@@ -53,6 +53,7 @@ int btfm_swr_hw_init(void)
 	uint8_t dev_num = 0;
 	int ret = 0;
 	int chipset_ver;
+	uint8_t retry = 0;
 
 	BTFMSWR_DBG("");
 
@@ -72,15 +73,21 @@ int btfm_swr_hw_init(void)
 
 	// get logical address
 	/*
-	 * Add 5msec delay to provide sufficient time for
+	 * Add delay to provide sufficient time for
 	 * soundwire auto enumeration of slave devices as
 	 * per HW requirement.
 	 */
-	usleep_range(5000, 5010);
-	ret = swr_get_logical_dev_num(pbtfmswr->swr_slave, pbtfmswr->p_dai_port->ea,
-									&dev_num);
+	for ( ; retry < MAX_GET_DEV_NUM_RETRY; retry++) {
+		ret = swr_get_logical_dev_num(pbtfmswr->swr_slave,
+						pbtfmswr->p_dai_port->ea,
+						&dev_num);
+		if (ret == 0)
+			break;
+		usleep_range(2000, 2100);
+	}
 	if (ret) {
-		BTFMSWR_ERR("error while getting logical device number");
+		BTFMSWR_ERR("error getting logical device num after retry %u",
+				retry);
 		goto err;
 	}
 
