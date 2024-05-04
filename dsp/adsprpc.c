@@ -6239,7 +6239,7 @@ static ssize_t fastrpc_debugfs_read(struct file *filp, char __user *buffer,
 	} else {
 		ret = fastrpc_file_get(fl);
 		if (ret) {
-			ADSPRPC_ERR("Failed to get user process reference for fl (%pK)\n", fl);
+			ADSPRPC_ERR("Failed to get user process reference\n");
 			goto bail;
 		}
 		len += scnprintf(fileinfo + len, DEBUGFS_SIZE - len,
@@ -6391,8 +6391,8 @@ static ssize_t fastrpc_debugfs_read(struct file *filp, char __user *buffer,
 	if (len > DEBUGFS_SIZE)
 		len = DEBUGFS_SIZE;
 	ret = simple_read_from_buffer(buffer, count, position, fileinfo, len);
-	kfree(fileinfo);
 bail:
+	kfree(fileinfo);
 	return ret;
 }
 
