@@ -247,19 +247,24 @@ static int delete_dsp_session(struct msm_cvp_inst *inst,
 			dprintk(CVP_DSP, "%s find device addr 0x%x\n",
 				__func__, buf->smem->device_addr);
 
-			rc = eva_fastrpc_dev_unmap_dma(
-					frpc_node->cvp_fastrpc_device,
-					buf);
-			if (rc)
-				dprintk_rl(CVP_WARN,
-					"%s Failed to unmap buffer 0x%x\n",
-					__func__, rc);
+			if (buf->ownership == CLIENT) {
+				msm_cvp_unmap_smem(inst, buf->smem, "unmap dsp");
+				msm_cvp_smem_put_dma_buf(buf->smem->dma_buf);
+			} else if (buf->ownership == DSP) {
+				rc = eva_fastrpc_dev_unmap_dma(
+						frpc_node->cvp_fastrpc_device,
+						buf);
+				if (rc)
+					dprintk_rl(CVP_WARN,
+							"%s Failed to unmap buffer 0x%x\n",
+							__func__, rc);
 
-			rc = cvp_release_dsp_buffers(inst, buf);
-			if (rc)
-				dprintk(CVP_ERR,
-					"%s Failed to free buffer 0x%x\n",
-					__func__, rc);
+				rc = cvp_release_dsp_buffers(inst, buf);
+				if (rc)
+					dprintk(CVP_ERR,
+							"%s Failed to free buffer 0x%x\n",
+							__func__, rc);
+			}
 
 			list_del(&buf->list);
 
