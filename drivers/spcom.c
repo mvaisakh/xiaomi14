@@ -33,8 +33,8 @@
  * to use a dedicated logical channel for HLOS and SP Application-Pair.
  *
  * Each HLOS/SP Application can be either Client or Server or both,
- * Messaging is allways point-to-point between 2 HLOS<=>SP applications.
- * Each channel exclusevly used by single Client or Server.
+ * Messaging is always point-to-point between 2 HLOS<=>SP applications.
+ * Each channel exclusively used by single Client or Server.
  *
  * User Space Request & Response are synchronous.
  * read() & write() operations are blocking until completed or terminated.
@@ -524,10 +524,10 @@ static int spcom_rx(struct spcom_channel *ch,
 		mutex_unlock(&ch->lock); /* unlock while waiting */
 		/* wait for rx response */
 		if (timeout_msec)
-			timeleft = wait_for_completion_interruptible_timeout(
+			timeleft = wait_for_completion_killable_timeout(
 						     &ch->rx_done, jiffies);
 		else
-			ret = wait_for_completion_interruptible(&ch->rx_done);
+			ret = wait_for_completion_killable(&ch->rx_done);
 		mutex_lock(&ch->lock);
 
 		if (timeout_msec && timeleft == 0) {
@@ -541,7 +541,7 @@ static int spcom_rx(struct spcom_channel *ch,
 			ret = -ERESTART;
 			goto exit_err;
 		} else if (ret < 0 || timeleft < 0) {
-			spcom_pr_err("rx wait was interrupted!");
+			spcom_pr_err("rx wait was interrupted! PID: %d", current_pid());
 			ret = -EINTR; /* abort, not restartable */
 			goto exit_err;
 		} else if (ch->actual_rx_size) {
@@ -3038,8 +3038,8 @@ static int spcom_ioctl_handle_poll_event(struct spcom_ioctl_poll_event *arg, int
 				&spcom_dev->rpmsg_state_change);
 
 			if (ret) {/* wait was interrupted */
-				spcom_pr_info("Wait for link state change interrupted, ret[%d]\n",
-						ret);
+				spcom_pr_info("Wait for link state change interrupted, ret[%d], pid: %d\n",
+						ret, current_pid());
 				return -EINTR;
 			}
 		}
