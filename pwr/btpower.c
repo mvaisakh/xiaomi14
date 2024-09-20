@@ -176,6 +176,26 @@ static struct vreg_data bt_vregs_info_qca6xx0[] = {
 		{BT_VDD_IPA_2p2, BT_VDD_IPA_2p2_CURRENT}},
 };
 
+// Regulator structure for WCN6450 BT SoC series
+static struct vreg_data bt_vregs_info_wcn6450[] = {
+	{NULL, "qcom,bt-vdd-io1",	  1256000, 1408000, 0, false, true,
+		{BT_VDD_IO_LDO, BT_VDD_IO_LDO_CURRENT}},
+	{NULL, "qcom,bt-vdd-aon",	  920000,  1040000,	0, false, true,
+		{BT_VDD_AON_LDO, BT_VDD_AON_LDO_CURRENT}},
+
+	/* BT_CX_MX */
+	{NULL, "qcom,bt-vdd-dig",	   920000,	1040000,  0, false, true,
+		{BT_VDD_DIG_LDO, BT_VDD_DIG_LDO_CURRENT}},
+	{NULL, "bt-vdd-rfa-0p8",  950000,  952000,  0, false, true,
+		{BT_VDD_RFA_0p8, BT_VDD_RFA_0p8}},
+	{NULL, "qcom,bt-vdd-rfa1",	   1856000, 2040000, 0, false, true,
+		{BT_VDD_RFA1_LDO, BT_VDD_RFA1_LDO_CURRENT}},
+	{NULL, "qcom,bt-vdd-rfa2",	   1256000, 1408000, 0, false, true,
+		{BT_VDD_RFA2_LDO, BT_VDD_RFA2_LDO_CURRENT}},
+	{NULL, "qcom,bt-vdd-pa",	   3300000, 3300000, 0, false, true,
+		{BT_VDD_PA_LDO, BT_VDD_PA_LDO_CURRENT}},
+};
+
 // Regulator structure for kiwi BT SoC series
 static struct vreg_data bt_vregs_info_kiwi[] = {
 	{NULL, "qcom,bt-vdd18-aon",      1800000, 1800000, 0, false, true,
@@ -278,6 +298,12 @@ static struct pwr_data bt_vreg_info_wcn6750 = {
 	.bt_num_vregs = ARRAY_SIZE(bt_vregs_info_qca6xx0),
 };
 
+static struct pwr_data bt_vreg_info_wcn6450 = {
+	.compatible = "qcom,wcn6450-bt",
+	.bt_vregs = bt_vregs_info_wcn6450,
+	.bt_num_vregs = ARRAY_SIZE(bt_vregs_info_wcn6450),
+};
+
 static struct pwr_data bt_vreg_info_peach = {
 	.compatible = "qcom,peach-bt",
 	.platform_vregs = bt_vregs_info_peach,
@@ -297,6 +323,7 @@ static const struct of_device_id bt_power_match_table[] = {
 	{	.compatible = "qcom,kiwi-no-share-ant-power",
 			.data = &bt_vreg_info_kiwi_no_share_ant_power},
 	{	.compatible = "qcom,wcn6750-bt", .data = &bt_vreg_info_wcn6750},
+	{       .compatible = "qcom,wcn6450-bt", .data = &bt_vreg_info_wcn6450},
 	{	.compatible = "qcom,bt-qca-converged", .data = &bt_vreg_info_converged},
 	{	.compatible = "qcom,peach-bt", .data = &bt_vreg_info_peach},
 	{},
