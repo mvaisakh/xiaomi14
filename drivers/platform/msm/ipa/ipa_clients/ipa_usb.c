@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/mutex.h>
@@ -2745,12 +2745,9 @@ int ipa3_usb_init(void)
 
 	ipa_usb_debugfs_init();
 
-	res = ipa_register_ipa_ready_cb(ipa_ready_callback, (void *)&usb_ops);
-	if (res < 0) {
-		pr_err("failed to register USB ops CB\n");
-			goto ipa_usb_workqueue_fail;
-	}
-	pr_err("ILIA: ipa_ready_callback registered\n");
+	res = ipa3_usb_register_ready_cb();
+	if (res < 0)
+		goto ipa_usb_workqueue_fail;
 
 	pr_info("exit: IPA_USB init success!\n");
 
@@ -2779,4 +2776,16 @@ void ipa3_usb_exit(void)
 #endif
 	ipa_usb_debugfs_remove();
 	kfree(ipa3_usb_ctx);
+}
+
+int ipa3_usb_register_ready_cb(void)
+{
+	int res;
+
+	res = ipa_register_ipa_ready_cb(ipa_ready_callback, (void *)&usb_ops);
+	if (res < 0)
+		IPA_USB_DBG("Failed to register USB ops CB\n");
+	else
+		IPA_USB_DBG("ipa_ready_callback registered\n");
+	return res;
 }
