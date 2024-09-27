@@ -421,6 +421,56 @@ int msm_vidc_read_efuse(struct msm_vidc_core *core)
 	return rc;
 }
 
+int msm_vidc_get_license_fp_info(struct msm_vidc_core *core)
+{
+	int rc = 0;
+	void __iomem *base;
+	u32 i = 0, softsku_enabled_bit = 0, license_data_count = 0;
+	u32 softsku_id = 0, license_validity_bit = 0;
+
+	struct msm_vidc_license_data *license_data = NULL;
+	struct msm_vidc_platform_data *platform_data;
+
+	platform_data = &core->platform->data;
+	license_data = platform_data->license_data;
+	license_data_count = platform_data->license_data_size;
+
+	if (!license_data)
+		return 0;
+
+	for (i = 0; i < license_data_count; i++) {
+		base = devm_ioremap(&core->pdev->dev, license_data[i].start_address,
+				license_data[i].header_size);
+		if (!base) {
+			d_vpr_e("failed license page info: start %#x, size %d\n",
+				license_data[i].start_address, license_data[i].header_size);
+			return -EINVAL;
+		}
+		softsku_enabled_bit = readl_relaxed(base);
+
+		if (softsku_enabled_bit & 0x1) {
+			license_validity_bit = readl_relaxed(base +
+							license_data[i].license_validity_shift);
+
+			if (license_validity_bit) {
+				softsku_id = readl_relaxed(base + license_data[i].sku_id_shift);
+				d_vpr_h("softsku_id %d\n", softsku_id);
+			} else {
+				softsku_id = 1;
+			}
+		}
+		if (softsku_id == 1)
+			platform_data->sku_version = SKU_VERSION_2;
+
+		if (platform_data->sku_version) {
+			d_vpr_h("softsku_id %d, platform version 0x%x\n",
+				softsku_id, platform_data->sku_version);
+			break;
+		}
+	}
+	return rc;
+}
+
 /****************** control framework utility functions **********************/
 
 enum msm_vidc_inst_capability_type msm_vidc_get_cap_id(struct msm_vidc_inst *inst, u32 id)
