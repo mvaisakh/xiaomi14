@@ -81,3 +81,16 @@ def define_anorak61():
 	    "CONFIG_BT_HW_SECURE_DISABLE",
 	]
    )
+
+def define_neo61():
+    define_bt_modules(
+	target = "neo-la",
+	modules = [
+	    "btpower",
+	    "bt_fm_slim",
+	],
+	config_options = [
+	    "CONFIG_MSM_BT_POWER",
+	    "CONFIG_BTFM_SLIM",
+	]
+   )
