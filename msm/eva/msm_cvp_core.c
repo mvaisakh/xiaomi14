@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/dma-direction.h>
@@ -64,10 +64,10 @@ int msm_cvp_private(void *cvp_inst, unsigned int cmd,
 }
 EXPORT_SYMBOL(msm_cvp_private);
 
-static bool msm_cvp_check_for_inst_overload(struct msm_cvp_core *core,
+bool msm_cvp_check_for_inst_overload(struct msm_cvp_core *core,
 		u32 *instance_count)
 {
-	u32 secure_instance_count = 0;
+	u32 secure_instance_count = 0, cam_count = 0, cv_count = 0;
 	struct msm_cvp_inst *inst = NULL;
 	bool overload = false;
 
@@ -77,15 +77,26 @@ static bool msm_cvp_check_for_inst_overload(struct msm_cvp_core *core,
 		/* This flag is not updated yet for the current instance */
 		if (inst->flags & CVP_SECURE)
 			secure_instance_count++;
+		if (inst->prop.type == HFI_SESSION_DMM)
+			cam_count++;
+		else
+			cv_count++;
 	}
 	mutex_unlock(&core->lock);
 
 	/* Instance count includes current instance as well. */
 
-	if ((*instance_count >= core->resources.max_inst_count) ||
+	if ((*instance_count > core->resources.max_inst_count) ||
 		(secure_instance_count >=
 			core->resources.max_secure_inst_count))
 		overload = true;
+	if (cam_count > MAX_DMM_INSTANCES) {
+		dprintk(CVP_WARN, "Reached 8 DMM session limit\n");
+		overload = true;
+	} else if (cv_count > MAX_CV_INSTANCES) {
+		dprintk(CVP_WARN, "Reached 8 generic CV session limit\n");
+		overload = true;
+	}
 	return overload;
 }
 
