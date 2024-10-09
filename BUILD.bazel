@@ -37,3 +37,7 @@ define_modules("volcano", "gki")
 define_modules("anorak", "consolidate")
 
 define_modules("anorak", "gki")
+
+define_modules("neo_la", "consolidate")
+
+define_modules("neo_la", "gki")
