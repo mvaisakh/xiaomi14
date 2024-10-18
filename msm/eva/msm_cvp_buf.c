@@ -1482,11 +1482,10 @@ static int msm_cvp_unmap_user_persist_buf(struct msm_cvp_inst *inst,
 				struct cvp_buf_type *buf,
 				u32 pkt_type, u32 buf_idx, u32 *iova)
 {
-	struct msm_cvp_smem *smem = NULL;
-        struct list_head *ptr;
-        struct list_head *next;
-        struct cvp_internal_buf *pbuf;
-        struct dma_buf *dma_buf;
+	struct list_head *ptr;
+	struct list_head *next;
+	struct cvp_internal_buf *pbuf;
+	struct dma_buf *dma_buf;
 
 	if (!inst) {
 		dprintk(CVP_ERR, "%s: invalid params\n", __func__);
@@ -1515,7 +1514,7 @@ static int msm_cvp_unmap_user_persist_buf(struct msm_cvp_inst *inst,
 				msm_cvp_smem_put_dma_buf(pbuf->smem->dma_buf);
 				pbuf->smem->device_addr = 0;
 			}
-			cvp_kmem_cache_free(&cvp_driver->smem_cache, smem);
+			cvp_kmem_cache_free(&cvp_driver->smem_cache, pbuf->smem);
 			pbuf->smem = NULL;
 			cvp_kmem_cache_free(&cvp_driver->buf_cache, pbuf);
 			mutex_unlock(&inst->persistbufs.lock);
