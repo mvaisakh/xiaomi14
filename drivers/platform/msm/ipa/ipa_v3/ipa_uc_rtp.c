@@ -1072,5 +1072,21 @@ int ipa3_create_hfi_send_uc(void)
 	IPADBG("hfi queue payload vptr is 0x%x\n", hfi_queue_payload_vptr);
 	IPADBG("hfi queue payload size is 0x%x\n", data.hfi_queue_payload_size);
 	res = ipa3_uc_send_hfi_cmd(&data);
+	if (res) {
+		iommu_unmap(cb->iommu_domain, queue_desc.dev_addr, queue_desc.size);
+		synx_uninitialize(glob_synx_session_ptr);
+	}
+
 	return res;
+}
+
+void ipa3_synx_uninitialize(void)
+{
+	if (IS_ERR_OR_NULL(glob_synx_session_ptr)) {
+		IPAERR("invalid synx fence session ptr to uninitialize\n");
+		return;
+	}
+
+	synx_uninitialize(glob_synx_session_ptr);
+	IPADBG("synx uninitialized successfully\n");
 }
