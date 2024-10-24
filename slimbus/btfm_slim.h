@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021,2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef BTFM_SLIM_H
@@ -41,6 +41,7 @@ enum {
 	BTFM_BT_SCO_SLIM_TX,
 	BTFM_BT_SCO_A2DP_SLIM_RX,
 	BTFM_BT_SPLIT_A2DP_SLIM_RX,
+	BTFM_BT_SPLIT_A2DP_SLIM_TX,
 	BTFM_SLIM_NUM_CODEC_DAIS
 };
 
@@ -70,6 +71,7 @@ struct btfmslim {
 	uint32_t num_rx_port;
 	uint32_t num_tx_port;
 	uint32_t sample_rate;
+	int dai_id;
 	uint32_t bps;
 	uint16_t direction;
 	struct btfmslim_ch *rx_chs;
