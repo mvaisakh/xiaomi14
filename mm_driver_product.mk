@@ -9,7 +9,7 @@ ifeq ($(TARGET_KERNEL_DLKM_DISABLE), true)
 endif
 
 ifeq ($(MM_DRV_DLKM_ENABLE), true)
-	ifneq ($(TARGET_BOARD_PLATFORM), taro)
+	ifneq ($(filter taro neo61, $(TARGET_BOARD_PLATFORM)), $(TARGET_BOARD_PLATFORM))
 		PRODUCT_PACKAGES += sync_fence.ko msm_hw_fence.ko
 	endif
 endif
