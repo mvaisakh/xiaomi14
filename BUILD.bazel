@@ -19,3 +19,7 @@ define_anorak61()
 load(":target.bzl", "define_neo61")
 
 define_neo61()
+
+load(":target.bzl", "define_volcano")
+
+define_volcano()
