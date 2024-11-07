@@ -3461,6 +3461,7 @@ int ipa3_tag_process(struct ipa3_desc *desc, int num_descs,
 
 int ipa3_usb_init(void);
 void ipa3_usb_exit(void);
+int ipa3_usb_register_ready_cb(void);
 
 void ipa3_q6_pre_shutdown_cleanup(void);
 void ipa3_q6_post_shutdown_cleanup(void);

@@ -12190,6 +12190,9 @@ static void ipa3_deepsleep_suspend(void)
 	IPADBG("Entry\n");
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 
+#if IS_ENABLED(CONFIG_DEEPSLEEP)
+	ipa_exit_callback();
+#endif
 	/* To allow default routing table delection using this flag */
 	ipa3_ctx->deepsleep = true;
 	/*Disabling the LAN NAPI*/
@@ -12227,6 +12230,7 @@ static void ipa3_deepsleep_resume(void)
 	IPADBG("Entry\n");
 	/*After deeplseep exit we shouldn't allow delete the default routing table*/
 	ipa3_ctx->deepsleep = false;
+	ipa3_usb_register_ready_cb();
 	/*Scheduling WQ to load IPA FW*/
 	queue_work(ipa3_ctx->transport_power_mgmt_wq,
 		&ipa3_fw_loading_work);
