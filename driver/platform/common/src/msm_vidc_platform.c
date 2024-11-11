@@ -385,6 +385,7 @@ int msm_vidc_read_efuse(struct msm_vidc_core *core)
 	u32 i = 0, efuse = 0, efuse_data_count = 0;
 	struct msm_vidc_efuse_data *efuse_data = NULL;
 	struct msm_vidc_platform_data *platform_data;
+	bool efuse_enabled;
 
 	platform_data = &core->platform->data;
 	efuse_data = platform_data->efuse_data;
@@ -392,6 +393,12 @@ int msm_vidc_read_efuse(struct msm_vidc_core *core)
 
 	if (!efuse_data)
 		return 0;
+
+	if (platform_data->sku_version) {
+		d_vpr_h("%s: Skip reading sku version as it's already identified, sku version:%d\n",
+				__func__, platform_data->sku_version);
+		return 0;
+	}
 
 	for (i = 0; i < efuse_data_count; i++) {
 		switch (efuse_data[i].purpose) {
@@ -405,9 +412,9 @@ int msm_vidc_read_efuse(struct msm_vidc_core *core)
 				return -EINVAL;
 			}
 			efuse = readl_relaxed(base);
-			platform_data->sku_version =
-					(efuse & efuse_data[i].mask) >>
-					efuse_data[i].shift;
+			efuse_enabled = (efuse & efuse_data[i].mask) >> efuse_data[i].shift;
+			if (efuse_enabled)
+				platform_data->sku_version = efuse_enabled;
 			break;
 		default:
 			break;
@@ -438,6 +445,12 @@ int msm_vidc_get_license_fp_info(struct msm_vidc_core *core)
 	if (!license_data)
 		return 0;
 
+	if (platform_data->sku_version) {
+		d_vpr_h("%s: Skip reading SoftSKU as efuse is already present, sku version: %d\n",
+				__func__, platform_data->sku_version);
+		return 0;
+	}
+
 	for (i = 0; i < license_data_count; i++) {
 		base = devm_ioremap(&core->pdev->dev, license_data[i].start_address,
 				license_data[i].header_size);
@@ -458,9 +471,25 @@ int msm_vidc_get_license_fp_info(struct msm_vidc_core *core)
 			} else {
 				softsku_id = 1;
 			}
+
+			switch (softsku_id) {
+			case 1:
+				platform_data->sku_version = SKU_VERSION_2;
+				break;
+			case 2:
+				platform_data->sku_version = SKU_VERSION_3;
+				break;
+			case 3:
+				platform_data->sku_version = SKU_VERSION_4;
+				break;
+			case 4:
+				platform_data->sku_version = SKU_VERSION_0;
+				break;
+			default:
+				platform_data->sku_version = SKU_VERSION_0;
+				break;
+			}
 		}
-		if (softsku_id == 1)
-			platform_data->sku_version = SKU_VERSION_2;
 
 		if (platform_data->sku_version) {
 			d_vpr_h("softsku_id %d, platform version 0x%x\n",

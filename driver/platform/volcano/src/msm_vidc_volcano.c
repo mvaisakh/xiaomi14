@@ -6372,6 +6372,9 @@ int msm_vidc_volcano_check_ddr_type(struct msm_vidc_platform_data *platform_data
 static int msm_vidc_init_data(struct msm_vidc_core *core)
 {
 	struct device *dev = NULL;
+	struct msm_platform_core_capability *platform_data;
+	int i, num_platform_caps;
+	unsigned int sku_ver;
 	int rc = 0;
 
 	dev = &core->pdev->dev;
@@ -6380,24 +6383,51 @@ static int msm_vidc_init_data(struct msm_vidc_core *core)
 
 	core->platform->data = volcano_data_v0;
 
-	/* Check for sku version */
-	rc = msm_vidc_get_license_fp_info(core);
-	if (rc) {
-		d_vpr_e("%s: Failed to read licence data\n", __func__);
-		return rc;
-	}
-
 	rc = msm_vidc_read_efuse(core);
 	if (rc) {
 		d_vpr_e("%s: Failed to read efuse\n", __func__);
 		return rc;
 	}
 
-	if (core->platform->data.sku_version == SKU_VERSION_1)
-		core->platform->data = volcano_data_v1;
+	/* Check for soft sku version */
+	rc = msm_vidc_get_license_fp_info(core);
+	if (rc) {
+		d_vpr_e("%s: Failed to read license data\n", __func__);
+		return rc;
+	}
 
-	if (core->platform->data.sku_version == SKU_VERSION_2)
+	sku_ver = core->platform->data.sku_version;
+	switch (sku_ver) {
+	case SKU_VERSION_1:
+		core->platform->data = volcano_data_v1;
+		break;
+	case SKU_VERSION_2:
 		core->platform->data = volcano_data_v2;
+		break;
+	case SKU_VERSION_3:
+		core->platform->data = volcano_data_v1;
+		core->platform->data.sku_version = sku_ver;
+		platform_data = core->platform->data.core_data;
+		num_platform_caps = core->platform->data.core_data_size;
+		for (i = 0; i < num_platform_caps && i < CORE_CAP_MAX; i++) {
+			if (platform_data[i].type == MAX_MBPS)
+				platform_data[i].value = 1044480; /* max_load 4096x2176@30fps*/
+		}
+		break;
+	case SKU_VERSION_4:
+		core->platform->data = volcano_data_v1;
+		core->platform->data.sku_version = sku_ver;
+		platform_data = core->platform->data.core_data;
+		num_platform_caps = core->platform->data.core_data_size;
+		for (i = 0; i < num_platform_caps && i < CORE_CAP_MAX; i++) {
+			if (platform_data[i].type == MAX_MBPS)
+				platform_data[i].value = 2088960; /* max_load 4096x2176@60fps*/
+		}
+		break;
+	default:
+		d_vpr_h("%s: Default volcano data already set\n", __func__);
+		break;
+	}
 
 	core->mem_ops = get_mem_ops_ext();
 	if (!core->mem_ops) {
