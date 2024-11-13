@@ -6,9 +6,9 @@ LOCAL_PATH := $(call my-dir)
 ifeq ($(call is-board-platform-in-list,taro kalama pineapple blair pitti volcano niobe anorak61 neo61), true)
 
 BT_SELECT := CONFIG_MSM_BT_POWER=m
-#ifdef CONFIG_SLIMBUS
+BT_SELECT += CONFIG_BTFM_CODEC=m
+BT_SELECT += CONFIG_BTFM_SWR=m
 BT_SELECT += CONFIG_BTFM_SLIM=m
-#endif
 BT_SELECT += CONFIG_I2C_RTC6226_QCA=m
 
 ifeq ($(TARGET_KERNEL_DLKM_SECURE_MSM_OVERRIDE), true)
@@ -20,6 +20,8 @@ endif
 LOCAL_PATH := $(call my-dir)
 LOCAL_MODULE_DDK_BUILD := true
 LOCAL_MODULE_KO_DIRS := pwr/btpower.ko
+LOCAL_MODULE_KO_DIRS += btfmcodec/btfmcodec.ko
+LOCAL_MODULE_KO_DIRS += soundwire/bt_fm_swr.ko
 LOCAL_MODULE_KO_DIRS += slimbus/bt_fm_slim.ko
 LOCAL_MODULE_KO_DIRS += rtc6226/radio-i2c-rtc6226-qca.ko
 
@@ -50,6 +52,7 @@ KBUILD_REQUIRED_KOS := smcinvoke_dlkm.ko
 endif
 endif
 
+KBUILD_REQUIRED_KOS += swr_dlkm.ko
 
 # Module.symvers needs to be generated as a intermediate module so that
 # other modules which depend on BT platform modules can set local
@@ -75,6 +78,24 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(BT_SRC_FILES)
 LOCAL_MODULE              := btpower.ko
 LOCAL_MODULE_KBUILD_NAME  := pwr/btpower.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
+################################ BTFM CODEC Driver #########################
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(BT_SRC_FILES)
+LOCAL_MODULE              := btfmcodec.ko
+LOCAL_MODULE_KBUILD_NAME  := btfmcodec/btfmcodec.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
+################################ soundwire ################################
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(BT_SRC_FILES)
+LOCAL_MODULE              := bt_fm_swr.ko
+LOCAL_MODULE_KBUILD_NAME  := soundwire/bt_fm_swr.ko
 LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)

@@ -6,7 +6,9 @@ ifeq ($(TARGET_USES_QMAA),true)
         BT_KERNEL_DRIVER := $(KERNEL_MODULES_OUT)/btpower.ko\
                             $(KERNEL_MODULES_OUT)/bt_fm_slim.ko
         ifneq ($(TARGET_BOARD_PLATFORM), neo61)
-           BT_KERNEL_DRIVER += $(KERNEL_MODULES_OUT)/radio-i2c-rtc6226-qca.ko
+           BT_KERNEL_DRIVER += $(KERNEL_MODULES_OUT)/radio-i2c-rtc6226-qca.ko \
+                               $(KERNEL_MODULES_OUT)/btfmcodec.ko \
+                               $(KERNEL_MODULES_OUT)/bt_fm_swr.ko
         endif
         BOARD_VENDOR_KERNEL_MODULES += $(BT_KERNEL_DRIVER)
      endif
@@ -16,7 +18,9 @@ else
      BT_KERNEL_DRIVER := $(KERNEL_MODULES_OUT)/btpower.ko\
                          $(KERNEL_MODULES_OUT)/bt_fm_slim.ko
      ifneq ($(TARGET_BOARD_PLATFORM), neo61)
-        BT_KERNEL_DRIVER += $(KERNEL_MODULES_OUT)/radio-i2c-rtc6226-qca.ko
+        BT_KERNEL_DRIVER += $(KERNEL_MODULES_OUT)/radio-i2c-rtc6226-qca.ko \
+                            $(KERNEL_MODULES_OUT)/btfmcodec.ko \
+                            $(KERNEL_MODULES_OUT)/bt_fm_swr.ko
      endif
      BOARD_VENDOR_KERNEL_MODULES += $(BT_KERNEL_DRIVER)
   endif
