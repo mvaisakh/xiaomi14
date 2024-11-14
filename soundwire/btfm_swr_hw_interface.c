@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -201,7 +201,11 @@ static int btfm_swr_dai_prepare(void *dai, uint32_t sampling_rate, uint32_t dire
 	bt_soc_enable_status = 0;
 	BTFMSWR_INFO("dai->id: %d, dai->rate: %d direction: %d", id, sampling_rate, direction);
 
-	btfm_get_sampling_rate(&sampling_rate);
+	if (id != FMAUDIO_TX)
+		btfm_get_sampling_rate(&sampling_rate);
+	else
+		BTFMSWR_INFO("Use sample rate from MM as is for FM");
+
 	btfmswr->sample_rate = sampling_rate;
 
 	switch (id) {

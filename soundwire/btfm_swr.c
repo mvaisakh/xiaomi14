@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -108,7 +108,7 @@ int btfm_swr_enable_port(u8 port_num, u8 ch_count, u32 sample_rate, u8 usecase)
 	ch_rate[0] = sample_rate;
 	port_type[0] = usecase;
 
-	BTFMSWR_INFO("enabling port : %d\n", port_num);
+	BTFMSWR_INFO("enabling port : %d, with num channels %d\n", port_num, ch_count);
 	ret = swr_connect_port(pbtfmswr->swr_slave, &port_id[0], num_port,
 							&ch_mask[0], &ch_rate[0], &num_ch[0],
 							&port_type[0]);
@@ -146,7 +146,7 @@ int btfm_swr_disable_port(u8 port_num, u8 ch_count, u8 usecase)
 	ch_mask[0] = ch_count == 2 ? TWO_CHANNEL_MASK :	ONE_CHANNEL_MASK;
 	port_type[0] = usecase;
 
-	BTFMSWR_INFO("disabling port : %d\n", port_num);
+	BTFMSWR_INFO("disabling port : %d, with num channels %d\n", port_num, ch_count);
 	ret = swr_disconnect_port(pbtfmswr->swr_slave, &port_id[0], num_port,
 							&ch_mask[0], &port_type[0]);
 
