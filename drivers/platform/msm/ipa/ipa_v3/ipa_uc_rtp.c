@@ -15,8 +15,7 @@
 /* TR==> 1024B  * 8B TRE * 2 pipes */
 #define IPA_UC_CON_TRANSFER_RING_SIZE  1024
 
-#define MAX_NUMBER_OF_STREAMS 4
-#define MAX_NUMBER_OF_PARTITIONS MAX_NUMBER_OF_STREAMS
+#define MAX_NUMBER_OF_PARTITIONS NO_OF_BUFFS
 
 #define MAX_UC_PROD_PIPES 4
 #define MAX_UC_CONS_PIPES 2
@@ -137,7 +136,7 @@ struct er_tr_to_free {
 struct er_tr_to_free er_tr_cpu_addresses;
 void *cpu_address[NO_OF_BUFFS];
 struct uc_temp_buffer_info tb_info;
-struct list_head mapped_bs_buff_lst[MAX_NUMBER_OF_STREAMS];
+struct list_head mapped_bs_buff_lst[MAX_STREAMS];
 struct synx_session *glob_synx_session_ptr;
 
 int ipa3_uc_send_tuple_info_cmd(struct traffic_tuple_info *data)
