@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -585,6 +585,9 @@ int btfmcodec_hwep_prepare(struct btfmcodec_data *btfmcodec, uint32_t sampling_r
 				btfmcodec_set_current_state(state, BT_Connected);
 			}
 		} else if (ret == 0 && test_bit(BTADV_CONFIGURE_DMA, &hwep_info->flags)) {
+                        /* Don't send request to cp for fm as it is non cp */
+			if (id == 0)
+				return  ret;
 			ret  = btfmcodec_configure_dma(btfmcodec, (uint8_t)id);
 			if (ret < 0) {
 				BTFMCODEC_ERR("failed to configure Codec DMA %d", ret);
