@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -30,13 +30,14 @@ enum {
 
 enum {
 	QCA_EVROS_SOC_ID_0100 = 0x40200100,
+	QCA_EVROS_SOC_ID_0104 = 0x40200104,
 	QCA_EVROS_SOC_ID_0200 = 0x40200200,
 };
 
 
 enum {
-	EVROS_EA = 0x0108170220,
-	GANGES_EA = 0x0208170220,
+	EVROS_EA = 0x0108170220ULL,
+	GANGES_EA = 0x0208170220ULL,
 };
 
 /* Specific defines for slave slimbus device */
