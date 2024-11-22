@@ -2,6 +2,7 @@ PWR_PATH = "pwr"
 SLIMBUS_PATH = "slimbus"
 FMRTC_PATH = "rtc6226"
 BTFMCODEC_PATH = "btfmcodec"
+SWR_PATH = "soundwire"
 
 # This dictionary holds all the BT modules included in the bt-kernel
 bt_modules = {}
@@ -113,4 +114,22 @@ register_bt_modules(
         "radio-rtc6226-i2c.c",
         "radio-rtc6226.h",
     ],
+)
+register_bt_modules(
+   name = "bt_fm_swr",
+   path = SWR_PATH,
+   # config_opt = "CONFIG_BTFM_SWR",
+   srcs = [
+       "btfm_swr.c",
+       "btfm_swr.h",
+       "btfm_swr_slave.c",
+       "btfm_swr_slave.h",
+       "btfm_swr_hw_interface.h",
+       "btfm_swr_hw_interface.c",
+   ],
+   deps = [
+      ":%b_btpower",":%b_btfmcodec", ":btfmcodec_headers",
+      "//vendor/qcom/opensource/audio-kernel:%b_audio",
+      "//vendor/qcom/opensource/audio-kernel:audio_headers"
+   ],
 )
