@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef __LINUX_BTFM_SWR_HW_INTERFACE_H
@@ -23,7 +23,7 @@ enum Codec {
 	APTX_AD_R4,
 	RVP,
 	SSC,
-        LHDC,
+	LHDC,
 	NO_CODEC
 };
 

@@ -176,7 +176,8 @@ void btfm_get_sampling_rate(uint32_t *sampling_rate)
 
 	if (*sampling_rate == 44100 || *sampling_rate == 48000) {
 		if (usecase_codec == LDAC ||
-		    usecase_codec == APTX_AD)
+		    usecase_codec == APTX_AD ||
+		    usecase_codec == LHDC)
 			*sampling_rate = (*sampling_rate) * 2;
 	}
 
