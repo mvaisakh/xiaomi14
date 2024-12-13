@@ -638,15 +638,15 @@ static const struct rsrc_min_max ipa3_rsrc_src_grp_config
 	[IPA_5_5_XR] = {
 		/* UL  DL  DMA  QDSS  URLLC UC_RX_Q N/A */
 		[IPA_v5_0_RSRC_GRP_TYPE_SRC_PKT_CONTEXTS] = {
-		{3, 9}, {4, 10}, {1, 1}, {1, 1}, {1, 63}, {0, 63}, {0, 0},  },
+		{3, 9}, {4, 10}, {0, 0}, {0, 0}, {3, 0x3f}, {0, 0x3f}, {0, 0},  },
 		[IPA_v5_0_RSRC_GRP_TYPE_SRC_DESCRIPTOR_LISTS] = {
-		{9, 9}, {12, 12}, {2, 2}, {2, 2}, {10, 10}, {0, 0}, {0, 0},  },
+		{9, 9}, {12, 12}, {0, 0}, {0, 0}, {10, 10}, {0, 0}, {0, 0},  },
 		[IPA_v5_0_RSRC_GRP_TYPE_SRC_DESCRIPTOR_BUFF] = {
-		{9, 9}, {24, 24}, {4, 4}, {4, 4}, {20, 20}, {0, 0}, {0, 0},  },
+		{9, 9}, {24, 24}, {0, 0}, {0, 0}, {20, 20}, {0, 0}, {0, 0},  },
 		[IPA_v5_0_RSRC_GRP_TYPE_SRC_HPS_DMARS] = {
-		{0, 63}, {0, 63}, {0, 63}, {0, 63}, {1, 63}, {0, 63}, {0, 0},  },
+		{0, 0x3f}, {0, 0x3f}, {0, 0x3f}, {0, 0x3f}, {1, 0x3f}, {0, 0x3f}, {0, 0},  },
 		[IPA_v5_0_RSRC_GRP_TYPE_SRC_ACK_ENTRIES] = {
-		{22, 22}, {16, 16}, {6, 6}, {2, 2}, {16, 16}, {0, 0}, {0, 0},  },
+		{22, 22}, {16, 16}, {0, 0}, {0, 0}, {16, 16}, {0, 0}, {0, 0},  },
 	},
 };
 
@@ -825,9 +825,9 @@ static const struct rsrc_min_max ipa3_rsrc_dst_grp_config
 	[IPA_5_5_XR] = {
 		/* UL  DL  DMA  QDSS unused  UC_RX_Q DRBIP N/A */
 		[IPA_v5_0_RSRC_GRP_TYPE_DST_DATA_SECTORS] = {
-		{6, 6}, {5, 5}, {2, 2}, {2, 2}, {0, 0}, {0, 0}, {0, 0},  },
+		{6, 6}, {6, 6}, {0, 0}, {0, 0}, {10, 10}, {0, 0}, {0, 0},  },
 		[IPA_v5_0_RSRC_GRP_TYPE_DST_DPS_DMARS] = {
-		{0, 3}, {0, 3}, {1, 2}, {1, 1}, {0, 0}, {0, 0}, {0, 0},  },
+		{0, 3}, {0, 3}, {0, 0}, {0, 0}, {1, 3}, {0, 0}, {0, 0},  },
 		[IPA_v5_0_RSRC_GRP_TYPE_DST_ULSO_SEGMENTS] = {
 		{0, 0x3f}, {0, 0x3f}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0},  },
 	},
@@ -5774,21 +5774,21 @@ static const struct ipa_ep_configuration ipa3_ep_mapping
 	/* IPA_5_5_XR */
 
 	[IPA_5_5_XR][IPA_CLIENT_APPS_LAN_PROD] = {
-			true, IPA_v5_5_GROUP_UL,
+			true, IPA_v5_5_GROUP_DL,
 			false,
 			IPA_DPS_HPS_SEQ_TYPE_PKT_PROCESS_NO_DEC_UCP,
 			QMB_MASTER_SELECT_DDR,
 			{ 9, 19, 26, 32, IPA_EE_AP, GSI_SMART_PRE_FETCH, 4},
 			IPA_TX_INSTANCE_NA },
 	[IPA_5_5_XR][IPA_CLIENT_APPS_CMD_PROD] = {
-			true, IPA_v5_5_GROUP_UL,
+			true, IPA_v5_5_GROUP_DL,
 			false,
 			IPA_DPS_HPS_SEQ_TYPE_DMA_ONLY,
 			QMB_MASTER_SELECT_DDR,
 			{ 14, 11, 20, 24, IPA_EE_AP, GSI_ESCAPE_BUF_ONLY, 0},
 			IPA_TX_INSTANCE_NA },
 	[IPA_5_5_XR][IPA_CLIENT_WLAN2_PROD] = {
-			true, IPA_v5_5_GROUP_UL,
+			true, IPA_v5_5_GROUP_DL,
 			true,
 			IPA_DPS_HPS_SEQ_TYPE_2ND_PKT_PROCESS_PASS_NO_DEC_UCP,
 			QMB_MASTER_SELECT_DDR,
@@ -5796,7 +5796,7 @@ static const struct ipa_ep_configuration ipa3_ep_mapping
 			IPA_TX_INSTANCE_NA },
 
 	[IPA_5_5_XR][IPA_CLIENT_APPS_LAN_CONS] = {
-			true, IPA_v5_5_GROUP_UL,
+			true, IPA_v5_5_GROUP_DL,
 			false,
 			IPA_DPS_HPS_SEQ_TYPE_INVALID,
 			QMB_MASTER_SELECT_DDR,
