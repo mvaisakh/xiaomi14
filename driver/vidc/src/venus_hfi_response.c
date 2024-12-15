@@ -71,7 +71,7 @@ static void print_sfr_message(struct msm_vidc_core *core)
 				vsfr->buf_size, core->sfr.mem_size);
 			return;
 		}
-		vsfr_size = vsfr->buf_size - sizeof(u32);
+		vsfr_size = core->sfr.mem_size - sizeof(u32);
 		p = memchr(vsfr->rg_data, '\0', vsfr_size);
 		/* SFR isn't guaranteed to be NULL terminated */
 		if (p == NULL)
