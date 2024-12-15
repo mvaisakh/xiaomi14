@@ -8824,6 +8824,7 @@ int ipa3_cfg_ep_cfg(u32 clnt_hdl, const struct ipa_ep_cfg_cfg *cfg)
 			IPAERR("bad parm, clnt_hdl = %d , ep_valid = %d\n",
 				clnt_hdl,
 				ipa3_ctx->ep[clnt_hdl].valid);
+			IPA_ACTIVE_CLIENTS_DEC_EP(ipa3_get_client_mapping(clnt_hdl));
 			return -EINVAL;
 		}
 		ipa3_ctx->ep[clnt_hdl].cfg.cfg.tx_instance = tx_instance;

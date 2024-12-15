@@ -398,6 +398,8 @@ enum {
 #define IPA_GSI_CHANNEL_HALT_MAX_SLEEP 10000
 #define IPA_GSI_CHANNEL_HALT_MAX_TRY 10
 
+#define XR_IPA_UC_INIT_TIMEOUT_MSEC 100
+
 /* round addresses for closes page per SMMU requirements */
 #define IPA_SMMU_ROUND_TO_PAGE(iova, pa, size, iova_p, pa_p, size_p) \
 	do { \
@@ -2284,6 +2286,7 @@ enum ipa_per_usb_enum_type_e {
  * @ip6_flt_tbl_lcl: where ip6 flt tables reside 1-local; 0-system
  * @power_mgmt_wq: workqueue for power management
  * @transport_power_mgmt_wq: workqueue transport related power management
+ * @xr_uc_init_wq: workqueue for uc initializations
  * @tag_process_before_gating: indicates whether to start tag process before
  *  gating IPA clocks
  * @transport_pm: transport power management related information
@@ -2412,6 +2415,7 @@ struct ipa3_context {
 	struct workqueue_struct *transport_power_mgmt_wq;
 	bool tag_process_before_gating;
 	struct ipa3_transport_pm transport_pm;
+	struct workqueue_struct *xr_uc_init_wq;
 	unsigned long gsi_evt_comm_hdl;
 	u32 gsi_evt_comm_ring_rem;
 	u32 clnt_hdl_cmd;
@@ -2539,6 +2543,7 @@ struct ipa3_context {
 	struct ipa3_tsp_ctx tsp;
 #endif
 	atomic_t ipa_clk_vote;
+	bool gsi_status;
 
 	int (*client_lock_unlock[IPA_MAX_CLNT])(bool is_lock);
 
@@ -3865,5 +3870,6 @@ int ipa3_allocate_uc_pipes_er_tr_send_to_uc(void);
 void ipa3_free_uc_temp_buffs(unsigned int no_of_buffs);
 void ipa3_free_uc_pipes_er_tr(void);
 int ipa3_uc_send_add_bitstream_buffers_cmd(struct bitstream_buffers_to_uc *data);
+void ipa3_synx_uninitialize(void);
 #endif
 #endif /* _IPA3_I_H_ */
