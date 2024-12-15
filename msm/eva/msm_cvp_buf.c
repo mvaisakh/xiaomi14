@@ -1315,6 +1315,7 @@ static struct msm_cvp_smem *msm_cvp_session_find_smem(struct msm_cvp_inst *inst,
 		smem = buf->smem;
 		if (smem && smem->dma_buf == dma_buf) {
 			atomic_inc(&smem->refcount);
+			msm_cvp_smem_put_dma_buf(smem->dma_buf);
 			mutex_unlock(&inst->persistbufs.lock);
 			print_smem(CVP_MEM, "found in persist", inst, smem);
 			return smem;
@@ -1329,6 +1330,7 @@ static struct msm_cvp_smem *msm_cvp_session_find_smem(struct msm_cvp_inst *inst,
 			smem = frame->bufs[i].smem;
 			if (smem && smem->dma_buf == dma_buf) {
 				atomic_inc(&smem->refcount);
+				msm_cvp_smem_put_dma_buf(smem->dma_buf);
 				mutex_unlock(&inst->frames.lock);
 				print_smem(CVP_MEM, "found in frame",
 					inst, smem);
