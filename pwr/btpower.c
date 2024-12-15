@@ -67,6 +67,9 @@
 #define SIGIO_SSR_ON_UWB         0x00000001
 #define SIGIO_UWB_SSR_COMPLETED  0x00000002
 
+#define RESETB_GPIO_HIGH         0x00000001
+#define RESETB_GPIO_LOW          0x00000000
+
 #define CRASH_REASON_NOT_FOUND  ((char *)"Crash reason not found")
 
 #define PERI_SS	(0x00)
@@ -176,6 +179,25 @@ static struct vreg_data bt_vregs_info_qca6xx0[] = {
 		{BT_VDD_IPA_2p2, BT_VDD_IPA_2p2_CURRENT}},
 };
 
+// Regulator structure for WCN6450 BT SoC series
+static struct vreg_data bt_vregs_info_wcn6450[] = {
+	{NULL, "qcom,bt-vdd-io",	  1256000, 1408000, 0, false, true,
+		{BT_VDD_IO_LDO, BT_VDD_IO_LDO_CURRENT}},
+	{NULL, "qcom,bt-vdd-aon",	  920000,  1040000,	0, false, true,
+		{BT_VDD_AON_LDO, BT_VDD_AON_LDO_CURRENT}},
+	/* BT_CX_MX */
+	{NULL, "qcom,bt-vdd-dig",	   920000,	1040000,  0, false, true,
+		{BT_VDD_DIG_LDO, BT_VDD_DIG_LDO_CURRENT}},
+	{NULL, "qcom,bt-vdd-rfa-0p8",  920000,  1040000,  0, false, true,
+		{BT_VDD_RFA_0p8, BT_VDD_RFA_0p8_CURRENT}},
+	{NULL, "qcom,bt-vdd-rfa1",	   1856000, 2040000, 0, false, true,
+		{BT_VDD_RFA1_LDO, BT_VDD_RFA1_LDO_CURRENT}},
+	{NULL, "qcom,bt-vdd-rfa2",	   1256000, 1408000, 0, false, true,
+		{BT_VDD_RFA2_LDO, BT_VDD_RFA2_LDO_CURRENT}},
+	{NULL, "qcom,bt-vdd-pa",	   3300000, 3300000, 0, false, true,
+		{BT_VDD_PA_LDO, BT_VDD_PA_LDO_CURRENT}},
+};
+
 // Regulator structure for kiwi BT SoC series
 static struct vreg_data bt_vregs_info_kiwi[] = {
 	{NULL, "qcom,bt-vdd18-aon",      1800000, 1800000, 0, false, true,
@@ -278,6 +300,12 @@ static struct pwr_data bt_vreg_info_wcn6750 = {
 	.bt_num_vregs = ARRAY_SIZE(bt_vregs_info_qca6xx0),
 };
 
+static struct pwr_data bt_vreg_info_wcn6450 = {
+	.compatible = "qcom,wcn6450-bt",
+	.bt_vregs = bt_vregs_info_wcn6450,
+	.bt_num_vregs = ARRAY_SIZE(bt_vregs_info_wcn6450),
+};
+
 static struct pwr_data bt_vreg_info_peach = {
 	.compatible = "qcom,peach-bt",
 	.platform_vregs = bt_vregs_info_peach,
@@ -297,6 +325,7 @@ static const struct of_device_id bt_power_match_table[] = {
 	{	.compatible = "qcom,kiwi-no-share-ant-power",
 			.data = &bt_vreg_info_kiwi_no_share_ant_power},
 	{	.compatible = "qcom,wcn6750-bt", .data = &bt_vreg_info_wcn6750},
+	{       .compatible = "qcom,wcn6450-bt", .data = &bt_vreg_info_wcn6450},
 	{	.compatible = "qcom,bt-qca-converged", .data = &bt_vreg_info_converged},
 	{	.compatible = "qcom,peach-bt", .data = &bt_vreg_info_peach},
 	{},
@@ -678,6 +707,34 @@ void bt_configure_wakeup_gpios(int on)
 }
 #endif
 
+static int bt_pull_resetb(int resetb_gpio, int value)
+{
+	int rc = 0;
+
+	rc = gpio_direction_output(resetb_gpio, value);
+	if (rc) {
+		pr_err("%s: Unable to set direction\n", __func__);
+		return rc;
+	}
+	return rc;
+}
+
+static int bt_resetb_operation(int resetb)
+{
+	int rc = 0;
+
+	/* making resetb to low */
+	pr_info("BTON: Turn bt_resetb_gpio to low\n");
+	rc = bt_pull_resetb(resetb, RESETB_GPIO_LOW);
+	if (rc)
+		return rc;
+	msleep(20);
+	/* making resetb to high after delay */
+	pr_info("BTON: Turn bt_resetb_gpio to High\n");
+	rc = bt_pull_resetb(resetb, RESETB_GPIO_HIGH);
+	return rc;
+}
+
 static int bt_configure_gpios(int on)
 {
 	int rc = 0;
@@ -685,6 +742,7 @@ static int bt_configure_gpios(int on)
 	int wl_reset_gpio = pwr_data->wl_gpio_sys_rst;
 	int bt_sw_ctrl_gpio  =  pwr_data->bt_gpio_sw_ctrl;
 	int bt_debug_gpio  =  pwr_data->bt_gpio_debug;
+	int bt_resetb_gpio = pwr_data->bt_gpio_resetb;
 	int assert_dbg_gpio = 0;
 
 	if (on) {
@@ -693,6 +751,14 @@ static int bt_configure_gpios(int on)
 			pr_err("%s: unable to request gpio %d (%d)\n",
 					__func__, bt_reset_gpio, rc);
 			return rc;
+		}
+		if (bt_resetb_gpio  >=  0) {
+			rc = gpio_request(bt_resetb_gpio, "bt_resetb_gpio_n");
+			if (rc) {
+				pr_err("%s: unable to request gpio %d (%d)\n",
+						__func__, bt_resetb_gpio, rc);
+				return rc;
+			}
 		}
 		pr_err("BTON:Turn Bt OFF asserting BT_EN to low\n");
 		pr_err("bt-reset-gpio(%d) value(%d)\n", bt_reset_gpio,
@@ -755,12 +821,18 @@ static int bt_configure_gpios(int on)
 				}
 				power_src.platform_state[BT_RESET_GPIO] =
 					gpio_get_value(bt_reset_gpio);
+				if (bt_resetb_gpio  >=  0) {
+					pr_err("BTON:Turn resetb High\n");
+					bt_pull_resetb(bt_resetb_gpio, RESETB_GPIO_HIGH);
+				}
 			}
 			pr_err("BTON: WLAN OFF waiting for 100ms delay\n");
 			pr_err("for AON output to fully discharge\n");
 			msleep(100);
 			pr_err("BTON: WLAN OFF Asserting BT_EN to high\n");
 			btpower_set_xo_clk_gpio_state(true);
+			if (bt_resetb_gpio  >=  0)
+				bt_resetb_operation(bt_resetb_gpio);
 			rc = gpio_direction_output(bt_reset_gpio, 1);
 			if (rc) {
 				pr_err("%s: Unable to set direction\n", __func__);
@@ -923,6 +995,8 @@ gpio_fail:
 			gpio_free(pwr_data->bt_gpio_debug);
 		if (pwr_data->bt_chip_clk)
 			bt_clk_disable(pwr_data->bt_chip_clk);
+		if (pwr_data->bt_gpio_resetb  >  0)
+			gpio_free(pwr_data->bt_gpio_resetb);
 clk_fail:
 regulator_fail:
 		for (i = 0; i < bt_num_vregs; i++) {
@@ -1329,6 +1403,13 @@ static int get_gpio_dt_pinfo(struct platform_device *pdev) {
 					"qcom,wl-reset-gpio", 0);
 	if (pwr_data->wl_gpio_sys_rst < 0)
 		pr_err("%s: wl-reset-gpio not provided in device tree\n",
+			__func__);
+
+	pwr_data->bt_gpio_resetb =
+		of_get_named_gpio(child,
+					"qcom,wl-resetb-gpio", 0);
+	if (pwr_data->bt_gpio_resetb < 0)
+		pr_err("%s: bt_gpio_resetb not provided in device tree\n",
 			__func__);
 
 	ret = of_property_read_u32(child, "mpm_wake_set_gpios",

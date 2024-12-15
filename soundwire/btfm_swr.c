@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -41,6 +41,7 @@ int btfm_get_bt_soc_index(int chipset_ver)
 		return GANGES;
 	case QCA_EVROS_SOC_ID_0100:
 	case QCA_EVROS_SOC_ID_0200:
+	case QCA_EVROS_SOC_ID_0104:
 		return EVROS;
 	default:
 		BTFMSWR_ERR("no BT SOC id defined, returning EVROS");
@@ -53,6 +54,7 @@ int btfm_swr_hw_init(void)
 	uint8_t dev_num = 0;
 	int ret = 0;
 	int chipset_ver;
+	uint8_t retry = 0;
 
 	BTFMSWR_DBG("");
 
@@ -72,15 +74,21 @@ int btfm_swr_hw_init(void)
 
 	// get logical address
 	/*
-	 * Add 5msec delay to provide sufficient time for
+	 * Add delay to provide sufficient time for
 	 * soundwire auto enumeration of slave devices as
 	 * per HW requirement.
 	 */
-	usleep_range(5000, 5010);
-	ret = swr_get_logical_dev_num(pbtfmswr->swr_slave, pbtfmswr->p_dai_port->ea,
-									&dev_num);
+	for ( ; retry < MAX_GET_DEV_NUM_RETRY; retry++) {
+		ret = swr_get_logical_dev_num(pbtfmswr->swr_slave,
+						pbtfmswr->p_dai_port->ea,
+						&dev_num);
+		if (ret == 0)
+			break;
+		usleep_range(2000, 2100);
+	}
 	if (ret) {
-		BTFMSWR_ERR("error while getting logical device number");
+		BTFMSWR_ERR("error getting logical device num after retry %u",
+				retry);
 		goto err;
 	}
 
@@ -108,7 +116,7 @@ int btfm_swr_enable_port(u8 port_num, u8 ch_count, u32 sample_rate, u8 usecase)
 	ch_rate[0] = sample_rate;
 	port_type[0] = usecase;
 
-	BTFMSWR_INFO("enabling port : %d\n", port_num);
+	BTFMSWR_INFO("enabling port : %d, with num channels %d\n", port_num, ch_count);
 	ret = swr_connect_port(pbtfmswr->swr_slave, &port_id[0], num_port,
 							&ch_mask[0], &ch_rate[0], &num_ch[0],
 							&port_type[0]);
@@ -146,7 +154,7 @@ int btfm_swr_disable_port(u8 port_num, u8 ch_count, u8 usecase)
 	ch_mask[0] = ch_count == 2 ? TWO_CHANNEL_MASK :	ONE_CHANNEL_MASK;
 	port_type[0] = usecase;
 
-	BTFMSWR_INFO("disabling port : %d\n", port_num);
+	BTFMSWR_INFO("disabling port : %d, with num channels %d\n", port_num, ch_count);
 	ret = swr_disconnect_port(pbtfmswr->swr_slave, &port_id[0], num_port,
 							&ch_mask[0], &port_type[0]);
 

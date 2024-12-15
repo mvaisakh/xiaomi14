@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 
@@ -26,6 +26,8 @@ extern struct btfmswr *pbtfmswr;
 #define TWO_CHANNEL_MASK 3
 
 #define MAX_BT_PORTS 1
+
+#define MAX_GET_DEV_NUM_RETRY 15
 
 /* Codec driver defines */
 enum {
