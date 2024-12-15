@@ -334,7 +334,7 @@ struct raydium_ts_data {
 	struct pinctrl_state *pinctrl_state_release;
 #endif /*end of MSM_NEW_VER*/
 	bool touch_offload;
-
+	bool is_retry;
 
 };
 struct raydium_platform_data {

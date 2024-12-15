@@ -10910,6 +10910,31 @@ static int pt_core_restore(struct device *dev)
 }
 
 /*******************************************************************************
+ * FUNCTION: pt_core_freeze
+ *
+ * SUMMARY: Wrapper function with device suspend/resume stratergy to call
+ *  pt_core_suspend_. This function may disable IRQ during sleep state.
+ *
+ * RETURN:
+ *	 0 = success
+ *	!0 = failure
+ *
+ * PARAMETERS:
+ *      *dev  - pointer to core device
+ ******************************************************************************/
+static int pt_core_freeze(struct device *dev)
+{
+	int rc = 0;
+	struct pt_core_data *cd = dev_get_drvdata(dev);
+
+	dev_info(dev, "%s: Entering into suspend mode:\n",
+		__func__);
+
+	queue_work(cd->pt_workqueue, &cd->suspend_offload_work);
+	return rc;
+}
+
+/*******************************************************************************
  * FUNCTION: suspend_offload_work
  *
  * SUMMARY: Wrapper function of pt_core_suspend() to avoid TP to be waken/slept
@@ -11072,7 +11097,7 @@ static int pt_pm_notifier(struct notifier_block *nb,
 
 const struct dev_pm_ops pt_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(pt_core_suspend, pt_core_resume)
-	.freeze  = pt_core_suspend,
+	.freeze  = pt_core_freeze,
 	.restore = pt_core_restore,
 	SET_RUNTIME_PM_OPS(pt_core_rt_suspend, pt_core_rt_resume,
 			NULL)

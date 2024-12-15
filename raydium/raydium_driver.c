@@ -1088,18 +1088,25 @@ int raydium_read_touchdata(unsigned char *p_u8_tp_status,  unsigned char *p_u8_b
 	unsigned char u8_retry;
 	unsigned char u8_read_size;
 	unsigned char u8_read_buf[MAX_REPORT_PACKET_SIZE];
+	unsigned char u8_retry_temp;
 	u8_retry = 100;
+	u8_retry_temp = u8_retry;
 
 	mutex_lock(&g_raydium_ts->lock);
 	while (u8_retry != 0) {
 		i32_ret = raydium_i2c_pda2_set_page(g_raydium_ts->client,
 						    g_raydium_ts->is_suspend, RAYDIUM_PDA2_PAGE_0);
 		if (i32_ret < 0) {
+			if ((!g_raydium_ts->is_retry) && (u8_retry < (u8_retry_temp - 1))) {
+				LOGD(LOG_INFO, "[touch]%s: g_raydium_ts->is_retry=%d, break\n", __func__, g_raydium_ts->is_retry);
+				break;
+			}
 			msleep(250);
 			u8_retry--;
 		} else
 			break;
 	}
+	g_raydium_ts->is_retry = true;
 	if (u8_retry == 0) {
 		LOGD(LOG_ERR, "[touch]%s: failed to set page\n", __func__);
 
@@ -1635,6 +1642,9 @@ static void panel_event_notifier_callback(enum panel_event_notifier_tag tag,
 		if (notification->notif_type == DRM_PANEL_EVENT_BLANK_LP) {
 			LOGD(LOG_INFO, "%s: LOWPOWER!\n", __func__);
 		} else {
+			if (notification->notif_type == DRM_PANEL_EVENT_BLANK) {
+				g_raydium_ts->is_retry = false;
+			}
 			LOGD(LOG_INFO, "%s: BLANK!\n", __func__);
 		}
 		if (notification->notif_data.early_trigger) {
@@ -2481,6 +2491,7 @@ static int raydium_ts_probe(struct i2c_client *client,
 	g_raydium_ts->irq_desc = irq_to_desc(g_raydium_ts->irq);
 	g_raydium_ts->irq_enabled = true;
 	g_raydium_ts->touch_offload = false;
+	g_raydium_ts->is_retry = true;
 
 	/*disable_irq then enable_irq for avoid Unbalanced enable for IRQ */
 
@@ -2557,6 +2568,7 @@ void raydium_ts_shutdown(struct i2c_client *client)
 
 	LOGD(LOG_INFO, "[touch] %s: start\n", __func__);
 
+	g_raydium_ts->is_retry = false;
 	cancel_work_sync(&g_raydium_ts->work);
 	if (g_raydium_ts->workqueue) {
 		destroy_workqueue(g_raydium_ts->workqueue);

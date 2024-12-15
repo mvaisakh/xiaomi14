@@ -414,6 +414,7 @@ static ssize_t raydium_touch_offload_store(struct device *dev,
 	i32_ret = kstrtou8(p_i8_buf, 16, &u8_mode);
 	if (i32_ret < 0)
 		return i32_ret;
+	g_raydium_ts->is_retry = true;
 
 	switch (u8_mode) {
 	case 0: /* Disable Touch offload */
