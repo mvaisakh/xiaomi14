@@ -6,7 +6,7 @@ LOCAL_PATH := $(call my-dir)
 ifeq ($(call is-board-platform-in-list,taro kalama pineapple blair pitti volcano niobe anorak61 neo61), true)
 
 BT_SELECT := CONFIG_MSM_BT_POWER=m
-ifneq ($(call is-board-platform-in-list, niobe anorak61 neo61), true)
+ifneq ($(call is-board-platform-in-list, niobe anorak61 neo61 pitti), true)
 BT_SELECT += CONFIG_BTFM_CODEC=m
 BT_SELECT += CONFIG_BTFM_SWR=m
 endif
@@ -22,7 +22,7 @@ endif
 LOCAL_PATH := $(call my-dir)
 LOCAL_MODULE_DDK_BUILD := true
 LOCAL_MODULE_KO_DIRS := pwr/btpower.ko
-ifneq ($(call is-board-platform-in-list, niobe anorak61 neo61), true)
+ifneq ($(call is-board-platform-in-list, niobe anorak61 neo61 pitti), true)
 LOCAL_MODULE_KO_DIRS += btfmcodec/btfmcodec.ko
 LOCAL_MODULE_KO_DIRS += soundwire/bt_fm_swr.ko
 endif
@@ -87,7 +87,7 @@ LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 
-ifneq ($(call is-board-platform-in-list, niobe anorak61 neo61), true)
+ifneq ($(call is-board-platform-in-list, niobe anorak61 neo61 pitti), true)
 ################################ BTFM CODEC Driver #########################
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(BT_SRC_FILES)

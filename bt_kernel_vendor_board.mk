@@ -5,7 +5,7 @@ ifeq ($(TARGET_USES_QMAA),true)
      ifeq ($(call is-board-platform-in-list,$(TARGET_BOARD_PLATFORM)),true)
         BT_KERNEL_DRIVER := $(KERNEL_MODULES_OUT)/btpower.ko\
                             $(KERNEL_MODULES_OUT)/bt_fm_slim.ko
-        ifeq (,$(filter niobe anorak61 neo61, $(TARGET_BOARD_PLATFORM)))
+        ifeq (,$(filter niobe anorak61 neo61 pitti, $(TARGET_BOARD_PLATFORM)))
            BT_KERNEL_DRIVER += $(KERNEL_MODULES_OUT)/radio-i2c-rtc6226-qca.ko \
                                $(KERNEL_MODULES_OUT)/btfmcodec.ko \
                                $(KERNEL_MODULES_OUT)/bt_fm_swr.ko
@@ -17,7 +17,7 @@ else
   ifeq ($(call is-board-platform-in-list,$(TARGET_BOARD_PLATFORM)),true)
      BT_KERNEL_DRIVER := $(KERNEL_MODULES_OUT)/btpower.ko\
                          $(KERNEL_MODULES_OUT)/bt_fm_slim.ko
-        ifeq (,$(filter niobe anorak61 neo61, $(TARGET_BOARD_PLATFORM)))
+        ifeq (,$(filter niobe anorak61 neo61 pitti, $(TARGET_BOARD_PLATFORM)))
         BT_KERNEL_DRIVER += $(KERNEL_MODULES_OUT)/radio-i2c-rtc6226-qca.ko \
                             $(KERNEL_MODULES_OUT)/btfmcodec.ko \
                             $(KERNEL_MODULES_OUT)/bt_fm_swr.ko
