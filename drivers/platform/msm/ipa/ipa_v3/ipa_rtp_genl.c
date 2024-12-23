@@ -884,7 +884,6 @@ int ipa_rtp_rmv_stream_id_req_hdlr(struct sk_buff *skb_2,
 	if (is_req_valid && (ipa3_uc_send_remove_stream_cmd(&rmv_sid_req)
 		|| ipa3_delete_rtp_hdr_proc_rt_flt_rules(rmv_sid_req.stream_id))) {
 		IPAERR("failed in removing stream-id, deleting hdr proc and flt rules\n");
-		return rc;
 	}
 
 	ipa_rtp_active_streams[rmv_sid_req.stream_id] = 0;
