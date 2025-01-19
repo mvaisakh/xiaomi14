@@ -12429,6 +12429,7 @@ static int _ipa_suspend_resume_pipe(enum ipa_client_type client, bool suspend)
 	int ipa_ep_idx, wan_coal_ep_idx, lan_coal_ep_idx;
 	struct ipa3_ep_context *ep;
 	int res;
+	struct ipa_ep_cfg_holb holb_cfg;
 
 	ipa_ep_idx = ipa_get_ep_mapping(client);
 	if (ipa_ep_idx < 0) {
@@ -12475,6 +12476,28 @@ static int _ipa_suspend_resume_pipe(enum ipa_client_type client, bool suspend)
 		if (res) {
 			IPAERR("failed to start LAN channel\n");
 			ipa_assert();
+		}
+	}
+
+	if ((ipa3_ctx->ipa_hw_type >= IPA_HW_v5_2 && client == IPA_CLIENT_APPS_WAN_CONS)
+			|| (ipa3_ctx->ipa_hw_type >= IPA_HW_v5_5 &&
+			 client == IPA_CLIENT_APPS_WAN_COAL_CONS) ||
+			client == IPA_CLIENT_ODL_DPL_CONS) {
+		ipa_ep_idx = ipa_get_ep_mapping(client);
+		if (ipa_ep_idx != IPA_EP_NOT_ALLOCATED && ipa3_ctx->ep[ipa_ep_idx].valid) {
+			memset(&holb_cfg, 0, sizeof(holb_cfg));
+			if (suspend)
+				holb_cfg.en = 0;
+			else
+				holb_cfg.en = 1;
+			IPADBG("Endpoint = %d HOLB mode = %d\n", ipa_ep_idx, holb_cfg.en);
+			ipahal_write_reg_n_fields(IPA_ENDP_INIT_HOL_BLOCK_EN_n,
+					ipa_ep_idx, &holb_cfg);
+			/* IPA4.5 issue requires HOLB_EN to be written twice */
+			if (ipa3_ctx->ipa_hw_type >= IPA_HW_v4_5 && holb_cfg.en)
+				ipahal_write_reg_n_fields(
+						IPA_ENDP_INIT_HOL_BLOCK_EN_n,
+						ipa_ep_idx, &holb_cfg);
 		}
 	}
 
@@ -12564,8 +12587,6 @@ void ipa3_force_close_coal(
 int ipa3_suspend_apps_pipes(bool suspend)
 {
 	int res, i;
-	struct ipa_ep_cfg_holb holb_cfg;
-	int odl_ep_idx;
 
 	if (suspend) {
 		stop_coalescing();
@@ -12605,24 +12626,6 @@ int ipa3_suspend_apps_pipes(bool suspend)
 	res = _ipa_suspend_resume_pipe(IPA_CLIENT_ODL_DPL_CONS, suspend);
 	if (res == -EAGAIN) {
 		goto undo_odl_cons;
-	}
-
-	odl_ep_idx = ipa_get_ep_mapping(IPA_CLIENT_ODL_DPL_CONS);
-	if (odl_ep_idx != IPA_EP_NOT_ALLOCATED && ipa3_ctx->ep[odl_ep_idx].valid) {
-		memset(&holb_cfg, 0, sizeof(holb_cfg));
-		if (suspend)
-			holb_cfg.en = 0;
-		else
-			holb_cfg.en = 1;
-
-		ipahal_write_reg_n_fields(IPA_ENDP_INIT_HOL_BLOCK_EN_n,
-				odl_ep_idx, &holb_cfg);
-		/* IPA4.5 issue requires HOLB_EN to be written twice */
-		if (ipa3_ctx->ipa_hw_type >= IPA_HW_v4_5 && holb_cfg.en)
-			ipahal_write_reg_n_fields(
-					IPA_ENDP_INIT_HOL_BLOCK_EN_n,
-					odl_ep_idx, &holb_cfg);
-
 	}
 
 	res = _ipa_suspend_resume_pipe(IPA_CLIENT_APPS_WAN_LOW_LAT_CONS,
