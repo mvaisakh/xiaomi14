@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _IPA3_I_H_
@@ -3858,7 +3858,7 @@ int ipa3_update_dma_per_stats(enum ipa_per_stats_type_e stats_type, uint32_t dat
 
 /* XR-IPA API's */
 #ifdef CONFIG_IPA_RTP
-int ipa3_uc_send_tuple_info_cmd(struct traffic_tuple_info *data);
+int ipa3_uc_send_tuple_info_cmd(struct traffic_tuple_info *data, uint8_t stream_id);
 int ipa3_alloc_temp_buffs_to_uc(unsigned int size, unsigned int no_of_buffs);
 int ipa3_map_buff_to_device_addr(struct map_buffer *map_buffs);
 int ipa3_unmap_buff_from_device_addr(struct unmap_buffer *unmap_buffs);
