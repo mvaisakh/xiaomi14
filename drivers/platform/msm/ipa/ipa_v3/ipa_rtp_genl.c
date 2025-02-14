@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include "ipa_rtp_genl.h"
@@ -304,6 +304,20 @@ int ipa3_install_rtp_hdr_proc_rt_flt_rules(struct traffic_tuple_info *tuple_info
 	rtp_rt_rule_entry->rule.hashable = 1;
 	rtp_rt_rule_entry->rule.retain_hdr = 1;
 	rtp_rt_rule_entry->status = -1;
+
+	rtp_rt_rule_entry->rule.attrib.u.v4.dst_addr_mask = 0xFFFFFFFF;
+	rtp_rt_rule_entry->rule.attrib.u.v4.dst_addr = tuple_info->ip_info.ipv4.dst_ip;
+	rtp_rt_rule_entry->rule.attrib.u.v4.src_addr_mask = 0xFFFFFFFF;
+	rtp_rt_rule_entry->rule.attrib.u.v4.src_addr = tuple_info->ip_info.ipv4.src_ip;
+	rtp_rt_rule_entry->rule.attrib.u.v4.protocol = tuple_info->ip_info.ipv4.protocol;
+	rtp_rt_rule_entry->rule.attrib.src_port = tuple_info->ip_info.ipv4.src_port_number;
+	rtp_rt_rule_entry->rule.attrib.dst_port = tuple_info->ip_info.ipv4.dst_port_number;
+
+	rtp_rt_rule_entry->rule.attrib.attrib_mask |= IPA_FLT_SRC_ADDR;
+	rtp_rt_rule_entry->rule.attrib.attrib_mask |= IPA_FLT_DST_ADDR;
+	rtp_rt_rule_entry->rule.attrib.attrib_mask |= IPA_FLT_PROTOCOL;
+	rtp_rt_rule_entry->rule.attrib.attrib_mask |= IPA_FLT_SRC_PORT;
+	rtp_rt_rule_entry->rule.attrib.attrib_mask |= IPA_FLT_DST_PORT;
 
 	if (ipa_add_rt_rule(rtp_rt_rule) || rtp_rt_rule_entry->status) {
 		IPAERR("fail to add rtp_rt_rule\n");

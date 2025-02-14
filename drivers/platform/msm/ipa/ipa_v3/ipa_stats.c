@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -132,7 +132,7 @@ static int ipa_get_generic_stats(unsigned long arg)
 	int i, j;
 	struct ipa_lnx_generic_stats *generic_stats;
 	struct ipa_drop_stats_all *out;
-	int alloc_size;
+	uint64_t alloc_size;
 	int reg_idx;
 	struct ipa_uc_holb_client_info *holb_client;
 	struct holb_discard_stats *holb_disc_stats_ptr;
