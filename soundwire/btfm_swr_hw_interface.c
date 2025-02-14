@@ -176,14 +176,16 @@ void btfm_get_sampling_rate(uint32_t *sampling_rate)
 
 	if (*sampling_rate == 44100 || *sampling_rate == 48000) {
 		if (usecase_codec == LDAC ||
-		    usecase_codec == APTX_AD)
+		    usecase_codec == APTX_AD ||
+		    usecase_codec == LHDC)
 			*sampling_rate = (*sampling_rate) * 2;
 	}
 
 	if (usecase_codec == LC3_VOICE ||
 	    usecase_codec == APTX_AD_SPEECH ||
 	    usecase_codec == LC3 || usecase_codec == APTX_AD_QLEA ||
-	    usecase_codec == APTX_AD_R4) {
+	    usecase_codec == APTX_AD_R4 ||
+	    usecase_codec == RVP) {
 		*sampling_rate = 96000;
 	}
 
