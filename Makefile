@@ -1,4 +1,5 @@
-KBUILD_OPTIONS+= SYNX_ROOT=$(KERNEL_SRC)/$(M)
+CUR_MKFILE=$(abspath $(lastword $(MAKEFILE_LIST)))
+KBUILD_OPTIONS+= SYNX_ROOT=$(dir $(CUR_MKFILE))
 
 all:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules $(KBUILD_OPTIONS)
