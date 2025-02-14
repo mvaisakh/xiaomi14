@@ -934,6 +934,11 @@ static int modify_dma_buf_addr(struct spcom_channel *ch, void *buf,
 
 	for (i = 0 ; i < ARRAY_SIZE(ch->dmabuf_array) ; i++) {
 		if (ch->dmabuf_array[i].handle == dma_buf) {
+			if (ch->dmabuf_array[i].attach != NULL) {
+				dma_buf_unmap_attachment(ch->dmabuf_array[i].attach,
+						ch->dmabuf_array[i].sg, DMA_BIDIRECTIONAL);
+				dma_buf_detach(dma_buf, ch->dmabuf_array[i].attach);
+			}
 			ch->dmabuf_array[i].attach = attach;
 			ch->dmabuf_array[i].sg = sg;
 			found_handle = true;
