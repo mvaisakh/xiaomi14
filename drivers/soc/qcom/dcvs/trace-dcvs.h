@@ -5,6 +5,7 @@
 
 #if !defined(_TRACE_DCVS_H) || defined(TRACE_HEADER_MULTI_READ)
 #define _TRACE_DCVS_H
+#undef TRACE_INCLUDE_PATH
 
 #undef TRACE_SYSTEM
 #define TRACE_SYSTEM dcvs
