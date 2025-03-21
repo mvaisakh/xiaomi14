@@ -2,3 +2,4 @@
 
 source "techpack/camera/Kconfig"
 source "techpack/dataipa/config/Kconfig"
+source "techpack/datarmnet/core/Kconfig"
