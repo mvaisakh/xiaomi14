@@ -1,1 +1,3 @@
-# Stub Kconfig
+# Techpack Config
+
+source "techpack/camera/Kconfig"
