@@ -450,8 +450,10 @@ ifneq ($(SRCARCH),$(SUBARCH))
 cross_compiling := 1
 endif
 
+KCONFIG_EXT_PREFIX := $(srctree)/techpack/
+
 KCONFIG_CONFIG	?= .config
-export KCONFIG_CONFIG
+export KCONFIG_CONFIG KCONFIG_EXT_PREFIX
 
 # SHELL used by kbuild
 CONFIG_SHELL := sh
