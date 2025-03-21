@@ -1,3 +1,4 @@
 # Techpack Config
 
 source "techpack/camera/Kconfig"
+source "techpack/dataipa/config/Kconfig"
