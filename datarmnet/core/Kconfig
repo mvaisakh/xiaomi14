@@ -3,6 +3,7 @@
 #
 
 config RMNET_CORE
+	tristate "QCOM RMNET drivers"
 	default m
 	depends on RMNET_MEM
 	select GRO_CELLS
@@ -13,6 +14,7 @@ config RMNET_CORE
 	  any IP mode physical device.
 
 config RMNET_CTL
+	tristate
 	default m
 	help
 	  Enable the RMNET CTL module which is used for handling QMAP commands
