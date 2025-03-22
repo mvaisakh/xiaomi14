@@ -2,4 +2,4 @@
 TECHPACK?=y
 
 techpack-dirs := $(shell find $(srctree)/techpack -maxdepth 1 -mindepth 1 -type d -not -name ".*")
-obj-${TECHPACK} += stub/ $(addsuffix /,$(subst $(srctree)/techpack/,,$(techpack-dirs)))
+obj-${TECHPACK} += $(addsuffix /,$(subst $(srctree)/techpack/,,$(techpack-dirs)))
