@@ -70,14 +70,6 @@ config MSM_MMRM
 	  mmrm knows about all clients' clock rates.
 	  MMRM can decide whether new peak power usage is within allowed value
 
-config INTERCONNECT_QCOM
-	bool "enabling icc bus driver"
-	help
-		This is to access icc driver api.
-		To cache AB and IB vote will
-		use ICC kernel driver API.
-		So that ICC driver can consolidate the vote
-
 config DOMAIN_ID_SECURE_CAMERA
 	bool "enable domain ID based secure camera flow"
 	help
