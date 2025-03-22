@@ -6,5 +6,5 @@ menuconfig RMNET_WLAN
     tristate "Rmnet WLAN support"
     default m
     depends on RMNET_CORE
-    ---help---
+    help
         WLAN processing module for RmNet driver
