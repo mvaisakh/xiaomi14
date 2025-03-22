@@ -1736,7 +1736,7 @@ config FEATURE_PKTLOG_EN_NON_LEGACY
 
 config WLAN_CTRL_NAME
 	string "Enable CONFIG_WLAN_CTRL_NAME"
-	default \"wlan\"
+	default "wlan"
 
 config QCA_WIFI_FTM_IOCTL
 	bool "Enable CONFIG_QCA_WIFI_FTM_IOCTL"
@@ -1843,7 +1843,7 @@ config DP_MLO_LINK_STATS_SUPPORT
 
 config MULTI_IF_NAME
 	string "set MULTI_IF_NAME"
-	default \"wlan\"
+	default "wlan"
 
 config CFG80211_EXT_FEATURE_AUTH_AND_DEAUTH_RANDOM_TA
 	bool "enable CFG80211_EXT_FEATURE_AUTH_AND_DEAUTH_RANDOM_TA"
