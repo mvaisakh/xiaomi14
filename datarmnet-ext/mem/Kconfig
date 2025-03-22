@@ -5,5 +5,5 @@
 menuconfig RMNET_MEM
     tristate "Rmnet MEM  support"
     default m
-    ---help---
+    help
         Memory module for RmNet driver

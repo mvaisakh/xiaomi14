@@ -5,5 +5,5 @@
 menuconfig RMNET_SCH
     tristate "Rmnet SCH Qdisc support"
     default m
-    ---help---
+    help
         QDisc module for RmNet driver
