@@ -1,3 +1,5 @@
+SYNX_ROOT := $(srctree)/techpack/synx-kernel
+
 LINUXINCLUDE    += -I$(SYNX_ROOT)/include \
                    -I$(SYNX_ROOT)/include/uapi \
 				   -I$(SYNX_ROOT)/include/uapi/synx/media
