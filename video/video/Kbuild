@@ -11,6 +11,7 @@ endif
 
 ifeq ($(CONFIG_MSM_VIDC_PINEAPPLE), y)
 LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/pineapple/inc \
+                  -I$(VIDEO_DRIVER_ABS_PATH)/platform/cliffs/inc \
                   -I$(VIDEO_DRIVER_ABS_PATH)/variant/iris33/inc
 endif
 
