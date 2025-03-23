@@ -1,1 +1,1 @@
-obj-y += aps/ mem/ offload/ perf/ perf_tether/ sch/ shs/ wlan/
+obj-y += aps/ mem/ offload/ perf/ perf_tether/ sch/ wlan/
