@@ -1,4 +1,6 @@
 # ported from Android.mk
+DSP_ROOT := $(srctree)/techpack/dsp
+
 $(info within KBUILD file KBUILD_EXTRA_SYMBOLS = $(KBUILD_EXTRA_SYMBOLS))
 
 ifeq ($(CONFIG_ARCH_WAIPIO), y)
