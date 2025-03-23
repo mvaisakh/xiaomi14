@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
+MSM_HW_FENCE_ROOT := $(srctree)/techpack/mm-drivers
 
 KDIR := $(TOP)/kernel_platform/msm-kernel
 include $(MSM_HW_FENCE_ROOT)/config/kalamammdrivers.conf

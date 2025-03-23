@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
+SYNC_FENCE_ROOT := $(srctree)/techpack/mm-drivers
 
 KDIR := $(TOP)/kernel_platform/msm-kernel
 LINUXINCLUDE    += -I$(SYNC_FENCE_ROOT)sync_fence/include/
