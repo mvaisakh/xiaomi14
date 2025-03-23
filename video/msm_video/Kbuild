@@ -2,8 +2,8 @@
 VIDEO_ROOT := techpack/video
 
 KBUILD_CPPFLAGS += -DCONFIG_MSM_MMRM=1
-VIDEO_DRIVER_ABS_PATH := $(VIDEO_ROOT)/msm_video/driver
-VIDEO_DRIVER_REL_PATH := ../msm_video/driver
+VIDEO_DRIVER_ABS_PATH := $(VIDEO_ROOT)/driver
+VIDEO_DRIVER_REL_PATH := ../driver
 
 ifeq ($(CONFIG_ARCH_PINEAPPLE), y)
 include $(VIDEO_ROOT)/config/pineapple_video.conf
