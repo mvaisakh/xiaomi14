@@ -4,7 +4,7 @@ MSM_HW_FENCE_ROOT := $(srctree)/techpack/mm-drivers
 KDIR := $(TOP)/kernel_platform/msm-kernel
 include $(MSM_HW_FENCE_ROOT)/config/kalamammdrivers.conf
 LINUXINCLUDE += -include $(MSM_HW_FENCE_ROOT)/config/kalamammdriversconf.h \
-		-I$(MSM_HW_FENCE_ROOT)hw_fence/include/
+		-I$(MSM_HW_FENCE_ROOT)/hw_fence/include/
 
 ifdef CONFIG_QTI_HW_FENCE
 obj-m += msm_hw_fence.o
