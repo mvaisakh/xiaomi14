@@ -1,1 +1,5 @@
+RMNET_CORE_INC_DIR := $(srctree)/techpack/datarmnet/core
+
+export RMNET_CORE_INC_DIR
+
 obj-y += aps/ mem/ offload/ perf/ perf_tether/ sch/ wlan/
