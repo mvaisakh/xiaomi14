@@ -168,7 +168,7 @@ ifdef CONFIG_SOUNDWIRE_MSTR_CTRL
 endif
 
 ifdef CONFIG_SOUNDWIRE
-	INCS += -include $(KERNEL_SRC)/drivers/base/regmap/internal.h
+	INCS += -include $(srctree)/drivers/base/regmap/internal.h
 	SWR_OBJS += regmap-swr.o
 	SWR_OBJS += soundwire.o
 endif
