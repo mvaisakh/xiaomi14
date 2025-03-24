@@ -15,7 +15,7 @@
  * Define path if not defined in bazel file
  */
 #ifndef DSP_TRACE_INCLUDE_PATH
-#define DSP_TRACE_INCLUDE_PATH ../../../../vendor/qcom/opensource/dsp-kernel/dsp
+#define DSP_TRACE_INCLUDE_PATH ../../dsp/dsp
 #endif
 
 #undef TRACE_INCLUDE_PATH
