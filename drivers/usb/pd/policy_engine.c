@@ -3753,7 +3753,10 @@ static void psy_changed_notifier_work(struct work_struct *w)
 	union power_supply_propval val;
 	enum power_supply_typec_mode typec_mode;
 	int ret;
+<<<<<<< HEAD
 	int usb_extcon_state;
+=======
+>>>>>>> 3a2fb5bca8df (drivers/usb: import OEM changes)
 
 	ret = usbpd_get_psy_iio_property(pd,
 			POWER_SUPPLY_PROP_TYPEC_MODE, &val);
@@ -3791,6 +3794,10 @@ static void psy_changed_notifier_work(struct work_struct *w)
 			pd->typec_mode = typec_mode;
 			queue_work(pd->wq, &pd->start_periph_work);
 		}
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3a2fb5bca8df (drivers/usb: import OEM changes)
 		return;
 	}
 
@@ -3823,6 +3830,7 @@ static void psy_changed_notifier_work(struct work_struct *w)
 		return;
 	}
 
+<<<<<<< HEAD
 	if (pd->typec_mode == typec_mode) {
 		if (!((pd->current_dr == DR_NONE) || (pd->current_dr == DR_UFP)))
 			return;
@@ -3845,6 +3853,10 @@ static void psy_changed_notifier_work(struct work_struct *w)
 		}
 		return;
 	}
+=======
+	if (pd->typec_mode == typec_mode)
+		return;
+>>>>>>> 3a2fb5bca8df (drivers/usb: import OEM changes)
 
 	pd->typec_mode = typec_mode;
 

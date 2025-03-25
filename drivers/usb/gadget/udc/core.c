@@ -1118,6 +1118,15 @@ static void vbus_event_work(struct work_struct *work)
 	mutex_unlock(&udc->connect_lock);
 }
 
+static void vbus_event_work(struct work_struct *work)
+{
+	struct usb_udc *udc = container_of(work, struct usb_udc, vbus_work);
+
+	mutex_lock(&udc->connect_lock);
+	usb_udc_connect_control_locked(udc);
+	mutex_unlock(&udc->connect_lock);
+}
+
 /**
  * usb_udc_vbus_handler - updates the udc core vbus status, and try to
  * connect or disconnect gadget
@@ -1371,6 +1380,8 @@ int usb_add_gadget(struct usb_gadget *gadget)
 	mutex_init(&udc->connect_lock);
 
 	udc->started = false;
+
+	pr_info("%s : add one udc !\n", __func__);
 
 	mutex_lock(&udc_lock);
 	list_add_tail(&udc->list, &udc_list);

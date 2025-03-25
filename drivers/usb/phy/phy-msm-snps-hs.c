@@ -1045,6 +1045,27 @@ static int msm_hsphy_probe(struct platform_device *pdev)
 		goto err_ret;
 	}
 
+	phy->vdd = devm_regulator_get(dev, "vdd");
+	if (IS_ERR(phy->vdd)) {
+		dev_err(dev, "unable to get vdd supply\n");
+		ret = PTR_ERR(phy->vdd);
+		goto err_ret;
+	}
+
+	phy->vdda33 = devm_regulator_get(dev, "vdda33");
+	if (IS_ERR(phy->vdda33)) {
+		dev_err(dev, "unable to get vdda33 supply\n");
+		ret = PTR_ERR(phy->vdda33);
+		goto err_ret;
+	}
+
+	phy->vdda18 = devm_regulator_get(dev, "vdda18");
+	if (IS_ERR(phy->vdda18)) {
+		dev_err(dev, "unable to get vdda18 supply\n");
+		ret = PTR_ERR(phy->vdda18);
+		goto err_ret;
+	}
+
 	ret = of_property_read_u32_array(dev->of_node, "qcom,refgen-voltage-level",
 					(u32 *) phy->refgen_levels,
 					ARRAY_SIZE(phy->refgen_levels));
