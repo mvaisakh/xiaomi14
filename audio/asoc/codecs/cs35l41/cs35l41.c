@@ -882,7 +882,7 @@ static int cs35l41_set_csplmboxcmd(struct cs35l41_private *cs35l41,
 		dev_err(cs35l41->dev,
 			"Failed to set mailbox(cmd: %u, sts: %u)\n", cmd, sts);
 #if IS_ENABLED(CONFIG_MIEV)
-		mievent_report(906001351, "PA internal exception",
+		mievent_report_cs35l41(906001351, "PA internal exception",
 			       cs35l41->dev);
 #endif
 		ret = -ENOMSG;
@@ -1761,7 +1761,7 @@ static irqreturn_t cs35l41_irq(int irq, void *data)
 		if (cs35l41->amp_short == 0)
 			cs35l41->amp_short = 1;
 #if IS_ENABLED(CONFIG_MIEV)
-		mievent_report(906001352, "PA detection exception",
+		mievent_report_cs35l41(906001352, "PA detection exception",
 			       cs35l41->dev);
 #endif
 		regmap_write(cs35l41->regmap, CS35L41_IRQ1_STATUS1,
@@ -3829,7 +3829,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 			dev_err(cs35l41->dev,
 				"Timeout waiting for OTP_BOOT_DONE\n");
 #if IS_ENABLED(CONFIG_MIEV)
-			mievent_report(906001354, "PA data exception",
+			mievent_report_cs35l41(906001354, "PA data exception",
 				       cs35l41->dev);
 #endif
 			ret = -EBUSY;
@@ -4015,7 +4015,7 @@ int cs35l41_probe(struct cs35l41_private *cs35l41,
 	if (ret < 0) {
 		dev_err(cs35l41->dev, "%s: Register codec failed\n", __func__);
 #if IS_ENABLED(CONFIG_MIEV)
-		mievent_report(906001352, "PA detection exception",
+		mievent_report_cs35l41(906001352, "PA detection exception",
 			       cs35l41->dev);
 #endif
 		goto err_dsp;
@@ -4080,7 +4080,7 @@ err:
 	if (probe_err_count >= probe_max_count) {
 		dev_warn(cs35l41->dev, "%s: Register dummy codec\n", __func__);
 #if IS_ENABLED(CONFIG_MIEV)
-		mievent_report(906001351, "PA internal exception",
+		mievent_report_cs35l41(906001351, "PA internal exception",
 			       cs35l41->dev);
 #endif
 		memset(&dummy_codec, 0,
@@ -4114,7 +4114,8 @@ int cs35l41_remove(struct cs35l41_private *cs35l41)
 	snd_soc_unregister_component(cs35l41->dev);
 	return 0;
 }
-int mievent_report(unsigned int eventid, const char *value, struct device *dev)
+
+int mievent_report_cs35l41(unsigned int eventid,const char *value,struct device *dev)
 {
 #if IS_ENABLED(CONFIG_MIEV)
 	struct misight_mievent *mievent;
