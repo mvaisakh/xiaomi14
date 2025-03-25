@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
-#include <linux/of.h>
-#include "phy-qcom-ufs-qmp-v4-pineapple.h"
 
-#define UFS_PHY_NAME "ufs_phy_qmp_v4_pineapple"
+#include "phy-qcom-ufs-qmp-v4-waipio.h"
+
+#define UFS_PHY_NAME "ufs_phy_qmp_v4_waipio"
 
 static inline void ufs_qcom_phy_qmp_v4_start_serdes(struct ufs_qcom_phy *phy);
 static int ufs_qcom_phy_qmp_v4_is_pcs_ready(struct ufs_qcom_phy *phy_common);
@@ -14,8 +15,7 @@ static int ufs_qcom_phy_qmp_v4_phy_calibrate(struct phy *generic_phy)
 {
 	struct ufs_qcom_phy *ufs_qcom_phy = get_ufs_qcom_phy(generic_phy);
 	struct device *dev = ufs_qcom_phy->dev;
-	bool is_rate_B;
-	int submode;
+	bool is_g4, is_rate_B;
 	int err;
 
 	err = reset_control_assert(ufs_qcom_phy->ufs_reset);
@@ -24,14 +24,8 @@ static int ufs_qcom_phy_qmp_v4_phy_calibrate(struct phy *generic_phy)
 		goto out;
 	}
 
-	/* For UFS PHY's submode, 2 = G5, 1 = G4, 0 = non-G4/G5 */
-	submode = ufs_qcom_phy->submode;
-	if (submode != UFS_QCOM_PHY_SUBMODE_G4 &&
-		submode != UFS_QCOM_PHY_SUBMODE_G5) {
-		dev_err(dev, "%s: unsupported submode.\n", __func__);
-		return -EOPNOTSUPP;
-	}
-
+	/* For UFS PHY's submode, 1 = G4, 0 = non-G4 */
+	is_g4 = !!ufs_qcom_phy->submode;
 	is_rate_B = (ufs_qcom_phy->mode == PHY_MODE_UFS_HS_B) ? true : false;
 
 	writel_relaxed(0x01, ufs_qcom_phy->mmio + UFS_PHY_SW_RESET);
@@ -43,17 +37,21 @@ static int ufs_qcom_phy_qmp_v4_phy_calibrate(struct phy *generic_phy)
 	 * 2. Write 2nd lane configuration if needed.
 	 * 3. Write Rate-B calibration overrides
 	 */
-
-	/* Same PHY HSG5 settings are used for HSG4 */
-	ufs_qcom_phy_write_tbl(ufs_qcom_phy, phy_cal_table_rate_A_g5,
-			       ARRAY_SIZE(phy_cal_table_rate_A_g5));
-	if (submode == UFS_QCOM_PHY_SUBMODE_G4)
-		ufs_qcom_phy_write_tbl(ufs_qcom_phy, phy_cal_table_rate_A_g4,
-				       ARRAY_SIZE(phy_cal_table_rate_A_g4));
-	if (ufs_qcom_phy->lanes_per_direction == 2)
-		ufs_qcom_phy_write_tbl(ufs_qcom_phy,
-				phy_cal_table_2nd_lane,
-				ARRAY_SIZE(phy_cal_table_2nd_lane));
+	if (is_g4) {
+		ufs_qcom_phy_write_tbl(ufs_qcom_phy, phy_cal_table_rate_A,
+				       ARRAY_SIZE(phy_cal_table_rate_A));
+		if (ufs_qcom_phy->lanes_per_direction == 2)
+			ufs_qcom_phy_write_tbl(ufs_qcom_phy,
+					phy_cal_table_2nd_lane,
+					ARRAY_SIZE(phy_cal_table_2nd_lane));
+	} else {
+		ufs_qcom_phy_write_tbl(ufs_qcom_phy, phy_cal_table_rate_A_no_g4,
+				       ARRAY_SIZE(phy_cal_table_rate_A_no_g4));
+		if (ufs_qcom_phy->lanes_per_direction == 2)
+			ufs_qcom_phy_write_tbl(ufs_qcom_phy,
+				      phy_cal_table_2nd_lane_no_g4,
+				      ARRAY_SIZE(phy_cal_table_2nd_lane_no_g4));
+	}
 	if (is_rate_B)
 		ufs_qcom_phy_write_tbl(ufs_qcom_phy, phy_cal_table_rate_B,
 				       ARRAY_SIZE(phy_cal_table_rate_B));
@@ -178,19 +176,6 @@ void ufs_qcom_phy_qmp_v4_power_control(struct ufs_qcom_phy *phy,
 	}
 }
 
-/* Refer to MPHY Spec Table-40 */
-#define  DEEMPHASIS_3_5_dB	0x04
-#define  NO_DEEMPHASIS		0x0
-
-static inline
-u32 ufs_qcom_phy_qmp_v4_get_tx_hs_equalizer(struct ufs_qcom_phy *phy, u32 gear)
-{
-	if (gear == 5)
-		return DEEMPHASIS_3_5_dB;
-	/* Gear 1-4 setting */
-	return NO_DEEMPHASIS;
-}
-
 static inline
 void ufs_qcom_phy_qmp_v4_set_tx_lane_enable(struct ufs_qcom_phy *phy, u32 val)
 {
@@ -265,24 +250,6 @@ static void ufs_qcom_phy_qmp_v4_dbg_register_dump(struct ufs_qcom_phy *phy)
 					"PHY TX1 Registers ");
 }
 
-static void ufs_qcom_phy_qmp_v4_dbg_register_save(struct ufs_qcom_phy *phy)
-{
-	ufs_qcom_phy_save_regs(phy, COM_BASE, COM_SIZE,
-					"PHY QSERDES COM Registers ");
-	ufs_qcom_phy_save_regs(phy, PCS2_BASE, PCS2_SIZE,
-					"PHY PCS2 Registers ");
-	ufs_qcom_phy_save_regs(phy, PHY_BASE, PHY_SIZE,
-					"PHY Registers ");
-	ufs_qcom_phy_save_regs(phy, RX_BASE(0), RX_SIZE,
-					"PHY RX0 Registers ");
-	ufs_qcom_phy_save_regs(phy, TX_BASE(0), TX_SIZE,
-					"PHY TX0 Registers ");
-	ufs_qcom_phy_save_regs(phy, RX_BASE(1), RX_SIZE,
-					"PHY RX1 Registers ");
-	ufs_qcom_phy_save_regs(phy, TX_BASE(1), TX_SIZE,
-					"PHY TX1 Registers ");
-}
-
 static const struct phy_ops ufs_qcom_phy_qmp_v4_phy_ops = {
 	.init		= ufs_qcom_phy_qmp_v4_init,
 	.exit		= ufs_qcom_phy_qmp_v4_exit,
@@ -299,9 +266,7 @@ static struct ufs_qcom_phy_specific_ops phy_v4_ops = {
 	.set_tx_lane_enable	= ufs_qcom_phy_qmp_v4_set_tx_lane_enable,
 	.ctrl_rx_linecfg	= ufs_qcom_phy_qmp_v4_ctrl_rx_linecfg,
 	.power_control		= ufs_qcom_phy_qmp_v4_power_control,
-	.get_tx_hs_equalizer    = ufs_qcom_phy_qmp_v4_get_tx_hs_equalizer,
 	.dbg_register_dump	= ufs_qcom_phy_qmp_v4_dbg_register_dump,
-	.dbg_register_save	= ufs_qcom_phy_qmp_v4_dbg_register_save,
 };
 
 static int ufs_qcom_phy_qmp_v4_probe(struct platform_device *pdev)
@@ -337,7 +302,7 @@ out:
 }
 
 static const struct of_device_id ufs_qcom_phy_qmp_v4_of_match[] = {
-	{.compatible = "qcom,ufs-phy-qmp-v4-pineapple"},
+	{.compatible = "qcom,ufs-phy-qmp-v4-waipio"},
 	{},
 };
 MODULE_DEVICE_TABLE(of, ufs_qcom_phy_qmp_v4_of_match);
@@ -346,11 +311,11 @@ static struct platform_driver ufs_qcom_phy_qmp_v4_driver = {
 	.probe = ufs_qcom_phy_qmp_v4_probe,
 	.driver = {
 		.of_match_table = ufs_qcom_phy_qmp_v4_of_match,
-		.name = "ufs_qcom_phy_qmp_v4_pineapple",
+		.name = "ufs_qcom_phy_qmp_v4_waipio",
 	},
 };
 
 module_platform_driver(ufs_qcom_phy_qmp_v4_driver);
 
-MODULE_DESCRIPTION("Universal Flash Storage (UFS) QCOM PHY QMP v4 PINEAPPLE");
+MODULE_DESCRIPTION("Universal Flash Storage (UFS) QCOM PHY QMP v4 WAIPIO");
 MODULE_LICENSE("GPL");
