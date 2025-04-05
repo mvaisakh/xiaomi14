@@ -22,14 +22,14 @@
  *  PDEV, VDEV and PEER objects.
  */
 
+#include <os_if_spectral_netlink.h>
+#include <target_if.h>
 #include <wlan_hdd_object_manager.h>
 #include <wlan_osif_priv.h>
 #include <wlan_reg_ucfg_api.h>
-#include <target_if.h>
-#include <os_if_spectral_netlink.h>
 
 static void hdd_init_pdev_os_priv(struct hdd_context *hdd_ctx,
-	struct pdev_osif_priv *os_priv)
+				  struct pdev_osif_priv *os_priv)
 {
 	/* Initialize the OS private structure*/
 	os_priv->wiphy = hdd_ctx->wiphy;
@@ -161,9 +161,8 @@ int hdd_objmgr_create_and_store_pdev(struct hdd_context *hdd_ctx)
 		status = QDF_STATUS_E_INVAL;
 		goto free_priv;
 	}
-	ucfg_mlme_get_phy_max_freq_range(psoc, &low_2ghz_chan,
-					 &high_2ghz_chan, &low_5ghz_chan,
-					 &high_5ghz_chan);
+	ucfg_mlme_get_phy_max_freq_range(psoc, &low_2ghz_chan, &high_2ghz_chan,
+					 &low_5ghz_chan, &high_5ghz_chan);
 	reg_cap_ptr->phy_id = 0;
 	reg_cap_ptr->low_2ghz_chan = low_2ghz_chan;
 	reg_cap_ptr->high_2ghz_chan = high_2ghz_chan;
@@ -179,7 +178,6 @@ int hdd_objmgr_create_and_store_pdev(struct hdd_context *hdd_ctx)
 		status = QDF_STATUS_E_NOMEM;
 		goto free_priv;
 	}
-
 
 	status = wlan_objmgr_pdev_try_get_ref(pdev, WLAN_HDD_ID_OBJ_MGR);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -252,7 +250,7 @@ int hdd_objmgr_set_peer_mlme_auth_state(struct wlan_objmgr_vdev *vdev,
 }
 
 int hdd_objmgr_set_peer_mlme_state(struct wlan_objmgr_vdev *vdev,
-	enum wlan_peer_state peer_state)
+				   enum wlan_peer_state peer_state)
 {
 	struct wlan_objmgr_peer *peer;
 
@@ -273,8 +271,8 @@ int hdd_objmgr_set_peer_mlme_state(struct wlan_objmgr_vdev *vdev,
 #ifdef WLAN_OBJMGR_REF_ID_TRACE
 struct wlan_objmgr_vdev *
 __hdd_objmgr_get_vdev_by_user(struct wlan_hdd_link_info *link_info,
-			      wlan_objmgr_ref_dbgid id,
-			      const char *func, int line)
+			      wlan_objmgr_ref_dbgid id, const char *func,
+			      int line)
 {
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
@@ -297,8 +295,7 @@ __hdd_objmgr_get_vdev_by_user(struct wlan_hdd_link_info *link_info,
 #else
 struct wlan_objmgr_vdev *
 __hdd_objmgr_get_vdev_by_user(struct wlan_hdd_link_info *link_info,
-			      wlan_objmgr_ref_dbgid id,
-			      const char *func)
+			      wlan_objmgr_ref_dbgid id, const char *func)
 {
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
@@ -320,10 +317,9 @@ __hdd_objmgr_get_vdev_by_user(struct wlan_hdd_link_info *link_info,
 #endif
 
 #ifdef WLAN_OBJMGR_REF_ID_TRACE
-void
-__hdd_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
-			      wlan_objmgr_ref_dbgid id, const char *func,
-			      int line)
+void __hdd_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
+				   wlan_objmgr_ref_dbgid id, const char *func,
+				   int line)
 {
 	if (!vdev) {
 		hdd_err("VDEV is NULL (via %s, id %d)", func, id);
@@ -333,9 +329,8 @@ __hdd_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
 	wlan_objmgr_vdev_release_ref_debug(vdev, id, func, line);
 }
 #else
-void
-__hdd_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
-			      wlan_objmgr_ref_dbgid id, const char *func)
+void __hdd_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
+				   wlan_objmgr_ref_dbgid id, const char *func)
 {
 	if (!vdev) {
 		hdd_err("VDEV is NULL (via %s, id %d)", func, id);

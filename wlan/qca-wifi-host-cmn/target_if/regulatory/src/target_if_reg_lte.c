@@ -68,9 +68,9 @@ static int tgt_reg_ch_avoid_event_handler(ol_scn_t handle, uint8_t *event_buf,
 		return -EINVAL;
 	}
 
-	if (wmi_extract_reg_ch_avoid_event(
-				wmi_handle, event_buf, &ch_avoid_event, len)
-	    != QDF_STATUS_SUCCESS) {
+	if (wmi_extract_reg_ch_avoid_event(wmi_handle, event_buf,
+					   &ch_avoid_event,
+					   len) != QDF_STATUS_SUCCESS) {
 		target_if_err("Extraction of CH avoid event failed");
 		return -EFAULT;
 	}
@@ -86,8 +86,9 @@ static int tgt_reg_ch_avoid_event_handler(ol_scn_t handle, uint8_t *event_buf,
 	return 0;
 }
 
-QDF_STATUS tgt_if_regulatory_register_ch_avoid_event_handler(
-	struct wlan_objmgr_psoc *psoc, void *arg)
+QDF_STATUS
+tgt_if_regulatory_register_ch_avoid_event_handler(struct wlan_objmgr_psoc *psoc,
+						  void *arg)
 {
 	wmi_unified_t wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
 
@@ -108,6 +109,6 @@ QDF_STATUS tgt_if_regulatory_unregister_ch_avoid_event_handler(
 		return QDF_STATUS_E_FAILURE;
 
 	return wmi_unified_unregister_event(wmi_handle,
-			wmi_wlan_freq_avoid_event_id);
+					    wmi_wlan_freq_avoid_event_id);
 }
 #endif

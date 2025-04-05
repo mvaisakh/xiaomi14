@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012,2014-2017,2019-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2012,2014-2017,2019-2021 The Linux Foundation. All rights
+ * reserved. Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
-#include <linux/module.h>
-#include <linux/slab.h>
+#include "cnss_common.h"
+#include <linux/err.h>
 #include <linux/mempool.h>
 #include <linux/mm.h>
-#include <linux/err.h>
+#include <linux/module.h>
 #include <linux/of.h>
+#include <linux/slab.h>
 #include <linux/version.h>
-#include "cnss_common.h"
 #ifdef CONFIG_CNSS_OUT_OF_TREE
 #include "cnss_prealloc.h"
 #else
@@ -70,27 +71,27 @@ struct cnss_pool {
 
 /* size, min pool reserve, name, memorypool handler, cache handler*/
 static struct cnss_pool cnss_pools_default[] = {
-	{8 * 1024, 16, "cnss-pool-8k", NULL, NULL},
-	{16 * 1024, 16, "cnss-pool-16k", NULL, NULL},
-	{32 * 1024, 22, "cnss-pool-32k", NULL, NULL},
-	{64 * 1024, 38, "cnss-pool-64k", NULL, NULL},
-	{128 * 1024, 10, "cnss-pool-128k", NULL, NULL},
+	{ 8 * 1024, 16, "cnss-pool-8k", NULL, NULL },
+	{ 16 * 1024, 16, "cnss-pool-16k", NULL, NULL },
+	{ 32 * 1024, 22, "cnss-pool-32k", NULL, NULL },
+	{ 64 * 1024, 38, "cnss-pool-64k", NULL, NULL },
+	{ 128 * 1024, 10, "cnss-pool-128k", NULL, NULL },
 };
 
 static struct cnss_pool cnss_pools_adrastea[] = {
-	{8 * 1024, 2, "cnss-pool-8k", NULL, NULL},
-	{16 * 1024, 10, "cnss-pool-16k", NULL, NULL},
-	{32 * 1024, 8, "cnss-pool-32k", NULL, NULL},
-	{64 * 1024, 4, "cnss-pool-64k", NULL, NULL},
-	{128 * 1024, 2, "cnss-pool-128k", NULL, NULL},
+	{ 8 * 1024, 2, "cnss-pool-8k", NULL, NULL },
+	{ 16 * 1024, 10, "cnss-pool-16k", NULL, NULL },
+	{ 32 * 1024, 8, "cnss-pool-32k", NULL, NULL },
+	{ 64 * 1024, 4, "cnss-pool-64k", NULL, NULL },
+	{ 128 * 1024, 2, "cnss-pool-128k", NULL, NULL },
 };
 
 static struct cnss_pool cnss_pools_wcn6750[] = {
-	{8 * 1024, 2, "cnss-pool-8k", NULL, NULL},
-	{16 * 1024, 8, "cnss-pool-16k", NULL, NULL},
-	{32 * 1024, 11, "cnss-pool-32k", NULL, NULL},
-	{64 * 1024, 15, "cnss-pool-64k", NULL, NULL},
-	{128 * 1024, 4, "cnss-pool-128k", NULL, NULL},
+	{ 8 * 1024, 2, "cnss-pool-8k", NULL, NULL },
+	{ 16 * 1024, 8, "cnss-pool-16k", NULL, NULL },
+	{ 32 * 1024, 11, "cnss-pool-32k", NULL, NULL },
+	{ 64 * 1024, 15, "cnss-pool-64k", NULL, NULL },
+	{ 128 * 1024, 4, "cnss-pool-128k", NULL, NULL },
 };
 
 struct cnss_pool *cnss_pools;
@@ -126,11 +127,9 @@ static int cnss_pool_init(void)
 
 	for (i = 0; i < cnss_prealloc_pool_size; i++) {
 		/* Create the slab cache */
-		cnss_pools[i].cache =
-			kmem_cache_create_usercopy(cnss_pools[i].name,
-						   cnss_pools[i].size, 0,
-						   SLAB_ACCOUNT, 0,
-						   cnss_pools[i].size, NULL);
+		cnss_pools[i].cache = kmem_cache_create_usercopy(
+			cnss_pools[i].name, cnss_pools[i].size, 0, SLAB_ACCOUNT,
+			0, cnss_pools[i].size, NULL);
 		if (!cnss_pools[i].cache) {
 			pr_err("cnss_prealloc: cache %s failed\n",
 			       cnss_pools[i].name);
@@ -139,8 +138,8 @@ static int cnss_pool_init(void)
 
 		/* Create the pool and associate to slab cache */
 		cnss_pools[i].mp =
-		    mempool_create(cnss_pools[i].min, mempool_alloc_slab,
-				   mempool_free_slab, cnss_pools[i].cache);
+			mempool_create(cnss_pools[i].min, mempool_alloc_slab,
+				       mempool_free_slab, cnss_pools[i].cache);
 
 		if (!cnss_pools[i].mp) {
 			pr_err("cnss_prealloc: mempool %s failed\n",
@@ -184,7 +183,8 @@ static void cnss_pool_deinit(void)
 
 void cnss_assign_prealloc_pool(unsigned long device_id)
 {
-	pr_info("cnss_prealloc: assign cnss pool for device id 0x%lx", device_id);
+	pr_info("cnss_prealloc: assign cnss pool for device id 0x%lx",
+		device_id);
 
 	switch (device_id) {
 	case ADRASTEA_DEVICE_ID:
@@ -296,7 +296,6 @@ static int cnss_pool_get_index(void *mem)
  */
 void *wcnss_prealloc_get(size_t size)
 {
-
 	void *mem = NULL;
 	gfp_t gfp_mask = __GFP_ZERO;
 	int i;
@@ -310,7 +309,6 @@ void *wcnss_prealloc_get(size_t size)
 		gfp_mask |= GFP_KERNEL;
 
 	if (size >= cnss_pool_alloc_threshold()) {
-
 		for (i = 0; i < cnss_prealloc_pool_size; i++) {
 			if (cnss_pools[i].size >= size && cnss_pools[i].mp) {
 				mem = mempool_alloc(cnss_pools[i].mp, gfp_mask);
@@ -357,11 +355,16 @@ int wcnss_prealloc_put(void *mem)
 EXPORT_SYMBOL(wcnss_prealloc_put);
 
 /* Not implemented. Make use of Linux SLAB features. */
-void wcnss_prealloc_check_memory_leak(void) {}
+void wcnss_prealloc_check_memory_leak(void)
+{
+}
 EXPORT_SYMBOL(wcnss_prealloc_check_memory_leak);
 
 /* Not implemented. Make use of Linux SLAB features. */
-int wcnss_pre_alloc_reset(void) { return -EOPNOTSUPP; }
+int wcnss_pre_alloc_reset(void)
+{
+	return -EOPNOTSUPP;
+}
 EXPORT_SYMBOL(wcnss_pre_alloc_reset);
 
 /**
@@ -403,4 +406,3 @@ static void __exit cnss_prealloc_exit(void)
 
 module_init(cnss_prealloc_init);
 module_exit(cnss_prealloc_exit);
-

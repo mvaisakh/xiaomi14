@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
 #include <linux/delay.h>
@@ -13,18 +14,17 @@
 #include "dsi_ctrl_reg.h"
 #include "dsi_hw.h"
 #include "dsi_panel.h"
-#include "dsi_catalog.h"
 #include "sde_dbg.h"
 #include "sde_dsc_helper.h"
 #include "sde_vdc_helper.h"
 
-#define MMSS_MISC_CLAMP_REG_OFF           0x0014
-#define DSI_CTRL_DYNAMIC_FORCE_ON         (0x23F|BIT(8)|BIT(9)|BIT(11)|BIT(21))
-#define DSI_CTRL_CMD_MISR_ENABLE          BIT(28)
-#define DSI_CTRL_VIDEO_MISR_ENABLE        BIT(16)
-#define DSI_CTRL_DMA_LINK_SEL             (BIT(12)|BIT(13))
-#define DSI_CTRL_MDP0_LINK_SEL            (BIT(20)|BIT(22))
-#define DSI_VBIF_CTRL_PRIORITY            0x07
+#define MMSS_MISC_CLAMP_REG_OFF 0x0014
+#define DSI_CTRL_DYNAMIC_FORCE_ON (0x23F | BIT(8) | BIT(9) | BIT(11) | BIT(21))
+#define DSI_CTRL_CMD_MISR_ENABLE BIT(28)
+#define DSI_CTRL_VIDEO_MISR_ENABLE BIT(16)
+#define DSI_CTRL_DMA_LINK_SEL (BIT(12) | BIT(13))
+#define DSI_CTRL_MDP0_LINK_SEL (BIT(20) | BIT(22))
+#define DSI_VBIF_CTRL_PRIORITY 0x07
 
 static bool dsi_dsc_compression_enabled(struct dsi_mode_info *mode)
 {
@@ -39,14 +39,16 @@ static bool dsi_vdc_compression_enabled(struct dsi_mode_info *mode)
 static bool dsi_compression_enabled(struct dsi_mode_info *mode)
 {
 	return (dsi_dsc_compression_enabled(mode) ||
-			dsi_vdc_compression_enabled(mode));
+		dsi_vdc_compression_enabled(mode));
 }
 
 /* Unsupported formats default to RGB888 */
-static const u8 cmd_mode_format_map[DSI_PIXEL_FORMAT_MAX] = {
-	0x6, 0x7, 0x8, 0x8, 0x0, 0x3, 0x4, 0x9 };
-static const u8 video_mode_format_map[DSI_PIXEL_FORMAT_MAX] = {
-	0x0, 0x1, 0x2, 0x3, 0x3, 0x3, 0x3, 0x4 };
+static const u8 cmd_mode_format_map[DSI_PIXEL_FORMAT_MAX] = { 0x6, 0x7, 0x8,
+							      0x8, 0x0, 0x3,
+							      0x4, 0x9 };
+static const u8 video_mode_format_map[DSI_PIXEL_FORMAT_MAX] = { 0x0, 0x1, 0x2,
+								0x3, 0x3, 0x3,
+								0x3, 0x4 };
 
 /**
  * dsi_split_link_setup() - setup dsi split link configurations
@@ -55,7 +57,7 @@ static const u8 video_mode_format_map[DSI_PIXEL_FORMAT_MAX] = {
  *                    command modes.
  */
 static void dsi_split_link_setup(struct dsi_ctrl_hw *ctrl,
-				struct dsi_host_common_cfg *cfg)
+				 struct dsi_host_common_cfg *cfg)
 {
 	u32 reg;
 
@@ -98,8 +100,7 @@ static void dsi_setup_trigger_controls(struct dsi_ctrl_hw *ctrl,
 				       struct dsi_host_common_cfg *cfg)
 {
 	u32 reg;
-	const u8 trigger_map[DSI_TRIGGER_MAX] = {
-		0x0, 0x2, 0x1, 0x4, 0x5, 0x6 };
+	const u8 trigger_map[DSI_TRIGGER_MAX] = { 0x0, 0x2, 0x1, 0x4, 0x5, 0x6 };
 
 	reg = DSI_R32(ctrl, DSI_TRIG_CTRL);
 
@@ -121,7 +122,7 @@ static void dsi_setup_trigger_controls(struct dsi_ctrl_hw *ctrl,
  *                    command modes.
  */
 void dsi_ctrl_hw_cmn_host_setup(struct dsi_ctrl_hw *ctrl,
-			       struct dsi_host_common_cfg *cfg)
+				struct dsi_host_common_cfg *cfg)
 {
 	u32 reg_value = 0;
 
@@ -188,9 +189,9 @@ void dsi_ctrl_hw_cmn_ulps_request(struct dsi_ctrl_hw *ctrl, u32 lanes)
 		reg |= BIT(3);
 
 	/*
-	 * ULPS entry request. Wait for short time to make sure
-	 * that the lanes enter ULPS. Recommended as per HPG.
-	 */
+   * ULPS entry request. Wait for short time to make sure
+   * that the lanes enter ULPS. Recommended as per HPG.
+   */
 	DSI_W32(ctrl, DSI_LANE_CTRL, reg);
 	usleep_range(100, 110);
 
@@ -226,17 +227,17 @@ void dsi_ctrl_hw_cmn_ulps_exit(struct dsi_ctrl_hw *ctrl, u32 lanes)
 		reg |= BIT(11);
 
 	/*
-	 * ULPS Exit Request
-	 * Hardware requirement is to wait for at least 1ms
-	 */
+   * ULPS Exit Request
+   * Hardware requirement is to wait for at least 1ms
+   */
 	DSI_W32(ctrl, DSI_LANE_CTRL, reg | prev_reg);
 	usleep_range(1000, 1010);
 	/*
-	 * Sometimes when exiting ULPS, it is possible that some DSI
-	 * lanes are not in the stop state which could lead to DSI
-	 * commands not going through. To avoid this, force the lanes
-	 * to be in stop state.
-	 */
+   * Sometimes when exiting ULPS, it is possible that some DSI
+   * lanes are not in the stop state which could lead to DSI
+   * commands not going through. To avoid this, force the lanes
+   * to be in stop state.
+   */
 	DSI_W32(ctrl, DSI_LANE_CTRL, (reg << 8) | prev_reg);
 	wmb(); /* ensure lanes are put to stop state */
 	DSI_W32(ctrl, DSI_LANE_CTRL, 0x0 | prev_reg);
@@ -281,7 +282,7 @@ u32 dsi_ctrl_hw_cmn_get_lanes_in_ulps(struct dsi_ctrl_hw *ctrl)
  */
 void dsi_ctrl_hw_cmn_phy_sw_reset(struct dsi_ctrl_hw *ctrl)
 {
-	DSI_W32(ctrl, DSI_PHY_SW_RESET, BIT(24)|BIT(0));
+	DSI_W32(ctrl, DSI_PHY_SW_RESET, BIT(24) | BIT(0));
 	wmb(); /* make sure reset is asserted */
 	udelay(1000);
 	DSI_W32(ctrl, DSI_PHY_SW_RESET, 0x0);
@@ -342,9 +343,8 @@ void dsi_ctrl_hw_cmn_soft_reset(struct dsi_ctrl_hw *ctrl)
  * @frame_count:  Number of frames to accumulate MISR.
  */
 void dsi_ctrl_hw_cmn_setup_misr(struct dsi_ctrl_hw *ctrl,
-			enum dsi_op_mode panel_mode,
-			bool enable,
-			u32 frame_count)
+				enum dsi_op_mode panel_mode, bool enable,
+				u32 frame_count)
 {
 	u32 addr;
 	u32 config = 0;
@@ -373,7 +373,7 @@ void dsi_ctrl_hw_cmn_setup_misr(struct dsi_ctrl_hw *ctrl,
  * @panel_mode:   CMD or VIDEO mode indicator
  */
 u32 dsi_ctrl_hw_cmn_collect_misr(struct dsi_ctrl_hw *ctrl,
-			enum dsi_op_mode panel_mode)
+				 enum dsi_op_mode panel_mode)
 {
 	u32 addr;
 	u32 enabled;
@@ -382,11 +382,11 @@ u32 dsi_ctrl_hw_cmn_collect_misr(struct dsi_ctrl_hw *ctrl,
 	if (panel_mode == DSI_OP_CMD_MODE) {
 		addr = DSI_MISR_CMD_MDP0_32BIT;
 		enabled = DSI_R32(ctrl, DSI_MISR_CMD_CTRL) &
-				DSI_CTRL_CMD_MISR_ENABLE;
+			  DSI_CTRL_CMD_MISR_ENABLE;
 	} else {
 		addr = DSI_MISR_VIDEO_32BIT;
 		enabled = DSI_R32(ctrl, DSI_MISR_VIDEO_CTRL) &
-				DSI_CTRL_VIDEO_MISR_ENABLE;
+			  DSI_CTRL_VIDEO_MISR_ENABLE;
 	}
 
 	if (enabled)
@@ -403,8 +403,7 @@ u32 dsi_ctrl_hw_cmn_collect_misr(struct dsi_ctrl_hw *ctrl,
  *
  * Enable or Disabe the Timing DB register.
  */
-void dsi_ctrl_hw_cmn_set_timing_db(struct dsi_ctrl_hw *ctrl,
-				     bool enable)
+void dsi_ctrl_hw_cmn_set_timing_db(struct dsi_ctrl_hw *ctrl, bool enable)
 {
 	if (enable)
 		DSI_W32(ctrl, DSI_DSI_TIMING_DB_MODE, 0x1);
@@ -427,8 +426,9 @@ void dsi_ctrl_hw_cmn_set_timing_db(struct dsi_ctrl_hw *ctrl,
  * Get the compression parameters based on compression type.
  */
 static void dsi_ctrl_hw_cmn_get_vid_dce_params(struct dsi_mode_info *mode,
-	u32 *width, u32 *bytes_per_pkt, u32 *pkt_per_line,
-	u32 *eol_byte_num)
+					       u32 *width, u32 *bytes_per_pkt,
+					       u32 *pkt_per_line,
+					       u32 *eol_byte_num)
 {
 	if (dsi_dsc_compression_enabled(mode)) {
 		*width = mode->dsc->pclk_per_line;
@@ -451,7 +451,7 @@ static void dsi_ctrl_hw_cmn_get_vid_dce_params(struct dsi_mode_info *mode,
  * Set up the video timing parameters for the DSI video mode operation.
  */
 void dsi_ctrl_hw_cmn_set_video_timing(struct dsi_ctrl_hw *ctrl,
-				     struct dsi_mode_info *mode)
+				      struct dsi_mode_info *mode)
 {
 	u32 reg = 0;
 	u32 hs_start = 0;
@@ -461,19 +461,19 @@ void dsi_ctrl_hw_cmn_set_video_timing(struct dsi_ctrl_hw *ctrl,
 	u32 vpos_start = 0, vpos_end, active_v_start, active_v_end, v_total;
 
 	if (dsi_compression_enabled(mode)) {
-		dsi_ctrl_hw_cmn_get_vid_dce_params(mode,
-				&width, &bytes_per_pkt,
-				&pkt_per_line, &eol_byte_num);
+		dsi_ctrl_hw_cmn_get_vid_dce_params(mode, &width, &bytes_per_pkt,
+						   &pkt_per_line,
+						   &eol_byte_num);
 		reg = bytes_per_pkt << 16;
 		/* data type of compressed image */
 		reg |= (0x0b << 8);
 		/*
-		 * pkt_per_line:
-		 * 0 == 1 pkt
-		 * 1 == 2 pkt
-		 * 2 == 4 pkt
-		 * 3 pkt is not supported
-		 */
+     * pkt_per_line:
+     * 0 == 1 pkt
+     * 1 == 2 pkt
+     * 2 == 4 pkt
+     * 3 pkt is not supported
+     */
 		reg |= (pkt_per_line >> 1) << 6;
 		reg |= eol_byte_num << 4;
 		reg |= 1;
@@ -485,9 +485,9 @@ void dsi_ctrl_hw_cmn_set_video_timing(struct dsi_ctrl_hw *ctrl,
 			DSI_W32(ctrl, DSI_VIDEO_MODE_CTRL, reg);
 		}
 
-		mode->h_active = DIV_ROUND_UP(mode->h_active *
-				mode->pclk_scale.numer,
-				mode->pclk_scale.denom);
+		mode->h_active =
+			DIV_ROUND_UP(mode->h_active * mode->pclk_scale.numer,
+				     mode->pclk_scale.denom);
 	} else {
 		width = mode->h_active;
 	}
@@ -496,13 +496,15 @@ void dsi_ctrl_hw_cmn_set_video_timing(struct dsi_ctrl_hw *ctrl,
 	active_h_start = mode->h_sync_width + mode->h_back_porch;
 	active_h_end = active_h_start + width;
 	h_total = (mode->h_sync_width + mode->h_back_porch + width +
-		   mode->h_front_porch) - 1;
+		   mode->h_front_porch) -
+		  1;
 
 	vpos_end = mode->v_sync_width;
 	active_v_start = mode->v_sync_width + mode->v_back_porch;
 	active_v_end = active_v_start + mode->v_active;
 	v_total = (mode->v_sync_width + mode->v_back_porch + mode->v_active +
-		   mode->v_front_porch) - 1;
+		   mode->v_front_porch) -
+		  1;
 
 	reg = ((active_h_end & 0xFFFF) << 16) | (active_h_start & 0xFFFF);
 	DSI_W32(ctrl, DSI_VIDEO_MODE_ACTIVE_H, reg);
@@ -537,8 +539,7 @@ void dsi_ctrl_hw_cmn_set_video_timing(struct dsi_ctrl_hw *ctrl,
  *
  * Get the video timing parameters for the DSI video mode operation.
  */
-u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl,
-				     const char *type)
+u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl, const char *type)
 {
 	u32 dsi_val = 0;
 
@@ -546,7 +547,7 @@ u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl,
 		u32 tmp_hpw;
 
 		tmp_hpw = DSI_R32(ctrl, DSI_VIDEO_MODE_HSYNC);
-		dsi_val  = (tmp_hpw >> 16) & 0xFFFF;
+		dsi_val = (tmp_hpw >> 16) & 0xFFFF;
 		return dsi_val;
 	} else if (strncmp(type, "HFP", 3) == 0) {
 		u32 tmp_hfp, h_total, active_h_end;
@@ -565,7 +566,7 @@ u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl,
 		u32 hs_end, active_h_start;
 
 		tmp_hbp = DSI_R32(ctrl, DSI_VIDEO_MODE_HSYNC);
-		hs_end  = (tmp_hbp >> 16) & 0xFFFF;
+		hs_end = (tmp_hbp >> 16) & 0xFFFF;
 		tmp_hbp = DSI_R32(ctrl, DSI_VIDEO_MODE_ACTIVE_H);
 		active_h_start = tmp_hbp & 0xFFFF;
 		tmp_hbp = active_h_start - hs_end;
@@ -576,7 +577,7 @@ u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl,
 		u32 tmp_vpw;
 
 		tmp_vpw = DSI_R32(ctrl, DSI_VIDEO_MODE_VSYNC_VPOS);
-		dsi_val  = (tmp_vpw >> 16) & 0xFFFF;
+		dsi_val = (tmp_vpw >> 16) & 0xFFFF;
 
 		return dsi_val;
 	} else if (strncmp(type, "VFP", 3) == 0) {
@@ -585,7 +586,7 @@ u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl,
 		tmp_vfp = DSI_R32(ctrl, DSI_VIDEO_MODE_TOTAL);
 		v_total = (tmp_vfp >> 16) & 0xFFFF;
 
-		tmp_vfp = DSI_R32(ctrl, + DSI_VIDEO_MODE_ACTIVE_V);
+		tmp_vfp = DSI_R32(ctrl, +DSI_VIDEO_MODE_ACTIVE_V);
 		active_v_end = (tmp_vfp >> 16) & 0xFFFF;
 
 		tmp_vfp = v_total - active_v_end + 1;
@@ -595,7 +596,7 @@ u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl,
 		u32 tmp_vbp, vpos_end, active_v_start;
 
 		tmp_vbp = DSI_R32(ctrl, DSI_VIDEO_MODE_VSYNC_VPOS);
-		vpos_end  = (tmp_vbp >> 16) & 0xFFFF;
+		vpos_end = (tmp_vbp >> 16) & 0xFFFF;
 
 		tmp_vbp = DSI_R32(ctrl, DSI_VIDEO_MODE_ACTIVE_V);
 		active_v_start = tmp_vbp & 0xFFFF;
@@ -619,10 +620,9 @@ u32 dsi_ctrl_hw_cmn_get_video_timing(struct dsi_ctrl_hw *ctrl,
  * Setup parameters for command mode pixel stream size.
  */
 void dsi_ctrl_hw_cmn_setup_cmd_stream(struct dsi_ctrl_hw *ctrl,
-				     struct dsi_mode_info *mode,
-				     struct dsi_host_common_cfg *cfg,
-				     u32 vc_id,
-				     struct dsi_rect *roi)
+				      struct dsi_mode_info *mode,
+				      struct dsi_host_common_cfg *cfg,
+				      u32 vc_id, struct dsi_rect *roi)
 {
 	u32 width_final = 0, stride_final = 0;
 	u32 height_final = 0;
@@ -647,7 +647,8 @@ void dsi_ctrl_hw_cmn_setup_cmd_stream(struct dsi_ctrl_hw *ctrl,
 		this_frame_slices = pic_width / dsc.config.slice_width;
 		intf_ip_w = this_frame_slices * dsc.config.slice_width;
 
-		sde_dsc_populate_dsc_private_params(&dsc, intf_ip_w, ctrl->widebus_support);
+		sde_dsc_populate_dsc_private_params(&dsc, intf_ip_w,
+						    ctrl->widebus_support);
 
 		width_final = dsc.bytes_per_pkt * dsc.pkt_per_line;
 		stride_final = dsc.bytes_per_pkt;
@@ -700,12 +701,12 @@ void dsi_ctrl_hw_cmn_setup_cmd_stream(struct dsi_ctrl_hw *ctrl,
 
 		reg = 0x39 << 8;
 		/*
-		 * pkt_per_line:
-		 * 0 == 1 pkt
-		 * 1 == 2 pkt
-		 * 2 == 4 pkt
-		 * 3 pkt is not supported
-		 */
+     * pkt_per_line:
+     * 0 == 1 pkt
+     * 1 == 2 pkt
+     * 2 == 4 pkt
+     * 3 pkt is not supported
+     */
 		reg |= (pkt_per_line >> 1) << 6;
 		reg |= eol_byte_num << 4;
 		reg |= 1;
@@ -778,8 +779,8 @@ void dsi_ctrl_hw_cmn_setup_avr(struct dsi_ctrl_hw *ctrl, bool enable)
  * video engine are not enabled as part of this function.
  */
 void dsi_ctrl_hw_cmn_video_engine_setup(struct dsi_ctrl_hw *ctrl,
-				       struct dsi_host_common_cfg *common_cfg,
-				       struct dsi_video_engine_cfg *cfg)
+					struct dsi_host_common_cfg *common_cfg,
+					struct dsi_video_engine_cfg *cfg)
 {
 	u32 reg = 0;
 
@@ -816,8 +817,8 @@ void dsi_ctrl_hw_cmn_video_engine_setup(struct dsi_ctrl_hw *ctrl,
  * command engine are not enabled as part of this function.
  */
 void dsi_ctrl_hw_cmn_cmd_engine_setup(struct dsi_ctrl_hw *ctrl,
-				     struct dsi_host_common_cfg *common_cfg,
-				     struct dsi_cmd_engine_cfg *cfg)
+				      struct dsi_host_common_cfg *common_cfg,
+				      struct dsi_cmd_engine_cfg *cfg)
 {
 	u32 reg = 0;
 
@@ -933,8 +934,8 @@ void dsi_ctrl_hw_cmn_cmd_engine_en(struct dsi_ctrl_hw *ctrl, bool on)
  * transmit the command.
  */
 void dsi_ctrl_hw_cmn_kickoff_command(struct dsi_ctrl_hw *ctrl_hw,
-				    struct dsi_ctrl_cmd_dma_info *cmd,
-				    u32 flags)
+				     struct dsi_ctrl_cmd_dma_info *cmd,
+				     u32 flags)
 {
 	u32 reg = 0;
 	struct dsi_ctrl *ctrl = container_of(ctrl_hw, struct dsi_ctrl, hw);
@@ -956,14 +957,14 @@ void dsi_ctrl_hw_cmn_kickoff_command(struct dsi_ctrl_hw *ctrl_hw,
 	else
 		reg &= ~BIT(26);
 
-	reg |= BIT(28);/* Select embedded mode */
-	reg &= ~BIT(24);/* packet type */
-	reg &= ~BIT(29);/* WC_SEL to 0 */
+	reg |= BIT(28); /* Select embedded mode */
+	reg &= ~BIT(24); /* packet type */
+	reg &= ~BIT(29); /* WC_SEL to 0 */
 	DSI_W32(ctrl_hw, DSI_COMMAND_MODE_DMA_CTRL, reg);
 
 	reg = DSI_R32(ctrl_hw, DSI_DMA_FIFO_CTRL);
-	reg |= BIT(20);/* Disable write watermark*/
-	reg |= BIT(16);/* Disable read watermark */
+	reg |= BIT(20); /* Disable write watermark*/
+	reg |= BIT(16); /* Disable read watermark */
 
 	DSI_W32(ctrl_hw, DSI_DMA_FIFO_CTRL, reg);
 	DSI_W32(ctrl_hw, DSI_DMA_CMD_OFFSET, cmd->offset);
@@ -998,22 +999,22 @@ void dsi_ctrl_hw_cmn_kickoff_command(struct dsi_ctrl_hw *ctrl_hw,
  * transmit the command.
  */
 void dsi_ctrl_hw_cmn_kickoff_fifo_command(struct dsi_ctrl_hw *ctrl,
-					 struct dsi_ctrl_cmd_dma_fifo_info *cmd,
-					 u32 flags)
+					  struct dsi_ctrl_cmd_dma_fifo_info *cmd,
+					  u32 flags)
 {
 	u32 reg = 0, i = 0;
 	u32 *ptr = cmd->command;
 	/*
-	 * Set CMD_DMA_TPG_EN, TPG_DMA_FIFO_MODE and
-	 * CMD_DMA_PATTERN_SEL = custom pattern stored in TPG DMA FIFO
-	 */
+   * Set CMD_DMA_TPG_EN, TPG_DMA_FIFO_MODE and
+   * CMD_DMA_PATTERN_SEL = custom pattern stored in TPG DMA FIFO
+   */
 	reg = (BIT(1) | BIT(2) | (0x3 << 16));
 	DSI_W32(ctrl, DSI_TEST_PATTERN_GEN_CTRL, reg);
 
 	/*
-	 * Program the FIFO with command buffer. Hardware requires an extra
-	 * DWORD (set to zero) if the length of command buffer is odd DWORDS.
-	 */
+   * Program the FIFO with command buffer. Hardware requires an extra
+   * DWORD (set to zero) if the length of command buffer is odd DWORDS.
+   */
 	for (i = 0; i < cmd->size; i += 4) {
 		DSI_W32(ctrl, DSI_TEST_PATTERN_GEN_CMD_DMA_INIT_VAL, *ptr);
 		ptr++;
@@ -1051,7 +1052,8 @@ void dsi_ctrl_hw_cmn_kickoff_fifo_command(struct dsi_ctrl_hw *ctrl,
 		DSI_W32(ctrl, DSI_CMD_MODE_DMA_SW_TRIGGER, 0x1);
 
 	DSI_CTRL_HW_DBG(ctrl, "size=%d, trigger = %d\n", cmd->size,
-		 (flags & DSI_CTRL_HW_CMD_WAIT_FOR_TRIGGER) ? false : true);
+			(flags & DSI_CTRL_HW_CMD_WAIT_FOR_TRIGGER) ? false :
+								     true);
 }
 
 void dsi_ctrl_hw_cmn_reset_cmd_fifo(struct dsi_ctrl_hw *ctrl)
@@ -1101,18 +1103,15 @@ void dsi_ctrl_hw_cmn_clear_rdbk_reg(struct dsi_ctrl_hw *ctrl)
  *
  * return: number of bytes read.
  */
-u32 dsi_ctrl_hw_cmn_get_cmd_read_data(struct dsi_ctrl_hw *ctrl,
-				     u8 *rd_buf,
-				     u32 read_offset,
-				     u32 rx_byte,
-				     u32 pkt_size,
-				     u32 *hw_read_cnt)
+u32 dsi_ctrl_hw_cmn_get_cmd_read_data(struct dsi_ctrl_hw *ctrl, u8 *rd_buf,
+				      u32 read_offset, u32 rx_byte,
+				      u32 pkt_size, u32 *hw_read_cnt)
 {
 	u32 *lp, *temp, data;
 	int i, j = 0, cnt, off;
 	u32 read_cnt;
 	u32 repeated_bytes = 0;
-	u8 reg[16] = {0};
+	u8 reg[16] = { 0 };
 	bool ack_err = false;
 
 	lp = (u32 *)rd_buf;
@@ -1124,7 +1123,7 @@ u32 dsi_ctrl_hw_cmn_get_cmd_read_data(struct dsi_ctrl_hw *ctrl,
 
 	read_cnt = (DSI_R32(ctrl, DSI_RDBK_DATA_CTRL) >> 16);
 	ack_err = (rx_byte == 4) ? (read_cnt == 8) :
-			((read_cnt - 4) == (pkt_size + 6));
+				   ((read_cnt - 4) == (pkt_size + 6));
 
 	if (ack_err)
 		read_cnt -= 4;
@@ -1134,18 +1133,20 @@ u32 dsi_ctrl_hw_cmn_get_cmd_read_data(struct dsi_ctrl_hw *ctrl,
 	}
 
 	/*
-	 * Large read_cnt value can lead to negative repeated_bytes value
-	 * and array out of bounds access of read buffer.
-	 * Avoid this by resetting read_cnt to expected value when panel
-	 * sends more bytes than expected.
-	 */
+   * Large read_cnt value can lead to negative repeated_bytes value
+   * and array out of bounds access of read buffer.
+   * Avoid this by resetting read_cnt to expected value when panel
+   * sends more bytes than expected.
+   */
 	if (rx_byte == 4 && read_cnt > 4) {
-		DSI_CTRL_HW_INFO(ctrl,
+		DSI_CTRL_HW_INFO(
+			ctrl,
 			"Expected %u bytes for short read but received %u bytes\n",
 			rx_byte, read_cnt);
 		read_cnt = rx_byte;
 	} else if (rx_byte == 16 && read_cnt > (pkt_size + 6)) {
-		DSI_CTRL_HW_INFO(ctrl,
+		DSI_CTRL_HW_INFO(
+			ctrl,
 			"Expected %u bytes for long read but received %u bytes\n",
 			pkt_size + 6, read_cnt);
 		read_cnt = pkt_size + 6;
@@ -1198,8 +1199,9 @@ u32 dsi_ctrl_hw_cmn_poll_dma_status(struct dsi_ctrl_hw *ctrl)
 	u32 const delay_us = 10;
 	u32 const timeout_us = 5000;
 
-	rc = DSI_READ_POLL_TIMEOUT_ATOMIC(ctrl, DSI_INT_CTRL, status,
-				      ((status & DSI_CMD_MODE_DMA_DONE) > 0), delay_us, timeout_us);
+	rc = DSI_READ_POLL_TIMEOUT_ATOMIC(
+		ctrl, DSI_INT_CTRL, status,
+		((status & DSI_CMD_MODE_DMA_DONE) > 0), delay_us, timeout_us);
 	if (rc) {
 		DSI_CTRL_HW_DBG(ctrl, "CMD_MODE_DMA_DONE failed\n");
 		status = 0;
@@ -1246,8 +1248,8 @@ u32 dsi_ctrl_hw_cmn_get_interrupt_status(struct dsi_ctrl_hw *ctrl)
 	if (reg & BIT(24))
 		ints |= DSI_ERROR;
 
-	DSI_CTRL_HW_DBG(ctrl, "Interrupt status = 0x%x, INT_CTRL=0x%x\n",
-		 ints, reg);
+	DSI_CTRL_HW_DBG(ctrl, "Interrupt status = 0x%x, INT_CTRL=0x%x\n", ints,
+			reg);
 	return ints;
 }
 
@@ -1282,15 +1284,15 @@ void dsi_ctrl_hw_cmn_clear_interrupt_status(struct dsi_ctrl_hw *ctrl, u32 ints)
 		reg |= BIT(30);
 
 	/*
-	 * Do not clear error status.
-	 * It will be cleared as part of
-	 * error handler function.
-	 */
+   * Do not clear error status.
+   * It will be cleared as part of
+   * error handler function.
+   */
 	reg &= ~BIT(24);
 	DSI_W32(ctrl, DSI_INT_CTRL, reg);
 
 	DSI_CTRL_HW_DBG(ctrl, "Clear interrupts, ints = 0x%x, INT_CTRL=0x%x\n",
-		 ints, reg);
+			ints, reg);
 }
 
 /**
@@ -1303,8 +1305,8 @@ void dsi_ctrl_hw_cmn_clear_interrupt_status(struct dsi_ctrl_hw *ctrl, u32 ints)
  * maintain the state of the interrupts enabled. To disable all
  * interrupts, set ints to 0.
  */
-void dsi_ctrl_hw_cmn_enable_status_interrupts(
-		struct dsi_ctrl_hw *ctrl, u32 ints)
+void dsi_ctrl_hw_cmn_enable_status_interrupts(struct dsi_ctrl_hw *ctrl,
+					      u32 ints)
 {
 	u32 reg = 0;
 
@@ -1420,9 +1422,9 @@ u64 dsi_ctrl_hw_cmn_get_error_status(struct dsi_ctrl_hw *ctrl)
 		errors |= DSI_INTERLEAVE_OP_CONTENTION;
 
 	DSI_CTRL_HW_DBG(ctrl, "Error status = 0x%llx, phy=0x%x, fifo=0x%x\n",
-		 errors, dln0_phy_err, fifo_status);
+			errors, dln0_phy_err, fifo_status);
 	DSI_CTRL_HW_DBG(ctrl, "ack=0x%x, timeout=0x%x, clk=0x%x, dsi=0x%x\n",
-		 ack_error, timeout_errors, clk_error, dsi_status);
+			ack_error, timeout_errors, clk_error, dsi_status);
 	return errors;
 }
 
@@ -1509,9 +1511,9 @@ void dsi_ctrl_hw_cmn_clear_error_status(struct dsi_ctrl_hw *ctrl, u64 errors)
 	DSI_W32(ctrl, DSI_STATUS, dsi_status);
 
 	DSI_CTRL_HW_DBG(ctrl, "clear errors = 0x%llx, phy=0x%x, fifo=0x%x\n",
-		 errors, dln0_phy_err, fifo_status);
+			errors, dln0_phy_err, fifo_status);
 	DSI_CTRL_HW_DBG(ctrl, "ack=0x%x, timeout=0x%x, clk=0x%x, dsi=0x%x\n",
-		 ack_error, timeout_error, clk_error, dsi_status);
+			ack_error, timeout_error, clk_error, dsi_status);
 }
 
 /**
@@ -1525,7 +1527,7 @@ void dsi_ctrl_hw_cmn_clear_error_status(struct dsi_ctrl_hw *ctrl, u64 errors)
  * interrupts, set errors to 0.
  */
 void dsi_ctrl_hw_cmn_enable_error_interrupts(struct dsi_ctrl_hw *ctrl,
-					    u64 errors)
+					     u64 errors)
 {
 	u32 int_ctrl = 0;
 	u32 int_mask0 = 0x7FFF3BFF;
@@ -1620,8 +1622,9 @@ dsi_write:
 	DSI_W32(ctrl, DSI_INT_CTRL, int_ctrl);
 	DSI_W32(ctrl, DSI_ERR_INT_MASK0, int_mask0);
 
-	DSI_CTRL_HW_DBG(ctrl, "[DSI_%d] enable errors = 0x%llx, int_mask0=0x%x\n",
-		 ctrl->index, errors, int_mask0);
+	DSI_CTRL_HW_DBG(ctrl,
+			"[DSI_%d] enable errors = 0x%llx, int_mask0=0x%x\n",
+			ctrl->index, errors, int_mask0);
 }
 
 /**
@@ -1631,8 +1634,8 @@ dsi_write:
  * @init_val:      Initial value to use for generating test pattern.
  */
 void dsi_ctrl_hw_cmn_video_test_pattern_setup(struct dsi_ctrl_hw *ctrl,
-					     enum dsi_test_pattern type,
-					     u32 init_val)
+					      enum dsi_test_pattern type,
+					      u32 init_val)
 {
 	u32 reg = 0, pattern_sel_shift = 4;
 
@@ -1670,9 +1673,8 @@ void dsi_ctrl_hw_cmn_video_test_pattern_setup(struct dsi_ctrl_hw *ctrl,
  * @stream_id:     Stream Id on which packets are generated.
  */
 void dsi_ctrl_hw_cmn_cmd_test_pattern_setup(struct dsi_ctrl_hw *ctrl,
-					   enum dsi_test_pattern type,
-					   u32 init_val,
-					   u32 stream_id)
+					    enum dsi_test_pattern type,
+					    u32 init_val, u32 stream_id)
 {
 	u32 reg = 0;
 	u32 init_offset;
@@ -1729,9 +1731,9 @@ void dsi_ctrl_hw_cmn_cmd_test_pattern_setup(struct dsi_ctrl_hw *ctrl,
  * @pattern:       Type of TPG pattern
  * @panel_mode:    DSI operation mode
  */
-void dsi_ctrl_hw_cmn_test_pattern_enable(struct dsi_ctrl_hw *ctrl,
-					bool enable, enum dsi_ctrl_tpg_pattern pattern,
-					enum dsi_op_mode panel_mode)
+void dsi_ctrl_hw_cmn_test_pattern_enable(struct dsi_ctrl_hw *ctrl, bool enable,
+					 enum dsi_ctrl_tpg_pattern pattern,
+					 enum dsi_op_mode panel_mode)
 {
 	u32 reg = DSI_R32(ctrl, DSI_TEST_PATTERN_GEN_CTRL);
 	u32 reg_tpg_main_control = 0;
@@ -1766,7 +1768,7 @@ void dsi_ctrl_hw_cmn_test_pattern_enable(struct dsi_ctrl_hw *ctrl,
  * @stream_id:     Stream on which frame update is sent.
  */
 void dsi_ctrl_hw_cmn_trigger_cmd_test_pattern(struct dsi_ctrl_hw *ctrl,
-					     u32 stream_id)
+					      u32 stream_id)
 {
 	switch (stream_id) {
 	case 0:
@@ -1789,10 +1791,10 @@ void dsi_ctrl_hw_dln0_phy_err(struct dsi_ctrl_hw *ctrl)
 {
 	u32 status = 0;
 	/*
-	 * Clear out any phy errors prior to exiting ULPS
-	 * This fixes certain instances where phy does not exit
-	 * ULPS cleanly. Also, do not print error during such cases.
-	 */
+   * Clear out any phy errors prior to exiting ULPS
+   * This fixes certain instances where phy does not exit
+   * ULPS cleanly. Also, do not print error during such cases.
+   */
 	status = DSI_R32(ctrl, DSI_DLN0_PHY_ERR);
 	if (status & 0x011111) {
 		DSI_W32(ctrl, DSI_DLN0_PHY_ERR, status);
@@ -1800,8 +1802,7 @@ void dsi_ctrl_hw_dln0_phy_err(struct dsi_ctrl_hw *ctrl)
 	}
 }
 
-void dsi_ctrl_hw_cmn_phy_reset_config(struct dsi_ctrl_hw *ctrl,
-		bool enable)
+void dsi_ctrl_hw_cmn_phy_reset_config(struct dsi_ctrl_hw *ctrl, bool enable)
 {
 	u32 reg = 0;
 
@@ -1816,8 +1817,7 @@ void dsi_ctrl_hw_cmn_phy_reset_config(struct dsi_ctrl_hw *ctrl,
 	DSI_MMSS_MISC_W32(ctrl, MMSS_MISC_CLAMP_REG_OFF, reg);
 }
 
-int dsi_ctrl_hw_cmn_ctrl_reset(struct dsi_ctrl_hw *ctrl,
-		int mask)
+int dsi_ctrl_hw_cmn_ctrl_reset(struct dsi_ctrl_hw *ctrl, int mask)
 {
 	int rc = 0;
 	u32 data;
@@ -1860,11 +1860,11 @@ void dsi_ctrl_hw_cmn_mask_error_intr(struct dsi_ctrl_hw *ctrl, u32 idx, bool en)
 	reg = DSI_R32(ctrl, 0x10c);
 
 	/*
-	 * Before unmasking we should clear the corresponding error status bits
-	 * that might have been set while we masked these errors. Since these
-	 * are sticky bits, these errors will trigger the moment we unmask
-	 * the error bits.
-	 */
+   * Before unmasking we should clear the corresponding error status bits
+   * that might have been set while we masked these errors. Since these
+   * are sticky bits, these errors will trigger the moment we unmask
+   * the error bits.
+   */
 	if (idx & BIT(DSI_FIFO_OVERFLOW)) {
 		if (en) {
 			reg |= (0x1f << 16);
@@ -1951,7 +1951,8 @@ int dsi_ctrl_hw_cmn_wait_for_cmd_mode_mdp_idle(struct dsi_ctrl_hw *ctrl)
 	u32 const timeout_us = 200 * 1000;
 
 	rc = DSI_READ_POLL_TIMEOUT(ctrl, DSI_STATUS, val,
-			!(val & cmd_mode_mdp_busy_mask), sleep_us, timeout_us);
+				   !(val & cmd_mode_mdp_busy_mask), sleep_us,
+				   timeout_us);
 	if (rc)
 		DSI_CTRL_HW_ERR(ctrl, "timed out waiting for idle\n");
 
@@ -1992,7 +1993,8 @@ int dsi_ctrl_hw_cmn_wait4dynamic_refresh_done(struct dsi_ctrl_hw *ctrl)
 	u32 reg = 0, dyn_refresh_done = BIT(28);
 
 	rc = DSI_READ_POLL_TIMEOUT(ctrl, DSI_INT_CTRL, reg,
-				(reg & dyn_refresh_done), sleep_us, timeout_us);
+				   (reg & dyn_refresh_done), sleep_us,
+				   timeout_us);
 	if (rc) {
 		DSI_CTRL_HW_ERR(ctrl, "wait4dynamic refresh timedout %d\n", rc);
 		return rc;
@@ -2014,7 +2016,8 @@ bool dsi_ctrl_hw_cmn_vid_engine_busy(struct dsi_ctrl_hw *ctrl)
 	u32 const timeout_us = 50000;
 
 	rc = DSI_READ_POLL_TIMEOUT(ctrl, DSI_STATUS, reg,
-			!(reg & video_engine_busy), sleep_us, timeout_us);
+				   !(reg & video_engine_busy), sleep_us,
+				   timeout_us);
 	if (rc)
 		return true;
 
@@ -2025,8 +2028,7 @@ void dsi_ctrl_hw_cmn_init_cmddma_trig_ctrl(struct dsi_ctrl_hw *ctrl,
 					   struct dsi_host_common_cfg *cfg)
 {
 	u32 reg;
-	const u8 trigger_map[DSI_TRIGGER_MAX] = {
-		0x0, 0x2, 0x1, 0x4, 0x5, 0x6 };
+	const u8 trigger_map[DSI_TRIGGER_MAX] = { 0x0, 0x2, 0x1, 0x4, 0x5, 0x6 };
 
 	/* Initialize the default trigger used for Command Mode DMA path. */
 	reg = DSI_R32(ctrl, DSI_TRIG_CTRL);

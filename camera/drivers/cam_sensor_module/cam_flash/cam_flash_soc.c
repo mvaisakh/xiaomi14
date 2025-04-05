@@ -4,10 +4,10 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/of.h>
-#include <linux/of_gpio.h>
 #include "cam_flash_soc.h"
 #include "cam_res_mgr_api.h"
+#include <linux/of.h>
+#include <linux/of_gpio.h>
 
 void cam_flash_put_source_node_data(struct cam_flash_ctrl *fctrl)
 {
@@ -61,11 +61,11 @@ void cam_flash_put_source_node_data(struct cam_flash_ctrl *fctrl)
 }
 
 #if __or(IS_REACHABLE(CONFIG_LEDS_QPNP_FLASH_V2), \
-			IS_REACHABLE(CONFIG_LEDS_QTI_FLASH))
-static int32_t cam_get_source_node_info(
-	struct device_node *of_node,
-	struct cam_flash_ctrl *fctrl,
-	struct cam_flash_private_soc *soc_private)
+	 IS_REACHABLE(CONFIG_LEDS_QTI_FLASH))
+static int32_t
+cam_get_source_node_info(struct device_node *of_node,
+			 struct cam_flash_ctrl *fctrl,
+			 struct cam_flash_private_soc *soc_private)
 {
 	int32_t rc = 0;
 	uint32_t count = 0, i = 0;
@@ -81,8 +81,8 @@ static int32_t cam_get_source_node_info(
 		CAM_WARN(CAM_FLASH, "switch_src_node NULL");
 	} else {
 		rc = of_property_read_string(switch_src_node,
-			"qcom,default-led-trigger",
-			&soc_private->switch_trigger_name);
+					     "qcom,default-led-trigger",
+					     &soc_private->switch_trigger_name);
 		if (rc) {
 			CAM_ERR(CAM_FLASH,
 				"default-led-trigger read failed rc=%d", rc);
@@ -108,19 +108,21 @@ static int32_t cam_get_source_node_info(
 		fctrl->flash_num_sources = count;
 
 		for (i = 0; i < count; i++) {
-			flash_src_node = of_parse_phandle(of_node,
-				"flash-source", i);
+			flash_src_node =
+				of_parse_phandle(of_node, "flash-source", i);
 			if (!flash_src_node) {
 				CAM_WARN(CAM_FLASH, "flash_src_node NULL");
 				continue;
 			}
 
-			rc = of_property_read_string(flash_src_node,
-				"qcom,default-led-trigger",
+			rc = of_property_read_string(
+				flash_src_node, "qcom,default-led-trigger",
 				&soc_private->flash_trigger_name[i]);
 			if (rc) {
-				CAM_WARN(CAM_FLASH,
-				"defalut-led-trigger read failed rc=%d", rc);
+				CAM_WARN(
+					CAM_FLASH,
+					"defalut-led-trigger read failed rc=%d",
+					rc);
 				of_node_put(flash_src_node);
 				continue;
 			}
@@ -139,22 +141,23 @@ static int32_t cam_get_source_node_info(
 					true);
 				if (rc) {
 					CAM_ERR(CAM_FLASH,
-					"WLED FLASH max_current read fail: %d",
+						"WLED FLASH max_current read fail: %d",
 						rc);
 					of_node_put(flash_src_node);
 					rc = 0;
 					continue;
 				}
 			} else {
-				rc = of_property_read_u32(flash_src_node,
-					"qcom,max-current",
+				rc = of_property_read_u32(
+					flash_src_node, "qcom,max-current",
 					&soc_private->flash_max_current[i]);
-				rc &= of_property_read_u32(flash_src_node,
-					"qcom,max-current-ma",
+				rc &= of_property_read_u32(
+					flash_src_node, "qcom,max-current-ma",
 					&soc_private->flash_max_current[i]);
 				if (rc < 0) {
-					CAM_WARN(CAM_FLASH,
-					"LED FLASH max-current read fail: %d",
+					CAM_WARN(
+						CAM_FLASH,
+						"LED FLASH max-current read fail: %d",
 						rc);
 					of_node_put(flash_src_node);
 					continue;
@@ -162,15 +165,15 @@ static int32_t cam_get_source_node_info(
 			}
 
 			/* Read operational-current */
-			if (of_property_read_u32(flash_src_node,
-				"qcom,current-ma",
-				&soc_private->flash_op_current[i])) {
+			if (of_property_read_u32(
+				    flash_src_node, "qcom,current-ma",
+				    &soc_private->flash_op_current[i])) {
 				CAM_DBG(CAM_FLASH, "op-current: read failed");
 			}
 
 			/* Read max-duration */
-			rc = of_property_read_u32(flash_src_node,
-				"qcom,duration-ms",
+			rc = of_property_read_u32(
+				flash_src_node, "qcom,duration-ms",
 				&soc_private->flash_max_duration[i]);
 			if (rc) {
 				CAM_DBG(CAM_FLASH,
@@ -180,8 +183,8 @@ static int32_t cam_get_source_node_info(
 			}
 			of_node_put(flash_src_node);
 
-			CAM_DBG(CAM_FLASH, "MainFlashMaxCurrent[%d]: %d",
-				i, soc_private->flash_max_current[i]);
+			CAM_DBG(CAM_FLASH, "MainFlashMaxCurrent[%d]: %d", i,
+				soc_private->flash_max_current[i]);
 		}
 	}
 
@@ -197,19 +200,19 @@ static int32_t cam_get_source_node_info(
 		CAM_DBG(CAM_FLASH, "torch_num_sources = %d",
 			fctrl->torch_num_sources);
 		for (i = 0; i < count; i++) {
-			torch_src_node = of_parse_phandle(of_node,
-				"torch-source", i);
+			torch_src_node =
+				of_parse_phandle(of_node, "torch-source", i);
 			if (!torch_src_node) {
 				CAM_WARN(CAM_FLASH, "torch_src_node NULL");
 				continue;
 			}
 
-			rc = of_property_read_string(torch_src_node,
-				"qcom,default-led-trigger",
+			rc = of_property_read_string(
+				torch_src_node, "qcom,default-led-trigger",
 				&soc_private->torch_trigger_name[i]);
 			if (rc < 0) {
 				CAM_WARN(CAM_FLASH,
-					"default-trigger read failed");
+					 "default-trigger read failed");
 				of_node_put(torch_src_node);
 				continue;
 			}
@@ -228,21 +231,22 @@ static int32_t cam_get_source_node_info(
 					true);
 				if (rc) {
 					CAM_ERR(CAM_FLASH,
-					"WLED TORCH max_current read fail: %d",
-					rc);
+						"WLED TORCH max_current read fail: %d",
+						rc);
 					of_node_put(torch_src_node);
 					continue;
 				}
 			} else {
-				rc = of_property_read_u32(torch_src_node,
-					"qcom,max-current",
+				rc = of_property_read_u32(
+					torch_src_node, "qcom,max-current",
 					&soc_private->torch_max_current[i]);
-				rc &= of_property_read_u32(torch_src_node,
-					"qcom,max-current-ma",
+				rc &= of_property_read_u32(
+					torch_src_node, "qcom,max-current-ma",
 					&soc_private->torch_max_current[i]);
 				if (rc < 0) {
-					CAM_WARN(CAM_FLASH,
-					"LED-TORCH max-current read failed: %d",
+					CAM_WARN(
+						CAM_FLASH,
+						"LED-TORCH max-current read failed: %d",
 						rc);
 					of_node_put(torch_src_node);
 					continue;
@@ -250,19 +254,19 @@ static int32_t cam_get_source_node_info(
 			}
 
 			/* Read operational-current */
-			rc = of_property_read_u32(torch_src_node,
-				"qcom,current-ma",
+			rc = of_property_read_u32(
+				torch_src_node, "qcom,current-ma",
 				&soc_private->torch_op_current[i]);
 			if (rc < 0) {
 				CAM_WARN(CAM_FLASH,
-					"op-current prop unavailable: %d", rc);
+					 "op-current prop unavailable: %d", rc);
 				rc = 0;
 			}
 
 			of_node_put(torch_src_node);
 
-			CAM_DBG(CAM_FLASH, "TorchMaxCurrent[%d]: %d",
-				i, soc_private->torch_max_current[i]);
+			CAM_DBG(CAM_FLASH, "TorchMaxCurrent[%d]: %d", i,
+				soc_private->torch_max_current[i]);
 		}
 	}
 
@@ -271,7 +275,7 @@ static int32_t cam_get_source_node_info(
 #endif
 
 int cam_flash_get_dt_data(struct cam_flash_ctrl *fctrl,
-	struct cam_hw_soc_info *soc_info)
+			  struct cam_hw_soc_info *soc_info)
 {
 	int32_t rc = 0;
 	struct device_node *of_node = NULL;
@@ -303,7 +307,7 @@ int cam_flash_get_dt_data(struct cam_flash_ctrl *fctrl,
 	}
 
 #if __or(IS_ENABLED(CONFIG_LEDS_QPNP_FLASH_V2), \
-			IS_ENABLED(CONFIG_LEDS_QTI_FLASH))
+	 IS_ENABLED(CONFIG_LEDS_QTI_FLASH))
 	rc = cam_get_source_node_info(of_node, fctrl, soc_info->soc_private);
 	if (rc) {
 		CAM_ERR(CAM_FLASH,

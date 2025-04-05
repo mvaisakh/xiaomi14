@@ -3,53 +3,53 @@
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
+#include "ipa_i.h"
 #include <linux/msm_ipa.h>
 #include <linux/string.h>
-#include "ipa_i.h"
 
 #define IPA_HOLB_TMR_VALUE 0
 #define OFFLOAD_DRV_NAME "ipa_qdss"
-#define IPA_QDSS_DBG(fmt, args...) \
-	do { \
-		pr_debug(OFFLOAD_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_QDSS_DBG(fmt, args...)                                           \
+	do {                                                                 \
+		pr_debug(OFFLOAD_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                       \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);     \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                   \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-#define IPA_QDSS_ERR(fmt, args...) \
-	do { \
-		pr_err(OFFLOAD_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_QDSS_ERR(fmt, args...)                                         \
+	do {                                                               \
+		pr_err(OFFLOAD_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+		       ##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                     \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);   \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                 \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);   \
 	} while (0)
 
 static void ipa3_qdss_gsi_chan_err_cb(struct gsi_chan_err_notify *notify)
 {
 	switch (notify->evt_id) {
 	case GSI_CHAN_INVALID_TRE_ERR:
-			IPAERR("Got GSI_CHAN_INVALID_TRE_ERR\n");
-			break;
+		IPAERR("Got GSI_CHAN_INVALID_TRE_ERR\n");
+		break;
 	case GSI_CHAN_NON_ALLOCATED_EVT_ACCESS_ERR:
-			IPAERR("Got GSI_CHAN_NON_ALLOCATED_EVT_ACCESS_ERR\n");
-			break;
+		IPAERR("Got GSI_CHAN_NON_ALLOCATED_EVT_ACCESS_ERR\n");
+		break;
 	case GSI_CHAN_OUT_OF_BUFFERS_ERR:
-			IPAERR("Got GSI_CHAN_OUT_OF_BUFFERS_ERR\n");
-			break;
+		IPAERR("Got GSI_CHAN_OUT_OF_BUFFERS_ERR\n");
+		break;
 	case GSI_CHAN_OUT_OF_RESOURCES_ERR:
-			IPAERR("Got GSI_CHAN_OUT_OF_RESOURCES_ERR\n");
-			break;
+		IPAERR("Got GSI_CHAN_OUT_OF_RESOURCES_ERR\n");
+		break;
 	case GSI_CHAN_UNSUPPORTED_INTER_EE_OP_ERR:
-			IPAERR("Got GSI_CHAN_UNSUPPORTED_INTER_EE_OP_ERR\n");
-			break;
+		IPAERR("Got GSI_CHAN_UNSUPPORTED_INTER_EE_OP_ERR\n");
+		break;
 	case GSI_CHAN_HWO_1_ERR:
-			IPAERR("Got GSI_CHAN_HWO_1_ERR\n");
-			break;
+		IPAERR("Got GSI_CHAN_HWO_1_ERR\n");
+		break;
 	default:
 		IPAERR("Unexpected err evt: %d\n", notify->evt_id);
 	}
@@ -57,7 +57,7 @@ static void ipa3_qdss_gsi_chan_err_cb(struct gsi_chan_err_notify *notify)
 }
 
 int ipa_qdss_conn_pipes(struct ipa_qdss_conn_in_params *in,
-	struct ipa_qdss_conn_out_params *out)
+			struct ipa_qdss_conn_out_params *out)
 {
 	struct gsi_chan_props gsi_channel_props;
 	struct ipa3_ep_context *ep_rx;
@@ -81,10 +81,9 @@ int ipa_qdss_conn_pipes(struct ipa_qdss_conn_in_params *in,
 	}
 
 	ipa_ep_idx_rx = ipa_get_ep_mapping(IPA_CLIENT_QDSS_PROD);
-	if ((ipa_ep_idx_rx == -1) ||
-		(ipa_ep_idx_rx >= IPA3_MAX_NUM_PIPES)) {
+	if ((ipa_ep_idx_rx == -1) || (ipa_ep_idx_rx >= IPA3_MAX_NUM_PIPES)) {
 		IPA_QDSS_ERR("out of range ipa_ep_idx_rx = %d\n",
-			ipa_ep_idx_rx);
+			     ipa_ep_idx_rx);
 		return -IPA_QDSS_PIPE_CONN_FAILURE;
 	}
 
@@ -114,7 +113,7 @@ int ipa_qdss_conn_pipes(struct ipa_qdss_conn_in_params *in,
 	gsi_ep_info = ipa_get_gsi_ep_info(ep_rx->client);
 	if (!gsi_ep_info) {
 		IPA_QDSS_ERR("Failed getting GSI EP info for client=%d\n",
-			ep_rx->client);
+			     ep_rx->client);
 		goto fail;
 	}
 
@@ -123,21 +122,20 @@ int ipa_qdss_conn_pipes(struct ipa_qdss_conn_in_params *in,
 	gsi_channel_props.use_db_eng = GSI_CHAN_DB_MODE;
 	gsi_channel_props.err_cb = ipa3_qdss_gsi_chan_err_cb;
 	gsi_channel_props.ring_len = in->desc_fifo_size;
-	gsi_channel_props.ring_base_addr =
-			in->desc_fifo_base_addr;
+	gsi_channel_props.ring_base_addr = in->desc_fifo_base_addr;
 	gsi_channel_props.db_in_bytes = 1;
 	gsi_channel_props.low_latency_en = 0;
 	result = gsi_alloc_channel(&gsi_channel_props, ipa3_ctx->gsi_dev_hdl,
-				&ep_rx->gsi_chan_hdl);
+				   &ep_rx->gsi_chan_hdl);
 	if (result != GSI_STATUS_SUCCESS) {
 		IPA_QDSS_ERR("Failed allocating gsi_chan_hdl=%d\n",
-				&ep_rx->gsi_chan_hdl);
+			     &ep_rx->gsi_chan_hdl);
 		goto fail;
 	}
 
 	ep_rx->gsi_mem_info.chan_ring_len = gsi_channel_props.ring_len;
 	ep_rx->gsi_mem_info.chan_ring_base_addr =
-				gsi_channel_props.ring_base_addr;
+		gsi_channel_props.ring_base_addr;
 
 	/* write channel scratch, do we need this? */
 	memset(&ch_scratch, 0, sizeof(ch_scratch));
@@ -146,16 +144,15 @@ int ipa_qdss_conn_pipes(struct ipa_qdss_conn_in_params *in,
 	ch_scratch.qdss.data_fifo_size = in->data_fifo_size;
 	ch_scratch.qdss.bam_p_evt_threshold = in->bam_p_evt_threshold;
 	ch_scratch.qdss.override_eot = in->override_eot;
-	result = gsi_write_channel_scratch(
-				ep_rx->gsi_chan_hdl, ch_scratch);
+	result = gsi_write_channel_scratch(ep_rx->gsi_chan_hdl, ch_scratch);
 	if (result != GSI_STATUS_SUCCESS) {
 		IPA_QDSS_ERR("failed to write channel scratch\n");
 		goto fail_write_scratch;
 	}
 
 	/* query channel db address */
-	if (gsi_query_channel_db_addr(ep_rx->gsi_chan_hdl,
-		&gsi_db_addr_low, &gsi_db_addr_high)) {
+	if (gsi_query_channel_db_addr(ep_rx->gsi_chan_hdl, &gsi_db_addr_low,
+				      &gsi_db_addr_high)) {
 		IPA_QDSS_ERR("failed to query gsi rx db addr\n");
 		goto fail_write_scratch;
 	}
@@ -169,16 +166,15 @@ int ipa_qdss_conn_pipes(struct ipa_qdss_conn_in_params *in,
 	result = ipa3_force_cfg_ep_holb(ipa_ep_idx_tx, &holb_cfg);
 	if (result)
 		IPA_QDSS_ERR("Configuring HOLB failed client_type =%d\n",
-			IPA_CLIENT_MHI_QDSS_CONS);
+			     IPA_CLIENT_MHI_QDSS_CONS);
 
 	/* Set DMA */
 	IPA_QDSS_DBG("DMA from %d to %d", IPA_CLIENT_QDSS_PROD,
-		IPA_CLIENT_MHI_QDSS_CONS);
+		     IPA_CLIENT_MHI_QDSS_CONS);
 	ep_cfg.mode.mode = IPA_DMA;
 	ep_cfg.mode.dst = IPA_CLIENT_MHI_QDSS_CONS;
 	ep_cfg.seq.set_dynamic = true;
-	if (ipa3_cfg_ep(ipa_get_ep_mapping(IPA_CLIENT_QDSS_PROD),
-		&ep_cfg)) {
+	if (ipa3_cfg_ep(ipa_get_ep_mapping(IPA_CLIENT_QDSS_PROD), &ep_cfg)) {
 		IPA_QDSS_ERR("Setting DMA mode failed\n");
 		goto fail_write_scratch;
 	}
@@ -236,13 +232,12 @@ int ipa_qdss_disconn_pipes(void)
 	}
 
 	/* Reset DMA */
-	IPA_QDSS_ERR("Resetting DMA %d to %d",
-		IPA_CLIENT_QDSS_PROD, IPA_CLIENT_MHI_QDSS_CONS);
+	IPA_QDSS_ERR("Resetting DMA %d to %d", IPA_CLIENT_QDSS_PROD,
+		     IPA_CLIENT_MHI_QDSS_CONS);
 	ep_cfg.mode.mode = IPA_BASIC;
 	ep_cfg.mode.dst = IPA_CLIENT_MHI_QDSS_CONS;
 	ep_cfg.seq.set_dynamic = true;
-	if (ipa3_cfg_ep(ipa_get_ep_mapping(IPA_CLIENT_QDSS_PROD),
-		&ep_cfg)) {
+	if (ipa3_cfg_ep(ipa_get_ep_mapping(IPA_CLIENT_QDSS_PROD), &ep_cfg)) {
 		IPAERR("Resetting DMA mode failed\n");
 	}
 

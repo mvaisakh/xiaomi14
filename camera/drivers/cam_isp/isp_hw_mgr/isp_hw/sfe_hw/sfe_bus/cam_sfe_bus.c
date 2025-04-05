@@ -5,18 +5,14 @@
  */
 
 #include "cam_sfe_bus.h"
+#include "cam_debug_util.h"
 #include "cam_sfe_bus_rd.h"
 #include "cam_sfe_bus_wr.h"
-#include "cam_debug_util.h"
 
-int cam_sfe_bus_init(
-	uint32_t                       bus_version,
-	int                            bus_type,
-	struct cam_hw_soc_info        *soc_info,
-	struct cam_hw_intf            *hw_intf,
-	void                          *bus_hw_info,
-	void                          *sfe_irq_controller,
-	struct cam_sfe_bus           **sfe_bus)
+int cam_sfe_bus_init(uint32_t bus_version, int bus_type,
+		     struct cam_hw_soc_info *soc_info,
+		     struct cam_hw_intf *hw_intf, void *bus_hw_info,
+		     void *sfe_irq_controller, struct cam_sfe_bus **sfe_bus)
 {
 	int rc = -ENODEV;
 
@@ -24,8 +20,8 @@ int cam_sfe_bus_init(
 	case BUS_TYPE_SFE_WR:
 		switch (bus_version) {
 		case CAM_SFE_BUS_WR_VER_1_0:
-			rc = cam_sfe_bus_wr_init(soc_info, hw_intf,
-				bus_hw_info, sfe_irq_controller, sfe_bus);
+			rc = cam_sfe_bus_wr_init(soc_info, hw_intf, bus_hw_info,
+						 sfe_irq_controller, sfe_bus);
 			break;
 		default:
 			CAM_ERR(CAM_SFE, "Unsupported Bus WR Version 0x%x",
@@ -36,8 +32,8 @@ int cam_sfe_bus_init(
 	case BUS_TYPE_SFE_RD:
 		switch (bus_version) {
 		case CAM_SFE_BUS_RD_VER_1_0:
-			rc = cam_sfe_bus_rd_init(soc_info, hw_intf,
-				bus_hw_info, sfe_irq_controller, sfe_bus);
+			rc = cam_sfe_bus_rd_init(soc_info, hw_intf, bus_hw_info,
+						 sfe_irq_controller, sfe_bus);
 			break;
 		default:
 			CAM_ERR(CAM_SFE, "Unsupported Bus RD Version 0x%x",
@@ -53,10 +49,8 @@ int cam_sfe_bus_init(
 	return rc;
 }
 
-int cam_sfe_bus_deinit(
-	uint32_t              bus_version,
-	int                   bus_type,
-	struct cam_sfe_bus  **sfe_bus)
+int cam_sfe_bus_deinit(uint32_t bus_version, int bus_type,
+		       struct cam_sfe_bus **sfe_bus)
 {
 	int rc = -ENODEV;
 
@@ -91,20 +85,17 @@ int cam_sfe_bus_deinit(
 	return rc;
 }
 
-static inline int __cam_sfe_bus_validate_alloc_type(
-	uint32_t alloc_type) {
-
+static inline int __cam_sfe_bus_validate_alloc_type(uint32_t alloc_type)
+{
 	if ((alloc_type >= CACHE_ALLOC_NONE) &&
-		(alloc_type <= CACHE_ALLOC_TBH_ALLOC))
+	    (alloc_type <= CACHE_ALLOC_TBH_ALLOC))
 		return 1;
 	else
 		return 0;
 }
 
-void cam_sfe_bus_parse_cache_cfg(
-	bool is_read,
-	uint32_t debug_val,
-	struct cam_sfe_bus_cache_dbg_cfg *dbg_cfg)
+void cam_sfe_bus_parse_cache_cfg(bool is_read, uint32_t debug_val,
+				 struct cam_sfe_bus_cache_dbg_cfg *dbg_cfg)
 {
 	uint32_t scratch_alloc_shift = 0, buf_alloc_shift = 0;
 	uint32_t scratch_cfg, buf_cfg, alloc_type;
@@ -124,14 +115,14 @@ void cam_sfe_bus_parse_cache_cfg(
 
 	scratch_cfg = (debug_val >> CACHE_SCRATCH_DEBUG_SHIFT) & 0xF;
 	buf_cfg = (debug_val >> CACHE_BUF_DEBUG_SHIFT) & 0xF;
-	dbg_cfg->print_cache_cfg = (bool)(debug_val >> CACHE_BUF_PRINT_DBG_SHIFT);
+	dbg_cfg->print_cache_cfg =
+		(bool)(debug_val >> CACHE_BUF_PRINT_DBG_SHIFT);
 
 	/* Check for scratch cfg */
 	if (scratch_cfg == 0xF) {
 		dbg_cfg->disable_for_scratch = true;
 	} else if (scratch_cfg == 1) {
-		alloc_type =
-			(debug_val >> scratch_alloc_shift) & 0xF;
+		alloc_type = (debug_val >> scratch_alloc_shift) & 0xF;
 		if (__cam_sfe_bus_validate_alloc_type(alloc_type)) {
 			dbg_cfg->scratch_alloc = alloc_type;
 			dbg_cfg->scratch_dbg_cfg = true;
@@ -147,8 +138,7 @@ void cam_sfe_bus_parse_cache_cfg(
 	if (buf_cfg == 0xF) {
 		dbg_cfg->disable_for_buf = true;
 	} else if (buf_cfg == 1) {
-		alloc_type =
-			(debug_val >> buf_alloc_shift) & 0xF;
+		alloc_type = (debug_val >> buf_alloc_shift) & 0xF;
 		if (__cam_sfe_bus_validate_alloc_type(alloc_type)) {
 			dbg_cfg->buf_alloc = alloc_type;
 			dbg_cfg->buf_dbg_cfg = true;

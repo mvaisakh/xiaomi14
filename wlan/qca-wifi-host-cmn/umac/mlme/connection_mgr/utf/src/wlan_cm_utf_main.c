@@ -20,31 +20,22 @@
  */
 
 #ifdef FEATURE_CM_UTF_ENABLE
-#include <wlan_cm_utf.h>
-#include <wlan_cm_api.h>
-#include <qdf_str.h>
-#include <wlan_cm_ucfg_api.h>
 #include <include/wlan_mlme_cmn.h>
+#include <qdf_str.h>
+#include <wlan_cm_api.h>
+#include <wlan_cm_ucfg_api.h>
+#include <wlan_cm_utf.h>
 
 #define CM_UTF_LIST_SIZE 1
 
 qdf_list_t wlan_cm_utf_list;
 
 static const char *cm_utf_test_names[] = {
-	"CONNECT_SUCCESS",
-	"DISCONNECT_SUCCESS",
-	"PEER_CREATE_FAILURE",
-	"PEER_CREATE_TIMEOUT",
-	"PEER_DELETE_TIMEOUT",
-	"AUTH_FAILURE",
-	"AUTH_TIMEOUT",
-	"ASSOC_FAILURE",
-	"ASSOC_TIMEOUT",
-	"CONNECT_SCAN_FAILURE",
-	"CONNECT_SER_TIMEOUT",
-	"DISCONNECT_SER_TIMEOUT",
-	"CONNECT_SER_FAILED",
-	"DISCONNECT_SER_FAIL",
+	"CONNECT_SUCCESS",	"DISCONNECT_SUCCESS",  "PEER_CREATE_FAILURE",
+	"PEER_CREATE_TIMEOUT",	"PEER_DELETE_TIMEOUT", "AUTH_FAILURE",
+	"AUTH_TIMEOUT",		"ASSOC_FAILURE",       "ASSOC_TIMEOUT",
+	"CONNECT_SCAN_FAILURE", "CONNECT_SER_TIMEOUT", "DISCONNECT_SER_TIMEOUT",
+	"CONNECT_SER_FAILED",	"DISCONNECT_SER_FAIL",
 };
 
 /* Structure to maintain debug information */
@@ -53,8 +44,8 @@ struct cm_utf_debugfs_info {
 	const struct file_operations *ops;
 };
 
-#define DEBUG_FOO(func_base) { .name = #func_base,                      \
-	.ops = &wlan_cm_utf_##func_base##_ops }
+#define DEBUG_FOO(func_base) \
+	{ .name = #func_base, .ops = &wlan_cm_utf_##func_base##_ops }
 
 /*
  * wlan_cm_utf_##func_base##_open() - Open debugfs entry for respective command
@@ -66,18 +57,18 @@ struct cm_utf_debugfs_info {
  */
 #define GENERATE_DEBUG_STRUCTS(func_base)                                     \
 	static int wlan_cm_utf_##func_base##_open(struct inode *inode,        \
-			struct file *file)                                    \
+						  struct file *file)          \
 	{                                                                     \
 		return single_open(file, wlan_cm_utf_##func_base##_show,      \
 				   inode->i_private);                         \
 	}                                                                     \
-									      \
+                                                                              \
 	static const struct file_operations wlan_cm_utf_##func_base##_ops = { \
-		.open           = wlan_cm_utf_##func_base##_open,             \
-		.read           = seq_read,                                   \
-		.llseek         = seq_lseek,                                  \
-		.write          = wlan_cm_utf_##func_base##_write,            \
-		.release        = single_release,                             \
+		.open = wlan_cm_utf_##func_base##_open,                       \
+		.read = seq_read,                                             \
+		.llseek = seq_lseek,                                          \
+		.write = wlan_cm_utf_##func_base##_write,                     \
+		.release = single_release,                                    \
 	};
 
 GENERATE_DEBUG_STRUCTS(scan_db_update);
@@ -116,22 +107,22 @@ static QDF_STATUS wlan_cm_utf_debugfs_create(struct wlan_cm_utf *cm_utf)
 	pdev_id = wlan_objmgr_pdev_get_pdev_id(pdev);
 	vdev_id = wlan_vdev_get_id(vdev);
 
-	snprintf(name, sizeof(name), "CM_UTF_PDEV%u_VDEV%u_SCAN",
-		 pdev_id, vdev_id);
-	cm_utf->debugfs_de[0] = debugfs_create_file(
-				name, 0644, qdf_debugfs_get_root(),
-				cm_utf, cm_utf_debugfs_infos[0].ops);
+	snprintf(name, sizeof(name), "CM_UTF_PDEV%u_VDEV%u_SCAN", pdev_id,
+		 vdev_id);
+	cm_utf->debugfs_de[0] =
+		debugfs_create_file(name, 0644, qdf_debugfs_get_root(), cm_utf,
+				    cm_utf_debugfs_infos[0].ops);
 
 	if (!cm_utf->debugfs_de[0]) {
 		mlme_err("Failed to create debugfs entry");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	snprintf(name, sizeof(name), "CM_UTF_PDEV%u_VDEV%u_UTF",
-		 pdev_id, vdev_id);
-	cm_utf->debugfs_de[1] = debugfs_create_file(
-				name, 0644, qdf_debugfs_get_root(),
-				cm_utf, cm_utf_debugfs_infos[1].ops);
+	snprintf(name, sizeof(name), "CM_UTF_PDEV%u_VDEV%u_UTF", pdev_id,
+		 vdev_id);
+	cm_utf->debugfs_de[1] =
+		debugfs_create_file(name, 0644, qdf_debugfs_get_root(), cm_utf,
+				    cm_utf_debugfs_infos[1].ops);
 
 	if (!cm_utf->debugfs_de[1]) {
 		mlme_err("Failed to create debugfs entry");
@@ -223,9 +214,9 @@ static void wlan_cm_utf_connect_rsp(struct wlan_cm_utf *cm_utf)
 	cm_conn_rsp->status_code = 0;
 	cm_conn_rsp->freq = conn_req.bss->entry->channel.chan_freq;
 	cm_conn_rsp->connect_ies.bcn_probe_rsp.ptr =
-				conn_req.bss->entry->raw_frame.ptr;
+		conn_req.bss->entry->raw_frame.ptr;
 	cm_conn_rsp->connect_ies.bcn_probe_rsp.len =
-				conn_req.bss->entry->raw_frame.len;
+		conn_req.bss->entry->raw_frame.len;
 	cm_conn_rsp->bssid = conn_req.bss->entry->bssid;
 	cm_conn_rsp->ssid = conn_req.bss->entry->ssid;
 
@@ -313,8 +304,7 @@ static void wlan_cm_utf_deliver_event(void *arg)
  *
  * Return: None
  */
-static QDF_STATUS
-wlan_cm_utf_default_connect_param(struct wlan_cm_utf *cm_utf)
+static QDF_STATUS wlan_cm_utf_default_connect_param(struct wlan_cm_utf *cm_utf)
 {
 	cm_utf->req.vdev_id = wlan_vdev_get_id(cm_utf->vdev);
 	cm_utf->req.source = CM_OSIF_CONNECT;
@@ -375,8 +365,8 @@ QDF_STATUS wlan_cm_utf_attach(struct wlan_objmgr_vdev *vdev)
 	if (!qdf_list_size(&wlan_cm_utf_list))
 		qdf_list_create(&wlan_cm_utf_list, CM_UTF_LIST_SIZE);
 
-	cm_utf = (struct wlan_cm_utf *)
-			qdf_mem_malloc(sizeof(struct wlan_cm_utf));
+	cm_utf = (struct wlan_cm_utf *)qdf_mem_malloc(
+		sizeof(struct wlan_cm_utf));
 
 	if (!cm_utf) {
 		mlme_err("Failed to allocate CM utf context");
@@ -394,16 +384,14 @@ QDF_STATUS wlan_cm_utf_attach(struct wlan_objmgr_vdev *vdev)
 		return status;
 	}
 
-	qdf_timer_init(NULL, &cm_utf->cm_utf_timer,
-		       wlan_cm_utf_deliver_event, (void *)cm_utf,
-		       QDF_TIMER_TYPE_WAKE_APPS);
+	qdf_timer_init(NULL, &cm_utf->cm_utf_timer, wlan_cm_utf_deliver_event,
+		       (void *)cm_utf, QDF_TIMER_TYPE_WAKE_APPS);
 
-	qdf_timer_init(NULL, &cm_utf->cm_utf_test_timer,
-		       wlan_cm_utf_stop_test, (void *)cm_utf,
-		       QDF_TIMER_TYPE_WAKE_APPS);
+	qdf_timer_init(NULL, &cm_utf->cm_utf_test_timer, wlan_cm_utf_stop_test,
+		       (void *)cm_utf, QDF_TIMER_TYPE_WAKE_APPS);
 
-	qdf_create_work(NULL, &cm_utf->cm_utf_work,
-			wlan_cm_utf_work_cb, cm_utf);
+	qdf_create_work(NULL, &cm_utf->cm_utf_work, wlan_cm_utf_work_cb,
+			cm_utf);
 
 	qdf_list_insert_back(&wlan_cm_utf_list, &cm_utf->cm_utf_node);
 	mlme_err("CM UTF attach Success");
@@ -421,20 +409,20 @@ static struct wlan_cm_utf *wlan_cm_get_utf(struct wlan_objmgr_vdev *vdev)
 		return NULL;
 	}
 
-	if (qdf_list_peek_front(&wlan_cm_utf_list, &next_node)
-					!= QDF_STATUS_SUCCESS) {
+	if (qdf_list_peek_front(&wlan_cm_utf_list, &next_node) !=
+	    QDF_STATUS_SUCCESS) {
 		mlme_err("UTF list is empty");
 		return NULL;
 	}
 
 	do {
 		node = next_node;
-		cm_utf = qdf_container_of(node, struct wlan_cm_utf,
-					  cm_utf_node);
+		cm_utf =
+			qdf_container_of(node, struct wlan_cm_utf, cm_utf_node);
 		if (cm_utf->vdev == vdev)
 			return cm_utf;
-	} while (qdf_list_peek_next(&wlan_cm_utf_list, node, &next_node)
-			== QDF_STATUS_SUCCESS);
+	} while (qdf_list_peek_next(&wlan_cm_utf_list, node, &next_node) ==
+		 QDF_STATUS_SUCCESS);
 
 	return NULL;
 }
@@ -451,8 +439,7 @@ void wlan_cm_utf_detach(struct wlan_objmgr_vdev *vdev)
 		return;
 	}
 
-	status = qdf_list_remove_node(&wlan_cm_utf_list,
-				      &cm_utf->cm_utf_node);
+	status = qdf_list_remove_node(&wlan_cm_utf_list, &cm_utf->cm_utf_node);
 	if (QDF_IS_STATUS_SUCCESS(status)) {
 		qdf_timer_free(&cm_utf->cm_utf_timer);
 		qdf_timer_free(&cm_utf->cm_utf_test_timer);
@@ -501,15 +488,15 @@ QDF_STATUS wlan_cm_utf_bss_peer_create_req(struct wlan_objmgr_vdev *vdev,
 }
 
 QDF_STATUS wlan_cm_utf_connect_req_active(
-			struct wlan_objmgr_vdev *vdev,
-			struct wlan_cm_vdev_connect_req *vdev_connect_req)
+	struct wlan_objmgr_vdev *vdev,
+	struct wlan_cm_vdev_connect_req *vdev_connect_req)
 {
-	//Resp API to be added
+	// Resp API to be added
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS wlan_cm_utf_connect_req(
-			struct wlan_objmgr_vdev *vdev,
+QDF_STATUS
+wlan_cm_utf_connect_req(struct wlan_objmgr_vdev *vdev,
 			struct wlan_cm_vdev_connect_req *vdev_connect_req)
 {
 	struct wlan_cm_utf *cm_utf;
@@ -533,9 +520,9 @@ QDF_STATUS wlan_cm_utf_connect_req(
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS wlan_cm_utf_disconnect_req(
-		struct wlan_objmgr_vdev *vdev,
-		struct wlan_cm_vdev_discon_req *vdev_disconnect_req)
+QDF_STATUS
+wlan_cm_utf_disconnect_req(struct wlan_objmgr_vdev *vdev,
+			   struct wlan_cm_vdev_discon_req *vdev_disconnect_req)
 {
 	struct wlan_cm_utf *cm_utf;
 
@@ -598,9 +585,9 @@ QDF_STATUS wlan_cm_utf_vdev_down(struct wlan_objmgr_vdev *vdev)
 	return QDF_STATUS_SUCCESS;
 }
 
-static
-QDF_STATUS wlan_cm_utf_validate_test(struct wlan_cm_utf *cm_utf,
-				     struct wlan_cm_connect_resp *cm_conn_rsp)
+static QDF_STATUS
+wlan_cm_utf_validate_test(struct wlan_cm_utf *cm_utf,
+			  struct wlan_cm_connect_resp *cm_conn_rsp)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 
@@ -695,9 +682,9 @@ wlan_cm_utf_osif_connect_cb(struct wlan_objmgr_vdev *vdev,
  *
  * Return: None
  */
-static QDF_STATUS wlan_cm_utf_osif_disconnect_cb(
-		struct wlan_objmgr_vdev *vdev,
-		struct wlan_cm_discon_rsp *cm_disconn_rsp)
+static QDF_STATUS
+wlan_cm_utf_osif_disconnect_cb(struct wlan_objmgr_vdev *vdev,
+			       struct wlan_cm_discon_rsp *cm_disconn_rsp)
 {
 	struct wlan_cm_utf *cm_utf;
 
@@ -730,9 +717,10 @@ static QDF_STATUS wlan_cm_utf_osif_disconnect_cb(
  *
  * Return: None
  */
-static QDF_STATUS wlan_cm_utf_update_conn_id_and_src_cb(
-		struct wlan_objmgr_vdev *vdev,
-		enum wlan_cm_source source, wlan_cm_id cm_id)
+static QDF_STATUS
+wlan_cm_utf_update_conn_id_and_src_cb(struct wlan_objmgr_vdev *vdev,
+				      enum wlan_cm_source source,
+				      wlan_cm_id cm_id)
 {
 	struct wlan_cm_utf *cm_utf;
 
@@ -751,8 +739,7 @@ static QDF_STATUS wlan_cm_utf_update_conn_id_and_src_cb(
 static struct mlme_cm_ops cm_ops = {
 	.mlme_cm_connect_complete_cb = wlan_cm_utf_osif_connect_cb,
 	.mlme_cm_failed_candidate_cb = NULL,
-	.mlme_cm_update_id_and_src_cb =
-			wlan_cm_utf_update_conn_id_and_src_cb,
+	.mlme_cm_update_id_and_src_cb = wlan_cm_utf_update_conn_id_and_src_cb,
 	.mlme_cm_disconnect_complete_cb = wlan_cm_utf_osif_disconnect_cb,
 	.mlme_cm_disconnect_start_cb = NULL,
 };
@@ -776,8 +763,8 @@ QDF_STATUS osif_cm_utf_register_cb(void)
  * Return: None
  *
  */
-static void
-wlan_cm_utf_update_connect_param(struct wlan_cm_utf *cm_utf, char *buffer)
+static void wlan_cm_utf_update_connect_param(struct wlan_cm_utf *cm_utf,
+					     char *buffer)
 {
 	char *token;
 	uint8_t idx = 0;
@@ -800,7 +787,8 @@ wlan_cm_utf_update_connect_param(struct wlan_cm_utf *cm_utf, char *buffer)
 	}
 
 	qdf_mem_zero(cm_utf->req.ssid.ssid, WLAN_SSID_MAX_LEN);
-	if (sscanf(token, "%2x:%2x:%2x:%2x:%2x:%2x ,%2x:%2x:%2x:%2x:%2x:%2x "
+	if (sscanf(token,
+		   "%2x:%2x:%2x:%2x:%2x:%2x ,%2x:%2x:%2x:%2x:%2x:%2x "
 		   ",%2x:%2x:%2x:%2x:%2x:%2x ,%u ,%u ,%u ,%u ,%u ,%u ,%u ,%u "
 		   ",%u ,%u ,%u ,%u ,%u ,%s",
 		   (unsigned int *)&cm_utf->req.bssid.bytes[0],
@@ -821,8 +809,7 @@ wlan_cm_utf_update_connect_param(struct wlan_cm_utf *cm_utf, char *buffer)
 		   (unsigned int *)&cm_utf->req.bssid_hint.bytes[3],
 		   (unsigned int *)&cm_utf->req.bssid_hint.bytes[4],
 		   (unsigned int *)&cm_utf->req.bssid_hint.bytes[5],
-		   &cm_utf->req.chan_freq,
-		   &cm_utf->req.crypto.wpa_versions,
+		   &cm_utf->req.chan_freq, &cm_utf->req.crypto.wpa_versions,
 		   &cm_utf->req.crypto.auth_type,
 		   &cm_utf->req.crypto.group_cipher,
 		   &cm_utf->req.crypto.ciphers_pairwise,
@@ -831,8 +818,7 @@ wlan_cm_utf_update_connect_param(struct wlan_cm_utf *cm_utf, char *buffer)
 		   &cm_utf->req.crypto.mgmt_ciphers,
 		   (unsigned int *)&cm_utf->req.ht_caps,
 		   (unsigned int *)&cm_utf->req.ht_caps_mask,
-		   &cm_utf->req.vht_caps,
-		   &cm_utf->req.vht_caps_mask,
+		   &cm_utf->req.vht_caps, &cm_utf->req.vht_caps_mask,
 		   (unsigned int *)&cm_utf->req.ssid.length,
 		   cm_utf->req.ssid.ssid) != 32) {
 		mlme_err("Invalid connect req params");
@@ -852,8 +838,8 @@ wlan_cm_utf_update_connect_param(struct wlan_cm_utf *cm_utf, char *buffer)
 			idx++;
 			break;
 		case 1:
-			cm_utf->req.assoc_ie.ptr =
-				(uint8_t *)qdf_mem_malloc(cm_utf->req.assoc_ie.len);
+			cm_utf->req.assoc_ie.ptr = (uint8_t *)qdf_mem_malloc(
+				cm_utf->req.assoc_ie.len);
 			if (!cm_utf->req.assoc_ie.ptr) {
 				mlme_err("Failed to alloc memory");
 				return;
@@ -864,7 +850,8 @@ wlan_cm_utf_update_connect_param(struct wlan_cm_utf *cm_utf, char *buffer)
 			break;
 		case 2:
 			if (sscanf(token, "%u",
-				   (unsigned int *)&cm_utf->req.crypto.wep_keys.key_len) != 1)
+				   (unsigned int *)&cm_utf->req.crypto.wep_keys
+					   .key_len) != 1)
 				return;
 			if (!cm_utf->req.crypto.wep_keys.key_len)
 				return;
@@ -872,7 +859,8 @@ wlan_cm_utf_update_connect_param(struct wlan_cm_utf *cm_utf, char *buffer)
 			break;
 		case 3:
 			cm_utf->req.crypto.wep_keys.key =
-				(uint8_t *)qdf_mem_malloc(cm_utf->req.crypto.wep_keys.key_len);
+				(uint8_t *)qdf_mem_malloc(
+					cm_utf->req.crypto.wep_keys.key_len);
 			if (!cm_utf->req.crypto.wep_keys.key) {
 				mlme_err("Failed to alloc memory");
 				return;
@@ -1004,12 +992,11 @@ int wlan_cm_utf_cm_test_id_show(qdf_debugfs_file_t m, void *v)
 	return 0;
 }
 
-ssize_t wlan_cm_utf_cm_test_id_write(struct file *file,
-				     const char __user *buf,
+ssize_t wlan_cm_utf_cm_test_id_write(struct file *file, const char __user *buf,
 				     size_t count, loff_t *ppos)
 {
 	struct wlan_cm_utf *cm_utf =
-			((struct seq_file *)file->private_data)->private;
+		((struct seq_file *)file->private_data)->private;
 	char *locbuf;
 
 	if ((!buf) || (count <= 0))

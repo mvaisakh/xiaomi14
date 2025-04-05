@@ -5,19 +5,19 @@
  */
 
 #include "cam_ois_dev.h"
-#include "cam_req_mgr_dev.h"
-#include "cam_ois_soc.h"
-#include "cam_ois_core.h"
-#include "cam_debug_util.h"
-#include "camera_main.h"
 #include "cam_compat.h"
+#include "cam_debug_util.h"
+#include "cam_ois_core.h"
+#include "cam_ois_soc.h"
+#include "cam_req_mgr_dev.h"
+#include "camera_main.h"
 /* xiaomi add for cci debug start */
 #include "cam_cci_debug_util.h"
 /* xiaomi add for cci debug end */
 
 static struct cam_i3c_ois_data {
-	struct cam_ois_ctrl_t                       *o_ctrl;
-	struct completion                            probe_complete;
+	struct cam_ois_ctrl_t *o_ctrl;
+	struct completion probe_complete;
 } g_i3c_ois_data[MAX_CAMERAS];
 
 struct completion *cam_ois_get_i3c_completion(uint32_t index)
@@ -26,14 +26,13 @@ struct completion *cam_ois_get_i3c_completion(uint32_t index)
 }
 
 static int cam_ois_subdev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+					 struct v4l2_subdev_fh *fh)
 {
-	struct cam_ois_ctrl_t *o_ctrl =
-		v4l2_get_subdevdata(sd);
+	struct cam_ois_ctrl_t *o_ctrl = v4l2_get_subdevdata(sd);
 
 	if (!o_ctrl) {
 		CAM_ERR(CAM_OIS, "o_ctrl ptr is NULL");
-			return -EINVAL;
+		return -EINVAL;
 	}
 
 	mutex_lock(&(o_ctrl->ois_mutex));
@@ -44,7 +43,7 @@ static int cam_ois_subdev_close_internal(struct v4l2_subdev *sd,
 }
 
 static int cam_ois_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -56,18 +55,17 @@ static int cam_ois_subdev_close(struct v4l2_subdev *sd,
 	return cam_ois_subdev_close_internal(sd, fh);
 }
 
-static long cam_ois_subdev_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, void *arg)
+static long cam_ois_subdev_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
+				 void *arg)
 {
-	int                       rc     = 0;
+	int rc = 0;
 	struct cam_ois_ctrl_t *o_ctrl = v4l2_get_subdevdata(sd);
 
 	switch (cmd) {
 	case VIDIOC_CAM_CONTROL:
 		rc = cam_ois_driver_cmd(o_ctrl, arg);
 		if (rc)
-			CAM_ERR(CAM_OIS,
-				"Failed with driver cmd: %d", rc);
+			CAM_ERR(CAM_OIS, "Failed with driver cmd: %d", rc);
 		break;
 	case CAM_SD_SHUTDOWN:
 		if (!cam_req_mgr_is_shutdown()) {
@@ -86,15 +84,14 @@ static long cam_ois_subdev_ioctl(struct v4l2_subdev *sd,
 }
 
 static int32_t cam_ois_update_i2c_info(struct cam_ois_ctrl_t *o_ctrl,
-	struct cam_ois_i2c_info_t *i2c_info)
+				       struct cam_ois_i2c_info_t *i2c_info)
 {
-	struct cam_sensor_cci_client        *cci_client = NULL;
+	struct cam_sensor_cci_client *cci_client = NULL;
 
 	if (o_ctrl->io_master_info.master_type == CCI_MASTER) {
 		cci_client = o_ctrl->io_master_info.cci_client;
 		if (!cci_client) {
-			CAM_ERR(CAM_OIS, "failed: cci_client %pK",
-				cci_client);
+			CAM_ERR(CAM_OIS, "failed: cci_client %pK", cci_client);
 			return -EINVAL;
 		}
 		cci_client->cci_i2c_master = o_ctrl->cci_i2c_master;
@@ -109,15 +106,13 @@ static int32_t cam_ois_update_i2c_info(struct cam_ois_ctrl_t *o_ctrl,
 
 #ifdef CONFIG_COMPAT
 static long cam_ois_init_subdev_do_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, unsigned long arg)
+					 unsigned int cmd, unsigned long arg)
 {
 	struct cam_control cmd_data;
 	int32_t rc = 0;
 
-	if (copy_from_user(&cmd_data, (void __user *)arg,
-		sizeof(cmd_data))) {
-		CAM_ERR(CAM_OIS,
-			"Failed to copy from user_ptr=%pK size=%zu",
+	if (copy_from_user(&cmd_data, (void __user *)arg, sizeof(cmd_data))) {
+		CAM_ERR(CAM_OIS, "Failed to copy from user_ptr=%pK size=%zu",
 			(void __user *)arg, sizeof(cmd_data));
 		return -EFAULT;
 	}
@@ -126,8 +121,7 @@ static long cam_ois_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 	case VIDIOC_CAM_CONTROL:
 		rc = cam_ois_subdev_ioctl(sd, cmd, &cmd_data);
 		if (rc) {
-			CAM_ERR(CAM_OIS,
-				"Failed in ois suddev handling rc %d",
+			CAM_ERR(CAM_OIS, "Failed in ois suddev handling rc %d",
 				rc);
 			return rc;
 		}
@@ -140,7 +134,7 @@ static long cam_ois_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 
 	if (!rc) {
 		if (copy_to_user((void __user *)arg, &cmd_data,
-			sizeof(cmd_data))) {
+				 sizeof(cmd_data))) {
 			CAM_ERR(CAM_OIS,
 				"Failed to copy from user_ptr=%pK size=%zu",
 				(void __user *)arg, sizeof(cmd_data));
@@ -172,14 +166,13 @@ static int cam_ois_init_subdev_param(struct cam_ois_ctrl_t *o_ctrl)
 
 	o_ctrl->v4l2_dev_str.internal_ops = &cam_ois_internal_ops;
 	o_ctrl->v4l2_dev_str.ops = &cam_ois_subdev_ops;
-	strlcpy(o_ctrl->device_name, CAM_OIS_NAME,
-		sizeof(o_ctrl->device_name));
+	strlcpy(o_ctrl->device_name, CAM_OIS_NAME, sizeof(o_ctrl->device_name));
 	o_ctrl->v4l2_dev_str.name = o_ctrl->device_name;
 	o_ctrl->v4l2_dev_str.sd_flags =
 		(V4L2_SUBDEV_FL_HAS_DEVNODE | V4L2_SUBDEV_FL_HAS_EVENTS);
 	o_ctrl->v4l2_dev_str.ent_function = CAM_OIS_DEVICE_TYPE;
 	o_ctrl->v4l2_dev_str.token = o_ctrl;
-	 o_ctrl->v4l2_dev_str.close_seq_prior = CAM_SD_CLOSE_MEDIUM_PRIORITY;
+	o_ctrl->v4l2_dev_str.close_seq_prior = CAM_SD_CLOSE_MEDIUM_PRIORITY;
 
 	rc = cam_register_subdev(&(o_ctrl->v4l2_dev_str));
 	if (rc)
@@ -189,17 +182,16 @@ static int cam_ois_init_subdev_param(struct cam_ois_ctrl_t *o_ctrl)
 }
 
 static int cam_ois_i2c_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				      struct device *master_dev, void *data)
 {
-	int                          rc = 0, i = 0; // xiaomi add
-	struct i2c_client           *client = NULL;
-	struct cam_ois_ctrl_t       *o_ctrl = NULL;
-	struct cam_ois_soc_private  *soc_private = NULL;
+	int rc = 0, i = 0; // xiaomi add
+	struct i2c_client *client = NULL;
+	struct cam_ois_ctrl_t *o_ctrl = NULL;
+	struct cam_ois_soc_private *soc_private = NULL;
 
 	client = container_of(dev, struct i2c_client, dev);
 	if (client == NULL) {
-		CAM_ERR(CAM_OIS, "Invalid Args client: %pK",
-			client);
+		CAM_ERR(CAM_OIS, "Invalid Args client: %pK", client);
 		return -EINVAL;
 	}
 
@@ -221,20 +213,19 @@ static int cam_ois_i2c_component_bind(struct device *dev,
 	// xiaomi add begin
 	INIT_LIST_HEAD(&(o_ctrl->i2c_parklens_data.list_head));
 	parklens_atomic_set(&(o_ctrl->parklens_ctrl.parklens_opcode),
-		ENTER_PARKLENS_WITH_POWERDOWN);
+			    ENTER_PARKLENS_WITH_POWERDOWN);
 	parklens_atomic_set(&(o_ctrl->parklens_ctrl.exit_result),
-		PARKLENS_ENTER);
+			    PARKLENS_ENTER);
 	parklens_atomic_set(&(o_ctrl->parklens_ctrl.parklens_state),
-		PARKLENS_INVALID);
+			    PARKLENS_INVALID);
 	o_ctrl->parklens_ctrl.parklens_thread = NULL;
 	o_ctrl->i2c_data.per_frame =
-		kzalloc(sizeof(struct i2c_settings_array) *
-		MAX_PER_FRAME_ARRAY, GFP_KERNEL);
+		kzalloc(sizeof(struct i2c_settings_array) * MAX_PER_FRAME_ARRAY,
+			GFP_KERNEL);
 
 	INIT_LIST_HEAD(&(o_ctrl->i2c_data.init_settings.list_head));
 
-	if (NULL == o_ctrl->i2c_data.per_frame)
-	{
+	if (NULL == o_ctrl->i2c_data.per_frame) {
 		rc = -ENOMEM;
 		goto octrl_free;
 	}
@@ -244,17 +235,13 @@ static int cam_ois_i2c_component_bind(struct device *dev,
 
 	o_ctrl->bridge_intf.device_hdl = -1;
 	o_ctrl->bridge_intf.link_hdl = -1;
-	o_ctrl->bridge_intf.ops.get_dev_info =
-		cam_ois_publish_dev_info;
-	o_ctrl->bridge_intf.ops.link_setup =
-		cam_ois_establish_link;
-	o_ctrl->bridge_intf.ops.apply_req =
-		cam_ois_apply_request;
+	o_ctrl->bridge_intf.ops.get_dev_info = cam_ois_publish_dev_info;
+	o_ctrl->bridge_intf.ops.link_setup = cam_ois_establish_link;
+	o_ctrl->bridge_intf.ops.apply_req = cam_ois_apply_request;
 	o_ctrl->last_flush_req = 0;
-	//xiaomi add end
+	// xiaomi add end
 
-	soc_private = kzalloc(sizeof(struct cam_ois_soc_private),
-		GFP_KERNEL);
+	soc_private = kzalloc(sizeof(struct cam_ois_soc_private), GFP_KERNEL);
 	if (!soc_private) {
 		rc = -ENOMEM;
 		goto octrl_free;
@@ -271,7 +258,7 @@ static int cam_ois_i2c_component_bind(struct device *dev,
 	if (rc)
 		goto soc_free;
 
-	cam_sensor_module_add_i2c_device((void *) o_ctrl, CAM_SENSOR_OIS);
+	cam_sensor_module_add_i2c_device((void *)o_ctrl, CAM_SENSOR_OIS);
 
 	mutex_init(&(o_ctrl->ois_mutex));
 	o_ctrl->cam_ois_state = CAM_OIS_INIT;
@@ -282,8 +269,7 @@ soc_free:
 	kfree(soc_private);
 octrl_free:
 	// xiaomi add begin
-	if (NULL != o_ctrl->i2c_data.per_frame)
-	{
+	if (NULL != o_ctrl->i2c_data.per_frame) {
 		kfree(o_ctrl->i2c_data.per_frame);
 		o_ctrl->i2c_data.per_frame = NULL;
 	}
@@ -294,17 +280,16 @@ probe_failure:
 }
 
 static void cam_ois_i2c_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					 struct device *master_dev, void *data)
 {
-	int                             i;
-	struct i2c_client              *client = NULL;
-	struct cam_ois_ctrl_t          *o_ctrl = NULL;
-	struct cam_hw_soc_info         *soc_info;
+	int i;
+	struct i2c_client *client = NULL;
+	struct cam_ois_ctrl_t *o_ctrl = NULL;
+	struct cam_hw_soc_info *soc_info;
 
 	client = container_of(dev, struct i2c_client, dev);
 	if (!client) {
-		CAM_ERR(CAM_OIS,
-			"Failed to get i2c client");
+		CAM_ERR(CAM_OIS, "Failed to get i2c client");
 		return;
 	}
 
@@ -332,8 +317,7 @@ static void cam_ois_i2c_component_unbind(struct device *dev,
 	cam_unregister_subdev(&(o_ctrl->v4l2_dev_str));
 
 	// xiaomi add begin
-	if (NULL != o_ctrl->i2c_data.per_frame)
-	{
+	if (NULL != o_ctrl->i2c_data.per_frame) {
 		kfree(o_ctrl->i2c_data.per_frame);
 		o_ctrl->i2c_data.per_frame = NULL;
 	}
@@ -350,13 +334,13 @@ const static struct component_ops cam_ois_i2c_component_ops = {
 };
 
 static int cam_ois_i2c_driver_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+				    const struct i2c_device_id *id)
 {
 	int rc = 0;
 
 	if (client == NULL || id == NULL) {
-		CAM_ERR(CAM_OIS, "Invalid Args client: %pK id: %pK",
-			client, id);
+		CAM_ERR(CAM_OIS, "Invalid Args client: %pK id: %pK", client,
+			id);
 		return -EINVAL;
 	}
 
@@ -388,16 +372,17 @@ static int cam_ois_i2c_driver_remove(struct i2c_client *client)
 }
 #endif
 
-static int cam_ois_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+static int cam_ois_component_bind(struct device *dev, struct device *master_dev,
+				  void *data)
 {
-	int32_t                         rc = 0, i = 0;
-	struct cam_ois_ctrl_t          *o_ctrl = NULL;
-	struct cam_ois_soc_private     *soc_private = NULL;
-	bool                            i3c_i2c_target;
+	int32_t rc = 0, i = 0;
+	struct cam_ois_ctrl_t *o_ctrl = NULL;
+	struct cam_ois_soc_private *soc_private = NULL;
+	bool i3c_i2c_target;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	i3c_i2c_target = of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
+	i3c_i2c_target =
+		of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
 	if (i3c_i2c_target)
 		return 0;
 
@@ -413,26 +398,25 @@ static int cam_ois_component_bind(struct device *dev,
 	o_ctrl->ois_device_type = MSM_CAMERA_PLATFORM_DEVICE;
 
 	o_ctrl->io_master_info.master_type = CCI_MASTER;
-	o_ctrl->io_master_info.cci_client = kzalloc(
-		sizeof(struct cam_sensor_cci_client), GFP_KERNEL);
+	o_ctrl->io_master_info.cci_client =
+		kzalloc(sizeof(struct cam_sensor_cci_client), GFP_KERNEL);
 	if (!o_ctrl->io_master_info.cci_client)
 		goto free_o_ctrl;
 
-	soc_private = kzalloc(sizeof(struct cam_ois_soc_private),
-		GFP_KERNEL);
+	soc_private = kzalloc(sizeof(struct cam_ois_soc_private), GFP_KERNEL);
 	if (!soc_private) {
 		rc = -ENOMEM;
 		goto free_cci_client;
 	}
 	o_ctrl->soc_info.soc_private = soc_private;
-	soc_private->power_info.dev  = &pdev->dev;
+	soc_private->power_info.dev = &pdev->dev;
 
 	memset(&o_ctrl->fw_info, 0, sizeof(struct cam_cmd_ois_fw_info));
 
 	// xiaomi add begin
 	o_ctrl->i2c_data.per_frame =
-		kzalloc(sizeof(struct i2c_settings_array) *
-		MAX_PER_FRAME_ARRAY, GFP_KERNEL);
+		kzalloc(sizeof(struct i2c_settings_array) * MAX_PER_FRAME_ARRAY,
+			GFP_KERNEL);
 	if (o_ctrl->i2c_data.per_frame == NULL) {
 		rc = -ENOMEM;
 		goto free_soc;
@@ -472,18 +456,14 @@ static int cam_ois_component_bind(struct device *dev,
 	o_ctrl->bridge_intf.device_hdl = -1;
 	// xiaomi add begin
 	o_ctrl->bridge_intf.link_hdl = -1;
-	o_ctrl->bridge_intf.ops.get_dev_info =
-		cam_ois_publish_dev_info;
-	o_ctrl->bridge_intf.ops.link_setup =
-		cam_ois_establish_link;
-	o_ctrl->bridge_intf.ops.apply_req =
-		cam_ois_apply_request;
-	o_ctrl->bridge_intf.ops.flush_req =
-		cam_ois_flush_request;
+	o_ctrl->bridge_intf.ops.get_dev_info = cam_ois_publish_dev_info;
+	o_ctrl->bridge_intf.ops.link_setup = cam_ois_establish_link;
+	o_ctrl->bridge_intf.ops.apply_req = cam_ois_apply_request;
+	o_ctrl->bridge_intf.ops.flush_req = cam_ois_flush_request;
 	o_ctrl->last_flush_req = 0;
 	// xiaomi add end
 
-	cam_sensor_module_add_i2c_device((void *) o_ctrl, CAM_SENSOR_OIS);
+	cam_sensor_module_add_i2c_device((void *)o_ctrl, CAM_SENSOR_OIS);
 
 	platform_set_drvdata(pdev, o_ctrl);
 	o_ctrl->cam_ois_state = CAM_OIS_INIT;
@@ -493,18 +473,18 @@ static int cam_ois_component_bind(struct device *dev,
 
 	INIT_LIST_HEAD(&(o_ctrl->i2c_parklens_data.list_head));
 	parklens_atomic_set(&(o_ctrl->parklens_ctrl.parklens_opcode),
-		ENTER_PARKLENS_WITH_POWERDOWN);
+			    ENTER_PARKLENS_WITH_POWERDOWN);
 	parklens_atomic_set(&(o_ctrl->parklens_ctrl.exit_result),
-		PARKLENS_ENTER);
+			    PARKLENS_ENTER);
 	parklens_atomic_set(&(o_ctrl->parklens_ctrl.parklens_state),
-		PARKLENS_INVALID);
+			    PARKLENS_INVALID);
 	o_ctrl->parklens_ctrl.parklens_thread = NULL;
 
 	CAM_DBG(CAM_OIS, "Component bound successfully");
 
 	/* xiaomi add for cci debug start */
-	rc = cam_cci_dev_create_debugfs_entry(o_ctrl->device_name,
-		o_ctrl->soc_info.index, CAM_OIS_NAME,
+	rc = cam_cci_dev_create_debugfs_entry(
+		o_ctrl->device_name, o_ctrl->soc_info.index, CAM_OIS_NAME,
 		&o_ctrl->io_master_info, o_ctrl->cci_i2c_master,
 		&o_ctrl->cci_debug);
 	if (rc) {
@@ -522,8 +502,7 @@ free_cci_client:
 	kfree(o_ctrl->io_master_info.cci_client);
 free_o_ctrl:
 	// xiaomi add begin
-	if (NULL != o_ctrl->i2c_data.per_frame)
-	{
+	if (NULL != o_ctrl->i2c_data.per_frame) {
 		kfree(o_ctrl->i2c_data.per_frame);
 		o_ctrl->i2c_data.per_frame = NULL;
 	}
@@ -533,15 +512,16 @@ free_o_ctrl:
 }
 
 static void cam_ois_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
-	int                             i;
-	struct cam_ois_ctrl_t          *o_ctrl;
-	struct cam_hw_soc_info         *soc_info;
-	bool                            i3c_i2c_target;
+	int i;
+	struct cam_ois_ctrl_t *o_ctrl;
+	struct cam_hw_soc_info *soc_info;
+	bool i3c_i2c_target;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	i3c_i2c_target = of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
+	i3c_i2c_target =
+		of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
 	if (i3c_i2c_target)
 		return;
 
@@ -568,8 +548,7 @@ static void cam_ois_component_unbind(struct device *dev,
 	cam_unregister_subdev(&(o_ctrl->v4l2_dev_str));
 	/* xiaomi add for cci debug start */
 	cam_cci_dev_remove_debugfs_entry((void *)o_ctrl->cci_debug);
-	if (NULL != o_ctrl->i2c_data.per_frame)
-	{
+	if (NULL != o_ctrl->i2c_data.per_frame) {
 		kfree(o_ctrl->i2c_data.per_frame);
 		o_ctrl->i2c_data.per_frame = NULL;
 	}
@@ -587,8 +566,7 @@ const static struct component_ops cam_ois_component_ops = {
 	.unbind = cam_ois_component_unbind,
 };
 
-static int32_t cam_ois_platform_driver_probe(
-	struct platform_device *pdev)
+static int32_t cam_ois_platform_driver_probe(struct platform_device *pdev)
 {
 	int rc = 0;
 
@@ -606,43 +584,43 @@ static int cam_ois_platform_driver_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id cam_ois_dt_match[] = {
-	{ .compatible = "qcom,ois" },
-	{ }
-};
+static const struct of_device_id cam_ois_dt_match[] = { { .compatible =
+								  "qcom,ois" },
+							{} };
 
 static const struct of_device_id cam_ois_i2c_dt_match[] = {
 	{ .compatible = "qcom,cam-i2c-ois" },
-	{ }
+	{}
 };
 
 MODULE_DEVICE_TABLE(of, cam_ois_dt_match);
 MODULE_DEVICE_TABLE(of, cam_ois_i2c_dt_match);
 
 struct platform_driver cam_ois_platform_driver = {
-	.driver = {
-		.name = "qcom,ois",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_ois_dt_match,
-	},
-	.probe = cam_ois_platform_driver_probe,
-	.remove = cam_ois_platform_driver_remove,
+    .driver =
+        {
+            .name = "qcom,ois",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_ois_dt_match,
+        },
+    .probe = cam_ois_platform_driver_probe,
+    .remove = cam_ois_platform_driver_remove,
 };
-static const struct i2c_device_id cam_ois_i2c_id[] = {
-	{ OIS_DRIVER_I2C, (kernel_ulong_t)NULL},
-	{ }
-};
+static const struct i2c_device_id cam_ois_i2c_id[] = { { OIS_DRIVER_I2C,
+							 (kernel_ulong_t)NULL },
+						       {} };
 
 struct i2c_driver cam_ois_i2c_driver = {
-	.id_table = cam_ois_i2c_id,
-	.probe  = cam_ois_i2c_driver_probe,
-	.remove = cam_ois_i2c_driver_remove,
-	.driver = {
-		.name = OIS_DRIVER_I2C,
-		.owner = THIS_MODULE,
-		.of_match_table = cam_ois_i2c_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .id_table = cam_ois_i2c_id,
+    .probe = cam_ois_i2c_driver_probe,
+    .remove = cam_ois_i2c_driver_remove,
+    .driver =
+        {
+            .name = OIS_DRIVER_I2C,
+            .owner = THIS_MODULE,
+            .of_match_table = cam_ois_i2c_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 static struct i3c_device_id ois_i3c_id[MAX_I3C_DEVICE_ID_ENTRIES + 1];
@@ -650,9 +628,9 @@ static struct i3c_device_id ois_i3c_id[MAX_I3C_DEVICE_ID_ENTRIES + 1];
 static int cam_ois_i3c_driver_probe(struct i3c_device *client)
 {
 	int32_t rc = 0;
-	struct cam_ois_ctrl_t            *o_ctrl = NULL;
-	uint32_t                          index;
-	struct device                    *dev;
+	struct cam_ois_ctrl_t *o_ctrl = NULL;
+	uint32_t index;
+	struct device *dev;
 
 	if (!client) {
 		CAM_INFO(CAM_OIS, "Null Client pointer");
@@ -665,18 +643,21 @@ static int cam_ois_i3c_driver_probe(struct i3c_device *client)
 
 	rc = of_property_read_u32(dev->of_node, "cell-index", &index);
 	if (rc) {
-		CAM_ERR(CAM_OIS, "device %s failed to read cell-index", dev_name(dev));
+		CAM_ERR(CAM_OIS, "device %s failed to read cell-index",
+			dev_name(dev));
 		return rc;
 	}
 
 	if (index >= MAX_CAMERAS) {
-		CAM_ERR(CAM_OIS, "Invalid Cell-Index: %u for %s", index, dev_name(dev));
+		CAM_ERR(CAM_OIS, "Invalid Cell-Index: %u for %s", index,
+			dev_name(dev));
 		return -EINVAL;
 	}
 
 	o_ctrl = g_i3c_ois_data[index].o_ctrl;
 	if (!o_ctrl) {
-		CAM_ERR(CAM_OIS, "o_ctrl is null. I3C Probe before platfom driver probe for %s",
+		CAM_ERR(CAM_OIS,
+			"o_ctrl is null. I3C Probe before platfom driver probe for %s",
 			dev_name(dev));
 		return -EINVAL;
 	}
@@ -690,21 +671,22 @@ static int cam_ois_i3c_driver_probe(struct i3c_device *client)
 }
 
 static struct i3c_driver cam_ois_i3c_driver = {
-	.id_table = ois_i3c_id,
-	.probe = cam_ois_i3c_driver_probe,
-	.remove = cam_i3c_driver_remove,
-	.driver = {
-		.owner = THIS_MODULE,
-		.name = OIS_DRIVER_I3C,
-		.of_match_table = cam_ois_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .id_table = ois_i3c_id,
+    .probe = cam_ois_i3c_driver_probe,
+    .remove = cam_i3c_driver_remove,
+    .driver =
+        {
+            .owner = THIS_MODULE,
+            .name = OIS_DRIVER_I3C,
+            .of_match_table = cam_ois_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_ois_driver_init(void)
 {
 	int rc = 0;
-	struct device_node                      *dev;
+	struct device_node *dev;
 	int num_entries = 0;
 
 	rc = platform_driver_register(&cam_ois_platform_driver);
@@ -719,7 +701,8 @@ int cam_ois_driver_init(void)
 		goto i2c_register_err;
 	}
 
-	memset(ois_i3c_id, 0, sizeof(struct i3c_device_id) * (MAX_I3C_DEVICE_ID_ENTRIES + 1));
+	memset(ois_i3c_id, 0,
+	       sizeof(struct i3c_device_id) * (MAX_I3C_DEVICE_ID_ENTRIES + 1));
 
 	dev = of_find_node_by_path(I3C_SENSOR_DEV_ID_DT_PATH);
 	if (!dev) {
@@ -728,12 +711,12 @@ int cam_ois_driver_init(void)
 	}
 
 	rc = cam_sensor_count_elems_i3c_device_id(dev, &num_entries,
-		"i3c-ois-id-table");
+						  "i3c-ois-id-table");
 	if (rc)
 		return 0;
 
-	rc = cam_sensor_fill_i3c_device_id(dev, num_entries,
-		"i3c-ois-id-table", ois_i3c_id);
+	rc = cam_sensor_fill_i3c_device_id(dev, num_entries, "i3c-ois-id-table",
+					   ois_i3c_id);
 	if (rc)
 		goto i3c_register_err;
 

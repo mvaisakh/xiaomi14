@@ -3,23 +3,22 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/delay.h>
 #include <linux/gunyah/gh_msgq.h>
 #include <linux/gunyah/gh_rm_drv.h>
-#include <linux/module.h>
-#include <linux/platform_device.h>
-#include <linux/of.h>
-#include <linux/sysfs.h>
-#include <linux/pm.h>
-#include <linux/suspend.h>
-#include <linux/delay.h>
-#include <linux/slab.h>
 #include <linux/ktime.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
+#include <linux/pm.h>
+#include <linux/slab.h>
+#include <linux/suspend.h>
+#include <linux/sysfs.h>
 
-
+#include "mmrm_vm_debug.h"
 #include "mmrm_vm_fe.h"
 #include "mmrm_vm_interface.h"
 #include "mmrm_vm_msgq.h"
-#include "mmrm_vm_debug.h"
 
 #define get_client_handle_2_id(client) (client->client_uid)
 
@@ -27,13 +26,14 @@ extern struct mmrm_vm_driver_data *drv_vm_fe;
 
 #define MAX_TIMEOUT_MS 300
 
-#define CHECK_SKIP_MMRM_CLK_RSRC(drv_data)	\
-{									\
-	if (!drv_data->is_clk_scaling_supported) {	\
-		d_mpr_h("%s: mmrm clk rsrc not supported\n", __func__);\
-		goto skip_mmrm;				\
-	}								\
-}
+#define CHECK_SKIP_MMRM_CLK_RSRC(drv_data)                           \
+	{                                                            \
+		if (!drv_data->is_clk_scaling_supported) {           \
+			d_mpr_h("%s: mmrm clk rsrc not supported\n", \
+				__func__);                           \
+			goto skip_mmrm;                              \
+		}                                                    \
+	}
 
 int mmrm_fe_append_work_list(struct mmrm_vm_msg_q *msg_q, int msg_sz)
 {
@@ -56,8 +56,8 @@ int mmrm_fe_append_work_list(struct mmrm_vm_msg_q *msg_q, int msg_sz)
 
 	mmrm_vm_fe_request_send(drv_vm_fe, msg_pkt, msg_sz);
 
-	waited_time_ms = wait_for_completion_timeout(&msg_q->complete,
-		msecs_to_jiffies(MAX_TIMEOUT_MS));
+	waited_time_ms = wait_for_completion_timeout(
+		&msg_q->complete, msecs_to_jiffies(MAX_TIMEOUT_MS));
 	if (waited_time_ms >= MAX_TIMEOUT_MS) {
 		d_mpr_e("%s: request send timeout\n", __func__);
 		return -1;
@@ -107,8 +107,9 @@ struct mmrm_client *mmrm_client_register(struct mmrm_client_desc *desc)
 	struct mmrm_client *client = NULL;
 
 	if (mmrm_vm_fe_clk_src_get(desc) == NULL) {
-		d_mpr_e("%s: FE doesn't support clk domain=%d client id=%d\n", __func__,
-			desc->client_info.desc.client_domain, desc->client_info.desc.client_id);
+		d_mpr_e("%s: FE doesn't support clk domain=%d client id=%d\n",
+			__func__, desc->client_info.desc.client_domain,
+			desc->client_info.desc.client_id);
 		goto err_clk_src;
 	}
 
@@ -123,11 +124,13 @@ struct mmrm_client *mmrm_client_register(struct mmrm_client_desc *desc)
 	api_msg->hd.cmd_id = MMRM_VM_REQUEST_REGISTER;
 	reg_data->client_type = desc->client_type;
 	reg_data->priority = desc->priority;
-	memcpy(&reg_data->desc, &desc->client_info.desc, sizeof(reg_data->desc));
+	memcpy(&reg_data->desc, &desc->client_info.desc,
+	       sizeof(reg_data->desc));
 
 	rc = mmrm_fe_append_work_list(msg_q, msg_size);
 	if (rc == 0) {
-		client = mmrm_vm_fe_get_client(msg_q->m_resp->msg.data.reg.client_id);
+		client = mmrm_vm_fe_get_client(
+			msg_q->m_resp->msg.data.reg.client_id);
 	};
 
 	release_msg_work(msg_q);
@@ -158,7 +161,6 @@ int mmrm_client_deregister(struct mmrm_client *client)
 	api_msg->hd.cmd_id = MMRM_VM_REQUEST_DEREGISTER;
 	reg_data->client_id = get_client_handle_2_id(client);
 
-
 	rc = mmrm_fe_append_work_list(msg_q, msg_size);
 	if (rc == 0)
 		rc = msg_q->m_resp->msg.data.dereg.ret_code;
@@ -171,7 +173,8 @@ err_no_mem:
 EXPORT_SYMBOL(mmrm_client_deregister);
 
 int mmrm_client_set_value(struct mmrm_client *client,
-	struct mmrm_client_data *client_data, unsigned long val)
+			  struct mmrm_client_data *client_data,
+			  unsigned long val)
 {
 	int rc = -1;
 	struct mmrm_vm_api_request_msg *api_msg;
@@ -207,11 +210,11 @@ err_no_mem:
 EXPORT_SYMBOL(mmrm_client_set_value);
 
 int mmrm_client_set_value_in_range(struct mmrm_client *client,
-	struct mmrm_client_data *client_data,
-	struct mmrm_client_res_value *val)
+				   struct mmrm_client_data *client_data,
+				   struct mmrm_client_res_value *val)
 {
 	int rc = -1;
-	struct mmrm_vm_api_request_msg *api_msg ;
+	struct mmrm_vm_api_request_msg *api_msg;
 	struct mmrm_vm_setvalue_inrange_request *reg_data;
 	size_t msg_size = sizeof(api_msg->hd) + sizeof(*reg_data);
 	struct mmrm_vm_msg_q *msg_q;
@@ -239,9 +242,8 @@ err_no_mem:
 }
 EXPORT_SYMBOL(mmrm_client_set_value_in_range);
 
-
 int mmrm_client_get_value(struct mmrm_client *client,
-	struct mmrm_client_res_value *val)
+			  struct mmrm_client_res_value *val)
 {
 	int rc = -1;
 	struct mmrm_vm_api_request_msg *api_msg;
@@ -260,7 +262,6 @@ int mmrm_client_get_value(struct mmrm_client *client,
 	api_msg->hd.cmd_id = MMRM_VM_REQUEST_GETVALUE;
 	reg_data->client_id = get_client_handle_2_id(client);
 
-
 	rc = mmrm_fe_append_work_list(msg_q, msg_size);
 
 	if (rc == 0) {
@@ -274,7 +275,8 @@ err_no_mem:
 }
 EXPORT_SYMBOL(mmrm_client_get_value);
 
-bool mmrm_client_check_scaling_supported(enum mmrm_client_type client_type, u32 client_domain)
+bool mmrm_client_check_scaling_supported(enum mmrm_client_type client_type,
+					 u32 client_domain)
 {
 	struct mmrm_vm_fe_priv *fe_data;
 

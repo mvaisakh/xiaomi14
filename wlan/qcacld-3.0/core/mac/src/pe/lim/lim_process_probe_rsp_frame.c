@@ -29,21 +29,21 @@
  *
  */
 
-#include "wni_api.h"
-#include "wni_cfg.h"
 #include "ani_global.h"
-#include "sch_api.h"
-#include "utils_api.h"
 #include "lim_api.h"
+#include "lim_assoc_utils.h"
+#include "lim_mlo.h"
+#include "lim_prop_exts_utils.h"
+#include "lim_send_messages.h"
+#include "lim_ser_des_utils.h"
 #include "lim_types.h"
 #include "lim_utils.h"
-#include "lim_assoc_utils.h"
-#include "lim_prop_exts_utils.h"
-#include "lim_ser_des_utils.h"
-#include "lim_send_messages.h"
-#include "lim_mlo.h"
-#include "wlan_mlo_mgr_sta.h"
 #include "parser_api.h"
+#include "sch_api.h"
+#include "utils_api.h"
+#include "wlan_mlo_mgr_sta.h"
+#include "wni_api.h"
+#include "wni_cfg.h"
 
 /**
  * lim_validate_ie_information_in_probe_rsp_frame () - validates ie
@@ -55,7 +55,7 @@
  */
 static QDF_STATUS
 lim_validate_ie_information_in_probe_rsp_frame(struct mac_context *mac_ctx,
-				uint8_t *pRxPacketInfo)
+					       uint8_t *pRxPacketInfo)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	uint8_t *pframe;
@@ -63,21 +63,21 @@ lim_validate_ie_information_in_probe_rsp_frame(struct mac_context *mac_ctx,
 	uint32_t missing_rsn_bytes;
 
 	/*
-	 * Validate a Probe response frame for malformed frame.
-	 * If the frame is malformed then do not consider as it
-	 * may cause problem fetching wrong IE values
-	 */
+   * Validate a Probe response frame for malformed frame.
+   * If the frame is malformed then do not consider as it
+   * may cause problem fetching wrong IE values
+   */
 
 	if (WMA_GET_RX_PAYLOAD_LEN(pRxPacketInfo) <
-		(SIR_MAC_B_PR_SSID_OFFSET + SIR_MAC_MIN_IE_LEN))
+	    (SIR_MAC_B_PR_SSID_OFFSET + SIR_MAC_MIN_IE_LEN))
 		return QDF_STATUS_E_FAILURE;
 
 	pframe = WMA_GET_RX_MPDU_DATA(pRxPacketInfo);
 	nframe = WMA_GET_RX_PAYLOAD_LEN(pRxPacketInfo);
 	missing_rsn_bytes = 0;
 
-	status = sir_validate_and_rectify_ies(mac_ctx,
-			pframe, nframe, &missing_rsn_bytes);
+	status = sir_validate_and_rectify_ies(mac_ctx, pframe, nframe,
+					      &missing_rsn_bytes);
 
 	if (status == QDF_STATUS_SUCCESS)
 		WMA_GET_RX_MPDU_LEN(pRxPacketInfo) += missing_rsn_bytes;
@@ -105,32 +105,33 @@ lim_process_updated_ies_in_probe_rsp(struct mac_context *mac_ctx,
 
 	if (session_entry->limMlmState == eLIM_MLM_LINK_ESTABLISHED_STATE) {
 		/*
-		 * Now Process EDCA Parameters, if EDCAParamSet
-		 * count is different.
-		 * -- While processing beacons in link established
-		 * state if it is determined that
-		 * QoS Info IE has a different count for EDCA Params,
-		 * and EDCA IE is not present in beacon,
-		 * then probe req is sent out to get the EDCA params.
-		 */
+     * Now Process EDCA Parameters, if EDCAParamSet
+     * count is different.
+     * -- While processing beacons in link established
+     * state if it is determined that
+     * QoS Info IE has a different count for EDCA Params,
+     * and EDCA IE is not present in beacon,
+     * then probe req is sent out to get the EDCA params.
+     */
 		sta_ds = dph_get_hash_entry(mac_ctx, DPH_STA_HASH_INDEX_PEER,
 					    &session_entry->dph.dphHashTable);
 
 		limGetQosMode(session_entry, &qos_enabled);
 		limGetWmeMode(session_entry, &wme_enabled);
-		pe_debug("wmeEdcaPresent: %d wme_enabled: %d edcaPresent: %d, qos_enabled: %d edcaParams.qosInfo.count: %d schObject.gLimEdcaParamSetCount: %d",
-			 probe_rsp->wmeEdcaPresent, wme_enabled,
-			 probe_rsp->edcaPresent, qos_enabled,
-			 probe_rsp->edcaParams.qosInfo.count,
-			 session_entry->gLimEdcaParamSetCount);
+		pe_debug(
+			"wmeEdcaPresent: %d wme_enabled: %d edcaPresent: %d, qos_enabled: %d "
+			"edcaParams.qosInfo.count: %d schObject.gLimEdcaParamSetCount: %d",
+			probe_rsp->wmeEdcaPresent, wme_enabled,
+			probe_rsp->edcaPresent, qos_enabled,
+			probe_rsp->edcaParams.qosInfo.count,
+			session_entry->gLimEdcaParamSetCount);
 
 		if (((probe_rsp->wmeEdcaPresent && wme_enabled) ||
 		     (probe_rsp->edcaPresent && qos_enabled)) &&
 		    (probe_rsp->edcaParams.qosInfo.count !=
 		     session_entry->gLimEdcaParamSetCount)) {
-			status = sch_beacon_edca_process(mac_ctx,
-						    &probe_rsp->edcaParams,
-						    session_entry);
+			status = sch_beacon_edca_process(
+				mac_ctx, &probe_rsp->edcaParams, session_entry);
 			if (QDF_IS_STATUS_ERROR(status)) {
 				pe_err("EDCA param process error");
 			} else if (sta_ds) {
@@ -138,13 +139,14 @@ lim_process_updated_ies_in_probe_rsp(struct mac_context *mac_ctx,
 					     &probe_rsp->edcaParams,
 					     sizeof(probe_rsp->edcaParams));
 				/*
-				 * If needed, downgrade the
-				 * EDCA parameters
-				 */
-				lim_set_active_edca_params(mac_ctx,
-						session_entry->gLimEdcaParams,
-						session_entry);
-				lim_send_edca_params(mac_ctx,
+         * If needed, downgrade the
+         * EDCA parameters
+         */
+				lim_set_active_edca_params(
+					mac_ctx, session_entry->gLimEdcaParams,
+					session_entry);
+				lim_send_edca_params(
+					mac_ctx,
 					session_entry->gLimEdcaParamsActive,
 					session_entry->vdev_id, false);
 				sch_qos_concurrency_update();
@@ -154,9 +156,8 @@ lim_process_updated_ies_in_probe_rsp(struct mac_context *mac_ctx,
 		}
 		if (session_entry->fWaitForProbeRsp) {
 			pe_warn("Check probe resp for caps change");
-			lim_detect_change_in_ap_capabilities(mac_ctx, probe_rsp,
-							     session_entry,
-							     false);
+			lim_detect_change_in_ap_capabilities(
+				mac_ctx, probe_rsp, session_entry, false);
 		}
 	}
 }
@@ -186,17 +187,17 @@ void lim_process_gen_probe_rsp_frame(struct mac_context *mac_ctx,
 	}
 
 	header = (struct wlan_frame_hdr *)(bcn_probe);
-	pe_debug("Generate Probe Resp for cu (len %d): " QDF_MAC_ADDR_FMT,
-		 len, QDF_MAC_ADDR_REF(header->i_addr3));
+	pe_debug("Generate Probe Resp for cu (len %d): " QDF_MAC_ADDR_FMT, len,
+		 QDF_MAC_ADDR_REF(header->i_addr3));
 
-	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_DEBUG,
-			   bcn_probe, len);
+	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_DEBUG, bcn_probe,
+			   len);
 
 	bcn_probe = (uint8_t *)(bcn_probe + sizeof(*header));
 	len -= sizeof(*header);
 
-	status = sir_convert_probe_frame2_struct(mac_ctx,
-						 bcn_probe, len, probe_rsp);
+	status = sir_convert_probe_frame2_struct(mac_ctx, bcn_probe, len,
+						 probe_rsp);
 	if (QDF_IS_STATUS_ERROR(status) || !probe_rsp->ssidPresent) {
 		pe_err("Parse error ProbeResponse, length=%d", len);
 		qdf_mem_free(probe_rsp);
@@ -208,11 +209,10 @@ void lim_process_gen_probe_rsp_frame(struct mac_context *mac_ctx,
 }
 
 #ifdef WLAN_FEATURE_11BE_MLO
-static
-void lim_update_mlo_mgr_prb_info(struct mac_context *mac_ctx,
-				 struct pe_session *session_entry,
-				 struct qdf_mac_addr *mac_addr,
-				 tpSirProbeRespBeacon probe_rsp)
+static void lim_update_mlo_mgr_prb_info(struct mac_context *mac_ctx,
+					struct pe_session *session_entry,
+					struct qdf_mac_addr *mac_addr,
+					tpSirProbeRespBeacon probe_rsp)
 {
 	if (!(session_entry->lim_join_req &&
 	      session_entry->lim_join_req->is_ml_probe_req_sent &&
@@ -224,11 +224,10 @@ void lim_update_mlo_mgr_prb_info(struct mac_context *mac_ctx,
 				probe_rsp->chan_freq);
 }
 #else
-static inline
-void lim_update_mlo_mgr_prb_info(struct mac_context *mac_ctx,
-				 struct pe_session *session_entry,
-				 struct qdf_mac_addr *mac_addr,
-				 tpSirProbeRespBeacon probe_rsp)
+static inline void lim_update_mlo_mgr_prb_info(struct mac_context *mac_ctx,
+					       struct pe_session *session_entry,
+					       struct qdf_mac_addr *mac_addr,
+					       tpSirProbeRespBeacon probe_rsp)
 {
 }
 #endif
@@ -247,9 +246,9 @@ void lim_update_mlo_mgr_prb_info(struct mac_context *mac_ctx,
  *
  * Return: None
  */
-void
-lim_process_probe_rsp_frame(struct mac_context *mac_ctx, uint8_t *rx_Packet_info,
-			    struct pe_session *session_entry)
+void lim_process_probe_rsp_frame(struct mac_context *mac_ctx,
+				 uint8_t *rx_Packet_info,
+				 struct pe_session *session_entry)
 {
 	uint8_t *body;
 	uint32_t frame_len = 0;
@@ -277,13 +276,12 @@ lim_process_probe_rsp_frame(struct mac_context *mac_ctx, uint8_t *rx_Packet_info
 
 	header = WMA_GET_RX_MAC_HEADER(rx_Packet_info);
 
-	mac_ctx->lim.bss_rssi = (int8_t)
-				WMA_GET_RX_RSSI_NORMALIZED(rx_Packet_info);
+	mac_ctx->lim.bss_rssi =
+		(int8_t)WMA_GET_RX_RSSI_NORMALIZED(rx_Packet_info);
 
 	/* Validate IE information before processing Probe Response Frame */
-	if (lim_validate_ie_information_in_probe_rsp_frame(mac_ctx,
-				rx_Packet_info) !=
-		QDF_STATUS_SUCCESS) {
+	if (lim_validate_ie_information_in_probe_rsp_frame(
+		    mac_ctx, rx_Packet_info) != QDF_STATUS_SUCCESS) {
 		pe_err("Parse error ProbeResponse, length=%d", frame_len);
 		qdf_mem_free(probe_rsp);
 		return;
@@ -292,10 +290,11 @@ lim_process_probe_rsp_frame(struct mac_context *mac_ctx, uint8_t *rx_Packet_info
 	frame_len = WMA_GET_RX_PAYLOAD_LEN(rx_Packet_info);
 	/* Get pointer to Probe Response frame body */
 	body = WMA_GET_RX_MPDU_DATA(rx_Packet_info);
-		/* Enforce Mandatory IEs */
-	if ((sir_convert_probe_frame2_struct(mac_ctx,
-		body, frame_len, probe_rsp) == QDF_STATUS_E_FAILURE) ||
-		!probe_rsp->ssidPresent) {
+	/* Enforce Mandatory IEs */
+	if ((sir_convert_probe_frame2_struct(mac_ctx, body, frame_len,
+					     probe_rsp) ==
+	     QDF_STATUS_E_FAILURE) ||
+	    !probe_rsp->ssidPresent) {
 		pe_err("Parse error ProbeResponse, length=%d", frame_len);
 		qdf_mem_free(probe_rsp);
 		return;
@@ -308,60 +307,52 @@ lim_process_probe_rsp_frame(struct mac_context *mac_ctx, uint8_t *rx_Packet_info
 				    probe_rsp);
 
 	lim_process_bcn_prb_rsp_t2lm(mac_ctx, session_entry, probe_rsp);
-	lim_gen_link_specific_probe_rsp(mac_ctx, session_entry,
-					probe_rsp,
-					body,
-					frame_len,
-					mac_ctx->lim.bss_rssi);
+	lim_gen_link_specific_probe_rsp(mac_ctx, session_entry, probe_rsp, body,
+					frame_len, mac_ctx->lim.bss_rssi);
 
 	if (mlo_is_mld_sta(session_entry->vdev)) {
 		cu_flag = false;
 		status = lim_get_bpcc_from_mlo_ie(probe_rsp, &bpcc);
 		if (QDF_IS_STATUS_SUCCESS(status))
-			cu_flag = lim_check_cu_happens(session_entry->vdev,
-						       bpcc);
-		lim_process_cu_for_probe_rsp(mac_ctx, session_entry,
-					     body, frame_len);
+			cu_flag =
+				lim_check_cu_happens(session_entry->vdev, bpcc);
+		lim_process_cu_for_probe_rsp(mac_ctx, session_entry, body,
+					     frame_len);
 	}
 
-	if (session_entry->limMlmState ==
-			eLIM_MLM_WT_JOIN_BEACON_STATE) {
+	if (session_entry->limMlmState == eLIM_MLM_WT_JOIN_BEACON_STATE) {
 		/*
-		 * Either Beacon/probe response is required.
-		 * Hence store it in same buffer.
-		 */
+     * Either Beacon/probe response is required.
+     * Hence store it in same buffer.
+     */
 		if (session_entry->beacon) {
 			qdf_mem_free(session_entry->beacon);
 			session_entry->beacon = NULL;
 			session_entry->bcnLen = 0;
 		}
-		session_entry->bcnLen =
-			WMA_GET_RX_MPDU_LEN(rx_Packet_info);
-		session_entry->beacon =
-			qdf_mem_malloc(session_entry->bcnLen);
+		session_entry->bcnLen = WMA_GET_RX_MPDU_LEN(rx_Packet_info);
+		session_entry->beacon = qdf_mem_malloc(session_entry->bcnLen);
 		if (!session_entry->beacon) {
 			pe_err("No Memory to store beacon");
 		} else {
 			/*
-			 * Store the whole ProbeRsp frame.
-			 * This is sent to csr/hdd in join cnf response.
-			 */
+       * Store the whole ProbeRsp frame.
+       * This is sent to csr/hdd in join cnf response.
+       */
 			qdf_mem_copy(session_entry->beacon,
-				     WMA_GET_RX_MAC_HEADER
-					     (rx_Packet_info),
+				     WMA_GET_RX_MAC_HEADER(rx_Packet_info),
 				     session_entry->bcnLen);
 		}
-			/* STA in WT_JOIN_BEACON_STATE */
-		lim_check_and_announce_join_success(mac_ctx, probe_rsp,
-						header,
-						session_entry);
+		/* STA in WT_JOIN_BEACON_STATE */
+		lim_check_and_announce_join_success(mac_ctx, probe_rsp, header,
+						    session_entry);
 	} else if (session_entry->limMlmState ==
 		   eLIM_MLM_LINK_ESTABLISHED_STATE) {
 		/*
-		 * Check if this Probe Response is for
-		 * our Probe Request sent upon reaching
-		 * heart beat threshold
-		 */
+     * Check if this Probe Response is for
+     * our Probe Request sent upon reaching
+     * heart beat threshold
+     */
 		sir_copy_mac_addr(current_bssid, session_entry->bssId);
 		if (qdf_mem_cmp(current_bssid, header->bssId,
 				sizeof(tSirMacAddr))) {
@@ -371,9 +362,9 @@ lim_process_probe_rsp_frame(struct mac_context *mac_ctx, uint8_t *rx_Packet_info
 		if (!LIM_IS_CONNECTION_ACTIVE(session_entry)) {
 			pe_warn("Recved Probe Resp from AP,AP-alive");
 			if (probe_rsp->HTInfo.present) {
-				chan_freq =
-				    wlan_reg_legacy_chan_to_freq(mac_ctx->pdev,
-								 probe_rsp->HTInfo.primaryChannel);
+				chan_freq = wlan_reg_legacy_chan_to_freq(
+					mac_ctx->pdev,
+					probe_rsp->HTInfo.primaryChannel);
 				lim_received_hb_handler(mac_ctx, chan_freq,
 							session_entry);
 			} else

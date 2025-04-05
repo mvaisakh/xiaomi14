@@ -21,23 +21,22 @@
  * implementation for creating sysfs file txrx_stats
  */
 
+#include "cdp_txrx_cmn.h"
+#include "cdp_txrx_cmn_struct.h"
+#include "cds_api.h"
+#include "osif_vdev_sync.h"
 #include <wlan_hdd_includes.h>
 #include <wlan_hdd_main.h>
-#include "osif_vdev_sync.h"
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_txrx_stats.h>
-#include "cds_api.h"
-#include "cdp_txrx_cmn_struct.h"
-#include "cdp_txrx_cmn.h"
 
-static ssize_t
-__hdd_sysfs_txrx_stats_store(struct net_device *net_dev,
-			     char const *buf, size_t count)
+static ssize_t __hdd_sysfs_txrx_stats_store(struct net_device *net_dev,
+					    char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
-	struct cdp_txrx_stats_req req = {0};
+	struct cdp_txrx_stats_req req = { 0 };
 	struct hdd_station_ctx *sta_ctx;
 	struct hdd_context *hdd_ctx;
 	char *sptr, *token;
@@ -57,8 +56,8 @@ __hdd_sysfs_txrx_stats_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -66,8 +65,8 @@ __hdd_sysfs_txrx_stats_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("txrx_stats: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("txrx_stats: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get val1 */
 	token = strsep(&sptr, " ");
@@ -87,17 +86,17 @@ __hdd_sysfs_txrx_stats_store(struct net_device *net_dev,
 	/* default value of secondary parameter is 0(mac_id) */
 	req.mac_id = val2;
 
-	hdd_debug("WE_SET_TXRX_STATS stats cmd: %d mac_id: %d",
-		  req.stats, req.mac_id);
+	hdd_debug("WE_SET_TXRX_STATS stats cmd: %d mac_id: %d", req.stats,
+		  req.mac_id);
 	if (qdf_unlikely(!soc))
 		return -EINVAL;
 
 	if (val1 == CDP_TXRX_STATS_28) {
 		if (sta_ctx->conn_info.is_authenticated) {
 			hdd_debug("ap mac addr:" QDF_MAC_ADDR_FMT,
-				  QDF_MAC_ADDR_REF(&sta_ctx->conn_info.bssid.bytes[0]));
-			req.peer_addr =
-				(char *)&sta_ctx->conn_info.bssid;
+				  QDF_MAC_ADDR_REF(
+					  &sta_ctx->conn_info.bssid.bytes[0]));
+			req.peer_addr = (char *)&sta_ctx->conn_info.bssid;
 		}
 	}
 	ret = cdp_txrx_stats_request(soc, adapter->deflink->vdev_id, &req);
@@ -110,10 +109,9 @@ __hdd_sysfs_txrx_stats_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_txrx_stats_store(struct device *dev,
-			   struct device_attribute *attr,
-			   char const *buf, size_t count)
+static ssize_t hdd_sysfs_txrx_stats_store(struct device *dev,
+					  struct device_attribute *attr,
+					  char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -130,8 +128,7 @@ hdd_sysfs_txrx_stats_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(txrx_stats, 0220,
-		   NULL, hdd_sysfs_txrx_stats_store);
+static DEVICE_ATTR(txrx_stats, 0220, NULL, hdd_sysfs_txrx_stats_store);
 
 int hdd_sysfs_txrx_stats_create(struct hdd_adapter *adapter)
 {

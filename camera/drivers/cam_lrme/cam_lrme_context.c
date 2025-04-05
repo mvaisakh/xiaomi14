@@ -4,16 +4,17 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
 
 #include "cam_debug_util.h"
 #include "cam_lrme_context.h"
 
 static const char lrme_dev_name[] = "cam-lrme";
 
-static int __cam_lrme_ctx_acquire_dev_in_available(struct cam_context *ctx,
-	struct cam_acquire_dev_cmd *cmd)
+static int
+__cam_lrme_ctx_acquire_dev_in_available(struct cam_context *ctx,
+					struct cam_acquire_dev_cmd *cmd)
 {
 	int rc = 0;
 	uintptr_t ctxt_to_hw_map = (uintptr_t)ctx->ctxt_to_hw_map;
@@ -35,8 +36,9 @@ static int __cam_lrme_ctx_acquire_dev_in_available(struct cam_context *ctx,
 	return rc;
 }
 
-static int __cam_lrme_ctx_release_dev_in_acquired(struct cam_context *ctx,
-	struct cam_release_dev_cmd *cmd)
+static int
+__cam_lrme_ctx_release_dev_in_acquired(struct cam_context *ctx,
+				       struct cam_release_dev_cmd *cmd)
 {
 	int rc = 0;
 
@@ -53,8 +55,9 @@ static int __cam_lrme_ctx_release_dev_in_acquired(struct cam_context *ctx,
 	return rc;
 }
 
-static int __cam_lrme_ctx_start_dev_in_acquired(struct cam_context *ctx,
-	struct cam_start_stop_dev_cmd *cmd)
+static int
+__cam_lrme_ctx_start_dev_in_acquired(struct cam_context *ctx,
+				     struct cam_start_stop_dev_cmd *cmd)
 {
 	int rc = 0;
 
@@ -71,8 +74,9 @@ static int __cam_lrme_ctx_start_dev_in_acquired(struct cam_context *ctx,
 	return rc;
 }
 
-static int __cam_lrme_ctx_config_dev_in_activated(struct cam_context *ctx,
-	struct cam_config_dev_cmd *cmd)
+static int
+__cam_lrme_ctx_config_dev_in_activated(struct cam_context *ctx,
+				       struct cam_config_dev_cmd *cmd)
 {
 	int rc;
 
@@ -87,9 +91,8 @@ static int __cam_lrme_ctx_config_dev_in_activated(struct cam_context *ctx,
 	return rc;
 }
 
-static int __cam_lrme_ctx_dump_dev_in_activated(
-	struct cam_context      *ctx,
-	struct cam_dump_req_cmd *cmd)
+static int __cam_lrme_ctx_dump_dev_in_activated(struct cam_context *ctx,
+						struct cam_dump_req_cmd *cmd)
 {
 	int rc = 0;
 
@@ -103,7 +106,7 @@ static int __cam_lrme_ctx_dump_dev_in_activated(
 }
 
 static int __cam_lrme_ctx_flush_dev_in_activated(struct cam_context *ctx,
-	struct cam_flush_dev_cmd *cmd)
+						 struct cam_flush_dev_cmd *cmd)
 {
 	int rc;
 	struct cam_context_utils_flush_args flush_args;
@@ -119,8 +122,9 @@ static int __cam_lrme_ctx_flush_dev_in_activated(struct cam_context *ctx,
 
 	return rc;
 }
-static int __cam_lrme_ctx_stop_dev_in_activated(struct cam_context *ctx,
-	struct cam_start_stop_dev_cmd *cmd)
+static int
+__cam_lrme_ctx_stop_dev_in_activated(struct cam_context *ctx,
+				     struct cam_start_stop_dev_cmd *cmd)
 {
 	int rc = 0;
 
@@ -137,8 +141,9 @@ static int __cam_lrme_ctx_stop_dev_in_activated(struct cam_context *ctx,
 	return rc;
 }
 
-static int __cam_lrme_ctx_release_dev_in_activated(struct cam_context *ctx,
-	struct cam_release_dev_cmd *cmd)
+static int
+__cam_lrme_ctx_release_dev_in_activated(struct cam_context *ctx,
+					struct cam_release_dev_cmd *cmd)
 {
 	int rc = 0;
 
@@ -162,7 +167,8 @@ static int __cam_lrme_ctx_release_dev_in_activated(struct cam_context *ctx,
 }
 
 static int __cam_lrme_ctx_handle_irq_in_activated(void *context,
-	uint32_t evt_id, void *evt_data)
+						  uint32_t evt_id,
+						  void *evt_data)
 {
 	int rc;
 
@@ -178,61 +184,62 @@ static int __cam_lrme_ctx_handle_irq_in_activated(void *context,
 }
 
 /* top state machine */
-static struct cam_ctx_ops
-	cam_lrme_ctx_state_machine[CAM_CTX_STATE_MAX] = {
-	/* Uninit */
-	{
-		.ioctl_ops = {},
-		.crm_ops = {},
-		.irq_ops = NULL,
-	},
-	/* Available */
-	{
-		.ioctl_ops = {
-			.acquire_dev = __cam_lrme_ctx_acquire_dev_in_available,
-		},
-		.crm_ops = {},
-		.irq_ops = NULL,
-	},
-	/* Acquired */
-	{
-		.ioctl_ops = {
-			.config_dev = __cam_lrme_ctx_config_dev_in_activated,
-			.release_dev = __cam_lrme_ctx_release_dev_in_acquired,
-			.start_dev = __cam_lrme_ctx_start_dev_in_acquired,
-		},
-		.crm_ops = {},
-		.irq_ops = NULL,
-	},
-	/* Ready */
-	{
-		.ioctl_ops = {},
-		.crm_ops = {},
-		.irq_ops = NULL,
-	},
-	/* Flushed */
-	{
-		.ioctl_ops = {},
-	},
-	/* Activate */
-	{
-		.ioctl_ops = {
-			.config_dev = __cam_lrme_ctx_config_dev_in_activated,
-			.release_dev = __cam_lrme_ctx_release_dev_in_activated,
-			.stop_dev = __cam_lrme_ctx_stop_dev_in_activated,
-			.flush_dev = __cam_lrme_ctx_flush_dev_in_activated,
-			.dump_dev = __cam_lrme_ctx_dump_dev_in_activated,
-		},
-		.crm_ops = {},
-		.irq_ops = __cam_lrme_ctx_handle_irq_in_activated,
-	},
+static struct cam_ctx_ops cam_lrme_ctx_state_machine[CAM_CTX_STATE_MAX] = {
+    /* Uninit */
+    {
+        .ioctl_ops = {},
+        .crm_ops = {},
+        .irq_ops = NULL,
+    },
+    /* Available */
+    {
+        .ioctl_ops =
+            {
+                .acquire_dev = __cam_lrme_ctx_acquire_dev_in_available,
+            },
+        .crm_ops = {},
+        .irq_ops = NULL,
+    },
+    /* Acquired */
+    {
+        .ioctl_ops =
+            {
+                .config_dev = __cam_lrme_ctx_config_dev_in_activated,
+                .release_dev = __cam_lrme_ctx_release_dev_in_acquired,
+                .start_dev = __cam_lrme_ctx_start_dev_in_acquired,
+            },
+        .crm_ops = {},
+        .irq_ops = NULL,
+    },
+    /* Ready */
+    {
+        .ioctl_ops = {},
+        .crm_ops = {},
+        .irq_ops = NULL,
+    },
+    /* Flushed */
+    {
+        .ioctl_ops = {},
+    },
+    /* Activate */
+    {
+        .ioctl_ops =
+            {
+                .config_dev = __cam_lrme_ctx_config_dev_in_activated,
+                .release_dev = __cam_lrme_ctx_release_dev_in_activated,
+                .stop_dev = __cam_lrme_ctx_stop_dev_in_activated,
+                .flush_dev = __cam_lrme_ctx_flush_dev_in_activated,
+                .dump_dev = __cam_lrme_ctx_dump_dev_in_activated,
+            },
+        .crm_ops = {},
+        .irq_ops = __cam_lrme_ctx_handle_irq_in_activated,
+    },
 };
 
 int cam_lrme_context_init(struct cam_lrme_context *lrme_ctx,
-	struct cam_context *base_ctx,
-	struct cam_hw_mgr_intf *hw_intf,
-	uint32_t index
-	int img_iommu_hdl)
+			  struct cam_context *base_ctx,
+			  struct cam_hw_mgr_intf *hw_intf,
+			  uint32_t index int img_iommu_hdl)
 {
 	int rc = 0;
 
@@ -245,8 +252,9 @@ int cam_lrme_context_init(struct cam_lrme_context *lrme_ctx,
 
 	memset(lrme_ctx, 0, sizeof(*lrme_ctx));
 
-	rc = cam_context_init(base_ctx, lrme_dev_name, CAM_LRME, index,
-		NULL, hw_intf, lrme_ctx->req_base, CAM_CTX_REQ_MAX, img_iommu_hdl);
+	rc = cam_context_init(base_ctx, lrme_dev_name, CAM_LRME, index, NULL,
+			      hw_intf, lrme_ctx->req_base, CAM_CTX_REQ_MAX,
+			      img_iommu_hdl);
 	if (rc) {
 		CAM_ERR(CAM_LRME, "Failed to init context");
 		return rc;

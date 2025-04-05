@@ -20,22 +20,22 @@
  * Defines AFC cfg80211 vendor command interface handles
  */
 
+#include <wlan_afc_ucfg_api.h>
 #include <wlan_cfg80211.h>
 #include <wlan_cfg80211_afc.h>
-#include <wlan_reg_ucfg_api.h>
+#include <wlan_hdd_object_manager.h>
 #include <wlan_objmgr_pdev_obj.h>
 #include <wlan_osif_priv.h>
-#include <wlan_hdd_object_manager.h>
-#include <wlan_afc_ucfg_api.h>
+#include <wlan_reg_ucfg_api.h>
 
 /* Maximum AFC data length can pass to target limited by platform driver */
-#define IF_AFC_RESPONSE_MAX_LEN  4096
+#define IF_AFC_RESPONSE_MAX_LEN 4096
 
 /*
  * JSON format AFC response data maximum length, limited by interface,
  * struct wlan_afc_host_resp is AFC response format pass to target.
  */
-#define QCA_NL80211_AFC_RESP_DATA_MAX_SIZE  \
+#define QCA_NL80211_AFC_RESP_DATA_MAX_SIZE \
 	(IF_AFC_RESPONSE_MAX_LEN - sizeof(struct wlan_afc_host_resp))
 
 /**
@@ -108,32 +108,31 @@ struct afc_resp_extracted {
 	uint32_t request_id;
 	uint32_t avail_exp_date;
 	uint32_t avail_exp_time;
-	int32_t  afc_serv_resp_code;
+	int32_t afc_serv_resp_code;
 	uint32_t num_frange_obj;
 	struct frange_obj frange[NUM_6GHZ_CHANNELS];
 	uint32_t num_opclass;
 	struct opclass_eirp_obj op_obj[REG_MAX_SUPP_OPER_CLASSES];
 };
 
-const struct nla_policy
-wlan_cfg80211_afc_response_policy[QCA_WLAN_VENDOR_ATTR_AFC_RESP_MAX + 1] = {
+const struct nla_policy wlan_cfg80211_afc_response_policy[QCA_WLAN_VENDOR_ATTR_AFC_RESP_MAX +
+							  1] = {
 	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_DATA] = { .type = NLA_STRING,
-				.len = QCA_NL80211_AFC_RESP_DATA_MAX_SIZE },
+						 .len = QCA_NL80211_AFC_RESP_DATA_MAX_SIZE },
 	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_TIME_TO_LIVE] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_REQ_ID] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_EXP_DATE] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_EXP_TIME] = { .type = NLA_U32 },
-	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_AFC_SERVER_RESP_CODE] = {
-							.type = NLA_S32 },
+	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_AFC_SERVER_RESP_CODE] = { .type = NLA_S32 },
 	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_FREQ_PSD_INFO] = { .type = NLA_NESTED },
-	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_OPCLASS_CHAN_EIRP_INFO] = {
-							.type = NLA_NESTED },
+	[QCA_WLAN_VENDOR_ATTR_AFC_RESP_OPCLASS_CHAN_EIRP_INFO] = { .type = NLA_NESTED },
 };
 
-#define nla_nest_end_checked(skb, start) do {		\
-	if ((skb) && (start))				\
-		nla_nest_end(skb, start);		\
-} while (0)
+#define nla_nest_end_checked(skb, start)          \
+	do {                                      \
+		if ((skb) && (start))             \
+			nla_nest_end(skb, start); \
+	} while (0)
 
 /**
  * afc_expiry_event_update_or_get_len() - Function to fill vendor event buffer
@@ -160,8 +159,7 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 	struct wlan_afc_opclass_obj *afc_opclass_obj;
 
 	if (vendor_event &&
-	    nla_put_u8(vendor_event,
-		       QCA_WLAN_VENDOR_ATTR_AFC_EVENT_TYPE,
+	    nla_put_u8(vendor_event, QCA_WLAN_VENDOR_ATTR_AFC_EVENT_TYPE,
 		       QCA_WLAN_VENDOR_AFC_EVENT_TYPE_EXPIRY)) {
 		osif_err("QCA_WLAN_VENDOR_AFC_EVENT_TYPE_EXPIRY put fail");
 		goto fail;
@@ -170,8 +168,7 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 	}
 
 	if (vendor_event &&
-	    nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_REQ_ID,
+	    nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_AFC_EVENT_REQ_ID,
 			afc_req->req_id)) {
 		osif_err("QCA_WLAN_VENDOR_ATTR_AFC_REQ_ID put fail");
 		goto fail;
@@ -183,7 +180,7 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 	    nla_put_u32(vendor_event,
 			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_AFC_WFA_VERSION,
 			(afc_req->version_major << 16) |
-			afc_req->version_minor)) {
+				afc_req->version_minor)) {
 		osif_err("AFC EVENT WFA version put fail");
 		goto fail;
 	} else {
@@ -212,8 +209,9 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 
 	if (vendor_event) {
 		/* Update the frequency range list from the Expiry event */
-		nla_attr = nla_nest_start(vendor_event,
-					  QCA_WLAN_VENDOR_ATTR_AFC_EVENT_FREQ_RANGE_LIST);
+		nla_attr = nla_nest_start(
+			vendor_event,
+			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_FREQ_RANGE_LIST);
 		if (!nla_attr) {
 			osif_err("AFC FREQ RANGE LIST start put fail");
 			goto fail;
@@ -234,12 +232,14 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 		}
 
 		if (vendor_event &&
-		    (nla_put_u32(vendor_event,
-				 QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_RANGE_START,
-				 afc_req->freq_lst->range_objs[i].lowfreq) ||
-		    nla_put_u32(vendor_event,
-				QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_RANGE_END,
-				afc_req->freq_lst->range_objs[i].highfreq))) {
+		    (nla_put_u32(
+			     vendor_event,
+			     QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_RANGE_START,
+			     afc_req->freq_lst->range_objs[i].lowfreq) ||
+		     nla_put_u32(
+			     vendor_event,
+			     QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_RANGE_END,
+			     afc_req->freq_lst->range_objs[i].highfreq))) {
 			osif_err("AFC REQ FREQ RANGE LIST put fail, num %d",
 				 afc_req->freq_lst->num_ranges);
 			goto fail;
@@ -252,8 +252,9 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 
 	if (vendor_event) {
 		/* Update the Operating class and channel list */
-		nla_attr = nla_nest_start(vendor_event,
-					  QCA_WLAN_VENDOR_ATTR_AFC_EVENT_OPCLASS_CHAN_LIST);
+		nla_attr = nla_nest_start(
+			vendor_event,
+			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_OPCLASS_CHAN_LIST);
 		if (!nla_attr) {
 			osif_err("AFC OPCLASS CHAN LIST start put fail");
 			goto fail;
@@ -287,10 +288,12 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 		}
 
 		if (vendor_event) {
-			chan_list = nla_nest_start(vendor_event,
-						   QCA_WLAN_VENDOR_ATTR_AFC_OPCLASS_INFO_CHAN_LIST);
+			chan_list = nla_nest_start(
+				vendor_event,
+				QCA_WLAN_VENDOR_ATTR_AFC_OPCLASS_INFO_CHAN_LIST);
 			if (!chan_list) {
-				osif_err("AFC OPCLASS INFO CHAN LIST start put fail");
+				osif_err(
+					"AFC OPCLASS INFO CHAN LIST start put fail");
 				goto fail;
 			}
 		} else {
@@ -301,7 +304,9 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 			if (vendor_event) {
 				chan_info = nla_nest_start(vendor_event, j);
 				if (!chan_info) {
-					osif_err("Fail to put opclass cfis nest %d", j);
+					osif_err(
+						"Fail to put opclass cfis nest %d",
+						j);
 					goto fail;
 				}
 			} else {
@@ -309,11 +314,13 @@ afc_expiry_event_update_or_get_len(struct sk_buff *vendor_event,
 			}
 
 			if (vendor_event &&
-			    nla_put_u8(vendor_event,
-				       QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_CHAN_NUM,
-				       afc_opclass_obj->cfis[j])) {
-				osif_err("AFC EIRP INFO CHAN NUM put fail, num %d",
-					 afc_opclass_obj->opclass_num_cfis);
+			    nla_put_u8(
+				    vendor_event,
+				    QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_CHAN_NUM,
+				    afc_opclass_obj->cfis[j])) {
+				osif_err(
+					"AFC EIRP INFO CHAN NUM put fail, num %d",
+					afc_opclass_obj->opclass_num_cfis);
 				goto fail;
 			} else {
 				len += nla_total_size(sizeof(u8));
@@ -357,8 +364,7 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 	int i, j, len = NLMSG_HDRLEN;
 
 	if (vendor_event &&
-	    nla_put_u8(vendor_event,
-		       QCA_WLAN_VENDOR_ATTR_AFC_EVENT_TYPE,
+	    nla_put_u8(vendor_event, QCA_WLAN_VENDOR_ATTR_AFC_EVENT_TYPE,
 		       QCA_WLAN_VENDOR_AFC_EVENT_TYPE_POWER_UPDATE_COMPLETE)) {
 		osif_err("AFC power update complete event type put fail");
 		goto fail;
@@ -367,8 +373,7 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 	}
 
 	if (vendor_event &&
-	    nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_REQ_ID,
+	    nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_AFC_EVENT_REQ_ID,
 			pwr_evt->resp_id)) {
 		osif_err("QCA_WLAN_VENDOR_ATTR_AFC_EVENT_REQ_ID put fail");
 		goto fail;
@@ -377,8 +382,7 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 	}
 
 	if (vendor_event &&
-	    nla_put_u8(vendor_event,
-		       QCA_WLAN_VENDOR_ATTR_AFC_EVENT_STATUS_CODE,
+	    nla_put_u8(vendor_event, QCA_WLAN_VENDOR_ATTR_AFC_EVENT_STATUS_CODE,
 		       pwr_evt->fw_status_code)) {
 		osif_err("AFC EVENT STATUS CODE put fail");
 		goto fail;
@@ -397,8 +401,7 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 	}
 
 	if (vendor_event &&
-	    nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_EXP_DATE,
+	    nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_AFC_EVENT_EXP_DATE,
 			pwr_evt->avail_exp_time_d)) {
 		osif_err("AFC EVENT EXPIRE DATE put fail");
 		goto fail;
@@ -407,8 +410,7 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 	}
 
 	if (vendor_event &&
-	    nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_EXP_TIME,
+	    nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_AFC_EVENT_EXP_TIME,
 			pwr_evt->avail_exp_time_t)) {
 		osif_err("AFC EVENT EXPIRE TIME put fail");
 		goto fail;
@@ -418,8 +420,9 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 
 	if (vendor_event) {
 		/* Update the Frequency and corresponding PSD info */
-		nla_attr = nla_nest_start(vendor_event,
-					  QCA_WLAN_VENDOR_ATTR_AFC_EVENT_FREQ_RANGE_LIST);
+		nla_attr = nla_nest_start(
+			vendor_event,
+			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_FREQ_RANGE_LIST);
 		if (!nla_attr)
 			goto fail;
 	} else {
@@ -436,15 +439,17 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 		}
 
 		if (vendor_event &&
-		    (nla_put_u32(vendor_event,
-				 QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_RANGE_START,
-				 pwr_evt->afc_freq_info[i].low_freq) ||
-		    nla_put_u32(vendor_event,
-				QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_RANGE_END,
-				pwr_evt->afc_freq_info[i].high_freq) ||
-		    nla_put_u32(vendor_event,
-				QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_PSD,
-				pwr_evt->afc_freq_info[i].max_psd))) {
+		    (nla_put_u32(
+			     vendor_event,
+			     QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_RANGE_START,
+			     pwr_evt->afc_freq_info[i].low_freq) ||
+		     nla_put_u32(
+			     vendor_event,
+			     QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_RANGE_END,
+			     pwr_evt->afc_freq_info[i].high_freq) ||
+		     nla_put_u32(vendor_event,
+				 QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_PSD,
+				 pwr_evt->afc_freq_info[i].max_psd))) {
 			osif_err("AFC FREQUENCY PSD INFO put failed, num %d",
 				 pwr_evt->num_freq_objs);
 			goto fail;
@@ -457,8 +462,9 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 
 	if (vendor_event) {
 		/* Update the Operating class, channel list and EIRP info */
-		nla_attr = nla_nest_start(vendor_event,
-					  QCA_WLAN_VENDOR_ATTR_AFC_EVENT_OPCLASS_CHAN_LIST);
+		nla_attr = nla_nest_start(
+			vendor_event,
+			QCA_WLAN_VENDOR_ATTR_AFC_EVENT_OPCLASS_CHAN_LIST);
 		if (!nla_attr)
 			goto fail;
 	} else {
@@ -488,8 +494,9 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 		}
 
 		if (vendor_event) {
-			chan_list = nla_nest_start(vendor_event,
-						   QCA_WLAN_VENDOR_ATTR_AFC_OPCLASS_INFO_CHAN_LIST);
+			chan_list = nla_nest_start(
+				vendor_event,
+				QCA_WLAN_VENDOR_ATTR_AFC_OPCLASS_INFO_CHAN_LIST);
 			if (!chan_list)
 				goto fail;
 		} else {
@@ -508,12 +515,14 @@ afc_power_event_update_or_get_len(struct sk_buff *vendor_event,
 			}
 
 			if (vendor_event &&
-			    (nla_put_u8(vendor_event,
-					QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_CHAN_NUM,
-					pow_evt_eirp_info[j].cfi) ||
-			    nla_put_u32(vendor_event,
-					QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_EIRP,
-					pow_evt_eirp_info[j].eirp_power))) {
+			    (nla_put_u8(
+				     vendor_event,
+				     QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_CHAN_NUM,
+				     pow_evt_eirp_info[j].cfi) ||
+			     nla_put_u32(
+				     vendor_event,
+				     QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_EIRP,
+				     pow_evt_eirp_info[j].eirp_power))) {
 				osif_err("AFC CHAN EIRP_INFO put fail, num %d",
 					 pow_evt_chan_info[i].num_chans);
 				goto fail;
@@ -555,11 +564,9 @@ int wlan_cfg80211_afc_send_request(struct wlan_objmgr_pdev *pdev,
 
 	vendor_buffer_len = afc_expiry_event_update_or_get_len(NULL, afc_req);
 
-	vendor_event = wlan_cfg80211_vendor_event_alloc(osif_priv->wiphy,
-							NULL,
-							vendor_buffer_len,
-							QCA_NL80211_VENDOR_SUBCMD_AFC_EVENT_INDEX,
-							GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		osif_priv->wiphy, NULL, vendor_buffer_len,
+		QCA_NL80211_VENDOR_SUBCMD_AFC_EVENT_INDEX, GFP_ATOMIC);
 	if (!vendor_event) {
 		osif_err("cfg80211 vendor event alloc failed");
 		return -ENOMEM;
@@ -582,9 +589,8 @@ fail:
 	return -EINVAL;
 }
 
-int
-wlan_cfg80211_afc_send_update_complete(struct wlan_objmgr_pdev *pdev,
-				       struct reg_fw_afc_power_event *afc_evt)
+int wlan_cfg80211_afc_send_update_complete(
+	struct wlan_objmgr_pdev *pdev, struct reg_fw_afc_power_event *afc_evt)
 {
 	struct sk_buff *vendor_event;
 	struct pdev_osif_priv *osif_priv;
@@ -603,11 +609,9 @@ wlan_cfg80211_afc_send_update_complete(struct wlan_objmgr_pdev *pdev,
 
 	vendor_buffer_len = afc_power_event_update_or_get_len(NULL, afc_evt);
 
-	vendor_event = wlan_cfg80211_vendor_event_alloc(osif_priv->wiphy,
-							NULL,
-							vendor_buffer_len,
-							QCA_NL80211_VENDOR_SUBCMD_AFC_EVENT_INDEX,
-							GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		osif_priv->wiphy, NULL, vendor_buffer_len,
+		QCA_NL80211_VENDOR_SUBCMD_AFC_EVENT_INDEX, GFP_ATOMIC);
 	if (!vendor_event) {
 		osif_err("cfg80211 vendor event alloc failed");
 		return -ENOMEM;
@@ -642,31 +646,25 @@ static void afc_response_display(struct afc_resp_extracted *rsp)
 	if (rsp->json_data)
 		return;
 
-	osif_debug("Req ID: %u TTL: %u Date: 0x%x Time: 0x%x Resp code: %u Freq objs: %u Opclass objs: %u",
-		   rsp->request_id,
-		   rsp->time_to_live,
-		   rsp->avail_exp_date,
-		   rsp->avail_exp_time,
-		   rsp->afc_serv_resp_code,
-		   rsp->num_frange_obj,
-		   rsp->num_opclass);
+	osif_debug(
+		"Req ID: %u TTL: %u Date: 0x%x Time: 0x%x Resp code: %u Freq "
+		"objs: %u Opclass objs: %u",
+		rsp->request_id, rsp->time_to_live, rsp->avail_exp_date,
+		rsp->avail_exp_time, rsp->afc_serv_resp_code,
+		rsp->num_frange_obj, rsp->num_opclass);
 
 	for (iter = 0; iter < rsp->num_frange_obj; iter++)
-		osif_debug("Freq Info[%d]: start %u end %u PSD %u",
-			   iter,
+		osif_debug("Freq Info[%d]: start %u end %u PSD %u", iter,
 			   rsp->frange[iter].freq_start,
-			   rsp->frange[iter].freq_end,
-			   rsp->frange[iter].psd);
+			   rsp->frange[iter].freq_end, rsp->frange[iter].psd);
 
 	for (iter = 0; iter < rsp->num_opclass; iter++) {
-		osif_debug("Opclass[%d]: %u Num channels: %u",
-			   iter,
+		osif_debug("Opclass[%d]: %u Num channels: %u", iter,
 			   rsp->op_obj[iter].opclass,
 			   rsp->op_obj[iter].num_channel);
 
 		for (j = 0; j < rsp->op_obj[iter].num_channel; j++)
-			osif_debug("Channel Info[%d]:CFI: %u EIRP: %u",
-				   j,
+			osif_debug("Channel Info[%d]:CFI: %u EIRP: %u", j,
 				   rsp->op_obj[iter].chan_eirp[j].channel_cfi,
 				   rsp->op_obj[iter].chan_eirp[j].eirp);
 	}
@@ -680,8 +678,8 @@ static void afc_response_display(struct afc_resp_extracted *rsp)
  *
  * Return: Negative error number if failed, otherwise success
  */
-static int
-wlan_parse_afc_rsp_freq_psd(struct nlattr *attr, struct afc_resp_extracted *rsp)
+static int wlan_parse_afc_rsp_freq_psd(struct nlattr *attr,
+				       struct afc_resp_extracted *rsp)
 {
 	int ret = -EINVAL;
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_MAX + 1];
@@ -694,11 +692,9 @@ wlan_parse_afc_rsp_freq_psd(struct nlattr *attr, struct afc_resp_extracted *rsp)
 			osif_err("Ignore exceed");
 			break;
 		}
-		if (wlan_cfg80211_nla_parse(tb,
-					    QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_MAX,
-					    nla_data(cur_attr),
-					    nla_len(cur_attr),
-					    NULL)) {
+		if (wlan_cfg80211_nla_parse(
+			    tb, QCA_WLAN_VENDOR_ATTR_AFC_FREQ_PSD_INFO_MAX,
+			    nla_data(cur_attr), nla_len(cur_attr), NULL)) {
 			osif_err("Invalid ATTR");
 			return ret;
 		}
@@ -730,9 +726,8 @@ wlan_parse_afc_rsp_freq_psd(struct nlattr *attr, struct afc_resp_extracted *rsp)
  *
  * Return: Negative error number if failed, otherwise success
  */
-static int
-wlan_parse_afc_rsp_opclass_eirp(struct nlattr *attr,
-				struct afc_resp_extracted *rsp)
+static int wlan_parse_afc_rsp_opclass_eirp(struct nlattr *attr,
+					   struct afc_resp_extracted *rsp)
 {
 	int ret = -EINVAL;
 	struct nlattr *tb1[QCA_WLAN_VENDOR_ATTR_AFC_OPCLASS_INFO_MAX + 1];
@@ -746,11 +741,9 @@ wlan_parse_afc_rsp_opclass_eirp(struct nlattr *attr,
 			osif_err("Ignore opclass list exceed");
 			break;
 		}
-		if (wlan_cfg80211_nla_parse(tb1,
-					    QCA_WLAN_VENDOR_ATTR_AFC_OPCLASS_INFO_MAX,
-					    nla_data(cur_attr),
-					    nla_len(cur_attr),
-					    NULL)) {
+		if (wlan_cfg80211_nla_parse(
+			    tb1, QCA_WLAN_VENDOR_ATTR_AFC_OPCLASS_INFO_MAX,
+			    nla_data(cur_attr), nla_len(cur_attr), NULL)) {
 			osif_err("Invalid ATTR");
 			return ret;
 		}
@@ -771,22 +764,22 @@ wlan_parse_afc_rsp_opclass_eirp(struct nlattr *attr,
 				osif_err("Ignore eirp list exceed");
 				break;
 			}
-			if (wlan_cfg80211_nla_parse(tb2,
-						    QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_MAX,
-						    nla_data(sub_attr),
-						    nla_len(sub_attr),
-						    NULL)) {
+			if (wlan_cfg80211_nla_parse(
+				    tb2,
+				    QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_MAX,
+				    nla_data(sub_attr), nla_len(sub_attr),
+				    NULL)) {
 				osif_err("Invalid ATTR");
 				return ret;
 			}
 			tb = tb2[QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_CHAN_NUM];
 			if (tb)
 				rsp->op_obj[i].chan_eirp[ch_idx].channel_cfi =
-						nla_get_u8(tb);
+					nla_get_u8(tb);
 			tb = tb2[QCA_WLAN_VENDOR_ATTR_AFC_CHAN_EIRP_INFO_EIRP];
 			if (tb)
 				rsp->op_obj[i].chan_eirp[ch_idx].eirp =
-						nla_get_u32(tb);
+					nla_get_u32(tb);
 			ch_idx++;
 		}
 		rsp->op_obj[i].num_channel = ch_idx;
@@ -884,17 +877,19 @@ static struct afc_resp_extracted *extract_afc_resp(struct nlattr **attr)
 	afc_rsp->avail_exp_time =
 		nla_get_u32(attr[QCA_WLAN_VENDOR_ATTR_AFC_RESP_EXP_TIME]);
 
-	afc_rsp->afc_serv_resp_code =
-		nla_get_s32(attr[QCA_WLAN_VENDOR_ATTR_AFC_RESP_AFC_SERVER_RESP_CODE]);
+	afc_rsp->afc_serv_resp_code = nla_get_s32(
+		attr[QCA_WLAN_VENDOR_ATTR_AFC_RESP_AFC_SERVER_RESP_CODE]);
 
-	if (wlan_parse_afc_rsp_freq_psd(attr[QCA_WLAN_VENDOR_ATTR_AFC_RESP_FREQ_PSD_INFO],
-					afc_rsp) <= 0) {
+	if (wlan_parse_afc_rsp_freq_psd(
+		    attr[QCA_WLAN_VENDOR_ATTR_AFC_RESP_FREQ_PSD_INFO],
+		    afc_rsp) <= 0) {
 		osif_err("parse freq psd err");
 		goto fail;
 	}
 
-	if (wlan_parse_afc_rsp_opclass_eirp(attr[QCA_WLAN_VENDOR_ATTR_AFC_RESP_OPCLASS_CHAN_EIRP_INFO],
-					    afc_rsp) <= 0) {
+	if (wlan_parse_afc_rsp_opclass_eirp(
+		    attr[QCA_WLAN_VENDOR_ATTR_AFC_RESP_OPCLASS_CHAN_EIRP_INFO],
+		    afc_rsp) <= 0) {
 		osif_err("parse opclass eirp err");
 		goto fail;
 	}
@@ -928,10 +923,9 @@ static inline bool is_target_support_json_format(struct wlan_objmgr_psoc *psoc)
  *
  * Return: Negative error number if failed, otherwise success
  */
-static int
-fill_host_afc_response_buffer(struct wlan_objmgr_psoc *psoc,
-			      struct afc_resp_extracted *afc_rsp,
-			      struct wlan_afc_host_resp *host_afc)
+static int fill_host_afc_response_buffer(struct wlan_objmgr_psoc *psoc,
+					 struct afc_resp_extracted *afc_rsp,
+					 struct wlan_afc_host_resp *host_afc)
 {
 	int ret = -EINVAL;
 	uint32_t bin_len, tmp_len;
@@ -957,8 +951,7 @@ fill_host_afc_response_buffer(struct wlan_objmgr_psoc *psoc,
 		}
 		host_afc->resp_format = REG_AFC_SERV_RESP_FORMAT_JSON;
 		host_afc->length = sizeof(*host_afc) + afc_rsp->json_len;
-		qdf_mem_copy(host_afc->afc_resp,
-			     afc_rsp->json_data,
+		qdf_mem_copy(host_afc->afc_resp, afc_rsp->json_data,
 			     afc_rsp->json_len);
 		return host_afc->length;
 	}
@@ -978,8 +971,8 @@ fill_host_afc_response_buffer(struct wlan_objmgr_psoc *psoc,
 			 afc_bin->num_frequency_obj);
 		return ret;
 	}
-	freq_psd = (struct wlan_afc_resp_freq_psd_info *)
-		   ((uint8_t *)host_afc + bin_len);
+	freq_psd = (struct wlan_afc_resp_freq_psd_info *)((uint8_t *)host_afc +
+							  bin_len);
 	for (i = 0; i < afc_bin->num_frequency_obj; i++) {
 		freq_psd->freq_info =
 			(afc_rsp->frange[i].freq_start & 0x0000FFFF) |
@@ -999,13 +992,13 @@ fill_host_afc_response_buffer(struct wlan_objmgr_psoc *psoc,
 		return ret;
 	}
 
-	op = (struct wlan_afc_resp_opclass_info *)
-	     ((uint8_t *)host_afc + bin_len);
+	op = (struct wlan_afc_resp_opclass_info *)((uint8_t *)host_afc +
+						   bin_len);
 	for (i = 0; i < afc_rsp->num_opclass; i++) {
 		op->opclass = afc_rsp->op_obj[i].opclass;
 		op->num_channels = afc_rsp->op_obj[i].num_channel;
-		chan_eirp = (struct wlan_afc_resp_eirp_info *)
-			    ((uint8_t *)op + sizeof(*op));
+		chan_eirp = (struct wlan_afc_resp_eirp_info *)((uint8_t *)op +
+							       sizeof(*op));
 		for (j = 0; j < afc_rsp->op_obj[i].num_channel; j++) {
 			chan_eirp->channel_cfi =
 				afc_rsp->op_obj[i].chan_eirp[j].channel_cfi;
@@ -1023,8 +1016,7 @@ fill_host_afc_response_buffer(struct wlan_objmgr_psoc *psoc,
 
 int wlan_cfg80211_vendor_afc_response(struct wlan_objmgr_psoc *psoc,
 				      struct wlan_objmgr_pdev *pdev,
-				      const void *data,
-				      int data_len)
+				      const void *data, int data_len)
 {
 	int ret = -EINVAL;
 	struct nlattr *attr[QCA_WLAN_VENDOR_ATTR_AFC_RESP_MAX + 1];
@@ -1061,9 +1053,9 @@ int wlan_cfg80211_vendor_afc_response(struct wlan_objmgr_psoc *psoc,
 	}
 
 	afc_ind_obj.cmd_type = REG_AFC_CMD_SERV_RESP_READY;
-	afc_ind_obj.serv_resp_format =
-				is_json ? REG_AFC_SERV_RESP_FORMAT_JSON :
-				REG_AFC_SERV_RESP_FORMAT_BINARY;
+	afc_ind_obj.serv_resp_format = is_json ?
+					       REG_AFC_SERV_RESP_FORMAT_JSON :
+					       REG_AFC_SERV_RESP_FORMAT_BINARY;
 	if (ucfg_reg_send_afc_resp_rx_ind(pdev, &afc_ind_obj) !=
 	    QDF_STATUS_SUCCESS) {
 		osif_err("Failed to send afc rx indication");

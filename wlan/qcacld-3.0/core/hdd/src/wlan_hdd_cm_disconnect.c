@@ -22,35 +22,35 @@
  *
  */
 
-#include "wlan_hdd_main.h"
-#include "wlan_hdd_object_manager.h"
-#include "wlan_hdd_trace.h"
-#include <osif_cm_req.h>
-#include "wlan_hdd_cm_api.h"
-#include "wlan_ipa_ucfg_api.h"
-#include "wlan_hdd_stats.h"
-#include "wlan_hdd_scan.h"
-#include "sme_power_save_api.h"
-#include <wlan_logging_sock_svc.h>
-#include "wlan_hdd_ftm_time_sync.h"
-#include "wlan_hdd_bcn_recv.h"
-#include "wlan_hdd_assoc.h"
-#include "wlan_hdd_ipa.h"
-#include "wlan_hdd_green_ap.h"
-#include "wlan_hdd_lpass.h"
-#include "wlan_hdd_bootup_marker.h"
-#include "wlan_p2p_ucfg_api.h"
-#include "wlan_crypto_global_api.h"
-#include "wlan_mlme_vdev_mgr_interface.h"
 #include "hif.h"
-#include "wlan_hdd_power.h"
-#include "wlan_hdd_napi.h"
-#include "wlan_hdd_cfr.h"
-#include "wlan_roam_debug.h"
-#include "wma_api.h"
-#include "wlan_hdd_hostapd.h"
+#include "sme_power_save_api.h"
+#include "wlan_crypto_global_api.h"
 #include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_assoc.h"
+#include "wlan_hdd_bcn_recv.h"
+#include "wlan_hdd_bootup_marker.h"
+#include "wlan_hdd_cfr.h"
+#include "wlan_hdd_cm_api.h"
+#include "wlan_hdd_ftm_time_sync.h"
+#include "wlan_hdd_green_ap.h"
+#include "wlan_hdd_hostapd.h"
+#include "wlan_hdd_ipa.h"
+#include "wlan_hdd_lpass.h"
+#include "wlan_hdd_main.h"
+#include "wlan_hdd_napi.h"
+#include "wlan_hdd_object_manager.h"
+#include "wlan_hdd_power.h"
+#include "wlan_hdd_scan.h"
+#include "wlan_hdd_stats.h"
+#include "wlan_hdd_trace.h"
+#include "wlan_ipa_ucfg_api.h"
+#include "wlan_mlme_vdev_mgr_interface.h"
+#include "wlan_p2p_ucfg_api.h"
+#include "wlan_roam_debug.h"
 #include "wma.h"
+#include "wma_api.h"
+#include <osif_cm_req.h>
+#include <wlan_logging_sock_svc.h>
 
 void hdd_handle_disassociation_event(struct wlan_hdd_link_info *link_info,
 				     struct qdf_mac_addr *peer_macaddr)
@@ -69,18 +69,17 @@ void hdd_handle_disassociation_event(struct wlan_hdd_link_info *link_info,
 	if ((adapter->device_mode == QDF_STA_MODE) ||
 	    (adapter->device_mode == QDF_P2P_CLIENT_MODE))
 		/* send peer status indication to oem app */
-		hdd_send_peer_status_ind_to_app(peer_macaddr,
-						ePeerDisconnected, 0,
-						link_info->vdev_id, NULL,
+		hdd_send_peer_status_ind_to_app(peer_macaddr, ePeerDisconnected,
+						0, link_info->vdev_id, NULL,
 						adapter->device_mode);
 
 	hdd_lpass_notify_disconnect(link_info);
 
 	vdev = hdd_objmgr_get_vdev_by_user(link_info, WLAN_DP_ID);
 	if (vdev) {
-		ucfg_dp_del_latency_critical_client(vdev,
-			hdd_convert_cfgdot11mode_to_80211mode(
-				sta_ctx->conn_info.dot11mode));
+		ucfg_dp_del_latency_critical_client(
+			vdev, hdd_convert_cfgdot11mode_to_80211mode(
+				      sta_ctx->conn_info.dot11mode));
 		/* stop timer in sta/p2p_cli */
 		ucfg_dp_bus_bw_compute_reset_prev_txrx_stats(vdev);
 		hdd_objmgr_put_vdev_by_user(vdev, WLAN_DP_ID);
@@ -105,26 +104,28 @@ static void hdd_cm_print_bss_info(struct hdd_station_ctx *hdd_sta_ctx)
 	conn_info = &hdd_sta_ctx->conn_info;
 
 	hdd_nofl_debug("*********** WIFI DATA LOGGER **************");
-	hdd_nofl_debug("freq: %d dot11mode %d AKM %d ssid: \"" QDF_SSID_FMT "\" ,roam_count %d nss %d legacy %d mcs %d signal %d noise: %d",
-		       conn_info->chan_freq, conn_info->dot11mode,
-		       conn_info->last_auth_type,
-		       QDF_SSID_REF(conn_info->last_ssid.SSID.length,
-				    conn_info->last_ssid.SSID.ssId),
-		       conn_info->roam_count,
-		       conn_info->txrate.nss, conn_info->txrate.legacy,
-		       conn_info->txrate.mcs, conn_info->signal,
-		       conn_info->noise);
+	hdd_nofl_debug(
+		"freq: %d dot11mode %d AKM %d ssid: \"" QDF_SSID_FMT
+		"\" ,roam_count %d nss %d legacy %d mcs %d signal %d noise: %d",
+		conn_info->chan_freq, conn_info->dot11mode,
+		conn_info->last_auth_type,
+		QDF_SSID_REF(conn_info->last_ssid.SSID.length,
+			     conn_info->last_ssid.SSID.ssId),
+		conn_info->roam_count, conn_info->txrate.nss,
+		conn_info->txrate.legacy, conn_info->txrate.mcs,
+		conn_info->signal, conn_info->noise);
 	ht_cap_info = (uint32_t *)&conn_info->ht_caps;
 	vht_cap_info = (uint32_t *)&conn_info->vht_caps;
 	hdd_nofl_debug("HT 0x%x VHT 0x%x ht20 info 0x%x",
 		       conn_info->conn_flag.ht_present ? *ht_cap_info : 0,
 		       conn_info->conn_flag.vht_present ? *vht_cap_info : 0,
 		       conn_info->conn_flag.hs20_present ?
-		       conn_info->hs20vendor_ie.release_num : 0);
+			       conn_info->hs20vendor_ie.release_num :
+			       0);
 }
 
-void
-__hdd_cm_disconnect_handler_pre_user_update(struct wlan_hdd_link_info *link_info)
+void __hdd_cm_disconnect_handler_pre_user_update(
+	struct wlan_hdd_link_info *link_info)
 {
 	struct hdd_adapter *adapter = link_info->adapter;
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
@@ -137,14 +138,12 @@ __hdd_cm_disconnect_handler_pre_user_update(struct wlan_hdd_link_info *link_info
 	time_buffer_size = sizeof(sta_ctx->conn_info.connect_time);
 	qdf_mem_zero(sta_ctx->conn_info.connect_time, time_buffer_size);
 	if (ucfg_ipa_is_enabled() &&
-	    QDF_IS_STATUS_SUCCESS(wlan_hdd_validate_mac_address(
-				  &sta_ctx->conn_info.bssid)))
+	    QDF_IS_STATUS_SUCCESS(
+		    wlan_hdd_validate_mac_address(&sta_ctx->conn_info.bssid)))
 		ucfg_ipa_wlan_evt(hdd_ctx->pdev, adapter->dev,
-				  adapter->device_mode,
-				  link_info->vdev_id,
+				  adapter->device_mode, link_info->vdev_id,
 				  WLAN_IPA_STA_DISCONNECT,
-				  sta_ctx->conn_info.bssid.bytes,
-				  false);
+				  sta_ctx->conn_info.bssid.bytes, false);
 
 	vdev = hdd_objmgr_get_vdev_by_user(link_info, WLAN_DP_ID);
 	if (vdev) {
@@ -154,10 +153,10 @@ __hdd_cm_disconnect_handler_pre_user_update(struct wlan_hdd_link_info *link_info
 
 	wlan_hdd_auto_shutdown_enable(hdd_ctx, true);
 
-	DPTRACE(qdf_dp_trace_mgmt_pkt(QDF_DP_TRACE_MGMT_PACKET_RECORD,
-		link_info->vdev_id,
-		QDF_TRACE_DEFAULT_PDEV_ID,
-		QDF_PROTO_TYPE_MGMT, QDF_PROTO_MGMT_DISASSOC));
+	DPTRACE(qdf_dp_trace_mgmt_pkt(
+		QDF_DP_TRACE_MGMT_PACKET_RECORD, link_info->vdev_id,
+		QDF_TRACE_DEFAULT_PDEV_ID, QDF_PROTO_TYPE_MGMT,
+		QDF_PROTO_MGMT_DISASSOC));
 
 	hdd_wmm_dscp_initial_state(adapter);
 	wlan_deregister_txrx_packetdump(OL_TXRX_PDEV_ID);
@@ -165,9 +164,8 @@ __hdd_cm_disconnect_handler_pre_user_update(struct wlan_hdd_link_info *link_info
 	hdd_place_marker(adapter, "DISCONNECTED", NULL);
 }
 
-void
-__hdd_cm_disconnect_handler_post_user_update(struct wlan_hdd_link_info *link_info,
-					     struct wlan_objmgr_vdev *vdev)
+void __hdd_cm_disconnect_handler_post_user_update(
+	struct wlan_hdd_link_info *link_info, struct wlan_objmgr_vdev *vdev)
 {
 	struct hdd_adapter *adapter = link_info->adapter;
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
@@ -176,7 +174,7 @@ __hdd_cm_disconnect_handler_post_user_update(struct wlan_hdd_link_info *link_inf
 	struct hdd_adapter *link_adapter;
 	struct hdd_station_ctx *link_sta_ctx;
 	bool is_link_switch =
-			wlan_vdev_mlme_is_mlo_link_switch_in_progress(vdev);
+		wlan_vdev_mlme_is_mlo_link_switch_in_progress(vdev);
 
 	mac_handle = hdd_ctx->mac_handle;
 	sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(link_info);
@@ -206,8 +204,8 @@ __hdd_cm_disconnect_handler_post_user_update(struct wlan_hdd_link_info *link_inf
 		/* Clear connection info in assoc link adapter as well */
 		link_adapter = hdd_get_assoc_link_adapter(adapter);
 		if (link_adapter) {
-			link_sta_ctx =
-				WLAN_HDD_GET_STATION_CTX_PTR(link_adapter->deflink);
+			link_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(
+				link_adapter->deflink);
 			hdd_conn_remove_connect_info(link_sta_ctx);
 		}
 	}
@@ -216,19 +214,18 @@ __hdd_cm_disconnect_handler_post_user_update(struct wlan_hdd_link_info *link_inf
 		/* Clear saved connection information in HDD */
 		hdd_conn_remove_connect_info(sta_ctx);
 		/* Reset the IEEE link ID to invalid when disconnect is not
-		 * due to link switch.
-		 */
+     * due to link switch.
+     */
 		hdd_adapter_reset_station_ctx(adapter);
 	}
 
 	ucfg_dp_remove_conn_info(vdev);
 
 	/* Setting the RTS profile to original value */
-	if (sme_cli_set_command(link_info->vdev_id,
-				wmi_vdev_param_enable_rtscts,
-				cfg_get(hdd_ctx->psoc,
-					CFG_ENABLE_FW_RTS_PROFILE),
-				VDEV_CMD))
+	if (sme_cli_set_command(
+		    link_info->vdev_id, wmi_vdev_param_enable_rtscts,
+		    cfg_get(hdd_ctx->psoc, CFG_ENABLE_FW_RTS_PROFILE),
+		    VDEV_CMD))
 		hdd_debug("Failed to set RTS_PROFILE");
 
 	hdd_init_scan_reject_params(hdd_ctx);
@@ -293,8 +290,8 @@ wlan_hdd_cm_issue_disconnect(struct wlan_hdd_link_info *link_info,
 	return status;
 }
 
-int wlan_hdd_cm_disconnect(struct wiphy *wiphy,
-			   struct net_device *dev, u16 reason)
+int wlan_hdd_cm_disconnect(struct wiphy *wiphy, struct net_device *dev,
+			   u16 reason)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
@@ -320,27 +317,26 @@ int wlan_hdd_cm_disconnect(struct wiphy *wiphy,
 	}
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_CFG80211_DISCONNECT,
-		   link_info->vdev_id, reason);
+		   TRACE_CODE_HDD_CFG80211_DISCONNECT, link_info->vdev_id,
+		   reason);
 
 	hdd_print_netdev_txq_status(dev);
 
 	if (reason == WLAN_REASON_DEAUTH_LEAVING)
-		qdf_dp_trace_dump_all(
-				WLAN_DEAUTH_DPTRACE_DUMP_COUNT,
-				QDF_TRACE_DEFAULT_PDEV_ID);
+		qdf_dp_trace_dump_all(WLAN_DEAUTH_DPTRACE_DUMP_COUNT,
+				      QDF_TRACE_DEFAULT_PDEV_ID);
 	/*
-	 * for Supplicant initiated disconnect always wait for complete,
-	 * as for WPS connection or back to back connect, supplicant initiate a
-	 * disconnect which is followed by connect and if kernel is not yet
-	 * disconnected, this new connect will be rejected by kernel with status
-	 * EALREADY. In case connect is rejected with EALREADY, supplicant will
-	 * queue one more disconnect followed by connect immediately, Now if
-	 * driver is not disconnected by this time, the kernel will again reject
-	 * connect and thus the failing the connect req in supplicant.
-	 * Thus we need to wait for disconnect to complete in this case,
-	 * and thus use sync API here.
-	 */
+   * for Supplicant initiated disconnect always wait for complete,
+   * as for WPS connection or back to back connect, supplicant initiate a
+   * disconnect which is followed by connect and if kernel is not yet
+   * disconnected, this new connect will be rejected by kernel with status
+   * EALREADY. In case connect is rejected with EALREADY, supplicant will
+   * queue one more disconnect followed by connect immediately, Now if
+   * driver is not disconnected by this time, the kernel will again reject
+   * connect and thus the failing the connect req in supplicant.
+   * Thus we need to wait for disconnect to complete in this case,
+   * and thus use sync API here.
+   */
 	status = wlan_hdd_cm_issue_disconnect(link_info, reason, true);
 
 	return qdf_status_to_os_return(status);
@@ -373,19 +369,17 @@ hdd_cm_disconnect_complete_pre_user_update(struct wlan_objmgr_vdev *vdev,
 
 	hdd_handle_disassociation_event(link_info, &rsp->req.req.bssid);
 
-	wlan_rec_conn_info(link_info->vdev_id,
-			   DEBUG_CONN_DISCONNECT_HANDLER,
-			   rsp->req.req.bssid.bytes,
-			   rsp->req.cm_id,
+	wlan_rec_conn_info(link_info->vdev_id, DEBUG_CONN_DISCONNECT_HANDLER,
+			   rsp->req.req.bssid.bytes, rsp->req.cm_id,
 			   rsp->req.req.reason_code << 16 |
-			   rsp->req.req.source);
+				   rsp->req.req.source);
 	wlan_hdd_set_tx_flow_info();
 	/*
-	 * Convert and cache internal reason code in adapter. This can be
-	 * sent to userspace with a vendor event.
-	 */
+   * Convert and cache internal reason code in adapter. This can be
+   * sent to userspace with a vendor event.
+   */
 	adapter->last_disconnect_reason =
-			osif_cm_mac_to_qca_reason(rsp->req.req.reason_code);
+		osif_cm_mac_to_qca_reason(rsp->req.req.reason_code);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -429,10 +423,9 @@ static void hdd_cm_set_default_wlm_mode(struct hdd_adapter *adapter)
 							client_id_bitmap, true);
 		wlan_hdd_deinit_multi_client_info_table(adapter);
 	} else {
-		status =
-			sme_set_wlm_latency_level(hdd_ctx->mac_handle,
-						  adapter->deflink->vdev_id,
-						  def_level, 0, false);
+		status = sme_set_wlm_latency_level(hdd_ctx->mac_handle,
+						   adapter->deflink->vdev_id,
+						   def_level, 0, false);
 		if (QDF_IS_STATUS_SUCCESS(status)) {
 			hdd_debug("reset wlm mode %x on disconnection",
 				  def_level);
@@ -564,17 +557,17 @@ hdd_cm_disconnect_complete_post_user_update(struct wlan_objmgr_vdev *vdev,
 
 	adapter = link_info->adapter;
 	if (adapter->device_mode == QDF_STA_MODE) {
-	/* Inform FTM TIME SYNC about the disconnection with the AP */
+		/* Inform FTM TIME SYNC about the disconnection with the AP */
 		hdd_ftm_time_sync_sta_state_notify(
-				adapter, FTM_TIME_SYNC_STA_DISCONNECTED);
+			adapter, FTM_TIME_SYNC_STA_DISCONNECTED);
 	}
 
 	/*
-	 * via the SET_MAX_BANDWIDTH command, the upper layer can update channel
-	 * width. The host should update channel bandwidth to the max supported
-	 * bandwidth on disconnection so that post disconnection DUT can
-	 * connect in max BW.
-	 */
+   * via the SET_MAX_BANDWIDTH command, the upper layer can update channel
+   * width. The host should update channel bandwidth to the max supported
+   * bandwidth on disconnection so that post disconnection DUT can
+   * connect in max BW.
+   */
 	hdd_cm_restore_ch_width(vdev, adapter);
 	hdd_cm_set_default_wlm_mode(adapter);
 	__hdd_cm_disconnect_handler_post_user_update(link_info, vdev);
@@ -698,21 +691,20 @@ QDF_STATUS hdd_cm_perfd_set_cpufreq(bool action)
 	}
 
 	if (action) {
-		req.magic    = WLAN_CORE_MINFREQ_MAGIC;
+		req.magic = WLAN_CORE_MINFREQ_MAGIC;
 		req.reserved = 0; /* unused */
-		req.coremask = 0x00ff;/* big and little cluster */
-		req.freq     = 0xfff;/* set to max freq */
+		req.coremask = 0x00ff; /* big and little cluster */
+		req.freq = 0xfff; /* set to max freq */
 	} else {
-		req.magic    = WLAN_CORE_MINFREQ_MAGIC;
+		req.magic = WLAN_CORE_MINFREQ_MAGIC;
 		req.reserved = 0; /* unused */
 		req.coremask = 0; /* not valid */
-		req.freq     = 0; /* reset */
+		req.freq = 0; /* reset */
 	}
 
 	hdd_debug("CPU min freq to 0x%x coremask 0x%x", req.freq, req.coremask);
 	/* the following service function returns void */
-	wlan_hdd_send_svc_nlink_msg(hdd_ctx->radio_index,
-				    WLAN_SVC_CORE_MINFREQ,
+	wlan_hdd_send_svc_nlink_msg(hdd_ctx->radio_index, WLAN_SVC_CORE_MINFREQ,
 				    &req, sizeof(struct wlan_core_minfreq));
 	return QDF_STATUS_SUCCESS;
 }

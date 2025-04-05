@@ -20,14 +20,14 @@
  * DOC: Implements public API for pmo to interact with target/WMI
  */
 
-#include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_arp_public_struct.h"
+#include "wlan_pmo_main.h"
 #include "wlan_pmo_ns_public_struct.h"
 #include "wlan_pmo_obj_mgmt_public_struct.h"
-#include "wlan_pmo_main.h"
+#include "wlan_pmo_tgt_api.h"
 
 QDF_STATUS pmo_tgt_enable_arp_offload_req(struct wlan_objmgr_vdev *vdev,
-		uint8_t vdev_id)
+					  uint8_t vdev_id)
 {
 	struct pmo_arp_offload_params *arp_offload_req = NULL;
 	struct pmo_ns_offload_params *ns_offload_req = NULL;
@@ -54,9 +54,9 @@ QDF_STATUS pmo_tgt_enable_arp_offload_req(struct wlan_objmgr_vdev *vdev,
 
 	qdf_spin_lock_bh(&vdev_ctx->pmo_vdev_lock);
 	qdf_mem_copy(arp_offload_req, &vdev_ctx->vdev_arp_req,
-		sizeof(*arp_offload_req));
+		     sizeof(*arp_offload_req));
 	qdf_mem_copy(ns_offload_req, &vdev_ctx->vdev_ns_req,
-		sizeof(*ns_offload_req));
+		     sizeof(*ns_offload_req));
 	qdf_spin_unlock_bh(&vdev_ctx->pmo_vdev_lock);
 
 	pmo_debug("vdev_id: %d: ARP offload %d NS offload %d ns_count %u",
@@ -69,8 +69,8 @@ QDF_STATUS pmo_tgt_enable_arp_offload_req(struct wlan_objmgr_vdev *vdev,
 		status = QDF_STATUS_E_NULL_VALUE;
 		goto out;
 	}
-	status = pmo_tx_ops.send_arp_offload_req(
-			vdev, arp_offload_req, ns_offload_req);
+	status = pmo_tx_ops.send_arp_offload_req(vdev, arp_offload_req,
+						 ns_offload_req);
 	if (status != QDF_STATUS_SUCCESS) {
 		pmo_err("Failed to send ARP offload");
 		goto out;
@@ -93,7 +93,7 @@ out:
 }
 
 QDF_STATUS pmo_tgt_disable_arp_offload_req(struct wlan_objmgr_vdev *vdev,
-		uint8_t vdev_id)
+					   uint8_t vdev_id)
 {
 	struct pmo_arp_offload_params *arp_offload_req = NULL;
 	struct pmo_ns_offload_params *ns_offload_req = NULL;
@@ -122,18 +122,15 @@ QDF_STATUS pmo_tgt_disable_arp_offload_req(struct wlan_objmgr_vdev *vdev,
 
 	qdf_spin_lock_bh(&vdev_ctx->pmo_vdev_lock);
 	qdf_mem_copy(arp_offload_req, &vdev_ctx->vdev_arp_req,
-		sizeof(*arp_offload_req));
+		     sizeof(*arp_offload_req));
 	qdf_mem_copy(ns_offload_req, &vdev_ctx->vdev_ns_req,
-		sizeof(*ns_offload_req));
+		     sizeof(*ns_offload_req));
 	qdf_spin_unlock_bh(&vdev_ctx->pmo_vdev_lock);
 
-	pmo_debug("ARP Offload vdev_id: %d enable: %d",
-		vdev_id,
-		arp_offload_req->enable);
-	pmo_debug("NS Offload vdev_id: %d enable: %d ns_count: %u",
-		vdev_id,
-		ns_offload_req->enable,
-		ns_offload_req->num_ns_offload_count);
+	pmo_debug("ARP Offload vdev_id: %d enable: %d", vdev_id,
+		  arp_offload_req->enable);
+	pmo_debug("NS Offload vdev_id: %d enable: %d ns_count: %u", vdev_id,
+		  ns_offload_req->enable, ns_offload_req->num_ns_offload_count);
 
 	pmo_tx_ops = GET_PMO_TX_OPS_FROM_PSOC(psoc);
 	if (!pmo_tx_ops.send_arp_offload_req) {
@@ -141,8 +138,8 @@ QDF_STATUS pmo_tgt_disable_arp_offload_req(struct wlan_objmgr_vdev *vdev,
 		status = QDF_STATUS_E_NULL_VALUE;
 		goto out;
 	}
-	status = pmo_tx_ops.send_arp_offload_req(
-			vdev, arp_offload_req, ns_offload_req);
+	status = pmo_tx_ops.send_arp_offload_req(vdev, arp_offload_req,
+						 ns_offload_req);
 	if (status != QDF_STATUS_SUCCESS)
 		pmo_err("Failed to send ARP offload");
 
@@ -160,4 +157,3 @@ out:
 
 	return status;
 }
-

@@ -26,36 +26,33 @@
 
 /* Include files */
 
-#include "target_if_dlm.h"
-#include <wlan_dlm_ucfg_api.h>
 #include "cfg_ucfg_api.h"
+#include "target_if_dlm.h"
 #include <wlan_dlm_core.h>
+#include <wlan_dlm_ucfg_api.h>
 
-struct dlm_pdev_priv_obj *
-dlm_get_pdev_obj(struct wlan_objmgr_pdev *pdev)
+struct dlm_pdev_priv_obj *dlm_get_pdev_obj(struct wlan_objmgr_pdev *pdev)
 {
 	struct dlm_pdev_priv_obj *dlm_pdev_obj;
 
-	dlm_pdev_obj = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						  WLAN_UMAC_COMP_DENYLIST_MGR);
+	dlm_pdev_obj = wlan_objmgr_pdev_get_comp_private_obj(
+		pdev, WLAN_UMAC_COMP_DENYLIST_MGR);
 
 	return dlm_pdev_obj;
 }
 
-struct dlm_psoc_priv_obj *
-dlm_get_psoc_obj(struct wlan_objmgr_psoc *psoc)
+struct dlm_psoc_priv_obj *dlm_get_psoc_obj(struct wlan_objmgr_psoc *psoc)
 {
 	struct dlm_psoc_priv_obj *dlm_psoc_obj;
 
-	dlm_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						  WLAN_UMAC_COMP_DENYLIST_MGR);
+	dlm_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(
+		psoc, WLAN_UMAC_COMP_DENYLIST_MGR);
 
 	return dlm_psoc_obj;
 }
 
 QDF_STATUS
-dlm_pdev_object_created_notification(struct wlan_objmgr_pdev *pdev,
-				     void *arg)
+dlm_pdev_object_created_notification(struct wlan_objmgr_pdev *pdev, void *arg)
 {
 	struct dlm_pdev_priv_obj *dlm_ctx;
 	QDF_STATUS status;
@@ -75,10 +72,8 @@ dlm_pdev_object_created_notification(struct wlan_objmgr_pdev *pdev,
 	qdf_list_create(&dlm_ctx->reject_ap_list, MAX_BAD_AP_LIST_SIZE);
 
 	target_if_dlm_register_tx_ops(&dlm_ctx->dlm_tx_ops);
-	status = wlan_objmgr_pdev_component_obj_attach(pdev,
-						   WLAN_UMAC_COMP_DENYLIST_MGR,
-						   dlm_ctx,
-						   QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_pdev_component_obj_attach(
+		pdev, WLAN_UMAC_COMP_DENYLIST_MGR, dlm_ctx, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dlm_err("Failed to attach pdev_ctx with pdev");
 		qdf_list_destroy(&dlm_ctx->reject_ap_list);
@@ -90,8 +85,7 @@ dlm_pdev_object_created_notification(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS
-dlm_pdev_object_destroyed_notification(struct wlan_objmgr_pdev *pdev,
-				       void *arg)
+dlm_pdev_object_destroyed_notification(struct wlan_objmgr_pdev *pdev, void *arg)
 {
 	struct dlm_pdev_priv_obj *dlm_ctx;
 
@@ -106,8 +100,7 @@ dlm_pdev_object_destroyed_notification(struct wlan_objmgr_pdev *pdev,
 	qdf_list_destroy(&dlm_ctx->reject_ap_list);
 	qdf_mutex_destroy(&dlm_ctx->reject_ap_list_lock);
 
-	wlan_objmgr_pdev_component_obj_detach(pdev,
-					      WLAN_UMAC_COMP_DENYLIST_MGR,
+	wlan_objmgr_pdev_component_obj_detach(pdev, WLAN_UMAC_COMP_DENYLIST_MGR,
 					      dlm_ctx);
 	qdf_mem_free(dlm_ctx);
 
@@ -115,8 +108,7 @@ dlm_pdev_object_destroyed_notification(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS
-dlm_psoc_object_created_notification(struct wlan_objmgr_psoc *psoc,
-				     void *arg)
+dlm_psoc_object_created_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	struct dlm_psoc_priv_obj *dlm_psoc_obj;
 	QDF_STATUS status;
@@ -126,10 +118,9 @@ dlm_psoc_object_created_notification(struct wlan_objmgr_psoc *psoc,
 	if (!dlm_psoc_obj)
 		return QDF_STATUS_E_FAILURE;
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						   WLAN_UMAC_COMP_DENYLIST_MGR,
-						   dlm_psoc_obj,
-						   QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_DENYLIST_MGR, dlm_psoc_obj,
+		QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dlm_err("Failed to attach psoc_ctx with psoc");
 		qdf_mem_free(dlm_psoc_obj);
@@ -149,27 +140,25 @@ dlm_psoc_object_destroyed_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 		dlm_err("DLM psoc obj NULL");
 		return QDF_STATUS_E_FAILURE;
 	}
-	wlan_objmgr_psoc_component_obj_detach(psoc,
-					      WLAN_UMAC_COMP_DENYLIST_MGR,
+	wlan_objmgr_psoc_component_obj_detach(psoc, WLAN_UMAC_COMP_DENYLIST_MGR,
 					      dlm_psoc_obj);
 	qdf_mem_free(dlm_psoc_obj);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static void
-dlm_init_cfg(struct wlan_objmgr_psoc *psoc, struct dlm_config *dlm_cfg)
+static void dlm_init_cfg(struct wlan_objmgr_psoc *psoc,
+			 struct dlm_config *dlm_cfg)
 {
 	dlm_cfg->avoid_list_exipry_time =
-				cfg_get(psoc, CFG_AVOID_LIST_EXPIRY_TIME);
+		cfg_get(psoc, CFG_AVOID_LIST_EXPIRY_TIME);
 	dlm_cfg->deny_list_exipry_time =
-				cfg_get(psoc, CFG_DENY_LIST_EXPIRY_TIME);
+		cfg_get(psoc, CFG_DENY_LIST_EXPIRY_TIME);
 	dlm_cfg->bad_bssid_counter_reset_time =
-				cfg_get(psoc, CFG_BAD_BSSID_RESET_TIME);
+		cfg_get(psoc, CFG_BAD_BSSID_RESET_TIME);
 	dlm_cfg->bad_bssid_counter_thresh =
-				cfg_get(psoc, CFG_BAD_BSSID_COUNTER_THRESHOLD);
-	dlm_cfg->delta_rssi =
-				cfg_get(psoc, CFG_DENYLIST_RSSI_THRESHOLD);
+		cfg_get(psoc, CFG_BAD_BSSID_COUNTER_THRESHOLD);
+	dlm_cfg->delta_rssi = cfg_get(psoc, CFG_DENYLIST_RSSI_THRESHOLD);
 }
 
 QDF_STATUS

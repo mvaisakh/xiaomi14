@@ -20,24 +20,25 @@
  * LMAC offload interface functions for WMI TLV Interface
  */
 
-#include <qdf_mem.h>         /* qdf_mem_malloc,free, etc. */
-#include <osdep.h>
 #include "htc_api.h"
 #include "wmi.h"
-
+#include <osdep.h>
+#include <qdf_mem.h> /* qdf_mem_malloc,free, etc. */
 
 /* Following macro definitions use OS or platform specific functions */
-#define dummy_print(fmt, ...) {}
+#define dummy_print(fmt, ...) \
+	{                     \
+	}
 #define wmi_tlv_print_verbose dummy_print
-#define wmi_tlv_print_error   qdf_print
-#define wmi_tlv_OS_MEMCPY     OS_MEMCPY
-#define wmi_tlv_OS_MEMZERO    OS_MEMZERO
-#define wmi_tlv_OS_MEMMOVE    OS_MEMMOVE
+#define wmi_tlv_print_error qdf_print
+#define wmi_tlv_OS_MEMCPY OS_MEMCPY
+#define wmi_tlv_OS_MEMZERO OS_MEMZERO
+#define wmi_tlv_OS_MEMMOVE OS_MEMMOVE
 
 #ifndef NO_DYNAMIC_MEM_ALLOC
-#define wmi_tlv_os_mem_alloc(scn, ptr, numBytes) \
-	{ \
+#define wmi_tlv_os_mem_alloc(scn, ptr, numBytes)  \
+	{                                         \
 		(ptr) = qdf_mem_malloc(numBytes); \
 	}
-#define wmi_tlv_os_mem_free   qdf_mem_free
+#define wmi_tlv_os_mem_free qdf_mem_free
 #endif

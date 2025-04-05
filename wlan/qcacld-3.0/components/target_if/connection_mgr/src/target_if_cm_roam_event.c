@@ -18,23 +18,23 @@
 /**
  * DOC: This file contains definitions for target_if roaming events.
  */
-#include "qdf_types.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_pdev_obj.h"
-#include "wlan_objmgr_vdev_obj.h"
-#include "wmi_unified_api.h"
-#include "scheduler_api.h"
-#include <wmi_unified.h>
 #include "target_if_cm_roam_event.h"
-#include "wlan_psoc_mlme_api.h"
-#include "wlan_mlme_main.h"
-#include <../../core/src/wlan_cm_roam_i.h>
-#include "wlan_cm_roam_api.h"
+#include "qdf_types.h"
+#include "scheduler_api.h"
 #include "target_if_cm_roam_offload.h"
-#include <target_if_vdev_mgr_rx_ops.h>
-#include <target_if_psoc_wake_lock.h>
-#include "wlan_mlo_mgr_peer.h"
+#include "wlan_cm_roam_api.h"
 #include "wlan_crypto_global_api.h"
+#include "wlan_mlme_main.h"
+#include "wlan_mlo_mgr_peer.h"
+#include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_objmgr_vdev_obj.h"
+#include "wlan_psoc_mlme_api.h"
+#include "wmi_unified_api.h"
+#include <../../core/src/wlan_cm_roam_i.h>
+#include <target_if_psoc_wake_lock.h>
+#include <target_if_vdev_mgr_rx_ops.h>
+#include <wmi_unified.h>
 
 struct wlan_cm_roam_rx_ops *
 target_if_cm_get_roam_rx_ops(struct wlan_objmgr_psoc *psoc)
@@ -58,21 +58,19 @@ target_if_cm_get_roam_rx_ops(struct wlan_objmgr_psoc *psoc)
 
 #ifdef WLAN_VENDOR_HANDOFF_CONTROL
 static void target_if_cm_roam_register_vendor_handoff_rx_ops(
-					struct wlan_cm_roam_rx_ops *rx_ops)
+	struct wlan_cm_roam_rx_ops *rx_ops)
 {
 	rx_ops->roam_vendor_handoff_event =
-					cm_roam_vendor_handoff_event_handler;
+		cm_roam_vendor_handoff_event_handler;
 }
 #else
-static inline void
-target_if_cm_roam_register_vendor_handoff_rx_ops(
-					struct wlan_cm_roam_rx_ops *rx_ops)
+static inline void target_if_cm_roam_register_vendor_handoff_rx_ops(
+	struct wlan_cm_roam_rx_ops *rx_ops)
 {
 }
 #endif
 
-void
-target_if_cm_roam_register_rx_ops(struct wlan_cm_roam_rx_ops *rx_ops)
+void target_if_cm_roam_register_rx_ops(struct wlan_cm_roam_rx_ops *rx_ops)
 {
 	rx_ops->roam_sync_event = cm_roam_sync_event_handler;
 	rx_ops->roam_sync_frame_event = cm_roam_sync_frame_event_handler;
@@ -122,9 +120,9 @@ int target_if_cm_roam_event(ol_scn_t scn, uint8_t *event, uint32_t len)
 	roam_event->psoc = psoc;
 
 	/**
-	 * Stop the timer upon RSO stop status success. The timer shall continue
-	 * to run upon HO_FAIL status and would be stopped upon HO_FAILED event
-	 */
+   * Stop the timer upon RSO stop status success. The timer shall continue
+   * to run upon HO_FAIL status and would be stopped upon HO_FAILED event
+   */
 	if ((roam_event->reason == ROAM_REASON_RSO_STATUS &&
 	     roam_event->notif_params == WMI_ROAM_SCAN_MODE_NONE) ||
 	    roam_event->reason == ROAM_REASON_HO_FAILED)
@@ -138,13 +136,13 @@ int target_if_cm_roam_event(ol_scn_t scn, uint8_t *event, uint32_t len)
 	}
 
 	/**
-	 * This can be called from IRQ context for WOW events such as
-	 * WOW_REASON_LOW_RSSI and WOW_REASON_HO_FAIL. There is no issue
-	 * currently, as these events are posted to schedular thread from
-	 * cm_roam_event_handler, to access umac which use mutex.
-	 * If any new ROAM event is added in IRQ context in future, avoid taking
-	 * mutex. If mutex/sleep is needed, post a message to scheduler thread.
-	 */
+   * This can be called from IRQ context for WOW events such as
+   * WOW_REASON_LOW_RSSI and WOW_REASON_HO_FAIL. There is no issue
+   * currently, as these events are posted to schedular thread from
+   * cm_roam_event_handler, to access umac which use mutex.
+   * If any new ROAM event is added in IRQ context in future, avoid taking
+   * mutex. If mutex/sleep is needed, post a message to scheduler thread.
+   */
 	qdf_status = roam_rx_ops->roam_event_rx(roam_event);
 
 done:
@@ -203,10 +201,8 @@ target_if_free_roam_synch_frame_ind(struct roam_synch_frame_ind *frame_ind)
 	qdf_mem_free(frame_ind);
 }
 
-int
-target_if_cm_roam_sync_frame_event(ol_scn_t scn,
-				   uint8_t *event,
-				   uint32_t len)
+int target_if_cm_roam_sync_frame_event(ol_scn_t scn, uint8_t *event,
+				       uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct roam_synch_frame_ind *frame_ind_ptr;
@@ -232,8 +228,7 @@ target_if_cm_roam_sync_frame_event(ol_scn_t scn,
 	if (!frame_ind_ptr)
 		return -ENOMEM;
 
-	qdf_status = wmi_extract_roam_sync_frame_event(wmi_handle, event,
-						       len,
+	qdf_status = wmi_extract_roam_sync_frame_event(wmi_handle, event, len,
 						       frame_ind_ptr);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("parsing of event failed, %d", qdf_status);
@@ -249,8 +244,7 @@ target_if_cm_roam_sync_frame_event(ol_scn_t scn,
 		goto err;
 	}
 
-	qdf_status = roam_rx_ops->roam_sync_frame_event(psoc,
-						    frame_ind_ptr);
+	qdf_status = roam_rx_ops->roam_sync_frame_event(psoc, frame_ind_ptr);
 
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		status = -EINVAL;
@@ -266,8 +260,7 @@ err:
 	return status;
 }
 
-int target_if_cm_roam_sync_event(ol_scn_t scn, uint8_t *event,
-				 uint32_t len)
+int target_if_cm_roam_sync_event(ol_scn_t scn, uint8_t *event, uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -290,8 +283,8 @@ int target_if_cm_roam_sync_event(ol_scn_t scn, uint8_t *event,
 
 	target_if_prevent_pm_during_roam_sync(psoc);
 
-	qdf_status = wmi_extract_roam_sync_event(wmi_handle, event,
-						 len, &sync_ind);
+	qdf_status =
+		wmi_extract_roam_sync_event(wmi_handle, event, len, &sync_ind);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("parsing of event failed, %d", qdf_status);
 		status = -EINVAL;
@@ -306,10 +299,7 @@ int target_if_cm_roam_sync_event(ol_scn_t scn, uint8_t *event,
 		goto err;
 	}
 
-	qdf_status = roam_rx_ops->roam_sync_event(psoc,
-						  event,
-						  len,
-						  sync_ind);
+	qdf_status = roam_rx_ops->roam_sync_event(psoc, event, len, sync_ind);
 
 	if (QDF_IS_STATUS_ERROR(qdf_status))
 		status = -EINVAL;
@@ -325,8 +315,8 @@ err:
 	return status;
 }
 
-static int
-target_if_cm_btm_denylist_event(ol_scn_t scn, uint8_t *event, uint32_t len)
+static int target_if_cm_btm_denylist_event(ol_scn_t scn, uint8_t *event,
+					   uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	int status = 0;
@@ -375,9 +365,9 @@ done:
 	return status;
 }
 
-int
-target_if_cm_roam_vdev_disconnect_event_handler(ol_scn_t scn, uint8_t *event,
-						uint32_t len)
+int target_if_cm_roam_vdev_disconnect_event_handler(ol_scn_t scn,
+						    uint8_t *event,
+						    uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -400,8 +390,8 @@ target_if_cm_roam_vdev_disconnect_event_handler(ol_scn_t scn, uint8_t *event,
 	data = qdf_mem_malloc(sizeof(*data));
 	if (!data)
 		return -ENOMEM;
-	qdf_status = wmi_extract_vdev_disconnect_event(wmi_handle, event, len,
-						       data);
+	qdf_status =
+		wmi_extract_vdev_disconnect_event(wmi_handle, event, len, data);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("parsing of event failed, %d", qdf_status);
 		goto done;
@@ -416,11 +406,11 @@ target_if_cm_roam_vdev_disconnect_event_handler(ol_scn_t scn, uint8_t *event,
 	}
 
 	/**
-	 * This can be called from IRQ context for WOW events. There is no
-	 * issue currently as this event is posted to scheduler thread from
-	 * wma_handle_disconnect_reason(). Avoid acquiring mutex/sleep in this
-	 * context in future and post a message to scheduler thread if needed.
-	 */
+   * This can be called from IRQ context for WOW events. There is no
+   * issue currently as this event is posted to scheduler thread from
+   * wma_handle_disconnect_reason(). Avoid acquiring mutex/sleep in this
+   * context in future and post a message to scheduler thread if needed.
+   */
 	qdf_status = roam_rx_ops->vdev_disconnect_event(data);
 
 done:
@@ -428,9 +418,8 @@ done:
 	return qdf_status_to_os_return(qdf_status);
 }
 
-int
-target_if_cm_roam_scan_chan_list_event_handler(ol_scn_t scn, uint8_t *event,
-					       uint32_t len)
+int target_if_cm_roam_scan_chan_list_event_handler(ol_scn_t scn, uint8_t *event,
+						   uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	int status = 0;
@@ -451,8 +440,8 @@ target_if_cm_roam_scan_chan_list_event_handler(ol_scn_t scn, uint8_t *event,
 		return -EINVAL;
 	}
 
-	qdf_status = wmi_extract_roam_scan_chan_list(wmi_handle, event, len,
-						     &data);
+	qdf_status =
+		wmi_extract_roam_scan_chan_list(wmi_handle, event, len, &data);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("parsing of event failed, %d", qdf_status);
 		return -EINVAL;
@@ -471,8 +460,7 @@ target_if_cm_roam_scan_chan_list_event_handler(ol_scn_t scn, uint8_t *event,
 	return status;
 }
 
-int
-target_if_cm_roam_stats_event(ol_scn_t scn, uint8_t *event, uint32_t len)
+int target_if_cm_roam_stats_event(ol_scn_t scn, uint8_t *event, uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	int status = 0;
@@ -520,15 +508,15 @@ err:
 	return status;
 }
 
-int
-target_if_cm_roam_auth_offload_event(ol_scn_t scn, uint8_t *event, uint32_t len)
+int target_if_cm_roam_auth_offload_event(ol_scn_t scn, uint8_t *event,
+					 uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	int status = 0;
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_cm_roam_rx_ops *roam_rx_ops;
-	struct auth_offload_event auth_event = {0};
+	struct auth_offload_event auth_event = { 0 };
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
 	if (!psoc) {
@@ -561,9 +549,8 @@ target_if_cm_roam_auth_offload_event(ol_scn_t scn, uint8_t *event, uint32_t len)
 	return status;
 }
 
-int
-target_if_pmkid_request_event_handler(ol_scn_t scn, uint8_t *event,
-				      uint32_t len)
+int target_if_pmkid_request_event_handler(ol_scn_t scn, uint8_t *event,
+					  uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -583,8 +570,8 @@ target_if_pmkid_request_event_handler(ol_scn_t scn, uint8_t *event,
 		return -EINVAL;
 	}
 
-	qdf_status = wmi_extract_roam_pmkid_request(wmi_handle, event, len,
-						    &data);
+	qdf_status =
+		wmi_extract_roam_pmkid_request(wmi_handle, event, len, &data);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("parsing of event failed, %d", qdf_status);
 		goto done;
@@ -600,11 +587,11 @@ target_if_pmkid_request_event_handler(ol_scn_t scn, uint8_t *event,
 	}
 
 	/**
-	 * This can be called from IRQ context for WOW events. There is no
-	 * issue currently as this event doesn't take any mutex.
-	 * If there is a mutex/sleep is needed in future, post a message to
-	 * scheduler thread.
-	 */
+   * This can be called from IRQ context for WOW events. There is no
+   * issue currently as this event doesn't take any mutex.
+   * If there is a mutex/sleep is needed in future, post a message to
+   * scheduler thread.
+   */
 	qdf_status = roam_rx_ops->roam_pmkid_request_event_rx(data);
 
 done:
@@ -613,13 +600,12 @@ done:
 	return qdf_status_to_os_return(qdf_status);
 }
 
-int
-target_if_roam_frame_event_handler(ol_scn_t scn, uint8_t *event,
-				   uint32_t len)
+int target_if_roam_frame_event_handler(ol_scn_t scn, uint8_t *event,
+				       uint32_t len)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct roam_scan_candidate_frame frame = {0};
+	struct roam_scan_candidate_frame frame = { 0 };
 	struct wlan_cm_roam_rx_ops *roam_rx_ops;
 	QDF_STATUS qdf_status;
 
@@ -648,8 +634,7 @@ target_if_roam_frame_event_handler(ol_scn_t scn, uint8_t *event,
 		return -EINVAL;
 	}
 
-	qdf_status = roam_rx_ops->roam_candidate_frame_event(psoc,
-							     &frame);
+	qdf_status = roam_rx_ops->roam_candidate_frame_event(psoc, &frame);
 	if (QDF_IS_STATUS_ERROR(qdf_status))
 		return -EINVAL;
 
@@ -680,9 +665,8 @@ int target_if_get_roam_vendor_control_param_event_handler(ol_scn_t scn,
 		return -EINVAL;
 	}
 
-	qdf_status = wmi_extract_roam_vendor_control_param_event(wmi_handle,
-							event, len,
-							&vendor_handoff_params);
+	qdf_status = wmi_extract_roam_vendor_control_param_event(
+		wmi_handle, event, len, &vendor_handoff_params);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("parsing of event failed, %d", qdf_status);
 		ret = -EINVAL;
@@ -710,10 +694,10 @@ target_if_register_roam_vendor_control_param_event(wmi_unified_t handle)
 {
 	QDF_STATUS ret;
 
-	ret = wmi_unified_register_event_handler(handle,
-			wmi_get_roam_vendor_control_param_event_id,
-			target_if_get_roam_vendor_control_param_event_handler,
-			WMI_RX_SERIALIZER_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_get_roam_vendor_control_param_event_id,
+		target_if_get_roam_vendor_control_param_event_handler,
+		WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event(%u) registration failed, ret: %d",
 			      wmi_get_roam_vendor_control_param_event_id, ret);
@@ -731,9 +715,9 @@ target_if_register_roam_vendor_control_param_event(wmi_unified_t handle)
 #endif
 
 #if defined(WLAN_FEATURE_ROAM_OFFLOAD) && defined(WLAN_FEATURE_11BE_MLO)
-static void
-target_if_update_pairwise_key_peer_mac(struct wlan_crypto_key_entry *crypto_entry,
-				       struct qdf_mac_addr *ap_link_addr)
+static void target_if_update_pairwise_key_peer_mac(
+	struct wlan_crypto_key_entry *crypto_entry,
+	struct qdf_mac_addr *ap_link_addr)
 {
 	uint8_t i;
 
@@ -746,14 +730,15 @@ target_if_update_pairwise_key_peer_mac(struct wlan_crypto_key_entry *crypto_entr
 
 		if (crypto_entry->keys.key[i]->key_type ==
 		    WLAN_CRYPTO_KEY_TYPE_UNICAST)
-			qdf_copy_macaddr((struct qdf_mac_addr *)crypto_entry->keys.key[i]->macaddr,
+			qdf_copy_macaddr((struct qdf_mac_addr *)
+						 crypto_entry->keys.key[i]
+							 ->macaddr,
 					 ap_link_addr);
 	}
 }
 
-static int
-target_if_roam_synch_key_event_handler(ol_scn_t scn, uint8_t *event,
-				       uint32_t len)
+static int target_if_roam_synch_key_event_handler(ol_scn_t scn, uint8_t *event,
+						  uint32_t len)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
@@ -790,21 +775,21 @@ target_if_roam_synch_key_event_handler(ol_scn_t scn, uint8_t *event,
 
 	wlan_mlo_get_mlpeer_by_peer_mladdr(&mld_addr, &ml_ctx);
 	if (!ml_ctx) {
-		target_if_err("ML context is not found mld addr: "
-			      QDF_MAC_ADDR_FMT,
-			      QDF_MAC_ADDR_REF(mld_addr.bytes));
+		target_if_err(
+			"ML context is not found mld addr: " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(mld_addr.bytes));
 		ret = -EINVAL;
 		goto done;
 	}
 
-	target_if_debug("num_keys:%d ML context is found mld addr: "
-			QDF_MAC_ADDR_FMT, num_keys,
-			QDF_MAC_ADDR_REF(mld_addr.bytes));
+	target_if_debug(
+		"num_keys:%d ML context is found mld addr: " QDF_MAC_ADDR_FMT,
+		num_keys, QDF_MAC_ADDR_REF(mld_addr.bytes));
 
 	/*
-	 * Fill VDEV ID & AP mac address for the pairwise keys
-	 * from link id received in the key event
-	 */
+   * Fill VDEV ID & AP mac address for the pairwise keys
+   * from link id received in the key event
+   */
 	for (i = 0; i < num_keys; i++) {
 		keys[i].vdev_id = WLAN_INVALID_VDEV_ID;
 		for (j = 0; j < WLAN_UMAC_MLO_MAX_VDEVS; j++) {
@@ -815,21 +800,29 @@ target_if_roam_synch_key_event_handler(ol_scn_t scn, uint8_t *event,
 			if (keys[i].link_id ==
 			    wlan_vdev_get_link_id(vdev_list)) {
 				keys[i].vdev_id = wlan_vdev_get_id(vdev_list);
-				qdf_copy_macaddr((struct qdf_mac_addr *)keys[i].mac_addr.raw,
-						 (struct qdf_mac_addr *)vdev_list->vdev_mlme.linkaddr);
-				link_info = mlo_mgr_get_ap_link_by_link_id(vdev_list,
-									   keys[i].link_id);
+				qdf_copy_macaddr(
+					(struct qdf_mac_addr *)keys[i]
+						.mac_addr.raw,
+					(struct qdf_mac_addr *)
+						vdev_list->vdev_mlme.linkaddr);
+				link_info = mlo_mgr_get_ap_link_by_link_id(
+					vdev_list, keys[i].link_id);
 				if (!link_info) {
-					target_if_err("Link info not found for link_id:%d",
-						      keys[i].link_id);
+					target_if_err(
+						"Link info not found for link_id:%d",
+						keys[i].link_id);
 					break;
 				}
-				target_if_debug("i:%d link_id:%d vdev_id:%d self link_addr: " QDF_MAC_ADDR_FMT " AP link addr: " QDF_MAC_ADDR_FMT,
-						i, keys[i].link_id, keys[i].vdev_id,
-						QDF_MAC_ADDR_REF(keys[i].mac_addr.raw),
-						QDF_MAC_ADDR_REF(link_info->ap_link_addr.bytes));
+				target_if_debug(
+					"i:%d link_id:%d vdev_id:%d self link_addr: " QDF_MAC_ADDR_FMT
+					" AP link addr: " QDF_MAC_ADDR_FMT,
+					i, keys[i].link_id, keys[i].vdev_id,
+					QDF_MAC_ADDR_REF(keys[i].mac_addr.raw),
+					QDF_MAC_ADDR_REF(
+						link_info->ap_link_addr.bytes));
 
-				target_if_update_pairwise_key_peer_mac(&keys[i], &link_info->ap_link_addr);
+				target_if_update_pairwise_key_peer_mac(
+					&keys[i], &link_info->ap_link_addr);
 				break;
 			}
 		}
@@ -840,20 +833,27 @@ target_if_roam_synch_key_event_handler(ol_scn_t scn, uint8_t *event,
 		    ml_ctx->link_ctx) {
 			for (j = 0; j < WLAN_MAX_ML_BSS_LINKS; j++) {
 				link_info = &ml_ctx->link_ctx->links_info[j];
-				if (qdf_is_macaddr_zero(&link_info->ap_link_addr))
+				if (qdf_is_macaddr_zero(
+					    &link_info->ap_link_addr))
 					continue;
 
 				if (qdf_is_macaddr_zero(&link_info->link_addr))
 					continue;
 
 				if (link_info->link_id == keys[i].link_id) {
-					target_if_debug("i:%d Standby vdev: link_id:%d ap_link_addr: " QDF_MAC_ADDR_FMT,
-							i, keys[i].link_id,
-							QDF_MAC_ADDR_REF(link_info->ap_link_addr.bytes));
-					qdf_copy_macaddr((struct qdf_mac_addr *)keys[i].mac_addr.raw,
-							 &link_info->link_addr);
-					target_if_update_pairwise_key_peer_mac(&keys[i],
-									       &link_info->ap_link_addr);
+					target_if_debug(
+						"i:%d Standby vdev: link_id:%d ap_link_addr: " QDF_MAC_ADDR_FMT,
+						i, keys[i].link_id,
+						QDF_MAC_ADDR_REF(
+							link_info->ap_link_addr
+								.bytes));
+					qdf_copy_macaddr(
+						(struct qdf_mac_addr *)keys[i]
+							.mac_addr.raw,
+						&link_info->link_addr);
+					target_if_update_pairwise_key_peer_mac(
+						&keys[i],
+						&link_info->ap_link_addr);
 				}
 			}
 		}
@@ -885,17 +885,16 @@ static void target_if_register_mlo_roam_events(wmi_unified_t handle)
 	QDF_STATUS status;
 
 	status = wmi_unified_register_event_handler(
-				handle,
-				wmi_roam_synch_key_event_id,
-				target_if_roam_synch_key_event_handler,
-				WMI_RX_SERIALIZER_CTX);
+		handle, wmi_roam_synch_key_event_id,
+		target_if_roam_synch_key_event_handler, WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(status))
 		target_if_err("wmi event(%u) registration failed, status: %d",
 			      wmi_roam_synch_key_event_id, status);
 }
 #else
 static inline void target_if_register_mlo_roam_events(wmi_unified_t handle)
-{}
+{
+}
 #endif
 
 QDF_STATUS
@@ -920,39 +919,37 @@ target_if_roam_offload_register_events(struct wlan_objmgr_psoc *psoc)
 	}
 
 	/* Register for roam offload event */
-	ret = wmi_unified_register_event_handler(handle,
-						 wmi_roam_synch_frame_event_id,
-						 target_if_cm_roam_sync_frame_event,
-						 WMI_RX_SERIALIZER_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_roam_synch_frame_event_id,
+		target_if_cm_roam_sync_frame_event, WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event registration failed, ret: %d", ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_unified_register_event_handler(handle,
-					wmi_roam_denylist_event_id,
-					target_if_cm_btm_denylist_event,
-					WMI_RX_SERIALIZER_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_roam_denylist_event_id,
+		target_if_cm_btm_denylist_event, WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event(%u) registration failed, ret: %d",
 			      wmi_roam_denylist_event_id, ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_unified_register_event_handler(handle,
-				wmi_vdev_disconnect_event_id,
-				target_if_cm_roam_vdev_disconnect_event_handler,
-				WMI_RX_SERIALIZER_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_vdev_disconnect_event_id,
+		target_if_cm_roam_vdev_disconnect_event_handler,
+		WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event(%u) registration failed, ret: %d",
 			      wmi_vdev_disconnect_event_id, ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_unified_register_event_handler(handle,
-				wmi_roam_scan_chan_list_id,
-				target_if_cm_roam_scan_chan_list_event_handler,
-				WMI_RX_SERIALIZER_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_roam_scan_chan_list_id,
+		target_if_cm_roam_scan_chan_list_event_handler,
+		WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event(%u) registration failed, ret: %d",
 			      wmi_roam_scan_chan_list_id, ret);
@@ -968,20 +965,18 @@ target_if_roam_offload_register_events(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_unified_register_event_handler(handle,
-				wmi_roam_auth_offload_event_id,
-				target_if_cm_roam_auth_offload_event,
-				WMI_RX_SERIALIZER_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_roam_auth_offload_event_id,
+		target_if_cm_roam_auth_offload_event, WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event(%u) registration failed, ret: %d",
 			      wmi_roam_auth_offload_event_id, ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_unified_register_event_handler(handle,
-				wmi_roam_pmkid_request_event_id,
-				target_if_pmkid_request_event_handler,
-				WMI_RX_SERIALIZER_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_roam_pmkid_request_event_id,
+		target_if_pmkid_request_event_handler, WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event(%u) registration failed, ret: %d",
 			      wmi_roam_stats_event_id, ret);
@@ -990,10 +985,9 @@ target_if_roam_offload_register_events(struct wlan_objmgr_psoc *psoc)
 
 	target_if_register_roam_vendor_control_param_event(handle);
 
-	ret = wmi_unified_register_event_handler(handle,
-				wmi_roam_frame_event_id,
-				target_if_roam_frame_event_handler,
-				WMI_RX_SERIALIZER_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_roam_frame_event_id,
+		target_if_roam_frame_event_handler, WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event(%u) registration failed, ret: %d",
 			      wmi_roam_frame_event_id, ret);

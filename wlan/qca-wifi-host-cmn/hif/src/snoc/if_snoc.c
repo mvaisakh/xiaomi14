@@ -23,17 +23,17 @@
  * c file for snoc specific implementations.
  */
 
-#include "hif.h"
-#include "hif_main.h"
-#include "hif_debug.h"
-#include "hif_io32.h"
-#include "ce_main.h"
-#include "ce_tasklet.h"
 #include "ce_api.h"
 #include "ce_internal.h"
-#include "snoc_api.h"
+#include "ce_main.h"
+#include "ce_tasklet.h"
+#include "hif.h"
+#include "hif_debug.h"
+#include "hif_io32.h"
+#include "hif_main.h"
 #include "pld_common.h"
 #include "qdf_util.h"
+#include "snoc_api.h"
 #ifdef IPA_OFFLOAD
 #include <uapi/linux/msm_ipa.h>
 #endif
@@ -184,8 +184,8 @@ int hif_snoc_bus_configure(struct hif_softc *scn)
 	scn->wake_irq = pld_get_irq(scn->qdf_dev->dev, wake_ce_id);
 	scn->wake_irq_type = HIF_PM_CE_WAKE;
 
-	hif_info("expecting wake from ce %d, irq %d",
-		 wake_ce_id, scn->wake_irq);
+	hif_info("expecting wake from ce %d, irq %d", wake_ce_id,
+		 scn->wake_irq);
 
 	return 0;
 
@@ -213,8 +213,10 @@ wlan_disable:
  * Return: 0 for success
  */
 static inline int hif_snoc_get_target_type(struct hif_softc *ol_sc,
-	struct device *dev, void *bdev, const struct hif_bus_id *bid,
-	uint32_t *hif_type, uint32_t *target_type)
+					   struct device *dev, void *bdev,
+					   const struct hif_bus_id *bid,
+					   uint32_t *hif_type,
+					   uint32_t *target_type)
 {
 	/* TODO: need to use HW version. Hard code for now */
 #ifdef QCA_WIFI_3_0_ADRASTEA
@@ -234,7 +236,7 @@ static int hif_set_dma_coherent_mask(qdf_device_t osdev)
 
 	if (false == hif_get_ipa_present())
 		return qdf_set_dma_coherent_mask(osdev->dev,
-					DMA_COHERENT_MASK_DEFAULT);
+						 DMA_COHERENT_MASK_DEFAULT);
 
 	if (hif_get_ipa_hw_type() < IPA_HW_v3_0)
 		addr_bits = DMA_COHERENT_MASK_BELOW_IPA_VER_3;
@@ -246,8 +248,7 @@ static int hif_set_dma_coherent_mask(qdf_device_t osdev)
 #else
 static int hif_set_dma_coherent_mask(qdf_device_t osdev)
 {
-	return qdf_set_dma_coherent_mask(osdev->dev,
-					DMA_COHERENT_MASK_DEFAULT);
+	return qdf_set_dma_coherent_mask(osdev->dev, DMA_COHERENT_MASK_DEFAULT);
 }
 #endif
 
@@ -261,10 +262,9 @@ static int hif_set_dma_coherent_mask(qdf_device_t osdev)
  *
  * Return: QDF_STATUS
  */
-QDF_STATUS hif_snoc_enable_bus(struct hif_softc *ol_sc,
-			  struct device *dev, void *bdev,
-			  const struct hif_bus_id *bid,
-			  enum hif_enable_type type)
+QDF_STATUS hif_snoc_enable_bus(struct hif_softc *ol_sc, struct device *dev,
+			       void *bdev, const struct hif_bus_id *bid,
+			       enum hif_enable_type type)
 {
 	int ret;
 	int hif_type;
@@ -289,8 +289,8 @@ QDF_STATUS hif_snoc_enable_bus(struct hif_softc *ol_sc,
 		return qdf_status_from_os_return(ret);
 	}
 
-	ret = hif_snoc_get_target_type(ol_sc, dev, bdev, bid,
-			&hif_type, &target_type);
+	ret = hif_snoc_get_target_type(ol_sc, dev, bdev, bid, &hif_type,
+				       &target_type);
 	if (ret < 0) {
 		hif_err("Invalid device id/revision_id");
 		return QDF_STATUS_E_FAILURE;
@@ -304,8 +304,8 @@ QDF_STATUS hif_snoc_enable_bus(struct hif_softc *ol_sc,
 	/* the bus should remain on during suspend for snoc */
 	hif_vote_link_up(GET_HIF_OPAQUE_HDL(ol_sc));
 
-	hif_debug("X - hif_type = 0x%x, target_type = 0x%x",
-		  hif_type, target_type);
+	hif_debug("X - hif_type = 0x%x, target_type = 0x%x", hif_type,
+		  target_type);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -352,8 +352,7 @@ void hif_snoc_nointrs(struct hif_softc *scn)
  *
  * Return: N/A
  */
-void hif_snoc_irq_enable(struct hif_softc *scn,
-		int ce_id)
+void hif_snoc_irq_enable(struct hif_softc *scn, int ce_id)
 {
 	ce_enable_irq_in_individual_register(scn, ce_id);
 }
@@ -381,8 +380,8 @@ void hif_snoc_irq_disable(struct hif_softc *scn, int ce_id)
  *
  * Return: 0 for success
  */
-static
-QDF_STATUS hif_snoc_setup_wakeup_sources(struct hif_softc *scn, bool enable)
+static QDF_STATUS hif_snoc_setup_wakeup_sources(struct hif_softc *scn,
+						bool enable)
 {
 	int ret;
 

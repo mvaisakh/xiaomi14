@@ -20,23 +20,23 @@
  *
  * This file provide definition for APIs registered for LMAC TWT Rx Ops
  */
+#include "twt/core/src/wlan_twt_common.h"
 #include <qdf_types.h>
 #include <wlan_objmgr_psoc_obj.h>
 #include <wlan_twt_public_structs.h>
-#include <wlan_twt_tgt_if_rx_api.h>
 #include <wlan_twt_tgt_if_ext_rx_ops.h>
-#include "twt/core/src/wlan_twt_common.h"
+#include <wlan_twt_tgt_if_rx_api.h>
 
-static QDF_STATUS
-tgt_twt_enable_complete_resp_handler(struct wlan_objmgr_psoc *psoc,
-			     struct twt_enable_complete_event_param *event)
+static QDF_STATUS tgt_twt_enable_complete_resp_handler(
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_enable_complete_event_param *event)
 {
 	return wlan_twt_enable_event_handler(psoc, event);
 }
 
-static QDF_STATUS
-tgt_twt_disable_complete_resp_handler(struct wlan_objmgr_psoc *psoc,
-			     struct twt_disable_complete_event_param *event)
+static QDF_STATUS tgt_twt_disable_complete_resp_handler(
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_disable_complete_event_param *event)
 {
 	return wlan_twt_disable_event_handler(psoc, event);
 }
@@ -50,4 +50,3 @@ void tgt_twt_register_rx_ops(struct wlan_lmac_if_rx_ops *rx_ops)
 
 	tgt_twt_register_ext_rx_ops(rx_ops);
 }
-

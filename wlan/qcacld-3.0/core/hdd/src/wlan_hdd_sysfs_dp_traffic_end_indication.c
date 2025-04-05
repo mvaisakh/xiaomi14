@@ -21,12 +21,12 @@
  *
  * dp_traffic_end_indication
  */
-#include <wlan_hdd_includes.h>
 #include "osif_vdev_sync.h"
 #include "wlan_hdd_object_manager.h"
+#include <wlan_dp_ucfg_api.h>
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_dp_traffic_end_indication.h>
-#include <wlan_dp_ucfg_api.h>
 
 static ssize_t
 __hdd_sysfs_dp_traffic_end_indication_show(struct net_device *net_dev,
@@ -34,7 +34,7 @@ __hdd_sysfs_dp_traffic_end_indication_show(struct net_device *net_dev,
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct wlan_objmgr_vdev *vdev;
-	struct dp_traffic_end_indication info = {0};
+	struct dp_traffic_end_indication info = { 0 };
 	QDF_STATUS status;
 	int ret;
 
@@ -59,18 +59,16 @@ __hdd_sysfs_dp_traffic_end_indication_show(struct net_device *net_dev,
 		return -EINVAL;
 
 	hdd_debug("vdev_id:%u traffic end indication:%u defdscp:%u spldscp:%u",
-		  adapter->deflink->vdev_id, info.enabled,
-		  info.def_dscp, info.spl_dscp);
+		  adapter->deflink->vdev_id, info.enabled, info.def_dscp,
+		  info.spl_dscp);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%u %u %u\n",
-			info.enabled, info.def_dscp, info.def_dscp);
+	ret = scnprintf(buf, PAGE_SIZE, "%u %u %u\n", info.enabled,
+			info.def_dscp, info.def_dscp);
 	return ret;
 }
 
-static ssize_t
-hdd_sysfs_dp_traffic_end_indication_show(struct device *dev,
-					 struct device_attribute *attr,
-					 char *buf)
+static ssize_t hdd_sysfs_dp_traffic_end_indication_show(
+	struct device *dev, struct device_attribute *attr, char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -89,11 +87,10 @@ hdd_sysfs_dp_traffic_end_indication_show(struct device *dev,
 
 static ssize_t
 __hdd_sysfs_dp_traffic_end_indication_store(struct net_device *net_dev,
-					    const char *buf,
-					    size_t count)
+					    const char *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
-	struct dp_traffic_end_indication info = {0};
+	struct dp_traffic_end_indication info = { 0 };
 	struct wlan_objmgr_vdev *vdev;
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
 	char *sptr, *token;
@@ -110,8 +107,8 @@ __hdd_sysfs_dp_traffic_end_indication_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(adapter->hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err("invalid input");
 		return ret;
@@ -180,8 +177,8 @@ hdd_sysfs_dp_traffic_end_indication_store(struct device *dev,
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_dp_traffic_end_indication_store(net_dev,
-								 buf, count);
+	errno_size = __hdd_sysfs_dp_traffic_end_indication_store(net_dev, buf,
+								 count);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -204,8 +201,7 @@ int hdd_sysfs_dp_traffic_end_indication_create(struct hdd_adapter *adapter)
 	return error;
 }
 
-void
-hdd_sysfs_dp_traffic_end_indication_destroy(struct hdd_adapter *adapter)
+void hdd_sysfs_dp_traffic_end_indication_destroy(struct hdd_adapter *adapter)
 {
 	device_remove_file(&adapter->dev->dev,
 			   &dev_attr_dp_traffic_end_indication);

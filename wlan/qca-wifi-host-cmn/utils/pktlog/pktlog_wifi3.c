@@ -44,29 +44,30 @@ process_offload_pktlog_wifi3(struct cdp_pdev *pdev, void *data)
 
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
 			ATH_PKTLOG_HDR_FLAGS_MASK) >>
-				ATH_PKTLOG_HDR_FLAGS_SHIFT;
-	pl_hdr.missed_cnt =  (*(pl_tgt_hdr + ATH_PKTLOG_HDR_MISSED_CNT_OFFSET) &
-			ATH_PKTLOG_HDR_MISSED_CNT_MASK) >>
-				ATH_PKTLOG_HDR_MISSED_CNT_SHIFT;
-	pl_hdr.log_type =  (*(pl_tgt_hdr + ATH_PKTLOG_HDR_LOG_TYPE_OFFSET) &
-			ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
-				ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
-	pl_hdr.size =  (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-			ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_FLAGS_SHIFT;
+	pl_hdr.missed_cnt = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_MISSED_CNT_OFFSET) &
+			     ATH_PKTLOG_HDR_MISSED_CNT_MASK) >>
+			    ATH_PKTLOG_HDR_MISSED_CNT_SHIFT;
+	pl_hdr.log_type = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_LOG_TYPE_OFFSET) &
+			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
+			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
+	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 
-	pktlog_hdr_set_specific_data(&pl_hdr,
-				     *(pl_tgt_hdr +
-				     ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET));
+	pktlog_hdr_set_specific_data(
+		&pl_hdr,
+		*(pl_tgt_hdr + ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET));
 	if (pl_hdr.size > MAX_PKTLOG_RECV_BUF_SIZE) {
 		pl_dev->invalid_packets++;
 		return A_ERROR;
 	}
 
 	/*
-	 *  Must include to process different types
-	 *  TX_CTL, TX_STATUS, TX_MSDU_ID, TX_FRM_HDR
-	 */
+   *  Must include to process different types
+   *  TX_CTL, TX_STATUS, TX_MSDU_ID, TX_FRM_HDR
+   */
 	pl_info = pl_dev->pl_info;
 	log_size = pl_hdr.size;
 	txdesc_hdr_ctl =
@@ -108,8 +109,8 @@ int process_rx_desc_remote_wifi3(void *pdev, void *data)
 	pl_hdr.size = qdf_nbuf_len(log_nbuf);
 	pl_hdr.timestamp = 0;
 	log_size = pl_hdr.size;
-	rxstat_log.rx_desc = (void *)pktlog_getbuf(pl_dev, pl_info,
-						  log_size, &pl_hdr);
+	rxstat_log.rx_desc =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 
 	if (!rxstat_log.rx_desc) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_DEBUG,
@@ -118,14 +119,11 @@ int process_rx_desc_remote_wifi3(void *pdev, void *data)
 	}
 
 	qdf_mem_copy(rxstat_log.rx_desc, qdf_nbuf_data(log_nbuf), pl_hdr.size);
-	cds_pkt_stats_to_logger_thread(&pl_hdr, NULL,
-				       rxstat_log.rx_desc);
+	cds_pkt_stats_to_logger_thread(&pl_hdr, NULL, rxstat_log.rx_desc);
 	return 0;
 }
 
-int
-process_pktlog_lite_wifi3(void *context, void *log_data,
-			  uint16_t log_type)
+int process_pktlog_lite_wifi3(void *context, void *log_data, uint16_t log_type)
 {
 	struct pktlog_dev_t *pl_dev = get_pktlog_handle();
 	struct ath_pktlog_info *pl_info;
@@ -147,8 +145,8 @@ process_pktlog_lite_wifi3(void *context, void *log_data,
 	pl_hdr.size = qdf_nbuf_len(log_nbuf);
 	pl_hdr.timestamp = 0;
 	log_size = pl_hdr.size;
-	rxstat_log.rx_desc = (void *)pktlog_getbuf(pl_dev, pl_info,
-						   log_size, &pl_hdr);
+	rxstat_log.rx_desc =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 	if (!rxstat_log.rx_desc) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_DEBUG,
 			  "%s: Rx descriptor is NULL", __func__);

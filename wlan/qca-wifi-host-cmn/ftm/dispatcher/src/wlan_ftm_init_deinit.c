@@ -21,25 +21,27 @@
  * DOC: This implementation of init/deint functions for FTM services.
  */
 
+#include "../../core/src/wlan_ftm_svc_i.h"
+#include <qdf_module.h>
+#include <wlan_cmn.h>
 #include <wlan_ftm_init_deinit_api.h>
 #include <wlan_ftm_ucfg_api.h>
 #include <wlan_objmgr_global_obj.h>
-#include "../../core/src/wlan_ftm_svc_i.h"
-#include <wlan_cmn.h>
-#include <qdf_module.h>
 
 QDF_STATUS dispatcher_ftm_init(void)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
-	status = wlan_objmgr_register_pdev_create_handler(WLAN_UMAC_COMP_FTM,
-			wlan_ftm_pdev_obj_create_notification, NULL);
+	status = wlan_objmgr_register_pdev_create_handler(
+		WLAN_UMAC_COMP_FTM, wlan_ftm_pdev_obj_create_notification,
+		NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		goto err_pdev_create;
 
-	status = wlan_objmgr_register_pdev_destroy_handler(WLAN_UMAC_COMP_FTM,
-			wlan_ftm_pdev_obj_destroy_notification, NULL);
+	status = wlan_objmgr_register_pdev_destroy_handler(
+		WLAN_UMAC_COMP_FTM, wlan_ftm_pdev_obj_destroy_notification,
+		NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		goto err_pdev_delete;
@@ -47,8 +49,9 @@ QDF_STATUS dispatcher_ftm_init(void)
 	return QDF_STATUS_SUCCESS;
 
 err_pdev_delete:
-	wlan_objmgr_unregister_pdev_create_handler(WLAN_UMAC_COMP_FTM,
-			wlan_ftm_pdev_obj_create_notification, NULL);
+	wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_FTM, wlan_ftm_pdev_obj_create_notification,
+		NULL);
 err_pdev_create:
 	return status;
 }
@@ -57,14 +60,16 @@ QDF_STATUS dispatcher_ftm_deinit(void)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
-	status = wlan_objmgr_unregister_pdev_create_handler(WLAN_UMAC_COMP_FTM,
-			wlan_ftm_pdev_obj_create_notification, NULL);
+	status = wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_FTM, wlan_ftm_pdev_obj_create_notification,
+		NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		return QDF_STATUS_E_FAILURE;
 
-	status = wlan_objmgr_unregister_pdev_destroy_handler(WLAN_UMAC_COMP_FTM,
-			wlan_ftm_pdev_obj_destroy_notification, NULL);
+	status = wlan_objmgr_unregister_pdev_destroy_handler(
+		WLAN_UMAC_COMP_FTM, wlan_ftm_pdev_obj_destroy_notification,
+		NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		return QDF_STATUS_E_FAILURE;

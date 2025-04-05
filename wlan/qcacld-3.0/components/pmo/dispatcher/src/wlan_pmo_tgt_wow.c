@@ -21,14 +21,13 @@
  * DOC: Implements public API for pmo to interact with target/WMI
  */
 
+#include "wlan_pmo_main.h"
+#include "wlan_pmo_obj_mgmt_public_struct.h"
 #include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_wow.h"
-#include "wlan_pmo_obj_mgmt_public_struct.h"
-#include "wlan_pmo_main.h"
 
-QDF_STATUS pmo_tgt_enable_wow_wakeup_event(
-		struct wlan_objmgr_vdev *vdev,
-		uint32_t *bitmap)
+QDF_STATUS pmo_tgt_enable_wow_wakeup_event(struct wlan_objmgr_vdev *vdev,
+					   uint32_t *bitmap)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -56,9 +55,8 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_disable_wow_wakeup_event(
-		struct wlan_objmgr_vdev *vdev,
-		uint32_t *bitmap)
+QDF_STATUS pmo_tgt_disable_wow_wakeup_event(struct wlan_objmgr_vdev *vdev,
+					    uint32_t *bitmap)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -75,8 +73,8 @@ QDF_STATUS pmo_tgt_disable_wow_wakeup_event(
 		goto out;
 	}
 
-	pmo_debug("Disable wakeup events 0x%x%x%x%x for vdev_id %d",
-		  bitmap[3], bitmap[2], bitmap[1], bitmap[0], vdev_id);
+	pmo_debug("Disable wakeup events 0x%x%x%x%x for vdev_id %d", bitmap[3],
+		  bitmap[2], bitmap[1], bitmap[0], vdev_id);
 
 	status = pmo_tx_ops.send_disable_wow_wakeup_event_req(vdev, bitmap);
 	if (status != QDF_STATUS_SUCCESS)
@@ -86,11 +84,12 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_send_wow_patterns_to_fw(
-		struct wlan_objmgr_vdev *vdev, uint8_t ptrn_id,
-		const uint8_t *ptrn, uint8_t ptrn_len,
-		uint8_t ptrn_offset, const uint8_t *mask,
-		uint8_t mask_len, bool user)
+QDF_STATUS pmo_tgt_send_wow_patterns_to_fw(struct wlan_objmgr_vdev *vdev,
+					   uint8_t ptrn_id, const uint8_t *ptrn,
+					   uint8_t ptrn_len,
+					   uint8_t ptrn_offset,
+					   const uint8_t *mask,
+					   uint8_t mask_len, bool user)
 {
 	QDF_STATUS status;
 	struct pmo_vdev_priv_obj *vdev_ctx;
@@ -107,10 +106,9 @@ QDF_STATUS pmo_tgt_send_wow_patterns_to_fw(
 		status = QDF_STATUS_E_NULL_VALUE;
 		goto out;
 	}
-	status = pmo_tx_ops.send_add_wow_pattern(
-				vdev, ptrn_id, ptrn,
-				ptrn_len, ptrn_offset, mask,
-				mask_len, user);
+	status = pmo_tx_ops.send_add_wow_pattern(vdev, ptrn_id, ptrn, ptrn_len,
+						 ptrn_offset, mask, mask_len,
+						 user);
 	if (status != QDF_STATUS_SUCCESS) {
 		if (!user)
 			pmo_decrement_wow_default_ptrn(vdev_ctx);
@@ -125,9 +123,8 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_del_wow_pattern(
-		struct wlan_objmgr_vdev *vdev, uint8_t ptrn_id,
-		bool user)
+QDF_STATUS pmo_tgt_del_wow_pattern(struct wlan_objmgr_vdev *vdev,
+				   uint8_t ptrn_id, bool user)
 {
 	QDF_STATUS status;
 	struct pmo_vdev_priv_obj *vdev_ctx;
@@ -157,4 +154,3 @@ out:
 
 	return status;
 }
-

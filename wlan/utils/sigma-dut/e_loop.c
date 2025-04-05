@@ -5,19 +5,17 @@
  * Licensed under the Clear BSD license. See README for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/wait.h>
-
+#include <unistd.h>
 
 char *e_loop_cmd_file = "/data/local/hs2/To_Phone/tag_file";
 char *e_loop_log_file = "/data/local/hs2/To_Phone/Logs/e_loop.log";
 static const char *log_file = NULL;
 static const char *tag_file = NULL;
-
 
 int main(int argc, char *argv[])
 {
@@ -90,7 +88,7 @@ int main(int argc, char *argv[])
 				return -1;
 			}
 			ret = snprintf(cmd, len, "%s > %s", buf, log_file);
-			if (ret < 0 || (size_t) ret >= len) {
+			if (ret < 0 || (size_t)ret >= len) {
 				free(buf);
 				free(cmd);
 				return -1;
@@ -104,10 +102,10 @@ int main(int argc, char *argv[])
 		cmd[len - 1] = '\0';
 
 		/*
-		 * This string "cmd" will contain the command passed in by
-		 * hs20-action.sh. And the name of the "logfile". Which can be
-		 * monitored for the result.
-		 */
+     * This string "cmd" will contain the command passed in by
+     * hs20-action.sh. And the name of the "logfile". Which can be
+     * monitored for the result.
+     */
 		ret = system(cmd);
 
 		if (WIFEXITED(ret)) {
@@ -119,13 +117,13 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 
-		if (fprintf(f2,"\nELOOP_CMD : %s\n", cmd) <= 0) {
+		if (fprintf(f2, "\nELOOP_CMD : %s\n", cmd) <= 0) {
 			fclose(f2);
 			free(cmd);
 			return -1;
 		}
 
-		if (fprintf(f2,"\nELOOP_CMD_STATUS : %d\n", ret) <= 0) {
+		if (fprintf(f2, "\nELOOP_CMD_STATUS : %d\n", ret) <= 0) {
 			fclose(f2);
 			free(cmd);
 			return -1;

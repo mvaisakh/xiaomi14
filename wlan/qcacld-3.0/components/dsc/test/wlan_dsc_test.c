@@ -17,14 +17,14 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "wlan_dsc_test.h"
 #include "__wlan_dsc.h"
+#include "cds_api.h"
 #include "qdf_event.h"
 #include "qdf_threads.h"
 #include "qdf_trace.h"
 #include "qdf_types.h"
 #include "wlan_dsc.h"
-#include "wlan_dsc_test.h"
-#include "cds_api.h"
 
 #define dsc_driver_trans_start(driver) dsc_driver_trans_start(driver, __func__)
 #define dsc_psoc_trans_start(psoc) dsc_psoc_trans_start(psoc, __func__)
@@ -45,7 +45,8 @@ static struct dsc_psoc *nth_psoc(struct dsc_driver *driver, int n)
 	if (n <= 0)
 		return NULL;
 
-	dsc_for_each_driver_psoc(driver, psoc) {
+	dsc_for_each_driver_psoc(driver, psoc)
+	{
 		n--;
 		if (n)
 			continue;
@@ -66,7 +67,8 @@ static struct dsc_vdev *nth_vdev(struct dsc_psoc *psoc, int n)
 	if (n <= 0)
 		return NULL;
 
-	dsc_for_each_psoc_vdev(psoc, vdev) {
+	dsc_for_each_psoc_vdev(psoc, vdev)
+	{
 		n--;
 		if (n)
 			continue;
@@ -86,7 +88,8 @@ static void __dsc_tree_destroy(struct dsc_driver *driver)
 
 	QDF_BUG(driver);
 
-	qdf_list_for_each_del(&driver->psocs, psoc, next_psoc, node) {
+	qdf_list_for_each_del(&driver->psocs, psoc, next_psoc, node)
+	{
 		struct dsc_vdev *vdev;
 		struct dsc_vdev *next_vdev;
 
@@ -166,22 +169,23 @@ exit:
 	return errors;
 }
 
-#define action_expect(obj, action, status, errors) \
-do { \
-	void *__obj = obj; \
-	QDF_STATUS __expected = status; \
-	QDF_STATUS __result; \
-\
-	__result = dsc_##obj##_##action##_start(__obj); \
-	if (__result != __expected) { \
-		dsc_err("FAIL: " #obj " " #action \
-			"; expected " #status " (%u), found %u", \
-			__expected, __result); \
-		(errors)++; \
-	} \
-	if (QDF_IS_STATUS_SUCCESS(__result) && QDF_IS_STATUS_ERROR(__expected))\
-		dsc_##obj##_##action##_stop(__obj); \
-} while (false)
+#define action_expect(obj, action, status, errors)                       \
+	do {                                                             \
+		void *__obj = obj;                                       \
+		QDF_STATUS __expected = status;                          \
+		QDF_STATUS __result;                                     \
+                                                                         \
+		__result = dsc_##obj##_##action##_start(__obj);          \
+		if (__result != __expected) {                            \
+			dsc_err("FAIL: " #obj " " #action                \
+				"; expected " #status " (%u), found %u", \
+				__expected, __result);                   \
+			(errors)++;                                      \
+		}                                                        \
+		if (QDF_IS_STATUS_SUCCESS(__result) &&                   \
+		    QDF_IS_STATUS_ERROR(__expected))                     \
+			dsc_##obj##_##action##_stop(__obj);              \
+	} while (false)
 
 static uint32_t dsc_test_driver_trans_blocks(void)
 {
@@ -210,12 +214,14 @@ static uint32_t dsc_test_driver_trans_blocks(void)
 	action_expect(driver, op, QDF_STATUS_E_AGAIN, errors);
 
 	/* ... children psoc trans/ops to fail */
-	dsc_for_each_driver_psoc(driver, psoc) {
+	dsc_for_each_driver_psoc(driver, psoc)
+	{
 		action_expect(psoc, trans, QDF_STATUS_E_INVAL, errors);
 		action_expect(psoc, op, QDF_STATUS_E_INVAL, errors);
 
 		/* ... grandchildren vdev trans/ops to fail */
-		dsc_for_each_psoc_vdev(psoc, vdev) {
+		dsc_for_each_psoc_vdev(psoc, vdev)
+		{
 			action_expect(vdev, trans, QDF_STATUS_E_INVAL, errors);
 			action_expect(vdev, op, QDF_STATUS_E_INVAL, errors);
 		}
@@ -265,26 +271,29 @@ static uint32_t dsc_test_psoc_trans_blocks(void)
 	action_expect(psoc, op, QDF_STATUS_E_AGAIN, errors);
 
 	/* ... children vdev trans/ops to fail */
-	dsc_for_each_psoc_vdev(psoc, vdev) {
+	dsc_for_each_psoc_vdev(psoc, vdev)
+	{
 		action_expect(vdev, trans, QDF_STATUS_E_BUSY, errors);
 		action_expect(vdev, op, QDF_STATUS_E_BUSY, errors);
 	}
 
 	/* ... while driver unload in progress vdev op and trans should be
-	 * rejected with EINVAL
-	 */
+   * rejected with EINVAL
+   */
 	cds_set_unload_in_progress(true);
-	dsc_for_each_psoc_vdev(psoc, vdev) {
+	dsc_for_each_psoc_vdev(psoc, vdev)
+	{
 		action_expect(vdev, trans, QDF_STATUS_E_INVAL, errors);
 		action_expect(vdev, op, QDF_STATUS_E_INVAL, errors);
 	}
 	cds_set_unload_in_progress(false);
 
 	/* ... while SSR recovery in progress vdev op and trans should be
-	 * rejected with EINVAL
-	 */
+   * rejected with EINVAL
+   */
 	cds_set_recovery_in_progress(true);
-	dsc_for_each_psoc_vdev(psoc, vdev) {
+	dsc_for_each_psoc_vdev(psoc, vdev)
+	{
 		action_expect(vdev, trans, QDF_STATUS_E_INVAL, errors);
 		action_expect(vdev, op, QDF_STATUS_E_INVAL, errors);
 	}
@@ -303,15 +312,15 @@ static uint32_t dsc_test_psoc_trans_blocks(void)
 	action_expect(psoc, op, QDF_STATUS_E_AGAIN, errors);
 
 	/* ... children vdev trans/ops to fail */
-	dsc_for_each_psoc_vdev(psoc, vdev) {
+	dsc_for_each_psoc_vdev(psoc, vdev)
+	{
 		action_expect(vdev, trans, QDF_STATUS_E_BUSY, errors);
 		action_expect(vdev, op, QDF_STATUS_E_BUSY, errors);
 	}
 
 	/* teardown */
 
-	dsc_for_each_driver_psoc(driver, psoc)
-		dsc_psoc_trans_stop(psoc);
+	dsc_for_each_driver_psoc(driver, psoc) dsc_psoc_trans_stop(psoc);
 
 	__dsc_tree_destroy(driver);
 
@@ -342,7 +351,8 @@ static uint32_t dsc_test_vdev_trans_blocks(void)
 	/* test */
 
 	/* a vdev in transition should cause ... */
-	dsc_for_each_driver_psoc(driver, psoc) {
+	dsc_for_each_driver_psoc(driver, psoc)
+	{
 		dsc_for_each_psoc_vdev(psoc, vdev)
 			action_expect(vdev, trans, QDF_STATUS_SUCCESS, errors);
 	}
@@ -352,12 +362,14 @@ static uint32_t dsc_test_vdev_trans_blocks(void)
 	action_expect(driver, op, QDF_STATUS_E_AGAIN, errors);
 
 	/* ... psoc trans/ops to fail */
-	dsc_for_each_driver_psoc(driver, psoc) {
+	dsc_for_each_driver_psoc(driver, psoc)
+	{
 		action_expect(psoc, trans, QDF_STATUS_E_AGAIN, errors);
 		action_expect(psoc, op, QDF_STATUS_E_AGAIN, errors);
 
 		/* ... the same vdev trans/ops to fail */
-		dsc_for_each_psoc_vdev(psoc, vdev) {
+		dsc_for_each_psoc_vdev(psoc, vdev)
+		{
 			action_expect(vdev, trans, QDF_STATUS_E_BUSY, errors);
 			action_expect(vdev, op, QDF_STATUS_E_BUSY, errors);
 		}
@@ -365,9 +377,9 @@ static uint32_t dsc_test_vdev_trans_blocks(void)
 
 	/* teardown */
 
-	dsc_for_each_driver_psoc(driver, psoc) {
-		dsc_for_each_psoc_vdev(psoc, vdev)
-			dsc_vdev_trans_stop(vdev);
+	dsc_for_each_driver_psoc(driver, psoc)
+	{
+		dsc_for_each_psoc_vdev(psoc, vdev) dsc_vdev_trans_stop(vdev);
 	}
 
 	__dsc_tree_destroy(driver);
@@ -381,15 +393,15 @@ exit:
 #define THREAD_TIMEOUT 1000 /* ms */
 #define dsc_event_wait(event) qdf_wait_single_event(event, THREAD_TIMEOUT)
 
-#define step_assert(field, expected) \
-do { \
-	uint32_t _step = ++(field); \
-	uint32_t _expected = (expected); \
-\
-	if (_step != _expected) \
-		QDF_DEBUG_PANIC("Step count is %u; Expected %u", \
-				_step, _expected); \
-} while (false)
+#define step_assert(field, expected)                                     \
+	do {                                                             \
+		uint32_t _step = ++(field);                              \
+		uint32_t _expected = (expected);                         \
+                                                                         \
+		if (_step != _expected)                                  \
+			QDF_DEBUG_PANIC("Step count is %u; Expected %u", \
+					_step, _expected);               \
+	} while (false)
 
 #define trans_waiting(ctx) (!qdf_list_empty(&(ctx)->trans.queue))
 
@@ -424,12 +436,12 @@ static QDF_STATUS dsc_thread_ops(void *context)
 		schedule();
 
 	/* at this point, each thread is:
-	 * 1) doing operations
-	 * 2) transitioning vdevs 1/2, waiting for ops to finish
-	 * 3) waiting to transition vdev 1
-	 * 4) waiting to transition psoc
-	 * 5) waitint to transition driver
-	 */
+   * 1) doing operations
+   * 2) transitioning vdevs 1/2, waiting for ops to finish
+   * 3) waiting to transition vdev 1
+   * 4) waiting to transition psoc
+   * 5) waitint to transition driver
+   */
 
 	step_assert(ctx->step, 8);
 	dsc_driver_op_stop(driver);
@@ -467,8 +479,7 @@ static QDF_STATUS dsc_thread_vdev_trans(void *context)
 	qdf_event_set(&ctx->start_vdev_wait);
 
 	/* wait for thread 1 to complete pending vdev ops */
-	dsc_for_each_psoc_vdev(psoc, vdev)
-		dsc_vdev_wait_for_ops(vdev);
+	dsc_for_each_psoc_vdev(psoc, vdev) dsc_vdev_wait_for_ops(vdev);
 
 	/* actual vdev transition work would happen here */
 
@@ -626,4 +637,3 @@ uint32_t dsc_unit_test(void)
 
 	return errors;
 }
-

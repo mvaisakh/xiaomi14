@@ -18,10 +18,10 @@
  *  DOC: target_if_ext_twt_cmd.c
  *  This file contains twt component's target related function definitions
  */
-#include <wlan_twt_public_structs.h>
-#include <wlan_lmac_if_def.h>
 #include <target_if.h>
 #include <target_if_ext_twt.h>
+#include <wlan_lmac_if_def.h>
+#include <wlan_twt_public_structs.h>
 #include <wmi_unified_twt_api.h>
 
 QDF_STATUS
@@ -100,13 +100,14 @@ target_if_twt_nudge_req(struct wlan_objmgr_psoc *psoc,
 }
 
 /**
- * target_if_twt_convert_ac_value() - map ac setting to the value to be used in FW.
+ * target_if_twt_convert_ac_value() - map ac setting to the value to be used in
+ * FW.
  * @ac_value: ac value to be mapped.
  *
  * Return: enum wmi_traffic_ac
  */
-static inline
-wmi_traffic_ac target_if_twt_convert_ac_value(enum twt_traffic_ac ac_value)
+static inline wmi_traffic_ac
+target_if_twt_convert_ac_value(enum twt_traffic_ac ac_value)
 {
 	switch (ac_value) {
 	case TWT_AC_BE:
@@ -129,7 +130,7 @@ target_if_twt_ac_param_send(struct wlan_objmgr_psoc *psoc,
 			    enum twt_traffic_ac twt_ac, uint8_t mac_id)
 {
 	struct wmi_unified *wmi_handle;
-	struct pdev_params params = {0};
+	struct pdev_params params = { 0 };
 
 	wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
 	if (!wmi_handle) {
@@ -155,4 +156,3 @@ target_if_twt_register_ext_tx_ops(struct wlan_lmac_if_twt_tx_ops *twt_tx_ops)
 
 	return QDF_STATUS_SUCCESS;
 }
-

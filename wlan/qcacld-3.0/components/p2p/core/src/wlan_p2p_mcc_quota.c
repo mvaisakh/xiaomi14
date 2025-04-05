@@ -21,14 +21,14 @@
  * implementation
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
+#include "wlan_p2p_mcc_quota.h"
+#include "wlan_p2p_main.h"
 #include "wlan_p2p_mcc_quota_public_struct.h"
 #include "wlan_p2p_public_struct.h"
 #include "wlan_p2p_ucfg_api.h"
-#include "wlan_p2p_main.h"
-#include "wlan_p2p_mcc_quota.h"
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 
 /**
  * struct wlan_mcc_quota_context - context for vdev iterate handler
@@ -61,10 +61,8 @@ static void wlan_indicate_quota_vdev_handler(struct wlan_objmgr_psoc *psoc,
 	QDF_STATUS status;
 
 	op_mode = wlan_vdev_mlme_get_opmode(vdev);
-	if (op_mode != QDF_STA_MODE &&
-	    op_mode != QDF_SAP_MODE &&
-	    op_mode != QDF_P2P_CLIENT_MODE &&
-	    op_mode != QDF_P2P_GO_MODE)
+	if (op_mode != QDF_STA_MODE && op_mode != QDF_SAP_MODE &&
+	    op_mode != QDF_P2P_CLIENT_MODE && op_mode != QDF_P2P_GO_MODE)
 		return;
 
 	status = p2p_soc_obj->mcc_quota_ev_os_if_cb(psoc, vdev,
@@ -90,8 +88,8 @@ QDF_STATUS p2p_mcc_quota_event_process(struct wlan_objmgr_psoc *psoc,
 		p2p_err("psoc context passed is NULL");
 		return QDF_STATUS_E_INVAL;
 	}
-	p2p_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-							    WLAN_UMAC_COMP_P2P);
+	p2p_soc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_P2P);
 	if (!p2p_soc_obj) {
 		p2p_err("p2p soc object is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -105,8 +103,8 @@ QDF_STATUS p2p_mcc_quota_event_process(struct wlan_objmgr_psoc *psoc,
 	context.quota_info = event_info;
 	context.p2p_soc_obj = p2p_soc_obj;
 	wlan_objmgr_iterate_obj_list(psoc, WLAN_VDEV_OP,
-				     wlan_indicate_quota_vdev_handler,
-				     &context, true, WLAN_P2P_ID);
+				     wlan_indicate_quota_vdev_handler, &context,
+				     true, WLAN_P2P_ID);
 
 	if (context.indicated)
 		return QDF_STATUS_SUCCESS;

@@ -3,16 +3,15 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-
+#include "ipahal_tsp.h"
 #include "ipa_tsp.h"
 #include "ipahal_i.h"
-#include "ipahal_tsp_i.h"
 #include "ipahal_reg.h"
-#include "ipahal_tsp.h"
+#include "ipahal_tsp_i.h"
 
-
-void ipahal_tsp_fill_hw_ingr_tc(const struct ipa_ioc_tsp_ingress_class_params *input,
-	void *table, u8 index)
+void ipahal_tsp_fill_hw_ingr_tc(
+	const struct ipa_ioc_tsp_ingress_class_params *input, void *table,
+	u8 index)
 {
 	/* The first index is 1 */
 	struct ipahal_tsp_ingress_class *hal_ingr_tc =
@@ -24,8 +23,9 @@ void ipahal_tsp_fill_hw_ingr_tc(const struct ipa_ioc_tsp_ingress_class_params *i
 	hal_ingr_tc->last_rtc = 0x0;
 }
 
-void ipahal_tsp_fill_hw_egr_ep(const struct ipa_ioc_tsp_egress_prod_params *input,
-	void *table, u8 index)
+void ipahal_tsp_fill_hw_egr_ep(
+	const struct ipa_ioc_tsp_egress_prod_params *input, void *table,
+	u8 index)
 {
 	union ipahal_tsp_egress_prod *hal_egr_ep =
 		(union ipahal_tsp_egress_prod *)table + index;
@@ -47,8 +47,9 @@ void ipahal_tsp_fill_hw_egr_ep(const struct ipa_ioc_tsp_egress_prod_params *inpu
 	}
 }
 
-void ipahal_tsp_fill_hw_egr_tc(const struct ipa_ioc_tsp_egress_class_params *input,
-	void *table, u8 index)
+void ipahal_tsp_fill_hw_egr_tc(
+	const struct ipa_ioc_tsp_egress_class_params *input, void *table,
+	u8 index)
 {
 	/* The first index is 1 */
 	union ipahal_tsp_egress_class *hal_egr_tc =
@@ -58,7 +59,8 @@ void ipahal_tsp_fill_hw_egr_tc(const struct ipa_ioc_tsp_egress_class_params *inp
 		/* even index */
 		hal_egr_tc->even.guaranteed_rate = input->guaranteed_rate;
 		hal_egr_tc->even.max_rate = input->max_rate;
-		hal_egr_tc->even.guaranteed_freq = 65536 / input->guaranteed_rate;
+		hal_egr_tc->even.guaranteed_freq =
+			65536 / input->guaranteed_rate;
 		hal_egr_tc->even.max_freq = 65536 / input->max_rate;
 		hal_egr_tc->even.guaranteed_burst = input->guaranteed_burst;
 		hal_egr_tc->even.max_burst = input->max_burst;
@@ -68,7 +70,8 @@ void ipahal_tsp_fill_hw_egr_tc(const struct ipa_ioc_tsp_egress_class_params *inp
 		/* odd index */
 		hal_egr_tc->odd.guaranteed_rate = input->guaranteed_rate;
 		hal_egr_tc->odd.max_rate = input->max_rate;
-		hal_egr_tc->odd.guaranteed_freq = 65536 / input->guaranteed_rate;
+		hal_egr_tc->odd.guaranteed_freq =
+			65536 / input->guaranteed_rate;
 		hal_egr_tc->odd.max_freq = 65536 / input->max_rate;
 		hal_egr_tc->odd.guaranteed_burst = input->guaranteed_burst;
 		hal_egr_tc->odd.max_burst = input->max_burst;
@@ -78,7 +81,7 @@ void ipahal_tsp_fill_hw_egr_tc(const struct ipa_ioc_tsp_egress_class_params *inp
 }
 
 void ipahal_tsp_parse_hw_ingr_tc(const void *table, u8 index,
-	struct ipa_ioc_tsp_ingress_class_params *output)
+				 struct ipa_ioc_tsp_ingress_class_params *output)
 {
 	/* The first index is 1 */
 	struct ipahal_tsp_ingress_class *hal_ingr_tc =
@@ -89,7 +92,7 @@ void ipahal_tsp_parse_hw_ingr_tc(const void *table, u8 index,
 }
 
 void ipahal_tsp_parse_hw_egr_tc(const void *table, u8 index,
-	struct ipa_ioc_tsp_egress_class_params *output)
+				struct ipa_ioc_tsp_egress_class_params *output)
 {
 	/* The first index is 1 */
 	union ipahal_tsp_egress_class *hal_egr_tc =
@@ -111,7 +114,7 @@ void ipahal_tsp_parse_hw_egr_tc(const void *table, u8 index,
 }
 
 void ipahal_tsp_parse_hw_egr_ep(const void *table, u8 index,
-	struct ipa_ioc_tsp_egress_prod_params *output)
+				struct ipa_ioc_tsp_egress_prod_params *output)
 {
 	union ipahal_tsp_egress_prod *hal_egr_ep =
 		(union ipahal_tsp_egress_prod *)table + index;

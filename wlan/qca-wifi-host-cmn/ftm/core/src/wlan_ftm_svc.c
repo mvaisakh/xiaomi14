@@ -21,10 +21,10 @@
  * DOC: This implementation of init/deint functions for FTM services.
  */
 
-#include "wlan_ftm_svc_i.h"
-#include <wlan_lmac_if_def.h>
-#include <wlan_ftm_ucfg_api.h>
 #include "target_if.h"
+#include "wlan_ftm_svc_i.h"
+#include <wlan_ftm_ucfg_api.h>
+#include <wlan_lmac_if_def.h>
 
 static inline struct wlan_lmac_if_ftm_tx_ops *
 wlan_psoc_get_ftm_txops(struct wlan_objmgr_psoc *psoc)
@@ -40,8 +40,7 @@ wlan_psoc_get_ftm_txops(struct wlan_objmgr_psoc *psoc)
 	return &tx_ops->ftm_tx_ops;
 }
 
-static QDF_STATUS
-ftm_pdev_obj_init(struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj)
+static QDF_STATUS ftm_pdev_obj_init(struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj)
 {
 	ftm_pdev_obj->data = qdf_mem_malloc(FTM_CMD_MAX_BUF_LENGTH);
 	if (!ftm_pdev_obj->data)
@@ -55,7 +54,7 @@ ftm_pdev_obj_init(struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj)
 
 QDF_STATUS
 wlan_ftm_pdev_obj_create_notification(struct wlan_objmgr_pdev *pdev,
-					void *arg_list)
+				      void *arg_list)
 {
 	QDF_STATUS status;
 	struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj;
@@ -90,10 +89,8 @@ wlan_ftm_pdev_obj_create_notification(struct wlan_objmgr_pdev *pdev,
 		return status;
 	}
 
-	status = wlan_objmgr_pdev_component_obj_attach(pdev,
-						WLAN_UMAC_COMP_FTM,
-						ftm_pdev_obj,
-						QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_pdev_component_obj_attach(
+		pdev, WLAN_UMAC_COMP_FTM, ftm_pdev_obj, QDF_STATUS_SUCCESS);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ftm_err("ftm pdev obj attach failed");
@@ -119,7 +116,7 @@ ftm_pdev_obj_deinit(struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj)
 
 QDF_STATUS
 wlan_ftm_pdev_obj_destroy_notification(struct wlan_objmgr_pdev *pdev,
-					void *arg_list)
+				       void *arg_list)
 {
 	QDF_STATUS status;
 	struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj;
@@ -148,7 +145,7 @@ wlan_ftm_pdev_obj_destroy_notification(struct wlan_objmgr_pdev *pdev,
 	}
 
 	status = wlan_objmgr_pdev_component_obj_detach(pdev, WLAN_UMAC_COMP_FTM,
-							ftm_pdev_obj);
+						       ftm_pdev_obj);
 
 	status = ftm_pdev_obj_deinit(ftm_pdev_obj);
 	ftm_pdev_obj->pdev = NULL;
@@ -193,8 +190,8 @@ wlan_ftm_testmode_detach(struct wlan_objmgr_psoc *psoc)
 }
 
 QDF_STATUS
-wlan_ftm_cmd_send(struct wlan_objmgr_pdev *pdev, uint8_t *buf,
-			uint32_t len, uint8_t pdev_id)
+wlan_ftm_cmd_send(struct wlan_objmgr_pdev *pdev, uint8_t *buf, uint32_t len,
+		  uint8_t pdev_id)
 {
 	struct wlan_lmac_if_ftm_tx_ops *ftm_tx_ops;
 	struct wlan_objmgr_psoc *psoc;

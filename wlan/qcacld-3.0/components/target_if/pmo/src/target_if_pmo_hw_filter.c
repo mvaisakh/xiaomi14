@@ -24,8 +24,8 @@
 
 #include "target_if.h"
 #include "target_if_pmo.h"
-#include "wmi_unified_api.h"
 #include "wlan_pmo_hw_filter_public_struct.h"
+#include "wmi_unified_api.h"
 
 QDF_STATUS target_if_pmo_conf_hw_filter(struct wlan_objmgr_psoc *psoc,
 					struct pmo_hw_filter_params *req)

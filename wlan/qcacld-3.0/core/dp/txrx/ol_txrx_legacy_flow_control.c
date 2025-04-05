@@ -16,28 +16,28 @@
  */
 
 /* OS abstraction libraries */
-#include <qdf_nbuf.h>           /* qdf_nbuf_t, etc. */
-#include <qdf_atomic.h>         /* qdf_atomic_read, etc. */
-#include <qdf_util.h>           /* qdf_unlikely */
+#include <qdf_atomic.h> /* qdf_atomic_read, etc. */
+#include <qdf_nbuf.h> /* qdf_nbuf_t, etc. */
+#include <qdf_util.h> /* qdf_unlikely */
 
 /* APIs for other modules */
-#include <htt.h>                /* HTT_TX_EXT_TID_MGMT */
-#include <ol_htt_tx_api.h>      /* htt_tx_desc_tid */
+#include <htt.h> /* HTT_TX_EXT_TID_MGMT */
+#include <ol_htt_tx_api.h> /* htt_tx_desc_tid */
 
 /* internal header files relevant for all systems */
-#include <ol_txrx_internal.h>   /* TXRX_ASSERT1 */
-#include <ol_tx_desc.h>         /* ol_tx_desc */
-#include <ol_tx_send.h>         /* ol_tx_send */
-#include <ol_txrx.h>            /* ol_txrx_get_vdev_from_vdev_id */
+#include <ol_tx_desc.h> /* ol_tx_desc */
+#include <ol_tx_send.h> /* ol_tx_send */
+#include <ol_txrx.h> /* ol_txrx_get_vdev_from_vdev_id */
+#include <ol_txrx_internal.h> /* TXRX_ASSERT1 */
 
 /* internal header files relevant only for HL systems */
-#include <ol_tx_queue.h>        /* ol_tx_enqueue */
+#include <ol_tx_queue.h> /* ol_tx_enqueue */
 
 /* internal header files relevant only for specific systems (Pronto) */
-#include <ol_txrx_encap.h>      /* OL_TX_ENCAP, etc */
-#include <ol_tx.h>
-#include <ol_cfg.h>
 #include <cdp_txrx_handle.h>
+#include <ol_cfg.h>
+#include <ol_tx.h>
+#include <ol_txrx_encap.h> /* OL_TX_ENCAP, etc */
 
 void ol_txrx_vdev_pause(struct cdp_soc_t *soc_hdl, uint8_t vdev_id,
 			uint32_t reason, uint32_t pause_type)
@@ -109,8 +109,7 @@ void ol_txrx_vdev_flush(struct cdp_soc_t *soc_hdl, uint8_t vdev_id)
 	qdf_timer_stop(&vdev->ll_pause.timer);
 	vdev->ll_pause.is_q_timer_on = false;
 	while (vdev->ll_pause.txq.head) {
-		qdf_nbuf_t next =
-			qdf_nbuf_next(vdev->ll_pause.txq.head);
+		qdf_nbuf_t next = qdf_nbuf_next(vdev->ll_pause.txq.head);
 		qdf_nbuf_set_next(vdev->ll_pause.txq.head, NULL);
 		if (QDF_NBUF_CB_PADDR(vdev->ll_pause.txq.head)) {
 			if (!qdf_nbuf_ipa_owned_get(vdev->ll_pause.txq.head))
@@ -118,8 +117,7 @@ void ol_txrx_vdev_flush(struct cdp_soc_t *soc_hdl, uint8_t vdev_id)
 					       vdev->ll_pause.txq.head,
 					       QDF_DMA_TO_DEVICE);
 		}
-		qdf_nbuf_tx_free(vdev->ll_pause.txq.head,
-				 QDF_NBUF_PKT_ERROR);
+		qdf_nbuf_tx_free(vdev->ll_pause.txq.head, QDF_NBUF_PKT_ERROR);
 		vdev->ll_pause.txq.head = next;
 	}
 	vdev->ll_pause.txq.tail = NULL;
@@ -158,58 +156,48 @@ static int ol_tx_get_max_to_send(struct ol_txrx_pdev_t *pdev)
 	} else {
 		consume_num_last_timer =
 			(pdev->tx_throttle.prev_outstanding_num -
-			 pdev->tx_desc.pool_size +
-			 pdev->tx_desc.num_free);
-		if (consume_num_last_timer >=
-			OL_TX_THROTTLE_MAX_SEND_LEVEL1) {
+			 pdev->tx_desc.pool_size + pdev->tx_desc.num_free);
+		if (consume_num_last_timer >= OL_TX_THROTTLE_MAX_SEND_LEVEL1) {
 			max_to_send = pdev->tx_throttle.tx_threshold;
 		} else if (consume_num_last_timer >=
-				OL_TX_THROTTLE_MAX_SEND_LEVEL2) {
-			max_to_send =
-				OL_TX_THROTTLE_MAX_SEND_LEVEL1;
+			   OL_TX_THROTTLE_MAX_SEND_LEVEL2) {
+			max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL1;
 		} else if (consume_num_last_timer >=
-				OL_TX_THROTTLE_MAX_SEND_LEVEL3) {
-			max_to_send =
-				OL_TX_THROTTLE_MAX_SEND_LEVEL2;
+			   OL_TX_THROTTLE_MAX_SEND_LEVEL3) {
+			max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL2;
 		} else if (consume_num_last_timer >=
-				OL_TX_THROTTLE_MAX_SEND_LEVEL4) {
-			max_to_send =
-				OL_TX_THROTTLE_MAX_SEND_LEVEL3;
+			   OL_TX_THROTTLE_MAX_SEND_LEVEL4) {
+			max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL3;
 		} else if (consume_num_last_timer >=
-				OL_TX_THROTTLE_MAX_SEND_LEVEL5) {
-			max_to_send =
-				OL_TX_THROTTLE_MAX_SEND_LEVEL4;
+			   OL_TX_THROTTLE_MAX_SEND_LEVEL5) {
+			max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL4;
 		} else if (pdev->tx_throttle.prev_outstanding_num >
-				consume_num_last_timer) {
+			   consume_num_last_timer) {
 			/*
-			 * when TX packet number is smaller than 35,
-			 * most likely low phy rate is being used.
-			 * As long as pdev->tx_throttle.prev_outstanding_num
-			 * is greater than consume_num_last_timer, it
-			 * means small TX packet number isn't limited
-			 * by packets injected from host.
-			 */
+       * when TX packet number is smaller than 35,
+       * most likely low phy rate is being used.
+       * As long as pdev->tx_throttle.prev_outstanding_num
+       * is greater than consume_num_last_timer, it
+       * means small TX packet number isn't limited
+       * by packets injected from host.
+       */
 			if (consume_num_last_timer >=
-				OL_TX_THROTTLE_MAX_SEND_LEVEL6)
-				max_to_send =
-					OL_TX_THROTTLE_MAX_SEND_LEVEL6;
+			    OL_TX_THROTTLE_MAX_SEND_LEVEL6)
+				max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL6;
 			else if (consume_num_last_timer >=
-					OL_TX_THROTTLE_MAX_SEND_LEVEL7)
-				max_to_send =
-					OL_TX_THROTTLE_MAX_SEND_LEVEL7;
+				 OL_TX_THROTTLE_MAX_SEND_LEVEL7)
+				max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL7;
 			else if (consume_num_last_timer >=
-					OL_TX_THROTTLE_MAX_SEND_LEVEL8)
-				max_to_send =
-					OL_TX_THROTTLE_MAX_SEND_LEVEL8;
+				 OL_TX_THROTTLE_MAX_SEND_LEVEL8)
+				max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL8;
 			else
-				max_to_send =
-					OL_TX_THROTTLE_MAX_SEND_LEVEL9;
+				max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL9;
 		} else {
 			/*
-			 * when come here, it means it's hard to evaluate
-			 * current phy rate, for safety, max_to_send set
-			 * to OL_TX_THROTTLE_MAX_SEND_LEVEL5.
-			 */
+       * when come here, it means it's hard to evaluate
+       * current phy rate, for safety, max_to_send set
+       * to OL_TX_THROTTLE_MAX_SEND_LEVEL5.
+       */
 			max_to_send = OL_TX_THROTTLE_MAX_SEND_LEVEL5;
 		}
 	}
@@ -232,19 +220,19 @@ static void ol_tx_vdev_ll_pause_queue_send_base(struct ol_txrx_vdev_t *vdev)
 	}
 
 	/*
-	 * Send as much of the backlog as possible, but leave some margin
-	 * of unallocated tx descriptors that can be used for new frames
-	 * being transmitted by other vdevs.
-	 * Ideally there would be a scheduler, which would not only leave
-	 * some margin for new frames for other vdevs, but also would
-	 * fairly apportion the tx descriptors between multiple vdevs that
-	 * have backlogs in their pause queues.
-	 * However, the fairness benefit of having a scheduler for frames
-	 * from multiple vdev's pause queues is not sufficient to outweigh
-	 * the extra complexity.
-	 */
+   * Send as much of the backlog as possible, but leave some margin
+   * of unallocated tx descriptors that can be used for new frames
+   * being transmitted by other vdevs.
+   * Ideally there would be a scheduler, which would not only leave
+   * some margin for new frames for other vdevs, but also would
+   * fairly apportion the tx descriptors between multiple vdevs that
+   * have backlogs in their pause queues.
+   * However, the fairness benefit of having a scheduler for frames
+   * from multiple vdev's pause queues is not sufficient to outweigh
+   * the extra complexity.
+   */
 	max_to_accept = vdev->pdev->tx_desc.num_free -
-		OL_TX_VDEV_PAUSE_QUEUE_SEND_MARGIN;
+			OL_TX_VDEV_PAUSE_QUEUE_SEND_MARGIN;
 	while (max_to_accept > 0 && vdev->ll_pause.txq.depth) {
 		qdf_nbuf_t tx_msdu;
 
@@ -256,17 +244,17 @@ static void ol_tx_vdev_ll_pause_queue_send_base(struct ol_txrx_vdev_t *vdev)
 			if (!vdev->ll_pause.txq.head)
 				vdev->ll_pause.txq.tail = NULL;
 			qdf_nbuf_set_next(tx_msdu, NULL);
-			QDF_NBUF_UPDATE_TX_PKT_COUNT(tx_msdu,
-						QDF_NBUF_TX_PKT_TXRX_DEQUEUE);
+			QDF_NBUF_UPDATE_TX_PKT_COUNT(
+				tx_msdu, QDF_NBUF_TX_PKT_TXRX_DEQUEUE);
 			tx_msdu = ol_tx_ll_wrapper(vdev, tx_msdu);
 			/*
-			 * It is unexpected that ol_tx_ll would reject the frame
-			 * since we checked that there's room for it, though
-			 * there's an infinitesimal possibility that between the
-			 * time we checked the room available and now, a
-			 * concurrent batch of tx frames used up all the room.
-			 * For simplicity, just drop the frame.
-			 */
+       * It is unexpected that ol_tx_ll would reject the frame
+       * since we checked that there's room for it, though
+       * there's an infinitesimal possibility that between the
+       * time we checked the room available and now, a
+       * concurrent batch of tx frames used up all the room.
+       * For simplicity, just drop the frame.
+       */
 			if (tx_msdu) {
 				qdf_nbuf_unmap(vdev->pdev->osdev, tx_msdu,
 					       QDF_DMA_TO_DEVICE);
@@ -288,9 +276,9 @@ static void ol_tx_vdev_ll_pause_queue_send_base(struct ol_txrx_vdev_t *vdev)
 	qdf_spin_unlock_bh(&vdev->ll_pause.mutex);
 }
 
-static qdf_nbuf_t
-ol_tx_vdev_pause_queue_append(struct ol_txrx_vdev_t *vdev,
-			      qdf_nbuf_t msdu_list, uint8_t start_timer)
+static qdf_nbuf_t ol_tx_vdev_pause_queue_append(struct ol_txrx_vdev_t *vdev,
+						qdf_nbuf_t msdu_list,
+						uint8_t start_timer)
 {
 	qdf_spin_lock_bh(&vdev->ll_pause.mutex);
 	while (msdu_list &&
@@ -300,10 +288,10 @@ ol_tx_vdev_pause_queue_append(struct ol_txrx_vdev_t *vdev,
 		QDF_NBUF_UPDATE_TX_PKT_COUNT(msdu_list,
 					     QDF_NBUF_TX_PKT_TXRX_ENQUEUE);
 		DPTRACE(qdf_dp_trace(msdu_list,
-			QDF_DP_TRACE_TXRX_QUEUE_PACKET_PTR_RECORD,
-			QDF_TRACE_DEFAULT_PDEV_ID,
-			qdf_nbuf_data_addr(msdu_list),
-			sizeof(qdf_nbuf_data(msdu_list)), QDF_TX));
+				     QDF_DP_TRACE_TXRX_QUEUE_PACKET_PTR_RECORD,
+				     QDF_TRACE_DEFAULT_PDEV_ID,
+				     qdf_nbuf_data_addr(msdu_list),
+				     sizeof(qdf_nbuf_data(msdu_list)), QDF_TX));
 
 		vdev->ll_pause.txq.depth++;
 		if (!vdev->ll_pause.txq.head) {
@@ -349,11 +337,13 @@ qdf_nbuf_t ol_tx_ll_queue(ol_txrx_vdev_handle vdev, qdf_nbuf_t msdu_list)
 		if (qdf_unlikely((paused_reason &
 				  OL_TXQ_PAUSE_REASON_PEER_UNAUTHORIZED) ==
 				 paused_reason)) {
-			eth_type = (((struct ethernet_hdr_t *)
-				     qdf_nbuf_data(msdu_list))->
-				    ethertype[0] << 8) |
-				   (((struct ethernet_hdr_t *)
-				     qdf_nbuf_data(msdu_list))->ethertype[1]);
+			eth_type = (((struct ethernet_hdr_t *)qdf_nbuf_data(
+					     msdu_list))
+					    ->ethertype[0]
+				    << 8) |
+				   (((struct ethernet_hdr_t *)qdf_nbuf_data(
+					     msdu_list))
+					    ->ethertype[1]);
 			if (ETHERTYPE_IS_EAPOL_WAPI(eth_type)) {
 				msdu_list = ol_tx_ll_wrapper(vdev, msdu_list);
 				return msdu_list;
@@ -363,30 +353,30 @@ qdf_nbuf_t ol_tx_ll_queue(ol_txrx_vdev_handle vdev, qdf_nbuf_t msdu_list)
 	} else {
 		if (vdev->ll_pause.txq.depth > 0 ||
 		    vdev->pdev->tx_throttle.current_throttle_level !=
-		    THROTTLE_LEVEL_0) {
+			    THROTTLE_LEVEL_0) {
 			/*
-			 * not paused, but there is a backlog of frms
-			 * from a prior pause or throttle off phase
-			 */
-			msdu_list = ol_tx_vdev_pause_queue_append(
-				vdev, msdu_list, 0);
+       * not paused, but there is a backlog of frms
+       * from a prior pause or throttle off phase
+       */
+			msdu_list = ol_tx_vdev_pause_queue_append(vdev,
+								  msdu_list, 0);
 			/*
-			 * if throttle is disabled or phase is "on",
-			 * send the frame
-			 */
+       * if throttle is disabled or phase is "on",
+       * send the frame
+       */
 			if (vdev->pdev->tx_throttle.current_throttle_level ==
 			    THROTTLE_LEVEL_0) {
 				/*
-				 * send as many frames as possible
-				 * from the vdevs backlog
-				 */
+         * send as many frames as possible
+         * from the vdevs backlog
+         */
 				ol_tx_vdev_ll_pause_queue_send_base(vdev);
 			}
 		} else {
 			/*
-			 * not paused, no throttle and no backlog -
-			 * send the new frames
-			 */
+       * not paused, no throttle and no backlog -
+       * send the new frames
+       */
 			msdu_list = ol_tx_ll_wrapper(vdev, msdu_list);
 		}
 	}
@@ -399,7 +389,7 @@ qdf_nbuf_t ol_tx_ll_queue(ol_txrx_vdev_handle vdev, qdf_nbuf_t msdu_list)
  */
 void ol_tx_pdev_ll_pause_queue_send_all(struct ol_txrx_pdev_t *pdev)
 {
-	int max_to_send;        /* tracks how many frames have been sent */
+	int max_to_send; /* tracks how many frames have been sent */
 	qdf_nbuf_t tx_msdu;
 	struct ol_txrx_vdev_t *vdev = NULL;
 	uint8_t more;
@@ -411,47 +401,48 @@ void ol_tx_pdev_ll_pause_queue_send_all(struct ol_txrx_pdev_t *pdev)
 		return;
 
 	/*
-	 * For host implementation thermal mitigation, there has limitation
-	 * in low phy rate case, like 11A 6M, 11B 11M. Host may have entered
-	 * throttle off state, if a big number packets are queued to ring
-	 * buffer in low phy rate, FW will have to keep active state during
-	 * the whole throttle cycle. So you need to be careful when
-	 * configuring the max_to_send value to avoid the chip temperature
-	 * suddenly rises to very high in high temperature test.
-	 * So add variable prev_outstanding_num to save last time outstanding
-	 * number, when pdev->tx_throttle.tx_timer come again, we can check
-	 * the gap to know high or low phy rate is being used, then choose
-	 * right max_to_send.
-	 * When it's the first time to enter the function, there doesn't have
-	 * info for prev_outstanding_num, to satisfy all rate, the maximum
-	 * safe number is OL_TX_THROTTLE_MAX_SEND_LEVEL5(35).
-	 */
+   * For host implementation thermal mitigation, there has limitation
+   * in low phy rate case, like 11A 6M, 11B 11M. Host may have entered
+   * throttle off state, if a big number packets are queued to ring
+   * buffer in low phy rate, FW will have to keep active state during
+   * the whole throttle cycle. So you need to be careful when
+   * configuring the max_to_send value to avoid the chip temperature
+   * suddenly rises to very high in high temperature test.
+   * So add variable prev_outstanding_num to save last time outstanding
+   * number, when pdev->tx_throttle.tx_timer come again, we can check
+   * the gap to know high or low phy rate is being used, then choose
+   * right max_to_send.
+   * When it's the first time to enter the function, there doesn't have
+   * info for prev_outstanding_num, to satisfy all rate, the maximum
+   * safe number is OL_TX_THROTTLE_MAX_SEND_LEVEL5(35).
+   */
 	max_to_send = ol_tx_get_max_to_send(pdev);
 
 	/* round robin through the vdev queues for the given pdev */
 
 	/*
-	 * Potential improvement: download several frames from the same vdev
-	 * at a time, since it is more likely that those frames could be
-	 * aggregated together, remember which vdev was serviced last,
-	 * so the next call this function can resume the round-robin
-	 * traversing where the current invocation left off
-	 */
+   * Potential improvement: download several frames from the same vdev
+   * at a time, since it is more likely that those frames could be
+   * aggregated together, remember which vdev was serviced last,
+   * so the next call this function can resume the round-robin
+   * traversing where the current invocation left off
+   */
 	do {
 		more = 0;
-		TAILQ_FOREACH(vdev, &pdev->vdev_list, vdev_list_elem) {
+		TAILQ_FOREACH(vdev, &pdev->vdev_list, vdev_list_elem)
+		{
 			qdf_spin_lock_bh(&vdev->ll_pause.mutex);
 			if (vdev->ll_pause.txq.depth) {
 				if (vdev->ll_pause.paused_reason) {
-					qdf_spin_unlock_bh(&vdev->ll_pause.
-							   mutex);
+					qdf_spin_unlock_bh(
+						&vdev->ll_pause.mutex);
 					continue;
 				}
 
 				tx_msdu = vdev->ll_pause.txq.head;
 				if (!tx_msdu) {
-					qdf_spin_unlock_bh(&vdev->ll_pause.
-							   mutex);
+					qdf_spin_unlock_bh(
+						&vdev->ll_pause.mutex);
 					continue;
 				}
 
@@ -467,14 +458,14 @@ void ol_tx_pdev_ll_pause_queue_send_all(struct ol_txrx_pdev_t *pdev)
 				qdf_nbuf_set_next(tx_msdu, NULL);
 				tx_msdu = ol_tx_ll_wrapper(vdev, tx_msdu);
 				/*
-				 * It is unexpected that ol_tx_ll would reject
-				 * the frame, since we checked that there's
-				 * room for it, though there's an infinitesimal
-				 * possibility that between the time we checked
-				 * the room available and now, a concurrent
-				 * batch of tx frames used up all the room.
-				 * For simplicity, just drop the frame.
-				 */
+         * It is unexpected that ol_tx_ll would reject
+         * the frame, since we checked that there's
+         * room for it, though there's an infinitesimal
+         * possibility that between the time we checked
+         * the room available and now, a concurrent
+         * batch of tx frames used up all the room.
+         * For simplicity, just drop the frame.
+         */
 				if (tx_msdu) {
 					qdf_nbuf_unmap(pdev->osdev, tx_msdu,
 						       QDF_DMA_TO_DEVICE);
@@ -495,12 +486,12 @@ void ol_tx_pdev_ll_pause_queue_send_all(struct ol_txrx_pdev_t *pdev)
 	qdf_spin_unlock_bh(&pdev->tx_mutex);
 
 	/*
-	 * currently as long as pdev->tx_throttle.current_throttle_level
-	 * isn't THROTTLE_LEVEL_0, all TX data is scheduled by Tx
-	 * throttle. It's needed to always start pdev->tx_throttle.tx_timer
-	 * at the end of each TX throttle processing to avoid TX cannot be
-	 * scheduled in the remaining throttle_on time.
-	 */
+   * currently as long as pdev->tx_throttle.current_throttle_level
+   * isn't THROTTLE_LEVEL_0, all TX data is scheduled by Tx
+   * throttle. It's needed to always start pdev->tx_throttle.tx_timer
+   * at the end of each TX throttle processing to avoid TX cannot be
+   * scheduled in the remaining throttle_on time.
+   */
 	qdf_timer_stop(&pdev->tx_throttle.tx_timer);
 	qdf_timer_start(&pdev->tx_throttle.tx_timer,
 			OL_TX_VDEV_PAUSE_QUEUE_SEND_PERIOD_MS);
@@ -517,12 +508,10 @@ void ol_tx_vdev_ll_pause_queue_send(void *context)
 	ol_tx_vdev_ll_pause_queue_send_base(vdev);
 }
 
-int ol_txrx_register_tx_flow_control(struct cdp_soc_t *soc_hdl,
-				     uint8_t vdev_id,
-				     ol_txrx_tx_flow_control_fp flowControl,
-				     void *osif_fc_ctx,
-				     ol_txrx_tx_flow_control_is_pause_fp
-				     flow_control_is_pause)
+int ol_txrx_register_tx_flow_control(
+	struct cdp_soc_t *soc_hdl, uint8_t vdev_id,
+	ol_txrx_tx_flow_control_fp flowControl, void *osif_fc_ctx,
+	ol_txrx_tx_flow_control_is_pause_fp flow_control_is_pause)
 {
 	struct ol_txrx_vdev_t *vdev =
 		(struct ol_txrx_vdev_t *)ol_txrx_get_vdev_from_vdev_id(vdev_id);
@@ -571,15 +560,13 @@ int ol_txrx_deregister_tx_flow_control_cb(struct cdp_soc_t *soc_hdl,
  *
  * Return: true/false
  */
-bool
-ol_txrx_get_tx_resource(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
-			struct qdf_mac_addr peer_addr,
-			unsigned int low_watermark,
-			unsigned int high_watermark_offset)
+bool ol_txrx_get_tx_resource(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
+			     struct qdf_mac_addr peer_addr,
+			     unsigned int low_watermark,
+			     unsigned int high_watermark_offset)
 {
 	struct ol_txrx_soc_t *soc = cdp_soc_t_to_ol_txrx_soc_t(soc_hdl);
-	ol_txrx_pdev_handle pdev =
-				ol_txrx_get_pdev_from_pdev_id(soc, pdev_id);
+	ol_txrx_pdev_handle pdev = ol_txrx_get_pdev_from_pdev_id(soc, pdev_id);
 	ol_txrx_vdev_handle vdev;
 
 	if (qdf_unlikely(!pdev)) {
@@ -594,11 +581,11 @@ ol_txrx_get_tx_resource(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 			  "%s: Invalid peer address: " QDF_MAC_ADDR_FMT,
 			  __func__, QDF_MAC_ADDR_REF(peer_addr.bytes));
 		/* Return true so caller do not understand that resource
-		 * is less than low_watermark.
-		 * sta_id validation will be done in ol_tx_send_data_frame
-		 * and if sta_id is not registered then host will drop
-		 * packet.
-		 */
+     * is less than low_watermark.
+     * sta_id validation will be done in ol_tx_send_data_frame
+     * and if sta_id is not registered then host will drop
+     * packet.
+     */
 		return true;
 	}
 
@@ -681,20 +668,20 @@ void ol_tx_flow_ct_unpause_os_q(ol_txrx_pdev_handle pdev)
 	struct ol_txrx_vdev_t *vdev;
 	struct cdp_soc_t *soc_hdl = ol_txrx_soc_t_to_cdp_soc_t(pdev->soc);
 
-	TAILQ_FOREACH(vdev, &pdev->vdev_list, vdev_list_elem) {
+	TAILQ_FOREACH(vdev, &pdev->vdev_list, vdev_list_elem)
+	{
 		if ((qdf_atomic_read(&vdev->os_q_paused) &&
 		     (vdev->tx_fl_hwm != 0)) ||
-		     ol_txrx_flow_control_is_pause(vdev)) {
+		    ol_txrx_flow_control_is_pause(vdev)) {
 			qdf_spin_lock(&pdev->tx_mutex);
 			if (pdev->tx_desc.num_free > vdev->tx_fl_hwm) {
 				qdf_atomic_set(&vdev->os_q_paused, 0);
 				qdf_spin_unlock(&pdev->tx_mutex);
-				ol_txrx_flow_control_cb(soc_hdl,
-							vdev->vdev_id, true);
+				ol_txrx_flow_control_cb(soc_hdl, vdev->vdev_id,
+							true);
 			} else {
 				qdf_spin_unlock(&pdev->tx_mutex);
 			}
 		}
 	}
 }
-

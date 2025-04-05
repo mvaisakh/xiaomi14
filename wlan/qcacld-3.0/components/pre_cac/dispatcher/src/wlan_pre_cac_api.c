@@ -18,8 +18,8 @@
  * DOC: Public API implementation of pre cac called from SAP module
  */
 
-#include "wlan_pre_cac_main.h"
 #include "wlan_pre_cac_api.h"
+#include "wlan_pre_cac_main.h"
 
 bool wlan_pre_cac_get_status(struct wlan_objmgr_psoc *psoc)
 {
@@ -42,8 +42,7 @@ qdf_freq_t wlan_pre_cac_get_freq_before_pre_cac(struct wlan_objmgr_vdev *vdev)
 	return pre_cac_get_freq_before_pre_cac(vdev);
 }
 
-void wlan_pre_cac_complete_set(struct wlan_objmgr_vdev *vdev,
-			       bool status)
+void wlan_pre_cac_complete_set(struct wlan_objmgr_vdev *vdev, bool status)
 {
 	pre_cac_complete_set(vdev, status);
 }
@@ -62,4 +61,3 @@ void wlan_pre_cac_handle_cac_end(struct wlan_objmgr_vdev *vdev)
 {
 	pre_cac_handle_cac_end(vdev);
 }
-

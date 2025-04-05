@@ -4,40 +4,40 @@
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"%s: " fmt, __func__
+#define pr_fmt(fmt) "%s: " fmt, __func__
 
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/types.h>
 #include <linux/cdev.h>
+#include <linux/dma-fence-array.h>
+#include <linux/dma-fence.h>
 #include <linux/file.h>
 #include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <linux/slab.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/mutex.h>
-#include <linux/dma-fence.h>
-#include <linux/dma-fence-array.h>
-#include <linux/sync_file.h>
-#include <uapi/sync_fence/qcom_sync_file.h>
+#include <linux/slab.h>
 #include <linux/soc/qcom/qcom_sync_file.h>
+#include <linux/sync_file.h>
+#include <linux/types.h>
+#include <linux/uaccess.h>
+#include <uapi/sync_fence/qcom_sync_file.h>
 
-#define CLASS_NAME	"sync"
-#define DRV_NAME	"spec_sync"
-#define DRV_VERSION	1
-#define NAME_LEN	32
+#define CLASS_NAME "sync"
+#define DRV_NAME "spec_sync"
+#define DRV_VERSION 1
+#define NAME_LEN 32
 
-#define FENCE_MIN	1
-#define FENCE_MAX	32
+#define FENCE_MIN 1
+#define FENCE_MAX 32
 
 #if IS_ENABLED(CONFIG_DEBUG_FS)
-	#define MAX_DEVICE_SUPPORTED	2
+#define MAX_DEVICE_SUPPORTED 2
 #else
-	#define MAX_DEVICE_SUPPORTED	1
+#define MAX_DEVICE_SUPPORTED 1
 #endif
 
-#define DUMMY_CONTEXT	0xfafadadafafadada
-#define DUMMY_SEQNO	0xefa9ce00efa9ce00
+#define DUMMY_CONTEXT 0xfafadadafafadada
+#define DUMMY_SEQNO 0xefa9ce00efa9ce00
 
 struct dummy_spec_fence {
 	struct dma_fence fence;
@@ -113,10 +113,12 @@ static void clear_fence_array_tracker(bool force_clear)
 		if (force_clear && !array->fences)
 			array->num_fences = 0;
 
-		pr_debug("force_clear:%d is_signaled:%d pending:%d\n", force_clear, is_signaled,
-			atomic_read(&array->num_pending));
+		pr_debug("force_clear:%d is_signaled:%d pending:%d\n",
+			 force_clear, is_signaled,
+			 atomic_read(&array->num_pending));
 
-		if (force_clear && !is_signaled && atomic_dec_and_test(&array->num_pending))
+		if (force_clear && !is_signaled &&
+		    atomic_dec_and_test(&array->num_pending))
 			dma_fence_signal(fence);
 
 		if (force_clear || is_signaled) {
@@ -128,11 +130,13 @@ static void clear_fence_array_tracker(bool force_clear)
 	mutex_unlock(&sync_dev.l_lock);
 }
 
-static struct sync_device *spec_fence_init_locked(struct sync_device *obj, const char *name)
+static struct sync_device *spec_fence_init_locked(struct sync_device *obj,
+						  const char *name)
 {
 	if (atomic_read(&obj->device_available) >= MAX_DEVICE_SUPPORTED) {
 		pr_err("number of device fds are limited to %d, device opened:%d\n",
-			MAX_DEVICE_SUPPORTED, atomic_read(&obj->device_available));
+		       MAX_DEVICE_SUPPORTED,
+		       atomic_read(&obj->device_available));
 		return NULL;
 	} else if (!atomic_read(&obj->device_available)) {
 		memset(obj->name, 0, NAME_LEN);
@@ -161,7 +165,8 @@ static int spec_sync_open(struct inode *inode, struct file *file)
 
 	obj = spec_fence_init_locked(obj, task_comm);
 	if (!obj) {
-		pr_err("Spec device exists owner:%s caller:%s\n", sync_dev.name, task_comm);
+		pr_err("Spec device exists owner:%s caller:%s\n", sync_dev.name,
+		       task_comm);
 		ret = -EEXIST;
 		goto end;
 	}
@@ -196,7 +201,8 @@ end:
 	return ret;
 }
 
-static int spec_sync_ioctl_get_ver(struct sync_device *obj, unsigned long __user arg)
+static int spec_sync_ioctl_get_ver(struct sync_device *obj,
+				   unsigned long __user arg)
 {
 	uint32_t version = obj->version;
 
@@ -228,7 +234,8 @@ static int spec_sync_create_array(struct fence_create_data *f)
 		goto error_args;
 	}
 
-	fences = kmalloc_array(f->num_fences, sizeof(void *), GFP_KERNEL|__GFP_ZERO);
+	fences = kmalloc_array(f->num_fences, sizeof(void *),
+			       GFP_KERNEL | __GFP_ZERO);
 	if (!fences) {
 		ret = -ENOMEM;
 		goto error_args;
@@ -237,21 +244,22 @@ static int spec_sync_create_array(struct fence_create_data *f)
 	for (i = 0; i < f->num_fences; i++) {
 		fences[i] = &dummy_fence_p->fence;
 		/*
-		 * Increase dummy-fences refcount here, we must do this since any call to
-		 * fence-array release while dummy-fences are the children of the fence-array
-		 * will decrement the dummy_fence refcount. Therefore, to prevent the release
-		 * of the dummy_fence fences, we must keep an extra refcount for every time that
-		 * the fence-array->release can decrement its children's refcount. the extra
-		 * refcount will be decreased impilictly when dma_fence_put(&fence_array->base)
-		 * called.
-		 */
+     * Increase dummy-fences refcount here, we must do this since any call to
+     * fence-array release while dummy-fences are the children of the
+     * fence-array will decrement the dummy_fence refcount. Therefore, to
+     * prevent the release of the dummy_fence fences, we must keep an extra
+     * refcount for every time that the fence-array->release can decrement its
+     * children's refcount. the extra refcount will be decreased impilictly when
+     * dma_fence_put(&fence_array->base) called.
+     */
 		dma_fence_get(&dummy_fence_p->fence);
 	}
 
 	signal_any = f->flags & SPEC_FENCE_SIGNAL_ALL ? false : true;
 
 	fence_array = dma_fence_array_create(f->num_fences, fences,
-				dma_fence_context_alloc(1), 0, signal_any);
+					     dma_fence_context_alloc(1), 0,
+					     signal_any);
 	if (!fence_array) {
 		/* fence-array create failed,  remove extra refcounts */
 		for (i = 0; i < f->num_fences; i++)
@@ -296,7 +304,8 @@ error_args:
 	return ret;
 }
 
-static int spec_sync_ioctl_create_fence(struct sync_device *obj, unsigned long __user arg)
+static int spec_sync_ioctl_create_fence(struct sync_device *obj,
+					unsigned long __user arg)
 {
 	struct fence_create_data f;
 	int fd;
@@ -316,25 +325,30 @@ static int spec_sync_ioctl_create_fence(struct sync_device *obj, unsigned long _
 	return 0;
 }
 
-int spec_sync_wait_bind_array(struct dma_fence_array *fence_array, u32 timeout_ms)
+int spec_sync_wait_bind_array(struct dma_fence_array *fence_array,
+			      u32 timeout_ms)
 {
 	int ret;
 
 	/* Check if fence-array is a speculative fence */
-	if (!fence_array || !test_bit(SPEC_FENCE_FLAG_FENCE_ARRAY, &fence_array->base.flags)) {
+	if (!fence_array ||
+	    !test_bit(SPEC_FENCE_FLAG_FENCE_ARRAY, &fence_array->base.flags)) {
 		pr_err("invalid fence!\n");
 		return -EINVAL;
-	} else if (test_bit(SPEC_FENCE_FLAG_FENCE_ARRAY_BOUND, &fence_array->base.flags)) {
+	} else if (test_bit(SPEC_FENCE_FLAG_FENCE_ARRAY_BOUND,
+			    &fence_array->base.flags)) {
 		/* This fence-array is already bound, just return success */
 		return 0;
 	}
 
 	/* Wait for the fence-array bind */
 	ret = wait_event_timeout(sync_dev.wait_queue,
-		test_bit(SPEC_FENCE_FLAG_FENCE_ARRAY_BOUND, &fence_array->base.flags),
-		msecs_to_jiffies(timeout_ms));
+				 test_bit(SPEC_FENCE_FLAG_FENCE_ARRAY_BOUND,
+					  &fence_array->base.flags),
+				 msecs_to_jiffies(timeout_ms));
 	if (!ret) {
-		pr_err("timed out waiting for bind fence-array %d\n", timeout_ms);
+		pr_err("timed out waiting for bind fence-array %d\n",
+		       timeout_ms);
 		ret = -ETIMEDOUT;
 	} else {
 		ret = 0;
@@ -354,13 +368,14 @@ static int spec_sync_bind_array(struct fence_bind_data *sync_bind_info)
 
 	fence = sync_file_get_fence(sync_bind_info->out_bind_fd);
 	if (!fence) {
-		pr_err("dma fence failure out_fd:%d\n", sync_bind_info->out_bind_fd);
+		pr_err("dma fence failure out_fd:%d\n",
+		       sync_bind_info->out_bind_fd);
 		return -EINVAL;
 	}
 
 	if (dma_fence_is_signaled(fence)) {
 		pr_err("spec fence is already signaled, out_fd:%d\n",
-				sync_bind_info->out_bind_fd);
+		       sync_bind_info->out_bind_fd);
 		ret = -EINVAL;
 		goto end;
 	}
@@ -368,7 +383,7 @@ static int spec_sync_bind_array(struct fence_bind_data *sync_bind_info)
 	fence_array = container_of(fence, struct dma_fence_array, base);
 	if (!sanitize_fence_array(fence_array)) {
 		pr_err("spec fence not found in the registered list out_fd:%d\n",
-				sync_bind_info->out_bind_fd);
+		       sync_bind_info->out_bind_fd);
 		ret = -EINVAL;
 		goto end;
 	}
@@ -377,10 +392,10 @@ static int spec_sync_bind_array(struct fence_bind_data *sync_bind_info)
 
 	for (i = 0; i < num_fences; i++) {
 		if (!(fence_array->fences[i]->context == DUMMY_CONTEXT &&
-			fence_array->fences[i]->seqno == DUMMY_SEQNO)) {
+		      fence_array->fences[i]->seqno == DUMMY_SEQNO)) {
 			pr_err("fence array already populated, spec fd:%d status:%d flags:0x%x\n",
-				sync_bind_info->out_bind_fd, dma_fence_get_status(fence),
-				fence->flags);
+			       sync_bind_info->out_bind_fd,
+			       dma_fence_get_status(fence), fence->flags);
 			ret = -EINVAL;
 			goto end;
 		}
@@ -393,7 +408,7 @@ static int spec_sync_bind_array(struct fence_bind_data *sync_bind_info)
 	}
 
 	if (copy_from_user(user_fds, (void __user *)sync_bind_info->fds,
-						num_fences * sizeof(int))) {
+			   num_fences * sizeof(int))) {
 		ret = -EFAULT;
 		goto out;
 	}
@@ -409,13 +424,14 @@ static int spec_sync_bind_array(struct fence_bind_data *sync_bind_info)
 		}
 		fence_array->fences[i] = user_fence;
 		/*
-		 * At this point the fence-array fully contains valid fences and no more the
-		 * dummy-fence, therefore, we must release the extra refcount that the
-		 * creation of the speculative fence added to the dummy-fence.
-		 */
+     * At this point the fence-array fully contains valid fences and no more the
+     * dummy-fence, therefore, we must release the extra refcount that the
+     * creation of the speculative fence added to the dummy-fence.
+     */
 		dma_fence_put(&sync_dev.dummy_fence->fence);
-		pr_debug("spec fd:%d i:%d bind fd:%d error:%d\n", sync_bind_info->out_bind_fd,
-			 i, user_fds[i], fence_array->fences[i]->error);
+		pr_debug("spec fd:%d i:%d bind fd:%d error:%d\n",
+			 sync_bind_info->out_bind_fd, i, user_fds[i],
+			 fence_array->fences[i]->error);
 	}
 
 	clear_bit(DMA_FENCE_FLAG_ENABLE_SIGNAL_BIT, &fence->flags);
@@ -441,11 +457,13 @@ end:
 	return ret;
 }
 
-static int spec_sync_ioctl_bind(struct sync_device *obj, unsigned long __user arg)
+static int spec_sync_ioctl_bind(struct sync_device *obj,
+				unsigned long __user arg)
 {
 	struct fence_bind_data sync_bind_info;
 
-	if (copy_from_user(&sync_bind_info, (void __user *)arg, sizeof(struct fence_bind_data)))
+	if (copy_from_user(&sync_bind_info, (void __user *)arg,
+			   sizeof(struct fence_bind_data)))
 		return -EFAULT;
 
 	if (sync_bind_info.out_bind_fd < 0) {
@@ -457,7 +475,7 @@ static int spec_sync_ioctl_bind(struct sync_device *obj, unsigned long __user ar
 }
 
 static long spec_sync_ioctl(struct file *file, unsigned int cmd,
-			  unsigned long arg)
+			    unsigned long arg)
 {
 	struct sync_device *obj = file->private_data;
 	int ret = 0;
@@ -503,9 +521,8 @@ static int spec_sync_register_device(void)
 		goto alloc_chrdev_region_err;
 	}
 
-	sync_dev.dev = device_create(sync_dev.dev_class, NULL,
-					 sync_dev.dev_num,
-					 &sync_dev, DRV_NAME);
+	sync_dev.dev = device_create(sync_dev.dev_class, NULL, sync_dev.dev_num,
+				     &sync_dev, DRV_NAME);
 	if (IS_ERR(sync_dev.dev)) {
 		pr_err("%s: device_create fail.\n", __func__);
 		goto device_create_err;
@@ -538,8 +555,8 @@ static int spec_sync_register_device(void)
 	}
 
 	spin_lock_init(&dummy_fence_p->lock);
-	dma_fence_init(&dummy_fence_p->fence, &dummy_spec_fence_ops, &dummy_fence_p->lock,
-		DUMMY_CONTEXT, DUMMY_SEQNO);
+	dma_fence_init(&dummy_fence_p->fence, &dummy_spec_fence_ops,
+		       &dummy_fence_p->lock, DUMMY_CONTEXT, DUMMY_SEQNO);
 	sync_dev.dummy_fence = dummy_fence_p;
 
 	return 0;
@@ -562,7 +579,8 @@ static int __init spec_sync_init(void)
 
 	ret = spec_sync_register_device();
 	if (ret) {
-		pr_err("%s: speculative sync driver register fail.\n", __func__);
+		pr_err("%s: speculative sync driver register fail.\n",
+		       __func__);
 		return ret;
 	}
 	return ret;

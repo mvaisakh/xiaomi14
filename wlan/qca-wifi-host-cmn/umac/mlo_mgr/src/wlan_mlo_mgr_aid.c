@@ -15,12 +15,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "wlan_mlo_mgr_main.h"
 #include "qdf_types.h"
 #include "wlan_cmn.h"
-#include <include/wlan_vdev_mlme.h>
 #include "wlan_mlo_mgr_ap.h"
 #include "wlan_mlo_mgr_cmn.h"
+#include "wlan_mlo_mgr_main.h"
+#include <include/wlan_vdev_mlme.h>
 
 static void mlo_peer_set_aid_bit(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
 				 uint16_t assoc_id_ix)
@@ -95,9 +95,8 @@ static uint16_t wlan_mlo_alloc_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
 
 	while (wlan_mlo_aid_idx_check(start_idx, end_idx, assoc_idx)) {
 		if (qdf_test_bit(assoc_idx, ml_aid_mgr->aid_bitmap)) {
-			signed_assoc_idx = wlan_mlo_aid_idx_update(start_idx,
-								   end_idx,
-								   assoc_idx);
+			signed_assoc_idx = wlan_mlo_aid_idx_update(
+				start_idx, end_idx, assoc_idx);
 			if (signed_assoc_idx < 0)
 				break;
 
@@ -120,10 +119,8 @@ static uint16_t wlan_mlo_alloc_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
 				break;
 
 			if (qdf_test_bit(assoc_idx, vdev_aid_mgr->aid_bitmap)) {
-				signed_assoc_idx =
-					wlan_mlo_aid_idx_update(start_idx,
-								end_idx,
-								assoc_idx);
+				signed_assoc_idx = wlan_mlo_aid_idx_update(
+					start_idx, end_idx, assoc_idx);
 				if (signed_assoc_idx < 0)
 					break;
 
@@ -135,13 +132,13 @@ static uint16_t wlan_mlo_alloc_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
 				first_aid = assoc_idx + 1;
 
 			/* Check whether this bit used by other VDEV
-			 * Non-MLO peers
-			 */
+       * Non-MLO peers
+       */
 			if (!wlan_mlo_check_aid_free(ml_aid_mgr, assoc_idx,
 						     true, link_ix)) {
 				/* Assoc ID is used by other link, return this
-				 * aid to caller
-				 */
+         * aid to caller
+         */
 				assoc_id = assoc_idx + 1;
 				vdev_aid_mgr = ml_aid_mgr->aid_mgr[link_ix];
 				qdf_set_bit(assoc_idx,
@@ -151,8 +148,8 @@ static uint16_t wlan_mlo_alloc_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
 			}
 		}
 
-		signed_assoc_idx = wlan_mlo_aid_idx_update(start_idx,
-							   end_idx, assoc_idx);
+		signed_assoc_idx =
+			wlan_mlo_aid_idx_update(start_idx, end_idx, assoc_idx);
 		if (signed_assoc_idx < 0)
 			break;
 		assoc_idx = signed_assoc_idx;
@@ -169,10 +166,9 @@ static uint16_t wlan_mlo_alloc_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
 
 #ifdef WLAN_FEATURE_11BE
 #define AID_NUM_BUCKET 3
-static uint16_t _wlan_mlo_peer_alloc_aid(
-		struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
-		bool is_mlo_peer, bool t2lm_peer,
-		uint8_t link_ix)
+static uint16_t
+_wlan_mlo_peer_alloc_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
+			 bool is_mlo_peer, bool t2lm_peer, uint8_t link_ix)
 {
 	uint16_t assoc_id = (uint16_t)-1;
 	uint16_t start_aid, aid_end1, aid_end2, tot_aid;
@@ -190,9 +186,11 @@ static uint16_t _wlan_mlo_peer_alloc_aid(
 	aid_end1 = pool_1_max_aid + start_aid;
 	aid_end2 = pool_1_max_aid + pool_1_max_aid + start_aid;
 
-	mlo_debug("max_aid = %d start_aid = %d tot_aid = %d pool_1_max_aid = %d aid_end1 = %d aid_end2 = %d",
-		  ml_aid_mgr->max_aid, start_aid, tot_aid, pool_1_max_aid,
-		  aid_end1, aid_end2);
+	mlo_debug(
+		"max_aid = %d start_aid = %d tot_aid = %d pool_1_max_aid = %d "
+		"aid_end1 = %d aid_end2 = %d",
+		ml_aid_mgr->max_aid, start_aid, tot_aid, pool_1_max_aid,
+		aid_end1, aid_end2);
 	if ((start_aid > aid_end1) || (aid_end1 > aid_end2)) {
 		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, start_aid,
 					      ml_aid_mgr->max_aid, link_ix,
@@ -202,65 +200,59 @@ static uint16_t _wlan_mlo_peer_alloc_aid(
 	mlo_debug("T2LM peer = %d", t2lm_peer);
 
 	if (t2lm_peer) {
-		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end1,
-					      aid_end2, link_ix,
-					      is_mlo_peer);
-
-		if (assoc_id != (uint16_t)-1)
-			return assoc_id;
-
-		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end2,
-					      ml_aid_mgr->max_aid,
+		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end1, aid_end2,
 					      link_ix, is_mlo_peer);
 
 		if (assoc_id != (uint16_t)-1)
 			return assoc_id;
 
-		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end1,
-					      start_aid, link_ix,
+		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end2,
+					      ml_aid_mgr->max_aid, link_ix,
 					      is_mlo_peer);
+
+		if (assoc_id != (uint16_t)-1)
+			return assoc_id;
+
+		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end1, start_aid,
+					      link_ix, is_mlo_peer);
 	} else {
-		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, start_aid,
-					      aid_end1, link_ix,
-					      is_mlo_peer);
-
-		if (assoc_id != (uint16_t)-1)
-			return assoc_id;
-
-		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end2,
-					      ml_aid_mgr->max_aid,
+		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, start_aid, aid_end1,
 					      link_ix, is_mlo_peer);
 
 		if (assoc_id != (uint16_t)-1)
 			return assoc_id;
 
 		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end2,
-					      aid_end1, link_ix,
+					      ml_aid_mgr->max_aid, link_ix,
 					      is_mlo_peer);
+
+		if (assoc_id != (uint16_t)-1)
+			return assoc_id;
+
+		assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, aid_end2, aid_end1,
+					      link_ix, is_mlo_peer);
 	}
 
 	return assoc_id;
 }
 #else
-static uint16_t _wlan_mlo_peer_alloc_aid(
-		struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
-		bool is_mlo_peer, bool t2lm_peer,
-		uint8_t link_ix)
+static uint16_t
+_wlan_mlo_peer_alloc_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
+			 bool is_mlo_peer, bool t2lm_peer, uint8_t link_ix)
 {
 	uint16_t assoc_id = (uint16_t)-1;
 
 	assoc_id = wlan_mlo_alloc_aid(ml_aid_mgr, ml_aid_mgr->start_aid,
-				      ml_aid_mgr->max_aid,
-				      link_ix, is_mlo_peer);
+				      ml_aid_mgr->max_aid, link_ix,
+				      is_mlo_peer);
 
 	return assoc_id;
 }
 #endif
 
-static uint16_t wlan_mlo_peer_alloc_aid(
-		struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
-		bool is_mlo_peer, bool t2lm_peer,
-		uint8_t link_ix)
+static uint16_t wlan_mlo_peer_alloc_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
+					bool is_mlo_peer, bool t2lm_peer,
+					uint8_t link_ix)
 {
 	uint16_t assoc_id = (uint16_t)-1;
 	struct mlo_mgr_context *mlo_mgr_ctx = wlan_objmgr_get_mlo_ctx();
@@ -277,8 +269,8 @@ static uint16_t wlan_mlo_peer_alloc_aid(
 	/* TODO check locking strategy */
 	ml_aid_lock_acquire(mlo_mgr_ctx);
 
-	assoc_id = _wlan_mlo_peer_alloc_aid(ml_aid_mgr, is_mlo_peer,
-					    t2lm_peer, link_ix);
+	assoc_id = _wlan_mlo_peer_alloc_aid(ml_aid_mgr, is_mlo_peer, t2lm_peer,
+					    link_ix);
 	if (assoc_id == (uint16_t)-1)
 		mlo_err("MLO aid allocation failed (reached max)");
 
@@ -287,9 +279,8 @@ static uint16_t wlan_mlo_peer_alloc_aid(
 	return assoc_id;
 }
 
-static uint16_t wlan_mlme_peer_alloc_aid(
-		struct wlan_vdev_aid_mgr *vdev_aid_mgr,
-		bool no_lock)
+static uint16_t wlan_mlme_peer_alloc_aid(struct wlan_vdev_aid_mgr *vdev_aid_mgr,
+					 bool no_lock)
 {
 	uint16_t assoc_id = (uint16_t)-1;
 	uint16_t i;
@@ -321,11 +312,9 @@ static uint16_t wlan_mlme_peer_alloc_aid(
 	return assoc_id;
 }
 
-static QDF_STATUS wlan_mlo_peer_set_aid(
-		struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
-		bool is_mlo_peer,
-		uint8_t link_ix,
-		uint16_t assoc_id)
+static QDF_STATUS wlan_mlo_peer_set_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
+					bool is_mlo_peer, uint8_t link_ix,
+					uint16_t assoc_id)
 {
 	uint16_t j;
 	struct wlan_vdev_aid_mgr *vdev_aid_mgr;
@@ -339,7 +328,7 @@ static QDF_STATUS wlan_mlo_peer_set_aid(
 	/* TODO check locking strategy */
 	ml_aid_lock_acquire(mlo_mgr_ctx);
 
-	if (qdf_test_bit(WLAN_AID(assoc_id) - 1,  ml_aid_mgr->aid_bitmap)) {
+	if (qdf_test_bit(WLAN_AID(assoc_id) - 1, ml_aid_mgr->aid_bitmap)) {
 		ml_aid_lock_release(mlo_mgr_ctx);
 		mlo_err("Assoc id %d is not available on ml aid mgr", assoc_id);
 		return QDF_STATUS_E_FAILURE;
@@ -401,9 +390,8 @@ static QDF_STATUS wlan_mlo_peer_set_aid(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS wlan_mlme_peer_set_aid(
-		struct wlan_vdev_aid_mgr *vdev_aid_mgr,
-		bool no_lock, uint16_t assoc_id)
+static QDF_STATUS wlan_mlme_peer_set_aid(struct wlan_vdev_aid_mgr *vdev_aid_mgr,
+					 bool no_lock, uint16_t assoc_id)
 {
 	struct mlo_mgr_context *mlo_mgr_ctx = wlan_objmgr_get_mlo_ctx();
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -436,12 +424,10 @@ static QDF_STATUS wlan_mlme_peer_set_aid(
 	return status;
 }
 
-QDF_STATUS wlan_mlo_peer_free_aid(
-		struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
-		uint8_t link_ix,
-		uint16_t assoc_id)
+QDF_STATUS wlan_mlo_peer_free_aid(struct wlan_ml_vdev_aid_mgr *ml_aid_mgr,
+				  uint8_t link_ix, uint16_t assoc_id)
 {
-	uint16_t  j;
+	uint16_t j;
 	struct wlan_vdev_aid_mgr *vdev_aid_mgr;
 	struct mlo_mgr_context *mlo_mgr_ctx = wlan_objmgr_get_mlo_ctx();
 	uint16_t assoc_id_ix;
@@ -500,9 +486,8 @@ static int wlan_mlme_peer_aid_is_set(struct wlan_vdev_aid_mgr *vdev_aid_mgr,
 	return isset;
 }
 
-void wlan_mlme_peer_free_aid(
-		struct wlan_vdev_aid_mgr *vdev_aid_mgr,
-		bool no_lock, uint16_t assoc_id)
+void wlan_mlme_peer_free_aid(struct wlan_vdev_aid_mgr *vdev_aid_mgr,
+			     bool no_lock, uint16_t assoc_id)
 {
 	struct mlo_mgr_context *mlo_mgr_ctx = wlan_objmgr_get_mlo_ctx();
 
@@ -552,9 +537,8 @@ static bool mlo_peer_t2lm_enabled(struct wlan_mlo_peer_context *ml_peer)
 }
 #endif
 
-QDF_STATUS mlo_peer_allocate_aid(
-		struct wlan_mlo_dev_context *ml_dev,
-		struct wlan_mlo_peer_context *ml_peer)
+QDF_STATUS mlo_peer_allocate_aid(struct wlan_mlo_dev_context *ml_dev,
+				 struct wlan_mlo_peer_context *ml_peer)
 {
 	uint16_t assoc_id = (uint16_t)-1;
 	struct wlan_ml_vdev_aid_mgr *ml_aid_mgr;
@@ -613,7 +597,8 @@ QDF_STATUS mlo_peer_free_aid(struct wlan_mlo_dev_context *ml_dev,
 	}
 
 	if (!ml_peer->assoc_id) {
-		mlo_info("MLD ID %d ML Peer " QDF_MAC_ADDR_FMT " ML assoc id is 0",
+		mlo_info("MLD ID %d ML Peer " QDF_MAC_ADDR_FMT
+			 " ML assoc id is 0",
 			 ml_dev->mld_id,
 			 QDF_MAC_ADDR_REF(ml_peer->peer_mld_addr.bytes));
 		return status;
@@ -750,8 +735,7 @@ uint16_t mlme_get_aid(struct wlan_objmgr_vdev *vdev)
 	return assoc_id;
 }
 
-QDF_STATUS mlme_set_aid(struct wlan_objmgr_vdev *vdev,
-			uint16_t assoc_id)
+QDF_STATUS mlme_set_aid(struct wlan_objmgr_vdev *vdev, uint16_t assoc_id)
 {
 	struct wlan_mlo_dev_context *ml_dev;
 	struct wlan_ml_vdev_aid_mgr *ml_aid_mgr;
@@ -846,8 +830,8 @@ void wlan_vdev_mlme_aid_mgr_max_aid_set(struct wlan_objmgr_vdev *vdev,
 			if (!vdev_aid_mgr)
 				continue;
 
-			aidmgr_sta_count = vdev_aid_mgr->max_aid -
-					   vdev_aid_mgr->start_aid;
+			aidmgr_sta_count =
+				vdev_aid_mgr->max_aid - vdev_aid_mgr->start_aid;
 			if (!max_sta_count) {
 				max_sta_count = aidmgr_sta_count;
 				continue;
@@ -984,8 +968,7 @@ QDF_STATUS wlan_mlo_vdev_init_mbss_aid_mgr(struct wlan_mlo_dev_context *ml_dev,
 		wlan_vdev_mlme_set_start_aid(vdev, start_aid);
 
 		qdf_atomic_inc(&txvdev_aid_mgr->ref_cnt);
-		wlan_vdev_mlme_set_aid_mgr(vdev,
-					   txvdev_aid_mgr);
+		wlan_vdev_mlme_set_aid_mgr(vdev, txvdev_aid_mgr);
 		ml_aid_mgr->aid_mgr[i] = txvdev_aid_mgr;
 
 		if (aid_mgr) {
@@ -1032,8 +1015,7 @@ QDF_STATUS wlan_mlo_vdev_deinit_mbss_aid_mgr(struct wlan_mlo_dev_context *mldev,
 
 	aid_mgr = wlan_vdev_mlme_get_aid_mgr(vdev);
 	if (!aid_mgr) {
-		mlo_err("AID mgr of VDEV%d is invalid",
-			wlan_vdev_get_id(vdev));
+		mlo_err("AID mgr of VDEV%d is invalid", wlan_vdev_get_id(vdev));
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -1087,8 +1069,7 @@ QDF_STATUS wlan_mlme_vdev_init_mbss_aid_mgr(struct wlan_objmgr_vdev *vdev,
 	aid_mgr = wlan_vdev_mlme_get_aid_mgr(vdev);
 
 	qdf_atomic_inc(&txvdev_aid_mgr->ref_cnt);
-	wlan_vdev_mlme_set_aid_mgr(vdev,
-				   txvdev_aid_mgr);
+	wlan_vdev_mlme_set_aid_mgr(vdev, txvdev_aid_mgr);
 
 	if (aid_mgr) {
 		mlo_info("AID mgr is freed for vdev %d with txvdev %d",
@@ -1102,8 +1083,9 @@ QDF_STATUS wlan_mlme_vdev_init_mbss_aid_mgr(struct wlan_objmgr_vdev *vdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS wlan_mlme_vdev_deinit_mbss_aid_mgr(struct wlan_objmgr_vdev *vdev,
-					      struct wlan_objmgr_vdev *tx_vdev)
+QDF_STATUS
+wlan_mlme_vdev_deinit_mbss_aid_mgr(struct wlan_objmgr_vdev *vdev,
+				   struct wlan_objmgr_vdev *tx_vdev)
 {
 	struct wlan_vdev_aid_mgr *aid_mgr;
 	struct wlan_vdev_aid_mgr *txvdev_aid_mgr;
@@ -1117,8 +1099,7 @@ QDF_STATUS wlan_mlme_vdev_deinit_mbss_aid_mgr(struct wlan_objmgr_vdev *vdev,
 
 	aid_mgr = wlan_vdev_mlme_get_aid_mgr(vdev);
 	if (!aid_mgr) {
-		mlo_err("AID mgr of VDEV%d is invalid",
-			wlan_vdev_get_id(vdev));
+		mlo_err("AID mgr of VDEV%d is invalid", wlan_vdev_get_id(vdev));
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -1285,7 +1266,6 @@ void wlan_mlo_vdev_aid_mgr_deinit(struct wlan_mlo_dev_context *ml_dev)
 		return;
 
 	for (i = 0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
-
 		if (ml_aid_mgr->aid_mgr[i]) {
 			n = qdf_atomic_read(&ml_aid_mgr->aid_mgr[i]->ref_cnt);
 			mlo_info("AID mgr ref cnt %d", n);

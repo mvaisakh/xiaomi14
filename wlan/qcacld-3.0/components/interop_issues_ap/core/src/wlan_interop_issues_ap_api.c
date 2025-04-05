@@ -19,9 +19,9 @@
 /**
  * DOC: wlan_interop_issues_ap_api.c
  */
-#include <wlan_interop_issues_ap_ucfg_api.h>
-#include <wlan_interop_issues_ap_api.h>
 #include <target_if_interop_issues_ap.h>
+#include <wlan_interop_issues_ap_api.h>
+#include <wlan_interop_issues_ap_ucfg_api.h>
 
 /**
  * interop_issues_ap_psoc_obj_created_notification() - PSOC obj create callback
@@ -45,17 +45,16 @@ interop_issues_ap_psoc_obj_created_notification(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_NOMEM;
 
 	qdf_spinlock_create(&interop_issues_ap_obj->lock);
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-					WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
-					interop_issues_ap_obj,
-					QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_INTEROP_ISSUES_AP, interop_issues_ap_obj,
+		QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		interop_issues_ap_err("obj attach with psoc failed");
 		goto interop_issues_ap_psoc_attach_failed;
 	}
 
-	target_if_interop_issues_ap_register_tx_ops(psoc,
-					&interop_issues_ap_obj->tx_ops);
+	target_if_interop_issues_ap_register_tx_ops(
+		psoc, &interop_issues_ap_obj->tx_ops);
 
 	return QDF_STATUS_SUCCESS;
 
@@ -88,12 +87,11 @@ interop_issues_ap_psoc_obj_destroyed_notification(struct wlan_objmgr_psoc *psoc,
 		interop_issues_ap_err("interop_issues_ap_obj is NULL");
 		return QDF_STATUS_E_FAULT;
 	}
-	target_if_interop_issues_ap_unregister_tx_ops(psoc,
-					&interop_issues_ap_obj->tx_ops);
+	target_if_interop_issues_ap_unregister_tx_ops(
+		psoc, &interop_issues_ap_obj->tx_ops);
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-					WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
-					interop_issues_ap_obj);
+	status = wlan_objmgr_psoc_component_obj_detach(
+		psoc, WLAN_UMAC_COMP_INTEROP_ISSUES_AP, interop_issues_ap_obj);
 	if (QDF_IS_STATUS_ERROR(status))
 		interop_issues_ap_err("interop_issues_ap_obj detach failed");
 
@@ -119,9 +117,8 @@ QDF_STATUS wlan_interop_issues_ap_init(void)
 
 	/* register psoc create handler functions. */
 	status = wlan_objmgr_register_psoc_create_handler(
-			WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
-			interop_issues_ap_psoc_obj_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
+		interop_issues_ap_psoc_obj_created_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		interop_issues_ap_err("register create handler failed");
 		return status;
@@ -129,15 +126,13 @@ QDF_STATUS wlan_interop_issues_ap_init(void)
 
 	/* register psoc delete handler functions. */
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
-			interop_issues_ap_psoc_obj_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
+		interop_issues_ap_psoc_obj_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		interop_issues_ap_err("register destroy handler failed");
 		status = wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
-				interop_issues_ap_psoc_obj_created_notification,
-				NULL);
+			WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
+			interop_issues_ap_psoc_obj_created_notification, NULL);
 	}
 
 	return status;
@@ -149,9 +144,8 @@ QDF_STATUS wlan_interop_issues_ap_deinit(void)
 
 	/* unregister psoc delete handler functions. */
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
-			interop_issues_ap_psoc_obj_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
+		interop_issues_ap_psoc_obj_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		interop_issues_ap_err("unregister destroy handler failed");
 		ret = status;
@@ -159,9 +153,8 @@ QDF_STATUS wlan_interop_issues_ap_deinit(void)
 
 	/* unregister psoc create handler functions. */
 	status = wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
-			interop_issues_ap_psoc_obj_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_INTEROP_ISSUES_AP,
+		interop_issues_ap_psoc_obj_created_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		interop_issues_ap_err("unregister create handler failed");
 		ret = status;

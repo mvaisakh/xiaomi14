@@ -23,18 +23,18 @@
  * WLAN Host Device Driver subnet detect API implementation
  */
 
-#include <linux/version.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <net/cfg80211.h>
-#include <ani_global.h>
-#include "sme_api.h"
-#include "osif_sync.h"
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_subnet_detect.h"
-#include <qca_vendor.h>
+#include "osif_sync.h"
+#include "sme_api.h"
 #include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_main.h"
 #include "wlan_hdd_object_manager.h"
+#include <ani_global.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/version.h>
+#include <net/cfg80211.h>
+#include <qca_vendor.h>
 
 /*
  * define short names for the global vendor params
@@ -44,15 +44,15 @@
 #define PARAM_IPV4_ADDR QCA_WLAN_VENDOR_ATTR_GW_PARAM_CONFIG_IPV4_ADDR
 #define PARAM_IPV6_ADDR QCA_WLAN_VENDOR_ATTR_GW_PARAM_CONFIG_IPV6_ADDR
 
-const struct nla_policy subnet_detect_policy[
-			QCA_WLAN_VENDOR_ATTR_GW_PARAM_CONFIG_MAX + 1] = {
+const struct nla_policy
+	subnet_detect_policy[QCA_WLAN_VENDOR_ATTR_GW_PARAM_CONFIG_MAX + 1] = {
 		[QCA_WLAN_VENDOR_ATTR_GW_PARAM_CONFIG_GW_MAC_ADDR] =
-				VENDOR_NLA_POLICY_MAC_ADDR,
+			VENDOR_NLA_POLICY_MAC_ADDR,
 		[QCA_WLAN_VENDOR_ATTR_GW_PARAM_CONFIG_IPV4_ADDR] =
-				VENDOR_NLA_POLICY_IPV4_ADDR,
+			VENDOR_NLA_POLICY_IPV4_ADDR,
 		[QCA_WLAN_VENDOR_ATTR_GW_PARAM_CONFIG_IPV6_ADDR] =
-				VENDOR_NLA_POLICY_IPV6_ADDR,
-};
+			VENDOR_NLA_POLICY_IPV6_ADDR,
+	};
 
 /**
  * __wlan_hdd_cfg80211_set_gateway_params() - set gateway params
@@ -64,9 +64,9 @@ const struct nla_policy subnet_detect_policy[
  * Return: 0 on success, negative errno on failure
  */
 static int __wlan_hdd_cfg80211_set_gateway_params(struct wiphy *wiphy,
-		struct wireless_dev *wdev,
-		const void *data,
-		int data_len)
+						  struct wireless_dev *wdev,
+						  const void *data,
+						  int data_len)
 {
 	struct net_device *dev = wdev->netdev;
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
@@ -98,8 +98,8 @@ static int __wlan_hdd_cfg80211_set_gateway_params(struct wiphy *wiphy,
 	}
 
 	/* The gateway parameters are only valid in the STA persona
-	 * and only in the connected state.
-	 */
+   * and only in the connected state.
+   */
 	if (QDF_STA_MODE != adapter->device_mode) {
 		hdd_debug("Received GW param update for non-STA mode adapter");
 		return -ENOTSUPP;
@@ -111,10 +111,10 @@ static int __wlan_hdd_cfg80211_set_gateway_params(struct wiphy *wiphy,
 	}
 
 	/* Extract NL parameters
-	 * mac_addr:  6 bytes
-	 * ipv4 addr: 4 bytes
-	 * ipv6 addr: 16 bytes
-	 */
+   * mac_addr:  6 bytes
+   * ipv4 addr: 4 bytes
+   * ipv6 addr: 16 bytes
+   */
 	if (wlan_cfg80211_nla_parse(tb,
 				    QCA_WLAN_VENDOR_ATTR_GW_PARAM_CONFIG_MAX,
 				    data, data_len, subnet_detect_policy)) {
@@ -127,20 +127,20 @@ static int __wlan_hdd_cfg80211_set_gateway_params(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 	nla_memcpy(req.gw_mac_addr.bytes, tb[PARAM_MAC_ADDR],
-			QDF_MAC_ADDR_SIZE);
+		   QDF_MAC_ADDR_SIZE);
 
 	/* req ipv4_addr_type and ipv6_addr_type are initially false due
-	 * to zeroing the struct
-	 */
+   * to zeroing the struct
+   */
 	if (tb[PARAM_IPV4_ADDR]) {
 		nla_memcpy(req.ipv4_addr, tb[PARAM_IPV4_ADDR],
-			QDF_IPV4_ADDR_SIZE);
+			   QDF_IPV4_ADDR_SIZE);
 		req.ipv4_addr_type = true;
 	}
 
 	if (tb[PARAM_IPV6_ADDR]) {
 		nla_memcpy(&req.ipv6_addr, tb[PARAM_IPV6_ADDR],
-			QDF_IPV6_ADDR_SIZE);
+			   QDF_IPV6_ADDR_SIZE);
 		req.ipv6_addr_type = true;
 	}
 
@@ -150,14 +150,14 @@ static int __wlan_hdd_cfg80211_set_gateway_params(struct wiphy *wiphy,
 	}
 
 	req.max_retries = 3;
-	req.timeout = 100;   /* in milliseconds */
+	req.timeout = 100; /* in milliseconds */
 	req.vdev_id = adapter->deflink->vdev_id;
 
 	hdd_debug("Configuring gateway for session %d", req.vdev_id);
-	hdd_debug("mac:"QDF_MAC_ADDR_FMT", ipv4:%pI4 (type %d), ipv6:%pI6c (type %d)",
-		  QDF_MAC_ADDR_REF(req.gw_mac_addr.bytes),
-		  req.ipv4_addr, req.ipv4_addr_type,
-		  req.ipv6_addr, req.ipv6_addr_type);
+	hdd_debug("mac:" QDF_MAC_ADDR_FMT
+		  ", ipv4:%pI4 (type %d), ipv6:%pI6c (type %d)",
+		  QDF_MAC_ADDR_REF(req.gw_mac_addr.bytes), req.ipv4_addr,
+		  req.ipv4_addr_type, req.ipv6_addr, req.ipv6_addr_type);
 
 	vdev = hdd_objmgr_get_vdev_by_user(adapter->deflink, WLAN_DP_ID);
 	if (vdev) {
@@ -189,7 +189,8 @@ static int __wlan_hdd_cfg80211_set_gateway_params(struct wiphy *wiphy,
  * Return: 0 on success; errno on failure
  */
 int wlan_hdd_cfg80211_set_gateway_params(struct wiphy *wiphy,
-		struct wireless_dev *wdev, const void *data, int data_len)
+					 struct wireless_dev *wdev,
+					 const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -198,8 +199,8 @@ int wlan_hdd_cfg80211_set_gateway_params(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_set_gateway_params(wiphy, wdev,
-						       data, data_len);
+	errno = __wlan_hdd_cfg80211_set_gateway_params(wiphy, wdev, data,
+						       data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 

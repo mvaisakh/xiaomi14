@@ -4,41 +4,41 @@
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <drm/drm_atomic_helper.h>
 #include <drm/drm_atomic.h>
+#include <drm/drm_atomic_helper.h>
 #include <drm/drm_crtc.h>
 
+#include "dp_debug.h"
+#include "dp_drm.h"
+#include "dp_mst_drm.h"
 #include "msm_drv.h"
 #include "msm_kms.h"
 #include "sde_connector.h"
-#include "dp_drm.h"
-#include "dp_mst_drm.h"
-#include "dp_debug.h"
 
 #define DP_MST_DEBUG(fmt, ...) DP_DEBUG(fmt, ##__VA_ARGS__)
 
-#define to_dp_bridge(x)     container_of((x), struct dp_bridge, base)
+#define to_dp_bridge(x) container_of((x), struct dp_bridge, base)
 
 void convert_to_drm_mode(const struct dp_display_mode *dp_mode,
-				struct drm_display_mode *drm_mode)
+			 struct drm_display_mode *drm_mode)
 {
 	u32 flags = 0;
 
 	memset(drm_mode, 0, sizeof(*drm_mode));
 
 	drm_mode->hdisplay = dp_mode->timing.h_active;
-	drm_mode->hsync_start = drm_mode->hdisplay +
-				dp_mode->timing.h_front_porch;
-	drm_mode->hsync_end = drm_mode->hsync_start +
-			      dp_mode->timing.h_sync_width;
+	drm_mode->hsync_start =
+		drm_mode->hdisplay + dp_mode->timing.h_front_porch;
+	drm_mode->hsync_end =
+		drm_mode->hsync_start + dp_mode->timing.h_sync_width;
 	drm_mode->htotal = drm_mode->hsync_end + dp_mode->timing.h_back_porch;
 	drm_mode->hskew = dp_mode->timing.h_skew;
 
 	drm_mode->vdisplay = dp_mode->timing.v_active;
-	drm_mode->vsync_start = drm_mode->vdisplay +
-				dp_mode->timing.v_front_porch;
-	drm_mode->vsync_end = drm_mode->vsync_start +
-			      dp_mode->timing.v_sync_width;
+	drm_mode->vsync_start =
+		drm_mode->vdisplay + dp_mode->timing.v_front_porch;
+	drm_mode->vsync_end =
+		drm_mode->vsync_start + dp_mode->timing.v_sync_width;
 	drm_mode->vtotal = drm_mode->vsync_end + dp_mode->timing.v_back_porch;
 
 	drm_mode->clock = dp_mode->timing.pixel_clk_khz;
@@ -60,7 +60,7 @@ void convert_to_drm_mode(const struct dp_display_mode *dp_mode,
 }
 
 static int dp_bridge_attach(struct drm_bridge *dp_bridge,
-				enum drm_bridge_attach_flags flags)
+			    enum drm_bridge_attach_flags flags)
 {
 	struct dp_bridge *bridge = to_dp_bridge(dp_bridge);
 
@@ -101,15 +101,15 @@ static void dp_bridge_pre_enable(struct drm_bridge *drm_bridge)
 	/* By this point mode should have been validated through mode_fixup */
 	rc = dp->set_mode(dp, bridge->dp_panel, &bridge->dp_mode);
 	if (rc) {
-		DP_ERR("[%d] failed to perform a mode set, rc=%d\n",
-		       bridge->id, rc);
+		DP_ERR("[%d] failed to perform a mode set, rc=%d\n", bridge->id,
+		       rc);
 		return;
 	}
 
 	rc = dp->prepare(dp, bridge->dp_panel);
 	if (rc) {
-		DP_ERR("[%d] DP display prepare failed, rc=%d\n",
-		       bridge->id, rc);
+		DP_ERR("[%d] DP display prepare failed, rc=%d\n", bridge->id,
+		       rc);
 		return;
 	}
 
@@ -118,8 +118,8 @@ static void dp_bridge_pre_enable(struct drm_bridge *drm_bridge)
 
 	rc = dp->enable(dp, bridge->dp_panel);
 	if (rc)
-		DP_ERR("[%d] DP display enable failed, rc=%d\n",
-		       bridge->id, rc);
+		DP_ERR("[%d] DP display enable failed, rc=%d\n", bridge->id,
+		       rc);
 }
 
 static void dp_bridge_enable(struct drm_bridge *drm_bridge)
@@ -217,22 +217,22 @@ static void dp_bridge_post_disable(struct drm_bridge *drm_bridge)
 
 	rc = dp->disable(dp, bridge->dp_panel);
 	if (rc) {
-		DP_ERR("[%d] DP display disable failed, rc=%d\n",
-		       bridge->id, rc);
+		DP_ERR("[%d] DP display disable failed, rc=%d\n", bridge->id,
+		       rc);
 		return;
 	}
 
 	rc = dp->unprepare(dp, bridge->dp_panel);
 	if (rc) {
-		DP_ERR("[%d] DP display unprepare failed, rc=%d\n",
-		       bridge->id, rc);
+		DP_ERR("[%d] DP display unprepare failed, rc=%d\n", bridge->id,
+		       rc);
 		return;
 	}
 }
 
 static void dp_bridge_mode_set(struct drm_bridge *drm_bridge,
-				const struct drm_display_mode *mode,
-				const struct drm_display_mode *adjusted_mode)
+			       const struct drm_display_mode *mode,
+			       const struct drm_display_mode *adjusted_mode)
 {
 	struct dp_bridge *bridge;
 	struct dp_display *dp;
@@ -256,14 +256,14 @@ static void dp_bridge_mode_set(struct drm_bridge *drm_bridge,
 	dp = bridge->display;
 
 	dp->convert_to_dp_mode(dp, bridge->dp_panel, adjusted_mode,
-			&bridge->dp_mode);
+			       &bridge->dp_mode);
 
 	dp->clear_reservation(dp, bridge->dp_panel);
 }
 
 static bool dp_bridge_mode_fixup(struct drm_bridge *drm_bridge,
-				  const struct drm_display_mode *mode,
-				  struct drm_display_mode *adjusted_mode)
+				 const struct drm_display_mode *mode,
+				 struct drm_display_mode *adjusted_mode)
 {
 	bool ret = true;
 	struct dp_display_mode dp_mode;
@@ -299,16 +299,17 @@ end:
 }
 
 static const struct drm_bridge_funcs dp_bridge_ops = {
-	.attach       = dp_bridge_attach,
-	.mode_fixup   = dp_bridge_mode_fixup,
-	.pre_enable   = dp_bridge_pre_enable,
-	.enable       = dp_bridge_enable,
-	.disable      = dp_bridge_disable,
+	.attach = dp_bridge_attach,
+	.mode_fixup = dp_bridge_mode_fixup,
+	.pre_enable = dp_bridge_pre_enable,
+	.enable = dp_bridge_enable,
+	.disable = dp_bridge_disable,
 	.post_disable = dp_bridge_post_disable,
-	.mode_set     = dp_bridge_mode_set,
+	.mode_set = dp_bridge_mode_set,
 };
 
-int dp_connector_add_custom_mode(struct drm_connector *conn, struct dp_display_mode *dp_mode)
+int dp_connector_add_custom_mode(struct drm_connector *conn,
+				 struct dp_display_mode *dp_mode)
 {
 	struct drm_display_mode *m, drm_mode;
 
@@ -316,7 +317,8 @@ int dp_connector_add_custom_mode(struct drm_connector *conn, struct dp_display_m
 	convert_to_drm_mode(dp_mode, &drm_mode);
 	m = drm_mode_duplicate(conn->dev, &drm_mode);
 	if (!m) {
-		DP_ERR("failed to add mode %ux%u\n", drm_mode.hdisplay, drm_mode.vdisplay);
+		DP_ERR("failed to add mode %ux%u\n", drm_mode.hdisplay,
+		       drm_mode.vdisplay);
 		return 0;
 	}
 	m->width_mm = conn->display_info.width_mm;
@@ -350,7 +352,7 @@ void init_failsafe_mode(struct dp_display_mode *dp_mode)
 }
 
 int dp_connector_config_hdr(struct drm_connector *connector, void *display,
-	struct sde_connector_state *c_state)
+			    struct sde_connector_state *c_state)
 {
 	struct dp_display *dp = display;
 	struct sde_connector *sde_conn;
@@ -367,11 +369,10 @@ int dp_connector_config_hdr(struct drm_connector *connector, void *display,
 	}
 
 	return dp->config_hdr(dp, sde_conn->drv_panel, &c_state->hdr_meta,
-			c_state->dyn_hdr_meta.dynamic_hdr_update);
+			      c_state->dyn_hdr_meta.dynamic_hdr_update);
 }
 
-int dp_connector_set_colorspace(struct drm_connector *connector,
-	void *display)
+int dp_connector_set_colorspace(struct drm_connector *connector, void *display)
 {
 	struct dp_display *dp_display = display;
 	struct sde_connector *sde_conn;
@@ -385,8 +386,8 @@ int dp_connector_set_colorspace(struct drm_connector *connector,
 		return -EINVAL;
 	}
 
-	return dp_display->set_colorspace(dp_display,
-		sde_conn->drv_panel, connector->state->colorspace);
+	return dp_display->set_colorspace(dp_display, sde_conn->drv_panel,
+					  connector->state->colorspace);
 }
 
 int dp_connector_post_init(struct drm_connector *connector, void *display)
@@ -420,10 +421,10 @@ end:
 }
 
 int dp_connector_get_mode_info(struct drm_connector *connector,
-		const struct drm_display_mode *drm_mode,
-		struct msm_sub_mode *sub_mode,
-		struct msm_mode_info *mode_info,
-		void *display, const struct msm_resource_caps_info *avail_res)
+			       const struct drm_display_mode *drm_mode,
+			       struct msm_sub_mode *sub_mode,
+			       struct msm_mode_info *mode_info, void *display,
+			       const struct msm_resource_caps_info *avail_res)
 {
 	const u32 single_intf = 1;
 	const u32 no_enc = 0;
@@ -437,8 +438,8 @@ int dp_connector_get_mode_info(struct drm_connector *connector,
 	int rc = 0;
 
 	if (!drm_mode || !mode_info || !avail_res ||
-			!avail_res->max_mixer_width || !connector || !display ||
-			!connector->dev || !connector->dev->dev_private) {
+	    !avail_res->max_mixer_width || !connector || !display ||
+	    !connector->dev || !connector->dev->dev_private) {
 		DP_ERR("invalid params\n");
 		return -EINVAL;
 	}
@@ -452,22 +453,22 @@ int dp_connector_get_mode_info(struct drm_connector *connector,
 	topology = &mode_info->topology;
 
 	rc = dp_disp->get_available_dp_resources(dp_disp, avail_res,
-			&avail_dp_res);
+						 &avail_dp_res);
 	if (rc) {
 		DP_ERR("error getting max dp resources. rc:%d\n", rc);
 		return rc;
 	}
 
 	rc = msm_get_mixer_count(priv, drm_mode, &avail_dp_res,
-			&topology->num_lm);
+				 &topology->num_lm);
 	if (rc) {
 		DP_ERR("error getting mixer count. rc:%d\n", rc);
 		return rc;
 	}
 	/* reset dp connector lm_mask for every connection event and
-	 * this will get re-populated in resource manager based on
-	 * resolution and topology of dp display.
-	 */
+   * this will get re-populated in resource manager based on
+   * resolution and topology of dp display.
+   */
 	sde_conn->lm_mask = 0;
 
 	topology->num_enc = no_enc;
@@ -481,9 +482,8 @@ int dp_connector_get_mode_info(struct drm_connector *connector,
 	dp_disp->convert_to_dp_mode(dp_disp, dp_panel, drm_mode, &dp_mode);
 
 	if (dp_mode.timing.comp_info.enabled) {
-		memcpy(&mode_info->comp_info,
-			&dp_mode.timing.comp_info,
-			sizeof(mode_info->comp_info));
+		memcpy(&mode_info->comp_info, &dp_mode.timing.comp_info,
+		       sizeof(mode_info->comp_info));
 
 		topology->num_enc = topology->num_lm;
 		topology->comp_type = mode_info->comp_info.comp_type;
@@ -493,7 +493,7 @@ int dp_connector_get_mode_info(struct drm_connector *connector,
 }
 
 int dp_connector_get_info(struct drm_connector *connector,
-		struct msm_display_info *info, void *data)
+			  struct msm_display_info *info, void *data)
 {
 	struct dp_display *display = data;
 
@@ -509,14 +509,13 @@ int dp_connector_get_info(struct drm_connector *connector,
 	info->is_connected = display->is_sst_connected;
 	info->curr_panel_mode = MSM_DISPLAY_VIDEO_MODE;
 	info->capabilities = MSM_DISPLAY_CAP_VID_MODE | MSM_DISPLAY_CAP_EDID |
-		MSM_DISPLAY_CAP_HOT_PLUG;
+			     MSM_DISPLAY_CAP_HOT_PLUG;
 
 	return 0;
 }
 
 enum drm_connector_status dp_connector_detect(struct drm_connector *conn,
-		bool force,
-		void *display)
+					      bool force, void *display)
 {
 	enum drm_connector_status status = connector_status_unknown;
 	struct msm_display_info info;
@@ -560,9 +559,8 @@ void dp_connector_post_open(struct drm_connector *connector, void *display)
 		dp->post_open(dp);
 }
 
-int dp_connector_atomic_check(struct drm_connector *connector,
-	void *display,
-	struct drm_atomic_state *a_state)
+int dp_connector_atomic_check(struct drm_connector *connector, void *display,
+			      struct drm_atomic_state *a_state)
 {
 	struct sde_connector *sde_conn;
 	struct drm_connector_state *old_state;
@@ -572,8 +570,7 @@ int dp_connector_atomic_check(struct drm_connector *connector,
 		return -EINVAL;
 
 	c_state = drm_atomic_get_new_connector_state(a_state, connector);
-	old_state =
-		drm_atomic_get_old_connector_state(a_state, connector);
+	old_state = drm_atomic_get_old_connector_state(a_state, connector);
 
 	if (!old_state || !c_state)
 		return -EINVAL;
@@ -581,10 +578,10 @@ int dp_connector_atomic_check(struct drm_connector *connector,
 	sde_conn = to_sde_connector(connector);
 
 	/*
-	 * Marking the colorspace has been changed
-	 * the flag shall be checked in the pre_kickoff
-	 * to configure the new colorspace in HW
-	 */
+   * Marking the colorspace has been changed
+   * the flag shall be checked in the pre_kickoff
+   * to configure the new colorspace in HW
+   */
 	if (c_state->colorspace != old_state->colorspace) {
 		DP_DEBUG("colorspace has been updated\n");
 		sde_conn->colorspace_updated = true;
@@ -593,8 +590,8 @@ int dp_connector_atomic_check(struct drm_connector *connector,
 	return 0;
 }
 
-int dp_connector_get_modes(struct drm_connector *connector,
-		void *display, const struct msm_resource_caps_info *avail_res)
+int dp_connector_get_modes(struct drm_connector *connector, void *display,
+			   const struct msm_resource_caps_info *avail_res)
 {
 	int rc = 0;
 	struct dp_display *dp;
@@ -612,18 +609,19 @@ int dp_connector_get_modes(struct drm_connector *connector,
 
 	dp = display;
 
-	dp_mode = kzalloc(sizeof(*dp_mode),  GFP_KERNEL);
+	dp_mode = kzalloc(sizeof(*dp_mode), GFP_KERNEL);
 	if (!dp_mode)
 		return 0;
 
 	/* pluggable case assumes EDID is read when HPD */
 	if (dp->is_sst_connected) {
 		/*
-		 * 1. for test request, rc = 1, and dp_mode will have test mode populated
-		 * 2. During normal operation, dp_mode will be untouched
-		 *    a. if mode query succeeds rc >= 0, valid modes will be added to connector
-		 *    b. if edid read failed, then connector mode list will be empty and rc <= 0
-		 */
+     * 1. for test request, rc = 1, and dp_mode will have test mode populated
+     * 2. During normal operation, dp_mode will be untouched
+     *    a. if mode query succeeds rc >= 0, valid modes will be added to
+     * connector b. if edid read failed, then connector mode list will be empty
+     * and rc <= 0
+     */
 		rc = dp->get_modes(dp, sde_conn->drv_panel, dp_mode);
 		if (!rc) {
 			DP_WARN("failed to get DP sink modes, adding failsafe");
@@ -640,7 +638,7 @@ int dp_connector_get_modes(struct drm_connector *connector,
 }
 
 int dp_drm_bridge_init(void *data, struct drm_encoder *encoder,
-	u32 max_mixer_count, u32 max_dsc_count)
+		       u32 max_mixer_count, u32 max_dsc_count)
 {
 	int rc = 0;
 	struct dp_bridge *bridge;
@@ -693,9 +691,10 @@ void dp_drm_bridge_deinit(void *data)
 	kfree(bridge);
 }
 
-enum drm_mode_status dp_connector_mode_valid(struct drm_connector *connector,
-		struct drm_display_mode *mode, void *display,
-		const struct msm_resource_caps_info *avail_res)
+enum drm_mode_status
+dp_connector_mode_valid(struct drm_connector *connector,
+			struct drm_display_mode *mode, void *display,
+			const struct msm_resource_caps_info *avail_res)
 {
 	int rc = 0, vrefresh;
 	struct dp_display *dp_disp;
@@ -720,24 +719,25 @@ enum drm_mode_status dp_connector_mode_valid(struct drm_connector *connector,
 	vrefresh = drm_mode_vrefresh(mode);
 
 	rc = dp_disp->get_available_dp_resources(dp_disp, avail_res,
-			&avail_dp_res);
+						 &avail_dp_res);
 	if (rc) {
 		DP_ERR("error getting max dp resources. rc:%d\n", rc);
 		return MODE_ERROR;
 	}
 
-	if (dp_panel->mode_override && (mode->hdisplay != dp_panel->hdisplay ||
-			mode->vdisplay != dp_panel->vdisplay ||
-			vrefresh != dp_panel->vrefresh ||
-			mode->picture_aspect_ratio != dp_panel->aspect_ratio))
+	if (dp_panel->mode_override &&
+	    (mode->hdisplay != dp_panel->hdisplay ||
+	     mode->vdisplay != dp_panel->vdisplay ||
+	     vrefresh != dp_panel->vrefresh ||
+	     mode->picture_aspect_ratio != dp_panel->aspect_ratio))
 		return MODE_BAD;
 
-	return dp_disp->validate_mode(dp_disp, sde_conn->drv_panel,
-			mode, &avail_dp_res);
+	return dp_disp->validate_mode(dp_disp, sde_conn->drv_panel, mode,
+				      &avail_dp_res);
 }
 
-int dp_connector_update_pps(struct drm_connector *connector,
-		char *pps_cmd, void *display)
+int dp_connector_update_pps(struct drm_connector *connector, char *pps_cmd,
+			    void *display)
 {
 	struct dp_display *dp_disp;
 	struct sde_connector *sde_conn;
@@ -771,9 +771,9 @@ int dp_connector_install_properties(void *display, struct drm_connector *conn)
 	base_conn = dp_display->base_connector;
 
 	/*
-	 * Create the property on the base connector during probe time and then
-	 * attach the same property onto new connector objects created for MST
-	 */
+   * Create the property on the base connector during probe time and then
+   * attach the same property onto new connector objects created for MST
+   */
 	if (!base_conn->colorspace_property) {
 		/* This is the base connector. create the drm property */
 		rc = drm_mode_create_dp_colorspace_property(base_conn);

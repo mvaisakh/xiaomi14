@@ -19,8 +19,8 @@
 
 #include <osdep.h>
 #include <wmi.h>
-#include <wmi_unified_priv.h>
 #include <wmi_unified_interop_issues_ap_api.h>
+#include <wmi_unified_priv.h>
 
 /**
  * extract_interop_issues_ap_ev_param_tlv() - extract info from event
@@ -30,9 +30,9 @@
  *
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
-static QDF_STATUS
-extract_interop_issues_ap_ev_param_tlv(wmi_unified_t wmi_handle, void *evt_buf,
-				     struct wlan_interop_issues_ap_event *data)
+static QDF_STATUS extract_interop_issues_ap_ev_param_tlv(
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct wlan_interop_issues_ap_event *data)
 {
 	wmi_pdev_rap_info_event_fixed_param *fixed_param;
 	WMI_PDEV_RAP_INFO_EVENTID_param_tlvs *param_buf =
@@ -80,7 +80,7 @@ send_set_rap_ps_cmd_tlv(wmi_unified_t wmi_handle,
 	qdf_size_t i;
 
 	count = rap->count;
-	len  = sizeof(*cmd) + WMI_TLV_HDR_SIZE + sizeof(*param) * count;
+	len = sizeof(*cmd) + WMI_TLV_HDR_SIZE + sizeof(*param) * count;
 	buf = wmi_buf_alloc(wmi_handle, len);
 	if (!buf)
 		return QDF_STATUS_E_FAILURE;
@@ -88,13 +88,12 @@ send_set_rap_ps_cmd_tlv(wmi_unified_t wmi_handle,
 	buf_ptr = wmi_buf_data(buf);
 	cmd = (wmi_pdev_set_rap_config_fixed_param *)buf_ptr;
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_pdev_set_rap_config_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-			       (wmi_pdev_set_rap_config_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_pdev_set_rap_config_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_pdev_set_rap_config_fixed_param));
 	cmd->pdev_id = wmi_handle->ops->convert_pdev_id_host_to_target(
-						     wmi_handle,
-						     WMI_HOST_PDEV_ID_SOC);
+		wmi_handle, WMI_HOST_PDEV_ID_SOC);
 
 	cmd->type = WMI_ROGUE_AP_ON_STA_PS;
 	if (rap->detect_enable)
@@ -105,15 +104,17 @@ send_set_rap_ps_cmd_tlv(wmi_unified_t wmi_handle,
 	buf_ptr += sizeof(*cmd);
 
 	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
-		  sizeof(wmi_pdev_set_rap_config_on_sta_ps_tlv_param) * count);
+		       sizeof(wmi_pdev_set_rap_config_on_sta_ps_tlv_param) *
+			       count);
 	buf_ptr += WMI_TLV_HDR_SIZE;
 
 	for (i = 0; i < count; i++) {
 		param = (wmi_pdev_set_rap_config_on_sta_ps_tlv_param *)buf_ptr;
-		WMITLV_SET_HDR(&param->tlv_header,
-		  WMITLV_TAG_STRUC_wmi_pdev_set_rap_config_on_sta_ps_tlv_param,
-		  WMITLV_GET_STRUCT_TLVLEN
-				(wmi_pdev_set_rap_config_on_sta_ps_tlv_param));
+		WMITLV_SET_HDR(
+			&param->tlv_header,
+			WMITLV_TAG_STRUC_wmi_pdev_set_rap_config_on_sta_ps_tlv_param,
+			WMITLV_GET_STRUCT_TLVLEN(
+				wmi_pdev_set_rap_config_on_sta_ps_tlv_param));
 		WMI_CHAR_ARRAY_TO_MAC_ADDR(rap->rap_items[i].bytes,
 					   &param->bssid);
 		buf_ptr += sizeof(*param);
@@ -134,6 +135,6 @@ void wmi_interop_issues_ap_attach_tlv(wmi_unified_t wmi_handle)
 	struct wmi_ops *ops = wmi_handle->ops;
 
 	ops->extract_interop_issues_ap_ev_param =
-					extract_interop_issues_ap_ev_param_tlv;
+		extract_interop_issues_ap_ev_param_tlv;
 	ops->send_set_rap_ps_cmd = send_set_rap_ps_cmd_tlv;
 }

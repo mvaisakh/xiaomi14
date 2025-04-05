@@ -3,12 +3,12 @@
  * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/rpmsg.h>
-#include <linux/of.h>
-#include <linux/module.h>
-#include "fastrpc_trace.h"
-#include <trace/events/rproc_qcom.h>
 #include "adsprpc_shared.h"
+#include "fastrpc_trace.h"
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/rpmsg.h>
+#include <trace/events/rproc_qcom.h>
 
 struct frpc_transport_session_control {
 	struct rpmsg_device *rpdev;
@@ -24,7 +24,8 @@ static struct frpc_transport_session_control rpmsg_session_control[NUM_CHANNELS]
 inline int verify_transport_device(int cid, int tvm_remote_domain)
 {
 	int err = 0;
-	struct frpc_transport_session_control *rpmsg_session = &rpmsg_session_control[cid];
+	struct frpc_transport_session_control *rpmsg_session =
+		&rpmsg_session_control[cid];
 
 	mutex_lock(&rpmsg_session->rpmsg_mutex);
 	VERIFY(err, NULL != rpmsg_session->rpdev);
@@ -48,7 +49,7 @@ static inline int get_cid_from_rpdev(struct rpmsg_device *rpdev)
 		return -ENODEV;
 
 	err = of_property_read_string(rpdev->dev.parent->of_node, "label",
-					&label);
+				      &label);
 
 	if (err)
 		label = rpdev->dev.parent->of_node->name;
@@ -87,18 +88,18 @@ static int fastrpc_rpmsg_probe(struct rpmsg_device *rpdev)
 	mutex_unlock(&transport_session_control->rpmsg_mutex);
 
 	/*
-	 * Set atomic variable to 1 when rpmsg channel is up
-	 * and wake up all threads waiting for rpmsg channel
-	 */
+   * Set atomic variable to 1 when rpmsg channel is up
+   * and wake up all threads waiting for rpmsg channel
+   */
 	atomic_set(&transport_session_control->is_rpmsg_ch_up, 1);
 	wake_up_interruptible(&transport_session_control->wait_for_rpmsg_ch);
 
 	ADSPRPC_INFO("opened rpmsg channel for %s\n",
-		rpmsg_session_control[cid].subsys);
+		     rpmsg_session_control[cid].subsys);
 bail:
 	if (err)
 		ADSPRPC_ERR("rpmsg probe of %s cid %d failed\n",
-			rpdev->dev.parent->of_node->name, cid);
+			    rpdev->dev.parent->of_node->name, cid);
 	return err;
 }
 
@@ -126,21 +127,21 @@ static void fastrpc_rpmsg_remove(struct rpmsg_device *rpdev)
 	mutex_unlock(&transport_session_control->rpmsg_mutex);
 
 	/*
-	 * Set atomic variable to 0 when rpmsg channel is down and
-	 * make threads wait on is_rpmsg_ch_up
-	 */
+   * Set atomic variable to 0 when rpmsg channel is down and
+   * make threads wait on is_rpmsg_ch_up
+   */
 	atomic_set(&transport_session_control->is_rpmsg_ch_up, 0);
 
 	ADSPRPC_INFO("closed rpmsg channel of %s\n",
-		rpmsg_session_control[cid].subsys);
+		     rpmsg_session_control[cid].subsys);
 bail:
 	if (err)
 		ADSPRPC_ERR("rpmsg remove of %s cid %d failed\n",
-			rpdev->dev.parent->of_node->name, cid);
+			    rpdev->dev.parent->of_node->name, cid);
 }
 
 static int fastrpc_rpmsg_callback(struct rpmsg_device *rpdev, void *data,
-	int len, void *priv, u32 addr)
+				  int len, void *priv, u32 addr)
 {
 	int err = 0;
 	int rpmsg_err = 0;
@@ -173,40 +174,46 @@ bail:
  * for rpmsg channel in the respective domain. The wait in this
  * function is done only for CDSP, Audio and Sensors Daemons.
  */
-int fastrpc_wait_for_transport_interrupt(int cid,
-					unsigned int flags)
+int fastrpc_wait_for_transport_interrupt(int cid, unsigned int flags)
 {
 	struct frpc_transport_session_control *transport_session_control = NULL;
 	int err = 0;
 
 	/*
-	 * The flags which are applicable only for daemons are checked.
-	 * Dynamic PDs will fail and return immediately if the
-	 * remote subsystem is not up.
-	 */
-	if (flags == FASTRPC_INIT_ATTACH || flags == FASTRPC_INIT_ATTACH_SENSORS
-		|| flags == FASTRPC_INIT_CREATE_STATIC) {
+   * The flags which are applicable only for daemons are checked.
+   * Dynamic PDs will fail and return immediately if the
+   * remote subsystem is not up.
+   */
+	if (flags == FASTRPC_INIT_ATTACH ||
+	    flags == FASTRPC_INIT_ATTACH_SENSORS ||
+	    flags == FASTRPC_INIT_CREATE_STATIC) {
 		transport_session_control = &rpmsg_session_control[cid];
 		ADSPRPC_DEBUG("Thread waiting for cid %d rpmsg channel", cid);
-		err = wait_event_interruptible(transport_session_control->wait_for_rpmsg_ch,
-				atomic_read(&transport_session_control->is_rpmsg_ch_up));
-		ADSPRPC_DEBUG("Thread received signal for cid %d rpmsg channel (interrupted %d)",
+		err = wait_event_interruptible(
+			transport_session_control->wait_for_rpmsg_ch,
+			atomic_read(
+				&transport_session_control->is_rpmsg_ch_up));
+		ADSPRPC_DEBUG(
+			"Thread received signal for cid %d rpmsg channel (interrupted %d)",
 			cid, err);
 	}
 
 	return err;
 }
 
-int fastrpc_transport_send(int cid, void *rpc_msg, uint32_t rpc_msg_size, int tvm_remote_domain)
+int fastrpc_transport_send(int cid, void *rpc_msg, uint32_t rpc_msg_size,
+			   int tvm_remote_domain)
 {
 	int err = 0;
-	struct frpc_transport_session_control *rpmsg_session = &rpmsg_session_control[cid];
+	struct frpc_transport_session_control *rpmsg_session =
+		&rpmsg_session_control[cid];
 
 	mutex_lock(&rpmsg_session->rpmsg_mutex);
 	VERIFY(err, !IS_ERR_OR_NULL(rpmsg_session->rpdev));
 	if (err) {
 		err = -ENODEV;
-		ADSPRPC_ERR("No rpmsg device for %s, err %d\n", current->comm, err);
+		ADSPRPC_ERR("No rpmsg device for %s, err %d\n", current->comm,
+			    err);
 		mutex_unlock(&rpmsg_session->rpmsg_mutex);
 		goto bail;
 	}
@@ -218,24 +225,25 @@ bail:
 
 static const struct rpmsg_device_id fastrpc_rpmsg_match[] = {
 	{ FASTRPC_GLINK_GUID },
-	{ },
+	{},
 };
 
 static const struct of_device_id fastrpc_rpmsg_of_match[] = {
 	{ .compatible = "qcom,msm-fastrpc-rpmsg" },
-	{ },
+	{},
 };
 MODULE_DEVICE_TABLE(of, fastrpc_rpmsg_of_match);
 
 static struct rpmsg_driver fastrpc_rpmsg_client = {
-	.id_table = fastrpc_rpmsg_match,
-	.probe = fastrpc_rpmsg_probe,
-	.remove = fastrpc_rpmsg_remove,
-	.callback = fastrpc_rpmsg_callback,
-	.drv = {
-		.name = "qcom,msm_fastrpc_rpmsg",
-		.of_match_table = fastrpc_rpmsg_of_match,
-	},
+    .id_table = fastrpc_rpmsg_match,
+    .probe = fastrpc_rpmsg_probe,
+    .remove = fastrpc_rpmsg_remove,
+    .callback = fastrpc_rpmsg_callback,
+    .drv =
+        {
+            .name = "qcom,msm_fastrpc_rpmsg",
+            .of_match_table = fastrpc_rpmsg_of_match,
+        },
 };
 
 void fastrpc_rproc_trace_events(const char *name, const char *event,
@@ -256,7 +264,8 @@ inline void fastrpc_transport_session_deinit(int cid)
 	mutex_destroy(&rpmsg_session_control[cid].rpmsg_mutex);
 }
 
-int fastrpc_set_tvm_remote_domain(struct fastrpc_file *fl, struct fastrpc_ioctl_init *init)
+int fastrpc_set_tvm_remote_domain(struct fastrpc_file *fl,
+				  struct fastrpc_ioctl_init *init)
 {
 	fl->tvm_remote_domain = -1;
 	return 0;
@@ -269,7 +278,7 @@ int fastrpc_transport_init(void)
 	err = register_rpmsg_driver(&fastrpc_rpmsg_client);
 	if (err) {
 		pr_err("Error: adsprpc: %s: register_rpmsg_driver failed with err %d\n",
-			__func__, err);
+		       __func__, err);
 		goto bail;
 	}
 bail:

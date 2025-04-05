@@ -4,46 +4,46 @@
  * reserved.
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
+#include <crypto/internal/rng.h>
+#include <linux/cdev.h>
+#include <linux/clk.h>
+#include <linux/crypto.h>
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/err.h>
+#include <linux/fs.h>
+#include <linux/hw_random.h>
+#include <linux/init.h>
+#include <linux/interconnect.h>
+#include <linux/io.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/init.h>
-#include <linux/device.h>
-#include <linux/platform_device.h>
-#include <linux/hw_random.h>
-#include <linux/clk.h>
-#include <linux/slab.h>
-#include <linux/io.h>
-#include <linux/err.h>
-#include <linux/types.h>
 #include <linux/of.h>
+#include <linux/platform_device.h>
 #include <linux/qrng.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/delay.h>
-#include <linux/crypto.h>
-#include <crypto/internal/rng.h>
-#include <linux/interconnect.h>
 #include <linux/sched/signal.h>
+#include <linux/slab.h>
+#include <linux/types.h>
 
 #define DRIVER_NAME "msm_rng"
 
 /* Device specific register offsets */
-#define PRNG_DATA_OUT_OFFSET    0x0000
-#define PRNG_STATUS_OFFSET	0x0004
-#define PRNG_LFSR_CFG_OFFSET	0x0100
-#define PRNG_CONFIG_OFFSET	0x0104
+#define PRNG_DATA_OUT_OFFSET 0x0000
+#define PRNG_STATUS_OFFSET 0x0004
+#define PRNG_LFSR_CFG_OFFSET 0x0100
+#define PRNG_CONFIG_OFFSET 0x0104
 
 /* Device specific register masks and config values */
-#define PRNG_LFSR_CFG_MASK	0xFFFF0000
-#define PRNG_LFSR_CFG_CLOCKS	0x0000DDDD
-#define PRNG_CONFIG_MASK	0xFFFFFFFD
-#define PRNG_HW_ENABLE		0x00000002
+#define PRNG_LFSR_CFG_MASK 0xFFFF0000
+#define PRNG_LFSR_CFG_CLOCKS 0x0000DDDD
+#define PRNG_CONFIG_MASK 0xFFFFFFFD
+#define PRNG_HW_ENABLE 0x00000002
 
-#define MAX_HW_FIFO_DEPTH 16                     /* FIFO is 16 words deep */
+#define MAX_HW_FIFO_DEPTH 16 /* FIFO is 16 words deep */
 #define MAX_HW_FIFO_SIZE (MAX_HW_FIFO_DEPTH * 4) /* FIFO is 32 bits wide  */
 
-#define RETRY_MAX_CNT		5	/* max retry times to read register */
-#define RETRY_DELAY_INTERVAL	440	/* retry delay interval in us */
+#define RETRY_MAX_CNT 5 /* max retry times to read register */
+#define RETRY_DELAY_INTERVAL 440 /* retry delay interval in us */
 
 struct msm_rng_device {
 	struct platform_device *pdev;
@@ -57,7 +57,7 @@ static struct msm_rng_device msm_rng_device_info;
 static struct msm_rng_device *msm_rng_dev_cached;
 static struct mutex cached_rng_lock;
 static long msm_rng_ioctl(struct file *filp, unsigned int cmd,
-				unsigned long arg)
+			  unsigned long arg)
 {
 	long ret = 0;
 
@@ -81,8 +81,8 @@ static long msm_rng_ioctl(struct file *filp, unsigned int cmd,
  *  back to caller
  *
  */
-static int msm_rng_direct_read(struct msm_rng_device *msm_rng_dev,
-					void *data, size_t max)
+static int msm_rng_direct_read(struct msm_rng_device *msm_rng_dev, void *data,
+			       size_t max)
 {
 	struct platform_device *pdev;
 	void __iomem *base;
@@ -119,8 +119,7 @@ static int msm_rng_direct_read(struct msm_rng_device *msm_rng_dev,
 	/* read random data from h/w */
 	do {
 		/* check status bit if data is available */
-		if (!(readl_relaxed(base + PRNG_STATUS_OFFSET)
-				& 0x00000001)) {
+		if (!(readl_relaxed(base + PRNG_STATUS_OFFSET) & 0x00000001)) {
 			if (failed++ == RETRY_MAX_CNT) {
 				if (currsize == 0)
 					pr_err("Data not available\n");
@@ -128,7 +127,6 @@ static int msm_rng_direct_read(struct msm_rng_device *msm_rng_dev,
 			}
 			udelay(RETRY_DELAY_INTERVAL);
 		} else {
-
 			/* read FIFO */
 			val = readl_relaxed(base + PRNG_DATA_OUT_OFFSET);
 
@@ -168,7 +166,6 @@ static int msm_rng_read(struct hwrng *rng, void *data, size_t max, bool wait)
 	return rv;
 }
 
-
 static struct hwrng msm_rng = {
 	.name = DRIVER_NAME,
 	.read = msm_rng_read,
@@ -198,7 +195,7 @@ static int msm_rng_enable_hw(struct msm_rng_device *msm_rng_dev)
 
 	/* Enable PRNG h/w only if it is NOT ON */
 	val = readl_relaxed(msm_rng_dev->base + PRNG_CONFIG_OFFSET) &
-					PRNG_HW_ENABLE;
+	      PRNG_HW_ENABLE;
 	/* PRNG H/W is not ON */
 	if (val != PRNG_HW_ENABLE) {
 		val = readl_relaxed(msm_rng_dev->base + PRNG_LFSR_CFG_OFFSET);
@@ -209,14 +206,15 @@ static int msm_rng_enable_hw(struct msm_rng_device *msm_rng_dev)
 		/* The PRNG CONFIG register should be first written */
 		mb();
 
-		reg_val = readl_relaxed(msm_rng_dev->base + PRNG_CONFIG_OFFSET)
-						& PRNG_CONFIG_MASK;
+		reg_val =
+			readl_relaxed(msm_rng_dev->base + PRNG_CONFIG_OFFSET) &
+			PRNG_CONFIG_MASK;
 		reg_val |= PRNG_HW_ENABLE;
 		writel_relaxed(reg_val, msm_rng_dev->base + PRNG_CONFIG_OFFSET);
 
 		/* The PRNG clk should be disabled only after we enable the
-		 * PRNG h/w by writing to the PRNG CONFIG register.
-		 */
+     * PRNG h/w by writing to the PRNG CONFIG register.
+     */
 		mb();
 	}
 	if (msm_rng_dev->prng_clk)
@@ -270,11 +268,11 @@ static int msm_rng_probe(struct platform_device *pdev)
 	/* create a handle for clock control */
 	if (pdev->dev.of_node) {
 		if (of_property_read_bool(pdev->dev.of_node,
-					"qcom,no-clock-support"))
+					  "qcom,no-clock-support"))
 			msm_rng_dev->prng_clk = NULL;
 		else
-			msm_rng_dev->prng_clk = clk_get(&pdev->dev,
-							"km_clk_src");
+			msm_rng_dev->prng_clk =
+				clk_get(&pdev->dev, "km_clk_src");
 	}
 
 	if (IS_ERR(msm_rng_dev->prng_clk)) {
@@ -298,10 +296,10 @@ static int msm_rng_probe(struct platform_device *pdev)
 	}
 
 	/* Enable rng h/w for the targets which can access the entire
-	 * address space of PRNG.
-	 */
-	if ((pdev->dev.of_node) && (of_property_read_bool(pdev->dev.of_node,
-					"qcom,no-qrng-config")))
+   * address space of PRNG.
+   */
+	if ((pdev->dev.of_node) &&
+	    (of_property_read_bool(pdev->dev.of_node, "qcom,no-qrng-config")))
 		configure_qrng = false;
 	if (configure_qrng) {
 		error = msm_rng_enable_hw(msm_rng_dev);
@@ -313,7 +311,7 @@ static int msm_rng_probe(struct platform_device *pdev)
 	mutex_init(&cached_rng_lock);
 
 	/* register with hwrng framework */
-	msm_rng.priv = (unsigned long) msm_rng_dev;
+	msm_rng.priv = (unsigned long)msm_rng_dev;
 	error = hwrng_register(&msm_rng);
 	if (error) {
 		dev_err(&pdev->dev, "failed to register hwrng\n");
@@ -332,8 +330,8 @@ static int msm_rng_probe(struct platform_device *pdev)
 		goto err_create_cls;
 	}
 
-	dev = device_create(msm_rng_class, NULL, MKDEV(QRNG_IOC_MAGIC, 0),
-				NULL, "msm-rng");
+	dev = device_create(msm_rng_class, NULL, MKDEV(QRNG_IOC_MAGIC, 0), NULL,
+			    "msm-rng");
 	if (IS_ERR(dev)) {
 		pr_err("Device create failed\n");
 		error = PTR_ERR(dev);
@@ -382,8 +380,7 @@ static int msm_rng_remove(struct platform_device *pdev)
 }
 
 static int qrng_get_random(struct crypto_rng *tfm, const u8 *src,
-				unsigned int slen, u8 *rdata,
-				unsigned int dlen)
+			   unsigned int slen, u8 *rdata, unsigned int dlen)
 {
 	int sizeread = 0;
 	int rv = -EFAULT;
@@ -401,7 +398,7 @@ static int qrng_get_random(struct crypto_rng *tfm, const u8 *src,
 	}
 
 	if (signal_pending(current) ||
-		mutex_lock_interruptible(&cached_rng_lock)) {
+	    mutex_lock_interruptible(&cached_rng_lock)) {
 		pr_err("%s: mutex lock interrupted\n", __func__);
 		rv = -ERESTARTSYS;
 		goto err_exit;
@@ -414,7 +411,6 @@ static int qrng_get_random(struct crypto_rng *tfm, const u8 *src,
 	mutex_unlock(&cached_rng_lock);
 err_exit:
 	return rv;
-
 }
 
 static int qrng_reset(struct crypto_rng *tfm, const u8 *seed, unsigned int slen)
@@ -422,31 +418,30 @@ static int qrng_reset(struct crypto_rng *tfm, const u8 *seed, unsigned int slen)
 	return 0;
 }
 
-static struct rng_alg rng_algs[] = { {
-	.generate	= qrng_get_random,
-	.seed		= qrng_reset,
-	.seedsize	= 0,
-	.base		= {
-		.cra_name		= "qrng",
-		.cra_driver_name	= "fips_hw_qrng",
-		.cra_priority		= 300,
-		.cra_ctxsize		= 0,
-		.cra_module		= THIS_MODULE,
-	}
-} };
+static struct rng_alg rng_algs[] = { { .generate = qrng_get_random,
+				       .seed = qrng_reset,
+				       .seedsize = 0,
+				       .base = {
+					       .cra_name = "qrng",
+					       .cra_driver_name = "fips_hw_qrng",
+					       .cra_priority = 300,
+					       .cra_ctxsize = 0,
+					       .cra_module = THIS_MODULE,
+				       } } };
 
 static const struct of_device_id qrng_match[] = {
-	{.compatible = "qcom,msm-rng"},
+	{ .compatible = "qcom,msm-rng" },
 	{},
 };
 
 static struct platform_driver rng_driver = {
-	.probe      = msm_rng_probe,
-	.remove     = msm_rng_remove,
-	.driver     = {
-		.name   = DRIVER_NAME,
-		.of_match_table = qrng_match,
-	},
+    .probe = msm_rng_probe,
+    .remove = msm_rng_remove,
+    .driver =
+        {
+            .name = DRIVER_NAME,
+            .of_match_table = qrng_match,
+        },
 };
 
 static int __init msm_rng_init(void)
@@ -456,14 +451,13 @@ static int __init msm_rng_init(void)
 	msm_rng_dev_cached = NULL;
 	ret = platform_driver_register(&rng_driver);
 	if (ret) {
-		pr_err("%s: platform_driver_register error:%d\n",
-			__func__, ret);
+		pr_err("%s: platform_driver_register error:%d\n", __func__,
+		       ret);
 		goto err_exit;
 	}
 	ret = crypto_register_rngs(rng_algs, ARRAY_SIZE(rng_algs));
 	if (ret) {
-		pr_err("%s: crypto_register_algs error:%d\n",
-			__func__, ret);
+		pr_err("%s: crypto_register_algs error:%d\n", __func__, ret);
 		goto err_exit;
 	}
 

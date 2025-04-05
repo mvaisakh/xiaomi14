@@ -47,10 +47,8 @@ wlan_dcs_psoc_obj_create_notification(struct wlan_objmgr_psoc *psoc,
 	for (loop = 0; loop < WLAN_DCS_MAX_PDEVS; loop++)
 		qdf_spinlock_create(&dcs_psoc_obj->dcs_pdev_priv[loop].lock);
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						       WLAN_UMAC_COMP_DCS,
-						       dcs_psoc_obj,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_DCS, dcs_psoc_obj, QDF_STATUS_SUCCESS);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dcs_err("dcs pdev obj attach failed");
@@ -84,12 +82,11 @@ wlan_dcs_psoc_obj_destroy_notification(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAULT;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-						       WLAN_UMAC_COMP_DCS,
+	status = wlan_objmgr_psoc_component_obj_detach(psoc, WLAN_UMAC_COMP_DCS,
 						       dcs_psoc_obj);
 	for (loop = 0; loop < WLAN_DCS_MAX_PDEVS; loop++) {
-		qdf_timer_free(&dcs_psoc_obj->dcs_pdev_priv[loop].
-							dcs_disable_timer);
+		qdf_timer_free(
+			&dcs_psoc_obj->dcs_pdev_priv[loop].dcs_disable_timer);
 		qdf_spinlock_destroy(&dcs_psoc_obj->dcs_pdev_priv[loop].lock);
 	}
 	qdf_mem_free(dcs_psoc_obj);
@@ -102,17 +99,15 @@ QDF_STATUS wlan_dcs_init(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_register_psoc_create_handler(
-			WLAN_UMAC_COMP_DCS,
-			wlan_dcs_psoc_obj_create_notification,
-			NULL);
+		WLAN_UMAC_COMP_DCS, wlan_dcs_psoc_obj_create_notification,
+		NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		goto err_psoc_create;
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_UMAC_COMP_DCS,
-			wlan_dcs_psoc_obj_destroy_notification,
-			NULL);
+		WLAN_UMAC_COMP_DCS, wlan_dcs_psoc_obj_destroy_notification,
+		NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		goto err_psoc_delete;
@@ -121,9 +116,8 @@ QDF_STATUS wlan_dcs_init(void)
 
 err_psoc_delete:
 	wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_DCS,
-			wlan_dcs_psoc_obj_create_notification,
-			NULL);
+		WLAN_UMAC_COMP_DCS, wlan_dcs_psoc_obj_create_notification,
+		NULL);
 err_psoc_create:
 	return status;
 }
@@ -133,17 +127,15 @@ QDF_STATUS wlan_dcs_deinit(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_DCS,
-			wlan_dcs_psoc_obj_create_notification,
-			NULL);
+		WLAN_UMAC_COMP_DCS, wlan_dcs_psoc_obj_create_notification,
+		NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		return QDF_STATUS_E_FAILURE;
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_DCS,
-			wlan_dcs_psoc_obj_destroy_notification,
-			NULL);
+		WLAN_UMAC_COMP_DCS, wlan_dcs_psoc_obj_destroy_notification,
+		NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		return QDF_STATUS_E_FAILURE;
@@ -172,8 +164,8 @@ QDF_STATUS wlan_dcs_psoc_open(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	dcs_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(
-			psoc, WLAN_UMAC_COMP_DCS);
+	dcs_psoc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_DCS);
 	if (!dcs_psoc_obj) {
 		dcs_err("dcs psoc private object is NULL");
 		return QDF_STATUS_E_FAILURE;
@@ -182,33 +174,32 @@ QDF_STATUS wlan_dcs_psoc_open(struct wlan_objmgr_psoc *psoc)
 	for (loop = 0; loop < WLAN_DCS_MAX_PDEVS; loop++) {
 		dcs_pdev_priv = &dcs_psoc_obj->dcs_pdev_priv[loop];
 		dcs_pdev_priv->dcs_host_params.dcs_enable_cfg =
-					cfg_get(psoc, CFG_DCS_ENABLE);
+			cfg_get(psoc, CFG_DCS_ENABLE);
 		dcs_pdev_priv->dcs_host_params.dcs_algorithm_process = false;
 		dcs_pdev_priv->dcs_host_params.dcs_debug =
-					cfg_get(psoc, CFG_DCS_DEBUG);
+			cfg_get(psoc, CFG_DCS_DEBUG);
 		dcs_pdev_priv->dcs_host_params.phy_err_penalty =
-				cfg_get(psoc, CFG_DCS_PHY_ERR_PENALTY);
+			cfg_get(psoc, CFG_DCS_PHY_ERR_PENALTY);
 		dcs_pdev_priv->dcs_host_params.phy_err_threshold =
-				cfg_get(psoc, CFG_DCS_PHY_ERR_THRESHOLD);
+			cfg_get(psoc, CFG_DCS_PHY_ERR_THRESHOLD);
 		dcs_pdev_priv->dcs_host_params.radar_err_threshold =
-				cfg_get(psoc, CFG_DCS_RADAR_ERR_THRESHOLD);
+			cfg_get(psoc, CFG_DCS_RADAR_ERR_THRESHOLD);
 		dcs_pdev_priv->dcs_host_params.coch_intfr_threshold =
-				cfg_get(psoc, CFG_DCS_COCH_INTFR_THRESHOLD);
+			cfg_get(psoc, CFG_DCS_COCH_INTFR_THRESHOLD);
 		dcs_pdev_priv->dcs_host_params.user_max_cu =
-				cfg_get(psoc, CFG_DCS_USER_MAX_CU);
+			cfg_get(psoc, CFG_DCS_USER_MAX_CU);
 		dcs_pdev_priv->dcs_host_params.intfr_detection_threshold =
 			cfg_get(psoc, CFG_DCS_INTFR_DETECTION_THRESHOLD);
 		dcs_pdev_priv->dcs_host_params.intfr_detection_window =
-				cfg_get(psoc, CFG_DCS_INTFR_DETECTION_WINDOW);
+			cfg_get(psoc, CFG_DCS_INTFR_DETECTION_WINDOW);
 		dcs_pdev_priv->dcs_host_params.tx_err_threshold =
-				cfg_get(psoc, CFG_DCS_TX_ERR_THRESHOLD);
+			cfg_get(psoc, CFG_DCS_TX_ERR_THRESHOLD);
 		dcs_pdev_priv->dcs_host_params.force_disable_algorithm =
-				cfg_get(psoc, CFG_DCS_DISABLE_ALGORITHM);
-		dcs_pdev_priv->dcs_freq_ctrl_params.
-					disable_threshold_per_5mins =
+			cfg_get(psoc, CFG_DCS_DISABLE_ALGORITHM);
+		dcs_pdev_priv->dcs_freq_ctrl_params.disable_threshold_per_5mins =
 			cfg_get(psoc, CFG_DCS_DISABLE_THRESHOLD_PER_5MINS);
 		dcs_pdev_priv->dcs_freq_ctrl_params.restart_delay =
-				cfg_get(psoc, CFG_DCS_RESTART_DELAY);
+			cfg_get(psoc, CFG_DCS_RESTART_DELAY);
 
 		qdf_timer_init(NULL, &dcs_pdev_priv->dcs_disable_timer,
 			       wlan_dcs_disable_timer_fn,

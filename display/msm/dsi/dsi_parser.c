@@ -3,16 +3,16 @@
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
+#include <linux/debugfs.h>
 #include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/firmware.h>
 #include <linux/slab.h>
 #include <linux/string.h>
-#include <linux/firmware.h>
-#include <linux/debugfs.h>
 #include <linux/uaccess.h>
-#include <linux/device.h>
 
-#include "dsi_parser.h"
 #include "dsi_defs.h"
+#include "dsi_parser.h"
 
 #define DSI_PARSER_MAX_NODES 20
 
@@ -99,8 +99,7 @@ static char *dsi_parser_get_data(char *start, char *end, char *str)
 	return NULL;
 }
 
-static bool dsi_parser_get_tuples_data(
-		struct dsi_parser_prop *prop, char *str)
+static bool dsi_parser_get_tuples_data(struct dsi_parser_prop *prop, char *str)
 {
 	bool middle_of_tx = false;
 
@@ -123,7 +122,7 @@ static bool dsi_parser_get_tuples_data(
 }
 
 static bool dsi_parser_get_strings(struct device *dev,
-			struct dsi_parser_prop *prop, char *str)
+				   struct dsi_parser_prop *prop, char *str)
 {
 	bool middle_of_tx = false;
 	int i = 0;
@@ -160,8 +159,7 @@ static bool dsi_parser_get_strings(struct device *dev,
 		char *out = strsep(&str, ",");
 
 		if ((str || middle_of_tx) && (i < count)) {
-			prop->items[i++] =
-				dsi_parser_get_data("\"", "\"", out);
+			prop->items[i++] = dsi_parser_get_data("\"", "\"", out);
 			prop->len++;
 
 			middle_of_tx = true;
@@ -172,7 +170,7 @@ end:
 }
 
 static bool dsi_parser_get_tuples(struct device *dev,
-			struct dsi_parser_prop *prop, char *str)
+				  struct dsi_parser_prop *prop, char *str)
 {
 	bool middle_of_tx = false;
 	char *data = NULL;
@@ -197,7 +195,7 @@ static bool dsi_parser_get_tuples(struct device *dev,
 }
 
 static void dsi_parser_get_int_value(struct dsi_parser_prop *prop,
-					int forced_base)
+				     int forced_base)
 {
 	int i;
 
@@ -224,8 +222,7 @@ static void dsi_parser_get_int_value(struct dsi_parser_prop *prop,
 		}
 
 		if (kstrtoint(tmp, base, &val)) {
-			DSI_ERR("error converting %s at %d\n",
-				tmp, i);
+			DSI_ERR("error converting %s at %d\n", tmp, i);
 
 			continue;
 		}
@@ -235,7 +232,7 @@ static void dsi_parser_get_int_value(struct dsi_parser_prop *prop,
 }
 
 static bool dsi_parser_parse_prop(struct device *dev,
-		struct dsi_parser_prop *prop, char *buf)
+				  struct dsi_parser_prop *prop, char *buf)
 {
 	bool found = false;
 	char *out = strsep(&buf, "=");
@@ -366,7 +363,7 @@ end:
 }
 
 static struct dsi_parser_node *dsi_parser_find_nodes(struct device *dev,
-							char **buf)
+						     char **buf)
 {
 	struct dsi_parser_node *node = NULL, *cnode = NULL;
 	char *name, *data;
@@ -423,7 +420,7 @@ static void dsi_parser_count_properties(struct dsi_parser_node *node)
 }
 
 static void dsi_parser_get_properties(struct device *dev,
-		struct dsi_parser_node *node)
+				      struct dsi_parser_node *node)
 {
 	int count;
 
@@ -435,8 +432,8 @@ static void dsi_parser_get_properties(struct device *dev,
 		char *buf = node->data;
 
 		node->prop = devm_kcalloc(dev, node->prop_count,
-				sizeof(struct dsi_parser_prop),
-				GFP_KERNEL);
+					  sizeof(struct dsi_parser_prop),
+					  GFP_KERNEL);
 		if (!node->prop)
 			return;
 
@@ -467,9 +464,8 @@ static void dsi_parser_get_properties(struct device *dev,
 		dsi_parser_get_properties(dev, node->child[count]);
 }
 
-static struct dsi_parser_prop *dsi_parser_search_property(
-			struct dsi_parser_node *node,
-			const char *name)
+static struct dsi_parser_prop *
+dsi_parser_search_property(struct dsi_parser_node *node, const char *name)
 {
 	int i = 0;
 	struct dsi_parser_prop *prop = node->prop;
@@ -484,8 +480,7 @@ static struct dsi_parser_prop *dsi_parser_search_property(
 
 /* APIs for the clients */
 struct property *dsi_parser_find_property(const struct device_node *np,
-				  const char *name,
-				  int *lenp)
+					  const char *name, int *lenp)
 {
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
 	struct dsi_parser_prop *prop = NULL;
@@ -514,8 +509,7 @@ end:
 	return (struct property *)prop;
 }
 
-bool dsi_parser_read_bool(const struct device_node *np,
-			const char *propname)
+bool dsi_parser_read_bool(const struct device_node *np, const char *propname)
 {
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
 	bool prop_set;
@@ -527,8 +521,8 @@ bool dsi_parser_read_bool(const struct device_node *np,
 	return prop_set;
 }
 
-int dsi_parser_read_string(const struct device_node *np,
-			const char *propname, const char **out_string)
+int dsi_parser_read_string(const struct device_node *np, const char *propname,
+			   const char **out_string)
 {
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
 	struct dsi_parser_prop *prop;
@@ -550,13 +544,13 @@ int dsi_parser_read_string(const struct device_node *np,
 }
 
 int dsi_parser_read_u64(const struct device_node *np, const char *propname,
-			 u64 *out_value)
+			u64 *out_value)
 {
 	return -EINVAL;
 }
 
-int dsi_parser_read_u32(const struct device_node *np,
-			const char *propname, u32 *out_value)
+int dsi_parser_read_u32(const struct device_node *np, const char *propname,
+			u32 *out_value)
 {
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
 	struct dsi_parser_prop *prop;
@@ -586,8 +580,8 @@ int dsi_parser_read_u32(const struct device_node *np,
 
 	rc = kstrtoint(property, base, out_value);
 	if (rc) {
-		DSI_ERR("prop=%s error(%d) converting %s, base=%d\n",
-			propname, rc, property, base);
+		DSI_ERR("prop=%s error(%d) converting %s, base=%d\n", propname,
+			rc, property, base);
 		goto end;
 	}
 
@@ -597,7 +591,7 @@ end:
 }
 
 int dsi_parser_read_u32_index(const struct device_node *np,
-			const char *propname, u32 index, u32 *out_value)
+			      const char *propname, u32 index, u32 *out_value)
 {
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
 	struct dsi_parser_prop *prop;
@@ -629,8 +623,8 @@ int dsi_parser_read_u32_index(const struct device_node *np,
 
 	rc = kstrtoint(property, base, out_value);
 	if (rc) {
-		DSI_ERR("prop=%s error(%d) converting %s, base=%d\n",
-			propname, rc, property, base);
+		DSI_ERR("prop=%s error(%d) converting %s, base=%d\n", propname,
+			rc, property, base);
 		goto end;
 	}
 
@@ -640,8 +634,7 @@ end:
 }
 
 int dsi_parser_read_u32_array(const struct device_node *np,
-			      const char *propname,
-			      u32 *out_values, size_t sz)
+			      const char *propname, u32 *out_values, size_t sz)
 {
 	int i, rc = 0;
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
@@ -688,7 +681,7 @@ end:
 }
 
 const void *dsi_parser_get_property(const struct device_node *np,
-			const char *name, int *lenp)
+				    const char *name, int *lenp)
 {
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
 	struct dsi_parser_prop *prop;
@@ -721,7 +714,7 @@ end:
 }
 
 struct device_node *dsi_parser_get_child_by_name(const struct device_node *np,
-				const char *name)
+						 const char *name)
 {
 	int index = 0;
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
@@ -747,9 +740,8 @@ end:
 	return (struct device_node *)matched_node;
 }
 
-struct dsi_parser_node *dsi_parser_get_node_by_name(
-				struct dsi_parser_node *node,
-				char *name)
+struct dsi_parser_node *
+dsi_parser_get_node_by_name(struct dsi_parser_node *node, char *name)
 {
 	int count = 0;
 	struct dsi_parser_node *matched_node = NULL;
@@ -765,8 +757,8 @@ struct dsi_parser_node *dsi_parser_get_node_by_name(
 	}
 
 	for (count = 0; count < node->children_count; count++) {
-		matched_node = dsi_parser_get_node_by_name(
-				node->child[count], name);
+		matched_node =
+			dsi_parser_get_node_by_name(node->child[count], name);
 		if (matched_node)
 			break;
 	}
@@ -790,7 +782,7 @@ int dsi_parser_get_child_count(const struct device_node *np)
 }
 
 struct device_node *dsi_parser_get_next_child(const struct device_node *np,
-	struct device_node *prev)
+					      struct device_node *prev)
 {
 	int index = 0;
 	struct dsi_parser_node *parent = (struct dsi_parser_node *)np;
@@ -825,7 +817,7 @@ end:
 }
 
 int dsi_parser_count_u32_elems(const struct device_node *np,
-				const char *propname)
+			       const char *propname)
 {
 	int count = 0;
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
@@ -844,8 +836,7 @@ end:
 	return count;
 }
 
-int dsi_parser_count_strings(const struct device_node *np,
-			    const char *propname)
+int dsi_parser_count_strings(const struct device_node *np, const char *propname)
 {
 	int count = 0;
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
@@ -868,8 +859,8 @@ end:
 }
 
 int dsi_parser_read_string_index(const struct device_node *np,
-				const char *propname,
-				int index, const char **output)
+				 const char *propname, int index,
+				 const char **output)
 {
 	struct dsi_parser_node *node = (struct dsi_parser_node *)np;
 	struct dsi_parser_prop *prop;
@@ -899,10 +890,10 @@ end:
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0))
 int dsi_parser_get_named_gpio(const struct device_node *np,
-				const char *propname, int index)
+			      const char *propname, int index)
 #else
-int dsi_parser_get_named_gpio(struct device_node *np,
-				const char *propname, int index)
+int dsi_parser_get_named_gpio(struct device_node *np, const char *propname,
+			      int index)
 #endif
 {
 	int gpio = -EINVAL;
@@ -912,8 +903,7 @@ int dsi_parser_get_named_gpio(struct device_node *np,
 	return gpio;
 }
 
-void *dsi_parser_get_head_node(void *in,
-				const u8 *data, u32 size)
+void *dsi_parser_get_head_node(void *in, const u8 *data, u32 size)
 {
 	struct dsi_parser *parser = in;
 	char *buf;
@@ -952,8 +942,8 @@ err:
 	return NULL;
 }
 
-static int dsi_parser_read_file(struct dsi_parser *parser,
-				const u8 **buf, u32 *size)
+static int dsi_parser_read_file(struct dsi_parser *parser, const u8 **buf,
+				u32 *size)
 {
 	int rc = 0;
 
@@ -968,8 +958,7 @@ static int dsi_parser_read_file(struct dsi_parser *parser,
 	*buf = parser->fw->data;
 	*size = parser->fw->size;
 
-	DSI_DEBUG("file %s: size %zd\n",
-		parser->file_name, parser->fw->size);
+	DSI_DEBUG("file %s: size %zd\n", parser->file_name, parser->fw->size);
 end:
 	return rc;
 }
@@ -1000,7 +989,8 @@ static void dsi_parser_free_mem(struct device *dev,
 
 		if ((prop->type == DSI_PROP_TYPE_INT_SET_ARRAY ||
 		     prop->type == DSI_PROP_TYPE_INT_SET ||
-		     prop->type == DSI_PROP_TYPE_INT_ARRAY) && prop->value)
+		     prop->type == DSI_PROP_TYPE_INT_ARRAY) &&
+		    prop->value)
 			devm_kfree(dev, prop->value);
 	}
 
@@ -1014,7 +1004,8 @@ static void dsi_parser_free_mem(struct device *dev,
 }
 
 static ssize_t dsi_parser_write_init(struct file *file,
-		const char __user *user_buff, size_t count, loff_t *ppos)
+				     const char __user *user_buff, size_t count,
+				     loff_t *ppos)
 {
 	struct dsi_parser *parser = file->private_data;
 	const u8 *data = NULL;
@@ -1061,8 +1052,8 @@ end:
 	return len;
 }
 
-static ssize_t dsi_parser_read_node(struct file *file,
-		char __user *user_buff, size_t count, loff_t *ppos)
+static ssize_t dsi_parser_read_node(struct file *file, char __user *user_buff,
+				    size_t count, loff_t *ppos)
 {
 	char *buf = NULL;
 	int i, j, len = 0, max_size = SZ_4K;
@@ -1089,18 +1080,18 @@ static ssize_t dsi_parser_read_node(struct file *file,
 	prop = node->prop;
 
 	len += scnprintf(buf + len, max_size - len, "node name=%s\n",
-		node->name);
+			 node->name);
 	if (len == max_size)
 		goto buffer_overflow;
 
 	len += scnprintf(buf + len, max_size - len, "children count=%d\n",
-		node->children_count);
+			 node->children_count);
 	if (len == max_size)
 		goto buffer_overflow;
 
 	for (i = 0; i < node->children_count; i++) {
-		len += scnprintf(buf + len, max_size - len, "child[%d]=%s\n",
-			i, node->child[i]->name);
+		len += scnprintf(buf + len, max_size - len, "child[%d]=%s\n", i,
+				 node->child[i]->name);
 		if (len == max_size)
 			goto buffer_overflow;
 	}
@@ -1109,31 +1100,30 @@ static ssize_t dsi_parser_read_node(struct file *file,
 		if (!prop[i].name)
 			continue;
 
-		len += scnprintf(buf + len, max_size - len,
-			"property=%s\n", prop[i].name);
+		len += scnprintf(buf + len, max_size - len, "property=%s\n",
+				 prop[i].name);
 		if (len == max_size)
 			goto buffer_overflow;
 
 		if (prop[i].value) {
 			if (prop[i].type == DSI_PROP_TYPE_STR) {
 				len += scnprintf(buf + len, max_size - len,
-					"value=%s\n", prop[i].value);
+						 "value=%s\n", prop[i].value);
 				if (len == max_size)
 					goto buffer_overflow;
 			} else {
 				for (j = 0; j < prop[i].len; j++) {
 					len += scnprintf(buf + len,
-						max_size - len,
-						"%x", prop[i].value[j]);
+							 max_size - len, "%x",
+							 prop[i].value[j]);
 					if (len == max_size)
 						goto buffer_overflow;
 				}
 
 				len += scnprintf(buf + len, max_size - len,
-						"\n");
+						 "\n");
 				if (len == max_size)
 					goto buffer_overflow;
-
 			}
 		}
 
@@ -1152,7 +1142,7 @@ static ssize_t dsi_parser_read_node(struct file *file,
 				delim = ' ';
 
 			len += scnprintf(buf + len, max_size - len, "%s%c",
-				prop[i].items[j], delim);
+					 prop[i].items[j], delim);
 			if (len == max_size)
 				goto buffer_overflow;
 		}
@@ -1173,7 +1163,8 @@ error:
 }
 
 static ssize_t dsi_parser_write_node(struct file *file,
-		const char __user *user_buff, size_t count, loff_t *ppos)
+				     const char __user *user_buff, size_t count,
+				     loff_t *ppos)
 {
 	struct dsi_parser *parser = file->private_data;
 	char buf[SZ_512];
@@ -1198,7 +1189,7 @@ static ssize_t dsi_parser_write_node(struct file *file,
 		parser->current_node = parser->head_node;
 	else
 		parser->current_node = dsi_parser_get_node_by_name(
-					parser->head_node, strim(buf));
+			parser->head_node, strim(buf));
 end:
 	return len;
 }
@@ -1232,8 +1223,8 @@ int dsi_parser_dbg_init(void *parser, struct dentry *parent_dir)
 		goto end;
 	}
 
-	file = debugfs_create_file("init", 0644, dir,
-		parser, &dsi_parser_init_fops);
+	file = debugfs_create_file("init", 0644, dir, parser,
+				   &dsi_parser_init_fops);
 	if (IS_ERR_OR_NULL(file)) {
 		rc = PTR_ERR(file);
 
@@ -1241,8 +1232,8 @@ int dsi_parser_dbg_init(void *parser, struct dentry *parent_dir)
 		goto dbg;
 	}
 
-	file = debugfs_create_file("node", 0644, dir,
-		parser, &dsi_parser_node_fops);
+	file = debugfs_create_file("node", 0644, dir, parser,
+				   &dsi_parser_node_fops);
 	if (IS_ERR_OR_NULL(file)) {
 		rc = PTR_ERR(file);
 
@@ -1296,4 +1287,3 @@ void dsi_parser_put(void *data)
 	devm_kfree(parser->dev, parser->buf);
 	devm_kfree(parser->dev, parser);
 }
-

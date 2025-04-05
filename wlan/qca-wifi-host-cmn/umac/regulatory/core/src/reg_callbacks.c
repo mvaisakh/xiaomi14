@@ -22,16 +22,16 @@
  * This file defines regulatory callback functions
  */
 
-#include <wlan_cmn.h>
-#include <reg_services_public_struct.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include "reg_priv_objs.h"
-#include "reg_utils.h"
-#include <scheduler_api.h>
 #include "reg_callbacks.h"
-#include "reg_services_common.h"
 #include "reg_build_chan_list.h"
+#include "reg_priv_objs.h"
+#include "reg_services_common.h"
+#include "reg_utils.h"
+#include <reg_services_public_struct.h>
+#include <scheduler_api.h>
+#include <wlan_cmn.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
 
 /**
  * reg_call_chan_change_cbks() - Call registered callback functions on channel
@@ -83,7 +83,7 @@ static void reg_call_chan_change_cbks(struct wlan_objmgr_psoc *psoc,
 	cbk_list = psoc_priv_obj->cbk_list;
 
 	for (ctr = 0; ctr < REG_MAX_CHAN_CHANGE_CBKS; ctr++) {
-		callback  = NULL;
+		callback = NULL;
 		qdf_spin_lock_bh(&psoc_priv_obj->cbk_list_lock);
 		if (cbk_list[ctr].cbk)
 			callback = cbk_list[ctr].cbk;
@@ -100,13 +100,12 @@ static inline void
 reg_fill_freq_ext_payload(struct reg_sched_payload **payload,
 			  struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj)
 {
-		(*payload)->ch_avoid_ind =
-			!!psoc_priv_obj->ch_avoid_ext_ind;
-		qdf_mem_copy(&(*payload)->avoid_info.freq_list,
-			     &psoc_priv_obj->avoid_freq_ext_list,
-			     sizeof(psoc_priv_obj->avoid_freq_ext_list));
+	(*payload)->ch_avoid_ind = !!psoc_priv_obj->ch_avoid_ext_ind;
+	qdf_mem_copy(&(*payload)->avoid_info.freq_list,
+		     &psoc_priv_obj->avoid_freq_ext_list,
+		     sizeof(psoc_priv_obj->avoid_freq_ext_list));
 
-		psoc_priv_obj->ch_avoid_ext_ind = false;
+	psoc_priv_obj->ch_avoid_ext_ind = false;
 }
 #else
 static inline void
@@ -235,7 +234,7 @@ static QDF_STATUS reg_sched_chan_change_cbks_nb(struct scheduler_msg *msg)
 QDF_STATUS reg_send_scheduler_msg_sb(struct wlan_objmgr_psoc *psoc,
 				     struct wlan_objmgr_pdev *pdev)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct reg_sched_payload *payload;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	QDF_STATUS status;
@@ -296,7 +295,7 @@ QDF_STATUS reg_send_scheduler_msg_sb(struct wlan_objmgr_psoc *psoc,
 QDF_STATUS reg_send_scheduler_msg_nb(struct wlan_objmgr_psoc *psoc,
 				     struct wlan_objmgr_pdev *pdev)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct reg_sched_payload *payload;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	QDF_STATUS status;
@@ -353,8 +352,7 @@ QDF_STATUS reg_send_scheduler_msg_nb(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-QDF_STATUS reg_notify_sap_event(struct wlan_objmgr_pdev *pdev,
-				bool sap_state)
+QDF_STATUS reg_notify_sap_event(struct wlan_objmgr_pdev *pdev, bool sap_state)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -478,9 +476,9 @@ void reg_unregister_ctry_change_callback(struct wlan_objmgr_psoc *psoc,
 	qdf_spin_unlock_bh(&psoc_priv_obj->cbk_list_lock);
 }
 
-void
-reg_register_is_chan_connected_callback(struct wlan_objmgr_psoc *psoc,
-				reg_get_connected_chan_for_mode_callback cbk)
+void reg_register_is_chan_connected_callback(
+	struct wlan_objmgr_psoc *psoc,
+	reg_get_connected_chan_for_mode_callback cbk)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 
@@ -496,9 +494,9 @@ reg_register_is_chan_connected_callback(struct wlan_objmgr_psoc *psoc,
 	qdf_spin_unlock_bh(&psoc_priv_obj->cbk_list_lock);
 }
 
-void
-reg_unregister_is_chan_connected_callback(struct wlan_objmgr_psoc *psoc,
-				reg_get_connected_chan_for_mode_callback cbk)
+void reg_unregister_is_chan_connected_callback(
+	struct wlan_objmgr_psoc *psoc,
+	reg_get_connected_chan_for_mode_callback cbk)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 

@@ -17,9 +17,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/platform_device.h>
 #include <linux/err.h>
 #include <linux/list.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
 
 #ifdef CONFIG_CNSS_OUT_OF_TREE
@@ -40,9 +40,9 @@
 #endif
 #endif
 
+#include "osif_psoc_sync.h"
 #include "pld_internal.h"
 #include "pld_snoc.h"
-#include "osif_psoc_sync.h"
 
 #ifdef CONFIG_PLD_SNOC_ICNSS
 
@@ -110,8 +110,7 @@ static int pld_snoc_probe(struct device *dev)
 	if (ret)
 		goto out;
 
-	return pld_context->ops->probe(dev, PLD_BUS_TYPE_SNOC,
-				       NULL, NULL);
+	return pld_context->ops->probe(dev, PLD_BUS_TYPE_SNOC, NULL, NULL);
 
 out:
 	return ret;
@@ -168,8 +167,8 @@ static int pld_snoc_reinit(struct device *dev)
 
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->reinit)
-		return pld_context->ops->reinit(dev, PLD_BUS_TYPE_SNOC,
-						NULL, NULL);
+		return pld_context->ops->reinit(dev, PLD_BUS_TYPE_SNOC, NULL,
+						NULL);
 
 	return -ENODEV;
 }
@@ -308,13 +307,12 @@ static int pld_update_hang_evt_data(struct icnss_uevent_hang_data *evt_data,
 	return 0;
 }
 
-static int pld_snoc_uevent(struct device *dev,
-			   struct icnss_uevent_data *uevent)
+static int pld_snoc_uevent(struct device *dev, struct icnss_uevent_data *uevent)
 {
 	struct pld_context *pld_context;
 	struct icnss_uevent_fw_down_data *fw_down_data = NULL;
 	struct icnss_uevent_hang_data *hang_data = NULL;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 
 	pld_context = pld_get_global_context();
 	if (!pld_context)
@@ -353,12 +351,11 @@ out:
 	return 0;
 }
 #else
-static int pld_snoc_uevent(struct device *dev,
-			   struct icnss_uevent_data *uevent)
+static int pld_snoc_uevent(struct device *dev, struct icnss_uevent_data *uevent)
 {
 	struct pld_context *pld_context;
 	struct icnss_uevent_fw_down_data *fw_down_data = NULL;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 
 	pld_context = pld_get_global_context();
 	if (!pld_context)
@@ -398,28 +395,27 @@ out:
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
-static struct device_info pld_snoc_dev_info[] = {
-	{ "ADRASTEA", ADRASTEA_DEVICE_ID },
-	{ 0 }
-};
+static struct device_info pld_snoc_dev_info[] = { { "ADRASTEA",
+						    ADRASTEA_DEVICE_ID },
+						  { 0 } };
 #endif
 
 struct icnss_driver_ops pld_snoc_ops = {
-	.name       = PLD_SNOC_OPS_NAME,
+	.name = PLD_SNOC_OPS_NAME,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
-	.dev_info   = pld_snoc_dev_info,
+	.dev_info = pld_snoc_dev_info,
 #endif
-	.probe      = pld_snoc_probe,
-	.remove     = pld_snoc_remove,
-	.shutdown   = pld_snoc_shutdown,
-	.reinit     = pld_snoc_reinit,
+	.probe = pld_snoc_probe,
+	.remove = pld_snoc_remove,
+	.shutdown = pld_snoc_shutdown,
+	.reinit = pld_snoc_reinit,
 	.crash_shutdown = pld_snoc_crash_shutdown,
 	.pm_suspend = pld_snoc_pm_suspend,
-	.pm_resume  = pld_snoc_pm_resume,
+	.pm_resume = pld_snoc_pm_resume,
 	.suspend_noirq = pld_snoc_suspend_noirq,
 	.resume_noirq = pld_snoc_resume_noirq,
 	.uevent = pld_snoc_uevent,
-	.idle_restart  = pld_snoc_idle_restart_cb,
+	.idle_restart = pld_snoc_idle_restart_cb,
 	.idle_shutdown = pld_snoc_idle_shutdown_cb,
 };
 
@@ -443,14 +439,12 @@ int pld_snoc_wlan_enable(struct device *dev, struct pld_wlan_enable_cfg *config,
 		return -ENODEV;
 
 	cfg.num_ce_tgt_cfg = config->num_ce_tgt_cfg;
-	cfg.ce_tgt_cfg = (struct ce_tgt_pipe_cfg *)
-		config->ce_tgt_cfg;
+	cfg.ce_tgt_cfg = (struct ce_tgt_pipe_cfg *)config->ce_tgt_cfg;
 	cfg.num_ce_svc_pipe_cfg = config->num_ce_svc_pipe_cfg;
-	cfg.ce_svc_cfg = (struct ce_svc_pipe_cfg *)
-		config->ce_svc_cfg;
+	cfg.ce_svc_cfg = (struct ce_svc_pipe_cfg *)config->ce_svc_cfg;
 	cfg.num_shadow_reg_cfg = config->num_shadow_reg_cfg;
-	cfg.shadow_reg_cfg = (struct icnss_shadow_reg_cfg *)
-		config->shadow_reg_cfg;
+	cfg.shadow_reg_cfg =
+		(struct icnss_shadow_reg_cfg *)config->shadow_reg_cfg;
 
 	switch (mode) {
 	case PLD_FTM:
@@ -478,7 +472,7 @@ int pld_snoc_wlan_disable(struct device *dev, enum pld_driver_mode mode)
 int pld_snoc_get_soc_info(struct device *dev, struct pld_soc_info *info)
 {
 	int errno;
-	struct icnss_soc_info icnss_info = {0};
+	struct icnss_soc_info icnss_info = { 0 };
 
 	if (!info || !dev)
 		return -ENODEV;

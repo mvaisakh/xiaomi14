@@ -18,15 +18,15 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_tracker.h"
 #include "qdf_tracker_test.h"
 #include "qdf_trace.h"
+#include "qdf_tracker.h"
 #include "qdf_types.h"
 
 #if defined(CONFIG_LEAK_DETECTION) && defined(WLAN_TRACKER_TEST)
 #define qdf_ut_tracker_bits 4 /* 16 buckets */
 #define qdf_ut_tracker_item_count 3
-#define qdf_ut_tracker_declare(name) \
+#define qdf_ut_tracker_declare(name)                                     \
 	qdf_tracker_declare(name, qdf_ut_tracker_bits, "unit-test leak", \
 			    "unit-test alloc", "unit-test free")
 
@@ -61,8 +61,8 @@ static uint32_t qdf_tracker_test_add_remove(void)
 
 	/* an empty tracker should track items */
 	for (i = 0; i < qdf_ut_tracker_item_count; i++) {
-		status = qdf_tracker_track(&tracker, items + i,
-					   __func__, __LINE__);
+		status = qdf_tracker_track(&tracker, items + i, __func__,
+					   __LINE__);
 		items[i] = QDF_IS_STATUS_SUCCESS(status);
 	}
 

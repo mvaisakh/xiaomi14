@@ -5,21 +5,21 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/debugfs.h>
-#include <linux/errno.h>
-#include <linux/etherdevice.h>
-#include <linux/if_vlan.h>
-#include <linux/fs.h>
-#include <linux/module.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
-#include <linux/sched.h>
-#include <linux/atomic.h>
-#include <linux/version.h>
 #include "ecm_ipa.h"
 #include "../ipa_common_i.h"
 #include "../ipa_pm.h"
 #include "../ipa_v3/ipa_i.h"
+#include <linux/atomic.h>
+#include <linux/debugfs.h>
+#include <linux/errno.h>
+#include <linux/etherdevice.h>
+#include <linux/fs.h>
+#include <linux/if_vlan.h>
+#include <linux/module.h>
+#include <linux/netdevice.h>
+#include <linux/sched.h>
+#include <linux/skbuff.h>
+#include <linux/version.h>
 
 #define DRIVER_NAME "ecm_ipa"
 #define ECM_IPA_IPV4_HDR_NAME "ecm_eth_ipv4"
@@ -34,56 +34,58 @@
 
 #define IPA_ECM_IPC_LOG_PAGES 50
 
-#define IPA_ECM_IPC_LOGGING(buf, fmt, args...) \
-	do { \
-		if (buf) \
+#define IPA_ECM_IPC_LOGGING(buf, fmt, args...)                         \
+	do {                                                           \
+		if (buf)                                               \
 			ipc_log_string((buf), fmt, __func__, __LINE__, \
-				## args); \
+				       ##args);                        \
 	} while (0)
 
 static void *ipa_ecm_logbuf;
 
-#define ECM_IPA_DEBUG(fmt, args...) \
-	do { \
-		pr_debug(DRIVER_NAME " %s:%d "\
-			fmt, __func__, __LINE__, ## args);\
-		if (ipa_ecm_logbuf) { \
-			IPA_ECM_IPC_LOGGING(ipa_ecm_logbuf, \
-				DRIVER_NAME " %s:%d " fmt, ## args); \
-		} \
+#define ECM_IPA_DEBUG(fmt, args...)                                     \
+	do {                                                            \
+		pr_debug(DRIVER_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                       \
+		if (ipa_ecm_logbuf) {                                   \
+			IPA_ECM_IPC_LOGGING(ipa_ecm_logbuf,             \
+					    DRIVER_NAME " %s:%d " fmt,  \
+					    ##args);                    \
+		}                                                       \
 	} while (0)
 
 #define ECM_IPA_DEBUG_XMIT(fmt, args...) \
-	pr_debug(DRIVER_NAME " %s:%d " fmt, __func__, __LINE__, ## args)
+	pr_debug(DRIVER_NAME " %s:%d " fmt, __func__, __LINE__, ##args)
 
-#define ECM_IPA_INFO(fmt, args...) \
-	do { \
-		pr_info(DRIVER_NAME "@%s@%d@ctx:%s: "\
-			fmt, __func__, __LINE__, current->comm, ## args);\
-		if (ipa_ecm_logbuf) { \
-			IPA_ECM_IPC_LOGGING(ipa_ecm_logbuf, \
-				DRIVER_NAME " %s:%d " fmt, ## args); \
-		} \
+#define ECM_IPA_INFO(fmt, args...)                                             \
+	do {                                                                   \
+		pr_info(DRIVER_NAME "@%s@%d@ctx:%s: " fmt, __func__, __LINE__, \
+			current->comm, ##args);                                \
+		if (ipa_ecm_logbuf) {                                          \
+			IPA_ECM_IPC_LOGGING(ipa_ecm_logbuf,                    \
+					    DRIVER_NAME " %s:%d " fmt,         \
+					    ##args);                           \
+		}                                                              \
 	} while (0)
 
-#define ECM_IPA_ERROR(fmt, args...) \
-	do { \
-		pr_err(DRIVER_NAME "@%s@%d@ctx:%s: "\
-			fmt, __func__, __LINE__, current->comm, ## args);\
-		if (ipa_ecm_logbuf) { \
-			IPA_ECM_IPC_LOGGING(ipa_ecm_logbuf, \
-				DRIVER_NAME " %s:%d " fmt, ## args); \
-		} \
+#define ECM_IPA_ERROR(fmt, args...)                                           \
+	do {                                                                  \
+		pr_err(DRIVER_NAME "@%s@%d@ctx:%s: " fmt, __func__, __LINE__, \
+		       current->comm, ##args);                                \
+		if (ipa_ecm_logbuf) {                                         \
+			IPA_ECM_IPC_LOGGING(ipa_ecm_logbuf,                   \
+					    DRIVER_NAME " %s:%d " fmt,        \
+					    ##args);                          \
+		}                                                             \
 	} while (0)
 
-#define NULL_CHECK(ptr) \
-	do { \
-		if (!(ptr)) { \
+#define NULL_CHECK(ptr)                                       \
+	do {                                                  \
+		if (!(ptr)) {                                 \
 			ECM_IPA_ERROR("null pointer #ptr\n"); \
-			ret = -EINVAL; \
-		} \
-	} \
-	while (0)
+			ret = -EINVAL;                        \
+		}                                             \
+	} while (0)
 
 #define ECM_IPA_LOG_ENTRY() ECM_IPA_DEBUG("begin\n")
 #define ECM_IPA_LOG_EXIT() ECM_IPA_DEBUG("end\n")
@@ -97,17 +99,17 @@ static void *ipa_ecm_logbuf;
 
 static struct qmap_hdr qmap_template_hdr = {
 	.pad = 0,
-	.next_hdr = 1,/* Followed by a qmap header extension */
-	.cd = 0,/* data */
+	.next_hdr = 1, /* Followed by a qmap header extension */
+	.cd = 0, /* data */
 	.mux_id = 0,
 	.packet_len_with_pad = 0,
 	.ext_next_hdr = 0,
-	.hdr_type = 0x3,/* ulso header type */
-	.additional_hdr_size = 0,/* added to hdr_len ep cfg */
+	.hdr_type = 0x3, /* ulso header type */
+	.additional_hdr_size = 0, /* added to hdr_len ep cfg */
 	.reserved = 0,
-	.zero_checksum = 0,/* calculate checksum */
-	.ip_id_cfg = 0,/* increment ip id for segments */
-	.segment_size = 0,/* max segment size for segmentation */
+	.zero_checksum = 0, /* calculate checksum */
+	.ip_id_cfg = 0, /* increment ip id for segments */
+	.segment_size = 0, /* max segment size for segmentation */
 };
 
 /**
@@ -153,9 +155,9 @@ enum ecm_ipa_operation {
 	ECM_IPA_CLEANUP,
 };
 
-#define ECM_IPA_STATE_DEBUG(ecm_ipa_ctx) \
-	ECM_IPA_DEBUG("Driver state - %s\n",\
-	ecm_ipa_state_string((ecm_ipa_ctx)->state))
+#define ECM_IPA_STATE_DEBUG(ecm_ipa_ctx)     \
+	ECM_IPA_DEBUG("Driver state - %s\n", \
+		      ecm_ipa_state_string((ecm_ipa_ctx)->state))
 
 /**
  * struct ecm_ipa_dev - main driver context parameters
@@ -203,50 +205,49 @@ struct ecm_ipa_dev {
 };
 
 static int ecm_ipa_open(struct net_device *net);
-static void ecm_ipa_packet_receive_notify
-	(void *priv, enum ipa_dp_evt_type evt, unsigned long data);
-static void ecm_ipa_tx_complete_notify
-	(void *priv, enum ipa_dp_evt_type evt, unsigned long data);
+static void ecm_ipa_packet_receive_notify(void *priv, enum ipa_dp_evt_type evt,
+					  unsigned long data);
+static void ecm_ipa_tx_complete_notify(void *priv, enum ipa_dp_evt_type evt,
+				       unsigned long data);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
-static void ecm_ipa_tx_timeout(struct net_device *net,
-	unsigned int txqueue);
+static void ecm_ipa_tx_timeout(struct net_device *net, unsigned int txqueue);
 #else /* Legacy API. */
 static void ecm_ipa_tx_timeout(struct net_device *net);
 #endif
 
 static int ecm_ipa_stop(struct net_device *net);
 static void ecm_ipa_enable_data_path(struct ecm_ipa_dev *ecm_ipa_ctx);
-static int ecm_ipa_rules_cfg
-	(struct ecm_ipa_dev *ecm_ipa_ctx, const void *dst_mac,
-		const void *src_mac);
+static int ecm_ipa_rules_cfg(struct ecm_ipa_dev *ecm_ipa_ctx,
+			     const void *dst_mac, const void *src_mac);
 static void ecm_ipa_rules_destroy(struct ecm_ipa_dev *ecm_ipa_ctx);
 static int ecm_ipa_register_properties(struct ecm_ipa_dev *ecm_ipa_ctx);
-static int ecm_ipa_hdrs_hpc_cfg(struct ecm_ipa_dev *ecm_ipa_ctx);;
+static int ecm_ipa_hdrs_hpc_cfg(struct ecm_ipa_dev *ecm_ipa_ctx);
+;
 static void ecm_ipa_deregister_properties(void);
 static struct net_device_stats *ecm_ipa_get_stats(struct net_device *net);
 static int ecm_ipa_register_pm_client(struct ecm_ipa_dev *ecm_ipa_ctx);
 static void ecm_ipa_deregister_pm_client(struct ecm_ipa_dev *ecm_ipa_ctx);
-static netdev_tx_t ecm_ipa_start_xmit
-	(struct sk_buff *skb, struct net_device *net);
+static netdev_tx_t ecm_ipa_start_xmit(struct sk_buff *skb,
+				      struct net_device *net);
 static int ecm_ipa_debugfs_atomic_open(struct inode *inode, struct file *file);
-static ssize_t ecm_ipa_debugfs_atomic_read
-	(struct file *file, char __user *ubuf, size_t count, loff_t *ppos);
+static ssize_t ecm_ipa_debugfs_atomic_read(struct file *file, char __user *ubuf,
+					   size_t count, loff_t *ppos);
 static void ecm_ipa_debugfs_init(struct ecm_ipa_dev *ecm_ipa_ctx);
 static void ecm_ipa_debugfs_destroy(struct ecm_ipa_dev *ecm_ipa_ctx);
 static int ecm_ipa_ep_registers_cfg(u32 usb_to_ipa_hdl, u32 ipa_to_usb_hdl,
-	bool is_vlan_mode);
-static int ecm_ipa_set_device_ethernet_addr
-	(struct net_device *net, u8 device_ethaddr[]);
-static enum ecm_ipa_state ecm_ipa_next_state
-	(enum ecm_ipa_state current_state, enum ecm_ipa_operation operation);
+				    bool is_vlan_mode);
+static int ecm_ipa_set_device_ethernet_addr(struct net_device *net,
+					    u8 device_ethaddr[]);
+static enum ecm_ipa_state ecm_ipa_next_state(enum ecm_ipa_state current_state,
+					     enum ecm_ipa_operation operation);
 static const char *ecm_ipa_state_string(enum ecm_ipa_state state);
 static int ecm_ipa_init_module(void);
 static void ecm_ipa_cleanup_module(void);
 
 static const struct net_device_ops ecm_ipa_netdev_ops = {
-	.ndo_open		= ecm_ipa_open,
-	.ndo_stop		= ecm_ipa_stop,
+	.ndo_open = ecm_ipa_open,
+	.ndo_stop = ecm_ipa_stop,
 	.ndo_start_xmit = ecm_ipa_start_xmit,
 	.ndo_set_mac_address = eth_mac_addr,
 	.ndo_tx_timeout = ecm_ipa_tx_timeout,
@@ -299,10 +300,8 @@ int ecm_ipa_init(struct ecm_ipa_params *params)
 	if (ret)
 		return ret;
 
-	ECM_IPA_DEBUG
-		("host_ethaddr=%pM, device_ethaddr=%pM\n",
-		params->host_ethaddr,
-		params->device_ethaddr);
+	ECM_IPA_DEBUG("host_ethaddr=%pM, device_ethaddr=%pM\n",
+		      params->host_ethaddr, params->device_ethaddr);
 
 	net = alloc_etherdev(sizeof(struct ecm_ipa_dev));
 	if (!net) {
@@ -335,7 +334,7 @@ int ecm_ipa_init(struct ecm_ipa_params *params)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0))
 		ecm_ipa_ctx->netif_rx_function = netif_rx_ni;
 #else
-                ecm_ipa_ctx->netif_rx_function = netif_rx;
+		ecm_ipa_ctx->netif_rx_function = netif_rx;
 #endif
 		ECM_IPA_DEBUG("LAN RX NAPI enabled = False");
 	}
@@ -347,8 +346,7 @@ int ecm_ipa_init(struct ecm_ipa_params *params)
 
 	ecm_ipa_debugfs_init(ecm_ipa_ctx);
 
-	result = ecm_ipa_set_device_ethernet_addr
-		(net, params->device_ethaddr);
+	result = ecm_ipa_set_device_ethernet_addr(net, params->device_ethaddr);
 	if (result) {
 		ECM_IPA_ERROR("set device MAC failed\n");
 		goto fail_set_device_ethernet;
@@ -364,15 +362,15 @@ int ecm_ipa_init(struct ecm_ipa_params *params)
 	ecm_ipa_ctx->is_ulso_mode = ipa3_is_ulso_supported();
 	ECM_IPA_DEBUG("is_ulso_mode=%d\n", ecm_ipa_ctx->is_ulso_mode);
 
-	result = ecm_ipa_rules_cfg
-		(ecm_ipa_ctx, params->host_ethaddr, params->device_ethaddr);
+	result = ecm_ipa_rules_cfg(ecm_ipa_ctx, params->host_ethaddr,
+				   params->device_ethaddr);
 	if (result) {
 		ECM_IPA_ERROR("fail on ipa rules set\n");
 		goto fail_rules_cfg;
 	}
 	ECM_IPA_DEBUG("Ethernet header insertion set\n");
 
-	if (ecm_ipa_ctx->is_ulso_mode){
+	if (ecm_ipa_ctx->is_ulso_mode) {
 		result = ecm_ipa_hdrs_hpc_cfg(ecm_ipa_ctx);
 		if (result) {
 			ECM_IPA_ERROR("fail on ipa hdrs hpc set\n");
@@ -381,7 +379,8 @@ int ecm_ipa_init(struct ecm_ipa_params *params)
 		ECM_IPA_DEBUG("IPA header-insertion configured for ECM\n");
 
 		ecm_ipa_ctx->net->hw_features = NETIF_F_RXCSUM;
-		ecm_ipa_ctx->net->hw_features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
+		ecm_ipa_ctx->net->hw_features |= NETIF_F_IP_CSUM |
+						 NETIF_F_IPV6_CSUM;
 		ecm_ipa_ctx->net->hw_features |= NETIF_F_SG;
 		ecm_ipa_ctx->net->hw_features |= NETIF_F_GRO_HW;
 		ecm_ipa_ctx->net->hw_features |= NETIF_F_GSO_UDP_L4;
@@ -420,8 +419,8 @@ int ecm_ipa_init(struct ecm_ipa_params *params)
 	return 0;
 
 fail_register_netdev:
-if (ecm_ipa_ctx->is_ulso_mode)
-    ipa_hdrs_hpc_destroy(ecm_ipa_ctx->empty_hdr_hdl);
+	if (ecm_ipa_ctx->is_ulso_mode)
+		ipa_hdrs_hpc_destroy(ecm_ipa_ctx->empty_hdr_hdl);
 fail_hdrs_hpc_add:
 	ecm_ipa_rules_destroy(ecm_ipa_ctx);
 fail_rules_cfg:
@@ -480,36 +479,34 @@ int ecm_ipa_connect(u32 usb_to_ipa_hdl, u32 ipa_to_usb_hdl, void *priv)
 	ECM_IPA_STATE_DEBUG(ecm_ipa_ctx);
 
 	if (!ipa3_is_client_handle_valid(usb_to_ipa_hdl)) {
-		ECM_IPA_ERROR
-			("usb_to_ipa_hdl(%d) is not a valid ipa handle\n",
-			usb_to_ipa_hdl);
+		ECM_IPA_ERROR("usb_to_ipa_hdl(%d) is not a valid ipa handle\n",
+			      usb_to_ipa_hdl);
 		return -EINVAL;
 	}
 	if (!ipa3_is_client_handle_valid(ipa_to_usb_hdl)) {
-		ECM_IPA_ERROR
-			("ipa_to_usb_hdl(%d) is not a valid ipa handle\n",
-			ipa_to_usb_hdl);
+		ECM_IPA_ERROR("ipa_to_usb_hdl(%d) is not a valid ipa handle\n",
+			      ipa_to_usb_hdl);
 		return -EINVAL;
 	}
 
 	ecm_ipa_ctx->ipa_to_usb_hdl = ipa_to_usb_hdl;
 	ecm_ipa_ctx->usb_to_ipa_hdl = usb_to_ipa_hdl;
 
-	ecm_ipa_ctx->ipa_to_usb_client = ipa3_get_client_mapping(ipa_to_usb_hdl);
+	ecm_ipa_ctx->ipa_to_usb_client =
+		ipa3_get_client_mapping(ipa_to_usb_hdl);
 	if (ecm_ipa_ctx->ipa_to_usb_client < 0) {
-		ECM_IPA_ERROR(
-			"Error getting IPA->USB client from handle %d\n",
-			ecm_ipa_ctx->ipa_to_usb_client);
+		ECM_IPA_ERROR("Error getting IPA->USB client from handle %d\n",
+			      ecm_ipa_ctx->ipa_to_usb_client);
 		return -EINVAL;
 	}
 	ECM_IPA_DEBUG("ipa_to_usb_client = %d\n",
 		      ecm_ipa_ctx->ipa_to_usb_client);
 
-	ecm_ipa_ctx->usb_to_ipa_client = ipa3_get_client_mapping(usb_to_ipa_hdl);
+	ecm_ipa_ctx->usb_to_ipa_client =
+		ipa3_get_client_mapping(usb_to_ipa_hdl);
 	if (ecm_ipa_ctx->usb_to_ipa_client < 0) {
-		ECM_IPA_ERROR(
-			"Error getting USB->IPA client from handle %d\n",
-			ecm_ipa_ctx->usb_to_ipa_client);
+		ECM_IPA_ERROR("Error getting USB->IPA client from handle %d\n",
+			      ecm_ipa_ctx->usb_to_ipa_client);
 		return -EINVAL;
 	}
 	ECM_IPA_DEBUG("usb_to_ipa_client = %d\n",
@@ -531,7 +528,7 @@ int ecm_ipa_connect(u32 usb_to_ipa_hdl, u32 ipa_to_usb_hdl, void *priv)
 	ECM_IPA_DEBUG("ecm_ipa 2 Tx and 2 Rx properties were registered\n");
 
 	retval = ecm_ipa_ep_registers_cfg(usb_to_ipa_hdl, ipa_to_usb_hdl,
-		ecm_ipa_ctx->is_vlan_mode);
+					  ecm_ipa_ctx->is_vlan_mode);
 	if (retval) {
 		ECM_IPA_ERROR("fail on ep cfg\n");
 		goto fail;
@@ -549,8 +546,7 @@ int ecm_ipa_connect(u32 usb_to_ipa_hdl, u32 ipa_to_usb_hdl, void *priv)
 	memset(&msg_meta, 0, sizeof(struct ipa_msg_meta));
 	msg_meta.msg_type = ECM_CONNECT;
 	msg_meta.msg_len = sizeof(struct ipa_ecm_msg);
-	strlcpy(ecm_msg->name, ecm_ipa_ctx->net->name,
-		IPA_RESOURCE_NAME_MAX);
+	strlcpy(ecm_msg->name, ecm_ipa_ctx->net->name, IPA_RESOURCE_NAME_MAX);
 	ecm_msg->ifindex = ecm_ipa_ctx->net->ifindex;
 
 	retval = ipa_send_msg(&msg_meta, ecm_msg, ecm_ipa_msg_free_cb);
@@ -639,8 +635,8 @@ static int ecm_ipa_open(struct net_device *net)
  * In case the outstanding packet high boundary is reached, the driver will
  * stop the send queue until enough packet were proceeded by the IPA core.
  */
-static netdev_tx_t ecm_ipa_start_xmit
-	(struct sk_buff *skb, struct net_device *net)
+static netdev_tx_t ecm_ipa_start_xmit(struct sk_buff *skb,
+				      struct net_device *net)
 {
 	int ret;
 	netdev_tx_t status = NETDEV_TX_BUSY;
@@ -648,10 +644,9 @@ static netdev_tx_t ecm_ipa_start_xmit
 
 	netif_trans_update(net);
 
-	ECM_IPA_DEBUG_XMIT
-		("Tx, len=%d, skb->protocol=%d, outstanding=%d\n",
-		skb->len, skb->protocol,
-		atomic_read(&ecm_ipa_ctx->outstanding_pkts));
+	ECM_IPA_DEBUG_XMIT("Tx, len=%d, skb->protocol=%d, outstanding=%d\n",
+			   skb->len, skb->protocol,
+			   atomic_read(&ecm_ipa_ctx->outstanding_pkts));
 
 	if (unlikely(netif_queue_stopped(net))) {
 		ECM_IPA_ERROR("interface queue is stopped\n");
@@ -671,10 +666,9 @@ static netdev_tx_t ecm_ipa_start_xmit
 	}
 
 	if (atomic_read(&ecm_ipa_ctx->outstanding_pkts) >=
-					ecm_ipa_ctx->outstanding_high) {
-		ECM_IPA_DEBUG
-			("outstanding high (%d)- stopping\n",
-			ecm_ipa_ctx->outstanding_high);
+	    ecm_ipa_ctx->outstanding_high) {
+		ECM_IPA_DEBUG("outstanding high (%d)- stopping\n",
+			      ecm_ipa_ctx->outstanding_high);
 		netif_stop_queue(net);
 		status = NETDEV_TX_BUSY;
 		goto out;
@@ -682,24 +676,27 @@ static netdev_tx_t ecm_ipa_start_xmit
 
 	if (ecm_ipa_ctx->is_vlan_mode)
 		if (unlikely(skb->protocol != htons(ETH_P_8021Q)))
-			ECM_IPA_DEBUG("ether_type != ETH_P_8021Q && vlan, prot = 0x%X\n",
+			ECM_IPA_DEBUG(
+				"ether_type != ETH_P_8021Q && vlan, prot = 0x%X\n",
 				skb->protocol);
 
 	if (ecm_ipa_ctx->is_ulso_mode &&
-		(net->features & (NETIF_F_ALL_TSO | NETIF_F_GSO_UDP_L4))){
+	    (net->features & (NETIF_F_ALL_TSO | NETIF_F_GSO_UDP_L4))) {
 		struct iphdr *iph = NULL;
 
 		if (ntohs(skb->protocol) == ETH_P_IP) {
 			iph = ip_hdr(skb);
 			if (IPV4_IS_TCP(iph) || IPV4_IS_UDP(iph)) {
-				skb = qmap_encapsulate_skb(skb, &qmap_template_hdr);
+				skb = qmap_encapsulate_skb(skb,
+							   &qmap_template_hdr);
 				skb_shinfo(skb)->gso_size =
 					net->mtu - IPV4_DELTA;
 			}
 		} else if (ntohs(skb->protocol) == ETH_P_IPV6) {
 			iph = ip_hdr(skb);
 			if (IPV6_IS_TCP(iph) || IPV6_IS_UDP(iph)) {
-				skb = qmap_encapsulate_skb(skb, &qmap_template_hdr);
+				skb = qmap_encapsulate_skb(skb,
+							   &qmap_template_hdr);
 				skb_shinfo(skb)->gso_size =
 					net->mtu - IPV6_DELTA;
 			}
@@ -734,8 +731,8 @@ fail_pm_activate:
  * IPA will pass a packet to the Linux network stack with skb->data pointing
  * to Ethernet packet frame.
  */
-static void ecm_ipa_packet_receive_notify
-	(void *priv, enum ipa_dp_evt_type evt, unsigned long data)
+static void ecm_ipa_packet_receive_notify(void *priv, enum ipa_dp_evt_type evt,
+					  unsigned long data)
 {
 	struct sk_buff *skb = (struct sk_buff *)data;
 	struct ecm_ipa_dev *ecm_ipa_ctx = priv;
@@ -852,8 +849,7 @@ int ecm_ipa_disconnect(void *priv)
 	memset(&msg_meta, 0, sizeof(struct ipa_msg_meta));
 	msg_meta.msg_type = ECM_DISCONNECT;
 	msg_meta.msg_len = sizeof(struct ipa_ecm_msg);
-	strlcpy(ecm_msg->name, ecm_ipa_ctx->net->name,
-		IPA_RESOURCE_NAME_MAX);
+	strlcpy(ecm_msg->name, ecm_ipa_ctx->net->name, IPA_RESOURCE_NAME_MAX);
 	ecm_msg->ifindex = ecm_ipa_ctx->net->ifindex;
 
 	retval = ipa_send_msg(&msg_meta, ecm_msg, ecm_ipa_msg_free_cb);
@@ -868,8 +864,7 @@ int ecm_ipa_disconnect(void *priv)
 
 	ecm_ipa_deregister_pm_client(ecm_ipa_ctx);
 
-	outstanding_dropped_pkts =
-		atomic_read(&ecm_ipa_ctx->outstanding_pkts);
+	outstanding_dropped_pkts = atomic_read(&ecm_ipa_ctx->outstanding_pkts);
 	ecm_ipa_ctx->net->stats.tx_errors += outstanding_dropped_pkts;
 	atomic_set(&ecm_ipa_ctx->outstanding_pkts, 0);
 
@@ -918,7 +913,7 @@ void ecm_ipa_cleanup(void *priv)
 	ECM_IPA_STATE_DEBUG(ecm_ipa_ctx);
 
 	if (ecm_ipa_ctx->is_ulso_mode)
-        ipa_hdrs_hpc_destroy(ecm_ipa_ctx->empty_hdr_hdl);
+		ipa_hdrs_hpc_destroy(ecm_ipa_ctx->empty_hdr_hdl);
 
 	ecm_ipa_rules_destroy(ecm_ipa_ctx);
 	ecm_ipa_debugfs_destroy(ecm_ipa_ctx);
@@ -941,17 +936,18 @@ static void ecm_ipa_enable_data_path(struct ecm_ipa_dev *ecm_ipa_ctx)
 		ECM_IPA_DEBUG("device_ready_notify() not supplied\n");
 	}
 
-	qmap_template_hdr.segment_size = htons(ecm_ipa_ctx->net->mtu -
-		sizeof(qmap_template_hdr));
+	qmap_template_hdr.segment_size =
+		htons(ecm_ipa_ctx->net->mtu - sizeof(qmap_template_hdr));
 
 	netif_start_queue(ecm_ipa_ctx->net);
 	ECM_IPA_DEBUG("queue started\n");
 }
 
-static void ecm_ipa_prepare_header_insertion(
-	int eth_type,
-	const char *hdr_name, struct ipa_hdr_add *add_hdr,
-	const void *dst_mac, const void *src_mac, bool is_vlan_mode)
+static void ecm_ipa_prepare_header_insertion(int eth_type, const char *hdr_name,
+					     struct ipa_hdr_add *add_hdr,
+					     const void *dst_mac,
+					     const void *src_mac,
+					     bool is_vlan_mode)
 {
 	struct ethhdr *eth_hdr;
 	struct vlan_ethhdr *eth_vlan_hdr;
@@ -967,8 +963,7 @@ static void ecm_ipa_prepare_header_insertion(
 		eth_vlan_hdr = (struct vlan_ethhdr *)add_hdr->hdr;
 		memcpy(eth_vlan_hdr->h_dest, dst_mac, ETH_ALEN);
 		memcpy(eth_vlan_hdr->h_source, src_mac, ETH_ALEN);
-		eth_vlan_hdr->h_vlan_encapsulated_proto =
-			htons(eth_type);
+		eth_vlan_hdr->h_vlan_encapsulated_proto = htons(eth_type);
 		eth_vlan_hdr->h_vlan_proto = htons(ETH_P_8021Q);
 		add_hdr->hdr_len = VLAN_ETH_HLEN;
 		add_hdr->type = IPA_HDR_L2_802_1Q;
@@ -1013,7 +1008,7 @@ static int ecm_ipa_hdrs_hpc_cfg(struct ecm_ipa_dev *ecm_ipa_ctx)
 	}
 	if (empty_hdr->status) {
 		ECM_IPA_ERROR("Fail on Header-Insertion ecm(%d)\n",
-			empty_hdr->status);
+			      empty_hdr->status);
 		result = empty_hdr->status;
 		goto fail_add_hdr;
 	}
@@ -1042,7 +1037,7 @@ fail_mem:
  * Returns negative errno, or zero on success
  */
 static int ecm_ipa_rules_cfg(struct ecm_ipa_dev *ecm_ipa_ctx,
-	const void *dst_mac, const void *src_mac)
+			     const void *dst_mac, const void *src_mac)
 {
 	struct ipa_ioc_add_hdr *hdrs;
 	struct ipa_hdr_add *ipv4_hdr;
@@ -1051,7 +1046,7 @@ static int ecm_ipa_rules_cfg(struct ecm_ipa_dev *ecm_ipa_ctx,
 
 	ECM_IPA_LOG_ENTRY();
 	hdrs = kzalloc(sizeof(*hdrs) + sizeof(*ipv4_hdr) + sizeof(*ipv6_hdr),
-		GFP_KERNEL);
+		       GFP_KERNEL);
 	if (!hdrs) {
 		result = -ENOMEM;
 		goto out;
@@ -1059,11 +1054,13 @@ static int ecm_ipa_rules_cfg(struct ecm_ipa_dev *ecm_ipa_ctx,
 
 	ipv4_hdr = &hdrs->hdr[0];
 	ecm_ipa_prepare_header_insertion(ETH_P_IP, ECM_IPA_IPV4_HDR_NAME,
-		ipv4_hdr, dst_mac, src_mac, ecm_ipa_ctx->is_vlan_mode);
+					 ipv4_hdr, dst_mac, src_mac,
+					 ecm_ipa_ctx->is_vlan_mode);
 
 	ipv6_hdr = &hdrs->hdr[1];
 	ecm_ipa_prepare_header_insertion(ETH_P_IPV6, ECM_IPA_IPV6_HDR_NAME,
-		ipv6_hdr, dst_mac, src_mac, ecm_ipa_ctx->is_vlan_mode);
+					 ipv6_hdr, dst_mac, src_mac,
+					 ecm_ipa_ctx->is_vlan_mode);
 
 	hdrs->commit = 1;
 	hdrs->num_hdrs = 2;
@@ -1074,13 +1071,13 @@ static int ecm_ipa_rules_cfg(struct ecm_ipa_dev *ecm_ipa_ctx,
 	}
 	if (ipv4_hdr->status) {
 		ECM_IPA_ERROR("Fail on Header-Insertion ipv4(%d)\n",
-			ipv4_hdr->status);
+			      ipv4_hdr->status);
 		result = ipv4_hdr->status;
 		goto out_free_mem;
 	}
 	if (ipv6_hdr->status) {
 		ECM_IPA_ERROR("Fail on Header-Insertion ipv6(%d)\n",
-			ipv6_hdr->status);
+			      ipv6_hdr->status);
 		result = ipv6_hdr->status;
 		goto out_free_mem;
 	}
@@ -1109,7 +1106,7 @@ static void ecm_ipa_rules_destroy(struct ecm_ipa_dev *ecm_ipa_ctx)
 	int result;
 
 	del_hdr = kzalloc(sizeof(*del_hdr) + sizeof(*ipv4) + sizeof(*ipv6),
-			GFP_KERNEL);
+			  GFP_KERNEL);
 	if (!del_hdr)
 		return;
 
@@ -1137,12 +1134,12 @@ static void ecm_ipa_rules_destroy(struct ecm_ipa_dev *ecm_ipa_ctx)
  */
 static int ecm_ipa_register_properties(struct ecm_ipa_dev *ecm_ipa_ctx)
 {
-	struct ipa_tx_intf tx_properties = {0};
-	struct ipa_ioc_tx_intf_prop properties[2] = { {0}, {0} };
+	struct ipa_tx_intf tx_properties = { 0 };
+	struct ipa_ioc_tx_intf_prop properties[2] = { { 0 }, { 0 } };
 	struct ipa_ioc_tx_intf_prop *ipv4_property;
 	struct ipa_ioc_tx_intf_prop *ipv6_property;
-	struct ipa_ioc_rx_intf_prop rx_ioc_properties[2] = { {0}, {0} };
-	struct ipa_rx_intf rx_properties = {0};
+	struct ipa_ioc_rx_intf_prop rx_ioc_properties[2] = { { 0 }, { 0 } };
+	struct ipa_rx_intf rx_properties = { 0 };
 	struct ipa_ioc_rx_intf_prop *rx_ipv4_property;
 	struct ipa_ioc_rx_intf_prop *rx_ipv6_property;
 	enum ipa_hdr_l2_type hdr_l2_type = IPA_HDR_L2_ETHERNET_II;
@@ -1157,16 +1154,14 @@ static int ecm_ipa_register_properties(struct ecm_ipa_dev *ecm_ipa_ctx)
 	ipv4_property = &tx_properties.prop[0];
 	ipv4_property->ip = IPA_IP_v4;
 	ipv4_property->dst_pipe = ecm_ipa_ctx->ipa_to_usb_client;
-	strlcpy
-		(ipv4_property->hdr_name, ECM_IPA_IPV4_HDR_NAME,
+	strlcpy(ipv4_property->hdr_name, ECM_IPA_IPV4_HDR_NAME,
 		IPA_RESOURCE_NAME_MAX);
 	ipv4_property->hdr_l2_type = hdr_l2_type;
 	ipv6_property = &tx_properties.prop[1];
 	ipv6_property->ip = IPA_IP_v6;
 	ipv6_property->dst_pipe = ecm_ipa_ctx->ipa_to_usb_client;
 	ipv6_property->hdr_l2_type = hdr_l2_type;
-	strlcpy
-		(ipv6_property->hdr_name, ECM_IPA_IPV6_HDR_NAME,
+	strlcpy(ipv6_property->hdr_name, ECM_IPA_IPV6_HDR_NAME,
 		IPA_RESOURCE_NAME_MAX);
 	tx_properties.num_props = 2;
 
@@ -1278,10 +1273,8 @@ static void ecm_ipa_deregister_pm_client(struct ecm_ipa_dev *ecm_ipa_ctx)
  * Check that the packet is the one we sent and release it
  * This function will be called in defered context in IPA wq.
  */
-static void ecm_ipa_tx_complete_notify
-		(void *priv,
-		enum ipa_dp_evt_type evt,
-		unsigned long data)
+static void ecm_ipa_tx_complete_notify(void *priv, enum ipa_dp_evt_type evt,
+				       unsigned long data)
 {
 	struct sk_buff *skb = (struct sk_buff *)data;
 	struct ecm_ipa_dev *ecm_ipa_ctx = priv;
@@ -1296,10 +1289,9 @@ static void ecm_ipa_tx_complete_notify
 		return;
 	}
 
-	ECM_IPA_DEBUG
-		("Tx-complete, len=%d, skb->prot=%d, outstanding=%d\n",
-		skb->len, skb->protocol,
-		atomic_read(&ecm_ipa_ctx->outstanding_pkts));
+	ECM_IPA_DEBUG("Tx-complete, len=%d, skb->prot=%d, outstanding=%d\n",
+		      skb->len, skb->protocol,
+		      atomic_read(&ecm_ipa_ctx->outstanding_pkts));
 
 	if (evt != IPA_WRITE_DONE) {
 		ECM_IPA_ERROR("unsupported event on Tx callback\n");
@@ -1307,9 +1299,8 @@ static void ecm_ipa_tx_complete_notify
 	}
 
 	if (unlikely(ecm_ipa_ctx->state != ECM_IPA_CONNECTED_AND_UP)) {
-		ECM_IPA_DEBUG
-			("dropping Tx-complete pkt, state=%s",
-			ecm_ipa_state_string(ecm_ipa_ctx->state));
+		ECM_IPA_DEBUG("dropping Tx-complete pkt, state=%s",
+			      ecm_ipa_state_string(ecm_ipa_ctx->state));
 		goto out;
 	}
 
@@ -1319,14 +1310,12 @@ static void ecm_ipa_tx_complete_notify
 	if (atomic_read(&ecm_ipa_ctx->outstanding_pkts) > 0)
 		atomic_dec(&ecm_ipa_ctx->outstanding_pkts);
 
-	if
-		(netif_queue_stopped(ecm_ipa_ctx->net) &&
-		netif_carrier_ok(ecm_ipa_ctx->net) &&
-		atomic_read(&ecm_ipa_ctx->outstanding_pkts)
-		< (ecm_ipa_ctx->outstanding_low)) {
-		ECM_IPA_DEBUG
-			("outstanding low (%d) - waking up queue\n",
-			ecm_ipa_ctx->outstanding_low);
+	if (netif_queue_stopped(ecm_ipa_ctx->net) &&
+	    netif_carrier_ok(ecm_ipa_ctx->net) &&
+	    atomic_read(&ecm_ipa_ctx->outstanding_pkts) <
+		    (ecm_ipa_ctx->outstanding_low)) {
+		ECM_IPA_DEBUG("outstanding low (%d) - waking up queue\n",
+			      ecm_ipa_ctx->outstanding_low);
 		netif_wake_queue(ecm_ipa_ctx->net);
 	}
 
@@ -1337,17 +1326,15 @@ out:
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
-static void ecm_ipa_tx_timeout(struct net_device *net,
-	unsigned int txqueue)
+static void ecm_ipa_tx_timeout(struct net_device *net, unsigned int txqueue)
 #else /* Legacy API */
 static void ecm_ipa_tx_timeout(struct net_device *net)
 #endif
 {
 	struct ecm_ipa_dev *ecm_ipa_ctx = netdev_priv(net);
 
-	ECM_IPA_ERROR
-		("possible IPA stall was detected, %d outstanding",
-		atomic_read(&ecm_ipa_ctx->outstanding_pkts));
+	ECM_IPA_ERROR("possible IPA stall was detected, %d outstanding",
+		      atomic_read(&ecm_ipa_ctx->outstanding_pkts));
 
 	net->stats.tx_errors++;
 }
@@ -1362,16 +1349,15 @@ static int ecm_ipa_debugfs_atomic_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t ecm_ipa_debugfs_atomic_read
-	(struct file *file, char __user *ubuf, size_t count, loff_t *ppos)
+static ssize_t ecm_ipa_debugfs_atomic_read(struct file *file, char __user *ubuf,
+					   size_t count, loff_t *ppos)
 {
 	int nbytes;
-	u8 atomic_str[DEBUGFS_TEMP_BUF_SIZE] = {0};
+	u8 atomic_str[DEBUGFS_TEMP_BUF_SIZE] = { 0 };
 	atomic_t *atomic_var = file->private_data;
 
-	nbytes = scnprintf
-		(atomic_str, sizeof(atomic_str), "%d\n",
-			atomic_read(atomic_var));
+	nbytes = scnprintf(atomic_str, sizeof(atomic_str), "%d\n",
+			   atomic_read(atomic_var));
 	return simple_read_from_buffer(ubuf, count, ppos, atomic_str, nbytes);
 }
 
@@ -1393,23 +1379,23 @@ static void ecm_ipa_debugfs_init(struct ecm_ipa_dev *ecm_ipa_ctx)
 		ECM_IPA_ERROR("could not create debugfs directory entry\n");
 		goto fail_directory;
 	}
-	debugfs_create_u8
-		("outstanding_high", flags_read_write,
-		ecm_ipa_ctx->directory, &ecm_ipa_ctx->outstanding_high);
-	debugfs_create_u8
-		("outstanding_low", flags_read_write,
-		ecm_ipa_ctx->directory, &ecm_ipa_ctx->outstanding_low);
-	file = debugfs_create_file
-		("outstanding", flags_read_only,
-		ecm_ipa_ctx->directory,
-		ecm_ipa_ctx, &ecm_ipa_debugfs_atomic_ops);
+	debugfs_create_u8("outstanding_high", flags_read_write,
+			  ecm_ipa_ctx->directory,
+			  &ecm_ipa_ctx->outstanding_high);
+	debugfs_create_u8("outstanding_low", flags_read_write,
+			  ecm_ipa_ctx->directory,
+			  &ecm_ipa_ctx->outstanding_low);
+	file = debugfs_create_file("outstanding", flags_read_only,
+				   ecm_ipa_ctx->directory, ecm_ipa_ctx,
+				   &ecm_ipa_debugfs_atomic_ops);
 	if (!file) {
 		ECM_IPA_ERROR("could not create outstanding file\n");
 		goto fail_file;
 	}
 
 	file = debugfs_create_bool("is_vlan_mode", flags_read_only,
-		ecm_ipa_ctx->directory, &ecm_ipa_ctx->is_vlan_mode);
+				   ecm_ipa_ctx->directory,
+				   &ecm_ipa_ctx->is_vlan_mode);
 	if (!file) {
 		ECM_IPA_ERROR("could not create is_vlan_mode file\n");
 		goto fail_file;
@@ -1432,9 +1418,13 @@ static void ecm_ipa_debugfs_destroy(struct ecm_ipa_dev *ecm_ipa_ctx)
 
 #else /* !CONFIG_DEBUG_FS*/
 
-static void ecm_ipa_debugfs_init(struct ecm_ipa_dev *ecm_ipa_ctx) {}
+static void ecm_ipa_debugfs_init(struct ecm_ipa_dev *ecm_ipa_ctx)
+{
+}
 
-static void ecm_ipa_debugfs_destroy(struct ecm_ipa_dev *ecm_ipa_ctx) {}
+static void ecm_ipa_debugfs_destroy(struct ecm_ipa_dev *ecm_ipa_ctx)
+{
+}
 
 #endif /* CONFIG_DEBUG_FS */
 
@@ -1455,13 +1445,12 @@ static void ecm_ipa_debugfs_destroy(struct ecm_ipa_dev *ecm_ipa_ctx) {}
  *  - Add Ethernet header
  */
 static int ecm_ipa_ep_registers_cfg(u32 usb_to_ipa_hdl, u32 ipa_to_usb_hdl,
-	bool is_vlan_mode)
+				    bool is_vlan_mode)
 {
 	int result = 0;
 	struct ipa_ep_cfg usb_to_ipa_ep_cfg;
 	struct ipa_ep_cfg ipa_to_usb_ep_cfg;
 	uint8_t hdr_add = 0;
-
 
 	ECM_IPA_LOG_ENTRY();
 	if (is_vlan_mode)
@@ -1512,8 +1501,8 @@ out:
  *
  * Returns 0 for success, negative otherwise
  */
-static int ecm_ipa_set_device_ethernet_addr
-	(struct net_device *net, u8 device_ethaddr[])
+static int ecm_ipa_set_device_ethernet_addr(struct net_device *net,
+					    u8 device_ethaddr[])
 {
 	if (!is_valid_ether_addr(device_ethaddr))
 		return -EINVAL;
@@ -1539,8 +1528,8 @@ static int ecm_ipa_set_device_ethernet_addr
  * In case the operation is invalid this state machine will return
  * the value ECM_IPA_INVALID to inform the caller for a forbidden sequence.
  */
-static enum ecm_ipa_state ecm_ipa_next_state
-	(enum ecm_ipa_state current_state, enum ecm_ipa_operation operation)
+static enum ecm_ipa_state ecm_ipa_next_state(enum ecm_ipa_state current_state,
+					     enum ecm_ipa_operation operation)
 {
 	int next_state = ECM_IPA_INVALID;
 
@@ -1582,11 +1571,10 @@ static enum ecm_ipa_state ecm_ipa_next_state
 		break;
 	}
 
-	ECM_IPA_DEBUG
-		("state transition ( %s -> %s )- %s\n",
-		ecm_ipa_state_string(current_state),
-		ecm_ipa_state_string(next_state),
-		next_state == ECM_IPA_INVALID ? "Forbidden" : "Allowed");
+	ECM_IPA_DEBUG("state transition ( %s -> %s )- %s\n",
+		      ecm_ipa_state_string(current_state),
+		      ecm_ipa_state_string(next_state),
+		      next_state == ECM_IPA_INVALID ? "Forbidden" : "Allowed");
 
 	return next_state;
 }
@@ -1622,7 +1610,7 @@ static int __init ecm_ipa_init_module(void)
 	ECM_IPA_LOG_ENTRY();
 	pr_info("ecm driver init\n");
 	ipa_ecm_logbuf = ipc_log_context_create(IPA_ECM_IPC_LOG_PAGES,
-			"ipa_ecm", MINIDUMP_MASK);
+						"ipa_ecm", MINIDUMP_MASK);
 	if (ipa_ecm_logbuf == NULL)
 		ECM_IPA_DEBUG("failed to create IPC log, continue...\n");
 	ECM_IPA_LOG_EXIT();

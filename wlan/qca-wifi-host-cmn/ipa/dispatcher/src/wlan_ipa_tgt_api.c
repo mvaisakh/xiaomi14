@@ -23,12 +23,13 @@
 #include "wlan_ipa_tgt_api.h"
 #include "wlan_ipa_main.h"
 #include "wlan_ipa_public_struct.h"
+#include <wlan_lmac_if_def.h>
 #include <wlan_objmgr_global_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include <wlan_lmac_if_def.h>
 
-QDF_STATUS tgt_ipa_uc_offload_enable_disable(struct wlan_objmgr_pdev *pdev,
-				struct ipa_uc_offload_control_params *req)
+QDF_STATUS
+tgt_ipa_uc_offload_enable_disable(struct wlan_objmgr_pdev *pdev,
+				  struct ipa_uc_offload_control_params *req)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_tx_ops *tx_ops;
@@ -79,4 +80,3 @@ tgt_ipa_intrabss_enable_disable(struct wlan_objmgr_pdev *pdev,
 	IPA_EXIT();
 	return status;
 }
-

@@ -24,16 +24,13 @@
 #include "../../core/src/wlan_dcs.h"
 #include "wlan_objmgr_vdev_obj.h"
 
-void ucfg_dcs_register_cb(
-			struct wlan_objmgr_psoc *psoc,
-			dcs_callback cbk,
-			void *arg)
+void ucfg_dcs_register_cb(struct wlan_objmgr_psoc *psoc, dcs_callback cbk,
+			  void *arg)
 {
 	struct dcs_psoc_priv_obj *dcs_psoc_priv;
 
-	dcs_psoc_priv = wlan_objmgr_psoc_get_comp_private_obj(
-							psoc,
-							WLAN_UMAC_COMP_DCS);
+	dcs_psoc_priv =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_DCS);
 	if (!dcs_psoc_priv) {
 		dcs_err("dcs psoc private object is null");
 		return;
@@ -43,12 +40,10 @@ void ucfg_dcs_register_cb(
 	dcs_psoc_priv->dcs_cbk.arg = arg;
 }
 
-void
-ucfg_dcs_register_user_cb(struct wlan_objmgr_psoc *psoc,
-			  uint8_t mac_id, uint8_t vdev_id,
-			  void (*cb)(uint8_t vdev_id,
-				     struct wlan_host_dcs_im_user_stats *stats,
-				     int status))
+void ucfg_dcs_register_user_cb(
+	struct wlan_objmgr_psoc *psoc, uint8_t mac_id, uint8_t vdev_id,
+	void (*cb)(uint8_t vdev_id, struct wlan_host_dcs_im_user_stats *stats,
+		   int status))
 {
 	struct dcs_pdev_priv_obj *dcs_pdev_priv;
 
@@ -97,15 +92,13 @@ QDF_STATUS ucfg_dcs_register_afc_sel_chan_cb(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_wlan_dcs_cmd(struct wlan_objmgr_psoc *psoc,
-		  uint32_t mac_id,
+ucfg_wlan_dcs_cmd(struct wlan_objmgr_psoc *psoc, uint32_t mac_id,
 		  bool is_host_pdev_id)
 {
 	return wlan_dcs_cmd_send(psoc, mac_id, is_host_pdev_id);
 }
 
-void ucfg_config_dcs_enable(struct wlan_objmgr_psoc *psoc,
-			    uint32_t mac_id,
+void ucfg_config_dcs_enable(struct wlan_objmgr_psoc *psoc, uint32_t mac_id,
 			    uint8_t interference_type)
 {
 	struct dcs_pdev_priv_obj *dcs_pdev_priv;
@@ -119,8 +112,7 @@ void ucfg_config_dcs_enable(struct wlan_objmgr_psoc *psoc,
 	dcs_pdev_priv->dcs_host_params.dcs_enable |= interference_type;
 }
 
-void ucfg_config_dcs_disable(struct wlan_objmgr_psoc *psoc,
-			     uint32_t mac_id,
+void ucfg_config_dcs_disable(struct wlan_objmgr_psoc *psoc, uint32_t mac_id,
 			     uint8_t interference_type)
 {
 	struct dcs_pdev_priv_obj *dcs_pdev_priv;

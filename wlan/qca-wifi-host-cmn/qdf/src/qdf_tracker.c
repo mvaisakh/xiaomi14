@@ -17,6 +17,7 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "qdf_tracker.h"
 #include "qdf_debug_domain.h"
 #include "qdf_lock.h"
 #include "qdf_mem.h"
@@ -24,7 +25,6 @@
 #include "qdf_ptr_hash.h"
 #include "qdf_status.h"
 #include "qdf_str.h"
-#include "qdf_tracker.h"
 #include "qdf_types.h"
 
 #ifdef CONFIG_LEAK_DETECTION
@@ -68,7 +68,8 @@ static uint32_t qdf_tracker_leaks_print(struct qdf_tracker *tracker,
 	bool print_header = true;
 	uint32_t count = 0;
 
-	qdf_ptr_hash_for_each(tracker->ht, bucket, node, entry) {
+	qdf_ptr_hash_for_each(tracker->ht, bucket, node, entry)
+	{
 		if (node->domain != domain)
 			continue;
 
@@ -81,8 +82,8 @@ static uint32_t qdf_tracker_leaks_print(struct qdf_tracker *tracker,
 		}
 
 		count++;
-		qdf_nofl_alert("0x%lx @ %s:%u", node->entry.key,
-			       node->func, node->line);
+		qdf_nofl_alert("0x%lx @ %s:%u", node->entry.key, node->func,
+			       node->line);
 	}
 
 	if (count)
@@ -99,8 +100,8 @@ void qdf_tracker_check_for_leaks(struct qdf_tracker *tracker)
 	qdf_spin_lock_bh(&tracker->lock);
 	leaks = qdf_tracker_leaks_print(tracker, domain);
 	if (leaks)
-		QDF_DEBUG_PANIC("%u fatal %s detected in %s domain!",
-				leaks, tracker->leak_title,
+		QDF_DEBUG_PANIC("%u fatal %s detected in %s domain!", leaks,
+				tracker->leak_title,
 				qdf_debug_domain_name(domain));
 	qdf_spin_unlock_bh(&tracker->lock);
 }
@@ -155,15 +156,14 @@ void qdf_tracker_untrack(struct qdf_tracker *tracker, void *ptr,
 	qdf_spin_lock_bh(&tracker->lock);
 	node = qdf_ptr_hash_remove(tracker->ht, ptr, node, entry);
 	if (!node)
-		QDF_DEBUG_PANIC("Double %s (via %s:%u)",
-				tracker->untrack_title, func, line);
-	else if (node->domain != domain)
-		QDF_DEBUG_PANIC("%s domain mismatch; tracked:%s, %s:%u; untracked:%s , %s:%u",
-				tracker->untrack_title,
-				qdf_debug_domain_name(node->domain),
-				node->func, node->line,
-				qdf_debug_domain_name(domain),
+		QDF_DEBUG_PANIC("Double %s (via %s:%u)", tracker->untrack_title,
 				func, line);
+	else if (node->domain != domain)
+		QDF_DEBUG_PANIC(
+			"%s domain mismatch; tracked:%s, %s:%u; untracked:%s , %s:%u",
+			tracker->untrack_title,
+			qdf_debug_domain_name(node->domain), node->func,
+			node->line, qdf_debug_domain_name(domain), func, line);
 	qdf_spin_unlock_bh(&tracker->lock);
 
 	if (node)

@@ -3,37 +3,37 @@
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/delay.h>
-#include "ipa.h"
-#include "ipa_i.h"
 #include "gsi.h"
 #include "gsihal.h"
+#include "ipa.h"
+#include "ipa_i.h"
 #include "ipa_ut_framework.h"
+#include <linux/delay.h>
 #include <linux/ipa_mhi.h>
 
-#define IPA_MHI_TEST_NUM_CHANNELS		8
-#define IPA_MHI_TEST_NUM_EVENT_RINGS		8
-#define IPA_MHI_TEST_FIRST_CHANNEL_ID		100
-#define IPA_MHI_TEST_FIRST_EVENT_RING_ID	100
+#define IPA_MHI_TEST_NUM_CHANNELS 8
+#define IPA_MHI_TEST_NUM_EVENT_RINGS 8
+#define IPA_MHI_TEST_FIRST_CHANNEL_ID 100
+#define IPA_MHI_TEST_FIRST_EVENT_RING_ID 100
 #define IPA_MHI_TEST_LAST_CHANNEL_ID \
 	(IPA_MHI_TEST_FIRST_CHANNEL_ID + IPA_MHI_TEST_NUM_CHANNELS - 1)
 #define IPA_MHI_TEST_LAST_EVENT_RING_ID \
 	(IPA_MHI_TEST_FIRST_EVENT_RING_ID + IPA_MHI_TEST_NUM_EVENT_RINGS - 1)
-#define IPA_MHI_TEST_MAX_DATA_BUF_SIZE		1500
-#define IPA_MHI_TEST_SEQ_TYPE_DMA		0x00000000
+#define IPA_MHI_TEST_MAX_DATA_BUF_SIZE 1500
+#define IPA_MHI_TEST_SEQ_TYPE_DMA 0x00000000
 
-#define IPA_MHI_TEST_LOOP_NUM			5
-#define IPA_MHI_RUN_TEST_UNIT_IN_LOOP(test_unit, rc, args...)		\
-	do {								\
-		int __i;						\
-		for (__i = 0; __i < IPA_MHI_TEST_LOOP_NUM; __i++) {	\
-			IPA_UT_LOG(#test_unit " START iter %d\n", __i);	\
-			rc = test_unit(args);				\
-			if (!rc)					\
-				continue;				\
-			IPA_UT_LOG(#test_unit " failed %d\n", rc);	\
-			break;						\
-		}							\
+#define IPA_MHI_TEST_LOOP_NUM 5
+#define IPA_MHI_RUN_TEST_UNIT_IN_LOOP(test_unit, rc, args...)           \
+	do {                                                            \
+		int __i;                                                \
+		for (__i = 0; __i < IPA_MHI_TEST_LOOP_NUM; __i++) {     \
+			IPA_UT_LOG(#test_unit " START iter %d\n", __i); \
+			rc = test_unit(args);                           \
+			if (!rc)                                        \
+				continue;                               \
+			IPA_UT_LOG(#test_unit " failed %d\n", rc);      \
+			break;                                          \
+		}                                                       \
 	} while (0)
 
 static char *ipa_mhi_state_str[] = {
@@ -45,36 +45,37 @@ static char *ipa_mhi_state_str[] = {
 	__stringify(IPA_MHI_STATE_RESUME_IN_PROGRESS),
 };
 
-#define MHI_STATE_STR(state) \
+#define MHI_STATE_STR(state)                             \
 	(((state) >= 0 && (state) < IPA_MHI_STATE_MAX) ? \
-		ipa_mhi_state_str[(state)] : \
-		"INVALID")
+		 ipa_mhi_state_str[(state)] :            \
+		 "INVALID")
 
 /**
  * check for MSI interrupt for one or both channels:
  * OUT channel MSI my be missed as it
  * will be overwritten by the IN channel MSI
  */
-#define IPA_MHI_TEST_CHECK_MSI_INTR(__both, __timeout)			\
-	do {								\
-		int i;							\
-		for (i = 0; i < 20; i++) {				\
-			if (*((u32 *)test_mhi_ctx->msi.base) ==		\
-				(0x10000000 |				\
-				(IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1))) { \
-				__timeout = false;			\
-				break;					\
-			}						\
-			if (__both && (*((u32 *)test_mhi_ctx->msi.base) == \
-				(0x10000000 |				\
-				(IPA_MHI_TEST_FIRST_EVENT_RING_ID)))) { \
+#define IPA_MHI_TEST_CHECK_MSI_INTR(__both, __timeout)                     \
+	do {                                                               \
+		int i;                                                     \
+		for (i = 0; i < 20; i++) {                                 \
+			if (*((u32 *)test_mhi_ctx->msi.base) ==            \
+			    (0x10000000 |                                  \
+			     (IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1))) {    \
+				__timeout = false;                         \
+				break;                                     \
+			}                                                  \
+			if (__both &&                                      \
+			    (*((u32 *)test_mhi_ctx->msi.base) ==           \
+			     (0x10000000 |                                 \
+			      (IPA_MHI_TEST_FIRST_EVENT_RING_ID)))) {      \
 				/* sleep to be sure IN MSI is generated */ \
-				msleep(20);				\
-				__timeout = false;			\
-				break;					\
-			}						\
-			msleep(20);					\
-		}							\
+				msleep(20);                                \
+				__timeout = false;                         \
+				break;                                     \
+			}                                                  \
+			msleep(20);                                        \
+		}                                                          \
 	} while (0)
 
 static DECLARE_COMPLETION(mhi_test_ready_comp);
@@ -102,16 +103,16 @@ enum ipa_mhi_channel_direction {
  * mapping is taken from MHI spec
  */
 struct ipa_mhi_channel_context_array {
-	u32	chstate:8;	/*0-7*/
-	u32	brsmode:2;	/*8-9*/
-	u32	pollcfg:6;	/*10-15*/
-	u32	reserved:16;	/*16-31*/
-	u32	chtype;		/*channel type (inbound/outbound)*/
-	u32	erindex;	/*event ring index*/
-	u64	rbase;		/*ring base address in the host addr spc*/
-	u64	rlen;		/*ring length in bytes*/
-	u64	rp;		/*read pointer in the host system addr spc*/
-	u64	wp;		/*write pointer in the host system addr spc*/
+	u32 chstate : 8; /*0-7*/
+	u32 brsmode : 2; /*8-9*/
+	u32 pollcfg : 6; /*10-15*/
+	u32 reserved : 16; /*16-31*/
+	u32 chtype; /*channel type (inbound/outbound)*/
+	u32 erindex; /*event ring index*/
+	u64 rbase; /*ring base address in the host addr spc*/
+	u64 rlen; /*ring length in bytes*/
+	u64 rp; /*read pointer in the host system addr spc*/
+	u64 wp; /*write pointer in the host system addr spc*/
 } __packed;
 
 /**
@@ -120,14 +121,14 @@ struct ipa_mhi_channel_context_array {
  * mapping is taken from MHI spec
  */
 struct ipa_mhi_event_context_array {
-	u16	intmodc;
-	u16	intmodt;/* Interrupt moderation timer (in microseconds) */
-	u32	ertype;
-	u32	msivec;	/* MSI vector for interrupt (MSI data)*/
-	u64	rbase;	/* ring base address in host address space*/
-	u64	rlen;	/* ring length in bytes*/
-	u64	rp;	/* read pointer in the host system address space*/
-	u64	wp;	/* write pointer in the host system address space*/
+	u16 intmodc;
+	u16 intmodt; /* Interrupt moderation timer (in microseconds) */
+	u32 ertype;
+	u32 msivec; /* MSI vector for interrupt (MSI data)*/
+	u64 rbase; /* ring base address in host address space*/
+	u64 rlen; /* ring length in bytes*/
+	u64 rp; /* read pointer in the host system address space*/
+	u64 wp; /* write pointer in the host system address space*/
 } __packed;
 
 /**
@@ -140,26 +141,26 @@ struct ipa_mhi_event_context_array {
  *	Only values accessed by HWP or test are documented
  */
 struct ipa_mhi_mmio_register_set {
-	u32	mhireglen;
-	u32	reserved_08_04;
-	u32	mhiver;
-	u32	reserved_10_0c;
+	u32 mhireglen;
+	u32 reserved_08_04;
+	u32 mhiver;
+	u32 reserved_10_0c;
 	struct mhicfg {
-		u8		nch;
-		u8		reserved_15_8;
-		u8		ner;
-		u8		reserved_31_23;
+		u8 nch;
+		u8 reserved_15_8;
+		u8 ner;
+		u8 reserved_31_23;
 	} __packed mhicfg;
 
-	u32	reserved_18_14;
-	u32	chdboff;
-	u32	reserved_20_1C;
-	u32	erdboff;
-	u32	reserved_28_24;
-	u32	bhioff;
-	u32	reserved_30_2C;
-	u32	debugoff;
-	u32	reserved_38_34;
+	u32 reserved_18_14;
+	u32 chdboff;
+	u32 reserved_20_1C;
+	u32 erdboff;
+	u32 reserved_28_24;
+	u32 bhioff;
+	u32 reserved_30_2C;
+	u32 debugoff;
+	u32 reserved_38_34;
 
 	struct mhictrl {
 		u32 rs : 1;
@@ -169,8 +170,8 @@ struct ipa_mhi_mmio_register_set {
 		u32 reserved_31_16 : 16;
 	} __packed mhictrl;
 
-	u64	reserved_40_3c;
-	u32	reserved_44_40;
+	u64 reserved_40_3c;
+	u32 reserved_44_40;
 
 	struct mhistatus {
 		u32 ready : 1;
@@ -182,89 +183,89 @@ struct ipa_mhi_mmio_register_set {
 	} __packed mhistatus;
 
 	/**
-	 * Register is not accessed by HWP.
-	 * In test register carries the handle for
-	 *  the buffer of channel context array
-	 */
+   * Register is not accessed by HWP.
+   * In test register carries the handle for
+   *  the buffer of channel context array
+   */
 	u32 reserved_50_4c;
 
 	u32 mhierror;
 
 	/**
-	 * Register is not accessed by HWP.
-	 * In test register carries the handle for
-	 * the buffer of event ring context array
-	 */
+   * Register is not accessed by HWP.
+   * In test register carries the handle for
+   * the buffer of event ring context array
+   */
 	u32 reserved_58_54;
 
 	/**
-	 * 64-bit pointer to the channel context array in the host memory space
-	 *  host sets the pointer to the channel context array during
-	 *  initialization.
-	 */
+   * 64-bit pointer to the channel context array in the host memory space
+   *  host sets the pointer to the channel context array during
+   *  initialization.
+   */
 	u64 ccabap;
 	/**
-	 * 64-bit pointer to the event context array in the host memory space
-	 *  host sets the pointer to the event context array during
-	 *  initialization
-	 */
+   * 64-bit pointer to the event context array in the host memory space
+   *  host sets the pointer to the event context array during
+   *  initialization
+   */
 	u64 ecabap;
 	/**
-	 * Register is not accessed by HWP.
-	 * In test register carries the pointer of virtual address
-	 *  for the buffer of channel context array
-	 */
+   * Register is not accessed by HWP.
+   * In test register carries the pointer of virtual address
+   *  for the buffer of channel context array
+   */
 	u64 crcbap;
 	/**
-	 * Register is not accessed by HWP.
-	 * In test register carries the pointer of virtual address
-	 *  for the buffer of event ring context array
-	 */
+   * Register is not accessed by HWP.
+   * In test register carries the pointer of virtual address
+   *  for the buffer of event ring context array
+   */
 	u64 crdb;
 
-	u64	reserved_80_78;
+	u64 reserved_80_78;
 
 	struct mhiaddr {
 		/**
-		 * Base address (64-bit) of the memory region in
-		 *  the host address space where the MHI control
-		 *  data structures are allocated by the host,
-		 *  including channel context array, event context array,
-		 *  and rings.
-		 *  The device uses this information to set up its internal
-		 *   address translation tables.
-		 *  value must be aligned to 4 Kbytes.
-		 */
+     * Base address (64-bit) of the memory region in
+     *  the host address space where the MHI control
+     *  data structures are allocated by the host,
+     *  including channel context array, event context array,
+     *  and rings.
+     *  The device uses this information to set up its internal
+     *   address translation tables.
+     *  value must be aligned to 4 Kbytes.
+     */
 		u64 mhicrtlbase;
 		/**
-		 * Upper limit address (64-bit) of the memory region in
-		 *  the host address space where the MHI control
-		 *  data structures are allocated by the host.
-		 * The device uses this information to setup its internal
-		 *  address translation tables.
-		 * The most significant 32 bits of MHICTRLBASE and
-		 * MHICTRLLIMIT registers must be equal.
-		 */
+     * Upper limit address (64-bit) of the memory region in
+     *  the host address space where the MHI control
+     *  data structures are allocated by the host.
+     * The device uses this information to setup its internal
+     *  address translation tables.
+     * The most significant 32 bits of MHICTRLBASE and
+     * MHICTRLLIMIT registers must be equal.
+     */
 		u64 mhictrllimit;
 		u64 reserved_18_10;
 		/**
-		 * Base address (64-bit) of the memory region in
-		 *  the host address space where the MHI data buffers
-		 *  are allocated by the host.
-		 * The device uses this information to setup its
-		 *  internal address translation tables.
-		 * value must be aligned to 4 Kbytes.
-		 */
+     * Base address (64-bit) of the memory region in
+     *  the host address space where the MHI data buffers
+     *  are allocated by the host.
+     * The device uses this information to setup its
+     *  internal address translation tables.
+     * value must be aligned to 4 Kbytes.
+     */
 		u64 mhidatabase;
 		/**
-		 * Upper limit address (64-bit) of the memory region in
-		 *  the host address space where the MHI data buffers
-		 *  are allocated by the host.
-		 * The device uses this information to setup its
-		 *  internal address translation tables.
-		 * The most significant 32 bits of MHIDATABASE and
-		 *  MHIDATALIMIT registers must be equal.
-		 */
+     * Upper limit address (64-bit) of the memory region in
+     *  the host address space where the MHI data buffers
+     *  are allocated by the host.
+     * The device uses this information to setup its
+     *  internal address translation tables.
+     * The most significant 32 bits of MHIDATABASE and
+     *  MHIDATALIMIT registers must be equal.
+     */
 		u64 mhidatalimit;
 		u64 reserved_30_28;
 	} __packed mhiaddr;
@@ -278,20 +279,20 @@ struct ipa_mhi_mmio_register_set {
  */
 struct ipa_mhi_event_ring_element {
 	/**
-	 * pointer to ring element that generated event in
-	 *  the host system address space
-	 */
-	u64	ptr;
+   * pointer to ring element that generated event in
+   *  the host system address space
+   */
+	u64 ptr;
 	union {
 		struct {
-			u32	len : 24;
-			u32	code : 8;
+			u32 len : 24;
+			u32 code : 8;
 		} __packed bits;
-		u32	dword;
+		u32 dword;
 	} __packed dword_8;
-	u16	reserved;
-	u8		type;
-	u8		chid;
+	u16 reserved;
+	u8 type;
+	u8 chid;
 } __packed;
 
 /**
@@ -300,22 +301,22 @@ struct ipa_mhi_event_ring_element {
  * mapping is taken from MHI spec
  */
 struct ipa_mhi_transfer_ring_element {
-	u64	ptr; /*pointer to buffer in the host system address space*/
-	u16	len; /*transaction length in bytes*/
-	u16	reserved0;
+	u64 ptr; /*pointer to buffer in the host system address space*/
+	u16 len; /*transaction length in bytes*/
+	u16 reserved0;
 	union {
 		struct {
-			u16		chain : 1;
-			u16		reserved_7_1 : 7;
-			u16		ieob : 1;
-			u16		ieot : 1;
-			u16		bei : 1;
-			u16		reserved_15_11 : 5;
+			u16 chain : 1;
+			u16 reserved_7_1 : 7;
+			u16 ieob : 1;
+			u16 ieot : 1;
+			u16 bei : 1;
+			u16 reserved_15_11 : 5;
 		} __packed bits;
-		u16	word;
+		u16 word;
 	} __packed word_C;
-	u8		type;
-	u8		reserved1;
+	u8 type;
+	u8 reserved1;
 } __packed;
 
 /**
@@ -339,8 +340,8 @@ struct ipa_test_mhi_context {
 
 static struct ipa_test_mhi_context *test_mhi_ctx;
 
-static void ipa_mhi_test_cb(void *priv,
-	enum ipa_mhi_event_type event, unsigned long data)
+static void ipa_mhi_test_cb(void *priv, enum ipa_mhi_event_type event,
+			    unsigned long data)
 {
 	IPA_UT_DBG("Entry\n");
 
@@ -360,19 +361,19 @@ static void ipa_test_mhi_free_mmio_space(void)
 		return;
 
 	dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->mmio_buf.size,
-		test_mhi_ctx->mmio_buf.base,
-		test_mhi_ctx->mmio_buf.phys_base);
+			  test_mhi_ctx->mmio_buf.base,
+			  test_mhi_ctx->mmio_buf.phys_base);
 
 	dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->ev_ctx_array.size,
-		test_mhi_ctx->ev_ctx_array.base,
-		test_mhi_ctx->ev_ctx_array.phys_base);
+			  test_mhi_ctx->ev_ctx_array.base,
+			  test_mhi_ctx->ev_ctx_array.phys_base);
 
 	dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->ch_ctx_array.size,
-		test_mhi_ctx->ch_ctx_array.base,
-		test_mhi_ctx->ch_ctx_array.phys_base);
+			  test_mhi_ctx->ch_ctx_array.base,
+			  test_mhi_ctx->ch_ctx_array.phys_base);
 
 	dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->msi.size,
-		test_mhi_ctx->msi.base, test_mhi_ctx->msi.phys_base);
+			  test_mhi_ctx->msi.base, test_mhi_ctx->msi.phys_base);
 }
 
 static int ipa_test_mhi_alloc_mmio_space(void)
@@ -394,90 +395,92 @@ static int ipa_test_mhi_alloc_mmio_space(void)
 	/* Allocate MSI */
 	msi->size = 4;
 	msi->base = dma_alloc_coherent(ipa3_ctx->pdev, msi->size,
-		&msi->phys_base, GFP_KERNEL);
+				       &msi->phys_base, GFP_KERNEL);
 	if (!msi->base) {
 		IPA_UT_ERR("no mem for msi\n");
 		return -ENOMEM;
 	}
 
-	IPA_UT_DBG("msi: base 0x%pK phys_addr 0x%pad size %d\n",
-		msi->base, &msi->phys_base, msi->size);
+	IPA_UT_DBG("msi: base 0x%pK phys_addr 0x%pad size %d\n", msi->base,
+		   &msi->phys_base, msi->size);
 
 	/* allocate buffer for channel context */
 	ch_ctx_array->size = sizeof(struct ipa_mhi_channel_context_array) *
-		IPA_MHI_TEST_NUM_CHANNELS;
-	ch_ctx_array->base = dma_alloc_coherent(ipa3_ctx->pdev,
-		ch_ctx_array->size, &ch_ctx_array->phys_base, GFP_KERNEL);
+			     IPA_MHI_TEST_NUM_CHANNELS;
+	ch_ctx_array->base =
+		dma_alloc_coherent(ipa3_ctx->pdev, ch_ctx_array->size,
+				   &ch_ctx_array->phys_base, GFP_KERNEL);
 	if (!ch_ctx_array->base) {
 		IPA_UT_ERR("no mem for ch ctx array\n");
 		rc = -ENOMEM;
 		goto fail_free_msi;
 	}
 	IPA_UT_DBG("channel ctx array: base 0x%pK phys_addr %pad size %d\n",
-		ch_ctx_array->base, &ch_ctx_array->phys_base,
-		ch_ctx_array->size);
+		   ch_ctx_array->base, &ch_ctx_array->phys_base,
+		   ch_ctx_array->size);
 
 	/* allocate buffer for event context */
 	ev_ctx_array->size = sizeof(struct ipa_mhi_event_context_array) *
-		IPA_MHI_TEST_NUM_EVENT_RINGS;
-	ev_ctx_array->base = dma_alloc_coherent(ipa3_ctx->pdev,
-		ev_ctx_array->size, &ev_ctx_array->phys_base, GFP_KERNEL);
+			     IPA_MHI_TEST_NUM_EVENT_RINGS;
+	ev_ctx_array->base =
+		dma_alloc_coherent(ipa3_ctx->pdev, ev_ctx_array->size,
+				   &ev_ctx_array->phys_base, GFP_KERNEL);
 	if (!ev_ctx_array->base) {
 		IPA_UT_ERR("no mem for ev ctx array\n");
 		rc = -ENOMEM;
 		goto fail_free_ch_ctx_arr;
 	}
 	IPA_UT_DBG("event ctx array: base 0x%pK phys_addr %pad size %d\n",
-		ev_ctx_array->base, &ev_ctx_array->phys_base,
-		ev_ctx_array->size);
+		   ev_ctx_array->base, &ev_ctx_array->phys_base,
+		   ev_ctx_array->size);
 
 	/* allocate buffer for mmio */
 	mmio_buf->size = sizeof(struct ipa_mhi_mmio_register_set);
 	mmio_buf->base = dma_alloc_coherent(ipa3_ctx->pdev, mmio_buf->size,
-		&mmio_buf->phys_base, GFP_KERNEL);
+					    &mmio_buf->phys_base, GFP_KERNEL);
 	if (!mmio_buf->base) {
 		IPA_UT_ERR("no mem for mmio buf\n");
 		rc = -ENOMEM;
 		goto fail_free_ev_ctx_arr;
 	}
 	IPA_UT_DBG("mmio buffer: base 0x%pK phys_addr %pad size %d\n",
-		mmio_buf->base, &mmio_buf->phys_base, mmio_buf->size);
+		   mmio_buf->base, &mmio_buf->phys_base, mmio_buf->size);
 
 	/* initlize table */
 	p_mmio = (struct ipa_mhi_mmio_register_set *)mmio_buf->base;
 
 	/**
-	 * 64-bit pointer to the channel context array in the host memory space;
-	 * Host sets the pointer to the channel context array
-	 * during initialization.
-	 */
+   * 64-bit pointer to the channel context array in the host memory space;
+   * Host sets the pointer to the channel context array
+   * during initialization.
+   */
 	p_mmio->ccabap = (u32)ch_ctx_array->phys_base -
-		(IPA_MHI_TEST_FIRST_CHANNEL_ID *
-		sizeof(struct ipa_mhi_channel_context_array));
+			 (IPA_MHI_TEST_FIRST_CHANNEL_ID *
+			  sizeof(struct ipa_mhi_channel_context_array));
 	IPA_UT_DBG("pMmio->ccabap 0x%llx\n", p_mmio->ccabap);
 
 	/**
-	 * 64-bit pointer to the event context array in the host memory space;
-	 * Host sets the pointer to the event context array
-	 * during initialization
-	 */
+   * 64-bit pointer to the event context array in the host memory space;
+   * Host sets the pointer to the event context array
+   * during initialization
+   */
 	p_mmio->ecabap = (u32)ev_ctx_array->phys_base -
-		(IPA_MHI_TEST_FIRST_EVENT_RING_ID *
-		sizeof(struct ipa_mhi_event_context_array));
+			 (IPA_MHI_TEST_FIRST_EVENT_RING_ID *
+			  sizeof(struct ipa_mhi_event_context_array));
 	IPA_UT_DBG("pMmio->ecabap 0x%llx\n", p_mmio->ecabap);
 
 	/**
-	 * Register is not accessed by HWP.
-	 * In test register carries the pointer of
-	 *  virtual address for the buffer of channel context array
-	 */
+   * Register is not accessed by HWP.
+   * In test register carries the pointer of
+   *  virtual address for the buffer of channel context array
+   */
 	p_mmio->crcbap = (unsigned long)ch_ctx_array->base;
 
 	/**
-	 * Register is not accessed by HWP.
-	 * In test register carries the pointer of
-	 *  virtual address for the buffer of channel context array
-	 */
+   * Register is not accessed by HWP.
+   * In test register carries the pointer of
+   *  virtual address for the buffer of channel context array
+   */
 	p_mmio->crdb = (unsigned long)ev_ctx_array->base;
 
 	/* test is running only on device. no need to translate addresses */
@@ -490,24 +493,22 @@ static int ipa_test_mhi_alloc_mmio_space(void)
 
 fail_free_ev_ctx_arr:
 	dma_free_coherent(ipa3_ctx->pdev, ev_ctx_array->size,
-		ev_ctx_array->base, ev_ctx_array->phys_base);
+			  ev_ctx_array->base, ev_ctx_array->phys_base);
 	ev_ctx_array->base = NULL;
 fail_free_ch_ctx_arr:
 	dma_free_coherent(ipa3_ctx->pdev, ch_ctx_array->size,
-		ch_ctx_array->base, ch_ctx_array->phys_base);
+			  ch_ctx_array->base, ch_ctx_array->phys_base);
 	ch_ctx_array->base = NULL;
 fail_free_msi:
-	dma_free_coherent(ipa3_ctx->pdev, msi->size, msi->base,
-		msi->phys_base);
+	dma_free_coherent(ipa3_ctx->pdev, msi->size, msi->base, msi->phys_base);
 	msi->base = NULL;
 	return rc;
 }
 
-static void ipa_mhi_test_destroy_channel_context(
-	struct ipa_mem_buffer transfer_ring_bufs[],
-	struct ipa_mem_buffer event_ring_bufs[],
-	u8 channel_id,
-	u8 event_ring_id)
+static void
+ipa_mhi_test_destroy_channel_context(struct ipa_mem_buffer transfer_ring_bufs[],
+				     struct ipa_mem_buffer event_ring_bufs[],
+				     u8 channel_id, u8 event_ring_id)
 {
 	u32 ev_ring_idx;
 	u32 ch_idx;
@@ -515,13 +516,13 @@ static void ipa_mhi_test_destroy_channel_context(
 	IPA_UT_DBG("Entry\n");
 
 	if ((channel_id < IPA_MHI_TEST_FIRST_CHANNEL_ID) ||
-		(channel_id > IPA_MHI_TEST_LAST_CHANNEL_ID)) {
+	    (channel_id > IPA_MHI_TEST_LAST_CHANNEL_ID)) {
 		IPA_UT_ERR("channal_id invalid %d\n", channel_id);
 		return;
 	}
 
 	if ((event_ring_id < IPA_MHI_TEST_FIRST_EVENT_RING_ID) ||
-		(event_ring_id > IPA_MHI_TEST_LAST_EVENT_RING_ID)) {
+	    (event_ring_id > IPA_MHI_TEST_LAST_EVENT_RING_ID)) {
 		IPA_UT_ERR("event_ring_id invalid %d\n", event_ring_id);
 		return;
 	}
@@ -531,29 +532,25 @@ static void ipa_mhi_test_destroy_channel_context(
 
 	if (transfer_ring_bufs[ch_idx].base) {
 		dma_free_coherent(ipa3_ctx->pdev,
-			transfer_ring_bufs[ch_idx].size,
-			transfer_ring_bufs[ch_idx].base,
-			transfer_ring_bufs[ch_idx].phys_base);
+				  transfer_ring_bufs[ch_idx].size,
+				  transfer_ring_bufs[ch_idx].base,
+				  transfer_ring_bufs[ch_idx].phys_base);
 		transfer_ring_bufs[ch_idx].base = NULL;
 	}
 
 	if (event_ring_bufs[ev_ring_idx].base) {
 		dma_free_coherent(ipa3_ctx->pdev,
-			event_ring_bufs[ev_ring_idx].size,
-			event_ring_bufs[ev_ring_idx].base,
-			event_ring_bufs[ev_ring_idx].phys_base);
+				  event_ring_bufs[ev_ring_idx].size,
+				  event_ring_bufs[ev_ring_idx].base,
+				  event_ring_bufs[ev_ring_idx].phys_base);
 		event_ring_bufs[ev_ring_idx].base = NULL;
 	}
 }
 
 static int ipa_mhi_test_config_channel_context(
-	struct ipa_mem_buffer *mmio,
-	struct ipa_mem_buffer transfer_ring_bufs[],
-	struct ipa_mem_buffer event_ring_bufs[],
-	u8 channel_id,
-	u8 event_ring_id,
-	u16 transfer_ring_size,
-	u16 event_ring_size,
+	struct ipa_mem_buffer *mmio, struct ipa_mem_buffer transfer_ring_bufs[],
+	struct ipa_mem_buffer event_ring_bufs[], u8 channel_id,
+	u8 event_ring_id, u16 transfer_ring_size, u16 event_ring_size,
 	u8 ch_type)
 {
 	struct ipa_mhi_mmio_register_set *p_mmio;
@@ -565,26 +562,25 @@ static int ipa_mhi_test_config_channel_context(
 	IPA_UT_DBG("Entry\n");
 
 	if ((channel_id < IPA_MHI_TEST_FIRST_CHANNEL_ID) ||
-		(channel_id > IPA_MHI_TEST_LAST_CHANNEL_ID)) {
+	    (channel_id > IPA_MHI_TEST_LAST_CHANNEL_ID)) {
 		IPA_UT_DBG("channal_id invalid %d\n", channel_id);
 		return -EFAULT;
 	}
 
 	if ((event_ring_id < IPA_MHI_TEST_FIRST_EVENT_RING_ID) ||
-		(event_ring_id > IPA_MHI_TEST_LAST_EVENT_RING_ID)) {
+	    (event_ring_id > IPA_MHI_TEST_LAST_EVENT_RING_ID)) {
 		IPA_UT_DBG("event_ring_id invalid %d\n", event_ring_id);
 		return -EFAULT;
 	}
 
 	p_mmio = (struct ipa_mhi_mmio_register_set *)mmio->base;
-	p_channels =
-		(struct ipa_mhi_channel_context_array *)
-		((unsigned long)p_mmio->crcbap);
-	p_events = (struct ipa_mhi_event_context_array *)
-		((unsigned long)p_mmio->crdb);
+	p_channels = (struct ipa_mhi_channel_context_array
+			      *)((unsigned long)p_mmio->crcbap);
+	p_events = (struct ipa_mhi_event_context_array *)((unsigned long)
+								  p_mmio->crdb);
 
-	IPA_UT_DBG("p_mmio: %pK p_channels: %pK p_events: %pK\n",
-		p_mmio, p_channels, p_events);
+	IPA_UT_DBG("p_mmio: %pK p_channels: %pK p_events: %pK\n", p_mmio,
+		   p_channels, p_events);
 
 	ch_idx = channel_id - IPA_MHI_TEST_FIRST_CHANNEL_ID;
 	ev_ring_idx = event_ring_id - IPA_MHI_TEST_FIRST_EVENT_RING_ID;
@@ -600,12 +596,10 @@ static int ipa_mhi_test_config_channel_context(
 		IPA_UT_LOG("Configuring event ring...\n");
 		event_ring_bufs[ev_ring_idx].size =
 			event_ring_size *
-				sizeof(struct ipa_mhi_event_ring_element);
-		event_ring_bufs[ev_ring_idx].base =
-			dma_alloc_coherent(ipa3_ctx->pdev,
-				event_ring_bufs[ev_ring_idx].size,
-				&event_ring_bufs[ev_ring_idx].phys_base,
-				GFP_KERNEL);
+			sizeof(struct ipa_mhi_event_ring_element);
+		event_ring_bufs[ev_ring_idx].base = dma_alloc_coherent(
+			ipa3_ctx->pdev, event_ring_bufs[ev_ring_idx].size,
+			&event_ring_bufs[ev_ring_idx].phys_base, GFP_KERNEL);
 		if (!event_ring_bufs[ev_ring_idx].base) {
 			IPA_UT_ERR("no mem for ev ring buf\n");
 			return -ENOMEM;
@@ -615,8 +609,7 @@ static int ipa_mhi_test_config_channel_context(
 		p_events[ev_ring_idx].msivec = event_ring_id;
 		p_events[ev_ring_idx].rbase =
 			(u32)event_ring_bufs[ev_ring_idx].phys_base;
-		p_events[ev_ring_idx].rlen =
-			event_ring_bufs[ev_ring_idx].size;
+		p_events[ev_ring_idx].rlen = event_ring_bufs[ev_ring_idx].size;
 		p_events[ev_ring_idx].rp =
 			(u32)event_ring_bufs[ev_ring_idx].phys_base;
 		p_events[ev_ring_idx].wp =
@@ -628,18 +621,16 @@ static int ipa_mhi_test_config_channel_context(
 
 	transfer_ring_bufs[ch_idx].size =
 		transfer_ring_size *
-			sizeof(struct ipa_mhi_transfer_ring_element);
-	transfer_ring_bufs[ch_idx].base =
-		dma_alloc_coherent(ipa3_ctx->pdev,
-			transfer_ring_bufs[ch_idx].size,
-			&transfer_ring_bufs[ch_idx].phys_base,
-			GFP_KERNEL);
+		sizeof(struct ipa_mhi_transfer_ring_element);
+	transfer_ring_bufs[ch_idx].base = dma_alloc_coherent(
+		ipa3_ctx->pdev, transfer_ring_bufs[ch_idx].size,
+		&transfer_ring_bufs[ch_idx].phys_base, GFP_KERNEL);
 	if (!transfer_ring_bufs[ch_idx].base) {
 		IPA_UT_ERR("no mem for xfer ring buf\n");
 		dma_free_coherent(ipa3_ctx->pdev,
-			event_ring_bufs[ev_ring_idx].size,
-			event_ring_bufs[ev_ring_idx].base,
-			event_ring_bufs[ev_ring_idx].phys_base);
+				  event_ring_bufs[ev_ring_idx].size,
+				  event_ring_bufs[ev_ring_idx].base,
+				  event_ring_bufs[ev_ring_idx].phys_base);
 		event_ring_bufs[ev_ring_idx].base = NULL;
 		return -ENOMEM;
 	}
@@ -662,35 +653,31 @@ static void ipa_mhi_test_destroy_data_structures(void)
 
 	/* Destroy OUT data buffer */
 	if (test_mhi_ctx->out_buffer.base) {
-		dma_free_coherent(ipa3_ctx->pdev,
-			test_mhi_ctx->out_buffer.size,
-			test_mhi_ctx->out_buffer.base,
-			test_mhi_ctx->out_buffer.phys_base);
+		dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->out_buffer.size,
+				  test_mhi_ctx->out_buffer.base,
+				  test_mhi_ctx->out_buffer.phys_base);
 		test_mhi_ctx->out_buffer.base = NULL;
 	}
 
 	/* Destroy IN data buffer */
 	if (test_mhi_ctx->in_buffer.base) {
-		dma_free_coherent(ipa3_ctx->pdev,
-			test_mhi_ctx->in_buffer.size,
-			test_mhi_ctx->in_buffer.base,
-			test_mhi_ctx->in_buffer.phys_base);
+		dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->in_buffer.size,
+				  test_mhi_ctx->in_buffer.base,
+				  test_mhi_ctx->in_buffer.phys_base);
 		test_mhi_ctx->in_buffer.base = NULL;
 	}
 
 	/* Destroy IN channel ctx */
 	ipa_mhi_test_destroy_channel_context(
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
+		test_mhi_ctx->xfer_ring_bufs, test_mhi_ctx->ev_ring_bufs,
 		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
 		IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1);
 
 	/* Destroy OUT channel ctx */
-	ipa_mhi_test_destroy_channel_context(
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID,
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID);
+	ipa_mhi_test_destroy_channel_context(test_mhi_ctx->xfer_ring_bufs,
+					     test_mhi_ctx->ev_ring_bufs,
+					     IPA_MHI_TEST_FIRST_CHANNEL_ID,
+					     IPA_MHI_TEST_FIRST_EVENT_RING_ID);
 }
 
 static int ipa_mhi_test_setup_data_structures(void)
@@ -701,13 +688,9 @@ static int ipa_mhi_test_setup_data_structures(void)
 
 	/* Config OUT Channel Context */
 	rc = ipa_mhi_test_config_channel_context(
-		&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID,
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID,
-		0x100,
-		0x80,
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID,
+		IPA_MHI_TEST_FIRST_EVENT_RING_ID, 0x100, 0x80,
 		IPA_MHI_OUT_CHAHNNEL);
 	if (rc) {
 		IPA_UT_ERR("Fail to config OUT ch ctx - err %d", rc);
@@ -716,13 +699,9 @@ static int ipa_mhi_test_setup_data_structures(void)
 
 	/* Config IN Channel Context */
 	rc = ipa_mhi_test_config_channel_context(
-		&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1,
-		0x100,
-		0x80,
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+		IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1, 0x100, 0x80,
 		IPA_MHI_IN_CHAHNNEL);
 	if (rc) {
 		IPA_UT_ERR("Fail to config IN ch ctx - err %d", rc);
@@ -739,8 +718,7 @@ static int ipa_mhi_test_setup_data_structures(void)
 		rc = -ENOMEM;
 		goto fail_destroy_in_ch_ctx;
 	}
-	memset(test_mhi_ctx->in_buffer.base, 0,
-		IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
+	memset(test_mhi_ctx->in_buffer.base, 0, IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
 
 	/* allocate OUT data buffer */
 	test_mhi_ctx->out_buffer.size = IPA_MHI_TEST_MAX_DATA_BUF_SIZE;
@@ -753,28 +731,25 @@ static int ipa_mhi_test_setup_data_structures(void)
 		goto fail_destroy_in_data_buf;
 	}
 	memset(test_mhi_ctx->out_buffer.base, 0,
-		IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
+	       IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
 
 	return 0;
 
 fail_destroy_in_data_buf:
-	dma_free_coherent(ipa3_ctx->pdev,
-		test_mhi_ctx->in_buffer.size,
-		test_mhi_ctx->in_buffer.base,
-		test_mhi_ctx->in_buffer.phys_base);
+	dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->in_buffer.size,
+			  test_mhi_ctx->in_buffer.base,
+			  test_mhi_ctx->in_buffer.phys_base);
 	test_mhi_ctx->in_buffer.base = NULL;
 fail_destroy_in_ch_ctx:
 	ipa_mhi_test_destroy_channel_context(
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
+		test_mhi_ctx->xfer_ring_bufs, test_mhi_ctx->ev_ring_bufs,
 		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
 		IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1);
 fail_destroy_out_ch_ctx:
-	ipa_mhi_test_destroy_channel_context(
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID,
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID);
+	ipa_mhi_test_destroy_channel_context(test_mhi_ctx->xfer_ring_bufs,
+					     test_mhi_ctx->ev_ring_bufs,
+					     IPA_MHI_TEST_FIRST_CHANNEL_ID,
+					     IPA_MHI_TEST_FIRST_EVENT_RING_ID);
 	return 0;
 }
 
@@ -793,8 +768,7 @@ static int ipa_test_mhi_suite_setup(void **ppriv)
 		return -EINVAL;
 	}
 
-	test_mhi_ctx = kzalloc(sizeof(struct ipa_test_mhi_context),
-		GFP_KERNEL);
+	test_mhi_ctx = kzalloc(sizeof(struct ipa_test_mhi_context), GFP_KERNEL);
 	if (!test_mhi_ctx) {
 		IPA_UT_ERR("failed allocated ctx\n");
 		return -ENOMEM;
@@ -852,7 +826,7 @@ static int ipa_test_mhi_suite_teardown(void *priv)
 	IPA_UT_DBG("Start Teardown\n");
 
 	if (!test_mhi_ctx)
-		return  0;
+		return 0;
 
 	ipa_teardown_sys_pipe(test_mhi_ctx->test_prod_hdl);
 	ipa_mhi_test_destroy_data_structures();
@@ -925,14 +899,15 @@ static int ipa_mhi_test_initialize_driver(bool skip_start_and_conn)
 		}
 		IPA_UT_LOG("AFTER mhi_start\n");
 
-		phys_addr = p_mmio->ccabap + (IPA_MHI_TEST_FIRST_CHANNEL_ID *
-			sizeof(struct ipa_mhi_channel_context_array));
-		p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
+		phys_addr = p_mmio->ccabap +
+			    (IPA_MHI_TEST_FIRST_CHANNEL_ID *
+			     sizeof(struct ipa_mhi_channel_context_array));
+		p_ch_ctx_array =
+			test_mhi_ctx->ch_ctx_array.base +
 			(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 		IPA_UT_LOG("ch: %d base: 0x%pK phys_addr 0x%llx chstate: %s\n",
-			IPA_MHI_TEST_FIRST_CHANNEL_ID,
-			p_ch_ctx_array, phys_addr,
-			MHI_STATE_STR(p_ch_ctx_array->chstate));
+			   IPA_MHI_TEST_FIRST_CHANNEL_ID, p_ch_ctx_array,
+			   phys_addr, MHI_STATE_STR(p_ch_ctx_array->chstate));
 
 		memset(&prod_params, 0, sizeof(prod_params));
 		prod_params.sys.client = IPA_CLIENT_MHI_PROD;
@@ -943,9 +918,9 @@ static int ipa_mhi_test_initialize_driver(bool skip_start_and_conn)
 		prod_params.sys.ipa_ep_cfg.seq.set_dynamic = true;
 		prod_params.channel_id = IPA_MHI_TEST_FIRST_CHANNEL_ID;
 		IPA_UT_LOG("BEFORE connect_pipe (PROD): client:%d ch_id:%u\n",
-			prod_params.sys.client, prod_params.channel_id);
+			   prod_params.sys.client, prod_params.channel_id);
 		rc = ipa_mhi_connect_pipe(&prod_params,
-			&test_mhi_ctx->prod_hdl);
+					  &test_mhi_ctx->prod_hdl);
 		if (rc) {
 			IPA_UT_LOG("mhi_connect_pipe failed %d\n", rc);
 			IPA_UT_TEST_FAIL_REPORT("fail connect PROD pipe");
@@ -954,30 +929,29 @@ static int ipa_mhi_test_initialize_driver(bool skip_start_and_conn)
 
 		if (p_ch_ctx_array->chstate != IPA_HW_MHI_CHANNEL_STATE_RUN) {
 			IPA_UT_LOG("MHI_PROD: chstate is not RUN chstate:%s\n",
-				MHI_STATE_STR(
-				p_ch_ctx_array->chstate));
+				   MHI_STATE_STR(p_ch_ctx_array->chstate));
 			IPA_UT_TEST_FAIL_REPORT("PROD pipe state is not run");
 			return -EFAULT;
 		}
 
 		phys_addr = p_mmio->ccabap +
-			((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
-			sizeof(struct ipa_mhi_channel_context_array));
-		p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
+			    ((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
+			     sizeof(struct ipa_mhi_channel_context_array));
+		p_ch_ctx_array =
+			test_mhi_ctx->ch_ctx_array.base +
 			(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 		IPA_UT_LOG("ch: %d base: 0x%pK phys_addr 0x%llx chstate: %s\n",
-			IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-			p_ch_ctx_array, phys_addr,
-			MHI_STATE_STR(p_ch_ctx_array->chstate));
+			   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1, p_ch_ctx_array,
+			   phys_addr, MHI_STATE_STR(p_ch_ctx_array->chstate));
 
 		memset(&cons_params, 0, sizeof(cons_params));
 		cons_params.sys.client = IPA_CLIENT_MHI_CONS;
 		cons_params.sys.skip_ep_cfg = true;
 		cons_params.channel_id = IPA_MHI_TEST_FIRST_CHANNEL_ID + 1;
 		IPA_UT_LOG("BEFORE connect_pipe (CONS): client:%d ch_id:%u\n",
-			cons_params.sys.client, cons_params.channel_id);
+			   cons_params.sys.client, cons_params.channel_id);
 		rc = ipa_mhi_connect_pipe(&cons_params,
-			&test_mhi_ctx->cons_hdl);
+					  &test_mhi_ctx->cons_hdl);
 		if (rc) {
 			IPA_UT_LOG("mhi_connect_pipe failed %d\n", rc);
 			IPA_UT_TEST_FAIL_REPORT("fail connect CONS pipe");
@@ -986,8 +960,7 @@ static int ipa_mhi_test_initialize_driver(bool skip_start_and_conn)
 
 		if (p_ch_ctx_array->chstate != IPA_HW_MHI_CHANNEL_STATE_RUN) {
 			IPA_UT_LOG("MHI_CONS: chstate is not RUN chstate:%s\n",
-				MHI_STATE_STR(
-				p_ch_ctx_array->chstate));
+				   MHI_STATE_STR(p_ch_ctx_array->chstate));
 			IPA_UT_TEST_FAIL_REPORT("CONS pipe state is not run");
 			return -EFAULT;
 		}
@@ -1017,23 +990,23 @@ static int ipa_mhi_test_destroy(struct ipa_test_mhi_context *ctx)
 
 	p_mmio = ctx->mmio_buf.base;
 
-	phys_addr = p_mmio->ccabap +
-		((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = ctx->ch_ctx_array.base +
-		(phys_addr - ctx->ch_ctx_array.phys_base);
+			 (phys_addr - ctx->ch_ctx_array.phys_base);
 	IPA_UT_LOG("channel id %d (CONS): chstate %s\n",
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		MHI_STATE_STR(p_ch_ctx_array->chstate));
+		   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+		   MHI_STATE_STR(p_ch_ctx_array->chstate));
 
-	phys_addr = p_mmio->ccabap +
-		((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = ctx->ch_ctx_array.base +
-		(phys_addr - ctx->ch_ctx_array.phys_base);
+			 (phys_addr - ctx->ch_ctx_array.phys_base);
 	IPA_UT_LOG("channel id %d (PROD): chstate %s\n",
-		IPA_MHI_TEST_FIRST_CHANNEL_ID,
-		MHI_STATE_STR(p_ch_ctx_array->chstate));
+		   IPA_MHI_TEST_FIRST_CHANNEL_ID,
+		   MHI_STATE_STR(p_ch_ctx_array->chstate));
 
 	IPA_UT_LOG("MHI Destroy\n");
 	ipa_mhi_destroy();
@@ -1043,45 +1016,38 @@ static int ipa_mhi_test_destroy(struct ipa_test_mhi_context *ctx)
 	ctx->cons_hdl = 0;
 
 	dma_free_coherent(ipa3_ctx->pdev, ctx->xfer_ring_bufs[1].size,
-		ctx->xfer_ring_bufs[1].base, ctx->xfer_ring_bufs[1].phys_base);
+			  ctx->xfer_ring_bufs[1].base,
+			  ctx->xfer_ring_bufs[1].phys_base);
 	ctx->xfer_ring_bufs[1].base = NULL;
 
 	IPA_UT_LOG("config channel context for channel %d (MHI CONS)\n",
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1);
+		   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1);
 	rc = ipa_mhi_test_config_channel_context(
-		&ctx->mmio_buf,
-		ctx->xfer_ring_bufs,
-		ctx->ev_ring_bufs,
+		&ctx->mmio_buf, ctx->xfer_ring_bufs, ctx->ev_ring_bufs,
 		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1,
-		0x100,
-		0x80,
+		IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1, 0x100, 0x80,
 		IPA_MHI_IN_CHAHNNEL);
 	if (rc) {
-		IPA_UT_LOG("config channel context failed %d, channel %d\n",
-			rc, IPA_MHI_TEST_FIRST_CHANNEL_ID + 1);
+		IPA_UT_LOG("config channel context failed %d, channel %d\n", rc,
+			   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1);
 		IPA_UT_TEST_FAIL_REPORT("fail config CONS channel ctx");
 		return -EFAULT;
 	}
 
 	dma_free_coherent(ipa3_ctx->pdev, ctx->xfer_ring_bufs[0].size,
-		ctx->xfer_ring_bufs[0].base, ctx->xfer_ring_bufs[0].phys_base);
+			  ctx->xfer_ring_bufs[0].base,
+			  ctx->xfer_ring_bufs[0].phys_base);
 	ctx->xfer_ring_bufs[0].base = NULL;
 
 	IPA_UT_LOG("config channel context for channel %d (MHI PROD)\n",
-		IPA_MHI_TEST_FIRST_CHANNEL_ID);
+		   IPA_MHI_TEST_FIRST_CHANNEL_ID);
 	rc = ipa_mhi_test_config_channel_context(
-		&ctx->mmio_buf,
-		ctx->xfer_ring_bufs,
-		ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID,
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID,
-		0x100,
-		0x80,
-		IPA_MHI_OUT_CHAHNNEL);
+		&ctx->mmio_buf, ctx->xfer_ring_bufs, ctx->ev_ring_bufs,
+		IPA_MHI_TEST_FIRST_CHANNEL_ID, IPA_MHI_TEST_FIRST_EVENT_RING_ID,
+		0x100, 0x80, IPA_MHI_OUT_CHAHNNEL);
 	if (rc) {
-		IPA_UT_LOG("config channel context failed %d, channel %d\n",
-			rc, IPA_MHI_TEST_FIRST_CHANNEL_ID);
+		IPA_UT_LOG("config channel context failed %d, channel %d\n", rc,
+			   IPA_MHI_TEST_FIRST_CHANNEL_ID);
 		IPA_UT_TEST_FAIL_REPORT("fail config PROD channel ctx");
 		return -EFAULT;
 	}
@@ -1095,7 +1061,7 @@ static int ipa_mhi_test_destroy(struct ipa_test_mhi_context *ctx)
  * 2. Initialize (to Ready or M0 states)
  */
 static int ipa_mhi_test_reset(struct ipa_test_mhi_context *ctx,
-	bool skip_start_and_conn)
+			      bool skip_start_and_conn)
 {
 	int rc;
 
@@ -1111,7 +1077,7 @@ static int ipa_mhi_test_reset(struct ipa_test_mhi_context *ctx,
 	rc = ipa_mhi_test_initialize_driver(skip_start_and_conn);
 	if (rc) {
 		IPA_UT_LOG("driver init failed skip_start_and_con=%d rc=%d\n",
-			skip_start_and_conn, rc);
+			   skip_start_and_conn, rc);
 		IPA_UT_TEST_FAIL_REPORT("init fail");
 		return rc;
 	}
@@ -1140,7 +1106,7 @@ static int ipa_mhi_test_channel_reset(void)
 	p_mmio = test_mhi_ctx->mmio_buf.base;
 
 	IPA_UT_LOG("Before pipe disconnect (CONS) client hdl=%u=\n",
-		test_mhi_ctx->cons_hdl);
+		   test_mhi_ctx->cons_hdl);
 	rc = ipa_mhi_disconnect_pipe(test_mhi_ctx->cons_hdl);
 	if (rc) {
 		IPA_UT_LOG("disconnect_pipe failed (CONS) %d\n", rc);
@@ -1149,25 +1115,20 @@ static int ipa_mhi_test_channel_reset(void)
 	}
 	test_mhi_ctx->cons_hdl = 0;
 
-	phys_addr = p_mmio->ccabap +
-		((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 
-	dma_free_coherent(ipa3_ctx->pdev,
-		test_mhi_ctx->xfer_ring_bufs[1].size,
-		test_mhi_ctx->xfer_ring_bufs[1].base,
-		test_mhi_ctx->xfer_ring_bufs[1].phys_base);
+	dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->xfer_ring_bufs[1].size,
+			  test_mhi_ctx->xfer_ring_bufs[1].base,
+			  test_mhi_ctx->xfer_ring_bufs[1].phys_base);
 	test_mhi_ctx->xfer_ring_bufs[1].base = NULL;
 	rc = ipa_mhi_test_config_channel_context(
-		&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1,
-		0x100,
-		0x80,
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+		IPA_MHI_TEST_FIRST_EVENT_RING_ID + 1, 0x100, 0x80,
 		IPA_MHI_IN_CHAHNNEL);
 	if (rc) {
 		IPA_UT_LOG("config_channel_context IN failed %d\n", rc);
@@ -1175,7 +1136,7 @@ static int ipa_mhi_test_channel_reset(void)
 		return -EFAULT;
 	}
 	IPA_UT_LOG("Before pipe disconnect (CONS) client hdl=%u=\n",
-		test_mhi_ctx->prod_hdl);
+		   test_mhi_ctx->prod_hdl);
 	rc = ipa_mhi_disconnect_pipe(test_mhi_ctx->prod_hdl);
 	if (rc) {
 		IPA_UT_LOG("disconnect_pipe failed (PROD) %d\n", rc);
@@ -1184,23 +1145,20 @@ static int ipa_mhi_test_channel_reset(void)
 	}
 	test_mhi_ctx->prod_hdl = 0;
 
-	phys_addr = p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 
 	dma_free_coherent(ipa3_ctx->pdev, test_mhi_ctx->xfer_ring_bufs[0].size,
-		test_mhi_ctx->xfer_ring_bufs[0].base,
-		test_mhi_ctx->xfer_ring_bufs[0].phys_base);
+			  test_mhi_ctx->xfer_ring_bufs[0].base,
+			  test_mhi_ctx->xfer_ring_bufs[0].phys_base);
 	test_mhi_ctx->xfer_ring_bufs[0].base = NULL;
 	rc = ipa_mhi_test_config_channel_context(
-		&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID,
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID,
-		0x100,
-		0x80,
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID,
+		IPA_MHI_TEST_FIRST_EVENT_RING_ID, 0x100, 0x80,
 		IPA_MHI_OUT_CHAHNNEL);
 	if (rc) {
 		IPA_UT_LOG("config_channel_context OUT failed %d\n", rc);
@@ -1223,14 +1181,15 @@ static int ipa_mhi_test_channel_reset(void)
 		return rc;
 	}
 
-	phys_addr = p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 	if (p_ch_ctx_array->chstate != IPA_HW_MHI_CHANNEL_STATE_RUN) {
 		IPA_UT_LOG("chstate is not run! ch %d chstate %s\n",
-			IPA_MHI_TEST_FIRST_CHANNEL_ID,
-			MHI_STATE_STR(p_ch_ctx_array->chstate));
+			   IPA_MHI_TEST_FIRST_CHANNEL_ID,
+			   MHI_STATE_STR(p_ch_ctx_array->chstate));
 		IPA_UT_TEST_FAIL_REPORT("PROD pipe state is not run");
 		return -EFAULT;
 	}
@@ -1247,15 +1206,15 @@ static int ipa_mhi_test_channel_reset(void)
 		return rc;
 	}
 
-	phys_addr = p_mmio->ccabap +
-		((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 	if (p_ch_ctx_array->chstate != IPA_HW_MHI_CHANNEL_STATE_RUN) {
 		IPA_UT_LOG("chstate is not run! ch %d chstate %s\n",
-			IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-			MHI_STATE_STR(p_ch_ctx_array->chstate));
+			   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+			   MHI_STATE_STR(p_ch_ctx_array->chstate));
 		IPA_UT_TEST_FAIL_REPORT("CONS pipe state is not run");
 		return -EFAULT;
 	}
@@ -1268,15 +1227,12 @@ static int ipa_mhi_test_channel_reset(void)
  * Send data
  */
 static int ipa_mhi_test_q_transfer_re(struct ipa_mem_buffer *mmio,
-	struct ipa_mem_buffer xfer_ring_bufs[],
-	struct ipa_mem_buffer ev_ring_bufs[],
-	u8 channel_id,
-	struct ipa_mem_buffer buf_array[],
-	int buf_array_size,
-	bool ieob,
-	bool ieot,
-	bool bei,
-	bool trigger_db)
+				      struct ipa_mem_buffer xfer_ring_bufs[],
+				      struct ipa_mem_buffer ev_ring_bufs[],
+				      u8 channel_id,
+				      struct ipa_mem_buffer buf_array[],
+				      int buf_array_size, bool ieob, bool ieot,
+				      bool bei, bool trigger_db)
 {
 	struct ipa_mhi_transfer_ring_element *curr_re;
 	struct ipa_mhi_mmio_register_set *p_mmio;
@@ -1294,19 +1250,19 @@ static int ipa_mhi_test_q_transfer_re(struct ipa_mem_buffer *mmio,
 	IPA_UT_LOG("Entry\n");
 
 	p_mmio = (struct ipa_mhi_mmio_register_set *)mmio->base;
-	p_channels = (struct ipa_mhi_channel_context_array *)
-		((unsigned long)p_mmio->crcbap);
-	p_events = (struct ipa_mhi_event_context_array *)
-		((unsigned long)p_mmio->crdb);
+	p_channels = (struct ipa_mhi_channel_context_array
+			      *)((unsigned long)p_mmio->crcbap);
+	p_events = (struct ipa_mhi_event_context_array *)((unsigned long)
+								  p_mmio->crdb);
 
 	if (ieob)
 		num_of_ed_to_queue = buf_array_size;
 	else
 		num_of_ed_to_queue = ieot ? 1 : 0;
 
-	if (channel_id >=
-		(IPA_MHI_TEST_FIRST_CHANNEL_ID + IPA_MHI_TEST_NUM_CHANNELS) ||
-		channel_id < IPA_MHI_TEST_FIRST_CHANNEL_ID) {
+	if (channel_id >= (IPA_MHI_TEST_FIRST_CHANNEL_ID +
+			   IPA_MHI_TEST_NUM_CHANNELS) ||
+	    channel_id < IPA_MHI_TEST_FIRST_CHANNEL_ID) {
 		IPA_UT_LOG("Invalid Channel ID %d\n", channel_id);
 		return -EFAULT;
 	}
@@ -1323,44 +1279,46 @@ static int ipa_mhi_test_q_transfer_re(struct ipa_mem_buffer *mmio,
 
 	/* First queue EDs */
 	event_ring_index = p_channels[channel_idx].erindex -
-		IPA_MHI_TEST_FIRST_EVENT_RING_ID;
+			   IPA_MHI_TEST_FIRST_EVENT_RING_ID;
 
 	wp_ofst = (u32)(p_events[event_ring_index].wp -
-		p_events[event_ring_index].rbase);
+			p_events[event_ring_index].rbase);
 	rp_ofst = (u32)(p_events[event_ring_index].rp -
-		p_events[event_ring_index].rbase);
+			p_events[event_ring_index].rbase);
 
 	if (p_events[event_ring_index].rlen & 0xFFFFFFFF00000000) {
 		IPA_UT_LOG("invalid ev rlen %llu\n",
-			p_events[event_ring_index].rlen);
+			   p_events[event_ring_index].rlen);
 		return -EFAULT;
 	}
 
 	if (wp_ofst > rp_ofst) {
 		avail_ev = (wp_ofst - rp_ofst) /
-			sizeof(struct ipa_mhi_event_ring_element);
+			   sizeof(struct ipa_mhi_event_ring_element);
 	} else {
 		avail_ev = (u32)p_events[event_ring_index].rlen -
-			(rp_ofst - wp_ofst);
+			   (rp_ofst - wp_ofst);
 		avail_ev /= sizeof(struct ipa_mhi_event_ring_element);
 	}
 
-	IPA_UT_LOG("wp_ofst=0x%x rp_ofst=0x%x rlen=%llu avail_ev=%u\n",
-		wp_ofst, rp_ofst, p_events[event_ring_index].rlen, avail_ev);
+	IPA_UT_LOG("wp_ofst=0x%x rp_ofst=0x%x rlen=%llu avail_ev=%u\n", wp_ofst,
+		   rp_ofst, p_events[event_ring_index].rlen, avail_ev);
 
 	if (num_of_ed_to_queue > ((u32)p_events[event_ring_index].rlen /
-		sizeof(struct ipa_mhi_event_ring_element))) {
+				  sizeof(struct ipa_mhi_event_ring_element))) {
 		IPA_UT_LOG("event ring too small for %u credits\n",
-			num_of_ed_to_queue);
+			   num_of_ed_to_queue);
 		return -EFAULT;
 	}
 
 	if (num_of_ed_to_queue > avail_ev) {
 		IPA_UT_LOG("Need to add event credits (needed=%u)\n",
-			num_of_ed_to_queue - avail_ev);
+			   num_of_ed_to_queue - avail_ev);
 
-		next_wp_ofst = (wp_ofst + (num_of_ed_to_queue - avail_ev) *
-			sizeof(struct ipa_mhi_event_ring_element)) %
+		next_wp_ofst =
+			(wp_ofst +
+			 (num_of_ed_to_queue - avail_ev) *
+				 sizeof(struct ipa_mhi_event_ring_element)) %
 			(u32)p_events[event_ring_index].rlen;
 
 		/* set next WP */
@@ -1369,33 +1327,37 @@ static int ipa_mhi_test_q_transfer_re(struct ipa_mem_buffer *mmio,
 
 		/* write value to event ring doorbell */
 		IPA_UT_LOG("DB to event 0x%llx: base %pa ofst 0x%x\n",
-			p_events[event_ring_index].wp,
-			&(test_mhi_ctx->transport_phys_addr),
-			gsihal_get_reg_nk_ofst(GSI_EE_n_EV_CH_k_DOORBELL_0, 0,
-			event_ring_index + ipa3_ctx->mhi_evid_limits[0]));
+			   p_events[event_ring_index].wp,
+			   &(test_mhi_ctx->transport_phys_addr),
+			   gsihal_get_reg_nk_ofst(
+				   GSI_EE_n_EV_CH_k_DOORBELL_0, 0,
+				   event_ring_index +
+					   ipa3_ctx->mhi_evid_limits[0]));
 		gsihal_write_reg_nk(GSI_EE_n_EV_CH_k_DOORBELL_0, 0,
-			event_ring_index + ipa3_ctx->mhi_evid_limits[0],
-			p_events[event_ring_index].wp);
+				    event_ring_index +
+					    ipa3_ctx->mhi_evid_limits[0],
+				    p_events[event_ring_index].wp);
 	}
 
 	for (i = 0; i < buf_array_size; i++) {
 		/* calculate virtual pointer for current WP and RP */
 		wp_ofst = (u32)(p_channels[channel_idx].wp -
-			p_channels[channel_idx].rbase);
+				p_channels[channel_idx].rbase);
 		rp_ofst = (u32)(p_channels[channel_idx].rp -
-			p_channels[channel_idx].rbase);
+				p_channels[channel_idx].rbase);
 		(void)rp_ofst;
-		curr_re = (struct ipa_mhi_transfer_ring_element *)
-			((unsigned long)xfer_ring_bufs[channel_idx].base +
-			wp_ofst);
+		curr_re = (struct ipa_mhi_transfer_ring_element
+				   *)((unsigned long)xfer_ring_bufs[channel_idx]
+					      .base +
+				      wp_ofst);
 		if (p_channels[channel_idx].rlen & 0xFFFFFFFF00000000) {
 			IPA_UT_LOG("invalid ch rlen %llu\n",
-				p_channels[channel_idx].rlen);
+				   p_channels[channel_idx].rlen);
 			return -EFAULT;
 		}
 		next_wp_ofst = (wp_ofst +
-			sizeof(struct ipa_mhi_transfer_ring_element)) %
-			(u32)p_channels[channel_idx].rlen;
+				sizeof(struct ipa_mhi_transfer_ring_element)) %
+			       (u32)p_channels[channel_idx].rlen;
 
 		/* write current RE */
 		curr_re->type = IPA_MHI_RING_ELEMENT_TRANSFER;
@@ -1414,15 +1376,15 @@ static int ipa_mhi_test_q_transfer_re(struct ipa_mem_buffer *mmio,
 			curr_re->word_C.bits.chain = 0;
 			if (trigger_db) {
 				IPA_UT_LOG(
-					"DB to channel 0x%llx: base %pa ofst 0x%x\n"
-					, p_channels[channel_idx].wp
-					, &(test_mhi_ctx->transport_phys_addr)
-					, gsihal_get_reg_nk_ofst(
-						GSI_EE_n_GSI_CH_k_DOORBELL_0,
-						0, channel_idx));
+					"DB to channel 0x%llx: base %pa ofst 0x%x\n",
+					p_channels[channel_idx].wp,
+					&(test_mhi_ctx->transport_phys_addr),
+					gsihal_get_reg_nk_ofst(
+						GSI_EE_n_GSI_CH_k_DOORBELL_0, 0,
+						channel_idx));
 				gsihal_write_reg_nk(
-					GSI_EE_n_GSI_CH_k_DOORBELL_0,
-					0, channel_idx,
+					GSI_EE_n_GSI_CH_k_DOORBELL_0, 0,
+					channel_idx,
 					p_channels[channel_idx].wp);
 			}
 		} else {
@@ -1454,22 +1416,16 @@ static int ipa_mhi_test_loopback_data_transfer(void)
 
 	val++;
 
-	memset(test_mhi_ctx->in_buffer.base, 0,
-		IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
+	memset(test_mhi_ctx->in_buffer.base, 0, IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
 	for (i = 0; i < IPA_MHI_TEST_MAX_DATA_BUF_SIZE; i++)
 		memset(test_mhi_ctx->out_buffer.base + i, (val + i) & 0xFF, 1);
 
 	/* queue RE for IN side and trigger doorbell */
-	rc = ipa_mhi_test_q_transfer_re(p_mmio,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		&test_mhi_ctx->in_buffer,
-		1,
-		true,
-		true,
-		false,
-		true);
+	rc = ipa_mhi_test_q_transfer_re(p_mmio, test_mhi_ctx->xfer_ring_bufs,
+					test_mhi_ctx->ev_ring_bufs,
+					IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+					&test_mhi_ctx->in_buffer, 1, true, true,
+					false, true);
 
 	if (rc) {
 		IPA_UT_LOG("q_transfer_re failed %d\n", rc);
@@ -1478,16 +1434,11 @@ static int ipa_mhi_test_loopback_data_transfer(void)
 	}
 
 	/* queue REs for OUT side and trigger doorbell */
-	rc = ipa_mhi_test_q_transfer_re(p_mmio,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID,
-		&test_mhi_ctx->out_buffer,
-		1,
-		true,
-		true,
-		false,
-		true);
+	rc = ipa_mhi_test_q_transfer_re(p_mmio, test_mhi_ctx->xfer_ring_bufs,
+					test_mhi_ctx->ev_ring_bufs,
+					IPA_MHI_TEST_FIRST_CHANNEL_ID,
+					&test_mhi_ctx->out_buffer, 1, true,
+					true, false, true);
 
 	if (rc) {
 		IPA_UT_LOG("q_transfer_re failed %d\n", rc);
@@ -1498,14 +1449,14 @@ static int ipa_mhi_test_loopback_data_transfer(void)
 	IPA_MHI_TEST_CHECK_MSI_INTR(true, timeout);
 	if (timeout) {
 		IPA_UT_LOG("transfer timeout. MSI = 0x%x\n",
-			*((u32 *)test_mhi_ctx->msi.base));
+			   *((u32 *)test_mhi_ctx->msi.base));
 		IPA_UT_TEST_FAIL_REPORT("xfter timeout");
 		return -EFAULT;
 	}
 
 	/* compare the two buffers */
 	if (memcmp(test_mhi_ctx->in_buffer.base, test_mhi_ctx->out_buffer.base,
-		IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
+		   IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
 		IPA_UT_LOG("buffer are not equal\n");
 		IPA_UT_TEST_FAIL_REPORT("non-equal buffers after xfer");
 		return -EFAULT;
@@ -1536,68 +1487,70 @@ static int ipa_mhi_test_suspend(bool force, bool should_success)
 
 	if (!should_success && rc != -EAGAIN) {
 		IPA_UT_LOG("ipa_mhi_suspend did not return -EAGAIN fail %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("suspend succeeded unexpectedly");
 		return -EFAULT;
 	}
 
 	p_mmio = test_mhi_ctx->mmio_buf.base;
 
-	phys_addr = p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 	if (should_success) {
 		if (p_ch_ctx_array->chstate !=
-			IPA_HW_MHI_CHANNEL_STATE_SUSPEND) {
+		    IPA_HW_MHI_CHANNEL_STATE_SUSPEND) {
 			IPA_UT_LOG("chstate is not suspend! ch %d chstate %s\n",
-				IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-				MHI_STATE_STR(p_ch_ctx_array->chstate));
+				   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+				   MHI_STATE_STR(p_ch_ctx_array->chstate));
 			IPA_UT_TEST_FAIL_REPORT("channel state not suspend");
 			return -EFAULT;
 		}
 		if (!force && p_ch_ctx_array->rp != p_ch_ctx_array->wp) {
 			IPA_UT_LOG("rp not updated ch %d rp 0x%llx wp 0x%llx\n",
-				IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-				p_ch_ctx_array->rp, p_ch_ctx_array->wp);
+				   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+				   p_ch_ctx_array->rp, p_ch_ctx_array->wp);
 			IPA_UT_TEST_FAIL_REPORT("rp was not updated");
 			return -EFAULT;
 		}
 	} else {
 		if (p_ch_ctx_array->chstate != IPA_HW_MHI_CHANNEL_STATE_RUN) {
 			IPA_UT_LOG("chstate is not running! ch %d chstate %s\n",
-				IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-				MHI_STATE_STR(p_ch_ctx_array->chstate));
+				   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+				   MHI_STATE_STR(p_ch_ctx_array->chstate));
 			IPA_UT_TEST_FAIL_REPORT("channel state not run");
 			return -EFAULT;
 		}
 	}
 
-	phys_addr = p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 	if (should_success) {
 		if (p_ch_ctx_array->chstate !=
-			IPA_HW_MHI_CHANNEL_STATE_SUSPEND) {
+		    IPA_HW_MHI_CHANNEL_STATE_SUSPEND) {
 			IPA_UT_LOG("chstate is not suspend! ch %d chstate %s\n",
-				IPA_MHI_TEST_FIRST_CHANNEL_ID,
-				MHI_STATE_STR(p_ch_ctx_array->chstate));
+				   IPA_MHI_TEST_FIRST_CHANNEL_ID,
+				   MHI_STATE_STR(p_ch_ctx_array->chstate));
 			IPA_UT_TEST_FAIL_REPORT("channel state not suspend");
 			return -EFAULT;
 		}
 		if (!force && p_ch_ctx_array->rp != p_ch_ctx_array->wp) {
 			IPA_UT_LOG("rp not updated ch %d rp 0x%llx wp 0x%llx\n",
-				IPA_MHI_TEST_FIRST_CHANNEL_ID,
-				p_ch_ctx_array->rp, p_ch_ctx_array->wp);
+				   IPA_MHI_TEST_FIRST_CHANNEL_ID,
+				   p_ch_ctx_array->rp, p_ch_ctx_array->wp);
 			IPA_UT_TEST_FAIL_REPORT("rp was not updated");
 			return -EFAULT;
 		}
 	} else {
 		if (p_ch_ctx_array->chstate != IPA_HW_MHI_CHANNEL_STATE_RUN) {
 			IPA_UT_LOG("chstate is not running! ch %d chstate %s\n",
-				IPA_MHI_TEST_FIRST_CHANNEL_ID,
-				MHI_STATE_STR(p_ch_ctx_array->chstate));
+				   IPA_MHI_TEST_FIRST_CHANNEL_ID,
+				   MHI_STATE_STR(p_ch_ctx_array->chstate));
 			IPA_UT_TEST_FAIL_REPORT("channel state not run");
 			return -EFAULT;
 		}
@@ -1626,26 +1579,28 @@ static int ipa_test_mhi_resume(void)
 
 	p_mmio = test_mhi_ctx->mmio_buf.base;
 
-	phys_addr = p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID + 1) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 	if (p_ch_ctx_array->chstate != IPA_HW_MHI_CHANNEL_STATE_RUN) {
 		IPA_UT_LOG("chstate is not running! ch %d chstate %s\n",
-			IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-			MHI_STATE_STR(p_ch_ctx_array->chstate));
+			   IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+			   MHI_STATE_STR(p_ch_ctx_array->chstate));
 		IPA_UT_TEST_FAIL_REPORT("channel state not run");
 		return -EFAULT;
 	}
 
-	phys_addr = p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 	if (p_ch_ctx_array->chstate != IPA_HW_MHI_CHANNEL_STATE_RUN) {
 		IPA_UT_LOG("chstate is not running! ch %d chstate %s\n",
-			IPA_MHI_TEST_FIRST_CHANNEL_ID,
-			MHI_STATE_STR(p_ch_ctx_array->chstate));
+			   IPA_MHI_TEST_FIRST_CHANNEL_ID,
+			   MHI_STATE_STR(p_ch_ctx_array->chstate));
 		IPA_UT_TEST_FAIL_REPORT("channel state not run");
 		return -EFAULT;
 	}
@@ -1687,16 +1642,10 @@ static int ipa_mhi_test_suspend_resume(void)
 		memset(test_mhi_ctx->out_buffer.base + i, i & 0xFF, 1);
 
 	/* queue RE for IN side and trigger doorbell */
-	rc = ipa_mhi_test_q_transfer_re(&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		&test_mhi_ctx->in_buffer,
-		1,
-		true,
-		true,
-		false,
-		true);
+	rc = ipa_mhi_test_q_transfer_re(
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+		&test_mhi_ctx->in_buffer, 1, true, true, false, true);
 	if (rc) {
 		IPA_UT_LOG("ipa_mhi_test_q_transfer_re failed %d\n", rc);
 		IPA_UT_TEST_FAIL_REPORT("fail IN q xfer re");
@@ -1704,16 +1653,10 @@ static int ipa_mhi_test_suspend_resume(void)
 	}
 
 	/* queue REs for OUT side and trigger doorbell */
-	rc = ipa_mhi_test_q_transfer_re(&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID,
-		&test_mhi_ctx->out_buffer,
-		1,
-		true,
-		true,
-		false,
-		true);
+	rc = ipa_mhi_test_q_transfer_re(
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID,
+		&test_mhi_ctx->out_buffer, 1, true, true, false, true);
 
 	if (rc) {
 		IPA_UT_LOG("ipa_mhi_test_q_transfer_re failed %d\n", rc);
@@ -1745,9 +1688,8 @@ static int ipa_mhi_test_suspend_resume(void)
 	}
 
 	/* compare the two buffers */
-	if (memcmp(test_mhi_ctx->in_buffer.base,
-		test_mhi_ctx->out_buffer.base,
-		IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
+	if (memcmp(test_mhi_ctx->in_buffer.base, test_mhi_ctx->out_buffer.base,
+		   IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
 		IPA_UT_LOG("Error: buffers are not equal\n");
 		IPA_UT_TEST_FAIL_REPORT("non-equal buffers after xfer");
 		return -EFAULT;
@@ -1790,16 +1732,10 @@ static int ipa_mhi_test_create_aggr_open_frame(void)
 	memset(test_mhi_ctx->msi.base, 0xFF, test_mhi_ctx->msi.size);
 
 	/* queue RE for IN side and trigger doorbell */
-	rc = ipa_mhi_test_q_transfer_re(&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		&test_mhi_ctx->in_buffer,
-		1,
-		true,
-		true,
-		false,
-		true);
+	rc = ipa_mhi_test_q_transfer_re(
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+		&test_mhi_ctx->in_buffer, 1, true, true, false, true);
 	if (rc) {
 		IPA_UT_LOG("ipa_mhi_test_q_transfer_re failed %d\n", rc);
 		IPA_UT_TEST_FAIL_REPORT("fail IN q xfer re");
@@ -1831,12 +1767,12 @@ static int ipa_mhi_test_create_aggr_open_frame(void)
 	if (ipa_ver >= IPA_HW_v5_0) {
 		aggr_state_active =
 			(u64)ipahal_read_ep_reg_n(IPA_STATE_AGGR_ACTIVE_n, 0,
-						test_mhi_ctx->cons_hdl) |
+						  test_mhi_ctx->cons_hdl) |
 			(((u64)ipahal_read_ep_reg_n(IPA_STATE_AGGR_ACTIVE_n, 1,
-						test_mhi_ctx->cons_hdl)) << 32);
+						    test_mhi_ctx->cons_hdl))
+			 << 32);
 	} else {
-		aggr_state_active =
-			(u64)ipahal_read_reg(IPA_STATE_AGGR_ACTIVE);
+		aggr_state_active = (u64)ipahal_read_reg(IPA_STATE_AGGR_ACTIVE);
 	}
 
 	IPA_UT_LOG("IPA_STATE_AGGR_ACTIVE  0x%x\n", aggr_state_active);
@@ -1880,9 +1816,9 @@ static int ipa_mhi_test_suspend_aggr_open(bool force)
 
 	IPA_UT_LOG("BEFORE suspend\n");
 	/**
-	 * if suspend force, then suspend should succeed.
-	 * otherwize it should fail due to open aggr.
-	 */
+   * if suspend force, then suspend should succeed.
+   * otherwize it should fail due to open aggr.
+   */
 	rc = ipa_mhi_test_suspend(force, force);
 	if (rc) {
 		IPA_UT_LOG("suspend failed %d\n", rc);
@@ -1910,11 +1846,11 @@ static int ipa_mhi_test_suspend_aggr_open(bool force)
 
 	if (ipa_get_hw_type() >= IPA_HW_v5_0)
 		ipahal_write_ep_reg(IPA_AGGR_FORCE_CLOSE_n,
-			test_mhi_ctx->cons_hdl,
-			ipahal_get_ep_bit(test_mhi_ctx->cons_hdl));
+				    test_mhi_ctx->cons_hdl,
+				    ipahal_get_ep_bit(test_mhi_ctx->cons_hdl));
 	else
 		ipahal_write_reg(IPA_AGGR_FORCE_CLOSE,
-			ipahal_get_ep_bit(test_mhi_ctx->cons_hdl));
+				 ipahal_get_ep_bit(test_mhi_ctx->cons_hdl));
 
 	IPA_MHI_TEST_CHECK_MSI_INTR(false, timeout);
 	if (timeout) {
@@ -1924,9 +1860,8 @@ static int ipa_mhi_test_suspend_aggr_open(bool force)
 	}
 
 	/* compare the two buffers */
-	if (memcmp(test_mhi_ctx->in_buffer.base,
-		test_mhi_ctx->out_buffer.base,
-		IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
+	if (memcmp(test_mhi_ctx->in_buffer.base, test_mhi_ctx->out_buffer.base,
+		   IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
 		IPA_UT_LOG("fail: buffer are not equal\n");
 		IPA_UT_TEST_FAIL_REPORT("non-equal buffers after xfer");
 		return -EFAULT;
@@ -1977,16 +1912,10 @@ static int ipa_mhi_test_suspend_host_wakeup(void)
 
 	memset(test_mhi_ctx->in_buffer.base, 0, IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
 	/* queue RE for IN side and trigger doorbell*/
-	rc = ipa_mhi_test_q_transfer_re(&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		&test_mhi_ctx->in_buffer,
-		1,
-		true,
-		true,
-		false,
-		true);
+	rc = ipa_mhi_test_q_transfer_re(
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+		&test_mhi_ctx->in_buffer, 1, true, true, false, true);
 
 	if (rc) {
 		IPA_UT_LOG("ipa_mhi_test_q_transfer_re failed %d\n", rc);
@@ -2014,7 +1943,7 @@ static int ipa_mhi_test_suspend_host_wakeup(void)
 	}
 
 	if (wait_for_completion_timeout(&mhi_test_wakeup_comp,
-		msecs_to_jiffies(3500)) == 0) {
+					msecs_to_jiffies(3500)) == 0) {
 		IPA_UT_LOG("timeout waiting for wakeup event\n");
 		IPA_UT_TEST_FAIL_REPORT("timeout waiting for wakeup event");
 		return -ETIME;
@@ -2038,9 +1967,8 @@ static int ipa_mhi_test_suspend_host_wakeup(void)
 	}
 
 	/* compare the two buffers */
-	if (memcmp(test_mhi_ctx->in_buffer.base,
-		test_mhi_ctx->out_buffer.base,
-		IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
+	if (memcmp(test_mhi_ctx->in_buffer.base, test_mhi_ctx->out_buffer.base,
+		   IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
 		IPA_UT_LOG("fail: buffer are not equal\n");
 		IPA_UT_TEST_FAIL_REPORT("non-equal buffers after xfer");
 		return -EFAULT;
@@ -2079,18 +2007,14 @@ static int ipa_mhi_test_create_full_channel(int *submitted_packets)
 		timeout = true;
 		/* queue REs for OUT side and trigger doorbell */
 		rc = ipa_mhi_test_q_transfer_re(&test_mhi_ctx->mmio_buf,
-			test_mhi_ctx->xfer_ring_bufs,
-			test_mhi_ctx->ev_ring_bufs,
-			IPA_MHI_TEST_FIRST_CHANNEL_ID,
-			&test_mhi_ctx->out_buffer,
-			1,
-			true,
-			true,
-			false,
-			true);
+						test_mhi_ctx->xfer_ring_bufs,
+						test_mhi_ctx->ev_ring_bufs,
+						IPA_MHI_TEST_FIRST_CHANNEL_ID,
+						&test_mhi_ctx->out_buffer, 1,
+						true, true, false, true);
 		if (rc) {
 			IPA_UT_LOG("ipa_mhi_test_q_transfer_re failed %d\n",
-				rc);
+				   rc);
 			IPA_UT_TEST_FAIL_REPORT("fail OUT q re");
 			return rc;
 		}
@@ -2099,8 +2023,7 @@ static int ipa_mhi_test_create_full_channel(int *submitted_packets)
 		IPA_UT_LOG("waiting for MSI\n");
 		for (i = 0; i < 10; i++) {
 			if (*((u32 *)test_mhi_ctx->msi.base) ==
-				(0x10000000 |
-				(IPA_MHI_TEST_FIRST_EVENT_RING_ID))) {
+			    (0x10000000 | (IPA_MHI_TEST_FIRST_EVENT_RING_ID))) {
 				IPA_UT_LOG("got MSI\n");
 				timeout = false;
 				break;
@@ -2140,7 +2063,7 @@ static int ipa_mhi_test_suspend_full_channel(bool force)
 	rc = ipa_mhi_test_suspend(force, false);
 	if (rc) {
 		IPA_UT_LOG("ipa_mhi_suspend did not returned -EAGAIN. rc %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("test suspend fail");
 		return -EFAULT;
 	}
@@ -2148,26 +2071,21 @@ static int ipa_mhi_test_suspend_full_channel(bool force)
 
 	while (submitted_packets) {
 		memset(test_mhi_ctx->in_buffer.base, 0,
-			IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
+		       IPA_MHI_TEST_MAX_DATA_BUF_SIZE);
 
 		/* invalidate spare register value (for msi) */
 		memset(test_mhi_ctx->msi.base, 0xFF, test_mhi_ctx->msi.size);
 
 		timeout = true;
 		/* queue RE for IN side and trigger doorbell */
-		rc = ipa_mhi_test_q_transfer_re(&test_mhi_ctx->mmio_buf,
-			test_mhi_ctx->xfer_ring_bufs,
+		rc = ipa_mhi_test_q_transfer_re(
+			&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
 			test_mhi_ctx->ev_ring_bufs,
 			IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-			&test_mhi_ctx->in_buffer,
-			1,
-			true,
-			true,
-			false,
-			true);
+			&test_mhi_ctx->in_buffer, 1, true, true, false, true);
 		if (rc) {
 			IPA_UT_LOG("ipa_mhi_test_q_transfer_re failed %d\n",
-				rc);
+				   rc);
 			IPA_UT_TEST_FAIL_REPORT("fail IN q re");
 			return rc;
 		}
@@ -2181,8 +2099,8 @@ static int ipa_mhi_test_suspend_full_channel(bool force)
 
 		/* compare the two buffers */
 		if (memcmp(test_mhi_ctx->in_buffer.base,
-			test_mhi_ctx->out_buffer.base,
-			IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
+			   test_mhi_ctx->out_buffer.base,
+			   IPA_MHI_TEST_MAX_DATA_BUF_SIZE)) {
 			IPA_UT_LOG("buffer are not equal\n");
 			IPA_UT_TEST_FAIL_REPORT("non-equal buffers after xfer");
 			return -EFAULT;
@@ -2238,10 +2156,11 @@ static int ipa_mhi_test_suspend_wp_update(void)
 
 	/* simulate a write by updating the wp */
 	p_mmio = test_mhi_ctx->mmio_buf.base;
-	phys_addr = p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
-		sizeof(struct ipa_mhi_channel_context_array));
+	phys_addr =
+		p_mmio->ccabap + ((IPA_MHI_TEST_FIRST_CHANNEL_ID) *
+				  sizeof(struct ipa_mhi_channel_context_array));
 	p_ch_ctx_array = test_mhi_ctx->ch_ctx_array.base +
-		(phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
+			 (phys_addr - test_mhi_ctx->ch_ctx_array.phys_base);
 	old_wp = p_ch_ctx_array->wp;
 	p_ch_ctx_array->wp += 16;
 
@@ -2292,12 +2211,10 @@ static int ipa_mhi_test_channel_reset_aggr_open(void)
 
 	ipa_ver = ipa_get_hw_type();
 	if (ipa_ver >= IPA_HW_v5_0) {
-		aggr_state_active =
-			ipahal_read_ep_reg(IPA_STATE_AGGR_ACTIVE_n,
-				test_mhi_ctx->cons_hdl);
+		aggr_state_active = ipahal_read_ep_reg(IPA_STATE_AGGR_ACTIVE_n,
+						       test_mhi_ctx->cons_hdl);
 	} else {
-		aggr_state_active =
-			ipahal_read_reg(IPA_STATE_AGGR_ACTIVE);
+		aggr_state_active = ipahal_read_reg(IPA_STATE_AGGR_ACTIVE);
 	}
 
 	IPADBG("IPA_STATE_AGGR_ACTIVE 0x%x\n", aggr_state_active);
@@ -2356,16 +2273,10 @@ static int ipa_mhi_test_channel_reset_ipa_holb(void)
 	memset(test_mhi_ctx->msi.base, 0xFF, test_mhi_ctx->msi.size);
 	timeout = true;
 	/* queue RE for IN side and trigger doorbell */
-	rc = ipa_mhi_test_q_transfer_re(&test_mhi_ctx->mmio_buf,
-		test_mhi_ctx->xfer_ring_bufs,
-		test_mhi_ctx->ev_ring_bufs,
-		IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
-		&test_mhi_ctx->in_buffer,
-		1,
-		true,
-		true,
-		false,
-		true);
+	rc = ipa_mhi_test_q_transfer_re(
+		&test_mhi_ctx->mmio_buf, test_mhi_ctx->xfer_ring_bufs,
+		test_mhi_ctx->ev_ring_bufs, IPA_MHI_TEST_FIRST_CHANNEL_ID + 1,
+		&test_mhi_ctx->in_buffer, 1, true, true, false, true);
 
 	if (rc) {
 		IPA_UT_LOG("ipa_mhi_test_q_transfer_re failed %d\n", rc);
@@ -2390,7 +2301,6 @@ static int ipa_mhi_test_channel_reset_ipa_holb(void)
 
 	return rc;
 }
-
 
 /**
  * TEST: mhi reset in READY state
@@ -2455,8 +2365,8 @@ static int ipa_mhi_test_reset_m0_state(void *priv)
 	rc = ipa_mhi_test_initialize_driver(false);
 	if (rc) {
 		IPA_UT_LOG("init to M0 state failed rc=%d\n", rc);
-		IPA_UT_TEST_FAIL_REPORT
-			("fail to init to M0 state (w/ start and connect)");
+		IPA_UT_TEST_FAIL_REPORT(
+			"fail to init to M0 state (w/ start and connect)");
 		return rc;
 	}
 
@@ -2498,8 +2408,8 @@ static int ipa_mhi_test_inloop_reset_m0_state(void *priv)
 	rc = ipa_mhi_test_initialize_driver(false);
 	if (rc) {
 		IPA_UT_LOG("init to M0 state failed rc=%d\n", rc);
-		IPA_UT_TEST_FAIL_REPORT
-			("fail to init to M0 state (w/ start and connect)");
+		IPA_UT_TEST_FAIL_REPORT(
+			"fail to init to M0 state (w/ start and connect)");
 		return rc;
 	}
 
@@ -2816,8 +2726,8 @@ static int ipa_mhi_test_in_loop_suspend_resume_aggr_open(void *priv)
 		return rc;
 	}
 
-	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_suspend_aggr_open,
-		rc, false);
+	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_suspend_aggr_open, rc,
+				      false);
 	if (rc) {
 		IPA_UT_LOG("suspend resume with aggr open failed rc=%d", rc);
 		IPA_UT_TEST_FAIL_REPORT(
@@ -2869,11 +2779,10 @@ static int ipa_mhi_test_in_loop_force_suspend_resume_aggr_open(void *priv)
 		return rc;
 	}
 
-	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_suspend_aggr_open,
-		rc, true);
+	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_suspend_aggr_open, rc, true);
 	if (rc) {
 		IPA_UT_LOG("force suspend resume with aggr open failed rc=%d",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT(
 			"in loop force suspend/resume with open aggr failed");
 		return rc;
@@ -2975,8 +2884,8 @@ static int ipa_mhi_test_in_loop_reject_suspend_full_channel(void *priv)
 		return rc;
 	}
 
-	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_suspend_full_channel,
-		rc, false);
+	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_suspend_full_channel, rc,
+				      false);
 	if (rc) {
 		IPA_UT_LOG("full channel rejected suspend failed rc=%d", rc);
 		IPA_UT_TEST_FAIL_REPORT(
@@ -3028,11 +2937,11 @@ static int ipa_mhi_test_in_loop_reject_force_suspend_full_channel(void *priv)
 		return rc;
 	}
 
-	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_suspend_full_channel,
-		rc, true);
+	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_suspend_full_channel, rc,
+				      true);
 	if (rc) {
 		IPA_UT_LOG("full channel rejected force suspend failed rc=%d",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT(
 			"in loop force rejected suspend as full ch failed");
 		return rc;
@@ -3137,7 +3046,7 @@ static int ipa_mhi_test_in_loop_channel_reset(void *priv)
 	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_channel_reset, rc);
 	if (rc) {
 		IPA_UT_LOG("channel reset (disconnect/connect) failed rc=%d",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("in loop channel reset failed");
 		return rc;
 	}
@@ -3189,7 +3098,7 @@ static int ipa_mhi_test_in_loop_channel_reset_aggr_open(void *priv)
 	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_channel_reset_aggr_open, rc);
 	if (rc) {
 		IPA_UT_LOG("channel reset (disconnect/connect) failed rc=%d",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT(
 			"in loop channel reset with open aggr failed");
 		return rc;
@@ -3242,7 +3151,7 @@ static int ipa_mhi_test_in_loop_channel_reset_ipa_holb(void *priv)
 	IPA_MHI_RUN_TEST_UNIT_IN_LOOP(ipa_mhi_test_channel_reset_ipa_holb, rc);
 	if (rc) {
 		IPA_UT_LOG("channel reset (disconnect/connect) failed rc=%d",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT(
 			"in loop channel reset with channel HOLB failed");
 		return rc;
@@ -3266,75 +3175,78 @@ static int ipa_mhi_test_in_loop_channel_reset_ipa_holb(void *priv)
 }
 
 /* Suite definition block */
-IPA_UT_DEFINE_SUITE_START(mhi, "MHI for GSI",
-	ipa_test_mhi_suite_setup, ipa_test_mhi_suite_teardown)
-{
-	IPA_UT_ADD_TEST(reset_ready_state,
-		"reset test in Ready state",
-		ipa_mhi_test_reset_ready_state,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(reset_m0_state,
-		"reset test in M0 state",
-		ipa_mhi_test_reset_m0_state,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+IPA_UT_DEFINE_SUITE_START(mhi, "MHI for GSI", ipa_test_mhi_suite_setup,
+			  ipa_test_mhi_suite_teardown){
+	IPA_UT_ADD_TEST(reset_ready_state, "reset test in Ready state",
+			ipa_mhi_test_reset_ready_state, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(reset_m0_state, "reset test in M0 state",
+			ipa_mhi_test_reset_m0_state, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(inloop_reset_m0_state,
-		"several reset iterations in M0 state",
-		ipa_mhi_test_inloop_reset_m0_state,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"several reset iterations in M0 state",
+			ipa_mhi_test_inloop_reset_m0_state, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(loopback_data_with_reset_on_m0,
-		"reset before and after loopback data in M0 state",
-		ipa_mhi_test_loopback_data_with_reset,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(reset_on_suspend,
-		"reset test in suspend state",
-		ipa_mhi_test_reset_on_suspend,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"reset before and after loopback data in M0 state",
+			ipa_mhi_test_loopback_data_with_reset, true,
+			IPA_HW_v3_0, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(reset_on_suspend, "reset test in suspend state",
+			ipa_mhi_test_reset_on_suspend, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(inloop_reset_on_suspend,
-		"several reset iterations in suspend state",
-		ipa_mhi_test_inloop_reset_on_suspend,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"several reset iterations in suspend state",
+			ipa_mhi_test_inloop_reset_on_suspend, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(loopback_data_with_reset_on_suspend,
-		"reset before and after loopback data in suspend state",
-		ipa_mhi_test_loopback_data_with_reset_on_suspend,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(suspend_resume,
-		"several suspend/resume iterations",
-		ipa_mhi_test_in_loop_suspend_resume,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(suspend_resume_with_open_aggr,
+			"reset before and after loopback data in suspend state",
+			ipa_mhi_test_loopback_data_with_reset_on_suspend, true,
+			IPA_HW_v3_0, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(suspend_resume, "several suspend/resume iterations",
+			ipa_mhi_test_in_loop_suspend_resume, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(
+		suspend_resume_with_open_aggr,
 		"several suspend/resume iterations with open aggregation frame",
-		ipa_mhi_test_in_loop_suspend_resume_aggr_open,
-		true, IPA_HW_v3_0, IPA_HW_v3_5_1),
-	IPA_UT_ADD_TEST(force_suspend_resume_with_open_aggr,
+		ipa_mhi_test_in_loop_suspend_resume_aggr_open, true,
+		IPA_HW_v3_0, IPA_HW_v3_5_1),
+	IPA_UT_ADD_TEST(
+		force_suspend_resume_with_open_aggr,
 		"several force suspend/resume iterations with open aggregation frame",
-		ipa_mhi_test_in_loop_force_suspend_resume_aggr_open,
-		true, IPA_HW_v3_0, IPA_HW_v3_5_1),
+		ipa_mhi_test_in_loop_force_suspend_resume_aggr_open, true,
+		IPA_HW_v3_0, IPA_HW_v3_5_1),
 	IPA_UT_ADD_TEST(suspend_resume_with_host_wakeup,
-		"several suspend and host wakeup resume iterations",
-		ipa_mhi_test_in_loop_suspend_host_wakeup,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(reject_suspend_channel_full,
+			"several suspend and host wakeup resume iterations",
+			ipa_mhi_test_in_loop_suspend_host_wakeup, true,
+			IPA_HW_v3_0, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(
+		reject_suspend_channel_full,
 		"several rejected suspend iterations due to full channel",
-		ipa_mhi_test_in_loop_reject_suspend_full_channel,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(reject_force_suspend_channel_full,
+		ipa_mhi_test_in_loop_reject_suspend_full_channel, true,
+		IPA_HW_v3_0, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(
+		reject_force_suspend_channel_full,
 		"several rejected force suspend iterations due to full channel",
-		ipa_mhi_test_in_loop_reject_force_suspend_full_channel,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(suspend_resume_manual_wp_update,
-		"several suspend/resume iterations with after simulating writing by wp manual update",
-		ipa_mhi_test_in_loop_suspend_resume_wp_update,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+		ipa_mhi_test_in_loop_reject_force_suspend_full_channel, true,
+		IPA_HW_v3_0, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(
+		suspend_resume_manual_wp_update,
+		"several suspend/resume iterations with after simulating "
+		"writing by wp manual update",
+		ipa_mhi_test_in_loop_suspend_resume_wp_update, true,
+		IPA_HW_v3_0, IPA_HW_MAX),
 	IPA_UT_ADD_TEST(channel_reset,
-		"several channel reset (disconnect/connect) iterations",
-		ipa_mhi_test_in_loop_channel_reset,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"several channel reset (disconnect/connect) iterations",
+			ipa_mhi_test_in_loop_channel_reset, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(channel_reset_aggr_open,
-		"several channel reset (disconnect/connect) iterations with open aggregation frame",
-		ipa_mhi_test_in_loop_channel_reset_aggr_open,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"several channel reset (disconnect/connect) iterations "
+			"with open aggregation frame",
+			ipa_mhi_test_in_loop_channel_reset_aggr_open, true,
+			IPA_HW_v3_0, IPA_HW_MAX),
 	IPA_UT_ADD_TEST(channel_reset_ipa_holb,
-		"several channel reset (disconnect/connect) iterations with channel in HOLB state",
-		ipa_mhi_test_in_loop_channel_reset_ipa_holb,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"several channel reset (disconnect/connect) iterations "
+			"with channel in HOLB state",
+			ipa_mhi_test_in_loop_channel_reset_ipa_holb, true,
+			IPA_HW_v3_0, IPA_HW_MAX),
 } IPA_UT_DEFINE_SUITE_END(mhi);

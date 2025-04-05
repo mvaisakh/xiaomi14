@@ -6,24 +6,24 @@
 
 #define pr_fmt(fmt) "mi_disp_core:[%s:%d] " fmt, __func__, __LINE__
 
+#include <linux/cdev.h>
+#include <linux/crypto.h>
+#include <linux/debugfs.h>
+#include <linux/fs.h>
+#include <linux/kobject.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
-#include <linux/slab.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/uaccess.h>
-#include <linux/crypto.h>
 #include <linux/proc_fs.h>
-#include <linux/debugfs.h>
-#include <linux/kobject.h>
+#include <linux/slab.h>
+#include <linux/uaccess.h>
 
-#include "mi_disp_print.h"
 #include "mi_disp_core.h"
+#include "mi_disp_print.h"
 
 static struct disp_core *g_disp_core = NULL;
 
-int mi_disp_cdev_register(const char *name,
-			const struct file_operations *fops, struct cdev **cdevp)
+int mi_disp_cdev_register(const char *name, const struct file_operations *fops,
+			  struct cdev **cdevp)
 {
 	int ret = 0;
 	dev_t dev_id;
@@ -52,7 +52,8 @@ int mi_disp_cdev_register(const char *name,
 		goto err_cdev_del;
 	}
 
-	DISP_INFO("cdev name = %s, dev_id = (%d:%d)", name, MAJOR(dev_id), MINOR(dev_id));
+	DISP_INFO("cdev name = %s, dev_id = (%d:%d)", name, MAJOR(dev_id),
+		  MINOR(dev_id));
 	*cdevp = cdev;
 	return 0;
 
@@ -86,7 +87,7 @@ void mi_disp_class_device_unregister(struct device *dev)
 	return device_unregister(dev);
 }
 
-struct disp_core * mi_get_disp_core(void)
+struct disp_core *mi_get_disp_core(void)
 {
 	int ret = 0;
 
@@ -136,9 +137,11 @@ int mi_disp_core_init(void)
 		goto err_class_destroy;
 	}
 
-	disp_core->debugfs_dir = debugfs_create_dir(MI_DISPLAY_DEBUGFS_DIR, NULL);
+	disp_core->debugfs_dir =
+		debugfs_create_dir(MI_DISPLAY_DEBUGFS_DIR, NULL);
 	if (!disp_core->debugfs_dir) {
-		DISP_ERROR("debugfs_create_dir failed for %s\n", MI_DISPLAY_DEBUGFS_DIR);
+		DISP_ERROR("debugfs_create_dir failed for %s\n",
+			   MI_DISPLAY_DEBUGFS_DIR);
 		ret = -ENOMEM;
 		goto err_procfs_remove;
 	}
@@ -169,4 +172,3 @@ void mi_disp_core_deinit(void)
 	kfree(g_disp_core);
 	g_disp_core = NULL;
 }
-

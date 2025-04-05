@@ -22,18 +22,18 @@
  *
  */
 
+#include "target_if_fwol.h"
 #include "qdf_mem.h"
-#include "target_if.h"
 #include "qdf_status.h"
-#include "wmi_unified_api.h"
-#include "wmi_unified_priv.h"
-#include "wmi_unified_param.h"
+#include "target_if.h"
+#include "wlan_defs.h"
+#include "wlan_fw_offload_main.h"
+#include "wlan_fwol_public_structs.h"
 #include "wlan_objmgr_psoc_obj.h"
 #include "wlan_utility.h"
-#include "wlan_defs.h"
-#include "wlan_fwol_public_structs.h"
-#include "wlan_fw_offload_main.h"
-#include "target_if_fwol.h"
+#include "wmi_unified_api.h"
+#include "wmi_unified_param.h"
+#include "wmi_unified_priv.h"
 
 #ifdef WLAN_FEATURE_ELNA
 /**
@@ -132,8 +132,8 @@ static int target_if_fwol_get_elna_bypass_resp(ol_scn_t scn, uint8_t *event_buf,
 
 	rx_ops = &fwol_obj->rx_ops;
 	if (rx_ops->get_elna_bypass_resp) {
-		status = wmi_extract_get_elna_bypass_resp(wmi_handle,
-							  event_buf, &resp);
+		status = wmi_extract_get_elna_bypass_resp(wmi_handle, event_buf,
+							  &resp);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			target_if_err("Failed to extract eLNA bypass");
 			return -EINVAL;
@@ -171,14 +171,14 @@ target_if_fwol_unregister_elna_event_handler(struct wlan_objmgr_psoc *psoc,
 	QDF_STATUS rc;
 
 	rc = wmi_unified_unregister_event_handler(
-					    get_wmi_unified_hdl_from_psoc(psoc),
-					    wmi_get_elna_bypass_event_id);
+		get_wmi_unified_hdl_from_psoc(psoc),
+		wmi_get_elna_bypass_event_id);
 	if (QDF_IS_STATUS_ERROR(rc))
-		target_if_debug("Failed to unregister get eLNA bypass event cb");
+		target_if_debug(
+			"Failed to unregister get eLNA bypass event cb");
 }
 
-static void
-target_if_fwol_register_elna_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
+static void target_if_fwol_register_elna_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
 {
 	tx_ops->set_elna_bypass = target_if_fwol_set_elna_bypass;
 	tx_ops->get_elna_bypass = target_if_fwol_get_elna_bypass;
@@ -196,8 +196,7 @@ target_if_fwol_unregister_elna_event_handler(struct wlan_objmgr_psoc *psoc,
 {
 }
 
-static void
-target_if_fwol_register_elna_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
+static void target_if_fwol_register_elna_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
 {
 }
 #endif /* WLAN_FEATURE_ELNA */
@@ -212,7 +211,7 @@ target_if_fwol_register_elna_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
  */
 static QDF_STATUS
 target_if_fwol_send_dscp_up_map_to_fw(struct wlan_objmgr_psoc *psoc,
-				     uint32_t *dscp_to_up_map)
+				      uint32_t *dscp_to_up_map)
 {
 	QDF_STATUS status;
 	wmi_unified_t wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
@@ -373,12 +372,12 @@ target_if_fwol_notify_thermal_throttle(struct wlan_objmgr_psoc *psoc,
  *
  * Return: 0 on success
  */
-static int
-target_if_fwol_thermal_throttle_event_handler(ol_scn_t scn, uint8_t *event_buf,
-					      uint32_t len)
+static int target_if_fwol_thermal_throttle_event_handler(ol_scn_t scn,
+							 uint8_t *event_buf,
+							 uint32_t len)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
-	struct thermal_throttle_info info = {0};
+	struct thermal_throttle_info info = { 0 };
 	struct wlan_objmgr_psoc *psoc;
 	wmi_unified_t wmi_handle;
 	struct wlan_fwol_psoc_obj *fwol_obj;
@@ -408,13 +407,10 @@ target_if_fwol_thermal_throttle_event_handler(ol_scn_t scn, uint8_t *event_buf,
 		return -EINVAL;
 	}
 
-	status = wmi_extract_thermal_stats(wmi_handle,
-					   event_buf,
-					   &info.temperature,
-					   &info.level,
+	status = wmi_extract_thermal_stats(wmi_handle, event_buf,
+					   &info.temperature, &info.level,
 					   &info.therm_throt_levels,
-					   info.level_info,
-					   &info.pdev_id);
+					   info.level_info, &info.pdev_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_debug("Failed to convert thermal target level");
 		return -EINVAL;
@@ -430,8 +426,7 @@ target_if_fwol_thermal_throttle_event_handler(ol_scn_t scn, uint8_t *event_buf,
 	if (QDF_IS_STATUS_ERROR(status))
 		target_if_debug("thermal stats level response failed.");
 
-	if (rx_ops->notify_thermal_throttle_handler)
-	{
+	if (rx_ops->notify_thermal_throttle_handler) {
 		if (info.level == THERMAL_UNKNOWN) {
 			target_if_debug("Failed to convert thermal target lvl");
 			return -EINVAL;
@@ -468,14 +463,14 @@ target_if_fwol_register_thermal_throttle_handler(struct wlan_objmgr_psoc *psoc)
 	}
 	if (!fwol_obj->cfg.thermal_temp_cfg.thermal_mitigation_enable &&
 	    !target_if_fwol_is_thermal_stats_enable(fwol_obj)) {
-		target_if_debug("thermal mitigation or stats offload not enabled");
+		target_if_debug(
+			"thermal mitigation or stats offload not enabled");
 		return;
 	}
 	status = wmi_unified_register_event_handler(
-				get_wmi_unified_hdl_from_psoc(psoc),
-				wmi_tt_stats_event_id,
-				target_if_fwol_thermal_throttle_event_handler,
-				WMI_RX_SERIALIZER_CTX);
+		get_wmi_unified_hdl_from_psoc(psoc), wmi_tt_stats_event_id,
+		target_if_fwol_thermal_throttle_event_handler,
+		WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(status))
 		target_if_debug("Failed to register thermal stats event cb");
 }
@@ -487,15 +482,13 @@ target_if_fwol_register_thermal_throttle_handler(struct wlan_objmgr_psoc *psoc)
  *
  * Return: void
  */
-static void
-target_if_fwol_unregister_thermal_throttle_handler(
-					struct wlan_objmgr_psoc *psoc)
+static void target_if_fwol_unregister_thermal_throttle_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	QDF_STATUS status;
 
 	status = wmi_unified_unregister_event_handler(
-				get_wmi_unified_hdl_from_psoc(psoc),
-				wmi_tt_stats_event_id);
+		get_wmi_unified_hdl_from_psoc(psoc), wmi_tt_stats_event_id);
 	if (QDF_IS_STATUS_ERROR(status))
 		target_if_debug("Failed to unregister thermal stats event cb");
 }
@@ -505,9 +498,8 @@ target_if_fwol_register_thermal_throttle_handler(struct wlan_objmgr_psoc *psoc)
 {
 }
 
-static void
-target_if_fwol_unregister_thermal_throttle_handler(
-					struct wlan_objmgr_psoc *psoc)
+static void target_if_fwol_unregister_thermal_throttle_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 }
 #endif
@@ -532,29 +524,25 @@ target_if_fwol_set_mdns_config(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_send_set_mdns_config_cmd(wmi_handle,
-						      mdns_info);
+	status = wmi_unified_send_set_mdns_config_cmd(wmi_handle, mdns_info);
 	if (QDF_IS_STATUS_ERROR(status))
 		target_if_err("Failed to set mDNS Config %d", status);
 
 	return status;
 }
 
-static void
-target_if_fwol_register_mdns_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
+static void target_if_fwol_register_mdns_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
 {
 	tx_ops->set_mdns_config = target_if_fwol_set_mdns_config;
 }
 #else
-static void
-target_if_fwol_register_mdns_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
+static void target_if_fwol_register_mdns_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
 {
 }
 #endif /* WLAN_FEATURE_MDNS_OFFLOAD */
 
 QDF_STATUS
-target_if_fwol_register_event_handler(struct wlan_objmgr_psoc *psoc,
-				      void *arg)
+target_if_fwol_register_event_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	target_if_fwol_register_elna_event_handler(psoc, arg);
 	target_if_fwol_register_thermal_throttle_handler(psoc);
@@ -584,4 +572,3 @@ QDF_STATUS target_if_fwol_register_tx_ops(struct wlan_fwol_tx_ops *tx_ops)
 
 	return QDF_STATUS_SUCCESS;
 }
-

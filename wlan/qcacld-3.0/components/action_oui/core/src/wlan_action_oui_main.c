@@ -21,12 +21,12 @@
  * DOC: Implement various notification handlers which are accessed
  * internally in action_oui component only.
  */
-#include "cfg_ucfg_api.h"
-#include "wlan_action_oui_cfg.h"
 #include "wlan_action_oui_main.h"
+#include "cfg_ucfg_api.h"
+#include "target_if_action_oui.h"
+#include "wlan_action_oui_cfg.h"
 #include "wlan_action_oui_public_struct.h"
 #include "wlan_action_oui_tgt_api.h"
-#include "target_if_action_oui.h"
 
 /**
  * action_oui_allocate() - Allocates memory for various actions.
@@ -38,8 +38,7 @@
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-action_oui_allocate(struct action_oui_psoc_priv *psoc_priv)
+static QDF_STATUS action_oui_allocate(struct action_oui_psoc_priv *psoc_priv)
 {
 	struct action_oui_priv *oui_priv;
 	uint32_t i;
@@ -49,7 +48,7 @@ action_oui_allocate(struct action_oui_psoc_priv *psoc_priv)
 		oui_priv = qdf_mem_malloc(sizeof(*oui_priv));
 		if (!oui_priv) {
 			action_oui_err("Mem alloc failed for oui_priv id: %u",
-					i);
+				       i);
 			goto free_mem;
 		}
 		oui_priv->id = i;
@@ -84,8 +83,7 @@ free_mem:
  *
  * Return: None
  */
-static void
-action_oui_destroy(struct action_oui_psoc_priv *psoc_priv)
+static void action_oui_destroy(struct action_oui_psoc_priv *psoc_priv)
 {
 	struct action_oui_priv *oui_priv;
 	struct action_oui_extension_priv *ext_priv;
@@ -107,12 +105,11 @@ action_oui_destroy(struct action_oui_psoc_priv *psoc_priv)
 			status = qdf_list_remove_front(ext_list, &node);
 			if (!QDF_IS_STATUS_SUCCESS(status)) {
 				action_oui_err("Invalid delete in action: %u",
-						oui_priv->id);
+					       oui_priv->id);
 				break;
 			}
-			ext_priv = qdf_container_of(node,
-					struct action_oui_extension_priv,
-					item);
+			ext_priv = qdf_container_of(
+				node, struct action_oui_extension_priv, item);
 			qdf_mem_free(ext_priv);
 			ext_priv = NULL;
 		}
@@ -129,8 +126,7 @@ static void action_oui_load_config(struct action_oui_psoc_priv *psoc_priv)
 {
 	struct wlan_objmgr_psoc *psoc = psoc_priv->psoc;
 
-	psoc_priv->action_oui_enable =
-		cfg_get(psoc, CFG_ENABLE_ACTION_OUI);
+	psoc_priv->action_oui_enable = cfg_get(psoc, CFG_ENABLE_ACTION_OUI);
 
 	qdf_str_lcopy(psoc_priv->action_oui_str[ACTION_OUI_CONNECT_1X1],
 		      cfg_get(psoc, CFG_ACTION_OUI_CONNECT_1X1),
@@ -147,22 +143,21 @@ static void action_oui_load_config(struct action_oui_psoc_priv *psoc_priv)
 	qdf_str_lcopy(psoc_priv->action_oui_str[ACTION_OUI_SWITCH_TO_11N_MODE],
 		      cfg_get(psoc, CFG_ACTION_OUI_SWITCH_TO_11N_MODE),
 		      ACTION_OUI_MAX_STR_LEN);
-	qdf_str_lcopy(psoc_priv->action_oui_str[ACTION_OUI_CONNECT_1X1_WITH_1_CHAIN],
-		      cfg_get(psoc,
-			      CFG_ACTION_OUI_CONNECT_1X1_WITH_1_CHAIN),
-		      ACTION_OUI_MAX_STR_LEN);
-	qdf_str_lcopy(psoc_priv->action_oui_str[ACTION_OUI_DISABLE_AGGRESSIVE_TX],
-		      cfg_get(psoc,
-			      CFG_ACTION_OUI_DISABLE_AGGRESSIVE_TX),
-		      ACTION_OUI_MAX_STR_LEN);
+	qdf_str_lcopy(
+		psoc_priv->action_oui_str[ACTION_OUI_CONNECT_1X1_WITH_1_CHAIN],
+		cfg_get(psoc, CFG_ACTION_OUI_CONNECT_1X1_WITH_1_CHAIN),
+		ACTION_OUI_MAX_STR_LEN);
+	qdf_str_lcopy(
+		psoc_priv->action_oui_str[ACTION_OUI_DISABLE_AGGRESSIVE_TX],
+		cfg_get(psoc, CFG_ACTION_OUI_DISABLE_AGGRESSIVE_TX),
+		ACTION_OUI_MAX_STR_LEN);
 	qdf_str_lcopy(psoc_priv->action_oui_str[ACTION_OUI_FORCE_MAX_NSS],
 		      cfg_get(psoc, CFG_ACTION_OUI_FORCE_MAX_NSS),
 		      ACTION_OUI_MAX_STR_LEN);
-	qdf_str_lcopy(psoc_priv->action_oui_str
-					  [ACTION_OUI_DISABLE_AGGRESSIVE_EDCA],
-		      cfg_get(psoc,
-			      CFG_ACTION_OUI_DISABLE_AGGRESSIVE_EDCA),
-		      ACTION_OUI_MAX_STR_LEN);
+	qdf_str_lcopy(
+		psoc_priv->action_oui_str[ACTION_OUI_DISABLE_AGGRESSIVE_EDCA],
+		cfg_get(psoc, CFG_ACTION_OUI_DISABLE_AGGRESSIVE_EDCA),
+		ACTION_OUI_MAX_STR_LEN);
 	qdf_str_lcopy(psoc_priv->action_oui_str[ACTION_OUI_EXTEND_WOW_ITO],
 		      cfg_get(psoc, CFG_ACTION_OUI_EXTEND_WOW_ITO),
 		      ACTION_OUI_MAX_STR_LEN);
@@ -179,24 +174,23 @@ static void action_oui_load_config(struct action_oui_psoc_priv *psoc_priv)
 		      cfg_get(psoc, CFG_ACTION_OUI_11BE_ALLOW_LIST),
 		      ACTION_OUI_MAX_STR_LEN);
 	qdf_str_lcopy(psoc_priv->action_oui_str
-			[ACTION_OUI_DISABLE_DYNAMIC_QOS_NULL_TX_RATE],
+			      [ACTION_OUI_DISABLE_DYNAMIC_QOS_NULL_TX_RATE],
 		      cfg_get(psoc,
 			      CFG_ACTION_OUI_DISABLE_DYNAMIC_QOS_NULL_TX_RATE),
 		      ACTION_OUI_MAX_STR_LEN);
 	qdf_str_lcopy(psoc_priv->action_oui_str
-			[ACTION_OUI_ENABLE_CTS2SELF_WITH_QOS_NULL],
+			      [ACTION_OUI_ENABLE_CTS2SELF_WITH_QOS_NULL],
 		      cfg_get(psoc,
 			      CFG_ACTION_OUI_ENABLE_CTS2SELF_WITH_QOS_NULL),
 		      ACTION_OUI_MAX_STR_LEN);
-	qdf_str_lcopy(psoc_priv->action_oui_str
-			[ACTION_OUI_SEND_SMPS_FRAME_WITH_OMN],
-		      cfg_get(psoc,
-			      CFG_ACTION_OUI_SEND_SMPS_FRAME_WITH_OMN),
-		      ACTION_OUI_MAX_STR_LEN);
-	qdf_str_lcopy(psoc_priv->action_oui_str
-			[ACTION_OUI_AUTH_ASSOC_6MBPS_2GHZ],
-		      cfg_get(psoc, CFG_ACTION_OUI_AUTH_ASSOC_6MBPS_2GHZ),
-		      ACTION_OUI_MAX_STR_LEN);
+	qdf_str_lcopy(
+		psoc_priv->action_oui_str[ACTION_OUI_SEND_SMPS_FRAME_WITH_OMN],
+		cfg_get(psoc, CFG_ACTION_OUI_SEND_SMPS_FRAME_WITH_OMN),
+		ACTION_OUI_MAX_STR_LEN);
+	qdf_str_lcopy(
+		psoc_priv->action_oui_str[ACTION_OUI_AUTH_ASSOC_6MBPS_2GHZ],
+		cfg_get(psoc, CFG_ACTION_OUI_AUTH_ASSOC_6MBPS_2GHZ),
+		ACTION_OUI_MAX_STR_LEN);
 }
 
 static void action_oui_parse_config(struct wlan_objmgr_psoc *psoc)
@@ -279,9 +273,9 @@ action_oui_psoc_create_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 		goto exit;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-				WLAN_UMAC_COMP_ACTION_OUI,
-				(void *)psoc_priv, QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_ACTION_OUI, (void *)psoc_priv,
+		QDF_STATUS_SUCCESS);
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		action_oui_err("Failed to attach priv with psoc");
 		goto free_psoc_priv;
@@ -314,9 +308,8 @@ action_oui_psoc_destroy_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 		goto exit;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-					WLAN_UMAC_COMP_ACTION_OUI,
-					(void *)psoc_priv);
+	status = wlan_objmgr_psoc_component_obj_detach(
+		psoc, WLAN_UMAC_COMP_ACTION_OUI, (void *)psoc_priv);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		action_oui_err("Failed to detach priv with psoc");
 
@@ -424,9 +417,7 @@ wlan_action_oui_cleanup(struct action_oui_psoc_priv *psoc_priv,
 			break;
 		}
 		ext_priv = qdf_container_of(
-				node,
-				struct action_oui_extension_priv,
-				item);
+			node, struct action_oui_extension_priv, item);
 		qdf_mem_free(ext_priv);
 		ext_priv = NULL;
 		if (psoc_priv->total_extensions)
@@ -466,4 +457,3 @@ bool wlan_action_oui_is_empty(struct wlan_objmgr_psoc *psoc,
 exit:
 	return empty;
 }
-

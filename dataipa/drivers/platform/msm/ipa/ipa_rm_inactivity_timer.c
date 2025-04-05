@@ -3,6 +3,8 @@
  * Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
  */
 
+#include "ipa.h"
+#include "ipa_rm_i.h"
 #include <linux/jiffies.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
@@ -10,8 +12,6 @@
 #include <linux/timer.h>
 #include <linux/unistd.h>
 #include <linux/workqueue.h>
-#include "ipa.h"
-#include "ipa_rm_i.h"
 
 #define MAX_WS_NAME 20
 

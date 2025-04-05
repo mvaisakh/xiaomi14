@@ -19,11 +19,11 @@
 
 #include <linux/module.h>
 #include <qdf_lock.h>
-#include <qdf_trace.h>
 #include <qdf_module.h>
+#include <qdf_trace.h>
 
-#include <qdf_types.h>
 #include <i_host_diag_core_event.h>
+#include <qdf_types.h>
 #ifdef FEATURE_RUNTIME_PM
 #include <cds_api.h>
 #include <hif.h>
@@ -93,11 +93,11 @@ QDF_STATUS qdf_mutex_acquire(qdf_mutex_t *lock)
 		return QDF_STATUS_E_FAULT;
 	}
 	if ((lock->process_id == current->pid) &&
-		(lock->state == LOCK_ACQUIRED)) {
+	    (lock->state == LOCK_ACQUIRED)) {
 		lock->refcount++;
 #ifdef QDF_NESTED_LOCK_DEBUG
-			pe_err("%s: %x %d %d", __func__, lock, current->pid,
-			  lock->refcount);
+		pe_err("%s: %x %d %d", __func__, lock, current->pid,
+		       lock->refcount);
 #endif
 		return QDF_STATUS_SUCCESS;
 	}
@@ -114,7 +114,7 @@ QDF_STATUS qdf_mutex_acquire(qdf_mutex_t *lock)
 		return QDF_STATUS_E_FAILURE;
 	}
 #ifdef QDF_NESTED_LOCK_DEBUG
-		pe_err("%s: %x %d", __func__, lock, current->pid);
+	pe_err("%s: %x %d", __func__, lock, current->pid);
 #endif
 	if (LOCK_DESTROYED != lock->state) {
 		lock->process_id = current->pid;
@@ -159,28 +159,29 @@ QDF_STATUS qdf_mutex_release(qdf_mutex_t *lock)
 	}
 
 	/* current_thread = get_current_thread_id();
-	 * Check thread ID of caller against thread ID
-	 * of the thread which acquire the lock
-	 */
+   * Check thread ID of caller against thread ID
+   * of the thread which acquire the lock
+   */
 	if (lock->process_id != current->pid) {
-		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			  "%s: current task pid does not match original task pid!!",
-			  __func__);
+		QDF_TRACE(
+			QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
+			"%s: current task pid does not match original task pid!!",
+			__func__);
 #ifdef QDF_NESTED_LOCK_DEBUG
-		pe_err("%s: Lock held by=%d being released by=%d",
-			  __func__, lock->process_id, current->pid);
+		pe_err("%s: Lock held by=%d being released by=%d", __func__,
+		       lock->process_id, current->pid);
 #endif
 		QDF_ASSERT(0);
 		return QDF_STATUS_E_PERM;
 	}
 	if ((lock->process_id == current->pid) &&
-		(lock->state == LOCK_ACQUIRED)) {
+	    (lock->state == LOCK_ACQUIRED)) {
 		if (lock->refcount > 0)
 			lock->refcount--;
 	}
 #ifdef QDF_NESTED_LOCK_DEBUG
-		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR, "%s: %x %d %d", __func__, lock, lock->process_id,
-		  lock->refcount);
+	QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR, "%s: %x %d %d",
+		  __func__, lock, lock->process_id, lock->refcount);
 #endif
 	if (lock->refcount)
 		return QDF_STATUS_SUCCESS;
@@ -192,7 +193,8 @@ QDF_STATUS qdf_mutex_release(qdf_mutex_t *lock)
 	BEFORE_UNLOCK(lock, 0);
 	mutex_unlock(&lock->m_lock);
 #ifdef QDF_NESTED_LOCK_DEBUG
-	QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR, "%s: Freeing lock %x %d %d", lock, lock->process_id,
+	QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
+		  "%s: Freeing lock %x %d %d", lock, lock->process_id,
 		  lock->refcount);
 #endif
 	return QDF_STATUS_SUCCESS;
@@ -222,9 +224,8 @@ void qdf_wake_lock_check_for_leaks(void)
 	qdf_tracker_check_for_leaks(&qdf_wake_lock_tracker);
 }
 
-static inline QDF_STATUS qdf_wake_lock_dbg_track(qdf_wake_lock_t *lock,
-						 const char *func,
-						 uint32_t line)
+static inline QDF_STATUS
+qdf_wake_lock_dbg_track(qdf_wake_lock_t *lock, const char *func, uint32_t line)
 {
 	return qdf_tracker_track(&qdf_wake_lock_tracker, lock, func, line);
 }
@@ -235,16 +236,16 @@ static inline void qdf_wake_lock_dbg_untrack(qdf_wake_lock_t *lock,
 	qdf_tracker_untrack(&qdf_wake_lock_tracker, lock, func, line);
 }
 #else
-static inline QDF_STATUS qdf_wake_lock_dbg_track(qdf_wake_lock_t *lock,
-						 const char *func,
-						 uint32_t line)
+static inline QDF_STATUS
+qdf_wake_lock_dbg_track(qdf_wake_lock_t *lock, const char *func, uint32_t line)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
 static inline void qdf_wake_lock_dbg_untrack(qdf_wake_lock_t *lock,
 					     const char *func, uint32_t line)
-{ }
+{
+}
 #endif /* WLAN_WAKE_LOCK_DEBUG */
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))
@@ -336,8 +337,8 @@ QDF_STATUS qdf_wake_lock_timeout_acquire(qdf_wake_lock_t *lock, uint32_t msec)
 QDF_STATUS qdf_wake_lock_timeout_acquire(qdf_wake_lock_t *lock, uint32_t msec)
 {
 	/* Wakelock for Rx is frequent.
-	 * It is reported only during active debug
-	 */
+   * It is reported only during active debug
+   */
 	__pm_wakeup_event(&(lock->lock), msec);
 	return QDF_STATUS_SUCCESS;
 }
@@ -369,22 +370,22 @@ qdf_export_symbol(qdf_wake_lock_release);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 110)) || \
 	defined(WAKEUP_SOURCE_DEV)
-void __qdf_wake_lock_destroy(qdf_wake_lock_t *lock,
-			     const char *func, uint32_t line)
+void __qdf_wake_lock_destroy(qdf_wake_lock_t *lock, const char *func,
+			     uint32_t line)
 {
 	wakeup_source_unregister(lock->priv);
 	qdf_wake_lock_dbg_untrack(lock, func, line);
 }
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))
-void __qdf_wake_lock_destroy(qdf_wake_lock_t *lock,
-			     const char *func, uint32_t line)
+void __qdf_wake_lock_destroy(qdf_wake_lock_t *lock, const char *func,
+			     uint32_t line)
 {
 	wakeup_source_trash(&(lock->lock));
 	qdf_wake_lock_dbg_untrack(lock, func, line);
 }
 #else
-void __qdf_wake_lock_destroy(qdf_wake_lock_t *lock,
-			     const char *func, uint32_t line)
+void __qdf_wake_lock_destroy(qdf_wake_lock_t *lock, const char *func,
+			     uint32_t line)
 {
 }
 #endif
@@ -523,7 +524,6 @@ QDF_STATUS qdf_spinlock_acquire(qdf_spinlock_t *lock)
 }
 qdf_export_symbol(qdf_spinlock_acquire);
 
-
 QDF_STATUS qdf_spinlock_release(qdf_spinlock_t *lock)
 {
 	spin_unlock(&lock->lock.spinlock);
@@ -607,7 +607,7 @@ static qdf_atomic_t lock_cookie_untracked_num;
 static bool qdf_is_lock_cookie(struct qdf_lock_cookie *lock_cookie)
 {
 	return lock_cookie >= &lock_cookies[0] &&
-		lock_cookie <= &lock_cookies[QDF_LOCK_STATS_LIST_SIZE-1];
+	       lock_cookie <= &lock_cookies[QDF_LOCK_STATS_LIST_SIZE - 1];
 }
 
 /**
@@ -664,9 +664,9 @@ void qdf_lock_stats_init(void)
 		__qdf_put_lock_cookie(&lock_cookies[i]);
 
 	/* stats must be allocated for the spinlock before the cookie,
-	 * otherwise this qdf_lock_list_spinlock wouldn't get initialized
-	 * properly
-	 */
+   * otherwise this qdf_lock_list_spinlock wouldn't get initialized
+   * properly
+   */
 	qdf_spinlock_create(&qdf_lock_list_spinlock);
 	qdf_atomic_init(&lock_cookie_get_failures);
 	qdf_atomic_init(&lock_cookie_untracked_num);
@@ -691,8 +691,8 @@ void qdf_lock_stats_deinit(void)
  * running the deinitialization code.  The cookie list will not be
  * corrupted.
  */
-void qdf_lock_stats_cookie_create(struct lock_stats *stats,
-				  const char *func, int line)
+void qdf_lock_stats_cookie_create(struct lock_stats *stats, const char *func,
+				  int line)
 {
 	struct qdf_lock_cookie *cookie = qdf_get_lock_cookie();
 
@@ -701,7 +701,7 @@ void qdf_lock_stats_cookie_create(struct lock_stats *stats,
 
 		qdf_atomic_inc(&lock_cookie_get_failures);
 		count = qdf_atomic_inc_return(&lock_cookie_untracked_num);
-		stats->cookie = (void *) DUMMY_LOCK_COOKIE;
+		stats->cookie = (void *)DUMMY_LOCK_COOKIE;
 		return;
 	}
 

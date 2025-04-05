@@ -46,4 +46,3 @@ out:
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_PMO_ID);
 	return status;
 }
-

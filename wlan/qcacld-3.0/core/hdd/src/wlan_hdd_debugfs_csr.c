@@ -25,16 +25,15 @@
  */
 
 #include "osif_sync.h"
+#include "qwlan_version.h"
+#include "wlan_hdd_debugfs.h"
+#include "wmi_unified_param.h"
+#include <cds_sched.h>
 #include <wlan_hdd_debugfs_csr.h>
 #include <wlan_hdd_main.h>
-#include <cds_sched.h>
 #include <wma_api.h>
-#include "qwlan_version.h"
-#include "wmi_unified_param.h"
-#include "wlan_hdd_debugfs.h"
 
-ssize_t
-wlan_hdd_current_time_info_debugfs(uint8_t *buf, ssize_t buf_avail_len)
+ssize_t wlan_hdd_current_time_info_debugfs(uint8_t *buf, ssize_t buf_avail_len)
 {
 	ssize_t length;
 	char time_buffer[HDD_TIME_STRING_LEN];
@@ -63,20 +62,18 @@ wlan_hdd_current_time_info_debugfs(uint8_t *buf, ssize_t buf_avail_len)
  *
  * Return: Number of bytes read on success, zero otherwise
  */
-static ssize_t
-wlan_hdd_debugfs_update_csr(struct hdd_context *hdd_ctx,
-			    struct hdd_adapter *adapter,
-			    enum hdd_debugfs_file_id id,
-			    uint8_t *buf,
-			    ssize_t buf_avail_len)
+static ssize_t wlan_hdd_debugfs_update_csr(struct hdd_context *hdd_ctx,
+					   struct hdd_adapter *adapter,
+					   enum hdd_debugfs_file_id id,
+					   uint8_t *buf, ssize_t buf_avail_len)
 {
 	ssize_t len = 0;
 
 	switch (id) {
 	case HDD_DEBUFS_FILE_ID_ROAM_SCAN_STATS_INFO:
 		/* populate roam scan stats info */
-		len = wlan_hdd_debugfs_update_roam_stats(hdd_ctx, adapter,
-							 buf, buf_avail_len);
+		len = wlan_hdd_debugfs_update_roam_stats(hdd_ctx, adapter, buf,
+							 buf_avail_len);
 		break;
 	case HDD_DEBUFS_FILE_ID_OFFLOAD_INFO:
 		/* populate offload info */
@@ -127,15 +124,14 @@ __wlan_hdd_read_debugfs_csr(struct wlan_hdd_debugfs_buffer_info *info,
 
 	if (*pos == 0) {
 		info->length = wlan_hdd_debugfs_update_csr(hdd_ctx, adapter,
-							   info->id,
-							   info->data,
+							   info->id, info->data,
 							   info->max_buf_len);
 	}
 
-	length = simple_read_from_buffer(buf, count, pos,
-					 info->data, info->length);
-	hdd_debug("length written = %zu, count: %zu, pos: %lld",
-		  length, count, *pos);
+	length = simple_read_from_buffer(buf, count, pos, info->data,
+					 info->length);
+	hdd_debug("length written = %zu, count: %zu, pos: %lld", length, count,
+		  *pos);
 
 	hdd_exit();
 	return length;
@@ -150,9 +146,8 @@ __wlan_hdd_read_debugfs_csr(struct wlan_hdd_debugfs_buffer_info *info,
  *
  * Return: Number of bytes read on success, zero otherwise
  */
-static ssize_t
-wlan_hdd_read_debugfs_csr(struct file *file, char __user *buf,
-			  size_t count, loff_t *pos)
+static ssize_t wlan_hdd_read_debugfs_csr(struct file *file, char __user *buf,
+					 size_t count, loff_t *pos)
 {
 	struct wlan_hdd_debugfs_buffer_info *info = file->private_data;
 	struct osif_vdev_sync *vdev_sync;
@@ -233,8 +228,8 @@ static int __wlan_hdd_open_debugfs_csr(struct hdd_adapter *adapter,
 static int wlan_hdd_open_debugfs_csr(struct inode *inode, struct file *file)
 {
 	struct hdd_debugfs_file_info *csr = inode->i_private;
-	struct hdd_adapter *adapter = qdf_container_of(csr, struct hdd_adapter,
-						       csr_file[csr->id]);
+	struct hdd_adapter *adapter =
+		qdf_container_of(csr, struct hdd_adapter, csr_file[csr->id]);
 	struct osif_vdev_sync *vdev_sync;
 	int errno;
 
@@ -259,8 +254,7 @@ static int wlan_hdd_open_debugfs_csr(struct inode *inode, struct file *file)
  *
  * Return: Errno
  */
-static int
-__wlan_hdd_release_debugfs_csr(struct file *file)
+static int __wlan_hdd_release_debugfs_csr(struct file *file)
 {
 	struct wlan_hdd_debugfs_buffer_info *info = file->private_data;
 
@@ -315,9 +309,9 @@ void wlan_hdd_debugfs_csr_init(struct hdd_adapter *adapter)
 	const uint32_t max_len = HDD_DEBUGFS_FILE_NAME_MAX;
 
 	/*
-	 * Create debugfs diagnostic files for connect, offload info
-	 * and roam info and store in csr_file member of adapter
-	 */
+   * Create debugfs diagnostic files for connect, offload info
+   * and roam info and store in csr_file member of adapter
+   */
 
 	csr = &adapter->csr_file[HDD_DEBUFS_FILE_ID_OFFLOAD_INFO];
 	if (!csr->entry) {
@@ -325,8 +319,8 @@ void wlan_hdd_debugfs_csr_init(struct hdd_adapter *adapter)
 		csr->id = HDD_DEBUFS_FILE_ID_OFFLOAD_INFO;
 		csr->buf_max_size = DEBUGFS_OFFLOAD_INFO_BUF_SIZE;
 		csr->entry = debugfs_create_file(csr->name, 0444,
-						 adapter->debugfs_phy,
-						 csr, &fops_csr_debugfs);
+						 adapter->debugfs_phy, csr,
+						 &fops_csr_debugfs);
 		if (!csr->entry)
 			hdd_err("Failed to create generic_info debugfs file");
 	}
@@ -337,8 +331,8 @@ void wlan_hdd_debugfs_csr_init(struct hdd_adapter *adapter)
 		csr->id = HDD_DEBUFS_FILE_ID_ROAM_SCAN_STATS_INFO;
 		csr->buf_max_size = DEBUGFS_ROAM_SCAN_STATS_INFO_BUF_SIZE;
 		csr->entry = debugfs_create_file(csr->name, 0444,
-						 adapter->debugfs_phy,
-						 csr, &fops_csr_debugfs);
+						 adapter->debugfs_phy, csr,
+						 &fops_csr_debugfs);
 		if (!csr->entry)
 			hdd_err("Failed to create generic_info debugfs file");
 	}

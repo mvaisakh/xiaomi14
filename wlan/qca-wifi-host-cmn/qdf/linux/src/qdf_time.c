@@ -22,8 +22,8 @@
  * QCA driver framework (QDF) timer APIs
  */
 
-#include <i_qdf_time.h>
 #include "qdf_time.h"
+#include <i_qdf_time.h>
 #include <qdf_module.h>
 
 qdf_ktime_t qdf_ns_to_ktime(uint64_t ns)
@@ -177,9 +177,9 @@ qdf_export_symbol(qdf_system_time_after_eq);
 uint64_t qdf_log_timestamp_to_usecs(uint64_t time)
 {
 	/*
-	 * Try to preserve precision by multiplying by 10 first.
-	 * If that would cause a wrap around, divide first instead.
-	 */
+   * Try to preserve precision by multiplying by 10 first.
+   * If that would cause a wrap around, divide first instead.
+   */
 	if (time * 10 < time) {
 		do_div(time, QDF_LOG_TIMESTAMP_CYCLES_PER_10_US);
 		return time * 10;
@@ -202,8 +202,7 @@ uint64_t qdf_log_timestamp_to_usecs(uint64_t time)
 qdf_export_symbol(qdf_log_timestamp_to_usecs);
 #endif /* end of MSM_PLATFORM */
 
-void qdf_log_timestamp_to_secs(uint64_t time, uint64_t *secs,
-			       uint64_t *usecs)
+void qdf_log_timestamp_to_secs(uint64_t time, uint64_t *secs, uint64_t *usecs)
 {
 	*secs = qdf_log_timestamp_to_usecs(time);
 	*usecs = do_div(*secs, 1000000ul);

@@ -21,12 +21,12 @@
  * DOC: defines DP interaction with FW using WMI
  */
 
-#include <qdf_status.h>
 #include "target_if_dp.h"
 #include <init_deinit_lmac.h>
+#include <qdf_status.h>
 #ifdef WLAN_FEATURE_PEER_TXQ_FLUSH_CONF
-#include <wmi_unified_param.h>
 #include <wlan_objmgr_peer_obj.h>
+#include <wmi_unified_param.h>
 #endif
 
 uint32_t target_if_get_active_mac_phy_number(struct wlan_objmgr_psoc *psoc)
@@ -54,12 +54,11 @@ uint32_t target_if_get_active_mac_phy_number(struct wlan_objmgr_psoc *psoc)
 	return max_mac_phy_cnt;
 }
 
-void
-target_if_peer_set_default_routing(struct cdp_ctrl_objmgr_psoc *psoc,
-				   uint8_t pdev_id, uint8_t *peer_macaddr,
-				   uint8_t vdev_id,
-				   bool hash_based, uint8_t ring_num,
-				   uint8_t lmac_peer_id_msb)
+void target_if_peer_set_default_routing(struct cdp_ctrl_objmgr_psoc *psoc,
+					uint8_t pdev_id, uint8_t *peer_macaddr,
+					uint8_t vdev_id, bool hash_based,
+					uint8_t ring_num,
+					uint8_t lmac_peer_id_msb)
 {
 	uint32_t value;
 	struct peer_set_params param;
@@ -83,8 +82,8 @@ target_if_peer_set_default_routing(struct cdp_ctrl_objmgr_psoc *psoc,
 	qdf_mem_zero(&param, sizeof(param));
 
 	/* TODO: Need bit definitions for ring number and hash based routing
-	 * fields in common wmi header file
-	 */
+   * fields in common wmi header file
+   */
 	value = ((hash_based) ? 1 : 0) | (ring_num << 1);
 
 	if (lmac_peer_id_msb)
@@ -96,16 +95,15 @@ target_if_peer_set_default_routing(struct cdp_ctrl_objmgr_psoc *psoc,
 	param.param_value = value;
 
 	if (wmi_set_peer_param_send(pdev_wmi_handle, peer_macaddr, &param)) {
-		target_if_err("Unable to set default routing for peer "
-				QDF_MAC_ADDR_FMT,
-				QDF_MAC_ADDR_REF(peer_macaddr));
+		target_if_err(
+			"Unable to set default routing for peer " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(peer_macaddr));
 	}
 	wlan_objmgr_pdev_release_ref(pdev, WLAN_PDEV_TARGET_IF_ID);
 }
 
 #ifdef SERIALIZE_QUEUE_SETUP
-static QDF_STATUS
-target_if_rx_reorder_queue_setup(struct scheduler_msg *msg)
+static QDF_STATUS target_if_rx_reorder_queue_setup(struct scheduler_msg *msg)
 {
 	struct rx_reorder_queue_setup_params param;
 	struct wmi_unified *pdev_wmi_handle;
@@ -157,14 +155,14 @@ out:
 
 QDF_STATUS
 target_if_peer_rx_reorder_queue_setup(struct cdp_ctrl_objmgr_psoc *psoc,
-				      uint8_t pdev_id,
-				      uint8_t vdev_id, uint8_t *peer_macaddr,
+				      uint8_t pdev_id, uint8_t vdev_id,
+				      uint8_t *peer_macaddr,
 				      qdf_dma_addr_t hw_qdesc, int tid,
 				      uint16_t queue_no,
 				      uint8_t ba_window_size_valid,
 				      uint16_t ba_window_size)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct reorder_q_setup *q_params;
 	QDF_STATUS status;
 
@@ -198,8 +196,8 @@ target_if_peer_rx_reorder_queue_setup(struct cdp_ctrl_objmgr_psoc *psoc,
 
 QDF_STATUS
 target_if_peer_rx_reorder_queue_setup(struct cdp_ctrl_objmgr_psoc *psoc,
-				      uint8_t pdev_id,
-				      uint8_t vdev_id, uint8_t *peer_macaddr,
+				      uint8_t pdev_id, uint8_t vdev_id,
+				      uint8_t *peer_macaddr,
 				      qdf_dma_addr_t hw_qdesc, int tid,
 				      uint16_t queue_no,
 				      uint8_t ba_window_size_valid,
@@ -242,8 +240,8 @@ target_if_peer_rx_reorder_queue_setup(struct cdp_ctrl_objmgr_psoc *psoc,
 
 QDF_STATUS
 target_if_peer_rx_reorder_queue_remove(struct cdp_ctrl_objmgr_psoc *psoc,
-				       uint8_t pdev_id,
-				       uint8_t vdev_id, uint8_t *peer_macaddr,
+				       uint8_t pdev_id, uint8_t vdev_id,
+				       uint8_t *peer_macaddr,
 				       uint32_t peer_tid_bitmap)
 {
 	struct rx_reorder_queue_remove_params param;
@@ -278,7 +276,7 @@ QDF_STATUS
 target_if_lro_hash_config(struct cdp_ctrl_objmgr_psoc *psoc, uint8_t pdev_id,
 			  struct cdp_lro_hash_config *lro_hash_cfg)
 {
-	struct wmi_lro_config_cmd_t wmi_lro_cmd = {0};
+	struct wmi_lro_config_cmd_t wmi_lro_cmd = { 0 };
 	struct wmi_unified *pdev_wmi_handle;
 	QDF_STATUS status;
 	struct wlan_objmgr_pdev *pdev =
@@ -311,8 +309,7 @@ target_if_lro_hash_config(struct cdp_ctrl_objmgr_psoc *psoc, uint8_t pdev_id,
 		     lro_hash_cfg->toeplitz_hash_ipv6,
 		     LRO_IPV6_SEED_ARR_SZ * sizeof(uint32_t));
 
-	status = wmi_unified_lro_config_cmd(pdev_wmi_handle,
-					    &wmi_lro_cmd);
+	status = wmi_unified_lro_config_cmd(pdev_wmi_handle, &wmi_lro_cmd);
 	wlan_objmgr_pdev_release_ref(pdev, WLAN_PDEV_TARGET_IF_ID);
 
 	return status;
@@ -320,13 +317,10 @@ target_if_lro_hash_config(struct cdp_ctrl_objmgr_psoc *psoc, uint8_t pdev_id,
 
 #ifdef WLAN_SUPPORT_PPEDS
 QDF_STATUS
-target_if_peer_set_ppeds_default_routing(struct cdp_ctrl_objmgr_psoc *soc,
-					 uint8_t *peer_macaddr,
-					 uint16_t service_code,
-					 uint8_t priority_valid,
-					 uint16_t src_info,
-					 uint8_t vdev_id, uint8_t use_ppe,
-					 uint8_t ppe_routing_enabled)
+target_if_peer_set_ppeds_default_routing(
+	struct cdp_ctrl_objmgr_psoc *soc, uint8_t *peer_macaddr,
+	uint16_t service_code, uint8_t priority_valid, uint16_t src_info,
+	uint8_t vdev_id, uint8_t use_ppe, uint8_t ppe_routing_enabled)
 {
 	struct wmi_unified *pdev_wmi_handle;
 	struct wlan_objmgr_pdev *pdev;
@@ -339,8 +333,7 @@ target_if_peer_set_ppeds_default_routing(struct cdp_ctrl_objmgr_psoc *soc,
 		target_if_err("PSOC is NULL!");
 		return QDF_STATUS_E_NULL_VALUE;
 	}
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_WDS_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_WDS_ID);
 	if (!vdev) {
 		target_if_err("vdev with id %d is NULL", vdev_id);
 		return QDF_STATUS_E_INVAL;
@@ -371,18 +364,18 @@ target_if_peer_set_ppeds_default_routing(struct cdp_ctrl_objmgr_psoc *soc,
 	param.vdev_id = vdev_id;
 	param.use_ppe = use_ppe;
 
-	qdf_status = wmi_unified_peer_ppe_ds_param_send(pdev_wmi_handle,
-							&param);
+	qdf_status =
+		wmi_unified_peer_ppe_ds_param_send(pdev_wmi_handle, &param);
 	if (qdf_status != QDF_STATUS_SUCCESS) {
-		target_if_err("Unable to set PPE default routing for peer "
-				QDF_MAC_ADDR_FMT,
-				QDF_MAC_ADDR_REF(peer_macaddr));
+		target_if_err(
+			"Unable to set PPE default routing for peer " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(peer_macaddr));
 	}
 
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_WDS_ID);
 	return qdf_status;
 }
-#endif	/* WLAN_SUPPORT_PPEDS */
+#endif /* WLAN_SUPPORT_PPEDS */
 
 #ifdef WDS_CONV_TARGET_IF_OPS_ENABLE
 QDF_STATUS
@@ -390,7 +383,7 @@ target_if_add_wds_entry(struct cdp_ctrl_objmgr_psoc *soc, uint8_t vdev_id,
 			uint8_t *peer_mac, const uint8_t *dest_mac,
 			uint32_t flags, uint8_t type)
 {
-	struct peer_add_wds_entry_params wmi_wds_param = {0};
+	struct peer_add_wds_entry_params wmi_wds_param = { 0 };
 	struct wmi_unified *pdev_wmi_handle;
 	struct wlan_objmgr_pdev *pdev;
 	struct wlan_objmgr_vdev *vdev;
@@ -400,8 +393,7 @@ target_if_add_wds_entry(struct cdp_ctrl_objmgr_psoc *soc, uint8_t vdev_id,
 	if (type == CDP_TXRX_AST_TYPE_WDS_HM_SEC)
 		return QDF_STATUS_E_FAILURE;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_WDS_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_WDS_ID);
 	if (!vdev) {
 		target_if_err("vdev with id %d is NULL", vdev_id);
 		return QDF_STATUS_E_INVAL;
@@ -433,11 +425,11 @@ target_if_add_wds_entry(struct cdp_ctrl_objmgr_psoc *soc, uint8_t vdev_id,
 	return status;
 }
 
-void
-target_if_del_wds_entry(struct cdp_ctrl_objmgr_psoc *soc, uint8_t vdev_id,
-			uint8_t *dest_mac, uint8_t type, uint8_t delete_in_fw)
+void target_if_del_wds_entry(struct cdp_ctrl_objmgr_psoc *soc, uint8_t vdev_id,
+			     uint8_t *dest_mac, uint8_t type,
+			     uint8_t delete_in_fw)
 {
-	struct peer_del_wds_entry_params wmi_wds_param = {0};
+	struct peer_del_wds_entry_params wmi_wds_param = { 0 };
 	struct wmi_unified *pdev_wmi_handle;
 	struct wlan_objmgr_pdev *pdev;
 	struct wlan_objmgr_vdev *vdev;
@@ -448,8 +440,7 @@ target_if_del_wds_entry(struct cdp_ctrl_objmgr_psoc *soc, uint8_t vdev_id,
 		return;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_WDS_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_WDS_ID);
 	if (!vdev) {
 		target_if_err("vdev with id %d is NULL", vdev_id);
 		return;
@@ -472,25 +463,22 @@ target_if_del_wds_entry(struct cdp_ctrl_objmgr_psoc *soc, uint8_t vdev_id,
 	qdf_mem_copy(&wmi_wds_param.dest_addr, dest_mac, QDF_MAC_ADDR_SIZE);
 	wmi_wds_param.vdev_id = vdev_id;
 
-	wmi_unified_peer_del_wds_entry_cmd(pdev_wmi_handle,
-					   &wmi_wds_param);
+	wmi_unified_peer_del_wds_entry_cmd(pdev_wmi_handle, &wmi_wds_param);
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_WDS_ID);
 }
 
 QDF_STATUS
 target_if_update_wds_entry(struct cdp_ctrl_objmgr_psoc *soc, uint8_t vdev_id,
-			   uint8_t *dest_mac, uint8_t *peer_mac,
-			   uint32_t flags)
+			   uint8_t *dest_mac, uint8_t *peer_mac, uint32_t flags)
 {
-	struct peer_update_wds_entry_params wmi_wds_param = {0};
+	struct peer_update_wds_entry_params wmi_wds_param = { 0 };
 	struct wmi_unified *pdev_wmi_handle;
 	struct wlan_objmgr_pdev *pdev;
 	struct wlan_objmgr_vdev *vdev;
 	struct wlan_objmgr_psoc *psoc = (struct wlan_objmgr_psoc *)soc;
 	QDF_STATUS status;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_WDS_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_WDS_ID);
 	if (!vdev) {
 		target_if_err("vdev with id %d is NULL", vdev_id);
 		return QDF_STATUS_E_INVAL;
@@ -534,7 +522,7 @@ static enum peer_txq_flush_policy
 map_flush_policy(enum cdp_peer_txq_flush_policy policy)
 {
 	switch (policy) {
-	case  CDP_PEER_TXQ_FLUSH_POLICY_NONE:
+	case CDP_PEER_TXQ_FLUSH_POLICY_NONE:
 		return PEER_TXQ_FLUSH_POLICY_NONE;
 	case CDP_PEER_TXQ_FLUSH_POLICY_TWT_SP_END:
 		return PEER_TXQ_FLUSH_POLICY_TWT_SP_END;
@@ -554,14 +542,13 @@ map_flush_policy(enum cdp_peer_txq_flush_policy policy)
  * Return: 0 for success or error code
  */
 static int send_peer_txq_flush_conf(struct cdp_ctrl_objmgr_psoc *psoc,
-				    uint8_t *mac, uint8_t vdev_id,
-				    uint32_t tid,
+				    uint8_t *mac, uint8_t vdev_id, uint32_t tid,
 				    enum cdp_peer_txq_flush_policy policy)
 {
 	struct wlan_objmgr_psoc *obj_soc;
 	struct wmi_unified *wmi_handle;
 	enum peer_txq_flush_policy flush_policy;
-	struct peer_txq_flush_config_params param = {0};
+	struct peer_txq_flush_config_params param = { 0 };
 	QDF_STATUS status;
 
 	obj_soc = (struct wlan_objmgr_psoc *)psoc;
@@ -596,8 +583,7 @@ static int send_peer_txq_flush_conf(struct cdp_ctrl_objmgr_psoc *psoc,
  * Return: 0 for success or error code
  */
 static int send_peer_txq_flush_tids(struct cdp_ctrl_objmgr_psoc *psoc,
-				    uint8_t *mac, uint8_t vdev_id,
-				    uint32_t tid)
+				    uint8_t *mac, uint8_t vdev_id, uint32_t tid)
 {
 	struct wlan_objmgr_psoc *obj_soc;
 	struct wmi_unified *wmi_handle;
@@ -625,11 +611,13 @@ static int send_peer_txq_flush_tids(struct cdp_ctrl_objmgr_psoc *psoc,
 }
 
 int target_if_peer_txq_flush_config(struct cdp_ctrl_objmgr_psoc *psoc,
-				    uint8_t vdev_id, uint8_t *addr,
-				    uint8_t ac, uint32_t tid,
+				    uint8_t vdev_id, uint8_t *addr, uint8_t ac,
+				    uint32_t tid,
 				    enum cdp_peer_txq_flush_policy policy)
 {
-	static uint8_t ac_to_tid[4][2] = { {0, 3}, {1, 2}, {4, 5}, {6, 7} };
+	static uint8_t ac_to_tid[4][2] = {
+		{ 0, 3 }, { 1, 2 }, { 4, 5 }, { 6, 7 }
+	};
 	struct wlan_objmgr_psoc *obj_soc;
 	struct wlan_objmgr_peer *peer;
 	int i, rc;
@@ -656,11 +644,11 @@ int target_if_peer_txq_flush_config(struct cdp_ctrl_objmgr_psoc *psoc,
 		return -EINVAL;
 	}
 	/* If tid mask is provided and policy is immediate use legacy WMI.
-	 * If tid mask is provided and policy is other than immediate use
-	 * the new WMI command for flush config.
-	 * If tid mask is not provided and ac mask is provided, convert to tid,
-	 * use the legacy WMI cmd for flushing the queues immediately.
-	 */
+   * If tid mask is provided and policy is other than immediate use
+   * the new WMI command for flush config.
+   * If tid mask is not provided and ac mask is provided, convert to tid,
+   * use the legacy WMI cmd for flushing the queues immediately.
+   */
 	if (tid) {
 		if (policy == CDP_PEER_TXQ_FLUSH_POLICY_IMMEDIATE) {
 			rc = send_peer_txq_flush_tids(psoc, addr, vdev_id, tid);
@@ -684,7 +672,7 @@ int target_if_peer_txq_flush_config(struct cdp_ctrl_objmgr_psoc *psoc,
 		wlan_objmgr_peer_release_ref(peer, WLAN_DP_ID);
 		return rc;
 	}
-	 /* should not hit this line */
+	/* should not hit this line */
 	return 0;
 }
 #endif

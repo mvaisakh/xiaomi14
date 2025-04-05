@@ -40,7 +40,7 @@ static int dfs_is_pri_multiple(uint32_t sample_pri, uint32_t refpri)
 		return 0;
 
 	for (i = 1; i <= MAX_ALLOWED_MISSED; i++) {
-		if ((sample_pri%(i*refpri) <= 5))
+		if ((sample_pri % (i * refpri) <= 5))
 			return 1;
 	}
 
@@ -56,19 +56,18 @@ static int dfs_is_pri_multiple(uint32_t sample_pri, uint32_t refpri)
  * @refpri: Reference PRI.
  */
 static int dfs_is_unique_pri(uint32_t highestpri, uint32_t midpri,
-		uint32_t lowestpri, uint32_t refpri)
+			     uint32_t lowestpri, uint32_t refpri)
 {
-#define DFS_STAGGERED_PRI_MARGIN_MIN  20
-#define DFS_STAGGERED_PRI_MARGIN_MAX  400
+#define DFS_STAGGERED_PRI_MARGIN_MIN 20
+#define DFS_STAGGERED_PRI_MARGIN_MAX 400
 	if ((DFS_DIFF(lowestpri, refpri) >= DFS_STAGGERED_PRI_MARGIN_MIN) &&
-		(DFS_DIFF(midpri, refpri) >= DFS_STAGGERED_PRI_MARGIN_MIN) &&
-		(DFS_DIFF(highestpri, refpri) >= DFS_STAGGERED_PRI_MARGIN_MIN)
-	   )
+	    (DFS_DIFF(midpri, refpri) >= DFS_STAGGERED_PRI_MARGIN_MIN) &&
+	    (DFS_DIFF(highestpri, refpri) >= DFS_STAGGERED_PRI_MARGIN_MIN))
 		return 1;
 
 	if ((dfs_is_pri_multiple(refpri, highestpri)) ||
-			(dfs_is_pri_multiple(refpri, lowestpri)) ||
-			(dfs_is_pri_multiple(refpri, midpri)))
+	    (dfs_is_pri_multiple(refpri, lowestpri)) ||
+	    (dfs_is_pri_multiple(refpri, midpri)))
 		return 0;
 #undef DFS_STAGGERED_PRI_MARGIN_MIN
 #undef DFS_STAGGERED_PRI_MARGIN_MAX
@@ -77,32 +76,30 @@ static int dfs_is_unique_pri(uint32_t highestpri, uint32_t midpri,
 }
 
 int dfs_staggered_check(struct wlan_dfs *dfs, struct dfs_filter *rf,
-		uint32_t deltaT, uint32_t width)
+			uint32_t deltaT, uint32_t width)
 {
 	uint32_t refpri, refdur, searchpri = 0, deltapri;
 	uint32_t n, i, primargin, durmargin;
 	int score[DFS_MAX_DL_SIZE], delayindex, dindex, found = 0;
 	struct dfs_delayline *dl;
 	uint32_t scoreindex, lowpriindex = 0, lowpri = 0xffff;
-	int  higherthan, lowerthan, numscores;
+	int higherthan, lowerthan, numscores;
 	int numpulseshigh = 0, numpulsesmid = 0, numpulsestemp = 0;
 	uint32_t lowestscore = 0, lowestscoreindex = 0, lowestpri = 0;
 	uint32_t midscore = 0, midscoreindex = 0, midpri = 0;
 	uint32_t highestscore = 0, highestscoreindex = 0, highestpri = 0;
 
 	dl = &rf->rf_dl;
-	if (dl->dl_numelems < (rf->rf_threshold-1)) {
+	if (dl->dl_numelems < (rf->rf_threshold - 1)) {
 		dfs_debug(dfs, WLAN_DEBUG_DFS2,
-				"numelems %d < threshold for filter %d",
-				dl->dl_numelems,
-				rf->rf_pulseid);
+			  "numelems %d < threshold for filter %d",
+			  dl->dl_numelems, rf->rf_pulseid);
 		return 0;
 	}
 	if (deltaT > rf->rf_filterlen) {
 		dfs_debug(dfs, WLAN_DEBUG_DFS2,
-				"numelems %d < threshold for filter %d",
-				dl->dl_numelems,
-				rf->rf_pulseid);
+			  "numelems %d < threshold for filter %d",
+			  dl->dl_numelems, rf->rf_pulseid);
 		return 0;
 	}
 	primargin = 6;
@@ -111,7 +108,7 @@ int dfs_staggered_check(struct wlan_dfs *dfs, struct dfs_filter *rf,
 	else
 		durmargin = 6;
 
-	qdf_mem_zero(score, sizeof(int)*DFS_MAX_DL_SIZE);
+	qdf_mem_zero(score, sizeof(int) * DFS_MAX_DL_SIZE);
 	/* Find out the lowest pri */
 	for (n = 0; n < dl->dl_numelems; n++) {
 		delayindex = (dl->dl_firstelem + n) & DFS_MAX_DL_MASK;
@@ -146,21 +143,22 @@ int dfs_staggered_check(struct wlan_dfs *dfs, struct dfs_filter *rf,
 	}
 
 	dfs->dfs_freq_offset = DFS_SIDX_TO_FREQ_OFFSET(
-				       (dl->dl_min_sidx + dl->dl_max_sidx) / 2);
+		(dl->dl_min_sidx + dl->dl_max_sidx) / 2);
 
 	for (n = 0; n < dl->dl_numelems; n++) {
 		delayindex = (dl->dl_firstelem + n) & DFS_MAX_DL_MASK;
 		refdur = dl->dl_elems[delayindex].de_time;
-		dfs_debug(dfs, WLAN_DEBUG_DFS2,
-				"score[%d]=%d pri=%d",
-				n, score[n], refdur);
+		dfs_debug(dfs, WLAN_DEBUG_DFS2, "score[%d]=%d pri=%d", n,
+			  score[n], refdur);
 	}
 
 	/* Find out the 2 or 3 highest scorers */
 	scoreindex = 0;
 	highestscore = 0;
 	highestscoreindex = 0;
-	highestpri = 0; numscores = 0; lowestscore = 0;
+	highestpri = 0;
+	numscores = 0;
+	lowestscore = 0;
 
 	for (n = 0; n < dl->dl_numelems; n++) {
 		higherthan = 0;
@@ -168,10 +166,7 @@ int dfs_staggered_check(struct wlan_dfs *dfs, struct dfs_filter *rf,
 		delayindex = (dl->dl_firstelem + n) & DFS_MAX_DL_MASK;
 		refpri = dl->dl_elems[delayindex].de_time;
 
-		if (!dfs_is_unique_pri(highestpri,
-					midpri,
-					lowestpri,
-					refpri))
+		if (!dfs_is_unique_pri(highestpri, midpri, lowestpri, refpri))
 			continue;
 
 		if (score[n] >= highestscore) {
@@ -201,69 +196,69 @@ int dfs_staggered_check(struct wlan_dfs *dfs, struct dfs_filter *rf,
 	if (midscore == 0)
 		return 0;
 
-	dfs_debug(dfs, WLAN_DEBUG_DFS1,
-			"FINAL highestscore=%d highestscoreindex = %d highestpri = %d",
-			highestscore, highestscoreindex, highestpri);
+	dfs_debug(
+		dfs, WLAN_DEBUG_DFS1,
+		"FINAL highestscore=%d highestscoreindex = %d highestpri = %d",
+		highestscore, highestscoreindex, highestpri);
 
 	dfs_debug(dfs, WLAN_DEBUG_DFS1,
-			"FINAL lowestscore=%d lowestscoreindex=%d lowpri=%d",
-			lowestscore, lowestscoreindex, lowestpri);
+		  "FINAL lowestscore=%d lowestscoreindex=%d lowpri=%d",
+		  lowestscore, lowestscoreindex, lowestpri);
 
 	dfs_debug(dfs, WLAN_DEBUG_DFS1,
-			"FINAL midscore=%d midscoreindex=%d midpri=%d",
-			midscore, midscoreindex, midpri);
+		  "FINAL midscore=%d midscoreindex=%d midpri=%d", midscore,
+		  midscoreindex, midpri);
 
 	delayindex = (dl->dl_firstelem + highestscoreindex) & DFS_MAX_DL_MASK;
 	refdur = dl->dl_elems[delayindex].de_dur;
 	refpri = dl->dl_elems[delayindex].de_time;
 
-	dfs_debug(dfs, WLAN_DEBUG_DFS1,
-			"highscoreindex=%d refdur=%d refpri=%d",
-			highestscoreindex, refdur, refpri);
+	dfs_debug(dfs, WLAN_DEBUG_DFS1, "highscoreindex=%d refdur=%d refpri=%d",
+		  highestscoreindex, refdur, refpri);
 
 	numpulsestemp = dfs_bin_pri_check(dfs, rf, dl, highestscore, refpri,
-			refdur, 0, highestpri);
+					  refdur, 0, highestpri);
 	numpulseshigh = numpulsestemp;
 	numpulsestemp = dfs_bin_pri_check(dfs, rf, dl, highestscore, refpri,
-			refdur, 0, highestpri + midpri);
+					  refdur, 0, highestpri + midpri);
 	if (numpulsestemp > numpulseshigh)
 		numpulseshigh = numpulsestemp;
 
 	numpulsestemp = dfs_bin_pri_check(dfs, rf, dl, highestscore, refpri,
-			refdur, 0, highestpri + midpri + lowestpri);
+					  refdur, 0,
+					  highestpri + midpri + lowestpri);
 	if (numpulsestemp > numpulseshigh)
 		numpulseshigh = numpulsestemp;
 
 	delayindex = (dl->dl_firstelem + midscoreindex) & DFS_MAX_DL_MASK;
 	refdur = dl->dl_elems[delayindex].de_dur;
 	refpri = dl->dl_elems[delayindex].de_time;
-	dfs_debug(dfs, WLAN_DEBUG_DFS1,
-			"midscoreindex=%d refdur=%d refpri=%d",
-			midscoreindex, refdur, refpri);
+	dfs_debug(dfs, WLAN_DEBUG_DFS1, "midscoreindex=%d refdur=%d refpri=%d",
+		  midscoreindex, refdur, refpri);
 
 	numpulsestemp = dfs_bin_pri_check(dfs, rf, dl, midscore, refpri, refdur,
-			0, midpri);
+					  0, midpri);
 	numpulsesmid = numpulsestemp;
 	numpulsestemp = dfs_bin_pri_check(dfs, rf, dl, midscore, refpri, refdur,
-			0, highestpri + midpri);
+					  0, highestpri + midpri);
 	if (numpulsestemp > numpulsesmid)
 		numpulsesmid = numpulsestemp;
 	numpulsestemp = dfs_bin_pri_check(dfs, rf, dl, midscore, refpri, refdur,
-			0, highestpri + midpri + lowestpri);
+					  0, highestpri + midpri + lowestpri);
 	if (numpulsestemp > numpulsesmid)
 		numpulsesmid = numpulsestemp;
 
-	dfs_debug(dfs, WLAN_DEBUG_DFS2,
-			"numpulseshigh=%d, numpulsesmid=%d",
-			numpulseshigh, numpulsesmid);
+	dfs_debug(dfs, WLAN_DEBUG_DFS2, "numpulseshigh=%d, numpulsesmid=%d",
+		  numpulseshigh, numpulsesmid);
 
 	if ((numpulseshigh >= rf->rf_threshold) &&
-			(numpulsesmid >= rf->rf_threshold)) {
+	    (numpulsesmid >= rf->rf_threshold)) {
 		found = 1;
-		dfs_debug(dfs, WLAN_DEBUG_DFS2,
-				"MATCH filter=%u numpulseshigh=%u numpulsesmid= %u thresh=%u",
-				rf->rf_pulseid, numpulseshigh,
-				numpulsesmid, rf->rf_threshold);
+		dfs_debug(
+			dfs, WLAN_DEBUG_DFS2,
+			"MATCH filter=%u numpulseshigh=%u numpulsesmid= %u thresh=%u",
+			rf->rf_pulseid, numpulseshigh, numpulsesmid,
+			rf->rf_threshold);
 	}
 
 	return found;

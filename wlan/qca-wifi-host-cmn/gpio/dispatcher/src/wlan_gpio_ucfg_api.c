@@ -17,9 +17,9 @@
 /**
  * DOC: This file contains gpio north bound interface definitions
  */
-#include <wlan_gpio_ucfg_api.h>
-#include <wlan_gpio_tgt_api.h>
 #include "qdf_module.h"
+#include <wlan_gpio_tgt_api.h>
+#include <wlan_gpio_ucfg_api.h>
 
 QDF_STATUS
 ucfg_set_gpio_config(struct wlan_objmgr_psoc *psoc,

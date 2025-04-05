@@ -27,7 +27,7 @@
 #include "wmi_unified_api.h"
 
 QDF_STATUS target_if_pmo_send_gtk_offload_req(struct wlan_objmgr_vdev *vdev,
-		struct pmo_gtk_req *gtk_req)
+					      struct pmo_gtk_req *gtk_req)
 {
 	uint8_t vdev_id;
 	QDF_STATUS status;
@@ -58,9 +58,7 @@ QDF_STATUS target_if_pmo_send_gtk_offload_req(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_send_gtk_offload_cmd(wmi_handle,
-						  vdev_id,
-						  gtk_req,
+	status = wmi_unified_send_gtk_offload_cmd(wmi_handle, vdev_id, gtk_req,
 						  gtk_req->flags,
 						  gtk_offload_opcode);
 	if (status)
@@ -99,14 +97,14 @@ QDF_STATUS target_if_pmo_send_gtk_response_req(struct wlan_objmgr_vdev *vdev)
 	}
 
 	/* send the wmi command */
-	status = wmi_unified_process_gtk_offload_getinfo_cmd(wmi_handle,
-			vdev_id, offload_req_opcode);
+	status = wmi_unified_process_gtk_offload_getinfo_cmd(
+		wmi_handle, vdev_id, offload_req_opcode);
 
 	return status;
 }
 
-int target_if_pmo_gtk_offload_status_event(void *scn_handle,
-	uint8_t *event, uint32_t len)
+int target_if_pmo_gtk_offload_status_event(void *scn_handle, uint8_t *event,
+					   uint32_t len)
 {
 	struct pmo_gtk_rsp_params *gtk_rsp_param;
 	struct wlan_objmgr_psoc *psoc;
@@ -136,7 +134,7 @@ int target_if_pmo_gtk_offload_status_event(void *scn_handle,
 	}
 
 	if (wmi_extract_gtk_rsp_event(wmi_handle, event, gtk_rsp_param, len) !=
-				      QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		target_if_err("Extraction of gtk rsp event failed");
 		qdf_mem_free(gtk_rsp_param);
 		ret = -EINVAL;
@@ -154,4 +152,3 @@ out:
 
 	return ret;
 }
-

@@ -28,17 +28,19 @@
 
 #include "ani_global.h"
 
-#include "wni_cfg.h"
-#include "sir_mac_prot_def.h"
+#include "lim_prop_exts_utils.h"
 #include "lim_types.h"
 #include "lim_utils.h"
-#include "lim_prop_exts_utils.h"
-#include "sch_api.h"
 #include "rrm_api.h"
+#include "sch_api.h"
+#include "sir_mac_prot_def.h"
+#include "wni_cfg.h"
 
-static void lim_update_config(struct mac_context *mac, struct pe_session *pe_session);
+static void lim_update_config(struct mac_context *mac,
+			      struct pe_session *pe_session);
 
-void lim_set_cfg_protection(struct mac_context *mac, struct pe_session *pesessionEntry)
+void lim_set_cfg_protection(struct mac_context *mac,
+			    struct pe_session *pesessionEntry)
 {
 	uint32_t val = 0;
 	struct wlan_mlme_cfg *mlme_cfg = mac->mlme_cfg;
@@ -47,29 +49,28 @@ void lim_set_cfg_protection(struct mac_context *mac, struct pe_session *pesessio
 		if (pesessionEntry->gLimProtectionControl ==
 		    MLME_FORCE_POLICY_PROTECTION_DISABLE)
 			qdf_mem_zero((void *)&pesessionEntry->cfgProtection,
-				    sizeof(tCfgProtection));
+				     sizeof(tCfgProtection));
 		else {
 			pe_debug("frm11a = %d, from11b = %d, frm11g = %d, "
-				   "ht20 = %d, nongf = %d, lsigTxop = %d, "
-				   "rifs = %d, obss = %d",
-				pesessionEntry->cfgProtection.fromlla,
-				pesessionEntry->cfgProtection.fromllb,
-				pesessionEntry->cfgProtection.fromllg,
-				pesessionEntry->cfgProtection.ht20,
-				pesessionEntry->cfgProtection.nonGf,
-				pesessionEntry->cfgProtection.lsigTxop,
-				pesessionEntry->cfgProtection.rifs,
-				pesessionEntry->cfgProtection.obss);
+				 "ht20 = %d, nongf = %d, lsigTxop = %d, "
+				 "rifs = %d, obss = %d",
+				 pesessionEntry->cfgProtection.fromlla,
+				 pesessionEntry->cfgProtection.fromllb,
+				 pesessionEntry->cfgProtection.fromllg,
+				 pesessionEntry->cfgProtection.ht20,
+				 pesessionEntry->cfgProtection.nonGf,
+				 pesessionEntry->cfgProtection.lsigTxop,
+				 pesessionEntry->cfgProtection.rifs,
+				 pesessionEntry->cfgProtection.obss);
 		}
 	} else {
 		mac->lim.gLimProtectionControl =
 			mlme_cfg->sap_protection_cfg.protection_force_policy;
 
-
 		if (mac->lim.gLimProtectionControl ==
 		    MLME_FORCE_POLICY_PROTECTION_DISABLE)
 			qdf_mem_zero((void *)&mac->lim.cfgProtection,
-				    sizeof(tCfgProtection));
+				     sizeof(tCfgProtection));
 		else {
 			val = mlme_cfg->sap_protection_cfg.protection_enabled;
 
@@ -89,7 +90,6 @@ void lim_set_cfg_protection(struct mac_context *mac, struct pe_session *pesessio
 				(val >> MLME_PROTECTION_ENABLED_RIFS) & 1;
 			mac->lim.cfgProtection.obss =
 				(val >> MLME_PROTECTION_ENABLED_OBSS) & 1;
-
 		}
 	}
 }
@@ -122,14 +122,13 @@ void lim_handle_param_update(struct mac_context *mac, eUpdateIEsType cfgId)
 	pe_debug("Handling CFG parameter id %X update", cfgId);
 
 	switch (cfgId) {
-	case eUPDATE_IE_PROBE_BCN:
-	{
+	case eUPDATE_IE_PROBE_BCN: {
 		msg.type = SIR_LIM_UPDATE_BEACON;
 		status = lim_post_msg_api(mac, &msg);
 
 		if (status != QDF_STATUS_SUCCESS)
 			pe_err("Failed lim_post_msg_api %u", status);
-			break;
+		break;
 	}
 	default:
 		break;
@@ -156,7 +155,8 @@ void lim_handle_param_update(struct mac_context *mac, eUpdateIEsType cfgId)
  * @return None
  */
 
-void lim_apply_configuration(struct mac_context *mac, struct pe_session *pe_session)
+void lim_apply_configuration(struct mac_context *mac,
+			     struct pe_session *pe_session)
 {
 	uint32_t phyMode;
 
@@ -174,7 +174,7 @@ void lim_apply_configuration(struct mac_context *mac, struct pe_session *pe_sess
 	/* Added for BT - AMP Support */
 	if (LIM_IS_AP_ROLE(pe_session)) {
 		/* This check is required to ensure the beacon generation is not done
-		   as a part of join request for a BT-AMP station */
+       as a part of join request for a BT-AMP station */
 
 		if (pe_session->statypeForBss == STA_ENTRY_SELF) {
 			sch_set_beacon_interval(mac, pe_session);
@@ -200,12 +200,13 @@ void lim_apply_configuration(struct mac_context *mac, struct pe_session *pe_sess
  * @return None
  */
 
-static void lim_update_config(struct mac_context *mac, struct pe_session *pe_session)
+static void lim_update_config(struct mac_context *mac,
+			      struct pe_session *pe_session)
 {
 	bool enabled;
 
 	pe_session->beaconParams.fShortPreamble =
-					mac->mlme_cfg->ht_caps.short_preamble;
+		mac->mlme_cfg->ht_caps.short_preamble;
 
 	/* In STA case this parameter is filled during the join request */
 	if (LIM_IS_AP_ROLE(pe_session)) {

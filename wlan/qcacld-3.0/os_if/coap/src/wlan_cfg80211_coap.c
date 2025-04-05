@@ -17,64 +17,63 @@
 /**
  * DOC: defines driver functions interfacing with linux kernel
  */
-#include <wmi_unified_param.h>
-#include <wlan_osif_request_manager.h>
 #include <osif_sync.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_hdd_main.h>
+#include <wlan_cfg80211_coap.h>
 #include <wlan_coap_main.h>
 #include <wlan_coap_ucfg_api.h>
-#include <wlan_cfg80211_coap.h>
+#include <wlan_hdd_main.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_osif_request_manager.h>
+#include <wmi_unified_param.h>
 
 #define COAP_MATCH_DATA_BYTES_MAX 16
 #define COAP_MSG_BYTES_MAX 1152
 #define COAP_OFFLOAD_REPLY_CACHE_EXPTIME_MS 40000
 #define COAP_OFFLOAD_CACHE_GET_TIMEOUT_MS 2000
 
-#define COAP_ATTR(_name) QCA_WLAN_VENDOR_ATTR_COAP_OFFLOAD_ ## _name
+#define COAP_ATTR(_name) QCA_WLAN_VENDOR_ATTR_COAP_OFFLOAD_##_name
 
-static const struct nla_policy
-coap_offload_filter_policy[COAP_ATTR(FILTER_MAX) + 1] = {
-	[COAP_ATTR(FILTER_DEST_IPV4)] = {.type = NLA_U32},
-	[COAP_ATTR(FILTER_DEST_IPV4_IS_BC)] = {.type = NLA_FLAG},
-	[COAP_ATTR(FILTER_DEST_PORT)] = {.type = NLA_U16},
-	[COAP_ATTR(FILTER_MATCH_OFFSET)] = {.type = NLA_U32},
-	[COAP_ATTR(FILTER_MATCH_DATA)] = {
-		.type = NLA_BINARY, .len = COAP_MATCH_DATA_BYTES_MAX},
+static const struct nla_policy coap_offload_filter_policy[COAP_ATTR(FILTER_MAX) +
+							  1] = {
+	[COAP_ATTR(FILTER_DEST_IPV4)] = { .type = NLA_U32 },
+	[COAP_ATTR(FILTER_DEST_IPV4_IS_BC)] = { .type = NLA_FLAG },
+	[COAP_ATTR(FILTER_DEST_PORT)] = { .type = NLA_U16 },
+	[COAP_ATTR(FILTER_MATCH_OFFSET)] = { .type = NLA_U32 },
+	[COAP_ATTR(FILTER_MATCH_DATA)] = { .type = NLA_BINARY,
+					   .len = COAP_MATCH_DATA_BYTES_MAX },
 };
 
 static const struct nla_policy
-coap_offload_tx_ipv4_policy[COAP_ATTR(TX_IPV4_MAX) + 1] = {
-	[COAP_ATTR(TX_IPV4_SRC_ADDR)] = {.type = NLA_U32},
-	[COAP_ATTR(TX_IPV4_SRC_PORT)] = {.type = NLA_U16},
-	[COAP_ATTR(TX_IPV4_DEST_ADDR)] = {.type = NLA_U32},
-	[COAP_ATTR(TX_IPV4_DEST_IS_BC)] = {.type = NLA_FLAG},
-	[COAP_ATTR(TX_IPV4_DEST_PORT)] = {.type = NLA_U16},
-};
+	coap_offload_tx_ipv4_policy[COAP_ATTR(TX_IPV4_MAX) + 1] = {
+		[COAP_ATTR(TX_IPV4_SRC_ADDR)] = { .type = NLA_U32 },
+		[COAP_ATTR(TX_IPV4_SRC_PORT)] = { .type = NLA_U16 },
+		[COAP_ATTR(TX_IPV4_DEST_ADDR)] = { .type = NLA_U32 },
+		[COAP_ATTR(TX_IPV4_DEST_IS_BC)] = { .type = NLA_FLAG },
+		[COAP_ATTR(TX_IPV4_DEST_PORT)] = { .type = NLA_U16 },
+	};
 
 static const struct nla_policy
-coap_offload_reply_policy[COAP_ATTR(REPLY_MAX) + 1] = {
-	[COAP_ATTR(REPLY_SRC_IPV4)] = {.type = NLA_U32},
-	[COAP_ATTR(REPLY_FILTER)] =
-		VENDOR_NLA_POLICY_NESTED(coap_offload_filter_policy),
-	[COAP_ATTR(REPLY_MSG)] = {
-		.type = NLA_BINARY, .len = COAP_MSG_BYTES_MAX},
-	[COAP_ATTR(REPLY_CACHE_EXPTIME)] = {.type = NLA_U32},
-};
+	coap_offload_reply_policy[COAP_ATTR(REPLY_MAX) + 1] = {
+		[COAP_ATTR(REPLY_SRC_IPV4)] = { .type = NLA_U32 },
+		[COAP_ATTR(REPLY_FILTER)] =
+			VENDOR_NLA_POLICY_NESTED(coap_offload_filter_policy),
+		[COAP_ATTR(REPLY_MSG)] = { .type = NLA_BINARY,
+					   .len = COAP_MSG_BYTES_MAX },
+		[COAP_ATTR(REPLY_CACHE_EXPTIME)] = { .type = NLA_U32 },
+	};
 
 static const struct nla_policy
-coap_offload_periodic_tx_policy[COAP_ATTR(PERIODIC_TX_MAX) + 1] = {
-	[COAP_ATTR(PERIODIC_TX_IPV4)] =
-		VENDOR_NLA_POLICY_NESTED(coap_offload_tx_ipv4_policy),
-	[COAP_ATTR(PERIODIC_TX_PERIOD)] = {.type = NLA_U32},
-	[COAP_ATTR(PERIODIC_TX_MSG)] = {
-		.type = NLA_BINARY, .len = COAP_MSG_BYTES_MAX},
-};
+	coap_offload_periodic_tx_policy[COAP_ATTR(PERIODIC_TX_MAX) + 1] = {
+		[COAP_ATTR(PERIODIC_TX_IPV4)] =
+			VENDOR_NLA_POLICY_NESTED(coap_offload_tx_ipv4_policy),
+		[COAP_ATTR(PERIODIC_TX_PERIOD)] = { .type = NLA_U32 },
+		[COAP_ATTR(PERIODIC_TX_MSG)] = { .type = NLA_BINARY,
+						 .len = COAP_MSG_BYTES_MAX },
+	};
 
-const struct nla_policy
-coap_offload_policy[COAP_ATTR(MAX) + 1] = {
-	[COAP_ATTR(ACTION)] = {.type = NLA_U32 },
-	[COAP_ATTR(REQ_ID)] = {.type = NLA_U32 },
+const struct nla_policy coap_offload_policy[COAP_ATTR(MAX) + 1] = {
+	[COAP_ATTR(ACTION)] = { .type = NLA_U32 },
+	[COAP_ATTR(REQ_ID)] = { .type = NLA_U32 },
 	[COAP_ATTR(REPLY)] =
 		VENDOR_NLA_POLICY_NESTED(coap_offload_reply_policy),
 	[COAP_ATTR(PERIODIC_TX)] =
@@ -89,9 +88,8 @@ coap_offload_policy[COAP_ATTR(MAX) + 1] = {
  *
  * Return: 0 on success; error number otherwise
  */
-static int
-wlan_cfg80211_coap_offload_reply_fill_filter(struct nlattr *attr_filter,
-	struct coap_offload_reply_param *params)
+static int wlan_cfg80211_coap_offload_reply_fill_filter(
+	struct nlattr *attr_filter, struct coap_offload_reply_param *params)
 {
 	struct nlattr *tb[COAP_ATTR(FILTER_MAX) + 1];
 
@@ -133,8 +131,7 @@ wlan_cfg80211_coap_offload_reply_fill_filter(struct nlattr *attr_filter,
 		return -EINVAL;
 	}
 
-	params->verify_offset =
-		nla_get_u32(tb[COAP_ATTR(FILTER_MATCH_OFFSET)]);
+	params->verify_offset = nla_get_u32(tb[COAP_ATTR(FILTER_MATCH_OFFSET)]);
 
 	if (!tb[COAP_ATTR(FILTER_MATCH_DATA)]) {
 		coap_err("no ATTR match data");
@@ -165,7 +162,7 @@ wlan_cfg80211_coap_offload_reply_enable(struct wlan_objmgr_vdev *vdev,
 					struct nlattr *attr_reply)
 {
 	struct nlattr *tb[COAP_ATTR(REPLY_MAX) + 1];
-	struct coap_offload_reply_param params = {0};
+	struct coap_offload_reply_param params = { 0 };
 	struct nlattr *attr;
 	QDF_STATUS status;
 	int ret;
@@ -175,8 +172,7 @@ wlan_cfg80211_coap_offload_reply_enable(struct wlan_objmgr_vdev *vdev,
 		return -EINVAL;
 	}
 
-	if (wlan_cfg80211_nla_parse_nested(tb, COAP_ATTR(REPLY_MAX),
-					   attr_reply,
+	if (wlan_cfg80211_nla_parse_nested(tb, COAP_ATTR(REPLY_MAX), attr_reply,
 					   coap_offload_reply_policy)) {
 		coap_err("Invalid ATTR");
 		return -EINVAL;
@@ -225,9 +221,8 @@ wlan_cfg80211_coap_offload_reply_enable(struct wlan_objmgr_vdev *vdev,
  *
  * Return: 0 on success; error number otherwise
  */
-static int
-wlan_cfg80211_coap_offload_fill_tx_ipv4(struct nlattr *attr_ipv4,
-			struct coap_offload_periodic_tx_param *params)
+static int wlan_cfg80211_coap_offload_fill_tx_ipv4(
+	struct nlattr *attr_ipv4, struct coap_offload_periodic_tx_param *params)
 {
 	struct nlattr *tb[COAP_ATTR(TX_IPV4_MAX) + 1];
 
@@ -267,8 +262,7 @@ wlan_cfg80211_coap_offload_fill_tx_ipv4(struct nlattr *attr_ipv4,
 		return -EINVAL;
 	}
 
-	params->dest_udp_port =
-		nla_get_u32(tb[COAP_ATTR(TX_IPV4_DEST_PORT)]);
+	params->dest_udp_port = nla_get_u32(tb[COAP_ATTR(TX_IPV4_DEST_PORT)]);
 	return 0;
 }
 
@@ -287,7 +281,7 @@ wlan_cfg80211_coap_offload_periodic_tx_enable(struct wlan_objmgr_vdev *vdev,
 					      struct nlattr *attr_periodic_tx)
 {
 	struct nlattr *tb[COAP_ATTR(PERIODIC_TX_MAX) + 1];
-	struct coap_offload_periodic_tx_param param = {0};
+	struct coap_offload_periodic_tx_param param = { 0 };
 	struct nlattr *attr_ipv4;
 	QDF_STATUS status;
 	int ret;
@@ -361,7 +355,8 @@ static void wlan_cfg80211_dealloc_coap_buf_info(void *priv)
 	if (!info)
 		return;
 
-	qdf_list_for_each_del(&info->info_list, cur, next, node) {
+	qdf_list_for_each_del(&info->info_list, cur, next, node)
+	{
 		qdf_list_remove_node(&info->info_list, &cur->node);
 		qdf_mem_free(cur->payload);
 		qdf_mem_free(cur);
@@ -370,8 +365,8 @@ static void wlan_cfg80211_dealloc_coap_buf_info(void *priv)
 	qdf_list_destroy(&info->info_list);
 }
 
-static void
-wlan_cfg80211_coap_cache_get_cbk(void *context, struct coap_buf_info *info)
+static void wlan_cfg80211_coap_cache_get_cbk(void *context,
+					     struct coap_buf_info *info)
 {
 	struct osif_request *request;
 	struct coap_buf_info *priv_info;
@@ -401,9 +396,9 @@ wlan_cfg80211_coap_cache_get_cbk(void *context, struct coap_buf_info *info)
  *
  * Return : 0 on success and errno on failure
  */
-static int
-wlan_cfg80211_coap_fill_buf_info(struct sk_buff *reply_skb,
-				 struct coap_buf_node *info, int index)
+static int wlan_cfg80211_coap_fill_buf_info(struct sk_buff *reply_skb,
+					    struct coap_buf_node *info,
+					    int index)
 {
 	struct nlattr *attr;
 
@@ -417,8 +412,8 @@ wlan_cfg80211_coap_fill_buf_info(struct sk_buff *reply_skb,
 				 info->tsf) ||
 	    nla_put_u32(reply_skb, COAP_ATTR(CACHE_INFO_SRC_IPV4),
 			info->src_ip) ||
-	    nla_put(reply_skb, COAP_ATTR(CACHE_INFO_MSG),
-		    info->len, info->payload)) {
+	    nla_put(reply_skb, COAP_ATTR(CACHE_INFO_MSG), info->len,
+		    info->payload)) {
 		coap_err("nla_put failed");
 		return -EINVAL;
 	}
@@ -434,9 +429,8 @@ wlan_cfg80211_coap_fill_buf_info(struct sk_buff *reply_skb,
  *
  * Return: 0 on success; error number otherwise
  */
-static int
-wlan_cfg80211_coap_offload_cache_deliver(struct wiphy *wiphy,
-					 qdf_list_t *cache_list)
+static int wlan_cfg80211_coap_offload_cache_deliver(struct wiphy *wiphy,
+						    qdf_list_t *cache_list)
 {
 	struct sk_buff *skb;
 	uint32_t skb_len = NLMSG_HDRLEN;
@@ -446,7 +440,8 @@ wlan_cfg80211_coap_offload_cache_deliver(struct wiphy *wiphy,
 
 	/* QCA_WLAN_VENDOR_ATTR_COAP_OFFLOAD_CACHES */
 	skb_len += nla_total_size(0);
-	qdf_list_for_each_del(cache_list, cur, next, node) {
+	qdf_list_for_each_del(cache_list, cur, next, node)
+	{
 		if (!cur->len || !cur->payload)
 			continue;
 
@@ -471,7 +466,8 @@ wlan_cfg80211_coap_offload_cache_deliver(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	qdf_list_for_each_del(cache_list, cur, next, node) {
+	qdf_list_for_each_del(cache_list, cur, next, node)
+	{
 		if (!cur->len || !cur->payload)
 			continue;
 
@@ -498,10 +494,9 @@ wlan_cfg80211_coap_offload_cache_deliver(struct wiphy *wiphy,
  *
  * Return: 0 on success; error number otherwise
  */
-static int
-wlan_cfg80211_coap_offload_cache_get(struct wiphy *wiphy,
-				     struct wlan_objmgr_vdev *vdev,
-				     uint32_t req_id)
+static int wlan_cfg80211_coap_offload_cache_get(struct wiphy *wiphy,
+						struct wlan_objmgr_vdev *vdev,
+						uint32_t req_id)
 {
 	void *cookie;
 	QDF_STATUS status;
@@ -527,9 +522,8 @@ wlan_cfg80211_coap_offload_cache_get(struct wiphy *wiphy,
 	buf_info->vdev_id = wlan_vdev_get_id(vdev);
 
 	cookie = osif_request_cookie(request);
-	status = ucfg_coap_offload_cache_get(vdev, req_id,
-					     wlan_cfg80211_coap_cache_get_cbk,
-					     cookie);
+	status = ucfg_coap_offload_cache_get(
+		vdev, req_id, wlan_cfg80211_coap_cache_get_cbk, cookie);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		coap_err("Unable to get cache");
 		goto out;
@@ -564,10 +558,8 @@ out:
  *
  * Return: 0 on success; error number otherwise
  */
-static int
-wlan_cfg80211_coap_offload_reply_disable(struct wiphy *wiphy,
-					 struct wlan_objmgr_vdev *vdev,
-					 uint32_t req_id)
+static int wlan_cfg80211_coap_offload_reply_disable(
+	struct wiphy *wiphy, struct wlan_objmgr_vdev *vdev, uint32_t req_id)
 {
 	void *cookie;
 	QDF_STATUS status;
@@ -593,8 +585,8 @@ wlan_cfg80211_coap_offload_reply_disable(struct wiphy *wiphy,
 	buf_info->vdev_id = wlan_vdev_get_id(vdev);
 
 	cookie = osif_request_cookie(request);
-	status = ucfg_coap_offload_reply_disable(vdev, req_id,
-			wlan_cfg80211_coap_cache_get_cbk, cookie);
+	status = ucfg_coap_offload_reply_disable(
+		vdev, req_id, wlan_cfg80211_coap_cache_get_cbk, cookie);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		coap_err("Failed to disable offload reply");
 		goto out;
@@ -621,17 +613,17 @@ out:
 	return qdf_status_to_os_return(status);
 }
 
-int
-wlan_cfg80211_coap_offload(struct wiphy *wiphy, struct wlan_objmgr_vdev *vdev,
-			   const void *data, int data_len)
+int wlan_cfg80211_coap_offload(struct wiphy *wiphy,
+			       struct wlan_objmgr_vdev *vdev, const void *data,
+			       int data_len)
 {
 	struct nlattr *tb[COAP_ATTR(MAX) + 1];
 	struct nlattr *attr;
 	uint32_t action, req_id;
 	int ret;
 
-	if (wlan_cfg80211_nla_parse(tb, COAP_ATTR(MAX),
-				    data, data_len, coap_offload_policy)) {
+	if (wlan_cfg80211_nla_parse(tb, COAP_ATTR(MAX), data, data_len,
+				    coap_offload_policy)) {
 		coap_err("Invalid ATTR");
 		return -EINVAL;
 	}
@@ -660,17 +652,15 @@ wlan_cfg80211_coap_offload(struct wiphy *wiphy, struct wlan_objmgr_vdev *vdev,
 		break;
 	case QCA_WLAN_VENDOR_COAP_OFFLOAD_ACTION_PERIODIC_TX_ENABLE:
 		attr = tb[COAP_ATTR(PERIODIC_TX)];
-		ret = wlan_cfg80211_coap_offload_periodic_tx_enable(vdev,
-								    req_id,
-								    attr);
+		ret = wlan_cfg80211_coap_offload_periodic_tx_enable(
+			vdev, req_id, attr);
 		break;
 	case QCA_WLAN_VENDOR_COAP_OFFLOAD_ACTION_PERIODIC_TX_DISABLE:
 		ret = wlan_cfg80211_coap_offload_periodic_tx_disable(vdev,
 								     req_id);
 		break;
 	case QCA_WLAN_VENDOR_COAP_OFFLOAD_ACTION_CACHE_GET:
-		ret = wlan_cfg80211_coap_offload_cache_get(wiphy, vdev,
-							   req_id);
+		ret = wlan_cfg80211_coap_offload_cache_get(wiphy, vdev, req_id);
 		break;
 	default:
 		ret = -EINVAL;

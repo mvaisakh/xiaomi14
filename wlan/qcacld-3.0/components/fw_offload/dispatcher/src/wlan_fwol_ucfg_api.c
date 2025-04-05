@@ -20,11 +20,11 @@
  * DOC: define internal APIs related to the fwol component
  */
 
+#include "wlan_fwol_ucfg_api.h"
+#include "target_if_fwol.h"
 #include "wlan_fw_offload_main.h"
 #include "wlan_fwol_public_structs.h"
-#include "wlan_fwol_ucfg_api.h"
 #include "wlan_fwol_tgt_api.h"
-#include "target_if_fwol.h"
 #include "wlan_objmgr_vdev_obj.h"
 
 QDF_STATUS ucfg_fwol_psoc_open(struct wlan_objmgr_psoc *psoc)
@@ -74,10 +74,8 @@ fwol_psoc_object_created_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 	if (!fwol_obj)
 		return QDF_STATUS_E_NOMEM;
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						       WLAN_UMAC_COMP_FWOL,
-						       fwol_obj,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_FWOL, fwol_obj, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		fwol_err("Failed to attach psoc_ctx with psoc");
 		qdf_mem_free(fwol_obj);
@@ -99,8 +97,9 @@ fwol_psoc_object_created_notification(struct wlan_objmgr_psoc *psoc, void *arg)
  *
  * Return QDF_STATUS status in case of success else return error
  */
-static QDF_STATUS fwol_psoc_object_destroyed_notification(
-		struct wlan_objmgr_psoc *psoc, void *arg)
+static QDF_STATUS
+fwol_psoc_object_destroyed_notification(struct wlan_objmgr_psoc *psoc,
+					void *arg)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 	QDF_STATUS status;
@@ -109,9 +108,8 @@ static QDF_STATUS fwol_psoc_object_destroyed_notification(
 	if (!fwol_obj)
 		return QDF_STATUS_E_NOMEM;
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-						       WLAN_UMAC_COMP_FWOL,
-						       fwol_obj);
+	status = wlan_objmgr_psoc_component_obj_detach(
+		psoc, WLAN_UMAC_COMP_FWOL, fwol_obj);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		fwol_err("Failed to detach psoc_ctx from psoc");
 		return status;
@@ -127,24 +125,21 @@ QDF_STATUS ucfg_fwol_init(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_register_psoc_create_handler(
-			WLAN_UMAC_COMP_FWOL,
-			fwol_psoc_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_FWOL, fwol_psoc_object_created_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		fwol_err("unable to register psoc create handle");
 		return status;
 	}
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_UMAC_COMP_FWOL,
-			fwol_psoc_object_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_FWOL, fwol_psoc_object_destroyed_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		fwol_err("unable to register psoc create handle");
 		wlan_objmgr_unregister_psoc_create_handler(
 			WLAN_UMAC_COMP_FWOL,
-			fwol_psoc_object_created_notification,
-			NULL);
+			fwol_psoc_object_created_notification, NULL);
 	}
 
 	return status;
@@ -155,24 +150,22 @@ void ucfg_fwol_deinit(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_FWOL,
-			fwol_psoc_object_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_FWOL, fwol_psoc_object_destroyed_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		fwol_err("unable to unregister psoc destroy handle");
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_FWOL,
-			fwol_psoc_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_FWOL, fwol_psoc_object_created_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		fwol_err("unable to unregister psoc create handle");
 }
 
 #ifdef FW_THERMAL_THROTTLE_SUPPORT
-QDF_STATUS ucfg_fwol_thermal_register_callbacks(
-				struct wlan_objmgr_psoc *psoc,
-				struct fwol_thermal_callbacks *cb)
+QDF_STATUS
+ucfg_fwol_thermal_register_callbacks(struct wlan_objmgr_psoc *psoc,
+				     struct fwol_thermal_callbacks *cb)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -186,8 +179,8 @@ QDF_STATUS ucfg_fwol_thermal_register_callbacks(
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS ucfg_fwol_thermal_unregister_callbacks(
-				struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+ucfg_fwol_thermal_unregister_callbacks(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -262,9 +255,8 @@ ucfg_fwol_is_neighbor_report_req_supported(struct wlan_objmgr_psoc *psoc,
 	if (!fwol_obj) {
 		fwol_err("Failed to get fwol obj");
 		*neighbor_report_req =
-			 !!(cfg_get(psoc,
-			    CFG_OFFLOAD_11K_ENABLE_BITMASK) &
-			    OFFLOAD_11K_BITMASK_NEIGHBOR_REPORT_REQUEST);
+			!!(cfg_get(psoc, CFG_OFFLOAD_11K_ENABLE_BITMASK) &
+			   OFFLOAD_11K_BITMASK_NEIGHBOR_REPORT_REQUEST);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -427,8 +419,9 @@ QDF_STATUS ucfg_get_max_mpdus_inampdu(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS ucfg_get_enable_phy_reg_retention(struct wlan_objmgr_psoc *psoc,
-					     uint8_t *enable_phy_reg_retention)
+QDF_STATUS
+ucfg_get_enable_phy_reg_retention(struct wlan_objmgr_psoc *psoc,
+				  uint8_t *enable_phy_reg_retention)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -516,7 +509,7 @@ ucfg_get_alternative_chainmask_enabled(struct wlan_objmgr_psoc *psoc,
 	}
 
 	*alternative_chainmask_enabled =
-				fwol_obj->cfg.alternative_chainmask_enabled;
+		fwol_obj->cfg.alternative_chainmask_enabled;
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -531,8 +524,7 @@ QDF_STATUS ucfg_get_smart_chainmask_enabled(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	*smart_chainmask_enabled =
-				fwol_obj->cfg.smart_chainmask_enabled;
+	*smart_chainmask_enabled = fwol_obj->cfg.smart_chainmask_enabled;
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -582,9 +574,8 @@ QDF_STATUS ucfg_fwol_get_enable_fw_log_type(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS ucfg_fwol_get_enable_fw_module_log_level(
-				struct wlan_objmgr_psoc *psoc,
-				uint8_t **enable_fw_module_log_level,
-				uint8_t *enable_fw_module_log_level_num)
+	struct wlan_objmgr_psoc *psoc, uint8_t **enable_fw_module_log_level,
+	uint8_t *enable_fw_module_log_level_num)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -596,14 +587,13 @@ QDF_STATUS ucfg_fwol_get_enable_fw_module_log_level(
 
 	*enable_fw_module_log_level = fwol_obj->cfg.enable_fw_module_log_level;
 	*enable_fw_module_log_level_num =
-				fwol_obj->cfg.enable_fw_module_log_level_num;
+		fwol_obj->cfg.enable_fw_module_log_level_num;
 	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS ucfg_fwol_wow_get_enable_fw_module_log_level(
-				struct wlan_objmgr_psoc *psoc,
-				uint8_t **enable_fw_wow_module_log_level,
-				uint8_t *enable_fw_wow_module_log_level_num)
+	struct wlan_objmgr_psoc *psoc, uint8_t **enable_fw_wow_module_log_level,
+	uint8_t *enable_fw_wow_module_log_level_num)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -614,9 +604,9 @@ QDF_STATUS ucfg_fwol_wow_get_enable_fw_module_log_level(
 	}
 
 	*enable_fw_wow_module_log_level =
-				fwol_obj->cfg.enable_fw_mod_wow_log_level;
+		fwol_obj->cfg.enable_fw_mod_wow_log_level;
 	*enable_fw_wow_module_log_level_num =
-				fwol_obj->cfg.enable_fw_mod_wow_log_level_num;
+		fwol_obj->cfg.enable_fw_mod_wow_log_level_num;
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -718,8 +708,9 @@ QDF_STATUS ucfg_fwol_get_tsf_sync_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 #ifdef WLAN_FEATURE_TSF_ACCURACY
-QDF_STATUS ucfg_fwol_get_tsf_accuracy_configs(struct wlan_objmgr_psoc *psoc,
-					      struct wlan_fwol_tsf_accuracy_configs **config)
+QDF_STATUS ucfg_fwol_get_tsf_accuracy_configs(
+	struct wlan_objmgr_psoc *psoc,
+	struct wlan_fwol_tsf_accuracy_configs **config)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -834,19 +825,19 @@ QDF_STATUS ucfg_fwol_get_ofdm_scrambler_seed(struct wlan_objmgr_psoc *psoc,
 	fwol_obj = fwol_get_psoc_obj(psoc);
 	if (!fwol_obj) {
 		*enable_ofdm_scrambler_seed =
-				cfg_default(CFG_ENABLE_OFDM_SCRAMBLER_SEED);
+			cfg_default(CFG_ENABLE_OFDM_SCRAMBLER_SEED);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	*enable_ofdm_scrambler_seed =
-				fwol_obj->cfg.enable_ofdm_scrambler_seed;
+	*enable_ofdm_scrambler_seed = fwol_obj->cfg.enable_ofdm_scrambler_seed;
 
 	return QDF_STATUS_SUCCESS;
 }
 #endif
 
-QDF_STATUS ucfg_fwol_get_enable_secondary_rate(struct wlan_objmgr_psoc *psoc,
-					       uint32_t *enable_secondary_rate)
+QDF_STATUS
+ucfg_fwol_get_enable_secondary_rate(struct wlan_objmgr_psoc *psoc,
+				    uint32_t *enable_secondary_rate)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -897,8 +888,8 @@ QDF_STATUS ucfg_fwol_get_dhcp_max_num_clients(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 ucfg_fwol_get_all_adaptive_dwelltime_params(
-			struct wlan_objmgr_psoc *psoc,
-			struct adaptive_dwelltime_params *dwelltime_params)
+	struct wlan_objmgr_psoc *psoc,
+	struct adaptive_dwelltime_params *dwelltime_params)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -913,9 +904,8 @@ ucfg_fwol_get_all_adaptive_dwelltime_params(
 }
 
 QDF_STATUS
-ucfg_fwol_get_adaptive_dwell_mode_enabled(
-				struct wlan_objmgr_psoc *psoc,
-				bool *adaptive_dwell_mode_enabled)
+ucfg_fwol_get_adaptive_dwell_mode_enabled(struct wlan_objmgr_psoc *psoc,
+					  bool *adaptive_dwell_mode_enabled)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -926,7 +916,7 @@ ucfg_fwol_get_adaptive_dwell_mode_enabled(
 	}
 
 	*adaptive_dwell_mode_enabled =
-			fwol_obj->cfg.dwelltime_params.is_enabled;
+		fwol_obj->cfg.dwelltime_params.is_enabled;
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -943,7 +933,7 @@ ucfg_fwol_get_global_adapt_dwelltime_mode(struct wlan_objmgr_psoc *psoc,
 	}
 
 	*global_adapt_dwelltime_mode =
-			fwol_obj->cfg.dwelltime_params.dwelltime_mode;
+		fwol_obj->cfg.dwelltime_params.dwelltime_mode;
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -964,8 +954,7 @@ ucfg_fwol_get_adapt_dwell_lpf_weight(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS ucfg_fwol_get_adapt_dwell_passive_mon_intval(
-				struct wlan_objmgr_psoc *psoc,
-				uint8_t *adapt_dwell_passive_mon_intval)
+	struct wlan_objmgr_psoc *psoc, uint8_t *adapt_dwell_passive_mon_intval)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -976,13 +965,12 @@ QDF_STATUS ucfg_fwol_get_adapt_dwell_passive_mon_intval(
 	}
 
 	*adapt_dwell_passive_mon_intval =
-			fwol_obj->cfg.dwelltime_params.passive_mon_intval;
+		fwol_obj->cfg.dwelltime_params.passive_mon_intval;
 	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS ucfg_fwol_get_adapt_dwell_wifi_act_threshold(
-				struct wlan_objmgr_psoc *psoc,
-				uint8_t *adapt_dwell_wifi_act_threshold)
+	struct wlan_objmgr_psoc *psoc, uint8_t *adapt_dwell_wifi_act_threshold)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -993,7 +981,7 @@ QDF_STATUS ucfg_fwol_get_adapt_dwell_wifi_act_threshold(
 	}
 
 	*adapt_dwell_wifi_act_threshold =
-			fwol_obj->cfg.dwelltime_params.wifi_act_threshold;
+		fwol_obj->cfg.dwelltime_params.wifi_act_threshold;
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -1027,11 +1015,11 @@ QDF_STATUS ucfg_fwol_set_elna_bypass(struct wlan_objmgr_vdev *vdev,
 	return status;
 }
 
-QDF_STATUS ucfg_fwol_get_elna_bypass(struct wlan_objmgr_vdev *vdev,
-				     struct get_elna_bypass_request *req,
-				     void (*callback)(void *context,
-				     struct get_elna_bypass_response *response),
-				     void *context)
+QDF_STATUS ucfg_fwol_get_elna_bypass(
+	struct wlan_objmgr_vdev *vdev, struct get_elna_bypass_request *req,
+	void (*callback)(void *context,
+			 struct get_elna_bypass_response *response),
+	void *context)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -1067,7 +1055,7 @@ QDF_STATUS ucfg_fwol_get_elna_bypass(struct wlan_objmgr_vdev *vdev,
 
 #ifdef WLAN_SEND_DSCP_UP_MAP_TO_FW
 QDF_STATUS ucfg_fwol_send_dscp_up_map_to_fw(struct wlan_objmgr_vdev *vdev,
-					   uint32_t *dscp_to_up_map)
+					    uint32_t *dscp_to_up_map)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -1141,9 +1129,8 @@ void ucfg_fwol_update_fw_cap_info(struct wlan_objmgr_psoc *psoc,
 }
 
 #ifdef THERMAL_STATS_SUPPORT
-static QDF_STATUS
-ucfg_fwol_get_cap(struct wlan_objmgr_psoc *psoc,
-		  struct wlan_fwol_capability_info *cap_info)
+static QDF_STATUS ucfg_fwol_get_cap(struct wlan_objmgr_psoc *psoc,
+				    struct wlan_fwol_capability_info *cap_info)
 {
 	struct wlan_fwol_psoc_obj *fwol_obj;
 
@@ -1162,16 +1149,15 @@ ucfg_fwol_get_cap(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS ucfg_fwol_send_get_thermal_stats_cmd(struct wlan_objmgr_psoc *psoc,
-				       enum thermal_stats_request_type req_type,
-				       void (*callback)(void *context,
-				       struct thermal_throttle_info *response),
-				       void *context)
+QDF_STATUS ucfg_fwol_send_get_thermal_stats_cmd(
+	struct wlan_objmgr_psoc *psoc, enum thermal_stats_request_type req_type,
+	void (*callback)(void *context, struct thermal_throttle_info *response),
+	void *context)
 {
 	QDF_STATUS status;
 	struct wlan_fwol_psoc_obj *fwol_obj;
 	struct wlan_fwol_tx_ops *tx_ops;
-	struct wlan_fwol_thermal_temp thermal_temp = {0};
+	struct wlan_fwol_thermal_temp thermal_temp = { 0 };
 	struct wlan_fwol_capability_info cap_info;
 	struct wlan_fwol_callbacks *cbs;
 
@@ -1191,9 +1177,11 @@ QDF_STATUS ucfg_fwol_send_get_thermal_stats_cmd(struct wlan_objmgr_psoc *psoc,
 
 	if (!thermal_temp.therm_stats_offset ||
 	    !cap_info.fw_thermal_stats_cap) {
-		fwol_err("Command Disabled in Ini gThermalStatsTempOffset %d or not enabled in FW %d",
-			 thermal_temp.therm_stats_offset,
-			 cap_info.fw_thermal_stats_cap);
+		fwol_err(
+			"Command Disabled in Ini gThermalStatsTempOffset %d or not "
+			"enabled in FW %d",
+			thermal_temp.therm_stats_offset,
+			cap_info.fw_thermal_stats_cap);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -1206,8 +1194,8 @@ QDF_STATUS ucfg_fwol_send_get_thermal_stats_cmd(struct wlan_objmgr_psoc *psoc,
 
 	tx_ops = &fwol_obj->tx_ops;
 	if (tx_ops && tx_ops->get_thermal_stats)
-		status = tx_ops->get_thermal_stats(psoc, req_type,
-					thermal_temp.therm_stats_offset);
+		status = tx_ops->get_thermal_stats(
+			psoc, req_type, thermal_temp.therm_stats_offset);
 	else
 		status = QDF_STATUS_E_INVAL;
 

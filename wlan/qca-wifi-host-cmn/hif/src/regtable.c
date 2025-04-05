@@ -17,18 +17,18 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "targaddrs.h"
-#include "target_type.h"
-#include "cepci.h"
 #include "regtable.h"
+#include "adrastea_reg_def.h"
 #include "ar6320def.h"
 #include "ar6320v2def.h"
+#include "cepci.h"
 #include "hif_main.h"
-#include "adrastea_reg_def.h"
+#include "targaddrs.h"
+#include "target_type.h"
 #include "wcn6450def.h"
 
-#include "targetdef.h"
 #include "hostdef.h"
+#include "targetdef.h"
 
 void hif_target_register_tbl_attach(struct hif_softc *scn, u32 target_type)
 {

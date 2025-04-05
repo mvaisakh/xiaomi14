@@ -15,18 +15,18 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+#include "wlan_twt_main.h"
 #include "include/wlan_mlme_cmn.h"
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_peer_obj.h>
-#include <wlan_twt_api.h>
-#include <wlan_utility.h>
+#include "twt/core/src/wlan_twt_common.h"
+#include "twt/core/src/wlan_twt_priv.h"
 #include <wlan_mlme_api.h>
 #include <wlan_mlme_main.h>
-#include "twt/core/src/wlan_twt_priv.h"
-#include "twt/core/src/wlan_twt_common.h"
-#include <wlan_twt_tgt_if_ext_tx_api.h>
+#include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
 #include <wlan_serialization_api.h>
-#include "wlan_twt_main.h"
+#include <wlan_twt_api.h>
+#include <wlan_twt_tgt_if_ext_tx_api.h>
+#include <wlan_utility.h>
 
 /**
  * wlan_twt_add_session()  - Add TWT session entry in the TWT context
@@ -37,26 +37,23 @@
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-wlan_twt_add_session(struct wlan_objmgr_psoc *psoc,
-		     struct qdf_mac_addr *peer_mac,
-		     uint8_t dialog_id,
-		     void *context)
+static QDF_STATUS wlan_twt_add_session(struct wlan_objmgr_psoc *psoc,
+				       struct qdf_mac_addr *peer_mac,
+				       uint8_t dialog_id, void *context)
 {
 	struct twt_peer_priv_obj *peer_priv;
 	struct wlan_objmgr_peer *peer;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err("peer twt component object is NULL");
@@ -67,7 +64,7 @@ wlan_twt_add_session(struct wlan_objmgr_psoc *psoc,
 
 	for (i = 0; i < peer_priv->num_twt_sessions; i++) {
 		if (peer_priv->session_info[i].dialog_id ==
-			TWT_ALL_SESSIONS_DIALOG_ID) {
+		    TWT_ALL_SESSIONS_DIALOG_ID) {
 			peer_priv->session_info[i].dialog_id = dialog_id;
 			peer_priv->session_info[i].twt_ack_ctx = context;
 			break;
@@ -82,23 +79,21 @@ wlan_twt_add_session(struct wlan_objmgr_psoc *psoc,
 QDF_STATUS
 wlan_twt_set_command_in_progress(struct wlan_objmgr_psoc *psoc,
 				 struct qdf_mac_addr *peer_mac,
-				 uint8_t dialog_id,
-				 enum wlan_twt_commands cmd)
+				 uint8_t dialog_id, enum wlan_twt_commands cmd)
 {
 	struct wlan_objmgr_peer *peer;
 	struct twt_peer_priv_obj *peer_priv;
 	uint8_t i = 0;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err(" peer twt component object is NULL");
@@ -108,7 +103,7 @@ wlan_twt_set_command_in_progress(struct wlan_objmgr_psoc *psoc,
 	qdf_mutex_acquire(&peer_priv->twt_peer_lock);
 	for (i = 0; i < peer_priv->num_twt_sessions; i++) {
 		if (peer_priv->session_info[i].dialog_id == dialog_id ||
-			dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
+		    dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
 			peer_priv->session_info[i].active_cmd = cmd;
 			if (dialog_id != TWT_ALL_SESSIONS_DIALOG_ID)
 				break;
@@ -123,23 +118,21 @@ wlan_twt_set_command_in_progress(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 wlan_twt_init_context(struct wlan_objmgr_psoc *psoc,
-		      struct qdf_mac_addr *peer_mac,
-		      uint8_t dialog_id)
+		      struct qdf_mac_addr *peer_mac, uint8_t dialog_id)
 {
 	struct twt_peer_priv_obj *peer_priv;
 	struct wlan_objmgr_peer *peer;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err("peer twt component object is NULL");
@@ -150,12 +143,11 @@ wlan_twt_init_context(struct wlan_objmgr_psoc *psoc,
 	peer_priv->num_twt_sessions = WLAN_MAX_TWT_SESSIONS_PER_PEER;
 	for (i = 0; i < peer_priv->num_twt_sessions; i++) {
 		if (peer_priv->session_info[i].dialog_id == dialog_id ||
-			dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
+		    dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
 			peer_priv->session_info[i].setup_done = false;
 			peer_priv->session_info[i].dialog_id =
-					TWT_ALL_SESSIONS_DIALOG_ID;
-			peer_priv->session_info[i].active_cmd =
-					WLAN_TWT_NONE;
+				TWT_ALL_SESSIONS_DIALOG_ID;
+			peer_priv->session_info[i].active_cmd = WLAN_TWT_NONE;
 		}
 	}
 	qdf_mutex_release(&peer_priv->twt_peer_lock);
@@ -174,22 +166,21 @@ wlan_twt_init_context(struct wlan_objmgr_psoc *psoc,
  *
  * Return: True if twt_notify is in progress.
  */
-static bool
-wlan_is_twt_notify_in_progress(struct wlan_objmgr_psoc *psoc, uint32_t vdev_id)
+static bool wlan_is_twt_notify_in_progress(struct wlan_objmgr_psoc *psoc,
+					   uint32_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct twt_vdev_priv_obj *twt_vdev_priv;
 	bool is_twt_notify_in_progress;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_TWT_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_TWT_ID);
 	if (!vdev) {
 		twt_err("vdev object not found");
 		return false;
 	}
 
-	twt_vdev_priv = wlan_objmgr_vdev_get_comp_private_obj(vdev,
-							WLAN_UMAC_COMP_TWT);
+	twt_vdev_priv =
+		wlan_objmgr_vdev_get_comp_private_obj(vdev, WLAN_UMAC_COMP_TWT);
 	if (!twt_vdev_priv) {
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_TWT_ID);
 		twt_err("twt vdev private object is NULL");
@@ -211,22 +202,20 @@ wlan_is_twt_notify_in_progress(struct wlan_objmgr_psoc *psoc, uint32_t vdev_id)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-wlan_twt_set_wait_for_notify(struct wlan_objmgr_psoc *psoc, uint32_t vdev_id,
-			     bool is_set)
+static QDF_STATUS wlan_twt_set_wait_for_notify(struct wlan_objmgr_psoc *psoc,
+					       uint32_t vdev_id, bool is_set)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct twt_vdev_priv_obj *twt_vdev_priv;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_TWT_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_TWT_ID);
 	if (!vdev) {
 		twt_err("vdev object not found");
 		return QDF_STATUS_E_INVAL;
 	}
 
-	twt_vdev_priv = wlan_objmgr_vdev_get_comp_private_obj(vdev,
-							WLAN_UMAC_COMP_TWT);
+	twt_vdev_priv =
+		wlan_objmgr_vdev_get_comp_private_obj(vdev, WLAN_UMAC_COMP_TWT);
 	if (!twt_vdev_priv) {
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_TWT_ID);
 		twt_err("twt vdev private object is NULL");
@@ -297,10 +286,9 @@ exit:
  *
  * Return: true if command is in progress, false otherwise
  */
-static bool
-wlan_twt_util_cmd_in_progress(struct twt_peer_priv_obj *peer_priv,
-			      uint8_t dialog_id,
-			      enum wlan_twt_commands cmd)
+static bool wlan_twt_util_cmd_in_progress(struct twt_peer_priv_obj *peer_priv,
+					  uint8_t dialog_id,
+					  enum wlan_twt_commands cmd)
 {
 	bool cmd_in_progress = false;
 	uint8_t i;
@@ -343,11 +331,10 @@ wlan_twt_util_cmd_in_progress(struct twt_peer_priv_obj *peer_priv,
  *
  * Return: true if command is in progress, false otherwise
  */
-static bool
-wlan_twt_any_peer_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
-				  uint8_t vdev_id,
-				  uint8_t dialog_id,
-				  enum wlan_twt_commands cmd)
+static bool wlan_twt_any_peer_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
+					      uint8_t vdev_id,
+					      uint8_t dialog_id,
+					      enum wlan_twt_commands cmd)
 {
 	qdf_list_t *peer_list;
 	struct wlan_objmgr_peer *peer, *peer_next;
@@ -360,11 +347,10 @@ wlan_twt_any_peer_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
 		return false;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_TWT_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_TWT_ID);
 	if (!vdev) {
-		twt_err("vdev is NULL, vdev_id: %d dialog_id: %d",
-				vdev_id, dialog_id);
+		twt_err("vdev is NULL, vdev_id: %d dialog_id: %d", vdev_id,
+			dialog_id);
 		return false;
 	}
 
@@ -378,12 +364,11 @@ wlan_twt_any_peer_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
 	peer = wlan_vdev_peer_list_peek_active_head(vdev, peer_list,
 						    WLAN_TWT_ID);
 	while (peer) {
-		peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+		peer_priv = wlan_objmgr_peer_get_comp_private_obj(
+			peer, WLAN_UMAC_COMP_TWT);
 		if (peer_priv) {
-			cmd_in_progress =
-				wlan_twt_util_cmd_in_progress(peer_priv,
-							      dialog_id, cmd);
+			cmd_in_progress = wlan_twt_util_cmd_in_progress(
+				peer_priv, dialog_id, cmd);
 
 			if (cmd_in_progress) {
 				wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
@@ -392,11 +377,8 @@ wlan_twt_any_peer_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
 			}
 		}
 
-		peer_next =
-			wlan_peer_get_next_active_peer_of_vdev(vdev,
-							       peer_list,
-							       peer,
-							       WLAN_TWT_ID);
+		peer_next = wlan_peer_get_next_active_peer_of_vdev(
+			vdev, peer_list, peer, WLAN_TWT_ID);
 
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		peer = peer_next;
@@ -416,27 +398,25 @@ wlan_twt_any_peer_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
  *
  * Return: True if given command is in progress.
  */
-static bool
-wlan_twt_sap_peer_is_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
-				     struct qdf_mac_addr *peer_mac,
-				     uint8_t dialog_id,
-				     enum wlan_twt_commands cmd)
+static bool wlan_twt_sap_peer_is_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
+						 struct qdf_mac_addr *peer_mac,
+						 uint8_t dialog_id,
+						 enum wlan_twt_commands cmd)
 {
 	struct wlan_objmgr_peer *peer;
 	struct twt_peer_priv_obj *peer_priv;
 	uint8_t i;
 	bool cmd_in_progress = false;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return false;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err("twt peer component object is NULL");
@@ -448,10 +428,8 @@ wlan_twt_sap_peer_is_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
 		enum wlan_twt_commands active_cmd;
 		uint8_t existing_dialog_id;
 
-		active_cmd =
-			peer_priv->session_info[i].active_cmd;
-		existing_dialog_id =
-			peer_priv->session_info[i].dialog_id;
+		active_cmd = peer_priv->session_info[i].active_cmd;
+		existing_dialog_id = peer_priv->session_info[i].dialog_id;
 
 		if (existing_dialog_id == dialog_id ||
 		    dialog_id == TWT_ALL_SESSIONS_DIALOG_ID ||
@@ -497,12 +475,11 @@ wlan_twt_sap_peer_is_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
  *
  * Return: true if command is in progress, false otherwise
  */
-static bool
-wlan_twt_sap_is_command_in_progress(struct wlan_objmgr_psoc *psoc,
-				    uint32_t vdev_id,
-				    struct qdf_mac_addr *peer_mac,
-				    uint8_t dialog_id,
-				    enum wlan_twt_commands cmd)
+static bool wlan_twt_sap_is_command_in_progress(struct wlan_objmgr_psoc *psoc,
+						uint32_t vdev_id,
+						struct qdf_mac_addr *peer_mac,
+						uint8_t dialog_id,
+						enum wlan_twt_commands cmd)
 {
 	if (qdf_is_macaddr_broadcast(peer_mac)) {
 		return wlan_twt_any_peer_cmd_in_progress(psoc, vdev_id,
@@ -532,11 +509,10 @@ wlan_twt_sap_is_command_in_progress(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-wlan_twt_sap_add_session(struct wlan_objmgr_psoc *psoc,
-			 uint8_t vdev_id,
-			 struct qdf_mac_addr *peer_mac,
-			 uint8_t dialog_id)
+static void wlan_twt_sap_add_session(struct wlan_objmgr_psoc *psoc,
+				     uint8_t vdev_id,
+				     struct qdf_mac_addr *peer_mac,
+				     uint8_t dialog_id)
 {
 	if (!qdf_is_macaddr_broadcast(peer_mac))
 		wlan_twt_add_session(psoc, peer_mac, dialog_id, NULL);
@@ -557,8 +533,7 @@ wlan_twt_sap_add_session(struct wlan_objmgr_psoc *psoc,
  */
 static QDF_STATUS
 wlan_twt_sap_set_all_peers_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
-					   uint8_t vdev_id,
-					   uint8_t dialog_id,
+					   uint8_t vdev_id, uint8_t dialog_id,
 					   enum wlan_twt_commands cmd)
 {
 	qdf_list_t *peer_list;
@@ -571,11 +546,10 @@ wlan_twt_sap_set_all_peers_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_TWT_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_TWT_ID);
 	if (!vdev) {
-		twt_err("vdev is NULL, vdev_id: %d dialog_id: %d",
-			vdev_id, dialog_id);
+		twt_err("vdev is NULL, vdev_id: %d dialog_id: %d", vdev_id,
+			dialog_id);
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
@@ -589,8 +563,8 @@ wlan_twt_sap_set_all_peers_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
 	peer = wlan_vdev_peer_list_peek_active_head(vdev, peer_list,
 						    WLAN_TWT_ID);
 	while (peer) {
-		peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+		peer_priv = wlan_objmgr_peer_get_comp_private_obj(
+			peer, WLAN_UMAC_COMP_TWT);
 		if (peer_priv) {
 			uint8_t i;
 			uint8_t num_sessions = peer_priv->num_twt_sessions;
@@ -603,7 +577,7 @@ wlan_twt_sap_set_all_peers_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
 				if (eid == dialog_id ||
 				    dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
 					peer_priv->session_info[i].active_cmd =
-									    cmd;
+						cmd;
 
 					if (dialog_id !=
 					    TWT_ALL_SESSIONS_DIALOG_ID) {
@@ -614,11 +588,8 @@ wlan_twt_sap_set_all_peers_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
 			qdf_mutex_release(&peer_priv->twt_peer_lock);
 		}
 
-		peer_next =
-			wlan_peer_get_next_active_peer_of_vdev(vdev,
-							       peer_list,
-							       peer,
-							       WLAN_TWT_ID);
+		peer_next = wlan_peer_get_next_active_peer_of_vdev(
+			vdev, peer_list, peer, WLAN_TWT_ID);
 
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		peer = peer_next;
@@ -653,18 +624,14 @@ wlan_twt_sap_set_all_peers_cmd_in_progress(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-wlan_twt_sap_set_command_in_progress(struct wlan_objmgr_psoc *psoc,
-				     uint8_t vdev_id,
-				     struct qdf_mac_addr *peer_mac,
-				     uint8_t dialog_id,
-				     enum wlan_twt_commands cmd)
+static QDF_STATUS wlan_twt_sap_set_command_in_progress(
+	struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
+	struct qdf_mac_addr *peer_mac, uint8_t dialog_id,
+	enum wlan_twt_commands cmd)
 {
 	if (qdf_is_macaddr_broadcast(peer_mac)) {
-		return wlan_twt_sap_set_all_peers_cmd_in_progress(psoc,
-								  vdev_id,
-								  dialog_id,
-								  cmd);
+		return wlan_twt_sap_set_all_peers_cmd_in_progress(
+			psoc, vdev_id, dialog_id, cmd);
 	} else {
 		return wlan_twt_set_command_in_progress(psoc, peer_mac,
 							dialog_id, cmd);
@@ -683,10 +650,9 @@ wlan_twt_sap_set_command_in_progress(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-wlan_twt_init_all_peers_context(struct wlan_objmgr_psoc *psoc,
-				uint8_t vdev_id,
-				uint8_t dialog_id)
+static QDF_STATUS wlan_twt_init_all_peers_context(struct wlan_objmgr_psoc *psoc,
+						  uint8_t vdev_id,
+						  uint8_t dialog_id)
 {
 	qdf_list_t *peer_list;
 	struct wlan_objmgr_peer *peer, *peer_next;
@@ -698,11 +664,10 @@ wlan_twt_init_all_peers_context(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						    WLAN_TWT_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_TWT_ID);
 	if (!vdev) {
-		twt_err("vdev is NULL, vdev_id: %d dialog_id: %d",
-			vdev_id, dialog_id);
+		twt_err("vdev is NULL, vdev_id: %d dialog_id: %d", vdev_id,
+			dialog_id);
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
@@ -716,8 +681,8 @@ wlan_twt_init_all_peers_context(struct wlan_objmgr_psoc *psoc,
 	peer = wlan_vdev_peer_list_peek_active_head(vdev, peer_list,
 						    WLAN_TWT_ID);
 	while (peer) {
-		peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+		peer_priv = wlan_objmgr_peer_get_comp_private_obj(
+			peer, WLAN_UMAC_COMP_TWT);
 		if (peer_priv) {
 			uint8_t i = 0;
 			uint8_t num_sessions = WLAN_MAX_TWT_SESSIONS_PER_PEER;
@@ -726,7 +691,7 @@ wlan_twt_init_all_peers_context(struct wlan_objmgr_psoc *psoc,
 			qdf_mutex_acquire(&peer_priv->twt_peer_lock);
 			for (i = 0; i < num_sessions; i++) {
 				uint8_t eid =
-					   peer_priv->session_info[i].dialog_id;
+					peer_priv->session_info[i].dialog_id;
 
 				if (eid == dialog_id ||
 				    dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
@@ -739,11 +704,8 @@ wlan_twt_init_all_peers_context(struct wlan_objmgr_psoc *psoc,
 			qdf_mutex_release(&peer_priv->twt_peer_lock);
 		}
 
-		peer_next =
-			wlan_peer_get_next_active_peer_of_vdev(vdev,
-							       peer_list,
-							       peer,
-							       WLAN_TWT_ID);
+		peer_next = wlan_peer_get_next_active_peer_of_vdev(
+			vdev, peer_list, peer, WLAN_TWT_ID);
 
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		peer = peer_next;
@@ -780,11 +742,10 @@ wlan_twt_init_all_peers_context(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-wlan_twt_sap_init_context(struct wlan_objmgr_psoc *psoc,
-			  uint8_t vdev_id,
-			  struct qdf_mac_addr *peer_mac,
-			  uint8_t dialog_id)
+static QDF_STATUS wlan_twt_sap_init_context(struct wlan_objmgr_psoc *psoc,
+					    uint8_t vdev_id,
+					    struct qdf_mac_addr *peer_mac,
+					    uint8_t dialog_id)
 {
 	if (!qdf_is_macaddr_broadcast(peer_mac))
 		return wlan_twt_init_context(psoc, peer_mac, dialog_id);
@@ -803,9 +764,9 @@ wlan_twt_sap_init_context(struct wlan_objmgr_psoc *psoc,
  *
  * Return: true if exists, false otherwise
  */
-static bool
-wlan_is_vdev_connected_to_peer(struct wlan_objmgr_psoc *psoc, uint32_t vdev_id,
-			       struct qdf_mac_addr *peer_macaddr)
+static bool wlan_is_vdev_connected_to_peer(struct wlan_objmgr_psoc *psoc,
+					   uint32_t vdev_id,
+					   struct qdf_mac_addr *peer_macaddr)
 {
 	uint8_t pdev_id;
 	struct wlan_objmgr_pdev *pdev;
@@ -813,8 +774,7 @@ wlan_is_vdev_connected_to_peer(struct wlan_objmgr_psoc *psoc, uint32_t vdev_id,
 	struct wlan_objmgr_peer *peer;
 	bool connection_exists = false;
 
-	pdev_id = wlan_get_pdev_id_from_vdev_id(psoc, vdev_id,
-						WLAN_TWT_ID);
+	pdev_id = wlan_get_pdev_id_from_vdev_id(psoc, vdev_id, WLAN_TWT_ID);
 	if (pdev_id == WLAN_INVALID_PDEV_ID) {
 		twt_err("Invalid pdev id");
 		return connection_exists;
@@ -826,8 +786,7 @@ wlan_is_vdev_connected_to_peer(struct wlan_objmgr_psoc *psoc, uint32_t vdev_id,
 		return connection_exists;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(pdev, vdev_id,
-						    WLAN_TWT_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(pdev, vdev_id, WLAN_TWT_ID);
 	if (!vdev) {
 		twt_err("vdev object is NULL");
 		goto end;
@@ -863,16 +822,15 @@ bool wlan_twt_is_setup_done(struct wlan_objmgr_psoc *psoc,
 	bool is_setup_done = false;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return false;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err("peer mlme component object is NULL");
@@ -905,16 +863,15 @@ bool wlan_twt_is_max_sessions_reached(struct wlan_objmgr_psoc *psoc,
 	struct wlan_objmgr_peer *peer;
 	uint8_t i, num_twt_sessions = 0, max_twt_sessions;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return true;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err("peer twt component object is NULL");
@@ -926,18 +883,18 @@ bool wlan_twt_is_max_sessions_reached(struct wlan_objmgr_psoc *psoc,
 	max_twt_sessions = peer_priv->num_twt_sessions;
 	for (i = 0; i < max_twt_sessions; i++) {
 		uint8_t existing_session_dialog_id =
-				peer_priv->session_info[i].dialog_id;
+			peer_priv->session_info[i].dialog_id;
 
 		if (existing_session_dialog_id != TWT_ALL_SESSIONS_DIALOG_ID &&
-			existing_session_dialog_id != dialog_id)
+		    existing_session_dialog_id != dialog_id)
 			num_twt_sessions++;
 	}
 
 	qdf_mutex_release(&peer_priv->twt_peer_lock);
 	wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 
-	twt_debug("num_twt_sessions:%d max_twt_sessions:%d",
-		  num_twt_sessions, max_twt_sessions);
+	twt_debug("num_twt_sessions:%d max_twt_sessions:%d", num_twt_sessions,
+		  max_twt_sessions);
 	return num_twt_sessions == max_twt_sessions;
 }
 
@@ -949,16 +906,15 @@ bool wlan_twt_is_setup_in_progress(struct wlan_objmgr_psoc *psoc,
 	struct wlan_objmgr_peer *peer;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return false;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err("peer twt component object is NULL");
@@ -998,26 +954,23 @@ bool wlan_twt_is_setup_in_progress(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-wlan_twt_set_ack_context(struct wlan_objmgr_psoc *psoc,
-			 struct qdf_mac_addr *peer_mac,
-			 uint8_t dialog_id,
-			 void *context)
+static QDF_STATUS wlan_twt_set_ack_context(struct wlan_objmgr_psoc *psoc,
+					   struct qdf_mac_addr *peer_mac,
+					   uint8_t dialog_id, void *context)
 {
 	struct twt_peer_priv_obj *peer_priv;
 	struct wlan_objmgr_peer *peer;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err("peer twt component object is NULL");
@@ -1055,26 +1008,23 @@ wlan_twt_set_ack_context(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-wlan_twt_get_ack_context(struct wlan_objmgr_psoc *psoc,
-			 struct qdf_mac_addr *peer_mac,
-			 uint8_t dialog_id,
-			 void **context)
+static QDF_STATUS wlan_twt_get_ack_context(struct wlan_objmgr_psoc *psoc,
+					   struct qdf_mac_addr *peer_mac,
+					   uint8_t dialog_id, void **context)
 {
 	struct twt_peer_priv_obj *peer_priv;
 	struct wlan_objmgr_peer *peer;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		goto err;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err("peer twt component object is NULL");
@@ -1116,16 +1066,15 @@ bool wlan_twt_is_command_in_progress(struct wlan_objmgr_psoc *psoc,
 	uint8_t i = 0;
 	bool is_command_in_progress = false;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return false;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err(" peer twt component object is NULL");
@@ -1140,19 +1089,19 @@ bool wlan_twt_is_command_in_progress(struct wlan_objmgr_psoc *psoc,
 			*pactive_cmd = active_cmd;
 
 		if (peer_priv->session_info[i].dialog_id == dialog_id ||
-			dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
+		    dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
 			if (cmd == WLAN_TWT_ANY) {
 				is_command_in_progress =
 					(active_cmd != WLAN_TWT_NONE);
 
 				if (dialog_id != TWT_ALL_SESSIONS_DIALOG_ID ||
-					is_command_in_progress)
+				    is_command_in_progress)
 					break;
 			} else {
 				is_command_in_progress = (active_cmd == cmd);
 
 				if (dialog_id != TWT_ALL_SESSIONS_DIALOG_ID ||
-					is_command_in_progress)
+				    is_command_in_progress)
 					break;
 			}
 		}
@@ -1165,8 +1114,7 @@ bool wlan_twt_is_command_in_progress(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS wlan_twt_setup_req(struct wlan_objmgr_psoc *psoc,
-			      struct twt_add_dialog_param *req,
-			      void *context)
+			      struct twt_add_dialog_param *req, void *context)
 {
 	QDF_STATUS status;
 	bool cmd_in_progress, notify_in_progress;
@@ -1174,7 +1122,8 @@ QDF_STATUS wlan_twt_setup_req(struct wlan_objmgr_psoc *psoc,
 
 	if (wlan_twt_is_max_sessions_reached(psoc, &req->peer_macaddr,
 					     req->dialog_id)) {
-		twt_err("TWT add failed(dialog_id:%d), another TWT already exists (max reached)",
+		twt_err("TWT add failed(dialog_id:%d), another TWT already exists (max "
+			"reached)",
 			req->dialog_id);
 		return QDF_STATUS_E_AGAIN;
 	}
@@ -1198,17 +1147,17 @@ QDF_STATUS wlan_twt_setup_req(struct wlan_objmgr_psoc *psoc,
 	}
 
 	cmd_in_progress = wlan_twt_is_command_in_progress(
-					psoc, &req->peer_macaddr, req->dialog_id,
-					WLAN_TWT_ANY, &active_cmd);
+		psoc, &req->peer_macaddr, req->dialog_id, WLAN_TWT_ANY,
+		&active_cmd);
 	if (cmd_in_progress) {
 		twt_debug("Already TWT command:%d is in progress", active_cmd);
 		return QDF_STATUS_E_PENDING;
 	}
 
 	/*
-	 * Add the dialog id to TWT context to drop back to back
-	 * commands
-	 */
+   * Add the dialog id to TWT context to drop back to back
+   * commands
+   */
 	wlan_twt_add_session(psoc, &req->peer_macaddr, req->dialog_id, context);
 	wlan_twt_set_ack_context(psoc, &req->peer_macaddr, req->dialog_id,
 				 context);
@@ -1232,34 +1181,35 @@ QDF_STATUS wlan_twt_setup_req(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF Status
  */
-static QDF_STATUS
-wlan_twt_sta_teardown_req(struct wlan_objmgr_psoc *psoc,
-			  struct twt_del_dialog_param *req,
-			  void *context)
+static QDF_STATUS wlan_twt_sta_teardown_req(struct wlan_objmgr_psoc *psoc,
+					    struct twt_del_dialog_param *req,
+					    void *context)
 {
 	bool cmd_in_progress;
 	enum wlan_twt_commands active_cmd = WLAN_TWT_NONE;
 	QDF_STATUS status;
 
 	if (!wlan_twt_is_setup_done(psoc, &req->peer_macaddr, req->dialog_id)) {
-		twt_err("vdev%d: TWT session %d setup incomplete",
-			  req->vdev_id, req->dialog_id);
+		twt_err("vdev%d: TWT session %d setup incomplete", req->vdev_id,
+			req->dialog_id);
 		return QDF_STATUS_E_AGAIN;
 	}
 
 	cmd_in_progress =
 		wlan_twt_is_command_in_progress(psoc, &req->peer_macaddr,
-			req->dialog_id, WLAN_TWT_SETUP, &active_cmd) ||
-		wlan_twt_is_command_in_progress(
-			psoc, &req->peer_macaddr, req->dialog_id,
-			WLAN_TWT_TERMINATE, &active_cmd);
+						req->dialog_id, WLAN_TWT_SETUP,
+						&active_cmd) ||
+		wlan_twt_is_command_in_progress(psoc, &req->peer_macaddr,
+						req->dialog_id,
+						WLAN_TWT_TERMINATE,
+						&active_cmd);
 	if (cmd_in_progress) {
 		twt_debug("Already TWT command:%d is in progress", active_cmd);
 		return QDF_STATUS_E_PENDING;
 	}
 
-	wlan_twt_set_ack_context(psoc, &req->peer_macaddr,
-				 req->dialog_id, context);
+	wlan_twt_set_ack_context(psoc, &req->peer_macaddr, req->dialog_id,
+				 context);
 	wlan_twt_set_command_in_progress(psoc, &req->peer_macaddr,
 					 req->dialog_id, WLAN_TWT_TERMINATE);
 
@@ -1296,9 +1246,9 @@ QDF_STATUS wlan_twt_pause_req(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_AGAIN;
 	}
 
-	cmd_in_progress = wlan_twt_is_command_in_progress(psoc,
-					&req->peer_macaddr, req->dialog_id,
-					WLAN_TWT_ANY, &active_cmd);
+	cmd_in_progress = wlan_twt_is_command_in_progress(
+		psoc, &req->peer_macaddr, req->dialog_id, WLAN_TWT_ANY,
+		&active_cmd);
 	if (cmd_in_progress) {
 		twt_debug("Already TWT command:%d is in progress", active_cmd);
 		return QDF_STATUS_E_PENDING;
@@ -1306,8 +1256,8 @@ QDF_STATUS wlan_twt_pause_req(struct wlan_objmgr_psoc *psoc,
 
 	wlan_twt_set_command_in_progress(psoc, &req->peer_macaddr,
 					 req->dialog_id, WLAN_TWT_SUSPEND);
-	wlan_twt_set_ack_context(psoc, &req->peer_macaddr,
-				 req->dialog_id, context);
+	wlan_twt_set_ack_context(psoc, &req->peer_macaddr, req->dialog_id,
+				 context);
 
 	status = tgt_twt_pause_req_send(psoc, req);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -1342,10 +1292,9 @@ QDF_STATUS wlan_twt_resume_req(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_AGAIN;
 	}
 
-	cmd_in_progress = wlan_twt_is_command_in_progress(psoc,
-					&req->peer_macaddr,
-					req->dialog_id, WLAN_TWT_ANY,
-					&active_cmd);
+	cmd_in_progress = wlan_twt_is_command_in_progress(
+		psoc, &req->peer_macaddr, req->dialog_id, WLAN_TWT_ANY,
+		&active_cmd);
 	if (cmd_in_progress) {
 		twt_debug("Already TWT command:%d is in progress", active_cmd);
 		return QDF_STATUS_E_PENDING;
@@ -1353,8 +1302,8 @@ QDF_STATUS wlan_twt_resume_req(struct wlan_objmgr_psoc *psoc,
 
 	wlan_twt_set_command_in_progress(psoc, &req->peer_macaddr,
 					 req->dialog_id, WLAN_TWT_RESUME);
-	wlan_twt_set_ack_context(psoc, &req->peer_macaddr,
-				 req->dialog_id, context);
+	wlan_twt_set_ack_context(psoc, &req->peer_macaddr, req->dialog_id,
+				 context);
 
 	status = tgt_twt_resume_req_send(psoc, req);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -1389,9 +1338,9 @@ QDF_STATUS wlan_twt_nudge_req(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_AGAIN;
 	}
 
-	cmd_in_progress = wlan_twt_is_command_in_progress(psoc,
-					&req->peer_macaddr, req->dialog_id,
-					WLAN_TWT_ANY, &active_cmd);
+	cmd_in_progress = wlan_twt_is_command_in_progress(
+		psoc, &req->peer_macaddr, req->dialog_id, WLAN_TWT_ANY,
+		&active_cmd);
 	if (cmd_in_progress) {
 		twt_debug("Already TWT command:%d is in progress", active_cmd);
 		return QDF_STATUS_E_PENDING;
@@ -1431,42 +1380,41 @@ QDF_STATUS wlan_twt_ac_pdev_param_send(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF Status
  */
-static QDF_STATUS
-wlan_twt_sap_teardown_req(struct wlan_objmgr_psoc *psoc,
-			  struct twt_del_dialog_param *req)
+static QDF_STATUS wlan_twt_sap_teardown_req(struct wlan_objmgr_psoc *psoc,
+					    struct twt_del_dialog_param *req)
 {
 	bool is_twt_cmd_in_progress;
 	QDF_STATUS status;
 	bool connection_exists;
 
 	if (!qdf_is_macaddr_broadcast(&req->peer_macaddr)) {
-		connection_exists = wlan_is_vdev_connected_to_peer(psoc,
-							   req->vdev_id,
-							   &req->peer_macaddr);
+		connection_exists = wlan_is_vdev_connected_to_peer(
+			psoc, req->vdev_id, &req->peer_macaddr);
 		if (!connection_exists) {
-			twt_warn("SAP doesn't have connection with this peer("QDF_MAC_ADDR_FMT")",
+			twt_warn(
+				"SAP doesn't have connection with this peer(" QDF_MAC_ADDR_FMT
+				")",
 				QDF_MAC_ADDR_REF(req->peer_macaddr.bytes));
 			/*
-			 * Return success, since STA is not associated and
-			 * there is no TWT session.
-			 */
+       * Return success, since STA is not associated and
+       * there is no TWT session.
+       */
 			return QDF_STATUS_SUCCESS;
 		}
 	}
 
-	is_twt_cmd_in_progress =
-		wlan_twt_sap_is_command_in_progress(
-				psoc, req->vdev_id, &req->peer_macaddr,
-				req->dialog_id, WLAN_TWT_TERMINATE);
+	is_twt_cmd_in_progress = wlan_twt_sap_is_command_in_progress(
+		psoc, req->vdev_id, &req->peer_macaddr, req->dialog_id,
+		WLAN_TWT_TERMINATE);
 	if (is_twt_cmd_in_progress) {
 		twt_debug("Already TWT teardown command is in progress");
 		return QDF_STATUS_E_PENDING;
 	}
 
 	/*
-	 * Add the dialog id to TWT context to drop back to back
-	 * commands
-	 */
+   * Add the dialog id to TWT context to drop back to back
+   * commands
+   */
 	wlan_twt_sap_add_session(psoc, req->vdev_id, &req->peer_macaddr,
 				 req->dialog_id);
 
@@ -1478,8 +1426,9 @@ wlan_twt_sap_teardown_req(struct wlan_objmgr_psoc *psoc,
 	if (QDF_IS_STATUS_ERROR(status)) {
 		twt_err("tgt_twt_teardown_req_send failed (status=%d)", status);
 		wlan_twt_sap_set_command_in_progress(psoc, req->vdev_id,
-					&req->peer_macaddr, req->dialog_id,
-					WLAN_TWT_NONE);
+						     &req->peer_macaddr,
+						     req->dialog_id,
+						     WLAN_TWT_NONE);
 		wlan_twt_sap_init_context(psoc, req->vdev_id,
 					  &req->peer_macaddr, req->dialog_id);
 	}
@@ -1489,16 +1438,15 @@ wlan_twt_sap_teardown_req(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 wlan_twt_teardown_req(struct wlan_objmgr_psoc *psoc,
-		      struct twt_del_dialog_param *req,
-		      void *context)
+		      struct twt_del_dialog_param *req, void *context)
 {
 	enum QDF_OPMODE opmode;
 	uint32_t pdev_id;
 	struct wlan_objmgr_pdev *pdev;
 	QDF_STATUS status;
 
-	pdev_id = wlan_get_pdev_id_from_vdev_id(psoc, req->vdev_id,
-						WLAN_TWT_ID);
+	pdev_id =
+		wlan_get_pdev_id_from_vdev_id(psoc, req->vdev_id, WLAN_TWT_ID);
 	if (pdev_id == WLAN_INVALID_PDEV_ID) {
 		twt_err("Invalid pdev id");
 		return QDF_STATUS_E_INVAL;
@@ -1544,13 +1492,13 @@ wlan_twt_ack_event_handler(struct wlan_objmgr_psoc *psoc,
 
 	twt_debug("TWT ack status: %d", event->status);
 	/* If the ack status is other than 0 (SUCCESS) then its a error.
-	 * that means there won't be following TWT add/del/pause/resume/nudge
-	 * event, hence clear the command in progress to NONE
-	 */
+   * that means there won't be following TWT add/del/pause/resume/nudge
+   * event, hence clear the command in progress to NONE
+   */
 	if (event->status) {
-		qdf_status = wlan_twt_set_command_in_progress(psoc,
-					 &event->peer_macaddr,
-					 event->dialog_id, WLAN_TWT_NONE);
+		qdf_status = wlan_twt_set_command_in_progress(
+			psoc, &event->peer_macaddr, event->dialog_id,
+			WLAN_TWT_NONE);
 		if (QDF_IS_STATUS_ERROR(qdf_status))
 			return qdf_status;
 	}
@@ -1573,25 +1521,23 @@ wlan_twt_ack_event_handler(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-wlan_twt_set_setup_done(struct wlan_objmgr_psoc *psoc,
-			struct qdf_mac_addr *peer_mac,
-			uint8_t dialog_id, bool is_set)
+static void wlan_twt_set_setup_done(struct wlan_objmgr_psoc *psoc,
+				    struct qdf_mac_addr *peer_mac,
+				    uint8_t dialog_id, bool is_set)
 {
 	struct twt_peer_priv_obj *peer_priv;
 	struct wlan_objmgr_peer *peer;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err(" peer twt component object is NULL");
@@ -1622,26 +1568,24 @@ wlan_twt_set_setup_done(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-wlan_twt_set_session_state(struct wlan_objmgr_psoc *psoc,
-			   struct qdf_mac_addr *peer_mac,
-			   uint8_t dialog_id,
-			   enum wlan_twt_session_state state)
+static void wlan_twt_set_session_state(struct wlan_objmgr_psoc *psoc,
+				       struct qdf_mac_addr *peer_mac,
+				       uint8_t dialog_id,
+				       enum wlan_twt_session_state state)
 {
 	struct wlan_objmgr_peer *peer;
 	struct twt_peer_priv_obj *peer_priv;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err(" peer twt component object is NULL");
@@ -1670,17 +1614,16 @@ wlan_twt_get_session_state(struct wlan_objmgr_psoc *psoc,
 	struct twt_peer_priv_obj *peer_priv;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return WLAN_TWT_SETUP_STATE_NOT_ESTABLISHED;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
@@ -1692,8 +1635,8 @@ wlan_twt_get_session_state(struct wlan_objmgr_psoc *psoc,
 	for (i = 0; i < peer_priv->num_twt_sessions; i++) {
 		if (peer_priv->session_info[i].dialog_id == dialog_id &&
 		    dialog_id != TWT_ALL_SESSIONS_DIALOG_ID) {
-		    qdf_mutex_release(&peer_priv->twt_peer_lock);
-		    wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
+			qdf_mutex_release(&peer_priv->twt_peer_lock);
+			wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 			return peer_priv->session_info[i].state;
 		}
 	}
@@ -1716,8 +1659,7 @@ wlan_twt_process_renego_failure(struct wlan_objmgr_psoc *psoc,
 				struct twt_add_dialog_complete_event *event)
 {
 	/* Reset the active TWT command to none */
-	wlan_twt_set_command_in_progress(psoc,
-					 &event->params.peer_macaddr,
+	wlan_twt_set_command_in_progress(psoc, &event->params.peer_macaddr,
 					 event->params.dialog_id,
 					 WLAN_TWT_NONE);
 
@@ -1739,8 +1681,7 @@ wlan_twt_process_add_initial_nego(struct wlan_objmgr_psoc *psoc,
 	mlme_twt_osif_setup_complete_ind(psoc, event, false);
 
 	/* Reset the active TWT command to none */
-	wlan_twt_set_command_in_progress(psoc,
-					 &event->params.peer_macaddr,
+	wlan_twt_set_command_in_progress(psoc, &event->params.peer_macaddr,
 					 event->params.dialog_id,
 					 WLAN_TWT_NONE);
 
@@ -1769,25 +1710,23 @@ wlan_twt_process_add_initial_nego(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-static void
-wlan_twt_clear_wake_dur_and_interval(struct wlan_objmgr_psoc *psoc,
-				     uint8_t vdev_id,
-				     struct qdf_mac_addr *peer_mac,
-				     uint8_t dialog_id)
+static void wlan_twt_clear_wake_dur_and_interval(struct wlan_objmgr_psoc *psoc,
+						 uint8_t vdev_id,
+						 struct qdf_mac_addr *peer_mac,
+						 uint8_t dialog_id)
 {
 	struct twt_peer_priv_obj *peer_priv;
 	struct wlan_objmgr_peer *peer;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return;
 	}
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err(" peer twt component object is NULL");
@@ -1798,16 +1737,17 @@ wlan_twt_clear_wake_dur_and_interval(struct wlan_objmgr_psoc *psoc,
 
 	for (i = 0; i < peer_priv->num_twt_sessions; i++) {
 		if (peer_priv->session_info[i].dialog_id == dialog_id) {
-			peer_priv->session_info[i].dialog_id = TWT_ALL_SESSIONS_DIALOG_ID;
+			peer_priv->session_info[i].dialog_id =
+				TWT_ALL_SESSIONS_DIALOG_ID;
 			peer_priv->session_info[i].wake_dur = 0;
 			peer_priv->session_info[i].wake_interval = 0;
 			break;
 		}
 	}
 
-	twt_debug("vdev:%d peer:" QDF_MAC_ADDR_FMT " dialog_id:%d wake_dur:%d wake_interval:%d",
-		  vdev_id,
-		  QDF_MAC_ADDR_REF(peer_mac->bytes),
+	twt_debug("vdev:%d peer:" QDF_MAC_ADDR_FMT
+		  " dialog_id:%d wake_dur:%d wake_interval:%d",
+		  vdev_id, QDF_MAC_ADDR_REF(peer_mac->bytes),
 		  peer_priv->session_info[i].dialog_id,
 		  peer_priv->session_info[i].wake_dur,
 		  peer_priv->session_info[i].wake_interval);
@@ -1828,28 +1768,26 @@ wlan_twt_clear_wake_dur_and_interval(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-static void
-wlan_twt_set_wake_dur_and_interval(struct wlan_objmgr_psoc *psoc,
-				   uint8_t vdev_id,
-				   struct qdf_mac_addr *peer_mac,
-				   uint8_t dialog_id,
-				   uint32_t wake_dur,
-				   uint32_t wake_interval)
+static void wlan_twt_set_wake_dur_and_interval(struct wlan_objmgr_psoc *psoc,
+					       uint8_t vdev_id,
+					       struct qdf_mac_addr *peer_mac,
+					       uint8_t dialog_id,
+					       uint32_t wake_dur,
+					       uint32_t wake_interval)
 {
 	struct twt_peer_priv_obj *peer_priv;
 	struct wlan_objmgr_peer *peer;
 	uint8_t i;
 
-	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes,
-					   WLAN_TWT_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, peer_mac->bytes, WLAN_TWT_ID);
 	if (!peer) {
-		twt_err("Peer object not found "QDF_MAC_ADDR_FMT,
+		twt_err("Peer object not found " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(peer_mac->bytes));
 		return;
 	}
 
-	peer_priv = wlan_objmgr_peer_get_comp_private_obj(peer,
-							  WLAN_UMAC_COMP_TWT);
+	peer_priv =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!peer_priv) {
 		wlan_objmgr_peer_release_ref(peer, WLAN_TWT_ID);
 		twt_err(" peer twt component object is NULL");
@@ -1861,21 +1799,25 @@ wlan_twt_set_wake_dur_and_interval(struct wlan_objmgr_psoc *psoc,
 	for (i = 0; i < peer_priv->num_twt_sessions; i++) {
 		if (peer_priv->session_info[i].dialog_id == dialog_id) {
 			peer_priv->session_info[i].wake_dur = wake_dur;
-			peer_priv->session_info[i].wake_interval = wake_interval;
-				break;
+			peer_priv->session_info[i].wake_interval =
+				wake_interval;
+			break;
 		} else {
-			if (peer_priv->session_info[i].dialog_id == TWT_ALL_SESSIONS_DIALOG_ID) {
-				peer_priv->session_info[i].dialog_id = dialog_id;
+			if (peer_priv->session_info[i].dialog_id ==
+			    TWT_ALL_SESSIONS_DIALOG_ID) {
+				peer_priv->session_info[i].dialog_id =
+					dialog_id;
 				peer_priv->session_info[i].wake_dur = wake_dur;
-				peer_priv->session_info[i].wake_interval = wake_interval;
+				peer_priv->session_info[i].wake_interval =
+					wake_interval;
 				break;
 			}
 		}
 	}
 
-	twt_debug("vdev:%d peer:" QDF_MAC_ADDR_FMT " dialog_id:%d wake_dur:%d wake_interval:%d",
-		  vdev_id,
-		  QDF_MAC_ADDR_REF(peer_mac->bytes),
+	twt_debug("vdev:%d peer:" QDF_MAC_ADDR_FMT
+		  " dialog_id:%d wake_dur:%d wake_interval:%d",
+		  vdev_id, QDF_MAC_ADDR_REF(peer_mac->bytes),
 		  peer_priv->session_info[i].dialog_id,
 		  peer_priv->session_info[i].wake_dur,
 		  peer_priv->session_info[i].wake_interval);
@@ -1885,8 +1827,9 @@ wlan_twt_set_wake_dur_and_interval(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-wlan_twt_setup_complete_event_handler(struct wlan_objmgr_psoc *psoc,
-				    struct twt_add_dialog_complete_event *event)
+wlan_twt_setup_complete_event_handler(
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_add_dialog_complete_event *event)
 {
 	bool is_evt_allowed;
 	bool setup_done;
@@ -1915,25 +1858,22 @@ wlan_twt_setup_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 	switch (opmode) {
 	case QDF_SAP_MODE:
 		wlan_twt_set_wake_dur_and_interval(
-					psoc, vdev_id,
-					&event->params.peer_macaddr,
-					event->params.dialog_id,
-					event->additional_params.wake_dur_us,
-					event->additional_params.wake_intvl_us);
-		qdf_status = mlme_twt_osif_setup_complete_ind(psoc, event,
-							      false);
+			psoc, vdev_id, &event->params.peer_macaddr,
+			event->params.dialog_id,
+			event->additional_params.wake_dur_us,
+			event->additional_params.wake_intvl_us);
+		qdf_status =
+			mlme_twt_osif_setup_complete_ind(psoc, event, false);
 		break;
 	case QDF_STA_MODE:
 		is_evt_allowed = wlan_twt_is_command_in_progress(
-						psoc,
-						&event->params.peer_macaddr,
-						event->params.dialog_id,
-						WLAN_TWT_SETUP, &active_cmd);
+			psoc, &event->params.peer_macaddr,
+			event->params.dialog_id, WLAN_TWT_SETUP, &active_cmd);
 
 		if (!is_evt_allowed) {
-			twt_debug("Drop TWT add dialog event for dialog_id:%d status:%d active_cmd:%d",
-				  event->params.dialog_id, status,
-				  active_cmd);
+			twt_debug(
+				"Drop TWT add dialog event for dialog_id:%d status:%d active_cmd:%d",
+				event->params.dialog_id, status, active_cmd);
 			qdf_status = QDF_STATUS_E_INVAL;
 			goto cleanup;
 		}
@@ -1981,19 +1921,17 @@ wlan_is_twt_teardown_failed(enum HOST_TWT_DEL_STATUS teardown_status)
 	return false;
 }
 
-static void
-wlan_twt_handle_sta_del_dialog_event(struct wlan_objmgr_psoc *psoc,
-			      struct twt_del_dialog_complete_event_param *event)
+static void wlan_twt_handle_sta_del_dialog_event(
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_del_dialog_complete_event_param *event)
 {
 	bool is_evt_allowed, usr_cfg_ps_enable;
 	enum wlan_twt_commands active_cmd = WLAN_TWT_NONE;
 
 	is_evt_allowed = wlan_twt_is_command_in_progress(
-					psoc, &event->peer_macaddr,
-					event->dialog_id,
-					WLAN_TWT_TERMINATE, &active_cmd);
-	if (!is_evt_allowed &&
-	    event->dialog_id != TWT_ALL_SESSIONS_DIALOG_ID &&
+		psoc, &event->peer_macaddr, event->dialog_id,
+		WLAN_TWT_TERMINATE, &active_cmd);
+	if (!is_evt_allowed && event->dialog_id != TWT_ALL_SESSIONS_DIALOG_ID &&
 	    event->status != HOST_TWT_DEL_STATUS_ROAMING &&
 	    event->status != HOST_TWT_DEL_STATUS_PEER_INIT_TEARDOWN &&
 	    event->status != HOST_TWT_DEL_STATUS_CONCURRENCY) {
@@ -2004,8 +1942,7 @@ wlan_twt_handle_sta_del_dialog_event(struct wlan_objmgr_psoc *psoc,
 	}
 
 	usr_cfg_ps_enable = mlme_get_user_ps(psoc, event->vdev_id);
-	if (!usr_cfg_ps_enable &&
-	    event->status == HOST_TWT_DEL_STATUS_OK)
+	if (!usr_cfg_ps_enable && event->status == HOST_TWT_DEL_STATUS_OK)
 		event->status = HOST_TWT_DEL_STATUS_PS_DISABLE_TEARDOWN;
 
 	mlme_twt_osif_teardown_complete_ind(psoc, event);
@@ -2020,16 +1957,17 @@ wlan_twt_handle_sta_del_dialog_event(struct wlan_objmgr_psoc *psoc,
 	if (wlan_is_twt_teardown_failed(event->status))
 		return;
 
-	wlan_twt_set_setup_done(psoc, &event->peer_macaddr,
-				event->dialog_id, false);
+	wlan_twt_set_setup_done(psoc, &event->peer_macaddr, event->dialog_id,
+				false);
 	wlan_twt_set_session_state(psoc, &event->peer_macaddr, event->dialog_id,
 				   WLAN_TWT_SETUP_STATE_NOT_ESTABLISHED);
 	wlan_twt_init_context(psoc, &event->peer_macaddr, event->dialog_id);
 }
 
 QDF_STATUS
-wlan_twt_teardown_complete_event_handler(struct wlan_objmgr_psoc *psoc,
-			      struct twt_del_dialog_complete_event_param *event)
+wlan_twt_teardown_complete_event_handler(
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_del_dialog_complete_event_param *event)
 {
 	enum QDF_OPMODE opmode;
 	uint32_t pdev_id, vdev_id;
@@ -2054,21 +1992,21 @@ wlan_twt_teardown_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 	case QDF_SAP_MODE:
 		mlme_twt_osif_teardown_complete_ind(psoc, event);
 
-		wlan_twt_clear_wake_dur_and_interval(psoc, vdev_id,
-						     &event->peer_macaddr,
-						     event->dialog_id);
+		wlan_twt_clear_wake_dur_and_interval(
+			psoc, vdev_id, &event->peer_macaddr, event->dialog_id);
 
 		/*
-		 * If this is an unsolicited TWT del event initiated from the
-		 * peer, then no need to clear the active command in progress
-		 */
+     * If this is an unsolicited TWT del event initiated from the
+     * peer, then no need to clear the active command in progress
+     */
 		if (event->status != HOST_TWT_DEL_STATUS_PEER_INIT_TEARDOWN) {
 			/* Reset the active TWT command to none */
-			wlan_twt_sap_set_command_in_progress(psoc,
-				event->vdev_id, &event->peer_macaddr,
+			wlan_twt_sap_set_command_in_progress(
+				psoc, event->vdev_id, &event->peer_macaddr,
 				event->dialog_id, WLAN_TWT_NONE);
 			wlan_twt_sap_init_context(psoc, event->vdev_id,
-				&event->peer_macaddr, event->dialog_id);
+						  &event->peer_macaddr,
+						  event->dialog_id);
 		}
 		break;
 	case QDF_STA_MODE:
@@ -2076,7 +2014,7 @@ wlan_twt_teardown_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 		break;
 	default:
 		twt_debug("TWT Teardown is not supported on %s",
-				  qdf_opmode_str(opmode));
+			  qdf_opmode_str(opmode));
 		break;
 	}
 
@@ -2085,8 +2023,9 @@ wlan_twt_teardown_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-wlan_twt_pause_complete_event_handler(struct wlan_objmgr_psoc *psoc,
-			    struct twt_pause_dialog_complete_event_param *event)
+wlan_twt_pause_complete_event_handler(
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_pause_dialog_complete_event_param *event)
 {
 	enum QDF_OPMODE opmode;
 	QDF_STATUS qdf_status = QDF_STATUS_E_FAILURE;
@@ -2119,9 +2058,9 @@ wlan_twt_pause_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 					   event->dialog_id,
 					   WLAN_TWT_SETUP_STATE_SUSPEND);
 
-		qdf_status = wlan_twt_set_command_in_progress(psoc,
-					&event->peer_macaddr,
-					event->dialog_id, WLAN_TWT_NONE);
+		qdf_status = wlan_twt_set_command_in_progress(
+			psoc, &event->peer_macaddr, event->dialog_id,
+			WLAN_TWT_NONE);
 		break;
 	default:
 		twt_debug("TWT Pause is not supported on %s",
@@ -2134,8 +2073,9 @@ wlan_twt_pause_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-wlan_twt_resume_complete_event_handler(struct wlan_objmgr_psoc *psoc,
-			   struct twt_resume_dialog_complete_event_param *event)
+wlan_twt_resume_complete_event_handler(
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_resume_dialog_complete_event_param *event)
 {
 	enum QDF_OPMODE opmode;
 	QDF_STATUS qdf_status = QDF_STATUS_E_FAILURE;
@@ -2168,10 +2108,9 @@ wlan_twt_resume_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 					   event->dialog_id,
 					   WLAN_TWT_SETUP_STATE_ACTIVE);
 
-		qdf_status = wlan_twt_set_command_in_progress(psoc,
-						&event->peer_macaddr,
-						event->dialog_id,
-						WLAN_TWT_NONE);
+		qdf_status = wlan_twt_set_command_in_progress(
+			psoc, &event->peer_macaddr, event->dialog_id,
+			WLAN_TWT_NONE);
 		break;
 	default:
 		twt_debug("TWT Resume is not supported on %s",
@@ -2184,8 +2123,9 @@ wlan_twt_resume_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-wlan_twt_nudge_complete_event_handler(struct wlan_objmgr_psoc *psoc,
-			    struct twt_nudge_dialog_complete_event_param *event)
+wlan_twt_nudge_complete_event_handler(
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_nudge_dialog_complete_event_param *event)
 {
 	bool is_evt_allowed;
 	enum HOST_TWT_NUDGE_STATUS status = event->status;
@@ -2215,25 +2155,24 @@ wlan_twt_nudge_complete_event_handler(struct wlan_objmgr_psoc *psoc,
 		qdf_status = mlme_twt_osif_nudge_complete_ind(psoc, event);
 		break;
 	case QDF_STA_MODE:
-		 is_evt_allowed = wlan_twt_is_command_in_progress(
-						psoc,
-						&event->peer_macaddr,
-						event->dialog_id,
-						WLAN_TWT_NUDGE, &active_cmd);
+		is_evt_allowed = wlan_twt_is_command_in_progress(
+			psoc, &event->peer_macaddr, event->dialog_id,
+			WLAN_TWT_NUDGE, &active_cmd);
 
 		if (!is_evt_allowed &&
 		    event->dialog_id != TWT_ALL_SESSIONS_DIALOG_ID) {
-			twt_debug("Drop TWT nudge dialog event for dialog_id:%d status:%d active_cmd:%d",
-				  event->dialog_id, status,
-				  active_cmd);
+			twt_debug(
+				"Drop TWT nudge dialog event for dialog_id:%d status:%d "
+				"active_cmd:%d",
+				event->dialog_id, status, active_cmd);
 			qdf_status = QDF_STATUS_E_INVAL;
 			goto fail;
 		}
 
 		mlme_twt_osif_nudge_complete_ind(psoc, event);
-		qdf_status = wlan_twt_set_command_in_progress(psoc,
-					&event->peer_macaddr,
-					event->dialog_id, WLAN_TWT_NONE);
+		qdf_status = wlan_twt_set_command_in_progress(
+			psoc, &event->peer_macaddr, event->dialog_id,
+			WLAN_TWT_NONE);
 		break;
 	default:
 		twt_debug("TWT nudge is not supported on %s",
@@ -2282,16 +2221,14 @@ QDF_STATUS wlan_twt_update_beacon_template(void)
 	return status;
 }
 
-void wlan_twt_set_work_params(
-			struct wlan_objmgr_vdev *vdev,
-			struct qdf_mac_addr *peer_mac,
-			uint8_t dialog_id,
-			uint32_t twt_next_action)
+void wlan_twt_set_work_params(struct wlan_objmgr_vdev *vdev,
+			      struct qdf_mac_addr *peer_mac, uint8_t dialog_id,
+			      uint32_t twt_next_action)
 {
 	struct twt_vdev_priv_obj *twt_vdev_priv;
 
-	twt_vdev_priv = wlan_objmgr_vdev_get_comp_private_obj(
-					vdev, WLAN_UMAC_COMP_TWT);
+	twt_vdev_priv =
+		wlan_objmgr_vdev_get_comp_private_obj(vdev, WLAN_UMAC_COMP_TWT);
 
 	if (!twt_vdev_priv) {
 		twt_err("twt vdev private obj is null");
@@ -2302,10 +2239,11 @@ void wlan_twt_set_work_params(
 	twt_vdev_priv->dialog_id = dialog_id;
 	twt_vdev_priv->next_action = twt_next_action;
 
-	twt_debug("renego: twt_terminate: dialog_id:%d next_action:%d peer mac_addr  "
-		   QDF_MAC_ADDR_FMT, twt_vdev_priv->dialog_id,
-		   twt_vdev_priv->next_action,
-		   QDF_MAC_ADDR_REF(twt_vdev_priv->peer_macaddr.bytes));
+	twt_debug(
+		"renego: twt_terminate: dialog_id:%d next_action:%d peer mac_addr "
+		" " QDF_MAC_ADDR_FMT,
+		twt_vdev_priv->dialog_id, twt_vdev_priv->next_action,
+		QDF_MAC_ADDR_REF(twt_vdev_priv->peer_macaddr.bytes));
 }
 
 void wlan_twt_get_work_params(struct wlan_objmgr_vdev *vdev,
@@ -2314,8 +2252,8 @@ void wlan_twt_get_work_params(struct wlan_objmgr_vdev *vdev,
 {
 	struct twt_vdev_priv_obj *twt_vdev_priv;
 
-	twt_vdev_priv = wlan_objmgr_vdev_get_comp_private_obj(
-					vdev, WLAN_UMAC_COMP_TWT);
+	twt_vdev_priv =
+		wlan_objmgr_vdev_get_comp_private_obj(vdev, WLAN_UMAC_COMP_TWT);
 	if (!twt_vdev_priv) {
 		twt_err("twt vdev private obj is null");
 		return;

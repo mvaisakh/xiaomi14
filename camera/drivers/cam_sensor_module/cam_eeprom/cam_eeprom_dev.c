@@ -5,19 +5,19 @@
  */
 
 #include "cam_eeprom_dev.h"
-#include "cam_req_mgr_dev.h"
-#include "cam_eeprom_soc.h"
-#include "cam_eeprom_core.h"
-#include "cam_debug_util.h"
-#include "camera_main.h"
 #include "cam_compat.h"
+#include "cam_debug_util.h"
+#include "cam_eeprom_core.h"
+#include "cam_eeprom_soc.h"
+#include "cam_req_mgr_dev.h"
+#include "camera_main.h"
 /* xiaomi add for cci start */
 #include "cam_cci_debug_util.h"
 /* xiaomi add for cci end */
 
 static struct cam_i3c_eeprom_data {
-	struct cam_eeprom_ctrl_t                  *e_ctrl;
-	struct completion                          probe_complete;
+	struct cam_eeprom_ctrl_t *e_ctrl;
+	struct completion probe_complete;
 } g_i3c_eeprom_data[MAX_CAMERAS];
 
 struct completion *cam_eeprom_get_i3c_completion(uint32_t index)
@@ -26,14 +26,13 @@ struct completion *cam_eeprom_get_i3c_completion(uint32_t index)
 }
 
 static int cam_eeprom_subdev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+					    struct v4l2_subdev_fh *fh)
 {
-	struct cam_eeprom_ctrl_t *e_ctrl =
-		v4l2_get_subdevdata(sd);
+	struct cam_eeprom_ctrl_t *e_ctrl = v4l2_get_subdevdata(sd);
 
 	if (!e_ctrl) {
 		CAM_ERR(CAM_EEPROM, "e_ctrl ptr is NULL");
-			return -EINVAL;
+		return -EINVAL;
 	}
 
 	mutex_lock(&(e_ctrl->eeprom_mutex));
@@ -44,7 +43,7 @@ static int cam_eeprom_subdev_close_internal(struct v4l2_subdev *sd,
 }
 
 static int cam_eeprom_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				   struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -56,18 +55,17 @@ static int cam_eeprom_subdev_close(struct v4l2_subdev *sd,
 	return cam_eeprom_subdev_close_internal(sd, fh);
 }
 
-static long cam_eeprom_subdev_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, void *arg)
+static long cam_eeprom_subdev_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
+				    void *arg)
 {
-	int                       rc     = 0;
+	int rc = 0;
 	struct cam_eeprom_ctrl_t *e_ctrl = v4l2_get_subdevdata(sd);
 
 	switch (cmd) {
 	case VIDIOC_CAM_CONTROL:
 		rc = cam_eeprom_driver_cmd(e_ctrl, arg);
 		if (rc)
-			CAM_ERR(CAM_EEPROM,
-				"Failed in Driver cmd: %d", rc);
+			CAM_ERR(CAM_EEPROM, "Failed in Driver cmd: %d", rc);
 		break;
 	case CAM_SD_SHUTDOWN:
 		if (!cam_req_mgr_is_shutdown()) {
@@ -86,9 +84,9 @@ static long cam_eeprom_subdev_ioctl(struct v4l2_subdev *sd,
 }
 
 int32_t cam_eeprom_update_i2c_info(struct cam_eeprom_ctrl_t *e_ctrl,
-	struct cam_eeprom_i2c_info_t *i2c_info)
+				   struct cam_eeprom_i2c_info_t *i2c_info)
 {
-	struct cam_sensor_cci_client        *cci_client = NULL;
+	struct cam_sensor_cci_client *cci_client = NULL;
 
 	if (e_ctrl->io_master_info.master_type == CCI_MASTER) {
 		cci_client = e_ctrl->io_master_info.cci_client;
@@ -107,22 +105,20 @@ int32_t cam_eeprom_update_i2c_info(struct cam_eeprom_ctrl_t *e_ctrl,
 		CAM_DBG(CAM_EEPROM, "Slave addr: 0x%x", i2c_info->slave_addr);
 	} else if (e_ctrl->io_master_info.master_type == SPI_MASTER) {
 		CAM_ERR(CAM_EEPROM, "Slave addr: 0x%x Freq Mode: %d",
-		i2c_info->slave_addr, i2c_info->i2c_freq_mode);
+			i2c_info->slave_addr, i2c_info->i2c_freq_mode);
 	}
 	return 0;
 }
 
 #ifdef CONFIG_COMPAT
 static long cam_eeprom_init_subdev_do_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, unsigned long arg)
+					    unsigned int cmd, unsigned long arg)
 {
 	struct cam_control cmd_data;
 	int32_t rc = 0;
 
-	if (copy_from_user(&cmd_data, (void __user *)arg,
-		sizeof(cmd_data))) {
-		CAM_ERR(CAM_EEPROM,
-			"Failed to copy from user_ptr=%pK size=%zu",
+	if (copy_from_user(&cmd_data, (void __user *)arg, sizeof(cmd_data))) {
+		CAM_ERR(CAM_EEPROM, "Failed to copy from user_ptr=%pK size=%zu",
 			(void __user *)arg, sizeof(cmd_data));
 		return -EFAULT;
 	}
@@ -132,8 +128,7 @@ static long cam_eeprom_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 		rc = cam_eeprom_subdev_ioctl(sd, cmd, &cmd_data);
 		if (rc < 0) {
 			CAM_ERR(CAM_EEPROM,
-				"Failed in eeprom suddev handling rc %d",
-				rc);
+				"Failed in eeprom suddev handling rc %d", rc);
 			return rc;
 		}
 		break;
@@ -144,7 +139,7 @@ static long cam_eeprom_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 
 	if (!rc) {
 		if (copy_to_user((void __user *)arg, &cmd_data,
-			sizeof(cmd_data))) {
+				 sizeof(cmd_data))) {
 			CAM_ERR(CAM_EEPROM,
 				"Failed to copy from user_ptr=%pK size=%zu",
 				(void __user *)arg, sizeof(cmd_data));
@@ -193,18 +188,17 @@ static int cam_eeprom_init_subdev(struct cam_eeprom_ctrl_t *e_ctrl)
 }
 
 static int cam_eeprom_i2c_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+					 struct device *master_dev, void *data)
 {
-	int                             rc = 0;
-	struct i2c_client              *client = NULL;
-	struct cam_eeprom_ctrl_t       *e_ctrl = NULL;
-	struct cam_eeprom_soc_private  *soc_private = NULL;
-	struct cam_hw_soc_info         *soc_info = NULL;
+	int rc = 0;
+	struct i2c_client *client = NULL;
+	struct cam_eeprom_ctrl_t *e_ctrl = NULL;
+	struct cam_eeprom_soc_private *soc_private = NULL;
+	struct cam_hw_soc_info *soc_info = NULL;
 
 	client = container_of(dev, struct i2c_client, dev);
 	if (client == NULL) {
-		CAM_ERR(CAM_OIS, "Invalid Args client: %pK",
-			client);
+		CAM_ERR(CAM_OIS, "Invalid Args client: %pK", client);
 		return -EINVAL;
 	}
 
@@ -252,7 +246,7 @@ static int cam_eeprom_i2c_component_bind(struct device *dev,
 	if (rc)
 		goto free_soc;
 
-	cam_sensor_module_add_i2c_device((void *) e_ctrl, CAM_SENSOR_EEPROM);
+	cam_sensor_module_add_i2c_device((void *)e_ctrl, CAM_SENSOR_EEPROM);
 
 	if (soc_private->i2c_info.slave_addr != 0)
 		e_ctrl->io_master_info.client->addr =
@@ -274,19 +268,19 @@ probe_failure:
 }
 
 static void cam_eeprom_i2c_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					    struct device *master_dev,
+					    void *data)
 {
-	int                             i;
-	struct i2c_client              *client = NULL;
-	struct v4l2_subdev             *sd = NULL;
-	struct cam_eeprom_ctrl_t       *e_ctrl;
-	struct cam_eeprom_soc_private  *soc_private;
-	struct cam_hw_soc_info         *soc_info;
+	int i;
+	struct i2c_client *client = NULL;
+	struct v4l2_subdev *sd = NULL;
+	struct cam_eeprom_ctrl_t *e_ctrl;
+	struct cam_eeprom_soc_private *soc_private;
+	struct cam_hw_soc_info *soc_info;
 
 	client = container_of(dev, struct i2c_client, dev);
 	if (!client) {
-		CAM_ERR(CAM_EEPROM,
-			"Failed to get i2c client");
+		CAM_ERR(CAM_EEPROM, "Failed to get i2c client");
 		return;
 	}
 
@@ -336,13 +330,13 @@ const static struct component_ops cam_eeprom_i2c_component_ops = {
 };
 
 static int cam_eeprom_i2c_driver_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+				       const struct i2c_device_id *id)
 {
 	int rc = 0;
 
 	if (client == NULL || id == NULL) {
-		CAM_ERR(CAM_EEPROM, "Invalid Args client: %pK id: %pK",
-			client, id);
+		CAM_ERR(CAM_EEPROM, "Invalid Args client: %pK id: %pK", client,
+			id);
 		return -EINVAL;
 	}
 
@@ -376,12 +370,12 @@ static int cam_eeprom_i2c_driver_remove(struct i2c_client *client)
 
 static int cam_eeprom_spi_setup(struct spi_device *spi)
 {
-	struct cam_eeprom_ctrl_t       *e_ctrl = NULL;
-	struct cam_hw_soc_info         *soc_info = NULL;
-	struct cam_sensor_spi_client   *spi_client;
-	struct cam_eeprom_soc_private  *eb_info;
+	struct cam_eeprom_ctrl_t *e_ctrl = NULL;
+	struct cam_hw_soc_info *soc_info = NULL;
+	struct cam_sensor_spi_client *spi_client;
+	struct cam_eeprom_soc_private *eb_info;
 	struct cam_sensor_power_ctrl_t *power_info = NULL;
-	int                             rc = 0;
+	int rc = 0;
 
 	e_ctrl = kzalloc(sizeof(*e_ctrl), GFP_KERNEL);
 	if (!e_ctrl)
@@ -470,15 +464,16 @@ static int cam_eeprom_spi_driver_probe(struct spi_device *spi)
 }
 
 static int cam_eeprom_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
-	int32_t                         rc = 0;
-	bool                            i3c_i2c_target;
-	struct cam_eeprom_ctrl_t       *e_ctrl = NULL;
-	struct cam_eeprom_soc_private  *soc_private = NULL;
+	int32_t rc = 0;
+	bool i3c_i2c_target;
+	struct cam_eeprom_ctrl_t *e_ctrl = NULL;
+	struct cam_eeprom_soc_private *soc_private = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	i3c_i2c_target = of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
+	i3c_i2c_target =
+		of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
 	if (i3c_i2c_target)
 		return 0;
 
@@ -495,15 +490,15 @@ static int cam_eeprom_component_bind(struct device *dev,
 	e_ctrl->userspace_probe = false;
 
 	e_ctrl->io_master_info.master_type = CCI_MASTER;
-	e_ctrl->io_master_info.cci_client = kzalloc(
-		sizeof(struct cam_sensor_cci_client), GFP_KERNEL);
+	e_ctrl->io_master_info.cci_client =
+		kzalloc(sizeof(struct cam_sensor_cci_client), GFP_KERNEL);
 	if (!e_ctrl->io_master_info.cci_client) {
 		rc = -ENOMEM;
 		goto free_e_ctrl;
 	}
 
-	soc_private = kzalloc(sizeof(struct cam_eeprom_soc_private),
-		GFP_KERNEL);
+	soc_private =
+		kzalloc(sizeof(struct cam_eeprom_soc_private), GFP_KERNEL);
 	if (!soc_private) {
 		rc = -ENOMEM;
 		goto free_cci_client;
@@ -529,7 +524,7 @@ static int cam_eeprom_component_bind(struct device *dev,
 	if (rc)
 		goto free_soc;
 
-	cam_sensor_module_add_i2c_device((void *) e_ctrl, CAM_SENSOR_EEPROM);
+	cam_sensor_module_add_i2c_device((void *)e_ctrl, CAM_SENSOR_EEPROM);
 
 	e_ctrl->bridge_intf.device_hdl = -1;
 	e_ctrl->bridge_intf.ops.get_dev_info = NULL;
@@ -540,11 +535,12 @@ static int cam_eeprom_component_bind(struct device *dev,
 	CAM_DBG(CAM_EEPROM, "Component bound successfully");
 
 	g_i3c_eeprom_data[e_ctrl->soc_info.index].e_ctrl = e_ctrl;
-	init_completion(&g_i3c_eeprom_data[e_ctrl->soc_info.index].probe_complete);
+	init_completion(
+		&g_i3c_eeprom_data[e_ctrl->soc_info.index].probe_complete);
 
 	/* xiaomi add for cci debug start */
-	rc = cam_cci_dev_create_debugfs_entry(e_ctrl->device_name,
-		e_ctrl->soc_info.index, CAM_EEPROM_NAME,
+	rc = cam_cci_dev_create_debugfs_entry(
+		e_ctrl->device_name, e_ctrl->soc_info.index, CAM_EEPROM_NAME,
 		&e_ctrl->io_master_info, e_ctrl->cci_i2c_master,
 		&e_ctrl->cci_debug);
 	if (rc) {
@@ -565,15 +561,16 @@ free_e_ctrl:
 }
 
 static void cam_eeprom_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					struct device *master_dev, void *data)
 {
-	int                        i;
-	bool                       i3c_i2c_target;
-	struct cam_eeprom_ctrl_t  *e_ctrl;
-	struct cam_hw_soc_info    *soc_info;
+	int i;
+	bool i3c_i2c_target;
+	struct cam_eeprom_ctrl_t *e_ctrl;
+	struct cam_hw_soc_info *soc_info;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	i3c_i2c_target = of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
+	i3c_i2c_target =
+		of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
 	if (i3c_i2c_target)
 		return;
 
@@ -615,8 +612,7 @@ const static struct component_ops cam_eeprom_component_ops = {
 	.unbind = cam_eeprom_component_unbind,
 };
 
-static int32_t cam_eeprom_platform_driver_probe(
-	struct platform_device *pdev)
+static int32_t cam_eeprom_platform_driver_probe(struct platform_device *pdev)
 {
 	int rc = 0;
 
@@ -636,55 +632,57 @@ static int cam_eeprom_platform_driver_remove(struct platform_device *pdev)
 
 static const struct of_device_id cam_eeprom_dt_match[] = {
 	{ .compatible = "qcom,eeprom" },
-	{ }
+	{}
 };
-
 
 MODULE_DEVICE_TABLE(of, cam_eeprom_dt_match);
 
 struct platform_driver cam_eeprom_platform_driver = {
-	.driver = {
-		.name = "qcom,eeprom",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_eeprom_dt_match,
-		.suppress_bind_attrs = true,
-	},
-	.probe = cam_eeprom_platform_driver_probe,
-	.remove = cam_eeprom_platform_driver_remove,
+    .driver =
+        {
+            .name = "qcom,eeprom",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_eeprom_dt_match,
+            .suppress_bind_attrs = true,
+        },
+    .probe = cam_eeprom_platform_driver_probe,
+    .remove = cam_eeprom_platform_driver_remove,
 };
 
 static const struct i2c_device_id cam_eeprom_i2c_id[] = {
-	{ EEPROM_DRIVER_I2C, (kernel_ulong_t)NULL},
-	{ }
+	{ EEPROM_DRIVER_I2C, (kernel_ulong_t)NULL },
+	{}
 };
 
 static const struct of_device_id cam_eeprom_i2c_dt_match[] = {
 	{ .compatible = "qcom,cam-i2c-eeprom" },
-	{ }
+	{}
 };
 
 MODULE_DEVICE_TABLE(of, cam_eeprom_i2c_dt_match);
 
 struct i2c_driver cam_eeprom_i2c_driver = {
-	.id_table = cam_eeprom_i2c_id,
-	.probe  = cam_eeprom_i2c_driver_probe,
-	.remove = cam_eeprom_i2c_driver_remove,
-	.driver = {
-		.name = EEPROM_DRIVER_I2C,
-		.owner = THIS_MODULE,
-		.of_match_table = cam_eeprom_i2c_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .id_table = cam_eeprom_i2c_id,
+    .probe = cam_eeprom_i2c_driver_probe,
+    .remove = cam_eeprom_i2c_driver_remove,
+    .driver =
+        {
+            .name = EEPROM_DRIVER_I2C,
+            .owner = THIS_MODULE,
+            .of_match_table = cam_eeprom_i2c_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 static struct spi_driver cam_eeprom_spi_driver = {
-	.driver = {
-		.name = "qcom_eeprom",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_eeprom_dt_match,
-	},
-	.probe = cam_eeprom_spi_driver_probe,
-	.remove = cam_eeprom_spi_driver_remove,
+    .driver =
+        {
+            .name = "qcom_eeprom",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_eeprom_dt_match,
+        },
+    .probe = cam_eeprom_spi_driver_probe,
+    .remove = cam_eeprom_spi_driver_remove,
 };
 
 static struct i3c_device_id eeprom_i3c_id[MAX_I3C_DEVICE_ID_ENTRIES + 1];
@@ -692,9 +690,9 @@ static struct i3c_device_id eeprom_i3c_id[MAX_I3C_DEVICE_ID_ENTRIES + 1];
 static int cam_eeprom_i3c_driver_probe(struct i3c_device *client)
 {
 	int32_t rc = 0;
-	struct cam_eeprom_ctrl_t       *e_ctrl = NULL;
-	uint32_t                        index;
-	struct device                  *dev;
+	struct cam_eeprom_ctrl_t *e_ctrl = NULL;
+	uint32_t index;
+	struct device *dev;
 
 	if (!client) {
 		CAM_INFO(CAM_EEPROM, "Null Client pointer");
@@ -707,18 +705,21 @@ static int cam_eeprom_i3c_driver_probe(struct i3c_device *client)
 
 	rc = of_property_read_u32(dev->of_node, "cell-index", &index);
 	if (rc) {
-		CAM_ERR(CAM_EEPROM, "device %s failed to read cell-index", dev_name(dev));
+		CAM_ERR(CAM_EEPROM, "device %s failed to read cell-index",
+			dev_name(dev));
 		return rc;
 	}
 
 	if (index >= MAX_CAMERAS) {
-		CAM_ERR(CAM_EEPROM, "Invalid Cell-Index: %u for %s", index, dev_name(dev));
+		CAM_ERR(CAM_EEPROM, "Invalid Cell-Index: %u for %s", index,
+			dev_name(dev));
 		return -EINVAL;
 	}
 
 	e_ctrl = g_i3c_eeprom_data[index].e_ctrl;
 	if (!e_ctrl) {
-		CAM_ERR(CAM_EEPROM, "e_ctrl is null. I3C Probe before platfom driver probe for %s",
+		CAM_ERR(CAM_EEPROM,
+			"e_ctrl is null. I3C Probe before platfom driver probe for %s",
 			dev_name(dev));
 		return -EINVAL;
 	}
@@ -732,21 +733,22 @@ static int cam_eeprom_i3c_driver_probe(struct i3c_device *client)
 }
 
 static struct i3c_driver cam_eeprom_i3c_driver = {
-	.id_table = eeprom_i3c_id,
-	.probe = cam_eeprom_i3c_driver_probe,
-	.remove = cam_i3c_driver_remove,
-	.driver = {
-		.owner = THIS_MODULE,
-		.name = EEPROM_DRIVER_I3C,
-		.of_match_table = cam_eeprom_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .id_table = eeprom_i3c_id,
+    .probe = cam_eeprom_i3c_driver_probe,
+    .remove = cam_i3c_driver_remove,
+    .driver =
+        {
+            .owner = THIS_MODULE,
+            .name = EEPROM_DRIVER_I3C,
+            .of_match_table = cam_eeprom_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_eeprom_driver_init(void)
 {
 	int rc = 0;
-	struct device_node                      *dev;
+	struct device_node *dev;
 	int num_entries = 0;
 
 	rc = platform_driver_register(&cam_eeprom_platform_driver);
@@ -768,7 +770,8 @@ int cam_eeprom_driver_init(void)
 		goto i2c_register_err;
 	}
 
-	memset(eeprom_i3c_id, 0, sizeof(struct i3c_device_id) * (MAX_I3C_DEVICE_ID_ENTRIES + 1));
+	memset(eeprom_i3c_id, 0,
+	       sizeof(struct i3c_device_id) * (MAX_I3C_DEVICE_ID_ENTRIES + 1));
 
 	dev = of_find_node_by_path(I3C_SENSOR_DEV_ID_DT_PATH);
 	if (!dev) {
@@ -777,18 +780,20 @@ int cam_eeprom_driver_init(void)
 	}
 
 	rc = cam_sensor_count_elems_i3c_device_id(dev, &num_entries,
-		"i3c-eeprom-id-table");
+						  "i3c-eeprom-id-table");
 	if (rc)
 		return 0;
 
-	rc = cam_sensor_fill_i3c_device_id(dev, num_entries,
-		"i3c-eeprom-id-table", eeprom_i3c_id);
+	rc = cam_sensor_fill_i3c_device_id(
+		dev, num_entries, "i3c-eeprom-id-table", eeprom_i3c_id);
 	if (rc)
 		goto i3c_register_err;
 
-	rc = i3c_driver_register_with_owner(&cam_eeprom_i3c_driver, THIS_MODULE);
+	rc = i3c_driver_register_with_owner(&cam_eeprom_i3c_driver,
+					    THIS_MODULE);
 	if (rc) {
-		CAM_ERR(CAM_EEPROM, "i3c_driver registration failed, rc: %d", rc);
+		CAM_ERR(CAM_EEPROM, "i3c_driver registration failed, rc: %d",
+			rc);
 		goto i3c_register_err;
 	}
 

@@ -25,6 +25,7 @@
 
 #ifdef WLAN_TALLOC_DEBUG
 
+#include "qdf_talloc.h"
 #include "i_qdf_talloc.h"
 #include "qdf_hashtable.h"
 #include "qdf_list.h"
@@ -33,21 +34,20 @@
 #include "qdf_module.h"
 #include "qdf_status.h"
 #include "qdf_str.h"
-#include "qdf_talloc.h"
 
 #define QDF_TALLOC_MAX_BYTES __page_size
 #define QDF_TALLOC_SLEEP_TIMEOUT_MS 300
 #define QDF_TALLOC_FUNC_NAME_SIZE 48
 #define QDF_TALLOC_HT_BITS 8 /* 256 buckets */
 
-static void
-__qdf_talloc_log_nomem(const size_t size, const char *func, const uint16_t line)
+static void __qdf_talloc_log_nomem(const size_t size, const char *func,
+				   const uint16_t line)
 {
 	qdf_nofl_info("Failed to alloc %zuB; via %s():%d", size, func, line);
 }
 
-static void *
-__qdf_zalloc_auto(const size_t size, const char *func, const uint16_t line)
+static void *__qdf_zalloc_auto(const size_t size, const char *func,
+			       const uint16_t line)
 {
 	unsigned long start, duration;
 	void *ptr;
@@ -57,8 +57,8 @@ __qdf_zalloc_auto(const size_t size, const char *func, const uint16_t line)
 	duration = qdf_mc_timer_get_system_time() - start;
 
 	if (duration > QDF_TALLOC_SLEEP_TIMEOUT_MS)
-		qdf_nofl_info("Alloc slept; %lums, %zuB; via %s():%d",
-			      duration, size, func, line);
+		qdf_nofl_info("Alloc slept; %lums, %zuB; via %s():%d", duration,
+			      size, func, line);
 
 	if (!ptr) {
 		__qdf_talloc_log_nomem(size, func, line);
@@ -70,8 +70,8 @@ __qdf_zalloc_auto(const size_t size, const char *func, const uint16_t line)
 	return ptr;
 }
 
-static void *
-__qdf_zalloc_atomic(const size_t size, const char *func, const uint16_t line)
+static void *__qdf_zalloc_atomic(const size_t size, const char *func,
+				 const uint16_t line)
 {
 	void *ptr;
 
@@ -109,8 +109,8 @@ struct qdf_talloc_parent_meta {
 };
 
 static struct qdf_talloc_parent_meta *
-qdf_talloc_parent_meta_alloc(const void *parent,
-			     const char *func, const uint16_t line)
+qdf_talloc_parent_meta_alloc(const void *parent, const char *func,
+			     const uint16_t line)
 {
 	struct qdf_talloc_parent_meta *pmeta;
 
@@ -250,8 +250,8 @@ static bool qdf_talloc_meta_assert_valid(struct qdf_talloc_header *header,
 	}
 
 	if (!is_valid)
-		QDF_DEBUG_PANIC("Fatal memory error detected @ %s():%d",
-				func, line);
+		QDF_DEBUG_PANIC("Fatal memory error detected @ %s():%d", func,
+				line);
 
 	return is_valid;
 }
@@ -268,18 +268,19 @@ static uint32_t qdf_leaks_print(const struct qdf_talloc_parent_meta *pmeta)
 	struct qdf_talloc_child_meta *cmeta;
 	uint32_t count = 0;
 
-	qdf_list_for_each(&pmeta->children, cmeta, node) {
-		qdf_nofl_alert("%6uB @ %s():%u",
-			       cmeta->size, cmeta->func, cmeta->line);
+	qdf_list_for_each(&pmeta->children, cmeta, node)
+	{
+		qdf_nofl_alert("%6uB @ %s():%u", cmeta->size, cmeta->func,
+			       cmeta->line);
 		count++;
 	}
 
 	return count;
 }
 
-#define qdf_leaks_panic(count, func, line) \
-	QDF_DEBUG_PANIC("%u fatal memory leaks detected @ %s():%u", \
-			count, func, line)
+#define qdf_leaks_panic(count, func, line)                                 \
+	QDF_DEBUG_PANIC("%u fatal memory leaks detected @ %s():%u", count, \
+			func, line)
 
 QDF_STATUS qdf_talloc_feature_init(void)
 {
@@ -331,8 +332,8 @@ static QDF_STATUS qdf_talloc_meta_insert(struct qdf_talloc_header *header,
 	return QDF_STATUS_SUCCESS;
 }
 
-void *__qdf_talloc_fl(const void *parent, const size_t size,
-		      const char *func, const uint16_t line)
+void *__qdf_talloc_fl(const void *parent, const size_t size, const char *func,
+		      const uint16_t line)
 {
 	QDF_STATUS status;
 	struct qdf_talloc_header *header;
@@ -364,9 +365,9 @@ void *__qdf_talloc_fl(const void *parent, const size_t size,
 }
 qdf_export_symbol(__qdf_talloc_fl);
 
-static void
-__qdf_talloc_assert_no_children(const void *parent,
-				const char *func, const uint16_t line)
+static void __qdf_talloc_assert_no_children(const void *parent,
+					    const char *func,
+					    const uint16_t line)
 {
 	struct qdf_talloc_parent_meta *pmeta;
 	uint32_t count;
@@ -420,8 +421,8 @@ void __qdf_tfree_fl(void *ptr, const char *func, const uint16_t line)
 }
 qdf_export_symbol(__qdf_tfree_fl);
 
-void qdf_talloc_assert_no_children_fl(const void *parent,
-				      const char *func, const uint16_t line)
+void qdf_talloc_assert_no_children_fl(const void *parent, const char *func,
+				      const uint16_t line)
 {
 	qdf_spin_lock_bh(&__qdf_talloc_meta_lock);
 	__qdf_talloc_assert_no_children(parent, func, line);
@@ -430,4 +431,3 @@ void qdf_talloc_assert_no_children_fl(const void *parent,
 qdf_export_symbol(qdf_talloc_assert_no_children_fl);
 
 #endif /* WLAN_TALLOC_DEBUG */
-

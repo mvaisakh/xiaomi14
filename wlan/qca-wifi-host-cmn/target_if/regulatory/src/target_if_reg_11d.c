@@ -83,8 +83,8 @@ static int tgt_reg_11d_new_cc_handler(ol_scn_t handle, uint8_t *event_buf,
 		return -EINVAL;
 	}
 	if (wmi_extract_reg_11d_new_cc_event(wmi_handle, event_buf,
-					     &reg_11d_new_cc, len)
-	    != QDF_STATUS_SUCCESS) {
+					     &reg_11d_new_cc,
+					     len) != QDF_STATUS_SUCCESS) {
 		target_if_err("Extraction of new country event failed");
 		return -EFAULT;
 	}
@@ -100,8 +100,9 @@ static int tgt_reg_11d_new_cc_handler(ol_scn_t handle, uint8_t *event_buf,
 	return 0;
 }
 
-QDF_STATUS tgt_if_regulatory_register_11d_new_cc_handler(
-	struct wlan_objmgr_psoc *psoc, void *arg)
+QDF_STATUS
+tgt_if_regulatory_register_11d_new_cc_handler(struct wlan_objmgr_psoc *psoc,
+					      void *arg)
 {
 	wmi_unified_t wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
 
@@ -113,8 +114,9 @@ QDF_STATUS tgt_if_regulatory_register_11d_new_cc_handler(
 					  tgt_reg_11d_new_cc_handler);
 }
 
-QDF_STATUS tgt_if_regulatory_unregister_11d_new_cc_handler(
-	struct wlan_objmgr_psoc *psoc, void *arg)
+QDF_STATUS
+tgt_if_regulatory_unregister_11d_new_cc_handler(struct wlan_objmgr_psoc *psoc,
+						void *arg)
 {
 	wmi_unified_t wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
 
@@ -126,8 +128,8 @@ QDF_STATUS tgt_if_regulatory_unregister_11d_new_cc_handler(
 }
 
 QDF_STATUS tgt_if_regulatory_start_11d_scan(
-		struct wlan_objmgr_psoc *psoc,
-		struct reg_start_11d_scan_req *reg_start_11d_scan_req)
+	struct wlan_objmgr_psoc *psoc,
+	struct reg_start_11d_scan_req *reg_start_11d_scan_req)
 {
 	wmi_unified_t wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
 
@@ -139,8 +141,8 @@ QDF_STATUS tgt_if_regulatory_start_11d_scan(
 }
 
 QDF_STATUS tgt_if_regulatory_stop_11d_scan(
-		   struct wlan_objmgr_psoc *psoc,
-		   struct reg_stop_11d_scan_req *reg_stop_11d_scan_req)
+	struct wlan_objmgr_psoc *psoc,
+	struct reg_stop_11d_scan_req *reg_stop_11d_scan_req)
 {
 	wmi_unified_t wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
 

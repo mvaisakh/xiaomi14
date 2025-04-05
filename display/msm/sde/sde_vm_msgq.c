@@ -4,11 +4,11 @@
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
-#include <linux/gunyah/gh_msgq.h>
-#include <linux/kthread.h>
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 #include "sde_kms.h"
 #include "sde_vm.h"
+#include <linux/gunyah/gh_msgq.h>
+#include <linux/kthread.h>
 
 static void _sde_vm_msgq_process_msg(struct kthread_work *work)
 {
@@ -18,7 +18,7 @@ static void _sde_vm_msgq_process_msg(struct kthread_work *work)
 
 	if (vm_ops->vm_msg_recv_cb)
 		vm_ops->vm_msg_recv_cb(vm_work->sde_vm, vm_work->msg_buf,
-				vm_work->msg_size);
+				       vm_work->msg_size);
 
 	kfree(vm_work->msg_buf);
 }
@@ -44,7 +44,7 @@ static int _sde_vm_msgq_listener(void *data)
 			return -ENOMEM;
 
 		ret = gh_msgq_recv(sde_vm->msgq_handle, buf,
-				GH_MSGQ_MAX_MSG_SIZE_BYTES, &size, 0);
+				   GH_MSGQ_MAX_MSG_SIZE_BYTES, &size, 0);
 		if (ret < 0) {
 			kfree(buf);
 			SDE_ERROR("gh_msgq_recv failed, rc=%d\n", ret);
@@ -70,11 +70,12 @@ int sde_vm_msgq_send(struct sde_vm *sde_vm, void *msg, size_t msg_size)
 
 	if (msg_size > GH_MSGQ_MAX_MSG_SIZE_BYTES) {
 		SDE_ERROR("msg size unsupported for msgq: %ld > %d\n", msg_size,
-				GH_MSGQ_MAX_MSG_SIZE_BYTES);
+			  GH_MSGQ_MAX_MSG_SIZE_BYTES);
 		return -E2BIG;
 	}
 
-	return gh_msgq_send(sde_vm->msgq_handle, msg, msg_size, GH_MSGQ_TX_PUSH);
+	return gh_msgq_send(sde_vm->msgq_handle, msg, msg_size,
+			    GH_MSGQ_TX_PUSH);
 }
 
 int sde_vm_msgq_init(struct sde_vm *sde_vm)
@@ -95,11 +96,11 @@ int sde_vm_msgq_init(struct sde_vm *sde_vm)
 	if (!vm_ops->vm_msg_recv_cb)
 		goto done;
 
-	msgq_listener_thread = kthread_run(_sde_vm_msgq_listener,
-			(void *)sde_vm, "disp_msgq_listener");
+	msgq_listener_thread = kthread_run(
+		_sde_vm_msgq_listener, (void *)sde_vm, "disp_msgq_listener");
 	if (IS_ERR(msgq_listener_thread)) {
 		SDE_ERROR("kthread creation failed for msgq, hdl: %p\n",
-				msgq_listener_thread);
+			  msgq_listener_thread);
 		rc = -EINVAL;
 		goto kthread_create_fail;
 	}

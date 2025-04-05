@@ -18,16 +18,15 @@
  *  DOC: target_if_twt_evt.c
  *  This file contains twt component's target related function definitions
  */
+#include "twt/core/src/wlan_twt_priv.h"
+#include <target_if_ext_twt.h>
 #include <target_if_twt.h>
 #include <target_if_twt_evt.h>
-#include <target_if_ext_twt.h>
-#include "twt/core/src/wlan_twt_priv.h"
 #include <wlan_twt_api.h>
 #include <wmi_unified_twt_api.h>
 
-int
-target_if_twt_en_complete_event_handler(ol_scn_t scn,
-					uint8_t *data, uint32_t datalen)
+int target_if_twt_en_complete_event_handler(ol_scn_t scn, uint8_t *data,
+					    uint32_t datalen)
 {
 	wmi_unified_t wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
@@ -54,7 +53,7 @@ target_if_twt_en_complete_event_handler(ol_scn_t scn,
 		target_if_err("rx_ops is NULL");
 		return -EINVAL;
 	}
-	twt_rx_ops =  &rx_ops->twt_rx_ops;
+	twt_rx_ops = &rx_ops->twt_rx_ops;
 	if (!twt_rx_ops || !twt_rx_ops->twt_enable_comp_cb) {
 		target_if_err("TWT rx_ops comp_cb is NULL");
 		return -EINVAL;
@@ -69,7 +68,7 @@ target_if_twt_en_complete_event_handler(ol_scn_t scn,
 	status = wmi_extract_twt_enable_comp_event(wmi_handle, data, &event);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("TWT enable extract event failed(status=%d)",
-				status);
+			      status);
 		goto end;
 	}
 
@@ -79,9 +78,8 @@ end:
 	return qdf_status_to_os_return(status);
 }
 
-int
-target_if_twt_disable_comp_event_handler(ol_scn_t scn,
-					 uint8_t *data, uint32_t datalen)
+int target_if_twt_disable_comp_event_handler(ol_scn_t scn, uint8_t *data,
+					     uint32_t datalen)
 {
 	wmi_unified_t wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
@@ -108,7 +106,7 @@ target_if_twt_disable_comp_event_handler(ol_scn_t scn,
 		target_if_err("rx_ops is NULL");
 		return -EINVAL;
 	}
-	twt_rx_ops =  &rx_ops->twt_rx_ops;
+	twt_rx_ops = &rx_ops->twt_rx_ops;
 	if (!twt_rx_ops || !twt_rx_ops->twt_disable_comp_cb) {
 		target_if_err("TWT rx_ops comp_cb is NULL");
 		return -EINVAL;
@@ -123,7 +121,7 @@ target_if_twt_disable_comp_event_handler(ol_scn_t scn,
 	status = wmi_extract_twt_disable_comp_event(wmi_handle, data, &event);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("TWT disable extract event failed(status=%d)",
-				status);
+			      status);
 		goto end;
 	}
 
@@ -132,4 +130,3 @@ target_if_twt_disable_comp_event_handler(ol_scn_t scn,
 end:
 	return qdf_status_to_os_return(status);
 }
-

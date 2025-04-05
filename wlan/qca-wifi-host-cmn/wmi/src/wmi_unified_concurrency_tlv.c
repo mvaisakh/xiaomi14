@@ -19,8 +19,8 @@
 
 #include <osdep.h>
 #include <wmi.h>
-#include <wmi_unified_priv.h>
 #include <wmi_unified_concurrency_api.h>
+#include <wmi_unified_priv.h>
 #ifdef WLAN_FEATURE_MCC_QUOTA
 #include <wlan_p2p_mcc_quota_public_struct.h>
 #endif
@@ -37,8 +37,8 @@
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS send_set_enable_disable_mcc_adaptive_scheduler_cmd_tlv(
-		wmi_unified_t wmi_handle, uint32_t mcc_adaptive_scheduler,
-		uint32_t pdev_id)
+	wmi_unified_t wmi_handle, uint32_t mcc_adaptive_scheduler,
+	uint32_t pdev_id)
 {
 	QDF_STATUS ret;
 	wmi_buf_t buf = 0;
@@ -53,18 +53,19 @@ static QDF_STATUS send_set_enable_disable_mcc_adaptive_scheduler_cmd_tlv(
 	cmd = (wmi_resmgr_adaptive_ocs_enable_disable_cmd_fixed_param *)
 		wmi_buf_data(buf);
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_resmgr_adaptive_ocs_enable_disable_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-			       (wmi_resmgr_adaptive_ocs_enable_disable_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_resmgr_adaptive_ocs_enable_disable_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_resmgr_adaptive_ocs_enable_disable_cmd_fixed_param));
 	cmd->enable = mcc_adaptive_scheduler;
 	cmd->pdev_id = wmi_handle->ops->convert_pdev_id_host_to_target(
-								wmi_handle,
-								pdev_id);
+		wmi_handle, pdev_id);
 
 	wmi_mtrace(WMI_RESMGR_ADAPTIVE_OCS_ENABLE_DISABLE_CMDID, NO_SESSION, 0);
-	ret = wmi_unified_cmd_send(wmi_handle, buf, len,
-				   WMI_RESMGR_ADAPTIVE_OCS_ENABLE_DISABLE_CMDID);
+	ret = wmi_unified_cmd_send(
+		wmi_handle, buf, len,
+		WMI_RESMGR_ADAPTIVE_OCS_ENABLE_DISABLE_CMDID);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		wmi_err("Failed to send enable/disable MCC"
 			" adaptive scheduler command");
@@ -86,10 +87,10 @@ static QDF_STATUS send_set_enable_disable_mcc_adaptive_scheduler_cmd_tlv(
  *
  * Return: QDF status
  */
-static QDF_STATUS send_set_mcc_channel_time_latency_cmd_tlv(
-					wmi_unified_t wmi_handle,
-					uint32_t mcc_channel_freq,
-					uint32_t mcc_channel_time_latency)
+static QDF_STATUS
+send_set_mcc_channel_time_latency_cmd_tlv(wmi_unified_t wmi_handle,
+					  uint32_t mcc_channel_freq,
+					  uint32_t mcc_channel_time_latency)
 {
 	QDF_STATUS ret;
 	wmi_buf_t buf = 0;
@@ -103,31 +104,33 @@ static QDF_STATUS send_set_mcc_channel_time_latency_cmd_tlv(
 	uint32_t latency_chan1 = mcc_channel_time_latency;
 
 	/* If 0ms latency is provided, then FW will set to a default.
-	 * Otherwise, latency must be at least 30ms.
-	 */
+   * Otherwise, latency must be at least 30ms.
+   */
 	if ((latency_chan1 > 0) &&
 	    (latency_chan1 < WMI_MCC_MIN_NON_ZERO_CHANNEL_LATENCY)) {
 		wmi_err("Invalid time latency for Channel #1 = %dms "
-			 "Minimum is 30ms (or 0 to use default value by "
-			 "firmware)", latency_chan1);
+			"Minimum is 30ms (or 0 to use default value by "
+			"firmware)",
+			latency_chan1);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	/*   Set WMI CMD for channel time latency here */
 	len = sizeof(wmi_resmgr_set_chan_latency_cmd_fixed_param) +
-	      WMI_TLV_HDR_SIZE +  /*Place holder for chan_time_latency array */
+	      WMI_TLV_HDR_SIZE + /*Place holder for chan_time_latency array */
 	      num_channels * sizeof(wmi_resmgr_chan_latency);
 	buf = wmi_buf_alloc(wmi_handle, len);
 	if (!buf) {
 		return QDF_STATUS_E_NOMEM;
 	}
-	buf_ptr = (uint8_t *) wmi_buf_data(buf);
-	cmdTL = (wmi_resmgr_set_chan_latency_cmd_fixed_param *)
-		wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmdTL->tlv_header,
+	buf_ptr = (uint8_t *)wmi_buf_data(buf);
+	cmdTL = (wmi_resmgr_set_chan_latency_cmd_fixed_param *)wmi_buf_data(
+		buf);
+	WMITLV_SET_HDR(
+		&cmdTL->tlv_header,
 		WMITLV_TAG_STRUC_wmi_resmgr_set_chan_latency_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_resmgr_set_chan_latency_cmd_fixed_param));
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_resmgr_set_chan_latency_cmd_fixed_param));
 	cmdTL->num_chans = num_channels;
 	/* Update channel time latency information for home channel(s) */
 	buf_ptr += sizeof(*cmdTL);
@@ -159,10 +162,8 @@ static QDF_STATUS send_set_mcc_channel_time_latency_cmd_tlv(
  * Return: QDF status
  */
 static QDF_STATUS send_set_mcc_channel_time_quota_cmd_tlv(
-					wmi_unified_t wmi_handle,
-					uint32_t adapter_1_chan_freq,
-					uint32_t adapter_1_quota,
-					uint32_t adapter_2_chan_freq)
+	wmi_unified_t wmi_handle, uint32_t adapter_1_chan_freq,
+	uint32_t adapter_1_quota, uint32_t adapter_2_chan_freq)
 {
 	QDF_STATUS ret;
 	wmi_buf_t buf = 0;
@@ -179,11 +180,11 @@ static QDF_STATUS send_set_mcc_channel_time_quota_cmd_tlv(
 	uint32_t chan2_freq = adapter_2_chan_freq;
 
 	wmi_debug("freq1:%dMHz, Quota1:%dms, freq2:%dMHz, Quota2:%dms",
-		 chan1_freq, quota_chan1, chan2_freq, quota_chan2);
+		  chan1_freq, quota_chan1, chan2_freq, quota_chan2);
 
 	/*
-	 * Perform sanity check on time quota values provided.
-	 */
+   * Perform sanity check on time quota values provided.
+   */
 	if (quota_chan1 < WMI_MCC_MIN_CHANNEL_QUOTA ||
 	    quota_chan1 > WMI_MCC_MAX_CHANNEL_QUOTA) {
 		wmi_err("Invalid time quota for Chan #1=%dms. Min: %dms, Max: %dms",
@@ -193,19 +194,20 @@ static QDF_STATUS send_set_mcc_channel_time_quota_cmd_tlv(
 	}
 	/* Set WMI CMD for channel time quota here */
 	len = sizeof(wmi_resmgr_set_chan_time_quota_cmd_fixed_param) +
-	      WMI_TLV_HDR_SIZE +       /* Place holder for chan_time_quota array */
+	      WMI_TLV_HDR_SIZE + /* Place holder for chan_time_quota array */
 	      num_channels * sizeof(wmi_resmgr_chan_time_quota);
 	buf = wmi_buf_alloc(wmi_handle, len);
 	if (!buf) {
 		return QDF_STATUS_E_NOMEM;
 	}
-	buf_ptr = (uint8_t *) wmi_buf_data(buf);
-	cmdTQ = (wmi_resmgr_set_chan_time_quota_cmd_fixed_param *)
-		wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmdTQ->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_resmgr_set_chan_time_quota_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-			       (wmi_resmgr_set_chan_time_quota_cmd_fixed_param));
+	buf_ptr = (uint8_t *)wmi_buf_data(buf);
+	cmdTQ = (wmi_resmgr_set_chan_time_quota_cmd_fixed_param *)wmi_buf_data(
+		buf);
+	WMITLV_SET_HDR(
+		&cmdTQ->tlv_header,
+		WMITLV_TAG_STRUC_wmi_resmgr_set_chan_time_quota_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_resmgr_set_chan_time_quota_cmd_fixed_param));
 	cmdTQ->num_chans = num_channels;
 
 	/* Update channel time quota information for home channel(s) */
@@ -265,9 +267,9 @@ static enum mcc_quota_type convert_to_host_quota_type(uint32_t quota_type)
  *
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
-static QDF_STATUS
-extract_mcc_quota_ev_param_tlv(wmi_unified_t wmi_handle,
-			       void *evt_buf, struct mcc_quota_info *param)
+static QDF_STATUS extract_mcc_quota_ev_param_tlv(wmi_unified_t wmi_handle,
+						 void *evt_buf,
+						 struct mcc_quota_info *param)
 {
 	WMI_RESMGR_CHAN_TIME_QUOTA_CHANGED_EVENTID_param_tlvs *param_tlvs;
 	wmi_resmgr_chan_time_quota_changed_event_fixed_param *fixed_param;
@@ -286,8 +288,8 @@ extract_mcc_quota_ev_param_tlv(wmi_unified_t wmi_handle,
 	}
 	fixed_param = param_tlvs->fixed_param;
 
-	wmi_debug("mcc quota type %d, num %d",
-		  fixed_param->quota_type, param_tlvs->num_chan_quota);
+	wmi_debug("mcc quota type %d, num %d", fixed_param->quota_type,
+		  param_tlvs->num_chan_quota);
 
 	param->type = convert_to_host_quota_type(fixed_param->quota_type);
 	if (param->type == QUOTA_TYPE_UNKNOWN)
@@ -309,8 +311,8 @@ extract_mcc_quota_ev_param_tlv(wmi_unified_t wmi_handle,
 			wmi_mcc_quota_info[i].chan_time_quota.chan_mhz;
 		param->chan_quota[i].channel_time_quota =
 			wmi_mcc_quota_info[i].chan_time_quota.channel_time_quota;
-		wmi_debug("mcc quota [%d] chan %d, quota %d",
-			  i, param->chan_quota[i].chan_mhz,
+		wmi_debug("mcc quota [%d] chan %d, quota %d", i,
+			  param->chan_quota[i].chan_mhz,
 			  param->chan_quota[i].channel_time_quota);
 	}
 

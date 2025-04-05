@@ -5,13 +5,13 @@
  *
  */
 
-#include <linux/module.h>
-#include <linux/mod_devicetable.h>
-#include <linux/of.h>
-#include <linux/skbuff.h>
-#include <linux/mhi.h>
 #include "rmnet_ctl.h"
 #include "rmnet_ctl_client.h"
+#include <linux/mhi.h>
+#include <linux/mod_devicetable.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/skbuff.h>
 
 #define RMNET_CTL_DEFAULT_MRU 256
 
@@ -26,14 +26,14 @@ struct rmnet_ctl_mhi_dev {
 
 static int rmnet_ctl_send_mhi(struct rmnet_ctl_dev *dev, struct sk_buff *skb)
 {
-	struct rmnet_ctl_mhi_dev *ctl_dev = container_of(
-				dev, struct rmnet_ctl_mhi_dev, dev);
+	struct rmnet_ctl_mhi_dev *ctl_dev =
+		container_of(dev, struct rmnet_ctl_mhi_dev, dev);
 	int rc;
 
 	spin_lock_bh(&ctl_dev->tx_lock);
 
-	rc = mhi_queue_transfer(ctl_dev->mhi_dev,
-				DMA_TO_DEVICE, skb, skb->len, MHI_EOT);
+	rc = mhi_queue_transfer(ctl_dev->mhi_dev, DMA_TO_DEVICE, skb, skb->len,
+				MHI_EOT);
 	if (rc)
 		dev->stats.tx_err++;
 	else
@@ -70,8 +70,8 @@ static void rmnet_ctl_alloc_buffers(struct rmnet_ctl_mhi_dev *ctl_dev,
 			return;
 
 		spin_lock_bh(&ctl_dev->rx_lock);
-		rc = mhi_queue_transfer(mhi_dev, DMA_FROM_DEVICE,
-					buf, ctl_dev->mru, MHI_EOT);
+		rc = mhi_queue_transfer(mhi_dev, DMA_FROM_DEVICE, buf,
+					ctl_dev->mru, MHI_EOT);
 		spin_unlock_bh(&ctl_dev->rx_lock);
 
 		if (rc) {
@@ -89,8 +89,8 @@ static void rmnet_ctl_dl_callback(struct mhi_device *mhi_dev,
 	if (mhi_res->transaction_status == -ENOTCONN) {
 		kfree(mhi_res->buf_addr);
 		return;
-	} else if (mhi_res->transaction_status ||
-		   !mhi_res->buf_addr || !mhi_res->bytes_xferd) {
+	} else if (mhi_res->transaction_status || !mhi_res->buf_addr ||
+		   !mhi_res->bytes_xferd) {
 		rmnet_ctl_log_err("RXE", mhi_res->transaction_status, NULL, 0);
 		ctl_dev->dev.stats.rx_err++;
 	} else {
@@ -187,16 +187,17 @@ static const struct mhi_device_id rmnet_ctl_mhi_match[] = {
 };
 
 static struct mhi_driver rmnet_ctl_driver = {
-	.probe = rmnet_ctl_probe,
-	.remove = rmnet_ctl_remove,
-	.dl_xfer_cb = rmnet_ctl_dl_callback,
-	.ul_xfer_cb = rmnet_ctl_ul_callback,
-	.status_cb = rmnet_ctl_status_callback,
-	.id_table = rmnet_ctl_mhi_match,
-	.driver = {
-		.name = "rmnet_ctl",
-		.owner = THIS_MODULE,
-	},
+    .probe = rmnet_ctl_probe,
+    .remove = rmnet_ctl_remove,
+    .dl_xfer_cb = rmnet_ctl_dl_callback,
+    .ul_xfer_cb = rmnet_ctl_ul_callback,
+    .status_cb = rmnet_ctl_status_callback,
+    .id_table = rmnet_ctl_mhi_match,
+    .driver =
+        {
+            .name = "rmnet_ctl",
+            .owner = THIS_MODULE,
+        },
 };
 
 static int __init rmnet_ctl_init(void)
@@ -215,8 +216,7 @@ static void __exit rmnet_ctl_exit(void)
 	rmnet_ctl_set_dbgfs(false);
 }
 
-module_init(rmnet_ctl_init)
-module_exit(rmnet_ctl_exit)
+module_init(rmnet_ctl_init) module_exit(rmnet_ctl_exit)
 
-MODULE_DESCRIPTION("RmNet Control MHI Driver");
+	MODULE_DESCRIPTION("RmNet Control MHI Driver");
 MODULE_LICENSE("GPL v2");

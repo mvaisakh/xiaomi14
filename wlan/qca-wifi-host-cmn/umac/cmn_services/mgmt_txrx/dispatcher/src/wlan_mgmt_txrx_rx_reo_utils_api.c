@@ -20,12 +20,12 @@
  *  This file contains mgmt rx re-ordering related public function definitions
  */
 
-#include <wlan_mgmt_txrx_rx_reo_utils_api.h>
-#include <wlan_mgmt_txrx_rx_reo_tgt_api.h>
 #include "../../core/src/wlan_mgmt_txrx_rx_reo_i.h"
 #include <cfg_ucfg_api.h>
+#include <wlan_mgmt_txrx_rx_reo_tgt_api.h>
+#include <wlan_mgmt_txrx_rx_reo_tgt_api.h>
+#include <wlan_mgmt_txrx_rx_reo_utils_api.h>
 #include <wlan_mgmt_txrx_tgt_api.h>
-#include<wlan_mgmt_txrx_rx_reo_tgt_api.h>
 #include <wlan_mlo_mgr_cmn.h>
 #include <wlan_mlo_mgr_setup.h>
 
@@ -76,19 +76,17 @@ wlan_mgmt_rx_reo_init(void)
 }
 
 #ifndef WLAN_MGMT_RX_REO_SIM_SUPPORT
-QDF_STATUS wlan_mgmt_txrx_process_rx_frame(
-			struct wlan_objmgr_pdev *pdev,
-			qdf_nbuf_t buf,
-			struct mgmt_rx_event_params *mgmt_rx_params)
+QDF_STATUS
+wlan_mgmt_txrx_process_rx_frame(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t buf,
+				struct mgmt_rx_event_params *mgmt_rx_params)
 {
 	return tgt_mgmt_txrx_process_rx_frame(pdev, buf, mgmt_rx_params);
 }
 
 QDF_STATUS
-wlan_mgmt_rx_reo_get_snapshot_info
-			(struct wlan_objmgr_pdev *pdev,
-			 enum mgmt_rx_reo_shared_snapshot_id id,
-			 struct mgmt_rx_reo_snapshot_info *snapshot_info)
+wlan_mgmt_rx_reo_get_snapshot_info(
+	struct wlan_objmgr_pdev *pdev, enum mgmt_rx_reo_shared_snapshot_id id,
+	struct mgmt_rx_reo_snapshot_info *snapshot_info)
 {
 	return tgt_mgmt_rx_reo_get_snapshot_info(pdev, id, snapshot_info);
 }
@@ -101,8 +99,7 @@ wlan_mgmt_rx_reo_get_snapshot_info
  * Return: On success returns the MLO HW link id corresponding to the pdev
  * object. On failure returns -EINVAL
  */
-int8_t
-wlan_get_mlo_link_id_from_pdev(struct wlan_objmgr_pdev *pdev)
+int8_t wlan_get_mlo_link_id_from_pdev(struct wlan_objmgr_pdev *pdev)
 {
 	uint16_t hw_link_id;
 
@@ -118,8 +115,7 @@ wlan_get_mlo_link_id_from_pdev(struct wlan_objmgr_pdev *pdev)
 
 qdf_export_symbol(wlan_get_mlo_link_id_from_pdev);
 
-int8_t
-wlan_get_mlo_grp_id_from_pdev(struct wlan_objmgr_pdev *pdev)
+int8_t wlan_get_mlo_grp_id_from_pdev(struct wlan_objmgr_pdev *pdev)
 {
 	uint8_t ml_grp_id;
 	struct wlan_objmgr_psoc *psoc = wlan_pdev_get_psoc(pdev);
@@ -155,16 +151,15 @@ struct wlan_objmgr_pdev *
 wlan_get_pdev_from_mlo_link_id(uint8_t mlo_link_id, uint8_t ml_grp_id,
 			       wlan_objmgr_ref_dbgid refdbgid)
 {
-	return wlan_mlo_get_pdev_by_hw_link_id(
-			mlo_link_id, ml_grp_id, refdbgid);
+	return wlan_mlo_get_pdev_by_hw_link_id(mlo_link_id, ml_grp_id,
+					       refdbgid);
 }
 
 qdf_export_symbol(wlan_get_pdev_from_mlo_link_id);
 #else
-QDF_STATUS wlan_mgmt_txrx_process_rx_frame(
-			struct wlan_objmgr_pdev *pdev,
-			qdf_nbuf_t buf,
-			struct mgmt_rx_event_params *mgmt_rx_params)
+QDF_STATUS
+wlan_mgmt_txrx_process_rx_frame(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t buf,
+				struct mgmt_rx_event_params *mgmt_rx_params)
 {
 	QDF_STATUS status;
 
@@ -172,20 +167,19 @@ QDF_STATUS wlan_mgmt_txrx_process_rx_frame(
 	status = mgmt_rx_reo_sim_process_rx_frame(pdev, buf, mgmt_rx_params);
 
 	/**
-	 * Free up the mgmt rx params.
-	 * nbuf shouldn't be freed here as it is taken care by
-	 * rx_frame_legacy_handler.
-	 */
+   * Free up the mgmt rx params.
+   * nbuf shouldn't be freed here as it is taken care by
+   * rx_frame_legacy_handler.
+   */
 	free_mgmt_rx_event_params(mgmt_rx_params);
 
 	return status;
 }
 
 QDF_STATUS
-wlan_mgmt_rx_reo_get_snapshot_info
-			(struct wlan_objmgr_pdev *pdev,
-			 enum mgmt_rx_reo_shared_snapshot_id id,
-			 struct mgmt_rx_reo_snapshot_info *snapshot_info)
+wlan_mgmt_rx_reo_get_snapshot_info(
+	struct wlan_objmgr_pdev *pdev, enum mgmt_rx_reo_shared_snapshot_id id,
+	struct mgmt_rx_reo_snapshot_info *snapshot_info)
 {
 	QDF_STATUS status;
 
@@ -210,8 +204,7 @@ wlan_mgmt_rx_reo_get_snapshot_info
  * Return: On success returns the MLO HW link id corresponding to the pdev
  * object. On failure returns -1.
  */
-int8_t
-wlan_get_mlo_link_id_from_pdev(struct wlan_objmgr_pdev *pdev)
+int8_t wlan_get_mlo_link_id_from_pdev(struct wlan_objmgr_pdev *pdev)
 {
 	return mgmt_rx_reo_sim_get_mlo_link_id_from_pdev(pdev);
 }
@@ -232,8 +225,8 @@ struct wlan_objmgr_pdev *
 wlan_get_pdev_from_mlo_link_id(uint8_t mlo_link_id, uint8_t ml_grp_id,
 			       wlan_objmgr_ref_dbgid refdbgid)
 {
-	return mgmt_rx_reo_sim_get_pdev_from_mlo_link_id(
-			mlo_link_id, ml_grp_id, refdbgid);
+	return mgmt_rx_reo_sim_get_pdev_from_mlo_link_id(mlo_link_id, ml_grp_id,
+							 refdbgid);
 }
 
 qdf_export_symbol(wlan_get_pdev_from_mlo_link_id);
@@ -247,8 +240,8 @@ wlan_mgmt_rx_reo_validate_mlo_link_info(struct wlan_objmgr_psoc *psoc)
 
 QDF_STATUS
 wlan_mgmt_rx_reo_pdev_obj_create_notification(
-			struct wlan_objmgr_pdev *pdev,
-			struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
+	struct wlan_objmgr_pdev *pdev,
+	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
 {
 	return mgmt_rx_reo_pdev_obj_create_notification(pdev,
 							mgmt_txrx_pdev_ctx);
@@ -256,8 +249,8 @@ wlan_mgmt_rx_reo_pdev_obj_create_notification(
 
 QDF_STATUS
 wlan_mgmt_rx_reo_pdev_obj_destroy_notification(
-			struct wlan_objmgr_pdev *pdev,
-			struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
+	struct wlan_objmgr_pdev *pdev,
+	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
 {
 	return mgmt_rx_reo_pdev_obj_destroy_notification(pdev,
 							 mgmt_txrx_pdev_ctx);
@@ -314,8 +307,8 @@ wlan_mgmt_rx_reo_get_pkt_ctr_delta_thresh(struct wlan_objmgr_psoc *psoc)
 }
 
 #ifdef WLAN_MGMT_RX_REO_DEBUG_SUPPORT
-uint16_t
-wlan_mgmt_rx_reo_get_ingress_frame_debug_list_size(struct wlan_objmgr_psoc *psoc)
+uint16_t wlan_mgmt_rx_reo_get_ingress_frame_debug_list_size(
+	struct wlan_objmgr_psoc *psoc)
 {
 	if (!psoc) {
 		mgmt_rx_reo_err("psoc is NULL!");
@@ -349,8 +342,7 @@ wlan_mgmt_rx_reo_get_scheduler_debug_list_size(struct wlan_objmgr_psoc *psoc)
 #endif /* WLAN_MGMT_RX_REO_DEBUG_SUPPORT */
 
 #ifndef WLAN_MGMT_RX_REO_SIM_SUPPORT
-bool
-wlan_mgmt_rx_reo_is_feature_enabled_at_psoc(struct wlan_objmgr_psoc *psoc)
+bool wlan_mgmt_rx_reo_is_feature_enabled_at_psoc(struct wlan_objmgr_psoc *psoc)
 {
 	if (!psoc) {
 		mgmt_rx_reo_err("psoc is NULL!");
@@ -365,8 +357,7 @@ wlan_mgmt_rx_reo_is_feature_enabled_at_psoc(struct wlan_objmgr_psoc *psoc)
 
 qdf_export_symbol(wlan_mgmt_rx_reo_is_feature_enabled_at_psoc);
 
-bool
-wlan_mgmt_rx_reo_is_feature_enabled_at_pdev(struct wlan_objmgr_pdev *pdev)
+bool wlan_mgmt_rx_reo_is_feature_enabled_at_pdev(struct wlan_objmgr_pdev *pdev)
 {
 	if (!pdev) {
 		mgmt_rx_reo_err("pdev is NULL!");
@@ -374,13 +365,12 @@ wlan_mgmt_rx_reo_is_feature_enabled_at_pdev(struct wlan_objmgr_pdev *pdev)
 	}
 
 	return wlan_mgmt_rx_reo_is_feature_enabled_at_psoc(
-			wlan_pdev_get_psoc(pdev));
+		wlan_pdev_get_psoc(pdev));
 }
 
 qdf_export_symbol(wlan_mgmt_rx_reo_is_feature_enabled_at_pdev);
 
-bool
-wlan_mgmt_rx_reo_is_scheduler_enabled_at_psoc(struct wlan_objmgr_psoc *psoc)
+bool wlan_mgmt_rx_reo_is_scheduler_enabled_at_psoc(struct wlan_objmgr_psoc *psoc)
 {
 	if (!psoc) {
 		mgmt_rx_reo_err("psoc is NULL!");
@@ -392,8 +382,7 @@ wlan_mgmt_rx_reo_is_scheduler_enabled_at_psoc(struct wlan_objmgr_psoc *psoc)
 
 qdf_export_symbol(wlan_mgmt_rx_reo_is_scheduler_enabled_at_psoc);
 
-bool
-wlan_mgmt_rx_reo_is_scheduler_enabled_at_pdev(struct wlan_objmgr_pdev *pdev)
+bool wlan_mgmt_rx_reo_is_scheduler_enabled_at_pdev(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_objmgr_psoc *psoc;
 
@@ -408,16 +397,14 @@ wlan_mgmt_rx_reo_is_scheduler_enabled_at_pdev(struct wlan_objmgr_pdev *pdev)
 
 qdf_export_symbol(wlan_mgmt_rx_reo_is_scheduler_enabled_at_pdev);
 #else
-bool
-wlan_mgmt_rx_reo_is_feature_enabled_at_psoc(struct wlan_objmgr_psoc *psoc)
+bool wlan_mgmt_rx_reo_is_feature_enabled_at_psoc(struct wlan_objmgr_psoc *psoc)
 {
 	return true;
 }
 
 qdf_export_symbol(wlan_mgmt_rx_reo_is_feature_enabled_at_psoc);
 
-bool
-wlan_mgmt_rx_reo_is_feature_enabled_at_pdev(struct wlan_objmgr_pdev *pdev)
+bool wlan_mgmt_rx_reo_is_feature_enabled_at_pdev(struct wlan_objmgr_pdev *pdev)
 {
 	return true;
 }
@@ -442,15 +429,13 @@ qdf_export_symbol(wlan_mgmt_rx_reo_sim_stop);
 #endif /* WLAN_MGMT_RX_REO_SIM_SUPPORT */
 
 #ifdef WLAN_MLO_MULTI_CHIP
-bool
-wlan_mgmt_rx_reo_is_simulation_in_progress(uint8_t ml_grp_id)
+bool wlan_mgmt_rx_reo_is_simulation_in_progress(uint8_t ml_grp_id)
 {
 	return mgmt_rx_reo_is_simulation_in_progress(ml_grp_id);
 }
 
 #else
-bool
-wlan_mgmt_rx_reo_is_simulation_in_progress(uint8_t ml_grp_id)
+bool wlan_mgmt_rx_reo_is_simulation_in_progress(uint8_t ml_grp_id)
 {
 	return false;
 }

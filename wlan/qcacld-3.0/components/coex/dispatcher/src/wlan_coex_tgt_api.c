@@ -19,10 +19,10 @@
  * DOC: contains coex south bound interface definitions
  */
 
+#include "wlan_objmgr_pdev_obj.h"
 #include <wlan_coex_main.h>
 #include <wlan_coex_tgt_api.h>
 #include <wlan_lmac_if_def.h>
-#include "wlan_objmgr_pdev_obj.h"
 
 static inline struct wlan_lmac_if_coex_tx_ops *
 wlan_psoc_get_coex_txops(struct wlan_objmgr_psoc *psoc)

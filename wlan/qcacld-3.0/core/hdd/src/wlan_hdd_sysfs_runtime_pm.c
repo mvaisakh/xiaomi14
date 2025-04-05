@@ -14,23 +14,21 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_psoc_sync.h"
-#include <wlan_hdd_sysfs.h>
-#include <wlan_hdd_sysfs_runtime_pm.h>
 #include "hif.h"
 #include "hif_runtime_pm.h"
+#include "osif_psoc_sync.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
+#include <wlan_hdd_sysfs_runtime_pm.h>
 
 static ssize_t hdd_sysfs_runtime_pm_show(struct kobject *kobj,
-					 struct kobj_attribute *attr,
-					 char *buf)
+					 struct kobj_attribute *attr, char *buf)
 {
 	return hif_rtpm_log_debug_stats(buf, HIF_RTPM_FILL_TYPE_SYSFS);
 }
 
 static struct kobj_attribute runtime_pm_attribute =
-	__ATTR(runtime_pm, 0440, hdd_sysfs_runtime_pm_show,
-	       NULL);
+	__ATTR(runtime_pm, 0440, hdd_sysfs_runtime_pm_show, NULL);
 
 int hdd_sysfs_runtime_pm_create(struct kobject *driver_kobject)
 {
@@ -41,16 +39,14 @@ int hdd_sysfs_runtime_pm_create(struct kobject *driver_kobject)
 		return -EINVAL;
 	}
 
-	error = sysfs_create_file(driver_kobject,
-				  &runtime_pm_attribute.attr);
+	error = sysfs_create_file(driver_kobject, &runtime_pm_attribute.attr);
 	if (error)
 		hdd_err("could not create runtime_pm sysfs file");
 
 	return error;
 }
 
-void
-hdd_sysfs_runtime_pm_destroy(struct kobject *driver_kobject)
+void hdd_sysfs_runtime_pm_destroy(struct kobject *driver_kobject)
 {
 	if (!driver_kobject) {
 		hdd_err("could not get driver kobject!");

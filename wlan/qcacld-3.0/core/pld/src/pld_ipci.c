@@ -17,9 +17,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/platform_device.h>
 #include <linux/err.h>
 #include <linux/list.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
 
 #ifdef CONFIG_PLD_IPCI_ICNSS
@@ -30,9 +30,9 @@
 #endif
 #endif
 
+#include "osif_psoc_sync.h"
 #include "pld_internal.h"
 #include "pld_ipci.h"
-#include "osif_psoc_sync.h"
 
 #ifdef CONFIG_PLD_IPCI_ICNSS
 
@@ -62,8 +62,7 @@ static int pld_ipci_probe(struct device *dev)
 	if (ret)
 		goto out;
 
-	return pld_context->ops->probe(dev, PLD_BUS_TYPE_IPCI,
-				       NULL, NULL);
+	return pld_context->ops->probe(dev, PLD_BUS_TYPE_IPCI, NULL, NULL);
 
 out:
 	return ret;
@@ -120,8 +119,8 @@ static int pld_ipci_reinit(struct device *dev)
 
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->reinit)
-		return pld_context->ops->reinit(dev, PLD_BUS_TYPE_IPCI,
-						NULL, NULL);
+		return pld_context->ops->reinit(dev, PLD_BUS_TYPE_IPCI, NULL,
+						NULL);
 
 	return -ENODEV;
 }
@@ -307,12 +306,11 @@ static int pld_update_hang_evt_data(struct icnss_uevent_hang_data *evt_data,
 	return 0;
 }
 
-static int pld_ipci_uevent(struct device *dev,
-			   struct icnss_uevent_data *uevent)
+static int pld_ipci_uevent(struct device *dev, struct icnss_uevent_data *uevent)
 {
 	struct pld_context *pld_context;
 	struct icnss_uevent_fw_down_data *uevent_data = NULL;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 	struct icnss_uevent_hang_data *hang_data = NULL;
 
 	pld_context = pld_get_global_context();
@@ -359,12 +357,11 @@ out:
 	return 0;
 }
 #else
-static int pld_ipci_uevent(struct device *dev,
-			   struct icnss_uevent_data *uevent)
+static int pld_ipci_uevent(struct device *dev, struct icnss_uevent_data *uevent)
 {
 	struct pld_context *pld_context;
 	struct icnss_uevent_fw_down_data *uevent_data = NULL;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 
 	pld_context = pld_get_global_context();
 	if (!pld_context)
@@ -415,8 +412,7 @@ static int pld_ipci_idle_restart_cb(struct device *dev)
 		return -EINVAL;
 
 	if (pld_context->ops->idle_restart)
-		return pld_context->ops->idle_restart(dev,
-						      PLD_BUS_TYPE_IPCI);
+		return pld_context->ops->idle_restart(dev, PLD_BUS_TYPE_IPCI);
 
 	return -ENODEV;
 }
@@ -439,8 +435,7 @@ static int pld_ipci_idle_shutdown_cb(struct device *dev)
 		return -EINVAL;
 
 	if (pld_context->ops->shutdown)
-		return pld_context->ops->idle_shutdown(dev,
-						       PLD_BUS_TYPE_IPCI);
+		return pld_context->ops->idle_shutdown(dev, PLD_BUS_TYPE_IPCI);
 
 	return -ENODEV;
 }
@@ -458,8 +453,7 @@ static int pld_ipci_idle_shutdown_cb(struct device *dev)
  * Non zero failure code for errors
  */
 static int pld_ipci_set_thermal_state(struct device *dev,
-				      unsigned long thermal_state,
-				      int mon_id)
+				      unsigned long thermal_state, int mon_id)
 {
 	struct pld_context *pld_context;
 
@@ -468,9 +462,8 @@ static int pld_ipci_set_thermal_state(struct device *dev,
 		return -EINVAL;
 
 	if (pld_context->ops->set_curr_therm_cdev_state)
-		return pld_context->ops->set_curr_therm_cdev_state(dev,
-							      thermal_state,
-							      mon_id);
+		return pld_context->ops->set_curr_therm_cdev_state(
+			dev, thermal_state, mon_id);
 
 	return -ENOTSUPP;
 }
@@ -493,21 +486,21 @@ static struct device_info pld_ipci_dev_info[] = {
 #endif
 
 struct icnss_driver_ops pld_ipci_ops = {
-	.name       = PLD_IPCI_OPS_NAME,
+	.name = PLD_IPCI_OPS_NAME,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
-	.dev_info   = pld_ipci_dev_info,
+	.dev_info = pld_ipci_dev_info,
 #endif
-	.probe      = pld_ipci_probe,
-	.remove     = pld_ipci_remove,
-	.shutdown   = pld_ipci_shutdown,
-	.reinit     = pld_ipci_reinit,
+	.probe = pld_ipci_probe,
+	.remove = pld_ipci_remove,
+	.shutdown = pld_ipci_shutdown,
+	.reinit = pld_ipci_reinit,
 	.crash_shutdown = pld_ipci_crash_shutdown,
 	.pm_suspend = pld_ipci_pm_suspend,
-	.pm_resume  = pld_ipci_pm_resume,
+	.pm_resume = pld_ipci_pm_resume,
 	.suspend_noirq = pld_ipci_suspend_noirq,
 	.resume_noirq = pld_ipci_resume_noirq,
 	.runtime_suspend = pld_ipci_runtime_suspend,
-	.runtime_resume  = pld_ipci_runtime_resume,
+	.runtime_resume = pld_ipci_runtime_resume,
 	.uevent = pld_ipci_uevent,
 	.idle_restart = pld_ipci_idle_restart_cb,
 	.idle_shutdown = pld_ipci_idle_shutdown_cb,
@@ -530,8 +523,8 @@ pld_ipci_populate_shadow_v3_cfg(struct icnss_wlan_enable_cfg *cfg,
 				struct pld_wlan_enable_cfg *config)
 {
 	cfg->num_shadow_reg_v3_cfg = config->num_shadow_reg_v3_cfg;
-	cfg->shadow_reg_v3_cfg = (struct icnss_shadow_reg_v3_cfg *)
-				 config->shadow_reg_v3_cfg;
+	cfg->shadow_reg_v3_cfg =
+		(struct icnss_shadow_reg_v3_cfg *)config->shadow_reg_v3_cfg;
 }
 #else
 static inline void
@@ -551,23 +544,21 @@ int pld_ipci_wlan_enable(struct device *dev, struct pld_wlan_enable_cfg *config,
 		return -ENODEV;
 
 	cfg.num_ce_tgt_cfg = config->num_ce_tgt_cfg;
-	cfg.ce_tgt_cfg = (struct ce_tgt_pipe_cfg *)
-		config->ce_tgt_cfg;
+	cfg.ce_tgt_cfg = (struct ce_tgt_pipe_cfg *)config->ce_tgt_cfg;
 	cfg.num_ce_svc_pipe_cfg = config->num_ce_svc_pipe_cfg;
-	cfg.ce_svc_cfg = (struct ce_svc_pipe_cfg *)
-		config->ce_svc_cfg;
+	cfg.ce_svc_cfg = (struct ce_svc_pipe_cfg *)config->ce_svc_cfg;
 	cfg.num_shadow_reg_cfg = config->num_shadow_reg_cfg;
-	cfg.shadow_reg_cfg = (struct icnss_shadow_reg_cfg *)
-		config->shadow_reg_cfg;
+	cfg.shadow_reg_cfg =
+		(struct icnss_shadow_reg_cfg *)config->shadow_reg_cfg;
 	cfg.num_shadow_reg_v2_cfg = config->num_shadow_reg_v2_cfg;
-	cfg.shadow_reg_v2_cfg = (struct icnss_shadow_reg_v2_cfg *)
-		config->shadow_reg_v2_cfg;
+	cfg.shadow_reg_v2_cfg =
+		(struct icnss_shadow_reg_v2_cfg *)config->shadow_reg_v2_cfg;
 	cfg.rri_over_ddr_cfg_valid = config->rri_over_ddr_cfg_valid;
 	if (config->rri_over_ddr_cfg_valid) {
 		cfg.rri_over_ddr_cfg.base_addr_low =
-			 config->rri_over_ddr_cfg.base_addr_low;
+			config->rri_over_ddr_cfg.base_addr_low;
 		cfg.rri_over_ddr_cfg.base_addr_high =
-			 config->rri_over_ddr_cfg.base_addr_high;
+			config->rri_over_ddr_cfg.base_addr_high;
 	}
 
 	pld_ipci_populate_shadow_v3_cfg(&cfg, config);
@@ -602,8 +593,8 @@ static void pld_ipci_populate_hw_cap_info(struct icnss_soc_info *icnss_info,
 	/*WLAN HW cap info*/
 	info->hw_cap_info.nss =
 		(enum pld_wlan_hw_nss_info)icnss_info->rd_card_chain_cap;
-	info->hw_cap_info.bw =
-	(enum pld_wlan_hw_channel_bw_info)icnss_info->phy_he_channel_width_cap;
+	info->hw_cap_info.bw = (enum pld_wlan_hw_channel_bw_info)
+				       icnss_info->phy_he_channel_width_cap;
 	info->hw_cap_info.qam =
 		(enum pld_wlan_hw_qam_info)icnss_info->phy_qam_cap;
 }
@@ -617,7 +608,7 @@ static void pld_ipci_populate_hw_cap_info(struct icnss_soc_info *icnss_info,
 int pld_ipci_get_soc_info(struct device *dev, struct pld_soc_info *info)
 {
 	int errno;
-	struct icnss_soc_info icnss_info = {0};
+	struct icnss_soc_info icnss_info = { 0 };
 
 	if (!info || !dev)
 		return -ENODEV;

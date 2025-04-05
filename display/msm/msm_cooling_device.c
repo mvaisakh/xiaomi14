@@ -2,14 +2,14 @@
 /*
  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
  */
+#include "msm_cooling_device.h"
 #include <linux/err.h>
 #include <linux/slab.h>
-#include "msm_cooling_device.h"
 
 #define BRIGHTNESS_CDEV_MAX 255
 
 static int sde_cdev_get_max_brightness(struct thermal_cooling_device *cdev,
-					unsigned long *state)
+				       unsigned long *state)
 {
 	struct sde_cdev *disp_cdev = (struct sde_cdev *)cdev->devdata;
 
@@ -19,18 +19,19 @@ static int sde_cdev_get_max_brightness(struct thermal_cooling_device *cdev,
 }
 
 static int sde_cdev_get_cur_brightness(struct thermal_cooling_device *cdev,
-					unsigned long *state)
+				       unsigned long *state)
 {
 	struct sde_cdev *disp_cdev = (struct sde_cdev *)cdev->devdata;
 
 	*state = ((disp_cdev->bd->props.max_brightness -
-			disp_cdev->thermal_state) / disp_cdev->cdev_sf);
+		   disp_cdev->thermal_state) /
+		  disp_cdev->cdev_sf);
 
 	return 0;
 }
 
 static int sde_cdev_set_cur_brightness(struct thermal_cooling_device *cdev,
-					unsigned long state)
+				       unsigned long state)
 {
 	struct sde_cdev *disp_cdev = (struct sde_cdev *)cdev->devdata;
 	unsigned long brightness_lvl = 0;
@@ -39,12 +40,12 @@ static int sde_cdev_set_cur_brightness(struct thermal_cooling_device *cdev,
 		return -EINVAL;
 
 	brightness_lvl = disp_cdev->bd->props.max_brightness -
-				(state * disp_cdev->cdev_sf);
+			 (state * disp_cdev->cdev_sf);
 	if (brightness_lvl == disp_cdev->thermal_state)
 		return 0;
 	disp_cdev->thermal_state = brightness_lvl;
-	blocking_notifier_call_chain(&disp_cdev->notifier_head,
-					brightness_lvl, (void *)disp_cdev->bd);
+	blocking_notifier_call_chain(&disp_cdev->notifier_head, brightness_lvl,
+				     (void *)disp_cdev->bd);
 
 	return 0;
 }
@@ -56,8 +57,8 @@ static struct thermal_cooling_device_ops sde_cdev_ops = {
 };
 
 struct sde_cdev *backlight_cdev_register(struct device *dev,
-					struct backlight_device *bd,
-					struct notifier_block *n)
+					 struct backlight_device *bd,
+					 struct notifier_block *n)
 {
 	struct sde_cdev *disp_cdev = NULL;
 
@@ -73,14 +74,14 @@ struct sde_cdev *backlight_cdev_register(struct device *dev,
 	disp_cdev->bd = bd;
 
 	if (bd->props.max_brightness > BRIGHTNESS_CDEV_MAX)
-		disp_cdev->cdev_sf = (bd->props.max_brightness /
-						BRIGHTNESS_CDEV_MAX);
+		disp_cdev->cdev_sf =
+			(bd->props.max_brightness / BRIGHTNESS_CDEV_MAX);
 	else
 		disp_cdev->cdev_sf = 1;
 
-	disp_cdev->cdev = thermal_of_cooling_device_register(dev->of_node,
-				(char *)dev_name(&bd->dev), disp_cdev,
-				&sde_cdev_ops);
+	disp_cdev->cdev = thermal_of_cooling_device_register(
+		dev->of_node, (char *)dev_name(&bd->dev), disp_cdev,
+		&sde_cdev_ops);
 	if (IS_ERR_OR_NULL(disp_cdev->cdev)) {
 		pr_err("cooling device register failed\n");
 		return (void *)disp_cdev->cdev;

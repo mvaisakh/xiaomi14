@@ -13,26 +13,26 @@
  *
  */
 
+#include <linux/acpi.h>
+#include <linux/delay.h>
+#include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
+#include <linux/i2c.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
-#include <linux/version.h>
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/delay.h>
-#include <linux/i2c.h>
-#include <linux/slab.h>
-#include <linux/workqueue.h>
-#include <linux/platform_device.h>
-#include <linux/regulator/consumer.h>
-#include <linux/gpio/consumer.h>
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
+#include <linux/platform_device.h>
 #include <linux/regmap.h>
-#include <linux/gpio.h>
-#include <linux/acpi.h>
+#include <linux/regulator/consumer.h>
+#include <linux/slab.h>
+#include <linux/version.h>
+#include <linux/workqueue.h>
 
-#include "wm_adsp.h"
 #include "cs35l41.h"
+#include "wm_adsp.h"
 #include <sound/cs35l41.h>
 
 static struct regmap_config cs35l41_regmap_i2c = {
@@ -50,23 +50,20 @@ static struct regmap_config cs35l41_regmap_i2c = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static const struct i2c_device_id cs35l41_id_i2c[] = {
-	{"cs35l40", 0},
-	{"cs35l41", 0},
-	{}
-};
+static const struct i2c_device_id cs35l41_id_i2c[] = { { "cs35l40", 0 },
+						       { "cs35l41", 0 },
+						       {} };
 
 MODULE_DEVICE_TABLE(i2c, cs35l41_id_i2c);
 
 static int cs35l41_i2c_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+			     const struct i2c_device_id *id)
 {
 	struct cs35l41_private *cs35l41;
 	struct device *dev = &client->dev;
 	struct cs35l41_platform_data *pdata = dev_get_platdata(dev);
 	const struct regmap_config *regmap_config = &cs35l41_regmap_i2c;
 	int ret;
-
 
 	dev_info(dev, "%s: E\n", __func__);
 
@@ -86,12 +83,12 @@ static int cs35l41_i2c_probe(struct i2c_client *client,
 		dev_err(cs35l41->dev, "Failed to allocate register map: %d\n",
 			ret);
 #if IS_ENABLED(CONFIG_MIEV)
-		mievent_report(906001353,"PA i2c exception",cs35l41->dev);
+		mievent_report(906001353, "PA i2c exception", cs35l41->dev);
 #endif
 		return ret;
 	}
 	ret = cs35l41_probe(cs35l41, pdata);
-	if ((ret != 0 ) && (ret != -ENODEV) && (ret != -ENOMEM)) {
+	if ((ret != 0) && (ret != -ENODEV) && (ret != -ENOMEM)) {
 		dev_err(dev, "I2C bus IO error. Try to defer probe\n");
 		ret = -EPROBE_DEFER;
 	}
@@ -109,8 +106,8 @@ static void cs35l41_i2c_remove(struct i2c_client *client)
 
 #ifdef CONFIG_OF
 static const struct of_device_id cs35l41_of_match[] = {
-	{.compatible = "cirrus,cs35l40"},
-	{.compatible = "cirrus,cs35l41"},
+	{ .compatible = "cirrus,cs35l40" },
+	{ .compatible = "cirrus,cs35l41" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, cs35l41_of_match);
@@ -125,14 +122,15 @@ MODULE_DEVICE_TABLE(acpi, cs35l41_acpi_match);
 #endif
 
 static struct i2c_driver cs35l41_i2c_driver = {
-	.driver = {
-		.name		= "cs35l41",
-		.of_match_table = of_match_ptr(cs35l41_of_match),
-		.acpi_match_table = ACPI_PTR(cs35l41_acpi_match),
-	},
-	.id_table	= cs35l41_id_i2c,
-	.probe		= cs35l41_i2c_probe,
-	.remove		= cs35l41_i2c_remove,
+    .driver =
+        {
+            .name = "cs35l41",
+            .of_match_table = of_match_ptr(cs35l41_of_match),
+            .acpi_match_table = ACPI_PTR(cs35l41_acpi_match),
+        },
+    .id_table = cs35l41_id_i2c,
+    .probe = cs35l41_i2c_probe,
+    .remove = cs35l41_i2c_remove,
 };
 
 module_i2c_driver(cs35l41_i2c_driver);

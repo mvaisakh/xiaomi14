@@ -26,13 +26,12 @@
 
 #include "wlan_hdd_disa.h"
 #include "osif_sync.h"
+#include "sme_api.h"
 #include "wlan_disa_ucfg_api.h"
 #include "wlan_osif_request_manager.h"
-#include "sme_api.h"
 #include <qca_vendor.h>
 
 #define WLAN_WAIT_TIME_ENCRYPT_DECRYPT 1000
-
 
 /**
  * struct hdd_encrypt_decrypt_msg_context - hdd encrypt/decrypt message context
@@ -54,8 +53,9 @@ struct hdd_encrypt_decrypt_msg_context {
  *
  * Return: none
  */
-static void hdd_encrypt_decrypt_msg_cb(void *cookie,
-	struct disa_encrypt_decrypt_resp_params *resp)
+static void
+hdd_encrypt_decrypt_msg_cb(void *cookie,
+			   struct disa_encrypt_decrypt_resp_params *resp)
 {
 	struct osif_request *request;
 	struct hdd_encrypt_decrypt_msg_context *context;
@@ -73,28 +73,23 @@ static void hdd_encrypt_decrypt_msg_cb(void *cookie,
 		return;
 	}
 
-	print_hex_dump(KERN_INFO, "Data in hdd_encrypt_decrypt_msg_cb: ",
-		DUMP_PREFIX_NONE, 16, 1,
-		resp->data,
-		resp->data_len, 0);
+	print_hex_dump(KERN_INFO,
+		       "Data in hdd_encrypt_decrypt_msg_cb: ", DUMP_PREFIX_NONE,
+		       16, 1, resp->data, resp->data_len, 0);
 
-	hdd_debug("vdev_id: %d status:%d data_length: %d",
-		resp->vdev_id,
-		resp->status,
-		resp->data_len);
+	hdd_debug("vdev_id: %d status:%d data_length: %d", resp->vdev_id,
+		  resp->status, resp->data_len);
 
 	context = osif_request_priv(request);
 	context->response = *resp;
 	context->status = 0;
 	if (resp->data_len) {
 		context->response.data =
-			qdf_mem_malloc(sizeof(uint8_t) *
-				resp->data_len);
+			qdf_mem_malloc(sizeof(uint8_t) * resp->data_len);
 		if (!context->response.data) {
 			context->status = -ENOMEM;
 		} else {
-			qdf_mem_copy(context->response.data,
-				     resp->data,
+			qdf_mem_copy(context->response.data, resp->data,
 				     resp->data_len);
 		}
 	} else {
@@ -114,8 +109,9 @@ static void hdd_encrypt_decrypt_msg_cb(void *cookie,
  *
  * Return: none
  */
-static int hdd_post_encrypt_decrypt_msg_rsp(struct hdd_context *hdd_ctx,
-	struct disa_encrypt_decrypt_resp_params *resp)
+static int
+hdd_post_encrypt_decrypt_msg_rsp(struct hdd_context *hdd_ctx,
+				 struct disa_encrypt_decrypt_resp_params *resp)
 {
 	struct sk_buff *skb;
 	uint32_t nl_buf_len;
@@ -147,14 +143,11 @@ nla_put_failure:
 	return -EINVAL;
 }
 
-const struct nla_policy
-encrypt_decrypt_policy[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_NEEDS_DECRYPTION] = {
-		.type = NLA_FLAG},
-	[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_CIPHER] = {
-		.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_KEYID] = {
-		.type = NLA_U8},
+const struct nla_policy encrypt_decrypt_policy[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_MAX +
+					       1] = {
+	[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_NEEDS_DECRYPTION] = { .type = NLA_FLAG },
+	[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_CIPHER] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_KEYID] = { .type = NLA_U8 },
 };
 
 /**
@@ -167,12 +160,9 @@ encrypt_decrypt_policy[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_MAX + 1] = {
  *
  * Return: 0 on success, negative errno on failure
  */
-static int
-hdd_fill_encrypt_decrypt_params(struct disa_encrypt_decrypt_req_params
-				*encrypt_decrypt_params,
-				struct hdd_adapter *adapter,
-				const void *data,
-				int data_len)
+static int hdd_fill_encrypt_decrypt_params(
+	struct disa_encrypt_decrypt_req_params *encrypt_decrypt_params,
+	struct hdd_adapter *adapter, const void *data, int data_len)
 {
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_MAX + 1];
 	uint8_t len, mac_hdr_len;
@@ -202,16 +192,16 @@ hdd_fill_encrypt_decrypt_params(struct disa_encrypt_decrypt_req_params
 		hdd_err("attr key id failed");
 		return -EINVAL;
 	}
-	encrypt_decrypt_params->key_idx = nla_get_u8(tb
-		    [QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_KEYID]);
+	encrypt_decrypt_params->key_idx =
+		nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_KEYID]);
 	hdd_debug("Key Idx: %d", encrypt_decrypt_params->key_idx);
 
 	if (!tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_CIPHER]) {
 		hdd_err("attr Cipher failed");
 		return -EINVAL;
 	}
-	encrypt_decrypt_params->key_cipher = nla_get_u32(tb
-		    [QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_CIPHER]);
+	encrypt_decrypt_params->key_cipher =
+		nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_CIPHER]);
 	hdd_debug("key_cipher: %d", encrypt_decrypt_params->key_cipher);
 
 	if (!tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_TK]) {
@@ -232,11 +222,11 @@ hdd_fill_encrypt_decrypt_params(struct disa_encrypt_decrypt_req_params
 	tmp = nla_data(tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_TK]);
 
 	qdf_mem_copy(encrypt_decrypt_params->key_data, tmp,
-			encrypt_decrypt_params->key_len);
+		     encrypt_decrypt_params->key_len);
 
 	print_hex_dump(KERN_INFO, "Key : ", DUMP_PREFIX_NONE, 16, 1,
-			&encrypt_decrypt_params->key_data,
-			encrypt_decrypt_params->key_len, 0);
+		       &encrypt_decrypt_params->key_data,
+		       encrypt_decrypt_params->key_len, 0);
 
 	if (!tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_PN]) {
 		hdd_err("attr PN failed");
@@ -253,7 +243,7 @@ hdd_fill_encrypt_decrypt_params(struct disa_encrypt_decrypt_req_params
 	qdf_mem_copy(encrypt_decrypt_params->pn, tmp, len);
 
 	print_hex_dump(KERN_INFO, "PN received : ", DUMP_PREFIX_NONE, 16, 1,
-			&encrypt_decrypt_params->pn, len, 0);
+		       &encrypt_decrypt_params->pn, len, 0);
 
 	if (!tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_DATA]) {
 		hdd_err("attr header failed");
@@ -269,16 +259,16 @@ hdd_fill_encrypt_decrypt_params(struct disa_encrypt_decrypt_req_params
 
 	tmp = nla_data(tb[QCA_WLAN_VENDOR_ATTR_ENCRYPTION_TEST_DATA]);
 
-	print_hex_dump(KERN_INFO, "Header and Payload received: ",
-			DUMP_PREFIX_NONE, 16, 1,
-			tmp, len, 0);
+	print_hex_dump(KERN_INFO,
+		       "Header and Payload received: ", DUMP_PREFIX_NONE, 16, 1,
+		       tmp, len, 0);
 
 	mac_hdr_len = MIN_MAC_HEADER_LEN;
 
 	/*
-	 * Check to find out address 4. Address 4 is present if ToDS and FromDS
-	 * are 1 and data representation is little endian.
-	 */
+   * Check to find out address 4. Address 4 is present if ToDS and FromDS
+   * are 1 and data representation is little endian.
+   */
 	fc[1] = *tmp;
 	fc[0] = *(tmp + 1);
 	if ((fc[0] & 0x03) == 0x03) {
@@ -287,10 +277,10 @@ hdd_fill_encrypt_decrypt_params(struct disa_encrypt_decrypt_req_params
 	}
 
 	/*
-	 * Check to find out Qos control field. Qos control field is present
-	 * if msb of subtype field is 1 and data representation is
-	 * little endian.
-	 */
+   * Check to find out Qos control field. Qos control field is present
+   * if msb of subtype field is 1 and data representation is
+   * little endian.
+   */
 	if (fc[1] & 0x80) {
 		hdd_err("Qos control is present");
 		mac_hdr_len += QOS_CONTROL_LEN;
@@ -302,35 +292,30 @@ hdd_fill_encrypt_decrypt_params(struct disa_encrypt_decrypt_req_params
 		hdd_err("Invalid header and payload length %u", len);
 		return -EINVAL;
 	}
-	qdf_mem_copy(encrypt_decrypt_params->mac_header,
-			tmp, mac_hdr_len);
+	qdf_mem_copy(encrypt_decrypt_params->mac_header, tmp, mac_hdr_len);
 
-	print_hex_dump(KERN_INFO, "Header received in request: ",
-			DUMP_PREFIX_NONE, 16, 1,
-			encrypt_decrypt_params->mac_header,
-			mac_hdr_len, 0);
+	print_hex_dump(KERN_INFO,
+		       "Header received in request: ", DUMP_PREFIX_NONE, 16, 1,
+		       encrypt_decrypt_params->mac_header, mac_hdr_len, 0);
 
-	encrypt_decrypt_params->data_len =
-			len - mac_hdr_len;
+	encrypt_decrypt_params->data_len = len - mac_hdr_len;
 
 	hdd_debug("Payload length: %d", encrypt_decrypt_params->data_len);
 
 	if (encrypt_decrypt_params->data_len) {
-		encrypt_decrypt_params->data =
-			qdf_mem_malloc(sizeof(uint8_t) *
-				encrypt_decrypt_params->data_len);
+		encrypt_decrypt_params->data = qdf_mem_malloc(
+			sizeof(uint8_t) * encrypt_decrypt_params->data_len);
 
 		if (!encrypt_decrypt_params->data)
 			return -ENOMEM;
 
-		qdf_mem_copy(encrypt_decrypt_params->data,
-			tmp + mac_hdr_len,
-			encrypt_decrypt_params->data_len);
+		qdf_mem_copy(encrypt_decrypt_params->data, tmp + mac_hdr_len,
+			     encrypt_decrypt_params->data_len);
 
-		print_hex_dump(KERN_INFO, "Data received in request: ",
-			DUMP_PREFIX_NONE, 16, 1,
-			encrypt_decrypt_params->data,
-			encrypt_decrypt_params->data_len, 0);
+		print_hex_dump(KERN_INFO,
+			       "Data received in request: ", DUMP_PREFIX_NONE,
+			       16, 1, encrypt_decrypt_params->data,
+			       encrypt_decrypt_params->data_len, 0);
 	}
 
 	return 0;
@@ -355,8 +340,7 @@ static void hdd_encrypt_decrypt_context_dealloc(void *priv)
  */
 static int hdd_encrypt_decrypt_msg(struct hdd_adapter *adapter,
 				   struct hdd_context *hdd_ctx,
-				   const void *data,
-				   int data_len)
+				   const void *data, int data_len)
 {
 	QDF_STATUS qdf_status;
 	int ret;
@@ -376,17 +360,17 @@ static int hdd_encrypt_decrypt_msg(struct hdd_adapter *adapter,
 	}
 	context = osif_request_priv(request);
 
-	ret = hdd_fill_encrypt_decrypt_params(&context->request, adapter,
-					      data, data_len);
+	ret = hdd_fill_encrypt_decrypt_params(&context->request, adapter, data,
+					      data_len);
 	if (ret)
 		goto cleanup;
 
 	cookie = osif_request_cookie(request);
 
 	qdf_status = ucfg_disa_encrypt_decrypt_req(hdd_ctx->psoc,
-				&context->request,
-				hdd_encrypt_decrypt_msg_cb,
-				cookie);
+						   &context->request,
+						   hdd_encrypt_decrypt_msg_cb,
+						   cookie);
 
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		hdd_err("Unable to post encrypt/decrypt message");
@@ -427,9 +411,9 @@ cleanup:
  * Return: 0 on success, negative errno on failure
  */
 static int __wlan_hdd_cfg80211_encrypt_decrypt_msg(struct wiphy *wiphy,
-						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+						   struct wireless_dev *wdev,
+						   const void *data,
+						   int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -471,9 +455,8 @@ static int __wlan_hdd_cfg80211_encrypt_decrypt_msg(struct wiphy *wiphy,
  * Return: 0 on success, negative errno on failure
  */
 int wlan_hdd_cfg80211_encrypt_decrypt_msg(struct wiphy *wiphy,
-						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+					  struct wireless_dev *wdev,
+					  const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -482,8 +465,8 @@ int wlan_hdd_cfg80211_encrypt_decrypt_msg(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_encrypt_decrypt_msg(wiphy, wdev,
-							data, data_len);
+	errno = __wlan_hdd_cfg80211_encrypt_decrypt_msg(wiphy, wdev, data,
+							data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 

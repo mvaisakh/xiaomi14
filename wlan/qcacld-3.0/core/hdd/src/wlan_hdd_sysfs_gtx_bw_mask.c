@@ -21,23 +21,22 @@
  * implementation for creating sysfs file gtx_bw_mask
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs.h>
-#include <wlan_hdd_sysfs_gtx_bw_mask.h>
 #include "wma.h"
 #include "wma_api.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
+#include <wlan_hdd_sysfs_gtx_bw_mask.h>
 
 static int hdd_sysfs_set_green_tx_param(struct hdd_adapter *adapter,
 					green_tx_param id,
-					const char *id_string,
-					int value)
+					const char *id_string, int value)
 {
 	int errno;
 
 	hdd_debug("%s %d", id_string, value);
-	errno = wma_cli_set_command(adapter->deflink->vdev_id,
-				    id, value, GTX_CMD);
+	errno = wma_cli_set_command(adapter->deflink->vdev_id, id, value,
+				    GTX_CMD);
 	if (errno)
 		hdd_err("Failed to set firmware, errno %d", errno);
 
@@ -45,7 +44,7 @@ static int hdd_sysfs_set_green_tx_param(struct hdd_adapter *adapter,
 }
 
 #define hdd_sysfs_set_green_tx_param(adapter, id, value) \
-			hdd_sysfs_set_green_tx_param(adapter, id, #id, value)
+	hdd_sysfs_set_green_tx_param(adapter, id, #id, value)
 
 static int hdd_sysfs_get_green_tx_param(struct hdd_adapter *adapter,
 					green_tx_param id,
@@ -61,11 +60,10 @@ static int hdd_sysfs_get_green_tx_param(struct hdd_adapter *adapter,
 }
 
 #define hdd_sysfs_get_green_tx_param(adapter, id) \
-			hdd_sysfs_get_green_tx_param(adapter, id, #id)
+	hdd_sysfs_get_green_tx_param(adapter, id, #id)
 
-static ssize_t
-__hdd_sysfs_gtx_bw_mask_store(struct net_device *net_dev,
-			      char const *buf, size_t count)
+static ssize_t __hdd_sysfs_gtx_bw_mask_store(struct net_device *net_dev,
+					     char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -85,8 +83,8 @@ __hdd_sysfs_gtx_bw_mask_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -94,8 +92,8 @@ __hdd_sysfs_gtx_bw_mask_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("gtx_bw_mask: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("gtx_bw_mask: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -104,8 +102,7 @@ __hdd_sysfs_gtx_bw_mask_store(struct net_device *net_dev,
 	if (kstrtou32(token, 0, &value))
 		return -EINVAL;
 
-	ret = hdd_sysfs_set_green_tx_param(adapter,
-					   wmi_vdev_param_gtx_bw_mask,
+	ret = hdd_sysfs_set_green_tx_param(adapter, wmi_vdev_param_gtx_bw_mask,
 					   value);
 
 	if (ret) {
@@ -116,10 +113,9 @@ __hdd_sysfs_gtx_bw_mask_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_gtx_bw_mask_store(struct device *dev,
-			    struct device_attribute *attr,
-			    char const *buf, size_t count)
+static ssize_t hdd_sysfs_gtx_bw_mask_store(struct device *dev,
+					   struct device_attribute *attr,
+					   char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -136,8 +132,8 @@ hdd_sysfs_gtx_bw_mask_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_gtx_bw_mask_show(struct net_device *net_dev, char *buf)
+static ssize_t __hdd_sysfs_gtx_bw_mask_show(struct net_device *net_dev,
+					    char *buf)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -164,10 +160,9 @@ __hdd_sysfs_gtx_bw_mask_show(struct net_device *net_dev, char *buf)
 	return scnprintf(buf, PAGE_SIZE, "%d", value);
 }
 
-static ssize_t
-hdd_sysfs_gtx_bw_mask_show(struct device *dev,
-			   struct device_attribute *attr,
-			   char *buf)
+static ssize_t hdd_sysfs_gtx_bw_mask_show(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -191,8 +186,7 @@ int hdd_sysfs_gtx_bw_mask_create(struct hdd_adapter *adapter)
 {
 	int error;
 
-	error = device_create_file(&adapter->dev->dev,
-				   &dev_attr_gtx_bw_mask);
+	error = device_create_file(&adapter->dev->dev, &dev_attr_gtx_bw_mask);
 	if (error)
 		hdd_err("could not create gtx_bw_mask sysfs file");
 

@@ -19,11 +19,11 @@
 /**
  * DOC: This file contains interop issues ap north bound interface definitions
  */
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_interop_issues_ap_ucfg_api.h>
-#include <wlan_interop_issues_ap_tgt_api.h>
 #include <wlan_cfg80211_interop_issues_ap.h>
 #include <wlan_interop_issues_ap_api.h>
+#include <wlan_interop_issues_ap_tgt_api.h>
+#include <wlan_interop_issues_ap_ucfg_api.h>
+#include <wlan_objmgr_vdev_obj.h>
 
 QDF_STATUS
 ucfg_set_interop_issues_ap_config(struct wlan_objmgr_psoc *psoc,
@@ -32,8 +32,9 @@ ucfg_set_interop_issues_ap_config(struct wlan_objmgr_psoc *psoc,
 	return tgt_set_interop_issues_ap_req(psoc, rap);
 }
 
-void ucfg_register_interop_issues_ap_callback(struct wlan_objmgr_pdev *pdev,
-				   struct wlan_interop_issues_ap_callbacks *cb)
+void ucfg_register_interop_issues_ap_callback(
+	struct wlan_objmgr_pdev *pdev,
+	struct wlan_interop_issues_ap_callbacks *cb)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct interop_issues_ap_psoc_priv_obj *obj;
@@ -51,7 +52,7 @@ void ucfg_register_interop_issues_ap_callback(struct wlan_objmgr_pdev *pdev,
 	}
 
 	obj->cbs.os_if_interop_issues_ap_event_handler =
-			cb->os_if_interop_issues_ap_event_handler;
+		cb->os_if_interop_issues_ap_event_handler;
 }
 
 QDF_STATUS ucfg_interop_issues_ap_psoc_enable(struct wlan_objmgr_psoc *psoc)

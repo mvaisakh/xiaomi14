@@ -16,43 +16,43 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_cfr_utils_api.h>
-#include <wlan_cfr_tgt_api.h>
-#include <qdf_module.h>
 #include <cfr_defs_i.h>
+#include <qdf_module.h>
+#include <wlan_cfr_tgt_api.h>
+#include <wlan_cfr_utils_api.h>
 #include <wlan_objmgr_global_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
 
 QDF_STATUS wlan_cfr_init(void)
 {
-	if (wlan_objmgr_register_psoc_create_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_psoc_obj_create_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_register_psoc_create_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_psoc_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_register_psoc_destroy_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_psoc_obj_destroy_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_register_psoc_destroy_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_psoc_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_register_pdev_create_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_pdev_obj_create_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_register_pdev_create_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_pdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_register_pdev_destroy_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_pdev_obj_destroy_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_register_pdev_destroy_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_pdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_register_peer_create_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_peer_obj_create_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_register_peer_create_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_peer_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_register_peer_destroy_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_peer_obj_destroy_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_register_peer_destroy_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_peer_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -61,34 +61,34 @@ QDF_STATUS wlan_cfr_init(void)
 
 QDF_STATUS wlan_cfr_deinit(void)
 {
-	if (wlan_objmgr_unregister_psoc_create_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_psoc_obj_create_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_psoc_create_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_psoc_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_unregister_psoc_destroy_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_psoc_obj_destroy_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_psoc_destroy_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_psoc_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_unregister_pdev_create_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_pdev_obj_create_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_pdev_create_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_pdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_unregister_pdev_destroy_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_pdev_obj_destroy_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_pdev_destroy_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_pdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_unregister_peer_create_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_peer_obj_create_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_peer_create_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_peer_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wlan_objmgr_unregister_peer_destroy_handler(WLAN_UMAC_COMP_CFR,
-				wlan_cfr_peer_obj_destroy_handler, NULL)
-				!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_peer_destroy_handler(
+		    WLAN_UMAC_COMP_CFR, wlan_cfr_peer_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	return QDF_STATUS_SUCCESS;
@@ -130,10 +130,10 @@ QDF_STATUS wlan_cfr_pdev_close(struct wlan_objmgr_pdev *pdev)
 		return QDF_STATUS_COMP_DISABLED;
 	}
 	/*
-	 * DBR does not have close as of now;
-	 * but this is getting added as part for new gerrit
-	 * Once we have that support we will add it.
-	 */
+   * DBR does not have close as of now;
+   * but this is getting added as part for new gerrit
+   * Once we have that support we will add it.
+   */
 	status = cfr_streamfs_remove(pdev);
 
 	return status;
@@ -210,7 +210,8 @@ bool wlan_cfr_is_feature_disabled(struct wlan_objmgr_pdev *pdev)
 	}
 
 	return (wlan_pdev_nif_feat_ext_cap_get(pdev, WLAN_PDEV_FEXT_CFR_EN) ?
-		false : true);
+			false :
+			true);
 }
 
 qdf_export_symbol(wlan_cfr_is_feature_disabled);

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -17,9 +18,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_types.h"
 #include "dummy.h"
 #include "hif_debug.h"
+#include "qdf_types.h"
 
 /**
  * hif_dummy_bus_prevent_linkdown() - prevent linkdown
@@ -32,7 +33,7 @@
 void hif_dummy_bus_prevent_linkdown(struct hif_softc *scn, bool flag)
 {
 	hif_debug("wlan: %s pcie power collapse ignored",
-			(flag ? "disable" : "enable"));
+		  (flag ? "disable" : "enable"));
 }
 
 /**
@@ -109,8 +110,8 @@ int hif_dummy_bus_resume_noirq(struct hif_softc *hif_ctx)
  * @sleep_ok: allow or deny target to go to sleep
  * @wait_for_it: ensure target has change
  */
-int hif_dummy_target_sleep_state_adjust(struct hif_softc *scn,
-						bool sleep_ok, bool wait_for_it)
+int hif_dummy_target_sleep_state_adjust(struct hif_softc *scn, bool sleep_ok,
+					bool wait_for_it)
 {
 	return 0;
 }
@@ -121,8 +122,9 @@ int hif_dummy_target_sleep_state_adjust(struct hif_softc *scn,
  * @is_packet_log_enabled: true if packet log is enabled
  */
 void hif_dummy_enable_power_management(struct hif_softc *hif_ctx,
-				 bool is_packet_log_enabled)
-{}
+				       bool is_packet_log_enabled)
+{
+}
 
 /**
  * hif_dummy_disable_power_management() - dummy call
@@ -131,7 +133,8 @@ void hif_dummy_enable_power_management(struct hif_softc *hif_ctx,
  * Return: none
  */
 void hif_dummy_disable_power_management(struct hif_softc *hif_ctx)
-{}
+{
+}
 
 /**
  * hif_dummy_disable_isr() - dummy call
@@ -140,7 +143,8 @@ void hif_dummy_disable_power_management(struct hif_softc *hif_ctx)
  * Return: none
  */
 void hif_dummy_disable_isr(struct hif_softc *scn)
-{}
+{
+}
 
 /**
  * hif_dummy_nointrs() - dummy call
@@ -149,7 +153,8 @@ void hif_dummy_disable_isr(struct hif_softc *scn)
  * Return: none
  */
 void hif_dummy_nointrs(struct hif_softc *hif_sc)
-{}
+{
+}
 
 /**
  * hif_dummy_bus_configure() - dummy call
@@ -172,8 +177,8 @@ int hif_dummy_bus_configure(struct hif_softc *hif_sc)
  * Return: QDF_STATUS_SUCCESS for success
  */
 QDF_STATUS
-hif_dummy_get_config_item(struct hif_softc *hif_sc,
-		     int opcode, void *config, uint32_t config_len)
+hif_dummy_get_config_item(struct hif_softc *hif_sc, int opcode, void *config,
+			  uint32_t config_len)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -184,8 +189,7 @@ hif_dummy_get_config_item(struct hif_softc *hif_sc,
  *
  * Return: None
  */
-void
-hif_dummy_set_mailbox_swap(struct hif_softc *hif_sc)
+void hif_dummy_set_mailbox_swap(struct hif_softc *hif_sc)
 {
 }
 
@@ -195,8 +199,7 @@ hif_dummy_set_mailbox_swap(struct hif_softc *hif_sc)
  *
  * Return: None
  */
-void
-hif_dummy_claim_device(struct hif_softc *hif_sc)
+void hif_dummy_claim_device(struct hif_softc *hif_sc)
 {
 }
 
@@ -206,8 +209,7 @@ hif_dummy_claim_device(struct hif_softc *hif_sc)
  *
  * Return: None
  */
-void
-hif_dummy_cancel_deferred_target_sleep(struct hif_softc *hif_sc)
+void hif_dummy_cancel_deferred_target_sleep(struct hif_softc *hif_sc)
 {
 }
 
@@ -219,7 +221,8 @@ hif_dummy_cancel_deferred_target_sleep(struct hif_softc *hif_sc)
  * Return: none
  */
 void hif_dummy_irq_enable(struct hif_softc *hif_sc, int irq_id)
-{}
+{
+}
 
 /**
  * hif_dummy_grp_irq_enable() - dummy call
@@ -229,7 +232,8 @@ void hif_dummy_irq_enable(struct hif_softc *hif_sc, int irq_id)
  * Return: none
  */
 void hif_dummy_grp_irq_enable(struct hif_softc *hif_sc, uint32_t grp_id)
-{}
+{
+}
 
 /**
  * hif_dummy_irq_disable() - dummy call
@@ -239,7 +243,8 @@ void hif_dummy_grp_irq_enable(struct hif_softc *hif_sc, uint32_t grp_id)
  * Return: none
  */
 void hif_dummy_irq_disable(struct hif_softc *hif_sc, int irq_id)
-{}
+{
+}
 
 /**
  * hif_dummy_grp_irq_disable() - dummy call
@@ -249,7 +254,8 @@ void hif_dummy_irq_disable(struct hif_softc *hif_sc, int irq_id)
  * Return: none
  */
 void hif_dummy_grp_irq_disable(struct hif_softc *hif_sc, uint32_t grp_id)
-{}
+{
+}
 
 /**
  * hif_dummy_grp_irq_configure() - dummy call
@@ -261,7 +267,7 @@ void hif_dummy_grp_irq_disable(struct hif_softc *hif_sc, uint32_t grp_id)
 int hif_dummy_grp_irq_configure(struct hif_softc *hif_sc,
 				struct hif_exec_context *exec)
 {
-    return 0;
+	return 0;
 }
 
 /**
@@ -295,18 +301,16 @@ int hif_dummy_dump_registers(struct hif_softc *hif_sc)
  * Return: None
  */
 void hif_dummy_dump_target_memory(struct hif_softc *hif_sc, void *ramdump_base,
-						uint32_t address, uint32_t size)
+				  uint32_t address, uint32_t size)
 {
 }
 
-uint32_t hif_dummy_bus_reg_read32(struct hif_softc *hif_sc,
-				  uint32_t offset)
+uint32_t hif_dummy_bus_reg_read32(struct hif_softc *hif_sc, uint32_t offset)
 {
 	return 0;
 }
 
-void hif_dummy_bus_reg_write32(struct hif_softc *hif_sc,
-			       uint32_t offset,
+void hif_dummy_bus_reg_write32(struct hif_softc *hif_sc, uint32_t offset,
 			       uint32_t value)
 {
 }
@@ -333,8 +337,7 @@ void hif_dummy_ipa_get_ce_resource(struct hif_softc *hif_sc,
  *
  * Return: None
  */
-void
-hif_dummy_mask_interrupt_call(struct hif_softc *hif_sc)
+void hif_dummy_mask_interrupt_call(struct hif_softc *hif_sc)
 {
 }
 
@@ -345,7 +348,8 @@ hif_dummy_mask_interrupt_call(struct hif_softc *hif_sc)
  * Return: none
  */
 void hif_dummy_display_stats(struct hif_softc *hif_ctx)
-{}
+{
+}
 
 /**
  * hif_dummy_clear_stats() - dummy call
@@ -365,8 +369,8 @@ void hif_dummy_clear_stats(struct hif_softc *hif_ctx)
  *
  * Return: none
  */
-void hif_dummy_set_bundle_mode(struct hif_softc *hif_ctx,
-					bool enabled, int rx_bundle_cnt)
+void hif_dummy_set_bundle_mode(struct hif_softc *hif_ctx, bool enabled,
+			       int rx_bundle_cnt)
 {
 }
 

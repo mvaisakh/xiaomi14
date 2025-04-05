@@ -14,18 +14,18 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
- /**
-  * DOC: qdf_hang_event_notifier
-  * This file provides OS dependent QDF notifier call for hang event
-  */
+/**
+ * DOC: qdf_hang_event_notifier
+ * This file provides OS dependent QDF notifier call for hang event
+ */
 
 #include <i_qdf_notifier.h>
-#include <qdf_notifier.h>
 #include <qdf_hang_event_notifier.h>
+#include <qdf_notifier.h>
 
 static qdf_atomic_notifier_init(qdf_hang_event_notif_head)
 
-QDF_STATUS qdf_hang_event_register_notifier(qdf_notif_block *nb)
+	QDF_STATUS qdf_hang_event_register_notifier(qdf_notif_block *nb)
 {
 	return qdf_register_atomic_notifier_chain(&qdf_hang_event_notif_head,
 						  nb);
@@ -39,6 +39,5 @@ QDF_STATUS qdf_hang_event_unregister_notifier(qdf_notif_block *nb)
 
 QDF_STATUS qdf_hang_event_notifier_call(unsigned long v, void *data)
 {
-	return qdf_atomic_notfier_call(&qdf_hang_event_notif_head,
-					 v, data);
+	return qdf_atomic_notfier_call(&qdf_hang_event_notif_head, v, data);
 }

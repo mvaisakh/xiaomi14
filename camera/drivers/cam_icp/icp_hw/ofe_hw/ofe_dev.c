@@ -1,39 +1,40 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
-#include <linux/module.h>
-#include <linux/slab.h>
-#include <linux/mod_devicetable.h>
-#include <linux/of_device.h>
-#include <linux/timer.h>
-#include "ofe_core.h"
-#include "ofe_soc.h"
-#include "cam_hw.h"
-#include "cam_hw_intf.h"
-#include "cam_io_util.h"
-#include "cam_icp_hw_intf.h"
-#include "cam_icp_hw_mgr_intf.h"
 #include "cam_cpas_api.h"
 #include "cam_debug_util.h"
+#include "cam_hw.h"
+#include "cam_hw_intf.h"
+#include "cam_icp_hw_intf.h"
+#include "cam_icp_hw_mgr_intf.h"
+#include "cam_io_util.h"
 #include "camera_main.h"
+#include "ofe_core.h"
+#include "ofe_soc.h"
+#include <linux/mod_devicetable.h>
+#include <linux/module.h>
+#include <linux/of_device.h>
+#include <linux/slab.h>
+#include <linux/timer.h>
 
 static struct cam_ofe_device_hw_info cam_ofe_hw_info = {
-	.hw_idx         = 0x0,
-	.pwr_ctrl       = 0x100,
-	.pwr_status     = 0xFC,
-	.top_rst_cmd    = 0x5B4,
+	.hw_idx = 0x0,
+	.pwr_ctrl = 0x100,
+	.pwr_status = 0xFC,
+	.top_rst_cmd = 0x5B4,
 	.top_irq_status = 0x5C4,
-	.top_rst_val    = 0x3,
-	.cdm_rst_cmd    = 0x10,
+	.top_rst_val = 0x3,
+	.cdm_rst_cmd = 0x10,
 	.cdm_irq_status = 0x44,
-	.cdm_rst_val    = 0x7F,
+	.cdm_rst_val = 0x7F,
 };
 
 static bool cam_ofe_cpas_cb(uint32_t client_handle, void *userdata,
-	struct cam_cpas_irq_data *irq_data)
+			    struct cam_cpas_irq_data *irq_data)
 {
 	bool error_handled = false;
 
@@ -42,8 +43,10 @@ static bool cam_ofe_cpas_cb(uint32_t client_handle, void *userdata,
 
 	switch (irq_data->irq_type) {
 	case CAM_CAMNOC_IRQ_OFE_WR_UBWC_ENCODE_ERROR:
-		CAM_ERR_RATE_LIMIT(CAM_ICP,
-			"OFE Write UBWC Decode error type=%d status=%x thr_err=%d, fcl_err=%d, len_md_err=%d, format_err=%d",
+		CAM_ERR_RATE_LIMIT(
+			CAM_ICP,
+			"OFE Write UBWC Decode error type=%d status=%x "
+			"thr_err=%d, fcl_err=%d, len_md_err=%d, format_err=%d",
 			irq_data->irq_type,
 			irq_data->u.dec_err.decerr_status.value,
 			irq_data->u.dec_err.decerr_status.thr_err,
@@ -53,8 +56,10 @@ static bool cam_ofe_cpas_cb(uint32_t client_handle, void *userdata,
 		error_handled = true;
 		break;
 	case CAM_CAMNOC_IRQ_OFE_RD_UBWC_DECODE_ERROR:
-		CAM_ERR_RATE_LIMIT(CAM_ICP,
-			"OFE Read UBWC Decode error type=%d status=%x thr_err=%d, fcl_err=%d, len_md_err=%d, format_err=%d",
+		CAM_ERR_RATE_LIMIT(
+			CAM_ICP,
+			"OFE Read UBWC Decode error type=%d status=%x "
+			"thr_err=%d, fcl_err=%d, len_md_err=%d, format_err=%d",
 			irq_data->irq_type,
 			irq_data->u.dec_err.decerr_status.value,
 			irq_data->u.dec_err.decerr_status.thr_err,
@@ -71,7 +76,8 @@ static bool cam_ofe_cpas_cb(uint32_t client_handle, void *userdata,
 }
 
 int cam_ofe_register_cpas(struct cam_hw_soc_info *soc_info,
-	struct cam_ofe_device_core_info *core_info, uint32_t hw_idx)
+			  struct cam_ofe_device_core_info *core_info,
+			  uint32_t hw_idx)
 {
 	struct cam_cpas_register_params cpas_register_params;
 	int rc;
@@ -92,23 +98,23 @@ int cam_ofe_register_cpas(struct cam_hw_soc_info *soc_info,
 	return rc;
 }
 
-static int cam_ofe_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+static int cam_ofe_component_bind(struct device *dev, struct device *master_dev,
+				  void *data)
 {
-	struct cam_hw_info                *ofe_dev      = NULL;
-	struct cam_hw_intf                *ofe_dev_intf = NULL;
-	const struct of_device_id         *match_dev    = NULL;
-	struct cam_ofe_device_core_info   *core_info    = NULL;
-	struct cam_ofe_device_hw_info     *hw_info      = NULL;
-	int                                rc           = 0;
+	struct cam_hw_info *ofe_dev = NULL;
+	struct cam_hw_intf *ofe_dev_intf = NULL;
+	const struct of_device_id *match_dev = NULL;
+	struct cam_ofe_device_core_info *core_info = NULL;
+	struct cam_ofe_device_hw_info *hw_info = NULL;
+	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	ofe_dev_intf = kzalloc(sizeof(struct cam_hw_intf), GFP_KERNEL);
 	if (!ofe_dev_intf)
 		return -ENOMEM;
 
-	of_property_read_u32(pdev->dev.of_node,
-		"cell-index", &ofe_dev_intf->hw_idx);
+	of_property_read_u32(pdev->dev.of_node, "cell-index",
+			     &ofe_dev_intf->hw_idx);
 
 	ofe_dev = kzalloc(sizeof(struct cam_hw_info), GFP_KERNEL);
 	if (!ofe_dev) {
@@ -125,14 +131,16 @@ static int cam_ofe_component_bind(struct device *dev,
 	ofe_dev_intf->hw_ops.process_cmd = cam_ofe_process_cmd;
 	ofe_dev_intf->hw_type = CAM_ICP_DEV_OFE;
 	platform_set_drvdata(pdev, ofe_dev_intf);
-	ofe_dev->core_info = kzalloc(sizeof(struct cam_ofe_device_core_info), GFP_KERNEL);
+	ofe_dev->core_info =
+		kzalloc(sizeof(struct cam_ofe_device_core_info), GFP_KERNEL);
 	if (!ofe_dev->core_info) {
 		rc = -ENOMEM;
 		goto free_dev;
 	}
 	core_info = (struct cam_ofe_device_core_info *)ofe_dev->core_info;
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_ICP, "No ofe hardware info");
 		goto free_core_info;
@@ -141,15 +149,16 @@ static int cam_ofe_component_bind(struct device *dev,
 	hw_info = (struct cam_ofe_device_hw_info *)match_dev->data;
 	core_info->ofe_hw_info = hw_info;
 
-	rc = cam_ofe_init_soc_resources(&ofe_dev->soc_info, cam_ofe_irq, ofe_dev);
+	rc = cam_ofe_init_soc_resources(&ofe_dev->soc_info, cam_ofe_irq,
+					ofe_dev);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "failed to init_soc");
 		goto free_core_info;
 	}
 	CAM_DBG(CAM_ICP, "soc info : %pK", (void *)&ofe_dev->soc_info);
 
-	rc = cam_ofe_register_cpas(&ofe_dev->soc_info,
-			core_info, ofe_dev_intf->hw_idx);
+	rc = cam_ofe_register_cpas(&ofe_dev->soc_info, core_info,
+				   ofe_dev_intf->hw_idx);
 	if (rc)
 		goto free_soc_resources;
 
@@ -175,11 +184,11 @@ free_dev_intf:
 }
 
 static void cam_ofe_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
-	struct cam_hw_info            *ofe_dev = NULL;
-	struct cam_hw_intf            *ofe_dev_intf = NULL;
-	struct cam_ofe_device_core_info   *core_info = NULL;
+	struct cam_hw_info *ofe_dev = NULL;
+	struct cam_hw_intf *ofe_dev_intf = NULL;
+	struct cam_ofe_device_core_info *core_info = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	CAM_DBG(CAM_ICP, "Unbinding component: %s", pdev->name);
@@ -227,14 +236,15 @@ static const struct of_device_id cam_ofe_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_ofe_dt_match);
 
 struct platform_driver cam_ofe_driver = {
-	.probe = cam_ofe_probe,
-	.remove = cam_ofe_remove,
-	.driver = {
-		.name = "cam-ofe",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_ofe_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_ofe_probe,
+    .remove = cam_ofe_remove,
+    .driver =
+        {
+            .name = "cam-ofe",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_ofe_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_ofe_init_module(void)

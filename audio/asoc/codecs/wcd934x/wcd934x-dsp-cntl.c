@@ -3,17 +3,17 @@
  * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/slab.h>
-#include <linux/delay.h>
+#include "wcd934x-dsp-cntl.h"
+#include "wcd934x.h"
+#include <asoc/core.h>
+#include <asoc/wcd934x_registers.h>
+#include <asoc/wcd9xxx-irq.h>
 #include <linux/component.h>
 #include <linux/debugfs.h>
+#include <linux/delay.h>
+#include <linux/slab.h>
 #include <sound/soc.h>
 #include <sound/wcd-dsp-mgr.h>
-#include <asoc/wcd934x_registers.h>
-#include "wcd934x.h"
-#include "wcd934x-dsp-cntl.h"
-#include <asoc/wcd9xxx-irq.h>
-#include <asoc/core.h>
 
 #define WCD_CNTL_DIR_NAME_LEN_MAX 32
 #define WCD_CPE_FLL_MAX_RETRIES 5
@@ -25,19 +25,19 @@
 #define WCD_934X_RAMDUMP_SIZE ((1024 * 1024) - 128)
 #define WCD_MISCDEV_CMD_MAX_LEN 11
 
-#define WCD_CNTL_MUTEX_LOCK(component, lock)             \
-{                                                    \
-	dev_dbg(component->dev, "%s: mutex_lock(%s)\n",  \
-		__func__, __stringify_1(lock));      \
-	mutex_lock(&lock);                           \
-}
+#define WCD_CNTL_MUTEX_LOCK(component, lock)                              \
+	{                                                                 \
+		dev_dbg(component->dev, "%s: mutex_lock(%s)\n", __func__, \
+			__stringify_1(lock));                             \
+		mutex_lock(&lock);                                        \
+	}
 
-#define WCD_CNTL_MUTEX_UNLOCK(component, lock)            \
-{                                                     \
-	dev_dbg(component->dev, "%s: mutex_unlock(%s)\n", \
-		__func__, __stringify_1(lock));       \
-	mutex_unlock(&lock);                          \
-}
+#define WCD_CNTL_MUTEX_UNLOCK(component, lock)                              \
+	{                                                                   \
+		dev_dbg(component->dev, "%s: mutex_unlock(%s)\n", __func__, \
+			__stringify_1(lock));                               \
+		mutex_unlock(&lock);                                        \
+	}
 
 enum wcd_mem_type {
 	WCD_MEM_TYPE_ALWAYS_ON,
@@ -51,29 +51,25 @@ struct wcd_cntl_attribute {
 			 ssize_t count);
 };
 
-#define WCD_CNTL_ATTR(_name, _mode, _show, _store) \
-static struct wcd_cntl_attribute cntl_attr_##_name = {	\
-	.attr = {.name = __stringify(_name), .mode = _mode},	\
-	.show = _show,	\
-	.store = _store,	\
-}
+#define WCD_CNTL_ATTR(_name, _mode, _show, _store)                     \
+	static struct wcd_cntl_attribute cntl_attr_##_name = {         \
+		.attr = { .name = __stringify(_name), .mode = _mode }, \
+		.show = _show,                                         \
+		.store = _store,                                       \
+	}
 
-#define to_wcd_cntl_attr(a) \
-	container_of((a), struct wcd_cntl_attribute, attr)
+#define to_wcd_cntl_attr(a) container_of((a), struct wcd_cntl_attribute, attr)
 
-#define to_wcd_cntl(kobj) \
-	container_of((kobj), struct wcd_dsp_cntl, wcd_kobj)
+#define to_wcd_cntl(kobj) container_of((kobj), struct wcd_dsp_cntl, wcd_kobj)
 
 static u8 mem_enable_values[] = {
-	0xFE, 0xFC, 0xF8, 0xF0,
-	0xE0, 0xC0, 0x80, 0x00,
+	0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80, 0x00,
 };
 
 #ifdef CONFIG_DEBUG_FS
-#define WCD_CNTL_SET_ERR_IRQ_FLAG(cntl)\
+#define WCD_CNTL_SET_ERR_IRQ_FLAG(cntl) \
 	atomic_cmpxchg(&cntl->err_irq_flag, 0, 1)
-#define WCD_CNTL_CLR_ERR_IRQ_FLAG(cntl)\
-	atomic_set(&cntl->err_irq_flag, 0)
+#define WCD_CNTL_CLR_ERR_IRQ_FLAG(cntl) atomic_set(&cntl->err_irq_flag, 0)
 
 static u16 wdsp_reg_for_debug_dump[] = {
 	WCD934X_CPE_SS_CPE_CTL,
@@ -121,15 +117,15 @@ static void wcd_cntl_collect_debug_dumps(struct wcd_dsp_cntl *cntl,
 
 	/* Mask all error interrupts */
 	snd_soc_component_write(component, WCD934X_CPE_SS_SS_ERROR_INT_MASK_0A,
-		      0xFF);
+				0xFF);
 	snd_soc_component_write(component, WCD934X_CPE_SS_SS_ERROR_INT_MASK_0B,
-		      0xFF);
+				0xFF);
 
 	/* Collect important WDSP registers dump for debug use */
 	pr_err("%s: Dump the WDSP registers for debug use\n", __func__);
-	for (i = 0; i < sizeof(wdsp_reg_for_debug_dump)/sizeof(u16); i++) {
+	for (i = 0; i < sizeof(wdsp_reg_for_debug_dump) / sizeof(u16); i++) {
 		val = snd_soc_component_read32(component,
-				wdsp_reg_for_debug_dump[i]);
+					       wdsp_reg_for_debug_dump[i]);
 		pr_err("%s: reg = 0x%x, val = 0x%x\n", __func__,
 		       wdsp_reg_for_debug_dump[i], val);
 	}
@@ -148,15 +144,17 @@ static void wcd_cntl_collect_debug_dumps(struct wcd_dsp_cntl *cntl,
 
 	/* Unmask the fatal irqs */
 	snd_soc_component_write(component, WCD934X_CPE_SS_SS_ERROR_INT_MASK_0A,
-		      ~(cntl->irqs.fatal_irqs & 0xFF));
+				~(cntl->irqs.fatal_irqs & 0xFF));
 	snd_soc_component_write(component, WCD934X_CPE_SS_SS_ERROR_INT_MASK_0B,
-		      ~((cntl->irqs.fatal_irqs >> 8) & 0xFF));
+				~((cntl->irqs.fatal_irqs >> 8) & 0xFF));
 
 	WCD_CNTL_CLR_ERR_IRQ_FLAG(cntl);
 }
 #else
 #define WCD_CNTL_SET_ERR_IRQ_FLAG(cntl) 0
-#define WCD_CNTL_CLR_ERR_IRQ_FLAG(cntl) do {} while (0)
+#define WCD_CNTL_CLR_ERR_IRQ_FLAG(cntl) \
+	do {                            \
+	} while (0)
 static void wcd_cntl_collect_debug_dumps(struct wcd_dsp_cntl *cntl,
 					 bool internal)
 {
@@ -165,12 +163,11 @@ static void wcd_cntl_collect_debug_dumps(struct wcd_dsp_cntl *cntl,
 
 static ssize_t wdsp_boot_show(struct wcd_dsp_cntl *cntl, char *buf)
 {
-	return snprintf(buf, WCD_SYSFS_ENTRY_MAX_LEN,
-			"%u", cntl->boot_reqs);
+	return snprintf(buf, WCD_SYSFS_ENTRY_MAX_LEN, "%u", cntl->boot_reqs);
 }
 
-static ssize_t wdsp_boot_store(struct wcd_dsp_cntl *cntl,
-			       const char *buf, ssize_t count)
+static ssize_t wdsp_boot_store(struct wcd_dsp_cntl *cntl, const char *buf,
+			       ssize_t count)
 {
 	u32 val;
 	bool vote;
@@ -178,8 +175,8 @@ static ssize_t wdsp_boot_store(struct wcd_dsp_cntl *cntl,
 
 	ret = kstrtou32(buf, 10, &val);
 	if (ret) {
-		dev_err(cntl->component->dev,
-			"%s: Invalid entry, ret = %d\n", __func__, ret);
+		dev_err(cntl->component->dev, "%s: Invalid entry, ret = %d\n",
+			__func__, ret);
 		return -EINVAL;
 	}
 
@@ -191,23 +188,21 @@ static ssize_t wdsp_boot_store(struct wcd_dsp_cntl *cntl,
 		vote = false;
 	}
 
-	if (cntl->m_dev && cntl->m_ops &&
-	    cntl->m_ops->vote_for_dsp)
+	if (cntl->m_dev && cntl->m_ops && cntl->m_ops->vote_for_dsp)
 		ret = cntl->m_ops->vote_for_dsp(cntl->m_dev, vote);
 	else
 		ret = -EINVAL;
 
 	if (ret < 0)
-		dev_err(cntl->component->dev,
-			"%s: failed to %s dsp\n", __func__,
-			vote ? "enable" : "disable");
+		dev_err(cntl->component->dev, "%s: failed to %s dsp\n",
+			__func__, vote ? "enable" : "disable");
 	return count;
 }
 
 WCD_CNTL_ATTR(boot, 0660, wdsp_boot_show, wdsp_boot_store);
 
-static ssize_t wcd_cntl_sysfs_show(struct kobject *kobj,
-				   struct attribute *attr, char *buf)
+static ssize_t wcd_cntl_sysfs_show(struct kobject *kobj, struct attribute *attr,
+				   char *buf)
 {
 	struct wcd_cntl_attribute *wcd_attr = to_wcd_cntl_attr(attr);
 	struct wcd_dsp_cntl *cntl = to_wcd_cntl(kobj);
@@ -242,8 +237,7 @@ static struct kobj_type wcd_cntl_ktype = {
 	.sysfs_ops = &wcd_cntl_sysfs_ops,
 };
 
-static void wcd_cntl_change_online_state(struct wcd_dsp_cntl *cntl,
-					 u8 online)
+static void wcd_cntl_change_online_state(struct wcd_dsp_cntl *cntl, u8 online)
 {
 	struct wdsp_ssr_entry *ssr_entry = &cntl->ssr_entry;
 	unsigned long ret;
@@ -256,8 +250,8 @@ static void wcd_cntl_change_online_state(struct wcd_dsp_cntl *cntl,
 	wake_up_interruptible(&ssr_entry->offline_poll_wait);
 	dev_dbg(cntl->component->dev,
 		"%s: requested %u, offline %u offline_change %u, ret = %ldn",
-		__func__, online, ssr_entry->offline,
-		ssr_entry->offline_change, ret);
+		__func__, online, ssr_entry->offline, ssr_entry->offline_change,
+		ret);
 	WCD_CNTL_MUTEX_UNLOCK(cntl->component, cntl->ssr_mutex);
 }
 
@@ -272,7 +266,7 @@ static ssize_t wdsp_ssr_entry_read(struct snd_info_entry *entry,
 	ssize_t ret;
 	u8 offline;
 
-	cntl = (struct wcd_dsp_cntl *) entry->private_data;
+	cntl = (struct wcd_dsp_cntl *)entry->private_data;
 	if (!cntl) {
 		pr_err("%s: Invalid private data for SSR procfs entry\n",
 		       __func__);
@@ -309,11 +303,11 @@ static unsigned int wdsp_ssr_entry_poll(struct snd_info_entry *entry,
 		return -EINVAL;
 	}
 
-	cntl = (struct wcd_dsp_cntl *) entry->private_data;
+	cntl = (struct wcd_dsp_cntl *)entry->private_data;
 	ssr_entry = &cntl->ssr_entry;
 
-	dev_dbg(cntl->component->dev, "%s: Poll wait, offline = %u\n",
-		__func__, ssr_entry->offline);
+	dev_dbg(cntl->component->dev, "%s: Poll wait, offline = %u\n", __func__,
+		ssr_entry->offline);
 	poll_wait(file, &ssr_entry->offline_poll_wait, wait);
 	dev_dbg(cntl->component->dev, "%s: Woken up Poll wait, offline = %u\n",
 		__func__, ssr_entry->offline);
@@ -321,8 +315,8 @@ static unsigned int wdsp_ssr_entry_poll(struct snd_info_entry *entry,
 	WCD_CNTL_MUTEX_LOCK(cntl->component, cntl->ssr_mutex);
 	if (xchg(&ssr_entry->offline_change, 0))
 		ret = POLLIN | POLLPRI | POLLRDNORM;
-	dev_dbg(cntl->component->dev, "%s: ret (%d) from poll_wait\n",
-		__func__, ret);
+	dev_dbg(cntl->component->dev, "%s: ret (%d) from poll_wait\n", __func__,
+		ret);
 	WCD_CNTL_MUTEX_UNLOCK(cntl->component, cntl->ssr_mutex);
 
 	return ret;
@@ -341,20 +335,20 @@ static int wcd_cntl_cpe_fll_calibrate(struct wcd_dsp_cntl *cntl)
 	u8 lock_det;
 
 	/* Make sure clocks are gated */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPE_CTL,
-			    0x05, 0x00);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPE_CTL, 0x05,
+				      0x00);
 
 	/* Enable CPE FLL reference clock */
 	snd_soc_component_update_bits(component, WCD934X_CLK_SYS_MCLK2_PRG1,
-			    0x80, 0x80);
+				      0x80, 0x80);
 
 	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_USER_CTL_5,
-			    0xF3, 0x13);
+				      0xF3, 0x13);
 	snd_soc_component_write(component, WCD934X_CPE_FLL_L_VAL_CTL_0, 0x50);
 
 	/* Disable CPAR reset and Enable CPAR clk */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL,
-			    0x02, 0x02);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL, 0x02,
+				      0x02);
 
 	/* Write calibration l-value based on cdc clk rate */
 	if (cntl->clk_rate == 9600000) {
@@ -368,25 +362,24 @@ static int wcd_cntl_cpe_fll_calibrate(struct wcd_dsp_cntl *cntl)
 	snd_soc_component_write(component, WCD934X_CPE_FLL_USER_CTL_7, cal_msb);
 
 	/* FLL mode to follow power up sequence */
-	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_FLL_MODE,
-			    0x60, 0x00);
+	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_FLL_MODE, 0x60,
+				      0x00);
 
 	/* HW controlled CPE FLL */
-	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_FLL_MODE,
-			    0x80, 0x80);
+	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_FLL_MODE, 0x80,
+				      0x80);
 
 	/* Force on CPE FLL */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CFG,
-			    0x04, 0x04);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CFG, 0x04,
+				      0x04);
 
 	do {
 		/* Time for FLL calibration to complete */
 		usleep_range(1000, 1100);
-		lock_det = snd_soc_component_read32(
-				component, WCD934X_CPE_FLL_STATUS_3);
+		lock_det = snd_soc_component_read32(component,
+						    WCD934X_CPE_FLL_STATUS_3);
 		retry++;
-	} while (!(lock_det & 0x01) &&
-		 retry <= WCD_CPE_FLL_MAX_RETRIES);
+	} while (!(lock_det & 0x01) && retry <= WCD_CPE_FLL_MAX_RETRIES);
 
 	if (!(lock_det & 0x01)) {
 		dev_err(component->dev, "%s: lock detect not set, 0x%02x\n",
@@ -395,20 +388,20 @@ static int wcd_cntl_cpe_fll_calibrate(struct wcd_dsp_cntl *cntl)
 		goto err_lock_det;
 	}
 
-	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_FLL_MODE,
-			    0x60, 0x20);
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CFG,
-			    0x04, 0x00);
+	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_FLL_MODE, 0x60,
+				      0x20);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CFG, 0x04,
+				      0x00);
 	return ret;
 
 err_lock_det:
 	/* Undo the register settings */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CFG,
-			    0x04, 0x00);
-	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_FLL_MODE,
-			    0x80, 0x00);
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL,
-			    0x02, 0x00);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CFG, 0x04,
+				      0x00);
+	snd_soc_component_update_bits(component, WCD934X_CPE_FLL_FLL_MODE, 0x80,
+				      0x00);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL, 0x02,
+				      0x00);
 	return ret;
 }
 
@@ -434,15 +427,13 @@ static void wcd_cntl_config_cpar(struct wcd_dsp_cntl *cntl)
 	snd_soc_component_write(component, WCD934X_TEST_DEBUG_LVAL_SVS_SVS2_LOW,
 				svs2_lo);
 	snd_soc_component_write(component,
-				WCD934X_TEST_DEBUG_LVAL_SVS_SVS2_HIGH,
-				svs2_hi);
+				WCD934X_TEST_DEBUG_LVAL_SVS_SVS2_HIGH, svs2_hi);
 
 	snd_soc_component_update_bits(component, WCD934X_CPE_SS_PWR_CPEFLL_CTL,
-			    0x03, 0x03);
+				      0x03, 0x03);
 }
 
-static int wcd_cntl_cpe_fll_ctrl(struct wcd_dsp_cntl *cntl,
-				 bool enable)
+static int wcd_cntl_cpe_fll_ctrl(struct wcd_dsp_cntl *cntl, bool enable)
 {
 	struct snd_soc_component *component = cntl->component;
 	int ret = 0;
@@ -451,8 +442,8 @@ static int wcd_cntl_cpe_fll_ctrl(struct wcd_dsp_cntl *cntl,
 		ret = wcd_cntl_cpe_fll_calibrate(cntl);
 		if (ret < 0) {
 			dev_err(component->dev,
-				"%s: cpe_fll_cal failed, err = %d\n",
-				__func__, ret);
+				"%s: cpe_fll_cal failed, err = %d\n", __func__,
+				ret);
 			goto done;
 		}
 
@@ -460,20 +451,18 @@ static int wcd_cntl_cpe_fll_ctrl(struct wcd_dsp_cntl *cntl,
 
 		/* Enable AHB CLK and CPE CLK*/
 		snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPE_CTL,
-				    0x05, 0x05);
+					      0x05, 0x05);
 	} else {
 		/* Disable AHB CLK and CPE CLK */
 		snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPE_CTL,
-				    0x05, 0x00);
+					      0x05, 0x00);
 		/* Reset the CPAR mode for CPE FLL */
 		snd_soc_component_write(component, WCD934X_CPE_FLL_FLL_MODE,
 					0x20);
-		snd_soc_component_update_bits(component,
-					WCD934X_CPE_SS_CPAR_CFG,
-					0x04, 0x00);
-		snd_soc_component_update_bits(component,
-					WCD934X_CPE_SS_CPAR_CTL,
-					0x02, 0x00);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_CPAR_CFG, 0x04, 0x00);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_CPAR_CTL, 0x02, 0x00);
 	}
 done:
 	return ret;
@@ -493,27 +482,27 @@ static int wcd_cntl_clocks_enable(struct wcd_dsp_cntl *cntl)
 
 	if (ret < 0) {
 		dev_err(component->dev,
-			"%s: Failed to enable cdc clk, err = %d\n",
-			__func__, ret);
+			"%s: Failed to enable cdc clk, err = %d\n", __func__,
+			ret);
 		goto done;
 	}
 	/* Pull CPAR out of reset */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL,
-				0x04, 0x00);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL, 0x04,
+				      0x00);
 
 	/* Configure and Enable CPE FLL clock */
 	ret = wcd_cntl_cpe_fll_ctrl(cntl, true);
 	if (ret < 0) {
 		dev_err(component->dev,
-			"%s: Failed to enable cpe clk, err = %d\n",
-			__func__, ret);
+			"%s: Failed to enable cpe clk, err = %d\n", __func__,
+			ret);
 		goto err_cpe_clk;
 	}
 	cntl->is_clk_enabled = true;
 
 	/* Ungate the CPR clock  */
 	snd_soc_component_update_bits(component, WCD934X_CODEC_RPM_CLK_GATE,
-				0x10, 0x00);
+				      0x10, 0x00);
 done:
 	WCD_CNTL_MUTEX_UNLOCK(component, cntl->clk_mutex);
 	return ret;
@@ -522,8 +511,8 @@ err_cpe_clk:
 	if (cntl->cdc_cb && cntl->cdc_cb->cdc_clk_en)
 		cntl->cdc_cb->cdc_clk_en(component, false);
 
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL,
-				0x04, 0x04);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL, 0x04,
+				      0x04);
 	WCD_CNTL_MUTEX_UNLOCK(component, cntl->clk_mutex);
 	return ret;
 }
@@ -536,25 +525,25 @@ static int wcd_cntl_clocks_disable(struct wcd_dsp_cntl *cntl)
 	WCD_CNTL_MUTEX_LOCK(component, cntl->clk_mutex);
 	if (!cntl->is_clk_enabled) {
 		dev_info(component->dev, "%s: clocks already disabled\n",
-			__func__);
+			 __func__);
 		goto done;
 	}
 
 	/* Gate the CPR clock  */
 	snd_soc_component_update_bits(component, WCD934X_CODEC_RPM_CLK_GATE,
-				0x10, 0x10);
+				      0x10, 0x10);
 
 	/* Disable CPE FLL clock */
 	ret = wcd_cntl_cpe_fll_ctrl(cntl, false);
 	if (ret < 0)
 		dev_err(component->dev,
-			"%s: Failed to disable cpe clk, err = %d\n",
-			__func__, ret);
+			"%s: Failed to disable cpe clk, err = %d\n", __func__,
+			ret);
 
 	/*
-	 * Even if CPE FLL disable failed, go ahead and disable
-	 * the codec clock
-	 */
+   * Even if CPE FLL disable failed, go ahead and disable
+   * the codec clock
+   */
 	if (cntl->cdc_cb && cntl->cdc_cb->cdc_clk_en)
 		ret = cntl->cdc_cb->cdc_clk_en(component, false);
 	else
@@ -563,24 +552,23 @@ static int wcd_cntl_clocks_disable(struct wcd_dsp_cntl *cntl)
 	cntl->is_clk_enabled = false;
 
 	/* Put CPAR in reset */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL,
-				0x04, 0x04);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPAR_CTL, 0x04,
+				      0x04);
 done:
 	WCD_CNTL_MUTEX_UNLOCK(component, cntl->clk_mutex);
 	return ret;
 }
 
-static void wcd_cntl_cpar_ctrl(struct wcd_dsp_cntl *cntl,
-			       bool enable)
+static void wcd_cntl_cpar_ctrl(struct wcd_dsp_cntl *cntl, bool enable)
 {
 	struct snd_soc_component *component = cntl->component;
 
 	if (enable)
-		snd_soc_component_update_bits(component,
-				WCD934X_CPE_SS_CPAR_CTL, 0x03, 0x03);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_CPAR_CTL, 0x03, 0x03);
 	else
-		snd_soc_component_update_bits(component,
-				WCD934X_CPE_SS_CPAR_CTL, 0x03, 0x00);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_CPAR_CTL, 0x03, 0x00);
 }
 
 static int wcd_cntl_enable_memory(struct wcd_dsp_cntl *cntl,
@@ -592,41 +580,36 @@ static int wcd_cntl_enable_memory(struct wcd_dsp_cntl *cntl,
 	u8 status;
 	int ret = 0;
 
-
 	switch (mem_type) {
-
 	case WCD_MEM_TYPE_ALWAYS_ON:
 
 		/* 512KB of always on region */
-		wcd9xxx_slim_write_repeat(wcd9xxx,
-				WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_0,
-				ARRAY_SIZE(mem_enable_values),
-				mem_enable_values);
-		wcd9xxx_slim_write_repeat(wcd9xxx,
-				WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_1,
-				ARRAY_SIZE(mem_enable_values),
-				mem_enable_values);
+		wcd9xxx_slim_write_repeat(
+			wcd9xxx, WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_0,
+			ARRAY_SIZE(mem_enable_values), mem_enable_values);
+		wcd9xxx_slim_write_repeat(
+			wcd9xxx, WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_1,
+			ARRAY_SIZE(mem_enable_values), mem_enable_values);
 		break;
 
 	case WCD_MEM_TYPE_SWITCHABLE:
 
-		snd_soc_component_update_bits(component,
-				WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL,
-				0x04, 0x00);
-		snd_soc_component_update_bits(component,
-				WCD934X_TEST_DEBUG_MEM_CTRL,
-				0x80, 0x80);
-		snd_soc_component_update_bits(component,
-				WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL,
-				0x01, 0x01);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL, 0x04,
+			0x00);
+		snd_soc_component_update_bits(
+			component, WCD934X_TEST_DEBUG_MEM_CTRL, 0x80, 0x80);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL, 0x01,
+			0x01);
 		do {
 			loop_cnt++;
 			/* Time to enable the power domain for memory */
 			usleep_range(100, 150);
-			status = snd_soc_component_read32(component,
-					WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL);
+			status = snd_soc_component_read32(
+				component, WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL);
 		} while ((status & 0x02) != 0x02 &&
-			  loop_cnt != WCD_MEM_ENABLE_MAX_RETRIES);
+			 loop_cnt != WCD_MEM_ENABLE_MAX_RETRIES);
 
 		if ((status & 0x02) != 0x02) {
 			dev_err(cntl->component->dev,
@@ -637,18 +620,15 @@ static int wcd_cntl_enable_memory(struct wcd_dsp_cntl *cntl,
 		}
 
 		/* Rest of the memory */
-		wcd9xxx_slim_write_repeat(wcd9xxx,
-				WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_2,
-				ARRAY_SIZE(mem_enable_values),
-				mem_enable_values);
-		wcd9xxx_slim_write_repeat(wcd9xxx,
-				WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_3,
-				ARRAY_SIZE(mem_enable_values),
-				mem_enable_values);
+		wcd9xxx_slim_write_repeat(
+			wcd9xxx, WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_2,
+			ARRAY_SIZE(mem_enable_values), mem_enable_values);
+		wcd9xxx_slim_write_repeat(
+			wcd9xxx, WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_3,
+			ARRAY_SIZE(mem_enable_values), mem_enable_values);
 
-		snd_soc_component_write(component,
-				WCD934X_CPE_SS_PWR_CPE_DRAM1_SHUTDOWN,
-				0x05);
+		snd_soc_component_write(
+			component, WCD934X_CPE_SS_PWR_CPE_DRAM1_SHUTDOWN, 0x05);
 		break;
 
 	default:
@@ -660,9 +640,9 @@ static int wcd_cntl_enable_memory(struct wcd_dsp_cntl *cntl,
 done:
 	/* Make sure Deep sleep of memories is enabled for all banks */
 	snd_soc_component_write(component,
-			WCD934X_CPE_SS_PWR_CPE_SYSMEM_DEEPSLP_0, 0xFF);
+				WCD934X_CPE_SS_PWR_CPE_SYSMEM_DEEPSLP_0, 0xFF);
 	snd_soc_component_write(component,
-			WCD934X_CPE_SS_PWR_CPE_SYSMEM_DEEPSLP_1, 0x0F);
+				WCD934X_CPE_SS_PWR_CPE_SYSMEM_DEEPSLP_1, 0x0F);
 
 	return ret;
 }
@@ -675,37 +655,35 @@ static void wcd_cntl_disable_memory(struct wcd_dsp_cntl *cntl,
 
 	switch (mem_type) {
 	case WCD_MEM_TYPE_ALWAYS_ON:
-		snd_soc_component_write(component,
-				WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_1,
-				0xFF);
-		snd_soc_component_write(component,
-				WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_0,
-				0xFF);
+		snd_soc_component_write(
+			component, WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_1,
+			0xFF);
+		snd_soc_component_write(
+			component, WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_0,
+			0xFF);
 		break;
 	case WCD_MEM_TYPE_SWITCHABLE:
-		snd_soc_component_write(component,
-				WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_3,
-				0xFF);
-		snd_soc_component_write(component,
-				WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_2,
-				0xFF);
-		snd_soc_component_write(component,
-				WCD934X_CPE_SS_PWR_CPE_DRAM1_SHUTDOWN,
-				0x07);
+		snd_soc_component_write(
+			component, WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_3,
+			0xFF);
+		snd_soc_component_write(
+			component, WCD934X_CPE_SS_PWR_CPE_SYSMEM_SHUTDOWN_2,
+			0xFF);
+		snd_soc_component_write(
+			component, WCD934X_CPE_SS_PWR_CPE_DRAM1_SHUTDOWN, 0x07);
 
-		snd_soc_component_update_bits(component,
-				WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL,
-				0x01, 0x00);
-		val = snd_soc_component_read32(component,
-				WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL, 0x01,
+			0x00);
+		val = snd_soc_component_read32(
+			component, WCD934X_CPE_SS_SOC_SW_COLLAPSE_CTL);
 		if (val & 0x02)
 			dev_err(component->dev,
 				"%s: Disable switchable failed, val = 0x%02x",
 				__func__, val);
 
-		snd_soc_component_update_bits(component,
-				WCD934X_TEST_DEBUG_MEM_CTRL,
-				0x80, 0x00);
+		snd_soc_component_update_bits(
+			component, WCD934X_TEST_DEBUG_MEM_CTRL, 0x80, 0x00);
 		break;
 	default:
 		dev_err(cntl->component->dev, "%s: Invalid mem_type %d\n",
@@ -714,9 +692,9 @@ static void wcd_cntl_disable_memory(struct wcd_dsp_cntl *cntl,
 	}
 
 	snd_soc_component_write(component,
-			WCD934X_CPE_SS_PWR_CPE_SYSMEM_DEEPSLP_0, 0xFF);
+				WCD934X_CPE_SS_PWR_CPE_SYSMEM_DEEPSLP_0, 0xFF);
 	snd_soc_component_write(component,
-			WCD934X_CPE_SS_PWR_CPE_SYSMEM_DEEPSLP_1, 0x0F);
+				WCD934X_CPE_SS_PWR_CPE_SYSMEM_DEEPSLP_1, 0x0F);
 }
 
 static void wcd_cntl_do_shutdown(struct wcd_dsp_cntl *cntl)
@@ -724,12 +702,12 @@ static void wcd_cntl_do_shutdown(struct wcd_dsp_cntl *cntl)
 	struct snd_soc_component *component = cntl->component;
 
 	/* Disable WDOG */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_WDOG_CFG,
-			    0x3F, 0x01);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_WDOG_CFG, 0x3F,
+				      0x01);
 
 	/* Put WDSP in reset state */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPE_CTL,
-			    0x02, 0x00);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPE_CTL, 0x02,
+				      0x00);
 
 	/* If DSP transitions from boot to shutdown, then vote for SVS */
 	if (cntl->is_wdsp_booted)
@@ -743,18 +721,16 @@ static int wcd_cntl_do_boot(struct wcd_dsp_cntl *cntl)
 	int ret = 0;
 
 	/*
-	 * Debug mode is set from debugfs file node. If debug_mode
-	 * is set, then do not configure the watchdog timer. This
-	 * will be required for debugging the DSP firmware.
-	 */
+   * Debug mode is set from debugfs file node. If debug_mode
+   * is set, then do not configure the watchdog timer. This
+   * will be required for debugging the DSP firmware.
+   */
 	if (cntl->debug_mode) {
-		snd_soc_component_update_bits(component,
-				WCD934X_CPE_SS_WDOG_CFG,
-				0x3F, 0x01);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_WDOG_CFG, 0x3F, 0x01);
 	} else {
-		snd_soc_component_update_bits(component,
-				WCD934X_CPE_SS_WDOG_CFG,
-				0x3F, 0x21);
+		snd_soc_component_update_bits(
+			component, WCD934X_CPE_SS_WDOG_CFG, 0x3F, 0x21);
 	}
 
 	/* Make sure all the error interrupts are cleared */
@@ -766,13 +742,13 @@ static int wcd_cntl_do_boot(struct wcd_dsp_cntl *cntl)
 	reinit_completion(&cntl->boot_complete);
 
 	/* Remove WDSP out of reset */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPE_CTL,
-			    0x02, 0x02);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_CPE_CTL, 0x02,
+				      0x02);
 
 	/*
-	 * In debug mode, DSP may not boot up normally,
-	 * wait indefinitely for DSP to boot.
-	 */
+   * In debug mode, DSP may not boot up normally,
+   * wait indefinitely for DSP to boot.
+   */
 	if (cntl->debug_mode) {
 		wait_for_completion(&cntl->boot_complete);
 		dev_dbg(component->dev, "%s: WDSP booted in dbg mode\n",
@@ -782,20 +758,20 @@ static int wcd_cntl_do_boot(struct wcd_dsp_cntl *cntl)
 	}
 
 	/* Boot in normal mode */
-	ret = wait_for_completion_timeout(&cntl->boot_complete,
-				msecs_to_jiffies(WCD_DSP_BOOT_TIMEOUT_MS));
+	ret = wait_for_completion_timeout(
+		&cntl->boot_complete,
+		msecs_to_jiffies(WCD_DSP_BOOT_TIMEOUT_MS));
 	if (!ret) {
-		dev_err(component->dev, "%s: WDSP boot timed out\n",
-			__func__);
+		dev_err(component->dev, "%s: WDSP boot timed out\n", __func__);
 		if (cntl->dbg_dmp_enable)
 			wcd_cntl_collect_debug_dumps(cntl, true);
 		ret = -ETIMEDOUT;
 		goto err_boot;
 	} else {
 		/*
-		 * Re-initialize the return code to 0, as in success case,
-		 * it will hold the remaining time for completion timeout
-		 */
+     * Re-initialize the return code to 0, as in success case,
+     * it will hold the remaining time for completion timeout
+     */
 		ret = 0;
 	}
 
@@ -803,8 +779,8 @@ static int wcd_cntl_do_boot(struct wcd_dsp_cntl *cntl)
 	cntl->is_wdsp_booted = true;
 
 	/* Enable WDOG */
-	snd_soc_component_update_bits(component, WCD934X_CPE_SS_WDOG_CFG,
-			    0x10, 0x10);
+	snd_soc_component_update_bits(component, WCD934X_CPE_SS_WDOG_CFG, 0x10,
+				      0x10);
 done:
 	/* If dsp booted up, then remove vote on SVS */
 	if (cntl->is_wdsp_booted)
@@ -824,16 +800,15 @@ static irqreturn_t wcd_cntl_ipc_irq(int irq, void *data)
 
 	complete(&cntl->boot_complete);
 
-	if (cntl->m_dev && cntl->m_ops &&
-	    cntl->m_ops->signal_handler)
+	if (cntl->m_dev && cntl->m_ops && cntl->m_ops->signal_handler)
 		ret = cntl->m_ops->signal_handler(cntl->m_dev, WDSP_IPC1_INTR,
 						  NULL);
 	else
 		ret = -EINVAL;
 
 	if (ret < 0)
-		dev_err(cntl->component->dev,
-			"%s: Failed to handle irq %d\n", __func__, irq);
+		dev_err(cntl->component->dev, "%s: Failed to handle irq %d\n",
+			__func__, irq);
 
 	return IRQ_HANDLED;
 }
@@ -847,24 +822,24 @@ static irqreturn_t wcd_cntl_err_irq(int irq, void *data)
 	u8 reg_val;
 	int rc, ret = 0;
 
-	reg_val = snd_soc_component_read32(component,
-				WCD934X_CPE_SS_SS_ERROR_INT_STATUS_0A);
+	reg_val = snd_soc_component_read32(
+		component, WCD934X_CPE_SS_SS_ERROR_INT_STATUS_0A);
 	status = status | reg_val;
 
-	reg_val = snd_soc_component_read32(component,
-				WCD934X_CPE_SS_SS_ERROR_INT_STATUS_0B);
+	reg_val = snd_soc_component_read32(
+		component, WCD934X_CPE_SS_SS_ERROR_INT_STATUS_0B);
 	status = status | (reg_val << 8);
 
 	dev_info(component->dev, "%s: error interrupt status = 0x%x\n",
-		__func__, status);
+		 __func__, status);
 
 	if ((status & cntl->irqs.fatal_irqs) &&
 	    (cntl->m_dev && cntl->m_ops && cntl->m_ops->signal_handler)) {
 		/*
-		 * If WDSP SSR happens, skip collecting debug dumps.
-		 * If debug dumps collecting happens first, WDSP_ERR_INTR
-		 * will be blocked in signal_handler and get processed later.
-		 */
+     * If WDSP SSR happens, skip collecting debug dumps.
+     * If debug dumps collecting happens first, WDSP_ERR_INTR
+     * will be blocked in signal_handler and get processed later.
+     */
 		rc = WCD_CNTL_SET_ERR_IRQ_FLAG(cntl);
 		arg.mem_dumps_enabled = cntl->ramdump_enable;
 		arg.remote_start_addr = WCD_934X_RAMDUMP_START_ADDR;
@@ -939,8 +914,8 @@ static int wcd_control_handler(struct device *dev, void *priv_data,
 		ret = wcd_cntl_do_boot(cntl);
 		if (ret < 0)
 			dev_err(component->dev,
-				"%s: WDSP boot failed, err = %d\n",
-				__func__, ret);
+				"%s: WDSP boot failed, err = %d\n", __func__,
+				ret);
 		break;
 
 	case WDSP_EVENT_DO_SHUTDOWN:
@@ -950,8 +925,8 @@ static int wcd_control_handler(struct device *dev, void *priv_data,
 		break;
 
 	default:
-		dev_dbg(component->dev, "%s: unhandled event %d\n",
-			__func__, event);
+		dev_dbg(component->dev, "%s: unhandled event %d\n", __func__,
+			event);
 	}
 
 done:
@@ -967,8 +942,8 @@ static int wcd_cntl_sysfs_init(char *dir, struct wcd_dsp_cntl *cntl)
 				   kernel_kobj, dir);
 	if (ret < 0) {
 		dev_err(component->dev,
-			"%s: Failed to add kobject %s, err = %d\n",
-			__func__, dir, ret);
+			"%s: Failed to add kobject %s, err = %d\n", __func__,
+			dir, ret);
 		goto done;
 	}
 
@@ -1005,12 +980,11 @@ static void wcd_cntl_debugfs_init(char *dir, struct wcd_dsp_cntl *cntl)
 		goto done;
 	}
 
-	debugfs_create_u32("debug_mode", 0644,
-			   cntl->entry, &cntl->debug_mode);
-	debugfs_create_bool("ramdump_enable", 0644,
-			    cntl->entry, &cntl->ramdump_enable);
-	debugfs_create_bool("debug_dump_enable", 0644,
-			    cntl->entry, &cntl->dbg_dmp_enable);
+	debugfs_create_u32("debug_mode", 0644, cntl->entry, &cntl->debug_mode);
+	debugfs_create_bool("ramdump_enable", 0644, cntl->entry,
+			    &cntl->ramdump_enable);
+	debugfs_create_bool("debug_dump_enable", 0644, cntl->entry,
+			    &cntl->dbg_dmp_enable);
 done:
 	return;
 }
@@ -1023,12 +997,11 @@ static void wcd_cntl_debugfs_remove(struct wcd_dsp_cntl *cntl)
 
 static int wcd_miscdev_release(struct inode *inode, struct file *filep)
 {
-	struct wcd_dsp_cntl *cntl = container_of(filep->private_data,
-						 struct wcd_dsp_cntl, miscdev);
-	if (!cntl->m_dev || !cntl->m_ops ||
-	    !cntl->m_ops->vote_for_dsp) {
-		dev_err(cntl->component->dev,
-			"%s: DSP not ready to boot\n", __func__);
+	struct wcd_dsp_cntl *cntl =
+		container_of(filep->private_data, struct wcd_dsp_cntl, miscdev);
+	if (!cntl->m_dev || !cntl->m_ops || !cntl->m_ops->vote_for_dsp) {
+		dev_err(cntl->component->dev, "%s: DSP not ready to boot\n",
+			__func__);
 		return -EINVAL;
 	}
 
@@ -1044,8 +1017,8 @@ static int wcd_miscdev_release(struct inode *inode, struct file *filep)
 static ssize_t wcd_miscdev_write(struct file *filep, const char __user *ubuf,
 				 size_t count, loff_t *pos)
 {
-	struct wcd_dsp_cntl *cntl = container_of(filep->private_data,
-						 struct wcd_dsp_cntl, miscdev);
+	struct wcd_dsp_cntl *cntl =
+		container_of(filep->private_data, struct wcd_dsp_cntl, miscdev);
 	char val[WCD_MISCDEV_CMD_MAX_LEN + 1];
 	bool vote;
 	int ret = 0;
@@ -1061,8 +1034,7 @@ static ssize_t wcd_miscdev_write(struct file *filep, const char __user *ubuf,
 	ret = copy_from_user(val, ubuf, count);
 	if (ret < 0) {
 		dev_err(cntl->component->dev,
-			"%s: copy_from_user failed, err = %d\n",
-			__func__, ret);
+			"%s: copy_from_user failed, err = %d\n", __func__, ret);
 		ret = -EFAULT;
 		goto done;
 	}
@@ -1073,8 +1045,7 @@ static ssize_t wcd_miscdev_write(struct file *filep, const char __user *ubuf,
 	} else if (val[0] == '0') {
 		if (cntl->boot_reqs == 0) {
 			dev_err(cntl->component->dev,
-				"%s: WDSP already disabled\n",
-				__func__);
+				"%s: WDSP already disabled\n", __func__);
 			ret = -EINVAL;
 			goto done;
 		}
@@ -1087,9 +1058,9 @@ static ssize_t wcd_miscdev_write(struct file *filep, const char __user *ubuf,
 			wcd_cntl_collect_debug_dumps(cntl, false);
 		}
 		/*
-		 * simply ignore the request from userspace
-		 * if dbg_dump_enable is not set from debugfs
-		 */
+     * simply ignore the request from userspace
+     * if dbg_dump_enable is not set from debugfs
+     */
 		goto done;
 	} else {
 		dev_err(cntl->component->dev, "%s: Invalid value %s\n",
@@ -1099,12 +1070,11 @@ static ssize_t wcd_miscdev_write(struct file *filep, const char __user *ubuf,
 	}
 
 	dev_dbg(cntl->component->dev,
-		"%s: booted = %s, ref_cnt = %d, vote = %s\n",
-		__func__, cntl->is_wdsp_booted ? "true" : "false",
-		cntl->boot_reqs, vote ? "true" : "false");
+		"%s: booted = %s, ref_cnt = %d, vote = %s\n", __func__,
+		cntl->is_wdsp_booted ? "true" : "false", cntl->boot_reqs,
+		vote ? "true" : "false");
 
-	if (cntl->m_dev && cntl->m_ops &&
-	    cntl->m_ops->vote_for_dsp)
+	if (cntl->m_dev && cntl->m_ops && cntl->m_ops->vote_for_dsp)
 		ret = cntl->m_ops->vote_for_dsp(cntl->m_dev, vote);
 	else
 		ret = -EINVAL;
@@ -1123,7 +1093,7 @@ static const struct file_operations wcd_miscdev_fops = {
 static int wcd_cntl_miscdev_create(struct wcd_dsp_cntl *cntl)
 {
 	snprintf(cntl->miscdev_name, ARRAY_SIZE(cntl->miscdev_name),
-		"wcd_dsp%u_control", cntl->dsp_instance);
+		 "wcd_dsp%u_control", cntl->dsp_instance);
 	cntl->miscdev.minor = MISC_DYNAMIC_MINOR;
 	cntl->miscdev.name = cntl->miscdev_name;
 	cntl->miscdev.fops = &wcd_miscdev_fops;
@@ -1146,10 +1116,8 @@ static int wcd_control_init(struct device *dev, void *priv_data)
 	int ret;
 	bool err_irq_requested = false;
 
-	ret = wcd9xxx_request_irq(core_res,
-				  cntl->irqs.cpe_ipc1_irq,
-				  wcd_cntl_ipc_irq, "CPE IPC1",
-				  cntl);
+	ret = wcd9xxx_request_irq(core_res, cntl->irqs.cpe_ipc1_irq,
+				  wcd_cntl_ipc_irq, "CPE IPC1", cntl);
 	if (ret < 0) {
 		dev_err(component->dev,
 			"%s: Failed to request cpe ipc irq, err = %d\n",
@@ -1159,28 +1127,28 @@ static int wcd_control_init(struct device *dev, void *priv_data)
 
 	/* Unmask the fatal irqs */
 	snd_soc_component_write(component, WCD934X_CPE_SS_SS_ERROR_INT_MASK_0A,
-		      ~(cntl->irqs.fatal_irqs & 0xFF));
+				~(cntl->irqs.fatal_irqs & 0xFF));
 	snd_soc_component_write(component, WCD934X_CPE_SS_SS_ERROR_INT_MASK_0B,
-		      ~((cntl->irqs.fatal_irqs >> 8) & 0xFF));
+				~((cntl->irqs.fatal_irqs >> 8) & 0xFF));
 
 	/*
-	 * CPE ERR irq is used only for error reporting from WCD DSP,
-	 * even if this request fails, DSP can be function normally.
-	 * Continuing with init even if the CPE ERR irq request fails.
-	 */
+   * CPE ERR irq is used only for error reporting from WCD DSP,
+   * even if this request fails, DSP can be function normally.
+   * Continuing with init even if the CPE ERR irq request fails.
+   */
 	if (wcd9xxx_request_irq(core_res, cntl->irqs.cpe_err_irq,
 				wcd_cntl_err_irq, "CPE ERR", cntl))
 		dev_info(component->dev, "%s: Failed request_irq(cpe_err_irq)",
-			__func__);
+			 __func__);
 	else
 		err_irq_requested = true;
-
 
 	/* Enable all the clocks */
 	ret = wcd_cntl_clocks_enable(cntl);
 	if (ret < 0) {
-		dev_err(component->dev, "%s: Failed to enable clocks, err = %d\n",
-			__func__, ret);
+		dev_err(component->dev,
+			"%s: Failed to enable clocks, err = %d\n", __func__,
+			ret);
 		goto err_clk_enable;
 	}
 	wcd_cntl_cpar_ctrl(cntl, true);
@@ -1232,8 +1200,7 @@ static struct wdsp_cmpnt_ops control_ops = {
 	.event_handler = wcd_control_handler,
 };
 
-static int wcd_ctrl_component_bind(struct device *dev,
-				   struct device *master,
+static int wcd_ctrl_component_bind(struct device *dev, struct device *master,
 				   void *data)
 {
 	struct wcd_dsp_cntl *cntl;
@@ -1251,8 +1218,7 @@ static int wcd_ctrl_component_bind(struct device *dev,
 
 	cntl = tavil_get_wcd_dsp_cntl(dev);
 	if (!cntl) {
-		dev_err(dev, "%s: Failed to get cntl reference\n",
-			__func__);
+		dev_err(dev, "%s: Failed to get cntl reference\n", __func__);
 		return -EINVAL;
 	}
 
@@ -1280,12 +1246,12 @@ static int wcd_ctrl_component_bind(struct device *dev,
 		goto done;
 	}
 
-	snprintf(wcd_cntl_dir_name, WCD_CNTL_DIR_NAME_LEN_MAX,
-		 "%s%d", "wdsp", cntl->dsp_instance);
+	snprintf(wcd_cntl_dir_name, WCD_CNTL_DIR_NAME_LEN_MAX, "%s%d", "wdsp",
+		 cntl->dsp_instance);
 	ret = wcd_cntl_sysfs_init(wcd_cntl_dir_name, cntl);
 	if (ret < 0) {
-		dev_err(dev, "%s: sysfs_init failed, err = %d\n",
-			__func__, ret);
+		dev_err(dev, "%s: sysfs_init failed, err = %d\n", __func__,
+			ret);
 		goto err_sysfs_init;
 	}
 
@@ -1298,8 +1264,8 @@ static int wcd_ctrl_component_bind(struct device *dev,
 	entry = snd_info_create_card_entry(card, proc_name, card->proc_root);
 	if (!entry) {
 		/* Do not treat this as Fatal error */
-		dev_err(dev, "%s: Failed to create procfs entry %s\n",
-			__func__, proc_name);
+		dev_err(dev, "%s: Failed to create procfs entry %s\n", __func__,
+			proc_name);
 		goto err_sysfs_init;
 	}
 
@@ -1325,8 +1291,7 @@ err_sysfs_init:
 	return ret;
 }
 
-static void wcd_ctrl_component_unbind(struct device *dev,
-				      struct device *master,
+static void wcd_ctrl_component_unbind(struct device *dev, struct device *master,
 				      void *data)
 {
 	struct wcd_dsp_cntl *cntl;
@@ -1338,8 +1303,7 @@ static void wcd_ctrl_component_unbind(struct device *dev,
 
 	cntl = tavil_get_wcd_dsp_cntl(dev);
 	if (!cntl) {
-		dev_err(dev, "%s: Failed to get cntl reference\n",
-			__func__);
+		dev_err(dev, "%s: Failed to get cntl reference\n", __func__);
 		return;
 	}
 
@@ -1387,8 +1351,7 @@ int wcd_dsp_ssr_event(struct wcd_dsp_cntl *cntl, enum cdc_ssr_event event)
 	switch (event) {
 	case WCD_CDC_DOWN_EVENT:
 		ret = cntl->m_ops->signal_handler(cntl->m_dev,
-						  WDSP_CDC_DOWN_SIGNAL,
-						  NULL);
+						  WDSP_CDC_DOWN_SIGNAL, NULL);
 		if (ret < 0)
 			dev_err(cntl->component->dev,
 				"%s: WDSP_CDC_DOWN_SIGNAL failed, err = %d\n",
@@ -1397,8 +1360,7 @@ int wcd_dsp_ssr_event(struct wcd_dsp_cntl *cntl, enum cdc_ssr_event event)
 		break;
 	case WCD_CDC_UP_EVENT:
 		ret = cntl->m_ops->signal_handler(cntl->m_dev,
-						  WDSP_CDC_UP_SIGNAL,
-						  NULL);
+						  WDSP_CDC_UP_SIGNAL, NULL);
 		if (ret < 0)
 			dev_err(cntl->component->dev,
 				"%s: WDSP_CDC_UP_SIGNAL failed, err = %d\n",
@@ -1440,7 +1402,7 @@ void wcd_dsp_cntl_init(struct snd_soc_component *component,
 
 	if (*cntl) {
 		pr_err("%s: cntl is non NULL, maybe already initialized ?\n",
-			__func__);
+		       __func__);
 		return;
 	}
 
@@ -1468,18 +1430,18 @@ void wcd_dsp_cntl_init(struct snd_soc_component *component,
 	WCD_CNTL_CLR_ERR_IRQ_FLAG(control);
 
 	/*
-	 * The default state of WDSP is in SVS mode.
-	 * Vote for SVS now, the vote will be removed only
-	 * after DSP is booted up.
-	 */
+   * The default state of WDSP is in SVS mode.
+   * Vote for SVS now, the vote will be removed only
+   * after DSP is booted up.
+   */
 	control->cdc_cb->cdc_vote_svs(component, true);
 
 	/*
-	 * If this is the last component needed by master to be ready,
-	 * then component_bind will be called within the component_add.
-	 * Hence, the data pointer should be assigned before component_add,
-	 * so that we can access it during this component's bind call.
-	 */
+   * If this is the last component needed by master to be ready,
+   * then component_bind will be called within the component_add.
+   * Hence, the data pointer should be assigned before component_add,
+   * so that we can access it during this component's bind call.
+   */
 	*cntl = control;
 	ret = component_add(component->dev, &wcd_ctrl_component_ops);
 	if (ret) {
@@ -1509,9 +1471,9 @@ void wcd_dsp_cntl_deinit(struct wcd_dsp_cntl **cntl)
 	component = control->component;
 
 	/*
-	 * Calling shutdown will cleanup all register states,
-	 * irrespective of DSP was booted up or not.
-	 */
+   * Calling shutdown will cleanup all register states,
+   * irrespective of DSP was booted up or not.
+   */
 	wcd_cntl_do_shutdown(control);
 	wcd_cntl_disable_memory(control, WCD_MEM_TYPE_SWITCHABLE);
 	wcd_cntl_disable_memory(control, WCD_MEM_TYPE_ALWAYS_ON);

@@ -17,24 +17,23 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "targcfg.h"
+#include "hif_io32.h"
 #include "qdf_lock.h"
 #include "qdf_status.h"
-#include "qdf_status.h"
-#include <qdf_atomic.h>         /* qdf_atomic_read */
-#include <targaddrs.h>
-#include "hif_io32.h"
-#include <hif.h>
 #include "regtable.h"
+#include "targcfg.h"
+#include <hif.h>
+#include <qdf_atomic.h> /* qdf_atomic_read */
+#include <targaddrs.h>
 #define ATH_MODULE_NAME hif
-#include <a_debug.h>
-#include "hif_main.h"
+#include "bmi_msg.h"
 #include "ce_api.h"
 #include "ce_bmi.h"
-#include "qdf_trace.h"
 #include "hif_debug.h"
-#include "bmi_msg.h"
+#include "hif_main.h"
 #include "qdf_module.h"
+#include "qdf_trace.h"
+#include <a_debug.h>
 
 /* Track a BMI transaction that is in progress */
 #ifndef BIT
@@ -42,21 +41,21 @@
 #endif
 
 enum {
-	BMI_REQ_SEND_DONE = BIT(0),   /* the bmi tx completion */
-	BMI_RESP_RECV_DONE = BIT(1),  /* the bmi respond is received */
+	BMI_REQ_SEND_DONE = BIT(0), /* the bmi tx completion */
+	BMI_RESP_RECV_DONE = BIT(1), /* the bmi respond is received */
 };
 
 struct BMI_transaction {
 	struct HIF_CE_state *hif_state;
 	qdf_semaphore_t bmi_transaction_sem;
-	uint8_t *bmi_request_host;        /* Req BMI msg in Host addr space */
-	qdf_dma_addr_t bmi_request_CE;    /* Req BMI msg in CE addr space */
-	uint32_t bmi_request_length;      /* Length of BMI request */
-	uint8_t *bmi_response_host;       /* Rsp BMI msg in Host addr space */
-	qdf_dma_addr_t bmi_response_CE;   /* Rsp BMI msg in CE addr space */
+	uint8_t *bmi_request_host; /* Req BMI msg in Host addr space */
+	qdf_dma_addr_t bmi_request_CE; /* Req BMI msg in CE addr space */
+	uint32_t bmi_request_length; /* Length of BMI request */
+	uint8_t *bmi_response_host; /* Rsp BMI msg in Host addr space */
+	qdf_dma_addr_t bmi_response_CE; /* Rsp BMI msg in CE addr space */
 	unsigned int bmi_response_length; /* Length of received response */
 	unsigned int bmi_timeout_ms;
-	uint32_t bmi_transaction_flags;   /* flags for the transcation */
+	uint32_t bmi_transaction_flags; /* flags for the transcation */
 };
 
 /*
@@ -65,32 +64,32 @@ struct BMI_transaction {
  * straight buffer, not an sk_buff.
  */
 void hif_bmi_send_done(struct CE_handle *copyeng, void *ce_context,
-		  void *transfer_context, qdf_dma_addr_t data,
-		  unsigned int nbytes,
-		  unsigned int transfer_id, unsigned int sw_index,
-		  unsigned int hw_index, uint32_t toeplitz_hash_result)
+		       void *transfer_context, qdf_dma_addr_t data,
+		       unsigned int nbytes, unsigned int transfer_id,
+		       unsigned int sw_index, unsigned int hw_index,
+		       uint32_t toeplitz_hash_result)
 {
 	struct BMI_transaction *transaction =
 		(struct BMI_transaction *)transfer_context;
 
 #ifdef BMI_RSP_POLLING
 	/*
-	 * Fix EV118783, Release a semaphore after sending
-	 * no matter whether a response is been expecting now.
-	 */
+   * Fix EV118783, Release a semaphore after sending
+   * no matter whether a response is been expecting now.
+   */
 	qdf_semaphore_release(&transaction->bmi_transaction_sem);
 #else
 	/*
-	 * If a response is anticipated, we'll complete the
-	 * transaction if the response has been received.
-	 * If no response is anticipated, complete the
-	 * transaction now.
-	 */
+   * If a response is anticipated, we'll complete the
+   * transaction if the response has been received.
+   * If no response is anticipated, complete the
+   * transaction now.
+   */
 	transaction->bmi_transaction_flags |= BMI_REQ_SEND_DONE;
 
 	/* resp is't needed or has already been received,
-	 * never assume resp comes later then this
-	 */
+   * never assume resp comes later then this
+   */
 	if (!transaction->bmi_response_CE ||
 	    (transaction->bmi_transaction_flags & BMI_RESP_RECV_DONE)) {
 		qdf_semaphore_release(&transaction->bmi_transaction_sem);
@@ -100,9 +99,9 @@ void hif_bmi_send_done(struct CE_handle *copyeng, void *ce_context,
 
 #ifndef BMI_RSP_POLLING
 void hif_bmi_recv_data(struct CE_handle *copyeng, void *ce_context,
-		  void *transfer_context, qdf_dma_addr_t data,
-		  unsigned int nbytes,
-		  unsigned int transfer_id, unsigned int flags)
+		       void *transfer_context, qdf_dma_addr_t data,
+		       unsigned int nbytes, unsigned int transfer_id,
+		       unsigned int flags)
 {
 	struct BMI_transaction *transaction =
 		(struct BMI_transaction *)transfer_context;
@@ -121,10 +120,8 @@ void hif_bmi_recv_data(struct CE_handle *copyeng, void *ce_context,
 
 QDF_STATUS hif_exchange_bmi_msg(struct hif_opaque_softc *hif_ctx,
 				qdf_dma_addr_t bmi_cmd_da,
-				qdf_dma_addr_t bmi_rsp_da,
-				uint8_t *bmi_request,
-				uint32_t request_length,
-				uint8_t *bmi_response,
+				qdf_dma_addr_t bmi_rsp_da, uint8_t *bmi_request,
+				uint32_t request_length, uint8_t *bmi_response,
 				uint32_t *bmi_response_lengthp,
 				uint32_t TimeoutMS)
 {
@@ -154,7 +151,7 @@ QDF_STATUS hif_exchange_bmi_msg(struct hif_opaque_softc *hif_ctx,
 		return QDF_STATUS_E_NOMEM;
 
 	transaction_id = (mux_id & MUX_ID_MASK) |
-		(transaction_id & TRANSACTION_ID_MASK);
+			 (transaction_id & TRANSACTION_ID_MASK);
 #ifdef QCA_WIFI_3_0
 	user_flags &= DESC_DATA_FLAG_MASK;
 #endif
@@ -172,28 +169,26 @@ QDF_STATUS hif_exchange_bmi_msg(struct hif_opaque_softc *hif_ctx,
 	transaction->bmi_transaction_flags = 0;
 
 	/*
-	 * CE_request = dma_map_single(dev,
-	 * (void *)bmi_request, request_length, DMA_TO_DEVICE);
-	 */
+   * CE_request = dma_map_single(dev,
+   * (void *)bmi_request, request_length, DMA_TO_DEVICE);
+   */
 	CE_request = bmi_cmd_da;
 	transaction->bmi_request_CE = CE_request;
 
 	if (bmi_response) {
-
 		/*
-		 * CE_response = dma_map_single(dev, bmi_response,
-		 * BMI_DATASZ_MAX, DMA_FROM_DEVICE);
-		 */
+     * CE_response = dma_map_single(dev, bmi_response,
+     * BMI_DATASZ_MAX, DMA_FROM_DEVICE);
+     */
 		CE_response = bmi_rsp_da;
 		transaction->bmi_response_host = bmi_response;
 		transaction->bmi_response_CE = CE_response;
 		/* dma_cache_sync(dev, bmi_response,
-		 *      BMI_DATASZ_MAX, DMA_FROM_DEVICE);
-		 */
-		qdf_mem_dma_sync_single_for_device(scn->qdf_dev,
-					       CE_response,
-					       BMI_DATASZ_MAX,
-					       DMA_FROM_DEVICE);
+     *      BMI_DATASZ_MAX, DMA_FROM_DEVICE);
+     */
+		qdf_mem_dma_sync_single_for_device(scn->qdf_dev, CE_response,
+						   BMI_DATASZ_MAX,
+						   DMA_FROM_DEVICE);
 		ce_recv_buf_enqueue(ce_recv, transaction,
 				    transaction->bmi_response_CE);
 		/* NB: see HIF_BMI_recv_done */
@@ -204,12 +199,10 @@ QDF_STATUS hif_exchange_bmi_msg(struct hif_opaque_softc *hif_ctx,
 
 	/* dma_cache_sync(dev, bmi_request, request_length, DMA_TO_DEVICE); */
 	qdf_mem_dma_sync_single_for_device(scn->qdf_dev, CE_request,
-				       request_length, DMA_TO_DEVICE);
+					   request_length, DMA_TO_DEVICE);
 
-	status =
-		ce_send(ce_send_hdl, transaction,
-			CE_request, request_length,
-			transaction_id, 0, user_flags);
+	status = ce_send(ce_send_hdl, transaction, CE_request, request_length,
+			 transaction_id, 0, user_flags);
 	ASSERT(status == QDF_STATUS_SUCCESS);
 	/* NB: see hif_bmi_send_done */
 
@@ -217,11 +210,10 @@ QDF_STATUS hif_exchange_bmi_msg(struct hif_opaque_softc *hif_ctx,
 
 	/* Wait for BMI request/response transaction to complete */
 	/* Always just wait for BMI request here if
-	 * BMI_RSP_POLLING is defined
-	 */
-	if (qdf_semaphore_acquire_timeout
-		       (&transaction->bmi_transaction_sem,
-			HIF_EXCHANGE_BMI_MSG_TIMEOUT)) {
+   * BMI_RSP_POLLING is defined
+   */
+	if (qdf_semaphore_acquire_timeout(&transaction->bmi_transaction_sem,
+					  HIF_EXCHANGE_BMI_MSG_TIMEOUT)) {
 		hif_err("BMI transaction timeout. Please check the HW interface!!");
 		qdf_mem_free(transaction);
 		return QDF_STATUS_E_TIMEOUT;
@@ -230,14 +222,13 @@ QDF_STATUS hif_exchange_bmi_msg(struct hif_opaque_softc *hif_ctx,
 	if (bmi_response) {
 #ifdef BMI_RSP_POLLING
 		/* Fix EV118783, do not wait a semaphore for the BMI response
-		 * since the relative interruption may be lost.
-		 * poll the BMI response instead.
-		 */
+     * since the relative interruption may be lost.
+     * poll the BMI response instead.
+     */
 		i = 0;
-		while (ce_completed_recv_next(
-			    ce_recv, NULL, NULL, &buf,
-			    &completed_nbytes, &id,
-			    &flags) != QDF_STATUS_SUCCESS) {
+		while (ce_completed_recv_next(ce_recv, NULL, NULL, &buf,
+					      &completed_nbytes, &id,
+					      &flags) != QDF_STATUS_SUCCESS) {
 			if (i++ > BMI_RSP_TO_MILLISEC) {
 				hif_err("Can't get bmi response");
 				status = QDF_STATUS_E_BUSY;
@@ -254,15 +245,14 @@ QDF_STATUS hif_exchange_bmi_msg(struct hif_opaque_softc *hif_ctx,
 				transaction->bmi_response_length;
 		}
 #endif
-
 	}
 
 	/* dma_unmap_single(dev, transaction->bmi_request_CE,
-	 *     request_length, DMA_TO_DEVICE);
-	 * bus_unmap_single(scn->sc_osdev,
-	 *     transaction->bmi_request_CE,
-	 *     request_length, BUS_DMA_TODEVICE);
-	 */
+   *     request_length, DMA_TO_DEVICE);
+   * bus_unmap_single(scn->sc_osdev,
+   *     transaction->bmi_request_CE,
+   *     request_length, BUS_DMA_TODEVICE);
+   */
 
 	if (status != QDF_STATUS_SUCCESS) {
 		qdf_dma_addr_t unused_buffer;
@@ -270,10 +260,9 @@ QDF_STATUS hif_exchange_bmi_msg(struct hif_opaque_softc *hif_ctx,
 		unsigned int unused_id;
 		unsigned int toeplitz_hash_result;
 
-		ce_cancel_send_next(ce_send_hdl,
-			NULL, NULL, &unused_buffer,
-			&unused_nbytes, &unused_id,
-			&toeplitz_hash_result);
+		ce_cancel_send_next(ce_send_hdl, NULL, NULL, &unused_buffer,
+				    &unused_nbytes, &unused_id,
+				    &toeplitz_hash_result);
 	}
 
 	A_TARGET_ACCESS_UNLIKELY(scn);
@@ -301,15 +290,15 @@ void hif_register_bmi_callbacks(struct hif_opaque_softc *hif_ctx)
 	struct HIF_CE_state *hif_state = HIF_GET_CE_STATE(hif_sc);
 
 	/*
-	 * Initially, establish CE completion handlers for use with BMI.
-	 * These are overwritten with generic handlers after we exit BMI phase.
-	 */
+   * Initially, establish CE completion handlers for use with BMI.
+   * These are overwritten with generic handlers after we exit BMI phase.
+   */
 	pipe_info = &hif_state->pipe_info[BMI_CE_NUM_TO_TARG];
 	ce_send_cb_register(pipe_info->ce_hdl, hif_bmi_send_done, pipe_info, 0);
 
 	if (BMI_RSP_CB_REGISTER) {
 		pipe_info = &hif_state->pipe_info[BMI_CE_NUM_TO_HOST];
-		ce_recv_cb_register(
-			pipe_info->ce_hdl, hif_bmi_recv_data, pipe_info, 0);
+		ce_recv_cb_register(pipe_info->ce_hdl, hif_bmi_recv_data,
+				    pipe_info, 0);
 	}
 }

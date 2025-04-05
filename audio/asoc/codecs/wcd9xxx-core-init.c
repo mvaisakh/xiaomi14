@@ -2,16 +2,16 @@
 /* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/module.h>
+#include <asoc/core.h>
 #include <asoc/msm-cdc-pinctrl.h>
 #include <asoc/wcd9xxx-irq.h>
-#include <asoc/core.h>
+#include <linux/module.h>
 
 #define NUM_DRIVERS_REG_RET 3
 
 static int __init wcd9xxx_core_init(void)
 {
-	int ret[NUM_DRIVERS_REG_RET] = {0};
+	int ret[NUM_DRIVERS_REG_RET] = { 0 };
 	int i = 0;
 
 	ret[0] = msm_cdc_pinctrl_drv_init();

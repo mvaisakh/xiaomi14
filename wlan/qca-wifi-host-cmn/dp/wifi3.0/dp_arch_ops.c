@@ -17,8 +17,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "dp_types.h"
 #include "cdp_txrx_cmn_reg.h"
+#include "dp_types.h"
 
 void dp_configure_arch_ops(struct dp_soc *soc);
 qdf_size_t dp_get_soc_context_size(uint16_t device_id);
@@ -40,7 +40,7 @@ qdf_size_t dp_get_soc_context_size_rh(void);
 
 static void dp_initialize_default_arch_ops(struct dp_arch_ops *arch_ops)
 {
-/* assign dummy functions for arch_ops which are architecture specific */
+	/* assign dummy functions for arch_ops which are architecture specific */
 }
 
 qdf_size_t dp_get_soc_context_size(uint16_t device_id)
@@ -55,12 +55,12 @@ qdf_size_t dp_get_soc_context_size(uint16_t device_id)
 #ifdef CONFIG_BERYLLIUM
 	case CDP_ARCH_TYPE_BE:
 		return dp_get_soc_context_size_be();
-	break;
+		break;
 #endif
 #ifdef CONFIG_RHINE
 	case CDP_ARCH_TYPE_RH:
 		return dp_get_soc_context_size_rh();
-	break;
+		break;
 #endif
 
 	default:
@@ -78,19 +78,19 @@ void dp_configure_arch_ops(struct dp_soc *soc)
 #ifdef CONFIG_LITHIUM
 	case CDP_ARCH_TYPE_LI:
 		dp_initialize_arch_ops_li(&soc->arch_ops);
-	break;
+		break;
 #endif
 
 #ifdef CONFIG_BERYLLIUM
 	case CDP_ARCH_TYPE_BE:
 		dp_initialize_arch_ops_be(&soc->arch_ops);
-	break;
+		break;
 #endif
 
 #ifdef CONFIG_RHINE
 	case CDP_ARCH_TYPE_RH:
 		dp_initialize_arch_ops_rh(&soc->arch_ops);
-	break;
+		break;
 #endif
 
 	default:

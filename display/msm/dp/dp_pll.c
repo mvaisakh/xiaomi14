@@ -4,10 +4,10 @@
  * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include "dp_pll.h"
+#include "dp_debug.h"
 #include <linux/err.h>
 #include <linux/of_device.h>
-#include "dp_debug.h"
-#include "dp_pll.h"
 
 static int dp_pll_fill_io(struct dp_pll *pll)
 {
@@ -83,7 +83,8 @@ static void dp_pll_clock_unregister(struct dp_pll *pll)
 	}
 }
 
-int dp_pll_clock_register_helper(struct dp_pll *pll, struct dp_pll_vco_clk *clks, int num_clks)
+int dp_pll_clock_register_helper(struct dp_pll *pll,
+				 struct dp_pll_vco_clk *clks, int num_clks)
 {
 	int rc = 0, i = 0;
 	struct platform_device *pdev;
@@ -102,7 +103,7 @@ int dp_pll_clock_register_helper(struct dp_pll *pll, struct dp_pll_vco_clk *clks
 		clk = clk_register(&pdev->dev, &clks[i].hw);
 		if (IS_ERR(clk)) {
 			DP_ERR("%s registration failed for DP: %d\n",
-			clk_hw_get_name(&clks[i].hw), pll->index);
+			       clk_hw_get_name(&clks[i].hw), pll->index);
 			return -EINVAL;
 		}
 		pll->clk_data->clks[i] = clk;
@@ -156,7 +157,7 @@ struct dp_pll *dp_pll_get(struct dp_pll_in *in)
 	}
 
 	pll->ssc_en = of_property_read_bool(pdev->dev.of_node,
-						"qcom,ssc-feature-enable");
+					    "qcom,ssc-feature-enable");
 	pll->bonding_en = of_property_read_bool(pdev->dev.of_node,
 						"qcom,bonding-feature-enable");
 
@@ -169,8 +170,8 @@ struct dp_pll *dp_pll_get(struct dp_pll_in *in)
 		goto error;
 
 	DP_INFO("revision=%s, ssc_en=%d, bonding_en=%d\n",
-			dp_pll_get_revision(pll->revision), pll->ssc_en,
-			pll->bonding_en);
+		dp_pll_get_revision(pll->revision), pll->ssc_en,
+		pll->bonding_en);
 
 	return pll;
 error:

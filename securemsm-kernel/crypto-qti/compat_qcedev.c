@@ -6,20 +6,21 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include "linux/compat_qcedev.h"
+#include "linux/qcedev.h"
+#include <linux/compat.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/uaccess.h>
-#include "linux/qcedev.h"
-#include <linux/compat.h>
-#include "linux/compat_qcedev.h"
 
-static void *compat_alloc_user_space(int size){
-    return NULL;
+static void *compat_alloc_user_space(int size)
+{
+	return NULL;
 }
 
-static int compat_get_qcedev_pmem_info(
-		struct compat_qcedev_pmem_info __user *pmem32,
-		struct qcedev_pmem_info __user *pmem)
+static int
+compat_get_qcedev_pmem_info(struct compat_qcedev_pmem_info __user *pmem32,
+			    struct qcedev_pmem_info __user *pmem)
 {
 	compat_ulong_t offset;
 	compat_int_t fd_src;
@@ -50,9 +51,9 @@ static int compat_get_qcedev_pmem_info(
 	return err;
 }
 
-static int compat_put_qcedev_pmem_info(
-		struct compat_qcedev_pmem_info __user *pmem32,
-		struct qcedev_pmem_info __user *pmem)
+static int
+compat_put_qcedev_pmem_info(struct compat_qcedev_pmem_info __user *pmem32,
+			    struct qcedev_pmem_info __user *pmem)
 {
 	compat_ulong_t offset;
 	compat_int_t fd_src;
@@ -83,9 +84,9 @@ static int compat_put_qcedev_pmem_info(
 	return err;
 }
 
-static int compat_get_qcedev_vbuf_info(
-		struct compat_qcedev_vbuf_info __user *vbuf32,
-		struct qcedev_vbuf_info __user *vbuf)
+static int
+compat_get_qcedev_vbuf_info(struct compat_qcedev_vbuf_info __user *vbuf32,
+			    struct qcedev_vbuf_info __user *vbuf)
 {
 	compat_uptr_t vaddr;
 	int err = 0, i;
@@ -94,7 +95,7 @@ static int compat_get_qcedev_vbuf_info(
 	for (i = 0; i < QCEDEV_MAX_BUFFERS; i++) {
 		err |= get_user(vaddr, &vbuf32->src[i].vaddr);
 		err |= put_user(vaddr,
-			(compat_uptr_t __user *)&vbuf->src[i].vaddr);
+				(compat_uptr_t __user *)&vbuf->src[i].vaddr);
 		err |= get_user(len, &vbuf32->src[i].len);
 		err |= put_user(len, &vbuf->src[i].len);
 	}
@@ -102,16 +103,16 @@ static int compat_get_qcedev_vbuf_info(
 	for (i = 0; i < QCEDEV_MAX_BUFFERS; i++) {
 		err |= get_user(vaddr, &vbuf32->dst[i].vaddr);
 		err |= put_user(vaddr,
-			(compat_uptr_t __user *)&vbuf->dst[i].vaddr);
+				(compat_uptr_t __user *)&vbuf->dst[i].vaddr);
 		err |= get_user(len, &vbuf32->dst[i].len);
 		err |= put_user(len, &vbuf->dst[i].len);
 	}
 	return err;
 }
 
-static int compat_put_qcedev_vbuf_info(
-		struct compat_qcedev_vbuf_info __user *vbuf32,
-		struct qcedev_vbuf_info __user *vbuf)
+static int
+compat_put_qcedev_vbuf_info(struct compat_qcedev_vbuf_info __user *vbuf32,
+			    struct qcedev_vbuf_info __user *vbuf)
 {
 	compat_uptr_t vaddr;
 	int err = 0, i;
@@ -136,8 +137,8 @@ static int compat_put_qcedev_vbuf_info(
 }
 
 static int compat_get_qcedev_cipher_op_req(
-		struct compat_qcedev_cipher_op_req __user *data32,
-		struct qcedev_cipher_op_req __user *data)
+	struct compat_qcedev_cipher_op_req __user *data32,
+	struct qcedev_cipher_op_req __user *data)
 {
 	enum qcedev_cipher_mode_enum mode;
 	enum qcedev_cipher_alg_enum alg;
@@ -196,8 +197,8 @@ static int compat_get_qcedev_cipher_op_req(
 }
 
 static int compat_put_qcedev_cipher_op_req(
-		struct compat_qcedev_cipher_op_req __user *data32,
-		struct qcedev_cipher_op_req __user *data)
+	struct compat_qcedev_cipher_op_req __user *data32,
+	struct qcedev_cipher_op_req __user *data)
 {
 	enum qcedev_cipher_mode_enum mode;
 	enum qcedev_cipher_alg_enum alg;
@@ -255,9 +256,10 @@ static int compat_put_qcedev_cipher_op_req(
 	return err;
 }
 
-static int compat_xfer_qcedev_map_buf_req(
-			struct compat_qcedev_map_buf_req __user *data32,
-			struct qcedev_map_buf_req __user *data, bool to_get)
+static int
+compat_xfer_qcedev_map_buf_req(struct compat_qcedev_map_buf_req __user *data32,
+			       struct qcedev_map_buf_req __user *data,
+			       bool to_get)
 {
 	int rc = 0, i, fd = -1;
 	uint32_t fd_size, fd_offset, num_fds, buf_vaddr;
@@ -297,8 +299,8 @@ static int compat_xfer_qcedev_map_buf_req(
 }
 
 static int compat_xfer_qcedev_unmap_buf_req(
-			struct compat_qcedev_unmap_buf_req __user *data32,
-			struct qcedev_unmap_buf_req __user *data, bool to_get)
+	struct compat_qcedev_unmap_buf_req __user *data32,
+	struct qcedev_unmap_buf_req __user *data, bool to_get)
 {
 	int i, rc = 0, fd = -1;
 	uint32_t num_fds;
@@ -323,10 +325,9 @@ static int compat_xfer_qcedev_unmap_buf_req(
 	return rc;
 }
 
-
-static int compat_get_qcedev_sha_op_req(
-		struct compat_qcedev_sha_op_req __user *data32,
-		struct qcedev_sha_op_req __user *data)
+static int
+compat_get_qcedev_sha_op_req(struct compat_qcedev_sha_op_req __user *data32,
+			     struct qcedev_sha_op_req __user *data)
 {
 	enum qcedev_sha_alg_enum alg;
 	compat_ulong_t authklen;
@@ -342,7 +343,7 @@ static int compat_get_qcedev_sha_op_req(
 	for (i = 0; i < QCEDEV_MAX_BUFFERS; i++) {
 		err |= get_user(vaddr, &data32->data[i].vaddr);
 		err |= put_user(vaddr,
-			(compat_uptr_t __user *)&data->data[i].vaddr);
+				(compat_uptr_t __user *)&data->data[i].vaddr);
 		err |= get_user(len, &data32->data[i].len);
 		err |= put_user(len, &data->data[i].len);
 	}
@@ -369,9 +370,9 @@ static int compat_get_qcedev_sha_op_req(
 	return err;
 }
 
-static int compat_put_qcedev_sha_op_req(
-		struct compat_qcedev_sha_op_req __user *data32,
-		struct qcedev_sha_op_req __user *data)
+static int
+compat_put_qcedev_sha_op_req(struct compat_qcedev_sha_op_req __user *data32,
+			     struct qcedev_sha_op_req __user *data)
 {
 	enum qcedev_sha_alg_enum alg;
 	compat_ulong_t authklen;
@@ -386,7 +387,7 @@ static int compat_put_qcedev_sha_op_req(
 
 	for (i = 0; i < QCEDEV_MAX_BUFFERS; i++) {
 		err |= get_user(vaddr,
-			(compat_uptr_t __user *)&data->data[i].vaddr);
+				(compat_uptr_t __user *)&data->data[i].vaddr);
 		err |= put_user(vaddr, &data32->data[i].vaddr);
 		err |= get_user(len, &data->data[i].len);
 		err |= put_user(len, &data32->data[i].len);
@@ -404,8 +405,7 @@ static int compat_put_qcedev_sha_op_req(
 
 	err |= get_user(diglen, &data->diglen);
 	err |= put_user(diglen, &data32->diglen);
-	err |= get_user(authkey,
-			(compat_uptr_t __user *)&data->authkey);
+	err |= get_user(authkey, (compat_uptr_t __user *)&data->authkey);
 	err |= put_user(authkey, &data32->authkey);
 	err |= get_user(authklen, &data->authklen);
 	err |= put_user(authklen, &data32->authklen);
@@ -439,11 +439,9 @@ static unsigned int convert_cmd(unsigned int cmd)
 	default:
 		return cmd;
 	}
-
 }
 
-long compat_qcedev_ioctl(struct file *file,
-		unsigned int cmd, unsigned long arg)
+long compat_qcedev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	long ret;
 

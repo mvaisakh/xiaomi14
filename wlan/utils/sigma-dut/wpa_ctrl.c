@@ -7,13 +7,13 @@
  * See README for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include <errno.h>
-#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 #ifdef __QNXNTO__
 #include <sys/select.h>
 #endif /* __QNXNTO__ */
@@ -38,19 +38,17 @@
 #endif /* CONFIG_CTRL_IFACE_UNIX */
 
 #ifdef ANDROID
-#include <dirent.h>
 #include <cutils/sockets.h>
+#include <dirent.h>
 #include <grp.h>
 #include <pwd.h>
 #endif /* ANDROID */
 
 #include "wpa_ctrl.h"
 
-
 #if defined(CONFIG_CTRL_IFACE_UNIX) || defined(CONFIG_CTRL_IFACE_UDP)
 #define CTRL_IFACE_SOCKET
 #endif /* CONFIG_CTRL_IFACE_UNIX || CONFIG_CTRL_IFACE_UDP */
-
 
 /**
  * struct wpa_ctrl - Internal structure for control interface library
@@ -78,7 +76,6 @@ struct wpa_ctrl {
 #endif /* CONFIG_CTRL_IFACE_NAMED_PIPE */
 };
 
-
 #ifdef CONFIG_CTRL_IFACE_UNIX
 
 #ifndef CONFIG_CTRL_IFACE_CLIENT_DIR
@@ -88,15 +85,12 @@ struct wpa_ctrl {
 #define CONFIG_CTRL_IFACE_CLIENT_PREFIX "wpa_ctrl_"
 #endif /* CONFIG_CTRL_IFACE_CLIENT_PREFIX */
 
-
-struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
+struct wpa_ctrl *wpa_ctrl_open(const char *ctrl_path)
 {
 	return wpa_ctrl_open2(ctrl_path, NULL);
 }
 
-
-struct wpa_ctrl * wpa_ctrl_open2(const char *ctrl_path,
-				 const char *cli_path)
+struct wpa_ctrl *wpa_ctrl_open2(const char *ctrl_path, const char *cli_path)
 {
 	struct wpa_ctrl *ctrl;
 	static int counter = 0;
@@ -129,30 +123,30 @@ try_again:
 		ret = os_snprintf(ctrl->local.sun_path,
 				  sizeof(ctrl->local.sun_path),
 				  "%s/" CONFIG_CTRL_IFACE_CLIENT_PREFIX "%d-%d",
-				  cli_path, (int) getpid(), counter);
+				  cli_path, (int)getpid(), counter);
 	} else {
 		ret = os_snprintf(ctrl->local.sun_path,
 				  sizeof(ctrl->local.sun_path),
-				  CONFIG_CTRL_IFACE_CLIENT_DIR "/"
-				  CONFIG_CTRL_IFACE_CLIENT_PREFIX "%d-%d",
-				  (int) getpid(), counter);
+				  CONFIG_CTRL_IFACE_CLIENT_DIR
+				  "/" CONFIG_CTRL_IFACE_CLIENT_PREFIX "%d-%d",
+				  (int)getpid(), counter);
 	}
 
-	if (ret < 0 || (size_t) ret >= sizeof(ctrl->local.sun_path)) {
+	if (ret < 0 || (size_t)ret >= sizeof(ctrl->local.sun_path)) {
 		close(ctrl->s);
 		os_free(ctrl);
 		return NULL;
 	}
 	tries++;
-	if (bind(ctrl->s, (struct sockaddr *) &ctrl->local,
-		    sizeof(ctrl->local)) < 0) {
+	if (bind(ctrl->s, (struct sockaddr *)&ctrl->local,
+		 sizeof(ctrl->local)) < 0) {
 		if (errno == EADDRINUSE && tries < 2) {
 			/*
-			 * getpid() returns unique identifier for this instance
-			 * of wpa_ctrl, so the existing socket file must have
-			 * been left by unclean termination of an earlier run.
-			 * Remove the file and try again.
-			 */
+       * getpid() returns unique identifier for this instance
+       * of wpa_ctrl, so the existing socket file must have
+       * been left by unclean termination of an earlier run.
+       * Remove the file and try again.
+       */
 			unlink(ctrl->local.sun_path);
 			goto try_again;
 		}
@@ -169,17 +163,16 @@ try_again:
 		chown(ctrl->local.sun_path, pw->pw_uid, gr->gr_gid);
 
 	/*
-	 * If the ctrl_path isn't an absolute pathname, assume that
-	 * it's the name of a socket in the Android reserved namespace.
-	 * Otherwise, it's a normal UNIX domain socket appearing in the
-	 * filesystem.
-	 */
+   * If the ctrl_path isn't an absolute pathname, assume that
+   * it's the name of a socket in the Android reserved namespace.
+   * Otherwise, it's a normal UNIX domain socket appearing in the
+   * filesystem.
+   */
 	if (*ctrl_path != '/') {
 		char buf[21];
 		os_snprintf(buf, sizeof(buf), "wpa_%s", ctrl_path);
 		if (socket_local_client_connect(
-			    ctrl->s, buf,
-			    ANDROID_SOCKET_NAMESPACE_RESERVED,
+			    ctrl->s, buf, ANDROID_SOCKET_NAMESPACE_RESERVED,
 			    SOCK_DGRAM) < 0) {
 			close(ctrl->s);
 			unlink(ctrl->local.sun_path);
@@ -198,7 +191,7 @@ try_again:
 		os_free(ctrl);
 		return NULL;
 	}
-	if (connect(ctrl->s, (struct sockaddr *) &ctrl->dest,
+	if (connect(ctrl->s, (struct sockaddr *)&ctrl->dest,
 		    sizeof(ctrl->dest)) < 0) {
 		close(ctrl->s);
 		unlink(ctrl->local.sun_path);
@@ -208,7 +201,6 @@ try_again:
 
 	return ctrl;
 }
-
 
 void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 {
@@ -222,10 +214,9 @@ void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 
 #endif /* CONFIG_CTRL_IFACE_UNIX */
 
-
 #ifdef CONFIG_CTRL_IFACE_UDP
 
-struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
+struct wpa_ctrl *wpa_ctrl_open(const char *ctrl_path)
 {
 	struct wpa_ctrl *ctrl;
 	char buf[128];
@@ -245,7 +236,7 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 
 	ctrl->local.sin_family = AF_INET;
 	ctrl->local.sin_addr.s_addr = htonl((127 << 24) | 1);
-	if (bind(ctrl->s, (struct sockaddr *) &ctrl->local,
+	if (bind(ctrl->s, (struct sockaddr *)&ctrl->local,
 		 sizeof(ctrl->local)) < 0) {
 		close(ctrl->s);
 		os_free(ctrl);
@@ -255,7 +246,7 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 	ctrl->dest.sin_family = AF_INET;
 	ctrl->dest.sin_addr.s_addr = htonl((127 << 24) | 1);
 	ctrl->dest.sin_port = htons(WPA_CTRL_IFACE_PORT);
-	if (connect(ctrl->s, (struct sockaddr *) &ctrl->dest,
+	if (connect(ctrl->s, (struct sockaddr *)&ctrl->dest,
 		    sizeof(ctrl->dest)) < 0) {
 		perror("connect");
 		close(ctrl->s);
@@ -272,7 +263,6 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 	return ctrl;
 }
 
-
 void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 {
 	close(ctrl->s);
@@ -281,7 +271,6 @@ void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 }
 
 #endif /* CONFIG_CTRL_IFACE_UDP */
-
 
 #ifdef CTRL_IFACE_SOCKET
 int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
@@ -335,13 +324,13 @@ int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
 				return res;
 			if (res > 0 && reply[0] == '<') {
 				/* This is an unsolicited message from
-				 * wpa_supplicant, not the reply to the
-				 * request. Use msg_cb to report this to the
-				 * caller. */
+         * wpa_supplicant, not the reply to the
+         * request. Use msg_cb to report this to the
+         * caller. */
 				if (msg_cb) {
 					/* Make sure the message is nul
-					 * terminated. */
-					if ((size_t) res == *reply_len)
+           * terminated. */
+					if ((size_t)res == *reply_len)
 						res = (*reply_len) - 1;
 					reply[res] = '\0';
 					msg_cb(reply, res);
@@ -358,15 +347,14 @@ int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
 }
 #endif /* CTRL_IFACE_SOCKET */
 
-
 static int wpa_ctrl_attach_helper(struct wpa_ctrl *ctrl, int attach)
 {
 	char buf[10];
 	int ret;
 	size_t len = 10;
 
-	ret = wpa_ctrl_request(ctrl, attach ? "ATTACH" : "DETACH", 6,
-			       buf, &len, NULL);
+	ret = wpa_ctrl_request(ctrl, attach ? "ATTACH" : "DETACH", 6, buf, &len,
+			       NULL);
 	if (ret < 0)
 		return ret;
 	if (len == 3 && os_memcmp(buf, "OK\n", 3) == 0)
@@ -374,18 +362,15 @@ static int wpa_ctrl_attach_helper(struct wpa_ctrl *ctrl, int attach)
 	return -1;
 }
 
-
 int wpa_ctrl_attach(struct wpa_ctrl *ctrl)
 {
 	return wpa_ctrl_attach_helper(ctrl, 1);
 }
 
-
 int wpa_ctrl_detach(struct wpa_ctrl *ctrl)
 {
 	return wpa_ctrl_attach_helper(ctrl, 0);
 }
-
 
 #ifdef CTRL_IFACE_SOCKET
 
@@ -400,7 +385,6 @@ int wpa_ctrl_recv(struct wpa_ctrl *ctrl, char *reply, size_t *reply_len)
 	return 0;
 }
 
-
 int wpa_ctrl_pending(struct wpa_ctrl *ctrl)
 {
 	struct timeval tv;
@@ -413,14 +397,12 @@ int wpa_ctrl_pending(struct wpa_ctrl *ctrl)
 	return FD_ISSET(ctrl->s, &rfds);
 }
 
-
 int wpa_ctrl_get_fd(struct wpa_ctrl *ctrl)
 {
 	return ctrl->s;
 }
 
 #endif /* CTRL_IFACE_SOCKET */
-
 
 #ifdef CONFIG_CTRL_IFACE_NAMED_PIPE
 
@@ -429,7 +411,7 @@ int wpa_ctrl_get_fd(struct wpa_ctrl *ctrl)
 #endif
 #define NAMED_PIPE_PREFIX TEXT("\\\\.\\pipe\\") TEXT(WPA_SUPPLICANT_NAMED_PIPE)
 
-struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
+struct wpa_ctrl *wpa_ctrl_open(const char *ctrl_path)
 {
 	struct wpa_ctrl *ctrl;
 	DWORD mode;
@@ -463,12 +445,12 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 		ctrl->pipe = CreateFile(name, GENERIC_READ | GENERIC_WRITE, 0,
 					NULL, OPEN_EXISTING, 0, NULL);
 		/*
-		 * Current named pipe server side in wpa_supplicant is
-		 * re-opening the pipe for new clients only after the previous
-		 * one is taken into use. This leaves a small window for race
-		 * conditions when two connections are being opened at almost
-		 * the same time. Retry if that was the case.
-		 */
+     * Current named pipe server side in wpa_supplicant is
+     * re-opening the pipe for new clients only after the previous
+     * one is taken into use. This leaves a small window for race
+     * conditions when two connections are being opened at almost
+     * the same time. Retry if that was the case.
+     */
 		if (ctrl->pipe != INVALID_HANDLE_VALUE ||
 		    GetLastError() != ERROR_PIPE_BUSY)
 			break;
@@ -489,13 +471,11 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 	return ctrl;
 }
 
-
 void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 {
 	CloseHandle(ctrl->pipe);
 	os_free(ctrl);
 }
-
 
 int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
 		     char *reply, size_t *reply_len,
@@ -514,7 +494,6 @@ int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
 	return 0;
 }
 
-
 int wpa_ctrl_recv(struct wpa_ctrl *ctrl, char *reply, size_t *reply_len)
 {
 	DWORD len = *reply_len;
@@ -524,7 +503,6 @@ int wpa_ctrl_recv(struct wpa_ctrl *ctrl, char *reply, size_t *reply_len)
 	return 0;
 }
 
-
 int wpa_ctrl_pending(struct wpa_ctrl *ctrl)
 {
 	DWORD left;
@@ -533,7 +511,6 @@ int wpa_ctrl_pending(struct wpa_ctrl *ctrl)
 		return -1;
 	return left ? 1 : 0;
 }
-
 
 int wpa_ctrl_get_fd(struct wpa_ctrl *ctrl)
 {

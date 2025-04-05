@@ -18,9 +18,9 @@
  * DOC: Implement API's specific to crypto component.
  */
 
-#include "wmi_unified_priv.h"
-#include "wmi_unified_param.h"
 #include "wmi_unified_crypto_api.h"
+#include "wmi_unified_param.h"
+#include "wmi_unified_priv.h"
 
 QDF_STATUS
 wmi_extract_install_key_comp_event(wmi_unified_t wmi_handle, void *evt_buf,

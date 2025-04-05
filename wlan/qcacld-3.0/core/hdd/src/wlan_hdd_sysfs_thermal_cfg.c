@@ -21,16 +21,16 @@
  * implementation for creating sysfs file thermal_cfg
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_psoc_sync.h"
-#include <wlan_hdd_sysfs.h>
-#include <wlan_hdd_sysfs_thermal_cfg.h>
+#include "qdf_status.h"
 #include "qdf_trace.h"
 #include "sme_api.h"
-#include "qdf_status.h"
-#include <wlan_fw_offload_main.h>
 #include "wlan_hdd_thermal.h"
+#include <wlan_fw_offload_main.h>
 #include <wlan_fwol_ucfg_api.h>
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
+#include <wlan_hdd_sysfs_thermal_cfg.h>
 
 #ifdef FW_THERMAL_THROTTLE_SUPPORT
 #ifndef QCN7605_SUPPORT
@@ -51,11 +51,9 @@ static QDF_STATUS hdd_send_thermal_mgmt_cmd(mac_handle_t mac_handle,
 #endif
 #endif /* FW_THERMAL_THROTTLE_SUPPORT */
 
-static ssize_t
-__hdd_sysfs_thermal_cfg_store(struct hdd_context *hdd_ctx,
-			      struct kobj_attribute *attr,
-			      const char *buf,
-			      size_t count)
+static ssize_t __hdd_sysfs_thermal_cfg_store(struct hdd_context *hdd_ctx,
+					     struct kobj_attribute *attr,
+					     const char *buf, size_t count)
 {
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
 	char *sptr, *token;
@@ -64,7 +62,7 @@ __hdd_sysfs_thermal_cfg_store(struct hdd_context *hdd_ctx,
 	QDF_STATUS status;
 	int ret;
 	struct thermal_mitigation_params therm_cfg_params;
-	struct wlan_fwol_thermal_temp thermal_temp = {0};
+	struct wlan_fwol_thermal_temp thermal_temp = { 0 };
 
 	status = ucfg_fwol_get_thermal_temp(hdd_ctx->psoc, &thermal_temp);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -75,8 +73,8 @@ __hdd_sysfs_thermal_cfg_store(struct hdd_context *hdd_ctx,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -84,8 +82,7 @@ __hdd_sysfs_thermal_cfg_store(struct hdd_context *hdd_ctx,
 	}
 
 	sptr = buf_local;
-	hdd_debug("thermal_cfg: count %zu buf_local:(%s)",
-		  count, buf_local);
+	hdd_debug("thermal_cfg: count %zu buf_local:(%s)", count, buf_local);
 
 	/* Get val1 */
 	token = strsep(&sptr, " ");
@@ -138,7 +135,7 @@ __hdd_sysfs_thermal_cfg_store(struct hdd_context *hdd_ctx,
 
 	/* Check for valid inputs */
 	if (val1 < 0 || val1 > 1 || val2 < 0 || val3 < 0 || val3 > 100 ||
-	    val4 < 0 || val4 > 3 ||  val5 < 0 || val6 < 0 || val7 < 0 ||
+	    val4 < 0 || val4 > 3 || val5 < 0 || val6 < 0 || val7 < 0 ||
 	    val6 <= val5)
 		return -EINVAL;
 
@@ -159,8 +156,8 @@ __hdd_sysfs_thermal_cfg_store(struct hdd_context *hdd_ctx,
 		return qdf_status_to_os_return(status);
 
 	if (!val7) {
-		status = hdd_send_thermal_mgmt_cmd(hdd_ctx->mac_handle,
-						   val5, val6);
+		status = hdd_send_thermal_mgmt_cmd(hdd_ctx->mac_handle, val5,
+						   val6);
 
 		if (QDF_IS_STATUS_ERROR(status))
 			return qdf_status_to_os_return(status);
@@ -169,11 +166,9 @@ __hdd_sysfs_thermal_cfg_store(struct hdd_context *hdd_ctx,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_thermal_cfg_store(struct kobject *kobj,
-			    struct kobj_attribute *attr,
-			    const char *buf,
-			    size_t count)
+static ssize_t hdd_sysfs_thermal_cfg_store(struct kobject *kobj,
+					   struct kobj_attribute *attr,
+					   const char *buf, size_t count)
 {
 	struct osif_psoc_sync *psoc_sync;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
@@ -184,13 +179,12 @@ hdd_sysfs_thermal_cfg_store(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_thermal_cfg_store(hdd_ctx, attr,
-						   buf, count);
+	errno_size = __hdd_sysfs_thermal_cfg_store(hdd_ctx, attr, buf, count);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -198,8 +192,7 @@ hdd_sysfs_thermal_cfg_store(struct kobject *kobj,
 }
 
 static struct kobj_attribute thermal_cfg_attribute =
-	__ATTR(thermal_cfg, 0220, NULL,
-	       hdd_sysfs_thermal_cfg_store);
+	__ATTR(thermal_cfg, 0220, NULL, hdd_sysfs_thermal_cfg_store);
 
 int hdd_sysfs_thermal_cfg_create(struct kobject *driver_kobject)
 {
@@ -210,16 +203,14 @@ int hdd_sysfs_thermal_cfg_create(struct kobject *driver_kobject)
 		return -EINVAL;
 	}
 
-	error = sysfs_create_file(driver_kobject,
-				  &thermal_cfg_attribute.attr);
+	error = sysfs_create_file(driver_kobject, &thermal_cfg_attribute.attr);
 	if (error)
 		hdd_err("could not create thermal_cfg sysfs file");
 
 	return error;
 }
 
-void
-hdd_sysfs_thermal_cfg_destroy(struct kobject *driver_kobject)
+void hdd_sysfs_thermal_cfg_destroy(struct kobject *driver_kobject)
 {
 	if (!driver_kobject) {
 		hdd_err("could not get driver kobject!");

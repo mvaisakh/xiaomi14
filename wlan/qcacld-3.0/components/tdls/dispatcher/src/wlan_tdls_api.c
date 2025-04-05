@@ -19,17 +19,17 @@
  * DOC: contains tdls link teardown definitions
  */
 
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_pdev_obj.h"
-#include "wlan_objmgr_vdev_obj.h"
 #include "wlan_tdls_api.h"
-#include "../../core/src/wlan_tdls_main.h"
 #include "../../core/src/wlan_tdls_ct.h"
+#include "../../core/src/wlan_tdls_main.h"
 #include "../../core/src/wlan_tdls_mgmt.h"
-#include <wlan_objmgr_global_obj.h>
-#include <wlan_objmgr_cmn.h>
-#include "wlan_tdls_cfg_api.h"
+#include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_objmgr_vdev_obj.h"
 #include "wlan_policy_mgr_api.h"
+#include "wlan_tdls_cfg_api.h"
+#include <wlan_objmgr_cmn.h>
+#include <wlan_objmgr_global_obj.h>
 
 static QDF_STATUS tdls_teardown_flush_cb(struct scheduler_msg *msg)
 {
@@ -45,7 +45,9 @@ static QDF_STATUS tdls_teardown_flush_cb(struct scheduler_msg *msg)
 QDF_STATUS wlan_tdls_teardown_links(struct wlan_objmgr_psoc *psoc)
 {
 	QDF_STATUS status;
-	struct scheduler_msg msg = {0, };
+	struct scheduler_msg msg = {
+		0,
+	};
 	struct tdls_link_teardown *link_teardown;
 
 	link_teardown = qdf_mem_malloc(sizeof(*link_teardown));
@@ -59,8 +61,7 @@ QDF_STATUS wlan_tdls_teardown_links(struct wlan_objmgr_psoc *psoc)
 	msg.flush_callback = tdls_teardown_flush_cb;
 	msg.type = TDLS_CMD_TEARDOWN_LINKS;
 
-	status = scheduler_post_message(QDF_MODULE_ID_HDD,
-					QDF_MODULE_ID_TDLS,
+	status = scheduler_post_message(QDF_MODULE_ID_HDD, QDF_MODULE_ID_TDLS,
 					QDF_MODULE_ID_OS_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		tdls_err("post msg fail, %d", status);
@@ -88,8 +89,8 @@ bool wlan_tdls_is_fw_11be_mlo_capable(struct wlan_objmgr_psoc *psoc)
 }
 #endif
 
-static void  wlan_tdls_teardown_links_sync(struct wlan_objmgr_psoc *psoc,
-					   struct wlan_objmgr_vdev *vdev)
+static void wlan_tdls_teardown_links_sync(struct wlan_objmgr_psoc *psoc,
+					  struct wlan_objmgr_vdev *vdev)
 {
 	struct tdls_vdev_priv_obj *vdev_priv_obj;
 	QDF_STATUS status;
@@ -118,8 +119,8 @@ static void  wlan_tdls_teardown_links_sync(struct wlan_objmgr_psoc *psoc,
 		   WAIT_TIME_FOR_TDLS_TEARDOWN_LINKS);
 
 	status = qdf_wait_for_event_completion(
-					&vdev_priv_obj->tdls_teardown_comp,
-					WAIT_TIME_FOR_TDLS_TEARDOWN_LINKS);
+		&vdev_priv_obj->tdls_teardown_comp,
+		WAIT_TIME_FOR_TDLS_TEARDOWN_LINKS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		tdls_err(" Teardown Completion timed out %d", status);
 		goto release_ref;
@@ -128,23 +129,20 @@ static void  wlan_tdls_teardown_links_sync(struct wlan_objmgr_psoc *psoc,
 	tdls_debug("TDLS teardown completion status %d ", status);
 
 release_ref:
-	wlan_objmgr_vdev_release_ref(tdls_vdev,
-				     WLAN_TDLS_NB_ID);
+	wlan_objmgr_vdev_release_ref(tdls_vdev, WLAN_TDLS_NB_ID);
 }
 
-void  wlan_tdls_check_and_teardown_links_sync(struct wlan_objmgr_psoc *psoc,
-					      struct wlan_objmgr_vdev *vdev)
+void wlan_tdls_check_and_teardown_links_sync(struct wlan_objmgr_psoc *psoc,
+					     struct wlan_objmgr_vdev *vdev)
 {
 	uint8_t sta_count;
 	enum QDF_OPMODE opmode;
 	bool tgt_tdls_concurrency_supported;
 
-	tgt_tdls_concurrency_supported =
-		wlan_psoc_nif_fw_ext2_cap_get(psoc,
-					      WLAN_TDLS_CONCURRENCIES_SUPPORT);
+	tgt_tdls_concurrency_supported = wlan_psoc_nif_fw_ext2_cap_get(
+		psoc, WLAN_TDLS_CONCURRENCIES_SUPPORT);
 	/* Don't initiate teardown in case of STA + P2P Client concurreny */
-	sta_count = policy_mgr_mode_specific_connection_count(psoc,
-							      PM_STA_MODE,
+	sta_count = policy_mgr_mode_specific_connection_count(psoc, PM_STA_MODE,
 							      NULL);
 	opmode = wlan_vdev_mlme_get_opmode(vdev);
 	if (tgt_tdls_concurrency_supported && opmode == QDF_P2P_CLIENT_MODE &&
@@ -160,13 +158,12 @@ void  wlan_tdls_check_and_teardown_links_sync(struct wlan_objmgr_psoc *psoc,
 static void wlan_tdls_handle_sap_start(struct wlan_objmgr_psoc *psoc)
 {
 	QDF_STATUS status;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 
 	msg.callback = tdls_process_cmd;
 	msg.type = TDLS_CMD_START_BSS;
 	msg.bodyptr = psoc;
-	status = scheduler_post_message(QDF_MODULE_ID_TDLS,
-					QDF_MODULE_ID_TDLS,
+	status = scheduler_post_message(QDF_MODULE_ID_TDLS, QDF_MODULE_ID_TDLS,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		tdls_err("post start bss msg fail");
@@ -195,10 +192,10 @@ void wlan_tdls_notify_channel_switch_complete(struct wlan_objmgr_psoc *psoc,
 
 	tdls_debug("CSA complete");
 	/*
-	 * Channel Switch can cause SCC -> MCC switch on
-	 * STA vdev. Disable TDLS if CSA causes STA vdev to be in MCC with
-	 * other vdev.
-	 */
+   * Channel Switch can cause SCC -> MCC switch on
+   * STA vdev. Disable TDLS if CSA causes STA vdev to be in MCC with
+   * other vdev.
+   */
 	if (!tdls_is_concurrency_allowed(psoc)) {
 		tdls_disable_offchan_and_teardown_links(tdls_vdev);
 		tdls_debug("Disable the tdls in FW after CSA");
@@ -219,7 +216,7 @@ wlan_tdls_post_set_off_channel_mode(struct wlan_objmgr_psoc *psoc,
 	struct tdls_vdev_priv_obj *tdls_vdev_priv;
 	struct tdls_soc_priv_obj *tdls_soc_priv;
 	struct tdls_set_offchanmode *req;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	QDF_STATUS status;
 
 	tdls_vdev = tdls_get_vdev(psoc, WLAN_TDLS_NB_ID);
@@ -273,16 +270,16 @@ void wlan_tdls_handle_p2p_client_connect(struct wlan_objmgr_psoc *psoc,
 		return;
 
 	/*
-	 * Disable TDLS off-channel when P2P CLI comes up as
-	 * 3rd interface. It will be re-enabled based on the
-	 * concurrency once P2P connection is complete
-	 */
+   * Disable TDLS off-channel when P2P CLI comes up as
+   * 3rd interface. It will be re-enabled based on the
+   * concurrency once P2P connection is complete
+   */
 	wlan_tdls_post_set_off_channel_mode(psoc, DISABLE_ACTIVE_CHANSWITCH);
 }
 #else
-static inline void
-wlan_tdls_handle_sap_start(struct wlan_objmgr_psoc *psoc)
-{}
+static inline void wlan_tdls_handle_sap_start(struct wlan_objmgr_psoc *psoc)
+{
+}
 #endif
 
 void wlan_tdls_notify_start_bss(struct wlan_objmgr_psoc *psoc,
@@ -315,7 +312,9 @@ static QDF_STATUS tdls_notify_flush_cb(struct scheduler_msg *msg)
 static QDF_STATUS
 tdls_notify_disconnect(struct tdls_sta_notify_params *notify_info)
 {
-	struct scheduler_msg msg = {0, };
+	struct scheduler_msg msg = {
+		0,
+	};
 	struct tdls_sta_notify_params *notify;
 	QDF_STATUS status;
 
@@ -328,7 +327,8 @@ tdls_notify_disconnect(struct tdls_sta_notify_params *notify_info)
 
 	notify = qdf_mem_malloc(sizeof(*notify));
 	if (!notify) {
-		wlan_objmgr_vdev_release_ref(notify_info->vdev, WLAN_TDLS_NB_ID);
+		wlan_objmgr_vdev_release_ref(notify_info->vdev,
+					     WLAN_TDLS_NB_ID);
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
@@ -338,8 +338,7 @@ tdls_notify_disconnect(struct tdls_sta_notify_params *notify_info)
 	msg.callback = tdls_process_cmd;
 	msg.type = TDLS_NOTIFY_STA_DISCONNECTION;
 	msg.flush_callback = tdls_notify_flush_cb;
-	status = scheduler_post_message(QDF_MODULE_ID_HDD,
-					QDF_MODULE_ID_TDLS,
+	status = scheduler_post_message(QDF_MODULE_ID_HDD, QDF_MODULE_ID_TDLS,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wlan_objmgr_vdev_release_ref(notify->vdev, WLAN_TDLS_NB_ID);
@@ -351,11 +350,11 @@ tdls_notify_disconnect(struct tdls_sta_notify_params *notify_info)
 	return QDF_STATUS_SUCCESS;
 }
 
-void wlan_tdls_notify_sta_disconnect(uint8_t vdev_id,
-				     bool lfr_roam, bool user_disconnect,
+void wlan_tdls_notify_sta_disconnect(uint8_t vdev_id, bool lfr_roam,
+				     bool user_disconnect,
 				     struct wlan_objmgr_vdev *vdev)
 {
-	struct tdls_sta_notify_params notify_info = {0};
+	struct tdls_sta_notify_params notify_info = { 0 };
 	QDF_STATUS status;
 
 	if (!vdev) {
@@ -381,7 +380,9 @@ void wlan_tdls_notify_sta_disconnect(uint8_t vdev_id,
 static QDF_STATUS
 tdls_notify_connect(struct tdls_sta_notify_params *notify_info)
 {
-	struct scheduler_msg msg = {0, };
+	struct scheduler_msg msg = {
+		0,
+	};
 	struct tdls_sta_notify_params *notify;
 	QDF_STATUS status;
 
@@ -404,8 +405,7 @@ tdls_notify_connect(struct tdls_sta_notify_params *notify_info)
 	msg.callback = tdls_process_cmd;
 	msg.type = TDLS_NOTIFY_STA_CONNECTION;
 	msg.flush_callback = tdls_notify_flush_cb;
-	status = scheduler_post_message(QDF_MODULE_ID_HDD,
-					QDF_MODULE_ID_TDLS,
+	status = scheduler_post_message(QDF_MODULE_ID_HDD, QDF_MODULE_ID_TDLS,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wlan_objmgr_vdev_release_ref(notify->vdev, WLAN_TDLS_NB_ID);
@@ -416,13 +416,12 @@ tdls_notify_connect(struct tdls_sta_notify_params *notify_info)
 	return status;
 }
 
-void
-wlan_tdls_notify_sta_connect(uint8_t session_id,
-			     bool tdls_chan_swit_prohibited,
-			     bool tdls_prohibited,
-			     struct wlan_objmgr_vdev *vdev)
+void wlan_tdls_notify_sta_connect(uint8_t session_id,
+				  bool tdls_chan_swit_prohibited,
+				  bool tdls_prohibited,
+				  struct wlan_objmgr_vdev *vdev)
 {
-	struct tdls_sta_notify_params notify_info = {0};
+	struct tdls_sta_notify_params notify_info = { 0 };
 	QDF_STATUS status;
 
 	if (!vdev) {
@@ -449,10 +448,9 @@ void wlan_tdls_get_features_info(struct wlan_objmgr_psoc *psoc,
 	cfg_tdls_get_support_enable(psoc, &tdls_feature_set->enable_tdls);
 	if (tdls_feature_set->enable_tdls) {
 		cfg_tdls_get_off_channel_enable(
-				psoc,
-				&tdls_feature_set->enable_tdls_offchannel);
+			psoc, &tdls_feature_set->enable_tdls_offchannel);
 		tdls_feature_set->max_tdls_peers =
-					cfg_tdls_get_max_peer_count(psoc);
+			cfg_tdls_get_max_peer_count(psoc);
 		tdls_feature_set->enable_tdls_capability_enhance = true;
 	}
 }

@@ -22,7 +22,7 @@
 #include <qdf_module.h>
 
 #ifdef FUNC_CALL_MAP
-char qdf_func_call_map_buf[QDF_FUNCTION_CALL_MAP_BUF_LEN] = {0};
+char qdf_func_call_map_buf[QDF_FUNCTION_CALL_MAP_BUF_LEN] = { 0 };
 
 void cc_func(unsigned int track)
 {

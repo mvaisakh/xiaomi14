@@ -21,14 +21,13 @@
  * implementation for creating sysfs file range_ext
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs.h>
-#include "wma_api.h"
 #include "wlan_hdd_sysfs_range_ext.h"
+#include "osif_vdev_sync.h"
+#include "wma_api.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
 
-static ssize_t
-__hdd_sysfs_range_ext_show(struct net_device *net_dev, char *buf)
+static ssize_t __hdd_sysfs_range_ext_show(struct net_device *net_dev, char *buf)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -53,10 +52,9 @@ __hdd_sysfs_range_ext_show(struct net_device *net_dev, char *buf)
 	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
 }
 
-static ssize_t
-hdd_sysfs_range_ext_show(struct device *dev,
-			 struct device_attribute *attr,
-			 char *buf)
+static ssize_t hdd_sysfs_range_ext_show(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -94,8 +92,8 @@ static ssize_t __hdd_sysfs_range_ext_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -103,8 +101,8 @@ static ssize_t __hdd_sysfs_range_ext_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("range_ext: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("range_ext: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -115,8 +113,8 @@ static ssize_t __hdd_sysfs_range_ext_store(struct net_device *net_dev,
 
 	hdd_debug("wmi_vdev_param_he_range_ext %d", value);
 	errno = wma_cli_set_command(adapter->deflink->vdev_id,
-				    wmi_vdev_param_he_range_ext,
-				    value, VDEV_CMD);
+				    wmi_vdev_param_he_range_ext, value,
+				    VDEV_CMD);
 	if (errno)
 		hdd_err("Failed to set he_range_ext firmware param, errno %d",
 			errno);
@@ -124,9 +122,9 @@ static ssize_t __hdd_sysfs_range_ext_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_range_ext_store(struct device *dev, struct device_attribute *attr,
-			  char const *buf, size_t count)
+static ssize_t hdd_sysfs_range_ext_store(struct device *dev,
+					 struct device_attribute *attr,
+					 char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;

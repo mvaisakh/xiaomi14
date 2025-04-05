@@ -16,11 +16,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "i_ar6320v2_regtable.h"
+#include "ol_cfg.h"
+#include "ol_fw.h"
 #include "ol_if_athvar.h"
 #include "targaddrs.h"
-#include "ol_cfg.h"
-#include "i_ar6320v2_regtable.h"
-#include "ol_fw.h"
 #ifdef HIF_PCI
 #include "ce_reg.h"
 #endif
@@ -30,8 +30,8 @@
 #if defined(HIF_USB)
 #include "regtable_usb.h"
 #endif
-#include "i_bmi.h"
 #include "cds_api.h"
+#include "i_bmi.h"
 
 #ifdef CONFIG_DISABLE_SLEEP_BMI_OPTION
 static inline void ol_sdio_disable_sleep(struct ol_context *ol_ctx)
@@ -40,15 +40,13 @@ static inline void ol_sdio_disable_sleep(struct ol_context *ol_ctx)
 
 	BMI_ERR("prevent ROME from sleeping");
 	bmi_read_soc_register(MBOX_BASE_ADDRESS + LOCAL_SCRATCH_OFFSET,
-		/* this address should be 0x80C0 for ROME*/
-		&value,
-		ol_ctx);
+			      /* this address should be 0x80C0 for ROME*/
+			      &value, ol_ctx);
 
 	value |= SOC_OPTION_SLEEP_DISABLE;
 
-	bmi_write_soc_register(MBOX_BASE_ADDRESS + LOCAL_SCRATCH_OFFSET,
-				 value,
-				 ol_ctx);
+	bmi_write_soc_register(MBOX_BASE_ADDRESS + LOCAL_SCRATCH_OFFSET, value,
+			       ol_ctx);
 }
 
 #else
@@ -66,30 +64,26 @@ static inline void ol_sdio_disable_sleep(struct ol_context *ol_ctx)
  *
  * Return: QDF_STATUS_SUCCESS on success and error QDF status on failure
  */
-static QDF_STATUS
-ol_usb_extra_initialization(struct ol_context *ol_ctx)
+static QDF_STATUS ol_usb_extra_initialization(struct ol_context *ol_ctx)
 {
 	struct hif_opaque_softc *scn = ol_ctx->scn;
-	struct hif_target_info *tgt_info =
-				hif_get_target_info_handle(scn);
+	struct hif_target_info *tgt_info = hif_get_target_info_handle(scn);
 	QDF_STATUS status = !QDF_STATUS_SUCCESS;
 	u_int32_t param = 0;
 
 	param |= HI_ACS_FLAGS_ALT_DATA_CREDIT_SIZE;
 	status = bmi_write_memory(
-				hif_hia_item_address(tgt_info->target_type,
-					offsetof(struct host_interest_s,
-					hi_acs_flags)),
-				(u_int8_t *)&param, 4, ol_ctx);
+		hif_hia_item_address(tgt_info->target_type,
+				     offsetof(struct host_interest_s,
+					      hi_acs_flags)),
+		(u_int8_t *)&param, 4, ol_ctx);
 
 	return status;
 }
 
 /*Setting SDIO block size, mbox ISR yield limit for SDIO based HIF*/
-static
-QDF_STATUS ol_sdio_extra_initialization(struct ol_context *ol_ctx)
+static QDF_STATUS ol_sdio_extra_initialization(struct ol_context *ol_ctx)
 {
-
 	QDF_STATUS status;
 	uint32_t param;
 	uint32_t blocksizes[HTC_MAILBOX_NUM_MAX];
@@ -99,26 +93,24 @@ QDF_STATUS ol_sdio_extra_initialization(struct ol_context *ol_ctx)
 	uint32_t target_type = tgt_info->target_type;
 
 	/* get the block sizes */
-	status = hif_get_config_item(scn,
-				HIF_DEVICE_GET_BLOCK_SIZE,
-				blocksizes, sizeof(blocksizes));
+	status = hif_get_config_item(scn, HIF_DEVICE_GET_BLOCK_SIZE, blocksizes,
+				     sizeof(blocksizes));
 	if (status) {
 		BMI_ERR("Failed to get block size info from HIF layer");
 		goto exit;
 	}
 	/* note: we actually get the block size for mailbox 1,
-	 * for SDIO the block size on mailbox 0 is artificially
-	 * set to 1 must be a power of 2
-	 */
+   * for SDIO the block size on mailbox 0 is artificially
+   * set to 1 must be a power of 2
+   */
 	qdf_assert((blocksizes[1] & (blocksizes[1] - 1)) == 0);
 
 	/* set the host interest area for the block size */
-	status = bmi_write_memory(hif_hia_item_address(target_type,
-				 offsetof(struct host_interest_s,
-				 hi_mbox_io_block_sz)),
-				(uint8_t *)&blocksizes[1],
-				4,
-				ol_ctx);
+	status = bmi_write_memory(
+		hif_hia_item_address(target_type,
+				     offsetof(struct host_interest_s,
+					      hi_mbox_io_block_sz)),
+		(uint8_t *)&blocksizes[1], 4, ol_ctx);
 
 	if (status) {
 		BMI_ERR("BMIWriteMemory for IO block size failed");
@@ -127,13 +119,11 @@ QDF_STATUS ol_sdio_extra_initialization(struct ol_context *ol_ctx)
 
 	if (MboxIsrYieldValue != 0) {
 		/* set the host for the mbox ISR yield limit */
-		status =
-		bmi_write_memory(hif_hia_item_address(target_type,
-				offsetof(struct host_interest_s,
-				hi_mbox_isr_yield_limit)),
-				(uint8_t *)&MboxIsrYieldValue,
-				4,
-				ol_ctx);
+		status = bmi_write_memory(
+			hif_hia_item_address(target_type,
+					     offsetof(struct host_interest_s,
+						      hi_mbox_isr_yield_limit)),
+			(uint8_t *)&MboxIsrYieldValue, 4, ol_ctx);
 
 		if (status) {
 			BMI_ERR("BMI write for yield limit failed\n");
@@ -141,12 +131,11 @@ QDF_STATUS ol_sdio_extra_initialization(struct ol_context *ol_ctx)
 		}
 	}
 	ol_sdio_disable_sleep(ol_ctx);
-	status = bmi_read_memory(hif_hia_item_address(target_type,
-			offsetof(struct host_interest_s,
-			hi_acs_flags)),
-			(uint8_t *)&param,
-			4,
-			ol_ctx);
+	status = bmi_read_memory(
+		hif_hia_item_address(target_type,
+				     offsetof(struct host_interest_s,
+					      hi_acs_flags)),
+		(uint8_t *)&param, 4, ol_ctx);
 	if (status) {
 		BMI_ERR("BMIReadMemory for hi_acs_flags failed");
 		goto exit;
@@ -166,9 +155,9 @@ QDF_STATUS ol_sdio_extra_initialization(struct ol_context *ol_ctx)
 		param &= ~HI_ACS_FLAGS_SDIO_REDUCE_TX_COMPL_SET;
 
 	bmi_write_memory(hif_hia_item_address(target_type,
-			offsetof(struct host_interest_s,
-			hi_acs_flags)),
-			(uint8_t *)&param, 4, ol_ctx);
+					      offsetof(struct host_interest_s,
+						       hi_acs_flags)),
+			 (uint8_t *)&param, 4, ol_ctx);
 exit:
 	return status;
 }
@@ -202,9 +191,11 @@ void ol_target_ready(struct hif_opaque_softc *scn, void *cfg_ctx)
 
 	if (hif_get_bus_type(scn) != QDF_BUS_TYPE_SDIO)
 		return;
-	status = hif_diag_read_mem(scn,
+	status = hif_diag_read_mem(
+		scn,
 		hif_hia_item_address(target_type,
-		offsetof(struct host_interest_s, hi_acs_flags)),
+				     offsetof(struct host_interest_s,
+					      hi_acs_flags)),
 		(uint8_t *)&value, sizeof(u_int32_t));
 
 	if (status != QDF_STATUS_SUCCESS) {

@@ -21,10 +21,10 @@
  * Implementation for creating sysfs file tdls_peers
  */
 
-#include <wlan_hdd_includes.h>
+#include "wlan_hdd_sysfs_tdls_peers.h"
 #include "osif_vdev_sync.h"
 #include "wlan_hdd_object_manager.h"
-#include "wlan_hdd_sysfs_tdls_peers.h"
+#include <wlan_hdd_includes.h>
 
 /**
  * __show_tdls_all_peers() - dump all TDLS peer info into output string
@@ -42,8 +42,8 @@ static int __show_tdls_all_peers(struct net_device *net_dev, char *buf)
 
 	hdd_enter_dev(net_dev);
 
-	ret_val = scnprintf(buf, PAGE_SIZE, "%s     getTdlsPeers:",
-			    net_dev->name);
+	ret_val = scnprintf(buf, PAGE_SIZE,
+			    "%s     getTdlsPeers:", net_dev->name);
 
 	if (hdd_validate_adapter(adapter)) {
 		ret_val += scnprintf(buf + ret_val, PAGE_SIZE - ret_val,
@@ -107,8 +107,7 @@ void hdd_sysfs_tdls_peers_interface_create(struct hdd_adapter *adapter)
 {
 	int error;
 
-	error = device_create_file(&adapter->dev->dev,
-				   &dev_attr_tdls_peers);
+	error = device_create_file(&adapter->dev->dev, &dev_attr_tdls_peers);
 	if (error)
 		hdd_err("could not create tdls_peers sysfs file");
 }

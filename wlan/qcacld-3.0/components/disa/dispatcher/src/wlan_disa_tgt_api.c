@@ -30,8 +30,9 @@
  *
  * Return: QDF_STATUS
  */
-QDF_STATUS tgt_disa_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
-		struct disa_encrypt_decrypt_req_params *req)
+QDF_STATUS
+tgt_disa_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
+			     struct disa_encrypt_decrypt_req_params *req)
 {
 	struct wlan_disa_tx_ops *disa_tx_ops;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -56,8 +57,9 @@ QDF_STATUS tgt_disa_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-QDF_STATUS tgt_disa_encrypt_decrypt_resp(struct wlan_objmgr_psoc *psoc,
-		struct disa_encrypt_decrypt_resp_params *resp)
+QDF_STATUS
+tgt_disa_encrypt_decrypt_resp(struct wlan_objmgr_psoc *psoc,
+			      struct disa_encrypt_decrypt_resp_params *resp)
 {
 	struct wlan_disa_ctx *disa_ctx;
 	encrypt_decrypt_resp_callback cb;
@@ -130,4 +132,3 @@ QDF_STATUS tgt_disa_unregister_ev_handlers(struct wlan_objmgr_psoc *psoc)
 
 	return QDF_STATUS_SUCCESS;
 }
-

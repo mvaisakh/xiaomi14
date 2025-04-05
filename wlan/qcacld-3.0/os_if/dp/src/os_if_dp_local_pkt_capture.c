@@ -14,25 +14,23 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_types.h"
-#include <net/cfg80211.h>
-#include "wlan_cfg80211.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_pdev_obj.h"
-#include "wlan_objmgr_vdev_obj.h"
 #include "os_if_dp_local_pkt_capture.h"
-#include "wlan_dp_ucfg_api.h"
-#include "wlan_dp_main.h"
 #include "cdp_txrx_mon.h"
-#include "wlan_policy_mgr_api.h"
-#include <ol_defines.h>
+#include "qdf_types.h"
+#include "wlan_cfg80211.h"
+#include "wlan_dp_main.h"
+#include "wlan_dp_ucfg_api.h"
+#include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_objmgr_vdev_obj.h"
 #include "wlan_osif_priv.h"
+#include "wlan_policy_mgr_api.h"
+#include <net/cfg80211.h>
+#include <ol_defines.h>
 
 /* Short name for QCA_NL80211_VENDOR_SUBCMD_SET_MONITOR_MODE command */
-#define SET_MONITOR_MODE_CONFIG_MAX \
-	QCA_WLAN_VENDOR_ATTR_SET_MONITOR_MODE_MAX
-#define SET_MONITOR_MODE_INVALID \
-	QCA_WLAN_VENDOR_ATTR_SET_MONITOR_MODE_INVALID
+#define SET_MONITOR_MODE_CONFIG_MAX QCA_WLAN_VENDOR_ATTR_SET_MONITOR_MODE_MAX
+#define SET_MONITOR_MODE_INVALID QCA_WLAN_VENDOR_ATTR_SET_MONITOR_MODE_INVALID
 #define SET_MONITOR_MODE_DATA_TX_FRAME_TYPE \
 	QCA_WLAN_VENDOR_ATTR_SET_MONITOR_MODE_DATA_TX_FRAME_TYPE
 #define SET_MONITOR_MODE_DATA_RX_FRAME_TYPE \
@@ -47,29 +45,26 @@
 	QCA_WLAN_VENDOR_ATTR_SET_MONITOR_MODE_CTRL_RX_FRAME_TYPE
 
 /* Short name for QCA_NL80211_VENDOR_SUBCMD_GET_MONITOR_MODE command */
-#define GET_MONITOR_MODE_CONFIG_MAX \
-	QCA_WLAN_VENDOR_ATTR_GET_MONITOR_MODE_MAX
-#define GET_MONITOR_MODE_INVALID \
-	QCA_WLAN_VENDOR_ATTR_GET_MONITOR_MODE_INVALID
-#define GET_MONITOR_MODE_STATUS \
-	QCA_WLAN_VENDOR_ATTR_GET_MONITOR_MODE_STATUS
+#define GET_MONITOR_MODE_CONFIG_MAX QCA_WLAN_VENDOR_ATTR_GET_MONITOR_MODE_MAX
+#define GET_MONITOR_MODE_INVALID QCA_WLAN_VENDOR_ATTR_GET_MONITOR_MODE_INVALID
+#define GET_MONITOR_MODE_STATUS QCA_WLAN_VENDOR_ATTR_GET_MONITOR_MODE_STATUS
 
-#define MGMT_FRAME_TYPE    0
-#define DATA_FRAME_TYPE    1
-#define CTRL_FRAME_TYPE    2
+#define MGMT_FRAME_TYPE 0
+#define DATA_FRAME_TYPE 1
+#define CTRL_FRAME_TYPE 2
 
 const struct nla_policy
-set_monitor_mode_policy[SET_MONITOR_MODE_CONFIG_MAX + 1] = {
-	[SET_MONITOR_MODE_DATA_TX_FRAME_TYPE] = { .type = NLA_U32 },
-	[SET_MONITOR_MODE_DATA_RX_FRAME_TYPE] = { .type = NLA_U32 },
-	[SET_MONITOR_MODE_MGMT_TX_FRAME_TYPE] = { .type = NLA_U32 },
-	[SET_MONITOR_MODE_MGMT_RX_FRAME_TYPE] = { .type = NLA_U32 },
-	[SET_MONITOR_MODE_CTRL_TX_FRAME_TYPE] = { .type = NLA_U32 },
-	[SET_MONITOR_MODE_CTRL_RX_FRAME_TYPE] = { .type = NLA_U32 },
-};
+	set_monitor_mode_policy[SET_MONITOR_MODE_CONFIG_MAX + 1] = {
+		[SET_MONITOR_MODE_DATA_TX_FRAME_TYPE] = { .type = NLA_U32 },
+		[SET_MONITOR_MODE_DATA_RX_FRAME_TYPE] = { .type = NLA_U32 },
+		[SET_MONITOR_MODE_MGMT_TX_FRAME_TYPE] = { .type = NLA_U32 },
+		[SET_MONITOR_MODE_MGMT_RX_FRAME_TYPE] = { .type = NLA_U32 },
+		[SET_MONITOR_MODE_CTRL_TX_FRAME_TYPE] = { .type = NLA_U32 },
+		[SET_MONITOR_MODE_CTRL_RX_FRAME_TYPE] = { .type = NLA_U32 },
+	};
 
-static
-bool os_if_local_pkt_capture_concurrency_allowed(struct wlan_objmgr_psoc *psoc)
+static bool
+os_if_local_pkt_capture_concurrency_allowed(struct wlan_objmgr_psoc *psoc)
 {
 	uint32_t num_connections, sta_count;
 
@@ -77,18 +72,17 @@ bool os_if_local_pkt_capture_concurrency_allowed(struct wlan_objmgr_psoc *psoc)
 	osif_debug("Total connections %d", num_connections);
 
 	/*
-	 * No connections, local packet capture is allowed
-	 * Only 1 connection and its STA, then local packet capture is allowed
-	 * 2+ port concurrency, local packet capture is not allowed
-	 */
+   * No connections, local packet capture is allowed
+   * Only 1 connection and its STA, then local packet capture is allowed
+   * 2+ port concurrency, local packet capture is not allowed
+   */
 	if (!num_connections)
 		return true;
 
 	if (num_connections > 1)
 		return false;
 
-	sta_count = policy_mgr_mode_specific_connection_count(psoc,
-							      PM_STA_MODE,
+	sta_count = policy_mgr_mode_specific_connection_count(psoc, PM_STA_MODE,
 							      NULL);
 	osif_debug("sta_count %d", sta_count);
 	if (sta_count == 1)
@@ -119,9 +113,9 @@ static QDF_STATUS os_if_start_capture_allowed(struct wlan_objmgr_vdev *vdev)
 	}
 
 	/*
-	 * Whether STA interface is present or not, is already checked
-	 * while creating monitor interface
-	 */
+   * Whether STA interface is present or not, is already checked
+   * while creating monitor interface
+   */
 
 	if (policy_mgr_is_mlo_sta_present(psoc)) {
 		osif_err("MLO STA present, start capture is not permitted");
@@ -171,12 +165,12 @@ static QDF_STATUS os_if_stop_capture_allowed(struct wlan_objmgr_vdev *vdev)
 	return QDF_STATUS_SUCCESS;
 }
 
-static
-QDF_STATUS os_if_dp_local_pkt_capture_start(struct wlan_objmgr_vdev *vdev,
-					    struct nlattr **tb)
+static QDF_STATUS
+os_if_dp_local_pkt_capture_start(struct wlan_objmgr_vdev *vdev,
+				 struct nlattr **tb)
 {
 	QDF_STATUS status;
-	struct cdp_monitor_filter filter = {0};
+	struct cdp_monitor_filter filter = { 0 };
 	uint32_t pkt_type = 0, val;
 	void *soc;
 
@@ -192,9 +186,8 @@ QDF_STATUS os_if_dp_local_pkt_capture_start(struct wlan_objmgr_vdev *vdev,
 		val = nla_get_u32(tb[SET_MONITOR_MODE_MGMT_TX_FRAME_TYPE]);
 
 		if (val != QCA_WLAN_VENDOR_MONITOR_MGMT_FRAME_TYPE_ALL) {
-			osif_err("Invalid value: %d Expected: %d",
-				val,
-				QCA_WLAN_VENDOR_MONITOR_MGMT_FRAME_TYPE_ALL);
+			osif_err("Invalid value: %d Expected: %d", val,
+				 QCA_WLAN_VENDOR_MONITOR_MGMT_FRAME_TYPE_ALL);
 			status = QDF_STATUS_E_INVAL;
 			goto error;
 		}
@@ -205,9 +198,8 @@ QDF_STATUS os_if_dp_local_pkt_capture_start(struct wlan_objmgr_vdev *vdev,
 		val = nla_get_u32(tb[SET_MONITOR_MODE_MGMT_RX_FRAME_TYPE]);
 
 		if (val != QCA_WLAN_VENDOR_MONITOR_MGMT_FRAME_TYPE_ALL) {
-			osif_err("Invalid value: %d Expected: %d",
-				val,
-				QCA_WLAN_VENDOR_MONITOR_MGMT_FRAME_TYPE_ALL);
+			osif_err("Invalid value: %d Expected: %d", val,
+				 QCA_WLAN_VENDOR_MONITOR_MGMT_FRAME_TYPE_ALL);
 			status = QDF_STATUS_E_INVAL;
 			goto error;
 		}
@@ -218,9 +210,8 @@ QDF_STATUS os_if_dp_local_pkt_capture_start(struct wlan_objmgr_vdev *vdev,
 		val = nla_get_u32(tb[SET_MONITOR_MODE_DATA_TX_FRAME_TYPE]);
 
 		if (val != QCA_WLAN_VENDOR_MONITOR_DATA_FRAME_TYPE_ALL) {
-			osif_err("Invalid value: %d Expected: %d",
-				val,
-				QCA_WLAN_VENDOR_MONITOR_DATA_FRAME_TYPE_ALL);
+			osif_err("Invalid value: %d Expected: %d", val,
+				 QCA_WLAN_VENDOR_MONITOR_DATA_FRAME_TYPE_ALL);
 			status = QDF_STATUS_E_INVAL;
 			goto error;
 		}
@@ -231,9 +222,8 @@ QDF_STATUS os_if_dp_local_pkt_capture_start(struct wlan_objmgr_vdev *vdev,
 		val = nla_get_u32(tb[SET_MONITOR_MODE_DATA_RX_FRAME_TYPE]);
 
 		if (val != QCA_WLAN_VENDOR_MONITOR_DATA_FRAME_TYPE_ALL) {
-			osif_err("Invalid value: %d Expected: %d",
-				val,
-				QCA_WLAN_VENDOR_MONITOR_DATA_FRAME_TYPE_ALL);
+			osif_err("Invalid value: %d Expected: %d", val,
+				 QCA_WLAN_VENDOR_MONITOR_DATA_FRAME_TYPE_ALL);
 			status = QDF_STATUS_E_INVAL;
 			goto error;
 		}
@@ -244,9 +234,8 @@ QDF_STATUS os_if_dp_local_pkt_capture_start(struct wlan_objmgr_vdev *vdev,
 		val = nla_get_u32(tb[SET_MONITOR_MODE_CTRL_TX_FRAME_TYPE]);
 
 		if (val != QCA_WLAN_VENDOR_MONITOR_CTRL_FRAME_TYPE_ALL) {
-			osif_err("Invalid value: %d Expected: %d",
-				val,
-				QCA_WLAN_VENDOR_MONITOR_CTRL_FRAME_TYPE_ALL);
+			osif_err("Invalid value: %d Expected: %d", val,
+				 QCA_WLAN_VENDOR_MONITOR_CTRL_FRAME_TYPE_ALL);
 			status = QDF_STATUS_E_INVAL;
 			goto error;
 		}
@@ -257,9 +246,8 @@ QDF_STATUS os_if_dp_local_pkt_capture_start(struct wlan_objmgr_vdev *vdev,
 		val = nla_get_u32(tb[SET_MONITOR_MODE_CTRL_RX_FRAME_TYPE]);
 
 		if (val != QCA_WLAN_VENDOR_MONITOR_CTRL_FRAME_TYPE_ALL) {
-			osif_err("Invalid value: %d Expected: %d",
-				val,
-				QCA_WLAN_VENDOR_MONITOR_CTRL_FRAME_TYPE_ALL);
+			osif_err("Invalid value: %d Expected: %d", val,
+				 QCA_WLAN_VENDOR_MONITOR_CTRL_FRAME_TYPE_ALL);
 			status = QDF_STATUS_E_INVAL;
 			goto error;
 		}
@@ -290,8 +278,8 @@ QDF_STATUS os_if_dp_set_lpc_configure(struct wlan_objmgr_vdev *vdev,
 	struct nlattr *tb[SET_MONITOR_MODE_CONFIG_MAX + 1];
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
-	if (wlan_cfg80211_nla_parse(tb, SET_MONITOR_MODE_CONFIG_MAX,
-				    data, data_len, set_monitor_mode_policy)) {
+	if (wlan_cfg80211_nla_parse(tb, SET_MONITOR_MODE_CONFIG_MAX, data,
+				    data_len, set_monitor_mode_policy)) {
 		osif_err("Invalid monitor attr");
 		status = QDF_STATUS_E_INVAL;
 		goto error;
@@ -354,8 +342,8 @@ QDF_STATUS os_if_dp_get_lpc_state(struct wlan_objmgr_vdev *vdev,
 	/* Length of attribute QCA_WLAN_VENDOR_ATTR_SET_MONITOR_MODE_STATUS */
 	skb_len += nla_total_size(sizeof(u32));
 
-	reply_skb = wlan_cfg80211_vendor_cmd_alloc_reply_skb(wdev->wiphy,
-							     skb_len);
+	reply_skb =
+		wlan_cfg80211_vendor_cmd_alloc_reply_skb(wdev->wiphy, skb_len);
 	if (!reply_skb) {
 		osif_err("alloc reply skb failed");
 		return QDF_STATUS_E_NOMEM;
@@ -379,4 +367,3 @@ fail:
 	wlan_cfg80211_vendor_free_skb(reply_skb);
 	return status;
 }
-

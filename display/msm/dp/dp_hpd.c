@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights
+ * reserved. Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/slab.h>
-#include <linux/device.h>
 #include <linux/delay.h>
+#include <linux/device.h>
 #include <linux/err.h>
+#include <linux/slab.h>
 
-#include "dp_hpd.h"
 #include "dp_altmode.h"
-#include "dp_usbpd.h"
-#include "dp_gpio_hpd.h"
-#include "dp_lphw_hpd.h"
-#include "dp_debug.h"
 #include "dp_bridge_hpd.h"
+#include "dp_debug.h"
+#include "dp_gpio_hpd.h"
+#include "dp_hpd.h"
+#include "dp_lphw_hpd.h"
+#include "dp_usbpd.h"
 
 static void dp_hpd_host_init(struct dp_hpd *dp_hpd,
-		struct dp_catalog_hpd *catalog)
+			     struct dp_catalog_hpd *catalog)
 {
 	if (!catalog) {
 		DP_ERR("invalid input\n");
@@ -28,7 +28,7 @@ static void dp_hpd_host_init(struct dp_hpd *dp_hpd,
 }
 
 static void dp_hpd_host_deinit(struct dp_hpd *dp_hpd,
-		struct dp_catalog_hpd *catalog)
+			       struct dp_catalog_hpd *catalog)
 {
 	if (!catalog) {
 		DP_ERR("invalid input\n");
@@ -42,9 +42,9 @@ static void dp_hpd_isr(struct dp_hpd *dp_hpd)
 }
 
 struct dp_hpd *dp_hpd_get(struct device *dev, struct dp_parser *parser,
-		struct dp_catalog_hpd *catalog,
-		struct dp_aux_bridge *aux_bridge,
-		struct dp_hpd_cb *cb)
+			  struct dp_catalog_hpd *catalog,
+			  struct dp_aux_bridge *aux_bridge,
+			  struct dp_hpd_cb *cb)
 {
 	struct dp_hpd *dp_hpd = NULL;
 
@@ -85,11 +85,11 @@ struct dp_hpd *dp_hpd_get(struct device *dev, struct dp_parser *parser,
 
 config:
 	if (!dp_hpd->host_init)
-		dp_hpd->host_init	= dp_hpd_host_init;
+		dp_hpd->host_init = dp_hpd_host_init;
 	if (!dp_hpd->host_deinit)
-		dp_hpd->host_deinit	= dp_hpd_host_deinit;
+		dp_hpd->host_deinit = dp_hpd_host_deinit;
 	if (!dp_hpd->isr)
-		dp_hpd->isr		= dp_hpd_isr;
+		dp_hpd->isr = dp_hpd_isr;
 
 end:
 	return dp_hpd;

@@ -21,13 +21,12 @@
  * DOC: This file contains TDLS configures interface definitions
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include "wlan_tdls_cfg_api.h"
 #include "../../core/src/wlan_tdls_main.h"
+#include "wlan_tdls_cfg_api.h"
+#include <wlan_objmgr_psoc_obj.h>
 
 QDF_STATUS
-cfg_tdls_get_support_enable(struct wlan_objmgr_psoc *psoc,
-			    bool *val)
+cfg_tdls_get_support_enable(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -44,8 +43,7 @@ cfg_tdls_get_support_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_set_support_enable(struct wlan_objmgr_psoc *psoc,
-			    bool val)
+cfg_tdls_set_support_enable(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -61,8 +59,7 @@ cfg_tdls_set_support_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_external_control(struct wlan_objmgr_psoc *psoc,
-			      bool *val)
+cfg_tdls_get_external_control(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -79,8 +76,7 @@ cfg_tdls_get_external_control(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_uapsd_mask(struct wlan_objmgr_psoc *psoc,
-			uint32_t *val)
+cfg_tdls_get_uapsd_mask(struct wlan_objmgr_psoc *psoc, uint32_t *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -97,8 +93,7 @@ cfg_tdls_get_uapsd_mask(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_buffer_sta_enable(struct wlan_objmgr_psoc *psoc,
-			       bool *val)
+cfg_tdls_get_buffer_sta_enable(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -115,8 +110,7 @@ cfg_tdls_get_buffer_sta_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_set_buffer_sta_enable(struct wlan_objmgr_psoc *psoc,
-			       bool val)
+cfg_tdls_set_buffer_sta_enable(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -132,8 +126,7 @@ cfg_tdls_set_buffer_sta_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_uapsd_inactivity_time(struct wlan_objmgr_psoc *psoc,
-				   uint32_t *val)
+cfg_tdls_get_uapsd_inactivity_time(struct wlan_objmgr_psoc *psoc, uint32_t *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -150,8 +143,7 @@ cfg_tdls_get_uapsd_inactivity_time(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_rx_pkt_threshold(struct wlan_objmgr_psoc *psoc,
-			      uint32_t *val)
+cfg_tdls_get_rx_pkt_threshold(struct wlan_objmgr_psoc *psoc, uint32_t *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -168,8 +160,7 @@ cfg_tdls_get_rx_pkt_threshold(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_off_channel_enable(struct wlan_objmgr_psoc *psoc,
-				bool *val)
+cfg_tdls_get_off_channel_enable(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -186,8 +177,7 @@ cfg_tdls_get_off_channel_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_set_off_channel_enable(struct wlan_objmgr_psoc *psoc,
-				bool val)
+cfg_tdls_set_off_channel_enable(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -203,8 +193,7 @@ cfg_tdls_set_off_channel_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_off_channel_enable_orig(struct wlan_objmgr_psoc *psoc,
-				     bool *val)
+cfg_tdls_get_off_channel_enable_orig(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -250,8 +239,7 @@ void cfg_tdls_restore_off_channel_enable(struct wlan_objmgr_psoc *psoc)
 }
 
 QDF_STATUS
-cfg_tdls_get_wmm_mode_enable(struct wlan_objmgr_psoc *psoc,
-			     bool *val)
+cfg_tdls_get_wmm_mode_enable(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -268,8 +256,7 @@ cfg_tdls_get_wmm_mode_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_set_vdev_nss_2g(struct wlan_objmgr_psoc *psoc,
-			 uint8_t val)
+cfg_tdls_set_vdev_nss_2g(struct wlan_objmgr_psoc *psoc, uint8_t val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -285,8 +272,7 @@ cfg_tdls_set_vdev_nss_2g(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_set_vdev_nss_5g(struct wlan_objmgr_psoc *psoc,
-			 uint8_t val)
+cfg_tdls_set_vdev_nss_5g(struct wlan_objmgr_psoc *psoc, uint8_t val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -302,8 +288,7 @@ cfg_tdls_set_vdev_nss_5g(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_sleep_sta_enable(struct wlan_objmgr_psoc *psoc,
-			      bool *val)
+cfg_tdls_get_sleep_sta_enable(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -320,8 +305,7 @@ cfg_tdls_get_sleep_sta_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_set_sleep_sta_enable(struct wlan_objmgr_psoc *psoc,
-			      bool val)
+cfg_tdls_set_sleep_sta_enable(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -337,8 +321,7 @@ cfg_tdls_set_sleep_sta_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_get_scan_enable(struct wlan_objmgr_psoc *psoc,
-			 bool *val)
+cfg_tdls_get_scan_enable(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -355,8 +338,7 @@ cfg_tdls_get_scan_enable(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_tdls_set_scan_enable(struct wlan_objmgr_psoc *psoc,
-			 bool val)
+cfg_tdls_set_scan_enable(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -400,8 +382,7 @@ cfg_tdls_set_link_id(struct wlan_objmgr_psoc *psoc, int val)
 	return QDF_STATUS_SUCCESS;
 }
 
-uint16_t
-cfg_tdls_get_max_peer_count(struct wlan_objmgr_psoc *psoc)
+uint16_t cfg_tdls_get_max_peer_count(struct wlan_objmgr_psoc *psoc)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 
@@ -414,8 +395,7 @@ cfg_tdls_get_max_peer_count(struct wlan_objmgr_psoc *psoc)
 	return soc_obj->max_num_tdls_sta;
 }
 
-uint16_t
-cfg_tdls_get_connected_peer_count(struct wlan_objmgr_psoc *psoc)
+uint16_t cfg_tdls_get_connected_peer_count(struct wlan_objmgr_psoc *psoc)
 {
 	struct tdls_soc_priv_obj *soc_obj;
 

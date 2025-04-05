@@ -22,14 +22,14 @@
 
 #include <linux/kobject.h>
 
-#include "wlan_hdd_includes.h"
-#include "wlan_hdd_sysfs_wifi_features.h"
-#include "wlan_hdd_sysfs.h"
 #include "osif_sync.h"
+#include "wlan_hdd_includes.h"
+#include "wlan_hdd_sysfs.h"
+#include "wlan_hdd_sysfs_wifi_features.h"
 
-static ssize_t  __hdd_sysfs_feature_set_show(struct hdd_context *hdd_ctx,
-					     struct kobj_attribute *attr,
-					     char *buf)
+static ssize_t __hdd_sysfs_feature_set_show(struct hdd_context *hdd_ctx,
+					    struct kobj_attribute *attr,
+					    char *buf)
 {
 	ssize_t ret_val = 0;
 	uint8_t i = 0;
@@ -70,8 +70,8 @@ static ssize_t hdd_sysfs_feature_set_show(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
@@ -94,8 +94,7 @@ void hdd_sysfs_create_wifi_feature_interface(struct kobject *wifi_kobject)
 		return;
 	}
 
-	error = sysfs_create_file(wifi_kobject,
-				  &feature_set_attribute.attr);
+	error = sysfs_create_file(wifi_kobject, &feature_set_attribute.attr);
 	if (error)
 		hdd_err("could not create dump in progress sysfs file");
 }
@@ -107,6 +106,5 @@ void hdd_sysfs_destroy_wifi_feature_interface(struct kobject *wifi_kobject)
 		return;
 	}
 
-	sysfs_remove_file(wifi_kobject,
-			  &feature_set_attribute.attr);
+	sysfs_remove_file(wifi_kobject, &feature_set_attribute.attr);
 }

@@ -1,33 +1,34 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
-#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/qrtr.h>
 #include <linux/soc/qcom/qmi.h>
 #if IS_ENABLED(CONFIG_IPC_LOGGING)
 #include <linux/ipc_logging.h>
 #endif
-#include <linux/sched.h>
-#include <asm/current.h>
-#include <linux/limits.h>
-#include <linux/slab.h>
-#include <linux/delay.h>
-#include <linux/workqueue.h>
-#include <linux/of.h>
 #include "cnss_plat_ipc_qmi.h"
 #include "cnss_plat_ipc_service_v01.h"
+#include <asm/current.h>
+#include <linux/delay.h>
+#include <linux/limits.h>
+#include <linux/of.h>
+#include <linux/sched.h>
+#include <linux/slab.h>
+#include <linux/workqueue.h>
 
 #define CNSS_MAX_FILE_SIZE (32 * 1024 * 1024)
 #define CNSS_PLAT_IPC_MAX_USER 1
 #define CNSS_PLAT_IPC_QMI_FILE_TXN_TIMEOUT 10000
 #define QMI_INIT_RETRY_MAX_TIMES 240
 #define QMI_INIT_RETRY_DELAY_MS 250
-#define NUM_LOG_PAGES			10
-#define CNSS_DAEMON_CFG_WAIT_RETRY	200
-#define CNSS_DAEMON_CFG_WAIT_MS	50
+#define NUM_LOG_PAGES 10
+#define CNSS_DAEMON_CFG_WAIT_RETRY 200
+#define CNSS_DAEMON_CFG_WAIT_MS 50
 
 /**
  * struct cnss_plat_ipc_file_data: File transfer context data
@@ -94,8 +95,8 @@ static void *cnss_plat_ipc_log_context;
 
 static void cnss_plat_ipc_logging_init(void)
 {
-	cnss_plat_ipc_log_context = ipc_log_context_create(NUM_LOG_PAGES,
-							   "cnss_plat", 0);
+	cnss_plat_ipc_log_context =
+		ipc_log_context_create(NUM_LOG_PAGES, "cnss_plat", 0);
 	if (!cnss_plat_ipc_log_context)
 		pr_err("cnss_plat: Unable to create log context\n");
 }
@@ -127,7 +128,7 @@ void cnss_plat_ipc_debug_log_print(void *log_ctx, char *process, const char *fn,
 }
 
 #define cnss_plat_ipc_log_print(_x...) \
-		cnss_plat_ipc_debug_log_print(cnss_plat_ipc_log_context, _x)
+	cnss_plat_ipc_debug_log_print(cnss_plat_ipc_log_context, _x)
 #else
 static void cnss_plat_ipc_logging_init(void) {};
 static void cnss_plat_ipc_logging_deinit(void) {};
@@ -149,22 +150,22 @@ void cnss_plat_ipc_debug_log_print(void *log_ctx, char *process, const char *fn,
 }
 
 #define cnss_plat_ipc_log_print(_x...) \
-		cnss_plat_ipc_debug_log_print((void *)NULL, _x)
+	cnss_plat_ipc_debug_log_print((void *)NULL, _x)
 #endif
 
-#define proc_name (in_irq() ? "irq" : \
-		(in_softirq() ? "soft_irq" : current->comm))
-#define cnss_plat_ipc_err(_fmt, ...) \
-		cnss_plat_ipc_log_print(proc_name, __func__, \
-		KERN_ERR, _fmt, ##__VA_ARGS__)
+#define proc_name \
+	(in_irq() ? "irq" : (in_softirq() ? "soft_irq" : current->comm))
+#define cnss_plat_ipc_err(_fmt, ...)                                 \
+	cnss_plat_ipc_log_print(proc_name, __func__, KERN_ERR, _fmt, \
+				##__VA_ARGS__)
 
-#define cnss_plat_ipc_info(_fmt, ...) \
-		cnss_plat_ipc_log_print(proc_name, __func__, \
-		KERN_INFO, _fmt, ##__VA_ARGS__)
+#define cnss_plat_ipc_info(_fmt, ...)                                 \
+	cnss_plat_ipc_log_print(proc_name, __func__, KERN_INFO, _fmt, \
+				##__VA_ARGS__)
 
-#define cnss_plat_ipc_dbg(_fmt, ...) \
-		cnss_plat_ipc_log_print(proc_name, __func__, \
-		KERN_DEBUG, _fmt, ##__VA_ARGS__)
+#define cnss_plat_ipc_dbg(_fmt, ...)                                   \
+	cnss_plat_ipc_log_print(proc_name, __func__, KERN_DEBUG, _fmt, \
+				##__VA_ARGS__)
 /**
  * cnss_plat_ipc_init_file_data() - Initialize file transfer context data
  * @name: File name
@@ -174,11 +175,8 @@ void cnss_plat_ipc_debug_log_print(void *log_ctx, char *process, const char *fn,
  *
  * Return: File data pointer
  */
-static
-struct cnss_plat_ipc_file_data *cnss_plat_ipc_init_file_data(char *name,
-							     char *buf,
-							     u32 buf_size,
-							     u32 file_size)
+static struct cnss_plat_ipc_file_data *
+cnss_plat_ipc_init_file_data(char *name, char *buf, u32 buf_size, u32 file_size)
 {
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
 	struct cnss_plat_ipc_file_data *fd;
@@ -247,14 +245,14 @@ cnss_plat_ipc_qmi_update_user(enum cnss_plat_ipc_qmi_client_id_v01 client_id)
 {
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
 	struct cnss_plat_ipc_qmi_client_ctx *qmi_client =
-			&svc->qmi_client_ctx[client_id];
+		&svc->qmi_client_ctx[client_id];
 	int i;
 
 	for (i = 0; i < qmi_client->num_user; i++) {
 		if (qmi_client->connection_update_cb[i])
-			qmi_client->connection_update_cb[i]
-						(qmi_client->cb_ctx[i],
-						qmi_client->client_connected);
+			qmi_client->connection_update_cb[i](
+				qmi_client->cb_ctx[i],
+				qmi_client->client_connected);
 	}
 }
 
@@ -268,9 +266,8 @@ cnss_plat_ipc_qmi_update_user(enum cnss_plat_ipc_qmi_client_id_v01 client_id)
  *
  * Return: 0 on success, negative error values otherwise
  */
-int cnss_plat_ipc_qmi_file_upload(enum cnss_plat_ipc_qmi_client_id_v01
-				  client_id, char *file_name, u8 *file_buf,
-				  u32 file_size)
+int cnss_plat_ipc_qmi_file_upload(enum cnss_plat_ipc_qmi_client_id_v01 client_id,
+				  char *file_name, u8 *file_buf, u32 file_size)
 {
 	struct cnss_plat_ipc_qmi_file_upload_ind_msg_v01 ind;
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
@@ -304,19 +301,19 @@ int cnss_plat_ipc_qmi_file_upload(enum cnss_plat_ipc_qmi_client_id_v01
 	ind.file_size = fd->file_size;
 	ind.file_id = fd->id;
 
-	ret = qmi_send_indication
-			(svc->svc_hdl, &qmi_client->client_sq,
-			 CNSS_PLAT_IPC_QMI_FILE_UPLOAD_IND_V01,
-			 CNSS_PLAT_IPC_QMI_FILE_UPLOAD_IND_MSG_V01_MAX_MSG_LEN,
-			 cnss_plat_ipc_qmi_file_upload_ind_msg_v01_ei, &ind);
+	ret = qmi_send_indication(
+		svc->svc_hdl, &qmi_client->client_sq,
+		CNSS_PLAT_IPC_QMI_FILE_UPLOAD_IND_V01,
+		CNSS_PLAT_IPC_QMI_FILE_UPLOAD_IND_MSG_V01_MAX_MSG_LEN,
+		cnss_plat_ipc_qmi_file_upload_ind_msg_v01_ei, &ind);
 
 	if (ret < 0) {
 		cnss_plat_ipc_err("QMI failed: %d\n", ret);
 		goto end;
 	}
-	ret = wait_for_completion_timeout(&fd->complete,
-					  msecs_to_jiffies
-					  (CNSS_PLAT_IPC_QMI_FILE_TXN_TIMEOUT));
+	ret = wait_for_completion_timeout(
+		&fd->complete,
+		msecs_to_jiffies(CNSS_PLAT_IPC_QMI_FILE_TXN_TIMEOUT));
 	if (!ret)
 		cnss_plat_ipc_err("Timeout Uploading file: %s\n", fd->name);
 
@@ -340,11 +337,10 @@ EXPORT_SYMBOL(cnss_plat_ipc_qmi_file_upload);
  *
  * Return: None
  */
-static void
-cnss_plat_ipc_qmi_file_upload_req_handler(struct qmi_handle *handle,
-					  struct sockaddr_qrtr *sq,
-					  struct qmi_txn *txn,
-					  const void *decoded_msg)
+static void cnss_plat_ipc_qmi_file_upload_req_handler(struct qmi_handle *handle,
+						      struct sockaddr_qrtr *sq,
+						      struct qmi_txn *txn,
+						      const void *decoded_msg)
 {
 	struct cnss_plat_ipc_qmi_file_upload_req_msg_v01 *req_msg;
 	struct cnss_plat_ipc_qmi_file_upload_resp_msg_v01 *resp;
@@ -352,8 +348,8 @@ cnss_plat_ipc_qmi_file_upload_req_handler(struct qmi_handle *handle,
 	int ret = 0;
 	struct cnss_plat_ipc_file_data *fd;
 
-	req_msg = (struct cnss_plat_ipc_qmi_file_upload_req_msg_v01 *)
-		   decoded_msg;
+	req_msg =
+		(struct cnss_plat_ipc_qmi_file_upload_req_msg_v01 *)decoded_msg;
 	if (!req_msg)
 		return;
 	cnss_plat_ipc_dbg("File ID: %d Seg Index: %d\n", req_msg->file_id,
@@ -368,7 +364,8 @@ cnss_plat_ipc_qmi_file_upload_req_handler(struct qmi_handle *handle,
 	}
 
 	if (req_msg->seg_index != fd->seg_index) {
-		cnss_plat_ipc_err("File %s transfer segment failure\n", fd->name);
+		cnss_plat_ipc_err("File %s transfer segment failure\n",
+				  fd->name);
 		complete(&fd->complete);
 	}
 
@@ -380,19 +377,18 @@ cnss_plat_ipc_qmi_file_upload_req_handler(struct qmi_handle *handle,
 	resp->seg_index = fd->seg_index++;
 	resp->seg_buf_len =
 		(fd->buf_size > CNSS_PLAT_IPC_QMI_MAX_DATA_SIZE_V01 ?
-		 CNSS_PLAT_IPC_QMI_MAX_DATA_SIZE_V01 : fd->buf_size);
+			 CNSS_PLAT_IPC_QMI_MAX_DATA_SIZE_V01 :
+			 fd->buf_size);
 	resp->end = (fd->seg_index == fd->seg_len);
 	memcpy(resp->seg_buf, fd->buf, resp->seg_buf_len);
 
 	cnss_plat_ipc_dbg("ID: %d Seg ID: %d Len: %d End: %d\n", resp->file_id,
 			  resp->seg_index, resp->seg_buf_len, resp->end);
 
-	ret = qmi_send_response
-		(svc->svc_hdl, sq, txn,
-		CNSS_PLAT_IPC_QMI_FILE_UPLOAD_RESP_V01,
+	ret = qmi_send_response(
+		svc->svc_hdl, sq, txn, CNSS_PLAT_IPC_QMI_FILE_UPLOAD_RESP_V01,
 		CNSS_PLAT_IPC_QMI_FILE_UPLOAD_RESP_MSG_V01_MAX_MSG_LEN,
-		cnss_plat_ipc_qmi_file_upload_resp_msg_v01_ei,
-		resp);
+		cnss_plat_ipc_qmi_file_upload_resp_msg_v01_ei, resp);
 
 	if (ret < 0) {
 		cnss_plat_ipc_err("QMI failed: %d\n", ret);
@@ -418,9 +414,9 @@ end:
  * @size: Provides the size of buffer. It is updated to reflect the file size
  *        at the end of file download.
  */
-int cnss_plat_ipc_qmi_file_download(enum cnss_plat_ipc_qmi_client_id_v01
-				    client_id, char *file_name, char *buf,
-				    u32 *size)
+int cnss_plat_ipc_qmi_file_download(
+	enum cnss_plat_ipc_qmi_client_id_v01 client_id, char *file_name,
+	char *buf, u32 *size)
 {
 	struct cnss_plat_ipc_qmi_file_download_ind_msg_v01 ind;
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
@@ -448,19 +444,19 @@ int cnss_plat_ipc_qmi_file_download(enum cnss_plat_ipc_qmi_client_id_v01
 		  file_name);
 	ind.file_id = fd->id;
 
-	ret = qmi_send_indication
-		(svc->svc_hdl, &qmi_client->client_sq,
-		 CNSS_PLAT_IPC_QMI_FILE_DOWNLOAD_IND_V01,
-		 CNSS_PLAT_IPC_QMI_FILE_DOWNLOAD_IND_MSG_V01_MAX_MSG_LEN,
-		 cnss_plat_ipc_qmi_file_download_ind_msg_v01_ei, &ind);
+	ret = qmi_send_indication(
+		svc->svc_hdl, &qmi_client->client_sq,
+		CNSS_PLAT_IPC_QMI_FILE_DOWNLOAD_IND_V01,
+		CNSS_PLAT_IPC_QMI_FILE_DOWNLOAD_IND_MSG_V01_MAX_MSG_LEN,
+		cnss_plat_ipc_qmi_file_download_ind_msg_v01_ei, &ind);
 
 	if (ret < 0) {
 		cnss_plat_ipc_err("QMI failed: %d\n", ret);
 		goto end;
 	}
-	ret = wait_for_completion_timeout(&fd->complete,
-					  msecs_to_jiffies
-					  (CNSS_PLAT_IPC_QMI_FILE_TXN_TIMEOUT));
+	ret = wait_for_completion_timeout(
+		&fd->complete,
+		msecs_to_jiffies(CNSS_PLAT_IPC_QMI_FILE_TXN_TIMEOUT));
 	if (!ret)
 		cnss_plat_ipc_err("Timeout downloading file:%s\n", fd->name);
 
@@ -486,26 +482,24 @@ EXPORT_SYMBOL(cnss_plat_ipc_qmi_file_download);
  *
  * Return: None
  */
-static void
-cnss_plat_ipc_qmi_file_download_req_handler(struct qmi_handle *handle,
-					    struct sockaddr_qrtr *sq,
-					    struct qmi_txn *txn,
-					    const void *decoded_msg)
+static void cnss_plat_ipc_qmi_file_download_req_handler(
+	struct qmi_handle *handle, struct sockaddr_qrtr *sq,
+	struct qmi_txn *txn, const void *decoded_msg)
 {
 	struct cnss_plat_ipc_qmi_file_download_req_msg_v01 *req_msg;
-	struct cnss_plat_ipc_qmi_file_download_resp_msg_v01 resp = {0};
+	struct cnss_plat_ipc_qmi_file_download_resp_msg_v01 resp = { 0 };
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
 	int ret = 0;
 	struct cnss_plat_ipc_file_data *fd;
 
 	req_msg = (struct cnss_plat_ipc_qmi_file_download_req_msg_v01 *)
-		   decoded_msg;
+		decoded_msg;
 	if (!req_msg)
 		return;
-	cnss_plat_ipc_dbg("File ID: %d Size: %d Seg Len: %d Index: %d End: %d\n",
-			  req_msg->file_id, req_msg->file_size,
-			  req_msg->seg_buf_len, req_msg->seg_index,
-			  req_msg->end);
+	cnss_plat_ipc_dbg(
+		"File ID: %d Size: %d Seg Len: %d Index: %d End: %d\n",
+		req_msg->file_id, req_msg->file_size, req_msg->seg_buf_len,
+		req_msg->seg_index, req_msg->end);
 
 	mutex_lock(&svc->file_idr_lock);
 	fd = idr_find(&svc->file_idr, req_msg->file_id);
@@ -516,14 +510,16 @@ cnss_plat_ipc_qmi_file_download_req_handler(struct qmi_handle *handle,
 	}
 
 	if (req_msg->file_size > fd->buf_size) {
-		cnss_plat_ipc_err("File %s size %d larger than buffer size %d\n",
-				  fd->name, req_msg->file_size, fd->buf_size);
+		cnss_plat_ipc_err(
+			"File %s size %d larger than buffer size %d\n",
+			fd->name, req_msg->file_size, fd->buf_size);
 		goto file_error;
 	}
 	if (req_msg->seg_buf_len > CNSS_PLAT_IPC_QMI_MAX_DATA_SIZE_V01 ||
 	    ((req_msg->seg_buf_len + fd->file_size) > fd->buf_size)) {
-		cnss_plat_ipc_err("Segment buf ID: %d buffer size %d not allowed\n",
-				  req_msg->seg_index, req_msg->seg_buf_len);
+		cnss_plat_ipc_err(
+			"Segment buf ID: %d buffer size %d not allowed\n",
+			req_msg->seg_index, req_msg->seg_buf_len);
 		goto file_error;
 	}
 	if (req_msg->seg_index != fd->seg_index) {
@@ -539,12 +535,10 @@ cnss_plat_ipc_qmi_file_download_req_handler(struct qmi_handle *handle,
 
 	resp.file_id = fd->id;
 	resp.seg_index = fd->seg_index;
-	ret = qmi_send_response
-		(svc->svc_hdl, sq, txn,
-		CNSS_PLAT_IPC_QMI_FILE_DOWNLOAD_RESP_V01,
+	ret = qmi_send_response(
+		svc->svc_hdl, sq, txn, CNSS_PLAT_IPC_QMI_FILE_DOWNLOAD_RESP_V01,
 		CNSS_PLAT_IPC_QMI_FILE_DOWNLOAD_RESP_MSG_V01_MAX_MSG_LEN,
-		cnss_plat_ipc_qmi_file_download_resp_msg_v01_ei,
-		&resp);
+		cnss_plat_ipc_qmi_file_download_resp_msg_v01_ei, &resp);
 
 	if (ret < 0)
 		cnss_plat_ipc_err("QMI failed: %d\n", ret);
@@ -571,14 +565,13 @@ file_error:
  *
  * Return: None
  */
-static void
-cnss_plat_ipc_qmi_init_setup_req_handler(struct qmi_handle *handle,
-					 struct sockaddr_qrtr *sq,
-					 struct qmi_txn *txn,
-					 const void *decoded_msg)
+static void cnss_plat_ipc_qmi_init_setup_req_handler(struct qmi_handle *handle,
+						     struct sockaddr_qrtr *sq,
+						     struct qmi_txn *txn,
+						     const void *decoded_msg)
 {
 	struct cnss_plat_ipc_qmi_init_setup_req_msg_v01 *req_msg;
-	struct cnss_plat_ipc_qmi_init_setup_resp_msg_v01 resp = {0};
+	struct cnss_plat_ipc_qmi_init_setup_resp_msg_v01 resp = { 0 };
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
 	struct cnss_plat_ipc_daemon_config *cfg = &daemon_cfg;
 	int ret = 0;
@@ -595,11 +588,10 @@ cnss_plat_ipc_qmi_init_setup_req_handler(struct qmi_handle *handle,
 	cfg->cal_file_available_bitmask = req_msg->cal_file_available_bitmask;
 	cfg->initialized = 1;
 
-	ret = qmi_send_response
-		(svc->svc_hdl, sq, txn,
-		 CNSS_PLAT_IPC_QMI_INIT_SETUP_RESP_V01,
-		 CNSS_PLAT_IPC_QMI_INIT_SETUP_RESP_MSG_V01_MAX_MSG_LEN,
-		 cnss_plat_ipc_qmi_init_setup_resp_msg_v01_ei, &resp);
+	ret = qmi_send_response(
+		svc->svc_hdl, sq, txn, CNSS_PLAT_IPC_QMI_INIT_SETUP_RESP_V01,
+		CNSS_PLAT_IPC_QMI_INIT_SETUP_RESP_MSG_V01_MAX_MSG_LEN,
+		cnss_plat_ipc_qmi_init_setup_resp_msg_v01_ei, &resp);
 	if (ret < 0)
 		cnss_plat_ipc_err("%s: QMI failed: %d\n", __func__, ret);
 }
@@ -615,14 +607,13 @@ cnss_plat_ipc_qmi_init_setup_req_handler(struct qmi_handle *handle,
  *
  * Return: None
  */
-static void
-cnss_plat_ipc_qmi_reg_client_req_handler(struct qmi_handle *handle,
-					 struct sockaddr_qrtr *sq,
-					 struct qmi_txn *txn,
-					 const void *decoded_msg)
+static void cnss_plat_ipc_qmi_reg_client_req_handler(struct qmi_handle *handle,
+						     struct sockaddr_qrtr *sq,
+						     struct qmi_txn *txn,
+						     const void *decoded_msg)
 {
 	struct cnss_plat_ipc_qmi_reg_client_req_msg_v01 *req_msg;
-	struct cnss_plat_ipc_qmi_reg_client_resp_msg_v01 resp = {0};
+	struct cnss_plat_ipc_qmi_reg_client_resp_msg_v01 resp = { 0 };
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
 	struct cnss_plat_ipc_qmi_client_ctx *qmi_client = svc->qmi_client_ctx;
 	int ret = 0;
@@ -633,26 +624,26 @@ cnss_plat_ipc_qmi_reg_client_req_handler(struct qmi_handle *handle,
 	if (req_msg->client_id_valid) {
 		if (req_msg->client_id <= CNSS_PLAT_IPC_MAX_QMI_CLIENTS &&
 		    !qmi_client[req_msg->client_id].client_connected) {
-			cnss_plat_ipc_info
-				("%s: QMI Client Connected. QMI Socket Node: %d Port: %d ID: %d\n",
-				 __func__, sq->sq_node, sq->sq_port,
-				 req_msg->client_id);
+			cnss_plat_ipc_info(
+				"%s: QMI Client Connected. QMI Socket Node: %d Port: %d ID: %d\n",
+				__func__, sq->sq_node, sq->sq_port,
+				req_msg->client_id);
 			qmi_client[req_msg->client_id].client_sq = *sq;
 			qmi_client[req_msg->client_id].client_connected = true;
-			cnss_plat_ipc_qmi_update_user
-					((enum cnss_plat_ipc_qmi_client_id_v01)
+			cnss_plat_ipc_qmi_update_user(
+				(enum cnss_plat_ipc_qmi_client_id_v01)
 					req_msg->client_id);
 		} else {
-			cnss_plat_ipc_err("QMI client already connected or Invalid client id\n");
+			cnss_plat_ipc_err(
+				"QMI client already connected or Invalid client id\n");
 			return;
 		}
 	}
 
-	ret = qmi_send_response
-		(svc->svc_hdl, sq, txn,
-		 CNSS_PLAT_IPC_QMI_REG_CLIENT_RESP_V01,
-		 CNSS_PLAT_IPC_QMI_REG_CLIENT_RESP_MSG_V01_MAX_MSG_LEN,
-		 cnss_plat_ipc_qmi_reg_client_resp_msg_v01_ei, &resp);
+	ret = qmi_send_response(
+		svc->svc_hdl, sq, txn, CNSS_PLAT_IPC_QMI_REG_CLIENT_RESP_V01,
+		CNSS_PLAT_IPC_QMI_REG_CLIENT_RESP_MSG_V01_MAX_MSG_LEN,
+		cnss_plat_ipc_qmi_reg_client_resp_msg_v01_ei, &resp);
 
 	if (ret < 0)
 		cnss_plat_ipc_err("QMI failed: %d\n", ret);
@@ -672,8 +663,7 @@ static void cnss_plat_ipc_qmi_disconnect_cb(struct qmi_handle *handle,
 					    unsigned int port)
 {
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
-	struct cnss_plat_ipc_qmi_client_ctx *qmi_client =
-					svc->qmi_client_ctx;
+	struct cnss_plat_ipc_qmi_client_ctx *qmi_client = svc->qmi_client_ctx;
 	struct cnss_plat_ipc_file_data *fd;
 	u32 file_id;
 	int i;
@@ -687,17 +677,17 @@ static void cnss_plat_ipc_qmi_disconnect_cb(struct qmi_handle *handle,
 		if (qmi_client[i].client_connected &&
 		    qmi_client[i].client_sq.sq_node == node &&
 		    qmi_client[i].client_sq.sq_port == port) {
-			cnss_plat_ipc_err
-				("%s: QMI client disconnect. QMI Socket Node:%d Port:%d ID: %d\n",
-				 __func__, node, port, i);
+			cnss_plat_ipc_err(
+				"%s: QMI client disconnect. QMI Socket Node:%d Port:%d ID: %d\n",
+				__func__, node, port, i);
 			qmi_client[i].client_sq.sq_node = 0;
 			qmi_client[i].client_sq.sq_port = 0;
 			qmi_client[i].client_sq.sq_family = 0;
 			qmi_client[i].client_connected = false;
 
 			/* Daemon killed. Fail any download / upload in progress. This
-			 * will also free stale fd
-			 */
+       * will also free stale fd
+       */
 			mutex_lock(&svc->file_idr_lock);
 			idr_for_each_entry(&svc->file_idr, fd, file_id)
 				complete(&fd->complete);
@@ -719,14 +709,12 @@ static void cnss_plat_ipc_qmi_bye_cb(struct qmi_handle *handle,
 				     unsigned int node)
 {
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
-	struct cnss_plat_ipc_qmi_client_ctx *qmi_client =
-					svc->qmi_client_ctx;
+	struct cnss_plat_ipc_qmi_client_ctx *qmi_client = svc->qmi_client_ctx;
 	int i;
 
 	for (i = 0; i <= CNSS_PLAT_IPC_MAX_QMI_CLIENTS; i++) {
-		cnss_plat_ipc_qmi_disconnect_cb
-					(handle, node,
-					 qmi_client[i].client_sq.sq_port);
+		cnss_plat_ipc_qmi_disconnect_cb(
+			handle, node, qmi_client[i].client_sq.sq_port);
 	}
 }
 
@@ -742,7 +730,7 @@ static struct qmi_msg_handler cnss_plat_ipc_qmi_req_handlers[] = {
 		.msg_id = CNSS_PLAT_IPC_QMI_REG_CLIENT_REQ_V01,
 		.ei = cnss_plat_ipc_qmi_reg_client_req_msg_v01_ei,
 		.decoded_size =
-		sizeof(struct cnss_plat_ipc_qmi_reg_client_req_msg_v01),
+			sizeof(struct cnss_plat_ipc_qmi_reg_client_req_msg_v01),
 		.fn = cnss_plat_ipc_qmi_reg_client_req_handler,
 	},
 	{
@@ -750,23 +738,23 @@ static struct qmi_msg_handler cnss_plat_ipc_qmi_req_handlers[] = {
 		.msg_id = CNSS_PLAT_IPC_QMI_INIT_SETUP_REQ_V01,
 		.ei = cnss_plat_ipc_qmi_init_setup_req_msg_v01_ei,
 		.decoded_size =
-		sizeof(struct cnss_plat_ipc_qmi_init_setup_req_msg_v01),
+			sizeof(struct cnss_plat_ipc_qmi_init_setup_req_msg_v01),
 		.fn = cnss_plat_ipc_qmi_init_setup_req_handler,
 	},
 	{
 		.type = QMI_REQUEST,
 		.msg_id = CNSS_PLAT_IPC_QMI_FILE_DOWNLOAD_REQ_V01,
 		.ei = cnss_plat_ipc_qmi_file_download_req_msg_v01_ei,
-		.decoded_size =
-		sizeof(struct cnss_plat_ipc_qmi_file_download_req_msg_v01),
+		.decoded_size = sizeof(
+			struct cnss_plat_ipc_qmi_file_download_req_msg_v01),
 		.fn = cnss_plat_ipc_qmi_file_download_req_handler,
 	},
 	{
 		.type = QMI_REQUEST,
 		.msg_id = CNSS_PLAT_IPC_QMI_FILE_UPLOAD_REQ_V01,
 		.ei = cnss_plat_ipc_qmi_file_upload_req_msg_v01_ei,
-		.decoded_size =
-		sizeof(struct cnss_plat_ipc_qmi_file_upload_req_msg_v01),
+		.decoded_size = sizeof(
+			struct cnss_plat_ipc_qmi_file_upload_req_msg_v01),
 		.fn = cnss_plat_ipc_qmi_file_upload_req_handler,
 	},
 	{}
@@ -808,8 +796,8 @@ EXPORT_SYMBOL(cnss_plat_ipc_qmi_daemon_config);
  * Return: 0 on success, negative error value otherwise
  */
 int cnss_plat_ipc_register(enum cnss_plat_ipc_qmi_client_id_v01 client_id,
-			   cnss_plat_ipc_connection_update
-			   connection_update_cb, void *cb_ctx)
+			   cnss_plat_ipc_connection_update connection_update_cb,
+			   void *cb_ctx)
 {
 	struct cnss_plat_ipc_qmi_svc_ctx *svc = &plat_ipc_qmi_svc;
 	struct cnss_plat_ipc_qmi_client_ctx *qmi_client;
@@ -886,26 +874,24 @@ static void cnss_plat_ipc_init_fn(struct work_struct *work)
 		return;
 
 retry:
-	ret = qmi_handle_init(svc->svc_hdl,
-			      CNSS_PLAT_IPC_QMI_MAX_MSG_SIZE_V01,
+	ret = qmi_handle_init(svc->svc_hdl, CNSS_PLAT_IPC_QMI_MAX_MSG_SIZE_V01,
 			      &cnss_plat_ipc_qmi_ops,
 			      cnss_plat_ipc_qmi_req_handlers);
 	if (ret < 0) {
 		/* If QMI fails to init, retry for total
-		 * QMI_INIT_RETRY_DELAY_MS * QMI_INIT_RETRY_MAX_TIMES ms.
-		 */
+     * QMI_INIT_RETRY_DELAY_MS * QMI_INIT_RETRY_MAX_TIMES ms.
+     */
 		if (retry++ < QMI_INIT_RETRY_MAX_TIMES) {
 			msleep(QMI_INIT_RETRY_DELAY_MS);
 			goto retry;
 		}
-		cnss_plat_ipc_err("Failed to init QMI handle after %d ms * %d, err = %d\n",
-				  QMI_INIT_RETRY_DELAY_MS,
-				  QMI_INIT_RETRY_MAX_TIMES, ret);
+		cnss_plat_ipc_err(
+			"Failed to init QMI handle after %d ms * %d, err = %d\n",
+			QMI_INIT_RETRY_DELAY_MS, QMI_INIT_RETRY_MAX_TIMES, ret);
 		goto free_svc_hdl;
 	}
 
-	ret = qmi_add_server(svc->svc_hdl,
-			     CNSS_PLATFORM_SERVICE_ID_V01,
+	ret = qmi_add_server(svc->svc_hdl, CNSS_PLATFORM_SERVICE_ID_V01,
 			     CNSS_PLATFORM_SERVICE_VERS_V01, 0);
 	if (ret < 0) {
 		cnss_plat_ipc_err("Server add fail: %d\n", ret);

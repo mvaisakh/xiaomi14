@@ -18,8 +18,8 @@
 #include <osdep.h>
 #include <wmi.h>
 #include <wmi_unified_priv.h>
-#include <wmi_unified_roam_param.h>
 #include <wmi_unified_roam_api.h>
+#include <wmi_unified_roam_param.h>
 
 #ifdef FEATURE_LFR_SUBNET_DETECTION
 QDF_STATUS
@@ -48,31 +48,30 @@ wmi_unified_set_rssi_monitoring_cmd(wmi_unified_t wmi_handle,
 #endif /* FEATURE_RSSI_MONITOR */
 
 QDF_STATUS wmi_unified_roam_scan_offload_rssi_thresh_cmd(
-		wmi_unified_t wmi_handle,
-		struct wlan_roam_offload_scan_rssi_params *roam_req)
+	wmi_unified_t wmi_handle,
+	struct wlan_roam_offload_scan_rssi_params *roam_req)
 {
 	if (wmi_handle->ops->send_roam_scan_offload_rssi_thresh_cmd)
 		return wmi_handle->ops->send_roam_scan_offload_rssi_thresh_cmd(
-				wmi_handle, roam_req);
+			wmi_handle, roam_req);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
 wmi_unified_roam_scan_offload_scan_period(
-				wmi_unified_t wmi_handle,
-				struct wlan_roam_scan_period_params *param)
+	wmi_unified_t wmi_handle, struct wlan_roam_scan_period_params *param)
 {
 	if (wmi_handle->ops->send_roam_scan_offload_scan_period_cmd)
 		return wmi_handle->ops->send_roam_scan_offload_scan_period_cmd(
-							wmi_handle, param);
+			wmi_handle, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_roam_mawc_params_cmd(
-			wmi_unified_t wmi_handle,
-			struct wlan_roam_mawc_params *params)
+QDF_STATUS
+wmi_unified_roam_mawc_params_cmd(wmi_unified_t wmi_handle,
+				 struct wlan_roam_mawc_params *params)
 {
 	if (wmi_handle->ops->send_roam_mawc_params_cmd)
 		return wmi_handle->ops->send_roam_mawc_params_cmd(wmi_handle,
@@ -128,7 +127,7 @@ QDF_STATUS wmi_unified_roam_synch_complete_cmd(wmi_unified_t wmi_handle,
 {
 	if (wmi_handle->ops->send_process_roam_synch_complete_cmd)
 		return wmi_handle->ops->send_process_roam_synch_complete_cmd(
-				wmi_handle, vdev_id);
+			wmi_handle, vdev_id);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -139,20 +138,20 @@ wmi_unified_roam_vendor_handoff_req_cmd(wmi_unified_t wmi_handle,
 					uint8_t vdev_id, uint32_t param_id)
 {
 	if (wmi_handle->ops->send_process_roam_vendor_handoff_req_cmd)
-	      return wmi_handle->ops->send_process_roam_vendor_handoff_req_cmd(
-				wmi_handle, vdev_id, param_id);
+		return wmi_handle->ops->send_process_roam_vendor_handoff_req_cmd(
+			wmi_handle, vdev_id, param_id);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
-wmi_extract_roam_vendor_control_param_event(wmi_unified_t wmi_handle,
-				uint8_t *event, uint32_t len,
-				struct roam_vendor_handoff_params **data)
+wmi_extract_roam_vendor_control_param_event(
+	wmi_unified_t wmi_handle, uint8_t *event, uint32_t len,
+	struct roam_vendor_handoff_params **data)
 {
 	if (wmi_handle->ops->extract_roam_vendor_control_param_event)
 		return wmi_handle->ops->extract_roam_vendor_control_param_event(
-					wmi_handle, event, len, data);
+			wmi_handle, event, len, data);
 	return QDF_STATUS_E_FAILURE;
 }
 #endif
@@ -167,9 +166,7 @@ wmi_extract_roam_synch_key_event(wmi_unified_t wmi_handle, uint8_t *event,
 {
 	if (wmi_handle->ops->extract_roam_synch_key_event)
 		return wmi_handle->ops->extract_roam_synch_key_event(
-							wmi_handle, event,
-							len, keys, num_keys,
-							mld_addr);
+			wmi_handle, event, len, keys, num_keys, mld_addr);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -200,8 +197,7 @@ wmi_unified_send_idle_roam_params(wmi_unified_t wmi_handle,
 				  struct wlan_roam_idle_params *req)
 {
 	if (wmi_handle->ops->send_idle_roam_params)
-		return wmi_handle->ops->send_idle_roam_params(wmi_handle,
-							      req);
+		return wmi_handle->ops->send_idle_roam_params(wmi_handle, req);
 	return QDF_STATUS_E_FAILURE;
 }
 
@@ -232,65 +228,60 @@ wmi_unified_roam_mlo_config_cmd(wmi_unified_t wmi_handle,
 				struct wlan_roam_mlo_config *req)
 {
 	if (wmi_handle->ops->send_roam_mlo_config)
-		return wmi_handle->ops->send_roam_mlo_config(wmi_handle,
-							     req);
+		return wmi_handle->ops->send_roam_mlo_config(wmi_handle, req);
 	return QDF_STATUS_E_FAILURE;
 }
 #endif
 
 QDF_STATUS wmi_unified_roam_scan_offload_mode_cmd(
-			wmi_unified_t wmi_handle,
-			struct wlan_roam_scan_offload_params *rso_cfg)
+	wmi_unified_t wmi_handle, struct wlan_roam_scan_offload_params *rso_cfg)
 {
 	if (wmi_handle->ops->send_roam_scan_offload_mode_cmd)
 		return wmi_handle->ops->send_roam_scan_offload_mode_cmd(
-					wmi_handle, rso_cfg);
+			wmi_handle, rso_cfg);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_send_roam_scan_offload_ap_cmd(
-				wmi_unified_t wmi_handle,
-				struct ap_profile_params *ap_profile)
+QDF_STATUS
+wmi_unified_send_roam_scan_offload_ap_cmd(wmi_unified_t wmi_handle,
+					  struct ap_profile_params *ap_profile)
 {
 	if (wmi_handle->ops->send_roam_scan_offload_ap_profile_cmd)
 		return wmi_handle->ops->send_roam_scan_offload_ap_profile_cmd(
-				  wmi_handle, ap_profile);
+			wmi_handle, ap_profile);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS wmi_unified_roam_scan_offload_cmd(wmi_unified_t wmi_handle,
-					     uint32_t command,
-					     uint32_t vdev_id)
+					     uint32_t command, uint32_t vdev_id)
 {
 	if (wmi_handle->ops->send_roam_scan_offload_cmd)
-		return wmi_handle->ops->send_roam_scan_offload_cmd(wmi_handle,
-								   command,
-								   vdev_id);
+		return wmi_handle->ops->send_roam_scan_offload_cmd(
+			wmi_handle, command, vdev_id);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
 wmi_unified_roam_scan_offload_chan_list_cmd(
-		wmi_unified_t wmi_handle,
-		struct wlan_roam_scan_channel_list *rso_ch_info)
+	wmi_unified_t wmi_handle,
+	struct wlan_roam_scan_channel_list *rso_ch_info)
 {
 	if (wmi_handle->ops->send_roam_scan_offload_chan_list_cmd)
 		return wmi_handle->ops->send_roam_scan_offload_chan_list_cmd(
-				wmi_handle, rso_ch_info);
+			wmi_handle, rso_ch_info);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS wmi_unified_roam_scan_offload_rssi_change_cmd(
-		wmi_unified_t wmi_handle,
-		struct wlan_roam_rssi_change_params *params)
+	wmi_unified_t wmi_handle, struct wlan_roam_rssi_change_params *params)
 {
 	if (wmi_handle->ops->send_roam_scan_offload_rssi_change_cmd)
 		return wmi_handle->ops->send_roam_scan_offload_rssi_change_cmd(
-					wmi_handle, params);
+			wmi_handle, params);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -307,12 +298,12 @@ wmi_unified_set_per_roam_config(wmi_unified_t wmi_handle,
 }
 
 QDF_STATUS wmi_unified_send_limit_off_chan_cmd(
-		wmi_unified_t wmi_handle,
-		struct wmi_limit_off_chan_param *limit_off_chan_param)
+	wmi_unified_t wmi_handle,
+	struct wmi_limit_off_chan_param *limit_off_chan_param)
 {
 	if (wmi_handle->ops->send_limit_off_chan_cmd)
-		return wmi_handle->ops->send_limit_off_chan_cmd(wmi_handle,
-				limit_off_chan_param);
+		return wmi_handle->ops->send_limit_off_chan_cmd(
+			wmi_handle, limit_off_chan_param);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -333,15 +324,14 @@ QDF_STATUS wmi_unified_send_btm_config(wmi_unified_t wmi_handle,
 				       struct wlan_roam_btm_config *params)
 {
 	if (wmi_handle->ops->send_btm_config)
-		return wmi_handle->ops->send_btm_config(wmi_handle,
-							params);
+		return wmi_handle->ops->send_btm_config(wmi_handle, params);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_send_bss_load_config(
-			wmi_unified_t wmi_handle,
-			struct wlan_roam_bss_load_config *params)
+QDF_STATUS
+wmi_unified_send_bss_load_config(wmi_unified_t wmi_handle,
+				 struct wlan_roam_bss_load_config *params)
 {
 	if (wmi_handle->ops->send_roam_bss_load_config)
 		return wmi_handle->ops->send_roam_bss_load_config(wmi_handle,
@@ -362,12 +352,12 @@ wmi_unified_offload_11k_cmd(wmi_unified_t wmi_handle,
 }
 
 QDF_STATUS wmi_unified_invoke_neighbor_report_cmd(
-			wmi_unified_t wmi_handle,
-			struct wmi_invoke_neighbor_report_params *params)
+	wmi_unified_t wmi_handle,
+	struct wmi_invoke_neighbor_report_params *params)
 {
 	if (wmi_handle->ops->send_invoke_neighbor_report_cmd)
 		return wmi_handle->ops->send_invoke_neighbor_report_cmd(
-				wmi_handle, params);
+			wmi_handle, params);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -377,7 +367,7 @@ QDF_STATUS wmi_unified_get_roam_scan_ch_list(wmi_unified_t wmi_handle,
 {
 	if (wmi_handle->ops->send_roam_scan_ch_list_req_cmd)
 		return wmi_handle->ops->send_roam_scan_ch_list_req_cmd(
-				wmi_handle, vdev_id);
+			wmi_handle, vdev_id);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -389,9 +379,8 @@ wmi_extract_roam_event(wmi_unified_t wmi_handle, uint8_t *event,
 		       struct roam_offload_roam_event *roam_event)
 {
 	if (wmi_handle->ops->extract_roam_event)
-		return wmi_handle->ops->extract_roam_event(wmi_handle, event,
-							   data_len,
-							   roam_event);
+		return wmi_handle->ops->extract_roam_event(
+			wmi_handle, event, data_len, roam_event);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -408,15 +397,14 @@ QDF_STATUS wmi_unified_set_roam_triggers(wmi_unified_t wmi_handle,
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_roam_sync_event(wmi_unified_t wmi_handle, void *evt_buf,
-				       uint32_t len,
-				       struct roam_offload_synch_ind **sync_ind)
+QDF_STATUS
+wmi_extract_roam_sync_event(wmi_unified_t wmi_handle, void *evt_buf,
+			    uint32_t len,
+			    struct roam_offload_synch_ind **sync_ind)
 {
 	if (wmi_handle->ops->extract_roam_sync_event)
-		return wmi_handle->ops->extract_roam_sync_event(wmi_handle,
-								evt_buf,
-								len,
-								sync_ind);
+		return wmi_handle->ops->extract_roam_sync_event(
+			wmi_handle, evt_buf, len, sync_ind);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -427,47 +415,42 @@ wmi_extract_roam_sync_frame_event(wmi_unified_t wmi_handle, void *event,
 				  struct roam_synch_frame_ind *frame_ptr)
 {
 	if (wmi_handle->ops->extract_roam_sync_frame_event)
-		return wmi_handle->ops->extract_roam_sync_frame_event(wmi_handle,
-								      event,
-								      len,
-								      frame_ptr);
+		return wmi_handle->ops->extract_roam_sync_frame_event(
+			wmi_handle, event, len, frame_ptr);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
-wmi_extract_btm_denylist_event(wmi_unified_t wmi_handle,
-			       uint8_t *event,
+wmi_extract_btm_denylist_event(wmi_unified_t wmi_handle, uint8_t *event,
 			       uint32_t data_len,
 			       struct roam_denylist_event **dst_list)
 {
 	if (wmi_handle->ops->extract_btm_dl_event)
-		return wmi_handle->ops->extract_btm_dl_event(wmi_handle,
-							     event,
-							     data_len,
-							     dst_list);
+		return wmi_handle->ops->extract_btm_dl_event(
+			wmi_handle, event, data_len, dst_list);
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
-wmi_extract_vdev_disconnect_event(wmi_unified_t wmi_handle,
-				  uint8_t *event, uint32_t data_len,
+wmi_extract_vdev_disconnect_event(wmi_unified_t wmi_handle, uint8_t *event,
+				  uint32_t data_len,
 				  struct vdev_disconnect_event_data *data)
 {
 	if (wmi_handle->ops->extract_vdev_disconnect_event)
 		return wmi_handle->ops->extract_vdev_disconnect_event(
-				wmi_handle, event, data_len, data);
+			wmi_handle, event, data_len, data);
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
-wmi_extract_roam_scan_chan_list(wmi_unified_t wmi_handle,
-				uint8_t *event, uint32_t data_len,
+wmi_extract_roam_scan_chan_list(wmi_unified_t wmi_handle, uint8_t *event,
+				uint32_t data_len,
 				struct cm_roam_scan_ch_resp **data)
 {
 	if (wmi_handle->ops->extract_roam_scan_chan_list)
 		return wmi_handle->ops->extract_roam_scan_chan_list(
-				wmi_handle, event, data_len, data);
+			wmi_handle, event, data_len, data);
 	return QDF_STATUS_E_FAILURE;
 }
 
@@ -489,8 +472,8 @@ wmi_unified_extract_roam_initial_info(wmi_unified_t wmi, void *evt_buf,
 				      uint8_t idx)
 {
 	if (wmi->ops->extract_roam_initial_info)
-		return wmi->ops->extract_roam_initial_info(wmi, evt_buf,
-							   dst, idx);
+		return wmi->ops->extract_roam_initial_info(wmi, evt_buf, dst,
+							   idx);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -511,49 +494,43 @@ wmi_unified_extract_roam_extract_frame_info(wmi_unified_t wmi, void *evt_buf,
 					    uint8_t idx, uint8_t num_frames)
 {
 	if (wmi->ops->extract_roam_frame_info)
-		return wmi->ops->extract_roam_frame_info(wmi, evt_buf,
-							 dst, idx, num_frames);
+		return wmi->ops->extract_roam_frame_info(wmi, evt_buf, dst, idx,
+							 num_frames);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
-wmi_extract_roam_stats_event(wmi_unified_t wmi_handle,
-			     uint8_t *event, uint32_t data_len,
+wmi_extract_roam_stats_event(wmi_unified_t wmi_handle, uint8_t *event,
+			     uint32_t data_len,
 			     struct roam_stats_event **stats_info)
 {
 	if (wmi_handle->ops->extract_roam_stats_event)
-		return wmi_handle->ops->extract_roam_stats_event(wmi_handle,
-								 event,
-								 data_len,
-								 stats_info);
+		return wmi_handle->ops->extract_roam_stats_event(
+			wmi_handle, event, data_len, stats_info);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
-wmi_extract_auth_offload_event(wmi_unified_t wmi_handle,
-			       uint8_t *event, uint32_t data_len,
+wmi_extract_auth_offload_event(wmi_unified_t wmi_handle, uint8_t *event,
+			       uint32_t data_len,
 			       struct auth_offload_event *auth_event)
 {
 	if (wmi_handle->ops->extract_auth_offload_event)
-		return wmi_handle->ops->extract_auth_offload_event(wmi_handle,
-								   event,
-								   data_len,
-								   auth_event);
+		return wmi_handle->ops->extract_auth_offload_event(
+			wmi_handle, event, data_len, auth_event);
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
-wmi_extract_roam_pmkid_request(wmi_unified_t wmi_handle,
-			       uint8_t *event, uint32_t data_len,
+wmi_extract_roam_pmkid_request(wmi_unified_t wmi_handle, uint8_t *event,
+			       uint32_t data_len,
 			       struct roam_pmkid_req_event **list)
 {
 	if (wmi_handle->ops->extract_roam_pmkid_request)
-		return wmi_handle->ops->extract_roam_pmkid_request(wmi_handle,
-								   event,
-								   data_len,
-								   list);
+		return wmi_handle->ops->extract_roam_pmkid_request(
+			wmi_handle, event, data_len, list);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -565,9 +542,7 @@ wmi_extract_roam_candidate_frame_event(wmi_unified_t wmi_handle, uint8_t *event,
 {
 	if (wmi_handle->ops->extract_roam_candidate_frame)
 		return wmi_handle->ops->extract_roam_candidate_frame(
-								  wmi_handle,
-								  event,
-								  len, data);
+			wmi_handle, event, len, data);
 	return QDF_STATUS_E_FAILURE;
 }
 #endif

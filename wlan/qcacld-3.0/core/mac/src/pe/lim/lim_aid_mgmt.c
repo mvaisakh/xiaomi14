@@ -28,19 +28,19 @@
  * --------------------------------------------------------------------
  */
 
-#include "cds_api.h"
-#include "wni_cfg.h"
 #include "ani_global.h"
-#include "sir_params.h"
-#include "lim_utils.h"
-#include "lim_timer_utils.h"
+#include "cds_api.h"
 #include "lim_ft_defs.h"
 #include "lim_session.h"
 #include "lim_session_utils.h"
+#include "lim_timer_utils.h"
+#include "lim_utils.h"
+#include "sir_params.h"
+#include "wni_cfg.h"
 #include <wlan_mlo_mgr_ap.h>
 #include <wlan_mlo_mgr_peer.h>
 
-#define LIM_START_PEER_IDX   1
+#define LIM_START_PEER_IDX 1
 
 /**
  * lim_init_peer_idxpool_legacy() - init aid pool for non MLO SAP
@@ -59,11 +59,11 @@ static void lim_init_peer_idxpool_legacy(struct mac_context *mac,
 
 #ifdef FEATURE_WLAN_TDLS
 	/*
-	* In station role, DPH_STA_HASH_INDEX_PEER (index 1) is reserved
-	* for peer station index corresponding to AP. Avoid choosing that index
-	* and get index starting from (DPH_STA_HASH_INDEX_PEER + 1)
-	* (index 2) for TDLS stations;
-	*/
+   * In station role, DPH_STA_HASH_INDEX_PEER (index 1) is reserved
+   * for peer station index corresponding to AP. Avoid choosing that index
+   * and get index starting from (DPH_STA_HASH_INDEX_PEER + 1)
+   * (index 2) for TDLS stations;
+   */
 	if (LIM_IS_STA_ROLE(pe_session)) {
 		pe_session->freePeerIdxHead = DPH_STA_HASH_INDEX_PEER + 1;
 	} else
@@ -157,7 +157,7 @@ static uint16_t lim_assign_peer_idx_mlo(struct pe_session *pe_session)
 #else
 static uint16_t lim_assign_peer_idx_mlo(struct pe_session *pe_session)
 {
-	return 0;               /* no more free peer index */
+	return 0; /* no more free peer index */
 }
 #endif
 
@@ -178,13 +178,14 @@ static uint16_t lim_assign_peer_idx_legacy(struct mac_context *mac,
 	if (pe_session->freePeerIdxHead) {
 		peer_id = pe_session->freePeerIdxHead;
 		pe_session->freePeerIdxHead =
-		    pe_session->gpLimPeerIdxpool[pe_session->freePeerIdxHead];
+			pe_session
+				->gpLimPeerIdxpool[pe_session->freePeerIdxHead];
 		if (pe_session->freePeerIdxHead == 0)
 			pe_session->freePeerIdxTail = 0;
 		return peer_id;
 	}
 
-	return 0;               /* no more free peer index */
+	return 0; /* no more free peer index */
 }
 
 /**
@@ -213,7 +214,8 @@ uint16_t lim_assign_peer_idx(struct mac_context *mac,
 	uint16_t peer_id;
 
 	/* make sure we haven't exceeded the configurable limit on associations */
-	/* This count is global to ensure that it doesn't exceed the hardware limits. */
+	/* This count is global to ensure that it doesn't exceed the hardware limits.
+   */
 	if (pe_get_current_stas_count(mac) >=
 	    mac->mlme_cfg->sap_cfg.assoc_sta_limit) {
 		/* too many associations already active */
@@ -292,8 +294,8 @@ static void lim_release_peer_idx_legacy(struct mac_context *mac,
 			(uint8_t)peer_idx;
 		pe_session->freePeerIdxTail = (uint8_t)peer_idx;
 	} else {
-		pe_session->freePeerIdxTail =
-			pe_session->freePeerIdxHead = (uint8_t)peer_idx;
+		pe_session->freePeerIdxTail = pe_session->freePeerIdxHead =
+			(uint8_t)peer_idx;
 	}
 	pe_session->gpLimPeerIdxpool[(uint8_t)peer_idx] = 0;
 }
@@ -319,9 +321,8 @@ static void lim_release_peer_idx_legacy(struct mac_context *mac,
  * @return None
  */
 
-void
-lim_release_peer_idx(struct mac_context *mac, uint16_t peer_idx,
-		     struct pe_session *pe_session)
+void lim_release_peer_idx(struct mac_context *mac, uint16_t peer_idx,
+			  struct pe_session *pe_session)
 {
 	pe_session->gLimNumOfCurrentSTAs--;
 
@@ -332,9 +333,8 @@ lim_release_peer_idx(struct mac_context *mac, uint16_t peer_idx,
 }
 
 #ifdef WLAN_FEATURE_11BE_MLO
-void
-lim_release_mlo_conn_idx(struct mac_context *mac, uint16_t peer_idx,
-			 struct pe_session *session, bool free_aid)
+void lim_release_mlo_conn_idx(struct mac_context *mac, uint16_t peer_idx,
+			      struct pe_session *session, bool free_aid)
 {
 	session->gLimNumOfCurrentSTAs--;
 	if (free_aid &&

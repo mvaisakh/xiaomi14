@@ -22,16 +22,16 @@
  *
  * APIs to get/set target_if params
  */
-#include <qdf_status.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <target_if.h>
-#include <target_type.h>
 #include <init_deinit_lmac.h>
 #include <qdf_module.h>
+#include <qdf_status.h>
+#include <target_if.h>
+#include <target_type.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
 
-struct wlan_psoc_target_capability_info *lmac_get_target_cap(
-				struct wlan_objmgr_psoc *psoc)
+struct wlan_psoc_target_capability_info *
+lmac_get_target_cap(struct wlan_objmgr_psoc *psoc)
 {
 	struct target_psoc_info *tgt_hdl;
 
@@ -97,7 +97,7 @@ uint32_t lmac_get_tgt_type(struct wlan_objmgr_psoc *psoc)
 qdf_export_symbol(lmac_get_tgt_type);
 
 QDF_STATUS lmac_get_pdev_target_type(struct wlan_objmgr_pdev *pdev,
-					uint32_t *target_type)
+				     uint32_t *target_type)
 {
 	struct wlan_objmgr_psoc *psoc;
 
@@ -223,8 +223,7 @@ HTC_HANDLE lmac_get_htc_hdl(struct wlan_objmgr_psoc *psoc)
 }
 qdf_export_symbol(lmac_get_htc_hdl);
 
-void lmac_set_htc_hdl(struct wlan_objmgr_psoc *psoc,
-		      HTC_HANDLE htc_hdl)
+void lmac_set_htc_hdl(struct wlan_objmgr_psoc *psoc, HTC_HANDLE htc_hdl)
 {
 	struct target_psoc_info *tgt_hdl;
 
@@ -266,8 +265,7 @@ struct hif_opaque_softc *lmac_get_ol_hif_hdl(struct wlan_objmgr_psoc *psoc)
 }
 qdf_export_symbol(lmac_get_ol_hif_hdl);
 
-struct wmi_unified *lmac_get_pdev_wmi_handle(
-		struct wlan_objmgr_pdev *pdev)
+struct wmi_unified *lmac_get_pdev_wmi_handle(struct wlan_objmgr_pdev *pdev)
 {
 	struct target_pdev_info *tgt_hdl;
 
@@ -286,8 +284,7 @@ struct wmi_unified *lmac_get_pdev_wmi_handle(
 }
 qdf_export_symbol(lmac_get_pdev_wmi_handle);
 
-wmi_unified_t
-lmac_get_pdev_wmi_unified_handle(struct wlan_objmgr_pdev *pdev)
+wmi_unified_t lmac_get_pdev_wmi_unified_handle(struct wlan_objmgr_pdev *pdev)
 {
 	return (wmi_unified_t)lmac_get_pdev_wmi_handle(pdev);
 }
@@ -346,8 +343,8 @@ void *lmac_get_pdev_feature_ptr(struct wlan_objmgr_pdev *pdev)
 }
 qdf_export_symbol(lmac_get_pdev_feature_ptr);
 
-enum wmi_host_hw_mode_config_type lmac_get_preferred_hw_mode(
-				struct wlan_objmgr_psoc *psoc)
+enum wmi_host_hw_mode_config_type
+lmac_get_preferred_hw_mode(struct wlan_objmgr_psoc *psoc)
 {
 	struct target_psoc_info *tgt_hdl;
 

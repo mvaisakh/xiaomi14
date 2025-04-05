@@ -23,49 +23,45 @@
  *
  */
 
-#include <linux/version.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/etherdevice.h>
-#include <linux/wireless.h>
+#include "wlan_hdd_mcc_quota.h"
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <net/cfg80211.h>
+#include "qdf_str.h"
+#include "qdf_trace.h"
+#include "qdf_types.h"
 #include "sme_api.h"
 #include "wlan_hdd_cfg80211.h"
 #include "wlan_hdd_hostapd.h"
 #include "wlan_hdd_main.h"
-#include "wlan_hdd_mcc_quota.h"
-#include "wlan_hdd_trace.h"
-#include "qdf_str.h"
-#include "qdf_trace.h"
-#include "qdf_types.h"
-#include "wlan_policy_mgr_api.h"
-#include <qca_vendor.h>
-#include "wlan_utility.h"
-#include "wlan_policy_mgr_ucfg.h"
-#include "wlan_mlme_ucfg_api.h"
-#include "wlan_mlme_public_struct.h"
 #include "wlan_hdd_object_manager.h"
-#include "sme_api.h"
-#include "wlan_p2p_ucfg_api.h"
+#include "wlan_hdd_trace.h"
+#include "wlan_mlme_public_struct.h"
+#include "wlan_mlme_ucfg_api.h"
 #include "wlan_osif_priv.h"
 #include "wlan_p2p_mcc_quota_public_struct.h"
+#include "wlan_p2p_ucfg_api.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_policy_mgr_ucfg.h"
+#include "wlan_utility.h"
 #include "wma.h"
+#include <linux/etherdevice.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/version.h>
+#include <linux/wireless.h>
+#include <net/cfg80211.h>
+#include <qca_vendor.h>
+#include <wlan_hdd_includes.h>
 
-const struct nla_policy
-set_mcc_quota_policy[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_TYPE] =	{ .type = NLA_U32 },
+const struct nla_policy set_mcc_quota_policy[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_MAX +
+					     1] = {
+	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_TYPE] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_ENTRIES] =
-				VENDOR_NLA_POLICY_NESTED(set_mcc_quota_policy),
-	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_FREQ] =	{
-					.type = NLA_U32 },
-	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_TIME_PERCENTAGE] =	{
-							.type = NLA_U32 },
+		VENDOR_NLA_POLICY_NESTED(set_mcc_quota_policy),
+	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_FREQ] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_TIME_PERCENTAGE] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_IFINDEX] = { .type = NLA_U32 },
-	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_LOW_LATENCY_MODE_ENABLE] = {
-					.type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_LOW_LATENCY_MODE_ENABLE] = { .type = NLA_U8 },
 };
 
 int wlan_hdd_set_mcc_adaptive_sched(struct wlan_objmgr_psoc *psoc, bool enable)
@@ -141,15 +137,14 @@ wlan_hdd_set_mcc_fixed_quota(struct hdd_context *hdd_ctx,
 	nla_for_each_nested(curr_attr, tb[cmd_id], rem_bytes) {
 		if (entries > 0) {
 			hdd_debug("Only one entry permitted");
-			hdd_debug("Entry (%d) for (%u) is ignored",
-				  entries, nla_type(curr_attr));
+			hdd_debug("Entry (%d) for (%u) is ignored", entries,
+				  nla_type(curr_attr));
 			entries++;
 			continue;
 		}
-		rc = wlan_cfg80211_nla_parse_nested(quota_entries,
-			       QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_MAX,
-			       curr_attr,
-			       set_mcc_quota_policy);
+		rc = wlan_cfg80211_nla_parse_nested(
+			quota_entries, QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_MAX,
+			curr_attr, set_mcc_quota_policy);
 		if (rc) {
 			hdd_err("Entry parse error %d", rc);
 			return -EINVAL;
@@ -227,10 +222,8 @@ wlan_hdd_set_mcc_fixed_quota(struct hdd_context *hdd_ctx,
  * Return: 0 on success, negative errno on failure
  */
 static int wlan_hdd_set_mcc_low_latency_quota(
-			struct hdd_context *hdd_ctx,
-			struct wireless_dev *wdev,
-			enum qca_wlan_vendor_mcc_quota_type quota_type,
-			struct nlattr *tb[])
+	struct hdd_context *hdd_ctx, struct wireless_dev *wdev,
+	enum qca_wlan_vendor_mcc_quota_type quota_type, struct nlattr *tb[])
 {
 	struct net_device *dev = wdev->netdev;
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
@@ -266,11 +259,10 @@ static int wlan_hdd_set_mcc_low_latency_quota(
 }
 
 int wlan_hdd_cfg80211_set_mcc_quota(struct wiphy *wiphy,
-				    struct wireless_dev *wdev,
-				    const void *attr,
+				    struct wireless_dev *wdev, const void *attr,
 				    int attr_len)
 {
-	struct hdd_context *hdd_ctx  = wiphy_priv(wiphy);
+	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_MAX + 1];
 	struct wlan_objmgr_psoc *psoc;
 	uint32_t cmd_id, quota_type;
@@ -320,8 +312,7 @@ int wlan_hdd_apply_user_mcc_quota(struct hdd_adapter *adapter)
 	if (!hdd_ctx)
 		return -EINVAL;
 
-	quota_val =
-		ucfg_mlme_get_user_mcc_quota_percentage(hdd_ctx->psoc);
+	quota_val = ucfg_mlme_get_user_mcc_quota_percentage(hdd_ctx->psoc);
 
 	if (quota_val == 0) {
 		hdd_debug("no mcc/quota for mode %d, vdev_id : %u",
@@ -393,8 +384,8 @@ wlan_cfg80211_indicate_mcc_quota(struct wlan_objmgr_psoc *psoc,
 	}
 
 	/* nested element of QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_FREQ and
-	 * QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_TIME_PERCENTAGE
-	 */
+   * QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_TIME_PERCENTAGE
+   */
 	data_len = nla_total_size(nla_total_size(sizeof(uint32_t)) +
 				  nla_total_size(sizeof(uint32_t)));
 	/* nested array of quota element */
@@ -402,16 +393,14 @@ wlan_cfg80211_indicate_mcc_quota(struct wlan_objmgr_psoc *psoc,
 	/* QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_TYPE and NL msg header */
 	data_len += nla_total_size(sizeof(uint32_t)) + NLMSG_HDRLEN;
 
-	vendor_event = wlan_cfg80211_vendor_event_alloc(pdev_osif_priv->wiphy,
-							wdev, data_len,
-							QCA_NL80211_VENDOR_SUBCMD_MCC_QUOTA_INDEX,
-							GFP_KERNEL);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		pdev_osif_priv->wiphy, wdev, data_len,
+		QCA_NL80211_VENDOR_SUBCMD_MCC_QUOTA_INDEX, GFP_KERNEL);
 	if (!vendor_event) {
 		hdd_debug("wlan_cfg80211_vendor_event_alloc failed");
 		return QDF_STATUS_E_NOMEM;
 	}
-	if (nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_TYPE,
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_TYPE,
 			quota_info->type)) {
 		status = QDF_STATUS_E_NOMEM;
 		hdd_debug("add QUOTA_TYPE failed");
@@ -425,8 +414,8 @@ wlan_cfg80211_indicate_mcc_quota(struct wlan_objmgr_psoc *psoc,
 		hdd_debug("add QUOTA_ENTRIES failed");
 		goto err;
 	}
-	hdd_debug("mcc quota vdev %d type %d num %d",
-		  vdev_id, quota_info->type, quota_info->num_chan_quota);
+	hdd_debug("mcc quota vdev %d type %d num %d", vdev_id, quota_info->type,
+		  quota_info->num_chan_quota);
 
 	for (idx = 0; idx < quota_info->num_chan_quota; idx++) {
 		quota_element = nla_nest_start(vendor_event, idx);
@@ -444,17 +433,18 @@ wlan_cfg80211_indicate_mcc_quota(struct wlan_objmgr_psoc *psoc,
 			goto err;
 		}
 
-		if (nla_put_u32(vendor_event,
-				QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_TIME_PERCENTAGE,
-				quota_info->chan_quota[idx].channel_time_quota)) {
+		if (nla_put_u32(
+			    vendor_event,
+			    QCA_WLAN_VENDOR_ATTR_MCC_QUOTA_CHAN_TIME_PERCENTAGE,
+			    quota_info->chan_quota[idx].channel_time_quota)) {
 			status = QDF_STATUS_E_NOMEM;
 			hdd_debug("add QUOTA_CHAN_TIME_PERCENTAGE failed");
 			goto err;
 		}
 
 		nla_nest_end(vendor_event, quota_element);
-		hdd_debug("mcc quota vdev %d [%d] %d quota %d",
-			  vdev_id, idx, quota_info->chan_quota[idx].chan_mhz,
+		hdd_debug("mcc quota vdev %d [%d] %d quota %d", vdev_id, idx,
+			  quota_info->chan_quota[idx].chan_mhz,
 			  quota_info->chan_quota[idx].channel_time_quota);
 	}
 	nla_nest_end(vendor_event, quota_attrs);
@@ -477,6 +467,6 @@ err:
  */
 void wlan_hdd_register_mcc_quota_event_callback(struct hdd_context *hdd_ctx)
 {
-	ucfg_p2p_register_mcc_quota_event_os_if_cb(hdd_ctx->psoc,
-						   wlan_cfg80211_indicate_mcc_quota);
+	ucfg_p2p_register_mcc_quota_event_os_if_cb(
+		hdd_ctx->psoc, wlan_cfg80211_indicate_mcc_quota);
 }

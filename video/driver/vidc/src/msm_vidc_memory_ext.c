@@ -6,24 +6,25 @@
 
 #include <linux/dma-buf.h>
 #include <linux/dma-heap.h>
-#include <linux/qcom-dma-mapping.h>
 #include <linux/mem-buf.h>
+#include <linux/qcom-dma-mapping.h>
 #include <soc/qcom/secure_buffer.h>
 
 #include "msm_vidc_core.h"
-#include "msm_vidc_driver.h"
 #include "msm_vidc_debug.h"
+#include "msm_vidc_driver.h"
 #include "msm_vidc_events.h"
-#include "msm_vidc_platform.h"
 #include "msm_vidc_memory.h"
+#include "msm_vidc_platform.h"
 
 static bool is_non_secure_buffer(struct dma_buf *dmabuf)
 {
 	return mem_buf_dma_buf_exclusive_owner(dmabuf);
 }
 
-static struct dma_buf_attachment *msm_vidc_dma_buf_attach_ext(struct msm_vidc_core *core,
-	struct dma_buf *dbuf, struct device *dev)
+static struct dma_buf_attachment *
+msm_vidc_dma_buf_attach_ext(struct msm_vidc_core *core, struct dma_buf *dbuf,
+			    struct device *dev)
 {
 	int rc = 0;
 	struct dma_buf_attachment *attach = NULL;
@@ -37,12 +38,13 @@ static struct dma_buf_attachment *msm_vidc_dma_buf_attach_ext(struct msm_vidc_co
 	cb = msm_vidc_get_context_bank_for_device(core, dev);
 	if (!cb) {
 		d_vpr_e("%s: Failed to get context bank device for %s\n",
-			 __func__, dev_name(dev));
+			__func__, dev_name(dev));
 		return NULL;
 	}
 
 	/* reject non-secure mapping request for a secure buffer(or vice versa) */
-	if (cb->region == MSM_VIDC_NON_SECURE || cb->region == MSM_VIDC_NON_SECURE_PIXEL) {
+	if (cb->region == MSM_VIDC_NON_SECURE ||
+	    cb->region == MSM_VIDC_NON_SECURE_PIXEL) {
 		if (!is_non_secure_buffer(dbuf)) {
 			d_vpr_e("%s: secure buffer mapping to non-secure region %d not allowed\n",
 				__func__, cb->region);
@@ -60,13 +62,14 @@ static struct dma_buf_attachment *msm_vidc_dma_buf_attach_ext(struct msm_vidc_co
 	if (IS_ERR_OR_NULL(attach)) {
 		rc = PTR_ERR(attach) ? PTR_ERR(attach) : -1;
 		d_vpr_e("Failed to attach dmabuf, error %d\n", rc);
-		return NULL;;
+		return NULL;
+		;
 	}
 
 	/*
-	 * We do not need dma_map function to perform cache operations
-	 * on the whole buffer size and hence pass skip sync flag.
-	 */
+   * We do not need dma_map function to perform cache operations
+   * on the whole buffer size and hence pass skip sync flag.
+   */
 	attach->dma_map_attrs |= DMA_ATTR_SKIP_CPU_SYNC;
 	if (is_sys_cache_present(core))
 		attach->dma_map_attrs |= DMA_ATTR_IOMMU_USE_UPSTREAM_HINT;
@@ -74,7 +77,8 @@ static struct dma_buf_attachment *msm_vidc_dma_buf_attach_ext(struct msm_vidc_co
 	return attach;
 }
 
-static int msm_vidc_memory_free_ext(struct msm_vidc_core *core, struct msm_vidc_mem *mem)
+static int msm_vidc_memory_free_ext(struct msm_vidc_core *core,
+				    struct msm_vidc_mem *mem)
 {
 	int rc = 0;
 
@@ -83,13 +87,14 @@ static int msm_vidc_memory_free_ext(struct msm_vidc_core *core, struct msm_vidc_
 		return -EINVAL;
 	}
 
-	d_vpr_h(
-		"%s: dmabuf %pK, size %d, kvaddr %pK, buffer_type %s, secure %d, region %d\n",
-		__func__, mem->dmabuf, mem->size, mem->kvaddr, buf_name(mem->type),
-		mem->secure, mem->region);
+	d_vpr_h("%s: dmabuf %pK, size %d, kvaddr %pK, buffer_type %s, secure %d, "
+		"region %d\n",
+		__func__, mem->dmabuf, mem->size, mem->kvaddr,
+		buf_name(mem->type), mem->secure, mem->region);
 
 	trace_msm_vidc_dma_buffer("FREE", mem->dmabuf, mem->size, mem->kvaddr,
-		buf_name(mem->type), mem->secure, mem->region);
+				  buf_name(mem->type), mem->secure,
+				  mem->region);
 
 	if (mem->kvaddr) {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
@@ -109,7 +114,8 @@ static int msm_vidc_memory_free_ext(struct msm_vidc_core *core, struct msm_vidc_
 	return rc;
 }
 
-static int msm_vidc_memory_alloc_ext(struct msm_vidc_core *core, struct msm_vidc_mem *mem)
+static int msm_vidc_memory_alloc_ext(struct msm_vidc_core *core,
+				     struct msm_vidc_mem *mem)
 {
 	int rc = 0;
 	int size = 0;
@@ -179,11 +185,11 @@ static int msm_vidc_memory_alloc_ext(struct msm_vidc_core *core, struct msm_vidc
 	if (mem->map_kernel) {
 		dma_buf_begin_cpu_access(mem->dmabuf, DMA_BIDIRECTIONAL);
 
-	/*
-	 * Waipio uses Kernel version 5.10.x,
-	 * Kalama uses Kernel Version 5.15.x,
-	 * Pineapple uses Kernel Version 5.18.x
-	 */
+		/*
+     * Waipio uses Kernel version 5.10.x,
+     * Kalama uses Kernel Version 5.15.x,
+     * Pineapple uses Kernel Version 5.18.x
+     */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0))
 		mem->kvaddr = dma_buf_vmap(mem->dmabuf);
 		if (!mem->kvaddr) {
@@ -210,21 +216,23 @@ static int msm_vidc_memory_alloc_ext(struct msm_vidc_core *core, struct msm_vidc
 #endif
 	}
 
-	d_vpr_h(
-		"%s: dmabuf %pK, size %d, kvaddr %pK, buffer_type %s, secure %d, region %d\n",
-		__func__, mem->dmabuf, mem->size, mem->kvaddr, buf_name(mem->type),
-		mem->secure, mem->region);
-	trace_msm_vidc_dma_buffer("ALLOC", mem->dmabuf, mem->size, mem->kvaddr,
+	d_vpr_h("%s: dmabuf %pK, size %d, kvaddr %pK, buffer_type %s, secure %d, "
+		"region %d\n",
+		__func__, mem->dmabuf, mem->size, mem->kvaddr,
 		buf_name(mem->type), mem->secure, mem->region);
+	trace_msm_vidc_dma_buffer("ALLOC", mem->dmabuf, mem->size, mem->kvaddr,
+				  buf_name(mem->type), mem->secure,
+				  mem->region);
 
 	return 0;
 
 error:
-    msm_vidc_memory_free_ext(core, mem);
+	msm_vidc_memory_free_ext(core, mem);
 	return rc;
 }
 
-static int msm_vidc_memory_map_ext(struct msm_vidc_core *core, struct msm_vidc_mem *mem)
+static int msm_vidc_memory_map_ext(struct msm_vidc_core *core,
+				   struct msm_vidc_mem *mem)
 {
 	int rc = 0;
 	struct dma_buf_attachment *attach = NULL;
@@ -242,7 +250,8 @@ static int msm_vidc_memory_map_ext(struct msm_vidc_core *core, struct msm_vidc_m
 	}
 
 	/* reject non-secure mapping request for a secure buffer(or vice versa) */
-	if (mem->region == MSM_VIDC_NON_SECURE || mem->region == MSM_VIDC_NON_SECURE_PIXEL) {
+	if (mem->region == MSM_VIDC_NON_SECURE ||
+	    mem->region == MSM_VIDC_NON_SECURE_PIXEL) {
 		if (!is_non_secure_buffer(mem->dmabuf)) {
 			d_vpr_e("%s: secure buffer mapping to non-secure region %d not allowed\n",
 				__func__, mem->region);
@@ -258,8 +267,7 @@ static int msm_vidc_memory_map_ext(struct msm_vidc_core *core, struct msm_vidc_m
 
 	cb = msm_vidc_get_context_bank_for_region(core, mem->region);
 	if (!cb || !cb->dev) {
-		d_vpr_e("%s: Failed to get context bank device\n",
-			 __func__);
+		d_vpr_e("%s: Failed to get context bank device\n", __func__);
 		rc = -EIO;
 		goto error_cb;
 	}
@@ -286,7 +294,8 @@ static int msm_vidc_memory_map_ext(struct msm_vidc_core *core, struct msm_vidc_m
 
 exit:
 	d_vpr_l("%s: type %11s, device_addr %#llx, refcount %d, region %d\n",
-		__func__, buf_name(mem->type), mem->device_addr, mem->refcount, mem->region);
+		__func__, buf_name(mem->type), mem->device_addr, mem->refcount,
+		mem->region);
 
 	return 0;
 
@@ -298,7 +307,7 @@ error_cb:
 }
 
 static int msm_vidc_memory_unmap_ext(struct msm_vidc_core *core,
-	struct msm_vidc_mem *mem)
+				     struct msm_vidc_mem *mem)
 {
 	int rc = 0;
 
@@ -314,14 +323,15 @@ static int msm_vidc_memory_unmap_ext(struct msm_vidc_core *core,
 		return -EINVAL;
 	}
 
-	d_vpr_l(
-		"%s: type %11s, device_addr %#llx, refcount %d, region %d\n",
-		__func__, buf_name(mem->type), mem->device_addr, mem->refcount, mem->region);
+	d_vpr_l("%s: type %11s, device_addr %#llx, refcount %d, region %d\n",
+		__func__, buf_name(mem->type), mem->device_addr, mem->refcount,
+		mem->region);
 
 	if (mem->refcount)
 		goto exit;
 
-	call_mem_op(core, dma_buf_unmap_attachment, core, mem->attach, mem->table);
+	call_mem_op(core, dma_buf_unmap_attachment, core, mem->attach,
+		    mem->table);
 	call_mem_op(core, dma_buf_detach, core, mem->dmabuf, mem->attach);
 
 	mem->device_addr = 0x0;
@@ -333,7 +343,7 @@ exit:
 }
 
 static u32 msm_vidc_buffer_region_ext(struct msm_vidc_inst *inst,
-	enum msm_vidc_buffer_type buffer_type)
+				      enum msm_vidc_buffer_type buffer_type)
 {
 	u32 region = MSM_VIDC_NON_SECURE;
 
@@ -414,7 +424,8 @@ static u32 msm_vidc_buffer_region_ext(struct msm_vidc_inst *inst,
 	return region;
 }
 
-static int msm_vidc_memory_alloc_map_ext(struct msm_vidc_core *core, struct msm_vidc_mem *mem)
+static int msm_vidc_memory_alloc_map_ext(struct msm_vidc_core *core,
+					 struct msm_vidc_mem *mem)
 {
 	int rc = 0;
 
@@ -433,7 +444,8 @@ static int msm_vidc_memory_alloc_map_ext(struct msm_vidc_core *core, struct msm_
 	return rc;
 }
 
-static int msm_vidc_memory_unmap_free_ext(struct msm_vidc_core *core, struct msm_vidc_mem *mem)
+static int msm_vidc_memory_unmap_free_ext(struct msm_vidc_core *core,
+					  struct msm_vidc_mem *mem)
 {
 	int rc = 0;
 
@@ -458,10 +470,10 @@ const struct msm_vidc_memory_ops *get_mem_ops_ext(void)
 	static struct msm_vidc_memory_ops mem_ops_ext;
 
 	memcpy(&mem_ops_ext, mem_ops, sizeof(struct msm_vidc_memory_ops));
-	mem_ops_ext.dma_buf_attach    = msm_vidc_dma_buf_attach_ext;
-	mem_ops_ext.memory_alloc_map  = msm_vidc_memory_alloc_map_ext;
+	mem_ops_ext.dma_buf_attach = msm_vidc_dma_buf_attach_ext;
+	mem_ops_ext.memory_alloc_map = msm_vidc_memory_alloc_map_ext;
 	mem_ops_ext.memory_unmap_free = msm_vidc_memory_unmap_free_ext;
-	mem_ops_ext.buffer_region     = msm_vidc_buffer_region_ext;
+	mem_ops_ext.buffer_region = msm_vidc_buffer_region_ext;
 
 	return &mem_ops_ext;
 }

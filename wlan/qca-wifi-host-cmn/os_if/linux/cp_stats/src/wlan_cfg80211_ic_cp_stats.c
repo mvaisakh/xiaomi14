@@ -21,10 +21,10 @@
  *
  * This file provide definitions to os_if cp_stats APIs
  */
+#include <qdf_util.h>
+#include <wlan_cfg80211.h>
 #include <wlan_cfg80211_ic_cp_stats.h>
 #include <wlan_cp_stats_ic_ucfg_api.h>
-#include <wlan_cfg80211.h>
-#include <qdf_util.h>
 
 int wlan_cfg80211_get_peer_cp_stats(struct wlan_objmgr_peer *peer_obj,
 				    struct peer_ic_cp_stats *peer_cp_stats)
@@ -43,8 +43,7 @@ int wlan_cfg80211_get_peer_cp_stats(struct wlan_objmgr_peer *peer_obj,
 
 	status = wlan_ucfg_get_peer_cp_stats(peer_obj, peer_cp_stats);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		osif_err("wlan_cfg80211_get_peer_cp_stats status: %d",
-			 status);
+		osif_err("wlan_cfg80211_get_peer_cp_stats status: %d", status);
 	}
 
 	return qdf_status_to_os_return(status);
@@ -67,8 +66,7 @@ int wlan_cfg80211_get_vdev_cp_stats(struct wlan_objmgr_vdev *vdev_obj,
 
 	status = wlan_ucfg_get_vdev_cp_stats(vdev_obj, vdev_cp_stats);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		osif_err("wlan_cfg80211_get_vdev_cp_stats status: %d",
-			 status);
+		osif_err("wlan_cfg80211_get_vdev_cp_stats status: %d", status);
 	}
 
 	return qdf_status_to_os_return(status);
@@ -91,8 +89,7 @@ int wlan_cfg80211_get_pdev_cp_stats(struct wlan_objmgr_pdev *pdev_obj,
 
 	status = wlan_ucfg_get_pdev_cp_stats(pdev_obj, pdev_cp_stats);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		osif_err("wlan_cfg80211_get_pdev_cp_stats status: %d",
-			 status);
+		osif_err("wlan_cfg80211_get_pdev_cp_stats status: %d", status);
 	}
 
 	return qdf_status_to_os_return(status);
@@ -101,9 +98,8 @@ int wlan_cfg80211_get_pdev_cp_stats(struct wlan_objmgr_pdev *pdev_obj,
 qdf_export_symbol(wlan_cfg80211_get_pdev_cp_stats);
 
 #ifdef WLAN_ATF_ENABLE
-int
-wlan_cfg80211_get_atf_peer_cp_stats(struct wlan_objmgr_peer *peer_obj,
-				    struct atf_peer_cp_stats *atf_cp_stats)
+int wlan_cfg80211_get_atf_peer_cp_stats(struct wlan_objmgr_peer *peer_obj,
+					struct atf_peer_cp_stats *atf_cp_stats)
 {
 	QDF_STATUS status;
 
@@ -127,9 +123,8 @@ wlan_cfg80211_get_atf_peer_cp_stats(struct wlan_objmgr_peer *peer_obj,
 }
 
 int wlan_cfg80211_get_atf_peer_cp_stats_from_mac(
-		struct wlan_objmgr_vdev *vdev_obj,
-		uint8_t *mac,
-		struct atf_peer_cp_stats *atf_cp_stats)
+	struct wlan_objmgr_vdev *vdev_obj, uint8_t *mac,
+	struct atf_peer_cp_stats *atf_cp_stats)
 {
 	QDF_STATUS status;
 
@@ -159,9 +154,9 @@ int wlan_cfg80211_get_atf_peer_cp_stats_from_mac(
 }
 #endif
 
-int
-wlan_cfg80211_get_dcs_pdev_cp_stats(struct wlan_objmgr_pdev *pdev_obj,
-				    struct pdev_dcs_chan_stats *dcs_chan_stats)
+int wlan_cfg80211_get_dcs_pdev_cp_stats(
+	struct wlan_objmgr_pdev *pdev_obj,
+	struct pdev_dcs_chan_stats *dcs_chan_stats)
 {
 	QDF_STATUS status;
 

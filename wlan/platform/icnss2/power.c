@@ -3,69 +3,66 @@
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
+#include "power.h"
+#include "debug.h"
+#include "main.h"
+#include "qmi.h"
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/of.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/regulator/consumer.h>
 #include <soc/qcom/cmd-db.h>
-#include "main.h"
-#include "qmi.h"
-#include "debug.h"
-#include "power.h"
 
 static struct icnss_vreg_cfg icnss_wcn6750_vreg_list[] = {
-	{"vdd-cx-mx", 824000, 952000, 0, 0, 0, false, true},
-	{"vdd-1.8-xo", 1872000, 1872000, 0, 0, 0, false, true},
-	{"vdd-1.3-rfa", 1256000, 1352000, 0, 0, 0, false, true},
+	{ "vdd-cx-mx", 824000, 952000, 0, 0, 0, false, true },
+	{ "vdd-1.8-xo", 1872000, 1872000, 0, 0, 0, false, true },
+	{ "vdd-1.3-rfa", 1256000, 1352000, 0, 0, 0, false, true },
 };
 
 static struct icnss_vreg_cfg icnss_adrestea_vreg_list[] = {
-	{"vdd-cx-mx", 752000, 752000, 0, 0, 0, false, true},
-	{"vdd-1.8-xo", 1800000, 1800000, 0, 0, 0, false, true},
-	{"vdd-1.3-rfa", 1304000, 1304000, 0, 0, 0, false, true},
-	{"vdd-3.3-ch1", 3312000, 3312000, 0, 0, 0, false, true},
-	{"vdd-3.3-ch0", 3312000, 3312000, 0, 0, 0, false, true},
+	{ "vdd-cx-mx", 752000, 752000, 0, 0, 0, false, true },
+	{ "vdd-1.8-xo", 1800000, 1800000, 0, 0, 0, false, true },
+	{ "vdd-1.3-rfa", 1304000, 1304000, 0, 0, 0, false, true },
+	{ "vdd-3.3-ch1", 3312000, 3312000, 0, 0, 0, false, true },
+	{ "vdd-3.3-ch0", 3312000, 3312000, 0, 0, 0, false, true },
 };
 
 static struct icnss_battery_level icnss_battery_level[] = {
-	{70, 3300000},
-	{60, 3200000},
-	{50, 3100000},
-	{25, 3000000},
-	{0, 2850000},
+	{ 70, 3300000 }, { 60, 3200000 }, { 50, 3100000 },
+	{ 25, 3000000 }, { 0, 2850000 },
 };
 
 static struct icnss_vreg_cfg icnss_wcn6450_vreg_list[] = {
-	{"vdd-cx-mx", 824000, 952000, 0, 0, 0, false, true},
-	{"vdd-1.8-xo", 1872000, 1872000, 0, 0, 0, false, true},
-	{"vdd-1.3-rfa", 1256000, 1352000, 0, 0, 0, false, true},
-	{"vdd-aon", 1256000, 1352000, 0, 0, 0, false, true},
+	{ "vdd-cx-mx", 824000, 952000, 0, 0, 0, false, true },
+	{ "vdd-1.8-xo", 1872000, 1872000, 0, 0, 0, false, true },
+	{ "vdd-1.3-rfa", 1256000, 1352000, 0, 0, 0, false, true },
+	{ "vdd-aon", 1256000, 1352000, 0, 0, 0, false, true },
 };
 
 static struct icnss_clk_cfg icnss_clk_list[] = {
-	{"rf_clk", 0, 0},
+	{ "rf_clk", 0, 0 },
 };
 
 static struct icnss_clk_cfg icnss_adrestea_clk_list[] = {
-	{"cxo_ref_clk_pin", 0, 0},
+	{ "cxo_ref_clk_pin", 0, 0 },
 };
 
-#define ICNSS_VREG_LIST_SIZE		ARRAY_SIZE(icnss_wcn6750_vreg_list)
-#define ICNSS_VREG_ADRESTEA_LIST_SIZE	ARRAY_SIZE(icnss_adrestea_vreg_list)
-#define ICNSS_VREG_EVROS_LIST_SIZE	ARRAY_SIZE(icnss_wcn6450_vreg_list)
-#define ICNSS_CLK_LIST_SIZE		ARRAY_SIZE(icnss_clk_list)
-#define ICNSS_CLK_ADRESTEA_LIST_SIZE	ARRAY_SIZE(icnss_adrestea_clk_list)
+#define ICNSS_VREG_LIST_SIZE ARRAY_SIZE(icnss_wcn6750_vreg_list)
+#define ICNSS_VREG_ADRESTEA_LIST_SIZE ARRAY_SIZE(icnss_adrestea_vreg_list)
+#define ICNSS_VREG_EVROS_LIST_SIZE ARRAY_SIZE(icnss_wcn6450_vreg_list)
+#define ICNSS_CLK_LIST_SIZE ARRAY_SIZE(icnss_clk_list)
+#define ICNSS_CLK_ADRESTEA_LIST_SIZE ARRAY_SIZE(icnss_adrestea_clk_list)
 
-#define ICNSS_CHAIN1_REGULATOR                          "vdd-3.3-ch1"
-#define MAX_PROP_SIZE					32
+#define ICNSS_CHAIN1_REGULATOR "vdd-3.3-ch1"
+#define MAX_PROP_SIZE 32
 
-#define BT_CXMX_VOLTAGE_MV		950
+#define BT_CXMX_VOLTAGE_MV 950
 #define ICNSS_MBOX_MSG_MAX_LEN 64
 #define ICNSS_MBOX_TIMEOUT_MS 1000
 
-#define ICNSS_BATTERY_LEVEL_COUNT	ARRAY_SIZE(icnss_battery_level)
-#define ICNSS_MAX_BATTERY_LEVEL		100
+#define ICNSS_BATTERY_LEVEL_COUNT ARRAY_SIZE(icnss_battery_level)
+#define ICNSS_MAX_BATTERY_LEVEL 100
 
 /**
  * enum icnss_vreg_param: Voltage regulator TCS param
@@ -98,7 +95,7 @@ static int icnss_get_vreg_single(struct icnss_priv *priv,
 	struct device *dev = NULL;
 	struct regulator *reg = NULL;
 	const __be32 *prop = NULL;
-	char prop_name[MAX_PROP_SIZE] = {0};
+	char prop_name[MAX_PROP_SIZE] = { 0 };
 	int len = 0;
 	int i;
 
@@ -117,10 +114,11 @@ static int icnss_get_vreg_single(struct icnss_priv *priv,
 			if (vreg->cfg.required) {
 				icnss_pr_err("Regulator %s doesn't exist: %d\n",
 					     vreg->cfg.name, ret);
-			goto out;
+				goto out;
 			} else {
-				icnss_pr_dbg("Optional regulator %s doesn't exist: %d\n",
-					     vreg->cfg.name, ret);
+				icnss_pr_dbg(
+					"Optional regulator %s doesn't exist: %d\n",
+					vreg->cfg.name, ret);
 				goto done;
 			}
 		} else {
@@ -132,13 +130,12 @@ static int icnss_get_vreg_single(struct icnss_priv *priv,
 
 	vreg->reg = reg;
 
-	snprintf(prop_name, MAX_PROP_SIZE, "qcom,%s-config",
-		 vreg->cfg.name);
+	snprintf(prop_name, MAX_PROP_SIZE, "qcom,%s-config", vreg->cfg.name);
 
 	prop = of_get_property(dev->of_node, prop_name, &len);
 
-	icnss_pr_dbg("Got regulator config, prop: %s, len: %d\n",
-		     prop_name, len);
+	icnss_pr_dbg("Got regulator config, prop: %s, len: %d\n", prop_name,
+		     len);
 
 	if (!prop || len < (2 * sizeof(__be32))) {
 		icnss_pr_dbg("Property %s %s, use default\n", prop_name,
@@ -174,10 +171,11 @@ static int icnss_get_vreg_single(struct icnss_priv *priv,
 	}
 
 done:
-	icnss_pr_dbg("Got regulator: %s, min_uv: %u, max_uv: %u, load_ua: %u, delay_us: %u, need_unvote: %u\n",
-		     vreg->cfg.name, vreg->cfg.min_uv,
-		     vreg->cfg.max_uv, vreg->cfg.load_ua,
-		     vreg->cfg.delay_us, vreg->cfg.need_unvote);
+	icnss_pr_dbg("Got regulator: %s, min_uv: %u, max_uv: %u, load_ua: %u, "
+		     "delay_us: %u, need_unvote: %u\n",
+		     vreg->cfg.name, vreg->cfg.min_uv, vreg->cfg.max_uv,
+		     vreg->cfg.load_ua, vreg->cfg.delay_us,
+		     vreg->cfg.need_unvote);
 
 	return 0;
 
@@ -198,26 +196,26 @@ static int icnss_vreg_on_single(struct icnss_vreg_info *vreg)
 	icnss_pr_dbg("Regulator %s is being enabled\n", vreg->cfg.name);
 
 	if (vreg->cfg.min_uv != 0 && vreg->cfg.max_uv != 0) {
-		ret = regulator_set_voltage(vreg->reg,
-					    vreg->cfg.min_uv,
+		ret = regulator_set_voltage(vreg->reg, vreg->cfg.min_uv,
 					    vreg->cfg.max_uv);
 
 		if (ret) {
-			icnss_pr_err("Failed to set voltage for regulator %s, min_uv: %u, max_uv: %u, err = %d\n",
-				     vreg->cfg.name, vreg->cfg.min_uv,
-				     vreg->cfg.max_uv, ret);
+			icnss_pr_err(
+				"Failed to set voltage for regulator %s, min_uv: %u, "
+				"max_uv: %u, err = %d\n",
+				vreg->cfg.name, vreg->cfg.min_uv,
+				vreg->cfg.max_uv, ret);
 			goto out;
 		}
 	}
 
 	if (vreg->cfg.load_ua) {
-		ret = regulator_set_load(vreg->reg,
-					 vreg->cfg.load_ua);
+		ret = regulator_set_load(vreg->reg, vreg->cfg.load_ua);
 
 		if (ret < 0) {
-			icnss_pr_err("Failed to set load for regulator %s, load: %u, err = %d\n",
-				     vreg->cfg.name, vreg->cfg.load_ua,
-				     ret);
+			icnss_pr_err(
+				"Failed to set load for regulator %s, load: %u, err = %d\n",
+				vreg->cfg.name, vreg->cfg.load_ua, ret);
 			goto out;
 		}
 	}
@@ -253,16 +251,17 @@ static int icnss_vreg_unvote_single(struct icnss_vreg_info *vreg)
 	if (vreg->cfg.load_ua) {
 		ret = regulator_set_load(vreg->reg, 0);
 		if (ret < 0)
-			icnss_pr_err("Failed to set load for regulator %s, err = %d\n",
-				     vreg->cfg.name, ret);
+			icnss_pr_err(
+				"Failed to set load for regulator %s, err = %d\n",
+				vreg->cfg.name, ret);
 	}
 
 	if (vreg->cfg.min_uv != 0 && vreg->cfg.max_uv != 0) {
-		ret = regulator_set_voltage(vreg->reg, 0,
-					    vreg->cfg.max_uv);
+		ret = regulator_set_voltage(vreg->reg, 0, vreg->cfg.max_uv);
 		if (ret)
-			icnss_pr_err("Failed to set voltage for regulator %s, err = %d\n",
-				     vreg->cfg.name, ret);
+			icnss_pr_err(
+				"Failed to set voltage for regulator %s, err = %d\n",
+				vreg->cfg.name, ret);
 	}
 
 	return ret;
@@ -278,8 +277,7 @@ static int icnss_vreg_off_single(struct icnss_vreg_info *vreg)
 		return 0;
 	}
 
-	icnss_pr_dbg("Regulator %s is being disabled\n",
-		     vreg->cfg.name);
+	icnss_pr_dbg("Regulator %s is being disabled\n", vreg->cfg.name);
 
 	ret = regulator_disable(vreg->reg);
 	if (ret)
@@ -289,16 +287,17 @@ static int icnss_vreg_off_single(struct icnss_vreg_info *vreg)
 	if (vreg->cfg.load_ua) {
 		ret = regulator_set_load(vreg->reg, 0);
 		if (ret < 0)
-			icnss_pr_err("Failed to set load for regulator %s, err = %d\n",
-				     vreg->cfg.name, ret);
+			icnss_pr_err(
+				"Failed to set load for regulator %s, err = %d\n",
+				vreg->cfg.name, ret);
 	}
 
 	if (vreg->cfg.min_uv != 0 && vreg->cfg.max_uv != 0) {
-		ret = regulator_set_voltage(vreg->reg, 0,
-					    vreg->cfg.max_uv);
+		ret = regulator_set_voltage(vreg->reg, 0, vreg->cfg.max_uv);
 		if (ret)
-			icnss_pr_err("Failed to set voltage for regulator %s, err = %d\n",
-				     vreg->cfg.name, ret);
+			icnss_pr_err(
+				"Failed to set voltage for regulator %s, err = %d\n",
+				vreg->cfg.name, ret);
 	}
 	vreg->enabled = false;
 
@@ -367,8 +366,8 @@ void icnss_put_vreg(struct icnss_priv *priv)
 	struct icnss_vreg_info *vreg = NULL;
 
 	while (!list_empty(vreg_list)) {
-		vreg = list_first_entry(vreg_list,
-					struct icnss_vreg_info, list);
+		vreg = list_first_entry(vreg_list, struct icnss_vreg_info,
+					list);
 		list_del(&vreg->list);
 	}
 }
@@ -454,14 +453,15 @@ int icnss_get_clk_single(struct icnss_priv *priv,
 			icnss_pr_err("Failed to get clock %s, err = %d\n",
 				     clk_info->cfg.name, ret);
 		else
-			icnss_pr_dbg("Failed to get optional clock %s, err = %d\n",
-				     clk_info->cfg.name, ret);
+			icnss_pr_dbg(
+				"Failed to get optional clock %s, err = %d\n",
+				clk_info->cfg.name, ret);
 		return ret;
 	}
 
 	clk_info->clk = clk;
-	icnss_pr_dbg("Got clock: %s, freq: %u\n",
-		     clk_info->cfg.name, clk_info->cfg.freq);
+	icnss_pr_dbg("Got clock: %s, freq: %u\n", clk_info->cfg.name,
+		     clk_info->cfg.freq);
 
 	return 0;
 }
@@ -481,9 +481,9 @@ static int icnss_clk_on_single(struct icnss_clk_info *clk_info)
 	if (clk_info->cfg.freq) {
 		ret = clk_set_rate(clk_info->clk, clk_info->cfg.freq);
 		if (ret) {
-			icnss_pr_err("Failed to set frequency %u for clock %s, err = %d\n",
-				     clk_info->cfg.freq, clk_info->cfg.name,
-				     ret);
+			icnss_pr_err(
+				"Failed to set frequency %u for clock %s, err = %d\n",
+				clk_info->cfg.freq, clk_info->cfg.name, ret);
 			return ret;
 		}
 	}
@@ -552,8 +552,7 @@ int icnss_get_clk(struct icnss_priv *priv)
 			goto cleanup;
 		}
 
-		memcpy(&clk_info->cfg, &clk_cfg[i],
-		       sizeof(clk_info->cfg));
+		memcpy(&clk_info->cfg, &clk_cfg[i], sizeof(clk_info->cfg));
 		ret = icnss_get_clk_single(priv, clk_info);
 		if (ret != 0) {
 			if (clk_info->cfg.required)
@@ -568,8 +567,8 @@ int icnss_get_clk(struct icnss_priv *priv)
 
 cleanup:
 	while (!list_empty(clk_list)) {
-		clk_info = list_first_entry(clk_list, struct icnss_clk_info,
-					    list);
+		clk_info =
+			list_first_entry(clk_list, struct icnss_clk_info, list);
 		list_del(&clk_info->list);
 	}
 
@@ -589,8 +588,8 @@ void icnss_put_clk(struct icnss_priv *priv)
 	clk_list = &priv->clk_list;
 
 	while (!list_empty(clk_list)) {
-		clk_info = list_first_entry(clk_list, struct icnss_clk_info,
-					    list);
+		clk_info =
+			list_first_entry(clk_list, struct icnss_clk_info, list);
 		list_del(&clk_info->list);
 	}
 }
@@ -700,8 +699,7 @@ int icnss_power_on(struct device *dev)
 	struct icnss_priv *priv = dev_get_drvdata(dev);
 
 	if (!priv) {
-		icnss_pr_err("Invalid drvdata: dev %pK, data %pK\n",
-			     dev, priv);
+		icnss_pr_err("Invalid drvdata: dev %pK, data %pK\n", dev, priv);
 		return -EINVAL;
 	}
 
@@ -716,8 +714,7 @@ int icnss_power_off(struct device *dev)
 	struct icnss_priv *priv = dev_get_drvdata(dev);
 
 	if (!priv) {
-		icnss_pr_err("Invalid drvdata: dev %pK, data %pK\n",
-			     dev, priv);
+		icnss_pr_err("Invalid drvdata: dev %pK, data %pK\n", dev, priv);
 		return -EINVAL;
 	}
 
@@ -733,17 +730,17 @@ void icnss_put_resources(struct icnss_priv *priv)
 	icnss_put_vreg(priv);
 }
 
-
 #if IS_ENABLED(CONFIG_MSM_QMP)
 /**
- * icnss_aop_interface_init: Initialize AOP interface: either mbox channel or direct QMP
+ * icnss_aop_interface_init: Initialize AOP interface: either mbox channel or
+ * direct QMP
  * @priv: Pointer to icnss platform data
  *
  * Device tree file should have either mbox or qmp configured, but not both.
  * Based on device tree configuration setup mbox channel or QMP
  *
  * Return: 0 for success, otherwise error code
-*/
+ */
 int icnss_aop_interface_init(struct icnss_priv *priv)
 {
 	struct mbox_client *mbox = &priv->mbox_client_data;
@@ -767,9 +764,9 @@ int icnss_aop_interface_init(struct icnss_priv *priv)
 	priv->qmp = NULL;
 	priv->use_direct_qmp = false;
 	/* First try to get mbox channel, if it fails then try qmp_get
-	 * In device tree file there should be either mboxes or qmp,
-	 * cannot have both properties at the same time.
-	 */
+   * In device tree file there should be either mboxes or qmp,
+   * cannot have both properties at the same time.
+   */
 	chan = mbox_request_channel(mbox, 0);
 	if (IS_ERR(chan)) {
 		ret = PTR_ERR(chan);
@@ -815,8 +812,9 @@ static int icnss_aop_set_vreg_param(struct icnss_priv *priv,
 {
 	struct qmp_pkt pkt;
 	char mbox_msg[ICNSS_MBOX_MSG_MAX_LEN];
-	static const char * const vreg_param_str[] = {"v", "m", "e"};
-	static const char *const tcs_seq_str[] = {"upval", "dwnval", "enable"};
+	static const char *const vreg_param_str[] = { "v", "m", "e" };
+	static const char *const tcs_seq_str[] = { "upval", "dwnval",
+						   "enable" };
 	int ret = 0;
 
 	if (param > ICNSS_VREG_ENABLE || seq > ICNSS_TCS_ALL_SEQ || !vreg_name)
@@ -829,7 +827,8 @@ static int icnss_aop_set_vreg_param(struct icnss_priv *priv,
 		icnss_pr_dbg("Sending AOP QMP msg: %s\n", mbox_msg);
 		ret = qmp_send(priv->qmp, mbox_msg, ICNSS_MBOX_MSG_MAX_LEN);
 		if (ret < 0)
-			icnss_pr_err("Failed to send AOP QMP msg: %s\n", mbox_msg);
+			icnss_pr_err("Failed to send AOP QMP msg: %s\n",
+				     mbox_msg);
 		else
 			ret = 0;
 	} else {
@@ -839,8 +838,9 @@ static int icnss_aop_set_vreg_param(struct icnss_priv *priv,
 
 		ret = mbox_send_message(priv->mbox_chan, &pkt);
 		if (ret < 0)
-			icnss_pr_err("Failed to send AOP mbox msg: %s,ret: %d\n",
-				     mbox_msg, ret);
+			icnss_pr_err(
+				"Failed to send AOP mbox msg: %s,ret: %d\n",
+				mbox_msg, ret);
 		else
 			ret = 0;
 	}
@@ -871,7 +871,8 @@ int icnss_update_cpr_info(struct icnss_priv *priv)
 	struct icnss_cpr_info *cpr_info = &priv->cpr_info;
 
 	if (!cpr_info->vreg_ol_cpr || (!priv->mbox_chan && !priv->qmp)) {
-		icnss_pr_dbg("Mbox channel / QMP / OL CPR Vreg not configured\n");
+		icnss_pr_dbg(
+			"Mbox channel / QMP / OL CPR Vreg not configured\n");
 		return 0;
 	}
 
@@ -881,27 +882,27 @@ int icnss_update_cpr_info(struct icnss_priv *priv)
 	}
 
 	cpr_info->voltage = cpr_info->voltage > BT_CXMX_VOLTAGE_MV ?
-		cpr_info->voltage : BT_CXMX_VOLTAGE_MV;
+				    cpr_info->voltage :
+				    BT_CXMX_VOLTAGE_MV;
 
-	return icnss_aop_set_vreg_param(priv,
-				       cpr_info->vreg_ol_cpr,
-				       ICNSS_VREG_VOLTAGE,
-				       ICNSS_TCS_UP_SEQ,
-				       cpr_info->voltage);
+	return icnss_aop_set_vreg_param(priv, cpr_info->vreg_ol_cpr,
+					ICNSS_VREG_VOLTAGE, ICNSS_TCS_UP_SEQ,
+					cpr_info->voltage);
 }
 
 static int icnss_get_battery_level(struct icnss_priv *priv)
 {
 	int err = 0, battery_percentage = 0;
-	union power_supply_propval psp = {0,};
+	union power_supply_propval psp = {
+		0,
+	};
 
 	if (!priv->batt_psy)
 		priv->batt_psy = power_supply_get_by_name("battery");
 
 	if (priv->batt_psy) {
-		err = power_supply_get_property(priv->batt_psy,
-						POWER_SUPPLY_PROP_CAPACITY,
-						&psp);
+		err = power_supply_get_property(
+			priv->batt_psy, POWER_SUPPLY_PROP_CAPACITY, &psp);
 		if (err) {
 			icnss_pr_err("battery percentage read error:%d\n", err);
 			goto out;
@@ -918,7 +919,8 @@ static void icnss_update_soc_level(struct work_struct *work)
 {
 	int battery_percentage = 0, current_updated_voltage = 0, err = 0;
 	int level_count;
-	struct icnss_priv *priv = container_of(work, struct icnss_priv, soc_update_work);
+	struct icnss_priv *priv =
+		container_of(work, struct icnss_priv, soc_update_work);
 
 	battery_percentage = icnss_get_battery_level(priv);
 	if (!battery_percentage ||
@@ -952,8 +954,7 @@ static int icnss_battery_supply_callback(struct notifier_block *nb,
 					 unsigned long event, void *data)
 {
 	struct power_supply *psy = data;
-	struct icnss_priv *priv = container_of(nb, struct icnss_priv,
-					       psf_nb);
+	struct icnss_priv *priv = container_of(nb, struct icnss_priv, psf_nb);
 	if (strcmp(psy->desc->name, "battery"))
 		return NOTIFY_OK;
 
@@ -968,8 +969,8 @@ int icnss_get_psf_info(struct icnss_priv *priv)
 {
 	int ret = 0;
 
-	priv->soc_update_wq = alloc_workqueue("icnss_soc_update",
-					      WQ_UNBOUND, 1);
+	priv->soc_update_wq =
+		alloc_workqueue("icnss_soc_update", WQ_UNBOUND, 1);
 	if (!priv->soc_update_wq) {
 		icnss_pr_err("Workqueue creation failed for soc update\n");
 		ret = -EFAULT;

@@ -16,8 +16,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_delayed_work.h"
 #include "qdf_delayed_work_test.h"
+#include "qdf_delayed_work.h"
 #include "qdf_trace.h"
 
 #define dwork_delay_ms 1
@@ -51,4 +51,3 @@ uint32_t qdf_delayed_work_unit_test(void)
 
 	return 0;
 }
-

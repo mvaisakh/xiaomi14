@@ -19,17 +19,16 @@
  * DOC: define UCFG APIs exposed for TWT by the mlme component
  */
 
-#include "wlan_mlme_main.h"
-#include "wlan_mlme_api.h"
-#include "wlan_mlme_ucfg_api.h"
-#include "cfg_mlme_twt.h"
 #include "wlan_mlme_twt_ucfg_api.h"
+#include "cfg_mlme_twt.h"
+#include "wlan_mlme_api.h"
+#include "wlan_mlme_main.h"
+#include "wlan_mlme_ucfg_api.h"
 
 #if defined(WLAN_SUPPORT_TWT) && defined(WLAN_FEATURE_11AX) && \
 	!defined(WLAN_TWT_CONV_SUPPORTED)
 QDF_STATUS
-ucfg_mlme_get_twt_requestor(struct wlan_objmgr_psoc *psoc,
-			    bool *val)
+ucfg_mlme_get_twt_requestor(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -45,8 +44,7 @@ ucfg_mlme_get_twt_requestor(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_mlme_set_twt_requestor(struct wlan_objmgr_psoc *psoc,
-			    bool val)
+ucfg_mlme_set_twt_requestor(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -60,8 +58,7 @@ ucfg_mlme_set_twt_requestor(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_mlme_get_twt_responder(struct wlan_objmgr_psoc *psoc,
-			    bool *val)
+ucfg_mlme_get_twt_responder(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -77,8 +74,7 @@ ucfg_mlme_get_twt_responder(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_mlme_set_twt_responder(struct wlan_objmgr_psoc *psoc,
-			    bool val)
+ucfg_mlme_set_twt_responder(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -163,8 +159,7 @@ ucfg_mlme_set_twt_congestion_timeout(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_mlme_set_enable_twt(struct wlan_objmgr_psoc *psoc,
-			 bool val)
+ucfg_mlme_set_enable_twt(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -178,8 +173,7 @@ ucfg_mlme_set_enable_twt(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_mlme_get_twt_bcast_requestor(struct wlan_objmgr_psoc *psoc,
-				  bool *val)
+ucfg_mlme_get_twt_bcast_requestor(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -198,8 +192,7 @@ ucfg_mlme_get_twt_bcast_requestor(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_mlme_get_twt_bcast_responder(struct wlan_objmgr_psoc *psoc,
-				  bool *val)
+ucfg_mlme_get_twt_bcast_responder(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -218,8 +211,7 @@ ucfg_mlme_get_twt_bcast_responder(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_mlme_set_twt_bcast_requestor(struct wlan_objmgr_psoc *psoc,
-				  bool val)
+ucfg_mlme_set_twt_bcast_requestor(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -233,8 +225,7 @@ ucfg_mlme_set_twt_bcast_requestor(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-ucfg_mlme_set_twt_bcast_responder(struct wlan_objmgr_psoc *psoc,
-				  bool val)
+ucfg_mlme_set_twt_bcast_responder(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -275,8 +266,7 @@ bool ucfg_mlme_get_twt_peer_bcast_capabilities(struct wlan_objmgr_psoc *psoc,
 }
 
 bool ucfg_mlme_get_twt_peer_responder_capabilities(
-					struct wlan_objmgr_psoc *psoc,
-					struct qdf_mac_addr *peer_mac)
+	struct wlan_objmgr_psoc *psoc, struct qdf_mac_addr *peer_mac)
 {
 	uint8_t peer_cap;
 

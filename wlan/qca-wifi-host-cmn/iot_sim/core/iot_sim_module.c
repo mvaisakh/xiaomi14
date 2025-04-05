@@ -14,12 +14,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include<linux/module.h>
-#include <wlan_iot_sim_utils_api.h>
-#include <qdf_types.h>
-#include<wlan_global_lmac_if_api.h>
 #include "iot_sim_defs_i.h"
 #include <dispatcher_init_deinit.h>
+#include <linux/module.h>
+#include <qdf_types.h>
+#include <wlan_global_lmac_if_api.h>
+#include <wlan_iot_sim_utils_api.h>
 
 MODULE_LICENSE("Dual BSD/GPL");
 
@@ -34,7 +34,7 @@ static int __init iot_sim_init_module(void)
 	wlan_iot_sim_init();
 	iot_sim_info("qca_iot_sim module loaded");
 	wlan_lmac_if_iot_sim_set_rx_ops_register_cb(
-					wlan_lmac_if_iot_sim_register_rx_ops);
+		wlan_lmac_if_iot_sim_register_rx_ops);
 	return 0;
 }
 

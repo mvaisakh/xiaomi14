@@ -21,16 +21,14 @@
  * implementation for creating sysfs file wowl_del_ptrn
  */
 
-#include <wlan_hdd_includes.h>
-#include <wlan_hdd_sysfs.h>
 #include "osif_vdev_sync.h"
 #include "wlan_hdd_wowl.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_wowl_del_ptrn.h>
 
-static ssize_t
-__hdd_sysfs_wowl_del_ptrn_store(struct net_device *net_dev,
-				char const *buf,
-				size_t count)
+static ssize_t __hdd_sysfs_wowl_del_ptrn_store(struct net_device *net_dev,
+					       char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -59,8 +57,7 @@ __hdd_sysfs_wowl_del_ptrn_store(struct net_device *net_dev,
 
 	buf_local[count - 1] = '\0';
 
-	hdd_debug("wowl_del_ptrn: count %zu buf_local:(%s)",
-		  count, buf_local);
+	hdd_debug("wowl_del_ptrn: count %zu buf_local:(%s)", count, buf_local);
 
 	if (!hdd_del_wowl_ptrn(adapter, buf_local)) {
 		hdd_err_rl("Failed to delete wowl ptrn");
@@ -72,10 +69,9 @@ __hdd_sysfs_wowl_del_ptrn_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_wowl_del_ptrn_store(struct device *dev,
-			      struct device_attribute *attr,
-			      char const *buf, size_t count)
+static ssize_t hdd_sysfs_wowl_del_ptrn_store(struct device *dev,
+					     struct device_attribute *attr,
+					     char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -92,15 +88,13 @@ hdd_sysfs_wowl_del_ptrn_store(struct device *dev,
 	return err_size;
 }
 
-static DEVICE_ATTR(wowl_del_ptrn, 0220,
-		   NULL, hdd_sysfs_wowl_del_ptrn_store);
+static DEVICE_ATTR(wowl_del_ptrn, 0220, NULL, hdd_sysfs_wowl_del_ptrn_store);
 
 int hdd_sysfs_wowl_del_ptrn_create(struct hdd_adapter *adapter)
 {
 	int error;
 
-	error = device_create_file(&adapter->dev->dev,
-				   &dev_attr_wowl_del_ptrn);
+	error = device_create_file(&adapter->dev->dev, &dev_attr_wowl_del_ptrn);
 	if (error)
 		hdd_err("could not create wowl_del_ptrn sysfs file");
 

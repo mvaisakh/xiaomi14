@@ -68,4 +68,3 @@ struct dp_aux_bridge *of_dp_aux_find_bridge(struct device_node *np)
 	return NULL;
 }
 #endif /* CONFIG_OF */
-

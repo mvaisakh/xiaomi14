@@ -32,14 +32,14 @@
    ------------------------------------------------------------------------*/
 
 #include "mac_trace.h"
-#include "wma_types.h"
 #include "csr_internal.h"
 #include "lim_global.h"
 #include "lim_types.h"
 #include "qdf_mem.h"
 #include "qdf_trace.h"
-#include "wma_if.h"
 #include "wma.h"
+#include "wma_if.h"
+#include "wma_types.h"
 
 /**
  * mac_trace_getcsr_roam_state() - Get the csr roam state
@@ -58,7 +58,7 @@ uint8_t *mac_trace_getcsr_roam_state(uint16_t csr_roam_state)
 		CASE_RETURN_STRING(eCSR_ROAMING_STATE_JOINED);
 
 	default:
-		return (uint8_t *) "UNKNOWN";
+		return (uint8_t *)"UNKNOWN";
 		break;
 	}
 }
@@ -81,7 +81,7 @@ uint8_t *mac_trace_getcsr_roam_sub_state(uint16_t csr_roam_sub_state)
 		CASE_RETURN_STRING(eCSR_ROAM_SUBSTATE_DEAUTH_REQ);
 		CASE_RETURN_STRING(eCSR_ROAM_SUBSTATE_WAIT_FOR_KEY);
 	default:
-		return (uint8_t *) "UNKNOWN";
+		return (uint8_t *)"UNKNOWN";
 		break;
 	}
 }
@@ -116,7 +116,7 @@ uint8_t *mac_trace_get_lim_sme_state(uint16_t lim_state)
 		CASE_RETURN_STRING(eLIM_SME_NORMAL_STATE);
 
 	default:
-		return (uint8_t *) "UNKNOWN";
+		return (uint8_t *)"UNKNOWN";
 		break;
 	}
 }
@@ -157,7 +157,7 @@ uint8_t *mac_trace_get_lim_mlm_state(uint16_t mlm_state)
 		CASE_RETURN_STRING(eLIM_MLM_WT_DEL_STA_RSP_STATE);
 
 	default:
-		return (uint8_t *) "UNKNOWN";
+		return (uint8_t *)"UNKNOWN";
 		break;
 	}
 }
@@ -312,7 +312,7 @@ uint8_t *mac_trace_get_sme_msg_string(uint16_t sme_msg)
 		CASE_RETURN_STRING(eWNI_SME_STA_CSA_CONTINUE_REQ);
 		CASE_RETURN_STRING(eWNI_SME_ANTENNA_ISOLATION_RSP);
 	default:
-		return (uint8_t *) "UNKNOWN";
+		return (uint8_t *)"UNKNOWN";
 		break;
 	}
 }
@@ -400,10 +400,10 @@ uint8_t *mac_trace_get_wma_msg_string(uint16_t wma_msg)
 #ifdef WLAN_FEATURE_PACKET_FILTERING
 		CASE_RETURN_STRING(WMA_8023_MULTICAST_LIST_REQ);
 		CASE_RETURN_STRING(WMA_RECEIVE_FILTER_SET_FILTER_REQ);
-		CASE_RETURN_STRING
-			(WMA_PACKET_COALESCING_FILTER_MATCH_COUNT_REQ);
-		CASE_RETURN_STRING
-			(WMA_PACKET_COALESCING_FILTER_MATCH_COUNT_RSP);
+		CASE_RETURN_STRING(
+			WMA_PACKET_COALESCING_FILTER_MATCH_COUNT_REQ);
+		CASE_RETURN_STRING(
+			WMA_PACKET_COALESCING_FILTER_MATCH_COUNT_RSP);
 		CASE_RETURN_STRING(WMA_RECEIVE_FILTER_CLEAR_FILTER_REQ);
 #endif /* WLAN_FEATURE_PACKET_FILTERING */
 #ifdef WLAN_FEATURE_GTK_OFFLOAD
@@ -550,7 +550,7 @@ uint8_t *mac_trace_get_wma_msg_string(uint16_t wma_msg)
 #endif /* FW_THERMAL_THROTTLE_SUPPORT */
 		CASE_RETURN_STRING(WMA_UPDATE_EDCA_PIFS_PARAM_IND);
 	default:
-		return (uint8_t *) "UNKNOWN";
+		return (uint8_t *)"UNKNOWN";
 		break;
 	}
 }
@@ -612,7 +612,7 @@ uint8_t *mac_trace_get_lim_msg_string(uint16_t lim_msg)
 		CASE_RETURN_STRING(LIM_MLM_LINK_TEST_STOP_REQ);
 		CASE_RETURN_STRING(LIM_MLM_PURGE_STA_IND);
 	default:
-		return (uint8_t *) "UNKNOWN";
+		return (uint8_t *)"UNKNOWN";
 		break;
 	}
 }
@@ -631,7 +631,7 @@ uint8_t *mac_trace_get_info_log_string(uint16_t info_log)
 		CASE_RETURN_STRING(eLOG_NODROP_MISSED_BEACON_SCENARIO);
 		CASE_RETURN_STRING(eLOG_PROC_DEAUTH_FRAME_SCENARIO);
 	default:
-		return (uint8_t *) "UNKNOWN";
+		return (uint8_t *)"UNKNOWN";
 		break;
 	}
 }

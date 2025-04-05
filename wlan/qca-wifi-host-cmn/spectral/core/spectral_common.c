@@ -20,11 +20,11 @@
 
 #include "spectral_cmn_api_i.h"
 #include "spectral_ol_api_i.h"
+#include <cfg_ucfg_api.h>
 #include <qdf_mem.h>
 #include <qdf_types.h>
-#include <wlan_spectral_public_structs.h>
 #include <wlan_cfg80211_spectral.h>
-#include <cfg_ucfg_api.h>
+#include <wlan_spectral_public_structs.h>
 
 /**
  * spectral_get_vdev() - Get pointer to vdev to be used for Spectral
@@ -48,8 +48,8 @@
  *
  * Return: Pointer to vdev on success, NULL on failure
  */
-static struct wlan_objmgr_vdev*
-spectral_get_vdev(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
+static struct wlan_objmgr_vdev *spectral_get_vdev(struct wlan_objmgr_pdev *pdev,
+						  uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev = NULL;
 
@@ -78,29 +78,27 @@ spectral_get_vdev(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
  *
  * Return: None
  */
-static void
-spectral_register_cfg80211_handlers(struct wlan_objmgr_pdev *pdev)
+static void spectral_register_cfg80211_handlers(struct wlan_objmgr_pdev *pdev)
 {
-	struct spectral_cfg80211_vendor_cmd_handlers handlers = {0};
+	struct spectral_cfg80211_vendor_cmd_handlers handlers = { 0 };
 
 	handlers.wlan_cfg80211_spectral_scan_start =
-			wlan_cfg80211_spectral_scan_config_and_start;
+		wlan_cfg80211_spectral_scan_config_and_start;
 	handlers.wlan_cfg80211_spectral_scan_stop =
-			wlan_cfg80211_spectral_scan_stop;
+		wlan_cfg80211_spectral_scan_stop;
 	handlers.wlan_cfg80211_spectral_scan_get_config =
-			wlan_cfg80211_spectral_scan_get_config;
+		wlan_cfg80211_spectral_scan_get_config;
 	handlers.wlan_cfg80211_spectral_scan_get_diag_stats =
-			wlan_cfg80211_spectral_scan_get_diag_stats;
+		wlan_cfg80211_spectral_scan_get_diag_stats;
 	handlers.wlan_cfg80211_spectral_scan_get_cap =
-			wlan_cfg80211_spectral_scan_get_cap;
+		wlan_cfg80211_spectral_scan_get_cap;
 	handlers.wlan_cfg80211_spectral_scan_get_status =
-			wlan_cfg80211_spectral_scan_get_status;
+		wlan_cfg80211_spectral_scan_get_status;
 
 	wlan_cfg80211_register_spectral_cmd_handler(pdev, &handlers);
 }
 #else
-static void
-spectral_register_cfg80211_handlers(struct wlan_objmgr_pdev *pdev)
+static void spectral_register_cfg80211_handlers(struct wlan_objmgr_pdev *pdev)
 {
 }
 #endif
@@ -134,13 +132,13 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 
 	switch (sscan_req->req_id) {
 	case SPECTRAL_SET_CONFIG:
-		err =  &sscan_req->config_req.sscan_err_code;
+		err = &sscan_req->config_req.sscan_err_code;
 		sp_in = &sscan_req->config_req.sscan_config;
 		if (sp_in->ss_count != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_SCAN_COUNT;
 			param.value = sp_in->ss_count;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -148,8 +146,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_fft_period != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_FFT_PERIOD;
 			param.value = sp_in->ss_fft_period;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -157,8 +155,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_period != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_SCAN_PERIOD;
 			param.value = sp_in->ss_period;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -166,8 +164,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_recapture != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_FFT_RECAPTURE;
 			param.value = sp_in->ss_recapture;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -175,8 +173,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_short_report != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_SHORT_REPORT;
 			param.value = (uint32_t)sp_in->ss_short_report ? 1 : 0;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -184,8 +182,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_spectral_pri != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_SPECT_PRI;
 			param.value = (uint32_t)sp_in->ss_spectral_pri;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -193,8 +191,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_fft_size != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_FFT_SIZE;
 			param.value = sp_in->ss_fft_size;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -202,8 +200,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_gc_ena != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_GC_ENA;
 			param.value = sp_in->ss_gc_ena;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -211,8 +209,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_restart_ena != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_RESTART_ENA;
 			param.value = sp_in->ss_restart_ena;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -220,8 +218,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_noise_floor_ref != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_NOISE_FLOOR_REF;
 			param.value = sp_in->ss_noise_floor_ref;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -229,8 +227,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_init_delay != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_INIT_DELAY;
 			param.value = sp_in->ss_init_delay;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -238,8 +236,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_nb_tone_thr != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_NB_TONE_THR;
 			param.value = sp_in->ss_nb_tone_thr;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -247,8 +245,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_str_bin_thr != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_STR_BIN_THR;
 			param.value = sp_in->ss_str_bin_thr;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -256,8 +254,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_wb_rpt_mode != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_WB_RPT_MODE;
 			param.value = sp_in->ss_wb_rpt_mode;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -265,8 +263,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_rssi_rpt_mode != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_RSSI_RPT_MODE;
 			param.value = sp_in->ss_rssi_rpt_mode;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -274,8 +272,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_rssi_thr != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_RSSI_THR;
 			param.value = sp_in->ss_rssi_thr;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -283,8 +281,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_pwr_format != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_PWR_FORMAT;
 			param.value = sp_in->ss_pwr_format;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -292,8 +290,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_rpt_mode != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_RPT_MODE;
 			param.value = sp_in->ss_rpt_mode;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -301,8 +299,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_bin_scale != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_BIN_SCALE;
 			param.value = sp_in->ss_bin_scale;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -310,34 +308,34 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_dbm_adj != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_DBM_ADJ;
 			param.value = sp_in->ss_dbm_adj;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
 
 		if (sp_in->ss_chn_mask != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			/*
-			 * Check if any of the inactive Rx antenna
-			 * chains is set active in spectral chainmask
-			 */
+       * Check if any of the inactive Rx antenna
+       * chains is set active in spectral chainmask
+       */
 			vdev = spectral_get_vdev(pdev, sscan_req->vdev_id);
 			if (!vdev)
 				goto bad;
 
-			vdev_rxchainmask =
-			    wlan_vdev_mlme_get_rxchainmask(vdev);
-			wlan_objmgr_vdev_release_ref(vdev,
-						     WLAN_SPECTRAL_ID);
+			vdev_rxchainmask = wlan_vdev_mlme_get_rxchainmask(vdev);
+			wlan_objmgr_vdev_release_ref(vdev, WLAN_SPECTRAL_ID);
 
 			if (!(sp_in->ss_chn_mask & vdev_rxchainmask)) {
-				spectral_err("Invalid Spectral Chainmask - Inactive Rx antenna chain cannot be an active spectral chain");
+				spectral_err(
+					"Invalid Spectral Chainmask - Inactive Rx antenna chain "
+					"cannot be an active spectral chain");
 				goto bad;
 			} else {
 				param.id = SPECTRAL_PARAM_CHN_MASK;
 				param.value = sp_in->ss_chn_mask;
-				ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+				ret = sc->sptrlc_set_spectral_config(
+					pdev, &param, smode, err);
 				if (QDF_IS_STATUS_ERROR(ret))
 					goto bad;
 			}
@@ -347,8 +345,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 			param.id = SPECTRAL_PARAM_FREQUENCY;
 			param.freq.cfreq1 = sp_in->ss_frequency.cfreq1;
 			param.freq.cfreq2 = sp_in->ss_frequency.cfreq2;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -356,8 +354,8 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		if (sp_in->ss_bandwidth != SPECTRAL_PHYERR_PARAM_NOVAL) {
 			param.id = SPECTRAL_PARAM_CHAN_WIDTH;
 			param.value = sp_in->ss_bandwidth;
-			ret = sc->sptrlc_set_spectral_config
-						(pdev, &param, smode, err);
+			ret = sc->sptrlc_set_spectral_config(pdev, &param,
+							     smode, err);
 			if (QDF_IS_STATUS_ERROR(ret))
 				goto bad;
 		}
@@ -371,21 +369,17 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 		spectralparams->ss_period = sp_out.ss_period;
 		spectralparams->ss_recapture = sp_out.ss_recapture;
 		spectralparams->ss_count = sp_out.ss_count;
-		spectralparams->ss_short_report =
-				sp_out.ss_short_report;
-		spectralparams->ss_spectral_pri =
-				sp_out.ss_spectral_pri;
+		spectralparams->ss_short_report = sp_out.ss_short_report;
+		spectralparams->ss_spectral_pri = sp_out.ss_spectral_pri;
 		spectralparams->ss_fft_size = sp_out.ss_fft_size;
 		spectralparams->ss_gc_ena = sp_out.ss_gc_ena;
 		spectralparams->ss_restart_ena = sp_out.ss_restart_ena;
-		spectralparams->ss_noise_floor_ref =
-				sp_out.ss_noise_floor_ref;
+		spectralparams->ss_noise_floor_ref = sp_out.ss_noise_floor_ref;
 		spectralparams->ss_init_delay = sp_out.ss_init_delay;
 		spectralparams->ss_nb_tone_thr = sp_out.ss_nb_tone_thr;
 		spectralparams->ss_str_bin_thr = sp_out.ss_str_bin_thr;
 		spectralparams->ss_wb_rpt_mode = sp_out.ss_wb_rpt_mode;
-		spectralparams->ss_rssi_rpt_mode =
-				sp_out.ss_rssi_rpt_mode;
+		spectralparams->ss_rssi_rpt_mode = sp_out.ss_rssi_rpt_mode;
 		spectralparams->ss_rssi_thr = sp_out.ss_rssi_thr;
 		spectralparams->ss_pwr_format = sp_out.ss_pwr_format;
 		spectralparams->ss_rpt_mode = sp_out.ss_rpt_mode;
@@ -398,14 +392,12 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 
 	case SPECTRAL_IS_ACTIVE:
 		sscan_req->status_req.is_active =
-					sc->sptrlc_is_spectral_active(pdev,
-								      smode);
+			sc->sptrlc_is_spectral_active(pdev, smode);
 		break;
 
 	case SPECTRAL_IS_ENABLED:
 		sscan_req->status_req.is_enabled =
-					sc->sptrlc_is_spectral_enabled(pdev,
-								       smode);
+			sc->sptrlc_is_spectral_enabled(pdev, smode);
 		break;
 
 	case SPECTRAL_SET_DEBUG_LEVEL:
@@ -415,7 +407,7 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 
 	case SPECTRAL_GET_DEBUG_LEVEL:
 		sscan_req->debug_req.spectral_dbg_level =
-					sc->sptrlc_get_debug_level(pdev);
+			sc->sptrlc_get_debug_level(pdev);
 		break;
 
 	case SPECTRAL_ACTIVATE_SCAN:
@@ -433,50 +425,42 @@ spectral_control_cmn(struct wlan_objmgr_pdev *pdev,
 			goto bad;
 		break;
 
-	case SPECTRAL_GET_CAPABILITY_INFO:
-		{
-			struct spectral_caps *caps;
+	case SPECTRAL_GET_CAPABILITY_INFO: {
+		struct spectral_caps *caps;
 
-			caps  = &sscan_req->caps_req.sscan_caps;
-			ret = sc->sptrlc_get_spectral_capinfo(pdev, caps);
-			if (QDF_IS_STATUS_ERROR(ret))
-				goto bad;
-		}
-		break;
+		caps = &sscan_req->caps_req.sscan_caps;
+		ret = sc->sptrlc_get_spectral_capinfo(pdev, caps);
+		if (QDF_IS_STATUS_ERROR(ret))
+			goto bad;
+	} break;
 
-	case SPECTRAL_GET_DIAG_STATS:
-		{
-			struct spectral_diag_stats *diag;
+	case SPECTRAL_GET_DIAG_STATS: {
+		struct spectral_diag_stats *diag;
 
-			diag  = &sscan_req->diag_req.sscan_diag;
-			ret = sc->sptrlc_get_spectral_diagstats(pdev, diag);
-			if (QDF_IS_STATUS_ERROR(ret))
-				goto bad;
-		}
-		break;
+		diag = &sscan_req->diag_req.sscan_diag;
+		ret = sc->sptrlc_get_spectral_diagstats(pdev, diag);
+		if (QDF_IS_STATUS_ERROR(ret))
+			goto bad;
+	} break;
 
-	case SPECTRAL_GET_CHAN_WIDTH:
-		{
-			uint32_t chan_width;
+	case SPECTRAL_GET_CHAN_WIDTH: {
+		uint32_t chan_width;
 
-			vdev = spectral_get_vdev(pdev, sscan_req->vdev_id);
-			if (!vdev)
-				goto bad;
+		vdev = spectral_get_vdev(pdev, sscan_req->vdev_id);
+		if (!vdev)
+			goto bad;
 
-			chan_width = spectral_vdev_get_ch_width(vdev);
-			wlan_objmgr_vdev_release_ref(vdev, WLAN_SPECTRAL_ID);
+		chan_width = spectral_vdev_get_ch_width(vdev);
+		wlan_objmgr_vdev_release_ref(vdev, WLAN_SPECTRAL_ID);
 
-			sscan_req->chan_width_req.chan_width =
-							(uint32_t)chan_width;
-		}
-		break;
+		sscan_req->chan_width_req.chan_width = (uint32_t)chan_width;
+	} break;
 
 	case SPECTRAL_SET_DMA_DEBUG:
 		if (sc->sptrlc_set_dma_debug)
 			sc->sptrlc_set_dma_debug(
-			     pdev,
-			     sscan_req->dma_debug_req.dma_debug_type,
-			     sscan_req->dma_debug_req.dma_debug_enable);
+				pdev, sscan_req->dma_debug_req.dma_debug_type,
+				sscan_req->dma_debug_req.dma_debug_enable);
 		break;
 
 	default:
@@ -495,8 +479,7 @@ bad:
  *
  * Return: None
  */
-static void
-spectral_ctx_deinit(struct spectral_context *sc)
+static void spectral_ctx_deinit(struct spectral_context *sc)
 {
 	if (sc) {
 		sc->sptrlc_ucfg_phyerr_config = NULL;
@@ -539,8 +522,8 @@ wlan_spectral_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 		return QDF_STATUS_COMP_DISABLED;
 	}
 
-	sc = (struct spectral_context *)
-	    qdf_mem_malloc(sizeof(struct spectral_context));
+	sc = (struct spectral_context *)qdf_mem_malloc(
+		sizeof(struct spectral_context));
 	if (!sc)
 		return QDF_STATUS_E_NOMEM;
 
@@ -555,8 +538,7 @@ wlan_spectral_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 }
 
 QDF_STATUS
-wlan_spectral_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc,
-				       void *arg)
+wlan_spectral_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	struct spectral_context *sc = NULL;
 
@@ -573,9 +555,8 @@ wlan_spectral_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc,
 	sc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
 						   WLAN_UMAC_COMP_SPECTRAL);
 	if (sc) {
-		wlan_objmgr_psoc_component_obj_detach(psoc,
-						      WLAN_UMAC_COMP_SPECTRAL,
-						      (void *)sc);
+		wlan_objmgr_psoc_component_obj_detach(
+			psoc, WLAN_UMAC_COMP_SPECTRAL, (void *)sc);
 		/* Deinitilise function pointers from spectral context */
 		spectral_ctx_deinit(sc);
 		qdf_mem_free(sc);
@@ -608,8 +589,8 @@ wlan_spectral_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 		return QDF_STATUS_COMP_DISABLED;
 	}
 
-	ps = (struct pdev_spectral *)
-	    qdf_mem_malloc(sizeof(struct pdev_spectral));
+	ps = (struct pdev_spectral *)qdf_mem_malloc(
+		sizeof(struct pdev_spectral));
 	if (!ps)
 		return QDF_STATUS_E_NOMEM;
 
@@ -635,14 +616,13 @@ wlan_spectral_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 					      (void *)ps, QDF_STATUS_SUCCESS);
 
 	return QDF_STATUS_SUCCESS;
- cleanup:
+cleanup:
 	qdf_mem_free(ps);
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
-wlan_spectral_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev,
-				       void *arg)
+wlan_spectral_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 {
 	struct pdev_spectral *ps = NULL;
 	struct spectral_context *sc = NULL;
@@ -668,9 +648,8 @@ wlan_spectral_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev,
 		if (sc->sptrlc_pdev_spectral_deinit)
 			sc->sptrlc_pdev_spectral_deinit(pdev);
 		ps->psptrl_target_handle = NULL;
-		wlan_objmgr_pdev_component_obj_detach(pdev,
-						      WLAN_UMAC_COMP_SPECTRAL,
-						      (void *)ps);
+		wlan_objmgr_pdev_component_obj_detach(
+			pdev, WLAN_UMAC_COMP_SPECTRAL, (void *)ps);
 		qdf_mem_free(ps);
 	}
 

@@ -17,9 +17,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "qdf_parse.h"
 #include "qdf_file.h"
 #include "qdf_module.h"
-#include "qdf_parse.h"
 #include "qdf_status.h"
 #include "qdf_str.h"
 #include "qdf_trace.h"
@@ -31,9 +31,8 @@
 #define QDF_SECTION_FOUND continue
 #endif
 
-static QDF_STATUS qdf_ini_read_values(char **main_cursor,
-				      char **read_key, char **read_value,
-				      bool *section_item)
+static QDF_STATUS qdf_ini_read_values(char **main_cursor, char **read_key,
+				      char **read_value, bool *section_item)
 {
 	char *cursor = *main_cursor;
 
@@ -45,9 +44,9 @@ static QDF_STATUS qdf_ini_read_values(char **main_cursor,
 		bool eol = false;
 
 		/*
-		 * Look for the end of the line, while noting any
-		 * value ('=') or comment ('#') indicators
-		 */
+     * Look for the end of the line, while noting any
+     * value ('=') or comment ('#') indicators
+     */
 		while (!eol) {
 			switch (*cursor) {
 			case '\r':
@@ -61,9 +60,9 @@ static QDF_STATUS qdf_ini_read_values(char **main_cursor,
 
 			case '=':
 				/*
-				 * The first '=' is the value indicator.
-				 * Subsequent '=' are valid value characters.
-				 */
+         * The first '=' is the value indicator.
+         * Subsequent '=' are valid value characters.
+         */
 				if (!value && !comment) {
 					value = cursor + 1;
 					*cursor = '\0';
@@ -74,9 +73,9 @@ static QDF_STATUS qdf_ini_read_values(char **main_cursor,
 
 			case '#':
 				/*
-				 * We don't process comments, so we can null-
-				 * terminate unconditionally here (unlike '=').
-				 */
+         * We don't process comments, so we can null-
+         * terminate unconditionally here (unlike '=').
+         */
 				comment = true;
 				*cursor = '\0';
 				fallthrough;
@@ -88,11 +87,11 @@ static QDF_STATUS qdf_ini_read_values(char **main_cursor,
 
 		key = qdf_str_trim(key);
 		/*
-		 * Ignoring comments, a valid ini line contains one of:
-		 *	1) some 'key=value' config item
-		 *	2) section header
-		 *	3) a line containing whitespace
-		 */
+     * Ignoring comments, a valid ini line contains one of:
+     *	1) some 'key=value' config item
+     *	2) section header
+     *	3) a line containing whitespace
+     */
 		if (value) {
 			*read_key = key;
 			*read_value = value;
@@ -156,13 +155,13 @@ QDF_STATUS qdf_ini_parse(const char *ini_path, void *context,
 				break;
 			else
 				ini_read_count++;
-		} else  {
+		} else {
 			qdf_debug("Section started in global file");
-		/* Currently AP Platforms supports and uses Sections,
-		 * hence break the loop, sections will be parsed separately,
-		 * in case of non AP platforms, sections are used as
-		 * logical separators hence continue reading the values.
-		 */
+			/* Currently AP Platforms supports and uses Sections,
+       * hence break the loop, sections will be parsed separately,
+       * in case of non AP platforms, sections are used as
+       * logical separators hence continue reading the values.
+       */
 			QDF_SECTION_FOUND;
 		}
 	}
@@ -292,7 +291,7 @@ static bool is_valid_key(char **main_cursor)
 	return true;
 }
 
-bool qdf_valid_ini_check(const char  *ini_path)
+bool qdf_valid_ini_check(const char *ini_path)
 {
 	QDF_STATUS status;
 	char *fbuf;

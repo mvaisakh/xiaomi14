@@ -16,10 +16,10 @@
  */
 
 #include "osdep.h"
-#include "wmi.h"
-#include "wmi_unified_priv.h"
-#include "wmi_unified_param.h"
 #include "target_if_cp_stats.h"
+#include "wmi.h"
+#include "wmi_unified_param.h"
+#include "wmi_unified_priv.h"
 #include <wlan_cp_stats_public_structs.h>
 
 #if defined(WLAN_SUPPORT_INFRA_CTRL_PATH_STATS) || \
@@ -80,8 +80,7 @@ static uint32_t get_infra_cp_stats_action(enum infra_cp_stats_action action)
 }
 
 #ifdef WLAN_SUPPORT_TWT
-static uint32_t
-get_stats_req_twt_dialog_id(struct infra_cp_stats_cmd_info *req)
+static uint32_t get_stats_req_twt_dialog_id(struct infra_cp_stats_cmd_info *req)
 {
 	return req->dialog_id;
 }
@@ -101,15 +100,16 @@ wmi_get_converted_twt_get_stats_status(WMI_GET_STATS_TWT_STATUS_T tgt_status)
 	}
 }
 
-static inline
-void wmi_extract_ctrl_path_twt_stats_tlv(void *tag_buf,
-					 struct twt_infra_cp_stats_event *param)
+static inline void
+wmi_extract_ctrl_path_twt_stats_tlv(void *tag_buf,
+				    struct twt_infra_cp_stats_event *param)
 {
 	wmi_ctrl_path_twt_stats_struct *wmi_stats_buf =
-			(wmi_ctrl_path_twt_stats_struct *)tag_buf;
+		(wmi_ctrl_path_twt_stats_struct *)tag_buf;
 
 	param->dialog_id = wmi_stats_buf->dialog_id;
-	param->status = wmi_get_converted_twt_get_stats_status(wmi_stats_buf->status);
+	param->status =
+		wmi_get_converted_twt_get_stats_status(wmi_stats_buf->status);
 	param->num_sp_cycles = wmi_stats_buf->num_sp_cycles;
 	param->avg_sp_dur_us = wmi_stats_buf->avg_sp_dur_us;
 	param->min_sp_dur_us = wmi_stats_buf->min_sp_dur_us;
@@ -137,8 +137,8 @@ static void wmi_twt_extract_stats_struct(void *tag_buf,
 {
 	struct twt_infra_cp_stats_event *twt_params;
 
-	twt_params = params->twt_infra_cp_stats +
-		     params->num_twt_infra_cp_stats;
+	twt_params =
+		params->twt_infra_cp_stats + params->num_twt_infra_cp_stats;
 
 	wmi_debug("TWT stats struct found - num_twt_cp_stats %d",
 		  params->num_twt_infra_cp_stats);
@@ -147,8 +147,8 @@ static void wmi_twt_extract_stats_struct(void *tag_buf,
 	wmi_extract_ctrl_path_twt_stats_tlv(tag_buf, twt_params);
 }
 #else
-static inline
-uint32_t get_stats_req_twt_dialog_id(struct infra_cp_stats_cmd_info *req)
+static inline uint32_t
+get_stats_req_twt_dialog_id(struct infra_cp_stats_cmd_info *req)
 {
 	return 0;
 }
@@ -160,12 +160,11 @@ static void wmi_twt_extract_stats_struct(void *tag_buf,
 #endif /* WLAN_SUPPORT_TWT */
 
 #ifdef WLAN_SUPPORT_INFRA_CTRL_PATH_STATS
-static void
-wmi_extract_ctrl_path_rrm_sta_stats_tlv(void *tag_buf,
-					struct cp_sta_stats *param)
+static void wmi_extract_ctrl_path_rrm_sta_stats_tlv(void *tag_buf,
+						    struct cp_sta_stats *param)
 {
 	wmi_ctrl_path_sta_rrm_stats_struct *wmi_stats_buf =
-			(wmi_ctrl_path_sta_rrm_stats_struct *)tag_buf;
+		(wmi_ctrl_path_sta_rrm_stats_struct *)tag_buf;
 	param->group.counter_stats.group_transmitted_frame_count =
 		wmi_stats_buf->dot11GroupTransmittedFrameCount;
 	param->group.counter_stats.group_received_frame_count =
@@ -197,7 +196,8 @@ wmi_rrm_extract_sta_stats_struct(void *tag_buf,
 static inline void
 wmi_rrm_extract_sta_stats_struct(void *tag_buf,
 				 struct infra_cp_stats_event *params)
-{}
+{
+}
 #endif
 
 #ifdef CONFIG_WLAN_BMISS
@@ -208,46 +208,50 @@ wmi_extract_ctrl_path_bmiss_stats_tlv(void *tag_buf,
 	int idx = 0;
 
 	wmi_ctrl_path_bmiss_stats_struct *wmi_stats_buf =
-			(wmi_ctrl_path_bmiss_stats_struct *)tag_buf;
+		(wmi_ctrl_path_bmiss_stats_struct *)tag_buf;
 	param->num_pre_bmiss = wmi_stats_buf->num_pre_bmiss;
 	for (idx = 0; idx < BMISS_STATS_RSSI_SAMPLES_MAX; idx++) {
 		param->rssi_samples[idx].rssi =
-				wmi_stats_buf->rssi_samples[idx].rssi;
+			wmi_stats_buf->rssi_samples[idx].rssi;
 		param->rssi_samples[idx].sample_time =
-				wmi_stats_buf->rssi_samples[idx].sample_time;
+			wmi_stats_buf->rssi_samples[idx].sample_time;
 	}
 	param->rssi_sample_curr_index = wmi_stats_buf->rssi_sample_curr_index;
 	param->num_first_bmiss = wmi_stats_buf->num_first_bmiss;
 	param->num_final_bmiss = wmi_stats_buf->num_final_bmiss;
 	param->num_null_sent_in_first_bmiss =
-	wmi_stats_buf->num_null_sent_in_first_bmiss;
+		wmi_stats_buf->num_null_sent_in_first_bmiss;
 	param->num_null_failed_in_first_bmiss =
-	wmi_stats_buf->num_null_failed_in_first_bmiss;
+		wmi_stats_buf->num_null_failed_in_first_bmiss;
 	param->num_null_failed_in_final_bmiss =
-	wmi_stats_buf->num_null_failed_in_final_bmiss;
+		wmi_stats_buf->num_null_failed_in_final_bmiss;
 	param->cons_bmiss_stats.num_of_bmiss_sequences =
-	wmi_stats_buf->cons_bmiss_stats.num_of_bmiss_sequences;
+		wmi_stats_buf->cons_bmiss_stats.num_of_bmiss_sequences;
 	param->cons_bmiss_stats.num_bitmask_wraparound =
-	wmi_stats_buf->cons_bmiss_stats.num_bitmask_wraparound;
+		wmi_stats_buf->cons_bmiss_stats.num_bitmask_wraparound;
 	param->cons_bmiss_stats.num_bcn_hist_lost =
-	wmi_stats_buf->cons_bmiss_stats.num_bcn_hist_lost;
+		wmi_stats_buf->cons_bmiss_stats.num_bcn_hist_lost;
 	wmi_debug("num_pre_bmiss = %u", wmi_stats_buf->num_pre_bmiss);
-	wmi_debug("num_first_bmiss = %u num_final_bmiss = %u, num_null_sent_in_first_bmiss = %u, num_null_failed_in_first_bmiss = %u",
-		  wmi_stats_buf->num_first_bmiss,
-		  wmi_stats_buf->num_final_bmiss,
-		  wmi_stats_buf->num_null_sent_in_first_bmiss,
-		  wmi_stats_buf->num_null_failed_in_first_bmiss);
-	wmi_debug("num_null_sent_in_final_bmiss %u null_fail_cnt_final_bmiss = %u rssi_sample_curr_index = %u",
-		  wmi_stats_buf->num_null_sent_in_final_bmiss,
-		  wmi_stats_buf->num_null_failed_in_final_bmiss,
-		  wmi_stats_buf->rssi_sample_curr_index);
+	wmi_debug(
+		"num_first_bmiss = %u num_final_bmiss = %u, num_null_sent_in_first_bmiss "
+		"= %u, num_null_failed_in_first_bmiss = %u",
+		wmi_stats_buf->num_first_bmiss, wmi_stats_buf->num_final_bmiss,
+		wmi_stats_buf->num_null_sent_in_first_bmiss,
+		wmi_stats_buf->num_null_failed_in_first_bmiss);
+	wmi_debug(
+		"num_null_sent_in_final_bmiss %u null_fail_cnt_final_bmiss = %u "
+		"rssi_sample_curr_index = %u",
+		wmi_stats_buf->num_null_sent_in_final_bmiss,
+		wmi_stats_buf->num_null_failed_in_final_bmiss,
+		wmi_stats_buf->rssi_sample_curr_index);
 	for (idx = 0; idx < BMISS_STATS_RSSI_SAMPLES_MAX; idx++) {
 		wmi_debug("rssi_sample-%u: rssi=%u", idx,
 			  wmi_stats_buf->rssi_samples[idx].rssi);
 		wmi_debug("rssi_sample-%u: sampletime=%u", idx,
 			  wmi_stats_buf->rssi_samples[idx].sample_time);
 	}
-	wmi_debug("num_of_bmiss_sequences %u num_bitmask_wraparound = %u num_bcn_hist_lost = %u",
+	wmi_debug("num_of_bmiss_sequences %u num_bitmask_wraparound = %u "
+		  "num_bcn_hist_lost = %u",
 		  wmi_stats_buf->cons_bmiss_stats.num_of_bmiss_sequences,
 		  wmi_stats_buf->cons_bmiss_stats.num_bitmask_wraparound,
 		  wmi_stats_buf->cons_bmiss_stats.num_bcn_hist_lost);
@@ -264,74 +268,75 @@ static void wmi_bmiss_extract_stats_struct(void *tag_buf,
 }
 
 #else /* CONFIG_WLAN_BMISS */
-static inline
-void wmi_bmiss_extract_stats_struct(void *tag_buf,
-				    struct infra_cp_stats_event *params)
+static inline void
+wmi_bmiss_extract_stats_struct(void *tag_buf,
+			       struct infra_cp_stats_event *params)
 
 {
 }
 
-#endif/* CONFIG_WLAN_BMISS */
+#endif /* CONFIG_WLAN_BMISS */
 
 #ifdef WLAN_CONFIG_TELEMETRY_AGENT
-static void
-wmi_extract_ctrl_path_pmlo_stats_tlv(wmi_unified_t wmi_handle, void *tag_buf,
-				     struct ctrl_path_pmlo_telemetry_stats_struct *param)
+static void wmi_extract_ctrl_path_pmlo_stats_tlv(
+	wmi_unified_t wmi_handle, void *tag_buf,
+	struct ctrl_path_pmlo_telemetry_stats_struct *param)
 {
 	int idx = 0;
 	wmi_ctrl_path_pmlo_stats_struct *wmi_stats_buf = tag_buf;
 
-	param->pdev_id =
-	     wmi_handle->ops->convert_target_pdev_id_to_host(wmi_handle,
-							wmi_stats_buf->pdev_id);
-	param->dl_inbss_airtime_ac_be =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_BE(wmi_stats_buf->dl_inbss_airtime_per_ac);
-	param->dl_inbss_airtime_ac_bk =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_BK(wmi_stats_buf->dl_inbss_airtime_per_ac);
-	param->dl_inbss_airtime_ac_vi =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_VI(wmi_stats_buf->dl_inbss_airtime_per_ac);
-	param->dl_inbss_airtime_ac_vo =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_VO(wmi_stats_buf->dl_inbss_airtime_per_ac);
-	param->ul_inbss_airtime_ac_be =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_BE(wmi_stats_buf->ul_inbss_airtime_per_ac);
-	param->ul_inbss_airtime_ac_bk =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_BK(wmi_stats_buf->ul_inbss_airtime_per_ac);
-	param->ul_inbss_airtime_ac_vi =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_VI(wmi_stats_buf->ul_inbss_airtime_per_ac);
-	param->ul_inbss_airtime_ac_vo =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_VO(wmi_stats_buf->ul_inbss_airtime_per_ac);
-	param->estimated_air_time_ac_be =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_BE(wmi_stats_buf->estimated_air_time_per_ac);
-	param->estimated_air_time_ac_bk =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_BK(wmi_stats_buf->estimated_air_time_per_ac);
-	param->estimated_air_time_ac_vi =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_VI(wmi_stats_buf->estimated_air_time_per_ac);
-	param->estimated_air_time_ac_vo =
-		WMI_PMLO_UL_DL_INBSS_AT_GET_VO(wmi_stats_buf->estimated_air_time_per_ac);
-	param->link_obss_airtime =
-		WMI_PMLO_LINK_OBSS_AT_GET(wmi_stats_buf->ul_dl_obss_free_aa_word32);
+	param->pdev_id = wmi_handle->ops->convert_target_pdev_id_to_host(
+		wmi_handle, wmi_stats_buf->pdev_id);
+	param->dl_inbss_airtime_ac_be = WMI_PMLO_UL_DL_INBSS_AT_GET_BE(
+		wmi_stats_buf->dl_inbss_airtime_per_ac);
+	param->dl_inbss_airtime_ac_bk = WMI_PMLO_UL_DL_INBSS_AT_GET_BK(
+		wmi_stats_buf->dl_inbss_airtime_per_ac);
+	param->dl_inbss_airtime_ac_vi = WMI_PMLO_UL_DL_INBSS_AT_GET_VI(
+		wmi_stats_buf->dl_inbss_airtime_per_ac);
+	param->dl_inbss_airtime_ac_vo = WMI_PMLO_UL_DL_INBSS_AT_GET_VO(
+		wmi_stats_buf->dl_inbss_airtime_per_ac);
+	param->ul_inbss_airtime_ac_be = WMI_PMLO_UL_DL_INBSS_AT_GET_BE(
+		wmi_stats_buf->ul_inbss_airtime_per_ac);
+	param->ul_inbss_airtime_ac_bk = WMI_PMLO_UL_DL_INBSS_AT_GET_BK(
+		wmi_stats_buf->ul_inbss_airtime_per_ac);
+	param->ul_inbss_airtime_ac_vi = WMI_PMLO_UL_DL_INBSS_AT_GET_VI(
+		wmi_stats_buf->ul_inbss_airtime_per_ac);
+	param->ul_inbss_airtime_ac_vo = WMI_PMLO_UL_DL_INBSS_AT_GET_VO(
+		wmi_stats_buf->ul_inbss_airtime_per_ac);
+	param->estimated_air_time_ac_be = WMI_PMLO_UL_DL_INBSS_AT_GET_BE(
+		wmi_stats_buf->estimated_air_time_per_ac);
+	param->estimated_air_time_ac_bk = WMI_PMLO_UL_DL_INBSS_AT_GET_BK(
+		wmi_stats_buf->estimated_air_time_per_ac);
+	param->estimated_air_time_ac_vi = WMI_PMLO_UL_DL_INBSS_AT_GET_VI(
+		wmi_stats_buf->estimated_air_time_per_ac);
+	param->estimated_air_time_ac_vo = WMI_PMLO_UL_DL_INBSS_AT_GET_VO(
+		wmi_stats_buf->estimated_air_time_per_ac);
+	param->link_obss_airtime = WMI_PMLO_LINK_OBSS_AT_GET(
+		wmi_stats_buf->ul_dl_obss_free_aa_word32);
 	param->link_idle_airtime =
 		WMI_PMLO_LINK_AA_GET(wmi_stats_buf->ul_dl_obss_free_aa_word32);
-	param->ul_inbss_airtime_non_ac =
-		WMI_PMLO_UL_AIRTIME_NON_AC_GET(wmi_stats_buf->ul_dl_obss_free_aa_word32);
-	param->dl_inbss_airtime_non_ac =
-		WMI_PMLO_DL_AIRTIME_NON_AC_GET(wmi_stats_buf->ul_dl_obss_free_aa_word32);
+	param->ul_inbss_airtime_non_ac = WMI_PMLO_UL_AIRTIME_NON_AC_GET(
+		wmi_stats_buf->ul_dl_obss_free_aa_word32);
+	param->dl_inbss_airtime_non_ac = WMI_PMLO_DL_AIRTIME_NON_AC_GET(
+		wmi_stats_buf->ul_dl_obss_free_aa_word32);
 	for (idx = 0; idx < WMI_AC_MAX; idx++) {
 		param->avg_chan_lat_per_ac[idx] =
-				wmi_stats_buf->avg_chan_lat_per_ac[idx];
+			wmi_stats_buf->avg_chan_lat_per_ac[idx];
 	}
 
 	wmi_debug("pdev_id = %u", wmi_stats_buf->pdev_id);
-	wmi_debug("dl_inbss_airtime_per_ac = %u, ul_inbss_airtime_per_ac = %u, estimated_air_time_per_ac = %u, ul_dl_obss_free_aa_word32 = %u",
-		  wmi_stats_buf->dl_inbss_airtime_per_ac,
-		  wmi_stats_buf->ul_inbss_airtime_per_ac,
-		  wmi_stats_buf->estimated_air_time_per_ac,
-		  wmi_stats_buf->ul_dl_obss_free_aa_word32);
+	wmi_debug(
+		"dl_inbss_airtime_per_ac = %u, ul_inbss_airtime_per_ac = %u, "
+		"estimated_air_time_per_ac = %u, ul_dl_obss_free_aa_word32 = %u",
+		wmi_stats_buf->dl_inbss_airtime_per_ac,
+		wmi_stats_buf->ul_inbss_airtime_per_ac,
+		wmi_stats_buf->estimated_air_time_per_ac,
+		wmi_stats_buf->ul_dl_obss_free_aa_word32);
 
 	for (idx = 0; idx < WMI_AC_MAX; idx++) {
-		wmi_debug("avg_chan_lat_per_ac_sample-%u: avg_chan_lat_per_ac=%u",
-			  idx,
-			  wmi_stats_buf->avg_chan_lat_per_ac[idx]);
+		wmi_debug(
+			"avg_chan_lat_per_ac_sample-%u: avg_chan_lat_per_ac=%u",
+			idx, wmi_stats_buf->avg_chan_lat_per_ac[idx]);
 	}
 }
 
@@ -349,7 +354,8 @@ static void wmi_pmlo_extract_stats_struct(wmi_unified_t wmi_handle,
 static void wmi_pmlo_extract_stats_struct(wmi_unified_t wmi_handle,
 					  void *tag_buf,
 					  struct infra_cp_stats_event *params)
-{ }
+{
+}
 #endif
 
 /**
@@ -442,13 +448,13 @@ QDF_STATUS wmi_stats_handler(wmi_unified_t wmi_handle, void *buff, int32_t len,
 		curr_tlv_tag = WMITLV_GET_TLVTAG(WMITLV_GET_HDR(buf_ptr));
 		curr_tlv_len = WMITLV_GET_TLVLEN(WMITLV_GET_HDR(buf_ptr));
 
-		wmi_debug("curr_tlv_len %d curr_tlv_tag %d rem_len %d",
-			  len, curr_tlv_len, curr_tlv_tag);
+		wmi_debug("curr_tlv_len %d curr_tlv_tag %d rem_len %d", len,
+			  curr_tlv_len, curr_tlv_tag);
 		if (curr_tlv_len) {
 			/* point to the tag inside WMITLV_TAG_ARRAY_STRUC */
 			tag_start_ptr = buf_ptr + WMI_TLV_HDR_SIZE;
 			curr_tlv_tag = WMITLV_GET_TLVTAG(
-						WMITLV_GET_HDR(tag_start_ptr));
+				WMITLV_GET_HDR(tag_start_ptr));
 			wmi_stats_extract_tag_struct(wmi_handle, curr_tlv_tag,
 						     (void *)tag_start_ptr,
 						     params);
@@ -509,25 +515,26 @@ prepare_infra_cp_stats_buf(wmi_unified_t wmi_handle,
 	uint32_t num_dialog_ids = INFRA_CP_STATS_MAX_REQ_TWT_DIALOG_ID;
 
 	/* Calculate total buffer length */
-	*req_buf_len = (sizeof(wmi_request_ctrl_path_stats_cmd_fixed_param) +
-		       WMI_TLV_HDR_SIZE + (sizeof(A_UINT32) * (num_pdev_ids)) +
-		       WMI_TLV_HDR_SIZE + sizeof(A_UINT32) * (num_vdev_ids) +
-		       WMI_TLV_HDR_SIZE +
-		       sizeof(wmi_mac_addr) * (num_mac_addr_list) +
-		       WMI_TLV_HDR_SIZE +
-		       (sizeof(A_UINT32) * (num_dialog_ids)));
+	*req_buf_len =
+		(sizeof(wmi_request_ctrl_path_stats_cmd_fixed_param) +
+		 WMI_TLV_HDR_SIZE + (sizeof(A_UINT32) * (num_pdev_ids)) +
+		 WMI_TLV_HDR_SIZE + sizeof(A_UINT32) * (num_vdev_ids) +
+		 WMI_TLV_HDR_SIZE + sizeof(wmi_mac_addr) * (num_mac_addr_list) +
+		 WMI_TLV_HDR_SIZE + (sizeof(A_UINT32) * (num_dialog_ids)));
 	req_buf = wmi_buf_alloc(wmi_handle, *req_buf_len);
 	if (!req_buf)
 		return NULL;
 
-	cmd_fixed_param = (wmi_request_ctrl_path_stats_cmd_fixed_param *)
-				wmi_buf_data(req_buf);
+	cmd_fixed_param =
+		(wmi_request_ctrl_path_stats_cmd_fixed_param *)wmi_buf_data(
+			req_buf);
 
 	/*Set TLV header*/
-	WMITLV_SET_HDR(&cmd_fixed_param->tlv_header,
+	WMITLV_SET_HDR(
+		&cmd_fixed_param->tlv_header,
 		WMITLV_TAG_STRUC_wmi_request_ctrl_path_stats_cmd_fixed_param,
 		WMITLV_GET_STRUCT_TLVLEN(
-				wmi_request_ctrl_path_stats_cmd_fixed_param));
+			wmi_request_ctrl_path_stats_cmd_fixed_param));
 
 	index = get_infra_cp_stats_id(stats_req->stats_id);
 	cmd_fixed_param->stats_id_mask = (1 << index);
@@ -540,19 +547,19 @@ prepare_infra_cp_stats_buf(wmi_unified_t wmi_handle,
 	/* Setting tlv header for pdev id arrays*/
 	buf_ptr = buf_ptr + sizeof(*cmd_fixed_param);
 	pdev_id_array = (uint32_t *)(buf_ptr + WMI_TLV_HDR_SIZE);
-	WMITLV_SET_HDR(buf_ptr,  WMITLV_TAG_ARRAY_UINT32,
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_UINT32,
 		       sizeof(A_UINT32) * num_pdev_ids);
 
 	/* Setting tlv header for vdev id arrays*/
-	buf_ptr = buf_ptr + WMI_TLV_HDR_SIZE +
-		  (sizeof(A_UINT32) * num_pdev_ids);
+	buf_ptr =
+		buf_ptr + WMI_TLV_HDR_SIZE + (sizeof(A_UINT32) * num_pdev_ids);
 	vdev_id_array = (uint32_t *)(buf_ptr + WMI_TLV_HDR_SIZE);
 	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_UINT32,
 		       sizeof(A_UINT32) * num_vdev_ids);
 
 	/* Setting tlv header for mac addr arrays*/
-	buf_ptr = buf_ptr + WMI_TLV_HDR_SIZE +
-		  (sizeof(A_UINT32) * num_vdev_ids);
+	buf_ptr =
+		buf_ptr + WMI_TLV_HDR_SIZE + (sizeof(A_UINT32) * num_vdev_ids);
 	mac_addr_array = buf_ptr + WMI_TLV_HDR_SIZE;
 	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_FIXED_STRUC,
 		       sizeof(wmi_mac_addr) * num_mac_addr_list);
@@ -567,8 +574,7 @@ prepare_infra_cp_stats_buf(wmi_unified_t wmi_handle,
 	for (index = 0; index < num_pdev_ids; index++) {
 		pdev_id_array[index] =
 			wmi_handle->ops->convert_pdev_id_host_to_target(
-					wmi_handle,
-					stats_req->pdev_id[index]);
+				wmi_handle, stats_req->pdev_id[index]);
 	}
 
 	for (index = 0; index < num_vdev_ids; index++)
@@ -586,8 +592,9 @@ prepare_infra_cp_stats_buf(wmi_unified_t wmi_handle,
 		  cmd_fixed_param->stats_id_mask, cmd_fixed_param->action,
 		  dialog_id_array[0]);
 	wmi_debug("num_pdev_ids %d num_vdev_ids %d num_dialog_ids %d \
-		   num_mac_addr %d", num_pdev_ids, num_vdev_ids,
-		   num_dialog_ids, num_mac_addr_list);
+		   num_mac_addr %d",
+		  num_pdev_ids, num_vdev_ids, num_dialog_ids,
+		  num_mac_addr_list);
 
 	return req_buf;
 }
@@ -616,8 +623,8 @@ send_infra_cp_stats_request_cmd_tlv(wmi_unified_t wmi_handle,
 	wmi_debug("buf_len %d", len);
 
 	wmi_mtrace(WMI_REQUEST_CTRL_PATH_STATS_CMDID, NO_SESSION, 0);
-	status = wmi_unified_cmd_send(wmi_handle, buf,
-				      len, WMI_REQUEST_CTRL_PATH_STATS_CMDID);
+	status = wmi_unified_cmd_send(wmi_handle, buf, len,
+				      WMI_REQUEST_CTRL_PATH_STATS_CMDID);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wmi_buf_free(buf);
@@ -644,18 +651,16 @@ send_infra_cp_stats_request_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: QDF_STATUS on success, else failure.
  */
-static QDF_STATUS
-send_stats_request_cmd_tlv(wmi_unified_t wmi_handle,
-			   uint8_t macaddr[QDF_MAC_ADDR_SIZE],
-			   struct stats_request_params *param)
+static QDF_STATUS send_stats_request_cmd_tlv(wmi_unified_t wmi_handle,
+					     uint8_t macaddr[QDF_MAC_ADDR_SIZE],
+					     struct stats_request_params *param)
 {
 	return QDF_STATUS_SUCCESS;
 }
 #else
-static QDF_STATUS
-send_stats_request_cmd_tlv(wmi_unified_t wmi_handle,
-			   uint8_t macaddr[QDF_MAC_ADDR_SIZE],
-			   struct stats_request_params *param)
+static QDF_STATUS send_stats_request_cmd_tlv(wmi_unified_t wmi_handle,
+					     uint8_t macaddr[QDF_MAC_ADDR_SIZE],
+					     struct stats_request_params *param)
 {
 	int32_t ret;
 	wmi_request_stats_cmd_fixed_param *cmd;
@@ -667,23 +672,22 @@ send_stats_request_cmd_tlv(wmi_unified_t wmi_handle,
 	if (!buf)
 		return QDF_STATUS_E_NOMEM;
 
-	cmd = (wmi_request_stats_cmd_fixed_param *) wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_request_stats_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-			       (wmi_request_stats_cmd_fixed_param));
+	cmd = (wmi_request_stats_cmd_fixed_param *)wmi_buf_data(buf);
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_request_stats_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_request_stats_cmd_fixed_param));
 	cmd->stats_id = param->stats_id;
 	cmd->vdev_id = param->vdev_id;
 	cmd->pdev_id = wmi_handle->ops->convert_pdev_id_host_to_target(
-							wmi_handle,
-							param->pdev_id);
+		wmi_handle, param->pdev_id);
 	is_qmi_send_support = param->is_qmi_send_support;
 
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(macaddr, &cmd->peer_macaddr);
 
-	wmi_debug("STATS REQ STATS_ID:%d VDEV_ID:%d PDEV_ID:%d, is_qmi_send_support %d",
-		  cmd->stats_id, cmd->vdev_id, cmd->pdev_id,
-		  is_qmi_send_support);
+	wmi_debug(
+		"STATS REQ STATS_ID:%d VDEV_ID:%d PDEV_ID:%d, is_qmi_send_support %d",
+		cmd->stats_id, cmd->vdev_id, cmd->pdev_id, is_qmi_send_support);
 
 	wmi_mtrace(WMI_REQUEST_STATS_CMDID, cmd->vdev_id, 0);
 	ret = wmi_unified_cmd_send_pm_chk(wmi_handle, buf, len,
@@ -724,8 +728,8 @@ send_big_data_stats_request_cmd_tlv(wmi_unified_t wmi_handle,
 	WMITLV_SET_HDR(
 		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_wmi_vdev_get_big_data_p2_cmd_fixed_param,
-		WMITLV_GET_STRUCT_TLVLEN
-		(wmi_vdev_get_big_data_p2_cmd_fixed_param));
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_vdev_get_big_data_p2_cmd_fixed_param));
 
 	cmd->vdev_id = param->vdev_id;
 
@@ -763,8 +767,8 @@ extract_all_stats_counts_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 	uint32_t i;
 
 	qdf_mem_zero(stats_param, sizeof(*stats_param));
-	param_buf = (WMI_UPDATE_STATS_EVENTID_param_tlvs *) evt_buf;
-	ev = (wmi_stats_event_fixed_param *) param_buf->fixed_param;
+	param_buf = (WMI_UPDATE_STATS_EVENTID_param_tlvs *)evt_buf;
+	ev = (wmi_stats_event_fixed_param *)param_buf->fixed_param;
 	rssi_event = param_buf->chain_stats;
 	if (!ev) {
 		wmi_err("event fixed param NULL");
@@ -838,8 +842,8 @@ extract_all_stats_counts_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 	}
 
 	/* ev->num_*_stats may cause uint32_t overflow, so use uint64_t
-	 * to save total length calculated
-	 */
+   * to save total length calculated
+   */
 	min_data_len =
 		(((uint64_t)ev->num_pdev_stats) * sizeof(wmi_pdev_stats)) +
 		(((uint64_t)ev->num_vdev_stats) * sizeof(wmi_vdev_stats)) +
@@ -855,7 +859,7 @@ extract_all_stats_counts_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 		 sizeof(wmi_mib_extd_stats));
 	if (param_buf->num_data != min_data_len) {
 		wmi_err("data len: %u isn't same as calculated: %llu",
-			 param_buf->num_data, min_data_len);
+			param_buf->num_data, min_data_len);
 		return QDF_STATUS_E_FAULT;
 	}
 
@@ -871,8 +875,7 @@ extract_all_stats_counts_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 	stats_param->num_mib_extd_stats = ev->num_mib_extd_stats;
 	stats_param->num_bcn_stats = ev->num_bcn_stats;
 	stats_param->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host(
-							wmi_handle,
-							ev->pdev_id);
+		wmi_handle, ev->pdev_id);
 
 	/* if chain_stats is not populated */
 	if (!param_buf->chain_stats || !param_buf->num_chain_stats)
@@ -889,7 +892,7 @@ extract_all_stats_counts_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 	if (rssi_event->num_per_chain_rssi_stats >=
 	    WMITLV_GET_TLVLEN(rssi_event->tlv_header)) {
 		wmi_err("num_per_chain_rssi_stats:%u is out of bounds",
-			 rssi_event->num_per_chain_rssi_stats);
+			rssi_event->num_per_chain_rssi_stats);
 		return QDF_STATUS_E_INVAL;
 	}
 	stats_param->num_rssi_stats = rssi_event->num_per_chain_rssi_stats;
@@ -941,7 +944,6 @@ static void extract_pdev_tx_stats(wmi_host_dbg_tx_stats *tx,
 	return;
 }
 
-
 /**
  * extract_pdev_rx_stats() - extract pdev rx stats from event
  * @rx: destination
@@ -979,25 +981,25 @@ static void extract_pdev_rx_stats(wmi_host_dbg_rx_stats *rx,
  *
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
-static QDF_STATUS
-extract_pdev_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf, uint32_t index,
-		       wmi_host_pdev_stats *pdev_stats)
+static QDF_STATUS extract_pdev_stats_tlv(wmi_unified_t wmi_handle,
+					 void *evt_buf, uint32_t index,
+					 wmi_host_pdev_stats *pdev_stats)
 {
 	WMI_UPDATE_STATS_EVENTID_param_tlvs *param_buf;
 	wmi_stats_event_fixed_param *ev_param;
 	uint8_t *data;
 
-	param_buf = (WMI_UPDATE_STATS_EVENTID_param_tlvs *) evt_buf;
-	ev_param = (wmi_stats_event_fixed_param *) param_buf->fixed_param;
-	pdev_stats->pdev_id =
-	     wmi_handle->ops->convert_target_pdev_id_to_host(wmi_handle,
-							     ev_param->pdev_id);
+	param_buf = (WMI_UPDATE_STATS_EVENTID_param_tlvs *)evt_buf;
+	ev_param = (wmi_stats_event_fixed_param *)param_buf->fixed_param;
+	pdev_stats->pdev_id = wmi_handle->ops->convert_target_pdev_id_to_host(
+		wmi_handle, ev_param->pdev_id);
 
 	data = param_buf->data;
 
 	if (index < ev_param->num_pdev_stats) {
-		wmi_pdev_stats *ev = (wmi_pdev_stats *) ((data) +
-				(index * sizeof(wmi_pdev_stats)));
+		wmi_pdev_stats *ev =
+			(wmi_pdev_stats *)((data) +
+					   (index * sizeof(wmi_pdev_stats)));
 
 		pdev_stats->chan_nf = ev->chan_nf;
 		pdev_stats->tx_frame_count = ev->tx_frame_count;
@@ -1008,9 +1010,9 @@ extract_pdev_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf, uint32_t index,
 		pdev_stats->chan_tx_pwr = ev->chan_tx_pwr;
 
 		extract_pdev_tx_stats(&(pdev_stats->pdev_stats.tx),
-			&(ev->pdev_stats.tx));
+				      &(ev->pdev_stats.tx));
 		extract_pdev_rx_stats(&(pdev_stats->pdev_stats.rx),
-			&(ev->pdev_stats.rx));
+				      &(ev->pdev_stats.rx));
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -1026,44 +1028,45 @@ extract_pdev_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf, uint32_t index,
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS extract_vdev_stats_tlv(wmi_unified_t wmi_handle,
-	void *evt_buf, uint32_t index, wmi_host_vdev_stats *vdev_stats)
+					 void *evt_buf, uint32_t index,
+					 wmi_host_vdev_stats *vdev_stats)
 {
 	WMI_UPDATE_STATS_EVENTID_param_tlvs *param_buf;
 	wmi_stats_event_fixed_param *ev_param;
 	uint8_t *data;
 
-	param_buf = (WMI_UPDATE_STATS_EVENTID_param_tlvs *) evt_buf;
-	ev_param = (wmi_stats_event_fixed_param *) param_buf->fixed_param;
-	data = (uint8_t *) param_buf->data;
+	param_buf = (WMI_UPDATE_STATS_EVENTID_param_tlvs *)evt_buf;
+	ev_param = (wmi_stats_event_fixed_param *)param_buf->fixed_param;
+	data = (uint8_t *)param_buf->data;
 
 	if (index < ev_param->num_vdev_stats) {
-		wmi_vdev_stats *ev = (wmi_vdev_stats *) ((data) +
-				((ev_param->num_pdev_stats) *
-				sizeof(wmi_pdev_stats)) +
-				(index * sizeof(wmi_vdev_stats)));
+		wmi_vdev_stats *ev =
+			(wmi_vdev_stats *)((data) +
+					   ((ev_param->num_pdev_stats) *
+					    sizeof(wmi_pdev_stats)) +
+					   (index * sizeof(wmi_vdev_stats)));
 
 		vdev_stats->vdev_id = ev->vdev_id;
 		vdev_stats->vdev_snr.bcn_snr = ev->vdev_snr.bcn_snr;
 		vdev_stats->vdev_snr.dat_snr = ev->vdev_snr.dat_snr;
 
 		OS_MEMCPY(vdev_stats->tx_frm_cnt, ev->tx_frm_cnt,
-			sizeof(ev->tx_frm_cnt));
+			  sizeof(ev->tx_frm_cnt));
 		vdev_stats->rx_frm_cnt = ev->rx_frm_cnt;
 		OS_MEMCPY(vdev_stats->multiple_retry_cnt,
-				ev->multiple_retry_cnt,
-				sizeof(ev->multiple_retry_cnt));
+			  ev->multiple_retry_cnt,
+			  sizeof(ev->multiple_retry_cnt));
 		OS_MEMCPY(vdev_stats->fail_cnt, ev->fail_cnt,
-				sizeof(ev->fail_cnt));
+			  sizeof(ev->fail_cnt));
 		vdev_stats->rts_fail_cnt = ev->rts_fail_cnt;
 		vdev_stats->rts_succ_cnt = ev->rts_succ_cnt;
 		vdev_stats->rx_err_cnt = ev->rx_err_cnt;
 		vdev_stats->rx_discard_cnt = ev->rx_discard_cnt;
 		vdev_stats->ack_fail_cnt = ev->ack_fail_cnt;
 		OS_MEMCPY(vdev_stats->tx_rate_history, ev->tx_rate_history,
-			sizeof(ev->tx_rate_history));
+			  sizeof(ev->tx_rate_history));
 		OS_MEMCPY(vdev_stats->bcn_rssi_history, ev->bcn_rssi_history,
-			sizeof(ev->bcn_rssi_history));
-
+			  sizeof(ev->bcn_rssi_history));
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -1078,28 +1081,31 @@ static QDF_STATUS extract_vdev_stats_tlv(wmi_unified_t wmi_handle,
  *
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
-static QDF_STATUS
-extract_peer_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf, uint32_t index,
-		       wmi_host_peer_stats *peer_stats)
+static QDF_STATUS extract_peer_stats_tlv(wmi_unified_t wmi_handle,
+					 void *evt_buf, uint32_t index,
+					 wmi_host_peer_stats *peer_stats)
 {
 	WMI_UPDATE_STATS_EVENTID_param_tlvs *param_buf;
 	wmi_stats_event_fixed_param *ev_param;
 	uint8_t *data;
 
-	param_buf = (WMI_UPDATE_STATS_EVENTID_param_tlvs *) evt_buf;
-	ev_param = (wmi_stats_event_fixed_param *) param_buf->fixed_param;
-	data = (uint8_t *) param_buf->data;
+	param_buf = (WMI_UPDATE_STATS_EVENTID_param_tlvs *)evt_buf;
+	ev_param = (wmi_stats_event_fixed_param *)param_buf->fixed_param;
+	data = (uint8_t *)param_buf->data;
 
 	if (index < ev_param->num_peer_stats) {
-		wmi_peer_stats *ev = (wmi_peer_stats *) ((data) +
-			((ev_param->num_pdev_stats) * sizeof(wmi_pdev_stats)) +
-			((ev_param->num_vdev_stats) * sizeof(wmi_vdev_stats)) +
-			(index * sizeof(wmi_peer_stats)));
+		wmi_peer_stats *ev =
+			(wmi_peer_stats *)((data) +
+					   ((ev_param->num_pdev_stats) *
+					    sizeof(wmi_pdev_stats)) +
+					   ((ev_param->num_vdev_stats) *
+					    sizeof(wmi_vdev_stats)) +
+					   (index * sizeof(wmi_peer_stats)));
 
 		OS_MEMSET(peer_stats, 0, sizeof(wmi_host_peer_stats));
 
-		OS_MEMCPY(&(peer_stats->peer_macaddr),
-			&(ev->peer_macaddr), sizeof(wmi_mac_addr));
+		OS_MEMCPY(&(peer_stats->peer_macaddr), &(ev->peer_macaddr),
+			  sizeof(wmi_mac_addr));
 
 		peer_stats->peer_rssi = ev->peer_rssi;
 		peer_stats->peer_tx_rate = ev->peer_tx_rate;
@@ -1119,8 +1125,8 @@ extract_peer_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf, uint32_t index,
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS
-extract_peer_extd_stats_tlv(wmi_unified_t wmi_handle,
-			    void *evt_buf, uint32_t index,
+extract_peer_extd_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf,
+			    uint32_t index,
 			    wmi_host_peer_extd_stats *peer_extd_stats)
 {
 	WMI_UPDATE_STATS_EVENTID_param_tlvs *param_buf;
@@ -1134,16 +1140,24 @@ extract_peer_extd_stats_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 
 	if (index < ev_param->num_peer_extd_stats) {
-		wmi_peer_extd_stats *ev = (wmi_peer_extd_stats *) (data +
-			(ev_param->num_pdev_stats * sizeof(wmi_pdev_stats)) +
-			(ev_param->num_vdev_stats * sizeof(wmi_vdev_stats)) +
-			(ev_param->num_peer_stats * sizeof(wmi_peer_stats)) +
-			(ev_param->num_bcnflt_stats *
-			sizeof(wmi_bcnfilter_stats_t)) +
-			(ev_param->num_chan_stats * sizeof(wmi_chan_stats)) +
-			(ev_param->num_mib_stats * sizeof(wmi_mib_stats)) +
-			(ev_param->num_bcn_stats * sizeof(wmi_bcn_stats)) +
-			(index * sizeof(wmi_peer_extd_stats)));
+		wmi_peer_extd_stats *ev =
+			(wmi_peer_extd_stats *)(data +
+						(ev_param->num_pdev_stats *
+						 sizeof(wmi_pdev_stats)) +
+						(ev_param->num_vdev_stats *
+						 sizeof(wmi_vdev_stats)) +
+						(ev_param->num_peer_stats *
+						 sizeof(wmi_peer_stats)) +
+						(ev_param->num_bcnflt_stats *
+						 sizeof(wmi_bcnfilter_stats_t)) +
+						(ev_param->num_chan_stats *
+						 sizeof(wmi_chan_stats)) +
+						(ev_param->num_mib_stats *
+						 sizeof(wmi_mib_stats)) +
+						(ev_param->num_bcn_stats *
+						 sizeof(wmi_bcn_stats)) +
+						(index *
+						 sizeof(wmi_peer_extd_stats)));
 
 		qdf_mem_zero(peer_extd_stats, sizeof(wmi_host_peer_extd_stats));
 		qdf_mem_copy(&peer_extd_stats->peer_macaddr, &ev->peer_macaddr,
@@ -1153,7 +1167,6 @@ extract_peer_extd_stats_tlv(wmi_unified_t wmi_handle,
 	}
 
 	return QDF_STATUS_SUCCESS;
-
 }
 
 /**
@@ -1198,7 +1211,7 @@ extract_pmf_bcn_protect_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 static void wmi_infra_cp_stats_ops_attach_tlv(struct wmi_ops *ops)
 {
 	ops->send_infra_cp_stats_request_cmd =
-					send_infra_cp_stats_request_cmd_tlv;
+		send_infra_cp_stats_request_cmd_tlv;
 }
 #else
 static void wmi_infra_cp_stats_ops_attach_tlv(struct wmi_ops *ops)
@@ -1215,9 +1228,9 @@ static void wmi_infra_cp_stats_ops_attach_tlv(struct wmi_ops *ops)
  *
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
-static QDF_STATUS
-extract_inst_rssi_stats_resp_tlv(wmi_unified_t wmi_handle, void *evt_buf,
-			struct wmi_host_inst_rssi_stats_resp *inst_rssi_resp)
+static QDF_STATUS extract_inst_rssi_stats_resp_tlv(
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct wmi_host_inst_rssi_stats_resp *inst_rssi_resp)
 {
 	WMI_INST_RSSI_STATS_EVENTID_param_tlvs *param_buf;
 	wmi_inst_rssi_stats_resp_fixed_param *event;
@@ -1233,14 +1246,12 @@ extract_inst_rssi_stats_resp_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 	return QDF_STATUS_SUCCESS;
 }
 
-static void
-wmi_inst_rssi_stats_ops_attach_tlv(struct wmi_ops *ops)
+static void wmi_inst_rssi_stats_ops_attach_tlv(struct wmi_ops *ops)
 {
 	ops->extract_inst_rssi_stats_resp = extract_inst_rssi_stats_resp_tlv;
 }
 #else
-static void
-wmi_inst_rssi_stats_ops_attach_tlv(struct wmi_ops *ops)
+static void wmi_inst_rssi_stats_ops_attach_tlv(struct wmi_ops *ops)
 {
 }
 #endif
@@ -1252,7 +1263,7 @@ void wmi_cp_stats_attach_tlv(wmi_unified_t wmi_handle)
 	ops->send_stats_request_cmd = send_stats_request_cmd_tlv;
 #ifdef WLAN_FEATURE_BIG_DATA_STATS
 	ops->send_big_data_stats_request_cmd =
-				send_big_data_stats_request_cmd_tlv;
+		send_big_data_stats_request_cmd_tlv;
 #endif
 	ops->extract_all_stats_count = extract_all_stats_counts_tlv;
 	ops->extract_pdev_stats = extract_pdev_stats_tlv;

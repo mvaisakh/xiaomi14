@@ -22,8 +22,8 @@
  */
 
 #include "wlan_action_oui_ucfg_api.h"
-#include "wlan_action_oui_main.h"
 #include "target_if_action_oui.h"
+#include "wlan_action_oui_main.h"
 #include "wlan_action_oui_tgt_api.h"
 #include <qdf_str.h>
 
@@ -34,24 +34,25 @@ QDF_STATUS ucfg_action_oui_init(void)
 	ACTION_OUI_ENTER();
 
 	status = wlan_objmgr_register_psoc_create_handler(
-				WLAN_UMAC_COMP_ACTION_OUI,
-				action_oui_psoc_create_notification, NULL);
+		WLAN_UMAC_COMP_ACTION_OUI, action_oui_psoc_create_notification,
+		NULL);
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		action_oui_err("Failed to register psoc create handler");
 		goto exit;
 	}
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-				WLAN_UMAC_COMP_ACTION_OUI,
-				action_oui_psoc_destroy_notification, NULL);
+		WLAN_UMAC_COMP_ACTION_OUI, action_oui_psoc_destroy_notification,
+		NULL);
 	if (QDF_IS_STATUS_SUCCESS(status)) {
 		action_oui_debug("psoc create/delete notifications registered");
 		goto exit;
 	}
 
 	action_oui_err("Failed to register psoc delete handler");
-	wlan_objmgr_unregister_psoc_create_handler(WLAN_UMAC_COMP_ACTION_OUI,
-			action_oui_psoc_create_notification, NULL);
+	wlan_objmgr_unregister_psoc_create_handler(
+		WLAN_UMAC_COMP_ACTION_OUI, action_oui_psoc_create_notification,
+		NULL);
 
 exit:
 	ACTION_OUI_EXIT();
@@ -65,15 +66,14 @@ void ucfg_action_oui_deinit(void)
 	ACTION_OUI_ENTER();
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_UMAC_COMP_ACTION_OUI,
-				action_oui_psoc_create_notification, NULL);
+		WLAN_UMAC_COMP_ACTION_OUI, action_oui_psoc_create_notification,
+		NULL);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		action_oui_err("Failed to unregister psoc create handler");
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-				WLAN_UMAC_COMP_ACTION_OUI,
-				action_oui_psoc_destroy_notification,
-				NULL);
+		WLAN_UMAC_COMP_ACTION_OUI, action_oui_psoc_destroy_notification,
+		NULL);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		action_oui_err("Failed to unregister psoc delete handler");
 
@@ -103,9 +103,8 @@ bool ucfg_action_oui_enabled(struct wlan_objmgr_psoc *psoc)
 	return psoc_priv->action_oui_enable;
 }
 
-uint8_t *
-ucfg_action_oui_get_config(struct wlan_objmgr_psoc *psoc,
-			   enum action_oui_id action_id)
+uint8_t *ucfg_action_oui_get_config(struct wlan_objmgr_psoc *psoc,
+				    enum action_oui_id action_id)
 {
 	struct action_oui_psoc_priv *psoc_priv;
 
@@ -122,10 +121,8 @@ ucfg_action_oui_get_config(struct wlan_objmgr_psoc *psoc,
 	return psoc_priv->action_oui_str[action_id];
 }
 
-
 QDF_STATUS
-ucfg_action_oui_parse(struct wlan_objmgr_psoc *psoc,
-		      const uint8_t *in_str,
+ucfg_action_oui_parse(struct wlan_objmgr_psoc *psoc, const uint8_t *in_str,
 		      enum action_oui_id action_id)
 {
 	return action_oui_parse_string(psoc, in_str, action_id);

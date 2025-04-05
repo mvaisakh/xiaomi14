@@ -8,11 +8,11 @@
 #include <linux/iopoll.h>
 
 #include "msm_vidc_core.h"
-#include "msm_vidc_driver.h"
-#include "msm_vidc_state.h"
 #include "msm_vidc_debug.h"
-#include "msm_vidc_variant.h"
+#include "msm_vidc_driver.h"
 #include "msm_vidc_platform.h"
+#include "msm_vidc_state.h"
+#include "msm_vidc_variant.h"
 #include "venus_hfi.h"
 
 int __write_register(struct msm_vidc_core *core, u32 reg, u32 value)
@@ -58,8 +58,7 @@ int __write_register_masked(struct msm_vidc_core *core, u32 reg, u32 value,
 		return rc;
 
 	if (!is_core_sub_state(core, CORE_SUBSTATE_POWER_ENABLE)) {
-		d_vpr_e("%s: register write failed, power is off\n",
-			__func__);
+		d_vpr_e("%s: register write failed, power is off\n", __func__);
 		return -EINVAL;
 	}
 
@@ -68,18 +67,18 @@ int __write_register_masked(struct msm_vidc_core *core, u32 reg, u32 value,
 
 	prev_val = readl_relaxed(base_addr);
 	/*
-	 * Memory barrier to ensure register read is correct
-	 */
+   * Memory barrier to ensure register read is correct
+   */
 	rmb();
 
 	new_val = (prev_val & ~mask) | (value & mask);
-	d_vpr_l(
-		"Base addr: %pK, writing to: %#x, previous-value: %#x, value: %#x, mask: %#x, new-value: %#x...\n",
+	d_vpr_l("Base addr: %pK, writing to: %#x, previous-value: %#x, value: %#x, "
+		"mask: %#x, new-value: %#x...\n",
 		base_addr, reg, prev_val, value, mask, new_val);
 	writel_relaxed(new_val, base_addr);
 	/*
-	 * Memory barrier to make sure value is written into the register.
-	 */
+   * Memory barrier to make sure value is written into the register.
+   */
 	wmb();
 
 	return rc;
@@ -99,9 +98,9 @@ int __read_register(struct msm_vidc_core *core, u32 reg, u32 *value)
 
 	*value = readl_relaxed(base_addr + reg);
 	/*
-	 * Memory barrier to make sure value is read correctly from the
-	 * register.
-	 */
+   * Memory barrier to make sure value is read correctly from the
+   * register.
+   */
 	rmb();
 	d_vpr_l("regread(%pK + %#x) = %#x\n", base_addr, reg, *value);
 
@@ -123,14 +122,15 @@ int __read_register_with_poll_timeout(struct msm_vidc_core *core, u32 reg,
 
 	addr = (u8 *)core->resource->register_base_addr + reg;
 
-	rc = readl_relaxed_poll_timeout(addr, val, ((val & mask) == exp_val), sleep_us, timeout_us);
+	rc = readl_relaxed_poll_timeout(addr, val, ((val & mask) == exp_val),
+					sleep_us, timeout_us);
 	/*
-	 * Memory barrier to make sure value is read correctly from the
-	 * register.
-	 */
+   * Memory barrier to make sure value is read correctly from the
+   * register.
+   */
 	rmb();
-	d_vpr_l(
-		"regread(%pK + %#x) = %#x. rc %d, mask %#x, exp_val %#x, cond %u, sleep %u, timeout %u\n",
+	d_vpr_l("regread(%pK + %#x) = %#x. rc %d, mask %#x, exp_val %#x, cond %u, "
+		"sleep %u, timeout %u\n",
 		core->resource->register_base_addr, reg, val, rc, mask, exp_val,
 		((val & mask) == exp_val), sleep_us, timeout_us);
 
@@ -152,7 +152,8 @@ int __set_registers(struct msm_vidc_core *core)
 
 	for (cnt = 0; cnt < prst_count; cnt++) {
 		rc = __write_register_masked(core, reg_prst[cnt].reg,
-				reg_prst[cnt].value, reg_prst[cnt].mask);
+					     reg_prst[cnt].value,
+					     reg_prst[cnt].mask);
 		if (rc)
 			return rc;
 	}

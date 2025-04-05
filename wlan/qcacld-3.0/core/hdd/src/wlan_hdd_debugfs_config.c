@@ -24,10 +24,10 @@
  * debugfs with ini configs
  */
 
-#include "wlan_hdd_main.h"
-#include "osif_psoc_sync.h"
-#include "cfg_ucfg_api.h"
 #include "wlan_hdd_debugfs_config.h"
+#include "cfg_ucfg_api.h"
+#include "osif_psoc_sync.h"
+#include "wlan_hdd_main.h"
 
 #define DEBUGFS_CONFIG_BUF_SIZE (4096 * 8)
 
@@ -117,9 +117,8 @@ static ssize_t __wlan_hdd_read_config_debugfs(struct file *file,
  *
  * Return: Number of bytes read on success, error number otherwise
  */
-static ssize_t wlan_hdd_read_config_debugfs(struct file *file,
-					    char __user *buf, size_t count,
-					    loff_t *pos)
+static ssize_t wlan_hdd_read_config_debugfs(struct file *file, char __user *buf,
+					    size_t count, loff_t *pos)
 {
 	struct hdd_context *hdd_ctx = file_inode(file)->i_private;
 	struct osif_psoc_sync *psoc_sync;
@@ -129,8 +128,8 @@ static ssize_t wlan_hdd_read_config_debugfs(struct file *file,
 	if (err_size)
 		return err_size;
 
-	err_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					   &psoc_sync);
+	err_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (err_size)
 		return err_size;
 
@@ -190,8 +189,7 @@ static int wlan_hdd_open_config_debugfs(struct inode *inode, struct file *file)
 	if (errno)
 		return errno;
 
-	errno = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					&psoc_sync);
+	errno = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno)
 		return errno;
 
@@ -237,7 +235,7 @@ int hdd_debugfs_ini_config_init(struct hdd_context *hdd_ctx)
 void hdd_debugfs_ini_config_deinit(struct hdd_context *hdd_ctx)
 {
 	/*
-	 * Config ini doesn't have a directory it is removed
-	 * as part of qdf remove
-	 */
+   * Config ini doesn't have a directory it is removed
+   * as part of qdf remove
+   */
 }

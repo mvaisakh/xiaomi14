@@ -31,8 +31,8 @@
 
 /* Function declarations and documentation */
 
-QDF_STATUS qdf_list_insert_before(qdf_list_t *list,
-	qdf_list_node_t *new_node, qdf_list_node_t *node)
+QDF_STATUS qdf_list_insert_before(qdf_list_t *list, qdf_list_node_t *new_node,
+				  qdf_list_node_t *node)
 {
 	list_add_tail(new_node, node);
 	list->count++;
@@ -41,8 +41,8 @@ QDF_STATUS qdf_list_insert_before(qdf_list_t *list,
 }
 qdf_export_symbol(qdf_list_insert_before);
 
-QDF_STATUS qdf_list_insert_after(qdf_list_t *list,
-	qdf_list_node_t *new_node, qdf_list_node_t *node)
+QDF_STATUS qdf_list_insert_after(qdf_list_t *list, qdf_list_node_t *new_node,
+				 qdf_list_node_t *node)
 {
 	list_add(new_node, node);
 	list->count++;
@@ -90,8 +90,8 @@ qdf_export_symbol(qdf_list_insert_back);
  *
  * Return: QDF status
  */
-QDF_STATUS qdf_list_insert_back_size(qdf_list_t *list,
-				     qdf_list_node_t *node, uint32_t *p_size)
+QDF_STATUS qdf_list_insert_back_size(qdf_list_t *list, qdf_list_node_t *node,
+				     uint32_t *p_size)
 {
 	list_add_tail(node, &list->anchor);
 	list->count++;
@@ -211,8 +211,7 @@ qdf_export_symbol(qdf_list_peek_front);
  *
  * Return: QDF status
  */
-QDF_STATUS qdf_list_peek_next(qdf_list_t *list,
-			      qdf_list_node_t *node,
+QDF_STATUS qdf_list_peek_next(qdf_list_t *list, qdf_list_node_t *node,
 			      qdf_list_node_t **node2)
 {
 	if (!list || !node || !node2)

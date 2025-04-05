@@ -6,7 +6,7 @@
 #include "ipa_i.h"
 #include <linux/delay.h>
 
-#define IPA_HW_INTERFACE_VERSION     0x2000
+#define IPA_HW_INTERFACE_VERSION 0x2000
 #define IPA_PKT_FLUSH_TO_US 100
 #define IPA_UC_POLL_SLEEP_USEC 100
 #define IPA_UC_POLL_MAX_RETRY 10000
@@ -20,8 +20,8 @@
  * due to HW limitation.
  *
  */
-#define IPA_CPU_2_HW_CMD_MBOX_m          0
-#define IPA_CPU_2_HW_CMD_MBOX_n         23
+#define IPA_CPU_2_HW_CMD_MBOX_m 0
+#define IPA_CPU_2_HW_CMD_MBOX_n 23
 
 #define IPA_UC_ERING_m 0
 #define IPA_UC_ERING_n_r 1
@@ -48,7 +48,7 @@
  * IPA_CPU_2_HW_CMD_ENABLE_FLOW_CTL_MONITOR: Command to enable pipe monitoring.
  * IPA_CPU_2_HW_CMD_UPDATE_FLOW_CTL_MONITOR: Command to update pipes to monitor.
  * IPA_CPU_2_HW_CMD_DISABLE_FLOW_CTL_MONITOR: Command to disable pipe
-					monitoring, no parameter required.
+                                        monitoring, no parameter required.
  * IPA_CPU_2_HW_CMD_ENABLE_HOLB_MONITOR: Command to enable HOLB monitoring.
  * IPA_CPU_2_HW_CMD_ADD_HOLB_MONITOR: Command to add GSI channel to HOLB
  *                                 monitor.
@@ -58,47 +58,42 @@
  * IPA_CPU_2_HW_CMD_ADD_EOGRE_MAPPING: Command to create/update GRE mapping
  */
 enum ipa3_cpu_2_hw_commands {
-	IPA_CPU_2_HW_CMD_NO_OP                     =
-		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 0),
-	IPA_CPU_2_HW_CMD_UPDATE_FLAGS              =
+	IPA_CPU_2_HW_CMD_NO_OP = FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 0),
+	IPA_CPU_2_HW_CMD_UPDATE_FLAGS =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 1),
-	IPA_CPU_2_HW_CMD_DEBUG_RUN_TEST            =
+	IPA_CPU_2_HW_CMD_DEBUG_RUN_TEST =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 2),
-	IPA_CPU_2_HW_CMD_DEBUG_GET_INFO            =
+	IPA_CPU_2_HW_CMD_DEBUG_GET_INFO =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 3),
-	IPA_CPU_2_HW_CMD_ERR_FATAL                 =
-		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 4),
-	IPA_CPU_2_HW_CMD_CLK_GATE                  =
-		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 5),
-	IPA_CPU_2_HW_CMD_CLK_UNGATE                =
+	IPA_CPU_2_HW_CMD_ERR_FATAL = FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 4),
+	IPA_CPU_2_HW_CMD_CLK_GATE = FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 5),
+	IPA_CPU_2_HW_CMD_CLK_UNGATE =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 6),
-	IPA_CPU_2_HW_CMD_MEMCPY                    =
-		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 7),
-	IPA_CPU_2_HW_CMD_RESET_PIPE                =
+	IPA_CPU_2_HW_CMD_MEMCPY = FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 7),
+	IPA_CPU_2_HW_CMD_RESET_PIPE =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 8),
-	IPA_CPU_2_HW_CMD_REG_WRITE                 =
-		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 9),
-	IPA_CPU_2_HW_CMD_GSI_CH_EMPTY              =
+	IPA_CPU_2_HW_CMD_REG_WRITE = FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 9),
+	IPA_CPU_2_HW_CMD_GSI_CH_EMPTY =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 10),
-	IPA_CPU_2_HW_CMD_REMOTE_IPA_INFO           =
+	IPA_CPU_2_HW_CMD_REMOTE_IPA_INFO =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 11),
-	IPA_CPU_2_HW_CMD_SETUP_EVENT_RING          =
+	IPA_CPU_2_HW_CMD_SETUP_EVENT_RING =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 12),
-	IPA_CPU_2_HW_CMD_ENABLE_FLOW_CTL_MONITOR   =
+	IPA_CPU_2_HW_CMD_ENABLE_FLOW_CTL_MONITOR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 13),
-	IPA_CPU_2_HW_CMD_UPDATE_FLOW_CTL_MONITOR   =
+	IPA_CPU_2_HW_CMD_UPDATE_FLOW_CTL_MONITOR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 14),
-	IPA_CPU_2_HW_CMD_DISABLE_FLOW_CTL_MONITOR  =
+	IPA_CPU_2_HW_CMD_DISABLE_FLOW_CTL_MONITOR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 15),
-	IPA_CPU_2_HW_CMD_ENABLE_HOLB_MONITOR       =
+	IPA_CPU_2_HW_CMD_ENABLE_HOLB_MONITOR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 17),
-	IPA_CPU_2_HW_CMD_ADD_HOLB_MONITOR          =
+	IPA_CPU_2_HW_CMD_ADD_HOLB_MONITOR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 18),
-	IPA_CPU_2_HW_CMD_DEL_HOLB_MONITOR          =
+	IPA_CPU_2_HW_CMD_DEL_HOLB_MONITOR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 19),
-	IPA_CPU_2_HW_CMD_DISABLE_HOLB_MONITOR       =
+	IPA_CPU_2_HW_CMD_DISABLE_HOLB_MONITOR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 20),
-	IPA_CPU_2_HW_CMD_ADD_EOGRE_MAPPING             =
+	IPA_CPU_2_HW_CMD_ADD_EOGRE_MAPPING =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 21),
 };
 
@@ -113,11 +108,11 @@ enum ipa3_cpu_2_hw_commands {
  *  IPA_CPU_2_HW_CMD_DEBUG_GET_INFO command
  */
 enum ipa3_hw_2_cpu_responses {
-	IPA_HW_2_CPU_RESPONSE_NO_OP          =
+	IPA_HW_2_CPU_RESPONSE_NO_OP =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 0),
 	IPA_HW_2_CPU_RESPONSE_INIT_COMPLETED =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 1),
-	IPA_HW_2_CPU_RESPONSE_CMD_COMPLETED  =
+	IPA_HW_2_CPU_RESPONSE_CMD_COMPLETED =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 2),
 	IPA_HW_2_CPU_RESPONSE_DEBUG_GET_INFO =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_COMMON, 3),
@@ -129,7 +124,7 @@ enum ipa3_hw_2_cpu_responses {
  *
  * The parameters are passed as immediate params in the shared memory
  */
-struct IpaHwMemCopyData_t  {
+struct IpaHwMemCopyData_t {
 	u32 destination_addr;
 	u32 source_addr;
 	u32 dest_buffer_size;
@@ -159,9 +154,9 @@ struct IpaHwRegWriteCmdData_t {
  */
 union IpaHwCpuCmdCompletedResponseData_t {
 	struct IpaHwCpuCmdCompletedResponseParams_t {
-		u32 originalCmdOp:8;
-		u32 status:8;
-		u32 responseData:16;
+		u32 originalCmdOp : 8;
+		u32 status : 8;
+		u32 responseData : 16;
 	} __packed params;
 	u32 raw32b;
 } __packed;
@@ -199,9 +194,8 @@ union IpaHwChkChEmptyCmdData_t {
 struct IpaSetupEventRingCmdParams_t {
 	u32 ring_base_pa;
 	u32 ring_base_pa_hi;
-	u32 ring_size; //size = 10
+	u32 ring_size; // size = 10
 } __packed;
-
 
 /**
  * Structure holding the parameters for
@@ -210,9 +204,8 @@ struct IpaSetupEventRingCmdParams_t {
  */
 union IpaSetupEventRingCmdData_t {
 	struct IpaSetupEventRingCmdParams_t event;
-	u32 raw32b[6]; //uc-internal
+	u32 raw32b[6]; // uc-internal
 } __packed;
-
 
 /**
  * Structure holding the parameters for IPA_CPU_2_HW_CMD_REMOTE_IPA_INFO
@@ -230,22 +223,23 @@ struct IpaHwDbAddrInfo_t {
  * cmd should be able to run in interrupt context, so using spin lock
  * instead of mutex.
  */
-#define IPA3_UC_LOCK(flags)						 \
-do {									 \
-	if (ipa3_ctx->apply_rg10_wa)					 \
-		spin_lock_irqsave(&ipa3_ctx->uc_ctx.uc_spinlock, flags); \
-	else								 \
-		mutex_lock(&ipa3_ctx->uc_ctx.uc_lock);			 \
-} while (0)
+#define IPA3_UC_LOCK(flags)                                              \
+	do {                                                             \
+		if (ipa3_ctx->apply_rg10_wa)                             \
+			spin_lock_irqsave(&ipa3_ctx->uc_ctx.uc_spinlock, \
+					  flags);                        \
+		else                                                     \
+			mutex_lock(&ipa3_ctx->uc_ctx.uc_lock);           \
+	} while (0)
 
-#define IPA3_UC_UNLOCK(flags)						      \
-do {									      \
-	if (ipa3_ctx->apply_rg10_wa)					      \
-		spin_unlock_irqrestore(&ipa3_ctx->uc_ctx.uc_spinlock, flags); \
-	else								      \
-		mutex_unlock(&ipa3_ctx->uc_ctx.uc_lock);		      \
-} while (0)
-
+#define IPA3_UC_UNLOCK(flags)                                                 \
+	do {                                                                  \
+		if (ipa3_ctx->apply_rg10_wa)                                  \
+			spin_unlock_irqrestore(&ipa3_ctx->uc_ctx.uc_spinlock, \
+					       flags);                        \
+		else                                                          \
+			mutex_unlock(&ipa3_ctx->uc_ctx.uc_lock);              \
+	} while (0)
 
 /**
  * Structure holding the parameters for IPA_CPU_2_HW_CMD_ENABLE_PIPE_MONITOR
@@ -255,8 +249,8 @@ do {									      \
  */
 union IpaEnablePipeMonitorCmdData_t {
 	struct IpaEnablePipeMonitorCmdParams_t {
-		u32 ipaProdGsiChid:16;
-		u32 redMarkerThreshold:16;
+		u32 ipaProdGsiChid : 16;
+		u32 redMarkerThreshold : 16;
 	} __packed params;
 	u32 raw32b;
 } __packed;
@@ -284,7 +278,7 @@ struct IpaUpdateFlowCtlMonitorData_t {
  */
 union IpaEnableHolbMonitorCmdData_t {
 	struct IpaEnableHolbMonitorParams_t {
-		uint32_t     holbMonitorPollingPeriod;
+		uint32_t holbMonitorPollingPeriod;
 	} params;
 	uint32_t raw32b;
 } __packed;
@@ -305,10 +299,10 @@ union IpaEnableHolbMonitorCmdData_t {
  */
 union IpaAddHolbMonitorCmdData_t {
 	struct IpaAddHolbMonitorParams_t {
-		uint32_t  ipaProdGsiChid    :8;
-		uint32_t  EE                :8;
-		uint32_t  holbActionMask    :8;
-		uint32_t  maxStuckSampleCnt :8;
+		uint32_t ipaProdGsiChid : 8;
+		uint32_t EE : 8;
+		uint32_t holbActionMask : 8;
+		uint32_t maxStuckSampleCnt : 8;
 	} __packed params;
 	uint32_t raw32b;
 } __packed;
@@ -323,9 +317,9 @@ union IpaAddHolbMonitorCmdData_t {
  */
 union IpaDelHolbMonitorCmdData_t {
 	struct IpaDelHolbMonitorParams_t {
-		uint32_t  ipaProdGsiChid :8;
-		uint32_t  EE             :8;
-		uint32_t  reserved       :16;
+		uint32_t ipaProdGsiChid : 8;
+		uint32_t EE : 8;
+		uint32_t reserved : 16;
 	} __packed params;
 	uint32_t raw32b;
 } __packed;
@@ -377,7 +371,6 @@ const char *ipa_hw_error_str(enum ipa3_hw_errors err_type)
 
 static void ipa3_deferred_holb_work(struct work_struct *work)
 {
-
 	int res;
 	u32 poll_period = ipa3_ctx->uc_ctx.holb_monitor.poll_period;
 
@@ -397,7 +390,6 @@ static void ipa3_deferred_holb_work(struct work_struct *work)
 	if (ipa3_uc_hdlrs[IPA_HW_FEATURE_COMMON].ipa_uc_holb_enabled_hdlr)
 		ipa3_uc_hdlrs[IPA_HW_FEATURE_COMMON].ipa_uc_holb_enabled_hdlr();
 
-
 fail_holb_enable:
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 }
@@ -413,9 +405,9 @@ static void ipa3_uc_save_dbg_stats(u32 size)
 		ipa3_ctx->uc_ctx.uc_sram_mmio->responseParams_1);
 	addr_offset = IPA_UC_DBG_STATS_GET_OFFSET(
 		ipa3_ctx->uc_ctx.uc_sram_mmio->responseParams_1);
-	mmio = ioremap(ipa3_ctx->ipa_wrapper_base +
-		addr_offset, sizeof(struct IpaHwRingStats_t) *
-		MAX_CH_STATS_SUPPORTED);
+	mmio = ioremap(ipa3_ctx->ipa_wrapper_base + addr_offset,
+		       sizeof(struct IpaHwRingStats_t) *
+			       MAX_CH_STATS_SUPPORTED);
 	if (mmio == NULL) {
 		IPAERR("unexpected NULL mmio\n");
 		return;
@@ -423,78 +415,64 @@ static void ipa3_uc_save_dbg_stats(u32 size)
 	switch (prot_id) {
 	case IPA_HW_PROTOCOL_AQC:
 		if (!ipa3_ctx->aqc_ctx.dbg_stats.uc_dbg_stats_mmio) {
-			ipa3_ctx->aqc_ctx.dbg_stats.uc_dbg_stats_size =
-				size;
+			ipa3_ctx->aqc_ctx.dbg_stats.uc_dbg_stats_size = size;
 			ipa3_ctx->aqc_ctx.dbg_stats.uc_dbg_stats_ofst =
 				addr_offset;
-			ipa3_ctx->aqc_ctx.dbg_stats.uc_dbg_stats_mmio =
-				mmio;
+			ipa3_ctx->aqc_ctx.dbg_stats.uc_dbg_stats_mmio = mmio;
 		} else
 			goto unmap;
 		break;
 	case IPA_HW_PROTOCOL_RTK:
 		if (!ipa3_ctx->rtk_ctx.dbg_stats.uc_dbg_stats_mmio) {
-			ipa3_ctx->rtk_ctx.dbg_stats.uc_dbg_stats_size =
-				size;
+			ipa3_ctx->rtk_ctx.dbg_stats.uc_dbg_stats_size = size;
 			ipa3_ctx->rtk_ctx.dbg_stats.uc_dbg_stats_ofst =
 				addr_offset;
-			ipa3_ctx->rtk_ctx.dbg_stats.uc_dbg_stats_mmio =
-				mmio;
+			ipa3_ctx->rtk_ctx.dbg_stats.uc_dbg_stats_mmio = mmio;
 		} else
 			goto unmap;
 		break;
 	case IPA_HW_PROTOCOL_NTN3:
 		if (!ipa3_ctx->ntn_ctx.dbg_stats.uc_dbg_stats_mmio) {
-			ipa3_ctx->ntn_ctx.dbg_stats.uc_dbg_stats_size =
-				size;
+			ipa3_ctx->ntn_ctx.dbg_stats.uc_dbg_stats_size = size;
 			ipa3_ctx->ntn_ctx.dbg_stats.uc_dbg_stats_ofst =
 				addr_offset;
-			ipa3_ctx->ntn_ctx.dbg_stats.uc_dbg_stats_mmio =
-				mmio;
+			ipa3_ctx->ntn_ctx.dbg_stats.uc_dbg_stats_mmio = mmio;
 		} else
 			goto unmap;
 		break;
 	case IPA_HW_PROTOCOL_WDI:
 		if (!ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio) {
-			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_size =
-				size;
+			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_size = size;
 			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_ofst =
 				addr_offset;
-			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio =
-				mmio;
+			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio = mmio;
 		} else
 			goto unmap;
 		break;
 	case IPA_HW_PROTOCOL_WDI3:
 		if (!ipa3_ctx->wdi3_ctx.dbg_stats.uc_dbg_stats_mmio) {
-			ipa3_ctx->wdi3_ctx.dbg_stats.uc_dbg_stats_size =
-				size;
+			ipa3_ctx->wdi3_ctx.dbg_stats.uc_dbg_stats_size = size;
 			ipa3_ctx->wdi3_ctx.dbg_stats.uc_dbg_stats_ofst =
 				addr_offset;
-			ipa3_ctx->wdi3_ctx.dbg_stats.uc_dbg_stats_mmio =
-				mmio;
+			ipa3_ctx->wdi3_ctx.dbg_stats.uc_dbg_stats_mmio = mmio;
 		} else
 			goto unmap;
 		break;
 	case IPA_HW_PROTOCOL_MHIP:
 		if (!ipa3_ctx->mhip_ctx.dbg_stats.uc_dbg_stats_mmio) {
-			ipa3_ctx->mhip_ctx.dbg_stats.uc_dbg_stats_size =
-				size;
+			ipa3_ctx->mhip_ctx.dbg_stats.uc_dbg_stats_size = size;
 			ipa3_ctx->mhip_ctx.dbg_stats.uc_dbg_stats_ofst =
 				addr_offset;
-			ipa3_ctx->mhip_ctx.dbg_stats.uc_dbg_stats_mmio =
-				mmio;
+			ipa3_ctx->mhip_ctx.dbg_stats.uc_dbg_stats_mmio = mmio;
 		} else
 			goto unmap;
 		break;
 	case IPA_HW_PROTOCOL_USB:
 		if (!ipa3_ctx->usb_ctx.dbg_stats.uc_dbg_stats_mmio) {
-			ipa3_ctx->usb_ctx.dbg_stats.uc_dbg_stats_size =
-				size;
+			ipa3_ctx->usb_ctx.dbg_stats.uc_dbg_stats_size = size;
 			ipa3_ctx->usb_ctx.dbg_stats.uc_dbg_stats_ofst =
 				addr_offset;
-			ipa3_ctx->usb_ctx.dbg_stats.uc_dbg_stats_mmio =
-				mmio;
+			ipa3_ctx->usb_ctx.dbg_stats.uc_dbg_stats_mmio = mmio;
 		} else
 			goto unmap;
 		break;
@@ -515,20 +493,20 @@ static void ipa3_log_evt_hdlr(void)
 		ipa3_ctx->uc_ctx.uc_event_top_ofst =
 			ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams;
 		if (ipa3_ctx->uc_ctx.uc_event_top_ofst +
-			sizeof(struct IpaHwEventLogInfoData_t) >=
-			ipa3_ctx->ctrl->ipa_reg_base_ofst +
-			ipahal_get_reg_n_ofst(
-				IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
-			ipa3_ctx->smem_sz) {
+			    sizeof(struct IpaHwEventLogInfoData_t) >=
+		    ipa3_ctx->ctrl->ipa_reg_base_ofst +
+			    ipahal_get_reg_n_ofst(
+				    IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
+			    ipa3_ctx->smem_sz) {
 			IPAERR("uc_top 0x%x outside SRAM\n",
-				ipa3_ctx->uc_ctx.uc_event_top_ofst);
+			       ipa3_ctx->uc_ctx.uc_event_top_ofst);
 			goto bad_uc_top_ofst;
 		}
 
-		ipa3_ctx->uc_ctx.uc_event_top_mmio = ioremap(
-			ipa3_ctx->ipa_wrapper_base +
-			ipa3_ctx->uc_ctx.uc_event_top_ofst,
-			sizeof(struct IpaHwEventLogInfoData_t));
+		ipa3_ctx->uc_ctx.uc_event_top_mmio =
+			ioremap(ipa3_ctx->ipa_wrapper_base +
+					ipa3_ctx->uc_ctx.uc_event_top_ofst,
+				sizeof(struct IpaHwEventLogInfoData_t));
 		if (!ipa3_ctx->uc_ctx.uc_event_top_mmio) {
 			IPAERR("fail to ioremap uc top\n");
 			goto bad_uc_top_ofst;
@@ -536,16 +514,15 @@ static void ipa3_log_evt_hdlr(void)
 
 		for (i = 0; i < IPA_HW_NUM_FEATURES; i++) {
 			if (ipa3_uc_hdlrs[i].ipa_uc_event_log_info_hdlr)
-				ipa3_uc_hdlrs[i].ipa_uc_event_log_info_hdlr
-					(ipa3_ctx->uc_ctx.uc_event_top_mmio);
+				ipa3_uc_hdlrs[i].ipa_uc_event_log_info_hdlr(
+					ipa3_ctx->uc_ctx.uc_event_top_mmio);
 		}
 	} else {
-
 		if (ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams !=
-			ipa3_ctx->uc_ctx.uc_event_top_ofst) {
+		    ipa3_ctx->uc_ctx.uc_event_top_ofst) {
 			IPAERR("uc top ofst changed new=%u cur=%u\n",
-				ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams,
-				ipa3_ctx->uc_ctx.uc_event_top_ofst);
+			       ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams,
+			       ipa3_ctx->uc_ctx.uc_event_top_ofst);
 		}
 	}
 
@@ -563,8 +540,8 @@ static void ipa3_event_ring_hdlr(void)
 	struct eventElement_t *e_b = NULL, *e_q = NULL, *e_h = NULL;
 	int mul = 0;
 
-	ering_rp = ipahal_read_reg_mn(IPA_UC_MAILBOX_m_n,
-		IPA_UC_ERING_m, IPA_UC_ERING_n_r);
+	ering_rp = ipahal_read_reg_mn(IPA_UC_MAILBOX_m_n, IPA_UC_ERING_m,
+				      IPA_UC_ERING_n_r);
 	offset = sizeof(struct eventElement_t);
 	ipa3_ctx->uc_ctx.ering_rp = ering_rp;
 
@@ -572,56 +549,53 @@ static void ipa3_event_ring_hdlr(void)
 		rp_va = ipa3_ctx->uc_ctx.event_ring.base +
 			ipa3_ctx->uc_ctx.ering_rp_local;
 
-		if (((struct eventElement_t *) rp_va)->Opcode == BW_NOTIFY) {
-			e_b = ((struct eventElement_t *) rp_va);
+		if (((struct eventElement_t *)rp_va)->Opcode == BW_NOTIFY) {
+			e_b = ((struct eventElement_t *)rp_va);
 			IPADBG("prot(%d), index (%d) throughput (%lu)\n",
-			e_b->Protocol,
-			e_b->Value.bw_param.ThresholdIndex,
-			e_b->Value.bw_param.throughput);
+			       e_b->Protocol,
+			       e_b->Value.bw_param.ThresholdIndex,
+			       e_b->Value.bw_param.throughput);
 
 			memset(&bw_info, 0, sizeof(struct ipa_inform_wlan_bw));
-			bw_info.index =
-				e_b->Value.bw_param.ThresholdIndex;
+			bw_info.index = e_b->Value.bw_param.ThresholdIndex;
 			mul = 1000 / IPA_UC_MON_INTERVAL;
 			bw_info.throughput =
-				e_b->Value.bw_param.throughput*mul;
+				e_b->Value.bw_param.throughput * mul;
 			if (ipa3_inform_wlan_bw(&bw_info))
 				IPAERR_RL("failed on index %d to wlan\n",
-				bw_info.index);
-		} else if (((struct eventElement_t *) rp_va)->Opcode
-			== QUOTA_NOTIFY) {
-			e_q = ((struct eventElement_t *) rp_va);
+					  bw_info.index);
+		} else if (((struct eventElement_t *)rp_va)->Opcode ==
+			   QUOTA_NOTIFY) {
+			e_q = ((struct eventElement_t *)rp_va);
 			IPADBG("got quota-notify %d reach(%d) usage (%lu)\n",
-			e_q->Protocol,
-			e_q->Value.quota_param.ThreasholdReached,
-			e_q->Value.quota_param.usage);
-			if (ipa_broadcast_wdi_quota_reach_ind(0,
-				e_q->Value.quota_param.usage))
+			       e_q->Protocol,
+			       e_q->Value.quota_param.ThreasholdReached,
+			       e_q->Value.quota_param.usage);
+			if (ipa_broadcast_wdi_quota_reach_ind(
+				    0, e_q->Value.quota_param.usage))
 				IPAERR_RL("failed on quota_reach for %d\n",
-						e_q->Protocol);
-		} else if (((struct eventElement_t *) rp_va)->Opcode
-				== IPA_HOLB_BAD_PERIPHERAL_EVENT) {
-			e_h = ((struct eventElement_t *) rp_va);
+					  e_q->Protocol);
+		} else if (((struct eventElement_t *)rp_va)->Opcode ==
+			   IPA_HOLB_BAD_PERIPHERAL_EVENT) {
+			e_h = ((struct eventElement_t *)rp_va);
 			IPAERR("Bad Periph for Chan %d QTimer %u %u\n",
-				e_h->Value.holb_notify_param.ipaProdGsiChid,
-				e_h->Value.holb_notify_param.qTimerMSB,
-				e_h->Value.holb_notify_param.qTimerLSB);
+			       e_h->Value.holb_notify_param.ipaProdGsiChid,
+			       e_h->Value.holb_notify_param.qTimerMSB,
+			       e_h->Value.holb_notify_param.qTimerLSB);
 			ipa3_uc_holb_event_log(
 				e_h->Value.holb_notify_param.ipaProdGsiChid,
-				true,
-				e_h->Value.holb_notify_param.qTimerLSB,
+				true, e_h->Value.holb_notify_param.qTimerLSB,
 				e_h->Value.holb_notify_param.qTimerMSB);
-		} else if (((struct eventElement_t *) rp_va)->Opcode
-				== IPA_HOLB_PERIPHERAL_RECOVERED_EVENT) {
-			e_h = ((struct eventElement_t *) rp_va);
+		} else if (((struct eventElement_t *)rp_va)->Opcode ==
+			   IPA_HOLB_PERIPHERAL_RECOVERED_EVENT) {
+			e_h = ((struct eventElement_t *)rp_va);
 			IPAERR("Recovered Periph Chan %d QTimer %u %u\n",
-				e_h->Value.holb_notify_param.ipaProdGsiChid,
-				e_h->Value.holb_notify_param.qTimerMSB,
-				e_h->Value.holb_notify_param.qTimerLSB);
+			       e_h->Value.holb_notify_param.ipaProdGsiChid,
+			       e_h->Value.holb_notify_param.qTimerMSB,
+			       e_h->Value.holb_notify_param.qTimerLSB);
 			ipa3_uc_holb_event_log(
 				e_h->Value.holb_notify_param.ipaProdGsiChid,
-				false,
-				e_h->Value.holb_notify_param.qTimerLSB,
+				false, e_h->Value.holb_notify_param.qTimerLSB,
 				e_h->Value.holb_notify_param.qTimerMSB);
 		}
 		ipa3_ctx->uc_ctx.ering_rp_local += offset;
@@ -632,7 +606,8 @@ static void ipa3_event_ring_hdlr(void)
 		ipa3_ctx->uc_ctx.ering_wp_local %=
 			ipa3_ctx->uc_ctx.event_ring.size;
 		ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n, IPA_UC_ERING_m,
-			IPA_UC_ERING_n_w, ipa3_ctx->uc_ctx.ering_wp_local);
+				    IPA_UC_ERING_n_w,
+				    ipa3_ctx->uc_ctx.ering_wp_local);
 	}
 }
 
@@ -705,7 +680,7 @@ int ipa3_uc_register_ready_cb(struct notifier_block *nb)
 
 	rc = blocking_notifier_chain_register(&uc_loaded_notifier, nb);
 	if (!rc && ipa3_ctx->uc_ctx.uc_loaded)
-		(void) nb->notifier_call(nb, false, ipa3_ctx);
+		(void)nb->notifier_call(nb, false, ipa3_ctx);
 
 	mutex_unlock(&uc_loaded_nb_lock);
 
@@ -731,8 +706,7 @@ int ipa3_uc_unregister_ready_cb(struct notifier_block *nb)
 EXPORT_SYMBOL(ipa3_uc_unregister_ready_cb);
 
 static void ipa3_uc_event_handler(enum ipa_irq_type interrupt,
-				 void *private_data,
-				 void *interrupt_data)
+				  void *private_data, void *interrupt_data)
 {
 	union IpaHwErrorEventData_t evt;
 	u8 feature;
@@ -741,29 +715,27 @@ static void ipa3_uc_event_handler(enum ipa_irq_type interrupt,
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 
-	IPADBG("uC evt opcode=%u\n",
-		ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
-
+	IPADBG("uC evt opcode=%u\n", ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
 
 	feature = EXTRACT_UC_FEATURE(ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
 
 	if (feature >= IPA_HW_FEATURE_MAX) {
-		IPAERR("Invalid feature %u for event %u\n",
-			feature, ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
+		IPAERR("Invalid feature %u for event %u\n", feature,
+		       ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
 		IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 		return;
 	}
 	/* Feature specific handling */
 	if (ipa3_uc_hdlrs[feature].ipa_uc_event_hdlr)
-		ipa3_uc_hdlrs[feature].ipa_uc_event_hdlr
-			(ipa3_ctx->uc_ctx.uc_sram_mmio);
+		ipa3_uc_hdlrs[feature].ipa_uc_event_hdlr(
+			ipa3_ctx->uc_ctx.uc_sram_mmio);
 
 	/* General handling */
 	if (ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp ==
 	    IPA_HW_2_CPU_EVENT_ERROR) {
 		evt.raw32b = ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams;
 		IPAERR("uC Error, evt errorType = %s\n",
-			ipa_hw_error_str(evt.params.errorType));
+		       ipa_hw_error_str(evt.params.errorType));
 		ipa3_ctx->uc_ctx.uc_failed = true;
 		ipa3_ctx->uc_ctx.uc_error_type = evt.params.errorType;
 		ipa3_ctx->uc_ctx.uc_error_timestamp =
@@ -771,25 +743,24 @@ static void ipa3_uc_event_handler(enum ipa_irq_type interrupt,
 		/* Unexpected UC hardware state */
 		ipa_assert();
 	} else if (ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp ==
-		IPA_HW_2_CPU_EVENT_LOG_INFO) {
+		   IPA_HW_2_CPU_EVENT_LOG_INFO) {
 		IPADBG("uC evt log info ofst=0x%x\n",
-			ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams);
+		       ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams);
 		ipa3_log_evt_hdlr();
 	} else if (ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp ==
-		IPA_HW_2_CPU_EVNT_RING_NOTIFY) {
+		   IPA_HW_2_CPU_EVNT_RING_NOTIFY) {
 		IPADBG("uC evt log info ofst=0x%x\n",
-			ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams);
+		       ipa3_ctx->uc_ctx.uc_sram_mmio->eventParams);
 		ipa3_event_ring_hdlr();
 	} else {
 		IPADBG("unsupported uC evt opcode=%u\n",
-				ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
+		       ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
 	}
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
-
 }
 
-int ipa3_uc_panic_notifier(struct notifier_block *this,
-		unsigned long event, void *ptr)
+int ipa3_uc_panic_notifier(struct notifier_block *this, unsigned long event,
+			   void *ptr)
 {
 	int result = 0;
 	struct ipa_active_client_logging_info log_info;
@@ -804,16 +775,14 @@ int ipa3_uc_panic_notifier(struct notifier_block *this,
 	if (ipa3_inc_client_enable_clks_no_block(&log_info))
 		goto fail;
 
-	ipa3_ctx->uc_ctx.uc_sram_mmio->cmdOp =
-		IPA_CPU_2_HW_CMD_ERR_FATAL;
+	ipa3_ctx->uc_ctx.uc_sram_mmio->cmdOp = IPA_CPU_2_HW_CMD_ERR_FATAL;
 	ipa3_ctx->uc_ctx.pending_cmd = ipa3_ctx->uc_ctx.uc_sram_mmio->cmdOp;
 	/* ensure write to shared memory is done before triggering uc */
 	wmb();
 
 	if (ipa3_ctx->apply_rg10_wa)
-		ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n,
-			IPA_CPU_2_HW_CMD_MBOX_m,
-			IPA_CPU_2_HW_CMD_MBOX_n, 0x1);
+		ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n, IPA_CPU_2_HW_CMD_MBOX_m,
+				    IPA_CPU_2_HW_CMD_MBOX_n, 0x1);
 	else
 		ipahal_write_reg_n(IPA_IRQ_EE_UC_n, 0, 0x1);
 
@@ -828,8 +797,7 @@ fail:
 }
 
 static void ipa3_uc_response_hdlr(enum ipa_irq_type interrupt,
-				void *private_data,
-				void *interrupt_data)
+				  void *private_data, void *interrupt_data)
 {
 	union IpaHwCpuCmdCompletedResponseData_t uc_rsp;
 	u8 feature;
@@ -838,14 +806,13 @@ static void ipa3_uc_response_hdlr(enum ipa_irq_type interrupt,
 
 	WARN_ON(private_data != ipa3_ctx);
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
-	IPADBG("uC rsp opcode=%u\n",
-			ipa3_ctx->uc_ctx.uc_sram_mmio->responseOp);
+	IPADBG("uC rsp opcode=%u\n", ipa3_ctx->uc_ctx.uc_sram_mmio->responseOp);
 
 	feature = EXTRACT_UC_FEATURE(ipa3_ctx->uc_ctx.uc_sram_mmio->responseOp);
 
 	if (feature >= IPA_HW_FEATURE_MAX) {
-		IPAERR("Invalid feature %u for event %u\n",
-			feature, ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
+		IPAERR("Invalid feature %u for event %u\n", feature,
+		       ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp);
 		IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 		return;
 	}
@@ -857,7 +824,7 @@ static void ipa3_uc_response_hdlr(enum ipa_irq_type interrupt,
 			&ipa3_ctx->uc_ctx.uc_status);
 		if (res == 0) {
 			IPADBG("feature %d specific response handler\n",
-				feature);
+			       feature);
 			complete_all(&ipa3_ctx->uc_ctx.uc_completion);
 			IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 			return;
@@ -866,8 +833,7 @@ static void ipa3_uc_response_hdlr(enum ipa_irq_type interrupt,
 
 	/* General handling */
 	if (ipa3_ctx->uc_ctx.uc_sram_mmio->responseOp ==
-			IPA_HW_2_CPU_RESPONSE_INIT_COMPLETED) {
-
+	    IPA_HW_2_CPU_RESPONSE_INIT_COMPLETED) {
 		if (ipa3_ctx->uc_ctx.uc_loaded) {
 			IPADBG("uC resp op INIT_COMPLETED is unexpected\n");
 			IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
@@ -881,23 +847,23 @@ static void ipa3_uc_response_hdlr(enum ipa_irq_type interrupt,
 		if (ipa3_ctx->uc_ctx.ipa_use_uc_holb_monitor)
 			queue_work(ipa_uc_holb_wq, &ipa3_holb_enabled_work);
 
-		(void) blocking_notifier_call_chain(&uc_loaded_notifier, true,
-			ipa3_ctx);
+		(void)blocking_notifier_call_chain(&uc_loaded_notifier, true,
+						   ipa3_ctx);
 
 		mutex_unlock(&uc_loaded_nb_lock);
 
 		IPADBG("IPA uC loaded\n");
 		/*
-		 * The proxy vote is held until uC is loaded to ensure that
-		 * IPA_HW_2_CPU_RESPONSE_INIT_COMPLETED is received.
-		 */
+     * The proxy vote is held until uC is loaded to ensure that
+     * IPA_HW_2_CPU_RESPONSE_INIT_COMPLETED is received.
+     */
 		ipa3_proxy_clk_unvote();
 
 		/*
-		 * To enable ipa power collapse we need to enable rpmh and uc
-		 * handshake So that uc can do register retention. To enable
-		 * this handshake we need to send the below message to rpmh.
-		 */
+     * To enable ipa power collapse we need to enable rpmh and uc
+     * handshake So that uc can do register retention. To enable
+     * this handshake we need to send the below message to rpmh.
+     */
 		ipa_pc_qmp_enable();
 
 		for (i = 0; i < IPA_HW_NUM_FEATURES; i++) {
@@ -908,13 +874,12 @@ static void ipa3_uc_response_hdlr(enum ipa_irq_type interrupt,
 		   IPA_HW_2_CPU_RESPONSE_CMD_COMPLETED) {
 		uc_rsp.raw32b = ipa3_ctx->uc_ctx.uc_sram_mmio->responseParams;
 		IPADBG("uC cmd response opcode=%u status=%u\n",
-		       uc_rsp.params.originalCmdOp,
-		       uc_rsp.params.status);
+		       uc_rsp.params.originalCmdOp, uc_rsp.params.status);
 		if (uc_rsp.params.originalCmdOp ==
 		    ipa3_ctx->uc_ctx.pending_cmd) {
 			ipa3_ctx->uc_ctx.uc_status = uc_rsp.params.status;
 			if (uc_rsp.params.originalCmdOp ==
-				IPA_CPU_2_HW_CMD_OFFLOAD_STATS_ALLOC)
+			    IPA_CPU_2_HW_CMD_OFFLOAD_STATS_ALLOC)
 				ipa3_uc_save_dbg_stats(
 					uc_rsp.params.responseData);
 			complete_all(&ipa3_ctx->uc_ctx.uc_completion);
@@ -928,12 +893,11 @@ static void ipa3_uc_response_hdlr(enum ipa_irq_type interrupt,
 		       ipa3_ctx->uc_ctx.uc_sram_mmio->responseOp);
 	}
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
-
 }
 
 static void ipa3_uc_wigig_misc_int_handler(enum ipa_irq_type interrupt,
-	void *private_data,
-	void *interrupt_data)
+					   void *private_data,
+					   void *interrupt_data)
 {
 	IPADBG("\n");
 
@@ -947,7 +911,8 @@ static void ipa3_uc_wigig_misc_int_handler(enum ipa_irq_type interrupt,
 }
 
 static int ipa3_uc_send_cmd_64b_param(u32 cmd_lo, u32 cmd_hi, u32 opcode,
-	u32 expected_status, bool polling_mode, unsigned long timeout_jiffies)
+				      u32 expected_status, bool polling_mode,
+				      unsigned long timeout_jiffies)
 {
 	int index;
 	union IpaHwCpuCmdCompletedResponseData_t uc_rsp;
@@ -984,9 +949,8 @@ send_cmd:
 	/* ensure write to shared memory is done before triggering uc */
 	wmb();
 	if (ipa3_ctx->apply_rg10_wa)
-		ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n,
-			IPA_CPU_2_HW_CMD_MBOX_m,
-			IPA_CPU_2_HW_CMD_MBOX_n, 0x1);
+		ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n, IPA_CPU_2_HW_CMD_MBOX_m,
+				    IPA_CPU_2_HW_CMD_MBOX_n, 0x1);
 	else
 		ipahal_write_reg_n(IPA_IRQ_EE_UC_n, 0, 0x1);
 
@@ -998,7 +962,7 @@ send_cmd:
 			    IPA_HW_2_CPU_RESPONSE_CMD_COMPLETED) {
 				uc_rsp.raw32b = uc_sram_ptr->responseParams;
 				if (uc_rsp.params.originalCmdOp ==
-					ipa3_ctx->uc_ctx.pending_cmd) {
+				    ipa3_ctx->uc_ctx.pending_cmd) {
 					ipa3_ctx->uc_ctx.uc_status =
 						uc_rsp.params.status;
 					break;
@@ -1008,7 +972,7 @@ send_cmd:
 				udelay(IPA_UC_POLL_SLEEP_USEC);
 			else
 				usleep_range(IPA_UC_POLL_SLEEP_USEC,
-					IPA_UC_POLL_SLEEP_USEC);
+					     IPA_UC_POLL_SLEEP_USEC);
 		}
 
 		if (index == IPA_UC_POLL_MAX_RETRY) {
@@ -1016,7 +980,7 @@ send_cmd:
 			if (ipa3_ctx->uc_ctx.uc_failed) {
 				uc_error_type = ipa3_ctx->uc_ctx.uc_error_type;
 				IPAERR("uC reported on Error, errorType = %s\n",
-					ipa_hw_error_str(uc_error_type));
+				       ipa_hw_error_str(uc_error_type));
 			}
 			IPA3_UC_UNLOCK(flags);
 			/* Unexpected UC hardware state */
@@ -1024,12 +988,12 @@ send_cmd:
 		}
 	} else {
 		if (wait_for_completion_timeout(&ipa3_ctx->uc_ctx.uc_completion,
-			timeout_jiffies) == 0) {
+						timeout_jiffies) == 0) {
 			IPAERR("uC timed out\n");
 			if (ipa3_ctx->uc_ctx.uc_failed) {
 				uc_error_type = ipa3_ctx->uc_ctx.uc_error_type;
 				IPAERR("uC reported on Error, errorType = %s\n",
-					ipa_hw_error_str(uc_error_type));
+				       ipa_hw_error_str(uc_error_type));
 			}
 			IPA3_UC_UNLOCK(flags);
 			/* Unexpected UC hardware state */
@@ -1039,13 +1003,11 @@ send_cmd:
 
 	if (ipa3_ctx->uc_ctx.uc_status != expected_status) {
 		if (ipa3_ctx->uc_ctx.uc_status ==
-		    IPA_HW_PROD_DISABLE_CMD_GSI_STOP_FAILURE ||
+			    IPA_HW_PROD_DISABLE_CMD_GSI_STOP_FAILURE ||
 		    ipa3_ctx->uc_ctx.uc_status ==
-		    IPA_HW_CONS_DISABLE_CMD_GSI_STOP_FAILURE ||
-		    ipa3_ctx->uc_ctx.uc_status ==
-		    IPA_HW_CONS_STOP_FAILURE ||
-		    ipa3_ctx->uc_ctx.uc_status ==
-		    IPA_HW_PROD_STOP_FAILURE) {
+			    IPA_HW_CONS_DISABLE_CMD_GSI_STOP_FAILURE ||
+		    ipa3_ctx->uc_ctx.uc_status == IPA_HW_CONS_STOP_FAILURE ||
+		    ipa3_ctx->uc_ctx.uc_status == IPA_HW_PROD_STOP_FAILURE) {
 			retries++;
 			if (retries == IPA_GSI_CHANNEL_STOP_MAX_RETRY) {
 				IPAERR("Failed after %d tries\n", retries);
@@ -1059,12 +1021,12 @@ send_cmd:
 				ipa3_inject_dma_task_for_gsi();
 			/* sleep for short period to flush IPA */
 			usleep_range(IPA_GSI_CHANNEL_STOP_SLEEP_MIN_USEC,
-				IPA_GSI_CHANNEL_STOP_SLEEP_MAX_USEC);
+				     IPA_GSI_CHANNEL_STOP_SLEEP_MAX_USEC);
 			goto send_cmd_lock;
 		}
 
 		if (ipa3_ctx->uc_ctx.uc_status ==
-			IPA_HW_GSI_CH_NOT_EMPTY_FAILURE) {
+		    IPA_HW_GSI_CH_NOT_EMPTY_FAILURE) {
 			retries++;
 			if (retries >= IPA_GSI_CHANNEL_EMPTY_MAX_RETRY) {
 				IPAERR("Failed after %d tries\n", retries);
@@ -1072,18 +1034,19 @@ send_cmd:
 				return -EFAULT;
 			}
 			if (ipa3_ctx->apply_rg10_wa)
-				udelay(
-				IPA_GSI_CHANNEL_EMPTY_SLEEP_MAX_USEC / 2 +
-				IPA_GSI_CHANNEL_EMPTY_SLEEP_MIN_USEC / 2);
+				udelay(IPA_GSI_CHANNEL_EMPTY_SLEEP_MAX_USEC /
+					       2 +
+				       IPA_GSI_CHANNEL_EMPTY_SLEEP_MIN_USEC /
+					       2);
 			else
 				usleep_range(
-				IPA_GSI_CHANNEL_EMPTY_SLEEP_MIN_USEC,
-				IPA_GSI_CHANNEL_EMPTY_SLEEP_MAX_USEC);
+					IPA_GSI_CHANNEL_EMPTY_SLEEP_MIN_USEC,
+					IPA_GSI_CHANNEL_EMPTY_SLEEP_MAX_USEC);
 			goto send_cmd;
 		}
 
 		IPAERR("uC cmd(%u): Received status %u, Expected status %u\n",
-			   opcode, ipa3_ctx->uc_ctx.uc_status, expected_status);
+		       opcode, ipa3_ctx->uc_ctx.uc_status, expected_status);
 		IPA3_UC_UNLOCK(flags);
 		return -EFAULT;
 	}
@@ -1115,11 +1078,11 @@ int ipa3_uc_interface_init(void)
 	spin_lock_init(&ipa3_ctx->uc_ctx.uc_spinlock);
 
 	phys_addr = ipa3_ctx->ipa_wrapper_base +
-		ipa3_ctx->ctrl->ipa_reg_base_ofst +
-		ipahal_get_reg_n_ofst(IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
-		IPA_MEM_PART(uc_ofst);
-	ipa3_ctx->uc_ctx.uc_sram_mmio = ioremap(phys_addr,
-		IPA_MEM_PART(uc_size));
+		    ipa3_ctx->ctrl->ipa_reg_base_ofst +
+		    ipahal_get_reg_n_ofst(IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
+		    IPA_MEM_PART(uc_ofst);
+	ipa3_ctx->uc_ctx.uc_sram_mmio =
+		ioremap(phys_addr, IPA_MEM_PART(uc_size));
 	if (!ipa3_ctx->uc_ctx.uc_sram_mmio) {
 		IPAERR("Fail to ioremap IPA uC SRAM\n");
 		result = -ENOMEM;
@@ -1127,26 +1090,24 @@ int ipa3_uc_interface_init(void)
 	}
 
 	if (!ipa3_ctx->apply_rg10_wa) {
-		result = ipa_add_interrupt_handler(IPA_UC_IRQ_0,
-			ipa3_uc_event_handler, true,
-			ipa3_ctx);
+		result = ipa_add_interrupt_handler(
+			IPA_UC_IRQ_0, ipa3_uc_event_handler, true, ipa3_ctx);
 		if (result) {
 			IPAERR("Fail to register for UC_IRQ0 event interrupt\n");
 			result = -EFAULT;
 			goto irq_fail0;
 		}
 
-		result = ipa_add_interrupt_handler(IPA_UC_IRQ_1,
-			ipa3_uc_response_hdlr, true,
-			ipa3_ctx);
+		result = ipa_add_interrupt_handler(
+			IPA_UC_IRQ_1, ipa3_uc_response_hdlr, true, ipa3_ctx);
 		if (result) {
 			IPAERR("fail to register for UC_IRQ1 rsp interrupt\n");
 			result = -EFAULT;
 			goto irq_fail1;
 		}
 
-		result = ipa_add_interrupt_handler(IPA_UC_IRQ_2,
-			ipa3_uc_wigig_misc_int_handler, true,
+		result = ipa_add_interrupt_handler(
+			IPA_UC_IRQ_2, ipa3_uc_wigig_misc_int_handler, true,
 			ipa3_ctx);
 		if (result) {
 			IPAERR("fail to register for UC_IRQ2 wigig misc interrupt\n");
@@ -1155,8 +1116,9 @@ int ipa3_uc_interface_init(void)
 		}
 
 		if (ipa3_ctx->uc_ctx.ipa_use_uc_holb_monitor) {
-			ipa_uc_holb_wq = alloc_workqueue(IPA_UC_HOLB_WORKQUEUE_NAME,
-					WQ_MEM_RECLAIM | WQ_UNBOUND | WQ_SYSFS, 1);
+			ipa_uc_holb_wq = alloc_workqueue(
+				IPA_UC_HOLB_WORKQUEUE_NAME,
+				WQ_MEM_RECLAIM | WQ_UNBOUND | WQ_SYSFS, 1);
 
 			if (!ipa_uc_holb_wq) {
 				IPAERR("Failed to create ipa_uc_holb_wq\n");
@@ -1182,7 +1144,6 @@ irq_fail0:
 remap_fail:
 	return result;
 }
-
 
 /**
  * ipa3_uc_load_notify() - Notification about uC loading
@@ -1210,9 +1171,8 @@ void ipa3_uc_load_notify(void)
 
 	ipa3_init_interrupts();
 
-	result = ipa_add_interrupt_handler(IPA_UC_IRQ_0,
-		ipa3_uc_event_handler, true,
-		ipa3_ctx);
+	result = ipa_add_interrupt_handler(IPA_UC_IRQ_0, ipa3_uc_event_handler,
+					   true, ipa3_ctx);
 	if (result)
 		IPAERR("Fail to register for UC_IRQ0 rsp interrupt.\n");
 
@@ -1226,7 +1186,7 @@ EXPORT_SYMBOL(ipa3_uc_load_notify);
 
 void ipa3_uc_interface_destroy(void)
 {
-	if(ipa3_ctx->uc_ctx.uc_inited) {
+	if (ipa3_ctx->uc_ctx.uc_inited) {
 		ipa3_remove_interrupt_handler(IPA_UC_IRQ_2);
 		ipa3_remove_interrupt_handler(IPA_UC_IRQ_1);
 		ipa3_remove_interrupt_handler(IPA_UC_IRQ_0);
@@ -1254,10 +1214,10 @@ void ipa3_uc_interface_destroy(void)
  *                  the expected.
  */
 int ipa3_uc_send_cmd(u32 cmd, u32 opcode, u32 expected_status,
-		    bool polling_mode, unsigned long timeout_jiffies)
+		     bool polling_mode, unsigned long timeout_jiffies)
 {
-	return ipa3_uc_send_cmd_64b_param(cmd, 0, opcode,
-		expected_status, polling_mode, timeout_jiffies);
+	return ipa3_uc_send_cmd_64b_param(cmd, 0, opcode, expected_status,
+					  polling_mode, timeout_jiffies);
 }
 
 /**
@@ -1269,7 +1229,7 @@ int ipa3_uc_send_cmd(u32 cmd, u32 opcode, u32 expected_status,
  * Return value: None
  */
 void ipa3_uc_register_handlers(enum ipa3_hw_features feature,
-			      struct ipa3_uc_hdlrs *hdlrs)
+			       struct ipa3_uc_hdlrs *hdlrs)
 {
 	unsigned long flags = 0;
 
@@ -1300,8 +1260,8 @@ int ipa3_uc_is_gsi_channel_empty(enum ipa_client_type ipa_client)
 	}
 
 	if (ipa3_uc_state_check()) {
-		IPADBG("uC cannot be used to validate ch emptiness clnt=%d\n"
-			, ipa_client);
+		IPADBG("uC cannot be used to validate ch emptiness clnt=%d\n",
+		       ipa_client);
 		return 0;
 	}
 
@@ -1312,7 +1272,7 @@ int ipa3_uc_is_gsi_channel_empty(enum ipa_client_type ipa_client)
 	       gsi_ep_info->ipa_gsi_chan_num);
 
 	ret = ipa3_uc_send_cmd(cmd.raw32b, IPA_CPU_2_HW_CMD_GSI_CH_EMPTY, 0,
-			      false, 10*HZ);
+			       false, 10 * HZ);
 
 	return ret;
 }
@@ -1330,11 +1290,11 @@ int ipa3_uc_enable_holb_monitor(uint32_t polling_period)
 	cmd.params.holbMonitorPollingPeriod = polling_period;
 
 	IPADBG("Sending uc CMD ENABLE_HOLB_MONITOR with polling_period (%d)\n",
-		polling_period);
+	       polling_period);
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 	ret = ipa3_uc_send_cmd(cmd.raw32b, IPA_CPU_2_HW_CMD_ENABLE_HOLB_MONITOR,
-				 0, false, 10*HZ);
+			       0, false, 10 * HZ);
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 
 	return ret;
@@ -1346,7 +1306,7 @@ int ipa3_uc_enable_holb_monitor(uint32_t polling_period)
  * Return value: 0 on success, negative value otherwise
  */
 int ipa3_uc_add_holb_monitor(uint16_t gsi_ch, uint32_t action_mask,
-		uint32_t max_stuck_cnt, uint8_t ee)
+			     uint32_t max_stuck_cnt, uint8_t ee)
 {
 	union IpaAddHolbMonitorCmdData_t cmd;
 	int ret;
@@ -1358,11 +1318,11 @@ int ipa3_uc_add_holb_monitor(uint16_t gsi_ch, uint32_t action_mask,
 
 	IPADBG("Sending uc CMD ADD_HOLB_MONITOR");
 	IPADBG("CMD params gsi_chid (%d), mask (%d), max_stuck_cnt (%d)\n",
-			gsi_ch, action_mask, max_stuck_cnt);
+	       gsi_ch, action_mask, max_stuck_cnt);
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 	ret = ipa3_uc_send_cmd(cmd.raw32b, IPA_CPU_2_HW_CMD_ADD_HOLB_MONITOR, 0,
-			      false, 10*HZ);
+			       false, 10 * HZ);
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 
 	return ret;
@@ -1383,11 +1343,11 @@ int ipa3_uc_del_holb_monitor(uint16_t gsi_ch, uint8_t ee)
 	cmd.params.EE = ee;
 
 	IPADBG("Sending uc IPA_CPU_2_HW_CMD_DEL_HOLB_MONITOR for gsi_ch %d\n",
-		gsi_ch);
+	       gsi_ch);
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 	ret = ipa3_uc_send_cmd(cmd.raw32b, IPA_CPU_2_HW_CMD_DEL_HOLB_MONITOR, 0,
-			      false, 10*HZ);
+			       false, 10 * HZ);
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 
 	return ret;
@@ -1406,7 +1366,7 @@ int ipa3_uc_disable_holb_monitor(void)
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 	ret = ipa3_uc_send_cmd(0, IPA_CPU_2_HW_CMD_DISABLE_HOLB_MONITOR, 0,
-			      false, 10*HZ);
+			       false, 10 * HZ);
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 
 	return ret;
@@ -1432,9 +1392,9 @@ int ipa3_uc_notify_clk_state(bool enabled)
 	}
 
 	/*
-	 * If the uC interface has not been initialized yet,
-	 * don't notify the uC on the enable/disable
-	 */
+   * If the uC interface has not been initialized yet,
+   * don't notify the uC on the enable/disable
+   */
 	if (ipa3_uc_state_check()) {
 		IPADBG("uC interface will not notify the UC on clock state\n");
 		return 0;
@@ -1461,7 +1421,7 @@ int ipa3_uc_update_hw_flags(u32 flags)
 	memset(&cmd, 0, sizeof(cmd));
 	cmd.params.newFlags = flags;
 	return ipa3_uc_send_cmd(cmd.raw32b, IPA_CPU_2_HW_CMD_UPDATE_FLAGS, 0,
-		false, HZ);
+				false, HZ);
 }
 
 /**
@@ -1482,22 +1442,19 @@ void ipa3_uc_rg10_write_reg(enum ipahal_reg_name reg, u32 n, u32 val)
 	if (!ipa3_ctx->apply_rg10_wa)
 		return ipahal_write_reg_n(reg, n, val);
 
-
 	/* calculate register physical address */
 	paddr = ipa3_ctx->ipa_wrapper_base + ipa3_ctx->ctrl->ipa_reg_base_ofst;
 	paddr += ipahal_get_reg_n_ofst(reg, n);
 
-	IPADBG("Sending uC cmd to reg write: addr=0x%x val=0x%x\n",
-		paddr, val);
-	ret = ipa3_uc_send_cmd_64b_param(paddr, val,
-		IPA_CPU_2_HW_CMD_REG_WRITE, 0, true, 0);
+	IPADBG("Sending uC cmd to reg write: addr=0x%x val=0x%x\n", paddr, val);
+	ret = ipa3_uc_send_cmd_64b_param(paddr, val, IPA_CPU_2_HW_CMD_REG_WRITE,
+					 0, true, 0);
 	if (ret) {
 		IPAERR("failed to send cmd to uC for reg write\n");
 		/* Unexpected UC hardware state */
 		BUG();
 	}
 }
-
 
 /**
  * ipa3_uc_memcpy() - Perform a memcpy action using IPA uC
@@ -1516,7 +1473,7 @@ int ipa3_uc_memcpy(phys_addr_t dest, phys_addr_t src, int len)
 	IPADBG("dest 0x%pa src 0x%pa len %d\n", &dest, &src, len);
 	mem.size = sizeof(*cmd);
 	mem.base = dma_alloc_coherent(ipa3_ctx->pdev, mem.size, &mem.phys_base,
-		GFP_KERNEL);
+				      GFP_KERNEL);
 	if (!mem.base) {
 		IPAERR("fail to alloc DMA buff of size %d\n", mem.size);
 		return -ENOMEM;
@@ -1528,7 +1485,7 @@ int ipa3_uc_memcpy(phys_addr_t dest, phys_addr_t src, int len)
 	cmd->source_addr = src;
 	cmd->source_buffer_size = len;
 	res = ipa3_uc_send_cmd((u32)mem.phys_base, IPA_CPU_2_HW_CMD_MEMCPY, 0,
-		true, 10 * HZ);
+			       true, 10 * HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		goto free_coherent;
@@ -1548,22 +1505,21 @@ int ipa3_uc_send_remote_ipa_info(u32 remote_addr, uint32_t mbox_n)
 
 	cmd.size = sizeof(*uc_info);
 	cmd.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, cmd.size,
-		&cmd.phys_base, GFP_KERNEL);
+				      &cmd.phys_base, GFP_KERNEL);
 	if (cmd.base == NULL)
 		return -ENOMEM;
 
-	uc_info = (struct IpaHwDbAddrInfo_t *) cmd.base;
+	uc_info = (struct IpaHwDbAddrInfo_t *)cmd.base;
 	uc_info->remoteIPAAddr = remote_addr;
 	uc_info->mboxN = mbox_n;
 
 	res = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-		IPA_CPU_2_HW_CMD_REMOTE_IPA_INFO, 0,
-		false, 10 * HZ);
+			       IPA_CPU_2_HW_CMD_REMOTE_IPA_INFO, 0, false,
+			       10 * HZ);
 
 	if (res) {
-		IPAERR("fail to map 0x%x to mbox %d\n",
-			uc_info->remoteIPAAddr,
-			uc_info->mboxN);
+		IPAERR("fail to map 0x%x to mbox %d\n", uc_info->remoteIPAAddr,
+		       uc_info->mboxN);
 		goto free_coherent;
 	}
 
@@ -1573,8 +1529,7 @@ free_coherent:
 	return res;
 }
 
-int ipa3_uc_debug_stats_alloc(
-	struct IpaHwOffloadStatsAllocCmdData_t cmdinfo)
+int ipa3_uc_debug_stats_alloc(struct IpaHwOffloadStatsAllocCmdData_t cmdinfo)
 {
 	int result;
 	struct ipa_mem_buffer cmd;
@@ -1583,31 +1538,28 @@ int ipa3_uc_debug_stats_alloc(
 
 	cmd.size = sizeof(*cmd_data);
 	cmd.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, cmd.size,
-		&cmd.phys_base, GFP_KERNEL);
+				      &cmd.phys_base, GFP_KERNEL);
 	if (cmd.base == NULL) {
 		result = -ENOMEM;
 		return result;
 	}
 	cmd_data = (struct IpaHwOffloadStatsAllocCmdData_t *)cmd.base;
 	memcpy(cmd_data, &cmdinfo,
-		sizeof(struct IpaHwOffloadStatsAllocCmdData_t));
+	       sizeof(struct IpaHwOffloadStatsAllocCmdData_t));
 	command = IPA_CPU_2_HW_CMD_OFFLOAD_STATS_ALLOC;
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 
-	result = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-		command,
-		IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
-		false, 20 * HZ);
+	result = ipa3_uc_send_cmd((u32)(cmd.phys_base), command,
+				  IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
+				  false, 20 * HZ);
 	if (result) {
 		IPAERR("fail to alloc offload stats\n");
 		goto cleanup;
 	}
 	result = 0;
 cleanup:
-	dma_free_coherent(ipa3_ctx->uc_pdev,
-		cmd.size,
-		cmd.base, cmd.phys_base);
+	dma_free_coherent(ipa3_ctx->uc_pdev, cmd.size, cmd.base, cmd.phys_base);
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 	IPADBG("exit\n");
 	return result;
@@ -1624,10 +1576,9 @@ int ipa3_uc_debug_stats_dealloc(uint32_t prot_id)
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 
 	/* instead of giving pointer, directly give prot_id */
-	result = ipa3_uc_send_cmd(prot_id,
-		command,
-		IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
-		false, 10 * HZ);
+	result = ipa3_uc_send_cmd(prot_id, command,
+				  IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
+				  false, 10 * HZ);
 	if (result) {
 		IPAERR("fail to dealloc offload stats\n");
 		goto cleanup;
@@ -1673,36 +1624,36 @@ int ipa3_uc_setup_event_ring(void)
 	/* Allocate event ring */
 	ring->size = sizeof(struct eventElement_t) * IPA_UC_EVENT_RING_SIZE;
 	ring->base = dma_alloc_coherent(ipa3_ctx->uc_pdev, ring->size,
-		&ring->phys_base, GFP_KERNEL);
+					&ring->phys_base, GFP_KERNEL);
 	if (ring->base == NULL)
 		return -ENOMEM;
 
 	cmd.size = sizeof(*ring_info);
 	cmd.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, cmd.size,
-		&cmd.phys_base, GFP_KERNEL);
+				      &cmd.phys_base, GFP_KERNEL);
 	if (cmd.base == NULL) {
-		dma_free_coherent(ipa3_ctx->uc_pdev, ring->size,
-			ring->base, ring->phys_base);
+		dma_free_coherent(ipa3_ctx->uc_pdev, ring->size, ring->base,
+				  ring->phys_base);
 		return -ENOMEM;
 	}
 
-	ring_info = (union IpaSetupEventRingCmdData_t *) cmd.base;
-	ring_info->event.ring_base_pa = (u32) (ring->phys_base & 0xFFFFFFFF);
+	ring_info = (union IpaSetupEventRingCmdData_t *)cmd.base;
+	ring_info->event.ring_base_pa = (u32)(ring->phys_base & 0xFFFFFFFF);
 	ring_info->event.ring_base_pa_hi =
-		(u32) ((ring->phys_base & 0xFFFFFFFF00000000) >> 32);
+		(u32)((ring->phys_base & 0xFFFFFFFF00000000) >> 32);
 	ring_info->event.ring_size = IPA_UC_EVENT_RING_SIZE;
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 
 	res = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-		IPA_CPU_2_HW_CMD_SETUP_EVENT_RING, 0,
-		false, 10 * HZ);
+			       IPA_CPU_2_HW_CMD_SETUP_EVENT_RING, 0, false,
+			       10 * HZ);
 
 	if (res) {
 		IPAERR(" faile to setup event ring 0x%x 0x%x, size %d\n",
-			ring_info->event.ring_base_pa,
-			ring_info->event.ring_base_pa_hi,
-			ring_info->event.ring_size);
+		       ring_info->event.ring_base_pa,
+		       ring_info->event.ring_base_pa_hi,
+		       ring_info->event.ring_size);
 		goto free_cmd;
 	}
 
@@ -1711,18 +1662,15 @@ int ipa3_uc_setup_event_ring(void)
 	ipa3_ctx->uc_ctx.ering_rp_local = 0;
 	ipa3_ctx->uc_ctx.ering_wp_local =
 		ring->size - sizeof(struct eventElement_t);
-	ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n,
-		IPA_UC_ERING_m, IPA_UC_ERING_n_r, 0);
-	ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n,
-		IPA_UC_ERING_m, IPA_UC_ERING_n_w,
-			ipa3_ctx->uc_ctx.ering_wp_local);
-	ipa3_ctx->uc_ctx.ering_wp =
-		ipa3_ctx->uc_ctx.ering_wp_local;
+	ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n, IPA_UC_ERING_m,
+			    IPA_UC_ERING_n_r, 0);
+	ipahal_write_reg_mn(IPA_UC_MAILBOX_m_n, IPA_UC_ERING_m,
+			    IPA_UC_ERING_n_w, ipa3_ctx->uc_ctx.ering_wp_local);
+	ipa3_ctx->uc_ctx.ering_wp = ipa3_ctx->uc_ctx.ering_wp_local;
 	ipa3_ctx->uc_ctx.ering_rp = 0;
 
 free_cmd:
-	dma_free_coherent(ipa3_ctx->uc_pdev,
-		cmd.size, cmd.base, cmd.phys_base);
+	dma_free_coherent(ipa3_ctx->uc_pdev, cmd.size, cmd.base, cmd.phys_base);
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 	return res;
 }
@@ -1735,7 +1683,7 @@ int ipa3_uc_quota_monitor(uint64_t quota)
 
 	cmd.size = sizeof(*quota_info);
 	cmd.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, cmd.size,
-		&cmd.phys_base, GFP_KERNEL);
+				      &cmd.phys_base, GFP_KERNEL);
 	if (cmd.base == NULL)
 		return -ENOMEM;
 
@@ -1743,47 +1691,42 @@ int ipa3_uc_quota_monitor(uint64_t quota)
 	quota_info->protocol = IPA_HW_PROTOCOL_WDI3;
 	quota_info->params.WdiQM.Quota = quota;
 	quota_info->params.WdiQM.info.Num = 4;
-	ind = ipa3_ctx->fnr_info.hw_counter_offset +
-		UL_HW - 1;
+	ind = ipa3_ctx->fnr_info.hw_counter_offset + UL_HW - 1;
 	quota_info->params.WdiQM.info.Offset[0] =
 		IPA_MEM_PART(stats_fnr_ofst) +
 		sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.hw_counter_offset +
-		DL_ALL - 1;
+	ind = ipa3_ctx->fnr_info.hw_counter_offset + DL_ALL - 1;
 	quota_info->params.WdiQM.info.Offset[1] =
 		IPA_MEM_PART(stats_fnr_ofst) +
 		sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.sw_counter_offset +
-		UL_HW_CACHE - 1;
+	ind = ipa3_ctx->fnr_info.sw_counter_offset + UL_HW_CACHE - 1;
 	quota_info->params.WdiQM.info.Offset[2] =
 		IPA_MEM_PART(stats_fnr_ofst) +
 		sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.sw_counter_offset +
-		UL_WLAN_TX - 1;
+	ind = ipa3_ctx->fnr_info.sw_counter_offset + UL_WLAN_TX - 1;
 	quota_info->params.WdiQM.info.Offset[3] =
 		IPA_MEM_PART(stats_fnr_ofst) +
 		sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	quota_info->params.WdiQM.info.Interval =
-		IPA_UC_MON_INTERVAL;
+	quota_info->params.WdiQM.info.Interval = IPA_UC_MON_INTERVAL;
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 	res = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-		IPA_CPU_2_HW_CMD_QUOTA_MONITORING,
-		IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
-		false, 10 * HZ);
+			       IPA_CPU_2_HW_CMD_QUOTA_MONITORING,
+			       IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS, false,
+			       10 * HZ);
 
 	if (res) {
 		IPAERR(" faile to set quota %d, number offset %d\n",
-			quota_info->params.WdiQM.Quota,
-			quota_info->params.WdiQM.info.Num);
+		       quota_info->params.WdiQM.Quota,
+		       quota_info->params.WdiQM.info.Num);
 		goto free_cmd;
 	}
 
 	IPADBG(" offest1 %d offest2 %d offest3 %d offest4 %d\n",
-			quota_info->params.WdiQM.info.Offset[0],
-			quota_info->params.WdiQM.info.Offset[1],
-			quota_info->params.WdiQM.info.Offset[2],
-			quota_info->params.WdiQM.info.Offset[3]);
+	       quota_info->params.WdiQM.info.Offset[0],
+	       quota_info->params.WdiQM.info.Offset[1],
+	       quota_info->params.WdiQM.info.Offset[2],
+	       quota_info->params.WdiQM.info.Offset[3]);
 
 free_cmd:
 	dma_free_coherent(ipa3_ctx->uc_pdev, cmd.size, cmd.base, cmd.phys_base);
@@ -1804,13 +1747,13 @@ int ipa_uc_bw_monitor(struct ipa_wdi_bw_info *info)
 	/* check max entry */
 	if (info->num > BW_MONITORING_MAX_THRESHOLD) {
 		IPAERR("%d, support max %d bw monitor\n", info->num,
-		BW_MONITORING_MAX_THRESHOLD);
+		       BW_MONITORING_MAX_THRESHOLD);
 		return -EINVAL;
 	}
 
 	cmd.size = sizeof(*bw_info);
 	cmd.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, cmd.size,
-		&cmd.phys_base, GFP_KERNEL);
+				      &cmd.phys_base, GFP_KERNEL);
 	if (cmd.base == NULL)
 		return -ENOMEM;
 
@@ -1826,60 +1769,51 @@ int ipa_uc_bw_monitor(struct ipa_wdi_bw_info *info)
 	}
 
 	bw_info->params.WdiBw.info.Num = 8;
-	ind = ipa3_ctx->fnr_info.hw_counter_offset +
-		UL_HW - 1;
+	ind = ipa3_ctx->fnr_info.hw_counter_offset + UL_HW - 1;
 	bw_info->params.WdiBw.info.Offset[0] =
 		IPA_MEM_PART(stats_fnr_ofst) +
-			sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.hw_counter_offset +
-		DL_HW - 1;
+		sizeof(struct ipa_flt_rt_stats) * ind + 8;
+	ind = ipa3_ctx->fnr_info.hw_counter_offset + DL_HW - 1;
 	bw_info->params.WdiBw.info.Offset[1] =
 		IPA_MEM_PART(stats_fnr_ofst) +
-			sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.hw_counter_offset +
-		DL_ALL - 1;
+		sizeof(struct ipa_flt_rt_stats) * ind + 8;
+	ind = ipa3_ctx->fnr_info.hw_counter_offset + DL_ALL - 1;
 	bw_info->params.WdiBw.info.Offset[2] =
 		IPA_MEM_PART(stats_fnr_ofst) +
-			sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.hw_counter_offset +
-		UL_ALL - 1;
+		sizeof(struct ipa_flt_rt_stats) * ind + 8;
+	ind = ipa3_ctx->fnr_info.hw_counter_offset + UL_ALL - 1;
 	bw_info->params.WdiBw.info.Offset[3] =
 		IPA_MEM_PART(stats_fnr_ofst) +
-			sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.sw_counter_offset +
-		UL_HW_CACHE - 1;
+		sizeof(struct ipa_flt_rt_stats) * ind + 8;
+	ind = ipa3_ctx->fnr_info.sw_counter_offset + UL_HW_CACHE - 1;
 	bw_info->params.WdiBw.info.Offset[4] =
 		IPA_MEM_PART(stats_fnr_ofst) +
-			sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.sw_counter_offset +
-		DL_HW_CACHE - 1;
+		sizeof(struct ipa_flt_rt_stats) * ind + 8;
+	ind = ipa3_ctx->fnr_info.sw_counter_offset + DL_HW_CACHE - 1;
 	bw_info->params.WdiBw.info.Offset[5] =
 		IPA_MEM_PART(stats_fnr_ofst) +
-			sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.sw_counter_offset +
-		UL_WLAN_TX - 1;
+		sizeof(struct ipa_flt_rt_stats) * ind + 8;
+	ind = ipa3_ctx->fnr_info.sw_counter_offset + UL_WLAN_TX - 1;
 	bw_info->params.WdiBw.info.Offset[6] =
 		IPA_MEM_PART(stats_fnr_ofst) +
-			sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	ind = ipa3_ctx->fnr_info.sw_counter_offset +
-		DL_WLAN_TX - 1;
+		sizeof(struct ipa_flt_rt_stats) * ind + 8;
+	ind = ipa3_ctx->fnr_info.sw_counter_offset + DL_WLAN_TX - 1;
 	bw_info->params.WdiBw.info.Offset[7] =
 		IPA_MEM_PART(stats_fnr_ofst) +
-			sizeof(struct ipa_flt_rt_stats) * ind + 8;
-	bw_info->params.WdiBw.info.Interval =
-		IPA_UC_MON_INTERVAL;
+		sizeof(struct ipa_flt_rt_stats) * ind + 8;
+	bw_info->params.WdiBw.info.Interval = IPA_UC_MON_INTERVAL;
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 
 	res = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-		IPA_CPU_2_HW_CMD_BW_MONITORING,
-			IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
-			false, 10 * HZ);
+			       IPA_CPU_2_HW_CMD_BW_MONITORING,
+			       IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS, false,
+			       10 * HZ);
 
 	if (res) {
 		IPAERR(" faile to set bw %d level with %d coutners\n",
-			bw_info->params.WdiBw.NumThresh,
-			bw_info->params.WdiBw.info.Num);
+		       bw_info->params.WdiBw.NumThresh,
+		       bw_info->params.WdiBw.info.Num);
 		goto free_cmd;
 	}
 
@@ -1905,18 +1839,18 @@ int ipa3_set_wlan_tx_info(struct ipa_wdi_tx_info *info)
 	/* update sw counters */
 	memset(&stats, 0, sizeof(struct ipa_flt_rt_stats));
 	stats.num_bytes = info->sta_tx;
-	if (ipa_set_flt_rt_stats(fnr_info.sw_counter_offset +
-		UL_WLAN_TX, stats)) {
+	if (ipa_set_flt_rt_stats(fnr_info.sw_counter_offset + UL_WLAN_TX,
+				 stats)) {
 		IPAERR("Failed to set stats to ul_wlan_tx %d\n",
-			fnr_info.sw_counter_offset + UL_WLAN_TX);
+		       fnr_info.sw_counter_offset + UL_WLAN_TX);
 		return -EINVAL;
 	}
 
 	stats.num_bytes = info->ap_tx;
-	if (ipa_set_flt_rt_stats(fnr_info.sw_counter_offset +
-		DL_WLAN_TX, stats)) {
+	if (ipa_set_flt_rt_stats(fnr_info.sw_counter_offset + DL_WLAN_TX,
+				 stats)) {
 		IPAERR("Failed to set stats to dl_wlan_tx %d\n",
-			fnr_info.sw_counter_offset + DL_WLAN_TX);
+		       fnr_info.sw_counter_offset + DL_WLAN_TX);
 		return -EINVAL;
 	}
 
@@ -1925,9 +1859,8 @@ int ipa3_set_wlan_tx_info(struct ipa_wdi_tx_info *info)
 EXPORT_SYMBOL(ipa3_set_wlan_tx_info);
 
 int ipa3_uc_send_enable_flow_control(uint16_t gsi_chid,
-		uint16_t redMarkerThreshold)
+				     uint16_t redMarkerThreshold)
 {
-
 	int res;
 	union IpaEnablePipeMonitorCmdData_t cmd;
 
@@ -1936,12 +1869,12 @@ int ipa3_uc_send_enable_flow_control(uint16_t gsi_chid,
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 	res = ipa3_uc_send_cmd((cmd.raw32b),
-		IPA_CPU_2_HW_CMD_ENABLE_FLOW_CTL_MONITOR, 0,
-		false, 10 * HZ);
+			       IPA_CPU_2_HW_CMD_ENABLE_FLOW_CTL_MONITOR, 0,
+			       false, 10 * HZ);
 
 	if (res)
 		IPAERR("fail to enable flow ctrl for 0x%x\n",
-			cmd.params.ipaProdGsiChid);
+		       cmd.params.ipaProdGsiChid);
 
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 	return res;
@@ -1952,9 +1885,8 @@ int ipa3_uc_send_disable_flow_control(void)
 	int res;
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
-	res = ipa3_uc_send_cmd(0,
-		IPA_CPU_2_HW_CMD_DISABLE_FLOW_CTL_MONITOR, 0,
-		false, 10 * HZ);
+	res = ipa3_uc_send_cmd(0, IPA_CPU_2_HW_CMD_DISABLE_FLOW_CTL_MONITOR, 0,
+			       false, 10 * HZ);
 
 	if (res)
 		IPAERR("fail to disable flow control\n");
@@ -1963,8 +1895,7 @@ int ipa3_uc_send_disable_flow_control(void)
 	return res;
 }
 
-int ipa3_uc_send_update_flow_control(uint32_t bitmask,
-		 uint8_t  add_delete)
+int ipa3_uc_send_update_flow_control(uint32_t bitmask, uint8_t add_delete)
 {
 	int res;
 
@@ -1974,13 +1905,13 @@ int ipa3_uc_send_update_flow_control(uint32_t bitmask,
 	}
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
-	res = ipa3_uc_send_cmd_64b_param(bitmask, add_delete,
-		IPA_CPU_2_HW_CMD_UPDATE_FLOW_CTL_MONITOR, 0,
-		false, 10 * HZ);
+	res = ipa3_uc_send_cmd_64b_param(
+		bitmask, add_delete, IPA_CPU_2_HW_CMD_UPDATE_FLOW_CTL_MONITOR,
+		0, false, 10 * HZ);
 
 	if (res)
 		IPAERR("fail flowCtrl update mask = 0x%x add_del = 0x%x\n",
-			bitmask, add_delete);
+		       bitmask, add_delete);
 
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 	return res;
@@ -1992,10 +1923,9 @@ int ipa3_uc_send_update_flow_control(uint32_t bitmask,
  *
  * Returns: 0 on success, negative on failure
  */
-int ipa3_add_dscp_vlan_pcp_map(
-	struct IpaDscpVlanPcpMap_t *map )
+int ipa3_add_dscp_vlan_pcp_map(struct IpaDscpVlanPcpMap_t *map)
 {
-	struct ipa_mem_buffer       mem;
+	struct ipa_mem_buffer mem;
 	struct IpaDscpVlanPcpMap_t *cmd;
 	int res;
 
@@ -2008,25 +1938,23 @@ int ipa3_add_dscp_vlan_pcp_map(
 
 	mem.size = sizeof(struct IpaDscpVlanPcpMap_t);
 
-	mem.base = dma_alloc_coherent(
-		ipa3_ctx->uc_pdev, mem.size,
-		&mem.phys_base, GFP_KERNEL);
+	mem.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, mem.size,
+				      &mem.phys_base, GFP_KERNEL);
 
 	if (!mem.base) {
 		IPAERR("Fail to alloc DMA buff of size %d\n", mem.size);
 		return -ENOMEM;
 	}
 
-	cmd = (struct IpaDscpVlanPcpMap_t *) mem.base;
+	cmd = (struct IpaDscpVlanPcpMap_t *)mem.base;
 
 	memcpy(cmd, map, sizeof(struct IpaDscpVlanPcpMap_t));
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 
-	res = ipa3_uc_send_cmd(
-		(u32) mem.phys_base,
-		IPA_CPU_2_HW_CMD_ADD_EOGRE_MAPPING,
-		0, true, 10 * HZ);
+	res = ipa3_uc_send_cmd((u32)mem.phys_base,
+			       IPA_CPU_2_HW_CMD_ADD_EOGRE_MAPPING, 0, true,
+			       10 * HZ);
 
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);

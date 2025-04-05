@@ -20,17 +20,15 @@
  * This file has the AFC osif interface with linux kernel.
  */
 
-#include <wlan_hdd_afc.h>
 #include <osif_psoc_sync.h>
-#include <wlan_cfg80211_afc.h>
-#include <wlan_hdd_main.h>
 #include <pld_common.h>
 #include <wlan_afc_ucfg_api.h>
+#include <wlan_cfg80211_afc.h>
+#include <wlan_hdd_afc.h>
+#include <wlan_hdd_main.h>
 
-int wlan_hdd_vendor_afc_response(struct wiphy *wiphy,
-				 struct wireless_dev *wdev,
-				 const void *data,
-				 int data_len)
+int wlan_hdd_vendor_afc_response(struct wiphy *wiphy, struct wireless_dev *wdev,
+				 const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	struct hdd_context *hdd_ctx;
@@ -56,10 +54,8 @@ int wlan_hdd_vendor_afc_response(struct wiphy *wiphy,
 		goto sync_stop;
 	}
 
-	ret = wlan_cfg80211_vendor_afc_response(hdd_ctx->psoc,
-						hdd_ctx->pdev,
-						data,
-						data_len);
+	ret = wlan_cfg80211_vendor_afc_response(hdd_ctx->psoc, hdd_ctx->pdev,
+						data, data_len);
 sync_stop:
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -95,10 +91,7 @@ static int wlan_hdd_send_response_to_afcmem(struct wlan_objmgr_psoc *psoc,
 
 	pdev_id = wlan_objmgr_pdev_get_pdev_id(pdev);
 
-	return pld_send_buffer_to_afcmem(qdf_dev->dev,
-					 afcdb,
-					 len,
-					 pdev_id);
+	return pld_send_buffer_to_afcmem(qdf_dev->dev, afcdb, len, pdev_id);
 }
 
 void wlan_hdd_register_afc_pld_cb(struct wlan_objmgr_psoc *psoc)

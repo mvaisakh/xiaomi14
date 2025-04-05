@@ -19,10 +19,10 @@
  * DOC: contains coex north bound interface definitions
  */
 
+#include "wlan_coex_public_structs.h"
+#include "wmi_unified.h"
 #include <wlan_coex_main.h>
 #include <wlan_coex_ucfg_api.h>
-#include "wmi_unified.h"
-#include "wlan_coex_public_structs.h"
 
 QDF_STATUS
 ucfg_coex_register_cfg_updated_handler(struct wlan_objmgr_psoc *psoc,
@@ -63,7 +63,7 @@ QDF_STATUS
 ucfg_coex_send_btc_chain_mode(struct wlan_objmgr_vdev *vdev,
 			      enum coex_btc_chain_mode mode)
 {
-	struct coex_config_params param = {0};
+	struct coex_config_params param = { 0 };
 
 	if (mode > WLAN_COEX_BTC_CHAIN_MODE_HYBRID)
 		return QDF_STATUS_E_INVAL;
@@ -79,11 +79,9 @@ ucfg_coex_send_btc_chain_mode(struct wlan_objmgr_vdev *vdev,
 
 #ifdef WLAN_FEATURE_DBAM_CONFIG
 QDF_STATUS
-ucfg_coex_send_dbam_config(struct wlan_objmgr_vdev *vdev,
-			   struct coex_dbam_config_params *param,
-			   void (*clbk)(void *ctx,
-			   enum coex_dbam_comp_status *rsp),
-			   void *context)
+ucfg_coex_send_dbam_config(
+	struct wlan_objmgr_vdev *vdev, struct coex_dbam_config_params *param,
+	void (*clbk)(void *ctx, enum coex_dbam_comp_status *rsp), void *context)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct coex_psoc_obj *coex_obj;
@@ -110,8 +108,8 @@ ucfg_coex_send_dbam_config(struct wlan_objmgr_vdev *vdev,
 	cbk->set_dbam_config_cb = clbk;
 	cbk->set_dbam_config_ctx = context;
 
-	coex_debug("send dbam config mode %d for vdev_id %d",
-		   param->dbam_mode, param->vdev_id);
+	coex_debug("send dbam config mode %d for vdev_id %d", param->dbam_mode,
+		   param->vdev_id);
 
 	return wlan_dbam_config_send(vdev, param);
 }

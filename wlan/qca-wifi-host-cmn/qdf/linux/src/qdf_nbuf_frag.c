@@ -22,16 +22,16 @@
  * QCA driver framework(QDF) network nbuf frag management APIs
  */
 
+#include "qdf_str.h"
 #include <qdf_atomic.h>
-#include <qdf_list.h>
 #include <qdf_debugfs.h>
+#include <qdf_list.h>
 #include <qdf_module.h>
 #include <qdf_nbuf_frag.h>
 #include <qdf_trace.h>
-#include "qdf_str.h"
 
 #ifdef QDF_NBUF_FRAG_GLOBAL_COUNT
-#define FRAG_DEBUGFS_NAME    "frag_counters"
+#define FRAG_DEBUGFS_NAME "frag_counters"
 static qdf_atomic_t frag_count;
 #endif
 
@@ -83,7 +83,7 @@ void __qdf_frag_mod_exit(void)
 
 #ifdef NBUF_FRAG_MEMORY_DEBUG
 
-#define QDF_FRAG_TRACK_MAX_SIZE    1024
+#define QDF_FRAG_TRACK_MAX_SIZE 1024
 
 /**
  * struct qdf_frag_track_node_t - Network frag tracking node structure
@@ -203,9 +203,8 @@ static QDF_FRAG_TRACK *qdf_frag_track_alloc(void)
 	if (!qdf_list_empty(&qdf_frag_track_free_list.track_list)) {
 		qdf_list_remove_front(&qdf_frag_track_free_list.track_list,
 				      &temp_list_node);
-		frag_track_node = qdf_container_of(temp_list_node,
-						   struct qdf_frag_track_node_t,
-						   hnode);
+		frag_track_node = qdf_container_of(
+			temp_list_node, struct qdf_frag_track_node_t, hnode);
 		qdf_frag_track_free_list_count--;
 	}
 
@@ -226,7 +225,7 @@ static QDF_FRAG_TRACK *qdf_frag_track_alloc(void)
 }
 
 /* FREEQ_POOLSIZE initial and minimum desired freelist poolsize */
-#define FREEQ_POOLSIZE    2048
+#define FREEQ_POOLSIZE 2048
 
 /**
  * qdf_frag_track_free() - Free the frag tracking cookie.
@@ -244,18 +243,18 @@ static void qdf_frag_track_free(QDF_FRAG_TRACK *frag_track_node)
 		return;
 
 	/*
-	 * Try to shrink the freelist if free_list_count > than FREEQ_POOLSIZE
-	 * only shrink the freelist if it is bigger than twice the number of
-	 * frags in use. Otherwise add the frag debug track node to the front
-	 * of qdf_frag_track_free_list.
-	 */
+   * Try to shrink the freelist if free_list_count > than FREEQ_POOLSIZE
+   * only shrink the freelist if it is bigger than twice the number of
+   * frags in use. Otherwise add the frag debug track node to the front
+   * of qdf_frag_track_free_list.
+   */
 
 	qdf_spin_lock_irqsave(&qdf_frag_track_free_list.list_lock);
 
 	qdf_frag_track_used_list_count--;
 	if (qdf_frag_track_free_list_count > FREEQ_POOLSIZE &&
-	    (qdf_frag_track_free_list_count >
-	    qdf_frag_track_used_list_count << 1)) {
+	    (qdf_frag_track_free_list_count > qdf_frag_track_used_list_count
+						      << 1)) {
 		kmem_cache_free(frag_tracking_cache, frag_track_node);
 	} else {
 		qdf_list_insert_front(&qdf_frag_track_free_list.track_list,
@@ -290,7 +289,8 @@ static void qdf_frag_track_prefill(void)
 	curr_node = NULL;
 	next_node = NULL;
 
-	qdf_list_for_each_del(&temp_list, curr_node, next_node, hnode) {
+	qdf_list_for_each_del(&temp_list, curr_node, next_node, hnode)
+	{
 		qdf_list_remove_node(&temp_list, &curr_node->hnode);
 		qdf_frag_track_free(curr_node);
 	}
@@ -316,9 +316,8 @@ static void qdf_frag_track_memory_manager_create(void)
 {
 	qdf_spinlock_create(&qdf_frag_track_free_list.list_lock);
 	qdf_list_create(&qdf_frag_track_free_list.track_list, 0);
-	frag_tracking_cache = kmem_cache_create("qdf_frag_tracking_cache",
-						sizeof(QDF_FRAG_TRACK),
-						0, 0, NULL);
+	frag_tracking_cache = kmem_cache_create(
+		"qdf_frag_tracking_cache", sizeof(QDF_FRAG_TRACK), 0, 0, NULL);
 
 	qdf_frag_track_prefill();
 }
@@ -342,12 +341,12 @@ static void qdf_frag_track_memory_manager_destroy(void)
 
 	if (qdf_frag_track_max_used > FREEQ_POOLSIZE * 4)
 		qdf_info("Unexpectedly large max_used count %d",
-			  qdf_frag_track_max_used);
+			 qdf_frag_track_max_used);
 
 	if (qdf_frag_track_max_used < qdf_frag_track_max_allocated)
 		qdf_info("%d Unused trackers were allocated",
-			  qdf_frag_track_max_allocated -
-			  qdf_frag_track_max_used);
+			 qdf_frag_track_max_allocated -
+				 qdf_frag_track_max_used);
 
 	if (qdf_frag_track_free_list_count > FREEQ_POOLSIZE &&
 	    qdf_frag_track_free_list_count > 3 * qdf_frag_track_max_used / 4)
@@ -360,10 +359,11 @@ static void qdf_frag_track_memory_manager_destroy(void)
 	qdf_info("%d Max buffers used observed", qdf_frag_track_max_used);
 
 	qdf_info("%d Max buffers allocated observed",
-		  qdf_frag_track_max_allocated);
+		 qdf_frag_track_max_allocated);
 
-	qdf_list_for_each_del(&qdf_frag_track_free_list.track_list,
-			      curr_node, next_node, hnode) {
+	qdf_list_for_each_del(&qdf_frag_track_free_list.track_list, curr_node,
+			      next_node, hnode)
+	{
 		qdf_list_remove_node(&qdf_frag_track_free_list.track_list,
 				     &curr_node->hnode);
 		kmem_cache_free(frag_tracking_cache, curr_node);
@@ -424,7 +424,8 @@ void qdf_frag_debug_exit(void)
 	for (index = 0; index < QDF_FRAG_TRACK_MAX_SIZE; index++) {
 		qdf_spin_lock_irqsave(&gp_qdf_frag_track_tbl[index].list_lock);
 		qdf_list_for_each_del(&gp_qdf_frag_track_tbl[index].track_list,
-				      p_prev, p_node, hnode) {
+				      p_prev, p_node, hnode)
+		{
 			qdf_list_remove_node(
 				&gp_qdf_frag_track_tbl[index].track_list,
 				&p_prev->hnode);
@@ -443,7 +444,7 @@ void qdf_frag_debug_exit(void)
 		}
 		qdf_list_destroy(&gp_qdf_frag_track_tbl[index].track_list);
 		qdf_spin_unlock_irqrestore(
-				&gp_qdf_frag_track_tbl[index].list_lock);
+			&gp_qdf_frag_track_tbl[index].list_lock);
 		qdf_spinlock_destroy(&gp_qdf_frag_track_tbl[index].list_lock);
 	}
 
@@ -484,7 +485,8 @@ static QDF_FRAG_TRACK *qdf_frag_debug_look_up(qdf_frag_t p_frag)
 	index = qdf_frag_debug_hash(p_frag);
 
 	qdf_list_for_each(&gp_qdf_frag_track_tbl[index].track_list, p_node,
-			  hnode) {
+			  hnode)
+	{
 		if (p_node->p_frag == p_frag)
 			return p_node;
 	}
@@ -501,8 +503,7 @@ static QDF_FRAG_TRACK *qdf_frag_debug_look_up(qdf_frag_t p_frag)
  *
  * Return: Allocated frag tracker node address
  */
-static QDF_FRAG_TRACK *__qdf_frag_debug_add_node(qdf_frag_t fragp,
-						 uint32_t idx,
+static QDF_FRAG_TRACK *__qdf_frag_debug_add_node(qdf_frag_t fragp, uint32_t idx,
 						 const char *func_name,
 						 uint32_t line_num)
 {
@@ -542,7 +543,7 @@ static void __qdf_frag_debug_delete_node(QDF_FRAG_TRACK *p_node, uint32_t idx)
 		qdf_frag_track_free(p_node);
 	} else {
 		qdf_info("Index value exceeds %d for delete node operation",
-			  QDF_FRAG_TRACK_MAX_SIZE);
+			 QDF_FRAG_TRACK_MAX_SIZE);
 	}
 }
 
@@ -565,8 +566,8 @@ void qdf_frag_debug_add_node(qdf_frag_t fragp, const char *func_name,
 		qdf_info("Double addition of frag %pK to debug tracker!!",
 			 fragp);
 		qdf_info("Already added from %s %d Current addition from %s %d",
-			  p_node->alloc_func_name,
-			  p_node->alloc_func_line, func_name, line_num);
+			 p_node->alloc_func_name, p_node->alloc_func_line,
+			 func_name, line_num);
 	} else {
 		p_node = __qdf_frag_debug_add_node(fragp, index, func_name,
 						   line_num);
@@ -630,7 +631,8 @@ void qdf_frag_debug_refcount_dec(qdf_frag_t fragp, const char *func_name,
 	if (p_node) {
 		if (!(p_node->refcount)) {
 			qdf_info("Refcount dec oprt for frag %pK not permitted "
-				 "as refcount=0", fragp);
+				 "as refcount=0",
+				 fragp);
 			goto done;
 		}
 		(p_node->refcount)--;
@@ -709,7 +711,7 @@ void qdf_frag_debug_update_addr(qdf_frag_t p_fragp, qdf_frag_t n_fragp,
 		qdf_info("Update address oprt failed for frag %pK from %s %d",
 			 p_fragp, func_name, line_num);
 		qdf_spin_unlock_irqrestore(
-				&gp_qdf_frag_track_tbl[prev_index].list_lock);
+			&gp_qdf_frag_track_tbl[prev_index].list_lock);
 	} else {
 		/* Update frag address */
 		p_node->p_frag = n_fragp;
@@ -743,8 +745,7 @@ void qdf_frag_debug_update_addr(qdf_frag_t p_fragp, qdf_frag_t n_fragp,
 }
 
 qdf_frag_t qdf_frag_alloc_debug(qdf_frag_cache_t *pf_cache,
-				unsigned int frag_size,
-				const char *func_name,
+				unsigned int frag_size, const char *func_name,
 				uint32_t line_num)
 {
 	qdf_frag_t p_frag;
@@ -752,7 +753,7 @@ qdf_frag_t qdf_frag_alloc_debug(qdf_frag_cache_t *pf_cache,
 	if (is_initial_mem_debug_disabled)
 		return __qdf_frag_alloc(pf_cache, frag_size);
 
-	p_frag =  __qdf_frag_alloc(pf_cache, frag_size);
+	p_frag = __qdf_frag_alloc(pf_cache, frag_size);
 
 	/* Store frag in QDF Frag Tracking Table */
 	if (qdf_likely(p_frag))
@@ -794,8 +795,8 @@ QDF_STATUS __qdf_mem_map_page(qdf_device_t osdev, __qdf_frag_t buf,
 	*phy_addr = dma_map_page(osdev->dev, page, offset, nbytes,
 				 __qdf_dma_dir_to_os(dir));
 
-	return dma_mapping_error(osdev->dev, *phy_addr) ?
-		QDF_STATUS_E_FAILURE : QDF_STATUS_SUCCESS;
+	return dma_mapping_error(osdev->dev, *phy_addr) ? QDF_STATUS_E_FAILURE :
+							  QDF_STATUS_SUCCESS;
 }
 #else
 QDF_STATUS __qdf_mem_map_page(qdf_device_t osdev, __qdf_frag_t buf,
@@ -812,8 +813,7 @@ qdf_export_symbol(__qdf_mem_map_page);
 void __qdf_mem_unmap_page(qdf_device_t osdev, qdf_dma_addr_t paddr,
 			  size_t nbytes, qdf_dma_dir_t dir)
 {
-	dma_unmap_page(osdev->dev, paddr, nbytes,
-		       __qdf_dma_dir_to_os(dir));
+	dma_unmap_page(osdev->dev, paddr, nbytes, __qdf_dma_dir_to_os(dir));
 }
 #else
 void __qdf_mem_unmap_page(qdf_device_t osdev, qdf_dma_addr_t paddr,
@@ -829,7 +829,7 @@ void __qdf_frag_cache_drain(qdf_frag_cache_t *pf_cache)
 {
 	struct page *page;
 
-	page  = virt_to_page(pf_cache->va);
+	page = virt_to_page(pf_cache->va);
 	__page_frag_cache_drain(page, pf_cache->pagecnt_bias);
 	memset(pf_cache, 0, sizeof(*pf_cache));
 }

@@ -3,12 +3,12 @@
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
-#include <linux/iopoll.h>
+#include "dsi_catalog.h"
+#include "dsi_ctrl.h"
 #include "dsi_ctrl_hw.h"
 #include "dsi_ctrl_reg.h"
 #include "dsi_hw.h"
-#include "dsi_ctrl.h"
-#include "dsi_catalog.h"
+#include <linux/iopoll.h>
 
 #define DISP_CC_MISC_CMD_REG_OFF 0x00
 
@@ -25,20 +25,23 @@
 #define DSI_MDP_MISR_SIGNATURE 0x368
 
 void dsi_ctrl_hw_22_setup_lane_map(struct dsi_ctrl_hw *ctrl_hw,
-		       struct dsi_lane_map *lane_map)
+				   struct dsi_lane_map *lane_map)
 {
 	struct dsi_ctrl *ctrl = container_of(ctrl_hw, struct dsi_ctrl, hw);
 	u32 reg_value;
 
-	/* Lane swap is performed through PHY for controller version 2.2/PHY versions 3.0 and above */
+	/* Lane swap is performed through PHY for controller version 2.2/PHY
+   * versions 3.0 and above */
 	if (ctrl->version >= DSI_CTRL_VERSION_2_2) {
-		DSI_CTRL_HW_DBG(ctrl_hw, "DSI controller version is >=2.2, lane swap is performed through PHY");
+		DSI_CTRL_HW_DBG(
+			ctrl_hw,
+			"DSI controller version is >=2.2, lane swap is performed through PHY");
 		return;
 	}
 	reg_value = lane_map->lane_map_v2[DSI_LOGICAL_LANE_0] |
-			(lane_map->lane_map_v2[DSI_LOGICAL_LANE_1] << 4) |
-			(lane_map->lane_map_v2[DSI_LOGICAL_LANE_2] << 8) |
-			(lane_map->lane_map_v2[DSI_LOGICAL_LANE_3] << 12);
+		    (lane_map->lane_map_v2[DSI_LOGICAL_LANE_1] << 4) |
+		    (lane_map->lane_map_v2[DSI_LOGICAL_LANE_2] << 8) |
+		    (lane_map->lane_map_v2[DSI_LOGICAL_LANE_3] << 12);
 
 	DSI_W32(ctrl_hw, DSI_LOGICAL_LANE_SWAP_CTRL, reg_value);
 
@@ -46,8 +49,7 @@ void dsi_ctrl_hw_22_setup_lane_map(struct dsi_ctrl_hw *ctrl_hw,
 			ctrl_hw->index);
 }
 
-int dsi_ctrl_hw_22_wait_for_lane_idle(struct dsi_ctrl_hw *ctrl,
-		u32 lanes)
+int dsi_ctrl_hw_22_wait_for_lane_idle(struct dsi_ctrl_hw *ctrl, u32 lanes)
 {
 	int rc = 0, val = 0;
 	u32 fifo_empty_mask = 0;
@@ -67,9 +69,10 @@ int dsi_ctrl_hw_22_wait_for_lane_idle(struct dsi_ctrl_hw *ctrl,
 		fifo_empty_mask |= BIT(28);
 
 	DSI_CTRL_HW_DBG(ctrl, "%s: polling for fifo empty, mask=0x%08x\n",
-		__func__, fifo_empty_mask);
+			__func__, fifo_empty_mask);
 	rc = DSI_READ_POLL_TIMEOUT(ctrl, DSI_FIFO_STATUS, val,
-			(val & fifo_empty_mask), sleep_us, timeout_us);
+				   (val & fifo_empty_mask), sleep_us,
+				   timeout_us);
 	if (rc) {
 		DSI_CTRL_HW_ERR(ctrl,
 				"%s: fifo not empty, FIFO_STATUS=0x%08x\n",
@@ -80,8 +83,7 @@ error:
 	return rc;
 }
 
-ssize_t dsi_ctrl_hw_22_reg_dump_to_buffer(struct dsi_ctrl_hw *ctrl,
-					  char *buf,
+ssize_t dsi_ctrl_hw_22_reg_dump_to_buffer(struct dsi_ctrl_hw *ctrl, char *buf,
 					  u32 size)
 {
 	return size;
@@ -92,8 +94,7 @@ ssize_t dsi_ctrl_hw_22_reg_dump_to_buffer(struct dsi_ctrl_hw *ctrl,
  * @ctrl:          Pointer to the controller host hardware.
  * @enable:      boolean to specify enable/disable.
  */
-void dsi_ctrl_hw_22_phy_reset_config(struct dsi_ctrl_hw *ctrl,
-		bool enable)
+void dsi_ctrl_hw_22_phy_reset_config(struct dsi_ctrl_hw *ctrl, bool enable)
 {
 	u32 reg = 0;
 
@@ -131,14 +132,14 @@ void dsi_ctrl_hw_22_schedule_dma_cmd(struct dsi_ctrl_hw *ctrl, int line_no)
  * @flags:		   - DSI CTRL Flags.
  */
 void dsi_ctrl_hw_kickoff_non_embedded_mode(struct dsi_ctrl_hw *ctrl,
-				    struct dsi_ctrl_cmd_dma_info *cmd,
-				    u32 flags)
+					   struct dsi_ctrl_cmd_dma_info *cmd,
+					   u32 flags)
 {
 	u32 reg = 0;
 
 	reg = DSI_R32(ctrl, DSI_COMMAND_MODE_DMA_CTRL);
 
-	reg &= ~BIT(31);/* disable broadcast */
+	reg &= ~BIT(31); /* disable broadcast */
 	reg &= ~BIT(30);
 
 	if (cmd->use_lpm)
@@ -148,16 +149,16 @@ void dsi_ctrl_hw_kickoff_non_embedded_mode(struct dsi_ctrl_hw *ctrl,
 
 	/* Select non EMBEDDED_MODE, pick the packet header from register */
 	reg &= ~BIT(28);
-	reg |= BIT(24);/* long packet */
-	reg |= BIT(29);/* wc_sel = 1 */
-	reg |= (((cmd->datatype) & 0x03f) << 16);/* data type */
+	reg |= BIT(24); /* long packet */
+	reg |= BIT(29); /* wc_sel = 1 */
+	reg |= (((cmd->datatype) & 0x03f) << 16); /* data type */
 	DSI_W32(ctrl, DSI_COMMAND_MODE_DMA_CTRL, reg);
 
 	/* Enable WRITE_WATERMARK_DISABLE and READ_WATERMARK_DISABLE bits */
 	reg = DSI_R32(ctrl, DSI_DMA_FIFO_CTRL);
 	reg |= BIT(20);
 	reg |= BIT(16);
-	reg |= 0x33;/* Set READ and WRITE watermark levels to maximum */
+	reg |= 0x33; /* Set READ and WRITE watermark levels to maximum */
 	DSI_W32(ctrl, DSI_DMA_FIFO_CTRL, reg);
 
 	DSI_W32(ctrl, DSI_DMA_CMD_OFFSET, cmd->offset);
@@ -178,7 +179,7 @@ void dsi_ctrl_hw_kickoff_non_embedded_mode(struct dsi_ctrl_hw *ctrl,
  *
  */
 void dsi_ctrl_hw_22_config_clk_gating(struct dsi_ctrl_hw *ctrl, bool enable,
-				enum dsi_clk_gate_type clk_selection)
+				      enum dsi_clk_gate_type clk_selection)
 {
 	u32 reg = 0;
 	u32 enable_select = 0;
@@ -210,8 +211,8 @@ void dsi_ctrl_hw_22_config_clk_gating(struct dsi_ctrl_hw *ctrl, bool enable,
  * @window:	Width of the DMA CMD window.
  */
 void dsi_ctrl_hw_22_configure_cmddma_window(struct dsi_ctrl_hw *ctrl,
-		struct dsi_ctrl_cmd_dma_info *cmd,
-		u32 line_no, u32 window)
+					    struct dsi_ctrl_cmd_dma_info *cmd,
+					    u32 line_no, u32 window)
 {
 	u32 reg = 0;
 
@@ -254,11 +255,10 @@ void dsi_ctrl_hw_22_configure_cmddma_window(struct dsi_ctrl_hw *ctrl,
  *                    command modes.
  */
 void dsi_ctrl_hw_22_reset_trigger_controls(struct dsi_ctrl_hw *ctrl,
-				       struct dsi_host_common_cfg *cfg)
+					   struct dsi_host_common_cfg *cfg)
 {
 	u32 reg;
-	const u8 trigger_map[DSI_TRIGGER_MAX] = {
-		0x0, 0x2, 0x1, 0x4, 0x5, 0x6 };
+	const u8 trigger_map[DSI_TRIGGER_MAX] = { 0x0, 0x2, 0x1, 0x4, 0x5, 0x6 };
 
 	reg = DSI_R32(ctrl, DSI_TRIG_CTRL);
 	reg &= ~BIT(16); /* Reset DMA_TRG_MUX */
@@ -281,22 +281,23 @@ void dsi_ctrl_hw_22_reset_trigger_controls(struct dsi_ctrl_hw *ctrl,
  */
 u32 dsi_ctrl_hw_22_log_line_count(struct dsi_ctrl_hw *ctrl, bool cmd_mode)
 {
-
 	u32 reg = 0;
 
 	if (IS_ERR_OR_NULL(ctrl->mdp_intf_base))
 		return reg;
 
 	if (cmd_mode)
-		reg = DSI_MDP_INTF_R32(ctrl, MDP_INTF_TEAR_OFFSET
-					+ MDP_INTF_TEAR_LINE_COUNT_OFFSET);
+		reg = DSI_MDP_INTF_R32(ctrl,
+				       MDP_INTF_TEAR_OFFSET +
+					       MDP_INTF_TEAR_LINE_COUNT_OFFSET);
 	else
 		reg = DSI_MDP_INTF_R32(ctrl, MDP_INTF_LINE_COUNT_OFFSET);
 	return reg;
 }
 
 void dsi_ctrl_hw_22_configure_splitlink(struct dsi_ctrl_hw *ctrl,
-		struct dsi_host_common_cfg *common_cfg, u32 flags)
+					struct dsi_host_common_cfg *common_cfg,
+					u32 flags)
 {
 	u32 reg = 0;
 
@@ -314,9 +315,9 @@ void dsi_ctrl_hw_22_configure_splitlink(struct dsi_ctrl_hw *ctrl,
 		reg |= (BIT(12) | BIT(13));
 
 	/**
-	 * Avoid dma trigger on sublink1 for read commands. This can be
-	 * enabled in future if panel supports sending read command on sublink1.
-	 */
+   * Avoid dma trigger on sublink1 for read commands. This can be
+   * enabled in future if panel supports sending read command on sublink1.
+   */
 	if (flags & DSI_CTRL_CMD_READ) {
 		reg = reg & ~BIT(13);
 	}
@@ -327,8 +328,9 @@ void dsi_ctrl_hw_22_configure_splitlink(struct dsi_ctrl_hw *ctrl,
 	wmb();
 }
 
-void dsi_ctrl_hw_22_setup_misr(struct dsi_ctrl_hw *ctrl, enum dsi_op_mode panel_mode,
-			bool enable, u32 frame_count)
+void dsi_ctrl_hw_22_setup_misr(struct dsi_ctrl_hw *ctrl,
+			       enum dsi_op_mode panel_mode, bool enable,
+			       u32 frame_count)
 {
 	u32 config = 0;
 
@@ -337,7 +339,8 @@ void dsi_ctrl_hw_22_setup_misr(struct dsi_ctrl_hw *ctrl, enum dsi_op_mode panel_
 
 	if (enable) {
 		config = (frame_count & 0xffff);
-		config |= BIT(8) | BIT(24) | BIT(31); /* enable, panel data-only, free run mode */
+		config |= BIT(8) | BIT(24) |
+			  BIT(31); /* enable, panel data-only, free run mode */
 	}
 
 	DSI_CTRL_HW_DBG(ctrl, "MISR enable:%d, frame_count:%d, config:0x%x\n",
@@ -346,7 +349,8 @@ void dsi_ctrl_hw_22_setup_misr(struct dsi_ctrl_hw *ctrl, enum dsi_op_mode panel_
 	wmb(); /* make sure MISR is configured */
 }
 
-u32 dsi_ctrl_hw_22_collect_misr(struct dsi_ctrl_hw *ctrl, enum dsi_op_mode panel_mode)
+u32 dsi_ctrl_hw_22_collect_misr(struct dsi_ctrl_hw *ctrl,
+				enum dsi_op_mode panel_mode)
 {
 	u32 enabled;
 	u32 misr = 0;

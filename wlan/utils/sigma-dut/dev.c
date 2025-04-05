@@ -6,16 +6,14 @@
  * Licensed under the Clear BSD license. See README for more details.
  */
 
-#include "sigma_dut.h"
-#include <ctype.h>
 #include "miracast.h"
-#include <sys/wait.h>
+#include "sigma_dut.h"
 #include "wpa_ctrl.h"
 #include "wpa_helpers.h"
-
+#include <ctype.h>
+#include <sys/wait.h>
 
 extern char *sigma_cert_path;
-
 
 static enum sigma_cmd_result cmd_dev_send_frame(struct sigma_dut *dut,
 						struct sigma_conn *conn,
@@ -31,19 +29,22 @@ static enum sigma_cmd_result cmd_dev_send_frame(struct sigma_dut *dut,
 
 	if (dut->mode == SIGMA_MODE_STATION ||
 	    dut->mode == SIGMA_MODE_UNKNOWN) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Convert "
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Convert "
 				"dev_send_frame to sta_send_frame");
 		return cmd_sta_send_frame(dut, conn, cmd);
 	}
 
 	if (dut->mode == SIGMA_MODE_AP) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Convert "
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Convert "
 				"dev_send_frame to ap_send_frame");
 		return cmd_ap_send_frame(dut, conn, cmd);
 	}
 
 #ifdef CONFIG_WLANTEST
-	sigma_dut_print(dut, DUT_MSG_DEBUG, "Convert dev_send_frame to "
+	sigma_dut_print(dut, DUT_MSG_DEBUG,
+			"Convert dev_send_frame to "
 			"wlantest_send_frame");
 	return cmd_wlantest_send_frame(dut, conn, cmd);
 #else /* CONFIG_WLANTEST */
@@ -53,7 +54,6 @@ static enum sigma_cmd_result cmd_dev_send_frame(struct sigma_dut *dut,
 #endif /* CONFIG_WLANTEST */
 }
 
-
 static enum sigma_cmd_result cmd_dev_set_parameter(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
 						   struct sigma_cmd *cmd)
@@ -61,14 +61,14 @@ static enum sigma_cmd_result cmd_dev_set_parameter(struct sigma_dut *dut,
 	const char *device = get_param(cmd, "Device");
 
 	if (device && strcasecmp(device, "STA") == 0) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Convert "
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Convert "
 				"dev_set_parameter to sta_set_parameter");
 		return cmd_sta_set_parameter(dut, conn, cmd);
 	}
 
 	return INVALID_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
@@ -92,14 +92,16 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 	snprintf(buf, sizeof(buf), "%s/uosc-disabled", sigma_cert_path);
 	if (file_exists(buf)) {
 		strlcpy(resp,
-			"ServerCertTrustResult,OverrideNotAllowed,Reason,UOSC disabled on device",
+			"ServerCertTrustResult,OverrideNotAllowed,Reason,UOSC disabled on "
+			"device",
 			sizeof(resp));
 		goto done;
 	}
 
 	if (!dut->server_cert_hash[0]) {
 		strlcpy(resp,
-			"ServerCertTrustResult,OverrideNotAllowed,Reason,No server certificate stored",
+			"ServerCertTrustResult,OverrideNotAllowed,Reason,No server "
+			"certificate stored",
 			sizeof(resp));
 		goto done;
 	}
@@ -113,7 +115,8 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 
 	if (dut->server_cert_tod == 1) {
 		strlcpy(resp,
-			"ServerCertTrustResult,OverrideNotAllowed,Reason,TOD-STRICT policy in received server certificate",
+			"ServerCertTrustResult,OverrideNotAllowed,Reason,TOD-STRICT policy "
+			"in received server certificate",
 			sizeof(resp));
 		goto done;
 	}
@@ -128,7 +131,8 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 	if (set_network_quoted(get_station_ifname(dut), dut->infra_network_id,
 			       "ca_cert", buf) < 0) {
 		strlcpy(resp,
-			"ServerCertTrustResult,OverrideNotAllowed,Reason,Could not configure server certificate hash for the network profile",
+			"ServerCertTrustResult,OverrideNotAllowed,Reason,Could not "
+			"configure server certificate hash for the network profile",
 			sizeof(resp));
 		goto done;
 	}
@@ -138,7 +142,8 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 	    set_network(get_station_ifname(dut), dut->infra_network_id,
 			"domain_suffix_match", "NULL") < 0) {
 		strlcpy(resp,
-			"ServerCertTrustResult,OverrideNotAllowed,Reason,Could not clear domain matching rules",
+			"ServerCertTrustResult,OverrideNotAllowed,Reason,Could not clear "
+			"domain matching rules",
 			sizeof(resp));
 		goto done;
 	}
@@ -146,10 +151,10 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 	wpa_command(get_station_ifname(dut), "DISCONNECT");
 	snprintf(buf, sizeof(buf), "SELECT_NETWORK %d", dut->infra_network_id);
 	if (wpa_command(get_station_ifname(dut), buf) < 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO, "Failed to select "
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Failed to select "
 				"network id %d on %s",
-				dut->infra_network_id,
-				get_station_ifname(dut));
+				dut->infra_network_id, get_station_ifname(dut));
 		strlcpy(resp,
 			"ServerCertTrustResult,Accepted,Result,Could not request reconnection",
 			sizeof(resp));
@@ -161,13 +166,10 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 		goto done;
 
 	for (e = 0; e < 20; e++) {
-		const char *events[] = {
-			"CTRL-EVENT-EAP-PEER-CERT",
-			"CTRL-EVENT-EAP-TLS-CERT-ERROR",
-			"CTRL-EVENT-DISCONNECTED",
-			"CTRL-EVENT-CONNECTED",
-			NULL
-		};
+		const char *events[] = { "CTRL-EVENT-EAP-PEER-CERT",
+					 "CTRL-EVENT-EAP-TLS-CERT-ERROR",
+					 "CTRL-EVENT-DISCONNECTED",
+					 "CTRL-EVENT-CONNECTED", NULL };
 		char buf[1024];
 		int res;
 
@@ -181,7 +183,6 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 		sigma_dut_print(dut, DUT_MSG_DEBUG, "Connection event: %s",
 				buf);
 
-
 		if (strstr(buf, "CTRL-EVENT-EAP-PEER-CERT") &&
 		    strstr(buf, " depth=0")) {
 			char *pos = strstr(buf, " hash=");
@@ -193,16 +194,18 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 					tod = 2;
 				else
 					tod = 0;
-				sigma_dut_print(dut, DUT_MSG_DEBUG,
-						"Server certificate TOD policy: %d",
-						tod);
+				sigma_dut_print(
+					dut, DUT_MSG_DEBUG,
+					"Server certificate TOD policy: %d",
+					tod);
 				dut->server_cert_tod = tod;
 			}
 		}
 
 		if (strstr(buf, "CTRL-EVENT-EAP-TLS-CERT-ERROR")) {
 			strlcpy(resp,
-				"ServerCertTrustResult,Accepted,Result,TLS server certificate validation failed with updated profile",
+				"ServerCertTrustResult,Accepted,Result,TLS server certificate "
+				"validation failed with updated profile",
 				sizeof(resp));
 			goto done;
 		}
@@ -220,9 +223,10 @@ static enum sigma_cmd_result sta_server_cert_trust(struct sigma_dut *dut,
 
 		if (strstr(buf, "CTRL-EVENT-CONNECTED")) {
 			if (tod >= 0) {
-				sigma_dut_print(dut, DUT_MSG_DEBUG,
-						"Network profile TOD policy update: %d -> %d",
-						dut->sta_tod_policy, tod);
+				sigma_dut_print(
+					dut, DUT_MSG_DEBUG,
+					"Network profile TOD policy update: %d -> %d",
+					dut->sta_tod_policy, tod);
 				dut->sta_tod_policy = tod;
 			}
 			strlcpy(resp,
@@ -242,19 +246,18 @@ done:
 	return STATUS_SENT;
 }
 
-
 static enum sigma_cmd_result dev_exec_key_rotation(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
 						   struct sigma_cmd *cmd)
 {
-	if (dut->mode == SIGMA_MODE_AP ||
-	    dut->mode == SIGMA_MODE_UNKNOWN) {
+	if (dut->mode == SIGMA_MODE_AP || dut->mode == SIGMA_MODE_UNKNOWN) {
 		const char *ifname;
 
 		ifname = get_hostapd_ifname(dut);
 		if (hapd_command(ifname, "REKEY_GTK") < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Failed to request hostapd to rekey GTK");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Failed to request hostapd to rekey GTK");
 			return STATUS_SENT_ERROR;
 		}
 		return SUCCESS_SEND_STATUS;
@@ -264,8 +267,10 @@ static enum sigma_cmd_result dev_exec_key_rotation(struct sigma_dut *dut,
 		if (!intf)
 			intf = get_main_ifname(dut);
 		if (wpa_command(intf, "KEY_REQUEST 0 0") != 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Failed to request wpa_supplicant to request AP to rekey GTK");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Failed to request wpa_supplicant to request AP to "
+				"rekey GTK");
 			return STATUS_SENT_ERROR;
 		}
 		return SUCCESS_SEND_STATUS;
@@ -275,7 +280,6 @@ static enum sigma_cmd_result dev_exec_key_rotation(struct sigma_dut *dut,
 		return STATUS_SENT_ERROR;
 	}
 }
-
 
 static enum sigma_cmd_result wpa3_dev_exec_action(struct sigma_dut *dut,
 						  struct sigma_conn *conn,
@@ -290,8 +294,8 @@ static enum sigma_cmd_result wpa3_dev_exec_action(struct sigma_dut *dut,
 		if (!val)
 			return ERROR_SEND_STATUS;
 		snprintf(buf2, sizeof(buf2), "STA %s", val);
-		if (wpa_command_resp(dut->hostapd_ifname, buf2,
-				     buf, sizeof(buf)) < 0)
+		if (wpa_command_resp(dut->hostapd_ifname, buf2, buf,
+				     sizeof(buf)) < 0)
 			return ERROR_SEND_STATUS;
 		pos = buf;
 		while (pos) {
@@ -319,7 +323,6 @@ static enum sigma_cmd_result wpa3_dev_exec_action(struct sigma_dut *dut,
 
 	return ERROR_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result cmd_dev_exec_action(struct sigma_dut *dut,
 						 struct sigma_conn *conn,
@@ -350,7 +353,6 @@ static enum sigma_cmd_result cmd_dev_exec_action(struct sigma_dut *dut,
 	return ERROR_SEND_STATUS;
 }
 
-
 static enum sigma_cmd_result cmd_dev_configure_ie(struct sigma_dut *dut,
 						  struct sigma_conn *conn,
 						  struct sigma_cmd *cmd)
@@ -373,7 +375,6 @@ static enum sigma_cmd_result cmd_dev_configure_ie(struct sigma_dut *dut,
 	return dut->rsne_override ? SUCCESS_SEND_STATUS : ERROR_SEND_STATUS;
 }
 
-
 static enum sigma_cmd_result cmd_dev_ble_action(struct sigma_dut *dut,
 						struct sigma_conn *conn,
 						struct sigma_cmd *cmd)
@@ -391,8 +392,9 @@ static enum sigma_cmd_result cmd_dev_ble_action(struct sigma_dut *dut,
 	pid_t pid;
 
 	if (prog && ble_role && action && msg_type) {
-		send_resp(dut, conn, SIGMA_COMPLETE,
-			  "OrgID,0x00,TransDataHeader,0x00,BloomFilterElement,NULL");
+		send_resp(
+			dut, conn, SIGMA_COMPLETE,
+			"OrgID,0x00,TransDataHeader,0x00,BloomFilterElement,NULL");
 		return STATUS_SENT;
 	}
 	if (!ble_op || !prog || !service_name || !ble_role || !discovery_type) {
@@ -427,19 +429,20 @@ static enum sigma_cmd_result cmd_dev_ble_action(struct sigma_dut *dut,
 	argv[0] = "am";
 	argv[1] = "start";
 	argv[2] = "-n";
-	argv[3] = "org.codeaurora.nanservicediscovery/org.codeaurora.nanservicediscovery.MainActivity";
+	argv[3] = "org.codeaurora.nanservicediscovery/"
+		  "org.codeaurora.nanservicediscovery.MainActivity";
 	argv[4] = "--es";
 	argv[5] = "service";
-	argv[6] = (char *) service_name;
+	argv[6] = (char *)service_name;
 	argv[7] = "--es";
 	argv[8] = "role";
-	argv[9] = (char *) ble_role;
+	argv[9] = (char *)ble_role;
 	argv[10] = "--es";
 	argv[11] = "scantype";
-	argv[12] = (char *) discovery_type;
+	argv[12] = (char *)discovery_type;
 	argv[13] = "--es";
 	argv[14] = "M2Transmit";
-	argv[15] = (char *) M2Transmit;
+	argv[15] = (char *)M2Transmit;
 	argv[16] = NULL;
 
 	pid = fork();
@@ -463,7 +466,6 @@ static enum sigma_cmd_result cmd_dev_ble_action(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 /* Runtime ID must contain only numbers */
 static int is_runtime_id_valid(struct sigma_dut *dut, const char *val)
 {
@@ -480,7 +482,6 @@ static int is_runtime_id_valid(struct sigma_dut *dut, const char *val)
 	return 1;
 }
 
-
 static int build_log_dir(struct sigma_dut *dut, char *dir, size_t dir_size)
 {
 	int res;
@@ -495,8 +496,7 @@ static int build_log_dir(struct sigma_dut *dut, char *dir, size_t dir_size)
 			       vendor);
 	} else {
 #ifdef ANDROID
-		res = snprintf(dir, dir_size, "/data/vendor/wifi/%s",
-			       vendor);
+		res = snprintf(dir, dir_size, "/data/vendor/wifi/%s", vendor);
 #else /* ANDROID */
 		res = snprintf(dir, dir_size, "/var/log/%s", vendor);
 #endif /* ANDROID */
@@ -506,9 +506,9 @@ static int build_log_dir(struct sigma_dut *dut, char *dir, size_t dir_size)
 		return -1;
 
 	/* Check for valid vendor name in log dir path since the log dir
-	 * (/var/log/vendor) is deleted in dev_stop routine. This check is to
-	 * avoid any unintended file deletion.
-	 */
+   * (/var/log/vendor) is deleted in dev_stop routine. This check is to
+   * avoid any unintended file deletion.
+   */
 	for (i = 0; vendor[i] != '\0'; i++) {
 		if (!isalpha(vendor[i])) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
@@ -520,7 +520,6 @@ static int build_log_dir(struct sigma_dut *dut, char *dir, size_t dir_size)
 
 	return 0;
 }
-
 
 /* User has to redirect wpa_supplicant logs to the following file. */
 #ifndef WPA_SUPPLICANT_LOG_FILE
@@ -542,8 +541,10 @@ static enum sigma_cmd_result cmd_dev_start_test(struct sigma_dut *dut,
 		return INVALID_SEND_STATUS;
 
 	if (!dut->vendor_name) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Log collection not supported without vendor name specified on the command line (-N)");
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Log collection not supported without vendor name "
+			"specified on the command line (-N)");
 		return SUCCESS_SEND_STATUS;
 	}
 
@@ -575,11 +576,11 @@ static enum sigma_cmd_result cmd_dev_start_test(struct sigma_dut *dut,
 	run_system_wrapper(dut, "mkdir -p %s", dir);
 
 #ifdef ANDROID
-	run_system_wrapper(dut, "logcat -v time > %s/logcat_%s.txt &",
-			   dir, dut->dev_start_test_runtime_id);
+	run_system_wrapper(dut, "logcat -v time > %s/logcat_%s.txt &", dir,
+			   dut->dev_start_test_runtime_id);
 #else /* ANDROID */
 	/* Open log file for sigma_dut logs. This is not needed for Android, as
-	 * we are already collecting logcat. */
+   * we are already collecting logcat. */
 	res = snprintf(buf, sizeof(buf), "%s/sigma_%s.txt", dir,
 		       dut->dev_start_test_runtime_id);
 	if (res >= 0 && res < sizeof(buf)) {
@@ -602,12 +603,10 @@ static enum sigma_cmd_result cmd_dev_start_test(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static int is_allowed_char(char ch)
 {
 	return strchr("./-_", ch) != NULL;
 }
-
 
 static int is_destpath_valid(struct sigma_dut *dut, const char *val)
 {
@@ -624,7 +623,6 @@ static int is_destpath_valid(struct sigma_dut *dut, const char *val)
 
 	return 1;
 }
-
 
 #ifndef ANDROID
 #define SUPP_LOG_BUFF_SIZE 4 * 1024
@@ -701,7 +699,8 @@ static int save_supplicant_log(struct sigma_dut *dut)
 		unsigned int bytes_read;
 
 		num_bytes_to_read = (file_size > SUPP_LOG_BUFF_SIZE) ?
-			SUPP_LOG_BUFF_SIZE : file_size;
+					    SUPP_LOG_BUFF_SIZE :
+					    file_size;
 		bytes_read = fread(buff_ptr, 1, num_bytes_to_read, supp_log);
 		if (!bytes_read) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
@@ -709,9 +708,10 @@ static int save_supplicant_log(struct sigma_dut *dut)
 			goto exit;
 		}
 		if (bytes_read != num_bytes_to_read) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"wpa_supplicant log read err, read %d, num_bytes_to_read %d",
-					bytes_read, num_bytes_to_read);
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"wpa_supplicant log read err, read %d, num_bytes_to_read %d",
+				bytes_read, num_bytes_to_read);
 			goto exit;
 		}
 		fwrite(buff_ptr, 1, bytes_read, wpa_log);
@@ -729,7 +729,6 @@ exit:
 }
 #endif /* !ANDROID */
 
-
 static enum sigma_cmd_result cmd_dev_stop_test(struct sigma_dut *dut,
 					       struct sigma_conn *conn,
 					       struct sigma_cmd *cmd)
@@ -741,8 +740,10 @@ static enum sigma_cmd_result cmd_dev_stop_test(struct sigma_dut *dut,
 	int res;
 
 	if (!dut->vendor_name) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Log collection not supported without vendor name specified on the command line (-N)");
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Log collection not supported without vendor name "
+			"specified on the command line (-N)");
 		return SUCCESS_SEND_STATUS;
 	}
 
@@ -773,7 +774,7 @@ static enum sigma_cmd_result cmd_dev_stop_test(struct sigma_dut *dut,
 		       dut->model_name ? dut->model_name : "Unknown",
 		       dut->dev_start_test_runtime_id);
 	if (res < 0 || res >= sizeof(out_file))
-	    return ERROR_SEND_STATUS;
+		return ERROR_SEND_STATUS;
 
 	if (run_system_wrapper(dut, "tar -czvf %s/../%s %s", dir, out_file,
 			       dir) < 0) {
@@ -808,7 +809,6 @@ static enum sigma_cmd_result cmd_dev_stop_test(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static enum sigma_cmd_result cmd_dev_get_log(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
 					     struct sigma_cmd *cmd)
@@ -816,22 +816,19 @@ static enum sigma_cmd_result cmd_dev_get_log(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static int req_intf(struct sigma_cmd *cmd)
 {
 	return get_param(cmd, "interface") == NULL ? -1 : 0;
 }
 
-
 static int req_role_svcname(struct sigma_cmd *cmd)
 {
 	if (!get_param(cmd, "BLERole"))
-		 return -1;
+		return -1;
 	if (get_param(cmd, "BLEOp") && !get_param(cmd, "ServiceName"))
 		return -1;
 	return 0;
 }
-
 
 static int req_intf_prog(struct sigma_cmd *cmd)
 {
@@ -842,7 +839,6 @@ static int req_intf_prog(struct sigma_cmd *cmd)
 	return 0;
 }
 
-
 static int req_prog(struct sigma_cmd *cmd)
 {
 	if (get_param(cmd, "program") == NULL)
@@ -850,14 +846,12 @@ static int req_prog(struct sigma_cmd *cmd)
 	return 0;
 }
 
-
 void dev_register_cmds(void)
 {
 	sigma_dut_reg_cmd("dev_send_frame", req_prog, cmd_dev_send_frame);
 	sigma_dut_reg_cmd("dev_set_parameter", req_intf_prog,
 			  cmd_dev_set_parameter);
-	sigma_dut_reg_cmd("dev_exec_action", req_prog,
-			  cmd_dev_exec_action);
+	sigma_dut_reg_cmd("dev_exec_action", req_prog, cmd_dev_exec_action);
 	sigma_dut_reg_cmd("dev_configure_ie", req_intf, cmd_dev_configure_ie);
 	sigma_dut_reg_cmd("dev_start_test", NULL, cmd_dev_start_test);
 	sigma_dut_reg_cmd("dev_stop_test", NULL, cmd_dev_stop_test);

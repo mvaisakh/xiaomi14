@@ -20,10 +20,10 @@
  * DOC: Implements public API for pmo to interact with target/WMI
  */
 
-#include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_hw_filter_public_struct.h"
-#include "wlan_pmo_obj_mgmt_public_struct.h"
 #include "wlan_pmo_main.h"
+#include "wlan_pmo_obj_mgmt_public_struct.h"
+#include "wlan_pmo_tgt_api.h"
 
 QDF_STATUS pmo_tgt_conf_hw_filter(struct wlan_objmgr_psoc *psoc,
 				  struct pmo_hw_filter_params *req)
@@ -51,4 +51,3 @@ exit_with_status:
 
 	return status;
 }
-

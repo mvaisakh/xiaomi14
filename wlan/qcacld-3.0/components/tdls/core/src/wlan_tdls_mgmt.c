@@ -23,32 +23,28 @@
  * TDLS management frames implementation
  */
 
-#include "wlan_tdls_main.h"
-#include "wlan_tdls_tgt_api.h"
-#include <wlan_serialization_api.h>
-#include "wlan_mgmt_txrx_utils_api.h"
-#include "wlan_tdls_peer.h"
-#include "wlan_tdls_ct.h"
 #include "wlan_tdls_mgmt.h"
+#include "wlan_mgmt_txrx_utils_api.h"
 #include "wlan_policy_mgr_api.h"
-#include <wlan_reg_services_api.h>
+#include "wlan_tdls_ct.h"
+#include "wlan_tdls_main.h"
+#include "wlan_tdls_peer.h"
+#include "wlan_tdls_tgt_api.h"
 #include <wlan_mlo_mgr_sta.h>
+#include <wlan_reg_services_api.h>
+#include <wlan_serialization_api.h>
 
-static
-const char *const tdls_action_frames_type[] = { "TDLS Setup Request",
-					 "TDLS Setup Response",
-					 "TDLS Setup Confirm",
-					 "TDLS Teardown",
-					 "TDLS Peer Traffic Indication",
-					 "TDLS Channel Switch Request",
-					 "TDLS Channel Switch Response",
-					 "TDLS Peer PSM Request",
-					 "TDLS Peer PSM Response",
-					 "TDLS Peer Traffic Response",
-					 "TDLS Discovery Request"};
+static const char *const tdls_action_frames_type[] = {
+	"TDLS Setup Request",		"TDLS Setup Response",
+	"TDLS Setup Confirm",		"TDLS Teardown",
+	"TDLS Peer Traffic Indication", "TDLS Channel Switch Request",
+	"TDLS Channel Switch Response", "TDLS Peer PSM Request",
+	"TDLS Peer PSM Response",	"TDLS Peer Traffic Response",
+	"TDLS Discovery Request"
+};
 
-QDF_STATUS tdls_set_rssi(struct wlan_objmgr_vdev *vdev,
-			 uint8_t *mac, int8_t rssi)
+QDF_STATUS tdls_set_rssi(struct wlan_objmgr_vdev *vdev, uint8_t *mac,
+			 int8_t rssi)
 {
 	struct tdls_vdev_priv_obj *tdls_vdev;
 	struct tdls_peer *curr_peer;
@@ -58,11 +54,11 @@ QDF_STATUS tdls_set_rssi(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	tdls_debug("rssi %d, peer " QDF_MAC_ADDR_FMT,
-		   rssi, QDF_MAC_ADDR_REF(mac));
+	tdls_debug("rssi %d, peer " QDF_MAC_ADDR_FMT, rssi,
+		   QDF_MAC_ADDR_REF(mac));
 
-	tdls_vdev = wlan_objmgr_vdev_get_comp_private_obj(
-			vdev, WLAN_UMAC_COMP_TDLS);
+	tdls_vdev = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_TDLS);
 
 	if (!tdls_vdev) {
 		tdls_err("null tdls vdev");
@@ -99,14 +95,13 @@ tdls_process_mlo_cal_tdls_link_score(struct wlan_objmgr_vdev *vdev)
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 
 	mlo_dev_ctx = vdev->mlo_dev_ctx;
-	for (i =  0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
+	for (i = 0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
 		score = 0;
 		mlo_vdev = mlo_dev_ctx->wlan_vdev_list[i];
 		if (!mlo_vdev)
 			continue;
-		tdls_vdev =
-		     wlan_objmgr_vdev_get_comp_private_obj(mlo_vdev,
-							   WLAN_UMAC_COMP_TDLS);
+		tdls_vdev = wlan_objmgr_vdev_get_comp_private_obj(
+			mlo_vdev, WLAN_UMAC_COMP_TDLS);
 		tdls_vdev->link_score = 0;
 		rx_mgmt = tdls_vdev->rx_mgmt;
 		if (!rx_mgmt)
@@ -145,13 +140,12 @@ tdls_process_mlo_choice_tdls_vdev(struct wlan_objmgr_vdev *vdev)
 	int i;
 
 	mlo_dev_ctx = vdev->mlo_dev_ctx;
-	for (i =  0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
+	for (i = 0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
 		mlo_vdev = mlo_dev_ctx->wlan_vdev_list[i];
 		if (!mlo_vdev)
 			continue;
-		tdls_vdev =
-		     wlan_objmgr_vdev_get_comp_private_obj(mlo_vdev,
-							   WLAN_UMAC_COMP_TDLS);
+		tdls_vdev = wlan_objmgr_vdev_get_comp_private_obj(
+			mlo_vdev, WLAN_UMAC_COMP_TDLS);
 		if (score < tdls_vdev->link_score) {
 			select_vdev = mlo_vdev;
 			score = tdls_vdev->link_score;
@@ -159,14 +153,13 @@ tdls_process_mlo_choice_tdls_vdev(struct wlan_objmgr_vdev *vdev)
 	}
 
 	/* free the memory except the choice one */
-	for (i =  0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
+	for (i = 0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
 		mlo_vdev = mlo_dev_ctx->wlan_vdev_list[i];
 		if (!mlo_vdev || mlo_vdev == select_vdev)
 			continue;
 
-		tdls_vdev =
-		     wlan_objmgr_vdev_get_comp_private_obj(mlo_vdev,
-							   WLAN_UMAC_COMP_TDLS);
+		tdls_vdev = wlan_objmgr_vdev_get_comp_private_obj(
+			mlo_vdev, WLAN_UMAC_COMP_TDLS);
 		qdf_mem_free(tdls_vdev->rx_mgmt);
 		tdls_vdev->rx_mgmt = NULL;
 		tdls_vdev->link_score = 0;
@@ -175,9 +168,9 @@ tdls_process_mlo_choice_tdls_vdev(struct wlan_objmgr_vdev *vdev)
 	return select_vdev;
 }
 
-static struct tdls_vdev_priv_obj
-*tdls_get_correct_vdev(struct tdls_vdev_priv_obj *tdls_vdev,
-		       struct tdls_rx_mgmt_frame *rx_mgmt)
+static struct tdls_vdev_priv_obj *
+tdls_get_correct_vdev(struct tdls_vdev_priv_obj *tdls_vdev,
+		      struct tdls_rx_mgmt_frame *rx_mgmt)
 {
 	struct wlan_objmgr_pdev *pdev;
 	struct wlan_objmgr_vdev *vdev;
@@ -193,9 +186,8 @@ static struct tdls_vdev_priv_obj
 	ies = &rx_mgmt->buf[TDLS_PUBLIC_ACTION_FRAME_TDLS_IE_OFFSET];
 	ie_len = rx_mgmt->frame_len - TDLS_PUBLIC_ACTION_FRAME_TDLS_IE_OFFSET;
 
-	linkid_ie =
-	  (struct tdls_link_identifier *)wlan_get_ie_ptr_from_eid(elem_id_param,
-								  ies, ie_len);
+	linkid_ie = (struct tdls_link_identifier *)wlan_get_ie_ptr_from_eid(
+		elem_id_param, ies, ie_len);
 	if (!linkid_ie)
 		return tdls_vdev;
 
@@ -203,8 +195,7 @@ static struct tdls_vdev_priv_obj
 	if (!pdev)
 		return tdls_vdev;
 
-	if (!wlan_get_connected_vdev_by_bssid(pdev,
-					      linkid_ie->bssid, &vdev_id))
+	if (!wlan_get_connected_vdev_by_bssid(pdev, linkid_ie->bssid, &vdev_id))
 		return tdls_vdev;
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(pdev, vdev_id,
@@ -242,8 +233,7 @@ static bool tdls_check_peer_mlo_dev(struct wlan_objmgr_vdev *vdev,
 		qdf_trace_hex_dump(QDF_MODULE_ID_TDLS, QDF_TRACE_LEVEL_DEBUG,
 				   (void *)&ie[0], ie[1] + 2);
 
-	ie = wlan_get_ext_ie_ptr_from_ext_id(&ext_id_param,
-					     1, ies, ie_len);
+	ie = wlan_get_ext_ie_ptr_from_ext_id(&ext_id_param, 1, ies, ie_len);
 	if (ie)
 		return true;
 
@@ -267,20 +257,19 @@ tdls_process_mlo_rx_mgmt_sync(struct tdls_soc_priv_obj *tdls_soc,
 	if (!peer_mlo) {
 		mlo_dev_ctx = vdev->mlo_dev_ctx;
 		/* stop all timers */
-		for (i =  0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
+		for (i = 0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
 			mlo_vdev = mlo_dev_ctx->wlan_vdev_list[i];
 			if (!mlo_vdev)
 				continue;
 
-			tdls_vdev =
-			       wlan_objmgr_vdev_get_comp_private_obj(mlo_vdev,
-							   WLAN_UMAC_COMP_TDLS);
+			tdls_vdev = wlan_objmgr_vdev_get_comp_private_obj(
+				mlo_vdev, WLAN_UMAC_COMP_TDLS);
 			tdls_vdev->discovery_sent_cnt = 0;
 			if (QDF_TIMER_STATE_RUNNING ==
 			    qdf_mc_timer_get_current_state(
-					    &tdls_vdev->peer_discovery_timer)) {
+				    &tdls_vdev->peer_discovery_timer)) {
 				qdf_mc_timer_stop(
-					      &tdls_vdev->peer_discovery_timer);
+					&tdls_vdev->peer_discovery_timer);
 				qdf_atomic_dec(&tdls_soc->timer_cnt);
 			}
 		}
@@ -293,9 +282,9 @@ tdls_process_mlo_rx_mgmt_sync(struct tdls_soc_priv_obj *tdls_soc,
 			   qdf_atomic_read(&tdls_soc->timer_cnt));
 
 		/* If peer is MLD, it uses ml mac address to send the
-		 * disconvery response, it needs to find out the
-		 * corresponding vdev per the bssid in link identifier ie.
-		 */
+     * disconvery response, it needs to find out the
+     * corresponding vdev per the bssid in link identifier ie.
+     */
 		tdls_vdev = tdls_get_correct_vdev(tdls_vdev, rx_mgmt);
 		status = QDF_STATUS_TDLS_MLO_SYNC;
 		if (!tdls_vdev || tdls_vdev->rx_mgmt) {
@@ -315,8 +304,8 @@ tdls_process_mlo_rx_mgmt_sync(struct tdls_soc_priv_obj *tdls_soc,
 			tdls_vdev->rx_mgmt->vdev_id = rx_mgmt->vdev_id;
 			tdls_vdev->rx_mgmt->frm_type = rx_mgmt->frm_type;
 			tdls_vdev->rx_mgmt->rx_rssi = rx_mgmt->rx_rssi;
-			qdf_mem_copy(tdls_vdev->rx_mgmt->buf,
-				     rx_mgmt->buf, rx_mgmt->frame_len);
+			qdf_mem_copy(tdls_vdev->rx_mgmt->buf, rx_mgmt->buf,
+				     rx_mgmt->frame_len);
 		} else {
 			tdls_err("alloc rx mgmt buf error");
 		}
@@ -356,8 +345,8 @@ void tdls_set_no_force_vdev(struct wlan_objmgr_vdev *vdev, bool flag)
 		mlo_vdev = mlo_dev_ctx->wlan_vdev_list[i];
 
 		/* flag: true means no force all vdevs,
-		 * false means except the current one
-		 */
+     * false means except the current one
+     */
 		if (!flag && (mlo_vdev == vdev))
 			continue;
 		mlo_vdev_lst[count] = wlan_vdev_get_id(mlo_vdev);
@@ -365,8 +354,8 @@ void tdls_set_no_force_vdev(struct wlan_objmgr_vdev *vdev, bool flag)
 	}
 
 	policy_mgr_mlo_sta_set_link(psoc, MLO_LINK_FORCE_REASON_TDLS,
-				    MLO_LINK_FORCE_MODE_NO_FORCE,
-				    count, mlo_vdev_lst);
+				    MLO_LINK_FORCE_MODE_NO_FORCE, count,
+				    mlo_vdev_lst);
 }
 #else
 struct wlan_objmgr_vdev *
@@ -387,9 +376,9 @@ tdls_process_mlo_choice_tdls_vdev(struct wlan_objmgr_vdev *vdev)
 	return NULL;
 }
 
-static struct tdls_vdev_priv_obj
-*tdls_get_correct_vdev(struct tdls_vdev_priv_obj *tdls_vdev,
-		       struct tdls_rx_mgmt_frame *rx_mgmt)
+static struct tdls_vdev_priv_obj *
+tdls_get_correct_vdev(struct tdls_vdev_priv_obj *tdls_vdev,
+		      struct tdls_rx_mgmt_frame *rx_mgmt)
 {
 	return NULL;
 }
@@ -428,9 +417,8 @@ tdls_needs_wait_discovery_response(struct wlan_objmgr_vdev *vdev,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS tdls_process_rx_mgmt(
-	struct tdls_rx_mgmt_event *rx_mgmt_event,
-	struct tdls_vdev_priv_obj *tdls_vdev)
+static QDF_STATUS tdls_process_rx_mgmt(struct tdls_rx_mgmt_event *rx_mgmt_event,
+				       struct tdls_vdev_priv_obj *tdls_vdev)
 {
 	struct tdls_rx_mgmt_frame *rx_mgmt;
 	struct tdls_soc_priv_obj *tdls_soc_obj;
@@ -454,24 +442,25 @@ static QDF_STATUS tdls_process_rx_mgmt(
 
 	vdev = tdls_vdev->vdev;
 	tdls_debug("received mgmt on vdev %d", wlan_vdev_get_id(vdev));
-	tdls_debug("soc:%pK, frame_len:%d, rx_freq:%d, vdev_id:%d, frm_type:%d, rx_rssi:%d, buf:%pK",
-		   tdls_soc_obj->soc, rx_mgmt->frame_len,
-		   rx_mgmt->rx_freq, rx_mgmt->vdev_id, rx_mgmt->frm_type,
-		   rx_mgmt->rx_rssi, rx_mgmt->buf);
+	tdls_debug(
+		"soc:%pK, frame_len:%d, rx_freq:%d, vdev_id:%d, frm_type:%d, "
+		"rx_rssi:%d, buf:%pK",
+		tdls_soc_obj->soc, rx_mgmt->frame_len, rx_mgmt->rx_freq,
+		rx_mgmt->vdev_id, rx_mgmt->frm_type, rx_mgmt->rx_rssi,
+		rx_mgmt->buf);
 
 	if (rx_mgmt->buf[TDLS_PUBLIC_ACTION_FRAME_OFFSET + 1] ==
 	    TDLS_PUBLIC_ACTION_DISC_RESP) {
 		if (tdls_needs_wait_discovery_response(vdev, tdls_soc_obj)) {
-			status = tdls_process_mlo_rx_mgmt_sync(tdls_soc_obj,
-							       tdls_vdev,
-							       rx_mgmt);
+			status = tdls_process_mlo_rx_mgmt_sync(
+				tdls_soc_obj, tdls_vdev, rx_mgmt);
 			if (status == QDF_STATUS_TDLS_MLO_SYNC) {
 				return QDF_STATUS_SUCCESS;
 			} else if (status == QDF_STATUS_SUCCESS) {
 				vdev = tdls_process_mlo_choice_tdls_vdev(vdev);
 				tdls_vdev =
-				     wlan_objmgr_vdev_get_comp_private_obj(vdev,
-							   WLAN_UMAC_COMP_TDLS);
+					wlan_objmgr_vdev_get_comp_private_obj(
+						vdev, WLAN_UMAC_COMP_TDLS);
 				rx_mgmt = tdls_vdev->rx_mgmt;
 				tdls_vdev_select = true;
 				tdls_debug("choice vdev %d as tdls vdev",
@@ -486,9 +475,9 @@ static QDF_STATUS tdls_process_rx_mgmt(
 		} else {
 			if (wlan_vdev_mlme_is_mlo_vdev(vdev)) {
 				tdls_link_vdev =
-					      tdls_mlo_get_tdls_link_vdev(vdev);
-				tdls_vdev =
-				      tdls_get_correct_vdev(tdls_vdev, rx_mgmt);
+					tdls_mlo_get_tdls_link_vdev(vdev);
+				tdls_vdev = tdls_get_correct_vdev(tdls_vdev,
+								  rx_mgmt);
 				if (!tdls_link_vdev || !tdls_vdev) {
 					tdls_debug("not expected frame");
 					return QDF_STATUS_SUCCESS;
@@ -498,15 +487,15 @@ static QDF_STATUS tdls_process_rx_mgmt(
 					return QDF_STATUS_SUCCESS;
 				}
 				rx_mgmt->vdev_id =
-					       wlan_vdev_get_id(tdls_link_vdev);
+					wlan_vdev_get_id(tdls_link_vdev);
 				vdev = tdls_link_vdev;
 			}
 		}
 
 		/* this is mld mac address for mlo case*/
 		mac = &rx_mgmt->buf[TDLS_80211_PEER_ADDR_OFFSET];
-		tdls_notice("[TDLS] TDLS Discovery Response,"
-			    QDF_MAC_ADDR_FMT " RSSI[%d] <--- OTA",
+		tdls_notice("[TDLS] TDLS Discovery Response," QDF_MAC_ADDR_FMT
+			    " RSSI[%d] <--- OTA",
 			    QDF_MAC_ADDR_REF(mac), rx_mgmt->rx_rssi);
 
 		tdls_debug("discovery resp on vdev %d", wlan_vdev_get_id(vdev));
@@ -523,7 +512,7 @@ static QDF_STATUS tdls_process_rx_mgmt(
 				   action_frame_type);
 		} else {
 			tdls_notice("[TDLS] %s <--- OTA",
-				   tdls_action_frames_type[action_frame_type]);
+				    tdls_action_frames_type[action_frame_type]);
 		}
 	}
 
@@ -555,15 +544,16 @@ QDF_STATUS tdls_process_rx_frame(struct scheduler_msg *msg)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	tdls_rx = (struct tdls_rx_mgmt_event *) msg->bodyptr;
+	tdls_rx = (struct tdls_rx_mgmt_event *)msg->bodyptr;
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(tdls_rx->tdls_soc_obj->soc,
-				tdls_rx->rx_mgmt->vdev_id, WLAN_TDLS_NB_ID);
+						    tdls_rx->rx_mgmt->vdev_id,
+						    WLAN_TDLS_NB_ID);
 
 	if (vdev) {
 		tdls_debug("tdls rx mgmt frame received");
-		tdls_vdev = wlan_objmgr_vdev_get_comp_private_obj(vdev,
-							WLAN_UMAC_COMP_TDLS);
+		tdls_vdev = wlan_objmgr_vdev_get_comp_private_obj(
+			vdev, WLAN_UMAC_COMP_TDLS);
 		if (tdls_vdev)
 			status = tdls_process_rx_mgmt(tdls_rx, tdls_vdev);
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_TDLS_NB_ID);
@@ -576,8 +566,7 @@ QDF_STATUS tdls_process_rx_frame(struct scheduler_msg *msg)
 	return status;
 }
 
-QDF_STATUS tdls_mgmt_rx_ops(struct wlan_objmgr_psoc *psoc,
-	bool isregister)
+QDF_STATUS tdls_mgmt_rx_ops(struct wlan_objmgr_psoc *psoc, bool isregister)
 {
 	struct mgmt_txrx_mgmt_frame_cb_info frm_cb_info;
 	QDF_STATUS status;
@@ -591,12 +580,14 @@ QDF_STATUS tdls_mgmt_rx_ops(struct wlan_objmgr_psoc *psoc,
 
 	if (isregister)
 		status = wlan_mgmt_txrx_register_rx_cb(psoc,
-				WLAN_UMAC_COMP_TDLS, &frm_cb_info,
-				num_of_entries);
+						       WLAN_UMAC_COMP_TDLS,
+						       &frm_cb_info,
+						       num_of_entries);
 	else
 		status = wlan_mgmt_txrx_deregister_rx_cb(psoc,
-				WLAN_UMAC_COMP_TDLS, &frm_cb_info,
-				num_of_entries);
+							 WLAN_UMAC_COMP_TDLS,
+							 &frm_cb_info,
+							 num_of_entries);
 
 	return status;
 }
@@ -616,12 +607,13 @@ tdls_internal_send_mgmt_tx_done(struct tdls_action_frame_request *req,
 	tdls_soc_obj = wlan_vdev_get_tdls_soc_obj(req->vdev);
 	if (tdls_soc_obj && tdls_soc_obj->tdls_event_cb)
 		tdls_soc_obj->tdls_event_cb(tdls_soc_obj->tdls_evt_cb_data,
-			TDLS_EVENT_MGMT_TX_ACK_CNF, &indication);
+					    TDLS_EVENT_MGMT_TX_ACK_CNF,
+					    &indication);
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS tdls_activate_send_mgmt_request_flush_cb(
-	struct scheduler_msg *msg)
+static QDF_STATUS
+tdls_activate_send_mgmt_request_flush_cb(struct scheduler_msg *msg)
 {
 	struct tdls_send_mgmt_request *tdls_mgmt_req;
 
@@ -640,7 +632,7 @@ tdls_activate_send_mgmt_request(struct tdls_action_frame_request *action_req)
 	QDF_STATUS status;
 	struct tdls_send_mgmt_request *tdls_mgmt_req;
 	struct wlan_objmgr_peer *peer;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct tdls_vdev_priv_obj *tdls_vdev;
 
 	if (!action_req || !action_req->vdev)
@@ -653,7 +645,7 @@ tdls_activate_send_mgmt_request(struct tdls_action_frame_request *action_req)
 	}
 
 	tdls_mgmt_req = qdf_mem_malloc(sizeof(struct tdls_send_mgmt_request) +
-				action_req->tdls_mgmt.len);
+				       action_req->tdls_mgmt.len);
 	if (!tdls_mgmt_req) {
 		status = QDF_STATUS_E_NOMEM;
 		goto release_cmd;
@@ -665,8 +657,7 @@ tdls_activate_send_mgmt_request(struct tdls_action_frame_request *action_req)
 		   "tdls_mgmt.status_code %d "
 		   "tdls_mgmt.responder %d "
 		   "tdls_mgmt.peer_capability %d",
-		   action_req->session_id,
-		   action_req->tdls_mgmt.dialog,
+		   action_req->session_id, action_req->tdls_mgmt.dialog,
 		   action_req->tdls_mgmt.frame_type,
 		   action_req->tdls_mgmt.status_code,
 		   action_req->tdls_mgmt.responder,
@@ -688,8 +679,8 @@ tdls_activate_send_mgmt_request(struct tdls_action_frame_request *action_req)
 		goto release_cmd;
 	}
 
-	qdf_mem_copy(tdls_mgmt_req->bssid.bytes,
-		     wlan_peer_get_macaddr(peer), QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(tdls_mgmt_req->bssid.bytes, wlan_peer_get_macaddr(peer),
+		     QDF_MAC_ADDR_SIZE);
 
 	wlan_objmgr_peer_release_ref(peer, WLAN_TDLS_SB_ID);
 
@@ -714,11 +705,12 @@ tdls_activate_send_mgmt_request(struct tdls_action_frame_request *action_req)
 		tdls_vdev = wlan_vdev_get_tdls_vdev_obj(action_req->vdev);
 		if (QDF_TIMER_STATE_RUNNING !=
 		    qdf_mc_timer_get_current_state(
-					  &tdls_vdev->peer_discovery_timer)) {
-			tdls_timer_restart(tdls_vdev->vdev,
-				     &tdls_vdev->peer_discovery_timer,
-				     tdls_vdev->threshold_config.tx_period_t -
-				     TDLS_DISCOVERY_TIMEOUT_ERE_UPDATE);
+			    &tdls_vdev->peer_discovery_timer)) {
+			tdls_timer_restart(
+				tdls_vdev->vdev,
+				&tdls_vdev->peer_discovery_timer,
+				tdls_vdev->threshold_config.tx_period_t -
+					TDLS_DISCOVERY_TIMEOUT_ERE_UPDATE);
 			qdf_atomic_inc(&tdls_soc_obj->timer_cnt);
 		} else {
 			qdf_mem_free(tdls_mgmt_req);
@@ -737,8 +729,7 @@ tdls_activate_send_mgmt_request(struct tdls_action_frame_request *action_req)
 	msg.bodyptr = tdls_mgmt_req;
 	msg.flush_callback = tdls_activate_send_mgmt_request_flush_cb;
 
-	status = scheduler_post_message(QDF_MODULE_ID_TDLS,
-					QDF_MODULE_ID_TDLS,
+	status = scheduler_post_message(QDF_MODULE_ID_TDLS, QDF_MODULE_ID_TDLS,
 					QDF_MODULE_ID_PE, &msg);
 	if (QDF_IS_STATUS_ERROR(status))
 		qdf_mem_free(tdls_mgmt_req);
@@ -757,7 +748,7 @@ release_cmd:
 
 static QDF_STATUS
 tdls_send_mgmt_serialize_callback(struct wlan_serialization_command *cmd,
-	 enum wlan_serialization_cb_reason reason)
+				  enum wlan_serialization_cb_reason reason)
 {
 	struct tdls_action_frame_request *req;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -777,16 +768,16 @@ tdls_send_mgmt_serialize_callback(struct wlan_serialization_command *cmd,
 	case WLAN_SER_CB_CANCEL_CMD:
 	case WLAN_SER_CB_ACTIVE_CMD_TIMEOUT:
 		/* command removed from pending list.
-		 * notify status complete with failure
-		 */
+     * notify status complete with failure
+     */
 		status = tdls_internal_send_mgmt_tx_done(req,
-				QDF_STATUS_E_FAILURE);
+							 QDF_STATUS_E_FAILURE);
 		break;
 
 	case WLAN_SER_CB_RELEASE_MEM_CMD:
 		/* command successfully completed.
-		 * release tdls_action_frame_request memory
-		 */
+     * release tdls_action_frame_request memory
+     */
 		wlan_objmgr_vdev_release_ref(req->vdev, WLAN_TDLS_NB_ID);
 		qdf_mem_free(req);
 		break;
@@ -804,7 +795,7 @@ tdls_send_mgmt_serialize_callback(struct wlan_serialization_command *cmd,
 #ifdef WLAN_FEATURE_11BE_MLO
 static QDF_STATUS tdls_set_link_mode(struct tdls_action_frame_request *req)
 {
-	uint8_t mlo_vdev_lst[WLAN_UMAC_MLO_MAX_VDEVS] = {-1};
+	uint8_t mlo_vdev_lst[WLAN_UMAC_MLO_MAX_VDEVS] = { -1 };
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_vdev *mlo_tdls_vdev;
 	uint8_t vdev_count = 0;
@@ -847,36 +838,36 @@ static QDF_STATUS tdls_set_link_mode(struct tdls_action_frame_request *req)
 }
 #endif
 
-QDF_STATUS tdls_process_mgmt_req(
-			struct tdls_action_frame_request *tdls_mgmt_req)
+QDF_STATUS
+tdls_process_mgmt_req(struct tdls_action_frame_request *tdls_mgmt_req)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
-	struct wlan_serialization_command cmd = {0, };
+	struct wlan_serialization_command cmd = {
+		0,
+	};
 	enum wlan_serialization_status ser_cmd_status;
 
 	/* If connected and in Infra. Only then allow this */
 	status = tdls_validate_mgmt_request(tdls_mgmt_req);
 	if (status != QDF_STATUS_SUCCESS) {
-		status = tdls_internal_send_mgmt_tx_done(tdls_mgmt_req,
-							 status);
+		status = tdls_internal_send_mgmt_tx_done(tdls_mgmt_req, status);
 		goto error_mgmt;
 	}
 
 	status = tdls_set_link_mode(tdls_mgmt_req);
 	if (status != QDF_STATUS_SUCCESS) {
 		tdls_err("failed to set link active");
-		status = tdls_internal_send_mgmt_tx_done(tdls_mgmt_req,
-							 status);
+		status = tdls_internal_send_mgmt_tx_done(tdls_mgmt_req, status);
 		goto error_mgmt;
 	}
 
 	/* update the responder, status code information
-	 * after the  cmd validation
-	 */
+   * after the  cmd validation
+   */
 	tdls_mgmt_req->tdls_mgmt.responder =
-			!tdls_mgmt_req->chk_frame.responder;
+		!tdls_mgmt_req->chk_frame.responder;
 	tdls_mgmt_req->tdls_mgmt.status_code =
-			tdls_mgmt_req->chk_frame.status_code;
+		tdls_mgmt_req->chk_frame.status_code;
 
 	cmd.cmd_type = WLAN_SER_CMD_TDLS_SEND_MGMT;
 	/* Cmd Id not applicable for non scan cmds */

@@ -4,46 +4,48 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/slab.h>
-#include <linux/mod_devicetable.h>
-#include <linux/of_device.h>
-#include <linux/module.h>
-#include <dt-bindings/msm-camera.h>
 #include "cam_sfe_dev.h"
-#include "cam_sfe_core.h"
-#include "cam_sfe_soc.h"
+#include "cam_debug_util.h"
 #include "cam_sfe680.h"
 #include "cam_sfe780.h"
 #include "cam_sfe880.h"
-#include "cam_debug_util.h"
+#include "cam_sfe_core.h"
+#include "cam_sfe_soc.h"
 #include "camera_main.h"
+#include <dt-bindings/msm-camera.h>
+#include <linux/mod_devicetable.h>
+#include <linux/module.h>
+#include <linux/of_device.h>
+#include <linux/slab.h>
 
 static struct cam_isp_hw_intf_data cam_sfe_hw_list[CAM_SFE_HW_NUM_MAX];
 static uint32_t g_num_sfe_hws;
 
-static int cam_sfe_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+static int cam_sfe_component_bind(struct device *dev, struct device *master_dev,
+				  void *data)
 {
-
-	struct cam_hw_info                *sfe_info = NULL;
-	struct cam_hw_intf                *sfe_hw_intf = NULL;
-	const struct of_device_id         *match_dev = NULL;
-	struct cam_sfe_hw_core_info       *core_info = NULL;
-	struct cam_sfe_hw_info            *hw_info = NULL;
-	struct platform_device            *pdev = NULL;
-	struct cam_sfe_soc_private        *soc_priv;
-	uint32_t                           sfe_dev_idx;
-	int                                i, rc = 0;
+	struct cam_hw_info *sfe_info = NULL;
+	struct cam_hw_intf *sfe_hw_intf = NULL;
+	const struct of_device_id *match_dev = NULL;
+	struct cam_sfe_hw_core_info *core_info = NULL;
+	struct cam_sfe_hw_info *hw_info = NULL;
+	struct platform_device *pdev = NULL;
+	struct cam_sfe_soc_private *soc_priv;
+	uint32_t sfe_dev_idx;
+	int i, rc = 0;
 
 	pdev = to_platform_device(dev);
 
-	rc = of_property_read_u32(pdev->dev.of_node, "cell-index", &sfe_dev_idx);
+	rc = of_property_read_u32(pdev->dev.of_node, "cell-index",
+				  &sfe_dev_idx);
 	if (rc) {
-		CAM_ERR(CAM_SFE, "Failed to read cell-index of SFE HW, rc: %d", rc);
+		CAM_ERR(CAM_SFE, "Failed to read cell-index of SFE HW, rc: %d",
+			rc);
 		goto end;
 	}
 
-	if (!cam_cpas_is_feature_supported(CAM_CPAS_SFE_FUSE, BIT(sfe_dev_idx), NULL)) {
+	if (!cam_cpas_is_feature_supported(CAM_CPAS_SFE_FUSE, BIT(sfe_dev_idx),
+					   NULL)) {
 		CAM_DBG(CAM_SFE, "SFE:%d is not supported", sfe_dev_idx);
 		goto end;
 	}
@@ -84,8 +86,8 @@ static int cam_sfe_component_bind(struct device *dev,
 
 	platform_set_drvdata(pdev, sfe_hw_intf);
 
-	sfe_info->core_info = kzalloc(sizeof(struct cam_sfe_hw_core_info),
-		GFP_KERNEL);
+	sfe_info->core_info =
+		kzalloc(sizeof(struct cam_sfe_hw_core_info), GFP_KERNEL);
 	if (!sfe_info->core_info) {
 		CAM_DBG(CAM_SFE, "Failed to alloc for core");
 		rc = -ENOMEM;
@@ -93,8 +95,8 @@ static int cam_sfe_component_bind(struct device *dev,
 	}
 	core_info = (struct cam_sfe_hw_core_info *)sfe_info->core_info;
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_SFE, "Of_match Failed");
 		rc = -EINVAL;
@@ -104,14 +106,14 @@ static int cam_sfe_component_bind(struct device *dev,
 	core_info->sfe_hw_info = hw_info;
 
 	rc = cam_sfe_init_soc_resources(&sfe_info->soc_info, cam_sfe_irq,
-		sfe_info);
+					sfe_info);
 	if (rc < 0) {
 		CAM_ERR(CAM_SFE, "Failed to init soc rc=%d", rc);
 		goto free_core_info;
 	}
 
-	rc = cam_sfe_core_init(core_info, &sfe_info->soc_info,
-		sfe_hw_intf, hw_info);
+	rc = cam_sfe_core_init(core_info, &sfe_info->soc_info, sfe_hw_intf,
+			       hw_info);
 	if (rc < 0) {
 		CAM_ERR(CAM_SFE, "Failed to init core rc=%d", rc);
 		goto deinit_soc;
@@ -131,8 +133,7 @@ static int cam_sfe_component_bind(struct device *dev,
 		cam_sfe_hw_list[sfe_hw_intf->hw_idx].hw_pid[i] =
 			soc_priv->pid[i];
 
-	CAM_DBG(CAM_SFE, "SFE%d bound successfully",
-		sfe_hw_intf->hw_idx);
+	CAM_DBG(CAM_SFE, "SFE%d bound successfully", sfe_hw_intf->hw_idx);
 
 	return rc;
 
@@ -150,14 +151,13 @@ end:
 }
 
 static void cam_sfe_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
-
-	struct cam_hw_info                *sfe_info = NULL;
-	struct cam_hw_intf                *sfe_hw_intf = NULL;
-	struct cam_sfe_hw_core_info       *core_info = NULL;
-	struct platform_device            *pdev = NULL;
-	int                                rc = 0;
+	struct cam_hw_info *sfe_info = NULL;
+	struct cam_hw_intf *sfe_hw_intf = NULL;
+	struct cam_sfe_hw_core_info *core_info = NULL;
+	struct platform_device *pdev = NULL;
+	int rc = 0;
 
 	pdev = to_platform_device(dev);
 	sfe_hw_intf = platform_get_drvdata(pdev);
@@ -214,7 +214,8 @@ void cam_sfe_get_num_hws(uint32_t *sfe_num)
 	if (sfe_num)
 		*sfe_num = g_num_sfe_hws;
 	else
-		CAM_ERR(CAM_SFE, "Invalid argument, g_num_sfe_hws: %u", g_num_sfe_hws);
+		CAM_ERR(CAM_SFE, "Invalid argument, g_num_sfe_hws: %u",
+			g_num_sfe_hws);
 }
 
 int cam_sfe_probe(struct platform_device *pdev)
@@ -270,21 +271,21 @@ static const struct of_device_id cam_sfe_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_sfe_dt_match);
 
 struct platform_driver cam_sfe_driver = {
-	.probe = cam_sfe_probe,
-	.remove = cam_sfe_remove,
-	.driver = {
-		.name = "cam_sfe",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_sfe_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_sfe_probe,
+    .remove = cam_sfe_remove,
+    .driver =
+        {
+            .name = "cam_sfe",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_sfe_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_sfe_init_module(void)
 {
 	return platform_driver_register(&cam_sfe_driver);
 }
-
 
 void cam_sfe_exit_module(void)
 {

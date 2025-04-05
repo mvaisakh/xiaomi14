@@ -20,10 +20,10 @@
  */
 
 #include "wlan_cm_main.h"
-#include "wlan_cm_roam_sm.h"
-#include "wlan_cm_sm.h"
 #include "wlan_cm_main_api.h"
 #include "wlan_cm_roam.h"
+#include "wlan_cm_roam_sm.h"
+#include "wlan_cm_sm.h"
 #include <wlan_scan_api.h>
 
 void cm_free_roam_req_mem(struct cm_roam_req *roam_req)
@@ -69,25 +69,28 @@ QDF_STATUS cm_check_and_prepare_roam_req(struct cnx_mgr *cm_ctx,
 	else if (req->chan_freq_hint)
 		freq = req->chan_freq_hint;
 	/*
-	 * Reject re-assoc unless freq along with prev bssid and one
-	 * of bssid or bssid hint is present.
-	 */
+   * Reject re-assoc unless freq along with prev bssid and one
+   * of bssid or bssid hint is present.
+   */
 	if (!cm_is_connect_req_reassoc(req))
 		return QDF_STATUS_E_FAILURE;
 
 	wlan_vdev_get_bss_peer_mac(cm_ctx->vdev, &bssid);
 	/* Reject re-assoc unless prev_bssid matches the current BSSID. */
 	if (!qdf_is_macaddr_equal(&req->prev_bssid, &bssid)) {
-		mlme_debug("BSSID didn't matched: bssid: "QDF_MAC_ADDR_FMT " prev bssid: " QDF_MAC_ADDR_FMT,
+		mlme_debug("BSSID didn't matched: bssid: " QDF_MAC_ADDR_FMT
+			   " prev bssid: " QDF_MAC_ADDR_FMT,
 			   QDF_MAC_ADDR_REF(bssid.bytes),
 			   QDF_MAC_ADDR_REF(req->prev_bssid.bytes));
 		status = wlan_vdev_get_bss_peer_mld_mac(cm_ctx->vdev,
 							&bss_mld_addr);
 		if (!(QDF_IS_STATUS_SUCCESS(status) &&
 		      qdf_is_macaddr_equal(&req->prev_bssid, &bss_mld_addr))) {
-			mlme_debug("BSSID didn't matched: bss mld: "QDF_MAC_ADDR_FMT " prev bssid: " QDF_MAC_ADDR_FMT,
-				   QDF_MAC_ADDR_REF(bss_mld_addr.bytes),
-				   QDF_MAC_ADDR_REF(req->prev_bssid.bytes));
+			mlme_debug(
+				"BSSID didn't matched: bss mld: " QDF_MAC_ADDR_FMT
+				" prev bssid: " QDF_MAC_ADDR_FMT,
+				QDF_MAC_ADDR_REF(bss_mld_addr.bytes),
+				QDF_MAC_ADDR_REF(req->prev_bssid.bytes));
 			return QDF_STATUS_E_FAILURE;
 		}
 	}
@@ -101,7 +104,8 @@ QDF_STATUS cm_check_and_prepare_roam_req(struct cnx_mgr *cm_ctx,
 	/* Reject re-assoc unless ssid matches. */
 	if (ssid.length != req->ssid.length ||
 	    qdf_mem_cmp(ssid.ssid, req->ssid.ssid, ssid.length)) {
-		mlme_debug("SSID didn't matched: self ssid: \"" QDF_SSID_FMT "\", ssid in req: \"" QDF_SSID_FMT "\"",
+		mlme_debug("SSID didn't matched: self ssid: \"" QDF_SSID_FMT
+			   "\", ssid in req: \"" QDF_SSID_FMT "\"",
 			   QDF_SSID_REF(ssid.length, ssid.ssid),
 			   QDF_SSID_REF(req->ssid.length, req->ssid.ssid));
 		return QDF_STATUS_E_FAILURE;
@@ -137,19 +141,17 @@ QDF_STATUS cm_add_roam_req_to_list(struct cnx_mgr *cm_ctx,
 	QDF_STATUS status;
 
 	cm_req->roam_req.cm_id =
-			cm_get_cm_id(cm_ctx, cm_req->roam_req.req.source);
+		cm_get_cm_id(cm_ctx, cm_req->roam_req.req.source);
 	cm_req->cm_id = cm_req->roam_req.cm_id;
 	cm_req->roam_req.req.vdev_id = wlan_vdev_get_id(cm_ctx->vdev);
-	status =
-	    cm_add_req_to_list_and_indicate_osif(cm_ctx, cm_req,
-						 cm_req->roam_req.req.source);
+	status = cm_add_req_to_list_and_indicate_osif(
+		cm_ctx, cm_req, cm_req->roam_req.req.source);
 
 	return status;
 }
 
 QDF_STATUS
-cm_fill_bss_info_in_roam_rsp_by_cm_id(struct cnx_mgr *cm_ctx,
-				      wlan_cm_id cm_id,
+cm_fill_bss_info_in_roam_rsp_by_cm_id(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id,
 				      struct wlan_cm_connect_resp *resp)
 {
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
@@ -189,8 +191,8 @@ cm_fill_bss_info_in_roam_rsp_by_cm_id(struct cnx_mgr *cm_ctx,
 		qdf_copy_macaddr(&resp->bssid, &req->bssid);
 		if (candidate) {
 			entry = candidate->entry;
-			cm_connect_resp_fill_mld_addr_from_candidate(cm_ctx->vdev,
-								     entry, resp);
+			cm_connect_resp_fill_mld_addr_from_candidate(
+				cm_ctx->vdev, entry, resp);
 		}
 		break;
 	}

@@ -24,23 +24,21 @@
  *
  */
 
+#include "osif_sync.h"
+#include "wlan_hdd_pre_cac.h"
 #include <cds_utils.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
-#include "osif_sync.h"
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
 #include <qdf_str.h>
 #include <wlan_hdd_includes.h>
 #include <wlan_hdd_sap_cond_chan_switch.h>
-#include "wlan_hdd_pre_cac.h"
 
-const struct nla_policy conditional_chan_switch_policy[
-		QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_FREQ_LIST] = {
-				.type = NLA_BINARY },
-	[QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_STATUS] = {
-				.type = NLA_U32 },
+const struct nla_policy conditional_chan_switch_policy[QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_MAX +
+						       1] = {
+	[QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_FREQ_LIST] = { .type = NLA_BINARY },
+	[QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_STATUS] = { .type = NLA_U32 },
 };
 
 /**
@@ -58,8 +56,7 @@ const struct nla_policy conditional_chan_switch_policy[
 static int
 __wlan_hdd_cfg80211_conditional_chan_switch(struct wiphy *wiphy,
 					    struct wireless_dev *wdev,
-					    const void *data,
-					    int data_len)
+					    const void *data, int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -77,8 +74,9 @@ __wlan_hdd_cfg80211_conditional_chan_switch(struct wiphy *wiphy,
 	if (ret)
 		return ret;
 
-	if (QDF_STATUS_SUCCESS != ucfg_mlme_get_dfs_master_capability(
-				hdd_ctx->psoc, &is_dfs_mode_enabled)) {
+	if (QDF_STATUS_SUCCESS !=
+	    ucfg_mlme_get_dfs_master_capability(hdd_ctx->psoc,
+						&is_dfs_mode_enabled)) {
 		hdd_err("Failed to get dfs master capability");
 		return -EINVAL;
 	}
@@ -100,13 +98,13 @@ __wlan_hdd_cfg80211_conditional_chan_switch(struct wiphy *wiphy,
 	}
 
 	/*
-	 * audit note: it is ok to pass a NULL policy here since only
-	 * one attribute is parsed which is array of frequencies and
-	 * it is explicitly validated for both under read and over read
-	 */
-	if (wlan_cfg80211_nla_parse(tb,
-			   QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_MAX,
-			   data, data_len, conditional_chan_switch_policy)) {
+   * audit note: it is ok to pass a NULL policy here since only
+   * one attribute is parsed which is array of frequencies and
+   * it is explicitly validated for both under read and over read
+   */
+	if (wlan_cfg80211_nla_parse(
+		    tb, QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_MAX,
+		    data, data_len, conditional_chan_switch_policy)) {
 		hdd_err("Invalid ATTR");
 		return -EINVAL;
 	}
@@ -116,8 +114,8 @@ __wlan_hdd_cfg80211_conditional_chan_switch(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	freq_len = nla_len(
-		tb[QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_FREQ_LIST])/
+	freq_len =
+		nla_len(tb[QCA_WLAN_VENDOR_ATTR_SAP_CONDITIONAL_CHAN_SWITCH_FREQ_LIST]) /
 		sizeof(uint32_t);
 
 	if (freq_len > NUM_CHANNELS) {
@@ -134,14 +132,14 @@ __wlan_hdd_cfg80211_conditional_chan_switch(struct wiphy *wiphy,
 		hdd_debug("freq[%d]=%d", i, freq[i]);
 
 	/*
-	 * The input frequency list from user space is designed to be a
-	 * priority based frequency list. This is only to accommodate any
-	 * future request. But, current requirement is only to perform CAC
-	 * on a single channel. So, the first entry from the list is picked.
-	 *
-	 * If channel is zero, any channel in the available outdoor regulatory
-	 * domain will be selected.
-	 */
+   * The input frequency list from user space is designed to be a
+   * priority based frequency list. This is only to accommodate any
+   * future request. But, current requirement is only to perform CAC
+   * on a single channel. So, the first entry from the list is picked.
+   *
+   * If channel is zero, any channel in the available outdoor regulatory
+   * domain will be selected.
+   */
 	ret = wlan_hdd_request_pre_cac(hdd_ctx, freq[0]);
 	if (ret) {
 		hdd_err("pre cac request failed with reason:%d", ret);
@@ -153,8 +151,7 @@ __wlan_hdd_cfg80211_conditional_chan_switch(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_conditional_chan_switch(struct wiphy *wiphy,
 					      struct wireless_dev *wdev,
-					      const void *data,
-					      int data_len)
+					      const void *data, int data_len)
 {
 	struct osif_vdev_sync *vdev_sync;
 	int errno;
@@ -163,11 +160,10 @@ int wlan_hdd_cfg80211_conditional_chan_switch(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_conditional_chan_switch(wiphy, wdev,
-							    data, data_len);
+	errno = __wlan_hdd_cfg80211_conditional_chan_switch(wiphy, wdev, data,
+							    data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
 	return errno;
 }
-

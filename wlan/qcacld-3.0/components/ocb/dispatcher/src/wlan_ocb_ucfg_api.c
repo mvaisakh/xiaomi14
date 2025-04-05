@@ -20,18 +20,18 @@
  * DOC: This file contains ocb north bound interface definitions
  */
 
+#include "reg_services_public_struct.h"
+#include "wlan_ocb_main.h"
 #include <scheduler_api.h>
 #include <wlan_defs.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_reg_services_api.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_global_obj.h>
-#include <wlan_ocb_public_structs.h>
-#include <wlan_ocb_ucfg_api.h>
-#include <wlan_ocb_tgt_api.h>
 #include <wlan_lmac_if_def.h>
-#include "wlan_ocb_main.h"
-#include "reg_services_public_struct.h"
+#include <wlan_objmgr_global_obj.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_ocb_public_structs.h>
+#include <wlan_ocb_tgt_api.h>
+#include <wlan_ocb_ucfg_api.h>
+#include <wlan_reg_services_api.h>
 
 /**
  * wlan_ocb_get_tx_ops() - get target interface tx operations
@@ -58,8 +58,8 @@ QDF_STATUS ucfg_ocb_init(void)
 	QDF_STATUS status;
 
 	ocb_notice("ocb module dispatcher init");
-	status = wlan_objmgr_register_pdev_create_handler(WLAN_UMAC_COMP_OCB,
-		ocb_pdev_obj_create_notification, NULL);
+	status = wlan_objmgr_register_pdev_create_handler(
+		WLAN_UMAC_COMP_OCB, ocb_pdev_obj_create_notification, NULL);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ocb_err("Failed to register pdev create handler for ocb");
@@ -67,8 +67,8 @@ QDF_STATUS ucfg_ocb_init(void)
 		return status;
 	}
 
-	status = wlan_objmgr_register_pdev_destroy_handler(WLAN_UMAC_COMP_OCB,
-		ocb_pdev_obj_destroy_notification, NULL);
+	status = wlan_objmgr_register_pdev_destroy_handler(
+		WLAN_UMAC_COMP_OCB, ocb_pdev_obj_destroy_notification, NULL);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ocb_err("Failed to register pdev destroy handler for ocb");
@@ -78,8 +78,8 @@ QDF_STATUS ucfg_ocb_init(void)
 	return status;
 
 fail_delete_pdev:
-	wlan_objmgr_unregister_pdev_create_handler(WLAN_UMAC_COMP_OCB,
-		ocb_pdev_obj_create_notification, NULL);
+	wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_OCB, ocb_pdev_obj_create_notification, NULL);
 
 	return status;
 }
@@ -89,13 +89,13 @@ QDF_STATUS ucfg_ocb_deinit(void)
 	QDF_STATUS status;
 
 	ocb_notice("ocb module dispatcher deinit");
-	status = wlan_objmgr_unregister_pdev_destroy_handler(WLAN_UMAC_COMP_OCB,
-				ocb_pdev_obj_destroy_notification, NULL);
+	status = wlan_objmgr_unregister_pdev_destroy_handler(
+		WLAN_UMAC_COMP_OCB, ocb_pdev_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ocb_err("Failed to unregister pdev destroy handler");
 
-	status = wlan_objmgr_unregister_pdev_create_handler(WLAN_UMAC_COMP_OCB,
-				ocb_pdev_obj_create_notification, NULL);
+	status = wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_OCB, ocb_pdev_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ocb_err("Failed to unregister pdev create handler");
 
@@ -106,8 +106,7 @@ QDF_STATUS ocb_psoc_enable(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_objmgr_pdev *pdev;
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0,
-					  WLAN_OCB_NB_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_OCB_NB_ID);
 	if (!pdev) {
 		ocb_err("Failed to get pdev handle");
 
@@ -123,8 +122,7 @@ QDF_STATUS ocb_psoc_disable(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_objmgr_pdev *pdev;
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0,
-					  WLAN_OCB_NB_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_OCB_NB_ID);
 	if (!pdev) {
 		ocb_err("Failed to get pdev handle");
 		return QDF_STATUS_E_FAILURE;
@@ -141,8 +139,7 @@ QDF_STATUS ucfg_ocb_set_txrx_pdev_id(struct wlan_objmgr_psoc *psoc,
 	struct wlan_objmgr_pdev *pdev;
 	struct ocb_pdev_obj *ocb_obj;
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0,
-					  WLAN_OCB_NB_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_OCB_NB_ID);
 	if (!pdev) {
 		ocb_err("Failed to get pdev handle");
 		return QDF_STATUS_E_FAILURE;
@@ -164,8 +161,7 @@ QDF_STATUS ucfg_ocb_update_dp_handle(struct wlan_objmgr_psoc *psoc,
 	struct wlan_objmgr_pdev *pdev;
 	struct ocb_pdev_obj *ocb_obj;
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0,
-					  WLAN_OCB_NB_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_OCB_NB_ID);
 	if (!pdev) {
 		ocb_err("Failed to get pdev handle");
 		return QDF_STATUS_E_FAILURE;
@@ -215,9 +211,9 @@ QDF_STATUS ucfg_ocb_config_channel(struct wlan_objmgr_pdev *pdev)
 
 		if (ocb_obj->channel_config) {
 			/*
-			 * On success case, backup parameters will be released
-			 * after channel info is synced to DP
-			 */
+       * On success case, backup parameters will be released
+       * after channel info is synced to DP
+       */
 			ocb_info("release the backed config parameters");
 			qdf_mem_free(ocb_obj->channel_config);
 			ocb_obj->channel_config = NULL;
@@ -258,17 +254,17 @@ QDF_STATUS ucfg_ocb_set_channel_config(struct wlan_objmgr_vdev *vdev,
 	}
 
 	for (i = 0; i < config->channel_count; i++) {
-		if (wlan_reg_freq_to_band(config->channels[i].chan_freq)
-				== REG_BAND_2G)
+		if (wlan_reg_freq_to_band(config->channels[i].chan_freq) ==
+		    REG_BAND_2G)
 			config->channels[i].ch_mode = MODE_11G;
 		else
 			config->channels[i].ch_mode = MODE_11A;
 	}
 
 	/*
-	 * backup the new configuration,
-	 * it will be released after target's response
-	 */
+   * backup the new configuration,
+   * it will be released after target's response
+   */
 	ocb_obj->channel_config = ocb_copy_config(config);
 	if (!ocb_obj->channel_config) {
 		ocb_err("Failed to backup config");
@@ -301,9 +297,9 @@ QDF_STATUS ucfg_ocb_set_channel_config(struct wlan_objmgr_vdev *vdev,
 
 	if (QDF_IS_STATUS_ERROR(status) && ocb_obj->channel_config) {
 		/*
-		 * On success case, backup parameters will be released
-		 * after channel info is synced to DP
-		 */
+     * On success case, backup parameters will be released
+     * after channel info is synced to DP
+     */
 		ocb_info("release the backed config parameters");
 		qdf_mem_free(ocb_obj->channel_config);
 		ocb_obj->channel_config = NULL;
@@ -412,8 +408,7 @@ QDF_STATUS ucfg_ocb_stop_timing_advert(struct wlan_objmgr_vdev *vdev,
 
 QDF_STATUS ucfg_ocb_get_tsf_timer(struct wlan_objmgr_vdev *vdev,
 				  struct ocb_get_tsf_timer_param *req,
-				  ocb_sync_callback get_tsf_cb,
-				  void *arg)
+				  ocb_sync_callback get_tsf_cb, void *arg)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -441,7 +436,7 @@ QDF_STATUS ucfg_ocb_get_tsf_timer(struct wlan_objmgr_vdev *vdev,
 	ocb_cbs = wlan_ocb_get_callbacks(pdev);
 	ocb_cbs->ocb_get_tsf_timer_context = arg;
 	ocb_cbs->ocb_get_tsf_timer_callback = get_tsf_cb;
-	request.vdev_id =  req->vdev_id;
+	request.vdev_id = req->vdev_id;
 	psoc = wlan_vdev_get_psoc(vdev);
 	if (!psoc) {
 		ocb_err("Null pointer for psoc");
@@ -458,8 +453,7 @@ QDF_STATUS ucfg_ocb_get_tsf_timer(struct wlan_objmgr_vdev *vdev,
 
 QDF_STATUS ucfg_ocb_dcc_get_stats(struct wlan_objmgr_vdev *vdev,
 				  struct ocb_dcc_get_stats_param *request,
-				  ocb_sync_callback dcc_get_stats_cb,
-				  void *arg)
+				  ocb_sync_callback dcc_get_stats_cb, void *arg)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -502,8 +496,7 @@ QDF_STATUS ucfg_ocb_dcc_get_stats(struct wlan_objmgr_vdev *vdev,
 }
 
 QDF_STATUS ucfg_ocb_dcc_clear_stats(struct wlan_objmgr_vdev *vdev,
-				    uint16_t vdev_id,
-				    uint32_t bitmap)
+				    uint16_t vdev_id, uint32_t bitmap)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -588,8 +581,9 @@ QDF_STATUS ucfg_ocb_dcc_update_ndl(struct wlan_objmgr_vdev *vdev,
 	return status;
 }
 
-QDF_STATUS ucfg_ocb_register_for_dcc_stats_event(struct wlan_objmgr_pdev *pdev,
-				void *ctx, ocb_sync_callback dcc_stats_cb)
+QDF_STATUS
+ucfg_ocb_register_for_dcc_stats_event(struct wlan_objmgr_pdev *pdev, void *ctx,
+				      ocb_sync_callback dcc_stats_cb)
 {
 	struct ocb_callbacks *ocb_cbs;
 
@@ -609,8 +603,9 @@ QDF_STATUS ucfg_ocb_register_for_dcc_stats_event(struct wlan_objmgr_pdev *pdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS ucfg_ocb_register_vdev_start(struct wlan_objmgr_pdev *pdev,
-				QDF_STATUS (*ocb_start)(struct ocb_config *))
+QDF_STATUS
+ucfg_ocb_register_vdev_start(struct wlan_objmgr_pdev *pdev,
+			     QDF_STATUS (*ocb_start)(struct ocb_config *))
 {
 	struct ocb_callbacks *ocb_cbs;
 

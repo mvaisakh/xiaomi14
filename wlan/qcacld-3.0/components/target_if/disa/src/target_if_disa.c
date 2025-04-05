@@ -21,15 +21,14 @@
  * in target if internally.
  */
 
-#include "target_if.h"
 #include "target_if_disa.h"
-#include "wlan_disa_tgt_api.h"
+#include "target_if.h"
 #include "wlan_disa_public_struct.h"
+#include "wlan_disa_tgt_api.h"
 #include <wmi_unified_api.h>
 
-int
-target_if_encrypt_decrypt_event_handler(ol_scn_t scn_handle, uint8_t *data,
-					uint32_t data_len)
+int target_if_encrypt_decrypt_event_handler(ol_scn_t scn_handle, uint8_t *data,
+					    uint32_t data_len)
 {
 	struct disa_encrypt_decrypt_resp_params resp;
 	struct wlan_objmgr_psoc *psoc;
@@ -53,8 +52,9 @@ target_if_encrypt_decrypt_event_handler(ol_scn_t scn_handle, uint8_t *data,
 	}
 
 	if (wmi_extract_encrypt_decrypt_resp_params(wmi_handle, data, &resp) !=
-						    QDF_STATUS_SUCCESS) {
-		target_if_err("Extraction of encrypt decrypt resp params failed");
+	    QDF_STATUS_SUCCESS) {
+		target_if_err(
+			"Extraction of encrypt decrypt resp params failed");
 		return -EINVAL;
 	}
 
@@ -75,9 +75,9 @@ target_if_disa_register_ev_handlers(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_register_event(wmi_handle,
-				wmi_vdev_encrypt_decrypt_data_rsp_event_id,
-				target_if_encrypt_decrypt_event_handler);
+	status = wmi_unified_register_event(
+		wmi_handle, wmi_vdev_encrypt_decrypt_data_rsp_event_id,
+		target_if_encrypt_decrypt_event_handler);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register Scan match event cb");
 		return QDF_STATUS_E_FAILURE;
@@ -98,8 +98,8 @@ target_if_disa_unregister_ev_handlers(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_unregister_event(wmi_handle,
-				wmi_vdev_encrypt_decrypt_data_rsp_event_id);
+	status = wmi_unified_unregister_event(
+		wmi_handle, wmi_vdev_encrypt_decrypt_data_rsp_event_id);
 	if (status) {
 		target_if_err("Failed to unregister Scan match event cb");
 		return QDF_STATUS_E_FAILURE;
@@ -110,7 +110,7 @@ target_if_disa_unregister_ev_handlers(struct wlan_objmgr_psoc *psoc)
 
 QDF_STATUS
 target_if_disa_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
-		struct disa_encrypt_decrypt_req_params *req)
+				   struct disa_encrypt_decrypt_req_params *req)
 {
 	wmi_unified_t wmi_handle;
 
@@ -122,7 +122,6 @@ target_if_disa_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
 
 	return wmi_unified_encrypt_decrypt_send_cmd(wmi_handle, req);
 }
-
 
 void target_if_disa_register_tx_ops(struct wlan_disa_tx_ops *disa_tx_ops)
 {

@@ -48,8 +48,8 @@ static bool mgmt_rx_reo_snapshot_is_valid(uint32_t snapshot_low,
 static uint16_t mgmt_rx_reo_snapshot_get_mgmt_pkt_ctr(uint32_t snapshot_low,
 						      uint8_t snapshot_version)
 {
-	return MLO_SHMEM_MGMT_RX_REO_SNAPSHOT_MGMT_PKT_CTR_GET
-					(snapshot_low, snapshot_version);
+	return MLO_SHMEM_MGMT_RX_REO_SNAPSHOT_MGMT_PKT_CTR_GET(
+		snapshot_low, snapshot_version);
 }
 
 /**
@@ -59,11 +59,11 @@ static uint16_t mgmt_rx_reo_snapshot_get_mgmt_pkt_ctr(uint32_t snapshot_low,
  *
  * Return: Redundant management packet counter of the snapshot
  */
-static uint16_t mgmt_rx_reo_snapshot_get_redundant_mgmt_pkt_ctr
-					(uint32_t snapshot_high)
+static uint16_t
+mgmt_rx_reo_snapshot_get_redundant_mgmt_pkt_ctr(uint32_t snapshot_high)
 {
-	return MLO_SHMEM_MGMT_RX_REO_SNAPSHOT_MGMT_PKT_CTR_REDUNDANT_GET
-							(snapshot_high);
+	return MLO_SHMEM_MGMT_RX_REO_SNAPSHOT_MGMT_PKT_CTR_REDUNDANT_GET(
+		snapshot_high);
 }
 
 /**
@@ -79,8 +79,8 @@ static bool mgmt_rx_reo_snapshot_is_consistent(uint32_t snapshot_low,
 					       uint32_t snapshot_high,
 					       uint8_t snapshot_version)
 {
-	return MLO_SHMEM_MGMT_RX_REO_SNAPSHOT_CHECK_CONSISTENCY(snapshot_low,
-					snapshot_high, snapshot_version);
+	return MLO_SHMEM_MGMT_RX_REO_SNAPSHOT_CHECK_CONSISTENCY(
+		snapshot_low, snapshot_high, snapshot_version);
 }
 
 /**
@@ -95,8 +95,8 @@ static bool mgmt_rx_reo_snapshot_is_consistent(uint32_t snapshot_low,
 static uint32_t mgmt_rx_reo_snapshot_get_global_timestamp(
 	uint32_t snapshot_low, uint32_t snapshot_high, uint8_t snapshot_version)
 {
-	return MLO_SHMEM_MGMT_RX_REO_SNAPSHOT_GLOBAL_TIMESTAMP_GET
-		(snapshot_low, snapshot_high, snapshot_version);
+	return MLO_SHMEM_MGMT_RX_REO_SNAPSHOT_GLOBAL_TIMESTAMP_GET(
+		snapshot_low, snapshot_high, snapshot_version);
 }
 
 QDF_STATUS mgmt_rx_reo_register_wifi3_0_ops(
@@ -114,8 +114,7 @@ QDF_STATUS mgmt_rx_reo_register_wifi3_0_ops(
 		mgmt_rx_reo_get_snapshot_address;
 	reo_low_level_ops->get_snapshot_version =
 		mgmt_rx_reo_get_snapshot_version;
-	reo_low_level_ops->snapshot_is_valid =
-		mgmt_rx_reo_snapshot_is_valid;
+	reo_low_level_ops->snapshot_is_valid = mgmt_rx_reo_snapshot_is_valid;
 	reo_low_level_ops->snapshot_get_mgmt_pkt_ctr =
 		mgmt_rx_reo_snapshot_get_mgmt_pkt_ctr;
 	reo_low_level_ops->snapshot_get_redundant_mgmt_pkt_ctr =
@@ -132,8 +131,7 @@ QDF_STATUS mgmt_rx_reo_register_wifi3_0_ops(
 #endif
 
 #ifdef WLAN_MLO_GLOBAL_SHMEM_SUPPORT
-static inline
-void global_shmem_register_target_recovery_ops(
+static inline void global_shmem_register_target_recovery_ops(
 	struct wlan_lmac_if_global_shmem_local_ops *shmem_local_ops)
 {
 	if (!shmem_local_ops) {
@@ -149,8 +147,7 @@ void global_shmem_register_target_recovery_ops(
 		mlo_glb_h_shmem_arena_get_no_of_chips_from_crash_info;
 }
 #else
-static inline
-void global_shmem_register_target_recovery_ops(
+static inline void global_shmem_register_target_recovery_ops(
 	struct wlan_lmac_if_global_shmem_local_ops *shmem_local_ops)
 {
 	if (!shmem_local_ops) {
@@ -164,15 +161,14 @@ void global_shmem_register_target_recovery_ops(
 #endif
 
 QDF_STATUS global_shmem_register_wifi3_0_ops(
-		struct wlan_lmac_if_global_shmem_local_ops *shmem_local_ops)
+	struct wlan_lmac_if_global_shmem_local_ops *shmem_local_ops)
 {
 	if (!shmem_local_ops) {
 		target_if_err("Low level ops of global shmem is NULL");
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	shmem_local_ops->init_shmem_arena_ctx =
-		mlo_glb_h_shmem_arena_ctx_init;
+	shmem_local_ops->init_shmem_arena_ctx = mlo_glb_h_shmem_arena_ctx_init;
 	shmem_local_ops->deinit_shmem_arena_ctx =
 		mlo_glb_h_shmem_arena_ctx_deinit;
 

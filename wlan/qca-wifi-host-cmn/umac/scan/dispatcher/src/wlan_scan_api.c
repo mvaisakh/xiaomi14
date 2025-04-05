@@ -21,12 +21,12 @@
  * DOC: This file contains all SCAN component's APIs
  */
 
-#include "cfg_ucfg_api.h"
 #include "wlan_scan_api.h"
 #include "../../core/src/wlan_scan_manager.h"
+#include "cfg_ucfg_api.h"
 #ifdef WLAN_POLICY_MGR_ENABLE
-#include <wlan_policy_mgr_api.h>
 #include "wlan_policy_mgr_public_struct.h"
+#include <wlan_policy_mgr_api.h>
 #endif
 
 void wlan_scan_cfg_get_passive_dwelltime(struct wlan_objmgr_psoc *psoc,
@@ -178,15 +178,13 @@ void wlan_scan_update_pno_dwell_time(struct wlan_objmgr_vdev *vdev,
 	if (!psoc)
 		return;
 
-	sap_or_p2p_present = policy_mgr_mode_specific_connection_count
-			       (psoc,
-				PM_SAP_MODE, NULL) ||
-				policy_mgr_mode_specific_connection_count
-			       (psoc,
-				PM_P2P_GO_MODE, NULL) ||
-				policy_mgr_mode_specific_connection_count
-			       (psoc,
-				PM_P2P_CLIENT_MODE, NULL);
+	sap_or_p2p_present =
+		policy_mgr_mode_specific_connection_count(psoc, PM_SAP_MODE,
+							  NULL) ||
+		policy_mgr_mode_specific_connection_count(psoc, PM_P2P_GO_MODE,
+							  NULL) ||
+		policy_mgr_mode_specific_connection_count(
+			psoc, PM_P2P_CLIENT_MODE, NULL);
 
 	if (sap_or_p2p_present) {
 		req->active_dwell_time = scan_def->conc_active_dwell;
@@ -243,9 +241,8 @@ void wlan_scan_cfg_set_conc_passive_dwelltime(struct wlan_objmgr_psoc *psoc,
 	scan_obj->scan_def.conc_passive_dwell = dwell_time;
 }
 
-void
-wlan_scan_cfg_get_dfs_chan_scan_allowed(struct wlan_objmgr_psoc *psoc,
-					bool *enable_dfs_scan)
+void wlan_scan_cfg_get_dfs_chan_scan_allowed(struct wlan_objmgr_psoc *psoc,
+					     bool *enable_dfs_scan)
 {
 	struct wlan_scan_obj *scan_obj;
 
@@ -256,9 +253,8 @@ wlan_scan_cfg_get_dfs_chan_scan_allowed(struct wlan_objmgr_psoc *psoc,
 	*enable_dfs_scan = scan_obj->scan_def.allow_dfs_chan_in_scan;
 }
 
-void
-wlan_scan_cfg_set_dfs_chan_scan_allowed(struct wlan_objmgr_psoc *psoc,
-					bool enable_dfs_scan)
+void wlan_scan_cfg_set_dfs_chan_scan_allowed(struct wlan_objmgr_psoc *psoc,
+					     bool enable_dfs_scan)
 {
 	struct wlan_scan_obj *scan_obj;
 
@@ -324,8 +320,7 @@ wlan_scan_process_bcn_probe_rx_sync(struct wlan_objmgr_psoc *psoc,
 	struct scan_bcn_probe_event *bcn = NULL;
 	QDF_STATUS status;
 
-	if ((frm_type != MGMT_PROBE_RESP) &&
-	    (frm_type != MGMT_BEACON)) {
+	if ((frm_type != MGMT_PROBE_RESP) && (frm_type != MGMT_BEACON)) {
 		scm_err("frame is not beacon or probe resp");
 		status = QDF_STATUS_E_INVAL;
 		goto free;
@@ -336,8 +331,7 @@ wlan_scan_process_bcn_probe_rx_sync(struct wlan_objmgr_psoc *psoc,
 		status = QDF_STATUS_E_NOMEM;
 		goto free;
 	}
-	bcn->rx_data =
-		qdf_mem_malloc_atomic(sizeof(*rx_param));
+	bcn->rx_data = qdf_mem_malloc_atomic(sizeof(*rx_param));
 	if (!bcn->rx_data) {
 		status = QDF_STATUS_E_NOMEM;
 		goto free;
@@ -403,7 +397,7 @@ QDF_STATUS wlan_scan_set_aging_time(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS wlan_scan_start(struct scan_start_request *req)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	QDF_STATUS status;
 
 	if (!req || !req->vdev) {
@@ -419,10 +413,10 @@ QDF_STATUS wlan_scan_start(struct scan_start_request *req)
 	}
 
 	/*
-	 * Try to get vdev reference. Return if reference could
-	 * not be taken. Reference will be released once scan
-	 * request handling completes along with free of @req.
-	 */
+   * Try to get vdev reference. Return if reference could
+   * not be taken. Reference will be released once scan
+   * request handling completes along with free of @req.
+   */
 	status = wlan_objmgr_vdev_try_get_ref(req->vdev, WLAN_SCAN_ID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		scm_info("unable to get reference");
@@ -434,8 +428,7 @@ QDF_STATUS wlan_scan_start(struct scan_start_request *req)
 	msg.callback = scm_scan_start_req;
 	msg.flush_callback = scm_scan_start_flush_callback;
 
-	status = scheduler_post_message(QDF_MODULE_ID_OS_IF,
-					QDF_MODULE_ID_SCAN,
+	status = scheduler_post_message(QDF_MODULE_ID_OS_IF, QDF_MODULE_ID_SCAN,
 					QDF_MODULE_ID_OS_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wlan_objmgr_vdev_release_ref(req->vdev, WLAN_SCAN_ID);
@@ -447,7 +440,7 @@ QDF_STATUS wlan_scan_start(struct scan_start_request *req)
 
 QDF_STATUS wlan_scan_cancel(struct scan_cancel_request *req)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	QDF_STATUS status;
 
 	if (!req || !req->vdev) {
@@ -467,8 +460,7 @@ QDF_STATUS wlan_scan_cancel(struct scan_cancel_request *req)
 	msg.callback = scm_scan_cancel_req;
 	msg.flush_callback = scm_scan_cancel_flush_callback;
 
-	status = scheduler_post_message(QDF_MODULE_ID_OS_IF,
-					QDF_MODULE_ID_SCAN,
+	status = scheduler_post_message(QDF_MODULE_ID_OS_IF, QDF_MODULE_ID_SCAN,
 					QDF_MODULE_ID_OS_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status))
 		goto vdev_put;
@@ -484,8 +476,7 @@ req_free:
 	return status;
 }
 
-wlan_scan_id
-wlan_scan_get_scan_id(struct wlan_objmgr_psoc *psoc)
+wlan_scan_id wlan_scan_get_scan_id(struct wlan_objmgr_psoc *psoc)
 {
 	wlan_scan_id id;
 	struct wlan_scan_obj *scan;
@@ -503,11 +494,11 @@ wlan_scan_get_scan_id(struct wlan_objmgr_psoc *psoc)
 	}
 
 	id = qdf_atomic_inc_return(&scan->scan_ids);
-	id =  id & WLAN_SCAN_ID_MASK;
+	id = id & WLAN_SCAN_ID_MASK;
 	/* Mark this scan request as triggered by host
-	 * by setting WLAN_HOST_SCAN_REQ_ID_PREFIX flag.
-	 */
-	id =  id | WLAN_HOST_SCAN_REQ_ID_PREFIX;
+   * by setting WLAN_HOST_SCAN_REQ_ID_PREFIX flag.
+   */
+	id = id | WLAN_HOST_SCAN_REQ_ID_PREFIX;
 	scm_debug("scan_id: 0x%x", id);
 
 	return id;
@@ -551,8 +542,7 @@ wlan_scan_init_default_params(struct wlan_objmgr_vdev *vdev,
 	req->scan_req.probe_delay = def->probe_delay;
 	req->scan_req.burst_duration = def->burst_duration;
 	req->scan_req.n_probes = def->num_probes;
-	req->scan_req.adaptive_dwell_time_mode =
-		def->adaptive_dwell_time_mode;
+	req->scan_req.adaptive_dwell_time_mode = def->adaptive_dwell_time_mode;
 	req->scan_req.scan_flags = def->scan_flags;
 	req->scan_req.scan_events = def->scan_events;
 	req->scan_req.scan_random.randomize = def->enable_mac_spoofing;
@@ -560,16 +550,15 @@ wlan_scan_init_default_params(struct wlan_objmgr_vdev *vdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-wlan_scan_requester
-wlan_scan_register_requester(struct wlan_objmgr_psoc *psoc,
-			     uint8_t *name,
-			     scan_event_handler event_cb,
-			     void *arg)
+wlan_scan_requester wlan_scan_register_requester(struct wlan_objmgr_psoc *psoc,
+						 uint8_t *name,
+						 scan_event_handler event_cb,
+						 void *arg)
 {
 	int i, j;
 	struct wlan_scan_obj *scan;
 	struct scan_requester_info *requesters;
-	wlan_scan_requester requester = {0};
+	wlan_scan_requester requester = { 0 };
 
 	if (!psoc) {
 		scm_err("null psoc");
@@ -598,15 +587,14 @@ wlan_scan_register_requester(struct wlan_objmgr_psoc *psoc,
 		}
 	}
 	qdf_spin_unlock_bh(&scan->lock);
-	scm_debug("module: %s, event_cb: 0x%pK, arg: 0x%pK, reqid: %d",
-		  name, event_cb, arg, requester);
+	scm_debug("module: %s, event_cb: 0x%pK, arg: 0x%pK, reqid: %d", name,
+		  event_cb, arg, requester);
 
 	return requester;
 }
 
-void
-wlan_scan_unregister_requester(struct wlan_objmgr_psoc *psoc,
-			       wlan_scan_requester requester)
+void wlan_scan_unregister_requester(struct wlan_objmgr_psoc *psoc,
+				    wlan_scan_requester requester)
 {
 	int idx;
 	struct wlan_scan_obj *scan;
@@ -663,8 +651,7 @@ void wlan_scan_get_last_scan_ageout_time(struct wlan_objmgr_psoc *psoc,
 		*last_scan_ageout_time = 0;
 		return;
 	}
-	*last_scan_ageout_time =
-	scan_obj->scan_def.last_scan_ageout_time;
+	*last_scan_ageout_time = scan_obj->scan_def.last_scan_ageout_time;
 }
 
 #ifdef FEATURE_SET
@@ -710,10 +697,10 @@ void wlan_scan_get_feature_info(struct wlan_objmgr_psoc *psoc,
 				struct wlan_scan_features *scan_feature_set)
 {
 	scan_feature_set->pno_in_unassoc_state =
-					wlan_scan_get_pno_scan_support(psoc);
+		wlan_scan_get_pno_scan_support(psoc);
 	if (scan_feature_set->pno_in_unassoc_state)
 		scan_feature_set->pno_in_assoc_state =
-				wlan_scan_is_connected_scan_enabled(psoc);
+			wlan_scan_is_connected_scan_enabled(psoc);
 }
 #endif
 
@@ -728,12 +715,11 @@ void wlan_scan_get_feature_info(struct wlan_objmgr_psoc *psoc,
  *
  * Return: void
  */
-static void
-wlan_scan_update_hint_bssid(struct wlan_objmgr_psoc *psoc,
-			    struct scan_start_request *req,
-			    qdf_freq_t ll_sap_freq)
+static void wlan_scan_update_hint_bssid(struct wlan_objmgr_psoc *psoc,
+					struct scan_start_request *req,
+					qdf_freq_t ll_sap_freq)
 {
-	struct hint_bssid hint_bssid[WLAN_SCAN_MAX_HINT_BSSID] = {0};
+	struct hint_bssid hint_bssid[WLAN_SCAN_MAX_HINT_BSSID] = { 0 };
 	uint32_t i;
 	uint32_t count = 0;
 	qdf_freq_t freq;
@@ -745,13 +731,11 @@ wlan_scan_update_hint_bssid(struct wlan_objmgr_psoc *psoc,
 		freq = req->scan_req.hint_bssid[i].freq_flags >> 16;
 		if (!freq)
 			continue;
-		if (!policy_mgr_2_freq_always_on_same_mac(psoc,
-							  ll_sap_freq,
+		if (!policy_mgr_2_freq_always_on_same_mac(psoc, ll_sap_freq,
 							  freq)) {
-			qdf_mem_copy(
-				&hint_bssid[count].bssid,
-				&req->scan_req.hint_bssid[i].bssid,
-				sizeof(hint_bssid[i].bssid));
+			qdf_mem_copy(&hint_bssid[count].bssid,
+				     &req->scan_req.hint_bssid[i].bssid,
+				     sizeof(hint_bssid[i].bssid));
 			hint_bssid[count].freq_flags =
 				req->scan_req.hint_bssid[i].freq_flags;
 			count++;
@@ -775,12 +759,11 @@ wlan_scan_update_hint_bssid(struct wlan_objmgr_psoc *psoc,
  *
  * Return: void
  */
-static
-void wlan_scan_update_hint_s_ssid(struct wlan_objmgr_psoc *psoc,
-				  struct scan_start_request *req,
-				  qdf_freq_t ll_sap_freq)
+static void wlan_scan_update_hint_s_ssid(struct wlan_objmgr_psoc *psoc,
+					 struct scan_start_request *req,
+					 qdf_freq_t ll_sap_freq)
 {
-	struct hint_short_ssid hint_s_ssid[WLAN_SCAN_MAX_HINT_BSSID] = {0};
+	struct hint_short_ssid hint_s_ssid[WLAN_SCAN_MAX_HINT_BSSID] = { 0 };
 	uint32_t i;
 	uint32_t count = 0;
 	qdf_freq_t freq;
@@ -792,13 +775,11 @@ void wlan_scan_update_hint_s_ssid(struct wlan_objmgr_psoc *psoc,
 		freq = req->scan_req.hint_s_ssid[i].freq_flags >> 16;
 		if (!freq)
 			continue;
-		if (!policy_mgr_2_freq_always_on_same_mac(psoc,
-							  ll_sap_freq,
+		if (!policy_mgr_2_freq_always_on_same_mac(psoc, ll_sap_freq,
 							  freq)) {
-			qdf_mem_copy(
-				&hint_s_ssid[count].short_ssid,
-				&req->scan_req.hint_s_ssid[i].short_ssid,
-				sizeof(hint_s_ssid[i].short_ssid));
+			qdf_mem_copy(&hint_s_ssid[count].short_ssid,
+				     &req->scan_req.hint_s_ssid[i].short_ssid,
+				     sizeof(hint_s_ssid[i].short_ssid));
 			hint_s_ssid[count].freq_flags =
 				req->scan_req.hint_s_ssid[i].freq_flags;
 			count++;
@@ -813,8 +794,7 @@ void wlan_scan_update_hint_s_ssid(struct wlan_objmgr_psoc *psoc,
 }
 
 void wlan_scan_update_low_latency_profile_chnlist(
-				struct wlan_objmgr_vdev *vdev,
-				struct scan_start_request *req)
+	struct wlan_objmgr_vdev *vdev, struct scan_start_request *req)
 {
 	uint32_t num_scan_channels = 0, i;
 	struct wlan_objmgr_psoc *psoc;
@@ -833,24 +813,24 @@ void wlan_scan_update_low_latency_profile_chnlist(
 	wlan_scan_update_hint_bssid(psoc, req, ll_sap_freq);
 	wlan_scan_update_hint_s_ssid(psoc, req, ll_sap_freq);
 	/*
-	 * Scenario: LL SAP is present and scan is requested.
-	 * Allow scan on freq on mutually exclusive mac.
-	 */
+   * Scenario: LL SAP is present and scan is requested.
+   * Allow scan on freq on mutually exclusive mac.
+   */
 	for (i = 0; i < req->scan_req.chan_list.num_chan; i++) {
 		freq = req->scan_req.chan_list.chan[i].freq;
-		if (policy_mgr_2_freq_always_on_same_mac(psoc,
-							 ll_sap_freq,
+		if (policy_mgr_2_freq_always_on_same_mac(psoc, ll_sap_freq,
 							 freq))
 			continue;
 
 		req->scan_req.chan_list.chan[num_scan_channels++] =
-					req->scan_req.chan_list.chan[i];
+			req->scan_req.chan_list.chan[i];
 	}
 	if (num_scan_channels < req->scan_req.chan_list.num_chan)
-		scm_debug("For DBS: only 2.4Ghz chan and for SBS: mutually exclusive ll-sap 5GHz chan allowed, total-chan %d, remaining-chan %d, ll-sap chan %d",
-			  req->scan_req.chan_list.num_chan,
-			  num_scan_channels,
-			  ll_sap_freq);
+		scm_debug(
+			"For DBS: only 2.4Ghz chan and for SBS: mutually exclusive ll-sap 5GHz "
+			"chan allowed, total-chan %d, remaining-chan %d, ll-sap chan %d",
+			req->scan_req.chan_list.num_chan, num_scan_channels,
+			ll_sap_freq);
 	req->scan_req.chan_list.num_chan = num_scan_channels;
 }
 #endif
@@ -886,10 +866,8 @@ wlan_scan_get_mld_addr_by_link_addr(struct wlan_objmgr_pdev *pdev,
 
 QDF_STATUS
 wlan_scan_get_scan_entry_by_mac_freq(struct wlan_objmgr_pdev *pdev,
-				     struct qdf_mac_addr *bssid,
-				     uint16_t freq,
-				     struct scan_cache_entry
-				     *cache_entry)
+				     struct qdf_mac_addr *bssid, uint16_t freq,
+				     struct scan_cache_entry *cache_entry)
 {
 	return scm_scan_get_scan_entry_by_mac_freq(pdev, bssid, freq,
 						   cache_entry);

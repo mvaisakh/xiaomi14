@@ -22,9 +22,9 @@
  *
  */
 
-#include <linux/module.h>
 #include "qwlan_version.h"
 #include "wlan_hdd_main.h"
+#include <linux/module.h>
 
 static int __init hdd_module_init(void)
 {

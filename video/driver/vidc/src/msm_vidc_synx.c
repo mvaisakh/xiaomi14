@@ -3,16 +3,16 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <msm_hw_fence_synx_translation.h>
 #include "msm_vidc_core.h"
-#include "msm_vidc_internal.h"
-#include "msm_vidc_fence.h"
 #include "msm_vidc_debug.h"
+#include "msm_vidc_fence.h"
+#include "msm_vidc_internal.h"
+#include <msm_hw_fence_synx_translation.h>
 #include <synx_api.h>
 
-#define MSM_VIDC_SYNX_FENCE_CLIENT_ID      SYNX_CLIENT_HW_FENCE_VID_CTX0
-#define MSM_VIDC_SYNX_CREATE_DMA_FENCE     SYNX_CREATE_DMA_FENCE
-#define MAX_SYNX_FENCE_SESSION_NAME        64
+#define MSM_VIDC_SYNX_FENCE_CLIENT_ID SYNX_CLIENT_HW_FENCE_VID_CTX0
+#define MSM_VIDC_SYNX_CREATE_DMA_FENCE SYNX_CREATE_DMA_FENCE
+#define MAX_SYNX_FENCE_SESSION_NAME 64
 
 static const char *msm_vidc_synx_dma_fence_get_driver_name(struct dma_fence *df)
 {
@@ -25,7 +25,8 @@ static const char *msm_vidc_synx_dma_fence_get_driver_name(struct dma_fence *df)
 	return "msm_vidc_synx_dma_fence_get_driver_name: invalid fence";
 }
 
-static const char *msm_vidc_synx_dma_fence_get_timeline_name(struct dma_fence *df)
+static const char *
+msm_vidc_synx_dma_fence_get_timeline_name(struct dma_fence *df)
 {
 	struct msm_vidc_fence *fence;
 
@@ -56,7 +57,7 @@ static void msm_vidc_synx_fence_release(struct dma_fence *df)
 	/* destroy associated synx fence */
 	if (fence->session) {
 		rc = synx_hwfence_release((struct synx_session *)fence->session,
-			(u32)fence->fence_id);
+					  (u32)fence->fence_id);
 		if (rc)
 			d_vpr_e("%s: failed to destroy synx fence for %s\n",
 				__func__, fence->name);
@@ -72,8 +73,8 @@ static const struct dma_fence_ops msm_vidc_synx_dma_fence_ops = {
 	.release = msm_vidc_synx_fence_release,
 };
 
-static struct msm_vidc_fence *msm_vidc_get_synx_fence_from_id(
-	struct msm_vidc_inst *inst, u64 fence_id)
+static struct msm_vidc_fence *
+msm_vidc_get_synx_fence_from_id(struct msm_vidc_inst *inst, u64 fence_id)
 {
 	struct msm_vidc_fence *fence, *dummy_fence;
 	bool found = false;
@@ -86,15 +87,16 @@ static struct msm_vidc_fence *msm_vidc_get_synx_fence_from_id(
 	}
 
 	if (!found) {
-		i_vpr_l(inst, "%s: no fence available for id: %u\n",
-			__func__, fence_id);
+		i_vpr_l(inst, "%s: no fence available for id: %u\n", __func__,
+			fence_id);
 		return NULL;
 	}
 
 	return fence;
 }
 
-static void msm_vidc_synx_fence_destroy(struct msm_vidc_inst *inst, u64 fence_id)
+static void msm_vidc_synx_fence_destroy(struct msm_vidc_inst *inst,
+					u64 fence_id)
 {
 	struct msm_vidc_fence *fence;
 
@@ -127,13 +129,12 @@ static int msm_vidc_synx_fence_register(struct msm_vidc_core *core)
 
 	params.id = (enum synx_client_id)MSM_VIDC_SYNX_FENCE_CLIENT_ID;
 	snprintf(synx_session_name, MAX_SYNX_FENCE_SESSION_NAME,
-		"video synx fence");
+		 "video synx fence");
 	params.name = synx_session_name;
 	params.ptr = &queue_desc;
 	params.flags = SYNX_INIT_MAX; /* unused */
 
-	session =
-		(struct synx_session *)synx_hwfence_initialize(&params);
+	session = (struct synx_session *)synx_hwfence_initialize(&params);
 	if (IS_ERR_OR_NULL(session)) {
 		d_vpr_e("%s: invalid synx fence session\n", __func__);
 		return -EINVAL;
@@ -145,7 +146,8 @@ static int msm_vidc_synx_fence_register(struct msm_vidc_core *core)
 	core->synx_fence_data.session = (void *)session;
 	core->synx_fence_data.queue.size = (u32)queue_desc.size;
 	core->synx_fence_data.queue.kvaddr = queue_desc.vaddr;
-	core->synx_fence_data.queue.phys_addr = (phys_addr_t)queue_desc.dev_addr;
+	core->synx_fence_data.queue.phys_addr =
+		(phys_addr_t)queue_desc.dev_addr;
 
 	core->synx_fence_data.queue.type = MSM_VIDC_BUF_INTERFACE_QUEUE;
 	core->synx_fence_data.queue.region = MSM_VIDC_NON_SECURE;
@@ -175,7 +177,8 @@ static int msm_vidc_synx_fence_deregister(struct msm_vidc_core *core)
 	return rc;
 }
 
-static struct msm_vidc_fence *msm_vidc_synx_dma_fence_create(struct msm_vidc_inst *inst)
+static struct msm_vidc_fence *
+msm_vidc_synx_dma_fence_create(struct msm_vidc_inst *inst)
 {
 	struct msm_vidc_fence *fence = NULL;
 	int rc = 0;
@@ -187,10 +190,10 @@ static struct msm_vidc_fence *msm_vidc_synx_dma_fence_create(struct msm_vidc_ins
 	fence->fd = INVALID_FD;
 	spin_lock_init(&fence->lock);
 	dma_fence_init(&fence->dma_fence, &msm_vidc_synx_dma_fence_ops,
-		&fence->lock, inst->fence_context.ctx_num,
-		++inst->fence_context.seq_num);
+		       &fence->lock, inst->fence_context.ctx_num,
+		       ++inst->fence_context.seq_num);
 	snprintf(fence->name, sizeof(fence->name), "synx %s: %llu",
-		inst->fence_context.name, inst->fence_context.seq_num);
+		 inst->fence_context.name, inst->fence_context.seq_num);
 
 	fence->fence_id = fence->dma_fence.seqno;
 
@@ -201,7 +204,8 @@ static struct msm_vidc_fence *msm_vidc_synx_dma_fence_create(struct msm_vidc_ins
 	return fence;
 }
 
-static struct msm_vidc_fence *msm_vidc_synx_fence_create(struct msm_vidc_inst *inst)
+static struct msm_vidc_fence *
+msm_vidc_synx_fence_create(struct msm_vidc_inst *inst)
 {
 	int rc = 0;
 	struct msm_vidc_fence *fence = NULL;
@@ -236,11 +240,10 @@ static struct msm_vidc_fence *msm_vidc_synx_fence_create(struct msm_vidc_inst *i
 
 	/* create hw fence */
 	rc = synx_hwfence_create(
-		(struct synx_session *)core->synx_fence_data.session,
-		&params);
+		(struct synx_session *)core->synx_fence_data.session, &params);
 	if (rc) {
-		i_vpr_e(inst, "%s: failed to create hw fence for %s",
-			__func__, fence->name);
+		i_vpr_e(inst, "%s: failed to create hw fence for %s", __func__,
+			fence->name);
 		goto destroy_dma_fence;
 	}
 
@@ -258,7 +261,7 @@ destroy_dma_fence:
 }
 
 int msm_vidc_synx_fence_create_fd(struct msm_vidc_inst *inst,
-	struct msm_vidc_fence *fence)
+				  struct msm_vidc_fence *fence)
 {
 	int rc = 0;
 
@@ -277,8 +280,8 @@ int msm_vidc_synx_fence_create_fd(struct msm_vidc_inst *inst,
 	}
 	fd_install(fence->fd, fence->sync_file->file);
 
-	i_vpr_l(inst, "%s: created fd %d for fence %s\n", __func__,
-		fence->fd, fence->name);
+	i_vpr_l(inst, "%s: created fd %d for fence %s\n", __func__, fence->fd,
+		fence->name);
 
 	return 0;
 
@@ -332,13 +335,13 @@ const struct msm_vidc_fence_ops *get_synx_fence_ops(void)
 {
 	static struct msm_vidc_fence_ops synx_ops;
 
-	synx_ops.fence_register      = msm_vidc_synx_fence_register;
-	synx_ops.fence_deregister    = msm_vidc_synx_fence_deregister;
-	synx_ops.fence_create        = msm_vidc_synx_fence_create;
-	synx_ops.fence_create_fd     = msm_vidc_synx_fence_create_fd;
-	synx_ops.fence_destroy       = msm_vidc_synx_fence_destroy;
-	synx_ops.fence_signal        = msm_vidc_synx_fence_signal;
-	synx_ops.fence_recover       = msm_vidc_synx_fence_recover;
+	synx_ops.fence_register = msm_vidc_synx_fence_register;
+	synx_ops.fence_deregister = msm_vidc_synx_fence_deregister;
+	synx_ops.fence_create = msm_vidc_synx_fence_create;
+	synx_ops.fence_create_fd = msm_vidc_synx_fence_create_fd;
+	synx_ops.fence_destroy = msm_vidc_synx_fence_destroy;
+	synx_ops.fence_signal = msm_vidc_synx_fence_signal;
+	synx_ops.fence_recover = msm_vidc_synx_fence_recover;
 
 	return &synx_ops;
 }

@@ -4,135 +4,130 @@
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
-#include <linux/delay.h>
-#include "sde_hwio.h"
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 #include "sde_hw_ctl.h"
 #include "sde_dbg.h"
+#include "sde_hwio.h"
 #include "sde_kms.h"
 #include "sde_reg_dma.h"
+#include <linux/delay.h>
 
-#define CTL_LAYER(lm)                 \
-	(((lm) == LM_5) ? (0x024) : (((lm) - LM_0) * 0x004))
-#define CTL_LAYER_EXT(lm)             \
-	(0x40 + (((lm) - LM_0) * 0x004))
-#define CTL_LAYER_EXT2(lm)             \
-	(0x70 + (((lm) - LM_0) * 0x004))
-#define CTL_LAYER_EXT3(lm)             \
-	(0xA0 + (((lm) - LM_0) * 0x004))
-#define CTL_LAYER_EXT4(lm)             \
-	(0xB8 + (((lm) - LM_0) * 0x004))
-#define CTL_TOP                       0x014
-#define CTL_FLUSH                     0x018
-#define CTL_START                     0x01C
-#define CTL_PREPARE                   0x0d0
-#define CTL_SW_RESET                  0x030
-#define CTL_SW_RESET_OVERRIDE         0x060
-#define CTL_STATUS                    0x064
-#define CTL_FLUSH_MASK                0x090
-#define CTL_LAYER_EXTN_OFFSET         0x40
-#define CTL_ROT_TOP                   0x0C0
-#define CTL_ROT_FLUSH                 0x0C4
-#define CTL_ROT_START                 0x0CC
+#define CTL_LAYER(lm) (((lm) == LM_5) ? (0x024) : (((lm) - LM_0) * 0x004))
+#define CTL_LAYER_EXT(lm) (0x40 + (((lm) - LM_0) * 0x004))
+#define CTL_LAYER_EXT2(lm) (0x70 + (((lm) - LM_0) * 0x004))
+#define CTL_LAYER_EXT3(lm) (0xA0 + (((lm) - LM_0) * 0x004))
+#define CTL_LAYER_EXT4(lm) (0xB8 + (((lm) - LM_0) * 0x004))
+#define CTL_TOP 0x014
+#define CTL_FLUSH 0x018
+#define CTL_START 0x01C
+#define CTL_PREPARE 0x0d0
+#define CTL_SW_RESET 0x030
+#define CTL_SW_RESET_OVERRIDE 0x060
+#define CTL_STATUS 0x064
+#define CTL_FLUSH_MASK 0x090
+#define CTL_LAYER_EXTN_OFFSET 0x40
+#define CTL_ROT_TOP 0x0C0
+#define CTL_ROT_FLUSH 0x0C4
+#define CTL_ROT_START 0x0CC
 
-#define CTL_MERGE_3D_ACTIVE           0x0E4
-#define CTL_DSC_ACTIVE                0x0E8
-#define CTL_WB_ACTIVE                 0x0EC
-#define CTL_CWB_ACTIVE                0x0F0
-#define CTL_INTF_ACTIVE               0x0F4
-#define CTL_CDM_ACTIVE                0x0F8
-#define CTL_FETCH_PIPE_ACTIVE         0x0FC
+#define CTL_MERGE_3D_ACTIVE 0x0E4
+#define CTL_DSC_ACTIVE 0x0E8
+#define CTL_WB_ACTIVE 0x0EC
+#define CTL_CWB_ACTIVE 0x0F0
+#define CTL_INTF_ACTIVE 0x0F4
+#define CTL_CDM_ACTIVE 0x0F8
+#define CTL_FETCH_PIPE_ACTIVE 0x0FC
 
-#define CTL_MERGE_3D_FLUSH           0x100
-#define CTL_DSC_FLUSH                0x104
-#define CTL_WB_FLUSH                 0x108
-#define CTL_CWB_FLUSH                0x10C
-#define CTL_INTF_FLUSH               0x110
-#define CTL_CDM_FLUSH                0x114
-#define CTL_PERIPH_FLUSH             0x128
-#define CTL_DSPP_0_FLUSH             0x13c
+#define CTL_MERGE_3D_FLUSH 0x100
+#define CTL_DSC_FLUSH 0x104
+#define CTL_WB_FLUSH 0x108
+#define CTL_CWB_FLUSH 0x10C
+#define CTL_INTF_FLUSH 0x110
+#define CTL_CDM_FLUSH 0x114
+#define CTL_PERIPH_FLUSH 0x128
+#define CTL_DSPP_0_FLUSH 0x13c
 
-#define CTL_INTF_MASTER               0x134
-#define CTL_UIDLE_ACTIVE              0x138
+#define CTL_INTF_MASTER 0x134
+#define CTL_UIDLE_ACTIVE 0x138
 
-#define CTL_HW_FENCE_CTRL             0x250
-#define CTL_FENCE_READY_SW_OVERRIDE   0x254
-#define CTL_INPUT_FENCE_ID            0x258
-#define CTL_OUTPUT_FENCE_CTRL         0x25C
-#define CTL_OUTPUT_FENCE_ID           0x260
-#define CTL_HW_FENCE_STATUS           0x278
-#define CTL_OUTPUT_FENCE_SW_OVERRIDE  0x27C
-#define CTL_TIMESTAMP_CTRL            0x264
+#define CTL_HW_FENCE_CTRL 0x250
+#define CTL_FENCE_READY_SW_OVERRIDE 0x254
+#define CTL_INPUT_FENCE_ID 0x258
+#define CTL_OUTPUT_FENCE_CTRL 0x25C
+#define CTL_OUTPUT_FENCE_ID 0x260
+#define CTL_HW_FENCE_STATUS 0x278
+#define CTL_OUTPUT_FENCE_SW_OVERRIDE 0x27C
+#define CTL_TIMESTAMP_CTRL 0x264
 #define CTL_OUTPUT_FENCE_START_TIMESTAMP0 0x268
 #define CTL_OUTPUT_FENCE_START_TIMESTAMP1 0x26C
 #define CTL_OUTPUT_FENCE_END_TIMESTAMP0 0x270
 #define CTL_OUTPUT_FENCE_END_TIMESTAMP1 0x274
-#define CTL_OUTPUT_FENCE_DIR_ADDR       0x280
-#define CTL_OUTPUT_FENCE_DIR_DATA       0x284
-#define CTL_OUTPUT_FENCE_DIR_MASK       0x288
-#define CTL_OUTPUT_FENCE_DIR_ATTR       0x28C
+#define CTL_OUTPUT_FENCE_DIR_ADDR 0x280
+#define CTL_OUTPUT_FENCE_DIR_DATA 0x284
+#define CTL_OUTPUT_FENCE_DIR_MASK 0x288
+#define CTL_OUTPUT_FENCE_DIR_ATTR 0x28C
 
-#define CTL_MIXER_BORDER_OUT            BIT(24)
-#define CTL_FLUSH_MASK_ROT              BIT(27)
-#define CTL_FLUSH_MASK_CTL              BIT(17)
+#define CTL_MIXER_BORDER_OUT BIT(24)
+#define CTL_FLUSH_MASK_ROT BIT(27)
+#define CTL_FLUSH_MASK_CTL BIT(17)
 
-#define CTL_NUM_EXT			5
-#define CTL_SSPP_MAX_RECTS		2
+#define CTL_NUM_EXT 5
+#define CTL_SSPP_MAX_RECTS 2
 
-#define SDE_REG_RESET_TIMEOUT_US        2000
-#define SDE_REG_WAIT_RESET_TIMEOUT_US        100000
+#define SDE_REG_RESET_TIMEOUT_US 2000
+#define SDE_REG_WAIT_RESET_TIMEOUT_US 100000
 
-#define UPDATE_MASK(m, idx, en)           \
+#define UPDATE_MASK(m, idx, en) \
 	((m) = (en) ? ((m) | BIT((idx))) : ((m) & ~BIT((idx))))
 
-#define CTL_INVALID_BIT                0xffff
+#define CTL_INVALID_BIT 0xffff
 
-#define VDC_IDX(i) ((i) +  16)
+#define VDC_IDX(i) ((i) + 16)
 
-#define UPDATE_ACTIVE(r, idx, en)  UPDATE_MASK((r), (idx), (en))
+#define UPDATE_ACTIVE(r, idx, en) UPDATE_MASK((r), (idx), (en))
 
 #define DNSC_BLUR_IDX(i) (i + 16)
 
 /**
  * List of SSPP bits in CTL_FLUSH
  */
-static const u32 sspp_tbl[SSPP_MAX] = { SDE_NONE, 0, 1, 2, 18, 11, 12, 24, 25, 13, 14};
+static const u32 sspp_tbl[SSPP_MAX] = { SDE_NONE, 0,  1,  2,  18, 11,
+					12,	  24, 25, 13, 14 };
 
 /**
  * List of layer mixer bits in CTL_FLUSH
  */
-static const u32 mixer_tbl[LM_MAX] = {SDE_NONE, 6, 7, 8, 9, 10, 20,
-	SDE_NONE};
+static const u32 mixer_tbl[LM_MAX] = { SDE_NONE, 6, 7, 8, 9, 10, 20, SDE_NONE };
 
 /**
  * List of DSPP bits in CTL_FLUSH
  */
-static const u32 dspp_tbl[DSPP_MAX] = {SDE_NONE, 13, 14, 15, 21};
+static const u32 dspp_tbl[DSPP_MAX] = { SDE_NONE, 13, 14, 15, 21 };
 
 /**
  * List of DSPP PA LUT bits in CTL_FLUSH
  */
-static const u32 dspp_pav_tbl[DSPP_MAX] = {SDE_NONE, 3, 4, 5, 19};
+static const u32 dspp_pav_tbl[DSPP_MAX] = { SDE_NONE, 3, 4, 5, 19 };
 
 /**
  * List of CDM LUT bits in CTL_FLUSH
  */
-static const u32 cdm_tbl[CDM_MAX] = {SDE_NONE, 26};
+static const u32 cdm_tbl[CDM_MAX] = { SDE_NONE, 26 };
 
 /**
  * List of WB bits in CTL_FLUSH
  */
-static const u32 wb_tbl[WB_MAX] = {SDE_NONE, SDE_NONE, SDE_NONE, 16};
+static const u32 wb_tbl[WB_MAX] = { SDE_NONE, SDE_NONE, SDE_NONE, 16 };
 
 /**
  * List of ROT bits in CTL_FLUSH
  */
-static const u32 rot_tbl[ROT_MAX] = {SDE_NONE, 27};
+static const u32 rot_tbl[ROT_MAX] = { SDE_NONE, 27 };
 
 /**
  * List of INTF bits in CTL_FLUSH
  */
-static const u32 intf_tbl[INTF_MAX] = {SDE_NONE, 31, 30, 29, 28};
+static const u32 intf_tbl[INTF_MAX] = { SDE_NONE, 31, 30, 29, 28 };
 
 /**
  * Below definitions are for CTL supporting SDE_CTL_ACTIVE_CFG,
@@ -144,68 +139,59 @@ static const u32 intf_tbl[INTF_MAX] = {SDE_NONE, 31, 30, 29, 28};
 /**
  * List of SSPP bits in CTL_FETCH_PIPE_ACTIVE
  */
-static const u32 fetch_tbl[SSPP_MAX] = {CTL_INVALID_BIT, 16, 17, 18, 19, 0, 1, 2, 3, 4, 5};
+static const u32 fetch_tbl[SSPP_MAX] = {
+	CTL_INVALID_BIT, 16, 17, 18, 19, 0, 1, 2, 3, 4, 5
+};
 
 /**
  * list of WB bits in CTL_WB_FLUSH
  */
-static const u32 wb_flush_tbl[WB_MAX] = {SDE_NONE, SDE_NONE, 1, 2};
+static const u32 wb_flush_tbl[WB_MAX] = { SDE_NONE, SDE_NONE, 1, 2 };
 
 /**
  * list of INTF bits in CTL_INTF_FLUSH
  */
-static const u32 intf_flush_tbl[INTF_MAX] = {SDE_NONE, 0, 1, 2, 3, 4, 5};
+static const u32 intf_flush_tbl[INTF_MAX] = { SDE_NONE, 0, 1, 2, 3, 4, 5 };
 
 /**
  * list of DSC bits in CTL_DSC_FLUSH
  */
-static const u32 dsc_flush_tbl[DSC_MAX] = {SDE_NONE, 0, 1, 2, 3, 4, 5};
+static const u32 dsc_flush_tbl[DSC_MAX] = { SDE_NONE, 0, 1, 2, 3, 4, 5 };
 
 /**
  * list of VDC bits in CTL_DSC_FLUSH
  */
-static const u32 vdc_flush_tbl[DSC_MAX] = {SDE_NONE, 16, 17};
+static const u32 vdc_flush_tbl[DSC_MAX] = { SDE_NONE, 16, 17 };
 
 /**
  * list of MERGE_3D bits in CTL_MERGE_3D_FLUSH
  */
-static const u32 merge_3d_tbl[MERGE_3D_MAX] = {SDE_NONE, 0, 1, 2};
+static const u32 merge_3d_tbl[MERGE_3D_MAX] = { SDE_NONE, 0, 1, 2 };
 
 /**
  * list of CDM bits in CTL_CDM_FLUSH
  */
-static const u32 cdm_flush_tbl[CDM_MAX] = {SDE_NONE, 0};
+static const u32 cdm_flush_tbl[CDM_MAX] = { SDE_NONE, 0 };
 
 /**
  * list of CWB bits in CTL_CWB_FLUSH
  */
-static const u32 cwb_flush_tbl[CWB_MAX] = {SDE_NONE, SDE_NONE, 1, 2, 3,
-	4, 5};
+static const u32 cwb_flush_tbl[CWB_MAX] = { SDE_NONE, SDE_NONE, 1, 2, 3, 4, 5 };
 
 /**
  * list of CWB bits in CTL_CWB_FLUSH for dedicated cwb
  */
-static const u32 dcwb_flush_tbl[CWB_MAX] = {SDE_NONE, SDE_NONE, 0, 1, 2, 3};
+static const u32 dcwb_flush_tbl[CWB_MAX] = { SDE_NONE, SDE_NONE, 0, 1, 2, 3 };
 
 /**
  * list of DSPP sub-blk flush bits in CTL_DSPP_x_FLUSH
  */
 static const u32 dspp_sub_blk_flush_tbl[SDE_DSPP_MAX] = {
-	[SDE_DSPP_IGC] = 2,
-	[SDE_DSPP_PCC] = 4,
-	[SDE_DSPP_GC] = 5,
-	[SDE_DSPP_HSIC] = 0,
-	[SDE_DSPP_MEMCOLOR] = 0,
-	[SDE_DSPP_SIXZONE] = 0,
-	[SDE_DSPP_GAMUT] = 3,
-	[SDE_DSPP_DITHER] = 0,
-	[SDE_DSPP_HIST] = 0,
-	[SDE_DSPP_VLUT] = 1,
-	[SDE_DSPP_AD] = 0,
-	[SDE_DSPP_LTM] = 7,
-	[SDE_DSPP_SPR] = 8,
-	[SDE_DSPP_DEMURA] = 9,
-	[SDE_DSPP_RC] = 10,
+	[SDE_DSPP_IGC] = 2,   [SDE_DSPP_PCC] = 4,      [SDE_DSPP_GC] = 5,
+	[SDE_DSPP_HSIC] = 0,  [SDE_DSPP_MEMCOLOR] = 0, [SDE_DSPP_SIXZONE] = 0,
+	[SDE_DSPP_GAMUT] = 3, [SDE_DSPP_DITHER] = 0,   [SDE_DSPP_HIST] = 0,
+	[SDE_DSPP_VLUT] = 1,  [SDE_DSPP_AD] = 0,       [SDE_DSPP_LTM] = 7,
+	[SDE_DSPP_SPR] = 8,   [SDE_DSPP_DEMURA] = 9,   [SDE_DSPP_RC] = 10,
 	[SDE_DSPP_SB] = 31,
 };
 
@@ -225,31 +211,31 @@ struct ctl_sspp_stage_reg_map {
 
 /* list of ctl_sspp_stage_reg_map for all the sppp */
 static const struct ctl_sspp_stage_reg_map
-sspp_reg_cfg_tbl[SSPP_MAX][CTL_SSPP_MAX_RECTS] = {
-	/* SSPP_NONE */{ {0, 0, 0, 0}, {0, 0, 0, 0} },
-	/* SSPP_VIG0 */{ {0, 0, 3, BIT(0)}, {3, 0, 4, 0} },
-	/* SSPP_VIG1 */{ {0, 3, 3, BIT(2)}, {3, 4, 4, 0} },
-	/* SSPP_VIG2 */{ {0, 6, 3, BIT(4)}, {3, 8, 4, 0} },
-	/* SSPP_VIG3 */{ {0, 26, 3, BIT(6)}, {3, 12, 4, 0} },
-	/* SSPP_DMA0 */{ {0, 18, 3, BIT(16)}, {2, 8, 4, 0} },
-	/* SSPP_DMA1 */{ {0, 21, 3, BIT(18)}, {2, 12, 4, 0} },
-	/* SSPP_DMA2 */{ {2, 0, 4, 0}, {2, 16, 4, 0} },
-	/* SSPP_DMA3 */{ {2, 4, 4, 0}, {2, 20, 4, 0} },
-	/* SSPP_DMA4 */{ {4, 0, 4, 0}, {4, 8, 4, 0} },
-	/* SSPP_DMA5 */{ {4, 4, 4, 0}, {4, 12, 4, 0} },
-};
+	sspp_reg_cfg_tbl[SSPP_MAX][CTL_SSPP_MAX_RECTS] = {
+		/* SSPP_NONE */ { { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+		/* SSPP_VIG0 */ { { 0, 0, 3, BIT(0) }, { 3, 0, 4, 0 } },
+		/* SSPP_VIG1 */ { { 0, 3, 3, BIT(2) }, { 3, 4, 4, 0 } },
+		/* SSPP_VIG2 */ { { 0, 6, 3, BIT(4) }, { 3, 8, 4, 0 } },
+		/* SSPP_VIG3 */ { { 0, 26, 3, BIT(6) }, { 3, 12, 4, 0 } },
+		/* SSPP_DMA0 */ { { 0, 18, 3, BIT(16) }, { 2, 8, 4, 0 } },
+		/* SSPP_DMA1 */ { { 0, 21, 3, BIT(18) }, { 2, 12, 4, 0 } },
+		/* SSPP_DMA2 */ { { 2, 0, 4, 0 }, { 2, 16, 4, 0 } },
+		/* SSPP_DMA3 */ { { 2, 4, 4, 0 }, { 2, 20, 4, 0 } },
+		/* SSPP_DMA4 */ { { 4, 0, 4, 0 }, { 4, 8, 4, 0 } },
+		/* SSPP_DMA5 */ { { 4, 4, 4, 0 }, { 4, 12, 4, 0 } },
+	};
 
 /**
  * Individual flush bit in CTL_FLUSH
  */
-#define WB_IDX         16
-#define DSC_IDX        22
-#define MERGE_3D_IDX   23
-#define CDM_IDX        26
-#define CWB_IDX        28
-#define DSPP_IDX       29
-#define PERIPH_IDX     30
-#define INTF_IDX       31
+#define WB_IDX 16
+#define DSC_IDX 22
+#define MERGE_3D_IDX 23
+#define CDM_IDX 26
+#define CWB_IDX 28
+#define DSPP_IDX 29
+#define PERIPH_IDX 30
+#define INTF_IDX 31
 
 /* struct ctl_hw_flush_cfg: Defines the active ctl hw flush config,
  *     See enum ctl_hw_flush_type for types
@@ -267,31 +253,29 @@ struct ctl_hw_flush_cfg {
 	const u32 *flush_tbl;
 };
 
-static const struct ctl_hw_flush_cfg
-		ctl_hw_flush_cfg_tbl_v1[SDE_HW_FLUSH_MAX] = {
-	{WB_MAX, CTL_WB_FLUSH, WB_IDX, SDE_HW_FLUSH_WB,
-			wb_flush_tbl}, /* SDE_HW_FLUSH_WB */
-	{DSC_MAX, CTL_DSC_FLUSH, DSC_IDX, SDE_HW_FLUSH_DSC,
-			dsc_flush_tbl}, /* SDE_HW_FLUSH_DSC */
+static const struct ctl_hw_flush_cfg ctl_hw_flush_cfg_tbl_v1[SDE_HW_FLUSH_MAX] = {
+	{ WB_MAX, CTL_WB_FLUSH, WB_IDX, SDE_HW_FLUSH_WB,
+	  wb_flush_tbl }, /* SDE_HW_FLUSH_WB */
+	{ DSC_MAX, CTL_DSC_FLUSH, DSC_IDX, SDE_HW_FLUSH_DSC,
+	  dsc_flush_tbl }, /* SDE_HW_FLUSH_DSC */
 	/* VDC is flushed to dsc, flush_reg = 0 so flush is done only once */
-	{VDC_MAX, 0, DSC_IDX, SDE_HW_FLUSH_DSC,
-			vdc_flush_tbl}, /* SDE_HW_FLUSH_VDC */
-	{MERGE_3D_MAX, CTL_MERGE_3D_FLUSH, MERGE_3D_IDX, SDE_HW_FLUSH_MERGE_3D,
-			merge_3d_tbl}, /* SDE_HW_FLUSH_MERGE_3D */
-	{CDM_MAX, CTL_CDM_FLUSH, CDM_IDX, SDE_HW_FLUSH_CDM,
-			cdm_flush_tbl}, /* SDE_HW_FLUSH_CDM */
-	{CWB_MAX, CTL_CWB_FLUSH, CWB_IDX, SDE_HW_FLUSH_CWB,
-			cwb_flush_tbl}, /* SDE_HW_FLUSH_CWB */
-	{INTF_MAX, CTL_PERIPH_FLUSH, PERIPH_IDX, SDE_HW_FLUSH_PERIPH,
-			intf_flush_tbl }, /* SDE_HW_FLUSH_PERIPH */
-	{INTF_MAX, CTL_INTF_FLUSH, INTF_IDX, SDE_HW_FLUSH_INTF,
-			intf_flush_tbl } /* SDE_HW_FLUSH_INTF */
+	{ VDC_MAX, 0, DSC_IDX, SDE_HW_FLUSH_DSC,
+	  vdc_flush_tbl }, /* SDE_HW_FLUSH_VDC */
+	{ MERGE_3D_MAX, CTL_MERGE_3D_FLUSH, MERGE_3D_IDX, SDE_HW_FLUSH_MERGE_3D,
+	  merge_3d_tbl }, /* SDE_HW_FLUSH_MERGE_3D */
+	{ CDM_MAX, CTL_CDM_FLUSH, CDM_IDX, SDE_HW_FLUSH_CDM,
+	  cdm_flush_tbl }, /* SDE_HW_FLUSH_CDM */
+	{ CWB_MAX, CTL_CWB_FLUSH, CWB_IDX, SDE_HW_FLUSH_CWB,
+	  cwb_flush_tbl }, /* SDE_HW_FLUSH_CWB */
+	{ INTF_MAX, CTL_PERIPH_FLUSH, PERIPH_IDX, SDE_HW_FLUSH_PERIPH,
+	  intf_flush_tbl }, /* SDE_HW_FLUSH_PERIPH */
+	{ INTF_MAX, CTL_INTF_FLUSH, INTF_IDX, SDE_HW_FLUSH_INTF,
+	  intf_flush_tbl } /* SDE_HW_FLUSH_INTF */
 };
 
-static struct sde_ctl_cfg *_ctl_offset(enum sde_ctl ctl,
-		struct sde_mdss_cfg *m,
-		void __iomem *addr,
-		struct sde_hw_blk_reg_map *b)
+static struct sde_ctl_cfg *_ctl_offset(enum sde_ctl ctl, struct sde_mdss_cfg *m,
+				       void __iomem *addr,
+				       struct sde_hw_blk_reg_map *b)
 {
 	int i;
 
@@ -309,7 +293,7 @@ static struct sde_ctl_cfg *_ctl_offset(enum sde_ctl ctl,
 }
 
 static int _mixer_stages(const struct sde_lm_cfg *mixer, int count,
-		enum sde_lm lm)
+			 enum sde_lm lm)
 {
 	int i;
 	int stages = -EINVAL;
@@ -337,7 +321,7 @@ static inline bool _is_dspp_flush_pending(struct sde_hw_ctl *ctx)
 }
 
 static inline void sde_hw_ctl_update_input_fence(struct sde_hw_ctl *ctx,
-					u32 client_id, u32 signal_id)
+						 u32 client_id, u32 signal_id)
 {
 	u32 val = (client_id << 16) | (0xFFFF & signal_id);
 
@@ -345,7 +329,7 @@ static inline void sde_hw_ctl_update_input_fence(struct sde_hw_ctl *ctx,
 }
 
 static inline void sde_hw_ctl_update_output_fence(struct sde_hw_ctl *ctx,
-					u32 client_id, u32 signal_id)
+						  u32 client_id, u32 signal_id)
 {
 	u32 val = (client_id << 16) | (0xFFFF & signal_id);
 
@@ -357,15 +341,17 @@ static inline int sde_hw_ctl_get_hw_fence_status(struct sde_hw_ctl *ctx)
 	return SDE_REG_READ(&ctx->hw, CTL_HW_FENCE_STATUS);
 }
 
-static inline void sde_hw_ctl_trigger_output_fence(struct sde_hw_ctl *ctx, u32 trigger_sel)
+static inline void sde_hw_ctl_trigger_output_fence(struct sde_hw_ctl *ctx,
+						   u32 trigger_sel)
 {
 	u32 val = ((trigger_sel & 0xF) << 4) | 0x1;
 
 	SDE_REG_WRITE(&ctx->hw, CTL_OUTPUT_FENCE_CTRL, val);
 }
 
-static inline void sde_hw_ctl_output_fence_dir_wr_init(struct sde_hw_ctl *ctx, u32 *addr,
-	u32 size, u32 mask)
+static inline void sde_hw_ctl_output_fence_dir_wr_init(struct sde_hw_ctl *ctx,
+						       u32 *addr, u32 size,
+						       u32 mask)
 {
 	uintptr_t ptr_val = (uintptr_t)addr;
 	u32 attr = SDE_REG_READ(&ctx->hw, CTL_OUTPUT_FENCE_DIR_ATTR);
@@ -378,18 +364,21 @@ static inline void sde_hw_ctl_output_fence_dir_wr_init(struct sde_hw_ctl *ctx, u
 	SDE_REG_WRITE(&ctx->hw, CTL_OUTPUT_FENCE_DIR_ADDR, ptr_val);
 }
 
-static inline void sde_hw_ctl_output_fence_dir_wr_data(struct sde_hw_ctl *ctx, u32 data)
+static inline void sde_hw_ctl_output_fence_dir_wr_data(struct sde_hw_ctl *ctx,
+						       u32 data)
 {
 	SDE_REG_WRITE(&ctx->hw, CTL_OUTPUT_FENCE_DIR_DATA, data);
 }
 
-static inline void sde_hw_ctl_hw_fence_ctrl(struct sde_hw_ctl *ctx, bool sw_override_set,
-	bool  sw_override_clear, u32 mode)
+static inline void sde_hw_ctl_hw_fence_ctrl(struct sde_hw_ctl *ctx,
+					    bool sw_override_set,
+					    bool sw_override_clear, u32 mode)
 {
 	u32 val;
 
 	val = SDE_REG_READ(&ctx->hw, CTL_HW_FENCE_CTRL);
-	val |= (sw_override_set ? BIT(5) : 0) | (sw_override_clear ? BIT(4) : 0);
+	val |= (sw_override_set ? BIT(5) : 0) |
+	       (sw_override_clear ? BIT(4) : 0);
 	if (!mode)
 		val &= ~BIT(0);
 	else
@@ -406,12 +395,14 @@ static inline void sde_hw_ctl_trigger_sw_override(struct sde_hw_ctl *ctx)
 	SDE_REG_WRITE(&ctx->hw, CTL_FENCE_READY_SW_OVERRIDE, 0x1);
 }
 
-static inline void sde_hw_ctl_trigger_output_fence_override(struct sde_hw_ctl *ctx)
+static inline void
+sde_hw_ctl_trigger_output_fence_override(struct sde_hw_ctl *ctx)
 {
 	SDE_REG_WRITE(&ctx->hw, CTL_OUTPUT_FENCE_SW_OVERRIDE, 0x1);
 }
 
-static inline void sde_hw_ctl_fence_timestamp_ctrl(struct sde_hw_ctl *ctx, bool enable, bool clear)
+static inline void sde_hw_ctl_fence_timestamp_ctrl(struct sde_hw_ctl *ctx,
+						   bool enable, bool clear)
 {
 	u32 val;
 
@@ -430,7 +421,8 @@ static inline void sde_hw_ctl_fence_timestamp_ctrl(struct sde_hw_ctl *ctx, bool 
 }
 
 static inline int sde_hw_ctl_output_fence_timestamps(struct sde_hw_ctl *ctx,
-			u64 *val_start, u64 *val_end)
+						     u64 *val_start,
+						     u64 *val_end)
 {
 	u32 start_l, start_h, end_l, end_h;
 
@@ -477,7 +469,8 @@ static inline int sde_hw_ctl_trigger_pending(struct sde_hw_ctl *ctx)
 	return 0;
 }
 
-static inline int sde_hw_ctl_clear_flush_mask(struct sde_hw_ctl *ctx, bool clear)
+static inline int sde_hw_ctl_clear_flush_mask(struct sde_hw_ctl *ctx,
+					      bool clear)
 {
 	if (!ctx)
 		return -EINVAL;
@@ -496,7 +489,7 @@ static inline int sde_hw_ctl_clear_pending_flush(struct sde_hw_ctl *ctx)
 }
 
 static inline int sde_hw_ctl_update_pending_flush(struct sde_hw_ctl *ctx,
-	struct sde_ctl_flush_cfg *cfg)
+						  struct sde_ctl_flush_cfg *cfg)
 {
 	if (!ctx || !cfg)
 		return -EINVAL;
@@ -506,7 +499,7 @@ static inline int sde_hw_ctl_update_pending_flush(struct sde_hw_ctl *ctx,
 }
 
 static int sde_hw_ctl_get_pending_flush(struct sde_hw_ctl *ctx,
-		struct sde_ctl_flush_cfg *cfg)
+					struct sde_ctl_flush_cfg *cfg)
 {
 	if (!ctx || !cfg)
 		return -EINVAL;
@@ -517,7 +510,6 @@ static int sde_hw_ctl_get_pending_flush(struct sde_hw_ctl *ctx,
 
 static inline int sde_hw_ctl_trigger_flush(struct sde_hw_ctl *ctx)
 {
-
 	if (!ctx)
 		return -EINVAL;
 
@@ -556,10 +548,9 @@ static inline void sde_hw_ctl_uidle_enable(struct sde_hw_ctl *ctx, bool enable)
 	SDE_REG_WRITE(&ctx->hw, CTL_UIDLE_ACTIVE, val);
 }
 
-
 static inline int sde_hw_ctl_update_bitmask_sspp(struct sde_hw_ctl *ctx,
-		enum sde_sspp sspp,
-		bool enable)
+						 enum sde_sspp sspp,
+						 bool enable)
 {
 	if (!ctx)
 		return -EINVAL;
@@ -574,8 +565,7 @@ static inline int sde_hw_ctl_update_bitmask_sspp(struct sde_hw_ctl *ctx,
 }
 
 static inline int sde_hw_ctl_update_bitmask_mixer(struct sde_hw_ctl *ctx,
-		enum sde_lm lm,
-		bool enable)
+						  enum sde_lm lm, bool enable)
 {
 	if (!ctx)
 		return -EINVAL;
@@ -592,8 +582,8 @@ static inline int sde_hw_ctl_update_bitmask_mixer(struct sde_hw_ctl *ctx,
 }
 
 static inline int sde_hw_ctl_update_bitmask_dspp(struct sde_hw_ctl *ctx,
-		enum sde_dspp dspp,
-		bool enable)
+						 enum sde_dspp dspp,
+						 bool enable)
 {
 	if (!ctx)
 		return -EINVAL;
@@ -608,7 +598,8 @@ static inline int sde_hw_ctl_update_bitmask_dspp(struct sde_hw_ctl *ctx,
 }
 
 static inline int sde_hw_ctl_update_bitmask_dspp_pavlut(struct sde_hw_ctl *ctx,
-		enum sde_dspp dspp, bool enable)
+							enum sde_dspp dspp,
+							bool enable)
 {
 	if (!ctx)
 		return -EINVAL;
@@ -623,8 +614,7 @@ static inline int sde_hw_ctl_update_bitmask_dspp_pavlut(struct sde_hw_ctl *ctx,
 }
 
 static inline int sde_hw_ctl_update_bitmask_cdm(struct sde_hw_ctl *ctx,
-		enum sde_cdm cdm,
-		bool enable)
+						enum sde_cdm cdm, bool enable)
 {
 	if (!ctx)
 		return -EINVAL;
@@ -639,13 +629,13 @@ static inline int sde_hw_ctl_update_bitmask_cdm(struct sde_hw_ctl *ctx,
 }
 
 static inline int sde_hw_ctl_update_bitmask_wb(struct sde_hw_ctl *ctx,
-		enum sde_wb wb, bool enable)
+					       enum sde_wb wb, bool enable)
 {
 	if (!ctx)
 		return -EINVAL;
 
-	if (!(wb > SDE_NONE) || !(wb < WB_MAX) ||
-			(wb == WB_0) || (wb == WB_1)) {
+	if (!(wb > SDE_NONE) || !(wb < WB_MAX) || (wb == WB_0) ||
+	    (wb == WB_1)) {
 		SDE_ERROR("Unsupported wb %d\n", wb);
 		return -EINVAL;
 	}
@@ -655,7 +645,8 @@ static inline int sde_hw_ctl_update_bitmask_wb(struct sde_hw_ctl *ctx,
 }
 
 static inline int sde_hw_ctl_update_bitmask_intf(struct sde_hw_ctl *ctx,
-		enum sde_intf intf, bool enable)
+						 enum sde_intf intf,
+						 bool enable)
 {
 	if (!ctx)
 		return -EINVAL;
@@ -670,7 +661,8 @@ static inline int sde_hw_ctl_update_bitmask_intf(struct sde_hw_ctl *ctx,
 }
 
 static inline int sde_hw_ctl_update_bitmask(struct sde_hw_ctl *ctx,
-		enum ctl_hw_flush_type type, u32 blk_idx, bool enable)
+					    enum ctl_hw_flush_type type,
+					    u32 blk_idx, bool enable)
 {
 	int ret = 0;
 
@@ -695,7 +687,8 @@ static inline int sde_hw_ctl_update_bitmask(struct sde_hw_ctl *ctx,
 }
 
 static inline int sde_hw_ctl_update_bitmask_v1(struct sde_hw_ctl *ctx,
-		enum ctl_hw_flush_type type, u32 blk_idx, bool enable)
+					       enum ctl_hw_flush_type type,
+					       u32 blk_idx, bool enable)
 {
 	const struct ctl_hw_flush_cfg *cfg;
 
@@ -706,12 +699,12 @@ static inline int sde_hw_ctl_update_bitmask_v1(struct sde_hw_ctl *ctx,
 
 	if ((blk_idx <= SDE_NONE) || (blk_idx >= cfg->blk_max)) {
 		SDE_ERROR("Unsupported hw idx, type:%d, blk_idx:%d, blk_max:%d",
-				type, blk_idx, cfg->blk_max);
+			  type, blk_idx, cfg->blk_max);
 		return -EINVAL;
 	}
 
 	UPDATE_MASK(ctx->flush.pending_hw_flush_mask[cfg->flush_mask_idx],
-			cfg->flush_tbl[blk_idx], enable);
+		    cfg->flush_tbl[blk_idx], enable);
 	if (ctx->flush.pending_hw_flush_mask[cfg->flush_mask_idx])
 		UPDATE_MASK(ctx->flush.pending_flush_mask, cfg->flush_idx, 1);
 	else
@@ -721,19 +714,19 @@ static inline int sde_hw_ctl_update_bitmask_v1(struct sde_hw_ctl *ctx,
 }
 
 static inline void sde_hw_ctl_update_dnsc_blur_bitmask(struct sde_hw_ctl *ctx,
-		u32 blk_idx, bool enable)
+						       u32 blk_idx, bool enable)
 {
 	if (enable)
 		ctx->flush.pending_hw_flush_mask[SDE_HW_FLUSH_WB] |=
-					BIT(DNSC_BLUR_IDX(blk_idx) - DNSC_BLUR_0);
+			BIT(DNSC_BLUR_IDX(blk_idx) - DNSC_BLUR_0);
 	else
 		ctx->flush.pending_hw_flush_mask[SDE_HW_FLUSH_WB] &=
-					~BIT(DNSC_BLUR_IDX(blk_idx) - DNSC_BLUR_0);
+			~BIT(DNSC_BLUR_IDX(blk_idx) - DNSC_BLUR_0);
 }
 
-static inline int sde_hw_ctl_update_pending_flush_v1(
-		struct sde_hw_ctl *ctx,
-		struct sde_ctl_flush_cfg *cfg)
+static inline int
+sde_hw_ctl_update_pending_flush_v1(struct sde_hw_ctl *ctx,
+				   struct sde_ctl_flush_cfg *cfg)
 {
 	int i = 0;
 
@@ -742,11 +735,11 @@ static inline int sde_hw_ctl_update_pending_flush_v1(
 
 	for (i = 0; i < SDE_HW_FLUSH_MAX; i++)
 		ctx->flush.pending_hw_flush_mask[i] |=
-				cfg->pending_hw_flush_mask[i];
+			cfg->pending_hw_flush_mask[i];
 
 	for (i = 0; i < CTL_MAX_DSPP_COUNT; i++)
 		ctx->flush.pending_dspp_flush_masks[i] |=
-				cfg->pending_dspp_flush_masks[i];
+			cfg->pending_dspp_flush_masks[i];
 
 	ctx->flush.pending_flush_mask |= cfg->pending_flush_mask;
 
@@ -754,17 +747,19 @@ static inline int sde_hw_ctl_update_pending_flush_v1(
 }
 
 static inline int sde_hw_ctl_update_bitmask_dspp_subblk(struct sde_hw_ctl *ctx,
-		enum sde_dspp dspp, u32 sub_blk, bool enable)
+							enum sde_dspp dspp,
+							u32 sub_blk,
+							bool enable)
 {
 	if (!ctx || dspp < DSPP_0 || dspp >= DSPP_MAX ||
-			sub_blk < SDE_DSPP_IGC || sub_blk >= SDE_DSPP_MAX) {
+	    sub_blk < SDE_DSPP_IGC || sub_blk >= SDE_DSPP_MAX) {
 		SDE_ERROR("invalid args - ctx %s, dspp %d sub_block %d\n",
-				ctx ? "valid" : "invalid", dspp, sub_blk);
+			  ctx ? "valid" : "invalid", dspp, sub_blk);
 		return -EINVAL;
 	}
 
 	UPDATE_MASK(ctx->flush.pending_dspp_flush_masks[dspp - DSPP_0],
-			dspp_sub_blk_flush_tbl[sub_blk], enable);
+		    dspp_sub_blk_flush_tbl[sub_blk], enable);
 	if (_is_dspp_flush_pending(ctx))
 		UPDATE_MASK(ctx->flush.pending_flush_mask, DSPP_IDX, 1);
 	else
@@ -774,7 +769,7 @@ static inline int sde_hw_ctl_update_bitmask_dspp_subblk(struct sde_hw_ctl *ctx,
 }
 
 static void sde_hw_ctl_set_fetch_pipe_active(struct sde_hw_ctl *ctx,
-		unsigned long *fetch_active)
+					     unsigned long *fetch_active)
 {
 	int i;
 	u32 val = 0;
@@ -782,7 +777,7 @@ static void sde_hw_ctl_set_fetch_pipe_active(struct sde_hw_ctl *ctx,
 	if (fetch_active) {
 		for (i = 0; i < SSPP_MAX; i++) {
 			if (test_bit(i, fetch_active) &&
-					fetch_tbl[i] != CTL_INVALID_BIT)
+			    fetch_tbl[i] != CTL_INVALID_BIT)
 				val |= BIT(fetch_tbl[i]);
 		}
 	}
@@ -795,7 +790,7 @@ static u32 sde_hw_ctl_get_active_fetch_pipes(struct sde_hw_ctl *ctx)
 	int i;
 	u32 fetch_info, fetch_active = 0;
 
-	if (!ctx)  {
+	if (!ctx) {
 		DRM_ERROR("invalid args - ctx invalid\n");
 		return 0;
 	}
@@ -804,7 +799,7 @@ static u32 sde_hw_ctl_get_active_fetch_pipes(struct sde_hw_ctl *ctx)
 
 	for (i = SSPP_VIG0; i < SSPP_MAX; i++) {
 		if (fetch_tbl[i] != CTL_INVALID_BIT &&
-				fetch_info & BIT(fetch_tbl[i])) {
+		    fetch_info & BIT(fetch_tbl[i])) {
 			fetch_active |= BIT(i);
 		}
 	}
@@ -812,10 +807,11 @@ static u32 sde_hw_ctl_get_active_fetch_pipes(struct sde_hw_ctl *ctx)
 	return fetch_active;
 }
 
-static inline void _sde_hw_ctl_write_dspp_flushes(struct sde_hw_ctl *ctx) {
+static inline void _sde_hw_ctl_write_dspp_flushes(struct sde_hw_ctl *ctx)
+{
 	int i;
 	bool has_dspp_flushes = ctx->caps->features &
-			BIT(SDE_CTL_UNIFIED_DSPP_FLUSH);
+				BIT(SDE_CTL_UNIFIED_DSPP_FLUSH);
 
 	if (!has_dspp_flushes)
 		return;
@@ -825,7 +821,7 @@ static inline void _sde_hw_ctl_write_dspp_flushes(struct sde_hw_ctl *ctx) {
 
 		if (pending)
 			SDE_REG_WRITE(&ctx->hw, CTL_DSPP_0_FLUSH + (i * 4),
-					pending);
+				      pending);
 	}
 }
 
@@ -843,11 +839,9 @@ static inline int sde_hw_ctl_trigger_flush_v1(struct sde_hw_ctl *ctx)
 
 	for (i = 0; i < SDE_HW_FLUSH_MAX; i++)
 		if (cfg[i].flush_reg &&
-				ctx->flush.pending_flush_mask &
-				BIT(cfg[i].flush_idx))
-			SDE_REG_WRITE(&ctx->hw,
-					cfg[i].flush_reg,
-					ctx->flush.pending_hw_flush_mask[i]);
+		    ctx->flush.pending_flush_mask & BIT(cfg[i].flush_idx))
+			SDE_REG_WRITE(&ctx->hw, cfg[i].flush_reg,
+				      ctx->flush.pending_hw_flush_mask[i]);
 
 	SDE_REG_WRITE(&ctx->hw, CTL_FLUSH, ctx->flush.pending_flush_mask);
 
@@ -887,8 +881,7 @@ static inline u32 sde_hw_ctl_get_intf(struct sde_hw_ctl *ctx)
 	c = &ctx->hw;
 	ctl_top = SDE_REG_READ(c, CTL_TOP);
 
-	intf_active = (ctl_top > 0) ?
-		BIT(ctl_top - 1) : 0;
+	intf_active = (ctl_top > 0) ? BIT(ctl_top - 1) : 0;
 
 	return intf_active;
 }
@@ -906,9 +899,9 @@ static u32 sde_hw_ctl_poll_reset_status(struct sde_hw_ctl *ctx, u32 timeout_us)
 	timeout = ktime_add_us(ktime_get(), timeout_us);
 
 	/*
-	 * it takes around 30us to have mdp finish resetting its ctl path
-	 * poll every 50us so that reset should be completed at 1st poll
-	 */
+   * it takes around 30us to have mdp finish resetting its ctl path
+   * poll every 50us so that reset should be completed at 1st poll
+   */
 	do {
 		status = SDE_REG_READ(c, CTL_SW_RESET);
 		status &= 0x1;
@@ -957,8 +950,8 @@ static void sde_hw_ctl_hard_reset(struct sde_hw_ctl *ctx, bool enable)
 		return;
 
 	c = &ctx->hw;
-	pr_debug("hw ctl hard reset for ctl:%d, %d\n",
-			ctx->idx - CTL_0, enable);
+	pr_debug("hw ctl hard reset for ctl:%d, %d\n", ctx->idx - CTL_0,
+		 enable);
 	SDE_REG_WRITE(c, CTL_SW_RESET_OVERRIDE, enable);
 }
 
@@ -1011,7 +1004,8 @@ static void sde_hw_ctl_clear_all_blendstages(struct sde_hw_ctl *ctx)
 }
 
 static void _sde_hw_ctl_get_mixer_cfg(struct sde_hw_ctl *ctx,
-		struct sde_hw_stage_cfg *stage_cfg, int stages, u32 *cfg)
+				      struct sde_hw_stage_cfg *stage_cfg,
+				      int stages, u32 *cfg)
 {
 	int i, j, pipes_per_stage;
 	const struct ctl_sspp_stage_reg_map *reg_map;
@@ -1023,19 +1017,20 @@ static void _sde_hw_ctl_get_mixer_cfg(struct sde_hw_ctl *ctx,
 
 	for (i = 0; i <= stages; i++) {
 		/* overflow to ext register if 'i + 1 > 7' */
-		for (j = 0 ; j < pipes_per_stage; j++) {
+		for (j = 0; j < pipes_per_stage; j++) {
 			enum sde_sspp pipe = stage_cfg->stage[i][j];
 			enum sde_sspp_multirect_index rect_index =
 				stage_cfg->multirect_index[i][j];
 			u32 mixer_value;
 
-			if (!pipe || pipe >= SSPP_MAX || rect_index >= SDE_SSPP_RECT_MAX)
+			if (!pipe || pipe >= SSPP_MAX ||
+			    rect_index >= SDE_SSPP_RECT_MAX)
 				continue;
 			/* Handle multi rect enums */
 			if (rect_index == SDE_SSPP_RECT_SOLO)
 				rect_index = SDE_SSPP_RECT_0;
 
-			reg_map = &sspp_reg_cfg_tbl[pipe][rect_index-1];
+			reg_map = &sspp_reg_cfg_tbl[pipe][rect_index - 1];
 			if (!reg_map->bits)
 				continue;
 
@@ -1047,9 +1042,9 @@ static void _sde_hw_ctl_get_mixer_cfg(struct sde_hw_ctl *ctx,
 	}
 }
 
-static void sde_hw_ctl_setup_blendstage(struct sde_hw_ctl *ctx,
-	enum sde_lm lm, struct sde_hw_stage_cfg *stage_cfg,
-	bool disable_border)
+static void sde_hw_ctl_setup_blendstage(struct sde_hw_ctl *ctx, enum sde_lm lm,
+					struct sde_hw_stage_cfg *stage_cfg,
+					bool disable_border)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 cfg[CTL_NUM_EXT] = { 0 };
@@ -1069,7 +1064,8 @@ static void sde_hw_ctl_setup_blendstage(struct sde_hw_ctl *ctx,
 		_sde_hw_ctl_get_mixer_cfg(ctx, stage_cfg, stages, cfg);
 
 	null_commit = (!cfg[0] && !cfg[1] && !cfg[2] && !cfg[3] && !cfg[4]);
-	if (!disable_border && (null_commit || (stage_cfg && !stage_cfg->stage[0][0])))
+	if (!disable_border &&
+	    (null_commit || (stage_cfg && !stage_cfg->stage[0][0])))
 		cfg[0] |= CTL_MIXER_BORDER_OUT;
 
 	SDE_REG_WRITE(c, CTL_LAYER(lm), cfg[0]);
@@ -1080,7 +1076,7 @@ static void sde_hw_ctl_setup_blendstage(struct sde_hw_ctl *ctx,
 }
 
 static u32 sde_hw_ctl_get_staged_sspp(struct sde_hw_ctl *ctx, enum sde_lm lm,
-		struct sde_sspp_index_info *info)
+				      struct sde_sspp_index_info *info)
 {
 	int i, j;
 	u32 count = 0;
@@ -1105,7 +1101,6 @@ static u32 sde_hw_ctl_get_staged_sspp(struct sde_hw_ctl *ctx, enum sde_lm lm,
 
 	for (i = SSPP_VIG0; i < SSPP_MAX; i++) {
 		for (j = 0; j < CTL_SSPP_MAX_RECTS; j++) {
-
 			sspp_cfg = &sspp_reg_cfg_tbl[i][j];
 			if (!sspp_cfg->bits || sspp_cfg->ext >= CTL_NUM_EXT)
 				continue;
@@ -1129,7 +1124,7 @@ static u32 sde_hw_ctl_get_staged_sspp(struct sde_hw_ctl *ctx, enum sde_lm lm,
 }
 
 static int sde_hw_ctl_intf_cfg_v1(struct sde_hw_ctl *ctx,
-		struct sde_hw_intf_cfg_v1 *cfg)
+				  struct sde_hw_intf_cfg_v1 *cfg)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 intf_active = 0;
@@ -1162,7 +1157,8 @@ static int sde_hw_ctl_intf_cfg_v1(struct sde_hw_ctl *ctx,
 
 	for (i = 0; i < cfg->dnsc_blur_count; i++) {
 		if (cfg->dnsc_blur[i])
-			wb_active |= BIT(DNSC_BLUR_IDX(cfg->dnsc_blur[i] - DNSC_BLUR_0));
+			wb_active |= BIT(
+				DNSC_BLUR_IDX(cfg->dnsc_blur[i] - DNSC_BLUR_0));
 	}
 
 	for (i = 0; i < cfg->merge_3d_count; i++) {
@@ -1194,7 +1190,8 @@ static int sde_hw_ctl_intf_cfg_v1(struct sde_hw_ctl *ctx,
 }
 
 static int sde_hw_ctl_reset_post_disable(struct sde_hw_ctl *ctx,
-		struct sde_hw_intf_cfg_v1 *cfg, u32 merge_3d_idx)
+					 struct sde_hw_intf_cfg_v1 *cfg,
+					 u32 merge_3d_idx)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 intf_active = 0, wb_active = 0, merge_3d_active = 0;
@@ -1223,8 +1220,10 @@ static int sde_hw_ctl_reset_post_disable(struct sde_hw_ctl *ctx,
 
 	for (i = 0; i < cfg->dnsc_blur_count; i++) {
 		if (cfg->dnsc_blur[i]) {
-			wb_active &= ~BIT(DNSC_BLUR_IDX(cfg->dnsc_blur[i] - DNSC_BLUR_0));
-			wb_flush |= BIT(DNSC_BLUR_IDX(cfg->dnsc_blur[i] - DNSC_BLUR_0));
+			wb_active &= ~BIT(
+				DNSC_BLUR_IDX(cfg->dnsc_blur[i] - DNSC_BLUR_0));
+			wb_flush |= BIT(
+				DNSC_BLUR_IDX(cfg->dnsc_blur[i] - DNSC_BLUR_0));
 		}
 	}
 
@@ -1232,7 +1231,7 @@ static int sde_hw_ctl_reset_post_disable(struct sde_hw_ctl *ctx,
 		/* disable and flush merge3d_blk */
 		merge_3d_active &= ~BIT(merge_3d_idx - MERGE_3D_0);
 		ctx->flush.pending_hw_flush_mask[SDE_HW_FLUSH_MERGE_3D] =
-				BIT(merge_3d_idx - MERGE_3D_0);
+			BIT(merge_3d_idx - MERGE_3D_0);
 		UPDATE_MASK(ctx->flush.pending_flush_mask, MERGE_3D_IDX, 1);
 		SDE_REG_WRITE(c, CTL_MERGE_3D_ACTIVE, merge_3d_active);
 	}
@@ -1241,7 +1240,7 @@ static int sde_hw_ctl_reset_post_disable(struct sde_hw_ctl *ctx,
 
 	if (cfg->intf_count) {
 		ctx->flush.pending_hw_flush_mask[SDE_HW_FLUSH_INTF] =
-				intf_flush;
+			intf_flush;
 		UPDATE_MASK(ctx->flush.pending_flush_mask, INTF_IDX, 1);
 		SDE_REG_WRITE(c, CTL_INTF_ACTIVE, intf_active);
 	}
@@ -1256,7 +1255,8 @@ static int sde_hw_ctl_reset_post_disable(struct sde_hw_ctl *ctx,
 }
 
 static int sde_hw_ctl_update_intf_cfg(struct sde_hw_ctl *ctx,
-		struct sde_hw_intf_cfg_v1 *cfg, bool enable)
+				      struct sde_hw_intf_cfg_v1 *cfg,
+				      bool enable)
 {
 	int i;
 	u32 cwb_active = 0;
@@ -1275,9 +1275,8 @@ static int sde_hw_ctl_update_intf_cfg(struct sde_hw_ctl *ctx,
 		cwb_active = SDE_REG_READ(c, CTL_CWB_ACTIVE);
 		for (i = 0; i < cfg->cwb_count; i++) {
 			if (cfg->cwb[i])
-				UPDATE_ACTIVE(cwb_active,
-					(cfg->cwb[i] - CWB_0),
-					enable);
+				UPDATE_ACTIVE(cwb_active, (cfg->cwb[i] - CWB_0),
+					      enable);
 		}
 
 		for (i = 0; i < cfg->wb_count; i++) {
@@ -1294,8 +1293,9 @@ static int sde_hw_ctl_update_intf_cfg(struct sde_hw_ctl *ctx,
 		for (i = 0; i < cfg->dnsc_blur_count; i++) {
 			if (cfg->dnsc_blur[i])
 				UPDATE_ACTIVE(wb_active,
-					DNSC_BLUR_IDX(cfg->dnsc_blur[i] - DNSC_BLUR_0),
-					enable);
+					      DNSC_BLUR_IDX(cfg->dnsc_blur[i] -
+							    DNSC_BLUR_0),
+					      enable);
 		}
 		SDE_REG_WRITE(c, CTL_WB_ACTIVE, wb_active);
 	}
@@ -1305,8 +1305,8 @@ static int sde_hw_ctl_update_intf_cfg(struct sde_hw_ctl *ctx,
 		for (i = 0; i < cfg->merge_3d_count; i++) {
 			if (cfg->merge_3d[i])
 				UPDATE_ACTIVE(merge_3d_active,
-					(cfg->merge_3d[i] - MERGE_3D_0),
-					enable);
+					      (cfg->merge_3d[i] - MERGE_3D_0),
+					      enable);
 		}
 
 		SDE_REG_WRITE(c, CTL_MERGE_3D_ACTIVE, merge_3d_active);
@@ -1316,8 +1316,8 @@ static int sde_hw_ctl_update_intf_cfg(struct sde_hw_ctl *ctx,
 		dsc_active = SDE_REG_READ(c, CTL_DSC_ACTIVE);
 		for (i = 0; i < cfg->dsc_count; i++) {
 			if (cfg->dsc[i])
-				UPDATE_ACTIVE(dsc_active,
-					(cfg->dsc[i] - DSC_0), enable);
+				UPDATE_ACTIVE(dsc_active, (cfg->dsc[i] - DSC_0),
+					      enable);
 		}
 
 		SDE_REG_WRITE(c, CTL_DSC_ACTIVE, dsc_active);
@@ -1328,7 +1328,8 @@ static int sde_hw_ctl_update_intf_cfg(struct sde_hw_ctl *ctx,
 		for (i = 0; i < cfg->vdc_count; i++) {
 			if (cfg->vdc[i])
 				UPDATE_ACTIVE(vdc_active,
-					VDC_IDX(cfg->vdc[i] - VDC_0), enable);
+					      VDC_IDX(cfg->vdc[i] - VDC_0),
+					      enable);
 		}
 
 		SDE_REG_WRITE(c, CTL_DSC_ACTIVE, vdc_active);
@@ -1337,7 +1338,7 @@ static int sde_hw_ctl_update_intf_cfg(struct sde_hw_ctl *ctx,
 }
 
 static int sde_hw_ctl_intf_cfg(struct sde_hw_ctl *ctx,
-		struct sde_hw_intf_cfg *cfg)
+			       struct sde_hw_intf_cfg *cfg)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 intf_cfg = 0;
@@ -1375,7 +1376,7 @@ static int sde_hw_ctl_intf_cfg(struct sde_hw_ctl *ctx,
 }
 
 static void sde_hw_ctl_update_wb_cfg(struct sde_hw_ctl *ctx,
-		struct sde_hw_intf_cfg *cfg, bool enable)
+				     struct sde_hw_intf_cfg *cfg, bool enable)
 {
 	struct sde_hw_blk_reg_map *c = &ctx->hw;
 	u32 intf_cfg = 0;
@@ -1408,7 +1409,8 @@ static inline u32 sde_hw_ctl_read_ctl_layers(struct sde_hw_ctl *ctx, int index)
 }
 
 static inline bool sde_hw_ctl_read_active_status(struct sde_hw_ctl *ctx,
-		enum sde_hw_blk_type blk, int index)
+						 enum sde_hw_blk_type blk,
+						 int index)
 {
 	struct sde_hw_blk_reg_map *c;
 
@@ -1422,19 +1424,26 @@ static inline bool sde_hw_ctl_read_active_status(struct sde_hw_ctl *ctx,
 	switch (blk) {
 	case SDE_HW_BLK_MERGE_3D:
 		return (SDE_REG_READ(c, CTL_MERGE_3D_ACTIVE) &
-			BIT(index - MERGE_3D_0)) ? true : false;
+			BIT(index - MERGE_3D_0)) ?
+			       true :
+			       false;
 	case SDE_HW_BLK_DSC:
-		return (SDE_REG_READ(c, CTL_DSC_ACTIVE) &
-			BIT(index - DSC_0)) ? true : false;
+		return (SDE_REG_READ(c, CTL_DSC_ACTIVE) & BIT(index - DSC_0)) ?
+			       true :
+			       false;
 	case SDE_HW_BLK_WB:
-		return (SDE_REG_READ(c, CTL_WB_ACTIVE) &
-			BIT(index - WB_0)) ? true : false;
+		return (SDE_REG_READ(c, CTL_WB_ACTIVE) & BIT(index - WB_0)) ?
+			       true :
+			       false;
 	case SDE_HW_BLK_CDM:
-		return (SDE_REG_READ(c, CTL_CDM_ACTIVE) &
-			BIT(index - CDM_0)) ? true : false;
+		return (SDE_REG_READ(c, CTL_CDM_ACTIVE) & BIT(index - CDM_0)) ?
+			       true :
+			       false;
 	case SDE_HW_BLK_INTF:
 		return (SDE_REG_READ(c, CTL_INTF_ACTIVE) &
-			BIT(index - INTF_0)) ? true : false;
+			BIT(index - INTF_0)) ?
+			       true :
+			       false;
 	default:
 		pr_err("unsupported blk %d\n", blk);
 		return false;
@@ -1452,25 +1461,24 @@ static int sde_hw_reg_dma_flush(struct sde_hw_ctl *ctx, bool blocking)
 
 	if (ops && ops->last_command)
 		return ops->last_command(ctx, DMA_CTL_QUEUE0,
-		    (blocking ? REG_DMA_WAIT4_COMP : REG_DMA_NOWAIT));
+					 (blocking ? REG_DMA_WAIT4_COMP :
+						     REG_DMA_NOWAIT));
 
 	return 0;
-
 }
 
-static void _setup_ctl_ops(struct sde_hw_ctl_ops *ops,
-		unsigned long cap)
+static void _setup_ctl_ops(struct sde_hw_ctl_ops *ops, unsigned long cap)
 {
 	if (cap & BIT(SDE_CTL_ACTIVE_CFG)) {
-		ops->update_pending_flush =
-			sde_hw_ctl_update_pending_flush_v1;
+		ops->update_pending_flush = sde_hw_ctl_update_pending_flush_v1;
 		ops->trigger_flush = sde_hw_ctl_trigger_flush_v1;
 
 		ops->setup_intf_cfg_v1 = sde_hw_ctl_intf_cfg_v1;
 		ops->update_intf_cfg = sde_hw_ctl_update_intf_cfg;
 
 		ops->update_bitmask = sde_hw_ctl_update_bitmask_v1;
-		ops->update_dnsc_blur_bitmask = sde_hw_ctl_update_dnsc_blur_bitmask;
+		ops->update_dnsc_blur_bitmask =
+			sde_hw_ctl_update_dnsc_blur_bitmask;
 		ops->get_ctl_intf = sde_hw_ctl_get_intf_v1;
 
 		ops->reset_post_disable = sde_hw_ctl_reset_post_disable;
@@ -1509,23 +1517,30 @@ static void _setup_ctl_ops(struct sde_hw_ctl_ops *ops,
 
 	if (cap & BIT(SDE_CTL_UNIFIED_DSPP_FLUSH)) {
 		ops->update_bitmask_dspp_subblk =
-				sde_hw_ctl_update_bitmask_dspp_subblk;
+			sde_hw_ctl_update_bitmask_dspp_subblk;
 	} else {
 		ops->update_bitmask_dspp = sde_hw_ctl_update_bitmask_dspp;
 		ops->update_bitmask_dspp_pavlut =
-				sde_hw_ctl_update_bitmask_dspp_pavlut;
+			sde_hw_ctl_update_bitmask_dspp_pavlut;
 	}
 
 	if (cap & BIT(SDE_CTL_HW_FENCE)) {
-		ops->hw_fence_update_input_fence = sde_hw_ctl_update_input_fence;
-		ops->hw_fence_update_output_fence = sde_hw_ctl_update_output_fence;
-		ops->hw_fence_trigger_output_fence = sde_hw_ctl_trigger_output_fence;
+		ops->hw_fence_update_input_fence =
+			sde_hw_ctl_update_input_fence;
+		ops->hw_fence_update_output_fence =
+			sde_hw_ctl_update_output_fence;
+		ops->hw_fence_trigger_output_fence =
+			sde_hw_ctl_trigger_output_fence;
 		ops->hw_fence_ctrl = sde_hw_ctl_hw_fence_ctrl;
-		ops->hw_fence_trigger_sw_override = sde_hw_ctl_trigger_sw_override;
+		ops->hw_fence_trigger_sw_override =
+			sde_hw_ctl_trigger_sw_override;
 		ops->get_hw_fence_status = sde_hw_ctl_get_hw_fence_status;
-		ops->trigger_output_fence_override = sde_hw_ctl_trigger_output_fence_override;
-		ops->hw_fence_output_status = sde_hw_ctl_output_fence_timestamps;
-		ops->hw_fence_output_timestamp_ctrl = sde_hw_ctl_fence_timestamp_ctrl;
+		ops->trigger_output_fence_override =
+			sde_hw_ctl_trigger_output_fence_override;
+		ops->hw_fence_output_status =
+			sde_hw_ctl_output_fence_timestamps;
+		ops->hw_fence_output_timestamp_ctrl =
+			sde_hw_ctl_fence_timestamp_ctrl;
 		if (cap & BIT(SDE_CTL_HW_FENCE_DIR_WRITE)) {
 			ops->hw_fence_output_fence_dir_write_init =
 				sde_hw_ctl_output_fence_dir_wr_init;
@@ -1538,9 +1553,8 @@ static void _setup_ctl_ops(struct sde_hw_ctl_ops *ops,
 		ops->uidle_enable = sde_hw_ctl_uidle_enable;
 }
 
-struct sde_hw_blk_reg_map *sde_hw_ctl_init(enum sde_ctl idx,
-		void __iomem *addr,
-		struct sde_mdss_cfg *m)
+struct sde_hw_blk_reg_map *sde_hw_ctl_init(enum sde_ctl idx, void __iomem *addr,
+					   struct sde_mdss_cfg *m)
 {
 	struct sde_hw_ctl *c;
 	struct sde_ctl_cfg *cfg;
@@ -1563,7 +1577,8 @@ struct sde_hw_blk_reg_map *sde_hw_ctl_init(enum sde_ctl idx,
 	c->mixer_hw_caps = m->mixer;
 
 	sde_dbg_reg_register_dump_range(SDE_DBG_NAME, cfg->name, c->hw.blk_off,
-			c->hw.blk_off + c->hw.length, c->hw.xin_id);
+					c->hw.blk_off + c->hw.length,
+					c->hw.xin_id);
 
 	return &c->hw;
 }

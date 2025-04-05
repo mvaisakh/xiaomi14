@@ -3,14 +3,14 @@
 
 #define pr_fmt(fmt) "cnss_genl: " fmt
 
+#include <linux/delay.h>
 #include <linux/err.h>
 #include <linux/module.h>
-#include <linux/delay.h>
-#include <net/netlink.h>
 #include <net/genetlink.h>
+#include <net/netlink.h>
 
-#include "main.h"
 #include "debug.h"
+#include "main.h"
 
 #define ICNSS_GENL_FAMILY_NAME "cnss-genl"
 #define ICNSS_GENL_MCAST_GROUP_NAME "cnss-genl-grp"
@@ -43,13 +43,13 @@ enum {
 static struct nla_policy icnss_genl_msg_policy[ICNSS_GENL_ATTR_MAX + 1] = {
 	[ICNSS_GENL_ATTR_MSG_TYPE] = { .type = NLA_U8 },
 	[ICNSS_GENL_ATTR_MSG_FILE_NAME] = { .type = NLA_NUL_STRING,
-					   .len = ICNSS_GENL_STR_LEN_MAX },
+					    .len = ICNSS_GENL_STR_LEN_MAX },
 	[ICNSS_GENL_ATTR_MSG_TOTAL_SIZE] = { .type = NLA_U32 },
 	[ICNSS_GENL_ATTR_MSG_SEG_ID] = { .type = NLA_U32 },
 	[ICNSS_GENL_ATTR_MSG_END] = { .type = NLA_U8 },
 	[ICNSS_GENL_ATTR_MSG_DATA_LEN] = { .type = NLA_U32 },
 	[ICNSS_GENL_ATTR_MSG_DATA] = { .type = NLA_BINARY,
-				      .len = ICNSS_GENL_DATA_LEN_MAX },
+				       .len = ICNSS_GENL_DATA_LEN_MAX },
 };
 
 static int icnss_genl_process_msg(struct sk_buff *skb, struct genl_info *info)
@@ -92,27 +92,28 @@ static int icnss_genl_send_data(u8 type, char *file_name, u32 total_size,
 	int ret = 0;
 	char filename[ICNSS_GENL_STR_LEN_MAX + 1];
 
-	icnss_pr_dbg("type: %u, file_name %s, total_size: %x, seg_id %u, end %u, data_len %u\n",
-		     type, file_name, total_size, seg_id, end, data_len);
+	icnss_pr_dbg(
+		"type: %u, file_name %s, total_size: %x, seg_id %u, end %u, "
+		"data_len %u\n",
+		type, file_name, total_size, seg_id, end, data_len);
 
 	if (!file_name)
 		strlcpy(filename, "default", sizeof(filename));
 	else
 		strlcpy(filename, file_name, sizeof(filename));
 
-	skb = genlmsg_new(NLMSG_HDRLEN +
-			  nla_total_size(sizeof(type)) +
-			  nla_total_size(strlen(filename) + 1) +
-			  nla_total_size(sizeof(total_size)) +
-			  nla_total_size(sizeof(seg_id)) +
-			  nla_total_size(sizeof(end)) +
-			  nla_total_size(sizeof(data_len)) +
-			  nla_total_size(data_len), GFP_KERNEL);
+	skb = genlmsg_new(NLMSG_HDRLEN + nla_total_size(sizeof(type)) +
+				  nla_total_size(strlen(filename) + 1) +
+				  nla_total_size(sizeof(total_size)) +
+				  nla_total_size(sizeof(seg_id)) +
+				  nla_total_size(sizeof(end)) +
+				  nla_total_size(sizeof(data_len)) +
+				  nla_total_size(data_len),
+			  GFP_KERNEL);
 	if (!skb)
 		return -ENOMEM;
 
-	msg_header = genlmsg_put(skb, 0, 0,
-				 &icnss_genl_family, 0,
+	msg_header = genlmsg_put(skb, 0, 0, &icnss_genl_family, 0,
 				 ICNSS_GENL_CMD_MSG);
 	if (!msg_header) {
 		ret = -ENOMEM;

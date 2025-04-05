@@ -21,22 +21,22 @@
  * DOC: Public APIs to perform debug operations on object manager
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_objmgr_peer_obj.h>
-#include <wlan_objmgr_debug.h>
 #include "wlan_objmgr_global_obj_i.h"
 #include <qdf_mem.h>
 #include <qdf_platform.h>
 #include <qdf_str.h>
+#include <wlan_objmgr_debug.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 
 /*
  * Default TTL (of FW) for mgmt frames is 5 sec, by considering all the other
  * delays, arrived with this value
  */
 #ifndef LOG_DEL_OBJ_TIMEOUT_VALUE_MSEC
-#define LOG_DEL_OBJ_TIMEOUT_VALUE_MSEC   8000
+#define LOG_DEL_OBJ_TIMEOUT_VALUE_MSEC 8000
 #endif
 #ifndef LOG_DEL_OBJ_DESTROY_DURATION_SEC
 #define LOG_DEL_OBJ_DESTROY_DURATION_SEC 8
@@ -47,7 +47,7 @@
  * The duration  should be higher than the psoc idle timeout.
  */
 #define LOG_DEL_OBJ_DESTROY_ASSERT_DURATION_SEC 32
-#define LOG_DEL_OBJ_LIST_MAX_COUNT       (3 + 5 + 48 + 4096)
+#define LOG_DEL_OBJ_LIST_MAX_COUNT (3 + 5 + 48 + 4096)
 
 union wlan_objmgr_del_obj {
 	struct wlan_objmgr_psoc *obj_psoc;
@@ -91,12 +91,10 @@ wlan_obj_type_get_obj_name(enum wlan_objmgr_obj_type obj_type)
 	static const struct wlan_obj_type_to_name {
 		enum wlan_objmgr_obj_type obj_type;
 		const char *name;
-	} obj_type_name[WLAN_OBJ_TYPE_MAX] = {
-		{WLAN_PSOC_OP, "psoc"},
-		{WLAN_PDEV_OP, "pdev"},
-		{WLAN_VDEV_OP, "vdev"},
-		{WLAN_PEER_OP, "peer"}
-	};
+	} obj_type_name[WLAN_OBJ_TYPE_MAX] = { { WLAN_PSOC_OP, "psoc" },
+					       { WLAN_PDEV_OP, "pdev" },
+					       { WLAN_VDEV_OP, "vdev" },
+					       { WLAN_PEER_OP, "peer" } };
 	uint8_t idx;
 
 	for (idx = 0; idx < WLAN_OBJ_TYPE_MAX; idx++) {
@@ -107,7 +105,7 @@ wlan_obj_type_get_obj_name(enum wlan_objmgr_obj_type obj_type)
 	return NULL;
 }
 
-static uint8_t*
+static uint8_t *
 wlan_objmgr_debug_get_macaddr(union wlan_objmgr_del_obj *obj,
 			      enum wlan_objmgr_obj_type obj_type)
 {
@@ -207,7 +205,7 @@ void wlan_objmgr_notify_log_delete(void *obj,
 	wlan_obj_type_get_obj(del_obj, &node->obj, obj_type);
 	node->obj_type = obj_type;
 	node->tstamp = tstamp;
-	obj_mgr_debug("#%s : mac_addr: "QDF_MAC_ADDR_FMT" entered L-state",
+	obj_mgr_debug("#%s : mac_addr: " QDF_MAC_ADDR_FMT " entered L-state",
 		      obj_name, QDF_MAC_ADDR_REF(macaddr));
 	wlan_objmgr_insert_ld_obj_to_list(debug_info, &node->node);
 }
@@ -245,8 +243,8 @@ wlan_objmgr_rem_ld_obj_from_list(union wlan_objmgr_del_obj *obj,
 	status = qdf_list_peek_front(list, &node);
 
 	while (QDF_IS_STATUS_SUCCESS(status)) {
-		obj_to_remove = qdf_container_of(node,
-						 struct log_del_obj, node);
+		obj_to_remove =
+			qdf_container_of(node, struct log_del_obj, node);
 		if (wlan_objmgr_del_obj_match(obj, &obj_to_remove->obj,
 					      obj_type) &&
 		    obj_to_remove->obj_type == obj_type) {
@@ -265,8 +263,7 @@ wlan_objmgr_rem_ld_obj_from_list(union wlan_objmgr_del_obj *obj,
 	qdf_spin_unlock_bh(&debug_info->list_lock);
 }
 
-void wlan_objmgr_notify_destroy(void *obj,
-				enum wlan_objmgr_obj_type obj_type)
+void wlan_objmgr_notify_destroy(void *obj, enum wlan_objmgr_obj_type obj_type)
 {
 	struct wlan_objmgr_debug_info *debug_info;
 	uint8_t *macaddr;
@@ -289,11 +286,10 @@ void wlan_objmgr_notify_destroy(void *obj,
 		obj_mgr_err("obj_name is null");
 		return;
 	}
-	obj_mgr_debug("#%s : macaddr: "QDF_MAC_ADDR_FMT" exited L-state",
+	obj_mgr_debug("#%s : macaddr: " QDF_MAC_ADDR_FMT " exited L-state",
 		      obj_name, QDF_MAC_ADDR_REF(macaddr));
 
-	wlan_objmgr_rem_ld_obj_from_list(del_obj,
-					 debug_info, obj_type);
+	wlan_objmgr_rem_ld_obj_from_list(del_obj, debug_info, obj_type);
 }
 
 /**
@@ -366,17 +362,15 @@ wlan_objmgr_print_ref_func_line(struct wlan_objmgr_trace_func *func_head,
 		while (tmp_ln_node) {
 			ref_cnt = qdf_atomic_read(&tmp_ln_node->line_ref.cnt);
 			obj_mgr_debug("line: %d cnt: %d",
-				      tmp_ln_node->line_ref.line,
-				      ref_cnt);
+				      tmp_ln_node->line_ref.line, ref_cnt);
 			tmp_ln_node = tmp_ln_node->next;
 		}
 		func_head = func_head->next;
 	}
 }
 
-static void
-wlan_objmgr_trace_print_ref(union wlan_objmgr_del_obj *obj,
-			    enum wlan_objmgr_obj_type obj_type)
+static void wlan_objmgr_trace_print_ref(union wlan_objmgr_del_obj *obj,
+					enum wlan_objmgr_obj_type obj_type)
 {
 	uint32_t id;
 	struct wlan_objmgr_trace_func *func_head;
@@ -422,9 +416,8 @@ wlan_objmgr_trace_print_ref(union wlan_objmgr_del_obj *obj,
 	}
 }
 #else
-static void
-wlan_objmgr_trace_print_ref(union wlan_objmgr_del_obj *obj,
-			    enum wlan_objmgr_obj_type obj_type)
+static void wlan_objmgr_trace_print_ref(union wlan_objmgr_del_obj *obj,
+					enum wlan_objmgr_obj_type obj_type)
 {
 }
 #endif
@@ -460,22 +453,22 @@ static void wlan_objmgr_iterate_log_del_obj_handler(void *timer_arg)
 	}
 
 	/* compute the current timestamp in seconds
-	 * need to compare with destroy duration of object
-	 */
+   * need to compare with destroy duration of object
+   */
 	cur_tstamp = (qdf_system_ticks_to_msecs(qdf_system_ticks()) / 1000);
 
 	do {
 		del_obj = qdf_container_of(node, struct log_del_obj, node);
 		obj_type = del_obj->obj_type;
-		macaddr = wlan_objmgr_debug_get_macaddr(&del_obj->obj,
-							obj_type);
+		macaddr =
+			wlan_objmgr_debug_get_macaddr(&del_obj->obj, obj_type);
 		obj_name = wlan_obj_type_get_obj_name(obj_type);
 
 		/* If object is in logically deleted state for time more than
-		 * destroy duration, print the object type and MAC
-		 */
-		if (cur_tstamp  < (del_obj->tstamp +
-					LOG_DEL_OBJ_DESTROY_DURATION_SEC)) {
+     * destroy duration, print the object type and MAC
+     */
+		if (cur_tstamp <
+		    (del_obj->tstamp + LOG_DEL_OBJ_DESTROY_DURATION_SEC)) {
 			break;
 		}
 		if (!macaddr) {
@@ -489,13 +482,13 @@ static void wlan_objmgr_iterate_log_del_obj_handler(void *timer_arg)
 			break;
 		}
 
-		obj_mgr_alert("#%s in L-state,MAC: " QDF_MAC_ADDR_FMT,
-			      obj_name, QDF_MAC_ADDR_REF(macaddr));
+		obj_mgr_alert("#%s in L-state,MAC: " QDF_MAC_ADDR_FMT, obj_name,
+			      QDF_MAC_ADDR_REF(macaddr));
 		wlan_objmgr_print_pending_refs(&del_obj->obj, obj_type);
 
 		wlan_objmgr_trace_print_ref(&del_obj->obj, obj_type);
-		if (cur_tstamp > del_obj->tstamp +
-		    LOG_DEL_OBJ_DESTROY_ASSERT_DURATION_SEC) {
+		if (cur_tstamp >
+		    del_obj->tstamp + LOG_DEL_OBJ_DESTROY_ASSERT_DURATION_SEC) {
 			if (!qdf_is_recovering() && !qdf_is_fw_down())
 				wlan_objmgr_debug_obj_destroyed_panic(obj_name);
 		}
@@ -527,12 +520,12 @@ void wlan_objmgr_debug_info_deinit(void)
 	qdf_spin_lock_bh(&debug_info->list_lock);
 
 	/* Check if any child of global object is in L-state and remove it,
-	 * ideally it shouldn't be
-	 */
+   * ideally it shouldn't be
+   */
 	while (qdf_list_remove_front(list, &node) == QDF_STATUS_SUCCESS) {
 		is_child_alive = true;
-		obj_to_remove = qdf_container_of(node,
-						 struct log_del_obj, node);
+		obj_to_remove =
+			qdf_container_of(node, struct log_del_obj, node);
 		if (qdf_list_empty(&debug_info->obj_list))
 			qdf_timer_stop(&debug_info->obj_timer);
 		/* free the object */
@@ -542,14 +535,14 @@ void wlan_objmgr_debug_info_deinit(void)
 
 	if (is_child_alive) {
 		obj_mgr_alert("This shouldn't happen!!, No child of global"
-			       "object should be in L-state, as global obj"
-				"is going to destroy");
+			      "object should be in L-state, as global obj"
+			      "is going to destroy");
 		QDF_BUG(0);
 	}
 
 	/* free timer, destroy spinlock, list and debug_info object as
-	 * global object is going to free
-	 */
+   * global object is going to free
+   */
 	qdf_list_destroy(list);
 	qdf_timer_free(&debug_info->obj_timer);
 	qdf_spinlock_destroy(&debug_info->list_lock);
@@ -572,12 +565,11 @@ void wlan_objmgr_debug_info_init(void)
 
 	/* Initialize timer with timeout handler */
 	qdf_timer_init(NULL, &debug_info->obj_timer,
-		       wlan_objmgr_iterate_log_del_obj_handler,
-		       NULL, QDF_TIMER_TYPE_WAKE_APPS);
+		       wlan_objmgr_iterate_log_del_obj_handler, NULL,
+		       QDF_TIMER_TYPE_WAKE_APPS);
 
 	/* Initialize the node_count to 0 and create list*/
-	qdf_list_create(&debug_info->obj_list,
-			LOG_DEL_OBJ_LIST_MAX_COUNT);
+	qdf_list_create(&debug_info->obj_list, LOG_DEL_OBJ_LIST_MAX_COUNT);
 
 	/* Initialize the spin_lock to protect list */
 	qdf_spinlock_create(&debug_info->list_lock);
@@ -587,21 +579,19 @@ void wlan_objmgr_debug_info_init(void)
 }
 
 #ifdef WLAN_OBJMGR_REF_ID_TRACE
-void
-wlan_objmgr_trace_init_lock(struct wlan_objmgr_trace *trace)
+void wlan_objmgr_trace_init_lock(struct wlan_objmgr_trace *trace)
 {
 	qdf_spinlock_create(&trace->trace_lock);
 }
 
-void
-wlan_objmgr_trace_deinit_lock(struct wlan_objmgr_trace *trace)
+void wlan_objmgr_trace_deinit_lock(struct wlan_objmgr_trace *trace)
 {
 	qdf_spinlock_destroy(&trace->trace_lock);
 }
 #endif
 
 #ifdef WLAN_OBJMGR_REF_ID_TRACE
-static inline struct wlan_objmgr_line_ref_node*
+static inline struct wlan_objmgr_line_ref_node *
 wlan_objmgr_trace_line_node_alloc(int line)
 {
 	struct wlan_objmgr_line_ref_node *line_node;
@@ -617,7 +607,7 @@ wlan_objmgr_trace_line_node_alloc(int line)
 	return line_node;
 }
 
-static inline struct wlan_objmgr_trace_func*
+static inline struct wlan_objmgr_trace_func *
 wlan_objmgr_trace_ref_node_alloc(const char *func, int line)
 {
 	struct wlan_objmgr_trace_func *func_node;
@@ -663,10 +653,9 @@ wlan_objmgr_trace_check_line(struct wlan_objmgr_trace_func *tmp_func_node,
 	}
 }
 
-void
-wlan_objmgr_trace_ref(struct wlan_objmgr_trace_func **func_head,
-		      struct wlan_objmgr_trace *trace,
-		      const char *func, int line)
+void wlan_objmgr_trace_ref(struct wlan_objmgr_trace_func **func_head,
+			   struct wlan_objmgr_trace *trace, const char *func,
+			   int line)
 {
 	struct wlan_objmgr_trace_func *tmp_func_node;
 	struct wlan_objmgr_trace_func *func_node;
@@ -690,8 +679,8 @@ wlan_objmgr_trace_ref(struct wlan_objmgr_trace_func **func_head,
 		}
 
 		if (!tmp_func_node) {
-			tmp_func_node = wlan_objmgr_trace_ref_node_alloc(func,
-									 line);
+			tmp_func_node =
+				wlan_objmgr_trace_ref_node_alloc(func, line);
 			if (tmp_func_node)
 				func_node->next = tmp_func_node;
 		}
@@ -714,8 +703,7 @@ wlan_objmgr_trace_del_line(struct wlan_objmgr_line_ref_node **line_head)
 	*line_head = NULL;
 }
 
-void
-wlan_objmgr_trace_del_ref_list(struct wlan_objmgr_trace *trace)
+void wlan_objmgr_trace_del_ref_list(struct wlan_objmgr_trace *trace)
 {
 	struct wlan_objmgr_trace_func *func_node;
 	struct wlan_objmgr_trace_func *del_tmp_node;

@@ -22,12 +22,12 @@
  */
 
 #include "wlan_p2p_api.h"
-#include <wlan_objmgr_psoc_obj.h>
-#include "wlan_p2p_public_struct.h"
 #include "../../core/src/wlan_p2p_main.h"
 #include "../../core/src/wlan_p2p_roc.h"
-#include <cds_utils.h>
+#include "wlan_p2p_public_struct.h"
 #include "wlan_scan_api.h"
+#include <cds_utils.h>
+#include <wlan_objmgr_psoc_obj.h>
 
 bool wlan_p2p_check_oui_and_force_1x1(uint8_t *assoc_ie, uint32_t assoc_ie_len)
 {
@@ -56,8 +56,8 @@ QDF_STATUS wlan_p2p_cleanup_roc_by_vdev(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	p2p_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-			WLAN_UMAC_COMP_P2P);
+	p2p_soc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_P2P);
 	if (!p2p_soc_obj) {
 		p2p_err("p2p soc context is NULL");
 		return QDF_STATUS_E_FAILURE;
@@ -101,9 +101,8 @@ static void wlan_p2p_abort_vdev_scan(struct wlan_objmgr_pdev *pdev,
 	if (wlan_vdev_mlme_get_opmode(vdev) != QDF_P2P_DEVICE_MODE)
 		return;
 
-	p2p_soc_obj =
-		wlan_objmgr_psoc_get_comp_private_obj(wlan_vdev_get_psoc(vdev),
-						      WLAN_UMAC_COMP_P2P);
+	p2p_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(
+		wlan_vdev_get_psoc(vdev), WLAN_UMAC_COMP_P2P);
 	if (!p2p_soc_obj) {
 		p2p_err("P2P soc object is NULL");
 		return;
@@ -120,20 +119,17 @@ static void wlan_p2p_abort_vdev_scan(struct wlan_objmgr_pdev *pdev,
 	req->cancel_req.req_type = WLAN_SCAN_CANCEL_VDEV_ALL;
 
 	qdf_mtrace(QDF_MODULE_ID_P2P, QDF_MODULE_ID_SCAN,
-		   req->cancel_req.req_type,
-		   req->cancel_req.vdev_id,
+		   req->cancel_req.req_type, req->cancel_req.vdev_id,
 		   req->cancel_req.scan_id);
 	status = wlan_scan_cancel(req);
 
 	p2p_debug("abort scan, scan req id:%d, scan id:%d, status:%d",
-		  req->cancel_req.requester,
-		  req->cancel_req.scan_id, status);
+		  req->cancel_req.requester, req->cancel_req.scan_id, status);
 }
 
 QDF_STATUS wlan_p2p_abort_scan(struct wlan_objmgr_pdev *pdev)
 {
-	return wlan_objmgr_pdev_iterate_obj_list(pdev,
-						 WLAN_VDEV_OP,
-						 wlan_p2p_abort_vdev_scan,
-						 NULL, 0, WLAN_P2P_ID);
+	return wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
+						 wlan_p2p_abort_vdev_scan, NULL,
+						 0, WLAN_P2P_ID);
 }

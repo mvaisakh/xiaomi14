@@ -19,19 +19,19 @@
 
 /* Host Debug log implementation */
 
-#include "athdefs.h"
-#include "a_types.h"
 #include "dbglog_host.h"
+#include "a_types.h"
+#include "athdefs.h"
+#include "host_diag_core_event.h"
+#include "ol_defines.h"
+#include "qwlan_version.h"
+#include "wma.h"
 #include "wmi.h"
 #include "wmi_unified_api.h"
-#include "wma.h"
-#include "ol_defines.h"
-#include <wlan_nlink_srv.h>
-#include "host_diag_core_event.h"
-#include "qwlan_version.h"
-#include <net/sock.h>
 #include <linux/netlink.h>
 #include <linux/vmalloc.h>
+#include <net/sock.h>
+#include <wlan_nlink_srv.h>
 
 #ifdef WLAN_DBGLOG_DEBUGFS
 #include <linux/debugfs.h>
@@ -48,34 +48,31 @@
 #endif
 
 #ifdef MULTI_IF_NAME
-#define CLD_DEBUGFS_DIR          "cld" MULTI_IF_NAME
+#define CLD_DEBUGFS_DIR "cld" MULTI_IF_NAME
 #else
 
-#define CLD_DEBUGFS_DIR          "cld"
+#define CLD_DEBUGFS_DIR "cld"
 #endif
-#define DEBUGFS_BLOCK_NAME       "dbglog_block"
-#define DEBUGFS_BLOCK_PERM       QDF_FILE_USR_READ
+#define DEBUGFS_BLOCK_NAME "dbglog_block"
+#define DEBUGFS_BLOCK_PERM QDF_FILE_USR_READ
 
 #define ATH_MODULE_NAME fwlog
 #include <a_debug.h>
-#define FWLOG_DEBUG   ATH_DEBUG_MAKE_MODULE_MASK(0)
+#define FWLOG_DEBUG ATH_DEBUG_MAKE_MODULE_MASK(0)
 
 static int get_version;
 static int gprint_limiter;
 static bool tgt_assert_enable;
 #ifdef WLAN_DEBUG
 static ATH_DEBUG_MASK_DESCRIPTION g_fwlog_debug_description[] = {
-	{FWLOG_DEBUG, "fwlog"},
+	{ FWLOG_DEBUG, "fwlog" },
 };
 
-ATH_DEBUG_INSTANTIATE_MODULE_VAR(fwlog,
-				 "fwlog",
-				 "Firmware Debug Log",
-				 ATH_DEBUG_MASK_DEFAULTS | ATH_DEBUG_INFO |
-				 ATH_DEBUG_ERR,
-				 ATH_DEBUG_DESCRIPTION_COUNT
-					 (g_fwlog_debug_description),
-				 g_fwlog_debug_description);
+ATH_DEBUG_INSTANTIATE_MODULE_VAR(
+	fwlog, "fwlog", "Firmware Debug Log",
+	ATH_DEBUG_MASK_DEFAULTS | ATH_DEBUG_INFO | ATH_DEBUG_ERR,
+	ATH_DEBUG_DESCRIPTION_COUNT(g_fwlog_debug_description),
+	g_fwlog_debug_description);
 #endif
 
 module_dbg_print mod_print[WLAN_MODULE_ID_MAX];
@@ -163,12 +160,8 @@ static const char *dbglog_get_module_str(uint32_t module_id)
 }
 
 char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
-	{
-		"INF_MSG_START",
-		"INF_ASSERTION_FAILED",
-		"INF_TARGET_ID",
-		"INF_MSG_END"
-	},
+	{ "INF_MSG_START", "INF_ASSERTION_FAILED", "INF_TARGET_ID",
+	  "INF_MSG_END" },
 	{
 		"WMI_DBGID_DEFINITION_START",
 		"WMI_CMD_RX_XTND_PKT_TOO_SHORT",
@@ -477,7 +470,7 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"COEX_PSP_STAT_2", /*                       197 */
 		"COEX_PSP_RX_STATUS_STATE_2", /*               198 */
 		"COEX_PSP_ERROR", /*                       199 */
-		"COEX_T2BT",    /*                               200 */
+		"COEX_T2BT", /*                               200 */
 		"COEX_BT_DURATION", /*                           201 */
 		"COEX_TX_MCI_GPM_WLAN_SCHED_INFO_TRIG", /*       202 */
 		"COEX_TX_MCI_GPM_WLAN_SCHED_INFO_TRIG_RSP", /*   203 */
@@ -533,131 +526,121 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"COEX_BT_SCAN_PROTECT", /* 253 */
 		"COEX_DEBUG_ID_END" /* 254 */
 	},
-	{
-		"ROAM_DBGID_DEFINITION_START",
-		"ROAM_MODULE_INIT",
-		"ROAM_DEV_START",
-		"ROAM_CONFIG_RSSI_THRESH",
-		"ROAM_CONFIG_SCAN_PERIOD",
-		"ROAM_CONFIG_AP_PROFILE",
-		"ROAM_CONFIG_CHAN_LIST",
-		"ROAM_CONFIG_SCAN_PARAMS",
-		"ROAM_CONFIG_RSSI_CHANGE",
-		"ROAM_SCAN_TIMER_START",
-		"ROAM_SCAN_TIMER_EXPIRE",
-		"ROAM_SCAN_TIMER_STOP",
-		"ROAM_SCAN_STARTED",
-		"ROAM_SCAN_COMPLETE",
-		"ROAM_SCAN_CANCELLED",
-		"ROAM_CANDIDATE_FOUND",
-		"ROAM_RSSI_ACTIVE_SCAN",
-		"ROAM_RSSI_ACTIVE_ROAM",
-		"ROAM_RSSI_GOOD",
-		"ROAM_BMISS_FIRST_RECV",
-		"ROAM_DEV_STOP",
-		"ROAM_FW_OFFLOAD_ENABLE",
-		"ROAM_CANDIDATE_SSID_MATCH",
-		"ROAM_CANDIDATE_SECURITY_MATCH",
-		"ROAM_LOW_RSSI_INTERRUPT",
-		"ROAM_HIGH_RSSI_INTERRUPT",
-		"ROAM_SCAN_REQUESTED",
-		"ROAM_BETTER_CANDIDATE_FOUND",
-		"ROAM_BETTER_AP_EVENT",
-		"ROAM_CANCEL_LOW_PRIO_SCAN",
-		"ROAM_FINAL_BMISS_RECVD",
-		"ROAM_CONFIG_SCAN_MODE",
-		"ROAM_BMISS_FINAL_SCAN_ENABLE",
-		"ROAM_SUITABLE_AP_EVENT",
-		"ROAM_RSN_IE_PARSE_ERROR",
-		"ROAM_WPA_IE_PARSE_ERROR",
-		"ROAM_SCAN_CMD_FROM_HOST",
-		"ROAM_HO_SORT_CANDIDATE",
-		"ROAM_HO_SAVE_CANDIDATE",
-		"ROAM_HO_GET_CANDIDATE",
-		"ROAM_HO_OFFLOAD_SET_PARAM",
-		"ROAM_HO_SM",
-		"ROAM_HO_HTT_SAVED",
-		"ROAM_HO_SYNC_START",
-		"ROAM_HO_START",
-		"ROAM_HO_COMPLETE",
-		"ROAM_HO_STOP",
-		"ROAM_HO_HTT_FORWARD",
-		"ROAM_DBGID_DEFINITION_END"
-	},
-	{
-		"RESMGR_CHMGR_DEFINITION_START",
-		"RESMGR_CHMGR_PAUSE_COMPLETE",
-		"RESMGR_CHMGR_CHANNEL_CHANGE",
-		"RESMGR_CHMGR_RESUME_COMPLETE",
-		"RESMGR_CHMGR_VDEV_PAUSE",
-		"RESMGR_CHMGR_VDEV_UNPAUSE",
-		"RESMGR_CHMGR_CTS2S_TX_COMP",
-		"RESMGR_CHMGR_CFEND_TX_COMP",
-		"RESMGR_CHMGR_DEFINITION_END"
-	},
-	{
-		"RESMGR_DEFINITION_START",
-		"RESMGR_OCS_ALLOCRAM_SIZE",
-		"RESMGR_OCS_RESOURCES",
-		"RESMGR_LINK_CREATE",
-		"RESMGR_LINK_DELETE",
-		"RESMGR_OCS_CHREQ_CREATE",
-		"RESMGR_OCS_CHREQ_DELETE",
-		"RESMGR_OCS_CHREQ_START",
-		"RESMGR_OCS_CHREQ_STOP",
-		"RESMGR_OCS_SCHEDULER_INVOKED",
-		"RESMGR_OCS_CHREQ_GRANT",
-		"RESMGR_OCS_CHREQ_COMPLETE",
-		"RESMGR_OCS_NEXT_TSFTIME",
-		"RESMGR_OCS_TSF_TIMEOUT_US",
-		"RESMGR_OCS_CURR_CAT_WINDOW",
-		"RESMGR_OCS_CURR_CAT_WINDOW_REQ",
-		"RESMGR_OCS_CURR_CAT_WINDOW_TIMESLOT",
-		"RESMGR_OCS_CHREQ_RESTART",
-		"RESMGR_OCS_CLEANUP_CH_ALLOCATORS",
-		"RESMGR_OCS_PURGE_CHREQ",
-		"RESMGR_OCS_CH_ALLOCATOR_FREE",
-		"RESMGR_OCS_RECOMPUTE_SCHEDULE",
-		"RESMGR_OCS_NEW_CAT_WINDOW_REQ",
-		"RESMGR_OCS_NEW_CAT_WINDOW_TIMESLOT",
-		"RESMGR_OCS_CUR_CH_ALLOC",
-		"RESMGR_OCS_WIN_CH_ALLOC",
-		"RESMGR_OCS_SCHED_CH_CHANGE",
-		"RESMGR_OCS_CONSTRUCT_CAT_WIN",
-		"RESMGR_OCS_CHREQ_PREEMPTED",
-		"RESMGR_OCS_CH_SWITCH_REQ",
-		"RESMGR_OCS_CHANNEL_SWITCHED",
-		"RESMGR_OCS_CLEANUP_STALE_REQS",
-		"RESMGR_OCS_CHREQ_UPDATE",
-		"RESMGR_OCS_REG_NOA_NOTIF",
-		"RESMGR_OCS_DEREG_NOA_NOTIF",
-		"RESMGR_OCS_GEN_PERIODIC_NOA",
-		"RESMGR_OCS_RECAL_QUOTAS",
-		"RESMGR_OCS_GRANTED_QUOTA_STATS",
-		"RESMGR_OCS_ALLOCATED_QUOTA_STATS",
-		"RESMGR_OCS_REQ_QUOTA_STATS",
-		"RESMGR_OCS_TRACKING_TIME_FIRED",
-		"RESMGR_VC_ARBITRATE_ATTRIBUTES",
-		"RESMGR_OCS_LATENCY_STRICT_TIME_SLOT",
-		"RESMGR_OCS_CURR_TSF",
-		"RESMGR_OCS_QUOTA_REM",
-		"RESMGR_OCS_LATENCY_CASE_NO",
-		"RESMGR_OCS_WIN_CAT_DUR",
-		"RESMGR_VC_UPDATE_CUR_VC",
-		"RESMGR_VC_REG_UNREG_LINK",
-		"RESMGR_VC_PRINT_LINK",
-		"RESMGR_OCS_MISS_TOLERANCE",
-		"RESMGR_DYN_SCH_ALLOCRAM_SIZE",
-		"RESMGR_DYN_SCH_ENABLE",
-		"RESMGR_DYN_SCH_ACTIVE",
-		"RESMGR_DYN_SCH_CH_STATS_START",
-		"RESMGR_DYN_SCH_CH_SX_STATS",
-		"RESMGR_DYN_SCH_TOT_UTIL_PER",
-		"RESMGR_DYN_SCH_HOME_CH_QUOTA",
-		"RESMGR_OCS_REG_RECAL_QUOTA_NOTIF",
-		"RESMGR_OCS_DEREG_RECAL_QUOTA_NOTIF",
-		"RESMGR_DEFINITION_END"
-	},
+	{ "ROAM_DBGID_DEFINITION_START",
+	  "ROAM_MODULE_INIT",
+	  "ROAM_DEV_START",
+	  "ROAM_CONFIG_RSSI_THRESH",
+	  "ROAM_CONFIG_SCAN_PERIOD",
+	  "ROAM_CONFIG_AP_PROFILE",
+	  "ROAM_CONFIG_CHAN_LIST",
+	  "ROAM_CONFIG_SCAN_PARAMS",
+	  "ROAM_CONFIG_RSSI_CHANGE",
+	  "ROAM_SCAN_TIMER_START",
+	  "ROAM_SCAN_TIMER_EXPIRE",
+	  "ROAM_SCAN_TIMER_STOP",
+	  "ROAM_SCAN_STARTED",
+	  "ROAM_SCAN_COMPLETE",
+	  "ROAM_SCAN_CANCELLED",
+	  "ROAM_CANDIDATE_FOUND",
+	  "ROAM_RSSI_ACTIVE_SCAN",
+	  "ROAM_RSSI_ACTIVE_ROAM",
+	  "ROAM_RSSI_GOOD",
+	  "ROAM_BMISS_FIRST_RECV",
+	  "ROAM_DEV_STOP",
+	  "ROAM_FW_OFFLOAD_ENABLE",
+	  "ROAM_CANDIDATE_SSID_MATCH",
+	  "ROAM_CANDIDATE_SECURITY_MATCH",
+	  "ROAM_LOW_RSSI_INTERRUPT",
+	  "ROAM_HIGH_RSSI_INTERRUPT",
+	  "ROAM_SCAN_REQUESTED",
+	  "ROAM_BETTER_CANDIDATE_FOUND",
+	  "ROAM_BETTER_AP_EVENT",
+	  "ROAM_CANCEL_LOW_PRIO_SCAN",
+	  "ROAM_FINAL_BMISS_RECVD",
+	  "ROAM_CONFIG_SCAN_MODE",
+	  "ROAM_BMISS_FINAL_SCAN_ENABLE",
+	  "ROAM_SUITABLE_AP_EVENT",
+	  "ROAM_RSN_IE_PARSE_ERROR",
+	  "ROAM_WPA_IE_PARSE_ERROR",
+	  "ROAM_SCAN_CMD_FROM_HOST",
+	  "ROAM_HO_SORT_CANDIDATE",
+	  "ROAM_HO_SAVE_CANDIDATE",
+	  "ROAM_HO_GET_CANDIDATE",
+	  "ROAM_HO_OFFLOAD_SET_PARAM",
+	  "ROAM_HO_SM",
+	  "ROAM_HO_HTT_SAVED",
+	  "ROAM_HO_SYNC_START",
+	  "ROAM_HO_START",
+	  "ROAM_HO_COMPLETE",
+	  "ROAM_HO_STOP",
+	  "ROAM_HO_HTT_FORWARD",
+	  "ROAM_DBGID_DEFINITION_END" },
+	{ "RESMGR_CHMGR_DEFINITION_START", "RESMGR_CHMGR_PAUSE_COMPLETE",
+	  "RESMGR_CHMGR_CHANNEL_CHANGE", "RESMGR_CHMGR_RESUME_COMPLETE",
+	  "RESMGR_CHMGR_VDEV_PAUSE", "RESMGR_CHMGR_VDEV_UNPAUSE",
+	  "RESMGR_CHMGR_CTS2S_TX_COMP", "RESMGR_CHMGR_CFEND_TX_COMP",
+	  "RESMGR_CHMGR_DEFINITION_END" },
+	{ "RESMGR_DEFINITION_START",
+	  "RESMGR_OCS_ALLOCRAM_SIZE",
+	  "RESMGR_OCS_RESOURCES",
+	  "RESMGR_LINK_CREATE",
+	  "RESMGR_LINK_DELETE",
+	  "RESMGR_OCS_CHREQ_CREATE",
+	  "RESMGR_OCS_CHREQ_DELETE",
+	  "RESMGR_OCS_CHREQ_START",
+	  "RESMGR_OCS_CHREQ_STOP",
+	  "RESMGR_OCS_SCHEDULER_INVOKED",
+	  "RESMGR_OCS_CHREQ_GRANT",
+	  "RESMGR_OCS_CHREQ_COMPLETE",
+	  "RESMGR_OCS_NEXT_TSFTIME",
+	  "RESMGR_OCS_TSF_TIMEOUT_US",
+	  "RESMGR_OCS_CURR_CAT_WINDOW",
+	  "RESMGR_OCS_CURR_CAT_WINDOW_REQ",
+	  "RESMGR_OCS_CURR_CAT_WINDOW_TIMESLOT",
+	  "RESMGR_OCS_CHREQ_RESTART",
+	  "RESMGR_OCS_CLEANUP_CH_ALLOCATORS",
+	  "RESMGR_OCS_PURGE_CHREQ",
+	  "RESMGR_OCS_CH_ALLOCATOR_FREE",
+	  "RESMGR_OCS_RECOMPUTE_SCHEDULE",
+	  "RESMGR_OCS_NEW_CAT_WINDOW_REQ",
+	  "RESMGR_OCS_NEW_CAT_WINDOW_TIMESLOT",
+	  "RESMGR_OCS_CUR_CH_ALLOC",
+	  "RESMGR_OCS_WIN_CH_ALLOC",
+	  "RESMGR_OCS_SCHED_CH_CHANGE",
+	  "RESMGR_OCS_CONSTRUCT_CAT_WIN",
+	  "RESMGR_OCS_CHREQ_PREEMPTED",
+	  "RESMGR_OCS_CH_SWITCH_REQ",
+	  "RESMGR_OCS_CHANNEL_SWITCHED",
+	  "RESMGR_OCS_CLEANUP_STALE_REQS",
+	  "RESMGR_OCS_CHREQ_UPDATE",
+	  "RESMGR_OCS_REG_NOA_NOTIF",
+	  "RESMGR_OCS_DEREG_NOA_NOTIF",
+	  "RESMGR_OCS_GEN_PERIODIC_NOA",
+	  "RESMGR_OCS_RECAL_QUOTAS",
+	  "RESMGR_OCS_GRANTED_QUOTA_STATS",
+	  "RESMGR_OCS_ALLOCATED_QUOTA_STATS",
+	  "RESMGR_OCS_REQ_QUOTA_STATS",
+	  "RESMGR_OCS_TRACKING_TIME_FIRED",
+	  "RESMGR_VC_ARBITRATE_ATTRIBUTES",
+	  "RESMGR_OCS_LATENCY_STRICT_TIME_SLOT",
+	  "RESMGR_OCS_CURR_TSF",
+	  "RESMGR_OCS_QUOTA_REM",
+	  "RESMGR_OCS_LATENCY_CASE_NO",
+	  "RESMGR_OCS_WIN_CAT_DUR",
+	  "RESMGR_VC_UPDATE_CUR_VC",
+	  "RESMGR_VC_REG_UNREG_LINK",
+	  "RESMGR_VC_PRINT_LINK",
+	  "RESMGR_OCS_MISS_TOLERANCE",
+	  "RESMGR_DYN_SCH_ALLOCRAM_SIZE",
+	  "RESMGR_DYN_SCH_ENABLE",
+	  "RESMGR_DYN_SCH_ACTIVE",
+	  "RESMGR_DYN_SCH_CH_STATS_START",
+	  "RESMGR_DYN_SCH_CH_SX_STATS",
+	  "RESMGR_DYN_SCH_TOT_UTIL_PER",
+	  "RESMGR_DYN_SCH_HOME_CH_QUOTA",
+	  "RESMGR_OCS_REG_RECAL_QUOTA_NOTIF",
+	  "RESMGR_OCS_DEREG_RECAL_QUOTA_NOTIF",
+	  "RESMGR_DEFINITION_END" },
 	{
 		"VDEV_MGR_DEBID_DEFINITION_START", /* vdev Mgr */
 		"VDEV_MGR_FIRST_BEACON_MISS_DETECTED",
@@ -695,17 +678,11 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"SCAN_FWLOG_EVENT_RESTARTED",
 		"SCAN_FWLOG_EVENT_COMPLETED",
 	},
-	{
-		"RATECTRL_DBGID_DEFINITION_START", /* Rate ctrl */
-		"RATECTRL_DBGID_ASSOC",
-		"RATECTRL_DBGID_NSS_CHANGE",
-		"RATECTRL_DBGID_CHAINMASK_ERR",
-		"RATECTRL_DBGID_UNEXPECTED_FRAME",
-		"RATECTRL_DBGID_WAL_RCQUERY",
-		"RATECTRL_DBGID_WAL_RCUPDATE",
-		"RATECTRL_DBGID_GTX_UPDATE",
-		"RATECTRL_DBGID_DEFINITION_END"
-	},
+	{ "RATECTRL_DBGID_DEFINITION_START", /* Rate ctrl */
+	  "RATECTRL_DBGID_ASSOC", "RATECTRL_DBGID_NSS_CHANGE",
+	  "RATECTRL_DBGID_CHAINMASK_ERR", "RATECTRL_DBGID_UNEXPECTED_FRAME",
+	  "RATECTRL_DBGID_WAL_RCQUERY", "RATECTRL_DBGID_WAL_RCUPDATE",
+	  "RATECTRL_DBGID_GTX_UPDATE", "RATECTRL_DBGID_DEFINITION_END" },
 	{
 		"AP_PS_DBGID_DEFINITION_START",
 		"AP_PS_DBGID_UPDATE_TIM",
@@ -728,7 +705,7 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"AP_PS_DBGID_DELIVER_CAB",
 	},
 	{
-		""              /* Block Ack */
+		"" /* Block Ack */
 	},
 	/* Mgmt TxRx */
 	{
@@ -736,25 +713,31 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"MGMT_TXRX_FORWARD_TO_HOST",
 		"MGMT_TXRX_DBGID_DEFINITION_END",
 	},
-	{                       /* Data TxRx */
+	{
+		/* Data TxRx */
 		"DATA_TXRX_DBGID_DEFINITION_START",
 		"DATA_TXRX_DBGID_RX_DATA_SEQ_LEN_INFO",
 		"DATA_TXRX_DBGID_DEFINITION_END",
 	},
-	{""                     /* HTT */
+	{
+		"" /* HTT */
 	},
-	{""                     /* HOST */
+	{
+		"" /* HOST */
 	},
-	{""                     /* BEACON */
-	 "BEACON_EVENT_SWBA_SEND_FAILED",
-	 "BEACON_EVENT_EARLY_RX_BMISS_STATUS",
-	 "BEACON_EVENT_EARLY_RX_SLEEP_SLOP",
-	 "BEACON_EVENT_EARLY_RX_CONT_BMISS_TIMEOUT",
-	 "BEACON_EVENT_EARLY_RX_PAUSE_SKIP_BCN_NUM",
-	 "BEACON_EVENT_EARLY_RX_CLK_DRIFT",
-	 "BEACON_EVENT_EARLY_RX_AP_DRIFT",
-	 "BEACON_EVENT_EARLY_RX_BCN_TYPE",},
-	{                       /* Offload Mgr */
+	{
+		"" /* BEACON */
+		"BEACON_EVENT_SWBA_SEND_FAILED",
+		"BEACON_EVENT_EARLY_RX_BMISS_STATUS",
+		"BEACON_EVENT_EARLY_RX_SLEEP_SLOP",
+		"BEACON_EVENT_EARLY_RX_CONT_BMISS_TIMEOUT",
+		"BEACON_EVENT_EARLY_RX_PAUSE_SKIP_BCN_NUM",
+		"BEACON_EVENT_EARLY_RX_CLK_DRIFT",
+		"BEACON_EVENT_EARLY_RX_AP_DRIFT",
+		"BEACON_EVENT_EARLY_RX_BCN_TYPE",
+	},
+	{
+		/* Offload Mgr */
 		"OFFLOAD_MGR_DBGID_DEFINITION_START",
 		"OFFLOADMGR_REGISTER_OFFLOAD",
 		"OFFLOADMGR_DEREGISTER_OFFLOAD",
@@ -832,10 +815,10 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"WAL_DBGID_DEFINITION_END",
 	},
 	{
-		""              /* DE */
+		"" /* DE */
 	},
 	{
-		""              /* pcie lp */
+		"" /* pcie lp */
 	},
 	{
 		/* RTT */
@@ -861,7 +844,8 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"RTT_CHANNEL_SWITCH_STOP",
 		"RTT_TIMER_START",
 	},
-	{                       /* RESOURCE */
+	{
+		/* RESOURCE */
 		"RESOURCE_DBGID_DEFINITION_START",
 		"RESOURCE_PEER_ALLOC",
 		"RESOURCE_PEER_FREE",
@@ -869,37 +853,20 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"RESOURCE_PEER_NBRHOOD_MGMT_ALLOC",
 		"RESOURCE_PEER_NBRHOOD_MGMT_INFO,RESOURCE_DBGID_DEFINITION_END",
 	},
-	{                       /* DCS */
-		"WLAN_DCS_DBGID_INIT",
-		"WLAN_DCS_DBGID_WMI_CWINT",
-		"WLAN_DCS_DBGID_TIMER",
-		"WLAN_DCS_DBGID_CMDG",
-		"WLAN_DCS_DBGID_CMDS",
-		"WLAN_DCS_DBGID_DINIT"
-	},
-	{                       /* CACHEMGR  */
-		""
-	},
-	{                       /* ANI  */
-		"ANI_DBGID_POLL",
-		"ANI_DBGID_CONTROL",
-		"ANI_DBGID_OFDM_PARAMS",
-		"ANI_DBGID_CCK_PARAMS",
-		"ANI_DBGID_RESET",
-		"ANI_DBGID_RESTART",
-		"ANI_DBGID_OFDM_LEVEL",
-		"ANI_DBGID_CCK_LEVEL",
-		"ANI_DBGID_FIRSTEP",
-		"ANI_DBGID_CYCPWR",
-		"ANI_DBGID_MRC_CCK",
-		"ANI_DBGID_SELF_CORR_LOW",
-		"ANI_DBGID_ENABLE",
-		"ANI_DBGID_CURRENT_LEVEL",
-		"ANI_DBGID_POLL_PERIOD",
-		"ANI_DBGID_LISTEN_PERIOD",
-		"ANI_DBGID_OFDM_LEVEL_CFG",
-		"ANI_DBGID_CCK_LEVEL_CFG"
-	},
+	{ /* DCS */
+	  "WLAN_DCS_DBGID_INIT", "WLAN_DCS_DBGID_WMI_CWINT",
+	  "WLAN_DCS_DBGID_TIMER", "WLAN_DCS_DBGID_CMDG", "WLAN_DCS_DBGID_CMDS",
+	  "WLAN_DCS_DBGID_DINIT" },
+	{ /* CACHEMGR  */
+	  "" },
+	{ /* ANI  */
+	  "ANI_DBGID_POLL", "ANI_DBGID_CONTROL", "ANI_DBGID_OFDM_PARAMS",
+	  "ANI_DBGID_CCK_PARAMS", "ANI_DBGID_RESET", "ANI_DBGID_RESTART",
+	  "ANI_DBGID_OFDM_LEVEL", "ANI_DBGID_CCK_LEVEL", "ANI_DBGID_FIRSTEP",
+	  "ANI_DBGID_CYCPWR", "ANI_DBGID_MRC_CCK", "ANI_DBGID_SELF_CORR_LOW",
+	  "ANI_DBGID_ENABLE", "ANI_DBGID_CURRENT_LEVEL",
+	  "ANI_DBGID_POLL_PERIOD", "ANI_DBGID_LISTEN_PERIOD",
+	  "ANI_DBGID_OFDM_LEVEL_CFG", "ANI_DBGID_CCK_LEVEL_CFG" },
 	{
 		"P2P_DBGID_DEFINITION_START",
 		"P2P_DEV_REGISTER",
@@ -958,9 +925,8 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"CSA_OFFLOAD_WMI_CHANSWITCH_RECV",
 		"CSA_DBGID_DEFINITION_END",
 	},
-	{                       /* NLO offload */
-		""
-	},
+	{ /* NLO offload */
+	  "" },
 	{
 		"WLAN_CHATTER_DBGID_DEFINITION_START",
 		"WLAN_CHATTER_ENTER",
@@ -997,17 +963,17 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"WOW_ARP_REPLIED",
 		"WOW_DBGID_DEFINITION_END",
 	},
-	{                       /* WAL VDEV  */
-		""
-	},
-	{                       /* WAL PDEV  */
-		""
-	},
-	{                       /* TEST  */
+	{ /* WAL VDEV  */
+	  "" },
+	{ /* WAL PDEV  */
+	  "" },
+	{
+		/* TEST  */
 		"TP_CHANGE_CHANNEL",
 		"TP_LOCAL_SEND",
 	},
-	{                       /* STA SMPS  */
+	{
+		/* STA SMPS  */
 		"STA_SMPS_DBGID_DEFINITION_START",
 		"STA_SMPS_DBGID_CREATE_PDEV_INSTANCE",
 		"STA_SMPS_DBGID_CREATE_VIRTUAL_CHAN_INSTANCE",
@@ -1029,16 +995,17 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"STA_SMPS_DBGID_DTIM_CHMASK_UPDATE_AWAKE",
 		"SMPS_DBGID_DEFINITION_END",
 	},
-	{                       /* SWBMISS */
+	{
+		/* SWBMISS */
 		"SWBMISS_DBGID_DEFINITION_START",
 		"SWBMISS_ENABLED",
 		"SWBMISS_DISABLED",
 		"SWBMISS_DBGID_DEFINITION_END",
 	},
-	{                       /* WMMAC */
-		""
-	},
-	{                       /* TDLS */
+	{ /* WMMAC */
+	  "" },
+	{
+		/* TDLS */
 		"TDLS_DBGID_DEFINITION_START",
 		"TDLS_DBGID_VDEV_CREATE",
 		"TDLS_DBGID_VDEV_DELETE",
@@ -1070,7 +1037,8 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"TDLS_DBGID_UAPSD_PS_DEFAULT_SETTINGS",
 		"TDLS_DBGID_UAPSD_GENERIC",
 	},
-	{                       /* HB */
+	{
+		/* HB */
 		"WLAN_HB_DBGID_DEFINITION_START",
 		"WLAN_HB_DBGID_INIT",
 		"WLAN_HB_DBGID_TCP_GET_TXBUF_FAIL",
@@ -1088,7 +1056,8 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"WLAN_HB_DBGID_TCP_TX",
 		"WLAN_HB_DBGID_DEFINITION_END",
 	},
-	{                       /* TXBF */
+	{
+		/* TXBF */
 		"TXBFEE_DBGID_START",
 		"TXBFEE_DBGID_NDPA_RECEIVED",
 		"TXBFEE_DBGID_HOST_CONFIG_TXBFEE_TYPE",
@@ -1109,17 +1078,18 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"TXBFEE_UPLOADH_EVENT_ALLOC_MEM_FAIL",
 		"TXBFEE_DBGID_END",
 	},
-	{                       /*BATCH SCAN */
+	{
+		/*BATCH SCAN */
 	},
-	{                       /*THERMAL MGR */
+	{
+		/*THERMAL MGR */
 		"THERMAL_MGR_DBGID_DEFINITION_START",
 		"THERMAL_MGR_NEW_THRESH",
 		"THERMAL_MGR_THRESH_CROSSED",
 		"THERMAL_MGR_DBGID_DEFINITION END",
 	},
-	{                       /* WLAN_MODULE_PHYERR_DFS */
-		""
-	},
+	{ /* WLAN_MODULE_PHYERR_DFS */
+	  "" },
 	{
 		/* WLAN_MODULE_RMC */
 		"RMC_DBGID_DEFINITION_START",
@@ -1189,10 +1159,8 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"HIF_UART_DBGID_TXRX_CTRL_CHAR",
 		"HIF_UART_DBGID_TXRX_BUF_DUMP",
 	},
-	{
-		/* LPI */
-		""
-	},
+	{ /* LPI */
+	  "" },
 	{
 		/* EXTSCAN DBGIDs */
 		"EXTSCAN_START",
@@ -1237,10 +1205,12 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"EXTSCAN_CONFIG_HOTLIST_TABLE",
 		"EXTSCAN_CONFIG_WLAN_CHANGE_TABLE",
 	},
-	{                       /* UNIT_TEST */
+	{
+		/* UNIT_TEST */
 		"UNIT_TEST_GEN",
 	},
-	{                       /* MLME */
+	{
+		/* MLME */
 		"MLME_DEBUG_CMN",
 		"MLME_IF",
 		"MLME_AUTH",
@@ -1252,7 +1222,8 @@ char *DBG_MSG_ARR[WLAN_MODULE_ID_MAX][MAX_DBG_MSGS] = {
 		"MLME_TIMER",
 		"MLME_FRMPARSE",
 	},
-	{                       /*SUPPLICANT */
+	{
+		/*SUPPLICANT */
 		"SUPPL_INIT",
 		"SUPPL_RECV_EAPOL",
 		"SUPPL_RECV_EAPOL_TIMEOUT",
@@ -1268,9 +1239,10 @@ int dbglog_module_log_enable(wmi_unified_t wmi_handle, uint32_t mod_id,
 	uint32_t val = 0;
 
 	if (mod_id > WLAN_MODULE_ID_MAX) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
-				("dbglog_module_log_enable: Invalid module id %d\n",
-				 mod_id));
+		AR_DEBUG_PRINTF(
+			ATH_DEBUG_ERR,
+			("dbglog_module_log_enable: Invalid module id %d\n",
+			 mod_id));
 		return -EINVAL;
 	}
 
@@ -1300,8 +1272,8 @@ int dbglog_vap_log_enable(wmi_unified_t wmi_handle, uint16_t vap_id,
 
 	wma_config_debug_module_cmd(wmi_handle,
 				    isenable ? WMI_DEBUG_LOG_PARAM_VDEV_ENABLE :
-				    WMI_DEBUG_LOG_PARAM_VDEV_DISABLE, vap_id,
-				    NULL, 0);
+					       WMI_DEBUG_LOG_PARAM_VDEV_DISABLE,
+				    vap_id, NULL, 0);
 
 	return 0;
 }
@@ -1344,18 +1316,17 @@ int dbglog_set_mod_wow_log_lvl(wmi_unified_t wmi_handle, uint32_t mod_log_lvl)
 	return 0;
 }
 
-void
-dbglog_set_vap_enable_bitmap(wmi_unified_t wmi_handle,
-			     uint32_t vap_enable_bitmap)
+void dbglog_set_vap_enable_bitmap(wmi_unified_t wmi_handle,
+				  uint32_t vap_enable_bitmap)
 {
 	wma_config_debug_module_cmd(wmi_handle,
 				    WMI_DEBUG_LOG_PARAM_VDEV_ENABLE_BITMAP,
 				    vap_enable_bitmap, NULL, 0);
 }
 
-void
-dbglog_set_mod_enable_bitmap(wmi_unified_t wmi_handle, uint32_t log_level,
-			     uint32_t *mod_enable_bitmap, uint32_t bitmap_len)
+void dbglog_set_mod_enable_bitmap(wmi_unified_t wmi_handle, uint32_t log_level,
+				  uint32_t *mod_enable_bitmap,
+				  uint32_t bitmap_len)
 {
 	wma_config_debug_module_cmd(wmi_handle,
 				    WMI_DEBUG_LOG_PARAM_MOD_ENABLE_BITMAP,
@@ -1391,14 +1362,14 @@ static char *dbglog_get_msg(uint32_t moduleid, uint32_t debugid)
 			return str;
 	}
 
-	snprintf(unknown_str, sizeof(unknown_str),
-		 "UNKNOWN %u:%u", moduleid, debugid);
+	snprintf(unknown_str, sizeof(unknown_str), "UNKNOWN %u:%u", moduleid,
+		 debugid);
 
 	return unknown_str;
 }
 
-static
-void dbglog_printf(uint32_t timestamp, uint16_t vap_id, const char *fmt, ...)
+static void dbglog_printf(uint32_t timestamp, uint16_t vap_id, const char *fmt,
+			  ...)
 {
 	char buf[128];
 	va_list ap;
@@ -1419,9 +1390,8 @@ void dbglog_printf(uint32_t timestamp, uint16_t vap_id, const char *fmt, ...)
 	AR_DEBUG_PRINTF(ATH_DEBUG_INFO, ("%s\n", buf));
 }
 
-static void
-dbglog_printf_no_line_break(uint32_t timestamp,
-			    uint16_t vap_id, const char *fmt, ...)
+static void dbglog_printf_no_line_break(uint32_t timestamp, uint16_t vap_id,
+					const char *fmt, ...)
 {
 	char buf[128];
 	va_list ap;
@@ -1444,18 +1414,17 @@ dbglog_printf_no_line_break(uint32_t timestamp,
 
 #define USE_NUMERIC 0
 
-static A_BOOL
-dbglog_default_print_handler(uint32_t mod_id, uint16_t vap_id, uint32_t dbg_id,
-			     uint32_t timestamp, uint16_t numargs,
-			     uint32_t *args)
+static A_BOOL dbglog_default_print_handler(uint32_t mod_id, uint16_t vap_id,
+					   uint32_t dbg_id, uint32_t timestamp,
+					   uint16_t numargs, uint32_t *args)
 {
 	int i;
 
 	if (vap_id < DBGLOG_MAX_VDEVID) {
 		AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
 				(DBGLOG_PRINT_PREFIX "[%u] vap-%u %s ( ",
-				 timestamp, vap_id, dbglog_get_msg(mod_id,
-								   dbg_id)));
+				 timestamp, vap_id,
+				 dbglog_get_msg(mod_id, dbg_id)));
 	} else {
 		AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
 				(DBGLOG_PRINT_PREFIX "[%u] %s ( ", timestamp,
@@ -1477,7 +1446,7 @@ dbglog_default_print_handler(uint32_t mod_id, uint16_t vap_id, uint32_t dbg_id,
 	return true;
 }
 
-#define DBGLOG_PARSE_ARGS_STRING_LENGTH    (DBGLOG_NUM_ARGS_MAX * 11 + 10)
+#define DBGLOG_PARSE_ARGS_STRING_LENGTH (DBGLOG_NUM_ARGS_MAX * 11 + 10)
 static int dbglog_print_raw_data(uint32_t *buffer, uint32_t length)
 {
 	uint32_t timestamp;
@@ -1489,15 +1458,13 @@ static int dbglog_print_raw_data(uint32_t *buffer, uint32_t length)
 	char *dbgidString;
 
 	while ((count + 1) < length) {
-
 		debugid = DBGLOG_GET_DBGID(buffer[count + 1]);
 		moduleid = DBGLOG_GET_MODULEID(buffer[count + 1]);
 		numargs = DBGLOG_GET_NUMARGS(buffer[count + 1]);
 		timestamp = DBGLOG_GET_TIME_STAMP(buffer[count]);
 
-		if (moduleid < WLAN_MODULE_ID_MAX && debugid < MAX_DBG_MSGS
-		    && numargs <= DBGLOG_NUM_ARGS_MAX) {
-
+		if (moduleid < WLAN_MODULE_ID_MAX && debugid < MAX_DBG_MSGS &&
+		    numargs <= DBGLOG_NUM_ARGS_MAX) {
 			OS_MEMZERO(parseArgsString, sizeof(parseArgsString));
 			totalWriteLen = 0;
 
@@ -1506,14 +1473,14 @@ static int dbglog_print_raw_data(uint32_t *buffer, uint32_t length)
 
 			for (curArgs = 0; curArgs < numargs; curArgs++) {
 				/*
-				 * Using sprintf_s instead of sprintf,
-				 * to avoid length overflow
-				 */
-				writeLen =
-				    snprintf(parseArgsString + totalWriteLen,
-					     DBGLOG_PARSE_ARGS_STRING_LENGTH -
-					     totalWriteLen, "%x ",
-					     buffer[count + 2 + curArgs]);
+         * Using sprintf_s instead of sprintf,
+         * to avoid length overflow
+         */
+				writeLen = snprintf(
+					parseArgsString + totalWriteLen,
+					DBGLOG_PARSE_ARGS_STRING_LENGTH -
+						totalWriteLen,
+					"%x ", buffer[count + 2 + curArgs]);
 				totalWriteLen += writeLen;
 			}
 skip_args_processing:
@@ -1527,12 +1494,12 @@ skip_args_processing:
 							 parseArgsString));
 				} else {
 					/* host need sync with FW id */
-					AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
-							("fw:%s:m:%x,id:%x(%x %x):%s\n",
-							 "UNKNOWN", moduleid,
-							 debugid, timestamp,
-							 buffer[count + 1],
-							 parseArgsString));
+					AR_DEBUG_PRINTF(
+						ATH_DEBUG_INFO,
+						("fw:%s:m:%x,id:%x(%x %x):%s\n",
+						 "UNKNOWN", moduleid, debugid,
+						 timestamp, buffer[count + 1],
+						 parseArgsString));
 				}
 			} else if (debugid ==
 				   DBGLOG_DBGID_SM_FRAMEWORK_PROXY_DBGLOG_MSG) {
@@ -1557,13 +1524,11 @@ skip_args_processing:
 	}
 
 	return 0;
-
 }
 
 #ifdef WLAN_DBGLOG_DEBUGFS
-static int
-dbglog_debugfs_raw_data(wmi_unified_t wmi_handle, const uint8_t *buf,
-			uint32_t length, uint32_t dropped)
+static int dbglog_debugfs_raw_data(wmi_unified_t wmi_handle, const uint8_t *buf,
+				   uint32_t length, uint32_t dropped)
 {
 	struct fwdebug *fwlog = (struct fwdebug *)&wmi_handle->dbglog;
 	struct dbglog_slot *slot;
@@ -1580,7 +1545,7 @@ dbglog_debugfs_raw_data(wmi_unified_t wmi_handle, const uint8_t *buf,
 		return -ENOMEM;
 
 	slot = (struct dbglog_slot *)skb_put(skb, slot_len);
-	slot->diag_type = (uint32_t) DIAG_TYPE_FW_DEBUG_MSG;
+	slot->diag_type = (uint32_t)DIAG_TYPE_FW_DEBUG_MSG;
 	slot->timestamp = cpu_to_le32(jiffies);
 	slot->length = cpu_to_le32(length);
 	slot->dropped = cpu_to_le32(dropped);
@@ -1675,9 +1640,10 @@ static int send_fw_diag_nl_data(const uint8_t *buffer, uint32_t len,
 
 		res = nl_srv_bcast_fw_logs(skb_out);
 		if ((res < 0) && (res != -ESRCH)) {
-			AR_DEBUG_PRINTF(ATH_DEBUG_RSVD1,
-					("%s: nl_srv_bcast_fw_logs failed 0x%x\n",
-					 __func__, res));
+			AR_DEBUG_PRINTF(
+				ATH_DEBUG_RSVD1,
+				("%s: nl_srv_bcast_fw_logs failed 0x%x\n",
+				 __func__, res));
 			return res;
 		}
 	}
@@ -1691,8 +1657,7 @@ static int send_fw_diag_nl_data(const uint8_t *buffer, uint32_t len,
  *
  * return: success
  */
-static int
-process_fw_diag_event_data(uint8_t *datap, uint32_t num_data)
+static int process_fw_diag_event_data(uint8_t *datap, uint32_t num_data)
 {
 	uint32_t diag_type;
 	uint32_t nl_data_len; /* diag hdr + payload */
@@ -1714,11 +1679,11 @@ process_fw_diag_event_data(uint8_t *datap, uint32_t num_data)
 		switch (diag_type) {
 		case DIAG_TYPE_FW_EVENT:
 			return send_fw_diag_nl_data(datap, nl_data_len,
-							diag_type);
+						    diag_type);
 			break;
 		case DIAG_TYPE_FW_LOG:
 			return send_fw_diag_nl_data(datap, nl_data_len,
-							diag_type);
+						    diag_type);
 			break;
 		}
 		/* Move to the next event and send to cnss-diag */
@@ -1729,8 +1694,8 @@ process_fw_diag_event_data(uint8_t *datap, uint32_t num_data)
 	return 0;
 }
 
-static int
-send_diag_netlink_data(const uint8_t *buffer, uint32_t len, uint32_t cmd)
+static int send_diag_netlink_data(const uint8_t *buffer, uint32_t len,
+				  uint32_t cmd)
 {
 	struct sk_buff *skb_out;
 	struct nlmsghdr *nlh;
@@ -1752,7 +1717,7 @@ send_diag_netlink_data(const uint8_t *buffer, uint32_t len, uint32_t cmd)
 
 	if (cds_is_multicast_logging()) {
 		slot_len = sizeof(*slot) + ATH6KL_FWLOG_PAYLOAD_SIZE +
-				sizeof(radio);
+			   sizeof(radio);
 
 		skb_out = nlmsg_new(slot_len, GFP_ATOMIC);
 		if (!skb_out) {
@@ -1760,8 +1725,8 @@ send_diag_netlink_data(const uint8_t *buffer, uint32_t len, uint32_t cmd)
 			return A_ERROR;
 		}
 
-		nlh = nlmsg_put(skb_out, 0, 0, WLAN_NL_MSG_CNSS_DIAG,
-				slot_len, 0);
+		nlh = nlmsg_put(skb_out, 0, 0, WLAN_NL_MSG_CNSS_DIAG, slot_len,
+				0);
 		if (!nlh) {
 			kfree_skb(skb_out);
 			return -EMSGSIZE;
@@ -1769,7 +1734,7 @@ send_diag_netlink_data(const uint8_t *buffer, uint32_t len, uint32_t cmd)
 		wnl = (tAniNlHdr *)nlh;
 		wnl->radio = radio;
 		/* data buffer offset from: nlmsg_hdr + sizeof(int) radio */
-		slot = (struct dbglog_slot *) (nlmsg_data(nlh) + sizeof(radio));
+		slot = (struct dbglog_slot *)(nlmsg_data(nlh) + sizeof(radio));
 		slot->diag_type = cmd;
 		slot->timestamp = cpu_to_le32(jiffies);
 		slot->length = cpu_to_le32(len);
@@ -1778,25 +1743,26 @@ send_diag_netlink_data(const uint8_t *buffer, uint32_t len, uint32_t cmd)
 		memcpy(slot->payload, buffer, len);
 
 		/*
-		 * Need to pad each record to fixed length
-		 * ATH6KL_FWLOG_PAYLOAD_SIZE
-		 */
+     * Need to pad each record to fixed length
+     * ATH6KL_FWLOG_PAYLOAD_SIZE
+     */
 		memset(slot->payload + len, 0, ATH6KL_FWLOG_PAYLOAD_SIZE - len);
 
 		res = nl_srv_bcast_fw_logs(skb_out);
 		if ((res < 0) && (res != -ESRCH)) {
-			AR_DEBUG_PRINTF(ATH_DEBUG_RSVD1,
-					("%s: nl_srv_bcast_fw_logs failed 0x%x\n",
-					 __func__, res));
+			AR_DEBUG_PRINTF(
+				ATH_DEBUG_RSVD1,
+				("%s: nl_srv_bcast_fw_logs failed 0x%x\n",
+				 __func__, res));
 			return res;
 		}
 	}
 	return res;
 }
 
-static int
-dbglog_process_netlink_data(wmi_unified_t wmi_handle, const uint8_t *buffer,
-			    uint32_t len, uint32_t dropped)
+static int dbglog_process_netlink_data(wmi_unified_t wmi_handle,
+				       const uint8_t *buffer, uint32_t len,
+				       uint32_t dropped)
 {
 	struct sk_buff *skb_out;
 	struct nlmsghdr *nlh;
@@ -1818,7 +1784,7 @@ dbglog_process_netlink_data(wmi_unified_t wmi_handle, const uint8_t *buffer,
 
 	if (cds_is_multicast_logging()) {
 		slot_len = sizeof(*slot) + ATH6KL_FWLOG_PAYLOAD_SIZE +
-				sizeof(radio);
+			   sizeof(radio);
 
 		skb_out = nlmsg_new(slot_len, GFP_KERNEL);
 		if (!skb_out) {
@@ -1827,8 +1793,8 @@ dbglog_process_netlink_data(wmi_unified_t wmi_handle, const uint8_t *buffer,
 			return A_ERROR;
 		}
 
-		nlh = nlmsg_put(skb_out, 0, 0, WLAN_NL_MSG_CNSS_DIAG,
-				slot_len, 0);
+		nlh = nlmsg_put(skb_out, 0, 0, WLAN_NL_MSG_CNSS_DIAG, slot_len,
+				0);
 		if (!nlh) {
 			kfree_skb(skb_out);
 			return -EMSGSIZE;
@@ -1836,24 +1802,25 @@ dbglog_process_netlink_data(wmi_unified_t wmi_handle, const uint8_t *buffer,
 		wnl = (tAniNlHdr *)nlh;
 		wnl->radio = radio;
 		/* data buffer offset from: nlmsg_hdr + sizeof(int) radio */
-		slot = (struct dbglog_slot *) (nlmsg_data(nlh) + sizeof(radio));
-		slot->diag_type = (uint32_t) DIAG_TYPE_FW_DEBUG_MSG;
+		slot = (struct dbglog_slot *)(nlmsg_data(nlh) + sizeof(radio));
+		slot->diag_type = (uint32_t)DIAG_TYPE_FW_DEBUG_MSG;
 		slot->timestamp = cpu_to_le32(jiffies);
 		slot->length = cpu_to_le32(len);
 		slot->dropped = cpu_to_le32(dropped);
 		memcpy(slot->payload, buffer, len);
 
 		/*
-		 * Need to pad each record to fixed length
-		 * ATH6KL_FWLOG_PAYLOAD_SIZE
-		 */
+     * Need to pad each record to fixed length
+     * ATH6KL_FWLOG_PAYLOAD_SIZE
+     */
 		memset(slot->payload + len, 0, ATH6KL_FWLOG_PAYLOAD_SIZE - len);
 
 		res = nl_srv_bcast_fw_logs(skb_out);
 		if ((res < 0) && (res != -ESRCH)) {
-			AR_DEBUG_PRINTF(ATH_DEBUG_RSVD1,
-					("%s: nl_srv_bcast_fw_logs failed 0x%x\n",
-					 __func__, res));
+			AR_DEBUG_PRINTF(
+				ATH_DEBUG_RSVD1,
+				("%s: nl_srv_bcast_fw_logs failed 0x%x\n",
+				 __func__, res));
 			return res;
 		}
 	}
@@ -1869,8 +1836,7 @@ dbglog_process_netlink_data(wmi_unified_t wmi_handle, const uint8_t *buffer,
 
 static int diag_fw_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 {
-
-	tp_wma_handle wma = (tp_wma_handle) scn;
+	tp_wma_handle wma = (tp_wma_handle)scn;
 	WMI_DIAG_EVENTID_param_tlvs *param_buf;
 	uint8_t *datap;
 	uint32_t len = 0;
@@ -1886,7 +1852,7 @@ static int diag_fw_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 		len = datalen;
 		wma->is_fw_assert = 0;
 	} else {
-		param_buf = (WMI_DIAG_EVENTID_param_tlvs *) data;
+		param_buf = (WMI_DIAG_EVENTID_param_tlvs *)data;
 		if (!param_buf) {
 			AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
 					("Get NULL point message from FW\n"));
@@ -1897,27 +1863,30 @@ static int diag_fw_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 		len = param_buf->num_bufp;
 
 		if (!get_version) {
-			if (len < 2*(sizeof(uint32_t))) {
-				AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
-						("len is less than expected\n"));
+			if (len < 2 * (sizeof(uint32_t))) {
+				AR_DEBUG_PRINTF(
+					ATH_DEBUG_ERR,
+					("len is less than expected\n"));
 				return A_ERROR;
 			}
-			buffer = (uint32_t *) datap;
-			buffer++;       /* skip offset */
+			buffer = (uint32_t *)datap;
+			buffer++; /* skip offset */
 			if (WLAN_DIAG_TYPE_CONFIG == DIAG_GET_TYPE(*buffer)) {
-				if (len < 3*(sizeof(uint32_t))) {
-					AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
-							("len is less than expected\n"));
+				if (len < 3 * (sizeof(uint32_t))) {
+					AR_DEBUG_PRINTF(
+						ATH_DEBUG_ERR,
+						("len is less than expected\n"));
 					return A_ERROR;
 				}
-				buffer++;       /* skip  */
+				buffer++; /* skip  */
 				if (DIAG_VERSION_INFO == DIAG_GET_ID(*buffer)) {
-					if (len < 4*(sizeof(uint32_t))) {
-						AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
-								("len is less than expected\n"));
+					if (len < 4 * (sizeof(uint32_t))) {
+						AR_DEBUG_PRINTF(
+							ATH_DEBUG_ERR,
+							("len is less than expected\n"));
 						return A_ERROR;
 					}
-					buffer++;       /* skip  */
+					buffer++; /* skip  */
 					/* get payload */
 					get_version = *buffer;
 				}
@@ -1926,30 +1895,33 @@ static int diag_fw_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 	}
 	if (dbglog_process_type == DBGLOG_PROCESS_PRINT_RAW) {
 		if (!gprint_limiter) {
-			AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
-					("NOT Supported only supports net link socket\n"));
+			AR_DEBUG_PRINTF(
+				ATH_DEBUG_ERR,
+				("NOT Supported only supports net link socket\n"));
 			gprint_limiter = true;
 		}
 		return 0;
 	}
 
 	if (dbglog_process_type == DBGLOG_PROCESS_NET_RAW) {
-		return send_diag_netlink_data((uint8_t *) datap,
-					      len, DIAG_TYPE_FW_MSG);
+		return send_diag_netlink_data((uint8_t *)datap, len,
+					      DIAG_TYPE_FW_MSG);
 	}
 #ifdef WLAN_DBGLOG_DEBUGFS
 	if (dbglog_process_type == DBGLOG_PROCESS_POOL_RAW) {
 		if (!gprint_limiter) {
-			AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
-					("NOT Supported only supports net link socket\n"));
+			AR_DEBUG_PRINTF(
+				ATH_DEBUG_ERR,
+				("NOT Supported only supports net link socket\n"));
 			gprint_limiter = true;
 		}
 		return 0;
 	}
 #endif /* WLAN_DBGLOG_DEBUGFS */
 	if (!gprint_limiter) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
-				("NOT Supported only supports net link socket\n"));
+		AR_DEBUG_PRINTF(
+			ATH_DEBUG_ERR,
+			("NOT Supported only supports net link socket\n"));
 		gprint_limiter = true;
 	}
 	/* Always returns zero */
@@ -1960,15 +1932,14 @@ static int diag_fw_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
  * WMI diag data event handler, this function invoked as a CB
  * when there DIAG_DATA to be forwarded from the FW.
  */
-static int
-fw_diag_data_event_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
+static int fw_diag_data_event_handler(ol_scn_t scn, uint8_t *data,
+				      uint32_t datalen)
 {
-
 	WMI_DIAG_DATA_CONTAINER_EVENTID_param_tlvs *param_buf;
 	uint8_t *datap;
 	uint32_t num_data; /* Total events */
 
-	param_buf = (WMI_DIAG_DATA_CONTAINER_EVENTID_param_tlvs *) data;
+	param_buf = (WMI_DIAG_DATA_CONTAINER_EVENTID_param_tlvs *)data;
 	if (!param_buf) {
 		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
 				("Got NULL point message from FW\n"));
@@ -1977,14 +1948,14 @@ fw_diag_data_event_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 
 	num_data = param_buf->num_bufp;
 
-	datap = (uint8_t *) param_buf->bufp;
+	datap = (uint8_t *)param_buf->bufp;
 
 	return process_fw_diag_event_data(datap, num_data);
 }
 
 int dbglog_parse_debug_logs(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 {
-	tp_wma_handle wma = (tp_wma_handle) scn;
+	tp_wma_handle wma = (tp_wma_handle)scn;
 	uint32_t count;
 	uint32_t *buffer;
 	uint32_t timestamp;
@@ -2008,7 +1979,7 @@ int dbglog_parse_debug_logs(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 		len = datalen;
 		wma->is_fw_assert = 0;
 	} else {
-		param_buf = (WMI_DEBUG_MESG_EVENTID_param_tlvs *) data;
+		param_buf = (WMI_DEBUG_MESG_EVENTID_param_tlvs *)data;
 		if (!param_buf) {
 			AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
 					("Get NULL point message from FW\n"));
@@ -2024,7 +1995,7 @@ int dbglog_parse_debug_logs(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 		return A_ERROR;
 	}
 
-	dropped = *((uint32_t *) datap);
+	dropped = *((uint32_t *)datap);
 	if (dropped > 0) {
 		AR_DEBUG_PRINTF(ATH_DEBUG_TRC,
 				("%d log buffers are dropped\n", dropped));
@@ -2033,23 +2004,21 @@ int dbglog_parse_debug_logs(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 	len -= sizeof(dropped);
 
 	count = 0;
-	buffer = (uint32_t *) datap;
+	buffer = (uint32_t *)datap;
 	length = (len >> 2);
 
 	if (dbglog_process_type == DBGLOG_PROCESS_PRINT_RAW)
 		return dbglog_print_raw_data(buffer, length);
 
 	if (dbglog_process_type == DBGLOG_PROCESS_NET_RAW) {
-		return dbglog_process_netlink_data((wmi_unified_t) wma->
-							   wmi_handle,
-						   (uint8_t *) buffer,
-						   len, dropped);
+		return dbglog_process_netlink_data(
+			(wmi_unified_t)wma->wmi_handle, (uint8_t *)buffer, len,
+			dropped);
 	}
 #ifdef WLAN_DBGLOG_DEBUGFS
 	if (dbglog_process_type == DBGLOG_PROCESS_POOL_RAW) {
-		return dbglog_debugfs_raw_data((wmi_unified_t) wma->wmi_handle,
-					       (uint8_t *) buffer, len,
-					       dropped);
+		return dbglog_debugfs_raw_data((wmi_unified_t)wma->wmi_handle,
+					       (uint8_t *)buffer, len, dropped);
 	}
 #endif /* WLAN_DBGLOG_DEBUGFS */
 
@@ -2068,29 +2037,25 @@ int dbglog_parse_debug_logs(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 
 		if (!mod_print[moduleid]) {
 			/*
-			 * No module specific log registered
-			 * use the default handler
-			 */
-			dbglog_default_print_handler(moduleid, vapid, debugid,
-						     timestamp, numargs,
-						     (((uint32_t *) buffer) +
-						      2 + count));
+       * No module specific log registered
+       * use the default handler
+       */
+			dbglog_default_print_handler(
+				moduleid, vapid, debugid, timestamp, numargs,
+				(((uint32_t *)buffer) + 2 + count));
 		} else {
-			if (!(mod_print[moduleid](moduleid, vapid, debugid,
-						  timestamp, numargs,
-						  (((uint32_t *) buffer) +
-						  2 + count)))) {
+			if (!(mod_print[moduleid](
+				    moduleid, vapid, debugid, timestamp,
+				    numargs,
+				    (((uint32_t *)buffer) + 2 + count)))) {
 				/*
-				 * The message is not handled
-				 * by the module specific handler
-				 */
-				dbglog_default_print_handler(moduleid, vapid,
-							     debugid, timestamp,
-							     numargs,
-							     (((uint32_t *)
-							       buffer) + 2 +
-							      count));
-
+         * The message is not handled
+         * by the module specific handler
+         */
+				dbglog_default_print_handler(
+					moduleid, vapid, debugid, timestamp,
+					numargs,
+					(((uint32_t *)buffer) + 2 + count));
 			}
 		}
 
@@ -2106,20 +2071,18 @@ void dbglog_reg_modprint(uint32_t mod_id, module_dbg_print printfn)
 	if (!mod_print[mod_id]) {
 		mod_print[mod_id] = printfn;
 	} else {
-		AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
-				("module print is already registered for this module %d\n",
-				 mod_id));
+		AR_DEBUG_PRINTF(
+			ATH_DEBUG_INFO,
+			("module print is already registered for this module %d\n",
+			 mod_id));
 	}
 }
 
-static void
-dbglog_sm_print(uint32_t timestamp,
-		uint16_t vap_id,
-		uint16_t numargs,
-		uint32_t *args,
-		const char *module_prefix,
-		const char *const states[], uint32_t num_states,
-		const char *const events[], uint32_t num_events)
+static void dbglog_sm_print(uint32_t timestamp, uint16_t vap_id,
+			    uint16_t numargs, uint32_t *args,
+			    const char *module_prefix,
+			    const char *const states[], uint32_t num_states,
+			    const char *const events[], uint32_t num_events)
 {
 	uint8_t type, arg1, arg2, arg3;
 	uint32_t extra, extra2, extra3;
@@ -2137,7 +2100,7 @@ dbglog_sm_print(uint32_t timestamp,
 	extra3 = args[3];
 
 	switch (type) {
-	case 0:         /* state transition */
+	case 0: /* state transition */
 		if (arg1 < num_states && arg2 < num_states) {
 			dbglog_printf(timestamp, vap_id,
 				      "%s: %s => %s (%#x, %#x, %#x)",
@@ -2150,7 +2113,7 @@ dbglog_sm_print(uint32_t timestamp,
 				      extra3);
 		}
 		break;
-	case 1:         /* dispatch event */
+	case 1: /* dispatch event */
 		if (arg1 < num_states && arg2 < num_events) {
 			dbglog_printf(timestamp, vap_id,
 				      "%s: %s < %s (%#x, %#x, %#x)",
@@ -2163,35 +2126,33 @@ dbglog_sm_print(uint32_t timestamp,
 				      extra3);
 		}
 		break;
-	case 2:         /* warning */
+	case 2: /* warning */
 		switch (arg1) {
 		case 0: /* unhandled event */
 			if (arg2 < num_states && arg3 < num_events) {
-				dbglog_printf(timestamp, vap_id,
-					      "%s: unhandled event %s in state %s (%#x, %#x, %#x)",
-					      module_prefix, events[arg3],
-					      states[arg2], extra, extra2,
-					      extra3);
+				dbglog_printf(
+					timestamp, vap_id,
+					"%s: unhandled event %s in state %s (%#x, %#x, %#x)",
+					module_prefix, events[arg3],
+					states[arg2], extra, extra2, extra3);
 			} else {
-				dbglog_printf(timestamp, vap_id,
-					      "%s: unhandled event %u in state %u (%#x, %#x, %#x)",
-					      module_prefix, arg3, arg2, extra,
-					      extra2, extra3);
+				dbglog_printf(
+					timestamp, vap_id,
+					"%s: unhandled event %u in state %u (%#x, %#x, %#x)",
+					module_prefix, arg3, arg2, extra,
+					extra2, extra3);
 			}
 			break;
 		default:
 			break;
-
 		}
 		break;
 	}
 }
 
 static A_BOOL
-dbglog_sta_powersave_print_handler(uint32_t mod_id,
-				   uint16_t vap_id,
-				   uint32_t dbg_id,
-				   uint32_t timestamp,
+dbglog_sta_powersave_print_handler(uint32_t mod_id, uint16_t vap_id,
+				   uint32_t dbg_id, uint32_t timestamp,
 				   uint16_t numargs, uint32_t *args)
 {
 	static const char *const states[] = {
@@ -2240,49 +2201,53 @@ dbglog_sta_powersave_print_handler(uint32_t mod_id,
 		break;
 	case PS_STA_PM_ARB_REQUEST:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "PM ARB request flags=%x, last_time=%x %s: %s",
-				      args[1], args[2],
-				      dbglog_get_module_str(args[0]),
-				      args[3] ? "SLEEP" : "WAKE");
+			dbglog_printf(
+				timestamp, vap_id,
+				"PM ARB request flags=%x, last_time=%x %s: %s",
+				args[1], args[2],
+				dbglog_get_module_str(args[0]),
+				args[3] ? "SLEEP" : "WAKE");
 		}
 		break;
 	case PS_STA_DELIVER_EVENT:
 		if (numargs == 2) {
-			dbglog_printf(timestamp, vap_id, "STA PS: %s %s",
-				      (args[0] == 0 ? "PAUSE_COMPLETE" :
-				       (args[0] == 1 ? "UNPAUSE_COMPLETE" :
-					(args[0] == 2 ? "SLEEP" :
-					 (args[0] ==
-					  3 ? "AWAKE" : "UNKNOWN")))),
-				      (args[1] ==
-				       0 ? "SUCCESS" : (args[1] ==
-							1 ? "TXQ_FLUSH_TIMEOUT"
-							: (args[1] ==
-							   2 ? "NO_ACK"
-							   : (args[1] ==
-							      3 ?
-							      "RX_LEAK_TIMEOUT"
-							      : (args[1] ==
-								 4 ?
-								 "PSPOLL_UAPSD_BUSY_TIMEOUT"
-								 :
-								 "UNKNOWN"))))));
+			dbglog_printf(
+				timestamp, vap_id, "STA PS: %s %s",
+				(args[0] == 0 ?
+					 "PAUSE_COMPLETE" :
+					 (args[0] == 1 ?
+						  "UNPAUSE_COMPLETE" :
+						  (args[0] == 2 ?
+							   "SLEEP" :
+							   (args[0] == 3 ?
+								    "AWAKE" :
+								    "UNKNOWN")))),
+				(args[1] == 0 ?
+					 "SUCCESS" :
+					 (args[1] == 1 ?
+						  "TXQ_FLUSH_TIMEOUT" :
+						  (args[1] == 2 ?
+							   "NO_ACK" :
+							   (args[1] == 3 ?
+								    "RX_LEAK_TIMEOUT" :
+								    (args[1] == 4 ?
+									     "PSPOLL_UAPSD_BUSY_TIMEOUT" :
+									     "UNKNOWN"))))));
 		}
 		break;
 	case PS_STA_PSPOLL_SEQ_DONE:
 		if (numargs == 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "STA PS poll: queue=%u comp=%u rsp=%u rsp_dur=%u fc=%x qos=%x %s",
-				      args[0], args[1], args[2], args[3],
-				      (args[4] >> 16) & 0xffff,
-				      (args[4] >> 8) & 0xff,
-				      (args[4] & 0xff) ==
-				      0 ? "SUCCESS" : (args[4] & 0xff) ==
-				      1 ? "NO_ACK" : (args[4] & 0xff) ==
-				      2 ? "DROPPED" : (args[4] & 0xff) ==
-				      3 ? "FILTERED" : (args[4] & 0xff) ==
-				      4 ? "RSP_TIMEOUT" : "UNKNOWN");
+			dbglog_printf(
+				timestamp, vap_id,
+				"STA PS poll: queue=%u comp=%u rsp=%u rsp_dur=%u fc=%x qos=%x %s",
+				args[0], args[1], args[2], args[3],
+				(args[4] >> 16) & 0xffff, (args[4] >> 8) & 0xff,
+				(args[4] & 0xff) == 0 ? "SUCCESS" :
+				(args[4] & 0xff) == 1 ? "NO_ACK" :
+				(args[4] & 0xff) == 2 ? "DROPPED" :
+				(args[4] & 0xff) == 3 ? "FILTERED" :
+				(args[4] & 0xff) == 4 ? "RSP_TIMEOUT" :
+							"UNKNOWN");
 		}
 		break;
 	case PS_STA_COEX_MODE:
@@ -2305,54 +2270,37 @@ dbglog_sta_powersave_print_handler(uint32_t mod_id,
 				char *name;
 				int is_time_param;
 			} params[] = {
-				{
-					"MAX_SLEEP_ATTEMPTS", 0
-				}, {
-					"DELAYED_SLEEP", 1
-				}, {
-					"TXRX_INACTIVITY", 1
-				}, {
-					"MAX_TX_BEFORE_WAKE", 0
-				}, {
-					"UAPSD_TIMEOUT", 1
-				}, {
-					"UAPSD_CONFIG", 0
-				}, {
-					"PSPOLL_RESPONSE_TIMEOUT", 1
-				}, {
-					"MAX_PSPOLL_BEFORE_WAKE", 0
-				}, {
-					"RX_WAKE_POLICY", 0
-				}, {
-					"DELAYED_PAUSE_RX_LEAK", 1
-				}, {
-					"TXRX_INACTIVITY_BLOCKED_RETRY", 1
-				}, {
-					"SPEC_WAKE_INTERVAL", 1
-				}, {
-					"MAX_SPEC_NODATA_PSPOLL", 0
-				}, {
-					"ESTIMATED_PSPOLL_RESP_TIME", 1
-				}, {
-					"QPOWER_MAX_PSPOLL_BEFORE_WAKE", 0
-				}, {
-					"QPOWER_ENABLE", 0
-				},
+				{ "MAX_SLEEP_ATTEMPTS", 0 },
+				{ "DELAYED_SLEEP", 1 },
+				{ "TXRX_INACTIVITY", 1 },
+				{ "MAX_TX_BEFORE_WAKE", 0 },
+				{ "UAPSD_TIMEOUT", 1 },
+				{ "UAPSD_CONFIG", 0 },
+				{ "PSPOLL_RESPONSE_TIMEOUT", 1 },
+				{ "MAX_PSPOLL_BEFORE_WAKE", 0 },
+				{ "RX_WAKE_POLICY", 0 },
+				{ "DELAYED_PAUSE_RX_LEAK", 1 },
+				{ "TXRX_INACTIVITY_BLOCKED_RETRY", 1 },
+				{ "SPEC_WAKE_INTERVAL", 1 },
+				{ "MAX_SPEC_NODATA_PSPOLL", 0 },
+				{ "ESTIMATED_PSPOLL_RESP_TIME", 1 },
+				{ "QPOWER_MAX_PSPOLL_BEFORE_WAKE", 0 },
+				{ "QPOWER_ENABLE", 0 },
 			};
 			uint32_t param = args[0];
 			uint32_t value = args[1];
 
 			if (param < QDF_ARRAY_SIZE(params)) {
 				if (params[param].is_time_param) {
-					dbglog_printf(timestamp, vap_id,
-						      "STA PS SET_PARAM %s => %u (us)",
-						      params[param].name,
-						      value);
+					dbglog_printf(
+						timestamp, vap_id,
+						"STA PS SET_PARAM %s => %u (us)",
+						params[param].name, value);
 				} else {
-					dbglog_printf(timestamp, vap_id,
-						      "STA PS SET_PARAM %s => %#x",
-						      params[param].name,
-						      value);
+					dbglog_printf(
+						timestamp, vap_id,
+						"STA PS SET_PARAM %s => %#x",
+						params[param].name, value);
 				}
 			} else {
 				dbglog_printf(timestamp, vap_id,
@@ -2362,9 +2310,10 @@ dbglog_sta_powersave_print_handler(uint32_t mod_id,
 		}
 		break;
 	case PS_STA_SPECPOLL_TIMER_STARTED:
-		dbglog_printf(timestamp, vap_id,
-			      "SPEC Poll Timer Started: Beacon time Remaining:%d wakeup interval:%d",
-			      args[0], args[1]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"SPEC Poll Timer Started: Beacon time Remaining:%d wakeup interval:%d",
+			args[0], args[1]);
 		break;
 	case PS_STA_SPECPOLL_TIMER_STOPPED:
 		dbglog_printf(timestamp, vap_id, "SPEC Poll Timer Stopped");
@@ -2384,33 +2333,23 @@ enum wlan_ibss_ps_sub_module {
 	WLAN_IBSS_PS_SUB_MODULE_MAX = 3,
 };
 
-#define WLAN_IBSS_PS_SUB_MODULE_OFFSET  0x1E
+#define WLAN_IBSS_PS_SUB_MODULE_OFFSET 0x1E
 
 static A_BOOL
-dbglog_ibss_powersave_print_handler(uint32_t mod_id,
-				    uint16_t vap_id,
-				    uint32_t dbg_id,
-				    uint32_t timestamp,
+dbglog_ibss_powersave_print_handler(uint32_t mod_id, uint16_t vap_id,
+				    uint32_t dbg_id, uint32_t timestamp,
 				    uint16_t numargs, uint32_t *args)
 {
 	static const char *const nw_states[] = {
-		"WAIT_FOR_TBTT",
-		"ATIM_WINDOW_PRE_BCN",
-		"ATIM_WINDOW_POST_BCN",
-		"OUT_OF_ATIM_WINDOW",
-		"PAUSE_PENDING",
-		"PAUSED",
+		"WAIT_FOR_TBTT",	"ATIM_WINDOW_PRE_BCN",
+		"ATIM_WINDOW_POST_BCN", "OUT_OF_ATIM_WINDOW",
+		"PAUSE_PENDING",	"PAUSED",
 	};
 
 	static const char *const ps_states[] = {
-		"ACTIVE",
-		"SLEEP_TX_SEND",
-		"SLEEP_DOZE_PAUSE_PENDING",
-		"SLEEP_DOZE",
-		"SLEEP_AWAKE",
-		"ACTIVE_TX_SEND",
-		"PAUSE_TX_SEND",
-		"PAUSED",
+		"ACTIVE",	 "SLEEP_TX_SEND", "SLEEP_DOZE_PAUSE_PENDING",
+		"SLEEP_DOZE",	 "SLEEP_AWAKE",	  "ACTIVE_TX_SEND",
+		"PAUSE_TX_SEND", "PAUSED",
 	};
 
 	static const char *const peer_ps_states[] = {
@@ -2476,9 +2415,10 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 		break;
 	case IBSS_PS_DBGID_PEER_CREATE:
 		if (numargs == 2) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: peer alloc failed for peer ID:%u",
-				      args[0]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: peer alloc failed for peer ID:%u",
+				args[0]);
 		} else if (numargs == 1) {
 			dbglog_printf(timestamp, vap_id,
 				      "IBSS PS: create peer ID=%u", args[0]);
@@ -2486,9 +2426,11 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 		break;
 	case IBSS_PS_DBGID_PEER_DELETE:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: delete peer ID=%u num_peers:%d num_sleeping_peers:%d ps_enabled_for_this_peer:%d",
-				      args[0], args[1], args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: delete peer ID=%u num_peers:%d "
+				"num_sleeping_peers:%d ps_enabled_for_this_peer:%d",
+				args[0], args[1], args[2], args[3]);
 		}
 		break;
 	case IBSS_PS_DBGID_VDEV_CREATE:
@@ -2507,11 +2449,13 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 	case IBSS_PS_DBGID_VDEV_EVENT:
 		if (numargs == 1) {
 			if (args[0] == 5) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: vdev event for peer add");
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: vdev event for peer add");
 			} else if (args[0] == 7) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: vdev event for peer delete");
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: vdev event for peer delete");
 			} else {
 				dbglog_printf(timestamp, vap_id,
 					      "IBSS PS: vdev event %u",
@@ -2523,58 +2467,70 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 	case IBSS_PS_DBGID_PEER_EVENT:
 		if (numargs == 4) {
 			if (args[0] == 0xFFFF) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: pre_send for peer:%u peer_type:%u sm_event_mask:%0x",
-					      args[1], args[3], args[2]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: pre_send for peer:%u peer_type:%u sm_event_mask:%0x",
+					args[1], args[3], args[2]);
 			} else if (args[0] == 0x20000) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: send_complete for peer:%u peer_type:%u sm_event_mask:%0x",
-					      args[1], args[3], args[2]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: send_complete for peer:%u peer_type:%u sm_event_mask:%0x",
+					args[1], args[3], args[2]);
 			} else if (args[0] == 0x10) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: send_n_complete for peer:%u peer_type:%u sm_event_mask:%0x",
-					      args[1], args[3], args[2]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: send_n_complete for peer:%u peer_type:%u "
+					"sm_event_mask:%0x",
+					args[1], args[3], args[2]);
 			} else if (args[0] == 0x40) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: rx event for peer:%u peer_type:%u sm_event_mask:%0x",
-					      args[1], args[3], args[2]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: rx event for peer:%u peer_type:%u sm_event_mask:%0x",
+					args[1], args[3], args[2]);
 			} else if (args[0] == 0x4) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: hw_q_empty for peer:%u peer_type:%u sm_event_mask:%0x",
-					      args[1], args[3], args[2]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: hw_q_empty for peer:%u peer_type:%u sm_event_mask:%0x",
+					args[1], args[3], args[2]);
 			}
 		}
 		break;
 
 	case IBSS_PS_DBGID_DELIVER_CAB:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: Deliver CAB n_mpdu:%d send_flags:%0x tid_cur:%d q_depth_for_other_tid:%d",
-				      args[0], args[1], args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: Deliver CAB n_mpdu:%d send_flags:%0x tid_cur:%d "
+				"q_depth_for_other_tid:%d",
+				args[0], args[1], args[2], args[3]);
 		}
 		break;
 
 	case IBSS_PS_DBGID_DELIVER_UC_DATA:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: Deliver UC data peer:%d tid:%d n_mpdu:%d send_flags:%0x",
-				      args[0], args[1], args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: Deliver UC data peer:%d tid:%d n_mpdu:%d send_flags:%0x",
+				args[0], args[1], args[2], args[3]);
 		}
 		break;
 
 	case IBSS_PS_DBGID_DELIVER_UC_DATA_ERROR:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: Deliver UC data error peer:%d tid:%d allowed_tidmask:%0x, pending_tidmap:%0x",
-				      args[0], args[1], args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: Deliver UC data error peer:%d tid:%d "
+				"allowed_tidmask:%0x, pending_tidmap:%0x",
+				args[0], args[1], args[2], args[3]);
 		}
 		break;
 
 	case IBSS_PS_DBGID_UC_INACTIVITY_TMR_RESTART:
 		if (numargs == 2) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: UC timer restart peer:%d timer_val:%0x",
-				      args[0], args[1]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: UC timer restart peer:%d timer_val:%0x",
+				args[0], args[1]);
 		}
 		break;
 
@@ -2589,16 +2545,18 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 	case IBSS_PS_DBGID_NULL_TX_COMPLETION:
 		if (numargs == 3) {
 			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: null tx completion peer:%d tx_completion_status:%d flags:%0x",
+				      "IBSS PS: null tx completion peer:%d "
+				      "tx_completion_status:%d flags:%0x",
 				      args[0], args[1], args[2]);
 		}
 		break;
 
 	case IBSS_PS_DBGID_ATIM_TIMER_START:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: ATIM timer start tsf:%0x %0x tbtt:%0x %0x",
-				      args[0], args[1], args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: ATIM timer start tsf:%0x %0x tbtt:%0x %0x",
+				args[0], args[1], args[2], args[3]);
 		}
 		break;
 
@@ -2615,17 +2573,19 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 
 	case IBSS_PS_DBGID_BC_ATIM_SEND:
 		if (numargs == 2) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: MC Data, num_of_peers:%d bc_atim_sent:%d",
-				      args[1], args[0]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: MC Data, num_of_peers:%d bc_atim_sent:%d",
+				args[1], args[0]);
 		}
 		break;
 
 	case IBSS_PS_DBGID_UC_TIMEOUT:
 		if (numargs == 2) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: UC timeout for peer:%d send_null:%d",
-				      args[0], args[1]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: UC timeout for peer:%d send_null:%d",
+				args[0], args[1]);
 		}
 		break;
 
@@ -2636,29 +2596,37 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 
 	case IBSS_PS_DBGID_PWR_COLLAPSE_NOT_ALLOWED:
 		if (numargs == 0) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: power collapse not allowed by INI");
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: power collapse not allowed by INI");
 		} else if (numargs == 1) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: power collapse not allowed since peer id:%d is not PS capable",
-				      args[0]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: power collapse not allowed since peer id:%d is "
+				"not PS capable",
+				args[0]);
 		} else if (numargs == 2) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: power collapse not allowed - no peers in NW");
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: power collapse not allowed - no peers in NW");
 		} else if (numargs == 3) {
 			if (args[0] == 2) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: power collapse not allowed, non-zero qdepth %d %d",
-					      args[1], args[2]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: power collapse not allowed, non-zero qdepth %d %d",
+					args[1], args[2]);
 			} else if (args[0] == 3) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: power collapse not allowed by peer:%d peer_flags:%0x",
-					      args[1], args[2]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: power collapse not allowed by peer:%d peer_flags:%0x",
+					args[1], args[2]);
 			}
 		} else if (numargs == 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: power collapse not allowed by state m/c nw_cur_state:%d nw_next_state:%d ps_cur_state:%d flags:%0x",
-				      args[1], args[2], args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: power collapse not allowed by state m/c nw_cur_state:%d "
+				"nw_next_state:%d ps_cur_state:%d flags:%0x",
+				args[1], args[2], args[3], args[4]);
 		}
 		break;
 
@@ -2701,30 +2669,36 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 
 	case IBSS_PS_DBGID_PS_KICKOUT_PEER:
 		if (numargs == 3) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: Kickout peer id:%d atim_fail_cnt:%d status:%d",
-				      args[0], args[1], args[2]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: Kickout peer id:%d atim_fail_cnt:%d status:%d",
+				args[0], args[1], args[2]);
 		}
 		break;
 
 	case IBSS_PS_DBGID_SET_PEER_PARAM:
 		if (numargs == 3) {
-			dbglog_printf(timestamp, vap_id,
-				      "IBSS PS: Set Peer Id:%d Param ID:%0x Value:%0x",
-				      args[0], args[1], args[2]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"IBSS PS: Set Peer Id:%d Param ID:%0x Value:%0x",
+				args[0], args[1], args[2]);
 		}
 		break;
 
 	case IBSS_PS_DBGID_BCN_ATIM_WIN_MISMATCH:
 		if (numargs == 4) {
 			if (args[0] == 0xDEAD) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: ATIM window length mismatch, our's:%d, peer id:%d, peer's:%d",
-					      args[1], args[2], args[3]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: ATIM window length mismatch, our's:%d, peer "
+					"id:%d, peer's:%d",
+					args[1], args[2], args[3]);
 			} else if (args[0] == 0xBEEF) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: Peer ATIM window length changed, peer id:%d, peer recorded atim window:%d new atim window:%d",
-					      args[1], args[2], args[3]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: Peer ATIM window length changed, peer id:%d, "
+					"peer recorded atim window:%d new atim window:%d",
+					args[1], args[2], args[3]);
 			}
 		}
 		break;
@@ -2732,13 +2706,15 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 	case IBSS_PS_DBGID_RX_CHAINMASK_CHANGE:
 		if (numargs == 2) {
 			if (args[1] == 0x1) {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: Voting for low power chainmask from :%d",
-					      args[0]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: Voting for low power chainmask from :%d",
+					args[0]);
 			} else {
-				dbglog_printf(timestamp, vap_id,
-					      "IBSS PS: Voting for high power chainmask from :%d",
-					      args[0]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"IBSS PS: Voting for high power chainmask from :%d",
+					args[0]);
 			}
 		}
 		break;
@@ -2750,18 +2726,17 @@ dbglog_ibss_powersave_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static
-A_BOOL dbglog_ratectrl_print_handler(uint32_t mod_id,
-				     uint16_t vap_id,
-				     uint32_t dbg_id,
-				     uint32_t timestamp,
-				     uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_ratectrl_print_handler(uint32_t mod_id, uint16_t vap_id,
+					    uint32_t dbg_id, uint32_t timestamp,
+					    uint16_t numargs, uint32_t *args)
 {
 	switch (dbg_id) {
 	case RATECTRL_DBGID_ASSOC:
-		dbglog_printf(timestamp, vap_id,
-			      "RATE: ChainMask %d, phymode %d, ni_flags 0x%08x, vht_mcs_set 0x%04x, ht_mcs_set 0x%04x",
-			      args[0], args[1], args[2], args[3], args[4]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"RATE: ChainMask %d, phymode %d, ni_flags 0x%08x, "
+			"vht_mcs_set 0x%04x, ht_mcs_set 0x%04x",
+			args[0], args[1], args[2], args[3], args[4]);
 		break;
 	case RATECTRL_DBGID_NSS_CHANGE:
 		dbglog_printf(timestamp, vap_id, "RATE: NEW NSS %d\n", args[0]);
@@ -2777,57 +2752,61 @@ A_BOOL dbglog_ratectrl_print_handler(uint32_t mod_id,
 			      args[1]);
 		break;
 	case RATECTRL_DBGID_WAL_RCQUERY:
-		dbglog_printf(timestamp, vap_id,
-			      "ratectrl_dbgid_wal_rcquery [rix1 %d rix2 %d rix3 %d proberix %d ppduflag 0x%x] ",
-			      args[0], args[1], args[2], args[3], args[4]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"ratectrl_dbgid_wal_rcquery [rix1 %d rix2 %d rix3 %d "
+			"proberix %d ppduflag 0x%x] ",
+			args[0], args[1], args[2], args[3], args[4]);
 		break;
 	case RATECTRL_DBGID_WAL_RCUPDATE:
-		dbglog_printf(timestamp, vap_id,
-			      "ratectrl_dbgid_wal_rcupdate [numelems %d ppduflag 0x%x] ",
-			      args[0], args[1]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"ratectrl_dbgid_wal_rcupdate [numelems %d ppduflag 0x%x] ",
+			args[0], args[1]);
 		break;
-	case RATECTRL_DBGID_GTX_UPDATE:
-	{
+	case RATECTRL_DBGID_GTX_UPDATE: {
 		switch (args[0]) {
 		case 255:
-			dbglog_printf(timestamp, vap_id,
-				      "GtxInitPwrCfg [bw[last %d|cur %d] rtcode 0x%x tpc %d tpc_init_pwr_cfg %d] ",
-				      args[1] >> 8, args[1] & 0xff,
-				      args[2], args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"GtxInitPwrCfg [bw[last %d|cur %d] rtcode 0x%x tpc %d "
+				"tpc_init_pwr_cfg %d] ",
+				args[1] >> 8, args[1] & 0xff, args[2], args[3],
+				args[4]);
 			break;
 		case 254:
-			dbglog_printf(timestamp, vap_id,
-				      "gtx_cfg_addr [RTMask0@0x%x PERThreshold@0x%x gtxTPCMin@0x%x userGtxMask@0x%x] ",
-				      args[1], args[2], args[3],
-				      args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"gtx_cfg_addr [RTMask0@0x%x PERThreshold@0x%x "
+				"gtxTPCMin@0x%x userGtxMask@0x%x] ",
+				args[1], args[2], args[3], args[4]);
 			break;
 		default:
-			dbglog_printf(timestamp, vap_id,
-				      "gtx_update [act %d bw %d rix 0x%x tpc %d per %d lastrssi %d] ",
-				      args[0], args[1], args[2],
-				      args[3], args[4], args[5]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"gtx_update [act %d bw %d rix 0x%x tpc %d per %d lastrssi %d] ",
+				args[0], args[1], args[2], args[3], args[4],
+				args[5]);
 		}
-	}
-	break;
+	} break;
 	}
 	return true;
 }
 
-static
-A_BOOL dbglog_ani_print_handler(uint32_t mod_id,
-				uint16_t vap_id,
-				uint32_t dbg_id,
-				uint32_t timestamp,
-				uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_ani_print_handler(uint32_t mod_id, uint16_t vap_id,
+				       uint32_t dbg_id, uint32_t timestamp,
+				       uint16_t numargs, uint32_t *args)
 {
 	switch (dbg_id) {
 	case ANI_DBGID_ENABLE:
 		dbglog_printf(timestamp, vap_id, "ANI Enable:  %d", args[0]);
 		break;
 	case ANI_DBGID_POLL:
-		dbglog_printf(timestamp, vap_id,
-			      "ANI POLLING: AccumListenTime %d ListenTime %d ofdmphyerr %d cckphyerr %d",
-			      args[0], args[1], args[2], args[3]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"ANI POLLING: AccumListenTime %d ListenTime %d ofdmphyerr %d "
+			"cckphyerr %d",
+			args[0], args[1], args[2], args[3]);
 		break;
 	case ANI_DBGID_RESTART:
 		dbglog_printf(timestamp, vap_id, "ANI Restart");
@@ -2838,14 +2817,17 @@ A_BOOL dbglog_ani_print_handler(uint32_t mod_id,
 			      args[0], args[1]);
 		break;
 	case ANI_DBGID_OFDM_LEVEL:
-		dbglog_printf(timestamp, vap_id,
-			      "ANI UPDATE ofdm level %d firstep %d firstep_low %d cycpwr_thr %d self_corr_low %d",
-			      args[0], args[1], args[2], args[3], args[4]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"ANI UPDATE ofdm level %d firstep %d firstep_low %d "
+			"cycpwr_thr %d self_corr_low %d",
+			args[0], args[1], args[2], args[3], args[4]);
 		break;
 	case ANI_DBGID_CCK_LEVEL:
-		dbglog_printf(timestamp, vap_id,
-			      "ANI  UPDATE cck level %d firstep %d firstep_low %d mrc_cck %d",
-			      args[0], args[1], args[2], args[3]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"ANI  UPDATE cck level %d firstep %d firstep_low %d mrc_cck %d",
+			args[0], args[1], args[2], args[3]);
 		break;
 	case ANI_DBGID_CONTROL:
 		dbglog_printf(timestamp, vap_id,
@@ -2859,14 +2841,16 @@ A_BOOL dbglog_ani_print_handler(uint32_t mod_id,
 			      args[0], args[1]);
 		break;
 	case ANI_DBGID_CCK_PARAMS:
-		dbglog_printf(timestamp, vap_id,
-			      "ANI cck_control mrc_cck %d barker_threshold %d\n",
-			      args[0], args[1]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"ANI cck_control mrc_cck %d barker_threshold %d\n",
+			args[0], args[1]);
 		break;
 	case ANI_DBGID_RESET:
-		dbglog_printf(timestamp, vap_id,
-			      "ANI resetting resetflag %d resetCause %8x channel index %d",
-			      args[0], args[1], args[2]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"ANI resetting resetflag %d resetCause %8x channel index %d",
+			args[0], args[1], args[2]);
 		break;
 	case ANI_DBGID_SELF_CORR_LOW:
 		dbglog_printf(timestamp, vap_id, "ANI self_corr_low %d",
@@ -2909,33 +2893,31 @@ A_BOOL dbglog_ani_print_handler(uint32_t mod_id,
 }
 
 static A_BOOL
-dbglog_ap_powersave_print_handler(uint32_t mod_id,
-				  uint16_t vap_id,
-				  uint32_t dbg_id,
-				  uint32_t timestamp,
+dbglog_ap_powersave_print_handler(uint32_t mod_id, uint16_t vap_id,
+				  uint32_t dbg_id, uint32_t timestamp,
 				  uint16_t numargs, uint32_t *args)
 {
 	switch (dbg_id) {
 	case AP_PS_DBGID_UPDATE_TIM:
 		if (numargs == 2) {
 			dbglog_printf(timestamp, vap_id,
-				      "AP PS: TIM update AID=%u %s",
-				      args[0], args[1] ? "set" : "clear");
+				      "AP PS: TIM update AID=%u %s", args[0],
+				      args[1] ? "set" : "clear");
 		}
 		break;
 	case AP_PS_DBGID_PEER_STATE_CHANGE:
 		if (numargs == 2) {
 			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u power save %s",
-				      args[0],
+				      "AP PS: AID=%u power save %s", args[0],
 				      args[1] ? "enabled" : "disabled");
 		}
 		break;
 	case AP_PS_DBGID_PSPOLL:
 		if (numargs == 3) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u pspoll response tid=%u flags=%x",
-				      args[0], args[1], args[2]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: AID=%u pspoll response tid=%u flags=%x",
+				args[0], args[1], args[2]);
 		}
 		break;
 	case AP_PS_DBGID_PEER_CREATE:
@@ -2958,18 +2940,20 @@ dbglog_ap_powersave_print_handler(uint32_t mod_id,
 		break;
 	case AP_PS_DBGID_SYNC_TIM:
 		if (numargs == 3) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u advertised=%#x buffered=%#x",
-				      args[0], args[1], args[2]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: AID=%u advertised=%#x buffered=%#x",
+				args[0], args[1], args[2]);
 		}
 		break;
 	case AP_PS_DBGID_NEXT_RESPONSE:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u select next response %s%s%s",
-				      args[0], args[1] ? "(usp active) " : "",
-				      args[2] ? "(pending usp) " : "",
-				      args[3] ? "(pending poll response)" : "");
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: AID=%u select next response %s%s%s",
+				args[0], args[1] ? "(usp active) " : "",
+				args[2] ? "(pending usp) " : "",
+				args[3] ? "(pending poll response)" : "");
 		}
 		break;
 	case AP_PS_DBGID_START_SP:
@@ -2981,9 +2965,10 @@ dbglog_ap_powersave_print_handler(uint32_t mod_id,
 		break;
 	case AP_PS_DBGID_COMPLETED_EOSP:
 		if (numargs == 3) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u EOSP eosp_tsf=%#x trigger_tsf=%#x",
-				      args[0], args[1], args[2]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: AID=%u EOSP eosp_tsf=%#x trigger_tsf=%#x",
+				args[0], args[1], args[2]);
 		}
 		break;
 	case AP_PS_DBGID_TRIGGER:
@@ -2997,51 +2982,56 @@ dbglog_ap_powersave_print_handler(uint32_t mod_id,
 		break;
 	case AP_PS_DBGID_DUPLICATE_TRIGGER:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u DUP TRIGGER tsf=%#x seq=%u ac=%u",
-				      args[0], args[1], args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: AID=%u DUP TRIGGER tsf=%#x seq=%u ac=%u",
+				args[0], args[1], args[2], args[3]);
 		}
 		break;
 	case AP_PS_DBGID_UAPSD_RESPONSE:
 		if (numargs == 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u UAPSD response tid=%u, n_mpdu=%u flags=%#x max_sp=%u current_sp=%u",
-				      args[0], args[1], args[2], args[3],
-				      (args[4] >> 16) & 0xffff,
-				      args[4] & 0xffff);
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: AID=%u UAPSD response tid=%u, n_mpdu=%u flags=%#x "
+				"max_sp=%u current_sp=%u",
+				args[0], args[1], args[2], args[3],
+				(args[4] >> 16) & 0xffff, args[4] & 0xffff);
 		}
 		break;
 	case AP_PS_DBGID_SEND_COMPLETE:
 		if (numargs == 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u SEND_COMPLETE fc=%#x qos=%#x %s%s",
-				      args[0], args[1], args[2],
-				      args[3] ? "(usp active) " : "",
-				      args[4] ? "(pending poll response)" : "");
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: AID=%u SEND_COMPLETE fc=%#x qos=%#x %s%s",
+				args[0], args[1], args[2],
+				args[3] ? "(usp active) " : "",
+				args[4] ? "(pending poll response)" : "");
 		}
 		break;
 	case AP_PS_DBGID_SEND_N_COMPLETE:
 		if (numargs == 3) {
 			dbglog_printf(timestamp, vap_id,
 				      "AP PS: AID=%u SEND_N_COMPLETE %s%s",
-				      args[0],
-				      args[1] ? "(usp active) " : "",
+				      args[0], args[1] ? "(usp active) " : "",
 				      args[2] ? "(pending poll response)" : "");
 		}
 		break;
 	case AP_PS_DBGID_DETECT_OUT_OF_SYNC_STA:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: AID=%u detected out-of-sync now=%u tx_waiting=%u txq_depth=%u",
-				      args[0], args[1], args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: AID=%u detected out-of-sync now=%u tx_waiting=%u "
+				"txq_depth=%u",
+				args[0], args[1], args[2], args[3]);
 		}
 		break;
 	case AP_PS_DBGID_DELIVER_CAB:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "AP PS: CAB %s n_mpdus=%u, flags=%x, extra=%u",
-				      (args[0] == 17) ? "MGMT" : "DATA",
-				      args[1], args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"AP PS: CAB %s n_mpdus=%u, flags=%x, extra=%u",
+				(args[0] == 17) ? "MGMT" : "DATA", args[1],
+				args[2], args[3]);
 		}
 		break;
 	default:
@@ -3051,46 +3041,36 @@ dbglog_ap_powersave_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static A_BOOL
-dbglog_wal_print_handler(uint32_t mod_id,
-			 uint16_t vap_id,
-			 uint32_t dbg_id,
-			 uint32_t timestamp, uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_wal_print_handler(uint32_t mod_id, uint16_t vap_id,
+				       uint32_t dbg_id, uint32_t timestamp,
+				       uint16_t numargs, uint32_t *args)
 {
 	static const char *const states[] = {
-		"ACTIVE",
-		"WAIT",
-		"WAIT_FILTER",
-		"PAUSE",
-		"PAUSE_SEND_N",
-		"BLOCK",
+		"ACTIVE", "WAIT",	  "WAIT_FILTER",
+		"PAUSE",  "PAUSE_SEND_N", "BLOCK",
 	};
 
 	static const char *const events[] = {
-		"PAUSE",
-		"PAUSE_FILTER",
-		"UNPAUSE",
+		"PAUSE",     "PAUSE_FILTER", "UNPAUSE",
 
-		"BLOCK",
-		"BLOCK_FILTER",
-		"UNBLOCK",
+		"BLOCK",     "BLOCK_FILTER", "UNBLOCK",
 
-		"HWQ_EMPTY",
-		"ALLOW_N",
+		"HWQ_EMPTY", "ALLOW_N",
 	};
 
-#define WAL_VDEV_TYPE(type)	\
-	(type == 0 ? "AP" :	  \
-	 (type == 1 ? "STA" :	     \
-	  (type == 2 ? "IBSS" :		\
-	   (type == 2 ? "MONITOR" :    \
-	   "UNKNOWN"))))
+#define WAL_VDEV_TYPE(type)                     \
+	(type == 0 ?                            \
+		 "AP" :                         \
+		 (type == 1 ?                   \
+			  "STA" :               \
+			  (type == 2 ? "IBSS" : \
+				       (type == 2 ? "MONITOR" : "UNKNOWN"))))
 
-#define WAL_SLEEP_STATE(state)	    \
-	(state == 1 ? "NETWORK SLEEP" :	\
-	 (state == 2 ? "AWAKE" :	 \
-	  (state == 3 ? "SYSTEM SLEEP" :  \
-	   "UNKNOWN")))
+#define WAL_SLEEP_STATE(state)           \
+	(state == 1 ?                    \
+		 "NETWORK SLEEP" :       \
+		 (state == 2 ? "AWAKE" : \
+			       (state == 3 ? "SYSTEM SLEEP" : "UNKNOWN")))
 
 	switch (dbg_id) {
 	case DBGLOG_DBGID_SM_FRAMEWORK_PROXY_DBGLOG_MSG:
@@ -3108,19 +3088,22 @@ dbglog_wal_print_handler(uint32_t mod_id,
 		break;
 	case WAL_DBGID_CHANNEL_CHANGE_FORCE_RESET:
 		if (numargs == 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "WAL channel change (force reset) freq=%u, flags=%u mode=%u rx_ok=%u tx_ok=%u",
-				      args[0] & 0x0000ffff,
-				      (args[0] & 0xffff0000) >> 16, args[1],
-				      args[2], args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"WAL channel change (force reset) freq=%u, flags=%u "
+				"mode=%u rx_ok=%u tx_ok=%u",
+				args[0] & 0x0000ffff,
+				(args[0] & 0xffff0000) >> 16, args[1], args[2],
+				args[3]);
 		}
 		break;
 	case WAL_DBGID_CHANNEL_CHANGE:
 		if (numargs == 2) {
-			dbglog_printf(timestamp, vap_id,
-				      "WAL channel change freq=%u, mode=%u flags=%u rx_ok=1 tx_ok=1",
-				      args[0] & 0x0000ffff,
-				      (args[0] & 0xffff0000) >> 16, args[1]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"WAL channel change freq=%u, mode=%u flags=%u rx_ok=1 tx_ok=1",
+				args[0] & 0x0000ffff,
+				(args[0] & 0xffff0000) >> 16, args[1]);
 		}
 		break;
 	case WAL_DBGID_VDEV_START:
@@ -3142,26 +3125,30 @@ dbglog_wal_print_handler(uint32_t mod_id,
 			      WAL_VDEV_TYPE(args[0]), args[1]);
 		break;
 	case WAL_DBGID_TX_MGMT_DESCID_SEQ_TYPE_LEN:
-		dbglog_printf(timestamp, vap_id,
-			      "WAL Tx Mgmt frame desc_id=0x%x, seq=0x%x, type=0x%x, len=0x%x islocal=0x%x",
-			      args[0], args[1], args[2],
-			      (args[3] & 0xffff0000) >> 16,
-			      args[3] & 0x0000ffff);
+		dbglog_printf(
+			timestamp, vap_id,
+			"WAL Tx Mgmt frame desc_id=0x%x, seq=0x%x, type=0x%x, "
+			"len=0x%x islocal=0x%x",
+			args[0], args[1], args[2], (args[3] & 0xffff0000) >> 16,
+			args[3] & 0x0000ffff);
 		break;
 	case WAL_DBGID_TX_MGMT_COMP_DESCID_STATUS:
-		dbglog_printf(timestamp, vap_id,
-			      "WAL Tx Mgmt frame completion desc_id=0x%x, status=0x%x, islocal=0x%x",
-			      args[0], args[1], args[2]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"WAL Tx Mgmt frame completion desc_id=0x%x, status=0x%x, islocal=0x%x",
+			args[0], args[1], args[2]);
 		break;
 	case WAL_DBGID_TX_DATA_MSDUID_SEQ_TYPE_LEN:
-		dbglog_printf(timestamp, vap_id,
-			      "WAL Tx Data frame msdu_id=0x%x, seq=0x%x, type=0x%x, len=0x%x",
-			      args[0], args[1], args[2], args[3]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"WAL Tx Data frame msdu_id=0x%x, seq=0x%x, type=0x%x, len=0x%x",
+			args[0], args[1], args[2], args[3]);
 		break;
 	case WAL_DBGID_TX_DATA_COMP_MSDUID_STATUS:
-		dbglog_printf(timestamp, vap_id,
-			      "WAL Tx Data frame completion desc_id=0x%x, status=0x%x, seq=0x%x",
-			      args[0], args[1], args[2]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"WAL Tx Data frame completion desc_id=0x%x, status=0x%x, seq=0x%x",
+			args[0], args[1], args[2]);
 		break;
 	case WAL_DBGID_RESET_PCU_CYCLE_CNT:
 		dbglog_printf(timestamp, vap_id,
@@ -3173,31 +3160,37 @@ dbglog_wal_print_handler(uint32_t mod_id,
 			      "WAL Tx enqueue discard msdu_id=0x%x", args[0]);
 		break;
 	case WAL_DBGID_SET_HW_CHAINMASK:
-		dbglog_printf(timestamp, vap_id,
-			      "WAL_DBGID_SET_HW_CHAINMASK pdev=%d, txchain=0x%x, rxchain=0x%x",
-			      args[0], args[1], args[2]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"WAL_DBGID_SET_HW_CHAINMASK pdev=%d, txchain=0x%x, rxchain=0x%x",
+			args[0], args[1], args[2]);
 		break;
 	case WAL_DBGID_SET_HW_CHAINMASK_TXRX_STOP_FAIL:
-		dbglog_printf(timestamp, vap_id,
-			      "WAL_DBGID_SET_HW_CHAINMASK_TXRX_STOP_FAIL rxstop=%d, txstop=%d",
-			      args[0], args[1]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"WAL_DBGID_SET_HW_CHAINMASK_TXRX_STOP_FAIL rxstop=%d, txstop=%d",
+			args[0], args[1]);
 		break;
 	case WAL_DBGID_GET_HW_CHAINMASK:
-		dbglog_printf(timestamp, vap_id, "WAL_DBGID_GET_HW_CHAINMASK "
-			      "txchain=0x%x, rxchain=0x%x", args[0], args[1]);
+		dbglog_printf(timestamp, vap_id,
+			      "WAL_DBGID_GET_HW_CHAINMASK "
+			      "txchain=0x%x, rxchain=0x%x",
+			      args[0], args[1]);
 		break;
 	case WAL_DBGID_SMPS_DISABLE:
 		dbglog_printf(timestamp, vap_id, "WAL_DBGID_SMPS_DISABLE");
 		break;
 	case WAL_DBGID_SMPS_ENABLE_HW_CNTRL:
-		dbglog_printf(timestamp, vap_id,
-			      "WAL_DBGID_SMPS_ENABLE_HW_CNTRL low_pwr_mask=0x%x, high_pwr_mask=0x%x",
-			      args[0], args[1]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"WAL_DBGID_SMPS_ENABLE_HW_CNTRL low_pwr_mask=0x%x, high_pwr_mask=0x%x",
+			args[0], args[1]);
 		break;
 	case WAL_DBGID_SMPS_SWSEL_CHAINMASK:
-		dbglog_printf(timestamp, vap_id,
-			      "WAL_DBGID_SMPS_SWSEL_CHAINMASK low_pwr=0x%x, chain_mask=0x%x",
-			      args[0], args[1]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"WAL_DBGID_SMPS_SWSEL_CHAINMASK low_pwr=0x%x, chain_mask=0x%x",
+			args[0], args[1]);
 		break;
 	default:
 		return false;
@@ -3206,19 +3199,14 @@ dbglog_wal_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static A_BOOL
-dbglog_scan_print_handler(uint32_t mod_id,
-			  uint16_t vap_id,
-			  uint32_t dbg_id,
-			  uint32_t timestamp, uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_scan_print_handler(uint32_t mod_id, uint16_t vap_id,
+					uint32_t dbg_id, uint32_t timestamp,
+					uint16_t numargs, uint32_t *args)
 {
-	static const char *const states[] = {
-		"IDLE",
-		"BSSCHAN",
-		"WAIT_FOREIGN_CHAN",
-		"FOREIGN_CHANNEL",
-		"TERMINATING"
-	};
+	static const char *const states[] = { "IDLE", "BSSCHAN",
+					      "WAIT_FOREIGN_CHAN",
+					      "FOREIGN_CHANNEL",
+					      "TERMINATING" };
 
 	static const char *const events[] = {
 		"REQ",
@@ -3244,12 +3232,9 @@ dbglog_scan_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static
-A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
-				 uint16_t vap_id,
-				 uint32_t dbg_id,
-				 uint32_t timestamp,
-				 uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_coex_print_handler(uint32_t mod_id, uint16_t vap_id,
+					uint32_t dbg_id, uint32_t timestamp,
+					uint16_t numargs, uint32_t *args)
 {
 	uint8_t i;
 	char *dbg_id_str;
@@ -3262,11 +3247,8 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 	};
 
 	static const char *const coex_sched_req[] = {
-		"SCHED_REQ_NEXT",
-		"SCHED_REQ_BT",
-		"SCHED_REQ_WLAN",
-		"SCHED_REQ_POSTPAUSE",
-		"SCHED_REQ_UNPAUSE",
+		"SCHED_REQ_NEXT",      "SCHED_REQ_BT",	    "SCHED_REQ_WLAN",
+		"SCHED_REQ_POSTPAUSE", "SCHED_REQ_UNPAUSE",
 	};
 
 	static const char *const coex_sched_type[] = {
@@ -3280,27 +3262,17 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 	};
 
 	static const char *const coex_trf_mgmt_type[] = {
-		"TRF_MGMT_FREERUN",
-		"TRF_MGMT_SHAPE_PM",
-		"TRF_MGMT_SHAPE_PSP",
-		"TRF_MGMT_SHAPE_S_CTS",
-		"TRF_MGMT_SHAPE_OCS",
-		"TRF_MGMT_SHAPE_FIXED_TIME",
-		"TRF_MGMT_SHAPE_NOA",
-		"TRF_MGMT_SHAPE_OCS_CRITICAL",
+		"TRF_MGMT_FREERUN",   "TRF_MGMT_SHAPE_PM",
+		"TRF_MGMT_SHAPE_PSP", "TRF_MGMT_SHAPE_S_CTS",
+		"TRF_MGMT_SHAPE_OCS", "TRF_MGMT_SHAPE_FIXED_TIME",
+		"TRF_MGMT_SHAPE_NOA", "TRF_MGMT_SHAPE_OCS_CRITICAL",
 		"TRF_MGMT_NONE",
 	};
 
 	static const char *const coex_system_status[] = {
-		"ALL_OFF",
-		"BTCOEX_NOT_REQD",
-		"WLAN_IS_IDLE",
-		"EXECUTE_SCHEME",
-		"BT_FULL_CONCURRENCY",
-		"WLAN_SLEEPING",
-		"WLAN_IS_PAUSED",
-		"WAIT_FOR_NEXT_ACTION",
-		"SOC_WAKE",
+		"ALL_OFF",	  "BTCOEX_NOT_REQD",	  "WLAN_IS_IDLE",
+		"EXECUTE_SCHEME", "BT_FULL_CONCURRENCY",  "WLAN_SLEEPING",
+		"WLAN_IS_PAUSED", "WAIT_FOR_NEXT_ACTION", "SOC_WAKE",
 	};
 
 	static const char *const wlan_rssi_type[] = {
@@ -3311,12 +3283,8 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 	};
 
 	static const char *const coex_bt_scheme[] = {
-		"IDLE_CTRL",
-		"ACTIVE_ASYNC_CTRL",
-		"PASSIVE_SYNC_CTRL",
-		"ACTIVE_SYNC_CTRL",
-		"DEFAULT_CTRL",
-		"CONCURRENCY_CTRL",
+		"IDLE_CTRL",	    "ACTIVE_ASYNC_CTRL", "PASSIVE_SYNC_CTRL",
+		"ACTIVE_SYNC_CTRL", "DEFAULT_CTRL",	 "CONCURRENCY_CTRL",
 	};
 
 	static const char *const wal_peer_rx_rate_stats_event_sent[] = {
@@ -3352,12 +3320,8 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 	};
 
 	static const char *const coex_pspoll_state[] = {
-		"STATE_DISABLED",
-		"STATE_NOT_READY",
-		"STATE_ENABLED",
-		"STATE_READY",
-		"STATE_TX_STATUS",
-		"STATE_RX_STATUS",
+		"STATE_DISABLED", "STATE_NOT_READY", "STATE_ENABLED",
+		"STATE_READY",	  "STATE_TX_STATUS", "STATE_RX_STATUS",
 	};
 
 	static const char *const coex_scheduler_interval[] = {
@@ -3366,12 +3330,8 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 	};
 
 	static const char *const wlan_weight[] = {
-		"BT_COEX_BASE",
-		"BT_COEX_LOW",
-		"BT_COEX_MID",
-		"BT_COEX_MID_NONSYNC",
-		"BT_COEX_HI_NONVOICE",
-		"BT_COEX_HI",
+		"BT_COEX_BASE",	       "BT_COEX_LOW",	      "BT_COEX_MID",
+		"BT_COEX_MID_NONSYNC", "BT_COEX_HI_NONVOICE", "BT_COEX_HI",
 		"BT_COEX_CRITICAL",
 	};
 
@@ -3382,33 +3342,16 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 	};
 
 	static const char *const coex_psp_error_type[] = {
-		"DISABLED_STATE",
-		"VDEV_NULL",
-		"COEX_PSP_ENTRY",
-		"ZERO_INTERVAL",
-		"COEX_PSP_EXIT",
-		"READY_DISABLED",
-		"READY_NOT_DISABLED",
-		"POLL_PKT_DROPPED",
-		"SET_TIMER_PARAM",
+		"DISABLED_STATE",     "VDEV_NULL",	  "COEX_PSP_ENTRY",
+		"ZERO_INTERVAL",      "COEX_PSP_EXIT",	  "READY_DISABLED",
+		"READY_NOT_DISABLED", "POLL_PKT_DROPPED", "SET_TIMER_PARAM",
 	};
 
 	static const char *const wlan_phymode[] = {
-		"A",
-		"G",
-		"B",
-		"G_ONLY",
-		"NA_HT20",
-		"NG_HT20",
-		"NA_HT40",
-		"NG_HT40",
-		"AC_VHT20",
-		"AC_VHT40",
-		"AC_VHT80",
-		"AC_VHT20_2G",
-		"AC_VHT40_2G",
-		"AC_VHT80_2G",
-		"UNKNOWN",
+		"A",	       "G",	      "B",	  "G_ONLY",
+		"NA_HT20",     "NG_HT20",     "NA_HT40",  "NG_HT40",
+		"AC_VHT20",    "AC_VHT40",    "AC_VHT80", "AC_VHT20_2G",
+		"AC_VHT40_2G", "AC_VHT80_2G", "UNKNOWN",
 	};
 
 	static const char *const wlan_curr_band[] = {
@@ -3424,34 +3367,35 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 			dbglog_printf(timestamp, vap_id, "%s: %s", dbg_id_str,
 				      coex_system_status[args[0]]);
 		} else if (numargs >= 5 && args[0] < 9 && args[2] < 9) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: %s, WlanSysState(0x%x), %s, NumChains(%u), AggrLimit(%u)",
-				      dbg_id_str, coex_system_status[args[0]],
-				      args[1], coex_trf_mgmt_type[args[2]],
-				      args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: %s, WlanSysState(0x%x), %s, NumChains(%u), AggrLimit(%u)",
+				dbg_id_str, coex_system_status[args[0]],
+				args[1], coex_trf_mgmt_type[args[2]], args[3],
+				args[4]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_SCHED_START:
-		if (numargs >= 5 && args[0] < 5 && args[2] < 9 && args[3] < 4
-		    && args[4] < 4) {
+		if (numargs >= 5 && args[0] < 5 && args[2] < 9 && args[3] < 4 &&
+		    args[4] < 4) {
 			if (args[1] == 0xffffffff) {
-				dbglog_printf(timestamp, vap_id,
-					      "%s: %s, DETERMINE_DURATION, %s, %s, %s",
-					      dbg_id_str,
-					      coex_sched_req[args[0]],
-					      coex_trf_mgmt_type[args[2]],
-					      wlan_rx_xput_status[args[3]],
-					      wlan_rssi_type[args[4]]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"%s: %s, DETERMINE_DURATION, %s, %s, %s",
+					dbg_id_str, coex_sched_req[args[0]],
+					coex_trf_mgmt_type[args[2]],
+					wlan_rx_xput_status[args[3]],
+					wlan_rssi_type[args[4]]);
 			} else {
-				dbglog_printf(timestamp, vap_id,
-					      "%s: %s, IntvlDur(%u), %s, %s, %s",
-					      dbg_id_str,
-					      coex_sched_req[args[0]], args[1],
-					      coex_trf_mgmt_type[args[2]],
-					      wlan_rx_xput_status[args[3]],
-					      wlan_rssi_type[args[4]]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"%s: %s, IntvlDur(%u), %s, %s, %s",
+					dbg_id_str, coex_sched_req[args[0]],
+					args[1], coex_trf_mgmt_type[args[2]],
+					wlan_rx_xput_status[args[3]],
+					wlan_rssi_type[args[4]]);
 			}
 		} else {
 			return false;
@@ -3459,12 +3403,12 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 		break;
 	case COEX_SCHED_RESULT:
 		if (numargs >= 5 && args[0] < 5 && args[1] < 9 && args[2] < 9) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: %s, %s, %s, CoexMgrPolicy(%u), IdleOverride(%u)",
-				      dbg_id_str, coex_sched_req[args[0]],
-				      coex_trf_mgmt_type[args[1]],
-				      coex_trf_mgmt_type[args[2]], args[3],
-				      args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: %s, %s, %s, CoexMgrPolicy(%u), IdleOverride(%u)",
+				dbg_id_str, coex_sched_req[args[0]],
+				coex_trf_mgmt_type[args[1]],
+				coex_trf_mgmt_type[args[2]], args[3], args[4]);
 		} else {
 			return false;
 		}
@@ -3479,72 +3423,82 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 		break;
 	case COEX_TRF_FREERUN:
 		if (numargs >= 5 && args[0] < 7) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: %s, AllocatedBtIntvls(%u), BtIntvlCnt(%u), AllocatedWlanIntvls(%u), WlanIntvlCnt(%u)",
-				      dbg_id_str, coex_sched_type[args[0]],
-				      args[1], args[2], args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: %s, AllocatedBtIntvls(%u), BtIntvlCnt(%u), "
+				"AllocatedWlanIntvls(%u), WlanIntvlCnt(%u)",
+				dbg_id_str, coex_sched_type[args[0]], args[1],
+				args[2], args[3], args[4]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_TRF_SHAPE_PM: /* used by ocs now */
 		if (numargs >= 3) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: IntvlLength(%u), BtDuration(%u), WlanDuration(%u)",
-				      dbg_id_str, args[0], args[1], args[2]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: IntvlLength(%u), BtDuration(%u), WlanDuration(%u)",
+				dbg_id_str, args[0], args[1], args[2]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_SYSTEM_MONITOR:
 		if (numargs >= 5 && args[1] < 4 && args[4] < 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: WlanRxCritical(%u), %s, MinDirectRxRate(%u), MonitorActiveNum(%u), %s",
-				      dbg_id_str, args[0],
-				      wlan_rx_xput_status[args[1]], args[2],
-				      args[3], wlan_rssi_type[args[4]]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: WlanRxCritical(%u), %s, MinDirectRxRate(%u), "
+				"MonitorActiveNum(%u), %s",
+				dbg_id_str, args[0],
+				wlan_rx_xput_status[args[1]], args[2], args[3],
+				wlan_rssi_type[args[4]]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_RX_RATE:
 		if (numargs >= 5 && args[4] < 3) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: NumUnderThreshPeers(%u), MinDirectRate(%u), LastRateSample(%u), DeltaT(%u), %s",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3],
-				      wal_peer_rx_rate_stats_event_sent[args
-									[4]]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: NumUnderThreshPeers(%u), MinDirectRate(%u), "
+				"LastRateSample(%u), DeltaT(%u), %s",
+				dbg_id_str, args[0], args[1], args[2], args[3],
+				wal_peer_rx_rate_stats_event_sent[args[4]]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_WLAN_INTERVAL_START:
 		if (numargs >= 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: WlanIntvlCnt(%u), Duration(%u), Weight(%u), BaseIdleOverride(%u), WeightMat[0](0x%x)",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: WlanIntvlCnt(%u), Duration(%u), Weight(%u), "
+				"BaseIdleOverride(%u), WeightMat[0](0x%x)",
+				dbg_id_str, args[0], args[1], args[2], args[3],
+				args[4]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_WLAN_POSTPAUSE_INTERVAL_START:
 		if (numargs >= 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: WlanPostPauseIntvlCnt(%u), XputMonitorActiveNum(%u), Duration(%u), Weight(%u)",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: WlanPostPauseIntvlCnt(%u), XputMonitorActiveNum(%u), "
+				"Duration(%u), Weight(%u)",
+				dbg_id_str, args[0], args[1], args[2], args[3]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_BT_INTERVAL_START:
 		if (numargs >= 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: BtIntvlCnt(%u), Duration(%u), Weight(%u), BaseIdleOverride(%u), WeightMat[0](0x%x), ",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: BtIntvlCnt(%u), Duration(%u), Weight(%u), "
+				"BaseIdleOverride(%u), WeightMat[0](0x%x), ",
+				dbg_id_str, args[0], args[1], args[2], args[3],
+				args[4]);
 		} else {
 			return false;
 		}
@@ -3561,24 +3515,24 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 		break;
 	case COEX_CHANNEL_CHANGE:
 		if (numargs >= 5 && args[3] < 2 && args[4] < 15) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: %uMhz->%uMhz, WlanSysState(0x%x), CurrBand(%s), PhyMode(%s)",
-				      dbg_id_str, args[0], args[1], args[2],
-				      wlan_curr_band[args[3]],
-				      wlan_phymode[args[4]]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: %uMhz->%uMhz, WlanSysState(0x%x), CurrBand(%s), PhyMode(%s)",
+				dbg_id_str, args[0], args[1], args[2],
+				wlan_curr_band[args[3]], wlan_phymode[args[4]]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_PSP_MGR_ENTER:
-		if (numargs >= 5 && args[0] < 23 &&
-		    args[1] < 6 && args[3] < 2) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: %s, %s, PsPollAvg(%u), %s, CurrT(%u)",
-				      dbg_id_str, wlan_psp_stimulus[args[0]],
-				      coex_pspoll_state[args[1]], args[2],
-				      coex_scheduler_interval[args[3]],
-				      args[4]);
+		if (numargs >= 5 && args[0] < 23 && args[1] < 6 &&
+		    args[3] < 2) {
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: %s, %s, PsPollAvg(%u), %s, CurrT(%u)",
+				dbg_id_str, wlan_psp_stimulus[args[0]],
+				coex_pspoll_state[args[1]], args[2],
+				coex_scheduler_interval[args[3]], args[4]);
 		} else {
 			return false;
 		}
@@ -3614,16 +3568,16 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 		break;
 	case COEX_LinkID:
 		if (numargs >= 4) {
-			if (args[0]) {  /* Add profile */
-				dbglog_printf(timestamp, vap_id,
-					      "%s Alloc: LocalID(%u), RemoteID(%u), MinFreeLocalID(%u)",
-					      dbg_id_str, args[1], args[2],
-					      args[3]);
-			} else {        /* Remove profile */
-				dbglog_printf(timestamp, vap_id,
-					      "%s Dealloc: LocalID(%u), RemoteID(%u), MinFreeLocalID(%u)",
-					      dbg_id_str, args[1], args[2],
-					      args[3]);
+			if (args[0]) { /* Add profile */
+				dbglog_printf(
+					timestamp, vap_id,
+					"%s Alloc: LocalID(%u), RemoteID(%u), MinFreeLocalID(%u)",
+					dbg_id_str, args[1], args[2], args[3]);
+			} else { /* Remove profile */
+				dbglog_printf(
+					timestamp, vap_id,
+					"%s Dealloc: LocalID(%u), RemoteID(%u), MinFreeLocalID(%u)",
+					dbg_id_str, args[1], args[2], args[3]);
 			}
 		} else {
 			return false;
@@ -3631,61 +3585,68 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 		break;
 	case COEX_PSP_MGR_RESULT:
 		if (numargs >= 5 && args[0] < 6) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: %s, PsPollAvg(%u), EstimationOverrun(%u), EstimationUnderun(%u), NotReadyErr(%u)",
-				      dbg_id_str, coex_pspoll_state[args[0]],
-				      args[1], args[2], args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: %s, PsPollAvg(%u), EstimationOverrun(%u), "
+				"EstimationUnderun(%u), NotReadyErr(%u)",
+				dbg_id_str, coex_pspoll_state[args[0]], args[1],
+				args[2], args[3], args[4]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_TRF_SHAPE_PSP:
 		if (numargs >= 5 && args[0] < 7 && args[1] < 7) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: %s, %s, Dur(%u), BtTriggerRecvd(%u), PspWlanCritical(%u)",
-				      dbg_id_str, coex_sched_type[args[0]],
-				      wlan_weight[args[1]], args[2], args[3],
-				      args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: %s, %s, Dur(%u), BtTriggerRecvd(%u), PspWlanCritical(%u)",
+				dbg_id_str, coex_sched_type[args[0]],
+				wlan_weight[args[1]], args[2], args[3],
+				args[4]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_PSP_SPEC_POLL:
 		if (numargs >= 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: PsPollSpecEna(%u), Count(%u), NextTS(%u), AllowSpecPsPollTx(%u), Intvl(%u)",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: PsPollSpecEna(%u), Count(%u), NextTS(%u), "
+				"AllowSpecPsPollTx(%u), Intvl(%u)",
+				dbg_id_str, args[0], args[1], args[2], args[3],
+				args[4]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_PSP_READY_STATE:
 		if (numargs >= 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: T2NonWlan(%u), CoexSchedulerEndTS(%u), MoreData(%u), PSPRespExpectedTS(%u), NonWlanIdleT(%u)",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: T2NonWlan(%u), CoexSchedulerEndTS(%u), MoreData(%u), "
+				"PSPRespExpectedTS(%u), NonWlanIdleT(%u)",
+				dbg_id_str, args[0], args[1], args[2], args[3],
+				args[4]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_PSP_NONWLAN_INTERVAL:
 		if (numargs >= 4) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: NonWlanBaseIntvl(%u), NonWlanIdleT(%u), PSPSpecIntvl(%u), ApRespTimeout(%u)",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: NonWlanBaseIntvl(%u), NonWlanIdleT(%u), "
+				"PSPSpecIntvl(%u), ApRespTimeout(%u)",
+				dbg_id_str, args[0], args[1], args[2], args[3]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_PSP_ERROR:
 		if (numargs >= 1 && args[0] < 9) {
-			dbglog_printf_no_line_break(timestamp, vap_id, "%s: %s",
-						    dbg_id_str,
-						    coex_psp_error_type[args
-									[0]]);
+			dbglog_printf_no_line_break(
+				timestamp, vap_id, "%s: %s", dbg_id_str,
+				coex_psp_error_type[args[0]]);
 			for (i = 1; i < numargs; i++) {
 				AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
 						(", %u", args[i]));
@@ -3697,20 +3658,23 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 		break;
 	case COEX_PSP_STAT_1:
 		if (numargs >= 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: ApResp0(%u), ApResp1(%u), ApResp2(%u), ApResp3(%u), ApResp4(%u)",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: ApResp0(%u), ApResp1(%u), ApResp2(%u), ApResp3(%u), ApResp4(%u)",
+				dbg_id_str, args[0], args[1], args[2], args[3],
+				args[4]);
 		} else {
 			return false;
 		}
 		break;
 	case COEX_PSP_STAT_2:
 		if (numargs >= 5) {
-			dbglog_printf(timestamp, vap_id,
-				      "%s: DataPt(%u), Max(%u), NextApRespIndex(%u), NumOfValidDataPts(%u), PsPollAvg(%u)",
-				      dbg_id_str, args[0], args[1], args[2],
-				      args[3], args[4]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"%s: DataPt(%u), Max(%u), NextApRespIndex(%u), "
+				"NumOfValidDataPts(%u), PsPollAvg(%u)",
+				dbg_id_str, args[0], args[1], args[2], args[3],
+				args[4]);
 		} else {
 			return false;
 		}
@@ -3718,15 +3682,19 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 	case COEX_PSP_RX_STATUS_STATE_1:
 		if (numargs >= 5) {
 			if (args[2]) {
-				dbglog_printf(timestamp, vap_id,
-					      "%s: RsExpectedTS(%u), RespActualTS(%u), Overrun, RsOverrunT(%u), RsRxDur(%u)",
-					      dbg_id_str, args[0], args[1],
-					      args[3], args[4]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"%s: RsExpectedTS(%u), RespActualTS(%u), Overrun, "
+					"RsOverrunT(%u), RsRxDur(%u)",
+					dbg_id_str, args[0], args[1], args[3],
+					args[4]);
 			} else {
-				dbglog_printf(timestamp, vap_id,
-					      "%s: RsExpectedTS(%u), RespActualTS(%u), Underrun, RsUnderrunT(%u), RsRxDur(%u)",
-					      dbg_id_str, args[0], args[1],
-					      args[3], args[4]);
+				dbglog_printf(
+					timestamp, vap_id,
+					"%s: RsExpectedTS(%u), RespActualTS(%u), Underrun, "
+					"RsUnderrunT(%u), RsRxDur(%u)",
+					dbg_id_str, args[0], args[1], args[3],
+					args[4]);
 			}
 		} else {
 			return false;
@@ -3739,12 +3707,9 @@ A_BOOL dbglog_coex_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static A_BOOL
-dbglog_beacon_print_handler(uint32_t mod_id,
-			    uint16_t vap_id,
-			    uint32_t dbg_id,
-			    uint32_t timestamp,
-			    uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_beacon_print_handler(uint32_t mod_id, uint16_t vap_id,
+					  uint32_t dbg_id, uint32_t timestamp,
+					  uint16_t numargs, uint32_t *args)
 {
 	static const char *const states[] = {
 		"INIT",
@@ -3754,14 +3719,9 @@ dbglog_beacon_print_handler(uint32_t mod_id,
 	};
 
 	static const char *const events[] = {
-		"ADJUST_START",
-		"ADJUST_RESTART",
-		"ADJUST_STOP",
-		"ADJUST_PAUSE",
-		"ADJUST_UNPAUSE",
-		"ADJUST_INC_SLOP_STEP",
-		"ADJUST_HOLD",
-		"ADJUST_HOLD_TIME_OUT",
+		"ADJUST_START", "ADJUST_RESTART",	"ADJUST_STOP",
+		"ADJUST_PAUSE", "ADJUST_UNPAUSE",	"ADJUST_INC_SLOP_STEP",
+		"ADJUST_HOLD",	"ADJUST_HOLD_TIME_OUT",
 	};
 
 	switch (dbg_id) {
@@ -3772,9 +3732,10 @@ dbglog_beacon_print_handler(uint32_t mod_id,
 		break;
 	case BEACON_EVENT_EARLY_RX_BMISS_STATUS:
 		if (numargs == 3) {
-			dbglog_printf(timestamp, vap_id,
-				      "early_rx bmiss status:rcv=%d total=%d miss=%d",
-				      args[0], args[1], args[2]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"early_rx bmiss status:rcv=%d total=%d miss=%d",
+				args[0], args[1], args[2]);
 		}
 		break;
 	case BEACON_EVENT_EARLY_RX_SLEEP_SLOP:
@@ -3785,9 +3746,10 @@ dbglog_beacon_print_handler(uint32_t mod_id,
 		break;
 	case BEACON_EVENT_EARLY_RX_CONT_BMISS_TIMEOUT:
 		if (numargs == 1) {
-			dbglog_printf(timestamp, vap_id,
-				      "early_rx cont bmiss timeout,update sleep_slop:%d",
-				      args[0]);
+			dbglog_printf(
+				timestamp, vap_id,
+				"early_rx cont bmiss timeout,update sleep_slop:%d",
+				args[0]);
 		}
 		break;
 	case BEACON_EVENT_EARLY_RX_PAUSE_SKIP_BCN_NUM:
@@ -3804,14 +3766,14 @@ dbglog_beacon_print_handler(uint32_t mod_id,
 		break;
 	case BEACON_EVENT_EARLY_RX_AP_DRIFT:
 		if (numargs == 1) {
-			dbglog_printf(timestamp, vap_id,
-				      "early_rx ap drift:%d", args[0]);
+			dbglog_printf(timestamp, vap_id, "early_rx ap drift:%d",
+				      args[0]);
 		}
 		break;
 	case BEACON_EVENT_EARLY_RX_BCN_TYPE:
 		if (numargs == 1) {
-			dbglog_printf(timestamp, vap_id,
-				      "early_rx bcn type:%d", args[0]);
+			dbglog_printf(timestamp, vap_id, "early_rx bcn type:%d",
+				      args[0]);
 		}
 		break;
 	default:
@@ -3821,19 +3783,18 @@ dbglog_beacon_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static A_BOOL
-dbglog_data_txrx_print_handler(uint32_t mod_id,
-			       uint16_t vap_id,
-			       uint32_t dbg_id,
-			       uint32_t timestamp,
-			       uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_data_txrx_print_handler(uint32_t mod_id, uint16_t vap_id,
+					     uint32_t dbg_id,
+					     uint32_t timestamp,
+					     uint16_t numargs, uint32_t *args)
 {
 	switch (dbg_id) {
 	case DATA_TXRX_DBGID_RX_DATA_SEQ_LEN_INFO:
-		dbglog_printf(timestamp, vap_id,
-			      "DATA RX seq=0x%x, len=0x%x, stored=0x%x, duperr=0x%x",
-			      args[0], args[1], (args[2] & 0xffff0000) >> 16,
-			      args[2] & 0x0000ffff);
+		dbglog_printf(
+			timestamp, vap_id,
+			"DATA RX seq=0x%x, len=0x%x, stored=0x%x, duperr=0x%x",
+			args[0], args[1], (args[2] & 0xffff0000) >> 16,
+			args[2] & 0x0000ffff);
 		break;
 	default:
 		return false;
@@ -3842,20 +3803,13 @@ dbglog_data_txrx_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static
-A_BOOL dbglog_smps_print_handler(uint32_t mod_id,
-				 uint16_t vap_id,
-				 uint32_t dbg_id,
-				 uint32_t timestamp,
-				 uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_smps_print_handler(uint32_t mod_id, uint16_t vap_id,
+					uint32_t dbg_id, uint32_t timestamp,
+					uint16_t numargs, uint32_t *args)
 {
 	static const char *const states[] = {
-		"S_INACTIVE",
-		"S_STATIC",
-		"S_DYNAMIC",
-		"S_STALLED",
-		"S_INACTIVE_WAIT",
-		"S_STATIC_WAIT",
+		"S_INACTIVE",	  "S_STATIC",	     "S_DYNAMIC",
+		"S_STALLED",	  "S_INACTIVE_WAIT", "S_STATIC_WAIT",
 		"S_DYNAMIC_WAIT",
 	};
 
@@ -3903,55 +3857,63 @@ A_BOOL dbglog_smps_print_handler(uint32_t mod_id,
 	case STA_SMPS_DBGID_VIRTUAL_CHAN_SMPS_STOP:
 		break;
 	case STA_SMPS_DBGID_SEND_SMPS_ACTION_FRAME:
-		dbglog_printf(timestamp, vap_id,
-			      "STA_SMPS STA %#x Signal SMPS mode as %s; cb_flags %#x",
-			      args[0],
-			      (args[1] ==
-			       0 ? "DISABLED" : (args[1] ==
-						 0x1 ? "STATIC" : (args[1] ==
-								   0x3 ?
-								   "DYNAMIC" :
+		dbglog_printf(
+			timestamp, vap_id,
+			"STA_SMPS STA %#x Signal SMPS mode as %s; cb_flags %#x",
+			args[0],
+			(args[1] == 0 ? "DISABLED" :
+					(args[1] == 0x1 ?
+						 "STATIC" :
+						 (args[1] == 0x3 ? "DYNAMIC" :
 								   "UNKNOWN"))),
-			      args[2]);
+			args[2]);
 		break;
 	case STA_SMPS_DBGID_DTIM_EBT_EVENT_CHMASK_UPDATE:
 		dbglog_printf(timestamp, vap_id,
 			      "STA_SMPS_DBGID_DTIM_EBT_EVENT_CHMASK_UPDATE");
 		break;
 	case STA_SMPS_DBGID_DTIM_CHMASK_UPDATE:
-		dbglog_printf(timestamp, vap_id,
-			      "STA_SMPS_DBGID_DTIM_CHMASK_UPDATE tx_mask %#x rx_mask %#x arb_dtim_mask %#x",
-			      args[0], args[1], args[2]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"STA_SMPS_DBGID_DTIM_CHMASK_UPDATE tx_mask %#x rx_mask %#x "
+			"arb_dtim_mask %#x",
+			args[0], args[1], args[2]);
 		break;
 	case STA_SMPS_DBGID_DTIM_BEACON_EVENT_CHMASK_UPDATE:
 		dbglog_printf(timestamp, vap_id,
 			      "STA_SMPS_DBGID_DTIM_BEACON_EVENT_CHMASK_UPDATE");
 		break;
 	case STA_SMPS_DBGID_DTIM_POWER_STATE_CHANGE:
-		dbglog_printf(timestamp, vap_id,
-			      "STA_SMPS_DBGID_DTIM_POWER_STATE_CHANGE cur_pwr_state %s new_pwr_state %s",
-			      (args[0] ==
-			       0x1 ? "SLEEP" : (args[0] ==
-						0x2 ? "AWAKE" : (args[0] ==
-								 0x3 ?
-								 "FULL_SLEEP" :
-								 "UNKNOWN"))),
-			      (args[1] ==
-			       0x1 ? "SLEEP" : (args[1] ==
-						0x2 ? "AWAKE" : (args[1] ==
-								 0x3 ?
-								 "FULL_SLEEP" :
-								 "UNKNOWN"))));
+		dbglog_printf(
+			timestamp, vap_id,
+			"STA_SMPS_DBGID_DTIM_POWER_STATE_CHANGE cur_pwr_state %s new_pwr_state "
+			"%s",
+			(args[0] == 0x1 ?
+				 "SLEEP" :
+				 (args[0] == 0x2 ?
+					  "AWAKE" :
+					  (args[0] == 0x3 ? "FULL_SLEEP" :
+							    "UNKNOWN"))),
+			(args[1] == 0x1 ?
+				 "SLEEP" :
+				 (args[1] == 0x2 ?
+					  "AWAKE" :
+					  (args[1] == 0x3 ? "FULL_SLEEP" :
+							    "UNKNOWN"))));
 		break;
 	case STA_SMPS_DBGID_DTIM_CHMASK_UPDATE_SLEEP:
-		dbglog_printf(timestamp, vap_id,
-			      "STA_SMPS_DBGID_DTIM_CHMASK_UPDATE_SLEEP tx_mask %#x rx_mask %#x orig_rx %#x dtim_rx %#x",
-			      args[0], args[1], args[2], args[3]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"STA_SMPS_DBGID_DTIM_CHMASK_UPDATE_SLEEP tx_mask %#x rx_mask "
+			"%#x orig_rx %#x dtim_rx %#x",
+			args[0], args[1], args[2], args[3]);
 		break;
 	case STA_SMPS_DBGID_DTIM_CHMASK_UPDATE_AWAKE:
-		dbglog_printf(timestamp, vap_id,
-			      "STA_SMPS_DBGID_DTIM_CHMASK_UPDATE_AWAKE tx_mask %#x rx_mask %#x orig_rx %#x",
-			      args[0], args[1], args[2]);
+		dbglog_printf(
+			timestamp, vap_id,
+			"STA_SMPS_DBGID_DTIM_CHMASK_UPDATE_AWAKE tx_mask %#x rx_mask "
+			"%#x orig_rx %#x",
+			args[0], args[1], args[2]);
 		break;
 	default:
 		dbglog_printf(timestamp, vap_id, "STA_SMPS: UNKNOWN DBGID!");
@@ -3961,30 +3923,18 @@ A_BOOL dbglog_smps_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static A_BOOL
-dbglog_p2p_print_handler(uint32_t mod_id,
-			 uint16_t vap_id,
-			 uint32_t dbg_id,
-			 uint32_t timestamp, uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_p2p_print_handler(uint32_t mod_id, uint16_t vap_id,
+				       uint32_t dbg_id, uint32_t timestamp,
+				       uint16_t numargs, uint32_t *args)
 {
 	static const char *const states[] = {
-		"ACTIVE",
-		"DOZE",
-		"TX_BCN",
-		"CTWIN",
-		"OPPPS",
+		"ACTIVE", "DOZE", "TX_BCN", "CTWIN", "OPPPS",
 	};
 
 	static const char *const events[] = {
-		"ONESHOT_NOA",
-		"CTWINDOW",
-		"PERIODIC_NOA",
-		"IDLE",
-		"NOA_CHANGED",
-		"TBTT",
-		"TX_BCN_CMP",
-		"OPPPS_OK",
-		"OPPPS_CHANGED",
+		"ONESHOT_NOA", "CTWINDOW",    "PERIODIC_NOA",
+		"IDLE",	       "NOA_CHANGED", "TBTT",
+		"TX_BCN_CMP",  "OPPPS_OK",    "OPPPS_CHANGED",
 	};
 
 	switch (dbg_id) {
@@ -4000,31 +3950,18 @@ dbglog_p2p_print_handler(uint32_t mod_id,
 	return true;
 }
 
-static A_BOOL
-dbglog_pcielp_print_handler(uint32_t mod_id,
-			    uint16_t vap_id,
-			    uint32_t dbg_id,
-			    uint32_t timestamp,
-			    uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_pcielp_print_handler(uint32_t mod_id, uint16_t vap_id,
+					  uint32_t dbg_id, uint32_t timestamp,
+					  uint16_t numargs, uint32_t *args)
 {
 	static const char *const states[] = {
-		"STOP",
-		"TX",
-		"RX",
-		"SLEEP",
-		"SUSPEND",
+		"STOP", "TX", "RX", "SLEEP", "SUSPEND",
 	};
 
 	static const char *const events[] = {
-		"VDEV_UP",
-		"ALL_VDEV_DOWN",
-		"AWAKE",
-		"SLEEP",
-		"TX_ACTIVITY",
-		"TX_INACTIVITY",
-		"TX_AC_CHANGE",
-		"SUSPEND",
-		"RESUME",
+		"VDEV_UP",	"ALL_VDEV_DOWN", "AWAKE",
+		"SLEEP",	"TX_ACTIVITY",	 "TX_INACTIVITY",
+		"TX_AC_CHANGE", "SUSPEND",	 "RESUME",
 	};
 
 	switch (dbg_id) {
@@ -4063,8 +4000,7 @@ static int dbglog_block_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t dbglog_block_read(struct file *file,
-				 char __user *user_buf,
+static ssize_t dbglog_block_read(struct file *file, char __user *user_buf,
 				 size_t count, loff_t *ppos)
 {
 	struct fwdebug *fwlog = file->private_data;
@@ -4086,8 +4022,8 @@ static ssize_t dbglog_block_read(struct file *file,
 
 		spin_unlock_bh(&fwlog->fwlog_queue.lock);
 
-		ret =
-		   wait_for_completion_interruptible(&fwlog->fwlog_completion);
+		ret = wait_for_completion_interruptible(
+			&fwlog->fwlog_completion);
 		if (ret == -ERESTARTSYS) {
 			qdf_mem_vfree(buf);
 			return ret;
@@ -4138,7 +4074,6 @@ static const struct file_operations fops_dbglog_block = {
 
 static void dbglog_debugfs_init(wmi_unified_t wmi_handle)
 {
-
 	/* Initialize the fw debug log queue */
 	skb_queue_head_init(&wmi_handle->dbglog.fwlog_queue);
 	init_completion(&wmi_handle->dbglog.fwlog_completion);
@@ -4197,21 +4132,20 @@ static void cnss_diag_handle_crash_inject(struct dbglog_slot *slot)
 
 		AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
 				("%s : DIAG_TYPE_CRASH_INJECT: %d %d\n",
-				 __func__, slot->payload[0],
-				 slot->payload[1]));
+				 __func__, slot->payload[0], slot->payload[1]));
 		if (!tgt_assert_enable) {
 			AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
 					("%s: tgt Assert Disabled\n",
-					  __func__));
+					 __func__));
 			return;
 		}
 		wma_cli_set2_command(0, (int)GEN_PARAM_CRASH_INJECT,
-					slot->payload[0],
-					slot->payload[1], GEN_CMD);
+				     slot->payload[0], slot->payload[1],
+				     GEN_CMD);
 		break;
 	default:
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("Unknown cmd[%d] error\n",
-						slot->diag_type));
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
+				("Unknown cmd[%d] error\n", slot->diag_type));
 		break;
 	}
 }
@@ -4228,41 +4162,43 @@ static void cnss_diag_handle_crash_inject(struct dbglog_slot *slot)
  *
  * Return: None
  */
-static void cnss_diag_cmd_handler(const void *data, int data_len,
-						void *ctx, int pid)
+static void cnss_diag_cmd_handler(const void *data, int data_len, void *ctx,
+				  int pid)
 {
 	struct dbglog_slot *slot = NULL;
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_MAX + 1];
 	int len;
 
 	/*
-	 * audit note: it is ok to pass a NULL policy here since a
-	 * length check on the data is added later already
-	 */
-	if (wlan_cfg80211_nla_parse(tb, CLD80211_ATTR_MAX,
-				    data, data_len, NULL)) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: nla parse fails\n",
-							__func__));
+   * audit note: it is ok to pass a NULL policy here since a
+   * length check on the data is added later already
+   */
+	if (wlan_cfg80211_nla_parse(tb, CLD80211_ATTR_MAX, data, data_len,
+				    NULL)) {
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
+				("%s: nla parse fails\n", __func__));
 		return;
 	}
 
 	if (!tb[CLD80211_ATTR_DATA]) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: attr VENDOR_DATA fails\n",
-								__func__));
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
+				("%s: attr VENDOR_DATA fails\n", __func__));
 		return;
 	}
 
 	len = nla_len(tb[CLD80211_ATTR_DATA]);
 	if (len < sizeof(struct dbglog_slot)) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: attr length less than sizeof(struct dbglog_slot)\n",
-				__func__));
+		AR_DEBUG_PRINTF(
+			ATH_DEBUG_ERR,
+			("%s: attr length less than sizeof(struct dbglog_slot)\n",
+			 __func__));
 		return;
 	}
 
 	slot = (struct dbglog_slot *)nla_data(tb[CLD80211_ATTR_DATA]);
-	if (len != (sizeof(struct dbglog_slot) + (uint64_t) slot->length)) {
-		AR_DEBUG_PRINTF(ATH_DEBUG_ERR, ("%s: attr length check fails\n",
-				__func__));
+	if (len != (sizeof(struct dbglog_slot) + (uint64_t)slot->length)) {
+		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
+				("%s: attr length check fails\n", __func__));
 		return;
 	}
 
@@ -4329,9 +4265,9 @@ int cnss_diag_deactivate_service(void)
 	int ret;
 
 	/*
-	 * Deregister the msg handler for msgs addressed to
-	 * WLAN_NL_MSG_CNSS_DIAG
-	 */
+   * Deregister the msg handler for msgs addressed to
+   * WLAN_NL_MSG_CNSS_DIAG
+   */
 	ret = nl_srv_unregister(WLAN_NL_MSG_CNSS_DIAG, cnss_diag_msg_callback);
 	if (ret)
 		AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
@@ -4341,46 +4277,45 @@ int cnss_diag_deactivate_service(void)
 }
 #endif
 
-static A_BOOL
-dbglog_wow_print_handler(uint32_t mod_id,
-			 uint16_t vap_id,
-			 uint32_t dbg_id,
-			 uint32_t timestamp, uint16_t numargs, uint32_t *args)
+static A_BOOL dbglog_wow_print_handler(uint32_t mod_id, uint16_t vap_id,
+				       uint32_t dbg_id, uint32_t timestamp,
+				       uint16_t numargs, uint32_t *args)
 {
-
 	switch (dbg_id) {
 	case WOW_NS_OFLD_ENABLE:
 		if (4 == numargs) {
-			dbglog_printf(timestamp, vap_id,
-				      "Enable NS offload, for sender %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-				      *(uint8_t *) &args[0],
-				      *((uint8_t *) &args[0] + 1),
-				      *((uint8_t *) &args[0] + 2),
-				      *((uint8_t *) &args[0] + 3),
-				      *(uint8_t *) &args[1],
-				      *((uint8_t *) &args[1] + 1),
-				      *((uint8_t *) &args[1] + 2),
-				      *((uint8_t *) &args[1] + 3),
-				      *(uint8_t *) &args[2],
-				      *((uint8_t *) &args[2] + 1),
-				      *((uint8_t *) &args[2] + 2),
-				      *((uint8_t *) &args[2] + 3),
-				      *(uint8_t *) &args[3],
-				      *((uint8_t *) &args[3] + 1),
-				      *((uint8_t *) &args[3] + 2),
-				      *((uint8_t *) &args[3] + 3));
+			dbglog_printf(
+				timestamp, vap_id,
+				"Enable NS offload, for sender "
+				"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%"
+				"02x%02x:%02x%02x",
+				*(uint8_t *)&args[0],
+				*((uint8_t *)&args[0] + 1),
+				*((uint8_t *)&args[0] + 2),
+				*((uint8_t *)&args[0] + 3),
+				*(uint8_t *)&args[1],
+				*((uint8_t *)&args[1] + 1),
+				*((uint8_t *)&args[1] + 2),
+				*((uint8_t *)&args[1] + 3),
+				*(uint8_t *)&args[2],
+				*((uint8_t *)&args[2] + 1),
+				*((uint8_t *)&args[2] + 2),
+				*((uint8_t *)&args[2] + 3),
+				*(uint8_t *)&args[3],
+				*((uint8_t *)&args[3] + 1),
+				*((uint8_t *)&args[3] + 2),
+				*((uint8_t *)&args[3] + 3));
 		} else {
 			return false;
 		}
 		break;
 	case WOW_ARP_OFLD_ENABLE:
 		if (1 == numargs) {
-			dbglog_printf(timestamp, vap_id,
-				      "Enable ARP offload, for sender %d.%d.%d.%d",
-				      *(uint8_t *) args,
-				      *((uint8_t *) args + 1),
-				      *((uint8_t *) args + 2),
-				      *((uint8_t *) args + 3));
+			dbglog_printf(
+				timestamp, vap_id,
+				"Enable ARP offload, for sender %d.%d.%d.%d",
+				*(uint8_t *)args, *((uint8_t *)args + 1),
+				*((uint8_t *)args + 2), *((uint8_t *)args + 3));
 		} else {
 			return false;
 		}
@@ -4395,48 +4330,54 @@ dbglog_wow_print_handler(uint32_t mod_id,
 		break;
 	case WOW_NS_RECEIVED:
 		if (4 == numargs) {
-			dbglog_printf(timestamp, vap_id,
-				      "NS requested from %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-				      *(uint8_t *) &args[0],
-				      *((uint8_t *) &args[0] + 1),
-				      *((uint8_t *) &args[0] + 2),
-				      *((uint8_t *) &args[0] + 3),
-				      *(uint8_t *) &args[1],
-				      *((uint8_t *) &args[1] + 1),
-				      *((uint8_t *) &args[1] + 2),
-				      *((uint8_t *) &args[1] + 3),
-				      *(uint8_t *) &args[2],
-				      *((uint8_t *) &args[2] + 1),
-				      *((uint8_t *) &args[2] + 2),
-				      *((uint8_t *) &args[2] + 3),
-				      *(uint8_t *) &args[3],
-				      *((uint8_t *) &args[3] + 1),
-				      *((uint8_t *) &args[3] + 2),
-				      *((uint8_t *) &args[3] + 3));
+			dbglog_printf(
+				timestamp, vap_id,
+				"NS requested from "
+				"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%"
+				"02x%02x:%02x%02x",
+				*(uint8_t *)&args[0],
+				*((uint8_t *)&args[0] + 1),
+				*((uint8_t *)&args[0] + 2),
+				*((uint8_t *)&args[0] + 3),
+				*(uint8_t *)&args[1],
+				*((uint8_t *)&args[1] + 1),
+				*((uint8_t *)&args[1] + 2),
+				*((uint8_t *)&args[1] + 3),
+				*(uint8_t *)&args[2],
+				*((uint8_t *)&args[2] + 1),
+				*((uint8_t *)&args[2] + 2),
+				*((uint8_t *)&args[2] + 3),
+				*(uint8_t *)&args[3],
+				*((uint8_t *)&args[3] + 1),
+				*((uint8_t *)&args[3] + 2),
+				*((uint8_t *)&args[3] + 3));
 		} else {
 			return false;
 		}
 		break;
 	case WOW_NS_REPLIED:
 		if (4 == numargs) {
-			dbglog_printf(timestamp, vap_id,
-				      "NS replied to %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-				      *(uint8_t *) &args[0],
-				      *((uint8_t *) &args[0] + 1),
-				      *((uint8_t *) &args[0] + 2),
-				      *((uint8_t *) &args[0] + 3),
-				      *(uint8_t *) &args[1],
-				      *((uint8_t *) &args[1] + 1),
-				      *((uint8_t *) &args[1] + 2),
-				      *((uint8_t *) &args[1] + 3),
-				      *(uint8_t *) &args[2],
-				      *((uint8_t *) &args[2] + 1),
-				      *((uint8_t *) &args[2] + 2),
-				      *((uint8_t *) &args[2] + 3),
-				      *(uint8_t *) &args[3],
-				      *((uint8_t *) &args[3] + 1),
-				      *((uint8_t *) &args[3] + 2),
-				      *((uint8_t *) &args[3] + 3));
+			dbglog_printf(
+				timestamp, vap_id,
+				"NS replied to "
+				"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%"
+				"02x%02x:%02x%02x",
+				*(uint8_t *)&args[0],
+				*((uint8_t *)&args[0] + 1),
+				*((uint8_t *)&args[0] + 2),
+				*((uint8_t *)&args[0] + 3),
+				*(uint8_t *)&args[1],
+				*((uint8_t *)&args[1] + 1),
+				*((uint8_t *)&args[1] + 2),
+				*((uint8_t *)&args[1] + 3),
+				*(uint8_t *)&args[2],
+				*((uint8_t *)&args[2] + 1),
+				*((uint8_t *)&args[2] + 2),
+				*((uint8_t *)&args[2] + 3),
+				*(uint8_t *)&args[3],
+				*((uint8_t *)&args[3] + 1),
+				*((uint8_t *)&args[3] + 2),
+				*((uint8_t *)&args[3] + 3));
 		} else {
 			return false;
 		}
@@ -4445,10 +4386,9 @@ dbglog_wow_print_handler(uint32_t mod_id,
 		if (1 == numargs) {
 			dbglog_printf(timestamp, vap_id,
 				      "ARP requested from %d.%d.%d.%d",
-				      *(uint8_t *) args,
-				      *((uint8_t *) args + 1),
-				      *((uint8_t *) args + 2),
-				      *((uint8_t *) args + 3));
+				      *(uint8_t *)args, *((uint8_t *)args + 1),
+				      *((uint8_t *)args + 2),
+				      *((uint8_t *)args + 3));
 		} else {
 			return false;
 		}
@@ -4458,10 +4398,9 @@ dbglog_wow_print_handler(uint32_t mod_id,
 		if (1 == numargs) {
 			dbglog_printf(timestamp, vap_id,
 				      "ARP replied to %d.%d.%d.%d",
-				      *(uint8_t *) args,
-				      *((uint8_t *) args + 1),
-				      *((uint8_t *) args + 2),
-				      *((uint8_t *) args + 3));
+				      *(uint8_t *)args, *((uint8_t *)args + 1),
+				      *((uint8_t *)args + 2),
+				      *((uint8_t *)args + 3));
 		} else {
 			return false;
 		}
@@ -4512,11 +4451,10 @@ int dbglog_init(wmi_unified_t wmi_handle)
 	tgt_assert_enable = wmi_handle->tgt_force_assert_enable;
 
 	/* Register handler for F3 or debug messages */
-	res =
-		wmi_unified_register_event_handler(wmi_handle,
-						   wmi_dbg_msg_event_id,
-						   dbglog_parse_debug_logs,
-						   WMI_RX_DIAG_WORK_CTX);
+	res = wmi_unified_register_event_handler(wmi_handle,
+						 wmi_dbg_msg_event_id,
+						 dbglog_parse_debug_logs,
+						 WMI_RX_DIAG_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(res))
 		return A_ERROR;
 
@@ -4549,9 +4487,8 @@ int dbglog_deinit(wmi_unified_t wmi_handle)
 	dbglog_debugfs_remove(wmi_handle);
 
 	tgt_assert_enable = 0;
-	res =
-		wmi_unified_unregister_event_handler(wmi_handle,
-						     wmi_dbg_msg_event_id);
+	res = wmi_unified_unregister_event_handler(wmi_handle,
+						   wmi_dbg_msg_event_id);
 	if (QDF_IS_STATUS_ERROR(res))
 		return A_ERROR;
 

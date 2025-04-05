@@ -17,17 +17,17 @@
 
 #ifdef WLAN_DP_FEATURE_SW_LATENCY_MGR
 
-#include <dp_types.h>
-#include <dp_internal.h>
-#include <wlan_cfg.h>
 #include "wlan_dp_swlm.h"
+#include "hal_api.h"
+#include "hal_internal.h"
+#include "hif.h"
 #include "qdf_time.h"
 #include "qdf_util.h"
-#include "hal_internal.h"
-#include "hal_api.h"
-#include "hif.h"
-#include <qdf_status.h>
+#include <dp_internal.h>
+#include <dp_types.h>
 #include <qdf_nbuf.h>
+#include <qdf_status.h>
+#include <wlan_cfg.h>
 
 /**
  * dp_swlm_is_tput_thresh_reached() - Calculate the current tx and rx TPUT
@@ -49,7 +49,7 @@ static bool dp_swlm_is_tput_thresh_reached(struct dp_soc *soc, uint8_t rid)
 	bool result = false;
 
 	tx_delta = soc->stats.tx.egress[rid].bytes -
-			params->tcl[rid].prev_tx_bytes;
+		   params->tcl[rid].prev_tx_bytes;
 	params->tcl[rid].prev_tx_bytes = soc->stats.tx.egress[rid].bytes;
 	if (tx_delta > params->tx_traffic_thresh) {
 		params->tcl[rid].sampling_session_tx_bytes = tx_delta;
@@ -64,7 +64,7 @@ static bool dp_swlm_is_tput_thresh_reached(struct dp_soc *soc, uint8_t rid)
 	}
 
 	tx_packet_delta = soc->stats.tx.egress[rid].num -
-		params->tcl[rid].prev_tx_packets;
+			  params->tcl[rid].prev_tx_packets;
 	params->tcl[rid].prev_tx_packets = soc->stats.tx.egress[rid].num;
 	if (tx_packet_delta < params->tx_pkt_thresh)
 		result = false;
@@ -87,9 +87,8 @@ static bool dp_swlm_is_tput_thresh_reached(struct dp_soc *soc, uint8_t rid)
  * Returns: 1 if the current TCL write is to be coalesced
  *	    0, if the current TCL write is to be processed.
  */
-static int
-dp_swlm_can_tcl_wr_coalesce(struct dp_soc *soc,
-			    struct dp_swlm_tcl_data *tcl_data)
+static int dp_swlm_can_tcl_wr_coalesce(struct dp_soc *soc,
+				       struct dp_swlm_tcl_data *tcl_data)
 {
 	u64 curr_time = qdf_get_log_timestamp_usecs();
 	int tput_level_pass, coalesce = 0;
@@ -98,8 +97,8 @@ dp_swlm_can_tcl_wr_coalesce(struct dp_soc *soc,
 	struct dp_swlm_params *params = &soc->swlm.params;
 
 	if (curr_time >= params->tcl[rid].expire_time) {
-		params->tcl[rid].expire_time = qdf_get_log_timestamp_usecs() +
-			      params->sampling_time;
+		params->tcl[rid].expire_time =
+			qdf_get_log_timestamp_usecs() + params->sampling_time;
 		tput_level_pass = dp_swlm_is_tput_thresh_reached(soc, rid);
 		if (tput_level_pass) {
 			params->tcl[rid].tput_pass_cnt++;
@@ -150,8 +149,7 @@ QDF_STATUS dp_print_swlm_stats(struct dp_soc *soc)
 			swlm->stats.tcl[i].timer_flush_success);
 		dp_info("Timer flush fail: %d",
 			swlm->stats.tcl[i].timer_flush_fail);
-		dp_info("Coalesce fail (TID): %d",
-			swlm->stats.tcl[i].tid_fail);
+		dp_info("Coalesce fail (TID): %d", swlm->stats.tcl[i].tid_fail);
 		dp_info("Coalesce fail (special frame): %d",
 			swlm->stats.tcl[i].sp_frames);
 		dp_info("Coalesce fail (Low latency connection): %d",
@@ -216,8 +214,7 @@ static inline QDF_STATUS dp_soc_swlm_tcl_attach(struct dp_soc *soc)
 		swlm->params.tcl[i].soc = soc;
 		swlm->params.tcl[i].ring_id = i;
 		swlm->params.tcl[i].bytes_flush_thresh = 0;
-		qdf_timer_init(soc->osdev,
-			       &swlm->params.tcl[i].flush_timer,
+		qdf_timer_init(soc->osdev, &swlm->params.tcl[i].flush_timer,
 			       dp_swlm_tcl_flush_timer,
 			       (void *)&swlm->params.tcl[i],
 			       QDF_TIMER_TYPE_WAKE_APPS);

@@ -12,9 +12,9 @@
 #include "kgsl_trace.h"
 
 static int a5xx_rb_pagetable_switch(struct kgsl_device *device,
-		struct adreno_context *drawctxt,
-		struct adreno_ringbuffer *rb,
-		struct kgsl_pagetable *pagetable, u32 *cmds)
+				    struct adreno_context *drawctxt,
+				    struct adreno_ringbuffer *rb,
+				    struct kgsl_pagetable *pagetable, u32 *cmds)
 {
 	u64 ttbr0 = kgsl_mmu_pagetable_get_ttbr0(pagetable);
 	u32 id = drawctxt ? drawctxt->base.id : 0;
@@ -33,10 +33,8 @@ static int a5xx_rb_pagetable_switch(struct kgsl_device *device,
 	cmds[7] = 1;
 
 	cmds[8] = cp_type7_packet(CP_MEM_WRITE, 5);
-	cmds[9] = lower_32_bits(SCRATCH_RB_GPU_ADDR(device,
-			rb->id, ttbr0));
-	cmds[10] = upper_32_bits(SCRATCH_RB_GPU_ADDR(device,
-			rb->id, ttbr0));
+	cmds[9] = lower_32_bits(SCRATCH_RB_GPU_ADDR(device, rb->id, ttbr0));
+	cmds[10] = upper_32_bits(SCRATCH_RB_GPU_ADDR(device, rb->id, ttbr0));
 	cmds[11] = lower_32_bits(ttbr0);
 	cmds[12] = upper_32_bits(ttbr0);
 	cmds[13] = id;
@@ -50,17 +48,17 @@ static int a5xx_rb_pagetable_switch(struct kgsl_device *device,
 }
 
 #define RB_SOPTIMESTAMP(device, rb) \
-	       MEMSTORE_RB_GPU_ADDR(device, rb, soptimestamp)
+	MEMSTORE_RB_GPU_ADDR(device, rb, soptimestamp)
 #define CTXT_SOPTIMESTAMP(device, drawctxt) \
-	       MEMSTORE_ID_GPU_ADDR(device, (drawctxt)->base.id, soptimestamp)
+	MEMSTORE_ID_GPU_ADDR(device, (drawctxt)->base.id, soptimestamp)
 
 #define RB_EOPTIMESTAMP(device, rb) \
-	       MEMSTORE_RB_GPU_ADDR(device, rb, eoptimestamp)
+	MEMSTORE_RB_GPU_ADDR(device, rb, eoptimestamp)
 #define CTXT_EOPTIMESTAMP(device, drawctxt) \
-	       MEMSTORE_ID_GPU_ADDR(device, (drawctxt)->base.id, eoptimestamp)
+	MEMSTORE_ID_GPU_ADDR(device, (drawctxt)->base.id, eoptimestamp)
 
 int a5xx_ringbuffer_submit(struct adreno_ringbuffer *rb,
-		struct adreno_submit_time *time, bool sync)
+			   struct adreno_submit_time *time, bool sync)
 {
 	struct adreno_device *adreno_dev = ADRENO_RB_DEVICE(rb);
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
@@ -76,10 +74,10 @@ int a5xx_ringbuffer_submit(struct adreno_ringbuffer *rb,
 			return PTR_ERR(cmds);
 
 		cmds[0] = cp_type7_packet(CP_WHERE_AM_I, 2);
-		cmds[1] = lower_32_bits(SCRATCH_RB_GPU_ADDR(device, rb->id,
-				rptr));
-		cmds[2] = upper_32_bits(SCRATCH_RB_GPU_ADDR(device, rb->id,
-				rptr));
+		cmds[1] = lower_32_bits(
+			SCRATCH_RB_GPU_ADDR(device, rb->id, rptr));
+		cmds[2] = upper_32_bits(
+			SCRATCH_RB_GPU_ADDR(device, rb->id, rptr));
 	}
 
 	spin_lock_irqsave(&rb->preempt_lock, flags);
@@ -102,8 +100,9 @@ int a5xx_ringbuffer_init(struct adreno_device *adreno_dev)
 	int i;
 
 	if (IS_ERR_OR_NULL(device->scratch))
-		device->scratch = kgsl_allocate_global(device, PAGE_SIZE,
-			0, 0, KGSL_MEMDESC_RANDOM | KGSL_MEMDESC_PRIVILEGED,
+		device->scratch = kgsl_allocate_global(
+			device, PAGE_SIZE, 0, 0,
+			KGSL_MEMDESC_RANDOM | KGSL_MEMDESC_PRIVILEGED,
 			"scratch");
 
 	if (IS_ERR(device->scratch))
@@ -114,7 +113,7 @@ int a5xx_ringbuffer_init(struct adreno_device *adreno_dev)
 	if (!adreno_preemption_feature_set(adreno_dev)) {
 		adreno_dev->num_ringbuffers = 1;
 		return adreno_ringbuffer_setup(adreno_dev,
-			&adreno_dev->ringbuffers[0], 0);
+					       &adreno_dev->ringbuffers[0], 0);
 	}
 
 	adreno_dev->num_ringbuffers = ARRAY_SIZE(adreno_dev->ringbuffers);
@@ -123,7 +122,7 @@ int a5xx_ringbuffer_init(struct adreno_device *adreno_dev)
 		int ret;
 
 		ret = adreno_ringbuffer_setup(adreno_dev,
-			&adreno_dev->ringbuffers[i], i);
+					      &adreno_dev->ringbuffers[i], i);
 		if (ret)
 			return ret;
 	}
@@ -136,9 +135,10 @@ int a5xx_ringbuffer_init(struct adreno_device *adreno_dev)
 #define A5XX_SUBMIT_MAX 64
 
 int a5xx_ringbuffer_addcmds(struct adreno_device *adreno_dev,
-		struct adreno_ringbuffer *rb, struct adreno_context *drawctxt,
-		u32 flags, u32 *in, u32 dwords, u32 timestamp,
-		struct adreno_submit_time *time)
+			    struct adreno_ringbuffer *rb,
+			    struct adreno_context *drawctxt, u32 flags, u32 *in,
+			    u32 dwords, u32 timestamp,
+			    struct adreno_submit_time *time)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	static u32 sequence;
@@ -168,10 +168,10 @@ int a5xx_ringbuffer_addcmds(struct adreno_device *adreno_dev,
 
 	/* 14 dwords */
 	index += a5xx_preemption_pre_ibsubmit(adreno_dev, rb, drawctxt,
-		&cmds[index]);
+					      &cmds[index]);
 
-	profile_gpuaddr = adreno_profile_preib_processing(adreno_dev,
-		drawctxt, &profile_dwords);
+	profile_gpuaddr = adreno_profile_preib_processing(adreno_dev, drawctxt,
+							  &profile_dwords);
 
 	if (profile_gpuaddr) {
 		cmds[index++] = cp_type7_packet(CP_INDIRECT_BUFFER_PFE, 3);
@@ -182,10 +182,10 @@ int a5xx_ringbuffer_addcmds(struct adreno_device *adreno_dev,
 
 	if (drawctxt) {
 		cmds[index++] = cp_type7_packet(CP_MEM_WRITE, 3);
-		cmds[index++] = lower_32_bits(CTXT_SOPTIMESTAMP(device,
-					drawctxt));
-		cmds[index++] = upper_32_bits(CTXT_SOPTIMESTAMP(device,
-					drawctxt));
+		cmds[index++] =
+			lower_32_bits(CTXT_SOPTIMESTAMP(device, drawctxt));
+		cmds[index++] =
+			upper_32_bits(CTXT_SOPTIMESTAMP(device, drawctxt));
 		cmds[index++] = timestamp;
 	}
 
@@ -213,8 +213,8 @@ int a5xx_ringbuffer_addcmds(struct adreno_device *adreno_dev,
 	}
 
 	/* 4 dwords */
-	profile_gpuaddr = adreno_profile_postib_processing(adreno_dev,
-		drawctxt, &profile_dwords);
+	profile_gpuaddr = adreno_profile_postib_processing(adreno_dev, drawctxt,
+							   &profile_dwords);
 
 	if (profile_gpuaddr) {
 		cmds[index++] = cp_type7_packet(CP_INDIRECT_BUFFER_PFE, 3);
@@ -224,26 +224,25 @@ int a5xx_ringbuffer_addcmds(struct adreno_device *adreno_dev,
 	}
 
 	if (!adreno_is_a510(adreno_dev) &&
-		test_bit(KGSL_FT_PAGEFAULT_GPUHALT_ENABLE,
-			&device->mmu.pfpolicy))
+	    test_bit(KGSL_FT_PAGEFAULT_GPUHALT_ENABLE, &device->mmu.pfpolicy))
 		cmds[index++] = cp_type7_packet(CP_WAIT_MEM_WRITES, 0);
 
 	/*
-	 * Do a unique memory write from the GPU to assist in early detection of
-	 * interrupt storms
-	 */
+   * Do a unique memory write from the GPU to assist in early detection of
+   * interrupt storms
+   */
 
 	cmds[index++] = cp_type7_packet(CP_MEM_WRITE, 3);
-	cmds[index++] = lower_32_bits(MEMSTORE_ID_GPU_ADDR(device,
-				KGSL_MEMSTORE_GLOBAL, ref_wait_ts));
-	cmds[index++] = upper_32_bits(MEMSTORE_ID_GPU_ADDR(device,
-				KGSL_MEMSTORE_GLOBAL, ref_wait_ts));
+	cmds[index++] = lower_32_bits(MEMSTORE_ID_GPU_ADDR(
+		device, KGSL_MEMSTORE_GLOBAL, ref_wait_ts));
+	cmds[index++] = upper_32_bits(MEMSTORE_ID_GPU_ADDR(
+		device, KGSL_MEMSTORE_GLOBAL, ref_wait_ts));
 	cmds[index++] = ++sequence;
 
 	/*
-	 * If this is an internal command, just write the ringbuffer timestamp,
-	 * otherwise, write both
-	 */
+   * If this is an internal command, just write the ringbuffer timestamp,
+   * otherwise, write both
+   */
 	if (!drawctxt) {
 		cmds[index++] = cp_type7_packet(CP_EVENT_WRITE, 4);
 		cmds[index++] = CACHE_FLUSH_TS | (1 << 31);
@@ -253,10 +252,10 @@ int a5xx_ringbuffer_addcmds(struct adreno_device *adreno_dev,
 	} else {
 		cmds[index++] = cp_type7_packet(CP_EVENT_WRITE, 4);
 		cmds[index++] = CACHE_FLUSH_TS | (1 << 31);
-		cmds[index++] = lower_32_bits(CTXT_EOPTIMESTAMP(device,
-					drawctxt));
-		cmds[index++] = upper_32_bits(CTXT_EOPTIMESTAMP(device,
-					drawctxt));
+		cmds[index++] =
+			lower_32_bits(CTXT_EOPTIMESTAMP(device, drawctxt));
+		cmds[index++] =
+			upper_32_bits(CTXT_EOPTIMESTAMP(device, drawctxt));
 		cmds[index++] = timestamp;
 
 		cmds[index++] = cp_type7_packet(CP_EVENT_WRITE, 4);
@@ -281,13 +280,13 @@ int a5xx_ringbuffer_addcmds(struct adreno_device *adreno_dev,
 	rb->_wptr -= (size - index);
 
 	a5xx_ringbuffer_submit(rb, time,
-		!adreno_is_preemption_enabled(adreno_dev));
+			       !adreno_is_preemption_enabled(adreno_dev));
 
 	return 0;
 }
 
 static u32 a5xx_get_alwayson_counter(struct adreno_device *adreno_dev,
-		u32 *cmds, u64 gpuaddr)
+				     u32 *cmds, u64 gpuaddr)
 {
 	cmds[0] = cp_type7_packet(CP_REG_TO_MEM, 3);
 	cmds[1] = A5XX_RBBM_ALWAYSON_COUNTER_LO;
@@ -307,8 +306,9 @@ static u32 a5xx_get_alwayson_counter(struct adreno_device *adreno_dev,
 #define PROFILE_IB_SLOTS (PAGE_SIZE / (PROFILE_IB_DWORDS << 2))
 
 static u64 a5xx_get_user_profiling_ib(struct adreno_device *adreno_dev,
-		struct adreno_ringbuffer *rb, struct kgsl_drawobj_cmd *cmdobj,
-		u32 target_offset, u32 *cmds)
+				      struct adreno_ringbuffer *rb,
+				      struct kgsl_drawobj_cmd *cmdobj,
+				      u32 target_offset, u32 *cmds)
 {
 	u32 offset, *ib, dwords;
 	u64 gpuaddr;
@@ -320,7 +320,8 @@ static u64 a5xx_get_user_profiling_ib(struct adreno_device *adreno_dev,
 	ib = rb->profile_desc->hostptr + offset;
 	gpuaddr = rb->profile_desc->gpuaddr + offset;
 	dwords = a5xx_get_alwayson_counter(adreno_dev, ib,
-		cmdobj->profiling_buffer_gpuaddr + target_offset);
+					   cmdobj->profiling_buffer_gpuaddr +
+						   target_offset);
 
 	cmds[0] = cp_type7_packet(CP_INDIRECT_BUFFER_PFE, 3);
 	cmds[1] = lower_32_bits(gpuaddr);
@@ -333,8 +334,8 @@ static u64 a5xx_get_user_profiling_ib(struct adreno_device *adreno_dev,
 }
 
 static int a5xx_rb_context_switch(struct adreno_device *adreno_dev,
-		struct adreno_ringbuffer *rb,
-		struct adreno_context *drawctxt)
+				  struct adreno_ringbuffer *rb,
+				  struct adreno_context *drawctxt)
 {
 	struct kgsl_pagetable *pagetable =
 		adreno_drawctxt_get_pagetable(drawctxt);
@@ -343,36 +344,36 @@ static int a5xx_rb_context_switch(struct adreno_device *adreno_dev,
 	u32 cmds[32];
 
 	if (adreno_drawctxt_get_pagetable(rb->drawctxt_active) != pagetable)
-		count += a5xx_rb_pagetable_switch(device, drawctxt,
-				rb, pagetable, cmds);
+		count += a5xx_rb_pagetable_switch(device, drawctxt, rb,
+						  pagetable, cmds);
 
 	cmds[count++] = cp_type7_packet(CP_NOP, 1);
 	cmds[count++] = CONTEXT_TO_MEM_IDENTIFIER;
 
 	cmds[count++] = cp_type7_packet(CP_MEM_WRITE, 3);
-	cmds[count++] = lower_32_bits(MEMSTORE_RB_GPU_ADDR(device, rb,
-				current_context));
-	cmds[count++] = upper_32_bits(MEMSTORE_RB_GPU_ADDR(device, rb,
-				current_context));
+	cmds[count++] = lower_32_bits(
+		MEMSTORE_RB_GPU_ADDR(device, rb, current_context));
+	cmds[count++] = upper_32_bits(
+		MEMSTORE_RB_GPU_ADDR(device, rb, current_context));
 	cmds[count++] = drawctxt->base.id;
 
 	cmds[count++] = cp_type7_packet(CP_MEM_WRITE, 3);
-	cmds[count++] = lower_32_bits(MEMSTORE_ID_GPU_ADDR(device,
-		KGSL_MEMSTORE_GLOBAL, current_context));
-	cmds[count++] = upper_32_bits(MEMSTORE_ID_GPU_ADDR(device,
-		KGSL_MEMSTORE_GLOBAL, current_context));
+	cmds[count++] = lower_32_bits(MEMSTORE_ID_GPU_ADDR(
+		device, KGSL_MEMSTORE_GLOBAL, current_context));
+	cmds[count++] = upper_32_bits(MEMSTORE_ID_GPU_ADDR(
+		device, KGSL_MEMSTORE_GLOBAL, current_context));
 	cmds[count++] = drawctxt->base.id;
 
 	cmds[count++] = cp_type4_packet(A5XX_UCHE_INVALIDATE0, 1);
 	cmds[count++] = 0x12;
 
 	return a5xx_ringbuffer_addcmds(adreno_dev, rb, NULL, F_NOTPROTECTED,
-			cmds, count, 0, NULL);
+				       cmds, count, 0, NULL);
 }
 
 static int a5xx_drawctxt_switch(struct adreno_device *adreno_dev,
-		struct adreno_ringbuffer *rb,
-		struct adreno_context *drawctxt)
+				struct adreno_ringbuffer *rb,
+				struct adreno_context *drawctxt)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 
@@ -390,30 +391,30 @@ static int a5xx_drawctxt_switch(struct adreno_device *adreno_dev,
 	a5xx_rb_context_switch(adreno_dev, rb, drawctxt);
 
 	/* Release the current drawctxt as soon as the new one is switched */
-	adreno_put_drawctxt_on_timestamp(device, rb->drawctxt_active,
-		rb, rb->timestamp);
+	adreno_put_drawctxt_on_timestamp(device, rb->drawctxt_active, rb,
+					 rb->timestamp);
 
 	rb->drawctxt_active = drawctxt;
 	return 0;
 }
 
-
 #define A5XX_USER_PROFILE_IB(dev, rb, cmdobj, cmds, field) \
-	a5xx_get_user_profiling_ib((dev), (rb), (cmdobj), \
-		offsetof(struct kgsl_drawobj_profiling_buffer, field), \
-		(cmds))
+	a5xx_get_user_profiling_ib(                        \
+		(dev), (rb), (cmdobj),                     \
+		offsetof(struct kgsl_drawobj_profiling_buffer, field), (cmds))
 
-#define A5XX_KERNEL_PROFILE(dev, cmdobj, cmds, field) \
-	a5xx_get_alwayson_counter((dev), (cmds), \
-		(dev)->profile_buffer->gpuaddr + \
+#define A5XX_KERNEL_PROFILE(dev, cmdobj, cmds, field)                          \
+	a5xx_get_alwayson_counter(                                             \
+		(dev), (cmds),                                                 \
+		(dev)->profile_buffer->gpuaddr +                               \
 			ADRENO_DRAWOBJ_PROFILE_OFFSET((cmdobj)->profile_index, \
-				field))
+						      field))
 
 #define A5XX_COMMAND_DWORDS 32
 
 int a5xx_ringbuffer_submitcmd(struct adreno_device *adreno_dev,
-		struct kgsl_drawobj_cmd *cmdobj, u32 flags,
-		struct adreno_submit_time *time)
+			      struct kgsl_drawobj_cmd *cmdobj, u32 flags,
+			      struct adreno_submit_time *time)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
@@ -442,20 +443,21 @@ int a5xx_ringbuffer_submitcmd(struct adreno_device *adreno_dev,
 	/* Kernel profiling: 4 dwords */
 	if (IS_KERNEL_PROFILE(flags))
 		index += A5XX_KERNEL_PROFILE(adreno_dev, cmdobj, &cmds[index],
-			started);
+					     started);
 
 	/* User profiling: 4 dwords */
 	if (IS_USER_PROFILE(flags))
 		index += A5XX_USER_PROFILE_IB(adreno_dev, rb, cmdobj,
-			&cmds[index], gpu_ticks_submitted);
+					      &cmds[index],
+					      gpu_ticks_submitted);
 
 	if (numibs) {
 		struct kgsl_memobj_node *ib;
 
 		list_for_each_entry(ib, &cmdobj->cmdlist, node) {
 			if (ib->priv & MEMOBJ_SKIP ||
-			    (ib->flags & KGSL_CMDLIST_CTXTSWITCH_PREAMBLE
-			     && !IS_PREAMBLE(flags)))
+			    (ib->flags & KGSL_CMDLIST_CTXTSWITCH_PREAMBLE &&
+			     !IS_PREAMBLE(flags)))
 				cmds[index++] = cp_type7_packet(CP_NOP, 4);
 
 			cmds[index++] =
@@ -469,12 +471,12 @@ int a5xx_ringbuffer_submitcmd(struct adreno_device *adreno_dev,
 	}
 
 	/*
-	 * SRM -- set render mode (ex binning, direct render etc)
-	 * SRM is set by UMD usually at start of IB to tell CP the type of
-	 * preemption.
-	 * KMD needs to set SRM to NULL to indicate CP that rendering is
-	 * done by IB.
-	 */
+   * SRM -- set render mode (ex binning, direct render etc)
+   * SRM is set by UMD usually at start of IB to tell CP the type of
+   * preemption.
+   * KMD needs to set SRM to NULL to indicate CP that rendering is
+   * done by IB.
+   */
 	cmds[index++] = cp_type7_packet(CP_SET_RENDER_MODE, 5);
 	cmds[index++] = 0;
 	cmds[index++] = 0;
@@ -488,12 +490,12 @@ int a5xx_ringbuffer_submitcmd(struct adreno_device *adreno_dev,
 	/* 4 dwords */
 	if (IS_KERNEL_PROFILE(flags))
 		index += A5XX_KERNEL_PROFILE(adreno_dev, cmdobj, &cmds[index],
-			retired);
+					     retired);
 
 	/* 4 dwords */
 	if (IS_USER_PROFILE(flags))
 		index += A5XX_USER_PROFILE_IB(adreno_dev, rb, cmdobj,
-			&cmds[index], gpu_ticks_retired);
+					      &cmds[index], gpu_ticks_retired);
 
 	cmds[index++] = cp_type7_packet(CP_NOP, 1);
 	cmds[index++] = END_IB_IDENTIFIER;
@@ -501,29 +503,29 @@ int a5xx_ringbuffer_submitcmd(struct adreno_device *adreno_dev,
 	ret = a5xx_drawctxt_switch(adreno_dev, rb, drawctxt);
 
 	/*
-	 * In the unlikely event of an error in the drawctxt switch,
-	 * treat it like a hang
-	 */
+   * In the unlikely event of an error in the drawctxt switch,
+   * treat it like a hang
+   */
 	if (ret) {
 		/*
-		 * It is "normal" to get a -ENOSPC or a -ENOENT. Don't log it,
-		 * the upper layers know how to handle it
-		 */
+     * It is "normal" to get a -ENOSPC or a -ENOENT. Don't log it,
+     * the upper layers know how to handle it
+     */
 		if (ret != -ENOSPC && ret != -ENOENT)
 			dev_err(device->dev,
-				     "Unable to switch draw context: %d\n",
-				     ret);
+				"Unable to switch draw context: %d\n", ret);
 		goto done;
 	}
 
 	adreno_drawobj_set_constraint(device, drawobj);
 
-	ret = a5xx_ringbuffer_addcmds(adreno_dev, drawctxt->rb, drawctxt,
-		flags, cmds, index, drawobj->timestamp, time);
+	ret = a5xx_ringbuffer_addcmds(adreno_dev, drawctxt->rb, drawctxt, flags,
+				      cmds, index, drawobj->timestamp, time);
 
 done:
 	trace_kgsl_issueibcmds(device, drawctxt->base.id, numibs,
-		drawobj->timestamp, drawobj->flags, ret, drawctxt->type);
+			       drawobj->timestamp, drawobj->flags, ret,
+			       drawctxt->type);
 
 	kfree(cmds);
 	return ret;

@@ -21,10 +21,10 @@
  */
 
 #include "ftm_time_sync_main.h"
-#include "target_if_ftm_time_sync.h"
-#include "wlan_objmgr_vdev_obj.h"
 #include "cfg_ftm_time_sync.h"
 #include "cfg_ucfg_api.h"
+#include "target_if_ftm_time_sync.h"
+#include "wlan_objmgr_vdev_obj.h"
 #include <pld_common.h>
 
 void ftm_time_sync_set_enable(struct wlan_objmgr_psoc *psoc, bool value)
@@ -138,7 +138,7 @@ static void ftm_time_sync_work_handler(void *arg)
 
 	if (vdev_priv->valid) {
 		status = vdev_priv->tx_ops.ftm_time_sync_send_qtime(
-						psoc, vdev_id, lpass_ts);
+			psoc, vdev_id, lpass_ts);
 		if (status != QDF_STATUS_SUCCESS)
 			ftm_time_sync_err("send_ftm_time_sync_qtime failed %d",
 					  status);
@@ -171,8 +171,8 @@ ftm_time_sync_vdev_create_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 	}
 
 	status = wlan_objmgr_vdev_component_obj_attach(
-				vdev, WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				(void *)vdev_priv, QDF_STATUS_SUCCESS);
+		vdev, WLAN_UMAC_COMP_FTM_TIME_SYNC, (void *)vdev_priv,
+		QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ftm_time_sync_err("Failed to attach priv with vdev");
 		goto free_vdev_priv;
@@ -251,8 +251,7 @@ ftm_time_sync_vdev_destroy_notification(struct wlan_objmgr_vdev *vdev,
 	ftm_time_sync_deregister_wmi_events(vdev);
 
 	status = wlan_objmgr_vdev_component_obj_detach(
-					vdev, WLAN_UMAC_COMP_FTM_TIME_SYNC,
-					(void *)vdev_priv);
+		vdev, WLAN_UMAC_COMP_FTM_TIME_SYNC, (void *)vdev_priv);
 	if (QDF_IS_STATUS_ERROR(status))
 		ftm_time_sync_err("Failed to detach priv with vdev");
 
@@ -263,15 +262,14 @@ exit:
 	return status;
 }
 
-static void
-ftm_time_sync_cfg_init(struct ftm_time_sync_psoc_priv *psoc_priv)
+static void ftm_time_sync_cfg_init(struct ftm_time_sync_psoc_priv *psoc_priv)
 {
-	psoc_priv->cfg_param.enable = cfg_get(psoc_priv->psoc,
-					      CFG_ENABLE_TIME_SYNC_FTM);
-	psoc_priv->cfg_param.role = cfg_get(psoc_priv->psoc,
-					    CFG_TIME_SYNC_FTM_ROLE);
-	psoc_priv->cfg_param.mode = cfg_get(psoc_priv->psoc,
-					    CFG_TIME_SYNC_FTM_MODE);
+	psoc_priv->cfg_param.enable =
+		cfg_get(psoc_priv->psoc, CFG_ENABLE_TIME_SYNC_FTM);
+	psoc_priv->cfg_param.role =
+		cfg_get(psoc_priv->psoc, CFG_TIME_SYNC_FTM_ROLE);
+	psoc_priv->cfg_param.mode =
+		cfg_get(psoc_priv->psoc, CFG_TIME_SYNC_FTM_MODE);
 }
 
 QDF_STATUS
@@ -285,8 +283,8 @@ ftm_time_sync_psoc_create_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 		return QDF_STATUS_E_NOMEM;
 
 	status = wlan_objmgr_psoc_component_obj_attach(
-				psoc, WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				psoc_priv, QDF_STATUS_SUCCESS);
+		psoc, WLAN_UMAC_COMP_FTM_TIME_SYNC, psoc_priv,
+		QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ftm_time_sync_err("Failed to attach psoc component obj");
 		goto free_psoc_priv;
@@ -316,8 +314,7 @@ ftm_time_sync_psoc_destroy_notification(struct wlan_objmgr_psoc *psoc,
 	}
 
 	status = wlan_objmgr_psoc_component_obj_detach(
-					psoc, WLAN_UMAC_COMP_FTM_TIME_SYNC,
-					psoc_priv);
+		psoc, WLAN_UMAC_COMP_FTM_TIME_SYNC, psoc_priv);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ftm_time_sync_err("Failed to detach psoc component obj");
 		return status;
@@ -350,8 +347,8 @@ QDF_STATUS ftm_time_sync_send_trigger(struct wlan_objmgr_vdev *vdev)
 	vdev_id = wlan_vdev_get_id(vdev_priv->vdev);
 	mode = ftm_time_sync_get_mode(psoc);
 
-	status = vdev_priv->tx_ops.ftm_time_sync_send_trigger(psoc,
-							      vdev_id, mode);
+	status = vdev_priv->tx_ops.ftm_time_sync_send_trigger(psoc, vdev_id,
+							      mode);
 	if (QDF_IS_STATUS_ERROR(status))
 		ftm_time_sync_err("send_ftm_time_sync_trigger failed %d",
 				  status);
@@ -395,20 +392,22 @@ ssize_t ftm_time_sync_show(struct wlan_objmgr_vdev *vdev, char *buf)
 		return 0;
 	}
 
-	size = qdf_scnprintf(buf, PAGE_SIZE,
-			     "%s " QDF_MAC_ADDR_FMT "\n", "BSSID",
-			     QDF_MAC_ADDR_REF(vdev_priv->bssid.bytes));
+	size = qdf_scnprintf(buf, PAGE_SIZE, "%s " QDF_MAC_ADDR_FMT "\n",
+			     "BSSID", QDF_MAC_ADDR_REF(vdev_priv->bssid.bytes));
 
 	for (iter = 0; iter < vdev_priv->num_qtime_pair; iter++) {
-		q_initiator = vdev_priv->ftm_ts_priv.time_pair[iter].qtime_initiator;
+		q_initiator =
+			vdev_priv->ftm_ts_priv.time_pair[iter].qtime_initiator;
 		q_target = vdev_priv->ftm_ts_priv.time_pair[iter].qtime_target;
 
 		size += qdf_scnprintf(buf + size, PAGE_SIZE - size,
 				      "%s %llu %s %llu %s %lld\n",
 
-				      "Qtime_initiator", q_initiator, "Qtime_target",
-				      q_target, "Offset", q_target > q_initiator ?
-				      q_target - q_initiator : q_initiator - q_target);
+				      "Qtime_initiator", q_initiator,
+				      "Qtime_target", q_target, "Offset",
+				      q_target > q_initiator ?
+					      q_target - q_initiator :
+					      q_initiator - q_target);
 	}
 	return size;
 }

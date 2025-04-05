@@ -5,15 +5,14 @@
  */
 
 #include <linux/device.h>
-#include <linux/platform_device.h>
-#include <linux/of.h>
-#include <linux/slab.h>
-#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
+#include <linux/slab.h>
 
 #include "cam_lrme_hw_core.h"
 #include "cam_lrme_hw_soc.h"
-
 
 int cam_lrme_soc_enable_resources(struct cam_hw_info *lrme_hw)
 {
@@ -21,7 +20,7 @@ int cam_lrme_soc_enable_resources(struct cam_hw_info *lrme_hw)
 	struct cam_lrme_soc_private *soc_private =
 		(struct cam_lrme_soc_private *)soc_info->soc_private;
 	struct cam_ahb_vote ahb_vote;
-	struct cam_axi_vote axi_vote = {0};
+	struct cam_axi_vote axi_vote = { 0 };
 	int rc = 0;
 
 	ahb_vote.type = CAM_VOTE_ABSOLUTE;
@@ -44,11 +43,13 @@ int cam_lrme_soc_enable_resources(struct cam_hw_info *lrme_hw)
 		return -EFAULT;
 	}
 
-	rc = cam_soc_util_enable_platform_resource(soc_info, CAM_CLK_SW_CLIENT_IDX, true,
-		soc_info->lowest_clk_level, true);
+	rc = cam_soc_util_enable_platform_resource(soc_info,
+						   CAM_CLK_SW_CLIENT_IDX, true,
+						   soc_info->lowest_clk_level,
+						   true);
 	if (rc) {
-		CAM_ERR(CAM_LRME,
-			"Failed to enable platform resource, rc %d", rc);
+		CAM_ERR(CAM_LRME, "Failed to enable platform resource, rc %d",
+			rc);
 		goto stop_cpas;
 	}
 
@@ -73,7 +74,8 @@ int cam_lrme_soc_disable_resources(struct cam_hw_info *lrme_hw)
 
 	cam_lrme_set_irq(lrme_hw, CAM_LRME_IRQ_DISABLE);
 
-	rc = cam_soc_util_disable_platform_resource(soc_info, CAM_CLK_SW_CLIENT_IDX, true, true);
+	rc = cam_soc_util_disable_platform_resource(
+		soc_info, CAM_CLK_SW_CLIENT_IDX, true, true);
 	if (rc) {
 		CAM_ERR(CAM_LRME, "Failed to disable platform resource");
 		return rc;
@@ -86,12 +88,12 @@ int cam_lrme_soc_disable_resources(struct cam_hw_info *lrme_hw)
 }
 
 int cam_lrme_soc_init_resources(struct cam_hw_soc_info *soc_info,
-	irq_handler_t irq_handler, void *private_data)
+				irq_handler_t irq_handler, void *private_data)
 {
 	struct cam_lrme_soc_private *soc_private;
 	struct cam_cpas_register_params cpas_register_param;
 	int rc, i;
-	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = {0};
+	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = { 0 };
 
 	rc = cam_soc_util_get_dt_properties(soc_info);
 	if (rc) {
@@ -102,7 +104,8 @@ int cam_lrme_soc_init_resources(struct cam_hw_soc_info *soc_info,
 	for (i = 0; i < soc_info->irq_count; i++)
 		irq_data[i] = private_data;
 
-	rc = cam_soc_util_request_platform_resource(soc_info, irq_handler, &(irq_data[0]));
+	rc = cam_soc_util_request_platform_resource(soc_info, irq_handler,
+						    &(irq_data[0]));
 	if (rc) {
 		CAM_ERR(CAM_LRME, "Failed in request_platform_resource rc=%d",
 			rc);
@@ -117,8 +120,8 @@ int cam_lrme_soc_init_resources(struct cam_hw_soc_info *soc_info,
 	soc_info->soc_private = soc_private;
 
 	memset(&cpas_register_param, 0, sizeof(cpas_register_param));
-	strlcpy(cpas_register_param.identifier,
-		"lrmecpas", CAM_HW_IDENTIFIER_LENGTH);
+	strlcpy(cpas_register_param.identifier, "lrmecpas",
+		CAM_HW_IDENTIFIER_LENGTH);
 	cpas_register_param.cell_index = soc_info->index;
 	cpas_register_param.dev = &soc_info->pdev->dev;
 	cpas_register_param.userdata = private_data;

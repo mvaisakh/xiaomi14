@@ -5,28 +5,28 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include "rndis_ipa.h"
+#include "ipa.h"
+#include "ipa_common_i.h"
+#include "ipa_pm.h"
 #include <linux/atomic.h>
+#include <linux/debugfs.h>
 #include <linux/errno.h>
 #include <linux/etherdevice.h>
+#include <linux/fs.h>
 #include <linux/if_vlan.h>
-#include <linux/debugfs.h>
 #include <linux/in.h>
-#include <linux/stddef.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
-#include <linux/fs.h>
 #include <linux/module.h>
 #include <linux/msm_ipa.h>
 #include <linux/netdevice.h>
-#include <linux/skbuff.h>
-#include <linux/sched.h>
-#include "ipa.h"
 #include <linux/random.h>
-#include <linux/workqueue.h>
+#include <linux/sched.h>
+#include <linux/skbuff.h>
+#include <linux/stddef.h>
 #include <linux/version.h>
-#include "rndis_ipa.h"
-#include "ipa_common_i.h"
-#include "ipa_pm.h"
+#include <linux/workqueue.h>
 
 #define CREATE_TRACE_POINTS
 #include "rndis_ipa_trace.h"
@@ -49,11 +49,11 @@
 #define FROM_IPA_TO_USB_BAMDMA 4
 #define FROM_USB_TO_IPA_BAMDMA 5
 #define BAM_DMA_MAX_PKT_NUMBER 10
-#define BAM_DMA_DATA_FIFO_SIZE \
-		(BAM_DMA_MAX_PKT_NUMBER * \
-			(ETH_FRAME_LEN + sizeof(struct rndis_pkt_hdr)))
+#define BAM_DMA_DATA_FIFO_SIZE    \
+	(BAM_DMA_MAX_PKT_NUMBER * \
+	 (ETH_FRAME_LEN + sizeof(struct rndis_pkt_hdr)))
 #define BAM_DMA_DESC_FIFO_SIZE \
-		(BAM_DMA_MAX_PKT_NUMBER * (sizeof(struct sps_iovec)))
+	(BAM_DMA_MAX_PKT_NUMBER * (sizeof(struct sps_iovec)))
 #define TX_TIMEOUT (5 * HZ)
 #define MIN_TX_ERROR_SLEEP_PERIOD 500
 #define DEFAULT_AGGR_TIME_LIMIT 1000 /* 1ms */
@@ -61,59 +61,59 @@
 
 #define IPA_RNDIS_IPC_LOG_PAGES 50
 
-#define IPA_RNDIS_IPC_LOGGING(buf, fmt, args...) \
-	do { \
-		if (buf) \
+#define IPA_RNDIS_IPC_LOGGING(buf, fmt, args...)                       \
+	do {                                                           \
+		if (buf)                                               \
 			ipc_log_string((buf), fmt, __func__, __LINE__, \
-				## args); \
+				       ##args);                        \
 	} while (0)
 
 static void *ipa_rndis_logbuf;
 
-#define RNDIS_IPA_DEBUG(fmt, args...) \
-	do { \
-		pr_debug(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ## args);\
-		if (ipa_rndis_logbuf) { \
-			IPA_RNDIS_IPC_LOGGING(ipa_rndis_logbuf, \
-				DRV_NAME " %s:%d " fmt, ## args); \
-		} \
+#define RNDIS_IPA_DEBUG(fmt, args...)                                          \
+	do {                                                                   \
+		pr_debug(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ##args);  \
+		if (ipa_rndis_logbuf) {                                        \
+			IPA_RNDIS_IPC_LOGGING(ipa_rndis_logbuf,                \
+					      DRV_NAME " %s:%d " fmt, ##args); \
+		}                                                              \
 	} while (0)
 
 #define RNDIS_IPA_DEBUG_XMIT(fmt, args...) \
-	pr_debug(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ## args)
+	pr_debug(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ##args)
 
-#define RNDIS_IPA_ERROR(fmt, args...) \
-	do { \
-		pr_err(DRV_NAME "@%s@%d@ctx:%s: "\
-			fmt, __func__, __LINE__, current->comm, ## args);\
-		if (ipa_rndis_logbuf) { \
-			IPA_RNDIS_IPC_LOGGING(ipa_rndis_logbuf, \
-				DRV_NAME " %s:%d " fmt, ## args); \
-		} \
+#define RNDIS_IPA_ERROR(fmt, args...)                                          \
+	do {                                                                   \
+		pr_err(DRV_NAME "@%s@%d@ctx:%s: " fmt, __func__, __LINE__,     \
+		       current->comm, ##args);                                 \
+		if (ipa_rndis_logbuf) {                                        \
+			IPA_RNDIS_IPC_LOGGING(ipa_rndis_logbuf,                \
+					      DRV_NAME " %s:%d " fmt, ##args); \
+		}                                                              \
 	} while (0)
 
-#define RNDIS_IPA_ERROR_RL(fmt, args...) \
-	do { \
-		pr_err_ratelimited_ipa(DRV_NAME "@%s@%d@ctx:%s: "\
-			fmt, __func__, __LINE__, current->comm, ## args);\
-		if (ipa_rndis_logbuf) { \
-			IPA_RNDIS_IPC_LOGGING(ipa_rndis_logbuf, \
-				DRV_NAME " %s:%d " fmt, ## args); \
-		} \
+#define RNDIS_IPA_ERROR_RL(fmt, args...)                                       \
+	do {                                                                   \
+		pr_err_ratelimited_ipa(DRV_NAME "@%s@%d@ctx:%s: " fmt,         \
+				       __func__, __LINE__, current->comm,      \
+				       ##args);                                \
+		if (ipa_rndis_logbuf) {                                        \
+			IPA_RNDIS_IPC_LOGGING(ipa_rndis_logbuf,                \
+					      DRV_NAME " %s:%d " fmt, ##args); \
+		}                                                              \
 	} while (0)
 
-#define NULL_CHECK_RETVAL(ptr) \
-		do { \
-			if (!(ptr)) { \
-				RNDIS_IPA_ERROR("null pointer #ptr\n"); \
-				ret = -EINVAL; \
-			} \
-		} \
-		while (0)
+#define NULL_CHECK_RETVAL(ptr)                                  \
+	do {                                                    \
+		if (!(ptr)) {                                   \
+			RNDIS_IPA_ERROR("null pointer #ptr\n"); \
+			ret = -EINVAL;                          \
+		}                                               \
+	} while (0)
 
 #define RNDIS_HDR_OFST(field) offsetof(struct rndis_pkt_hdr, field)
 #define RNDIS_IPA_LOG_ENTRY() RNDIS_IPA_DEBUG("begin\n")
-#define RNDIS_IPA_LOG_EXIT()  RNDIS_IPA_DEBUG("end\n")
+#define RNDIS_IPA_LOG_EXIT() RNDIS_IPA_DEBUG("end\n")
 
 #define IPV4_IS_TCP(iph) ((iph)->protocol == IPPROTO_TCP)
 #define IPV4_IS_UDP(iph) ((iph)->protocol == IPPROTO_UDP)
@@ -143,12 +143,12 @@ static void *ipa_rndis_logbuf;
  * INVALID is a state which is not allowed.
  */
 enum rndis_ipa_state {
-	RNDIS_IPA_UNLOADED          = 0,
-	RNDIS_IPA_INITIALIZED       = 1,
-	RNDIS_IPA_CONNECTED         = 2,
-	RNDIS_IPA_UP                = 3,
-	RNDIS_IPA_CONNECTED_AND_UP  = 4,
-	RNDIS_IPA_INVALID           = 5,
+	RNDIS_IPA_UNLOADED = 0,
+	RNDIS_IPA_INITIALIZED = 1,
+	RNDIS_IPA_CONNECTED = 2,
+	RNDIS_IPA_UP = 3,
+	RNDIS_IPA_CONNECTED_AND_UP = 4,
+	RNDIS_IPA_INVALID = 5,
 };
 
 /**
@@ -165,10 +165,9 @@ enum rndis_ipa_operation {
 	RNDIS_IPA_CLEANUP,
 };
 
-#define RNDIS_IPA_STATE_DEBUG(ctx) \
-	RNDIS_IPA_DEBUG("Driver state: %s\n",\
-	rndis_ipa_state_string((ctx)->state))
-
+#define RNDIS_IPA_STATE_DEBUG(ctx)            \
+	RNDIS_IPA_DEBUG("Driver state: %s\n", \
+			rndis_ipa_state_string((ctx)->state))
 
 /**
  * struct rndis_ipa_dev - main driver context parameters
@@ -231,7 +230,7 @@ struct rndis_ipa_dev {
 	u32 outstanding_low;
 	u32 error_msec_sleep_time;
 	enum rndis_ipa_state state;
-	u8  host_ethaddr[ETH_ALEN];
+	u8 host_ethaddr[ETH_ALEN];
 	u8 device_ethaddr[ETH_ALEN];
 	void (*device_ready_notify)(void);
 	struct delayed_work xmit_error_delayed_work;
@@ -252,38 +251,38 @@ struct rndis_ipa_dev {
  * @zeroes: OOB place holder - not used for RNDIS_IPA.
  */
 struct rndis_pkt_hdr {
-	__le32	msg_type;
-	__le32	msg_len;
-	__le32	data_ofst;
-	__le32	data_len;
-	__le32  zeroes[7];
+	__le32 msg_type;
+	__le32 msg_len;
+	__le32 data_ofst;
+	__le32 data_len;
+	__le32 zeroes[7];
 } __packed__;
 
 static int rndis_ipa_open(struct net_device *net);
-static void rndis_ipa_packet_receive_notify
-	(void *private, enum ipa_dp_evt_type evt, unsigned long data);
-static void rndis_ipa_tx_complete_notify
-	(void *private, enum ipa_dp_evt_type evt, unsigned long data);
+static void rndis_ipa_packet_receive_notify(void *private,
+					    enum ipa_dp_evt_type evt,
+					    unsigned long data);
+static void rndis_ipa_tx_complete_notify(void *private,
+					 enum ipa_dp_evt_type evt,
+					 unsigned long data);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
-static void rndis_ipa_tx_timeout(struct net_device *net,
-	unsigned int txqueue);
+static void rndis_ipa_tx_timeout(struct net_device *net, unsigned int txqueue);
 #else /* Legacy API. */
 static void rndis_ipa_tx_timeout(struct net_device *net);
 #endif
 
 static int rndis_ipa_stop(struct net_device *net);
 static void rndis_ipa_enable_data_path(struct rndis_ipa_dev *rndis_ipa_ctx);
-static struct sk_buff *rndis_encapsulate_skb(struct sk_buff *skb,
-	struct rndis_ipa_dev *rndis_ipa_ctx);
+static struct sk_buff *
+rndis_encapsulate_skb(struct sk_buff *skb, struct rndis_ipa_dev *rndis_ipa_ctx);
 static void rndis_ipa_xmit_error(struct sk_buff *skb);
 static void rndis_ipa_xmit_error_aftercare_wq(struct work_struct *work);
-static void rndis_ipa_prepare_header_insertion
-	(int eth_type,
-	const char *hdr_name, struct ipa_hdr_add *add_hdr,
+static void rndis_ipa_prepare_header_insertion(
+	int eth_type, const char *hdr_name, struct ipa_hdr_add *add_hdr,
 	const void *dst_mac, const void *src_mac, bool is_vlan_mode);
 static int rndis_ipa_hdrs_cfg(struct rndis_ipa_dev *rndis_ipa_ctx,
-	const void *dst_mac, const void *src_mac);
+			      const void *dst_mac, const void *src_mac);
 static int rndis_ipa_hdrs_hpc_cfg(struct rndis_ipa_dev *rndis_ipa_ctx);
 static int rndis_ipa_hdrs_destroy(struct rndis_ipa_dev *rndis_ipa_ctx);
 static struct net_device_stats *rndis_ipa_get_stats(struct net_device *net);
@@ -293,40 +292,36 @@ static int rndis_ipa_register_pm_client(struct rndis_ipa_dev *rndis_ipa_ctx);
 static int rndis_ipa_deregister_pm_client(struct rndis_ipa_dev *rndis_ipa_ctx);
 static bool rx_filter(struct sk_buff *skb);
 static bool tx_filter(struct sk_buff *skb);
-static netdev_tx_t rndis_ipa_start_xmit
-	(struct sk_buff *skb, struct net_device *net);
-static int rndis_ipa_debugfs_atomic_open
-	(struct inode *inode, struct file *file);
-static int rndis_ipa_debugfs_aggr_open
-	(struct inode *inode, struct file *file);
-static ssize_t rndis_ipa_debugfs_aggr_write
-	(struct file *file,
-	const char __user *buf, size_t count, loff_t *ppos);
-static ssize_t rndis_ipa_debugfs_atomic_read
-	(struct file *file,
-	char __user *ubuf, size_t count, loff_t *ppos);
+static netdev_tx_t rndis_ipa_start_xmit(struct sk_buff *skb,
+					struct net_device *net);
+static int rndis_ipa_debugfs_atomic_open(struct inode *inode,
+					 struct file *file);
+static int rndis_ipa_debugfs_aggr_open(struct inode *inode, struct file *file);
+static ssize_t rndis_ipa_debugfs_aggr_write(struct file *file,
+					    const char __user *buf,
+					    size_t count, loff_t *ppos);
+static ssize_t rndis_ipa_debugfs_atomic_read(struct file *file,
+					     char __user *ubuf, size_t count,
+					     loff_t *ppos);
 static void rndis_ipa_dump_skb(struct sk_buff *skb);
 static void rndis_ipa_debugfs_init(struct rndis_ipa_dev *rndis_ipa_ctx);
 static void rndis_ipa_debugfs_destroy(struct rndis_ipa_dev *rndis_ipa_ctx);
-static int rndis_ipa_ep_registers_cfg
-	(u32 usb_to_ipa_hdl,
-	u32 ipa_to_usb_hdl, u32 max_xfer_size_bytes_to_dev,
-	u32 max_xfer_size_bytes_to_host, u32 mtu,
-	bool deaggr_enable,
-	bool is_vlan_mode);
-static int rndis_ipa_set_device_ethernet_addr
-	(struct net_device *net,
-	u8 device_ethaddr[]);
-static enum rndis_ipa_state rndis_ipa_next_state
-	(enum rndis_ipa_state current_state,
-	enum rndis_ipa_operation operation);
+static int rndis_ipa_ep_registers_cfg(u32 usb_to_ipa_hdl, u32 ipa_to_usb_hdl,
+				      u32 max_xfer_size_bytes_to_dev,
+				      u32 max_xfer_size_bytes_to_host, u32 mtu,
+				      bool deaggr_enable, bool is_vlan_mode);
+static int rndis_ipa_set_device_ethernet_addr(struct net_device *net,
+					      u8 device_ethaddr[]);
+static enum rndis_ipa_state
+rndis_ipa_next_state(enum rndis_ipa_state current_state,
+		     enum rndis_ipa_operation operation);
 static const char *rndis_ipa_state_string(enum rndis_ipa_state state);
 
 static struct rndis_ipa_dev *rndis_ipa;
 
 static const struct net_device_ops rndis_ipa_netdev_ops = {
-	.ndo_open		= rndis_ipa_open,
-	.ndo_stop		= rndis_ipa_stop,
+	.ndo_open = rndis_ipa_open,
+	.ndo_stop = rndis_ipa_stop,
 	.ndo_start_xmit = rndis_ipa_start_xmit,
 	.ndo_tx_timeout = rndis_ipa_tx_timeout,
 	.ndo_get_stats = rndis_ipa_get_stats,
@@ -339,148 +334,169 @@ static const struct file_operations rndis_ipa_debugfs_atomic_ops = {
 };
 
 static const struct file_operations rndis_ipa_aggr_ops = {
-		.open = rndis_ipa_debugfs_aggr_open,
-		.write = rndis_ipa_debugfs_aggr_write,
+	.open = rndis_ipa_debugfs_aggr_open,
+	.write = rndis_ipa_debugfs_aggr_write,
 };
 
 static struct ipa_ep_cfg ipa_to_usb_ep_cfg = {
-	.mode = {
-		.mode = IPA_BASIC,
-		.dst = IPA_CLIENT_APPS_LAN_CONS,
-	},
-	.hdr = {
-		.hdr_len = ETH_HLEN + sizeof(struct rndis_pkt_hdr),
-		.hdr_ofst_metadata_valid = false,
-		.hdr_ofst_metadata = 0,
-		.hdr_additional_const_len = ETH_HLEN,
-		.hdr_ofst_pkt_size_valid = true,
-		.hdr_ofst_pkt_size = offsetof(struct rndis_pkt_hdr, data_len),
-		.hdr_a5_mux = false,
-		.hdr_remove_additional = false,
-		.hdr_metadata_reg_valid = false,
-	},
-	.hdr_ext = {
-		.hdr_pad_to_alignment = 0,
-		.hdr_total_len_or_pad_offset = offsetof(struct rndis_pkt_hdr, msg_len),
-		.hdr_payload_len_inc_padding = false,
-		.hdr_total_len_or_pad = IPA_HDR_TOTAL_LEN,
-		.hdr_total_len_or_pad_valid = true,
-		.hdr_little_endian = true,
-	},
-	.aggr = {
-		.aggr_en = IPA_ENABLE_AGGR,
-		.aggr = IPA_GENERIC,
-		.aggr_byte_limit = 4,
-		.aggr_time_limit = DEFAULT_AGGR_TIME_LIMIT,
-		.aggr_pkt_limit = DEFAULT_AGGR_PKT_LIMIT,
-	},
-	.deaggr = {
-		.deaggr_hdr_len = 0,
-		.packet_offset_valid = 0,
-		.packet_offset_location = 0,
-		.max_packet_len = 0,
-	},
-	.route = {
-		.rt_tbl_hdl = RNDIS_IPA_DFLT_RT_HDL,
-	},
-	.nat = {
-		.nat_en = IPA_SRC_NAT,
-	},
+    .mode =
+        {
+            .mode = IPA_BASIC,
+            .dst = IPA_CLIENT_APPS_LAN_CONS,
+        },
+    .hdr =
+        {
+            .hdr_len = ETH_HLEN + sizeof(struct rndis_pkt_hdr),
+            .hdr_ofst_metadata_valid = false,
+            .hdr_ofst_metadata = 0,
+            .hdr_additional_const_len = ETH_HLEN,
+            .hdr_ofst_pkt_size_valid = true,
+            .hdr_ofst_pkt_size = offsetof(struct rndis_pkt_hdr, data_len),
+            .hdr_a5_mux = false,
+            .hdr_remove_additional = false,
+            .hdr_metadata_reg_valid = false,
+        },
+    .hdr_ext =
+        {
+            .hdr_pad_to_alignment = 0,
+            .hdr_total_len_or_pad_offset =
+                offsetof(struct rndis_pkt_hdr, msg_len),
+            .hdr_payload_len_inc_padding = false,
+            .hdr_total_len_or_pad = IPA_HDR_TOTAL_LEN,
+            .hdr_total_len_or_pad_valid = true,
+            .hdr_little_endian = true,
+        },
+    .aggr =
+        {
+            .aggr_en = IPA_ENABLE_AGGR,
+            .aggr = IPA_GENERIC,
+            .aggr_byte_limit = 4,
+            .aggr_time_limit = DEFAULT_AGGR_TIME_LIMIT,
+            .aggr_pkt_limit = DEFAULT_AGGR_PKT_LIMIT,
+        },
+    .deaggr =
+        {
+            .deaggr_hdr_len = 0,
+            .packet_offset_valid = 0,
+            .packet_offset_location = 0,
+            .max_packet_len = 0,
+        },
+    .route =
+        {
+            .rt_tbl_hdl = RNDIS_IPA_DFLT_RT_HDL,
+        },
+    .nat =
+        {
+            .nat_en = IPA_SRC_NAT,
+        },
 };
 
 static struct ipa_ep_cfg usb_to_ipa_ep_cfg_deaggr_dis = {
-	.mode = {
-		.mode = IPA_BASIC,
-		.dst  = IPA_CLIENT_APPS_LAN_CONS,
-	},
-	.hdr = {
-		.hdr_len = ETH_HLEN + sizeof(struct rndis_pkt_hdr),
-		.hdr_ofst_metadata_valid = false,
-		.hdr_ofst_metadata = 0,
-		.hdr_additional_const_len = 0,
-		.hdr_ofst_pkt_size_valid = true,
-		.hdr_ofst_pkt_size = 3 * sizeof(u32) +
-			sizeof(struct rndis_pkt_hdr),
-		.hdr_a5_mux = false,
-		.hdr_remove_additional = false,
-		.hdr_metadata_reg_valid = true,
-	},
-	.hdr_ext = {
-		.hdr_pad_to_alignment = 0,
-		.hdr_total_len_or_pad_offset = 1 * sizeof(u32),
-		.hdr_payload_len_inc_padding = false,
-		.hdr_total_len_or_pad = IPA_HDR_TOTAL_LEN,
-		.hdr_total_len_or_pad_valid = true,
-		.hdr_little_endian = true,
-	},
+    .mode =
+        {
+            .mode = IPA_BASIC,
+            .dst = IPA_CLIENT_APPS_LAN_CONS,
+        },
+    .hdr =
+        {
+            .hdr_len = ETH_HLEN + sizeof(struct rndis_pkt_hdr),
+            .hdr_ofst_metadata_valid = false,
+            .hdr_ofst_metadata = 0,
+            .hdr_additional_const_len = 0,
+            .hdr_ofst_pkt_size_valid = true,
+            .hdr_ofst_pkt_size = 3 * sizeof(u32) + sizeof(struct rndis_pkt_hdr),
+            .hdr_a5_mux = false,
+            .hdr_remove_additional = false,
+            .hdr_metadata_reg_valid = true,
+        },
+    .hdr_ext =
+        {
+            .hdr_pad_to_alignment = 0,
+            .hdr_total_len_or_pad_offset = 1 * sizeof(u32),
+            .hdr_payload_len_inc_padding = false,
+            .hdr_total_len_or_pad = IPA_HDR_TOTAL_LEN,
+            .hdr_total_len_or_pad_valid = true,
+            .hdr_little_endian = true,
+        },
 
-	.aggr = {
-		.aggr_en = IPA_BYPASS_AGGR,
-		.aggr = 0,
-		.aggr_byte_limit = 0,
-		.aggr_time_limit = 0,
-		.aggr_pkt_limit  = 0,
-	},
-	.deaggr = {
-		.deaggr_hdr_len = 0,
-		.packet_offset_valid = false,
-		.packet_offset_location = 0,
-		.max_packet_len = 0,
-	},
+    .aggr =
+        {
+            .aggr_en = IPA_BYPASS_AGGR,
+            .aggr = 0,
+            .aggr_byte_limit = 0,
+            .aggr_time_limit = 0,
+            .aggr_pkt_limit = 0,
+        },
+    .deaggr =
+        {
+            .deaggr_hdr_len = 0,
+            .packet_offset_valid = false,
+            .packet_offset_location = 0,
+            .max_packet_len = 0,
+        },
 
-	.route = {
-		.rt_tbl_hdl = RNDIS_IPA_DFLT_RT_HDL,
-	},
-	.nat = {
-		.nat_en = IPA_BYPASS_NAT,
-	},
+    .route =
+        {
+            .rt_tbl_hdl = RNDIS_IPA_DFLT_RT_HDL,
+        },
+    .nat =
+        {
+            .nat_en = IPA_BYPASS_NAT,
+        },
 };
 
 static struct ipa_ep_cfg usb_to_ipa_ep_cfg_deaggr_en = {
-	.mode = {
-		.mode = IPA_BASIC,
-		.dst  = IPA_CLIENT_APPS_LAN_CONS,
-	},
-	.hdr = {
-		.hdr_len = ETH_HLEN,
-		.hdr_ofst_metadata_valid = false,
-		.hdr_ofst_metadata = 0,
-		.hdr_additional_const_len = 0,
-		.hdr_ofst_pkt_size_valid = true,
-		.hdr_ofst_pkt_size = 3 * sizeof(u32),
-		.hdr_a5_mux = false,
-		.hdr_remove_additional = false,
-		.hdr_metadata_reg_valid = true,
-	},
-	.hdr_ext = {
-		.hdr_pad_to_alignment = 0,
-		.hdr_total_len_or_pad_offset = 1 * sizeof(u32),
-		.hdr_payload_len_inc_padding = false,
-		.hdr_total_len_or_pad = IPA_HDR_TOTAL_LEN,
-		.hdr_total_len_or_pad_valid = true,
-		.hdr_little_endian = true,
-	},
-	.aggr = {
-		.aggr_en = IPA_ENABLE_DEAGGR,
-		.aggr = IPA_GENERIC,
-		.aggr_byte_limit = 0,
-		.aggr_time_limit = 0,
-		.aggr_pkt_limit  = 0,
-	},
-	.deaggr = {
-		.deaggr_hdr_len = sizeof(struct rndis_pkt_hdr),
-		.syspipe_err_detection = true,
-		.packet_offset_valid = true,
-		.packet_offset_location = 8,
-		.ignore_min_pkt_err = true,
-		.max_packet_len = 8192, /* Will be overridden*/
-	},
-	.route = {
-		.rt_tbl_hdl = RNDIS_IPA_DFLT_RT_HDL,
-	},
-	.nat = {
-		.nat_en = IPA_BYPASS_NAT,
-	},
+    .mode =
+        {
+            .mode = IPA_BASIC,
+            .dst = IPA_CLIENT_APPS_LAN_CONS,
+        },
+    .hdr =
+        {
+            .hdr_len = ETH_HLEN,
+            .hdr_ofst_metadata_valid = false,
+            .hdr_ofst_metadata = 0,
+            .hdr_additional_const_len = 0,
+            .hdr_ofst_pkt_size_valid = true,
+            .hdr_ofst_pkt_size = 3 * sizeof(u32),
+            .hdr_a5_mux = false,
+            .hdr_remove_additional = false,
+            .hdr_metadata_reg_valid = true,
+        },
+    .hdr_ext =
+        {
+            .hdr_pad_to_alignment = 0,
+            .hdr_total_len_or_pad_offset = 1 * sizeof(u32),
+            .hdr_payload_len_inc_padding = false,
+            .hdr_total_len_or_pad = IPA_HDR_TOTAL_LEN,
+            .hdr_total_len_or_pad_valid = true,
+            .hdr_little_endian = true,
+        },
+    .aggr =
+        {
+            .aggr_en = IPA_ENABLE_DEAGGR,
+            .aggr = IPA_GENERIC,
+            .aggr_byte_limit = 0,
+            .aggr_time_limit = 0,
+            .aggr_pkt_limit = 0,
+        },
+    .deaggr =
+        {
+            .deaggr_hdr_len = sizeof(struct rndis_pkt_hdr),
+            .syspipe_err_detection = true,
+            .packet_offset_valid = true,
+            .packet_offset_location = 8,
+            .ignore_min_pkt_err = true,
+            .max_packet_len = 8192, /* Will be overridden*/
+        },
+    .route =
+        {
+            .rt_tbl_hdl = RNDIS_IPA_DFLT_RT_HDL,
+        },
+    .nat =
+        {
+            .nat_en = IPA_BYPASS_NAT,
+        },
 };
 
 /**
@@ -497,7 +513,7 @@ static struct rndis_pkt_hdr rndis_template_hdr = {
 	.msg_len = sizeof(struct rndis_pkt_hdr),
 	.data_ofst = sizeof(struct rndis_pkt_hdr) - RNDIS_HDR_OFST(data_ofst),
 	.data_len = 0,
-	.zeroes = {0},
+	.zeroes = { 0 },
 };
 
 /**
@@ -574,10 +590,8 @@ int rndis_ipa_init(struct ipa_usb_init_params *params)
 	if (ret)
 		return ret;
 
-	RNDIS_IPA_DEBUG
-		("host_ethaddr=%pM, device_ethaddr=%pM\n",
-		params->host_ethaddr,
-		params->device_ethaddr);
+	RNDIS_IPA_DEBUG("host_ethaddr=%pM, device_ethaddr=%pM\n",
+			params->host_ethaddr, params->device_ethaddr);
 
 	net = alloc_etherdev(sizeof(struct rndis_ipa_dev));
 	if (!net) {
@@ -610,17 +624,13 @@ int rndis_ipa_init(struct ipa_usb_init_params *params)
 	rndis_ipa_ctx->outstanding_high = DEFAULT_OUTSTANDING_HIGH;
 	rndis_ipa_ctx->outstanding_low = DEFAULT_OUTSTANDING_LOW;
 	atomic_set(&rndis_ipa_ctx->outstanding_pkts, 0);
-	memcpy
-		(rndis_ipa_ctx->device_ethaddr, params->device_ethaddr,
-		sizeof(rndis_ipa_ctx->device_ethaddr));
-	memcpy
-		(rndis_ipa_ctx->host_ethaddr, params->host_ethaddr,
-		sizeof(rndis_ipa_ctx->host_ethaddr));
-	INIT_DELAYED_WORK
-		(&rndis_ipa_ctx->xmit_error_delayed_work,
-		rndis_ipa_xmit_error_aftercare_wq);
-	rndis_ipa_ctx->error_msec_sleep_time =
-		MIN_TX_ERROR_SLEEP_PERIOD;
+	memcpy(rndis_ipa_ctx->device_ethaddr, params->device_ethaddr,
+	       sizeof(rndis_ipa_ctx->device_ethaddr));
+	memcpy(rndis_ipa_ctx->host_ethaddr, params->host_ethaddr,
+	       sizeof(rndis_ipa_ctx->host_ethaddr));
+	INIT_DELAYED_WORK(&rndis_ipa_ctx->xmit_error_delayed_work,
+			  rndis_ipa_xmit_error_aftercare_wq);
+	rndis_ipa_ctx->error_msec_sleep_time = MIN_TX_ERROR_SLEEP_PERIOD;
 	RNDIS_IPA_DEBUG("internal data structures were set\n");
 
 	if (!params->device_ready_notify)
@@ -628,31 +638,29 @@ int rndis_ipa_init(struct ipa_usb_init_params *params)
 	rndis_ipa_ctx->device_ready_notify = params->device_ready_notify;
 
 	snprintf(net->name, sizeof(net->name), "%s%%d", NETDEV_NAME);
-	RNDIS_IPA_DEBUG
-		("Setting network interface driver name to: %s\n",
-		net->name);
+	RNDIS_IPA_DEBUG("Setting network interface driver name to: %s\n",
+			net->name);
 
 	net->netdev_ops = &rndis_ipa_netdev_ops;
 	net->watchdog_timeo = TX_TIMEOUT;
 
 	net->needed_headroom = sizeof(rndis_template_hdr);
-	RNDIS_IPA_DEBUG
-		("Needed headroom for RNDIS header set to %d\n",
-		net->needed_headroom);
+	RNDIS_IPA_DEBUG("Needed headroom for RNDIS header set to %d\n",
+			net->needed_headroom);
 
 	rndis_ipa_debugfs_init(rndis_ipa_ctx);
 
-	result = rndis_ipa_set_device_ethernet_addr
-		(net, rndis_ipa_ctx->device_ethaddr);
+	result = rndis_ipa_set_device_ethernet_addr(
+		net, rndis_ipa_ctx->device_ethaddr);
 	if (result) {
 		RNDIS_IPA_ERROR("set device MAC failed\n");
 		goto fail_set_device_ethernet;
 	}
 	RNDIS_IPA_DEBUG("Device Ethernet address set %pM\n", net->dev_addr);
 
-	if (ipa_is_vlan_mode(IPA_VLAN_IF_RNDIS,
-		&rndis_ipa_ctx->is_vlan_mode)) {
-		RNDIS_IPA_ERROR_RL("couldn't acquire vlan mode, is ipa ready?\n");
+	if (ipa_is_vlan_mode(IPA_VLAN_IF_RNDIS, &rndis_ipa_ctx->is_vlan_mode)) {
+		RNDIS_IPA_ERROR_RL(
+			"couldn't acquire vlan mode, is ipa ready?\n");
 		goto fail_get_vlan_mode;
 	}
 	RNDIS_IPA_DEBUG("is_vlan_mode %d\n", rndis_ipa_ctx->is_vlan_mode);
@@ -661,7 +669,7 @@ int rndis_ipa_init(struct ipa_usb_init_params *params)
 	RNDIS_IPA_DEBUG("is_ulso_mode=%d\n", rndis_ipa_ctx->is_ulso_mode);
 
 	result = rndis_ipa_hdrs_cfg(rndis_ipa_ctx, params->host_ethaddr,
-			params->device_ethaddr);
+				    params->device_ethaddr);
 	if (result) {
 		RNDIS_IPA_ERROR("fail on ipa hdrs set\n");
 		goto fail_hdrs_cfg;
@@ -677,8 +685,8 @@ int rndis_ipa_init(struct ipa_usb_init_params *params)
 		RNDIS_IPA_DEBUG("IPA header-insertion configured for RNDIS\n");
 
 		rndis_ipa_ctx->net->hw_features = NETIF_F_RXCSUM;
-		rndis_ipa_ctx->net->hw_features |=
-		    NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
+		rndis_ipa_ctx->net->hw_features |= NETIF_F_IP_CSUM |
+						   NETIF_F_IPV6_CSUM;
 		rndis_ipa_ctx->net->hw_features |= NETIF_F_SG;
 		rndis_ipa_ctx->net->hw_features |= NETIF_F_GRO_HW;
 		rndis_ipa_ctx->net->hw_features |= NETIF_F_GSO_UDP_L4;
@@ -687,7 +695,7 @@ int rndis_ipa_init(struct ipa_usb_init_params *params)
 	}
 
 	result = rndis_ipa_register_properties(net->name,
-		rndis_ipa_ctx->is_vlan_mode);
+					       rndis_ipa_ctx->is_vlan_mode);
 	if (result) {
 		RNDIS_IPA_ERROR("fail on properties set\n");
 		goto fail_register_tx;
@@ -702,9 +710,8 @@ int rndis_ipa_init(struct ipa_usb_init_params *params)
 		RNDIS_IPA_ERROR("register_netdev failed: %d\n", result);
 		goto fail_register_netdev;
 	}
-	RNDIS_IPA_DEBUG
-		("netdev:%s registration succeeded, index=%d\n",
-		net->name, net->ifindex);
+	RNDIS_IPA_DEBUG("netdev:%s registration succeeded, index=%d\n",
+			net->name, net->ifindex);
 
 	if (ipa_get_lan_rx_napi()) {
 		rndis_ipa_ctx->netif_rx_function = netif_receive_skb;
@@ -780,13 +787,11 @@ EXPORT_SYMBOL(rndis_ipa_init);
  *
  * Returns negative errno, or zero on success
  */
-int rndis_ipa_pipe_connect_notify(
-	u32 usb_to_ipa_hdl,
-	u32 ipa_to_usb_hdl,
-	u32 max_xfer_size_bytes_to_dev,
-	u32 max_packet_number_to_dev,
-	u32 max_xfer_size_bytes_to_host,
-	void *private)
+int rndis_ipa_pipe_connect_notify(u32 usb_to_ipa_hdl, u32 ipa_to_usb_hdl,
+				  u32 max_xfer_size_bytes_to_dev,
+				  u32 max_packet_number_to_dev,
+				  u32 max_xfer_size_bytes_to_host,
+				  void *private)
 {
 	struct rndis_ipa_dev *rndis_ipa_ctx = private;
 	int next_state;
@@ -804,21 +809,16 @@ int rndis_ipa_pipe_connect_notify(
 	if (ret)
 		return ret;
 
-	RNDIS_IPA_DEBUG
-		("usb_to_ipa_hdl=%d, ipa_to_usb_hdl=%d, private=0x%pK\n",
-		usb_to_ipa_hdl, ipa_to_usb_hdl, private);
-	RNDIS_IPA_DEBUG
-		("max_xfer_sz_to_dev=%d, max_pkt_num_to_dev=%d\n",
-		max_xfer_size_bytes_to_dev,
-		max_packet_number_to_dev);
-	RNDIS_IPA_DEBUG
-		("max_xfer_sz_to_host=%d\n",
-		max_xfer_size_bytes_to_host);
+	RNDIS_IPA_DEBUG("usb_to_ipa_hdl=%d, ipa_to_usb_hdl=%d, private=0x%pK\n",
+			usb_to_ipa_hdl, ipa_to_usb_hdl, private);
+	RNDIS_IPA_DEBUG("max_xfer_sz_to_dev=%d, max_pkt_num_to_dev=%d\n",
+			max_xfer_size_bytes_to_dev, max_packet_number_to_dev);
+	RNDIS_IPA_DEBUG("max_xfer_sz_to_host=%d\n",
+			max_xfer_size_bytes_to_host);
 
 	spin_lock_irqsave(&rndis_ipa_ctx->state_lock, flags);
-	next_state = rndis_ipa_next_state
-		(rndis_ipa_ctx->state,
-		RNDIS_IPA_CONNECT);
+	next_state =
+		rndis_ipa_next_state(rndis_ipa_ctx->state, RNDIS_IPA_CONNECT);
 	if (next_state == RNDIS_IPA_INVALID) {
 		spin_unlock_irqrestore(&rndis_ipa_ctx->state_lock, flags);
 		RNDIS_IPA_ERROR("use init()/disconnect() before connect()\n");
@@ -827,14 +827,14 @@ int rndis_ipa_pipe_connect_notify(
 	spin_unlock_irqrestore(&rndis_ipa_ctx->state_lock, flags);
 
 	if (usb_to_ipa_hdl >= IPA_CLIENT_MAX) {
-		RNDIS_IPA_ERROR_RL
-			("usb_to_ipa_hdl(%d) - not valid ipa handle\n",
+		RNDIS_IPA_ERROR_RL(
+			"usb_to_ipa_hdl(%d) - not valid ipa handle\n",
 			usb_to_ipa_hdl);
 		return -EINVAL;
 	}
 	if (ipa_to_usb_hdl >= IPA_CLIENT_MAX) {
-		RNDIS_IPA_ERROR_RL
-			("ipa_to_usb_hdl(%d) - not valid ipa handle\n",
+		RNDIS_IPA_ERROR_RL(
+			"ipa_to_usb_hdl(%d) - not valid ipa handle\n",
 			ipa_to_usb_hdl);
 		return -EINVAL;
 	}
@@ -852,14 +852,12 @@ int rndis_ipa_pipe_connect_notify(
 		rndis_ipa_ctx->deaggregation_enable = true;
 	else
 		rndis_ipa_ctx->deaggregation_enable = false;
-	result = rndis_ipa_ep_registers_cfg
-		(usb_to_ipa_hdl,
-		ipa_to_usb_hdl,
-		max_xfer_size_bytes_to_dev,
-		max_xfer_size_bytes_to_host,
-		rndis_ipa_ctx->net->mtu,
-		rndis_ipa_ctx->deaggregation_enable,
-		rndis_ipa_ctx->is_vlan_mode);
+	result = rndis_ipa_ep_registers_cfg(usb_to_ipa_hdl, ipa_to_usb_hdl,
+					    max_xfer_size_bytes_to_dev,
+					    max_xfer_size_bytes_to_host,
+					    rndis_ipa_ctx->net->mtu,
+					    rndis_ipa_ctx->deaggregation_enable,
+					    rndis_ipa_ctx->is_vlan_mode);
 	if (result) {
 		RNDIS_IPA_ERROR("fail on ep cfg\n");
 		goto fail;
@@ -898,11 +896,12 @@ int rndis_ipa_pipe_connect_notify(
 	}
 
 	spin_lock_irqsave(&rndis_ipa_ctx->state_lock, flags);
-	next_state = rndis_ipa_next_state(rndis_ipa_ctx->state,
-					  RNDIS_IPA_CONNECT);
+	next_state =
+		rndis_ipa_next_state(rndis_ipa_ctx->state, RNDIS_IPA_CONNECT);
 	if (next_state == RNDIS_IPA_INVALID) {
 		spin_unlock_irqrestore(&rndis_ipa_ctx->state_lock, flags);
-		RNDIS_IPA_ERROR_RL("use init()/disconnect() before connect()\n");
+		RNDIS_IPA_ERROR_RL(
+			"use init()/disconnect() before connect()\n");
 		return -EPERM;
 	}
 	rndis_ipa_ctx->state = next_state;
@@ -1016,10 +1015,9 @@ static netdev_tx_t rndis_ipa_start_xmit(struct sk_buff *skb,
 
 	netif_trans_update(net);
 
-	RNDIS_IPA_DEBUG_XMIT
-		("Tx, len=%d, skb->protocol=%d, outstanding=%d\n",
-		skb->len, skb->protocol,
-		atomic_read(&rndis_ipa_ctx->outstanding_pkts));
+	RNDIS_IPA_DEBUG_XMIT("Tx, len=%d, skb->protocol=%d, outstanding=%d\n",
+			     skb->len, skb->protocol,
+			     atomic_read(&rndis_ipa_ctx->outstanding_pkts));
 
 	if (unlikely(netif_queue_stopped(net))) {
 		RNDIS_IPA_ERROR_RL("interface queue is stopped\n");
@@ -1050,7 +1048,7 @@ static netdev_tx_t rndis_ipa_start_xmit(struct sk_buff *skb,
 	}
 
 	if (atomic_read(&rndis_ipa_ctx->outstanding_pkts) >=
-				rndis_ipa_ctx->outstanding_high) {
+	    rndis_ipa_ctx->outstanding_high) {
 		RNDIS_IPA_DEBUG("Outstanding high boundary reached (%d)\n",
 				rndis_ipa_ctx->outstanding_high);
 		netif_stop_queue(net);
@@ -1060,28 +1058,30 @@ static netdev_tx_t rndis_ipa_start_xmit(struct sk_buff *skb,
 	}
 
 	if (rndis_ipa_ctx->is_ulso_mode &&
-		(net->features & (NETIF_F_ALL_TSO | NETIF_F_GSO_UDP_L4))){
+	    (net->features & (NETIF_F_ALL_TSO | NETIF_F_GSO_UDP_L4))) {
 		struct iphdr *iph = NULL;
 		/*
-		 * gso_size must be set here because tx feature must be on
-		 * meanning that in case of a small packet its checksum will
-		 * not be computed and we must compute it using the hardware
-		 * and thus marking it as gso packet, and the way to do it is to
-		 * set gso_size to non 0 value. It is only used internally by
-		 * the ipa driver so, there is no significance which non-0 value
-		 * is set.
-		 */
+     * gso_size must be set here because tx feature must be on
+     * meanning that in case of a small packet its checksum will
+     * not be computed and we must compute it using the hardware
+     * and thus marking it as gso packet, and the way to do it is to
+     * set gso_size to non 0 value. It is only used internally by
+     * the ipa driver so, there is no significance which non-0 value
+     * is set.
+     */
 		if (ntohs(skb->protocol) == ETH_P_IP) {
 			iph = ip_hdr(skb);
 			if (IPV4_IS_TCP(iph) || IPV4_IS_UDP(iph)) {
-				skb = qmap_encapsulate_skb(skb, &qmap_template_hdr);
+				skb = qmap_encapsulate_skb(skb,
+							   &qmap_template_hdr);
 				skb_shinfo(skb)->gso_size =
 					net->mtu - IPV4_DELTA;
 			}
 		} else if (ntohs(skb->protocol) == ETH_P_IPV6) {
 			iph = ip_hdr(skb);
 			if (IPV6_IS_TCP(iph) || IPV6_IS_UDP(iph)) {
-				skb = qmap_encapsulate_skb(skb, &qmap_template_hdr);
+				skb = qmap_encapsulate_skb(skb,
+							   &qmap_template_hdr);
 				skb_shinfo(skb)->gso_size =
 					net->mtu - IPV6_DELTA;
 			}
@@ -1113,9 +1113,8 @@ out:
 		ipa_pm_deferred_deactivate(rndis_ipa_ctx->pm_hdl);
 fail_pm_activate:
 
-	RNDIS_IPA_DEBUG
-		("packet Tx done - %s\n",
-		(status == NETDEV_TX_OK) ? "OK" : "FAIL");
+	RNDIS_IPA_DEBUG("packet Tx done - %s\n",
+			(status == NETDEV_TX_OK) ? "OK" : "FAIL");
 
 	return status;
 }
@@ -1134,10 +1133,9 @@ fail_pm_activate:
  * boundary is reached and queue was stopped before.
  * At the end the skb shall be freed.
  */
-static void rndis_ipa_tx_complete_notify(
-	void *private,
-	enum ipa_dp_evt_type evt,
-	unsigned long data)
+static void rndis_ipa_tx_complete_notify(void *private,
+					 enum ipa_dp_evt_type evt,
+					 unsigned long data)
 {
 	struct sk_buff *skb = (struct sk_buff *)data;
 	struct rndis_ipa_dev *rndis_ipa_ctx = private;
@@ -1150,10 +1148,9 @@ static void rndis_ipa_tx_complete_notify(
 
 	trace_rndis_status_rcvd(skb->protocol);
 
-	RNDIS_IPA_DEBUG
-		("Tx-complete, len=%d, skb->prot=%d, outstanding=%d\n",
-		skb->len, skb->protocol,
-		atomic_read(&rndis_ipa_ctx->outstanding_pkts));
+	RNDIS_IPA_DEBUG("Tx-complete, len=%d, skb->prot=%d, outstanding=%d\n",
+			skb->len, skb->protocol,
+			atomic_read(&rndis_ipa_ctx->outstanding_pkts));
 
 	if (unlikely((evt != IPA_WRITE_DONE))) {
 		RNDIS_IPA_ERROR_RL("unsupported event on TX call-back\n");
@@ -1161,9 +1158,8 @@ static void rndis_ipa_tx_complete_notify(
 	}
 
 	if (unlikely(rndis_ipa_ctx->state != RNDIS_IPA_CONNECTED_AND_UP)) {
-		RNDIS_IPA_DEBUG
-		("dropping Tx-complete pkt, state=%s\n",
-		rndis_ipa_state_string(rndis_ipa_ctx->state));
+		RNDIS_IPA_DEBUG("dropping Tx-complete pkt, state=%s\n",
+				rndis_ipa_state_string(rndis_ipa_ctx->state));
 		goto out;
 	}
 
@@ -1173,11 +1169,10 @@ static void rndis_ipa_tx_complete_notify(
 	if (atomic_read(&rndis_ipa_ctx->outstanding_pkts) > 0)
 		atomic_dec(&rndis_ipa_ctx->outstanding_pkts);
 
-	if
-		(netif_queue_stopped(rndis_ipa_ctx->net) &&
-		netif_carrier_ok(rndis_ipa_ctx->net) &&
-		atomic_read(&rndis_ipa_ctx->outstanding_pkts) <
-					(rndis_ipa_ctx->outstanding_low)) {
+	if (netif_queue_stopped(rndis_ipa_ctx->net) &&
+	    netif_carrier_ok(rndis_ipa_ctx->net) &&
+	    atomic_read(&rndis_ipa_ctx->outstanding_pkts) <
+		    (rndis_ipa_ctx->outstanding_low)) {
 		RNDIS_IPA_DEBUG("outstanding low boundary reached (%d)n",
 				rndis_ipa_ctx->outstanding_low);
 		netif_wake_queue(rndis_ipa_ctx->net);
@@ -1193,8 +1188,7 @@ out:
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
-static void rndis_ipa_tx_timeout(struct net_device *net,
-	unsigned int txqueue)
+static void rndis_ipa_tx_timeout(struct net_device *net, unsigned int txqueue)
 #else /* Legacy API. */
 static void rndis_ipa_tx_timeout(struct net_device *net)
 #endif
@@ -1202,9 +1196,8 @@ static void rndis_ipa_tx_timeout(struct net_device *net)
 	struct rndis_ipa_dev *rndis_ipa_ctx = netdev_priv(net);
 	int outstanding = atomic_read(&rndis_ipa_ctx->outstanding_pkts);
 
-	RNDIS_IPA_ERROR
-		("possible IPA stall was detected, %d outstanding\n",
-		outstanding);
+	RNDIS_IPA_ERROR("possible IPA stall was detected, %d outstanding\n",
+			outstanding);
 
 	net->stats.tx_errors++;
 }
@@ -1244,18 +1237,15 @@ static void rndis_ipa_tx_timeout(struct net_device *net)
  *
  * Netdev status fields shall be updated based on the current Rx packet
  */
-static void rndis_ipa_packet_receive_notify(
-		void *private,
-		enum ipa_dp_evt_type evt,
-		unsigned long data)
+static void rndis_ipa_packet_receive_notify(void *private,
+					    enum ipa_dp_evt_type evt,
+					    unsigned long data)
 {
 	struct sk_buff *skb = (struct sk_buff *)data;
 	struct rndis_ipa_dev *rndis_ipa_ctx = private;
 	unsigned int packet_len = skb->len;
 
-	RNDIS_IPA_DEBUG
-		("packet Rx, len=%d\n",
-		skb->len);
+	RNDIS_IPA_DEBUG("packet Rx, len=%d\n", skb->len);
 
 	if (unlikely(rndis_ipa_ctx == NULL)) {
 		RNDIS_IPA_DEBUG("Private context is NULL. Drop SKB.\n");
@@ -1268,14 +1258,13 @@ static void rndis_ipa_packet_receive_notify(
 
 	if (unlikely(rndis_ipa_ctx->state != RNDIS_IPA_CONNECTED_AND_UP)) {
 		RNDIS_IPA_DEBUG("use connect()/up() before receive()\n");
-		RNDIS_IPA_DEBUG("packet dropped (length=%d)\n",
-				skb->len);
+		RNDIS_IPA_DEBUG("packet dropped (length=%d)\n", skb->len);
 		rndis_ipa_ctx->rx_dropped++;
 		dev_kfree_skb_any(skb);
 		return;
 	}
 
-	if (evt != IPA_RECEIVE)	{
+	if (evt != IPA_RECEIVE) {
 		RNDIS_IPA_ERROR_RL("a none IPA_RECEIVE event in driver RX\n");
 		rndis_ipa_ctx->rx_dropped++;
 		dev_kfree_skb_any(skb);
@@ -1379,9 +1368,8 @@ int rndis_ipa_pipe_disconnect_notify(void *private)
 
 	spin_lock_irqsave(&rndis_ipa_ctx->state_lock, flags);
 
-	next_state = rndis_ipa_next_state
-		(rndis_ipa_ctx->state,
-		RNDIS_IPA_DISCONNECT);
+	next_state = rndis_ipa_next_state(rndis_ipa_ctx->state,
+					  RNDIS_IPA_DISCONNECT);
 	if (next_state == RNDIS_IPA_INVALID) {
 		spin_unlock_irqrestore(&rndis_ipa_ctx->state_lock, flags);
 		RNDIS_IPA_ERROR_RL("can't disconnect before connect\n");
@@ -1494,9 +1482,8 @@ void rndis_ipa_cleanup(void *private)
 		return;
 
 	spin_lock_irqsave(&rndis_ipa_ctx->state_lock, flags);
-	next_state = rndis_ipa_next_state
-		(rndis_ipa_ctx->state,
-		RNDIS_IPA_CLEANUP);
+	next_state =
+		rndis_ipa_next_state(rndis_ipa_ctx->state, RNDIS_IPA_CLEANUP);
 	if (next_state == RNDIS_IPA_INVALID) {
 		spin_unlock_irqrestore(&rndis_ipa_ctx->state_lock, flags);
 		RNDIS_IPA_ERROR_RL("use disconnect()before clean()\n");
@@ -1535,8 +1522,8 @@ void rndis_ipa_cleanup(void *private)
 	RNDIS_IPA_DEBUG("netdev unregistered\n");
 
 	spin_lock_irqsave(&rndis_ipa_ctx->state_lock, flags);
-	next_state = rndis_ipa_next_state(rndis_ipa_ctx->state,
-					  RNDIS_IPA_CLEANUP);
+	next_state =
+		rndis_ipa_next_state(rndis_ipa_ctx->state, RNDIS_IPA_CLEANUP);
 	if (next_state == RNDIS_IPA_INVALID) {
 		spin_unlock_irqrestore(&rndis_ipa_ctx->state_lock, flags);
 		RNDIS_IPA_ERROR_RL("use disconnect()before clean()\n");
@@ -1560,8 +1547,8 @@ static void rndis_ipa_enable_data_path(struct rndis_ipa_dev *rndis_ipa_ctx)
 		RNDIS_IPA_DEBUG("device_ready_notify() not supplied\n");
 	}
 
-	qmap_template_hdr.segment_size = htons(rndis_ipa_ctx->net->mtu -
-		sizeof(qmap_template_hdr));
+	qmap_template_hdr.segment_size =
+		htons(rndis_ipa_ctx->net->mtu - sizeof(qmap_template_hdr));
 	netif_start_queue(rndis_ipa_ctx->net);
 	RNDIS_IPA_DEBUG("netif_start_queue() was called\n");
 }
@@ -1584,19 +1571,18 @@ static void rndis_ipa_xmit_error(struct sk_buff *skb)
 	rndis_ipa_ctx->net->stats.tx_errors++;
 
 	get_random_bytes(&rand_dealy_msec, sizeof(rand_dealy_msec));
-	delay_jiffies = msecs_to_jiffies(
-		rndis_ipa_ctx->error_msec_sleep_time + rand_dealy_msec);
+	delay_jiffies = msecs_to_jiffies(rndis_ipa_ctx->error_msec_sleep_time +
+					 rand_dealy_msec);
 
-	retval = schedule_delayed_work(
-		&rndis_ipa_ctx->xmit_error_delayed_work, delay_jiffies);
+	retval = schedule_delayed_work(&rndis_ipa_ctx->xmit_error_delayed_work,
+				       delay_jiffies);
 	if (!retval) {
 		RNDIS_IPA_ERROR("fail to schedule delayed work\n");
 		netif_start_queue(rndis_ipa_ctx->net);
 	} else {
-		RNDIS_IPA_DEBUG
-			("work scheduled to start Tx-queue in %d msec\n",
-			rndis_ipa_ctx->error_msec_sleep_time +
-			rand_dealy_msec);
+		RNDIS_IPA_DEBUG("work scheduled to start Tx-queue in %d msec\n",
+				rndis_ipa_ctx->error_msec_sleep_time +
+					rand_dealy_msec);
 		rndis_ipa_ctx->during_xmit_error = true;
 	}
 
@@ -1613,14 +1599,12 @@ static void rndis_ipa_xmit_error_aftercare_wq(struct work_struct *work)
 	RNDIS_IPA_DEBUG("Starting queue after xmit error\n");
 
 	delayed_work = to_delayed_work(work);
-	rndis_ipa_ctx = container_of
-		(delayed_work, struct rndis_ipa_dev,
-		xmit_error_delayed_work);
+	rndis_ipa_ctx = container_of(delayed_work, struct rndis_ipa_dev,
+				     xmit_error_delayed_work);
 
 	if (unlikely(rndis_ipa_ctx->state != RNDIS_IPA_CONNECTED_AND_UP)) {
-		RNDIS_IPA_ERROR_RL
-			("error aftercare handling in bad state (%d)",
-			rndis_ipa_ctx->state);
+		RNDIS_IPA_ERROR_RL("error aftercare handling in bad state (%d)",
+				   rndis_ipa_ctx->state);
 		return;
 	}
 
@@ -1654,8 +1638,7 @@ static void rndis_ipa_xmit_error_aftercare_wq(struct work_struct *work)
  * For SW data-path, this header won't be used.
  */
 static void rndis_ipa_prepare_header_insertion(
-	int eth_type,
-	const char *hdr_name, struct ipa_hdr_add *add_hdr,
+	int eth_type, const char *hdr_name, struct ipa_hdr_add *add_hdr,
 	const void *dst_mac, const void *src_mac, bool is_vlan_mode)
 {
 	struct ethhdr *eth_hdr;
@@ -1670,8 +1653,9 @@ static void rndis_ipa_prepare_header_insertion(
 	add_hdr->eth2_ofst = sizeof(rndis_template_hdr);
 
 	if (is_vlan_mode) {
-		eth_vlan_hdr = (struct vlan_ethhdr *)(add_hdr->hdr +
-			sizeof(rndis_template_hdr));
+		eth_vlan_hdr =
+			(struct vlan_ethhdr *)(add_hdr->hdr +
+					       sizeof(rndis_template_hdr));
 		memcpy(eth_vlan_hdr->h_dest, dst_mac, ETH_ALEN);
 		memcpy(eth_vlan_hdr->h_source, src_mac, ETH_ALEN);
 		eth_vlan_hdr->h_vlan_encapsulated_proto = htons(eth_type);
@@ -1680,7 +1664,7 @@ static void rndis_ipa_prepare_header_insertion(
 		add_hdr->type = IPA_HDR_L2_802_1Q;
 	} else {
 		eth_hdr = (struct ethhdr *)(add_hdr->hdr +
-			sizeof(rndis_template_hdr));
+					    sizeof(rndis_template_hdr));
 		memcpy(eth_hdr->h_dest, dst_mac, ETH_ALEN);
 		memcpy(eth_hdr->h_source, src_mac, ETH_ALEN);
 		eth_hdr->h_proto = htons(eth_type);
@@ -1729,7 +1713,7 @@ static int rndis_ipa_hdrs_hpc_cfg(struct rndis_ipa_dev *rndis_ipa_ctx)
 	}
 	if (rndis_hdr->status) {
 		RNDIS_IPA_ERROR("Fail on Header-Insertion rndis(%d)\n",
-			rndis_hdr->status);
+				rndis_hdr->status);
 		result = rndis_hdr->status;
 		goto fail_add_hdr;
 	}
@@ -1763,9 +1747,8 @@ fail_mem:
  *
  * Returns negative errno, or zero on success
  */
-static int rndis_ipa_hdrs_cfg(
-	struct rndis_ipa_dev *rndis_ipa_ctx,
-	const void *dst_mac, const void *src_mac)
+static int rndis_ipa_hdrs_cfg(struct rndis_ipa_dev *rndis_ipa_ctx,
+			      const void *dst_mac, const void *src_mac)
 {
 	struct ipa_ioc_add_hdr *hdrs;
 	struct ipa_hdr_add *ipv4_hdr;
@@ -1775,7 +1758,7 @@ static int rndis_ipa_hdrs_cfg(
 	RNDIS_IPA_LOG_ENTRY();
 
 	hdrs = kzalloc(sizeof(*hdrs) + sizeof(*ipv4_hdr) + sizeof(*ipv6_hdr),
-	GFP_KERNEL);
+		       GFP_KERNEL);
 	if (!hdrs) {
 		result = -ENOMEM;
 		goto fail_mem;
@@ -1783,10 +1766,12 @@ static int rndis_ipa_hdrs_cfg(
 
 	ipv4_hdr = &hdrs->hdr[0];
 	ipv6_hdr = &hdrs->hdr[1];
-	rndis_ipa_prepare_header_insertion(ETH_P_IP, IPV4_HDR_NAME,
-		ipv4_hdr, dst_mac, src_mac, rndis_ipa_ctx->is_vlan_mode);
-	rndis_ipa_prepare_header_insertion(ETH_P_IPV6, IPV6_HDR_NAME,
-		ipv6_hdr, dst_mac, src_mac, rndis_ipa_ctx->is_vlan_mode);
+	rndis_ipa_prepare_header_insertion(ETH_P_IP, IPV4_HDR_NAME, ipv4_hdr,
+					   dst_mac, src_mac,
+					   rndis_ipa_ctx->is_vlan_mode);
+	rndis_ipa_prepare_header_insertion(ETH_P_IPV6, IPV6_HDR_NAME, ipv6_hdr,
+					   dst_mac, src_mac,
+					   rndis_ipa_ctx->is_vlan_mode);
 
 	hdrs->num_hdrs = 2;
 	hdrs->commit = 1;
@@ -1833,8 +1818,8 @@ static int rndis_ipa_hdrs_destroy(struct rndis_ipa_dev *rndis_ipa_ctx)
 	struct ipa_hdr_del *ipv6;
 	int result;
 
-	del_hdr = kzalloc(sizeof(*del_hdr) + sizeof(*ipv4) +
-			sizeof(*ipv6), GFP_KERNEL);
+	del_hdr = kzalloc(sizeof(*del_hdr) + sizeof(*ipv4) + sizeof(*ipv6),
+			  GFP_KERNEL);
 	if (!del_hdr)
 		return -ENOMEM;
 
@@ -1885,12 +1870,12 @@ static struct net_device_stats *rndis_ipa_get_stats(struct net_device *net)
  */
 static int rndis_ipa_register_properties(char *netdev_name, bool is_vlan_mode)
 {
-	struct ipa_tx_intf tx_properties = {0};
-	struct ipa_ioc_tx_intf_prop properties[2] = { {0}, {0} };
+	struct ipa_tx_intf tx_properties = { 0 };
+	struct ipa_ioc_tx_intf_prop properties[2] = { { 0 }, { 0 } };
 	struct ipa_ioc_tx_intf_prop *ipv4_property;
 	struct ipa_ioc_tx_intf_prop *ipv6_property;
-	struct ipa_ioc_rx_intf_prop rx_ioc_properties[2] = { {0}, {0} };
-	struct ipa_rx_intf rx_properties = {0};
+	struct ipa_ioc_rx_intf_prop rx_ioc_properties[2] = { { 0 }, { 0 } };
+	struct ipa_rx_intf rx_properties = { 0 };
 	struct ipa_ioc_rx_intf_prop *rx_ipv4_property;
 	struct ipa_ioc_rx_intf_prop *rx_ipv6_property;
 	enum ipa_hdr_l2_type hdr_l2_type = IPA_HDR_L2_ETHERNET_II;
@@ -1905,16 +1890,12 @@ static int rndis_ipa_register_properties(char *netdev_name, bool is_vlan_mode)
 	ipv4_property = &tx_properties.prop[0];
 	ipv4_property->ip = IPA_IP_v4;
 	ipv4_property->dst_pipe = IPA_TO_USB_CLIENT;
-	strlcpy
-		(ipv4_property->hdr_name, IPV4_HDR_NAME,
-		IPA_RESOURCE_NAME_MAX);
+	strlcpy(ipv4_property->hdr_name, IPV4_HDR_NAME, IPA_RESOURCE_NAME_MAX);
 	ipv4_property->hdr_l2_type = hdr_l2_type;
 	ipv6_property = &tx_properties.prop[1];
 	ipv6_property->ip = IPA_IP_v6;
 	ipv6_property->dst_pipe = IPA_TO_USB_CLIENT;
-	strlcpy
-		(ipv6_property->hdr_name, IPV6_HDR_NAME,
-		IPA_RESOURCE_NAME_MAX);
+	strlcpy(ipv6_property->hdr_name, IPV6_HDR_NAME, IPA_RESOURCE_NAME_MAX);
 	ipv6_property->hdr_l2_type = hdr_l2_type;
 	tx_properties.num_props = 2;
 
@@ -1948,7 +1929,7 @@ static int rndis_ipa_register_properties(char *netdev_name, bool is_vlan_mode)
  *
  * This function revert the work done on rndis_ipa_register_properties().
  */
-static int  rndis_ipa_deregister_properties(char *netdev_name)
+static int rndis_ipa_deregister_properties(char *netdev_name)
 {
 	int result;
 
@@ -2024,23 +2005,23 @@ static int rndis_ipa_deregister_pm_client(struct rndis_ipa_dev *rndis_ipa_ctx)
  * skb values.
  * Ethernet 2 header should already be encapsulated in the packet.
  */
-static struct sk_buff *rndis_encapsulate_skb(struct sk_buff *skb,
-	struct rndis_ipa_dev *rndis_ipa_ctx)
+static struct sk_buff *
+rndis_encapsulate_skb(struct sk_buff *skb, struct rndis_ipa_dev *rndis_ipa_ctx)
 {
 	struct rndis_pkt_hdr *rndis_hdr;
 	int payload_byte_len = skb->len;
 
 	/* if there is no room in this skb, allocate a new one */
 	if (unlikely(skb_headroom(skb) < sizeof(rndis_template_hdr))) {
-		struct sk_buff *new_skb = skb_copy_expand(skb,
-			sizeof(rndis_template_hdr), 0, GFP_ATOMIC);
+		struct sk_buff *new_skb = skb_copy_expand(
+			skb, sizeof(rndis_template_hdr), 0, GFP_ATOMIC);
 
 		if (!new_skb) {
 			RNDIS_IPA_ERROR_RL("no memory for skb expand\n");
 			return skb;
 		}
-		RNDIS_IPA_DEBUG("skb expanded. old %pK new %pK\n",
-			skb, new_skb);
+		RNDIS_IPA_DEBUG("skb expanded. old %pK new %pK\n", skb,
+				new_skb);
 		dev_kfree_skb_any(skb);
 		skb = new_skb;
 	}
@@ -2048,16 +2029,16 @@ static struct sk_buff *rndis_encapsulate_skb(struct sk_buff *skb,
 	if (rndis_ipa_ctx->is_vlan_mode)
 		if (unlikely(skb->protocol != htons(ETH_P_8021Q)))
 			RNDIS_IPA_DEBUG(
-				"ether_type != ETH_P_8021Q && vlan, prot = 0x%X\n"
-				, skb->protocol);
+				"ether_type != ETH_P_8021Q && vlan, prot = 0x%X\n",
+				skb->protocol);
 
 	/* make room at the head of the SKB to put the RNDIS header */
-	rndis_hdr = (struct rndis_pkt_hdr *)skb_push(skb,
-					sizeof(rndis_template_hdr));
+	rndis_hdr = (struct rndis_pkt_hdr *)skb_push(
+		skb, sizeof(rndis_template_hdr));
 
 	memcpy(rndis_hdr, &rndis_template_hdr, sizeof(*rndis_hdr));
-	rndis_hdr->msg_len +=  payload_byte_len;
-	rndis_hdr->data_len +=  payload_byte_len;
+	rndis_hdr->msg_len += payload_byte_len;
+	rndis_hdr->data_len += payload_byte_len;
 
 	return skb;
 }
@@ -2092,15 +2073,14 @@ static bool tx_filter(struct sk_buff *skb)
 	if (likely(!rndis_ipa_ctx->tx_filter))
 		return false;
 
-	is_icmp = (skb->protocol == htons(ETH_P_IP)	&&
-		ip_hdr(skb)->protocol == IPPROTO_ICMP);
+	is_icmp = (skb->protocol == htons(ETH_P_IP) &&
+		   ip_hdr(skb)->protocol == IPPROTO_ICMP);
 
 	if ((!rndis_ipa_ctx->icmp_filter) && is_icmp)
 		return false;
 
 	return true;
 }
-
 
 /**
  * rndis_ipa_ep_registers_cfg() - configure the USB endpoints
@@ -2127,14 +2107,10 @@ static bool tx_filter(struct sk_buff *skb)
  *  - Add Ethernet header
  *  - Add RNDIS header
  */
-static int rndis_ipa_ep_registers_cfg(
-	u32 usb_to_ipa_hdl,
-	u32 ipa_to_usb_hdl,
-	u32 max_xfer_size_bytes_to_dev,
-	u32 max_xfer_size_bytes_to_host,
-	u32 mtu,
-	bool deaggr_enable,
-	bool is_vlan_mode)
+static int rndis_ipa_ep_registers_cfg(u32 usb_to_ipa_hdl, u32 ipa_to_usb_hdl,
+				      u32 max_xfer_size_bytes_to_dev,
+				      u32 max_xfer_size_bytes_to_host, u32 mtu,
+				      bool deaggr_enable, bool is_vlan_mode)
 {
 	int result;
 	struct ipa_ep_cfg *usb_to_ipa_ep_cfg;
@@ -2155,7 +2131,7 @@ static int rndis_ipa_ep_registers_cfg(
 			VLAN_ETH_HLEN + sizeof(struct rndis_pkt_hdr);
 		ipa_to_usb_ep_cfg.hdr.hdr_additional_const_len = VLAN_ETH_HLEN;
 		qmap_template_hdr.additional_hdr_size =
-				VLAN_ETH_HLEN - ETH_HLEN;
+			VLAN_ETH_HLEN - ETH_HLEN;
 	} else {
 		usb_to_ipa_ep_cfg->hdr.hdr_len = ETH_HLEN + add;
 		ipa_to_usb_ep_cfg.hdr.hdr_len =
@@ -2185,8 +2161,9 @@ static int rndis_ipa_ep_registers_cfg(
 	}
 
 	RNDIS_IPA_DEBUG(
-		"RNDIS aggregation param: en=%d byte_limit=%d time_limit=%d pkt_limit=%d\n"
-		, ipa_to_usb_ep_cfg.aggr.aggr_en,
+		"RNDIS aggregation param: en=%d byte_limit=%d time_limit=%d "
+		"pkt_limit=%d\n",
+		ipa_to_usb_ep_cfg.aggr.aggr_en,
 		ipa_to_usb_ep_cfg.aggr.aggr_byte_limit,
 		ipa_to_usb_ep_cfg.aggr.aggr_time_limit,
 		ipa_to_usb_ep_cfg.aggr.aggr_pkt_limit);
@@ -2221,9 +2198,8 @@ static int rndis_ipa_ep_registers_cfg(
  *
  * Returns 0 for success, negative otherwise
  */
-static int rndis_ipa_set_device_ethernet_addr(
-	struct net_device *net,
-	u8 device_ethaddr[])
+static int rndis_ipa_set_device_ethernet_addr(struct net_device *net,
+					      u8 device_ethaddr[])
 {
 	if (!is_valid_ether_addr(device_ethaddr))
 		return -EINVAL;
@@ -2249,9 +2225,9 @@ static int rndis_ipa_set_device_ethernet_addr(
  * In case the operation is invalid this state machine will return
  * the value RNDIS_IPA_INVALID to inform the caller for a forbidden sequence.
  */
-static enum rndis_ipa_state rndis_ipa_next_state(
-		enum rndis_ipa_state current_state,
-		enum rndis_ipa_operation operation)
+static enum rndis_ipa_state
+rndis_ipa_next_state(enum rndis_ipa_state current_state,
+		     enum rndis_ipa_operation operation)
 {
 	int next_state = RNDIS_IPA_INVALID;
 
@@ -2293,12 +2269,11 @@ static enum rndis_ipa_state rndis_ipa_next_state(
 		break;
 	}
 
-	RNDIS_IPA_DEBUG
-		("state transition ( %s -> %s )- %s\n",
-		rndis_ipa_state_string(current_state),
-		rndis_ipa_state_string(next_state),
-		next_state == RNDIS_IPA_INVALID ?
-		"Forbidden" : "Allowed");
+	RNDIS_IPA_DEBUG("state transition ( %s -> %s )- %s\n",
+			rndis_ipa_state_string(current_state),
+			rndis_ipa_state_string(next_state),
+			next_state == RNDIS_IPA_INVALID ? "Forbidden" :
+							  "Allowed");
 
 	return next_state;
 }
@@ -2331,19 +2306,14 @@ static void rndis_ipa_dump_skb(struct sk_buff *skb)
 	u32 *cur = (u32 *)skb->data;
 	u8 *byte;
 
-	RNDIS_IPA_DEBUG
-		("packet dump start for skb->len=%d\n",
-		skb->len);
+	RNDIS_IPA_DEBUG("packet dump start for skb->len=%d\n", skb->len);
 
 	for (i = 0; i < (skb->len / 4); i++) {
 		byte = (u8 *)(cur + i);
-		pr_info
-			("%2d %08x   %02x %02x %02x %02x\n",
-			i, *(cur + i),
+		pr_info("%2d %08x   %02x %02x %02x %02x\n", i, *(cur + i),
 			byte[0], byte[1], byte[2], byte[3]);
 	}
-	RNDIS_IPA_DEBUG
-		("packet dump ended for skb->len=%d\n", skb->len);
+	RNDIS_IPA_DEBUG("packet dump ended for skb->len=%d\n", skb->len);
 }
 
 #ifdef CONFIG_DEBUG_FS
@@ -2354,7 +2324,7 @@ static void rndis_ipa_debugfs_init(struct rndis_ipa_dev *rndis_ipa_ctx)
 {
 	const mode_t flags_read_write = 0666;
 	const mode_t flags_read_only = 0444;
-	const mode_t  flags_write_only = 0222;
+	const mode_t flags_write_only = 0222;
 	struct dentry *file;
 	struct dentry *aggr_directory;
 
@@ -2369,117 +2339,98 @@ static void rndis_ipa_debugfs_init(struct rndis_ipa_dev *rndis_ipa_ctx)
 		goto fail_directory;
 	}
 
-	debugfs_create_bool
-		("tx_filter", flags_read_write,
-		rndis_ipa_ctx->directory, &rndis_ipa_ctx->tx_filter);
+	debugfs_create_bool("tx_filter", flags_read_write,
+			    rndis_ipa_ctx->directory,
+			    &rndis_ipa_ctx->tx_filter);
 
-	debugfs_create_bool
-		("rx_filter", flags_read_write,
-		rndis_ipa_ctx->directory, &rndis_ipa_ctx->rx_filter);
+	debugfs_create_bool("rx_filter", flags_read_write,
+			    rndis_ipa_ctx->directory,
+			    &rndis_ipa_ctx->rx_filter);
 
-	debugfs_create_bool
-		("icmp_filter", flags_read_write,
-		rndis_ipa_ctx->directory, &rndis_ipa_ctx->icmp_filter);
+	debugfs_create_bool("icmp_filter", flags_read_write,
+			    rndis_ipa_ctx->directory,
+			    &rndis_ipa_ctx->icmp_filter);
 
-	debugfs_create_u32
-		("outstanding_high", flags_read_write,
-		rndis_ipa_ctx->directory,
-		&rndis_ipa_ctx->outstanding_high);
+	debugfs_create_u32("outstanding_high", flags_read_write,
+			   rndis_ipa_ctx->directory,
+			   &rndis_ipa_ctx->outstanding_high);
 
-	debugfs_create_u32
-		("outstanding_low", flags_read_write,
-		rndis_ipa_ctx->directory,
-		&rndis_ipa_ctx->outstanding_low);
+	debugfs_create_u32("outstanding_low", flags_read_write,
+			   rndis_ipa_ctx->directory,
+			   &rndis_ipa_ctx->outstanding_low);
 
-	file = debugfs_create_file
-		("outstanding", flags_read_only,
-		rndis_ipa_ctx->directory,
-		rndis_ipa_ctx, &rndis_ipa_debugfs_atomic_ops);
+	file = debugfs_create_file("outstanding", flags_read_only,
+				   rndis_ipa_ctx->directory, rndis_ipa_ctx,
+				   &rndis_ipa_debugfs_atomic_ops);
 	if (!file) {
 		RNDIS_IPA_ERROR("could not create outstanding file\n");
 		goto fail_file;
 	}
 
-	debugfs_create_u8
-		("state", flags_read_only,
-		rndis_ipa_ctx->directory, (u8 *)&rndis_ipa_ctx->state);
+	debugfs_create_u8("state", flags_read_only, rndis_ipa_ctx->directory,
+			  (u8 *)&rndis_ipa_ctx->state);
 
-	debugfs_create_u32
-		("tx_dropped", flags_read_only,
-		rndis_ipa_ctx->directory, &rndis_ipa_ctx->tx_dropped);
+	debugfs_create_u32("tx_dropped", flags_read_only,
+			   rndis_ipa_ctx->directory,
+			   &rndis_ipa_ctx->tx_dropped);
 
-	debugfs_create_u32
-		("rx_dropped", flags_read_only,
-		rndis_ipa_ctx->directory, &rndis_ipa_ctx->rx_dropped);
+	debugfs_create_u32("rx_dropped", flags_read_only,
+			   rndis_ipa_ctx->directory,
+			   &rndis_ipa_ctx->rx_dropped);
 
-	aggr_directory = debugfs_create_dir
-		(DEBUGFS_AGGR_DIR_NAME,
-		rndis_ipa_ctx->directory);
+	aggr_directory = debugfs_create_dir(DEBUGFS_AGGR_DIR_NAME,
+					    rndis_ipa_ctx->directory);
 	if (!aggr_directory) {
 		RNDIS_IPA_ERROR("could not create debugfs aggr entry\n");
 		goto fail_directory;
 	}
 
-	file = debugfs_create_file
-		("aggr_value_set", flags_write_only,
-		aggr_directory,
-		rndis_ipa_ctx, &rndis_ipa_aggr_ops);
+	file = debugfs_create_file("aggr_value_set", flags_write_only,
+				   aggr_directory, rndis_ipa_ctx,
+				   &rndis_ipa_aggr_ops);
 	if (!file) {
 		RNDIS_IPA_ERROR("could not create aggr_value_set file\n");
 		goto fail_file;
 	}
 
-	debugfs_create_u8
-		("aggr_enable", flags_read_write,
-		aggr_directory, (u8 *)&ipa_to_usb_ep_cfg.aggr.aggr_en);
+	debugfs_create_u8("aggr_enable", flags_read_write, aggr_directory,
+			  (u8 *)&ipa_to_usb_ep_cfg.aggr.aggr_en);
 
-	debugfs_create_u8
-		("aggr_type", flags_read_write,
-		aggr_directory, (u8 *)&ipa_to_usb_ep_cfg.aggr.aggr);
+	debugfs_create_u8("aggr_type", flags_read_write, aggr_directory,
+			  (u8 *)&ipa_to_usb_ep_cfg.aggr.aggr);
 
-	debugfs_create_u32
-		("aggr_byte_limit", flags_read_write,
-		aggr_directory,
-		&ipa_to_usb_ep_cfg.aggr.aggr_byte_limit);
+	debugfs_create_u32("aggr_byte_limit", flags_read_write, aggr_directory,
+			   &ipa_to_usb_ep_cfg.aggr.aggr_byte_limit);
 
-	debugfs_create_u32
-		("aggr_time_limit", flags_read_write,
-		aggr_directory,
-		&ipa_to_usb_ep_cfg.aggr.aggr_time_limit);
+	debugfs_create_u32("aggr_time_limit", flags_read_write, aggr_directory,
+			   &ipa_to_usb_ep_cfg.aggr.aggr_time_limit);
 
-	debugfs_create_u32
-		("aggr_pkt_limit", flags_read_write,
-		aggr_directory,
-		&ipa_to_usb_ep_cfg.aggr.aggr_pkt_limit);
+	debugfs_create_u32("aggr_pkt_limit", flags_read_write, aggr_directory,
+			   &ipa_to_usb_ep_cfg.aggr.aggr_pkt_limit);
 
-	debugfs_create_bool
-		("tx_dump_enable", flags_read_write,
-		rndis_ipa_ctx->directory,
-		&rndis_ipa_ctx->tx_dump_enable);
+	debugfs_create_bool("tx_dump_enable", flags_read_write,
+			    rndis_ipa_ctx->directory,
+			    &rndis_ipa_ctx->tx_dump_enable);
 
-	debugfs_create_bool
-		("rx_dump_enable", flags_read_write,
-		rndis_ipa_ctx->directory,
-		&rndis_ipa_ctx->rx_dump_enable);
+	debugfs_create_bool("rx_dump_enable", flags_read_write,
+			    rndis_ipa_ctx->directory,
+			    &rndis_ipa_ctx->rx_dump_enable);
 
-	debugfs_create_bool
-		("deaggregation_enable", flags_read_write,
-		rndis_ipa_ctx->directory,
-		&rndis_ipa_ctx->deaggregation_enable);
+	debugfs_create_bool("deaggregation_enable", flags_read_write,
+			    rndis_ipa_ctx->directory,
+			    &rndis_ipa_ctx->deaggregation_enable);
 
-	debugfs_create_u32
-		("error_msec_sleep_time", flags_read_write,
-		rndis_ipa_ctx->directory,
-		&rndis_ipa_ctx->error_msec_sleep_time);
+	debugfs_create_u32("error_msec_sleep_time", flags_read_write,
+			   rndis_ipa_ctx->directory,
+			   &rndis_ipa_ctx->error_msec_sleep_time);
 
-	debugfs_create_bool
-		("during_xmit_error", flags_read_only,
-		rndis_ipa_ctx->directory,
-		&rndis_ipa_ctx->during_xmit_error);
+	debugfs_create_bool("during_xmit_error", flags_read_only,
+			    rndis_ipa_ctx->directory,
+			    &rndis_ipa_ctx->during_xmit_error);
 
 	debugfs_create_bool("is_vlan_mode", flags_read_only,
-		rndis_ipa_ctx->directory,
-		&rndis_ipa_ctx->is_vlan_mode);
+			    rndis_ipa_ctx->directory,
+			    &rndis_ipa_ctx->is_vlan_mode);
 
 	RNDIS_IPA_DEBUG("debugfs entries were created\n");
 	RNDIS_IPA_LOG_EXIT();
@@ -2498,15 +2449,17 @@ static void rndis_ipa_debugfs_destroy(struct rndis_ipa_dev *rndis_ipa_ctx)
 
 #else /* !CONFIG_DEBUG_FS */
 
-static void rndis_ipa_debugfs_init(struct rndis_ipa_dev *rndis_ipa_ctx) {}
+static void rndis_ipa_debugfs_init(struct rndis_ipa_dev *rndis_ipa_ctx)
+{
+}
 
-static void rndis_ipa_debugfs_destroy(struct rndis_ipa_dev *rndis_ipa_ctx) {}
+static void rndis_ipa_debugfs_destroy(struct rndis_ipa_dev *rndis_ipa_ctx)
+{
+}
 
 #endif /* CONFIG_DEBUG_FS*/
 
-static int rndis_ipa_debugfs_aggr_open
-		(struct inode *inode,
-		struct file *file)
+static int rndis_ipa_debugfs_aggr_open(struct inode *inode, struct file *file)
 {
 	struct rndis_ipa_dev *rndis_ipa_ctx = inode->i_private;
 
@@ -2515,9 +2468,9 @@ static int rndis_ipa_debugfs_aggr_open
 	return 0;
 }
 
-static ssize_t rndis_ipa_debugfs_aggr_write
-	(struct file *file,
-	const char __user *buf, size_t count, loff_t *ppos)
+static ssize_t rndis_ipa_debugfs_aggr_write(struct file *file,
+					    const char __user *buf,
+					    size_t count, loff_t *ppos)
 {
 	struct rndis_ipa_dev *rndis_ipa_ctx = NULL;
 	int result;
@@ -2549,18 +2502,18 @@ static int rndis_ipa_debugfs_atomic_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t rndis_ipa_debugfs_atomic_read
-	(struct file *file, char __user *ubuf, size_t count, loff_t *ppos)
+static ssize_t rndis_ipa_debugfs_atomic_read(struct file *file,
+					     char __user *ubuf, size_t count,
+					     loff_t *ppos)
 {
 	int nbytes;
-	u8 atomic_str[DEBUGFS_TEMP_BUF_SIZE] = {0};
+	u8 atomic_str[DEBUGFS_TEMP_BUF_SIZE] = { 0 };
 	atomic_t *atomic_var = file->private_data;
 
 	RNDIS_IPA_LOG_ENTRY();
 
-	nbytes = scnprintf
-		(atomic_str, sizeof(atomic_str), "%d\n",
-		atomic_read(atomic_var));
+	nbytes = scnprintf(atomic_str, sizeof(atomic_str), "%d\n",
+			   atomic_read(atomic_var));
 
 	RNDIS_IPA_LOG_EXIT();
 
@@ -2570,7 +2523,7 @@ static ssize_t rndis_ipa_debugfs_atomic_read
 int rndis_ipa_init_module(void)
 {
 	ipa_rndis_logbuf = ipc_log_context_create(IPA_RNDIS_IPC_LOG_PAGES,
-		"ipa_rndis", MINIDUMP_MASK);
+						  "ipa_rndis", MINIDUMP_MASK);
 	if (ipa_rndis_logbuf == NULL)
 		RNDIS_IPA_ERROR("failed to create IPC log, continue...\n");
 
@@ -2592,5 +2545,5 @@ EXPORT_SYMBOL(rndis_ipa_cleanup_module);
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("RNDIS_IPA network interface");
 
-//late_initcall(rndis_ipa_init_module);
-//module_exit(rndis_ipa_cleanup_module);
+// late_initcall(rndis_ipa_init_module);
+// module_exit(rndis_ipa_cleanup_module);

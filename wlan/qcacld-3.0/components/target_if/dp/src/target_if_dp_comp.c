@@ -19,17 +19,17 @@
  */
 
 #include "target_if_dp_comp.h"
-#include "target_if.h"
-#include "qdf_status.h"
-#include "wmi.h"
-#include "wmi_unified_api.h"
-#include "wmi_unified_priv.h"
-#include "wmi_unified_param.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_dp_public_struct.h"
 #include "cdp_txrx_cmn.h"
 #include "cdp_txrx_ops.h"
+#include "qdf_status.h"
+#include "target_if.h"
 #include "wlan_dp_main.h"
+#include "wlan_dp_public_struct.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wmi.h"
+#include "wmi_unified_api.h"
+#include "wmi_unified_param.h"
+#include "wmi_unified_priv.h"
 #include <wlan_cm_api.h>
 
 /**
@@ -40,9 +40,8 @@
  *
  * Return: Return: 0 on success, failure code otherwise.
  */
-static int
-target_if_dp_get_arp_stats_event_handler(ol_scn_t scn, uint8_t *data,
-					 uint32_t datalen)
+static int target_if_dp_get_arp_stats_event_handler(ol_scn_t scn, uint8_t *data,
+						    uint32_t datalen)
 {
 	WMI_VDEV_GET_ARP_STAT_EVENTID_param_tlvs *param_buf;
 	wmi_vdev_get_arp_stats_event_fixed_param *data_event;
@@ -50,7 +49,7 @@ target_if_dp_get_arp_stats_event_handler(ol_scn_t scn, uint8_t *data,
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_dp_psoc_nb_ops *nb_ops;
 	uint8_t *buf_ptr;
-	struct dp_rsp_stats rsp = {0};
+	struct dp_rsp_stats rsp = { 0 };
 
 	if (!scn || !data) {
 		dp_err("scn: 0x%pK, data: 0x%pK", scn, data);
@@ -97,7 +96,7 @@ target_if_dp_get_arp_stats_event_handler(ol_scn_t scn, uint8_t *data,
 	connect_stats_event = (wmi_vdev_get_connectivity_check_stats *)buf_ptr;
 
 	if (((connect_stats_event->tlv_header & 0xFFFF0000) >> 16 ==
-	      WMITLV_TAG_STRUC_wmi_vdev_get_connectivity_check_stats)) {
+	     WMITLV_TAG_STRUC_wmi_vdev_get_connectivity_check_stats)) {
 		rsp.connect_stats_present = true;
 		rsp.tcp_ack_recvd = connect_stats_event->tcp_ack_recvd;
 		rsp.icmpv4_rsp_recvd = connect_stats_event->icmpv4_rsp_recvd;
@@ -134,10 +133,9 @@ target_if_dp_arp_stats_register_event_handler(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	ret_val = wmi_unified_register_event_handler(wmi_handle,
-				wmi_get_arp_stats_req_id,
-				target_if_dp_get_arp_stats_event_handler,
-				WMI_RX_WORK_CTX);
+	ret_val = wmi_unified_register_event_handler(
+		wmi_handle, wmi_get_arp_stats_req_id,
+		target_if_dp_get_arp_stats_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(ret_val))
 		dp_err("Failed to register event_handler");
 
@@ -198,8 +196,7 @@ target_if_dp_get_arp_req_stats(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						    req_buf->vdev_id,
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, req_buf->vdev_id,
 						    WLAN_DP_ID);
 	if (!vdev) {
 		dp_err("Can't get vdev by vdev_id:%d", req_buf->vdev_id);
@@ -247,8 +244,7 @@ target_if_dp_set_arp_req_stats(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						    req_buf->vdev_id,
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, req_buf->vdev_id,
 						    WLAN_DP_ID);
 	if (!vdev) {
 		dp_err("Can't get vdev by vdev_id:%d", req_buf->vdev_id);
@@ -286,7 +282,7 @@ static QDF_STATUS
 target_if_dp_lro_config_cmd(struct wlan_objmgr_psoc *psoc,
 			    struct cdp_lro_hash_config *dp_lro_cmd)
 {
-	struct wmi_lro_config_cmd_t wmi_lro_cmd = {0};
+	struct wmi_lro_config_cmd_t wmi_lro_cmd = { 0 };
 	struct wmi_unified *wmi_handle;
 
 	wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
@@ -315,13 +311,12 @@ target_if_dp_lro_config_cmd(struct wlan_objmgr_psoc *psoc,
  *
  * Return: 0 on success, failure code otherwise.
  */
-static QDF_STATUS
-target_if_dp_send_dhcp_ind(uint16_t vdev_id,
-			   struct dp_dhcp_ind *dhcp_ind)
+static QDF_STATUS target_if_dp_send_dhcp_ind(uint16_t vdev_id,
+					     struct dp_dhcp_ind *dhcp_ind)
 {
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
-	wmi_peer_set_param_cmd_fixed_param peer_set_param_fp = {0};
+	wmi_peer_set_param_cmd_fixed_param peer_set_param_fp = { 0 };
 	QDF_STATUS status;
 
 	psoc = wlan_objmgr_get_psoc_by_id(0, WLAN_PSOC_TARGET_IF_ID);
@@ -348,8 +343,7 @@ target_if_dp_send_dhcp_ind(uint16_t vdev_id,
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(dhcp_ind->peer_mac_addr.bytes,
 				   &peer_set_param_fp.peer_macaddr);
 
-	status = wmi_unified_process_dhcp_ind(wmi_handle,
-					      &peer_set_param_fp);
+	status = wmi_unified_process_dhcp_ind(wmi_handle, &peer_set_param_fp);
 	wlan_objmgr_psoc_release_ref(psoc, WLAN_PSOC_TARGET_IF_ID);
 
 	return status;
@@ -361,13 +355,10 @@ void target_if_dp_register_tx_ops(struct wlan_dp_psoc_sb_ops *sb_ops)
 		target_if_dp_arp_stats_register_event_handler;
 	sb_ops->dp_arp_stats_unregister_event_handler =
 		target_if_dp_arp_stats_unregister_event_handler;
-	sb_ops->dp_get_arp_req_stats =
-		target_if_dp_get_arp_req_stats;
-	sb_ops->dp_set_arp_req_stats =
-		target_if_dp_set_arp_req_stats;
+	sb_ops->dp_get_arp_req_stats = target_if_dp_get_arp_req_stats;
+	sb_ops->dp_set_arp_req_stats = target_if_dp_set_arp_req_stats;
 	sb_ops->dp_lro_config_cmd = target_if_dp_lro_config_cmd;
-	sb_ops->dp_send_dhcp_ind =
-		target_if_dp_send_dhcp_ind;
+	sb_ops->dp_send_dhcp_ind = target_if_dp_send_dhcp_ind;
 }
 
 void target_if_dp_register_rx_ops(struct wlan_dp_psoc_nb_ops *nb_ops)

@@ -21,15 +21,14 @@
  * implementation for creating sysfs file dcm
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs.h>
 #include "wlan_hdd_sysfs_dcm.h"
+#include "osif_vdev_sync.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
 #include <wma_api.h>
 
-static ssize_t
-__wlan_hdd_sysfs_dcm_store(struct net_device *net_dev, char const *buf,
-			   size_t count)
+static ssize_t __wlan_hdd_sysfs_dcm_store(struct net_device *net_dev,
+					  char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -48,8 +47,8 @@ __wlan_hdd_sysfs_dcm_store(struct net_device *net_dev, char const *buf,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -65,8 +64,8 @@ __wlan_hdd_sysfs_dcm_store(struct net_device *net_dev, char const *buf,
 	hdd_debug("dcm %d", value);
 
 	ret = wma_cli_set_command(adapter->deflink->vdev_id,
-				  wmi_vdev_param_he_dcm_enable,
-				  value, VDEV_CMD);
+				  wmi_vdev_param_he_dcm_enable, value,
+				  VDEV_CMD);
 	if (ret) {
 		hdd_err_rl("Failed to set dcm, errno %d", ret);
 		return ret;
@@ -94,8 +93,7 @@ static ssize_t wlan_hdd_sysfs_dcm_store(struct device *dev,
 	return err_size;
 }
 
-static ssize_t
-__wlan_hdd_sysfs_dcm_show(struct net_device *net_dev, char *buf)
+static ssize_t __wlan_hdd_sysfs_dcm_show(struct net_device *net_dev, char *buf)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -113,8 +111,7 @@ __wlan_hdd_sysfs_dcm_show(struct net_device *net_dev, char *buf)
 		return -EINVAL;
 
 	value = wma_cli_get_command(adapter->deflink->vdev_id,
-				    wmi_vdev_param_he_dcm_enable,
-				    VDEV_CMD);
+				    wmi_vdev_param_he_dcm_enable, VDEV_CMD);
 
 	hdd_debug("dcm %d", value);
 
@@ -124,8 +121,7 @@ __wlan_hdd_sysfs_dcm_show(struct net_device *net_dev, char *buf)
 }
 
 static ssize_t wlan_hdd_sysfs_dcm_show(struct device *dev,
-				       struct device_attribute *attr,
-				       char *buf)
+				       struct device_attribute *attr, char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;

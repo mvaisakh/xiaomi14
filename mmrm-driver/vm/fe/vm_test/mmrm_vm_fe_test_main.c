@@ -17,13 +17,13 @@
 
 #include <soc/qcom/socinfo.h>
 
-#include "mmrm_vm_fe_test_internal.h"
 #include "mmrm_vm_debug.h"
+#include "mmrm_vm_fe_test_internal.h"
 
 #define MODULE_NAME "mmrm_vm_fe_test"
 
 enum supported_soc_ids {
-	SOC_KALAMA_ID = 519			/* KAILUA */
+	SOC_KALAMA_ID = 519 /* KAILUA */
 };
 
 struct mmrm_test_platform_resources {
@@ -36,28 +36,28 @@ struct mmrm_test_driver_data {
 	struct mmrm_test_platform_resources clk_res;
 };
 
-static struct mmrm_test_driver_data *test_drv_data = (void *) -EPROBE_DEFER;
+static struct mmrm_test_driver_data *test_drv_data = (void *)-EPROBE_DEFER;
 
 int mmrm_vm_debug = MMRM_VM_ERR | MMRM_VM_WARN | MMRM_VM_PRINTK;
 
-int mmrm_vm_fe_load_mmrm_test_table(
-	struct mmrm_test_platform_resources *dt_res)
+int mmrm_vm_fe_load_mmrm_test_table(struct mmrm_test_platform_resources *dt_res)
 {
 	int rc = 0, num_clock_names = 0, c = 0;
 	struct platform_device *pdev = dt_res->pdev;
-	int   entry_offset = 0;
+	int entry_offset = 0;
 	struct clock_rate *clk_rate;
 
-	num_clock_names = of_property_count_strings(pdev->dev.of_node,
-			"clock-names");
+	num_clock_names =
+		of_property_count_strings(pdev->dev.of_node, "clock-names");
 	if (num_clock_names <= 0) {
 		dt_res->count = 0;
 		goto err_load_corner_tbl;
 	}
 	d_mpr_h("%s: count =%d\n", __func__, num_clock_names);
 
-	dt_res->clk_rate_tbl = devm_kzalloc(&pdev->dev,
-		sizeof(*dt_res->clk_rate_tbl) * num_clock_names, GFP_KERNEL);
+	dt_res->clk_rate_tbl = devm_kzalloc(
+		&pdev->dev, sizeof(*dt_res->clk_rate_tbl) * num_clock_names,
+		GFP_KERNEL);
 
 	if (!dt_res->clk_rate_tbl) {
 		rc = -ENOMEM;
@@ -67,40 +67,45 @@ int mmrm_vm_fe_load_mmrm_test_table(
 
 	clk_rate = dt_res->clk_rate_tbl;
 	for (c = 0; c < num_clock_names; c++, clk_rate++) {
-		of_property_read_string_index(pdev->dev.of_node,
-			"clock-names", c, &clk_rate->name);
+		of_property_read_string_index(pdev->dev.of_node, "clock-names",
+					      c, &clk_rate->name);
 	}
 
 	clk_rate = dt_res->clk_rate_tbl;
 	for (c = 0; c < num_clock_names; c++, entry_offset += 7, clk_rate++) {
-		of_property_read_u32_index(pdev->dev.of_node,
-			"clock_rates", entry_offset, &clk_rate->domain);
+		of_property_read_u32_index(pdev->dev.of_node, "clock_rates",
+					   entry_offset, &clk_rate->domain);
 
-		of_property_read_u32_index(pdev->dev.of_node,
-			"clock_rates", entry_offset+1, &clk_rate->id);
+		of_property_read_u32_index(pdev->dev.of_node, "clock_rates",
+					   entry_offset + 1, &clk_rate->id);
 
-		of_property_read_u32_index(pdev->dev.of_node,
-			"clock_rates", entry_offset+2, &clk_rate->clk_rates[0]);
+		of_property_read_u32_index(pdev->dev.of_node, "clock_rates",
+					   entry_offset + 2,
+					   &clk_rate->clk_rates[0]);
 
-		of_property_read_u32_index(pdev->dev.of_node,
-			"clock_rates", entry_offset+3, &clk_rate->clk_rates[1]);
+		of_property_read_u32_index(pdev->dev.of_node, "clock_rates",
+					   entry_offset + 3,
+					   &clk_rate->clk_rates[1]);
 
-		of_property_read_u32_index(pdev->dev.of_node,
-			"clock_rates", entry_offset+4, &clk_rate->clk_rates[2]);
+		of_property_read_u32_index(pdev->dev.of_node, "clock_rates",
+					   entry_offset + 4,
+					   &clk_rate->clk_rates[2]);
 
-		of_property_read_u32_index(pdev->dev.of_node,
-			"clock_rates", entry_offset+5, &clk_rate->clk_rates[3]);
+		of_property_read_u32_index(pdev->dev.of_node, "clock_rates",
+					   entry_offset + 5,
+					   &clk_rate->clk_rates[3]);
 
-		of_property_read_u32_index(pdev->dev.of_node,
-			"clock_rates", entry_offset+6, &clk_rate->clk_rates[4]);
+		of_property_read_u32_index(pdev->dev.of_node, "clock_rates",
+					   entry_offset + 6,
+					   &clk_rate->clk_rates[4]);
 	}
 
 	/* print clock rate tables */
 
 	clk_rate = dt_res->clk_rate_tbl;
 	for (c = 0; c < num_clock_names; c++, clk_rate++) {
-		d_mpr_h("clock name:%s, %d, %d, %d, %d, %d, %d, %d\n", clk_rate->name,
-			clk_rate->domain, clk_rate->id,
+		d_mpr_h("clock name:%s, %d, %d, %d, %d, %d, %d, %d\n",
+			clk_rate->name, clk_rate->domain, clk_rate->id,
 			clk_rate->clk_rates[0], clk_rate->clk_rates[1],
 			clk_rate->clk_rates[2], clk_rate->clk_rates[3],
 			clk_rate->clk_rates[4]);
@@ -112,9 +117,8 @@ err_load_corner_tbl:
 	return rc;
 }
 
-int mmrm_clk_print_info(
-	struct mmrm_test_platform_resources *dt_res,
-	char *buf, int max_len)
+int mmrm_clk_print_info(struct mmrm_test_platform_resources *dt_res, char *buf,
+			int max_len)
 {
 	struct clock_rate *clk_rate;
 	int left_spaces = max_len;
@@ -126,11 +130,12 @@ int mmrm_clk_print_info(
 
 	clk_rate = dt_res->clk_rate_tbl;
 	for (c = 0; c < count; c++, clk_rate++) {
-		len = scnprintf(buf, left_spaces, "clock name:%s, %d, %d, %d, %d, %d, %d, %d\n",
-			clk_rate->name, clk_rate->domain, clk_rate->id,
-			clk_rate->clk_rates[0], clk_rate->clk_rates[1],
-			clk_rate->clk_rates[2], clk_rate->clk_rates[3],
-			clk_rate->clk_rates[4]);
+		len = scnprintf(buf, left_spaces,
+				"clock name:%s, %d, %d, %d, %d, %d, %d, %d\n",
+				clk_rate->name, clk_rate->domain, clk_rate->id,
+				clk_rate->clk_rates[0], clk_rate->clk_rates[1],
+				clk_rate->clk_rates[2], clk_rate->clk_rates[3],
+				clk_rate->clk_rates[4]);
 
 		left_spaces -= len;
 		buf += len;
@@ -140,8 +145,8 @@ int mmrm_clk_print_info(
 
 struct clock_rate *find_clk_by_name(const char *name)
 {
-	int  i;
-	struct mmrm_test_platform_resources  *res = &test_drv_data->clk_res;
+	int i;
+	struct mmrm_test_platform_resources *res = &test_drv_data->clk_res;
 	struct clock_rate *p = res->clk_rate_tbl;
 
 	for (i = 0; i < res->count; i++, p++) {
@@ -158,7 +163,7 @@ int get_clock_count(void)
 
 struct clock_rate *get_nth_clock(int nth)
 {
-	struct mmrm_test_platform_resources  *res = &test_drv_data->clk_res;
+	struct mmrm_test_platform_resources *res = &test_drv_data->clk_res;
 
 	return &(res->clk_rate_tbl[nth]);
 }
@@ -175,7 +180,7 @@ int mmrm_vm_fe_test_read_platform_resources(struct platform_device *pdev)
 		goto exit;
 	}
 
-	if (test_drv_data == (void *) -EPROBE_DEFER) {
+	if (test_drv_data == (void *)-EPROBE_DEFER) {
 		d_mpr_e("%s: mmrm_test_read_platform_resources\n", __func__);
 		goto exit;
 	}
@@ -203,9 +208,12 @@ static int mmrm_test(struct platform_device *pdev, int flags)
 		if (flags & 1)
 			mmrm_vm_fe_client_tests(pdev);
 		if (flags & 2)
-			test_mmrm_concurrent_client_cases(pdev, kalama_testcases, kalama_testcases_count);
+			test_mmrm_concurrent_client_cases(
+				pdev, kalama_testcases, kalama_testcases_count);
 		if (flags & 4)
-			test_mmrm_switch_volt_corner_client_testcases(pdev, kalama_cornercase_testcases, kalama_cornercase_testcases_count);
+			test_mmrm_switch_volt_corner_client_testcases(
+				pdev, kalama_cornercase_testcases,
+				kalama_cornercase_testcases_count);
 		break;
 	default:
 		d_mpr_e("%s: Not supported for soc_id %d\n", __func__, soc_id);
@@ -215,7 +223,8 @@ static int mmrm_test(struct platform_device *pdev, int flags)
 }
 
 static ssize_t mmrm_vm_fe_sysfs_debug_get(struct device *dev,
-		struct device_attribute *attr, char *buf)
+					  struct device_attribute *attr,
+					  char *buf)
 {
 	int ret;
 
@@ -226,7 +235,8 @@ static ssize_t mmrm_vm_fe_sysfs_debug_get(struct device *dev,
 }
 
 static ssize_t mmrm_vm_fe_sysfs_debug_set(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
 {
 	int ret;
 	unsigned long dbg_mask;
@@ -239,11 +249,12 @@ static ssize_t mmrm_vm_fe_sysfs_debug_set(struct device *dev,
 }
 
 static ssize_t dump_clk_info_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+				  struct device_attribute *attr, char *buf)
 {
 	int rc;
 
-	rc = mmrm_clk_print_info(&test_drv_data->clk_res, buf, MMRM_SYSFS_ENTRY_MAX_LEN);
+	rc = mmrm_clk_print_info(&test_drv_data->clk_res, buf,
+				 MMRM_SYSFS_ENTRY_MAX_LEN);
 	if (rc == 0)
 		d_mpr_e("%s: failed to dump clk info\n", __func__);
 
@@ -251,9 +262,10 @@ static ssize_t dump_clk_info_show(struct device *dev,
 }
 
 ssize_t test_trigger_store(struct device *dev, struct device_attribute *attr,
-	const char *buf, size_t count)
+			   const char *buf, size_t count)
 {
-	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
+	struct platform_device *pdev =
+		container_of(dev, struct platform_device, dev);
 	int ret;
 	unsigned long flags;
 
@@ -265,7 +277,7 @@ ssize_t test_trigger_store(struct device *dev, struct device_attribute *attr,
 		return -1;
 	}
 
-	if  (flags & 0x80)
+	if (flags & 0x80)
 		mmrm_vm_fe_client_register_tests(pdev);
 	else
 		mmrm_test(pdev, flags);
@@ -275,9 +287,8 @@ ssize_t test_trigger_store(struct device *dev, struct device_attribute *attr,
 
 static DEVICE_ATTR_RO(dump_clk_info);
 
-static DEVICE_ATTR(debug, 0644,
-	mmrm_vm_fe_sysfs_debug_get,
-	mmrm_vm_fe_sysfs_debug_set);
+static DEVICE_ATTR(debug, 0644, mmrm_vm_fe_sysfs_debug_get,
+		   mmrm_vm_fe_sysfs_debug_set);
 
 static DEVICE_ATTR_WO(test_trigger);
 
@@ -298,14 +309,17 @@ static int mmrm_vm_fe_test_probe(struct platform_device *pdev)
 	int rc;
 
 	// Check if of_node is found
-	if (!of_device_is_compatible(pdev->dev.of_node, "qcom,mmrm-vm-fe-test")) {
+	if (!of_device_is_compatible(pdev->dev.of_node,
+				     "qcom,mmrm-vm-fe-test")) {
 		d_mpr_e("No compatible device node\n");
 		return 1;
 	}
 
-	is_mmrm_supported = mmrm_client_check_scaling_supported(MMRM_CLIENT_CLOCK, 0);
+	is_mmrm_supported =
+		mmrm_client_check_scaling_supported(MMRM_CLIENT_CLOCK, 0);
 	if (!is_mmrm_supported) {
-		d_mpr_e("%s: MMRM not supported on %s\n", __func__, socinfo_get_id_string());
+		d_mpr_e("%s: MMRM not supported on %s\n", __func__,
+			socinfo_get_id_string());
 		return 0;
 	}
 
@@ -325,9 +339,9 @@ static int mmrm_vm_fe_test_probe(struct platform_device *pdev)
 	}
 	d_mpr_e("%s: Validating mmrm on target\n", __func__);
 
-	if (sysfs_create_group(&pdev->dev.kobj, &mmrm_vm_fe_test_fs_attrs_group)) {
-		d_mpr_e("%s: failed to create sysfs\n",
-			__func__);
+	if (sysfs_create_group(&pdev->dev.kobj,
+			       &mmrm_vm_fe_test_fs_attrs_group)) {
+		d_mpr_e("%s: failed to create sysfs\n", __func__);
 	}
 
 err_no_mem:
@@ -356,24 +370,26 @@ int mmrm_vm_fe_test_remove(struct platform_device *pdev)
 	dev_set_drvdata(&pdev->dev, NULL);
 
 	kfree(test_drv_data);
-	test_drv_data = (void *) -EPROBE_DEFER;
+	test_drv_data = (void *)-EPROBE_DEFER;
 
 err_exit:
 	return rc;
 }
 
 static const struct of_device_id mmrm_vm_fe_test_dt_match[] = {
-	{.compatible = "qcom,mmrm-vm-fe-test"}, {} // empty
+	{ .compatible = "qcom,mmrm-vm-fe-test" },
+	{} // empty
 };
 
 static struct platform_driver mmrm_vm_fe_test_driver = {
-	.probe = mmrm_vm_fe_test_probe,
-	.remove = mmrm_vm_fe_test_remove,
-	.driver = {
-			.name = MODULE_NAME,
-			.owner = THIS_MODULE,
-			.of_match_table = mmrm_vm_fe_test_dt_match,
-		},
+    .probe = mmrm_vm_fe_test_probe,
+    .remove = mmrm_vm_fe_test_remove,
+    .driver =
+        {
+            .name = MODULE_NAME,
+            .owner = THIS_MODULE,
+            .of_match_table = mmrm_vm_fe_test_dt_match,
+        },
 };
 
 static int __init mmrm_vm_fe_test_init(void)

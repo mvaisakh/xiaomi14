@@ -21,13 +21,13 @@
  * This file maintains definitaions of connect, disconnect, roam
  * common apis.
  */
-#include <include/wlan_mlme_cmn.h>
 #include "osif_cm_util.h"
-#include "wlan_osif_priv.h"
-#include "wlan_cfg80211.h"
 #include "osif_cm_rsp.h"
+#include "wlan_cfg80211.h"
 #include "wlan_cfg80211_scan.h"
 #include "wlan_mlo_mgr_sta.h"
+#include "wlan_osif_priv.h"
+#include <include/wlan_mlme_cmn.h>
 
 enum qca_sta_connect_fail_reason_codes
 osif_cm_mac_to_qca_connect_fail_reason(enum wlan_status_code internal_reason)
@@ -67,26 +67,31 @@ osif_cm_mac_to_qca_connect_fail_reason(enum wlan_status_code internal_reason)
 	return reason;
 }
 
-const char *
-osif_cm_qca_reason_to_str(enum qca_disconnect_reason_codes reason)
+const char *osif_cm_qca_reason_to_str(enum qca_disconnect_reason_codes reason)
 {
 	switch (reason) {
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_INTERNAL_ROAM_FAILURE);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_EXTERNAL_ROAM_FAILURE);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_GATEWAY_REACHABILITY_FAILURE);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_UNSUPPORTED_CHANNEL_CSA);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_OPER_CHANNEL_DISABLED_INDOOR);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_OPER_CHANNEL_USER_DISABLED);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_DEVICE_RECOVERY);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_KEY_TIMEOUT);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_OPER_CHANNEL_BAND_CHANGE);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_IFACE_DOWN);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_PEER_XRETRY_FAIL);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_PEER_INACTIVITY);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_SA_QUERY_TIMEOUT);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_BEACON_MISS_FAILURE);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_CHANNEL_SWITCH_FAILURE);
-	CASE_RETURN_STRING(QCA_DISCONNECT_REASON_USER_TRIGGERED);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_INTERNAL_ROAM_FAILURE);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_EXTERNAL_ROAM_FAILURE);
+		CASE_RETURN_STRING(
+			QCA_DISCONNECT_REASON_GATEWAY_REACHABILITY_FAILURE);
+		CASE_RETURN_STRING(
+			QCA_DISCONNECT_REASON_UNSUPPORTED_CHANNEL_CSA);
+		CASE_RETURN_STRING(
+			QCA_DISCONNECT_REASON_OPER_CHANNEL_DISABLED_INDOOR);
+		CASE_RETURN_STRING(
+			QCA_DISCONNECT_REASON_OPER_CHANNEL_USER_DISABLED);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_DEVICE_RECOVERY);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_KEY_TIMEOUT);
+		CASE_RETURN_STRING(
+			QCA_DISCONNECT_REASON_OPER_CHANNEL_BAND_CHANGE);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_IFACE_DOWN);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_PEER_XRETRY_FAIL);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_PEER_INACTIVITY);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_SA_QUERY_TIMEOUT);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_BEACON_MISS_FAILURE);
+		CASE_RETURN_STRING(
+			QCA_DISCONNECT_REASON_CHANNEL_SWITCH_FAILURE);
+		CASE_RETURN_STRING(QCA_DISCONNECT_REASON_USER_TRIGGERED);
 	case QCA_DISCONNECT_REASON_UNSPECIFIED:
 		return "";
 	default:
@@ -98,7 +103,7 @@ enum qca_disconnect_reason_codes
 osif_cm_mac_to_qca_reason(enum wlan_reason_code internal_reason)
 {
 	enum qca_disconnect_reason_codes reason =
-					QCA_DISCONNECT_REASON_UNSPECIFIED;
+		QCA_DISCONNECT_REASON_UNSPECIFIED;
 
 	if (internal_reason < REASON_PROP_START)
 		return reason;
@@ -112,19 +117,16 @@ osif_cm_mac_to_qca_reason(enum wlan_reason_code internal_reason)
 		reason = QCA_DISCONNECT_REASON_EXTERNAL_ROAM_FAILURE;
 		break;
 	case REASON_GATEWAY_REACHABILITY_FAILURE:
-		reason =
-		QCA_DISCONNECT_REASON_GATEWAY_REACHABILITY_FAILURE;
+		reason = QCA_DISCONNECT_REASON_GATEWAY_REACHABILITY_FAILURE;
 		break;
 	case REASON_UNSUPPORTED_CHANNEL_CSA:
 		reason = QCA_DISCONNECT_REASON_UNSUPPORTED_CHANNEL_CSA;
 		break;
 	case REASON_OPER_CHANNEL_DISABLED_INDOOR:
-		reason =
-		QCA_DISCONNECT_REASON_OPER_CHANNEL_DISABLED_INDOOR;
+		reason = QCA_DISCONNECT_REASON_OPER_CHANNEL_DISABLED_INDOOR;
 		break;
 	case REASON_OPER_CHANNEL_USER_DISABLED:
-		reason =
-		QCA_DISCONNECT_REASON_OPER_CHANNEL_USER_DISABLED;
+		reason = QCA_DISCONNECT_REASON_OPER_CHANNEL_USER_DISABLED;
 		break;
 	case REASON_DEVICE_RECOVERY:
 		reason = QCA_DISCONNECT_REASON_DEVICE_RECOVERY;
@@ -192,9 +194,8 @@ QDF_STATUS osif_cm_reset_id_and_src(struct wlan_objmgr_vdev *vdev)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_cm_connect_complete_cb(struct wlan_objmgr_vdev *vdev,
-			    struct wlan_cm_connect_resp *rsp)
+static QDF_STATUS osif_cm_connect_complete_cb(struct wlan_objmgr_vdev *vdev,
+					      struct wlan_cm_connect_resp *rsp)
 {
 	return osif_connect_handler(vdev, rsp);
 }
@@ -206,9 +207,8 @@ osif_cm_connect_complete_cb(struct wlan_objmgr_vdev *vdev,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_cm_failed_candidate_cb(struct wlan_objmgr_vdev *vdev,
-			    struct wlan_cm_connect_resp *rsp)
+static QDF_STATUS osif_cm_failed_candidate_cb(struct wlan_objmgr_vdev *vdev,
+					      struct wlan_cm_connect_resp *rsp)
 {
 	return osif_failed_candidate_handler(vdev, rsp);
 }
@@ -223,9 +223,9 @@ osif_cm_failed_candidate_cb(struct wlan_objmgr_vdev *vdev,
  * Context: Any context. Takes and releases cmd id spinlock
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_cm_update_id_and_src_cb(struct wlan_objmgr_vdev *vdev,
-			     enum wlan_cm_source source, wlan_cm_id cm_id)
+static QDF_STATUS osif_cm_update_id_and_src_cb(struct wlan_objmgr_vdev *vdev,
+					       enum wlan_cm_source source,
+					       wlan_cm_id cm_id)
 {
 	struct vdev_osif_priv *osif_priv = wlan_vdev_get_ospriv(vdev);
 
@@ -251,9 +251,8 @@ osif_cm_update_id_and_src_cb(struct wlan_objmgr_vdev *vdev,
  * Return: QDF_STATUS
  */
 
-static QDF_STATUS
-osif_cm_disconnect_complete_cb(struct wlan_objmgr_vdev *vdev,
-			       struct wlan_cm_discon_rsp *rsp)
+static QDF_STATUS osif_cm_disconnect_complete_cb(struct wlan_objmgr_vdev *vdev,
+						 struct wlan_cm_discon_rsp *rsp)
 {
 	return osif_disconnect_handler(vdev, rsp);
 }
@@ -274,12 +273,10 @@ void osif_cm_unlink_bss(struct wlan_objmgr_vdev *vdev,
 	qdf_mem_free(filter);
 }
 
-static QDF_STATUS
-osif_cm_disable_netif_queue(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS osif_cm_disable_netif_queue(struct wlan_objmgr_vdev *vdev)
 {
-	return osif_cm_netif_queue_ind(vdev,
-				       WLAN_STOP_ALL_NETIF_QUEUE_N_CARRIER,
-				       WLAN_CONTROL_PATH);
+	return osif_cm_netif_queue_ind(
+		vdev, WLAN_STOP_ALL_NETIF_QUEUE_N_CARRIER, WLAN_CONTROL_PATH);
 }
 
 /**
@@ -291,12 +288,10 @@ osif_cm_disable_netif_queue(struct wlan_objmgr_vdev *vdev)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_cm_roam_sync_cb(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS osif_cm_roam_sync_cb(struct wlan_objmgr_vdev *vdev)
 {
 	osif_cm_napi_serialize(true);
-	return osif_cm_netif_queue_ind(vdev,
-				       WLAN_STOP_ALL_NETIF_QUEUE,
+	return osif_cm_netif_queue_ind(vdev, WLAN_STOP_ALL_NETIF_QUEUE,
 				       WLAN_CONTROL_PATH);
 }
 
@@ -309,10 +304,9 @@ osif_cm_roam_sync_cb(struct wlan_objmgr_vdev *vdev)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_pmksa_candidate_notify_cb(struct wlan_objmgr_vdev *vdev,
-			       struct qdf_mac_addr *bssid,
-			       int index, bool preauth)
+static QDF_STATUS osif_pmksa_candidate_notify_cb(struct wlan_objmgr_vdev *vdev,
+						 struct qdf_mac_addr *bssid,
+						 int index, bool preauth)
 {
 	return osif_pmksa_candidate_notify(vdev, bssid, index, preauth);
 }
@@ -329,14 +323,11 @@ osif_pmksa_candidate_notify_cb(struct wlan_objmgr_vdev *vdev,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_cm_send_keys_cb(struct wlan_objmgr_vdev *vdev, uint8_t key_index,
-		     bool pairwise, enum wlan_crypto_cipher_type cipher_type)
+static QDF_STATUS osif_cm_send_keys_cb(struct wlan_objmgr_vdev *vdev,
+				       uint8_t key_index, bool pairwise,
+				       enum wlan_crypto_cipher_type cipher_type)
 {
-	return osif_cm_send_vdev_keys(vdev,
-				       key_index,
-				       pairwise,
-				       cipher_type);
+	return osif_cm_send_vdev_keys(vdev, key_index, pairwise, cipher_type);
 }
 #else
 static inline QDF_STATUS
@@ -353,8 +344,7 @@ osif_cm_disable_netif_queue(struct wlan_objmgr_vdev *vdev)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_link_reconfig_notify_cb(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS osif_link_reconfig_notify_cb(struct wlan_objmgr_vdev *vdev)
 {
 	struct vdev_osif_priv *osif_priv;
 	struct wlan_objmgr_vdev *assoc_vdev;
@@ -407,18 +397,15 @@ osif_link_reconfig_notify_cb(struct wlan_objmgr_vdev *vdev)
 			   wlan_vdev_get_id(vdev));
 		return status;
 	}
-	osif_debug("ap mld addr: "QDF_MAC_ADDR_FMT,
+	osif_debug("ap mld addr: " QDF_MAC_ADDR_FMT,
 		   QDF_MAC_ADDR_REF(ap_mld_mac.bytes));
 
 	data_len = nla_total_size(QDF_MAC_ADDR_SIZE) +
-		   nla_total_size(sizeof(uint16_t)) +
-		   NLMSG_HDRLEN;
+		   nla_total_size(sizeof(uint16_t)) + NLMSG_HDRLEN;
 
-	vendor_event =
-	wlan_cfg80211_vendor_event_alloc(pdev_osif_priv->wiphy,
-					 wdev, data_len,
-					 QCA_NL80211_VENDOR_SUBCMD_LINK_RECONFIG_INDEX,
-					 GFP_KERNEL);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		pdev_osif_priv->wiphy, wdev, data_len,
+		QCA_NL80211_VENDOR_SUBCMD_LINK_RECONFIG_INDEX, GFP_KERNEL);
 	if (!vendor_event) {
 		osif_debug("wlan_cfg80211_vendor_event_alloc failed");
 		return QDF_STATUS_E_NOMEM;
@@ -461,7 +448,7 @@ static QDF_STATUS osif_cm_disconnect_start_cb(struct wlan_objmgr_vdev *vdev,
 					      enum wlan_cm_source source)
 {
 	/* Don't stop netif queues for link switch disconnect */
-	if (source == CM_MLO_LINK_SWITCH_DISCONNECT||
+	if (source == CM_MLO_LINK_SWITCH_DISCONNECT ||
 	    source == CM_MLO_ROAM_INTERNAL_DISCONNECT)
 		return QDF_STATUS_SUCCESS;
 
@@ -479,12 +466,10 @@ static QDF_STATUS osif_cm_disconnect_start_cb(struct wlan_objmgr_vdev *vdev,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_cm_roam_start_cb(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS osif_cm_roam_start_cb(struct wlan_objmgr_vdev *vdev)
 {
 	osif_cm_perfd_set_cpufreq(true);
-	return osif_cm_netif_queue_ind(vdev,
-				       WLAN_STOP_ALL_NETIF_QUEUE,
+	return osif_cm_netif_queue_ind(vdev, WLAN_STOP_ALL_NETIF_QUEUE,
 				       WLAN_CONTROL_PATH);
 }
 
@@ -497,13 +482,11 @@ osif_cm_roam_start_cb(struct wlan_objmgr_vdev *vdev)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_cm_roam_abort_cb(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS osif_cm_roam_abort_cb(struct wlan_objmgr_vdev *vdev)
 {
 	osif_cm_perfd_set_cpufreq(false);
 	osif_cm_napi_serialize(false);
-	return osif_cm_netif_queue_ind(vdev,
-				       WLAN_WAKE_ALL_NETIF_QUEUE,
+	return osif_cm_netif_queue_ind(vdev, WLAN_WAKE_ALL_NETIF_QUEUE,
 				       WLAN_CONTROL_PATH);
 }
 
@@ -517,8 +500,7 @@ osif_cm_roam_abort_cb(struct wlan_objmgr_vdev *vdev)
  * Return: QDF_STATUS
  */
 
-static QDF_STATUS
-osif_cm_roam_cmpl_cb(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS osif_cm_roam_cmpl_cb(struct wlan_objmgr_vdev *vdev)
 {
 	osif_cm_perfd_set_cpufreq(false);
 	return osif_cm_napi_serialize(false);
@@ -579,12 +561,10 @@ osif_cm_get_scan_ie_info_cb(struct wlan_objmgr_vdev *vdev,
  * Return: void
  */
 
-static void
-osif_cm_roam_rt_stats_evt_cb(struct roam_stats_event *roam_stats,
-		      uint8_t idx)
+static void osif_cm_roam_rt_stats_evt_cb(struct roam_stats_event *roam_stats,
+					 uint8_t idx)
 {
-	if (osif_cm_legacy_ops &&
-	    osif_cm_legacy_ops->roam_rt_stats_event_cb)
+	if (osif_cm_legacy_ops && osif_cm_legacy_ops->roam_rt_stats_event_cb)
 		osif_cm_legacy_ops->roam_rt_stats_event_cb(roam_stats, idx);
 }
 
@@ -602,9 +582,8 @@ osif_cm_roam_rt_stats_evt_cb(struct roam_stats_event *roam_stats,
  * Return: QDF_STATUS
  */
 
-static QDF_STATUS
-osif_cm_ft_preauth_cmpl_cb(struct wlan_objmgr_vdev *vdev,
-			   struct wlan_preauth_rsp *rsp)
+static QDF_STATUS osif_cm_ft_preauth_cmpl_cb(struct wlan_objmgr_vdev *vdev,
+					     struct wlan_preauth_rsp *rsp)
 {
 	osif_cm_ft_preauth_complete_cb cb = NULL;
 	QDF_STATUS ret = QDF_STATUS_SUCCESS;
@@ -630,9 +609,8 @@ osif_cm_ft_preauth_cmpl_cb(struct wlan_objmgr_vdev *vdev,
  * Return: QDF_STATUS
  */
 
-static QDF_STATUS
-osif_cm_cckm_preauth_cmpl_cb(struct wlan_objmgr_vdev *vdev,
-			     struct wlan_preauth_rsp *rsp)
+static QDF_STATUS osif_cm_cckm_preauth_cmpl_cb(struct wlan_objmgr_vdev *vdev,
+					       struct wlan_preauth_rsp *rsp)
 {
 	osif_cm_cckm_preauth_complete_cb cb = NULL;
 	QDF_STATUS ret = QDF_STATUS_SUCCESS;
@@ -688,11 +666,11 @@ static struct mlme_cm_ops cm_ops = {
 #endif
 #ifdef WLAN_VENDOR_HANDOFF_CONTROL
 	.mlme_cm_get_vendor_handoff_params_cb =
-					osif_cm_vendor_handoff_params_cb,
+		osif_cm_vendor_handoff_params_cb,
 #endif
 #ifdef WLAN_BOOST_CPU_FREQ_IN_ROAM
 	.mlme_cm_perfd_reset_cpufreq_ctrl_cb =
-				osif_cm_perfd_reset_cpufreq_ctrl_cb,
+		osif_cm_perfd_reset_cpufreq_ctrl_cb,
 #endif
 };
 
@@ -837,10 +815,8 @@ QDF_STATUS osif_cm_save_gtk(struct wlan_objmgr_vdev *vdev,
 }
 
 QDF_STATUS
-osif_cm_send_vdev_keys(struct wlan_objmgr_vdev *vdev,
-		       uint8_t key_index,
-		       bool pairwise,
-		       enum wlan_crypto_cipher_type cipher_type)
+osif_cm_send_vdev_keys(struct wlan_objmgr_vdev *vdev, uint8_t key_index,
+		       bool pairwise, enum wlan_crypto_cipher_type cipher_type)
 {
 	osif_cm_send_vdev_keys_cb cb = NULL;
 

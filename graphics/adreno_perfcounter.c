@@ -86,13 +86,14 @@ inline void adreno_perfcounter_save(struct adreno_device *adreno_dev)
 			group->regs[counter].value =
 				group->regs[counter].value +
 				adreno_perfcounter_read(adreno_dev, groupid,
-								counter);
+							counter);
 		}
 	}
 }
 
 static int adreno_perfcounter_enable(struct adreno_device *adreno_dev,
-	unsigned int group, unsigned int counter, unsigned int countable);
+				     unsigned int group, unsigned int counter,
+				     unsigned int countable);
 
 /**
  * adreno_perfcounter_start: Enable performance counters
@@ -122,15 +123,15 @@ void adreno_perfcounter_start(struct adreno_device *adreno_dev)
 				continue;
 
 			/*
-			 * The GPU has to be idle before calling the perfcounter
-			 * enable function, but since this function is called
-			 * during start we already know the GPU is idle.
-			 * Since the countable/counter pairs have already been
-			 * validated, there is no way for _enable() to fail so
-			 * no need to check the return code.
-			 */
+       * The GPU has to be idle before calling the perfcounter
+       * enable function, but since this function is called
+       * during start we already know the GPU is idle.
+       * Since the countable/counter pairs have already been
+       * validated, there is no way for _enable() to fail so
+       * no need to check the return code.
+       */
 			adreno_perfcounter_enable(adreno_dev, i, j,
-					  group->regs[j].countable);
+						  group->regs[j].countable);
 		}
 	}
 }
@@ -145,7 +146,8 @@ void adreno_perfcounter_start(struct adreno_device *adreno_dev)
  * the 64 bit result for each pair
  */
 
-int adreno_perfcounter_read_group(struct adreno_device *adreno_dev,
+int adreno_perfcounter_read_group(
+	struct adreno_device *adreno_dev,
 	struct kgsl_perfcounter_read_group __user *reads, unsigned int count)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
@@ -164,12 +166,13 @@ int adreno_perfcounter_read_group(struct adreno_device *adreno_dev,
 		return -EINVAL;
 
 	list = kmalloc_array(count, sizeof(struct kgsl_perfcounter_read_group),
-			GFP_KERNEL);
+			     GFP_KERNEL);
 	if (!list)
 		return -ENOMEM;
 
 	if (copy_from_user(list, reads,
-			sizeof(struct kgsl_perfcounter_read_group) * count)) {
+			   sizeof(struct kgsl_perfcounter_read_group) *
+				   count)) {
 		ret = -EFAULT;
 		goto done;
 	}
@@ -184,7 +187,6 @@ int adreno_perfcounter_read_group(struct adreno_device *adreno_dev,
 
 	/* list iterator */
 	for (j = 0; j < count; j++) {
-
 		list[j].value = 0;
 
 		/* Verify that the group ID is within range */
@@ -212,7 +214,8 @@ int adreno_perfcounter_read_group(struct adreno_device *adreno_dev,
 	/* write the data */
 	if (ret == 0)
 		if (copy_to_user(reads, list,
-			sizeof(struct kgsl_perfcounter_read_group) * count))
+				 sizeof(struct kgsl_perfcounter_read_group) *
+					 count))
 			ret = -EFAULT;
 
 done:
@@ -229,7 +232,7 @@ done:
  */
 
 int adreno_perfcounter_get_groupid(struct adreno_device *adreno_dev,
-					const char *name)
+				   const char *name)
 {
 	const struct adreno_perfcounters *counters =
 		ADRENO_PERFCOUNTERS(adreno_dev);
@@ -248,7 +251,7 @@ int adreno_perfcounter_get_groupid(struct adreno_device *adreno_dev,
 
 		/* verify name and length */
 		if (strlen(name) == strlen(group->name) &&
-			strcmp(group->name, name) == 0)
+		    strcmp(group->name, name) == 0)
 			return i;
 	}
 
@@ -264,7 +267,7 @@ int adreno_perfcounter_get_groupid(struct adreno_device *adreno_dev,
  */
 
 const char *adreno_perfcounter_get_name(struct adreno_device *adreno_dev,
-		unsigned int groupid)
+					unsigned int groupid)
 {
 	const struct adreno_perfcounters *counters =
 		ADRENO_PERFCOUNTERS(adreno_dev);
@@ -287,8 +290,10 @@ const char *adreno_perfcounter_get_name(struct adreno_device *adreno_dev,
  */
 
 int adreno_perfcounter_query_group(struct adreno_device *adreno_dev,
-	unsigned int groupid, unsigned int __user *countables,
-	unsigned int count, unsigned int *max_counters)
+				   unsigned int groupid,
+				   unsigned int __user *countables,
+				   unsigned int count,
+				   unsigned int *max_counters)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	const struct adreno_perfcounters *counters =
@@ -309,9 +314,9 @@ int adreno_perfcounter_query_group(struct adreno_device *adreno_dev,
 	*max_counters = group->reg_count;
 
 	/*
-	 * if NULL countable or *count of zero, return max reg_count in
-	 * *max_counters and return success
-	 */
+   * if NULL countable or *count of zero, return max reg_count in
+   * *max_counters and return success
+   */
 	if (countables == NULL || count == 0) {
 		mutex_unlock(&device->mutex);
 		return 0;
@@ -339,8 +344,8 @@ int adreno_perfcounter_query_group(struct adreno_device *adreno_dev,
 }
 
 static inline void refcount_group(const struct adreno_perfcount_group *group,
-	unsigned int reg, unsigned int flags,
-	unsigned int *lo, unsigned int *hi)
+				  unsigned int reg, unsigned int flags,
+				  unsigned int *lo, unsigned int *hi)
 {
 	if (flags & PERFCOUNTER_FLAG_KERNEL)
 		group->regs[reg].kernelcount++;
@@ -369,8 +374,9 @@ static inline void refcount_group(const struct adreno_perfcount_group *group,
  */
 
 int adreno_perfcounter_get(struct adreno_device *adreno_dev,
-	unsigned int groupid, unsigned int countable, unsigned int *offset,
-	unsigned int *offset_hi, unsigned int flags)
+			   unsigned int groupid, unsigned int countable,
+			   unsigned int *offset, unsigned int *offset_hi,
+			   unsigned int flags)
 {
 	const struct adreno_perfcounters *counters =
 		ADRENO_PERFCOUNTERS(adreno_dev);
@@ -394,18 +400,18 @@ int adreno_perfcounter_get(struct adreno_device *adreno_dev,
 
 	if (group->flags & ADRENO_PERFCOUNTER_GROUP_FIXED) {
 		/*
-		 * In fixed groups the countable equals the fixed register the
-		 * user wants. First make sure it is in range
-		 */
+     * In fixed groups the countable equals the fixed register the
+     * user wants. First make sure it is in range
+     */
 
 		if (countable >= group->reg_count)
 			return -EINVAL;
 
 		/* If it is already reserved, just increase the refcounts */
 		if ((group->regs[countable].kernelcount != 0) ||
-			(group->regs[countable].usercount != 0)) {
-			refcount_group(group, countable, flags,
-				offset, offset_hi);
+		    (group->regs[countable].usercount != 0)) {
+			refcount_group(group, countable, flags, offset,
+				       offset_hi);
 			return 0;
 		}
 
@@ -414,18 +420,18 @@ int adreno_perfcounter_get(struct adreno_device *adreno_dev,
 		unsigned int i;
 
 		/*
-		 * Check if the countable is already associated with a counter.
-		 * Refcount and return the offset, otherwise, try and find an
-		 * empty counter and assign the countable to it.
-		 */
+     * Check if the countable is already associated with a counter.
+     * Refcount and return the offset, otherwise, try and find an
+     * empty counter and assign the countable to it.
+     */
 
 		for (i = 0; i < group->reg_count; i++) {
 			if (group->regs[i].countable == countable) {
-				refcount_group(group, i, flags,
-					offset, offset_hi);
+				refcount_group(group, i, flags, offset,
+					       offset_hi);
 				return 0;
 			} else if (group->regs[i].countable ==
-			KGSL_PERFCOUNTER_NOT_USED) {
+				   KGSL_PERFCOUNTER_NOT_USED) {
 				/* keep track of unused counter */
 				empty = i;
 			}
@@ -466,7 +472,6 @@ int adreno_perfcounter_get(struct adreno_device *adreno_dev,
 	return ret;
 }
 
-
 /**
  * adreno_perfcounter_put: Release a countable from counter resource
  * @adreno_dev: Adreno device to configure
@@ -478,7 +483,8 @@ int adreno_perfcounter_get(struct adreno_device *adreno_dev,
  * noone else is using the countable, free up the counter for others.
  */
 int adreno_perfcounter_put(struct adreno_device *adreno_dev,
-	unsigned int groupid, unsigned int countable, unsigned int flags)
+			   unsigned int groupid, unsigned int countable,
+			   unsigned int flags)
 {
 	const struct adreno_perfcounters *counters =
 		ADRENO_PERFCOUNTERS(adreno_dev);
@@ -493,15 +499,15 @@ int adreno_perfcounter_put(struct adreno_device *adreno_dev,
 	group = &(counters->groups[groupid]);
 
 	/*
-	 * Find if the counter/countable pair is used currently.
-	 * Start cycling through registers in the bank.
-	 */
+   * Find if the counter/countable pair is used currently.
+   * Start cycling through registers in the bank.
+   */
 	for (i = 0; i < group->reg_count; i++) {
 		/* check if countable assigned is what we are looking for */
 		if (group->regs[i].countable == countable) {
 			/* found pair, book keep count based on request type */
 			if (flags & PERFCOUNTER_FLAG_KERNEL &&
-					group->regs[i].kernelcount > 0)
+			    group->regs[i].kernelcount > 0)
 				group->regs[i].kernelcount--;
 			else if (group->regs[i].usercount > 0)
 				group->regs[i].usercount--;
@@ -510,19 +516,22 @@ int adreno_perfcounter_put(struct adreno_device *adreno_dev,
 
 			/* mark available if not used anymore */
 			if (group->regs[i].kernelcount == 0 &&
-					group->regs[i].usercount == 0) {
+			    group->regs[i].usercount == 0) {
 				/*
-				 * Perfcounter register is added to the power
-				 * up reglist only if group_restore flag is set.
-				 * Hence check the flag before removing the entry
-				 * from the reglist.
-				 */
-				if ((group->flags & ADRENO_PERFCOUNTER_GROUP_RESTORE) &&
-						gpudev->perfcounter_remove)
-					ret = gpudev->perfcounter_remove(adreno_dev,
-							&group->regs[i], groupid);
+         * Perfcounter register is added to the power
+         * up reglist only if group_restore flag is set.
+         * Hence check the flag before removing the entry
+         * from the reglist.
+         */
+				if ((group->flags &
+				     ADRENO_PERFCOUNTER_GROUP_RESTORE) &&
+				    gpudev->perfcounter_remove)
+					ret = gpudev->perfcounter_remove(
+						adreno_dev, &group->regs[i],
+						groupid);
 				if (!ret)
-					group->regs[i].countable = KGSL_PERFCOUNTER_NOT_USED;
+					group->regs[i].countable =
+						KGSL_PERFCOUNTER_NOT_USED;
 			}
 
 			return ret;
@@ -544,7 +553,8 @@ int adreno_perfcounter_put(struct adreno_device *adreno_dev,
  * Return 0 on success else error code
  */
 static int adreno_perfcounter_enable(struct adreno_device *adreno_dev,
-	unsigned int groupid, unsigned int counter, unsigned int countable)
+				     unsigned int groupid, unsigned int counter,
+				     unsigned int countable)
 {
 	const struct adreno_perfcounters *counters =
 		ADRENO_PERFCOUNTERS(adreno_dev);
@@ -574,7 +584,7 @@ static int adreno_perfcounter_enable(struct adreno_device *adreno_dev,
  * Returns the 64 bit counter value on success else 0.
  */
 uint64_t adreno_perfcounter_read(struct adreno_device *adreno_dev,
-	unsigned int groupid, unsigned int counter)
+				 unsigned int groupid, unsigned int counter)
 {
 	const struct adreno_perfcounters *counters =
 		ADRENO_PERFCOUNTERS(adreno_dev);

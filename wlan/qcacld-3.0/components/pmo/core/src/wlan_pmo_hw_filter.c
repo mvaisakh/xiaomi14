@@ -20,18 +20,18 @@
  * DOC: Implements arp offload feature API's
  */
 
-#include "qdf_lock.h"
 #include "wlan_pmo_hw_filter.h"
-#include "wlan_pmo_tgt_api.h"
+#include "qdf_lock.h"
 #include "wlan_pmo_main.h"
 #include "wlan_pmo_obj_mgmt_public_struct.h"
+#include "wlan_pmo_tgt_api.h"
 
 QDF_STATUS pmo_core_enable_hw_filter_in_fwr(struct wlan_objmgr_vdev *vdev)
 {
 	QDF_STATUS status;
 	struct pmo_psoc_priv_obj *psoc_priv;
 	enum pmo_hw_filter_mode mode_bitmap;
-	struct pmo_hw_filter_params req = {0};
+	struct pmo_hw_filter_params req = { 0 };
 
 	pmo_enter();
 
@@ -68,7 +68,7 @@ QDF_STATUS pmo_core_disable_hw_filter_in_fwr(struct wlan_objmgr_vdev *vdev)
 	QDF_STATUS status;
 	struct pmo_psoc_priv_obj *psoc_priv;
 	enum pmo_hw_filter_mode mode_bitmap;
-	struct pmo_hw_filter_params req = {0};
+	struct pmo_hw_filter_params req = { 0 };
 
 	pmo_enter();
 

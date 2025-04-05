@@ -20,46 +20,42 @@
  * DOC: define UCFG APIs exposed by the denylist mgr component
  */
 
-#include <wlan_dlm_ucfg_api.h>
-#include <wlan_dlm_core.h>
-#include <wlan_dlm_api.h>
 #include "wlan_pmo_obj_mgmt_api.h"
+#include <wlan_dlm_api.h>
+#include <wlan_dlm_core.h>
+#include <wlan_dlm_ucfg_api.h>
 
 QDF_STATUS ucfg_dlm_init(void)
 {
 	QDF_STATUS status;
 
 	status = wlan_objmgr_register_pdev_create_handler(
-			WLAN_UMAC_COMP_DENYLIST_MGR,
-			dlm_pdev_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_pdev_object_created_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dlm_err("pdev create register notification failed");
 		goto fail_create_pdev;
 	}
 
 	status = wlan_objmgr_register_pdev_destroy_handler(
-			WLAN_UMAC_COMP_DENYLIST_MGR,
-			dlm_pdev_object_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_pdev_object_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dlm_err("pdev destroy register notification failed");
 		goto fail_destroy_pdev;
 	}
 
 	status = wlan_objmgr_register_psoc_create_handler(
-			WLAN_UMAC_COMP_DENYLIST_MGR,
-			dlm_psoc_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_psoc_object_created_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dlm_err("psoc create register notification failed");
 		goto fail_create_psoc;
 	}
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_UMAC_COMP_DENYLIST_MGR,
-			dlm_psoc_object_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_psoc_object_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dlm_err("psoc destroy register notification failed");
 		goto fail_destroy_psoc;
@@ -68,15 +64,17 @@ QDF_STATUS ucfg_dlm_init(void)
 	return QDF_STATUS_SUCCESS;
 
 fail_destroy_psoc:
-	wlan_objmgr_unregister_psoc_create_handler(WLAN_UMAC_COMP_DENYLIST_MGR,
-				   dlm_psoc_object_created_notification, NULL);
+	wlan_objmgr_unregister_psoc_create_handler(
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_psoc_object_created_notification, NULL);
 fail_create_psoc:
 	wlan_objmgr_unregister_pdev_destroy_handler(
-				 WLAN_UMAC_COMP_DENYLIST_MGR,
-				 dlm_pdev_object_destroyed_notification, NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_pdev_object_destroyed_notification, NULL);
 fail_destroy_pdev:
-	wlan_objmgr_unregister_pdev_create_handler(WLAN_UMAC_COMP_DENYLIST_MGR,
-				   dlm_pdev_object_created_notification, NULL);
+	wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_pdev_object_created_notification, NULL);
 fail_create_pdev:
 	return status;
 }
@@ -86,24 +84,20 @@ QDF_STATUS ucfg_dlm_deinit(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_DENYLIST_MGR,
-			dlm_psoc_object_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_psoc_object_destroyed_notification, NULL);
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_DENYLIST_MGR,
-			dlm_psoc_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_psoc_object_created_notification, NULL);
 
 	status = wlan_objmgr_unregister_pdev_destroy_handler(
-			WLAN_UMAC_COMP_DENYLIST_MGR,
-			dlm_pdev_object_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_pdev_object_destroyed_notification, NULL);
 
 	status = wlan_objmgr_unregister_pdev_create_handler(
-			WLAN_UMAC_COMP_DENYLIST_MGR,
-			dlm_pdev_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_DENYLIST_MGR,
+		dlm_pdev_object_created_notification, NULL);
 
 	return status;
 }
@@ -143,23 +137,22 @@ QDF_STATUS ucfg_dlm_psoc_get_suspended(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-ucfg_dlm_suspend_handler(struct wlan_objmgr_psoc *psoc, void *arg)
+static QDF_STATUS ucfg_dlm_suspend_handler(struct wlan_objmgr_psoc *psoc,
+					   void *arg)
 {
 	ucfg_dlm_psoc_set_suspended(psoc, true);
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-ucfg_dlm_resume_handler(struct wlan_objmgr_psoc *psoc, void *arg)
+static QDF_STATUS ucfg_dlm_resume_handler(struct wlan_objmgr_psoc *psoc,
+					  void *arg)
 {
 	ucfg_dlm_psoc_set_suspended(psoc, false);
 	dlm_update_reject_ap_list_to_fw(psoc);
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline void
-ucfg_dlm_register_pmo_handler(void)
+static inline void ucfg_dlm_register_pmo_handler(void)
 {
 	pmo_register_suspend_handler(WLAN_UMAC_COMP_DENYLIST_MGR,
 				     ucfg_dlm_suspend_handler, NULL);
@@ -167,8 +160,7 @@ ucfg_dlm_register_pmo_handler(void)
 				    ucfg_dlm_resume_handler, NULL);
 }
 
-static inline void
-ucfg_dlm_unregister_pmo_handler(void)
+static inline void ucfg_dlm_unregister_pmo_handler(void)
 {
 	pmo_unregister_suspend_handler(WLAN_UMAC_COMP_DENYLIST_MGR,
 				       ucfg_dlm_suspend_handler);
@@ -200,26 +192,22 @@ ucfg_dlm_add_userspace_deny_list(struct wlan_objmgr_pdev *pdev,
 				 struct qdf_mac_addr *bssid_deny_list,
 				 uint8_t num_of_bssid)
 {
-	return dlm_add_userspace_deny_list(pdev, bssid_deny_list,
-					    num_of_bssid);
+	return dlm_add_userspace_deny_list(pdev, bssid_deny_list, num_of_bssid);
 }
 
-void
-ucfg_dlm_dump_deny_list_ap(struct wlan_objmgr_pdev *pdev)
+void ucfg_dlm_dump_deny_list_ap(struct wlan_objmgr_pdev *pdev)
 {
 	return wlan_dlm_dump_denylist_bssid(pdev);
 }
 
-void
-ucfg_dlm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
-				     struct qdf_mac_addr bssid,
-				     enum dlm_connection_state con_state)
+void ucfg_dlm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
+					  struct qdf_mac_addr bssid,
+					  enum dlm_connection_state con_state)
 {
 	wlan_dlm_update_bssid_connect_params(pdev, bssid, con_state);
 }
 
-void
-ucfg_dlm_wifi_off(struct wlan_objmgr_pdev *pdev)
+void ucfg_dlm_wifi_off(struct wlan_objmgr_pdev *pdev)
 {
 	struct dlm_pdev_priv_obj *dlm_ctx;
 	struct dlm_psoc_priv_obj *dlm_psoc_obj;

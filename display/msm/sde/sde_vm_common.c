@@ -4,23 +4,24 @@
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 
-#include <linux/list_sort.h>
-#include "linux/sde_rsc.h"
-#include "dsi/dsi_display.h"
-#include "dp/dp_display.h"
-#include "sde_kms.h"
 #include "sde_vm_common.h"
+#include "dp/dp_display.h"
+#include "dsi/dsi_display.h"
+#include "linux/sde_rsc.h"
 #include "sde_crtc.h"
+#include "sde_kms.h"
 #include "sde_vm_msgq.h"
+#include <linux/list_sort.h>
 
 struct gh_notify_vmid_desc *sde_vm_populate_vmid(gh_vmid_t vmid)
 {
 	struct gh_notify_vmid_desc *vmid_desc;
 
-	vmid_desc = kzalloc(offsetof(struct gh_notify_vmid_desc,
-					vmid_entries[1]), GFP_KERNEL);
+	vmid_desc =
+		kzalloc(offsetof(struct gh_notify_vmid_desc, vmid_entries[1]),
+			GFP_KERNEL);
 	if (!vmid_desc)
 		return ERR_PTR(ENOMEM);
 
@@ -54,7 +55,8 @@ struct gh_acl_desc *sde_vm_populate_acl(enum gh_vm_names vm_name)
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0))
-int __mem_sort_cmp(void *priv, const struct list_head *a, const struct list_head *b)
+int __mem_sort_cmp(void *priv, const struct list_head *a,
+		   const struct list_head *b)
 {
 	const struct msm_io_mem_entry *left =
 		container_of(a, struct msm_io_mem_entry, list);
@@ -76,8 +78,8 @@ int __mem_sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 #endif
 
 bool __merge_on_overlap(struct msm_io_mem_entry *res,
-		const struct msm_io_mem_entry *left,
-		const struct msm_io_mem_entry *right)
+			const struct msm_io_mem_entry *left,
+			const struct msm_io_mem_entry *right)
 {
 	phys_addr_t l_s = left->base;
 	phys_addr_t l_e = left->base + left->size;
@@ -120,8 +122,8 @@ void _sde_vm_sort_and_align(struct list_head *mem)
 	}
 
 	list_for_each_entry(entry, mem, list)
-		SDE_DEBUG("base: 0x%llx - size: 0x%llx\n",
-				entry->base, entry->size);
+		SDE_DEBUG("base: 0x%llx - size: 0x%llx\n", entry->base,
+			  entry->size);
 }
 
 struct gh_sgl_desc *sde_vm_populate_sgl(struct msm_io_res *io_res)
@@ -136,7 +138,8 @@ struct gh_sgl_desc *sde_vm_populate_sgl(struct msm_io_res *io_res)
 		num_mem_entry++;
 
 	sgl_desc = kzalloc(offsetof(struct gh_sgl_desc,
-			   sgl_entries[num_mem_entry]), GFP_KERNEL);
+				    sgl_entries[num_mem_entry]),
+			   GFP_KERNEL);
 	if (!sgl_desc)
 		return ERR_PTR(ENOMEM);
 
@@ -165,9 +168,8 @@ struct sde_vm_irq_desc *sde_vm_populate_irq(struct msm_io_res *io_res)
 	if (!irq_desc)
 		return ERR_PTR(ENOMEM);
 
-	irq_desc->irq_entries = kcalloc(num_irq,
-					sizeof(struct sde_vm_irq_entry),
-					GFP_KERNEL);
+	irq_desc->irq_entries =
+		kcalloc(num_irq, sizeof(struct sde_vm_irq_entry), GFP_KERNEL);
 	if (!irq_desc->irq_entries) {
 		sde_vm_free_irq(irq_desc);
 		return ERR_PTR(ENOMEM);
@@ -213,7 +215,7 @@ int sde_vm_get_resources(struct sde_kms *sde_kms, struct msm_io_res *io_res)
 		rc = entry->ops.vm_get_io_resources(io_res, entry->data);
 		if (rc) {
 			SDE_ERROR("get_io_resources failed for device: %d\n",
-					 entry->dev->id);
+				  entry->dev->id);
 			goto fail_get_res;
 		}
 	}
@@ -246,7 +248,7 @@ int sde_vm_post_acquire(struct sde_kms *kms)
 		rc = entry->ops.vm_post_hw_acquire(entry->data);
 		if (rc) {
 			SDE_ERROR("post_acquire failed for device: %d\n",
-					   entry->dev->id);
+				  entry->dev->id);
 			goto post_acquire_rollback;
 		}
 	}
@@ -255,7 +257,7 @@ int sde_vm_post_acquire(struct sde_kms *kms)
 
 post_acquire_rollback:
 	list_for_each_entry_continue_reverse(entry, &priv->vm_client_list,
-			list) {
+					     list) {
 		if (!entry->ops.vm_pre_hw_release)
 			continue;
 
@@ -284,7 +286,7 @@ int sde_vm_pre_release(struct sde_kms *kms)
 		rc = entry->ops.vm_pre_hw_release(entry->data);
 		if (rc) {
 			SDE_ERROR("pre_release failed for device: %d\n",
-					   entry->dev->id);
+				  entry->dev->id);
 			goto pre_release_rollback;
 		}
 	}
@@ -293,7 +295,7 @@ int sde_vm_pre_release(struct sde_kms *kms)
 
 pre_release_rollback:
 	list_for_each_entry_continue_reverse(entry, &priv->vm_client_list,
-			list) {
+					     list) {
 		if (!entry->ops.vm_post_hw_acquire)
 			continue;
 
@@ -310,8 +312,8 @@ pre_release_rollback:
 }
 
 int sde_vm_request_valid(struct sde_kms *sde_kms,
-			  enum sde_crtc_vm_req old_state,
-			  enum sde_crtc_vm_req new_state)
+			 enum sde_crtc_vm_req old_state,
+			 enum sde_crtc_vm_req new_state)
 {
 	int rc = 0;
 	bool vm_owns_hw = sde_vm_owns_hw(sde_kms);
@@ -323,7 +325,8 @@ int sde_vm_request_valid(struct sde_kms *sde_kms,
 			rc = -EINVAL;
 		break;
 	case VM_REQ_ACQUIRE:
-		if ((old_state != VM_REQ_RELEASE) || (vm_owns_hw && !sde_in_trusted_vm(sde_kms)))
+		if ((old_state != VM_REQ_RELEASE) ||
+		    (vm_owns_hw && !sde_in_trusted_vm(sde_kms)))
 			rc = -EINVAL;
 		break;
 	default:
@@ -331,8 +334,8 @@ int sde_vm_request_valid(struct sde_kms *sde_kms,
 		rc = -EINVAL;
 	};
 
-	SDE_DEBUG("old req: %d new req: %d owns_hw: %d, rc: %d\n",
-			old_state, new_state, vm_owns_hw, rc);
+	SDE_DEBUG("old req: %d new req: %d owns_hw: %d, rc: %d\n", old_state,
+		  new_state, vm_owns_hw, rc);
 	SDE_EVT32(old_state, new_state, vm_owns_hw, rc);
 
 	return rc;

@@ -1,5 +1,6 @@
 /* Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -12,24 +13,24 @@
  *
  */
 
-#include <linux/platform_device.h>
-#include <linux/of_platform.h>
-#include <linux/ipc_logging.h>
-#include <linux/refcount.h>
-#include <linux/device.h>
-#include <linux/module.h>
-#include <linux/skbuff.h>
-#include <linux/cdev.h>
-#include <linux/slab.h>
-#include <linux/poll.h>
-#include <linux/idr.h>
-#include <linux/of.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <linux/termios.h>
-#include <ipc/gpr-lite.h>
-#include <dsp/spf-core.h>
 #include <dsp/msm_audio_ion.h>
+#include <dsp/spf-core.h>
+#include <ipc/gpr-lite.h>
+#include <linux/cdev.h>
+#include <linux/device.h>
+#include <linux/fs.h>
+#include <linux/idr.h>
+#include <linux/ipc_logging.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
+#include <linux/platform_device.h>
+#include <linux/poll.h>
+#include <linux/refcount.h>
+#include <linux/skbuff.h>
+#include <linux/slab.h>
+#include <linux/termios.h>
+#include <linux/uaccess.h>
 
 /* Define IPC Logging Macros */
 #define AUDIO_PKT_IPC_LOG_PAGE_CNT 2
@@ -38,33 +39,32 @@ static void *audio_pkt_ilctxt;
 static int audio_pkt_debug_mask;
 module_param_named(debug_mask, audio_pkt_debug_mask, int, 0664);
 
-#define APM_CMD_SHARED_MEM_MAP_REGIONS		0x0100100C
-#define APM_MEMORY_MAP_BIT_MASK_IS_OFFSET_MODE	0x00000004UL
+#define APM_CMD_SHARED_MEM_MAP_REGIONS 0x0100100C
+#define APM_MEMORY_MAP_BIT_MASK_IS_OFFSET_MODE 0x00000004UL
 enum {
 	AUDIO_PKT_INFO = 1U << 0,
 };
 
-#define AUDIO_PKT_INFO(x, ...)						\
-do {									\
-	if (audio_pkt_debug_mask & AUDIO_PKT_INFO) {			\
-		ipc_log_string(audio_pkt_ilctxt,			\
-			"[%s]: "x, __func__, ##__VA_ARGS__);		\
-	}								\
-} while (0)
+#define AUDIO_PKT_INFO(x, ...)                                                 \
+	do {                                                                   \
+		if (audio_pkt_debug_mask & AUDIO_PKT_INFO) {                   \
+			ipc_log_string(audio_pkt_ilctxt, "[%s]: " x, __func__, \
+				       ##__VA_ARGS__);                         \
+		}                                                              \
+	} while (0)
 
-#define AUDIO_PKT_ERR(x, ...)						      \
-do {									      \
-	pr_err_ratelimited("[%s]: "x, __func__, ##__VA_ARGS__);		      \
-	ipc_log_string(audio_pkt_ilctxt, "[%s]: "x, __func__, ##__VA_ARGS__); \
-} while (0)
-
+#define AUDIO_PKT_ERR(x, ...)                                            \
+	do {                                                             \
+		pr_err_ratelimited("[%s]: " x, __func__, ##__VA_ARGS__); \
+		ipc_log_string(audio_pkt_ilctxt, "[%s]: " x, __func__,   \
+			       ##__VA_ARGS__);                           \
+	} while (0)
 
 #define MODULE_NAME "audio-pkt"
 #define MINOR_NUMBER_COUNT 1
 #define AUDPKT_DRIVER_NAME "aud_pasthru_adsp"
 #define CHANNEL_NAME "adsp_apps"
 #define MAX_PACKET_SIZE 4096
-
 
 enum audio_pkt_state {
 	AUDIO_PKT_INIT,
@@ -113,12 +113,10 @@ struct audio_pkt_priv {
 
 static struct audio_pkt_priv *ap_priv;
 
-
 struct audio_pkt_apm_cmd_shared_mem_map_regions_t {
 	uint16_t mem_pool_id;
 	uint16_t num_regions;
 	uint32_t property_flag;
-
 };
 
 struct audio_pkt_apm_shared_map_region_payload_t {
@@ -156,7 +154,7 @@ struct audio_pkt_clnt_ch {
 int audio_pkt_open(struct inode *inode, struct file *file)
 {
 	struct audio_pkt_device *audpkt_dev = ap_priv->ap_dev;
-	AUDIO_PKT_INFO("%s: for %s \n", __func__,audpkt_dev->ch_name);
+	AUDIO_PKT_INFO("%s: for %s \n", __func__, audpkt_dev->ch_name);
 	file->private_data = ap_priv;
 	return 0;
 }
@@ -183,7 +181,7 @@ int audio_pkt_release(struct inode *inode, struct file *file)
 		return -EINVAL;
 	}
 
-	AUDIO_PKT_INFO("%s: for %s \n", __func__,audpkt_dev->ch_name);
+	AUDIO_PKT_INFO("%s: for %s \n", __func__, audpkt_dev->ch_name);
 	spin_lock_irqsave(&audpkt_dev->queue_lock, flags);
 
 	/* Discard all SKBs */
@@ -201,7 +199,6 @@ int audio_pkt_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-
 static int audio_pkt_internal_release(struct platform_device *adev)
 {
 	struct audio_pkt_priv *ap_priv = platform_get_drvdata(adev);
@@ -214,7 +211,7 @@ static int audio_pkt_internal_release(struct platform_device *adev)
 		return -EINVAL;
 	}
 
-	AUDIO_PKT_INFO("%s: for %s\n", __func__,audpkt_dev->ch_name);
+	AUDIO_PKT_INFO("%s: for %s\n", __func__, audpkt_dev->ch_name);
 	spin_lock_irqsave(&audpkt_dev->queue_lock, flags);
 	/* Discard all SKBs */
 	while (!skb_queue_empty(&audpkt_dev->queue)) {
@@ -239,8 +236,8 @@ static int audio_pkt_internal_release(struct platform_device *adev)
  * userspace client do a read() system call. All input arguments are
  * validated by the virtual file system before calling this function.
  */
-ssize_t audio_pkt_read(struct file *file, char __user *buf,
-		       size_t count, loff_t *ppos)
+ssize_t audio_pkt_read(struct file *file, char __user *buf, size_t count,
+		       loff_t *ppos)
 {
 	struct audio_pkt_priv *ap_priv = file->private_data;
 	struct audio_pkt_device *audpkt_dev = ap_priv->ap_dev;
@@ -256,8 +253,7 @@ ssize_t audio_pkt_read(struct file *file, char __user *buf,
 	}
 
 	mutex_lock(&ap_priv->lock);
-	if (AUDIO_PKT_PROBED != ap_priv->status)
-	{
+	if (AUDIO_PKT_PROBED != ap_priv->status) {
 		mutex_unlock(&ap_priv->lock);
 		AUDIO_PKT_ERR("dev is in reset\n");
 		return -ENETRESET;
@@ -273,8 +269,9 @@ ssize_t audio_pkt_read(struct file *file, char __user *buf,
 			return -EAGAIN;
 
 		/* Wait until we get data or the endpoint goes away */
-		if (wait_event_interruptible(audpkt_dev->readq,
-					!skb_queue_empty(&audpkt_dev->queue)))
+		if (wait_event_interruptible(
+			    audpkt_dev->readq,
+			    !skb_queue_empty(&audpkt_dev->queue)))
 			return -ERESTARTSYS;
 
 		spin_lock_irqsave(&audpkt_dev->queue_lock, flags);
@@ -288,7 +285,7 @@ ssize_t audio_pkt_read(struct file *file, char __user *buf,
 	use = min_t(size_t, count, skb->len);
 	if (copy_to_user(buf, skb->data, use))
 		use = -EFAULT;
-	temp = (uint32_t *) skb->data;
+	temp = (uint32_t *)skb->data;
 	kfree_skb(skb);
 
 	return use;
@@ -301,23 +298,25 @@ ssize_t audio_pkt_read(struct file *file, char __user *buf,
 int audpkt_chk_and_update_physical_addr(struct audio_gpr_pkt *gpr_pkt)
 {
 	int ret = 0;
-        size_t pa_len = 0;
+	size_t pa_len = 0;
 	dma_addr_t paddr;
 
 	if (gpr_pkt->audpkt_mem_map.mmap_header.property_flag &
-				APM_MEMORY_MAP_BIT_MASK_IS_OFFSET_MODE) {
+	    APM_MEMORY_MAP_BIT_MASK_IS_OFFSET_MODE) {
 		ret = msm_audio_get_phy_addr(
-			(int) gpr_pkt->audpkt_mem_map.mmap_payload.shm_addr_lsw,
+			(int)gpr_pkt->audpkt_mem_map.mmap_payload.shm_addr_lsw,
 			&paddr, &pa_len);
 		if (ret < 0) {
 			AUDIO_PKT_ERR("%s Get phy. address failed, ret %d\n",
-					__func__, ret);
+				      __func__, ret);
 			return ret;
 		}
 		AUDIO_PKT_INFO("%s physical address %pK", __func__,
-				(void *) paddr);
-		gpr_pkt->audpkt_mem_map.mmap_payload.shm_addr_lsw = (uint32_t) paddr;
-		gpr_pkt->audpkt_mem_map.mmap_payload.shm_addr_msw = (uint64_t) paddr >> 32;
+			       (void *)paddr);
+		gpr_pkt->audpkt_mem_map.mmap_payload.shm_addr_lsw =
+			(uint32_t)paddr;
+		gpr_pkt->audpkt_mem_map.mmap_payload.shm_addr_msw =
+			(uint64_t)paddr >> 32;
 	}
 	return ret;
 }
@@ -333,8 +332,8 @@ int audpkt_chk_and_update_physical_addr(struct audio_gpr_pkt *gpr_pkt)
  * userspace client do a write() system call. All input arguments are
  * validated by the virtual file system before calling this function.
  */
-ssize_t audio_pkt_write(struct file *file, const char __user *buf,
-			size_t count, loff_t *ppos)
+ssize_t audio_pkt_write(struct file *file, const char __user *buf, size_t count,
+			loff_t *ppos)
 {
 	struct audio_pkt_priv *ap_priv = NULL;
 	struct audio_pkt_device *audpkt_dev = NULL;
@@ -349,14 +348,13 @@ ssize_t audio_pkt_write(struct file *file, const char __user *buf,
 	ap_priv = file->private_data;
 	audpkt_dev = ap_priv->ap_dev;
 
-	if (!audpkt_dev)  {
+	if (!audpkt_dev) {
 		AUDIO_PKT_ERR("invalid device handle\n");
 		return -EINVAL;
 	}
 
 	mutex_lock(&ap_priv->lock);
-	if (AUDIO_PKT_PROBED != ap_priv->status)
-	{
+	if (AUDIO_PKT_PROBED != ap_priv->status) {
 		mutex_unlock(&ap_priv->lock);
 		AUDIO_PKT_ERR("dev is in reset\n");
 		return -ENETRESET;
@@ -364,18 +362,18 @@ ssize_t audio_pkt_write(struct file *file, const char __user *buf,
 	mutex_unlock(&ap_priv->lock);
 	if (count < sizeof(struct gpr_hdr)) {
 		AUDIO_PKT_ERR("Invalid count %zu\n", count);
-		return  -EINVAL;
+		return -EINVAL;
 	}
 
 	kbuf = memdup_user(buf, count);
 	if (IS_ERR(kbuf))
 		return PTR_ERR(kbuf);
 
-	audpkt_hdr = (struct gpr_hdr *) kbuf;
+	audpkt_hdr = (struct gpr_hdr *)kbuf;
 
 	/* validate packet size */
-	if ((count > MAX_PACKET_SIZE) || (count < GPR_PKT_GET_PACKET_BYTE_SIZE(audpkt_hdr->header)))
-	{
+	if ((count > MAX_PACKET_SIZE) ||
+	    (count < GPR_PKT_GET_PACKET_BYTE_SIZE(audpkt_hdr->header))) {
 		ret = -EINVAL;
 		goto free_kbuf;
 	}
@@ -386,9 +384,11 @@ ssize_t audio_pkt_write(struct file *file, const char __user *buf,
 			ret = -EINVAL;
 			goto free_kbuf;
 		}
-		ret = audpkt_chk_and_update_physical_addr((struct audio_gpr_pkt *) audpkt_hdr);
+		ret = audpkt_chk_and_update_physical_addr(
+			(struct audio_gpr_pkt *)audpkt_hdr);
 		if (ret < 0) {
-			AUDIO_PKT_ERR("Update Physical Address Failed -%d\n", ret);
+			AUDIO_PKT_ERR("Update Physical Address Failed -%d\n",
+				      ret);
 			goto free_kbuf;
 		}
 	}
@@ -397,13 +397,13 @@ ssize_t audio_pkt_write(struct file *file, const char __user *buf,
 		ret = -ERESTARTSYS;
 		goto free_kbuf;
 	}
-	if (count < sizeof(struct gpr_pkt )) {
+	if (count < sizeof(struct gpr_pkt)) {
 		AUDIO_PKT_ERR("Invalid count %zu\n", count);
 		ret = -EINVAL;
 		mutex_unlock(&audpkt_dev->lock);
 		goto free_kbuf;
 	}
-	ret = gpr_send_pkt(ap_priv->adev,(struct gpr_pkt *) kbuf);
+	ret = gpr_send_pkt(ap_priv->adev, (struct gpr_pkt *)kbuf);
 	if (ret < 0) {
 		AUDIO_PKT_ERR("APR Send Packet Failed ret -%d\n", ret);
 		if (ret == -ECONNRESET)
@@ -465,10 +465,9 @@ static const struct file_operations audio_pkt_fops = {
  *
  * return:	0 for success, Standard Linux errors
  */
-static int audio_pkt_srvc_callback(struct gpr_device *adev,
-				void *data)
+static int audio_pkt_srvc_callback(struct gpr_device *adev, void *data)
 {
-	struct audio_pkt_priv *ap_priv =  dev_get_drvdata(&adev->dev);
+	struct audio_pkt_priv *ap_priv = dev_get_drvdata(&adev->dev);
 	struct audio_pkt_device *audpkt_dev = ap_priv->ap_dev;
 
 	unsigned long flags;
@@ -478,8 +477,8 @@ static int audio_pkt_srvc_callback(struct gpr_device *adev,
 	hdr_size = GPR_PKT_GET_HEADER_BYTE_SIZE(hdr->header);
 	pkt_size = GPR_PKT_GET_PACKET_BYTE_SIZE(hdr->header);
 
-    AUDIO_PKT_INFO("%s: header %d packet %d \n",
-		__func__,hdr_size, pkt_size);
+	AUDIO_PKT_INFO("%s: header %d packet %d \n", __func__, hdr_size,
+		       pkt_size);
 
 	skb = alloc_skb(pkt_size, GFP_ATOMIC);
 	if (!skb)
@@ -508,8 +507,7 @@ static int audio_pkt_srvc_callback(struct gpr_device *adev,
  */
 static int audio_pkt_probe(struct gpr_device *adev)
 {
-	if(ap_priv)
-	{
+	if (ap_priv) {
 		mutex_lock(&ap_priv->lock);
 		ap_priv->adev = adev;
 		ap_priv->status = AUDIO_PKT_PROBED;
@@ -517,18 +515,15 @@ static int audio_pkt_probe(struct gpr_device *adev)
 
 		dev_set_drvdata(&adev->dev, ap_priv);
 
-		dev_dbg(&adev->dev, "%s: Driver[%s] Probed\n",
-		 __func__, adev->name);
-	}
-	else
-	{
-		dev_err(&adev->dev, "%s: Driver[%s] Probe Failed\n",
-		 __func__, adev->name);
+		dev_dbg(&adev->dev, "%s: Driver[%s] Probed\n", __func__,
+			adev->name);
+	} else {
+		dev_err(&adev->dev, "%s: Driver[%s] Probe Failed\n", __func__,
+			adev->name);
 		return -EINVAL;
 	}
 
 	return 0;
-
 }
 
 /**
@@ -543,20 +538,17 @@ static int audio_pkt_probe(struct gpr_device *adev)
  */
 static int audio_pkt_remove(struct gpr_device *adev)
 {
-	if(ap_priv)
-	{
+	if (ap_priv) {
 		mutex_lock(&ap_priv->lock);
 		ap_priv->adev = NULL;
 		ap_priv->status = AUDIO_PKT_REMOVED;
 		mutex_unlock(&ap_priv->lock);
-		dev_dbg(&adev->dev, "%s: Driver[%s] Removing\n",
-		 __func__, adev->name);
+		dev_dbg(&adev->dev, "%s: Driver[%s] Removing\n", __func__,
+			adev->name);
 		dev_set_drvdata(&adev->dev, NULL);
-	}
-	else
-	{
-		dev_err(&adev->dev, "%s: Driver[%s] Remove Failed\n",
-		 __func__, adev->name);
+	} else {
+		dev_err(&adev->dev, "%s: Driver[%s] Remove Failed\n", __func__,
+			adev->name);
 		return -EINVAL;
 	}
 	return 0;
@@ -569,28 +561,30 @@ static const struct of_device_id audio_pkt_match_table[] = {
 MODULE_DEVICE_TABLE(of, audio_pkt_match_table);
 
 static struct gpr_driver audio_pkt_driver = {
-	.probe = audio_pkt_probe,
-	.remove = audio_pkt_remove,
-	.callback = audio_pkt_srvc_callback,
-	.driver = {
-		.name = MODULE_NAME,
-		.of_match_table = of_match_ptr(audio_pkt_match_table),
-	 },
+    .probe = audio_pkt_probe,
+    .remove = audio_pkt_remove,
+    .callback = audio_pkt_srvc_callback,
+    .driver =
+        {
+            .name = MODULE_NAME,
+            .of_match_table = of_match_ptr(audio_pkt_match_table),
+        },
 };
 
-static int audio_pkt_plaform_driver_register_gpr(struct platform_device *pdev,
-				struct audio_pkt_device *audpkt_dev)
+static int
+audio_pkt_plaform_driver_register_gpr(struct platform_device *pdev,
+				      struct audio_pkt_device *audpkt_dev)
 {
 	int ret = 0;
 
-	ap_priv = devm_kzalloc(&pdev->dev,
-			     sizeof(*ap_priv), GFP_KERNEL);
+	ap_priv = devm_kzalloc(&pdev->dev, sizeof(*ap_priv), GFP_KERNEL);
 	if (!ap_priv)
 		return -ENOMEM;
 
 	ret = gpr_driver_register(&audio_pkt_driver);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: registering to gpr driver failed, err = %d\n",
+		dev_err(&pdev->dev,
+			"%s: registering to gpr driver failed, err = %d\n",
 			__func__, ret);
 		goto err;
 	}
@@ -623,14 +617,14 @@ static int audio_pkt_platform_driver_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	ret = alloc_chrdev_region(&audpkt_dev->audio_pkt_major, 0,
-				  MINOR_NUMBER_COUNT,AUDPKT_DRIVER_NAME);
+				  MINOR_NUMBER_COUNT, AUDPKT_DRIVER_NAME);
 	if (ret < 0) {
 		AUDIO_PKT_ERR("alloc_chrdev_region failed ret:%d\n", ret);
 		goto err_chrdev;
 	}
 
-	audpkt_dev->audio_pkt_class = class_create(THIS_MODULE,
-						   AUDPKT_DRIVER_NAME);
+	audpkt_dev->audio_pkt_class =
+		class_create(THIS_MODULE, AUDPKT_DRIVER_NAME);
 	if (IS_ERR(audpkt_dev->audio_pkt_class)) {
 		ret = PTR_ERR(audpkt_dev->audio_pkt_class);
 		AUDIO_PKT_ERR("class_create failed ret:%ld\n",
@@ -670,8 +664,9 @@ static int audio_pkt_platform_driver_probe(struct platform_device *pdev)
 
 	ret = audio_pkt_plaform_driver_register_gpr(pdev, audpkt_dev);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: Failed to register with gpr, err = %d\n",
-			__func__, ret);
+		dev_err(&pdev->dev,
+			"%s: Failed to register with gpr, err = %d\n", __func__,
+			ret);
 		goto free_dev;
 	}
 
@@ -679,10 +674,11 @@ static int audio_pkt_platform_driver_probe(struct platform_device *pdev)
 	AUDIO_PKT_INFO("Audio Packet Port Driver Initialized\n");
 
 	goto done;
-	//return of_platform_populate(dev->of_node, NULL, NULL, dev);
+	// return of_platform_populate(dev->of_node, NULL, NULL, dev);
 
 free_dev:
-	device_destroy(audpkt_dev->audio_pkt_class,audpkt_dev->audio_pkt_major);
+	device_destroy(audpkt_dev->audio_pkt_class,
+		       audpkt_dev->audio_pkt_major);
 err_device:
 	class_destroy(audpkt_dev->audio_pkt_class);
 err_class:
@@ -691,7 +687,6 @@ err_class:
 err_chrdev:
 done:
 	return ret;
-
 }
 
 /**
@@ -715,35 +710,34 @@ static int audio_pkt_platform_driver_remove(struct platform_device *adev)
 
 	if (audpkt_dev) {
 		cdev_del(&audpkt_dev->cdev);
-		device_destroy(audpkt_dev->audio_pkt_class,audpkt_dev->audio_pkt_major);
+		device_destroy(audpkt_dev->audio_pkt_class,
+			       audpkt_dev->audio_pkt_major);
 		class_destroy(audpkt_dev->audio_pkt_class);
 		unregister_chrdev_region(MAJOR(audpkt_dev->audio_pkt_major),
-				 MINOR_NUMBER_COUNT);
+					 MINOR_NUMBER_COUNT);
 	}
 
-	//of_platform_depopulate(&adev->dev);
+	// of_platform_depopulate(&adev->dev);
 	AUDIO_PKT_INFO("Audio Packet Port Driver Removed\n");
 
 	return 0;
-
 }
 
 static const struct of_device_id audio_pkt_platform_match_table[] = {
-	{ .compatible = "qcom,audio-pkt-core-platform"},
+	{ .compatible = "qcom,audio-pkt-core-platform" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, audio_pkt_platform_match_table);
 
-
 static struct platform_driver audio_pkt_core_platform_driver = {
-	.probe          = audio_pkt_platform_driver_probe,
-	.remove         = audio_pkt_platform_driver_remove,
-	.driver         = {
-		.name = MODULE_NAME,
-		.of_match_table = of_match_ptr(audio_pkt_platform_match_table),
-	},
+    .probe = audio_pkt_platform_driver_probe,
+    .remove = audio_pkt_platform_driver_remove,
+    .driver =
+        {
+            .name = MODULE_NAME,
+            .of_match_table = of_match_ptr(audio_pkt_platform_match_table),
+        },
 };
-
 
 static int __init audio_pkt_init(void)
 {

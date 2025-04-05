@@ -26,14 +26,14 @@
 /* Include Files */
 
 #include "qdf_str.h"
+#include "wlan_hdd_object_manager.h"
 #include <wlan_hdd_includes.h>
 #include <wlan_hdd_wowl.h>
 #include <wlan_pmo_wow_public_struct.h>
-#include "wlan_hdd_object_manager.h"
 
 /* Preprocessor Definitions and Constants */
-#define WOWL_INTER_PTRN_TOKENIZER   ';'
-#define WOWL_INTRA_PTRN_TOKENIZER   ':'
+#define WOWL_INTER_PTRN_TOKENIZER ';'
+#define WOWL_INTRA_PTRN_TOKENIZER ':'
 
 /* Type Declarations */
 
@@ -74,8 +74,8 @@ static void dump_hdd_wowl_ptrn(struct pmo_wow_add_pattern *ptrn)
 			   ptrn->pattern_mask, ptrn->pattern_mask_size);
 }
 
-static QDF_STATUS
-hdd_get_num_wow_filters(struct hdd_context *hdd_ctx, uint8_t *num_filters)
+static QDF_STATUS hdd_get_num_wow_filters(struct hdd_context *hdd_ctx,
+					  uint8_t *num_filters)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc = hdd_ctx->psoc;
@@ -85,7 +85,7 @@ hdd_get_num_wow_filters(struct hdd_context *hdd_ctx, uint8_t *num_filters)
 		return status;
 
 	if (cds_get_conparam() == QDF_GLOBAL_FTM_MODE)
-		*num_filters =  0;
+		*num_filters = 0;
 	else
 		*num_filters = ucfg_pmo_get_num_wow_filters(hdd_ctx->psoc);
 
@@ -118,9 +118,9 @@ bool hdd_add_wowl_ptrn(struct hdd_adapter *adapter, const char *ptrn)
 		return false;
 
 	/* There has to have at least 1 byte for each field (pattern
-	 * size, mask size, pattern, mask) e.g. PP:QQ:RR:SS ==> 11
-	 * chars
-	 */
+   * size, mask size, pattern, mask) e.g. PP:QQ:RR:SS ==> 11
+   * chars
+   */
 	len = find_ptrn_len(ptrn);
 	while (len >= 11) {
 		empty_slot = -1;
@@ -165,9 +165,9 @@ bool hdd_add_wowl_ptrn(struct hdd_adapter *adapter, const char *ptrn)
 		wow_pattern.pattern_mask_size =
 			(hex_to_bin(ptrn[3]) * 0x10) + hex_to_bin(ptrn[4]);
 
-		if (wow_pattern.pattern_size > PMO_WOWL_BCAST_PATTERN_MAX_SIZE
-		    || wow_pattern.pattern_mask_size >
-		    WOWL_PTRN_MASK_MAX_SIZE) {
+		if (wow_pattern.pattern_size >
+			    PMO_WOWL_BCAST_PATTERN_MAX_SIZE ||
+		    wow_pattern.pattern_mask_size > WOWL_PTRN_MASK_MAX_SIZE) {
 			hdd_err("Invalid length specified. Skip!");
 			invalid_ptrn = true;
 			ptrn += len;
@@ -201,10 +201,9 @@ bool hdd_add_wowl_ptrn(struct hdd_adapter *adapter, const char *ptrn)
 
 		/* Extract the pattern */
 		for (i = 0; i < wow_pattern.pattern_size; i++) {
-			wow_pattern.pattern[i] =
-				(hex_to_bin(ptrn[0]) * 0x10) +
-				hex_to_bin(ptrn[1]);
-			ptrn += 2;      /* skip to next byte */
+			wow_pattern.pattern[i] = (hex_to_bin(ptrn[0]) * 0x10) +
+						 hex_to_bin(ptrn[1]);
+			ptrn += 2; /* skip to next byte */
 		}
 
 		/* Skip over the ':' separator after the pattern */
@@ -215,7 +214,7 @@ bool hdd_add_wowl_ptrn(struct hdd_adapter *adapter, const char *ptrn)
 			wow_pattern.pattern_mask[i] =
 				(hex_to_bin(ptrn[0]) * 0x10) +
 				hex_to_bin(ptrn[1]);
-			ptrn += 2;      /* skip to next byte */
+			ptrn += 2; /* skip to next byte */
 		}
 
 		/* All is good. Store the pattern locally */
@@ -375,9 +374,8 @@ bool hdd_add_wowl_ptrn_debugfs(struct hdd_adapter *adapter, uint8_t pattern_idx,
 	}
 	/* Extract the pattern */
 	for (i = 0; i < wow_pattern.pattern_size; i++) {
-		wow_pattern.pattern[i] =
-			(hex_to_bin(pattern_buf[0]) << 4) +
-			hex_to_bin(pattern_buf[1]);
+		wow_pattern.pattern[i] = (hex_to_bin(pattern_buf[0]) << 4) +
+					 hex_to_bin(pattern_buf[1]);
 
 		/* Skip to next byte */
 		pattern_buf += 2;
@@ -389,16 +387,15 @@ bool hdd_add_wowl_ptrn_debugfs(struct hdd_adapter *adapter, uint8_t pattern_idx,
 		wow_pattern.pattern_mask_size += 1;
 
 	mask_len = strlen(pattern_mask);
-	if ((mask_len % 2)
-	    || (wow_pattern.pattern_mask_size != (mask_len >> 1))) {
+	if ((mask_len % 2) ||
+	    (wow_pattern.pattern_mask_size != (mask_len >> 1))) {
 		hdd_err("Malformed WoW pattern mask!");
 
 		return false;
 	}
 	if (wow_pattern.pattern_mask_size > WOWL_PTRN_MASK_MAX_SIZE) {
 		hdd_err("WoW pattern mask size (%d) greater than max (%d)",
-			wow_pattern.pattern_mask_size,
-			WOWL_PTRN_MASK_MAX_SIZE);
+			wow_pattern.pattern_mask_size, WOWL_PTRN_MASK_MAX_SIZE);
 		return false;
 	}
 	/* Extract the pattern mask */
@@ -421,7 +418,7 @@ bool hdd_add_wowl_ptrn_debugfs(struct hdd_adapter *adapter, uint8_t pattern_idx,
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_POWER_ID);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_ret_status)) {
 		hdd_err("pmo_wow_user_pattern failed with error code (%d).",
-			  qdf_ret_status);
+			qdf_ret_status);
 
 		return false;
 	}
@@ -445,8 +442,7 @@ bool hdd_add_wowl_ptrn_debugfs(struct hdd_adapter *adapter, uint8_t pattern_idx,
  *
  * Return: false if any errors encountered, true otherwise
  */
-bool hdd_del_wowl_ptrn_debugfs(struct hdd_adapter *adapter,
-			       uint8_t pattern_idx)
+bool hdd_del_wowl_ptrn_debugfs(struct hdd_adapter *adapter, uint8_t pattern_idx)
 {
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS qdf_ret_status;
@@ -459,8 +455,7 @@ bool hdd_del_wowl_ptrn_debugfs(struct hdd_adapter *adapter,
 	}
 
 	if (!g_hdd_wowl_ptrns_debugfs[pattern_idx]) {
-		hdd_err("WoW pattern %d is not in the table.",
-			pattern_idx);
+		hdd_err("WoW pattern %d is not in the table.", pattern_idx);
 
 		return false;
 	}
@@ -474,7 +469,7 @@ bool hdd_del_wowl_ptrn_debugfs(struct hdd_adapter *adapter,
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_POWER_ID);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_ret_status)) {
 		hdd_err("sme_wowl_del_bcast_pattern failed with error code (%d).",
-			 qdf_ret_status);
+			qdf_ret_status);
 
 		return false;
 	}

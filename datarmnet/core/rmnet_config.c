@@ -14,22 +14,22 @@
  *
  */
 
-#include <net/sock.h>
-#include <linux/module.h>
-#include <linux/netlink.h>
-#include <linux/netdevice.h>
 #include "rmnet_config.h"
-#include "rmnet_handlers.h"
-#include "rmnet_vnd.h"
-#include "rmnet_private.h"
-#include "rmnet_map.h"
-#include "rmnet_descriptor.h"
-#include "rmnet_ll.h"
-#include "rmnet_genl.h"
-#include "rmnet_qmi.h"
 #include "qmi_rmnet.h"
+#include "rmnet_descriptor.h"
+#include "rmnet_genl.h"
+#include "rmnet_handlers.h"
+#include "rmnet_ll.h"
+#include "rmnet_map.h"
+#include "rmnet_private.h"
+#include "rmnet_qmi.h"
+#include "rmnet_vnd.h"
+#include <linux/module.h>
+#include <linux/netdevice.h>
+#include <linux/netlink.h>
+#include <net/sock.h>
 #define CONFIG_QTI_QMI_RMNET 1
-#define CONFIG_QTI_QMI_DFC  1
+#define CONFIG_QTI_QMI_DFC 1
 #define CONFIG_QTI_QMI_POWER_COLLAPSE 1
 
 #define QMAP_SHS_MASK 0xFF
@@ -64,21 +64,12 @@ enum {
 };
 
 static const struct nla_policy rmnet_policy[__IFLA_RMNET_EXT_MAX] = {
-	[IFLA_RMNET_MUX_ID] = {
-		.type = NLA_U16
-	},
-	[IFLA_RMNET_FLAGS] = {
-		.len = sizeof(struct ifla_rmnet_flags)
-	},
-	[IFLA_RMNET_DFC_QOS] = {
-		.len = sizeof(struct tcmsg)
-	},
-	[IFLA_RMNET_UL_AGG_PARAMS] = {
-		.len = sizeof(struct rmnet_egress_agg_params)
-	},
-	[IFLA_RMNET_UL_AGG_STATE_ID] = {
-		.type = NLA_U8
-	},
+	[IFLA_RMNET_MUX_ID] = { .type = NLA_U16 },
+	[IFLA_RMNET_FLAGS] = { .len = sizeof(struct ifla_rmnet_flags) },
+	[IFLA_RMNET_DFC_QOS] = { .len = sizeof(struct tcmsg) },
+	[IFLA_RMNET_UL_AGG_PARAMS] = { .len = sizeof(
+					       struct rmnet_egress_agg_params) },
+	[IFLA_RMNET_UL_AGG_STATE_ID] = { .type = NLA_U8 },
 };
 
 int rmnet_is_real_dev_registered(const struct net_device *real_dev)
@@ -88,8 +79,7 @@ int rmnet_is_real_dev_registered(const struct net_device *real_dev)
 EXPORT_SYMBOL(rmnet_is_real_dev_registered);
 
 /* Needs rtnl lock */
-static struct rmnet_port*
-rmnet_get_port_rtnl(const struct net_device *real_dev)
+static struct rmnet_port *rmnet_get_port_rtnl(const struct net_device *real_dev)
 {
 	return rtnl_dereference(real_dev->rx_handler_data);
 }
@@ -131,7 +121,7 @@ static int rmnet_register_real_device(struct net_device *real_dev)
 		return -ENOMEM;
 
 	port->dev = real_dev;
-	port->phy_shs_cfg.config = RMNET_SHS_NO_DLMKR |	RMNET_SHS_NO_PSH |
+	port->phy_shs_cfg.config = RMNET_SHS_NO_DLMKR | RMNET_SHS_NO_PSH |
 				   RMNET_SHS_STMP_ALL;
 	port->phy_shs_cfg.map_mask = QMAP_SHS_MASK;
 	port->phy_shs_cfg.max_pkts = QMAP_SHS_PKT_LIMIT;
@@ -329,8 +319,8 @@ static void rmnet_force_unassociate_device(struct net_device *dev)
 	}
 
 	/* Unregistering devices in context before freeing port.
-	 * If this API becomes non-context their order should switch.
-	 */
+   * If this API becomes non-context their order should switch.
+   */
 	unregister_netdevice_many(&list);
 
 	qmi_rmnet_qos_exit_post();
@@ -350,9 +340,8 @@ static int rmnet_config_notify_cb(struct notifier_block *nb,
 	switch (event) {
 	case NETDEV_REGISTER:
 		if (dev->rtnl_link_ops == &rmnet_link_ops) {
-			rc = netdev_rx_handler_register(dev,
-							rmnet_rx_priv_handler,
-							NULL);
+			rc = netdev_rx_handler_register(
+				dev, rmnet_rx_priv_handler, NULL);
 
 			if (rc)
 				return NOTIFY_BAD;
@@ -425,8 +414,7 @@ static int rmnet_changelink(struct net_device *dev, struct nlattr *tb[],
 	u32 data_format;
 	int rc = 0;
 
-	real_dev = __dev_get_by_index(dev_net(dev),
-				      nla_get_u32(tb[IFLA_LINK]));
+	real_dev = __dev_get_by_index(dev_net(dev), nla_get_u32(tb[IFLA_LINK]));
 
 	if (!real_dev || !dev || !rmnet_is_real_dev_registered(real_dev))
 		return -ENODEV;
@@ -514,7 +502,7 @@ static int rmnet_fill_info(struct sk_buff *skb, const struct net_device *dev)
 		f.flags = 0;
 	}
 
-	f.mask  = ~0;
+	f.mask = ~0;
 
 	if (nla_put(skb, IFLA_RMNET_FLAGS, sizeof(f), &f))
 		goto nla_put_failure;
@@ -523,13 +511,12 @@ static int rmnet_fill_info(struct sk_buff *skb, const struct net_device *dev)
 		struct rmnet_aggregation_state *state;
 
 		/* Only report default for now. The entire message type
-		 * would need to change to get both states in there (nested
-		 * messages, etc), since they both have the same NLA type...
-		 */
+     * would need to change to get both states in there (nested
+     * messages, etc), since they both have the same NLA type...
+     */
 		state = &port->agg_state[RMNET_DEFAULT_AGG_STATE];
 		if (nla_put(skb, IFLA_RMNET_UL_AGG_PARAMS,
-			    sizeof(state->params),
-			    &state->params))
+			    sizeof(state->params), &state->params))
 			goto nla_put_failure;
 	}
 
@@ -540,17 +527,17 @@ nla_put_failure:
 }
 
 struct rtnl_link_ops rmnet_link_ops __read_mostly = {
-	.kind		= "rmnet",
-	.maxtype	= __IFLA_RMNET_EXT_MAX - 1,
-	.priv_size	= sizeof(struct rmnet_priv),
-	.setup		= rmnet_vnd_setup,
-	.validate	= rmnet_rtnl_validate,
-	.newlink	= rmnet_newlink,
-	.dellink	= rmnet_dellink,
-	.get_size	= rmnet_get_size,
-	.changelink     = rmnet_changelink,
-	.policy		= rmnet_policy,
-	.fill_info	= rmnet_fill_info,
+	.kind = "rmnet",
+	.maxtype = __IFLA_RMNET_EXT_MAX - 1,
+	.priv_size = sizeof(struct rmnet_priv),
+	.setup = rmnet_vnd_setup,
+	.validate = rmnet_rtnl_validate,
+	.newlink = rmnet_newlink,
+	.dellink = rmnet_dellink,
+	.get_size = rmnet_get_size,
+	.changelink = rmnet_changelink,
+	.policy = rmnet_policy,
+	.fill_info = rmnet_fill_info,
 };
 
 /* Needs either rcu_read_lock() or rtnl lock */
@@ -576,8 +563,7 @@ struct rmnet_endpoint *rmnet_get_endpoint(struct rmnet_port *port, u8 mux_id)
 }
 EXPORT_SYMBOL(rmnet_get_endpoint);
 
-int rmnet_add_bridge(struct net_device *rmnet_dev,
-		     struct net_device *slave_dev,
+int rmnet_add_bridge(struct net_device *rmnet_dev, struct net_device *slave_dev,
 		     struct netlink_ext_ack *extack)
 {
 	struct rmnet_priv *priv = netdev_priv(rmnet_dev);
@@ -588,8 +574,8 @@ int rmnet_add_bridge(struct net_device *rmnet_dev,
 	port = rmnet_get_port(real_dev);
 
 	/* If there is more than one rmnet dev attached, its probably being
-	 * used for muxing. Skip the briding in that case
-	 */
+   * used for muxing. Skip the briding in that case
+   */
 	if (port->nr_rmnet_devs > 1)
 		return -EINVAL;
 
@@ -611,8 +597,7 @@ int rmnet_add_bridge(struct net_device *rmnet_dev,
 	return 0;
 }
 
-int rmnet_del_bridge(struct net_device *rmnet_dev,
-		     struct net_device *slave_dev)
+int rmnet_del_bridge(struct net_device *rmnet_dev, struct net_device *slave_dev)
 {
 	struct rmnet_priv *priv = netdev_priv(rmnet_dev);
 	struct net_device *real_dev = priv->real_dev;
@@ -727,7 +712,7 @@ void rmnet_get_packets(void *port, u64 *rx, u64 *tx)
 }
 EXPORT_SYMBOL(rmnet_get_packets);
 
-void  rmnet_set_powersave_format(void *port)
+void rmnet_set_powersave_format(void *port)
 {
 	if (!port)
 		return;
@@ -735,7 +720,7 @@ void  rmnet_set_powersave_format(void *port)
 }
 EXPORT_SYMBOL(rmnet_set_powersave_format);
 
-void  rmnet_clear_powersave_format(void *port)
+void rmnet_clear_powersave_format(void *port)
 {
 	if (!port)
 		return;
@@ -752,8 +737,8 @@ void rmnet_enable_all_flows(void *port)
 		return;
 
 	rcu_read_lock();
-	hash_for_each_rcu(((struct rmnet_port *)port)->muxed_ep,
-			  bkt, ep, hlnode) {
+	hash_for_each_rcu(((struct rmnet_port *)port)->muxed_ep, bkt, ep,
+			  hlnode) {
 		qmi_rmnet_enable_all_flows(ep->egress_dev);
 	}
 	rcu_read_unlock();
@@ -770,8 +755,8 @@ bool rmnet_all_flows_enabled(void *port)
 		return true;
 
 	rcu_read_lock();
-	hash_for_each_rcu(((struct rmnet_port *)port)->muxed_ep,
-			  bkt, ep, hlnode) {
+	hash_for_each_rcu(((struct rmnet_port *)port)->muxed_ep, bkt, ep,
+			  hlnode) {
 		if (!qmi_rmnet_all_flows_enabled(ep->egress_dev)) {
 			ret = false;
 			goto out;
@@ -798,13 +783,12 @@ void rmnet_prepare_ps_bearers(void *port, u8 *num_bearers, u8 *bearer_id)
 	number_bearers_left = *num_bearers;
 
 	rcu_read_lock();
-	hash_for_each_rcu(((struct rmnet_port *)port)->muxed_ep,
-			  bkt, ep, hlnode) {
+	hash_for_each_rcu(((struct rmnet_port *)port)->muxed_ep, bkt, ep,
+			  hlnode) {
 		num_bearers_in_out = number_bearers_left;
-		qmi_rmnet_prepare_ps_bearers(ep->egress_dev,
-					     &num_bearers_in_out,
-					     bearer_id ? bearer_id +
-						current_num_bearers : NULL);
+		qmi_rmnet_prepare_ps_bearers(
+			ep->egress_dev, &num_bearers_in_out,
+			bearer_id ? bearer_id + current_num_bearers : NULL);
 		current_num_bearers += num_bearers_in_out;
 		number_bearers_left -= num_bearers_in_out;
 	}
@@ -837,7 +821,7 @@ int rmnet_get_dlmarker_info(void *port)
 		return 0;
 
 	return ((struct rmnet_port *)port)->data_format &
-		(RMNET_INGRESS_FORMAT_DL_MARKER_V1 |
+	       (RMNET_INGRESS_FORMAT_DL_MARKER_V1 |
 		RMNET_INGRESS_FORMAT_DL_MARKER_V2);
 }
 EXPORT_SYMBOL(rmnet_get_dlmarker_info);
@@ -881,6 +865,4 @@ static void __exit rmnet_exit(void)
 	module_put(THIS_MODULE);
 }
 
-module_init(rmnet_init)
-module_exit(rmnet_exit)
-MODULE_LICENSE("GPL v2");
+module_init(rmnet_init) module_exit(rmnet_exit) MODULE_LICENSE("GPL v2");

@@ -1,16 +1,17 @@
-#include <linux/slab.h>
+#include "mi_disp_flatmode.h"
+#include "dsi_panel.h"
+#include "dsi_parser.h"
+#include "mi_disp_print.h"
+#include "mi_dsi_display.h"
+#include "mi_dsi_panel.h"
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
-#include "mi_disp_print.h"
+#include <linux/slab.h>
 #include <linux/soc/qcom/smem.h>
-#include "dsi_parser.h"
-#include "dsi_panel.h"
-#include "mi_dsi_panel.h"
-#include "mi_dsi_display.h"
-#include "mi_disp_flatmode.h"
 
 static bool mi_disp_parse_flatmode_status_len(struct dsi_parser_utils *utils,
-	char *prop_key, u32 **target, u32 cmd_cnt)
+					      char *prop_key, u32 **target,
+					      u32 cmd_cnt)
 {
 	int tmp;
 
@@ -20,7 +21,7 @@ static bool mi_disp_parse_flatmode_status_len(struct dsi_parser_utils *utils,
 	tmp /= sizeof(u32);
 	if (tmp != cmd_cnt) {
 		DISP_ERROR("request property(%d) do not match cmd count(%d)\n",
-				tmp, cmd_cnt);
+			   tmp, cmd_cnt);
 		return false;
 	}
 
@@ -40,8 +41,9 @@ static bool mi_disp_parse_flatmode_status_len(struct dsi_parser_utils *utils,
 	return true;
 }
 
-static int mi_dsi_panel_parse_flatmode_configs(
-		struct dsi_panel *panel, struct mi_panel_flatmode_config *config)
+static int
+mi_dsi_panel_parse_flatmode_configs(struct dsi_panel *panel,
+				    struct mi_panel_flatmode_config *config)
 {
 	int rc = 0;
 	u32 tmp;
@@ -55,29 +57,29 @@ static int mi_dsi_panel_parse_flatmode_configs(
 		return rc;
 	}
 
-    utils = &(panel->utils);
-	config->flatmode_check_enabled = utils->read_bool(utils->data,
-				"mi,flatmode-status-check-enabled");
+	utils = &(panel->utils);
+	config->flatmode_check_enabled = utils->read_bool(
+		utils->data, "mi,flatmode-status-check-enabled");
 	if (!config->flatmode_check_enabled)
 		goto error;
 
 	dsi_panel_parse_cmd_sets_sub(&config->offset_cmd,
-				DSI_CMD_SET_MI_FLATMODE_STATUS_OFFSET, utils);
+				     DSI_CMD_SET_MI_FLATMODE_STATUS_OFFSET,
+				     utils);
 	if (!config->offset_cmd.count)
 		DISP_INFO("flat mode status offset command parsing failed\n");
 
 	dsi_panel_parse_cmd_sets_sub(&config->status_cmd,
-				DSI_CMD_SET_MI_FLATMODE_STATUS, utils);
+				     DSI_CMD_SET_MI_FLATMODE_STATUS, utils);
 	if (!config->status_cmd.count) {
 		DISP_ERROR("flat mode status command parsing failed\n");
 		rc = -EINVAL;
 		goto error;
 	}
 
-	if (!mi_disp_parse_flatmode_status_len(utils,
-		"mi,mdss-dsi-panel-flatmode-status-read-length",
-			&(config->status_cmds_rlen),
-				config->status_cmd.count)) {
+	if (!mi_disp_parse_flatmode_status_len(
+		    utils, "mi,mdss-dsi-panel-flatmode-status-read-length",
+		    &(config->status_cmds_rlen), config->status_cmd.count)) {
 		DISP_ERROR("Invalid flat mode status read length\n");
 		rc = -EINVAL;
 		goto error1;
@@ -91,8 +93,9 @@ static int mi_dsi_panel_parse_flatmode_configs(
 		goto error2;
 	}
 
-	data = utils->find_property(utils->data,
-			"mi,mdss-dsi-panel-flatmode-on-status-value", &tmp);
+	data = utils->find_property(
+		utils->data, "mi,mdss-dsi-panel-flatmode-on-status-value",
+		&tmp);
 	tmp /= sizeof(u32);
 	if (IS_ERR_OR_NULL(data) || tmp != status_len) {
 		DISP_ERROR("error parse panel-status-value\n");
@@ -105,7 +108,8 @@ static int mi_dsi_panel_parse_flatmode_configs(
 		rc = -ENOMEM;
 		goto error2;
 	}
-	config->return_buf = kcalloc(status_len, sizeof(unsigned char), GFP_KERNEL);
+	config->return_buf =
+		kcalloc(status_len, sizeof(unsigned char), GFP_KERNEL);
 	if (!config->return_buf) {
 		rc = -ENOMEM;
 		goto error3;
@@ -117,8 +121,8 @@ static int mi_dsi_panel_parse_flatmode_configs(
 	}
 
 	rc = utils->read_u32_array(utils->data,
-		"mi,mdss-dsi-panel-flatmode-on-status-value",
-		config->status_value, status_len);
+				   "mi,mdss-dsi-panel-flatmode-on-status-value",
+				   config->status_value, status_len);
 	if (rc) {
 		DISP_ERROR("error reading flat mode status values\n");
 		memset(config->status_value, 0, status_len);
@@ -126,7 +130,8 @@ static int mi_dsi_panel_parse_flatmode_configs(
 	}
 
 	dsi_panel_parse_cmd_sets_sub(&config->offset_end_cmd,
-				DSI_CMD_SET_MI_FLATMODE_STATUS_OFFSET_END, utils);
+				     DSI_CMD_SET_MI_FLATMODE_STATUS_OFFSET_END,
+				     utils);
 	if (!config->offset_end_cmd.count) {
 		DISP_INFO("flat mode status end command parsing failed\n");
 	}
@@ -151,8 +156,8 @@ error:
 	return rc;
 }
 
-
-static void mi_dsi_panel_flatmode_freemem(struct mi_panel_flatmode_config *config)
+static void
+mi_dsi_panel_flatmode_freemem(struct mi_panel_flatmode_config *config)
 {
 	if (config && config->flatmode_check_enabled) {
 		dsi_panel_destroy_cmd_packets(&config->offset_cmd);
@@ -172,7 +177,8 @@ static void mi_dsi_panel_flatmode_freemem(struct mi_panel_flatmode_config *confi
 }
 
 static int mi_flatmode_write_offset_cmd(struct dsi_display *display,
-		struct mi_panel_flatmode_config *config, bool is_end)
+					struct mi_panel_flatmode_config *config,
+					bool is_end)
 {
 	int rc = 0;
 	struct dsi_panel_cmd_set *cmd_sets = &config->offset_cmd;
@@ -184,7 +190,8 @@ static int mi_flatmode_write_offset_cmd(struct dsi_display *display,
 
 	rc = mi_dsi_panel_write_cmd_set(display->panel, cmd_sets);
 	if (rc) {
-		DISP_ERROR("[%s] failed to send cmds, rc=%d\n", display->panel->type, rc);
+		DISP_ERROR("[%s] failed to send cmds, rc=%d\n",
+			   display->panel->type, rc);
 	}
 
 	dsi_panel_release_panel_lock(display->panel);
@@ -193,7 +200,7 @@ static int mi_flatmode_write_offset_cmd(struct dsi_display *display,
 }
 
 static bool mi_flatmode_validate_status(struct dsi_display *display,
-		struct mi_panel_flatmode_config *config)
+					struct mi_panel_flatmode_config *config)
 {
 	int i, count = 0, start = 0, len = 0, *lenp;
 	struct dsi_cmd_desc *cmds;
@@ -210,12 +217,13 @@ static bool mi_flatmode_validate_status(struct dsi_display *display,
 	for (i = 0; i < count; ++i) {
 		memset(config->status_buf, 0x0, 256);
 		cmds[i].msg.flags |= flags;
-		if(mi_dsi_display_cmd_read(display, cmds[i], config->status_buf, lenp[i]) <= 0) {
+		if (mi_dsi_display_cmd_read(display, cmds[i],
+					    config->status_buf, lenp[i]) <= 0) {
 			DISP_ERROR("mi_dsi_display_cmd_read fail\n");
 			goto error;
 		}
 
-		memcpy(config->return_buf+start, config->status_buf, lenp[i]);
+		memcpy(config->return_buf + start, config->status_buf, lenp[i]);
 		start += lenp[i];
 	}
 
@@ -223,8 +231,9 @@ static bool mi_flatmode_validate_status(struct dsi_display *display,
 		len += lenp[i];
 
 	for (i = 0; i < len; ++i) {
-		DISP_INFO(" flat mode return_buff[%d] = 0x%x, status_value[%d] = 0x%x",
-						i, config->return_buf[i], i, config->status_value[i]);
+		DISP_INFO(
+			" flat mode return_buff[%d] = 0x%x, status_value[%d] = 0x%x",
+			i, config->return_buf[i], i, config->status_value[i]);
 		if (config->return_buf[i] != config->status_value[i]) {
 			goto error;
 		}
@@ -236,7 +245,8 @@ error:
 	return false;
 }
 
-int mi_dsi_panel_flatmode_validate_status(struct dsi_display *display, bool *status)
+int mi_dsi_panel_flatmode_validate_status(struct dsi_display *display,
+					  bool *status)
 {
 	int rc = 0;
 	struct mi_panel_flatmode_config flatmode_config;
@@ -247,7 +257,8 @@ int mi_dsi_panel_flatmode_validate_status(struct dsi_display *display, bool *sta
 	}
 
 	if (!display->panel->panel_initialized) {
-		DISP_WARN("[%s] panel not initialized!\n", display->panel->type);
+		DISP_WARN("[%s] panel not initialized!\n",
+			  display->panel->type);
 		return -ENODEV;
 	}
 

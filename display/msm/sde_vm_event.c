@@ -3,8 +3,8 @@
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/sde_vm_event.h>
 #include "msm_drv.h"
+#include <linux/sde_vm_event.h>
 
 int msm_register_vm_event(struct device *dev, struct device *client_dev,
 			  struct msm_vm_ops *ops, void *priv_data)

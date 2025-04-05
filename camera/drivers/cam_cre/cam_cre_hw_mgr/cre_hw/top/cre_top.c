@@ -2,27 +2,26 @@
 /*
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
  */
-#include <linux/platform_device.h>
-#include <linux/delay.h>
-#include <linux/timer.h>
-#include <linux/completion.h>
-#include <media/cam_cre.h>
-#include "cam_io_util.h"
+#include "cre_top.h"
+#include "cam_debug_util.h"
 #include "cam_hw.h"
 #include "cam_hw_intf.h"
-#include "cre_core.h"
-#include "cre_soc.h"
-#include "cam_soc_util.h"
 #include "cam_io_util.h"
-#include "cam_debug_util.h"
-#include "cre_hw.h"
+#include "cam_soc_util.h"
+#include "cre_core.h"
 #include "cre_dev_intf.h"
-#include "cre_top.h"
+#include "cre_hw.h"
+#include "cre_soc.h"
+#include <linux/completion.h>
+#include <linux/delay.h>
+#include <linux/platform_device.h>
+#include <linux/timer.h>
+#include <media/cam_cre.h>
 
 static struct cre_top cre_top_info;
 
-static int cam_cre_top_reset(struct cam_cre_hw *cre_hw_info,
-	int32_t ctx_id, void *data)
+static int cam_cre_top_reset(struct cam_cre_hw *cre_hw_info, int32_t ctx_id,
+			     void *data)
 {
 	int rc = 0;
 	struct cam_cre_top_reg *top_reg;
@@ -44,31 +43,32 @@ static int cam_cre_top_reset(struct cam_cre_hw *cre_hw_info,
 
 	/* enable interrupt mask */
 	cam_io_w_mb(top_reg_val->irq_mask,
-		cre_hw_info->top_reg_offset->base + top_reg->irq_mask);
+		    cre_hw_info->top_reg_offset->base + top_reg->irq_mask);
 
 	/* CRE SW RESET */
 	cam_io_w_mb(top_reg_val->sw_reset_cmd,
-		cre_hw_info->top_reg_offset->base + top_reg->reset_cmd);
+		    cre_hw_info->top_reg_offset->base + top_reg->reset_cmd);
 
-	rc = wait_for_completion_timeout(
-			&cre_top_info.reset_complete,
-			msecs_to_jiffies(60));
+	rc = wait_for_completion_timeout(&cre_top_info.reset_complete,
+					 msecs_to_jiffies(60));
 
 	if (!rc || rc < 0) {
 		spin_lock_irqsave(&cre_top_info.hw_lock, flags);
 		if (!completion_done(&cre_top_info.reset_complete)) {
 			CAM_DBG(CAM_CRE,
 				"IRQ delayed, checking the status registers");
-			irq_mask = cam_io_r_mb(cre_hw_info->top_reg_offset->base +
-				top_reg->irq_mask);
-			irq_status = cam_io_r_mb(cre_hw_info->top_reg_offset->base +
-				top_reg->irq_status);
+			irq_mask =
+				cam_io_r_mb(cre_hw_info->top_reg_offset->base +
+					    top_reg->irq_mask);
+			irq_status =
+				cam_io_r_mb(cre_hw_info->top_reg_offset->base +
+					    top_reg->irq_status);
 			if (irq_status & top_reg_val->rst_done) {
 				CAM_DBG(CAM_CRE, "cre reset done");
 				cam_io_w_mb(irq_status,
-					top_reg->base + top_reg->irq_clear);
+					    top_reg->base + top_reg->irq_clear);
 				cam_io_w_mb(top_reg_val->irq_cmd_clear,
-					top_reg->base + top_reg->irq_cmd);
+					    top_reg->base + top_reg->irq_cmd);
 			} else {
 				CAM_ERR(CAM_CRE,
 					"irq mask 0x%x irq status 0x%x",
@@ -85,14 +85,14 @@ static int cam_cre_top_reset(struct cam_cre_hw *cre_hw_info,
 
 	/* enable interrupt mask */
 	cam_io_w_mb(top_reg_val->irq_mask,
-		cre_hw_info->top_reg_offset->base + top_reg->irq_mask);
+		    cre_hw_info->top_reg_offset->base + top_reg->irq_mask);
 
 	mutex_unlock(&cre_top_info.cre_hw_mutex);
 	return rc;
 }
 
-static int cam_cre_top_release(struct cam_cre_hw *cre_hw_info,
-	int32_t ctx_id, void *data)
+static int cam_cre_top_release(struct cam_cre_hw *cre_hw_info, int32_t ctx_id,
+			       void *data)
 {
 	int rc = 0;
 
@@ -106,8 +106,8 @@ static int cam_cre_top_release(struct cam_cre_hw *cre_hw_info,
 	return rc;
 }
 
-static int cam_cre_top_acquire(struct cam_cre_hw *cre_hw_info,
-	int32_t ctx_id, void *data)
+static int cam_cre_top_acquire(struct cam_cre_hw *cre_hw_info, int32_t ctx_id,
+			       void *data)
 {
 	int rc = 0;
 	struct cam_cre_dev_acquire *cre_dev_acquire = data;
@@ -123,8 +123,8 @@ static int cam_cre_top_acquire(struct cam_cre_hw *cre_hw_info,
 	return rc;
 }
 
-static int cam_cre_top_init(struct cam_cre_hw *cre_hw_info,
-	int32_t ctx_id, void *data)
+static int cam_cre_top_init(struct cam_cre_hw *cre_hw_info, int32_t ctx_id,
+			    void *data)
 {
 	int rc = 0;
 	struct cam_cre_top_reg *top_reg;
@@ -151,29 +151,30 @@ static int cam_cre_top_init(struct cam_cre_hw *cre_hw_info,
 
 	/* enable interrupt mask */
 	cam_io_w_mb(top_reg_val->irq_mask,
-		cre_hw_info->top_reg_offset->base + top_reg->irq_mask);
+		    cre_hw_info->top_reg_offset->base + top_reg->irq_mask);
 	cam_io_w_mb(top_reg_val->sw_reset_cmd,
-		cre_hw_info->top_reg_offset->base + top_reg->reset_cmd);
+		    cre_hw_info->top_reg_offset->base + top_reg->reset_cmd);
 
-	rc = wait_for_completion_timeout(
-			&cre_top_info.reset_complete,
-			msecs_to_jiffies(60));
+	rc = wait_for_completion_timeout(&cre_top_info.reset_complete,
+					 msecs_to_jiffies(60));
 
 	if (!rc || rc < 0) {
 		spin_lock_irqsave(&cre_top_info.hw_lock, flags);
 		if (!completion_done(&cre_top_info.reset_complete)) {
 			CAM_DBG(CAM_CRE,
 				"IRQ delayed, checking the status registers");
-			irq_mask = cam_io_r_mb(cre_hw_info->top_reg_offset->base +
-				top_reg->irq_mask);
-			irq_status = cam_io_r_mb(cre_hw_info->top_reg_offset->base +
-				top_reg->irq_status);
+			irq_mask =
+				cam_io_r_mb(cre_hw_info->top_reg_offset->base +
+					    top_reg->irq_mask);
+			irq_status =
+				cam_io_r_mb(cre_hw_info->top_reg_offset->base +
+					    top_reg->irq_status);
 			if (irq_status & top_reg_val->rst_done) {
 				CAM_DBG(CAM_CRE, "cre reset done");
 				cam_io_w_mb(irq_status,
-					top_reg->base + top_reg->irq_clear);
+					    top_reg->base + top_reg->irq_clear);
 				cam_io_w_mb(top_reg_val->irq_cmd_clear,
-					top_reg->base + top_reg->irq_cmd);
+					    top_reg->base + top_reg->irq_cmd);
 			} else {
 				CAM_ERR(CAM_CRE,
 					"irq mask 0x%x irq status 0x%x",
@@ -190,12 +191,12 @@ static int cam_cre_top_init(struct cam_cre_hw *cre_hw_info,
 	}
 	/* enable interrupt mask */
 	cam_io_w_mb(top_reg_val->irq_mask,
-		cre_hw_info->top_reg_offset->base + top_reg->irq_mask);
+		    cre_hw_info->top_reg_offset->base + top_reg->irq_mask);
 	return rc;
 }
 
-static int cam_cre_top_probe(struct cam_cre_hw *cre_hw_info,
-	int32_t ctx_id, void *data)
+static int cam_cre_top_probe(struct cam_cre_hw *cre_hw_info, int32_t ctx_id,
+			     void *data)
 {
 	int rc = 0;
 
@@ -210,8 +211,8 @@ static int cam_cre_top_probe(struct cam_cre_hw *cre_hw_info,
 	return rc;
 }
 
-static int cam_cre_top_isr(struct cam_cre_hw *cre_hw_info,
-	int32_t ctx_id, void *data)
+static int cam_cre_top_isr(struct cam_cre_hw *cre_hw_info, int32_t ctx_id,
+			   void *data)
 {
 	int rc = 0;
 	uint32_t irq_status;
@@ -230,11 +231,10 @@ static int cam_cre_top_isr(struct cam_cre_hw *cre_hw_info,
 	spin_lock(&cre_top_info.hw_lock);
 	/* Read and Clear Top Interrupt status */
 	irq_status = cam_io_r_mb(top_reg->base + top_reg->irq_status);
-	cam_io_w_mb(irq_status,
-		top_reg->base + top_reg->irq_clear);
+	cam_io_w_mb(irq_status, top_reg->base + top_reg->irq_clear);
 
 	cam_io_w_mb(top_reg_val->irq_cmd_clear,
-		top_reg->base + top_reg->irq_cmd);
+		    top_reg->base + top_reg->irq_cmd);
 
 	if (irq_status & top_reg_val->rst_done) {
 		CAM_DBG(CAM_CRE, "cre reset done");
@@ -258,8 +258,8 @@ static int cam_cre_top_isr(struct cam_cre_hw *cre_hw_info,
 	return rc;
 }
 
-int cam_cre_top_process(struct cam_cre_hw *cre_hw_info,
-	int32_t ctx_id, uint32_t cmd_id, void *data)
+int cam_cre_top_process(struct cam_cre_hw *cre_hw_info, int32_t ctx_id,
+			uint32_t cmd_id, void *data)
 {
 	int rc = 0;
 

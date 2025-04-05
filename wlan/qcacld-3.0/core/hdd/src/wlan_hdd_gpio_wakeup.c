@@ -14,9 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "wlan_hdd_gpio_wakeup.h"
 #include "wlan_hdd_main.h"
 #include <linux/gpio.h>
-#include "wlan_hdd_gpio_wakeup.h"
 
 static int32_t gpio_wakeup_irq_num = -1;
 

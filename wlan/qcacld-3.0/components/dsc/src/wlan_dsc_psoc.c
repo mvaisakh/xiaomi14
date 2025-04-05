@@ -17,18 +17,18 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "__wlan_dsc.h"
 #include "qdf_list.h"
 #include "qdf_status.h"
 #include "qdf_talloc.h"
 #include "qdf_types.h"
-#include "__wlan_dsc.h"
 #include "wlan_dsc.h"
 
 #define __dsc_driver_lock(psoc) __dsc_lock((psoc)->driver)
 #define __dsc_driver_unlock(psoc) __dsc_unlock((psoc)->driver)
 
-static QDF_STATUS
-__dsc_psoc_create(struct dsc_driver *driver, struct dsc_psoc **out_psoc)
+static QDF_STATUS __dsc_psoc_create(struct dsc_driver *driver,
+				    struct dsc_psoc **out_psoc)
 {
 	struct dsc_psoc *psoc;
 
@@ -65,7 +65,7 @@ dsc_psoc_create(struct dsc_driver *driver, struct dsc_psoc **out_psoc)
 {
 	QDF_STATUS status;
 
-	status =  __dsc_psoc_create(driver, out_psoc);
+	status = __dsc_psoc_create(driver, out_psoc);
 
 	return status;
 }
@@ -113,7 +113,8 @@ static bool __dsc_psoc_trans_active_down_tree(struct dsc_psoc *psoc)
 {
 	struct dsc_vdev *vdev;
 
-	dsc_for_each_psoc_vdev(psoc, vdev) {
+	dsc_for_each_psoc_vdev(psoc, vdev)
+	{
 		if (__dsc_trans_active(&vdev->trans))
 			return true;
 	}
@@ -156,12 +157,12 @@ static QDF_STATUS __dsc_psoc_can_trans(struct dsc_psoc *psoc)
 static bool __dsc_psoc_can_trigger(struct dsc_psoc *psoc)
 {
 	return !__dsc_trans_active_or_queued(&psoc->driver->trans) &&
-		!__dsc_trans_active(&psoc->trans) &&
-		!__dsc_psoc_trans_active_down_tree(psoc);
+	       !__dsc_trans_active(&psoc->trans) &&
+	       !__dsc_psoc_trans_active_down_tree(psoc);
 }
 
-static QDF_STATUS
-__dsc_psoc_trans_start_nolock(struct dsc_psoc *psoc, const char *desc)
+static QDF_STATUS __dsc_psoc_trans_start_nolock(struct dsc_psoc *psoc,
+						const char *desc)
 {
 	QDF_STATUS status;
 
@@ -172,8 +173,8 @@ __dsc_psoc_trans_start_nolock(struct dsc_psoc *psoc, const char *desc)
 	return __dsc_trans_start(&psoc->trans, desc);
 }
 
-static QDF_STATUS
-__dsc_psoc_trans_start(struct dsc_psoc *psoc, const char *desc)
+static QDF_STATUS __dsc_psoc_trans_start(struct dsc_psoc *psoc,
+					 const char *desc)
 {
 	QDF_STATUS status;
 
@@ -202,8 +203,8 @@ QDF_STATUS dsc_psoc_trans_start(struct dsc_psoc *psoc, const char *desc)
 	return status;
 }
 
-static QDF_STATUS
-__dsc_psoc_trans_start_wait(struct dsc_psoc *psoc, const char *desc)
+static QDF_STATUS __dsc_psoc_trans_start_wait(struct dsc_psoc *psoc,
+					      const char *desc)
 {
 	QDF_STATUS status;
 	struct dsc_tran tran = { 0 };
@@ -257,8 +258,7 @@ static void __dsc_psoc_trigger_trans(struct dsc_psoc *psoc)
 	if (__dsc_trans_trigger(&psoc->trans))
 		return;
 
-	dsc_for_each_psoc_vdev(psoc, vdev)
-		__dsc_trans_trigger(&vdev->trans);
+	dsc_for_each_psoc_vdev(psoc, vdev) __dsc_trans_trigger(&vdev->trans);
 }
 
 static void __dsc_psoc_trans_stop(struct dsc_psoc *psoc)
@@ -379,12 +379,10 @@ static void __dsc_psoc_wait_for_ops(struct dsc_psoc *psoc)
 		qdf_wait_single_event(&psoc->ops.event, 0);
 
 	/* wait for down-tree ops to complete as well */
-	dsc_for_each_psoc_vdev(psoc, vdev)
-		dsc_vdev_wait_for_ops(vdev);
+	dsc_for_each_psoc_vdev(psoc, vdev) dsc_vdev_wait_for_ops(vdev);
 }
 
 void dsc_psoc_wait_for_ops(struct dsc_psoc *psoc)
 {
 	__dsc_psoc_wait_for_ops(psoc);
 }
-

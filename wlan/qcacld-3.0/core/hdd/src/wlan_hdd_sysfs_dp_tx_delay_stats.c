@@ -21,16 +21,15 @@
  *
  * dp_tx_delay_stats
  */
-#include <wlan_hdd_includes.h>
 #include "osif_vdev_sync.h"
 #include "wlan_hdd_object_manager.h"
+#include <cdp_txrx_host_stats.h>
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_dp_tx_delay_stats.h>
-#include <cdp_txrx_host_stats.h>
 
-static ssize_t
-__hdd_sysfs_dp_tx_delay_stats_show(struct net_device *net_dev,
-				   char *buf)
+static ssize_t __hdd_sysfs_dp_tx_delay_stats_show(struct net_device *net_dev,
+						  char *buf)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	ol_txrx_soc_handle dp_soc = cds_get_context(QDF_MODULE_ID_SOC);
@@ -50,8 +49,8 @@ __hdd_sysfs_dp_tx_delay_stats_show(struct net_device *net_dev,
 	value = cdp_vdev_is_tx_delay_stats_enabled(dp_soc,
 						   adapter->deflink->vdev_id);
 
-	hdd_debug("vdev_id: %d tx_delay_stats: %d",
-		  adapter->deflink->vdev_id, value);
+	hdd_debug("vdev_id: %d tx_delay_stats: %d", adapter->deflink->vdev_id,
+		  value);
 
 	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
 }
@@ -75,9 +74,9 @@ static ssize_t hdd_sysfs_dp_tx_delay_stats_show(struct device *dev,
 	return err_size;
 }
 
-static ssize_t
-__hdd_sysfs_dp_tx_delay_stats_store(struct net_device *net_dev, const char *buf,
-				    size_t count)
+static ssize_t __hdd_sysfs_dp_tx_delay_stats_store(struct net_device *net_dev,
+						   const char *buf,
+						   size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -96,8 +95,8 @@ __hdd_sysfs_dp_tx_delay_stats_store(struct net_device *net_dev, const char *buf,
 	if (!wlan_hdd_validate_modules_state(adapter->hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -111,20 +110,18 @@ __hdd_sysfs_dp_tx_delay_stats_store(struct net_device *net_dev, const char *buf,
 	if (kstrtou8(token, 0, &value))
 		return -EINVAL;
 
-	hdd_debug("vdev_id: %d tx_delay_stats: %d",
-		  adapter->deflink->vdev_id, value);
+	hdd_debug("vdev_id: %d tx_delay_stats: %d", adapter->deflink->vdev_id,
+		  value);
 
-	cdp_enable_disable_vdev_tx_delay_stats(dp_soc,
-					       adapter->deflink->vdev_id,
-					       value);
+	cdp_enable_disable_vdev_tx_delay_stats(
+		dp_soc, adapter->deflink->vdev_id, value);
 
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dp_tx_delay_stats_store(struct device *dev,
-				  struct device_attribute *attr,
-				  char const *buf, size_t count)
+static ssize_t hdd_sysfs_dp_tx_delay_stats_store(struct device *dev,
+						 struct device_attribute *attr,
+						 char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -141,8 +138,7 @@ hdd_sysfs_dp_tx_delay_stats_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(dp_tx_delay_stats, 0660,
-		   hdd_sysfs_dp_tx_delay_stats_show,
+static DEVICE_ATTR(dp_tx_delay_stats, 0660, hdd_sysfs_dp_tx_delay_stats_show,
 		   hdd_sysfs_dp_tx_delay_stats_store);
 
 int hdd_sysfs_dp_tx_delay_stats_create(struct hdd_adapter *adapter)
@@ -157,8 +153,7 @@ int hdd_sysfs_dp_tx_delay_stats_create(struct hdd_adapter *adapter)
 	return error;
 }
 
-void
-hdd_sysfs_dp_tx_delay_stats_destroy(struct hdd_adapter *adapter)
+void hdd_sysfs_dp_tx_delay_stats_destroy(struct hdd_adapter *adapter)
 {
 	device_remove_file(&adapter->dev->dev, &dev_attr_dp_tx_delay_stats);
 }

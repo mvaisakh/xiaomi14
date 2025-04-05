@@ -14,19 +14,19 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
- /**
-  *  DOC: osif_twt_req.c
-  *  This file contains twt request related osif APIs
-  */
-#include <wlan_cfg80211.h>
+/**
+ *  DOC: osif_twt_req.c
+ *  This file contains twt request related osif APIs
+ */
 #include <osif_twt_req.h>
 #include <osif_twt_util.h>
+#include <wlan_cfg80211.h>
 #include <wlan_osif_request_manager.h>
 #include <wlan_twt_ucfg_api.h>
 #include <wlan_twt_ucfg_ext_api.h>
 
 #define TWT_DISABLE_COMPLETE_TIMEOUT 1000
-#define TWT_ENABLE_COMPLETE_TIMEOUT  1000
+#define TWT_ENABLE_COMPLETE_TIMEOUT 1000
 
 int osif_twt_requestor_enable(struct wlan_objmgr_psoc *psoc,
 			      struct twt_enable_param *req)
@@ -37,8 +37,8 @@ int osif_twt_requestor_enable(struct wlan_objmgr_psoc *psoc,
 	struct twt_en_dis_priv *twt_en_priv;
 	void *context;
 	static const struct osif_request_params params = {
-				.priv_size = sizeof(*twt_en_priv),
-				.timeout_ms = TWT_ENABLE_COMPLETE_TIMEOUT,
+		.priv_size = sizeof(*twt_en_priv),
+		.timeout_ms = TWT_ENABLE_COMPLETE_TIMEOUT,
 	};
 
 	request = osif_request_alloc(&params);
@@ -80,8 +80,8 @@ int osif_twt_responder_enable(struct wlan_objmgr_psoc *psoc,
 	struct twt_en_dis_priv *twt_en_priv;
 	void *context;
 	static const struct osif_request_params params = {
-				.priv_size = sizeof(*twt_en_priv),
-				.timeout_ms = TWT_ENABLE_COMPLETE_TIMEOUT,
+		.priv_size = sizeof(*twt_en_priv),
+		.timeout_ms = TWT_ENABLE_COMPLETE_TIMEOUT,
 	};
 
 	request = osif_request_alloc(&params);
@@ -119,8 +119,8 @@ int osif_twt_requestor_disable(struct wlan_objmgr_psoc *psoc,
 	struct twt_en_dis_priv *twt_en_priv;
 	void *context;
 	static const struct osif_request_params params = {
-				.priv_size = sizeof(*twt_en_priv),
-				.timeout_ms = TWT_DISABLE_COMPLETE_TIMEOUT,
+		.priv_size = sizeof(*twt_en_priv),
+		.timeout_ms = TWT_DISABLE_COMPLETE_TIMEOUT,
 	};
 
 	request = osif_request_alloc(&params);
@@ -161,8 +161,8 @@ int osif_twt_responder_disable(struct wlan_objmgr_psoc *psoc,
 	struct twt_en_dis_priv *twt_en_priv;
 	void *context;
 	static const struct osif_request_params params = {
-				.priv_size = sizeof(*twt_en_priv),
-				.timeout_ms = TWT_DISABLE_COMPLETE_TIMEOUT,
+		.priv_size = sizeof(*twt_en_priv),
+		.timeout_ms = TWT_DISABLE_COMPLETE_TIMEOUT,
 	};
 
 	request = osif_request_alloc(&params);
@@ -190,4 +190,3 @@ cleanup:
 	osif_request_put(request);
 	return ret;
 }
-

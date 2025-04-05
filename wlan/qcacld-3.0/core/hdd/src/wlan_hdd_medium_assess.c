@@ -23,32 +23,24 @@
  */
 
 #include "wlan_hdd_medium_assess.h"
+#include "wlan_cmn.h"
 #include <osif_sync.h>
+#include <sme_api.h>
+#include <wlan_cp_stats_mc_ucfg_api.h>
+#include <wlan_dcs_ucfg_api.h>
 #include <wlan_hdd_main.h>
 #include <wlan_hdd_object_manager.h>
-#include <wlan_dcs_ucfg_api.h>
-#include <wlan_cp_stats_mc_ucfg_api.h>
-#include <sme_api.h>
 #include <wma_api.h>
-#include "wlan_cmn.h"
 
 /* define short names for get station info attributes */
-#define MEDIUM_ASSESS_TYPE \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_TYPE
-#define PERIOD \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_PERIOD
-#define TOTAL_CYCLE_COUNT \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_TOTAL_CYCLE_COUNT
-#define IDLE_COUNT \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_IDLE_COUNT
-#define IBSS_RX_COUNT \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_IBSS_RX_COUNT
-#define OBSS_RX_COUNT \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_OBSS_RX_COUNT
-#define MAX_IBSS_RSSI \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_MAX_IBSS_RSSI
-#define MIN_IBSS_RSSI \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_MIN_IBSS_RSSI
+#define MEDIUM_ASSESS_TYPE QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_TYPE
+#define PERIOD QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_PERIOD
+#define TOTAL_CYCLE_COUNT QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_TOTAL_CYCLE_COUNT
+#define IDLE_COUNT QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_IDLE_COUNT
+#define IBSS_RX_COUNT QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_IBSS_RX_COUNT
+#define OBSS_RX_COUNT QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_OBSS_RX_COUNT
+#define MAX_IBSS_RSSI QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_MAX_IBSS_RSSI
+#define MIN_IBSS_RSSI QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_MIN_IBSS_RSSI
 #define CONGESTION_REPORT_ENABLE \
 	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_CONGESTION_REPORT_ENABLE
 #define CONGESTION_REPORT_THRESHOLD \
@@ -57,11 +49,10 @@
 	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_CONGESTION_REPORT_INTERVAL
 #define CONGESTION_PERCENTAGE \
 	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_CONGESTION_PERCENTAGE
-#define MEDIUM_ASSESS_MAX \
-	QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_MAX
+#define MEDIUM_ASSESS_MAX QCA_WLAN_VENDOR_ATTR_MEDIUM_ASSESS_MAX
 
-#define DEFAULT_CCA_PERIOD 10	/* seconds */
-#define CCA_GET_RSSI_INTERVAL 1000	/* 1 second */
+#define DEFAULT_CCA_PERIOD 10 /* seconds */
+#define CCA_GET_RSSI_INTERVAL 1000 /* 1 second */
 
 #define REPORT_DISABLE 0
 #define REPORT_ENABLE 1
@@ -76,13 +67,12 @@ static bool timer_enable;
 struct hdd_medium_assess_info medium_assess_info[WLAN_UMAC_MAX_RP_PID];
 unsigned long stime;
 
-const struct nla_policy
-hdd_medium_assess_policy[MEDIUM_ASSESS_MAX + 1] = {
-	[MEDIUM_ASSESS_TYPE] = {.type = NLA_U8},
-	[PERIOD] = {.type = NLA_U32},
-	[CONGESTION_REPORT_ENABLE] = {.type = NLA_U8},
-	[CONGESTION_REPORT_THRESHOLD] = {.type = NLA_U8},
-	[CONGESTION_REPORT_INTERVAL] = {.type = NLA_U8},
+const struct nla_policy hdd_medium_assess_policy[MEDIUM_ASSESS_MAX + 1] = {
+	[MEDIUM_ASSESS_TYPE] = { .type = NLA_U8 },
+	[PERIOD] = { .type = NLA_U32 },
+	[CONGESTION_REPORT_ENABLE] = { .type = NLA_U8 },
+	[CONGESTION_REPORT_THRESHOLD] = { .type = NLA_U8 },
+	[CONGESTION_REPORT_INTERVAL] = { .type = NLA_U8 },
 };
 
 /*
@@ -145,17 +135,14 @@ static void hdd_cca_notification_cb(uint8_t vdev_id,
 	}
 
 	event = wlan_cfg80211_vendor_event_alloc(
-				hdd_ctx->wiphy, &link_info->adapter->wdev,
-				get_cca_report_len(),
-				QCA_NL80211_VENDOR_SUBCMD_MEDIUM_ASSESS_INDEX,
-				GFP_KERNEL);
+		hdd_ctx->wiphy, &link_info->adapter->wdev, get_cca_report_len(),
+		QCA_NL80211_VENDOR_SUBCMD_MEDIUM_ASSESS_INDEX, GFP_KERNEL);
 	if (!event) {
 		hdd_err("wlan_cfg80211_vendor_event_alloc failed");
 		return;
 	}
 
-	if (nla_put_u8(event, MEDIUM_ASSESS_TYPE,
-		       QCA_WLAN_MEDIUM_ASSESS_CCA) ||
+	if (nla_put_u8(event, MEDIUM_ASSESS_TYPE, QCA_WLAN_MEDIUM_ASSESS_CCA) ||
 	    nla_put_u32(event, TOTAL_CYCLE_COUNT, stats->cycle_count) ||
 	    nla_put_u32(event, IDLE_COUNT,
 			stats->cycle_count - stats->rxclr_count) ||
@@ -194,9 +181,8 @@ static int hdd_medium_assess_cca(struct hdd_context *hdd_ctx,
 	if (!vdev)
 		return -EINVAL;
 
-	status = policy_mgr_get_mac_id_by_session_id(hdd_ctx->psoc,
-						     adapter->deflink->vdev_id,
-						     &mac_id);
+	status = policy_mgr_get_mac_id_by_session_id(
+		hdd_ctx->psoc, adapter->deflink->vdev_id, &mac_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err_rl("Failed to get mac_id");
 		errno = -EINVAL;
@@ -226,8 +212,8 @@ static int hdd_medium_assess_cca(struct hdd_context *hdd_ctx,
 				  adapter->deflink->vdev_id,
 				  hdd_cca_notification_cb);
 	/* dcs is already enabled and dcs event is reported every second
-	 * set the user request counter to collect user stats
-	 */
+   * set the user request counter to collect user stats
+   */
 	ucfg_dcs_set_user_request(hdd_ctx->psoc, mac_id, cca_period);
 
 out:
@@ -299,24 +285,24 @@ static void hdd_congestion_notification_cb(uint8_t vdev_id,
 
 		if (data[i].part1_valid && mdata->data[index].part1_valid) {
 			if (CYCLE_THRESHOLD > (data[i].cycle_count -
-			    mdata->data[index].cycle_count))
+					       mdata->data[index].cycle_count))
 				continue;
 		}
 
 		if (data[i].part1_valid) {
 			mdata->data[mdata->index].part1_valid = true;
 			mdata->data[mdata->index].cycle_count =
-						data[i].cycle_count;
+				data[i].cycle_count;
 			mdata->data[mdata->index].rx_clear_count =
-						data[i].rx_clear_count;
+				data[i].rx_clear_count;
 			mdata->data[mdata->index].tx_frame_count =
-						data[i].tx_frame_count;
+				data[i].tx_frame_count;
 		}
 
 		if (data[i].part2_valid) {
 			mdata->data[mdata->index].part2_valid = true;
 			mdata->data[mdata->index].my_rx_count =
-						data[i].my_rx_count;
+				data[i].my_rx_count;
 		}
 
 		if (last) {
@@ -388,7 +374,7 @@ void hdd_medium_assess_ssr_enable_flag(void)
 
 void hdd_medium_assess_stop_timer(uint8_t pdev_id, struct hdd_context *hdd_ctx)
 {
-	struct request_info info = {0};
+	struct request_info info = { 0 };
 	bool pending = false;
 	uint8_t i, interval = 0;
 
@@ -405,9 +391,8 @@ void hdd_medium_assess_stop_timer(uint8_t pdev_id, struct hdd_context *hdd_ctx)
 		interval += medium_assess_info[i].config.interval;
 
 	if (!interval) {
-		ucfg_mc_cp_stats_reset_pending_req(hdd_ctx->psoc,
-						   TYPE_CONGESTION_STATS,
-						   &info, &pending);
+		ucfg_mc_cp_stats_reset_pending_req(
+			hdd_ctx->psoc, TYPE_CONGESTION_STATS, &info, &pending);
 		qdf_mc_timer_stop(&hdd_medium_assess_timer);
 		hdd_debug("medium assess atimer stop");
 	}
@@ -439,8 +424,8 @@ hdd_congestion_notification_calculation(struct hdd_medium_assess_info *info)
 	else
 		t_index = MEDIUM_ASSESS_NUM - info->config.interval - h_index;
 
-	if (h_index < 0 || h_index >= MEDIUM_ASSESS_NUM ||
-	    t_index < 0 || t_index >= MEDIUM_ASSESS_NUM) {
+	if (h_index < 0 || h_index >= MEDIUM_ASSESS_NUM || t_index < 0 ||
+	    t_index >= MEDIUM_ASSESS_NUM) {
 		hdd_err("medium assess index is not valid.");
 		return;
 	}
@@ -455,16 +440,16 @@ hdd_congestion_notification_calculation(struct hdd_medium_assess_info *info)
 	}
 
 	if (h_data->rx_clear_count >= t_data->rx_clear_count) {
-		rx_clear_count_delta = h_data->rx_clear_count -
-						t_data->rx_clear_count;
+		rx_clear_count_delta =
+			h_data->rx_clear_count - t_data->rx_clear_count;
 	} else {
 		rx_clear_count_delta = U32_MAX - t_data->rx_clear_count;
 		rx_clear_count_delta += h_data->rx_clear_count;
 	}
 
 	if (h_data->tx_frame_count >= t_data->tx_frame_count) {
-		tx_frame_count_delta = h_data->tx_frame_count -
-						t_data->tx_frame_count;
+		tx_frame_count_delta =
+			h_data->tx_frame_count - t_data->tx_frame_count;
 	} else {
 		tx_frame_count_delta = U32_MAX - t_data->tx_frame_count;
 		tx_frame_count_delta += h_data->tx_frame_count;
@@ -486,8 +471,8 @@ hdd_congestion_notification_calculation(struct hdd_medium_assess_info *info)
 
 	if (rx_clear_count_delta > tx_frame_count_delta &&
 	    rx_clear_count_delta - tx_frame_count_delta > my_rx_count_delta) {
-		diff = rx_clear_count_delta - tx_frame_count_delta
-		       - my_rx_count_delta;
+		diff = rx_clear_count_delta - tx_frame_count_delta -
+		       my_rx_count_delta;
 		if (cycle_count_delta)
 			congestion = qdf_do_div(diff * 100, cycle_count_delta);
 
@@ -528,7 +513,7 @@ static void hdd_congestion_notification_report_multi(uint8_t pdev_id)
 static void hdd_medium_assess_expire_handler(void *arg)
 {
 	struct wlan_objmgr_vdev *vdev;
-	struct request_info info = {0};
+	struct request_info info = { 0 };
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	struct wlan_hdd_link_info *link_info;
 	uint8_t vdev_id = INVALID_VDEV_ID, pdev_id;
@@ -566,9 +551,7 @@ static void hdd_medium_assess_expire_handler(void *arg)
 	info.pdev_id = WMI_HOST_PDEV_ID_SOC;
 	info.u.congestion_notif_cb = hdd_congestion_notification_cb;
 	stime = jiffies + msecs_to_jiffies(40);
-	ucfg_mc_cp_stats_send_stats_request(vdev,
-					    TYPE_CONGESTION_STATS,
-					    &info);
+	ucfg_mc_cp_stats_send_stats_request(vdev, TYPE_CONGESTION_STATS, &info);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_CP_STATS_ID);
 	qdf_mc_timer_start(&hdd_medium_assess_timer,
 			   MEDIUM_ASSESS_TIMER_INTERVAL);
@@ -654,11 +637,9 @@ static int hdd_medium_assess_congestion_report(struct hdd_context *hdd_ctx,
 			  pdev_id, vdev_id);
 
 		if (!timer_enable) {
-			status =
-			    qdf_mc_timer_init(&hdd_medium_assess_timer,
-					      QDF_TIMER_TYPE_SW,
-					      hdd_medium_assess_expire_handler,
-					      NULL);
+			status = qdf_mc_timer_init(
+				&hdd_medium_assess_timer, QDF_TIMER_TYPE_SW,
+				hdd_medium_assess_expire_handler, NULL);
 			if (QDF_IS_STATUS_ERROR(status)) {
 				hdd_debug("medium assess init timer failed");
 				errno = -EINVAL;
@@ -696,8 +677,7 @@ out:
  */
 static int __hdd_cfg80211_medium_assess(struct wiphy *wiphy,
 					struct wireless_dev *wdev,
-					const void *data,
-					int data_len)
+					const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -738,7 +718,7 @@ static int __hdd_cfg80211_medium_assess(struct wiphy *wiphy,
 		break;
 	case QCA_WLAN_MEDIUM_ASSESS_CONGESTION_REPORT:
 		errno = hdd_medium_assess_congestion_report(hdd_ctx, adapter,
-							     tb);
+							    tb);
 		break;
 	default:
 		hdd_err_rl("Invalid medium assess type: %d", type);
@@ -750,10 +730,8 @@ static int __hdd_cfg80211_medium_assess(struct wiphy *wiphy,
 	return errno;
 }
 
-int hdd_cfg80211_medium_assess(struct wiphy *wiphy,
-			       struct wireless_dev *wdev,
-			       const void *data,
-			       int data_len)
+int hdd_cfg80211_medium_assess(struct wiphy *wiphy, struct wireless_dev *wdev,
+			       const void *data, int data_len)
 {
 	struct osif_vdev_sync *vdev_sync;
 	int errno;

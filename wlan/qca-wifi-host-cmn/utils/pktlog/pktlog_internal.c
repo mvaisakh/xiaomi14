@@ -32,39 +32,35 @@
  */
 
 #ifndef REMOVE_PKT_LOG
-#include "ol_txrx_types.h"
-#include "ol_htt_tx_api.h"
-#include "ol_tx_desc.h"
-#include "qdf_mem.h"
 #include "htt.h"
 #include "htt_internal.h"
+#include "ol_htt_tx_api.h"
+#include "ol_tx_desc.h"
+#include "ol_txrx_types.h"
 #include "pktlog_ac_i.h"
-#include "wma_api.h"
+#include "qdf_mem.h"
 #include "wlan_logging_sock_svc.h"
+#include "wma_api.h"
 
 #ifdef PKTLOG_HAS_SPECIFIC_DATA
-void
-pktlog_hdr_set_specific_data(struct ath_pktlog_hdr *log_hdr,
-			     uint32_t type_specific_data)
+void pktlog_hdr_set_specific_data(struct ath_pktlog_hdr *log_hdr,
+				  uint32_t type_specific_data)
 {
 	log_hdr->type_specific_data = type_specific_data;
 }
 
-uint32_t
-pktlog_hdr_get_specific_data(struct ath_pktlog_hdr *log_hdr)
+uint32_t pktlog_hdr_get_specific_data(struct ath_pktlog_hdr *log_hdr)
 {
 	return log_hdr->type_specific_data;
 }
 
-void
-pktlog_arg_set_specific_data(struct ath_pktlog_arg *plarg,
-			     uint32_t type_specific_data)
+void pktlog_arg_set_specific_data(struct ath_pktlog_arg *plarg,
+				  uint32_t type_specific_data)
 {
 	plarg->type_specific_data = type_specific_data;
 }
 
-uint32_t
-pktlog_arg_get_specific_data(struct ath_pktlog_arg *plarg)
+uint32_t pktlog_arg_get_specific_data(struct ath_pktlog_arg *plarg)
 {
 	return plarg->type_specific_data;
 }
@@ -106,14 +102,13 @@ void pktlog_getbuf_intsafe(struct ath_pktlog_arg *plarg)
 		return;
 	}
 
-
 	buf_size = pl_info->buf_size;
 	cur_wr_offset = log_buf->wr_offset;
 	/* Move read offset to the next entry if there is a buffer overlap */
 	if (log_buf->rd_offset >= 0) {
-		if ((cur_wr_offset <= log_buf->rd_offset)
-		    && (cur_wr_offset + sizeof(struct ath_pktlog_hdr)) >
-		    log_buf->rd_offset) {
+		if ((cur_wr_offset <= log_buf->rd_offset) &&
+		    (cur_wr_offset + sizeof(struct ath_pktlog_hdr)) >
+			    log_buf->rd_offset) {
 			PKTLOG_MOV_RD_IDX(log_buf->rd_offset, log_buf,
 					  buf_size);
 		}
@@ -130,7 +125,7 @@ void pktlog_getbuf_intsafe(struct ath_pktlog_arg *plarg)
 #else
 	log_hdr->log_type = log_type;
 #endif
-	log_hdr->size = (uint16_t) log_size;
+	log_hdr->size = (uint16_t)log_size;
 	log_hdr->missed_cnt = plarg->missed_cnt;
 	log_hdr->timestamp = plarg->timestamp;
 	pktlog_hdr_set_specific_data(log_hdr,
@@ -138,34 +133,37 @@ void pktlog_getbuf_intsafe(struct ath_pktlog_arg *plarg)
 	cur_wr_offset += sizeof(*log_hdr);
 
 	if ((buf_size - cur_wr_offset) < log_size) {
-		while ((cur_wr_offset <= log_buf->rd_offset)
-		       && (log_buf->rd_offset < buf_size)) {
+		while ((cur_wr_offset <= log_buf->rd_offset) &&
+		       (log_buf->rd_offset < buf_size)) {
 			PKTLOG_MOV_RD_IDX(log_buf->rd_offset, log_buf,
 					  buf_size);
 		}
 		cur_wr_offset = 0;
 	}
 
-	while ((cur_wr_offset <= log_buf->rd_offset)
-	       && (cur_wr_offset + log_size) > log_buf->rd_offset) {
+	while ((cur_wr_offset <= log_buf->rd_offset) &&
+	       (cur_wr_offset + log_size) > log_buf->rd_offset) {
 		PKTLOG_MOV_RD_IDX(log_buf->rd_offset, log_buf, buf_size);
 	}
 
 	log_ptr = &(log_buf->log_data[cur_wr_offset]);
 	cur_wr_offset += log_hdr->size;
 
-	log_buf->wr_offset = ((buf_size - cur_wr_offset) >=
-			      sizeof(struct ath_pktlog_hdr)) ? cur_wr_offset :
-			     0;
+	log_buf->wr_offset =
+		((buf_size - cur_wr_offset) >= sizeof(struct ath_pktlog_hdr)) ?
+			cur_wr_offset :
+			0;
 
 	plarg->buf = log_ptr;
 }
 
 char *pktlog_getbuf(struct pktlog_dev_t *pl_dev,
-		    struct ath_pktlog_info *pl_info,
-		    size_t log_size, struct ath_pktlog_hdr *pl_hdr)
+		    struct ath_pktlog_info *pl_info, size_t log_size,
+		    struct ath_pktlog_hdr *pl_hdr)
 {
-	struct ath_pktlog_arg plarg = { 0, };
+	struct ath_pktlog_arg plarg = {
+		0,
+	};
 	uint8_t flags = 0;
 
 	plarg.pl_info = pl_info;
@@ -184,9 +182,9 @@ char *pktlog_getbuf(struct pktlog_dev_t *pl_dev,
 
 	if (flags & PHFLAGS_INTERRUPT_CONTEXT) {
 		/*
-		 * We are already in interrupt context, no need to make it
-		 * intsafe. call the function directly.
-		 */
+     * We are already in interrupt context, no need to make it
+     * intsafe. call the function directly.
+     */
 		pktlog_getbuf_intsafe(&plarg);
 	} else {
 		PKTLOG_LOCK(pl_info);

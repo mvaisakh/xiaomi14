@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015, 2017-2018, 2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015, 2017-2018, 2020 The Linux Foundation. All rights
+ * reserved.
  *
  */
+#include <asoc/wcdcal-hwdep.h>
+#include <linux/bitops.h>
+#include <linux/ioctl.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <linux/ioctl.h>
-#include <linux/bitops.h>
 #include <sound/hwdep.h>
 #include <sound/msmcal-hwdep.h>
 #include <sound/soc.h>
-#include <asoc/wcdcal-hwdep.h>
 
 const int cal_size_info[WCD9XXX_MAX_CAL] = {
 	[WCD9XXX_ANC_CAL] = 16384,
@@ -28,22 +29,19 @@ const char *cal_name_info[WCD9XXX_MAX_CAL] = {
 };
 
 struct firmware_cal *wcdcal_get_fw_cal(struct fw_info *fw_data,
-					enum wcd_cal_type type)
+				       enum wcd_cal_type type)
 {
 	if (!fw_data) {
 		pr_err("%s: fw_data is NULL\n", __func__);
 		return NULL;
 	}
-	if (type >= WCD9XXX_MAX_CAL ||
-		type < WCD9XXX_MIN_CAL) {
+	if (type >= WCD9XXX_MAX_CAL || type < WCD9XXX_MIN_CAL) {
 		pr_err("%s: wrong cal type sent %d\n", __func__, type);
 		return NULL;
 	}
 	mutex_lock(&fw_data->lock);
-	if (!test_bit(WCDCAL_RECIEVED,
-		&fw_data->wcdcal_state[type])) {
-		pr_err("%s: cal not sent by userspace %d\n",
-			__func__, type);
+	if (!test_bit(WCDCAL_RECIEVED, &fw_data->wcdcal_state[type])) {
+		pr_err("%s: cal not sent by userspace %d\n", __func__, type);
 		mutex_unlock(&fw_data->lock);
 		return NULL;
 	}
@@ -54,28 +52,27 @@ EXPORT_SYMBOL(wcdcal_get_fw_cal);
 
 #if IS_ENABLED(CONFIG_AUDIO_QGKI)
 static int wcdcal_hwdep_ioctl_shared(struct snd_hwdep *hw,
-			struct wcdcal_ioctl_buffer fw_user)
+				     struct wcdcal_ioctl_buffer fw_user)
 {
 	struct fw_info *fw_data = hw->private_data;
 	struct firmware_cal **fw = fw_data->fw;
 	void *data;
 
 	if (!test_bit(fw_user.cal_type, fw_data->cal_bit)) {
-		pr_err("%s: codec didn't set this %d!!\n",
-				__func__, fw_user.cal_type);
+		pr_err("%s: codec didn't set this %d!!\n", __func__,
+		       fw_user.cal_type);
 		return -EFAULT;
 	}
 	if (fw_user.cal_type >= WCD9XXX_MAX_CAL ||
-		fw_user.cal_type < WCD9XXX_MIN_CAL) {
-		pr_err("%s: wrong cal type sent %d\n",
-				__func__, fw_user.cal_type);
+	    fw_user.cal_type < WCD9XXX_MIN_CAL) {
+		pr_err("%s: wrong cal type sent %d\n", __func__,
+		       fw_user.cal_type);
 		return -EFAULT;
 	}
 	if (fw_user.size > cal_size_info[fw_user.cal_type] ||
-		fw_user.size <= 0) {
-		pr_err("%s: incorrect firmware size %d for %s\n",
-			__func__, fw_user.size,
-			cal_name_info[fw_user.cal_type]);
+	    fw_user.size <= 0) {
+		pr_err("%s: incorrect firmware size %d for %s\n", __func__,
+		       fw_user.size, cal_name_info[fw_user.cal_type]);
 		return -EFAULT;
 	}
 	data = fw[fw_user.cal_type]->data;
@@ -103,7 +100,7 @@ enum {
 
 #if IS_ENABLED(CONFIG_AUDIO_QGKI)
 static int wcdcal_hwdep_ioctl_compat(struct snd_hwdep *hw, struct file *file,
-		unsigned int cmd, unsigned long arg)
+				     unsigned int cmd, unsigned long arg)
 {
 	struct wcdcal_ioctl_buffer __user *argp = (void __user *)arg;
 	struct wcdcal_ioctl_buffer32 fw_user32;
@@ -129,7 +126,7 @@ static int wcdcal_hwdep_ioctl_compat(struct snd_hwdep *hw, struct file *file,
 
 #if IS_ENABLED(CONFIG_AUDIO_QGKI)
 static int wcdcal_hwdep_ioctl(struct snd_hwdep *hw, struct file *file,
-		unsigned int cmd, unsigned long arg)
+			      unsigned int cmd, unsigned long arg)
 {
 	struct wcdcal_ioctl_buffer __user *argp = (void __user *)arg;
 	struct wcdcal_ioctl_buffer fw_user;
@@ -151,8 +148,7 @@ static int wcdcal_hwdep_release(struct snd_hwdep *hw, struct file *file)
 
 	mutex_lock(&fw_data->lock);
 	/* clear all the calibrations */
-	memset(fw_data->wcdcal_state, 0,
-		sizeof(fw_data->wcdcal_state));
+	memset(fw_data->wcdcal_state, 0, sizeof(fw_data->wcdcal_state));
 	mutex_unlock(&fw_data->lock);
 	return 0;
 }
@@ -172,17 +168,14 @@ int wcd_cal_create_hwdep(void *data, int node,
 	}
 
 	fw = fw_data->fw;
-	snprintf(hwname, strlen("Codec %s"), "Codec %s",
-		 component->name);
-	err = snd_hwdep_new(component->card->snd_card,
-			    hwname, node, &hwdep);
+	snprintf(hwname, strlen("Codec %s"), "Codec %s", component->name);
+	err = snd_hwdep_new(component->card->snd_card, hwname, node, &hwdep);
 	if (err < 0) {
-		dev_err(component->dev, "%s: new hwdep failed %d\n",
-				__func__, err);
+		dev_err(component->dev, "%s: new hwdep failed %d\n", __func__,
+			err);
 		return err;
 	}
-	snprintf(hwdep->name, strlen("Codec %s"), "Codec %s",
-		 component->name);
+	snprintf(hwdep->name, strlen("Codec %s"), "Codec %s", component->name);
 	hwdep->iface = SNDRV_HWDEP_IFACE_AUDIO_CODEC;
 	hwdep->private_data = fw_data;
 	hwdep->ops.ioctl_compat = wcdcal_hwdep_ioctl_compat;
@@ -191,19 +184,16 @@ int wcd_cal_create_hwdep(void *data, int node,
 	mutex_init(&fw_data->lock);
 
 	for_each_set_bit(cal_bit, fw_data->cal_bit, WCD9XXX_MAX_CAL) {
-		set_bit(WCDCAL_UNINITIALISED,
-				&fw_data->wcdcal_state[cal_bit]);
+		set_bit(WCDCAL_UNINITIALISED, &fw_data->wcdcal_state[cal_bit]);
 		fw[cal_bit] = kzalloc(sizeof *(fw[cal_bit]), GFP_KERNEL);
 		if (!fw[cal_bit])
 			goto end;
 	}
 	for_each_set_bit(cal_bit, fw_data->cal_bit, WCD9XXX_MAX_CAL) {
-		fw[cal_bit]->data = kzalloc(cal_size_info[cal_bit],
-						GFP_KERNEL);
+		fw[cal_bit]->data = kzalloc(cal_size_info[cal_bit], GFP_KERNEL);
 		if (!fw[cal_bit]->data)
 			goto exit;
-		set_bit(WCDCAL_INITIALISED,
-			&fw_data->wcdcal_state[cal_bit]);
+		set_bit(WCDCAL_INITIALISED, &fw_data->wcdcal_state[cal_bit]);
 	}
 	return 0;
 exit:

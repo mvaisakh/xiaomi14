@@ -20,9 +20,9 @@
  * function definitions
  */
 
-#include <wlan_mgmt_txrx_rx_reo_ucfg_api.h>
 #include "../../core/src/wlan_mgmt_txrx_rx_reo_i.h"
 #include <cfg_ucfg_api.h>
+#include <wlan_mgmt_txrx_rx_reo_ucfg_api.h>
 
 QDF_STATUS
 ucfg_wlan_mgmt_rx_reo_sim_start(uint8_t ml_grp_id)
@@ -64,8 +64,7 @@ ucfg_wlan_mgmt_rx_reo_sim_stop(uint8_t ml_grp_id)
 
 qdf_export_symbol(ucfg_wlan_mgmt_rx_reo_sim_stop);
 
-bool
-ucfg_wlan_mgmt_rx_reo_is_simulation_in_progress(uint8_t ml_grp_id)
+bool ucfg_wlan_mgmt_rx_reo_is_simulation_in_progress(uint8_t ml_grp_id)
 {
 	return wlan_mgmt_rx_reo_is_simulation_in_progress(ml_grp_id);
 }

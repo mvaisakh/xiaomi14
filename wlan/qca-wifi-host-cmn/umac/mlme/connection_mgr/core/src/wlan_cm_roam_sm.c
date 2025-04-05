@@ -19,11 +19,11 @@
  * DOC: Implements general SM framework for connection manager roaming sm
  */
 
-#include "wlan_cm_main.h"
 #include "wlan_cm_roam_sm.h"
-#include "wlan_cm_sm.h"
+#include "wlan_cm_main.h"
 #include "wlan_cm_main_api.h"
 #include "wlan_cm_roam.h"
+#include "wlan_cm_sm.h"
 #ifdef WLAN_FEATURE_11BE_MLO_ADV_FEATURE
 #include "wlan_mlo_mgr_roam.h"
 #endif
@@ -41,9 +41,8 @@ void cm_state_roaming_exit(void *ctx)
 }
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
-static
-bool cm_handle_fw_roaming_event(struct cnx_mgr *cm_ctx, uint16_t event,
-				uint16_t data_len, void *data)
+static bool cm_handle_fw_roaming_event(struct cnx_mgr *cm_ctx, uint16_t event,
+				       uint16_t data_len, void *data)
 {
 	bool event_handled = true;
 	QDF_STATUS status;
@@ -56,8 +55,7 @@ bool cm_handle_fw_roaming_event(struct cnx_mgr *cm_ctx, uint16_t event,
 			break;
 		}
 		cm_sm_transition_to(cm_ctx, WLAN_CM_SS_ROAM_STARTED);
-		cm_sm_deliver_event_sync(cm_ctx,
-					 WLAN_CM_SM_EV_ROAM_INVOKE,
+		cm_sm_deliver_event_sync(cm_ctx, WLAN_CM_SM_EV_ROAM_INVOKE,
 					 data_len, data);
 		break;
 	case WLAN_CM_SM_EV_ROAM_START:
@@ -67,19 +65,17 @@ bool cm_handle_fw_roaming_event(struct cnx_mgr *cm_ctx, uint16_t event,
 			break;
 		}
 		cm_sm_transition_to(cm_ctx, WLAN_CM_SS_ROAM_STARTED);
-		cm_sm_deliver_event_sync(cm_ctx,
-					 WLAN_CM_SM_EV_ROAM_START,
-					 0, NULL);
+		cm_sm_deliver_event_sync(cm_ctx, WLAN_CM_SM_EV_ROAM_START, 0,
+					 NULL);
 		break;
 	case WLAN_CM_SM_EV_ROAM_ABORT:
 		cm_sm_transition_to(cm_ctx, WLAN_CM_S_CONNECTED);
-		cm_sm_deliver_event_sync(cm_ctx, event,
-					 data_len, data);
+		cm_sm_deliver_event_sync(cm_ctx, event, data_len, data);
 		break;
 	case WLAN_CM_SM_EV_ROAM_SYNC:
 		cm_sm_transition_to(cm_ctx, WLAN_CM_SS_ROAM_SYNC);
-		status = cm_sm_deliver_event_sync(cm_ctx, event,
-						  data_len, data);
+		status =
+			cm_sm_deliver_event_sync(cm_ctx, event, data_len, data);
 		if (QDF_IS_STATUS_ERROR(status))
 			event_handled = false;
 		break;
@@ -91,16 +87,16 @@ bool cm_handle_fw_roaming_event(struct cnx_mgr *cm_ctx, uint16_t event,
 	return event_handled;
 }
 #else
-static inline
-bool cm_handle_fw_roaming_event(struct cnx_mgr *cm_ctx, uint16_t event,
-				uint16_t data_len, void *data)
+static inline bool cm_handle_fw_roaming_event(struct cnx_mgr *cm_ctx,
+					      uint16_t event, uint16_t data_len,
+					      void *data)
 {
 	return false;
 }
 #endif
 
-bool cm_state_roaming_event(void *ctx, uint16_t event,
-			    uint16_t data_len, void *data)
+bool cm_state_roaming_event(void *ctx, uint16_t event, uint16_t data_len,
+			    void *data)
 {
 	struct cnx_mgr *cm_ctx = ctx;
 	bool event_handled = true;
@@ -142,8 +138,8 @@ static bool cm_handle_connect_disconnect_in_roam(struct cnx_mgr *cm_ctx,
 
 	switch (event) {
 	case WLAN_CM_SM_EV_CONNECT_REQ:
-		status = cm_handle_connect_req_in_non_init_state(cm_ctx, data,
-							WLAN_CM_S_ROAMING);
+		status = cm_handle_connect_req_in_non_init_state(
+			cm_ctx, data, WLAN_CM_S_ROAMING);
 		if (QDF_IS_STATUS_ERROR(status))
 			return false;
 		cm_sm_transition_to(cm_ctx, WLAN_CM_S_CONNECTING);
@@ -151,8 +147,8 @@ static bool cm_handle_connect_disconnect_in_roam(struct cnx_mgr *cm_ctx,
 					 data_len, data);
 		break;
 	case WLAN_CM_SM_EV_DISCONNECT_REQ:
-		status = cm_handle_discon_req_in_non_connected_state(cm_ctx,
-						data, WLAN_CM_S_ROAMING);
+		status = cm_handle_discon_req_in_non_connected_state(
+			cm_ctx, data, WLAN_CM_S_ROAMING);
 		if (QDF_IS_STATUS_ERROR(status))
 			return false;
 		cm_sm_transition_to(cm_ctx, WLAN_CM_S_DISCONNECTING);
@@ -189,9 +185,8 @@ void cm_subst_preauth_exit(void *ctx)
 }
 
 #ifdef WLAN_FEATURE_PREAUTH_ENABLE
-static bool
-cm_handle_preauth_event(struct cnx_mgr *cm_ctx, uint16_t event,
-			uint16_t data_len, void *data)
+static bool cm_handle_preauth_event(struct cnx_mgr *cm_ctx, uint16_t event,
+				    uint16_t data_len, void *data)
 {
 	bool event_handled = true;
 
@@ -221,16 +216,16 @@ cm_handle_preauth_event(struct cnx_mgr *cm_ctx, uint16_t event,
 	return event_handled;
 }
 #else
-static inline bool
-cm_handle_preauth_event(struct cnx_mgr *cm_ctx, uint16_t event,
-			uint16_t data_len, void *data)
+static inline bool cm_handle_preauth_event(struct cnx_mgr *cm_ctx,
+					   uint16_t event, uint16_t data_len,
+					   void *data)
 {
 	return false;
 }
 #endif
 
-bool cm_subst_preauth_event(void *ctx, uint16_t event,
-			    uint16_t data_len, void *data)
+bool cm_subst_preauth_event(void *ctx, uint16_t event, uint16_t data_len,
+			    void *data)
 {
 	struct cnx_mgr *cm_ctx = ctx;
 	bool event_handled = true;
@@ -239,9 +234,8 @@ bool cm_subst_preauth_event(void *ctx, uint16_t event,
 	case WLAN_CM_SM_EV_CONNECT_REQ:
 	case WLAN_CM_SM_EV_DISCONNECT_REQ:
 	case WLAN_CM_SM_EV_DISCONNECT_ACTIVE:
-		event_handled =
-			cm_handle_connect_disconnect_in_roam(cm_ctx, event,
-							     data_len, data);
+		event_handled = cm_handle_connect_disconnect_in_roam(
+			cm_ctx, event, data_len, data);
 		break;
 	case WLAN_CM_SM_EV_ROAM_START:
 		cm_host_roam_start_req(cm_ctx, data);
@@ -254,8 +248,8 @@ bool cm_subst_preauth_event(void *ctx, uint16_t event,
 		cm_reassoc_complete(cm_ctx, data);
 		break;
 	default:
-		event_handled = cm_handle_preauth_event(cm_ctx, event,
-							data_len, data);
+		event_handled =
+			cm_handle_preauth_event(cm_ctx, event, data_len, data);
 		break;
 	}
 
@@ -279,9 +273,8 @@ void cm_subst_reassoc_exit(void *ctx)
 }
 
 #ifdef WLAN_FEATURE_PREAUTH_ENABLE
-static bool
-cm_handle_reassoc_event(struct cnx_mgr *cm_ctx, uint16_t event,
-			uint16_t data_len, void *data)
+static bool cm_handle_reassoc_event(struct cnx_mgr *cm_ctx, uint16_t event,
+				    uint16_t data_len, void *data)
 {
 	bool event_handled = true;
 	QDF_STATUS status;
@@ -299,16 +292,16 @@ cm_handle_reassoc_event(struct cnx_mgr *cm_ctx, uint16_t event,
 	return event_handled;
 }
 #else
-static inline bool
-cm_handle_reassoc_event(struct cnx_mgr *cm_ctx, uint16_t event,
-			uint16_t data_len, void *data)
+static inline bool cm_handle_reassoc_event(struct cnx_mgr *cm_ctx,
+					   uint16_t event, uint16_t data_len,
+					   void *data)
 {
 	return false;
 }
 #endif
 
-bool cm_subst_reassoc_event(void *ctx, uint16_t event,
-			    uint16_t data_len, void *data)
+bool cm_subst_reassoc_event(void *ctx, uint16_t event, uint16_t data_len,
+			    void *data)
 {
 	struct cnx_mgr *cm_ctx = ctx;
 	bool event_handled = true;
@@ -317,9 +310,8 @@ bool cm_subst_reassoc_event(void *ctx, uint16_t event,
 	case WLAN_CM_SM_EV_CONNECT_REQ:
 	case WLAN_CM_SM_EV_DISCONNECT_REQ:
 	case WLAN_CM_SM_EV_DISCONNECT_ACTIVE:
-		event_handled =
-			cm_handle_connect_disconnect_in_roam(cm_ctx, event,
-							     data_len, data);
+		event_handled = cm_handle_connect_disconnect_in_roam(
+			cm_ctx, event, data_len, data);
 		break;
 	case WLAN_CM_SM_EV_START_REASSOC:
 		cm_reassoc_start(cm_ctx, data);
@@ -362,8 +354,8 @@ bool cm_subst_reassoc_event(void *ctx, uint16_t event,
 		cm_handle_reassoc_hw_mode_change(cm_ctx, data, event);
 		break;
 	default:
-		event_handled = cm_handle_reassoc_event(cm_ctx, event,
-							data_len, data);
+		event_handled =
+			cm_handle_reassoc_event(cm_ctx, event, data_len, data);
 		break;
 	}
 
@@ -387,8 +379,8 @@ void cm_subst_roam_start_exit(void *ctx)
 {
 }
 
-bool cm_subst_roam_start_event(void *ctx, uint16_t event,
-			       uint16_t data_len, void *data)
+bool cm_subst_roam_start_event(void *ctx, uint16_t event, uint16_t data_len,
+			       void *data)
 {
 	bool event_handled = true;
 	struct cnx_mgr *cm_ctx = ctx;
@@ -398,9 +390,8 @@ bool cm_subst_roam_start_event(void *ctx, uint16_t event,
 	case WLAN_CM_SM_EV_CONNECT_REQ:
 	case WLAN_CM_SM_EV_DISCONNECT_REQ:
 	case WLAN_CM_SM_EV_DISCONNECT_ACTIVE:
-		event_handled =
-			cm_handle_connect_disconnect_in_roam(cm_ctx, event,
-							     data_len, data);
+		event_handled = cm_handle_connect_disconnect_in_roam(
+			cm_ctx, event, data_len, data);
 		break;
 	case WLAN_CM_SM_EV_ROAM_START:
 		cm_fw_roam_start(ctx);
@@ -412,13 +403,12 @@ bool cm_subst_roam_start_event(void *ctx, uint16_t event,
 	case WLAN_CM_SM_EV_ROAM_INVOKE_FAIL:
 	case WLAN_CM_SM_EV_ROAM_HO_FAIL:
 		cm_sm_transition_to(cm_ctx, WLAN_CM_S_CONNECTED);
-		cm_sm_deliver_event_sync(cm_ctx, event,
-					 data_len, data);
+		cm_sm_deliver_event_sync(cm_ctx, event, data_len, data);
 		break;
 	case WLAN_CM_SM_EV_ROAM_SYNC:
 		cm_sm_transition_to(cm_ctx, WLAN_CM_SS_ROAM_SYNC);
-		status = cm_sm_deliver_event_sync(cm_ctx, event,
-						  data_len, data);
+		status =
+			cm_sm_deliver_event_sync(cm_ctx, event, data_len, data);
 		if (QDF_IS_STATUS_ERROR(status))
 			event_handled = false;
 		break;
@@ -444,8 +434,8 @@ void cm_subst_roam_sync_exit(void *ctx)
 {
 }
 
-bool cm_subst_roam_sync_event(void *ctx, uint16_t event,
-			      uint16_t data_len, void *data)
+bool cm_subst_roam_sync_event(void *ctx, uint16_t event, uint16_t data_len,
+			      void *data)
 {
 	bool event_handled = true;
 	struct cnx_mgr *cm_ctx = ctx;
@@ -455,9 +445,8 @@ bool cm_subst_roam_sync_event(void *ctx, uint16_t event,
 	case WLAN_CM_SM_EV_CONNECT_REQ:
 	case WLAN_CM_SM_EV_DISCONNECT_REQ:
 	case WLAN_CM_SM_EV_DISCONNECT_ACTIVE:
-		event_handled =
-			cm_handle_connect_disconnect_in_roam(cm_ctx, event,
-							     data_len, data);
+		event_handled = cm_handle_connect_disconnect_in_roam(
+			cm_ctx, event, data_len, data);
 		break;
 	case WLAN_CM_SM_EV_ROAM_SYNC:
 #ifdef WLAN_FEATURE_11BE_MLO_ADV_FEATURE
@@ -473,14 +462,12 @@ bool cm_subst_roam_sync_event(void *ctx, uint16_t event,
 		break;
 	case WLAN_CM_SM_EV_ROAM_DONE:
 		cm_sm_transition_to(cm_ctx, WLAN_CM_S_CONNECTED);
-		cm_sm_deliver_event_sync(cm_ctx, event,
-					 data_len, data);
+		cm_sm_deliver_event_sync(cm_ctx, event, data_len, data);
 		break;
 	case WLAN_CM_SM_EV_ROAM_ABORT:
 	case WLAN_CM_SM_EV_ROAM_HO_FAIL:
 		cm_sm_transition_to(cm_ctx, WLAN_CM_S_CONNECTED);
-		cm_sm_deliver_event_sync(cm_ctx, event,
-					 data_len, data);
+		cm_sm_deliver_event_sync(cm_ctx, event, data_len, data);
 		break;
 	default:
 		event_handled = false;

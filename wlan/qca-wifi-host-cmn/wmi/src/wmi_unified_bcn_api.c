@@ -26,8 +26,7 @@ wmi_unified_bcn_buf_ll_cmd(wmi_unified_t wmi_handle,
 			   wmi_bcn_send_from_host_cmd_fixed_param *param)
 {
 	if (wmi_handle->ops->send_bcn_buf_ll_cmd)
-		return wmi_handle->ops->send_bcn_buf_ll_cmd(wmi_handle,
-						param);
+		return wmi_handle->ops->send_bcn_buf_ll_cmd(wmi_handle, param);
 
 	return QDF_STATUS_E_FAILURE;
 }

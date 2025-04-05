@@ -6,39 +6,38 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include "linux/qcedev.h"
+#include "linux/compat_qcedev.h"
+#include <linux/crypto.h>
+#include <linux/debugfs.h>
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/dma-mapping.h>
+#include <linux/dmapool.h>
+#include <linux/fs.h>
+#include <linux/init.h>
+#include <linux/interconnect.h>
+#include <linux/interrupt.h>
+#include <linux/kernel.h>
 #include <linux/mman.h>
 #include <linux/module.h>
-#include <linux/device.h>
-#include <linux/types.h>
 #include <linux/platform_device.h>
-#include <linux/dma-mapping.h>
-#include <linux/kernel.h>
-#include <linux/dmapool.h>
-#include <linux/interrupt.h>
-#include <linux/spinlock.h>
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/fs.h>
-#include <linux/uaccess.h>
-#include <linux/debugfs.h>
 #include <linux/scatterlist.h>
-#include <linux/crypto.h>
-#include "linux/qcedev.h"
-#include <linux/interconnect.h>
-#include <linux/delay.h>
-#include "linux/compat_qcedev.h"
+#include <linux/spinlock.h>
+#include <linux/types.h>
+#include <linux/uaccess.h>
 
-#include <crypto/hash.h>
-#include "qcedevi.h"
 #include "qce.h"
 #include "qcedev_smmu.h"
+#include "qcedevi.h"
 #include "qcom_crypto_device.h"
+#include <crypto/hash.h>
 
 #include <linux/compat.h>
 
 #define CACHE_LINE_SIZE 64
 #define CE_SHA_BLOCK_SIZE SHA256_BLOCK_SIZE
-#define MAX_CEHW_REQ_TRANSFER_SIZE (128*32*1024)
+#define MAX_CEHW_REQ_TRANSFER_SIZE (128 * 32 * 1024)
 /*
  * Max wait time once a crypto request is submitted.
  */
@@ -60,22 +59,20 @@ enum qcedev_req_status {
 	QCEDEV_REQ_DONE = 3,
 };
 
-static uint8_t  _std_init_vector_sha1_uint8[] =   {
-	0x67, 0x45, 0x23, 0x01, 0xEF, 0xCD, 0xAB, 0x89,
-	0x98, 0xBA, 0xDC, 0xFE, 0x10, 0x32, 0x54, 0x76,
-	0xC3, 0xD2, 0xE1, 0xF0
-};
+static uint8_t _std_init_vector_sha1_uint8[] = { 0x67, 0x45, 0x23, 0x01, 0xEF,
+						 0xCD, 0xAB, 0x89, 0x98, 0xBA,
+						 0xDC, 0xFE, 0x10, 0x32, 0x54,
+						 0x76, 0xC3, 0xD2, 0xE1, 0xF0 };
 /* standard initialization vector for SHA-256, source: FIPS 180-2 */
 static uint8_t _std_init_vector_sha256_uint8[] = {
-	0x6A, 0x09, 0xE6, 0x67, 0xBB, 0x67, 0xAE, 0x85,
-	0x3C, 0x6E, 0xF3, 0x72, 0xA5, 0x4F, 0xF5, 0x3A,
-	0x51, 0x0E, 0x52, 0x7F, 0x9B, 0x05, 0x68, 0x8C,
-	0x1F, 0x83, 0xD9, 0xAB, 0x5B, 0xE0, 0xCD, 0x19
+	0x6A, 0x09, 0xE6, 0x67, 0xBB, 0x67, 0xAE, 0x85, 0x3C, 0x6E, 0xF3,
+	0x72, 0xA5, 0x4F, 0xF5, 0x3A, 0x51, 0x0E, 0x52, 0x7F, 0x9B, 0x05,
+	0x68, 0x8C, 0x1F, 0x83, 0xD9, 0xAB, 0x5B, 0xE0, 0xCD, 0x19
 };
 
-#define QCEDEV_CTX_KEY_MASK		0x000000ff
-#define QCEDEV_CTX_USE_HW_KEY		0x00000001
-#define QCEDEV_CTX_USE_PIPE_KEY		0x00000002
+#define QCEDEV_CTX_KEY_MASK 0x000000ff
+#define QCEDEV_CTX_USE_HW_KEY 0x00000001
+#define QCEDEV_CTX_USE_PIPE_KEY 0x00000002
 
 static DEFINE_MUTEX(send_cmd_lock);
 static DEFINE_MUTEX(qcedev_sent_bw_req);
@@ -86,8 +83,8 @@ static struct class *driver_class;
 static struct device *class_dev;
 
 static const struct of_device_id qcedev_match[] = {
-	{	.compatible = "qcom,qcedev"},
-	{	.compatible = "qcom,qcedev,context-bank"},
+	{ .compatible = "qcom,qcedev" },
+	{ .compatible = "qcom,qcedev,context-bank" },
 	{}
 };
 
@@ -117,8 +114,8 @@ static int qcedev_control_clocks(struct qcedev_control *podev, bool enable)
 			pr_err("%s Unable enable clk\n", __func__);
 			return ret;
 		}
-		ret = icc_set_bw(podev->icc_path,
-				podev->icc_avg_bw, podev->icc_peak_bw);
+		ret = icc_set_bw(podev->icc_path, podev->icc_avg_bw,
+				 podev->icc_peak_bw);
 		if (ret) {
 			pr_err("%s Unable to set high bw\n", __func__);
 			ret = qce_disable_clk(podev->qce);
@@ -128,8 +125,8 @@ static int qcedev_control_clocks(struct qcedev_control *podev, bool enable)
 		}
 		break;
 	case QCE_BW_REQUEST_FIRST:
-		ret = icc_set_bw(podev->icc_path,
-				podev->icc_avg_bw, podev->icc_peak_bw);
+		ret = icc_set_bw(podev->icc_path, podev->icc_avg_bw,
+				 podev->icc_peak_bw);
 		if (ret) {
 			pr_err("%s Unable to set high bw\n", __func__);
 			return ret;
@@ -167,8 +164,8 @@ static int qcedev_control_clocks(struct qcedev_control *podev, bool enable)
 		ret = qce_disable_clk(podev->qce);
 		if (ret) {
 			pr_err("%s Unable to disable clk\n", __func__);
-			ret = icc_set_bw(podev->icc_path,
-					podev->icc_avg_bw, podev->icc_peak_bw);
+			ret = icc_set_bw(podev->icc_path, podev->icc_avg_bw,
+					 podev->icc_peak_bw);
 			if (ret)
 				pr_err("%s Unable to set high bw\n", __func__);
 			return ret;
@@ -182,11 +179,12 @@ static int qcedev_control_clocks(struct qcedev_control *podev, bool enable)
 }
 
 static void qcedev_ce_high_bw_req(struct qcedev_control *podev,
-							bool high_bw_req)
+				  bool high_bw_req)
 {
 	int ret = 0;
 
-	if(podev == NULL) return;
+	if (podev == NULL)
+		return;
 
 	mutex_lock(&qcedev_sent_bw_req);
 	if (high_bw_req) {
@@ -197,7 +195,7 @@ static void qcedev_ce_high_bw_req(struct qcedev_control *podev,
 			ret = qce_set_irqs(podev->qce, true);
 			if (ret) {
 				pr_err("%s: could not enable bam irqs, ret = %d",
-						__func__, ret);
+				       __func__, ret);
 				qcedev_control_clocks(podev, false);
 				goto exit_unlock_mutex;
 			}
@@ -208,7 +206,7 @@ static void qcedev_ce_high_bw_req(struct qcedev_control *podev,
 			ret = qce_set_irqs(podev->qce, false);
 			if (ret) {
 				pr_err("%s: could not disable bam irqs, ret = %d",
-						__func__, ret);
+				       __func__, ret);
 				goto exit_unlock_mutex;
 			}
 			ret = qcedev_control_clocks(podev, false);
@@ -229,9 +227,8 @@ static int qcedev_release(struct inode *inode, struct file *file);
 static int start_cipher_req(struct qcedev_control *podev,
 			    int *current_req_info);
 static int start_offload_cipher_req(struct qcedev_control *podev,
-				int *current_req_info);
-static int start_sha_req(struct qcedev_control *podev,
-			 int *current_req_info);
+				    int *current_req_info);
+static int start_sha_req(struct qcedev_control *podev, int *current_req_info);
 
 static const struct file_operations qcedev_fops = {
 	.owner = THIS_MODULE,
@@ -250,7 +247,7 @@ static struct qcedev_control qce_dev[] = {
 };
 
 #define MAX_QCE_DEVICE ARRAY_SIZE(qce_dev)
-#define DEBUG_MAX_FNAME  16
+#define DEBUG_MAX_FNAME 16
 #define DEBUG_MAX_RW_BUF 1024
 
 struct qcedev_stat {
@@ -286,7 +283,7 @@ static int qcedev_open(struct inode *inode, struct file *file)
 	podev = qcedev_minor_to_control(MINOR(inode->i_rdev));
 	if (podev == NULL) {
 		pr_err("%s: no such device %d\n", __func__,
-					MINOR(inode->i_rdev));
+		       MINOR(inode->i_rdev));
 		return -ENOENT;
 	}
 
@@ -309,11 +306,10 @@ static int qcedev_release(struct inode *inode, struct file *file)
 	struct qcedev_control *podev;
 	struct qcedev_handle *handle;
 
-	handle =  file->private_data;
-	podev =  handle->cntl;
+	handle = file->private_data;
+	podev = handle->cntl;
 	if (podev != NULL && podev->magic != QCEDEV_MAGIC) {
-		pr_err("%s: invalid handle %pK\n",
-					__func__, podev);
+		pr_err("%s: invalid handle %pK\n", __func__, podev);
 	}
 
 	if (podev)
@@ -347,7 +343,7 @@ static void req_done(unsigned long data)
 	/* Look through queued requests and wake up the corresponding thread */
 	if (!list_empty(&podev->ready_commands)) {
 		new_req = container_of(podev->ready_commands.next,
-						struct qcedev_async_req, list);
+				       struct qcedev_async_req, list);
 		list_del(&new_req->list);
 		new_req->state = QCEDEV_REQ_CURRENT;
 		wake_up_interruptible(&new_req->wait_q);
@@ -357,7 +353,7 @@ static void req_done(unsigned long data)
 }
 
 void qcedev_sha_req_cb(void *cookie, unsigned char *digest,
-	unsigned char *authdata, int ret)
+		       unsigned char *authdata, int ret)
 {
 	struct qcedev_sha_req *areq;
 	struct qcedev_control *pdev;
@@ -365,10 +361,10 @@ void qcedev_sha_req_cb(void *cookie, unsigned char *digest,
 
 	uint32_t *auth32 = (uint32_t *)authdata;
 
-	areq = (struct qcedev_sha_req *) cookie;
+	areq = (struct qcedev_sha_req *)cookie;
 	if (!areq || !areq->cookie)
 		return;
-	handle = (struct qcedev_handle *) areq->cookie;
+	handle = (struct qcedev_handle *)areq->cookie;
 	pdev = handle->cntl;
 	if (!pdev)
 		return;
@@ -384,19 +380,18 @@ void qcedev_sha_req_cb(void *cookie, unsigned char *digest,
 	tasklet_schedule(&pdev->done_tasklet);
 };
 
-
-void qcedev_cipher_req_cb(void *cookie, unsigned char *icv,
-	unsigned char *iv, int ret)
+void qcedev_cipher_req_cb(void *cookie, unsigned char *icv, unsigned char *iv,
+			  int ret)
 {
 	struct qcedev_cipher_req *areq;
 	struct qcedev_handle *handle;
 	struct qcedev_control *podev;
 	struct qcedev_async_req *qcedev_areq;
 
-	areq = (struct qcedev_cipher_req *) cookie;
+	areq = (struct qcedev_cipher_req *)cookie;
 	if (!areq || !areq->cookie)
 		return;
-	handle = (struct qcedev_handle *) areq->cookie;
+	handle = (struct qcedev_handle *)areq->cookie;
 	podev = handle->cntl;
 	if (!podev)
 		return;
@@ -404,12 +399,11 @@ void qcedev_cipher_req_cb(void *cookie, unsigned char *icv,
 
 	if (iv)
 		memcpy(&qcedev_areq->cipher_op_req.iv[0], iv,
-					qcedev_areq->cipher_op_req.ivlen);
+		       qcedev_areq->cipher_op_req.ivlen);
 	tasklet_schedule(&podev->done_tasklet);
 };
 
-static int start_cipher_req(struct qcedev_control *podev,
-			    int *current_req_info)
+static int start_cipher_req(struct qcedev_control *podev, int *current_req_info)
 {
 	struct qcedev_async_req *qcedev_areq;
 	struct qce_req creq;
@@ -457,8 +451,7 @@ static int start_cipher_req(struct qcedev_control *podev,
 		return -EINVAL;
 	}
 
-	if ((creq.alg == CIPHER_ALG_AES) &&
-		(creq.mode == QCE_MODE_CTR)) {
+	if ((creq.alg == CIPHER_ALG_AES) && (creq.mode == QCE_MODE_CTR)) {
 		creq.dir = QCE_ENCRYPT;
 	} else {
 		if (qcedev_areq->cipher_op_req.op == QCEDEV_OPER_ENC)
@@ -471,15 +464,14 @@ static int start_cipher_req(struct qcedev_control *podev,
 	creq.ivsize = qcedev_areq->cipher_op_req.ivlen;
 	creq.iv_ctr_size = 0;
 
-	creq.enckey =  &qcedev_areq->cipher_op_req.enckey[0];
+	creq.enckey = &qcedev_areq->cipher_op_req.enckey[0];
 	creq.encklen = qcedev_areq->cipher_op_req.encklen;
 
 	creq.cryptlen = qcedev_areq->cipher_op_req.data_len;
 
 	if (qcedev_areq->cipher_op_req.encklen == 0) {
-		if ((qcedev_areq->cipher_op_req.op == QCEDEV_OPER_ENC_NO_KEY)
-			|| (qcedev_areq->cipher_op_req.op ==
-				QCEDEV_OPER_DEC_NO_KEY))
+		if ((qcedev_areq->cipher_op_req.op == QCEDEV_OPER_ENC_NO_KEY) ||
+		    (qcedev_areq->cipher_op_req.op == QCEDEV_OPER_DEC_NO_KEY))
 			creq.op = QCE_REQ_ABLK_CIPHER_NO_KEY;
 		else {
 			int i;
@@ -490,7 +482,7 @@ static int start_cipher_req(struct qcedev_control *podev,
 			}
 
 			if ((podev->platform_support.hw_key_support == 1) &&
-						(i == QCEDEV_MAX_KEY_SIZE))
+			    (i == QCEDEV_MAX_KEY_SIZE))
 				creq.op = QCE_REQ_ABLK_CIPHER;
 			else {
 				ret = -EINVAL;
@@ -514,17 +506,17 @@ unsupported:
 };
 
 void qcedev_offload_cipher_req_cb(void *cookie, unsigned char *icv,
-			      unsigned char *iv, int ret)
+				  unsigned char *iv, int ret)
 {
 	struct qcedev_cipher_req *areq;
 	struct qcedev_handle *handle;
 	struct qcedev_control *podev;
 	struct qcedev_async_req *qcedev_areq;
 
-	areq = (struct qcedev_cipher_req *) cookie;
+	areq = (struct qcedev_cipher_req *)cookie;
 	if (!areq || !areq->cookie)
 		return;
-	handle = (struct qcedev_handle *) areq->cookie;
+	handle = (struct qcedev_handle *)areq->cookie;
 	podev = handle->cntl;
 	if (!podev)
 		return;
@@ -532,13 +524,13 @@ void qcedev_offload_cipher_req_cb(void *cookie, unsigned char *icv,
 
 	if (iv)
 		memcpy(&qcedev_areq->offload_cipher_op_req.iv[0], iv,
-			qcedev_areq->offload_cipher_op_req.ivlen);
+		       qcedev_areq->offload_cipher_op_req.ivlen);
 
 	tasklet_schedule(&podev->done_tasklet);
 }
 
 static int start_offload_cipher_req(struct qcedev_control *podev,
-				int *current_req_info)
+				    int *current_req_info)
 {
 	struct qcedev_async_req *qcedev_areq;
 	struct qce_req creq;
@@ -573,7 +565,7 @@ static int start_offload_cipher_req(struct qcedev_control *podev,
 	    qcedev_areq->offload_cipher_op_req.encrypt) {
 		creq.dir = QCE_ENCRYPT;
 	} else {
-		switch(qcedev_areq->offload_cipher_op_req.op) {
+		switch (qcedev_areq->offload_cipher_op_req.op) {
 		case QCEDEV_OFFLOAD_HLOS_HLOS:
 		case QCEDEV_OFFLOAD_HLOS_HLOS_1:
 		case QCEDEV_OFFLOAD_HLOS_CPB:
@@ -617,8 +609,9 @@ static int start_offload_cipher_req(struct qcedev_control *podev,
 			creq.pattern_info |= (patt_sz - 1) << 4;
 		if (proc_data_sz)
 			creq.pattern_info |= (proc_data_sz - 1) << 8;
-		creq.pattern_info |=
-		qcedev_areq->offload_cipher_op_req.pattern_info.patt_offset << 12;
+		creq.pattern_info |= qcedev_areq->offload_cipher_op_req
+					     .pattern_info.patt_offset
+				     << 12;
 	}
 	creq.block_offset = qcedev_areq->offload_cipher_op_req.block_offset;
 	ret = qce_ablk_cipher_req(podev->qce, &creq);
@@ -629,8 +622,7 @@ static int start_offload_cipher_req(struct qcedev_control *podev,
 	return ret;
 }
 
-static int start_sha_req(struct qcedev_control *podev,
-			 int *current_req_info)
+static int start_sha_req(struct qcedev_control *podev, int *current_req_info)
 {
 	struct qcedev_async_req *qcedev_areq;
 	struct qce_sha_req sreq;
@@ -676,7 +668,7 @@ static int start_sha_req(struct qcedev_control *podev,
 		break;
 	default:
 		pr_err("Algorithm %d not supported, exiting\n",
-			qcedev_areq->sha_op_req.alg);
+		       qcedev_areq->sha_op_req.alg);
 		return -EINVAL;
 	}
 
@@ -705,10 +697,10 @@ static int start_sha_req(struct qcedev_control *podev,
 	return ret;
 };
 
-static void qcedev_check_crypto_status(
-			struct qcedev_async_req *qcedev_areq, void *handle)
+static void qcedev_check_crypto_status(struct qcedev_async_req *qcedev_areq,
+				       void *handle)
 {
-	struct qce_error error = {0};
+	struct qce_error error = { 0 };
 
 	qcedev_areq->offload_cipher_op_req.err = QCEDEV_OFFLOAD_NO_ERROR;
 	qce_get_crypto_status(handle, &error);
@@ -727,10 +719,10 @@ static void qcedev_check_crypto_status(
 	return;
 }
 
-#define MAX_RETRIES	333
+#define MAX_RETRIES 333
 
 static int submit_req(struct qcedev_async_req *qcedev_areq,
-					struct qcedev_handle *handle)
+		      struct qcedev_handle *handle)
 {
 	struct qcedev_control *podev;
 	unsigned long flags = 0;
@@ -750,11 +742,11 @@ static int submit_req(struct qcedev_async_req *qcedev_areq,
 	spin_lock_irqsave(&podev->lock, flags);
 
 	/*
-	 * Service only one crypto request at a time.
-	 * Any other new requests are queued in ready_commands and woken up
-	 * only when the active command has finished successfully or when the
-	 * request times out or when the command failed when setting up.
-	 */
+   * Service only one crypto request at a time.
+   * Any other new requests are queued in ready_commands and woken up
+   * only when the active command has finished successfully or when the
+   * request times out or when the command failed when setting up.
+   */
 	do {
 		if (podev->active_command == NULL) {
 			podev->active_command = qcedev_areq;
@@ -762,24 +754,23 @@ static int submit_req(struct qcedev_async_req *qcedev_areq,
 			switch (qcedev_areq->op_type) {
 			case QCEDEV_CRYPTO_OPER_CIPHER:
 				ret = start_cipher_req(podev,
-						&current_req_info);
+						       &current_req_info);
 				crypto_wait = MAX_CRYPTO_WAIT_TIME;
 				break;
 			case QCEDEV_CRYPTO_OPER_OFFLOAD_CIPHER:
-				ret = start_offload_cipher_req(podev,
-						&current_req_info);
+				ret = start_offload_cipher_req(
+					podev, &current_req_info);
 				crypto_wait = MAX_OFFLOAD_CRYPTO_WAIT_TIME;
 				break;
 			default:
 				crypto_wait = MAX_CRYPTO_WAIT_TIME;
 
-				ret = start_sha_req(podev,
-						&current_req_info);
+				ret = start_sha_req(podev, &current_req_info);
 				break;
 			}
 		} else {
 			list_add_tail(&qcedev_areq->list,
-					&podev->ready_commands);
+				      &podev->ready_commands);
 			qcedev_areq->state = QCEDEV_REQ_WAITING;
 			req_wait = wait_event_interruptible_lock_irq_timeout(
 				qcedev_areq->wait_q,
@@ -788,7 +779,7 @@ static int submit_req(struct qcedev_async_req *qcedev_areq,
 				msecs_to_jiffies(MAX_REQUEST_TIME));
 			if ((req_wait == 0) || (req_wait == -ERESTARTSYS)) {
 				pr_err("%s: request timed out, req_wait = %d\n",
-						__func__, req_wait);
+				       __func__, req_wait);
 				list_del(&qcedev_areq->list);
 				podev->active_command = NULL;
 				spin_unlock_irqrestore(&podev->lock, flags);
@@ -800,12 +791,12 @@ static int submit_req(struct qcedev_async_req *qcedev_areq,
 	if (ret != 0) {
 		podev->active_command = NULL;
 		/*
-		 * Look through queued requests and wake up the corresponding
-		 * thread.
-		 */
+     * Look through queued requests and wake up the corresponding
+     * thread.
+     */
 		if (!list_empty(&podev->ready_commands)) {
 			new_req = container_of(podev->ready_commands.next,
-						struct qcedev_async_req, list);
+					       struct qcedev_async_req, list);
 			list_del(&new_req->list);
 			new_req->state = QCEDEV_REQ_CURRENT;
 			wake_up_interruptible(&new_req->wait_q);
@@ -816,31 +807,32 @@ static int submit_req(struct qcedev_async_req *qcedev_areq,
 
 	qcedev_areq->timed_out = false;
 	if (ret == 0)
-		wait = wait_for_completion_timeout(&qcedev_areq->complete,
-				msecs_to_jiffies(crypto_wait));
+		wait = wait_for_completion_timeout(
+			&qcedev_areq->complete, msecs_to_jiffies(crypto_wait));
 
 	if (!wait) {
-	/*
-	 * This means wait timed out, and the callback routine was not
-	 * exercised. The callback sequence does some housekeeping which
-	 * would be missed here, hence having a call to qce here to do
-	 * that.
-	 */
+		/*
+     * This means wait timed out, and the callback routine was not
+     * exercised. The callback sequence does some housekeeping which
+     * would be missed here, hence having a call to qce here to do
+     * that.
+     */
 		pr_err("%s: wait timed out, req info = %d\n", __func__,
-					current_req_info);
+		       current_req_info);
 		spin_lock_irqsave(&podev->lock, flags);
 		qcedev_areq->timed_out = true;
 		spin_unlock_irqrestore(&podev->lock, flags);
 		qcedev_check_crypto_status(qcedev_areq, podev->qce);
 		if (qcedev_areq->offload_cipher_op_req.err ==
-			QCEDEV_OFFLOAD_NO_ERROR) {
-			pr_err("%s: no error, wait for request to be done", __func__);
+		    QCEDEV_OFFLOAD_NO_ERROR) {
+			pr_err("%s: no error, wait for request to be done",
+			       __func__);
 			while (qcedev_areq->state != QCEDEV_REQ_DONE &&
-				retries < MAX_RETRIES) {
+			       retries < MAX_RETRIES) {
 				usleep_range(3000, 5000);
 				retries++;
 				pr_err("%s: waiting for req state to be done, retries = %d",
-					__func__, retries);
+				       __func__, retries);
 			}
 			return 0;
 		}
@@ -848,9 +840,9 @@ static int submit_req(struct qcedev_async_req *qcedev_areq,
 		if (ret)
 			pr_err("%s: error during manage timeout", __func__);
 
-		req_done((unsigned long) podev);
+		req_done((unsigned long)podev);
 		if (qcedev_areq->offload_cipher_op_req.err !=
-						QCEDEV_OFFLOAD_NO_ERROR)
+		    QCEDEV_OFFLOAD_NO_ERROR)
 			return 0;
 	}
 
@@ -876,7 +868,7 @@ static int submit_req(struct qcedev_async_req *qcedev_areq,
 			break;
 		}
 	} else if (qcedev_areq->op_type == QCEDEV_CRYPTO_OPER_OFFLOAD_CIPHER) {
-		//Do nothing
+		// Do nothing
 	} else {
 		if (qcedev_areq->err)
 			pstat->qcedev_sha_fail++;
@@ -888,7 +880,7 @@ static int submit_req(struct qcedev_async_req *qcedev_areq,
 }
 
 static int qcedev_sha_init(struct qcedev_async_req *areq,
-				struct qcedev_handle *handle)
+			   struct qcedev_handle *handle)
 {
 	struct qcedev_sha_ctxt *sha_ctxt = &handle->sha_ctxt;
 
@@ -896,16 +888,16 @@ static int qcedev_sha_init(struct qcedev_async_req *areq,
 	sha_ctxt->first_blk = 1;
 
 	if ((areq->sha_op_req.alg == QCEDEV_ALG_SHA1) ||
-			(areq->sha_op_req.alg == QCEDEV_ALG_SHA1_HMAC)) {
-		memcpy(&sha_ctxt->digest[0],
-			&_std_init_vector_sha1_uint8[0], SHA1_DIGEST_SIZE);
+	    (areq->sha_op_req.alg == QCEDEV_ALG_SHA1_HMAC)) {
+		memcpy(&sha_ctxt->digest[0], &_std_init_vector_sha1_uint8[0],
+		       SHA1_DIGEST_SIZE);
 		sha_ctxt->diglen = SHA1_DIGEST_SIZE;
 	} else {
 		if ((areq->sha_op_req.alg == QCEDEV_ALG_SHA256) ||
-			(areq->sha_op_req.alg == QCEDEV_ALG_SHA256_HMAC)) {
+		    (areq->sha_op_req.alg == QCEDEV_ALG_SHA256_HMAC)) {
 			memcpy(&sha_ctxt->digest[0],
-					&_std_init_vector_sha256_uint8[0],
-					SHA256_DIGEST_SIZE);
+			       &_std_init_vector_sha256_uint8[0],
+			       SHA256_DIGEST_SIZE);
 			sha_ctxt->diglen = SHA256_DIGEST_SIZE;
 		}
 	}
@@ -913,10 +905,9 @@ static int qcedev_sha_init(struct qcedev_async_req *areq,
 	return 0;
 }
 
-
 static int qcedev_sha_update_max_xfer(struct qcedev_async_req *qcedev_areq,
-				struct qcedev_handle *handle,
-				struct scatterlist *sg_src)
+				      struct qcedev_handle *handle,
+				      struct scatterlist *sg_src)
 {
 	int err = 0;
 	int i = 0;
@@ -941,7 +932,7 @@ static int qcedev_sha_update_max_xfer(struct qcedev_async_req *qcedev_areq,
 		sha_block_size = SHA256_BLOCK_SIZE;
 
 	if (total <= sha_block_size) {
-		uint32_t len =  qcedev_areq->sha_op_req.data_len;
+		uint32_t len = qcedev_areq->sha_op_req.data_len;
 
 		i = 0;
 
@@ -950,9 +941,9 @@ static int qcedev_sha_update_max_xfer(struct qcedev_async_req *qcedev_areq,
 		/* Copy data from user src(s) */
 		while (len > 0) {
 			user_src = qcedev_areq->sha_op_req.data[i].vaddr;
-			if (user_src && copy_from_user(k_src,
-				(void __user *)user_src,
-				qcedev_areq->sha_op_req.data[i].len))
+			if (user_src &&
+			    copy_from_user(k_src, (void __user *)user_src,
+					   qcedev_areq->sha_op_req.data[i].len))
 				return -EFAULT;
 
 			len -= qcedev_areq->sha_op_req.data[i].len;
@@ -969,22 +960,19 @@ static int qcedev_sha_update_max_xfer(struct qcedev_async_req *qcedev_areq,
 	if (k_buf_src == NULL)
 		return -ENOMEM;
 
-	k_align_src = (uint8_t *)ALIGN(((uintptr_t)k_buf_src),
-							CACHE_LINE_SIZE);
+	k_align_src = (uint8_t *)ALIGN(((uintptr_t)k_buf_src), CACHE_LINE_SIZE);
 	k_src = k_align_src;
 
 	/* check for trailing buffer from previous updates and append it */
 	if (t_buf > 0) {
-		memcpy(k_src, &handle->sha_ctxt.trailing_buf[0],
-								t_buf);
+		memcpy(k_src, &handle->sha_ctxt.trailing_buf[0], t_buf);
 		k_src += t_buf;
 	}
 
 	/* Copy data from user src(s) */
 	user_src = qcedev_areq->sha_op_req.data[0].vaddr;
-	if (user_src && copy_from_user(k_src,
-				(void __user *)user_src,
-				qcedev_areq->sha_op_req.data[0].len)) {
+	if (user_src && copy_from_user(k_src, (void __user *)user_src,
+				       qcedev_areq->sha_op_req.data[0].len)) {
 		memset(k_buf_src, 0, buf_size);
 		kfree(k_buf_src);
 		return -EFAULT;
@@ -992,9 +980,9 @@ static int qcedev_sha_update_max_xfer(struct qcedev_async_req *qcedev_areq,
 	k_src += qcedev_areq->sha_op_req.data[0].len;
 	for (i = 1; i < qcedev_areq->sha_op_req.entries; i++) {
 		user_src = qcedev_areq->sha_op_req.data[i].vaddr;
-		if (user_src && copy_from_user(k_src,
-					(void __user *)user_src,
-					qcedev_areq->sha_op_req.data[i].len)) {
+		if (user_src &&
+		    copy_from_user(k_src, (void __user *)user_src,
+				   qcedev_areq->sha_op_req.data[i].len)) {
 			memset(k_buf_src, 0, buf_size);
 			kfree(k_buf_src);
 			return -EFAULT;
@@ -1004,11 +992,11 @@ static int qcedev_sha_update_max_xfer(struct qcedev_async_req *qcedev_areq,
 
 	/*  get new trailing buffer */
 	sha_pad_len = ALIGN(total, CE_SHA_BLOCK_SIZE) - total;
-	trailing_buf_len =  CE_SHA_BLOCK_SIZE - sha_pad_len;
+	trailing_buf_len = CE_SHA_BLOCK_SIZE - sha_pad_len;
 
 	qcedev_areq->sha_req.sreq.src = sg_src;
 	sg_init_one(qcedev_areq->sha_req.sreq.src, k_align_src,
-						total-trailing_buf_len);
+		    total - trailing_buf_len);
 
 	qcedev_areq->sha_req.sreq.nbytes = total - trailing_buf_len;
 
@@ -1016,8 +1004,7 @@ static int qcedev_sha_update_max_xfer(struct qcedev_async_req *qcedev_areq,
 	if (trailing_buf_len > 0) {
 		memset(&handle->sha_ctxt.trailing_buf[0], 0, 64);
 		memcpy(&handle->sha_ctxt.trailing_buf[0],
-			(k_src - trailing_buf_len),
-			trailing_buf_len);
+		       (k_src - trailing_buf_len), trailing_buf_len);
 	}
 	handle->sha_ctxt.trailing_buf_len = trailing_buf_len;
 
@@ -1032,8 +1019,8 @@ static int qcedev_sha_update_max_xfer(struct qcedev_async_req *qcedev_areq,
 }
 
 static int qcedev_sha_update(struct qcedev_async_req *qcedev_areq,
-				struct qcedev_handle *handle,
-				struct scatterlist *sg_src)
+			     struct qcedev_handle *handle,
+			     struct scatterlist *sg_src)
 {
 	int err = 0;
 	int i = 0;
@@ -1048,19 +1035,17 @@ static int qcedev_sha_update(struct qcedev_async_req *qcedev_areq,
 	}
 
 	if (qcedev_areq->sha_op_req.data_len > QCE_MAX_OPER_DATA) {
-
-		struct	qcedev_sha_op_req *saved_req;
-		struct	qcedev_sha_op_req req;
-		struct	qcedev_sha_op_req *sreq = &qcedev_areq->sha_op_req;
+		struct qcedev_sha_op_req *saved_req;
+		struct qcedev_sha_op_req req;
+		struct qcedev_sha_op_req *sreq = &qcedev_areq->sha_op_req;
 		uint32_t req_size = 0;
 
 		req_size = sizeof(struct qcedev_sha_op_req);
 		/* save the original req structure */
-		saved_req =
-			kmalloc(req_size, GFP_KERNEL);
+		saved_req = kmalloc(req_size, GFP_KERNEL);
 		if (saved_req == NULL) {
 			pr_err("%s:Can't Allocate mem:saved_req 0x%lx\n",
-						__func__, (uintptr_t)saved_req);
+			       __func__, (uintptr_t)saved_req);
 			return -ENOMEM;
 		}
 		memcpy(&req, sreq, sizeof(*sreq));
@@ -1073,19 +1058,19 @@ static int qcedev_sha_update(struct qcedev_async_req *qcedev_areq,
 				sreq->data[0].len = QCE_MAX_OPER_DATA;
 				if (i > 0) {
 					sreq->data[0].vaddr =
-							sreq->data[i].vaddr;
+						sreq->data[i].vaddr;
 				}
 
 				sreq->data_len = QCE_MAX_OPER_DATA;
 				sreq->entries = 1;
 
-				err = qcedev_sha_update_max_xfer(qcedev_areq,
-								handle, sg_src);
+				err = qcedev_sha_update_max_xfer(
+					qcedev_areq, handle, sg_src);
 
-				sreq->data[i].len = req.data[i].len -
-							QCE_MAX_OPER_DATA;
-				sreq->data[i].vaddr = req.data[i].vaddr +
-							QCE_MAX_OPER_DATA;
+				sreq->data[i].len =
+					req.data[i].len - QCE_MAX_OPER_DATA;
+				sreq->data[i].vaddr =
+					req.data[i].vaddr + QCE_MAX_OPER_DATA;
 				req.data[i].vaddr = sreq->data[i].vaddr;
 				req.data[i].len = sreq->data[i].len;
 			} else {
@@ -1093,9 +1078,10 @@ static int qcedev_sha_update(struct qcedev_async_req *qcedev_areq,
 				for (j = i; j < req.entries; j++) {
 					num_entries++;
 					if ((total + sreq->data[j].len) >=
-							QCE_MAX_OPER_DATA) {
+					    QCE_MAX_OPER_DATA) {
 						sreq->data[j].len =
-						(QCE_MAX_OPER_DATA - total);
+							(QCE_MAX_OPER_DATA -
+							 total);
 						total = QCE_MAX_OPER_DATA;
 						break;
 					}
@@ -1106,21 +1092,21 @@ static int qcedev_sha_update(struct qcedev_async_req *qcedev_areq,
 				if (i > 0)
 					for (k = 0; k < num_entries; k++) {
 						sreq->data[k].len =
-							sreq->data[i+k].len;
+							sreq->data[i + k].len;
 						sreq->data[k].vaddr =
-							sreq->data[i+k].vaddr;
+							sreq->data[i + k].vaddr;
 					}
 				sreq->entries = num_entries;
 
 				i = j;
-				err = qcedev_sha_update_max_xfer(qcedev_areq,
-								handle, sg_src);
+				err = qcedev_sha_update_max_xfer(
+					qcedev_areq, handle, sg_src);
 				num_entries = 0;
 
-				sreq->data[i].vaddr = req.data[i].vaddr +
-							sreq->data[i].len;
-				sreq->data[i].len = req.data[i].len -
-							sreq->data[i].len;
+				sreq->data[i].vaddr =
+					req.data[i].vaddr + sreq->data[i].len;
+				sreq->data[i].len =
+					req.data[i].len - sreq->data[i].len;
 				req.data[i].vaddr = sreq->data[i].vaddr;
 				req.data[i].len = sreq->data[i].len;
 
@@ -1145,7 +1131,7 @@ static int qcedev_sha_update(struct qcedev_async_req *qcedev_areq,
 }
 
 static int qcedev_sha_final(struct qcedev_async_req *qcedev_areq,
-				struct qcedev_handle *handle)
+			    struct qcedev_handle *handle)
 {
 	int err = 0;
 	struct scatterlist sg_src;
@@ -1168,11 +1154,10 @@ static int qcedev_sha_final(struct qcedev_async_req *qcedev_areq,
 	if (k_buf_src == NULL)
 		return -ENOMEM;
 
-	k_align_src = (uint8_t *)ALIGN(((uintptr_t)k_buf_src),
-						CACHE_LINE_SIZE);
+	k_align_src = (uint8_t *)ALIGN(((uintptr_t)k_buf_src), CACHE_LINE_SIZE);
 	memcpy(k_align_src, &handle->sha_ctxt.trailing_buf[0], total);
 
-	qcedev_areq->sha_req.sreq.src = (struct scatterlist *) &sg_src;
+	qcedev_areq->sha_req.sreq.src = (struct scatterlist *)&sg_src;
 
 	sg_init_one(qcedev_areq->sha_req.sreq.src, k_align_src, total);
 
@@ -1194,8 +1179,8 @@ static int qcedev_sha_final(struct qcedev_async_req *qcedev_areq,
 }
 
 static int qcedev_hash_cmac(struct qcedev_async_req *qcedev_areq,
-					struct qcedev_handle *handle,
-					struct scatterlist *sg_src)
+			    struct qcedev_handle *handle,
+			    struct scatterlist *sg_src)
 {
 	int err = 0;
 	int i = 0;
@@ -1209,14 +1194,14 @@ static int qcedev_hash_cmac(struct qcedev_async_req *qcedev_areq,
 	total = qcedev_areq->sha_op_req.data_len;
 
 	if ((qcedev_areq->sha_op_req.authklen != QCEDEV_AES_KEY_128) &&
-		(qcedev_areq->sha_op_req.authklen != QCEDEV_AES_KEY_256)) {
+	    (qcedev_areq->sha_op_req.authklen != QCEDEV_AES_KEY_256)) {
 		pr_err("%s: unsupported key length\n", __func__);
 		return -EINVAL;
 	}
 
 	if (copy_from_user(&handle->sha_ctxt.authkey[0],
-				(void __user *)qcedev_areq->sha_op_req.authkey,
-				qcedev_areq->sha_op_req.authklen))
+			   (void __user *)qcedev_areq->sha_op_req.authkey,
+			   qcedev_areq->sha_op_req.authklen))
 		return -EFAULT;
 
 	if (total > U32_MAX - CACHE_LINE_SIZE * 2)
@@ -1233,8 +1218,9 @@ static int qcedev_hash_cmac(struct qcedev_async_req *qcedev_areq,
 	user_src = qcedev_areq->sha_op_req.data[0].vaddr;
 	for (i = 0; i < qcedev_areq->sha_op_req.entries; i++) {
 		user_src = qcedev_areq->sha_op_req.data[i].vaddr;
-		if (user_src && copy_from_user(k_src, (void __user *)user_src,
-				qcedev_areq->sha_op_req.data[i].len)) {
+		if (user_src &&
+		    copy_from_user(k_src, (void __user *)user_src,
+				   qcedev_areq->sha_op_req.data[i].len)) {
 			memset(k_buf_src, 0, buf_size);
 			kfree(k_buf_src);
 			return -EFAULT;
@@ -1255,33 +1241,33 @@ static int qcedev_hash_cmac(struct qcedev_async_req *qcedev_areq,
 }
 
 static int qcedev_set_hmac_auth_key(struct qcedev_async_req *areq,
-					struct qcedev_handle *handle,
-					struct scatterlist *sg_src)
+				    struct qcedev_handle *handle,
+				    struct scatterlist *sg_src)
 {
 	int err = 0;
 
 	if (areq->sha_op_req.authklen <= QCEDEV_MAX_KEY_SIZE) {
 		qcedev_sha_init(areq, handle);
 		if (copy_from_user(&handle->sha_ctxt.authkey[0],
-				(void __user *)areq->sha_op_req.authkey,
-				areq->sha_op_req.authklen))
+				   (void __user *)areq->sha_op_req.authkey,
+				   areq->sha_op_req.authklen))
 			return -EFAULT;
 	} else {
 		struct qcedev_async_req authkey_areq;
-		uint8_t	authkey[QCEDEV_MAX_SHA_BLOCK_SIZE];
+		uint8_t authkey[QCEDEV_MAX_SHA_BLOCK_SIZE];
 
 		init_completion(&authkey_areq.complete);
 
 		authkey_areq.sha_op_req.entries = 1;
 		authkey_areq.sha_op_req.data[0].vaddr =
-						areq->sha_op_req.authkey;
+			areq->sha_op_req.authkey;
 		authkey_areq.sha_op_req.data[0].len = areq->sha_op_req.authklen;
 		authkey_areq.sha_op_req.data_len = areq->sha_op_req.authklen;
 		authkey_areq.sha_op_req.diglen = 0;
 		authkey_areq.handle = handle;
 
 		memset(&authkey_areq.sha_op_req.digest[0], 0,
-						QCEDEV_MAX_SHA_DIGEST);
+		       QCEDEV_MAX_SHA_DIGEST);
 		if (areq->sha_op_req.alg == QCEDEV_ALG_SHA1_HMAC)
 			authkey_areq.sha_op_req.alg = QCEDEV_ALG_SHA1;
 		if (areq->sha_op_req.alg == QCEDEV_ALG_SHA256_HMAC)
@@ -1296,17 +1282,17 @@ static int qcedev_set_hmac_auth_key(struct qcedev_async_req *areq,
 		else
 			return err;
 		memcpy(&authkey[0], &handle->sha_ctxt.digest[0],
-				handle->sha_ctxt.diglen);
+		       handle->sha_ctxt.diglen);
 		qcedev_sha_init(areq, handle);
 
 		memcpy(&handle->sha_ctxt.authkey[0], &authkey[0],
-				handle->sha_ctxt.diglen);
+		       handle->sha_ctxt.diglen);
 	}
 	return err;
 }
 
 static int qcedev_hmac_get_ohash(struct qcedev_async_req *qcedev_areq,
-				struct qcedev_handle *handle)
+				 struct qcedev_handle *handle)
 {
 	int err = 0;
 	struct scatterlist sg_src;
@@ -1329,15 +1315,15 @@ static int qcedev_hmac_get_ohash(struct qcedev_async_req *qcedev_areq,
 
 	/* check for trailing buffer from previous updates and append it */
 	memcpy(k_src, &handle->sha_ctxt.trailing_buf[0],
-			handle->sha_ctxt.trailing_buf_len);
+	       handle->sha_ctxt.trailing_buf_len);
 
-	qcedev_areq->sha_req.sreq.src = (struct scatterlist *) &sg_src;
+	qcedev_areq->sha_req.sreq.src = (struct scatterlist *)&sg_src;
 	sg_init_one(qcedev_areq->sha_req.sreq.src, k_src, sha_block_size);
 
 	qcedev_areq->sha_req.sreq.nbytes = sha_block_size;
 	memset(&handle->sha_ctxt.trailing_buf[0], 0, sha_block_size);
 	memcpy(&handle->sha_ctxt.trailing_buf[0], &handle->sha_ctxt.digest[0],
-					sha_digest_size);
+	       sha_digest_size);
 	handle->sha_ctxt.trailing_buf_len = sha_digest_size;
 
 	handle->sha_ctxt.first_blk = 1;
@@ -1347,13 +1333,13 @@ static int qcedev_hmac_get_ohash(struct qcedev_async_req *qcedev_areq,
 
 	if (qcedev_areq->sha_op_req.alg == QCEDEV_ALG_SHA1_HMAC) {
 		memcpy(&handle->sha_ctxt.digest[0],
-			&_std_init_vector_sha1_uint8[0], SHA1_DIGEST_SIZE);
+		       &_std_init_vector_sha1_uint8[0], SHA1_DIGEST_SIZE);
 		handle->sha_ctxt.diglen = SHA1_DIGEST_SIZE;
 	}
 
 	if (qcedev_areq->sha_op_req.alg == QCEDEV_ALG_SHA256_HMAC) {
 		memcpy(&handle->sha_ctxt.digest[0],
-			&_std_init_vector_sha256_uint8[0], SHA256_DIGEST_SIZE);
+		       &_std_init_vector_sha256_uint8[0], SHA256_DIGEST_SIZE);
 		handle->sha_ctxt.diglen = SHA256_DIGEST_SIZE;
 	}
 	err = submit_req(qcedev_areq, handle);
@@ -1367,7 +1353,7 @@ static int qcedev_hmac_get_ohash(struct qcedev_async_req *qcedev_areq,
 }
 
 static int qcedev_hmac_update_iokey(struct qcedev_async_req *areq,
-				struct qcedev_handle *handle, bool ikey)
+				    struct qcedev_handle *handle, bool ikey)
 {
 	int i;
 	uint32_t constant;
@@ -1386,15 +1372,15 @@ static int qcedev_hmac_update_iokey(struct qcedev_async_req *areq,
 	memset(&handle->sha_ctxt.trailing_buf[0], 0, sha_block_size);
 	for (i = 0; i < sha_block_size; i++)
 		handle->sha_ctxt.trailing_buf[i] =
-				(handle->sha_ctxt.authkey[i] ^ constant);
+			(handle->sha_ctxt.authkey[i] ^ constant);
 
 	handle->sha_ctxt.trailing_buf_len = sha_block_size;
 	return 0;
 }
 
 static int qcedev_hmac_init(struct qcedev_async_req *areq,
-				struct qcedev_handle *handle,
-				struct scatterlist *sg_src)
+			    struct qcedev_handle *handle,
+			    struct scatterlist *sg_src)
 {
 	int err;
 	struct qcedev_control *podev = handle->cntl;
@@ -1408,7 +1394,7 @@ static int qcedev_hmac_init(struct qcedev_async_req *areq,
 }
 
 static int qcedev_hmac_final(struct qcedev_async_req *areq,
-				struct qcedev_handle *handle)
+			     struct qcedev_handle *handle)
 {
 	int err;
 	struct qcedev_control *podev = handle->cntl;
@@ -1427,36 +1413,37 @@ static int qcedev_hmac_final(struct qcedev_async_req *areq,
 }
 
 static int qcedev_hash_init(struct qcedev_async_req *areq,
-				struct qcedev_handle *handle,
-				struct scatterlist *sg_src)
+			    struct qcedev_handle *handle,
+			    struct scatterlist *sg_src)
 {
 	if ((areq->sha_op_req.alg == QCEDEV_ALG_SHA1) ||
-			(areq->sha_op_req.alg == QCEDEV_ALG_SHA256))
+	    (areq->sha_op_req.alg == QCEDEV_ALG_SHA256))
 		return qcedev_sha_init(areq, handle);
 	else
 		return qcedev_hmac_init(areq, handle, sg_src);
 }
 
 static int qcedev_hash_update(struct qcedev_async_req *qcedev_areq,
-				struct qcedev_handle *handle,
-				struct scatterlist *sg_src)
+			      struct qcedev_handle *handle,
+			      struct scatterlist *sg_src)
 {
 	return qcedev_sha_update(qcedev_areq, handle, sg_src);
 }
 
 static int qcedev_hash_final(struct qcedev_async_req *areq,
-				struct qcedev_handle *handle)
+			     struct qcedev_handle *handle)
 {
 	if ((areq->sha_op_req.alg == QCEDEV_ALG_SHA1) ||
-			(areq->sha_op_req.alg == QCEDEV_ALG_SHA256))
+	    (areq->sha_op_req.alg == QCEDEV_ALG_SHA256))
 		return qcedev_sha_final(areq, handle);
 	else
 		return qcedev_hmac_final(areq, handle);
 }
 
 static int qcedev_vbuf_ablk_cipher_max_xfer(struct qcedev_async_req *areq,
-				int *di, struct qcedev_handle *handle,
-				uint8_t *k_align_src)
+					    int *di,
+					    struct qcedev_handle *handle,
+					    uint8_t *k_align_src)
 {
 	int err = 0;
 	int i = 0;
@@ -1465,25 +1452,24 @@ static int qcedev_vbuf_ablk_cipher_max_xfer(struct qcedev_async_req *areq,
 	uint32_t byteoffset = 0;
 	uint8_t *user_src = NULL;
 	uint8_t *k_align_dst = k_align_src;
-	struct	qcedev_cipher_op_req *creq = &areq->cipher_op_req;
-
+	struct qcedev_cipher_op_req *creq = &areq->cipher_op_req;
 
 	if (areq->cipher_op_req.mode == QCEDEV_AES_MODE_CTR)
 		byteoffset = areq->cipher_op_req.byteoffset;
 
 	user_src = areq->cipher_op_req.vbuf.src[0].vaddr;
-	if (user_src && copy_from_user((k_align_src + byteoffset),
-				(void __user *)user_src,
-				areq->cipher_op_req.vbuf.src[0].len))
+	if (user_src &&
+	    copy_from_user((k_align_src + byteoffset), (void __user *)user_src,
+			   areq->cipher_op_req.vbuf.src[0].len))
 		return -EFAULT;
 
 	k_align_src += byteoffset + areq->cipher_op_req.vbuf.src[0].len;
 
 	for (i = 1; i < areq->cipher_op_req.entries; i++) {
 		user_src = areq->cipher_op_req.vbuf.src[i].vaddr;
-		if (user_src && copy_from_user(k_align_src,
-					(void __user *)user_src,
-					areq->cipher_op_req.vbuf.src[i].len)) {
+		if (user_src &&
+		    copy_from_user(k_align_src, (void __user *)user_src,
+				   areq->cipher_op_req.vbuf.src[i].len)) {
 			return -EFAULT;
 		}
 		k_align_src += areq->cipher_op_req.vbuf.src[i].len;
@@ -1493,13 +1479,12 @@ static int qcedev_vbuf_ablk_cipher_max_xfer(struct qcedev_async_req *areq,
 	k_align_src = k_align_dst;
 	areq->cipher_op_req.data_len += byteoffset;
 
-	areq->cipher_req.creq.src = (struct scatterlist *) &sg_src;
-	areq->cipher_req.creq.dst = (struct scatterlist *) &sg_src;
+	areq->cipher_req.creq.src = (struct scatterlist *)&sg_src;
+	areq->cipher_req.creq.dst = (struct scatterlist *)&sg_src;
 
 	/* In place encryption/decryption */
-	sg_init_one(areq->cipher_req.creq.src,
-					k_align_dst,
-					areq->cipher_op_req.data_len);
+	sg_init_one(areq->cipher_req.creq.src, k_align_dst,
+		    areq->cipher_op_req.data_len);
 
 	areq->cipher_req.creq.cryptlen = areq->cipher_op_req.data_len;
 	areq->cipher_req.creq.iv = areq->cipher_op_req.iv;
@@ -1512,10 +1497,11 @@ static int qcedev_vbuf_ablk_cipher_max_xfer(struct qcedev_async_req *areq,
 
 	while (creq->data_len > 0) {
 		if (creq->vbuf.dst[dst_i].len <= creq->data_len) {
-			if (err == 0 && copy_to_user(
-				(void __user *)creq->vbuf.dst[dst_i].vaddr,
-					(k_align_dst + byteoffset),
-					creq->vbuf.dst[dst_i].len)) {
+			if (err == 0 &&
+			    copy_to_user(
+				    (void __user *)creq->vbuf.dst[dst_i].vaddr,
+				    (k_align_dst + byteoffset),
+				    creq->vbuf.dst[dst_i].len)) {
 				err = -EFAULT;
 				goto exit;
 			}
@@ -1524,10 +1510,11 @@ static int qcedev_vbuf_ablk_cipher_max_xfer(struct qcedev_async_req *areq,
 			creq->data_len -= creq->vbuf.dst[dst_i].len;
 			dst_i++;
 		} else {
-			if (err == 0 && copy_to_user(
-				(void __user *)creq->vbuf.dst[dst_i].vaddr,
-					(k_align_dst + byteoffset),
-				creq->data_len)) {
+			if (err == 0 &&
+			    copy_to_user(
+				    (void __user *)creq->vbuf.dst[dst_i].vaddr,
+				    (k_align_dst + byteoffset),
+				    creq->data_len)) {
 				err = -EFAULT;
 				goto exit;
 			}
@@ -1546,7 +1533,7 @@ exit:
 };
 
 static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
-						struct qcedev_handle *handle)
+				   struct qcedev_handle *handle)
 {
 	int err = 0;
 	int di = 0;
@@ -1563,7 +1550,7 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 	uint32_t max_data_xfer;
 	struct qcedev_cipher_op_req *saved_req;
 	uint32_t req_size = 0;
-	struct	qcedev_cipher_op_req *creq = &areq->cipher_op_req;
+	struct qcedev_cipher_op_req *creq = &areq->cipher_op_req;
 
 	total = 0;
 
@@ -1573,8 +1560,7 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 	k_buf_src = kmalloc(buf_size, GFP_KERNEL);
 	if (k_buf_src == NULL)
 		return -ENOMEM;
-	k_align_src = (uint8_t *)ALIGN(((uintptr_t)k_buf_src),
-							CACHE_LINE_SIZE);
+	k_align_src = (uint8_t *)ALIGN(((uintptr_t)k_buf_src), CACHE_LINE_SIZE);
 	max_data_xfer = QCE_MAX_OPER_DATA - byteoffset;
 
 	req_size = sizeof(struct qcedev_cipher_op_req);
@@ -1583,7 +1569,6 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 		memset(k_buf_src, 0, buf_size);
 		kfree(k_buf_src);
 		return -ENOMEM;
-
 	}
 
 	if (areq->cipher_op_req.data_len > max_data_xfer) {
@@ -1596,7 +1581,7 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 		/* Address 32 KB  at a time */
 		while ((i < req.entries) && (err == 0)) {
 			if (creq->vbuf.src[i].len > max_data_xfer) {
-				creq->vbuf.src[0].len =	max_data_xfer;
+				creq->vbuf.src[0].len = max_data_xfer;
 				if (i > 0) {
 					creq->vbuf.src[0].vaddr =
 						creq->vbuf.src[i].vaddr;
@@ -1605,8 +1590,8 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 				creq->data_len = max_data_xfer;
 				creq->entries = 1;
 
-				err = qcedev_vbuf_ablk_cipher_max_xfer(areq,
-						&di, handle, k_align_src);
+				err = qcedev_vbuf_ablk_cipher_max_xfer(
+					areq, &di, handle, k_align_src);
 				if (err < 0) {
 					memset(saved_req, 0, req_size);
 					memset(k_buf_src, 0, buf_size);
@@ -1615,23 +1600,21 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 					return err;
 				}
 
-				creq->vbuf.src[i].len =	req.vbuf.src[i].len -
-							max_data_xfer;
+				creq->vbuf.src[i].len =
+					req.vbuf.src[i].len - max_data_xfer;
 				creq->vbuf.src[i].vaddr =
-						req.vbuf.src[i].vaddr +
-						max_data_xfer;
-				req.vbuf.src[i].vaddr =
-						creq->vbuf.src[i].vaddr;
+					req.vbuf.src[i].vaddr + max_data_xfer;
+				req.vbuf.src[i].vaddr = creq->vbuf.src[i].vaddr;
 				req.vbuf.src[i].len = creq->vbuf.src[i].len;
 
 			} else {
 				total = areq->cipher_op_req.byteoffset;
 				for (j = i; j < req.entries; j++) {
 					num_entries++;
-					if ((total + creq->vbuf.src[j].len)
-							>= max_data_xfer) {
+					if ((total + creq->vbuf.src[j].len) >=
+					    max_data_xfer) {
 						creq->vbuf.src[j].len =
-						max_data_xfer - total;
+							max_data_xfer - total;
 						total = max_data_xfer;
 						break;
 					}
@@ -1642,15 +1625,17 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 				if (i > 0)
 					for (k = 0; k < num_entries; k++) {
 						creq->vbuf.src[k].len =
-						creq->vbuf.src[i+k].len;
+							creq->vbuf.src[i + k]
+								.len;
 						creq->vbuf.src[k].vaddr =
-						creq->vbuf.src[i+k].vaddr;
+							creq->vbuf.src[i + k]
+								.vaddr;
 					}
-				creq->entries =  num_entries;
+				creq->entries = num_entries;
 
 				i = j;
-				err = qcedev_vbuf_ablk_cipher_max_xfer(areq,
-						&di, handle, k_align_src);
+				err = qcedev_vbuf_ablk_cipher_max_xfer(
+					areq, &di, handle, k_align_src);
 				if (err < 0) {
 					memset(saved_req, 0, req_size);
 					memset(k_buf_src, 0, buf_size);
@@ -1662,13 +1647,13 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 				num_entries = 0;
 				areq->cipher_op_req.byteoffset = 0;
 
-				creq->vbuf.src[i].vaddr = req.vbuf.src[i].vaddr
-					+ creq->vbuf.src[i].len;
-				creq->vbuf.src[i].len =	req.vbuf.src[i].len -
+				creq->vbuf.src[i].vaddr =
+					req.vbuf.src[i].vaddr +
+					creq->vbuf.src[i].len;
+				creq->vbuf.src[i].len = req.vbuf.src[i].len -
 							creq->vbuf.src[i].len;
 
-				req.vbuf.src[i].vaddr =
-						creq->vbuf.src[i].vaddr;
+				req.vbuf.src[i].vaddr = creq->vbuf.src[i].vaddr;
 				req.vbuf.src[i].len = creq->vbuf.src[i].len;
 
 				if (creq->vbuf.src[i].len == 0)
@@ -1682,7 +1667,7 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 		} /* end of while ((i < req.entries) && (err == 0)) */
 	} else
 		err = qcedev_vbuf_ablk_cipher_max_xfer(areq, &di, handle,
-								k_align_src);
+						       k_align_src);
 
 	/* Restore the original req structure */
 	for (i = 0; i < saved_req->entries; i++) {
@@ -1703,11 +1688,10 @@ static int qcedev_vbuf_ablk_cipher(struct qcedev_async_req *areq,
 	kfree(saved_req);
 	kfree(k_buf_src);
 	return err;
-
 }
 
 static int qcedev_smmu_ablk_offload_cipher(struct qcedev_async_req *areq,
-				       struct qcedev_handle *handle)
+					   struct qcedev_handle *handle)
 {
 	int i = 0;
 	int err = 0;
@@ -1724,12 +1708,12 @@ static int qcedev_smmu_ablk_offload_cipher(struct qcedev_async_req *areq,
 		byteoffset = areq->offload_cipher_op_req.byteoffset;
 
 	/*
-	 * areq has two components:
-	 *      a) Request that comes from userspace i.e. offload_cipher_op_req
-	 *      b) Request that QCE understands - skcipher i.e. cipher_req.creq
-	 *         skcipher has sglist pointers src and dest that would carry
-	 *         data to/from CE.
-	 */
+   * areq has two components:
+   *      a) Request that comes from userspace i.e. offload_cipher_op_req
+   *      b) Request that QCE understands - skcipher i.e. cipher_req.creq
+   *         skcipher has sglist pointers src and dest that would carry
+   *         data to/from CE.
+   */
 	areq->cipher_req.creq.src = &sg_src;
 	areq->cipher_req.creq.dst = &sg_dst;
 	sg_init_table(&sg_src, 1);
@@ -1747,8 +1731,8 @@ static int qcedev_smmu_ablk_offload_cipher(struct qcedev_async_req *areq,
 		areq->cipher_req.creq.iv = areq->offload_cipher_op_req.iv;
 
 		while (pending_data_len) {
-			transfer_data_len = min(max_data_xfer,
-						pending_data_len);
+			transfer_data_len =
+				min(max_data_xfer, pending_data_len);
 			sg_src.dma_address = (dma_addr_t)user_src;
 			sg_dst.dma_address = (dma_addr_t)user_dst;
 			areq->cipher_req.creq.cryptlen = transfer_data_len;
@@ -1759,7 +1743,7 @@ static int qcedev_smmu_ablk_offload_cipher(struct qcedev_async_req *areq,
 			err = submit_req(areq, handle);
 			if (err) {
 				pr_err("%s: Error processing req, err = %d\n",
-						__func__, err);
+				       __func__, err);
 				goto exit;
 			}
 			/* update data len to be processed */
@@ -1775,26 +1759,26 @@ exit:
 }
 
 static int qcedev_check_cipher_key(struct qcedev_cipher_op_req *req,
-						struct qcedev_control *podev)
+				   struct qcedev_control *podev)
 {
 	/* if intending to use HW key make sure key fields are set
-	 * correctly and HW key is indeed supported in target
-	 */
+   * correctly and HW key is indeed supported in target
+   */
 	if (req->encklen == 0) {
 		int i;
 
 		for (i = 0; i < QCEDEV_MAX_KEY_SIZE; i++) {
 			if (req->enckey[i]) {
 				pr_err("%s: Invalid key: non-zero key input\n",
-								__func__);
+				       __func__);
 				goto error;
 			}
 		}
 		if ((req->op != QCEDEV_OPER_ENC_NO_KEY) &&
-			(req->op != QCEDEV_OPER_DEC_NO_KEY))
+		    (req->op != QCEDEV_OPER_DEC_NO_KEY))
 			if (!podev->platform_support.hw_key_support) {
 				pr_err("%s: Invalid op %d\n", __func__,
-						(uint32_t)req->op);
+				       (uint32_t)req->op);
 				goto error;
 			}
 	} else {
@@ -1805,20 +1789,20 @@ static int qcedev_check_cipher_key(struct qcedev_cipher_op_req *req,
 			}
 		} else {
 			/* if not using HW key make sure key
-			 * length is valid
-			 */
+       * length is valid
+       */
 			if (req->mode == QCEDEV_AES_MODE_XTS) {
-				if ((req->encklen != QCEDEV_AES_KEY_128*2) &&
-				(req->encklen != QCEDEV_AES_KEY_256*2)) {
+				if ((req->encklen != QCEDEV_AES_KEY_128 * 2) &&
+				    (req->encklen != QCEDEV_AES_KEY_256 * 2)) {
 					pr_err("%s: unsupported key size: %d\n",
-							__func__, req->encklen);
+					       __func__, req->encklen);
 					goto error;
 				}
 			} else {
 				if ((req->encklen != QCEDEV_AES_KEY_128) &&
-					(req->encklen != QCEDEV_AES_KEY_256)) {
+				    (req->encklen != QCEDEV_AES_KEY_256)) {
 					pr_err("%s: unsupported key size %d\n",
-							__func__, req->encklen);
+					       __func__, req->encklen);
 					goto error;
 				}
 			}
@@ -1830,7 +1814,7 @@ error:
 }
 
 static int qcedev_check_cipher_params(struct qcedev_cipher_op_req *req,
-						struct qcedev_control *podev)
+				      struct qcedev_control *podev)
 {
 	uint32_t total = 0;
 	uint32_t i;
@@ -1840,31 +1824,30 @@ static int qcedev_check_cipher_params(struct qcedev_cipher_op_req *req,
 		goto error;
 	}
 	if ((req->entries == 0) || (req->data_len == 0) ||
-			(req->entries > QCEDEV_MAX_BUFFERS)) {
+	    (req->entries > QCEDEV_MAX_BUFFERS)) {
 		pr_err("%s: Invalid cipher length/entries\n", __func__);
 		goto error;
 	}
 	if ((req->alg >= QCEDEV_ALG_LAST) ||
-		(req->mode >= QCEDEV_AES_DES_MODE_LAST)) {
+	    (req->mode >= QCEDEV_AES_DES_MODE_LAST)) {
 		pr_err("%s: Invalid algorithm %d\n", __func__,
-						(uint32_t)req->alg);
+		       (uint32_t)req->alg);
 		goto error;
 	}
 	if ((req->mode == QCEDEV_AES_MODE_XTS) &&
-				(!podev->ce_support.aes_xts)) {
+	    (!podev->ce_support.aes_xts)) {
 		pr_err("%s: XTS algorithm is not supported\n", __func__);
 		goto error;
 	}
 	if (req->alg == QCEDEV_ALG_AES) {
 		if (qcedev_check_cipher_key(req, podev))
 			goto error;
-
 	}
 	/* if using a byteoffset, make sure it is CTR mode using vbuf */
 	if (req->byteoffset) {
 		if (req->mode != QCEDEV_AES_MODE_CTR) {
 			pr_err("%s: Operation on byte offset not supported\n",
-								 __func__);
+			       __func__);
 			goto error;
 		}
 		if (req->byteoffset >= AES_CE_BLOCK_SIZE) {
@@ -1875,7 +1858,7 @@ static int qcedev_check_cipher_params(struct qcedev_cipher_op_req *req,
 		for (i = 0; i < req->entries; i++) {
 			if (total > U32_MAX - req->vbuf.src[i].len) {
 				pr_err("%s:Integer overflow on total src len\n",
-					__func__);
+				       __func__);
 				goto error;
 			}
 			total += req->vbuf.src[i].len;
@@ -1884,7 +1867,7 @@ static int qcedev_check_cipher_params(struct qcedev_cipher_op_req *req,
 
 	if (req->data_len < req->byteoffset) {
 		pr_err("%s: req data length %u is less than byteoffset %u\n",
-				__func__, req->data_len, req->byteoffset);
+		       __func__, req->data_len, req->byteoffset);
 		goto error;
 	}
 
@@ -1903,13 +1886,13 @@ static int qcedev_check_cipher_params(struct qcedev_cipher_op_req *req,
 	/* Ensure zer ivlen for ECB  mode  */
 	if (req->ivlen > 0) {
 		if ((req->mode == QCEDEV_AES_MODE_ECB) ||
-				(req->mode == QCEDEV_DES_MODE_ECB)) {
+		    (req->mode == QCEDEV_DES_MODE_ECB)) {
 			pr_err("%s: Expecting a zero length IV\n", __func__);
 			goto error;
 		}
 	} else {
 		if ((req->mode != QCEDEV_AES_MODE_ECB) &&
-				(req->mode != QCEDEV_DES_MODE_ECB)) {
+		    (req->mode != QCEDEV_DES_MODE_ECB)) {
 			pr_err("%s: Expecting a non-zero ength IV\n", __func__);
 			goto error;
 		}
@@ -1918,60 +1901,58 @@ static int qcedev_check_cipher_params(struct qcedev_cipher_op_req *req,
 	for (i = 0, total = 0; i < req->entries; i++) {
 		if (!req->vbuf.dst[i].vaddr && req->vbuf.dst[i].len) {
 			pr_err("%s: NULL req dst vbuf[%d] with length %d\n",
-				__func__, i, req->vbuf.dst[i].len);
+			       __func__, i, req->vbuf.dst[i].len);
 			goto error;
 		}
 		if (req->vbuf.dst[i].len >= U32_MAX - total) {
 			pr_err("%s: Integer overflow on total req dst vbuf length\n",
-				__func__);
+			       __func__);
 			goto error;
 		}
 		total += req->vbuf.dst[i].len;
 	}
 	if (total != req->data_len) {
 		pr_err("%s: Total (i=%d) dst(%d) buf size != data_len (%d)\n",
-			__func__, i, total, req->data_len);
+		       __func__, i, total, req->data_len);
 		goto error;
 	}
 	/* Check for sum of all src length is equal to data_len  */
 	for (i = 0, total = 0; i < req->entries; i++) {
 		if (!req->vbuf.src[i].vaddr && req->vbuf.src[i].len) {
 			pr_err("%s: NULL req src vbuf[%d] with length %d\n",
-				__func__, i, req->vbuf.src[i].len);
+			       __func__, i, req->vbuf.src[i].len);
 			goto error;
 		}
 		if (req->vbuf.src[i].len > U32_MAX - total) {
 			pr_err("%s: Integer overflow on total req src vbuf length\n",
-				__func__);
+			       __func__);
 			goto error;
 		}
 		total += req->vbuf.src[i].len;
 	}
 	if (total != req->data_len) {
 		pr_err("%s: Total src(%d) buf size != data_len (%d)\n",
-			__func__, total, req->data_len);
+		       __func__, total, req->data_len);
 		goto error;
 	}
 	return 0;
 error:
 	return -EINVAL;
-
 }
 
 static int qcedev_check_sha_params(struct qcedev_sha_op_req *req,
-						struct qcedev_control *podev)
+				   struct qcedev_control *podev)
 {
 	uint32_t total = 0;
 	uint32_t i;
 
-	if ((req->alg == QCEDEV_ALG_AES_CMAC) &&
-				(!podev->ce_support.cmac)) {
+	if ((req->alg == QCEDEV_ALG_AES_CMAC) && (!podev->ce_support.cmac)) {
 		pr_err("%s: CMAC not supported\n", __func__);
 		goto sha_error;
 	}
 	if ((!req->entries) || (req->entries > QCEDEV_MAX_BUFFERS)) {
-		pr_err("%s: Invalid num entries (%d)\n",
-						__func__, req->entries);
+		pr_err("%s: Invalid num entries (%d)\n", __func__,
+		       req->entries);
 		goto sha_error;
 	}
 
@@ -1980,21 +1961,21 @@ static int qcedev_check_sha_params(struct qcedev_sha_op_req *req,
 		goto sha_error;
 	}
 	if ((req->alg == QCEDEV_ALG_SHA1_HMAC) ||
-			(req->alg == QCEDEV_ALG_SHA256_HMAC)) {
+	    (req->alg == QCEDEV_ALG_SHA256_HMAC)) {
 		if (req->authkey == NULL) {
 			pr_err("%s: Invalid authkey pointer\n", __func__);
 			goto sha_error;
 		}
 		if (req->authklen <= 0) {
-			pr_err("%s: Invalid authkey length (%d)\n",
-						__func__, req->authklen);
+			pr_err("%s: Invalid authkey length (%d)\n", __func__,
+			       req->authklen);
 			goto sha_error;
 		}
 	}
 
 	if (req->alg == QCEDEV_ALG_AES_CMAC) {
 		if ((req->authklen != QCEDEV_AES_KEY_128) &&
-					(req->authklen != QCEDEV_AES_KEY_256)) {
+		    (req->authklen != QCEDEV_AES_KEY_256)) {
 			pr_err("%s: unsupported key length\n", __func__);
 			goto sha_error;
 		}
@@ -2004,7 +1985,7 @@ static int qcedev_check_sha_params(struct qcedev_sha_op_req *req,
 	for (i = 0, total = 0; i < req->entries; i++) {
 		if (req->data[i].len > U32_MAX - total) {
 			pr_err("%s: Integer overflow on total req buf length\n",
-				__func__);
+			       __func__);
 			goto sha_error;
 		}
 		total += req->data[i].len;
@@ -2012,7 +1993,7 @@ static int qcedev_check_sha_params(struct qcedev_sha_op_req *req,
 
 	if (total != req->data_len) {
 		pr_err("%s: Total src(%d) buf size != data_len (%d)\n",
-			__func__, total, req->data_len);
+		       __func__, total, req->data_len);
 		goto sha_error;
 	}
 	return 0;
@@ -2020,17 +2001,17 @@ sha_error:
 	return -EINVAL;
 }
 
-static int qcedev_check_offload_cipher_key(struct qcedev_offload_cipher_op_req *req,
-				       struct qcedev_control *podev)
+static int
+qcedev_check_offload_cipher_key(struct qcedev_offload_cipher_op_req *req,
+				struct qcedev_control *podev)
 {
 	if (req->encklen == 0)
 		return -EINVAL;
 
 	/* AES-192 is not a valid option for OFFLOAD use case */
 	if ((req->encklen != QCEDEV_AES_KEY_128) &&
-			(req->encklen != QCEDEV_AES_KEY_256)) {
-		pr_err("%s: unsupported key size %d\n",
-					__func__, req->encklen);
+	    (req->encklen != QCEDEV_AES_KEY_256)) {
+		pr_err("%s: unsupported key size %d\n", __func__, req->encklen);
 		goto error;
 	}
 
@@ -2039,22 +2020,22 @@ error:
 	return -EINVAL;
 }
 
-static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_req *req,
-					  struct qcedev_control *podev)
+static int
+qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_req *req,
+				   struct qcedev_control *podev)
 {
 	uint32_t total = 0;
 	int i = 0;
 
 	if ((req->entries == 0) || (req->data_len == 0) ||
-		(req->entries > QCEDEV_MAX_BUFFERS)) {
+	    (req->entries > QCEDEV_MAX_BUFFERS)) {
 		pr_err("%s: Invalid cipher length/entries\n", __func__);
 		goto error;
 	}
 
-	if ((req->alg != QCEDEV_ALG_AES) ||
-		(req->mode > QCEDEV_AES_MODE_CTR)) {
+	if ((req->alg != QCEDEV_ALG_AES) || (req->mode > QCEDEV_AES_MODE_CTR)) {
 		pr_err("%s: Invalid algorithm %d\n", __func__,
-					(uint32_t)req->alg);
+		       (uint32_t)req->alg);
 		goto error;
 	}
 
@@ -2068,7 +2049,7 @@ static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_re
 	if (req->byteoffset) {
 		if (req->mode != QCEDEV_AES_MODE_CTR) {
 			pr_err("%s: Operation on byte offset not supported\n",
-						__func__);
+			       __func__);
 			goto error;
 		}
 		if (req->byteoffset >= AES_CE_BLOCK_SIZE) {
@@ -2079,7 +2060,7 @@ static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_re
 		for (i = 0; i < req->entries; i++) {
 			if (total > U32_MAX - req->vbuf.src[i].len) {
 				pr_err("%s:Int overflow on total src len\n",
-						__func__);
+				       __func__);
 				goto error;
 			}
 			total += req->vbuf.src[i].len;
@@ -2088,7 +2069,7 @@ static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_re
 
 	if (req->data_len < req->byteoffset) {
 		pr_err("%s: req data length %u is less than byteoffset %u\n",
-				__func__, req->data_len, req->byteoffset);
+		       __func__, req->data_len, req->byteoffset);
 		goto error;
 	}
 
@@ -2100,8 +2081,7 @@ static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_re
 
 	/* Ensure Key size */
 	if (req->encklen > QCEDEV_MAX_KEY_SIZE) {
-		pr_err("%s: Klen is not correct: %u\n", __func__,
-						req->encklen);
+		pr_err("%s: Klen is not correct: %u\n", __func__, req->encklen);
 		goto error;
 	}
 
@@ -2109,12 +2089,12 @@ static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_re
 	for (i = 0, total = 0; i < req->entries; i++) {
 		if (!req->vbuf.dst[i].vaddr && req->vbuf.dst[i].len) {
 			pr_err("%s: NULL req dst vbuf[%d] with length %d\n",
-					__func__, i, req->vbuf.dst[i].len);
+			       __func__, i, req->vbuf.dst[i].len);
 			goto error;
 		}
 		if (req->vbuf.dst[i].len >= U32_MAX - total) {
 			pr_err("%s: Int overflow on total req dst vbuf len\n",
-					__func__);
+			       __func__);
 			goto error;
 		}
 		total += req->vbuf.dst[i].len;
@@ -2122,7 +2102,7 @@ static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_re
 
 	if (total != req->data_len) {
 		pr_err("%s: Total (i=%d) dst(%d) buf size != data_len (%d)\n",
-					__func__, i, total, req->data_len);
+		       __func__, i, total, req->data_len);
 		goto error;
 	}
 
@@ -2130,12 +2110,12 @@ static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_re
 	for (i = 0, total = 0; i < req->entries; i++) {
 		if (!req->vbuf.src[i].vaddr && req->vbuf.src[i].len) {
 			pr_err("%s: NULL req src vbuf[%d] with length %d\n",
-					__func__, i, req->vbuf.src[i].len);
+			       __func__, i, req->vbuf.src[i].len);
 			goto error;
 		}
 		if (req->vbuf.src[i].len > U32_MAX - total) {
 			pr_err("%s: Int overflow on total req src vbuf len\n",
-					__func__);
+			       __func__);
 			goto error;
 		}
 		total += req->vbuf.src[i].len;
@@ -2143,7 +2123,7 @@ static int qcedev_check_offload_cipher_params(struct qcedev_offload_cipher_op_re
 
 	if (total != req->data_len) {
 		pr_err("%s: Total src(%d) buf size != data_len (%d)\n",
-				__func__, total, req->data_len);
+		       __func__, total, req->data_len);
 		goto error;
 	}
 
@@ -2152,8 +2132,7 @@ error:
 	return -EINVAL;
 }
 
-long qcedev_ioctl(struct file *file,
-				unsigned int cmd, unsigned long arg)
+long qcedev_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int err = 0;
 	struct qcedev_handle *handle;
@@ -2165,12 +2144,11 @@ long qcedev_ioctl(struct file *file,
 	if (!qcedev_areq)
 		return -ENOMEM;
 
-	handle =  file->private_data;
-	podev =  handle->cntl;
+	handle = file->private_data;
+	podev = handle->cntl;
 	qcedev_areq->handle = handle;
 	if (podev == NULL || podev->magic != QCEDEV_MAGIC) {
-		pr_err("%s: invalid handle %pK\n",
-			__func__, podev);
+		pr_err("%s: invalid handle %pK\n", __func__, podev);
 		err = -ENOENT;
 		goto exit_free_qcedev_areq;
 	}
@@ -2188,15 +2166,15 @@ long qcedev_ioctl(struct file *file,
 	case QCEDEV_IOCTL_ENC_REQ:
 	case QCEDEV_IOCTL_DEC_REQ:
 		if (copy_from_user(&qcedev_areq->cipher_op_req,
-				(void __user *)arg,
-				sizeof(struct qcedev_cipher_op_req))) {
+				   (void __user *)arg,
+				   sizeof(struct qcedev_cipher_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
 		qcedev_areq->op_type = QCEDEV_CRYPTO_OPER_CIPHER;
 
 		if (qcedev_check_cipher_params(&qcedev_areq->cipher_op_req,
-				podev)) {
+					       podev)) {
 			err = -EINVAL;
 			goto exit_free_qcedev_areq;
 		}
@@ -2205,46 +2183,46 @@ long qcedev_ioctl(struct file *file,
 		if (err)
 			goto exit_free_qcedev_areq;
 		if (copy_to_user((void __user *)arg,
-					&qcedev_areq->cipher_op_req,
-					sizeof(struct qcedev_cipher_op_req))) {
+				 &qcedev_areq->cipher_op_req,
+				 sizeof(struct qcedev_cipher_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
 		break;
 
 	case QCEDEV_IOCTL_OFFLOAD_OP_REQ:
-		if (copy_from_user(&qcedev_areq->offload_cipher_op_req,
-				(void __user *)arg,
-				sizeof(struct qcedev_offload_cipher_op_req))) {
+		if (copy_from_user(
+			    &qcedev_areq->offload_cipher_op_req,
+			    (void __user *)arg,
+			    sizeof(struct qcedev_offload_cipher_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
 		qcedev_areq->op_type = QCEDEV_CRYPTO_OPER_OFFLOAD_CIPHER;
 		if (qcedev_check_offload_cipher_params(
-				&qcedev_areq->offload_cipher_op_req, podev)) {
+			    &qcedev_areq->offload_cipher_op_req, podev)) {
 			err = -EINVAL;
 			goto exit_free_qcedev_areq;
 		}
-		qcedev_areq->offload_cipher_op_req.err = QCEDEV_OFFLOAD_NO_ERROR;
+		qcedev_areq->offload_cipher_op_req.err =
+			QCEDEV_OFFLOAD_NO_ERROR;
 		err = qcedev_smmu_ablk_offload_cipher(qcedev_areq, handle);
 		if (err)
 			goto exit_free_qcedev_areq;
 
 		if (copy_to_user((void __user *)arg,
-				&qcedev_areq->offload_cipher_op_req,
-				sizeof(struct qcedev_offload_cipher_op_req))) {
+				 &qcedev_areq->offload_cipher_op_req,
+				 sizeof(struct qcedev_offload_cipher_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
 		break;
 
-	case QCEDEV_IOCTL_SHA_INIT_REQ:
-		{
+	case QCEDEV_IOCTL_SHA_INIT_REQ: {
 		struct scatterlist sg_src;
 
-		if (copy_from_user(&qcedev_areq->sha_op_req,
-					(void __user *)arg,
-					sizeof(struct qcedev_sha_op_req))) {
+		if (copy_from_user(&qcedev_areq->sha_op_req, (void __user *)arg,
+				   sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
@@ -2262,26 +2240,23 @@ long qcedev_ioctl(struct file *file,
 		}
 		mutex_unlock(&hash_access_lock);
 		if (copy_to_user((void __user *)arg, &qcedev_areq->sha_op_req,
-					sizeof(struct qcedev_sha_op_req))) {
+				 sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
 		handle->sha_ctxt.init_done = true;
-		}
-		break;
+	} break;
 	case QCEDEV_IOCTL_GET_CMAC_REQ:
 		if (!podev->ce_support.cmac) {
 			err = -ENOTTY;
 			goto exit_free_qcedev_areq;
 		}
 		fallthrough;
-	case QCEDEV_IOCTL_SHA_UPDATE_REQ:
-		{
+	case QCEDEV_IOCTL_SHA_UPDATE_REQ: {
 		struct scatterlist sg_src;
 
-		if (copy_from_user(&qcedev_areq->sha_op_req,
-					(void __user *)arg,
-					sizeof(struct qcedev_sha_op_req))) {
+		if (copy_from_user(&qcedev_areq->sha_op_req, (void __user *)arg,
+				   sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
@@ -2315,22 +2290,20 @@ long qcedev_ioctl(struct file *file,
 
 		if (handle->sha_ctxt.diglen > QCEDEV_MAX_SHA_DIGEST) {
 			pr_err("Invalid sha_ctxt.diglen %d\n",
-					handle->sha_ctxt.diglen);
+			       handle->sha_ctxt.diglen);
 			mutex_unlock(&hash_access_lock);
 			err = -EINVAL;
 			goto exit_free_qcedev_areq;
 		}
 		memcpy(&qcedev_areq->sha_op_req.digest[0],
-				&handle->sha_ctxt.digest[0],
-				handle->sha_ctxt.diglen);
+		       &handle->sha_ctxt.digest[0], handle->sha_ctxt.diglen);
 		mutex_unlock(&hash_access_lock);
 		if (copy_to_user((void __user *)arg, &qcedev_areq->sha_op_req,
-					sizeof(struct qcedev_sha_op_req))) {
+				 sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
-		}
-		break;
+	} break;
 
 	case QCEDEV_IOCTL_SHA_FINAL_REQ:
 
@@ -2339,9 +2312,8 @@ long qcedev_ioctl(struct file *file,
 			err = -EINVAL;
 			goto exit_free_qcedev_areq;
 		}
-		if (copy_from_user(&qcedev_areq->sha_op_req,
-					(void __user *)arg,
-					sizeof(struct qcedev_sha_op_req))) {
+		if (copy_from_user(&qcedev_areq->sha_op_req, (void __user *)arg,
+				   sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
@@ -2359,31 +2331,28 @@ long qcedev_ioctl(struct file *file,
 		}
 		if (handle->sha_ctxt.diglen > QCEDEV_MAX_SHA_DIGEST) {
 			pr_err("Invalid sha_ctxt.diglen %d\n",
-					handle->sha_ctxt.diglen);
+			       handle->sha_ctxt.diglen);
 			mutex_unlock(&hash_access_lock);
 			err = -EINVAL;
 			goto exit_free_qcedev_areq;
 		}
 		qcedev_areq->sha_op_req.diglen = handle->sha_ctxt.diglen;
 		memcpy(&qcedev_areq->sha_op_req.digest[0],
-				&handle->sha_ctxt.digest[0],
-				handle->sha_ctxt.diglen);
+		       &handle->sha_ctxt.digest[0], handle->sha_ctxt.diglen);
 		mutex_unlock(&hash_access_lock);
 		if (copy_to_user((void __user *)arg, &qcedev_areq->sha_op_req,
-					sizeof(struct qcedev_sha_op_req))) {
+				 sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
 		handle->sha_ctxt.init_done = false;
 		break;
 
-	case QCEDEV_IOCTL_GET_SHA_REQ:
-		{
+	case QCEDEV_IOCTL_GET_SHA_REQ: {
 		struct scatterlist sg_src;
 
-		if (copy_from_user(&qcedev_areq->sha_op_req,
-					(void __user *)arg,
-					sizeof(struct qcedev_sha_op_req))) {
+		if (copy_from_user(&qcedev_areq->sha_op_req, (void __user *)arg,
+				   sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
@@ -2407,98 +2376,90 @@ long qcedev_ioctl(struct file *file,
 		}
 		if (handle->sha_ctxt.diglen > QCEDEV_MAX_SHA_DIGEST) {
 			pr_err("Invalid sha_ctxt.diglen %d\n",
-					handle->sha_ctxt.diglen);
+			       handle->sha_ctxt.diglen);
 			mutex_unlock(&hash_access_lock);
 			err = -EINVAL;
 			goto exit_free_qcedev_areq;
 		}
-		qcedev_areq->sha_op_req.diglen =	handle->sha_ctxt.diglen;
+		qcedev_areq->sha_op_req.diglen = handle->sha_ctxt.diglen;
 		memcpy(&qcedev_areq->sha_op_req.digest[0],
-				&handle->sha_ctxt.digest[0],
-				handle->sha_ctxt.diglen);
+		       &handle->sha_ctxt.digest[0], handle->sha_ctxt.diglen);
 		mutex_unlock(&hash_access_lock);
 		if (copy_to_user((void __user *)arg, &qcedev_areq->sha_op_req,
-					sizeof(struct qcedev_sha_op_req))) {
+				 sizeof(struct qcedev_sha_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
 		}
+	} break;
+
+	case QCEDEV_IOCTL_MAP_BUF_REQ: {
+		unsigned long long vaddr = 0;
+		struct qcedev_map_buf_req map_buf = { { 0 } };
+		int i = 0;
+
+		if (copy_from_user(&map_buf, (void __user *)arg,
+				   sizeof(map_buf))) {
+			err = -EFAULT;
+			goto exit_free_qcedev_areq;
+		}
+
+		if (map_buf.num_fds > ARRAY_SIZE(map_buf.fd)) {
+			pr_err("%s: err: num_fds = %d exceeds max value\n",
+			       __func__, map_buf.num_fds);
+			err = -EINVAL;
+			goto exit_free_qcedev_areq;
+		}
+
+		for (i = 0; i < map_buf.num_fds; i++) {
+			err = qcedev_check_and_map_buffer(handle, map_buf.fd[i],
+							  map_buf.fd_offset[i],
+							  map_buf.fd_size[i],
+							  &vaddr);
+			if (err) {
+				pr_err("%s: err: failed to map fd(%d) - %d\n",
+				       __func__, map_buf.fd[i], err);
+				goto exit_free_qcedev_areq;
+			}
+			map_buf.buf_vaddr[i] = vaddr;
+			pr_info("%s: info: vaddr = %llx\n, fd = %d", __func__,
+				vaddr, map_buf.fd[i]);
+		}
+
+		if (copy_to_user((void __user *)arg, &map_buf,
+				 sizeof(map_buf))) {
+			err = -EFAULT;
+			goto exit_free_qcedev_areq;
 		}
 		break;
+	}
 
-	case QCEDEV_IOCTL_MAP_BUF_REQ:
-		{
-			unsigned long long vaddr = 0;
-			struct qcedev_map_buf_req map_buf = { {0} };
-			int i = 0;
+	case QCEDEV_IOCTL_UNMAP_BUF_REQ: {
+		struct qcedev_unmap_buf_req unmap_buf = { { 0 } };
+		int i = 0;
 
-			if (copy_from_user(&map_buf,
-					(void __user *)arg, sizeof(map_buf))) {
-				err = -EFAULT;
-				goto exit_free_qcedev_areq;
-			}
-
-			if (map_buf.num_fds > ARRAY_SIZE(map_buf.fd)) {
-				pr_err("%s: err: num_fds = %d exceeds max value\n",
-							__func__, map_buf.num_fds);
-				err = -EINVAL;
-				goto exit_free_qcedev_areq;
-			}
-
-			for (i = 0; i < map_buf.num_fds; i++) {
-				err = qcedev_check_and_map_buffer(handle,
-						map_buf.fd[i],
-						map_buf.fd_offset[i],
-						map_buf.fd_size[i],
-						&vaddr);
-				if (err) {
-					pr_err(
-						"%s: err: failed to map fd(%d) - %d\n",
-						__func__, map_buf.fd[i], err);
-					goto exit_free_qcedev_areq;
-				}
-				map_buf.buf_vaddr[i] = vaddr;
-				pr_info("%s: info: vaddr = %llx\n, fd = %d",
-					__func__, vaddr, map_buf.fd[i]);
-			}
-
-			if (copy_to_user((void __user *)arg, &map_buf,
-					sizeof(map_buf))) {
-				err = -EFAULT;
-				goto exit_free_qcedev_areq;
-			}
-			break;
+		if (copy_from_user(&unmap_buf, (void __user *)arg,
+				   sizeof(unmap_buf))) {
+			err = -EFAULT;
+			goto exit_free_qcedev_areq;
+		}
+		if (unmap_buf.num_fds > ARRAY_SIZE(unmap_buf.fd)) {
+			pr_err("%s: err: num_fds = %d exceeds max value\n",
+			       __func__, unmap_buf.num_fds);
+			err = -EINVAL;
+			goto exit_free_qcedev_areq;
 		}
 
-	case QCEDEV_IOCTL_UNMAP_BUF_REQ:
-		{
-			struct qcedev_unmap_buf_req unmap_buf = { { 0 } };
-			int i = 0;
-
-			if (copy_from_user(&unmap_buf,
-				(void __user *)arg, sizeof(unmap_buf))) {
-				err = -EFAULT;
+		for (i = 0; i < unmap_buf.num_fds; i++) {
+			err = qcedev_check_and_unmap_buffer(handle,
+							    unmap_buf.fd[i]);
+			if (err) {
+				pr_err("%s: err: failed to unmap fd(%d) - %d\n",
+				       __func__, unmap_buf.fd[i], err);
 				goto exit_free_qcedev_areq;
 			}
-			if (unmap_buf.num_fds > ARRAY_SIZE(unmap_buf.fd)) {
-				pr_err("%s: err: num_fds = %d exceeds max value\n",
-							__func__, unmap_buf.num_fds);
-				err = -EINVAL;
-				goto exit_free_qcedev_areq;
-			}
-
-			for (i = 0; i < unmap_buf.num_fds; i++) {
-				err = qcedev_check_and_unmap_buffer(handle,
-						unmap_buf.fd[i]);
-				if (err) {
-					pr_err(
-						"%s: err: failed to unmap fd(%d) - %d\n",
-						 __func__,
-						unmap_buf.fd[i], err);
-					goto exit_free_qcedev_areq;
-				}
-			}
-			break;
 		}
+		break;
+	}
 
 	default:
 		err = -ENOTTY;
@@ -2533,7 +2494,7 @@ static int qcedev_probe_device(struct platform_device *pdev)
 	}
 
 	class_dev = device_create(driver_class, NULL, qcedev_device_no, NULL,
-			QCEDEV_DEV);
+				  QCEDEV_DEV);
 	if (IS_ERR(class_dev)) {
 		pr_err("class_device_create failed %d\n", rc);
 		rc = -ENOMEM;
@@ -2563,31 +2524,28 @@ static int qcedev_probe_device(struct platform_device *pdev)
 	podev->icc_path = of_icc_get(&pdev->dev, "data_path");
 	if (IS_ERR(podev->icc_path)) {
 		rc = PTR_ERR(podev->icc_path);
-		pr_err("%s Failed to get icc path with error %d\n",
-			__func__, rc);
+		pr_err("%s Failed to get icc path with error %d\n", __func__,
+		       rc);
 		goto exit_del_cdev;
 	}
 
 	/*
-	 * HLOS crypto vote values from DTSI. If no values specified, use
-	 * nominal values.
-	 */
-	if (of_property_read_u32((&pdev->dev)->of_node,
-				"qcom,icc_avg_bw",
-				&podev->icc_avg_bw)) {
+   * HLOS crypto vote values from DTSI. If no values specified, use
+   * nominal values.
+   */
+	if (of_property_read_u32((&pdev->dev)->of_node, "qcom,icc_avg_bw",
+				 &podev->icc_avg_bw)) {
 		pr_warn("%s: No icc avg BW set, using default\n", __func__);
 		podev->icc_avg_bw = CRYPTO_AVG_BW;
 	}
 
-	if (of_property_read_u32((&pdev->dev)->of_node,
-				"qcom,icc_peak_bw",
-				&podev->icc_peak_bw)) {
+	if (of_property_read_u32((&pdev->dev)->of_node, "qcom,icc_peak_bw",
+				 &podev->icc_peak_bw)) {
 		pr_warn("%s: No icc peak BW set, using default\n", __func__);
 		podev->icc_peak_bw = CRYPTO_PEAK_BW;
 	}
 
-	rc = icc_set_bw(podev->icc_path, podev->icc_avg_bw,
-				podev->icc_peak_bw);
+	rc = icc_set_bw(podev->icc_path, podev->icc_avg_bw, podev->icc_peak_bw);
 	if (rc) {
 		pr_err("%s Unable to set high bandwidth\n", __func__);
 		goto exit_unregister_bus_scale;
@@ -2602,8 +2560,8 @@ static int qcedev_probe_device(struct platform_device *pdev)
 
 	rc = qce_set_irqs(podev->qce, false);
 	if (rc) {
-		pr_err("%s: could not disable bam irqs, ret = %d",
-				__func__, rc);
+		pr_err("%s: could not disable bam irqs, ret = %d", __func__,
+		       rc);
 		goto exit_scale_busbandwidth;
 	}
 
@@ -2621,16 +2579,16 @@ static int qcedev_probe_device(struct platform_device *pdev)
 		podev->platform_support.ce_shared = 0;
 		podev->platform_support.shared_ce_resource = 0;
 		podev->platform_support.hw_key_support =
-						podev->ce_support.hw_key;
+			podev->ce_support.hw_key;
 		podev->platform_support.sha_hmac = 1;
 	} else {
 		platform_support =
 			(struct msm_ce_hw_support *)pdev->dev.platform_data;
 		podev->platform_support.ce_shared = platform_support->ce_shared;
 		podev->platform_support.shared_ce_resource =
-				platform_support->shared_ce_resource;
+			platform_support->shared_ce_resource;
 		podev->platform_support.hw_key_support =
-				platform_support->hw_key_support;
+			platform_support->hw_key_support;
 		podev->platform_support.sha_hmac = platform_support->sha_hmac;
 	}
 
@@ -2640,11 +2598,11 @@ static int qcedev_probe_device(struct platform_device *pdev)
 		goto exit_qce_close;
 	}
 
-	rc = of_platform_populate(pdev->dev.of_node, qcedev_match,
-			NULL, &pdev->dev);
+	rc = of_platform_populate(pdev->dev.of_node, qcedev_match, NULL,
+				  &pdev->dev);
 	if (rc) {
-		pr_err("%s: err: of_platform_populate failed: %d\n",
-			__func__, rc);
+		pr_err("%s: err: of_platform_populate failed: %d\n", __func__,
+		       rc);
 		goto exit_mem_new_client;
 	}
 
@@ -2685,7 +2643,7 @@ static int qcedev_probe(struct platform_device *pdev)
 	if (of_device_is_compatible(pdev->dev.of_node, "qcom,qcedev"))
 		return qcedev_probe_device(pdev);
 	else if (of_device_is_compatible(pdev->dev.of_node,
-		"qcom,qcedev,context-bank"))
+					 "qcom,qcedev,context-bank"))
 		return qcedev_parse_context_bank(pdev);
 
 	return -EINVAL;
@@ -2733,7 +2691,7 @@ static int qcedev_suspend(struct platform_device *pdev, pm_message_t state)
 		ret = qce_set_irqs(podev->qce, false);
 		if (ret) {
 			pr_err("%s: could not disable bam irqs, ret = %d",
-					__func__, ret);
+			       __func__, ret);
 			goto suspend_exit;
 		}
 		ret = qcedev_control_clocks(podev, false);
@@ -2764,7 +2722,7 @@ static int qcedev_resume(struct platform_device *pdev)
 		ret = qce_set_irqs(podev->qce, true);
 		if (ret) {
 			pr_err("%s: could not enable bam irqs, ret = %d",
-					__func__, ret);
+			       __func__, ret);
 			qcedev_control_clocks(podev, false);
 		}
 	}
@@ -2775,14 +2733,15 @@ resume_exit:
 }
 
 static struct platform_driver qcedev_plat_driver = {
-	.probe = qcedev_probe,
-	.remove = qcedev_remove,
-	.suspend = qcedev_suspend,
-	.resume = qcedev_resume,
-	.driver = {
-		.name = "qce",
-		.of_match_table = qcedev_match,
-	},
+    .probe = qcedev_probe,
+    .remove = qcedev_remove,
+    .suspend = qcedev_suspend,
+    .resume = qcedev_resume,
+    .driver =
+        {
+            .name = "qce",
+            .of_match_table = qcedev_match,
+        },
 };
 
 static int _disp_stats(int id)
@@ -2792,52 +2751,51 @@ static int _disp_stats(int id)
 
 	pstat = &_qcedev_stat;
 	len = scnprintf(_debug_read_buf, DEBUG_MAX_RW_BUF - 1,
-			"\nQTI QCE dev driver %d Statistics:\n",
-				id + 1);
+			"\nQTI QCE dev driver %d Statistics:\n", id + 1);
 
 	len += scnprintf(_debug_read_buf + len, DEBUG_MAX_RW_BUF - len - 1,
-			"   Encryption operation success       : %d\n",
-					pstat->qcedev_enc_success);
+			 "   Encryption operation success       : %d\n",
+			 pstat->qcedev_enc_success);
 	len += scnprintf(_debug_read_buf + len, DEBUG_MAX_RW_BUF - len - 1,
-			"   Encryption operation fail   : %d\n",
-					pstat->qcedev_enc_fail);
+			 "   Encryption operation fail   : %d\n",
+			 pstat->qcedev_enc_fail);
 	len += scnprintf(_debug_read_buf + len, DEBUG_MAX_RW_BUF - len - 1,
-			"   Decryption operation success     : %d\n",
-					pstat->qcedev_dec_success);
+			 "   Decryption operation success     : %d\n",
+			 pstat->qcedev_dec_success);
 
 	len += scnprintf(_debug_read_buf + len, DEBUG_MAX_RW_BUF - len - 1,
-			"   Encryption operation fail          : %d\n",
-					pstat->qcedev_dec_fail);
+			 "   Encryption operation fail          : %d\n",
+			 pstat->qcedev_dec_fail);
 
 	return len;
 }
 
 static ssize_t _debug_stats_read(struct file *file, char __user *buf,
-			size_t count, loff_t *ppos)
+				 size_t count, loff_t *ppos)
 {
 	ssize_t rc = -EINVAL;
-	int qcedev = *((int *) file->private_data);
+	int qcedev = *((int *)file->private_data);
 	int len;
 
 	len = _disp_stats(qcedev);
 
 	if (len <= count)
-		rc = simple_read_from_buffer((void __user *) buf, len,
-			ppos, (void *) _debug_read_buf, len);
+		rc = simple_read_from_buffer((void __user *)buf, len, ppos,
+					     (void *)_debug_read_buf, len);
 	return rc;
 }
 
 static ssize_t _debug_stats_write(struct file *file, const char __user *buf,
-			size_t count, loff_t *ppos)
+				  size_t count, loff_t *ppos)
 {
 	memset((char *)&_qcedev_stat, 0, sizeof(struct qcedev_stat));
 	return count;
 };
 
 static const struct file_operations _debug_stats_ops = {
-	.open =         simple_open,
-	.read =         _debug_stats_read,
-	.write =        _debug_stats_write,
+	.open = simple_open,
+	.read = _debug_stats_read,
+	.write = _debug_stats_write,
 };
 
 static int _qcedev_debug_init(void)
@@ -2849,17 +2807,17 @@ static int _qcedev_debug_init(void)
 	_debug_dent = debugfs_create_dir("qcedev", NULL);
 	if (IS_ERR(_debug_dent)) {
 		pr_debug("qcedev debugfs_create_dir fail, error %ld\n",
-				PTR_ERR(_debug_dent));
+			 PTR_ERR(_debug_dent));
 		return PTR_ERR(_debug_dent);
 	}
 
-	snprintf(name, DEBUG_MAX_FNAME-1, "stats-%d", 1);
+	snprintf(name, DEBUG_MAX_FNAME - 1, "stats-%d", 1);
 	_debug_qcedev = 0;
-	dent = debugfs_create_file(name, 0644, _debug_dent,
-			&_debug_qcedev, &_debug_stats_ops);
+	dent = debugfs_create_file(name, 0644, _debug_dent, &_debug_qcedev,
+				   &_debug_stats_ops);
 	if (dent == NULL) {
 		pr_debug("qcedev debugfs_create_file fail, error %ld\n",
-				PTR_ERR(dent));
+			 PTR_ERR(dent));
 		rc = PTR_ERR(dent);
 		goto err;
 	}

@@ -22,11 +22,11 @@
  * further call target_if component using LMAC TWT txops
  */
 #include <qdf_types.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_twt_public_structs.h>
-#include <wlan_twt_api.h>
-#include <wlan_twt_tgt_if_ext_tx_api.h>
 #include <wlan_lmac_if_def.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_twt_api.h>
+#include <wlan_twt_public_structs.h>
+#include <wlan_twt_tgt_if_ext_tx_api.h>
 
 QDF_STATUS
 tgt_twt_setup_req_send(struct wlan_objmgr_psoc *psoc,
@@ -196,4 +196,3 @@ tgt_twt_ac_pdev_param_send(struct wlan_objmgr_psoc *psoc,
 
 	return status;
 }
-

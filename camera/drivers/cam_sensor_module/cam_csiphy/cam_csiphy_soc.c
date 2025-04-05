@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
 #include "cam_csiphy_soc.h"
@@ -14,24 +15,26 @@
 #include "include/cam_csiphy_2_3_0_hwreg.h"
 
 /* Clock divide factor for CPHY spec v1.0 */
-#define CSIPHY_DIVISOR_16                    16
+#define CSIPHY_DIVISOR_16 16
 /* Clock divide factor for CPHY spec v1.2 and up */
-#define CSIPHY_DIVISOR_32                    32
+#define CSIPHY_DIVISOR_32 32
 /* Clock divide factor for DPHY */
-#define CSIPHY_DIVISOR_8                     8
-#define CSIPHY_LOG_BUFFER_SIZE_IN_BYTES      250
-#define ONE_LOG_LINE_MAX_SIZE                20
+#define CSIPHY_DIVISOR_8 8
+#define CSIPHY_LOG_BUFFER_SIZE_IN_BYTES 250
+#define ONE_LOG_LINE_MAX_SIZE 20
 
-static int cam_csiphy_io_dump(void __iomem *base_addr, uint16_t num_regs, int csiphy_idx)
+static int cam_csiphy_io_dump(void __iomem *base_addr, uint16_t num_regs,
+			      int csiphy_idx)
 {
-	char                                    *buffer;
-	uint8_t                                  buffer_offset = 0;
-	uint8_t                                  rem_buffer_size = CSIPHY_LOG_BUFFER_SIZE_IN_BYTES;
-	uint16_t                                 i;
-	uint32_t                                 reg_offset;
+	char *buffer;
+	uint8_t buffer_offset = 0;
+	uint8_t rem_buffer_size = CSIPHY_LOG_BUFFER_SIZE_IN_BYTES;
+	uint16_t i;
+	uint32_t reg_offset;
 
 	if (!base_addr || !num_regs) {
-		CAM_ERR(CAM_CSIPHY, "Invalid params. base_addr: 0x%p num_regs: %u",
+		CAM_ERR(CAM_CSIPHY,
+			"Invalid params. base_addr: 0x%p num_regs: %u",
 			base_addr, num_regs);
 		return -EINVAL;
 	}
@@ -46,10 +49,13 @@ static int cam_csiphy_io_dump(void __iomem *base_addr, uint16_t num_regs, int cs
 	CAM_INFO(CAM_CSIPHY, "CSIPHY:%d Dump", csiphy_idx);
 	for (i = 0; i < num_regs; i++) {
 		reg_offset = i << 2;
-		buffer_offset += scnprintf(buffer + buffer_offset, rem_buffer_size, "0x%x=0x%x\n",
-			reg_offset, cam_io_r_mb(base_addr + reg_offset));
+		buffer_offset += scnprintf(buffer + buffer_offset,
+					   rem_buffer_size, "0x%x=0x%x\n",
+					   reg_offset,
+					   cam_io_r_mb(base_addr + reg_offset));
 
-		rem_buffer_size = CSIPHY_LOG_BUFFER_SIZE_IN_BYTES - buffer_offset;
+		rem_buffer_size =
+			CSIPHY_LOG_BUFFER_SIZE_IN_BYTES - buffer_offset;
 
 		if (rem_buffer_size <= ONE_LOG_LINE_MAX_SIZE) {
 			buffer[buffer_offset - 1] = '\0';
@@ -93,11 +99,11 @@ int32_t cam_csiphy_reg_dump(struct cam_hw_soc_info *soc_info)
 int32_t cam_csiphy_common_status_reg_dump(struct csiphy_device *csiphy_dev)
 {
 	struct csiphy_reg_parms_t *csiphy_reg = NULL;
-	int32_t                    rc = 0;
-	resource_size_t            size = 0;
-	void __iomem              *phy_base = NULL;
-	int                        reg_id = 0;
-	uint32_t                   val, status_reg, clear_reg;
+	int32_t rc = 0;
+	resource_size_t size = 0;
+	void __iomem *phy_base = NULL;
+	int reg_id = 0;
+	uint32_t val, status_reg, clear_reg;
 
 	if (!csiphy_dev) {
 		rc = -EINVAL;
@@ -111,18 +117,19 @@ int32_t cam_csiphy_common_status_reg_dump(struct csiphy_device *csiphy_dev)
 	clear_reg = csiphy_reg->mipi_csiphy_interrupt_clear0_addr;
 	size = csiphy_reg->csiphy_num_common_status_regs;
 
-	CAM_INFO(CAM_CSIPHY, "PHY base addr=%pK offset=0x%x size=%d",
-		phy_base, status_reg, size);
+	CAM_INFO(CAM_CSIPHY, "PHY base addr=%pK offset=0x%x size=%d", phy_base,
+		 status_reg, size);
 
 	if (phy_base != NULL) {
 		for (reg_id = 0; reg_id < size; reg_id++) {
 			val = cam_io_r(phy_base + status_reg + (0x4 * reg_id));
 
 			if (reg_id < csiphy_reg->csiphy_interrupt_status_size)
-				cam_io_w_mb(val, phy_base + clear_reg + (0x4 * reg_id));
+				cam_io_w_mb(val, phy_base + clear_reg +
+							 (0x4 * reg_id));
 
 			CAM_INFO(CAM_CSIPHY, "CSIPHY%d_COMMON_STATUS%u = 0x%x",
-				csiphy_dev->soc_info.index, reg_id, val);
+				 csiphy_dev->soc_info.index, reg_id, val);
 		}
 	} else {
 		rc = -EINVAL;
@@ -132,8 +139,8 @@ int32_t cam_csiphy_common_status_reg_dump(struct csiphy_device *csiphy_dev)
 	return rc;
 }
 
-enum cam_vote_level get_clk_voting_dynamic(
-	struct csiphy_device *csiphy_dev, int32_t index)
+enum cam_vote_level get_clk_voting_dynamic(struct csiphy_device *csiphy_dev,
+					   int32_t index)
 {
 	uint32_t cam_vote_level = 0;
 	uint32_t last_valid_vote = 0;
@@ -156,19 +163,21 @@ enum cam_vote_level get_clk_voting_dynamic(
 	phy_data_rate += 1;
 	csiphy_dev->current_data_rate = phy_data_rate;
 
-	for (cam_vote_level = 0; cam_vote_level < CAM_MAX_VOTE; cam_vote_level++) {
+	for (cam_vote_level = 0; cam_vote_level < CAM_MAX_VOTE;
+	     cam_vote_level++) {
 		if (soc_info->clk_level_valid[cam_vote_level] != true)
 			continue;
 
 		if (soc_info->clk_rate[cam_vote_level]
-			[csiphy_dev->rx_clk_src_idx] > phy_data_rate) {
+				      [csiphy_dev->rx_clk_src_idx] >
+		    phy_data_rate) {
 			CAM_DBG(CAM_CSIPHY,
 				"Found match PHY:%d clk_name:%s data_rate:%llu clk_rate:%d level:%d",
 				soc_info->index,
 				soc_info->clk_name[csiphy_dev->rx_clk_src_idx],
 				phy_data_rate,
 				soc_info->clk_rate[cam_vote_level]
-				[csiphy_dev->rx_clk_src_idx],
+						  [csiphy_dev->rx_clk_src_idx],
 				cam_vote_level);
 			return cam_vote_level;
 		}
@@ -180,7 +189,7 @@ enum cam_vote_level get_clk_voting_dynamic(
 int32_t cam_csiphy_enable_hw(struct csiphy_device *csiphy_dev, int32_t index)
 {
 	int32_t rc = 0;
-	struct cam_hw_soc_info   *soc_info;
+	struct cam_hw_soc_info *soc_info;
 	enum cam_vote_level vote_level;
 	struct cam_csiphy_param *param = &csiphy_dev->csiphy_info[index];
 	int i;
@@ -196,47 +205,56 @@ int32_t cam_csiphy_enable_hw(struct csiphy_device *csiphy_dev, int32_t index)
 	vote_level = csiphy_dev->ctrl_reg->getclockvoting(csiphy_dev, index);
 
 	for (i = 0; i < soc_info->num_clk; i++) {
-		CAM_DBG(CAM_CSIPHY, "PHY:%d %s:%d",
-			soc_info->index,
+		CAM_DBG(CAM_CSIPHY, "PHY:%d %s:%d", soc_info->index,
 			soc_info->clk_name[i],
 			soc_info->clk_rate[vote_level][i]);
 	}
 
-	rc = cam_soc_util_enable_platform_resource(soc_info,
+	rc = cam_soc_util_enable_platform_resource(
+		soc_info,
 		(soc_info->is_clk_drv_en && param->use_hw_client_voting) ?
-		param->conn_csid_idx : CAM_CLK_SW_CLIENT_IDX, true, vote_level, true);
+			param->conn_csid_idx :
+			CAM_CLK_SW_CLIENT_IDX,
+		true, vote_level, true);
 	if (rc) {
 		CAM_ERR(CAM_CSIPHY,
-			"[%s] failed to enable platform resources, clk_drv_en=%d, use_hw_client=%d conn_csid_idx=%d, rc=%d",
-			soc_info->dev_name, soc_info->is_clk_drv_en, param->use_hw_client_voting,
-			param->conn_csid_idx, rc);
+			"[%s] failed to enable platform resources, clk_drv_en=%d, "
+			"use_hw_client=%d conn_csid_idx=%d, rc=%d",
+			soc_info->dev_name, soc_info->is_clk_drv_en,
+			param->use_hw_client_voting, param->conn_csid_idx, rc);
 		goto end;
 	}
 
-	if (soc_info->is_clk_drv_en && param->use_hw_client_voting && param->is_drv_config_en) {
+	if (soc_info->is_clk_drv_en && param->use_hw_client_voting &&
+	    param->is_drv_config_en) {
 		int clk_vote_level_high = vote_level;
 		int clk_vote_level_low = soc_info->lowest_clk_level;
 
-		rc = cam_soc_util_set_clk_rate_level(soc_info, param->conn_csid_idx,
-			clk_vote_level_high, clk_vote_level_low, false);
+		rc = cam_soc_util_set_clk_rate_level(soc_info,
+						     param->conn_csid_idx,
+						     clk_vote_level_high,
+						     clk_vote_level_low, false);
 		if (rc) {
 			CAM_ERR(CAM_CSIPHY,
-				"Failed to set the req clk_rate level[high low]: [%s %s] cesta_client_idx: %d rc: %d",
-				cam_soc_util_get_string_from_level(clk_vote_level_high),
-				cam_soc_util_get_string_from_level(clk_vote_level_low),
+				"Failed to set the req clk_rate level[high low]: [%s %s] "
+				"cesta_client_idx: %d rc: %d",
+				cam_soc_util_get_string_from_level(
+					clk_vote_level_high),
+				cam_soc_util_get_string_from_level(
+					clk_vote_level_low),
 				param->conn_csid_idx, rc);
 			rc = -EINVAL;
 			goto disable_platform_resource;
 		}
 
-		rc = cam_soc_util_cesta_channel_switch(param->conn_csid_idx, "csiphy_start");
+		rc = cam_soc_util_cesta_channel_switch(param->conn_csid_idx,
+						       "csiphy_start");
 		if (rc) {
 			CAM_ERR(CAM_CSIPHY,
 				"[%s] Failed to apply power states for crm client:%d rc:%d",
 				soc_info->dev_name, param->conn_csid_idx, rc);
 			goto disable_platform_resource;
 		}
-
 	}
 
 	cam_csiphy_reset(csiphy_dev);
@@ -245,16 +263,18 @@ int32_t cam_csiphy_enable_hw(struct csiphy_device *csiphy_dev, int32_t index)
 
 disable_platform_resource:
 	cam_soc_util_disable_platform_resource(soc_info,
-		(soc_info->is_clk_drv_en && param->use_hw_client_voting) ?
-		param->conn_csid_idx : CAM_CLK_SW_CLIENT_IDX,
-		true, true);
+					       (soc_info->is_clk_drv_en &&
+						param->use_hw_client_voting) ?
+						       param->conn_csid_idx :
+						       CAM_CLK_SW_CLIENT_IDX,
+					       true, true);
 end:
 	return rc;
 }
 
 int32_t cam_csiphy_disable_hw(struct csiphy_device *csiphy_dev, int32_t index)
 {
-	struct cam_hw_soc_info   *soc_info;
+	struct cam_hw_soc_info *soc_info;
 	struct cam_csiphy_param *param;
 
 	if (!csiphy_dev || !csiphy_dev->ref_count) {
@@ -273,78 +293,88 @@ int32_t cam_csiphy_disable_hw(struct csiphy_device *csiphy_dev, int32_t index)
 	cam_csiphy_reset(csiphy_dev);
 
 	cam_soc_util_disable_platform_resource(soc_info,
-		(soc_info->is_clk_drv_en && param->use_hw_client_voting) ?
-		param->conn_csid_idx : CAM_CLK_SW_CLIENT_IDX,
-		true, true);
+					       (soc_info->is_clk_drv_en &&
+						param->use_hw_client_voting) ?
+						       param->conn_csid_idx :
+						       CAM_CLK_SW_CLIENT_IDX,
+					       true, true);
 
 	return 0;
 }
 
 int32_t cam_csiphy_parse_dt_info(struct platform_device *pdev,
-	struct csiphy_device *csiphy_dev)
+				 struct csiphy_device *csiphy_dev)
 {
-	int32_t   rc = 0, i = 0;
-	uint32_t  clk_cnt = 0;
-	uint32_t   is_regulator_enable_sync;
-	char      *csi_3p_clk_name = "csi_phy_3p_clk";
-	char      *csi_3p_clk_src_name = "csiphy_3p_clk_src";
-	struct cam_hw_soc_info   *soc_info;
-	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = {0};
+	int32_t rc = 0, i = 0;
+	uint32_t clk_cnt = 0;
+	uint32_t is_regulator_enable_sync;
+	char *csi_3p_clk_name = "csi_phy_3p_clk";
+	char *csi_3p_clk_src_name = "csiphy_3p_clk_src";
+	struct cam_hw_soc_info *soc_info;
+	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = { 0 };
 
 	soc_info = &csiphy_dev->soc_info;
 
 	rc = cam_soc_util_get_dt_properties(soc_info);
 	if (rc < 0) {
 		CAM_ERR(CAM_CSIPHY, "parsing common soc dt(rc %d)", rc);
-		return  rc;
+		return rc;
 	}
 
 	if (of_property_read_u32(soc_info->dev->of_node, "rgltr-enable-sync",
-		&is_regulator_enable_sync)) {
+				 &is_regulator_enable_sync)) {
 		/* this is not fatal, overwrite to 0 */
 		is_regulator_enable_sync = 0;
 	}
 
-	csiphy_dev->prgm_cmn_reg_across_csiphy = (bool) is_regulator_enable_sync;
+	csiphy_dev->prgm_cmn_reg_across_csiphy = (bool)is_regulator_enable_sync;
 
-	if (of_device_is_compatible(soc_info->dev->of_node, "qcom,csiphy-v2.1.0")) {
+	if (of_device_is_compatible(soc_info->dev->of_node,
+				    "qcom,csiphy-v2.1.0")) {
 		csiphy_dev->ctrl_reg = &ctrl_reg_2_1_0;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V210;
 		csiphy_dev->is_divisor_32_comp = true;
 		csiphy_dev->clk_lane = 0;
-	} else if (of_device_is_compatible(soc_info->dev->of_node, "qcom,csiphy-v2.1.1")) {
+	} else if (of_device_is_compatible(soc_info->dev->of_node,
+					   "qcom,csiphy-v2.1.1")) {
 		csiphy_dev->ctrl_reg = &ctrl_reg_2_1_1;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V211;
 		csiphy_dev->is_divisor_32_comp = true;
 		csiphy_dev->clk_lane = 0;
-	} else if (of_device_is_compatible(soc_info->dev->of_node, "qcom,csiphy-v2.1.2")) {
+	} else if (of_device_is_compatible(soc_info->dev->of_node,
+					   "qcom,csiphy-v2.1.2")) {
 		csiphy_dev->ctrl_reg = &ctrl_reg_2_1_2;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V212;
 		csiphy_dev->is_divisor_32_comp = true;
 		csiphy_dev->clk_lane = 0;
-	} else if (of_device_is_compatible(soc_info->dev->of_node, "qcom,csiphy-v2.1.3")) {
+	} else if (of_device_is_compatible(soc_info->dev->of_node,
+					   "qcom,csiphy-v2.1.3")) {
 		csiphy_dev->ctrl_reg = &ctrl_reg_2_1_3;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V213;
 		csiphy_dev->is_divisor_32_comp = true;
 		csiphy_dev->clk_lane = 0;
-	} else if (of_device_is_compatible(soc_info->dev->of_node, "qcom,csiphy-v2.2.0")) {
+	} else if (of_device_is_compatible(soc_info->dev->of_node,
+					   "qcom,csiphy-v2.2.0")) {
 		csiphy_dev->ctrl_reg = &ctrl_reg_2_2_0;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V220;
 		csiphy_dev->is_divisor_32_comp = true;
 		csiphy_dev->clk_lane = 0;
-	} else if (of_device_is_compatible(soc_info->dev->of_node, "qcom,csiphy-v2.3.0")) {
+	} else if (of_device_is_compatible(soc_info->dev->of_node,
+					   "qcom,csiphy-v2.3.0")) {
 		csiphy_dev->ctrl_reg = &ctrl_reg_2_3_0;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V230;
 		csiphy_dev->is_divisor_32_comp = true;
 		csiphy_dev->clk_lane = 0;
 		/* xiaomi add cphy reg - begin */
-	} else if (of_device_is_compatible(soc_info->dev->of_node, "qcom,csiphy-v2.2.0-n2")) {
+	} else if (of_device_is_compatible(soc_info->dev->of_node,
+					   "qcom,csiphy-v2.2.0-n2")) {
 		csiphy_dev->ctrl_reg = &ctrl_reg_2_2_0_n2;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V220;
 		csiphy_dev->is_divisor_32_comp = true;
 		csiphy_dev->clk_lane = 0;
 		/* xiaomi add cphy reg - end   */
-	} else if (of_device_is_compatible(soc_info->dev->of_node, "qcom,csiphy-v2.2.0-n3")) {
+	} else if (of_device_is_compatible(soc_info->dev->of_node,
+					   "qcom,csiphy-v2.2.0-n3")) {
 		csiphy_dev->ctrl_reg = &ctrl_reg_2_2_0_n3;
 		csiphy_dev->hw_version = CSIPHY_VERSION_V220;
 		csiphy_dev->is_divisor_32_comp = true;
@@ -364,26 +394,22 @@ int32_t cam_csiphy_parse_dt_info(struct platform_device *pdev,
 	}
 
 	for (i = 0; i < soc_info->num_clk; i++) {
-		if (!strcmp(soc_info->clk_name[i],
-			csi_3p_clk_src_name)) {
+		if (!strcmp(soc_info->clk_name[i], csi_3p_clk_src_name)) {
 			csiphy_dev->csiphy_3p_clk_info[0].clk_name =
 				soc_info->clk_name[i];
 			csiphy_dev->csiphy_3p_clk_info[0].clk_rate =
 				soc_info->clk_rate[0][i];
-			csiphy_dev->csiphy_3p_clk[0] =
-				soc_info->clk[i];
+			csiphy_dev->csiphy_3p_clk[0] = soc_info->clk[i];
 			continue;
-		} else if (!strcmp(soc_info->clk_name[i],
-				csi_3p_clk_name)) {
+		} else if (!strcmp(soc_info->clk_name[i], csi_3p_clk_name)) {
 			csiphy_dev->csiphy_3p_clk_info[1].clk_name =
 				soc_info->clk_name[i];
 			csiphy_dev->csiphy_3p_clk_info[1].clk_rate =
 				soc_info->clk_rate[0][i];
-			csiphy_dev->csiphy_3p_clk[1] =
-				soc_info->clk[i];
+			csiphy_dev->csiphy_3p_clk[1] = soc_info->clk[i];
 			continue;
 		} else if (!strcmp(soc_info->clk_name[i],
-				CAM_CSIPHY_RX_CLK_SRC)) {
+				   CAM_CSIPHY_RX_CLK_SRC)) {
 			csiphy_dev->rx_clk_src_idx = i;
 			continue;
 		}
@@ -404,8 +430,8 @@ int32_t cam_csiphy_parse_dt_info(struct platform_device *pdev,
 		CAM_ERR(CAM_CSIPHY, "Failed to query DRV enable rc:%d", rc);
 		return rc;
 	}
-	rc = cam_soc_util_request_platform_resource(&csiphy_dev->soc_info,
-		cam_csiphy_irq, &(irq_data[0]));
+	rc = cam_soc_util_request_platform_resource(
+		&csiphy_dev->soc_info, cam_csiphy_irq, &(irq_data[0]));
 
 	return rc;
 }

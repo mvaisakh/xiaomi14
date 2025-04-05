@@ -22,14 +22,14 @@
  *
  * TDLS peer basic operations
  */
-#include "wlan_tdls_main.h"
 #include "wlan_tdls_peer.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_reg_ucfg_api.h"
+#include "wlan_tdls_main.h"
+#include <host_diag_core_event.h>
+#include <wlan_policy_mgr_api.h>
 #include <wlan_reg_services_api.h>
 #include <wlan_utility.h>
-#include <wlan_policy_mgr_api.h>
-#include "wlan_reg_ucfg_api.h"
-#include <host_diag_core_event.h>
-#include "wlan_policy_mgr_api.h"
 
 static uint8_t calculate_hash_key(const uint8_t *macaddr)
 {
@@ -56,15 +56,14 @@ struct tdls_peer *tdls_find_peer(struct tdls_vdev_priv_obj *vdev_obj,
 	status = qdf_list_peek_front(head, &p_node);
 	while (QDF_IS_STATUS_SUCCESS(status)) {
 		peer = qdf_container_of(p_node, struct tdls_peer, node);
-		if (WLAN_ADDR_EQ(&peer->peer_mac, macaddr)
-		    == QDF_STATUS_SUCCESS) {
+		if (WLAN_ADDR_EQ(&peer->peer_mac, macaddr) ==
+		    QDF_STATUS_SUCCESS) {
 			return peer;
 		}
 		status = qdf_list_peek_next(head, p_node, &p_node);
 	}
 
-	tdls_debug("no tdls peer " QDF_MAC_ADDR_FMT,
-		   QDF_MAC_ADDR_REF(macaddr));
+	tdls_debug("no tdls peer " QDF_MAC_ADDR_FMT, QDF_MAC_ADDR_REF(macaddr));
 	return NULL;
 }
 
@@ -76,8 +75,8 @@ struct tdls_peer *tdls_find_peer(struct tdls_vdev_priv_obj *vdev_obj,
  *
  * Return: None.
  */
-static void
-tdls_find_peer_handler(struct wlan_objmgr_psoc *psoc, void *obj, void *arg)
+static void tdls_find_peer_handler(struct wlan_objmgr_psoc *psoc, void *obj,
+				   void *arg)
 {
 	struct wlan_objmgr_vdev *vdev = obj;
 	struct tdls_search_peer_param *tdls_param = arg;
@@ -103,8 +102,8 @@ tdls_find_peer_handler(struct wlan_objmgr_psoc *psoc, void *obj, void *arg)
 	tdls_param->peer = tdls_find_peer(vdev_obj, tdls_param->macaddr);
 }
 
-struct tdls_peer *
-tdls_find_all_peer(struct tdls_soc_priv_obj *soc_obj, const uint8_t *macaddr)
+struct tdls_peer *tdls_find_all_peer(struct tdls_soc_priv_obj *soc_obj,
+				     const uint8_t *macaddr)
 {
 	struct tdls_search_peer_param tdls_search_param;
 	struct wlan_objmgr_psoc *psoc;
@@ -122,15 +121,14 @@ tdls_find_all_peer(struct tdls_soc_priv_obj *soc_obj, const uint8_t *macaddr)
 	tdls_search_param.macaddr = macaddr;
 	tdls_search_param.peer = NULL;
 
-	wlan_objmgr_iterate_obj_list(psoc, WLAN_VDEV_OP,
-				     tdls_find_peer_handler,
+	wlan_objmgr_iterate_obj_list(psoc, WLAN_VDEV_OP, tdls_find_peer_handler,
 				     &tdls_search_param, 0, WLAN_TDLS_NB_ID);
 
 	return tdls_search_param.peer;
 }
 
 uint8_t tdls_find_opclass(struct wlan_objmgr_psoc *psoc, uint8_t channel,
-				 uint8_t bw_offset)
+			  uint8_t bw_offset)
 {
 	char country[REG_ALPHA2_LEN + 1];
 	QDF_STATUS status;
@@ -165,10 +163,10 @@ qdf_freq_t tdls_get_offchan_freq(struct wlan_objmgr_vdev *vdev,
 	pref_non6g_ch = soc_obj->tdls_configs.tdls_pre_off_chan_num;
 
 	/*
-	 * Fill preferred offchannel frequency here. If TDLS on 6 GHz is
-	 * allowed then fill pref 6 GHz frequency
-	 * Otherwise, fill 5 GHz preferred frequency
-	 */
+   * Fill preferred offchannel frequency here. If TDLS on 6 GHz is
+   * allowed then fill pref 6 GHz frequency
+   * Otherwise, fill 5 GHz preferred frequency
+   */
 	if (pref_6g_freq && tdls_is_6g_freq_allowed(vdev, pref_6g_freq))
 		pref_freq = pref_6g_freq;
 	else
@@ -202,7 +200,7 @@ uint32_t tdls_get_offchan_bw(struct tdls_soc_priv_obj *soc_obj,
 	    CHECK_BIT(soc_obj->tdls_configs.tdls_pre_off_chan_bw,
 		      BW_160_OFFSET_BIT))
 		pre_off_chan_bw = soc_obj->tdls_configs.tdls_pre_off_chan_bw &
-						~(1 << BW_160_OFFSET_BIT);
+				  ~(1 << BW_160_OFFSET_BIT);
 	else
 		pre_off_chan_bw = soc_obj->tdls_configs.tdls_pre_off_chan_bw;
 
@@ -213,16 +211,16 @@ static void tdls_fill_pref_off_chan_info(struct tdls_vdev_priv_obj *vdev_obj,
 					 struct tdls_soc_priv_obj *soc_obj,
 					 struct tdls_peer *peer)
 {
-	peer->pref_off_chan_freq = tdls_get_offchan_freq(vdev_obj->vdev,
-							 soc_obj);
-	peer->pref_off_chan_width = tdls_get_offchan_bw(soc_obj,
-						      peer->pref_off_chan_freq);
+	peer->pref_off_chan_freq =
+		tdls_get_offchan_freq(vdev_obj->vdev, soc_obj);
+	peer->pref_off_chan_width =
+		tdls_get_offchan_bw(soc_obj, peer->pref_off_chan_freq);
 	tdls_debug("Pref off channel freq %d chan width %d",
 		   peer->pref_off_chan_freq, peer->pref_off_chan_width);
 }
 
-static QDF_STATUS
-tdls_remove_first_idle_peer(qdf_list_t *head) {
+static QDF_STATUS tdls_remove_first_idle_peer(qdf_list_t *head)
+{
 	QDF_STATUS status;
 	qdf_list_node_t *p_node;
 	struct tdls_peer *peer;
@@ -232,10 +230,10 @@ tdls_remove_first_idle_peer(qdf_list_t *head) {
 		peer = qdf_container_of(p_node, struct tdls_peer, node);
 		if (peer && peer->link_status == TDLS_LINK_IDLE) {
 			if (peer->is_peer_idle_timer_initialised) {
-				tdls_debug(QDF_MAC_ADDR_FMT
+				tdls_debug(
+					QDF_MAC_ADDR_FMT
 					": destroy  idle timer ",
-					QDF_MAC_ADDR_REF(
-					peer->peer_mac.bytes));
+					QDF_MAC_ADDR_REF(peer->peer_mac.bytes));
 				qdf_mc_timer_stop(&peer->peer_idle_timer);
 				qdf_mc_timer_destroy(&peer->peer_idle_timer);
 			}
@@ -288,18 +286,17 @@ static struct tdls_peer *tdls_add_peer(struct tdls_vdev_priv_obj *vdev_obj,
 	peer->vdev_priv = vdev_obj;
 
 	tdls_fill_pref_off_chan_info(vdev_obj, soc_obj, peer);
-	peer->op_class_for_pref_off_chan =
-		tdls_get_opclass_from_bandwidth(
-				vdev_obj->vdev, peer->pref_off_chan_freq,
-				peer->pref_off_chan_width,
-				&reg_bw_offset);
+	peer->op_class_for_pref_off_chan = tdls_get_opclass_from_bandwidth(
+		vdev_obj->vdev, peer->pref_off_chan_freq,
+		peer->pref_off_chan_width, &reg_bw_offset);
 
 	peer->valid_entry = false;
 
 	if (qdf_list_size(head) >= qdf_list_max_size(head)) {
 		if (QDF_IS_STATUS_ERROR(tdls_remove_first_idle_peer(head))) {
-			tdls_err("list size exceed max and remove idle peer failed, key %d",
-				 key);
+			tdls_err(
+				"list size exceed max and remove idle peer failed, key %d",
+				key);
 			qdf_mem_free(peer);
 			return NULL;
 		}
@@ -324,9 +321,9 @@ struct tdls_peer *tdls_get_peer(struct tdls_vdev_priv_obj *vdev_obj,
 	return peer;
 }
 
-static struct tdls_peer *
-tdls_find_progress_peer_in_list(qdf_list_t *head,
-				const uint8_t *macaddr, uint8_t skip_self)
+static struct tdls_peer *tdls_find_progress_peer_in_list(qdf_list_t *head,
+							 const uint8_t *macaddr,
+							 uint8_t skip_self)
 {
 	QDF_STATUS status;
 	struct tdls_peer *peer;
@@ -336,8 +333,8 @@ tdls_find_progress_peer_in_list(qdf_list_t *head,
 	while (QDF_IS_STATUS_SUCCESS(status)) {
 		peer = qdf_container_of(p_node, struct tdls_peer, node);
 		if (skip_self && macaddr &&
-		    WLAN_ADDR_EQ(&peer->peer_mac, macaddr)
-		    == QDF_STATUS_SUCCESS) {
+		    WLAN_ADDR_EQ(&peer->peer_mac, macaddr) ==
+			    QDF_STATUS_SUCCESS) {
 			status = qdf_list_peek_next(head, p_node, &p_node);
 			continue;
 		} else if (TDLS_LINK_CONNECTING == peer->link_status) {
@@ -395,9 +392,8 @@ tdls_find_progress_peer(struct tdls_vdev_priv_obj *vdev_obj,
  *
  * Return: None.
  */
-static void
-tdls_find_progress_peer_handler(struct wlan_objmgr_psoc *psoc,
-				void *obj, void *arg)
+static void tdls_find_progress_peer_handler(struct wlan_objmgr_psoc *psoc,
+					    void *obj, void *arg)
 {
 	struct wlan_objmgr_vdev *vdev = obj;
 	struct tdls_search_progress_param *tdls_progress = arg;
@@ -418,9 +414,8 @@ tdls_find_progress_peer_handler(struct wlan_objmgr_psoc *psoc,
 	vdev_obj = wlan_objmgr_vdev_get_comp_private_obj(vdev,
 							 WLAN_UMAC_COMP_TDLS);
 
-	tdls_progress->peer = tdls_find_progress_peer(vdev_obj,
-						      tdls_progress->macaddr,
-						      tdls_progress->skip_self);
+	tdls_progress->peer = tdls_find_progress_peer(
+		vdev_obj, tdls_progress->macaddr, tdls_progress->skip_self);
 }
 
 struct tdls_peer *tdls_is_progress(struct tdls_vdev_priv_obj *vdev_obj,
@@ -472,10 +467,9 @@ tdls_find_first_connected_peer(struct tdls_vdev_priv_obj *vdev_obj)
 			peer = qdf_container_of(p_node, struct tdls_peer, node);
 
 			if (peer && TDLS_LINK_CONNECTED == peer->link_status) {
-				tdls_debug(QDF_MAC_ADDR_FMT
-					   " TDLS_LINK_CONNECTED",
-					   QDF_MAC_ADDR_REF(
-						   peer->peer_mac.bytes));
+				tdls_debug(
+					QDF_MAC_ADDR_FMT " TDLS_LINK_CONNECTED",
+					QDF_MAC_ADDR_REF(peer->peer_mac.bytes));
 				return peer;
 			}
 			status = qdf_list_peek_next(head, p_node, &p_node);
@@ -508,13 +502,13 @@ static void tdls_determine_channel_opclass(struct tdls_soc_priv_obj *soc_obj,
 	struct wlan_objmgr_psoc *psoc = NULL;
 	enum policy_mgr_con_mode mode;
 	/*
-	 * If tdls offchannel is not enabled then we provide base channel
-	 * and in that case pass opclass as 0 since opclass is mainly needed
-	 * for offchannel cases.
-	 */
+   * If tdls offchannel is not enabled then we provide base channel
+   * and in that case pass opclass as 0 since opclass is mainly needed
+   * for offchannel cases.
+   */
 	if (!(TDLS_IS_OFF_CHANNEL_ENABLED(
-		      soc_obj->tdls_configs.tdls_feature_flags)) ||
-	      soc_obj->tdls_fw_off_chan_mode != ENABLE_CHANSWITCH) {
+		    soc_obj->tdls_configs.tdls_feature_flags)) ||
+	    soc_obj->tdls_fw_off_chan_mode != ENABLE_CHANSWITCH) {
 		vdev_id = wlan_vdev_get_id(vdev_obj->vdev);
 		opmode = wlan_vdev_mlme_get_opmode(vdev_obj->vdev);
 		pdev = wlan_vdev_get_pdev(vdev_obj->vdev);
@@ -522,14 +516,13 @@ static void tdls_determine_channel_opclass(struct tdls_soc_priv_obj *soc_obj,
 
 		mode = policy_mgr_qdf_opmode_to_pm_con_mode(psoc, opmode,
 							    vdev_id);
-		*channel = wlan_reg_freq_to_chan(pdev, policy_mgr_get_channel(
-						 soc_obj->soc,
-						 mode,
-						 &vdev_id));
+		*channel = wlan_reg_freq_to_chan(
+			pdev,
+			policy_mgr_get_channel(soc_obj->soc, mode, &vdev_id));
 		*opclass = 0;
 	} else {
-		*channel = wlan_reg_freq_to_chan(pdev,
-						 peer->pref_off_chan_freq);
+		*channel =
+			wlan_reg_freq_to_chan(pdev, peer->pref_off_chan_freq);
 		*opclass = peer->op_class_for_pref_off_chan;
 	}
 	tdls_debug("channel:%d opclass:%d", *channel, *opclass);
@@ -567,8 +560,8 @@ static void tdls_get_wifi_hal_state(struct tdls_peer *peer, uint32_t *state,
 		break;
 	case TDLS_LINK_CONNECTED:
 		if ((TDLS_IS_OFF_CHANNEL_ENABLED(
-			     soc_obj->tdls_configs.tdls_feature_flags)) &&
-		     (soc_obj->tdls_fw_off_chan_mode == ENABLE_CHANSWITCH))
+			    soc_obj->tdls_configs.tdls_feature_flags)) &&
+		    (soc_obj->tdls_fw_off_chan_mode == ENABLE_CHANSWITCH))
 			*state = QCA_WIFI_HAL_TDLS_S_ESTABLISHED_OFF_CHANNEL;
 		else
 			*state = QCA_WIFI_HAL_TDLS_S_ENABLED;
@@ -651,22 +644,21 @@ void tdls_extract_peer_state_param(struct tdls_peer_update_state *peer_param,
 	qdf_mem_zero(peer_param, sizeof(*peer_param));
 	peer_param->vdev_id = wlan_vdev_get_id(vdev_obj->vdev);
 
-	qdf_mem_copy(peer_param->peer_macaddr,
-		     peer->peer_mac.bytes, QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(peer_param->peer_macaddr, peer->peer_mac.bytes,
+		     QDF_MAC_ADDR_SIZE);
 	peer_param->peer_state = TDLS_PEER_STATE_CONNECTED;
 	peer_param->peer_cap.is_peer_responder = peer->is_responder;
 	peer_param->peer_cap.peer_uapsd_queue = peer->uapsd_queues;
 	peer_param->peer_cap.peer_max_sp = peer->max_sp;
 	peer_param->peer_cap.peer_buff_sta_support = peer->buf_sta_capable;
-	peer_param->peer_cap.peer_off_chan_support =
-		peer->off_channel_capable;
+	peer_param->peer_cap.peer_off_chan_support = peer->off_channel_capable;
 	peer_param->peer_cap.peer_curr_operclass = 0;
 	peer_param->peer_cap.self_curr_operclass =
-			peer->op_class_for_pref_off_chan;
-	peer_param->peer_cap.pref_off_channum = wlan_reg_freq_to_chan(pdev,
-						      peer->pref_off_chan_freq);
+		peer->op_class_for_pref_off_chan;
+	peer_param->peer_cap.pref_off_channum =
+		wlan_reg_freq_to_chan(pdev, peer->pref_off_chan_freq);
 	peer_param->peer_cap.pref_off_chan_bandwidth =
-						peer->pref_off_chan_width;
+		peer->pref_off_chan_width;
 	peer_param->peer_cap.opclass_for_prefoffchan =
 		peer->op_class_for_pref_off_chan;
 	peer_param->peer_cap.pref_offchan_freq = peer->pref_off_chan_freq;
@@ -677,7 +669,8 @@ void tdls_extract_peer_state_param(struct tdls_peer_update_state *peer_param,
 	}
 
 	if (BIT(REG_BAND_2G) == cur_band) {
-		tdls_err("sending the offchannel value as 0 as only 2g is supported");
+		tdls_err(
+			"sending the offchannel value as 0 as only 2g is supported");
 		peer_param->peer_cap.pref_off_channum = 0;
 		peer_param->peer_cap.opclass_for_prefoffchan = 0;
 		peer_param->peer_cap.pref_offchan_freq = 0;
@@ -686,9 +679,9 @@ void tdls_extract_peer_state_param(struct tdls_peer_update_state *peer_param,
 	ch_freq = peer->pref_off_chan_freq;
 	if (wlan_reg_is_dfs_for_freq(pdev, ch_freq)) {
 		/*
-		 * If pref_off_chan_freq is DFS frequency, that means it is 5Ghz
-		 * case. So, reset to default 5 GHz frequency
-		 */
+     * If pref_off_chan_freq is DFS frequency, that means it is 5Ghz
+     * case. So, reset to default 5 GHz frequency
+     */
 		tdls_err("Resetting TDLS off-channel from %d to %d",
 			 peer_param->peer_cap.pref_off_channum,
 			 WLAN_TDLS_PREFERRED_OFF_CHANNEL_NUM_DEF);
@@ -699,9 +692,8 @@ void tdls_extract_peer_state_param(struct tdls_peer_update_state *peer_param,
 	}
 
 	num = 0;
-	allowed_freq =
-		tdls_get_allowed_off_channel_for_concurrency(pdev,
-							     vdev_obj->vdev);
+	allowed_freq = tdls_get_allowed_off_channel_for_concurrency(
+		pdev, vdev_obj->vdev);
 	tdls_debug("allowed freq:%u", allowed_freq);
 
 	for (i = 0; i < peer->supported_channels_len; i++) {
@@ -710,8 +702,7 @@ void tdls_extract_peer_state_param(struct tdls_peer_update_state *peer_param,
 			continue;
 
 		ch_state = wlan_reg_get_channel_state_for_pwrmode(
-							pdev, ch_freq,
-							REG_CURRENT_PWR_MODE);
+			pdev, ch_freq, REG_CURRENT_PWR_MODE);
 
 		if (CHANNEL_STATE_INVALID != ch_state &&
 		    !wlan_reg_is_dfs_for_freq(pdev, ch_freq) &&
@@ -719,13 +710,12 @@ void tdls_extract_peer_state_param(struct tdls_peer_update_state *peer_param,
 			peer_param->peer_cap.peer_chan[num].ch_freq = ch_freq;
 			if (!wlan_reg_is_6ghz_chan_freq(ch_freq)) {
 				tx_power =
-				wlan_reg_get_channel_reg_power_for_freq(pdev,
-								       ch_freq);
+					wlan_reg_get_channel_reg_power_for_freq(
+						pdev, ch_freq);
 			} else {
-				tx_power =
-				tdls_get_6g_pwr_for_power_type(vdev_obj->vdev,
-							       ch_freq,
-							       REG_CLI_DEF_VLP);
+				tx_power = tdls_get_6g_pwr_for_power_type(
+					vdev_obj->vdev, ch_freq,
+					REG_CLI_DEF_VLP);
 			}
 			peer_param->peer_cap.peer_chan[num].pwr = tx_power;
 			peer_param->peer_cap.peer_chan[num].dfs_set = false;
@@ -807,8 +797,7 @@ static void tdls_update_pmo_status(struct tdls_vdev_priv_obj *tdls_vdev,
 	    (new_status == TDLS_LINK_CONNECTING))
 		tdls_prevent_suspend(tdls_soc);
 
-	if ((old_status > TDLS_LINK_IDLE) &&
-	    (new_status == TDLS_LINK_IDLE) &&
+	if ((old_status > TDLS_LINK_IDLE) && (new_status == TDLS_LINK_IDLE) &&
 	    (!tdls_soc->connected_peer_count) &&
 	    (!tdls_is_progress(tdls_vdev, NULL, 0)))
 		tdls_allow_suspend(tdls_soc);
@@ -831,8 +820,7 @@ static void tdls_update_pmo_status(struct tdls_vdev_priv_obj *tdls_vdev,
  * Return: None.
  */
 void tdls_set_link_status(struct tdls_vdev_priv_obj *vdev_obj,
-			  const uint8_t *mac,
-			  enum tdls_link_state link_status,
+			  const uint8_t *mac, enum tdls_link_state link_status,
 			  enum tdls_link_state_reason link_reason)
 {
 	uint32_t state = 0;
@@ -866,11 +854,11 @@ void tdls_set_link_status(struct tdls_vdev_priv_obj *vdev_obj,
 			return;
 		}
 
-		tdls_determine_channel_opclass(soc_obj, vdev_obj,
-					       peer, &channel, &op_class);
+		tdls_determine_channel_opclass(soc_obj, vdev_obj, peer,
+					       &channel, &op_class);
 		tdls_get_wifi_hal_state(peer, &state, &res);
-		peer->state_change_notification(mac, op_class, channel,
-						state, res, soc_obj->soc);
+		peer->state_change_notification(mac, op_class, channel, state,
+						res, soc_obj->soc);
 	}
 }
 
@@ -886,9 +874,8 @@ void tdls_set_peer_link_status(struct tdls_peer *peer,
 	struct tdls_vdev_priv_obj *vdev_obj;
 	enum tdls_link_state old_status;
 
-	tdls_debug("state %d reason %d peer:" QDF_MAC_ADDR_FMT,
-		   link_status, link_reason,
-		   QDF_MAC_ADDR_REF(peer->peer_mac.bytes));
+	tdls_debug("state %d reason %d peer:" QDF_MAC_ADDR_FMT, link_status,
+		   link_reason, QDF_MAC_ADDR_REF(peer->peer_mac.bytes));
 
 	vdev_obj = peer->vdev_priv;
 	old_status = peer->link_status;
@@ -907,18 +894,16 @@ void tdls_set_peer_link_status(struct tdls_peer *peer,
 			return;
 		}
 
-		tdls_determine_channel_opclass(soc_obj, vdev_obj,
-					       peer, &channel, &op_class);
+		tdls_determine_channel_opclass(soc_obj, vdev_obj, peer,
+					       &channel, &op_class);
 		tdls_get_wifi_hal_state(peer, &state, &res);
-		peer->state_change_notification(peer->peer_mac.bytes,
-						op_class, channel, state,
-						res, soc_obj->soc);
+		peer->state_change_notification(peer->peer_mac.bytes, op_class,
+						channel, state, res,
+						soc_obj->soc);
 	}
 }
 
-static void
-tdls_fill_peer_pref_offchan_bw(struct tdls_peer *peer,
-			       uint16_t bw)
+static void tdls_fill_peer_pref_offchan_bw(struct tdls_peer *peer, uint16_t bw)
 {
 	if (bw < BW_160_MHZ)
 		peer->pref_off_chan_width &= ~(1 << BW_160_OFFSET_BIT);
@@ -951,21 +936,21 @@ static void tdls_update_off_chan_peer_caps(struct tdls_vdev_priv_obj *vdev_obj,
 	}
 
 	/*
-	 * Update Pref Offcahnnel BW such that:
-	 * 1. If 6 GHz is supported then select the ini preferred 6 GHz channel
-	 *    frequency.
-	 * 2. If 6 GHz is supported and peer doesn't support the ini preferred
-	 *    channel frequency then select the very first 6 GHz channel which
-	 *    peer supports as prefferd offchannel.
-	 * 3. If peer doesn't support 6 GHz, then select ini preferred 5 GHz
-	 *    off channel frequency, given that peer should also support it
-	 * 4. If peer doesn support 6 GHz and also doesn't support ini preferred
-	 *    5 GHz offcahnnel, then select the very first 5 GHz channel it
-	 *    supports.
-	 */
+   * Update Pref Offcahnnel BW such that:
+   * 1. If 6 GHz is supported then select the ini preferred 6 GHz channel
+   *    frequency.
+   * 2. If 6 GHz is supported and peer doesn't support the ini preferred
+   *    channel frequency then select the very first 6 GHz channel which
+   *    peer supports as prefferd offchannel.
+   * 3. If peer doesn't support 6 GHz, then select ini preferred 5 GHz
+   *    off channel frequency, given that peer should also support it
+   * 4. If peer doesn support 6 GHz and also doesn't support ini preferred
+   *    5 GHz offcahnnel, then select the very first 5 GHz channel it
+   *    supports.
+   */
 	ini_pref_6g_freq = soc_obj->tdls_configs.tdls_pre_off_chan_freq_6g;
-	ini_pref_non6g_freq = wlan_reg_legacy_chan_to_freq(pdev,
-				soc_obj->tdls_configs.tdls_pre_off_chan_num);
+	ini_pref_non6g_freq = wlan_reg_legacy_chan_to_freq(
+		pdev, soc_obj->tdls_configs.tdls_pre_off_chan_num);
 
 	if (ini_pref_6g_freq == peer->pref_off_chan_freq)
 		is_6g_support = true;
@@ -985,8 +970,7 @@ static void tdls_update_off_chan_peer_caps(struct tdls_vdev_priv_obj *vdev_obj,
 			peer_5g_supportd = true;
 			peer_5g_freq = ini_pref_non6g_freq;
 		}
-		if (!peer_5g_supportd &&
-		    wlan_reg_is_5ghz_ch_freq(peer_freq)) {
+		if (!peer_5g_supportd && wlan_reg_is_5ghz_ch_freq(peer_freq)) {
 			peer_5g_freq = peer_freq;
 			peer_5g_supportd = true;
 		}
@@ -1008,18 +992,18 @@ static void tdls_update_off_chan_peer_caps(struct tdls_vdev_priv_obj *vdev_obj,
 		peer->pref_off_chan_freq = 0;
 
 bw_check:
-	max_pref_width = wlan_reg_get_max_chwidth(pdev,
-						  peer->pref_off_chan_freq);
+	max_pref_width =
+		wlan_reg_get_max_chwidth(pdev, peer->pref_off_chan_freq);
 	for (i = 0; i < peer->supported_oper_classes_len; i++) {
-		temp_bw = wlan_reg_get_op_class_width(pdev,
-						peer->supported_oper_classes[i],
-						false);
+		temp_bw = wlan_reg_get_op_class_width(
+			pdev, peer->supported_oper_classes[i], false);
 		if (temp_bw > peer_supportd_max_bw)
 			peer_supportd_max_bw = temp_bw;
 	}
 
 	peer_supportd_max_bw = (peer_supportd_max_bw > max_pref_width) ?
-				max_pref_width : peer_supportd_max_bw;
+				       max_pref_width :
+				       peer_supportd_max_bw;
 	if (wlan_reg_is_6ghz_chan_freq(peer->pref_off_chan_freq) &&
 	    peer_supportd_max_bw < BW_160_MHZ)
 		tdls_fill_peer_pref_offchan_bw(peer, peer_supportd_max_bw);
@@ -1031,11 +1015,9 @@ bw_check:
 	    CHECK_BIT(peer->pref_off_chan_width, BW_160_OFFSET_BIT))
 		peer->pref_off_chan_width &= ~(1 << BW_160_OFFSET_BIT);
 
-	peer->op_class_for_pref_off_chan =
-		tdls_get_opclass_from_bandwidth(
-				vdev_obj->vdev, peer->pref_off_chan_freq,
-				peer->pref_off_chan_width,
-				&reg_bw_offset);
+	peer->op_class_for_pref_off_chan = tdls_get_opclass_from_bandwidth(
+		vdev_obj->vdev, peer->pref_off_chan_freq,
+		peer->pref_off_chan_width, &reg_bw_offset);
 
 	tdls_debug("Updated preff offchannel freq %d width %d opclass %d",
 		   peer->pref_off_chan_freq, peer->pref_off_chan_width,
@@ -1044,7 +1026,7 @@ bw_check:
 
 void tdls_set_peer_caps(struct tdls_vdev_priv_obj *vdev_obj,
 			const uint8_t *macaddr,
-			struct tdls_update_peer_params  *req_info)
+			struct tdls_update_peer_params *req_info)
 {
 	uint8_t is_buffer_sta = 0;
 	uint8_t is_off_channel_supported = 0;
@@ -1099,7 +1081,7 @@ void tdls_set_peer_caps(struct tdls_vdev_priv_obj *vdev_obj,
 }
 
 QDF_STATUS tdls_set_valid(struct tdls_vdev_priv_obj *vdev_obj,
-			   const uint8_t *macaddr)
+			  const uint8_t *macaddr)
 {
 	struct tdls_peer *peer;
 
@@ -1181,8 +1163,7 @@ QDF_STATUS tdls_reset_peer(struct tdls_vdev_priv_obj *vdev_obj,
 		curr_peer->op_class_for_pref_off_chan =
 			tdls_get_opclass_from_bandwidth(
 				vdev_obj->vdev, curr_peer->pref_off_chan_freq,
-				curr_peer->pref_off_chan_width,
-				&reg_bw_offset);
+				curr_peer->pref_off_chan_width, &reg_bw_offset);
 	}
 
 	if (curr_peer->is_peer_idle_timer_initialised) {
@@ -1220,10 +1201,10 @@ void tdls_peer_idle_timers_destroy(struct tdls_vdev_priv_obj *vdev_obj)
 		while (QDF_IS_STATUS_SUCCESS(status)) {
 			peer = qdf_container_of(p_node, struct tdls_peer, node);
 			if (peer && peer->is_peer_idle_timer_initialised) {
-				tdls_debug(QDF_MAC_ADDR_FMT
-					   ": destroy  idle timer ",
-					   QDF_MAC_ADDR_REF(
-						   peer->peer_mac.bytes));
+				tdls_debug(
+					QDF_MAC_ADDR_FMT
+					": destroy  idle timer ",
+					QDF_MAC_ADDR_REF(peer->peer_mac.bytes));
 				qdf_mc_timer_stop(&peer->peer_idle_timer);
 				qdf_mc_timer_destroy(&peer->peer_idle_timer);
 			}
@@ -1248,7 +1229,7 @@ void tdls_free_peer_list(struct tdls_vdev_priv_obj *vdev_obj)
 		head = &vdev_obj->peer_list[i];
 
 		while (QDF_IS_STATUS_SUCCESS(
-			       qdf_list_remove_front(head, &p_node))) {
+			qdf_list_remove_front(head, &p_node))) {
 			peer = qdf_container_of(p_node, struct tdls_peer, node);
 			qdf_mem_free(peer);
 		}

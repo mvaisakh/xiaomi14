@@ -16,8 +16,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_slist.h"
 #include "qdf_slist_test.h"
+#include "qdf_slist.h"
 #include "qdf_trace.h"
 
 struct qdf_slist_test_item {
@@ -90,14 +90,16 @@ static uint32_t qdf_slist_test_for_each(void)
 
 	/* ... be able to iterate over each item */
 	i = 0;
-	qdf_slist_for_each(&list, item, node) {
+	qdf_slist_for_each(&list, item, node)
+	{
 		item->id = i++;
 	}
 	QDF_BUG(i == qdf_slist_node_count);
 
 	/* ... be able to remove each item in the same order */
 	i = 0;
-	qdf_slist_for_each_del(&list, prev, item, node) {
+	qdf_slist_for_each_del(&list, prev, item, node)
+	{
 		QDF_BUG(item);
 		QDF_BUG(item->id == i++);
 		QDF_BUG(qdf_slist_remove(&list, prev, node)->id == item->id);
@@ -123,4 +125,3 @@ uint32_t qdf_slist_unit_test(void)
 
 	return errors;
 }
-

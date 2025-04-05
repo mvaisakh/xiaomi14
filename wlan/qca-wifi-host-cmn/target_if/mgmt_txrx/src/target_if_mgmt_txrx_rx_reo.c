@@ -20,15 +20,15 @@
  *  This file contains definitions of management rx re-ordering related APIs.
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
+#include <init_deinit_lmac.h>
 #include <qdf_status.h>
 #include <target_if.h>
-#include <wlan_mgmt_txrx_rx_reo_public_structs.h>
 #include <target_if_mgmt_txrx_rx_reo.h>
 #include <wlan_lmac_if_api.h>
-#include <init_deinit_lmac.h>
+#include <wlan_mgmt_txrx_rx_reo_public_structs.h>
 #include <wlan_mlo_mgr_setup.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
 
 /**
  * target_if_mgmt_rx_reo_fw_consumed_event_handler() - WMI event handler to
@@ -39,9 +39,9 @@
  *
  * Return: 0 for success, else failure
  */
-static int
-target_if_mgmt_rx_reo_fw_consumed_event_handler(
-	ol_scn_t scn, uint8_t *data, uint32_t datalen)
+static int target_if_mgmt_rx_reo_fw_consumed_event_handler(ol_scn_t scn,
+							   uint8_t *data,
+							   uint32_t datalen)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_pdev *pdev;
@@ -84,7 +84,8 @@ target_if_mgmt_rx_reo_fw_consumed_event_handler(
 					  WLAN_MGMT_SB_ID);
 	if (!pdev) {
 		mgmt_rx_reo_err("Couldn't get pdev for pdev_id: %d"
-				"on psoc: %pK", params.pdev_id, psoc);
+				"on psoc: %pK",
+				params.pdev_id, psoc);
 		return -EINVAL;
 	}
 
@@ -138,15 +139,14 @@ target_if_mgmt_rx_reo_register_event_handlers(struct wlan_objmgr_psoc *psoc)
 	}
 
 	status = wmi_unified_register_event_handler(
-			wmi_handle,
-			wmi_mgmt_rx_fw_consumed_eventid,
-			target_if_mgmt_rx_reo_fw_consumed_event_handler,
-			WMI_RX_UMAC_CTX);
+		wmi_handle, wmi_mgmt_rx_fw_consumed_eventid,
+		target_if_mgmt_rx_reo_fw_consumed_event_handler,
+		WMI_RX_UMAC_CTX);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mgmt_rx_reo_err("Register Rx FW consumed event cb errcode %d",
 				status);
-		if (status ==  QDF_STATUS_E_NOSUPPORT)
+		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 	}
 
@@ -166,13 +166,12 @@ target_if_mgmt_rx_reo_unregister_event_handlers(struct wlan_objmgr_psoc *psoc)
 	}
 
 	status = wmi_unified_unregister_event_handler(
-			wmi_handle,
-			wmi_mgmt_rx_fw_consumed_eventid);
+		wmi_handle, wmi_mgmt_rx_fw_consumed_eventid);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mgmt_rx_reo_err("Unregister Rx FW consumed event cb errcode %d",
 				status);
-		if (status ==  QDF_STATUS_E_NOSUPPORT)
+		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 	}
 
@@ -284,13 +283,11 @@ target_if_mgmt_rx_reo_get_valid_hw_link_bitmap(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-target_if_mgmt_rx_reo_read_snapshot_raw
-			(struct mgmt_rx_reo_shared_snapshot *snapshot_address,
-			 uint32_t *mgmt_rx_reo_snapshot_low,
-			 uint32_t *mgmt_rx_reo_snapshot_high,
-			 uint8_t snapshot_version,
-			 struct mgmt_rx_reo_shared_snapshot *raw_snapshot)
+static QDF_STATUS target_if_mgmt_rx_reo_read_snapshot_raw(
+	struct mgmt_rx_reo_shared_snapshot *snapshot_address,
+	uint32_t *mgmt_rx_reo_snapshot_low, uint32_t *mgmt_rx_reo_snapshot_high,
+	uint8_t snapshot_version,
+	struct mgmt_rx_reo_shared_snapshot *raw_snapshot)
 {
 	uint32_t prev_snapshot_low;
 	uint32_t prev_snapshot_high;
@@ -299,14 +296,14 @@ target_if_mgmt_rx_reo_read_snapshot_raw
 	uint8_t retry_count = 0;
 
 	if (snapshot_version == 1) {
-		*mgmt_rx_reo_snapshot_low =
-		    qdf_le32_to_cpu(snapshot_address->mgmt_rx_reo_snapshot_low);
-		*mgmt_rx_reo_snapshot_high =
-		   qdf_le32_to_cpu(snapshot_address->mgmt_rx_reo_snapshot_high);
+		*mgmt_rx_reo_snapshot_low = qdf_le32_to_cpu(
+			snapshot_address->mgmt_rx_reo_snapshot_low);
+		*mgmt_rx_reo_snapshot_high = qdf_le32_to_cpu(
+			snapshot_address->mgmt_rx_reo_snapshot_high);
 		raw_snapshot->mgmt_rx_reo_snapshot_low =
-						*mgmt_rx_reo_snapshot_low;
+			*mgmt_rx_reo_snapshot_low;
 		raw_snapshot->mgmt_rx_reo_snapshot_high =
-						*mgmt_rx_reo_snapshot_high;
+			*mgmt_rx_reo_snapshot_high;
 		return QDF_STATUS_SUCCESS;
 	}
 
@@ -317,17 +314,18 @@ target_if_mgmt_rx_reo_read_snapshot_raw
 	raw_snapshot->mgmt_rx_reo_snapshot_low = prev_snapshot_low;
 	raw_snapshot->mgmt_rx_reo_snapshot_high = prev_snapshot_high;
 
-	for (; retry_count < (MGMT_RX_REO_SNAPSHOT_B2B_READ_SWAR_RETRY_LIMIT - 1);
+	for (;
+	     retry_count < (MGMT_RX_REO_SNAPSHOT_B2B_READ_SWAR_RETRY_LIMIT - 1);
 	     retry_count++) {
-		cur_snapshot_low =
-		    qdf_le32_to_cpu(snapshot_address->mgmt_rx_reo_snapshot_low);
-		cur_snapshot_high =
-		   qdf_le32_to_cpu(snapshot_address->mgmt_rx_reo_snapshot_high);
+		cur_snapshot_low = qdf_le32_to_cpu(
+			snapshot_address->mgmt_rx_reo_snapshot_low);
+		cur_snapshot_high = qdf_le32_to_cpu(
+			snapshot_address->mgmt_rx_reo_snapshot_high);
 
 		raw_snapshot[retry_count + 1].mgmt_rx_reo_snapshot_low =
-							cur_snapshot_low;
+			cur_snapshot_low;
 		raw_snapshot[retry_count + 1].mgmt_rx_reo_snapshot_high =
-							cur_snapshot_high;
+			cur_snapshot_high;
 
 		if (prev_snapshot_low == cur_snapshot_low &&
 		    prev_snapshot_high == cur_snapshot_high)
@@ -358,14 +356,13 @@ target_if_mgmt_rx_reo_read_snapshot_raw
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-target_if_mgmt_rx_reo_read_snapshot(
-			struct wlan_objmgr_pdev *pdev,
-			struct mgmt_rx_reo_snapshot_info *snapshot_info,
-			enum mgmt_rx_reo_shared_snapshot_id id,
-			struct mgmt_rx_reo_snapshot_params *snapshot_value,
-			struct mgmt_rx_reo_shared_snapshot (*raw_snapshot)
-			[MGMT_RX_REO_SNAPSHOT_B2B_READ_SWAR_RETRY_LIMIT])
+static QDF_STATUS target_if_mgmt_rx_reo_read_snapshot(
+	struct wlan_objmgr_pdev *pdev,
+	struct mgmt_rx_reo_snapshot_info *snapshot_info,
+	enum mgmt_rx_reo_shared_snapshot_id id,
+	struct mgmt_rx_reo_snapshot_params *snapshot_value,
+	struct mgmt_rx_reo_shared_snapshot (
+		*raw_snapshot)[MGMT_RX_REO_SNAPSHOT_B2B_READ_SWAR_RETRY_LIMIT])
 {
 	bool snapshot_valid;
 	uint16_t mgmt_pkt_ctr;
@@ -399,7 +396,7 @@ target_if_mgmt_rx_reo_read_snapshot(
 	qdf_mem_zero(snapshot_value, sizeof(*snapshot_value));
 
 	low_level_ops = target_if_get_mgmt_rx_reo_low_level_ops(
-				wlan_pdev_get_psoc(pdev));
+		wlan_pdev_get_psoc(pdev));
 
 	if (!low_level_ops) {
 		mgmt_rx_reo_err("Low level ops of MGMT Rx REO is null");
@@ -416,12 +413,10 @@ target_if_mgmt_rx_reo_read_snapshot(
 		retry_count = 0;
 		for (; retry_count < MGMT_RX_REO_SNAPSHOT_READ_RETRY_LIMIT;
 		     retry_count++) {
-			status = target_if_mgmt_rx_reo_read_snapshot_raw
-					(snapshot_address,
-					 &mgmt_rx_reo_snapshot_low,
-					 &mgmt_rx_reo_snapshot_high,
-					 snapshot_version,
-					 raw_snapshot[retry_count]);
+			status = target_if_mgmt_rx_reo_read_snapshot_raw(
+				snapshot_address, &mgmt_rx_reo_snapshot_low,
+				&mgmt_rx_reo_snapshot_high, snapshot_version,
+				raw_snapshot[retry_count]);
 
 			if (QDF_IS_STATUS_ERROR(status)) {
 				mgmt_rx_reo_err("Failed to read snapshot %d",
@@ -430,45 +425,45 @@ target_if_mgmt_rx_reo_read_snapshot(
 			}
 
 			snapshot_valid = low_level_ops->snapshot_is_valid(
-						mgmt_rx_reo_snapshot_low,
-						snapshot_version);
+				mgmt_rx_reo_snapshot_low, snapshot_version);
 
 			if (!snapshot_valid) {
 				mgmt_rx_reo_info("Invalid REO snapshot value");
 				snapshot_value->valid = false;
 				snapshot_value->mgmt_pkt_ctr =
-					low_level_ops->snapshot_get_mgmt_pkt_ctr
-					(mgmt_rx_reo_snapshot_low,
-					 snapshot_version);
+					low_level_ops->snapshot_get_mgmt_pkt_ctr(
+						mgmt_rx_reo_snapshot_low,
+						snapshot_version);
 				snapshot_value->global_timestamp =
-				low_level_ops->snapshot_get_global_timestamp
-					(mgmt_rx_reo_snapshot_low,
-					 mgmt_rx_reo_snapshot_high,
-					 snapshot_version);
+					low_level_ops
+						->snapshot_get_global_timestamp(
+							mgmt_rx_reo_snapshot_low,
+							mgmt_rx_reo_snapshot_high,
+							snapshot_version);
 				snapshot_value->retry_count = retry_count + 1;
 				return QDF_STATUS_SUCCESS;
 			}
 
-			if (low_level_ops->snapshot_is_consistent
-						(mgmt_rx_reo_snapshot_low,
-						 mgmt_rx_reo_snapshot_high,
-						 snapshot_version)) {
+			if (low_level_ops->snapshot_is_consistent(
+				    mgmt_rx_reo_snapshot_low,
+				    mgmt_rx_reo_snapshot_high,
+				    snapshot_version)) {
 				global_timestamp =
-				    low_level_ops->snapshot_get_global_timestamp
-						(mgmt_rx_reo_snapshot_low,
-						 mgmt_rx_reo_snapshot_high,
-						 snapshot_version);
+					low_level_ops
+						->snapshot_get_global_timestamp(
+							mgmt_rx_reo_snapshot_low,
+							mgmt_rx_reo_snapshot_high,
+							snapshot_version);
 				mgmt_pkt_ctr =
-					low_level_ops->snapshot_get_mgmt_pkt_ctr
-						(mgmt_rx_reo_snapshot_low,
-						 snapshot_version);
+					low_level_ops->snapshot_get_mgmt_pkt_ctr(
+						mgmt_rx_reo_snapshot_low,
+						snapshot_version);
 				break;
 			}
-			mgmt_rx_reo_info("Inconsistent snapshot %d, version=%u, low=0x%x, high=0x%x, retry=%u",
-					 id, snapshot_version,
-					 mgmt_rx_reo_snapshot_low,
-					 mgmt_rx_reo_snapshot_high,
-					 retry_count);
+			mgmt_rx_reo_info(
+				"Inconsistent snapshot %d, version=%u, low=0x%x, high=0x%x, retry=%u",
+				id, snapshot_version, mgmt_rx_reo_snapshot_low,
+				mgmt_rx_reo_snapshot_high, retry_count);
 		}
 
 		if (retry_count == MGMT_RX_REO_SNAPSHOT_READ_RETRY_LIMIT) {
@@ -507,11 +502,9 @@ target_if_mgmt_rx_reo_read_snapshot(
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-target_if_mgmt_rx_reo_get_snapshot_info
-			(struct wlan_objmgr_pdev *pdev,
-			 enum mgmt_rx_reo_shared_snapshot_id id,
-			 struct mgmt_rx_reo_snapshot_info *snapshot_info)
+static QDF_STATUS target_if_mgmt_rx_reo_get_snapshot_info(
+	struct wlan_objmgr_pdev *pdev, enum mgmt_rx_reo_shared_snapshot_id id,
+	struct mgmt_rx_reo_snapshot_info *snapshot_info)
 {
 	struct wlan_lmac_if_mgmt_rx_reo_low_level_ops *low_level_ops;
 	int8_t link_id;
@@ -558,8 +551,7 @@ target_if_mgmt_rx_reo_get_snapshot_info
 	qdf_assert_always(link_id >= 0);
 
 	snapshot_info->address =
-			low_level_ops->get_snapshot_address(grp_id,
-							    link_id, id);
+		low_level_ops->get_snapshot_address(grp_id, link_id, id);
 
 	snapshot_version = low_level_ops->get_snapshot_version(grp_id, id);
 	if (snapshot_version < 0) {
@@ -581,9 +573,8 @@ target_if_mgmt_rx_reo_get_snapshot_info
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS
-target_if_mgmt_rx_reo_filter_config(
-	struct wlan_objmgr_pdev *pdev,
-	struct mgmt_rx_reo_filter *filter)
+target_if_mgmt_rx_reo_filter_config(struct wlan_objmgr_pdev *pdev,
+				    struct mgmt_rx_reo_filter *filter)
 {
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
@@ -605,9 +596,9 @@ target_if_mgmt_rx_reo_filter_config(
 }
 
 QDF_STATUS
-target_if_mgmt_rx_reo_extract_reo_params(
-	wmi_unified_t wmi_handle, void *evt_buf,
-	struct mgmt_rx_event_params *params)
+target_if_mgmt_rx_reo_extract_reo_params(wmi_unified_t wmi_handle,
+					 void *evt_buf,
+					 struct mgmt_rx_event_params *params)
 {
 	struct wlan_objmgr_psoc *psoc;
 
@@ -713,7 +704,7 @@ target_if_mgmt_rx_reo_cancel_scheduled_delivery(struct wlan_objmgr_psoc *psoc)
 
 QDF_STATUS
 target_if_mgmt_rx_reo_tx_ops_register(
-			struct wlan_lmac_if_mgmt_txrx_tx_ops *mgmt_txrx_tx_ops)
+	struct wlan_lmac_if_mgmt_txrx_tx_ops *mgmt_txrx_tx_ops)
 {
 	struct wlan_lmac_if_mgmt_rx_reo_tx_ops *mgmt_rx_reo_tx_ops;
 
@@ -723,19 +714,19 @@ target_if_mgmt_rx_reo_tx_ops_register(
 	}
 	mgmt_rx_reo_tx_ops = &mgmt_txrx_tx_ops->mgmt_rx_reo_tx_ops;
 	mgmt_rx_reo_tx_ops->get_num_active_hw_links =
-				target_if_mgmt_rx_reo_get_num_active_hw_links;
+		target_if_mgmt_rx_reo_get_num_active_hw_links;
 	mgmt_rx_reo_tx_ops->get_valid_hw_link_bitmap =
-				target_if_mgmt_rx_reo_get_valid_hw_link_bitmap;
+		target_if_mgmt_rx_reo_get_valid_hw_link_bitmap;
 	mgmt_rx_reo_tx_ops->read_mgmt_rx_reo_snapshot =
-				target_if_mgmt_rx_reo_read_snapshot;
+		target_if_mgmt_rx_reo_read_snapshot;
 	mgmt_rx_reo_tx_ops->get_mgmt_rx_reo_snapshot_info =
-				target_if_mgmt_rx_reo_get_snapshot_info;
+		target_if_mgmt_rx_reo_get_snapshot_info;
 	mgmt_rx_reo_tx_ops->mgmt_rx_reo_filter_config =
-					target_if_mgmt_rx_reo_filter_config;
+		target_if_mgmt_rx_reo_filter_config;
 	mgmt_rx_reo_tx_ops->schedule_delivery =
-				target_if_mgmt_rx_reo_schedule_delivery;
+		target_if_mgmt_rx_reo_schedule_delivery;
 	mgmt_rx_reo_tx_ops->cancel_scheduled_delivery =
-				target_if_mgmt_rx_reo_cancel_scheduled_delivery;
+		target_if_mgmt_rx_reo_cancel_scheduled_delivery;
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -756,8 +747,8 @@ target_if_mgmt_rx_reo_host_drop_handler(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	mgmt_rx_reo_rx_ops = target_if_mgmt_rx_reo_get_rx_ops(
-					wlan_pdev_get_psoc(pdev));
+	mgmt_rx_reo_rx_ops =
+		target_if_mgmt_rx_reo_get_rx_ops(wlan_pdev_get_psoc(pdev));
 	if (!mgmt_rx_reo_rx_ops) {
 		mgmt_rx_reo_err("rx_ops of MGMT Rx REO module is NULL");
 		return QDF_STATUS_E_NULL_VALUE;

@@ -21,37 +21,34 @@
 #include <wmi_unified_dcs_api.h>
 
 QDF_STATUS wmi_extract_dcs_interference_type(
-		void *wmi_hdl,
-		void *evt_buf,
-		struct wlan_host_dcs_interference_param *param)
+	void *wmi_hdl, void *evt_buf,
+	struct wlan_host_dcs_interference_param *param)
 {
 	wmi_unified_t wmi = (wmi_unified_t)wmi_hdl;
 
 	if (wmi->ops->extract_dcs_interference_type) {
-		return wmi->ops->extract_dcs_interference_type(wmi,
-							       evt_buf,
+		return wmi->ops->extract_dcs_interference_type(wmi, evt_buf,
 							       param);
 	}
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_dcs_im_tgt_stats(
-		void *wmi_hdl,
-		void *evt_buf,
-		struct wlan_host_dcs_im_tgt_stats *wlan_stat)
+QDF_STATUS
+wmi_extract_dcs_im_tgt_stats(void *wmi_hdl, void *evt_buf,
+			     struct wlan_host_dcs_im_tgt_stats *wlan_stat)
 {
 	wmi_unified_t wmi_handle = (wmi_unified_t)wmi_hdl;
 
 	if (wmi_handle->ops->extract_dcs_im_tgt_stats) {
-		return wmi_handle->ops->extract_dcs_im_tgt_stats(wmi_handle,
-								 evt_buf,
-								 wlan_stat);
+		return wmi_handle->ops->extract_dcs_im_tgt_stats(
+			wmi_handle, evt_buf, wlan_stat);
 	}
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_dcs_awgn_info(wmi_unified_t wmi_hdl, void *evt_buf,
-				     struct wlan_host_dcs_awgn_info *awgn_info)
+QDF_STATUS
+wmi_extract_dcs_awgn_info(wmi_unified_t wmi_hdl, void *evt_buf,
+			  struct wlan_host_dcs_awgn_info *awgn_info)
 {
 	if (wmi_hdl && wmi_hdl->ops->extract_dcs_awgn_info)
 		return wmi_hdl->ops->extract_dcs_awgn_info(wmi_hdl, evt_buf,
@@ -60,10 +57,8 @@ QDF_STATUS wmi_extract_dcs_awgn_info(wmi_unified_t wmi_hdl, void *evt_buf,
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_send_dcs_pdev_param(wmi_unified_t wmi_handle,
-				   uint32_t pdev_idx,
-				   bool is_host_pdev_id,
-				   uint32_t dcs_enable)
+QDF_STATUS wmi_send_dcs_pdev_param(wmi_unified_t wmi_handle, uint32_t pdev_idx,
+				   bool is_host_pdev_id, uint32_t dcs_enable)
 {
 	struct pdev_params pparam;
 

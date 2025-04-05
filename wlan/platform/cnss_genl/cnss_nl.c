@@ -12,29 +12,22 @@
 
 #define CLD80211_GENL_NAME "cld80211"
 
-#define CLD80211_MULTICAST_GROUP_SVC_MSGS       "svc_msgs"
-#define CLD80211_MULTICAST_GROUP_HOST_LOGS      "host_logs"
-#define CLD80211_MULTICAST_GROUP_FW_LOGS        "fw_logs"
-#define CLD80211_MULTICAST_GROUP_PER_PKT_STATS  "per_pkt_stats"
-#define CLD80211_MULTICAST_GROUP_DIAG_EVENTS    "diag_events"
-#define CLD80211_MULTICAST_GROUP_FATAL_EVENTS   "fatal_events"
-#define CLD80211_MULTICAST_GROUP_OEM_MSGS       "oem_msgs"
+#define CLD80211_MULTICAST_GROUP_SVC_MSGS "svc_msgs"
+#define CLD80211_MULTICAST_GROUP_HOST_LOGS "host_logs"
+#define CLD80211_MULTICAST_GROUP_FW_LOGS "fw_logs"
+#define CLD80211_MULTICAST_GROUP_PER_PKT_STATS "per_pkt_stats"
+#define CLD80211_MULTICAST_GROUP_DIAG_EVENTS "diag_events"
+#define CLD80211_MULTICAST_GROUP_FATAL_EVENTS "fatal_events"
+#define CLD80211_MULTICAST_GROUP_OEM_MSGS "oem_msgs"
 
 static const struct genl_multicast_group nl_mcgrps[] = {
-	[CLD80211_MCGRP_SVC_MSGS] = { .name =
-			CLD80211_MULTICAST_GROUP_SVC_MSGS},
-	[CLD80211_MCGRP_HOST_LOGS] = { .name =
-			CLD80211_MULTICAST_GROUP_HOST_LOGS},
-	[CLD80211_MCGRP_FW_LOGS] = { .name =
-			CLD80211_MULTICAST_GROUP_FW_LOGS},
-	[CLD80211_MCGRP_PER_PKT_STATS] = { .name =
-			CLD80211_MULTICAST_GROUP_PER_PKT_STATS},
-	[CLD80211_MCGRP_DIAG_EVENTS] = { .name =
-			CLD80211_MULTICAST_GROUP_DIAG_EVENTS},
-	[CLD80211_MCGRP_FATAL_EVENTS] = { .name =
-			CLD80211_MULTICAST_GROUP_FATAL_EVENTS},
-	[CLD80211_MCGRP_OEM_MSGS] = { .name =
-			CLD80211_MULTICAST_GROUP_OEM_MSGS},
+	[CLD80211_MCGRP_SVC_MSGS] = { .name = CLD80211_MULTICAST_GROUP_SVC_MSGS },
+	[CLD80211_MCGRP_HOST_LOGS] = { .name = CLD80211_MULTICAST_GROUP_HOST_LOGS },
+	[CLD80211_MCGRP_FW_LOGS] = { .name = CLD80211_MULTICAST_GROUP_FW_LOGS },
+	[CLD80211_MCGRP_PER_PKT_STATS] = { .name = CLD80211_MULTICAST_GROUP_PER_PKT_STATS },
+	[CLD80211_MCGRP_DIAG_EVENTS] = { .name = CLD80211_MULTICAST_GROUP_DIAG_EVENTS },
+	[CLD80211_MCGRP_FATAL_EVENTS] = { .name = CLD80211_MULTICAST_GROUP_FATAL_EVENTS },
+	[CLD80211_MCGRP_OEM_MSGS] = { .name = CLD80211_MULTICAST_GROUP_OEM_MSGS },
 };
 
 struct cld_ops {
@@ -61,7 +54,7 @@ static const struct nla_policy cld80211_policy[CLD80211_ATTR_MAX + 1] = {
 	[CLD80211_ATTR_DATA] = { .type = NLA_BINARY,
 				 .len = CLD80211_MAX_NL_DATA },
 	[CLD80211_ATTR_META_DATA] = { .type = NLA_BINARY,
-				 .len = CLD80211_MAX_NL_DATA },
+				      .len = CLD80211_MAX_NL_DATA },
 	[CLD80211_ATTR_CMD] = { .type = NLA_U32 },
 	[CLD80211_ATTR_CMD_TAG_DATA] = { .type = NLA_NESTED },
 };
@@ -85,8 +78,8 @@ static int cld80211_pre_doit(const struct genl_ops *ops, struct sk_buff *skb,
 /* The netlink family */
 static struct genl_family cld80211_fam __ro_after_init = {
 	.name = CLD80211_GENL_NAME,
-	.hdrsize = 0,			/* no private header */
-	.version = 1,			/* no particular meaning now */
+	.hdrsize = 0, /* no private header */
+	.version = 1, /* no particular meaning now */
 	.maxattr = CLD80211_ATTR_MAX,
 	.policy = cld80211_policy,
 	.netnsok = true,
@@ -154,8 +147,8 @@ static int cld80211_doit(struct sk_buff *skb, struct genl_info *info)
 
 	if (info->attrs[CLD80211_ATTR_VENDOR_DATA]) {
 		cld_cb(nla_data(info->attrs[CLD80211_ATTR_VENDOR_DATA]),
-		       nla_len(info->attrs[CLD80211_ATTR_VENDOR_DATA]),
-		       cld_ctx, info->snd_portid);
+		       nla_len(info->attrs[CLD80211_ATTR_VENDOR_DATA]), cld_ctx,
+		       info->snd_portid);
 	} else {
 		pr_err("CLD80211: No CLD80211_ATTR_VENDOR_DATA\n");
 		return -EINVAL;

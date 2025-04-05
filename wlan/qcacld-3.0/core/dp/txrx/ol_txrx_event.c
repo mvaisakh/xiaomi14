@@ -16,11 +16,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "ol_txrx_types.h"
 #include "ol_txrx.h"
+#include "ol_txrx_types.h"
 
-static inline wdi_event_subscribe *wdi_event_next_sub(wdi_event_subscribe *
-						      wdi_sub)
+static inline wdi_event_subscribe *
+wdi_event_next_sub(wdi_event_subscribe *wdi_sub)
 {
 	if (!wdi_sub) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
@@ -30,17 +30,17 @@ static inline wdi_event_subscribe *wdi_event_next_sub(wdi_event_subscribe *
 	return wdi_sub->priv.next;
 }
 
-static inline void
-wdi_event_del_subs(wdi_event_subscribe *wdi_sub, int event_index)
+static inline void wdi_event_del_subs(wdi_event_subscribe *wdi_sub,
+				      int event_index)
 {
 	wdi_event_notify deallocate_sub;
 
 	while (wdi_sub) {
 		wdi_event_subscribe *next = wdi_event_next_sub(wdi_sub);
 		/*
-		 *  Context is NULL for static allocation of subs
-		 *  In dynamic allocation case notify the user
-		 */
+     *  Context is NULL for static allocation of subs
+     *  In dynamic allocation case notify the user
+     */
 		if (wdi_sub->context) {
 			deallocate_sub = wdi_sub->context;
 			deallocate_sub(WDI_EVENT_SUB_DEALLOCATE,
@@ -51,10 +51,9 @@ wdi_event_del_subs(wdi_event_subscribe *wdi_sub, int event_index)
 	/* qdf_mem_free(wdi_sub); */
 }
 
-static inline void
-wdi_event_iter_sub(struct ol_txrx_pdev_t *pdev,
-		   uint32_t event_index,
-		   wdi_event_subscribe *wdi_sub, void *data)
+static inline void wdi_event_iter_sub(struct ol_txrx_pdev_t *pdev,
+				      uint32_t event_index,
+				      wdi_event_subscribe *wdi_sub, void *data)
 {
 	enum WDI_EVENT event = event_index + WDI_EVENT_BASE;
 
@@ -65,9 +64,7 @@ wdi_event_iter_sub(struct ol_txrx_pdev_t *pdev,
 	}
 }
 
-void
-wdi_event_handler(enum WDI_EVENT event,
-		  uint8_t pdev_id, void *data)
+void wdi_event_handler(enum WDI_EVENT event, uint8_t pdev_id, void *data)
 {
 	uint32_t event_index;
 	wdi_event_subscribe *wdi_sub;
@@ -75,8 +72,8 @@ wdi_event_handler(enum WDI_EVENT event,
 	ol_txrx_pdev_handle txrx_pdev;
 
 	/*
-	 * Input validation
-	 */
+   * Input validation
+   */
 	if (!event) {
 		ol_txrx_err("Invalid WDI event");
 		return;
@@ -90,9 +87,9 @@ wdi_event_handler(enum WDI_EVENT event,
 		return;
 	}
 	/*
-	 *  There can be NULL data, so no validation for the data
-	 *  Subscribers must do the sanity based on the requirements
-	 */
+   *  There can be NULL data, so no validation for the data
+   *  Subscribers must do the sanity based on the requirements
+   */
 	event_index = event - WDI_EVENT_BASE;
 
 	wdi_sub = txrx_pdev->wdi_event_list[event_index];
@@ -101,15 +98,14 @@ wdi_event_handler(enum WDI_EVENT event,
 	wdi_event_iter_sub(txrx_pdev, event_index, wdi_sub, data);
 }
 
-int
-wdi_event_sub(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
-	      wdi_event_subscribe *pevent_cb_sub, uint32_t event)
+int wdi_event_sub(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
+		  wdi_event_subscribe *pevent_cb_sub, uint32_t event)
 {
 	uint32_t event_index;
 	wdi_event_subscribe *wdi_sub;
 	struct ol_txrx_soc_t *soc = cdp_soc_t_to_ol_txrx_soc_t(soc_hdl);
-	ol_txrx_pdev_handle txrx_pdev = ol_txrx_get_pdev_from_pdev_id(soc,
-								      pdev_id);
+	ol_txrx_pdev_handle txrx_pdev =
+		ol_txrx_get_pdev_from_pdev_id(soc, pdev_id);
 	wdi_event_subscribe *event_cb_sub = pevent_cb_sub;
 
 	/* Input validation */
@@ -134,8 +130,8 @@ wdi_event_sub(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 
 	wdi_sub = txrx_pdev->wdi_event_list[event_index];
 	/*
-	 *  Check if it is the first subscriber of the event
-	 */
+   *  Check if it is the first subscriber of the event
+   */
 	if (!wdi_sub) {
 		wdi_sub = event_cb_sub;
 		wdi_sub->priv.next = NULL;
@@ -151,14 +147,13 @@ wdi_event_sub(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	return 0;
 }
 
-int
-wdi_event_unsub(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
-		wdi_event_subscribe *pevent_cb_sub, uint32_t event)
+int wdi_event_unsub(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
+		    wdi_event_subscribe *pevent_cb_sub, uint32_t event)
 {
 	uint32_t event_index = event - WDI_EVENT_BASE;
 	struct ol_txrx_soc_t *soc = cdp_soc_t_to_ol_txrx_soc_t(soc_hdl);
-	ol_txrx_pdev_handle txrx_pdev = ol_txrx_get_pdev_from_pdev_id(soc,
-								      pdev_id);
+	ol_txrx_pdev_handle txrx_pdev =
+		ol_txrx_get_pdev_from_pdev_id(soc, pdev_id);
 
 	wdi_event_subscribe *event_cb_sub = pevent_cb_sub;
 
@@ -199,10 +194,8 @@ A_STATUS wdi_event_attach(struct ol_txrx_pdev_t *txrx_pdev)
 		return A_ERROR;
 	}
 	/* Separate subscriber list for each event */
-	txrx_pdev->wdi_event_list = (wdi_event_subscribe **)
-				    qdf_mem_malloc(
-					    sizeof(wdi_event_subscribe *) *
-					    WDI_NUM_EVENTS);
+	txrx_pdev->wdi_event_list = (wdi_event_subscribe **)qdf_mem_malloc(
+		sizeof(wdi_event_subscribe *) * WDI_NUM_EVENTS);
 	if (!txrx_pdev->wdi_event_list)
 		return A_NO_MEMORY;
 
@@ -216,8 +209,7 @@ A_STATUS wdi_event_detach(struct ol_txrx_pdev_t *txrx_pdev)
 
 	if (!txrx_pdev) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-			  "Invalid device in %s\nWDI detach failed",
-			  __func__);
+			  "Invalid device in %s\nWDI detach failed", __func__);
 		return A_ERROR;
 	}
 	if (!txrx_pdev->wdi_event_list) {

@@ -21,11 +21,11 @@
  * Implementation for the Common WFA config interfaces.
  */
 
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_psoc_mlme_api.h"
-#include "wlan_mlme_ucfg_api.h"
 #include "wlan_wfa_tgt_if_tx_api.h"
 #include "wlan_mlme_public_struct.h"
+#include "wlan_mlme_ucfg_api.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_psoc_mlme_api.h"
 #include "wlan_vdev_mgr_tgt_if_tx_api.h"
 #include "wma.h"
 
@@ -55,8 +55,8 @@ wlan_wfatest_get_tx_ops_from_vdev(struct wlan_objmgr_vdev *vdev)
 
 static QDF_STATUS
 wlan_wfa_set_test_feature_flags(struct wlan_objmgr_psoc *psoc,
-			       enum wlan_wfa_test_feature_flags feature,
-			       uint8_t value)
+				enum wlan_wfa_test_feature_flags feature,
+				uint8_t value)
 {
 	mlme_psoc_ext_t *mlme_priv;
 
@@ -124,7 +124,7 @@ wlan_send_wfatest_cmd(struct wlan_objmgr_vdev *vdev,
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct wlan_wfa_cmd_tx_ops *tx_ops;
 	struct vdev_mlme_obj *mlme_obj;
-	struct config_fils_params param = {0};
+	struct config_fils_params param = { 0 };
 
 	if (!vdev || !wmi_wfatest) {
 		mlme_legacy_err("vdev or test params is NULL");

@@ -3,16 +3,15 @@
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/mutex.h>
-#include <linux/module.h>
-#include <linux/debugfs.h>
-#include <linux/device.h>
+#include "ipa_ut_framework.h"
 #include "ipa.h"
 #include "ipa_i.h"
-#include "ipa_ut_framework.h"
-#include "ipa_ut_suite_list.h"
 #include "ipa_ut_i.h"
-
+#include "ipa_ut_suite_list.h"
+#include <linux/debugfs.h>
+#include <linux/device.h>
+#include <linux/module.h>
+#include <linux/mutex.h>
 
 #define IPA_UT_DEBUG_WRITE_BUF_SIZE 256
 #define IPA_UT_DEBUG_READ_BUF_SIZE 1024
@@ -51,23 +50,24 @@ struct ipa_ut_dbgfs_test_write_work_ctx {
 	void *user_data;
 };
 
-static ssize_t ipa_ut_dbgfs_enable_read(struct file *file,
-	char __user *ubuf, size_t count, loff_t *ppos);
+static ssize_t ipa_ut_dbgfs_enable_read(struct file *file, char __user *ubuf,
+					size_t count, loff_t *ppos);
 static ssize_t ipa_ut_dbgfs_enable_write(struct file *file,
-	const char __user *buf, size_t count, loff_t *ppos);
-static ssize_t ipa_ut_dbgfs_test_read(struct file *file,
-	char __user *ubuf, size_t count, loff_t *ppos);
+					 const char __user *buf, size_t count,
+					 loff_t *ppos);
+static ssize_t ipa_ut_dbgfs_test_read(struct file *file, char __user *ubuf,
+				      size_t count, loff_t *ppos);
 static ssize_t ipa_ut_dbgfs_test_write(struct file *file,
-	const char __user *buf, size_t count, loff_t *ppos);
-static int ipa_ut_dbgfs_all_test_open(struct inode *inode,
-	struct file *filp);
+				       const char __user *buf, size_t count,
+				       loff_t *ppos);
+static int ipa_ut_dbgfs_all_test_open(struct inode *inode, struct file *filp);
 static int ipa_ut_dbgfs_regression_test_open(struct inode *inode,
-	struct file *filp);
-static ssize_t ipa_ut_dbgfs_meta_test_read(struct file *file,
-	char __user *ubuf, size_t count, loff_t *ppos);
+					     struct file *filp);
+static ssize_t ipa_ut_dbgfs_meta_test_read(struct file *file, char __user *ubuf,
+					   size_t count, loff_t *ppos);
 static ssize_t ipa_ut_dbgfs_meta_test_write(struct file *file,
-	const char __user *buf, size_t count, loff_t *ppos);
-
+					    const char __user *buf,
+					    size_t count, loff_t *ppos);
 
 static const struct file_operations ipa_ut_dbgfs_enable_fops = {
 	.read = ipa_ut_dbgfs_enable_read,
@@ -131,16 +131,16 @@ static void ipa_ut_dump_fail_report_stack(void)
 		return;
 	}
 
-	for (i = 0 ; i < _IPA_UT_TEST_FAIL_REPORT_IDX; i++) {
+	for (i = 0; i < _IPA_UT_TEST_FAIL_REPORT_IDX; i++) {
 		if (i == 0)
 			pr_err("***** FAIL INFO STACK *****:\n");
 		else
 			pr_err("Called From:\n");
 
 		pr_err("\tFILE = %s\n\tFUNC = %s()\n\tLINE = %d\n",
-			_IPA_UT_TEST_FAIL_REPORT_DATA[i].file,
-			_IPA_UT_TEST_FAIL_REPORT_DATA[i].func,
-			_IPA_UT_TEST_FAIL_REPORT_DATA[i].line);
+		       _IPA_UT_TEST_FAIL_REPORT_DATA[i].file,
+		       _IPA_UT_TEST_FAIL_REPORT_DATA[i].func,
+		       _IPA_UT_TEST_FAIL_REPORT_DATA[i].line);
 		pr_err("\t%s\n", _IPA_UT_TEST_FAIL_REPORT_DATA[i].info);
 	}
 }
@@ -166,21 +166,21 @@ static void ipa_ut_show_suite_exec_summary(const struct ipa_ut_suite *suite)
 	pr_info("===========================\n");
 	pr_info("Successful tests\n");
 	pr_info("----------------\n");
-	for (i = 0 ; i < suite->tests_cnt ; i++) {
+	for (i = 0; i < suite->tests_cnt; i++) {
 		if (suite->tests[i].res != IPA_UT_TEST_RES_SUCCESS)
 			continue;
 		pr_info("\t%s\n", suite->tests[i].name);
 	}
 	pr_info("\nFailed tests\n");
 	pr_info("------------\n");
-	for (i = 0 ; i < suite->tests_cnt ; i++) {
+	for (i = 0; i < suite->tests_cnt; i++) {
 		if (suite->tests[i].res != IPA_UT_TEST_RES_FAIL)
 			continue;
 		pr_info("\t%s\n", suite->tests[i].name);
 	}
 	pr_info("\nSkipped tests\n");
 	pr_info("-------------\n");
-	for (i = 0 ; i < suite->tests_cnt ; i++) {
+	for (i = 0; i < suite->tests_cnt; i++) {
 		if (suite->tests[i].res != IPA_UT_TEST_RES_SKIP)
 			continue;
 		pr_info("\t%s\n", suite->tests[i].name);
@@ -219,8 +219,8 @@ static void ipa_ut_dbgfs_meta_test_write_work_func(struct work_struct *work)
 	long meta_type;
 	bool tst_fail = false;
 
-	write_work_ctx = container_of(work, struct
-		ipa_ut_dbgfs_test_write_work_ctx, dbgfs_work);
+	write_work_ctx = container_of(
+		work, struct ipa_ut_dbgfs_test_write_work_ctx, dbgfs_work);
 
 	IPA_UT_DBG("Entry\n");
 
@@ -230,11 +230,11 @@ static void ipa_ut_dbgfs_meta_test_write_work_func(struct work_struct *work)
 	meta_type = write_work_ctx->meta_type;
 	IPA_UT_DBG("Meta test type %ld\n", meta_type);
 
-	_IPA_UT_TEST_LOG_BUF_NAME = kzalloc(_IPA_UT_TEST_LOG_BUF_SIZE,
-		GFP_KERNEL);
+	_IPA_UT_TEST_LOG_BUF_NAME =
+		kzalloc(_IPA_UT_TEST_LOG_BUF_SIZE, GFP_KERNEL);
 	if (!_IPA_UT_TEST_LOG_BUF_NAME) {
 		IPA_UT_ERR("failed to allocate %d bytes\n",
-			_IPA_UT_TEST_LOG_BUF_SIZE);
+			   _IPA_UT_TEST_LOG_BUF_SIZE);
 		rc = -ENOMEM;
 		goto unlock_mutex;
 	}
@@ -254,7 +254,7 @@ static void ipa_ut_dbgfs_meta_test_write_work_func(struct work_struct *work)
 		rc = suite->meta_data->setup(&suite->meta_data->priv);
 		if (rc) {
 			IPA_UT_ERR("Setup failed for suite %s\n",
-				suite->meta_data->name);
+				   suite->meta_data->name);
 			rc = -EFAULT;
 			goto release_clock;
 		}
@@ -263,31 +263,27 @@ static void ipa_ut_dbgfs_meta_test_write_work_func(struct work_struct *work)
 			suite->meta_data->name);
 	}
 
-	pr_info("*** Suite '%s': Run %s tests ***\n\n",
-		suite->meta_data->name,
-		meta_type == IPA_UT_META_TEST_REGRESSION ? "regression" : "all"
-		);
-	for (i = 0 ; i < suite->tests_cnt ; i++) {
+	pr_info("*** Suite '%s': Run %s tests ***\n\n", suite->meta_data->name,
+		meta_type == IPA_UT_META_TEST_REGRESSION ? "regression" :
+							   "all");
+	for (i = 0; i < suite->tests_cnt; i++) {
 		if (meta_type == IPA_UT_META_TEST_REGRESSION &&
-			!suite->tests[i].run_in_regression) {
-			pr_info(
-				"*** Test '%s': Skip - Not in regression ***\n\n"
-				, suite->tests[i].name);
+		    !suite->tests[i].run_in_regression) {
+			pr_info("*** Test '%s': Skip - Not in regression ***\n\n",
+				suite->tests[i].name);
 			suite->tests[i].res = IPA_UT_TEST_RES_SKIP;
 			continue;
 		}
 		if (suite->tests[i].min_ipa_hw_ver > ipa_ver ||
-			suite->tests[i].max_ipa_hw_ver < ipa_ver) {
-			pr_info(
-				"*** Test '%s': Skip - IPA VER mismatch ***\n\n"
-				, suite->tests[i].name);
+		    suite->tests[i].max_ipa_hw_ver < ipa_ver) {
+			pr_info("*** Test '%s': Skip - IPA VER mismatch ***\n\n",
+				suite->tests[i].name);
 			suite->tests[i].res = IPA_UT_TEST_RES_SKIP;
 			continue;
 		}
 		if (!suite->tests[i].run) {
-			pr_info(
-				"*** Test '%s': Skip - No Run function ***\n\n"
-				, suite->tests[i].name);
+			pr_info("*** Test '%s': Skip - No Run function ***\n\n",
+				suite->tests[i].name);
 			suite->tests[i].res = IPA_UT_TEST_RES_SKIP;
 			continue;
 		}
@@ -320,7 +316,7 @@ static void ipa_ut_dbgfs_meta_test_write_work_func(struct work_struct *work)
 		rc = suite->meta_data->teardown(suite->meta_data->priv);
 		if (rc) {
 			IPA_UT_ERR("Teardown failed for suite %s\n",
-				suite->meta_data->name);
+				   suite->meta_data->name);
 			rc = -EFAULT;
 			goto release_clock;
 		}
@@ -351,7 +347,8 @@ unlock_mutex:
  * Return: Negative if failure. Amount of characters written if success.
  */
 static ssize_t ipa_ut_dbgfs_meta_test_write(struct file *file,
-	const char __user *buf, size_t count, loff_t *ppos)
+					    const char __user *buf,
+					    size_t count, loff_t *ppos)
 {
 	struct ipa_ut_dbgfs_test_write_work_ctx *write_work_ctx;
 
@@ -365,7 +362,7 @@ static ssize_t ipa_ut_dbgfs_meta_test_write(struct file *file,
 	write_work_ctx->meta_type = (long)(file->private_data);
 
 	INIT_WORK(&write_work_ctx->dbgfs_work,
-		ipa_ut_dbgfs_meta_test_write_work_func);
+		  ipa_ut_dbgfs_meta_test_write_work_func);
 
 	queue_work(ipa_ut_ctx->wq, &write_work_ctx->dbgfs_work);
 
@@ -385,8 +382,8 @@ static ssize_t ipa_ut_dbgfs_meta_test_write(struct file *file,
  *
  * Return: Amount of characters written to user space buffer
  */
-static ssize_t ipa_ut_dbgfs_meta_test_read(struct file *file,
-	char __user *ubuf, size_t count, loff_t *ppos)
+static ssize_t ipa_ut_dbgfs_meta_test_read(struct file *file, char __user *ubuf,
+					   size_t count, loff_t *ppos)
 {
 	char *buf;
 	struct ipa_ut_suite *suite;
@@ -406,34 +403,34 @@ static ssize_t ipa_ut_dbgfs_meta_test_read(struct file *file,
 	buf = kmalloc(IPA_UT_DEBUG_READ_BUF_SIZE + 1, GFP_KERNEL);
 	if (!buf) {
 		IPA_UT_ERR("failed to allocate %d bytes\n",
-			IPA_UT_DEBUG_READ_BUF_SIZE + 1);
+			   IPA_UT_DEBUG_READ_BUF_SIZE + 1);
 		cnt = 0;
 		goto unlock_mutex;
 	}
 
 	if (meta_type == IPA_UT_META_TEST_ALL) {
-		nbytes = scnprintf(buf, IPA_UT_DEBUG_READ_BUF_SIZE,
+		nbytes = scnprintf(
+			buf, IPA_UT_DEBUG_READ_BUF_SIZE,
 			"\tMeta-test running all the tests in the suite:\n"
 			"\tSuite Name: %s\n"
 			"\tDescription: %s\n"
 			"\tNumber of test in suite: %zu\n",
-			suite->meta_data->name,
-			suite->meta_data->desc ?: "",
+			suite->meta_data->name, suite->meta_data->desc ?: "",
 			suite->tests_cnt);
 	} else {
-		nbytes = scnprintf(buf, IPA_UT_DEBUG_READ_BUF_SIZE,
+		nbytes = scnprintf(
+			buf, IPA_UT_DEBUG_READ_BUF_SIZE,
 			"\tMeta-test running regression tests in the suite:\n"
 			"\tSuite Name: %s\n"
 			"\tDescription: %s\n"
 			"\tRegression tests:\n",
-			suite->meta_data->name,
-			suite->meta_data->desc ?: "");
-		for (i = 0 ; i < suite->tests_cnt ; i++) {
+			suite->meta_data->name, suite->meta_data->desc ?: "");
+		for (i = 0; i < suite->tests_cnt; i++) {
 			if (!suite->tests[i].run_in_regression)
 				continue;
 			nbytes += scnprintf(buf + nbytes,
-				IPA_UT_DEBUG_READ_BUF_SIZE - nbytes,
-				"\t\t%s\n", suite->tests[i].name);
+					    IPA_UT_DEBUG_READ_BUF_SIZE - nbytes,
+					    "\t\t%s\n", suite->tests[i].name);
 		}
 	}
 
@@ -455,7 +452,7 @@ unlock_mutex:
  * Return: Zero (always success).
  */
 static int ipa_ut_dbgfs_regression_test_open(struct inode *inode,
-	struct file *filp)
+					     struct file *filp)
 {
 	IPA_UT_DBG("Entry\n");
 
@@ -472,8 +469,7 @@ static int ipa_ut_dbgfs_regression_test_open(struct inode *inode,
  *
  * Return: Zero (always success).
  */
-static int ipa_ut_dbgfs_all_test_open(struct inode *inode,
-	struct file *filp)
+static int ipa_ut_dbgfs_all_test_open(struct inode *inode, struct file *filp)
 {
 	IPA_UT_DBG("Entry\n");
 
@@ -508,8 +504,8 @@ static void ipa_ut_dbgfs_test_write_work_func(struct work_struct *work)
 	int rc = 0;
 	enum ipa_hw_type ipa_ver;
 
-	write_work_ctx = container_of(work, struct
-		ipa_ut_dbgfs_test_write_work_ctx, dbgfs_work);
+	write_work_ctx = container_of(
+		work, struct ipa_ut_dbgfs_test_write_work_ctx, dbgfs_work);
 
 	IPA_UT_DBG("Entry\n");
 
@@ -517,27 +513,25 @@ static void ipa_ut_dbgfs_test_write_work_func(struct work_struct *work)
 	test = (struct ipa_ut_test *)(write_work_ctx->user_data);
 	ipa_assert_on(!test);
 
-	_IPA_UT_TEST_LOG_BUF_NAME = kzalloc(_IPA_UT_TEST_LOG_BUF_SIZE,
-		GFP_KERNEL);
+	_IPA_UT_TEST_LOG_BUF_NAME =
+		kzalloc(_IPA_UT_TEST_LOG_BUF_SIZE, GFP_KERNEL);
 	if (!_IPA_UT_TEST_LOG_BUF_NAME) {
 		IPA_UT_ERR("failed to allocate %d bytes\n",
-			_IPA_UT_TEST_LOG_BUF_SIZE);
+			   _IPA_UT_TEST_LOG_BUF_SIZE);
 		rc = -ENOMEM;
 		goto unlock_mutex;
 	}
 
 	if (!test->run) {
-		IPA_UT_ERR("*** Test %s - No run func ***\n",
-			test->name);
+		IPA_UT_ERR("*** Test %s - No run func ***\n", test->name);
 		rc = -EFAULT;
 		goto free_mem;
 	}
 
 	ipa_ver = ipa_get_hw_type();
-	if (test->min_ipa_hw_ver > ipa_ver ||
-		test->max_ipa_hw_ver < ipa_ver) {
-		IPA_UT_ERR("Cannot run test %s on IPA HW Ver %s\n",
-			test->name, ipa_get_version_string(ipa_ver));
+	if (test->min_ipa_hw_ver > ipa_ver || test->max_ipa_hw_ver < ipa_ver) {
+		IPA_UT_ERR("Cannot run test %s on IPA HW Ver %s\n", test->name,
+			   ipa_get_version_string(ipa_ver));
 		rc = -EFAULT;
 		goto free_mem;
 	}
@@ -553,17 +547,17 @@ static void ipa_ut_dbgfs_test_write_work_func(struct work_struct *work)
 
 	if (suite->meta_data->setup) {
 		IPA_UT_DBG("*** Suite '%s': Run setup ***\n",
-			suite->meta_data->name);
+			   suite->meta_data->name);
 		rc = suite->meta_data->setup(&suite->meta_data->priv);
 		if (rc) {
 			IPA_UT_ERR("Setup failed for suite %s\n",
-				suite->meta_data->name);
+				   suite->meta_data->name);
 			rc = -EFAULT;
 			goto release_clock;
 		}
 	} else {
 		IPA_UT_DBG("*** Suite '%s': No Setup ***\n",
-			suite->meta_data->name);
+			   suite->meta_data->name);
 	}
 
 	IPA_UT_DBG("*** Test '%s': Running... ***\n", test->name);
@@ -582,17 +576,17 @@ static void ipa_ut_dbgfs_test_write_work_func(struct work_struct *work)
 
 	if (suite->meta_data->teardown) {
 		IPA_UT_DBG("*** Suite '%s': Run Teardown ***\n",
-			suite->meta_data->name);
+			   suite->meta_data->name);
 		rc = suite->meta_data->teardown(suite->meta_data->priv);
 		if (rc) {
 			IPA_UT_ERR("Teardown failed for suite %s\n",
-				suite->meta_data->name);
+				   suite->meta_data->name);
 			rc = -EFAULT;
 			goto release_clock;
 		}
 	} else {
 		IPA_UT_DBG("*** Suite '%s': No Teardown ***\n",
-			suite->meta_data->name);
+			   suite->meta_data->name);
 	}
 
 release_clock:
@@ -606,7 +600,8 @@ unlock_mutex:
 }
 
 static ssize_t ipa_ut_dbgfs_test_write(struct file *file,
-	const char __user *buf, size_t count, loff_t *ppos)
+				       const char __user *buf, size_t count,
+				       loff_t *ppos)
 {
 	struct ipa_ut_dbgfs_test_write_work_ctx *write_work_ctx;
 
@@ -620,7 +615,7 @@ static ssize_t ipa_ut_dbgfs_test_write(struct file *file,
 	write_work_ctx->meta_type = (long)(file->private_data);
 
 	INIT_WORK(&write_work_ctx->dbgfs_work,
-		ipa_ut_dbgfs_test_write_work_func);
+		  ipa_ut_dbgfs_test_write_work_func);
 
 	queue_work(ipa_ut_ctx->wq, &write_work_ctx->dbgfs_work);
 
@@ -635,7 +630,7 @@ static ssize_t ipa_ut_dbgfs_test_write(struct file *file,
  * Return: Amount of characters written to user space buffer
  */
 static ssize_t ipa_ut_dbgfs_test_read(struct file *file, char __user *ubuf,
-	size_t count, loff_t *ppos)
+				      size_t count, loff_t *ppos)
 {
 	char *buf;
 	struct ipa_ut_test *test;
@@ -651,12 +646,13 @@ static ssize_t ipa_ut_dbgfs_test_read(struct file *file, char __user *ubuf,
 	buf = kmalloc(IPA_UT_DEBUG_READ_BUF_SIZE, GFP_KERNEL);
 	if (!buf) {
 		IPA_UT_ERR("failed to allocate %d bytes\n",
-			IPA_UT_DEBUG_READ_BUF_SIZE);
+			   IPA_UT_DEBUG_READ_BUF_SIZE);
 		cnt = 0;
 		goto unlock_mutex;
 	}
 
-	nbytes = scnprintf(buf, IPA_UT_DEBUG_READ_BUF_SIZE,
+	nbytes = scnprintf(
+		buf, IPA_UT_DEBUG_READ_BUF_SIZE,
 		"\t Test Name: %s\n"
 		"\t Description: %s\n"
 		"\t Suite Name: %s\n"
@@ -665,7 +661,8 @@ static ssize_t ipa_ut_dbgfs_test_read(struct file *file, char __user *ubuf,
 		test->name, test->desc ?: "", test->suite->meta_data->name,
 		test->run_in_regression ? "Yes" : "No",
 		ipa_get_version_string(test->min_ipa_hw_ver),
-		test->max_ipa_hw_ver == IPA_HW_MAX ? "MAX" :
+		test->max_ipa_hw_ver == IPA_HW_MAX ?
+			"MAX" :
 			ipa_get_version_string(test->max_ipa_hw_ver));
 
 	if (nbytes > count)
@@ -700,7 +697,7 @@ static int ipa_ut_framework_load_suites(void)
 	IPA_UT_DBG("Entry\n");
 
 	for (suite_idx = IPA_UT_SUITE_FIRST_INDEX;
-		suite_idx < IPA_UT_SUITES_COUNT; suite_idx++) {
+	     suite_idx < IPA_UT_SUITES_COUNT; suite_idx++) {
 		suite = IPA_UT_GET_SUITE(suite_idx);
 
 		if (!suite->meta_data->name) {
@@ -709,18 +706,18 @@ static int ipa_ut_framework_load_suites(void)
 		}
 
 		s_dent = debugfs_create_dir(suite->meta_data->name,
-			ipa_ut_ctx->test_dbgfs_suites);
+					    ipa_ut_ctx->test_dbgfs_suites);
 
 		if (!s_dent || IS_ERR(s_dent)) {
 			IPA_UT_ERR("fail create dbg entry - suite %s\n",
-				suite->meta_data->name);
+				   suite->meta_data->name);
 			return -EFAULT;
 		}
 
-		for (tst_idx = 0; tst_idx < suite->tests_cnt ; tst_idx++) {
+		for (tst_idx = 0; tst_idx < suite->tests_cnt; tst_idx++) {
 			if (!suite->tests[tst_idx].name) {
 				IPA_UT_ERR("No test name on suite %s\n",
-					suite->meta_data->name);
+					   suite->meta_data->name);
 				return -EFAULT;
 			}
 			f_dent = debugfs_create_file(
@@ -730,31 +727,33 @@ static int ipa_ut_framework_load_suites(void)
 				&ipa_ut_dbgfs_test_fops);
 			if (!f_dent || IS_ERR(f_dent)) {
 				IPA_UT_ERR("fail create dbg entry - tst %s\n",
-					suite->tests[tst_idx].name);
+					   suite->tests[tst_idx].name);
 				return -EFAULT;
 			}
 		}
 
 		/* entry for meta-test all to run all tests in suites */
 		f_dent = debugfs_create_file(_IPA_UT_RUN_ALL_TEST_NAME,
-			IPA_UT_READ_WRITE_DBG_FILE_MODE, s_dent,
-			suite, &ipa_ut_dbgfs_all_test_fops);
+					     IPA_UT_READ_WRITE_DBG_FILE_MODE,
+					     s_dent, suite,
+					     &ipa_ut_dbgfs_all_test_fops);
 		if (!f_dent || IS_ERR(f_dent)) {
 			IPA_UT_ERR("fail to create dbg entry - %s\n",
-				_IPA_UT_RUN_ALL_TEST_NAME);
+				   _IPA_UT_RUN_ALL_TEST_NAME);
 			return -EFAULT;
 		}
 
 		/*
-		 * entry for meta-test regression to run all regression
-		 * tests in suites
-		 */
-		f_dent = debugfs_create_file(_IPA_UT_RUN_REGRESSION_TEST_NAME,
-			IPA_UT_READ_WRITE_DBG_FILE_MODE, s_dent,
-			suite, &ipa_ut_dbgfs_regression_test_fops);
+     * entry for meta-test regression to run all regression
+     * tests in suites
+     */
+		f_dent = debugfs_create_file(
+			_IPA_UT_RUN_REGRESSION_TEST_NAME,
+			IPA_UT_READ_WRITE_DBG_FILE_MODE, s_dent, suite,
+			&ipa_ut_dbgfs_regression_test_fops);
 		if (!f_dent || IS_ERR(f_dent)) {
 			IPA_UT_ERR("fail to create dbg entry - %s\n",
-				_IPA_UT_RUN_ALL_TEST_NAME);
+				   _IPA_UT_RUN_ALL_TEST_NAME);
 			return -EFAULT;
 		}
 	}
@@ -783,10 +782,10 @@ static int ipa_ut_framework_enable(void)
 		goto unlock_mutex;
 	}
 
-	ipa_ut_ctx->test_dbgfs_suites = debugfs_create_dir("suites",
-		ipa_ut_ctx->test_dbgfs_root);
+	ipa_ut_ctx->test_dbgfs_suites =
+		debugfs_create_dir("suites", ipa_ut_ctx->test_dbgfs_root);
 	if (!ipa_ut_ctx->test_dbgfs_suites ||
-		IS_ERR(ipa_ut_ctx->test_dbgfs_suites)) {
+	    IS_ERR(ipa_ut_ctx->test_dbgfs_suites)) {
 		IPA_UT_ERR("failed to create suites debugfs dir\n");
 		ret = -EFAULT;
 		goto unlock_mutex;
@@ -844,7 +843,8 @@ unlock_mutex:
  * Return: if failed then negative value, if succeeds, amount of given chars
  */
 static ssize_t ipa_ut_dbgfs_enable_write(struct file *file,
-	const char __user *buf, size_t count, loff_t *ppos)
+					 const char __user *buf, size_t count,
+					 loff_t *ppos)
 {
 	char lcl_buf[IPA_UT_DEBUG_WRITE_BUF_SIZE];
 	s8 option = 0;
@@ -885,19 +885,18 @@ static ssize_t ipa_ut_dbgfs_enable_write(struct file *file,
  * Return: amount of characters returned to user space
  */
 static ssize_t ipa_ut_dbgfs_enable_read(struct file *file, char __user *ubuf,
-	size_t count, loff_t *ppos)
+					size_t count, loff_t *ppos)
 {
 	const char *status;
 
 	IPA_UT_DBG("Entry\n");
 
 	mutex_lock(&ipa_ut_ctx->lock);
-	status = ipa_ut_ctx->enabled ?
-		"Enabled - Write 0 to disable\n" :
-		"Disabled - Write 1 to enable\n";
+	status = ipa_ut_ctx->enabled ? "Enabled - Write 0 to disable\n" :
+				       "Disabled - Write 1 to enable\n";
 	mutex_unlock(&ipa_ut_ctx->lock);
-	return simple_read_from_buffer(ubuf, count, ppos,
-		status, strlen(status));
+	return simple_read_from_buffer(ubuf, count, ppos, status,
+				       strlen(status));
 }
 
 /**
@@ -934,19 +933,19 @@ static int ipa_ut_framework_init(void)
 
 	/* tests needs to point to their corresponding suites structures */
 	for (suite_idx = IPA_UT_SUITE_FIRST_INDEX;
-		suite_idx < IPA_UT_SUITES_COUNT; suite_idx++) {
+	     suite_idx < IPA_UT_SUITES_COUNT; suite_idx++) {
 		suite = IPA_UT_GET_SUITE(suite_idx);
 		ipa_assert_on(!suite);
 		if (!suite->tests) {
 			IPA_UT_DBG("No tests for suite %s\n",
-				suite->meta_data->name);
+				   suite->meta_data->name);
 			continue;
 		}
 		for (test_idx = 0; test_idx < suite->tests_cnt; test_idx++) {
 			suite->tests[test_idx].suite = suite;
 			IPA_UT_DBG("Updating test %s info for suite %s\n",
-				suite->tests[test_idx].name,
-				suite->meta_data->name);
+				   suite->tests[test_idx].name,
+				   suite->meta_data->name);
 		}
 	}
 
@@ -957,10 +956,10 @@ static int ipa_ut_framework_init(void)
 		goto unlock_mutex;
 	}
 
-	ipa_ut_ctx->test_dbgfs_root = debugfs_create_dir("test",
-		ipa_ut_ctx->ipa_dbgfs_root);
+	ipa_ut_ctx->test_dbgfs_root =
+		debugfs_create_dir("test", ipa_ut_ctx->ipa_dbgfs_root);
 	if (!ipa_ut_ctx->test_dbgfs_root ||
-		IS_ERR(ipa_ut_ctx->test_dbgfs_root)) {
+	    IS_ERR(ipa_ut_ctx->test_dbgfs_root)) {
 		IPA_UT_ERR("failed to create test debugfs dir\n");
 		ret = -EFAULT;
 		destroy_workqueue(ipa_ut_ctx->wq);
@@ -968,8 +967,9 @@ static int ipa_ut_framework_init(void)
 	}
 
 	dfile_enable = debugfs_create_file("enable",
-		IPA_UT_READ_WRITE_DBG_FILE_MODE,
-		ipa_ut_ctx->test_dbgfs_root, 0, &ipa_ut_dbgfs_enable_fops);
+					   IPA_UT_READ_WRITE_DBG_FILE_MODE,
+					   ipa_ut_ctx->test_dbgfs_root, 0,
+					   &ipa_ut_dbgfs_enable_fops);
 	if (!dfile_enable || IS_ERR(dfile_enable)) {
 		IPA_UT_ERR("failed to create enable debugfs file\n");
 		ret = -EFAULT;
@@ -1050,24 +1050,24 @@ int ipa_ut_module_init(void)
 		ret = ipa_register_ipa_ready_cb(ipa_ut_ipa_ready_cb, NULL);
 
 		/*
-		 * If the call to ipa_register_ipa_ready_cb() above
-		 * returns 0, this means that we've succeeded in
-		 * queuing up a future call to ipa_ut_framework_init()
-		 * and that the call to it will be made once the IPA
-		 * becomes ready.  If this is the case, the call to
-		 * ipa_ut_framework_init() below need not be made.
-		 *
-		 * If the call to ipa_register_ipa_ready_cb() above
-		 * returns -EEXIST, it means that during the call to
-		 * ipa_register_ipa_ready_cb(), the IPA has become
-		 * ready, and hence, no indirect call to
-		 * ipa_ut_framework_init() will be made, so we need to
-		 * call it ourselves below.
-		 *
-		 * If the call to ipa_register_ipa_ready_cb() above
-		 * return something other than 0 or -EEXIST, that's a
-		 * hard error.
-		 */
+     * If the call to ipa_register_ipa_ready_cb() above
+     * returns 0, this means that we've succeeded in
+     * queuing up a future call to ipa_ut_framework_init()
+     * and that the call to it will be made once the IPA
+     * becomes ready.  If this is the case, the call to
+     * ipa_ut_framework_init() below need not be made.
+     *
+     * If the call to ipa_register_ipa_ready_cb() above
+     * returns -EEXIST, it means that during the call to
+     * ipa_register_ipa_ready_cb(), the IPA has become
+     * ready, and hence, no indirect call to
+     * ipa_ut_framework_init() will be made, so we need to
+     * call it ourselves below.
+     *
+     * If the call to ipa_register_ipa_ready_cb() above
+     * return something other than 0 or -EEXIST, that's a
+     * hard error.
+     */
 		if (ret == -EEXIST) {
 			init_framewok = true;
 		} else {
@@ -1108,4 +1108,3 @@ void ipa_ut_module_exit(void)
 	kfree(ipa_ut_ctx);
 	ipa_ut_ctx = NULL;
 }
-

@@ -25,11 +25,11 @@
  */
 
 /* Include Files */
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_lpass.h"
+#include "qwlan_version.h"
+#include "wlan_hdd_main.h"
 #include "wlan_hdd_oemdata.h"
 #include <cds_utils.h>
-#include "qwlan_version.h"
 
 /**
  * wlan_hdd_get_channel_info() - Get channel info
@@ -47,8 +47,8 @@ static void wlan_hdd_get_channel_info(struct hdd_context *hdd_ctx,
 	uint32_t reg_info_2;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 
-	status = sme_get_reg_info(hdd_ctx->mac_handle, chan_freq,
-				  &reg_info_1, &reg_info_2);
+	status = sme_get_reg_info(hdd_ctx->mac_handle, chan_freq, &reg_info_1,
+				  &reg_info_2);
 	if (status != QDF_STATUS_SUCCESS)
 		return;
 
@@ -59,10 +59,8 @@ static void wlan_hdd_get_channel_info(struct hdd_context *hdd_ctx,
 	if (CHANNEL_STATE_DFS ==
 	    wlan_reg_get_channel_state_for_pwrmode(hdd_ctx->pdev, chan_freq,
 						   REG_CURRENT_PWR_MODE))
-		WMI_SET_CHANNEL_FLAG(chan_info,
-				     WMI_CHAN_FLAG_DFS);
-	hdd_update_channel_bw_info(hdd_ctx, chan_freq,
-				   chan_info);
+		WMI_SET_CHANNEL_FLAG(chan_info, WMI_CHAN_FLAG_DFS);
+	hdd_update_channel_bw_info(hdd_ctx, chan_freq, chan_info);
 	chan_info->reg_info_1 = reg_info_1;
 	chan_info->reg_info_2 = reg_info_2;
 }
@@ -140,16 +138,15 @@ static int wlan_hdd_gen_wlan_status_pack(struct wlan_status_data *data,
 		    wlan_reg_is_6ghz_chan_freq(chan_freq_list[i]))
 			continue;
 
-		chan_id = wlan_reg_freq_to_chan(hdd_ctx->pdev,
-						chan_freq_list[i]);
+		chan_id =
+			wlan_reg_freq_to_chan(hdd_ctx->pdev, chan_freq_list[i]);
 		if (!chan_id)
 			continue;
 
 		chan_info = &data->channel_info[data->numChannels];
 		data->channel_list[data->numChannels] = chan_id;
 		chan_info->chan_id = chan_id;
-		wlan_hdd_get_channel_info(hdd_ctx,
-					  chan_info,
+		wlan_hdd_get_channel_info(hdd_ctx, chan_info,
 					  chan_freq_list[i]);
 		data->numChannels++;
 	}
@@ -167,8 +164,7 @@ static int wlan_hdd_gen_wlan_status_pack(struct wlan_status_data *data,
 		if (WLAN_SVC_MAX_SSID_LEN >=
 		    sta_ctx->conn_info.ssid.SSID.length) {
 			data->ssid_len = sta_ctx->conn_info.ssid.SSID.length;
-			memcpy(data->ssid,
-			       sta_ctx->conn_info.ssid.SSID.ssId,
+			memcpy(data->ssid, sta_ctx->conn_info.ssid.SSID.ssId,
 			       sta_ctx->conn_info.ssid.SSID.length);
 		}
 		if (QDF_MAC_ADDR_SIZE >= sizeof(sta_ctx->conn_info.bssid))
@@ -192,8 +188,7 @@ static int wlan_hdd_gen_wlan_status_pack(struct wlan_status_data *data,
  * Return: 0 if package was created, otherwise a negative errno
  */
 static int wlan_hdd_gen_wlan_version_pack(struct wlan_version_data *data,
-					  uint32_t fw_version,
-					  uint32_t chip_id,
+					  uint32_t fw_version, uint32_t chip_id,
 					  const char *chip_name)
 {
 	if (!data) {
@@ -210,8 +205,8 @@ static int wlan_hdd_gen_wlan_version_pack(struct wlan_version_data *data,
 	strlcpy(data->host_version, QWLAN_VERSIONSTR, WLAN_SVC_MAX_STR_LEN);
 	scnprintf(data->fw_version, WLAN_SVC_MAX_STR_LEN, "%d.%d.%d.%d",
 		  (fw_version & 0xf0000000) >> 28,
-		  (fw_version & 0xf000000) >> 24,
-		  (fw_version & 0xf00000) >> 20, (fw_version & 0x7fff));
+		  (fw_version & 0xf000000) >> 24, (fw_version & 0xf00000) >> 20,
+		  (fw_version & 0x7fff));
 	return 0;
 }
 
@@ -246,14 +241,13 @@ static void wlan_hdd_send_status_pkg(struct wlan_hdd_link_info *link_info,
 		return;
 
 	if (is_on)
-		ret = wlan_hdd_gen_wlan_status_pack(data, link_info,
-						    sta_ctx, is_on,
-						    is_connected);
+		ret = wlan_hdd_gen_wlan_status_pack(data, link_info, sta_ctx,
+						    is_on, is_connected);
 
 	if (!ret)
 		wlan_hdd_send_svc_nlink_msg(hdd_ctx->radio_index,
-					    WLAN_SVC_WLAN_STATUS_IND,
-					    data, sizeof(*data));
+					    WLAN_SVC_WLAN_STATUS_IND, data,
+					    sizeof(*data));
 	kfree(data);
 }
 
@@ -268,8 +262,7 @@ static void wlan_hdd_send_status_pkg(struct wlan_hdd_link_info *link_info,
  *
  * Return: none
  */
-static void wlan_hdd_send_version_pkg(uint32_t fw_version,
-				      uint32_t chip_id,
+static void wlan_hdd_send_version_pkg(uint32_t fw_version, uint32_t chip_id,
 				      const char *chip_name)
 {
 	int ret = 0;
@@ -287,8 +280,8 @@ static void wlan_hdd_send_version_pkg(uint32_t fw_version,
 					     chip_name);
 	if (!ret)
 		wlan_hdd_send_svc_nlink_msg(hdd_ctx->radio_index,
-					WLAN_SVC_WLAN_VERSION_IND,
-					    &data, sizeof(data));
+					    WLAN_SVC_WLAN_VERSION_IND, &data,
+					    sizeof(data));
 }
 
 /**

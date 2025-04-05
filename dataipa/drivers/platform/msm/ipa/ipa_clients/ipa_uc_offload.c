@@ -4,49 +4,49 @@
  */
 
 #include "ipa_uc_offload.h"
-#include <linux/msm_ipa.h>
-#include <linux/if_vlan.h>
 #include "ipa_common_i.h"
 #include "ipa_pm.h"
+#include <linux/if_vlan.h>
+#include <linux/msm_ipa.h>
 
 #define IPA_NTN_DMA_POOL_ALIGNMENT 8
 #define OFFLOAD_DRV_NAME "ipa_uc_offload"
-#define IPA_UC_OFFLOAD_DBG(fmt, args...) \
-	do { \
-		pr_debug(OFFLOAD_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_UC_OFFLOAD_DBG(fmt, args...)                                     \
+	do {                                                                 \
+		pr_debug(OFFLOAD_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                       \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);     \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                   \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-#define IPA_UC_OFFLOAD_LOW(fmt, args...) \
-	do { \
-		pr_debug(OFFLOAD_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_UC_OFFLOAD_LOW(fmt, args...)                                     \
+	do {                                                                 \
+		pr_debug(OFFLOAD_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                   \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-#define IPA_UC_OFFLOAD_ERR(fmt, args...) \
-	do { \
-		pr_err(OFFLOAD_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_UC_OFFLOAD_ERR(fmt, args...)                                   \
+	do {                                                               \
+		pr_err(OFFLOAD_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+		       ##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                     \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);   \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                 \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);   \
 	} while (0)
 
-#define IPA_UC_OFFLOAD_INFO(fmt, args...) \
-	do { \
-		pr_info(OFFLOAD_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			OFFLOAD_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_UC_OFFLOAD_INFO(fmt, args...)                                   \
+	do {                                                                \
+		pr_info(OFFLOAD_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                      \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);    \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                  \
+				OFFLOAD_DRV_NAME " %s:%d " fmt, ##args);    \
 	} while (0)
 
 enum ipa_uc_offload_state {
@@ -70,11 +70,9 @@ struct ipa_uc_offload_ctx {
 
 static struct ipa_uc_offload_ctx *ipa_uc_offload_ctx[IPA_UC_MAX_PROT_SIZE];
 
-
-static int ipa_commit_partial_hdr(
-	struct ipa_ioc_add_hdr *hdr,
-	const char *netdev_name,
-	struct ipa_hdr_info *hdr_info)
+static int ipa_commit_partial_hdr(struct ipa_ioc_add_hdr *hdr,
+				  const char *netdev_name,
+				  struct ipa_hdr_info *hdr_info)
 {
 	int i;
 
@@ -86,10 +84,10 @@ static int ipa_commit_partial_hdr(
 	hdr->commit = 0;
 	hdr->num_hdrs = 2;
 
-	snprintf(hdr->hdr[0].name, sizeof(hdr->hdr[0].name),
-			 "%s_ipv4", netdev_name);
-	snprintf(hdr->hdr[1].name, sizeof(hdr->hdr[1].name),
-			 "%s_ipv6", netdev_name);
+	snprintf(hdr->hdr[0].name, sizeof(hdr->hdr[0].name), "%s_ipv4",
+		 netdev_name);
+	snprintf(hdr->hdr[1].name, sizeof(hdr->hdr[1].name), "%s_ipv6",
+		 netdev_name);
 	for (i = IPA_IP_v4; i < IPA_IP_MAX; i++) {
 		hdr->hdr[i].hdr_len = hdr_info[i].hdr_len;
 		memcpy(hdr->hdr[i].hdr, hdr_info[i].hdr, hdr->hdr[i].hdr_len);
@@ -113,8 +111,8 @@ static void ipa_uc_offload_ntn_pm_cb(void *p, enum ipa_pm_cb_event event)
 	IPA_UC_OFFLOAD_DBG("event = %d\n", event);
 }
 
-static int ipa_uc_offload_ntn_register_pm_client(
-	struct ipa_uc_offload_ctx *ntn_ctx)
+static int
+ipa_uc_offload_ntn_register_pm_client(struct ipa_uc_offload_ctx *ntn_ctx)
 {
 	int res;
 	struct ipa_pm_register_params params;
@@ -134,14 +132,14 @@ static int ipa_uc_offload_ntn_register_pm_client(
 		return res;
 	}
 	if (ntn_ctx->proto == IPA_UC_NTN_V2X)
-		res = ipa_pm_associate_ipa_cons_to_client(ntn_ctx->pm_hdl,
-			IPA_CLIENT_ETHERNET2_CONS);
+		res = ipa_pm_associate_ipa_cons_to_client(
+			ntn_ctx->pm_hdl, IPA_CLIENT_ETHERNET2_CONS);
 	else
-		res = ipa_pm_associate_ipa_cons_to_client(ntn_ctx->pm_hdl,
-			IPA_CLIENT_ETHERNET_CONS);
+		res = ipa_pm_associate_ipa_cons_to_client(
+			ntn_ctx->pm_hdl, IPA_CLIENT_ETHERNET_CONS);
 	if (res) {
-		IPA_UC_OFFLOAD_ERR("fail to associate. PM (%d) Prot: %d\n",
-			res, ntn_ctx->proto);
+		IPA_UC_OFFLOAD_ERR("fail to associate. PM (%d) Prot: %d\n", res,
+				   ntn_ctx->proto);
 		ipa_pm_deregister(ntn_ctx->pm_hdl);
 		ntn_ctx->pm_hdl = ~0;
 		return res;
@@ -150,17 +148,16 @@ static int ipa_uc_offload_ntn_register_pm_client(
 	return 0;
 }
 
-static void ipa_uc_offload_ntn_deregister_pm_client(
-	struct ipa_uc_offload_ctx *ntn_ctx)
+static void
+ipa_uc_offload_ntn_deregister_pm_client(struct ipa_uc_offload_ctx *ntn_ctx)
 {
 	ipa_pm_deactivate_sync(ntn_ctx->pm_hdl);
 	ipa_pm_deregister(ntn_ctx->pm_hdl);
 }
 
-static int ipa_uc_offload_ntn_reg_intf(
-	struct ipa_uc_offload_intf_params *inp,
-	struct ipa_uc_offload_out_params *outp,
-	struct ipa_uc_offload_ctx *ntn_ctx)
+static int ipa_uc_offload_ntn_reg_intf(struct ipa_uc_offload_intf_params *inp,
+				       struct ipa_uc_offload_out_params *outp,
+				       struct ipa_uc_offload_ctx *ntn_ctx)
 {
 	struct ipa_ioc_add_hdr *hdr = NULL;
 	struct ipa_tx_intf tx;
@@ -172,7 +169,7 @@ static int ipa_uc_offload_ntn_reg_intf(
 	bool is_vlan_mode;
 
 	IPA_UC_OFFLOAD_DBG("register interface for netdev %s\n",
-					 inp->netdev_name);
+			   inp->netdev_name);
 	ret = ipa_uc_offload_ntn_register_pm_client(ntn_ctx);
 	if (ret) {
 		IPA_UC_OFFLOAD_ERR("fail to register PM client\n");
@@ -199,31 +196,28 @@ static int ipa_uc_offload_ntn_reg_intf(
 
 	if (is_vlan_mode) {
 		if ((inp->hdr_info[0].hdr_type != IPA_HDR_L2_802_1Q) ||
-			(inp->hdr_info[1].hdr_type != IPA_HDR_L2_802_1Q)) {
-			IPA_UC_OFFLOAD_ERR(
-				"hdr_type mismatch in vlan mode\n");
+		    (inp->hdr_info[1].hdr_type != IPA_HDR_L2_802_1Q)) {
+			IPA_UC_OFFLOAD_ERR("hdr_type mismatch in vlan mode\n");
 			WARN_ON_RATELIMIT_IPA(1);
 			ret = -EFAULT;
 			goto fail;
 		}
 		IPA_UC_OFFLOAD_DBG("vlan HEADER type compatible\n");
 
-		if ((inp->hdr_info[0].hdr_len <
-			(ETH_HLEN + VLAN_HLEN)) ||
-			(inp->hdr_info[1].hdr_len <
-			(ETH_HLEN + VLAN_HLEN))) {
+		if ((inp->hdr_info[0].hdr_len < (ETH_HLEN + VLAN_HLEN)) ||
+		    (inp->hdr_info[1].hdr_len < (ETH_HLEN + VLAN_HLEN))) {
 			IPA_UC_OFFLOAD_ERR(
-				"hdr_len shorter than vlan len (%u) (%u)\n"
-				, inp->hdr_info[0].hdr_len
-				, inp->hdr_info[1].hdr_len);
+				"hdr_len shorter than vlan len (%u) (%u)\n",
+				inp->hdr_info[0].hdr_len,
+				inp->hdr_info[1].hdr_len);
 			WARN_ON_RATELIMIT_IPA(1);
 			ret = -EFAULT;
 			goto fail;
 		}
 
 		IPA_UC_OFFLOAD_DBG("vlan HEADER len compatible (%u) (%u)\n",
-			inp->hdr_info[0].hdr_len,
-			inp->hdr_info[1].hdr_len);
+				   inp->hdr_info[0].hdr_len,
+				   inp->hdr_info[1].hdr_len);
 	}
 
 	if (ipa_commit_partial_hdr(hdr, ntn_ctx->netdev_name, inp->hdr_info)) {
@@ -241,13 +235,13 @@ static int ipa_uc_offload_ntn_reg_intf(
 	tx_prop[0].dst_pipe = IPA_CLIENT_ETHERNET_CONS;
 	tx_prop[0].hdr_l2_type = inp->hdr_info[0].hdr_type;
 	memcpy(tx_prop[0].hdr_name, hdr->hdr[IPA_IP_v4].name,
-		sizeof(tx_prop[0].hdr_name));
+	       sizeof(tx_prop[0].hdr_name));
 
 	tx_prop[1].ip = IPA_IP_v6;
 	tx_prop[1].dst_pipe = IPA_CLIENT_ETHERNET_CONS;
 	tx_prop[1].hdr_l2_type = inp->hdr_info[1].hdr_type;
 	memcpy(tx_prop[1].hdr_name, hdr->hdr[IPA_IP_v6].name,
-		sizeof(tx_prop[1].hdr_name));
+	       sizeof(tx_prop[1].hdr_name));
 
 	/* populate rx prop */
 	rx.num_props = 2;
@@ -294,21 +288,20 @@ fail_alloc:
 	return ret;
 }
 
-int ipa_uc_offload_reg_intf(
-	struct ipa_uc_offload_intf_params *inp,
-	struct ipa_uc_offload_out_params *outp)
+int ipa_uc_offload_reg_intf(struct ipa_uc_offload_intf_params *inp,
+			    struct ipa_uc_offload_out_params *outp)
 {
 	struct ipa_uc_offload_ctx *ctx;
 	int ret = 0;
 
 	if (inp == NULL || outp == NULL) {
-		IPA_UC_OFFLOAD_ERR("invalid params in=%pK out=%pK\n",
-			inp, outp);
+		IPA_UC_OFFLOAD_ERR("invalid params in=%pK out=%pK\n", inp,
+				   outp);
 		return -EINVAL;
 	}
 
 	if (inp->proto <= IPA_UC_INVALID ||
-		inp->proto >= IPA_UC_MAX_PROT_SIZE) {
+	    inp->proto >= IPA_UC_MAX_PROT_SIZE) {
 		IPA_UC_OFFLOAD_ERR("invalid proto %d\n", inp->proto);
 		return -EINVAL;
 	}
@@ -340,7 +333,7 @@ int ipa_uc_offload_reg_intf(
 	if (ctx->proto == IPA_UC_NTN_V2X) {
 		/* always in vlan mode */
 		IPA_UC_OFFLOAD_INFO("v2x hdr_len %d\n",
-			inp->hdr_info[0].hdr_len);
+				    inp->hdr_info[0].hdr_len);
 		ctx->hdr_len = inp->hdr_info[0].hdr_len;
 		ret = ipa_uc_offload_ntn_register_pm_client(ctx);
 		if (!ret)
@@ -355,9 +348,8 @@ int ipa_uc_offload_reg_intf(
 }
 EXPORT_SYMBOL(ipa_uc_offload_reg_intf);
 
-
 static int ipa_uc_ntn_alloc_conn_smmu_info(struct ipa_ntn_setup_info *dest,
-	struct ipa_ntn_setup_info *source)
+					   struct ipa_ntn_setup_info *source)
 {
 	int result;
 
@@ -365,27 +357,27 @@ static int ipa_uc_ntn_alloc_conn_smmu_info(struct ipa_ntn_setup_info *dest,
 
 	memcpy(dest, source, sizeof(struct ipa_ntn_setup_info));
 
-	dest->data_buff_list =
-		kcalloc(dest->num_buffers, sizeof(struct ntn_buff_smmu_map),
-			GFP_KERNEL);
+	dest->data_buff_list = kcalloc(dest->num_buffers,
+				       sizeof(struct ntn_buff_smmu_map),
+				       GFP_KERNEL);
 	if (dest->data_buff_list == NULL) {
 		IPA_UC_OFFLOAD_ERR("failed to alloc smmu info\n");
 		return -ENOMEM;
 	}
 
 	memcpy(dest->data_buff_list, source->data_buff_list,
-		sizeof(struct ntn_buff_smmu_map) * dest->num_buffers);
+	       sizeof(struct ntn_buff_smmu_map) * dest->num_buffers);
 
 	result = ipa_smmu_store_sgt(&dest->buff_pool_base_sgt,
-		source->buff_pool_base_sgt);
+				    source->buff_pool_base_sgt);
 	if (result) {
 		kfree(dest->data_buff_list);
 		dest->data_buff_list = NULL;
 		return result;
 	}
 
-	result = ipa_smmu_store_sgt(&dest->ring_base_sgt,
-		source->ring_base_sgt);
+	result =
+		ipa_smmu_store_sgt(&dest->ring_base_sgt, source->ring_base_sgt);
 	if (result) {
 		kfree(dest->data_buff_list);
 		dest->data_buff_list = NULL;
@@ -405,8 +397,8 @@ static void ipa_uc_ntn_free_conn_smmu_info(struct ipa_ntn_setup_info *params)
 }
 
 int ipa_uc_ntn_conn_pipes(struct ipa_ntn_conn_in_params *inp,
-			struct ipa_ntn_conn_out_params *outp,
-			struct ipa_uc_offload_ctx *ntn_ctx)
+			  struct ipa_ntn_conn_out_params *outp,
+			  struct ipa_uc_offload_ctx *ntn_ctx)
 {
 	int result = 0;
 	enum ipa_uc_offload_state prev_state;
@@ -418,12 +410,12 @@ int ipa_uc_ntn_conn_pipes(struct ipa_ntn_conn_in_params *inp,
 
 	prev_state = ntn_ctx->state;
 	if (inp->dl.ring_base_pa % IPA_NTN_DMA_POOL_ALIGNMENT ||
-		inp->dl.buff_pool_base_pa % IPA_NTN_DMA_POOL_ALIGNMENT) {
+	    inp->dl.buff_pool_base_pa % IPA_NTN_DMA_POOL_ALIGNMENT) {
 		IPA_UC_OFFLOAD_ERR("alignment failure on TX\n");
 		return -EINVAL;
 	}
 	if (inp->ul.ring_base_pa % IPA_NTN_DMA_POOL_ALIGNMENT ||
-		inp->ul.buff_pool_base_pa % IPA_NTN_DMA_POOL_ALIGNMENT) {
+	    inp->ul.buff_pool_base_pa % IPA_NTN_DMA_POOL_ALIGNMENT) {
 		IPA_UC_OFFLOAD_ERR("alignment failure on RX\n");
 		return -EINVAL;
 	}
@@ -435,11 +427,11 @@ int ipa_uc_ntn_conn_pipes(struct ipa_ntn_conn_in_params *inp,
 	}
 
 	ntn_ctx->state = IPA_UC_OFFLOAD_STATE_UP;
-	result = ipa3_setup_uc_ntn_pipes(inp, ntn_ctx->notify,
-		ntn_ctx->priv, ntn_ctx->hdr_len, outp);
+	result = ipa3_setup_uc_ntn_pipes(inp, ntn_ctx->notify, ntn_ctx->priv,
+					 ntn_ctx->hdr_len, outp);
 	if (result) {
 		IPA_UC_OFFLOAD_ERR("fail to setup uc offload pipes: %d\n",
-				result);
+				   result);
 		ntn_ctx->state = prev_state;
 		result = -EFAULT;
 		goto fail;
@@ -447,13 +439,13 @@ int ipa_uc_ntn_conn_pipes(struct ipa_ntn_conn_in_params *inp,
 
 	if (ntn_ctx->conn.dl.smmu_enabled) {
 		result = ipa_uc_ntn_alloc_conn_smmu_info(&ntn_ctx->conn.dl,
-			&inp->dl);
+							 &inp->dl);
 		if (result) {
 			IPA_UC_OFFLOAD_ERR("alloc failure on TX\n");
 			goto fail;
 		}
 		result = ipa_uc_ntn_alloc_conn_smmu_info(&ntn_ctx->conn.ul,
-			&inp->ul);
+							 &inp->ul);
 		if (result) {
 			ipa_uc_ntn_free_conn_smmu_info(&ntn_ctx->conn.dl);
 			IPA_UC_OFFLOAD_ERR("alloc failure on RX\n");
@@ -466,7 +458,7 @@ fail:
 }
 
 int ipa_uc_offload_conn_pipes(struct ipa_uc_offload_conn_in_params *inp,
-			struct ipa_uc_offload_conn_out_params *outp)
+			      struct ipa_uc_offload_conn_out_params *outp)
 {
 	int ret = 0;
 	struct ipa_uc_offload_ctx *offload_ctx;
@@ -477,9 +469,9 @@ int ipa_uc_offload_conn_pipes(struct ipa_uc_offload_conn_in_params *inp,
 	}
 
 	if (inp->clnt_hndl <= IPA_UC_INVALID ||
-		inp->clnt_hndl >= IPA_UC_MAX_PROT_SIZE) {
+	    inp->clnt_hndl >= IPA_UC_MAX_PROT_SIZE) {
 		IPA_UC_OFFLOAD_ERR("invalid client handle %d\n",
-						   inp->clnt_hndl);
+				   inp->clnt_hndl);
 		return -EINVAL;
 	}
 
@@ -498,7 +490,7 @@ int ipa_uc_offload_conn_pipes(struct ipa_uc_offload_conn_in_params *inp,
 	case IPA_UC_NTN_V2X:
 	case IPA_UC_NTN:
 		ret = ipa_uc_ntn_conn_pipes(&inp->u.ntn, &outp->u.ntn,
-						offload_ctx);
+					    offload_ctx);
 		break;
 
 	default:
@@ -524,8 +516,7 @@ static int ipa_uc_ntn_disconn_pipes(struct ipa_uc_offload_ctx *ntn_ctx)
 	ntn_ctx->state = IPA_UC_OFFLOAD_STATE_INITIALIZED;
 	ret = ipa_pm_deactivate_sync(ntn_ctx->pm_hdl);
 	if (ret) {
-		IPA_UC_OFFLOAD_ERR("fail to deactivate res: %d\n",
-			ret);
+		IPA_UC_OFFLOAD_ERR("fail to deactivate res: %d\n", ret);
 		return -EFAULT;
 	}
 
@@ -537,10 +528,10 @@ static int ipa_uc_ntn_disconn_pipes(struct ipa_uc_offload_ctx *ntn_ctx)
 		ipa_ep_idx_dl = ipa_get_ep_mapping(IPA_CLIENT_ETHERNET_CONS);
 	}
 	ret = ipa3_tear_down_uc_offload_pipes(ipa_ep_idx_ul, ipa_ep_idx_dl,
-		&ntn_ctx->conn);
+					      &ntn_ctx->conn);
 	if (ret) {
 		IPA_UC_OFFLOAD_ERR("fail to tear down ntn offload pipes, %d\n",
-			ret);
+				   ret);
 		return -EFAULT;
 	}
 	if (ntn_ctx->conn.dl.smmu_enabled) {
@@ -556,8 +547,7 @@ int ipa_uc_offload_disconn_pipes(u32 clnt_hdl)
 	struct ipa_uc_offload_ctx *offload_ctx;
 	int ret = 0;
 
-	if (clnt_hdl <= IPA_UC_INVALID ||
-		clnt_hdl >= IPA_UC_MAX_PROT_SIZE) {
+	if (clnt_hdl <= IPA_UC_INVALID || clnt_hdl >= IPA_UC_MAX_PROT_SIZE) {
 		IPA_UC_OFFLOAD_ERR("Invalid client handle %d\n", clnt_hdl);
 		return -EINVAL;
 	}
@@ -628,8 +618,7 @@ int ipa_uc_offload_cleanup(u32 clnt_hdl)
 	struct ipa_uc_offload_ctx *offload_ctx;
 	int ret = 0;
 
-	if (clnt_hdl <= IPA_UC_INVALID ||
-		clnt_hdl >= IPA_UC_MAX_PROT_SIZE) {
+	if (clnt_hdl <= IPA_UC_INVALID || clnt_hdl >= IPA_UC_MAX_PROT_SIZE) {
 		IPA_UC_OFFLOAD_ERR("Invalid client handle %d\n", clnt_hdl);
 		return -EINVAL;
 	}
@@ -717,17 +706,15 @@ int ipa_set_perf_profile(struct ipa_perf_profile *profile)
 	}
 
 	if (profile->client != IPA_CLIENT_ETHERNET_PROD &&
-		profile->client != IPA_CLIENT_ETHERNET_CONS) {
+	    profile->client != IPA_CLIENT_ETHERNET_CONS) {
 		IPA_UC_OFFLOAD_ERR("not supported\n");
 		return -EINVAL;
 	}
 
 	IPA_UC_OFFLOAD_DBG("setting throughput to %d\n",
-		profile->max_supported_bw_mbps);
+			   profile->max_supported_bw_mbps);
 
-	return ipa_pm_set_throughput(
-		ipa_uc_offload_ctx[IPA_UC_NTN]->pm_hdl,
-		profile->max_supported_bw_mbps);
+	return ipa_pm_set_throughput(ipa_uc_offload_ctx[IPA_UC_NTN]->pm_hdl,
+				     profile->max_supported_bw_mbps);
 }
 EXPORT_SYMBOL(ipa_set_perf_profile);
-

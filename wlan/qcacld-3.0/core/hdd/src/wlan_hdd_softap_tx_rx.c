@@ -21,41 +21,40 @@
 #define HDD_DISALLOW_LEGACY_HDDLOG 1
 
 /* Include files */
-#include <linux/semaphore.h>
-#include "osif_sync.h"
-#include <wlan_hdd_tx_rx.h>
-#include <wlan_hdd_softap_tx_rx.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
-#include <linux/etherdevice.h>
-#include <qdf_types.h>
-#include <ani_global.h>
-#include <qdf_types.h>
-#include <net/ieee80211_radiotap.h>
-#include <cds_sched.h>
-#include <cdp_txrx_cmn.h>
-#include <cdp_txrx_peer_ops.h>
-#include <cds_utils.h>
-#include <cdp_txrx_flow_ctrl_v2.h>
-#include <cdp_txrx_misc.h>
-#include <wlan_hdd_object_manager.h>
-#include "wlan_p2p_ucfg_api.h"
-#include <wlan_hdd_regulatory.h>
-#include "wlan_ipa_ucfg_api.h"
-#include "wlan_dp_ucfg_api.h"
-#include "wlan_policy_mgr_ucfg.h"
-#include <wma_types.h>
-#include "wlan_hdd_sta_info.h"
 #include "ol_defines.h"
-#include <wlan_hdd_sar_limits.h>
+#include "osif_sync.h"
+#include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_sta_info.h"
 #include "wlan_hdd_tsf.h"
 #include "wlan_hdd_wds.h"
+#include "wlan_ipa_ucfg_api.h"
+#include "wlan_p2p_ucfg_api.h"
+#include "wlan_policy_mgr_ucfg.h"
+#include <ani_global.h>
+#include <cdp_txrx_cmn.h>
 #include <cdp_txrx_ctrl.h>
+#include <cdp_txrx_flow_ctrl_v2.h>
+#include <cdp_txrx_misc.h>
+#include <cdp_txrx_peer_ops.h>
+#include <cds_sched.h>
+#include <cds_utils.h>
+#include <linux/etherdevice.h>
+#include <linux/netdevice.h>
+#include <linux/semaphore.h>
+#include <linux/skbuff.h>
+#include <net/ieee80211_radiotap.h>
+#include <qdf_types.h>
+#include <wlan_hdd_object_manager.h>
+#include <wlan_hdd_regulatory.h>
+#include <wlan_hdd_sar_limits.h>
+#include <wlan_hdd_softap_tx_rx.h>
+#include <wlan_hdd_tx_rx.h>
+#include <wma_types.h>
 #ifdef FEATURE_WDS
 #include <net/llc_pdu.h>
 #endif
-#include <os_if_dp.h>
 #include <cfg_ucfg_api.h>
+#include <os_if_dp.h>
 #include <wlan_twt_ucfg_ext_api.h>
 
 /* Preprocessor definitions and constants */
@@ -79,7 +78,7 @@ struct l2_update_frame {
 #ifdef QCA_LL_LEGACY_TX_FLOW_CONTROL
 void hdd_softap_tx_resume_timer_expired_handler(void *adapter_context)
 {
-	struct hdd_adapter *adapter = (struct hdd_adapter *) adapter_context;
+	struct hdd_adapter *adapter = (struct hdd_adapter *)adapter_context;
 
 	if (!adapter) {
 		hdd_err("NULL adapter");
@@ -99,8 +98,8 @@ void hdd_softap_tx_resume_timer_expired_handler(void *adapter_context)
  *
  * Return: None
  */
-static void
-hdd_softap_tx_resume_false(struct hdd_adapter *adapter, bool tx_resume)
+static void hdd_softap_tx_resume_false(struct hdd_adapter *adapter,
+				       bool tx_resume)
 {
 	QDF_STATUS status;
 	qdf_mc_timer_t *fc_timer;
@@ -116,8 +115,8 @@ hdd_softap_tx_resume_false(struct hdd_adapter *adapter, bool tx_resume)
 	if (QDF_TIMER_STATE_STOPPED != qdf_mc_timer_get_current_state(fc_timer))
 		return;
 
-	status = qdf_mc_timer_start(fc_timer,
-				    WLAN_SAP_HDD_TX_FLOW_CONTROL_OS_Q_BLOCK_TIME);
+	status = qdf_mc_timer_start(
+		fc_timer, WLAN_SAP_HDD_TX_FLOW_CONTROL_OS_Q_BLOCK_TIME);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		hdd_err("Failed to start tx_flow_control_timer");
@@ -127,7 +126,7 @@ hdd_softap_tx_resume_false(struct hdd_adapter *adapter, bool tx_resume)
 
 void hdd_softap_tx_resume_cb(void *adapter_context, bool tx_resume)
 {
-	struct hdd_adapter *adapter = (struct hdd_adapter *) adapter_context;
+	struct hdd_adapter *adapter = (struct hdd_adapter *)adapter_context;
 
 	if (!adapter) {
 		hdd_err("NULL adapter");
@@ -137,15 +136,14 @@ void hdd_softap_tx_resume_cb(void *adapter_context, bool tx_resume)
 	/* Resume TX  */
 	if (true == tx_resume) {
 		if (QDF_TIMER_STATE_STOPPED !=
-		    qdf_mc_timer_get_current_state(&adapter->
-						   tx_flow_control_timer)) {
+		    qdf_mc_timer_get_current_state(
+			    &adapter->tx_flow_control_timer)) {
 			qdf_mc_timer_stop(&adapter->tx_flow_control_timer);
 		}
 
 		hdd_debug("Enabling queues");
-		wlan_hdd_netif_queue_control(adapter,
-					WLAN_WAKE_ALL_NETIF_QUEUE,
-					WLAN_DATA_FLOW_CONTROL);
+		wlan_hdd_netif_queue_control(adapter, WLAN_WAKE_ALL_NETIF_QUEUE,
+					     WLAN_DATA_FLOW_CONTROL);
 	}
 	hdd_softap_tx_resume_false(adapter, tx_resume);
 }
@@ -159,13 +157,11 @@ void hdd_ipa_update_rx_mcbc_stats(struct hdd_adapter *adapter,
 	struct qdf_mac_addr *src_mac;
 	qdf_ether_header_t *eh;
 
-	src_mac = (struct qdf_mac_addr *)(skb->data +
-					  QDF_NBUF_SRC_MAC_OFFSET);
+	src_mac = (struct qdf_mac_addr *)(skb->data + QDF_NBUF_SRC_MAC_OFFSET);
 
-	hdd_sta_info = hdd_get_sta_info_by_mac(
-				&adapter->sta_info_list,
-				src_mac->bytes,
-				STA_INFO_SOFTAP_IPA_RX_PKT_CALLBACK);
+	hdd_sta_info =
+		hdd_get_sta_info_by_mac(&adapter->sta_info_list, src_mac->bytes,
+					STA_INFO_SOFTAP_IPA_RX_PKT_CALLBACK);
 	if (!hdd_sta_info)
 		return;
 
@@ -176,8 +172,8 @@ void hdd_ipa_update_rx_mcbc_stats(struct hdd_adapter *adapter,
 	if (QDF_IS_ADDR_BROADCAST(eh->ether_dhost))
 		hdd_sta_info->rx_mc_bc_cnt++;
 
-	hdd_put_sta_info_ref(&adapter->sta_info_list, &hdd_sta_info,
-			     true, STA_INFO_SOFTAP_IPA_RX_PKT_CALLBACK);
+	hdd_put_sta_info_ref(&adapter->sta_info_list, &hdd_sta_info, true,
+			     STA_INFO_SOFTAP_IPA_RX_PKT_CALLBACK);
 }
 #else
 void hdd_ipa_update_rx_mcbc_stats(struct hdd_adapter *adapter,
@@ -205,7 +201,7 @@ static void __hdd_softap_hard_start_xmit(struct sk_buff *skb,
 	struct hdd_adapter *adapter = (struct hdd_adapter *)netdev_priv(dev);
 	struct hdd_context *hdd_ctx = adapter->hdd_ctx;
 	struct hdd_tx_rx_stats *stats =
-				&adapter->deflink->hdd_stats.tx_rx_stats;
+		&adapter->deflink->hdd_stats.tx_rx_stats;
 	int cpu = qdf_get_smp_processor_id();
 	QDF_STATUS status;
 
@@ -235,9 +231,9 @@ netdev_tx_t hdd_softap_hard_start_xmit(struct sk_buff *skb,
 
 QDF_STATUS hdd_softap_ipa_start_xmit(qdf_nbuf_t nbuf, qdf_netdev_t dev)
 {
-	if (NETDEV_TX_OK == hdd_softap_hard_start_xmit(
-					(struct sk_buff *)nbuf,
-					(struct net_device *)dev))
+	if (NETDEV_TX_OK ==
+	    hdd_softap_hard_start_xmit((struct sk_buff *)nbuf,
+				       (struct net_device *)dev))
 		return QDF_STATUS_SUCCESS;
 	else
 		return QDF_STATUS_E_FAILURE;
@@ -252,18 +248,17 @@ static void __hdd_softap_tx_timeout(struct net_device *dev)
 	int i;
 
 	DPTRACE(qdf_dp_trace(NULL, QDF_DP_TRACE_HDD_SOFTAP_TX_TIMEOUT,
-			QDF_TRACE_DEFAULT_PDEV_ID,
-			NULL, 0, QDF_TX));
+			     QDF_TRACE_DEFAULT_PDEV_ID, NULL, 0, QDF_TX));
 	/* Getting here implies we disabled the TX queues for too
-	 * long. Queues are disabled either because of disassociation
-	 * or low resource scenarios. In case of disassociation it is
-	 * ok to ignore this. But if associated, we have do possible
-	 * recovery here
-	 */
+   * long. Queues are disabled either because of disassociation
+   * or low resource scenarios. In case of disassociation it is
+   * ok to ignore this. But if associated, we have do possible
+   * recovery here
+   */
 	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	if (cds_is_driver_recovering() || cds_is_driver_in_bad_state()) {
 		QDF_TRACE(QDF_MODULE_ID_HDD_SAP_DATA, QDF_TRACE_LEVEL_ERROR,
-			 "%s: Recovery in Progress. Ignore!!!", __func__);
+			  "%s: Recovery in Progress. Ignore!!!", __func__);
 		return;
 	}
 
@@ -276,10 +271,9 @@ static void __hdd_softap_tx_timeout(struct net_device *dev)
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		txq = netdev_get_tx_queue(dev, i);
-		QDF_TRACE(QDF_MODULE_ID_HDD_DATA,
-			  QDF_TRACE_LEVEL_DEBUG,
-			  "Queue: %d status: %d txq->trans_start: %lu",
-			  i, netif_tx_queue_stopped(txq), txq->trans_start);
+		QDF_TRACE(QDF_MODULE_ID_HDD_DATA, QDF_TRACE_LEVEL_DEBUG,
+			  "Queue: %d status: %d txq->trans_start: %lu", i,
+			  netif_tx_queue_stopped(txq), txq->trans_start);
 	}
 
 	wlan_hdd_display_adapter_netif_queue_history(adapter);
@@ -291,7 +285,7 @@ static void __hdd_softap_tx_timeout(struct net_device *dev)
 	}
 
 	QDF_TRACE(QDF_MODULE_ID_HDD_DATA, QDF_TRACE_LEVEL_DEBUG,
-			"carrier state: %d", netif_carrier_ok(dev));
+		  "carrier state: %d", netif_carrier_ok(dev));
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
@@ -381,10 +375,10 @@ hdd_reset_sta_info_during_reattach(struct hdd_station_info *sta_info)
  *
  * Return: QDF STATUS SUCCESS on successful attach, error code otherwise
  */
-static QDF_STATUS hdd_sta_info_re_attach(
-				struct hdd_sta_info_obj *sta_info_container,
-				struct hdd_station_info *sta_info,
-				struct qdf_mac_addr *sta_mac)
+static QDF_STATUS
+hdd_sta_info_re_attach(struct hdd_sta_info_obj *sta_info_container,
+		       struct hdd_station_info *sta_info,
+		       struct qdf_mac_addr *sta_mac)
 {
 	if (!sta_info_container || !sta_info) {
 		hdd_err("Parameter(s) null");
@@ -479,9 +473,9 @@ QDF_STATUS hdd_softap_deregister_sta(struct hdd_adapter *adapter,
 	}
 
 	/*
-	 * If the address is a broadcast address then the CDP layers expects
-	 * the self mac address of the adapter.
-	 */
+   * If the address is a broadcast address then the CDP layers expects
+   * the self mac address of the adapter.
+   */
 	if (QDF_IS_ADDR_BROADCAST(sta->sta_mac.bytes)) {
 		mac_addr = &adapter->mac_addr;
 	} else {
@@ -493,12 +487,11 @@ QDF_STATUS hdd_softap_deregister_sta(struct hdd_adapter *adapter,
 	}
 
 	if (ucfg_ipa_is_enabled()) {
-		if (ucfg_ipa_wlan_evt(hdd_ctx->pdev, adapter->dev,
-				      adapter->device_mode,
-				      adapter->deflink->vdev_id,
-				      WLAN_IPA_CLIENT_DISCONNECT,
-				      mac_addr->bytes,
-				      false) != QDF_STATUS_SUCCESS)
+		if (ucfg_ipa_wlan_evt(
+			    hdd_ctx->pdev, adapter->dev, adapter->device_mode,
+			    adapter->deflink->vdev_id,
+			    WLAN_IPA_CLIENT_DISCONNECT, mac_addr->bytes,
+			    false) != QDF_STATUS_SUCCESS)
 			hdd_debug("WLAN_CLIENT_DISCONNECT event failed");
 	}
 
@@ -521,13 +514,14 @@ QDF_STATUS hdd_softap_deregister_sta(struct hdd_adapter *adapter,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS hdd_softap_register_sta(struct wlan_hdd_link_info *link_info,
-				   bool auth_required, bool privacy_required,
-				   struct qdf_mac_addr *sta_mac,
-				   tSap_StationAssocReassocCompleteEvent *event)
+QDF_STATUS
+hdd_softap_register_sta(struct wlan_hdd_link_info *link_info,
+			bool auth_required, bool privacy_required,
+			struct qdf_mac_addr *sta_mac,
+			tSap_StationAssocReassocCompleteEvent *event)
 {
 	QDF_STATUS qdf_status = QDF_STATUS_E_FAILURE;
-	struct ol_txrx_desc_type txrx_desc = {0};
+	struct ol_txrx_desc_type txrx_desc = { 0 };
 	struct hdd_adapter *adapter = link_info->adapter;
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	struct ol_txrx_ops txrx_ops;
@@ -542,22 +536,22 @@ QDF_STATUS hdd_softap_register_sta(struct wlan_hdd_link_info *link_info,
 
 	if (event) {
 		wmm_enabled = event->wmmEnabled;
-		dot11mode = hdd_convert_dot11mode_from_phymode(event->chan_info.info);
+		dot11mode = hdd_convert_dot11mode_from_phymode(
+			event->chan_info.info);
 	}
 
 	ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(link_info);
 
 	/*
-	 * If the address is a broadcast address, then provide the self mac addr
-	 * to the data path. Else provide the mac address of the connected peer.
-	 */
+   * If the address is a broadcast address, then provide the self mac addr
+   * to the data path. Else provide the mac address of the connected peer.
+   */
 	if (qdf_is_macaddr_broadcast(sta_mac)) {
 		qdf_mem_copy(&txrx_desc.peer_addr, &adapter->mac_addr,
 			     QDF_MAC_ADDR_SIZE);
 		is_macaddr_broadcast = true;
 	} else {
-		qdf_mem_copy(&txrx_desc.peer_addr, sta_mac,
-			     QDF_MAC_ADDR_SIZE);
+		qdf_mem_copy(&txrx_desc.peer_addr, sta_mac, QDF_MAC_ADDR_SIZE);
 	}
 
 	qdf_status = hdd_softap_init_tx_rx_sta(adapter, sta_mac);
@@ -580,13 +574,13 @@ QDF_STATUS hdd_softap_register_sta(struct wlan_hdd_link_info *link_info,
 
 	if (is_macaddr_broadcast) {
 		/*
-		 * Register the vdev transmit and receive functions once with
-		 * CDP layer. Broadcast STA is registered only once when BSS is
-		 * started.
-		 */
+     * Register the vdev transmit and receive functions once with
+     * CDP layer. Broadcast STA is registered only once when BSS is
+     * started.
+     */
 		qdf_mem_zero(&txrx_ops, sizeof(txrx_ops));
 		txrx_ops.tx.tx_classify_critical_pkt_cb =
-					hdd_wmm_classify_pkt_cb;
+			hdd_wmm_classify_pkt_cb;
 		ucfg_dp_softap_register_txrx_ops(vdev, &txrx_ops);
 	}
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_DP_ID);
@@ -596,29 +590,30 @@ QDF_STATUS hdd_softap_register_sta(struct wlan_hdd_link_info *link_info,
 	txrx_desc.bw = hdd_convert_ch_width_to_cdp_peer_bw(ch_width);
 	qdf_status = cdp_peer_register(soc, OL_TXRX_PDEV_ID, &txrx_desc);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
-		hdd_debug("cdp_peer_register() failed to register.  Status = %d [0x%08X]",
-			  qdf_status, qdf_status);
+		hdd_debug(
+			"cdp_peer_register() failed to register.  Status = %d [0x%08X]",
+			qdf_status, qdf_status);
 		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true,
 				     STA_INFO_SOFTAP_REGISTER_STA);
 		return qdf_status;
 	}
 
 	/* if ( WPA ), tell TL to go to 'connected' and after keys come to the
-	 * driver then go to 'authenticated'.  For all other authentication
-	 * types (those that do not require upper layer authentication) we can
-	 * put TL directly into 'authenticated' state
-	 */
+   * driver then go to 'authenticated'.  For all other authentication
+   * types (those that do not require upper layer authentication) we can
+   * put TL directly into 'authenticated' state
+   */
 
 	sta_info->is_qos_enabled = wmm_enabled;
 
 	if (!auth_required) {
 		hdd_debug("open/shared auth STA MAC= " QDF_MAC_ADDR_FMT
 			  ".  Changing TL state to AUTHENTICATED at Join time",
-			 QDF_MAC_ADDR_REF(sta_info->sta_mac.bytes));
+			  QDF_MAC_ADDR_REF(sta_info->sta_mac.bytes));
 
 		/* Connections that do not need Upper layer auth,
-		 * transition TL directly to 'Authenticated' state.
-		 */
+     * transition TL directly to 'Authenticated' state.
+     */
 		qdf_status = hdd_change_peer_state(link_info,
 						   txrx_desc.peer_addr.bytes,
 						   OL_TXRX_PEER_STATE_AUTH);
@@ -626,13 +621,11 @@ QDF_STATUS hdd_softap_register_sta(struct wlan_hdd_link_info *link_info,
 		sta_info->peer_state = OL_TXRX_PEER_STATE_AUTH;
 		if (!qdf_is_macaddr_broadcast(sta_mac))
 			qdf_status = wlan_hdd_send_sta_authorized_event(
-							adapter, hdd_ctx,
-							sta_mac);
+				adapter, hdd_ctx, sta_mac);
 	} else {
-
 		hdd_debug("ULA auth STA MAC = " QDF_MAC_ADDR_FMT
 			  ".  Changing TL state to CONNECTED at Join time",
-			 QDF_MAC_ADDR_REF(sta_info->sta_mac.bytes));
+			  QDF_MAC_ADDR_REF(sta_info->sta_mac.bytes));
 
 		qdf_status = hdd_change_peer_state(link_info,
 						   txrx_desc.peer_addr.bytes,
@@ -649,9 +642,9 @@ QDF_STATUS hdd_softap_register_sta(struct wlan_hdd_link_info *link_info,
 
 	if (is_macaddr_broadcast) {
 		hdd_debug("Enabling queues");
-		wlan_hdd_netif_queue_control(adapter,
-					     WLAN_START_ALL_NETIF_QUEUE_N_CARRIER,
-					     WLAN_CONTROL_PATH);
+		wlan_hdd_netif_queue_control(
+			adapter, WLAN_START_ALL_NETIF_QUEUE_N_CARRIER,
+			WLAN_CONTROL_PATH);
 	}
 	ucfg_mlme_update_oce_flags(hdd_ctx->pdev);
 	ucfg_twt_init_context(hdd_ctx->psoc, sta_mac,
@@ -675,8 +668,7 @@ hdd_softap_register_bc_sta(struct wlan_hdd_link_info *link_info,
 		return qdf_status;
 	}
 
-	qdf_status = hdd_softap_register_sta(link_info, false,
-					     privacy_required,
+	qdf_status = hdd_softap_register_sta(link_info, false, privacy_required,
 					     &broadcast_macaddr, NULL);
 
 	return qdf_status;
@@ -696,12 +688,13 @@ QDF_STATUS hdd_softap_stop_bss(struct hdd_adapter *adapter)
 	if (QDF_STATUS_SUCCESS != status)
 		hdd_err("can't get indoor channel marking, using default");
 	/* This is stop bss callback running in scheduler thread so do not
-	 * driver unload in progress check otherwise it can lead to peer
-	 * object leak
-	 */
+   * driver unload in progress check otherwise it can lead to peer
+   * object leak
+   */
 
 	hdd_for_each_sta_ref_safe(adapter->sta_info_list, sta_info, tmp,
-				  STA_INFO_SOFTAP_STOP_BSS) {
+				  STA_INFO_SOFTAP_STOP_BSS)
+	{
 		status = hdd_softap_deregister_sta(adapter, &sta_info);
 		hdd_put_sta_info_ref(&adapter->sta_info_list, &sta_info, true,
 				     STA_INFO_SOFTAP_STOP_BSS);
@@ -718,22 +711,19 @@ QDF_STATUS hdd_softap_stop_bss(struct hdd_adapter *adapter)
 	}
 
 	if (ucfg_ipa_is_enabled()) {
-		if (ucfg_ipa_wlan_evt(hdd_ctx->pdev,
-				      adapter->dev,
-				      adapter->device_mode,
-				      adapter->deflink->vdev_id,
-				      WLAN_IPA_AP_DISCONNECT,
-				      adapter->dev->dev_addr,
-				      false) != QDF_STATUS_SUCCESS)
+		if (ucfg_ipa_wlan_evt(
+			    hdd_ctx->pdev, adapter->dev, adapter->device_mode,
+			    adapter->deflink->vdev_id, WLAN_IPA_AP_DISCONNECT,
+			    adapter->dev->dev_addr,
+			    false) != QDF_STATUS_SUCCESS)
 			hdd_err("WLAN_AP_DISCONNECT event failed");
 	}
 
 	/* Setting the RTS profile to original value */
-	if (sme_cli_set_command(adapter->deflink->vdev_id,
-				wmi_vdev_param_enable_rtscts,
-				cfg_get(hdd_ctx->psoc,
-					CFG_ENABLE_FW_RTS_PROFILE),
-				VDEV_CMD))
+	if (sme_cli_set_command(
+		    adapter->deflink->vdev_id, wmi_vdev_param_enable_rtscts,
+		    cfg_get(hdd_ctx->psoc, CFG_ENABLE_FW_RTS_PROFILE),
+		    VDEV_CMD))
 		hdd_debug("Failed to set RTS_PROFILE");
 
 	return status;
@@ -817,8 +807,7 @@ QDF_STATUS hdd_softap_change_sta_state(struct hdd_adapter *adapter,
 		hdd_err("hdd ctx is null");
 		return status;
 	}
-	peer = wlan_objmgr_get_peer_by_mac(hdd_ctx->psoc,
-					   sta_mac->bytes,
+	peer = wlan_objmgr_get_peer_by_mac(hdd_ctx->psoc, sta_mac->bytes,
 					   WLAN_LEGACY_MAC_ID);
 
 	if (!peer) {
@@ -854,15 +843,15 @@ QDF_STATUS hdd_softap_ind_l2_update(struct hdd_adapter *adapter,
 	msg->eh.h_proto = htons(sizeof(*msg) - sizeof(struct ethhdr));
 
 	/* null DSAP and a null SSAP is a way to solicit a response from any
-	 * station (i.e., any DA)
-	 */
+   * station (i.e., any DA)
+   */
 	msg->l2_update_pdu.dsap = LLC_NULL_SAP;
 	msg->l2_update_pdu.ssap = LLC_NULL_SAP;
 
 	/*
-	 * unsolicited XID response frame to announce presence.
-	 * lsb.11110101.
-	 */
+   * unsolicited XID response frame to announce presence.
+   * lsb.11110101.
+   */
 	msg->l2_update_pdu.ctrl_1 = LLC_PDU_TYPE_U | LLC_1_PDU_CMD_XID;
 
 	/* XID information field 129.1.0 to indicate connectionless service */

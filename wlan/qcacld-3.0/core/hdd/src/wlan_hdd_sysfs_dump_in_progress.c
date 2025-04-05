@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
-* Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -25,15 +25,14 @@
 
 #include <linux/kobject.h>
 
-#include "wlan_hdd_includes.h"
-#include "wlan_hdd_sysfs_dump_in_progress.h"
-#include "wlan_hdd_sysfs.h"
 #include "osif_sync.h"
+#include "wlan_hdd_includes.h"
+#include "wlan_hdd_sysfs.h"
+#include "wlan_hdd_sysfs_dump_in_progress.h"
 
-static ssize_t
-__hdd_sysfs_dump_in_progress_store(struct hdd_context *hdd_ctx,
-				   struct kobj_attribute *attr,
-				   char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dump_in_progress_store(struct hdd_context *hdd_ctx,
+						  struct kobj_attribute *attr,
+						  char const *buf, size_t count)
 {
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
 	char *sptr, *token;
@@ -42,8 +41,8 @@ __hdd_sysfs_dump_in_progress_store(struct hdd_context *hdd_ctx,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -79,22 +78,22 @@ static ssize_t hdd_sysfs_dump_in_progress_store(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_dump_in_progress_store(hdd_ctx, attr,
-							buf, count);
+	errno_size =
+		__hdd_sysfs_dump_in_progress_store(hdd_ctx, attr, buf, count);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
 	return errno_size;
 }
 
-static ssize_t  __hdd_sysfs_dump_in_progress_show(struct hdd_context *hdd_ctx,
-						  struct kobj_attribute *attr,
-						  char *buf)
+static ssize_t __hdd_sysfs_dump_in_progress_show(struct hdd_context *hdd_ctx,
+						 struct kobj_attribute *attr,
+						 char *buf)
 {
 	ssize_t ret_val;
 
@@ -117,8 +116,8 @@ static ssize_t hdd_sysfs_dump_in_progress_show(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
@@ -154,7 +153,5 @@ void hdd_sysfs_destroy_dump_in_progress_interface(struct kobject *wifi_kobject)
 		return;
 	}
 
-	sysfs_remove_file(wifi_kobject,
-			  &dump_in_progress_attribute.attr);
+	sysfs_remove_file(wifi_kobject, &dump_in_progress_attribute.attr);
 }
-

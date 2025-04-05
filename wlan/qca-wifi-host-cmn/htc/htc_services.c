@@ -19,9 +19,9 @@
 
 #include "htc_debug.h"
 #include "htc_internal.h"
-#include <hif.h>
-#include <qdf_nbuf.h>           /* qdf_nbuf_t */
 #include "qdf_module.h"
+#include <hif.h>
+#include <qdf_nbuf.h> /* qdf_nbuf_t */
 
 /* use credit flow control over HTC */
 unsigned int htc_credit_flow = 1;
@@ -66,31 +66,27 @@ void htc_global_credit_flow_enable(void)
  *
  * Return: None
  */
-static inline void
-htc_alt_data_credit_size_update(HTC_TARGET *target,
-				uint8_t *ul_pipe,
-				uint8_t *dl_pipe,
-				int *txCreditSize)
+static inline void htc_alt_data_credit_size_update(HTC_TARGET *target,
+						   uint8_t *ul_pipe,
+						   uint8_t *dl_pipe,
+						   int *txCreditSize)
 {
-	if ((target->AltDataCreditSize) &&
-	    (*ul_pipe == 1) && (*dl_pipe == 0))
+	if ((target->AltDataCreditSize) && (*ul_pipe == 1) && (*dl_pipe == 0))
 		*txCreditSize = target->AltDataCreditSize;
-
 }
 #else
 
-static inline void
-htc_alt_data_credit_size_update(HTC_TARGET *target,
-				uint8_t *ul_pipe,
-				uint8_t *dl_pipe,
-				int *txCreditSize)
+static inline void htc_alt_data_credit_size_update(HTC_TARGET *target,
+						   uint8_t *ul_pipe,
+						   uint8_t *dl_pipe,
+						   int *txCreditSize)
 {
 }
 #endif
 
 QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
-			     struct htc_service_connect_req *pConnectReq,
-			     struct htc_service_connect_resp *pConnectResp)
+			       struct htc_service_connect_req *pConnectReq,
+			       struct htc_service_connect_resp *pConnectResp)
 {
 	HTC_TARGET *target = GET_HTC_TARGET_FROM_HANDLE(HTCHandle);
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -110,11 +106,10 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 	int ret;
 
 	AR_DEBUG_PRINTF(ATH_DEBUG_TRC,
-			("+htc_connect_service, target:%pK SvcID:0x%X\n", target,
-			 pConnectReq->service_id));
+			("+htc_connect_service, target:%pK SvcID:0x%X\n",
+			 target, pConnectReq->service_id));
 
 	do {
-
 		AR_DEBUG_ASSERT(pConnectReq->service_id != 0);
 
 		if (HTC_CTRL_RSVD_SVC == pConnectReq->service_id) {
@@ -124,14 +119,14 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 			txAlloc = 0;
 
 		} else {
-
-			txAlloc = htc_get_credit_allocation(target,
-					pConnectReq->service_id);
+			txAlloc = htc_get_credit_allocation(
+				target, pConnectReq->service_id);
 
 			if (!txAlloc) {
-				AR_DEBUG_PRINTF(ATH_DEBUG_TRC,
-						("Service %d does not allocate target credits!\n",
-						 pConnectReq->service_id));
+				AR_DEBUG_PRINTF(
+					ATH_DEBUG_TRC,
+					("Service %d does not allocate target credits!\n",
+					 pConnectReq->service_id));
 			}
 
 			/* allocate a packet to send to the target */
@@ -143,17 +138,15 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 				break;
 			}
 
-			netbuf =
-				(qdf_nbuf_t)
-				GET_HTC_PACKET_NET_BUF_CONTEXT(pSendPacket);
-			length =
-				sizeof(HTC_CONNECT_SERVICE_MSG) +
-				pConnectReq->MetaDataLength;
+			netbuf = (qdf_nbuf_t)GET_HTC_PACKET_NET_BUF_CONTEXT(
+				pSendPacket);
+			length = sizeof(HTC_CONNECT_SERVICE_MSG) +
+				 pConnectReq->MetaDataLength;
 
 			/* assemble connect service message */
 			qdf_nbuf_put_tail(netbuf, length);
-			pConnectMsg =
-			    (HTC_CONNECT_SERVICE_MSG *) qdf_nbuf_data(netbuf);
+			pConnectMsg = (HTC_CONNECT_SERVICE_MSG *)qdf_nbuf_data(
+				netbuf);
 
 			if (!pConnectMsg) {
 				AR_DEBUG_ASSERT(0);
@@ -165,8 +158,8 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 				     sizeof(HTC_CONNECT_SERVICE_MSG));
 
 			conn_flags =
-				(pConnectReq->
-				 ConnectionFlags & ~HTC_SET_RECV_ALLOC_MASK) |
+				(pConnectReq->ConnectionFlags &
+				 ~HTC_SET_RECV_ALLOC_MASK) |
 				HTC_CONNECT_FLAGS_SET_RECV_ALLOCATION(txAlloc);
 			HTC_SET_FIELD(pConnectMsg, HTC_CONNECT_SERVICE_MSG,
 				      MESSAGEID, HTC_MSG_CONNECT_SERVICE_ID);
@@ -175,8 +168,7 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 			HTC_SET_FIELD(pConnectMsg, HTC_CONNECT_SERVICE_MSG,
 				      CONNECTIONFLAGS, conn_flags);
 
-			if (pConnectReq->
-			    ConnectionFlags &
+			if (pConnectReq->ConnectionFlags &
 			    HTC_CONNECT_FLAGS_DISABLE_CREDIT_FLOW_CTRL) {
 				disableCreditFlowCtrl = true;
 			}
@@ -189,10 +181,11 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 			    (pConnectReq->MetaDataLength <=
 			     HTC_SERVICE_META_DATA_MAX_LENGTH)) {
 				/* copy meta data into msg buffer (after hdr) */
-				qdf_mem_copy((uint8_t *) pConnectMsg +
-					 sizeof(HTC_CONNECT_SERVICE_MSG),
-					 pConnectReq->pMetaData,
-					 pConnectReq->MetaDataLength);
+				qdf_mem_copy(
+					(uint8_t *)pConnectMsg +
+						sizeof(HTC_CONNECT_SERVICE_MSG),
+					pConnectReq->pMetaData,
+					pConnectReq->MetaDataLength);
 
 				HTC_SET_FIELD(pConnectMsg,
 					      HTC_CONNECT_SERVICE_MSG,
@@ -200,14 +193,12 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 					      pConnectReq->MetaDataLength);
 			}
 
-			SET_HTC_PACKET_INFO_TX(pSendPacket,
-					       NULL,
-					       (uint8_t *) pConnectMsg,
-					       length,
+			SET_HTC_PACKET_INFO_TX(pSendPacket, NULL,
+					       (uint8_t *)pConnectMsg, length,
 					       ENDPOINT_0,
 					       HTC_SERVICE_TX_PACKET_TAG);
 
-			status = htc_send_pkt((HTC_HANDLE) target, pSendPacket);
+			status = htc_send_pkt((HTC_HANDLE)target, pSendPacket);
 			/* we don't own it anymore */
 			pSendPacket = NULL;
 			if (QDF_IS_STATUS_ERROR(status))
@@ -218,70 +209,67 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 			if (QDF_IS_STATUS_ERROR(status))
 				break;
 			/* we controlled the buffer creation so it has to be
-			 * properly aligned
-			 */
-			pResponseMsg =
-				(HTC_CONNECT_SERVICE_RESPONSE_MSG *) target->
-				CtrlResponseBuffer;
+       * properly aligned
+       */
+			pResponseMsg = (HTC_CONNECT_SERVICE_RESPONSE_MSG *)
+					       target->CtrlResponseBuffer;
 
-			rsp_msg_id = HTC_GET_FIELD(pResponseMsg,
-					   HTC_CONNECT_SERVICE_RESPONSE_MSG,
-					   MESSAGEID);
-			rsp_msg_serv_id =
-				HTC_GET_FIELD(pResponseMsg,
-					      HTC_CONNECT_SERVICE_RESPONSE_MSG,
-					      SERVICEID);
-			rsp_msg_status =
-				HTC_GET_FIELD(pResponseMsg,
-					      HTC_CONNECT_SERVICE_RESPONSE_MSG,
-					      STATUS);
-			rsp_msg_end_id =
-				HTC_GET_FIELD(pResponseMsg,
-					      HTC_CONNECT_SERVICE_RESPONSE_MSG,
-					      ENDPOINTID);
-			rsp_msg_max_msg_size =
-				HTC_GET_FIELD(pResponseMsg,
-					      HTC_CONNECT_SERVICE_RESPONSE_MSG,
-					      MAXMSGSIZE);
-			rsp_msg_serv_meta_len =
-				HTC_GET_FIELD(pResponseMsg,
-					      HTC_CONNECT_SERVICE_RESPONSE_MSG,
-					      SERVICEMETALENGTH);
+			rsp_msg_id = HTC_GET_FIELD(
+				pResponseMsg, HTC_CONNECT_SERVICE_RESPONSE_MSG,
+				MESSAGEID);
+			rsp_msg_serv_id = HTC_GET_FIELD(
+				pResponseMsg, HTC_CONNECT_SERVICE_RESPONSE_MSG,
+				SERVICEID);
+			rsp_msg_status = HTC_GET_FIELD(
+				pResponseMsg, HTC_CONNECT_SERVICE_RESPONSE_MSG,
+				STATUS);
+			rsp_msg_end_id = HTC_GET_FIELD(
+				pResponseMsg, HTC_CONNECT_SERVICE_RESPONSE_MSG,
+				ENDPOINTID);
+			rsp_msg_max_msg_size = HTC_GET_FIELD(
+				pResponseMsg, HTC_CONNECT_SERVICE_RESPONSE_MSG,
+				MAXMSGSIZE);
+			rsp_msg_serv_meta_len = HTC_GET_FIELD(
+				pResponseMsg, HTC_CONNECT_SERVICE_RESPONSE_MSG,
+				SERVICEMETALENGTH);
 
-			if ((rsp_msg_id != HTC_MSG_CONNECT_SERVICE_RESPONSE_ID)
-			    || (target->CtrlResponseLength <
-				sizeof(HTC_CONNECT_SERVICE_RESPONSE_MSG))) {
+			if ((rsp_msg_id !=
+			     HTC_MSG_CONNECT_SERVICE_RESPONSE_ID) ||
+			    (target->CtrlResponseLength <
+			     sizeof(HTC_CONNECT_SERVICE_RESPONSE_MSG))) {
 				/* this message is not valid */
 				AR_DEBUG_ASSERT(false);
 				status = QDF_STATUS_E_PROTO;
 				break;
 			}
 
-			AR_DEBUG_PRINTF(ATH_DEBUG_TRC,
-					("htc_connect_service, service 0x%X connect response from target status:%d, assigned ep: %d\n",
-					 rsp_msg_serv_id, rsp_msg_status,
-					 rsp_msg_end_id));
+			AR_DEBUG_PRINTF(
+				ATH_DEBUG_TRC,
+				("htc_connect_service, service 0x%X connect response "
+				 "from target status:%d, assigned ep: %d\n",
+				 rsp_msg_serv_id, rsp_msg_status,
+				 rsp_msg_end_id));
 
 			pConnectResp->ConnectRespCode = rsp_msg_status;
 
 			/* check response status */
 			if (rsp_msg_status != HTC_SERVICE_SUCCESS) {
-				AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
-						(" Target failed service 0x%X connect request (status:%d)\n",
-						 rsp_msg_serv_id,
-						 rsp_msg_status));
+				AR_DEBUG_PRINTF(
+					ATH_DEBUG_ERR,
+					(" Target failed service 0x%X connect request (status:%d)\n",
+					 rsp_msg_serv_id, rsp_msg_status));
 				status = QDF_STATUS_E_PROTO;
-/* TODO: restore the ifdef when FW supports services 301 and 302
- * (HTT_MSG_DATA[23]_MSG_SVC)
- */
-/* #ifdef QCA_TX_HTT2_SUPPORT */
+				/* TODO: restore the ifdef when FW supports services 301 and 302
+         * (HTT_MSG_DATA[23]_MSG_SVC)
+         */
+				/* #ifdef QCA_TX_HTT2_SUPPORT */
 				/* Keep work and not to block the control msg */
 				target->CtrlResponseProcessing = false;
-/* #endif */ /* QCA_TX_HTT2_SUPPORT */
+				/* #endif */ /* QCA_TX_HTT2_SUPPORT */
 				break;
 			}
 
-			assignedEndpoint = (HTC_ENDPOINT_ID) rsp_msg_end_id;
+			assignedEndpoint = (HTC_ENDPOINT_ID)rsp_msg_end_id;
 			maxMsgSize = rsp_msg_max_msg_size;
 
 			if ((pConnectResp->pMetaData) &&
@@ -289,17 +277,17 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 			    (rsp_msg_serv_meta_len <=
 			     HTC_SERVICE_META_DATA_MAX_LENGTH)) {
 				/* caller supplied a buffer and the target
-				 * responded with data
-				 */
+         * responded with data
+         */
 				int copyLength =
 					min((int)pConnectResp->BufferLength,
 					    (int)rsp_msg_serv_meta_len);
 				/* copy the meta data */
-				qdf_mem_copy(pConnectResp->pMetaData,
-					 ((uint8_t *) pResponseMsg) +
-					 sizeof
-					 (HTC_CONNECT_SERVICE_RESPONSE_MSG),
-					 copyLength);
+				qdf_mem_copy(
+					pConnectResp->pMetaData,
+					((uint8_t *)pResponseMsg) +
+						sizeof(HTC_CONNECT_SERVICE_RESPONSE_MSG),
+					copyLength);
 				pConnectResp->ActualLength = copyLength;
 			}
 			/* done processing response buffer */
@@ -352,18 +340,15 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 		pEndpoint->EpCallBacks = pConnectReq->EpCallbacks;
 		pEndpoint->async_update = 0;
 
-		ret = hif_map_service_to_pipe(target->hif_dev,
-					      pEndpoint->service_id,
-					      &pEndpoint->UL_PipeID,
-					      &pEndpoint->DL_PipeID,
-					      &pEndpoint->ul_is_polled,
-					      &pEndpoint->dl_is_polled);
+		ret = hif_map_service_to_pipe(
+			target->hif_dev, pEndpoint->service_id,
+			&pEndpoint->UL_PipeID, &pEndpoint->DL_PipeID,
+			&pEndpoint->ul_is_polled, &pEndpoint->dl_is_polled);
 		status = qdf_status_from_os_return(ret);
 		if (QDF_IS_STATUS_ERROR(status))
 			break;
 
-		htc_alt_data_credit_size_update(target,
-						&pEndpoint->UL_PipeID,
+		htc_alt_data_credit_size_update(target, &pEndpoint->UL_PipeID,
 						&pEndpoint->DL_PipeID,
 						&pEndpoint->TxCreditSize);
 
@@ -371,11 +356,9 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 		qdf_assert(!pEndpoint->dl_is_polled);
 
 		if (pEndpoint->ul_is_polled) {
-			qdf_timer_init(target->osdev,
-				&pEndpoint->ul_poll_timer,
-				htc_send_complete_check_cleanup,
-				pEndpoint,
-				QDF_TIMER_TYPE_SW);
+			qdf_timer_init(target->osdev, &pEndpoint->ul_poll_timer,
+				       htc_send_complete_check_cleanup,
+				       pEndpoint, QDF_TIMER_TYPE_SW);
 		}
 
 		HTC_TRACE("SVC:0x%4.4X, ULpipe:%d DLpipe:%d id:%d Ready",
@@ -396,22 +379,20 @@ QDF_STATUS htc_connect_service(HTC_HANDLE HTCHandle,
 }
 qdf_export_symbol(htc_connect_service);
 
-void htc_set_credit_distribution(HTC_HANDLE HTCHandle,
-				 void *pCreditDistContext,
+void htc_set_credit_distribution(HTC_HANDLE HTCHandle, void *pCreditDistContext,
 				 HTC_CREDIT_DIST_CALLBACK CreditDistFunc,
 				 HTC_CREDIT_INIT_CALLBACK CreditInitFunc,
 				 HTC_SERVICE_ID ServicePriorityOrder[],
 				 int ListLength)
 {
 	/* NOT Supported, this transport does not use a credit based flow
-	 * control mechanism
-	 */
-
+   * control mechanism
+   */
 }
 
 void htc_fw_event_handler(void *context, QDF_STATUS status)
 {
-	HTC_TARGET *target = (HTC_TARGET *) context;
+	HTC_TARGET *target = (HTC_TARGET *)context;
 	struct htc_init_info *initInfo = &target->HTCInitInfo;
 
 	/* check if target failure handler exists and pass error code to it. */
@@ -419,15 +400,13 @@ void htc_fw_event_handler(void *context, QDF_STATUS status)
 		initInfo->TargetFailure(initInfo->pContext, status);
 }
 
-
-void htc_set_async_ep(HTC_HANDLE HTCHandle,
-			HTC_ENDPOINT_ID htc_ep_id, bool value)
+void htc_set_async_ep(HTC_HANDLE HTCHandle, HTC_ENDPOINT_ID htc_ep_id,
+		      bool value)
 {
 	HTC_TARGET *target = GET_HTC_TARGET_FROM_HANDLE(HTCHandle);
 	HTC_ENDPOINT *pEndpoint = &target->endpoint[htc_ep_id];
 
 	pEndpoint->async_update = value;
-	HTC_INFO("%s: htc_handle %pK, ep %d, value %d", __func__,
-		HTCHandle, htc_ep_id, value);
+	HTC_INFO("%s: htc_handle %pK, ep %d, value %d", __func__, HTCHandle,
+		 htc_ep_id, value);
 }
-

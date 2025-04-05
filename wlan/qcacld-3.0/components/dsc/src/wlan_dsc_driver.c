@@ -16,11 +16,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "__wlan_dsc.h"
 #include "qdf_list.h"
 #include "qdf_mem.h"
 #include "qdf_status.h"
 #include "qdf_types.h"
-#include "__wlan_dsc.h"
 #include "wlan_dsc.h"
 
 void __dsc_lock(struct dsc_driver *driver)
@@ -106,11 +106,13 @@ static bool __dsc_driver_trans_active_down_tree(struct dsc_driver *driver)
 	struct dsc_psoc *psoc;
 	struct dsc_vdev *vdev;
 
-	dsc_for_each_driver_psoc(driver, psoc) {
+	dsc_for_each_driver_psoc(driver, psoc)
+	{
 		if (__dsc_trans_active(&psoc->trans))
 			return true;
 
-		dsc_for_each_psoc_vdev(psoc, vdev) {
+		dsc_for_each_psoc_vdev(psoc, vdev)
+		{
 			if (__dsc_trans_active(&vdev->trans))
 				return true;
 		}
@@ -124,17 +126,17 @@ static bool __dsc_driver_trans_active_down_tree(struct dsc_driver *driver)
 static bool __dsc_driver_can_trans(struct dsc_driver *driver)
 {
 	return !__dsc_trans_active_or_queued(&driver->trans) &&
-		!__dsc_driver_trans_active_down_tree(driver);
+	       !__dsc_driver_trans_active_down_tree(driver);
 }
 
 static bool __dsc_driver_can_trigger(struct dsc_driver *driver)
 {
 	return !__dsc_trans_active(&driver->trans) &&
-		!__dsc_driver_trans_active_down_tree(driver);
+	       !__dsc_driver_trans_active_down_tree(driver);
 }
 
-static QDF_STATUS
-__dsc_driver_trans_start_nolock(struct dsc_driver *driver, const char *desc)
+static QDF_STATUS __dsc_driver_trans_start_nolock(struct dsc_driver *driver,
+						  const char *desc)
 {
 	if (!__dsc_driver_can_trans(driver))
 		return QDF_STATUS_E_AGAIN;
@@ -142,8 +144,8 @@ __dsc_driver_trans_start_nolock(struct dsc_driver *driver, const char *desc)
 	return __dsc_trans_start(&driver->trans, desc);
 }
 
-static QDF_STATUS
-__dsc_driver_trans_start(struct dsc_driver *driver, const char *desc)
+static QDF_STATUS __dsc_driver_trans_start(struct dsc_driver *driver,
+					   const char *desc)
 {
 	QDF_STATUS status;
 
@@ -172,8 +174,8 @@ QDF_STATUS dsc_driver_trans_start(struct dsc_driver *driver, const char *desc)
 	return status;
 }
 
-static QDF_STATUS
-__dsc_driver_trans_start_wait(struct dsc_driver *driver, const char *desc)
+static QDF_STATUS __dsc_driver_trans_start_wait(struct dsc_driver *driver,
+						const char *desc)
 {
 	QDF_STATUS status;
 	struct dsc_tran tran = { 0 };
@@ -238,7 +240,8 @@ static void __dsc_driver_trigger_trans(struct dsc_driver *driver)
 	if (__dsc_trans_trigger(&driver->trans))
 		return;
 
-	dsc_for_each_driver_psoc(driver, psoc) {
+	dsc_for_each_driver_psoc(driver, psoc)
+	{
 		if (__dsc_trans_trigger(&psoc->trans))
 			continue;
 
@@ -280,8 +283,8 @@ void dsc_driver_assert_trans_protected(struct dsc_driver *driver)
 	__dsc_driver_assert_trans_protected(driver);
 }
 
-static QDF_STATUS
-__dsc_driver_op_start(struct dsc_driver *driver, const char *func)
+static QDF_STATUS __dsc_driver_op_start(struct dsc_driver *driver,
+					const char *func)
 {
 	QDF_STATUS status;
 
@@ -360,12 +363,10 @@ static void __dsc_driver_wait_for_ops(struct dsc_driver *driver)
 		qdf_wait_single_event(&driver->ops.event, 0);
 
 	/* wait for down-tree ops to complete as well */
-	dsc_for_each_driver_psoc(driver, psoc)
-		dsc_psoc_wait_for_ops(psoc);
+	dsc_for_each_driver_psoc(driver, psoc) dsc_psoc_wait_for_ops(psoc);
 }
 
 void dsc_driver_wait_for_ops(struct dsc_driver *driver)
 {
 	__dsc_driver_wait_for_ops(driver);
 }
-

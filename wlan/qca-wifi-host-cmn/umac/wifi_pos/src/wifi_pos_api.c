@@ -21,17 +21,17 @@
  * This file defines the APIs wifi_pos component.
  */
 
-#include <wlan_lmac_if_def.h>
 #include "wifi_pos_api.h"
-#include "wifi_pos_utils_i.h"
-#include "wifi_pos_main_i.h"
 #include "os_if_wifi_pos.h"
 #include "target_if_wifi_pos.h"
+#include "wifi_pos_main_i.h"
+#include "wifi_pos_utils_i.h"
+#include "wlan_lmac_if_def.h"
 #include "wlan_objmgr_cmn.h"
 #include "wlan_objmgr_global_obj.h"
-#include "wlan_objmgr_psoc_obj.h"
 #include "wlan_objmgr_peer_obj.h"
-#include "wlan_lmac_if_def.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include <wlan_lmac_if_def.h>
 
 struct wlan_lmac_if_wifi_pos_rx_ops *
 wifi_pos_get_rx_ops(struct wlan_objmgr_psoc *psoc)
@@ -55,7 +55,7 @@ wifi_pos_get_rx_ops(struct wlan_objmgr_psoc *psoc)
 struct wifi_pos_legacy_ops *wifi_pos_get_legacy_ops(void)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_obj =
-			wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
+		wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
 
 	if (!wifi_pos_obj)
 		return NULL;
@@ -68,7 +68,7 @@ wifi_pos_set_legacy_ops(struct wlan_objmgr_psoc *psoc,
 			struct wifi_pos_legacy_ops *legacy_ops)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_obj =
-			wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
+		wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
 
 	if (!wifi_pos_obj)
 		return QDF_STATUS_E_FAILURE;
@@ -105,8 +105,7 @@ QDF_STATUS wifi_pos_init(void)
 
 	/* register psoc create handler functions. */
 	status = wlan_objmgr_register_psoc_create_handler(
-		WLAN_UMAC_COMP_WIFI_POS,
-		wifi_pos_psoc_obj_created_notification,
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_psoc_obj_created_notification,
 		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wifi_pos_err("register_psoc_create_handler failed, status: %d",
@@ -117,8 +116,7 @@ QDF_STATUS wifi_pos_init(void)
 	/* register psoc delete handler functions. */
 	status = wlan_objmgr_register_psoc_destroy_handler(
 		WLAN_UMAC_COMP_WIFI_POS,
-		wifi_pos_psoc_obj_destroyed_notification,
-		NULL);
+		wifi_pos_psoc_obj_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wifi_pos_err("register_psoc_destroy_handler failed, status: %d",
 			     status);
@@ -126,8 +124,8 @@ QDF_STATUS wifi_pos_init(void)
 	}
 
 	status = wlan_objmgr_register_vdev_create_handler(
-			WLAN_UMAC_COMP_WIFI_POS,
-			wifi_pos_vdev_created_notification, NULL);
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_vdev_created_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wifi_pos_err("register_vdev_create_handler failed, status: %d",
 			     status);
@@ -135,27 +133,25 @@ QDF_STATUS wifi_pos_init(void)
 	}
 
 	status = wlan_objmgr_register_vdev_destroy_handler(
-			WLAN_UMAC_COMP_WIFI_POS,
-			wifi_pos_vdev_destroyed_notification, NULL);
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_vdev_destroyed_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wifi_pos_err("register_vdev_destroy_handler failed, status: %d",
 			     status);
 		goto fail_vdev_destroy_handler;
 	}
 
-	status =  wlan_objmgr_register_peer_create_handler(
-			WLAN_UMAC_COMP_WIFI_POS,
-			wifi_pos_peer_object_created_notification,
-			NULL);
+	status = wlan_objmgr_register_peer_create_handler(
+		WLAN_UMAC_COMP_WIFI_POS,
+		wifi_pos_peer_object_created_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wifi_pos_err("peer create register notification failed");
 		goto fail_peer_create_handler;
 	}
 
 	status = wlan_objmgr_register_peer_destroy_handler(
-				WLAN_UMAC_COMP_WIFI_POS,
-				wifi_pos_peer_object_destroyed_notification,
-				NULL);
+		WLAN_UMAC_COMP_WIFI_POS,
+		wifi_pos_peer_object_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wifi_pos_err("peer destroy register notification failed");
 		goto fail_peer_destroy_handler;
@@ -165,28 +161,27 @@ QDF_STATUS wifi_pos_init(void)
 
 fail_peer_destroy_handler:
 	wlan_objmgr_unregister_peer_create_handler(
-			WLAN_UMAC_COMP_WIFI_POS,
-			wifi_pos_peer_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_WIFI_POS,
+		wifi_pos_peer_object_created_notification, NULL);
 fail_peer_create_handler:
 	wlan_objmgr_unregister_vdev_destroy_handler(
-			WLAN_UMAC_COMP_WIFI_POS,
-			wifi_pos_vdev_destroyed_notification, NULL);
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_vdev_destroyed_notification,
+		NULL);
 
 fail_vdev_destroy_handler:
 	wlan_objmgr_unregister_vdev_create_handler(
-			WLAN_UMAC_COMP_WIFI_POS,
-			wifi_pos_vdev_created_notification, NULL);
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_vdev_created_notification,
+		NULL);
 
 fail_vdev_create_handler:
 	wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_WIFI_POS,
-			wifi_pos_psoc_obj_destroyed_notification, NULL);
+		WLAN_UMAC_COMP_WIFI_POS,
+		wifi_pos_psoc_obj_destroyed_notification, NULL);
 
 fail_psoc_destroy_handler:
 	wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_WIFI_POS,
-			wifi_pos_psoc_obj_created_notification, NULL);
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_psoc_obj_created_notification,
+		NULL);
 
 	return status;
 }
@@ -196,52 +191,52 @@ QDF_STATUS wifi_pos_deinit(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_unregister_peer_destroy_handler(
-				WLAN_UMAC_COMP_WIFI_POS,
-				wifi_pos_peer_object_destroyed_notification,
-				NULL);
+		WLAN_UMAC_COMP_WIFI_POS,
+		wifi_pos_peer_object_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		wifi_pos_err("unable to unregister peer destroy handle");
 
 	status = wlan_objmgr_unregister_peer_create_handler(
-				WLAN_UMAC_COMP_WIFI_POS,
-				wifi_pos_peer_object_created_notification,
-				NULL);
+		WLAN_UMAC_COMP_WIFI_POS,
+		wifi_pos_peer_object_created_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		wifi_pos_err("unable to unregister peer create handle");
 
 	status = wlan_objmgr_unregister_vdev_destroy_handler(
-				WLAN_UMAC_COMP_WIFI_POS,
-				wifi_pos_vdev_destroyed_notification, NULL);
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_vdev_destroyed_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
-		wifi_pos_err("unregister_vdev_destroy_handler failed, status: %d",
-			     status);
+		wifi_pos_err(
+			"unregister_vdev_destroy_handler failed, status: %d",
+			status);
 
 	status = wlan_objmgr_unregister_vdev_create_handler(
-				WLAN_UMAC_COMP_WIFI_POS,
-				wifi_pos_vdev_created_notification, NULL);
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_vdev_created_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
-		wifi_pos_err("unregister_vdev_create_handler failed, status: %d",
-			     status);
+		wifi_pos_err(
+			"unregister_vdev_create_handler failed, status: %d",
+			status);
 
 	/* deregister psoc create handler functions. */
 	status = wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_UMAC_COMP_WIFI_POS,
-				wifi_pos_psoc_obj_created_notification,
-				NULL);
+		WLAN_UMAC_COMP_WIFI_POS, wifi_pos_psoc_obj_created_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		wifi_pos_err("unregister_psoc_create_handler failed, status: %d",
-			     status);
+		wifi_pos_err(
+			"unregister_psoc_create_handler failed, status: %d",
+			status);
 		return status;
 	}
 
 	/* deregister psoc delete handler functions. */
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-				WLAN_UMAC_COMP_WIFI_POS,
-				wifi_pos_psoc_obj_destroyed_notification,
-				NULL);
+		WLAN_UMAC_COMP_WIFI_POS,
+		wifi_pos_psoc_obj_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		wifi_pos_err("unregister_psoc_destroy_handler failed, status: %d",
-			     status);
+		wifi_pos_err(
+			"unregister_psoc_destroy_handler failed, status: %d",
+			status);
 	}
 
 	wifi_pos_lock_deinit();
@@ -297,9 +292,8 @@ wifi_pos_get_peer_private_object(struct wlan_objmgr_peer *peer)
 		return NULL;
 	}
 
-	peer_priv =
-		wlan_objmgr_peer_get_comp_private_obj(peer,
-						      WLAN_UMAC_COMP_WIFI_POS);
+	peer_priv = wlan_objmgr_peer_get_comp_private_obj(
+		peer, WLAN_UMAC_COMP_WIFI_POS);
 
 	return peer_priv;
 }
@@ -307,7 +301,7 @@ wifi_pos_get_peer_private_object(struct wlan_objmgr_peer *peer)
 void wifi_pos_set_oem_target_type(struct wlan_objmgr_psoc *psoc, uint32_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -322,7 +316,7 @@ void wifi_pos_set_oem_target_type(struct wlan_objmgr_psoc *psoc, uint32_t val)
 void wifi_pos_set_oem_fw_version(struct wlan_objmgr_psoc *psoc, uint32_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -337,7 +331,7 @@ void wifi_pos_set_oem_fw_version(struct wlan_objmgr_psoc *psoc, uint32_t val)
 void wifi_pos_set_drv_ver_major(struct wlan_objmgr_psoc *psoc, uint8_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -352,7 +346,7 @@ void wifi_pos_set_drv_ver_major(struct wlan_objmgr_psoc *psoc, uint8_t val)
 void wifi_pos_set_drv_ver_minor(struct wlan_objmgr_psoc *psoc, uint8_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -367,7 +361,7 @@ void wifi_pos_set_drv_ver_minor(struct wlan_objmgr_psoc *psoc, uint8_t val)
 void wifi_pos_set_drv_ver_patch(struct wlan_objmgr_psoc *psoc, uint8_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -382,7 +376,7 @@ void wifi_pos_set_drv_ver_patch(struct wlan_objmgr_psoc *psoc, uint8_t val)
 void wifi_pos_set_drv_ver_build(struct wlan_objmgr_psoc *psoc, uint8_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -397,7 +391,7 @@ void wifi_pos_set_drv_ver_build(struct wlan_objmgr_psoc *psoc, uint8_t val)
 void wifi_pos_set_dwell_time_min(struct wlan_objmgr_psoc *psoc, uint16_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -411,7 +405,7 @@ void wifi_pos_set_dwell_time_min(struct wlan_objmgr_psoc *psoc, uint16_t val)
 void wifi_pos_set_dwell_time_max(struct wlan_objmgr_psoc *psoc, uint16_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -427,7 +421,7 @@ void wifi_pos_set_current_dwell_time_max(struct wlan_objmgr_psoc *psoc,
 					 uint16_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -443,7 +437,7 @@ void wifi_pos_set_current_dwell_time_min(struct wlan_objmgr_psoc *psoc,
 					 uint16_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -459,7 +453,7 @@ uint32_t wifi_pos_get_app_pid(struct wlan_objmgr_psoc *psoc)
 {
 	uint32_t app_pid;
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-				wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -471,14 +465,13 @@ uint32_t wifi_pos_get_app_pid(struct wlan_objmgr_psoc *psoc)
 	qdf_spin_unlock_bh(&wifi_pos_psoc->wifi_pos_lock);
 
 	return app_pid;
-
 }
 
 bool wifi_pos_is_app_registered(struct wlan_objmgr_psoc *psoc)
 {
 	bool is_app_registered;
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-				wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -494,10 +487,11 @@ bool wifi_pos_is_app_registered(struct wlan_objmgr_psoc *psoc)
 
 #ifdef WLAN_FEATURE_CIF_CFR
 QDF_STATUS wifi_pos_init_cir_cfr_rings(struct wlan_objmgr_psoc *psoc,
-				   void *hal_soc, uint8_t num_mac, void *buf)
+				       void *hal_soc, uint8_t num_mac,
+				       void *buf)
 {
-	return target_if_wifi_pos_init_cir_cfr_rings(psoc, hal_soc,
-						     num_mac, buf);
+	return target_if_wifi_pos_init_cir_cfr_rings(psoc, hal_soc, num_mac,
+						     buf);
 }
 #endif
 
@@ -529,8 +523,8 @@ wifi_pos_register_get_phy_mode_cb(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS wifi_pos_register_get_fw_phy_mode_for_freq_cb(
-				struct wlan_objmgr_psoc *psoc,
-				void (*handler)(uint32_t, uint32_t, uint32_t *))
+	struct wlan_objmgr_psoc *psoc,
+	void (*handler)(uint32_t, uint32_t, uint32_t *))
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc;
 
@@ -556,9 +550,9 @@ QDF_STATUS wifi_pos_register_get_fw_phy_mode_for_freq_cb(
 
 #ifndef CNSS_GENL
 QDF_STATUS wifi_pos_register_get_pdev_id_by_dev_name(
-		struct wlan_objmgr_psoc *psoc,
-		QDF_STATUS (*handler)(char *dev_name, uint8_t *pdev_id,
-				      struct wlan_objmgr_psoc **psoc))
+	struct wlan_objmgr_psoc *psoc,
+	QDF_STATUS (*handler)(char *dev_name, uint8_t *pdev_id,
+			      struct wlan_objmgr_psoc **psoc))
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc;
 
@@ -585,9 +579,9 @@ QDF_STATUS wifi_pos_register_get_pdev_id_by_dev_name(
 
 #ifdef WLAN_RTT_MEASUREMENT_NOTIFICATION
 QDF_STATUS wifi_pos_register_measurement_request_notification(
-		struct wlan_objmgr_psoc *psoc,
-		QDF_STATUS (*handler)(struct wlan_objmgr_pdev *pdev,
-				      struct rtt_channel_info *chinfo))
+	struct wlan_objmgr_psoc *psoc,
+	QDF_STATUS (*handler)(struct wlan_objmgr_pdev *pdev,
+			      struct rtt_channel_info *chinfo))
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc;
 
@@ -614,10 +608,10 @@ QDF_STATUS wifi_pos_register_measurement_request_notification(
 #endif /* WLAN_RTT_MEASUREMENT_NOTIFICATION */
 
 QDF_STATUS wifi_pos_register_get_max_fw_phymode_for_channels(
-		struct wlan_objmgr_psoc *psoc,
-		QDF_STATUS (*handler)(struct wlan_objmgr_pdev *pdev,
-				      struct wifi_pos_channel_power *chan_list,
-				      uint16_t wifi_pos_num_chans))
+	struct wlan_objmgr_psoc *psoc,
+	QDF_STATUS (*handler)(struct wlan_objmgr_pdev *pdev,
+			      struct wifi_pos_channel_power *chan_list,
+			      uint16_t wifi_pos_num_chans))
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc;
 
@@ -644,11 +638,9 @@ QDF_STATUS wifi_pos_register_get_max_fw_phymode_for_channels(
 #endif /* CNSS_GENL */
 
 QDF_STATUS wifi_pos_register_send_action(
-				struct wlan_objmgr_psoc *psoc,
-				void (*handler)(struct wlan_objmgr_psoc *psoc,
-						uint32_t sub_type,
-						uint8_t *buf,
-						uint32_t buf_len))
+	struct wlan_objmgr_psoc *psoc,
+	void (*handler)(struct wlan_objmgr_psoc *psoc, uint32_t sub_type,
+			uint8_t *buf, uint32_t buf_len))
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc;
 
@@ -675,7 +667,7 @@ QDF_STATUS wifi_pos_register_send_action(
 QDF_STATUS wifi_pos_register_osif_callbacks(struct wifi_pos_osif_ops *ops)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_obj =
-			wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
+		wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
 
 	if (!wifi_pos_obj) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -690,7 +682,7 @@ QDF_STATUS wifi_pos_register_osif_callbacks(struct wifi_pos_osif_ops *ops)
 struct wifi_pos_osif_ops *wifi_pos_get_osif_callbacks(void)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_obj =
-			wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
+		wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
 
 	if (!wifi_pos_obj) {
 		wifi_pos_err("wifi_pos priv obj is null");
@@ -704,7 +696,7 @@ struct wifi_pos_osif_ops *wifi_pos_get_osif_callbacks(void)
 void wifi_pos_set_rsta_sec_ltf_cap(bool val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
+		wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_alert("unable to get wifi_pos psoc obj");
@@ -720,7 +712,7 @@ bool wifi_pos_get_rsta_sec_ltf_cap(void)
 {
 	bool value;
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
+		wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_alert("unable to get wifi_pos psoc obj");
@@ -737,7 +729,7 @@ bool wifi_pos_get_rsta_sec_ltf_cap(void)
 void wifi_pos_set_rsta_11az_ranging_cap(bool val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
+		wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_alert("unable to get wifi_pos psoc obj");
@@ -753,7 +745,7 @@ bool wifi_pos_get_rsta_11az_ranging_cap(void)
 {
 	bool value;
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
+		wifi_pos_get_psoc_priv_obj(wifi_pos_get_psoc());
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_alert("unable to get wifi_pos psoc obj");

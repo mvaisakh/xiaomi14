@@ -20,16 +20,16 @@
  * DOC: implementation of the driver FTM functions interfacing with linux kernel
  */
 
-#include <qdf_util.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_ftm_ucfg_api.h>
-#include <qdf_types.h>
 #include <qdf_module.h>
+#include <qdf_types.h>
+#include <qdf_util.h>
 #include <wlan_cfg80211_ftm.h>
+#include <wlan_ftm_ucfg_api.h>
 #include <wlan_ioctl_ftm.h>
+#include <wlan_objmgr_pdev_obj.h>
 
-static QDF_STATUS
-wlan_process_ftm_ioctl_cmd(struct wlan_objmgr_pdev *pdev, uint8_t *userdata)
+static QDF_STATUS wlan_process_ftm_ioctl_cmd(struct wlan_objmgr_pdev *pdev,
+					     uint8_t *userdata)
 {
 	uint8_t *buffer;
 	QDF_STATUS error;
@@ -55,8 +55,8 @@ wlan_process_ftm_ioctl_cmd(struct wlan_objmgr_pdev *pdev, uint8_t *userdata)
 	return error;
 }
 
-static QDF_STATUS
-wlan_process_ftm_ioctl_rsp(struct wlan_objmgr_pdev *pdev, uint8_t *userdata)
+static QDF_STATUS wlan_process_ftm_ioctl_rsp(struct wlan_objmgr_pdev *pdev,
+					     uint8_t *userdata)
 {
 	uint8_t *buffer;
 	QDF_STATUS error;
@@ -79,15 +79,14 @@ wlan_process_ftm_ioctl_rsp(struct wlan_objmgr_pdev *pdev, uint8_t *userdata)
 	return error;
 }
 
-int
-wlan_ioctl_ftm_testmode_cmd(struct wlan_objmgr_pdev *pdev, int cmd,
-			    uint8_t *userdata)
+int wlan_ioctl_ftm_testmode_cmd(struct wlan_objmgr_pdev *pdev, int cmd,
+				uint8_t *userdata)
 {
 	QDF_STATUS error;
 	struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj;
 
-	ftm_pdev_obj = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-			WLAN_UMAC_COMP_FTM);
+	ftm_pdev_obj =
+		wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_FTM);
 	if (!ftm_pdev_obj) {
 		ftm_err("Failed to get ftm pdev component");
 		return QDF_STATUS_E_FAILURE;

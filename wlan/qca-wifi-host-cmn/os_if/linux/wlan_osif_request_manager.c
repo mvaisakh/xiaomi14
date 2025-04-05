@@ -16,12 +16,12 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/kernel.h>
-#include "qdf_mem.h"
-#include "qdf_list.h"
-#include "qdf_event.h"
-#include "wlan_cfg80211.h"
 #include "wlan_osif_request_manager.h"
+#include "qdf_event.h"
+#include "qdf_list.h"
+#include "qdf_mem.h"
+#include "wlan_cfg80211.h"
+#include <linux/kernel.h>
 
 /* arbitrary value */
 #define MAX_NUM_REQUESTS 20
@@ -77,7 +77,8 @@ static struct osif_request *osif_request_find(void *cookie)
 	return NULL;
 }
 
-struct osif_request *osif_request_alloc(const struct osif_request_params *params)
+struct osif_request *
+osif_request_alloc(const struct osif_request_params *params)
 {
 	size_t length;
 	struct osif_request *request;
@@ -151,14 +152,14 @@ int osif_request_wait_for_response(struct osif_request *request)
 	QDF_STATUS status;
 
 	status = qdf_wait_for_event_completion(&request->completed,
-				       request->params.timeout_ms);
+					       request->params.timeout_ms);
 
 	return qdf_status_to_os_return(status);
 }
 
 void osif_request_complete(struct osif_request *request)
 {
-	(void) qdf_event_set(&request->completed);
+	(void)qdf_event_set(&request->completed);
 }
 
 void osif_request_manager_init(void)

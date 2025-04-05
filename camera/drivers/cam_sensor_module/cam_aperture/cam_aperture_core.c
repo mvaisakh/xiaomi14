@@ -3,15 +3,15 @@
  * Copyright Copyright “Copyright (C) 2018 XiaoMi, Inc.”
  */
 
-#include <linux/module.h>
-#include <cam_sensor_cmn_header.h>
 #include "cam_aperture_core.h"
-#include "cam_sensor_util.h"
-#include "cam_trace.h"
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
+#include "cam_sensor_util.h"
+#include "cam_trace.h"
+#include <cam_sensor_cmn_header.h>
+#include <linux/module.h>
 
-#define MAX_RETRY_TIMES 3  //xiaomi add
+#define MAX_RETRY_TIMES 3 // xiaomi add
 
 int32_t cam_aperture_construct_default_power_setting(
 	struct cam_sensor_power_ctrl_t *power_info)
@@ -20,8 +20,7 @@ int32_t cam_aperture_construct_default_power_setting(
 
 	power_info->power_setting_size = 1;
 	power_info->power_setting =
-		kzalloc(sizeof(struct cam_sensor_power_setting),
-			GFP_KERNEL);
+		kzalloc(sizeof(struct cam_sensor_power_setting), GFP_KERNEL);
 	if (!power_info->power_setting)
 		return -ENOMEM;
 
@@ -32,8 +31,7 @@ int32_t cam_aperture_construct_default_power_setting(
 
 	power_info->power_down_setting_size = 1;
 	power_info->power_down_setting =
-		kzalloc(sizeof(struct cam_sensor_power_setting),
-			GFP_KERNEL);
+		kzalloc(sizeof(struct cam_sensor_power_setting), GFP_KERNEL);
 	if (!power_info->power_down_setting) {
 		rc = -ENOMEM;
 		goto free_power_settings;
@@ -55,12 +53,12 @@ free_power_settings:
 static int32_t cam_aperture_power_up(struct cam_aperture_ctrl_t *a_ctrl)
 {
 	int rc = 0;
-	struct cam_hw_soc_info                 *soc_info = &a_ctrl->soc_info;
-	struct cam_aperture_soc_private        *soc_private;
-	struct cam_sensor_power_ctrl_t         *power_info;
-	struct completion                      *i3c_probe_completion = NULL;
-	struct timespec64                       ts1, ts2;
-	long                                    microsec = 0;
+	struct cam_hw_soc_info *soc_info = &a_ctrl->soc_info;
+	struct cam_aperture_soc_private *soc_private;
+	struct cam_sensor_power_ctrl_t *power_info;
+	struct completion *i3c_probe_completion = NULL;
+	struct timespec64 ts1, ts2;
+	long microsec = 0;
 
 	CAM_GET_TIMESTAMP(ts1);
 	CAM_DBG(CAM_APERTURE, "%s start power_up", a_ctrl->device_name);
@@ -70,9 +68,8 @@ static int32_t cam_aperture_power_up(struct cam_aperture_ctrl_t *a_ctrl)
 	power_info = &soc_private->power_info;
 
 	if ((power_info->power_setting == NULL) &&
-		(power_info->power_down_setting == NULL)) {
-		CAM_INFO(CAM_APERTURE,
-			"Using default power settings");
+	    (power_info->power_down_setting == NULL)) {
+		CAM_INFO(CAM_APERTURE, "Using default power settings");
 		rc = cam_aperture_construct_default_power_setting(power_info);
 		if (rc < 0) {
 			CAM_ERR(CAM_APERTURE,
@@ -82,10 +79,9 @@ static int32_t cam_aperture_power_up(struct cam_aperture_ctrl_t *a_ctrl)
 	}
 
 	/* Parse and fill vreg params for power up settings */
-	rc = msm_camera_fill_vreg_params(
-		&a_ctrl->soc_info,
-		power_info->power_setting,
-		power_info->power_setting_size);
+	rc = msm_camera_fill_vreg_params(&a_ctrl->soc_info,
+					 power_info->power_setting,
+					 power_info->power_setting_size);
 	if (rc) {
 		CAM_ERR(CAM_APERTURE,
 			"failed to fill vreg params for power up rc:%d", rc);
@@ -93,10 +89,9 @@ static int32_t cam_aperture_power_up(struct cam_aperture_ctrl_t *a_ctrl)
 	}
 
 	/* Parse and fill vreg params for power down settings*/
-	rc = msm_camera_fill_vreg_params(
-		&a_ctrl->soc_info,
-		power_info->power_down_setting,
-		power_info->power_down_setting_size);
+	rc = msm_camera_fill_vreg_params(&a_ctrl->soc_info,
+					 power_info->power_down_setting,
+					 power_info->power_down_setting_size);
 	if (rc) {
 		CAM_ERR(CAM_APERTURE,
 			"failed to fill vreg params power down rc:%d", rc);
@@ -106,12 +101,13 @@ static int32_t cam_aperture_power_up(struct cam_aperture_ctrl_t *a_ctrl)
 	power_info->dev = soc_info->dev;
 
 	if (a_ctrl->io_master_info.master_type == I3C_MASTER)
-		i3c_probe_completion = cam_aperture_get_i3c_completion(a_ctrl->soc_info.index);
+		i3c_probe_completion =
+			cam_aperture_get_i3c_completion(a_ctrl->soc_info.index);
 
-	rc = cam_sensor_core_power_up(power_info, soc_info, i3c_probe_completion);
+	rc = cam_sensor_core_power_up(power_info, soc_info,
+				      i3c_probe_completion);
 	if (rc) {
-		CAM_ERR(CAM_APERTURE,
-			"failed in aperture power up rc %d", rc);
+		CAM_ERR(CAM_APERTURE, "failed in aperture power up rc %d", rc);
 		return rc;
 	}
 
@@ -124,7 +120,7 @@ static int32_t cam_aperture_power_up(struct cam_aperture_ctrl_t *a_ctrl)
 	CAM_GET_TIMESTAMP(ts2);
 	CAM_GET_TIMESTAMP_DIFF_IN_MICRO(ts1, ts2, microsec);
 	CAM_DBG(CAM_APERTURE, "%s end power_up, occupy time is: %ld ms",
-		a_ctrl->device_name, microsec/1000);
+		a_ctrl->device_name, microsec / 1000);
 
 	return rc;
 cci_failure:
@@ -139,7 +135,7 @@ static int32_t cam_aperture_power_down(struct cam_aperture_ctrl_t *a_ctrl)
 	int32_t rc = 0;
 	struct cam_sensor_power_ctrl_t *power_info;
 	struct cam_hw_soc_info *soc_info = &a_ctrl->soc_info;
-	struct cam_aperture_soc_private  *soc_private;
+	struct cam_aperture_soc_private *soc_private;
 	struct timespec64 ts1, ts2;
 	long microsec = 0;
 
@@ -171,60 +167,55 @@ static int32_t cam_aperture_power_down(struct cam_aperture_ctrl_t *a_ctrl)
 	CAM_GET_TIMESTAMP(ts2);
 	CAM_GET_TIMESTAMP_DIFF_IN_MICRO(ts1, ts2, microsec);
 	CAM_DBG(CAM_APERTURE, "%s end power_down, occupy time is: %ld ms",
-		a_ctrl->device_name, microsec/1000);
+		a_ctrl->device_name, microsec / 1000);
 
 	return rc;
 }
 
-static int32_t cam_aperture_i2c_modes_util(
-	struct camera_io_master *io_master_info,
-	struct i2c_settings_list *i2c_list)
+static int32_t
+cam_aperture_i2c_modes_util(struct camera_io_master *io_master_info,
+			    struct i2c_settings_list *i2c_list)
 {
 	int32_t rc = 0;
 	uint32_t i, size;
 
 	if (i2c_list->op_code == CAM_SENSOR_I2C_WRITE_RANDOM) {
 		rc = camera_io_dev_write(io_master_info,
-			&(i2c_list->i2c_settings));
+					 &(i2c_list->i2c_settings));
 		if (rc < 0) {
 			CAM_ERR(CAM_APERTURE,
-				"Failed to random write I2C settings: %d",
-				rc);
+				"Failed to random write I2C settings: %d", rc);
 			return rc;
 		}
 	} else if (i2c_list->op_code == CAM_SENSOR_I2C_WRITE_SEQ) {
-		rc = camera_io_dev_write_continuous(
-			io_master_info,
-			&(i2c_list->i2c_settings),
-			CAM_SENSOR_I2C_WRITE_SEQ);
+		rc = camera_io_dev_write_continuous(io_master_info,
+						    &(i2c_list->i2c_settings),
+						    CAM_SENSOR_I2C_WRITE_SEQ);
 		if (rc < 0) {
 			CAM_ERR(CAM_APERTURE,
-				"Failed to seq write I2C settings: %d",
-				rc);
+				"Failed to seq write I2C settings: %d", rc);
 			return rc;
-			}
+		}
 	} else if (i2c_list->op_code == CAM_SENSOR_I2C_WRITE_BURST) {
-		rc = camera_io_dev_write_continuous(
-			io_master_info,
-			&(i2c_list->i2c_settings),
-			CAM_SENSOR_I2C_WRITE_BURST);
+		rc = camera_io_dev_write_continuous(io_master_info,
+						    &(i2c_list->i2c_settings),
+						    CAM_SENSOR_I2C_WRITE_BURST);
 		if (rc < 0) {
 			CAM_ERR(CAM_APERTURE,
-				"Failed to burst write I2C settings: %d",
-				rc);
+				"Failed to burst write I2C settings: %d", rc);
 			return rc;
 		}
 	} else if (i2c_list->op_code == CAM_SENSOR_I2C_POLL) {
 		size = i2c_list->i2c_settings.size;
 		for (i = 0; i < size; i++) {
 			rc = camera_io_dev_poll(
-			io_master_info,
-			i2c_list->i2c_settings.reg_setting[i].reg_addr,
-			i2c_list->i2c_settings.reg_setting[i].reg_data,
-			i2c_list->i2c_settings.reg_setting[i].data_mask,
-			i2c_list->i2c_settings.addr_type,
-			i2c_list->i2c_settings.data_type,
-			i2c_list->i2c_settings.reg_setting[i].delay);
+				io_master_info,
+				i2c_list->i2c_settings.reg_setting[i].reg_addr,
+				i2c_list->i2c_settings.reg_setting[i].reg_data,
+				i2c_list->i2c_settings.reg_setting[i].data_mask,
+				i2c_list->i2c_settings.addr_type,
+				i2c_list->i2c_settings.data_type,
+				i2c_list->i2c_settings.reg_setting[i].delay);
 			if (rc < 0) {
 				CAM_ERR(CAM_APERTURE,
 					"i2c poll apply setting Fail: %d", rc);
@@ -237,7 +228,7 @@ static int32_t cam_aperture_i2c_modes_util(
 }
 
 int32_t cam_aperture_slaveInfo_pkt_parser(struct cam_aperture_ctrl_t *a_ctrl,
-	uint32_t *cmd_buf, size_t len)
+					  uint32_t *cmd_buf, size_t len)
 {
 	int32_t rc = 0;
 	struct cam_cmd_i2c_info *i2c_info;
@@ -253,8 +244,8 @@ int32_t cam_aperture_slaveInfo_pkt_parser(struct cam_aperture_ctrl_t *a_ctrl,
 			a_ctrl->cci_i2c_master;
 		a_ctrl->io_master_info.cci_client->i2c_freq_mode =
 			i2c_info->i2c_freq_mode;
-		a_ctrl->io_master_info.cci_client->sid =
-			i2c_info->slave_addr >> 1;
+		a_ctrl->io_master_info.cci_client->sid = i2c_info->slave_addr >>
+							 1;
 		CAM_DBG(CAM_APERTURE, "Slave addr: 0x%x Freq Mode: %d",
 			i2c_info->slave_addr, i2c_info->i2c_freq_mode);
 	} else if (a_ctrl->io_master_info.master_type == I2C_MASTER) {
@@ -263,14 +254,14 @@ int32_t cam_aperture_slaveInfo_pkt_parser(struct cam_aperture_ctrl_t *a_ctrl,
 	} else {
 		CAM_ERR(CAM_APERTURE, "Invalid Master type: %d",
 			a_ctrl->io_master_info.master_type);
-		 rc = -EINVAL;
+		rc = -EINVAL;
 	}
 
 	return rc;
 }
 
 int32_t cam_aperture_apply_settings(struct cam_aperture_ctrl_t *a_ctrl,
-	struct i2c_settings_array *i2c_set)
+				    struct i2c_settings_array *i2c_set)
 {
 	struct i2c_settings_list *i2c_list;
 	int32_t rc = 0;
@@ -286,58 +277,72 @@ int32_t cam_aperture_apply_settings(struct cam_aperture_ctrl_t *a_ctrl,
 		return -EINVAL;
 	}
 
-	list_for_each_entry(i2c_list,
-		&(i2c_set->list_head), list) {
+	list_for_each_entry(i2c_list, &(i2c_set->list_head), list) {
 		/* xiaomi add I2C trace begin */
 		switch (i2c_list->op_code) {
 		case CAM_SENSOR_I2C_WRITE_RANDOM:
 		case CAM_SENSOR_I2C_WRITE_BURST:
 		case CAM_SENSOR_I2C_WRITE_SEQ: {
-			for (j = 0;j < i2c_list->i2c_settings.size;j++) {
-				trace_cam_i2c_write_log_event("[APERTURESETTINGS]", a_ctrl->device_name,
-					i2c_set->request_id, j, "WRITE", i2c_list->i2c_settings.reg_setting[j].reg_addr,
-					i2c_list->i2c_settings.reg_setting[j].reg_data);
+			for (j = 0; j < i2c_list->i2c_settings.size; j++) {
+				trace_cam_i2c_write_log_event(
+					"[APERTURESETTINGS]",
+					a_ctrl->device_name,
+					i2c_set->request_id, j, "WRITE",
+					i2c_list->i2c_settings.reg_setting[j]
+						.reg_addr,
+					i2c_list->i2c_settings.reg_setting[j]
+						.reg_data);
 			}
 			break;
 		}
 		case CAM_SENSOR_I2C_READ_RANDOM:
 		case CAM_SENSOR_I2C_READ_SEQ: {
-			for (j = 0;j < i2c_list->i2c_settings.size;j++) {
-				trace_cam_i2c_write_log_event("[APERTURESETTINGS]", a_ctrl->device_name,
-					i2c_set->request_id, j, "READ", i2c_list->i2c_settings.reg_setting[j].reg_addr,
-					i2c_list->i2c_settings.reg_setting[j].reg_data);
+			for (j = 0; j < i2c_list->i2c_settings.size; j++) {
+				trace_cam_i2c_write_log_event(
+					"[APERTURESETTINGS]",
+					a_ctrl->device_name,
+					i2c_set->request_id, j, "READ",
+					i2c_list->i2c_settings.reg_setting[j]
+						.reg_addr,
+					i2c_list->i2c_settings.reg_setting[j]
+						.reg_data);
 			}
 			break;
 		}
-		case CAM_SENSOR_I2C_POLL:{
-			for (j = 0;j < i2c_list->i2c_settings.size;j++) {
-				trace_cam_i2c_write_log_event("[APERTURESETTINGS]", a_ctrl->device_name,
-					i2c_set->request_id, j, "POLL", i2c_list->i2c_settings.reg_setting[j].reg_addr,
-					i2c_list->i2c_settings.reg_setting[j].reg_data);
+		case CAM_SENSOR_I2C_POLL: {
+			for (j = 0; j < i2c_list->i2c_settings.size; j++) {
+				trace_cam_i2c_write_log_event(
+					"[APERTURESETTINGS]",
+					a_ctrl->device_name,
+					i2c_set->request_id, j, "POLL",
+					i2c_list->i2c_settings.reg_setting[j]
+						.reg_addr,
+					i2c_list->i2c_settings.reg_setting[j]
+						.reg_data);
 			}
 			break;
 		}
 		default:
 			break;
 		}
-		if(a_ctrl->device_error == false){
+		if (a_ctrl->device_error == false) {
 			rc = cam_aperture_i2c_modes_util(
-				&(a_ctrl->io_master_info),
-				i2c_list);
+				&(a_ctrl->io_master_info), i2c_list);
 			if (rc < 0) {
 				CAM_WARN(CAM_APERTURE,
-					"Failed to apply settings: %d",
-					rc);
+					 "Failed to apply settings: %d", rc);
 				/* xiaomi add to ignore the apply setting fail - begin */
 				for (i = 0; i < MAX_RETRY_TIMES; i++) {
 					usleep_range(1000, 1010);
 					rc = cam_aperture_i2c_modes_util(
 						&(a_ctrl->io_master_info),
 						i2c_list);
-					if(rc < 0){
-						CAM_WARN(CAM_APERTURE,
-						"Failed to apply settings: %d times:%d",rc,i);
-					}else{
+					if (rc < 0) {
+						CAM_WARN(
+							CAM_APERTURE,
+							"Failed to apply settings: %d times:%d",
+							rc, i);
+					} else {
 						break;
 					}
 				}
@@ -350,14 +355,11 @@ int32_t cam_aperture_apply_settings(struct cam_aperture_ctrl_t *a_ctrl,
 					rc = 0;
 					break;
 				}
-			}
-			else {
-				CAM_DBG(CAM_APERTURE,
-					"Success:request ID: %d",
+			} else {
+				CAM_DBG(CAM_APERTURE, "Success:request ID: %d",
 					i2c_set->request_id);
 			}
-		}
-		else{
+		} else {
 			CAM_ERR(CAM_APERTURE, "device is error skip!!");
 		}
 	}
@@ -374,43 +376,44 @@ int32_t cam_aperture_apply_request(struct cam_req_mgr_apply_request *apply)
 		return -EINVAL;
 	}
 
-	a_ctrl = (struct cam_aperture_ctrl_t *)
-		cam_get_device_priv(apply->dev_hdl);
+	a_ctrl = (struct cam_aperture_ctrl_t *)cam_get_device_priv(
+		apply->dev_hdl);
 	if (!a_ctrl) {
 		CAM_ERR(CAM_APERTURE, "Device data is NULL");
 		return -EINVAL;
 	}
 	request_id = apply->request_id % MAX_PER_FRAME_ARRAY;
 
-	trace_cam_apply_req("Aperture", a_ctrl->soc_info.index, apply->request_id, apply->link_hdl);
+	trace_cam_apply_req("Aperture", a_ctrl->soc_info.index,
+			    apply->request_id, apply->link_hdl);
 
 	CAM_DBG(CAM_APERTURE, "Request Id: %lld", apply->request_id);
 	mutex_lock(&(a_ctrl->aperture_mutex));
 	if ((apply->request_id ==
-		a_ctrl->i2c_data.per_frame[request_id].request_id) &&
-		(a_ctrl->i2c_data.per_frame[request_id].is_settings_valid)
-		== 1) {
-		rc = cam_aperture_apply_settings(a_ctrl,
-			&a_ctrl->i2c_data.per_frame[request_id]);
+	     a_ctrl->i2c_data.per_frame[request_id].request_id) &&
+	    (a_ctrl->i2c_data.per_frame[request_id].is_settings_valid) == 1) {
+		rc = cam_aperture_apply_settings(
+			a_ctrl, &a_ctrl->i2c_data.per_frame[request_id]);
 		if (rc < 0) {
 			CAM_ERR(CAM_APERTURE,
 				"Failed in applying the request: %lld\n",
 				apply->request_id);
 			goto release_mutex;
 		} else {
-			a_ctrl->i2c_data.per_frame[request_id].is_settings_valid = 0;
+			a_ctrl->i2c_data.per_frame[request_id]
+				.is_settings_valid = 0;
 		}
 	}
 
 	if (rc < 0)
 		goto release_mutex;
 
-	del_req_id = (request_id +
-		MAX_PER_FRAME_ARRAY - MAX_SYSTEM_PIPELINE_DELAY) %
+	del_req_id =
+		(request_id + MAX_PER_FRAME_ARRAY - MAX_SYSTEM_PIPELINE_DELAY) %
 		MAX_PER_FRAME_ARRAY;
 
 	if (apply->request_id >
-		a_ctrl->i2c_data.per_frame[del_req_id].request_id) {
+	    a_ctrl->i2c_data.per_frame[del_req_id].request_id) {
 		a_ctrl->i2c_data.per_frame[del_req_id].request_id = 0;
 		rc = delete_request(&a_ctrl->i2c_data.per_frame[del_req_id]);
 		if (rc < 0) {
@@ -428,8 +431,8 @@ release_mutex:
 	return rc;
 }
 
-int32_t cam_aperture_establish_link(
-	struct cam_req_mgr_core_dev_link_setup *link)
+int32_t
+cam_aperture_establish_link(struct cam_req_mgr_core_dev_link_setup *link)
 {
 	struct cam_aperture_ctrl_t *a_ctrl = NULL;
 
@@ -438,8 +441,8 @@ int32_t cam_aperture_establish_link(
 		return -EINVAL;
 	}
 
-	a_ctrl = (struct cam_aperture_ctrl_t *)
-		cam_get_device_priv(link->dev_hdl);
+	a_ctrl = (struct cam_aperture_ctrl_t *)cam_get_device_priv(
+		link->dev_hdl);
 	if (!a_ctrl) {
 		CAM_ERR(CAM_APERTURE, "Device data is NULL");
 		return -EINVAL;
@@ -458,10 +461,9 @@ int32_t cam_aperture_establish_link(
 	return 0;
 }
 
-static int cam_aperture_update_req_mgr(
-	struct cam_aperture_ctrl_t *a_ctrl,
-	struct cam_packet *csl_packet,
-	struct skip_frame  skip_info)
+static int cam_aperture_update_req_mgr(struct cam_aperture_ctrl_t *a_ctrl,
+				       struct cam_packet *csl_packet,
+				       struct skip_frame skip_info)
 {
 	int rc = 0;
 	struct cam_req_mgr_add_request add_req;
@@ -472,22 +474,21 @@ static int cam_aperture_update_req_mgr(
 	add_req.dev_hdl = a_ctrl->bridge_intf.device_hdl;
 
 	if ((csl_packet->header.op_code & 0xFFFFFF) ==
-		CAM_APERTURE_PACKET_SWITCH) {
-		if(skip_info.trigger_eof) {
+	    CAM_APERTURE_PACKET_SWITCH) {
+		if (skip_info.trigger_eof) {
 			add_req.trigger_eof = true;
 			add_req.skip_at_sof = skip_info.skip_num;
-		}
-		else {
+		} else {
 			add_req.trigger_eof = false;
 		}
 	}
 
-	if (a_ctrl->bridge_intf.crm_cb &&
-		a_ctrl->bridge_intf.crm_cb->add_req) {
+	if (a_ctrl->bridge_intf.crm_cb && a_ctrl->bridge_intf.crm_cb->add_req) {
 		rc = a_ctrl->bridge_intf.crm_cb->add_req(&add_req);
 		if (rc) {
 			if (rc == -EBADR)
-				CAM_INFO(CAM_APERTURE,
+				CAM_INFO(
+					CAM_APERTURE,
 					"Adding request: %llu failed: rc: %d, it has been flushed",
 					csl_packet->header.request_id, rc);
 			else
@@ -523,34 +524,34 @@ int32_t cam_aperture_publish_dev_info(struct cam_req_mgr_device_info *info)
 }
 
 int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
-	void *arg)
+				   void *arg)
 {
-	int32_t  rc = 0;
-	int32_t  i = 0;
+	int32_t rc = 0;
+	int32_t i = 0;
 	uint32_t total_cmd_buf_in_bytes = 0;
-	size_t   len_of_buff = 0;
-	size_t   remain_len  = 0;
-	size_t   tot_size    = 0;
-	uint32_t byte_cnt    = 0;
-	uint32_t *offset     = NULL;
-	uint32_t *cmd_buf    = NULL;
+	size_t len_of_buff = 0;
+	size_t remain_len = 0;
+	size_t tot_size = 0;
+	uint32_t byte_cnt = 0;
+	uint32_t *offset = NULL;
+	uint32_t *cmd_buf = NULL;
 	uintptr_t generic_ptr;
 	uintptr_t generic_pkt_ptr;
-	uint16_t                  generic_op_code;
-	struct common_header      *cmm_hdr = NULL;
-	struct cam_control        *ioctl_ctrl = NULL;
-	struct cam_packet         *csl_packet = NULL;
+	uint16_t generic_op_code;
+	struct common_header *cmm_hdr = NULL;
+	struct cam_control *ioctl_ctrl = NULL;
+	struct cam_packet *csl_packet = NULL;
 	struct cam_config_dev_cmd config;
-	struct i2c_data_settings  *i2c_data = NULL;
+	struct i2c_data_settings *i2c_data = NULL;
 	struct i2c_settings_array *i2c_reg_settings = NULL;
-	struct cam_cmd_buf_desc   *cmd_desc = NULL;
+	struct cam_cmd_buf_desc *cmd_desc = NULL;
 	struct cam_aperture_soc_private *soc_private = NULL;
-	struct cam_sensor_power_ctrl_t  *power_info = NULL;
-	struct skip_frame   *skip_frame_msg = NULL;
-	struct skip_frame    skip_info = {0};
+	struct cam_sensor_power_ctrl_t *power_info = NULL;
+	struct skip_frame *skip_frame_msg = NULL;
+	struct skip_frame skip_info = { 0 };
 
-	uint32_t                  j = 0;
-	struct list_head          *list = NULL;
+	uint32_t j = 0;
+	struct list_head *list = NULL;
 
 	if (!a_ctrl || !arg) {
 		CAM_ERR(CAM_APERTURE, "Invalid Args");
@@ -563,12 +564,11 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 	power_info = &soc_private->power_info;
 
 	ioctl_ctrl = (struct cam_control *)arg;
-	if (copy_from_user(&config,
-		u64_to_user_ptr(ioctl_ctrl->handle),
-		sizeof(config)))
+	if (copy_from_user(&config, u64_to_user_ptr(ioctl_ctrl->handle),
+			   sizeof(config)))
 		return -EFAULT;
-	rc = cam_mem_get_cpu_buf(config.packet_handle,
-		&generic_pkt_ptr, &len_of_buff);
+	rc = cam_mem_get_cpu_buf(config.packet_handle, &generic_pkt_ptr,
+				 &len_of_buff);
 	if (rc < 0) {
 		CAM_ERR(CAM_APERTURE, "Error in converting command Handle %d",
 			rc);
@@ -577,32 +577,31 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 
 	remain_len = len_of_buff;
 	if ((sizeof(struct cam_packet) > len_of_buff) ||
-		((size_t)config.offset >= len_of_buff -
-		sizeof(struct cam_packet))) {
+	    ((size_t)config.offset >=
+	     len_of_buff - sizeof(struct cam_packet))) {
 		CAM_ERR(CAM_APERTURE,
 			"Inval cam_packet strut size: %zu, len_of_buff: %zu",
-			 sizeof(struct cam_packet), len_of_buff);
+			sizeof(struct cam_packet), len_of_buff);
 		rc = -EINVAL;
 		goto end;
 	}
 
 	remain_len -= (size_t)config.offset;
-	csl_packet = (struct cam_packet *)
-			(generic_pkt_ptr + (uint32_t)config.offset);
+	csl_packet = (struct cam_packet *)(generic_pkt_ptr +
+					   (uint32_t)config.offset);
 
-	if (cam_packet_util_validate_packet(csl_packet,
-		remain_len)) {
+	if (cam_packet_util_validate_packet(csl_packet, remain_len)) {
 		CAM_ERR(CAM_APERTURE, "Invalid packet params");
 		rc = -EINVAL;
 		goto end;
 	}
 
 	if ((csl_packet->header.op_code & 0xFFFFFF) !=
-		CAM_APERTURE_PACKET_OPCODE_INIT &&
-		(csl_packet->header.op_code & 0xFFFFFF) !=
-		CAM_APERTURE_PACKET_OPCODE_READ &&
-		csl_packet->header.request_id <= a_ctrl->last_flush_req
-		&& a_ctrl->last_flush_req != 0) {
+		    CAM_APERTURE_PACKET_OPCODE_INIT &&
+	    (csl_packet->header.op_code & 0xFFFFFF) !=
+		    CAM_APERTURE_PACKET_OPCODE_READ &&
+	    csl_packet->header.request_id <= a_ctrl->last_flush_req &&
+	    a_ctrl->last_flush_req != 0) {
 		CAM_DBG(CAM_APERTURE,
 			"reject request %lld, last request to flush %lld",
 			csl_packet->header.request_id, a_ctrl->last_flush_req);
@@ -625,7 +624,7 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 			if (!total_cmd_buf_in_bytes)
 				continue;
 			rc = cam_mem_get_cpu_buf(cmd_desc[i].mem_handle,
-					&generic_ptr, &len_of_buff);
+						 &generic_ptr, &len_of_buff);
 			if (rc < 0) {
 				CAM_ERR(CAM_APERTURE, "Failed to get cpu buf");
 				goto end;
@@ -637,8 +636,8 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 				goto end;
 			}
 			if ((len_of_buff < sizeof(struct common_header)) ||
-				(cmd_desc[i].offset > (len_of_buff -
-				sizeof(struct common_header)))) {
+			    (cmd_desc[i].offset >
+			     (len_of_buff - sizeof(struct common_header)))) {
 				CAM_ERR(CAM_APERTURE,
 					"Invalid length for sensor cmd");
 				rc = -EINVAL;
@@ -656,7 +655,8 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 					a_ctrl, cmd_buf, remain_len);
 				if (rc < 0) {
 					CAM_ERR(CAM_APERTURE,
-					"Failed to parse slave info: %d", rc);
+						"Failed to parse slave info: %d",
+						rc);
 					goto end;
 				}
 				break;
@@ -665,9 +665,8 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 				CAM_DBG(CAM_APERTURE,
 					"Received power settings buffer");
 				rc = cam_sensor_update_power_settings(
-						cmd_buf,
-						total_cmd_buf_in_bytes,
-						power_info, remain_len);
+					cmd_buf, total_cmd_buf_in_bytes,
+					power_info, remain_len);
 				if (rc) {
 					CAM_ERR(CAM_APERTURE,
 						"Failed:parse power settings: %d",
@@ -679,19 +678,18 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 				CAM_DBG(CAM_APERTURE,
 					"Received initSettings buffer");
 				i2c_data = &(a_ctrl->i2c_data);
-				i2c_reg_settings =
-					&i2c_data->init_settings;
+				i2c_reg_settings = &i2c_data->init_settings;
 
 				i2c_reg_settings->request_id = 0;
 				i2c_reg_settings->is_settings_valid = 1;
 				rc = cam_sensor_i2c_command_parser(
 					&a_ctrl->io_master_info,
-					i2c_reg_settings,
-					&cmd_desc[i], 1, NULL);
+					i2c_reg_settings, &cmd_desc[i], 1,
+					NULL);
 				if (rc < 0) {
 					CAM_ERR(CAM_APERTURE,
-					"Failed:parse init settings: %d",
-					rc);
+						"Failed:parse init settings: %d",
+						rc);
 					goto end;
 				}
 				break;
@@ -700,17 +698,17 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 		}
 
 		if (a_ctrl->cam_act_state == CAM_APERTURE_ACQUIRE) {
-				rc = cam_aperture_power_up(a_ctrl);
-				if (rc < 0) {
-					CAM_ERR(CAM_APERTURE,
-						" Aperture Power up failed");
-					goto end;
-				}
+			rc = cam_aperture_power_up(a_ctrl);
+			if (rc < 0) {
+				CAM_ERR(CAM_APERTURE,
+					" Aperture Power up failed");
+				goto end;
+			}
 			a_ctrl->cam_act_state = CAM_APERTURE_CONFIG;
 		}
 
-		rc = cam_aperture_apply_settings(a_ctrl,
-			&a_ctrl->i2c_data.init_settings);
+		rc = cam_aperture_apply_settings(
+			a_ctrl, &a_ctrl->i2c_data.init_settings);
 		if (rc < 0) {
 			CAM_ERR(CAM_APERTURE, "Cannot apply Init settings");
 			goto end;
@@ -720,7 +718,7 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 		rc = delete_request(&a_ctrl->i2c_data.init_settings);
 		if (rc < 0) {
 			CAM_WARN(CAM_APERTURE,
-				"Fail in deleting the Init settings");
+				 "Fail in deleting the Init settings");
 			rc = 0;
 		}
 		break;
@@ -728,18 +726,18 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 		if (a_ctrl->cam_act_state < CAM_APERTURE_CONFIG) {
 			rc = -EINVAL;
 			CAM_WARN(CAM_APERTURE,
-				"Not in right state to move lens: %d",
-				a_ctrl->cam_act_state);
+				 "Not in right state to move lens: %d",
+				 a_ctrl->cam_act_state);
 			goto end;
 		}
 		a_ctrl->setting_apply_state = APT_APPLY_SETTINGS_LATER;
 
 		i2c_data = &(a_ctrl->i2c_data);
-		i2c_reg_settings = &i2c_data->per_frame[
-			csl_packet->header.request_id % MAX_PER_FRAME_ARRAY];
+		i2c_reg_settings =
+			&i2c_data->per_frame[csl_packet->header.request_id %
+					     MAX_PER_FRAME_ARRAY];
 
-		i2c_reg_settings->request_id =
-			csl_packet->header.request_id;
+		i2c_reg_settings->request_id = csl_packet->header.request_id;
 		i2c_reg_settings->is_settings_valid = 1;
 		offset = (uint32_t *)&csl_packet->payload;
 		offset += csl_packet->cmd_buf_offset / sizeof(uint32_t);
@@ -747,14 +745,16 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 
 		total_cmd_buf_in_bytes = cmd_desc[0].length;
 
-		CAM_DBG(CAM_APERTURE, "[ApeSkipFrame] total_cmd_buf_in_bytes %d",
+		CAM_DBG(CAM_APERTURE,
+			"[ApeSkipFrame] total_cmd_buf_in_bytes %d",
 			total_cmd_buf_in_bytes);
 
-		rc = cam_mem_get_cpu_buf(cmd_desc[0].mem_handle,
-			&generic_ptr, &len_of_buff);
+		rc = cam_mem_get_cpu_buf(cmd_desc[0].mem_handle, &generic_ptr,
+					 &len_of_buff);
 
 		if (rc < 0) {
-			CAM_ERR(CAM_APERTURE, "[ApeSkipFrame] Failed to get cpu buf : 0x%x",
+			CAM_ERR(CAM_APERTURE,
+				"[ApeSkipFrame] Failed to get cpu buf : 0x%x",
 				cmd_desc[0].mem_handle);
 			rc = -EINVAL;
 			goto end;
@@ -768,20 +768,20 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 		}
 
 		cmd_buf += cmd_desc[0].offset / sizeof(uint32_t);
-		skip_frame_msg = ((struct skip_frame*)cmd_buf);
+		skip_frame_msg = ((struct skip_frame *)cmd_buf);
 
 		memcpy(&skip_info, skip_frame_msg, sizeof(struct skip_frame));
 
-		CAM_INFO(CAM_APERTURE, "[ApeSkipFrame] skip reqId: %llu, skip num: %llu "
-				"trigger_eof: %d",
-				skip_info.req_id,
-				skip_info.skip_num,
-				skip_info.trigger_eof);
+		CAM_INFO(CAM_APERTURE,
+			 "[ApeSkipFrame] skip reqId: %llu, skip num: %llu "
+			 "trigger_eof: %d",
+			 skip_info.req_id, skip_info.skip_num,
+			 skip_info.trigger_eof);
 
 		total_cmd_buf_in_bytes -= sizeof(struct skip_frame);
 
-	    remain_len = len_of_buff;
-		cmd_buf    = (uint32_t *)(skip_frame_msg+1);
+		remain_len = len_of_buff;
+		cmd_buf = (uint32_t *)(skip_frame_msg + 1);
 
 		remain_len -= cmd_desc[0].offset;
 		if (remain_len < total_cmd_buf_in_bytes) {
@@ -792,7 +792,7 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 
 		while (byte_cnt < total_cmd_buf_in_bytes) {
 			if ((remain_len - byte_cnt) <
-				sizeof(struct common_header)) {
+			    sizeof(struct common_header)) {
 				CAM_ERR(CAM_APERTURE, "Not enough buffer");
 				rc = -EINVAL;
 				goto end;
@@ -801,139 +801,147 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 			generic_op_code = cmm_hdr->fifth_byte;
 
 			switch (cmm_hdr->cmd_type) {
-				case CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR: {
-					uint32_t cmd_length_in_bytes   = 0;
-					struct cam_cmd_i2c_random_wr
-						*cam_cmd_i2c_random_wr =
-						(struct cam_cmd_i2c_random_wr *)cmd_buf;
+			case CAMERA_SENSOR_CMD_TYPE_I2C_RNDM_WR: {
+				uint32_t cmd_length_in_bytes = 0;
+				struct cam_cmd_i2c_random_wr
+					*cam_cmd_i2c_random_wr =
+						(struct cam_cmd_i2c_random_wr *)
+							cmd_buf;
 
-					if ((remain_len - byte_cnt) <
-						sizeof(struct cam_cmd_i2c_random_wr)) {
-						CAM_ERR(CAM_APERTURE,
-							"Not enough buffer provided");
-						rc = -EINVAL;
-						goto end;
-					}
-					tot_size = sizeof(struct i2c_rdwr_header) +
-						(sizeof(struct i2c_random_wr_payload) *
-						cam_cmd_i2c_random_wr->header.count);
-
-					if (tot_size > (remain_len - byte_cnt)) {
-						CAM_ERR(CAM_APERTURE,
-							"Not enough buffer provided");
-						rc = -EINVAL;
-						goto end;
-					}
-
-					rc = cam_sensor_handle_random_write(
-						cam_cmd_i2c_random_wr,
-						i2c_reg_settings,
-						&cmd_length_in_bytes, &j, &list);
-					if (rc < 0) {
-						CAM_ERR(CAM_APERTURE,
-						"Failed in random write %d", rc);
-						rc = -EINVAL;
-						goto end;
-					}
-
-					cmd_buf  += cmd_length_in_bytes /
-						sizeof(uint32_t);
-					byte_cnt += cmd_length_in_bytes;
-					break;
+				if ((remain_len - byte_cnt) <
+				    sizeof(struct cam_cmd_i2c_random_wr)) {
+					CAM_ERR(CAM_APERTURE,
+						"Not enough buffer provided");
+					rc = -EINVAL;
+					goto end;
 				}
-				case CAMERA_SENSOR_CMD_TYPE_I2C_CONT_WR: {
-					uint32_t cmd_length_in_bytes   = 0;
-					struct cam_cmd_i2c_continuous_wr
+				tot_size =
+					sizeof(struct i2c_rdwr_header) +
+					(sizeof(struct i2c_random_wr_payload) *
+					 cam_cmd_i2c_random_wr->header.count);
+
+				if (tot_size > (remain_len - byte_cnt)) {
+					CAM_ERR(CAM_APERTURE,
+						"Not enough buffer provided");
+					rc = -EINVAL;
+					goto end;
+				}
+
+				rc = cam_sensor_handle_random_write(
+					cam_cmd_i2c_random_wr, i2c_reg_settings,
+					&cmd_length_in_bytes, &j, &list);
+				if (rc < 0) {
+					CAM_ERR(CAM_APERTURE,
+						"Failed in random write %d",
+						rc);
+					rc = -EINVAL;
+					goto end;
+				}
+
+				cmd_buf +=
+					cmd_length_in_bytes / sizeof(uint32_t);
+				byte_cnt += cmd_length_in_bytes;
+				break;
+			}
+			case CAMERA_SENSOR_CMD_TYPE_I2C_CONT_WR: {
+				uint32_t cmd_length_in_bytes = 0;
+				struct cam_cmd_i2c_continuous_wr
 					*cam_cmd_i2c_continuous_wr =
-					(struct cam_cmd_i2c_continuous_wr *)
-					cmd_buf;
+						(struct cam_cmd_i2c_continuous_wr
+							 *)cmd_buf;
 
-					if ((remain_len - byte_cnt) <
-					sizeof(struct cam_cmd_i2c_continuous_wr)) {
-						CAM_ERR(CAM_APERTURE,
-							"Not enough buffer provided");
-						rc = -EINVAL;
-						goto end;
-					}
+				if ((remain_len - byte_cnt) <
+				    sizeof(struct cam_cmd_i2c_continuous_wr)) {
+					CAM_ERR(CAM_APERTURE,
+						"Not enough buffer provided");
+					rc = -EINVAL;
+					goto end;
+				}
 
-					tot_size = sizeof(struct i2c_rdwr_header) +
-					sizeof(cam_cmd_i2c_continuous_wr->reg_addr) +
-					(sizeof(struct cam_cmd_read) *
-					cam_cmd_i2c_continuous_wr->header.count);
+				tot_size = sizeof(struct i2c_rdwr_header) +
+					   sizeof(cam_cmd_i2c_continuous_wr
+							  ->reg_addr) +
+					   (sizeof(struct cam_cmd_read) *
+					    cam_cmd_i2c_continuous_wr->header
+						    .count);
 
-					if (tot_size > (remain_len - byte_cnt)) {
-						CAM_ERR(CAM_APERTURE,
-							"Not enough buffer provided");
-						rc = -EINVAL;
-						goto end;
-					}
+				if (tot_size > (remain_len - byte_cnt)) {
+					CAM_ERR(CAM_APERTURE,
+						"Not enough buffer provided");
+					rc = -EINVAL;
+					goto end;
+				}
 
-					rc = cam_sensor_handle_continuous_write(
-						cam_cmd_i2c_continuous_wr,
-						i2c_reg_settings,
-						&cmd_length_in_bytes, &j, &list);
+				rc = cam_sensor_handle_continuous_write(
+					cam_cmd_i2c_continuous_wr,
+					i2c_reg_settings, &cmd_length_in_bytes,
+					&j, &list);
+				if (rc < 0) {
+					CAM_ERR(CAM_APERTURE,
+						"Failed in continuous write %d",
+						rc);
+					goto end;
+				}
+
+				cmd_buf +=
+					cmd_length_in_bytes / sizeof(uint32_t);
+				byte_cnt += cmd_length_in_bytes;
+
+				break;
+			}
+			case CAMERA_SENSOR_CMD_TYPE_WAIT: {
+				if ((((generic_op_code ==
+				       CAMERA_SENSOR_WAIT_OP_HW_UCND) ||
+				      (generic_op_code ==
+				       CAMERA_SENSOR_WAIT_OP_SW_UCND)) &&
+				     ((remain_len - byte_cnt) <
+				      sizeof(struct cam_cmd_unconditional_wait))) ||
+				    ((generic_op_code ==
+				      CAMERA_SENSOR_WAIT_OP_COND) &&
+				     ((remain_len - byte_cnt) <
+				      sizeof(struct cam_cmd_conditional_wait)))) {
+					CAM_ERR(CAM_APERTURE,
+						"Not enough buffer space");
+					rc = -EINVAL;
+					goto end;
+				}
+
+				if (generic_op_code ==
+					    CAMERA_SENSOR_WAIT_OP_HW_UCND ||
+				    generic_op_code ==
+					    CAMERA_SENSOR_WAIT_OP_SW_UCND) {
+					rc = cam_sensor_handle_delay(
+						&cmd_buf, generic_op_code,
+						i2c_reg_settings, j, &byte_cnt,
+						list);
 					if (rc < 0) {
 						CAM_ERR(CAM_APERTURE,
-						"Failed in continuous write %d", rc);
+							"delay hdl failed: %d",
+							rc);
 						goto end;
 					}
 
-					cmd_buf += cmd_length_in_bytes /
-						sizeof(uint32_t);
-					byte_cnt += cmd_length_in_bytes;
-
-					break;
-				}
-				case CAMERA_SENSOR_CMD_TYPE_WAIT: {
-					if ((((generic_op_code == CAMERA_SENSOR_WAIT_OP_HW_UCND) ||
-						(generic_op_code == CAMERA_SENSOR_WAIT_OP_SW_UCND)) &&
-						((remain_len - byte_cnt) <
-						sizeof(struct cam_cmd_unconditional_wait))) ||
-						((generic_op_code == CAMERA_SENSOR_WAIT_OP_COND) &&
-						((remain_len - byte_cnt) <
-						sizeof(struct cam_cmd_conditional_wait)))) {
+				} else if (generic_op_code ==
+					   CAMERA_SENSOR_WAIT_OP_COND) {
+					rc = cam_sensor_handle_poll(
+						&cmd_buf, i2c_reg_settings,
+						&byte_cnt, &j, &list);
+					if (rc < 0) {
 						CAM_ERR(CAM_APERTURE,
-							"Not enough buffer space");
-						rc = -EINVAL;
+							"Random read fail: %d",
+							rc);
 						goto end;
 					}
-
-					if (generic_op_code ==
-						CAMERA_SENSOR_WAIT_OP_HW_UCND ||
-						generic_op_code ==
-							CAMERA_SENSOR_WAIT_OP_SW_UCND) {
-						rc = cam_sensor_handle_delay(
-							&cmd_buf, generic_op_code,
-							i2c_reg_settings, j, &byte_cnt,
-							list);
-						if (rc < 0) {
-							CAM_ERR(CAM_APERTURE,
-								"delay hdl failed: %d",
-								rc);
-							goto end;
-						}
-
-					} else if (generic_op_code ==
-						CAMERA_SENSOR_WAIT_OP_COND) {
-						rc = cam_sensor_handle_poll(
-							&cmd_buf, i2c_reg_settings,
-							&byte_cnt, &j, &list);
-						if (rc < 0) {
-							CAM_ERR(CAM_APERTURE,
-								"Random read fail: %d",
-								rc);
-							goto end;
-						}
-					} else {
-						CAM_ERR(CAM_APERTURE,
-							"Wrong Wait Command: %d",
-							generic_op_code);
-						rc = -EINVAL;
-						goto end;
-					}
-
-					break;
+				} else {
+					CAM_ERR(CAM_APERTURE,
+						"Wrong Wait Command: %d",
+						generic_op_code);
+					rc = -EINVAL;
+					goto end;
 				}
+
+				break;
+			}
 			}
 		}
 
@@ -948,8 +956,8 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 	case CAM_PKT_NOP_OPCODE:
 		if (a_ctrl->cam_act_state < CAM_APERTURE_CONFIG) {
 			CAM_WARN(CAM_APERTURE,
-				"Received NOP packets in invalid state: %d",
-				a_ctrl->cam_act_state);
+				 "Received NOP packets in invalid state: %d",
+				 a_ctrl->cam_act_state);
 			rc = -EINVAL;
 			goto end;
 		}
@@ -962,95 +970,92 @@ int32_t cam_aperture_i2c_pkt_parse(struct cam_aperture_ctrl_t *a_ctrl,
 		break;
 
 	case CAM_APERTURE_PACKET_OPCODE_READ: {
-			uint64_t qtime_ns;
-			struct cam_buf_io_cfg *io_cfg;
-			struct i2c_settings_array i2c_read_settings;
+		uint64_t qtime_ns;
+		struct cam_buf_io_cfg *io_cfg;
+		struct i2c_settings_array i2c_read_settings;
 
-			if (a_ctrl->cam_act_state < CAM_APERTURE_CONFIG) {
-				rc = -EINVAL;
-				CAM_WARN(CAM_APERTURE,
-					"Not in right state to read aperture: %d",
-					a_ctrl->cam_act_state);
-				goto end;
-			}
-			CAM_DBG(CAM_APERTURE, "number of I/O configs: %d:",
-				csl_packet->num_io_configs);
-			if (csl_packet->num_io_configs == 0) {
-				CAM_ERR(CAM_APERTURE, "No I/O configs to process");
-				rc = -EINVAL;
-				goto end;
-			}
+		if (a_ctrl->cam_act_state < CAM_APERTURE_CONFIG) {
+			rc = -EINVAL;
+			CAM_WARN(CAM_APERTURE,
+				 "Not in right state to read aperture: %d",
+				 a_ctrl->cam_act_state);
+			goto end;
+		}
+		CAM_DBG(CAM_APERTURE, "number of I/O configs: %d:",
+			csl_packet->num_io_configs);
+		if (csl_packet->num_io_configs == 0) {
+			CAM_ERR(CAM_APERTURE, "No I/O configs to process");
+			rc = -EINVAL;
+			goto end;
+		}
 
-			INIT_LIST_HEAD(&(i2c_read_settings.list_head));
+		INIT_LIST_HEAD(&(i2c_read_settings.list_head));
 
-			io_cfg = (struct cam_buf_io_cfg *) ((uint8_t *)
-				&csl_packet->payload +
-				csl_packet->io_configs_offset);
+		io_cfg = (struct cam_buf_io_cfg
+				  *)((uint8_t *)&csl_packet->payload +
+				     csl_packet->io_configs_offset);
 
-			if (io_cfg == NULL) {
-				CAM_ERR(CAM_APERTURE, "I/O config is invalid(NULL)");
-				rc = -EINVAL;
-				goto end;
-			}
+		if (io_cfg == NULL) {
+			CAM_ERR(CAM_APERTURE, "I/O config is invalid(NULL)");
+			rc = -EINVAL;
+			goto end;
+		}
 
-			offset = (uint32_t *)&csl_packet->payload;
-			offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
-			cmd_desc = (struct cam_cmd_buf_desc *)(offset);
-			i2c_read_settings.is_settings_valid = 1;
-			i2c_read_settings.request_id = 0;
-			rc = cam_sensor_i2c_command_parser(&a_ctrl->io_master_info,
-				&i2c_read_settings,
-				cmd_desc, 1, &io_cfg[0]);
+		offset = (uint32_t *)&csl_packet->payload;
+		offset += (csl_packet->cmd_buf_offset / sizeof(uint32_t));
+		cmd_desc = (struct cam_cmd_buf_desc *)(offset);
+		i2c_read_settings.is_settings_valid = 1;
+		i2c_read_settings.request_id = 0;
+		rc = cam_sensor_i2c_command_parser(&a_ctrl->io_master_info,
+						   &i2c_read_settings, cmd_desc,
+						   1, &io_cfg[0]);
+		if (rc < 0) {
+			CAM_ERR(CAM_APERTURE,
+				"aperture read pkt parsing failed: %d", rc);
+			goto end;
+		}
+
+		rc = cam_sensor_util_get_current_qtimer_ns(&qtime_ns);
+		if (rc < 0) {
+			CAM_ERR(CAM_APERTURE, "failed to get qtimer rc:%d");
+			goto end;
+		}
+
+		if (a_ctrl->device_error == false) {
+			rc = cam_sensor_i2c_read_data(&i2c_read_settings,
+						      &a_ctrl->io_master_info);
 			if (rc < 0) {
-				CAM_ERR(CAM_APERTURE,
-					"aperture read pkt parsing failed: %d", rc);
-				goto end;
-			}
-
-			rc = cam_sensor_util_get_current_qtimer_ns(&qtime_ns);
-			if (rc < 0) {
-				CAM_ERR(CAM_APERTURE, "failed to get qtimer rc:%d");
-				goto end;
-			}
-
-			if(a_ctrl->device_error == false)
-			{
-				rc = cam_sensor_i2c_read_data(
-					&i2c_read_settings,
-					&a_ctrl->io_master_info);
-				if (rc < 0) {
-					CAM_ERR(CAM_APERTURE, "cannot read data, rc:%d", rc);
-					delete_request(&i2c_read_settings);
-					goto end;
-				}
-			}
-			else
-			{
-				rc = -ENODEV;
-				CAM_ERR(CAM_APERTURE, "device error cannot read data");
+				CAM_ERR(CAM_APERTURE, "cannot read data, rc:%d",
+					rc);
 				delete_request(&i2c_read_settings);
 				goto end;
 			}
+		} else {
+			rc = -ENODEV;
+			CAM_ERR(CAM_APERTURE, "device error cannot read data");
+			delete_request(&i2c_read_settings);
+			goto end;
+		}
 
-			if (csl_packet->num_io_configs > 1) {
-				rc = cam_sensor_util_write_qtimer_to_io_buffer(
-					qtime_ns, &io_cfg[1]);
-				if (rc < 0) {
-					CAM_ERR(CAM_APERTURE,
-						"write qtimer failed rc: %d", rc);
-					delete_request(&i2c_read_settings);
-					goto end;
-				}
-			}
-
-			rc = delete_request(&i2c_read_settings);
+		if (csl_packet->num_io_configs > 1) {
+			rc = cam_sensor_util_write_qtimer_to_io_buffer(
+				qtime_ns, &io_cfg[1]);
 			if (rc < 0) {
 				CAM_ERR(CAM_APERTURE,
-					"Failed in deleting the read settings");
+					"write qtimer failed rc: %d", rc);
+				delete_request(&i2c_read_settings);
 				goto end;
 			}
-			break;
 		}
+
+		rc = delete_request(&i2c_read_settings);
+		if (rc < 0) {
+			CAM_ERR(CAM_APERTURE,
+				"Failed in deleting the read settings");
+			goto end;
+		}
+		break;
+	}
 	default:
 		CAM_ERR(CAM_APERTURE, "Wrong Opcode: %d",
 			csl_packet->header.op_code & 0xFFFFFF);
@@ -1066,10 +1071,9 @@ end:
 void cam_aperture_shutdown(struct cam_aperture_ctrl_t *a_ctrl)
 {
 	int rc = 0;
-	struct cam_aperture_soc_private  *soc_private =
+	struct cam_aperture_soc_private *soc_private =
 		(struct cam_aperture_soc_private *)a_ctrl->soc_info.soc_private;
-	struct cam_sensor_power_ctrl_t *power_info =
-		&soc_private->power_info;
+	struct cam_sensor_power_ctrl_t *power_info = &soc_private->power_info;
 
 	if (a_ctrl->cam_act_state == CAM_APERTURE_INIT)
 		return;
@@ -1101,13 +1105,12 @@ void cam_aperture_shutdown(struct cam_aperture_ctrl_t *a_ctrl)
 	a_ctrl->cam_act_state = CAM_APERTURE_INIT;
 }
 
-int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
-	void *arg)
+int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl, void *arg)
 {
 	int rc = 0;
 	struct cam_control *cmd = (struct cam_control *)arg;
 	struct cam_aperture_soc_private *soc_private = NULL;
-	struct cam_sensor_power_ctrl_t  *power_info = NULL;
+	struct cam_sensor_power_ctrl_t *power_info = NULL;
 
 	if (!a_ctrl || !cmd) {
 		CAM_ERR(CAM_APERTURE, "Invalid Args");
@@ -1139,8 +1142,8 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 			goto release_mutex;
 		}
 		rc = copy_from_user(&aperture_acq_dev,
-			u64_to_user_ptr(cmd->handle),
-			sizeof(aperture_acq_dev));
+				    u64_to_user_ptr(cmd->handle),
+				    sizeof(aperture_acq_dev));
 		if (rc < 0) {
 			CAM_ERR(CAM_APERTURE, "Failed Copying from user\n");
 			goto release_mutex;
@@ -1167,16 +1170,15 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 		CAM_DBG(CAM_APERTURE, "Device Handle: %d",
 			aperture_acq_dev.device_handle);
 		if (copy_to_user(u64_to_user_ptr(cmd->handle),
-			&aperture_acq_dev,
-			sizeof(struct cam_sensor_acquire_dev))) {
+				 &aperture_acq_dev,
+				 sizeof(struct cam_sensor_acquire_dev))) {
 			CAM_ERR(CAM_APERTURE, "Failed Copy to User");
 			rc = -EFAULT;
 			goto release_mutex;
 		}
 
 		a_ctrl->cam_act_state = CAM_APERTURE_ACQUIRE;
-	}
-		break;
+	} break;
 	case CAM_RELEASE_DEV: {
 		struct i2c_settings_array *i2c_set = NULL;
 		int i;
@@ -1184,7 +1186,7 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 		if (a_ctrl->cam_act_state == CAM_APERTURE_START) {
 			rc = -EINVAL;
 			CAM_WARN(CAM_APERTURE,
-				"Cant release aperture: in start state");
+				 "Cant release aperture: in start state");
 			goto release_mutex;
 		}
 
@@ -1230,7 +1232,6 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 		power_info->power_down_setting_size = 0;
 		power_info->power_setting_size = 0;
 
-
 		for (i = 0; i < MAX_PER_FRAME_ARRAY; i++) {
 			i2c_set = &(a_ctrl->i2c_data.per_frame[i]);
 
@@ -1242,34 +1243,30 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 						i2c_set->request_id, rc);
 			}
 		}
-	}
-		break;
+	} break;
 	case CAM_QUERY_CAP: {
-		struct cam_aperture_query_cap aperture_cap = {0};
+		struct cam_aperture_query_cap aperture_cap = { 0 };
 
 		CAM_DBG(CAM_APERTURE, "aperture Query Cap");
 		aperture_cap.slot_info = a_ctrl->soc_info.index;
-		if (copy_to_user(u64_to_user_ptr(cmd->handle),
-			&aperture_cap,
-			sizeof(struct cam_aperture_query_cap))) {
+		if (copy_to_user(u64_to_user_ptr(cmd->handle), &aperture_cap,
+				 sizeof(struct cam_aperture_query_cap))) {
 			CAM_ERR(CAM_APERTURE, "Failed Copy to User");
 			rc = -EFAULT;
 			goto release_mutex;
 		}
-	}
-		break;
+	} break;
 	case CAM_START_DEV: {
 		if (a_ctrl->cam_act_state != CAM_APERTURE_CONFIG) {
 			rc = -EINVAL;
 			CAM_WARN(CAM_APERTURE,
-			"Not in right state to start : %d",
-			a_ctrl->cam_act_state);
+				 "Not in right state to start : %d",
+				 a_ctrl->cam_act_state);
 			goto release_mutex;
 		}
 		a_ctrl->cam_act_state = CAM_APERTURE_START;
 		a_ctrl->last_flush_req = 0;
-	}
-		break;
+	} break;
 	case CAM_STOP_DEV: {
 		struct i2c_settings_array *i2c_set = NULL;
 		int i;
@@ -1277,8 +1274,8 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 		if (a_ctrl->cam_act_state != CAM_APERTURE_START) {
 			rc = -EINVAL;
 			CAM_WARN(CAM_APERTURE,
-			"Not in right state to stop : %d",
-			a_ctrl->cam_act_state);
+				 "Not in right state to stop : %d",
+				 a_ctrl->cam_act_state);
 			goto release_mutex;
 		}
 
@@ -1297,15 +1294,14 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 		a_ctrl->cam_act_state = CAM_APERTURE_CONFIG;
 
 		a_ctrl->device_error = false;
-	}
-		break;
+	} break;
 	case CAM_CONFIG_DEV: {
-		a_ctrl->setting_apply_state =
-			APT_APPLY_SETTINGS_LATER;
+		a_ctrl->setting_apply_state = APT_APPLY_SETTINGS_LATER;
 		rc = cam_aperture_i2c_pkt_parse(a_ctrl, arg);
 		if (rc < 0) {
 			if (rc == -EBADR)
-				CAM_INFO(CAM_APERTURE,
+				CAM_INFO(
+					CAM_APERTURE,
 					"Failed in aperture Parsing, it has been flushed");
 			else
 				CAM_ERR(CAM_APERTURE,
@@ -1313,16 +1309,18 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 			goto release_mutex;
 		}
 
-		if (a_ctrl->setting_apply_state ==
-			APT_APPLY_SETTINGS_NOW) {
-			rc = cam_aperture_apply_settings(a_ctrl,
-				&a_ctrl->i2c_data.init_settings);
+		if (a_ctrl->setting_apply_state == APT_APPLY_SETTINGS_NOW) {
+			rc = cam_aperture_apply_settings(
+				a_ctrl, &a_ctrl->i2c_data.init_settings);
 			if ((rc == -EAGAIN) &&
-			(a_ctrl->io_master_info.master_type == CCI_MASTER)) {
-				CAM_WARN(CAM_APERTURE,
+			    (a_ctrl->io_master_info.master_type ==
+			     CCI_MASTER)) {
+				CAM_WARN(
+					CAM_APERTURE,
 					"CCI HW is in resetting mode:: Reapplying Init settings");
 				usleep_range(1000, 1010);
-				rc = cam_aperture_apply_settings(a_ctrl,
+				rc = cam_aperture_apply_settings(
+					a_ctrl,
 					&a_ctrl->i2c_data.init_settings);
 			}
 
@@ -1339,8 +1337,7 @@ int32_t cam_aperture_driver_cmd(struct cam_aperture_ctrl_t *a_ctrl,
 				goto release_mutex;
 			}
 		}
-	}
-		break;
+	} break;
 	default:
 		CAM_ERR(CAM_APERTURE, "Invalid Opcode %d", cmd->op_code);
 	}
@@ -1361,8 +1358,8 @@ int32_t cam_aperture_flush_request(struct cam_req_mgr_flush_request *flush_req)
 	if (!flush_req)
 		return -EINVAL;
 
-	a_ctrl = (struct cam_aperture_ctrl_t *)
-		cam_get_device_priv(flush_req->dev_hdl);
+	a_ctrl = (struct cam_aperture_ctrl_t *)cam_get_device_priv(
+		flush_req->dev_hdl);
 	if (!a_ctrl) {
 		CAM_ERR(CAM_APERTURE, "Device data is NULL");
 		return -EINVAL;
@@ -1383,8 +1380,8 @@ int32_t cam_aperture_flush_request(struct cam_req_mgr_flush_request *flush_req)
 	for (i = 0; i < MAX_PER_FRAME_ARRAY; i++) {
 		i2c_set = &(a_ctrl->i2c_data.per_frame[i]);
 
-		if ((flush_req->type == CAM_REQ_MGR_FLUSH_TYPE_CANCEL_REQ)
-				&& (i2c_set->request_id != flush_req->req_id))
+		if ((flush_req->type == CAM_REQ_MGR_FLUSH_TYPE_CANCEL_REQ) &&
+		    (i2c_set->request_id != flush_req->req_id))
 			continue;
 
 		if (i2c_set->is_settings_valid == 1) {
@@ -1395,7 +1392,7 @@ int32_t cam_aperture_flush_request(struct cam_req_mgr_flush_request *flush_req)
 					i2c_set->request_id, rc);
 
 			if (flush_req->type ==
-				CAM_REQ_MGR_FLUSH_TYPE_CANCEL_REQ) {
+			    CAM_REQ_MGR_FLUSH_TYPE_CANCEL_REQ) {
 				cancel_req_id_found = 1;
 				break;
 			}
@@ -1403,7 +1400,7 @@ int32_t cam_aperture_flush_request(struct cam_req_mgr_flush_request *flush_req)
 	}
 
 	if (flush_req->type == CAM_REQ_MGR_FLUSH_TYPE_CANCEL_REQ &&
-		!cancel_req_id_found)
+	    !cancel_req_id_found)
 		CAM_DBG(CAM_APERTURE,
 			"Flush request id:%lld not found in the pending list",
 			flush_req->req_id);

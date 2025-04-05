@@ -22,13 +22,13 @@
  * send wow related cmd and process event.
  */
 
-
 #include "target_if.h"
 #include "target_if_pmo.h"
 #include "wmi_unified_api.h"
 
 QDF_STATUS target_if_pmo_send_ra_filter_req(struct wlan_objmgr_vdev *vdev,
-		uint8_t default_pattern, uint16_t rate_limit_interval)
+					    uint8_t default_pattern,
+					    uint16_t rate_limit_interval)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -53,10 +53,8 @@ QDF_STATUS target_if_pmo_send_ra_filter_req(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_wow_sta_ra_filter_cmd(wmi_handle,
-						   vdev_id,
-						   default_pattern,
-						   rate_limit_interval);
+	status = wmi_unified_wow_sta_ra_filter_cmd(
+		wmi_handle, vdev_id, default_pattern, rate_limit_interval);
 	if (status)
 		target_if_err("Failed to send RA rate limit to fw");
 
@@ -64,8 +62,8 @@ QDF_STATUS target_if_pmo_send_ra_filter_req(struct wlan_objmgr_vdev *vdev,
 }
 
 QDF_STATUS target_if_pmo_send_action_frame_patterns(
-		struct wlan_objmgr_vdev *vdev,
-		struct pmo_action_wakeup_set_params *ip_cmd)
+	struct wlan_objmgr_vdev *vdev,
+	struct pmo_action_wakeup_set_params *ip_cmd)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -93,13 +91,14 @@ QDF_STATUS target_if_pmo_send_action_frame_patterns(
 	status = wmi_unified_action_frame_patterns_cmd(wmi_handle, ip_cmd);
 	if (status != QDF_STATUS_SUCCESS)
 		target_if_err("Failed to config wow action frame map, ret %d",
-			status);
+			      status);
 
 	return status;
 }
 
-QDF_STATUS target_if_pmo_send_enhance_mc_offload_req(
-		struct wlan_objmgr_vdev *vdev, bool enable)
+QDF_STATUS
+target_if_pmo_send_enhance_mc_offload_req(struct wlan_objmgr_vdev *vdev,
+					  bool enable)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -124,12 +123,10 @@ QDF_STATUS target_if_pmo_send_enhance_mc_offload_req(
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_enable_enhance_multicast_offload_cmd(wmi_handle,
-								  vdev_id,
-								  enable);
+	status = wmi_unified_enable_enhance_multicast_offload_cmd(
+		wmi_handle, vdev_id, enable);
 	if (status)
 		target_if_err("Failed to config wow wakeup event");
 
 	return status;
 }
-

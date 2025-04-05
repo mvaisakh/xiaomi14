@@ -20,14 +20,14 @@
  * Implementation for creating sysfs file temperature
  */
 
-#include <wlan_hdd_includes.h>
-#include <wlan_hdd_sysfs.h>
 #include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs_temperature.h>
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_stats.h>
+#include <wlan_hdd_sysfs.h>
+#include <wlan_hdd_sysfs_temperature.h>
 
-static ssize_t
-__hdd_sysfs_temperature_show(struct net_device *net_dev, char *buf)
+static ssize_t __hdd_sysfs_temperature_show(struct net_device *net_dev,
+					    char *buf)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -56,10 +56,9 @@ __hdd_sysfs_temperature_show(struct net_device *net_dev, char *buf)
 	return scnprintf(buf, PAGE_SIZE, "%d\n", value);
 }
 
-static ssize_t
-hdd_sysfs_temperature_show(struct device *dev,
-			   struct device_attribute *attr,
-			   char *buf)
+static ssize_t hdd_sysfs_temperature_show(struct device *dev,
+					  struct device_attribute *attr,
+					  char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -76,15 +75,13 @@ hdd_sysfs_temperature_show(struct device *dev,
 	return err_size;
 }
 
-static DEVICE_ATTR(temperature, 0440,
-		   hdd_sysfs_temperature_show, NULL);
+static DEVICE_ATTR(temperature, 0440, hdd_sysfs_temperature_show, NULL);
 
 int hdd_sysfs_temperature_create(struct hdd_adapter *adapter)
 {
 	int error;
 
-	error = device_create_file(&adapter->dev->dev,
-				   &dev_attr_temperature);
+	error = device_create_file(&adapter->dev->dev, &dev_attr_temperature);
 	if (error)
 		hdd_err("could not create temperature sysfs file");
 

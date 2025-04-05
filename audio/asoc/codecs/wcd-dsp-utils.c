@@ -4,16 +4,15 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include "wcd-dsp-utils.h"
 #include <linux/device.h>
+#include <linux/elf.h>
 #include <linux/err.h>
 #include <linux/firmware.h>
-#include <linux/elf.h>
-#include <linux/slab.h>
 #include <linux/list.h>
-#include "wcd-dsp-utils.h"
+#include <linux/slab.h>
 
-static bool wdsp_is_valid_elf_hdr(const struct elf32_hdr *ehdr,
-				  size_t fw_size)
+static bool wdsp_is_valid_elf_hdr(const struct elf32_hdr *ehdr, size_t fw_size)
 {
 	if (fw_size < sizeof(*ehdr)) {
 		pr_err_ratelimited("%s: Firmware too small\n", __func__);
@@ -36,7 +35,8 @@ static bool wdsp_is_valid_elf_hdr(const struct elf32_hdr *ehdr,
 	}
 
 	if (sizeof(struct elf32_phdr) * ehdr->e_phnum +
-	    sizeof(struct elf32_hdr) > fw_size) {
+		    sizeof(struct elf32_hdr) >
+	    fw_size) {
 		pr_err_ratelimited("%s: Too small MDT file\n", __func__);
 		goto elf_check_fail;
 	}
@@ -47,10 +47,8 @@ elf_check_fail:
 	return false;
 }
 
-static int wdsp_add_segment_to_list(struct device *dev,
-				    const char *img_fname,
-				    const struct elf32_phdr *phdr,
-				    int phdr_idx,
+static int wdsp_add_segment_to_list(struct device *dev, const char *img_fname,
+				    const struct elf32_phdr *phdr, int phdr_idx,
 				    struct list_head *seg_list)
 {
 	struct wdsp_img_segment *seg;
@@ -66,17 +64,18 @@ static int wdsp_add_segment_to_list(struct device *dev,
 		goto done;
 	}
 
-	snprintf(seg->split_fname, sizeof(seg->split_fname),
-		 "%s.b%02d", img_fname, phdr_idx);
+	snprintf(seg->split_fname, sizeof(seg->split_fname), "%s.b%02d",
+		 img_fname, phdr_idx);
 	ret = request_firmware(&seg->split_fw, seg->split_fname, dev);
 	if (ret < 0) {
 		dev_err_ratelimited(dev, "%s: firmware %s not found\n",
-			__func__, seg->split_fname);
+				    __func__, seg->split_fname);
 		goto bad_seg;
 	}
 
 	if (phdr->p_filesz != seg->split_fw->size) {
-		dev_err_ratelimited(dev,
+		dev_err_ratelimited(
+			dev,
 			"%s: %s size mismatch, phdr_size: 0x%x fw_size: 0x%zx",
 			__func__, seg->split_fname, phdr->p_filesz,
 			seg->split_fw->size);
@@ -86,7 +85,7 @@ static int wdsp_add_segment_to_list(struct device *dev,
 
 	seg->load_addr = phdr->p_paddr;
 	seg->size = phdr->p_filesz;
-	seg->data = (u8 *) seg->split_fw->data;
+	seg->data = (u8 *)seg->split_fw->data;
 
 	list_add_tail(&seg->list, seg_list);
 done:
@@ -129,10 +128,8 @@ EXPORT_SYMBOL(wdsp_flush_segment_list);
  * an struct wdsp_img_segment for each segment that matches segment_type
  * and add this structure to list pointed by seg_list
  */
-int wdsp_get_segment_list(struct device *dev,
-			  const char *img_fname,
-			  unsigned int segment_type,
-			  struct list_head *seg_list,
+int wdsp_get_segment_list(struct device *dev, const char *img_fname,
+			  unsigned int segment_type, struct list_head *seg_list,
 			  u32 *entry_point)
 {
 	const struct firmware *fw;
@@ -152,14 +149,15 @@ int wdsp_get_segment_list(struct device *dev,
 	if (!img_fname || !seg_list || !entry_point) {
 		ret = -EINVAL;
 		dev_err_ratelimited(dev, "%s: Invalid input params\n",
-			__func__);
+				    __func__);
 		goto done;
 	}
 
 	if (segment_type != WDSP_ELF_FLAG_RE &&
 	    segment_type != WDSP_ELF_FLAG_WRITE) {
-		dev_err_ratelimited(dev, "%s: Invalid request for segment_type %d\n",
-			__func__, segment_type);
+		dev_err_ratelimited(dev,
+				    "%s: Invalid request for segment_type %d\n",
+				    __func__, segment_type);
 		ret = -EINVAL;
 		goto done;
 	}
@@ -168,39 +166,39 @@ int wdsp_get_segment_list(struct device *dev,
 	ret = request_firmware(&fw, mdt_name, dev);
 	if (ret < 0) {
 		dev_err_ratelimited(dev, "%s: firmware %s not found\n",
-			__func__, mdt_name);
+				    __func__, mdt_name);
 		goto done;
 	}
 
-	ehdr = (struct elf32_hdr *) fw->data;
+	ehdr = (struct elf32_hdr *)fw->data;
 	*entry_point = ehdr->e_entry;
 	if (!wdsp_is_valid_elf_hdr(ehdr, fw->size)) {
-		dev_err_ratelimited(dev, "%s: fw mdt %s is invalid\n",
-			__func__, mdt_name);
+		dev_err_ratelimited(dev, "%s: fw mdt %s is invalid\n", __func__,
+				    mdt_name);
 		ret = -EINVAL;
 		goto bad_elf;
 	}
 
 	elf_ptr = fw->data + sizeof(*ehdr);
 	for (phdr_idx = 0; phdr_idx < ehdr->e_phnum; phdr_idx++) {
-		phdr = (struct elf32_phdr *) elf_ptr;
+		phdr = (struct elf32_phdr *)elf_ptr;
 		segment_match = false;
 
 		switch (segment_type) {
 		case WDSP_ELF_FLAG_RE:
 			/*
-			 * Flag can be READ or EXECUTE or both but
-			 * WRITE flag should not be set.
-			 */
+       * Flag can be READ or EXECUTE or both but
+       * WRITE flag should not be set.
+       */
 			if ((phdr->p_flags & segment_type) &&
 			    !(phdr->p_flags & WDSP_ELF_FLAG_WRITE))
 				segment_match = true;
 			break;
 		case WDSP_ELF_FLAG_WRITE:
 			/*
-			 * If WRITE flag is set, other flags do not
-			 * matter.
-			 */
+       * If WRITE flag is set, other flags do not
+       * matter.
+       */
 			if (phdr->p_flags & segment_type)
 				segment_match = true;
 			break;

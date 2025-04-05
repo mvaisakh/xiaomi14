@@ -43,10 +43,8 @@ gpio_psoc_obj_created_notification(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_NOMEM;
 
 	qdf_spinlock_create(&gpio_obj->lock);
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						       WLAN_UMAC_COMP_GPIO,
-						       gpio_obj,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_GPIO, gpio_obj, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		gpio_err("obj attach with psoc failed");
 		goto gpio_psoc_attach_failed;
@@ -84,9 +82,8 @@ gpio_psoc_obj_destroyed_notification(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAULT;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-						       WLAN_UMAC_COMP_GPIO,
-						       gpio_obj);
+	status = wlan_objmgr_psoc_component_obj_detach(
+		psoc, WLAN_UMAC_COMP_GPIO, gpio_obj);
 	if (QDF_IS_STATUS_ERROR(status))
 		gpio_err("gpio_obj detach failed");
 
@@ -102,9 +99,7 @@ QDF_STATUS wlan_gpio_init(void)
 
 	/* register psoc create handler functions. */
 	status = wlan_objmgr_register_psoc_create_handler(
-			WLAN_UMAC_COMP_GPIO,
-			gpio_psoc_obj_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_GPIO, gpio_psoc_obj_created_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		gpio_err("register create handler failed");
 		return status;
@@ -112,9 +107,8 @@ QDF_STATUS wlan_gpio_init(void)
 
 	/* register psoc delete handler functions. */
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_UMAC_COMP_GPIO,
-			gpio_psoc_obj_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_GPIO, gpio_psoc_obj_destroyed_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		gpio_err("register destroy handler failed");
 		goto fail_delete_psoc;
@@ -124,9 +118,7 @@ QDF_STATUS wlan_gpio_init(void)
 
 fail_delete_psoc:
 	wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_UMAC_COMP_GPIO,
-				gpio_psoc_obj_created_notification,
-				NULL);
+		WLAN_UMAC_COMP_GPIO, gpio_psoc_obj_created_notification, NULL);
 	return status;
 }
 
@@ -136,9 +128,8 @@ QDF_STATUS wlan_gpio_deinit(void)
 
 	/* unregister psoc delete handler functions. */
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_GPIO,
-			gpio_psoc_obj_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_GPIO, gpio_psoc_obj_destroyed_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		gpio_err("unregister destroy handler failed");
 		ret = status;
@@ -146,9 +137,7 @@ QDF_STATUS wlan_gpio_deinit(void)
 
 	/* unregister psoc create handler functions. */
 	status = wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_GPIO,
-			gpio_psoc_obj_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_GPIO, gpio_psoc_obj_created_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		gpio_err("unregister create handler failed");
 		ret = status;

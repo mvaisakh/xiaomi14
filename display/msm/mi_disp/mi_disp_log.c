@@ -6,26 +6,26 @@
 
 #define pr_fmt(fmt) "mi_disp_log:[%s:%d] " fmt, __func__, __LINE__
 
+#include <linux/cdev.h>
+#include <linux/crypto.h>
+#include <linux/debugfs.h>
+#include <linux/delay.h>
+#include <linux/freezer.h>
+#include <linux/fs.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
-#include <linux/slab.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/uaccess.h>
-#include <linux/crypto.h>
-#include <linux/spinlock.h>
-#include <linux/sched/clock.h>
-#include <linux/types.h>
-#include <linux/delay.h>
-#include <linux/debugfs.h>
-#include <linux/wait.h>
-#include <linux/freezer.h>
 #include <linux/rtc.h>
+#include <linux/sched/clock.h>
+#include <linux/slab.h>
+#include <linux/spinlock.h>
+#include <linux/types.h>
+#include <linux/uaccess.h>
+#include <linux/wait.h>
 
 #include "mi_disp_config.h"
+#include "mi_disp_core.h"
 #include "mi_disp_log.h"
 #include "mi_disp_print.h"
-#include "mi_disp_core.h"
 #include "sde_trace.h"
 
 #if MI_DISP_LOG_ENABLE
@@ -36,8 +36,8 @@
 #define DISP_LOG_BUF_SIZE 0x1000
 
 enum disp_log_type {
-	LOG_TYPE_KERNEL = 0,   /* mi display kernel log */
-	LOG_TYPE_USER   = 1,   /* mi display user log */
+	LOG_TYPE_KERNEL = 0, /* mi display kernel log */
+	LOG_TYPE_USER = 1, /* mi display user log */
 	LOG_TYPE_MAX,
 };
 
@@ -84,31 +84,31 @@ bool mi_disp_log_is_initialized(void)
 	return g_disp_log ? g_disp_log->initialized : false;
 }
 
-static int mi_disp_log_printk_func(struct log_buf *log_buf,
-		const char *fmt, va_list args)
+static int mi_disp_log_printk_func(struct log_buf *log_buf, const char *fmt,
+				   va_list args)
 {
 	static char textbuf[1024];
 	char *text = textbuf;
-	u64 ts_usec,ts_sec;
+	u64 ts_usec, ts_sec;
 	u32 text_len;
 	unsigned long flags;
 	int i;
-	
-	spin_lock_irqsave(&log_buf->lock,flags);
-	ts_usec = local_clock()/1000;
-	ts_sec = ts_usec/1000000;
+
+	spin_lock_irqsave(&log_buf->lock, flags);
+	ts_usec = local_clock() / 1000;
+	ts_sec = ts_usec / 1000000;
 	ts_usec %= 1000000;
 	text_len = snprintf(text, sizeof(textbuf), "Timestamp:[%5lld.%06lld] ",
-					ts_sec, ts_usec);
-	text_len += vsnprintf(text + text_len, sizeof(textbuf) - text_len,
-					fmt, args);
+			    ts_sec, ts_usec);
+	text_len += vsnprintf(text + text_len, sizeof(textbuf) - text_len, fmt,
+			      args);
 	for (i = 0; i < text_len; i++) {
 		log_buf->buf[log_buf->pos.offset++] = *text++;
 		if (log_buf->pos.offset == log_buf->size) {
 			log_buf->pos.offset = 0;
 			++log_buf->pos.wrap;
 		}
-	} 
+	}
 	spin_unlock_irqrestore(&log_buf->lock, flags);
 
 	return text_len;
@@ -137,8 +137,8 @@ static int mi_disp_log_kenrel_printk(const char *fmt, ...)
 	return rc;
 }
 
-static int mi_disp_log_user_printk(struct log_buf *log_buf,
-		const char *fmt, ...)
+static int mi_disp_log_user_printk(struct log_buf *log_buf, const char *fmt,
+				   ...)
 {
 	va_list args;
 	int rc;
@@ -166,8 +166,8 @@ void disp_log_printk(const char *format, ...)
 	vaf.fmt = format;
 	vaf.va = &args;
 
-	mi_disp_log_kenrel_printk("[%ps] %pV",
-	       __builtin_return_address(0), &vaf);
+	mi_disp_log_kenrel_printk("[%ps] %pV", __builtin_return_address(0),
+				  &vaf);
 
 	va_end(args);
 }
@@ -191,11 +191,9 @@ void disp_log_printk_utc(const char *format, ...)
 	vaf.va = &args;
 
 	mi_disp_log_kenrel_printk("[%ps][%02d-%02d %02d:%02d:%02d.%06lu] %pV",
-			__builtin_return_address(0),
-			tm.tm_mon + 1, tm.tm_mday,
-			tm.tm_hour, tm.tm_min,
-			tm.tm_sec, ts.tv_nsec/1000,
-			&vaf);
+				  __builtin_return_address(0), tm.tm_mon + 1,
+				  tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+				  ts.tv_nsec / 1000, &vaf);
 
 	va_end(args);
 }
@@ -207,7 +205,8 @@ void disp_kernel_timer_log_printk(const char *format, ...)
 	struct rtc_time tm;
 	unsigned long local_time;
 	struct va_format vaf;
-	va_list args;;
+	va_list args;
+	;
 	ktime_get_real_ts64(&tv);
 	/* Convert rtc to local time */
 	local_time = (u32)(tv.tv_sec - (sys_tz.tz_minuteswest * 60));
@@ -216,17 +215,15 @@ void disp_kernel_timer_log_printk(const char *format, ...)
 	vaf.fmt = format;
 	vaf.va = &args;
 	mi_disp_log_kenrel_printk("[%04d-%02d-%02d %02d:%02d:%02d.%06lu] %pV",
-			tm.tm_year+1900,
-			tm.tm_mon + 1, tm.tm_mday,
-			tm.tm_hour, tm.tm_min,
-			tm.tm_sec, tv.tv_nsec / 1000, &vaf);
+				  tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+				  tm.tm_hour, tm.tm_min, tm.tm_sec,
+				  tv.tv_nsec / 1000, &vaf);
 	va_end(args);
 }
 EXPORT_SYMBOL(disp_kernel_timer_log_printk);
 
-
 static int mi_disp_log_read_stats(struct log_buf *log,
-		struct disp_log_read *read_ptr, size_t count)
+				  struct disp_log_read *read_ptr, size_t count)
 {
 	uint32_t wrap_start;
 	uint32_t wrap_end;
@@ -252,8 +249,7 @@ static int mi_disp_log_read_stats(struct log_buf *log,
 		/* current start no longer valid                   */
 		log_start->wrap = log->pos.wrap - 1;
 		log_start->offset = log->pos.offset + 1;
-	} else if ((wrap_cnt == 1) &&
-		(log->pos.offset > log_start->offset)) {
+	} else if ((wrap_cnt == 1) && (log->pos.offset > log_start->offset)) {
 		/* end position has overwritten start */
 		log_start->offset = log->pos.offset + 1;
 	}
@@ -275,13 +271,12 @@ static int mi_disp_log_read_stats(struct log_buf *log,
 	return len;
 }
 
-static ssize_t mi_disp_log_debugfs_read(struct file *file,
-		char __user *buf, size_t count, loff_t *offp)
+static ssize_t mi_disp_log_debugfs_read(struct file *file, char __user *buf,
+					size_t count, loff_t *offp)
 {
 	int ret = 0;
-	struct disp_log_read *read_ptr =  file->private_data;
-	struct disp_log *disp_log =
-			(struct disp_log *)read_ptr->private;
+	struct disp_log_read *read_ptr = file->private_data;
+	struct disp_log *disp_log = (struct disp_log *)read_ptr->private;
 	struct log_buf *log_buf;
 	int len = 0;
 
@@ -308,11 +303,12 @@ static ssize_t mi_disp_log_debugfs_read(struct file *file,
 	return len;
 }
 
-static ssize_t mi_disp_log_debugfs_write(struct file *file, const char __user *buf,
-			 size_t count, loff_t *ppos)
+static ssize_t mi_disp_log_debugfs_write(struct file *file,
+					 const char __user *buf, size_t count,
+					 loff_t *ppos)
 {
 	int ret = 0;
-	struct disp_log_read *read_ptr =  file->private_data;
+	struct disp_log_read *read_ptr = file->private_data;
 	char *input = NULL;
 
 	input = kmalloc(count, GFP_KERNEL);
@@ -335,7 +331,6 @@ exit:
 	kfree(input);
 	return ret ? ret : count;
 }
-
 
 int mi_disp_log_debugfs_open(struct inode *inode, struct file *file)
 {
@@ -365,17 +360,16 @@ static int mi_disp_log_debugfs_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-
 static const struct file_operations disp_log_debugfs_fops = {
-	.owner   = THIS_MODULE,
-	.open    = mi_disp_log_debugfs_open,
-	.read    = mi_disp_log_debugfs_read,
-	.write   = mi_disp_log_debugfs_write,
+	.owner = THIS_MODULE,
+	.open = mi_disp_log_debugfs_open,
+	.read = mi_disp_log_debugfs_read,
+	.write = mi_disp_log_debugfs_write,
 	.release = mi_disp_log_debugfs_release,
 };
 
 static ssize_t mi_disp_log_write(struct file *file, const char __user *buf,
-			 size_t count, loff_t *ppos)
+				 size_t count, loff_t *ppos)
 {
 	int ret;
 	struct disp_log *disp_log = file->private_data;
@@ -408,14 +402,13 @@ err_exit:
 }
 
 static ssize_t mi_disp_log_read(struct file *file, char __user *buf,
-			    size_t count, loff_t *ppos)
+				size_t count, loff_t *ppos)
 {
-	struct disp_log *disp_log =
-			(struct disp_log *)file->private_data;
+	struct disp_log *disp_log = (struct disp_log *)file->private_data;
 	struct log_buf *log_buf = &disp_log->log[LOG_TYPE_KERNEL];
 	size_t read_len = 0;
 	ssize_t ret;
-	struct disp_log_read *read_ptr =  disp_log->read_ptr;
+	struct disp_log_read *read_ptr = disp_log->read_ptr;
 	ret = mutex_lock_interruptible(&read_ptr->lock);
 	if (ret)
 		return ret;
@@ -442,7 +435,7 @@ int mi_disp_log_open(struct inode *inode, struct file *file)
 
 	file->private_data = g_disp_log;
 
-	if(g_disp_log->read_ptr) {
+	if (g_disp_log->read_ptr) {
 		DISP_ERROR("dev is opend \n");
 		return -ENOMEM;
 	}
@@ -455,16 +448,16 @@ int mi_disp_log_open(struct inode *inode, struct file *file)
 }
 __poll_t mi_disp_log_poll(struct file *filp, struct poll_table_struct *wait)
 {
-	struct disp_log* disp_log= filp->private_data;
+	struct disp_log *disp_log = filp->private_data;
 	__poll_t mask = 0;
 	poll_wait(filp, &(disp_log->log[LOG_TYPE_KERNEL].wq_head), wait);
 	if (!atomic_read(&disp_log->log[LOG_TYPE_KERNEL].wait))
 		mask |= EPOLLIN | EPOLLRDNORM;
 	return mask;
 }
- int mi_disp_log_release(struct inode *inode, struct file *file)
+int mi_disp_log_release(struct inode *inode, struct file *file)
 {
-	struct disp_log* disp_log= file->private_data;
+	struct disp_log *disp_log = file->private_data;
 	if (!disp_log)
 		return 0;
 	mutex_destroy(&disp_log->read_ptr->lock);
@@ -473,7 +466,6 @@ __poll_t mi_disp_log_poll(struct file *filp, struct poll_table_struct *wait)
 	return 0;
 }
 
-
 const struct file_operations disp_log_fops = {
 	.owner = THIS_MODULE,
 	.open = mi_disp_log_open,
@@ -481,12 +473,11 @@ const struct file_operations disp_log_fops = {
 	.write = mi_disp_log_write,
 	.release = mi_disp_log_release,
 	.poll = mi_disp_log_poll,
-	.llseek          = no_llseek,
+	.llseek = no_llseek,
 };
 
-static ssize_t info_show(struct device *device,
-			   struct device_attribute *attr,
-			   char *buf)
+static ssize_t info_show(struct device *device, struct device_attribute *attr,
+			 char *buf)
 {
 	struct disp_log *disp_log = dev_get_drvdata(device);
 	ssize_t count = 0;
@@ -494,36 +485,30 @@ static ssize_t info_show(struct device *device,
 
 	log_buf = &disp_log->log[LOG_TYPE_KERNEL];
 	count = snprintf(buf, PAGE_SIZE,
-				"Kernel Display log parameter information:\n");
+			 "Kernel Display log parameter information:\n");
+	count += snprintf(buf + count, PAGE_SIZE - count, "buffer size = %d\n",
+			  (u32)log_buf->size);
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"buffer size = %d\n",
-				(u32)log_buf->size);
+			  "buffer wrap arounds = %d\n", log_buf->pos.wrap);
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"buffer wrap arounds = %d\n",
-				log_buf->pos.wrap);
-	count += snprintf(buf + count, PAGE_SIZE - count,
-				"buffer write position = %d\n",
-				log_buf->pos.offset);
+			  "buffer write position = %d\n", log_buf->pos.offset);
 
 	log_buf = &disp_log->log[LOG_TYPE_USER];
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"User Display log parameter information:\n");
+			  "User Display log parameter information:\n");
+	count += snprintf(buf + count, PAGE_SIZE - count, "buffer size = %d\n",
+			  (u32)log_buf->size);
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"buffer size = %d\n",
-				(u32)log_buf->size);
+			  "buffer wrap arounds = %d\n", log_buf->pos.wrap);
 	count += snprintf(buf + count, PAGE_SIZE - count,
-				"buffer wrap arounds = %d\n",
-				log_buf->pos.wrap);
-	count += snprintf(buf + count, PAGE_SIZE - count,
-				"buffer write position = %d\n",
-				log_buf->pos.offset);
+			  "buffer write position = %d\n", log_buf->pos.offset);
 
 	return count;
 }
 
 static ssize_t user_buf_store(struct device *device,
-			   struct device_attribute *attr,
-			   const char *buf, size_t count)
+			      struct device_attribute *attr, const char *buf,
+			      size_t count)
 {
 	struct disp_log *disp_log = dev_get_drvdata(device);
 	struct log_buf *log_buf = NULL;
@@ -540,8 +525,7 @@ static ssize_t user_buf_store(struct device *device,
 }
 
 static ssize_t user_buf_show(struct device *device,
-			   struct device_attribute *attr,
-			   char *buf)
+			     struct device_attribute *attr, char *buf)
 {
 	struct disp_log *disp_log = dev_get_drvdata(device);
 	ssize_t count = 0;
@@ -549,13 +533,12 @@ static ssize_t user_buf_show(struct device *device,
 
 	log_buf = &disp_log->log[LOG_TYPE_USER];
 	/* sysfs can only support PAGE_SIZE buffer */
-	count = snprintf(buf, PAGE_SIZE,"%s\n", log_buf->buf);
+	count = snprintf(buf, PAGE_SIZE, "%s\n", log_buf->buf);
 	return count;
 }
 
 static ssize_t kernel_buf_show(struct device *device,
-			   struct device_attribute *attr,
-			   char *buf)
+			       struct device_attribute *attr, char *buf)
 {
 	struct disp_log *disp_log = dev_get_drvdata(device);
 	ssize_t count = 0;
@@ -563,7 +546,7 @@ static ssize_t kernel_buf_show(struct device *device,
 
 	log_buf = &disp_log->log[LOG_TYPE_KERNEL];
 	/* sysfs can only support PAGE_SIZE buffer */
-	count = snprintf(buf, PAGE_SIZE,"%s\n", log_buf->buf);
+	count = snprintf(buf, PAGE_SIZE, "%s\n", log_buf->buf);
 	return count;
 }
 
@@ -571,20 +554,17 @@ static DEVICE_ATTR_RO(info);
 static DEVICE_ATTR_RW(user_buf);
 static DEVICE_ATTR_RO(kernel_buf);
 
-static struct attribute *disp_log_dev_attrs[] = {
-	&dev_attr_info.attr,
-	&dev_attr_user_buf.attr,
-	&dev_attr_kernel_buf.attr,
-	NULL
-};
+static struct attribute *disp_log_dev_attrs[] = { &dev_attr_info.attr,
+						  &dev_attr_user_buf.attr,
+						  &dev_attr_kernel_buf.attr,
+						  NULL };
 
 static const struct attribute_group disp_log_dev_group = {
 	.attrs = disp_log_dev_attrs,
 };
 
 static const struct attribute_group *disp_log_dev_groups[] = {
-	&disp_log_dev_group,
-	NULL
+	&disp_log_dev_group, NULL
 };
 
 int mi_disp_log_init(void)
@@ -601,8 +581,7 @@ int mi_disp_log_init(void)
 		return 0;
 	}
 
-	buf = kzalloc(sizeof(*disp_log) + (2 * DISP_LOG_BUF_SIZE),
-				GFP_KERNEL);
+	buf = kzalloc(sizeof(*disp_log) + (2 * DISP_LOG_BUF_SIZE), GFP_KERNEL);
 	if (!buf) {
 		DISP_ERROR("can not allocate Buffer\n");
 		ret = -ENOMEM;
@@ -621,29 +600,33 @@ int mi_disp_log_init(void)
 		log_buf->buf = &buf[i * DISP_LOG_BUF_SIZE];
 	}
 
-	ret = mi_disp_cdev_register(DISP_LOG_DEVICE_NAME,
-				&disp_log_fops, &disp_log->cdev);
+	ret = mi_disp_cdev_register(DISP_LOG_DEVICE_NAME, &disp_log_fops,
+				    &disp_log->cdev);
 	if (ret < 0) {
-		DISP_ERROR("cdev register failed for %s\n", DISP_LOG_DEVICE_NAME);
+		DISP_ERROR("cdev register failed for %s\n",
+			   DISP_LOG_DEVICE_NAME);
 		goto err_free_mem;
 	}
 
 	disp_log->dev_id = disp_log->cdev->dev;
 	disp_log->class = disp_core ? disp_core->class : NULL;
 	disp_log->dev = device_create_with_groups(disp_log->class, NULL,
-			disp_log->dev_id, disp_log,
-			disp_log_dev_groups, DISP_LOG_DEVICE_NAME);
+						  disp_log->dev_id, disp_log,
+						  disp_log_dev_groups,
+						  DISP_LOG_DEVICE_NAME);
 	if (IS_ERR(disp_log->dev)) {
 		DISP_ERROR("create device failed for \n");
 		ret = -ENODEV;
 		goto err_cdev_unreg;
 	}
 
-	disp_log->debug = debugfs_create_file(DISP_LOG_DEVICE_NAME,
-			0444, disp_core ? disp_core->debugfs_dir : NULL,
-			disp_log, &disp_log_debugfs_fops);
+	disp_log->debug =
+		debugfs_create_file(DISP_LOG_DEVICE_NAME, 0444,
+				    disp_core ? disp_core->debugfs_dir : NULL,
+				    disp_log, &disp_log_debugfs_fops);
 	if (disp_log->debug == NULL) {
-		DISP_ERROR("debugfs_create_file failed for %s \n", DISP_LOG_DEVICE_NAME);
+		DISP_ERROR("debugfs_create_file failed for %s \n",
+			   DISP_LOG_DEVICE_NAME);
 		ret = -ENOMEM;
 		goto err_dev_destroy;
 	}

@@ -14,16 +14,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_iot_sim_utils_api.h>
-#include <qdf_module.h>
-#include <qdf_delayed_work.h>
 #include "../../core/iot_sim_cmn_api_i.h"
+#include <qdf_delayed_work.h>
+#include <qdf_module.h>
+#include <wlan_iot_sim_utils_api.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
 #include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 
 #define IEEE80211_FRAME_BODY_OFFSET 0x18
-#define IEEE80211_TSF_LEN       (8)
+#define IEEE80211_TSF_LEN (8)
 
 /*
  * iot_sim_apply_content_change_rule - function to apply content change rule
@@ -50,14 +50,14 @@ iot_sim_update_beacon_template_struct(qdf_nbuf_t nbuf,
 		return QDF_STATUS_E_NULL_VALUE;
 
 	/**
-	 * Skip fixed field
-	 */
+   * Skip fixed field
+   */
 	offset += IEEE80211_TSF_LEN; /* TSF field */
 	offset += 2; /* Beacon interval */
 	offset += 2; /* Capability Information */
 
-	ie_len = wbuf_get_pktlen(nbuf) -
-		 sizeof(struct ieee80211_frame) - offset;
+	ie_len =
+		wbuf_get_pktlen(nbuf) - sizeof(struct ieee80211_frame) - offset;
 	ie = (struct ie_header *)((uint8_t *)qdf_nbuf_data(nbuf) +
 				  sizeof(struct ieee80211_frame) + offset);
 
@@ -87,8 +87,7 @@ iot_sim_update_beacon_template_struct(qdf_nbuf_t nbuf,
 				iot_sim_err("Invalid CSA IE Length");
 				goto err;
 			}
-			csa =
-			(struct ieee80211_ath_channelswitch_ie *)ie;
+			csa = (struct ieee80211_ath_channelswitch_ie *)ie;
 			param->csa_switch_count_offset =
 				(((uint8_t *)&csa->tbttcount) -
 				 (uint8_t *)qdf_nbuf_data(nbuf));
@@ -98,8 +97,7 @@ iot_sim_update_beacon_template_struct(qdf_nbuf_t nbuf,
 				iot_sim_err("Invalid ECSA IE Length");
 				goto err;
 			}
-			ecsa =
-			(struct ieee80211_extendedchannelswitch_ie *)ie;
+			ecsa = (struct ieee80211_extendedchannelswitch_ie *)ie;
 			param->ext_csa_switch_count_offset =
 				(((uint8_t *)&ecsa->tbttcount) -
 				 (uint8_t *)qdf_nbuf_data(nbuf));
@@ -123,7 +121,7 @@ iot_sim_update_beacon_template_struct(qdf_nbuf_t nbuf,
 			break;
 		case WLAN_ELEMID_MULTIPLE_BSSID:
 			offset = ((uint8_t *)ie -
-				 (uint8_t *)qdf_nbuf_data(nbuf));
+				  (uint8_t *)qdf_nbuf_data(nbuf));
 			param->mbssid_ie_offset = offset;
 			break;
 		default:
@@ -137,8 +135,7 @@ iot_sim_update_beacon_template_struct(qdf_nbuf_t nbuf,
 					  ie->ie_len);
 	}
 	param->tmpl_len = wbuf_get_pktlen(nbuf);
-	param->tmpl_len_aligned = roundup(param->tmpl_len,
-					  sizeof(uint32_t));
+	param->tmpl_len_aligned = roundup(param->tmpl_len, sizeof(uint32_t));
 	param->frm = (uint8_t *)qdf_nbuf_data(nbuf);
 	return QDF_STATUS_SUCCESS;
 err:
@@ -148,8 +145,7 @@ err:
 QDF_STATUS
 iot_sim_apply_content_change_rule(struct wlan_objmgr_pdev *pdev,
 				  struct iot_sim_rule *piot_sim_rule,
-				  qdf_nbuf_t nbuf,
-				  int fixed_param_length,
+				  qdf_nbuf_t nbuf, int fixed_param_length,
 				  struct beacon_tmpl_params *param)
 {
 	uint8_t *buf = NULL;
@@ -163,17 +159,15 @@ iot_sim_apply_content_change_rule(struct wlan_objmgr_pdev *pdev,
 	buf_len = qdf_nbuf_len(nbuf);
 	buf = qdf_nbuf_data(nbuf);
 
-	if (piot_sim_rule->offset ==
-			IEEE80211_FRAME_BODY_OFFSET) {
+	if (piot_sim_rule->offset == IEEE80211_FRAME_BODY_OFFSET) {
 		offset = IEEE80211_FRAME_BODY_OFFSET;
 	} else if (piot_sim_rule->offset == 0) {
 		offset = 0;
 	} else if (buf[piot_sim_rule->offset] ==
-			piot_sim_rule->frm_content[0]) {
+		   piot_sim_rule->frm_content[0]) {
 		offset = piot_sim_rule->offset;
-	}  else {
-		offset = IEEE80211_FRAME_BODY_OFFSET +
-			fixed_param_length;
+	} else {
+		offset = IEEE80211_FRAME_BODY_OFFSET + fixed_param_length;
 		while (((offset + 1) < buf_len) &&
 		       (buf[offset] < piot_sim_rule->frm_content[0])) {
 			offset += buf[offset + 1] + 2;
@@ -184,8 +178,7 @@ iot_sim_apply_content_change_rule(struct wlan_objmgr_pdev *pdev,
 		buf += offset;
 		qdf_mem_copy(buf, piot_sim_rule->frm_content,
 			     piot_sim_rule->len);
-		qdf_nbuf_set_pktlen(nbuf, offset +
-				piot_sim_rule->len);
+		qdf_nbuf_set_pktlen(nbuf, offset + piot_sim_rule->len);
 		iot_sim_debug("iot_sim: Content updated");
 	} else {
 		iot_sim_err("Failed to modify content");
@@ -193,8 +186,8 @@ iot_sim_apply_content_change_rule(struct wlan_objmgr_pdev *pdev,
 
 	if (IEEE80211_IS_BEACON((struct ieee80211_frame *)qdf_nbuf_data(nbuf)))
 		status = iot_sim_update_beacon_template_struct(nbuf, param);
-		if (QDF_IS_STATUS_ERROR(status))
-			iot_sim_err("Failed to update beacon param");
+	if (QDF_IS_STATUS_ERROR(status))
+		iot_sim_err("Failed to update beacon param");
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -224,8 +217,7 @@ iot_sim_apply_delay_drop_rule(struct iot_sim_rule *piot_sim_rule,
 	struct wlan_objmgr_psoc *psoc = wlan_pdev_get_psoc(isc->pdev_obj);
 	struct wlan_objmgr_peer **peer = &piot_sim_rule->peer;
 
-	if (!piot_sim_rule->drop &&
-	    !piot_sim_rule->delay_dur)
+	if (!piot_sim_rule->drop && !piot_sim_rule->delay_dur)
 		return QDF_STATUS_E_NOSUPPORT;
 
 	if (piot_sim_rule->drop && nbuf) {
@@ -238,8 +230,7 @@ iot_sim_apply_delay_drop_rule(struct iot_sim_rule *piot_sim_rule,
 		}
 
 		if (piot_sim_rule->nbuf_list[0]) {
-			if (!qdf_delayed_work_stop(piot_sim_rule->
-						   dwork)) {
+			if (!qdf_delayed_work_stop(piot_sim_rule->dwork)) {
 				piot_sim_rule->nbuf_list[1] = nbuf;
 				return QDF_STATUS_SUCCESS;
 			}
@@ -273,8 +264,8 @@ iot_sim_apply_delay_drop_rule(struct iot_sim_rule *piot_sim_rule,
 		*peer = wlan_objmgr_get_peer(psoc, param->pdev_id,
 					     (uint8_t *)mac_addr,
 					     WLAN_IOT_SIM_ID);
-		qdf_mem_copy(rx_param->rx_params,
-			     param->rx_params, RX_STATUS_SIZE);
+		qdf_mem_copy(rx_param->rx_params, param->rx_params,
+			     RX_STATUS_SIZE);
 		piot_sim_rule->rx_param = rx_param;
 		piot_sim_rule->nbuf_list[0] = nbuf;
 		if (!qdf_delayed_work_start(piot_sim_rule->dwork,
@@ -313,8 +304,8 @@ iot_sim_apply_delay_drop_rule(struct iot_sim_rule *piot_sim_rule,
  *	   QDF_STATUS_E_NOSUPPORT, no content change rule found for this frame
  */
 QDF_STATUS iot_sim_frame_update(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t nbuf,
-				struct beacon_tmpl_params *param,
-				bool tx, struct mgmt_rx_event_params *rx_param)
+				struct beacon_tmpl_params *param, bool tx,
+				struct mgmt_rx_event_params *rx_param)
 {
 	uint8_t type, subtype, seq = 0;
 	struct iot_sim_context *isc;
@@ -341,18 +332,18 @@ QDF_STATUS iot_sim_frame_update(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t nbuf,
 
 	if (type == IEEE80211_FC0_TYPE_MGT &&
 	    subtype == IEEE80211_FC0_SUBTYPE_AUTH) {
-	/* Authentication frame */
+		/* Authentication frame */
 		auth_seq_index = IEEE80211_FRAME_BODY_OFFSET + 2;
 		seq = le16toh(*(u_int16_t *)(buf + auth_seq_index));
 	} else if (type == IEEE80211_FC0_TYPE_MGT &&
 		   (subtype == IEEE80211_FC0_SUBTYPE_PROBE_RESP ||
 		    subtype == IEEE80211_FC0_SUBTYPE_BEACON))
-	/* Probe response frame */
+		/* Probe response frame */
 		fixed_param_len = 12;
 	else if (type == IEEE80211_FC0_TYPE_MGT &&
 		 (subtype == IEEE80211_FC0_SUBTYPE_ASSOC_RESP ||
 		  subtype == IEEE80211_FC0_SUBTYPE_REASSOC_RESP))
-	/* Assoc/Reassoc response frame */
+		/* Assoc/Reassoc response frame */
 		fixed_param_len = 6;
 	else if (type == IEEE80211_FC0_TYPE_MGT &&
 		 (subtype == IEEE80211_FC0_SUBTYPE_DEAUTH ||
@@ -360,12 +351,12 @@ QDF_STATUS iot_sim_frame_update(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t nbuf,
 		deauth_disassoc = true;
 	else if (type == IEEE80211_FC0_TYPE_MGT &&
 		 subtype == IEEE80211_FC0_SUBTYPE_ACTION) {
-	/* Action frame */
+		/* Action frame */
 		frm = buf + IEEE80211_FRAME_BODY_OFFSET;
 
 		is_action_frm = true;
-		if (iot_sim_get_index_for_action_frm(frm, &cat,
-						     &cat_index, !tx)) {
+		if (iot_sim_get_index_for_action_frm(frm, &cat, &cat_index,
+						     !tx)) {
 			iot_sim_err("get_index_for_action_frm failed");
 			return QDF_STATUS_SUCCESS;
 		}
@@ -373,8 +364,7 @@ QDF_STATUS iot_sim_frame_update(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t nbuf,
 
 	subtype >>= IEEE80211_FC0_SUBTYPE_SHIFT;
 	iot_sim_debug("iot_sim: type:%d subtype:%d seq:%d, action:%u dir:%s",
-		      type, subtype, seq, is_action_frm,
-		      tx ? "TX" : "RX");
+		      type, subtype, seq, is_action_frm, tx ? "TX" : "RX");
 
 	if (tx)
 		mac_addr = (struct qdf_mac_addr *)wh->i_addr1;
@@ -394,34 +384,28 @@ QDF_STATUS iot_sim_frame_update(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t nbuf,
 		goto norule;
 
 	if (is_action_frm)
-		piot_sim_rule = peer_rule->rule_per_seq[seq]->
-			rule_per_action_frm[cat][cat_index];
+		piot_sim_rule = peer_rule->rule_per_seq[seq]
+					->rule_per_action_frm[cat][cat_index];
 	else
-		piot_sim_rule = peer_rule->rule_per_seq[seq]->
-			rule_per_type[type][subtype];
+		piot_sim_rule = peer_rule->rule_per_seq[seq]
+					->rule_per_type[type][subtype];
 
 	if (!piot_sim_rule)
 		goto norule;
 
 	if (tx) {
-		if (IEEE80211_IS_BEACON((struct ieee80211_frame *)
-					qdf_nbuf_data(nbuf))) {
+		if (IEEE80211_IS_BEACON(
+			    (struct ieee80211_frame *)qdf_nbuf_data(nbuf))) {
 			if (isc->bcn_buf)
 				qdf_nbuf_free(isc->bcn_buf);
 			isc->bcn_buf = qdf_nbuf_copy(nbuf);
-			status =
-			   iot_sim_apply_content_change_rule(pdev,
-							     piot_sim_rule,
-							     isc->bcn_buf,
-							     fixed_param_len,
-							     param);
+			status = iot_sim_apply_content_change_rule(
+				pdev, piot_sim_rule, isc->bcn_buf,
+				fixed_param_len, param);
 		} else {
-			status =
-			   iot_sim_apply_content_change_rule(pdev,
-							     piot_sim_rule,
-							     nbuf,
-							     fixed_param_len,
-							     param);
+			status = iot_sim_apply_content_change_rule(
+				pdev, piot_sim_rule, nbuf, fixed_param_len,
+				param);
 		}
 
 		if (status == QDF_STATUS_E_NOSUPPORT) {
@@ -432,9 +416,8 @@ QDF_STATUS iot_sim_frame_update(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t nbuf,
 				goto norule;
 		}
 	} else {
-		status = iot_sim_apply_delay_drop_rule(piot_sim_rule,
-						       nbuf, rx_param,
-						       isc, mac_addr);
+		status = iot_sim_apply_delay_drop_rule(piot_sim_rule, nbuf,
+						       rx_param, isc, mac_addr);
 		if (QDF_IS_STATUS_SUCCESS(status))
 			status = QDF_STATUS_E_NULL_VALUE;
 		else

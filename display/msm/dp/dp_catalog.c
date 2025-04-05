@@ -1,123 +1,113 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved. Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
-
 
 #include <linux/delay.h>
 #include <linux/iopoll.h>
 
 #include "dp_catalog.h"
-#include "dp_reg.h"
 #include "dp_debug.h"
 #include "dp_link.h"
+#include "dp_reg.h"
 
-#define DP_GET_MSB(x)	(x >> 8)
-#define DP_GET_LSB(x)	(x & 0xff)
+#define DP_GET_MSB(x) (x >> 8)
+#define DP_GET_LSB(x) (x & 0xff)
 
 #define DP_PHY_READY BIT(1)
 
-#define dp_catalog_get_priv(x) ({ \
-	struct dp_catalog *dp_catalog; \
-	dp_catalog = container_of(x, struct dp_catalog, x); \
-	container_of(dp_catalog, struct dp_catalog_private, \
-				dp_catalog); \
-})
+#define dp_catalog_get_priv(x)                                      \
+	({                                                          \
+		struct dp_catalog *dp_catalog;                      \
+		dp_catalog = container_of(x, struct dp_catalog, x); \
+		container_of(dp_catalog, struct dp_catalog_private, \
+			     dp_catalog);                           \
+	})
 
-#define DP_INTERRUPT_STATUS1 \
-	(DP_INTR_AUX_I2C_DONE| \
-	DP_INTR_WRONG_ADDR | DP_INTR_TIMEOUT | \
-	DP_INTR_NACK_DEFER | DP_INTR_WRONG_DATA_CNT | \
-	DP_INTR_I2C_NACK | DP_INTR_I2C_DEFER | \
-	DP_INTR_PLL_UNLOCKED | DP_INTR_AUX_ERROR)
+#define DP_INTERRUPT_STATUS1                                              \
+	(DP_INTR_AUX_I2C_DONE | DP_INTR_WRONG_ADDR | DP_INTR_TIMEOUT |    \
+	 DP_INTR_NACK_DEFER | DP_INTR_WRONG_DATA_CNT | DP_INTR_I2C_NACK | \
+	 DP_INTR_I2C_DEFER | DP_INTR_PLL_UNLOCKED | DP_INTR_AUX_ERROR)
 
-#define DP_INTR_MASK1		(DP_INTERRUPT_STATUS1 << 2)
+#define DP_INTR_MASK1 (DP_INTERRUPT_STATUS1 << 2)
 
-#define DP_INTERRUPT_STATUS2 \
+#define DP_INTERRUPT_STATUS2                                   \
 	(DP_INTR_READY_FOR_VIDEO | DP_INTR_IDLE_PATTERN_SENT | \
-	DP_INTR_FRAME_END | DP_INTR_CRC_UPDATED | DP_INTR_SST_FIFO_UNDERFLOW)
+	 DP_INTR_FRAME_END | DP_INTR_CRC_UPDATED | DP_INTR_SST_FIFO_UNDERFLOW)
 
-#define DP_INTR_MASK2		(DP_INTERRUPT_STATUS2 << 2)
+#define DP_INTR_MASK2 (DP_INTERRUPT_STATUS2 << 2)
 
-
-#define DP_INTERRUPT_STATUS3 \
+#define DP_INTERRUPT_STATUS3                                            \
 	(DP_INTR_SST_ML_FIFO_OVERFLOW | DP_INTR_MST0_ML_FIFO_OVERFLOW | \
-	DP_INTR_MST1_ML_FIFO_OVERFLOW | DP_INTR_DP1_FRAME_END | DP_INTR_SDP0_COLLISION | \
-	DP_INTR_SDP1_COLLISION)
+	 DP_INTR_MST1_ML_FIFO_OVERFLOW | DP_INTR_DP1_FRAME_END |        \
+	 DP_INTR_SDP0_COLLISION | DP_INTR_SDP1_COLLISION)
 
-#define DP_INTR_MASK3		(DP_INTERRUPT_STATUS3 << 2)
+#define DP_INTR_MASK3 (DP_INTERRUPT_STATUS3 << 2)
 
 #define DP_INTERRUPT_STATUS5 \
 	(DP_INTR_MST_DP0_VCPF_SENT | DP_INTR_MST_DP1_VCPF_SENT)
 
-#define DP_INTR_MASK5		(DP_INTERRUPT_STATUS5 << 2)
-#define DP_TPG_PATTERN_MAX	9
-#define DP_TPG_PATTERN_DEFAULT	8
+#define DP_INTR_MASK5 (DP_INTERRUPT_STATUS5 << 2)
+#define DP_TPG_PATTERN_MAX 9
+#define DP_TPG_PATTERN_DEFAULT 8
 
-#define DP_INTERRUPT_STATUS6 \
-	(DP_INTR_SST_BS_LATE | DP_INTR_DP0_BACKPRESSURE_ERROR | DP_INTR_DP1_BACKPRESSURE_ERROR)
+#define DP_INTERRUPT_STATUS6                                    \
+	(DP_INTR_SST_BS_LATE | DP_INTR_DP0_BACKPRESSURE_ERROR | \
+	 DP_INTR_DP1_BACKPRESSURE_ERROR)
 
-#define DP_INTR_MASK6		(DP_INTERRUPT_STATUS6 << 2)
+#define DP_INTR_MASK6 (DP_INTERRUPT_STATUS6 << 2)
 
-#define dp_catalog_fill_io(x) { \
-	catalog->io.x = parser->get_io(parser, #x); \
-}
+#define dp_catalog_fill_io(x)                               \
+	{                                                   \
+		catalog->io.x = parser->get_io(parser, #x); \
+	}
 
-#define dp_catalog_fill_io_buf(x) { \
-	parser->get_io_buf(parser, #x); \
-}
+#define dp_catalog_fill_io_buf(x)               \
+	{                                       \
+		parser->get_io_buf(parser, #x); \
+	}
 
-#define dp_read(x) ({ \
-	catalog->read(catalog, io_data, x); \
-})
+#define dp_read(x) ({ catalog->read(catalog, io_data, x); })
 
-#define dp_write(x, y) ({ \
-	catalog->write(catalog, io_data, x, y); \
-})
+#define dp_write(x, y) ({ catalog->write(catalog, io_data, x, y); })
 
 static u8 const vm_pre_emphasis[4][4] = {
-	{0x00, 0x0B, 0x12, 0xFF},       /* pe0, 0 db */
-	{0x00, 0x0A, 0x12, 0xFF},       /* pe1, 3.5 db */
-	{0x00, 0x0C, 0xFF, 0xFF},       /* pe2, 6.0 db */
-	{0xFF, 0xFF, 0xFF, 0xFF}        /* pe3, 9.5 db */
+	{ 0x00, 0x0B, 0x12, 0xFF }, /* pe0, 0 db */
+	{ 0x00, 0x0A, 0x12, 0xFF }, /* pe1, 3.5 db */
+	{ 0x00, 0x0C, 0xFF, 0xFF }, /* pe2, 6.0 db */
+	{ 0xFF, 0xFF, 0xFF, 0xFF } /* pe3, 9.5 db */
 };
 
 /* voltage swing, 0.2v and 1.0v are not support */
 static u8 const vm_voltage_swing[4][4] = {
-	{0x07, 0x0F, 0x14, 0xFF}, /* sw0, 0.4v  */
-	{0x11, 0x1D, 0x1F, 0xFF}, /* sw1, 0.6 v */
-	{0x18, 0x1F, 0xFF, 0xFF}, /* sw1, 0.8 v */
-	{0xFF, 0xFF, 0xFF, 0xFF}  /* sw1, 1.2 v, optional */
+	{ 0x07, 0x0F, 0x14, 0xFF }, /* sw0, 0.4v  */
+	{ 0x11, 0x1D, 0x1F, 0xFF }, /* sw1, 0.6 v */
+	{ 0x18, 0x1F, 0xFF, 0xFF }, /* sw1, 0.8 v */
+	{ 0xFF, 0xFF, 0xFF, 0xFF } /* sw1, 1.2 v, optional */
 };
 
-static u8 const vm_pre_emphasis_hbr3_hbr2[4][4] = {
-	{0x00, 0x0C, 0x15, 0x1A},
-	{0x02, 0x0E, 0x16, 0xFF},
-	{0x02, 0x11, 0xFF, 0xFF},
-	{0x04, 0xFF, 0xFF, 0xFF}
-};
+static u8 const vm_pre_emphasis_hbr3_hbr2[4][4] = { { 0x00, 0x0C, 0x15, 0x1A },
+						    { 0x02, 0x0E, 0x16, 0xFF },
+						    { 0x02, 0x11, 0xFF, 0xFF },
+						    { 0x04, 0xFF, 0xFF,
+						      0xFF } };
 
-static u8 const vm_voltage_swing_hbr3_hbr2[4][4] = {
-	{0x02, 0x12, 0x16, 0x1A},
-	{0x09, 0x19, 0x1F, 0xFF},
-	{0x10, 0x1F, 0xFF, 0xFF},
-	{0x1F, 0xFF, 0xFF, 0xFF}
-};
+static u8 const vm_voltage_swing_hbr3_hbr2[4][4] = { { 0x02, 0x12, 0x16, 0x1A },
+						     { 0x09, 0x19, 0x1F, 0xFF },
+						     { 0x10, 0x1F, 0xFF, 0xFF },
+						     { 0x1F, 0xFF, 0xFF,
+						       0xFF } };
 
-static u8 const vm_pre_emphasis_hbr_rbr[4][4] = {
-	{0x00, 0x0C, 0x14, 0x19},
-	{0x00, 0x0B, 0x12, 0xFF},
-	{0x00, 0x0B, 0xFF, 0xFF},
-	{0x04, 0xFF, 0xFF, 0xFF}
-};
+static u8 const vm_pre_emphasis_hbr_rbr[4][4] = { { 0x00, 0x0C, 0x14, 0x19 },
+						  { 0x00, 0x0B, 0x12, 0xFF },
+						  { 0x00, 0x0B, 0xFF, 0xFF },
+						  { 0x04, 0xFF, 0xFF, 0xFF } };
 
-static u8 const vm_voltage_swing_hbr_rbr[4][4] = {
-	{0x08, 0x0F, 0x16, 0x1F},
-	{0x11, 0x1E, 0x1F, 0xFF},
-	{0x19, 0x1F, 0xFF, 0xFF},
-	{0x1F, 0xFF, 0xFF, 0xFF}
-};
+static u8 const vm_voltage_swing_hbr_rbr[4][4] = { { 0x08, 0x0F, 0x16, 0x1F },
+						   { 0x11, 0x1E, 0x1F, 0xFF },
+						   { 0x19, 0x1F, 0xFF, 0xFF },
+						   { 0x1F, 0xFF, 0xFF, 0xFF } };
 
 enum dp_flush_bit {
 	DP_PPS_FLUSH,
@@ -131,9 +121,9 @@ struct dp_catalog_private {
 	struct dp_parser *parser;
 
 	u32 (*read)(struct dp_catalog_private *catalog,
-		struct dp_io_data *io_data, u32 offset);
+		    struct dp_io_data *io_data, u32 offset);
 	void (*write)(struct dp_catalog_private *catlog,
-		struct dp_io_data *io_data, u32 offset, u32 data);
+		      struct dp_io_data *io_data, u32 offset, u32 data);
 
 	u32 (*audio_map)[DP_AUDIO_SDP_HEADER_MAX];
 	struct dp_catalog dp_catalog;
@@ -144,7 +134,7 @@ struct dp_catalog_private {
 };
 
 static u32 dp_read_sw(struct dp_catalog_private *catalog,
-		struct dp_io_data *io_data, u32 offset)
+		      struct dp_io_data *io_data, u32 offset)
 {
 	u32 data = 0;
 
@@ -155,14 +145,14 @@ static u32 dp_read_sw(struct dp_catalog_private *catalog,
 }
 
 static void dp_write_sw(struct dp_catalog_private *catalog,
-	struct dp_io_data *io_data, u32 offset, u32 data)
+			struct dp_io_data *io_data, u32 offset, u32 data)
 {
 	if (io_data->buf)
 		memcpy(io_data->buf + offset, &data, sizeof(data));
 }
 
 static u32 dp_read_hw(struct dp_catalog_private *catalog,
-	struct dp_io_data *io_data, u32 offset)
+		      struct dp_io_data *io_data, u32 offset)
 {
 	u32 data = 0;
 
@@ -172,43 +162,43 @@ static u32 dp_read_hw(struct dp_catalog_private *catalog,
 }
 
 static void dp_write_hw(struct dp_catalog_private *catalog,
-	struct dp_io_data *io_data, u32 offset, u32 data)
+			struct dp_io_data *io_data, u32 offset, u32 data)
 {
 	writel_relaxed(data, io_data->io.base + offset);
 }
 
 static u32 dp_read_sub_sw(struct dp_catalog *dp_catalog,
-		struct dp_io_data *io_data, u32 offset)
+			  struct dp_io_data *io_data, u32 offset)
 {
-	struct dp_catalog_private *catalog = container_of(dp_catalog,
-			struct dp_catalog_private, dp_catalog);
+	struct dp_catalog_private *catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 
 	return dp_read_sw(catalog, io_data, offset);
 }
 
 static void dp_write_sub_sw(struct dp_catalog *dp_catalog,
-	struct dp_io_data *io_data, u32 offset, u32 data)
+			    struct dp_io_data *io_data, u32 offset, u32 data)
 {
-	struct dp_catalog_private *catalog = container_of(dp_catalog,
-			struct dp_catalog_private, dp_catalog);
+	struct dp_catalog_private *catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 
 	dp_write_sw(catalog, io_data, offset, data);
 }
 
 static u32 dp_read_sub_hw(struct dp_catalog *dp_catalog,
-	struct dp_io_data *io_data, u32 offset)
+			  struct dp_io_data *io_data, u32 offset)
 {
-	struct dp_catalog_private *catalog = container_of(dp_catalog,
-			struct dp_catalog_private, dp_catalog);
+	struct dp_catalog_private *catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 
 	return dp_read_hw(catalog, io_data, offset);
 }
 
 static void dp_write_sub_hw(struct dp_catalog *dp_catalog,
-	struct dp_io_data *io_data, u32 offset, u32 data)
+			    struct dp_io_data *io_data, u32 offset, u32 data)
 {
-	struct dp_catalog_private *catalog = container_of(dp_catalog,
-			struct dp_catalog_private, dp_catalog);
+	struct dp_catalog_private *catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 
 	dp_write_hw(catalog, io_data, offset, data);
 }
@@ -379,7 +369,8 @@ static void dp_catalog_aux_enable(struct dp_catalog_aux *aux, bool enable)
 }
 
 static void dp_catalog_aux_update_cfg(struct dp_catalog_aux *aux,
-		struct dp_aux_cfg *cfg, enum dp_phy_aux_config_type type)
+				      struct dp_aux_cfg *cfg,
+				      enum dp_phy_aux_config_type type)
 {
 	struct dp_catalog_private *catalog;
 	u32 new_index = 0, current_index = 0;
@@ -397,15 +388,15 @@ static void dp_catalog_aux_update_cfg(struct dp_catalog_aux *aux,
 	current_index = cfg[type].current_index;
 	new_index = (current_index + 1) % cfg[type].cfg_cnt;
 	DP_DEBUG("Updating %s from 0x%08x to 0x%08x\n",
-		dp_phy_aux_config_type_to_string(type),
-	cfg[type].lut[current_index], cfg[type].lut[new_index]);
+		 dp_phy_aux_config_type_to_string(type),
+		 cfg[type].lut[current_index], cfg[type].lut[new_index]);
 
 	dp_write(cfg[type].offset, cfg[type].lut[new_index]);
 	cfg[type].current_index = new_index;
 }
 
 static void dp_catalog_aux_setup(struct dp_catalog_aux *aux,
-		struct dp_aux_cfg *cfg)
+				 struct dp_aux_cfg *cfg)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -466,8 +457,8 @@ static void dp_catalog_aux_get_irq(struct dp_catalog_aux *aux, bool cmd_busy)
 	dp_write(DP_INTR_STATUS, ack);
 }
 
-static bool dp_catalog_ctrl_wait_for_phy_ready(
-		struct dp_catalog_private *catalog)
+static bool
+dp_catalog_ctrl_wait_for_phy_ready(struct dp_catalog_private *catalog)
 {
 	u32 phy_version;
 	u32 reg, state;
@@ -484,8 +475,8 @@ static bool dp_catalog_ctrl_wait_for_phy_ready(
 	}
 
 	if (readl_poll_timeout_atomic((base + reg), state,
-			((state & DP_PHY_READY) > 0),
-			poll_sleep_us, pll_timeout_us)) {
+				      ((state & DP_PHY_READY) > 0),
+				      poll_sleep_us, pll_timeout_us)) {
 		DP_ERR("PHY status failed, status=%x\n", state);
 
 		success = false;
@@ -496,7 +487,7 @@ static bool dp_catalog_ctrl_wait_for_phy_ready(
 
 /* controller related catalog functions */
 static int dp_catalog_ctrl_late_phy_init(struct dp_catalog_ctrl *ctrl,
-					u8 lane_cnt, bool flipped)
+					 u8 lane_cnt, bool flipped)
 {
 	int rc = 0;
 	u32 bias0_en, drvr0_en, bias1_en, drvr1_en;
@@ -547,9 +538,9 @@ static int dp_catalog_ctrl_late_phy_init(struct dp_catalog_ctrl *ctrl,
 	dp_write(DP_PHY_CFG, 0x19);
 
 	/*
-	 * Make sure all the register writes are completed before
-	 * doing any other operation
-	 */
+   * Make sure all the register writes are completed before
+   * doing any other operation
+   */
 	wmb();
 
 	if (!dp_catalog_ctrl_wait_for_phy_ready(catalog)) {
@@ -614,8 +605,8 @@ static void dp_catalog_panel_sdp_update(struct dp_catalog_panel *panel)
 	dp_write(MMSS_DP_SDP_CFG3 + sdp_cfg3_off, 0x00);
 }
 
-static void dp_catalog_panel_setup_vsif_infoframe_sdp(
-		struct dp_catalog_panel *panel)
+static void
+dp_catalog_panel_setup_vsif_infoframe_sdp(struct dp_catalog_panel *panel)
 {
 	struct dp_catalog_private *catalog;
 	struct drm_msm_ext_hdr_metadata *hdr;
@@ -638,8 +629,7 @@ static void dp_catalog_panel_setup_vsif_infoframe_sdp(
 	/* HEADER BYTE 1 */
 	header = panel->dhdr_vsif_sdp.HB1;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_1_BIT)
-			| (parity << PARITY_BYTE_1_BIT));
+	data = ((header << HEADER_BYTE_1_BIT) | (parity << PARITY_BYTE_1_BIT));
 	dp_write(MMSS_DP_VSCEXT_0 + mst_offset, data);
 	memcpy(buf + off, &data, sizeof(data));
 	off += sizeof(data);
@@ -647,26 +637,24 @@ static void dp_catalog_panel_setup_vsif_infoframe_sdp(
 	/* HEADER BYTE 2 */
 	header = panel->dhdr_vsif_sdp.HB2;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_2_BIT)
-			| (parity << PARITY_BYTE_2_BIT));
+	data = ((header << HEADER_BYTE_2_BIT) | (parity << PARITY_BYTE_2_BIT));
 	dp_write(MMSS_DP_VSCEXT_1 + mst_offset, data);
 
 	/* HEADER BYTE 3 */
 	header = panel->dhdr_vsif_sdp.HB3;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_3_BIT)
-			| (parity << PARITY_BYTE_3_BIT));
+	data = ((header << HEADER_BYTE_3_BIT) | (parity << PARITY_BYTE_3_BIT));
 	data |= dp_read(MMSS_DP_VSCEXT_1 + mst_offset);
 	dp_write(MMSS_DP_VSCEXT_1 + mst_offset, data);
 	memcpy(buf + off, &data, sizeof(data));
 	off += sizeof(data);
 
-	print_hex_dump_debug("[drm-dp] VSCEXT: ",
-			DUMP_PREFIX_NONE, 16, 4, buf, off, false);
+	print_hex_dump_debug("[drm-dp] VSCEXT: ", DUMP_PREFIX_NONE, 16, 4, buf,
+			     off, false);
 }
 
-static void dp_catalog_panel_setup_hdr_infoframe_sdp(
-		struct dp_catalog_panel *panel)
+static void
+dp_catalog_panel_setup_hdr_infoframe_sdp(struct dp_catalog_panel *panel)
 {
 	struct dp_catalog_private *catalog;
 	struct drm_msm_ext_hdr_metadata *hdr;
@@ -691,28 +679,23 @@ static void dp_catalog_panel_setup_hdr_infoframe_sdp(
 	/* HEADER BYTE 1 */
 	header = panel->shdr_if_sdp.HB1;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_1_BIT)
-			| (parity << PARITY_BYTE_1_BIT));
-	dp_write(MMSS_DP_GENERIC2_0 + mst_offset,
-			data);
+	data = ((header << HEADER_BYTE_1_BIT) | (parity << PARITY_BYTE_1_BIT));
+	dp_write(MMSS_DP_GENERIC2_0 + mst_offset, data);
 	memcpy(buf + off, &data, sizeof(data));
 	off += sizeof(data);
 
 	/* HEADER BYTE 2 */
 	header = panel->shdr_if_sdp.HB2;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_2_BIT)
-			| (parity << PARITY_BYTE_2_BIT));
+	data = ((header << HEADER_BYTE_2_BIT) | (parity << PARITY_BYTE_2_BIT));
 	dp_write(MMSS_DP_GENERIC2_1 + mst_offset, data);
 
 	/* HEADER BYTE 3 */
 	header = panel->shdr_if_sdp.HB3;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_3_BIT)
-			| (parity << PARITY_BYTE_3_BIT));
+	data = ((header << HEADER_BYTE_3_BIT) | (parity << PARITY_BYTE_3_BIT));
 	data |= dp_read(MMSS_DP_VSCEXT_1 + mst_offset);
-	dp_write(MMSS_DP_GENERIC2_1 + mst_offset,
-			data);
+	dp_write(MMSS_DP_GENERIC2_1 + mst_offset, data);
 	memcpy(buf + off, &data, sizeof(data));
 	off += sizeof(data);
 
@@ -776,8 +759,8 @@ static void dp_catalog_panel_setup_hdr_infoframe_sdp(
 	memcpy(buf + off, &data, sizeof(data));
 	off += sizeof(data);
 
-	print_hex_dump_debug("[drm-dp] HDR: ",
-			DUMP_PREFIX_NONE, 16, 4, buf, off, false);
+	print_hex_dump_debug("[drm-dp] HDR: ", DUMP_PREFIX_NONE, 16, 4, buf,
+			     off, false);
 }
 
 static void dp_catalog_panel_setup_vsc_sdp(struct dp_catalog_panel *panel)
@@ -807,8 +790,7 @@ static void dp_catalog_panel_setup_vsc_sdp(struct dp_catalog_panel *panel)
 	/* HEADER BYTE 1 */
 	header = panel->vsc_colorimetry.header.HB1;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_1_BIT)
-			| (parity << PARITY_BYTE_1_BIT));
+	data = ((header << HEADER_BYTE_1_BIT) | (parity << PARITY_BYTE_1_BIT));
 	dp_write(MMSS_DP_GENERIC0_0 + mst_offset, data);
 	memcpy(buf + off, &data, sizeof(data));
 	off += sizeof(data);
@@ -816,15 +798,13 @@ static void dp_catalog_panel_setup_vsc_sdp(struct dp_catalog_panel *panel)
 	/* HEADER BYTE 2 */
 	header = panel->vsc_colorimetry.header.HB2;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_2_BIT)
-			| (parity << PARITY_BYTE_2_BIT));
+	data = ((header << HEADER_BYTE_2_BIT) | (parity << PARITY_BYTE_2_BIT));
 	dp_write(MMSS_DP_GENERIC0_1 + mst_offset, data);
 
 	/* HEADER BYTE 3 */
 	header = panel->vsc_colorimetry.header.HB3;
 	parity = dp_header_get_parity(header);
-	data   = ((header << HEADER_BYTE_3_BIT)
-			| (parity << PARITY_BYTE_3_BIT));
+	data = ((header << HEADER_BYTE_3_BIT) | (parity << PARITY_BYTE_3_BIT));
 	data |= dp_read(MMSS_DP_GENERIC0_1 + mst_offset);
 	dp_write(MMSS_DP_GENERIC0_1 + mst_offset, data);
 	memcpy(buf + off, &data, sizeof(data));
@@ -848,8 +828,8 @@ static void dp_catalog_panel_setup_vsc_sdp(struct dp_catalog_panel *panel)
 	off += sizeof(data);
 
 	data = (panel->vsc_colorimetry.data[16] & 0xFF) |
-		((panel->vsc_colorimetry.data[17] & 0xFF) << 8) |
-		((panel->vsc_colorimetry.data[18] & 0x7) << 16);
+	       ((panel->vsc_colorimetry.data[17] & 0xFF) << 8) |
+	       ((panel->vsc_colorimetry.data[18] & 0x7) << 16);
 
 	dp_write(MMSS_DP_GENERIC0_6 + mst_offset, data);
 	memcpy(buf + off, &data, sizeof(data));
@@ -868,12 +848,11 @@ static void dp_catalog_panel_setup_vsc_sdp(struct dp_catalog_panel *panel)
 	memcpy(buf + off, &data, sizeof(data));
 	off += sizeof(data);
 
-	print_hex_dump_debug("[drm-dp] VSC: ",
-			DUMP_PREFIX_NONE, 16, 4, buf, off, false);
+	print_hex_dump_debug("[drm-dp] VSC: ", DUMP_PREFIX_NONE, 16, 4, buf,
+			     off, false);
 }
 
-static void dp_catalog_panel_config_sdp(struct dp_catalog_panel *panel,
-	bool en)
+static void dp_catalog_panel_config_sdp(struct dp_catalog_panel *panel, bool en)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -949,7 +928,7 @@ static void dp_catalog_panel_config_misc(struct dp_catalog_panel *panel)
 }
 
 static int dp_catalog_panel_set_colorspace(struct dp_catalog_panel *panel,
-bool vsc_supported)
+					   bool vsc_supported)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -977,7 +956,7 @@ bool vsc_supported)
 }
 
 static void dp_catalog_panel_config_hdr(struct dp_catalog_panel *panel, bool en,
-	u32 dhdr_max_pkts, bool flush)
+					u32 dhdr_max_pkts, bool flush)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1057,8 +1036,8 @@ static void dp_catalog_panel_config_hdr(struct dp_catalog_panel *panel, bool en,
 	}
 }
 
-static void dp_catalog_panel_update_transfer_unit(
-		struct dp_catalog_panel *panel)
+static void
+dp_catalog_panel_update_transfer_unit(struct dp_catalog_panel *panel)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1110,10 +1089,10 @@ static void dp_catalog_ctrl_config_ctrl(struct dp_catalog_ctrl *ctrl, u8 ln_cnt)
 
 	cfg = dp_read(DP_CONFIGURATION_CTRL);
 	/*
-	 * Reset ASSR (alternate scrambler seed reset) by resetting BIT(10).
-	 * ASSR should be set to disable for TPS4 link training pattern.
-	 * Forcing it to 0 as the power on reset value of register enables it.
-	 */
+   * Reset ASSR (alternate scrambler seed reset) by resetting BIT(10).
+   * ASSR should be set to disable for TPS4 link training pattern.
+   * Forcing it to 0 as the power on reset value of register enables it.
+   */
 	cfg &= ~(BIT(4) | BIT(5) | BIT(10));
 	cfg |= (ln_cnt - 1) << 4;
 	dp_write(DP_CONFIGURATION_CTRL, cfg);
@@ -1126,7 +1105,7 @@ static void dp_catalog_ctrl_config_ctrl(struct dp_catalog_ctrl *ctrl, u8 ln_cnt)
 }
 
 static void dp_catalog_panel_config_ctrl(struct dp_catalog_panel *panel,
-		u32 cfg)
+					 u32 cfg)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1211,7 +1190,7 @@ static void dp_catalog_panel_config_dto(struct dp_catalog_panel *panel,
 }
 
 static void dp_catalog_ctrl_lane_mapping(struct dp_catalog_ctrl *ctrl,
-						bool flipped, char *lane_map)
+					 bool flipped, char *lane_map)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1228,7 +1207,7 @@ static void dp_catalog_ctrl_lane_mapping(struct dp_catalog_ctrl *ctrl,
 }
 
 static void dp_catalog_ctrl_lane_pnswap(struct dp_catalog_ctrl *ctrl,
-						u8 ln_pnswap)
+					u8 ln_pnswap)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1252,7 +1231,7 @@ static void dp_catalog_ctrl_lane_pnswap(struct dp_catalog_ctrl *ctrl,
 }
 
 static void dp_catalog_ctrl_mainlink_ctrl(struct dp_catalog_ctrl *ctrl,
-						bool enable)
+					  bool enable)
 {
 	u32 mainlink_ctrl, reg;
 	struct dp_catalog_private *catalog;
@@ -1459,9 +1438,9 @@ static int dp_catalog_ctrl_setup_misr(struct dp_catalog_ctrl *ctrl)
 	wmb();
 
 	io_data = catalog->io.dp_link;
-	val = 1;	// frame count
+	val = 1; // frame count
 	val |= BIT(10); // clear status
-	val |= BIT(8);  // enable
+	val |= BIT(8); // enable
 	dp_write(DP_MISR40_CTRL, val);
 	/* make sure misr control is applied */
 	wmb();
@@ -1469,7 +1448,8 @@ static int dp_catalog_ctrl_setup_misr(struct dp_catalog_ctrl *ctrl)
 	return 0;
 }
 
-static int dp_catalog_ctrl_read_misr(struct dp_catalog_ctrl *ctrl, struct dp_misr40_data *data)
+static int dp_catalog_ctrl_read_misr(struct dp_catalog_ctrl *ctrl,
+				     struct dp_misr40_data *data)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1508,7 +1488,8 @@ static int dp_catalog_ctrl_read_misr(struct dp_catalog_ctrl *ctrl, struct dp_mis
 	return 0;
 }
 
-static void dp_catalog_panel_tpg_cfg(struct dp_catalog_panel *panel, u32 pattern)
+static void dp_catalog_panel_tpg_cfg(struct dp_catalog_panel *panel,
+				     u32 pattern)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1544,12 +1525,11 @@ static void dp_catalog_panel_tpg_cfg(struct dp_catalog_panel *panel, u32 pattern
 	if (pattern > DP_TPG_PATTERN_MAX)
 		pattern = DP_TPG_PATTERN_DEFAULT;
 
-	dp_write(MMSS_DP_INTF_HSYNC_CTL,
-			panel->hsync_ctl);
+	dp_write(MMSS_DP_INTF_HSYNC_CTL, panel->hsync_ctl);
 	dp_write(MMSS_DP_INTF_VSYNC_PERIOD_F0,
-			panel->vsync_period * panel->hsync_period);
+		 panel->vsync_period * panel->hsync_period);
 	dp_write(MMSS_DP_INTF_VSYNC_PULSE_WIDTH_F0,
-			panel->v_sync_width * panel->hsync_period);
+		 panel->v_sync_width * panel->hsync_period);
 	dp_write(MMSS_DP_INTF_VSYNC_PERIOD_F1, 0);
 	dp_write(MMSS_DP_INTF_VSYNC_PULSE_WIDTH_F1, 0);
 	dp_write(MMSS_DP_INTF_DISPLAY_HCTL, panel->display_hctl);
@@ -1622,11 +1602,11 @@ static void dp_catalog_panel_dsc_cfg(struct dp_catalog_panel *panel)
 
 	for (i = 0; i < panel->dsc.parity_word_len; i++)
 		dp_write(DP_PPS_PB_4_7 + (i << 2) + offset,
-				panel->dsc.parity_word[i]);
+			 panel->dsc.parity_word[i]);
 
 	for (i = 0; i < panel->dsc.pps_word_len; i++)
 		dp_write(DP_PPS_PPS_0_3 + (i << 2) + offset,
-				panel->dsc.pps_word[i]);
+			 panel->dsc.pps_word[i]);
 
 	reg = 0;
 	if (panel->dsc.dsc_en) {
@@ -1638,12 +1618,11 @@ static void dp_catalog_panel_dsc_cfg(struct dp_catalog_panel *panel)
 	}
 	dp_write(DP_COMPRESSION_MODE_CTRL + offset, reg);
 
-	DP_DEBUG("compression:0x%x for stream:%d\n",
-			reg, panel->stream_id);
+	DP_DEBUG("compression:0x%x for stream:%d\n", reg, panel->stream_id);
 }
 
 static void dp_catalog_panel_dp_flush(struct dp_catalog_panel *panel,
-		enum dp_flush_bit flush_bit)
+				      enum dp_flush_bit flush_bit)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1671,8 +1650,7 @@ static void dp_catalog_panel_dp_flush(struct dp_catalog_panel *panel,
 
 	dp_flush = dp_read(MMSS_DP_FLUSH + offset);
 
-	if ((flush_bit == DP_PPS_FLUSH) &&
-		dsc->continuous_pps)
+	if ((flush_bit == DP_PPS_FLUSH) && dsc->continuous_pps)
 		dp_flush &= ~BIT(2);
 
 	dp_flush |= BIT(flush_bit);
@@ -1690,7 +1668,6 @@ static void dp_catalog_panel_dhdr_flush(struct dp_catalog_panel *panel)
 	dp_catalog_panel_dp_flush(panel, DP_DHDR_FLUSH);
 	DP_DEBUG("dhdr flush for stream:%d\n", panel->stream_id);
 }
-
 
 static bool dp_catalog_panel_dhdr_busy(struct dp_catalog_panel *panel)
 {
@@ -1716,7 +1693,8 @@ static bool dp_catalog_panel_dhdr_busy(struct dp_catalog_panel *panel)
 	return dp_flush & BIT(DP_DHDR_FLUSH) ? true : false;
 }
 
-static int dp_catalog_panel_get_src_crc(struct dp_catalog_panel *panel, u16 *crc)
+static int dp_catalog_panel_get_src_crc(struct dp_catalog_panel *panel,
+					u16 *crc)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1736,10 +1714,10 @@ static int dp_catalog_panel_get_src_crc(struct dp_catalog_panel *panel, u16 *crc
 	else
 		offset = MMSS_DP1_CRC_RG;
 
-	reg = dp_read(offset); //GR
+	reg = dp_read(offset); // GR
 	crc[0] = reg & 0xffff;
 	crc[1] = reg >> 16;
-	crc[2] = dp_read(offset + 4); //B
+	crc[2] = dp_read(offset + 4); // B
 
 	return 0;
 }
@@ -1797,7 +1775,7 @@ end:
 }
 
 static void dp_catalog_ctrl_enable_irq(struct dp_catalog_ctrl *ctrl,
-						bool enable)
+				       bool enable)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1877,7 +1855,6 @@ static void dp_catalog_ctrl_get_interrupt(struct dp_catalog_ctrl *ctrl)
 	ack <<= 1;
 	ack |= DP_INTR_MASK6;
 	dp_write(DP_INTR_STATUS6, ack);
-
 }
 
 static void dp_catalog_ctrl_phy_reset(struct dp_catalog_ctrl *ctrl)
@@ -1900,7 +1877,7 @@ static void dp_catalog_ctrl_phy_reset(struct dp_catalog_ctrl *ctrl)
 }
 
 static void dp_catalog_ctrl_phy_lane_cfg(struct dp_catalog_ctrl *ctrl,
-		bool flipped, u8 ln_cnt)
+					 bool flipped, u8 ln_cnt)
 {
 	u32 info = 0x0;
 	struct dp_catalog_private *catalog;
@@ -1924,7 +1901,7 @@ static void dp_catalog_ctrl_phy_lane_cfg(struct dp_catalog_ctrl *ctrl,
 }
 
 static void dp_catalog_ctrl_update_vx_px(struct dp_catalog_ctrl *ctrl,
-		u8 v_level, u8 p_level, bool high)
+					 u8 v_level, u8 p_level, bool high)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -1980,16 +1957,15 @@ static void dp_catalog_ctrl_update_vx_px(struct dp_catalog_ctrl *ctrl,
 		dp_write(TXn_TX_DRV_LVL, value0);
 		dp_write(TXn_TX_EMP_POST1_LVL, value1);
 
-		DP_DEBUG("hw: vx_value=0x%x px_value=0x%x\n",
-			value0, value1);
+		DP_DEBUG("hw: vx_value=0x%x px_value=0x%x\n", value0, value1);
 	} else {
-		DP_ERR("invalid vx (0x%x=0x%x), px (0x%x=0x%x\n",
-			v_level, value0, p_level, value1);
+		DP_ERR("invalid vx (0x%x=0x%x), px (0x%x=0x%x\n", v_level,
+		       value0, p_level, value1);
 	}
 }
 
 static void dp_catalog_ctrl_send_phy_pattern(struct dp_catalog_ctrl *ctrl,
-			u32 pattern)
+					     u32 pattern)
 {
 	struct dp_catalog_private *catalog;
 	u32 value = 0x0;
@@ -2077,7 +2053,7 @@ static u32 dp_catalog_ctrl_read_phy_pattern(struct dp_catalog_ctrl *ctrl)
 }
 
 static void dp_catalog_ctrl_fec_config(struct dp_catalog_ctrl *ctrl,
-		bool enable)
+				       bool enable)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data = NULL;
@@ -2094,11 +2070,11 @@ static void dp_catalog_ctrl_fec_config(struct dp_catalog_ctrl *ctrl,
 	reg = dp_read(DP_MAINLINK_CTRL);
 
 	/*
-	 * fec_en = BIT(12)
-	 * fec_seq_mode = BIT(22)
-	 * sde_flush = BIT(23) | BIT(24)
-	 * fb_boundary_sel = BIT(25)
-	 */
+   * fec_en = BIT(12)
+   * fec_seq_mode = BIT(22)
+   * sde_flush = BIT(23) | BIT(24)
+   * fb_boundary_sel = BIT(25)
+   */
 	if (enable)
 		reg |= BIT(12) | BIT(22) | BIT(23) | BIT(24) | BIT(25);
 	else
@@ -2119,7 +2095,8 @@ u32 dp_catalog_get_dp_core_version(struct dp_catalog *dp_catalog)
 		return 0;
 	}
 
-	catalog = container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
+	catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 	if (catalog->dp_core_version)
 		return catalog->dp_core_version;
 
@@ -2138,21 +2115,22 @@ u32 dp_catalog_get_dp_phy_version(struct dp_catalog *dp_catalog)
 		return 0;
 	}
 
-	catalog = container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
+	catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 	if (catalog->dp_phy_version)
 		return catalog->dp_phy_version;
 
 	io_data = catalog->io.dp_phy;
 	catalog->dp_phy_version = (dp_read(DP_PHY_REVISION_ID3) << 24) |
-				(dp_read(DP_PHY_REVISION_ID2) << 16) |
-				(dp_read(DP_PHY_REVISION_ID1) << 8) |
-				dp_read(DP_PHY_REVISION_ID0);
+				  (dp_read(DP_PHY_REVISION_ID2) << 16) |
+				  (dp_read(DP_PHY_REVISION_ID1) << 8) |
+				  dp_read(DP_PHY_REVISION_ID0);
 
 	return catalog->dp_phy_version;
 }
 
-static int dp_catalog_reg_dump(struct dp_catalog *dp_catalog,
-		char *name, u8 **out_buf, u32 *out_buf_len)
+static int dp_catalog_reg_dump(struct dp_catalog *dp_catalog, char *name,
+			       u8 **out_buf, u32 *out_buf_len)
 {
 	int ret = 0;
 	u8 *buf;
@@ -2166,8 +2144,8 @@ static int dp_catalog_reg_dump(struct dp_catalog *dp_catalog,
 		return -EINVAL;
 	}
 
-	catalog = container_of(dp_catalog, struct dp_catalog_private,
-		dp_catalog);
+	catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 
 	parser = catalog->parser;
 	parser->get_io_buf(parser, name);
@@ -2213,7 +2191,7 @@ end:
 }
 
 static void dp_catalog_ctrl_mst_config(struct dp_catalog_ctrl *ctrl,
-		bool enable)
+				       bool enable)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data = NULL;
@@ -2259,7 +2237,7 @@ static void dp_catalog_ctrl_trigger_act(struct dp_catalog_ctrl *ctrl)
 }
 
 static void dp_catalog_ctrl_read_act_complete_sts(struct dp_catalog_ctrl *ctrl,
-		bool *sts)
+						  bool *sts)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data = NULL;
@@ -2282,8 +2260,8 @@ static void dp_catalog_ctrl_read_act_complete_sts(struct dp_catalog_ctrl *ctrl,
 		*sts = true;
 }
 
-static void dp_catalog_ctrl_channel_alloc(struct dp_catalog_ctrl *ctrl,
-			u32 ch, u32 ch_start_slot, u32 tot_slot_cnt)
+static void dp_catalog_ctrl_channel_alloc(struct dp_catalog_ctrl *ctrl, u32 ch,
+					  u32 ch_start_slot, u32 tot_slot_cnt)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data = NULL;
@@ -2297,9 +2275,9 @@ static void dp_catalog_ctrl_channel_alloc(struct dp_catalog_ctrl *ctrl,
 	}
 
 	if (ch_start_slot > DP_MAX_TIME_SLOTS ||
-			(ch_start_slot + tot_slot_cnt > DP_MAX_TIME_SLOTS)) {
-		DP_ERR("invalid slots start %d, tot %d\n",
-			ch_start_slot, tot_slot_cnt);
+	    (ch_start_slot + tot_slot_cnt > DP_MAX_TIME_SLOTS)) {
+		DP_ERR("invalid slots start %d, tot %d\n", ch_start_slot,
+		       tot_slot_cnt);
 		return;
 	}
 
@@ -2307,8 +2285,8 @@ static void dp_catalog_ctrl_channel_alloc(struct dp_catalog_ctrl *ctrl,
 
 	io_data = catalog->io.dp_link;
 
-	DP_DEBUG("ch %d, start_slot %d, tot_slot %d\n",
-			ch, ch_start_slot, tot_slot_cnt);
+	DP_DEBUG("ch %d, start_slot %d, tot_slot %d\n", ch, ch_start_slot,
+		 tot_slot_cnt);
 
 	if (ch == DP_STREAM_1)
 		reg_off = DP_DP1_TIMESLOT_1_32 - DP_DP0_TIMESLOT_1_32;
@@ -2329,15 +2307,16 @@ static void dp_catalog_ctrl_channel_alloc(struct dp_catalog_ctrl *ctrl,
 		}
 	}
 
-	DP_DEBUG("ch:%d slot_reg_1:%d, slot_reg_2:%d\n", ch,
-			slot_reg_1, slot_reg_2);
+	DP_DEBUG("ch:%d slot_reg_1:%d, slot_reg_2:%d\n", ch, slot_reg_1,
+		 slot_reg_2);
 
 	dp_write(DP_DP0_TIMESLOT_1_32 + reg_off, slot_reg_1);
 	dp_write(DP_DP0_TIMESLOT_33_63 + reg_off, slot_reg_2);
 }
 
 static void dp_catalog_ctrl_channel_dealloc(struct dp_catalog_ctrl *ctrl,
-			u32 ch, u32 ch_start_slot, u32 tot_slot_cnt)
+					    u32 ch, u32 ch_start_slot,
+					    u32 tot_slot_cnt)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data = NULL;
@@ -2350,9 +2329,9 @@ static void dp_catalog_ctrl_channel_dealloc(struct dp_catalog_ctrl *ctrl,
 	}
 
 	if (ch_start_slot > DP_MAX_TIME_SLOTS ||
-			(ch_start_slot + tot_slot_cnt > DP_MAX_TIME_SLOTS)) {
-		DP_ERR("invalid slots start %d, tot %d\n",
-			ch_start_slot, tot_slot_cnt);
+	    (ch_start_slot + tot_slot_cnt > DP_MAX_TIME_SLOTS)) {
+		DP_ERR("invalid slots start %d, tot %d\n", ch_start_slot,
+		       tot_slot_cnt);
 		return;
 	}
 
@@ -2360,8 +2339,8 @@ static void dp_catalog_ctrl_channel_dealloc(struct dp_catalog_ctrl *ctrl,
 
 	io_data = catalog->io.dp_link;
 
-	DP_DEBUG("dealloc ch %d, start_slot %d, tot_slot %d\n",
-			ch, ch_start_slot, tot_slot_cnt);
+	DP_DEBUG("dealloc ch %d, start_slot %d, tot_slot %d\n", ch,
+		 ch_start_slot, tot_slot_cnt);
 
 	if (ch == DP_STREAM_1)
 		reg_off = DP_DP1_TIMESLOT_1_32 - DP_DP0_TIMESLOT_1_32;
@@ -2380,15 +2359,15 @@ static void dp_catalog_ctrl_channel_dealloc(struct dp_catalog_ctrl *ctrl,
 		ch_start_slot++;
 	}
 
-	DP_DEBUG("dealloc ch:%d slot_reg_1:%d, slot_reg_2:%d\n", ch,
-			slot_reg_1, slot_reg_2);
+	DP_DEBUG("dealloc ch:%d slot_reg_1:%d, slot_reg_2:%d\n", ch, slot_reg_1,
+		 slot_reg_2);
 
 	dp_write(DP_DP0_TIMESLOT_1_32 + reg_off, slot_reg_1);
 	dp_write(DP_DP0_TIMESLOT_33_63 + reg_off, slot_reg_2);
 }
 
 static void dp_catalog_ctrl_update_rg(struct dp_catalog_ctrl *ctrl, u32 ch,
-		u32 x_int, u32 y_frac_enum)
+				      u32 x_int, u32 y_frac_enum)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data = NULL;
@@ -2407,7 +2386,7 @@ static void dp_catalog_ctrl_update_rg(struct dp_catalog_ctrl *ctrl, u32 ch,
 	rg |= (x_int << 16);
 
 	DP_DEBUG("ch: %d x_int:%d y_frac_enum:%d rg:%d\n", ch, x_int,
-			y_frac_enum, rg);
+		 y_frac_enum, rg);
 
 	if (ch == DP_STREAM_1)
 		reg_off = DP_DP1_RG - DP_DP0_RG;
@@ -2416,7 +2395,7 @@ static void dp_catalog_ctrl_update_rg(struct dp_catalog_ctrl *ctrl, u32 ch,
 }
 
 static void dp_catalog_ctrl_mainlink_levels(struct dp_catalog_ctrl *ctrl,
-		u8 lane_cnt)
+					    u8 lane_cnt)
 {
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
@@ -2424,7 +2403,7 @@ static void dp_catalog_ctrl_mainlink_levels(struct dp_catalog_ctrl *ctrl,
 
 	catalog = dp_catalog_get_priv(ctrl);
 
-	io_data   = catalog->io.dp_link;
+	io_data = catalog->io.dp_link;
 
 	switch (lane_cnt) {
 	case 1:
@@ -2438,7 +2417,7 @@ static void dp_catalog_ctrl_mainlink_levels(struct dp_catalog_ctrl *ctrl,
 		break;
 	default:
 		DP_DEBUG("setting the default safe_to_exit_level = %u\n",
-				safe_to_exit_level);
+			 safe_to_exit_level);
 		break;
 	}
 
@@ -2447,11 +2426,10 @@ static void dp_catalog_ctrl_mainlink_levels(struct dp_catalog_ctrl *ctrl,
 	mainlink_levels |= safe_to_exit_level;
 
 	DP_DEBUG("mainlink_level = 0x%x, safe_to_exit_level = 0x%x\n",
-			mainlink_levels, safe_to_exit_level);
+		 mainlink_levels, safe_to_exit_level);
 
 	dp_write(DP_MAINLINK_LEVELS, mainlink_levels);
 }
-
 
 /* panel related catalog functions */
 static int dp_catalog_panel_timing_cfg(struct dp_catalog_panel *panel)
@@ -2522,7 +2500,7 @@ static void dp_catalog_hpd_config_hpd(struct dp_catalog_hpd *hpd, bool en)
 		reftimer |= BIT(16);
 		dp_write(DP_DP_HPD_REFTIMER, reftimer);
 
-		 /* Connect_time is 250us & disconnect_time is 2ms */
+		/* Connect_time is 250us & disconnect_time is 2ms */
 		dp_write(DP_DP_HPD_EVENT_TIME_0, 0x3E800FA);
 		dp_write(DP_DP_HPD_EVENT_TIME_1, 0x1F407D0);
 
@@ -2646,7 +2624,7 @@ static void dp_catalog_audio_config_sdp(struct dp_catalog_audio *audio)
 static void dp_catalog_audio_get_header(struct dp_catalog_audio *audio)
 {
 	struct dp_catalog_private *catalog;
-	u32 (*sdp_map)[DP_AUDIO_SDP_HEADER_MAX];
+	u32(*sdp_map)[DP_AUDIO_SDP_HEADER_MAX];
 	struct dp_io_data *io_data;
 	enum dp_catalog_audio_sdp_type sdp;
 	enum dp_catalog_audio_header_type header;
@@ -2656,10 +2634,10 @@ static void dp_catalog_audio_get_header(struct dp_catalog_audio *audio)
 
 	catalog = dp_catalog_get_priv(audio);
 
-	io_data    = catalog->io.dp_link;
+	io_data = catalog->io.dp_link;
 	sdp_map = catalog->audio_map;
-	sdp     = audio->sdp_type;
-	header  = audio->sdp_header;
+	sdp = audio->sdp_type;
+	header = audio->sdp_header;
 
 	audio->data = dp_read(sdp_map[sdp][header]);
 }
@@ -2667,7 +2645,7 @@ static void dp_catalog_audio_get_header(struct dp_catalog_audio *audio)
 static void dp_catalog_audio_set_header(struct dp_catalog_audio *audio)
 {
 	struct dp_catalog_private *catalog;
-	u32 (*sdp_map)[DP_AUDIO_SDP_HEADER_MAX];
+	u32(*sdp_map)[DP_AUDIO_SDP_HEADER_MAX];
 	struct dp_io_data *io_data;
 	enum dp_catalog_audio_sdp_type sdp;
 	enum dp_catalog_audio_header_type header;
@@ -2678,11 +2656,11 @@ static void dp_catalog_audio_set_header(struct dp_catalog_audio *audio)
 
 	catalog = dp_catalog_get_priv(audio);
 
-	io_data    = catalog->io.dp_link;
+	io_data = catalog->io.dp_link;
 	sdp_map = catalog->audio_map;
-	sdp     = audio->sdp_type;
-	header  = audio->sdp_header;
-	data    = audio->data;
+	sdp = audio->sdp_type;
+	header = audio->sdp_header;
+	data = audio->data;
 
 	dp_write(sdp_map[sdp][header], data);
 }
@@ -2696,7 +2674,7 @@ static void dp_catalog_audio_config_acr(struct dp_catalog_audio *audio)
 	catalog = dp_catalog_get_priv(audio);
 
 	select = audio->data;
-	io_data   = catalog->io.dp_link;
+	io_data = catalog->io.dp_link;
 
 	acr_ctrl = select << 4 | BIT(31) | BIT(8) | BIT(14);
 
@@ -2752,10 +2730,10 @@ static void dp_catalog_config_spd_header(struct dp_catalog_panel *panel)
 
 	new_value = 0x83;
 	parity_byte = dp_header_get_parity(new_value);
-	value |= ((new_value << HEADER_BYTE_1_BIT)
-			| (parity_byte << PARITY_BYTE_1_BIT));
-	DP_DEBUG("Header Byte 1: value = 0x%x, parity_byte = 0x%x\n",
-			value, parity_byte);
+	value |= ((new_value << HEADER_BYTE_1_BIT) |
+		  (parity_byte << PARITY_BYTE_1_BIT));
+	DP_DEBUG("Header Byte 1: value = 0x%x, parity_byte = 0x%x\n", value,
+		 parity_byte);
 	dp_write(MMSS_DP_GENERIC1_0 + offset, value);
 
 	/* Config header and parity byte 2 */
@@ -2763,10 +2741,10 @@ static void dp_catalog_config_spd_header(struct dp_catalog_panel *panel)
 
 	new_value = 0x1b;
 	parity_byte = dp_header_get_parity(new_value);
-	value |= ((new_value << HEADER_BYTE_2_BIT)
-			| (parity_byte << PARITY_BYTE_2_BIT));
-	DP_DEBUG("Header Byte 2: value = 0x%x, parity_byte = 0x%x\n",
-			value, parity_byte);
+	value |= ((new_value << HEADER_BYTE_2_BIT) |
+		  (parity_byte << PARITY_BYTE_2_BIT));
+	DP_DEBUG("Header Byte 2: value = 0x%x, parity_byte = 0x%x\n", value,
+		 parity_byte);
 	dp_write(MMSS_DP_GENERIC1_1 + offset, value);
 
 	/* Config header and parity byte 3 */
@@ -2774,10 +2752,10 @@ static void dp_catalog_config_spd_header(struct dp_catalog_panel *panel)
 
 	new_value = (0x0 | (0x12 << 2));
 	parity_byte = dp_header_get_parity(new_value);
-	value |= ((new_value << HEADER_BYTE_3_BIT)
-			| (parity_byte << PARITY_BYTE_3_BIT));
-	DP_DEBUG("Header Byte 3: value = 0x%x, parity_byte = 0x%x\n",
-			new_value, parity_byte);
+	value |= ((new_value << HEADER_BYTE_3_BIT) |
+		  (parity_byte << PARITY_BYTE_3_BIT));
+	DP_DEBUG("Header Byte 3: value = 0x%x, parity_byte = 0x%x\n", new_value,
+		 parity_byte);
 	dp_write(MMSS_DP_GENERIC1_1 + offset, value);
 }
 
@@ -2792,23 +2770,23 @@ static void dp_catalog_panel_config_spd(struct dp_catalog_panel *panel)
 	u32 sdp_cfg2_off = 0;
 
 	/*
-	 * Source Device Information
-	 * 00h unknown
-	 * 01h Digital STB
-	 * 02h DVD
-	 * 03h D-VHS
-	 * 04h HDD Video
-	 * 05h DVC
-	 * 06h DSC
-	 * 07h Video CD
-	 * 08h Game
-	 * 09h PC general
-	 * 0ah Bluray-Disc
-	 * 0bh Super Audio CD
-	 * 0ch HD DVD
-	 * 0dh PMP
-	 * 0eh-ffh reserved
-	 */
+   * Source Device Information
+   * 00h unknown
+   * 01h Digital STB
+   * 02h DVD
+   * 03h D-VHS
+   * 04h HDD Video
+   * 05h DVC
+   * 06h DSC
+   * 07h Video CD
+   * 08h Game
+   * 09h PC general
+   * 0ah Bluray-Disc
+   * 0bh Super Audio CD
+   * 0ch HD DVD
+   * 0dh PMP
+   * 0eh-ffh reserved
+   */
 	u32 device_type = 0;
 
 	if (!panel || panel->stream_id >= DP_STREAM_MAX)
@@ -2826,35 +2804,23 @@ static void dp_catalog_panel_config_spd(struct dp_catalog_panel *panel)
 	product = panel->spd_product_description;
 
 	dp_write(MMSS_DP_GENERIC1_2 + offset,
-			((vendor[0] & 0x7f) |
-			((vendor[1] & 0x7f) << 8) |
-			((vendor[2] & 0x7f) << 16) |
-			((vendor[3] & 0x7f) << 24)));
+		 ((vendor[0] & 0x7f) | ((vendor[1] & 0x7f) << 8) |
+		  ((vendor[2] & 0x7f) << 16) | ((vendor[3] & 0x7f) << 24)));
 	dp_write(MMSS_DP_GENERIC1_3 + offset,
-			((vendor[4] & 0x7f) |
-			((vendor[5] & 0x7f) << 8) |
-			((vendor[6] & 0x7f) << 16) |
-			((vendor[7] & 0x7f) << 24)));
+		 ((vendor[4] & 0x7f) | ((vendor[5] & 0x7f) << 8) |
+		  ((vendor[6] & 0x7f) << 16) | ((vendor[7] & 0x7f) << 24)));
 	dp_write(MMSS_DP_GENERIC1_4 + offset,
-			((product[0] & 0x7f) |
-			((product[1] & 0x7f) << 8) |
-			((product[2] & 0x7f) << 16) |
-			((product[3] & 0x7f) << 24)));
+		 ((product[0] & 0x7f) | ((product[1] & 0x7f) << 8) |
+		  ((product[2] & 0x7f) << 16) | ((product[3] & 0x7f) << 24)));
 	dp_write(MMSS_DP_GENERIC1_5 + offset,
-			((product[4] & 0x7f) |
-			((product[5] & 0x7f) << 8) |
-			((product[6] & 0x7f) << 16) |
-			((product[7] & 0x7f) << 24)));
+		 ((product[4] & 0x7f) | ((product[5] & 0x7f) << 8) |
+		  ((product[6] & 0x7f) << 16) | ((product[7] & 0x7f) << 24)));
 	dp_write(MMSS_DP_GENERIC1_6 + offset,
-			((product[8] & 0x7f) |
-			((product[9] & 0x7f) << 8) |
-			((product[10] & 0x7f) << 16) |
-			((product[11] & 0x7f) << 24)));
+		 ((product[8] & 0x7f) | ((product[9] & 0x7f) << 8) |
+		  ((product[10] & 0x7f) << 16) | ((product[11] & 0x7f) << 24)));
 	dp_write(MMSS_DP_GENERIC1_7 + offset,
-			((product[12] & 0x7f) |
-			((product[13] & 0x7f) << 8) |
-			((product[14] & 0x7f) << 16) |
-			((product[15] & 0x7f) << 24)));
+		 ((product[12] & 0x7f) | ((product[13] & 0x7f) << 8) |
+		  ((product[14] & 0x7f) << 16) | ((product[15] & 0x7f) << 24)));
 	dp_write(MMSS_DP_GENERIC1_8 + offset, device_type);
 	dp_write(MMSS_DP_GENERIC1_9 + offset, 0x00);
 
@@ -2923,8 +2889,8 @@ static void dp_catalog_set_exe_mode(struct dp_catalog *dp_catalog, char *mode)
 		return;
 	}
 
-	catalog = container_of(dp_catalog, struct dp_catalog_private,
-		dp_catalog);
+	catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 
 	strlcpy(catalog->exe_mode, mode, sizeof(catalog->exe_mode));
 
@@ -2934,7 +2900,7 @@ static void dp_catalog_set_exe_mode(struct dp_catalog *dp_catalog, char *mode)
 		dp_catalog_get_io_buf(catalog);
 
 	if (!strcmp(catalog->exe_mode, "hw") ||
-		!strcmp(catalog->exe_mode, "all")) {
+	    !strcmp(catalog->exe_mode, "all")) {
 		catalog->read = dp_read_hw;
 		catalog->write = dp_write_hw;
 
@@ -2950,16 +2916,18 @@ static void dp_catalog_set_exe_mode(struct dp_catalog *dp_catalog, char *mode)
 }
 
 static int dp_catalog_init(struct device *dev, struct dp_catalog *dp_catalog,
-			struct dp_parser *parser)
+			   struct dp_parser *parser)
 {
 	int rc = 0;
-	struct dp_catalog_private *catalog = container_of(dp_catalog,
-				struct dp_catalog_private, dp_catalog);
+	struct dp_catalog_private *catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 
 	if (parser->hw_cfg.phy_version >= DP_PHY_VERSION_4_2_0)
-		dp_catalog->sub = dp_catalog_get_v420(dev, dp_catalog, &catalog->io);
+		dp_catalog->sub =
+			dp_catalog_get_v420(dev, dp_catalog, &catalog->io);
 	else if (parser->hw_cfg.phy_version == DP_PHY_VERSION_2_0_0)
-		dp_catalog->sub = dp_catalog_get_v200(dev, dp_catalog, &catalog->io);
+		dp_catalog->sub =
+			dp_catalog_get_v200(dev, dp_catalog, &catalog->io);
 	else
 		goto end;
 
@@ -2981,8 +2949,8 @@ void dp_catalog_put(struct dp_catalog *dp_catalog)
 	if (!dp_catalog)
 		return;
 
-	catalog = container_of(dp_catalog, struct dp_catalog_private,
-				dp_catalog);
+	catalog =
+		container_of(dp_catalog, struct dp_catalog_private, dp_catalog);
 
 	if (dp_catalog->sub && dp_catalog->sub->put)
 		dp_catalog->sub->put(dp_catalog);
@@ -2997,34 +2965,34 @@ struct dp_catalog *dp_catalog_get(struct device *dev, struct dp_parser *parser)
 	struct dp_catalog *dp_catalog;
 	struct dp_catalog_private *catalog;
 	struct dp_catalog_aux aux = {
-		.read_data     = dp_catalog_aux_read_data,
-		.write_data    = dp_catalog_aux_write_data,
-		.write_trans   = dp_catalog_aux_write_trans,
-		.clear_trans   = dp_catalog_aux_clear_trans,
-		.reset         = dp_catalog_aux_reset,
+		.read_data = dp_catalog_aux_read_data,
+		.write_data = dp_catalog_aux_write_data,
+		.write_trans = dp_catalog_aux_write_trans,
+		.clear_trans = dp_catalog_aux_clear_trans,
+		.reset = dp_catalog_aux_reset,
 		.update_aux_cfg = dp_catalog_aux_update_cfg,
-		.enable        = dp_catalog_aux_enable,
-		.setup         = dp_catalog_aux_setup,
-		.get_irq       = dp_catalog_aux_get_irq,
+		.enable = dp_catalog_aux_enable,
+		.setup = dp_catalog_aux_setup,
+		.get_irq = dp_catalog_aux_get_irq,
 		.clear_hw_interrupts = dp_catalog_aux_clear_hw_interrupts,
 	};
 	struct dp_catalog_ctrl ctrl = {
-		.state_ctrl     = dp_catalog_ctrl_state_ctrl,
-		.config_ctrl    = dp_catalog_ctrl_config_ctrl,
-		.lane_mapping   = dp_catalog_ctrl_lane_mapping,
-		.lane_pnswap    = dp_catalog_ctrl_lane_pnswap,
-		.mainlink_ctrl  = dp_catalog_ctrl_mainlink_ctrl,
-		.set_pattern    = dp_catalog_ctrl_set_pattern,
-		.reset          = dp_catalog_ctrl_reset,
-		.usb_reset      = dp_catalog_ctrl_usb_reset,
+		.state_ctrl = dp_catalog_ctrl_state_ctrl,
+		.config_ctrl = dp_catalog_ctrl_config_ctrl,
+		.lane_mapping = dp_catalog_ctrl_lane_mapping,
+		.lane_pnswap = dp_catalog_ctrl_lane_pnswap,
+		.mainlink_ctrl = dp_catalog_ctrl_mainlink_ctrl,
+		.set_pattern = dp_catalog_ctrl_set_pattern,
+		.reset = dp_catalog_ctrl_reset,
+		.usb_reset = dp_catalog_ctrl_usb_reset,
 		.mainlink_ready = dp_catalog_ctrl_mainlink_ready,
-		.enable_irq     = dp_catalog_ctrl_enable_irq,
-		.phy_reset      = dp_catalog_ctrl_phy_reset,
-		.phy_lane_cfg   = dp_catalog_ctrl_phy_lane_cfg,
-		.update_vx_px   = dp_catalog_ctrl_update_vx_px,
-		.get_interrupt  = dp_catalog_ctrl_get_interrupt,
-		.read_hdcp_status     = dp_catalog_ctrl_read_hdcp_status,
-		.send_phy_pattern    = dp_catalog_ctrl_send_phy_pattern,
+		.enable_irq = dp_catalog_ctrl_enable_irq,
+		.phy_reset = dp_catalog_ctrl_phy_reset,
+		.phy_lane_cfg = dp_catalog_ctrl_phy_lane_cfg,
+		.update_vx_px = dp_catalog_ctrl_update_vx_px,
+		.get_interrupt = dp_catalog_ctrl_get_interrupt,
+		.read_hdcp_status = dp_catalog_ctrl_read_hdcp_status,
+		.send_phy_pattern = dp_catalog_ctrl_send_phy_pattern,
 		.read_phy_pattern = dp_catalog_ctrl_read_phy_pattern,
 		.mst_config = dp_catalog_ctrl_mst_config,
 		.trigger_act = dp_catalog_ctrl_trigger_act,
@@ -3039,13 +3007,13 @@ struct dp_catalog *dp_catalog_get(struct device *dev, struct dp_parser *parser)
 		.read_misr = dp_catalog_ctrl_read_misr,
 	};
 	struct dp_catalog_hpd hpd = {
-		.config_hpd	= dp_catalog_hpd_config_hpd,
-		.get_interrupt	= dp_catalog_hpd_get_interrupt,
+		.config_hpd = dp_catalog_hpd_config_hpd,
+		.get_interrupt = dp_catalog_hpd_get_interrupt,
 	};
 	struct dp_catalog_audio audio = {
-		.init       = dp_catalog_audio_init,
+		.init = dp_catalog_audio_init,
 		.config_acr = dp_catalog_audio_config_acr,
-		.enable     = dp_catalog_audio_enable,
+		.enable = dp_catalog_audio_enable,
 		.config_sdp = dp_catalog_audio_config_sdp,
 		.set_header = dp_catalog_audio_set_header,
 		.get_header = dp_catalog_audio_get_header,
@@ -3075,7 +3043,7 @@ struct dp_catalog *dp_catalog_get(struct device *dev, struct dp_parser *parser)
 		goto error;
 	}
 
-	catalog  = devm_kzalloc(dev, sizeof(*catalog), GFP_KERNEL);
+	catalog = devm_kzalloc(dev, sizeof(*catalog), GFP_KERNEL);
 	if (!catalog) {
 		rc = -ENOMEM;
 		goto error;
@@ -3109,9 +3077,9 @@ struct dp_catalog *dp_catalog_get(struct device *dev, struct dp_parser *parser)
 
 	dp_catalog = &catalog->dp_catalog;
 
-	dp_catalog->aux   = aux;
-	dp_catalog->ctrl  = ctrl;
-	dp_catalog->hpd   = hpd;
+	dp_catalog->aux = aux;
+	dp_catalog->ctrl = ctrl;
+	dp_catalog->hpd = hpd;
 	dp_catalog->audio = audio;
 	dp_catalog->panel = panel;
 

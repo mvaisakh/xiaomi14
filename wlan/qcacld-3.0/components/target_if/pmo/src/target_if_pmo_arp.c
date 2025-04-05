@@ -27,9 +27,9 @@
 #include "wmi_unified_api.h"
 
 QDF_STATUS target_if_pmo_send_arp_offload_req(
-		struct wlan_objmgr_vdev *vdev,
-		struct pmo_arp_offload_params *arp_offload_req,
-		struct pmo_ns_offload_params *ns_offload_req)
+	struct wlan_objmgr_vdev *vdev,
+	struct pmo_arp_offload_params *arp_offload_req,
+	struct pmo_ns_offload_params *ns_offload_req)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -54,14 +54,10 @@ QDF_STATUS target_if_pmo_send_arp_offload_req(
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_enable_arp_ns_offload_cmd(wmi_handle,
-						       arp_offload_req,
-						       ns_offload_req,
-						       vdev_id);
+	status = wmi_unified_enable_arp_ns_offload_cmd(
+		wmi_handle, arp_offload_req, ns_offload_req, vdev_id);
 	if (status != QDF_STATUS_SUCCESS)
 		target_if_err("Failed to enable ARP NDP/NSffload");
 
 	return status;
 }
-
-

@@ -6,16 +6,16 @@
 
 #define pr_fmt(fmt) "CAM-REQ-MGR_UTIL %s:%d " fmt, __func__, __LINE__
 
-#include <linux/module.h>
-#include <linux/of_platform.h>
-#include <linux/slab.h>
-#include <linux/mutex.h>
-#include <linux/spinlock_types.h>
-#include <linux/random.h>
-#include <media/cam_req_mgr.h>
 #include "cam_req_mgr_util.h"
 #include "cam_debug_util.h"
 #include "cam_subdev.h"
+#include <linux/module.h>
+#include <linux/mutex.h>
+#include <linux/of_platform.h>
+#include <linux/random.h>
+#include <linux/slab.h>
+#include <linux/spinlock_types.h>
+#include <media/cam_req_mgr.h>
 
 static struct cam_req_mgr_util_hdl_tbl *hdl_tbl;
 static DEFINE_SPINLOCK(hdl_tbl_lock);
@@ -97,7 +97,8 @@ int cam_handle_validate(int32_t session_hdl, int32_t handle)
 
 	idx = CAM_REQ_MGR_GET_HDL_IDX(handle);
 	if (idx < 0 || idx >= CAM_REQ_MGR_MAX_HANDLES_V2) {
-		CAM_ERR(CAM_CRM, "Invalid index:%d for handle: 0x%x", idx, handle);
+		CAM_ERR(CAM_CRM, "Invalid index:%d for handle: 0x%x", idx,
+			handle);
 		rc = -EINVAL;
 		goto out;
 	}
@@ -109,10 +110,11 @@ int cam_handle_validate(int32_t session_hdl, int32_t handle)
 	}
 
 	if (hdl_tbl->hdl[idx].session_hdl != session_hdl ||
-		hdl_tbl->hdl[idx].hdl_value != handle) {
-		CAM_ERR(CAM_CRM, "Exp ses_hdl: 0x%x ses_hdl: 0x%x Exp hdl: 0x%x hdl: 0x%x",
-			hdl_tbl->hdl[idx].session_hdl, session_hdl, hdl_tbl->hdl[idx].hdl_value,
-			handle);
+	    hdl_tbl->hdl[idx].hdl_value != handle) {
+		CAM_ERR(CAM_CRM,
+			"Exp ses_hdl: 0x%x ses_hdl: 0x%x Exp hdl: 0x%x hdl: 0x%x",
+			hdl_tbl->hdl[idx].session_hdl, session_hdl,
+			hdl_tbl->hdl[idx].hdl_value, handle);
 		rc = -EINVAL;
 		goto out;
 	}
@@ -136,8 +138,8 @@ int cam_req_mgr_util_free_hdls(void)
 	for (i = 0; i < CAM_REQ_MGR_MAX_HANDLES_V2; i++) {
 		if (hdl_tbl->hdl[i].state == HDL_ACTIVE) {
 			CAM_WARN(CAM_CRM, "Dev handle = %x session_handle = %x",
-				hdl_tbl->hdl[i].hdl_value,
-				hdl_tbl->hdl[i].session_hdl);
+				 hdl_tbl->hdl[i].hdl_value,
+				 hdl_tbl->hdl[i].session_hdl);
 			hdl_tbl->hdl[i].state = HDL_FREE;
 			clear_bit(i, hdl_tbl->bitmap);
 		}
@@ -169,11 +171,13 @@ static void cam_dump_tbl_info(void)
 	int i;
 
 	for (i = 0; i < CAM_REQ_MGR_MAX_HANDLES_V2; i++)
-		CAM_INFO_RATE_LIMIT_CUSTOM(CAM_CRM, CAM_RATE_LIMIT_INTERVAL_5SEC,
+		CAM_INFO_RATE_LIMIT_CUSTOM(
+			CAM_CRM, CAM_RATE_LIMIT_INTERVAL_5SEC,
 			CAM_REQ_MGR_MAX_HANDLES_V2,
 			"session_hdl=%x hdl_value=%x type=%d state=%d dev_id=%lld",
 			hdl_tbl->hdl[i].session_hdl, hdl_tbl->hdl[i].hdl_value,
-			hdl_tbl->hdl[i].type, hdl_tbl->hdl[i].state, hdl_tbl->hdl[i].dev_id);
+			hdl_tbl->hdl[i].type, hdl_tbl->hdl[i].state,
+			hdl_tbl->hdl[i].dev_id);
 }
 
 int32_t cam_create_session_hdl(void *priv)
@@ -191,7 +195,8 @@ int32_t cam_create_session_hdl(void *priv)
 
 	idx = cam_get_free_handle_index();
 	if (idx < 0) {
-		CAM_ERR(CAM_CRM, "Unable to create session handle(idx = %d)", idx);
+		CAM_ERR(CAM_CRM, "Unable to create session handle(idx = %d)",
+			idx);
 		cam_dump_tbl_info();
 		spin_unlock_bh(&hdl_tbl_lock);
 		return idx;
@@ -233,7 +238,8 @@ int32_t cam_create_device_hdl(struct cam_create_dev_hdl *hdl_data)
 
 	idx = cam_get_free_handle_index();
 	if (idx < 0) {
-		CAM_ERR(CAM_CRM, "Unable to create device handle(idx= %d)", idx);
+		CAM_ERR(CAM_CRM, "Unable to create device handle(idx= %d)",
+			idx);
 		cam_dump_tbl_info();
 		spin_unlock_bh(&hdl_tbl_lock);
 		return idx;
@@ -309,14 +315,14 @@ void *cam_get_priv(int32_t dev_hdl, int handle_type)
 	}
 
 	if (hdl_tbl->hdl[idx].hdl_value != dev_hdl) {
-		CAM_ERR_RATE_LIMIT(CAM_CRM, "Invalid hdl [%d] [%d]",
-			dev_hdl, hdl_tbl->hdl[idx].hdl_value);
+		CAM_ERR_RATE_LIMIT(CAM_CRM, "Invalid hdl [%d] [%d]", dev_hdl,
+				   hdl_tbl->hdl[idx].hdl_value);
 		goto device_priv_fail;
 	}
 
 	if (hdl_tbl->hdl[idx].state != HDL_ACTIVE) {
 		CAM_ERR_RATE_LIMIT(CAM_CRM, "Invalid state:%d",
-			hdl_tbl->hdl[idx].state);
+				   hdl_tbl->hdl[idx].state);
 		goto device_priv_fail;
 	}
 
@@ -348,8 +354,8 @@ struct cam_req_mgr_core_session *cam_get_session_priv(int32_t dev_hdl)
 {
 	struct cam_req_mgr_core_session *priv;
 
-	priv = (struct cam_req_mgr_core_session *)
-		cam_get_priv(dev_hdl, HDL_TYPE_SESSION);
+	priv = (struct cam_req_mgr_core_session *)cam_get_priv(
+		dev_hdl, HDL_TYPE_SESSION);
 
 	return priv;
 }
@@ -358,8 +364,8 @@ struct cam_req_mgr_core_link *cam_get_link_priv(int32_t dev_hdl)
 {
 	struct cam_req_mgr_core_link *priv;
 
-	priv = (struct cam_req_mgr_core_link *)
-		cam_get_priv(dev_hdl, HDL_TYPE_LINK);
+	priv = (struct cam_req_mgr_core_link *)cam_get_priv(dev_hdl,
+							    HDL_TYPE_LINK);
 
 	return priv;
 }
@@ -388,7 +394,8 @@ void *cam_get_device_ops(int32_t dev_hdl)
 	}
 
 	type = CAM_REQ_MGR_GET_HDL_TYPE(dev_hdl);
-	if (HDL_TYPE_DEV != type && HDL_TYPE_SESSION != type && HDL_TYPE_LINK != type) {
+	if (HDL_TYPE_DEV != type && HDL_TYPE_SESSION != type &&
+	    HDL_TYPE_LINK != type) {
 		CAM_ERR(CAM_CRM, "Invalid type");
 		goto device_ops_fail;
 	}
@@ -442,8 +449,8 @@ static int cam_destroy_hdl(int32_t dev_hdl, int dev_hdl_type)
 	}
 
 	hdl_tbl->hdl[idx].state = HDL_FREE;
-	hdl_tbl->hdl[idx].ops   = NULL;
-	hdl_tbl->hdl[idx].priv  = NULL;
+	hdl_tbl->hdl[idx].ops = NULL;
+	hdl_tbl->hdl[idx].priv = NULL;
 	clear_bit(idx, hdl_tbl->bitmap);
 	spin_unlock_bh(&hdl_tbl_lock);
 

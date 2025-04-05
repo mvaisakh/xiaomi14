@@ -17,9 +17,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <scheduler_core.h>
-#include <qdf_atomic.h>
 #include "qdf_flex_mem.h"
+#include <qdf_atomic.h>
+#include <scheduler_core.h>
 
 static struct scheduler_ctx g_sched_ctx;
 static struct scheduler_ctx *gp_sched_ctx;
@@ -29,14 +29,16 @@ DEFINE_QDF_FLEX_MEM_POOL(sched_pool, sizeof(struct scheduler_msg),
 
 #ifdef WLAN_SCHED_HISTORY_SIZE
 
-#define SCHEDULER_HISTORY_HEADER "|Callback                               "\
-				 "|Message Type"			   \
-				 "|Queue Duration(us)|Queue Depth"	   \
-				 "|Run Duration(us)|"
+#define SCHEDULER_HISTORY_HEADER                   \
+	"|Callback                               " \
+	"|Message Type"                            \
+	"|Queue Duration(us)|Queue Depth"          \
+	"|Run Duration(us)|"
 
-#define SCHEDULER_HISTORY_LINE "--------------------------------------" \
-			       "--------------------------------------" \
-			       "--------------------------------------"
+#define SCHEDULER_HISTORY_LINE                   \
+	"--------------------------------------" \
+	"--------------------------------------" \
+	"--------------------------------------"
 
 /**
  * struct sched_history_item - metrics for a scheduler message
@@ -125,11 +127,9 @@ void sched_history_print(void)
 		if (!item->callback)
 			continue;
 
-		sched_nofl_fatal("%40pF|%12d|%18d|%11d|%16d|",
-				 item->callback, item->type_id,
-				 item->queue_duration_us,
-				 item->queue_depth,
-				 item->run_duration_us);
+		sched_nofl_fatal("%40pF|%12d|%18d|%11d|%16d|", item->callback,
+				 item->type_id, item->queue_duration_us,
+				 item->queue_depth, item->run_duration_us);
 	}
 
 	sched_nofl_fatal(SCHEDULER_HISTORY_LINE);
@@ -139,10 +139,18 @@ void sched_history_print(void)
 #else /* WLAN_SCHED_HISTORY_SIZE */
 
 static inline void sched_history_queue(struct scheduler_mq_type *queue,
-				       struct scheduler_msg *msg) { }
-static inline void sched_history_start(struct scheduler_msg *msg) { }
-static inline void sched_history_stop(void) { }
-void sched_history_print(void) { }
+				       struct scheduler_msg *msg)
+{
+}
+static inline void sched_history_start(struct scheduler_msg *msg)
+{
+}
+static inline void sched_history_stop(void)
+{
+}
+void sched_history_print(void)
+{
+}
 
 #endif /* WLAN_SCHED_HISTORY_SIZE */
 
@@ -217,7 +225,7 @@ static QDF_STATUS scheduler_all_queues_init(struct scheduler_ctx *sched_ctx)
 	/* Initialize all qid to qidx mapping to invalid values */
 	for (i = 0; i < QDF_MODULE_ID_MAX; i++)
 		sched_ctx->queue_ctx.scheduler_msg_qid_to_qidx[i] =
-					SCHEDULER_NUMBER_OF_MSG_QUEUE;
+			SCHEDULER_NUMBER_OF_MSG_QUEUE;
 
 	sched_exit();
 
@@ -241,7 +249,7 @@ static QDF_STATUS scheduler_all_queues_deinit(struct scheduler_ctx *sched_ctx)
 	/* Initialize all qid to qidx mapping to invalid values */
 	for (i = 0; i < QDF_MODULE_ID_MAX; i++)
 		sched_ctx->queue_ctx.scheduler_msg_qid_to_qidx[i] =
-					SCHEDULER_NUMBER_OF_MSG_QUEUE;
+			SCHEDULER_NUMBER_OF_MSG_QUEUE;
 
 	sched_exit();
 
@@ -335,7 +343,6 @@ buffer_full:
 	    SCHEDULER_WRAPPER_MAX_FAIL_COUNT)
 		QDF_DEBUG_PANIC("Scheduler buffer is full");
 
-
 dec_queue_count:
 	qdf_atomic_dec(&__sched_queue_depth);
 
@@ -370,8 +377,9 @@ static void scheduler_thread_process_queues(struct scheduler_ctx *sch_ctx,
 			*shutdown = true;
 
 			/* Check for any Suspend Indication */
-			if (qdf_atomic_test_and_clear_bit(MC_SUSPEND_EVENT_MASK,
-						&sch_ctx->sch_event_flag)) {
+			if (qdf_atomic_test_and_clear_bit(
+				    MC_SUSPEND_EVENT_MASK,
+				    &sch_ctx->sch_event_flag)) {
 				/* Unblock anyone waiting on suspend */
 				if (gp_sched_ctx->hdd_callback)
 					gp_sched_ctx->hdd_callback();
@@ -394,8 +402,8 @@ static void scheduler_thread_process_queues(struct scheduler_ctx *sch_ctx,
 			sched_history_start(msg);
 			qdf_timer_start(&sch_ctx->watchdog_timer,
 					sch_ctx->timeout);
-			status = sch_ctx->queue_ctx.
-					scheduler_msg_process_fn[i](msg);
+			status = sch_ctx->queue_ctx.scheduler_msg_process_fn[i](
+				msg);
 			qdf_timer_stop(&sch_ctx->watchdog_timer);
 			sched_history_stop();
 
@@ -412,7 +420,7 @@ static void scheduler_thread_process_queues(struct scheduler_ctx *sch_ctx,
 
 	/* Check for any Suspend Indication */
 	if (qdf_atomic_test_and_clear_bit(MC_SUSPEND_EVENT_MASK,
-			&sch_ctx->sch_event_flag)) {
+					  &sch_ctx->sch_event_flag)) {
 		qdf_spin_lock(&sch_ctx->sch_thread_lock);
 		qdf_event_reset(&sch_ctx->resume_sch_event);
 		/* controller thread suspend completion callback */
@@ -423,7 +431,7 @@ static void scheduler_thread_process_queues(struct scheduler_ctx *sch_ctx,
 		qdf_wait_single_event(&sch_ctx->resume_sch_event, 0);
 	}
 
-	return;  /* Nothing to process wait on wait queue */
+	return; /* Nothing to process wait on wait queue */
 }
 
 int scheduler_thread(void *arg)
@@ -439,25 +447,26 @@ int scheduler_thread(void *arg)
 	qdf_set_user_nice(current, -2);
 
 	/* Ack back to the context from which the main controller thread
-	 * has been created
-	 */
+   * has been created
+   */
 	qdf_event_set(&sch_ctx->sch_start_event);
-	sched_debug("scheduler thread %d (%s) starting up",
-		    current->pid, current->comm);
+	sched_debug("scheduler thread %d (%s) starting up", current->pid,
+		    current->comm);
 
 	while (!shutdown) {
 		/* This implements the execution model algorithm */
 		retWaitStatus = qdf_wait_queue_interruptible(
-					sch_ctx->sch_wait_queue,
-					qdf_atomic_test_bit(MC_POST_EVENT_MASK,
-						&sch_ctx->sch_event_flag) ||
-					qdf_atomic_test_bit(MC_SUSPEND_EVENT_MASK,
-						&sch_ctx->sch_event_flag));
+			sch_ctx->sch_wait_queue,
+			qdf_atomic_test_bit(MC_POST_EVENT_MASK,
+					    &sch_ctx->sch_event_flag) ||
+				qdf_atomic_test_bit(MC_SUSPEND_EVENT_MASK,
+						    &sch_ctx->sch_event_flag));
 
 		if (retWaitStatus == -ERESTARTSYS)
 			QDF_DEBUG_PANIC("Scheduler received -ERESTARTSYS");
 
-		qdf_atomic_clear_bit(MC_POST_EVENT_MASK, &sch_ctx->sch_event_flag);
+		qdf_atomic_clear_bit(MC_POST_EVENT_MASK,
+				     &sch_ctx->sch_event_flag);
 		scheduler_thread_process_queues(sch_ctx, &shutdown);
 	}
 
@@ -501,4 +510,3 @@ void scheduler_queues_flush(struct scheduler_ctx *sched_ctx)
 		scheduler_flush_single_queue(mq);
 	}
 }
-

@@ -29,32 +29,26 @@
 
 /*=========================================================================*/
 /*!
-	@file
-	ipa_nat_test999.c
+        @file
+        ipa_nat_test999.c
 
-	@brief
-	Verify the following scenario:
-	1. Delete ipv4 table
+        @brief
+        Verify the following scenario:
+        1. Delete ipv4 table
 */
 /*===========================================================================*/
 
 #include "ipa_nat_test.h"
 
-int ipa_nat_test999(
-	const char* nat_mem_type,
-	u32 pub_ip_add,
-	int total_entries,
-	u32 tbl_hdl,
-	int sep,
-	void* arb_data_ptr)
+int ipa_nat_test999(const char *nat_mem_type, u32 pub_ip_add, int total_entries,
+		    u32 tbl_hdl, int sep, void *arb_data_ptr)
 {
-	int* tbl_hdl_ptr = (int*) arb_data_ptr;
+	int *tbl_hdl_ptr = (int *)arb_data_ptr;
 	int ret;
 
 	IPADBG("In\n");
 
-	if ( ! sep )
-	{
+	if (!sep) {
 		IPADBG("calling ipa_nat_del_ipv4_tbl()\n");
 
 		ret = ipa_nat_del_ipv4_tbl(tbl_hdl);

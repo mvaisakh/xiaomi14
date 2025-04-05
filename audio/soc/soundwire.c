@@ -4,21 +4,21 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/completion.h>
+#include <linux/errno.h>
+#include <linux/idr.h>
+#include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/errno.h>
-#include <linux/slab.h>
-#include <linux/init.h>
-#include <linux/types.h>
 #include <linux/of_device.h>
-#include <linux/completion.h>
-#include <linux/idr.h>
 #include <linux/pm_runtime.h>
+#include <linux/slab.h>
+#include <linux/types.h>
 #include <soc/soundwire.h>
 
 struct boardinfo {
-	struct list_head	list;
-	struct swr_boardinfo	board_info;
+	struct list_head list;
+	struct swr_boardinfo board_info;
 };
 
 static LIST_HEAD(board_list);
@@ -29,7 +29,7 @@ static DEFINE_MUTEX(swr_lock);
 
 static struct device_type swr_dev_type;
 
-#define SOUNDWIRE_NAME_SIZE	32
+#define SOUNDWIRE_NAME_SIZE 32
 
 static void swr_master_put(struct swr_master *master)
 {
@@ -74,12 +74,11 @@ void swr_remove_device(struct swr_device *swr_dev)
 	struct swr_device *swr_dev_loop, *safe;
 
 	/*
-	 * master still has reference to all nodes and deletes
-	 * at platform_unregister, so need to init the deleted
-	 * entry
-	 */
-	list_for_each_entry_safe(swr_dev_loop, safe,
-				 &swr_dev->master->devices,
+   * master still has reference to all nodes and deletes
+   * at platform_unregister, so need to init the deleted
+   * entry
+   */
+	list_for_each_entry_safe(swr_dev_loop, safe, &swr_dev->master->devices,
 				 dev_list) {
 		if (swr_dev == swr_dev_loop)
 			list_del_init(&swr_dev_loop->dev_list);
@@ -100,7 +99,7 @@ EXPORT_SYMBOL(swr_remove_device);
  * Returns a soundwire new device or NULL
  */
 struct swr_device *swr_new_device(struct swr_master *master,
-				 struct swr_boardinfo const *info)
+				  struct swr_boardinfo const *info)
 {
 	int result;
 	struct swr_device *swr;
@@ -130,8 +129,9 @@ struct swr_device *swr_new_device(struct swr_master *master,
 	dev_set_name(&swr->dev, "%s.%lx", swr->name, swr->addr);
 	result = device_register(&swr->dev);
 	if (result) {
-		dev_err_ratelimited(&master->dev, "device [%s] register failed err %d\n",
-			swr->name, result);
+		dev_err_ratelimited(&master->dev,
+				    "device [%s] register failed err %d\n",
+				    swr->name, result);
 		goto err_out;
 	}
 	dev_dbg(&master->dev, "Device [%s] registered with bus id %s\n",
@@ -171,21 +171,24 @@ int of_register_swr_devices(struct swr_master *master)
 		dev_dbg(&master->dev, "of_swr:register %s\n", node->full_name);
 
 		if (of_modalias_node(node, info.name, sizeof(info.name)) < 0) {
-			dev_err_ratelimited(&master->dev, "of_swr:modalias failure %s\n",
-				node->full_name);
+			dev_err_ratelimited(&master->dev,
+					    "of_swr:modalias failure %s\n",
+					    node->full_name);
 			continue;
 		}
 		if (of_property_read_u64(node, "reg", &addr)) {
-			dev_err_ratelimited(&master->dev, "of_swr:invalid reg %s\n",
-				node->full_name);
+			dev_err_ratelimited(&master->dev,
+					    "of_swr:invalid reg %s\n",
+					    node->full_name);
 			continue;
 		}
 		info.addr = addr;
 		info.of_node = of_node_get(node);
 		swr = swr_new_device(master, &info);
 		if (!swr) {
-			dev_err_ratelimited(&master->dev, "of_swr: Register failed %s\n",
-				node->full_name);
+			dev_err_ratelimited(&master->dev,
+					    "of_swr: Register failed %s\n",
+					    node->full_name);
 			of_node_put(node);
 			continue;
 		}
@@ -208,8 +211,9 @@ void swr_port_response(struct swr_master *mstr, u8 tid)
 	txn = mstr->port_txn[tid];
 
 	if (txn == NULL) {
-		dev_err_ratelimited(&mstr->dev, "%s: transaction is already NULL\n",
-			__func__);
+		dev_err_ratelimited(&mstr->dev,
+				    "%s: transaction is already NULL\n",
+				    __func__);
 		return;
 	}
 	mstr->port_txn[tid] = NULL;
@@ -257,8 +261,7 @@ EXPORT_SYMBOL(swr_remove_from_group);
  *
  * Returns error code for failure and 0 for success
  */
-int swr_slvdev_datapath_control(struct swr_device *dev, u8 dev_num,
-				bool enable)
+int swr_slvdev_datapath_control(struct swr_device *dev, u8 dev_num, bool enable)
 {
 	struct swr_master *master;
 	int ret = 0;
@@ -302,7 +305,7 @@ EXPORT_SYMBOL(swr_slvdev_datapath_control);
  * and enable master and slave ports
  */
 int swr_connect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
-			u8 *ch_mask, u32 *ch_rate, u8 *num_ch, u8 *port_type)
+		     u8 *ch_mask, u32 *ch_rate, u8 *num_ch, u8 *port_type)
 {
 	u8 i = 0;
 	int ret = 0;
@@ -315,18 +318,19 @@ int swr_connect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
 		return -EINVAL;
 	}
 	if (num_port > SWR_MAX_DEV_PORT_NUM) {
-		dev_err_ratelimited(&master->dev, "%s: num_port %d exceeds max port %d\n",
-			__func__, num_port, SWR_MAX_DEV_PORT_NUM);
+		dev_err_ratelimited(&master->dev,
+				    "%s: num_port %d exceeds max port %d\n",
+				    __func__, num_port, SWR_MAX_DEV_PORT_NUM);
 		return -EINVAL;
 	}
 
 	/*
-	 * create "txn" to accommodate ports enablement of
-	 * different slave devices calling swr_connect_port at the
-	 * same time. Once master process the txn data, it calls
-	 * swr_port_response() to free the transaction. Maximum
-	 * of 256 transactions can be allocated.
-	 */
+   * create "txn" to accommodate ports enablement of
+   * different slave devices calling swr_connect_port at the
+   * same time. Once master process the txn data, it calls
+   * swr_port_response() to free the transaction. Maximum
+   * of 256 transactions can be allocated.
+   */
 	txn = kzalloc(sizeof(struct swr_params), GFP_KERNEL);
 	if (!txn)
 		return -ENOMEM;
@@ -340,19 +344,20 @@ int swr_connect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
 		if (master->last_tid == 255) {
 			mutex_unlock(&master->mlock);
 			kfree(txn);
-			dev_err_ratelimited(&master->dev, "%s Max tid reached\n",
-				__func__);
+			dev_err_ratelimited(&master->dev,
+					    "%s Max tid reached\n", __func__);
 			return -ENOMEM;
 		}
 		temp_txn = krealloc(master->port_txn,
-				(i + 1) * sizeof(struct swr_params *),
-				GFP_KERNEL);
+				    (i + 1) * sizeof(struct swr_params *),
+				    GFP_KERNEL);
 		if (!temp_txn) {
 			mutex_unlock(&master->mlock);
 			kfree(txn);
-			dev_err_ratelimited(&master->dev, "%s Not able to allocate\n"
-				"master port transaction memory\n",
-				__func__);
+			dev_err_ratelimited(&master->dev,
+					    "%s Not able to allocate\n"
+					    "master port transaction memory\n",
+					    __func__);
 			return -ENOMEM;
 		}
 		master->port_txn = temp_txn;
@@ -366,9 +371,9 @@ int swr_connect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
 	txn->num_port = num_port;
 	for (i = 0; i < num_port; i++) {
 		txn->port_id[i] = port_id[i];
-		txn->num_ch[i]  = num_ch[i];
+		txn->num_ch[i] = num_ch[i];
 		txn->ch_rate[i] = ch_rate[i];
-		txn->ch_en[i]   = ch_mask[i];
+		txn->ch_en[i] = ch_mask[i];
 		txn->port_type[i] = port_type[i];
 	}
 	ret = master->connect_port(master, txn);
@@ -387,7 +392,7 @@ EXPORT_SYMBOL(swr_connect_port);
  * disable master and slave port and (re)configure frame structure
  */
 int swr_disconnect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
-					u8 *ch_mask, u8 *port_type)
+			u8 *ch_mask, u8 *port_type)
 {
 	u8 i = 0;
 	int ret;
@@ -401,8 +406,9 @@ int swr_disconnect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
 	}
 
 	if (num_port > SWR_MAX_DEV_PORT_NUM) {
-		dev_err_ratelimited(&master->dev, "%s: num_port %d exceeds max port %d\n",
-			__func__, num_port, SWR_MAX_DEV_PORT_NUM);
+		dev_err_ratelimited(&master->dev,
+				    "%s: num_port %d exceeds max port %d\n",
+				    __func__, num_port, SWR_MAX_DEV_PORT_NUM);
 		return -EINVAL;
 	}
 
@@ -419,19 +425,20 @@ int swr_disconnect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
 		if (master->last_tid == 255) {
 			mutex_unlock(&master->mlock);
 			kfree(txn);
-			dev_err_ratelimited(&master->dev, "%s Max tid reached\n",
-				__func__);
+			dev_err_ratelimited(&master->dev,
+					    "%s Max tid reached\n", __func__);
 			return -ENOMEM;
 		}
 		temp_txn = krealloc(master->port_txn,
-				(i + 1) * sizeof(struct swr_params *),
-				GFP_KERNEL);
+				    (i + 1) * sizeof(struct swr_params *),
+				    GFP_KERNEL);
 		if (!temp_txn) {
 			mutex_unlock(&master->mlock);
 			kfree(txn);
-			dev_err_ratelimited(&master->dev, "%s Not able to allocate\n"
-				"master port transaction memory\n",
-				__func__);
+			dev_err_ratelimited(&master->dev,
+					    "%s Not able to allocate\n"
+					    "master port transaction memory\n",
+					    __func__);
 			return -ENOMEM;
 		}
 		master->port_txn = temp_txn;
@@ -445,7 +452,7 @@ int swr_disconnect_port(struct swr_device *dev, u8 *port_id, u8 num_port,
 	txn->num_port = num_port;
 	for (i = 0; i < num_port; i++) {
 		txn->port_id[i] = port_id[i];
-		txn->ch_en[i]   = ch_mask[i];
+		txn->ch_en[i] = ch_mask[i];
 		txn->port_type[i] = port_type[i];
 	}
 	ret = master->disconnect_port(master, txn);
@@ -461,8 +468,7 @@ EXPORT_SYMBOL(swr_disconnect_port);
  *
  * This API will get the logical device number of soundwire slave device
  */
-int swr_get_logical_dev_num(struct swr_device *dev, u64 dev_id,
-			u8 *dev_num)
+int swr_get_logical_dev_num(struct swr_device *dev, u64 dev_id, u8 *dev_num)
 {
 	int ret = 0;
 	struct swr_master *master = dev->master;
@@ -486,8 +492,8 @@ EXPORT_SYMBOL(swr_get_logical_dev_num);
  *
  * This API will set soundwire port params from slave
  */
-int swr_init_port_params(struct swr_device *dev,
-			 u32 num_ports, struct swr_dev_frame_config *pp)
+int swr_init_port_params(struct swr_device *dev, u32 num_ports,
+			 struct swr_dev_frame_config *pp)
 {
 	int ret = 0;
 	struct swr_master *master = dev->master;
@@ -497,8 +503,7 @@ int swr_init_port_params(struct swr_device *dev,
 		return -EINVAL;
 	}
 	mutex_lock(&master->mlock);
-	ret = master->init_port_params(master, dev->dev_num,
-				       num_ports, pp);
+	ret = master->init_port_params(master, dev->dev_num, num_ports, pp);
 	mutex_unlock(&master->mlock);
 	return ret;
 }
@@ -570,8 +575,8 @@ EXPORT_SYMBOL(swr_device_wakeup_unvote);
  * This API will read the value of the register address from
  * soundwire slave device
  */
-int swr_read(struct swr_device *dev, u8 dev_num, u16 reg_addr,
-	     void *buf, u32 len)
+int swr_read(struct swr_device *dev, u8 dev_num, u16 reg_addr, void *buf,
+	     u32 len)
 {
 	struct swr_master *master = dev->master;
 
@@ -627,8 +632,7 @@ EXPORT_SYMBOL(swr_bulk_write);
  * This API will write the value of the register address to
  * soundwire slave device
  */
-int swr_write(struct swr_device *dev, u8 dev_num, u16 reg_addr,
-	      const void *buf)
+int swr_write(struct swr_device *dev, u8 dev_num, u16 reg_addr, const void *buf)
 {
 	struct swr_master *master = dev->master;
 
@@ -825,14 +829,14 @@ void swr_driver_unregister(struct swr_driver *drv)
 EXPORT_SYMBOL(swr_driver_unregister);
 
 static void swr_match_ctrl_to_boardinfo(struct swr_master *master,
-				struct swr_boardinfo *bi)
+					struct swr_boardinfo *bi)
 {
 	struct swr_device *swr;
 
 	if (master->bus_num != bi->bus_num) {
 		dev_dbg(&master->dev,
-			"%s: master# %d and bi# %d does not match\n",
-			__func__, master->bus_num, bi->bus_num);
+			"%s: master# %d and bi# %d does not match\n", __func__,
+			master->bus_num, bi->bus_num);
 		return;
 	}
 
@@ -901,8 +905,8 @@ static void swr_master_release(struct device *dev)
 
 #define swr_master_attr_gr NULL
 static struct device_type swr_master_type = {
-	.groups     = swr_master_attr_gr,
-	.release    = swr_master_release,
+	.groups = swr_master_attr_gr,
+	.release = swr_master_release,
 };
 
 static int __unregister(struct device *dev, void *null)
@@ -962,7 +966,7 @@ int swr_register_master(struct swr_master *master)
 	if (id >= 0)
 		master->bus_num = id;
 	id = idr_alloc(&master_idr, master, master->bus_num,
-				master->bus_num + 1, GFP_KERNEL);
+		       master->bus_num + 1, GFP_KERNEL);
 	mutex_unlock(&swr_lock);
 	if (id < 0)
 		return id;
@@ -983,8 +987,8 @@ int swr_register_master(struct swr_master *master)
 		goto done;
 
 	INIT_LIST_HEAD(&master->devices);
-	pr_debug("%s: SWR master registered successfully %s\n",
-		__func__, dev_name(&master->dev));
+	pr_debug("%s: SWR master registered successfully %s\n", __func__,
+		 dev_name(&master->dev));
 	return 0;
 
 done:
@@ -996,9 +1000,9 @@ EXPORT_SYMBOL(swr_register_master);
 #define swr_device_attr_gr NULL
 #define swr_device_uevent NULL
 static struct device_type swr_dev_type = {
-	.groups    = swr_device_attr_gr,
-	.uevent    = swr_device_uevent,
-	.release   = swr_dev_release,
+	.groups = swr_device_attr_gr,
+	.uevent = swr_device_uevent,
+	.release = swr_dev_release,
 };
 
 static const struct swr_device_id *swr_match(const struct swr_device_id *id,
@@ -1092,18 +1096,14 @@ static int swr_pm_resume(struct device *dev)
 		return swr_legacy_resume(dev);
 }
 #else
-#define swr_pm_suspend	NULL
-#define swr_pm_resume	NULL
+#define swr_pm_suspend NULL
+#define swr_pm_resume NULL
 #endif /*CONFIG_PM_SLEEP*/
 
 static const struct dev_pm_ops soundwire_pm = {
 	.suspend = swr_pm_suspend,
 	.resume = swr_pm_resume,
-	SET_RUNTIME_PM_OPS(
-		pm_generic_suspend,
-		pm_generic_resume,
-		NULL
-		)
+	SET_RUNTIME_PM_OPS(pm_generic_suspend, pm_generic_resume, NULL)
 };
 
 struct device soundwire_dev = {
@@ -1111,9 +1111,9 @@ struct device soundwire_dev = {
 };
 
 struct bus_type soundwire_type = {
-	.name		= "soundwire",
-	.match		= swr_device_match,
-	.pm		= &soundwire_pm,
+	.name = "soundwire",
+	.match = swr_device_match,
+	.pm = &soundwire_pm,
 };
 EXPORT_SYMBOL(soundwire_type);
 
@@ -1138,7 +1138,6 @@ static int __init soundwire_init(void)
 }
 module_init(soundwire_init);
 module_exit(soundwire_exit);
-
 
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Soundwire module");

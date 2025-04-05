@@ -9,12 +9,12 @@
 
 #include "sigma_dut.h"
 #ifdef __linux__
-#include <signal.h>
 #include <netinet/tcp.h>
+#include <signal.h>
 #endif /* __linux__ */
+#include "miracast.h"
 #include "wpa_ctrl.h"
 #include "wpa_helpers.h"
-#include "miracast.h"
 
 #define SIGMA_DUT_PORT 9000
 #define MAX_CONNECTIONS 4
@@ -45,7 +45,7 @@ int sigma_periodic_data = 0;
 
 #ifdef ANDROID_WIFI_HAL
 
-static void * wifi_hal_event_thread(void *ptr)
+static void *wifi_hal_event_thread(void *ptr)
 {
 	struct sigma_dut *dut = ptr;
 
@@ -54,7 +54,6 @@ static void * wifi_hal_event_thread(void *ptr)
 
 	return NULL;
 }
-
 
 int wifi_hal_initialize(struct sigma_dut *dut)
 {
@@ -77,17 +76,16 @@ int wifi_hal_initialize(struct sigma_dut *dut)
 	else
 		ifname = "wlan0";
 
-	dut->wifi_hal_iface_handle = wifi_get_iface_handle(dut->wifi_hal_handle,
-							   (char *) ifname);
+	dut->wifi_hal_iface_handle =
+		wifi_get_iface_handle(dut->wifi_hal_handle, (char *)ifname);
 
-	pthread_create(&thread1, NULL, &wifi_hal_event_thread, (void *) dut);
+	pthread_create(&thread1, NULL, &wifi_hal_event_thread, (void *)dut);
 	dut->wifi_hal_initialized = true;
 
 	return 0;
 }
 
 #endif /* ANDROID_WIFI_HAL */
-
 
 static enum android_LogPriority level_to_android_priority(int level)
 {
@@ -105,7 +103,6 @@ static enum android_LogPriority level_to_android_priority(int level)
 
 #endif /* ANDROID */
 
-
 void sigma_dut_print(struct sigma_dut *dut, int level, const char *fmt, ...)
 {
 	va_list ap;
@@ -117,16 +114,16 @@ void sigma_dut_print(struct sigma_dut *dut, int level, const char *fmt, ...)
 	gettimeofday(&tv, NULL);
 #ifdef ANDROID
 	va_start(ap, fmt);
-	__android_log_vprint(level_to_android_priority(level),
-			     "sigma_dut", fmt, ap);
+	__android_log_vprint(level_to_android_priority(level), "sigma_dut", fmt,
+			     ap);
 	va_end(ap);
 	if (!dut->stdout_debug)
 		return;
 #else /* ANDROID */
 	if (dut->log_file_fd) {
 		va_start(ap, fmt);
-		fprintf(dut->log_file_fd, "%ld.%06u: ",
-			(long) tv.tv_sec, (unsigned int) tv.tv_usec);
+		fprintf(dut->log_file_fd, "%ld.%06u: ", (long)tv.tv_sec,
+			(unsigned int)tv.tv_usec);
 		vfprintf(dut->log_file_fd, fmt, ap);
 		fprintf(dut->log_file_fd, "\n");
 		va_end(ap);
@@ -134,13 +131,11 @@ void sigma_dut_print(struct sigma_dut *dut, int level, const char *fmt, ...)
 #endif /* ANDROID */
 
 	va_start(ap, fmt);
-	printf("%ld.%06u: ", (long) tv.tv_sec,
-	       (unsigned int) tv.tv_usec);
+	printf("%ld.%06u: ", (long)tv.tv_sec, (unsigned int)tv.tv_usec);
 	vprintf(fmt, ap);
 	printf("\n");
 	va_end(ap);
 }
-
 
 void sigma_dut_summary(struct sigma_dut *dut, const char *fmt, ...)
 {
@@ -161,9 +156,7 @@ void sigma_dut_summary(struct sigma_dut *dut, const char *fmt, ...)
 	fclose(f);
 }
 
-
-int sigma_dut_reg_cmd(const char *cmd,
-		      int (*validate)(struct sigma_cmd *cmd),
+int sigma_dut_reg_cmd(const char *cmd, int (*validate)(struct sigma_cmd *cmd),
 		      enum sigma_cmd_result (*process)(struct sigma_dut *dut,
 						       struct sigma_conn *conn,
 						       struct sigma_cmd *cmd))
@@ -185,17 +178,16 @@ int sigma_dut_reg_cmd(const char *cmd,
 	if (h == NULL)
 		return -1;
 	memset(h, 0, len);
-	h->cmd = (char *) (h + 1); /* include in same allocation */
+	h->cmd = (char *)(h + 1); /* include in same allocation */
 	memcpy(h->cmd, cmd, clen);
 	h->validate = validate;
-	h->process= process;
+	h->process = process;
 
 	h->next = sigma_dut.cmds;
 	sigma_dut.cmds = h;
 
 	return 0;
 }
-
 
 static void sigma_dut_unreg_cmds(struct sigma_dut *dut)
 {
@@ -208,7 +200,6 @@ static void sigma_dut_unreg_cmds(struct sigma_dut *dut)
 		free(prev);
 	}
 }
-
 
 static int open_socket(struct sigma_dut *dut, int port)
 {
@@ -230,25 +221,27 @@ static int open_socket(struct sigma_dut *dut, int port)
 
 #ifndef __QNXNTO__
 	val = 1;
-	if (setsockopt(dut->s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) <
-	    0)
-		sigma_dut_print(dut, DUT_MSG_INFO, "setsockopt SO_REUSEADDR: "
-				"%s", strerror(errno));
+	if (setsockopt(dut->s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0)
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"setsockopt SO_REUSEADDR: "
+				"%s",
+				strerror(errno));
 #endif /* !__QNXNTO__ */
 
 #ifdef __linux__
 	val = 1;
-	if (setsockopt(dut->s, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) <
-	    0)
-		sigma_dut_print(dut, DUT_MSG_INFO, "setsockopt TCP_NODELAY: "
-				"%s", strerror(errno));
+	if (setsockopt(dut->s, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) < 0)
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"setsockopt TCP_NODELAY: "
+				"%s",
+				strerror(errno));
 #endif /* __linux__ */
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 
-	if (bind(dut->s, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	if (bind(dut->s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR, "bind: %s",
 				strerror(errno));
 		goto fail;
@@ -269,14 +262,12 @@ fail:
 	return -1;
 }
 
-
 static void close_socket(struct sigma_dut *dut)
 {
 	shutdown(dut->s, SHUT_RDWR);
 	close(dut->s);
 	dut->s = -1;
 }
-
 
 void send_resp(struct sigma_dut *dut, struct sigma_conn *conn,
 	       enum sigma_status status, const char *buf)
@@ -288,8 +279,8 @@ void send_resp(struct sigma_dut *dut, struct sigma_conn *conn,
 	if (!conn)
 		return;
 
-	sigma_dut_print(dut, DUT_MSG_INFO, "resp: status=%d buf=%s",
-			status, buf ? buf : "N/A");
+	sigma_dut_print(dut, DUT_MSG_INFO, "resp: status=%d buf=%s", status,
+			buf ? buf : "N/A");
 
 	iov[0].iov_base = "status,";
 	iov[0].iov_len = 7;
@@ -313,10 +304,10 @@ void send_resp(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 	if (status != SIGMA_RUNNING) {
 		sigma_dut_summary(dut, "CAPI resp: status,%s%s",
-				  (char *) iov[1].iov_base, buf ? buf : "");
+				  (char *)iov[1].iov_base, buf ? buf : "");
 	}
 	if (buf) {
-		iov[2].iov_base = (void *) buf;
+		iov[2].iov_base = (void *)buf;
 		iov[2].iov_len = strlen(buf);
 		iov[3].iov_base = "\r\n";
 		iov[3].iov_len = 2;
@@ -337,8 +328,7 @@ void send_resp(struct sigma_dut *dut, struct sigma_conn *conn,
 	dut->response_sent++;
 }
 
-
-const char * get_param(struct sigma_cmd *cmd, const char *name)
+const char *get_param(struct sigma_cmd *cmd, const char *name)
 {
 	int i;
 	for (i = 0; i < cmd->count; i++) {
@@ -348,9 +338,8 @@ const char * get_param(struct sigma_cmd *cmd, const char *name)
 	return NULL;
 }
 
-
-const char * get_param_indexed(struct sigma_cmd *cmd, const char *name,
-			       int index)
+const char *get_param_indexed(struct sigma_cmd *cmd, const char *name,
+			      int index)
 {
 	int i, j;
 
@@ -365,8 +354,7 @@ const char * get_param_indexed(struct sigma_cmd *cmd, const char *name,
 	return NULL;
 }
 
-
-const char * get_param_fmt(struct sigma_cmd *cmd, const char *name, ...)
+const char *get_param_fmt(struct sigma_cmd *cmd, const char *name, ...)
 {
 	va_list ap;
 	char buf[100];
@@ -381,7 +369,6 @@ const char * get_param_fmt(struct sigma_cmd *cmd, const char *name, ...)
 
 	return get_param(cmd, buf);
 }
-
 
 static void process_cmd(struct sigma_dut *dut, struct sigma_conn *conn,
 			char *buf)
@@ -449,7 +436,8 @@ static void process_cmd(struct sigma_dut *dut, struct sigma_conn *conn,
 				goto invalid_params;
 			*pos2++ = '\0';
 			if (c.count == MAX_PARAMS) {
-				sigma_dut_print(dut, DUT_MSG_INFO, "Too many "
+				sigma_dut_print(dut, DUT_MSG_INFO,
+						"Too many "
 						"parameters");
 				goto invalid_params;
 			}
@@ -477,9 +465,10 @@ static void process_cmd(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	if (h->validate && h->validate(&c) < 0) {
-	invalid_params:
+invalid_params:
 		sigma_dut_print(dut, DUT_MSG_INFO, "Invalid parameters");
-		send_resp(dut, conn, SIGMA_INVALID, "errorCode,Invalid "
+		send_resp(dut, conn, SIGMA_INVALID,
+			  "errorCode,Invalid "
 			  "parameters");
 		goto out;
 	}
@@ -504,9 +493,10 @@ static void process_cmd(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	if (!conn->waiting_completion && dut->response_sent != 2) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"ERROR: Unexpected number of status lines sent (%d) for command '%s'",
-				dut->response_sent, cmd);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"ERROR: Unexpected number of status lines sent (%d) for command '%s'",
+			dut->response_sent, cmd);
 	}
 
 out:
@@ -521,7 +511,6 @@ out:
 	}
 }
 
-
 static void process_conn(struct sigma_dut *dut, struct sigma_conn *conn)
 {
 	ssize_t res;
@@ -534,11 +523,11 @@ static void process_conn(struct sigma_dut *dut, struct sigma_conn *conn)
 	res = recv(conn->s, conn->buf + conn->pos, MAX_CMD_LEN + 5 - conn->pos,
 		   0);
 	if (res < 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO, "recv: %s",
-				strerror(errno));
+		sigma_dut_print(dut, DUT_MSG_INFO, "recv: %s", strerror(errno));
 	}
 	if (res <= 0) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Close connection from "
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Close connection from "
 				"%s:%d",
 				inet_ntoa(conn->addr.sin_addr),
 				ntohs(conn->addr.sin_port));
@@ -548,8 +537,7 @@ static void process_conn(struct sigma_dut *dut, struct sigma_conn *conn)
 		return;
 	}
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG, "Received %d bytes",
-			(int) res);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "Received %d bytes", (int)res);
 
 	for (;;) {
 		for (i = conn->pos; i < conn->pos + res; i++) {
@@ -561,7 +549,8 @@ static void process_conn(struct sigma_dut *dut, struct sigma_conn *conn)
 			/* Full command not yet received */
 			conn->pos += res;
 			if (conn->pos >= MAX_CMD_LEN + 5) {
-				sigma_dut_print(dut, DUT_MSG_INFO, "Too long "
+				sigma_dut_print(dut, DUT_MSG_INFO,
+						"Too long "
 						"command dropped");
 				conn->pos = 0;
 			}
@@ -579,7 +568,6 @@ static void process_conn(struct sigma_dut *dut, struct sigma_conn *conn)
 		conn->pos = 0;
 	}
 }
-
 
 static int stop_loop = 0;
 
@@ -631,9 +619,10 @@ static void run_loop(struct sigma_dut *dut)
 				maxfd = dut->s;
 		}
 
-
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Waiting for next "
-				"command (can_accept=%d)", can_accept);
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Waiting for next "
+				"command (can_accept=%d)",
+				can_accept);
 		res = select(maxfd + 1, &rfds, NULL, NULL, NULL);
 		if (res < 0) {
 			perror("select");
@@ -656,20 +645,19 @@ static void run_loop(struct sigma_dut *dut)
 			}
 			if (i == MAX_CONNECTIONS) {
 				/*
-				 * This cannot really happen since can_accept
-				 * would not be set to one.
-				 */
+         * This cannot really happen since can_accept
+         * would not be set to one.
+         */
 				sigma_dut_print(dut, DUT_MSG_DEBUG,
 						"No room for new connection");
 				continue;
 			}
 			conn[i].addrlen = sizeof(conn[i].addr);
 			conn[i].s = accept(dut->s,
-					   (struct sockaddr *) &conn[i].addr,
+					   (struct sockaddr *)&conn[i].addr,
 					   &conn[i].addrlen);
 			if (conn[i].s < 0) {
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"accept: %s",
+				sigma_dut_print(dut, DUT_MSG_INFO, "accept: %s",
 						strerror(errno));
 				continue;
 			}
@@ -690,7 +678,6 @@ static void run_loop(struct sigma_dut *dut)
 	}
 }
 
-
 static int run_local_cmd(int port, char *lcmd)
 {
 	int s, len;
@@ -700,7 +687,6 @@ static int run_local_cmd(int port, char *lcmd)
 	int count;
 	char resp[MAX_CMD_LEN];
 	int pos;
-
 
 	if (strlen(lcmd) > sizeof(cmd) - 4) {
 		printf("Too long command\n");
@@ -722,7 +708,7 @@ static int run_local_cmd(int port, char *lcmd)
 		return -1;
 	}
 
-	if (connect(s, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("connect");
 		close(s);
 		return -1;
@@ -735,8 +721,8 @@ static int run_local_cmd(int port, char *lcmd)
 		return -1;
 	}
 	if (res != len) {
-		printf("Unexpected send result: %d (expected %d)\n",
-		       (int) res, len);
+		printf("Unexpected send result: %d (expected %d)\n", (int)res,
+		       len);
 		close(s);
 		return -1;
 	}
@@ -758,7 +744,7 @@ static int run_local_cmd(int port, char *lcmd)
 			return -1;
 		}
 		len += res;
-	next_line:
+next_line:
 		e = memchr(resp + pos, '\r', len - pos);
 		if (e == NULL)
 			continue;
@@ -780,7 +766,6 @@ static int run_local_cmd(int port, char *lcmd)
 	return 0;
 }
 
-
 static void determine_sigma_p2p_ifname(struct sigma_dut *dut)
 {
 	char buf[256];
@@ -796,15 +781,15 @@ static void determine_sigma_p2p_ifname(struct sigma_dut *dut)
 		wpa_ctrl_close(ctrl);
 		dut->p2p_ifname_buf = strdup(buf);
 		dut->p2p_ifname = dut->p2p_ifname_buf;
-		sigma_dut_print(&sigma_dut, DUT_MSG_INFO,
-				"Using interface %s for P2P operations instead of interface %s",
-				dut->p2p_ifname ? dut->p2p_ifname : "NULL",
-				get_station_ifname(dut));
+		sigma_dut_print(
+			&sigma_dut, DUT_MSG_INFO,
+			"Using interface %s for P2P operations instead of interface %s",
+			dut->p2p_ifname ? dut->p2p_ifname : "NULL",
+			get_station_ifname(dut));
 	} else {
 		dut->p2p_ifname = get_station_ifname(dut);
 	}
 }
-
 
 static int get_nl80211_config_enable_option(struct sigma_dut *dut)
 {
@@ -832,7 +817,6 @@ static int get_nl80211_config_enable_option(struct sigma_dut *dut)
 
 	return 0;
 }
-
 
 static void set_defaults(struct sigma_dut *dut)
 {
@@ -862,7 +846,6 @@ static void set_defaults(struct sigma_dut *dut)
 #endif /* ANDROID */
 	dut->autoconnect_default = 1;
 }
-
 
 static void deinit_sigma_dut(struct sigma_dut *dut)
 {
@@ -910,7 +893,6 @@ static void deinit_sigma_dut(struct sigma_dut *dut)
 	free_dscp_policy_table(dut);
 }
 
-
 static void set_main_ifname(struct sigma_dut *dut, const char *val)
 {
 	const char *pos;
@@ -928,7 +910,6 @@ static void set_main_ifname(struct sigma_dut *dut, const char *val)
 	free(dut->main_ifname_5g);
 	dut->main_ifname_5g = strdup(pos + 1);
 }
-
 
 static void set_station_ifname(struct sigma_dut *dut, const char *val)
 {
@@ -948,55 +929,51 @@ static void set_station_ifname(struct sigma_dut *dut, const char *val)
 	dut->station_ifname_5g = strdup(pos + 1);
 }
 
-
-static const char * const license1 =
-"sigma_dut - WFA Sigma DUT/CA\n"
-"----------------------------\n"
-"\n"
-"Copyright (c) 2010-2011, Atheros Communications, Inc.\n"
-"Copyright (c) 2011-2017, Qualcomm Atheros, Inc.\n"
-"Copyright (c) 2018-2021, The Linux Foundation\n"
-"All Rights Reserved.\n"
-"Licensed under the Clear BSD license.\n"
-"\n";
-static const char * const license2 =
-"Redistribution and use in source and binary forms, with or without\n"
-"modification, are permitted (subject to the limitations in the\n"
-"disclaimer below) provided that the following conditions are met:\n"
-"\n";
-static const char * const license3 =
-"* Redistributions of source code must retain the above copyright notice,\n"
-"  this list of conditions and the following disclaimer.\n"
-"\n"
-"* Redistributions in binary form must reproduce the above copyright\n"
-"  notice, this list of conditions and the following disclaimer in the\n"
-"  documentation and/or other materials provided with the distribution.\n"
-"\n"
-"* Neither the name of Qualcomm Atheros, Inc. nor the names of its\n"
-"  contributors may be used to endorse or promote products derived from\n"
-"  this software without specific prior written permission.\n"
-"\n";
-static const char * const license4 =
-"NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED\n"
-"BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND\n"
-"CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,\n"
-"BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND\n"
-"FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n"
-"COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,\n"
-"INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT\n"
-"NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF\n"
-"USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"
-"ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
-"THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n";
-
+static const char *const license1 =
+	"sigma_dut - WFA Sigma DUT/CA\n"
+	"----------------------------\n"
+	"\n"
+	"Copyright (c) 2010-2011, Atheros Communications, Inc.\n"
+	"Copyright (c) 2011-2017, Qualcomm Atheros, Inc.\n"
+	"Copyright (c) 2018-2021, The Linux Foundation\n"
+	"All Rights Reserved.\n"
+	"Licensed under the Clear BSD license.\n"
+	"\n";
+static const char *const license2 =
+	"Redistribution and use in source and binary forms, with or without\n"
+	"modification, are permitted (subject to the limitations in the\n"
+	"disclaimer below) provided that the following conditions are met:\n"
+	"\n";
+static const char *const license3 =
+	"* Redistributions of source code must retain the above copyright notice,\n"
+	"  this list of conditions and the following disclaimer.\n"
+	"\n"
+	"* Redistributions in binary form must reproduce the above copyright\n"
+	"  notice, this list of conditions and the following disclaimer in the\n"
+	"  documentation and/or other materials provided with the distribution.\n"
+	"\n"
+	"* Neither the name of Qualcomm Atheros, Inc. nor the names of its\n"
+	"  contributors may be used to endorse or promote products derived from\n"
+	"  this software without specific prior written permission.\n"
+	"\n";
+static const char *const license4 =
+	"NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED\n"
+	"BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND\n"
+	"CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,\n"
+	"BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND\n"
+	"FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n"
+	"COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,\n"
+	"INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT\n"
+	"NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF\n"
+	"USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"
+	"ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+	"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF\n"
+	"THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n";
 
 static void print_license(void)
 {
-	printf("%s%s%s%s\n",
-	       license1, license2, license3, license4);
+	printf("%s%s%s%s\n", license1, license2, license3, license4);
 }
-
 
 static void usage(void)
 {
@@ -1035,7 +1012,6 @@ static void usage(void)
 	printf("local command: sigma_dut [-p<port>] <-l<cmd>>\n");
 }
 
-
 int main(int argc, char *argv[])
 {
 	int c;
@@ -1053,8 +1029,10 @@ int main(int argc, char *argv[])
 	set_defaults(&sigma_dut);
 
 	for (;;) {
-		c = getopt(argc, argv,
-			   "aAb:Bc:C:dDE:e:fF:gGhH:j:J:i:Ik:K:l:L:m:M:nN:o:O:p:P:qQr:R:s:S:tT:uv:VWw:x:y:z:Z:2345:6:7");
+		c = getopt(
+			argc, argv,
+			"aAb:Bc:C:dDE:e:fF:gGhH:j:J:i:Ik:K:l:L:m:M:nN:o:O:p:P:qQr:R:s:S:"
+			"tT:uv:VWw:x:y:z:Z:2345:6:7");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -1094,7 +1072,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'g':
 			/* Enable internal processing of P2P group formation
-			 * events to start/stop DHCP server/client. */
+       * events to start/stop DHCP server/client. */
 			internal_dhcp_enabled = 1;
 			break;
 		case 'G':
@@ -1223,10 +1201,10 @@ int main(int argc, char *argv[])
 			sigma_wmm_ac = 1;
 			break;
 		case 'u':
-		       sigma_dut_print(&sigma_dut, DUT_MSG_INFO,
-				       "Use iface down/up in reset cmd");
-		       sigma_dut.iface_down_on_reset = 1;
-		       break;
+			sigma_dut_print(&sigma_dut, DUT_MSG_INFO,
+					"Use iface down/up in reset cmd");
+			sigma_dut.iface_down_on_reset = 1;
+			break;
 		case 'A':
 			sigma_dut.sim_no_username = 1;
 			break;
@@ -1267,8 +1245,9 @@ int main(int argc, char *argv[])
 			errno = 0;
 			timeout = strtol(optarg, NULL, 10);
 			if (errno || timeout < 0) {
-				sigma_dut_print(&sigma_dut, DUT_MSG_ERROR,
-					       "failed to set default_timeout");
+				sigma_dut_print(
+					&sigma_dut, DUT_MSG_ERROR,
+					"failed to set default_timeout");
 				return -1;
 			}
 			sigma_dut_print(&sigma_dut, DUT_MSG_INFO,
@@ -1310,8 +1289,10 @@ int main(int argc, char *argv[])
 	if ((wifi_chip_type == DRIVER_QNXNTO ||
 	     wifi_chip_type == DRIVER_LINUX_WCN) &&
 	    (!sigma_dut.main_ifname || !sigma_dut.station_ifname)) {
-		sigma_dut_print(&sigma_dut, DUT_MSG_ERROR,
-				"Interface should be provided for QNX/LINUX-WCN driver - check option M and S");
+		sigma_dut_print(
+			&sigma_dut, DUT_MSG_ERROR,
+			"Interface should be provided for QNX/LINUX-WCN driver - "
+			"check option M and S");
 	}
 
 	if (get_openwrt_driver_type() == OPENWRT_DRIVER_ATHEROS)
@@ -1335,8 +1316,8 @@ int main(int argc, char *argv[])
 	if (sigma_ctrl_sock) {
 		env_str = getenv("SOCK");
 		if (env_str) {
-			sigma_dut_print(&sigma_dut, DUT_MSG_INFO,
-					"SOCK=%s", env_str);
+			sigma_dut_print(&sigma_dut, DUT_MSG_INFO, "SOCK=%s",
+					env_str);
 		}
 		snprintf(buf, sizeof(buf), "SOCK=%s", sigma_ctrl_sock);
 		if (putenv(buf) != 0) {

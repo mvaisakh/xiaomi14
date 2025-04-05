@@ -15,7 +15,7 @@
 
 #define DHCP_SERVER_PORT 67
 #define DHCP_CLIENT_PORT 68
-#define DHCP_ACK         5
+#define DHCP_ACK 5
 
 #define UDP_PROTOCOL 17
 
@@ -40,7 +40,7 @@ struct dhcp_pkt {
 	u8 boot_file[128];
 	u32 magic_cookie;
 	u8 options[314];
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 enum dhcp_options {
 	DHCP_OPT_SUBNET_MASK = 1,
@@ -49,8 +49,7 @@ enum dhcp_options {
 	DHCP_OPT_END = 255
 };
 
-
-static u8 * get_dhcp_option(u8 *options, u8 type, int len)
+static u8 *get_dhcp_option(u8 *options, u8 type, int len)
 {
 	u8 *pos = options;
 	u8 *end = pos + len;
@@ -63,13 +62,12 @@ static u8 * get_dhcp_option(u8 *options, u8 type, int len)
 	return NULL;
 }
 
-
 /**
  * 1. Open UDP socket
  * 2. read_msg
  * 3. Process DHCP_ACK
  */
-static void * process_dhcp_ack(void *ptr)
+static void *process_dhcp_ack(void *ptr)
 {
 	struct bpf_program pcap_fp;
 	char pcap_filter[200], pcap_err[PCAP_ERRBUF_SIZE];
@@ -104,8 +102,7 @@ static void * process_dhcp_ack(void *ptr)
 	}
 
 	snprintf(pcap_filter, sizeof(pcap_filter),
-		 "ip proto 0x%x and udp src port 0x%x",
-		 protocol, port_no);
+		 "ip proto 0x%x and udp src port 0x%x", protocol, port_no);
 	sigma_dut_print(dut, DUT_MSG_INFO, "pcap_flter %s", pcap_filter);
 
 	if (pcap_compile(pcap, &pcap_fp, pcap_filter, 1, pcap_netp) < 0)
@@ -135,19 +132,20 @@ static void * process_dhcp_ack(void *ptr)
 		hex_dump(dut, buf, nbytes);
 
 		if (nbytes < 314) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"HLP: Ignore MSG, Too short message received");
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"HLP: Ignore MSG, Too short message received");
 			continue;
 		}
 		nbytes -= 14;
 
 		/*
-		 * Process DHCP packet
-		 * skip ethernet header from buf and then process the ack
-		 */
-		dhcp = (struct dhcp_pkt *) (buf + ETH_HLEN);
+     * Process DHCP packet
+     * skip ethernet header from buf and then process the ack
+     */
+		dhcp = (struct dhcp_pkt *)(buf + ETH_HLEN);
 
-		option_len = nbytes - ((char *) dhcp->options - (char *) dhcp);
+		option_len = nbytes - ((char *)dhcp->options - (char *)dhcp);
 
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
 				"option_len %d, First option : %02x",
@@ -157,8 +155,9 @@ static void * process_dhcp_ack(void *ptr)
 		msg_type = get_dhcp_option(dhcp->options, DHCP_OPT_MSG_TYPE,
 					   option_len);
 		if (!msg_type) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Ignore MSG, DHCP OPT MSG_TYPE missing");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Ignore MSG, DHCP OPT MSG_TYPE missing");
 			continue;
 		}
 
@@ -222,12 +221,10 @@ exit:
 	return NULL;
 }
 
-
 static void hlp_thread_exit(int signum)
 {
 	pthread_exit(0);
 }
-
 
 void hlp_thread_cleanup(struct sigma_dut *dut)
 {
@@ -242,7 +239,6 @@ void hlp_thread_cleanup(struct sigma_dut *dut)
 		dut->hlp_thread = 0;
 	}
 }
-
 
 void process_fils_hlp(struct sigma_dut *dut)
 {
@@ -260,11 +256,10 @@ void process_fils_hlp(struct sigma_dut *dut)
 
 	/* create FILS_HLP thread */
 	if (!pthread_create(&hlp_thread, NULL, &process_dhcp_ack,
-			    (void *) dut)) {
+			    (void *)dut)) {
 		dut->hlp_thread = hlp_thread;
 	} else {
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
 				"FILS_HLP thread creation failed");
 	}
-
 }

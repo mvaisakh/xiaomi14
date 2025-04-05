@@ -18,8 +18,8 @@
  */
 
 #include "wifi_pos_ucfg_api.h"
-#include "wifi_pos_utils_i.h"
 #include "os_if_wifi_pos_utils.h"
+#include "wifi_pos_utils_i.h"
 
 #if defined(WIFI_POS_CONVERGED) && defined(WLAN_FEATURE_RTT_11AZ_SUPPORT)
 QDF_STATUS

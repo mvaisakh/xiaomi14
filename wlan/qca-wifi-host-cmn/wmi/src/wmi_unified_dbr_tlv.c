@@ -17,11 +17,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <osdep.h>
 #include "wmi.h"
-#include "wmi_unified_priv.h"
-#include "wmi_unified_dbr_param.h"
 #include "wmi_unified_dbr_api.h"
+#include "wmi_unified_dbr_param.h"
+#include "wmi_unified_priv.h"
+#include <osdep.h>
 
 /**
  * send_dbr_cfg_cmd_tlv() - configure DMA rings for Direct Buf RX
@@ -31,7 +31,7 @@
  * Return: QDF_STATUS_SUCCESS on success and QDF_STATUS_E_FAILURE for failure
  */
 static QDF_STATUS send_dbr_cfg_cmd_tlv(wmi_unified_t wmi_handle,
-				struct direct_buf_rx_cfg_req *cfg)
+				       struct direct_buf_rx_cfg_req *cfg)
 {
 	wmi_buf_t buf;
 	wmi_dma_ring_cfg_req_fixed_param *cmd;
@@ -46,13 +46,13 @@ static QDF_STATUS send_dbr_cfg_cmd_tlv(wmi_unified_t wmi_handle,
 
 	cmd = (wmi_dma_ring_cfg_req_fixed_param *)wmi_buf_data(buf);
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_wmi_dma_ring_cfg_req_fixed_param,
 		WMITLV_GET_STRUCT_TLVLEN(wmi_dma_ring_cfg_req_fixed_param));
 
 	cmd->pdev_id = wmi_handle->ops->convert_host_pdev_id_to_target(
-						wmi_handle,
-						cfg->pdev_id);
+		wmi_handle, cfg->pdev_id);
 	cmd->mod_id = cfg->mod_id;
 	cmd->base_paddr_lo = cfg->base_paddr_lo;
 	cmd->base_paddr_hi = cfg->base_paddr_hi;
@@ -69,15 +69,15 @@ static QDF_STATUS send_dbr_cfg_cmd_tlv(wmi_unified_t wmi_handle,
 		  "base paddr lo %x base paddr hi %x head idx paddr lo %x"
 		  "head idx paddr hi %x tail idx paddr lo %x"
 		  "tail idx addr hi %x num elems %d buf size %d num resp %d"
-		  "event timeout %d", cmd->pdev_id,
-		  cmd->mod_id, cmd->base_paddr_lo, cmd->base_paddr_hi,
-		  cmd->head_idx_paddr_lo, cmd->head_idx_paddr_hi,
-		  cmd->tail_idx_paddr_lo, cmd->tail_idx_paddr_hi,
-		  cmd->num_elems, cmd->buf_size, cmd->num_resp_per_event,
-		  cmd->event_timeout_ms);
+		  "event timeout %d",
+		  cmd->pdev_id, cmd->mod_id, cmd->base_paddr_lo,
+		  cmd->base_paddr_hi, cmd->head_idx_paddr_lo,
+		  cmd->head_idx_paddr_hi, cmd->tail_idx_paddr_lo,
+		  cmd->tail_idx_paddr_hi, cmd->num_elems, cmd->buf_size,
+		  cmd->num_resp_per_event, cmd->event_timeout_ms);
 	wmi_mtrace(WMI_PDEV_DMA_RING_CFG_REQ_CMDID, NO_SESSION, 0);
 	ret = wmi_unified_cmd_send(wmi_handle, buf, len,
-				WMI_PDEV_DMA_RING_CFG_REQ_CMDID);
+				   WMI_PDEV_DMA_RING_CFG_REQ_CMDID);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		wmi_err(":wmi cmd send failed");
 		wmi_buf_free(buf);
@@ -87,9 +87,8 @@ static QDF_STATUS send_dbr_cfg_cmd_tlv(wmi_unified_t wmi_handle,
 }
 
 static QDF_STATUS extract_scaling_params_service_ready_ext_tlv(
-			wmi_unified_t wmi_handle,
-			uint8_t *event, uint8_t idx,
-			struct wlan_psoc_host_spectral_scaling_params *param)
+	wmi_unified_t wmi_handle, uint8_t *event, uint8_t idx,
+	struct wlan_psoc_host_spectral_scaling_params *param)
 {
 	WMI_SERVICE_READY_EXT_EVENTID_param_tlvs *param_buf;
 	wmi_spectral_bin_scaling_params *spectral_bin_scaling_params;
@@ -101,8 +100,7 @@ static QDF_STATUS extract_scaling_params_service_ready_ext_tlv(
 	spectral_bin_scaling_params = &param_buf->wmi_bin_scaling_params[idx];
 
 	param->pdev_id = wmi_handle->ops->convert_target_pdev_id_to_host(
-					wmi_handle,
-					spectral_bin_scaling_params->pdev_id);
+		wmi_handle, spectral_bin_scaling_params->pdev_id);
 	param->low_level_offset = spectral_bin_scaling_params->low_level_offset;
 	param->formula_id = spectral_bin_scaling_params->formula_id;
 	param->high_level_offset =
@@ -114,8 +112,9 @@ static QDF_STATUS extract_scaling_params_service_ready_ext_tlv(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_dbr_buf_release_fixed_tlv(wmi_unified_t wmi_handle,
-		uint8_t *event, struct direct_buf_rx_rsp *param)
+static QDF_STATUS
+extract_dbr_buf_release_fixed_tlv(wmi_unified_t wmi_handle, uint8_t *event,
+				  struct direct_buf_rx_rsp *param)
 {
 	WMI_PDEV_DMA_RING_BUF_RELEASE_EVENTID_param_tlvs *param_buf;
 	wmi_dma_buf_release_fixed_param *ev;
@@ -129,8 +128,7 @@ static QDF_STATUS extract_dbr_buf_release_fixed_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_INVAL;
 
 	param->pdev_id = wmi_handle->ops->convert_target_pdev_id_to_host(
-								wmi_handle,
-								ev->pdev_id);
+		wmi_handle, ev->pdev_id);
 	param->mod_id = ev->mod_id;
 	if ((!param_buf->num_entries) ||
 	    param_buf->num_entries < ev->num_buf_release_entry) {
@@ -140,7 +138,7 @@ static QDF_STATUS extract_dbr_buf_release_fixed_tlv(wmi_unified_t wmi_handle,
 	param->num_buf_release_entry = ev->num_buf_release_entry;
 	if (((!param_buf->num_meta_data) ||
 	     param_buf->num_meta_data < ev->num_meta_data_entry) &&
-	     ((!param_buf->num_cv_meta_data) ||
+	    ((!param_buf->num_cv_meta_data) ||
 	     param_buf->num_cv_meta_data < ev->num_meta_data_entry)) {
 		wmi_err(" actual num of meta data entries less than provided entries");
 		return QDF_STATUS_E_INVAL;
@@ -148,13 +146,15 @@ static QDF_STATUS extract_dbr_buf_release_fixed_tlv(wmi_unified_t wmi_handle,
 	param->num_meta_data_entry = param_buf->num_meta_data;
 	param->num_cv_meta_data_entry = param_buf->num_cv_meta_data;
 	wmi_debug("pdev id %d mod id %d num buf release entry %d",
-		 param->pdev_id, param->mod_id, param->num_buf_release_entry);
+		  param->pdev_id, param->mod_id, param->num_buf_release_entry);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_dbr_buf_release_entry_tlv(wmi_unified_t wmi_handle,
-		uint8_t *event, uint8_t idx, struct direct_buf_rx_entry *param)
+static QDF_STATUS
+extract_dbr_buf_release_entry_tlv(wmi_unified_t wmi_handle, uint8_t *event,
+				  uint8_t idx,
+				  struct direct_buf_rx_entry *param)
 {
 	WMI_PDEV_DMA_RING_BUF_RELEASE_EVENTID_param_tlvs *param_buf;
 	wmi_dma_buf_release_entry *entry;
@@ -178,9 +178,9 @@ static QDF_STATUS extract_dbr_buf_release_entry_tlv(wmi_unified_t wmi_handle,
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_dbr_buf_metadata_tlv(
-		wmi_unified_t wmi_handle, uint8_t *event,
-		uint8_t idx, struct direct_buf_rx_metadata *param)
+static QDF_STATUS
+extract_dbr_buf_metadata_tlv(wmi_unified_t wmi_handle, uint8_t *event,
+			     uint8_t idx, struct direct_buf_rx_metadata *param)
 {
 	WMI_PDEV_DMA_RING_BUF_RELEASE_EVENTID_param_tlvs *param_buf;
 	wmi_dma_buf_release_spectral_meta_data *entry;
@@ -207,9 +207,10 @@ static QDF_STATUS extract_dbr_buf_metadata_tlv(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_dbr_buf_cv_metadata_tlv(
-		wmi_unified_t wmi_handle, uint8_t *event,
-		uint8_t idx, struct direct_buf_rx_cv_metadata *param)
+static QDF_STATUS
+extract_dbr_buf_cv_metadata_tlv(wmi_unified_t wmi_handle, uint8_t *event,
+				uint8_t idx,
+				struct direct_buf_rx_cv_metadata *param)
 {
 	WMI_PDEV_DMA_RING_BUF_RELEASE_EVENTID_param_tlvs *param_buf;
 	wmi_dma_buf_release_cv_upload_meta_data *ev;
@@ -252,5 +253,5 @@ void wmi_dbr_attach_tlv(wmi_unified_t wmi_handle)
 	ops->extract_dbr_buf_cv_metadata = extract_dbr_buf_cv_metadata_tlv;
 	ops->extract_dbr_buf_release_fixed = extract_dbr_buf_release_fixed_tlv;
 	ops->extract_scaling_params_service_ready_ext =
-			extract_scaling_params_service_ready_ext_tlv;
+		extract_scaling_params_service_ready_ext_tlv;
 }

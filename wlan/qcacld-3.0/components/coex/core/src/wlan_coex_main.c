@@ -19,9 +19,9 @@
  * DOC: contains definitions for coex core functions
  */
 
-#include <wlan_coex_ucfg_api.h>
-#include <wlan_coex_tgt_api.h>
 #include <wlan_coex_main.h>
+#include <wlan_coex_tgt_api.h>
+#include <wlan_coex_ucfg_api.h>
 
 QDF_STATUS wlan_coex_psoc_created_notification(struct wlan_objmgr_psoc *psoc,
 					       void *arg_list)
@@ -36,10 +36,8 @@ QDF_STATUS wlan_coex_psoc_created_notification(struct wlan_objmgr_psoc *psoc,
 	psoc_obj->btc_chain_mode = WLAN_COEX_BTC_CHAIN_MODE_UNSETTLED;
 
 	/* Attach scan private date to psoc */
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						       WLAN_UMAC_COMP_COEX,
-						       psoc_obj,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_COEX, psoc_obj, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		coex_err("Failed to attach psoc coex component");
 		qdf_mem_free(psoc_obj);
@@ -60,9 +58,8 @@ QDF_STATUS wlan_coex_psoc_destroyed_notification(struct wlan_objmgr_psoc *psoc,
 	if (!psoc_obj)
 		return QDF_STATUS_E_FAILURE;
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-						       WLAN_UMAC_COMP_COEX,
-						       psoc_obj);
+	status = wlan_objmgr_psoc_component_obj_detach(
+		psoc, WLAN_UMAC_COMP_COEX, psoc_obj);
 	if (QDF_IS_STATUS_ERROR(status))
 		coex_err("Failed to detach psoc coex component");
 

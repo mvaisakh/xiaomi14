@@ -4,50 +4,48 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <linux/delay.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
-#include <linux/delay.h>
 #include <linux/timer.h>
 
-#include "cam_io_util.h"
-#include "cam_hw.h"
-#include "cam_hw_intf.h"
-#include "cre_core.h"
-#include "cre_soc.h"
-#include "cam_soc_util.h"
-#include "cam_io_util.h"
+#include "cam_compat.h"
+#include "cam_cpas_api.h"
 #include "cam_cre_hw_intf.h"
 #include "cam_cre_hw_mgr_intf.h"
-#include "cam_cpas_api.h"
 #include "cam_debug_util.h"
-#include "cre_dev_intf.h"
-#include "cam_compat.h"
-#include "cre_bus_wr.h"
+#include "cam_hw.h"
+#include "cam_hw_intf.h"
+#include "cam_io_util.h"
+#include "cam_soc_util.h"
 #include "cre_bus_rd.h"
+#include "cre_bus_wr.h"
+#include "cre_core.h"
+#include "cre_dev_intf.h"
+#include "cre_soc.h"
 
 #define CAM_CRE_RESET_TIMEOUT msecs_to_jiffies(500)
 
 struct cam_cre_irq_data irq_data;
 
 static int cam_cre_caps_vote(struct cam_cre_device_core_info *core_info,
-	struct cam_cre_dev_bw_update *cpas_vote)
+			     struct cam_cre_dev_bw_update *cpas_vote)
 {
 	int rc = 0;
 
 	if (cpas_vote->ahb_vote_valid)
 		rc = cam_cpas_update_ahb_vote(core_info->cpas_handle,
-			&cpas_vote->ahb_vote);
+					      &cpas_vote->ahb_vote);
 	if (cpas_vote->axi_vote_valid)
 		rc = cam_cpas_update_axi_vote(core_info->cpas_handle,
-			&cpas_vote->axi_vote);
+					      &cpas_vote->axi_vote);
 	if (rc)
 		CAM_ERR(CAM_CRE, "cpas vote is failed: %d", rc);
 
 	return rc;
 }
 
-int cam_cre_get_hw_caps(void *hw_priv, void *get_hw_cap_args,
-	uint32_t arg_size)
+int cam_cre_get_hw_caps(void *hw_priv, void *get_hw_cap_args, uint32_t arg_size)
 {
 	struct cam_hw_info *cre_dev = hw_priv;
 	struct cam_hw_soc_info *soc_info = NULL;
@@ -64,8 +62,8 @@ int cam_cre_get_hw_caps(void *hw_priv, void *get_hw_cap_args,
 	core_info = (struct cam_cre_device_core_info *)cre_dev->core_info;
 
 	if ((!soc_info) || (!core_info)) {
-		CAM_ERR(CAM_CRE, "soc_info = %x core_info = %x",
-			soc_info, core_info);
+		CAM_ERR(CAM_CRE, "soc_info = %x core_info = %x", soc_info,
+			core_info);
 		return -EINVAL;
 	}
 
@@ -86,8 +84,7 @@ int cam_cre_get_hw_caps(void *hw_priv, void *get_hw_cap_args,
 	return 0;
 }
 
-static int cam_cre_dev_process_init(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+static int cam_cre_dev_process_init(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	int rc = 0;
 
@@ -96,33 +93,29 @@ static int cam_cre_dev_process_init(struct cam_cre_hw *cre_hw,
 		goto top_init_fail;
 
 	rc = cam_cre_bus_wr_process(cre_hw, 0, CRE_HW_INIT, cmd_args);
-		if (rc)
-			goto bus_wr_init_fail;
+	if (rc)
+		goto bus_wr_init_fail;
 
 	rc = cam_cre_bus_rd_process(cre_hw, 0, CRE_HW_INIT, cmd_args);
-		if (rc)
-			goto bus_rd_init_fail;
+	if (rc)
+		goto bus_rd_init_fail;
 
 	return rc;
 
 bus_rd_init_fail:
-	rc = cam_cre_bus_wr_process(cre_hw, 0,
-		CRE_HW_DEINIT, NULL);
+	rc = cam_cre_bus_wr_process(cre_hw, 0, CRE_HW_DEINIT, NULL);
 bus_wr_init_fail:
-	rc = cam_cre_top_process(cre_hw, 0,
-		CRE_HW_DEINIT, NULL);
+	rc = cam_cre_top_process(cre_hw, 0, CRE_HW_DEINIT, NULL);
 top_init_fail:
 	return rc;
 }
 
-static int cam_cre_process_init(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+static int cam_cre_process_init(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	return cam_cre_dev_process_init(cre_hw, cmd_args);
 }
 
-int cam_cre_init_hw(void *device_priv,
-	void *init_hw_args, uint32_t arg_size)
+int cam_cre_init_hw(void *device_priv, void *init_hw_args, uint32_t arg_size)
 {
 	struct cam_hw_info *cre_dev = device_priv;
 	struct cam_hw_soc_info *soc_info = NULL;
@@ -141,8 +134,8 @@ int cam_cre_init_hw(void *device_priv,
 	soc_info = &cre_dev->soc_info;
 	core_info = (struct cam_cre_device_core_info *)cre_dev->core_info;
 	if ((!soc_info) || (!core_info)) {
-		CAM_ERR(CAM_CRE, "soc_info = %pK core_info = %pK",
-			soc_info, core_info);
+		CAM_ERR(CAM_CRE, "soc_info = %pK core_info = %pK", soc_info,
+			core_info);
 		rc = -EINVAL;
 		goto end;
 	}
@@ -158,23 +151,17 @@ int cam_cre_init_hw(void *device_priv,
 	cpas_vote->ahb_vote.type = CAM_VOTE_ABSOLUTE;
 	cpas_vote->ahb_vote.vote.level = CAM_LOWSVS_D1_VOTE;
 	cpas_vote->axi_vote.num_paths = 1;
-	cpas_vote->axi_vote.axi_path[0].path_data_type =
-		CAM_AXI_PATH_DATA_ALL;
+	cpas_vote->axi_vote.axi_path[0].path_data_type = CAM_AXI_PATH_DATA_ALL;
 	cpas_vote->axi_vote.axi_path[0].transac_type =
 		CAM_AXI_TRANSACTION_WRITE;
-	cpas_vote->axi_vote.axi_path[0].camnoc_bw =
-		CAM_CPAS_DEFAULT_AXI_BW;
-	cpas_vote->axi_vote.axi_path[0].mnoc_ab_bw =
-		CAM_CPAS_DEFAULT_AXI_BW;
-	cpas_vote->axi_vote.axi_path[0].mnoc_ib_bw =
-		CAM_CPAS_DEFAULT_AXI_BW;
-	cpas_vote->axi_vote.axi_path[0].ddr_ab_bw =
-		CAM_CPAS_DEFAULT_AXI_BW;
-	cpas_vote->axi_vote.axi_path[0].ddr_ib_bw =
-		CAM_CPAS_DEFAULT_AXI_BW;
+	cpas_vote->axi_vote.axi_path[0].camnoc_bw = CAM_CPAS_DEFAULT_AXI_BW;
+	cpas_vote->axi_vote.axi_path[0].mnoc_ab_bw = CAM_CPAS_DEFAULT_AXI_BW;
+	cpas_vote->axi_vote.axi_path[0].mnoc_ib_bw = CAM_CPAS_DEFAULT_AXI_BW;
+	cpas_vote->axi_vote.axi_path[0].ddr_ab_bw = CAM_CPAS_DEFAULT_AXI_BW;
+	cpas_vote->axi_vote.axi_path[0].ddr_ib_bw = CAM_CPAS_DEFAULT_AXI_BW;
 
-	rc = cam_cpas_start(core_info->cpas_handle,
-		&cpas_vote->ahb_vote, &cpas_vote->axi_vote);
+	rc = cam_cpas_start(core_info->cpas_handle, &cpas_vote->ahb_vote,
+			    &cpas_vote->axi_vote);
 	if (rc) {
 		CAM_ERR(CAM_CRE, "cpass start failed: %d", rc);
 		goto free_cpas_vote;
@@ -211,8 +198,7 @@ end:
 	return rc;
 }
 
-int cam_cre_deinit_hw(void *device_priv,
-	void *init_hw_args, uint32_t arg_size)
+int cam_cre_deinit_hw(void *device_priv, void *init_hw_args, uint32_t arg_size)
 {
 	struct cam_hw_info *cre_dev = device_priv;
 	struct cam_hw_soc_info *soc_info = NULL;
@@ -227,8 +213,8 @@ int cam_cre_deinit_hw(void *device_priv,
 	soc_info = &cre_dev->soc_info;
 	core_info = (struct cam_cre_device_core_info *)cre_dev->core_info;
 	if ((!soc_info) || (!core_info)) {
-		CAM_ERR(CAM_CRE, "soc_info = %pK core_info = %pK",
-			soc_info, core_info);
+		CAM_ERR(CAM_CRE, "soc_info = %pK core_info = %pK", soc_info,
+			core_info);
 		return -EINVAL;
 	}
 
@@ -244,8 +230,7 @@ static int cam_cre_dev_process_dump_debug_reg(struct cam_cre_hw *cre_hw)
 {
 	int rc = 0;
 
-	rc = cam_cre_top_process(cre_hw, -1,
-		CRE_HW_DUMP_DEBUG, NULL);
+	rc = cam_cre_top_process(cre_hw, -1, CRE_HW_DUMP_DEBUG, NULL);
 
 	return rc;
 }
@@ -254,88 +239,92 @@ static int cam_cre_dev_process_reset(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	int rc = 0;
 
-	rc = cam_cre_top_process(cre_hw, -1,
-		CRE_HW_RESET, NULL);
+	rc = cam_cre_top_process(cre_hw, -1, CRE_HW_RESET, NULL);
 
 	return rc;
 }
 
-static int cam_cre_dev_process_release(struct cam_cre_hw *cre_hw, void *cmd_args)
+static int cam_cre_dev_process_release(struct cam_cre_hw *cre_hw,
+				       void *cmd_args)
 {
 	int rc = 0;
 	struct cam_cre_dev_release *cre_dev_release;
 
 	cre_dev_release = cmd_args;
 	rc = cam_cre_top_process(cre_hw, cre_dev_release->ctx_id,
-		CRE_HW_RELEASE, NULL);
+				 CRE_HW_RELEASE, NULL);
 
 	rc |= cam_cre_bus_wr_process(cre_hw, cre_dev_release->ctx_id,
-		CRE_HW_RELEASE, NULL);
+				     CRE_HW_RELEASE, NULL);
 
 	rc |= cam_cre_bus_rd_process(cre_hw, cre_dev_release->ctx_id,
-		CRE_HW_RELEASE, NULL);
+				     CRE_HW_RELEASE, NULL);
 
 	return rc;
 }
 
-static int cam_cre_dev_process_acquire(struct cam_cre_hw *cre_hw, void *cmd_args)
+static int cam_cre_dev_process_acquire(struct cam_cre_hw *cre_hw,
+				       void *cmd_args)
 {
 	int rc = 0;
 	struct cam_cre_dev_acquire *cre_dev_acquire;
 
 	if (!cmd_args || !cre_hw) {
-		CAM_ERR(CAM_CRE, "Invalid arguments: %pK %pK",
-		cmd_args, cre_hw);
+		CAM_ERR(CAM_CRE, "Invalid arguments: %pK %pK", cmd_args,
+			cre_hw);
 		return -EINVAL;
 	}
 
 	cre_dev_acquire = cmd_args;
 	rc = cam_cre_top_process(cre_hw, cre_dev_acquire->ctx_id,
-		CRE_HW_ACQUIRE, cre_dev_acquire);
+				 CRE_HW_ACQUIRE, cre_dev_acquire);
 	if (rc)
 		goto top_acquire_fail;
 
 	rc = cam_cre_bus_wr_process(cre_hw, cre_dev_acquire->ctx_id,
-		CRE_HW_ACQUIRE, cre_dev_acquire->cre_acquire);
+				    CRE_HW_ACQUIRE,
+				    cre_dev_acquire->cre_acquire);
 	if (rc)
 		goto bus_wr_acquire_fail;
 
 	rc = cam_cre_bus_rd_process(cre_hw, cre_dev_acquire->ctx_id,
-		CRE_HW_ACQUIRE, cre_dev_acquire->cre_acquire);
+				    CRE_HW_ACQUIRE,
+				    cre_dev_acquire->cre_acquire);
 	if (rc)
 		goto bus_rd_acquire_fail;
 
 	return 0;
 
 bus_rd_acquire_fail:
-	cam_cre_bus_wr_process(cre_hw, cre_dev_acquire->ctx_id,
-		CRE_HW_RELEASE, cre_dev_acquire->cre_acquire);
+	cam_cre_bus_wr_process(cre_hw, cre_dev_acquire->ctx_id, CRE_HW_RELEASE,
+			       cre_dev_acquire->cre_acquire);
 bus_wr_acquire_fail:
-	cam_cre_top_process(cre_hw, cre_dev_acquire->ctx_id,
-		CRE_HW_RELEASE, cre_dev_acquire->cre_acquire);
+	cam_cre_top_process(cre_hw, cre_dev_acquire->ctx_id, CRE_HW_RELEASE,
+			    cre_dev_acquire->cre_acquire);
 top_acquire_fail:
 	return rc;
 }
 
-static int cam_cre_dev_process_reg_set_update(struct cam_cre_hw *cre_hw, void *cmd_args)
+static int cam_cre_dev_process_reg_set_update(struct cam_cre_hw *cre_hw,
+					      void *cmd_args)
 {
 	int rc = 0;
 	struct cam_cre_dev_reg_set_update *reg_set_update;
 
 	reg_set_update = cmd_args;
 
-	rc = cam_cre_top_process(cre_hw, 0,
-		CRE_HW_REG_SET_UPDATE, reg_set_update);
+	rc = cam_cre_top_process(cre_hw, 0, CRE_HW_REG_SET_UPDATE,
+				 reg_set_update);
 	if (rc)
 		goto end;
 
-	rc = cam_cre_bus_wr_process(cre_hw, 0,
-		CRE_HW_REG_SET_UPDATE, reg_set_update);
+	rc = cam_cre_bus_wr_process(cre_hw, 0, CRE_HW_REG_SET_UPDATE,
+				    reg_set_update);
 	if (rc)
 		goto end;
 
-	rc = cam_cre_bus_rd_process(cre_hw, 0,
-		CRE_HW_REG_SET_UPDATE, reg_set_update);
+	rc = cam_cre_bus_rd_process(cre_hw, 0, CRE_HW_REG_SET_UPDATE,
+				    reg_set_update);
 	if (rc)
 		goto end;
 
@@ -343,7 +332,8 @@ end:
 	return rc;
 }
 
-static int cam_cre_dev_process_prepare(struct cam_cre_hw *cre_hw, void *cmd_args)
+static int cam_cre_dev_process_prepare(struct cam_cre_hw *cre_hw,
+				       void *cmd_args)
 {
 	int rc = 0;
 	struct cam_cre_dev_prepare_req *cre_dev_prepare_req;
@@ -351,19 +341,19 @@ static int cam_cre_dev_process_prepare(struct cam_cre_hw *cre_hw, void *cmd_args
 	cre_dev_prepare_req = cmd_args;
 
 	rc = cam_cre_top_process(cre_hw, cre_dev_prepare_req->ctx_data->ctx_id,
-		CRE_HW_PREPARE, cre_dev_prepare_req);
+				 CRE_HW_PREPARE, cre_dev_prepare_req);
 	if (rc)
 		goto end;
 
 	rc = cam_cre_bus_wr_process(cre_hw,
-		cre_dev_prepare_req->ctx_data->ctx_id,
-		CRE_HW_PREPARE, cre_dev_prepare_req);
+				    cre_dev_prepare_req->ctx_data->ctx_id,
+				    CRE_HW_PREPARE, cre_dev_prepare_req);
 	if (rc)
 		goto end;
 
 	rc = cam_cre_bus_rd_process(cre_hw,
-		cre_dev_prepare_req->ctx_data->ctx_id,
-		CRE_HW_PREPARE, cre_dev_prepare_req);
+				    cre_dev_prepare_req->ctx_data->ctx_id,
+				    CRE_HW_PREPARE, cre_dev_prepare_req);
 	if (rc)
 		goto end;
 
@@ -371,8 +361,7 @@ end:
 	return rc;
 }
 
-static int cam_cre_dev_process_probe(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+static int cam_cre_dev_process_probe(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	cam_cre_top_process(cre_hw, -1, CRE_HW_PROBE, NULL);
 	cam_cre_bus_wr_process(cre_hw, -1, CRE_HW_PROBE, NULL);
@@ -381,8 +370,7 @@ static int cam_cre_dev_process_probe(struct cam_cre_hw *cre_hw,
 	return 0;
 }
 
-static int cam_cre_process_probe(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+static int cam_cre_process_probe(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	return cam_cre_dev_process_probe(cre_hw, cmd_args);
 }
@@ -392,38 +380,34 @@ static int cam_cre_process_dump_debug_reg(struct cam_cre_hw *cre_hw)
 	return cam_cre_dev_process_dump_debug_reg(cre_hw);
 }
 
-static int cam_cre_process_reset(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+static int cam_cre_process_reset(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	return cam_cre_dev_process_reset(cre_hw, cmd_args);
 }
 
-static int cam_cre_process_release(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+static int cam_cre_process_release(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	return cam_cre_dev_process_release(cre_hw, cmd_args);
 }
 
-static int cam_cre_process_acquire(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+static int cam_cre_process_acquire(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	return cam_cre_dev_process_acquire(cre_hw, cmd_args);
 }
 
-static int cam_cre_process_prepare(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+static int cam_cre_process_prepare(struct cam_cre_hw *cre_hw, void *cmd_args)
 {
 	return cam_cre_dev_process_prepare(cre_hw, cmd_args);
 }
 
 static int cam_cre_process_reg_set_update(struct cam_cre_hw *cre_hw,
-	void *cmd_args)
+					  void *cmd_args)
 {
 	return cam_cre_dev_process_reg_set_update(cre_hw, cmd_args);
 }
 
-int cam_cre_process_cmd(void *device_priv, uint32_t cmd_type,
-	void *cmd_args, uint32_t arg_size)
+int cam_cre_process_cmd(void *device_priv, uint32_t cmd_type, void *cmd_args,
+			uint32_t arg_size)
 {
 	int rc = 0;
 	struct cam_hw_info *cre_dev = device_priv;
@@ -433,16 +417,16 @@ int cam_cre_process_cmd(void *device_priv, uint32_t cmd_type,
 	unsigned long flags;
 
 	if (!device_priv) {
-		CAM_ERR(CAM_CRE, "Invalid args %x for cmd %u",
-			device_priv, cmd_type);
+		CAM_ERR(CAM_CRE, "Invalid args %x for cmd %u", device_priv,
+			cmd_type);
 		return -EINVAL;
 	}
 
 	soc_info = &cre_dev->soc_info;
 	core_info = (struct cam_cre_device_core_info *)cre_dev->core_info;
 	if ((!soc_info) || (!core_info)) {
-		CAM_ERR(CAM_CRE, "soc_info = %x core_info = %x",
-			soc_info, core_info);
+		CAM_ERR(CAM_CRE, "soc_info = %x core_info = %x", soc_info,
+			core_info);
 		return -EINVAL;
 	}
 
@@ -479,7 +463,8 @@ int cam_cre_process_cmd(void *device_priv, uint32_t cmd_type,
 			(struct cam_cre_dev_clk_update *)cmd_args;
 
 		if (!core_info->clk_enable) {
-			rc = cam_soc_util_clk_enable_default(soc_info, CAM_CLK_SW_CLIENT_IDX,
+			rc = cam_soc_util_clk_enable_default(
+				soc_info, CAM_CLK_SW_CLIENT_IDX,
 				soc_info->lowest_clk_level);
 			if (rc) {
 				CAM_ERR(CAM_CRE, "Clock enable is failed");
@@ -491,15 +476,14 @@ int cam_cre_process_cmd(void *device_priv, uint32_t cmd_type,
 		rc = cam_cre_update_clk_rate(soc_info, clk_upd_cmd->clk_rate);
 		if (rc)
 			CAM_ERR(CAM_CRE, "Failed to update clk: %d", rc);
-		}
-		break;
+	} break;
 	case CRE_HW_CLK_DISABLE: {
 		if (core_info->clk_enable)
-			cam_soc_util_clk_disable_default(soc_info, CAM_CLK_SW_CLIENT_IDX);
+			cam_soc_util_clk_disable_default(soc_info,
+							 CAM_CLK_SW_CLIENT_IDX);
 
 		core_info->clk_enable = false;
-		}
-		break;
+	} break;
 	case CRE_HW_BW_UPDATE: {
 		struct cam_cre_dev_bw_update *cpas_vote = cmd_args;
 
@@ -509,8 +493,7 @@ int cam_cre_process_cmd(void *device_priv, uint32_t cmd_type,
 		rc = cam_cre_caps_vote(core_info, cpas_vote);
 		if (rc)
 			CAM_ERR(CAM_CRE, "failed to update bw: %d", rc);
-		}
-		break;
+	} break;
 	case CRE_HW_SET_IRQ_CB: {
 		struct cam_cre_set_irq_cb *irq_cb = cmd_args;
 
@@ -523,8 +506,7 @@ int cam_cre_process_cmd(void *device_priv, uint32_t cmd_type,
 		core_info->irq_cb.cre_hw_mgr_cb = irq_cb->cre_hw_mgr_cb;
 		core_info->irq_cb.data = irq_cb->data;
 		spin_unlock_irqrestore(&cre_dev->hw_lock, flags);
-		}
-		break;
+	} break;
 	case CRE_HW_REG_SET_UPDATE:
 		rc = cam_cre_process_reg_set_update(cre_hw, cmd_args);
 		break;
@@ -563,12 +545,13 @@ irqreturn_t cam_cre_irq(int irq_num, void *data)
 		cam_cre_bus_rd_process(cre_hw, 0, CRE_HW_ISR, &irq_data);
 
 	spin_lock(&cre_dev->hw_lock);
-	CAM_DBG(CAM_CRE, "core_info->irq_cb.cre_hw_mgr_cb %x core_info->irq_cb.data %x",
-			core_info->irq_cb.cre_hw_mgr_cb, core_info->irq_cb.data);
+	CAM_DBG(CAM_CRE,
+		"core_info->irq_cb.cre_hw_mgr_cb %x core_info->irq_cb.data %x",
+		core_info->irq_cb.cre_hw_mgr_cb, core_info->irq_cb.data);
 	if (core_info->irq_cb.cre_hw_mgr_cb && core_info->irq_cb.data)
 		if (irq_data.error || irq_data.wr_buf_done)
-			core_info->irq_cb.cre_hw_mgr_cb(&irq_data,
-				sizeof(struct cam_hw_info),
+			core_info->irq_cb.cre_hw_mgr_cb(
+				&irq_data, sizeof(struct cam_hw_info),
 				core_info->irq_cb.data);
 	spin_unlock(&cre_dev->hw_lock);
 

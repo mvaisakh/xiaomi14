@@ -3,15 +3,15 @@
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
+#include "debug.h"
+#include "main.h"
+#include "power.h"
+#include "qmi.h"
+#include <linux/debugfs.h>
 #include <linux/err.h>
 #include <linux/seq_file.h>
-#include <linux/debugfs.h>
-#include <linux/uaccess.h>
 #include <linux/slab.h>
-#include "main.h"
-#include "debug.h"
-#include "qmi.h"
-#include "power.h"
+#include <linux/uaccess.h>
 
 void *icnss_ipc_log_context;
 void *icnss_ipc_log_long_context;
@@ -19,8 +19,8 @@ void *icnss_ipc_log_smp2p_context;
 void *icnss_ipc_soc_wake_context;
 
 static ssize_t icnss_regwrite_write(struct file *fp,
-				    const char __user *user_buf,
-				    size_t count, loff_t *off)
+				    const char __user *user_buf, size_t count,
+				    loff_t *off)
 {
 	struct icnss_priv *priv =
 		((struct seq_file *)fp->private_data)->private;
@@ -82,7 +82,8 @@ static int icnss_regwrite_show(struct seq_file *s, void *data)
 {
 	struct icnss_priv *priv = s->private;
 
-	seq_puts(s, "Usage: echo <mem_type> <offset> <reg_val> > <debugfs>/icnss/reg_write\n");
+	seq_puts(s, "Usage: echo <mem_type> <offset> <reg_val> > "
+		    "<debugfs>/icnss/reg_write\n");
 
 	if (!test_bit(ICNSS_FW_READY, &priv->state))
 		seq_puts(s, "Firmware is not ready yet!, wait for FW READY\n");
@@ -96,11 +97,11 @@ static int icnss_regwrite_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations icnss_regwrite_fops = {
-	.read		= seq_read,
-	.write          = icnss_regwrite_write,
-	.open           = icnss_regwrite_open,
-	.owner          = THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = icnss_regwrite_write,
+	.open = icnss_regwrite_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static int icnss_regread_show(struct seq_file *s, void *data)
@@ -109,10 +110,13 @@ static int icnss_regread_show(struct seq_file *s, void *data)
 
 	mutex_lock(&priv->dev_lock);
 	if (!priv->diag_reg_read_buf) {
-		seq_puts(s, "Usage: echo <mem_type> <offset> <data_len> > <debugfs>/icnss/reg_read\n");
+		seq_puts(s, "Usage: echo <mem_type> <offset> <data_len> > "
+			    "<debugfs>/icnss/reg_read\n");
 
 		if (!test_bit(ICNSS_FW_READY, &priv->state))
-			seq_puts(s, "Firmware is not ready yet!, wait for FW READY\n");
+			seq_puts(
+				s,
+				"Firmware is not ready yet!, wait for FW READY\n");
 
 		mutex_unlock(&priv->dev_lock);
 		return 0;
@@ -141,7 +145,7 @@ static int icnss_regread_open(struct inode *inode, struct file *file)
 static ssize_t icnss_reg_parse(const char __user *user_buf, size_t count,
 			       struct icnss_reg_info *reg_info_ptr)
 {
-	char buf[64] = {0};
+	char buf[64] = { 0 };
 	char *sptr = NULL, *token = NULL;
 	const char *delim = " ";
 	unsigned int len = 0;
@@ -219,8 +223,7 @@ static ssize_t icnss_regread_write(struct file *fp, const char __user *user_buf,
 
 	ret = wlfw_athdiag_read_send_sync_msg(priv, reg_info.reg_offset,
 					      reg_info.mem_type,
-					      reg_info.data_len,
-					      reg_buf);
+					      reg_info.data_len, reg_buf);
 	if (ret) {
 		kfree(reg_buf);
 		mutex_unlock(&priv->dev_lock);
@@ -237,15 +240,15 @@ static ssize_t icnss_regread_write(struct file *fp, const char __user *user_buf,
 }
 
 static const struct file_operations icnss_regread_fops = {
-	.read           = seq_read,
-	.write          = icnss_regread_write,
-	.open           = icnss_regread_open,
-	.owner          = THIS_MODULE,
-	.llseek         = seq_lseek,
+	.read = seq_read,
+	.write = icnss_regread_write,
+	.open = icnss_regread_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static ssize_t icnss_stats_write(struct file *fp, const char __user *buf,
-				size_t count, loff_t *off)
+				 size_t count, loff_t *off)
 {
 	struct icnss_priv *priv =
 		((struct seq_file *)fp->private_data)->private;
@@ -265,18 +268,18 @@ static ssize_t icnss_stats_write(struct file *fp, const char __user *buf,
 static int icnss_stats_show_rejuvenate_info(struct seq_file *s,
 					    struct icnss_priv *priv)
 {
-	if (priv->stats.rejuvenate_ind)  {
-		seq_puts(s, "\n<---------------- Rejuvenate Info ----------------->\n");
+	if (priv->stats.rejuvenate_ind) {
+		seq_puts(
+			s,
+			"\n<---------------- Rejuvenate Info ----------------->\n");
 		seq_printf(s, "Number of Rejuvenations: %u\n",
 			   priv->stats.rejuvenate_ind);
 		seq_printf(s, "Cause for Rejuvenation: 0x%x\n",
 			   priv->cause_for_rejuvenation);
 		seq_printf(s, "Requesting Sub-System: 0x%x\n",
 			   priv->requesting_sub_system);
-		seq_printf(s, "Line Number: %u\n",
-			   priv->line_number);
-		seq_printf(s, "Function Name: %s\n",
-			   priv->function_name);
+		seq_printf(s, "Line Number: %u\n", priv->line_number);
+		seq_printf(s, "Function Name: %s\n", priv->function_name);
 	}
 
 	return 0;
@@ -290,8 +293,8 @@ static int icnss_stats_show_irqs(struct seq_file *s, struct icnss_priv *priv)
 	seq_printf(s, "%4s %4s %8s %8s %8s %8s\n", "CE_ID", "IRQ", "Request",
 		   "Free", "Enable", "Disable");
 	for (i = 0; i < ICNSS_MAX_IRQ_REGISTRATIONS; i++)
-		seq_printf(s, "%4d: %4u %8u %8u %8u %8u\n", i,
-			   priv->ce_irqs[i], priv->stats.ce_irqs[i].request,
+		seq_printf(s, "%4d: %4u %8u %8u %8u %8u\n", i, priv->ce_irqs[i],
+			   priv->stats.ce_irqs[i].request,
 			   priv->stats.ce_irqs[i].free,
 			   priv->stats.ce_irqs[i].enable,
 			   priv->stats.ce_irqs[i].disable);
@@ -303,24 +306,24 @@ static int icnss_stats_show_capability(struct seq_file *s,
 				       struct icnss_priv *priv)
 {
 	if (test_bit(ICNSS_FW_READY, &priv->state)) {
-		seq_puts(s, "\n<---------------- FW Capability ----------------->\n");
+		seq_puts(
+			s,
+			"\n<---------------- FW Capability ----------------->\n");
 		seq_printf(s, "Chip ID: 0x%x\n", priv->chip_info.chip_id);
 		seq_printf(s, "Chip family: 0x%x\n",
-			  priv->chip_info.chip_family);
+			   priv->chip_info.chip_family);
 		seq_printf(s, "Board ID: 0x%x\n", priv->board_id);
 		seq_printf(s, "SOC Info: 0x%x\n", priv->soc_id);
 		seq_printf(s, "Firmware Version: 0x%x\n",
 			   priv->fw_version_info.fw_version);
 		seq_printf(s, "Firmware Build Timestamp: %s\n",
 			   priv->fw_version_info.fw_build_timestamp);
-		seq_printf(s, "Firmware Build ID: %s\n",
-			   priv->fw_build_id);
+		seq_printf(s, "Firmware Build ID: %s\n", priv->fw_build_id);
 		seq_printf(s, "RD card chain cap: %d\n",
 			   priv->rd_card_chain_cap);
 		seq_printf(s, "PHY HE channel width cap: %d\n",
 			   priv->phy_he_channel_width_cap);
-		seq_printf(s, "PHY QAM cap: %d\n",
-			   priv->phy_qam_cap);
+		seq_printf(s, "PHY QAM cap: %d\n", priv->phy_qam_cap);
 	}
 
 	return 0;
@@ -333,8 +336,7 @@ static int icnss_stats_show_events(struct seq_file *s, struct icnss_priv *priv)
 	seq_puts(s, "\n<----------------- Events stats ------------------->\n");
 	seq_printf(s, "%24s %16s %16s\n", "Events", "Posted", "Processed");
 	for (i = 0; i < ICNSS_DRIVER_EVENT_MAX; i++)
-		seq_printf(s, "%24s %16u %16u\n",
-			   icnss_driver_event_to_str(i),
+		seq_printf(s, "%24s %16u %16u\n", icnss_driver_event_to_str(i),
 			   priv->stats.events[i].posted,
 			   priv->stats.events[i].processed);
 
@@ -349,7 +351,6 @@ static int icnss_stats_show_state(struct seq_file *s, struct icnss_priv *priv)
 
 	seq_printf(s, "\nState: 0x%lx(", priv->state);
 	for (i = 0, state = priv->state; state != 0; state >>= 1, i++) {
-
 		if (!(state & 0x1))
 			continue;
 
@@ -437,7 +438,7 @@ static int icnss_stats_show_state(struct seq_file *s, struct icnss_priv *priv)
 		}
 
 		seq_printf(s, "UNKNOWN-%d", i);
-		}
+	}
 	seq_puts(s, ")\n");
 
 	return 0;
@@ -448,7 +449,6 @@ static int icnss_stats_show_state(struct seq_file *s, struct icnss_priv *priv)
 
 static int icnss_stats_show(struct seq_file *s, void *data)
 {
-
 	struct icnss_priv *priv = s->private;
 
 	ICNSS_STATS_DUMP(s, priv, ind_register_req);
@@ -485,7 +485,9 @@ static int icnss_stats_show(struct seq_file *s, void *data)
 	ICNSS_STATS_DUMP(s, priv, pm_relax);
 
 	if (priv->device_id == ADRASTEA_DEVICE_ID) {
-		seq_puts(s, "\n<------------------ MSA stats ------------------->\n");
+		seq_puts(
+			s,
+			"\n<------------------ MSA stats ------------------->\n");
 		ICNSS_STATS_DUMP(s, priv, msa_info_req);
 		ICNSS_STATS_DUMP(s, priv, msa_info_resp);
 		ICNSS_STATS_DUMP(s, priv, msa_info_err);
@@ -494,13 +496,14 @@ static int icnss_stats_show(struct seq_file *s, void *data)
 		ICNSS_STATS_DUMP(s, priv, msa_ready_err);
 		ICNSS_STATS_DUMP(s, priv, msa_ready_ind);
 
-		seq_puts(s, "\n<------------------ Rejuvenate stats ------------------->\n");
+		seq_puts(
+			s,
+			"\n<------------------ Rejuvenate stats ------------------->\n");
 		ICNSS_STATS_DUMP(s, priv, rejuvenate_ind);
 		ICNSS_STATS_DUMP(s, priv, rejuvenate_ack_req);
 		ICNSS_STATS_DUMP(s, priv, rejuvenate_ack_resp);
 		ICNSS_STATS_DUMP(s, priv, rejuvenate_ack_err);
 		icnss_stats_show_rejuvenate_info(s, priv);
-
 	}
 
 	icnss_stats_show_irqs(s, priv);
@@ -520,12 +523,12 @@ static int icnss_stats_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations icnss_stats_fops = {
-	.read		= seq_read,
-	.write		= icnss_stats_write,
-	.release	= single_release,
-	.open		= icnss_stats_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = icnss_stats_write,
+	.release = single_release,
+	.open = icnss_stats_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static int icnss_fw_debug_show(struct seq_file *s, void *data)
@@ -547,7 +550,8 @@ static int icnss_fw_debug_show(struct seq_file *s, void *data)
 	seq_puts(s, "  VAL: (64 bit feature mask)\n");
 
 	if (!test_bit(ICNSS_FW_READY, &priv->state)) {
-		seq_puts(s, "Firmware is not ready yet, can't run test_mode!\n");
+		seq_puts(s,
+			 "Firmware is not ready yet, can't run test_mode!\n");
 		goto out;
 	}
 
@@ -571,17 +575,19 @@ static int icnss_test_mode_fw_test_off(struct icnss_priv *priv)
 	int ret;
 
 	if (!test_bit(ICNSS_FW_READY, &priv->state)) {
-		icnss_pr_err("Firmware is not ready yet!, wait for FW READY: state: 0x%lx\n",
-			     priv->state);
-			ret = -ENODEV;
-			goto out;
+		icnss_pr_err(
+			"Firmware is not ready yet!, wait for FW READY: state: 0x%lx\n",
+			priv->state);
+		ret = -ENODEV;
+		goto out;
 	}
 
 	if (test_bit(ICNSS_DRIVER_PROBED, &priv->state)) {
-		icnss_pr_err("Machine mode is running, can't run test mode: state: 0x%lx\n",
-			     priv->state);
-			ret = -EINVAL;
-			goto out;
+		icnss_pr_err(
+			"Machine mode is running, can't run test mode: state: 0x%lx\n",
+			priv->state);
+		ret = -EINVAL;
+		goto out;
 	}
 
 	if (!test_bit(ICNSS_FW_TEST_MODE, &priv->state)) {
@@ -607,15 +613,17 @@ static int icnss_test_mode_fw_test(struct icnss_priv *priv,
 	int ret;
 
 	if (!test_bit(ICNSS_FW_READY, &priv->state)) {
-		icnss_pr_err("Firmware is not ready yet!, wait for FW READY, state: 0x%lx\n",
-			     priv->state);
-			ret = -ENODEV;
-			goto out;
+		icnss_pr_err(
+			"Firmware is not ready yet!, wait for FW READY, state: 0x%lx\n",
+			priv->state);
+		ret = -ENODEV;
+		goto out;
 	}
 
 	if (test_bit(ICNSS_DRIVER_PROBED, &priv->state)) {
-		icnss_pr_err("Machine mode is running, can't run test mode, state: 0x%lx\n",
-			     priv->state);
+		icnss_pr_err(
+			"Machine mode is running, can't run test mode, state: 0x%lx\n",
+			priv->state);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -647,10 +655,9 @@ out:
 	return ret;
 }
 
-
 static ssize_t icnss_fw_debug_write(struct file *fp,
-				    const char __user *user_buf,
-				    size_t count, loff_t *off)
+				    const char __user *user_buf, size_t count,
+				    loff_t *off)
 {
 	struct icnss_priv *priv =
 		((struct seq_file *)fp->private_data)->private;
@@ -726,17 +733,17 @@ static int icnss_fw_debug_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations icnss_fw_debug_fops = {
-	.read		= seq_read,
-	.write		= icnss_fw_debug_write,
-	.release	= single_release,
-	.open		= icnss_fw_debug_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = icnss_fw_debug_write,
+	.release = single_release,
+	.open = icnss_fw_debug_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static ssize_t icnss_control_params_debug_write(struct file *fp,
-					       const char __user *user_buf,
-					       size_t count, loff_t *off)
+						const char __user *user_buf,
+						size_t count, loff_t *off)
 {
 	struct icnss_priv *priv =
 		((struct seq_file *)fp->private_data)->private;
@@ -783,31 +790,34 @@ static int icnss_control_params_debug_show(struct seq_file *s, void *data)
 {
 	struct icnss_priv *priv = s->private;
 
-	seq_puts(s, "\nUsage: echo <params_name> <value> > <debugfs>/icnss/control_params\n");
+	seq_puts(
+		s,
+		"\nUsage: echo <params_name> <value> > <debugfs>/icnss/control_params\n");
 	seq_puts(s, "<params_name> can be from below:\n");
 	seq_puts(s, "qmi_timeout: Timeout for QMI message in milliseconds\n");
 
 	seq_puts(s, "\nCurrent value:\n");
 
-	seq_printf(s, "qmi_timeout: %u\n", jiffies_to_msecs(priv->ctrl_params.qmi_timeout));
+	seq_printf(s, "qmi_timeout: %u\n",
+		   jiffies_to_msecs(priv->ctrl_params.qmi_timeout));
 
 	return 0;
 }
 
 static int icnss_control_params_debug_open(struct inode *inode,
-					  struct file *file)
+					   struct file *file)
 {
 	return single_open(file, icnss_control_params_debug_show,
 			   inode->i_private);
 }
 
 static const struct file_operations icnss_control_params_debug_fops = {
-	.read		= seq_read,
-	.write		= icnss_control_params_debug_write,
-	.release	= single_release,
-	.open		= icnss_control_params_debug_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = icnss_control_params_debug_write,
+	.release = single_release,
+	.open = icnss_control_params_debug_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 #ifdef CONFIG_ICNSS2_DEBUG
@@ -822,22 +832,22 @@ int icnss_debugfs_create(struct icnss_priv *priv)
 		ret = PTR_ERR(root_dentry);
 		icnss_pr_err("Unable to create debugfs %d\n", ret);
 		goto out;
-		}
+	}
 
-		priv->root_dentry = root_dentry;
+	priv->root_dentry = root_dentry;
 
-		debugfs_create_file("fw_debug", 0600, root_dentry, priv,
-					&icnss_fw_debug_fops);
-		debugfs_create_file("stats", 0600, root_dentry, priv,
-						&icnss_stats_fops);
-		debugfs_create_file("reg_read", 0600, root_dentry, priv,
-						&icnss_regread_fops);
-		debugfs_create_file("reg_write", 0600, root_dentry, priv,
-						&icnss_regwrite_fops);
-		debugfs_create_file("control_params", 0600, root_dentry, priv,
-					&icnss_control_params_debug_fops);
+	debugfs_create_file("fw_debug", 0600, root_dentry, priv,
+			    &icnss_fw_debug_fops);
+	debugfs_create_file("stats", 0600, root_dentry, priv,
+			    &icnss_stats_fops);
+	debugfs_create_file("reg_read", 0600, root_dentry, priv,
+			    &icnss_regread_fops);
+	debugfs_create_file("reg_write", 0600, root_dentry, priv,
+			    &icnss_regwrite_fops);
+	debugfs_create_file("control_params", 0600, root_dentry, priv,
+			    &icnss_control_params_debug_fops);
 out:
-		return ret;
+	return ret;
 }
 #else
 int icnss_debugfs_create(struct icnss_priv *priv)
@@ -856,7 +866,7 @@ int icnss_debugfs_create(struct icnss_priv *priv)
 	priv->root_dentry = root_dentry;
 
 	debugfs_create_file("stats", 0600, root_dentry, priv,
-							     &icnss_stats_fops);
+			    &icnss_stats_fops);
 	return 0;
 }
 #endif
@@ -868,26 +878,25 @@ void icnss_debugfs_destroy(struct icnss_priv *priv)
 
 void icnss_debug_init(void)
 {
-	icnss_ipc_log_context = ipc_log_context_create(NUM_LOG_PAGES,
-						       "icnss", 0);
+	icnss_ipc_log_context =
+		ipc_log_context_create(NUM_LOG_PAGES, "icnss", 0);
 	if (!icnss_ipc_log_context)
 		icnss_pr_err("Unable to create log context\n");
 
-	icnss_ipc_log_long_context = ipc_log_context_create(NUM_LOG_LONG_PAGES,
-						       "icnss_long", 0);
+	icnss_ipc_log_long_context =
+		ipc_log_context_create(NUM_LOG_LONG_PAGES, "icnss_long", 0);
 	if (!icnss_ipc_log_long_context)
 		icnss_pr_err("Unable to create log long context\n");
 
-	icnss_ipc_log_smp2p_context = ipc_log_context_create(NUM_LOG_LONG_PAGES,
-						       "icnss_smp2p", 0);
+	icnss_ipc_log_smp2p_context =
+		ipc_log_context_create(NUM_LOG_LONG_PAGES, "icnss_smp2p", 0);
 	if (!icnss_ipc_log_smp2p_context)
 		icnss_pr_err("Unable to create log smp2p context\n");
 
-	icnss_ipc_soc_wake_context = ipc_log_context_create(NUM_LOG_LONG_PAGES,
-						       "icnss_soc_wake", 0);
+	icnss_ipc_soc_wake_context =
+		ipc_log_context_create(NUM_LOG_LONG_PAGES, "icnss_soc_wake", 0);
 	if (!icnss_ipc_soc_wake_context)
 		icnss_pr_err("Unable to create log soc_wake context\n");
-
 }
 
 void icnss_debug_deinit(void)

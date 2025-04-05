@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
-* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
-* Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
-*/
+ * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
 
 #include "adreno.h"
 #include "adreno_a3xx.h"
@@ -20,18 +20,16 @@ static struct adreno_coresight_register a3xx_coresight_registers[] = {
 	{ A3XX_RBBM_INT_TRACE_BUS_CTL, 0x00201111 },
 };
 
-static ADRENO_CORESIGHT_ATTR(config_debug_bus,
-	&a3xx_coresight_registers[0]);
+static ADRENO_CORESIGHT_ATTR(config_debug_bus, &a3xx_coresight_registers[0]);
 static ADRENO_CORESIGHT_ATTR(config_trace_stop_cnt,
-	&a3xx_coresight_registers[1]);
+			     &a3xx_coresight_registers[1]);
 static ADRENO_CORESIGHT_ATTR(config_trace_start_cnt,
-	&a3xx_coresight_registers[2]);
+			     &a3xx_coresight_registers[2]);
 static ADRENO_CORESIGHT_ATTR(config_trace_period_cnt,
-	&a3xx_coresight_registers[3]);
-static ADRENO_CORESIGHT_ATTR(config_trace_cmd,
-	&a3xx_coresight_registers[4]);
+			     &a3xx_coresight_registers[3]);
+static ADRENO_CORESIGHT_ATTR(config_trace_cmd, &a3xx_coresight_registers[4]);
 static ADRENO_CORESIGHT_ATTR(config_trace_bus_ctl,
-	&a3xx_coresight_registers[5]);
+			     &a3xx_coresight_registers[5]);
 
 static struct attribute *a3xx_coresight_attrs[] = {
 	&coresight_attr_config_debug_bus.attr.attr,
@@ -61,5 +59,5 @@ static const struct adreno_coresight a3xx_coresight = {
 void a3xx_coresight_init(struct adreno_device *adreno_dev)
 {
 	adreno_coresight_add_device(adreno_dev, "coresight-gfx",
-		&a3xx_coresight, &adreno_dev->gx_coresight);
+				    &a3xx_coresight, &adreno_dev->gx_coresight);
 }

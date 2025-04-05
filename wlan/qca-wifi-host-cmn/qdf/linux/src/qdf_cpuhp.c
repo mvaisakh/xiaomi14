@@ -22,10 +22,10 @@
  */
 
 #include "i_qdf_cpuhp.h"
-#include "qdf_trace.h"
 #include "linux/cpu.h"
 #include "linux/notifier.h"
 #include "linux/version.h"
+#include "qdf_trace.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
 #include "linux/cpuhotplug.h"
@@ -36,8 +36,7 @@ static __qdf_cpuhp_emit __qdf_cpuhp_on_down;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0)
 static int qdf_cpuhp_legacy_handler(struct notifier_block *block,
-				    unsigned long state,
-				    void *hcpu)
+				    unsigned long state, void *hcpu)
 {
 	unsigned long cpu = (unsigned long)hcpu;
 
@@ -90,10 +89,9 @@ static int qdf_cpuhp_down_handler(unsigned int cpu)
 
 static inline void qdf_cpuhp_register_callbacks(void)
 {
-	registered_hotplug_state = cpuhp_setup_state(CPUHP_AP_ONLINE_DYN,
-						     "wlan/qca-qdf:online",
-						     qdf_cpuhp_up_handler,
-						     qdf_cpuhp_down_handler);
+	registered_hotplug_state =
+		cpuhp_setup_state(CPUHP_AP_ONLINE_DYN, "wlan/qca-qdf:online",
+				  qdf_cpuhp_up_handler, qdf_cpuhp_down_handler);
 }
 
 static inline void qdf_cpuhp_unregister_callbacks(void)
@@ -116,4 +114,3 @@ void __qdf_cpuhp_os_deinit(void)
 {
 	qdf_cpuhp_unregister_callbacks();
 }
-

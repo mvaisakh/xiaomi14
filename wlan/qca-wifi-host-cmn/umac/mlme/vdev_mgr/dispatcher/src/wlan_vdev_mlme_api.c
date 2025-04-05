@@ -19,14 +19,14 @@
  * DOC: Implements VDEV MLME public APIs
  */
 
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_mlme_dbg.h>
-#include "include/wlan_vdev_mlme.h"
 #include "../../core/src/vdev_mlme_sm.h"
-#include <wlan_vdev_mlme_api.h>
+#include "include/wlan_vdev_mlme.h"
+#include "wlan_objmgr_vdev_obj.h"
 #include <include/wlan_mlme_cmn.h>
 #include <qdf_module.h>
-#include "wlan_objmgr_vdev_obj.h"
+#include <wlan_mlme_dbg.h>
+#include <wlan_objmgr_vdev_obj.h>
+#include <wlan_vdev_mlme_api.h>
 
 struct vdev_mlme_obj *wlan_vdev_mlme_get_cmpt_obj(struct wlan_objmgr_vdev *vdev)
 {
@@ -174,7 +174,7 @@ QDF_STATUS wlan_vdev_mlme_is_active(struct wlan_objmgr_vdev *vdev)
 	enum wlan_vdev_state state;
 
 	state = wlan_vdev_mlme_get_state(vdev);
-	if ((state == WLAN_VDEV_S_UP) ||  (state == WLAN_VDEV_S_DFS_CAC_WAIT) ||
+	if ((state == WLAN_VDEV_S_UP) || (state == WLAN_VDEV_S_DFS_CAC_WAIT) ||
 	    (state == WLAN_VDEV_S_SUSPEND))
 		return QDF_STATUS_SUCCESS;
 
@@ -358,9 +358,8 @@ QDF_STATUS wlan_vdev_is_up_active_state(struct wlan_objmgr_vdev *vdev)
 qdf_export_symbol(wlan_vdev_is_up_active_state);
 
 #ifdef WLAN_FEATURE_11BE_MLO
-bool
-wlan_vdev_mlme_get_is_mlo_link(struct wlan_objmgr_psoc *psoc,
-			       uint8_t vdev_id)
+bool wlan_vdev_mlme_get_is_mlo_link(struct wlan_objmgr_psoc *psoc,
+				    uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	bool is_link = false;
@@ -381,9 +380,8 @@ wlan_vdev_mlme_get_is_mlo_link(struct wlan_objmgr_psoc *psoc,
 	return is_link;
 }
 
-bool
-wlan_vdev_mlme_get_is_mlo_vdev(struct wlan_objmgr_psoc *psoc,
-			       uint8_t vdev_id)
+bool wlan_vdev_mlme_get_is_mlo_vdev(struct wlan_objmgr_psoc *psoc,
+				    uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	bool is_mlo_vdev = false;
@@ -405,10 +403,9 @@ wlan_vdev_mlme_get_is_mlo_vdev(struct wlan_objmgr_psoc *psoc,
 }
 #endif
 #ifdef WLAN_FEATURE_SR
-void
-wlan_mlme_update_sr_data(struct wlan_objmgr_vdev *vdev, int *val,
-			 int32_t srg_pd_threshold, int32_t non_srg_pd_threshold,
-			 bool is_sr_enable)
+void wlan_mlme_update_sr_data(struct wlan_objmgr_vdev *vdev, int *val,
+			      int32_t srg_pd_threshold,
+			      int32_t non_srg_pd_threshold, bool is_sr_enable)
 {
 	uint8_t ap_non_srg_pd_threshold = 0;
 	uint8_t ap_srg_min_pd_threshold_offset = 0;
@@ -422,11 +419,11 @@ wlan_mlme_update_sr_data(struct wlan_objmgr_vdev *vdev, int *val,
 			wlan_vdev_mlme_get_non_srg_pd_offset(vdev) +
 			SR_PD_THRESHOLD_MIN;
 		/*
-		 * Update non_srg_pd_threshold with provide
-		 * non_srg_pd_threshold for non-srg, if pd threshold is
-		 * with in the range else keep the same as
-		 * advertised by AP.
-		 */
+     * Update non_srg_pd_threshold with provide
+     * non_srg_pd_threshold for non-srg, if pd threshold is
+     * with in the range else keep the same as
+     * advertised by AP.
+     */
 		if (!non_srg_pd_threshold ||
 		    (non_srg_pd_threshold > ap_non_srg_pd_threshold))
 			non_srg_pd_threshold = ap_non_srg_pd_threshold;
@@ -437,18 +434,18 @@ wlan_mlme_update_sr_data(struct wlan_objmgr_vdev *vdev, int *val,
 
 	if (sr_ctrl & SRG_INFO_PRESENT) {
 		wlan_vdev_mlme_get_srg_pd_offset(
-					vdev, &ap_srg_max_pd_threshold_offset,
-					&ap_srg_min_pd_threshold_offset);
+			vdev, &ap_srg_max_pd_threshold_offset,
+			&ap_srg_min_pd_threshold_offset);
 		/*
-		 * Update srg_pd_threshold with provide
-		 * srg_pd_threshold, if pd threshold is with in the
-		 * SRG range else keep the max of advertised by AP.
-		 */
+     * Update srg_pd_threshold with provide
+     * srg_pd_threshold, if pd threshold is with in the
+     * SRG range else keep the max of advertised by AP.
+     */
 		if (!srg_pd_threshold ||
 		    (srg_pd_threshold > (ap_srg_max_pd_threshold_offset +
-					SR_PD_THRESHOLD_MIN) ||
-		    srg_pd_threshold < (ap_srg_min_pd_threshold_offset +
-					SR_PD_THRESHOLD_MIN)))
+					 SR_PD_THRESHOLD_MIN) ||
+		     srg_pd_threshold < (ap_srg_min_pd_threshold_offset +
+					 SR_PD_THRESHOLD_MIN)))
 			srg_pd_threshold = ap_srg_max_pd_threshold_offset +
 					   SR_PD_THRESHOLD_MIN;
 
@@ -456,11 +453,11 @@ wlan_mlme_update_sr_data(struct wlan_objmgr_vdev *vdev, int *val,
 		*val |= is_sr_enable << SRG_SPR_ENABLE_POS;
 	}
 	/* bit    | purpose
-	 * -----------------
-	 * 0  - 7 | Param Value for non-SRG based Spatial Reuse
-	 * 8  - 15| Param value for SRG based Spatial Reuse
-	 * 29     | Param value is in dBm units rather than dB units
-	 */
+   * -----------------
+   * 0  - 7 | Param Value for non-SRG based Spatial Reuse
+   * 8  - 15| Param value for SRG based Spatial Reuse
+   * 29     | Param value is in dBm units rather than dB units
+   */
 	QDF_SET_BITS(*val, NON_SRG_MAX_PD_OFFSET_POS, SR_PADDING_BYTE,
 		     (uint8_t)non_srg_pd_threshold);
 	QDF_SET_BITS(*val, SRG_THRESHOLD_MAX_PD_POS, SR_PADDING_BYTE,

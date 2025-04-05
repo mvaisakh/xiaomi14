@@ -54,14 +54,14 @@ static int rpmh_arc_cmds(struct rpmh_arc_vals *arc, const char *res_id)
 	arc->val = cmd_db_read_aux_data(res_id, &len);
 
 	/*
-	 * cmd_db_read_aux_data() gives us a zero-padded table of
-	 * size len that contains the arc values. To determine the
-	 * number of arc values, we loop through the table and count
-	 * them until we get to the end of the buffer or hit the
-	 * zero padding.
-	 */
+   * cmd_db_read_aux_data() gives us a zero-padded table of
+   * size len that contains the arc values. To determine the
+   * number of arc values, we loop through the table and count
+   * them until we get to the end of the buffer or hit the
+   * zero padding.
+   */
 	for (arc->num = 1; arc->num < (len >> 1); arc->num++) {
-		if (arc->val[arc->num - 1] != 0 &&  arc->val[arc->num] == 0)
+		if (arc->val[arc->num - 1] != 0 && arc->val[arc->num] == 0)
 			break;
 	}
 
@@ -69,17 +69,18 @@ static int rpmh_arc_cmds(struct rpmh_arc_vals *arc, const char *res_id)
 }
 
 static int setup_volt_dependency_tbl(uint32_t *votes,
-		struct rpmh_arc_vals *pri_rail, struct rpmh_arc_vals *sec_rail,
-		u16 *vlvl, unsigned int num_entries)
+				     struct rpmh_arc_vals *pri_rail,
+				     struct rpmh_arc_vals *sec_rail, u16 *vlvl,
+				     unsigned int num_entries)
 {
 	int i, j, k;
 	uint16_t cur_vlvl;
 	bool found_match;
 
 	/* i tracks current KGSL GPU frequency table entry
-	 * j tracks secondary rail voltage table entry
-	 * k tracks primary rail voltage table entry
-	 */
+   * j tracks secondary rail voltage table entry
+   * k tracks primary rail voltage table entry
+   */
 	for (i = 0; i < num_entries; i++) {
 		found_match = false;
 
@@ -97,13 +98,13 @@ static int setup_volt_dependency_tbl(uint32_t *votes,
 			return -EINVAL;
 
 		/*
-		 * Look for a secondary rail index whose VLVL value
-		 * is greater than or equal to the VLVL value of the
-		 * corresponding index of the primary rail
-		 */
+     * Look for a secondary rail index whose VLVL value
+     * is greater than or equal to the VLVL value of the
+     * corresponding index of the primary rail
+     */
 		for (j = 0; j < sec_rail->num; j++) {
 			if (sec_rail->val[j] >= cur_vlvl ||
-					j + 1 == sec_rail->num)
+			    j + 1 == sec_rail->num)
 				break;
 		}
 
@@ -117,8 +118,7 @@ static int setup_volt_dependency_tbl(uint32_t *votes,
 }
 
 /* Generate a set of bandwidth votes for the list of BCMs */
-static void tcs_cmd_data(struct bcm *bcms, int count, u32 ab, u32 ib,
-		u32 *data)
+static void tcs_cmd_data(struct bcm *bcms, int count, u32 ab, u32 ib, u32 *data)
 {
 	int i;
 
@@ -131,10 +131,10 @@ static void tcs_cmd_data(struct bcm *bcms, int count, u32 ab, u32 ib,
 			commit = true;
 
 		/*
-		 * On a660, the "ACV" y vote should be 0x08 if there is a valid
-		 * vote and 0x00 if not. This is kind of hacky and a660 specific
-		 * but we can clean it up when we add a new target
-		 */
+     * On a660, the "ACV" y vote should be 0x08 if there is a valid
+     * vote and 0x00 if not. This is kind of hacky and a660 specific
+     * but we can clean it up when we add a new target
+     */
 		if (bcms[i].fixed) {
 			if (!ab && !ib)
 				data[i] = BCM_TCS_CMD(commit, false, 0x0, 0x0);
@@ -144,12 +144,12 @@ static void tcs_cmd_data(struct bcm *bcms, int count, u32 ab, u32 ib,
 		}
 
 		/* Multiple the bandwidth by the width of the connection */
-		avg = ((u64) ab) * bcms[i].width;
+		avg = ((u64)ab) * bcms[i].width;
 
 		/* And then divide by the total width across channels */
 		do_div(avg, bcms[i].buswidth * bcms[i].channels);
 
-		peak = ((u64) ib) * bcms[i].width;
+		peak = ((u64)ib) * bcms[i].width;
 		do_div(peak, bcms[i].buswidth);
 
 		/* Input bandwidth value is in KBps */
@@ -161,9 +161,9 @@ static void tcs_cmd_data(struct bcm *bcms, int count, u32 ab, u32 ib,
 		do_div(y, bcms[i].unit);
 
 		/*
-		 * If a bandwidth value was specified but the calculation ends
-		 * rounding down to zero, set a minimum level
-		 */
+     * If a bandwidth value was specified but the calculation ends
+     * rounding down to zero, set a minimum level
+     */
 		if (ab && x == 0)
 			x = 1;
 
@@ -197,7 +197,8 @@ static void free_rpmh_bw_votes(struct rpmh_bw_votes *votes)
 
 /* Build the votes table from the specified bandwidth levels */
 static struct rpmh_bw_votes *build_rpmh_bw_votes(struct bcm *bcms,
-		int bcm_count, u32 *levels, int levels_count)
+						 int bcm_count, u32 *levels,
+						 int levels_count)
 {
 	struct rpmh_bw_votes *votes;
 	int i;
@@ -265,8 +266,9 @@ static struct rpmh_bw_votes *build_rpmh_bw_votes(struct bcm *bcms,
  * for gmu dcvs
  */
 static int setup_cx_arc_votes(struct adreno_device *adreno_dev,
-	struct rpmh_arc_vals *pri_rail, struct rpmh_arc_vals *sec_rail,
-	u32 *freqs, u32 *vlvls)
+			      struct rpmh_arc_vals *pri_rail,
+			      struct rpmh_arc_vals *sec_rail, u32 *freqs,
+			      u32 *vlvls)
 {
 	/* Hardcoded values of GMU CX voltage levels */
 	struct a6xx_gmu_device *gmu = to_a6xx_gmu(adreno_dev);
@@ -286,8 +288,8 @@ static int setup_cx_arc_votes(struct adreno_device *adreno_dev,
 	table->cx_votes[1].freq = freqs[0] / 1000;
 	table->cx_votes[2].freq = freqs[1] / 1000;
 
-	ret = setup_volt_dependency_tbl(cx_votes, pri_rail,
-			sec_rail, gmu_cx_vlvl, table->gmu_level_num);
+	ret = setup_volt_dependency_tbl(cx_votes, pri_rail, sec_rail,
+					gmu_cx_vlvl, table->gmu_level_num);
 	if (!ret) {
 		for (i = 0; i < table->gmu_level_num; i++)
 			table->cx_votes[i].vote = cx_votes[i];
@@ -301,9 +303,9 @@ static int to_cx_hlvl(struct rpmh_arc_vals *cx_rail, u32 vlvl, u32 *hlvl)
 	u32 i;
 
 	/*
-	 * This means that the Gx level doesn't have a dependency on Cx level.
-	 * Return the same value to disable cx voting at GMU.
-	 */
+   * This means that the Gx level doesn't have a dependency on Cx level.
+   * Return the same value to disable cx voting at GMU.
+   */
 	if (vlvl == 0xffffffff) {
 		*hlvl = vlvl;
 		return 0;
@@ -329,8 +331,9 @@ static int to_cx_hlvl(struct rpmh_arc_vals *cx_rail, u32 vlvl, u32 *hlvl)
  * for gpu dcvs
  */
 static int setup_gx_arc_votes(struct adreno_device *adreno_dev,
-	struct rpmh_arc_vals *pri_rail, struct rpmh_arc_vals *sec_rail,
-	struct rpmh_arc_vals *cx_rail)
+			      struct rpmh_arc_vals *pri_rail,
+			      struct rpmh_arc_vals *sec_rail,
+			      struct rpmh_arc_vals *cx_rail)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	struct a6xx_gmu_device *gmu = to_a6xx_gmu(adreno_dev);
@@ -345,7 +348,7 @@ static int setup_gx_arc_votes(struct adreno_device *adreno_dev,
 	table->gpu_level_num = device->pwrctrl.num_pwrlevels + 1;
 
 	if (table->gpu_level_num > pri_rail->num ||
-		table->gpu_level_num > ARRAY_SIZE(vlvl_tbl)) {
+	    table->gpu_level_num > ARRAY_SIZE(vlvl_tbl)) {
 		dev_err(&gmu->pdev->dev,
 			"Defined more GPU DCVS levels than RPMh can support\n");
 		return -ERANGE;
@@ -367,23 +370,22 @@ static int setup_gx_arc_votes(struct adreno_device *adreno_dev,
 		table->gx_votes[index].freq = pwr->pwrlevels[i].gpu_freq / 1000;
 
 		ret = to_cx_hlvl(cx_rail, cx_vlvl,
-				&table->gx_votes[index].cx_vote);
+				 &table->gx_votes[index].cx_vote);
 		if (ret) {
 			dev_err(&gmu->pdev->dev, "Unsupported cx corner: %u\n",
-					cx_vlvl);
+				cx_vlvl);
 			return ret;
 		}
 	}
 
-	ret = setup_volt_dependency_tbl(gx_votes, pri_rail,
-			sec_rail, vlvl_tbl, table->gpu_level_num);
+	ret = setup_volt_dependency_tbl(gx_votes, pri_rail, sec_rail, vlvl_tbl,
+					table->gpu_level_num);
 	if (!ret) {
 		for (i = 0; i < table->gpu_level_num; i++)
 			table->gx_votes[i].vote = gx_votes[i];
 	}
 
 	return ret;
-
 }
 
 static int build_dcvs_table(struct adreno_device *adreno_dev)
@@ -409,8 +411,8 @@ static int build_dcvs_table(struct adreno_device *adreno_dev)
 	if (ret)
 		return ret;
 
-	ret = setup_cx_arc_votes(adreno_dev, &cx_arc, &mx_arc,
-					gmu->freqs, gmu->vlvls);
+	ret = setup_cx_arc_votes(adreno_dev, &cx_arc, &mx_arc, gmu->freqs,
+				 gmu->vlvls);
 	if (ret)
 		return ret;
 
@@ -433,7 +435,8 @@ static struct bcm a660_cnoc_bcms[] = {
 };
 
 static void build_bw_table_cmd(struct hfi_bwtable_cmd *cmd,
-		struct rpmh_bw_votes *ddr, struct rpmh_bw_votes *cnoc)
+			       struct rpmh_bw_votes *ddr,
+			       struct rpmh_bw_votes *cnoc)
 {
 	u32 i, j;
 
@@ -446,20 +449,20 @@ static void build_bw_table_cmd(struct hfi_bwtable_cmd *cmd,
 
 	for (i = 0; i < ddr->num_levels; i++)
 		for (j = 0; j < ddr->num_cmds; j++)
-			cmd->ddr_cmd_data[i][j] = (u32) ddr->cmds[i][j];
+			cmd->ddr_cmd_data[i][j] = (u32)ddr->cmds[i][j];
 
 	if (!cnoc)
 		return;
 
 	cmd->cnoc_cmds_num = cnoc->num_cmds;
-		cmd->cnoc_wait_bitmask = cnoc->wait_bitmask;
+	cmd->cnoc_wait_bitmask = cnoc->wait_bitmask;
 
 	for (i = 0; i < cnoc->num_cmds; i++)
 		cmd->cnoc_cmd_addrs[i] = cnoc->addrs[i];
 
 	for (i = 0; i < cnoc->num_levels; i++)
 		for (j = 0; j < cnoc->num_cmds; j++)
-			cmd->cnoc_cmd_data[i][j] = (u32) cnoc->cmds[i][j];
+			cmd->cnoc_cmd_data[i][j] = (u32)cnoc->cmds[i][j];
 }
 
 static int build_bw_table(struct adreno_device *adreno_dev)
@@ -473,16 +476,17 @@ static int build_bw_table(struct adreno_device *adreno_dev)
 	int ret;
 
 	ddr = build_rpmh_bw_votes(a660_ddr_bcms, ARRAY_SIZE(a660_ddr_bcms),
-		pwr->ddr_table, pwr->ddr_table_count);
+				  pwr->ddr_table, pwr->ddr_table_count);
 	if (IS_ERR(ddr))
 		return PTR_ERR(ddr);
 
-	cnoc_table = kgsl_bus_get_table(device->pdev, "qcom,bus-table-cnoc",
-		&count);
+	cnoc_table =
+		kgsl_bus_get_table(device->pdev, "qcom,bus-table-cnoc", &count);
 
 	if (count > 0)
 		cnoc = build_rpmh_bw_votes(a660_cnoc_bcms,
-			ARRAY_SIZE(a660_cnoc_bcms), cnoc_table, count);
+					   ARRAY_SIZE(a660_cnoc_bcms),
+					   cnoc_table, count);
 
 	kfree(cnoc_table);
 

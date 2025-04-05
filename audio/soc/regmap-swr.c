@@ -5,20 +5,20 @@
  */
 
 #include <linux/device.h>
-#include <linux/slab.h>
+#include <linux/init.h>
+#include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/regmap.h>
-#include <linux/module.h>
-#include <linux/init.h>
+#include <linux/slab.h>
 #include <soc/soundwire.h>
 
 #define ADDR_BYTES 2
 #define VAL_BYTES 1
 #define PAD_BYTES 0
 
-static int regmap_swr_gather_write(void *context,
-				const void *reg, size_t reg_size,
-				const void *val, size_t val_len)
+static int regmap_swr_gather_write(void *context, const void *reg,
+				   size_t reg_size, const void *val,
+				   size_t val_len)
 {
 	struct device *dev = context;
 	struct swr_device *swr = to_swr_device(dev);
@@ -37,8 +37,9 @@ static int regmap_swr_gather_write(void *context,
 		return -EINVAL;
 	}
 	if (reg_size != ADDR_BYTES) {
-		dev_err_ratelimited(dev, "%s: reg size %zd bytes not supported\n",
-			__func__, reg_size);
+		dev_err_ratelimited(dev,
+				    "%s: reg size %zd bytes not supported\n",
+				    __func__, reg_size);
 		return -EINVAL;
 	}
 	reg_addr = *(u16 *)reg;
@@ -47,7 +48,8 @@ static int regmap_swr_gather_write(void *context,
 		value = (u8 *)val + (VAL_BYTES * i);
 		ret = swr_write(swr, swr->dev_num, (reg_addr + i), value);
 		if (ret < 0) {
-			dev_err_ratelimited(dev, "%s: write reg 0x%x failed, err %d\n",
+			dev_err_ratelimited(
+				dev, "%s: write reg 0x%x failed, err %d\n",
 				__func__, (reg_addr + i), ret);
 			break;
 		}
@@ -79,7 +81,8 @@ static int regmap_swr_raw_multi_reg_write(void *context, const void *data,
 	}
 
 	if (ADDR_BYTES + VAL_BYTES + PAD_BYTES == 0) {
-		dev_err_ratelimited(dev, "%s: sum of addr, value and pad is 0\n", __func__);
+		dev_err_ratelimited(
+			dev, "%s: sum of addr, value and pad is 0\n", __func__);
 		return -EINVAL;
 	}
 	num_regs = count / (ADDR_BYTES + VAL_BYTES + PAD_BYTES);
@@ -103,7 +106,8 @@ static int regmap_swr_raw_multi_reg_write(void *context, const void *data,
 	}
 	ret = swr_bulk_write(swr, swr->dev_num, reg, val, num_regs);
 	if (ret)
-		dev_err_ratelimited(dev, "%s: multi reg write failed\n", __func__);
+		dev_err_ratelimited(dev, "%s: multi reg write failed\n",
+				    __func__);
 
 	kfree(val);
 mem_fail:
@@ -131,9 +135,8 @@ static int regmap_swr_write(void *context, const void *data, size_t count)
 					       (count - ADDR_BYTES));
 }
 
-static int regmap_swr_read(void *context,
-			const void *reg, size_t reg_size,
-			void *val, size_t val_size)
+static int regmap_swr_read(void *context, const void *reg, size_t reg_size,
+			   void *val, size_t val_size)
 {
 	struct device *dev = context;
 	struct swr_device *swr = to_swr_device(dev);
@@ -150,7 +153,8 @@ static int regmap_swr_read(void *context,
 		return -EINVAL;
 	}
 	if (reg_size != ADDR_BYTES) {
-		dev_err_ratelimited(dev, "%s: register size %zd bytes not supported\n",
+		dev_err_ratelimited(
+			dev, "%s: register size %zd bytes not supported\n",
 			__func__, reg_size);
 		return -EINVAL;
 	}
@@ -158,7 +162,7 @@ static int regmap_swr_read(void *context,
 	ret = swr_read(swr, swr->dev_num, reg_addr, val, val_size);
 	if (ret < 0)
 		dev_err_ratelimited(dev, "%s: codec reg 0x%x read failed %d\n",
-			__func__, reg_addr, ret);
+				    __func__, reg_addr, ret);
 	return ret;
 }
 
@@ -176,7 +180,7 @@ struct regmap *__regmap_init_swr(struct swr_device *swr,
 				 const char *lock_name)
 {
 	return __regmap_init(&swr->dev, &regmap_swr, &swr->dev, config,
-			   lock_key, lock_name);
+			     lock_key, lock_name);
 }
 EXPORT_SYMBOL(__regmap_init_swr);
 
@@ -186,7 +190,7 @@ struct regmap *__devm_regmap_init_swr(struct swr_device *swr,
 				      const char *lock_name)
 {
 	return __devm_regmap_init(&swr->dev, &regmap_swr, &swr->dev, config,
-				lock_key, lock_name);
+				  lock_key, lock_name);
 }
 EXPORT_SYMBOL(__devm_regmap_init_swr);
 

@@ -18,17 +18,17 @@
  */
 
 #include "sme_power_save.h"
-#include "sme_power_save_api.h"
-#include <sir_common.h>
-#include <ani_global.h>
-#include <utils_api.h>
-#include "sme_trace.h"
+#include "csr_inside_api.h"
 #include "qdf_mem.h"
 #include "qdf_types.h"
+#include "sme_power_save_api.h"
+#include "sme_trace.h"
 #include "wma.h"
 #include "wma_internal.h"
 #include "wmm_apsd.h"
-#include "csr_inside_api.h"
+#include <ani_global.h>
+#include <sir_common.h>
+#include <utils_api.h>
 
 /**
  * sme_post_ps_msg_to_wma(): post message to WMA.
@@ -39,17 +39,16 @@
  */
 static QDF_STATUS sme_post_ps_msg_to_wma(uint16_t type, void *body)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 
 	msg.type = type;
 	msg.reserved = 0;
 	msg.bodyptr = body;
 	msg.bodyval = 0;
 
-	if (QDF_STATUS_SUCCESS != scheduler_post_message(QDF_MODULE_ID_SME,
-							 QDF_MODULE_ID_WMA,
-							 QDF_MODULE_ID_WMA,
-							 &msg)) {
+	if (QDF_STATUS_SUCCESS !=
+	    scheduler_post_message(QDF_MODULE_ID_SME, QDF_MODULE_ID_WMA,
+				   QDF_MODULE_ID_WMA, &msg)) {
 		sme_err("Posting message %d failed", type);
 		qdf_mem_free(body);
 		return QDF_STATUS_E_FAILURE;
@@ -65,22 +64,20 @@ static QDF_STATUS sme_post_ps_msg_to_wma(uint16_t type, void *body)
  * Return: QDF_STATUS
  */
 static void sme_ps_fill_uapsd_req_params(struct mac_context *mac_ctx,
-		tUapsd_Params *uapsdParams, uint32_t session_id,
-		enum ps_state *ps_state)
+					 tUapsd_Params *uapsdParams,
+					 uint32_t session_id,
+					 enum ps_state *ps_state)
 {
-
 	uint8_t uapsd_delivery_mask = 0;
 	uint8_t uapsd_trigger_mask = 0;
 	struct ps_global_info *ps_global_info = &mac_ctx->sme.ps_global_info;
 	struct ps_params *ps_param = &ps_global_info->ps_params[session_id];
 
-	uapsd_delivery_mask =
-		ps_param->uapsd_per_ac_bit_mask |
-		ps_param->uapsd_per_ac_delivery_enable_mask;
+	uapsd_delivery_mask = ps_param->uapsd_per_ac_bit_mask |
+			      ps_param->uapsd_per_ac_delivery_enable_mask;
 
-	uapsd_trigger_mask =
-		ps_param->uapsd_per_ac_bit_mask |
-		ps_param->uapsd_per_ac_trigger_enable_mask;
+	uapsd_trigger_mask = ps_param->uapsd_per_ac_bit_mask |
+			     ps_param->uapsd_per_ac_trigger_enable_mask;
 
 	uapsdParams->bkDeliveryEnabled =
 		LIM_UAPSD_GET(ACBK, uapsd_delivery_mask);
@@ -94,17 +91,13 @@ static void sme_ps_fill_uapsd_req_params(struct mac_context *mac_ctx,
 	uapsdParams->voDeliveryEnabled =
 		LIM_UAPSD_GET(ACVO, uapsd_delivery_mask);
 
-	uapsdParams->bkTriggerEnabled =
-		LIM_UAPSD_GET(ACBK, uapsd_trigger_mask);
+	uapsdParams->bkTriggerEnabled = LIM_UAPSD_GET(ACBK, uapsd_trigger_mask);
 
-	uapsdParams->beTriggerEnabled =
-		LIM_UAPSD_GET(ACBE, uapsd_trigger_mask);
+	uapsdParams->beTriggerEnabled = LIM_UAPSD_GET(ACBE, uapsd_trigger_mask);
 
-	uapsdParams->viTriggerEnabled =
-		LIM_UAPSD_GET(ACVI, uapsd_trigger_mask);
+	uapsdParams->viTriggerEnabled = LIM_UAPSD_GET(ACVI, uapsd_trigger_mask);
 
-	uapsdParams->voTriggerEnabled =
-		LIM_UAPSD_GET(ACVO, uapsd_trigger_mask);
+	uapsdParams->voTriggerEnabled = LIM_UAPSD_GET(ACVO, uapsd_trigger_mask);
 	if (ps_param->ps_state != FULL_POWER_MODE) {
 		uapsdParams->enable_ps = true;
 		*ps_state = UAPSD_MODE;
@@ -114,8 +107,8 @@ static void sme_ps_fill_uapsd_req_params(struct mac_context *mac_ctx,
 	}
 }
 
-static void sme_set_ps_state(struct mac_context *mac_ctx,
-		uint32_t session_id, enum ps_state ps_state)
+static void sme_set_ps_state(struct mac_context *mac_ctx, uint32_t session_id,
+			     enum ps_state ps_state)
 {
 	struct ps_global_info *ps_global_info = &mac_ctx->sme.ps_global_info;
 	struct ps_params *ps_param = &ps_global_info->ps_params[session_id];
@@ -123,8 +116,8 @@ static void sme_set_ps_state(struct mac_context *mac_ctx,
 	ps_param->ps_state = ps_state;
 }
 
-static void sme_get_ps_state(struct mac_context *mac_ctx,
-		uint32_t session_id, enum ps_state *ps_state)
+static void sme_get_ps_state(struct mac_context *mac_ctx, uint32_t session_id,
+			     enum ps_state *ps_state)
 {
 	struct ps_global_info *ps_global_info = &mac_ctx->sme.ps_global_info;
 	struct ps_params *ps_param = &ps_global_info->ps_params[session_id];
@@ -137,23 +130,23 @@ static void sme_get_ps_state(struct mac_context *mac_ctx,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-sme_ps_enable_ps_req_params(struct mac_context *mac_ctx, uint32_t vdev_id)
+static QDF_STATUS sme_ps_enable_ps_req_params(struct mac_context *mac_ctx,
+					      uint32_t vdev_id)
 {
 	struct sEnablePsParams *enable_ps_req_params;
 	struct ps_global_info *ps_global_info = &mac_ctx->sme.ps_global_info;
 	struct ps_params *ps_param = &ps_global_info->ps_params[vdev_id];
 	enum ps_state ps_state;
 
-	enable_ps_req_params =  qdf_mem_malloc(sizeof(*enable_ps_req_params));
+	enable_ps_req_params = qdf_mem_malloc(sizeof(*enable_ps_req_params));
 	if (!enable_ps_req_params)
 		return QDF_STATUS_E_NOMEM;
 
 	if (ps_param->uapsd_per_ac_bit_mask) {
 		enable_ps_req_params->psSetting = eSIR_ADDON_ENABLE_UAPSD;
 		sme_ps_fill_uapsd_req_params(mac_ctx,
-				&enable_ps_req_params->uapsdParams,
-				vdev_id, &ps_state);
+					     &enable_ps_req_params->uapsdParams,
+					     vdev_id, &ps_state);
 		ps_state = UAPSD_MODE;
 		enable_ps_req_params->uapsdParams.enable_ps = true;
 	} else {
@@ -182,7 +175,7 @@ sme_ps_enable_ps_req_params(struct mac_context *mac_ctx, uint32_t vdev_id)
 static QDF_STATUS sme_ps_disable_ps_req_params(struct mac_context *mac_ctx,
 					       uint32_t vdev_id)
 {
-	struct  sDisablePsParams *disable_ps_req_params;
+	struct sDisablePsParams *disable_ps_req_params;
 
 	disable_ps_req_params = qdf_mem_malloc(sizeof(*disable_ps_req_params));
 	if (!disable_ps_req_params)
@@ -208,9 +201,8 @@ static QDF_STATUS sme_ps_disable_ps_req_params(struct mac_context *mac_ctx,
  * Return: QDF_STATUS
  */
 static QDF_STATUS sme_ps_enable_uapsd_req_params(struct mac_context *mac_ctx,
-		uint32_t session_id)
+						 uint32_t session_id)
 {
-
 	struct sEnableUapsdParams *enable_uapsd_req_params;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	enum ps_state ps_state;
@@ -221,8 +213,8 @@ static QDF_STATUS sme_ps_enable_uapsd_req_params(struct mac_context *mac_ctx,
 		return QDF_STATUS_E_NOMEM;
 
 	sme_ps_fill_uapsd_req_params(mac_ctx,
-			&enable_uapsd_req_params->uapsdParams,
-			session_id, &ps_state);
+				     &enable_uapsd_req_params->uapsdParams,
+				     session_id, &ps_state);
 	enable_uapsd_req_params->sessionid = session_id;
 
 	status = sme_post_ps_msg_to_wma(WMA_ENABLE_UAPSD_REQ,
@@ -243,7 +235,7 @@ static QDF_STATUS sme_ps_enable_uapsd_req_params(struct mac_context *mac_ctx,
  * Return: QDF_STATUS
  */
 static QDF_STATUS sme_ps_disable_uapsd_req_params(struct mac_context *mac_ctx,
-		uint32_t session_id)
+						  uint32_t session_id)
 {
 	struct sDisableUapsdParams *disable_uapsd_req_params;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -279,8 +271,8 @@ static QDF_STATUS sme_ps_disable_uapsd_req_params(struct mac_context *mac_ctx,
  *
  * Return: QDF_STATUS
  */
-QDF_STATUS sme_ps_process_command(struct mac_context *mac_ctx, uint32_t session_id,
-		enum sme_ps_cmd command)
+QDF_STATUS sme_ps_process_command(struct mac_context *mac_ctx,
+				  uint32_t session_id, enum sme_ps_cmd command)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
@@ -326,8 +318,9 @@ static QDF_STATUS sme_ps_enable_user_check(bool usr_cfg_ps_enable,
 					   uint32_t session_id)
 {
 	if (command == SME_PS_ENABLE && !usr_cfg_ps_enable) {
-		sme_debug("vdev:%d Cannot initiate PS. PS is disabled by usr(ioctl)",
-			  session_id);
+		sme_debug(
+			"vdev:%d Cannot initiate PS. PS is disabled by usr(ioctl)",
+			session_id);
 		return QDF_STATUS_E_FAILURE;
 	}
 	return QDF_STATUS_SUCCESS;
@@ -364,17 +357,16 @@ QDF_STATUS sme_enable_sta_ps_check(struct mac_context *mac_ctx,
 
 	usr_cfg_ps_enable = mlme_get_user_ps(mac_ctx->psoc, session_id);
 
-	if (sme_ps_enable_user_check(usr_cfg_ps_enable, command, session_id)
-	    != QDF_STATUS_SUCCESS)
+	if (sme_ps_enable_user_check(usr_cfg_ps_enable, command, session_id) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
 	/* Check whether the given session is Infra and in Connected State
-	 * also if command is power save disable  there is not need to check
-	 * for connected state as firmware can handle this
-	 */
+   * also if command is power save disable  there is not need to check
+   * for connected state as firmware can handle this
+   */
 	if (!cm_is_vdevid_connected(mac_ctx->pdev, session_id)) {
-		sme_debug("vdev:%d STA not infra/connected state",
-			  session_id);
+		sme_debug("vdev:%d STA not infra/connected state", session_id);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -401,13 +393,13 @@ QDF_STATUS sme_ps_enable_disable(mac_handle_t mac_handle, uint32_t session_id,
 		return status;
 	}
 
-	status =  sme_enable_sta_ps_check(mac_ctx, session_id, command);
+	status = sme_enable_sta_ps_check(mac_ctx, session_id, command);
 	if (status != QDF_STATUS_SUCCESS) {
 		/*
-		 * In non associated state driver won't handle the power save
-		 * But kernel expects return status success even
-		 * in the disconnected state.
-		 */
+     * In non associated state driver won't handle the power save
+     * But kernel expects return status success even
+     * in the disconnected state.
+     */
 		if (!cm_is_vdevid_connected(mac_ctx->pdev, session_id))
 			status = QDF_STATUS_SUCCESS;
 		sme_release_global_lock(&mac_ctx->sme);
@@ -433,8 +425,7 @@ QDF_STATUS sme_ps_update(mac_handle_t mac_handle, uint32_t vdev_id)
 	}
 	usr_ps_cfg = mlme_get_user_ps(mac_ctx->psoc, vdev_id);
 	command = usr_ps_cfg ? SME_PS_ENABLE : SME_PS_DISABLE;
-	sme_debug("Allow power save %d vdev %d",
-		  usr_ps_cfg, vdev_id);
+	sme_debug("Allow power save %d vdev %d", usr_ps_cfg, vdev_id);
 	status = sme_ps_enable_disable(mac_handle, vdev_id, command);
 	sme_release_global_lock(&mac_ctx->sme);
 
@@ -442,25 +433,23 @@ QDF_STATUS sme_ps_update(mac_handle_t mac_handle, uint32_t vdev_id)
 }
 
 #ifdef QCA_WIFI_EMULATION
-static
-QDF_STATUS sme_ps_set_powersave_disable_auto_timer(mac_handle_t mac_handle,
-						   uint8_t vdev_id)
+static QDF_STATUS
+sme_ps_set_powersave_disable_auto_timer(mac_handle_t mac_handle,
+					uint8_t vdev_id)
 {
 	return QDF_STATUS_SUCCESS;
 }
 #else
-static
-QDF_STATUS sme_ps_set_powersave_disable_auto_timer(mac_handle_t mac_handle,
-						   uint8_t vdev_id)
+static QDF_STATUS
+sme_ps_set_powersave_disable_auto_timer(mac_handle_t mac_handle,
+					uint8_t vdev_id)
 {
-	return sme_ps_disable_auto_ps_timer(mac_handle,
-					      vdev_id);
+	return sme_ps_disable_auto_ps_timer(mac_handle, vdev_id);
 }
 #endif
 
-QDF_STATUS sme_ps_set_powersave(mac_handle_t mac_handle,
-				uint8_t vdev_id, bool allow_power_save,
-				uint32_t timeout,
+QDF_STATUS sme_ps_set_powersave(mac_handle_t mac_handle, uint8_t vdev_id,
+				bool allow_power_save, uint32_t timeout,
 				bool ap_supports_immediate_power_save)
 {
 	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
@@ -479,13 +468,12 @@ QDF_STATUS sme_ps_set_powersave(mac_handle_t mac_handle,
 
 	mlme_set_user_ps(mac_ctx->psoc, vdev_id, allow_power_save);
 	/*
-	 * This is a workaround for defective AP's that send a disassoc
-	 * immediately after WPS connection completes. Defer powersave by a
-	 * small amount if the affected AP is detected.
-	 */
+   * This is a workaround for defective AP's that send a disassoc
+   * immediately after WPS connection completes. Defer powersave by a
+   * small amount if the affected AP is detected.
+   */
 	device_mode = wlan_get_opmode_from_vdev_id(mac_ctx->pdev, vdev_id);
-	if (allow_power_save &&
-	    device_mode == QDF_STA_MODE &&
+	if (allow_power_save && device_mode == QDF_STA_MODE &&
 	    !ap_supports_immediate_power_save) {
 		timeout = AUTO_PS_DEFER_TIMEOUT_MS;
 		sme_debug("Defer power-save due to AP spec non-conformance");
@@ -495,8 +483,8 @@ QDF_STATUS sme_ps_set_powersave(mac_handle_t mac_handle,
 		if (device_mode == QDF_STA_MODE ||
 		    device_mode == QDF_P2P_CLIENT_MODE) {
 			sme_debug("Disabling Auto Power save timer");
-			status = sme_ps_disable_auto_ps_timer(
-				mac_handle, vdev_id);
+			status = sme_ps_disable_auto_ps_timer(mac_handle,
+							      vdev_id);
 			if (status != QDF_STATUS_SUCCESS)
 				goto end;
 		}
@@ -506,21 +494,17 @@ QDF_STATUS sme_ps_set_powersave(mac_handle_t mac_handle,
 			sme_debug("Wlan driver Entering Power save");
 
 			/*
-			 * Enter Power Save command received from GUI
-			 * this means DHCP is completed
-			 */
+       * Enter Power Save command received from GUI
+       * this means DHCP is completed
+       */
 			if (timeout) {
 				status = sme_ps_enable_auto_ps_timer(
-								mac_handle,
-								vdev_id,
-								timeout);
+					mac_handle, vdev_id, timeout);
 				if (status != QDF_STATUS_SUCCESS)
 					goto end;
 			} else {
 				status = sme_ps_enable_disable(
-							mac_handle,
-							vdev_id,
-							SME_PS_ENABLE);
+					mac_handle, vdev_id, SME_PS_ENABLE);
 				if (status != QDF_STATUS_SUCCESS)
 					goto end;
 			}
@@ -531,9 +515,9 @@ QDF_STATUS sme_ps_set_powersave(mac_handle_t mac_handle,
 		sme_debug("Wlan driver Entering Full Power");
 
 		/*
-		 * Enter Full power command received from GUI
-		 * this means we are disconnected
-		 */
+     * Enter Full power command received from GUI
+     * this means we are disconnected
+     */
 		status = sme_ps_set_powersave_disable_auto_timer(mac_handle,
 								 vdev_id);
 		if (status != QDF_STATUS_SUCCESS)
@@ -541,8 +525,7 @@ QDF_STATUS sme_ps_set_powersave(mac_handle_t mac_handle,
 
 		wlan_mlme_is_bmps_enabled(mac_ctx->psoc, &is_bmps_enabled);
 		if (is_bmps_enabled) {
-			status = sme_ps_enable_disable(mac_handle,
-						       vdev_id,
+			status = sme_ps_enable_disable(mac_handle, vdev_id,
 						       SME_PS_DISABLE);
 			if (status != QDF_STATUS_SUCCESS)
 				goto end;
@@ -629,16 +612,15 @@ end:
  */
 QDF_STATUS sme_ps_uapsd_enable(mac_handle_t mac_handle, uint32_t session_id)
 {
-
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
 
-	status =  sme_enable_sta_ps_check(mac_ctx, session_id,
-					SME_PS_UAPSD_ENABLE);
+	status = sme_enable_sta_ps_check(mac_ctx, session_id,
+					 SME_PS_UAPSD_ENABLE);
 	if (status != QDF_STATUS_SUCCESS)
 		return status;
 	status = sme_ps_process_command(mac_ctx, session_id,
-			SME_PS_UAPSD_ENABLE);
+					SME_PS_UAPSD_ENABLE);
 	if (status == QDF_STATUS_SUCCESS)
 		sme_offload_qos_process_into_uapsd_mode(mac_ctx, session_id);
 
@@ -654,16 +636,15 @@ QDF_STATUS sme_ps_uapsd_enable(mac_handle_t mac_handle, uint32_t session_id)
  */
 QDF_STATUS sme_ps_uapsd_disable(mac_handle_t mac_handle, uint32_t session_id)
 {
-
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
 
 	status = sme_enable_sta_ps_check(mac_ctx, session_id,
-					SME_PS_UAPSD_DISABLE);
+					 SME_PS_UAPSD_DISABLE);
 	if (status != QDF_STATUS_SUCCESS)
 		return status;
 	status = sme_ps_process_command(mac_ctx, session_id,
-			SME_PS_UAPSD_DISABLE);
+					SME_PS_UAPSD_DISABLE);
 	if (status == QDF_STATUS_SUCCESS)
 		sme_offload_qos_process_out_of_uapsd_mode(mac_ctx, session_id);
 
@@ -682,33 +663,31 @@ void sme_set_tspec_uapsd_mask_per_session(struct mac_context *mac_ctx,
 					  struct mac_ts_info *ts_info,
 					  uint8_t session_id)
 {
-	uint8_t user_prio = (uint8_t) ts_info->traffic.userPrio;
+	uint8_t user_prio = (uint8_t)ts_info->traffic.userPrio;
 	uint16_t direction = ts_info->traffic.direction;
 	uint8_t ac = upToAc(user_prio);
 	struct ps_global_info *ps_global_info = &mac_ctx->sme.ps_global_info;
 	struct ps_params *ps_param = &ps_global_info->ps_params[session_id];
 
-	sme_debug("Set UAPSD mask for AC: %d dir: %d action: %d",
-		  ac, direction, ts_info->traffic.psb);
+	sme_debug("Set UAPSD mask for AC: %d dir: %d action: %d", ac, direction,
+		  ts_info->traffic.psb);
 
 	/* Converting AC to appropriate Uapsd Bit Mask
-	 * AC_BE(0) --> UAPSD_BITOFFSET_ACVO(3)
-	 * AC_BK(1) --> UAPSD_BITOFFSET_ACVO(2)
-	 * AC_VI(2) --> UAPSD_BITOFFSET_ACVO(1)
-	 * AC_VO(3) --> UAPSD_BITOFFSET_ACVO(0)
-	 */
+   * AC_BE(0) --> UAPSD_BITOFFSET_ACVO(3)
+   * AC_BK(1) --> UAPSD_BITOFFSET_ACVO(2)
+   * AC_VI(2) --> UAPSD_BITOFFSET_ACVO(1)
+   * AC_VO(3) --> UAPSD_BITOFFSET_ACVO(0)
+   */
 	ac = ((~ac) & 0x3);
 	if (ts_info->traffic.psb) {
 		ps_param->uapsd_per_ac_bit_mask |= (1 << ac);
 		if (direction == SIR_MAC_DIRECTION_UPLINK)
-			ps_param->uapsd_per_ac_trigger_enable_mask |=
-				(1 << ac);
+			ps_param->uapsd_per_ac_trigger_enable_mask |= (1 << ac);
 		else if (direction == SIR_MAC_DIRECTION_DNLINK)
 			ps_param->uapsd_per_ac_delivery_enable_mask |=
 				(1 << ac);
 		else if (direction == SIR_MAC_DIRECTION_BIDIR) {
-			ps_param->uapsd_per_ac_trigger_enable_mask |=
-				(1 << ac);
+			ps_param->uapsd_per_ac_trigger_enable_mask |= (1 << ac);
 			ps_param->uapsd_per_ac_delivery_enable_mask |=
 				(1 << ac);
 		}
@@ -729,29 +708,25 @@ void sme_set_tspec_uapsd_mask_per_session(struct mac_context *mac_ctx,
 	}
 
 	/*
-	 * ADDTS success, so AC is now admitted. We shall now use the default
-	 * EDCA parameters as advertised by AP and send the updated EDCA params
-	 * to HAL.
-	 */
+   * ADDTS success, so AC is now admitted. We shall now use the default
+   * EDCA parameters as advertised by AP and send the updated EDCA params
+   * to HAL.
+   */
 	if (direction == SIR_MAC_DIRECTION_UPLINK) {
-		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_UPLINK] |=
-			(1 << ac);
+		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_UPLINK] |= (1 << ac);
 	} else if (direction == SIR_MAC_DIRECTION_DNLINK) {
-		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_DNLINK] |=
-			(1 << ac);
+		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_DNLINK] |= (1 << ac);
 	} else if (direction == SIR_MAC_DIRECTION_BIDIR) {
-		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_UPLINK] |=
-			(1 << ac);
-		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_DNLINK] |=
-			(1 << ac);
+		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_UPLINK] |= (1 << ac);
+		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_DNLINK] |= (1 << ac);
 	}
 
 	sme_debug("New ps_param->uapsd_per_ac_trigger_enable_mask: 0x%x",
-		ps_param->uapsd_per_ac_trigger_enable_mask);
+		  ps_param->uapsd_per_ac_trigger_enable_mask);
 	sme_debug("New  ps_param->uapsd_per_ac_delivery_enable_mask: 0x%x",
-		ps_param->uapsd_per_ac_delivery_enable_mask);
+		  ps_param->uapsd_per_ac_delivery_enable_mask);
 	sme_debug("New ps_param->ac_admit_mask[SIR_MAC_DIRECTION_UPLINK]: 0x%x",
-		ps_param->ac_admit_mask[SIR_MAC_DIRECTION_UPLINK]);
+		  ps_param->ac_admit_mask[SIR_MAC_DIRECTION_UPLINK]);
 }
 
 /**
@@ -783,11 +758,10 @@ QDF_STATUS sme_set_ps_host_offload(mac_handle_t mac_handle,
 				   uint8_t session_id)
 {
 	struct sir_host_offload_req *request_buf;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
 
-	sme_debug("IP address = %d.%d.%d.%d",
-		  request->params.hostIpv4Addr[0],
+	sme_debug("IP address = %d.%d.%d.%d", request->params.hostIpv4Addr[0],
 		  request->params.hostIpv4Addr[1],
 		  request->params.hostIpv4Addr[2],
 		  request->params.hostIpv4Addr[3]);
@@ -801,8 +775,7 @@ QDF_STATUS sme_set_ps_host_offload(mac_handle_t mac_handle,
 	if (!request_buf)
 		return QDF_STATUS_E_NOMEM;
 
-	wlan_mlme_get_bssid_vdev_id(mac_ctx->pdev, session_id,
-				    &request->bssid);
+	wlan_mlme_get_bssid_vdev_id(mac_ctx->pdev, session_id, &request->bssid);
 	qdf_mem_copy(request_buf, request, sizeof(struct sir_host_offload_req));
 
 	msg.type = WMA_SET_HOST_OFFLOAD;
@@ -811,9 +784,8 @@ QDF_STATUS sme_set_ps_host_offload(mac_handle_t mac_handle,
 	MTRACE(qdf_trace(QDF_MODULE_ID_SME, TRACE_CODE_SME_TX_WMA_MSG,
 			 session_id, msg.type));
 	if (QDF_STATUS_SUCCESS !=
-			scheduler_post_message(QDF_MODULE_ID_SME,
-					       QDF_MODULE_ID_WMA,
-					       QDF_MODULE_ID_WMA, &msg)) {
+	    scheduler_post_message(QDF_MODULE_ID_SME, QDF_MODULE_ID_WMA,
+				   QDF_MODULE_ID_WMA, &msg)) {
 		sme_err("Not able to post WMA_SET_HOST_OFFLOAD msg to WMA");
 		qdf_mem_free(request_buf);
 		return QDF_STATUS_E_FAILURE;
@@ -838,15 +810,14 @@ QDF_STATUS sme_set_ps_ns_offload(mac_handle_t mac_handle,
 {
 	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
 	struct sir_host_offload_req *request_buf;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 
 	if (!CSR_IS_SESSION_VALID(mac_ctx, session_id)) {
 		sme_err("CSR session is invalid");
 		return QDF_STATUS_E_INVAL;
 	}
 
-	wlan_mlme_get_bssid_vdev_id(mac_ctx->pdev, session_id,
-				    &request->bssid);
+	wlan_mlme_get_bssid_vdev_id(mac_ctx->pdev, session_id, &request->bssid);
 
 	request_buf = qdf_mem_malloc(sizeof(*request_buf));
 	if (!request_buf)
@@ -860,11 +831,9 @@ QDF_STATUS sme_set_ps_ns_offload(mac_handle_t mac_handle,
 	MTRACE(qdf_trace(QDF_MODULE_ID_SME, TRACE_CODE_SME_TX_WMA_MSG,
 			 session_id, msg.type));
 	if (QDF_STATUS_SUCCESS !=
-			scheduler_post_message(QDF_MODULE_ID_SME,
-					       QDF_MODULE_ID_WMA,
-					       QDF_MODULE_ID_WMA, &msg)) {
-		sme_err(
-		"Not able to post SIR_HAL_SET_HOST_OFFLOAD message to HAL");
+	    scheduler_post_message(QDF_MODULE_ID_SME, QDF_MODULE_ID_WMA,
+				   QDF_MODULE_ID_WMA, &msg)) {
+		sme_err("Not able to post SIR_HAL_SET_HOST_OFFLOAD message to HAL");
 		qdf_mem_free(request_buf);
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -894,10 +863,8 @@ QDF_STATUS sme_post_pe_message(struct mac_context *mac_ctx,
 {
 	QDF_STATUS qdf_status;
 
-	qdf_status = scheduler_post_message(QDF_MODULE_ID_SME,
-					    QDF_MODULE_ID_PE,
-					    QDF_MODULE_ID_PE,
-					    msg);
+	qdf_status = scheduler_post_message(QDF_MODULE_ID_SME, QDF_MODULE_ID_PE,
+					    QDF_MODULE_ID_PE, msg);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		sme_err("scheduler_post_msg failed with status: %d",
 			qdf_status);
@@ -929,8 +896,7 @@ QDF_STATUS sme_ps_enable_auto_ps_timer(mac_handle_t mac_handle,
 	QDF_TIMER_STATE cur_state;
 	bool usr_cfg_ps_enable;
 
-	usr_cfg_ps_enable =
-		mlme_get_user_ps(mac_ctx->psoc, session_id);
+	usr_cfg_ps_enable = mlme_get_user_ps(mac_ctx->psoc, session_id);
 	if (!timeout && !usr_cfg_ps_enable) {
 		sme_debug("auto_ps_timer called with timeout 0; ignore");
 		return QDF_STATUS_SUCCESS;
@@ -948,8 +914,8 @@ QDF_STATUS sme_ps_enable_auto_ps_timer(mac_handle_t mac_handle,
 
 	timeout = sme_ps_scale_auto_ps_timeout(timeout);
 	sme_debug("Start auto_ps_timer for %d ms", timeout);
-	qdf_status = qdf_mc_timer_start(&ps_param->auto_ps_enable_timer,
-		timeout);
+	qdf_status =
+		qdf_mc_timer_start(&ps_param->auto_ps_enable_timer, timeout);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		if (QDF_STATUS_E_ALREADY == qdf_status) {
 			/* Consider this ok since the timer is already started*/
@@ -975,18 +941,16 @@ QDF_STATUS sme_ps_disable_auto_ps_timer(mac_handle_t mac_handle,
 
 	ps_param = &ps_global_info->ps_params[session_id];
 	/*
-	 * Stop the auto ps entry timer if running
-	 */
+   * Stop the auto ps entry timer if running
+   */
 	if (QDF_TIMER_STATE_RUNNING ==
-			qdf_mc_timer_get_current_state(
-				&ps_param->auto_ps_enable_timer)) {
+	    qdf_mc_timer_get_current_state(&ps_param->auto_ps_enable_timer)) {
 		sme_debug("Stop auto_ps_enable_timer Timer for session ID: %d",
-				session_id);
+			  session_id);
 		qdf_mc_timer_stop(&ps_param->auto_ps_enable_timer);
 	}
 	return QDF_STATUS_SUCCESS;
 }
-
 
 QDF_STATUS sme_ps_open(mac_handle_t mac_handle)
 {
@@ -996,15 +960,14 @@ QDF_STATUS sme_ps_open(mac_handle_t mac_handle)
 	for (i = 0; i < WLAN_MAX_VDEVS; i++) {
 		mlme_set_user_ps(mac->psoc, i, true);
 
-		if (QDF_STATUS_SUCCESS != sme_ps_open_per_session(mac_handle,
-								  i)) {
+		if (QDF_STATUS_SUCCESS !=
+		    sme_ps_open_per_session(mac_handle, i)) {
 			sme_err("PMC Init Failed for session: %d", i);
 			return QDF_STATUS_E_FAILURE;
 		}
 	}
 	return QDF_STATUS_SUCCESS;
 }
-
 
 QDF_STATUS sme_ps_open_per_session(mac_handle_t mac_handle, uint32_t session_id)
 {
@@ -1016,15 +979,12 @@ QDF_STATUS sme_ps_open_per_session(mac_handle_t mac_handle, uint32_t session_id)
 	ps_param->mac_ctx = mac_ctx;
 	/* Allocate a timer to enable ps automatically */
 	if (!QDF_IS_STATUS_SUCCESS(qdf_mc_timer_init(
-					&ps_param->auto_ps_enable_timer,
-					QDF_TIMER_TYPE_SW,
-					sme_auto_ps_entry_timer_expired,
-					ps_param)))     {
+		    &ps_param->auto_ps_enable_timer, QDF_TIMER_TYPE_SW,
+		    sme_auto_ps_entry_timer_expired, ps_param))) {
 		sme_err("Cannot allocate timer for auto ps entry");
 		return QDF_STATUS_E_FAILURE;
 	}
 	return QDF_STATUS_SUCCESS;
-
 }
 
 void sme_auto_ps_entry_timer_expired(void *data)
@@ -1072,22 +1032,19 @@ QDF_STATUS sme_ps_close(mac_handle_t mac_handle)
 QDF_STATUS sme_ps_close_per_session(mac_handle_t mac_handle,
 				    uint32_t session_id)
 {
-
 	struct mac_context *mac_ctx = MAC_CONTEXT(mac_handle);
 	struct ps_global_info *ps_global_info = &mac_ctx->sme.ps_global_info;
 	struct ps_params *ps_param = &ps_global_info->ps_params[session_id];
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
 
 	/*
-	 * Stop the auto ps entry timer if running
-	 */
+   * Stop the auto ps entry timer if running
+   */
 	if (QDF_TIMER_STATE_RUNNING ==
-			qdf_mc_timer_get_current_state(
-				&ps_param->auto_ps_enable_timer))
+	    qdf_mc_timer_get_current_state(&ps_param->auto_ps_enable_timer))
 		qdf_mc_timer_stop(&ps_param->auto_ps_enable_timer);
 
-	qdf_status =
-		qdf_mc_timer_destroy(&ps_param->auto_ps_enable_timer);
+	qdf_status = qdf_mc_timer_destroy(&ps_param->auto_ps_enable_timer);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status))
 		sme_err("Cannot deallocate suto PS timer");
 	return qdf_status;

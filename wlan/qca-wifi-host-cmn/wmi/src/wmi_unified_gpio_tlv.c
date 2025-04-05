@@ -17,8 +17,8 @@
 
 #include <osdep.h>
 #include <wmi.h>
-#include <wmi_unified_priv.h>
 #include <wmi_unified_gpio_api.h>
+#include <wmi_unified_priv.h>
 
 /**
  * convert_gpio_direction() - Function to convert unified gpio direction
@@ -30,8 +30,7 @@
  * 0 - Output
  * 1 - Input
  */
-static uint32_t
-convert_gpio_direction(enum gpio_direction dir)
+static uint32_t convert_gpio_direction(enum gpio_direction dir)
 {
 	switch (dir) {
 	case WMI_HOST_GPIO_INPUT:
@@ -51,8 +50,7 @@ convert_gpio_direction(enum gpio_direction dir)
  *
  * Return: FW TLV WMI gpio pull type
  */
-static uint32_t
-convert_gpio_pull_type(enum gpio_pull_type pull_type)
+static uint32_t convert_gpio_pull_type(enum gpio_pull_type pull_type)
 {
 	switch (pull_type) {
 	case WMI_HOST_GPIO_PULL_NONE:
@@ -74,8 +72,7 @@ convert_gpio_pull_type(enum gpio_pull_type pull_type)
  *
  * Return: FW TLV WMI gpio interrupt mode
  */
-static uint32_t
-convert_gpio_interrupt_mode(enum gpio_interrupt_mode intr_mode)
+static uint32_t convert_gpio_interrupt_mode(enum gpio_interrupt_mode intr_mode)
 {
 	switch (intr_mode) {
 	case WMI_HOST_GPIO_INTMODE_DISABLE:
@@ -105,8 +102,7 @@ convert_gpio_interrupt_mode(enum gpio_interrupt_mode intr_mode)
  * 0 - Output low level
  * 1 - Output high level
  */
-static uint32_t
-convert_gpio_output_value(enum gpio_value value)
+static uint32_t convert_gpio_output_value(enum gpio_value value)
 {
 	switch (value) {
 	case WMI_HOST_GPIO_LEVEL_LOW:
@@ -127,9 +123,8 @@ convert_gpio_output_value(enum gpio_value value)
  *
  * Return: QDF_STATUS_SUCCESS on success and QDF_STATUS_E_FAILURE for failure
  */
-static QDF_STATUS
-send_gpio_config_cmd_tlv(wmi_unified_t wmi_handle,
-			 struct gpio_config_params *param)
+static QDF_STATUS send_gpio_config_cmd_tlv(wmi_unified_t wmi_handle,
+					   struct gpio_config_params *param)
 {
 	wmi_gpio_config_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -150,10 +145,10 @@ send_gpio_config_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 
 	cmd = (wmi_gpio_config_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_gpio_config_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN(
-				wmi_gpio_config_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_gpio_config_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_gpio_config_cmd_fixed_param));
 	cmd->gpio_num = param->pin_num;
 	cmd->input = convert_gpio_direction(param->pin_dir);
 	cmd->pull_type = convert_gpio_pull_type(param->pin_pull_type);
@@ -163,9 +158,9 @@ send_gpio_config_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd->init_enable = param->init_enable;
 
 	wmi_debug("GPIO num %d, input-dir %d, pull_type %d, intr_mode %d"
-		 " mux_config_val %d drive %d init_enable %d",
-		 cmd->gpio_num, cmd->input, cmd->pull_type, cmd->intr_mode,
-		 cmd->mux_config_val, cmd->drive, cmd->init_enable);
+		  " mux_config_val %d drive %d init_enable %d",
+		  cmd->gpio_num, cmd->input, cmd->pull_type, cmd->intr_mode,
+		  cmd->mux_config_val, cmd->drive, cmd->init_enable);
 
 	wmi_mtrace(WMI_GPIO_CONFIG_CMDID, NO_SESSION, 0);
 	ret = wmi_unified_cmd_send(wmi_handle, buf, sizeof(*cmd),
@@ -188,9 +183,8 @@ send_gpio_config_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: QDF_STATUS_SUCCESS on success and QDF_STATUS_E_FAILURE for failure
  */
-static QDF_STATUS
-send_gpio_output_cmd_tlv(wmi_unified_t wmi_handle,
-			 struct gpio_output_params *param)
+static QDF_STATUS send_gpio_output_cmd_tlv(wmi_unified_t wmi_handle,
+					   struct gpio_output_params *param)
 {
 	wmi_gpio_output_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -208,10 +202,10 @@ send_gpio_output_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 
 	cmd = (wmi_gpio_output_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_gpio_output_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN(
-				wmi_gpio_output_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_gpio_output_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_gpio_output_cmd_fixed_param));
 	cmd->gpio_num = param->pin_num;
 	cmd->set = convert_gpio_output_value(param->pin_set);
 
@@ -235,4 +229,3 @@ void wmi_gpio_attach_tlv(wmi_unified_t wmi_handle)
 	ops->send_gpio_config_cmd = send_gpio_config_cmd_tlv;
 	ops->send_gpio_output_cmd = send_gpio_output_cmd_tlv;
 }
-

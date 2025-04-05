@@ -14,8 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <i_qdf_notifier.h>
-#include <qdf_status.h>
 #include <qdf_notifier.h>
+#include <qdf_status.h>
 
 QDF_STATUS qdf_register_blocking_notifier_chain(qdf_blocking_notif_head *head,
 						qdf_notif_block *qnb)
@@ -32,8 +32,7 @@ QDF_STATUS qdf_unregister_blocking_notifier_chain(qdf_blocking_notif_head *head,
 {
 	int ret;
 
-	ret = __qdf_unregister_blocking_notifier_chain(head,
-						       &qnb->notif_block);
+	ret = __qdf_unregister_blocking_notifier_chain(head, &qnb->notif_block);
 
 	return qdf_status_from_os_return(ret);
 }
@@ -68,8 +67,8 @@ QDF_STATUS qdf_unregister_atomic_notifier_chain(qdf_atomic_notif_head *head,
 	return qdf_status_from_os_return(ret);
 }
 
-QDF_STATUS qdf_atomic_notfier_call(qdf_atomic_notif_head *head,
-				   unsigned long v, void *data)
+QDF_STATUS qdf_atomic_notfier_call(qdf_atomic_notif_head *head, unsigned long v,
+				   void *data)
 {
 	int ret;
 

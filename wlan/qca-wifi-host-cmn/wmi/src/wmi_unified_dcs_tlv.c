@@ -29,8 +29,8 @@
  * Return: 0 for success or error code
  */
 static QDF_STATUS extract_dcs_interference_type_tlv(
-		wmi_unified_t wmi_handle,
-		void *evt_buf, struct wlan_host_dcs_interference_param *param)
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct wlan_host_dcs_interference_param *param)
 {
 	WMI_DCS_INTERFERENCE_EVENTID_param_tlvs *param_buf;
 
@@ -48,8 +48,7 @@ static QDF_STATUS extract_dcs_interference_type_tlv(
 	param->interference_type = param_buf->fixed_param->interference_type;
 	/* Just support tlv currently */
 	param->pdev_id = wmi_handle->ops->convert_target_pdev_id_to_host(
-					wmi_handle,
-					param_buf->fixed_param->pdev_id);
+		wmi_handle, param_buf->fixed_param->pdev_id);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -62,10 +61,9 @@ static QDF_STATUS extract_dcs_interference_type_tlv(
  *
  * Return: 0 for success or error code
  */
-static QDF_STATUS extract_dcs_im_tgt_stats_tlv(
-			wmi_unified_t wmi_handle,
-			void *evt_buf,
-			struct wlan_host_dcs_im_tgt_stats *wlan_stat)
+static QDF_STATUS
+extract_dcs_im_tgt_stats_tlv(wmi_unified_t wmi_handle, void *evt_buf,
+			     struct wlan_host_dcs_im_tgt_stats *wlan_stat)
 {
 	WMI_DCS_INTERFERENCE_EVENTID_param_tlvs *param_buf;
 	wlan_dcs_im_tgt_stats_t *ev;
@@ -147,4 +145,3 @@ void wmi_dcs_attach_tlv(wmi_unified_t wmi_handle)
 	ops->extract_dcs_im_tgt_stats = extract_dcs_im_tgt_stats_tlv;
 	ops->extract_dcs_awgn_info = extract_dcs_awgn_info_tlv;
 }
-

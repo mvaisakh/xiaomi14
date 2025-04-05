@@ -21,18 +21,17 @@
  */
 
 #include "wlan_pmo_wow.h"
-#include "wlan_pmo_tgt_api.h"
+#include "cfg_nan_api.h"
 #include "wlan_pmo_main.h"
 #include "wlan_pmo_obj_mgmt_public_struct.h"
-#include <wlan_scan_ucfg_api.h>
 #include "wlan_pmo_static_config.h"
+#include "wlan_pmo_tgt_api.h"
 #include "wlan_reg_services_api.h"
-#include "cfg_nan_api.h"
 #include "wlan_utility.h"
+#include <wlan_scan_ucfg_api.h>
 
 void pmo_set_wow_event_bitmap(WOW_WAKE_EVENT_TYPE event,
-			      uint32_t wow_bitmap_size,
-			      uint32_t *bitmask)
+			      uint32_t wow_bitmap_size, uint32_t *bitmask)
 {
 	uint32_t bit_idx = 0, idx = 0;
 
@@ -73,7 +72,7 @@ out:
 }
 
 QDF_STATUS pmo_core_add_wow_user_pattern(struct wlan_objmgr_vdev *vdev,
-		struct pmo_wow_add_pattern *ptrn)
+					 struct pmo_wow_add_pattern *ptrn)
 {
 	QDF_STATUS status;
 	uint8_t id;
@@ -96,21 +95,21 @@ QDF_STATUS pmo_core_add_wow_user_pattern(struct wlan_objmgr_vdev *vdev,
 	pmo_debug("Add user passed wow pattern id %d vdev id %d",
 		  ptrn->pattern_id, wlan_vdev_get_id(vdev));
 	/*
-	 * Convert received pattern mask value from bit representation
-	 * to byte representation.
-	 *
-	 * For example, received value from umac,
-	 *
-	 *      Mask value    : A1 (equivalent binary is "1010 0001")
-	 *      Pattern value : 12:00:13:00:00:00:00:44
-	 *
-	 * The value which goes to FW after the conversion from this
-	 * function (1 in mask value will become FF and 0 will
-	 * become 00),
-	 *
-	 *      Mask value    : FF:00:FF:00:00:00:00:FF
-	 *      Pattern value : 12:00:13:00:00:00:00:44
-	 */
+   * Convert received pattern mask value from bit representation
+   * to byte representation.
+   *
+   * For example, received value from umac,
+   *
+   *      Mask value    : A1 (equivalent binary is "1010 0001")
+   *      Pattern value : 12:00:13:00:00:00:00:44
+   *
+   * The value which goes to FW after the conversion from this
+   * function (1 in mask value will become FF and 0 will
+   * become 00),
+   *
+   *      Mask value    : FF:00:FF:00:00:00:00:FF
+   *      Pattern value : 12:00:13:00:00:00:00:44
+   */
 	qdf_mem_zero(new_mask, sizeof(new_mask));
 	for (pos = 0; pos < ptrn->pattern_size; pos++) {
 		bit_to_check = (PMO_NUM_BITS_IN_BYTE - 1) -
@@ -121,13 +120,9 @@ QDF_STATUS pmo_core_add_wow_user_pattern(struct wlan_objmgr_vdev *vdev,
 			new_mask[pos] = PMO_WOW_PTRN_MASK_VALID;
 	}
 
-	status = pmo_tgt_send_wow_patterns_to_fw(vdev,
-						 ptrn->pattern_id,
-						 ptrn->pattern,
-						 ptrn->pattern_size,
-						 ptrn->pattern_byte_offset,
-						 new_mask,
-						 ptrn->pattern_size, true);
+	status = pmo_tgt_send_wow_patterns_to_fw(
+		vdev, ptrn->pattern_id, ptrn->pattern, ptrn->pattern_size,
+		ptrn->pattern_byte_offset, new_mask, ptrn->pattern_size, true);
 	if (status != QDF_STATUS_SUCCESS)
 		pmo_err("Failed to add wow pattern %d", ptrn->pattern_id);
 
@@ -139,7 +134,7 @@ out:
 }
 
 QDF_STATUS pmo_core_del_wow_user_pattern(struct wlan_objmgr_vdev *vdev,
-		uint8_t pattern_id)
+					 uint8_t pattern_id)
 {
 	QDF_STATUS status;
 	struct pmo_vdev_priv_obj *vdev_ctx;
@@ -177,7 +172,7 @@ void pmo_core_enable_wakeup_event(struct wlan_objmgr_psoc *psoc,
 				  WOW_WAKE_EVENT_TYPE wow_event)
 {
 	struct wlan_objmgr_vdev *vdev;
-	uint32_t bitmap[PMO_WOW_MAX_EVENT_BM_LEN] = {0};
+	uint32_t bitmap[PMO_WOW_MAX_EVENT_BM_LEN] = { 0 };
 
 	pmo_enter();
 
@@ -207,7 +202,7 @@ void pmo_core_disable_wakeup_event(struct wlan_objmgr_psoc *psoc,
 				   WOW_WAKE_EVENT_TYPE wow_event)
 {
 	struct wlan_objmgr_vdev *vdev;
-	uint32_t bitmap[PMO_WOW_MAX_EVENT_BM_LEN] = {0};
+	uint32_t bitmap[PMO_WOW_MAX_EVENT_BM_LEN] = { 0 };
 
 	if (!psoc) {
 		pmo_err("psoc is null");
@@ -233,8 +228,7 @@ void pmo_core_disable_wakeup_event(struct wlan_objmgr_psoc *psoc,
  *
  * Return TRUE if beaconning vdev is up
  */
-static
-bool pmo_is_beaconing_vdev_up(struct wlan_objmgr_psoc *psoc)
+static bool pmo_is_beaconing_vdev_up(struct wlan_objmgr_psoc *psoc)
 {
 	int vdev_id;
 	struct wlan_objmgr_vdev *vdev;
@@ -270,13 +264,12 @@ bool pmo_is_beaconing_vdev_up(struct wlan_objmgr_psoc *psoc)
  *
  * Return: true if we need to enable wow for beaconning offload
  */
-static
-bool pmo_support_wow_for_beaconing(struct wlan_objmgr_psoc *psoc)
+static bool pmo_support_wow_for_beaconing(struct wlan_objmgr_psoc *psoc)
 {
 	/*
-	 * if (wmi_service_enabled(wma->wmi_handle,
-	 *			wmi_service_beacon_offload))
-	 */
+   * if (wmi_service_enabled(wma->wmi_handle,
+   *			wmi_service_beacon_offload))
+   */
 	return pmo_is_beaconing_vdev_up(psoc);
 }
 
@@ -350,120 +343,72 @@ bool pmo_core_is_wow_applicable(struct wlan_objmgr_psoc *psoc)
 
 void pmo_set_sta_wow_bitmask(uint32_t *bitmask, uint32_t wow_bitmap_size)
 {
-
-	pmo_set_wow_event_bitmap(WOW_CSA_IE_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_CSA_IE_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_CLIENT_KICKOUT_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_CLIENT_KICKOUT_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_PATTERN_MATCH_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_PATTERN_MATCH_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_DEAUTH_RECVD_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_DEAUTH_RECVD_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_DISASSOC_RECVD_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_DISASSOC_RECVD_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_BMISS_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_GTK_ERR_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_BETTER_AP_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_HTT_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_RA_MATCH_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_NLO_DETECTED_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_BMISS_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_EXTSCAN_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_OEM_RESPONSE_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_GTK_ERR_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_TDLS_CONN_TRACKER_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_BETTER_AP_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_HTT_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_RA_MATCH_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_NLO_DETECTED_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_EXTSCAN_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_OEM_RESPONSE_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_TDLS_CONN_TRACKER_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_11D_SCAN_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_NLO_SCAN_COMPLETE_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_11D_SCAN_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_NLO_SCAN_COMPLETE_EVENT, wow_bitmap_size,
 				 bitmask);
 	/*
-	 * WPA3 roaming offloads SAE authentication to wpa_supplicant
-	 * Firmware will send WMI_ROAM_PREAUTH_START_EVENTID
-	 */
-	pmo_set_wow_event_bitmap(WOW_ROAM_PREAUTH_START_EVENT,
-				 wow_bitmap_size,
+   * WPA3 roaming offloads SAE authentication to wpa_supplicant
+   * Firmware will send WMI_ROAM_PREAUTH_START_EVENTID
+   */
+	pmo_set_wow_event_bitmap(WOW_ROAM_PREAUTH_START_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_ROAM_PMKID_REQUEST_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_ROAM_PMKID_REQUEST_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_VDEV_DISCONNECT_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_VDEV_DISCONNECT_EVENT, wow_bitmap_size,
 				 bitmask);
 
-	pmo_set_wow_event_bitmap(WOW_TWT_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_TWT_EVENT, wow_bitmap_size, bitmask);
+
+	pmo_set_wow_event_bitmap(WOW_DCS_INTERFERENCE_DET, wow_bitmap_size,
 				 bitmask);
 
-	pmo_set_wow_event_bitmap(WOW_DCS_INTERFERENCE_DET,
-				 wow_bitmap_size,
-				 bitmask);
-
-	pmo_set_wow_event_bitmap(WOW_RTT_11AZ_EVENT,
-				 wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_RTT_11AZ_EVENT, wow_bitmap_size, bitmask);
 }
 
 void pmo_set_sap_wow_bitmask(uint32_t *bitmask, uint32_t wow_bitmap_size)
 {
-	pmo_set_wow_event_bitmap(WOW_CLIENT_KICKOUT_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_CLIENT_KICKOUT_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_PROBE_REQ_WPS_IE_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_PROBE_REQ_WPS_IE_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_PATTERN_MATCH_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_PATTERN_MATCH_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_AUTH_REQ_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_AUTH_REQ_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_ASSOC_REQ_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_DEAUTH_RECVD_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_ASSOC_REQ_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_DISASSOC_RECVD_EVENT, wow_bitmap_size,
 				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_DEAUTH_RECVD_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_DISASSOC_RECVD_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_HTT_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_SAP_OBSS_DETECTION_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_HTT_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_SAP_OBSS_DETECTION_EVENT, wow_bitmap_size,
 				 bitmask);
 	pmo_set_wow_event_bitmap(WOW_BSS_COLOR_COLLISION_DETECT_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_DCS_INTERFERENCE_DET,
-				 wow_bitmap_size,
-				 bitmask);
-	pmo_set_wow_event_bitmap(WOW_RTT_11AZ_EVENT,
 				 wow_bitmap_size, bitmask);
-	pmo_set_wow_event_bitmap(WOW_XGAP_EVENT,
-				 wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_DCS_INTERFERENCE_DET, wow_bitmap_size,
+				 bitmask);
+	pmo_set_wow_event_bitmap(WOW_RTT_11AZ_EVENT, wow_bitmap_size, bitmask);
+	pmo_set_wow_event_bitmap(WOW_XGAP_EVENT, wow_bitmap_size, bitmask);
 }
 
 uint8_t pmo_get_num_wow_filters(struct wlan_objmgr_psoc *psoc)
@@ -472,7 +417,8 @@ uint8_t pmo_get_num_wow_filters(struct wlan_objmgr_psoc *psoc)
 	bool apf = false;
 	bool pkt_filter = false;
 
-	pmo_psoc_with_ctx(psoc, psoc_ctx) {
+	pmo_psoc_with_ctx(psoc, psoc_ctx)
+	{
 		apf = pmo_intersect_apf(psoc_ctx);
 		pkt_filter = pmo_intersect_packet_filter(psoc_ctx);
 	}
@@ -487,12 +433,9 @@ uint8_t pmo_get_num_wow_filters(struct wlan_objmgr_psoc *psoc)
 void pmo_set_ndp_wow_bitmask(uint32_t *bitmask, uint32_t wow_bitmap_size)
 {
 	/* wake up host when Nan Management Frame is received */
-	pmo_set_wow_event_bitmap(WOW_NAN_DATA_EVENT,
-				 wow_bitmap_size,
-				 bitmask);
+	pmo_set_wow_event_bitmap(WOW_NAN_DATA_EVENT, wow_bitmap_size, bitmask);
 	/* wake up host when NDP data packet is received */
-	pmo_set_wow_event_bitmap(WOW_PATTERN_MATCH_EVENT,
-				 wow_bitmap_size,
+	pmo_set_wow_event_bitmap(WOW_PATTERN_MATCH_EVENT, wow_bitmap_size,
 				 bitmask);
 }
 #endif

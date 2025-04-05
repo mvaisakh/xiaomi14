@@ -3,18 +3,17 @@
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
-
+#include "gsi.h"
+#include "ipa.h"
+#include "ipa_i.h"
 #include <linux/debugfs.h>
-#include <linux/export.h>
 #include <linux/delay.h>
+#include <linux/dmapool.h>
+#include <linux/export.h>
 #include <linux/kernel.h>
+#include <linux/msm_gsi.h>
 #include <linux/msm_ipa.h>
 #include <linux/mutex.h>
-#include "ipa.h"
-#include <linux/msm_gsi.h>
-#include <linux/dmapool.h>
-#include "ipa_i.h"
-#include "gsi.h"
 
 #define IPA_DMA_POLLING_MIN_SLEEP_RX 1010
 #define IPA_DMA_POLLING_MAX_SLEEP_RX 1050
@@ -25,39 +24,37 @@
 
 #define IPADMA_DRV_NAME "ipa_dma"
 
-#define IPADMA_DBG(fmt, args...) \
-	do { \
-		pr_debug(IPADMA_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IPADMA_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPADMA_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPADMA_DBG(fmt, args...)                                            \
+	do {                                                                \
+		pr_debug(IPADMA_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                           \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                      \
+				IPADMA_DRV_NAME " %s:%d " fmt, ##args);     \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                  \
+				IPADMA_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-#define IPADMA_DBG_LOW(fmt, args...) \
-	do { \
-		pr_debug(IPADMA_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPADMA_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPADMA_DBG_LOW(fmt, args...)                                        \
+	do {                                                                \
+		pr_debug(IPADMA_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                           \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                  \
+				IPADMA_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-#define IPADMA_ERR(fmt, args...) \
-	do { \
-		pr_err(IPADMA_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IPADMA_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPADMA_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPADMA_ERR(fmt, args...)                                          \
+	do {                                                              \
+		pr_err(IPADMA_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+		       ##args);                                           \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                    \
+				IPADMA_DRV_NAME " %s:%d " fmt, ##args);   \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                \
+				IPADMA_DRV_NAME " %s:%d " fmt, ##args);   \
 	} while (0)
 
-#define IPADMA_FUNC_ENTRY() \
-	IPADMA_DBG_LOW("ENTRY\n")
+#define IPADMA_FUNC_ENTRY() IPADMA_DBG_LOW("ENTRY\n")
 
-#define IPADMA_FUNC_EXIT() \
-	IPADMA_DBG_LOW("EXIT\n")
+#define IPADMA_FUNC_EXIT() IPADMA_DBG_LOW("EXIT\n")
 
 #ifdef CONFIG_DEBUG_FS
 #define IPADMA_MAX_MSG_LEN 1024
@@ -65,8 +62,12 @@ static char dbg_buff[IPADMA_MAX_MSG_LEN];
 static void ipa3_dma_debugfs_init(void);
 static void ipa3_dma_debugfs_destroy(void);
 #else
-static void ipa3_dma_debugfs_init(void) {}
-static void ipa3_dma_debugfs_destroy(void) {}
+static void ipa3_dma_debugfs_init(void)
+{
+}
+static void ipa3_dma_debugfs_destroy(void)
+{
+}
 #endif
 
 /**
@@ -213,10 +214,10 @@ int ipa_dma_init(void)
 	mutex_lock(&ipa_dma_init_refcnt_ctrl->lock);
 	if (ipa_dma_init_refcnt_ctrl->ref_cnt > 0) {
 		IPADMA_DBG("Already initialized refcnt=%d\n",
-			ipa_dma_init_refcnt_ctrl->ref_cnt);
+			   ipa_dma_init_refcnt_ctrl->ref_cnt);
 		if (!ipa3_dma_ctx) {
 			IPADMA_ERR("Context missing. refcnt=%d\n",
-				ipa_dma_init_refcnt_ctrl->ref_cnt);
+				   ipa_dma_init_refcnt_ctrl->ref_cnt);
 			res = -EFAULT;
 		} else {
 			ipa_dma_init_refcnt_ctrl->ref_cnt++;
@@ -243,9 +244,9 @@ int ipa_dma_init(void)
 		goto init_unlock;
 	}
 
-	ipa_dma_ctx_t->ipa_dma_xfer_wrapper_cache =
-		kmem_cache_create("IPA DMA XFER WRAPPER",
-			sizeof(struct ipa3_dma_xfer_wrapper), 0, 0, NULL);
+	ipa_dma_ctx_t->ipa_dma_xfer_wrapper_cache = kmem_cache_create(
+		"IPA DMA XFER WRAPPER", sizeof(struct ipa3_dma_xfer_wrapper), 0,
+		0, NULL);
 	if (!ipa_dma_ctx_t->ipa_dma_xfer_wrapper_cache) {
 		IPAERR(":failed to create ipa dma xfer wrapper cache.\n");
 		res = -ENOMEM;
@@ -269,22 +270,21 @@ int ipa_dma_init(void)
 	sync_sz = IPA_SYS_DESC_FIFO_SZ;
 	async_sz = IPA_DMA_SYS_DESC_MAX_FIFO_SZ;
 	/*
-	 * for ipav3.5 we need to double the rings and allocate dummy buffers
-	 * in order to apply the prefetch WA
-	 */
+   * for ipav3.5 we need to double the rings and allocate dummy buffers
+   * in order to apply the prefetch WA
+   */
 	if (ipa_get_hw_type() == IPA_HW_v3_5) {
 		sync_sz *= 2;
 		async_sz *= 2;
 
-		ipa_dma_ctx_t->ipa_dma_dummy_src_sync.base =
-			dma_alloc_coherent(ipa3_ctx->pdev,
-			IPA_DMA_DUMMY_BUFF_SZ * 4,
+		ipa_dma_ctx_t->ipa_dma_dummy_src_sync.base = dma_alloc_coherent(
+			ipa3_ctx->pdev, IPA_DMA_DUMMY_BUFF_SZ * 4,
 			&ipa_dma_ctx_t->ipa_dma_dummy_src_sync.phys_base,
 			GFP_KERNEL);
 
 		if (!ipa_dma_ctx_t->ipa_dma_dummy_src_sync.base) {
 			IPAERR("DMA alloc fail %d bytes for prefetch WA\n",
-				IPA_DMA_DUMMY_BUFF_SZ);
+			       IPA_DMA_DUMMY_BUFF_SZ);
 			res = -ENOMEM;
 			goto fail_alloc_dummy;
 		}
@@ -317,7 +317,7 @@ int ipa_dma_init(void)
 	sys_in.ipa_ep_cfg.mode.dst = IPA_CLIENT_MEMCPY_DMA_SYNC_CONS;
 	sys_in.skip_ep_cfg = false;
 	if (ipa_setup_sys_pipe(&sys_in,
-		&ipa_dma_ctx_t->ipa_dma_sync_prod_hdl)) {
+			       &ipa_dma_ctx_t->ipa_dma_sync_prod_hdl)) {
 		IPADMA_ERR(":setup sync prod pipe failed\n");
 		res = -EPERM;
 		goto fail_sync_prod;
@@ -332,7 +332,7 @@ int ipa_dma_init(void)
 	sys_in.notify = NULL;
 	sys_in.priv = NULL;
 	if (ipa_setup_sys_pipe(&sys_in,
-		&ipa_dma_ctx_t->ipa_dma_sync_cons_hdl)) {
+			       &ipa_dma_ctx_t->ipa_dma_sync_cons_hdl)) {
 		IPADMA_ERR(":setup sync cons pipe failed.\n");
 		res = -EPERM;
 		goto fail_sync_cons;
@@ -349,7 +349,7 @@ int ipa_dma_init(void)
 	sys_in.skip_ep_cfg = false;
 	sys_in.notify = NULL;
 	if (ipa_setup_sys_pipe(&sys_in,
-		&ipa_dma_ctx_t->ipa_dma_async_prod_hdl)) {
+			       &ipa_dma_ctx_t->ipa_dma_async_prod_hdl)) {
 		IPADMA_ERR(":setup async prod pipe failed.\n");
 		res = -EPERM;
 		goto fail_async_prod;
@@ -364,7 +364,7 @@ int ipa_dma_init(void)
 	sys_in.notify = ipa3_dma_async_memcpy_notify_cb;
 	sys_in.priv = NULL;
 	if (ipa_setup_sys_pipe(&sys_in,
-		&ipa_dma_ctx_t->ipa_dma_async_cons_hdl)) {
+			       &ipa_dma_ctx_t->ipa_dma_async_cons_hdl)) {
 		IPADMA_ERR(":setup async cons pipe failed.\n");
 		res = -EPERM;
 		goto fail_async_cons;
@@ -385,8 +385,8 @@ fail_sync_cons:
 	ipa_teardown_sys_pipe(ipa_dma_ctx_t->ipa_dma_sync_prod_hdl);
 fail_sync_prod:
 	dma_free_coherent(ipa3_ctx->pdev, IPA_DMA_DUMMY_BUFF_SZ * 4,
-		ipa_dma_ctx_t->ipa_dma_dummy_src_sync.base,
-		ipa_dma_ctx_t->ipa_dma_dummy_src_sync.phys_base);
+			  ipa_dma_ctx_t->ipa_dma_dummy_src_sync.base,
+			  ipa_dma_ctx_t->ipa_dma_dummy_src_sync.phys_base);
 fail_alloc_dummy:
 	kmem_cache_destroy(ipa_dma_ctx_t->ipa_dma_xfer_wrapper_cache);
 fail_mem_ctrl:
@@ -395,7 +395,6 @@ fail_mem_ctrl:
 init_unlock:
 	mutex_unlock(&ipa_dma_init_refcnt_ctrl->lock);
 	return res;
-
 }
 EXPORT_SYMBOL(ipa_dma_init);
 
@@ -410,15 +409,14 @@ EXPORT_SYMBOL(ipa_dma_init);
 int ipa_dma_enable(void)
 {
 	IPADMA_FUNC_ENTRY();
-	if ((ipa3_dma_ctx == NULL) ||
-		(ipa_dma_init_refcnt_ctrl->ref_cnt < 1)) {
+	if ((ipa3_dma_ctx == NULL) || (ipa_dma_init_refcnt_ctrl->ref_cnt < 1)) {
 		IPADMA_ERR("IPADMA isn't initialized, can't enable\n");
 		return -EINVAL;
 	}
 	mutex_lock(&ipa3_dma_ctx->enable_lock);
 	if (ipa3_dma_ctx->enable_ref_cnt > 0) {
 		IPADMA_ERR("Already enabled refcnt=%d\n",
-			ipa3_dma_ctx->enable_ref_cnt);
+			   ipa3_dma_ctx->enable_ref_cnt);
 		ipa3_dma_ctx->enable_ref_cnt++;
 		mutex_unlock(&ipa3_dma_ctx->enable_lock);
 		return 0;
@@ -469,8 +467,7 @@ int ipa_dma_disable(void)
 	bool dec_clks = false;
 
 	IPADMA_FUNC_ENTRY();
-	if ((ipa3_dma_ctx == NULL) ||
-		(ipa_dma_init_refcnt_ctrl->ref_cnt < 1)) {
+	if ((ipa3_dma_ctx == NULL) || (ipa_dma_init_refcnt_ctrl->ref_cnt < 1)) {
 		IPADMA_ERR("IPADMA isn't initialized, can't disable\n");
 		return -EINVAL;
 	}
@@ -478,7 +475,7 @@ int ipa_dma_disable(void)
 	spin_lock_irqsave(&ipa3_dma_ctx->pending_lock, flags);
 	if (ipa3_dma_ctx->enable_ref_cnt > 1) {
 		IPADMA_DBG("Multiple enablement done. refcnt=%d\n",
-			ipa3_dma_ctx->enable_ref_cnt);
+			   ipa3_dma_ctx->enable_ref_cnt);
 		ipa3_dma_ctx->enable_ref_cnt--;
 		goto completed;
 	}
@@ -538,8 +535,8 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 	bool prefetch_wa = false;
 
 	IPADMA_FUNC_ENTRY();
-	IPADMA_DBG_LOW("dest =  0x%llx, src = 0x%llx, len = %d\n",
-		dest, src, len);
+	IPADMA_DBG_LOW("dest =  0x%llx, src = 0x%llx, len = %d\n", dest, src,
+		       len);
 	if (ipa3_dma_ctx == NULL) {
 		IPADMA_ERR("IPADMA isn't initialized, can't memcpy\n");
 		return -EPERM;
@@ -550,7 +547,7 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 	}
 	if (len > IPA_DMA_MAX_PKT_SZ || len <= 0) {
 		IPADMA_ERR("invalid len, %d\n", len);
-		return	-EINVAL;
+		return -EINVAL;
 	}
 	spin_lock_irqsave(&ipa3_dma_ctx->pending_lock, flags);
 	if (!ipa3_dma_ctx->enable_ref_cnt) {
@@ -564,7 +561,7 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 	ep_idx = ipa_get_ep_mapping(IPA_CLIENT_MEMCPY_DMA_SYNC_CONS);
 	if (-1 == ep_idx) {
 		IPADMA_ERR("Client %u is not mapped\n",
-			IPA_CLIENT_MEMCPY_DMA_SYNC_CONS);
+			   IPA_CLIENT_MEMCPY_DMA_SYNC_CONS);
 		return -EFAULT;
 	}
 	cons_sys = ipa3_ctx->ep[ep_idx].sys;
@@ -572,13 +569,13 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 	ep_idx = ipa_get_ep_mapping(IPA_CLIENT_MEMCPY_DMA_SYNC_PROD);
 	if (-1 == ep_idx) {
 		IPADMA_ERR("Client %u is not mapped\n",
-			IPA_CLIENT_MEMCPY_DMA_SYNC_PROD);
+			   IPA_CLIENT_MEMCPY_DMA_SYNC_PROD);
 		return -EFAULT;
 	}
 	prod_sys = ipa3_ctx->ep[ep_idx].sys;
 
 	xfer_descr = kmem_cache_zalloc(ipa3_dma_ctx->ipa_dma_xfer_wrapper_cache,
-					GFP_KERNEL);
+				       GFP_KERNEL);
 	if (!xfer_descr) {
 		IPADMA_ERR("failed to alloc xfer descr wrapper\n");
 		res = -ENOMEM;
@@ -603,20 +600,19 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 	prod_xfer_elem.xfer_user_data = NULL;
 
 	/*
-	 * when copy is less than 9B we need to chain another dummy
-	 * copy so the total size will be larger (for ipav3.5)
-	 * for the consumer we have to prepare an additional credit
-	 */
+   * when copy is less than 9B we need to chain another dummy
+   * copy so the total size will be larger (for ipav3.5)
+   * for the consumer we have to prepare an additional credit
+   */
 	prefetch_wa = ((ipa_get_hw_type() == IPA_HW_v3_5) &&
-		len < IPA_DMA_PREFETCH_WA_THRESHOLD);
+		       len < IPA_DMA_PREFETCH_WA_THRESHOLD);
 	if (prefetch_wa) {
 		cons_xfer_elem.xfer_user_data = NULL;
 		res = gsi_queue_xfer(cons_sys->ep->gsi_chan_hdl, 1,
-			&cons_xfer_elem, false);
+				     &cons_xfer_elem, false);
 		if (res) {
-			IPADMA_ERR(
-				"Failed: gsi_queue_xfer dest descr res:%d\n",
-				res);
+			IPADMA_ERR("Failed: gsi_queue_xfer dest descr res:%d\n",
+				   res);
 			goto fail_send;
 		}
 		cons_xfer_elem.addr =
@@ -626,7 +622,7 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 		cons_xfer_elem.flags = GSI_XFER_FLAG_EOT;
 		cons_xfer_elem.xfer_user_data = xfer_descr;
 		res = gsi_queue_xfer(cons_sys->ep->gsi_chan_hdl, 1,
-			&cons_xfer_elem, true);
+				     &cons_xfer_elem, true);
 		if (res) {
 			IPADMA_ERR(
 				"Failed: gsi_queue_xfer dummy dest descr res:%d\n",
@@ -635,11 +631,10 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 		}
 		prod_xfer_elem.flags = GSI_XFER_FLAG_CHAIN;
 		res = gsi_queue_xfer(prod_sys->ep->gsi_chan_hdl, 1,
-			&prod_xfer_elem, false);
+				     &prod_xfer_elem, false);
 		if (res) {
-			IPADMA_ERR(
-				"Failed: gsi_queue_xfer src descr res:%d\n",
-				res);
+			IPADMA_ERR("Failed: gsi_queue_xfer src descr res:%d\n",
+				   res);
 			ipa_assert();
 			goto fail_send;
 		}
@@ -650,37 +645,35 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 		prod_xfer_elem.flags = GSI_XFER_FLAG_EOT;
 		prod_xfer_elem.xfer_user_data = NULL;
 		res = gsi_queue_xfer(prod_sys->ep->gsi_chan_hdl, 1,
-				&prod_xfer_elem, true);
+				     &prod_xfer_elem, true);
 		if (res) {
 			IPADMA_ERR(
-					"Failed: gsi_queue_xfer dummy src descr res:%d\n",
-					res);
-				ipa_assert();
-				goto fail_send;
-			}
+				"Failed: gsi_queue_xfer dummy src descr res:%d\n",
+				res);
+			ipa_assert();
+			goto fail_send;
+		}
 	} else {
 		cons_xfer_elem.xfer_user_data = xfer_descr;
 		res = gsi_queue_xfer(cons_sys->ep->gsi_chan_hdl, 1,
-			&cons_xfer_elem, true);
+				     &cons_xfer_elem, true);
 		if (res) {
-			IPADMA_ERR(
-				"Failed: gsi_queue_xfer dest descr res:%d\n",
-				res);
+			IPADMA_ERR("Failed: gsi_queue_xfer dest descr res:%d\n",
+				   res);
 			goto fail_send;
 		}
 		prod_xfer_elem.flags = GSI_XFER_FLAG_EOT;
 		res = gsi_queue_xfer(prod_sys->ep->gsi_chan_hdl, 1,
-			&prod_xfer_elem, true);
+				     &prod_xfer_elem, true);
 		if (res) {
-			IPADMA_ERR(
-			"Failed: gsi_queue_xfer src descr res:%d\n",
-			 res);
+			IPADMA_ERR("Failed: gsi_queue_xfer src descr res:%d\n",
+				   res);
 			ipa_assert();
 			goto fail_send;
 		}
 	}
 	head_descr = list_first_entry(&cons_sys->head_desc_list,
-				struct ipa3_dma_xfer_wrapper, link);
+				      struct ipa3_dma_xfer_wrapper, link);
 
 	/* in case we are not the head of the list, wait for head to wake us */
 	if (xfer_descr != head_descr) {
@@ -688,7 +681,8 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 		wait_for_completion(&xfer_descr->xfer_done);
 		mutex_lock(&ipa3_dma_ctx->sync_lock);
 		head_descr = list_first_entry(&cons_sys->head_desc_list,
-					struct ipa3_dma_xfer_wrapper, link);
+					      struct ipa3_dma_xfer_wrapper,
+					      link);
 		/* Unexpected transfer sent from HW */
 		ipa_assert_on(xfer_descr != head_descr);
 	}
@@ -696,8 +690,7 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 
 	do {
 		/* wait for transfer to complete */
-		res = gsi_poll_channel(cons_sys->ep->gsi_chan_hdl,
-			&gsi_notify);
+		res = gsi_poll_channel(cons_sys->ep->gsi_chan_hdl, &gsi_notify);
 		if (res == GSI_STATUS_SUCCESS)
 			stop_polling = true;
 		else if (res != GSI_STATUS_POLL_EMPTY)
@@ -705,21 +698,22 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 				"Failed: gsi_poll_chanel, returned %d loop#:%d\n",
 				res, i);
 		usleep_range(IPA_DMA_POLLING_MIN_SLEEP_RX,
-			IPA_DMA_POLLING_MAX_SLEEP_RX);
+			     IPA_DMA_POLLING_MAX_SLEEP_RX);
 		i++;
 	} while (!stop_polling);
 
 	/* for prefetch WA we will receive the length of the dummy
-	 * transfer in the event (because it is the second element)
-	 */
+   * transfer in the event (because it is the second element)
+   */
 	if (prefetch_wa)
-		ipa_assert_on(gsi_notify.bytes_xfered !=
-			IPA_DMA_DUMMY_BUFF_SZ);
+		ipa_assert_on(gsi_notify.bytes_xfered != IPA_DMA_DUMMY_BUFF_SZ);
 	else
 		ipa_assert_on(len != gsi_notify.bytes_xfered);
 
-	ipa_assert_on(dest != ((struct ipa3_dma_xfer_wrapper *)
-			(gsi_notify.xfer_user_data))->phys_addr_dest);
+	ipa_assert_on(
+		dest !=
+		((struct ipa3_dma_xfer_wrapper *)(gsi_notify.xfer_user_data))
+			->phys_addr_dest);
 
 	mutex_lock(&ipa3_dma_ctx->sync_lock);
 	list_del(&head_descr->link);
@@ -728,7 +722,8 @@ int ipa_dma_sync_memcpy(u64 dest, u64 src, int len)
 	/* wake the head of the list */
 	if (!list_empty(&cons_sys->head_desc_list)) {
 		head_descr = list_first_entry(&cons_sys->head_desc_list,
-				struct ipa3_dma_xfer_wrapper, link);
+					      struct ipa3_dma_xfer_wrapper,
+					      link);
 		complete(&head_descr->xfer_done);
 	}
 	mutex_unlock(&ipa3_dma_ctx->sync_lock);
@@ -771,7 +766,7 @@ EXPORT_SYMBOL(ipa_dma_sync_memcpy);
  *		-EFAULT: descr fifo is full.
  */
 int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
-		void (*user_cb)(void *user1), void *user_param)
+			 void (*user_cb)(void *user1), void *user_param)
 {
 	int ep_idx;
 	int res = 0;
@@ -782,8 +777,8 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 	unsigned long flags;
 
 	IPADMA_FUNC_ENTRY();
-	IPADMA_DBG_LOW("dest =  0x%llx, src = 0x%llx, len = %d\n",
-		dest, src, len);
+	IPADMA_DBG_LOW("dest =  0x%llx, src = 0x%llx, len = %d\n", dest, src,
+		       len);
 	if (ipa3_dma_ctx == NULL) {
 		IPADMA_ERR("IPADMA isn't initialized, can't memcpy\n");
 		return -EPERM;
@@ -794,7 +789,7 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 	}
 	if (len > IPA_DMA_MAX_PKT_SZ || len <= 0) {
 		IPADMA_ERR("invalid len, %d\n", len);
-		return	-EINVAL;
+		return -EINVAL;
 	}
 	if (!user_cb) {
 		IPADMA_ERR("null pointer: user_cb\n");
@@ -812,7 +807,7 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 	ep_idx = ipa_get_ep_mapping(IPA_CLIENT_MEMCPY_DMA_ASYNC_CONS);
 	if (-1 == ep_idx) {
 		IPADMA_ERR("Client %u is not mapped\n",
-			IPA_CLIENT_MEMCPY_DMA_ASYNC_CONS);
+			   IPA_CLIENT_MEMCPY_DMA_ASYNC_CONS);
 		return -EFAULT;
 	}
 	cons_sys = ipa3_ctx->ep[ep_idx].sys;
@@ -820,13 +815,13 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 	ep_idx = ipa_get_ep_mapping(IPA_CLIENT_MEMCPY_DMA_ASYNC_PROD);
 	if (-1 == ep_idx) {
 		IPADMA_ERR("Client %u is not mapped\n",
-			IPA_CLIENT_MEMCPY_DMA_ASYNC_PROD);
+			   IPA_CLIENT_MEMCPY_DMA_ASYNC_PROD);
 		return -EFAULT;
 	}
 	prod_sys = ipa3_ctx->ep[ep_idx].sys;
 
 	xfer_descr = kmem_cache_zalloc(ipa3_dma_ctx->ipa_dma_xfer_wrapper_cache,
-					GFP_KERNEL);
+				       GFP_KERNEL);
 	if (!xfer_descr) {
 		res = -ENOMEM;
 		goto fail_mem_alloc;
@@ -841,18 +836,18 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 	list_add_tail(&xfer_descr->link, &cons_sys->head_desc_list);
 	cons_sys->len++;
 	/*
-	 * when copy is less than 9B we need to chain another dummy
-	 * copy so the total size will be larger (for ipav3.5)
-	 */
-	if ((ipa_get_hw_type() == IPA_HW_v3_5) && len <
-		IPA_DMA_PREFETCH_WA_THRESHOLD) {
+   * when copy is less than 9B we need to chain another dummy
+   * copy so the total size will be larger (for ipav3.5)
+   */
+	if ((ipa_get_hw_type() == IPA_HW_v3_5) &&
+	    len < IPA_DMA_PREFETCH_WA_THRESHOLD) {
 		xfer_elem_cons.addr = dest;
 		xfer_elem_cons.len = len;
 		xfer_elem_cons.type = GSI_XFER_ELEM_DATA;
 		xfer_elem_cons.flags = GSI_XFER_FLAG_EOT;
 		xfer_elem_cons.xfer_user_data = NULL;
 		res = gsi_queue_xfer(cons_sys->ep->gsi_chan_hdl, 1,
-			&xfer_elem_cons, false);
+				     &xfer_elem_cons, false);
 		if (res) {
 			IPADMA_ERR(
 				"Failed: gsi_queue_xfer on dest descr res: %d\n",
@@ -866,7 +861,7 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 		xfer_elem_cons.flags = GSI_XFER_FLAG_EOT;
 		xfer_elem_cons.xfer_user_data = xfer_descr;
 		res = gsi_queue_xfer(cons_sys->ep->gsi_chan_hdl, 1,
-			&xfer_elem_cons, true);
+				     &xfer_elem_cons, true);
 		if (res) {
 			IPADMA_ERR(
 				"Failed: gsi_queue_xfer on dummy dest descr res: %d\n",
@@ -880,7 +875,7 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 		xfer_elem_prod.flags = GSI_XFER_FLAG_CHAIN;
 		xfer_elem_prod.xfer_user_data = NULL;
 		res = gsi_queue_xfer(prod_sys->ep->gsi_chan_hdl, 1,
-			&xfer_elem_prod, false);
+				     &xfer_elem_prod, false);
 		if (res) {
 			IPADMA_ERR(
 				"Failed: gsi_queue_xfer on src descr res: %d\n",
@@ -895,7 +890,7 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 		xfer_elem_prod.flags = GSI_XFER_FLAG_EOT;
 		xfer_elem_prod.xfer_user_data = NULL;
 		res = gsi_queue_xfer(prod_sys->ep->gsi_chan_hdl, 1,
-			&xfer_elem_prod, true);
+				     &xfer_elem_prod, true);
 		if (res) {
 			IPADMA_ERR(
 				"Failed: gsi_queue_xfer on dummy src descr res: %d\n",
@@ -904,19 +899,18 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 			goto fail_send;
 		}
 	} else {
-
 		xfer_elem_cons.addr = dest;
 		xfer_elem_cons.len = len;
 		xfer_elem_cons.type = GSI_XFER_ELEM_DATA;
 		xfer_elem_cons.flags = GSI_XFER_FLAG_EOT;
 		xfer_elem_cons.xfer_user_data = xfer_descr;
 		res = gsi_queue_xfer(cons_sys->ep->gsi_chan_hdl, 1,
-			&xfer_elem_cons, true);
+				     &xfer_elem_cons, true);
 		if (res) {
 			IPADMA_ERR(
-					"Failed: gsi_queue_xfer on dummy dest descr res: %d\n",
+				"Failed: gsi_queue_xfer on dummy dest descr res: %d\n",
 				res);
-				ipa_assert();
+			ipa_assert();
 			goto fail_send;
 		}
 		xfer_elem_prod.addr = src;
@@ -925,15 +919,14 @@ int ipa_dma_async_memcpy(u64 dest, u64 src, int len,
 		xfer_elem_prod.flags = GSI_XFER_FLAG_EOT;
 		xfer_elem_prod.xfer_user_data = NULL;
 		res = gsi_queue_xfer(prod_sys->ep->gsi_chan_hdl, 1,
-			&xfer_elem_prod, true);
+				     &xfer_elem_prod, true);
 		if (res) {
 			IPADMA_ERR(
-					"Failed: gsi_queue_xfer on dummy src descr res: %d\n",
+				"Failed: gsi_queue_xfer on dummy src descr res: %d\n",
 				res);
 			ipa_assert();
 			goto fail_send;
 		}
-
 	}
 	spin_unlock_irqrestore(&ipa3_dma_ctx->async_lock, flags);
 	IPADMA_FUNC_EXIT();
@@ -979,7 +972,7 @@ int ipa3_dma_uc_memcpy(phys_addr_t dest, phys_addr_t src, int len)
 	}
 	if (len > IPA_DMA_MAX_PKT_SZ || len <= 0) {
 		IPADMA_ERR("invalid len, %d\n", len);
-		return	-EINVAL;
+		return -EINVAL;
 	}
 
 	spin_lock_irqsave(&ipa3_dma_ctx->pending_lock, flags);
@@ -1026,7 +1019,7 @@ void ipa_dma_destroy(void)
 	mutex_lock(&ipa_dma_init_refcnt_ctrl->lock);
 	if (ipa_dma_init_refcnt_ctrl->ref_cnt > 1) {
 		IPADMA_DBG("Multiple initialization done. refcnt=%d\n",
-			ipa_dma_init_refcnt_ctrl->ref_cnt);
+			   ipa_dma_init_refcnt_ctrl->ref_cnt);
 		ipa_dma_init_refcnt_ctrl->ref_cnt--;
 		goto completed;
 	}
@@ -1067,8 +1060,8 @@ void ipa_dma_destroy(void)
 	ipa3_dma_debugfs_destroy();
 	kmem_cache_destroy(ipa3_dma_ctx->ipa_dma_xfer_wrapper_cache);
 	dma_free_coherent(ipa3_ctx->pdev, IPA_DMA_DUMMY_BUFF_SZ * 4,
-		ipa3_dma_ctx->ipa_dma_dummy_src_sync.base,
-		ipa3_dma_ctx->ipa_dma_dummy_src_sync.phys_base);
+			  ipa3_dma_ctx->ipa_dma_dummy_src_sync.base,
+			  ipa3_dma_ctx->ipa_dma_dummy_src_sync.phys_base);
 	kfree(ipa3_dma_ctx);
 	ipa3_dma_ctx = NULL;
 
@@ -1089,8 +1082,8 @@ EXPORT_SYMBOL(ipa_dma_destroy);
  * @evt - event name - IPA_RECIVE.
  * @data -the ipa_mem_buffer.
  */
-void ipa3_dma_async_memcpy_notify_cb(void *priv
-			, enum ipa_dp_evt_type evt, unsigned long data)
+void ipa3_dma_async_memcpy_notify_cb(void *priv, enum ipa_dp_evt_type evt,
+				     unsigned long data)
 {
 	int ep_idx = 0;
 	struct ipa3_dma_xfer_wrapper *xfer_descr_expected;
@@ -1107,8 +1100,8 @@ void ipa3_dma_async_memcpy_notify_cb(void *priv
 	sys = ipa3_ctx->ep[ep_idx].sys;
 
 	spin_lock_irqsave(&ipa3_dma_ctx->async_lock, flags);
-	xfer_descr_expected = list_first_entry(&sys->head_desc_list,
-				 struct ipa3_dma_xfer_wrapper, link);
+	xfer_descr_expected = list_first_entry(
+		&sys->head_desc_list, struct ipa3_dma_xfer_wrapper, link);
 	list_del(&xfer_descr_expected->link);
 	sys->len--;
 	spin_unlock_irqrestore(&ipa3_dma_ctx->async_lock, flags);
@@ -1117,7 +1110,7 @@ void ipa3_dma_async_memcpy_notify_cb(void *priv
 	xfer_descr_expected->callback(xfer_descr_expected->user1);
 
 	kmem_cache_free(ipa3_dma_ctx->ipa_dma_xfer_wrapper_cache,
-		xfer_descr_expected);
+			xfer_descr_expected);
 
 	if (ipa3_dma_ctx->destroy_pending && !ipa3_dma_work_pending())
 		complete(&ipa3_dma_ctx->done);
@@ -1130,56 +1123,56 @@ static struct dentry *dent;
 static struct dentry *dfile_info;
 
 static ssize_t ipa3_dma_debugfs_read(struct file *file, char __user *ubuf,
-				 size_t count, loff_t *ppos)
+				     size_t count, loff_t *ppos)
 {
 	int nbytes = 0;
 
 	if (!ipa_dma_init_refcnt_ctrl) {
 		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
-			"Setup was not done\n");
+				    IPADMA_MAX_MSG_LEN - nbytes,
+				    "Setup was not done\n");
 		goto completed;
-
 	}
 
 	if (!ipa3_dma_ctx) {
-		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
+		nbytes += scnprintf(
+			&dbg_buff[nbytes], IPADMA_MAX_MSG_LEN - nbytes,
 			"Status:\n	Not initialized (ref_cnt=%d)\n",
 			ipa_dma_init_refcnt_ctrl->ref_cnt);
 	} else {
 		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
-			"Status:\n	Initialized (ref_cnt=%d)\n",
-			ipa_dma_init_refcnt_ctrl->ref_cnt);
+				    IPADMA_MAX_MSG_LEN - nbytes,
+				    "Status:\n	Initialized (ref_cnt=%d)\n",
+				    ipa_dma_init_refcnt_ctrl->ref_cnt);
 		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
-			"	%s (ref_cnt=%d)\n",
-			(ipa3_dma_ctx->enable_ref_cnt > 0) ?
-			"Enabled" : "Disabled",
-			ipa3_dma_ctx->enable_ref_cnt);
-		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
+				    IPADMA_MAX_MSG_LEN - nbytes,
+				    "	%s (ref_cnt=%d)\n",
+				    (ipa3_dma_ctx->enable_ref_cnt > 0) ?
+					    "Enabled" :
+					    "Disabled",
+				    ipa3_dma_ctx->enable_ref_cnt);
+		nbytes += scnprintf(
+			&dbg_buff[nbytes], IPADMA_MAX_MSG_LEN - nbytes,
 			"Statistics:\n	total sync memcpy: %d\n	",
 			atomic_read(&ipa3_dma_ctx->total_sync_memcpy));
-		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
+		nbytes += scnprintf(
+			&dbg_buff[nbytes], IPADMA_MAX_MSG_LEN - nbytes,
 			"total async memcpy: %d\n	",
 			atomic_read(&ipa3_dma_ctx->total_async_memcpy));
-		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
+		nbytes += scnprintf(
+			&dbg_buff[nbytes], IPADMA_MAX_MSG_LEN - nbytes,
 			"total uc memcpy: %d\n	",
 			atomic_read(&ipa3_dma_ctx->total_uc_memcpy));
-		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
+		nbytes += scnprintf(
+			&dbg_buff[nbytes], IPADMA_MAX_MSG_LEN - nbytes,
 			"pending sync memcpy jobs: %d\n	",
 			atomic_read(&ipa3_dma_ctx->sync_memcpy_pending_cnt));
-		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
+		nbytes += scnprintf(
+			&dbg_buff[nbytes], IPADMA_MAX_MSG_LEN - nbytes,
 			"pending async memcpy jobs: %d\n	",
 			atomic_read(&ipa3_dma_ctx->async_memcpy_pending_cnt));
-		nbytes += scnprintf(&dbg_buff[nbytes],
-			IPADMA_MAX_MSG_LEN - nbytes,
+		nbytes += scnprintf(
+			&dbg_buff[nbytes], IPADMA_MAX_MSG_LEN - nbytes,
 			"pending uc memcpy jobs: %d\n",
 			atomic_read(&ipa3_dma_ctx->uc_memcpy_pending_cnt));
 	}
@@ -1189,9 +1182,8 @@ completed:
 }
 
 static ssize_t ipa3_dma_debugfs_reset_statistics(struct file *file,
-					const char __user *ubuf,
-					size_t count,
-					loff_t *ppos)
+						 const char __user *ubuf,
+						 size_t count, loff_t *ppos)
 {
 	s8 in_num = 0;
 	int ret;
@@ -1230,9 +1222,8 @@ static void ipa3_dma_debugfs_init(void)
 		return;
 	}
 
-	dfile_info =
-		debugfs_create_file("info", read_write_mode, dent,
-				 0, &ipa3_ipadma_stats_ops);
+	dfile_info = debugfs_create_file("info", read_write_mode, dent, 0,
+					 &ipa3_ipadma_stats_ops);
 	if (!dfile_info || IS_ERR(dfile_info)) {
 		IPADMA_ERR("fail to create file stats\n");
 		goto fail;

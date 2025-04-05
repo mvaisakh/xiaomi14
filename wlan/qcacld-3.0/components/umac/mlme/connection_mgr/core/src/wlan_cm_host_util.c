@@ -22,14 +22,14 @@
  * connection manager
  */
 
+#include "connection_mgr/core/src/wlan_cm_roam.h"
 #include "wlan_cm_vdev_api.h"
-#include "wlan_scan_api.h"
-#include "wlan_scan_utils_api.h"
+#include "wlan_logging_sock_svc.h"
 #include "wlan_policy_mgr_api.h"
 #include "wlan_roam_debug.h"
+#include "wlan_scan_api.h"
+#include "wlan_scan_utils_api.h"
 #include "wni_api.h"
-#include "wlan_logging_sock_svc.h"
-#include "connection_mgr/core/src/wlan_cm_roam.h"
 
 /*
  * cm_copy_ssids_from_rso_config_params() - copy SSID from rso_config_params
@@ -53,14 +53,14 @@ cm_copy_ssids_from_rso_config_params(struct rso_user_config *rso_usr_cfg,
 	filter->num_of_ssid = rso_usr_cfg->num_ssid_allowed_list;
 	if (filter->num_of_ssid > max_ssid)
 		filter->num_of_ssid = max_ssid;
-	for  (i = 0; i < filter->num_of_ssid; i++)
+	for (i = 0; i < filter->num_of_ssid; i++)
 		qdf_mem_copy(&filter->ssid_list[i],
 			     &rso_usr_cfg->ssid_allowed_list[i],
 			     sizeof(struct wlan_ssid));
 }
 
-QDF_STATUS cm_update_advance_roam_scan_filter(
-		struct wlan_objmgr_vdev *vdev, struct scan_filter *filter)
+QDF_STATUS cm_update_advance_roam_scan_filter(struct wlan_objmgr_vdev *vdev,
+					      struct scan_filter *filter)
 {
 	uint8_t num_ch = 0;
 	struct wlan_objmgr_psoc *psoc;
@@ -91,7 +91,8 @@ QDF_STATUS cm_update_advance_roam_scan_filter(
 		wlan_vdev_mlme_get_ssid(vdev, filter->ssid_list[0].ssid,
 					&filter->ssid_list[0].length);
 
-		mlme_debug("Filtering for SSID " QDF_SSID_FMT ",length of SSID = %u",
+		mlme_debug("Filtering for SSID " QDF_SSID_FMT
+			   ",length of SSID = %u",
 			   QDF_SSID_REF(filter->ssid_list[0].length,
 					filter->ssid_list[0].ssid),
 			   filter->ssid_list[0].length);
@@ -109,20 +110,18 @@ QDF_STATUS cm_update_advance_roam_scan_filter(
 			filter->num_of_channels = NUM_CHANNELS;
 		qdf_mem_copy(filter->chan_freq_list, chan_lst->freq_list,
 			     filter->num_of_channels *
-			     sizeof(filter->chan_freq_list[0]));
+				     sizeof(filter->chan_freq_list[0]));
 	}
 
 	if (rso_cfg->is_11r_assoc)
 		/*
-		 * MDIE should be added as a part of profile. This should be
-		 * added as a part of filter as well
-		 */
+     * MDIE should be added as a part of profile. This should be
+     * added as a part of filter as well
+     */
 		filter->mobility_domain = rso_cfg->mdid.mobility_domain;
-	filter->enable_adaptive_11r =
-		wlan_mlme_adaptive_11r_enabled(psoc);
+	filter->enable_adaptive_11r = wlan_mlme_adaptive_11r_enabled(psoc);
 
-	if (rso_cfg->orig_sec_info.rsn_caps &
-	    WLAN_CRYPTO_RSN_CAP_MFP_REQUIRED)
+	if (rso_cfg->orig_sec_info.rsn_caps & WLAN_CRYPTO_RSN_CAP_MFP_REQUIRED)
 		filter->pmf_cap = WLAN_PMF_REQUIRED;
 	else if (rso_cfg->orig_sec_info.rsn_caps &
 		 WLAN_CRYPTO_RSN_CAP_MFP_ENABLED)
@@ -209,8 +208,7 @@ cm_handle_reassoc_req(struct wlan_objmgr_vdev *vdev,
 	msg.type = CM_REASSOC_REQ;
 	msg.flush_callback = cm_flush_join_req;
 
-	status = scheduler_post_message(QDF_MODULE_ID_MLME,
-					QDF_MODULE_ID_PE,
+	status = scheduler_post_message(QDF_MODULE_ID_MLME, QDF_MODULE_ID_PE,
 					QDF_MODULE_ID_PE, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err(CM_PREFIX_FMT "msg post fail",
@@ -236,8 +234,7 @@ QDF_STATUS cm_handle_roam_start(struct wlan_objmgr_vdev *vdev,
 		cm_roam_state_change(wlan_vdev_get_pdev(vdev),
 				     wlan_vdev_get_id(vdev),
 				     WLAN_ROAM_RSO_STOPPED,
-				     REASON_OS_REQUESTED_ROAMING_NOW,
-				     NULL, false);
+				     REASON_OS_REQUESTED_ROAMING_NOW, NULL,
+				     false);
 	return QDF_STATUS_SUCCESS;
 }
-

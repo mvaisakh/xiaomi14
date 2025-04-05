@@ -22,23 +22,23 @@
  * DOC: This file has the DFS dispatcher API implementation which is exposed
  * to outside of DFS component.
  */
-#include <wlan_objmgr_vdev_obj.h>
 #include "wlan_dfs_utils_api.h"
+#include "../../core/src/dfs.h"
+#include "../../core/src/dfs_random_chan_sel.h"
+#include "../../core/src/dfs_zero_cac.h"
 #include "wlan_dfs_init_deinit_api.h"
 #include "wlan_dfs_mlme_api.h"
-#include "../../core/src/dfs.h"
-#include "../../core/src/dfs_zero_cac.h"
+#include <wlan_objmgr_vdev_obj.h>
 #include <wlan_reg_services_api.h>
-#include "../../core/src/dfs_random_chan_sel.h"
 #ifdef QCA_DFS_USE_POLICY_MANAGER
 #include "wlan_policy_mgr_api.h"
 #endif
 #ifdef QCA_DFS_NOL_PLATFORM_DRV_SUPPORT
 #include <pld_common.h>
 #endif
-#include <qdf_module.h>
-#include "wlan_dfs_lmac_api.h"
 #include "../../core/src/dfs_internal.h"
+#include "wlan_dfs_lmac_api.h"
+#include <qdf_module.h>
 
 struct dfs_nol_info {
 	uint16_t num_chans;
@@ -51,7 +51,7 @@ QDF_STATUS utils_dfs_reset(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_reset(dfs);
 	dfs_nol_update(dfs);
@@ -84,7 +84,7 @@ QDF_STATUS utils_dfs_cac_valid_reset_for_freq(struct wlan_objmgr_pdev *pdev,
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_cac_valid_reset_for_freq(dfs, prevchan_freq, prevchan_flags);
 
@@ -100,7 +100,7 @@ QDF_STATUS utils_dfs_reset_precaclists(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_reset_precaclists(dfs);
 
@@ -130,7 +130,7 @@ QDF_STATUS utils_dfs_cancel_precac_timer(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_cancel_precac_timer(dfs);
 
@@ -146,7 +146,7 @@ QDF_STATUS utils_dfs_start_precac_timer(struct wlan_objmgr_pdev *pdev)
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
 		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "NULL dfs");
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 	}
 
 	if (!dfs->dfs_precac_secondary_freq_mhz)
@@ -161,10 +161,9 @@ QDF_STATUS utils_dfs_start_precac_timer(struct wlan_objmgr_pdev *pdev)
 
 #ifdef WLAN_DFS_PRECAC_AUTO_CHAN_SUPPORT
 #ifdef CONFIG_CHAN_FREQ_API
-bool
-utils_dfs_precac_decide_pref_chan_for_freq(struct wlan_objmgr_pdev *pdev,
-					   uint16_t *chan_freq,
-					   enum wlan_phymode mode)
+bool utils_dfs_precac_decide_pref_chan_for_freq(struct wlan_objmgr_pdev *pdev,
+						uint16_t *chan_freq,
+						enum wlan_phymode mode)
 {
 	struct wlan_dfs *dfs;
 
@@ -183,7 +182,7 @@ QDF_STATUS utils_dfs_cancel_cac_timer(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_cancel_cac_timer(dfs);
 
@@ -197,7 +196,7 @@ QDF_STATUS utils_dfs_start_cac_timer(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_start_cac_timer(dfs);
 
@@ -211,10 +210,10 @@ QDF_STATUS utils_dfs_cac_stop(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_cac_stop(dfs);
-	return  QDF_STATUS_SUCCESS;
+	return QDF_STATUS_SUCCESS;
 }
 qdf_export_symbol(utils_dfs_cac_stop);
 
@@ -271,16 +270,13 @@ bool utils_dfs_is_cac_required(struct wlan_objmgr_pdev *pdev,
 	dfs_fill_chan_info(&cur_channel, cur_chan);
 	dfs_fill_chan_info(&prev_channel, prev_chan);
 
-	return dfs_is_cac_required(dfs,
-				   &cur_channel,
-				   &prev_channel,
+	return dfs_is_cac_required(dfs, &cur_channel, &prev_channel,
 				   continue_current_cac, true);
 }
 
-bool
-utils_dfs_is_cac_required_on_dfs_curchan(struct wlan_objmgr_pdev *pdev,
-					 bool *continue_current_cac,
-					 bool is_vap_restart)
+bool utils_dfs_is_cac_required_on_dfs_curchan(struct wlan_objmgr_pdev *pdev,
+					      bool *continue_current_cac,
+					      bool is_vap_restart)
 {
 	struct wlan_dfs *dfs;
 
@@ -288,11 +284,8 @@ utils_dfs_is_cac_required_on_dfs_curchan(struct wlan_objmgr_pdev *pdev,
 	if (!dfs)
 		return false;
 
-	return dfs_is_cac_required(dfs,
-				   dfs->dfs_curchan,
-				   dfs->dfs_prevchan,
-				   continue_current_cac,
-				   is_vap_restart);
+	return dfs_is_cac_required(dfs, dfs->dfs_curchan, dfs->dfs_prevchan,
+				   continue_current_cac, is_vap_restart);
 }
 
 QDF_STATUS utils_dfs_stacac_stop(struct wlan_objmgr_pdev *pdev)
@@ -301,7 +294,7 @@ QDF_STATUS utils_dfs_stacac_stop(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_stacac_stop(dfs);
 
@@ -315,7 +308,7 @@ QDF_STATUS utils_dfs_get_usenol(struct wlan_objmgr_pdev *pdev, uint16_t *usenol)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	*usenol = dfs_get_use_nol(dfs);
 
@@ -364,7 +357,7 @@ bool utils_dfs_is_spruce_spur_war_applicable(struct wlan_objmgr_pdev *pdev)
 	    WLAN_IS_CHAN_MODE_20(dfs->dfs_curchan)) {
 		/* is the primary channel 52/56/60/64? */
 		bool is_chan_spur_80mhzfreq =
-		    DFS_IS_CHAN_SPRUCE_SPUR_FREQ_80MHZ(cur_freq);
+			DFS_IS_CHAN_SPRUCE_SPUR_FREQ_80MHZ(cur_freq);
 		if (is_chan_spur_80mhzfreq)
 			return true;
 		return false;
@@ -374,7 +367,7 @@ bool utils_dfs_is_spruce_spur_war_applicable(struct wlan_objmgr_pdev *pdev)
 	if (WLAN_IS_CHAN_MODE_160(dfs->dfs_curchan)) {
 		/* is the primary channel 36/44/48/52/56/60/64? */
 		bool is_chan_spur_160mhz_freq =
-		    DFS_IS_CHAN_SPRUCE_SPUR_FREQ_160MHZ(cur_freq);
+			DFS_IS_CHAN_SPRUCE_SPUR_FREQ_160MHZ(cur_freq);
 		if (is_chan_spur_160mhz_freq)
 			return true;
 		return false;
@@ -389,7 +382,7 @@ QDF_STATUS utils_dfs_radar_disable(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_radar_disable(dfs);
 
@@ -398,13 +391,13 @@ QDF_STATUS utils_dfs_radar_disable(struct wlan_objmgr_pdev *pdev)
 qdf_export_symbol(utils_dfs_radar_disable);
 
 QDF_STATUS utils_dfs_set_update_nol_flag(struct wlan_objmgr_pdev *pdev,
-		bool val)
+					 bool val)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_set_update_nol_flag(dfs, val);
 
@@ -413,13 +406,13 @@ QDF_STATUS utils_dfs_set_update_nol_flag(struct wlan_objmgr_pdev *pdev,
 qdf_export_symbol(utils_dfs_set_update_nol_flag);
 
 QDF_STATUS utils_dfs_get_update_nol_flag(struct wlan_objmgr_pdev *pdev,
-		bool *nol_flag)
+					 bool *nol_flag)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	*nol_flag = dfs_get_update_nol_flag(dfs);
 
@@ -428,13 +421,13 @@ QDF_STATUS utils_dfs_get_update_nol_flag(struct wlan_objmgr_pdev *pdev,
 qdf_export_symbol(utils_dfs_get_update_nol_flag);
 
 QDF_STATUS utils_dfs_get_dfs_use_nol(struct wlan_objmgr_pdev *pdev,
-		int *dfs_use_nol)
+				     int *dfs_use_nol)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	*dfs_use_nol = dfs_get_use_nol(dfs);
 
@@ -443,13 +436,13 @@ QDF_STATUS utils_dfs_get_dfs_use_nol(struct wlan_objmgr_pdev *pdev,
 qdf_export_symbol(utils_dfs_get_dfs_use_nol);
 
 QDF_STATUS utils_dfs_get_nol_timeout(struct wlan_objmgr_pdev *pdev,
-		int *dfs_nol_timeout)
+				     int *dfs_nol_timeout)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	*dfs_nol_timeout = dfs_get_nol_timeout(dfs);
 
@@ -457,15 +450,14 @@ QDF_STATUS utils_dfs_get_nol_timeout(struct wlan_objmgr_pdev *pdev,
 }
 qdf_export_symbol(utils_dfs_get_nol_timeout);
 
-QDF_STATUS utils_dfs_nol_addchan(struct wlan_objmgr_pdev *pdev,
-		uint16_t freq,
-		uint32_t dfs_nol_timeout)
+QDF_STATUS utils_dfs_nol_addchan(struct wlan_objmgr_pdev *pdev, uint16_t freq,
+				 uint32_t dfs_nol_timeout)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	DFS_NOL_ADD_CHAN_LOCKED(dfs, freq, dfs_nol_timeout);
 
@@ -479,7 +471,7 @@ QDF_STATUS utils_dfs_nol_update(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_nol_update(dfs);
 
@@ -487,13 +479,14 @@ QDF_STATUS utils_dfs_nol_update(struct wlan_objmgr_pdev *pdev)
 }
 qdf_export_symbol(utils_dfs_nol_update);
 
-QDF_STATUS utils_dfs_second_segment_radar_disable(struct wlan_objmgr_pdev *pdev)
+QDF_STATUS
+utils_dfs_second_segment_radar_disable(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_second_segment_radar_disable(dfs);
 
@@ -506,7 +499,7 @@ QDF_STATUS utils_dfs_bw_reduce(struct wlan_objmgr_pdev *pdev, bool bw_reduce)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs->dfs_bw_reduced = bw_reduce;
 
@@ -522,7 +515,7 @@ QDF_STATUS utils_dfs_is_bw_reduce(struct wlan_objmgr_pdev *pdev,
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	*bw_reduce = dfs->dfs_bw_reduced;
 
@@ -538,7 +531,7 @@ QDF_STATUS utils_dfs_fetch_nol_ie_info(struct wlan_objmgr_pdev *pdev,
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_fetch_nol_ie_info(dfs, nol_ie_bandwidth, nol_ie_startfreq,
 			      nol_ie_bitmap);
@@ -547,14 +540,13 @@ QDF_STATUS utils_dfs_fetch_nol_ie_info(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS utils_dfs_set_rcsa_flags(struct wlan_objmgr_pdev *pdev,
-				    bool is_rcsa_ie_sent,
-				    bool is_nol_ie_sent)
+				    bool is_rcsa_ie_sent, bool is_nol_ie_sent)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_set_rcsa_flags(dfs, is_rcsa_ie_sent, is_nol_ie_sent);
 
@@ -562,14 +554,13 @@ QDF_STATUS utils_dfs_set_rcsa_flags(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS utils_dfs_get_rcsa_flags(struct wlan_objmgr_pdev *pdev,
-				    bool *is_rcsa_ie_sent,
-				    bool *is_nol_ie_sent)
+				    bool *is_rcsa_ie_sent, bool *is_nol_ie_sent)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 	dfs_get_rcsa_flags(dfs, is_rcsa_ie_sent, is_nol_ie_sent);
 
 	return QDF_STATUS_SUCCESS;
@@ -584,20 +575,19 @@ bool utils_dfs_process_nol_ie_bitmap(struct wlan_objmgr_pdev *pdev,
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  false;
+		return false;
 	return dfs_process_nol_ie_bitmap(dfs, nol_ie_bandwidth,
-					 nol_ie_startfreq,
-					 nol_ie_bitmap);
+					 nol_ie_startfreq, nol_ie_bitmap);
 }
 
 QDF_STATUS utils_dfs_set_cac_timer_running(struct wlan_objmgr_pdev *pdev,
-		int val)
+					   int val)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs->dfs_cac_timer_running = val;
 
@@ -606,16 +596,16 @@ QDF_STATUS utils_dfs_set_cac_timer_running(struct wlan_objmgr_pdev *pdev,
 qdf_export_symbol(utils_dfs_set_cac_timer_running);
 
 QDF_STATUS utils_dfs_get_nol_chfreq_and_chwidth(struct wlan_objmgr_pdev *pdev,
-		void *nollist,
-		uint32_t *nol_chfreq,
-		uint32_t *nol_chwidth,
-		int index)
+						void *nollist,
+						uint32_t *nol_chfreq,
+						uint32_t *nol_chwidth,
+						int index)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_get_nol_chfreq_and_chwidth(nollist, nol_chfreq, nol_chwidth, index);
 
@@ -624,14 +614,13 @@ QDF_STATUS utils_dfs_get_nol_chfreq_and_chwidth(struct wlan_objmgr_pdev *pdev,
 qdf_export_symbol(utils_dfs_get_nol_chfreq_and_chwidth);
 
 QDF_STATUS utils_dfs_update_cur_chan_flags(struct wlan_objmgr_pdev *pdev,
-		uint64_t flags,
-		uint16_t flagext)
+					   uint64_t flags, uint16_t flagext)
 {
 	struct wlan_dfs *dfs;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs)
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 
 	dfs_update_cur_chan_flags(dfs, flags, flagext);
 
@@ -639,20 +628,20 @@ QDF_STATUS utils_dfs_update_cur_chan_flags(struct wlan_objmgr_pdev *pdev,
 }
 
 static void utils_dfs_get_max_phy_mode(struct wlan_objmgr_pdev *pdev,
-		uint32_t *phy_mode)
+				       uint32_t *phy_mode)
 {
 	return;
 }
 
 static void utils_dfs_get_max_sup_width(struct wlan_objmgr_pdev *pdev,
-		uint8_t *ch_width)
+					uint8_t *ch_width)
 {
 	return;
 }
 
 #ifndef QCA_DFS_USE_POLICY_MANAGER
-void utils_dfs_get_chan_list(struct wlan_objmgr_pdev *pdev,
-			     void *clist, uint32_t *num_chan)
+void utils_dfs_get_chan_list(struct wlan_objmgr_pdev *pdev, void *clist,
+			     uint32_t *num_chan)
 {
 	uint32_t i = 0, j = 0;
 	enum channel_state state;
@@ -667,29 +656,28 @@ void utils_dfs_get_chan_list(struct wlan_objmgr_pdev *pdev,
 	}
 
 	cur_chan_list = qdf_mem_malloc(NUM_CHANNELS *
-			sizeof(struct regulatory_channel));
+				       sizeof(struct regulatory_channel));
 	if (!cur_chan_list) {
 		*num_chan = 0;
 		return;
 	}
 
-	if (wlan_reg_get_current_chan_list(
-			pdev, cur_chan_list) != QDF_STATUS_SUCCESS) {
+	if (wlan_reg_get_current_chan_list(pdev, cur_chan_list) !=
+	    QDF_STATUS_SUCCESS) {
 		*num_chan = 0;
 		dfs_alert(dfs, WLAN_DEBUG_DFS_ALWAYS,
-				"failed to get curr channel list");
+			  "failed to get curr channel list");
 		return;
 	}
 
 	for (i = 0; i < NUM_CHANNELS; i++) {
 		state = cur_chan_list[i].state;
 		if (state == CHANNEL_STATE_DFS ||
-				state == CHANNEL_STATE_ENABLE) {
+		    state == CHANNEL_STATE_ENABLE) {
 			chan_list[j].dfs_ch_ieee = cur_chan_list[i].chan_num;
 			chan_list[j].dfs_ch_freq = cur_chan_list[i].center_freq;
 			if (state == CHANNEL_STATE_DFS)
-				chan_list[j].dfs_ch_flagext =
-					WLAN_CHAN_DFS;
+				chan_list[j].dfs_ch_flagext = WLAN_CHAN_DFS;
 
 			if (cur_chan_list[i].nol_history)
 				chan_list[j].dfs_ch_flagext |=
@@ -763,9 +751,9 @@ static void utils_dfs_get_channel_list(struct wlan_objmgr_pdev *pdev,
 
 		if (is_curchan_5g) {
 			/*
-			 * Always add 5G channels.
-			 * If inter band is allowed, add 6G also.
-			 */
+       * Always add 5G channels.
+       * If inter band is allowed, add 6G also.
+       */
 			if (WLAN_REG_IS_5GHZ_CH_FREQ(center_freq) ||
 			    (is_inter_band_switch_allowed &&
 			     WLAN_REG_IS_6GHZ_CHAN_FREQ(center_freq))) {
@@ -775,12 +763,12 @@ static void utils_dfs_get_channel_list(struct wlan_objmgr_pdev *pdev,
 				j++;
 			}
 		} else if ((is_curchan_24g) &&
-				WLAN_REG_IS_24GHZ_CH_FREQ(center_freq)) {
+			   WLAN_REG_IS_24GHZ_CH_FREQ(center_freq)) {
 			chan_list[j].dfs_ch_ieee = chan_num;
 			chan_list[j].dfs_ch_freq = center_freq;
 			j++;
 		} else if ((is_curchan_49g) &&
-				WLAN_REG_IS_49GHZ_FREQ(center_freq)) {
+			   WLAN_REG_IS_49GHZ_FREQ(center_freq)) {
 			chan_list[j].dfs_ch_ieee = chan_num;
 			chan_list[j].dfs_ch_freq = center_freq;
 			j++;
@@ -804,8 +792,8 @@ static void utils_dfs_get_channel_list(struct wlan_objmgr_pdev *pdev,
 				       struct dfs_channel *chan_list,
 				       uint32_t *num_chan)
 {
-	uint32_t pcl_ch[NUM_CHANNELS] = {0};
-	uint8_t weight_list[NUM_CHANNELS] = {0};
+	uint32_t pcl_ch[NUM_CHANNELS] = { 0 };
+	uint8_t weight_list[NUM_CHANNELS] = { 0 };
 	uint32_t len;
 	uint32_t weight_len;
 	uint32_t i;
@@ -818,7 +806,7 @@ static void utils_dfs_get_channel_list(struct wlan_objmgr_pdev *pdev,
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (!psoc) {
 		*num_chan = 0;
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "null psoc");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "null psoc");
 		return;
 	}
 
@@ -833,28 +821,27 @@ static void utils_dfs_get_channel_list(struct wlan_objmgr_pdev *pdev,
 	} else {
 		mode = PM_SAP_MODE;
 	}
-	conn_count = policy_mgr_mode_specific_connection_count(
-			psoc, mode, NULL);
+	conn_count =
+		policy_mgr_mode_specific_connection_count(psoc, mode, NULL);
 	if (0 == conn_count)
-		policy_mgr_get_pcl(psoc, mode, pcl_ch,
-				   &len, weight_list, weight_len, vdev_id);
+		policy_mgr_get_pcl(psoc, mode, pcl_ch, &len, weight_list,
+				   weight_len, vdev_id);
 	else
-		policy_mgr_get_pcl_for_existing_conn(
-			psoc, mode, pcl_ch, &len, weight_list,
-			weight_len, true, vdev_id);
+		policy_mgr_get_pcl_for_existing_conn(psoc, mode, pcl_ch, &len,
+						     weight_list, weight_len,
+						     true, vdev_id);
 
 	if (*num_chan < len) {
 		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,
-				"Invalid len src=%d, dst=%d",
-				*num_chan, len);
+			"Invalid len src=%d, dst=%d", *num_chan, len);
 		*num_chan = 0;
 		return;
 	}
 
 	for (i = 0; i < len; i++) {
-		chan_list[i].dfs_ch_ieee  =
+		chan_list[i].dfs_ch_ieee =
 			wlan_reg_freq_to_chan(pdev, pcl_ch[i]);
-		chan_list[i].dfs_ch_freq  = pcl_ch[i];
+		chan_list[i].dfs_ch_freq = pcl_ch[i];
 		if (wlan_reg_is_dfs_for_freq(pdev, pcl_ch[i]))
 			chan_list[i].dfs_ch_flagext |= WLAN_CHAN_DFS;
 	}
@@ -862,8 +849,8 @@ static void utils_dfs_get_channel_list(struct wlan_objmgr_pdev *pdev,
 	dfs_info(NULL, WLAN_DEBUG_DFS_ALWAYS, "num channels %d", i);
 }
 
-void utils_dfs_get_chan_list(struct wlan_objmgr_pdev *pdev,
-			     void *clist, uint32_t *num_chan)
+void utils_dfs_get_chan_list(struct wlan_objmgr_pdev *pdev, void *clist,
+			     uint32_t *num_chan)
 {
 	utils_dfs_get_channel_list(pdev, NULL, (struct dfs_channel *)clist,
 				   num_chan);
@@ -871,8 +858,8 @@ void utils_dfs_get_chan_list(struct wlan_objmgr_pdev *pdev,
 
 bool utils_dfs_can_ignore_radar_event(struct wlan_objmgr_pdev *pdev)
 {
-	return policy_mgr_get_can_skip_radar_event(
-		wlan_pdev_get_psoc(pdev), INVALID_VDEV_ID);
+	return policy_mgr_get_can_skip_radar_event(wlan_pdev_get_psoc(pdev),
+						   INVALID_VDEV_ID);
 }
 #endif
 
@@ -892,13 +879,13 @@ QDF_STATUS utils_dfs_get_vdev_random_channel_for_freq(
 	*target_chan_freq = 0;
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (!psoc) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null psoc");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null psoc");
 		goto random_chan_error;
 	}
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null dfs");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null dfs");
 		goto random_chan_error;
 	}
 
@@ -909,7 +896,7 @@ QDF_STATUS utils_dfs_get_vdev_random_channel_for_freq(
 
 	utils_dfs_get_channel_list(pdev, vdev, chan_list, &num_chan);
 	if (!num_chan) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "zero channels");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "zero channels");
 		goto random_chan_error;
 	}
 
@@ -918,25 +905,24 @@ QDF_STATUS utils_dfs_get_vdev_random_channel_for_freq(
 					    (uint8_t *)&chan_params->ch_width);
 
 	*target_chan_freq = dfs_prepare_random_channel_for_freq(
-			dfs, chan_list, num_chan, flags, chan_params,
-			(uint8_t)dfs_reg, acs_info);
+		dfs, chan_list, num_chan, flags, chan_params, (uint8_t)dfs_reg,
+		acs_info);
 
-	dfs_info(dfs, WLAN_DEBUG_DFS_RANDOM_CHAN,
-		 "input width=%d", chan_params->ch_width);
+	dfs_info(dfs, WLAN_DEBUG_DFS_RANDOM_CHAN, "input width=%d",
+		 chan_params->ch_width);
 
 	if (*target_chan_freq) {
-		wlan_reg_set_channel_params_for_pwrmode(
-						     pdev, *target_chan_freq, 0,
-						     chan_params,
-						     REG_CURRENT_PWR_MODE);
+		wlan_reg_set_channel_params_for_pwrmode(pdev, *target_chan_freq,
+							0, chan_params,
+							REG_CURRENT_PWR_MODE);
 		utils_dfs_get_max_phy_mode(pdev, hw_mode);
 		status = QDF_STATUS_SUCCESS;
 	}
 
 	dfs_info(dfs, WLAN_DEBUG_DFS_RANDOM_CHAN,
-		 "ch=%d, seg0=%d, seg1=%d, width=%d",
-		 *target_chan_freq, chan_params->center_freq_seg0,
-		 chan_params->center_freq_seg1, chan_params->ch_width);
+		 "ch=%d, seg0=%d, seg1=%d, width=%d", *target_chan_freq,
+		 chan_params->center_freq_seg0, chan_params->center_freq_seg1,
+		 chan_params->ch_width);
 
 random_chan_error:
 	qdf_mem_free(chan_list);
@@ -948,13 +934,12 @@ qdf_export_symbol(utils_dfs_get_vdev_random_channel_for_freq);
 #endif
 
 #ifdef CONFIG_CHAN_FREQ_API
-QDF_STATUS utils_dfs_get_random_channel_for_freq(
-	struct wlan_objmgr_pdev *pdev,
-	uint16_t flags,
-	struct ch_params *ch_params,
-	uint32_t *hw_mode,
-	uint16_t *target_chan_freq,
-	struct dfs_acs_info *acs_info)
+QDF_STATUS utils_dfs_get_random_channel_for_freq(struct wlan_objmgr_pdev *pdev,
+						 uint16_t flags,
+						 struct ch_params *ch_params,
+						 uint32_t *hw_mode,
+						 uint16_t *target_chan_freq,
+						 struct dfs_acs_info *acs_info)
 {
 	return utils_dfs_get_vdev_random_channel_for_freq(pdev, NULL, flags,
 							  ch_params, hw_mode,
@@ -966,8 +951,7 @@ qdf_export_symbol(utils_dfs_get_random_channel_for_freq);
 #endif
 
 #ifdef CONFIG_CHAN_FREQ_API
-QDF_STATUS utils_dfs_bw_reduced_channel_for_freq(
-						 struct wlan_objmgr_pdev *pdev,
+QDF_STATUS utils_dfs_bw_reduced_channel_for_freq(struct wlan_objmgr_pdev *pdev,
 						 struct ch_params *chan_params,
 						 uint32_t *hw_mode,
 						 uint16_t *target_chan_freq)
@@ -981,40 +965,34 @@ QDF_STATUS utils_dfs_bw_reduced_channel_for_freq(
 	*target_chan_freq = 0;
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (!psoc) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null psoc");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null psoc");
 		return status;
 	}
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null dfs");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null dfs");
 		return status;
 	}
 	dfs_curchan = dfs->dfs_curchan;
-	ch_state =
-		wlan_reg_get_channel_state_for_pwrmode(pdev,
-						       dfs_curchan->dfs_ch_freq,
-						       REG_CURRENT_PWR_MODE);
+	ch_state = wlan_reg_get_channel_state_for_pwrmode(
+		pdev, dfs_curchan->dfs_ch_freq, REG_CURRENT_PWR_MODE);
 
-	if (ch_state == CHANNEL_STATE_DFS ||
-	    ch_state == CHANNEL_STATE_ENABLE) {
+	if (ch_state == CHANNEL_STATE_DFS || ch_state == CHANNEL_STATE_ENABLE) {
 		/* If the current channel is 80P80MHz and radar is detected on
-		 * the channel, the next highest bandwidth that maybe available
-		 * is 80MHz. Since the current regulatory algorithm reduces the
-		 * bandwidth from 80P80MHz to 160MHz, provide the channel
-		 * width as 80MHz if current channel is 80P80MHz.
-		 */
+     * the channel, the next highest bandwidth that maybe available
+     * is 80MHz. Since the current regulatory algorithm reduces the
+     * bandwidth from 80P80MHz to 160MHz, provide the channel
+     * width as 80MHz if current channel is 80P80MHz.
+     */
 		if (chan_params->ch_width == CH_WIDTH_80P80MHZ)
 			chan_params->ch_width = CH_WIDTH_80MHZ;
 
-		chan_params->mhz_freq_seg0 =
-			dfs_curchan->dfs_ch_mhz_freq_seg1;
-		chan_params->mhz_freq_seg1 =
-			dfs_curchan->dfs_ch_mhz_freq_seg2;
-		wlan_reg_set_channel_params_for_pwrmode(pdev, dfs_curchan->
-							dfs_ch_freq,
-							0, chan_params,
-							REG_CURRENT_PWR_MODE);
+		chan_params->mhz_freq_seg0 = dfs_curchan->dfs_ch_mhz_freq_seg1;
+		chan_params->mhz_freq_seg1 = dfs_curchan->dfs_ch_mhz_freq_seg2;
+		wlan_reg_set_channel_params_for_pwrmode(
+			pdev, dfs_curchan->dfs_ch_freq, 0, chan_params,
+			REG_CURRENT_PWR_MODE);
 
 		*target_chan_freq = dfs_curchan->dfs_ch_freq;
 		utils_dfs_get_max_phy_mode(pdev, hw_mode);
@@ -1028,7 +1006,6 @@ QDF_STATUS utils_dfs_bw_reduced_channel_for_freq(
 qdf_export_symbol(utils_dfs_bw_reduced_channel_for_freq);
 #endif
 
-
 #ifdef QCA_DFS_NOL_PLATFORM_DRV_SUPPORT
 void utils_dfs_init_nol(struct wlan_objmgr_pdev *pdev)
 {
@@ -1041,14 +1018,14 @@ void utils_dfs_init_nol(struct wlan_objmgr_pdev *pdev)
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (!dfs || !psoc) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,
-				"dfs %pK, psoc %pK", dfs, psoc);
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs %pK, psoc %pK", dfs,
+			psoc);
 		return;
 	}
 
 	qdf_dev = psoc->soc_objmgr.qdf_dev;
 	if (!qdf_dev->dev) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null device");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null device");
 		return;
 	}
 
@@ -1064,7 +1041,7 @@ void utils_dfs_init_nol(struct wlan_objmgr_pdev *pdev)
 		dfs_info(dfs, WLAN_DEBUG_DFS_ALWAYS, "nol channels in pld");
 		DFS_PRINT_NOL_LOCKED(dfs);
 	} else {
-		dfs_debug(dfs, WLAN_DEBUG_DFS_ALWAYS,  "no nol in pld");
+		dfs_debug(dfs, WLAN_DEBUG_DFS_ALWAYS, "no nol in pld");
 	}
 	qdf_mem_free(dfs_nolinfo);
 }
@@ -1086,19 +1063,19 @@ void utils_dfs_save_nol(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null dfs");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null dfs");
 		return;
 	}
 
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (!psoc) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null psoc");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null psoc");
 		return;
 	}
 
 	qdf_dev = psoc->soc_objmgr.qdf_dev;
 	if (!qdf_dev->dev) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null device");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null device");
 		return;
 	}
 
@@ -1127,7 +1104,7 @@ void utils_dfs_print_nol_channels(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null dfs");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null dfs");
 		return;
 	}
 
@@ -1141,7 +1118,7 @@ void utils_dfs_clear_nol_channels(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null dfs");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null dfs");
 		return;
 	}
 
@@ -1153,18 +1130,17 @@ void utils_dfs_clear_nol_channels(struct wlan_objmgr_pdev *pdev)
 	dfs_nol_update(dfs);
 
 	/*
-	 * update platform driver nol list with local cache which is zero,
-	 * cleared in above step, so this will clear list in platform driver.
-	 */
+   * update platform driver nol list with local cache which is zero,
+   * cleared in above step, so this will clear list in platform driver.
+   */
 	utils_dfs_save_nol(pdev);
 }
 qdf_export_symbol(utils_dfs_clear_nol_channels);
 
 #ifdef CONFIG_CHAN_FREQ_API
 void utils_dfs_reg_update_nol_chan_for_freq(struct wlan_objmgr_pdev *pdev,
-					  uint16_t *freq_list,
-					  uint8_t num_chan,
-					  bool nol_chan)
+					    uint16_t *freq_list,
+					    uint8_t num_chan, bool nol_chan)
 {
 	wlan_reg_update_nol_ch_for_freq(pdev, freq_list, num_chan, nol_chan);
 }
@@ -1173,11 +1149,9 @@ qdf_export_symbol(utils_dfs_reg_update_nol_chan_for_freq);
 #endif
 
 #ifdef CONFIG_CHAN_FREQ_API
-void
-utils_dfs_reg_update_nol_history_chan_for_freq(struct wlan_objmgr_pdev *pdev,
-					       uint16_t *freq_list,
-					       uint8_t num_chan,
-					       bool nol_history_chan)
+void utils_dfs_reg_update_nol_history_chan_for_freq(
+	struct wlan_objmgr_pdev *pdev, uint16_t *freq_list, uint8_t num_chan,
+	bool nol_history_chan)
 {
 	wlan_reg_update_nol_history_ch_for_freq(pdev, freq_list, num_chan,
 						nol_history_chan);
@@ -1216,7 +1190,7 @@ uint32_t utils_dfs_chan_to_freq(uint8_t chan)
 		return DFS_CHAN_14_FREQ;
 	else if (chan < DFS_24_GHZ_CHANNEL_27)
 		return DFS_CHAN_15_FREQ + ((chan - DFS_24_GHZ_CHANNEL_15) *
-				DFS_CHAN_SPACING_20MHZ);
+					   DFS_CHAN_SPACING_20MHZ);
 	else if (chan == DFS_5_GHZ_CHANNEL_170)
 		return DFS_CHAN_170_FREQ;
 	else
@@ -1228,20 +1202,20 @@ qdf_export_symbol(utils_dfs_chan_to_freq);
 
 #ifdef CONFIG_CHAN_FREQ_API
 QDF_STATUS utils_dfs_mark_leaking_chan_for_freq(struct wlan_objmgr_pdev *pdev,
-	enum phy_ch_width ch_width,
-	uint8_t temp_chan_lst_sz,
-	uint16_t *temp_freq_lst)
+						enum phy_ch_width ch_width,
+						uint8_t temp_chan_lst_sz,
+						uint16_t *temp_freq_lst)
 {
 	struct wlan_dfs *dfs = NULL;
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null dfs");
-		return  QDF_STATUS_E_FAILURE;
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null dfs");
+		return QDF_STATUS_E_FAILURE;
 	}
 
 	return dfs_mark_leaking_chan_for_freq(dfs, ch_width, temp_chan_lst_sz,
-					    temp_freq_lst);
+					      temp_freq_lst);
 }
 qdf_export_symbol(utils_dfs_mark_leaking_chan_for_freq);
 #endif
@@ -1267,8 +1241,8 @@ QDF_STATUS utils_dfs_is_spoof_check_failed(struct wlan_objmgr_pdev *pdev,
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "dfs is null");
-		return  QDF_STATUS_E_FAILURE;
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs is null");
+		return QDF_STATUS_E_FAILURE;
 	}
 
 	*is_spoof_check_failed = dfs->dfs_spoof_check_failed;
@@ -1309,8 +1283,8 @@ QDF_STATUS utils_dfs_get_disable_radar_marking(struct wlan_objmgr_pdev *pdev,
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "dfs is null");
-		return  QDF_STATUS_E_FAILURE;
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs is null");
+		return QDF_STATUS_E_FAILURE;
 	}
 
 	*disable_radar_marking = dfs_get_disable_radar_marking(dfs);
@@ -1350,7 +1324,7 @@ void utils_dfs_reset_dfs_prevchan(struct wlan_objmgr_pdev *pdev)
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "dfs is null");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs is null");
 		return;
 	}
 
@@ -1371,7 +1345,7 @@ void utils_dfs_agile_sm_deliver_evt(struct wlan_objmgr_pdev *pdev,
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "dfs is null");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs is null");
 		return;
 	}
 
@@ -1382,10 +1356,7 @@ void utils_dfs_agile_sm_deliver_evt(struct wlan_objmgr_pdev *pdev,
 	dfs_soc_obj->dfs_priv[dfs->dfs_psoc_idx].agile_precac_active = true;
 	event_data = (void *)dfs;
 
-	dfs_agile_sm_deliver_evt(dfs->dfs_soc_obj,
-				 event,
-				 0,
-				 event_data);
+	dfs_agile_sm_deliver_evt(dfs->dfs_soc_obj, event, 0, event_data);
 }
 #endif
 
@@ -1404,7 +1375,7 @@ QDF_STATUS utils_dfs_get_rcac_channel(struct wlan_objmgr_pdev *pdev,
 
 	dfs = wlan_pdev_get_dfs_obj(pdev);
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "null dfs");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "null dfs");
 		return status;
 	}
 
@@ -1442,9 +1413,9 @@ utils_dfs_precac_status_for_channel(struct wlan_objmgr_pdev *pdev,
 #endif
 
 #if defined(WLAN_DISP_CHAN_INFO)
-#define FIRST_DFS_CHAN_NUM  52
-#define CHAN_NUM_SPACING     4
-#define INVALID_INDEX     (-1)
+#define FIRST_DFS_CHAN_NUM 52
+#define CHAN_NUM_SPACING 4
+#define INVALID_INDEX (-1)
 
 void utils_dfs_convert_freq_to_index(qdf_freq_t freq, int8_t *index)
 {
@@ -1454,7 +1425,8 @@ void utils_dfs_convert_freq_to_index(qdf_freq_t freq, int8_t *index)
 	chan_num = (freq - WLAN_5_GHZ_BASE_FREQ) / WLAN_CHAN_SPACING_5MHZ;
 	tmp_index = (chan_num - FIRST_DFS_CHAN_NUM) / CHAN_NUM_SPACING;
 	*index = ((tmp_index >= 0) && (tmp_index < NUM_DFS_CHANS)) ?
-		  tmp_index : INVALID_INDEX;
+			 tmp_index :
+			 INVALID_INDEX;
 }
 
 /**
@@ -1469,8 +1441,7 @@ void utils_dfs_convert_freq_to_index(qdf_freq_t freq, int8_t *index)
  * Return: QDF_STATUS
  */
 static QDF_STATUS
-utils_dfs_update_chan_state_array_element(struct wlan_dfs *dfs,
-					  qdf_freq_t freq,
+utils_dfs_update_chan_state_array_element(struct wlan_dfs *dfs, qdf_freq_t freq,
 					  enum channel_dfs_state state)
 {
 	int8_t index;
@@ -1505,12 +1476,12 @@ QDF_STATUS dfs_init_chan_state_array(struct wlan_objmgr_pdev *pdev)
 		return QDF_STATUS_E_FAILURE;
 
 	cur_chan_list = qdf_mem_malloc(NUM_CHANNELS *
-			sizeof(struct regulatory_channel));
+				       sizeof(struct regulatory_channel));
 	if (!cur_chan_list)
 		return QDF_STATUS_E_NOMEM;
 
-	if (wlan_reg_get_current_chan_list(
-				pdev, cur_chan_list) != QDF_STATUS_SUCCESS) {
+	if (wlan_reg_get_current_chan_list(pdev, cur_chan_list) !=
+	    QDF_STATUS_SUCCESS) {
 		qdf_mem_free(cur_chan_list);
 		dfs_alert(dfs, WLAN_DEBUG_DFS_ALWAYS,
 			  "failed to get curr channel list");
@@ -1523,8 +1494,7 @@ QDF_STATUS dfs_init_chan_state_array(struct wlan_objmgr_pdev *pdev)
 		if (!IS_CHAN_DFS(cur_chan_list[i].chan_flags))
 			continue;
 
-		utils_dfs_update_chan_state_array_element(dfs,
-							  freq,
+		utils_dfs_update_chan_state_array_element(dfs, freq,
 							  CH_DFS_S_CAC_REQ);
 	}
 
@@ -1543,8 +1513,7 @@ QDF_STATUS utils_dfs_get_chan_dfs_state(struct wlan_objmgr_pdev *pdev,
 	if (!dfs)
 		return QDF_STATUS_E_FAILURE;
 
-	qdf_mem_copy(dfs_ch_s,
-		     dfs->dfs_channel_state_array,
+	qdf_mem_copy(dfs_ch_s, dfs->dfs_channel_state_array,
 		     sizeof(dfs->dfs_channel_state_array));
 
 	return QDF_STATUS_SUCCESS;
@@ -1560,21 +1529,20 @@ qdf_export_symbol(utils_dfs_get_chan_dfs_state);
  *
  * Return: void.
  */
-static
-void convert_event_to_state(enum WLAN_DFS_EVENTS event,
-			    enum channel_dfs_state *state)
+static void convert_event_to_state(enum WLAN_DFS_EVENTS event,
+				   enum channel_dfs_state *state)
 {
-	static const
-	enum channel_dfs_state ev_to_state[WLAN_EV_PCAC_COMPLETED + 1] = {
-	[WLAN_EV_RADAR_DETECTED] = CH_DFS_S_INVALID,
-	[WLAN_EV_CAC_RESET]      = CH_DFS_S_CAC_REQ,
-	[WLAN_EV_CAC_STARTED]    = CH_DFS_S_CAC_STARTED,
-	[WLAN_EV_CAC_COMPLETED]  = CH_DFS_S_CAC_COMPLETED,
-	[WLAN_EV_NOL_STARTED]    = CH_DFS_S_NOL,
-	[WLAN_EV_NOL_FINISHED]   = CH_DFS_S_CAC_REQ,
-	[WLAN_EV_PCAC_STARTED]   = CH_DFS_S_PRECAC_STARTED,
-	[WLAN_EV_PCAC_COMPLETED] = CH_DFS_S_PRECAC_COMPLETED,
-	};
+	static const enum channel_dfs_state
+		ev_to_state[WLAN_EV_PCAC_COMPLETED + 1] = {
+			[WLAN_EV_RADAR_DETECTED] = CH_DFS_S_INVALID,
+			[WLAN_EV_CAC_RESET] = CH_DFS_S_CAC_REQ,
+			[WLAN_EV_CAC_STARTED] = CH_DFS_S_CAC_STARTED,
+			[WLAN_EV_CAC_COMPLETED] = CH_DFS_S_CAC_COMPLETED,
+			[WLAN_EV_NOL_STARTED] = CH_DFS_S_NOL,
+			[WLAN_EV_NOL_FINISHED] = CH_DFS_S_CAC_REQ,
+			[WLAN_EV_PCAC_STARTED] = CH_DFS_S_PRECAC_STARTED,
+			[WLAN_EV_PCAC_COMPLETED] = CH_DFS_S_PRECAC_COMPLETED,
+		};
 
 	*state = ev_to_state[event];
 }
@@ -1604,99 +1572,98 @@ QDF_STATUS utils_dfs_radar_enable(struct wlan_objmgr_pdev *pdev)
 enum phy_ch_width
 utils_dfs_convert_wlan_phymode_to_chwidth(enum wlan_phymode phymode)
 {
-		switch (phymode) {
-		case WLAN_PHYMODE_11NA_HT20:
-		case WLAN_PHYMODE_11NG_HT20:
-		case WLAN_PHYMODE_11AC_VHT20:
-		case WLAN_PHYMODE_11AC_VHT20_2G:
-		case WLAN_PHYMODE_11AXA_HE20:
-		case WLAN_PHYMODE_11AXG_HE20:
-		case WLAN_PHYMODE_11BEG_EHT20:
-		case WLAN_PHYMODE_11BEA_EHT20:
-			return CH_WIDTH_20MHZ;
-		case WLAN_PHYMODE_11NA_HT40:
-		case WLAN_PHYMODE_11NG_HT40PLUS:
-		case WLAN_PHYMODE_11NG_HT40MINUS:
-		case WLAN_PHYMODE_11NG_HT40:
-		case WLAN_PHYMODE_11AC_VHT40:
-		case WLAN_PHYMODE_11AC_VHT40PLUS_2G:
-		case WLAN_PHYMODE_11AC_VHT40MINUS_2G:
-		case WLAN_PHYMODE_11AC_VHT40_2G:
-		case WLAN_PHYMODE_11AXG_HE40PLUS:
-		case WLAN_PHYMODE_11AXG_HE40MINUS:
-		case WLAN_PHYMODE_11AXG_HE40:
-		case WLAN_PHYMODE_11BEA_EHT40:
-		case WLAN_PHYMODE_11BEG_EHT40PLUS:
-		case WLAN_PHYMODE_11BEG_EHT40MINUS:
-		case WLAN_PHYMODE_11BEG_EHT40:
-			return CH_WIDTH_40MHZ;
-		case WLAN_PHYMODE_11AC_VHT80:
-		case WLAN_PHYMODE_11AC_VHT80_2G:
-		case WLAN_PHYMODE_11AXA_HE80:
-		case WLAN_PHYMODE_11AXG_HE80:
-		case WLAN_PHYMODE_11BEA_EHT80:
-			return CH_WIDTH_80MHZ;
-		case WLAN_PHYMODE_11AC_VHT160:
-		case WLAN_PHYMODE_11AXA_HE160:
-		case WLAN_PHYMODE_11BEA_EHT160:
-			return CH_WIDTH_160MHZ;
-		case WLAN_PHYMODE_11AC_VHT80_80:
-		case WLAN_PHYMODE_11AXA_HE80_80:
-			return CH_WIDTH_80P80MHZ;
-		case WLAN_PHYMODE_11BEA_EHT320:
-			return CH_WIDTH_320MHZ;
-		default:
-			return CH_WIDTH_INVALID;
-		}
+	switch (phymode) {
+	case WLAN_PHYMODE_11NA_HT20:
+	case WLAN_PHYMODE_11NG_HT20:
+	case WLAN_PHYMODE_11AC_VHT20:
+	case WLAN_PHYMODE_11AC_VHT20_2G:
+	case WLAN_PHYMODE_11AXA_HE20:
+	case WLAN_PHYMODE_11AXG_HE20:
+	case WLAN_PHYMODE_11BEG_EHT20:
+	case WLAN_PHYMODE_11BEA_EHT20:
+		return CH_WIDTH_20MHZ;
+	case WLAN_PHYMODE_11NA_HT40:
+	case WLAN_PHYMODE_11NG_HT40PLUS:
+	case WLAN_PHYMODE_11NG_HT40MINUS:
+	case WLAN_PHYMODE_11NG_HT40:
+	case WLAN_PHYMODE_11AC_VHT40:
+	case WLAN_PHYMODE_11AC_VHT40PLUS_2G:
+	case WLAN_PHYMODE_11AC_VHT40MINUS_2G:
+	case WLAN_PHYMODE_11AC_VHT40_2G:
+	case WLAN_PHYMODE_11AXG_HE40PLUS:
+	case WLAN_PHYMODE_11AXG_HE40MINUS:
+	case WLAN_PHYMODE_11AXG_HE40:
+	case WLAN_PHYMODE_11BEA_EHT40:
+	case WLAN_PHYMODE_11BEG_EHT40PLUS:
+	case WLAN_PHYMODE_11BEG_EHT40MINUS:
+	case WLAN_PHYMODE_11BEG_EHT40:
+		return CH_WIDTH_40MHZ;
+	case WLAN_PHYMODE_11AC_VHT80:
+	case WLAN_PHYMODE_11AC_VHT80_2G:
+	case WLAN_PHYMODE_11AXA_HE80:
+	case WLAN_PHYMODE_11AXG_HE80:
+	case WLAN_PHYMODE_11BEA_EHT80:
+		return CH_WIDTH_80MHZ;
+	case WLAN_PHYMODE_11AC_VHT160:
+	case WLAN_PHYMODE_11AXA_HE160:
+	case WLAN_PHYMODE_11BEA_EHT160:
+		return CH_WIDTH_160MHZ;
+	case WLAN_PHYMODE_11AC_VHT80_80:
+	case WLAN_PHYMODE_11AXA_HE80_80:
+		return CH_WIDTH_80P80MHZ;
+	case WLAN_PHYMODE_11BEA_EHT320:
+		return CH_WIDTH_320MHZ;
+	default:
+		return CH_WIDTH_INVALID;
+	}
 }
 #else
 enum phy_ch_width
 utils_dfs_convert_wlan_phymode_to_chwidth(enum wlan_phymode phymode)
 {
-		switch (phymode) {
-		case WLAN_PHYMODE_11NA_HT20:
-		case WLAN_PHYMODE_11NG_HT20:
-		case WLAN_PHYMODE_11AC_VHT20:
-		case WLAN_PHYMODE_11AC_VHT20_2G:
-		case WLAN_PHYMODE_11AXA_HE20:
-		case WLAN_PHYMODE_11AXG_HE20:
-			return CH_WIDTH_20MHZ;
-		case WLAN_PHYMODE_11NA_HT40:
-		case WLAN_PHYMODE_11NG_HT40PLUS:
-		case WLAN_PHYMODE_11NG_HT40MINUS:
-		case WLAN_PHYMODE_11NG_HT40:
-		case WLAN_PHYMODE_11AC_VHT40:
-		case WLAN_PHYMODE_11AC_VHT40PLUS_2G:
-		case WLAN_PHYMODE_11AC_VHT40MINUS_2G:
-		case WLAN_PHYMODE_11AC_VHT40_2G:
-		case WLAN_PHYMODE_11AXG_HE40PLUS:
-		case WLAN_PHYMODE_11AXG_HE40MINUS:
-		case WLAN_PHYMODE_11AXG_HE40:
-			return CH_WIDTH_40MHZ;
-		case WLAN_PHYMODE_11AC_VHT80:
-		case WLAN_PHYMODE_11AC_VHT80_2G:
-		case WLAN_PHYMODE_11AXA_HE80:
-		case WLAN_PHYMODE_11AXG_HE80:
-			return CH_WIDTH_80MHZ;
-		case WLAN_PHYMODE_11AC_VHT160:
-		case WLAN_PHYMODE_11AXA_HE160:
-			return CH_WIDTH_160MHZ;
-		case WLAN_PHYMODE_11AC_VHT80_80:
-		case WLAN_PHYMODE_11AXA_HE80_80:
-			return CH_WIDTH_80P80MHZ;
-		default:
-			return CH_WIDTH_INVALID;
-		}
+	switch (phymode) {
+	case WLAN_PHYMODE_11NA_HT20:
+	case WLAN_PHYMODE_11NG_HT20:
+	case WLAN_PHYMODE_11AC_VHT20:
+	case WLAN_PHYMODE_11AC_VHT20_2G:
+	case WLAN_PHYMODE_11AXA_HE20:
+	case WLAN_PHYMODE_11AXG_HE20:
+		return CH_WIDTH_20MHZ;
+	case WLAN_PHYMODE_11NA_HT40:
+	case WLAN_PHYMODE_11NG_HT40PLUS:
+	case WLAN_PHYMODE_11NG_HT40MINUS:
+	case WLAN_PHYMODE_11NG_HT40:
+	case WLAN_PHYMODE_11AC_VHT40:
+	case WLAN_PHYMODE_11AC_VHT40PLUS_2G:
+	case WLAN_PHYMODE_11AC_VHT40MINUS_2G:
+	case WLAN_PHYMODE_11AC_VHT40_2G:
+	case WLAN_PHYMODE_11AXG_HE40PLUS:
+	case WLAN_PHYMODE_11AXG_HE40MINUS:
+	case WLAN_PHYMODE_11AXG_HE40:
+		return CH_WIDTH_40MHZ;
+	case WLAN_PHYMODE_11AC_VHT80:
+	case WLAN_PHYMODE_11AC_VHT80_2G:
+	case WLAN_PHYMODE_11AXA_HE80:
+	case WLAN_PHYMODE_11AXG_HE80:
+		return CH_WIDTH_80MHZ;
+	case WLAN_PHYMODE_11AC_VHT160:
+	case WLAN_PHYMODE_11AXA_HE160:
+		return CH_WIDTH_160MHZ;
+	case WLAN_PHYMODE_11AC_VHT80_80:
+	case WLAN_PHYMODE_11AXA_HE80_80:
+		return CH_WIDTH_80P80MHZ;
+	default:
+		return CH_WIDTH_INVALID;
+	}
 }
 #endif
 
 #if defined(WLAN_FEATURE_11BE) && defined(QCA_DFS_BW_EXPAND) && \
 	defined(QCA_DFS_RCSA_SUPPORT)
-uint16_t
-utils_dfs_get_radar_bitmap_from_nolie(struct wlan_objmgr_pdev *pdev,
-				      enum wlan_phymode phy_mode,
-				      qdf_freq_t nol_ie_start_freq,
-				      uint8_t nol_ie_bitmap)
+uint16_t utils_dfs_get_radar_bitmap_from_nolie(struct wlan_objmgr_pdev *pdev,
+					       enum wlan_phymode phy_mode,
+					       qdf_freq_t nol_ie_start_freq,
+					       uint8_t nol_ie_bitmap)
 {
 	struct wlan_dfs *dfs;
 

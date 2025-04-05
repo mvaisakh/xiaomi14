@@ -18,23 +18,22 @@
  */
 
 /* Include Files */
+#include "cdp_txrx_ipa.h"
+#include "host_diag_core_event.h"
 #include "qdf_delayed_work.h"
 #include "wlan_ipa_core.h"
 #include "wlan_ipa_main.h"
-#include "cdp_txrx_ipa.h"
-#include "host_diag_core_event.h"
 #include "wlan_reg_services_api.h"
 
 QDF_STATUS wlan_ipa_set_perf_level(struct wlan_ipa_priv *ipa_ctx,
-				    uint64_t tx_packets,
-				    uint64_t rx_packets)
+				   uint64_t tx_packets, uint64_t rx_packets)
 {
 	int ret;
 	uint32_t next_bw;
 	uint64_t total_packets = tx_packets + rx_packets;
 
 	if ((!wlan_ipa_is_enabled(ipa_ctx->config)) ||
-		(!wlan_ipa_is_clk_scaling_enabled(ipa_ctx->config)))
+	    (!wlan_ipa_is_clk_scaling_enabled(ipa_ctx->config)))
 		return 0;
 
 	if (total_packets > (ipa_ctx->config->bus_bw_high / 2))
@@ -48,16 +47,16 @@ QDF_STATUS wlan_ipa_set_perf_level(struct wlan_ipa_priv *ipa_ctx,
 		ipa_debug("Requesting IPA perf curr: %d, next: %d",
 			  ipa_ctx->curr_cons_bw, next_bw);
 		ret = cdp_ipa_set_perf_level(ipa_ctx->dp_soc,
-					     QDF_IPA_CLIENT_WLAN1_CONS,
-					     next_bw, ipa_ctx->hdl);
+					     QDF_IPA_CLIENT_WLAN1_CONS, next_bw,
+					     ipa_ctx->hdl);
 		if (ret) {
 			ipa_err("RM CONS set perf profile failed: %d", ret);
 
 			return QDF_STATUS_E_FAILURE;
 		}
 		ret = cdp_ipa_set_perf_level(ipa_ctx->dp_soc,
-					     QDF_IPA_CLIENT_WLAN1_PROD,
-					     next_bw, ipa_ctx->hdl);
+					     QDF_IPA_CLIENT_WLAN1_PROD, next_bw,
+					     ipa_ctx->hdl);
 		if (ret) {
 			ipa_err("RM PROD set perf profile failed: %d", ret);
 			return QDF_STATUS_E_FAILURE;
@@ -70,8 +69,8 @@ QDF_STATUS wlan_ipa_set_perf_level(struct wlan_ipa_priv *ipa_ctx,
 }
 
 #ifdef QCA_IPA_LL_TX_FLOW_CONTROL
-static inline
-QDF_STATUS wlan_ipa_update_perf_level(struct wlan_ipa_priv *ipa_ctx, int client)
+static inline QDF_STATUS
+wlan_ipa_update_perf_level(struct wlan_ipa_priv *ipa_ctx, int client)
 {
 	struct wlan_objmgr_pdev *pdev = ipa_ctx->pdev;
 	qdf_freq_t low_2g, high_2g;
@@ -79,20 +78,18 @@ QDF_STATUS wlan_ipa_update_perf_level(struct wlan_ipa_priv *ipa_ctx, int client)
 	wlan_reg_get_freq_range(pdev, &low_2g, &high_2g, NULL, NULL);
 
 	if (low_2g != 0 || high_2g != 0) {
-		return cdp_ipa_set_perf_level(
-				ipa_ctx->dp_soc,
-				client,
-				WLAN_IPA_MAX_BANDWIDTH_2G, ipa_ctx->hdl);
+		return cdp_ipa_set_perf_level(ipa_ctx->dp_soc, client,
+					      WLAN_IPA_MAX_BANDWIDTH_2G,
+					      ipa_ctx->hdl);
 	} else {
-		return cdp_ipa_set_perf_level(
-				ipa_ctx->dp_soc,
-				client,
-				WLAN_IPA_MAX_BANDWIDTH, ipa_ctx->hdl);
+		return cdp_ipa_set_perf_level(ipa_ctx->dp_soc, client,
+					      WLAN_IPA_MAX_BANDWIDTH,
+					      ipa_ctx->hdl);
 	}
 }
 #else
-static inline
-QDF_STATUS wlan_ipa_update_perf_level(struct wlan_ipa_priv *ipa_ctx, int client)
+static inline QDF_STATUS
+wlan_ipa_update_perf_level(struct wlan_ipa_priv *ipa_ctx, int client)
 {
 	uint32_t bw;
 
@@ -192,7 +189,7 @@ QDF_STATUS wlan_ipa_wdi_rm_request(struct wlan_ipa_priv *ipa_ctx)
 	qdf_spin_unlock_bh(&ipa_ctx->rm_lock);
 
 	ret = qdf_ipa_rm_inactivity_timer_request_resource(
-			QDF_IPA_RM_RESOURCE_WLAN_PROD);
+		QDF_IPA_RM_RESOURCE_WLAN_PROD);
 
 	qdf_spin_lock_bh(&ipa_ctx->rm_lock);
 	if (ret == 0) {
@@ -243,14 +240,14 @@ QDF_STATUS wlan_ipa_wdi_rm_try_release(struct wlan_ipa_priv *ipa_ctx)
 	}
 
 	/* IPA driver returns immediately so set the state here to avoid any
-	 * race condition.
-	 */
+   * race condition.
+   */
 	ipa_ctx->rm_state = WLAN_IPA_RM_RELEASED;
 	ipa_ctx->stats.num_rm_release++;
 	qdf_spin_unlock_bh(&ipa_ctx->rm_lock);
 
 	ret = qdf_ipa_rm_inactivity_timer_release_resource(
-				QDF_IPA_RM_RESOURCE_WLAN_PROD);
+		QDF_IPA_RM_RESOURCE_WLAN_PROD);
 
 	if (qdf_unlikely(ret != 0)) {
 		qdf_spin_lock_bh(&ipa_ctx->rm_lock);
@@ -261,11 +258,11 @@ QDF_STATUS wlan_ipa_wdi_rm_try_release(struct wlan_ipa_priv *ipa_ctx)
 	}
 
 	/*
-	 * If wake_lock is released immediately, kernel would try to suspend
-	 * immediately as well, Just avoid ping-pong between suspend-resume
-	 * while there is healthy amount of data transfer going on by
-	 * releasing the wake_lock after some delay.
-	 */
+   * If wake_lock is released immediately, kernel would try to suspend
+   * immediately as well, Just avoid ping-pong between suspend-resume
+   * while there is healthy amount of data transfer going on by
+   * releasing the wake_lock after some delay.
+   */
 	qdf_delayed_work_start(&ipa_ctx->wake_lock_work,
 			       WLAN_IPA_RX_INACTIVITY_MSEC_DELAY);
 
@@ -279,9 +276,8 @@ QDF_STATUS wlan_ipa_wdi_rm_try_release(struct wlan_ipa_priv *ipa_ctx)
  *
  * Return: None
  */
-static void
-wlan_ipa_uc_rm_notify_handler(struct wlan_ipa_priv *ipa_ctx,
-			      qdf_ipa_rm_event_t event)
+static void wlan_ipa_uc_rm_notify_handler(struct wlan_ipa_priv *ipa_ctx,
+					  qdf_ipa_rm_event_t event)
 {
 	if (!wlan_ipa_is_rm_enabled(ipa_ctx->config))
 		return;
@@ -415,9 +411,9 @@ static void wlan_ipa_rm_notify(void *user_data, qdf_ipa_rm_event_t event,
 	case QDF_IPA_RM_RESOURCE_GRANTED:
 		if (wlan_ipa_uc_is_enabled(ipa_ctx->config)) {
 			/* RM Notification comes with ISR context
-			 * it should be serialized into work queue to avoid
-			 * ISR sleep problem
-			 */
+       * it should be serialized into work queue to avoid
+       * ISR sleep problem
+       */
 			ipa_ctx->uc_rm_work.event = event;
 			qdf_sched_work(0, &ipa_ctx->uc_rm_work.work);
 			break;
@@ -477,8 +473,9 @@ QDF_STATUS wlan_ipa_wdi_setup_rm(struct wlan_ipa_priv *ipa_ctx)
 	qdf_ipa_rm_add_dependency(QDF_IPA_RM_RESOURCE_WLAN_PROD,
 				  QDF_IPA_RM_RESOURCE_APPS_CONS);
 
-	ret = qdf_ipa_rm_inactivity_timer_init(QDF_IPA_RM_RESOURCE_WLAN_PROD,
-					WLAN_IPA_RX_INACTIVITY_MSEC_DELAY);
+	ret = qdf_ipa_rm_inactivity_timer_init(
+		QDF_IPA_RM_RESOURCE_WLAN_PROD,
+		WLAN_IPA_RX_INACTIVITY_MSEC_DELAY);
 	if (ret) {
 		ipa_err("Timer init failed: %d", ret);
 		goto timer_init_failed;

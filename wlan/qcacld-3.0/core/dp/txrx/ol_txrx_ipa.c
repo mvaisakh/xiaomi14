@@ -17,17 +17,17 @@
 
 /*=== includes ===*/
 /* header files for OS primitives */
-#include <osdep.h>              /* uint32_t, etc. */
-#include <qdf_mem.h>         /* qdf_mem_malloc,free */
-#include <qdf_types.h>          /* qdf_device_t, qdf_print */
-#include <qdf_lock.h>           /* qdf_spinlock */
-#include <qdf_atomic.h>         /* qdf_atomic_read */
+#include <osdep.h> /* uint32_t, etc. */
+#include <qdf_atomic.h> /* qdf_atomic_read */
+#include <qdf_lock.h> /* qdf_spinlock */
+#include <qdf_mem.h> /* qdf_mem_malloc,free */
+#include <qdf_types.h> /* qdf_device_t, qdf_print */
 
 /* header files for utilities */
-#include "queue.h"         /* TAILQ */
+#include "queue.h" /* TAILQ */
 
 /* header files for configuration API */
-#include <ol_cfg.h>             /* ol_cfg_is_high_latency */
+#include <ol_cfg.h> /* ol_cfg_is_high_latency */
 #include <ol_if_athvar.h>
 
 /* header files for HTT API */
@@ -35,35 +35,35 @@
 #include <ol_htt_tx_api.h>
 
 /* header files for our own APIs */
-#include <ol_txrx_api.h>
-#include <ol_txrx_dbg.h>
 #include <cdp_txrx_ocb.h>
-#include <ol_txrx_ctrl_api.h>
 #include <cdp_txrx_stats.h>
+#include <ol_txrx_api.h>
+#include <ol_txrx_ctrl_api.h>
+#include <ol_txrx_dbg.h>
 #include <ol_txrx_osif_api.h>
 /* header files for our internal definitions */
-#include <ol_txrx_internal.h>   /* TXRX_ASSERT, etc. */
-#include <wdi_event.h>          /* WDI events */
-#include <ol_tx.h>              /* ol_tx_ll */
-#include <ol_rx.h>              /* ol_rx_deliver */
-#include <ol_txrx_peer_find.h>  /* ol_txrx_peer_find_attach, etc. */
-#include <ol_rx_pn.h>           /* ol_rx_pn_check, etc. */
-#include <ol_rx_fwd.h>          /* ol_rx_fwd_check, etc. */
-#include <ol_rx_reorder_timeout.h>      /* OL_RX_REORDER_TIMEOUT_INIT, etc. */
-#include <ol_rx_reorder.h>
-#include <ol_tx_send.h>         /* ol_tx_discard_target_frms */
-#include <ol_tx_desc.h>         /* ol_tx_desc_frame_free */
-#include <ol_tx_queue.h>
-#include <ol_tx_sched.h>           /* ol_tx_sched_attach, etc. */
-#include <ol_txrx.h>
-#include <ol_txrx_types.h>
-#include <cdp_txrx_flow_ctrl_legacy.h>
-#include <cdp_txrx_bus.h>
-#include <cdp_txrx_ipa.h>
-#include <cdp_txrx_pmf.h>
-#include "wma.h"
 #include "hif.h"
+#include "wma.h"
+#include <cdp_txrx_bus.h>
+#include <cdp_txrx_flow_ctrl_legacy.h>
+#include <cdp_txrx_ipa.h>
 #include <cdp_txrx_peer_ops.h>
+#include <cdp_txrx_pmf.h>
+#include <ol_rx.h> /* ol_rx_deliver */
+#include <ol_rx_fwd.h> /* ol_rx_fwd_check, etc. */
+#include <ol_rx_pn.h> /* ol_rx_pn_check, etc. */
+#include <ol_rx_reorder.h>
+#include <ol_rx_reorder_timeout.h> /* OL_RX_REORDER_TIMEOUT_INIT, etc. */
+#include <ol_tx.h> /* ol_tx_ll */
+#include <ol_tx_desc.h> /* ol_tx_desc_frame_free */
+#include <ol_tx_queue.h>
+#include <ol_tx_sched.h> /* ol_tx_sched_attach, etc. */
+#include <ol_tx_send.h> /* ol_tx_discard_target_frms */
+#include <ol_txrx.h>
+#include <ol_txrx_internal.h> /* TXRX_ASSERT, etc. */
+#include <ol_txrx_peer_find.h> /* ol_txrx_peer_find_attach, etc. */
+#include <ol_txrx_types.h>
+#include <wdi_event.h> /* WDI events */
 #ifndef REMOVE_PKT_LOG
 #include "pktlog_ac.h"
 #endif
@@ -76,34 +76,19 @@
 /* For Tx pipes, use Ethernet-II Header format */
 #ifdef QCA_WIFI_3_0
 struct ol_txrx_ipa_uc_tx_hdr ipa_uc_tx_hdr = {
-	{
-		0x0000,
-		0x00000000,
-		0x00000000
-	},
-	{
-		0x00000000
-	},
-	{
-		{0x00, 0x03, 0x7f, 0xaa, 0xbb, 0xcc},
-		{0x00, 0x03, 0x7f, 0xdd, 0xee, 0xff},
-		0x0008
-	}
+	{ 0x0000, 0x00000000, 0x00000000 },
+	{ 0x00000000 },
+	{ { 0x00, 0x03, 0x7f, 0xaa, 0xbb, 0xcc },
+	  { 0x00, 0x03, 0x7f, 0xdd, 0xee, 0xff },
+	  0x0008 }
 };
 #else
 struct ol_txrx_ipa_uc_tx_hdr ipa_uc_tx_hdr = {
-	{
-		0x00000000,
-		0x00000000
-	},
-	{
-		0x00000000
-	},
-	{
-		{0x00, 0x03, 0x7f, 0xaa, 0xbb, 0xcc},
-		{0x00, 0x03, 0x7f, 0xdd, 0xee, 0xff},
-		0x0008
-	}
+	{ 0x00000000, 0x00000000 },
+	{ 0x00000000 },
+	{ { 0x00, 0x03, 0x7f, 0xaa, 0xbb, 0xcc },
+	  { 0x00, 0x03, 0x7f, 0xdd, 0xee, 0xff },
+	  0x0008 }
 };
 #endif
 
@@ -124,28 +109,22 @@ QDF_STATUS ol_txrx_ipa_uc_get_resource(struct cdp_soc_t *soc_hdl,
 		return QDF_STATUS_E_NOENT;
 
 	ipa_res = &pdev->ipa_resource;
-	htt_ipa_uc_get_resource(pdev->htt_pdev,
-				&ipa_res->ce_sr,
-				&ipa_res->tx_comp_ring,
-				&ipa_res->rx_rdy_ring,
-				&ipa_res->rx2_rdy_ring,
-				&ipa_res->rx_proc_done_idx,
-				&ipa_res->rx2_proc_done_idx,
-				&ipa_res->ce_sr_ring_size,
-				&ipa_res->ce_reg_paddr,
-				&ipa_res->tx_num_alloc_buffer);
+	htt_ipa_uc_get_resource(
+		pdev->htt_pdev, &ipa_res->ce_sr, &ipa_res->tx_comp_ring,
+		&ipa_res->rx_rdy_ring, &ipa_res->rx2_rdy_ring,
+		&ipa_res->rx_proc_done_idx, &ipa_res->rx2_proc_done_idx,
+		&ipa_res->ce_sr_ring_size, &ipa_res->ce_reg_paddr,
+		&ipa_res->tx_num_alloc_buffer);
 
-	if ((0 == qdf_mem_get_dma_addr(osdev,
-				&ipa_res->ce_sr->mem_info)) ||
-	    (0 == qdf_mem_get_dma_addr(osdev,
-				&ipa_res->tx_comp_ring->mem_info)) ||
-	    (0 == qdf_mem_get_dma_addr(osdev,
-				&ipa_res->rx_rdy_ring->mem_info))
+	if ((0 == qdf_mem_get_dma_addr(osdev, &ipa_res->ce_sr->mem_info)) ||
+	    (0 ==
+	     qdf_mem_get_dma_addr(osdev, &ipa_res->tx_comp_ring->mem_info)) ||
+	    (0 == qdf_mem_get_dma_addr(osdev, &ipa_res->rx_rdy_ring->mem_info))
 #if defined(QCA_WIFI_3_0) && defined(CONFIG_IPA3)
-	    || (0 == qdf_mem_get_dma_addr(osdev,
-				&ipa_res->rx2_rdy_ring->mem_info))
+	    ||
+	    (0 == qdf_mem_get_dma_addr(osdev, &ipa_res->rx2_rdy_ring->mem_info))
 #endif
-	   )
+	)
 		return QDF_STATUS_E_FAILURE;
 
 	return QDF_STATUS_SUCCESS;
@@ -166,8 +145,8 @@ QDF_STATUS ol_txrx_ipa_uc_set_doorbell_paddr(struct cdp_soc_t *soc_hdl,
 
 	ipa_res = &pdev->ipa_resource;
 	ret = htt_ipa_uc_set_doorbell_paddr(pdev->htt_pdev,
-				      ipa_res->tx_comp_doorbell_dmaaddr,
-				      ipa_res->rx_ready_doorbell_dmaaddr);
+					    ipa_res->tx_comp_doorbell_dmaaddr,
+					    ipa_res->rx_ready_doorbell_dmaaddr);
 
 	if (ret) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
@@ -215,7 +194,8 @@ QDF_STATUS ol_txrx_ipa_uc_op_response(struct cdp_soc_t *soc_hdl,
 		pdev->ipa_uc_op_cb(op_msg, pdev->usr_ctxt);
 	} else {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-		    "%s: IPA callback function is not registered", __func__);
+			  "%s: IPA callback function is not registered",
+			  __func__);
 		qdf_mem_free(op_msg);
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -308,8 +288,9 @@ static QDF_STATUS __ol_txrx_ipa_tx_buf_smmu_mapping(struct ol_txrx_pdev_t *pdev,
 
 	for (index = 0; index < tx_buffer_cnt; index++) {
 		if (htt_pdev->ipa_uc_tx_rsc.tx_buf_pool_strg[index]) {
-			*mem_info = htt_pdev->ipa_uc_tx_rsc.
-					tx_buf_pool_strg[index]->mem_info;
+			*mem_info =
+				htt_pdev->ipa_uc_tx_rsc.tx_buf_pool_strg[index]
+					->mem_info;
 			mem_info++;
 			unmap_cnt++;
 		}
@@ -325,8 +306,7 @@ static QDF_STATUS __ol_txrx_ipa_tx_buf_smmu_mapping(struct ol_txrx_pdev_t *pdev,
 }
 
 QDF_STATUS ol_txrx_ipa_tx_buf_smmu_mapping(struct cdp_soc_t *soc_hdl,
-					   uint8_t pdev_id,
-					   const char *func,
+					   uint8_t pdev_id, const char *func,
 					   uint32_t line)
 {
 	QDF_STATUS ret;
@@ -348,8 +328,7 @@ QDF_STATUS ol_txrx_ipa_tx_buf_smmu_mapping(struct cdp_soc_t *soc_hdl,
 }
 
 QDF_STATUS ol_txrx_ipa_tx_buf_smmu_unmapping(struct cdp_soc_t *soc_hdl,
-					     uint8_t pdev_id,
-					     const char *func,
+					     uint8_t pdev_id, const char *func,
 					     uint32_t line)
 {
 	QDF_STATUS ret;
@@ -373,23 +352,23 @@ QDF_STATUS ol_txrx_ipa_tx_buf_smmu_unmapping(struct cdp_soc_t *soc_hdl,
 #ifdef CONFIG_IPA_WDI_UNIFIED_API
 
 #ifndef QCA_LL_TX_FLOW_CONTROL_V2
-static inline void ol_txrx_setup_mcc_sys_pipes(
-		qdf_ipa_sys_connect_params_t *sys_in,
-		qdf_ipa_wdi_conn_in_params_t *pipe_in)
+static inline void
+ol_txrx_setup_mcc_sys_pipes(qdf_ipa_sys_connect_params_t *sys_in,
+			    qdf_ipa_wdi_conn_in_params_t *pipe_in)
 {
 	int i = 0;
 
 	/* Setup MCC sys pipe */
 	QDF_IPA_WDI_CONN_IN_PARAMS_NUM_SYS_PIPE_NEEDED(pipe_in) =
-			OL_TXRX_IPA_MAX_IFACE;
+		OL_TXRX_IPA_MAX_IFACE;
 	for (i = 0; i < OL_TXRX_IPA_MAX_IFACE; i++)
 		memcpy(&QDF_IPA_WDI_CONN_IN_PARAMS_SYS_IN(pipe_in)[i],
 		       &sys_in[i], sizeof(qdf_ipa_sys_connect_params_t));
 }
 #else
-static inline void ol_txrx_setup_mcc_sys_pipes(
-		qdf_ipa_sys_connect_params_t *sys_in,
-		qdf_ipa_wdi_conn_in_params_t *pipe_in)
+static inline void
+ol_txrx_setup_mcc_sys_pipes(qdf_ipa_sys_connect_params_t *sys_in,
+			    qdf_ipa_wdi_conn_in_params_t *pipe_in)
 {
 	QDF_IPA_WDI_CONN_IN_PARAMS_NUM_SYS_PIPE_NEEDED(pipe_in) = 0;
 }
@@ -404,29 +383,26 @@ static inline void ol_txrx_setup_mcc_sys_pipes(
  *
  * Return: None
  */
-static inline void ol_txrx_ipa_wdi_tx_smmu_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_smmu_t *tx_smmu,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_tx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			       qdf_ipa_wdi_pipe_setup_info_smmu_t *tx_smmu,
+			       bool over_gsi)
 {
 	QDF_IPA_WDI_SETUP_INFO_SMMU_CLIENT(tx_smmu) =
 		QDF_IPA_CLIENT_WLAN_WDI2_CONS;
-	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_BASE(
-				tx_smmu),
-		     &ipa_res->tx_comp_ring->sgtable,
-		     sizeof(sgtable_t));
+	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_BASE(tx_smmu),
+		     &ipa_res->tx_comp_ring->sgtable, sizeof(sgtable_t));
 	QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_SIZE(tx_smmu) =
 		ipa_res->tx_comp_ring->mem_info.size;
-	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_BASE(
-				tx_smmu),
-		     &ipa_res->ce_sr->sgtable,
-		     sizeof(sgtable_t));
+	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_BASE(tx_smmu),
+		     &ipa_res->ce_sr->sgtable, sizeof(sgtable_t));
 	QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_SIZE(tx_smmu) =
 		ipa_res->ce_sr_ring_size;
 	QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_DOORBELL_PA(tx_smmu) =
 		ipa_res->ce_reg_paddr;
 	if (over_gsi)
-		QDF_IPA_WDI_SETUP_INFO_SMMU_IS_EVT_RN_DB_PCIE_ADDR(tx_smmu) = true;
+		QDF_IPA_WDI_SETUP_INFO_SMMU_IS_EVT_RN_DB_PCIE_ADDR(tx_smmu) =
+			true;
 	QDF_IPA_WDI_SETUP_INFO_SMMU_NUM_PKT_BUFFERS(tx_smmu) =
 		ipa_res->tx_num_alloc_buffer;
 	QDF_IPA_WDI_SETUP_INFO_SMMU_PKT_OFFSET(tx_smmu) = 0;
@@ -439,55 +415,48 @@ static inline void ol_txrx_ipa_wdi_tx_smmu_params(
  *
  * Return: None
  */
-static inline void ol_txrx_ipa_wdi_rx_smmu_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_smmu_t *rx_smmu,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_rx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			       qdf_ipa_wdi_pipe_setup_info_smmu_t *rx_smmu,
+			       bool over_gsi)
 {
 	QDF_IPA_WDI_SETUP_INFO_SMMU_CLIENT(rx_smmu) =
 		QDF_IPA_CLIENT_WLAN_WDI2_PROD;
-	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_BASE(
-				rx_smmu),
-		     &ipa_res->rx_rdy_ring->sgtable,
-		     sizeof(sgtable_t));
+	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_BASE(rx_smmu),
+		     &ipa_res->rx_rdy_ring->sgtable, sizeof(sgtable_t));
 	QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_SIZE(rx_smmu) =
 		ipa_res->rx_rdy_ring->mem_info.size;
 	QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_DOORBELL_PA(rx_smmu) =
 		ipa_res->rx_proc_done_idx->mem_info.pa;
 	if (over_gsi)
-		QDF_IPA_WDI_SETUP_INFO_SMMU_IS_TXR_RN_DB_PCIE_ADDR(rx_smmu) = false;
-	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_BASE(
-				rx_smmu),
-		     &ipa_res->rx2_rdy_ring->sgtable,
-		     sizeof(sgtable_t));
+		QDF_IPA_WDI_SETUP_INFO_SMMU_IS_TXR_RN_DB_PCIE_ADDR(rx_smmu) =
+			false;
+	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_BASE(rx_smmu),
+		     &ipa_res->rx2_rdy_ring->sgtable, sizeof(sgtable_t));
 	QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_SIZE(rx_smmu) =
 		ipa_res->rx2_rdy_ring->mem_info.size;
 	QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_DOORBELL_PA(rx_smmu) =
 		ipa_res->rx2_proc_done_idx->mem_info.pa;
 	if (over_gsi)
-		QDF_IPA_WDI_SETUP_INFO_SMMU_IS_EVT_RN_DB_PCIE_ADDR(rx_smmu) = false;
+		QDF_IPA_WDI_SETUP_INFO_SMMU_IS_EVT_RN_DB_PCIE_ADDR(rx_smmu) =
+			false;
 	QDF_IPA_WDI_SETUP_INFO_SMMU_PKT_OFFSET(rx_smmu) = 0;
-
 }
 #else
 
-static inline void ol_txrx_ipa_wdi_tx_smmu_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_smmu_t *tx_smmu,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_tx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			       qdf_ipa_wdi_pipe_setup_info_smmu_t *tx_smmu,
+			       bool over_gsi)
 {
 	QDF_IPA_WDI_SETUP_INFO_SMMU_CLIENT(tx_smmu) =
 		QDF_IPA_CLIENT_WLAN_LEGACY_CONS;
-	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_BASE(
-				tx_smmu),
-		     &ipa_res->tx_comp_ring->sgtable,
-		     sizeof(sgtable_t));
+	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_BASE(tx_smmu),
+		     &ipa_res->tx_comp_ring->sgtable, sizeof(sgtable_t));
 	QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_SIZE(tx_smmu) =
 		ipa_res->tx_comp_ring->mem_info.size;
-	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_BASE(
-				tx_smmu),
-		     &ipa_res->ce_sr->sgtable,
-		     sizeof(sgtable_t));
+	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_BASE(tx_smmu),
+		     &ipa_res->ce_sr->sgtable, sizeof(sgtable_t));
 	QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_SIZE(tx_smmu) =
 		ipa_res->ce_sr_ring_size;
 	QDF_IPA_WDI_SETUP_INFO_SMMU_EVENT_RING_DOORBELL_PA(tx_smmu) =
@@ -497,17 +466,15 @@ static inline void ol_txrx_ipa_wdi_tx_smmu_params(
 	QDF_IPA_WDI_SETUP_INFO_SMMU_PKT_OFFSET(tx_smmu) = 0;
 }
 
-static inline void ol_txrx_ipa_wdi_rx_smmu_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_smmu_t *rx_smmu,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_rx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			       qdf_ipa_wdi_pipe_setup_info_smmu_t *rx_smmu,
+			       bool over_gsi)
 {
 	QDF_IPA_WDI_SETUP_INFO_SMMU_CLIENT(rx_smmu) =
 		QDF_IPA_CLIENT_WLAN_LEGACY_PROD;
-	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_BASE(
-				rx_smmu),
-		     &ipa_res->rx_rdy_ring->sgtable,
-		     sizeof(sgtable_t));
+	qdf_mem_copy(&QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_BASE(rx_smmu),
+		     &ipa_res->rx_rdy_ring->sgtable, sizeof(sgtable_t));
 	QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_SIZE(rx_smmu) =
 		ipa_res->rx_rdy_ring->mem_info.size;
 	QDF_IPA_WDI_SETUP_INFO_SMMU_TRANSFER_RING_DOORBELL_PA(rx_smmu) =
@@ -519,17 +486,17 @@ static inline void ol_txrx_ipa_wdi_rx_smmu_params(
 
 #else
 
-static inline void ol_txrx_ipa_wdi_tx_smmu_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_smmu_t *tx_smmu,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_tx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			       qdf_ipa_wdi_pipe_setup_info_smmu_t *tx_smmu,
+			       bool over_gsi)
 {
 }
 
-static inline void ol_txrx_ipa_wdi_rx_smmu_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_smmu_t *rx_smmu,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_rx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			       qdf_ipa_wdi_pipe_setup_info_smmu_t *rx_smmu,
+			       bool over_gsi)
 {
 }
 #endif
@@ -542,10 +509,9 @@ static inline void ol_txrx_ipa_wdi_rx_smmu_params(
  *
  * Return: None
  */
-static inline void ol_txrx_ipa_wdi_tx_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_t *tx,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_tx_params(struct ol_txrx_ipa_resources *ipa_res,
+			  qdf_ipa_wdi_pipe_setup_info_t *tx, bool over_gsi)
 {
 	qdf_device_t osdev = cds_get_context(QDF_MODULE_ID_QDF_DEVICE);
 
@@ -554,15 +520,12 @@ static inline void ol_txrx_ipa_wdi_tx_params(
 
 	QDF_IPA_WDI_SETUP_INFO_CLIENT(tx) = IPA_CLIENT_WLAN1_CONS;
 	QDF_IPA_WDI_SETUP_INFO_TRANSFER_RING_BASE_PA(tx) =
-		qdf_mem_get_dma_addr(osdev,
-				&ipa_res->tx_comp_ring->mem_info);
+		qdf_mem_get_dma_addr(osdev, &ipa_res->tx_comp_ring->mem_info);
 	QDF_IPA_WDI_SETUP_INFO_TRANSFER_RING_SIZE(tx) =
 		ipa_res->tx_comp_ring->mem_info.size;
 	QDF_IPA_WDI_SETUP_INFO_EVENT_RING_BASE_PA(tx) =
-		qdf_mem_get_dma_addr(osdev,
-				&ipa_res->ce_sr->mem_info);
-	QDF_IPA_WDI_SETUP_INFO_EVENT_RING_SIZE(tx) =
-		ipa_res->ce_sr_ring_size;
+		qdf_mem_get_dma_addr(osdev, &ipa_res->ce_sr->mem_info);
+	QDF_IPA_WDI_SETUP_INFO_EVENT_RING_SIZE(tx) = ipa_res->ce_sr_ring_size;
 	QDF_IPA_WDI_SETUP_INFO_EVENT_RING_DOORBELL_PA(tx) =
 		ipa_res->ce_reg_paddr;
 	if (over_gsi)
@@ -579,10 +542,9 @@ static inline void ol_txrx_ipa_wdi_tx_params(
  *
  * Return: None
  */
-static inline void ol_txrx_ipa_wdi_rx_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_t *rx,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_rx_params(struct ol_txrx_ipa_resources *ipa_res,
+			  qdf_ipa_wdi_pipe_setup_info_t *rx, bool over_gsi)
 {
 	QDF_IPA_WDI_SETUP_INFO_CLIENT(rx) = IPA_CLIENT_WLAN1_PROD;
 	QDF_IPA_WDI_SETUP_INFO_TRANSFER_RING_BASE_PA(rx) =
@@ -605,10 +567,9 @@ static inline void ol_txrx_ipa_wdi_rx_params(
 }
 
 #else
-static inline void ol_txrx_ipa_wdi_tx_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_t *tx,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_tx_params(struct ol_txrx_ipa_resources *ipa_res,
+			  qdf_ipa_wdi_pipe_setup_info_t *tx, bool over_gsi)
 {
 	qdf_device_t osdev = cds_get_context(QDF_MODULE_ID_QDF_DEVICE);
 
@@ -617,15 +578,12 @@ static inline void ol_txrx_ipa_wdi_tx_params(
 
 	QDF_IPA_WDI_SETUP_INFO_CLIENT(tx) = QDF_IPA_CLIENT_WLAN_LEGACY_CONS;
 	QDF_IPA_WDI_SETUP_INFO_TRANSFER_RING_BASE_PA(tx) =
-		qdf_mem_get_dma_addr(osdev,
-				&ipa_res->tx_comp_ring->mem_info);
+		qdf_mem_get_dma_addr(osdev, &ipa_res->tx_comp_ring->mem_info);
 	QDF_IPA_WDI_SETUP_INFO_TRANSFER_RING_SIZE(tx) =
 		ipa_res->tx_comp_ring->mem_info.size;
 	QDF_IPA_WDI_SETUP_INFO_EVENT_RING_BASE_PA(tx) =
-		qdf_mem_get_dma_addr(osdev,
-				&ipa_res->ce_sr->mem_info);
-	QDF_IPA_WDI_SETUP_INFO_EVENT_RING_SIZE(tx) =
-		ipa_res->ce_sr_ring_size;
+		qdf_mem_get_dma_addr(osdev, &ipa_res->ce_sr->mem_info);
+	QDF_IPA_WDI_SETUP_INFO_EVENT_RING_SIZE(tx) = ipa_res->ce_sr_ring_size;
 	QDF_IPA_WDI_SETUP_INFO_EVENT_RING_DOORBELL_PA(tx) =
 		ipa_res->ce_reg_paddr;
 	QDF_IPA_WDI_SETUP_INFO_NUM_PKT_BUFFERS(tx) =
@@ -633,10 +591,9 @@ static inline void ol_txrx_ipa_wdi_tx_params(
 	QDF_IPA_WDI_SETUP_INFO_PKT_OFFSET(tx) = 0;
 }
 
-static inline void ol_txrx_ipa_wdi_rx_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_pipe_setup_info_t *rx,
-				bool over_gsi)
+static inline void
+ol_txrx_ipa_wdi_rx_params(struct ol_txrx_ipa_resources *ipa_res,
+			  qdf_ipa_wdi_pipe_setup_info_t *rx, bool over_gsi)
 {
 	QDF_IPA_WDI_SETUP_INFO_CLIENT(rx) = QDF_IPA_CLIENT_WLAN_LEGACY_PROD;
 	QDF_IPA_WDI_SETUP_INFO_TRANSFER_RING_BASE_PA(rx) =
@@ -657,10 +614,8 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 			     bool is_rm_enabled, uint32_t *p_tx_pipe_handle,
 			     uint32_t *p_rx_pipe_handle, bool is_smmu_enabled,
 			     qdf_ipa_sys_connect_params_t *sys_in,
-			     bool over_gsi,
-			     qdf_ipa_wdi_hdl_t hdl,
-			     qdf_ipa_wdi_hdl_t id,
-			     void *ipa_ast_notify_cb)
+			     bool over_gsi, qdf_ipa_wdi_hdl_t hdl,
+			     qdf_ipa_wdi_hdl_t id, void *ipa_ast_notify_cb)
 {
 	struct ol_txrx_soc_t *soc = cdp_soc_t_to_ol_txrx_soc_t(soc_hdl);
 	ol_txrx_pdev_handle pdev = ol_txrx_get_pdev_from_pdev_id(soc, pdev_id);
@@ -720,7 +675,6 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	else
 		ol_txrx_ipa_wdi_tx_params(ipa_res, tx, over_gsi);
 
-
 	/* RX PIPE */
 	if (is_smmu_enabled) {
 		rx_smmu = &QDF_IPA_WDI_CONN_IN_PARAMS_RX_SMMU(pipe_in);
@@ -752,9 +706,10 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	/* Connect WDI IPA PIPE */
 	ret = qdf_ipa_wdi_conn_pipes(pipe_in, &pipe_out);
 	if (ret) {
-		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-			  "%s: ipa_wdi_conn_pipes: IPA pipe setup failed: ret=%d",
-			  __func__, ret);
+		QDF_TRACE(
+			QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
+			"%s: ipa_wdi_conn_pipes: IPA pipe setup failed: ret=%d",
+			__func__, ret);
 		qdf_mem_free(pipe_in);
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -762,10 +717,10 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	/* IPA uC Doorbell registers */
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
 		  "%s: Tx DB PA=0x%x, Rx DB PA=0x%x", __func__,
-		  (unsigned int)
-			QDF_IPA_WDI_CONN_OUT_PARAMS_TX_UC_DB_PA(&pipe_out),
-		  (unsigned int)
-			QDF_IPA_WDI_CONN_OUT_PARAMS_RX_UC_DB_PA(&pipe_out));
+		  (unsigned int)QDF_IPA_WDI_CONN_OUT_PARAMS_TX_UC_DB_PA(
+			  &pipe_out),
+		  (unsigned int)QDF_IPA_WDI_CONN_OUT_PARAMS_RX_UC_DB_PA(
+			  &pipe_out));
 
 	ipa_res->tx_comp_doorbell_dmaaddr =
 		QDF_IPA_WDI_CONN_OUT_PARAMS_TX_UC_DB_PA(&pipe_out);
@@ -796,8 +751,7 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
  * Return: QDF_STATUS
  */
 QDF_STATUS ol_txrx_ipa_cleanup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
-			       uint32_t tx_pipe_handle,
-			       uint32_t rx_pipe_handle,
+			       uint32_t tx_pipe_handle, uint32_t rx_pipe_handle,
 			       qdf_ipa_wdi_hdl_t hdl)
 {
 	int ret;
@@ -866,8 +820,8 @@ QDF_STATUS ol_txrx_ipa_setup_iface(char *ifname, uint8_t *mac_addr,
 	int ret = -EINVAL;
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		  "%s: Add Partial hdr: %s, "QDF_MAC_ADDR_FMT,
-		  __func__, ifname, QDF_MAC_ADDR_REF(mac_addr));
+		  "%s: Add Partial hdr: %s, " QDF_MAC_ADDR_FMT, __func__,
+		  ifname, QDF_MAC_ADDR_REF(mac_addr));
 
 	qdf_mem_zero(&hdr_info, sizeof(qdf_ipa_wdi_hdr_info_t));
 	memcpy(&uc_tx_hdr, &ipa_uc_tx_hdr, OL_TXRX_IPA_UC_WLAN_TX_HDR_LEN);
@@ -889,8 +843,7 @@ QDF_STATUS ol_txrx_ipa_setup_iface(char *ifname, uint8_t *mac_addr,
 	       &hdr_info, sizeof(qdf_ipa_wdi_hdr_info_t));
 	QDF_IPA_WDI_REG_INTF_IN_PARAMS_ALT_DST_PIPE(&in) = cons_client;
 	QDF_IPA_WDI_REG_INTF_IN_PARAMS_IS_META_DATA_VALID(&in) = 1;
-	QDF_IPA_WDI_REG_INTF_IN_PARAMS_META_DATA(&in) =
-		htonl(session_id << 16);
+	QDF_IPA_WDI_REG_INTF_IN_PARAMS_META_DATA(&in) = htonl(session_id << 16);
 	QDF_IPA_WDI_REG_INTF_IN_PARAMS_META_DATA_MASK(&in) = htonl(0x00FF0000);
 
 	/* IPV6 header */
@@ -899,7 +852,8 @@ QDF_STATUS ol_txrx_ipa_setup_iface(char *ifname, uint8_t *mac_addr,
 		       OL_TXRX_IPA_UC_WLAN_TX_HDR_LEN);
 		uc_tx_hdr_v6.eth.h_proto = qdf_htons(ETH_P_IPV6);
 		QDF_IPA_WDI_HDR_INFO_HDR(&hdr_info) = (uint8_t *)&uc_tx_hdr_v6;
-		memcpy(&(QDF_IPA_WDI_REG_INTF_IN_PARAMS_HDR_INFO(&in)[IPA_IP_v6]),
+		memcpy(&(QDF_IPA_WDI_REG_INTF_IN_PARAMS_HDR_INFO(
+			       &in)[IPA_IP_v6]),
 		       &hdr_info, sizeof(qdf_ipa_wdi_hdr_info_t));
 	}
 
@@ -962,8 +916,8 @@ QDF_STATUS ol_txrx_ipa_enable_pipes(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	ret = qdf_ipa_wdi_enable_pipes(hdl);
 	if (ret) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-			  "%s: ipa_wdi_enable_pipes failed: ret=%d",
-				__func__, ret);
+			  "%s: ipa_wdi_enable_pipes failed: ret=%d", __func__,
+			  ret);
 		status = htt_rx_update_smmu_map(pdev->htt_pdev, false);
 		if (status != QDF_STATUS_SUCCESS)
 			QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
@@ -994,8 +948,8 @@ QDF_STATUS ol_txrx_ipa_disable_pipes(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	ret = qdf_ipa_wdi_disable_pipes(hdl);
 	if (ret) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-			  "%s: ipa_wdi_disable_pipes failed: ret=%d",
-			  __func__, ret);
+			  "%s: ipa_wdi_disable_pipes failed: ret=%d", __func__,
+			  ret);
 	}
 
 	if (htt_rx_update_smmu_map(pdev->htt_pdev, false) !=
@@ -1028,7 +982,7 @@ QDF_STATUS ol_txrx_ipa_set_perf_level(int client,
 
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"Set perf profile failed, code %d", result);
+			  "Set perf profile failed, code %d", result);
 
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -1046,28 +1000,26 @@ QDF_STATUS ol_txrx_ipa_set_perf_level(int client,
  *
  * Return: None
  */
-static inline void ol_txrx_ipa_tx_smmu_params(
-					struct ol_txrx_ipa_resources *ipa_res,
-					qdf_ipa_wdi_in_params_t *pipe_in)
+static inline void
+ol_txrx_ipa_tx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			   qdf_ipa_wdi_in_params_t *pipe_in)
 {
-	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		    "%s: SMMU Enabled", __func__);
+	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG, "%s: SMMU Enabled",
+		  __func__);
 
 	QDF_IPA_PIPE_IN_SMMU_ENABLED(pipe_in) = true;
 	qdf_mem_copy(&QDF_IPA_PIPE_IN_DL_SMMU_COMP_RING(pipe_in),
-		     &ipa_res->tx_comp_ring->sgtable,
-		     sizeof(sgtable_t));
+		     &ipa_res->tx_comp_ring->sgtable, sizeof(sgtable_t));
 	QDF_IPA_PIPE_IN_DL_SMMU_COMP_RING_SIZE(pipe_in) =
-					ipa_res->tx_comp_ring->mem_info.size;
+		ipa_res->tx_comp_ring->mem_info.size;
 	qdf_mem_copy(&QDF_IPA_PIPE_IN_DL_SMMU_CE_RING(pipe_in),
-		     &ipa_res->ce_sr->sgtable,
-		     sizeof(sgtable_t));
+		     &ipa_res->ce_sr->sgtable, sizeof(sgtable_t));
 	QDF_IPA_PIPE_IN_DL_SMMU_CE_DOOR_BELL_PA(pipe_in) =
-					ipa_res->ce_reg_paddr;
+		ipa_res->ce_reg_paddr;
 	QDF_IPA_PIPE_IN_DL_SMMU_CE_RING_SIZE(pipe_in) =
-					ipa_res->ce_sr_ring_size;
+		ipa_res->ce_sr_ring_size;
 	QDF_IPA_PIPE_IN_DL_SMMU_NUM_TX_BUFFERS(pipe_in) =
-					ipa_res->tx_num_alloc_buffer;
+		ipa_res->tx_num_alloc_buffer;
 }
 
 /**
@@ -1077,40 +1029,38 @@ static inline void ol_txrx_ipa_tx_smmu_params(
  *
  * Return: None
  */
-static inline void ol_txrx_ipa_rx_smmu_params(
-					struct ol_txrx_ipa_resources *ipa_res,
-					qdf_ipa_wdi_in_params_t *pipe_in)
+static inline void
+ol_txrx_ipa_rx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			   qdf_ipa_wdi_in_params_t *pipe_in)
 {
 	qdf_mem_copy(&QDF_IPA_PIPE_IN_UL_SMMU_RDY_RING(pipe_in),
-		     &ipa_res->rx_rdy_ring->sgtable,
-		     sizeof(sgtable_t));
+		     &ipa_res->rx_rdy_ring->sgtable, sizeof(sgtable_t));
 	QDF_IPA_PIPE_IN_UL_SMMU_RDY_RING_SIZE(pipe_in) =
-				ipa_res->rx_rdy_ring->mem_info.size;
+		ipa_res->rx_rdy_ring->mem_info.size;
 	QDF_IPA_PIPE_IN_UL_SMMU_RDY_RING_RP_PA(pipe_in) =
-				ipa_res->rx_proc_done_idx->mem_info.pa;
+		ipa_res->rx_proc_done_idx->mem_info.pa;
 
 	QDF_IPA_PIPE_IN_UL_SMMU_RDY_RING_RP_VA(pipe_in) =
-				ipa_res->rx_proc_done_idx->vaddr;
+		ipa_res->rx_proc_done_idx->vaddr;
 	qdf_mem_copy(&QDF_IPA_PIPE_IN_UL_SMMU_RDY_COMP_RING(pipe_in),
-		     &ipa_res->rx2_rdy_ring->sgtable,
-		     sizeof(sgtable_t));
+		     &ipa_res->rx2_rdy_ring->sgtable, sizeof(sgtable_t));
 	QDF_IPA_PIPE_IN_UL_SMMU_RDY_COMP_RING_SIZE(pipe_in) =
-				ipa_res->rx2_rdy_ring->mem_info.size;
+		ipa_res->rx2_rdy_ring->mem_info.size;
 	QDF_IPA_PIPE_IN_UL_SMMU_RDY_COMP_RING_WP_PA(pipe_in) =
-				ipa_res->rx2_proc_done_idx->mem_info.pa;
+		ipa_res->rx2_proc_done_idx->mem_info.pa;
 	QDF_IPA_PIPE_IN_UL_SMMU_RDY_COMP_RING_WP_VA(pipe_in) =
-				ipa_res->rx2_proc_done_idx->vaddr;
+		ipa_res->rx2_proc_done_idx->vaddr;
 }
 #else
-static inline void ol_txrx_ipa_tx_smmu_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_in_params_t *pipe_in)
+static inline void
+ol_txrx_ipa_tx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			   qdf_ipa_wdi_in_params_t *pipe_in)
 {
 }
 
-static inline void ol_txrx_ipa_rx_smmu_params(
-				struct ol_txrx_ipa_resources *ipa_res,
-				qdf_ipa_wdi_in_params_t *pipe_in)
+static inline void
+ol_txrx_ipa_rx_smmu_params(struct ol_txrx_ipa_resources *ipa_res,
+			   qdf_ipa_wdi_in_params_t *pipe_in)
 {
 }
 #endif
@@ -1122,9 +1072,8 @@ static inline void ol_txrx_ipa_rx_smmu_params(
  *
  * Return: None
  */
-static inline void ol_txrx_ipa_tx_params(
-					struct ol_txrx_ipa_resources *ipa_res,
-					qdf_ipa_wdi_in_params_t *pipe_in)
+static inline void ol_txrx_ipa_tx_params(struct ol_txrx_ipa_resources *ipa_res,
+					 qdf_ipa_wdi_in_params_t *pipe_in)
 {
 	qdf_device_t osdev = cds_get_context(QDF_MODULE_ID_QDF_DEVICE);
 
@@ -1132,17 +1081,13 @@ static inline void ol_txrx_ipa_tx_params(
 		return;
 
 	QDF_IPA_PIPE_IN_DL_COMP_RING_BASE_PA(pipe_in) =
-		qdf_mem_get_dma_addr(osdev,
-				&ipa_res->tx_comp_ring->mem_info);
+		qdf_mem_get_dma_addr(osdev, &ipa_res->tx_comp_ring->mem_info);
 	QDF_IPA_PIPE_IN_DL_COMP_RING_SIZE(pipe_in) =
 		ipa_res->tx_comp_ring->mem_info.size;
 	QDF_IPA_PIPE_IN_DL_CE_RING_BASE_PA(pipe_in) =
-		qdf_mem_get_dma_addr(osdev,
-				&ipa_res->ce_sr->mem_info);
-	QDF_IPA_PIPE_IN_DL_CE_DOOR_BELL_PA(pipe_in) =
-		ipa_res->ce_reg_paddr;
-	QDF_IPA_PIPE_IN_DL_CE_RING_SIZE(pipe_in) =
-		ipa_res->ce_sr_ring_size;
+		qdf_mem_get_dma_addr(osdev, &ipa_res->ce_sr->mem_info);
+	QDF_IPA_PIPE_IN_DL_CE_DOOR_BELL_PA(pipe_in) = ipa_res->ce_reg_paddr;
+	QDF_IPA_PIPE_IN_DL_CE_RING_SIZE(pipe_in) = ipa_res->ce_sr_ring_size;
 	QDF_IPA_PIPE_IN_DL_NUM_TX_BUFFERS(pipe_in) =
 		ipa_res->tx_num_alloc_buffer;
 }
@@ -1154,9 +1099,8 @@ static inline void ol_txrx_ipa_tx_params(
  *
  * Return: None
  */
-static inline void ol_txrx_ipa_rx_params(
-					struct ol_txrx_ipa_resources *ipa_res,
-					qdf_ipa_wdi_in_params_t *pipe_in)
+static inline void ol_txrx_ipa_rx_params(struct ol_txrx_ipa_resources *ipa_res,
+					 qdf_ipa_wdi_in_params_t *pipe_in)
 {
 	qdf_device_t osdev = cds_get_context(QDF_MODULE_ID_QDF_DEVICE);
 
@@ -1169,8 +1113,7 @@ static inline void ol_txrx_ipa_rx_params(
 		ipa_res->rx_rdy_ring->mem_info.size;
 	QDF_IPA_PIPE_IN_UL_RDY_RING_RP_PA(pipe_in) =
 		ipa_res->rx_proc_done_idx->mem_info.pa;
-	OL_TXRX_IPA_WDI2_SET(pipe_in, ipa_res,
-			     osdev);
+	OL_TXRX_IPA_WDI2_SET(pipe_in, ipa_res, osdev);
 }
 
 QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
@@ -1217,7 +1160,7 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 
 	if (!is_rm_enabled) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-			    "%s: IPA RM DISABLED, IPA AWAKE", __func__);
+			  "%s: IPA RM DISABLED, IPA AWAKE", __func__);
 		QDF_IPA_PIPE_IN_KEEP_IPA_AWAKE(&pipe_in) = true;
 	}
 
@@ -1230,15 +1173,16 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	ret = qdf_ipa_connect_wdi_pipe(&pipe_in, &pipe_out);
 	if (ret) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-		    "ipa_connect_wdi_pipe: Tx pipe setup failed: ret=%d", ret);
+			  "ipa_connect_wdi_pipe: Tx pipe setup failed: ret=%d",
+			  ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	/* Micro Controller Doorbell register */
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		"%s CONS DB pipe out 0x%x TX PIPE Handle 0x%x", __func__,
-		(unsigned int)QDF_IPA_PIPE_OUT_UC_DOOR_BELL_PA(&pipe_out),
-		pipe_out.clnt_hdl);
+		  "%s CONS DB pipe out 0x%x TX PIPE Handle 0x%x", __func__,
+		  (unsigned int)QDF_IPA_PIPE_OUT_UC_DOOR_BELL_PA(&pipe_out),
+		  pipe_out.clnt_hdl);
 	ipa_res->tx_comp_doorbell_dmaaddr =
 		QDF_IPA_PIPE_OUT_UC_DOOR_BELL_PA(&pipe_out);
 	/* WLAN TX PIPE Handle */
@@ -1252,12 +1196,11 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	QDF_IPA_PIPE_IN_HDR_METADATA_REG_VALID(&pipe_in) = 1;
 	QDF_IPA_PIPE_IN_MODE(&pipe_in) = IPA_BASIC;
 	QDF_IPA_PIPE_IN_CLIENT(&pipe_in) = IPA_CLIENT_WLAN1_PROD;
-	QDF_IPA_PIPE_IN_DESC_FIFO_SZ(&pipe_in) =
-		ipa_desc_size + SPS_DESC_SIZE;
+	QDF_IPA_PIPE_IN_DESC_FIFO_SZ(&pipe_in) = ipa_desc_size + SPS_DESC_SIZE;
 	QDF_IPA_PIPE_IN_NOTIFY(&pipe_in) = ipa_w2i_cb;
 	if (!is_rm_enabled) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-			    "%s: IPA RM DISABLED, IPA AWAKE", __func__);
+			  "%s: IPA RM DISABLED, IPA AWAKE", __func__);
 		QDF_IPA_PIPE_IN_KEEP_IPA_AWAKE(&pipe_in) = true;
 	}
 
@@ -1273,7 +1216,8 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 	ret = qdf_ipa_connect_wdi_pipe(&pipe_in, &pipe_out);
 	if (ret) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-		    "ipa_connect_wdi_pipe: Rx pipe setup failed: ret=%d", ret);
+			  "ipa_connect_wdi_pipe: Rx pipe setup failed: ret=%d",
+			  ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 	ipa_res->rx_ready_doorbell_dmaaddr =
@@ -1304,30 +1248,31 @@ QDF_STATUS ol_txrx_ipa_setup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
  * Return: QDF_STATUS
  */
 QDF_STATUS ol_txrx_ipa_cleanup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
-			       uint32_t tx_pipe_handle,
-			       uint32_t rx_pipe_handle)
+			       uint32_t tx_pipe_handle, uint32_t rx_pipe_handle)
 {
 	int ret;
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		    "%s: Disconnect TX PIPE tx_pipe_handle=0x%x",
-		    __func__, tx_pipe_handle);
+		  "%s: Disconnect TX PIPE tx_pipe_handle=0x%x", __func__,
+		  tx_pipe_handle);
 	ret = qdf_ipa_disconnect_wdi_pipe(tx_pipe_handle);
 	if (ret) {
-		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-		    "ipa_disconnect_wdi_pipe: Tx pipe cleanup failed: ret=%d",
-		    ret);
+		QDF_TRACE(
+			QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
+			"ipa_disconnect_wdi_pipe: Tx pipe cleanup failed: ret=%d",
+			ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		    "%s: Disconnect RX PIPE rx_pipe_handle=0x%x",
-		    __func__, rx_pipe_handle);
+		  "%s: Disconnect RX PIPE rx_pipe_handle=0x%x", __func__,
+		  rx_pipe_handle);
 	ret = qdf_ipa_disconnect_wdi_pipe(rx_pipe_handle);
 	if (ret) {
-		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-		    "ipa_disconnect_wdi_pipe: Rx pipe cleanup failed: ret=%d",
-		    ret);
+		QDF_TRACE(
+			QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
+			"ipa_disconnect_wdi_pipe: Rx pipe cleanup failed: ret=%d",
+			ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -1394,12 +1339,12 @@ static int ol_txrx_ipa_add_header_info(char *ifname, uint8_t *mac_addr,
 	struct ol_txrx_ipa_uc_tx_hdr *uc_tx_hdr = NULL;
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		  "Add Partial hdr: %s, "QDF_MAC_ADDR_FMT, ifname,
+		  "Add Partial hdr: %s, " QDF_MAC_ADDR_FMT, ifname,
 		  QDF_MAC_ADDR_REF(mac_addr));
 
 	/* dynamically allocate the memory to add the hdrs */
-	ipa_hdr = qdf_mem_malloc(sizeof(qdf_ipa_ioc_add_hdr_t)
-				 + sizeof(qdf_ipa_hdr_add_t));
+	ipa_hdr = qdf_mem_malloc(sizeof(qdf_ipa_ioc_add_hdr_t) +
+				 sizeof(qdf_ipa_hdr_add_t));
 	if (!ipa_hdr) {
 		ret = -ENOMEM;
 		goto end;
@@ -1408,14 +1353,13 @@ static int ol_txrx_ipa_add_header_info(char *ifname, uint8_t *mac_addr,
 	QDF_IPA_IOC_ADD_HDR_COMMIT(ipa_hdr) = 0;
 	QDF_IPA_IOC_ADD_HDR_NUM_HDRS(ipa_hdr) = 1;
 
-	uc_tx_hdr = (struct ol_txrx_ipa_uc_tx_hdr *)
-		QDF_IPA_IOC_ADD_HDR_HDR(ipa_hdr);
+	uc_tx_hdr = (struct ol_txrx_ipa_uc_tx_hdr *)QDF_IPA_IOC_ADD_HDR_HDR(
+		ipa_hdr);
 	memcpy(uc_tx_hdr, &ipa_uc_tx_hdr, OL_TXRX_IPA_UC_WLAN_TX_HDR_LEN);
 	memcpy(uc_tx_hdr->eth.h_source, mac_addr, ETH_ALEN);
 	uc_tx_hdr->ipa_hd.vdev_id = session_id;
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		  "ifname=%s, vdev_id=%d",
-		  ifname, uc_tx_hdr->ipa_hd.vdev_id);
+		  "ifname=%s, vdev_id=%d", ifname, uc_tx_hdr->ipa_hd.vdev_id);
 	snprintf(QDF_IPA_IOC_ADD_HDR_NAME(ipa_hdr), IPA_RESOURCE_NAME_MAX,
 		 "%s%s", ifname, OL_TXRX_IPA_IPV4_NAME_EXT);
 	QDF_IPA_IOC_ADD_HDR_HDR_LEN(ipa_hdr) = OL_TXRX_IPA_UC_WLAN_TX_HDR_LEN;
@@ -1434,30 +1378,30 @@ static int ol_txrx_ipa_add_header_info(char *ifname, uint8_t *mac_addr,
 	}
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		"%s: IPv4 hdr_hdl: 0x%x",
-		QDF_IPA_IOC_ADD_HDR_NAME(ipa_hdr),
-		QDF_IPA_IOC_ADD_HDR_HDR_HDL(ipa_hdr));
+		  "%s: IPv4 hdr_hdl: 0x%x", QDF_IPA_IOC_ADD_HDR_NAME(ipa_hdr),
+		  QDF_IPA_IOC_ADD_HDR_HDR_HDL(ipa_hdr));
 
 	if (is_ipv6_enabled) {
 		snprintf(QDF_IPA_IOC_ADD_HDR_NAME(ipa_hdr),
-			 IPA_RESOURCE_NAME_MAX, "%s%s",
-			 ifname, OL_TXRX_IPA_IPV6_NAME_EXT);
+			 IPA_RESOURCE_NAME_MAX, "%s%s", ifname,
+			 OL_TXRX_IPA_IPV6_NAME_EXT);
 
-		uc_tx_hdr = (struct ol_txrx_ipa_uc_tx_hdr *)
-			QDF_IPA_IOC_ADD_HDR_HDR(ipa_hdr);
+		uc_tx_hdr =
+			(struct ol_txrx_ipa_uc_tx_hdr *)QDF_IPA_IOC_ADD_HDR_HDR(
+				ipa_hdr);
 		uc_tx_hdr->eth.h_proto = cpu_to_be16(ETH_P_IPV6);
 
 		ret = qdf_ipa_add_hdr(ipa_hdr);
 		if (ret) {
 			QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				    "%s: IPv6 add hdr failed: %d", ifname, ret);
+				  "%s: IPv6 add hdr failed: %d", ifname, ret);
 			goto clean_ipv4_hdr;
 		}
 
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-			"%s: IPv6 hdr_hdl: 0x%x",
-			QDF_IPA_IOC_ADD_HDR_NAME(ipa_hdr),
-			QDF_IPA_IOC_ADD_HDR_HDR_HDL(ipa_hdr));
+			  "%s: IPv6 hdr_hdl: 0x%x",
+			  QDF_IPA_IOC_ADD_HDR_NAME(ipa_hdr),
+			  QDF_IPA_IOC_ADD_HDR_HDR_HDL(ipa_hdr));
 	}
 
 	qdf_mem_free(ipa_hdr);
@@ -1465,8 +1409,8 @@ static int ol_txrx_ipa_add_header_info(char *ifname, uint8_t *mac_addr,
 	return ret;
 
 clean_ipv4_hdr:
-	snprintf(ipa_hdr->hdr[0].name, IPA_RESOURCE_NAME_MAX, "%s%s",
-		 ifname, OL_TXRX_IPA_IPV4_NAME_EXT);
+	snprintf(ipa_hdr->hdr[0].name, IPA_RESOURCE_NAME_MAX, "%s%s", ifname,
+		 OL_TXRX_IPA_IPV4_NAME_EXT);
 	ol_txrx_ipa_remove_header(ipa_hdr->hdr[0].name);
 end:
 	if (ipa_hdr)
@@ -1506,24 +1450,22 @@ static int ol_txrx_ipa_register_interface(char *ifname,
 		num_prop++;
 
 	/* Allocate TX properties for TOS categories, 1 each for IPv4 & IPv6 */
-	tx_prop =
-		qdf_mem_malloc(sizeof(qdf_ipa_ioc_tx_intf_prop_t) * num_prop);
+	tx_prop = qdf_mem_malloc(sizeof(qdf_ipa_ioc_tx_intf_prop_t) * num_prop);
 	if (!tx_prop)
 		goto register_interface_fail;
 
 	/* Allocate RX properties, 1 each for IPv4 & IPv6 */
-	rx_prop =
-		qdf_mem_malloc(sizeof(qdf_ipa_ioc_rx_intf_prop_t) * num_prop);
+	rx_prop = qdf_mem_malloc(sizeof(qdf_ipa_ioc_rx_intf_prop_t) * num_prop);
 	if (!rx_prop)
 		goto register_interface_fail;
 
 	qdf_mem_zero(&tx_intf, sizeof(tx_intf));
 	qdf_mem_zero(&rx_intf, sizeof(rx_intf));
 
-	snprintf(ipv4_hdr_name, IPA_RESOURCE_NAME_MAX, "%s%s",
-		 ifname, OL_TXRX_IPA_IPV4_NAME_EXT);
-	snprintf(ipv6_hdr_name, IPA_RESOURCE_NAME_MAX, "%s%s",
-		 ifname, OL_TXRX_IPA_IPV6_NAME_EXT);
+	snprintf(ipv4_hdr_name, IPA_RESOURCE_NAME_MAX, "%s%s", ifname,
+		 OL_TXRX_IPA_IPV4_NAME_EXT);
+	snprintf(ipv6_hdr_name, IPA_RESOURCE_NAME_MAX, "%s%s", ifname,
+		 OL_TXRX_IPA_IPV6_NAME_EXT);
 
 	QDF_IPA_IOC_RX_INTF_PROP_IP(&rx_prop[IPA_IP_v4]) = IPA_IP_v4;
 	QDF_IPA_IOC_RX_INTF_PROP_SRC_PIPE(&rx_prop[IPA_IP_v4]) = prod_client;
@@ -1533,9 +1475,9 @@ static int ol_txrx_ipa_register_interface(char *ifname,
 		IPA_FLT_META_DATA;
 
 	/*
-	 * Interface ID is 3rd byte in the CLD header. Add the meta data and
-	 * mask to identify the interface in IPA hardware
-	 */
+   * Interface ID is 3rd byte in the CLD header. Add the meta data and
+   * mask to identify the interface in IPA hardware
+   */
 	QDF_IPA_IOC_RX_INTF_PROP_META_DATA(&rx_prop[IPA_IP_v4]) =
 		htonl(session_id << 16);
 	QDF_IPA_IOC_RX_INTF_PROP_META_DATA_MASK(&rx_prop[IPA_IP_v4]) =
@@ -1560,11 +1502,11 @@ static int ol_txrx_ipa_register_interface(char *ifname,
 
 	QDF_IPA_IOC_TX_INTF_PROP_IP(&tx_prop[IPA_IP_v4]) = IPA_IP_v4;
 	QDF_IPA_IOC_TX_INTF_PROP_HDR_L2_TYPE(&tx_prop[IPA_IP_v4]) =
-			IPA_HDR_L2_ETHERNET_II;
+		IPA_HDR_L2_ETHERNET_II;
 	QDF_IPA_IOC_TX_INTF_PROP_DST_PIPE(&tx_prop[IPA_IP_v4]) =
-			IPA_CLIENT_WLAN1_CONS;
+		IPA_CLIENT_WLAN1_CONS;
 	QDF_IPA_IOC_TX_INTF_PROP_ALT_DST_PIPE(&tx_prop[IPA_IP_v4]) =
-			cons_client;
+		cons_client;
 	strlcpy(QDF_IPA_IOC_TX_INTF_PROP_HDR_NAME(&tx_prop[IPA_IP_v4]),
 		ipv4_hdr_name, IPA_RESOURCE_NAME_MAX);
 	tx_intf.num_props++;
@@ -1618,9 +1560,7 @@ QDF_STATUS ol_txrx_ipa_setup_iface(char *ifname, uint8_t *mac_addr,
 		return QDF_STATUS_E_FAILURE;
 
 	/* Configure the TX and RX pipes filter rules */
-	ret = ol_txrx_ipa_register_interface(ifname,
-					     prod_client,
-					     cons_client,
+	ret = ol_txrx_ipa_register_interface(ifname, prod_client, cons_client,
 					     session_id, is_ipv6_enabled);
 	if (ret)
 		return QDF_STATUS_E_FAILURE;
@@ -1641,21 +1581,20 @@ QDF_STATUS ol_txrx_ipa_cleanup_iface(char *ifname, bool is_ipv6_enabled)
 	int ret;
 
 	/* Remove the headers */
-	snprintf(name_ipa, IPA_RESOURCE_NAME_MAX, "%s%s",
-			ifname, OL_TXRX_IPA_IPV4_NAME_EXT);
+	snprintf(name_ipa, IPA_RESOURCE_NAME_MAX, "%s%s", ifname,
+		 OL_TXRX_IPA_IPV4_NAME_EXT);
 	ol_txrx_ipa_remove_header(name_ipa);
 
 	if (is_ipv6_enabled) {
-		snprintf(name_ipa, IPA_RESOURCE_NAME_MAX, "%s%s",
-				ifname, OL_TXRX_IPA_IPV6_NAME_EXT);
+		snprintf(name_ipa, IPA_RESOURCE_NAME_MAX, "%s%s", ifname,
+			 OL_TXRX_IPA_IPV6_NAME_EXT);
 		ol_txrx_ipa_remove_header(name_ipa);
 	}
 	/* unregister the interface with IPA */
 	ret = qdf_ipa_deregister_intf(ifname);
 	if (ret) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-				"%s: ipa_deregister_intf fail: %d",
-				ifname, ret);
+			  "%s: ipa_deregister_intf fail: %d", ifname, ret);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -1685,40 +1624,36 @@ QDF_STATUS ol_txrx_ipa_enable_pipes(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 
 	/* ACTIVATE TX PIPE */
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-			"%s: Enable TX PIPE(tx_pipe_handle=%d)",
-			__func__, ipa_res->tx_pipe_handle);
+		  "%s: Enable TX PIPE(tx_pipe_handle=%d)", __func__,
+		  ipa_res->tx_pipe_handle);
 	result = qdf_ipa_enable_wdi_pipe(ipa_res->tx_pipe_handle);
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"%s: Enable TX PIPE fail, code %d",
-				__func__, result);
+			  "%s: Enable TX PIPE fail, code %d", __func__, result);
 		goto smmu_unmap;
 	}
 	result = qdf_ipa_resume_wdi_pipe(ipa_res->tx_pipe_handle);
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"%s: Resume TX PIPE fail, code %d",
-				__func__, result);
+			  "%s: Resume TX PIPE fail, code %d", __func__, result);
 		goto smmu_unmap;
 	}
 	ol_txrx_ipa_uc_set_active(soc_hdl, pdev_id, true, true);
 
 	/* ACTIVATE RX PIPE */
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-			"%s: Enable RX PIPE(rx_pipe_handle=%d)",
-			__func__, ipa_res->rx_pipe_handle);
+		  "%s: Enable RX PIPE(rx_pipe_handle=%d)", __func__,
+		  ipa_res->rx_pipe_handle);
 	result = qdf_ipa_enable_wdi_pipe(ipa_res->rx_pipe_handle);
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"%s: Enable RX PIPE fail, code %d",
-				__func__, result);
+			  "%s: Enable RX PIPE fail, code %d", __func__, result);
 		goto smmu_unmap;
 	}
 	result = qdf_ipa_resume_wdi_pipe(ipa_res->rx_pipe_handle);
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"%s: Resume RX PIPE fail, code %d",
-				__func__, result);
+			  "%s: Resume RX PIPE fail, code %d", __func__, result);
 		goto smmu_unmap;
 	}
 	ol_txrx_ipa_uc_set_active(soc_hdl, pdev_id, true, false);
@@ -1749,37 +1684,37 @@ QDF_STATUS ol_txrx_ipa_disable_pipes(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 
 	ipa_res = &pdev->ipa_resource;
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-			"%s: Disable RX PIPE", __func__);
+		  "%s: Disable RX PIPE", __func__);
 	result = qdf_ipa_suspend_wdi_pipe(ipa_res->rx_pipe_handle);
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"%s: Suspend RX PIPE fail, code %d",
-				__func__, result);
+			  "%s: Suspend RX PIPE fail, code %d", __func__,
+			  result);
 		goto smmu_unmap;
 	}
 
 	result = qdf_ipa_disable_wdi_pipe(ipa_res->rx_pipe_handle);
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"%s: Disable RX PIPE fail, code %d",
-				__func__, result);
+			  "%s: Disable RX PIPE fail, code %d", __func__,
+			  result);
 		goto smmu_unmap;
 	}
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-			"%s: Disable TX PIPE", __func__);
+		  "%s: Disable TX PIPE", __func__);
 	result = qdf_ipa_suspend_wdi_pipe(ipa_res->tx_pipe_handle);
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"%s: Suspend TX PIPE fail, code %d",
-				__func__, result);
+			  "%s: Suspend TX PIPE fail, code %d", __func__,
+			  result);
 		goto smmu_unmap;
 	}
 	result = qdf_ipa_disable_wdi_pipe(ipa_res->tx_pipe_handle);
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"%s: Disable TX PIPE fail, code %d",
-				__func__, result);
+			  "%s: Disable TX PIPE fail, code %d", __func__,
+			  result);
 		goto smmu_unmap;
 	}
 
@@ -1813,7 +1748,7 @@ QDF_STATUS ol_txrx_ipa_set_perf_level(int client,
 		resource_name = QDF_IPA_RM_RESOURCE_WLAN_CONS;
 	} else {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"not supported client %d", client);
+			  "not supported client %d", client);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -1823,7 +1758,7 @@ QDF_STATUS ol_txrx_ipa_set_perf_level(int client,
 
 	if (result) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-				"Set perf profile failed, code %d", result);
+			  "Set perf profile failed, code %d", result);
 
 		return QDF_STATUS_E_FAILURE;
 	}

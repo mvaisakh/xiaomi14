@@ -6,29 +6,31 @@
  */
 
 #include "rmnet_genl.h"
-#include <net/sock.h>
-#include <linux/skbuff.h>
 #include <linux/ktime.h>
+#include <linux/skbuff.h>
+#include <net/sock.h>
 
-#define RMNET_CORE_GENL_MAX_STR_LEN	255
+#define RMNET_CORE_GENL_MAX_STR_LEN 255
 
 /* Static Functions and Definitions */
-static struct nla_policy rmnet_genl_attr_policy[RMNET_CORE_GENL_ATTR_MAX +
-						1] = {
-	[RMNET_CORE_GENL_ATTR_INT]  = { .type = NLA_S32 },
-	[RMNET_CORE_GENL_ATTR_PID_BPS] = NLA_POLICY_EXACT_LEN(sizeof(struct rmnet_core_pid_bps_resp)),
-	[RMNET_CORE_GENL_ATTR_PID_BOOST] = NLA_POLICY_EXACT_LEN(sizeof(struct rmnet_core_pid_boost_req)),
-	[RMNET_CORE_GENL_ATTR_TETHER_INFO] = NLA_POLICY_EXACT_LEN(sizeof(struct rmnet_core_tether_info_req)),
-	[RMNET_CORE_GENL_ATTR_STR]  = { .type = NLA_NUL_STRING, .len =
-				RMNET_CORE_GENL_MAX_STR_LEN },
+static struct nla_policy rmnet_genl_attr_policy[RMNET_CORE_GENL_ATTR_MAX + 1] = {
+	[RMNET_CORE_GENL_ATTR_INT] = { .type = NLA_S32 },
+	[RMNET_CORE_GENL_ATTR_PID_BPS] =
+		NLA_POLICY_EXACT_LEN(sizeof(struct rmnet_core_pid_bps_resp)),
+	[RMNET_CORE_GENL_ATTR_PID_BOOST] =
+		NLA_POLICY_EXACT_LEN(sizeof(struct rmnet_core_pid_boost_req)),
+	[RMNET_CORE_GENL_ATTR_TETHER_INFO] =
+		NLA_POLICY_EXACT_LEN(sizeof(struct rmnet_core_tether_info_req)),
+	[RMNET_CORE_GENL_ATTR_STR] = { .type = NLA_NUL_STRING,
+				       .len = RMNET_CORE_GENL_MAX_STR_LEN },
 };
 
-#define RMNET_CORE_GENL_OP(_cmd, _func)			\
-	{						\
-		.cmd	= _cmd,				\
-		.doit	= _func,			\
-		.dumpit	= NULL,				\
-		.flags	= 0,				\
+#define RMNET_CORE_GENL_OP(_cmd, _func) \
+	{                               \
+		.cmd = _cmd,            \
+		.doit = _func,          \
+		.dumpit = NULL,         \
+		.flags = 0,             \
 	}
 
 static const struct genl_ops rmnet_core_genl_ops[] = {
@@ -42,12 +44,12 @@ static const struct genl_ops rmnet_core_genl_ops[] = {
 
 struct genl_family rmnet_core_genl_family = {
 	.hdrsize = 0,
-	.name    = RMNET_CORE_GENL_FAMILY_NAME,
+	.name = RMNET_CORE_GENL_FAMILY_NAME,
 	.version = RMNET_CORE_GENL_VERSION,
 	.maxattr = RMNET_CORE_GENL_ATTR_MAX,
-	.policy  = rmnet_genl_attr_policy,
-	.ops     = rmnet_core_genl_ops,
-	.n_ops   = ARRAY_SIZE(rmnet_core_genl_ops),
+	.policy = rmnet_genl_attr_policy,
+	.ops = rmnet_core_genl_ops,
+	.n_ops = ARRAY_SIZE(rmnet_core_genl_ops),
 };
 
 #define RMNET_PID_STATS_HT_SIZE (8)
@@ -57,14 +59,15 @@ DEFINE_HASHTABLE(rmnet_pid_ht, RMNET_PID_STATS_HT_SIZE);
 /* Spinlock definition for pid hash table */
 static DEFINE_SPINLOCK(rmnet_pid_ht_splock);
 
-#define RMNET_GENL_SEC_TO_MSEC(x)   ((x) * 1000)
-#define RMNET_GENL_SEC_TO_NSEC(x)   ((x) * 1000000000)
+#define RMNET_GENL_SEC_TO_MSEC(x) ((x) * 1000)
+#define RMNET_GENL_SEC_TO_NSEC(x) ((x) * 1000000000)
 #define RMNET_GENL_BYTES_TO_BITS(x) ((x) * 8)
-#define RMNET_GENL_NSEC_TO_SEC(x) ({\
-	u64 __quotient = (x); \
-	do_div(__quotient, 1000000000); \
-	__quotient; \
-})
+#define RMNET_GENL_NSEC_TO_SEC(x)               \
+	({                                      \
+		u64 __quotient = (x);           \
+		do_div(__quotient, 1000000000); \
+		__quotient;                     \
+	})
 
 int rmnet_core_userspace_connected;
 #define RMNET_QUERY_PERIOD_SEC (1) /* Period of pid/bps queries */
@@ -111,14 +114,13 @@ void rmnet_update_pid_and_check_boost(pid_t pid, unsigned int len,
 			tx_bytes = node_p->tx_bytes;
 
 			if (node_p->sched_boost_enable) {
-				rm_err("boost triggered for pid %d",
-				       pid);
+				rm_err("boost triggered for pid %d", pid);
 				/* Just triggered boost, dont re-trigger */
 				node_p->sched_boost_enable = 0;
 				*boost_enable = 1;
 				*boost_period = node_p->sched_boost_period_ms;
 				node_p->sched_boost_remaining_ms =
-							(int)*boost_period;
+					(int)*boost_period;
 			}
 
 			break;
@@ -143,8 +145,7 @@ void rmnet_update_pid_and_check_boost(pid_t pid, unsigned int len,
 	spin_unlock_irqrestore(&rmnet_pid_ht_splock, ht_flags);
 }
 
-void rmnet_boost_for_pid(pid_t pid, int boost_enable,
-			 u64 boost_period)
+void rmnet_boost_for_pid(pid_t pid, int boost_enable, u64 boost_period)
 {
 	struct hlist_node *tmp;
 	struct rmnet_pid_node_s *node_p;
@@ -171,8 +172,8 @@ void rmnet_boost_for_pid(pid_t pid, int boost_enable,
 	spin_unlock_irqrestore(&rmnet_pid_ht_splock, ht_flags);
 }
 
-static void rmnet_create_pid_bps_resp(struct rmnet_core_pid_bps_resp
-				      *pid_bps_resp_ptr)
+static void
+rmnet_create_pid_bps_resp(struct rmnet_core_pid_bps_resp *pid_bps_resp_ptr)
 {
 	struct timespec64 time;
 	struct hlist_node *tmp;
@@ -183,16 +184,15 @@ static void rmnet_create_pid_bps_resp(struct rmnet_core_pid_bps_resp
 	u16 bkt;
 
 	ktime_get_real_ts64(&time);
-	pid_bps_resp_ptr->timestamp = RMNET_GENL_SEC_TO_NSEC(time.tv_sec) +
-		   time.tv_nsec;
+	pid_bps_resp_ptr->timestamp =
+		RMNET_GENL_SEC_TO_NSEC(time.tv_sec) + time.tv_nsec;
 
 	/*  Using do while to spin lock and unlock only once */
 	spin_lock_irqsave(&rmnet_pid_ht_splock, ht_flags);
 	do {
 		i = 0;
 
-		hash_for_each_safe(RMNET_PID_STATS_HT, bkt, tmp,
-				   node_p, list) {
+		hash_for_each_safe(RMNET_PID_STATS_HT, bkt, tmp, node_p, list) {
 			tx_bytes_cur = node_p->tx_bytes;
 			if (tx_bytes_cur <= node_p->tx_bytes_last_query) {
 				/* Dont send inactive pids to userspace */
@@ -218,7 +218,8 @@ static void rmnet_create_pid_bps_resp(struct rmnet_core_pid_bps_resp
 			if (node_p->sched_boost_remaining_ms >=
 			    RMNET_GENL_SEC_TO_MSEC(RMNET_QUERY_PERIOD_SEC)) {
 				node_p->sched_boost_remaining_ms -=
-				RMNET_GENL_SEC_TO_MSEC(RMNET_QUERY_PERIOD_SEC);
+					RMNET_GENL_SEC_TO_MSEC(
+						RMNET_QUERY_PERIOD_SEC);
 
 				rm_err("CORE_BOOST: enabling boost for pid %d\n"
 				       "sched boost remaining = %d ms",
@@ -231,7 +232,7 @@ static void rmnet_create_pid_bps_resp(struct rmnet_core_pid_bps_resp
 			pid_bps_resp_ptr->list[i].pid = node_p->pid;
 			pid_bps_resp_ptr->list[i].tx_bps = node_p->tx_bps;
 			pid_bps_resp_ptr->list[i].boost_remaining_ms =
-					node_p->sched_boost_remaining_ms;
+				node_p->sched_boost_remaining_ms;
 
 			node_p->timstamp_last_query =
 				pid_bps_resp_ptr->timestamp;
@@ -266,15 +267,14 @@ int rmnet_core_genl_send_resp(struct genl_info *info,
 		goto out;
 
 	msg_head = genlmsg_put(skb, 0, info->snd_seq + 1,
-			       &rmnet_core_genl_family,
-			       0, RMNET_CORE_GENL_CMD_PID_BPS_REQ);
+			       &rmnet_core_genl_family, 0,
+			       RMNET_CORE_GENL_CMD_PID_BPS_REQ);
 	if (!msg_head) {
 		rc = -ENOMEM;
 		goto out;
 	}
 	rc = nla_put(skb, RMNET_CORE_GENL_ATTR_PID_BPS,
-		     sizeof(struct rmnet_core_pid_bps_resp),
-		     pid_bps_resp);
+		     sizeof(struct rmnet_core_pid_bps_resp), pid_bps_resp);
 	if (rc != 0)
 		goto out;
 
@@ -298,7 +298,7 @@ int rmnet_core_genl_pid_bps_req_hdlr(struct sk_buff *skb_2,
 				     struct genl_info *info)
 {
 	struct nlattr *na;
-	struct rmnet_core_pid_bps_req  pid_bps_req;
+	struct rmnet_core_pid_bps_req pid_bps_req;
 	struct rmnet_core_pid_bps_resp pid_bps_resp;
 	int is_req_valid = 0;
 
@@ -311,8 +311,8 @@ int rmnet_core_genl_pid_bps_req_hdlr(struct sk_buff *skb_2,
 	} else {
 		na = info->attrs[RMNET_CORE_GENL_ATTR_PID_BPS];
 		if (na) {
-			if (nla_memcpy(&pid_bps_req, na,
-				       sizeof(pid_bps_req)) > 0) {
+			if (nla_memcpy(&pid_bps_req, na, sizeof(pid_bps_req)) >
+			    0) {
 				is_req_valid = 1;
 			} else {
 				rm_err("CORE_GNL: nla_memcpy failed %d\n",
@@ -328,8 +328,7 @@ int rmnet_core_genl_pid_bps_req_hdlr(struct sk_buff *skb_2,
 		rmnet_core_userspace_connected = 1;
 
 	/* Copy to pid/byte list to the payload */
-	memset(&pid_bps_resp, 0x0,
-	       sizeof(pid_bps_resp));
+	memset(&pid_bps_resp, 0x0, sizeof(pid_bps_resp));
 	if (is_req_valid) {
 		rmnet_create_pid_bps_resp(&pid_bps_resp);
 	}
@@ -388,7 +387,7 @@ int rmnet_core_genl_pid_boost_req_hdlr(struct sk_buff *skb_2,
 }
 
 int rmnet_core_genl_tether_info_req_hdlr(struct sk_buff *skb_2,
-				       struct genl_info *info)
+					 struct genl_info *info)
 {
 	struct nlattr *na;
 	struct rmnet_core_tether_info_req tether_info_req;
@@ -404,7 +403,8 @@ int rmnet_core_genl_tether_info_req_hdlr(struct sk_buff *skb_2,
 
 	na = info->attrs[RMNET_CORE_GENL_ATTR_TETHER_INFO];
 	if (na) {
-		if (nla_memcpy(&tether_info_req, na, sizeof(tether_info_req)) > 0) {
+		if (nla_memcpy(&tether_info_req, na, sizeof(tether_info_req)) >
+		    0) {
 			is_req_valid = 1;
 		} else {
 			rm_err("CORE_GNL: nla_memcpy failed %d\n",

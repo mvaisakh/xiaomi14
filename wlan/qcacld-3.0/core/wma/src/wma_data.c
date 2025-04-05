@@ -24,15 +24,15 @@
 
 /* Header files */
 
-#include "wma.h"
-#include "enet.h"
-#include "wma_api.h"
-#include "cds_api.h"
-#include "wmi_unified_api.h"
-#include "wlan_qct_sys.h"
-#include "wni_api.h"
 #include "ani_global.h"
+#include "cds_api.h"
+#include "enet.h"
+#include "wlan_qct_sys.h"
+#include "wma.h"
+#include "wma_api.h"
 #include "wmi_unified.h"
+#include "wmi_unified_api.h"
+#include "wni_api.h"
 #include "wni_cfg.h"
 #include <cdp_txrx_tx_throttle.h>
 #if defined(CONFIG_HL_SUPPORT)
@@ -40,14 +40,14 @@
 #else
 #include "wlan_tgt_def_config.h"
 #endif
+#include "qdf_mem.h"
 #include "qdf_nbuf.h"
 #include "qdf_types.h"
-#include "qdf_mem.h"
 #include "qdf_util.h"
 
-#include "wma_types.h"
 #include "lim_api.h"
 #include "lim_session_utils.h"
+#include "wma_types.h"
 
 #include "cds_utils.h"
 
@@ -55,37 +55,37 @@
 #include "pktlog_ac.h"
 #endif /* REMOVE_PKT_LOG */
 
-#include "dbglog_host.h"
 #include "csr_api.h"
+#include "dbglog_host.h"
 #include "ol_fw.h"
 
-#include "wma_internal.h"
-#include "cdp_txrx_flow_ctrl_legacy.h"
 #include "cdp_txrx_cmn.h"
+#include "cdp_txrx_flow_ctrl_legacy.h"
 #include "cdp_txrx_misc.h"
-#include <cdp_txrx_peer_ops.h>
-#include <cdp_txrx_cfg.h>
 #include "cdp_txrx_stats.h"
-#include <cdp_txrx_misc.h>
-#include "wlan_mgmt_txrx_utils_api.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_pdev_obj.h"
-#include "wlan_objmgr_vdev_obj.h"
-#include "wlan_objmgr_peer_obj.h"
-#include <cdp_txrx_handle.h>
 #include "cfg_ucfg_api.h"
-#include "wlan_policy_mgr_ucfg.h"
-#include <wlan_pmo_ucfg_api.h>
+#include "target_if_fwol.h"
+#include "wlan_fw_offload_main.h"
 #include "wlan_lmac_if_api.h"
+#include "wlan_mgmt_txrx_utils_api.h"
+#include "wlan_mlo_mgr_sta.h"
+#include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_peer_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_objmgr_vdev_obj.h"
+#include "wlan_pkt_capture_ucfg_api.h"
+#include "wlan_policy_mgr_ucfg.h"
+#include "wma_eht.h"
+#include "wma_internal.h"
+#include <cdp_txrx_cfg.h>
+#include <cdp_txrx_handle.h>
+#include <cdp_txrx_misc.h>
+#include <cdp_txrx_peer_ops.h>
+#include <wlan_cm_api.h>
 #include <wlan_cp_stats_mc_ucfg_api.h>
 #include <wlan_crypto_global_api.h>
 #include <wlan_mlme_main.h>
-#include <wlan_cm_api.h>
-#include "wlan_pkt_capture_ucfg_api.h"
-#include "wma_eht.h"
-#include "wlan_mlo_mgr_sta.h"
-#include "wlan_fw_offload_main.h"
-#include "target_if_fwol.h"
+#include <wlan_pmo_ucfg_api.h>
 
 struct wma_search_rate {
 	int32_t rate;
@@ -96,147 +96,154 @@ struct wma_search_rate {
 /* In ofdm_cck_rate_tbl->flag, if bit 7 is 1 it's CCK, otherwise it ofdm.
  * Lower bit carries the ofdm/cck index for encoding the rate
  */
-static struct wma_search_rate ofdm_cck_rate_tbl[WMA_MAX_OFDM_CCK_RATE_TBL_SIZE] = {
-	{540, 4},               /* 4: OFDM 54 Mbps */
-	{480, 0},               /* 0: OFDM 48 Mbps */
-	{360, 5},               /* 5: OFDM 36 Mbps */
-	{240, 1},               /* 1: OFDM 24 Mbps */
-	{180, 6},               /* 6: OFDM 18 Mbps */
-	{120, 2},               /* 2: OFDM 12 Mbps */
-	{110, (1 << 7)},        /* 0: CCK 11 Mbps Long */
-	{90, 7},                /* 7: OFDM 9 Mbps  */
-	{60, 3},                /* 3: OFDM 6 Mbps  */
-	{55, ((1 << 7) | 1)},   /* 1: CCK 5.5 Mbps Long */
-	{20, ((1 << 7) | 2)},   /* 2: CCK 2 Mbps Long   */
-	{10, ((1 << 7) | 3)} /* 3: CCK 1 Mbps Long   */
-};
+static struct wma_search_rate
+	ofdm_cck_rate_tbl[WMA_MAX_OFDM_CCK_RATE_TBL_SIZE] = {
+		{ 540, 4 }, /* 4: OFDM 54 Mbps */
+		{ 480, 0 }, /* 0: OFDM 48 Mbps */
+		{ 360, 5 }, /* 5: OFDM 36 Mbps */
+		{ 240, 1 }, /* 1: OFDM 24 Mbps */
+		{ 180, 6 }, /* 6: OFDM 18 Mbps */
+		{ 120, 2 }, /* 2: OFDM 12 Mbps */
+		{ 110, (1 << 7) }, /* 0: CCK 11 Mbps Long */
+		{ 90, 7 }, /* 7: OFDM 9 Mbps  */
+		{ 60, 3 }, /* 3: OFDM 6 Mbps  */
+		{ 55, ((1 << 7) | 1) }, /* 1: CCK 5.5 Mbps Long */
+		{ 20, ((1 << 7) | 2) }, /* 2: CCK 2 Mbps Long   */
+		{ 10, ((1 << 7) | 3) } /* 3: CCK 1 Mbps Long   */
+	};
 
 #define WMA_MAX_VHT20_RATE_TBL_SIZE 9
 /* In vht20_400ns_rate_tbl flag carries the mcs index for encoding the rate */
-static struct wma_search_rate vht20_400ns_rate_tbl[WMA_MAX_VHT20_RATE_TBL_SIZE] = {
-	{867, 8},               /* MCS8 1SS short GI */
-	{722, 7},               /* MCS7 1SS short GI */
-	{650, 6},               /* MCS6 1SS short GI */
-	{578, 5},               /* MCS5 1SS short GI */
-	{433, 4},               /* MCS4 1SS short GI */
-	{289, 3},               /* MCS3 1SS short GI */
-	{217, 2},               /* MCS2 1SS short GI */
-	{144, 1},               /* MCS1 1SS short GI */
-	{72, 0} /* MCS0 1SS short GI */
-};
+static struct wma_search_rate
+	vht20_400ns_rate_tbl[WMA_MAX_VHT20_RATE_TBL_SIZE] = {
+		{ 867, 8 }, /* MCS8 1SS short GI */
+		{ 722, 7 }, /* MCS7 1SS short GI */
+		{ 650, 6 }, /* MCS6 1SS short GI */
+		{ 578, 5 }, /* MCS5 1SS short GI */
+		{ 433, 4 }, /* MCS4 1SS short GI */
+		{ 289, 3 }, /* MCS3 1SS short GI */
+		{ 217, 2 }, /* MCS2 1SS short GI */
+		{ 144, 1 }, /* MCS1 1SS short GI */
+		{ 72, 0 } /* MCS0 1SS short GI */
+	};
 
 /* In vht20_800ns_rate_tbl flag carries the mcs index for encoding the rate */
-static struct wma_search_rate vht20_800ns_rate_tbl[WMA_MAX_VHT20_RATE_TBL_SIZE] = {
-	{780, 8},               /* MCS8 1SS long GI */
-	{650, 7},               /* MCS7 1SS long GI */
-	{585, 6},               /* MCS6 1SS long GI */
-	{520, 5},               /* MCS5 1SS long GI */
-	{390, 4},               /* MCS4 1SS long GI */
-	{260, 3},               /* MCS3 1SS long GI */
-	{195, 2},               /* MCS2 1SS long GI */
-	{130, 1},               /* MCS1 1SS long GI */
-	{65, 0} /* MCS0 1SS long GI */
-};
+static struct wma_search_rate
+	vht20_800ns_rate_tbl[WMA_MAX_VHT20_RATE_TBL_SIZE] = {
+		{ 780, 8 }, /* MCS8 1SS long GI */
+		{ 650, 7 }, /* MCS7 1SS long GI */
+		{ 585, 6 }, /* MCS6 1SS long GI */
+		{ 520, 5 }, /* MCS5 1SS long GI */
+		{ 390, 4 }, /* MCS4 1SS long GI */
+		{ 260, 3 }, /* MCS3 1SS long GI */
+		{ 195, 2 }, /* MCS2 1SS long GI */
+		{ 130, 1 }, /* MCS1 1SS long GI */
+		{ 65, 0 } /* MCS0 1SS long GI */
+	};
 
 #define WMA_MAX_VHT40_RATE_TBL_SIZE 10
 /* In vht40_400ns_rate_tbl flag carries the mcs index for encoding the rate */
-static struct wma_search_rate vht40_400ns_rate_tbl[WMA_MAX_VHT40_RATE_TBL_SIZE] = {
-	{2000, 9},              /* MCS9 1SS short GI */
-	{1800, 8},              /* MCS8 1SS short GI */
-	{1500, 7},              /* MCS7 1SS short GI */
-	{1350, 6},              /* MCS6 1SS short GI */
-	{1200, 5},              /* MCS5 1SS short GI */
-	{900, 4},               /* MCS4 1SS short GI */
-	{600, 3},               /* MCS3 1SS short GI */
-	{450, 2},               /* MCS2 1SS short GI */
-	{300, 1},               /* MCS1 1SS short GI */
-	{150, 0},               /* MCS0 1SS short GI */
-};
+static struct wma_search_rate
+	vht40_400ns_rate_tbl[WMA_MAX_VHT40_RATE_TBL_SIZE] = {
+		{ 2000, 9 }, /* MCS9 1SS short GI */
+		{ 1800, 8 }, /* MCS8 1SS short GI */
+		{ 1500, 7 }, /* MCS7 1SS short GI */
+		{ 1350, 6 }, /* MCS6 1SS short GI */
+		{ 1200, 5 }, /* MCS5 1SS short GI */
+		{ 900, 4 }, /* MCS4 1SS short GI */
+		{ 600, 3 }, /* MCS3 1SS short GI */
+		{ 450, 2 }, /* MCS2 1SS short GI */
+		{ 300, 1 }, /* MCS1 1SS short GI */
+		{ 150, 0 }, /* MCS0 1SS short GI */
+	};
 
-static struct wma_search_rate vht40_800ns_rate_tbl[WMA_MAX_VHT40_RATE_TBL_SIZE] = {
-	{1800, 9},              /* MCS9 1SS long GI */
-	{1620, 8},              /* MCS8 1SS long GI */
-	{1350, 7},              /* MCS7 1SS long GI */
-	{1215, 6},              /* MCS6 1SS long GI */
-	{1080, 5},              /* MCS5 1SS long GI */
-	{810, 4},               /* MCS4 1SS long GI */
-	{540, 3},               /* MCS3 1SS long GI */
-	{405, 2},               /* MCS2 1SS long GI */
-	{270, 1},               /* MCS1 1SS long GI */
-	{135, 0} /* MCS0 1SS long GI */
-};
+static struct wma_search_rate
+	vht40_800ns_rate_tbl[WMA_MAX_VHT40_RATE_TBL_SIZE] = {
+		{ 1800, 9 }, /* MCS9 1SS long GI */
+		{ 1620, 8 }, /* MCS8 1SS long GI */
+		{ 1350, 7 }, /* MCS7 1SS long GI */
+		{ 1215, 6 }, /* MCS6 1SS long GI */
+		{ 1080, 5 }, /* MCS5 1SS long GI */
+		{ 810, 4 }, /* MCS4 1SS long GI */
+		{ 540, 3 }, /* MCS3 1SS long GI */
+		{ 405, 2 }, /* MCS2 1SS long GI */
+		{ 270, 1 }, /* MCS1 1SS long GI */
+		{ 135, 0 } /* MCS0 1SS long GI */
+	};
 
 #define WMA_MAX_VHT80_RATE_TBL_SIZE 10
-static struct wma_search_rate vht80_400ns_rate_tbl[WMA_MAX_VHT80_RATE_TBL_SIZE] = {
-	{4333, 9},              /* MCS9 1SS short GI */
-	{3900, 8},              /* MCS8 1SS short GI */
-	{3250, 7},              /* MCS7 1SS short GI */
-	{2925, 6},              /* MCS6 1SS short GI */
-	{2600, 5},              /* MCS5 1SS short GI */
-	{1950, 4},              /* MCS4 1SS short GI */
-	{1300, 3},              /* MCS3 1SS short GI */
-	{975, 2},               /* MCS2 1SS short GI */
-	{650, 1},               /* MCS1 1SS short GI */
-	{325, 0} /* MCS0 1SS short GI */
-};
+static struct wma_search_rate
+	vht80_400ns_rate_tbl[WMA_MAX_VHT80_RATE_TBL_SIZE] = {
+		{ 4333, 9 }, /* MCS9 1SS short GI */
+		{ 3900, 8 }, /* MCS8 1SS short GI */
+		{ 3250, 7 }, /* MCS7 1SS short GI */
+		{ 2925, 6 }, /* MCS6 1SS short GI */
+		{ 2600, 5 }, /* MCS5 1SS short GI */
+		{ 1950, 4 }, /* MCS4 1SS short GI */
+		{ 1300, 3 }, /* MCS3 1SS short GI */
+		{ 975, 2 }, /* MCS2 1SS short GI */
+		{ 650, 1 }, /* MCS1 1SS short GI */
+		{ 325, 0 } /* MCS0 1SS short GI */
+	};
 
-static struct wma_search_rate vht80_800ns_rate_tbl[WMA_MAX_VHT80_RATE_TBL_SIZE] = {
-	{3900, 9},              /* MCS9 1SS long GI */
-	{3510, 8},              /* MCS8 1SS long GI */
-	{2925, 7},              /* MCS7 1SS long GI */
-	{2633, 6},              /* MCS6 1SS long GI */
-	{2340, 5},              /* MCS5 1SS long GI */
-	{1755, 4},              /* MCS4 1SS long GI */
-	{1170, 3},              /* MCS3 1SS long GI */
-	{878, 2},               /* MCS2 1SS long GI */
-	{585, 1},               /* MCS1 1SS long GI */
-	{293, 0} /* MCS0 1SS long GI */
-};
+static struct wma_search_rate
+	vht80_800ns_rate_tbl[WMA_MAX_VHT80_RATE_TBL_SIZE] = {
+		{ 3900, 9 }, /* MCS9 1SS long GI */
+		{ 3510, 8 }, /* MCS8 1SS long GI */
+		{ 2925, 7 }, /* MCS7 1SS long GI */
+		{ 2633, 6 }, /* MCS6 1SS long GI */
+		{ 2340, 5 }, /* MCS5 1SS long GI */
+		{ 1755, 4 }, /* MCS4 1SS long GI */
+		{ 1170, 3 }, /* MCS3 1SS long GI */
+		{ 878, 2 }, /* MCS2 1SS long GI */
+		{ 585, 1 }, /* MCS1 1SS long GI */
+		{ 293, 0 } /* MCS0 1SS long GI */
+	};
 
 #define WMA_MAX_HT20_RATE_TBL_SIZE 8
 static struct wma_search_rate ht20_400ns_rate_tbl[WMA_MAX_HT20_RATE_TBL_SIZE] = {
-	{722, 7},               /* MCS7 1SS short GI */
-	{650, 6},               /* MCS6 1SS short GI */
-	{578, 5},               /* MCS5 1SS short GI */
-	{433, 4},               /* MCS4 1SS short GI */
-	{289, 3},               /* MCS3 1SS short GI */
-	{217, 2},               /* MCS2 1SS short GI */
-	{144, 1},               /* MCS1 1SS short GI */
-	{72, 0} /* MCS0 1SS short GI */
+	{ 722, 7 }, /* MCS7 1SS short GI */
+	{ 650, 6 }, /* MCS6 1SS short GI */
+	{ 578, 5 }, /* MCS5 1SS short GI */
+	{ 433, 4 }, /* MCS4 1SS short GI */
+	{ 289, 3 }, /* MCS3 1SS short GI */
+	{ 217, 2 }, /* MCS2 1SS short GI */
+	{ 144, 1 }, /* MCS1 1SS short GI */
+	{ 72, 0 } /* MCS0 1SS short GI */
 };
 
 static struct wma_search_rate ht20_800ns_rate_tbl[WMA_MAX_HT20_RATE_TBL_SIZE] = {
-	{650, 7},               /* MCS7 1SS long GI */
-	{585, 6},               /* MCS6 1SS long GI */
-	{520, 5},               /* MCS5 1SS long GI */
-	{390, 4},               /* MCS4 1SS long GI */
-	{260, 3},               /* MCS3 1SS long GI */
-	{195, 2},               /* MCS2 1SS long GI */
-	{130, 1},               /* MCS1 1SS long GI */
-	{65, 0} /* MCS0 1SS long GI */
+	{ 650, 7 }, /* MCS7 1SS long GI */
+	{ 585, 6 }, /* MCS6 1SS long GI */
+	{ 520, 5 }, /* MCS5 1SS long GI */
+	{ 390, 4 }, /* MCS4 1SS long GI */
+	{ 260, 3 }, /* MCS3 1SS long GI */
+	{ 195, 2 }, /* MCS2 1SS long GI */
+	{ 130, 1 }, /* MCS1 1SS long GI */
+	{ 65, 0 } /* MCS0 1SS long GI */
 };
 
 #define WMA_MAX_HT40_RATE_TBL_SIZE 8
 static struct wma_search_rate ht40_400ns_rate_tbl[WMA_MAX_HT40_RATE_TBL_SIZE] = {
-	{1500, 7},              /* MCS7 1SS short GI */
-	{1350, 6},              /* MCS6 1SS short GI */
-	{1200, 5},              /* MCS5 1SS short GI */
-	{900, 4},               /* MCS4 1SS short GI */
-	{600, 3},               /* MCS3 1SS short GI */
-	{450, 2},               /* MCS2 1SS short GI */
-	{300, 1},               /* MCS1 1SS short GI */
-	{150, 0} /* MCS0 1SS short GI */
+	{ 1500, 7 }, /* MCS7 1SS short GI */
+	{ 1350, 6 }, /* MCS6 1SS short GI */
+	{ 1200, 5 }, /* MCS5 1SS short GI */
+	{ 900, 4 }, /* MCS4 1SS short GI */
+	{ 600, 3 }, /* MCS3 1SS short GI */
+	{ 450, 2 }, /* MCS2 1SS short GI */
+	{ 300, 1 }, /* MCS1 1SS short GI */
+	{ 150, 0 } /* MCS0 1SS short GI */
 };
 
 static struct wma_search_rate ht40_800ns_rate_tbl[WMA_MAX_HT40_RATE_TBL_SIZE] = {
-	{1350, 7},              /* MCS7 1SS long GI */
-	{1215, 6},              /* MCS6 1SS long GI */
-	{1080, 5},              /* MCS5 1SS long GI */
-	{810, 4},               /* MCS4 1SS long GI */
-	{540, 3},               /* MCS3 1SS long GI */
-	{405, 2},               /* MCS2 1SS long GI */
-	{270, 1},               /* MCS1 1SS long GI */
-	{135, 0} /* MCS0 1SS long GI */
+	{ 1350, 7 }, /* MCS7 1SS long GI */
+	{ 1215, 6 }, /* MCS6 1SS long GI */
+	{ 1080, 5 }, /* MCS5 1SS long GI */
+	{ 810, 4 }, /* MCS4 1SS long GI */
+	{ 540, 3 }, /* MCS3 1SS long GI */
+	{ 405, 2 }, /* MCS2 1SS long GI */
+	{ 270, 1 }, /* MCS1 1SS long GI */
+	{ 135, 0 } /* MCS0 1SS long GI */
 };
 
 /**
@@ -254,11 +261,11 @@ static void wma_bin_search_rate(struct wma_search_rate *tbl, int32_t tbl_size,
 	int32_t upper, lower, mid;
 
 	/* the table is descenting. index holds the largest value and the
-	 * bottom index holds the smallest value
-	 */
+   * bottom index holds the smallest value
+   */
 
-	upper = 0;              /* index 0 */
-	lower = tbl_size - 1;   /* last index */
+	upper = 0; /* index 0 */
+	lower = tbl_size - 1; /* last index */
 
 	if (*mbpsx10_rate >= tbl[upper].rate) {
 		/* use the largest rate */
@@ -281,9 +288,9 @@ static void wma_bin_search_rate(struct wma_search_rate *tbl, int32_t tbl_size,
 			return;
 		}
 		/* not found. if mid's rate is larger than input move
-		 * upper to mid. If mid's rate is larger than input
-		 * move lower to mid.
-		 */
+     * upper to mid. If mid's rate is larger than input
+     * move lower to mid.
+     */
 		if (*mbpsx10_rate > tbl[mid].rate)
 			lower = mid;
 		else
@@ -499,9 +506,8 @@ static QDF_STATUS wma_fill_vht40_mcast_rate(uint32_t shortgi,
 				    WMA_MAX_VHT40_RATE_TBL_SIZE, &lgi_rate,
 				    &lgi_idx);
 
-	wma_set_ht_vht_mcast_rate(shortgi, mbpsx10_rate,
-				  sgi_idx, sgi_rate, lgi_idx, lgi_rate,
-				  3, rate, streaming_rate);
+	wma_set_ht_vht_mcast_rate(shortgi, mbpsx10_rate, sgi_idx, sgi_rate,
+				  lgi_idx, lgi_rate, 3, rate, streaming_rate);
 	if (nss == 1)
 		*streaming_rate = *streaming_rate << 1;
 	return QDF_STATUS_SUCCESS;
@@ -560,20 +566,19 @@ static QDF_STATUS wma_fill_vht80_mcast_rate(uint32_t shortgi,
  *
  * Return: QDF status
  */
-static QDF_STATUS wma_fill_ht_mcast_rate(uint32_t shortgi,
-					 uint32_t chwidth, int32_t mbpsx10_rate,
-					 uint8_t nss, uint8_t *rate,
-					 int32_t *streaming_rate)
+static QDF_STATUS wma_fill_ht_mcast_rate(uint32_t shortgi, uint32_t chwidth,
+					 int32_t mbpsx10_rate, uint8_t nss,
+					 uint8_t *rate, int32_t *streaming_rate)
 {
 	int32_t ret = 0;
 
 	*streaming_rate = 0;
 	if (chwidth == 0)
-		ret = wma_fill_ht20_mcast_rate(shortgi, mbpsx10_rate,
-					       nss, rate, streaming_rate);
+		ret = wma_fill_ht20_mcast_rate(shortgi, mbpsx10_rate, nss, rate,
+					       streaming_rate);
 	else if (chwidth == 1)
-		ret = wma_fill_ht40_mcast_rate(shortgi, mbpsx10_rate,
-					       nss, rate, streaming_rate);
+		ret = wma_fill_ht40_mcast_rate(shortgi, mbpsx10_rate, nss, rate,
+					       streaming_rate);
 	else
 		wma_err("Error, Invalid chwidth enum %d", chwidth);
 	return (*streaming_rate != 0) ? QDF_STATUS_SUCCESS : QDF_STATUS_E_INVAL;
@@ -592,8 +597,7 @@ static QDF_STATUS wma_fill_ht_mcast_rate(uint32_t shortgi,
  *
  * Return: QDF status
  */
-static QDF_STATUS wma_fill_vht_mcast_rate(uint32_t shortgi,
-					  uint32_t chwidth,
+static QDF_STATUS wma_fill_vht_mcast_rate(uint32_t shortgi, uint32_t chwidth,
 					  int32_t mbpsx10_rate, uint8_t nss,
 					  uint8_t *rate,
 					  int32_t *streaming_rate)
@@ -629,24 +633,24 @@ static QDF_STATUS wma_fill_vht_mcast_rate(uint32_t shortgi,
  * Return: QDF status
  */
 static QDF_STATUS wma_encode_mc_rate(uint32_t shortgi, uint32_t chwidth,
-			     A_UINT32 mhz, int32_t mbpsx10_rate, uint8_t nss,
-			     uint8_t *rate)
+				     A_UINT32 mhz, int32_t mbpsx10_rate,
+				     uint8_t nss, uint8_t *rate)
 {
 	int32_t ret = 0;
 
 	/* nss input value: 0 - 1x1; 1 - 2x2; 2 - 3x3
-	 * the phymode selection is based on following assumption:
-	 * (1) if the app specifically requested 1x1 or 2x2 we hornor it
-	 * (2) if mbpsx10_rate <= 540: always use BG
-	 * (3) 540 < mbpsx10_rate <= 2000: use 1x1 HT/VHT
-	 * (4) 2000 < mbpsx10_rate: use 2x2 HT/VHT
-	 */
+   * the phymode selection is based on following assumption:
+   * (1) if the app specifically requested 1x1 or 2x2 we hornor it
+   * (2) if mbpsx10_rate <= 540: always use BG
+   * (3) 540 < mbpsx10_rate <= 2000: use 1x1 HT/VHT
+   * (4) 2000 < mbpsx10_rate: use 2x2 HT/VHT
+   */
 	wma_debug("Input: nss = %d, mbpsx10 = 0x%x, chwidth = %d, shortgi = %d",
 		  nss, mbpsx10_rate, chwidth, shortgi);
 	if ((mbpsx10_rate & 0x40000000) && nss > 0) {
 		/* bit 30 indicates user inputted nss,
-		 * bit 28 and 29 used to encode nss
-		 */
+     * bit 28 and 29 used to encode nss
+     */
 		uint8_t user_nss = (mbpsx10_rate & 0x30000000) >> 28;
 
 		nss = (user_nss < nss) ? user_nss : nss;
@@ -654,15 +658,15 @@ static QDF_STATUS wma_encode_mc_rate(uint32_t shortgi, uint32_t chwidth,
 		mbpsx10_rate &= ~0x70000000;
 	} else if (mbpsx10_rate <= WMA_MCAST_1X1_CUT_OFF_RATE) {
 		/* if the input rate is less or equal to the
-		 * 1x1 cutoff rate we use 1x1 only
-		 */
+     * 1x1 cutoff rate we use 1x1 only
+     */
 		nss = 0;
 	}
 	/* encode NSS bits (bit 4, bit 5) */
 	*rate = (nss & 0x3) << 4;
 	/* if mcast input rate exceeds the ofdm/cck max rate 54mpbs
-	 * we try to choose best ht/vht mcs rate
-	 */
+   * we try to choose best ht/vht mcs rate
+   */
 	if (540 < mbpsx10_rate) {
 		/* cannot use ofdm/cck, choose closest ht/vht mcs rate */
 		uint8_t rate_ht = *rate;
@@ -672,8 +676,7 @@ static QDF_STATUS wma_encode_mc_rate(uint32_t shortgi, uint32_t chwidth,
 		int32_t stream_rate = 0;
 
 		ret = wma_fill_ht_mcast_rate(shortgi, chwidth, mbpsx10_rate,
-					     nss, &rate_ht,
-					     &stream_rate_ht);
+					     nss, &rate_ht, &stream_rate_ht);
 		if (ret != QDF_STATUS_SUCCESS)
 			stream_rate_ht = 0;
 		if (mhz < WMA_2_4_GHZ_MAX_FREQ) {
@@ -684,8 +687,7 @@ static QDF_STATUS wma_encode_mc_rate(uint32_t shortgi, uint32_t chwidth,
 		}
 		/* capable doing 11AC mcast so that search vht tables */
 		ret = wma_fill_vht_mcast_rate(shortgi, chwidth, mbpsx10_rate,
-					      nss, &rate_vht,
-					      &stream_rate_vht);
+					      nss, &rate_vht, &stream_rate_vht);
 		if (ret != QDF_STATUS_SUCCESS) {
 			if (stream_rate_ht != 0)
 				ret = QDF_STATUS_SUCCESS;
@@ -717,17 +719,18 @@ static QDF_STATUS wma_encode_mc_rate(uint32_t shortgi, uint32_t chwidth,
 		}
 ht_vht_done:
 		wma_debug("NSS = %d, freq = %d", nss, mhz);
-		wma_debug("input_rate = %d, chwidth = %d rate = 0x%x, streaming_rate = %d",
-			 mbpsx10_rate, chwidth, *rate, stream_rate);
+		wma_debug(
+			"input_rate = %d, chwidth = %d rate = 0x%x, streaming_rate = %d",
+			mbpsx10_rate, chwidth, *rate, stream_rate);
 	} else {
 		if (mbpsx10_rate > 0)
-			ret = wma_fill_ofdm_cck_mcast_rate(mbpsx10_rate,
-							   nss, rate);
+			ret = wma_fill_ofdm_cck_mcast_rate(mbpsx10_rate, nss,
+							   rate);
 		else
 			*rate = 0xFF;
 
-		wma_debug("NSS = %d, input_rate = %d, rate = 0x%x",
-			  nss, mbpsx10_rate, *rate);
+		wma_debug("NSS = %d, input_rate = %d, rate = 0x%x", nss,
+			  mbpsx10_rate, *rate);
 	}
 	return ret;
 }
@@ -807,10 +810,10 @@ enum tx_rate_info wma_get_vht_rate_flags(enum phy_ch_width ch_width)
 
 	if (ch_width == CH_WIDTH_80P80MHZ)
 		rate_flags |= TX_RATE_VHT160 | TX_RATE_VHT80 | TX_RATE_VHT40 |
-				TX_RATE_VHT20;
+			      TX_RATE_VHT20;
 	if (ch_width == CH_WIDTH_160MHZ)
 		rate_flags |= TX_RATE_VHT160 | TX_RATE_VHT80 | TX_RATE_VHT40 |
-				TX_RATE_VHT20;
+			      TX_RATE_VHT20;
 	if (ch_width == CH_WIDTH_80MHZ)
 		rate_flags |= TX_RATE_VHT80 | TX_RATE_VHT40 | TX_RATE_VHT20;
 	else if (ch_width)
@@ -836,10 +839,9 @@ enum tx_rate_info wma_get_he_rate_flags(enum phy_ch_width ch_width)
 {
 	enum tx_rate_info rate_flags = 0;
 
-	if (ch_width == CH_WIDTH_160MHZ ||
-	    ch_width == CH_WIDTH_80P80MHZ)
+	if (ch_width == CH_WIDTH_160MHZ || ch_width == CH_WIDTH_80P80MHZ)
 		rate_flags |= TX_RATE_HE160 | TX_RATE_HE80 | TX_RATE_HE40 |
-				TX_RATE_HE20;
+			      TX_RATE_HE20;
 	else if (ch_width == CH_WIDTH_80MHZ)
 		rate_flags |= TX_RATE_HE80 | TX_RATE_HE40 | TX_RATE_HE20;
 	else if (ch_width)
@@ -869,12 +871,14 @@ void wma_set_bss_rate_flags(tp_wma_handle wma, uint8_t vdev_id,
 	qdf_status = wma_set_bss_rate_flags_eht(rate_flags, add_bss);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		if (QDF_STATUS_SUCCESS !=
-			wma_set_bss_rate_flags_he(rate_flags, add_bss)) {
+		    wma_set_bss_rate_flags_he(rate_flags, add_bss)) {
 			if (add_bss->vhtCapable)
-				*rate_flags = wma_get_vht_rate_flags(add_bss->ch_width);
+				*rate_flags = wma_get_vht_rate_flags(
+					add_bss->ch_width);
 			/* avoid to conflict with htCapable flag */
 			else if (add_bss->htCapable)
-				*rate_flags |= wma_get_ht_rate_flags(add_bss->ch_width);
+				*rate_flags |= wma_get_ht_rate_flags(
+					add_bss->ch_width);
 		}
 	}
 
@@ -888,15 +892,15 @@ void wma_set_bss_rate_flags(tp_wma_handle wma, uint8_t vdev_id,
 		*rate_flags = TX_RATE_LEGACY;
 
 	wma_debug("capable: vht %u, ht %u, rate_flags %x, ch_width %d",
-		  add_bss->vhtCapable, add_bss->htCapable,
-		  *rate_flags, add_bss->ch_width);
+		  add_bss->vhtCapable, add_bss->htCapable, *rate_flags,
+		  add_bss->ch_width);
 
 	wma_cp_stats_set_rate_flag(wma, vdev_id);
 }
 
 void wma_set_vht_txbf_cfg(struct mac_context *mac, uint8_t vdev_id)
 {
-	wmi_vdev_txbf_en txbf_en = {0};
+	wmi_vdev_txbf_en txbf_en = { 0 };
 	QDF_STATUS status;
 	tp_wma_handle wma = cds_get_context(QDF_MODULE_ID_WMA);
 
@@ -924,11 +928,11 @@ void wma_set_vht_txbf_cfg(struct mac_context *mac, uint8_t vdev_id)
  */
 int32_t wmi_unified_send_txbf(tp_wma_handle wma, tpAddStaParams params)
 {
-	wmi_vdev_txbf_en txbf_en = {0};
+	wmi_vdev_txbf_en txbf_en = { 0 };
 
 	/* This is set when Other partner is Bformer
-	 * and we are capable bformee(enabled both in ini and fw)
-	 */
+   * and we are capable bformee(enabled both in ini and fw)
+   */
 	txbf_en.sutxbfee = params->vhtTxBFCapable;
 	txbf_en.mutxbfee = params->vhtTxMUBformeeCapable;
 	txbf_en.sutxbfer = params->enable_su_tx_bformer;
@@ -938,12 +942,10 @@ int32_t wmi_unified_send_txbf(tp_wma_handle wma, tpAddStaParams params)
 		txbf_en.sutxbfee = txbf_en.mutxbfee;
 
 	wma_debug("txbf_en.sutxbfee %d txbf_en.mutxbfee %d, sutxbfer %d",
-		 txbf_en.sutxbfee, txbf_en.mutxbfee, txbf_en.sutxbfer);
+		  txbf_en.sutxbfee, txbf_en.mutxbfee, txbf_en.sutxbfer);
 
-	return wma_vdev_set_param(wma->wmi_handle,
-						params->smesessionId,
-						wmi_vdev_param_txbf,
-						*((A_UINT8 *) &txbf_en));
+	return wma_vdev_set_param(wma->wmi_handle, params->smesessionId,
+				  wmi_vdev_param_txbf, *((A_UINT8 *)&txbf_en));
 }
 
 /**
@@ -998,18 +1000,18 @@ end:
  *
  * Return: none
  */
-void
-wma_data_tx_ack_comp_hdlr(void *wma_context, qdf_nbuf_t netbuf, int32_t status)
+void wma_data_tx_ack_comp_hdlr(void *wma_context, qdf_nbuf_t netbuf,
+			       int32_t status)
 {
-	tp_wma_handle wma_handle = (tp_wma_handle) wma_context;
+	tp_wma_handle wma_handle = (tp_wma_handle)wma_context;
 
 	if (wma_validate_handle(wma_handle))
 		return;
 
 	/*
-	 * if netBuf does not match with pending nbuf then just free the
-	 * netbuf and do not call ack cb
-	 */
+   * if netBuf does not match with pending nbuf then just free the
+   * netbuf and do not call ack cb
+   */
 	if (wma_handle->last_umac_data_nbuf != netbuf) {
 		if (wma_handle->umac_data_ota_ack_cb) {
 			wma_err("nbuf does not match but umac_data_ota_ack_cb is not null");
@@ -1030,8 +1032,7 @@ wma_data_tx_ack_comp_hdlr(void *wma_context, qdf_nbuf_t netbuf, int32_t status)
 			ack_work->status = status;
 
 			qdf_create_work(0, &ack_work->ack_cmp_work,
-					wma_data_tx_ack_work_handler,
-					ack_work);
+					wma_data_tx_ack_work_handler, ack_work);
 			qdf_sched_work(0, &ack_work->ack_cmp_work);
 		}
 	}
@@ -1067,8 +1068,8 @@ QDF_STATUS wma_check_txrx_chainmask(int num_rf_chains, int cmd_value)
  *
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
-QDF_STATUS wma_set_enable_disable_mcc_adaptive_scheduler(uint32_t
-							 mcc_adaptive_scheduler)
+QDF_STATUS
+wma_set_enable_disable_mcc_adaptive_scheduler(uint32_t mcc_adaptive_scheduler)
 {
 	tp_wma_handle wma = NULL;
 	uint32_t pdev_id;
@@ -1078,19 +1079,19 @@ QDF_STATUS wma_set_enable_disable_mcc_adaptive_scheduler(uint32_t
 		return QDF_STATUS_E_FAULT;
 
 	/*
-	 * Since there could be up to two instances of OCS in FW (one per MAC),
-	 * FW provides the option of enabling and disabling MAS on a per MAC
-	 * basis. But, Host does not have enable/disable option for individual
-	 * MACs. So, FW agreed for the Host to send down a 'pdev id' of 0.
-	 * When 'pdev id' of 0 is used, FW treats this as a SOC level command
-	 * and applies the same value to both MACs. Irrespective of the value
-	 * of 'WMI_SERVICE_DEPRECATED_REPLACE', the pdev id needs to be '0'
-	 * (SOC level) for WMI_RESMGR_ADAPTIVE_OCS_ENABLE_DISABLE_CMDID
-	 */
+   * Since there could be up to two instances of OCS in FW (one per MAC),
+   * FW provides the option of enabling and disabling MAS on a per MAC
+   * basis. But, Host does not have enable/disable option for individual
+   * MACs. So, FW agreed for the Host to send down a 'pdev id' of 0.
+   * When 'pdev id' of 0 is used, FW treats this as a SOC level command
+   * and applies the same value to both MACs. Irrespective of the value
+   * of 'WMI_SERVICE_DEPRECATED_REPLACE', the pdev id needs to be '0'
+   * (SOC level) for WMI_RESMGR_ADAPTIVE_OCS_ENABLE_DISABLE_CMDID
+   */
 	pdev_id = WMI_PDEV_ID_SOC;
 
 	return wmi_unified_set_enable_disable_mcc_adaptive_scheduler_cmd(
-			wma->wmi_handle, mcc_adaptive_scheduler, pdev_id);
+		wma->wmi_handle, mcc_adaptive_scheduler, pdev_id);
 }
 
 /**
@@ -1106,7 +1107,8 @@ QDF_STATUS wma_set_enable_disable_mcc_adaptive_scheduler(uint32_t
  * Return: QDF status
  */
 QDF_STATUS wma_set_mcc_channel_time_latency(tp_wma_handle wma,
-	uint32_t mcc_channel, uint32_t mcc_channel_time_latency)
+					    uint32_t mcc_channel,
+					    uint32_t mcc_channel_time_latency)
 {
 	bool mcc_adapt_sch = false;
 	struct mac_context *mac = NULL;
@@ -1131,23 +1133,23 @@ QDF_STATUS wma_set_mcc_channel_time_latency(tp_wma_handle wma,
 		return QDF_STATUS_E_FAILURE;
 	}
 	/* Confirm MCC adaptive scheduler feature is disabled */
-	if (policy_mgr_get_dynamic_mcc_adaptive_sch(mac->psoc,
-						    &mcc_adapt_sch) ==
-	    QDF_STATUS_SUCCESS) {
+	if (policy_mgr_get_dynamic_mcc_adaptive_sch(
+		    mac->psoc, &mcc_adapt_sch) == QDF_STATUS_SUCCESS) {
 		if (mcc_adapt_sch) {
-			wma_debug("Can't set channel latency while MCC ADAPTIVE SCHED is enabled. Exit");
+			wma_debug(
+				"Can't set channel latency while MCC ADAPTIVE SCHED is "
+				"enabled. Exit");
 			return QDF_STATUS_SUCCESS;
 		}
 	} else {
 		wma_err("Failed to get value for MCC_ADAPTIVE_SCHED, "
-			 "Exit w/o setting latency");
+			"Exit w/o setting latency");
 		QDF_ASSERT(0);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	return wmi_unified_set_mcc_channel_time_latency_cmd(wma->wmi_handle,
-						chan1_freq,
-						mcc_channel_time_latency);
+	return wmi_unified_set_mcc_channel_time_latency_cmd(
+		wma->wmi_handle, chan1_freq, mcc_channel_time_latency);
 }
 
 /**
@@ -1167,8 +1169,9 @@ QDF_STATUS wma_set_mcc_channel_time_latency(tp_wma_handle wma,
  * Return: QDF status
  */
 QDF_STATUS wma_set_mcc_channel_time_quota(tp_wma_handle wma,
-		uint32_t adapter_1_chan_number,	uint32_t adapter_1_quota,
-		uint32_t adapter_2_chan_number)
+					  uint32_t adapter_1_chan_number,
+					  uint32_t adapter_1_quota,
+					  uint32_t adapter_2_chan_number)
 {
 	bool mcc_adapt_sch = false;
 	struct mac_context *mac = NULL;
@@ -1194,11 +1197,11 @@ QDF_STATUS wma_set_mcc_channel_time_quota(tp_wma_handle wma,
 	}
 
 	/* Confirm MCC adaptive scheduler feature is disabled */
-	if (policy_mgr_get_dynamic_mcc_adaptive_sch(mac->psoc,
-						    &mcc_adapt_sch) ==
-	    QDF_STATUS_SUCCESS) {
+	if (policy_mgr_get_dynamic_mcc_adaptive_sch(
+		    mac->psoc, &mcc_adapt_sch) == QDF_STATUS_SUCCESS) {
 		if (mcc_adapt_sch) {
-			wma_debug("Can't set channel quota while MCC_ADAPTIVE_SCHED is enabled. Exit");
+			wma_debug(
+				"Can't set channel quota while MCC_ADAPTIVE_SCHED is enabled. Exit");
 			return QDF_STATUS_SUCCESS;
 		}
 	} else {
@@ -1207,10 +1210,8 @@ QDF_STATUS wma_set_mcc_channel_time_quota(tp_wma_handle wma,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	return wmi_unified_set_mcc_channel_time_quota_cmd(wma->wmi_handle,
-						chan1_freq,
-						adapter_1_quota,
-						chan2_freq);
+	return wmi_unified_set_mcc_channel_time_quota_cmd(
+		wma->wmi_handle, chan1_freq, adapter_1_quota, chan2_freq);
 }
 
 #define MAX_VDEV_PROCESS_RATE_PARAMS 2
@@ -1218,9 +1219,9 @@ QDF_STATUS wma_set_mcc_channel_time_quota(tp_wma_handle wma,
  * wmi_vdev_param_sgi
  * wmi_vdev_param_mcast_data_rate
  */
-QDF_STATUS wma_process_rate_update_indicate(tp_wma_handle wma,
-					    tSirRateUpdateInd *
-					    pRateUpdateParams)
+QDF_STATUS
+wma_process_rate_update_indicate(tp_wma_handle wma,
+				 tSirRateUpdateInd *pRateUpdateParams)
 {
 	int32_t ret = 0;
 	uint8_t vdev_id = 0;
@@ -1236,8 +1237,8 @@ QDF_STATUS wma_process_rate_update_indicate(tp_wma_handle wma,
 	/* Get the vdev id */
 	if (wma_find_vdev_id_by_addr(wma, pRateUpdateParams->bssid.bytes,
 				     &vdev_id)) {
-		wma_err("vdev handle is invalid for "QDF_MAC_ADDR_FMT,
-			 QDF_MAC_ADDR_REF(pRateUpdateParams->bssid.bytes));
+		wma_err("vdev handle is invalid for " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(pRateUpdateParams->bssid.bytes));
 		qdf_mem_free(pRateUpdateParams);
 		return QDF_STATUS_E_INVAL;
 	}
@@ -1253,30 +1254,29 @@ QDF_STATUS wma_process_rate_update_indicate(tp_wma_handle wma,
 	if (short_gi == 0)
 		short_gi = (rate_flag & TX_RATE_SGI) ? true : false;
 	/* first check if reliable TX mcast rate is used. If not check the bcast
-	 * Then is mcast. Mcast rate is saved in mcastDataRate24GHz
-	 */
+   * Then is mcast. Mcast rate is saved in mcastDataRate24GHz
+   */
 	if (pRateUpdateParams->reliableMcastDataRateTxFlag > 0) {
 		mbpsx10_rate = pRateUpdateParams->reliableMcastDataRate;
 		paramid = wmi_vdev_param_mcast_data_rate;
-		if (pRateUpdateParams->
-		    reliableMcastDataRateTxFlag & TX_RATE_SGI)
-			short_gi = 1;   /* upper layer specified short GI */
+		if (pRateUpdateParams->reliableMcastDataRateTxFlag &
+		    TX_RATE_SGI)
+			short_gi = 1; /* upper layer specified short GI */
 	} else if (pRateUpdateParams->bcastDataRate > -1) {
 		mbpsx10_rate = pRateUpdateParams->bcastDataRate;
 		paramid = wmi_vdev_param_bcast_data_rate;
 	} else {
 		mbpsx10_rate = pRateUpdateParams->mcastDataRate24GHz;
 		paramid = wmi_vdev_param_mcast_data_rate;
-		if (pRateUpdateParams->
-		    mcastDataRate24GHzTxFlag & TX_RATE_SGI)
-			short_gi = 1;   /* upper layer specified short GI */
+		if (pRateUpdateParams->mcastDataRate24GHzTxFlag & TX_RATE_SGI)
+			short_gi = 1; /* upper layer specified short GI */
 	}
-	wma_debug("dev_id = %d, dev_type = %d, dev_mode = %d,",
-		 vdev_id, intr[vdev_id].type,
-		 pRateUpdateParams->dev_mode);
-	wma_debug("mac = "QDF_MAC_ADDR_FMT", config.shortgi = %d, rate_flags = 0x%x",
-		 QDF_MAC_ADDR_REF(pRateUpdateParams->bssid.bytes),
-		 intr[vdev_id].config.shortgi, rate_flag);
+	wma_debug("dev_id = %d, dev_type = %d, dev_mode = %d,", vdev_id,
+		  intr[vdev_id].type, pRateUpdateParams->dev_mode);
+	wma_debug("mac = " QDF_MAC_ADDR_FMT
+		  ", config.shortgi = %d, rate_flags = 0x%x",
+		  QDF_MAC_ADDR_REF(pRateUpdateParams->bssid.bytes),
+		  intr[vdev_id].config.shortgi, rate_flag);
 	ret = wma_encode_mc_rate(short_gi, intr[vdev_id].config.chwidth,
 				 intr[vdev_id].ch_freq, mbpsx10_rate,
 				 pRateUpdateParams->nss, &rate);
@@ -1300,8 +1300,8 @@ QDF_STATUS wma_process_rate_update_indicate(tp_wma_handle wma,
 		goto error;
 	}
 
-	ret = wma_send_multi_pdev_vdev_set_params(MLME_VDEV_SETPARAM,
-						  vdev_id, setparam, index);
+	ret = wma_send_multi_pdev_vdev_set_params(MLME_VDEV_SETPARAM, vdev_id,
+						  setparam, index);
 	if (QDF_IS_STATUS_ERROR(ret))
 		wma_debug("failed to send vdev set params");
 error:
@@ -1320,12 +1320,12 @@ error:
  *
  * Return: none
  */
-static void
-wma_mgmt_tx_ack_comp_hdlr(void *wma_context, qdf_nbuf_t netbuf, int32_t status)
+static void wma_mgmt_tx_ack_comp_hdlr(void *wma_context, qdf_nbuf_t netbuf,
+				      int32_t status)
 {
-	tp_wma_handle wma_handle = (tp_wma_handle) wma_context;
-	struct wlan_objmgr_pdev *pdev = (struct wlan_objmgr_pdev *)
-					wma_handle->pdev;
+	tp_wma_handle wma_handle = (tp_wma_handle)wma_context;
+	struct wlan_objmgr_pdev *pdev =
+		(struct wlan_objmgr_pdev *)wma_handle->pdev;
 	struct wmi_mgmt_params mgmt_params = {};
 	uint16_t desc_id;
 	uint8_t vdev_id;
@@ -1347,13 +1347,12 @@ wma_mgmt_tx_ack_comp_hdlr(void *wma_context, qdf_nbuf_t netbuf, int32_t status)
  *
  * Return: none
  */
-static void
-wma_mgmt_tx_dload_comp_hldr(void *wma_context, qdf_nbuf_t netbuf,
-			    int32_t status)
+static void wma_mgmt_tx_dload_comp_hldr(void *wma_context, qdf_nbuf_t netbuf,
+					int32_t status)
 {
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
 
-	tp_wma_handle wma_handle = (tp_wma_handle) wma_context;
+	tp_wma_handle wma_handle = (tp_wma_handle)wma_context;
 	void *mac_context = wma_handle->mac_context;
 
 	wma_debug("Tx Complete Status %d", status);
@@ -1387,15 +1386,14 @@ QDF_STATUS wma_tx_attach(tp_wma_handle wma_handle)
 {
 	/* Get the Vos Context */
 	struct cds_context *cds_handle =
-		(struct cds_context *) (wma_handle->cds_context);
+		(struct cds_context *)(wma_handle->cds_context);
 
 	/* Get the txRx Pdev ID */
 	uint8_t pdev_id = WMI_PDEV_ID_SOC;
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 
 	/* Register for Tx Management Frames */
-	cdp_mgmt_tx_cb_set(soc, pdev_id, 0,
-			   wma_mgmt_tx_dload_comp_hldr,
+	cdp_mgmt_tx_cb_set(soc, pdev_id, 0, wma_mgmt_tx_dload_comp_hldr,
 			   wma_mgmt_tx_ack_comp_hdlr, wma_handle);
 
 	/* Register callback to send PEER_UNMAP_RESPONSE cmd*/
@@ -1446,8 +1444,7 @@ QDF_STATUS wma_tx_detach(tp_wma_handle wma_handle)
 
 #if defined(QCA_LL_LEGACY_TX_FLOW_CONTROL) || \
 	defined(QCA_LL_TX_FLOW_CONTROL_V2) || defined(CONFIG_HL_SUPPORT)
-static void wma_process_vdev_tx_pause_evt(void *soc,
-					  tp_wma_handle wma,
+static void wma_process_vdev_tx_pause_evt(void *soc, tp_wma_handle wma,
 					  wmi_tx_pause_event_fixed_param *event,
 					  uint8_t vdev_id)
 {
@@ -1455,21 +1452,19 @@ static void wma_process_vdev_tx_pause_evt(void *soc,
 	if (event->action == ACTION_PAUSE) {
 		/* Exclude TDLS_OFFCHAN_CHOP from vdev based pauses */
 		if (event->pause_type == PAUSE_TYPE_CHOP_TDLS_OFFCHAN) {
-			cdp_fc_vdev_pause(soc, vdev_id,
-					  OL_TXQ_PAUSE_REASON_FW,
+			cdp_fc_vdev_pause(soc, vdev_id, OL_TXQ_PAUSE_REASON_FW,
 					  event->pause_type);
 		} else {
 			/*
-			 * Now only support per-dev pause so it is not
-			 * necessary to pause a paused queue again.
-			 */
+       * Now only support per-dev pause so it is not
+       * necessary to pause a paused queue again.
+       */
 			if (!wma_vdev_get_pause_bitmap(vdev_id))
 				cdp_fc_vdev_pause(soc, vdev_id,
 						  OL_TXQ_PAUSE_REASON_FW,
 						  event->pause_type);
 
-			wma_vdev_set_pause_bit(vdev_id,
-					       event->pause_type);
+			wma_vdev_set_pause_bit(vdev_id, event->pause_type);
 		}
 	}
 	/* UNPAUSE action, clean bitmap */
@@ -1480,7 +1475,7 @@ static void wma_process_vdev_tx_pause_evt(void *soc,
 					    OL_TXQ_PAUSE_REASON_FW,
 					    event->pause_type);
 		} else {
-		/* Handle unpause only if already paused */
+			/* Handle unpause only if already paused */
 			if (wma_vdev_get_pause_bitmap(vdev_id)) {
 				wma_vdev_clear_pause_bit(vdev_id,
 							 event->pause_type);
@@ -1489,8 +1484,8 @@ static void wma_process_vdev_tx_pause_evt(void *soc,
 					return;
 
 				/* PAUSE BIT MAP is cleared
-				 * UNPAUSE VDEV
-				 */
+         * UNPAUSE VDEV
+         */
 				cdp_fc_vdev_unpause(soc, vdev_id,
 						    OL_TXQ_PAUSE_REASON_FW,
 						    event->pause_type);
@@ -1504,14 +1499,14 @@ static void wma_process_vdev_tx_pause_evt(void *soc,
 int wma_mcc_vdev_tx_pause_evt_handler(void *handle, uint8_t *event,
 				      uint32_t len)
 {
-	tp_wma_handle wma = (tp_wma_handle) handle;
+	tp_wma_handle wma = (tp_wma_handle)handle;
 	WMI_TX_PAUSE_EVENTID_param_tlvs *param_buf;
 	wmi_tx_pause_event_fixed_param *wmi_event;
 	uint8_t vdev_id;
 	A_UINT32 vdev_map;
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 
-	param_buf = (WMI_TX_PAUSE_EVENTID_param_tlvs *) event;
+	param_buf = (WMI_TX_PAUSE_EVENTID_param_tlvs *)event;
 	if (!param_buf) {
 		wma_err("Invalid roam event buffer");
 		return -EINVAL;
@@ -1528,9 +1523,9 @@ int wma_mcc_vdev_tx_pause_evt_handler(void *handle, uint8_t *event,
 	wmi_event = param_buf->fixed_param;
 	vdev_map = wmi_event->vdev_map;
 	/* FW mapped vdev from ID
-	 * vdev_map = (1 << vdev_id)
-	 * So, host should unmap to ID
-	 */
+   * vdev_map = (1 << vdev_id)
+   * So, host should unmap to ID
+   */
 	for (vdev_id = 0; vdev_map != 0 && vdev_id < wma->max_bssid;
 	     vdev_id++) {
 		if (!(vdev_map & 0x1)) {
@@ -1543,12 +1538,11 @@ int wma_mcc_vdev_tx_pause_evt_handler(void *handle, uint8_t *event,
 				continue;
 			}
 
-			wma_process_vdev_tx_pause_evt(soc, wma,
-						      wmi_event,
+			wma_process_vdev_tx_pause_evt(soc, wma, wmi_event,
 						      vdev_id);
 
-			wma_debug
-				("vdev_id %d, pause_map 0x%x, pause type %d, action %d",
+			wma_debug(
+				"vdev_id %d, pause_map 0x%x, pause type %d, action %d",
 				vdev_id, wma_vdev_get_pause_bitmap(vdev_id),
 				wmi_event->pause_type, wmi_event->action);
 		}
@@ -1576,12 +1570,12 @@ int wma_mcc_vdev_tx_pause_evt_handler(void *handle, uint8_t *event,
  *
  * Return: QDF_STATUS based on values sent to firmware
  */
-static
-QDF_STATUS wma_set_peer_rate_report_condition(WMA_HANDLE handle,
-			struct t_bad_peer_txtcl_config *config)
+static QDF_STATUS
+wma_set_peer_rate_report_condition(WMA_HANDLE handle,
+				   struct t_bad_peer_txtcl_config *config)
 {
 	tp_wma_handle wma_handle = (tp_wma_handle)handle;
-	struct wmi_peer_rate_report_params rate_report_params = {0};
+	struct wmi_peer_rate_report_params rate_report_params = { 0 };
 	u_int32_t i, j;
 
 	rate_report_params.rate_report_enable = config->enable;
@@ -1590,14 +1584,14 @@ QDF_STATUS wma_set_peer_rate_report_condition(WMA_HANDLE handle,
 	for (i = 0; i < WMI_PEER_RATE_REPORT_COND_MAX_NUM; i++) {
 		rate_report_params.report_per_phy[i].cond_flags =
 			config->threshold[i].cond;
-		rate_report_params.report_per_phy[i].delta.delta_min  =
+		rate_report_params.report_per_phy[i].delta.delta_min =
 			config->threshold[i].delta;
 		rate_report_params.report_per_phy[i].delta.percent =
 			config->threshold[i].percentage;
 		for (j = 0; j < WMI_MAX_NUM_OF_RATE_THRESH; j++) {
-			rate_report_params.report_per_phy[i].
-				report_rate_threshold[j] =
-					config->threshold[i].thresh[j];
+			rate_report_params.report_per_phy[i]
+				.report_rate_threshold[j] =
+				config->threshold[i].thresh[j];
 		}
 	}
 
@@ -1618,8 +1612,9 @@ QDF_STATUS wma_set_peer_rate_report_condition(WMA_HANDLE handle,
  * Return: QDF_STATUS based on procedure status
  */
 
-QDF_STATUS wma_process_init_bad_peer_tx_ctl_info(tp_wma_handle wma,
-					struct t_bad_peer_txtcl_config *config)
+QDF_STATUS
+wma_process_init_bad_peer_tx_ctl_info(tp_wma_handle wma,
+				      struct t_bad_peer_txtcl_config *config)
 {
 	/* Parameter sanity check */
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
@@ -1629,33 +1624,26 @@ QDF_STATUS wma_process_init_bad_peer_tx_ctl_info(tp_wma_handle wma,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	wma_debug("enable %d period %d txq limit %d\n",
-		 config->enable,
-		 config->period,
-		 config->txq_limit);
+	wma_debug("enable %d period %d txq limit %d\n", config->enable,
+		  config->period, config->txq_limit);
 
 	/* Only need to initialize the setting
-	 * when the feature is enabled
-	 */
+   * when the feature is enabled
+   */
 	if (config->enable) {
 		int i = 0;
 
-		cdp_bad_peer_txctl_set_setting(soc,
-					WMI_PDEV_ID_SOC,
-					config->enable,
-					config->period,
-					config->txq_limit);
+		cdp_bad_peer_txctl_set_setting(soc, WMI_PDEV_ID_SOC,
+					       config->enable, config->period,
+					       config->txq_limit);
 
 		for (i = 0; i < WLAN_WMA_IEEE80211_MAX_LEVEL; i++) {
 			u_int32_t threshold, limit;
 
 			threshold = config->threshold[i].thresh[0];
-			limit =	config->threshold[i].txlimit;
-			cdp_bad_peer_txctl_update_threshold(soc,
-						WMI_PDEV_ID_SOC,
-						i,
-						threshold,
-						limit);
+			limit = config->threshold[i].txlimit;
+			cdp_bad_peer_txctl_update_threshold(
+				soc, WMI_PDEV_ID_SOC, i, threshold, limit);
 		}
 	}
 
@@ -1676,7 +1664,7 @@ QDF_STATUS wma_process_init_bad_peer_tx_ctl_info(tp_wma_handle wma,
 static QDF_STATUS wma_update_thermal_mitigation_to_fw(tp_wma_handle wma,
 						      u_int8_t thermal_level)
 {
-	struct thermal_mitigation_params therm_data = {0};
+	struct thermal_mitigation_params therm_data = { 0 };
 
 	/* Check if vdev is in mcc, if in mcc set dc value as 10, else 100 */
 	therm_data.dc = 100;
@@ -1716,15 +1704,15 @@ static QDF_STATUS wma_update_thermal_mitigation_to_fw(tp_wma_handle wma,
  */
 static QDF_STATUS wma_update_thermal_cfg_to_fw(tp_wma_handle wma)
 {
-	t_thermal_cmd_params thermal_params = {0};
+	t_thermal_cmd_params thermal_params = { 0 };
 
 	/* Get the temperature thresholds to set in firmware */
 	thermal_params.minTemp =
-		wma->thermal_mgmt_info.thermalLevels[WLAN_WMA_THERMAL_LEVEL_0].
-		minTempThreshold;
+		wma->thermal_mgmt_info.thermalLevels[WLAN_WMA_THERMAL_LEVEL_0]
+			.minTempThreshold;
 	thermal_params.maxTemp =
-		wma->thermal_mgmt_info.thermalLevels[WLAN_WMA_THERMAL_LEVEL_0].
-		maxTempThreshold;
+		wma->thermal_mgmt_info.thermalLevels[WLAN_WMA_THERMAL_LEVEL_0]
+			.maxTempThreshold;
 	thermal_params.thermalEnable =
 		wma->thermal_mgmt_info.thermalMgmtEnabled;
 	thermal_params.thermal_action = wma->thermal_mgmt_info.thermal_action;
@@ -1766,18 +1754,18 @@ QDF_STATUS wma_process_init_thermal_info(tp_wma_handle wma,
 		  pThermalParams->thermal_action);
 
 	wma_nofl_debug("Throttle Duty Cycle Level in percentage:\n"
-		 "0 %d\n"
-		 "1 %d\n"
-		 "2 %d\n"
-		 "3 %d\n"
-		 "4 %d\n"
-		 "5 %d",
-		 pThermalParams->throttle_duty_cycle_tbl[0],
-		 pThermalParams->throttle_duty_cycle_tbl[1],
-		 pThermalParams->throttle_duty_cycle_tbl[2],
-		 pThermalParams->throttle_duty_cycle_tbl[3],
-		 pThermalParams->throttle_duty_cycle_tbl[4],
-		 pThermalParams->throttle_duty_cycle_tbl[5]);
+		       "0 %d\n"
+		       "1 %d\n"
+		       "2 %d\n"
+		       "3 %d\n"
+		       "4 %d\n"
+		       "5 %d",
+		       pThermalParams->throttle_duty_cycle_tbl[0],
+		       pThermalParams->throttle_duty_cycle_tbl[1],
+		       pThermalParams->throttle_duty_cycle_tbl[2],
+		       pThermalParams->throttle_duty_cycle_tbl[3],
+		       pThermalParams->throttle_duty_cycle_tbl[4],
+		       pThermalParams->throttle_duty_cycle_tbl[5]);
 
 	wma->thermal_mgmt_info.thermalMgmtEnabled =
 		pThermalParams->thermalMgmtEnabled;
@@ -1807,30 +1795,31 @@ QDF_STATUS wma_process_init_thermal_info(tp_wma_handle wma,
 		pThermalParams->thermalLevels[5].maxTempThreshold;
 	wma->thermal_mgmt_info.thermalCurrLevel = WLAN_WMA_THERMAL_LEVEL_0;
 	wma->thermal_mgmt_info.thermal_action = pThermalParams->thermal_action;
-	wma_nofl_debug("TM level min max:\n"
-		 "0 %d   %d\n"
-		 "1 %d   %d\n"
-		 "2 %d   %d\n"
-		 "3 %d   %d\n"
-		 "4 %d   %d\n"
-		 "5 %d   %d",
-		 wma->thermal_mgmt_info.thermalLevels[0].minTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[0].maxTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[1].minTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[1].maxTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[2].minTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[2].maxTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[3].minTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[3].maxTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[4].minTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[4].maxTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[5].minTempThreshold,
-		 wma->thermal_mgmt_info.thermalLevels[5].maxTempThreshold);
+	wma_nofl_debug(
+		"TM level min max:\n"
+		"0 %d   %d\n"
+		"1 %d   %d\n"
+		"2 %d   %d\n"
+		"3 %d   %d\n"
+		"4 %d   %d\n"
+		"5 %d   %d",
+		wma->thermal_mgmt_info.thermalLevels[0].minTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[0].maxTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[1].minTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[1].maxTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[2].minTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[2].maxTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[3].minTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[3].maxTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[4].minTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[4].maxTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[5].minTempThreshold,
+		wma->thermal_mgmt_info.thermalLevels[5].maxTempThreshold);
 
 #ifdef FW_THERMAL_THROTTLE_SUPPORT
 	for (i = 0; i < THROTTLE_LEVEL_MAX; i++)
 		wma->thermal_mgmt_info.throttle_duty_cycle_tbl[i] =
-				pThermalParams->throttle_duty_cycle_tbl[i];
+			pThermalParams->throttle_duty_cycle_tbl[i];
 #endif /* FW_THERMAL_THROTTLE_SUPPORT */
 
 	if (wma->thermal_mgmt_info.thermalMgmtEnabled) {
@@ -1841,7 +1830,7 @@ QDF_STATUS wma_process_init_thermal_info(tp_wma_handle wma,
 				&pThermalParams->throttle_duty_cycle_tbl[0]);
 		} else {
 			qdf_status = wma_update_thermal_mitigation_to_fw(
-					wma, WLAN_WMA_THERMAL_LEVEL_0);
+				wma, WLAN_WMA_THERMAL_LEVEL_0);
 			if (QDF_STATUS_SUCCESS != qdf_status)
 				return qdf_status;
 		}
@@ -1861,7 +1850,7 @@ QDF_STATUS wma_process_init_thermal_info(tp_wma_handle wma,
 static void wma_set_thermal_level_ind(u_int8_t level)
 {
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
-	struct scheduler_msg sme_msg = {0};
+	struct scheduler_msg sme_msg = { 0 };
 
 	wma_info("Thermal level: %d", level);
 
@@ -1910,7 +1899,7 @@ QDF_STATUS wma_process_set_thermal_level(tp_wma_handle wma,
 
 	if (thermal_level == wma->thermal_mgmt_info.thermalCurrLevel) {
 		wma_debug("Current level %d is same as the set level, ignoring",
-			 wma->thermal_mgmt_info.thermalCurrLevel);
+			  wma->thermal_mgmt_info.thermalCurrLevel);
 		return QDF_STATUS_SUCCESS;
 	}
 
@@ -1925,7 +1914,6 @@ QDF_STATUS wma_process_set_thermal_level(tp_wma_handle wma,
 	return QDF_STATUS_SUCCESS;
 }
 
-
 /**
  * wma_set_thermal_mgmt() - set thermal mgmt command to fw
  * @wma_handle: Pointer to WMA handle
@@ -1939,7 +1927,7 @@ QDF_STATUS wma_process_set_thermal_level(tp_wma_handle wma,
 QDF_STATUS wma_set_thermal_mgmt(tp_wma_handle wma_handle,
 				t_thermal_cmd_params thermal_info)
 {
-	struct thermal_cmd_params mgmt_thermal_info = {0};
+	struct thermal_cmd_params mgmt_thermal_info = { 0 };
 
 	if (!wma_handle) {
 		wma_err("Invalid input");
@@ -1968,20 +1956,20 @@ QDF_STATUS wma_set_thermal_mgmt(tp_wma_handle wma_handle,
  */
 static uint8_t wma_thermal_mgmt_get_level(void *handle, uint32_t temp)
 {
-	tp_wma_handle wma = (tp_wma_handle) handle;
+	tp_wma_handle wma = (tp_wma_handle)handle;
 	int i;
 	uint8_t level;
 
 	level = i = wma->thermal_mgmt_info.thermalCurrLevel;
-	while (temp < wma->thermal_mgmt_info.thermalLevels[i].minTempThreshold
-	       && i > 0) {
+	while (temp < wma->thermal_mgmt_info.thermalLevels[i].minTempThreshold &&
+	       i > 0) {
 		i--;
 		level = i;
 	}
 
 	i = wma->thermal_mgmt_info.thermalCurrLevel;
-	while (temp > wma->thermal_mgmt_info.thermalLevels[i].maxTempThreshold
-	       && i < (WLAN_WMA_MAX_THERMAL_LEVELS - 1)) {
+	while (temp > wma->thermal_mgmt_info.thermalLevels[i].maxTempThreshold &&
+	       i < (WLAN_WMA_MAX_THERMAL_LEVELS - 1)) {
 		i++;
 		level = i;
 	}
@@ -1998,8 +1986,7 @@ static uint8_t wma_thermal_mgmt_get_level(void *handle, uint32_t temp)
  *
  * Return: host thermal throttle level
  */
-static enum thermal_throttle_level
-wma_thermal_level_to_host(uint8_t level)
+static enum thermal_throttle_level wma_thermal_level_to_host(uint8_t level)
 {
 	switch (level) {
 	case WLAN_WMA_THERMAL_LEVEL_0:
@@ -2032,17 +2019,17 @@ int wma_thermal_mgmt_evt_handler(void *handle, uint8_t *event, uint32_t len)
 	tp_wma_handle wma;
 	wmi_thermal_mgmt_event_fixed_param *tm_event;
 	uint8_t thermal_level;
-	t_thermal_cmd_params thermal_params = {0};
+	t_thermal_cmd_params thermal_params = { 0 };
 	WMI_THERMAL_MGMT_EVENTID_param_tlvs *param_buf;
 	struct wlan_objmgr_psoc *psoc;
-	struct thermal_throttle_info info = {0};
+	struct thermal_throttle_info info = { 0 };
 
 	if (!event || !handle) {
 		wma_err("Invalid thermal mitigation event buffer");
 		return -EINVAL;
 	}
 
-	wma = (tp_wma_handle) handle;
+	wma = (tp_wma_handle)handle;
 
 	if (wma_validate_handle(wma))
 		return -EINVAL;
@@ -2053,7 +2040,7 @@ int wma_thermal_mgmt_evt_handler(void *handle, uint8_t *event, uint32_t len)
 		return -EINVAL;
 	}
 
-	param_buf = (WMI_THERMAL_MGMT_EVENTID_param_tlvs *) event;
+	param_buf = (WMI_THERMAL_MGMT_EVENTID_param_tlvs *)event;
 
 	/* Check if thermal mitigation is enabled */
 	if (!wma->thermal_mgmt_info.thermalMgmtEnabled) {
@@ -2063,16 +2050,16 @@ int wma_thermal_mgmt_evt_handler(void *handle, uint8_t *event, uint32_t len)
 
 	tm_event = param_buf->fixed_param;
 	wma_debug("Thermal mgmt event received with temperature %d",
-		 tm_event->temperature_degreeC);
+		  tm_event->temperature_degreeC);
 
 	/* Get the thermal mitigation level for the reported temperature */
-	thermal_level = wma_thermal_mgmt_get_level(handle,
-					tm_event->temperature_degreeC);
+	thermal_level = wma_thermal_mgmt_get_level(
+		handle, tm_event->temperature_degreeC);
 	wma_debug("Thermal mgmt level  %d", thermal_level);
 
 	if (thermal_level == wma->thermal_mgmt_info.thermalCurrLevel) {
 		wma_debug("Current level %d is same as the set level, ignoring",
-			 wma->thermal_mgmt_info.thermalCurrLevel);
+			  wma->thermal_mgmt_info.thermalCurrLevel);
 		return 0;
 	}
 
@@ -2092,17 +2079,17 @@ int wma_thermal_mgmt_evt_handler(void *handle, uint8_t *event, uint32_t len)
 	if (wma->fw_therm_throt_support) {
 		/* Send duty cycle info to firmware for fw to throttle */
 		if (QDF_STATUS_SUCCESS !=
-			wma_update_thermal_mitigation_to_fw(wma, thermal_level))
+		    wma_update_thermal_mitigation_to_fw(wma, thermal_level))
 			return QDF_STATUS_E_FAILURE;
 	}
 
 	/* Get the temperature thresholds to set in firmware */
 	thermal_params.minTemp =
-		wma->thermal_mgmt_info.thermalLevels[thermal_level].
-		minTempThreshold;
+		wma->thermal_mgmt_info.thermalLevels[thermal_level]
+			.minTempThreshold;
 	thermal_params.maxTemp =
-		wma->thermal_mgmt_info.thermalLevels[thermal_level].
-		maxTempThreshold;
+		wma->thermal_mgmt_info.thermalLevels[thermal_level]
+			.maxTempThreshold;
 	thermal_params.thermalEnable =
 		wma->thermal_mgmt_info.thermalMgmtEnabled;
 	thermal_params.thermal_action = wma->thermal_mgmt_info.thermal_action;
@@ -2132,7 +2119,7 @@ static void wma_decap_to_8023(qdf_nbuf_t msdu, struct wma_decap_info_t *info)
 	uint8_t *buf;
 	struct ethernet_hdr_t *ethr_hdr;
 
-	buf = (uint8_t *) qdf_nbuf_data(msdu);
+	buf = (uint8_t *)qdf_nbuf_data(msdu);
 	llc_hdr = (struct llc_snap_hdr_t *)buf;
 	ether_type = (llc_hdr->ethertype[0] << 8) | llc_hdr->ethertype[1];
 	/* do llc remove if needed */
@@ -2157,8 +2144,8 @@ static void wma_decap_to_8023(qdf_nbuf_t msdu, struct wma_decap_info_t *info)
 		buf = qdf_nbuf_push_head(msdu, ETHERNET_HDR_LEN - l2_hdr_space);
 
 	/* mpdu hdr should be present in info,re-create ethr_hdr based on
-	 * mpdu hdr
-	 */
+   * mpdu hdr
+   */
 	wh = (struct ieee80211_qosframe_addr4 *)info->hdr;
 	ethr_hdr = (struct ethernet_hdr_t *)local_buf;
 	switch (wh->i_fc[1] & IEEE80211_FC1_DIR_MASK) {
@@ -2194,7 +2181,7 @@ static void wma_decap_to_8023(qdf_nbuf_t msdu, struct wma_decap_info_t *info)
 	} else {
 		uint32_t pktlen =
 			qdf_nbuf_len(msdu) - sizeof(ethr_hdr->ethertype);
-		ether_type = (uint16_t) pktlen;
+		ether_type = (uint16_t)pktlen;
 		ether_type = qdf_nbuf_len(msdu) - sizeof(struct ethernet_hdr_t);
 		ethr_hdr->ethertype[0] = (ether_type >> 8) & 0xff;
 		ethr_hdr->ethertype[1] = (ether_type) & 0xff;
@@ -2223,26 +2210,24 @@ static int32_t wma_ieee80211_hdrsize(const void *data)
 /**
  * rate_pream: Mapping from data rates to preamble.
  */
-static uint32_t rate_pream[] = {WMI_RATE_PREAMBLE_CCK, WMI_RATE_PREAMBLE_CCK,
-				WMI_RATE_PREAMBLE_CCK, WMI_RATE_PREAMBLE_CCK,
-				WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM,
-				WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM,
-				WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM,
-				WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM};
+static uint32_t rate_pream[] = {
+	WMI_RATE_PREAMBLE_CCK,	WMI_RATE_PREAMBLE_CCK,	WMI_RATE_PREAMBLE_CCK,
+	WMI_RATE_PREAMBLE_CCK,	WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM,
+	WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM,
+	WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM, WMI_RATE_PREAMBLE_OFDM
+};
 
 /**
  * rate_mcs: Mapping from data rates to MCS (+4 for OFDM to keep the sequence).
  */
-static uint32_t rate_mcs[] = {WMI_MAX_CCK_TX_RATE_1M, WMI_MAX_CCK_TX_RATE_2M,
-			      WMI_MAX_CCK_TX_RATE_5_5M, WMI_MAX_CCK_TX_RATE_11M,
-			      WMI_MAX_OFDM_TX_RATE_6M + 4,
-			      WMI_MAX_OFDM_TX_RATE_9M + 4,
-			      WMI_MAX_OFDM_TX_RATE_12M + 4,
-			      WMI_MAX_OFDM_TX_RATE_18M + 4,
-			      WMI_MAX_OFDM_TX_RATE_24M + 4,
-			      WMI_MAX_OFDM_TX_RATE_36M + 4,
-			      WMI_MAX_OFDM_TX_RATE_48M + 4,
-			      WMI_MAX_OFDM_TX_RATE_54M + 4};
+static uint32_t rate_mcs[] = {
+	WMI_MAX_CCK_TX_RATE_1M,	      WMI_MAX_CCK_TX_RATE_2M,
+	WMI_MAX_CCK_TX_RATE_5_5M,     WMI_MAX_CCK_TX_RATE_11M,
+	WMI_MAX_OFDM_TX_RATE_6M + 4,  WMI_MAX_OFDM_TX_RATE_9M + 4,
+	WMI_MAX_OFDM_TX_RATE_12M + 4, WMI_MAX_OFDM_TX_RATE_18M + 4,
+	WMI_MAX_OFDM_TX_RATE_24M + 4, WMI_MAX_OFDM_TX_RATE_36M + 4,
+	WMI_MAX_OFDM_TX_RATE_48M + 4, WMI_MAX_OFDM_TX_RATE_54M + 4
+};
 
 #define WMA_TX_SEND_MGMT_TYPE 0
 #define WMA_TX_SEND_DATA_TYPE 1
@@ -2257,7 +2242,7 @@ static uint32_t rate_mcs[] = {WMI_MAX_CCK_TX_RATE_1M, WMI_MAX_CCK_TX_RATE_2M,
 static void wma_update_tx_send_params(struct tx_send_params *tx_param,
 				      enum rateid rid)
 {
-	uint8_t  preamble = 0, nss = 0, rix = 0;
+	uint8_t preamble = 0, nss = 0, rix = 0;
 
 	preamble = rate_pream[rid];
 	rix = rate_mcs[rid];
@@ -2267,9 +2252,9 @@ static void wma_update_tx_send_params(struct tx_send_params *tx_param,
 	tx_param->preamble_type = (1 << preamble);
 	tx_param->frame_type = WMA_TX_SEND_MGMT_TYPE;
 
-	wma_debug("rate_id: %d, mcs: %0x, nss: %0x, preamble: %0x",
-		 rid, tx_param->mcs_mask, tx_param->nss_mask,
-		 tx_param->preamble_type);
+	wma_debug("rate_id: %d, mcs: %0x, nss: %0x, preamble: %0x", rid,
+		  tx_param->mcs_mask, tx_param->nss_mask,
+		  tx_param->preamble_type);
 }
 
 QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
@@ -2281,13 +2266,13 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 			 uint16_t channel_freq, enum rateid rid,
 			 int8_t peer_rssi, uint16_t action)
 {
-	tp_wma_handle wma_handle = (tp_wma_handle) (wma_context);
+	tp_wma_handle wma_handle = (tp_wma_handle)(wma_context);
 	int32_t status;
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
 	int32_t is_high_latency;
 	bool is_wmi_mgmt_tx = false;
 	enum frame_index tx_frm_index = GENERIC_NODOWNLD_NOACK_COMP_INDEX;
-	tpSirMacFrameCtl pFc = (tpSirMacFrameCtl) (qdf_nbuf_data(tx_frame));
+	tpSirMacFrameCtl pFc = (tpSirMacFrameCtl)(qdf_nbuf_data(tx_frame));
 	uint8_t use_6mbps = 0;
 	uint8_t downld_comp_required = 0;
 	uint16_t chanfreq;
@@ -2297,7 +2282,7 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 	struct wma_txrx_node *iface;
 	struct mac_context *mac;
 	tpSirMacMgmtHdr mHdr;
-	struct wmi_mgmt_params mgmt_param = {0};
+	struct wmi_mgmt_params mgmt_param = { 0 };
 	struct cdp_cfg *ctrl_pdev;
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 	struct ieee80211_frame *wh;
@@ -2335,9 +2320,9 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 		return QDF_STATUS_E_FAILURE;
 	}
 	/*
-	 * Currently only support to
-	 * send 80211 Mgmt and 80211 Data are added.
-	 */
+   * Currently only support to
+   * send 80211 Mgmt and 80211 Data are added.
+   */
 	if (!((frmType == TXRX_FRM_802_11_MGMT) ||
 	      (frmType == TXRX_FRM_802_11_DATA))) {
 		wma_err("No Support to send other frames except 802.11 Mgmt/Data");
@@ -2358,19 +2343,19 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 				uint8_t mic_len, hdr_len, pdev_id;
 
 				/* Allocate extra bytes for privacy header and
-				 * trailer
-				 */
+         * trailer
+         */
 				if (iface->type == WMI_VDEV_TYPE_NDI &&
 				    (tx_flag & HAL_USE_PMF)) {
 					hdr_len = IEEE80211_CCMP_HEADERLEN;
 					mic_len = IEEE80211_CCMP_MICLEN;
 				} else {
 					pdev_id = wlan_objmgr_pdev_get_pdev_id(
-							wma_handle->pdev);
+						wma_handle->pdev);
 					qdf_status = mlme_get_peer_mic_len(
-							wma_handle->psoc,
-							pdev_id, wh->i_addr1,
-							&mic_len, &hdr_len);
+						wma_handle->psoc, pdev_id,
+						wh->i_addr1, &mic_len,
+						&hdr_len);
 
 					if (QDF_IS_STATUS_ERROR(qdf_status)) {
 						cds_packet_free(
@@ -2380,29 +2365,27 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 				}
 
 				newFrmLen = frmLen + hdr_len + mic_len;
-				qdf_status =
-					cds_packet_alloc((uint16_t) newFrmLen,
-							 (void **)&pFrame,
-							 (void **)&pPacket);
+				qdf_status = cds_packet_alloc(
+					(uint16_t)newFrmLen, (void **)&pFrame,
+					(void **)&pPacket);
 
 				if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
-					wma_alert("Failed to allocate %d bytes for RMF status code (%x)",
-						newFrmLen,
-						qdf_status);
+					wma_alert(
+						"Failed to allocate %d bytes for RMF status code (%x)",
+						newFrmLen, qdf_status);
 					/* Free the original packet memory */
 					cds_packet_free((void *)tx_frame);
 					goto error;
 				}
 
 				/*
-				 * Initialize the frame with 0's and only fill
-				 * MAC header and data, Keep the CCMP header and
-				 * trailer as 0's, firmware shall fill this
-				 */
+         * Initialize the frame with 0's and only fill
+         * MAC header and data, Keep the CCMP header and
+         * trailer as 0's, firmware shall fill this
+         */
 				qdf_mem_zero(pFrame, newFrmLen);
 				qdf_mem_copy(pFrame, wh, sizeof(*wh));
-				qdf_mem_copy(pFrame + sizeof(*wh) +
-					     hdr_len,
+				qdf_mem_copy(pFrame + sizeof(*wh) + hdr_len,
 					     pData + sizeof(*wh),
 					     frmLen - sizeof(*wh));
 
@@ -2410,15 +2393,15 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 				tx_frame = pPacket;
 				pData = pFrame;
 				frmLen = newFrmLen;
-				pFc = (tpSirMacFrameCtl)
-						(qdf_nbuf_data(tx_frame));
+				pFc = (tpSirMacFrameCtl)(qdf_nbuf_data(
+					tx_frame));
 			}
 		} else {
 			uint16_t mmie_size;
 			int32_t mgmtcipherset;
 
-			mgmtcipherset = wlan_crypto_get_param(iface->vdev,
-						WLAN_CRYPTO_PARAM_MGMT_CIPHER);
+			mgmtcipherset = wlan_crypto_get_param(
+				iface->vdev, WLAN_CRYPTO_PARAM_MGMT_CIPHER);
 			if (mgmtcipherset <= 0) {
 				wma_err("Invalid key cipher %d", mgmtcipherset);
 				cds_packet_free((void *)tx_frame);
@@ -2432,27 +2415,27 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 
 			/* Allocate extra bytes for MMIE */
 			newFrmLen = frmLen + mmie_size;
-			qdf_status = cds_packet_alloc((uint16_t) newFrmLen,
+			qdf_status = cds_packet_alloc((uint16_t)newFrmLen,
 						      (void **)&pFrame,
 						      (void **)&pPacket);
 
 			if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
-				wma_alert("Failed to allocate %d bytes for RMF status code (%x)",
-					newFrmLen,
-					qdf_status);
+				wma_alert(
+					"Failed to allocate %d bytes for RMF status code (%x)",
+					newFrmLen, qdf_status);
 				/* Free the original packet memory */
 				cds_packet_free((void *)tx_frame);
 				goto error;
 			}
 			/*
-			 * Initialize the frame with 0's and only fill
-			 * MAC header and data. MMIE field will be
-			 * filled by wlan_crypto_add_mmie API
-			 */
+       * Initialize the frame with 0's and only fill
+       * MAC header and data. MMIE field will be
+       * filled by wlan_crypto_add_mmie API
+       */
 			qdf_mem_zero(pFrame, newFrmLen);
 			qdf_mem_copy(pFrame, wh, sizeof(*wh));
-			qdf_mem_copy(pFrame + sizeof(*wh),
-				     pData + sizeof(*wh), frmLen - sizeof(*wh));
+			qdf_mem_copy(pFrame + sizeof(*wh), pData + sizeof(*wh),
+				     frmLen - sizeof(*wh));
 
 			/* The API expect length without the mmie size */
 			if (!wlan_crypto_add_mmie(iface->vdev, pFrame,
@@ -2467,14 +2450,14 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 			tx_frame = pPacket;
 			pData = pFrame;
 			frmLen = newFrmLen;
-			pFc = (tpSirMacFrameCtl) (qdf_nbuf_data(tx_frame));
+			pFc = (tpSirMacFrameCtl)(qdf_nbuf_data(tx_frame));
 		}
 		/*
-		 * Some target which support sending mgmt frame based on htt
-		 * would DMA write this PMF tx frame buffer, it may cause smmu
-		 * check permission fault, set a flag to do bi-direction DMA
-		 * map, normal tx unmap is enough for this case.
-		 */
+     * Some target which support sending mgmt frame based on htt
+     * would DMA write this PMF tx frame buffer, it may cause smmu
+     * check permission fault, set a flag to do bi-direction DMA
+     * map, normal tx unmap is enough for this case.
+     */
 		QDF_NBUF_CB_TX_DMA_BI_MAP((qdf_nbuf_t)tx_frame) = 1;
 	}
 	mHdr = (tpSirMacMgmtHdr)qdf_nbuf_data(tx_frame);
@@ -2485,14 +2468,13 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 			(struct ieee80211_frame *)qdf_nbuf_data(tx_frame);
 
 		/* Make the TSF offset negative to match TSF in beacons */
-		adjusted_tsf_le = cpu_to_le64(0ULL -
-					      wma_handle->interfaces[vdev_id].
-					      tsfadjust);
+		adjusted_tsf_le = cpu_to_le64(
+			0ULL - wma_handle->interfaces[vdev_id].tsfadjust);
 		A_MEMCPY(&wh[1], &adjusted_tsf_le, sizeof(adjusted_tsf_le));
 	}
 	if (frmType == TXRX_FRM_802_11_DATA) {
 		qdf_nbuf_t ret;
-		qdf_nbuf_t skb = (qdf_nbuf_t) tx_frame;
+		qdf_nbuf_t skb = (qdf_nbuf_t)tx_frame;
 
 		struct wma_decap_info_t decap_info;
 		struct ieee80211_frame *wh =
@@ -2500,21 +2482,22 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 		unsigned long curr_timestamp = qdf_mc_timer_get_system_ticks();
 
 		/*
-		 * 1) TxRx Module expects data input to be 802.3 format
-		 * So Decapsulation has to be done.
-		 * 2) Only one Outstanding Data pending for Ack is allowed
-		 */
+     * 1) TxRx Module expects data input to be 802.3 format
+     * So Decapsulation has to be done.
+     * 2) Only one Outstanding Data pending for Ack is allowed
+     */
 		if (tx_frm_ota_comp_cb) {
 			if (wma_handle->umac_data_ota_ack_cb) {
 				/*
-				 * If last data frame was sent more than 2 secs
-				 * ago and still we didn't receive ack/nack from
-				 * fw then allow Tx of this data frame
-				 */
+         * If last data frame was sent more than 2 secs
+         * ago and still we didn't receive ack/nack from
+         * fw then allow Tx of this data frame
+         */
 				if (curr_timestamp >=
 				    wma_handle->last_umac_data_ota_timestamp +
-				    200) {
-					wma_err("No Tx Ack for last data frame for more than 2 secs, allow Tx of current data frame");
+					    200) {
+					wma_err("No Tx Ack for last data frame for more than 2 secs, allow "
+						"Tx of current data frame");
 				} else {
 					wma_err("Already one Data pending for Ack, reject Tx of data frame");
 					cds_packet_free((void *)tx_frame);
@@ -2523,9 +2506,9 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 			}
 		} else {
 			/*
-			 * Data Frames are sent through TxRx Non Standard Data
-			 * path so Ack Complete Cb is must
-			 */
+       * Data Frames are sent through TxRx Non Standard Data
+       * path so Ack Complete Cb is must
+       */
 			wma_err("No Ack Complete Cb. Don't Allow");
 			cds_packet_free((void *)tx_frame);
 			return QDF_STATUS_E_FAILURE;
@@ -2553,23 +2536,19 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 		wma_handle->last_umac_data_nbuf = skb;
 
 		/* Send the Data frame to TxRx in Non Standard Path */
-		cdp_hl_tdls_flag_reset(soc,
-			vdev_id, tdls_flag);
+		cdp_hl_tdls_flag_reset(soc, vdev_id, tdls_flag);
 
-		ret = cdp_tx_non_std(soc,
-			vdev_id,
-			OL_TX_SPEC_NO_FREE, skb);
+		ret = cdp_tx_non_std(soc, vdev_id, OL_TX_SPEC_NO_FREE, skb);
 
-		cdp_hl_tdls_flag_reset(soc,
-			vdev_id, false);
+		cdp_hl_tdls_flag_reset(soc, vdev_id, false);
 
 		if (ret) {
 			wma_err("TxRx Rejected. Fail to do Tx");
 			/* Call Download Cb so that umac can free the buffer */
 			if (tx_frm_download_comp_cb)
-				tx_frm_download_comp_cb(wma_handle->mac_context,
-						tx_frame,
-						WMA_TX_FRAME_BUFFER_FREE);
+				tx_frm_download_comp_cb(
+					wma_handle->mac_context, tx_frame,
+					WMA_TX_FRAME_BUFFER_FREE);
 			wma_handle->umac_data_ota_ack_cb = NULL;
 			wma_handle->last_umac_data_nbuf = NULL;
 			return QDF_STATUS_E_FAILURE;
@@ -2595,7 +2574,7 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 					     wmi_service_mgmt_tx_wmi);
 
 	downld_comp_required = tx_frm_download_comp_cb && is_high_latency &&
-				(!is_wmi_mgmt_tx) && tx_frm_ota_comp_cb;
+			       (!is_wmi_mgmt_tx) && tx_frm_ota_comp_cb;
 
 	/* Fill the frame index to send */
 	if (pFc->type == SIR_MAC_MGMT_FRAME) {
@@ -2607,27 +2586,25 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 				tx_frm_index = GENERIC_NODOWLOAD_ACK_COMP_INDEX;
 
 		} else {
-			tx_frm_index =
-				GENERIC_NODOWNLD_NOACK_COMP_INDEX;
+			tx_frm_index = GENERIC_NODOWNLD_NOACK_COMP_INDEX;
 		}
-
 	}
 
 	/*
-	 * If Download Complete is required
-	 * Wait for download complete
-	 */
+   * If Download Complete is required
+   * Wait for download complete
+   */
 	if (downld_comp_required) {
 		/* Store Tx Comp Cb */
 		wma_handle->tx_frm_download_comp_cb = tx_frm_download_comp_cb;
 
 		/* Reset the Tx Frame Complete Event */
 		qdf_status = qdf_event_reset(
-				&wma_handle->tx_frm_download_comp_event);
+			&wma_handle->tx_frm_download_comp_event);
 
 		if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 			wma_alert("Event Reset failed tx comp event %x",
-				 qdf_status);
+				  qdf_status);
 			cds_packet_free((void *)tx_frame);
 			goto error;
 		}
@@ -2644,11 +2621,11 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 		else
 			chanfreq = channel_freq;
 		wma_debug("Probe response frame on channel %d vdev:%d",
-			 chanfreq, vdev_id);
+			  chanfreq, vdev_id);
 		if (wma_is_vdev_in_ap_mode(wma_handle, vdev_id) && !chanfreq)
 			wma_err("AP oper chan is zero");
 	} else if (pFc->subType == SIR_MAC_MGMT_ACTION ||
-			pFc->subType == SIR_MAC_MGMT_AUTH) {
+		   pFc->subType == SIR_MAC_MGMT_AUTH) {
 		chanfreq = channel_freq;
 	} else {
 		chanfreq = 0;
@@ -2656,24 +2633,24 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 
 	if (pFc->type == SIR_MAC_MGMT_FRAME) {
 		if ((mac->mlme_cfg->gen.debug_packet_log &
-		    DEBUG_PKTLOG_TYPE_MGMT) &&
+		     DEBUG_PKTLOG_TYPE_MGMT) &&
 		    (pFc->subType != SIR_MAC_MGMT_PROBE_REQ) &&
 		    (pFc->subType != SIR_MAC_MGMT_PROBE_RSP) &&
 		    (pFc->subType != SIR_MAC_MGMT_ACTION)) {
 			wma_debug("TX MGMT - Type %hu, SubType %hu seq_num[%d]",
 				  pFc->type, pFc->subType,
 				  ((mHdr->seqControl.seqNumHi << 4) |
-				  mHdr->seqControl.seqNumLo));
+				   mHdr->seqControl.seqNumLo));
 			qdf_trace_hex_dump(QDF_MODULE_ID_WMA,
 					   QDF_TRACE_LEVEL_DEBUG, pData,
 					   frmLen);
 		} else if ((mac->mlme_cfg->gen.debug_packet_log &
-			   DEBUG_PKTLOG_TYPE_ACTION) &&
+			    DEBUG_PKTLOG_TYPE_ACTION) &&
 			   (pFc->subType == SIR_MAC_MGMT_ACTION)) {
 			wma_debug("TX MGMT - Type %hu, SubType %hu seq_num[%d]",
 				  pFc->type, pFc->subType,
-				 ((mHdr->seqControl.seqNumHi << 4) |
-				 mHdr->seqControl.seqNumLo));
+				  ((mHdr->seqControl.seqNumHi << 4) |
+				   mHdr->seqControl.seqNumLo));
 			qdf_trace_hex_dump(QDF_MODULE_ID_WMA,
 					   QDF_TRACE_LEVEL_DEBUG, pData,
 					   frmLen);
@@ -2706,9 +2683,9 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 		mgmt_param.tx_flags |= MGMT_TX_USE_INCORRECT_KEY;
 
 	/*
-	 * Update the tx_params TLV only for rates
-	 * other than 1Mbps and 6 Mbps
-	 */
+   * Update the tx_params TLV only for rates
+   * other than 1Mbps and 6 Mbps
+   */
 	if (rid < RATEID_DEFAULT &&
 	    (rid != RATEID_1MBPS && !(rid == RATEID_6MBPS && is_5g))) {
 		wma_debug("using rate id: %d for Tx", rid);
@@ -2736,11 +2713,10 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 	if (!peer) {
 		mac_addr = wh->i_addr2;
 		peer = wlan_objmgr_get_peer(psoc, pdev_id, mac_addr,
-					WLAN_MGMT_NB_ID);
+					    WLAN_MGMT_NB_ID);
 		if (!peer) {
-			vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-								    vdev_id,
-								    WLAN_MGMT_NB_ID);
+			vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+				psoc, vdev_id, WLAN_MGMT_NB_ID);
 			if (!vdev) {
 				wma_err("vdev is null");
 				cds_packet_free((void *)tx_frame);
@@ -2755,8 +2731,7 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 			}
 			wma_debug("mld mac addr " QDF_MAC_ADDR_FMT,
 				  QDF_MAC_ADDR_REF(mld_addr));
-			peer = wlan_objmgr_get_peer(psoc, pdev_id,
-						    mld_addr,
+			peer = wlan_objmgr_get_peer(psoc, pdev_id, mld_addr,
 						    WLAN_MGMT_NB_ID);
 			if (!peer) {
 				wma_err("peer is null");
@@ -2768,17 +2743,16 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 
 	if (ucfg_pkt_capture_get_pktcap_mode(psoc) &
 	    PKT_CAPTURE_MODE_MGMT_ONLY) {
-		ucfg_pkt_capture_mgmt_tx(wma_handle->pdev,
-					 tx_frame,
-					 wma_handle->interfaces[vdev_id].ch_freq,
-					 mgmt_param.tx_param.preamble_type);
+		ucfg_pkt_capture_mgmt_tx(
+			wma_handle->pdev, tx_frame,
+			wma_handle->interfaces[vdev_id].ch_freq,
+			mgmt_param.tx_param.preamble_type);
 	}
 
 	status = wlan_mgmt_txrx_mgmt_frame_tx(peer, wma_handle->mac_context,
 					      (qdf_nbuf_t)tx_frame, NULL,
 					      tx_frm_ota_comp_cb,
-					      WLAN_UMAC_COMP_MLME,
-					      &mgmt_param);
+					      WLAN_UMAC_COMP_MLME, &mgmt_param);
 
 	wlan_objmgr_peer_release_ref(peer, WLAN_MGMT_NB_ID);
 	if (status != QDF_STATUS_SUCCESS) {
@@ -2788,10 +2762,10 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 	}
 
 	/*
-	 * Failed to send Tx Mgmt Frame
-	 */
+   * Failed to send Tx Mgmt Frame
+   */
 	if (status) {
-	/* Call Download Cb so that umac can free the buffer */
+		/* Call Download Cb so that umac can free the buffer */
 		uint32_t rem;
 
 		if (tx_frm_download_comp_cb)
@@ -2812,33 +2786,33 @@ QDF_STATUS wma_tx_packet(void *wma_context, void *tx_frame, uint16_t frmLen,
 		return QDF_STATUS_SUCCESS;
 
 	/*
-	 * Wait for Download Complete
-	 * if required
-	 */
+   * Wait for Download Complete
+   * if required
+   */
 	if (downld_comp_required) {
 		/*
-		 * Wait for Download Complete
-		 * @ Integrated : Dxe Complete
-		 * @ Discrete : Target Download Complete
-		 */
-		qdf_status =
-			qdf_wait_for_event_completion(&wma_handle->
-					      tx_frm_download_comp_event,
-					      WMA_TX_FRAME_COMPLETE_TIMEOUT);
+     * Wait for Download Complete
+     * @ Integrated : Dxe Complete
+     * @ Discrete : Target Download Complete
+     */
+		qdf_status = qdf_wait_for_event_completion(
+			&wma_handle->tx_frm_download_comp_event,
+			WMA_TX_FRAME_COMPLETE_TIMEOUT);
 
 		if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 			wma_nofl_alert("Wait Event failed txfrm_comp_event");
 			/*
-			 * @Integrated: Something Wrong with Dxe
-			 *   TODO: Some Debug Code
-			 * Here We need to trigger SSR since
-			 * since system went into a bad state where
-			 * we didn't get Download Complete for almost
-			 * WMA_TX_FRAME_COMPLETE_TIMEOUT (1 sec)
-			 */
+       * @Integrated: Something Wrong with Dxe
+       *   TODO: Some Debug Code
+       * Here We need to trigger SSR since
+       * since system went into a bad state where
+       * we didn't get Download Complete for almost
+       * WMA_TX_FRAME_COMPLETE_TIMEOUT (1 sec)
+       */
 			/* display scheduler stats */
-			return cdp_display_stats(soc, CDP_SCHEDULER_STATS,
-						QDF_STATS_VERBOSITY_LEVEL_HIGH);
+			return cdp_display_stats(
+				soc, CDP_SCHEDULER_STATS,
+				QDF_STATS_VERBOSITY_LEVEL_HIGH);
 		}
 	}
 
@@ -2871,7 +2845,7 @@ void ol_rx_aggregation_hole(uint32_t hole_info)
 	QDF_STATUS status;
 
 	alloc_len = sizeof(*rx_aggr_hole_event) +
-		sizeof(rx_aggr_hole_event->hole_info_array[0]);
+		    sizeof(rx_aggr_hole_event->hole_info_array[0]);
 	rx_aggr_hole_event = qdf_mem_malloc(alloc_len);
 	if (!rx_aggr_hole_event)
 		return;
@@ -2913,20 +2887,18 @@ void ol_rx_aggregation_hole(uint32_t hole_info)
  * as a solution to IR-196435 at which point this prototype will
  * be removed.
  */
-void ol_rx_err(void *pdev, uint8_t vdev_id,
-	       uint8_t *peer_mac_addr, int tid, uint32_t tsf32,
-	       enum ol_rx_err_type err_type, qdf_nbuf_t rx_frame,
-	       uint64_t *pn, uint8_t key_id);
-void ol_rx_err(void *pdev, uint8_t vdev_id,
-	       uint8_t *peer_mac_addr, int tid, uint32_t tsf32,
-	       enum ol_rx_err_type err_type, qdf_nbuf_t rx_frame,
-	       uint64_t *pn, uint8_t key_id)
+void ol_rx_err(void *pdev, uint8_t vdev_id, uint8_t *peer_mac_addr, int tid,
+	       uint32_t tsf32, enum ol_rx_err_type err_type,
+	       qdf_nbuf_t rx_frame, uint64_t *pn, uint8_t key_id);
+void ol_rx_err(void *pdev, uint8_t vdev_id, uint8_t *peer_mac_addr, int tid,
+	       uint32_t tsf32, enum ol_rx_err_type err_type,
+	       qdf_nbuf_t rx_frame, uint64_t *pn, uint8_t key_id)
 {
 	tp_wma_handle wma = cds_get_context(QDF_MODULE_ID_WMA);
 	struct mic_failure_ind *mic_err_ind;
 	qdf_ether_header_t *eth_hdr;
 	uint8_t *bssid;
-	struct scheduler_msg cds_msg = {0};
+	struct scheduler_msg cds_msg = { 0 };
 
 	if (!wma)
 		return;
@@ -2950,17 +2922,15 @@ void ol_rx_err(void *pdev, uint8_t vdev_id,
 		qdf_mem_free((void *)mic_err_ind);
 		return;
 	}
-	qdf_copy_macaddr(&mic_err_ind->bssId,
-		     (struct qdf_mac_addr *)bssid);
+	qdf_copy_macaddr(&mic_err_ind->bssId, (struct qdf_mac_addr *)bssid);
 	qdf_mem_copy(mic_err_ind->info.taMacAddr,
-		     (struct qdf_mac_addr *) peer_mac_addr,
-			sizeof(tSirMacAddr));
+		     (struct qdf_mac_addr *)peer_mac_addr, sizeof(tSirMacAddr));
 	qdf_mem_copy(mic_err_ind->info.srcMacAddr,
-		     (struct qdf_mac_addr *) eth_hdr->ether_shost,
-			sizeof(tSirMacAddr));
+		     (struct qdf_mac_addr *)eth_hdr->ether_shost,
+		     sizeof(tSirMacAddr));
 	qdf_mem_copy(mic_err_ind->info.dstMacAddr,
-		     (struct qdf_mac_addr *) eth_hdr->ether_dhost,
-			sizeof(tSirMacAddr));
+		     (struct qdf_mac_addr *)eth_hdr->ether_dhost,
+		     sizeof(tSirMacAddr));
 	mic_err_ind->info.keyId = key_id;
 	mic_err_ind->info.multicast =
 		IEEE80211_IS_MULTICAST(eth_hdr->ether_dhost);
@@ -2968,13 +2938,11 @@ void ol_rx_err(void *pdev, uint8_t vdev_id,
 
 	qdf_mem_zero(&cds_msg, sizeof(struct scheduler_msg));
 	cds_msg.type = eWNI_SME_MIC_FAILURE_IND;
-	cds_msg.bodyptr = (void *) mic_err_ind;
+	cds_msg.bodyptr = (void *)mic_err_ind;
 
 	if (QDF_STATUS_SUCCESS !=
-		scheduler_post_message(QDF_MODULE_ID_TXRX,
-				       QDF_MODULE_ID_SME,
-				       QDF_MODULE_ID_SME,
-				       &cds_msg)) {
+	    scheduler_post_message(QDF_MODULE_ID_TXRX, QDF_MODULE_ID_SME,
+				   QDF_MODULE_ID_SME, &cds_msg)) {
 		wma_err("could not post mic failure indication to SME");
 		qdf_mem_free((void *)mic_err_ind);
 	}
@@ -2987,7 +2955,7 @@ void wma_tx_abort(uint8_t vdev_id)
 	uint32_t peer_tid_bitmap = PEER_ALL_TID_BITMASK;
 	struct wma_txrx_node *iface;
 	uint8_t *bssid;
-	struct peer_flush_params param = {0};
+	struct peer_flush_params param = { 0 };
 
 	wma = cds_get_context(QDF_MODULE_ID_WMA);
 	if (!wma)
@@ -3005,7 +2973,7 @@ void wma_tx_abort(uint8_t vdev_id)
 		return;
 	}
 
-	wma_debug("vdevid %d bssid "QDF_MAC_ADDR_FMT, vdev_id,
+	wma_debug("vdevid %d bssid " QDF_MAC_ADDR_FMT, vdev_id,
 		  QDF_MAC_ADDR_REF(bssid));
 	wma_vdev_set_pause_bit(vdev_id, PAUSE_TYPE_HOST);
 	cdp_fc_vdev_pause(cds_get_context(QDF_MODULE_ID_SOC), vdev_id,
@@ -3015,8 +2983,7 @@ void wma_tx_abort(uint8_t vdev_id)
 	peer_tid_bitmap &= ~(0x1 << WMI_MGMT_TID);
 	param.peer_tid_bitmap = peer_tid_bitmap;
 	param.vdev_id = vdev_id;
-	wmi_unified_peer_flush_tids_send(wma->wmi_handle, bssid,
-					 &param);
+	wmi_unified_peer_flush_tids_send(wma->wmi_handle, bssid, &param);
 }
 
 void wma_delete_invalid_peer_entries(uint8_t vdev_id, uint8_t *peer_mac_addr)
@@ -3032,17 +2999,17 @@ void wma_delete_invalid_peer_entries(uint8_t vdev_id, uint8_t *peer_mac_addr)
 
 	if (peer_mac_addr) {
 		for (i = 0; i < INVALID_PEER_MAX_NUM; i++) {
-			if (qdf_mem_cmp
-				      (iface->invalid_peers[i].rx_macaddr,
-				      peer_mac_addr,
-				      QDF_MAC_ADDR_SIZE) == 0) {
+			if (qdf_mem_cmp(iface->invalid_peers[i].rx_macaddr,
+					peer_mac_addr,
+					QDF_MAC_ADDR_SIZE) == 0) {
 				qdf_mem_zero(iface->invalid_peers[i].rx_macaddr,
 					     sizeof(QDF_MAC_ADDR_SIZE));
 				break;
 			}
 		}
 		if (i == INVALID_PEER_MAX_NUM)
-			wma_debug("peer_mac_addr "QDF_MAC_ADDR_FMT" is not found",
+			wma_debug("peer_mac_addr " QDF_MAC_ADDR_FMT
+				  " is not found",
 				  QDF_MAC_ADDR_REF(peer_mac_addr));
 	} else {
 		qdf_mem_zero(iface->invalid_peers,
@@ -3072,12 +3039,9 @@ uint8_t wma_rx_invalid_peer_ind(uint8_t vdev_id, void *wh)
 	qdf_mem_copy(rx_inv_msg->ra, wh_l->i_addr1, QDF_MAC_ADDR_SIZE);
 	qdf_mem_copy(rx_inv_msg->ta, wh_l->i_addr2, QDF_MAC_ADDR_SIZE);
 
-
 	for (i = 0; i < INVALID_PEER_MAX_NUM; i++) {
-		if (qdf_mem_cmp
-			      (iface->invalid_peers[i].rx_macaddr,
-			      rx_inv_msg->ta,
-			      QDF_MAC_ADDR_SIZE) == 0) {
+		if (qdf_mem_cmp(iface->invalid_peers[i].rx_macaddr,
+				rx_inv_msg->ta, QDF_MAC_ADDR_SIZE) == 0) {
 			invalid_peer_found = true;
 			break;
 		}
@@ -3085,24 +3049,23 @@ uint8_t wma_rx_invalid_peer_ind(uint8_t vdev_id, void *wh)
 
 	if (!invalid_peer_found) {
 		qdf_mem_copy(iface->invalid_peers[index].rx_macaddr,
-			     rx_inv_msg->ta,
-			    QDF_MAC_ADDR_SIZE);
+			     rx_inv_msg->ta, QDF_MAC_ADDR_SIZE);
 
 		/* reset count if reached max */
-		iface->invalid_peer_idx =
-			(index + 1) % INVALID_PEER_MAX_NUM;
+		iface->invalid_peer_idx = (index + 1) % INVALID_PEER_MAX_NUM;
 
 		/* send deauth */
-		wma_debug("vdev_id: %d RA: "QDF_MAC_ADDR_FMT" TA: "QDF_MAC_ADDR_FMT,
+		wma_debug("vdev_id: %d RA: " QDF_MAC_ADDR_FMT
+			  " TA: " QDF_MAC_ADDR_FMT,
 			  vdev_id, QDF_MAC_ADDR_REF(rx_inv_msg->ra),
 			  QDF_MAC_ADDR_REF(rx_inv_msg->ta));
 
-		wma_send_msg(wma,
-			     SIR_LIM_RX_INVALID_PEER,
-			     (void *)rx_inv_msg, 0);
+		wma_send_msg(wma, SIR_LIM_RX_INVALID_PEER, (void *)rx_inv_msg,
+			     0);
 	} else {
-		wma_debug_rl("Ignore invalid peer indication as received more than once "
-			QDF_MAC_ADDR_FMT,
+		wma_debug_rl(
+			"Ignore invalid peer indication as received more than "
+			"once " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(rx_inv_msg->ta));
 		qdf_mem_free(rx_inv_msg);
 	}
@@ -3110,9 +3073,8 @@ uint8_t wma_rx_invalid_peer_ind(uint8_t vdev_id, void *wh)
 	return 0;
 }
 
-static bool
-wma_drop_delba(tp_wma_handle wma, uint8_t vdev_id,
-	       enum cdp_delba_rcode cdp_reason_code)
+static bool wma_drop_delba(tp_wma_handle wma, uint8_t vdev_id,
+			   enum cdp_delba_rcode cdp_reason_code)
 {
 	struct wlan_objmgr_vdev *vdev;
 	qdf_time_t last_ts, ts = qdf_mc_timer_get_system_time();
@@ -3143,8 +3105,8 @@ done:
 	return drop;
 }
 
-int wma_dp_send_delba_ind(uint8_t vdev_id, uint8_t *peer_macaddr,
-			  uint8_t tid, uint8_t reason_code,
+int wma_dp_send_delba_ind(uint8_t vdev_id, uint8_t *peer_macaddr, uint8_t tid,
+			  uint8_t reason_code,
 			  enum cdp_delba_rcode cdp_reason_code)
 {
 	tp_wma_handle wma = cds_get_context(QDF_MODULE_ID_WMA);
@@ -3165,8 +3127,8 @@ int wma_dp_send_delba_ind(uint8_t vdev_id, uint8_t *peer_macaddr,
 	qdf_mem_copy(req->peer_macaddr, peer_macaddr, QDF_MAC_ADDR_SIZE);
 	req->tid = tid;
 	req->reason_code = reason_code;
-	wma_debug("req delba_ind vdev %d "QDF_MAC_ADDR_FMT" tid %d reason %d",
-		 vdev_id, QDF_MAC_ADDR_REF(peer_macaddr), tid, reason_code);
+	wma_debug("req delba_ind vdev %d " QDF_MAC_ADDR_FMT " tid %d reason %d",
+		  vdev_id, QDF_MAC_ADDR_REF(peer_macaddr), tid, reason_code);
 	wma_send_msg_high_priority(wma, SIR_HAL_REQ_SEND_DELBA_REQ_IND,
 				   (void *)req, 0);
 

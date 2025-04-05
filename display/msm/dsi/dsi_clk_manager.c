@@ -4,12 +4,12 @@
  * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/of.h>
-#include <linux/delay.h>
-#include <linux/slab.h>
-#include <linux/pm_runtime.h>
 #include "dsi_clk.h"
 #include "dsi_defs.h"
+#include <linux/delay.h>
+#include <linux/of.h>
+#include <linux/pm_runtime.h>
+#include <linux/slab.h>
 
 struct dsi_core_clks {
 	struct dsi_core_clk_info clks;
@@ -56,9 +56,8 @@ struct dsi_clk_client_info {
 	struct dsi_clk_mngr *mngr;
 };
 
-static int _get_clk_mngr_index(struct dsi_clk_mngr *mngr,
-				u32 dsi_ctrl_index,
-				u32 *clk_mngr_index)
+static int _get_clk_mngr_index(struct dsi_clk_mngr *mngr, u32 dsi_ctrl_index,
+			       u32 *clk_mngr_index)
 {
 	int i;
 
@@ -82,7 +81,7 @@ static int _get_clk_mngr_index(struct dsi_clk_mngr *mngr,
  * return: error code in case of failure or 0 for success.
  */
 int dsi_clk_set_link_frequencies(void *client, struct link_clk_freq freq,
-				u32 index)
+				 u32 index)
 {
 	int rc = 0, clk_mngr_index = 0;
 	struct dsi_clk_client_info *c = client;
@@ -101,7 +100,7 @@ int dsi_clk_set_link_frequencies(void *client, struct link_clk_freq freq,
 	}
 
 	memcpy(&mngr->link_clks[clk_mngr_index].freq, &freq,
-		sizeof(struct link_clk_freq));
+	       sizeof(struct link_clk_freq));
 
 	return rc;
 }
@@ -142,8 +141,8 @@ int dsi_clk_set_pixel_clk_rate(void *client, u64 pixel_clk, u32 index)
  * @index:	Index of the DSI controller.
  * return: error code in case of failure or 0 for success.
  */
-int dsi_clk_set_byte_clk_rate(void *client, u64 byte_clk,
-					u64 byte_intf_clk, u32 index)
+int dsi_clk_set_byte_clk_rate(void *client, u64 byte_clk, u64 byte_intf_clk,
+			      u32 index)
 {
 	int rc = 0;
 	struct dsi_clk_client_info *c = client;
@@ -165,10 +164,10 @@ int dsi_clk_set_byte_clk_rate(void *client, u64 byte_clk,
 				  byte_intf_clk);
 		if (rc)
 			DSI_ERR("failed to set clk rate for byte intf clk=%d\n",
-			       rc);
+				rc);
 		else
 			mngr->link_clks[index].freq.byte_intf_clk_rate =
-								byte_intf_clk;
+				byte_intf_clk;
 	}
 
 	return rc;
@@ -278,7 +277,6 @@ int dsi_core_clk_start(struct dsi_core_clks *c_clks)
 		}
 	}
 
-
 	return rc;
 
 error_disable_bus_clk:
@@ -320,7 +318,7 @@ int dsi_core_clk_stop(struct dsi_core_clks *c_clks)
 }
 
 static int dsi_link_hs_clk_set_rate(struct dsi_link_hs_clk_info *link_hs_clks,
-		int index)
+				    int index)
 {
 	int rc = 0;
 	struct dsi_clk_mngr *mngr;
@@ -335,37 +333,35 @@ static int dsi_link_hs_clk_set_rate(struct dsi_link_hs_clk_info *link_hs_clks,
 	mngr = container_of(l_clks, struct dsi_clk_mngr, link_clks[index]);
 
 	/*
-	 * In an ideal world, cont_splash_enabled should not be required inside
-	 * the clock manager. But, in the current driver cont_splash_enabled
-	 * flag is set inside mdp driver and there is no interface event
-	 * associated with this flag setting.
-	 */
+   * In an ideal world, cont_splash_enabled should not be required inside
+   * the clock manager. But, in the current driver cont_splash_enabled
+   * flag is set inside mdp driver and there is no interface event
+   * associated with this flag setting.
+   */
 	if (mngr->is_cont_splash_enabled)
 		return 0;
 
 	if (mngr->phy_pll_bypass)
 		return 0;
 
-	rc = clk_set_rate(link_hs_clks->byte_clk,
-		l_clks->freq.byte_clk_rate);
+	rc = clk_set_rate(link_hs_clks->byte_clk, l_clks->freq.byte_clk_rate);
 	if (rc) {
 		DSI_ERR("clk_set_rate failed for byte_clk rc = %d\n", rc);
 		goto error;
 	}
 
-	rc = clk_set_rate(link_hs_clks->pixel_clk,
-		l_clks->freq.pix_clk_rate);
+	rc = clk_set_rate(link_hs_clks->pixel_clk, l_clks->freq.pix_clk_rate);
 	if (rc) {
 		DSI_ERR("clk_set_rate failed for pixel_clk rc = %d\n", rc);
 		goto error;
 	}
 
 	/*
-	 * If byte_intf_clk is present, set rate for that too.
-	 */
+   * If byte_intf_clk is present, set rate for that too.
+   */
 	if (link_hs_clks->byte_intf_clk) {
 		rc = clk_set_rate(link_hs_clks->byte_intf_clk,
-				l_clks->freq.byte_intf_clk_rate);
+				  l_clks->freq.byte_intf_clk_rate);
 		if (rc) {
 			DSI_ERR("set_rate failed for byte_intf_clk rc = %d\n",
 				rc);
@@ -466,7 +462,7 @@ static void dsi_link_hs_clk_disable(struct dsi_link_hs_clk_info *link_hs_clks)
  * dsi_link_clk_start() - enable dsi link clocks
  */
 static int dsi_link_hs_clk_start(struct dsi_link_hs_clk_info *link_hs_clks,
-	enum dsi_link_clk_op_type op_type, int index)
+				 enum dsi_link_clk_op_type op_type, int index)
 {
 	int rc = 0;
 
@@ -487,7 +483,7 @@ static int dsi_link_hs_clk_start(struct dsi_link_hs_clk_info *link_hs_clks,
 		rc = dsi_link_hs_clk_prepare(link_hs_clks);
 		if (rc) {
 			DSI_ERR("failed to prepare link HS clks, rc = %d\n",
-					rc);
+				rc);
 			goto error;
 		}
 	}
@@ -522,7 +518,7 @@ static int dsi_link_hs_clk_stop(struct dsi_link_hs_clk_info *link_hs_clks)
 }
 
 static int dsi_link_lp_clk_start(struct dsi_link_lp_clk_info *link_lp_clks,
-	int index)
+				 int index)
 {
 	int rc = 0;
 	struct dsi_clk_mngr *mngr;
@@ -540,13 +536,13 @@ static int dsi_link_lp_clk_start(struct dsi_link_lp_clk_info *link_lp_clks,
 		return -EINVAL;
 
 	/*
-	 * In an ideal world, cont_splash_enabled should not be required inside
-	 * the clock manager. But, in the current driver cont_splash_enabled
-	 * flag is set inside mdp driver and there is no interface event
-	 * associated with this flag setting. Also, set rate for clock need not
-	 * be called for every enable call. It should be done only once when
-	 * coming out of suspend.
-	 */
+   * In an ideal world, cont_splash_enabled should not be required inside
+   * the clock manager. But, in the current driver cont_splash_enabled
+   * flag is set inside mdp driver and there is no interface event
+   * associated with this flag setting. Also, set rate for clock need not
+   * be called for every enable call. It should be done only once when
+   * coming out of suspend.
+   */
 	if (mngr->is_cont_splash_enabled)
 		goto prepare;
 
@@ -567,8 +563,7 @@ error:
 	return rc;
 }
 
-static int dsi_link_lp_clk_stop(
-	struct dsi_link_lp_clk_info *link_lp_clks)
+static int dsi_link_lp_clk_stop(struct dsi_link_lp_clk_info *link_lp_clks)
 {
 	struct dsi_link_clks *l_clks;
 
@@ -581,17 +576,17 @@ static int dsi_link_lp_clk_stop(
 }
 
 static int dsi_display_core_clk_enable(struct dsi_core_clks *clks,
-	u32 ctrl_count, u32 master_ndx)
+				       u32 ctrl_count, u32 master_ndx)
 {
 	int rc = 0;
 	int i;
 	struct dsi_core_clks *clk, *m_clks;
 
 	/*
-	 * In case of split DSI usecases, the clock for master controller should
-	 * be enabled before the other controller. Master controller in the
-	 * clock context refers to the controller that sources the clock.
-	 */
+   * In case of split DSI usecases, the clock for master controller should
+   * be enabled before the other controller. Master controller in the
+   * clock context refers to the controller that sources the clock.
+   */
 
 	m_clks = &clks[master_ndx];
 
@@ -622,7 +617,8 @@ error:
 }
 
 static int dsi_display_link_clk_enable(struct dsi_link_clks *clks,
-	enum dsi_lclk_type l_type, u32 ctrl_count, u32 master_ndx)
+				       enum dsi_lclk_type l_type,
+				       u32 ctrl_count, u32 master_ndx)
 {
 	int rc = 0;
 	int i;
@@ -632,10 +628,10 @@ static int dsi_display_link_clk_enable(struct dsi_link_clks *clks,
 	mngr = container_of(clks, struct dsi_clk_mngr, link_clks[master_ndx]);
 
 	/*
-	 * In case of split DSI usecases, the clock for master controller should
-	 * be enabled before the other controller. Master controller in the
-	 * clock context refers to the controller that sources the clock.
-	 */
+   * In case of split DSI usecases, the clock for master controller should
+   * be enabled before the other controller. Master controller in the
+   * clock context refers to the controller that sources the clock.
+   */
 
 	m_clks = &clks[master_ndx];
 
@@ -643,7 +639,7 @@ static int dsi_display_link_clk_enable(struct dsi_link_clks *clks,
 		rc = dsi_link_lp_clk_start(&m_clks->lp_clks, master_ndx);
 		if (rc) {
 			DSI_ERR("failed to turn on master lp link clocks, rc=%d\n",
-					rc);
+				rc);
 			goto error;
 		}
 	}
@@ -653,11 +649,11 @@ static int dsi_display_link_clk_enable(struct dsi_link_clks *clks,
 			mngr->phy_config_cb(mngr->priv_data, true);
 			mngr->phy_pll_toggle_cb(mngr->priv_data, true);
 		}
-		rc = dsi_link_hs_clk_start(&m_clks->hs_clks,
-			DSI_LINK_CLK_START, master_ndx);
+		rc = dsi_link_hs_clk_start(&m_clks->hs_clks, DSI_LINK_CLK_START,
+					   master_ndx);
 		if (rc) {
 			DSI_ERR("failed to turn on master hs link clocks, rc=%d\n",
-					rc);
+				rc);
 			goto error;
 		}
 	}
@@ -671,14 +667,14 @@ static int dsi_display_link_clk_enable(struct dsi_link_clks *clks,
 			rc = dsi_link_lp_clk_start(&clk->lp_clks, i);
 			if (rc) {
 				DSI_ERR("failed to turn on lp link clocks, rc=%d\n",
-						rc);
+					rc);
 				goto error_disable_master;
 			}
 		}
 
 		if (l_type & DSI_LINK_HS_CLK) {
 			rc = dsi_link_hs_clk_start(&clk->hs_clks,
-				DSI_LINK_CLK_START, i);
+						   DSI_LINK_CLK_START, i);
 			if (rc) {
 				DSI_ERR("failed to turn on hs link clocks, rc=%d\n",
 					rc);
@@ -698,18 +694,18 @@ error:
 }
 
 static int dsi_display_core_clk_disable(struct dsi_core_clks *clks,
-	u32 ctrl_count, u32 master_ndx)
+					u32 ctrl_count, u32 master_ndx)
 {
 	int rc = 0;
 	int i;
 	struct dsi_core_clks *clk, *m_clks;
 
 	/*
-	 * In case of split DSI usecases, clock for slave DSI controllers should
-	 * be disabled first before disabling clock for master controller. Slave
-	 * controllers in the clock context refer to controller which source
-	 * clock from another controller.
-	 */
+   * In case of split DSI usecases, clock for slave DSI controllers should
+   * be disabled first before disabling clock for master controller. Slave
+   * controllers in the clock context refer to controller which source
+   * clock from another controller.
+   */
 
 	m_clks = &clks[master_ndx];
 
@@ -737,7 +733,8 @@ error:
 }
 
 static int dsi_display_link_clk_disable(struct dsi_link_clks *clks,
-	enum dsi_lclk_type l_type, u32 ctrl_count, u32 master_ndx)
+					enum dsi_lclk_type l_type,
+					u32 ctrl_count, u32 master_ndx)
 {
 	int rc = 0;
 	int i;
@@ -747,11 +744,11 @@ static int dsi_display_link_clk_disable(struct dsi_link_clks *clks,
 	mngr = container_of(clks, struct dsi_clk_mngr, link_clks[master_ndx]);
 
 	/*
-	 * In case of split DSI usecases, clock for slave DSI controllers should
-	 * be disabled first before disabling clock for master controller. Slave
-	 * controllers in the clock context refer to controller which source
-	 * clock from another controller.
-	 */
+   * In case of split DSI usecases, clock for slave DSI controllers should
+   * be disabled first before disabling clock for master controller. Slave
+   * controllers in the clock context refer to controller which source
+   * clock from another controller.
+   */
 
 	m_clks = &clks[master_ndx];
 
@@ -765,14 +762,14 @@ static int dsi_display_link_clk_disable(struct dsi_link_clks *clks,
 			rc = dsi_link_lp_clk_stop(&clk->lp_clks);
 			if (rc)
 				DSI_ERR("failed to turn off lp link clocks, rc=%d\n",
-						rc);
+					rc);
 		}
 
 		if (l_type & DSI_LINK_HS_CLK) {
 			rc = dsi_link_hs_clk_stop(&clk->hs_clks);
 			if (rc)
 				DSI_ERR("failed to turn off hs link clocks, rc=%d\n",
-						rc);
+					rc);
 		}
 	}
 
@@ -780,14 +777,14 @@ static int dsi_display_link_clk_disable(struct dsi_link_clks *clks,
 		rc = dsi_link_lp_clk_stop(&m_clks->lp_clks);
 		if (rc)
 			DSI_ERR("failed to turn off master lp link clocks, rc=%d\n",
-					rc);
+				rc);
 	}
 
 	if (l_type & DSI_LINK_HS_CLK) {
 		rc = dsi_link_hs_clk_stop(&m_clks->hs_clks);
 		if (rc)
 			DSI_ERR("failed to turn off master hs link clocks, rc=%d\n",
-					rc);
+				rc);
 		mngr->phy_pll_toggle_cb(mngr->priv_data, false);
 	}
 
@@ -795,8 +792,9 @@ static int dsi_display_link_clk_disable(struct dsi_link_clks *clks,
 }
 
 static int dsi_clk_update_link_clk_state(struct dsi_clk_mngr *mngr,
-	struct dsi_link_clks *l_clks, enum dsi_lclk_type l_type, u32 l_state,
-	bool enable)
+					 struct dsi_link_clks *l_clks,
+					 enum dsi_lclk_type l_type, u32 l_state,
+					 bool enable)
 {
 	int rc = 0;
 
@@ -806,49 +804,49 @@ static int dsi_clk_update_link_clk_state(struct dsi_clk_mngr *mngr,
 	if (enable) {
 		if (mngr->pre_clkon_cb) {
 			rc = mngr->pre_clkon_cb(mngr->priv_data, DSI_LINK_CLK,
-				l_type, l_state);
+						l_type, l_state);
 			if (rc) {
 				DSI_ERR("pre link clk on cb failed for type %d\n",
-						l_type);
+					l_type);
 				goto error;
 			}
 		}
-		rc = dsi_display_link_clk_enable(l_clks, l_type,
-				mngr->dsi_ctrl_count, mngr->master_ndx);
+		rc = dsi_display_link_clk_enable(
+			l_clks, l_type, mngr->dsi_ctrl_count, mngr->master_ndx);
 		if (rc) {
 			DSI_ERR("failed to start link clk type %d rc=%d\n",
-					l_type, rc);
+				l_type, rc);
 			goto error;
 		}
 
 		if (mngr->post_clkon_cb) {
 			rc = mngr->post_clkon_cb(mngr->priv_data, DSI_LINK_CLK,
-				l_type, l_state);
+						 l_type, l_state);
 			if (rc) {
 				DSI_ERR("post link clk on cb failed for type %d\n",
-						l_type);
+					l_type);
 				goto error;
 			}
 		}
 	} else {
 		if (mngr->pre_clkoff_cb) {
-			rc = mngr->pre_clkoff_cb(mngr->priv_data,
-				DSI_LINK_CLK, l_type, l_state);
+			rc = mngr->pre_clkoff_cb(mngr->priv_data, DSI_LINK_CLK,
+						 l_type, l_state);
 			if (rc)
 				DSI_ERR("pre link clk off cb failed\n");
 		}
 
-		rc = dsi_display_link_clk_disable(l_clks, l_type,
-			mngr->dsi_ctrl_count, mngr->master_ndx);
+		rc = dsi_display_link_clk_disable(
+			l_clks, l_type, mngr->dsi_ctrl_count, mngr->master_ndx);
 		if (rc) {
 			DSI_ERR("failed to stop link clk type %d, rc = %d\n",
-					l_type, rc);
+				l_type, rc);
 			goto error;
 		}
 
 		if (mngr->post_clkoff_cb) {
-			rc = mngr->post_clkoff_cb(mngr->priv_data,
-				DSI_LINK_CLK, l_type, l_state);
+			rc = mngr->post_clkoff_cb(mngr->priv_data, DSI_LINK_CLK,
+						  l_type, l_state);
 			if (rc)
 				DSI_ERR("post link clk off cb failed\n");
 		}
@@ -859,32 +857,28 @@ error:
 }
 
 static int dsi_update_core_clks(struct dsi_clk_mngr *mngr,
-		struct dsi_core_clks *c_clks)
+				struct dsi_core_clks *c_clks)
 {
 	int rc = 0;
 
 	if (mngr->core_clk_state == DSI_CLK_OFF) {
-		rc = mngr->pre_clkon_cb(mngr->priv_data,
-					DSI_CORE_CLK,
-					DSI_LINK_NONE,
-					DSI_CLK_ON);
+		rc = mngr->pre_clkon_cb(mngr->priv_data, DSI_CORE_CLK,
+					DSI_LINK_NONE, DSI_CLK_ON);
 		if (rc) {
 			DSI_ERR("failed to turn on MDP FS rc= %d\n", rc);
 			goto error;
 		}
 	}
 	rc = dsi_display_core_clk_enable(c_clks, mngr->dsi_ctrl_count,
-			mngr->master_ndx);
+					 mngr->master_ndx);
 	if (rc) {
 		DSI_ERR("failed to turn on core clks rc = %d\n", rc);
 		goto error;
 	}
 
 	if (mngr->post_clkon_cb) {
-		rc = mngr->post_clkon_cb(mngr->priv_data,
-					 DSI_CORE_CLK,
-					 DSI_LINK_NONE,
-					 DSI_CLK_ON);
+		rc = mngr->post_clkon_cb(mngr->priv_data, DSI_CORE_CLK,
+					 DSI_LINK_NONE, DSI_CLK_ON);
 		if (rc)
 			DSI_ERR("post clk on cb failed, rc = %d\n", rc);
 	}
@@ -894,8 +888,8 @@ error:
 }
 
 static int dsi_update_clk_state(struct dsi_clk_mngr *mngr,
-	struct dsi_core_clks *c_clks, u32 c_state,
-	struct dsi_link_clks *l_clks, u32 l_state)
+				struct dsi_core_clks *c_clks, u32 c_state,
+				struct dsi_link_clks *l_clks, u32 l_state)
 {
 	int rc = 0;
 	bool l_c_on = false;
@@ -903,13 +897,13 @@ static int dsi_update_clk_state(struct dsi_clk_mngr *mngr,
 	if (!mngr)
 		return -EINVAL;
 
-	DSI_DEBUG("c_state = %d, l_state = %d\n",
-		 c_clks ? c_state : -1, l_clks ? l_state : -1);
+	DSI_DEBUG("c_state = %d, l_state = %d\n", c_clks ? c_state : -1,
+		  l_clks ? l_state : -1);
 	/*
-	 * Below is the sequence to toggle DSI clocks:
-	 *	1. For ON sequence, Core clocks before link clocks
-	 *	2. For OFF sequence, Link clocks before core clocks.
-	 */
+   * Below is the sequence to toggle DSI clocks:
+   *	1. For ON sequence, Core clocks before link clocks
+   *	2. For OFF sequence, Link clocks before core clocks.
+   */
 	if (c_clks && (c_state == DSI_CLK_ON))
 		rc = dsi_update_core_clks(mngr, c_clks);
 
@@ -918,36 +912,34 @@ static int dsi_update_clk_state(struct dsi_clk_mngr *mngr,
 
 	if (l_clks) {
 		if (l_state == DSI_CLK_ON) {
-			rc = dsi_clk_update_link_clk_state(mngr, l_clks,
-				DSI_LINK_LP_CLK, l_state, true);
+			rc = dsi_clk_update_link_clk_state(
+				mngr, l_clks, DSI_LINK_LP_CLK, l_state, true);
 			if (rc)
 				goto error;
 
-			rc = dsi_clk_update_link_clk_state(mngr, l_clks,
-				DSI_LINK_HS_CLK, l_state, true);
+			rc = dsi_clk_update_link_clk_state(
+				mngr, l_clks, DSI_LINK_HS_CLK, l_state, true);
 			if (rc)
 				goto error;
 		} else {
 			/*
-			 * Two conditions that need to be checked for Link
-			 * clocks:
-			 * 1. Link clocks need core clocks to be on when
-			 *    transitioning from EARLY_GATE to OFF state.
-			 * 2. ULPS mode might have to be enabled in case of OFF
-			 *    state. For ULPS, Link clocks should be turned ON
-			 *    first before they are turned off again.
-			 *
-			 * If Link is going from EARLY_GATE to OFF state AND
-			 * Core clock is already in EARLY_GATE or OFF state,
-			 * turn on Core clocks and link clocks.
-			 *
-			 * ULPS state is managed as part of the pre_clkoff_cb.
-			 */
+       * Two conditions that need to be checked for Link
+       * clocks:
+       * 1. Link clocks need core clocks to be on when
+       *    transitioning from EARLY_GATE to OFF state.
+       * 2. ULPS mode might have to be enabled in case of OFF
+       *    state. For ULPS, Link clocks should be turned ON
+       *    first before they are turned off again.
+       *
+       * If Link is going from EARLY_GATE to OFF state AND
+       * Core clock is already in EARLY_GATE or OFF state,
+       * turn on Core clocks and link clocks.
+       *
+       * ULPS state is managed as part of the pre_clkoff_cb.
+       */
 			if ((l_state == DSI_CLK_OFF) &&
-			    (mngr->link_clk_state ==
-			    DSI_CLK_EARLY_GATE) &&
-			    (mngr->core_clk_state !=
-			    DSI_CLK_ON)) {
+			    (mngr->link_clk_state == DSI_CLK_EARLY_GATE) &&
+			    (mngr->core_clk_state != DSI_CLK_ON)) {
 				rc = dsi_display_core_clk_enable(
 					mngr->core_clks, mngr->dsi_ctrl_count,
 					mngr->master_ndx);
@@ -956,7 +948,8 @@ static int dsi_update_clk_state(struct dsi_clk_mngr *mngr,
 					goto error;
 				}
 
-				rc = dsi_display_link_clk_enable(l_clks,
+				rc = dsi_display_link_clk_enable(
+					l_clks,
 					(DSI_LINK_LP_CLK & DSI_LINK_HS_CLK),
 					mngr->dsi_ctrl_count, mngr->master_ndx);
 				if (rc) {
@@ -967,31 +960,31 @@ static int dsi_update_clk_state(struct dsi_clk_mngr *mngr,
 				DSI_DEBUG("ECG: core and Link_on\n");
 			}
 
-			rc = dsi_clk_update_link_clk_state(mngr, l_clks,
-				DSI_LINK_HS_CLK, l_state, false);
+			rc = dsi_clk_update_link_clk_state(
+				mngr, l_clks, DSI_LINK_HS_CLK, l_state, false);
 			if (rc)
 				goto error;
 
-			rc = dsi_clk_update_link_clk_state(mngr, l_clks,
-				DSI_LINK_LP_CLK, l_state, false);
+			rc = dsi_clk_update_link_clk_state(
+				mngr, l_clks, DSI_LINK_LP_CLK, l_state, false);
 			if (rc)
 				goto error;
 
 			/*
-			 * This check is to save unnecessary clock state
-			 * change when going from EARLY_GATE to OFF. In the
-			 * case where the request happens for both Core and Link
-			 * clocks in the same call, core clocks need to be
-			 * turned on first before OFF state can be entered.
-			 *
-			 * Core clocks are turned on here for Link clocks to go
-			 * to OFF state. If core clock request is also present,
-			 * then core clocks can be turned off Core clocks are
-			 * transitioned to OFF state.
-			 */
-			if (l_c_on && (!(c_clks && (c_state == DSI_CLK_OFF)
-					 && (mngr->core_clk_state ==
-					     DSI_CLK_EARLY_GATE)))) {
+       * This check is to save unnecessary clock state
+       * change when going from EARLY_GATE to OFF. In the
+       * case where the request happens for both Core and Link
+       * clocks in the same call, core clocks need to be
+       * turned on first before OFF state can be entered.
+       *
+       * Core clocks are turned on here for Link clocks to go
+       * to OFF state. If core clock request is also present,
+       * then core clocks can be turned off Core clocks are
+       * transitioned to OFF state.
+       */
+			if (l_c_on &&
+			    (!(c_clks && (c_state == DSI_CLK_OFF) &&
+			       (mngr->core_clk_state == DSI_CLK_EARLY_GATE)))) {
 				rc = dsi_display_core_clk_disable(
 					mngr->core_clks, mngr->dsi_ctrl_count,
 					mngr->master_ndx);
@@ -1011,19 +1004,19 @@ static int dsi_update_clk_state(struct dsi_clk_mngr *mngr,
 
 	if (c_clks && (c_state != DSI_CLK_ON)) {
 		/*
-		 * When going to OFF state from EARLY GATE state, Core clocks
-		 * should be turned on first so that the IOs can be clamped.
-		 * l_c_on flag is set, then the core clocks were turned before
-		 * to the Link clocks go to OFF state. So Core clocks are
-		 * already ON and this step can be skipped.
-		 *
-		 * IOs are clamped in pre_clkoff_cb callback.
-		 */
+     * When going to OFF state from EARLY GATE state, Core clocks
+     * should be turned on first so that the IOs can be clamped.
+     * l_c_on flag is set, then the core clocks were turned before
+     * to the Link clocks go to OFF state. So Core clocks are
+     * already ON and this step can be skipped.
+     *
+     * IOs are clamped in pre_clkoff_cb callback.
+     */
 		if ((c_state == DSI_CLK_OFF) &&
-		    (mngr->core_clk_state ==
-		    DSI_CLK_EARLY_GATE) && !l_c_on) {
+		    (mngr->core_clk_state == DSI_CLK_EARLY_GATE) && !l_c_on) {
 			rc = dsi_display_core_clk_enable(mngr->core_clks,
-				mngr->dsi_ctrl_count, mngr->master_ndx);
+							 mngr->dsi_ctrl_count,
+							 mngr->master_ndx);
 			if (rc) {
 				DSI_ERR("core clks did not start\n");
 				goto error;
@@ -1033,16 +1026,14 @@ static int dsi_update_clk_state(struct dsi_clk_mngr *mngr,
 			DSI_DEBUG("ECG: core on skip\n");
 
 		if (mngr->pre_clkoff_cb) {
-			rc = mngr->pre_clkoff_cb(mngr->priv_data,
-						 DSI_CORE_CLK,
-						 DSI_LINK_NONE,
-						 c_state);
+			rc = mngr->pre_clkoff_cb(mngr->priv_data, DSI_CORE_CLK,
+						 DSI_LINK_NONE, c_state);
 			if (rc)
 				DSI_ERR("pre core clk off cb failed\n");
 		}
 
 		rc = dsi_display_core_clk_disable(c_clks, mngr->dsi_ctrl_count,
-			mngr->master_ndx);
+						  mngr->master_ndx);
 		if (rc) {
 			DSI_ERR("failed to turn off core clks rc = %d\n", rc);
 			goto error;
@@ -1051,12 +1042,12 @@ static int dsi_update_clk_state(struct dsi_clk_mngr *mngr,
 		if (c_state == DSI_CLK_OFF) {
 			if (mngr->post_clkoff_cb) {
 				rc = mngr->post_clkoff_cb(mngr->priv_data,
-						DSI_CORE_CLK,
-						DSI_LINK_NONE,
-						DSI_CLK_OFF);
+							  DSI_CORE_CLK,
+							  DSI_LINK_NONE,
+							  DSI_CLK_OFF);
 				if (rc)
 					DSI_ERR("post clkoff cb fail, rc = %d\n",
-					       rc);
+						rc);
 			}
 		}
 		mngr->core_clk_state = c_state;
@@ -1079,14 +1070,14 @@ static int dsi_recheck_clk_state(struct dsi_clk_mngr *mngr)
 	struct dsi_link_clks *l_clks = NULL;
 
 	/*
-	 * Conditions to maintain DSI manager clock state based on
-	 *		clock states of various clients:
-	 *	1. If any client has clock in ON state, DSI manager clock state
-	 *		should be ON.
-	 *	2. If any client is in ECG state with rest of them turned OFF,
-	 *	   go to Early gate state.
-	 *	3. If all clients have clocks as OFF, then go to OFF state.
-	 */
+   * Conditions to maintain DSI manager clock state based on
+   *		clock states of various clients:
+   *	1. If any client has clock in ON state, DSI manager clock state
+   *		should be ON.
+   *	2. If any client is in ECG state with rest of them turned OFF,
+   *	   go to Early gate state.
+   *	3. If all clients have clocks as OFF, then go to OFF state.
+   */
 	list_for_each(pos, &mngr->client_list) {
 		c = list_entry(pos, struct dsi_clk_client_info, list);
 		if (c->core_clk_state == DSI_CLK_ON) {
@@ -1117,9 +1108,9 @@ static int dsi_recheck_clk_state(struct dsi_clk_mngr *mngr)
 	old_l_clk_state = mngr->link_clk_state;
 
 	DSI_DEBUG("c_clk_state (%d -> %d)\n", old_c_clk_state,
-			new_core_clk_state);
+		  new_core_clk_state);
 	DSI_DEBUG("l_clk_state (%d -> %d)\n", old_l_clk_state,
-			new_link_clk_state);
+		  new_link_clk_state);
 
 	if (c_clks || l_clks) {
 		rc = dsi_update_clk_state(mngr, c_clks, new_core_clk_state,
@@ -1135,7 +1126,7 @@ error:
 }
 
 int dsi_clk_req_state(void *client, enum dsi_clk_type clk,
-	enum dsi_clk_state state)
+		      enum dsi_clk_state state)
 {
 	int rc = 0;
 	struct dsi_clk_client_info *c = client;
@@ -1145,7 +1136,7 @@ int dsi_clk_req_state(void *client, enum dsi_clk_type clk,
 	if (!client || !clk || clk > (DSI_CORE_CLK | DSI_LINK_CLK) ||
 	    state > DSI_CLK_EARLY_GATE) {
 		DSI_ERR("Invalid params, client = %pK, clk = 0x%x, state = %d\n",
-		       client, clk, state);
+			client, clk, state);
 		return -EINVAL;
 	}
 
@@ -1153,17 +1144,17 @@ int dsi_clk_req_state(void *client, enum dsi_clk_type clk,
 	mutex_lock(&mngr->clk_mutex);
 
 	DSI_DEBUG("[%s]%s: CLK=%d, new_state=%d, core=%d, linkl=%d\n",
-	       mngr->name, c->name, clk, state, c->core_clk_state,
-	       c->link_clk_state);
+		  mngr->name, c->name, clk, state, c->core_clk_state,
+		  c->link_clk_state);
 
 	/*
-	 * Clock refcount handling as below:
-	 *	i. Increment refcount whenever ON is called.
-	 *	ii. Decrement refcount when transitioning from ON state to
-	 *		either OFF or EARLY_GATE.
-	 *	iii. Do not decrement refcount when changing from
-	 *		EARLY_GATE to OFF.
-	 */
+   * Clock refcount handling as below:
+   *	i. Increment refcount whenever ON is called.
+   *	ii. Decrement refcount when transitioning from ON state to
+   *		either OFF or EARLY_GATE.
+   *	iii. Do not decrement refcount when changing from
+   *		EARLY_GATE to OFF.
+   */
 	if (state == DSI_CLK_ON) {
 		if (clk & DSI_CORE_CLK) {
 			c->core_refcount++;
@@ -1179,18 +1170,17 @@ int dsi_clk_req_state(void *client, enum dsi_clk_type clk,
 				changed = true;
 			}
 		}
-	} else if ((state == DSI_CLK_EARLY_GATE) ||
-		   (state == DSI_CLK_OFF)) {
+	} else if ((state == DSI_CLK_EARLY_GATE) || (state == DSI_CLK_OFF)) {
 		if (clk & DSI_CORE_CLK) {
 			if (c->core_refcount == 0) {
-				if ((c->core_clk_state ==
-				    DSI_CLK_EARLY_GATE) &&
+				if ((c->core_clk_state == DSI_CLK_EARLY_GATE) &&
 				    (state == DSI_CLK_OFF)) {
 					changed = true;
 					c->core_clk_state = DSI_CLK_OFF;
 				} else {
-					DSI_WARN("Core refcount is zero for %s\n",
-							c->name);
+					DSI_WARN(
+						"Core refcount is zero for %s\n",
+						c->name);
 				}
 			} else {
 				c->core_refcount--;
@@ -1202,14 +1192,14 @@ int dsi_clk_req_state(void *client, enum dsi_clk_type clk,
 		}
 		if (clk & DSI_LINK_CLK) {
 			if (c->link_refcount == 0) {
-				if ((c->link_clk_state ==
-				    DSI_CLK_EARLY_GATE) &&
+				if ((c->link_clk_state == DSI_CLK_EARLY_GATE) &&
 				    (state == DSI_CLK_OFF)) {
 					changed = true;
 					c->link_clk_state = DSI_CLK_OFF;
 				} else {
-					DSI_WARN("Link refcount is zero for %s\n",
-							c->name);
+					DSI_WARN(
+						"Link refcount is zero for %s\n",
+						c->name);
 				}
 			} else {
 				c->link_refcount--;
@@ -1220,9 +1210,10 @@ int dsi_clk_req_state(void *client, enum dsi_clk_type clk,
 			}
 		}
 	}
-	DSI_DEBUG("[%s]%s: change=%d, Core (ref=%d, state=%d), Link (ref=%d, state=%d)\n",
-		 mngr->name, c->name, changed, c->core_refcount,
-		 c->core_clk_state, c->link_refcount, c->link_clk_state);
+	DSI_DEBUG(
+		"[%s]%s: change=%d, Core (ref=%d, state=%d), Link (ref=%d, state=%d)\n",
+		mngr->name, c->name, changed, c->core_refcount,
+		c->core_clk_state, c->link_refcount, c->link_clk_state);
 
 	if (changed) {
 		rc = dsi_recheck_clk_state(mngr);
@@ -1249,30 +1240,31 @@ static int dsi_display_link_clk_force_update(void *client)
 	l_clks = mngr->link_clks;
 
 	/*
-	 * When link_clk_state is DSI_CLK_OFF, don't change DSI clock rate
-	 * since it is possible to be overwritten, and return -EAGAIN to
-	 * dynamic DSI writing interface to defer the reenabling to the next
-	 * drm commit.
-	 */
+   * When link_clk_state is DSI_CLK_OFF, don't change DSI clock rate
+   * since it is possible to be overwritten, and return -EAGAIN to
+   * dynamic DSI writing interface to defer the reenabling to the next
+   * drm commit.
+   */
 	if (mngr->link_clk_state == DSI_CLK_OFF) {
 		rc = -EAGAIN;
 		goto error;
 	}
 
-	rc = dsi_clk_update_link_clk_state(mngr, l_clks, (DSI_LINK_LP_CLK |
-				DSI_LINK_HS_CLK), DSI_CLK_OFF, false);
+	rc = dsi_clk_update_link_clk_state(mngr, l_clks,
+					   (DSI_LINK_LP_CLK | DSI_LINK_HS_CLK),
+					   DSI_CLK_OFF, false);
 	if (rc)
 		goto error;
 
-	rc = dsi_clk_update_link_clk_state(mngr, l_clks, (DSI_LINK_LP_CLK |
-				DSI_LINK_HS_CLK), DSI_CLK_ON, true);
+	rc = dsi_clk_update_link_clk_state(mngr, l_clks,
+					   (DSI_LINK_LP_CLK | DSI_LINK_HS_CLK),
+					   DSI_CLK_ON, true);
 	if (rc)
 		goto error;
 
 error:
 	mutex_unlock(&mngr->clk_mutex);
 	return rc;
-
 }
 
 int dsi_display_link_clk_force_update_ctrl(void *handle)
@@ -1293,13 +1285,12 @@ int dsi_display_link_clk_force_update_ctrl(void *handle)
 	return rc;
 }
 
-int dsi_display_clk_ctrl(void *handle,
-	u32 clk_type, u32 clk_state)
+int dsi_display_clk_ctrl(void *handle, u32 clk_type, u32 clk_state)
 {
 	int rc = 0;
 
 	if ((!handle) || (clk_type > DSI_ALL_CLKS) ||
-			(clk_state > DSI_CLK_EARLY_GATE)) {
+	    (clk_state > DSI_CLK_EARLY_GATE)) {
 		DSI_ERR("Invalid arg\n");
 		return -EINVAL;
 	}
@@ -1371,8 +1362,7 @@ int dsi_deregister_clk_handle(void *client)
 	}
 
 	list_for_each_safe(pos, tmp, &mngr->client_list) {
-		node = list_entry(pos, struct dsi_clk_client_info,
-			  list);
+		node = list_entry(pos, struct dsi_clk_client_info, list);
 		if (node == c) {
 			list_del(&node->list);
 			DSI_DEBUG("Removed device (%s)\n", node->name);
@@ -1413,9 +1403,8 @@ int dsi_display_dump_clk_handle_state(void *client)
 	mngr = c->mngr;
 	mutex_lock(&mngr->clk_mutex);
 	DSI_INFO("[%s]%s: Core (ref=%d, state=%d), Link (ref=%d, state=%d)\n",
-			mngr->name, c->name, c->core_refcount,
-			c->core_clk_state, c->link_refcount,
-			c->link_clk_state);
+		 mngr->name, c->name, c->core_refcount, c->core_clk_state,
+		 c->link_refcount, c->link_clk_state);
 	mutex_unlock(&mngr->clk_mutex);
 
 	return 0;
@@ -1448,11 +1437,11 @@ void *dsi_display_clk_mngr_register(struct dsi_clk_info *info)
 
 	for (i = 0; i < mngr->dsi_ctrl_count; i++) {
 		memcpy(&mngr->core_clks[i].clks, &info->c_clks[i],
-			sizeof(struct dsi_core_clk_info));
+		       sizeof(struct dsi_core_clk_info));
 		memcpy(&mngr->link_clks[i].hs_clks, &info->l_hs_clks[i],
-			sizeof(struct dsi_link_hs_clk_info));
+		       sizeof(struct dsi_link_hs_clk_info));
 		memcpy(&mngr->link_clks[i].lp_clks, &info->l_lp_clks[i],
-			sizeof(struct dsi_link_lp_clk_info));
+		       sizeof(struct dsi_link_lp_clk_info));
 		mngr->ctrl_index[i] = info->ctrl_index[i];
 	}
 
@@ -1489,8 +1478,7 @@ int dsi_display_clk_mngr_deregister(void *clk_mngr)
 	mutex_lock(&mngr->clk_mutex);
 
 	list_for_each_safe(position, tmp, &mngr->client_list) {
-		node = list_entry(position, struct dsi_clk_client_info,
-			  list);
+		node = list_entry(position, struct dsi_clk_client_info, list);
 		list_del(&node->list);
 		DSI_DEBUG("Removed device (%s)\n", node->name);
 		kfree(node);

@@ -4,11 +4,11 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include "ipa_i.h"
 #include "ipa_odl.h"
+#include "ipa_i.h"
 #include <linux/msm_ipa.h>
-#include <linux/sched/signal.h>
 #include <linux/poll.h>
+#include <linux/sched/signal.h>
 
 struct ipa_odl_context *ipa3_odl_ctx;
 
@@ -17,23 +17,23 @@ static DECLARE_WAIT_QUEUE_HEAD(odl_ctl_msg_wq);
 static void print_ipa_odl_state_bit_mask(void)
 {
 	IPADBG("ipa3_odl_ctx->odl_state.odl_init --> %d\n",
-		ipa3_odl_ctx->odl_state.odl_init);
+	       ipa3_odl_ctx->odl_state.odl_init);
 	IPADBG("ipa3_odl_ctx->odl_state.odl_open --> %d\n",
-		ipa3_odl_ctx->odl_state.odl_open);
+	       ipa3_odl_ctx->odl_state.odl_open);
 	IPADBG("ipa3_odl_ctx->odl_state.adpl_open --> %d\n",
-		ipa3_odl_ctx->odl_state.adpl_open);
+	       ipa3_odl_ctx->odl_state.adpl_open);
 	IPADBG("ipa3_odl_ctx->odl_state.aggr_byte_limit_sent --> %d\n",
-		ipa3_odl_ctx->odl_state.aggr_byte_limit_sent);
+	       ipa3_odl_ctx->odl_state.aggr_byte_limit_sent);
 	IPADBG("ipa3_odl_ctx->odl_state.odl_ep_setup --> %d\n",
-		ipa3_odl_ctx->odl_state.odl_ep_setup);
+	       ipa3_odl_ctx->odl_state.odl_ep_setup);
 	IPADBG("ipa3_odl_ctx->odl_state.odl_setup_done_sent --> %d\n",
-		ipa3_odl_ctx->odl_state.odl_setup_done_sent);
+	       ipa3_odl_ctx->odl_state.odl_setup_done_sent);
 	IPADBG("ipa3_odl_ctx->odl_state.odl_ep_info_sent --> %d\n",
-		ipa3_odl_ctx->odl_state.odl_ep_info_sent);
+	       ipa3_odl_ctx->odl_state.odl_ep_info_sent);
 	IPADBG("ipa3_odl_ctx->odl_state.odl_connected --> %d\n",
-		ipa3_odl_ctx->odl_state.odl_connected);
+	       ipa3_odl_ctx->odl_state.odl_connected);
 	IPADBG("ipa3_odl_ctx->odl_state.odl_disconnected --> %d\n\n",
-		ipa3_odl_ctx->odl_state.odl_disconnected);
+	       ipa3_odl_ctx->odl_state.odl_disconnected);
 }
 
 static int ipa_odl_ctl_fops_open(struct inode *inode, struct file *filp)
@@ -82,7 +82,7 @@ static int ipa_odl_ctl_fops_release(struct inode *inode, struct file *filp)
  */
 
 static ssize_t ipa_odl_ctl_fops_read(struct file *filp, char __user *buf,
-			size_t count, loff_t *f_pos)
+				     size_t count, loff_t *f_pos)
 {
 	char __user *start;
 	u8 data;
@@ -94,7 +94,7 @@ static ssize_t ipa_odl_ctl_fops_read(struct file *filp, char __user *buf,
 	ipa3_odl_ctx->odl_ctl_msg_wq_flag = false;
 
 	if (!ipa3_odl_ctx->odl_state.adpl_open &&
-			!ipa3_odl_ctx->odl_state.odl_disconnected) {
+	    !ipa3_odl_ctx->odl_state.odl_disconnected) {
 		IPADBG("Failed to send data odl pipe already disconnected\n");
 		ret = -EFAULT;
 		goto send_failed;
@@ -118,8 +118,7 @@ static ssize_t ipa_odl_ctl_fops_read(struct file *filp, char __user *buf,
 		else if (!new_state)
 			data = 0;
 
-		if (copy_to_user(buf, &data,
-					sizeof(data))) {
+		if (copy_to_user(buf, &data, sizeof(data))) {
 			IPADBG("Cpoying data to user failed\n");
 			ret = -EFAULT;
 			goto send_failed;
@@ -128,10 +127,8 @@ static ssize_t ipa_odl_ctl_fops_read(struct file *filp, char __user *buf,
 		buf += sizeof(data);
 
 		if (data == 1)
-			ipa3_odl_ctx->odl_state.odl_setup_done_sent =
-				true;
+			ipa3_odl_ctx->odl_state.odl_setup_done_sent = true;
 	}
-
 
 	if (start != buf && ret != -EFAULT)
 		ret = buf - start;
@@ -153,9 +150,9 @@ static unsigned int ipa_odl_ctl_fops_poll(struct file *file, poll_table *wait)
 }
 
 static long ipa_odl_ctl_fops_ioctl(struct file *filp, unsigned int cmd,
-							unsigned long arg)
+				   unsigned long arg)
 {
-	struct ipa_odl_ep_info ep_info = {0};
+	struct ipa_odl_ep_info ep_info = { 0 };
 	struct ipa_odl_modem_config status;
 	int retval = 0;
 
@@ -173,10 +170,9 @@ static long ipa_odl_ctl_fops_ioctl(struct file *filp, unsigned int cmd,
 		ep_info.ep_type = ODL_EP_TYPE_HSUSB;
 		ep_info.peripheral_iface_id = ODL_EP_PERIPHERAL_IFACE_ID;
 		ep_info.cons_pipe_num = -1;
-		ep_info.prod_pipe_num =
-			ipa3_odl_ctx->odl_client_hdl;
+		ep_info.prod_pipe_num = ipa3_odl_ctx->odl_client_hdl;
 		if (copy_to_user((void __user *)arg, &ep_info,
-					sizeof(ep_info))) {
+				 sizeof(ep_info))) {
 			retval = -EFAULT;
 			goto fail;
 		}
@@ -185,14 +181,15 @@ static long ipa_odl_ctl_fops_ioctl(struct file *filp, unsigned int cmd,
 	case IPA_IOC_ODL_QUERY_MODEM_CONFIG:
 		IPADBG("Received the IPA_IOC_ODL_QUERY_MODEM_CONFIG :\n");
 		if (copy_from_user(&status, (const void __user *)arg,
-			sizeof(status))) {
+				   sizeof(status))) {
 			retval = -EFAULT;
 			break;
 		}
 		if (status.config_status == CONFIG_SUCCESS)
 			ipa3_odl_ctx->odl_state.odl_connected = true;
 		IPADBG("status.config_status = %d odl_connected = %d\n",
-		status.config_status, ipa3_odl_ctx->odl_state.odl_connected);
+		       status.config_status,
+		       ipa3_odl_ctx->odl_state.odl_connected);
 		break;
 	default:
 		retval = -ENOIOCTLCMD;
@@ -209,7 +206,7 @@ static void delete_first_node(void)
 
 	if (!list_empty(&ipa3_odl_ctx->adpl_msg_list)) {
 		msg = list_first_entry(&ipa3_odl_ctx->adpl_msg_list,
-				struct ipa3_push_msg_odl, link);
+				       struct ipa3_push_msg_odl, link);
 		if (msg) {
 			list_del(&msg->link);
 			kfree(msg->buff);
@@ -246,7 +243,7 @@ int ipa3_send_adpl_msg(unsigned long skb_data)
 	msg->len = skb->len;
 	mutex_lock(&ipa3_odl_ctx->adpl_msg_lock);
 	if (atomic_read(&ipa3_odl_ctx->stats.numer_in_queue) >=
-						MAX_QUEUE_TO_ODL)
+	    MAX_QUEUE_TO_ODL)
 		delete_first_node();
 	list_add_tail(&msg->link, &ipa3_odl_ctx->adpl_msg_list);
 	atomic_inc(&ipa3_odl_ctx->stats.numer_in_queue);
@@ -266,9 +263,8 @@ int ipa3_send_adpl_msg(unsigned long skb_data)
  *
  * IPA will pass a packet to the Linux network stack with skb->data
  */
-static void odl_ipa_packet_receive_notify(void *priv,
-		enum ipa_dp_evt_type evt,
-		unsigned long data)
+static void odl_ipa_packet_receive_notify(void *priv, enum ipa_dp_evt_type evt,
+					  unsigned long data)
 {
 	IPADBG_LOW("Rx packet was received\n");
 	if (evt == IPA_RECEIVE)
@@ -291,7 +287,7 @@ int ipa_setup_odl_pipe(void)
 	ipa_odl_ep_cfg->ipa_ep_cfg.aggr.aggr_hard_byte_limit_en = 1;
 	ipa_odl_ep_cfg->ipa_ep_cfg.aggr.aggr = IPA_GENERIC;
 	ipa_odl_ep_cfg->ipa_ep_cfg.aggr.aggr_byte_limit =
-						IPA_ODL_AGGR_BYTE_LIMIT;
+		IPA_ODL_AGGR_BYTE_LIMIT;
 	ipa_odl_ep_cfg->ipa_ep_cfg.aggr.aggr_pkt_limit = 0;
 
 	ipa_odl_ep_cfg->ipa_ep_cfg.hdr.hdr_len = 4;
@@ -311,15 +307,15 @@ int ipa_setup_odl_pipe(void)
 	ipa_odl_ep_cfg->notify = odl_ipa_packet_receive_notify;
 
 	ipa_odl_ep_cfg->napi_obj = NULL;
-	ipa_odl_ep_cfg->desc_fifo_sz = IPA_ODL_RX_RING_SIZE *
-						IPA_FIFO_ELEMENT_SIZE;
+	ipa_odl_ep_cfg->desc_fifo_sz =
+		IPA_ODL_RX_RING_SIZE * IPA_FIFO_ELEMENT_SIZE;
 	ipa3_odl_ctx->odl_client_hdl = -1;
 
 	/* For MHIP, ODL functionality is DMA. So bypass aggregation, checksum
-	 * offload, hdr_len.
-	 */
+   * offload, hdr_len.
+   */
 	if (ipa3_ctx->platform_type == IPA_PLAT_TYPE_APQ &&
-		ipa3_is_mhip_offload_enabled()) {
+	    ipa3_is_mhip_offload_enabled()) {
 		IPADBG("MHIP enabled: bypass aggr + csum offload for ODL");
 		ipa_odl_ep_cfg->ipa_ep_cfg.aggr.aggr_en = IPA_BYPASS_AGGR;
 		ipa_odl_ep_cfg->ipa_ep_cfg.cfg.cs_offload_en =
@@ -327,10 +323,8 @@ int ipa_setup_odl_pipe(void)
 		ipa_odl_ep_cfg->ipa_ep_cfg.hdr.hdr_len = 0;
 	}
 
-	ret = ipa_setup_sys_pipe(ipa_odl_ep_cfg,
-			&ipa3_odl_ctx->odl_client_hdl);
+	ret = ipa_setup_sys_pipe(ipa_odl_ep_cfg, &ipa3_odl_ctx->odl_client_hdl);
 	return ret;
-
 }
 
 /**
@@ -362,7 +356,7 @@ int ipa3_odl_pipe_open(void)
 	int ret = 0;
 	struct ipa_ep_cfg_holb holb_cfg;
 
-	if(ipa3_ctx->ipa_hw_type < IPA_HW_v4_1) {
+	if (ipa3_ctx->ipa_hw_type < IPA_HW_v4_1) {
 		IPADBG("ODL not supported\n");
 		return 0;
 	}
@@ -396,9 +390,9 @@ int ipa3_odl_pipe_open(void)
 	ipa3_odl_ctx->stats.odl_rx_pkt = 0;
 	ipa3_odl_ctx->stats.odl_tx_diag_pkt = 0;
 	/*
-	 * Send signal to ipa_odl_ctl_fops_read,
-	 * to send ODL ep open notification
-	 */
+   * Send signal to ipa_odl_ctl_fops_read,
+   * to send ODL ep open notification
+   */
 	if (ipa3_is_mhip_offload_enabled()) {
 		IPADBG("MHIP is enabled, continue\n");
 		ipa3_odl_ctx->odl_state.odl_open = true;
@@ -422,7 +416,6 @@ int ipa3_odl_pipe_open(void)
 	}
 fail:
 	return ret;
-
 }
 static int ipa_adpl_open(struct inode *inode, struct file *filp)
 {
@@ -431,7 +424,7 @@ static int ipa_adpl_open(struct inode *inode, struct file *filp)
 	IPADBG("Called the function :\n");
 	mutex_lock(&ipa3_odl_ctx->pipe_lock);
 	if (ipa3_odl_ctx->odl_state.odl_init &&
-				!ipa3_odl_ctx->odl_state.adpl_open) {
+	    !ipa3_odl_ctx->odl_state.adpl_open) {
 		/* Activate ipa_pm*/
 		ret = ipa_pm_activate_sync(ipa3_odl_ctx->odl_pm_hdl);
 		if (ret)
@@ -463,7 +456,6 @@ static int ipa_adpl_release(struct inode *inode, struct file *filp)
 		ret = ipa3_mpm_enable_adpl_over_odl(false);
 		if (ret)
 			IPAERR("mpm failed to disable ADPL over ODL\n");
-
 	}
 	mutex_unlock(&ipa3_odl_ctx->pipe_lock);
 
@@ -474,7 +466,7 @@ void ipa3_odl_pipe_cleanup(bool is_ssr)
 {
 	bool ipa_odl_opened = false;
 
-	if(ipa3_ctx->ipa_hw_type < IPA_HW_v4_1) {
+	if (ipa3_ctx->ipa_hw_type < IPA_HW_v4_1) {
 		IPADBG("ODL not supported\n");
 		return;
 	}
@@ -484,7 +476,7 @@ void ipa3_odl_pipe_cleanup(bool is_ssr)
 		return;
 	}
 
-	if(!ipa3_odl_ctx->odl_state.odl_ep_setup) {
+	if (!ipa3_odl_ctx->odl_state.odl_ep_setup) {
 		IPAERR("adpl pipe setup not done\n");
 		return;
 	}
@@ -514,9 +506,9 @@ void ipa3_odl_pipe_cleanup(bool is_ssr)
 	ipa3_odl_ctx->odl_state.aggr_byte_limit_sent = false;
 	ipa3_odl_ctx->odl_state.odl_connected = false;
 	/*
-	 * Send signal to ipa_odl_ctl_fops_read,
-	 * to send ODL ep close notification
-	 */
+   * Send signal to ipa_odl_ctl_fops_read,
+   * to send ODL ep close notification
+   */
 	ipa3_odl_ctx->odl_ctl_msg_wq_flag = true;
 	ipa3_odl_ctx->stats.odl_drop_pkt = 0;
 	atomic_set(&ipa3_odl_ctx->stats.numer_in_queue, 0);
@@ -524,7 +516,6 @@ void ipa3_odl_pipe_cleanup(bool is_ssr)
 	ipa3_odl_ctx->stats.odl_tx_diag_pkt = 0;
 	IPADBG("Wake up odl ctl\n");
 	wake_up_interruptible(&odl_ctl_msg_wq);
-
 }
 
 /**
@@ -545,9 +536,9 @@ void ipa3_odl_pipe_cleanup(bool is_ssr)
  * Note:	Should not be called from atomic context
  */
 static ssize_t ipa_adpl_read(struct file *filp, char __user *buf, size_t count,
-		  loff_t *f_pos)
+			     loff_t *f_pos)
 {
-	int ret =  0;
+	int ret = 0;
 	char __user *start = buf;
 	struct ipa3_push_msg_odl *msg;
 	DEFINE_WAIT_FUNC(wait, woken_wake_function);
@@ -562,7 +553,7 @@ static ssize_t ipa_adpl_read(struct file *filp, char __user *buf, size_t count,
 		msg = NULL;
 		if (!list_empty(&ipa3_odl_ctx->adpl_msg_list)) {
 			msg = list_first_entry(&ipa3_odl_ctx->adpl_msg_list,
-					struct ipa3_push_msg_odl, link);
+					       struct ipa3_push_msg_odl, link);
 			list_del(&msg->link);
 			if (atomic_read(&ipa3_odl_ctx->stats.numer_in_queue))
 				atomic_dec(&ipa3_odl_ctx->stats.numer_in_queue);
@@ -581,8 +572,7 @@ static ssize_t ipa_adpl_read(struct file *filp, char __user *buf, size_t count,
 			}
 
 			if (msg->buff) {
-				if (copy_to_user(buf, msg->buff,
-							msg->len)) {
+				if (copy_to_user(buf, msg->buff, msg->len)) {
 					ret = -EFAULT;
 					kfree(msg->buff);
 					kfree(msg);
@@ -618,8 +608,8 @@ static ssize_t ipa_adpl_read(struct file *filp, char __user *buf, size_t count,
 	return ret;
 }
 
-static long ipa_adpl_ioctl(struct file *filp,
-	unsigned int cmd, unsigned long arg)
+static long ipa_adpl_ioctl(struct file *filp, unsigned int cmd,
+			   unsigned long arg)
 {
 	struct odl_agg_pipe_info odl_pipe_info;
 	int retval = 0;
@@ -635,11 +625,12 @@ static long ipa_adpl_ioctl(struct file *filp,
 	switch (cmd) {
 	case IPA_IOC_ODL_GET_AGG_BYTE_LIMIT:
 		odl_pipe_info.agg_byte_limit =
-		/*Modem expecting value in bytes. so passing 15 = 15*1024*/
-		(ipa3_odl_ctx->odl_sys_param.ipa_ep_cfg.aggr.aggr_byte_limit *
-			1024);
+			/*Modem expecting value in bytes. so passing 15 = 15*1024*/
+			(ipa3_odl_ctx->odl_sys_param.ipa_ep_cfg.aggr
+				 .aggr_byte_limit *
+			 1024);
 		if (copy_to_user((void __user *)arg, &odl_pipe_info,
-					sizeof(odl_pipe_info))) {
+				 sizeof(odl_pipe_info))) {
 			retval = -EFAULT;
 			goto fail;
 		}
@@ -707,7 +698,8 @@ int ipa_odl_init(void)
 	}
 
 	odl_cdev[loop].dev = device_create(odl_cdev[loop].class, NULL,
-		 odl_cdev[loop].dev_num, ipa3_ctx, "ipa_adpl");
+					   odl_cdev[loop].dev_num, ipa3_ctx,
+					   "ipa_adpl");
 	if (IS_ERR(odl_cdev[loop].dev)) {
 		IPAERR("device_create err:%ld\n", PTR_ERR(odl_cdev[loop].dev));
 		result = PTR_ERR(odl_cdev[loop].dev);
@@ -731,19 +723,20 @@ int ipa_odl_init(void)
 
 	if (IS_ERR(odl_cdev[loop].class)) {
 		IPAERR("Error: odl_cdev->class NULL\n");
-		result =  -ENODEV;
+		result = -ENODEV;
 		goto create_char_dev1_fail;
 	}
 
 	result = alloc_chrdev_region(&odl_cdev[loop].dev_num, 0, 1,
-							"ipa_odl_ctl");
+				     "ipa_odl_ctl");
 	if (result) {
 		IPAERR("alloc_chrdev_region error for ipa odl ctl pipe\n");
 		goto alloc_chrdev1_region_fail;
 	}
 
 	odl_cdev[loop].dev = device_create(odl_cdev[loop].class, NULL,
-		 odl_cdev[loop].dev_num, ipa3_ctx, "ipa_odl_ctl");
+					   odl_cdev[loop].dev_num, ipa3_ctx,
+					   "ipa_odl_ctl");
 	if (IS_ERR(odl_cdev[loop].dev)) {
 		IPAERR("device_create err:%ld\n", PTR_ERR(odl_cdev[loop].dev));
 		result = PTR_ERR(odl_cdev[loop].dev);
@@ -766,8 +759,7 @@ int ipa_odl_init(void)
 	/* register ipa_pm */
 	result = ipa3_odl_register_pm();
 	if (result) {
-		IPAWANERR("ipa3_odl_register_pm failed, ret: %d\n",
-				result);
+		IPAWANERR("ipa3_odl_register_pm failed, ret: %d\n", result);
 	}
 	return 0;
 cdev1_add_fail:

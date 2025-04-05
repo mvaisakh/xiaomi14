@@ -24,20 +24,20 @@
  * debugfs with offload information
  */
 
+#include "qwlan_version.h"
+#include "wlan_hdd_object_manager.h"
+#include "wlan_pmo_common_public_struct.h"
+#include "wlan_pmo_mc_addr_filtering_public_struct.h"
+#include "wlan_pmo_ns_public_struct.h"
+#include "wlan_pmo_ucfg_api.h"
+#include "wmi_unified_param.h"
+#include <cds_sched.h>
 #include <wlan_hdd_debugfs_csr.h>
 #include <wlan_hdd_main.h>
-#include <cds_sched.h>
 #include <wma_api.h>
-#include "qwlan_version.h"
-#include "wmi_unified_param.h"
-#include "wlan_pmo_common_public_struct.h"
-#include "wlan_pmo_ns_public_struct.h"
-#include "wlan_pmo_mc_addr_filtering_public_struct.h"
-#include "wlan_pmo_ucfg_api.h"
-#include "wlan_hdd_object_manager.h"
 
 /* IPv6 address string */
-#define IPV6_MAC_ADDRESS_STR_LEN 47  /* Including null terminator */
+#define IPV6_MAC_ADDRESS_STR_LEN 47 /* Including null terminator */
 
 /**
  * wlan_hdd_mc_addr_list_info_debugfs() - Populate mc addr list info
@@ -48,15 +48,15 @@
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_mc_addr_list_info_debugfs(struct hdd_context *hdd_ctx,
-				   struct hdd_adapter *adapter, uint8_t *buf,
-				   ssize_t buf_avail_len)
+static ssize_t wlan_hdd_mc_addr_list_info_debugfs(struct hdd_context *hdd_ctx,
+						  struct hdd_adapter *adapter,
+						  uint8_t *buf,
+						  ssize_t buf_avail_len)
 {
 	ssize_t length = 0;
 	int ret;
 	uint8_t i;
-	struct pmo_mc_addr_list mc_addr_list = {0};
+	struct pmo_mc_addr_list mc_addr_list = { 0 };
 	QDF_STATUS status;
 
 	if (!ucfg_pmo_is_mc_addr_list_enabled(hdd_ctx->psoc)) {
@@ -67,9 +67,8 @@ wlan_hdd_mc_addr_list_info_debugfs(struct hdd_context *hdd_ctx,
 		return length;
 	}
 
-	status = ucfg_pmo_get_mc_addr_list(hdd_ctx->psoc,
-					   adapter->deflink->vdev_id,
-					   &mc_addr_list);
+	status = ucfg_pmo_get_mc_addr_list(
+		hdd_ctx->psoc, adapter->deflink->vdev_id, &mc_addr_list);
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		ret = scnprintf(buf, buf_avail_len,
 				"\nMC addr list query is failed\n");
@@ -99,9 +98,10 @@ wlan_hdd_mc_addr_list_info_debugfs(struct hdd_context *hdd_ctx,
 			return buf_avail_len;
 		}
 
-		ret = scnprintf(buf + length, buf_avail_len - length,
-				QDF_MAC_ADDR_FMT "\n",
-				QDF_MAC_ADDR_REF(mc_addr_list.mc_addr[i].bytes));
+		ret = scnprintf(
+			buf + length, buf_avail_len - length,
+			QDF_MAC_ADDR_FMT "\n",
+			QDF_MAC_ADDR_REF(mc_addr_list.mc_addr[i].bytes));
 		if (ret <= 0)
 			return length;
 		length += ret;
@@ -130,14 +130,14 @@ wlan_hdd_mc_addr_list_info_debugfs(struct hdd_context *hdd_ctx,
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_arp_offload_info_debugfs(struct hdd_context *hdd_ctx,
-				  struct hdd_adapter *adapter, uint8_t *buf,
-				  ssize_t buf_avail_len)
+static ssize_t wlan_hdd_arp_offload_info_debugfs(struct hdd_context *hdd_ctx,
+						 struct hdd_adapter *adapter,
+						 uint8_t *buf,
+						 ssize_t buf_avail_len)
 {
 	ssize_t length = 0;
 	int ret_val;
-	struct pmo_arp_offload_params info = {0};
+	struct pmo_arp_offload_params info = { 0 };
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
 
@@ -185,11 +185,13 @@ static void ipv6_addr_string(uint8_t *buffer, uint8_t *ipv6_addr)
 {
 	uint8_t *a = ipv6_addr;
 
-	scnprintf(buffer, IPV6_MAC_ADDRESS_STR_LEN,
-		  "%02x%02x::%02x%02x::%02x%02x::%02x%02x::%02x%02x::%02x%02x::%02x%02x::%02x%02x",
-		  (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5], (a)[6],
-		  (a)[7], (a)[8], (a)[9], (a)[10], (a)[11], (a)[12], (a)[13],
-		  (a)[14], (a)[15]);
+	scnprintf(
+		buffer, IPV6_MAC_ADDRESS_STR_LEN,
+		"%02x%02x::%02x%02x::%02x%02x::%02x%02x::%02x%02x::%02x%02x::%02x%"
+		"02x::%02x%02x",
+		(a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5], (a)[6], (a)[7],
+		(a)[8], (a)[9], (a)[10], (a)[11], (a)[12], (a)[13], (a)[14],
+		(a)[15]);
 }
 
 /**
@@ -225,14 +227,14 @@ static uint8_t *hdd_ipv6_scope_str(enum pmo_ns_addr_scope scope)
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_ns_offload_info_debugfs(struct hdd_context *hdd_ctx,
-				 struct hdd_adapter *adapter, uint8_t *buf,
-				 ssize_t buf_avail_len)
+static ssize_t wlan_hdd_ns_offload_info_debugfs(struct hdd_context *hdd_ctx,
+						struct hdd_adapter *adapter,
+						uint8_t *buf,
+						ssize_t buf_avail_len)
 {
 	ssize_t length = 0;
 	int ret;
-	struct pmo_ns_offload_params info = {0};
+	struct pmo_ns_offload_params info = { 0 };
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
 	uint32_t i;
@@ -254,8 +256,7 @@ wlan_hdd_ns_offload_info_debugfs(struct hdd_context *hdd_ctx,
 		return length;
 	}
 
-	ret = scnprintf(buf, buf_avail_len,
-			"\nNS OFFLOAD DETAILS\n");
+	ret = scnprintf(buf, buf_avail_len, "\nNS OFFLOAD DETAILS\n");
 	if (ret <= 0)
 		return length;
 	length += ret;
@@ -295,16 +296,14 @@ wlan_hdd_ns_offload_info_debugfs(struct hdd_context *hdd_ctx,
 		ipv6_addr_string(ipv6_str, info.target_ipv6_addr[i]);
 		scope_string = hdd_ipv6_scope_str(info.scope[i]);
 
-		if (info.target_ipv6_addr_ac_type[i] ==
-		    PMO_IPV6_ADDR_AC_TYPE)
+		if (info.target_ipv6_addr_ac_type[i] == PMO_IPV6_ADDR_AC_TYPE)
 			strlcpy(cast_string, "(ANY CAST)", 12);
 		else
 			strlcpy(cast_string, "(UNI CAST)", 12);
 
 		ret = scnprintf(buf + length, buf_avail_len - length,
-				"%u. %s %s and scope is: %s\n",
-				(i + 1), ipv6_str, cast_string,
-				scope_string);
+				"%u. %s %s and scope is: %s\n", (i + 1),
+				ipv6_str, cast_string, scope_string);
 		if (ret <= 0)
 			return length;
 		length += ret;
@@ -322,10 +321,10 @@ wlan_hdd_ns_offload_info_debugfs(struct hdd_context *hdd_ctx,
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_ns_offload_info_debugfs(struct hdd_context *hdd_ctx,
-				 struct hdd_adapter *adapter, uint8_t *buf,
-				 ssize_t buf_avail_len)
+static ssize_t wlan_hdd_ns_offload_info_debugfs(struct hdd_context *hdd_ctx,
+						struct hdd_adapter *adapter,
+						uint8_t *buf,
+						ssize_t buf_avail_len)
 {
 	return 0;
 }
@@ -341,10 +340,9 @@ wlan_hdd_ns_offload_info_debugfs(struct hdd_context *hdd_ctx,
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_apf_info_debugfs(struct hdd_context *hdd_ctx,
-			  struct hdd_adapter *adapter, uint8_t *buf,
-			  ssize_t buf_avail_len)
+static ssize_t wlan_hdd_apf_info_debugfs(struct hdd_context *hdd_ctx,
+					 struct hdd_adapter *adapter,
+					 uint8_t *buf, ssize_t buf_avail_len)
 {
 	ssize_t length = 0;
 	int ret_val;
@@ -365,19 +363,18 @@ wlan_hdd_apf_info_debugfs(struct hdd_context *hdd_ctx,
 	return length;
 }
 #else
-static ssize_t
-wlan_hdd_apf_info_debugfs(struct hdd_context *hdd_ctx,
-			  struct hdd_adapter *adapter, uint8_t *buf,
-			  ssize_t buf_avail_len)
+static ssize_t wlan_hdd_apf_info_debugfs(struct hdd_context *hdd_ctx,
+					 struct hdd_adapter *adapter,
+					 uint8_t *buf, ssize_t buf_avail_len)
 {
 	return 0;
 }
 #endif
 
-ssize_t
-wlan_hdd_debugfs_update_filters_info(struct hdd_context *hdd_ctx,
-				     struct hdd_adapter *adapter,
-				     uint8_t *buf, ssize_t buf_avail_len)
+ssize_t wlan_hdd_debugfs_update_filters_info(struct hdd_context *hdd_ctx,
+					     struct hdd_adapter *adapter,
+					     uint8_t *buf,
+					     ssize_t buf_avail_len)
 {
 	ssize_t len;
 	int ret_val;

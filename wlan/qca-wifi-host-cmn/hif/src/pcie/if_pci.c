@@ -17,155 +17,155 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/pci.h>
-#include <linux/slab.h>
-#include <linux/interrupt.h>
-#include <linux/if_arp.h>
-#include <linux/of_pci.h>
-#include <linux/version.h>
-#include "hif_io32.h"
 #include "if_pci.h"
-#include "hif.h"
-#include "target_type.h"
-#include "hif_main.h"
-#include "ce_main.h"
 #include "ce_api.h"
-#include "ce_internal.h"
-#include "ce_reg.h"
 #include "ce_bmi.h"
-#include "regtable.h"
+#include "ce_internal.h"
+#include "ce_main.h"
+#include "ce_reg.h"
+#include "hif.h"
+#include "hif_debug.h"
 #include "hif_hw_version.h"
-#include <linux/debugfs.h>
-#include <linux/seq_file.h>
-#include "qdf_status.h"
+#include "hif_io32.h"
+#include "hif_main.h"
+#include "mp_dev.h"
+#include "pld_common.h"
 #include "qdf_atomic.h"
 #include "qdf_platform.h"
-#include "pld_common.h"
-#include "mp_dev.h"
-#include "hif_debug.h"
+#include "qdf_status.h"
+#include "regtable.h"
+#include "target_type.h"
+#include <linux/debugfs.h>
+#include <linux/if_arp.h>
+#include <linux/interrupt.h>
+#include <linux/of_pci.h>
+#include <linux/pci.h>
+#include <linux/seq_file.h>
+#include <linux/slab.h>
+#include <linux/version.h>
 
 #ifdef QCA_SUPPORT_LEGACY_INTERRUPTS
 char *legacy_ic_irqname[] = {
-"ce0",
-"ce1",
-"ce2",
-"ce3",
-"ce4",
-"ce5",
-"ce6",
-"ce7",
-"ce8",
-"ce9",
-"ce10",
-"ce11",
-"ce12",
-"ce13",
-"ce14",
-"ce15",
-"reo2sw8_intr2",
-"reo2sw7_intr2",
-"reo2sw6_intr2",
-"reo2sw5_intr2",
-"reo2sw4_intr2",
-"reo2sw3_intr2",
-"reo2sw2_intr2",
-"reo2sw1_intr2",
-"reo2sw0_intr2",
-"reo2sw8_intr",
-"reo2sw7_intr",
-"reo2sw6_inrr",
-"reo2sw5_intr",
-"reo2sw4_intr",
-"reo2sw3_intr",
-"reo2sw2_intr",
-"reo2sw1_intr",
-"reo2sw0_intr",
-"reo2status_intr2",
-"reo_status",
-"reo2rxdma_out_2",
-"reo2rxdma_out_1",
-"reo_cmd",
-"sw2reo6",
-"sw2reo5",
-"sw2reo1",
-"sw2reo",
-"rxdma2reo_mlo_0_dst_ring1",
-"rxdma2reo_mlo_0_dst_ring0",
-"rxdma2reo_mlo_1_dst_ring1",
-"rxdma2reo_mlo_1_dst_ring0",
-"rxdma2reo_dst_ring1",
-"rxdma2reo_dst_ring0",
-"rxdma2sw_dst_ring1",
-"rxdma2sw_dst_ring0",
-"rxdma2release_dst_ring1",
-"rxdma2release_dst_ring0",
-"sw2rxdma_2_src_ring",
-"sw2rxdma_1_src_ring",
-"sw2rxdma_0",
-"wbm2sw6_release2",
-"wbm2sw5_release2",
-"wbm2sw4_release2",
-"wbm2sw3_release2",
-"wbm2sw2_release2",
-"wbm2sw1_release2",
-"wbm2sw0_release2",
-"wbm2sw6_release",
-"wbm2sw5_release",
-"wbm2sw4_release",
-"wbm2sw3_release",
-"wbm2sw2_release",
-"wbm2sw1_release",
-"wbm2sw0_release",
-"wbm2sw_link",
-"wbm_error_release",
-"sw2txmon_src_ring",
-"sw2rxmon_src_ring",
-"txmon2sw_p1_intr1",
-"txmon2sw_p1_intr0",
-"txmon2sw_p0_dest1",
-"txmon2sw_p0_dest0",
-"rxmon2sw_p1_intr1",
-"rxmon2sw_p1_intr0",
-"rxmon2sw_p0_dest1",
-"rxmon2sw_p0_dest0",
-"sw_release",
-"sw2tcl_credit2",
-"sw2tcl_credit",
-"sw2tcl4",
-"sw2tcl5",
-"sw2tcl3",
-"sw2tcl2",
-"sw2tcl1",
-"sw2wbm1",
-"misc_8",
-"misc_7",
-"misc_6",
-"misc_5",
-"misc_4",
-"misc_3",
-"misc_2",
-"misc_1",
-"misc_0",
+	"ce0",
+	"ce1",
+	"ce2",
+	"ce3",
+	"ce4",
+	"ce5",
+	"ce6",
+	"ce7",
+	"ce8",
+	"ce9",
+	"ce10",
+	"ce11",
+	"ce12",
+	"ce13",
+	"ce14",
+	"ce15",
+	"reo2sw8_intr2",
+	"reo2sw7_intr2",
+	"reo2sw6_intr2",
+	"reo2sw5_intr2",
+	"reo2sw4_intr2",
+	"reo2sw3_intr2",
+	"reo2sw2_intr2",
+	"reo2sw1_intr2",
+	"reo2sw0_intr2",
+	"reo2sw8_intr",
+	"reo2sw7_intr",
+	"reo2sw6_inrr",
+	"reo2sw5_intr",
+	"reo2sw4_intr",
+	"reo2sw3_intr",
+	"reo2sw2_intr",
+	"reo2sw1_intr",
+	"reo2sw0_intr",
+	"reo2status_intr2",
+	"reo_status",
+	"reo2rxdma_out_2",
+	"reo2rxdma_out_1",
+	"reo_cmd",
+	"sw2reo6",
+	"sw2reo5",
+	"sw2reo1",
+	"sw2reo",
+	"rxdma2reo_mlo_0_dst_ring1",
+	"rxdma2reo_mlo_0_dst_ring0",
+	"rxdma2reo_mlo_1_dst_ring1",
+	"rxdma2reo_mlo_1_dst_ring0",
+	"rxdma2reo_dst_ring1",
+	"rxdma2reo_dst_ring0",
+	"rxdma2sw_dst_ring1",
+	"rxdma2sw_dst_ring0",
+	"rxdma2release_dst_ring1",
+	"rxdma2release_dst_ring0",
+	"sw2rxdma_2_src_ring",
+	"sw2rxdma_1_src_ring",
+	"sw2rxdma_0",
+	"wbm2sw6_release2",
+	"wbm2sw5_release2",
+	"wbm2sw4_release2",
+	"wbm2sw3_release2",
+	"wbm2sw2_release2",
+	"wbm2sw1_release2",
+	"wbm2sw0_release2",
+	"wbm2sw6_release",
+	"wbm2sw5_release",
+	"wbm2sw4_release",
+	"wbm2sw3_release",
+	"wbm2sw2_release",
+	"wbm2sw1_release",
+	"wbm2sw0_release",
+	"wbm2sw_link",
+	"wbm_error_release",
+	"sw2txmon_src_ring",
+	"sw2rxmon_src_ring",
+	"txmon2sw_p1_intr1",
+	"txmon2sw_p1_intr0",
+	"txmon2sw_p0_dest1",
+	"txmon2sw_p0_dest0",
+	"rxmon2sw_p1_intr1",
+	"rxmon2sw_p1_intr0",
+	"rxmon2sw_p0_dest1",
+	"rxmon2sw_p0_dest0",
+	"sw_release",
+	"sw2tcl_credit2",
+	"sw2tcl_credit",
+	"sw2tcl4",
+	"sw2tcl5",
+	"sw2tcl3",
+	"sw2tcl2",
+	"sw2tcl1",
+	"sw2wbm1",
+	"misc_8",
+	"misc_7",
+	"misc_6",
+	"misc_5",
+	"misc_4",
+	"misc_3",
+	"misc_2",
+	"misc_1",
+	"misc_0",
 };
 #endif
 
 #if (defined(QCA_WIFI_QCA6390) || defined(QCA_WIFI_QCA6490) || \
-	defined(QCA_WIFI_KIWI))
+     defined(QCA_WIFI_KIWI))
 #include "hal_api.h"
 #endif
 
-#include "if_pci_internal.h"
 #include "ce_tasklet.h"
-#include "targaddrs.h"
 #include "hif_exec.h"
+#include "if_pci_internal.h"
+#include "targaddrs.h"
 
-#include "pci_api.h"
 #include "ahb_api.h"
-#include "wlan_cfg.h"
-#include "qdf_hang_event_notifier.h"
-#include "qdf_platform.h"
+#include "pci_api.h"
 #include "qal_devnode.h"
+#include "qdf_hang_event_notifier.h"
 #include "qdf_irq.h"
+#include "qdf_platform.h"
+#include "wlan_cfg.h"
 
 /* Maximum ms timeout for host to wake up target */
 #define PCIE_WAKE_TIMEOUT 1000
@@ -184,12 +184,15 @@ char *legacy_ic_irqname[] = {
 #define WLAN_CFG_MAX_CE_COUNT 12
 #endif
 #define DP_IRQ_NAME_LEN 25
-char dp_irqname[WLAN_CFG_MAX_PCIE_GROUPS][WLAN_CFG_INT_NUM_CONTEXTS][DP_IRQ_NAME_LEN] = {};
-char ce_irqname[WLAN_CFG_MAX_PCIE_GROUPS][WLAN_CFG_MAX_CE_COUNT][DP_IRQ_NAME_LEN] = {};
+char dp_irqname[WLAN_CFG_MAX_PCIE_GROUPS][WLAN_CFG_INT_NUM_CONTEXTS]
+	       [DP_IRQ_NAME_LEN] = {};
+char ce_irqname[WLAN_CFG_MAX_PCIE_GROUPS][WLAN_CFG_MAX_CE_COUNT]
+	       [DP_IRQ_NAME_LEN] = {};
 
 #ifdef QCA_SUPPORT_LEGACY_INTERRUPTS
 #define WLAN_CFG_MAX_LEGACY_IRQ_COUNT 160
-char dp_legacy_irqname[WLAN_CFG_MAX_PCIE_GROUPS][WLAN_CFG_MAX_LEGACY_IRQ_COUNT][DP_IRQ_NAME_LEN] = {};
+char dp_legacy_irqname[WLAN_CFG_MAX_PCIE_GROUPS][WLAN_CFG_MAX_LEGACY_IRQ_COUNT]
+		      [DP_IRQ_NAME_LEN] = {};
 #endif
 
 static inline int hif_get_pci_slot(struct hif_softc *scn)
@@ -242,7 +245,6 @@ static void hif_pci_route_adrastea_interrupt(struct hif_pci_softc *sc)
 }
 #endif
 
-
 /**
  * pci_dispatch_interrupt() - PCI interrupt dispatcher
  * @scn: scn
@@ -265,16 +267,15 @@ static void pci_dispatch_interrupt(struct hif_softc *scn)
 
 	if (intr_summary == 0) {
 		if ((scn->target_status != TARGET_STATUS_RESET) &&
-			(!qdf_atomic_read(&scn->link_suspended))) {
+		    (!qdf_atomic_read(&scn->link_suspended))) {
+			hif_write32_mb(scn,
+				       scn->mem + (SOC_CORE_BASE_ADDRESS |
+						   PCIE_INTR_ENABLE_ADDRESS),
+				       HOST_GROUP0_MASK);
 
-			hif_write32_mb(scn, scn->mem +
-				(SOC_CORE_BASE_ADDRESS |
-				PCIE_INTR_ENABLE_ADDRESS),
-				HOST_GROUP0_MASK);
-
-			hif_read32_mb(scn, scn->mem +
-					(SOC_CORE_BASE_ADDRESS |
-					PCIE_INTR_ENABLE_ADDRESS));
+			hif_read32_mb(scn,
+				      scn->mem + (SOC_CORE_BASE_ADDRESS |
+						  PCIE_INTR_ENABLE_ADDRESS));
 		}
 		Q_TARGET_ACCESS_END(scn);
 		return;
@@ -285,7 +286,7 @@ static void pci_dispatch_interrupt(struct hif_softc *scn)
 	for (id = 0; intr_summary && (id < scn->ce_count); id++) {
 		if (intr_summary & (1 << id)) {
 			intr_summary &= ~(1 << id);
-			ce_dispatch_interrupt(id,  &hif_state->tasklets[id]);
+			ce_dispatch_interrupt(id, &hif_state->tasklets[id]);
 		}
 	}
 }
@@ -308,10 +309,10 @@ irqreturn_t hif_pci_legacy_ce_interrupt_handler(int irq, void *arg)
 			return IRQ_HANDLED;
 
 		if (ADRASTEA_BU) {
-			host_enable = hif_read32_mb(sc, sc->mem +
-						    PCIE_INTR_ENABLE_ADDRESS);
-			host_cause = hif_read32_mb(sc, sc->mem +
-						   PCIE_INTR_CAUSE_ADDRESS);
+			host_enable = hif_read32_mb(
+				sc, sc->mem + PCIE_INTR_ENABLE_ADDRESS);
+			host_cause = hif_read32_mb(
+				sc, sc->mem + PCIE_INTR_CAUSE_ADDRESS);
 			if (!(host_enable & host_cause)) {
 				hif_pci_route_adrastea_interrupt(sc);
 				return IRQ_HANDLED;
@@ -319,80 +320,88 @@ irqreturn_t hif_pci_legacy_ce_interrupt_handler(int irq, void *arg)
 		}
 
 		/* Clear Legacy PCI line interrupts
-		 * IMPORTANT: INTR_CLR register has to be set
-		 * after INTR_ENABLE is set to 0,
-		 * otherwise interrupt can not be really cleared
-		 */
-		hif_write32_mb(sc, sc->mem +
-			      (SOC_CORE_BASE_ADDRESS |
-			       PCIE_INTR_ENABLE_ADDRESS), 0);
+     * IMPORTANT: INTR_CLR register has to be set
+     * after INTR_ENABLE is set to 0,
+     * otherwise interrupt can not be really cleared
+     */
+		hif_write32_mb(sc,
+			       sc->mem + (SOC_CORE_BASE_ADDRESS |
+					  PCIE_INTR_ENABLE_ADDRESS),
+			       0);
 
-		hif_write32_mb(sc, sc->mem +
-			      (SOC_CORE_BASE_ADDRESS | PCIE_INTR_CLR_ADDRESS),
-			       ADRASTEA_BU ?
-			       (host_enable & host_cause) :
-			      HOST_GROUP0_MASK);
+		hif_write32_mb(sc,
+			       sc->mem + (SOC_CORE_BASE_ADDRESS |
+					  PCIE_INTR_CLR_ADDRESS),
+			       ADRASTEA_BU ? (host_enable & host_cause) :
+					     HOST_GROUP0_MASK);
 
 		if (ADRASTEA_BU)
 			hif_write32_mb(sc, sc->mem + 0x2f100c,
 				       (host_cause >> 1));
 
 		/* IMPORTANT: this extra read transaction is required to
-		 * flush the posted write buffer
-		 */
+     * flush the posted write buffer
+     */
 		if (!ADRASTEA_BU) {
-		tmp =
-			hif_read32_mb(sc, sc->mem +
-				     (SOC_CORE_BASE_ADDRESS |
-				      PCIE_INTR_ENABLE_ADDRESS));
+			tmp = hif_read32_mb(
+				sc, sc->mem + (SOC_CORE_BASE_ADDRESS |
+					       PCIE_INTR_ENABLE_ADDRESS));
 
-		if (tmp == 0xdeadbeef) {
-			hif_err("SoC returns 0xdeadbeef!!");
+			if (tmp == 0xdeadbeef) {
+				hif_err("SoC returns 0xdeadbeef!!");
 
-			pci_read_config_word(sc->pdev, PCI_VENDOR_ID, &val);
-			hif_err("PCI Vendor ID = 0x%04x", val);
+				pci_read_config_word(sc->pdev, PCI_VENDOR_ID,
+						     &val);
+				hif_err("PCI Vendor ID = 0x%04x", val);
 
-			pci_read_config_word(sc->pdev, PCI_DEVICE_ID, &val);
-			hif_err("PCI Device ID = 0x%04x", val);
+				pci_read_config_word(sc->pdev, PCI_DEVICE_ID,
+						     &val);
+				hif_err("PCI Device ID = 0x%04x", val);
 
-			pci_read_config_word(sc->pdev, PCI_COMMAND, &val);
-			hif_err("PCI Command = 0x%04x", val);
+				pci_read_config_word(sc->pdev, PCI_COMMAND,
+						     &val);
+				hif_err("PCI Command = 0x%04x", val);
 
-			pci_read_config_word(sc->pdev, PCI_STATUS, &val);
-			hif_err("PCI Status = 0x%04x", val);
+				pci_read_config_word(sc->pdev, PCI_STATUS,
+						     &val);
+				hif_err("PCI Status = 0x%04x", val);
 
-			pci_read_config_dword(sc->pdev, PCI_BASE_ADDRESS_0,
-					      &bar0);
-			hif_err("PCI BAR0 = 0x%08x", bar0);
+				pci_read_config_dword(
+					sc->pdev, PCI_BASE_ADDRESS_0, &bar0);
+				hif_err("PCI BAR0 = 0x%08x", bar0);
 
-			hif_err("RTC_STATE_ADDRESS = 0x%08x",
-				hif_read32_mb(sc, sc->mem +
-					PCIE_LOCAL_BASE_ADDRESS
-					+ RTC_STATE_ADDRESS));
-			hif_err("PCIE_SOC_WAKE_ADDRESS = 0x%08x",
-				hif_read32_mb(sc, sc->mem +
-					PCIE_LOCAL_BASE_ADDRESS
-					+ PCIE_SOC_WAKE_ADDRESS));
-			hif_err("0x80008 = 0x%08x, 0x8000c = 0x%08x",
-				hif_read32_mb(sc, sc->mem + 0x80008),
-				hif_read32_mb(sc, sc->mem + 0x8000c));
-			hif_err("0x80010 = 0x%08x, 0x80014 = 0x%08x",
-				hif_read32_mb(sc, sc->mem + 0x80010),
-				hif_read32_mb(sc, sc->mem + 0x80014));
-			hif_err("0x80018 = 0x%08x, 0x8001c = 0x%08x",
-				hif_read32_mb(sc, sc->mem + 0x80018),
-				hif_read32_mb(sc, sc->mem + 0x8001c));
-			QDF_BUG(0);
-		}
+				hif_err("RTC_STATE_ADDRESS = 0x%08x",
+					hif_read32_mb(
+						sc,
+						sc->mem +
+							PCIE_LOCAL_BASE_ADDRESS +
+							RTC_STATE_ADDRESS));
+				hif_err("PCIE_SOC_WAKE_ADDRESS = 0x%08x",
+					hif_read32_mb(
+						sc,
+						sc->mem +
+							PCIE_LOCAL_BASE_ADDRESS +
+							PCIE_SOC_WAKE_ADDRESS));
+				hif_err("0x80008 = 0x%08x, 0x8000c = 0x%08x",
+					hif_read32_mb(sc, sc->mem + 0x80008),
+					hif_read32_mb(sc, sc->mem + 0x8000c));
+				hif_err("0x80010 = 0x%08x, 0x80014 = 0x%08x",
+					hif_read32_mb(sc, sc->mem + 0x80010),
+					hif_read32_mb(sc, sc->mem + 0x80014));
+				hif_err("0x80018 = 0x%08x, 0x8001c = 0x%08x",
+					hif_read32_mb(sc, sc->mem + 0x80018),
+					hif_read32_mb(sc, sc->mem + 0x8001c));
+				QDF_BUG(0);
+			}
 
-		PCI_CLR_CAUSE0_REGISTER(sc);
+			PCI_CLR_CAUSE0_REGISTER(sc);
 		}
 
 		if (HAS_FW_INDICATOR) {
 			fw_indicator_address = hif_state->fw_indicator_address;
 			fw_indicator = A_TARGET_READ(scn, fw_indicator_address);
 			if ((fw_indicator != ~0) &&
-			   (fw_indicator & FW_IND_EVENT_PENDING))
+			    (fw_indicator & FW_IND_EVENT_PENDING))
 				ssr_irq = true;
 		}
 
@@ -416,7 +425,7 @@ irqreturn_t hif_pci_legacy_ce_interrupt_handler(int irq, void *arg)
 
 bool hif_pci_targ_is_present(struct hif_softc *scn, void *__iomem *mem)
 {
-	return 1;               /* FIX THIS */
+	return 1; /* FIX THIS */
 }
 
 int hif_get_irq_num(struct hif_opaque_softc *scn, int *irq, uint32_t size)
@@ -439,12 +448,11 @@ int hif_get_irq_num(struct hif_opaque_softc *scn, int *irq, uint32_t size)
 	}
 
 	for (i = 0; i < sc->num_msi_intrs; i++) {
-		irq[i] = sc->irq +  i + MSI_ASSIGN_CE_INITIAL;
+		irq[i] = sc->irq + i + MSI_ASSIGN_CE_INITIAL;
 	}
 
 	return sc->num_msi_intrs;
 }
-
 
 /**
  * hif_pci_cancel_deferred_target_sleep() - cancels the deferred target sleep
@@ -460,15 +468,16 @@ void hif_pci_cancel_deferred_target_sleep(struct hif_softc *scn)
 
 	qdf_spin_lock_irqsave(&hif_state->keep_awake_lock);
 	/*
-	 * If the deferred sleep timer is running cancel it
-	 * and put the soc into sleep.
-	 */
+   * If the deferred sleep timer is running cancel it
+   * and put the soc into sleep.
+   */
 	if (hif_state->fake_sleep == true) {
 		qdf_timer_stop(&hif_state->sleep_timer);
 		if (hif_state->verified_awake == false) {
-			hif_write32_mb(scn, pci_addr + PCIE_LOCAL_BASE_ADDRESS +
-				      PCIE_SOC_WAKE_ADDRESS,
-				      PCIE_SOC_WAKE_RESET);
+			hif_write32_mb(scn,
+				       pci_addr + PCIE_LOCAL_BASE_ADDRESS +
+					       PCIE_SOC_WAKE_ADDRESS,
+				       PCIE_SOC_WAKE_RESET);
 		}
 		hif_state->fake_sleep = false;
 	}
@@ -480,13 +489,15 @@ inline void hif_pci_cancel_deferred_target_sleep(struct hif_softc *scn)
 }
 #endif
 
-#define A_PCIE_LOCAL_REG_READ(sc, mem, addr) \
-	hif_read32_mb(sc, (char *)(mem) + \
-	PCIE_LOCAL_BASE_ADDRESS + (uint32_t)(addr))
+#define A_PCIE_LOCAL_REG_READ(sc, mem, addr)                        \
+	hif_read32_mb(sc, (char *)(mem) + PCIE_LOCAL_BASE_ADDRESS + \
+				  (uint32_t)(addr))
 
-#define A_PCIE_LOCAL_REG_WRITE(sc, mem, addr, val) \
-	hif_write32_mb(sc, ((char *)(mem) + \
-	PCIE_LOCAL_BASE_ADDRESS + (uint32_t)(addr)), (val))
+#define A_PCIE_LOCAL_REG_WRITE(sc, mem, addr, val)                            \
+	hif_write32_mb(                                                       \
+		sc,                                                           \
+		((char *)(mem) + PCIE_LOCAL_BASE_ADDRESS + (uint32_t)(addr)), \
+		(val))
 
 #ifdef QCA_WIFI_3_0
 /**
@@ -516,13 +527,13 @@ static bool hif_targ_is_awake(struct hif_softc *scn, void *__iomem *mem)
 
 	if (scn->recovery)
 		return false;
-	val = hif_read32_mb(scn, mem + PCIE_LOCAL_BASE_ADDRESS
-		+ RTC_STATE_ADDRESS);
+	val = hif_read32_mb(scn,
+			    mem + PCIE_LOCAL_BASE_ADDRESS + RTC_STATE_ADDRESS);
 	return (RTC_STATE_V_GET(val) & RTC_STATE_V_ON) == RTC_STATE_V_ON;
 }
 #endif
 
-#define ATH_PCI_RESET_WAIT_MAX 10       /* Ms */
+#define ATH_PCI_RESET_WAIT_MAX 10 /* Ms */
 static void hif_pci_device_reset(struct hif_pci_softc *sc)
 {
 	void __iomem *mem = sc->mem;
@@ -534,8 +545,8 @@ static void hif_pci_device_reset(struct hif_pci_softc *sc)
 		return;
 
 	/* NB: Don't check resetok here.  This form of reset
-	 * is integral to correct operation.
-	 */
+   * is integral to correct operation.
+   */
 
 	if (!SOC_GLOBAL_RESET_ADDRESS)
 		return;
@@ -546,9 +557,9 @@ static void hif_pci_device_reset(struct hif_pci_softc *sc)
 	hif_err("Reset Device");
 
 	/*
-	 * NB: If we try to write SOC_GLOBAL_RESET_ADDRESS without first
-	 * writing WAKE_V, the Target may scribble over Host memory!
-	 */
+   * NB: If we try to write SOC_GLOBAL_RESET_ADDRESS without first
+   * writing WAKE_V, the Target may scribble over Host memory!
+   */
 	A_PCIE_LOCAL_REG_WRITE(sc, mem, PCIE_SOC_WAKE_ADDRESS,
 			       PCIE_SOC_WAKE_V_MASK);
 	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
@@ -574,9 +585,8 @@ static void hif_pci_device_reset(struct hif_pci_softc *sc)
 	val &= ~1;
 	A_PCIE_LOCAL_REG_WRITE(sc, mem, SOC_GLOBAL_RESET_ADDRESS, val);
 	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
-		if (!
-		    (A_PCIE_LOCAL_REG_READ(sc, mem, RTC_STATE_ADDRESS) &
-		     RTC_STATE_COLD_RESET_MASK))
+		if (!(A_PCIE_LOCAL_REG_READ(sc, mem, RTC_STATE_ADDRESS) &
+		      RTC_STATE_COLD_RESET_MASK))
 			break;
 
 		qdf_mdelay(1);
@@ -604,8 +614,8 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 	struct hif_softc *scn = HIF_GET_SOFTC(sc);
 
 	/* NB: Don't check resetok here.  This form of reset is
-	 * integral to correct operation.
-	 */
+   * integral to correct operation.
+   */
 
 	if (!mem)
 		return;
@@ -613,9 +623,9 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 	hif_debug("Target Warm Reset");
 
 	/*
-	 * NB: If we try to write SOC_GLOBAL_RESET_ADDRESS without first
-	 * writing WAKE_V, the Target may scribble over Host memory!
-	 */
+   * NB: If we try to write SOC_GLOBAL_RESET_ADDRESS without first
+   * writing WAKE_V, the Target may scribble over Host memory!
+   */
 	A_PCIE_LOCAL_REG_WRITE(sc, mem, PCIE_SOC_WAKE_ADDRESS,
 			       PCIE_SOC_WAKE_V_MASK);
 	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
@@ -625,27 +635,24 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 	}
 
 	/*
-	 * Disable Pending interrupts
-	 */
-	val =
-		hif_read32_mb(sc, mem +
-			     (SOC_CORE_BASE_ADDRESS |
-			      PCIE_INTR_CAUSE_ADDRESS));
+   * Disable Pending interrupts
+   */
+	val = hif_read32_mb(sc, mem + (SOC_CORE_BASE_ADDRESS |
+				       PCIE_INTR_CAUSE_ADDRESS));
 	hif_debug("Host Intr Cause reg 0x%x: value : 0x%x",
 		  (SOC_CORE_BASE_ADDRESS | PCIE_INTR_CAUSE_ADDRESS), val);
 	/* Target CPU Intr Cause */
-	val = hif_read32_mb(sc, mem +
-			    (SOC_CORE_BASE_ADDRESS | CPU_INTR_ADDRESS));
+	val = hif_read32_mb(sc,
+			    mem + (SOC_CORE_BASE_ADDRESS | CPU_INTR_ADDRESS));
 	hif_debug("Target CPU Intr Cause 0x%x", val);
 
-	val =
-		hif_read32_mb(sc, mem +
-			     (SOC_CORE_BASE_ADDRESS |
-			      PCIE_INTR_ENABLE_ADDRESS));
-	hif_write32_mb(sc, (mem +
-		       (SOC_CORE_BASE_ADDRESS | PCIE_INTR_ENABLE_ADDRESS)), 0);
-	hif_write32_mb(sc, (mem +
-		       (SOC_CORE_BASE_ADDRESS + PCIE_INTR_CLR_ADDRESS)),
+	val = hif_read32_mb(sc, mem + (SOC_CORE_BASE_ADDRESS |
+				       PCIE_INTR_ENABLE_ADDRESS));
+	hif_write32_mb(
+		sc, (mem + (SOC_CORE_BASE_ADDRESS | PCIE_INTR_ENABLE_ADDRESS)),
+		0);
+	hif_write32_mb(sc,
+		       (mem + (SOC_CORE_BASE_ADDRESS + PCIE_INTR_CLR_ADDRESS)),
 		       HOST_GROUP0_MASK);
 
 	qdf_mdelay(100);
@@ -657,64 +664,54 @@ static void hif_pci_device_warm_reset(struct hif_pci_softc *sc)
 	}
 
 	/* Clear Target LF Timer interrupts */
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS +
-			      SOC_LF_TIMER_CONTROL0_ADDRESS));
+	val = hif_read32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS +
+				       SOC_LF_TIMER_CONTROL0_ADDRESS));
 	hif_debug("addr 0x%x : 0x%x",
-	       (RTC_SOC_BASE_ADDRESS + SOC_LF_TIMER_CONTROL0_ADDRESS), val);
+		  (RTC_SOC_BASE_ADDRESS + SOC_LF_TIMER_CONTROL0_ADDRESS), val);
 	val &= ~SOC_LF_TIMER_CONTROL0_ENABLE_MASK;
-	hif_write32_mb(sc, mem +
-		      (RTC_SOC_BASE_ADDRESS + SOC_LF_TIMER_CONTROL0_ADDRESS),
-		      val);
+	hif_write32_mb(
+		sc,
+		mem + (RTC_SOC_BASE_ADDRESS + SOC_LF_TIMER_CONTROL0_ADDRESS),
+		val);
 
 	/* Reset CE */
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	val = hif_read32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
+				       SOC_RESET_CONTROL_ADDRESS));
 	val |= SOC_RESET_CONTROL_CE_RST_MASK;
-	hif_write32_mb(sc, (mem +
-		       (RTC_SOC_BASE_ADDRESS | SOC_RESET_CONTROL_ADDRESS)),
-		      val);
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	hif_write32_mb(
+		sc, (mem + (RTC_SOC_BASE_ADDRESS | SOC_RESET_CONTROL_ADDRESS)),
+		val);
+	val = hif_read32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
+				       SOC_RESET_CONTROL_ADDRESS));
 	qdf_mdelay(10);
 
 	/* CE unreset */
 	val &= ~SOC_RESET_CONTROL_CE_RST_MASK;
-	hif_write32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
-		       SOC_RESET_CONTROL_ADDRESS), val);
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	hif_write32_mb(sc,
+		       mem + (RTC_SOC_BASE_ADDRESS | SOC_RESET_CONTROL_ADDRESS),
+		       val);
+	val = hif_read32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
+				       SOC_RESET_CONTROL_ADDRESS));
 	qdf_mdelay(10);
 
 	/* Read Target CPU Intr Cause */
-	val = hif_read32_mb(sc, mem +
-			    (SOC_CORE_BASE_ADDRESS | CPU_INTR_ADDRESS));
+	val = hif_read32_mb(sc,
+			    mem + (SOC_CORE_BASE_ADDRESS | CPU_INTR_ADDRESS));
 	hif_debug("Target CPU Intr Cause after CE reset 0x%x", val);
 
 	/* CPU warm RESET */
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	val = hif_read32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
+				       SOC_RESET_CONTROL_ADDRESS));
 	val |= SOC_RESET_CONTROL_CPU_WARM_RST_MASK;
-	hif_write32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
-		       SOC_RESET_CONTROL_ADDRESS), val);
-	val =
-		hif_read32_mb(sc, mem +
-			     (RTC_SOC_BASE_ADDRESS |
-			      SOC_RESET_CONTROL_ADDRESS));
+	hif_write32_mb(sc,
+		       mem + (RTC_SOC_BASE_ADDRESS | SOC_RESET_CONTROL_ADDRESS),
+		       val);
+	val = hif_read32_mb(sc, mem + (RTC_SOC_BASE_ADDRESS |
+				       SOC_RESET_CONTROL_ADDRESS));
 	hif_debug("RESET_CONTROL after cpu warm reset 0x%x", val);
 
 	qdf_mdelay(100);
 	hif_debug("Target Warm reset complete");
-
 }
 
 #ifndef QCA_WIFI_3_0
@@ -759,40 +756,42 @@ int hif_check_soc_status(struct hif_opaque_softc *hif_ctx)
 
 	/* Check PCIe local register for bar/memory access */
 	val = hif_read32_mb(sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
-			   RTC_STATE_ADDRESS);
+					RTC_STATE_ADDRESS);
 	hif_debug("RTC_STATE_ADDRESS is %08x", val);
 
 	/* Try to wake up target if it sleeps */
-	hif_write32_mb(sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
-		PCIE_SOC_WAKE_ADDRESS, PCIE_SOC_WAKE_V_MASK);
+	hif_write32_mb(
+		sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS,
+		PCIE_SOC_WAKE_V_MASK);
 	hif_debug("PCIE_SOC_WAKE_ADDRESS is %08x",
-		hif_read32_mb(sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
-		PCIE_SOC_WAKE_ADDRESS));
+		  hif_read32_mb(sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
+					    PCIE_SOC_WAKE_ADDRESS));
 
 	/* Check if target can be woken up */
 	while (!hif_targ_is_awake(scn, sc->mem)) {
 		if (timeout_count >= PCIE_WAKE_TIMEOUT) {
 			hif_err("wake up timeout, %08x, %08x",
-				hif_read32_mb(sc, sc->mem +
-				     PCIE_LOCAL_BASE_ADDRESS +
-				     RTC_STATE_ADDRESS),
-				hif_read32_mb(sc, sc->mem +
-				     PCIE_LOCAL_BASE_ADDRESS +
-				     PCIE_SOC_WAKE_ADDRESS));
+				hif_read32_mb(
+					sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
+						    RTC_STATE_ADDRESS),
+				hif_read32_mb(
+					sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
+						    PCIE_SOC_WAKE_ADDRESS));
 			return -EACCES;
 		}
 
-		hif_write32_mb(sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
-			      PCIE_SOC_WAKE_ADDRESS, PCIE_SOC_WAKE_V_MASK);
+		hif_write32_mb(sc,
+			       sc->mem + PCIE_LOCAL_BASE_ADDRESS +
+				       PCIE_SOC_WAKE_ADDRESS,
+			       PCIE_SOC_WAKE_V_MASK);
 
 		qdf_mdelay(100);
 		timeout_count += 100;
 	}
 
 	/* Check Power register for SoC internal bus issues */
-	val =
-		hif_read32_mb(sc, sc->mem + RTC_SOC_BASE_ADDRESS +
-			     SOC_POWER_REG_OFFSET);
+	val = hif_read32_mb(sc, sc->mem + RTC_SOC_BASE_ADDRESS +
+					SOC_POWER_REG_OFFSET);
 	hif_debug("Power register is %08x", val);
 
 	return 0;
@@ -819,33 +818,32 @@ static void __hif_pci_dump_registers(struct hif_softc *scn)
 		return;
 
 	/* DEBUG_INPUT_SEL_SRC = 0x6 */
-	val =
-		hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-			     WLAN_DEBUG_INPUT_SEL_OFFSET);
+	val = hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
+					WLAN_DEBUG_INPUT_SEL_OFFSET);
 	val &= ~WLAN_DEBUG_INPUT_SEL_SRC_MASK;
 	val |= WLAN_DEBUG_INPUT_SEL_SRC_SET(0x6);
-	hif_write32_mb(sc, mem + GPIO_BASE_ADDRESS +
-		       WLAN_DEBUG_INPUT_SEL_OFFSET, val);
+	hif_write32_mb(
+		sc, mem + GPIO_BASE_ADDRESS + WLAN_DEBUG_INPUT_SEL_OFFSET, val);
 
 	/* DEBUG_CONTROL_ENABLE = 0x1 */
 	val = hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-			   WLAN_DEBUG_CONTROL_OFFSET);
+					WLAN_DEBUG_CONTROL_OFFSET);
 	val &= ~WLAN_DEBUG_CONTROL_ENABLE_MASK;
 	val |= WLAN_DEBUG_CONTROL_ENABLE_SET(0x1);
-	hif_write32_mb(sc, mem + GPIO_BASE_ADDRESS +
-		      WLAN_DEBUG_CONTROL_OFFSET, val);
+	hif_write32_mb(sc, mem + GPIO_BASE_ADDRESS + WLAN_DEBUG_CONTROL_OFFSET,
+		       val);
 
 	hif_debug("Debug: inputsel: %x dbgctrl: %x",
-	       hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-			    WLAN_DEBUG_INPUT_SEL_OFFSET),
-	       hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-			    WLAN_DEBUG_CONTROL_OFFSET));
+		  hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
+					    WLAN_DEBUG_INPUT_SEL_OFFSET),
+		  hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
+					    WLAN_DEBUG_CONTROL_OFFSET));
 
 	hif_debug("Debug CE");
 	/* Loop CE debug output */
 	/* AMBA_DEBUG_BUS_SEL = 0xc */
-	val = hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-			    AMBA_DEBUG_BUS_OFFSET);
+	val = hif_read32_mb(sc,
+			    mem + GPIO_BASE_ADDRESS + AMBA_DEBUG_BUS_OFFSET);
 	val &= ~AMBA_DEBUG_BUS_SEL_MASK;
 	val |= AMBA_DEBUG_BUS_SEL_SET(0xc);
 	hif_write32_mb(sc, mem + GPIO_BASE_ADDRESS + AMBA_DEBUG_BUS_OFFSET,
@@ -854,48 +852,50 @@ static void __hif_pci_dump_registers(struct hif_softc *scn)
 	for (i = 0; i < sizeof(wrapper_idx) / sizeof(uint32_t); i++) {
 		/* For (i=1,2,3,4,8,9) write CE_WRAPPER_DEBUG_SEL = i */
 		val = hif_read32_mb(sc, mem + CE_WRAPPER_BASE_ADDRESS +
-				   CE_WRAPPER_DEBUG_OFFSET);
+						CE_WRAPPER_DEBUG_OFFSET);
 		val &= ~CE_WRAPPER_DEBUG_SEL_MASK;
 		val |= CE_WRAPPER_DEBUG_SEL_SET(wrapper_idx[i]);
-		hif_write32_mb(sc, mem + CE_WRAPPER_BASE_ADDRESS +
-			      CE_WRAPPER_DEBUG_OFFSET, val);
+		hif_write32_mb(sc,
+			       mem + CE_WRAPPER_BASE_ADDRESS +
+				       CE_WRAPPER_DEBUG_OFFSET,
+			       val);
 
-		hif_debug("ce wrapper: %d amdbg: %x cewdbg: %x",
-			  wrapper_idx[i],
+		hif_debug("ce wrapper: %d amdbg: %x cewdbg: %x", wrapper_idx[i],
 			  hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-				AMBA_DEBUG_BUS_OFFSET),
+						    AMBA_DEBUG_BUS_OFFSET),
 			  hif_read32_mb(sc, mem + CE_WRAPPER_BASE_ADDRESS +
-				CE_WRAPPER_DEBUG_OFFSET));
+						    CE_WRAPPER_DEBUG_OFFSET));
 
 		if (wrapper_idx[i] <= 7) {
 			for (j = 0; j <= 5; j++) {
 				ce_base = CE_BASE_ADDRESS(wrapper_idx[i]);
 				/* For (j=0~5) write CE_DEBUG_SEL = j */
-				val =
-					hif_read32_mb(sc, mem + ce_base +
-						     CE_DEBUG_OFFSET);
+				val = hif_read32_mb(
+					sc, mem + ce_base + CE_DEBUG_OFFSET);
 				val &= ~CE_DEBUG_SEL_MASK;
 				val |= CE_DEBUG_SEL_SET(j);
-				hif_write32_mb(sc, mem + ce_base +
-					       CE_DEBUG_OFFSET, val);
+				hif_write32_mb(sc,
+					       mem + ce_base + CE_DEBUG_OFFSET,
+					       val);
 
 				/* read (@gpio_athr_wlan_reg)
-				 * WLAN_DEBUG_OUT_DATA
-				 */
-				val = hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS
-						    + WLAN_DEBUG_OUT_OFFSET);
+         * WLAN_DEBUG_OUT_DATA
+         */
+				val = hif_read32_mb(
+					sc, mem + GPIO_BASE_ADDRESS +
+						    WLAN_DEBUG_OUT_OFFSET);
 				val = WLAN_DEBUG_OUT_DATA_GET(val);
 
-				hif_debug("module%d: cedbg: %x out: %x",
-					  j,
-					  hif_read32_mb(sc, mem + ce_base +
-						CE_DEBUG_OFFSET), val);
+				hif_debug("module%d: cedbg: %x out: %x", j,
+					  hif_read32_mb(
+						  sc, mem + ce_base +
+							      CE_DEBUG_OFFSET),
+					  val);
 			}
 		} else {
 			/* read (@gpio_athr_wlan_reg) WLAN_DEBUG_OUT_DATA */
-			val =
-				hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-					     WLAN_DEBUG_OUT_OFFSET);
+			val = hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
+							WLAN_DEBUG_OUT_OFFSET);
 			val = WLAN_DEBUG_OUT_DATA_GET(val);
 
 			hif_debug("out: %x", val);
@@ -905,34 +905,34 @@ static void __hif_pci_dump_registers(struct hif_softc *scn)
 	hif_debug("Debug PCIe:");
 	/* Loop PCIe debug output */
 	/* Write AMBA_DEBUG_BUS_SEL = 0x1c */
-	val = hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-			    AMBA_DEBUG_BUS_OFFSET);
+	val = hif_read32_mb(sc,
+			    mem + GPIO_BASE_ADDRESS + AMBA_DEBUG_BUS_OFFSET);
 	val &= ~AMBA_DEBUG_BUS_SEL_MASK;
 	val |= AMBA_DEBUG_BUS_SEL_SET(0x1c);
-	hif_write32_mb(sc, mem + GPIO_BASE_ADDRESS +
-		       AMBA_DEBUG_BUS_OFFSET, val);
+	hif_write32_mb(sc, mem + GPIO_BASE_ADDRESS + AMBA_DEBUG_BUS_OFFSET,
+		       val);
 
 	for (i = 0; i <= 8; i++) {
 		/* For (i=1~8) write AMBA_DEBUG_BUS_PCIE_DEBUG_SEL = i */
-		val =
-			hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-				     AMBA_DEBUG_BUS_OFFSET);
+		val = hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
+						AMBA_DEBUG_BUS_OFFSET);
 		val &= ~AMBA_DEBUG_BUS_PCIE_DEBUG_SEL_MASK;
 		val |= AMBA_DEBUG_BUS_PCIE_DEBUG_SEL_SET(i);
-		hif_write32_mb(sc, mem + GPIO_BASE_ADDRESS +
-			       AMBA_DEBUG_BUS_OFFSET, val);
+		hif_write32_mb(sc,
+			       mem + GPIO_BASE_ADDRESS + AMBA_DEBUG_BUS_OFFSET,
+			       val);
 
 		/* read (@gpio_athr_wlan_reg) WLAN_DEBUG_OUT_DATA */
-		val =
-			hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-				     WLAN_DEBUG_OUT_OFFSET);
+		val = hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
+						WLAN_DEBUG_OUT_OFFSET);
 		val = WLAN_DEBUG_OUT_DATA_GET(val);
 
 		hif_debug("amdbg: %x out: %x %x",
 			  hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-				WLAN_DEBUG_OUT_OFFSET), val,
+						    WLAN_DEBUG_OUT_OFFSET),
+			  val,
 			  hif_read32_mb(sc, mem + GPIO_BASE_ADDRESS +
-				WLAN_DEBUG_OUT_OFFSET));
+						    WLAN_DEBUG_OUT_OFFSET));
 	}
 
 	Q_TARGET_ACCESS_END(scn);
@@ -993,10 +993,12 @@ static void reschedule_tasklet_work_handler(void *arg)
 static void hif_init_reschedule_tasklet_work(struct hif_pci_softc *sc)
 {
 	qdf_create_work(0, &sc->reschedule_tasklet_work,
-				reschedule_tasklet_work_handler, NULL);
+			reschedule_tasklet_work_handler, NULL);
 }
 #else
-static void hif_init_reschedule_tasklet_work(struct hif_pci_softc *sc) { }
+static void hif_init_reschedule_tasklet_work(struct hif_pci_softc *sc)
+{
+}
 #endif /* HIF_CONFIG_SLUB_DEBUG_ON */
 
 void wlan_tasklet(unsigned long data)
@@ -1071,7 +1073,7 @@ static void hif_enable_power_gating(struct hif_pci_softc *sc)
  *       care about saving power.
  */
 void hif_pci_enable_power_management(struct hif_softc *hif_sc,
-				 bool is_packet_log_enabled)
+				     bool is_packet_log_enabled)
 {
 	struct hif_pci_softc *pci_ctx = HIF_GET_PCI_SOFTC(hif_sc);
 	uint32_t mode;
@@ -1094,8 +1096,7 @@ void hif_pci_enable_power_management(struct hif_softc *hif_sc,
 		hif_enable_power_gating(pci_ctx);
 
 	if (!CONFIG_ATH_PCIE_MAX_PERF &&
-	    CONFIG_ATH_PCIE_AWAKE_WHILE_DRIVER_LOAD &&
-	    !ce_srng_based(hif_sc)) {
+	    CONFIG_ATH_PCIE_AWAKE_WHILE_DRIVER_LOAD && !ce_srng_based(hif_sc)) {
 		/* allow sleep for PCIE_AWAKE_WHILE_DRIVER_LOAD feature */
 		if (hif_pci_target_sleep_state_adjust(hif_sc, true, false) < 0)
 			hif_err("Failed to set target to sleep");
@@ -1180,16 +1181,14 @@ static void hif_wake_target_cpu(struct hif_softc *scn)
 	uint32_t core_ctrl;
 	struct hif_opaque_softc *hif_hdl = GET_HIF_OPAQUE_HDL(scn);
 
-	rv = hif_diag_read_access(hif_hdl,
-				  SOC_CORE_BASE_ADDRESS | CORE_CTRL_ADDRESS,
-				  &core_ctrl);
+	rv = hif_diag_read_access(
+		hif_hdl, SOC_CORE_BASE_ADDRESS | CORE_CTRL_ADDRESS, &core_ctrl);
 	QDF_ASSERT(rv == QDF_STATUS_SUCCESS);
 	/* A_INUM_FIRMWARE interrupt to Target CPU */
 	core_ctrl |= CORE_CTRL_CPU_INTR_MASK;
 
-	rv = hif_diag_write_access(hif_hdl,
-				   SOC_CORE_BASE_ADDRESS | CORE_CTRL_ADDRESS,
-				   core_ctrl);
+	rv = hif_diag_write_access(
+		hif_hdl, SOC_CORE_BASE_ADDRESS | CORE_CTRL_ADDRESS, core_ctrl);
 	QDF_ASSERT(rv == QDF_STATUS_SUCCESS);
 }
 
@@ -1202,9 +1201,8 @@ static void hif_wake_target_cpu(struct hif_softc *scn)
  */
 static void soc_wake_reset(struct hif_softc *scn)
 {
-	hif_write32_mb(scn, scn->mem +
-		PCIE_LOCAL_BASE_ADDRESS +
-		PCIE_SOC_WAKE_ADDRESS,
+	hif_write32_mb(
+		scn, scn->mem + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS,
 		PCIE_SOC_WAKE_RESET);
 }
 
@@ -1232,8 +1230,8 @@ static void hif_sleep_entry(void *arg)
 
 	qdf_spin_lock_irqsave(&hif_state->keep_awake_lock);
 	if (hif_state->fake_sleep) {
-		idle_ms = qdf_system_ticks_to_msecs(qdf_system_ticks()
-						    - hif_state->sleep_ticks);
+		idle_ms = qdf_system_ticks_to_msecs(qdf_system_ticks() -
+						    hif_state->sleep_ticks);
 		if (!hif_state->verified_awake &&
 		    idle_ms >= HIF_MIN_SLEEP_INACTIVITY_TIME_MS) {
 			if (!qdf_atomic_read(&scn->link_suspended)) {
@@ -1249,7 +1247,7 @@ static void hif_sleep_entry(void *arg)
 	qdf_spin_unlock_irqrestore(&hif_state->keep_awake_lock);
 }
 
-#define HIF_HIA_MAX_POLL_LOOP    1000000
+#define HIF_HIA_MAX_POLL_LOOP 1000000
 #define HIF_HIA_POLLING_DELAY_MS 10
 
 #ifdef QCA_HIF_HIA_EXTND
@@ -1263,96 +1261,93 @@ static void hif_set_hia_extnd(struct hif_softc *scn)
 	hif_info("E");
 
 	if ((target_type == TARGET_TYPE_AR900B) ||
-			target_type == TARGET_TYPE_QCA9984 ||
-			target_type == TARGET_TYPE_QCA9888) {
+	    target_type == TARGET_TYPE_QCA9984 ||
+	    target_type == TARGET_TYPE_QCA9888) {
 		/* CHIP revision is 8-11 bits of the CHIP_ID register 0xec
-		 * in RTC space
-		 */
-		tgt_info->target_revision
-			= CHIP_ID_REVISION_GET(hif_read32_mb(scn, scn->mem
-					+ CHIP_ID_ADDRESS));
-		qdf_print("chip_id 0x%x chip_revision 0x%x",
-			  target_type, tgt_info->target_revision);
+     * in RTC space
+     */
+		tgt_info->target_revision = CHIP_ID_REVISION_GET(
+			hif_read32_mb(scn, scn->mem + CHIP_ID_ADDRESS));
+		qdf_print("chip_id 0x%x chip_revision 0x%x", target_type,
+			  tgt_info->target_revision);
 	}
 
 	{
 		uint32_t flag2_value = 0;
-		uint32_t flag2_targ_addr =
-			host_interest_item_address(target_type,
+		uint32_t flag2_targ_addr = host_interest_item_address(
+			target_type,
 			offsetof(struct host_interest_s, hi_skip_clock_init));
 
-		if ((ar900b_20_targ_clk != -1) &&
-			(frac != -1) && (intval != -1)) {
+		if ((ar900b_20_targ_clk != -1) && (frac != -1) &&
+		    (intval != -1)) {
 			hif_diag_read_access(hif_hdl, flag2_targ_addr,
-				&flag2_value);
+					     &flag2_value);
 			qdf_print("\n Setting clk_override");
 			flag2_value |= CLOCK_OVERRIDE;
 
 			hif_diag_write_access(hif_hdl, flag2_targ_addr,
-					flag2_value);
+					      flag2_value);
 			qdf_print("\n CLOCK PLL val set %d", flag2_value);
 		} else {
 			qdf_print("\n CLOCK PLL skipped");
 		}
 	}
 
-	if (target_type == TARGET_TYPE_AR900B
-			|| target_type == TARGET_TYPE_QCA9984
-			|| target_type == TARGET_TYPE_QCA9888) {
-
+	if (target_type == TARGET_TYPE_AR900B ||
+	    target_type == TARGET_TYPE_QCA9984 ||
+	    target_type == TARGET_TYPE_QCA9888) {
 		/* for AR9980_2.0, 300 mhz clock is used, right now we assume
-		 * this would be supplied through module parameters,
-		 * if not supplied assumed default or same behavior as 1.0.
-		 * Assume 1.0 clock can't be tuned, reset to defaults
-		 */
+     * this would be supplied through module parameters,
+     * if not supplied assumed default or same behavior as 1.0.
+     * Assume 1.0 clock can't be tuned, reset to defaults
+     */
 
 		qdf_print(KERN_INFO
 			  "%s: setting the target pll frac %x intval %x",
 			  __func__, frac, intval);
 
 		/* do not touch frac, and int val, let them be default -1,
-		 * if desired, host can supply these through module params
-		 */
+     * if desired, host can supply these through module params
+     */
 		if (frac != -1 || intval != -1) {
 			uint32_t flag2_value = 0;
 			uint32_t flag2_targ_addr;
 
-			flag2_targ_addr =
-				host_interest_item_address(target_type,
-				offsetof(struct host_interest_s,
-					hi_clock_info));
-			hif_diag_read_access(hif_hdl,
-				flag2_targ_addr, &flag2_value);
+			flag2_targ_addr = host_interest_item_address(
+				target_type, offsetof(struct host_interest_s,
+						      hi_clock_info));
+			hif_diag_read_access(hif_hdl, flag2_targ_addr,
+					     &flag2_value);
 			qdf_print("\n ====> FRAC Val %x Address %x", frac,
 				  flag2_value);
 			hif_diag_write_access(hif_hdl, flag2_value, frac);
-			qdf_print("\n INT Val %x  Address %x",
-				  intval, flag2_value + 4);
-			hif_diag_write_access(hif_hdl,
-					flag2_value + 4, intval);
+			qdf_print("\n INT Val %x  Address %x", intval,
+				  flag2_value + 4);
+			hif_diag_write_access(hif_hdl, flag2_value + 4, intval);
 		} else {
-			qdf_print(KERN_INFO
-				  "%s: no frac provided, skipping pre-configuring PLL",
-				  __func__);
+			qdf_print(
+				KERN_INFO
+				"%s: no frac provided, skipping pre-configuring PLL",
+				__func__);
 		}
 
 		/* for 2.0 write 300 mhz into hi_desired_cpu_speed_hz */
-		if ((target_type == TARGET_TYPE_AR900B)
-			&& (tgt_info->target_revision == AR900B_REV_2)
-			&& ar900b_20_targ_clk != -1) {
+		if ((target_type == TARGET_TYPE_AR900B) &&
+		    (tgt_info->target_revision == AR900B_REV_2) &&
+		    ar900b_20_targ_clk != -1) {
 			uint32_t flag2_value = 0;
 			uint32_t flag2_targ_addr;
 
-			flag2_targ_addr
-				= host_interest_item_address(target_type,
-					offsetof(struct host_interest_s,
-					hi_desired_cpu_speed_hz));
+			flag2_targ_addr = host_interest_item_address(
+				target_type, offsetof(struct host_interest_s,
+						      hi_desired_cpu_speed_hz));
 			hif_diag_read_access(hif_hdl, flag2_targ_addr,
-							&flag2_value);
+					     &flag2_value);
 			qdf_print("\n ==> hi_desired_cpu_speed_hz Address %x",
 				  flag2_value);
-			hif_diag_write_access(hif_hdl, flag2_value,
-				ar900b_20_targ_clk/*300000000u*/);
+			hif_diag_write_access(
+				hif_hdl, flag2_value,
+				ar900b_20_targ_clk /*300000000u*/);
 		} else if (target_type == TARGET_TYPE_QCA9888) {
 			uint32_t flag2_targ_addr;
 
@@ -1361,32 +1356,30 @@ static void hif_set_hia_extnd(struct hif_softc *scn)
 				/* Setting the target clock speed to 300 mhz */
 			}
 
-			flag2_targ_addr
-				= host_interest_item_address(target_type,
-					offsetof(struct host_interest_s,
-					hi_desired_cpu_speed_hz));
+			flag2_targ_addr = host_interest_item_address(
+				target_type, offsetof(struct host_interest_s,
+						      hi_desired_cpu_speed_hz));
 			hif_diag_write_access(hif_hdl, flag2_targ_addr,
-				qca9888_20_targ_clk);
+					      qca9888_20_targ_clk);
 		} else {
-			qdf_print("%s: targ_clk is not provided, skipping pre-configuring PLL",
-				  __func__);
+			qdf_print(
+				"%s: targ_clk is not provided, skipping pre-configuring PLL",
+				__func__);
 		}
 	} else {
 		if (frac != -1 || intval != -1) {
 			uint32_t flag2_value = 0;
-			uint32_t flag2_targ_addr =
-				host_interest_item_address(target_type,
-					offsetof(struct host_interest_s,
-							hi_clock_info));
+			uint32_t flag2_targ_addr = host_interest_item_address(
+				target_type, offsetof(struct host_interest_s,
+						      hi_clock_info));
 			hif_diag_read_access(hif_hdl, flag2_targ_addr,
-						&flag2_value);
+					     &flag2_value);
 			qdf_print("\n ====> FRAC Val %x Address %x", frac,
 				  flag2_value);
 			hif_diag_write_access(hif_hdl, flag2_value, frac);
 			qdf_print("\n INT Val %x  Address %x", intval,
 				  flag2_value + 4);
-			hif_diag_write_access(hif_hdl, flag2_value + 4,
-					      intval);
+			hif_diag_write_access(hif_hdl, flag2_value + 4, intval);
 		}
 	}
 }
@@ -1439,11 +1432,9 @@ static int hif_set_hia(struct hif_softc *scn)
 
 	hif_info("E");
 
-	hif_get_target_ce_config(scn,
-				 &target_ce_config, &target_ce_config_sz,
+	hif_get_target_ce_config(scn, &target_ce_config, &target_ce_config_sz,
 				 &target_service_to_ce_map,
-				 &target_service_to_ce_map_sz,
-				 NULL, NULL);
+				 &target_service_to_ce_map_sz, NULL, NULL);
 
 	if (ADRASTEA_BU)
 		return 0;
@@ -1451,8 +1442,8 @@ static int hif_set_hia(struct hif_softc *scn)
 #ifdef QCA_WIFI_3_0
 	i = 0;
 	while (i < HIF_HIA_MAX_POLL_LOOP) {
-		host_interest_area = hif_read32_mb(scn, scn->mem +
-						A_SOC_CORE_SCRATCH_0_ADDRESS);
+		host_interest_area = hif_read32_mb(
+			scn, scn->mem + A_SOC_CORE_SCRATCH_0_ADDRESS);
 		if ((host_interest_area & 0x01) == 0) {
 			qdf_mdelay(HIF_HIA_POLLING_DELAY_MS);
 			host_interest_area = 0;
@@ -1476,24 +1467,26 @@ static int hif_set_hia(struct hif_softc *scn)
 		return -EIO;
 	}
 
-	interconnect_targ_addr = host_interest_area +
-			offsetof(struct host_interest_area_t,
-			hi_interconnect_state);
+	interconnect_targ_addr =
+		host_interest_area +
+		offsetof(struct host_interest_area_t, hi_interconnect_state);
 
-	flag2_targ_addr = host_interest_area +
-			offsetof(struct host_interest_area_t, hi_option_flag2);
+	flag2_targ_addr =
+		host_interest_area +
+		offsetof(struct host_interest_area_t, hi_option_flag2);
 
 #else
-	interconnect_targ_addr = hif_hia_item_address(target_type,
+	interconnect_targ_addr = hif_hia_item_address(
+		target_type,
 		offsetof(struct host_interest_s, hi_interconnect_state));
-	ealloc_targ_addr = hif_hia_item_address(target_type,
-		offsetof(struct host_interest_s, hi_early_alloc));
-	flag2_targ_addr = hif_hia_item_address(target_type,
-		offsetof(struct host_interest_s, hi_option_flag2));
+	ealloc_targ_addr = hif_hia_item_address(
+		target_type, offsetof(struct host_interest_s, hi_early_alloc));
+	flag2_targ_addr = hif_hia_item_address(
+		target_type, offsetof(struct host_interest_s, hi_option_flag2));
 #endif
 	/* Supply Target-side CE configuration */
 	rv = hif_diag_read_access(hif_hdl, interconnect_targ_addr,
-			  &pcie_state_targ_addr);
+				  &pcie_state_targ_addr);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("interconnect_targ_addr = 0x%0x, ret = %d",
 			interconnect_targ_addr, rv);
@@ -1505,11 +1498,8 @@ static int hif_set_hia(struct hif_softc *scn)
 		goto done;
 	}
 	pipe_cfg_addr = pcie_state_targ_addr +
-			  offsetof(struct pcie_state_s,
-			  pipe_cfg_addr);
-	rv = hif_diag_read_access(hif_hdl,
-			  pipe_cfg_addr,
-			  &pipe_cfg_targ_addr);
+			offsetof(struct pcie_state_s, pipe_cfg_addr);
+	rv = hif_diag_read_access(hif_hdl, pipe_cfg_addr, &pipe_cfg_targ_addr);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("pipe_cfg_addr = 0x%0x, ret = %d", pipe_cfg_addr, rv);
 		goto done;
@@ -1521,8 +1511,8 @@ static int hif_set_hia(struct hif_softc *scn)
 	}
 
 	rv = hif_diag_write_mem(hif_hdl, pipe_cfg_targ_addr,
-			(uint8_t *) target_ce_config,
-			target_ce_config_sz);
+				(uint8_t *)target_ce_config,
+				target_ce_config_sz);
 
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("write pipe cfg: %d", rv);
@@ -1530,10 +1520,10 @@ static int hif_set_hia(struct hif_softc *scn)
 	}
 
 	rv = hif_diag_read_access(hif_hdl,
-			  pcie_state_targ_addr +
-			  offsetof(struct pcie_state_s,
-			   svc_to_pipe_map),
-			  &svc_to_pipe_map);
+				  pcie_state_targ_addr +
+					  offsetof(struct pcie_state_s,
+						   svc_to_pipe_map),
+				  &svc_to_pipe_map);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("get svc/pipe map: %d", rv);
 		goto done;
@@ -1544,20 +1534,19 @@ static int hif_set_hia(struct hif_softc *scn)
 		goto done;
 	}
 
-	rv = hif_diag_write_mem(hif_hdl,
-			svc_to_pipe_map,
-			(uint8_t *) target_service_to_ce_map,
-			target_service_to_ce_map_sz);
+	rv = hif_diag_write_mem(hif_hdl, svc_to_pipe_map,
+				(uint8_t *)target_service_to_ce_map,
+				target_service_to_ce_map_sz);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("write svc/pipe map: %d", rv);
 		goto done;
 	}
 
 	rv = hif_diag_read_access(hif_hdl,
-			pcie_state_targ_addr +
-			offsetof(struct pcie_state_s,
-			config_flags),
-			&pcie_config_flags);
+				  pcie_state_targ_addr +
+					  offsetof(struct pcie_state_s,
+						   config_flags),
+				  &pcie_config_flags);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("get pcie config_flags: %d", rv);
 		goto done;
@@ -1571,12 +1560,11 @@ static int hif_set_hia(struct hif_softc *scn)
 #if (CONFIG_PCIE_ENABLE_AXI_CLK_GATE)
 	pcie_config_flags |= PCIE_CONFIG_FLAG_AXI_CLK_GATE;
 #endif
-	rv = hif_diag_write_mem(hif_hdl,
-			pcie_state_targ_addr +
-			offsetof(struct pcie_state_s,
-			config_flags),
-			(uint8_t *) &pcie_config_flags,
-			sizeof(pcie_config_flags));
+	rv = hif_diag_write_mem(
+		hif_hdl,
+		pcie_state_targ_addr +
+			offsetof(struct pcie_state_s, config_flags),
+		(uint8_t *)&pcie_config_flags, sizeof(pcie_config_flags));
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("write pcie config_flags: %d", rv);
 		goto done;
@@ -1584,26 +1572,21 @@ static int hif_set_hia(struct hif_softc *scn)
 
 #ifndef QCA_WIFI_3_0
 	/* configure early allocation */
-	ealloc_targ_addr = hif_hia_item_address(target_type,
-						offsetof(
-						struct host_interest_s,
-						hi_early_alloc));
+	ealloc_targ_addr = hif_hia_item_address(
+		target_type, offsetof(struct host_interest_s, hi_early_alloc));
 
-	rv = hif_diag_read_access(hif_hdl, ealloc_targ_addr,
-			&ealloc_value);
+	rv = hif_diag_read_access(hif_hdl, ealloc_targ_addr, &ealloc_value);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("get early alloc val: %d", rv);
 		goto done;
 	}
 
 	/* 1 bank is switched to IRAM, except ROME 1.0 */
-	ealloc_value |=
-		((HI_EARLY_ALLOC_MAGIC << HI_EARLY_ALLOC_MAGIC_SHIFT) &
-		 HI_EARLY_ALLOC_MAGIC_MASK);
+	ealloc_value |= ((HI_EARLY_ALLOC_MAGIC << HI_EARLY_ALLOC_MAGIC_SHIFT) &
+			 HI_EARLY_ALLOC_MAGIC_MASK);
 
-	rv = hif_diag_read_access(hif_hdl,
-			  CHIP_ID_ADDRESS |
-			  RTC_SOC_BASE_ADDRESS, &chip_id);
+	rv = hif_diag_read_access(
+		hif_hdl, CHIP_ID_ADDRESS | RTC_SOC_BASE_ADDRESS, &chip_id);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("get chip id val: %d", rv);
 		goto done;
@@ -1611,21 +1594,21 @@ static int hif_set_hia(struct hif_softc *scn)
 	if (CHIP_ID_VERSION_GET(chip_id) == 0xD) {
 		tgt_info->target_revision = CHIP_ID_REVISION_GET(chip_id);
 		switch (CHIP_ID_REVISION_GET(chip_id)) {
-		case 0x2:       /* ROME 1.3 */
+		case 0x2: /* ROME 1.3 */
 			/* 2 banks are switched to IRAM */
 			banks_switched = 2;
 			break;
-		case 0x4:       /* ROME 2.1 */
-		case 0x5:       /* ROME 2.2 */
+		case 0x4: /* ROME 2.1 */
+		case 0x5: /* ROME 2.2 */
 			banks_switched = 6;
 			break;
-		case 0x8:       /* ROME 3.0 */
-		case 0x9:       /* ROME 3.1 */
-		case 0xA:       /* ROME 3.2 */
+		case 0x8: /* ROME 3.0 */
+		case 0x9: /* ROME 3.1 */
+		case 0xA: /* ROME 3.2 */
 			banks_switched = 9;
 			break;
-		case 0x0:       /* ROME 1.0 */
-		case 0x1:       /* ROME 1.1 */
+		case 0x0: /* ROME 1.0 */
+		case 0x1: /* ROME 1.1 */
 		default:
 			/* 3 banks are switched to IRAM */
 			banks_switched = 3;
@@ -1633,41 +1616,34 @@ static int hif_set_hia(struct hif_softc *scn)
 		}
 	}
 
-	ealloc_value |=
-		((banks_switched << HI_EARLY_ALLOC_IRAM_BANKS_SHIFT)
-		 & HI_EARLY_ALLOC_IRAM_BANKS_MASK);
+	ealloc_value |= ((banks_switched << HI_EARLY_ALLOC_IRAM_BANKS_SHIFT) &
+			 HI_EARLY_ALLOC_IRAM_BANKS_MASK);
 
-	rv = hif_diag_write_access(hif_hdl,
-				ealloc_targ_addr,
-				ealloc_value);
+	rv = hif_diag_write_access(hif_hdl, ealloc_targ_addr, ealloc_value);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("set early alloc val: %d", rv);
 		goto done;
 	}
 #endif
-	if ((target_type == TARGET_TYPE_AR900B)
-			|| (target_type == TARGET_TYPE_QCA9984)
-			|| (target_type == TARGET_TYPE_QCA9888)
-			|| (target_type == TARGET_TYPE_AR9888)) {
+	if ((target_type == TARGET_TYPE_AR900B) ||
+	    (target_type == TARGET_TYPE_QCA9984) ||
+	    (target_type == TARGET_TYPE_QCA9888) ||
+	    (target_type == TARGET_TYPE_AR9888)) {
 		hif_set_hia_extnd(scn);
 	}
 
 	/* Tell Target to proceed with initialization */
-	flag2_targ_addr = hif_hia_item_address(target_type,
-						offsetof(
-						struct host_interest_s,
-						hi_option_flag2));
+	flag2_targ_addr = hif_hia_item_address(
+		target_type, offsetof(struct host_interest_s, hi_option_flag2));
 
-	rv = hif_diag_read_access(hif_hdl, flag2_targ_addr,
-			  &flag2_value);
+	rv = hif_diag_read_access(hif_hdl, flag2_targ_addr, &flag2_value);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("get option val: %d", rv);
 		goto done;
 	}
 
 	flag2_value |= HI_OPTION_EARLY_CFG_DONE;
-	rv = hif_diag_write_access(hif_hdl, flag2_targ_addr,
-			   flag2_value);
+	rv = hif_diag_write_access(hif_hdl, flag2_targ_addr, flag2_value);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("set option val: %d", rv);
 		goto done;
@@ -1700,9 +1676,8 @@ int hif_pci_bus_configure(struct hif_softc *hif_sc)
 	hif_state->fake_sleep = false;
 	hif_state->sleep_ticks = 0;
 
-	qdf_timer_init(NULL, &hif_state->sleep_timer,
-			       hif_sleep_entry, (void *)hif_state,
-			       QDF_TIMER_TYPE_WAKE_APPS);
+	qdf_timer_init(NULL, &hif_state->sleep_timer, hif_sleep_entry,
+		       (void *)hif_state, QDF_TIMER_TYPE_WAKE_APPS);
 	hif_state->sleep_timer_init = true;
 
 	status = hif_wlan_enable(hif_sc);
@@ -1717,18 +1692,18 @@ int hif_pci_bus_configure(struct hif_softc *hif_sc)
 	     CONFIG_ATH_PCIE_AWAKE_WHILE_DRIVER_LOAD) &&
 	    !ce_srng_based(hif_sc)) {
 		/*
-		 * prevent sleep for PCIE_AWAKE_WHILE_DRIVER_LOAD feature
-		 * prevent sleep when we want to keep firmware always awake
-		 * note: when we want to keep firmware always awake,
-		 *       hif_target_sleep_state_adjust will point to a dummy
-		 *       function, and hif_pci_target_sleep_state_adjust must
-		 *       be called instead.
-		 * note: bus type check is here because AHB bus is reusing
-		 *       hif_pci_bus_configure code.
-		 */
+     * prevent sleep for PCIE_AWAKE_WHILE_DRIVER_LOAD feature
+     * prevent sleep when we want to keep firmware always awake
+     * note: when we want to keep firmware always awake,
+     *       hif_target_sleep_state_adjust will point to a dummy
+     *       function, and hif_pci_target_sleep_state_adjust must
+     *       be called instead.
+     * note: bus type check is here because AHB bus is reusing
+     *       hif_pci_bus_configure code.
+     */
 		if (hif_sc->bus_type == QDF_BUS_TYPE_PCI) {
-			if (hif_pci_target_sleep_state_adjust(hif_sc,
-					false, true) < 0) {
+			if (hif_pci_target_sleep_state_adjust(hif_sc, false,
+							      true) < 0) {
 				status = -EACCES;
 				goto disable_wlan;
 			}
@@ -1759,7 +1734,6 @@ int hif_pci_bus_configure(struct hif_softc *hif_sc)
 			goto unconfig_ce;
 
 		hif_debug("hif_set_hia done");
-
 	}
 
 	if (((hif_sc->target_info.target_type == TARGET_TYPE_QCA8074) ||
@@ -1836,8 +1810,7 @@ static inline int hif_pci_set_coherent_dma_mask(struct pci_dev *pci_dev,
 }
 #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)) */
 
-static int hif_enable_pci_nopld(struct hif_pci_softc *sc,
-				struct pci_dev *pdev,
+static int hif_enable_pci_nopld(struct hif_pci_softc *sc, struct pci_dev *pdev,
 				const struct pci_device_id *id)
 {
 	void __iomem *mem;
@@ -1846,17 +1819,16 @@ static int hif_enable_pci_nopld(struct hif_pci_softc *sc,
 	struct hif_softc *ol_sc = HIF_GET_SOFTC(sc);
 
 	pci_read_config_word(pdev, PCI_DEVICE_ID, &device_id);
-	if (device_id != id->device)  {
-		hif_err(
-		   "dev id mismatch, config id = 0x%x, probing id = 0x%x",
-		   device_id, id->device);
+	if (device_id != id->device) {
+		hif_err("dev id mismatch, config id = 0x%x, probing id = 0x%x",
+			device_id, id->device);
 		/* pci link is down, so returning with error code */
 		return -EIO;
 	}
 
 	/* FIXME: temp. commenting out assign_resource
-	 * call for dev_attach to work on 2.6.38 kernel
-	 */
+   * call for dev_attach to work on 2.6.38 kernel
+   */
 #if (!defined(__LINUX_ARM_ARCH__))
 	if (pci_assign_resource(pdev, BAR_NUM)) {
 		hif_err("pci_assign_resource error");
@@ -1878,9 +1850,9 @@ static int hif_enable_pci_nopld(struct hif_pci_softc *sc,
 
 #ifdef CONFIG_ARM_LPAE
 	/* if CONFIG_ARM_LPAE is enabled, we have to set 64 bits mask
-	 * for 32 bits device also.
-	 */
-	ret =  hif_pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
+   * for 32 bits device also.
+   */
+	ret = hif_pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
 	if (ret) {
 		hif_err("Cannot enable 64-bit pci DMA");
 		goto err_dma;
@@ -1922,11 +1894,11 @@ static int hif_enable_pci_nopld(struct hif_pci_softc *sc,
 
 	/* Hawkeye emulation specific change */
 	if ((device_id == RUMIM2M_DEVICE_ID_NODE0) ||
-		(device_id == RUMIM2M_DEVICE_ID_NODE1) ||
-		(device_id == RUMIM2M_DEVICE_ID_NODE2) ||
-		(device_id == RUMIM2M_DEVICE_ID_NODE3) ||
-		(device_id == RUMIM2M_DEVICE_ID_NODE4) ||
-		(device_id == RUMIM2M_DEVICE_ID_NODE5)) {
+	    (device_id == RUMIM2M_DEVICE_ID_NODE1) ||
+	    (device_id == RUMIM2M_DEVICE_ID_NODE2) ||
+	    (device_id == RUMIM2M_DEVICE_ID_NODE3) ||
+	    (device_id == RUMIM2M_DEVICE_ID_NODE4) ||
+	    (device_id == RUMIM2M_DEVICE_ID_NODE5)) {
 		mem = mem + 0x0c000000;
 		sc->mem = mem;
 		hif_info("Changing PCI mem base to %pK", sc->mem);
@@ -1947,15 +1919,13 @@ err_region:
 	return ret;
 }
 
-static int hif_enable_pci_pld(struct hif_pci_softc *sc,
-			      struct pci_dev *pdev,
+static int hif_enable_pci_pld(struct hif_pci_softc *sc, struct pci_dev *pdev,
 			      const struct pci_device_id *id)
 {
 	PCI_CFG_TO_DISABLE_L1SS_STATES(pdev, 0x188);
 	sc->pci_enabled = true;
 	return 0;
 }
-
 
 static void hif_pci_deinit_nopld(struct hif_pci_softc *sc)
 {
@@ -1966,7 +1936,9 @@ static void hif_pci_deinit_nopld(struct hif_pci_softc *sc)
 	pci_disable_device(sc->pdev);
 }
 
-static void hif_pci_deinit_pld(struct hif_pci_softc *sc) {}
+static void hif_pci_deinit_pld(struct hif_pci_softc *sc)
+{
+}
 
 static void hif_disable_pci(struct hif_pci_softc *sc)
 {
@@ -1993,17 +1965,18 @@ static int hif_pci_probe_tgt_wakeup(struct hif_pci_softc *sc)
 	struct hif_softc *scn = HIF_GET_SOFTC(sc);
 
 	/*
-	 * Verify that the Target was started cleanly.*
-	 * The case where this is most likely is with an AUX-powered
-	 * Target and a Host in WoW mode. If the Host crashes,
-	 * loses power, or is restarted (without unloading the driver)
-	 * then the Target is left (aux) powered and running.  On a
-	 * subsequent driver load, the Target is in an unexpected state.
-	 * We try to catch that here in order to reset the Target and
-	 * retry the probe.
-	 */
-	hif_write32_mb(sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
-				  PCIE_SOC_WAKE_ADDRESS, PCIE_SOC_WAKE_V_MASK);
+   * Verify that the Target was started cleanly.*
+   * The case where this is most likely is with an AUX-powered
+   * Target and a Host in WoW mode. If the Host crashes,
+   * loses power, or is restarted (without unloading the driver)
+   * then the Target is left (aux) powered and running.  On a
+   * subsequent driver load, the Target is in an unexpected state.
+   * We try to catch that here in order to reset the Target and
+   * retry the probe.
+   */
+	hif_write32_mb(
+		sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS,
+		PCIE_SOC_WAKE_V_MASK);
 	while (!hif_targ_is_awake(scn, sc->mem)) {
 		if (0 == targ_awake_limit) {
 			hif_err("target awake timeout");
@@ -2019,16 +1992,16 @@ static int hif_pci_probe_tgt_wakeup(struct hif_pci_softc *sc)
 		int wait_limit = 200;
 		/* Synchronization point: wait the BAR0 is configured */
 		while (wait_limit-- &&
-			   !(hif_read32_mb(sc, c->mem +
-					  PCIE_LOCAL_BASE_ADDRESS +
-					  PCIE_SOC_RDY_STATUS_ADDRESS)
-					  & PCIE_SOC_RDY_STATUS_BAR_MASK)) {
+		       !(hif_read32_mb(sc,
+				       c->mem + PCIE_LOCAL_BASE_ADDRESS +
+					       PCIE_SOC_RDY_STATUS_ADDRESS) &
+			 PCIE_SOC_RDY_STATUS_BAR_MASK)) {
 			qdf_mdelay(10);
 		}
 		if (wait_limit < 0) {
 			/* AR6320v1 doesn't support checking of BAR0
-			 * configuration, takes one sec to wait BAR0 ready
-			 */
+       * configuration, takes one sec to wait BAR0 ready
+       */
 			hif_debug("AR6320v1 waits two sec for BAR0");
 		}
 	}
@@ -2036,8 +2009,9 @@ static int hif_pci_probe_tgt_wakeup(struct hif_pci_softc *sc)
 
 #ifndef QCA_WIFI_3_0
 	fw_indicator = hif_read32_mb(sc, sc->mem + FW_INDICATOR_ADDRESS);
-	hif_write32_mb(sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
-				  PCIE_SOC_WAKE_ADDRESS, PCIE_SOC_WAKE_RESET);
+	hif_write32_mb(
+		sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS,
+		PCIE_SOC_WAKE_RESET);
 
 	if (fw_indicator & FW_IND_INITIALIZED) {
 		hif_err("Target is in an unknown state. EAGAIN");
@@ -2060,40 +2034,43 @@ static int hif_pci_configure_legacy_irq(struct hif_pci_softc *sc)
 
 	/* do notn support MSI or MSI IRQ failed */
 	tasklet_init(&sc->intr_tq, wlan_tasklet, (unsigned long)sc);
-	ret = request_irq(sc->pdev->irq,
-			  hif_pci_legacy_ce_interrupt_handler, IRQF_SHARED,
-			  "wlan_pci", sc);
+	ret = request_irq(sc->pdev->irq, hif_pci_legacy_ce_interrupt_handler,
+			  IRQF_SHARED, "wlan_pci", sc);
 	if (ret) {
 		hif_err("request_irq failed, ret: %d", ret);
 		goto end;
 	}
 	scn->wake_irq = sc->pdev->irq;
 	/* Use sc->irq instead of sc->pdev-irq
-	 * platform_device pdev doesn't have an irq field
-	 */
+   * platform_device pdev doesn't have an irq field
+   */
 	sc->irq = sc->pdev->irq;
 	/* Use Legacy PCI Interrupts */
-	hif_write32_mb(sc, sc->mem + (SOC_CORE_BASE_ADDRESS |
-		  PCIE_INTR_ENABLE_ADDRESS),
-		  HOST_GROUP0_MASK);
+	hif_write32_mb(sc,
+		       sc->mem + (SOC_CORE_BASE_ADDRESS |
+				  PCIE_INTR_ENABLE_ADDRESS),
+		       HOST_GROUP0_MASK);
 	hif_read32_mb(sc, sc->mem + (SOC_CORE_BASE_ADDRESS |
-			       PCIE_INTR_ENABLE_ADDRESS));
-	hif_write32_mb(sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS +
-		      PCIE_SOC_WAKE_ADDRESS, PCIE_SOC_WAKE_RESET);
+				     PCIE_INTR_ENABLE_ADDRESS));
+	hif_write32_mb(
+		sc, sc->mem + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS,
+		PCIE_SOC_WAKE_RESET);
 
-	if ((target_type == TARGET_TYPE_AR900B)  ||
-			(target_type == TARGET_TYPE_QCA9984) ||
-			(target_type == TARGET_TYPE_AR9888) ||
-			(target_type == TARGET_TYPE_QCA9888) ||
-			(target_type == TARGET_TYPE_AR6320V1) ||
-			(target_type == TARGET_TYPE_AR6320V2) ||
-			(target_type == TARGET_TYPE_AR6320V3)) {
-		hif_write32_mb(scn, scn->mem + PCIE_LOCAL_BASE_ADDRESS +
-				PCIE_SOC_WAKE_ADDRESS, PCIE_SOC_WAKE_V_MASK);
+	if ((target_type == TARGET_TYPE_AR900B) ||
+	    (target_type == TARGET_TYPE_QCA9984) ||
+	    (target_type == TARGET_TYPE_AR9888) ||
+	    (target_type == TARGET_TYPE_QCA9888) ||
+	    (target_type == TARGET_TYPE_AR6320V1) ||
+	    (target_type == TARGET_TYPE_AR6320V2) ||
+	    (target_type == TARGET_TYPE_AR6320V3)) {
+		hif_write32_mb(scn,
+			       scn->mem + PCIE_LOCAL_BASE_ADDRESS +
+				       PCIE_SOC_WAKE_ADDRESS,
+			       PCIE_SOC_WAKE_V_MASK);
 	}
 end:
-	QDF_TRACE(QDF_MODULE_ID_HIF, QDF_TRACE_LEVEL_ERROR,
-			  "%s: X, ret = %d", __func__, ret);
+	QDF_TRACE(QDF_MODULE_ID_HIF, QDF_TRACE_LEVEL_ERROR, "%s: X, ret = %d",
+		  __func__, ret);
 	return ret;
 }
 
@@ -2118,8 +2095,8 @@ static int hif_ce_srng_free_irq(struct hif_softc *scn)
 	}
 
 	/* needs to match the ce_id -> irq data mapping
-	 * used in the srng parameter configuration
-	 */
+   * used in the srng parameter configuration
+   */
 	for (ce_id = 0; ce_id < scn->ce_count; ce_id++) {
 		if (host_ce_conf[ce_id].flags & CE_ATTR_DISABLE_INTR)
 			continue;
@@ -2153,12 +2130,11 @@ void hif_pci_deconfigure_grp_irq(struct hif_softc *scn)
 				irq = hif_ext_group->os_irq[j];
 				if (scn->irq_unlazy_disable) {
 					qdf_dev_clear_irq_status_flags(
-							irq,
-							QDF_IRQ_DISABLE_UNLAZY);
+						irq, QDF_IRQ_DISABLE_UNLAZY);
 				}
 				hif_irq_affinity_remove(irq);
-				pfrm_free_irq(scn->qdf_dev->dev,
-					      irq, hif_ext_group);
+				pfrm_free_irq(scn->qdf_dev->dev, irq,
+					      hif_ext_group);
 			}
 			hif_ext_group->numirq = 0;
 		}
@@ -2201,16 +2177,15 @@ void hif_pci_nointrs(struct hif_softc *scn)
 		sc->num_msi_intrs = 0;
 	} else {
 		/* Legacy PCI line interrupt
-		 * Use sc->irq instead of sc->pdev-irq
-		 * platform_device pdev doesn't have an irq field
-		 */
+     * Use sc->irq instead of sc->pdev-irq
+     * platform_device pdev doesn't have an irq field
+     */
 		free_irq(sc->irq, sc);
 	}
 	scn->request_irq_done = false;
 }
 
-static inline
-bool hif_pci_default_link_up(struct hif_target_info *tgt_info)
+static inline bool hif_pci_default_link_up(struct hif_target_info *tgt_info)
 {
 	if (ADRASTEA_BU && (tgt_info->target_type != TARGET_TYPE_QCN7605))
 		return true;
@@ -2233,8 +2208,8 @@ void hif_pci_disable_bus(struct hif_softc *scn)
 	struct hif_target_info *tgt_info = &scn->target_info;
 
 	/* Attach did not succeed, all resources have been
-	 * freed in error handler
-	 */
+   * freed in error handler
+   */
 	if (!sc)
 		return;
 
@@ -2249,9 +2224,9 @@ void hif_pci_disable_bus(struct hif_softc *scn)
 
 #if defined(CPU_WARM_RESET_WAR)
 	/* Currently CPU warm reset sequence is tested only for AR9888_REV2
-	 * Need to enable for AR9888_REV1 once CPU warm reset sequence is
-	 * verified for AR9888_REV1
-	 */
+   * Need to enable for AR9888_REV1 once CPU warm reset sequence is
+   * verified for AR9888_REV1
+   */
 	if ((tgt_info->target_version == AR9888_REV2_VERSION) ||
 	    (tgt_info->target_version == AR9887_REV1_VERSION))
 		hif_pci_device_warm_reset(sc);
@@ -2325,12 +2300,12 @@ static void hif_pci_config_low_power_int_register(struct hif_softc *scn,
 	uint32_t target_type = tgt_info->target_type;
 
 	/*
-	 * Only configure the bits INTR_L1SS and INTR_CLKPM of
-	 * PCIE_LOW_POWER_INT_MASK register for QCA6174 for high
-	 * consumption issue. NFA344A power consumption is above 80mA
-	 * after entering Modern Standby. But the power will drop to normal
-	 * after PERST# de-assert.
-	 */
+   * Only configure the bits INTR_L1SS and INTR_CLKPM of
+   * PCIE_LOW_POWER_INT_MASK register for QCA6174 for high
+   * consumption issue. NFA344A power consumption is above 80mA
+   * after entering Modern Standby. But the power will drop to normal
+   * after PERST# de-assert.
+   */
 	if ((target_type == TARGET_TYPE_AR6320) ||
 	    (target_type == TARGET_TYPE_AR6320V1) ||
 	    (target_type == TARGET_TYPE_AR6320V2) ||
@@ -2376,9 +2351,9 @@ int hif_pci_bus_suspend(struct hif_softc *scn)
 	hif_apps_irqs_disable(GET_HIF_OPAQUE_HDL(scn));
 
 	/*
-	 * In an unlikely case, if draining becomes infinite loop,
-	 * it returns an error, shall abort the bus suspend.
-	 */
+   * In an unlikely case, if draining becomes infinite loop,
+   * it returns an error, shall abort the bus suspend.
+   */
 	ret = hif_drain_fw_diag_ce(scn);
 	if (ret)
 		hif_err("draining fw_diag_ce not got cleaned");
@@ -2393,10 +2368,10 @@ int hif_pci_bus_suspend(struct hif_softc *scn)
 	hif_cancel_deferred_target_sleep(scn);
 
 	/*
-	 * Only need clear the bits INTR_L1SS/INTR_CLKPM after suspend.
-	 * No need do enable bits after resume, as firmware will restore
-	 * the bits after resume.
-	 */
+   * Only need clear the bits INTR_L1SS/INTR_CLKPM after suspend.
+   * No need do enable bits after resume, as firmware will restore
+   * the bits after resume.
+   */
 	hif_pci_config_low_power_int_register(scn, false);
 
 	scn->bus_suspended = true;
@@ -2431,7 +2406,7 @@ static int __hif_check_link_status(struct hif_softc *scn)
 		return 0;
 
 	hif_err("Invalid PCIe Config Space; PCIe link down dev_id:0x%04x",
-	       dev_id);
+		dev_id);
 
 	scn->recovery = true;
 
@@ -2450,13 +2425,12 @@ static inline int __hif_check_link_status(struct hif_softc *scn)
 }
 #endif
 
-
 #ifdef HIF_BUS_LOG_INFO
 bool hif_log_pcie_info(struct hif_softc *scn, uint8_t *data,
 		       unsigned int *offset)
 {
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(scn);
-	struct hang_event_bus_info info = {0};
+	struct hang_event_bus_info info = { 0 };
 	size_t size;
 
 	if (!sc) {
@@ -2536,10 +2510,10 @@ int hif_pci_bus_suspend_noirq(struct hif_softc *scn)
 int hif_pci_bus_resume_noirq(struct hif_softc *scn)
 {
 	/* a vote for link up can come in the middle of the ongoing resume
-	 * process. hence, clear the link suspend flag once
-	 * hif_bus_resume_noirq() succeeds since PCIe link is already resumed
-	 * by this time
-	 */
+   * process. hence, clear the link suspend flag once
+   * hif_bus_resume_noirq() succeeds since PCIe link is already resumed
+   * by this time
+   */
 	qdf_atomic_set(&scn->link_suspended, 0);
 
 	return 0;
@@ -2586,9 +2560,9 @@ void hif_pci_reset_soc(struct hif_softc *hif_sc)
 
 #if defined(CPU_WARM_RESET_WAR)
 	/* Currently CPU warm reset sequence is tested only for AR9888_REV2
-	 * Need to enable for AR9888_REV1 once CPU warm reset sequence is
-	 * verified for AR9888_REV1
-	 */
+   * Need to enable for AR9888_REV1 once CPU warm reset sequence is
+   * verified for AR9888_REV1
+   */
 	if (tgt_info->target_version == AR9888_REV2_VERSION)
 		hif_pci_device_warm_reset(sc);
 	else
@@ -2640,12 +2614,12 @@ static int hif_log_soc_wakeup_timeout(struct hif_pci_softc *sc)
 	hif_info("PCI BAR 0 = 0x%08x", bar);
 
 	hif_info("SOC_WAKE_ADDR 0%08x",
-		hif_read32_mb(scn, pci_addr + PCIE_LOCAL_BASE_ADDRESS +
-				PCIE_SOC_WAKE_ADDRESS));
+		 hif_read32_mb(scn, pci_addr + PCIE_LOCAL_BASE_ADDRESS +
+					    PCIE_SOC_WAKE_ADDRESS));
 
 	hif_info("RTC_STATE_ADDR 0x%08x",
-		hif_read32_mb(scn, pci_addr + PCIE_LOCAL_BASE_ADDRESS +
-							RTC_STATE_ADDRESS));
+		 hif_read32_mb(scn, pci_addr + PCIE_LOCAL_BASE_ADDRESS +
+					    RTC_STATE_ADDRESS));
 
 	hif_info("wakeup target");
 
@@ -2698,8 +2672,8 @@ static int hif_log_soc_wakeup_timeout(struct hif_pci_softc *sc)
  *
  * Return: int
  */
-int hif_pci_target_sleep_state_adjust(struct hif_softc *scn,
-			      bool sleep_ok, bool wait_for_it)
+int hif_pci_target_sleep_state_adjust(struct hif_softc *scn, bool sleep_ok,
+				      bool wait_for_it)
 {
 	struct HIF_CE_state *hif_state = HIF_GET_CE_STATE(scn);
 	A_target_id_t pci_addr = scn->mem;
@@ -2737,7 +2711,7 @@ int hif_pci_target_sleep_state_adjust(struct hif_softc *scn,
 			/* Start the Sleep Timer */
 			qdf_timer_stop(&hif_state->sleep_timer);
 			qdf_timer_start(&hif_state->sleep_timer,
-				HIF_SLEEP_INACTIVITY_TIMER_PERIOD_MS);
+					HIF_SLEEP_INACTIVITY_TIMER_PERIOD_MS);
 		}
 		qdf_spin_unlock_irqrestore(&hif_state->keep_awake_lock);
 	} else {
@@ -2748,21 +2722,22 @@ int hif_pci_target_sleep_state_adjust(struct hif_softc *scn,
 		} else {
 			if (hif_state->keep_awake_count == 0) {
 				/* Force AWAKE */
-				hif_write32_mb(sc, pci_addr +
-					      PCIE_LOCAL_BASE_ADDRESS +
-					      PCIE_SOC_WAKE_ADDRESS,
-					      PCIE_SOC_WAKE_V_MASK);
+				hif_write32_mb(sc,
+					       pci_addr +
+						       PCIE_LOCAL_BASE_ADDRESS +
+						       PCIE_SOC_WAKE_ADDRESS,
+					       PCIE_SOC_WAKE_V_MASK);
 			}
 		}
 		hif_state->keep_awake_count++;
 		qdf_spin_unlock_irqrestore(&hif_state->keep_awake_lock);
 
 		if (wait_for_it && !hif_state->verified_awake) {
-#define PCIE_SLEEP_ADJUST_TIMEOUT 8000  /* 8Ms */
+#define PCIE_SLEEP_ADJUST_TIMEOUT 8000 /* 8Ms */
 			int tot_delay = 0;
 			int curr_delay = 5;
 
-			for (;; ) {
+			for (;;) {
 				if (hif_targ_is_awake(scn, pci_addr)) {
 					hif_state->verified_awake = true;
 					break;
@@ -2780,10 +2755,10 @@ int hif_pci_target_sleep_state_adjust(struct hif_softc *scn,
 			}
 
 			/*
-			 * NB: If Target has to come out of Deep Sleep,
-			 * this may take a few Msecs. Typically, though
-			 * this delay should be <30us.
-			 */
+       * NB: If Target has to come out of Deep Sleep,
+       * this may take a few Msecs. Typically, though
+       * this delay should be <30us.
+       */
 			if (tot_delay > max_delay)
 				max_delay = tot_delay;
 		}
@@ -2791,17 +2766,20 @@ int hif_pci_target_sleep_state_adjust(struct hif_softc *scn,
 
 	if (debug && hif_state->verified_awake) {
 		debug = 0;
-		hif_err("INTR_ENABLE_REG = 0x%08x, INTR_CAUSE_REG = 0x%08x, CPU_INTR_REG = 0x%08x, INTR_CLR_REG = 0x%08x, CE_INTERRUPT_SUMMARY_REG = 0x%08x",
+		hif_err("INTR_ENABLE_REG = 0x%08x, INTR_CAUSE_REG = 0x%08x, CPU_INTR_REG = "
+			"0x%08x, INTR_CLR_REG = 0x%08x, CE_INTERRUPT_SUMMARY_REG = 0x%08x",
 			hif_read32_mb(sc, sc->mem + SOC_CORE_BASE_ADDRESS +
-				PCIE_INTR_ENABLE_ADDRESS),
+						  PCIE_INTR_ENABLE_ADDRESS),
 			hif_read32_mb(sc, sc->mem + SOC_CORE_BASE_ADDRESS +
-				PCIE_INTR_CAUSE_ADDRESS),
+						  PCIE_INTR_CAUSE_ADDRESS),
 			hif_read32_mb(sc, sc->mem + SOC_CORE_BASE_ADDRESS +
-				CPU_INTR_ADDRESS),
+						  CPU_INTR_ADDRESS),
 			hif_read32_mb(sc, sc->mem + SOC_CORE_BASE_ADDRESS +
-				PCIE_INTR_CLR_ADDRESS),
-			hif_read32_mb(sc, sc->mem + CE_WRAPPER_BASE_ADDRESS +
-				CE_WRAPPER_INTERRUPT_SUMMARY_ADDRESS));
+						  PCIE_INTR_CLR_ADDRESS),
+			hif_read32_mb(
+				sc,
+				sc->mem + CE_WRAPPER_BASE_ADDRESS +
+					CE_WRAPPER_INTERRUPT_SUMMARY_ADDRESS));
 	}
 
 	return 0;
@@ -2832,8 +2810,8 @@ uint32_t hif_target_read_checked(struct hif_softc *scn, uint32_t offset)
 	return value;
 }
 
-void
-hif_target_write_checked(struct hif_softc *scn, uint32_t offset, uint32_t value)
+void hif_target_write_checked(struct hif_softc *scn, uint32_t offset,
+			      uint32_t value)
 {
 	void *addr;
 
@@ -2877,12 +2855,11 @@ void hif_target_dump_access_log(void)
 
 	for (idx = 0; idx < len; idx++) {
 		cur_idx = (start_idx + idx) % PCIE_ACCESS_LOG_NUM;
-		hif_debug("idx:%d sn:%u wr:%d addr:%pK val:%u",
-		       idx,
-		       pcie_access_log[cur_idx].seqnum,
-		       pcie_access_log[cur_idx].is_write,
-		       pcie_access_log[cur_idx].addr,
-		       pcie_access_log[cur_idx].value);
+		hif_debug("idx:%d sn:%u wr:%d addr:%pK val:%u", idx,
+			  pcie_access_log[cur_idx].seqnum,
+			  pcie_access_log[cur_idx].is_write,
+			  pcie_access_log[cur_idx].addr,
+			  pcie_access_log[cur_idx].value);
 	}
 
 	pcie_access_log_seqnum = 0;
@@ -2988,13 +2965,12 @@ static int hif_ce_configure_legacyirq(struct hif_softc *scn)
 		}
 
 		pci_slot = hif_get_pci_slot(scn);
-		qdf_scnprintf(ce_irqname[pci_slot][ce_id],
-			      DP_IRQ_NAME_LEN, "pci%d_ce_%u", pci_slot, ce_id);
+		qdf_scnprintf(ce_irqname[pci_slot][ce_id], DP_IRQ_NAME_LEN,
+			      "pci%d_ce_%u", pci_slot, ce_id);
 		pci_sc->ce_irq_num[ce_id] = irq;
 
 		ret = pfrm_request_irq(scn->qdf_dev->dev, irq,
-				       hif_ce_interrupt_handler,
-				       IRQF_SHARED,
+				       hif_ce_interrupt_handler, IRQF_SHARED,
 				       ce_irqname[pci_slot][ce_id],
 				       &ce_sc->tasklets[ce_id]);
 		if (ret) {
@@ -3050,8 +3026,8 @@ int hif_ce_msi_configure_irq_by_ceid(struct hif_softc *scn, int ce_id)
 
 	irq_id = scn->int_assignment->msi_idx[ce_id];
 	/* needs to match the ce_id -> irq data mapping
-	 * used in the srng parameter configuration
-	 */
+   * used in the srng parameter configuration
+   */
 	pci_slot = hif_get_pci_slot(scn);
 	msi_data = irq_id + msi_irq_start;
 	irq = pld_get_msi_irq(scn->qdf_dev->dev, msi_data);
@@ -3059,9 +3035,10 @@ int hif_ce_msi_configure_irq_by_ceid(struct hif_softc *scn, int ce_id)
 		irq_flags = IRQF_SHARED | IRQF_NOBALANCING;
 	else
 		irq_flags = IRQF_SHARED;
-	hif_debug("%s: (ce_id %d, irq_id %d, msi_data %d, irq %d flag 0x%lx tasklet %pK)",
-		  __func__, ce_id, irq_id, msi_data, irq, irq_flags,
-		  &ce_sc->tasklets[ce_id]);
+	hif_debug(
+		"%s: (ce_id %d, irq_id %d, msi_data %d, irq %d flag 0x%lx tasklet %pK)",
+		__func__, ce_id, irq_id, msi_data, irq, irq_flags,
+		&ce_sc->tasklets[ce_id]);
 
 	/* implies the ce is also initialized */
 	if (!ce_sc->tasklets[ce_id].inited)
@@ -3071,13 +3048,11 @@ int hif_ce_msi_configure_irq_by_ceid(struct hif_softc *scn, int ce_id)
 
 	hif_affinity_mgr_init_ce_irq(scn, ce_id, irq);
 
-	qdf_scnprintf(ce_irqname[pci_slot][ce_id],
-		      DP_IRQ_NAME_LEN, "pci%u_wlan_ce_%u",
-		      pci_slot, ce_id);
+	qdf_scnprintf(ce_irqname[pci_slot][ce_id], DP_IRQ_NAME_LEN,
+		      "pci%u_wlan_ce_%u", pci_slot, ce_id);
 
-	ret = pfrm_request_irq(scn->qdf_dev->dev,
-			       irq, hif_ce_interrupt_handler, irq_flags,
-			       ce_irqname[pci_slot][ce_id],
+	ret = pfrm_request_irq(scn->qdf_dev->dev, irq, hif_ce_interrupt_handler,
+			       irq_flags, ce_irqname[pci_slot][ce_id],
 			       &ce_sc->tasklets[ce_id]);
 	if (ret)
 		return -EINVAL;
@@ -3105,8 +3080,8 @@ static int hif_ce_msi_configure_irq(struct hif_softc *scn)
 		if (ret)
 			return ret;
 
-		scn->wake_irq = pld_get_msi_irq(scn->qdf_dev->dev,
-						msi_irq_start);
+		scn->wake_irq =
+			pld_get_msi_irq(scn->qdf_dev->dev, msi_irq_start);
 		scn->wake_irq_type = HIF_PM_MSI_WAKE;
 
 		ret = pfrm_request_irq(scn->qdf_dev->dev, scn->wake_irq,
@@ -3135,8 +3110,8 @@ static int hif_ce_msi_configure_irq(struct hif_softc *scn)
 	scn->bus_ops.hif_map_ce_to_irq = &hif_ce_msi_map_ce_to_irq;
 
 	/* needs to match the ce_id -> irq data mapping
-	 * used in the srng parameter configuration
-	 */
+   * used in the srng parameter configuration
+   */
 	for (ce_id = 0; ce_id < scn->ce_count; ce_id++) {
 		if (host_ce_conf[ce_id].flags & CE_ATTR_DISABLE_INTR)
 			continue;
@@ -3159,14 +3134,13 @@ free_irq:
 		ce_id--;
 		msi_data = (ce_id % msi_data_count) + msi_irq_start;
 		irq = pld_get_msi_irq(scn->qdf_dev->dev, msi_data);
-		pfrm_free_irq(scn->qdf_dev->dev,
-			      irq, &ce_sc->tasklets[ce_id]);
+		pfrm_free_irq(scn->qdf_dev->dev, irq, &ce_sc->tasklets[ce_id]);
 	}
 
 free_wake_irq:
 	if (!scn->ini_cfg.disable_wake_irq) {
-		pfrm_free_irq(scn->qdf_dev->dev,
-			      scn->wake_irq, scn->qdf_dev->dev);
+		pfrm_free_irq(scn->qdf_dev->dev, scn->wake_irq,
+			      scn->qdf_dev->dev);
 		scn->wake_irq = 0;
 		scn->wake_irq_type = HIF_PM_INVALID_WAKE;
 	}
@@ -3222,27 +3196,28 @@ void hif_pci_irq_set_affinity_hint(struct hif_exec_context *hif_ext_group,
 		qdf_cpumask_clear(&hif_ext_group->new_cpu_mask[i]);
 
 	for (i = 0; i < hif_ext_group->numirq; i++) {
-		qdf_for_each_online_cpu(cpus) {
+		qdf_for_each_online_cpu(cpus)
+		{
 			package_id = qdf_topology_physical_package_id(cpus);
 			if (package_id >= 0 && BIT(package_id) & cpu_cluster) {
-				qdf_cpumask_set_cpu(cpus,
-						    &hif_ext_group->
-						    new_cpu_mask[i]);
+				qdf_cpumask_set_cpu(
+					cpus, &hif_ext_group->new_cpu_mask[i]);
 				mask_set = true;
 			}
 		}
 	}
 	for (i = 0; i < hif_ext_group->numirq; i++) {
 		if (mask_set) {
-			ret = hif_affinity_mgr_set_qrg_irq_affinity((struct hif_softc *)hif_ext_group->hif,
-								    hif_ext_group->os_irq[i],
-								    hif_ext_group->grp_id, i,
-								    &hif_ext_group->new_cpu_mask[i]);
+			ret = hif_affinity_mgr_set_qrg_irq_affinity(
+				(struct hif_softc *)hif_ext_group->hif,
+				hif_ext_group->os_irq[i], hif_ext_group->grp_id,
+				i, &hif_ext_group->new_cpu_mask[i]);
 			if (ret)
-				qdf_debug("Set affinity %*pbl fails for IRQ %d ",
-					  qdf_cpumask_pr_args(&hif_ext_group->
-							      new_cpu_mask[i]),
-					  hif_ext_group->os_irq[i]);
+				qdf_debug(
+					"Set affinity %*pbl fails for IRQ %d ",
+					qdf_cpumask_pr_args(
+						&hif_ext_group->new_cpu_mask[i]),
+					hif_ext_group->os_irq[i]);
 		} else {
 			qdf_debug("Offline CPU: Set affinity fails for IRQ: %d",
 				  hif_ext_group->os_irq[i]);
@@ -3267,14 +3242,14 @@ void hif_pci_ce_irq_set_affinity_hint(struct hif_softc *scn)
 	host_ce_conf = ce_sc->host_ce_config;
 	qdf_cpumask_clear(&ce_cpu_mask);
 
-	qdf_for_each_online_cpu(cpus) {
+	qdf_for_each_online_cpu(cpus)
+	{
 		package_id = qdf_topology_physical_package_id(cpus);
 		if (package_id >= 0 && BIT(package_id) & perf_cpu_cluster) {
-			qdf_cpumask_set_cpu(cpus,
-					    &ce_cpu_mask);
+			qdf_cpumask_set_cpu(cpus, &ce_cpu_mask);
 		} else {
-			hif_err_rl("Unable to set cpu mask for offline CPU %d"
-				   , cpus);
+			hif_err_rl("Unable to set cpu mask for offline CPU %d",
+				   cpus);
 		}
 	}
 	if (qdf_cpumask_empty(&ce_cpu_mask)) {
@@ -3285,21 +3260,20 @@ void hif_pci_ce_irq_set_affinity_hint(struct hif_softc *scn)
 		if (host_ce_conf[ce_id].flags & CE_ATTR_DISABLE_INTR)
 			continue;
 		qdf_cpumask_copy(&updated_mask, &ce_cpu_mask);
-		ret = hif_affinity_mgr_set_ce_irq_affinity(scn, pci_sc->ce_irq_num[ce_id],
-							   ce_id,
-							   &updated_mask);
+		ret = hif_affinity_mgr_set_ce_irq_affinity(
+			scn, pci_sc->ce_irq_num[ce_id], ce_id, &updated_mask);
 		qdf_cpumask_clear(&pci_sc->ce_irq_cpu_mask[ce_id]);
 		qdf_cpumask_copy(&pci_sc->ce_irq_cpu_mask[ce_id],
 				 &updated_mask);
 		if (ret)
 			hif_err_rl("Set affinity %*pbl fails for CE IRQ %d",
 				   qdf_cpumask_pr_args(
-					&pci_sc->ce_irq_cpu_mask[ce_id]),
+					   &pci_sc->ce_irq_cpu_mask[ce_id]),
 				   pci_sc->ce_irq_num[ce_id]);
 		else
 			hif_debug_rl("Set affinity %*pbl for CE IRQ: %d",
 				     qdf_cpumask_pr_args(
-					&pci_sc->ce_irq_cpu_mask[ce_id]),
+					     &pci_sc->ce_irq_cpu_mask[ce_id]),
 				     pci_sc->ce_irq_num[ce_id]);
 	}
 }
@@ -3320,20 +3294,21 @@ void hif_pci_config_irq_clear_cpu_affinity(struct hif_softc *scn,
 			qdf_cpumask_setall(&hif_ext_group->new_cpu_mask[i]);
 			qdf_cpumask_clear_cpu(cpu,
 					      &hif_ext_group->new_cpu_mask[i]);
-			ret = hif_affinity_mgr_set_qrg_irq_affinity((struct hif_softc *)hif_ext_group->hif,
-								    hif_ext_group->os_irq[i],
-								    hif_ext_group->grp_id, i,
-								    &hif_ext_group->new_cpu_mask[i]);
+			ret = hif_affinity_mgr_set_qrg_irq_affinity(
+				(struct hif_softc *)hif_ext_group->hif,
+				hif_ext_group->os_irq[i], hif_ext_group->grp_id,
+				i, &hif_ext_group->new_cpu_mask[i]);
 			if (ret)
 				hif_err("Set affinity %*pbl fails for IRQ %d ",
-					qdf_cpumask_pr_args(&hif_ext_group->
-							    new_cpu_mask[i]),
+					qdf_cpumask_pr_args(
+						&hif_ext_group->new_cpu_mask[i]),
 					hif_ext_group->os_irq[i]);
 			else
-				hif_debug("Set affinity %*pbl for IRQ: %d",
-					  qdf_cpumask_pr_args(&hif_ext_group->
-							      new_cpu_mask[i]),
-					  hif_ext_group->os_irq[i]);
+				hif_debug(
+					"Set affinity %*pbl for IRQ: %d",
+					qdf_cpumask_pr_args(
+						&hif_ext_group->new_cpu_mask[i]),
+					hif_ext_group->os_irq[i]);
 		}
 	}
 }
@@ -3400,18 +3375,19 @@ static int hif_grp_configure_legacyirq(struct hif_softc *scn,
 			qdf_dev_set_irq_status_flags(irq,
 						     QDF_IRQ_DISABLE_UNLAZY);
 
-		hif_debug("request_irq = %d for grp %d",
-			  irq, hif_ext_group->grp_id);
+		hif_debug("request_irq = %d for grp %d", irq,
+			  hif_ext_group->grp_id);
 
-		qdf_scnprintf(dp_legacy_irqname[pci_slot][hif_ext_group->irq[j]],
-			      DP_IRQ_NAME_LEN, "pci%u_%s", pci_slot,
-			      legacy_ic_irqname[hif_ext_group->irq[j]]);
+		qdf_scnprintf(
+			dp_legacy_irqname[pci_slot][hif_ext_group->irq[j]],
+			DP_IRQ_NAME_LEN, "pci%u_%s", pci_slot,
+			legacy_ic_irqname[hif_ext_group->irq[j]]);
 
-		ret = pfrm_request_irq(scn->qdf_dev->dev, irq,
-				       hif_ext_group_interrupt_handler,
-				       IRQF_SHARED | IRQF_NO_SUSPEND,
-				       dp_legacy_irqname[pci_slot][hif_ext_group->irq[j]],
-				       hif_ext_group);
+		ret = pfrm_request_irq(
+			scn->qdf_dev->dev, irq, hif_ext_group_interrupt_handler,
+			IRQF_SHARED | IRQF_NO_SUSPEND,
+			dp_legacy_irqname[pci_slot][hif_ext_group->irq[j]],
+			hif_ext_group);
 		if (ret) {
 			hif_err("request_irq failed ret = %d", ret);
 			return -EFAULT;
@@ -3466,25 +3442,23 @@ int hif_pci_configure_grp_irq(struct hif_softc *scn,
 			irq_flags = IRQF_SHARED | IRQF_NOBALANCING;
 		else
 			irq_flags = IRQF_SHARED | IRQF_NO_SUSPEND;
-		hif_debug("request_irq = %d for grp %d irq_flags 0x%lx",
-			  irq, hif_ext_group->grp_id, irq_flags);
+		hif_debug("request_irq = %d for grp %d irq_flags 0x%lx", irq,
+			  hif_ext_group->grp_id, irq_flags);
 
 		qdf_scnprintf(dp_irqname[pci_slot][hif_ext_group->grp_id],
-			      DP_IRQ_NAME_LEN, "pci%u_wlan_grp_dp_%u",
-			      pci_slot, hif_ext_group->grp_id);
+			      DP_IRQ_NAME_LEN, "pci%u_wlan_grp_dp_%u", pci_slot,
+			      hif_ext_group->grp_id);
 		ret = pfrm_request_irq(
-				scn->qdf_dev->dev, irq,
-				hif_ext_group_interrupt_handler,
-				irq_flags,
-				dp_irqname[pci_slot][hif_ext_group->grp_id],
-				hif_ext_group);
+			scn->qdf_dev->dev, irq, hif_ext_group_interrupt_handler,
+			irq_flags, dp_irqname[pci_slot][hif_ext_group->grp_id],
+			hif_ext_group);
 		if (ret) {
 			hif_err("request_irq failed ret = %d", ret);
 			return -EFAULT;
 		}
 		hif_ext_group->os_irq[j] = irq;
-		hif_affinity_mgr_init_grp_irq(scn, hif_ext_group->grp_id,
-					      j, irq);
+		hif_affinity_mgr_init_grp_irq(scn, hif_ext_group->grp_id, j,
+					      irq);
 	}
 	hif_ext_group->irq_requested = true;
 	return 0;
@@ -3510,29 +3484,25 @@ void hif_pci_set_grp_intr_affinity(struct hif_softc *scn,
 #endif
 
 #if (defined(QCA_WIFI_QCA6390) || defined(QCA_WIFI_QCA6490) || \
-	defined(QCA_WIFI_KIWI))
-uint32_t hif_pci_reg_read32(struct hif_softc *hif_sc,
-			    uint32_t offset)
+     defined(QCA_WIFI_KIWI))
+uint32_t hif_pci_reg_read32(struct hif_softc *hif_sc, uint32_t offset)
 {
 	return hal_read32_mb(hif_sc->hal_soc, offset);
 }
 
-void hif_pci_reg_write32(struct hif_softc *hif_sc,
-			 uint32_t offset,
+void hif_pci_reg_write32(struct hif_softc *hif_sc, uint32_t offset,
 			 uint32_t value)
 {
 	hal_write32_mb(hif_sc->hal_soc, offset, value);
 }
 #else
 /* TODO: Need to implement other chips carefully */
-uint32_t hif_pci_reg_read32(struct hif_softc *hif_sc,
-			    uint32_t offset)
+uint32_t hif_pci_reg_read32(struct hif_softc *hif_sc, uint32_t offset)
 {
 	return 0;
 }
 
-void hif_pci_reg_write32(struct hif_softc *hif_sc,
-			 uint32_t offset,
+void hif_pci_reg_write32(struct hif_softc *hif_sc, uint32_t offset,
 			 uint32_t value)
 {
 }
@@ -3604,15 +3574,17 @@ static void hif_trigger_timer_irq(struct hif_softc *scn)
 {
 	int tmp;
 	/* Trigger IRQ on Peregrine/Swift by setting
-	 * IRQ Bit of LF_TIMER 0
-	 */
+   * IRQ Bit of LF_TIMER 0
+   */
 	tmp = hif_read32_mb(scn, scn->mem + (RTC_SOC_BASE_ADDRESS +
-						SOC_LF_TIMER_STATUS0_ADDRESS));
+					     SOC_LF_TIMER_STATUS0_ADDRESS));
 	/* Set Raw IRQ Bit */
 	tmp |= 1;
 	/* SOC_LF_TIMER_STATUS0 */
-	hif_write32_mb(scn, scn->mem + (RTC_SOC_BASE_ADDRESS +
-		       SOC_LF_TIMER_STATUS0_ADDRESS), tmp);
+	hif_write32_mb(scn,
+		       scn->mem + (RTC_SOC_BASE_ADDRESS +
+				   SOC_LF_TIMER_STATUS0_ADDRESS),
+		       tmp);
 }
 
 /**
@@ -3628,16 +3600,17 @@ static void hif_trigger_timer_irq(struct hif_softc *scn)
  */
 static void hif_target_sync(struct hif_softc *scn)
 {
-	hif_write32_mb(scn, scn->mem + (SOC_CORE_BASE_ADDRESS |
-			    PCIE_INTR_ENABLE_ADDRESS),
-			    PCIE_INTR_FIRMWARE_MASK | PCIE_INTR_CE_MASK_ALL);
+	hif_write32_mb(scn,
+		       scn->mem + (SOC_CORE_BASE_ADDRESS |
+				   PCIE_INTR_ENABLE_ADDRESS),
+		       PCIE_INTR_FIRMWARE_MASK | PCIE_INTR_CE_MASK_ALL);
 	/* read to flush pcie write */
 	(void)hif_read32_mb(scn, scn->mem + (SOC_CORE_BASE_ADDRESS |
-			PCIE_INTR_ENABLE_ADDRESS));
+					     PCIE_INTR_ENABLE_ADDRESS));
 
-	hif_write32_mb(scn, scn->mem + PCIE_LOCAL_BASE_ADDRESS +
-			PCIE_SOC_WAKE_ADDRESS,
-			PCIE_SOC_WAKE_V_MASK);
+	hif_write32_mb(
+		scn, scn->mem + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS,
+		PCIE_SOC_WAKE_V_MASK);
 	while (!hif_targ_is_awake(scn, scn->mem))
 		;
 
@@ -3649,18 +3622,21 @@ static void hif_target_sync(struct hif_softc *scn)
 fw_retry:
 		hif_info("Loop checking FW signal");
 		while (1) {
-			fw_ind = hif_read32_mb(scn, scn->mem +
-					FW_INDICATOR_ADDRESS);
+			fw_ind = hif_read32_mb(scn,
+					       scn->mem + FW_INDICATOR_ADDRESS);
 			if (fw_ind & FW_IND_INITIALIZED)
 				break;
 			if (wait_limit-- < 0)
 				break;
-			hif_write32_mb(scn, scn->mem + (SOC_CORE_BASE_ADDRESS |
-			    PCIE_INTR_ENABLE_ADDRESS),
-			    PCIE_INTR_FIRMWARE_MASK | PCIE_INTR_CE_MASK_ALL);
-			    /* read to flush pcie write */
-			(void)hif_read32_mb(scn, scn->mem +
-			    (SOC_CORE_BASE_ADDRESS | PCIE_INTR_ENABLE_ADDRESS));
+			hif_write32_mb(scn,
+				       scn->mem + (SOC_CORE_BASE_ADDRESS |
+						   PCIE_INTR_ENABLE_ADDRESS),
+				       PCIE_INTR_FIRMWARE_MASK |
+					       PCIE_INTR_CE_MASK_ALL);
+			/* read to flush pcie write */
+			(void)hif_read32_mb(
+				scn, scn->mem + (SOC_CORE_BASE_ADDRESS |
+						 PCIE_INTR_ENABLE_ADDRESS));
 
 			qdf_mdelay(10);
 		}
@@ -3674,11 +3650,13 @@ fw_retry:
 			hif_info("FW signal timed out");
 			qdf_assert_always(0);
 		} else {
-			hif_info("Got FW signal, retries = %x", 500-wait_limit);
+			hif_info("Got FW signal, retries = %x",
+				 500 - wait_limit);
 		}
 	}
-	hif_write32_mb(scn, scn->mem + PCIE_LOCAL_BASE_ADDRESS +
-			PCIE_SOC_WAKE_ADDRESS, PCIE_SOC_WAKE_RESET);
+	hif_write32_mb(
+		scn, scn->mem + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS,
+		PCIE_SOC_WAKE_RESET);
 }
 
 static void hif_pci_get_soc_info_pld(struct hif_pci_softc *sc,
@@ -3689,7 +3667,7 @@ static void hif_pci_get_soc_info_pld(struct hif_pci_softc *sc,
 
 	pld_get_soc_info(dev, &info);
 	sc->mem = info.v_addr;
-	sc->ce_sc.ol_sc.mem    = info.v_addr;
+	sc->ce_sc.ol_sc.mem = info.v_addr;
 	sc->ce_sc.ol_sc.mem_pa = info.p_addr;
 	sc->device_version.family_number = info.device_version.family_number;
 	sc->device_version.device_number = info.device_version.device_number;
@@ -3712,10 +3690,10 @@ static void hif_pci_get_soc_info_pld(struct hif_pci_softc *sc,
 
 static void hif_pci_get_soc_info_nopld(struct hif_pci_softc *sc,
 				       struct device *dev)
-{}
+{
+}
 
-static bool hif_is_pld_based_target(struct hif_pci_softc *sc,
-				    int device_id)
+static bool hif_is_pld_based_target(struct hif_pci_softc *sc, int device_id)
 {
 	if (!pld_have_platform_driver_support(sc->dev))
 		return false;
@@ -3790,10 +3768,9 @@ static void hif_pci_init_reg_windowing_support(struct hif_pci_softc *sc,
  *
  * Return: QDF_STATUS
  */
-QDF_STATUS hif_pci_enable_bus(struct hif_softc *ol_sc,
-			  struct device *dev, void *bdev,
-			  const struct hif_bus_id *bid,
-			  enum hif_enable_type type)
+QDF_STATUS hif_pci_enable_bus(struct hif_softc *ol_sc, struct device *dev,
+			      void *bdev, const struct hif_bus_id *bid,
+			      enum hif_enable_type type)
 {
 	int ret = 0;
 	uint32_t hif_type;
@@ -3811,8 +3788,8 @@ QDF_STATUS hif_pci_enable_bus(struct hif_softc *ol_sc,
 		return QDF_STATUS_E_NOMEM;
 	}
 	/* Following print is used by various tools to identify
-	 * WLAN SOC (e.g. crash dump analysis and reporting tool).
-	 */
+   * WLAN SOC (e.g. crash dump analysis and reporting tool).
+   */
 	hif_info("con_mode = 0x%x, WLAN_SOC_device_id = 0x%x",
 		 hif_get_conparam(ol_sc), id->device);
 
@@ -3832,21 +3809,20 @@ again:
 	hif_info("hif_enable_pci done");
 
 	/* Temporary FIX: disable ASPM on peregrine.
-	 * Will be removed after the OTP is programmed
-	 */
+   * Will be removed after the OTP is programmed
+   */
 	hif_disable_power_gating(hif_hdl);
 
 	device_disable_async_suspend(&pdev->dev);
 	pfrm_read_config_word(pdev, 0x08, &revision_id);
 
-	ret = hif_get_device_type(id->device, revision_id,
-						&hif_type, &target_type);
+	ret = hif_get_device_type(id->device, revision_id, &hif_type,
+				  &target_type);
 	if (ret < 0) {
 		hif_err("Invalid device id/revision_id");
 		goto err_tgtstate;
 	}
-	hif_info("hif_type = 0x%x, target_type = 0x%x",
-		hif_type, target_type);
+	hif_info("hif_type = 0x%x, target_type = 0x%x", hif_type, target_type);
 
 	hif_register_tbl_attach(ol_sc, hif_type);
 	hif_target_register_tbl_attach(ol_sc, target_type);
@@ -3856,8 +3832,8 @@ again:
 	tgt_info->target_type = target_type;
 
 	/*
-	 * Disable unlzay interrupt registration for QCN9000
-	 */
+   * Disable unlzay interrupt registration for QCN9000
+   */
 	if (target_type == TARGET_TYPE_QCN9000 ||
 	    target_type == TARGET_TYPE_QCN9224)
 		ol_sc->irq_unlazy_disable = 1;
@@ -3926,17 +3902,16 @@ void hif_pci_irq_enable(struct hif_softc *scn, int ce_id)
 	if (scn->ce_irq_summary == 0) {
 		/* Enable Legacy PCI line interrupts */
 		if (LEGACY_INTERRUPTS(sc) &&
-			(scn->target_status != TARGET_STATUS_RESET) &&
-			(!qdf_atomic_read(&scn->link_suspended))) {
+		    (scn->target_status != TARGET_STATUS_RESET) &&
+		    (!qdf_atomic_read(&scn->link_suspended))) {
+			hif_write32_mb(scn,
+				       scn->mem + (SOC_CORE_BASE_ADDRESS |
+						   PCIE_INTR_ENABLE_ADDRESS),
+				       HOST_GROUP0_MASK);
 
-			hif_write32_mb(scn, scn->mem +
-				(SOC_CORE_BASE_ADDRESS |
-				PCIE_INTR_ENABLE_ADDRESS),
-				HOST_GROUP0_MASK);
-
-			hif_read32_mb(scn, scn->mem +
-					(SOC_CORE_BASE_ADDRESS |
-					PCIE_INTR_ENABLE_ADDRESS));
+			hif_read32_mb(scn,
+				      scn->mem + (SOC_CORE_BASE_ADDRESS |
+						  PCIE_INTR_ENABLE_ADDRESS));
 		}
 	}
 	if (scn->hif_init_done == true)
@@ -3987,21 +3962,21 @@ int hif_pci_addr_in_boundary(struct hif_softc *scn, uint32_t offset)
 	    tgt_info->target_type == TARGET_TYPE_MANGO ||
 	    tgt_info->target_type == TARGET_TYPE_PEACH) {
 		/*
-		 * Need to consider offset's memtype for QCA6290/QCA8074,
-		 * also mem_len and DRAM_BASE_ADDRESS/DRAM_SIZE need to be
-		 * well initialized/defined.
-		 */
+     * Need to consider offset's memtype for QCA6290/QCA8074,
+     * also mem_len and DRAM_BASE_ADDRESS/DRAM_SIZE need to be
+     * well initialized/defined.
+     */
 		return 0;
 	}
 
-	if ((offset >= DRAM_BASE_ADDRESS && offset <= DRAM_BASE_ADDRESS + DRAM_SIZE)
-		 || (offset + sizeof(unsigned int) <= sc->mem_len)) {
+	if ((offset >= DRAM_BASE_ADDRESS &&
+	     offset <= DRAM_BASE_ADDRESS + DRAM_SIZE) ||
+	    (offset + sizeof(unsigned int) <= sc->mem_len)) {
 		return 0;
 	}
 
-	hif_info("Refusing to read memory at 0x%x - 0x%x (max 0x%zx)",
-		offset, (uint32_t)(offset + sizeof(unsigned int)),
-		sc->mem_len);
+	hif_info("Refusing to read memory at 0x%x - 0x%x (max 0x%zx)", offset,
+		 (uint32_t)(offset + sizeof(unsigned int)), sc->mem_len);
 
 	return -EINVAL;
 }
@@ -4041,13 +4016,14 @@ static inline int hif_soc_wake_request(struct hif_opaque_softc *hif_handle)
 	hif_write32_mb(scn, scn->mem + PCIE_REG_WAKE_UMAC_OFFSET, 1);
 	HIF_STATS_INC(pci_scn, soc_force_wake_register_write_success, 1);
 	/*
-	 * do not reset the timeout
-	 * total_wake_time = MHI_WAKE_TIME + PCI_WAKE_TIME < 50 ms
-	 */
+   * do not reset the timeout
+   * total_wake_time = MHI_WAKE_TIME + PCI_WAKE_TIME < 50 ms
+   */
 	timeout = 0;
 	do {
 		value = hif_read32_mb(
-				scn, scn->mem +
+			scn,
+			scn->mem +
 				PCIE_SOC_PCIE_REG_PCIE_SCRATCH_0_SOC_PCIE_REG);
 		if (value == HIF_POLL_UMAC_WAKE)
 			break;
@@ -4056,8 +4032,7 @@ static inline int hif_soc_wake_request(struct hif_opaque_softc *hif_handle)
 	} while (timeout <= FORCE_WAKE_DELAY_TIMEOUT_MS);
 
 	if (value != HIF_POLL_UMAC_WAKE) {
-		hif_err("force wake handshake failed, reg value = 0x%x",
-			value);
+		hif_err("force wake handshake failed, reg value = 0x%x", value);
 		HIF_STATS_INC(pci_scn, soc_force_wake_failure, 1);
 		qdf_atomic_dec(&scn->active_wake_req_cnt);
 		qdf_spin_unlock_bh(&pci_scn->force_wake_lock);
@@ -4125,9 +4100,9 @@ int hif_force_wake_request(struct hif_opaque_softc *hif_handle)
 	}
 
 	/* If device's M1 state-change event races here, it can be ignored,
-	 * as the device is expected to immediately move from M2 to M0
-	 * without entering low power state.
-	 */
+   * as the device is expected to immediately move from M2 to M0
+   * without entering low power state.
+   */
 	if (!pld_is_device_awake(scn->qdf_dev->dev))
 		hif_info("state-change event races, ignore");
 
@@ -4220,9 +4195,9 @@ int hif_force_wake_request(struct hif_opaque_softc *hif_handle)
 	}
 
 	/* If device's M1 state-change event races here, it can be ignored,
-	 * as the device is expected to immediately move from M2 to M0
-	 * without entering low power state.
-	 */
+   * as the device is expected to immediately move from M2 to M0
+   * without entering low power state.
+   */
 	if (!pld_is_device_awake(scn->qdf_dev->dev))
 		hif_info("state-change event races, ignore");
 

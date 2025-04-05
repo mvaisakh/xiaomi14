@@ -31,13 +31,11 @@
 #include "wlan_cp_stats_defs.h"
 #include <wlan_cp_stats_ucfg_api.h>
 #include <wlan_cp_stats_utils_api.h>
-#include <wmi_unified_twt_param.h>
 #include <wlan_twt_public_structs.h>
+#include <wmi_unified_twt_param.h>
 
-
-static QDF_STATUS
-wlan_cp_stats_psoc_comp_obj_config
-(struct wlan_objmgr_psoc *psoc, enum wlan_cp_stats_comp_id comp_id,
+static QDF_STATUS wlan_cp_stats_psoc_comp_obj_config(
+	struct wlan_objmgr_psoc *psoc, enum wlan_cp_stats_comp_id comp_id,
 	enum wlan_cp_stats_cfg_state cfg_state, void *data)
 {
 	struct psoc_cp_stats *psoc_cs;
@@ -72,9 +70,8 @@ wlan_cp_stats_psoc_comp_obj_config
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-wlan_cp_stats_pdev_comp_obj_config
-(struct wlan_objmgr_pdev *pdev, enum wlan_cp_stats_comp_id comp_id,
+static QDF_STATUS wlan_cp_stats_pdev_comp_obj_config(
+	struct wlan_objmgr_pdev *pdev, enum wlan_cp_stats_comp_id comp_id,
 	enum wlan_cp_stats_cfg_state cfg_state, void *data)
 {
 	struct pdev_cp_stats *pdev_cs;
@@ -109,9 +106,8 @@ wlan_cp_stats_pdev_comp_obj_config
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-wlan_cp_stats_vdev_comp_obj_config
-(struct wlan_objmgr_vdev *vdev, enum wlan_cp_stats_comp_id comp_id,
+static QDF_STATUS wlan_cp_stats_vdev_comp_obj_config(
+	struct wlan_objmgr_vdev *vdev, enum wlan_cp_stats_comp_id comp_id,
 	enum wlan_cp_stats_cfg_state cfg_state, void *data)
 {
 	struct vdev_cp_stats *vdev_cs;
@@ -146,9 +142,8 @@ wlan_cp_stats_vdev_comp_obj_config
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-wlan_cp_stats_peer_comp_obj_config
-(struct wlan_objmgr_peer *peer, enum wlan_cp_stats_comp_id comp_id,
+static QDF_STATUS wlan_cp_stats_peer_comp_obj_config(
+	struct wlan_objmgr_peer *peer, enum wlan_cp_stats_comp_id comp_id,
 	enum wlan_cp_stats_cfg_state cfg_state, void *data)
 {
 	struct peer_cp_stats *peer_cs;
@@ -186,8 +181,8 @@ wlan_cp_stats_peer_comp_obj_config
 QDF_STATUS
 wlan_cp_stats_comp_obj_config(enum wlan_objmgr_obj_type obj_type,
 			      enum wlan_cp_stats_cfg_state cfg_state,
-			      enum wlan_cp_stats_comp_id comp_id,
-			      void *cmn_obj, void *data)
+			      enum wlan_cp_stats_comp_id comp_id, void *cmn_obj,
+			      void *data)
 {
 	QDF_STATUS status;
 
@@ -204,28 +199,24 @@ wlan_cp_stats_comp_obj_config(enum wlan_objmgr_obj_type obj_type,
 
 	switch (obj_type) {
 	case WLAN_PSOC_OP:
-		status =
-			wlan_cp_stats_psoc_comp_obj_config(
-					(struct wlan_objmgr_psoc *)cmn_obj,
-					comp_id, cfg_state, data);
+		status = wlan_cp_stats_psoc_comp_obj_config(
+			(struct wlan_objmgr_psoc *)cmn_obj, comp_id, cfg_state,
+			data);
 		break;
 	case WLAN_PDEV_OP:
-		status =
-			wlan_cp_stats_pdev_comp_obj_config(
-					(struct wlan_objmgr_pdev *)cmn_obj,
-					comp_id, cfg_state, data);
+		status = wlan_cp_stats_pdev_comp_obj_config(
+			(struct wlan_objmgr_pdev *)cmn_obj, comp_id, cfg_state,
+			data);
 		break;
 	case WLAN_VDEV_OP:
-		status =
-			wlan_cp_stats_vdev_comp_obj_config(
-					(struct wlan_objmgr_vdev *)cmn_obj,
-					comp_id, cfg_state, data);
+		status = wlan_cp_stats_vdev_comp_obj_config(
+			(struct wlan_objmgr_vdev *)cmn_obj, comp_id, cfg_state,
+			data);
 		break;
 	case WLAN_PEER_OP:
-		status =
-			wlan_cp_stats_peer_comp_obj_config(
-					(struct wlan_objmgr_peer *)cmn_obj,
-					comp_id, cfg_state, data);
+		status = wlan_cp_stats_peer_comp_obj_config(
+			(struct wlan_objmgr_peer *)cmn_obj, comp_id, cfg_state,
+			data);
 		break;
 	default:
 		cp_stats_err("Invalid common object");
@@ -238,8 +229,8 @@ wlan_cp_stats_comp_obj_config(enum wlan_objmgr_obj_type obj_type,
 #if defined(WLAN_SUPPORT_TWT) && defined(WLAN_TWT_CONV_SUPPORTED)
 QDF_STATUS
 wlan_cp_stats_twt_get_session_evt_handler(
-				struct wlan_objmgr_psoc *psoc,
-				struct twt_session_stats_info *twt_params)
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_session_stats_info *twt_params)
 {
 	int i;
 	uint32_t event_type;

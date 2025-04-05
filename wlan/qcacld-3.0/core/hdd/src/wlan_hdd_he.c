@@ -24,54 +24,44 @@
  *
  */
 
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_he.h"
-#include "osif_sync.h"
-#include "wma_he.h"
-#include "wlan_utility.h"
-#include "wlan_mlme_ucfg_api.h"
-#include "spatial_reuse_ucfg_api.h"
 #include "cdp_txrx_host_stats.h"
-#include "wlan_policy_mgr_i.h"
-#include "wlan_objmgr_vdev_obj.h"
+#include "osif_sync.h"
+#include "spatial_reuse_ucfg_api.h"
+#include "wlan_hdd_main.h"
 #include "wlan_hdd_object_manager.h"
+#include "wlan_mlme_ucfg_api.h"
+#include "wlan_objmgr_vdev_obj.h"
+#include "wlan_policy_mgr_i.h"
+#include "wlan_utility.h"
+#include "wma_he.h"
 
-const struct nla_policy
-wlan_hdd_sr_policy[QCA_WLAN_VENDOR_ATTR_SR_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_SR_OPERATION] = {.type = NLA_U8},
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS] = {.type = NLA_NESTED},
-	[QCA_WLAN_VENDOR_ATTR_SR_STATS] = {.type = NLA_NESTED},
+const struct nla_policy wlan_hdd_sr_policy[QCA_WLAN_VENDOR_ATTR_SR_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_SR_OPERATION] = { .type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS] = { .type = NLA_NESTED },
+	[QCA_WLAN_VENDOR_ATTR_SR_STATS] = { .type = NLA_NESTED },
 };
 
-static const struct nla_policy
-qca_wlan_vendor_srp_param_policy[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_HESIGA_VAL15_ENABLE] = {
-							.type = NLA_FLAG},
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_DISALLOW] = {
-							.type = NLA_FLAG},
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MIN_OFFSET] = {
-							.type = NLA_U8},
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MAX_OFFSET] = {
-							.type = NLA_U8},
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_MAX_OFFSET] = {
-							.type = NLA_U8},
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_PD_THRESHOLD] = {
-							.type = NLA_S32},
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_PD_THRESHOLD] = {
-							.type = NLA_S32},
-	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_REASON_CODE] = {.type = NLA_U32},
+static const struct nla_policy qca_wlan_vendor_srp_param_policy[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_MAX +
+								1] = {
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_HESIGA_VAL15_ENABLE] = { .type = NLA_FLAG },
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_DISALLOW] = { .type = NLA_FLAG },
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MIN_OFFSET] = { .type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MAX_OFFSET] = { .type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_MAX_OFFSET] = { .type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_PD_THRESHOLD] = { .type = NLA_S32 },
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_PD_THRESHOLD] = { .type = NLA_S32 },
+	[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_REASON_CODE] = { .type = NLA_U32 },
 
 };
 
-void hdd_update_tgt_he_cap(struct hdd_context *hdd_ctx,
-			   struct wma_tgt_cfg *cfg)
+void hdd_update_tgt_he_cap(struct hdd_context *hdd_ctx, struct wma_tgt_cfg *cfg)
 {
 	QDF_STATUS status;
-	tDot11fIEhe_cap he_cap_ini = {0};
+	tDot11fIEhe_cap he_cap_ini = { 0 };
 	uint8_t value = 0;
 
-	status = ucfg_mlme_cfg_get_vht_tx_bfee_ant_supp(hdd_ctx->psoc,
-							&value);
+	status = ucfg_mlme_cfg_get_vht_tx_bfee_ant_supp(hdd_ctx->psoc, &value);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		hdd_err("unable to get tx_bfee_ant_supp");
 
@@ -87,7 +77,7 @@ void wlan_hdd_check_11ax_support(struct hdd_beacon_data *beacon,
 	const uint8_t *ie;
 
 	ie = wlan_get_ext_ie_ptr_from_ext_id(HE_CAP_OUI_TYPE, HE_CAP_OUI_SIZE,
-					    beacon->tail, beacon->tail_len);
+					     beacon->tail, beacon->tail_len);
 	if (ie)
 		config->SapHw_mode = eCSR_DOT11_MODE_11ax;
 }
@@ -107,15 +97,13 @@ int hdd_update_he_cap_in_cfg(struct hdd_context *hdd_ctx)
 	}
 
 	/* In val,
-	 * Bit 1 - corresponds to UL MIMO
-	 * Bit 2 - corresponds to UL OFDMA
-	 */
-	ret = ucfg_mlme_cfg_get_enable_ul_mimo(hdd_ctx->psoc,
-					       &enable_ul_mimo);
+   * Bit 1 - corresponds to UL MIMO
+   * Bit 2 - corresponds to UL OFDMA
+   */
+	ret = ucfg_mlme_cfg_get_enable_ul_mimo(hdd_ctx->psoc, &enable_ul_mimo);
 	if (ret)
 		return ret;
-	ret = ucfg_mlme_cfg_get_enable_ul_ofdm(hdd_ctx->psoc,
-					       &enable_ul_ofdma);
+	ret = ucfg_mlme_cfg_get_enable_ul_ofdm(hdd_ctx->psoc, &enable_ul_ofdma);
 	if (ret)
 		return ret;
 	if (val & 0x1 || (val >> 1) & 0x1)
@@ -138,11 +126,9 @@ int hdd_update_he_cap_in_cfg(struct hdd_context *hdd_ctx)
  *
  * Return: 0 if success, non-zero for failure
  */
-static int
-__wlan_hdd_cfg80211_get_he_cap(struct wiphy *wiphy,
-			       struct wireless_dev *wdev,
-			       const void *data,
-			       int data_len)
+static int __wlan_hdd_cfg80211_get_he_cap(struct wiphy *wiphy,
+					  struct wireless_dev *wdev,
+					  const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	int ret;
@@ -170,18 +156,18 @@ __wlan_hdd_cfg80211_get_he_cap(struct wiphy *wiphy,
 		if (QDF_STATUS_SUCCESS != status)
 			return -EINVAL;
 	} else {
-		hdd_info("11AX: HE not supported, send only QCA_WLAN_VENDOR_ATTR_HE_SUPPORTED");
+		hdd_info(
+			"11AX: HE not supported, send only QCA_WLAN_VENDOR_ATTR_HE_SUPPORTED");
 	}
 
 	if (he_supported) {
-		nl_buf_len += NLA_HDRLEN + sizeof(he_supported) +
-			      NLA_HDRLEN + sizeof(he_cap.phy_cap) +
-			      NLA_HDRLEN + sizeof(he_cap.mac_cap) +
-			      NLA_HDRLEN + sizeof(he_cap.mcs) +
-			      NLA_HDRLEN + sizeof(he_cap.ppet.numss_m1) +
-			      NLA_HDRLEN + sizeof(he_cap.ppet.ru_bit_mask) +
-			      NLA_HDRLEN +
-				sizeof(he_cap.ppet.ppet16_ppet8_ru3_ru0);
+		nl_buf_len += NLA_HDRLEN + sizeof(he_supported) + NLA_HDRLEN +
+			      sizeof(he_cap.phy_cap) + NLA_HDRLEN +
+			      sizeof(he_cap.mac_cap) + NLA_HDRLEN +
+			      sizeof(he_cap.mcs) + NLA_HDRLEN +
+			      sizeof(he_cap.ppet.numss_m1) + NLA_HDRLEN +
+			      sizeof(he_cap.ppet.ru_bit_mask) + NLA_HDRLEN +
+			      sizeof(he_cap.ppet.ppet16_ppet8_ru3_ru0);
 	} else {
 		nl_buf_len += NLA_HDRLEN + sizeof(he_supported);
 	}
@@ -194,25 +180,22 @@ __wlan_hdd_cfg80211_get_he_cap(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	if (nla_put_u8(reply_skb,
-		       QCA_WLAN_VENDOR_ATTR_HE_SUPPORTED, he_supported))
+	if (nla_put_u8(reply_skb, QCA_WLAN_VENDOR_ATTR_HE_SUPPORTED,
+		       he_supported))
 		goto nla_put_failure;
 
 	/* No need to populate other attributes if HE is not supported */
 	if (0 == he_supported)
 		goto end;
 
-	if (nla_put_u32(reply_skb,
-			QCA_WLAN_VENDOR_ATTR_MAC_CAPAB, he_cap.mac_cap) ||
-	    nla_put_u32(reply_skb,
-			QCA_WLAN_VENDOR_ATTR_HE_MCS, he_cap.mcs) ||
-	    nla_put_u32(reply_skb,
-			QCA_WLAN_VENDOR_ATTR_NUM_SS, he_cap.ppet.numss_m1) ||
-	    nla_put_u32(reply_skb,
-			QCA_WLAN_VENDOR_ATTR_RU_IDX_MASK,
+	if (nla_put_u32(reply_skb, QCA_WLAN_VENDOR_ATTR_MAC_CAPAB,
+			he_cap.mac_cap) ||
+	    nla_put_u32(reply_skb, QCA_WLAN_VENDOR_ATTR_HE_MCS, he_cap.mcs) ||
+	    nla_put_u32(reply_skb, QCA_WLAN_VENDOR_ATTR_NUM_SS,
+			he_cap.ppet.numss_m1) ||
+	    nla_put_u32(reply_skb, QCA_WLAN_VENDOR_ATTR_RU_IDX_MASK,
 			he_cap.ppet.ru_bit_mask) ||
-	    nla_put(reply_skb,
-		    QCA_WLAN_VENDOR_ATTR_PHY_CAPAB,
+	    nla_put(reply_skb, QCA_WLAN_VENDOR_ATTR_PHY_CAPAB,
 		    sizeof(u32) * HE_MAX_PHY_CAP_SIZE, he_cap.phy_cap) ||
 	    nla_put(reply_skb, QCA_WLAN_VENDOR_ATTR_PPE_THRESHOLD,
 		    sizeof(u32) * PSOC_HOST_MAX_NUM_SS,
@@ -229,10 +212,8 @@ nla_put_failure:
 	return -EINVAL;
 }
 
-int wlan_hdd_cfg80211_get_he_cap(struct wiphy *wiphy,
-				 struct wireless_dev *wdev,
-				 const void *data,
-				 int data_len)
+int wlan_hdd_cfg80211_get_he_cap(struct wiphy *wiphy, struct wireless_dev *wdev,
+				 const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -293,12 +274,9 @@ hdd_sr_event_convert_operation(enum sr_osif_operation sr_osif_oper,
 }
 
 static QDF_STATUS hdd_sr_pack_suspend_resume_event(
-					 struct sk_buff *skb,
-					 enum qca_wlan_sr_operation sr_nl_oper,
-					 enum qca_wlan_sr_reason_code sr_nl_rc,
-					 uint8_t srg_max_pd_offset,
-					 uint8_t srg_min_pd_offset,
-					 uint8_t non_srg_max_pd_offset)
+	struct sk_buff *skb, enum qca_wlan_sr_operation sr_nl_oper,
+	enum qca_wlan_sr_reason_code sr_nl_rc, uint8_t srg_max_pd_offset,
+	uint8_t srg_min_pd_offset, uint8_t non_srg_max_pd_offset)
 {
 	struct nlattr *attr;
 	QDF_STATUS status = QDF_STATUS_E_FAULT;
@@ -331,23 +309,23 @@ static QDF_STATUS hdd_sr_pack_suspend_resume_event(
 	if (sr_nl_rc == QCA_WLAN_SR_REASON_CODE_ROAMING &&
 	    sr_nl_oper == QCA_WLAN_SR_OPERATION_SR_RESUME) {
 		if (nla_put_u32(
-			skb,
-			QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MIN_OFFSET,
-			srg_min_pd_offset)) {
+			    skb,
+			    QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MIN_OFFSET,
+			    srg_min_pd_offset)) {
 			hdd_err("srg_pd_min_offset put fail");
 			goto sr_events_end;
 		}
 		if (nla_put_u32(
-			skb,
-			QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MAX_OFFSET,
-			srg_max_pd_offset)) {
+			    skb,
+			    QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MAX_OFFSET,
+			    srg_max_pd_offset)) {
 			hdd_err("srg_pd_min_offset put fail");
 			goto sr_events_end;
 		}
 		if (nla_put_u32(
-		      skb,
-		      QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_MAX_OFFSET,
-		      non_srg_max_pd_offset)) {
+			    skb,
+			    QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_MAX_OFFSET,
+			    non_srg_max_pd_offset)) {
 			hdd_err("non_srg_pd_offset put fail");
 			goto sr_events_end;
 		}
@@ -403,8 +381,7 @@ static void hdd_sr_osif_events(struct wlan_objmgr_vdev *vdev,
 		return;
 	}
 
-	hdd_debug("SR Operation: %u SR Reason Code: %u",
-		  sr_nl_oper, sr_nl_rc);
+	hdd_debug("SR Operation: %u SR Reason Code: %u", sr_nl_oper, sr_nl_rc);
 	switch (sr_nl_oper) {
 	case QCA_WLAN_SR_OPERATION_SR_SUSPEND:
 	case QCA_WLAN_SR_OPERATION_SR_RESUME:
@@ -419,9 +396,9 @@ static void hdd_sr_osif_events(struct wlan_objmgr_vdev *vdev,
 			/* QCA_WLAN_VENDOR_ATTR_SR_PARAMS */
 			len += nla_total_size(0);
 			/*
-			 * In case of resume due to roaming additional config
-			 * params are required to be sent.
-			 */
+       * In case of resume due to roaming additional config
+       * params are required to be sent.
+       */
 			if (sr_nl_rc == QCA_WLAN_SR_REASON_CODE_ROAMING &&
 			    sr_nl_oper == QCA_WLAN_SR_OPERATION_SR_RESUME) {
 				/* SR_PARAMS_SRG_OBSS_PD_MIN_OFFSET */
@@ -431,17 +408,15 @@ static void hdd_sr_osif_events(struct wlan_objmgr_vdev *vdev,
 				/* SR_PARAMS_NON_SRG_OBSS_PD_MAX_OFFSET */
 				len += nla_total_size(sizeof(int32_t));
 			}
-			skb = wlan_cfg80211_vendor_event_alloc(wiphy, wdev,
-							       len, idx,
-							       GFP_KERNEL);
+			skb = wlan_cfg80211_vendor_event_alloc(wiphy, wdev, len,
+							       idx, GFP_KERNEL);
 			if (!skb) {
 				hdd_err("wlan_cfg80211_vendor_event_alloc failed");
 				return;
 			}
 			status = hdd_sr_pack_suspend_resume_event(
-					skb, sr_nl_oper, sr_nl_rc,
-					srg_max_pd_offset, srg_min_pd_offset,
-					non_srg_max_pd_offset);
+				skb, sr_nl_oper, sr_nl_rc, srg_max_pd_offset,
+				srg_min_pd_offset, non_srg_max_pd_offset);
 			if (QDF_IS_STATUS_ERROR(status)) {
 				wlan_cfg80211_vendor_free_skb(skb);
 				return;
@@ -470,11 +445,11 @@ static int hdd_get_srp_stats_len(void)
 	uint32_t len = NLMSG_HDRLEN;
 
 	len += nla_total_size(sizeof(stats.num_srg_ppdu_success)) +
-		nla_total_size(sizeof(stats.num_srg_ppdu_tried)) +
-		nla_total_size(sizeof(stats.num_srg_opportunities)) +
-		nla_total_size(sizeof(stats.num_non_srg_ppdu_success)) +
-		nla_total_size(sizeof(stats.num_non_srg_ppdu_tried)) +
-		nla_total_size(sizeof(stats.num_non_srg_opportunities));
+	       nla_total_size(sizeof(stats.num_srg_ppdu_tried)) +
+	       nla_total_size(sizeof(stats.num_srg_opportunities)) +
+	       nla_total_size(sizeof(stats.num_non_srg_ppdu_success)) +
+	       nla_total_size(sizeof(stats.num_non_srg_ppdu_tried)) +
+	       nla_total_size(sizeof(stats.num_non_srg_opportunities));
 
 	return len;
 }
@@ -483,19 +458,18 @@ static int hdd_get_srp_param_len(void)
 {
 	uint32_t len = NLMSG_HDRLEN;
 
-	len += nla_total_size(sizeof(bool)) +
-	       nla_total_size(sizeof(bool))+
-	       nla_total_size(sizeof(uint8_t))+
-	       nla_total_size(sizeof(uint8_t))+
+	len += nla_total_size(sizeof(bool)) + nla_total_size(sizeof(bool)) +
+	       nla_total_size(sizeof(uint8_t)) +
+	       nla_total_size(sizeof(uint8_t)) +
 	       nla_total_size(sizeof(uint8_t));
 
 	return len;
 }
 
-static int
-hdd_add_param_info(struct sk_buff *skb, uint8_t srg_max_pd_offset,
-		   uint8_t srg_min_pd_offset, uint8_t non_srg_pd_offset,
-		   uint8_t sr_ctrl, int idx)
+static int hdd_add_param_info(struct sk_buff *skb, uint8_t srg_max_pd_offset,
+			      uint8_t srg_min_pd_offset,
+			      uint8_t non_srg_pd_offset, uint8_t sr_ctrl,
+			      int idx)
 {
 	struct nlattr *nla_attr;
 	bool non_srg_obss_pd_disallow = sr_ctrl & NON_SRG_PD_SR_DISALLOWED;
@@ -504,9 +478,12 @@ hdd_add_param_info(struct sk_buff *skb, uint8_t srg_max_pd_offset,
 	nla_attr = nla_nest_start(skb, idx);
 	if (!nla_attr)
 		goto fail;
-	hdd_debug("SR params of connected AP srg_max_pd_offset %d srg_min_pd_offset %d non_srg_pd_offset %d non_srg_obss_pd_disallow %d hesega_val_15_enable %d",
-		  srg_max_pd_offset, srg_min_pd_offset, non_srg_pd_offset,
-		  non_srg_obss_pd_disallow, hesega_val_15_enable);
+	hdd_debug(
+		"SR params of connected AP srg_max_pd_offset %d srg_min_pd_offset "
+		"%d non_srg_pd_offset %d non_srg_obss_pd_disallow %d "
+		"hesega_val_15_enable %d",
+		srg_max_pd_offset, srg_min_pd_offset, non_srg_pd_offset,
+		non_srg_obss_pd_disallow, hesega_val_15_enable);
 
 	if (nla_put_u32(skb,
 			QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_OBSS_PD_MIN_OFFSET,
@@ -521,20 +498,21 @@ hdd_add_param_info(struct sk_buff *skb, uint8_t srg_max_pd_offset,
 		goto fail;
 	}
 	if (nla_put_u32(
-		skb,
-		QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_MAX_OFFSET,
-		non_srg_pd_offset)) {
+		    skb,
+		    QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_MAX_OFFSET,
+		    non_srg_pd_offset)) {
 		hdd_err("non_srg_pd_offset put fail");
 		goto fail;
 	}
-	if (non_srg_obss_pd_disallow && nla_put_flag(
-		skb,
-		QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_DISALLOW)) {
+	if (non_srg_obss_pd_disallow &&
+	    nla_put_flag(
+		    skb,
+		    QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_OBSS_PD_DISALLOW)) {
 		hdd_err("non_srg_obss_pd_disallow put fail or enabled");
 		goto fail;
 	}
-	if (hesega_val_15_enable && nla_put_flag(
-			 skb,
+	if (hesega_val_15_enable &&
+	    nla_put_flag(skb,
 			 QCA_WLAN_VENDOR_ATTR_SR_PARAMS_HESIGA_VAL15_ENABLE)) {
 		hdd_err("hesega_val_15_enable put fail or disabled");
 		goto fail;
@@ -545,9 +523,8 @@ hdd_add_param_info(struct sk_buff *skb, uint8_t srg_max_pd_offset,
 fail:
 	return -EINVAL;
 }
-static int
-hdd_add_stats_info(struct sk_buff *skb,
-		   struct cdp_pdev_obss_pd_stats_tlv *stats)
+static int hdd_add_stats_info(struct sk_buff *skb,
+			      struct cdp_pdev_obss_pd_stats_tlv *stats)
 {
 	struct nlattr *nla_attr;
 
@@ -555,7 +532,8 @@ hdd_add_stats_info(struct sk_buff *skb,
 	if (!nla_attr)
 		goto fail;
 
-	hdd_debug("SR stats - srg: ppdu_success %d tried %d opportunities %d non-srg: ppdu_success %d tried %d opportunities %d",
+	hdd_debug("SR stats - srg: ppdu_success %d tried %d opportunities %d "
+		  "non-srg: ppdu_success %d tried %d opportunities %d",
 		  stats->num_srg_ppdu_success, stats->num_srg_ppdu_tried,
 		  stats->num_srg_opportunities, stats->num_non_srg_ppdu_success,
 		  stats->num_non_srg_ppdu_tried,
@@ -572,31 +550,30 @@ hdd_add_stats_info(struct sk_buff *skb,
 		hdd_err("num_srg_ppdu_tried put fail");
 		goto fail;
 	}
-	if (nla_put_u32(
-		skb,
-		QCA_WLAN_VENDOR_ATTR_SR_STATS_SRG_TX_OPPORTUNITIES_COUNT,
-		stats->num_srg_opportunities)) {
+	if (nla_put_u32(skb,
+			QCA_WLAN_VENDOR_ATTR_SR_STATS_SRG_TX_OPPORTUNITIES_COUNT,
+			stats->num_srg_opportunities)) {
 		hdd_err("num_srg_opportunities put fail");
 		goto fail;
 	}
 	if (nla_put_u32(
-		skb,
-		QCA_WLAN_VENDOR_ATTR_SR_STATS_NON_SRG_TX_PPDU_SUCCESS_COUNT,
-		stats->num_non_srg_ppdu_success)) {
+		    skb,
+		    QCA_WLAN_VENDOR_ATTR_SR_STATS_NON_SRG_TX_PPDU_SUCCESS_COUNT,
+		    stats->num_non_srg_ppdu_success)) {
 		hdd_err("num_non_srg_ppdu_success put fail");
 		goto fail;
 	}
 	if (nla_put_u32(
-		skb,
-		QCA_WLAN_VENDOR_ATTR_SR_STATS_NON_SRG_TX_PPDU_TRIED_COUNT,
-		stats->num_non_srg_ppdu_tried)) {
+		    skb,
+		    QCA_WLAN_VENDOR_ATTR_SR_STATS_NON_SRG_TX_PPDU_TRIED_COUNT,
+		    stats->num_non_srg_ppdu_tried)) {
 		hdd_err("num_non_srg_ppdu_tried put fail");
 		goto fail;
 	}
 	if (nla_put_u32(
-		skb,
-		QCA_WLAN_VENDOR_ATTR_SR_STATS_NON_SRG_TX_OPPORTUNITIES_COUNT,
-		stats->num_non_srg_opportunities)) {
+		    skb,
+		    QCA_WLAN_VENDOR_ATTR_SR_STATS_NON_SRG_TX_OPPORTUNITIES_COUNT,
+		    stats->num_non_srg_opportunities)) {
 		hdd_err("num_non_srg_opportunities put fail");
 		goto fail;
 	}
@@ -611,7 +588,7 @@ static int hdd_get_sr_stats(struct hdd_context *hdd_ctx, uint8_t mac_id,
 {
 	ol_txrx_soc_handle soc;
 	uint8_t pdev_id;
-	struct cdp_txrx_stats_req req = {0};
+	struct cdp_txrx_stats_req req = { 0 };
 
 	soc = cds_get_context(QDF_MODULE_ID_SOC);
 	if (!soc) {
@@ -634,7 +611,7 @@ static int hdd_clear_sr_stats(struct hdd_context *hdd_ctx, uint8_t mac_id)
 	QDF_STATUS status;
 	ol_txrx_soc_handle soc;
 	uint8_t pdev_id;
-	struct cdp_txrx_stats_req req = {0};
+	struct cdp_txrx_stats_req req = { 0 };
 
 	soc = cds_get_context(QDF_MODULE_ID_SOC);
 	if (!soc) {
@@ -664,8 +641,8 @@ static bool hdd_check_mode_support_for_sr(struct hdd_adapter *adapter,
 {
 	if ((adapter->device_mode == QDF_STA_MODE) &&
 	    (!hdd_cm_is_vdev_connected(adapter->deflink) || !sr_ctrl ||
-	    ((sr_ctrl & NON_SRG_PD_SR_DISALLOWED) &&
-	    !(sr_ctrl & SRG_INFO_PRESENT)))) {
+	     ((sr_ctrl & NON_SRG_PD_SR_DISALLOWED) &&
+	      !(sr_ctrl & SRG_INFO_PRESENT)))) {
 		hdd_err("mode %d doesn't supports SR", adapter->device_mode);
 		return false;
 	}
@@ -700,7 +677,7 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(wdev->netdev);
 	struct wlan_objmgr_vdev *vdev;
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_SR_MAX + 1];
-	struct nlattr *tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_MAX + 1] = {0};
+	struct nlattr *tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_MAX + 1] = { 0 };
 	enum qca_wlan_sr_operation sr_oper;
 	struct nlattr *sr_oper_attr;
 	struct nlattr *sr_param_attr;
@@ -729,9 +706,9 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 	}
 	sr_ctrl = wlan_vdev_mlme_get_sr_ctrl(vdev);
 	/**
-	 * Reject command if SR concurrency is not allowed and
-	 * only STA mode is set in ini to enable SR.
-	 **/
+   * Reject command if SR concurrency is not allowed and
+   * only STA mode is set in ini to enable SR.
+   **/
 	ucfg_mlme_get_sr_enable_modes(hdd_ctx->psoc, &sr_device_modes);
 	if (!(sr_device_modes & (1 << adapter->device_mode))) {
 		hdd_debug("SR operation not allowed for mode %d",
@@ -786,9 +763,8 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 	sr_param_attr = tb[id];
 	if (sr_param_attr) {
 		ret = wlan_cfg80211_nla_parse_nested(
-				tb2, QCA_WLAN_VENDOR_ATTR_SR_PARAMS_MAX,
-				sr_param_attr,
-				qca_wlan_vendor_srp_param_policy);
+			tb2, QCA_WLAN_VENDOR_ATTR_SR_PARAMS_MAX, sr_param_attr,
+			qca_wlan_vendor_srp_param_policy);
 		if (ret) {
 			hdd_err("sr_param_attr parse failed");
 			goto exit;
@@ -802,36 +778,34 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 		} else {
 			is_sr_enable = false;
 			if (!wlan_vdev_mlme_get_he_spr_enabled(vdev)) {
-				hdd_debug("SR not enabled, reject disable command");
+				hdd_debug(
+					"SR not enabled, reject disable command");
 				ret = -EINVAL;
 				goto exit;
 			}
 		}
 		/**
-		 * As per currenct implementation from userspace same
-		 * PD threshold value is configured for both SRG and
-		 * NON-SRG and fw will decide further based on BSS color
-		 * So only SRG param is parsed and set as pd threshold
-		 */
+     * As per currenct implementation from userspace same
+     * PD threshold value is configured for both SRG and
+     * NON-SRG and fw will decide further based on BSS color
+     * So only SRG param is parsed and set as pd threshold
+     */
 		if (is_sr_enable &&
 		    tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_PD_THRESHOLD]) {
-			srg_pd_threshold =
-			nla_get_s32(
-			tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_PD_THRESHOLD]);
+			srg_pd_threshold = nla_get_s32(
+				tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_SRG_PD_THRESHOLD]);
 			is_pd_threshold_present = true;
 			wlan_vdev_mlme_set_pd_threshold_present(
-						vdev, is_pd_threshold_present);
+				vdev, is_pd_threshold_present);
 		}
 
 		if (is_sr_enable &&
 		    tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_PD_THRESHOLD]) {
-			non_srg_pd_threshold =
-			nla_get_s32(
-			tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_PD_THRESHOLD]
-			);
+			non_srg_pd_threshold = nla_get_s32(
+				tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_NON_SRG_PD_THRESHOLD]);
 			is_pd_threshold_present = true;
 			wlan_vdev_mlme_set_pd_threshold_present(
-						vdev, is_pd_threshold_present);
+				vdev, is_pd_threshold_present);
 		}
 		if (is_pd_threshold_present) {
 			if (!hdd_check_mode_support_for_sr(adapter, sr_ctrl)) {
@@ -839,8 +813,9 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 				goto exit;
 			}
 		}
-		hdd_debug("setting sr enable %d with pd threshold srg: %d non srg: %d",
-			  is_sr_enable, srg_pd_threshold, non_srg_pd_threshold);
+		hdd_debug(
+			"setting sr enable %d with pd threshold srg: %d non srg: %d",
+			is_sr_enable, srg_pd_threshold, non_srg_pd_threshold);
 		/* Set the variables */
 		ucfg_spatial_reuse_set_sr_enable(vdev, is_sr_enable);
 		if (hdd_check_mode_support_for_sr(adapter, sr_ctrl)) {
@@ -861,12 +836,11 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 			goto exit;
 		}
 		status = policy_mgr_get_mac_id_by_session_id(
-						hdd_ctx->psoc,
-						adapter->deflink->vdev_id,
-						&mac_id);
+			hdd_ctx->psoc, adapter->deflink->vdev_id, &mac_id);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			hdd_err("Failed to get mac_id for vdev_id: %u",
-				adapter->deflink->vdev_id); {
+				adapter->deflink->vdev_id);
+			{
 				ret = -EAGAIN;
 				goto exit;
 			}
@@ -897,9 +871,7 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 			goto exit;
 		}
 		status = policy_mgr_get_mac_id_by_session_id(
-						hdd_ctx->psoc,
-						adapter->deflink->vdev_id,
-						&mac_id);
+			hdd_ctx->psoc, adapter->deflink->vdev_id, &mac_id);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			hdd_err("Failed to get mac_id for vdev_id: %u",
 				adapter->deflink->vdev_id);
@@ -918,15 +890,14 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 		}
 		if (tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_HESIGA_VAL15_ENABLE])
 			sr_he_siga_val15_allowed = nla_get_u8(
-			tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_HESIGA_VAL15_ENABLE]
-			);
+				tb2[QCA_WLAN_VENDOR_ATTR_SR_PARAMS_HESIGA_VAL15_ENABLE]);
 		if (!sr_he_siga_val15_allowed) {
 			hdd_err("invalid sr_he_siga_val15_enable param");
 			ret = -EINVAL;
 			goto exit;
 		}
 		if (!QDF_IS_STATUS_SUCCESS(ucfg_spatial_reuse_send_sr_prohibit(
-					   vdev, sr_he_siga_val15_allowed))) {
+			    vdev, sr_he_siga_val15_allowed))) {
 			hdd_debug("Prohibit command can not be sent");
 			ret = -EINVAL;
 			goto exit;
@@ -937,8 +908,8 @@ static int __wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
 			ret = -EINVAL;
 			goto exit;
 		}
-		if (!QDF_IS_STATUS_SUCCESS(ucfg_spatial_reuse_send_sr_prohibit(
-					   vdev, false))) {
+		if (!QDF_IS_STATUS_SUCCESS(
+			    ucfg_spatial_reuse_send_sr_prohibit(vdev, false))) {
 			hdd_debug("Prohibit command can not be sent");
 			ret = -EINVAL;
 			goto exit;
@@ -986,8 +957,8 @@ exit:
 }
 
 int wlan_hdd_cfg80211_sr_operations(struct wiphy *wiphy,
-				    struct wireless_dev *wdev,
-				    const void *data, int data_len)
+				    struct wireless_dev *wdev, const void *data,
+				    int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;

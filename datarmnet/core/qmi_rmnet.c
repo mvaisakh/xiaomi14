@@ -13,20 +13,20 @@
  */
 #include <linux/soc/qcom/qmi.h>
 
-#include "qmi_rmnet_i.h"
-#include "qmi_rmnet.h"
-#include "rmnet_qmi.h"
-#include "rmnet_module.h"
-#include "rmnet_hook.h"
 #include "dfc.h"
-#include <linux/rtnetlink.h>
-#include <uapi/linux/rtnetlink.h>
-#include <net/pkt_sched.h>
-#include <net/tcp.h>
-#include <linux/module.h>
-#include <linux/moduleparam.h>
+#include "qmi_rmnet.h"
+#include "qmi_rmnet_i.h"
+#include "rmnet_hook.h"
+#include "rmnet_module.h"
+#include "rmnet_qmi.h"
 #include <linux/ip.h>
 #include <linux/ipv6.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/rtnetlink.h>
+#include <net/pkt_sched.h>
+#include <net/tcp.h>
+#include <uapi/linux/rtnetlink.h>
 
 #define NLMSG_FLOW_ACTIVATE 1
 #define NLMSG_FLOW_DEACTIVATE 2
@@ -43,8 +43,7 @@
 
 #define FLAG_TO_MODE(f) ((f) & FLAG_DFC_MASK)
 
-#define DFC_SUPPORTED_MODE(m) \
-	((m) == DFC_MODE_SA)
+#define DFC_SUPPORTED_MODE(m) ((m) == DFC_MODE_SA)
 
 #define FLAG_TO_QMAP(f) ((f) & FLAG_QMAP_MASK)
 #define FLAG_TO_PS_EXT(f) ((f) & FLAG_PS_EXT_MASK)
@@ -69,39 +68,36 @@ static unsigned int qmi_rmnet_scale_factor = 5;
 static LIST_HEAD(qos_cleanup_list);
 #endif
 
-static int
-qmi_rmnet_del_flow(struct net_device *dev, struct tcmsg *tcm,
-		   struct qmi_info *qmi);
+static int qmi_rmnet_del_flow(struct net_device *dev, struct tcmsg *tcm,
+			      struct qmi_info *qmi);
 
 struct qmi_elem_info data_ep_id_type_v01_ei[] = {
 	{
-		.data_type	= QMI_SIGNED_4_BYTE_ENUM,
-		.elem_len	= 1,
-		.elem_size	= sizeof(enum data_ep_type_enum_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct data_ep_id_type_v01,
-					   ep_type),
-		.ei_array	= NULL,
+		.data_type = QMI_SIGNED_4_BYTE_ENUM,
+		.elem_len = 1,
+		.elem_size = sizeof(enum data_ep_type_enum_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct data_ep_id_type_v01, ep_type),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_4_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u32),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct data_ep_id_type_v01,
-					   iface_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_4_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u32),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct data_ep_id_type_v01, iface_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.elem_len	= 0,
-		.elem_size	= 0,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= 0,
-		.ei_array	= NULL,
+		.data_type = QMI_EOTI,
+		.elem_len = 0,
+		.elem_size = 0,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = 0,
+		.ei_array = NULL,
 	},
 };
 EXPORT_SYMBOL(data_ep_id_type_v01_ei);
@@ -121,8 +117,7 @@ void *qmi_rmnet_has_dfc_client(struct qmi_info *qmi)
 	return NULL;
 }
 
-static inline int
-qmi_rmnet_has_client(struct qmi_info *qmi)
+static inline int qmi_rmnet_has_client(struct qmi_info *qmi)
 {
 	if (qmi->wda_client)
 		return 1;
@@ -130,8 +125,7 @@ qmi_rmnet_has_client(struct qmi_info *qmi)
 	return qmi_rmnet_has_dfc_client(qmi) ? 1 : 0;
 }
 
-static int
-qmi_rmnet_has_pending(struct qmi_info *qmi)
+static int qmi_rmnet_has_pending(struct qmi_info *qmi)
 {
 	int i;
 
@@ -147,8 +141,7 @@ qmi_rmnet_has_pending(struct qmi_info *qmi)
 }
 
 #ifdef CONFIG_QTI_QMI_DFC
-static void
-qmi_rmnet_clean_flow_list(struct qos_info *qos)
+static void qmi_rmnet_clean_flow_list(struct qos_info *qos)
 {
 	struct rmnet_bearer_map *bearer, *br_tmp;
 	struct rmnet_flow_map *itm, *fl_tmp;
@@ -168,8 +161,8 @@ qmi_rmnet_clean_flow_list(struct qos_info *qos)
 	memset(qos->mq, 0, sizeof(qos->mq));
 }
 
-struct rmnet_flow_map *
-qmi_rmnet_get_flow_map(struct qos_info *qos, u32 flow_id, int ip_type)
+struct rmnet_flow_map *qmi_rmnet_get_flow_map(struct qos_info *qos, u32 flow_id,
+					      int ip_type)
 {
 	struct rmnet_flow_map *itm;
 
@@ -183,8 +176,8 @@ qmi_rmnet_get_flow_map(struct qos_info *qos, u32 flow_id, int ip_type)
 	return NULL;
 }
 
-struct rmnet_bearer_map *
-qmi_rmnet_get_bearer_map(struct qos_info *qos, uint8_t bearer_id)
+struct rmnet_bearer_map *qmi_rmnet_get_bearer_map(struct qos_info *qos,
+						  uint8_t bearer_id)
 {
 	struct rmnet_bearer_map *itm;
 
@@ -245,9 +238,9 @@ static void qmi_rmnet_watchdog_fn(struct timer_list *t)
 		goto done;
 
 	/*
-	 * Possible stall, try to recover. Enable 80% query and jumpstart
-	 * the bearer if disabled.
-	 */
+   * Possible stall, try to recover. Enable 80% query and jumpstart
+   * the bearer if disabled.
+   */
 	bearer->watchdog_expire_cnt++;
 	bearer->bytes_in_flight = 0;
 	if (!bearer->grant_size) {
@@ -313,8 +306,8 @@ static void qmi_rmnet_bearer_clean(struct qos_info *qos)
 	}
 }
 
-static struct rmnet_bearer_map *__qmi_rmnet_bearer_get(
-				struct qos_info *qos_info, u8 bearer_id)
+static struct rmnet_bearer_map *
+__qmi_rmnet_bearer_get(struct qos_info *qos_info, u8 bearer_id)
 {
 	struct rmnet_bearer_map *bearer;
 
@@ -334,8 +327,8 @@ static struct rmnet_bearer_map *__qmi_rmnet_bearer_get(
 		bearer->ack_mq_idx = INVALID_MQ;
 		bearer->qos = qos_info;
 		timer_setup(&bearer->watchdog, qmi_rmnet_watchdog_fn, 0);
-		timer_setup(&bearer->ch_switch.guard_timer,
-			    rmnet_ll_guard_fn, 0);
+		timer_setup(&bearer->ch_switch.guard_timer, rmnet_ll_guard_fn,
+			    0);
 		list_add(&bearer->list, &qos_info->bearer_head);
 	}
 
@@ -344,8 +337,7 @@ static struct rmnet_bearer_map *__qmi_rmnet_bearer_get(
 
 static void __qmi_rmnet_bearer_put(struct net_device *dev,
 				   struct qos_info *qos_info,
-				   struct rmnet_bearer_map *bearer,
-				   bool reset)
+				   struct rmnet_bearer_map *bearer, bool reset)
 {
 	struct mq_map *mq;
 	int i, j;
@@ -447,9 +439,9 @@ static int qmi_rmnet_add_flow(struct net_device *dev, struct tcmsg *tcm,
 	ASSERT_RTNL();
 
 	/* flow activate
-	 * tcm->tcm__pad1 - bearer_id, tcm->tcm_parent - flow_id,
-	 * tcm->tcm_ifindex - ip_type, tcm->tcm_handle - mq_idx
-	 */
+   * tcm->tcm__pad1 - bearer_id, tcm->tcm_parent - flow_id,
+   * tcm->tcm_ifindex - ip_type, tcm->tcm_handle - mq_idx
+   */
 
 	new_map.bearer_id = tcm->tcm__pad1;
 	new_map.flow_id = tcm->tcm_parent;
@@ -465,8 +457,8 @@ again:
 				     new_map.ip_type);
 	if (itm) {
 		if (itm->bearer_id != new_map.bearer_id) {
-			rc = __qmi_rmnet_rebind_flow(
-				dev, qos_info, itm, &new_map);
+			rc = __qmi_rmnet_rebind_flow(dev, qos_info, itm,
+						     &new_map);
 			goto done;
 		} else if (itm->mq_idx != new_map.mq_idx) {
 			tmp_tcm.tcm__pad1 = itm->bearer_id;
@@ -510,9 +502,8 @@ done:
 	return rc;
 }
 
-static int
-qmi_rmnet_del_flow(struct net_device *dev, struct tcmsg *tcm,
-		   struct qmi_info *qmi)
+static int qmi_rmnet_del_flow(struct net_device *dev, struct tcmsg *tcm,
+			      struct qmi_info *qmi)
 {
 	struct qos_info *qos_info = (struct qos_info *)rmnet_get_qos_pt(dev);
 	struct rmnet_flow_map new_map, *itm;
@@ -523,9 +514,9 @@ qmi_rmnet_del_flow(struct net_device *dev, struct tcmsg *tcm,
 	ASSERT_RTNL();
 
 	/* flow deactivate
-	 * tcm->tcm__pad1 - bearer_id, tcm->tcm_parent - flow_id,
-	 * tcm->tcm_ifindex - ip_type
-	 */
+   * tcm->tcm__pad1 - bearer_id, tcm->tcm_parent - flow_id,
+   * tcm->tcm_ifindex - ip_type
+   */
 
 	spin_lock_bh(&qos_info->qos_lock);
 
@@ -580,22 +571,19 @@ struct rmnet_bearer_map *qmi_rmnet_get_bearer_noref(struct qos_info *qos_info,
 }
 
 #else
-static inline void
-qmi_rmnet_update_flow_map(struct rmnet_flow_map *itm,
-			  struct rmnet_flow_map *new_map)
+static inline void qmi_rmnet_update_flow_map(struct rmnet_flow_map *itm,
+					     struct rmnet_flow_map *new_map)
 {
 }
 
-static inline int
-qmi_rmnet_add_flow(struct net_device *dev, struct tcmsg *tcm,
-		   struct qmi_info *qmi)
+static inline int qmi_rmnet_add_flow(struct net_device *dev, struct tcmsg *tcm,
+				     struct qmi_info *qmi)
 {
 	return -EINVAL;
 }
 
-static inline int
-qmi_rmnet_del_flow(struct net_device *dev, struct tcmsg *tcm,
-		   struct qmi_info *qmi)
+static inline int qmi_rmnet_del_flow(struct net_device *dev, struct tcmsg *tcm,
+				     struct qmi_info *qmi)
 {
 	return -EINVAL;
 }
@@ -605,8 +593,8 @@ static inline void qmi_rmnet_query_flows(struct qmi_info *qmi)
 }
 #endif
 
-static int
-qmi_rmnet_setup_client(void *port, struct qmi_info *qmi, struct tcmsg *tcm)
+static int qmi_rmnet_setup_client(void *port, struct qmi_info *qmi,
+				  struct tcmsg *tcm)
 {
 	int idx, err = 0;
 	struct svc_info svc;
@@ -614,9 +602,9 @@ qmi_rmnet_setup_client(void *port, struct qmi_info *qmi, struct tcmsg *tcm)
 	ASSERT_RTNL();
 
 	/* client setup
-	 * tcm->tcm_handle - instance, tcm->tcm_info - ep_type,
-	 * tcm->tcm_parent - iface_id, tcm->tcm_ifindex - flags
-	 */
+   * tcm->tcm_handle - instance, tcm->tcm_info - ep_type,
+   * tcm->tcm_parent - iface_id, tcm->tcm_ifindex - flags
+   */
 	idx = (tcm->tcm_handle == 0) ? 0 : 1;
 
 	if (!qmi) {
@@ -634,8 +622,8 @@ qmi_rmnet_setup_client(void *port, struct qmi_info *qmi, struct tcmsg *tcm)
 	svc.ep_type = tcm->tcm_info;
 	svc.iface_id = tcm->tcm_parent;
 
-	if (DFC_SUPPORTED_MODE(dfc_mode) &&
-	    !qmi->dfc_clients[idx] && !qmi->dfc_pending[idx]) {
+	if (DFC_SUPPORTED_MODE(dfc_mode) && !qmi->dfc_clients[idx] &&
+	    !qmi->dfc_pending[idx]) {
 		if (dfc_qmap)
 			err = dfc_qmap_client_init(port, idx, &svc, qmi);
 		else
@@ -643,16 +631,15 @@ qmi_rmnet_setup_client(void *port, struct qmi_info *qmi, struct tcmsg *tcm)
 		qmi->dfc_client_exiting[idx] = false;
 	}
 
-	if ((tcm->tcm_ifindex & FLAG_POWERSAVE_MASK) &&
-	    (idx == 0) && !qmi->wda_client && !qmi->wda_pending) {
+	if ((tcm->tcm_ifindex & FLAG_POWERSAVE_MASK) && (idx == 0) &&
+	    !qmi->wda_client && !qmi->wda_pending) {
 		err = wda_qmi_client_init(port, &svc, qmi);
 	}
 
 	return err;
 }
 
-static int
-__qmi_rmnet_delete_client(void *port, struct qmi_info *qmi, int idx)
+static int __qmi_rmnet_delete_client(void *port, struct qmi_info *qmi, int idx)
 {
 	void *data = NULL;
 
@@ -681,8 +668,8 @@ __qmi_rmnet_delete_client(void *port, struct qmi_info *qmi, int idx)
 	return 1;
 }
 
-static void
-qmi_rmnet_delete_client(void *port, struct qmi_info *qmi, struct tcmsg *tcm)
+static void qmi_rmnet_delete_client(void *port, struct qmi_info *qmi,
+				    struct tcmsg *tcm)
 {
 	int idx;
 	void *data = NULL;
@@ -742,8 +729,7 @@ int qmi_rmnet_change_link(struct net_device *dev, void *port, void *tcm_pt,
 		if (qmi_rmnet_setup_client(port, qmi, tcm) < 0) {
 			/* retrieve qmi again as it could have been changed */
 			qmi = (struct qmi_info *)rmnet_get_qmi_pt(port);
-			if (qmi &&
-			    !qmi_rmnet_has_client(qmi) &&
+			if (qmi && !qmi_rmnet_has_client(qmi) &&
 			    !qmi_rmnet_has_pending(qmi)) {
 				rmnet_reset_qmi_pt(port);
 				kfree(qmi);
@@ -965,8 +951,8 @@ bool qmi_rmnet_get_flow_state(struct net_device *dev, struct sk_buff *skb,
 }
 EXPORT_SYMBOL(qmi_rmnet_get_flow_state);
 
-void qmi_rmnet_burst_fc_check(struct net_device *dev,
-			      int ip_type, u32 mark, unsigned int len)
+void qmi_rmnet_burst_fc_check(struct net_device *dev, int ip_type, u32 mark,
+			      unsigned int len)
 {
 	struct qos_info *qos = rmnet_get_qos_pt(dev);
 
@@ -1137,7 +1123,7 @@ EXPORT_SYMBOL(qmi_rmnet_qos_exit_post);
 #endif
 
 #ifdef CONFIG_QTI_QMI_POWER_COLLAPSE
-static struct workqueue_struct  *rmnet_ps_wq;
+static struct workqueue_struct *rmnet_ps_wq;
 static struct rmnet_powersave_work *rmnet_work;
 static bool rmnet_work_quit;
 static bool rmnet_work_inited;
@@ -1169,10 +1155,8 @@ void qmi_rmnet_ps_off_notify(void *port)
 }
 EXPORT_SYMBOL(qmi_rmnet_ps_off_notify);
 
-int qmi_rmnet_ps_ind_register(void *port,
-			      struct qmi_rmnet_ps_ind *ps_ind)
+int qmi_rmnet_ps_ind_register(void *port, struct qmi_rmnet_ps_ind *ps_ind)
 {
-
 	if (!port || !ps_ind || !ps_ind->ps_on_handler ||
 	    !ps_ind->ps_off_handler)
 		return -EINVAL;
@@ -1183,8 +1167,7 @@ int qmi_rmnet_ps_ind_register(void *port,
 }
 EXPORT_SYMBOL(qmi_rmnet_ps_ind_register);
 
-int qmi_rmnet_ps_ind_deregister(void *port,
-				struct qmi_rmnet_ps_ind *ps_ind)
+int qmi_rmnet_ps_ind_deregister(void *port, struct qmi_rmnet_ps_ind *ps_ind)
 {
 	struct qmi_rmnet_ps_ind *tmp;
 
@@ -1214,8 +1197,8 @@ int qmi_rmnet_set_powersave_mode(void *port, uint8_t enable, u8 num_bearers,
 	rc = wda_set_powersave_mode(qmi->wda_client, enable, num_bearers,
 				    bearer_id);
 	if (rc < 0) {
-		pr_err("%s() failed set powersave mode[%u], err=%d\n",
-			__func__, enable, rc);
+		pr_err("%s() failed set powersave mode[%u], err=%d\n", __func__,
+		       enable, rc);
 		return rc;
 	}
 
@@ -1259,13 +1242,12 @@ static void qmi_rmnet_check_stats(struct work_struct *work)
 	qmi->dl_msg_active = false;
 
 	if (qmi->ps_enabled) {
-
 		/* Ready to accept grant */
 		qmi->ps_ignore_grant = false;
 
 		/* Register to get QMI DFC and DL marker */
-		if (qmi_rmnet_set_powersave_mode(real_work->port, 0,
-						 0, NULL) < 0)
+		if (qmi_rmnet_set_powersave_mode(real_work->port, 0, 0, NULL) <
+		    0)
 			goto end;
 
 		qmi->ps_enabled = false;
@@ -1281,15 +1263,14 @@ static void qmi_rmnet_check_stats(struct work_struct *work)
 
 	if (!rxd && !txd) {
 		/* If no DL msg received and there is a flow disabled,
-		 * (likely in RLF), no need to enter powersave
-		 */
-		if (!dl_msg_active &&
-		    !rmnet_all_flows_enabled(real_work->port))
+     * (likely in RLF), no need to enter powersave
+     */
+		if (!dl_msg_active && !rmnet_all_flows_enabled(real_work->port))
 			goto end;
 
 		/* Deregister to suppress QMI DFC and DL marker */
-		if (qmi_rmnet_set_powersave_mode(real_work->port, 1,
-						 0, NULL) < 0)
+		if (qmi_rmnet_set_powersave_mode(real_work->port, 1, 0, NULL) <
+		    0)
 			goto end;
 
 		qmi->ps_enabled = true;
@@ -1298,8 +1279,8 @@ static void qmi_rmnet_check_stats(struct work_struct *work)
 		qmi->ps_ignore_grant = true;
 
 		/* Clear the bit before enabling flow so pending packets
-		 * can trigger the work again
-		 */
+     * can trigger the work again
+     */
 		clear_bit(PS_WORK_ACTIVE_BIT, &qmi->ps_work_active);
 		rmnet_enable_all_flows(real_work->port);
 
@@ -1342,7 +1323,6 @@ static void qmi_rmnet_check_stats_2(struct work_struct *work)
 	real_work->old_tx_pkts = tx;
 
 	if (qmi->ps_enabled) {
-
 		/* Ready to accept grant */
 		qmi->ps_ignore_grant = false;
 
@@ -1350,8 +1330,8 @@ static void qmi_rmnet_check_stats_2(struct work_struct *work)
 		if (dfc_qmap)
 			rc = dfc_qmap_set_powersave(0, 0, NULL);
 		else
-			rc = qmi_rmnet_set_powersave_mode(real_work->port, 0,
-							  0, NULL);
+			rc = qmi_rmnet_set_powersave_mode(real_work->port, 0, 0,
+							  NULL);
 		if (rc)
 			goto end;
 
@@ -1415,8 +1395,8 @@ void qmi_rmnet_work_init(void *port)
 	if (rmnet_ps_wq)
 		return;
 
-	rmnet_ps_wq = alloc_workqueue("rmnet_powersave_work",
-				      WQ_CPU_INTENSIVE, 1);
+	rmnet_ps_wq =
+		alloc_workqueue("rmnet_powersave_work", WQ_CPU_INTENSIVE, 1);
 
 	if (!rmnet_ps_wq)
 		return;
@@ -1429,8 +1409,7 @@ void qmi_rmnet_work_init(void *port)
 	}
 
 	if (dfc_ps_ext)
-		INIT_DELAYED_WORK(&rmnet_work->work,
-				     qmi_rmnet_check_stats_2);
+		INIT_DELAYED_WORK(&rmnet_work->work, qmi_rmnet_check_stats_2);
 	else
 		INIT_DELAYED_WORK(&rmnet_work->work, qmi_rmnet_check_stats);
 

@@ -16,12 +16,12 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-#include <dp_types.h>
 #include <dp_htt.h>
 #include <dp_internal.h>
-#include <dp_rx_mon.h>
-#include <dp_mon_filter.h>
 #include <dp_mon.h>
+#include <dp_mon_filter.h>
+#include <dp_rx_mon.h>
+#include <dp_types.h>
 
 /*
  * dp_mon_filter_mode_type_to_str
@@ -56,8 +56,8 @@ int8_t *dp_mon_filter_mode_type_to_str[DP_MON_FILTER_MAX_MODE] = {
 
 #if defined(WLAN_PKT_CAPTURE_RX_2_0) || defined(CONFIG_WORD_BASED_TLV) || \
 	defined(WLAN_FEATURE_LOCAL_PKT_CAPTURE)
-static inline
-void dp_mon_filter_show_filter_1(struct htt_rx_ring_tlv_filter *tlv_filter)
+static inline void
+dp_mon_filter_show_filter_1(struct htt_rx_ring_tlv_filter *tlv_filter)
 {
 	DP_MON_FILTER_PRINT("rx_hdr_length: %d", tlv_filter->rx_hdr_length);
 	DP_MON_FILTER_PRINT("mgmt_dma_length: %d", tlv_filter->mgmt_dma_length);
@@ -65,8 +65,8 @@ void dp_mon_filter_show_filter_1(struct htt_rx_ring_tlv_filter *tlv_filter)
 	DP_MON_FILTER_PRINT("data_dma_length: %d", tlv_filter->data_dma_length);
 }
 #else
-static inline
-void dp_mon_filter_show_filter_1(struct htt_rx_ring_tlv_filter *tlv_filter)
+static inline void
+dp_mon_filter_show_filter_1(struct htt_rx_ring_tlv_filter *tlv_filter)
 {
 }
 #endif
@@ -86,8 +86,7 @@ void dp_mon_filter_show_filter(struct dp_mon_pdev *mon_pdev,
 	DP_MON_FILTER_PRINT("packet: %d", tlv_filter->packet);
 	DP_MON_FILTER_PRINT("msdu_end: %d", tlv_filter->msdu_end);
 	DP_MON_FILTER_PRINT("mpdu_end: %d", tlv_filter->mpdu_end);
-	DP_MON_FILTER_PRINT("packet_header: %d",
-			    tlv_filter->packet_header);
+	DP_MON_FILTER_PRINT("packet_header: %d", tlv_filter->packet_header);
 	DP_MON_FILTER_PRINT("attention: %d", tlv_filter->attention);
 	DP_MON_FILTER_PRINT("ppdu_start: %d", tlv_filter->ppdu_start);
 	DP_MON_FILTER_PRINT("ppdu_end: %d", tlv_filter->ppdu_end);
@@ -132,14 +131,12 @@ dp_mon_set_fp_phy_err_filter(struct htt_rx_ring_tlv_filter *tlv_filter,
 			     struct dp_mon_filter *mon_filter)
 {
 	if (mon_filter->tlv_filter.phy_err_filter_valid) {
-		tlv_filter->fp_phy_err =
-			mon_filter->tlv_filter.fp_phy_err;
+		tlv_filter->fp_phy_err = mon_filter->tlv_filter.fp_phy_err;
 		tlv_filter->fp_phy_err_buf_src =
 			mon_filter->tlv_filter.fp_phy_err_buf_src;
 		tlv_filter->fp_phy_err_buf_dest =
 			mon_filter->tlv_filter.fp_phy_err_buf_dest;
-		tlv_filter->phy_err_mask =
-			mon_filter->tlv_filter.phy_err_mask;
+		tlv_filter->phy_err_mask = mon_filter->tlv_filter.phy_err_mask;
 		tlv_filter->phy_err_mask_cont =
 			mon_filter->tlv_filter.phy_err_mask_cont;
 		tlv_filter->phy_err_filter_valid =
@@ -163,25 +160,25 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 	struct dp_mon_pdev *mon_pdev = pdev->monitor_pdev;
 
 	/*
-	 * Loop through all the modes.
-	 */
+   * Loop through all the modes.
+   */
 	for (current_mode = 0; current_mode < DP_MON_FILTER_MAX_MODE;
-						current_mode++) {
+	     current_mode++) {
 		struct dp_mon_filter *mon_filter =
 			&mon_pdev->filter[current_mode][srng_type];
 		uint32_t src_filter = 0, dst_filter = 0;
 
 		/*
-		 * Check if the correct mode is enabled or not.
-		 */
+     * Check if the correct mode is enabled or not.
+     */
 		if (!mon_filter->valid)
 			continue;
 
 		filter->valid = true;
 
 		/*
-		 * Set the super bit fields
-		 */
+     * Set the super bit fields
+     */
 		src_filter =
 			DP_MON_FILTER_GET(&mon_filter->tlv_filter, FILTER_TLV);
 		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_TLV);
@@ -189,8 +186,8 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 		DP_MON_FILTER_SET(tlv_filter, FILTER_TLV, dst_filter);
 
 		/*
-		 * Set the filter management filter.
-		 */
+     * Set the filter management filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_FP_MGMT);
 		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_FP_MGMT);
@@ -198,8 +195,8 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 		DP_MON_FILTER_SET(tlv_filter, FILTER_FP_MGMT, dst_filter);
 
 		/*
-		 * Set the monitor other management filter.
-		 */
+     * Set the monitor other management filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_MO_MGMT);
 		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_MO_MGMT);
@@ -207,8 +204,8 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 		DP_MON_FILTER_SET(tlv_filter, FILTER_MO_MGMT, dst_filter);
 
 		/*
-		 * Set the filter pass control filter.
-		 */
+     * Set the filter pass control filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_FP_CTRL);
 		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_FP_CTRL);
@@ -216,8 +213,8 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 		DP_MON_FILTER_SET(tlv_filter, FILTER_FP_CTRL, dst_filter);
 
 		/*
-		 * Set the monitor other control filter.
-		 */
+     * Set the monitor other control filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_MO_CTRL);
 		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_MO_CTRL);
@@ -225,19 +222,17 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 		DP_MON_FILTER_SET(tlv_filter, FILTER_MO_CTRL, dst_filter);
 
 		/*
-		 * Set the filter pass data filter.
-		 */
+     * Set the filter pass data filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_FP_DATA);
-		dst_filter = DP_MON_FILTER_GET(tlv_filter,
-					       FILTER_FP_DATA);
+		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_FP_DATA);
 		dst_filter |= src_filter;
-		DP_MON_FILTER_SET(tlv_filter,
-				  FILTER_FP_DATA, dst_filter);
+		DP_MON_FILTER_SET(tlv_filter, FILTER_FP_DATA, dst_filter);
 
 		/*
-		 * Set the monitor other data filter.
-		 */
+     * Set the monitor other data filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_MO_DATA);
 		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_MO_DATA);
@@ -245,19 +240,17 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 		DP_MON_FILTER_SET(tlv_filter, FILTER_MO_DATA, dst_filter);
 
 		/*
-		 * Set the monitor direct data filter.
-		 */
+     * Set the monitor direct data filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_MD_DATA);
-		dst_filter = DP_MON_FILTER_GET(tlv_filter,
-					       FILTER_MD_DATA);
+		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_MD_DATA);
 		dst_filter |= src_filter;
-		DP_MON_FILTER_SET(tlv_filter,
-				  FILTER_MD_DATA, dst_filter);
+		DP_MON_FILTER_SET(tlv_filter, FILTER_MD_DATA, dst_filter);
 
 		/*
-		 * Set the monitor direct management filter.
-		 */
+     * Set the monitor direct management filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_MD_MGMT);
 		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_MD_MGMT);
@@ -265,8 +258,8 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 		DP_MON_FILTER_SET(tlv_filter, FILTER_MD_MGMT, dst_filter);
 
 		/*
-		 * Set the monitor direct management filter.
-		 */
+     * Set the monitor direct management filter.
+     */
 		src_filter = DP_MON_FILTER_GET(&mon_filter->tlv_filter,
 					       FILTER_MD_CTRL);
 		dst_filter = DP_MON_FILTER_GET(tlv_filter, FILTER_MD_CTRL);
@@ -275,7 +268,7 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
 
 		dp_mon_set_fp_phy_err_filter(tlv_filter, mon_filter);
 		tlv_filter->enable_mon_mac_filter =
-				mon_filter->tlv_filter.enable_mon_mac_filter;
+			mon_filter->tlv_filter.enable_mon_mac_filter;
 		DP_RX_MON_FILTER_SET_RX_HDR_LEN(tlv_filter,
 						mon_filter->tlv_filter);
 	}
@@ -289,12 +282,10 @@ void dp_mon_filter_h2t_setup(struct dp_soc *soc, struct dp_pdev *pdev,
  *
  * Return: true if yes, false if not
  */
-static inline
-bool dp_mon_is_lpc_mode(struct dp_soc *soc)
+static inline bool dp_mon_is_lpc_mode(struct dp_soc *soc)
 {
 	if (soc->cdp_soc.ol_ops->get_con_mode &&
-	    soc->cdp_soc.ol_ops->get_con_mode() ==
-	    QDF_GLOBAL_MISSION_MODE &&
+	    soc->cdp_soc.ol_ops->get_con_mode() == QDF_GLOBAL_MISSION_MODE &&
 	    wlan_cfg_get_local_pkt_capture(soc->wlan_cfg_ctx))
 		return true;
 	else
@@ -302,8 +293,7 @@ bool dp_mon_is_lpc_mode(struct dp_soc *soc)
 }
 
 QDF_STATUS
-dp_mon_ht2_rx_ring_cfg(struct dp_soc *soc,
-		       struct dp_pdev *pdev,
+dp_mon_ht2_rx_ring_cfg(struct dp_soc *soc, struct dp_pdev *pdev,
 		       enum dp_mon_filter_srng_type srng_type,
 		       struct htt_rx_ring_tlv_filter *tlv_filter)
 {
@@ -319,30 +309,31 @@ dp_mon_ht2_rx_ring_cfg(struct dp_soc *soc,
 	}
 
 	/*
-	 * Overwrite the max_mac_rings for the status rings.
-	 */
+   * Overwrite the max_mac_rings for the status rings.
+   */
 	if (srng_type == DP_MON_FILTER_SRNG_TYPE_RXDMA_MONITOR_STATUS)
 		dp_update_num_mac_rings_for_dbs(soc, &max_mac_rings);
 
-	dp_mon_filter_info("%pK: srng type %d Max_mac_rings %d ",
-			   soc, srng_type, max_mac_rings);
+	dp_mon_filter_info("%pK: srng type %d Max_mac_rings %d ", soc,
+			   srng_type, max_mac_rings);
 
 	/*
-	 * Loop through all MACs per radio and set the filter to the individual
-	 * macs. For MCL
-	 */
+   * Loop through all MACs per radio and set the filter to the individual
+   * macs. For MCL
+   */
 	for (mac_id = 0; mac_id < max_mac_rings; mac_id++) {
 		int mac_for_pdev =
 			dp_get_mac_id_for_pdev(mac_id, pdev->pdev_id);
-		int lmac_id = dp_get_lmac_id_for_pdev_id(soc, mac_id, pdev->pdev_id);
+		int lmac_id =
+			dp_get_lmac_id_for_pdev_id(soc, mac_id, pdev->pdev_id);
 		int hal_ring_type, ring_buf_size;
 		hal_ring_handle_t hal_ring_hdl;
 
 		switch (srng_type) {
 		case DP_MON_FILTER_SRNG_TYPE_RXDMA_BUF:
 			if (target_type == TARGET_TYPE_QCN9160) {
-				hal_ring_hdl =
-				soc->rx_refill_buf_ring[lmac_id].hal_srng;
+				hal_ring_hdl = soc->rx_refill_buf_ring[lmac_id]
+						       .hal_srng;
 				ring_buf_size = RX_MONITOR_BUFFER_SIZE;
 			} else {
 				hal_ring_hdl =
@@ -354,16 +345,16 @@ dp_mon_ht2_rx_ring_cfg(struct dp_soc *soc,
 
 		case DP_MON_FILTER_SRNG_TYPE_RXDMA_MONITOR_STATUS:
 			/*
-			 * If two back to back HTT msg sending happened in
-			 * short time, the second HTT msg source SRNG HP
-			 * writing has chance to fail, this has been confirmed
-			 * by HST HW.
-			 * for monitor mode, here is the last HTT msg for sending.
-			 * if the 2nd HTT msg for monitor status ring sending failed,
-			 * HW won't provide anything into 2nd monitor status ring.
-			 * as a WAR, add some delay before 2nd HTT msg start sending,
-			 * > 2us is required per HST HW, delay 100 us for safe.
-			 */
+       * If two back to back HTT msg sending happened in
+       * short time, the second HTT msg source SRNG HP
+       * writing has chance to fail, this has been confirmed
+       * by HST HW.
+       * for monitor mode, here is the last HTT msg for sending.
+       * if the 2nd HTT msg for monitor status ring sending failed,
+       * HW won't provide anything into 2nd monitor status ring.
+       * as a WAR, add some delay before 2nd HTT msg start sending,
+       * > 2us is required per HST HW, delay 100 us for safe.
+       */
 			if (mac_id)
 				qdf_udelay(100);
 
@@ -395,8 +386,7 @@ dp_mon_ht2_rx_ring_cfg(struct dp_soc *soc,
 
 		status = htt_h2t_rx_ring_cfg(soc->htt_handle, mac_for_pdev,
 					     hal_ring_hdl, hal_ring_type,
-					     ring_buf_size,
-					     tlv_filter);
+					     ring_buf_size, tlv_filter);
 		if (status != QDF_STATUS_SUCCESS)
 			return status;
 	}
@@ -649,7 +639,8 @@ QDF_STATUS dp_mon_filter_update(struct dp_pdev *pdev)
 
 	mon_ops = dp_mon_ops_get(pdev->soc);
 	if (!mon_ops) {
-		dp_mon_filter_err("Rx mon filter update failed ops uninitialized");
+		dp_mon_filter_err(
+			"Rx mon filter update failed ops uninitialized");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -665,7 +656,8 @@ QDF_STATUS dp_tx_mon_filter_update(struct dp_pdev *pdev)
 
 	mon_ops = dp_mon_ops_get(pdev->soc);
 	if (!mon_ops) {
-		dp_mon_filter_err("Tx mon filter update failed ops uninitialized");
+		dp_mon_filter_err(
+			"Tx mon filter update failed ops uninitialized");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -688,16 +680,16 @@ void dp_mon_filters_reset(struct dp_pdev *pdev)
 }
 #endif
 
-void
-dp_mon_filter_reset_mon_srng(struct dp_soc *soc, struct dp_pdev *pdev,
-			     enum dp_mon_filter_srng_type mon_srng_type)
+void dp_mon_filter_reset_mon_srng(struct dp_soc *soc, struct dp_pdev *pdev,
+				  enum dp_mon_filter_srng_type mon_srng_type)
 {
-	struct htt_rx_ring_tlv_filter tlv_filter = {0};
+	struct htt_rx_ring_tlv_filter tlv_filter = { 0 };
 
-	if (dp_mon_ht2_rx_ring_cfg(soc, pdev, mon_srng_type,
-				   &tlv_filter) != QDF_STATUS_SUCCESS) {
-		dp_mon_filter_err("%pK: Monitor destination ring filter setting failed",
-				  soc);
+	if (dp_mon_ht2_rx_ring_cfg(soc, pdev, mon_srng_type, &tlv_filter) !=
+	    QDF_STATUS_SUCCESS) {
+		dp_mon_filter_err(
+			"%pK: Monitor destination ring filter setting failed",
+			soc);
 	}
 }
 
@@ -708,8 +700,8 @@ dp_mon_filter_reset_mon_srng(struct dp_soc *soc, struct dp_pdev *pdev,
  *
  * Return: None
  */
-static inline
-void dp_mon_filter_adjust(struct dp_pdev *pdev, struct dp_mon_filter *filter)
+static inline void dp_mon_filter_adjust(struct dp_pdev *pdev,
+					struct dp_mon_filter *filter)
 {
 	struct dp_soc *soc = pdev->soc;
 
@@ -826,7 +818,7 @@ void dp_mon_filter_set_cbf_cmn(struct dp_pdev *pdev,
 	filter->tlv_filter.mpdu_end = 1;
 	filter->tlv_filter.attention = 1;
 	filter->tlv_filter.ppdu_start = 0;
-	filter->tlv_filter.ppdu_end =  0;
+	filter->tlv_filter.ppdu_end = 0;
 	filter->tlv_filter.ppdu_end_user_stats = 0;
 	filter->tlv_filter.ppdu_end_user_stats_ext = 0;
 	filter->tlv_filter.ppdu_end_status_done = 0;
@@ -851,16 +843,16 @@ void dp_mon_filter_dealloc(struct dp_mon_pdev *mon_pdev)
 	mon_filter = mon_pdev->filter;
 
 	/*
-	 * Check if the monitor filters are already allocated to the mon_pdev.
-	 */
+   * Check if the monitor filters are already allocated to the mon_pdev.
+   */
 	if (!mon_filter) {
 		dp_mon_filter_err("Found NULL memory for the Monitor filter");
 		return;
 	}
 
 	/*
-	 * Iterate through the every mode and free the filter object.
-	 */
+   * Iterate through the every mode and free the filter object.
+   */
 	for (mode = 0; mode < DP_MON_FILTER_MAX_MODE; mode++) {
 		if (!mon_filter[mode]) {
 			continue;
@@ -885,8 +877,7 @@ struct dp_mon_filter **dp_mon_filter_alloc(struct dp_mon_pdev *mon_pdev)
 	}
 
 	mon_filter = (struct dp_mon_filter **)qdf_mem_malloc(
-			(sizeof(struct dp_mon_filter *) *
-			 DP_MON_FILTER_MAX_MODE));
+		(sizeof(struct dp_mon_filter *) * DP_MON_FILTER_MAX_MODE));
 	if (!mon_filter) {
 		dp_mon_filter_err("Monitor filter mem allocation failed");
 		return NULL;
@@ -896,13 +887,13 @@ struct dp_mon_filter **dp_mon_filter_alloc(struct dp_mon_pdev *mon_pdev)
 		     sizeof(struct dp_mon_filter *) * DP_MON_FILTER_MAX_MODE);
 
 	/*
-	 * Allocate the memory for filters for different srngs for each modes.
-	 */
+   * Allocate the memory for filters for different srngs for each modes.
+   */
 	for (mode = 0; mode < DP_MON_FILTER_MAX_MODE; mode++) {
 		mon_filter[mode] = qdf_mem_malloc(sizeof(struct dp_mon_filter) *
 						  DP_MON_FILTER_SRNG_TYPE_MAX);
 		/* Assign the mon_filter to the pdev->filter such
-		 * that the dp_mon_filter_dealloc() can free up the filters. */
+     * that the dp_mon_filter_dealloc() can free up the filters. */
 		if (!mon_filter[mode]) {
 			mon_pdev->filter = mon_filter;
 			goto fail;
@@ -933,8 +924,7 @@ bool dp_mon_get_is_local_pkt_capture_running(struct cdp_soc_t *cdp_soc,
 					     uint8_t pdev_id)
 {
 	struct dp_soc *soc = (struct dp_soc *)cdp_soc;
-	struct dp_pdev *pdev =
-		dp_get_pdev_from_soc_pdev_id_wifi3(soc, pdev_id);
+	struct dp_pdev *pdev = dp_get_pdev_from_soc_pdev_id_wifi3(soc, pdev_id);
 	struct dp_mon_pdev *mon_pdev;
 
 	if (!pdev || !pdev->monitor_pdev) {
@@ -954,7 +944,7 @@ dp_mon_set_local_pkt_capture_rx_filter(struct dp_pdev *pdev,
 	struct dp_mon_pdev *mon_pdev = pdev->monitor_pdev;
 	enum dp_mon_filter_mode mode = DP_MON_FILTER_MONITOR_MODE;
 	enum dp_mon_filter_srng_type srng_type;
-	struct dp_mon_filter dst_filter = {0};
+	struct dp_mon_filter dst_filter = { 0 };
 
 	dst_filter.valid = true;
 	dp_mon_filter_set_status_cmn(mon_pdev, &dst_filter);
@@ -981,8 +971,8 @@ static void dp_mon_clear_local_pkt_capture_rx_filter(struct dp_pdev *pdev)
 	struct dp_mon_pdev *mon_pdev = pdev->monitor_pdev;
 	enum dp_mon_filter_mode mode = DP_MON_FILTER_MONITOR_MODE;
 	enum dp_mon_filter_srng_type srng_type =
-				DP_MON_FILTER_SRNG_TYPE_RXDMA_MONITOR_STATUS;
-	struct dp_mon_filter filter = {0};
+		DP_MON_FILTER_SRNG_TYPE_RXDMA_MONITOR_STATUS;
+	struct dp_mon_filter filter = { 0 };
 
 	mon_pdev->filter[mode][srng_type] = filter;
 }
@@ -992,8 +982,8 @@ static void dp_mon_reset_local_pkt_capture_rx_filter(struct dp_pdev *pdev)
 	struct dp_mon_pdev *mon_pdev = pdev->monitor_pdev;
 	enum dp_mon_filter_mode mode = DP_MON_FILTER_MONITOR_MODE;
 	enum dp_mon_filter_srng_type srng_type =
-				DP_MON_FILTER_SRNG_TYPE_RXDMA_MONITOR_STATUS;
-	struct dp_mon_filter filter = {0};
+		DP_MON_FILTER_SRNG_TYPE_RXDMA_MONITOR_STATUS;
+	struct dp_mon_filter filter = { 0 };
 
 	filter.valid = true;
 	mon_pdev->filter[mode][srng_type] = filter;
@@ -1018,7 +1008,8 @@ QDF_STATUS dp_mon_start_local_pkt_capture(struct cdp_soc_t *cdp_soc,
 	local_pkt_capture_running =
 		dp_mon_get_is_local_pkt_capture_running(cdp_soc, pdev_id);
 	if (local_pkt_capture_running) {
-		dp_mon_filter_err("Can't start local pkt capture. Already running");
+		dp_mon_filter_err(
+			"Can't start local pkt capture. Already running");
 		return QDF_STATUS_E_ALREADY;
 	}
 
@@ -1068,7 +1059,7 @@ QDF_STATUS dp_mon_stop_local_pkt_capture(struct cdp_soc_t *cdp_soc,
 
 	mon_pdev = pdev->monitor_pdev;
 	local_pkt_capture_running =
-			dp_mon_get_is_local_pkt_capture_running(cdp_soc, pdev_id);
+		dp_mon_get_is_local_pkt_capture_running(cdp_soc, pdev_id);
 	if (!local_pkt_capture_running) {
 		dp_mon_filter_err("Local pkt capture is not running");
 		return QDF_STATUS_SUCCESS;

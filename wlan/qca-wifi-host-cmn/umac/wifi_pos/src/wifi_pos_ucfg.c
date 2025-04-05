@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017-2018, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -21,20 +22,20 @@
  * DOC: This file defines the important dispatcher APIs pertinent to
  * wifi positioning.
  */
-#include <wlan_lmac_if_def.h>
-#include "wifi_pos_utils_i.h"
 #include "wifi_pos_api.h"
 #include "wifi_pos_ucfg_i.h"
+#include "wifi_pos_utils_i.h"
 #include "wlan_ptt_sock_svc.h"
+#include <wlan_lmac_if_def.h>
 #ifndef CNSS_GENL
-#include <wlan_objmgr_psoc_obj.h>
 #include "wifi_pos_main_i.h"
+#include <wlan_objmgr_psoc_obj.h>
 #endif
 
 #ifndef CNSS_GENL
-QDF_STATUS ucfg_wifi_psoc_get_pdev_id_by_dev_name(
-		char *dev_name, uint8_t *pdev_id,
-		struct wlan_objmgr_psoc **psoc)
+QDF_STATUS
+ucfg_wifi_psoc_get_pdev_id_by_dev_name(char *dev_name, uint8_t *pdev_id,
+				       struct wlan_objmgr_psoc **psoc)
 {
 	struct wlan_objmgr_psoc *tmp_psoc = wifi_pos_get_psoc();
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc_obj;
@@ -56,18 +57,18 @@ QDF_STATUS ucfg_wifi_psoc_get_pdev_id_by_dev_name(
 	}
 
 	return wifi_pos_psoc_obj->wifi_pos_get_pdev_id_by_dev_name(
-			dev_name, pdev_id, psoc);
+		dev_name, pdev_id, psoc);
 }
 
 #ifdef WLAN_RTT_MEASUREMENT_NOTIFICATION
-QDF_STATUS ucfg_wifi_pos_measurement_request_notification(
-		struct wlan_objmgr_pdev *pdev,
-		struct wifi_pos_req_msg *req)
+QDF_STATUS
+ucfg_wifi_pos_measurement_request_notification(struct wlan_objmgr_pdev *pdev,
+					       struct wifi_pos_req_msg *req)
 {
 	struct wlan_objmgr_psoc *psoc = wifi_pos_get_psoc();
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc_obj;
 	struct wlan_lmac_if_wifi_pos_tx_ops *tx_ops;
-	struct rtt_channel_info chinfo = {0};
+	struct rtt_channel_info chinfo = { 0 };
 
 	if (!psoc) {
 		wifi_pos_err("psoc is null");
@@ -81,7 +82,8 @@ QDF_STATUS ucfg_wifi_pos_measurement_request_notification(
 	}
 
 	if (!wifi_pos_psoc_obj->wifi_pos_measurement_request_notification) {
-		wifi_pos_debug("wifi_pos_measurement_request_notification is not registered");
+		wifi_pos_debug(
+			"wifi_pos_measurement_request_notification is not registered");
 		return QDF_STATUS_SUCCESS;
 	}
 
@@ -104,7 +106,7 @@ QDF_STATUS ucfg_wifi_pos_measurement_request_notification(
 	}
 
 	return wifi_pos_psoc_obj->wifi_pos_measurement_request_notification(
-			pdev, &chinfo);
+		pdev, &chinfo);
 }
 #endif /* WLAN_RTT_MEASUREMENT_NOTIFICATION */
 #endif
@@ -142,8 +144,10 @@ QDF_STATUS ucfg_wifi_pos_process_req(struct wlan_objmgr_psoc *psoc,
 	}
 
 	if (req->msg_type != WIFI_POS_CMD_REGISTRATION &&
-		(!is_app_registered || app_pid != req->pid)) {
-		wifi_pos_err("requesting app is not registered, app_registered: %d, requesting pid: %d, stored pid: %d",
+	    (!is_app_registered || app_pid != req->pid)) {
+		wifi_pos_err(
+			"requesting app is not registered, app_registered: %d, "
+			"requesting pid: %d, stored pid: %d",
 			is_app_registered, req->pid, app_pid);
 		err = OEM_ERR_APP_NOT_REGISTERED;
 		send_rsp_cb(psoc, app_pid, WIFI_POS_CMD_ERROR, sizeof(err),
@@ -154,12 +158,11 @@ QDF_STATUS ucfg_wifi_pos_process_req(struct wlan_objmgr_psoc *psoc,
 	return wifi_pos_psoc_obj->wifi_pos_req_handler(psoc, req);
 }
 
-
 uint32_t ucfg_wifi_pos_get_ftm_cap(struct wlan_objmgr_psoc *psoc)
 {
 	uint32_t val = 0;
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_alert("unable to get wifi_pos psoc obj");
@@ -176,7 +179,7 @@ uint32_t ucfg_wifi_pos_get_ftm_cap(struct wlan_objmgr_psoc *psoc)
 void ucfg_wifi_pos_set_ftm_cap(struct wlan_objmgr_psoc *psoc, uint32_t val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_alert("unable to get wifi_pos psoc obj");
@@ -188,11 +191,10 @@ void ucfg_wifi_pos_set_ftm_cap(struct wlan_objmgr_psoc *psoc, uint32_t val)
 	qdf_spin_unlock_bh(&wifi_pos_psoc->wifi_pos_lock);
 }
 
-void ucfg_wifi_pos_set_oem_6g_supported(struct wlan_objmgr_psoc *psoc,
-					bool val)
+void ucfg_wifi_pos_set_oem_6g_supported(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 	if (!wifi_pos_psoc) {
 		wifi_pos_alert("unable to get wifi_pos psoc obj");
 		return;
@@ -207,7 +209,7 @@ bool ucfg_wifi_pos_is_nl_rsp(struct wlan_objmgr_psoc *psoc)
 {
 	uint32_t val = 0;
 	struct wifi_pos_psoc_priv_obj *wifi_pos_psoc =
-			wifi_pos_get_psoc_priv_obj(psoc);
+		wifi_pos_get_psoc_priv_obj(psoc);
 
 	if (!wifi_pos_psoc) {
 		wifi_pos_alert("unable to get wifi_pos psoc obj");
@@ -222,6 +224,4 @@ bool ucfg_wifi_pos_is_nl_rsp(struct wlan_objmgr_psoc *psoc)
 		return true;
 	else
 		return false;
-
 }
-

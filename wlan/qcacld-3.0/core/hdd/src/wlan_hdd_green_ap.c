@@ -24,15 +24,15 @@
  *
  */
 
+#include "wlan_lmac_if_def.h"
+#include "wlan_mlme_ucfg_api.h"
+#include "wlan_osif_priv.h"
 #include <net/cfg80211.h>
+#include <osif_vdev_sync.h>
+#include <wlan_green_ap_ucfg_api.h>
 #include <wlan_hdd_green_ap.h>
 #include <wlan_hdd_main.h>
 #include <wlan_policy_mgr_api.h>
-#include <wlan_green_ap_ucfg_api.h>
-#include "wlan_mlme_ucfg_api.h"
-#include <osif_vdev_sync.h>
-#include "wlan_osif_priv.h"
-#include "wlan_lmac_if_def.h"
 
 /**
  * hdd_green_ap_check_enable() - to check whether to enable green ap or not
@@ -47,22 +47,21 @@ static int hdd_green_ap_check_enable(struct hdd_context *hdd_ctx,
 	uint8_t num_sessions, mode;
 	QDF_STATUS status;
 
-	for (mode = 0;
-	     mode < QDF_MAX_NO_OF_MODE;
-	     mode++) {
+	for (mode = 0; mode < QDF_MAX_NO_OF_MODE; mode++) {
 		if (mode == QDF_SAP_MODE || mode == QDF_P2P_GO_MODE)
 			continue;
 
 		status = policy_mgr_mode_specific_num_active_sessions(
-					hdd_ctx->psoc, mode, &num_sessions);
+			hdd_ctx->psoc, mode, &num_sessions);
 		if (status != QDF_STATUS_SUCCESS) {
 			hdd_err("Failed to get num sessions for mode: %d",
 				mode);
 			return -EINVAL;
 		} else if (num_sessions) {
 			*enable_green_ap = false;
-			hdd_debug("active sessions for mode: %d is %d disable green AP",
-				  mode, num_sessions);
+			hdd_debug(
+				"active sessions for mode: %d is %d disable green AP",
+				mode, num_sessions);
 			return 0;
 		}
 	}
@@ -86,8 +85,7 @@ int hdd_green_ap_enable_egap(struct hdd_context *hdd_ctx)
 
 	status = ucfg_green_ap_enable_egap(hdd_ctx->pdev);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		hdd_debug("enhance green ap is not enabled, status %d",
-			  status);
+		hdd_debug("enhance green ap is not enabled, status %d", status);
 		return qdf_status_to_os_return(status);
 	}
 
@@ -120,8 +118,8 @@ int hdd_green_ap_start_state_mc(struct hdd_context *hdd_ctx,
 		hdd_debug(" 2x2 not enabled");
 	}
 
-	if (QDF_IS_STATUS_ERROR(ucfg_green_ap_get_ps_config(hdd_ctx->pdev,
-							     &ps_enable)))
+	if (QDF_IS_STATUS_ERROR(
+		    ucfg_green_ap_get_ps_config(hdd_ctx->pdev, &ps_enable)))
 		return 0;
 
 	if (!ps_enable) {
@@ -129,12 +127,10 @@ int hdd_green_ap_start_state_mc(struct hdd_context *hdd_ctx,
 		return 0;
 	}
 
-	policy_mgr_mode_specific_num_active_sessions(hdd_ctx->psoc,
-						     QDF_SAP_MODE,
-						     &num_sap_sessions);
-	policy_mgr_mode_specific_num_active_sessions(hdd_ctx->psoc,
-						     QDF_P2P_GO_MODE,
-						     &num_p2p_go_sessions);
+	policy_mgr_mode_specific_num_active_sessions(
+		hdd_ctx->psoc, QDF_SAP_MODE, &num_sap_sessions);
+	policy_mgr_mode_specific_num_active_sessions(
+		hdd_ctx->psoc, QDF_P2P_GO_MODE, &num_p2p_go_sessions);
 
 	switch (mode) {
 	case QDF_STA_MODE:
@@ -144,8 +140,7 @@ int hdd_green_ap_start_state_mc(struct hdd_context *hdd_ctx,
 
 		if (is_session_start) {
 			hdd_debug("Disabling Green AP");
-			ucfg_green_ap_set_ps_config(hdd_ctx->pdev,
-						    false);
+			ucfg_green_ap_set_ps_config(hdd_ctx->pdev, false);
 			wlan_green_ap_stop(hdd_ctx->pdev);
 		} else {
 			ret = hdd_green_ap_check_enable(hdd_ctx,
@@ -194,9 +189,9 @@ int hdd_green_ap_start_state_mc(struct hdd_context *hdd_ctx,
 
 #ifdef WLAN_SUPPORT_GAP_LL_PS_MODE
 const struct nla_policy
-wlan_hdd_sap_low_pwr_mode[QCA_WLAN_VENDOR_ATTR_DOZED_AP_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_DOZED_AP_STATE] = {.type = NLA_U8},
-};
+	wlan_hdd_sap_low_pwr_mode[QCA_WLAN_VENDOR_ATTR_DOZED_AP_MAX + 1] = {
+		[QCA_WLAN_VENDOR_ATTR_DOZED_AP_STATE] = { .type = NLA_U8 },
+	};
 
 /**
  * __wlan_hdd_enter_sap_low_pwr_mode() - Green AP low latency power
@@ -209,10 +204,9 @@ wlan_hdd_sap_low_pwr_mode[QCA_WLAN_VENDOR_ATTR_DOZED_AP_MAX + 1] = {
  *
  * Return: 0 for Success and negative value for failure
  */
-static int
-__wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
-				  struct wireless_dev *wdev,
-				  const void *data, int data_len)
+static int __wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
+					     struct wireless_dev *wdev,
+					     const void *data, int data_len)
 {
 	uint8_t lp_flags, len;
 	uint64_t cookie_id;
@@ -225,10 +219,8 @@ __wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
 
 	hdd_enter_dev(wdev->netdev);
 
-	if (wlan_cfg80211_nla_parse(tb,
-				    QCA_WLAN_VENDOR_ATTR_DOZED_AP_MAX,
-				    data, data_len,
-				    wlan_hdd_sap_low_pwr_mode)) {
+	if (wlan_cfg80211_nla_parse(tb, QCA_WLAN_VENDOR_ATTR_DOZED_AP_MAX, data,
+				    data_len, wlan_hdd_sap_low_pwr_mode)) {
 		hdd_err("Invalid ATTR");
 		return -EINVAL;
 	}
@@ -238,8 +230,7 @@ __wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	lp_flags =
-		nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_DOZED_AP_STATE]);
+	lp_flags = nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_DOZED_AP_STATE]);
 
 	if (lp_flags > QCA_WLAN_DOZED_AP_ENABLE) {
 		hdd_err("Invalid state received");
@@ -249,9 +240,9 @@ __wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
 	hdd_debug("state: %s",
 		  lp_flags == QCA_WLAN_DOZED_AP_ENABLE ? "ENABLE" : "DISABLE");
 
-	status = ucfg_green_ap_ll_ps(
-			hdd_ctx->pdev, adapter->deflink->vdev, lp_flags,
-			ap_ctx->sap_config.beacon_int, &cookie_id);
+	status = ucfg_green_ap_ll_ps(hdd_ctx->pdev, adapter->deflink->vdev,
+				     lp_flags, ap_ctx->sap_config.beacon_int,
+				     &cookie_id);
 	if (status != QDF_STATUS_SUCCESS) {
 		hdd_err("unable to send low latency power save cmd");
 		return -EINVAL;
@@ -285,10 +276,9 @@ fail:
 	return 0;
 }
 
-int
-wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
-				struct wireless_dev *wdev,
-				const void *data, int data_len)
+int wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
+				    struct wireless_dev *wdev, const void *data,
+				    int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -297,8 +287,7 @@ wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_enter_sap_low_pwr_mode(wiphy, wdev,
-						  data, data_len);
+	errno = __wlan_hdd_enter_sap_low_pwr_mode(wiphy, wdev, data, data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -306,9 +295,8 @@ wlan_hdd_enter_sap_low_pwr_mode(struct wiphy *wiphy,
 }
 
 QDF_STATUS wlan_hdd_send_green_ap_ll_ps_event(
-					struct wlan_objmgr_vdev *vdev,
-					struct wlan_green_ap_ll_ps_event_param
-					*ll_ps_param)
+	struct wlan_objmgr_vdev *vdev,
+	struct wlan_green_ap_ll_ps_event_param *ll_ps_param)
 {
 	int index = QCA_NL80211_VENDOR_SUBCMD_DOZED_AP_INDEX;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -333,8 +321,8 @@ QDF_STATUS wlan_hdd_send_green_ap_ll_ps_event(
 	len += nla_total_size(sizeof(u16));
 
 	skb = wlan_cfg80211_vendor_event_alloc(osif_priv->wdev->wiphy,
-					       osif_priv->wdev, len,
-					       index, qdf_mem_malloc_flags());
+					       osif_priv->wdev, len, index,
+					       qdf_mem_malloc_flags());
 	if (!skb) {
 		hdd_err("skb allocation failed");
 		return QDF_STATUS_E_NOMEM;
@@ -347,7 +335,8 @@ QDF_STATUS wlan_hdd_send_green_ap_ll_ps_event(
 		goto nla_put_failure;
 	}
 
-	if (wlan_cfg80211_nla_put_u64(skb, QCA_WLAN_VENDOR_ATTR_DOZED_AP_NEXT_TSF,
+	if (wlan_cfg80211_nla_put_u64(skb,
+				      QCA_WLAN_VENDOR_ATTR_DOZED_AP_NEXT_TSF,
 				      ll_ps_param->next_tsf)) {
 		hdd_err("nla_put failed for next tsf");
 		status = QDF_STATUS_E_FAILURE;
@@ -376,13 +365,14 @@ nla_put_failure:
 	return status;
 }
 
-QDF_STATUS green_ap_register_hdd_callback(struct wlan_objmgr_pdev *pdev,
-					  struct green_ap_hdd_callback *hdd_cback)
+QDF_STATUS
+green_ap_register_hdd_callback(struct wlan_objmgr_pdev *pdev,
+			       struct green_ap_hdd_callback *hdd_cback)
 {
 	struct wlan_pdev_green_ap_ctx *green_ap_ctx;
 
 	green_ap_ctx = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev, WLAN_UMAC_COMP_GREEN_AP);
+		pdev, WLAN_UMAC_COMP_GREEN_AP);
 
 	if (!green_ap_ctx) {
 		hdd_err("green ap context obtained is NULL");

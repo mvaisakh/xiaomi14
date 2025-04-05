@@ -12,15 +12,15 @@
  * RmNet MHI Low Latency channel handlers
  */
 
+#include "rmnet_ll.h"
+#include "rmnet_ll_core.h"
 #include <linux/device.h>
+#include <linux/if_ether.h>
+#include <linux/mhi.h>
+#include <linux/mm.h>
 #include <linux/netdevice.h>
 #include <linux/of.h>
 #include <linux/skbuff.h>
-#include <linux/mhi.h>
-#include <linux/if_ether.h>
-#include <linux/mm.h>
-#include "rmnet_ll.h"
-#include "rmnet_ll_core.h"
 
 static struct rmnet_ll_endpoint *rmnet_ll_mhi_ep;
 
@@ -64,8 +64,8 @@ static void rmnet_ll_mhi_rx(struct mhi_device *mhi_dev, struct mhi_result *res)
 	skb->dev = ll_ep->phys_dev;
 	skb->protocol = htons(ETH_P_MAP);
 	/* Mark this as arriving on the LL channel. Allows rmnet to skip
-	 * module handling as needed.
-	 */
+   * module handling as needed.
+   */
 	skb->priority = 0xda1a;
 	stats->rx_pkts++;
 	netif_rx(skb);
@@ -100,8 +100,8 @@ static int rmnet_ll_mhi_probe(struct mhi_device *mhi_dev,
 	int rc;
 
 	/* Allocate space for our state from the managed pool tied to the life
-	 * of the mhi device.
-	 */
+   * of the mhi device.
+   */
 	ll_ep = devm_kzalloc(&mhi_dev->dev, sizeof(*ll_ep), GFP_KERNEL);
 	if (!ll_ep)
 		return -ENOMEM;
@@ -110,8 +110,8 @@ static int rmnet_ll_mhi_probe(struct mhi_device *mhi_dev,
 	ll_ep->priv = (void *)mhi_dev;
 
 	/* Grab the MRU of the device so we know the size of the pages we need
-	 * to allocate for the pool.
-	 */
+   * to allocate for the pool.
+   */
 	rc = of_property_read_u32(mhi_dev->dev.of_node, "mhi,mru",
 				  &ll_ep->dev_mru);
 	if (rc || !ll_ep->dev_mru)
@@ -120,8 +120,8 @@ static int rmnet_ll_mhi_probe(struct mhi_device *mhi_dev,
 
 	ll_ep->page_order = get_order(ll_ep->dev_mru);
 	/* We store some stuff at the end of the page, so don't let the HW
-	 * use that part of it.
-	 */
+   * use that part of it.
+   */
 	ll_ep->buf_len = ll_ep->dev_mru - sizeof(struct rmnet_ll_buffer);
 
 	/* Tell MHI to initialize the UL/DL channels for transfer */
@@ -143,9 +143,9 @@ static int rmnet_ll_mhi_probe(struct mhi_device *mhi_dev,
 	rmnet_ll_buffers_recycle(ll_ep);
 
 	/* Not a fan of storing this pointer in two locations, but I've yet to
-	 * come up with any other good way of accessing it on the TX path from
-	 * rmnet otherwise, since we won't have any references to the mhi_dev.
-	 */
+   * come up with any other good way of accessing it on the TX path from
+   * rmnet otherwise, since we won't have any references to the mhi_dev.
+   */
 	dev_set_drvdata(&mhi_dev->dev, ll_ep);
 	rmnet_ll_mhi_ep = ll_ep;
 	return 0;
@@ -157,9 +157,9 @@ static void rmnet_ll_mhi_remove(struct mhi_device *mhi_dev)
 
 	ll_ep = dev_get_drvdata(&mhi_dev->dev);
 	/* Remove our private data form the device. No need to free it though.
-	 * It will be freed once the mhi_dev is released since it was alloced
-	 * from a managed pool.
-	 */
+   * It will be freed once the mhi_dev is released since it was alloced
+   * from a managed pool.
+   */
 	dev_set_drvdata(&mhi_dev->dev, NULL);
 	rmnet_ll_mhi_ep = NULL;
 	rmnet_ll_buffer_pool_free(ll_ep);
@@ -173,15 +173,16 @@ static const struct mhi_device_id rmnet_ll_mhi_channel_table[] = {
 };
 
 static struct mhi_driver rmnet_ll_driver = {
-	.probe = rmnet_ll_mhi_probe,
-	.remove = rmnet_ll_mhi_remove,
-	.dl_xfer_cb = rmnet_ll_mhi_rx,
-	.ul_xfer_cb = rmnet_ll_mhi_tx_complete,
-	.id_table = rmnet_ll_mhi_channel_table,
-	.driver = {
-		.name = "rmnet_ll",
-		.owner = THIS_MODULE,
-	},
+    .probe = rmnet_ll_mhi_probe,
+    .remove = rmnet_ll_mhi_remove,
+    .dl_xfer_cb = rmnet_ll_mhi_rx,
+    .ul_xfer_cb = rmnet_ll_mhi_tx_complete,
+    .id_table = rmnet_ll_mhi_channel_table,
+    .driver =
+        {
+            .name = "rmnet_ll",
+            .owner = THIS_MODULE,
+        },
 };
 
 static int rmnet_ll_mhi_queue(struct rmnet_ll_endpoint *ll_ep,
@@ -190,8 +191,8 @@ static int rmnet_ll_mhi_queue(struct rmnet_ll_endpoint *ll_ep,
 	struct mhi_device *mhi_dev = ll_ep->priv;
 
 	return mhi_queue_buf(mhi_dev, DMA_FROM_DEVICE,
-			     page_address(ll_buf->page),
-			     ll_ep->buf_len, MHI_EOT);
+			     page_address(ll_buf->page), ll_ep->buf_len,
+			     MHI_EOT);
 }
 
 static int rmnet_ll_mhi_query_free_descriptors(struct rmnet_ll_endpoint *ll_ep)

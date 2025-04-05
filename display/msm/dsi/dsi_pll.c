@@ -4,19 +4,19 @@
  * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"%s: " fmt, __func__
+#define pr_fmt(fmt) "%s: " fmt, __func__
 
-#include <linux/module.h>
-#include <linux/of_device.h>
-#include <linux/kernel.h>
-#include <linux/err.h>
-#include <linux/delay.h>
-#include <linux/iopoll.h>
-#include <linux/of_address.h>
 #include "dsi_pll.h"
+#include <linux/delay.h>
+#include <linux/err.h>
+#include <linux/iopoll.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/of_address.h>
+#include <linux/of_device.h>
 
 static int dsi_pll_clock_register(struct platform_device *pdev,
-				struct dsi_pll_resource *pll_res)
+				  struct dsi_pll_resource *pll_res)
 {
 	int rc;
 
@@ -39,17 +39,18 @@ static int dsi_pll_clock_register(struct platform_device *pdev,
 }
 
 static inline int dsi_pll_get_ioresources(struct platform_device *pdev,
-				void __iomem **regmap, char *resource_name)
+					  void __iomem **regmap,
+					  char *resource_name)
 {
 	int rc = 0;
-	struct resource *rsc = platform_get_resource_byname(pdev,
-						IORESOURCE_MEM, resource_name);
+	struct resource *rsc = platform_get_resource_byname(
+		pdev, IORESOURCE_MEM, resource_name);
 	if (rsc) {
 		if (!regmap)
 			return -ENOMEM;
 
-		*regmap = devm_ioremap(&pdev->dev,
-					rsc->start, resource_size(rsc));
+		*regmap = devm_ioremap(&pdev->dev, rsc->start,
+				       resource_size(rsc));
 		if (!*regmap)
 			return -ENOMEM;
 	}
@@ -67,7 +68,7 @@ static void dsi_pll_free_bootmem(u32 mem_addr, u32 size)
 }
 
 static void dsi_pll_parse_dfps(struct platform_device *pdev,
-				struct dsi_pll_resource *pll_res)
+			       struct dsi_pll_resource *pll_res)
 {
 	struct device_node *pnode = NULL;
 	const u32 *addr;
@@ -84,13 +85,13 @@ static void dsi_pll_parse_dfps(struct platform_device *pdev,
 	addr = of_get_address(pnode, 0, &size, NULL);
 	if (!addr) {
 		DSI_PLL_ERR(pll_res,
-			"failed to parse the dfps memory address\n");
+			    "failed to parse the dfps memory address\n");
 		goto node_err;
 	}
 
 	/* maintain compatibility for 32/64 bit */
-	offsets[0] = (u32) of_read_ulong(addr, 2);
-	offsets[1] = (u32) size;
+	offsets[0] = (u32)of_read_ulong(addr, 2);
+	offsets[1] = (u32)size;
 
 	trim_codes = memremap(offsets[0], offsets[1], MEMREMAP_WB);
 	if (!trim_codes)
@@ -118,15 +119,15 @@ node_err:
 }
 
 static int dsi_pll_parse_dfps_from_dt(struct platform_device *pdev,
-				struct dsi_pll_resource *pll_res)
+				      struct dsi_pll_resource *pll_res)
 {
-	int  property_len = 0, rc = 0;
+	int property_len = 0, rc = 0;
 	u32 i = 0, code_size = 0, vco_rate_cnt = 0;
-	struct device_node     *pnode          = NULL;
-	struct pll_codes_info  *pll_codes_info = NULL;
-	struct pll_codes_entry *code_entry     = NULL;
-	struct dfps_codes_info *codes_dfps     = NULL;
-	struct pll_codes_header header         = {};
+	struct device_node *pnode = NULL;
+	struct pll_codes_info *pll_codes_info = NULL;
+	struct pll_codes_entry *code_entry = NULL;
+	struct dfps_codes_info *codes_dfps = NULL;
+	struct pll_codes_header header = {};
 
 	pnode = of_parse_phandle(pdev->dev.of_node, "pll_codes_region", 0);
 	if (IS_ERR_OR_NULL(pnode)) {
@@ -144,7 +145,7 @@ static int dsi_pll_parse_dfps_from_dt(struct platform_device *pdev,
 	}
 
 	rc = of_property_read_u32_array(pnode, "reg", (u32 *)&header,
-			sizeof(header)/4);
+					sizeof(header) / 4);
 	if (rc) {
 		DSI_PLL_ERR(pll_res, "fail to get pll_codes data header\n");
 		goto err;
@@ -158,7 +159,7 @@ static int dsi_pll_parse_dfps_from_dt(struct platform_device *pdev,
 
 	if (header.version < DSI_PLL_TRIM_CODES_VERSION) {
 		DSI_PLL_ERR(pll_res, "unsupported pll trim codes version:%d\n",
-				header.version);
+			    header.version);
 		rc = -EINVAL;
 		goto err;
 	}
@@ -176,7 +177,7 @@ static int dsi_pll_parse_dfps_from_dt(struct platform_device *pdev,
 	}
 
 	if ((header.num_entries * sizeof(struct pll_codes_entry) +
-			sizeof(struct pll_codes_header)) != header.size) {
+	     sizeof(struct pll_codes_header)) != header.size) {
 		DSI_PLL_ERR(pll_res, "num_entries not match with size\n");
 		rc = -EINVAL;
 		goto err;
@@ -198,7 +199,7 @@ static int dsi_pll_parse_dfps_from_dt(struct platform_device *pdev,
 	}
 
 	rc = of_property_read_u32_array(pnode, "reg", (u32 *)pll_codes_info,
-			code_size/4);
+					code_size / 4);
 	if (rc) {
 		DSI_PLL_ERR(pll_res, "fail to get pll_codes data\n");
 		goto err;
@@ -219,11 +220,11 @@ static int dsi_pll_parse_dfps_from_dt(struct platform_device *pdev,
 			codes_dfps->is_valid = 1;
 			codes_dfps->clk_rate = code_entry[i].vco_rate;
 			codes_dfps->pll_codes.pll_codes_1 =
-					code_entry[i].pll_codes[0];
+				code_entry[i].pll_codes[0];
 			codes_dfps->pll_codes.pll_codes_2 =
-					code_entry[i].pll_codes[1];
+				code_entry[i].pll_codes[1];
 			codes_dfps->pll_codes.pll_codes_3 =
-					code_entry[i].pll_codes[2];
+				code_entry[i].pll_codes[2];
 			vco_rate_cnt++;
 		}
 
@@ -254,7 +255,7 @@ int dsi_pll_init(struct platform_device *pdev, struct dsi_pll_resource **pll)
 	}
 
 	pll_res = devm_kzalloc(&pdev->dev, sizeof(struct dsi_pll_resource),
-								GFP_KERNEL);
+			       GFP_KERNEL);
 	if (!pll_res)
 		return -ENOMEM;
 
@@ -268,7 +269,6 @@ int dsi_pll_init(struct platform_device *pdev, struct dsi_pll_resource **pll)
 
 	DSI_PLL_INFO(pll_res, "DSI pll label = %s\n", label);
 
-
 	if (!strcmp(label, "dsi_pll_4nm"))
 		pll_res->pll_revision = DSI_PLL_4NM;
 	else if (!strcmp(label, "dsi_pll_5nm"))
@@ -277,35 +277,37 @@ int dsi_pll_init(struct platform_device *pdev, struct dsi_pll_resource **pll)
 		return -ENOTSUPP;
 
 	rc = of_property_read_u32(pdev->dev.of_node, "cell-index",
-			&pll_res->index);
+				  &pll_res->index);
 	if (rc) {
-		DSI_PLL_ERR(pll_res, "Unable to get the cell-index rc=%d\n", rc);
+		DSI_PLL_ERR(pll_res, "Unable to get the cell-index rc=%d\n",
+			    rc);
 		pll_res->index = 0;
 	}
 
-	pll_res->ssc_en = of_property_read_bool(pdev->dev.of_node,
-						"qcom,dsi-pll-ssc-en");
+	pll_res->ssc_en =
+		of_property_read_bool(pdev->dev.of_node, "qcom,dsi-pll-ssc-en");
 
 	if (pll_res->ssc_en) {
 		DSI_PLL_INFO(pll_res, "PLL SSC enabled\n");
 
 		rc = of_property_read_u32(pdev->dev.of_node,
-			"qcom,ssc-frequency-hz", &pll_res->ssc_freq);
+					  "qcom,ssc-frequency-hz",
+					  &pll_res->ssc_freq);
 
-		rc = of_property_read_u32(pdev->dev.of_node,
-			"qcom,ssc-ppm", &pll_res->ssc_ppm);
+		rc = of_property_read_u32(pdev->dev.of_node, "qcom,ssc-ppm",
+					  &pll_res->ssc_ppm);
 
 		pll_res->ssc_center = false;
 
 		label = of_get_property(pdev->dev.of_node,
-			"qcom,dsi-pll-ssc-mode", NULL);
+					"qcom,dsi-pll-ssc-mode", NULL);
 
 		if (label && !strcmp(label, "center-spread"))
 			pll_res->ssc_center = true;
 	}
 
-	pll_res->phy_pll_bypass = of_property_read_bool(pdev->dev.of_node,
-			"qcom,dsi-phy-pll-bypass");
+	pll_res->phy_pll_bypass = of_property_read_bool(
+		pdev->dev.of_node, "qcom,dsi-phy-pll-bypass");
 
 	if (dsi_pll_get_ioresources(pdev, &pll_res->pll_base, "pll_base")) {
 		DSI_PLL_ERR(pll_res, "Unable to remap pll base resources\n");
@@ -315,25 +317,27 @@ int dsi_pll_init(struct platform_device *pdev, struct dsi_pll_resource **pll)
 	pr_info("PLL base=%p\n", pll_res->pll_base);
 
 	if (dsi_pll_get_ioresources(pdev, &pll_res->phy_base, "dsi_phy")) {
-		DSI_PLL_ERR(pll_res, "Unable to remap pll phy base resources\n");
+		DSI_PLL_ERR(pll_res,
+			    "Unable to remap pll phy base resources\n");
 		return -ENOMEM;
 	}
 
 	if (dsi_pll_get_ioresources(pdev, &pll_res->dyn_pll_base,
-							"dyn_refresh_base")) {
-		DSI_PLL_ERR(pll_res, "Unable to remap dynamic pll base resources\n");
+				    "dyn_refresh_base")) {
+		DSI_PLL_ERR(pll_res,
+			    "Unable to remap dynamic pll base resources\n");
 		return -ENOMEM;
 	}
 
 	if (dsi_pll_get_ioresources(pdev, &pll_res->gdsc_base, "gdsc_base"))
 		DSI_PLL_DBG(pll_res, "Unable to remap gdsc base resources\n");
 
-	pll_res->in_trusted_vm = of_property_read_bool(pdev->dev.of_node,
-						"qcom,dsi-pll-in-trusted-vm");
+	pll_res->in_trusted_vm = of_property_read_bool(
+		pdev->dev.of_node, "qcom,dsi-pll-in-trusted-vm");
 
 	if (pll_res->in_trusted_vm) {
 		DSI_PLL_INFO(pll_res,
-			"Bypassing PLL clock register for Trusted VM\n");
+			     "Bypassing PLL clock register for Trusted VM\n");
 		return rc;
 	}
 
@@ -349,7 +353,8 @@ int dsi_pll_init(struct platform_device *pdev, struct dsi_pll_resource **pll)
 	return rc;
 }
 
-void dsi_pll_parse_dfps_data(struct platform_device *pdev, struct dsi_pll_resource *pll_res)
+void dsi_pll_parse_dfps_data(struct platform_device *pdev,
+			     struct dsi_pll_resource *pll_res)
 {
 	if (!(pll_res->in_trusted_vm)) {
 		if (dsi_pll_parse_dfps_from_dt(pdev, pll_res))

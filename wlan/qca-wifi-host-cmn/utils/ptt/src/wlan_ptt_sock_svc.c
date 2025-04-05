@@ -18,18 +18,16 @@
  */
 
 /******************************************************************************
-* wlan_ptt_sock_svc.c
-*
-******************************************************************************/
+ * wlan_ptt_sock_svc.c
+ *
+ ******************************************************************************/
 #ifdef PTT_SOCK_SVC_ENABLE
-#include <wlan_nlink_srv.h>
-#include <qdf_types.h>
 #include <qdf_status.h>
 #include <qdf_trace.h>
-#include <wlan_nlink_common.h>
-#include <wlan_ptt_sock_svc.h>
 #include <qdf_types.h>
-#include <qdf_trace.h>
+#include <wlan_nlink_common.h>
+#include <wlan_nlink_srv.h>
+#include <wlan_ptt_sock_svc.h>
 
 #ifdef CNSS_GENL
 #ifdef CONFIG_CNSS_OUT_OF_TREE
@@ -42,9 +40,9 @@
 
 #define PTT_SOCK_DEBUG
 #ifdef PTT_SOCK_DEBUG
-#define PTT_TRACE(level, args ...) QDF_TRACE(QDF_MODULE_ID_QDF, level, ## args)
+#define PTT_TRACE(level, args...) QDF_TRACE(QDF_MODULE_ID_QDF, level, ##args)
 #else
-#define PTT_TRACE(level, args ...)
+#define PTT_TRACE(level, args...)
 #endif
 
 #ifdef PTT_SOCK_DEBUG_VERBOSE
@@ -80,7 +78,7 @@ static int nl_srv_ucast_ptt(struct sk_buff *skb, int dst_pid, int flag)
 {
 #ifdef CNSS_GENL
 	return nl_srv_ucast(skb, dst_pid, flag, ANI_NL_MSG_PUMAC,
-				CLD80211_MCGRP_DIAG_EVENTS);
+			    CLD80211_MCGRP_DIAG_EVENTS);
 #else
 	return nl_srv_ucast(skb, dst_pid, flag);
 #endif
@@ -142,9 +140,8 @@ int ptt_sock_send_msg_to_app(tAniHdr *wmsg, int radio, int src_mod, int pid)
 			  __func__, tot_msg_len);
 		return -ENOMEM;
 	}
-	nlh =
-		nlmsg_put(skb, pid, nlmsg_seq++, src_mod, payload_len,
-			  NLM_F_REQUEST);
+	nlh = nlmsg_put(skb, pid, nlmsg_seq++, src_mod, payload_len,
+			NLM_F_REQUEST);
 	if (!nlh) {
 		PTT_TRACE(QDF_TRACE_LEVEL_ERROR,
 			  "%s: nlmsg_put() failed for msg size[%d]\n", __func__,
@@ -152,12 +149,12 @@ int ptt_sock_send_msg_to_app(tAniHdr *wmsg, int radio, int src_mod, int pid)
 		kfree_skb(skb);
 		return -ENOMEM;
 	}
-	wnl = (tAniNlHdr *) nlh;
+	wnl = (tAniNlHdr *)nlh;
 	wnl->radio = radio;
 	/* kernel FORTIFY_SOURCE may warn when multiple struct are copied
-	 * using memcpy. So, to avoid, assign a void pointer to the struct
-	 * and copy using memcpy
-	 */
+   * using memcpy. So, to avoid, assign a void pointer to the struct
+   * and copy using memcpy
+   */
 	out = &wnl->wmsg;
 	memcpy(out, wmsg, wmsg_length);
 #ifdef PTT_SOCK_DEBUG_VERBOSE
@@ -195,11 +192,11 @@ static void ptt_cmd_handler(const void *data, int data_len, void *ctx, int pid)
 	struct nlattr *tb[CLD80211_ATTR_MAX + 1];
 
 	/*
-	 * audit note: it is ok to pass a NULL policy here since a
-	 * length check on the data is added later already
-	 */
-	if (wlan_cfg80211_nla_parse(tb, CLD80211_ATTR_MAX,
-				    data, data_len, NULL)) {
+   * audit note: it is ok to pass a NULL policy here since a
+   * length check on the data is added later already
+   */
+	if (wlan_cfg80211_nla_parse(tb, CLD80211_ATTR_MAX, data, data_len,
+				    NULL)) {
 		PTT_TRACE(QDF_TRACE_LEVEL_ERROR, "Invalid ATTR");
 		return;
 	}
@@ -211,7 +208,7 @@ static void ptt_cmd_handler(const void *data, int data_len, void *ctx, int pid)
 
 	if (nla_len(tb[CLD80211_ATTR_DATA]) < sizeof(struct sptt_app_reg_req)) {
 		PTT_TRACE(QDF_TRACE_LEVEL_ERROR, "%s:attr length check fails\n",
-			__func__);
+			  __func__);
 		return;
 	}
 
@@ -219,16 +216,13 @@ static void ptt_cmd_handler(const void *data, int data_len, void *ctx, int pid)
 	length = be16_to_cpu(payload->wmsg.length);
 	if ((USHRT_MAX - length) < (sizeof(payload->radio) + sizeof(tAniHdr))) {
 		PTT_TRACE(QDF_TRACE_LEVEL_ERROR,
-			"u16 overflow length %d %zu %zu",
-			length,
-			sizeof(payload->radio),
-			sizeof(tAniHdr));
+			  "u16 overflow length %d %zu %zu", length,
+			  sizeof(payload->radio), sizeof(tAniHdr));
 		return;
 	}
 
-	if (nla_len(tb[CLD80211_ATTR_DATA]) <  (length +
-						sizeof(payload->radio) +
-						sizeof(tAniHdr))) {
+	if (nla_len(tb[CLD80211_ATTR_DATA]) <
+	    (length + sizeof(payload->radio) + sizeof(tAniHdr))) {
 		PTT_TRACE(QDF_TRACE_LEVEL_ERROR, "ATTR_DATA len check failed");
 		return;
 	}
@@ -236,11 +230,11 @@ static void ptt_cmd_handler(const void *data, int data_len, void *ctx, int pid)
 	switch (payload->wmsg.type) {
 	case ANI_MSG_APP_REG_REQ:
 		ptt_sock_send_msg_to_app(&payload->wmsg, payload->radio,
-							ANI_NL_MSG_PUMAC, pid);
+					 ANI_NL_MSG_PUMAC, pid);
 		break;
 	default:
 		PTT_TRACE(QDF_TRACE_LEVEL_ERROR, "Unknown msg type %d",
-							payload->wmsg.type);
+			  payload->wmsg.type);
 		break;
 	}
 }

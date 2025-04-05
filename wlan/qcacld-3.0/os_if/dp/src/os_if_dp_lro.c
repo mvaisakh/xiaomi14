@@ -19,19 +19,19 @@
  *  This file contains DP component's LRO osif API implementation
  */
 #include "os_if_dp_lro.h"
-#include <wlan_objmgr_vdev_obj.h>
 #include <linux/inet_lro.h>
 #include <linux/list.h>
 #include <linux/random.h>
 #include <net/tcp.h>
+#include <wlan_objmgr_vdev_obj.h>
 
-#define LRO_VALID_FIELDS \
+#define LRO_VALID_FIELDS                                        \
 	(LRO_DESC | LRO_ELIGIBILITY_CHECKED | LRO_TCP_ACK_NUM | \
 	 LRO_TCP_DATA_CSUM | LRO_TCP_SEQ_NUM | LRO_TCP_WIN)
 
-#if defined(QCA_WIFI_QCA6290) || defined(QCA_WIFI_QCA6390) || \
-    defined(QCA_WIFI_QCA6490) || defined(QCA_WIFI_QCA6750) || \
-    defined(QCA_WIFI_KIWI) || defined(QCA_WIFI_WCN6450)
+#if defined(QCA_WIFI_QCA6290) || defined(QCA_WIFI_QCA6390) ||     \
+	defined(QCA_WIFI_QCA6490) || defined(QCA_WIFI_QCA6750) || \
+	defined(QCA_WIFI_KIWI) || defined(QCA_WIFI_WCN6450)
 #ifdef WLAN_FEATURE_LRO_CTX_IN_CB
 static qdf_lro_ctx_t osif_dp_get_lro_ctx(struct sk_buff *skb)
 {
@@ -65,7 +65,7 @@ QDF_STATUS osif_dp_lro_rx(qdf_netdev_t dev, qdf_nbuf_t nbuf)
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct qdf_lro_info info;
 	struct net_lro_desc *lro_desc = NULL;
-	struct sk_buff * skb = (struct sk_buff *)nbuf;
+	struct sk_buff *skb = (struct sk_buff *)nbuf;
 
 	if ((dev->features & NETIF_F_LRO) != NETIF_F_LRO)
 		return QDF_STATUS_E_NOSUPPORT;
@@ -88,12 +88,11 @@ QDF_STATUS osif_dp_lro_rx(qdf_netdev_t dev, qdf_nbuf_t nbuf)
 		dp_lro_info.lro_eligible = 1;
 		dp_lro_info.tcp_ack_num = QDF_NBUF_CB_RX_TCP_ACK_NUM(skb);
 		dp_lro_info.tcp_data_csum =
-			 csum_unfold(htons(QDF_NBUF_CB_RX_TCP_CHKSUM(skb)));
+			csum_unfold(htons(QDF_NBUF_CB_RX_TCP_CHKSUM(skb)));
 		dp_lro_info.tcp_seq_num = QDF_NBUF_CB_RX_TCP_SEQ_NUM(skb);
 		dp_lro_info.tcp_win = QDF_NBUF_CB_RX_TCP_WIN(skb);
 
-		lro_receive_skb_ext(ctx->lro_mgr, skb, NULL,
-				    &dp_lro_info);
+		lro_receive_skb_ext(ctx->lro_mgr, skb, NULL, &dp_lro_info);
 
 		if (!dp_lro_info.lro_desc->active)
 			qdf_lro_desc_free(ctx, lro_desc);
@@ -123,7 +122,7 @@ osif_dp_lro_set_reset(struct wlan_vdev_objmgr *vdev, uint8_t enable_flag)
 	struct net_device *dev;
 	QDF_STATUS status;
 
-	osif_priv  = wlan_vdev_get_ospriv(vdev);
+	osif_priv = wlan_vdev_get_ospriv(vdev);
 	dev = osif_priv->wdev->netdev;
 
 	status = ucfg_dp_lro_set_reset(vdev, enable_flag);

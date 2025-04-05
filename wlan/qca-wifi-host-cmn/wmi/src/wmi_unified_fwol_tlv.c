@@ -18,10 +18,10 @@
  */
 
 #include "osdep.h"
-#include "wmi.h"
-#include "wmi_unified_priv.h"
 #include "wlan_fwol_public_structs.h"
+#include "wmi.h"
 #include "wmi_unified_fwol_api.h"
+#include "wmi_unified_priv.h"
 
 #ifdef WLAN_FEATURE_ELNA
 /**
@@ -49,10 +49,10 @@ send_set_elna_bypass_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_set_elna_bypass_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_set_elna_bypass_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_set_elna_bypass_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_set_elna_bypass_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_set_elna_bypass_cmd_fixed_param));
 	cmd->vdev_id = req->vdev_id;
 	cmd->en_dis = req->elna_mode;
 	wmi_mtrace(WMI_SET_ELNA_BYPASS_CMDID, req->vdev_id, req->elna_mode);
@@ -91,10 +91,10 @@ send_get_elna_bypass_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_get_elna_bypass_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_get_elna_bypass_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_get_elna_bypass_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_get_elna_bypass_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_get_elna_bypass_cmd_fixed_param));
 	cmd->vdev_id = req->vdev_id;
 	wmi_mtrace(WMI_GET_ELNA_BYPASS_CMDID, req->vdev_id, 0);
 	ret = wmi_unified_cmd_send(wmi_handle, buf, len,
@@ -131,8 +131,7 @@ extract_get_elna_bypass_resp_tlv(struct wmi_unified *wmi_handle, void *resp_buf,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	wmi_debug("Get elna bypass %d from vdev %d",
-		  evt->en_dis, evt->vdev_id);
+	wmi_debug("Get elna bypass %d from vdev %d", evt->en_dis, evt->vdev_id);
 
 	resp->vdev_id = evt->vdev_id;
 	resp->elna_mode = evt->en_dis;
@@ -164,9 +163,8 @@ static void wmi_fwol_attach_elna_tlv(struct wmi_ops *ops)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-send_dscp_tid_map_cmd_tlv(wmi_unified_t wmi_handle,
-			  uint32_t *dscp_to_tid_map)
+static QDF_STATUS send_dscp_tid_map_cmd_tlv(wmi_unified_t wmi_handle,
+					    uint32_t *dscp_to_tid_map)
 {
 	QDF_STATUS status;
 	wmi_pdev_set_dscp_tid_map_cmd_fixed_param *cmd;
@@ -183,8 +181,8 @@ send_dscp_tid_map_cmd_tlv(wmi_unified_t wmi_handle,
 	WMITLV_SET_HDR(
 		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_wmi_pdev_set_dscp_tid_map_cmd_fixed_param,
-		WMITLV_GET_STRUCT_TLVLEN
-		(wmi_pdev_set_dscp_tid_map_cmd_fixed_param));
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_pdev_set_dscp_tid_map_cmd_fixed_param));
 	cmd->reserved0 = WMI_PDEV_ID_SOC;
 	qdf_mem_copy(&cmd->dscp_to_tid_map, dscp_to_tid_map,
 		     sizeof(uint32_t) * WMI_DSCP_MAP_MAX);
@@ -219,9 +217,8 @@ static void wmi_fwol_attach_dscp_tid_tlv(struct wmi_ops *ops)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-send_set_mdns_fqdn_cmd_tlv(wmi_unified_t wmi_handle,
-			   struct mdns_config_info *mdns_info)
+static QDF_STATUS send_set_mdns_fqdn_cmd_tlv(wmi_unified_t wmi_handle,
+					     struct mdns_config_info *mdns_info)
 {
 	wmi_buf_t buf;
 	uint8_t *buf_ptr;
@@ -250,10 +247,10 @@ send_set_mdns_fqdn_cmd_tlv(wmi_unified_t wmi_handle,
 
 	buf_ptr = wmi_buf_data(buf);
 	cmd = (wmi_mdns_set_fqdn_cmd_fixed_param *)buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_mdns_set_fqdn_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_mdns_set_fqdn_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_mdns_set_fqdn_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_mdns_set_fqdn_cmd_fixed_param));
 	cmd->vdev_id = mdns_info->vdev_id;
 	cmd->type = mdns_info->fqdn_type;
 	cmd->fqdn_len = mdns_info->fqdn_len;
@@ -293,7 +290,8 @@ send_set_mdns_response_cmd_tlv(wmi_unified_t wmi_handle,
 	uint16_t resp_len_aligned;
 	QDF_STATUS ret;
 
-	resp_len_aligned = roundup(mdns_info->answer_payload_len, sizeof(uint32_t));
+	resp_len_aligned =
+		roundup(mdns_info->answer_payload_len, sizeof(uint32_t));
 	if (resp_len_aligned < mdns_info->answer_payload_len) {
 		wmi_err_rl("integer overflow while rounding up data_len");
 		return QDF_STATUS_E_FAILURE;
@@ -313,10 +311,10 @@ send_set_mdns_response_cmd_tlv(wmi_unified_t wmi_handle,
 
 	buf_ptr = wmi_buf_data(buf);
 	cmd = (wmi_mdns_set_resp_cmd_fixed_param *)buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_mdns_set_resp_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_mdns_set_resp_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_mdns_set_resp_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_mdns_set_resp_cmd_fixed_param));
 	cmd->vdev_id = mdns_info->vdev_id;
 	cmd->AR_count = mdns_info->resource_record_count;
 	cmd->resp_len = mdns_info->answer_payload_len;
@@ -360,10 +358,10 @@ send_set_mdns_offload_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_mdns_offload_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_mdns_offload_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_mdns_offload_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_mdns_offload_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_mdns_offload_cmd_fixed_param));
 	cmd->vdev_id = mdns_info->vdev_id;
 	cmd->enable = mdns_info->enable;
 
@@ -393,7 +391,9 @@ send_set_mdns_config_cmd_tlv(wmi_unified_t wmi_handle,
 	if (!mdns_info->enable) {
 		ret = send_set_mdns_offload_cmd_tlv(wmi_handle, mdns_info);
 		if (QDF_IS_STATUS_ERROR(ret))
-			wmi_err_rl("Failed to send mDNS offload command. ret = %d", ret);
+			wmi_err_rl(
+				"Failed to send mDNS offload command. ret = %d",
+				ret);
 
 		return ret;
 	}
@@ -406,13 +406,15 @@ send_set_mdns_config_cmd_tlv(wmi_unified_t wmi_handle,
 
 	ret = send_set_mdns_response_cmd_tlv(wmi_handle, mdns_info);
 	if (QDF_IS_STATUS_ERROR(ret)) {
-		wmi_err_rl("Failed to send set mDNS response command. ret = %d", ret);
+		wmi_err_rl("Failed to send set mDNS response command. ret = %d",
+			   ret);
 		return ret;
 	}
 
 	ret = send_set_mdns_offload_cmd_tlv(wmi_handle, mdns_info);
 	if (QDF_IS_STATUS_ERROR(ret)) {
-		wmi_err_rl("Failed to send set mDNS offload  command. ret = %d", ret);
+		wmi_err_rl("Failed to send set mDNS offload  command. ret = %d",
+			   ret);
 		return ret;
 	}
 
@@ -457,10 +459,10 @@ send_get_thermal_stats_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_thermal_stats_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_thermal_stats_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_thermal_stats_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_thermal_stats_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_thermal_stats_cmd_fixed_param));
 	cmd->thermal_action = req_type;
 	cmd->thermal_offset = temp_offset;
 	ret = wmi_unified_cmd_send(wmi_handle, buf, len,

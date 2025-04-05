@@ -25,8 +25,8 @@
 #include <qdf_idr.h>
 #include <qdf_module.h>
 
-#define QDF_IDR_START     0x100
-#define QDF_IDR_END       0
+#define QDF_IDR_START 0x100
+#define QDF_IDR_END 0
 
 static int qdf_idr_gpf_flag(void)
 {
@@ -46,8 +46,8 @@ static int qdf_idr_gpf_flag(void)
  *
  * Return: new ID
  */
-static inline int32_t
-__qdf_idr_alloc(qdf_idr *idp, void *ptr, int32_t start, int32_t end)
+static inline int32_t __qdf_idr_alloc(qdf_idr *idp, void *ptr, int32_t start,
+				      int32_t end)
 {
 	int32_t id = 0;
 
@@ -56,8 +56,8 @@ __qdf_idr_alloc(qdf_idr *idp, void *ptr, int32_t start, int32_t end)
 	return id;
 }
 #else
-static inline int32_t
-__qdf_idr_alloc(qdf_idr *idp, void *ptr, int32_t start, int32_t end)
+static inline int32_t __qdf_idr_alloc(qdf_idr *idp, void *ptr, int32_t start,
+				      int32_t end)
 {
 	return idr_alloc(&idp->idr, ptr, start, end, qdf_idr_gpf_flag());
 }
@@ -140,4 +140,3 @@ QDF_STATUS qdf_idr_find(qdf_idr *idp, int32_t id, void **ptr)
 }
 
 qdf_export_symbol(qdf_idr_find);
-

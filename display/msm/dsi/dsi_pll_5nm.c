@@ -4,22 +4,22 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/kernel.h>
+#include "dsi_pll_5nm.h"
+#include <linux/delay.h>
 #include <linux/err.h>
 #include <linux/iopoll.h>
-#include <linux/delay.h>
+#include <linux/kernel.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
-#include "dsi_pll_5nm.h"
 
 #define VCO_DELAY_USEC 1
 
-#define MHZ_250		250000000UL
-#define MHZ_500		500000000UL
-#define MHZ_1000	1000000000UL
-#define MHZ_1100	1100000000UL
-#define MHZ_1900	1900000000UL
-#define MHZ_3000	3000000000UL
+#define MHZ_250 250000000UL
+#define MHZ_500 500000000UL
+#define MHZ_1000 1000000000UL
+#define MHZ_1100 1100000000UL
+#define MHZ_1900 1900000000UL
+#define MHZ_3000 3000000000UL
 
 struct dsi_pll_regs {
 	u32 pll_prop_gain_rate;
@@ -63,15 +63,13 @@ struct dsi_pll_5nm {
 	bool cphy_enabled;
 };
 
-static inline bool dsi_pll_5nm_is_hw_revision(
-		struct dsi_pll_resource *rsc)
+static inline bool dsi_pll_5nm_is_hw_revision(struct dsi_pll_resource *rsc)
 {
-	return (rsc->pll_revision == DSI_PLL_5NM) ?
-		true : false;
+	return (rsc->pll_revision == DSI_PLL_5NM) ? true : false;
 }
 
-static inline void dsi_pll_set_pll_post_div(struct dsi_pll_resource *pll, u32
-		pll_post_div)
+static inline void dsi_pll_set_pll_post_div(struct dsi_pll_resource *pll,
+					    u32 pll_post_div)
 {
 	u32 pll_post_div_val = 0;
 
@@ -87,7 +85,7 @@ static inline void dsi_pll_set_pll_post_div(struct dsi_pll_resource *pll, u32
 	DSI_PLL_REG_W(pll->pll_base, PLL_PLL_OUTDIV_RATE, pll_post_div_val);
 	if (pll->slave)
 		DSI_PLL_REG_W(pll->slave->pll_base, PLL_PLL_OUTDIV_RATE,
-				pll_post_div_val);
+			      pll_post_div_val);
 }
 
 static inline int dsi_pll_get_pll_post_div(struct dsi_pll_resource *pll)
@@ -99,8 +97,8 @@ static inline int dsi_pll_get_pll_post_div(struct dsi_pll_resource *pll)
 	return (1 << reg_val);
 }
 
-static inline void dsi_pll_set_phy_post_div(struct dsi_pll_resource *pll, u32
-		phy_post_div)
+static inline void dsi_pll_set_phy_post_div(struct dsi_pll_resource *pll,
+					    u32 phy_post_div)
 {
 	u32 reg_val = 0;
 
@@ -117,7 +115,6 @@ static inline void dsi_pll_set_phy_post_div(struct dsi_pll_resource *pll, u32
 	}
 }
 
-
 static inline int dsi_pll_get_phy_post_div(struct dsi_pll_resource *pll)
 {
 	u32 reg_val = 0;
@@ -127,9 +124,8 @@ static inline int dsi_pll_get_phy_post_div(struct dsi_pll_resource *pll)
 	return (reg_val & 0xF);
 }
 
-
-static inline void dsi_pll_set_dsiclk_sel(struct dsi_pll_resource *pll, u32
-		dsiclk_sel)
+static inline void dsi_pll_set_dsiclk_sel(struct dsi_pll_resource *pll,
+					  u32 dsiclk_sel)
 {
 	u32 reg_val = 0;
 
@@ -154,8 +150,8 @@ static inline int dsi_pll_get_dsiclk_sel(struct dsi_pll_resource *pll)
 	return (reg_val & 0x3);
 }
 
-static inline void dsi_pll_set_pclk_div(struct dsi_pll_resource *pll, u32
-		pclk_div)
+static inline void dsi_pll_set_pclk_div(struct dsi_pll_resource *pll,
+					u32 pclk_div)
 {
 	u32 reg_val = 0;
 
@@ -199,7 +195,8 @@ static void dsi_pll_config_slave(struct dsi_pll_resource *rsc)
 	rsc->slave = NULL;
 
 	if (!orsc) {
-		DSI_PLL_WARN(rsc,
+		DSI_PLL_WARN(
+			rsc,
 			"slave PLL unavilable, assuming standalone config\n");
 		return;
 	}
@@ -211,7 +208,7 @@ static void dsi_pll_config_slave(struct dsi_pll_resource *rsc)
 		rsc->slave = pll_rsc_db[DSI_PLL_1]; /* external source */
 
 	DSI_PLL_DBG(rsc, "Slave PLL %s\n",
-			rsc->slave ? "configured" : "absent");
+		    rsc->slave ? "configured" : "absent");
 }
 
 static void dsi_pll_setup_config(struct dsi_pll_5nm *pll,
@@ -292,7 +289,7 @@ static void dsi_pll_calc_dec_frac(struct dsi_pll_5nm *pll,
 }
 
 static void dsi_pll_calc_ssc(struct dsi_pll_5nm *pll,
-		  struct dsi_pll_resource *rsc)
+			     struct dsi_pll_resource *rsc)
 {
 	struct dsi_pll_config *config = &pll->pll_configuration;
 	struct dsi_pll_regs *regs = &pll->reg_setup;
@@ -310,9 +307,8 @@ static void dsi_pll_calc_ssc(struct dsi_pll_5nm *pll,
 	ssc_mod = (ssc_per + 1) % (config->ssc_adj_per + 1);
 	ssc_per -= ssc_mod;
 
-	frac = regs->frac_div_start_low |
-			(regs->frac_div_start_mid << 8) |
-			(regs->frac_div_start_high << 16);
+	frac = regs->frac_div_start_low | (regs->frac_div_start_mid << 8) |
+	       (regs->frac_div_start_high << 16);
 	ssc_step_size = regs->decimal_div_start;
 	ssc_step_size *= (1 << config->frac_bits);
 	ssc_step_size += frac;
@@ -331,13 +327,13 @@ static void dsi_pll_calc_ssc(struct dsi_pll_5nm *pll,
 	regs->ssc_control = config->ssc_center ? SSC_CENTER : 0;
 
 	DSI_PLL_DBG(rsc, "SCC: Dec:%d, frac:%llu, frac_bits:%d\n",
-			regs->decimal_div_start, frac, config->frac_bits);
+		    regs->decimal_div_start, frac, config->frac_bits);
 	DSI_PLL_DBG(rsc, "SSC: div_per:0x%X, stepsize:0x%X, adjper:0x%X\n",
-			ssc_per, (u32)ssc_step_size, config->ssc_adj_per);
+		    ssc_per, (u32)ssc_step_size, config->ssc_adj_per);
 }
 
 static void dsi_pll_ssc_commit(struct dsi_pll_5nm *pll,
-		struct dsi_pll_resource *rsc)
+			       struct dsi_pll_resource *rsc)
 {
 	void __iomem *pll_base = rsc->pll_base;
 	struct dsi_pll_regs *regs = &pll->reg_setup;
@@ -346,24 +342,24 @@ static void dsi_pll_ssc_commit(struct dsi_pll_5nm *pll,
 		DSI_PLL_DBG(rsc, "SSC is enabled\n");
 
 		DSI_PLL_REG_W(pll_base, PLL_SSC_STEPSIZE_LOW_1,
-				regs->ssc_stepsize_low);
+			      regs->ssc_stepsize_low);
 		DSI_PLL_REG_W(pll_base, PLL_SSC_STEPSIZE_HIGH_1,
-				regs->ssc_stepsize_high);
+			      regs->ssc_stepsize_high);
 		DSI_PLL_REG_W(pll_base, PLL_SSC_DIV_PER_LOW_1,
-				regs->ssc_div_per_low);
+			      regs->ssc_div_per_low);
 		DSI_PLL_REG_W(pll_base, PLL_SSC_DIV_PER_HIGH_1,
-				regs->ssc_div_per_high);
+			      regs->ssc_div_per_high);
 		DSI_PLL_REG_W(pll_base, PLL_SSC_ADJPER_LOW_1,
-				regs->ssc_adjper_low);
+			      regs->ssc_adjper_low);
 		DSI_PLL_REG_W(pll_base, PLL_SSC_ADJPER_HIGH_1,
-				regs->ssc_adjper_high);
+			      regs->ssc_adjper_high);
 		DSI_PLL_REG_W(pll_base, PLL_SSC_CONTROL,
-				SSC_EN | regs->ssc_control);
+			      SSC_EN | regs->ssc_control);
 	}
 }
 
 static void dsi_pll_config_hzindep_reg(struct dsi_pll_5nm *pll,
-				  struct dsi_pll_resource *rsc)
+				       struct dsi_pll_resource *rsc)
 {
 	void __iomem *pll_base = rsc->pll_base;
 	u64 vco_rate = rsc->vco_current_rate;
@@ -372,11 +368,11 @@ static void dsi_pll_config_hzindep_reg(struct dsi_pll_5nm *pll,
 	case DSI_PLL_5NM:
 	default:
 		if (vco_rate < 3100000000ULL)
-			DSI_PLL_REG_W(pll_base,
-					PLL_ANALOG_CONTROLS_FIVE_1, 0x01);
+			DSI_PLL_REG_W(pll_base, PLL_ANALOG_CONTROLS_FIVE_1,
+				      0x01);
 		else
-			DSI_PLL_REG_W(pll_base,
-					PLL_ANALOG_CONTROLS_FIVE_1, 0x03);
+			DSI_PLL_REG_W(pll_base, PLL_ANALOG_CONTROLS_FIVE_1,
+				      0x03);
 
 		if (vco_rate < 1520000000ULL)
 			DSI_PLL_REG_W(pll_base, PLL_VCO_CONFIG_1, 0x08);
@@ -557,7 +553,6 @@ static void dsi_pll_init_val(struct dsi_pll_resource *rsc)
 	DSI_PLL_REG_W(pll_base, PLL_CMODE_1, 0x00000010);
 	DSI_PLL_REG_W(pll_base, PLL_CMODE_2, 0x00000010);
 	DSI_PLL_REG_W(pll_base, PLL_ANALOG_CONTROLS_FIVE_2, 0x00000003);
-
 }
 
 static void dsi_pll_detect_phy_mode(struct dsi_pll_5nm *pll,
@@ -577,19 +572,18 @@ static void dsi_pll_commit(struct dsi_pll_5nm *pll,
 
 	DSI_PLL_REG_W(pll_base, PLL_CORE_INPUT_OVERRIDE, 0x12);
 	DSI_PLL_REG_W(pll_base, PLL_DECIMAL_DIV_START_1,
-		       reg->decimal_div_start);
+		      reg->decimal_div_start);
 	DSI_PLL_REG_W(pll_base, PLL_FRAC_DIV_START_LOW_1,
-		       reg->frac_div_start_low);
+		      reg->frac_div_start_low);
 	DSI_PLL_REG_W(pll_base, PLL_FRAC_DIV_START_MID_1,
-		       reg->frac_div_start_mid);
+		      reg->frac_div_start_mid);
 	DSI_PLL_REG_W(pll_base, PLL_FRAC_DIV_START_HIGH_1,
-		       reg->frac_div_start_high);
+		      reg->frac_div_start_high);
 	DSI_PLL_REG_W(pll_base, PLL_PLL_LOCKDET_RATE_1, reg->pll_lockdet_rate);
 	DSI_PLL_REG_W(pll_base, PLL_PLL_LOCK_DELAY, 0x06);
-	DSI_PLL_REG_W(pll_base, PLL_CMODE_1,
-			pll->cphy_enabled ? 0x00 : 0x10);
+	DSI_PLL_REG_W(pll_base, PLL_CMODE_1, pll->cphy_enabled ? 0x00 : 0x10);
 	DSI_PLL_REG_W(pll_base, PLL_CLOCK_INVERTERS_1,
-			reg->pll_clock_inverters);
+		      reg->pll_clock_inverters);
 }
 
 static int dsi_pll_5nm_lock_status(struct dsi_pll_resource *pll)
@@ -599,11 +593,10 @@ static int dsi_pll_5nm_lock_status(struct dsi_pll_resource *pll)
 	u32 const delay_us = 100;
 	u32 const timeout_us = 5000;
 
-	rc = DSI_READ_POLL_TIMEOUT_ATOMIC_GEN(pll->pll_base, pll->index, PLL_COMMON_STATUS_ONE,
-				       status,
-				       ((status & BIT(0)) > 0),
-				       delay_us,
-				       timeout_us);
+	rc = DSI_READ_POLL_TIMEOUT_ATOMIC_GEN(pll->pll_base, pll->index,
+					      PLL_COMMON_STATUS_ONE, status,
+					      ((status & BIT(0)) > 0), delay_us,
+					      timeout_us);
 	if (rc)
 		DSI_PLL_ERR(pll, "lock failed, status=0x%08x\n", status);
 
@@ -645,17 +638,17 @@ static void dsi_pll_enable_global_clk(struct dsi_pll_resource *rsc)
 	data = DSI_PLL_REG_R(rsc->phy_base, PHY_CMN_CLK_CFG1);
 
 	/* Turn on clk_en_sel bit prior to resync toggle fifo */
-	DSI_PLL_REG_W(rsc->phy_base, PHY_CMN_CLK_CFG1, (data | BIT(5) |
-								BIT(4)));
+	DSI_PLL_REG_W(rsc->phy_base, PHY_CMN_CLK_CFG1,
+		      (data | BIT(5) | BIT(4)));
 }
 
 static void dsi_pll_phy_dig_reset(struct dsi_pll_resource *rsc)
 {
 	/*
-	 * Reset the PHY digital domain. This would be needed when
-	 * coming out of a CX or analog rail power collapse while
-	 * ensuring that the pads maintain LP00 or LP11 state
-	 */
+   * Reset the PHY digital domain. This would be needed when
+   * coming out of a CX or analog rail power collapse while
+   * ensuring that the pads maintain LP00 or LP11 state
+   */
 	DSI_PLL_REG_W(rsc->phy_base, PHY_CMN_GLBL_DIGTOP_SPARE4, BIT(0));
 	wmb(); /* Ensure that the reset is asserted */
 	DSI_PLL_REG_W(rsc->phy_base, PHY_CMN_GLBL_DIGTOP_SPARE4, 0x0);
@@ -679,13 +672,13 @@ static int dsi_pll_prepare_stub(struct clk_hw *hw)
 }
 
 static int dsi_pll_set_rate_stub(struct clk_hw *hw, unsigned long rate,
-		unsigned long parent_rate)
+				 unsigned long parent_rate)
 {
 	return 0;
 }
 
 static long dsi_pll_byteclk_round_rate(struct clk_hw *hw, unsigned long rate,
-				unsigned long *parent_rate)
+				       unsigned long *parent_rate)
 {
 	struct dsi_pll_clk *pll = to_pll_clk_hw(hw);
 	struct dsi_pll_resource *pll_res = pll->priv;
@@ -694,7 +687,7 @@ static long dsi_pll_byteclk_round_rate(struct clk_hw *hw, unsigned long rate,
 }
 
 static long dsi_pll_pclk_round_rate(struct clk_hw *hw, unsigned long rate,
-		unsigned long *parent_rate)
+				    unsigned long *parent_rate)
 {
 	struct dsi_pll_clk *pll = to_pll_clk_hw(hw);
 	struct dsi_pll_resource *pll_res = pll->priv;
@@ -728,9 +721,9 @@ static unsigned long dsi_pll_vco_recalc_rate(struct dsi_pll_resource *pll)
 
 	frac = DSI_PLL_REG_R(pll->pll_base, PLL_FRAC_DIV_START_LOW_1);
 	frac |= ((DSI_PLL_REG_R(pll->pll_base, PLL_FRAC_DIV_START_MID_1) & 0xFF)
-					<< 8);
+		 << 8);
 	frac |= ((DSI_PLL_REG_R(pll->pll_base, PLL_FRAC_DIV_START_HIGH_1) & 0x3)
-					<< 16);
+		 << 16);
 
 	multiplier = 1 << config->frac_bits;
 	pll_freq = dec * (ref_clk * 2);
@@ -745,7 +738,7 @@ static unsigned long dsi_pll_vco_recalc_rate(struct dsi_pll_resource *pll)
 }
 
 static unsigned long dsi_pll_byteclk_recalc_rate(struct clk_hw *hw,
-		unsigned long parent_rate)
+						 unsigned long parent_rate)
 {
 	struct dsi_pll_clk *byte_pll = to_pll_clk_hw(hw);
 	struct dsi_pll_resource *pll = NULL;
@@ -761,15 +754,15 @@ static unsigned long dsi_pll_byteclk_recalc_rate(struct clk_hw *hw,
 	pll = byte_pll->priv;
 
 	/*
-	 * In the case when byteclk rate is set, the recalculation function
-	 * should  return the current rate. Recalc rate is also called during
-	 * clock registration, during which the function should reverse
-	 * calculate clock rates that were set as part of UEFI.
-	 */
+   * In the case when byteclk rate is set, the recalculation function
+   * should  return the current rate. Recalc rate is also called during
+   * clock registration, during which the function should reverse
+   * calculate clock rates that were set as part of UEFI.
+   */
 	if (pll->byteclk_rate != 0) {
 		DSI_PLL_DBG(pll, "returning byte clk rate = %lld %lld\n",
-				pll->byteclk_rate, parent_rate);
-		return  pll->byteclk_rate;
+			    pll->byteclk_rate, parent_rate);
+		return pll->byteclk_rate;
 	}
 
 	vco_rate = dsi_pll_vco_recalc_rate(pll);
@@ -786,7 +779,7 @@ static unsigned long dsi_pll_byteclk_recalc_rate(struct clk_hw *hw,
 }
 
 static unsigned long dsi_pll_pclk_recalc_rate(struct clk_hw *hw,
-		unsigned long parent_rate)
+					      unsigned long parent_rate)
 {
 	struct dsi_pll_clk *pix_pll = to_pll_clk_hw(hw);
 	struct dsi_pll_resource *pll = NULL;
@@ -802,14 +795,14 @@ static unsigned long dsi_pll_pclk_recalc_rate(struct clk_hw *hw,
 	pll = pix_pll->priv;
 
 	/*
-	 * In the case when pclk rate is set, the recalculation function
-	 * should  return the current rate. Recalc rate is also called during
-	 * clock registration, during which the function should reverse
-	 * calculate the clock rates that were set as part of UEFI.
-	 */
+   * In the case when pclk rate is set, the recalculation function
+   * should  return the current rate. Recalc rate is also called during
+   * clock registration, during which the function should reverse
+   * calculate the clock rates that were set as part of UEFI.
+   */
 	if (pll->pclk_rate != 0) {
 		DSI_PLL_DBG(pll, "returning pclk rate = %lld %lld\n",
-				pll->pclk_rate, parent_rate);
+			    pll->pclk_rate, parent_rate);
 		return pll->pclk_rate;
 	}
 
@@ -863,43 +856,47 @@ static const struct clk_ops pll_pclk_ops = {
  */
 
 static struct dsi_pll_clk dsi0_phy_pll_out_byteclk = {
-	.hw.init = &(struct clk_init_data){
+	.hw.init =
+		&(struct clk_init_data){
 			.name = "dsi0_phy_pll_out_byteclk",
 			.ops = &pll_byteclk_ops,
-	},
+		},
 };
 
 static struct dsi_pll_clk dsi1_phy_pll_out_byteclk = {
-	.hw.init = &(struct clk_init_data){
+	.hw.init =
+		&(struct clk_init_data){
 			.name = "dsi1_phy_pll_out_byteclk",
 			.ops = &pll_byteclk_ops,
-	},
+		},
 };
 
 static struct dsi_pll_clk dsi0_phy_pll_out_dsiclk = {
-	.hw.init = &(struct clk_init_data){
+	.hw.init =
+		&(struct clk_init_data){
 			.name = "dsi0_phy_pll_out_dsiclk",
 			.ops = &pll_pclk_ops,
-	},
+		},
 };
 
 static struct dsi_pll_clk dsi1_phy_pll_out_dsiclk = {
-	.hw.init = &(struct clk_init_data){
+	.hw.init =
+		&(struct clk_init_data){
 			.name = "dsi1_phy_pll_out_dsiclk",
 			.ops = &pll_pclk_ops,
-	},
+		},
 };
 
 int dsi_pll_clock_register_5nm(struct platform_device *pdev,
-				  struct dsi_pll_resource *pll_res)
+			       struct dsi_pll_resource *pll_res)
 {
 	int rc = 0, ndx;
 	struct clk *clk;
 	struct clk_onecell_data *clk_data;
 	int num_clks = 4;
 
-	if (!pdev || !pdev->dev.of_node ||
-			!pll_res || !pll_res->pll_base || !pll_res->phy_base) {
+	if (!pdev || !pdev->dev.of_node || !pll_res || !pll_res->pll_base ||
+	    !pll_res->phy_base) {
 		DSI_PLL_ERR(pll_res, "Invalid params\n");
 		return -EINVAL;
 	}
@@ -921,12 +918,12 @@ int dsi_pll_clock_register_5nm(struct platform_device *pdev,
 	dsi_pll_setup_config(pll_res->priv, pll_res);
 
 	clk_data = devm_kzalloc(&pdev->dev, sizeof(struct clk_onecell_data),
-					GFP_KERNEL);
+				GFP_KERNEL);
 	if (!clk_data)
 		return -ENOMEM;
 
-	clk_data->clks = devm_kzalloc(&pdev->dev, (num_clks *
-				sizeof(struct clk *)), GFP_KERNEL);
+	clk_data->clks = devm_kzalloc(
+		&pdev->dev, (num_clks * sizeof(struct clk *)), GFP_KERNEL);
 	if (!clk_data->clks)
 		return -ENOMEM;
 
@@ -938,55 +935,53 @@ int dsi_pll_clock_register_5nm(struct platform_device *pdev,
 		dsi0_phy_pll_out_dsiclk.priv = pll_res;
 
 		clk = devm_clk_register(&pdev->dev,
-				&dsi0_phy_pll_out_byteclk.hw);
+					&dsi0_phy_pll_out_byteclk.hw);
 		if (IS_ERR(clk)) {
 			DSI_PLL_ERR(pll_res,
-				"clk registration failed for DSI clock\n");
+				    "clk registration failed for DSI clock\n");
 			rc = -EINVAL;
 			goto clk_register_fail;
 		}
 		clk_data->clks[0] = clk;
 
 		clk = devm_clk_register(&pdev->dev,
-				&dsi0_phy_pll_out_dsiclk.hw);
+					&dsi0_phy_pll_out_dsiclk.hw);
 		if (IS_ERR(clk)) {
 			DSI_PLL_ERR(pll_res,
-				"clk registration failed for DSI clock\n");
+				    "clk registration failed for DSI clock\n");
 			rc = -EINVAL;
 			goto clk_register_fail;
 		}
 		clk_data->clks[1] = clk;
 
-
 		rc = of_clk_add_provider(pdev->dev.of_node,
-				of_clk_src_onecell_get, clk_data);
+					 of_clk_src_onecell_get, clk_data);
 	} else {
 		dsi1_phy_pll_out_byteclk.priv = pll_res;
 		dsi1_phy_pll_out_dsiclk.priv = pll_res;
 
-
 		clk = devm_clk_register(&pdev->dev,
-				&dsi1_phy_pll_out_byteclk.hw);
+					&dsi1_phy_pll_out_byteclk.hw);
 		if (IS_ERR(clk)) {
 			DSI_PLL_ERR(pll_res,
-				"clk registration failed for DSI clock\n");
+				    "clk registration failed for DSI clock\n");
 			rc = -EINVAL;
 			goto clk_register_fail;
 		}
 		clk_data->clks[2] = clk;
 
 		clk = devm_clk_register(&pdev->dev,
-				&dsi1_phy_pll_out_dsiclk.hw);
+					&dsi1_phy_pll_out_dsiclk.hw);
 		if (IS_ERR(clk)) {
 			DSI_PLL_ERR(pll_res,
-				"clk registration failed for DSI clock\n");
+				    "clk registration failed for DSI clock\n");
 			rc = -EINVAL;
 			goto clk_register_fail;
 		}
 		clk_data->clks[3] = clk;
 
 		rc = of_clk_add_provider(pdev->dev.of_node,
-				of_clk_src_onecell_get, clk_data);
+					 of_clk_src_onecell_get, clk_data);
 	}
 	if (!rc) {
 		DSI_PLL_INFO(pll_res, "Registered clocks successfully\n");
@@ -998,9 +993,8 @@ clk_register_fail:
 }
 
 static int dsi_pll_5nm_set_byteclk_div(struct dsi_pll_resource *pll,
-		bool commit)
+				       bool commit)
 {
-
 	int i = 0;
 	int table_size;
 	u32 pll_post_div = 0, phy_post_div = 0;
@@ -1032,15 +1026,16 @@ static int dsi_pll_5nm_set_byteclk_div(struct dsi_pll_resource *pll,
 
 	for (i = 0; i < table_size; i++) {
 		if ((table[i].min_hz <= bitclk_rate) &&
-				(bitclk_rate <= table[i].max_hz)) {
+		    (bitclk_rate <= table[i].max_hz)) {
 			pll_post_div = table[i].pll_div;
 			phy_post_div = table[i].phy_div;
 			break;
 		}
 	}
 
-	DSI_PLL_DBG(pll, "bit clk rate: %llu, pll_post_div: %d, phy_post_div: %d\n",
-			bitclk_rate, pll_post_div, phy_post_div);
+	DSI_PLL_DBG(pll,
+		    "bit clk rate: %llu, pll_post_div: %d, phy_post_div: %d\n",
+		    bitclk_rate, pll_post_div, phy_post_div);
 
 	if (commit) {
 		dsi_pll_set_pll_post_div(pll, pll_post_div);
@@ -1084,8 +1079,9 @@ static int dsi_pll_calc_dphy_pclk_div(struct dsi_pll_resource *pll)
 	do_div(pclk_div, 2);
 	do_div(pclk_div, pll->lanes);
 
-	DSI_PLL_DBG(pll, "bpp: %d, lanes: %d, m_val: %u, n_val: %u, pclk_div: %u\n",
-                          pll->bpp, pll->lanes, m_val, n_val, pclk_div);
+	DSI_PLL_DBG(pll,
+		    "bpp: %d, lanes: %d, m_val: %u, n_val: %u, pclk_div: %u\n",
+		    pll->bpp, pll->lanes, m_val, n_val, pclk_div);
 
 	return pclk_div;
 }
@@ -1098,9 +1094,9 @@ static int dsi_pll_calc_cphy_pclk_div(struct dsi_pll_resource *pll)
 
 	if (pll->bpp == 24 && pll->lanes == 2) {
 		/*
-		 * RGB888 or DSC is enabled
-		 * Skipping DSC enabled check
-		 */
+     * RGB888 or DSC is enabled
+     * Skipping DSC enabled check
+     */
 		m_val = 2;
 		n_val = 3;
 	} else if (pll->bpp == 30) {
@@ -1137,20 +1133,22 @@ static int dsi_pll_calc_cphy_pclk_div(struct dsi_pll_resource *pll)
 	}
 
 	/* Calculating pclk_div assuming dsiclk_sel to be 3 */
-	pclk_div =  pll->bpp * phy_post_div;
+	pclk_div = pll->bpp * phy_post_div;
 	pclk_div = mult_frac(pclk_div, m_val, n_val);
 	do_div(pclk_div, 8);
 	do_div(pclk_div, pll->lanes);
 
-	DSI_PLL_DBG(pll, "bpp: %d, lanes: %d, m_val: %u, n_val: %u, phy_post_div: %u pclk_div: %u\n",
-                          pll->bpp, pll->lanes, m_val, n_val, phy_post_div, pclk_div);
+	DSI_PLL_DBG(
+		pll,
+		"bpp: %d, lanes: %d, m_val: %u, n_val: %u, phy_post_div: %u "
+		"pclk_div: %u\n",
+		pll->bpp, pll->lanes, m_val, n_val, phy_post_div, pclk_div);
 
 	return pclk_div;
 }
 
 static int dsi_pll_5nm_set_pclk_div(struct dsi_pll_resource *pll, bool commit)
 {
-
 	int dsiclk_sel = 0, pclk_div = 0;
 	u64 pclk_src_rate;
 	u32 pll_post_div;
@@ -1174,7 +1172,7 @@ static int dsi_pll_5nm_set_pclk_div(struct dsi_pll_resource *pll, bool commit)
 	pll->pclk_rate = div_u64(pclk_src_rate, pclk_div);
 
 	DSI_PLL_DBG(pll, "pclk rate: %llu, dsiclk_sel: %d, pclk_div: %d\n",
-			pll->pclk_rate, dsiclk_sel, pclk_div);
+		    pll->pclk_rate, dsiclk_sel, pclk_div);
 
 	if (commit) {
 		dsi_pll_set_dsiclk_sel(pll, dsiclk_sel);
@@ -1182,7 +1180,6 @@ static int dsi_pll_5nm_set_pclk_div(struct dsi_pll_resource *pll, bool commit)
 	}
 
 	return 0;
-
 }
 
 static int dsi_pll_5nm_vco_set_rate(struct dsi_pll_resource *pll_res)
@@ -1231,13 +1228,13 @@ static int dsi_pll_read_stored_trim_codes(struct dsi_pll_resource *pll_res,
 			&pll_res->dfps->codes_dfps[i];
 
 		DSI_PLL_DBG(pll_res, "valid=%d vco_rate=%d, code %d %d %d\n",
-			codes_info->is_valid, codes_info->clk_rate,
-			codes_info->pll_codes.pll_codes_1,
-			codes_info->pll_codes.pll_codes_2,
-			codes_info->pll_codes.pll_codes_3);
+			    codes_info->is_valid, codes_info->clk_rate,
+			    codes_info->pll_codes.pll_codes_1,
+			    codes_info->pll_codes.pll_codes_2,
+			    codes_info->pll_codes.pll_codes_3);
 
 		if (vco_clk_rate != codes_info->clk_rate &&
-				codes_info->is_valid)
+		    codes_info->is_valid)
 			continue;
 
 		pll_res->cache_pll_trim_codes[0] =
@@ -1253,10 +1250,11 @@ static int dsi_pll_read_stored_trim_codes(struct dsi_pll_resource *pll_res,
 	if (!found)
 		return -EINVAL;
 
-	DSI_PLL_DBG(pll_res, "trim_code_0=0x%x trim_code_1=0x%x trim_code_2=0x%x\n",
-			pll_res->cache_pll_trim_codes[0],
-			pll_res->cache_pll_trim_codes[1],
-			pll_res->cache_pll_trim_codes[2]);
+	DSI_PLL_DBG(pll_res,
+		    "trim_code_0=0x%x trim_code_1=0x%x trim_code_2=0x%x\n",
+		    pll_res->cache_pll_trim_codes[0],
+		    pll_res->cache_pll_trim_codes[1],
+		    pll_res->cache_pll_trim_codes[2]);
 
 	return 0;
 }
@@ -1273,174 +1271,165 @@ static void dsi_pll_5nm_dynamic_refresh(struct dsi_pll_5nm *pll,
 	data = DSI_PLL_REG_R(rsc->phy_base, PHY_CMN_CLK_CFG1);
 	data &= ~BIT(5);
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL0,
-			   PHY_CMN_CLK_CFG1, PHY_CMN_PLL_CNTRL, data, 0);
+			  PHY_CMN_CLK_CFG1, PHY_CMN_PLL_CNTRL, data, 0);
 	upper_addr |= (upper_8_bit(PHY_CMN_CLK_CFG1) << 0);
 	upper_addr |= (upper_8_bit(PHY_CMN_PLL_CNTRL) << 1);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL1,
-			   PHY_CMN_RBUF_CTRL,
-			   (PLL_CORE_INPUT_OVERRIDE + offset),
-			   0, 0x12);
+			  PHY_CMN_RBUF_CTRL, (PLL_CORE_INPUT_OVERRIDE + offset),
+			  0, 0x12);
 	upper_addr |= (upper_8_bit(PHY_CMN_RBUF_CTRL) << 2);
 	upper_addr |= (upper_8_bit(PLL_CORE_INPUT_OVERRIDE + offset) << 3);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL2,
-			   (PLL_DECIMAL_DIV_START_1 + offset),
-			   (PLL_FRAC_DIV_START_LOW_1 + offset),
-			   reg->decimal_div_start, reg->frac_div_start_low);
+			  (PLL_DECIMAL_DIV_START_1 + offset),
+			  (PLL_FRAC_DIV_START_LOW_1 + offset),
+			  reg->decimal_div_start, reg->frac_div_start_low);
 	upper_addr |= (upper_8_bit(PLL_DECIMAL_DIV_START_1 + offset) << 4);
 	upper_addr |= (upper_8_bit(PLL_FRAC_DIV_START_LOW_1 + offset) << 5);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL3,
-			   (PLL_FRAC_DIV_START_MID_1 + offset),
-			   (PLL_FRAC_DIV_START_HIGH_1 + offset),
-			   reg->frac_div_start_mid, reg->frac_div_start_high);
+			  (PLL_FRAC_DIV_START_MID_1 + offset),
+			  (PLL_FRAC_DIV_START_HIGH_1 + offset),
+			  reg->frac_div_start_mid, reg->frac_div_start_high);
 	upper_addr |= (upper_8_bit(PLL_FRAC_DIV_START_MID_1 + offset) << 6);
 	upper_addr |= (upper_8_bit(PLL_FRAC_DIV_START_HIGH_1 + offset) << 7);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL4,
-			   (PLL_SYSTEM_MUXES + offset),
-			   (PLL_PLL_LOCKDET_RATE_1 + offset),
-			   0xc0, 0x10);
+			  (PLL_SYSTEM_MUXES + offset),
+			  (PLL_PLL_LOCKDET_RATE_1 + offset), 0xc0, 0x10);
 	upper_addr |= (upper_8_bit(PLL_SYSTEM_MUXES + offset) << 8);
 	upper_addr |= (upper_8_bit(PLL_PLL_LOCKDET_RATE_1 + offset) << 9);
 
 	data = DSI_PLL_REG_R(rsc->pll_base, PLL_PLL_OUTDIV_RATE) & 0x03;
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL5,
-			   (PLL_PLL_OUTDIV_RATE + offset),
-			   (PLL_PLL_LOCK_DELAY + offset),
-			   data, 0x06);
+			  (PLL_PLL_OUTDIV_RATE + offset),
+			  (PLL_PLL_LOCK_DELAY + offset), data, 0x06);
 
 	upper_addr |= (upper_8_bit(PLL_PLL_OUTDIV_RATE + offset) << 10);
 	upper_addr |= (upper_8_bit(PLL_PLL_LOCK_DELAY + offset) << 11);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL6,
-			   (PLL_CMODE_1 + offset),
-			   (PLL_CLOCK_INVERTERS_1 + offset),
-			   pll->cphy_enabled ? 0x00 : 0x10,
-			   reg->pll_clock_inverters);
+			  (PLL_CMODE_1 + offset),
+			  (PLL_CLOCK_INVERTERS_1 + offset),
+			  pll->cphy_enabled ? 0x00 : 0x10,
+			  reg->pll_clock_inverters);
 	upper_addr |= (upper_8_bit(PLL_CMODE_1 + offset) << 12);
 	upper_addr |= (upper_8_bit(PLL_CLOCK_INVERTERS_1 + offset) << 13);
 
 	data = DSI_PLL_REG_R(rsc->pll_base, PLL_VCO_CONFIG_1);
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL7,
-			   (PLL_ANALOG_CONTROLS_FIVE_1 + offset),
-			   (PLL_VCO_CONFIG_1 + offset),
-			   0x01, data);
+			  (PLL_ANALOG_CONTROLS_FIVE_1 + offset),
+			  (PLL_VCO_CONFIG_1 + offset), 0x01, data);
 	upper_addr |= (upper_8_bit(PLL_ANALOG_CONTROLS_FIVE_1 + offset) << 14);
 	upper_addr |= (upper_8_bit(PLL_VCO_CONFIG_1 + offset) << 15);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL8,
-			   (PLL_ANALOG_CONTROLS_FIVE + offset),
-			   (PLL_ANALOG_CONTROLS_TWO + offset), 0x01, 0x03);
+			  (PLL_ANALOG_CONTROLS_FIVE + offset),
+			  (PLL_ANALOG_CONTROLS_TWO + offset), 0x01, 0x03);
 	upper_addr |= (upper_8_bit(PLL_ANALOG_CONTROLS_FIVE + offset) << 16);
 	upper_addr |= (upper_8_bit(PLL_ANALOG_CONTROLS_TWO + offset) << 17);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL9,
-			   (PLL_ANALOG_CONTROLS_THREE + offset),
-			   (PLL_DSM_DIVIDER + offset),
-			   rsc->cache_pll_trim_codes[2], 0x00);
+			  (PLL_ANALOG_CONTROLS_THREE + offset),
+			  (PLL_DSM_DIVIDER + offset),
+			  rsc->cache_pll_trim_codes[2], 0x00);
 	upper_addr |= (upper_8_bit(PLL_ANALOG_CONTROLS_THREE + offset) << 18);
 	upper_addr |= (upper_8_bit(PLL_DSM_DIVIDER + offset) << 19);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL10,
-			   (PLL_FEEDBACK_DIVIDER + offset),
-			   (PLL_CALIBRATION_SETTINGS + offset), 0x4E, 0x40);
+			  (PLL_FEEDBACK_DIVIDER + offset),
+			  (PLL_CALIBRATION_SETTINGS + offset), 0x4E, 0x40);
 	upper_addr |= (upper_8_bit(PLL_FEEDBACK_DIVIDER + offset) << 20);
 	upper_addr |= (upper_8_bit(PLL_CALIBRATION_SETTINGS + offset) << 21);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL11,
-			   (PLL_BAND_SEL_CAL_SETTINGS_THREE + offset),
-			   (PLL_FREQ_DETECT_SETTINGS_ONE + offset), 0xBA, 0x0C);
-	upper_addr |= (upper_8_bit(PLL_BAND_SEL_CAL_SETTINGS_THREE + offset)
-		       << 22);
-	upper_addr |= (upper_8_bit(PLL_FREQ_DETECT_SETTINGS_ONE + offset)
-		       << 23);
+			  (PLL_BAND_SEL_CAL_SETTINGS_THREE + offset),
+			  (PLL_FREQ_DETECT_SETTINGS_ONE + offset), 0xBA, 0x0C);
+	upper_addr |=
+		(upper_8_bit(PLL_BAND_SEL_CAL_SETTINGS_THREE + offset) << 22);
+	upper_addr |=
+		(upper_8_bit(PLL_FREQ_DETECT_SETTINGS_ONE + offset) << 23);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL12,
-			   (PLL_OUTDIV + offset),
-			   (PLL_CORE_OVERRIDE + offset), 0, 0);
+			  (PLL_OUTDIV + offset), (PLL_CORE_OVERRIDE + offset),
+			  0, 0);
 	upper_addr |= (upper_8_bit(PLL_OUTDIV + offset) << 24);
 	upper_addr |= (upper_8_bit(PLL_CORE_OVERRIDE + offset) << 25);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL13,
-			   (PLL_PLL_DIGITAL_TIMERS_TWO + offset),
-			   (PLL_PLL_PROP_GAIN_RATE_1 + offset),
-			    0x08, reg->pll_prop_gain_rate);
+			  (PLL_PLL_DIGITAL_TIMERS_TWO + offset),
+			  (PLL_PLL_PROP_GAIN_RATE_1 + offset), 0x08,
+			  reg->pll_prop_gain_rate);
 	upper_addr |= (upper_8_bit(PLL_PLL_DIGITAL_TIMERS_TWO + offset) << 26);
 	upper_addr |= (upper_8_bit(PLL_PLL_PROP_GAIN_RATE_1 + offset) << 27);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL14,
-			   (PLL_PLL_BAND_SEL_RATE_1 + offset),
-			   (PLL_PLL_INT_GAIN_IFILT_BAND_1 + offset),
-			    0xC0, 0x82);
+			  (PLL_PLL_BAND_SEL_RATE_1 + offset),
+			  (PLL_PLL_INT_GAIN_IFILT_BAND_1 + offset), 0xC0, 0x82);
 	upper_addr |= (upper_8_bit(PLL_PLL_BAND_SEL_RATE_1 + offset) << 28);
-	upper_addr |= (upper_8_bit(PLL_PLL_INT_GAIN_IFILT_BAND_1 + offset)
-		       << 29);
+	upper_addr |=
+		(upper_8_bit(PLL_PLL_INT_GAIN_IFILT_BAND_1 + offset) << 29);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL15,
-			   (PLL_PLL_FL_INT_GAIN_PFILT_BAND_1 + offset),
-			   (PLL_PLL_LOCK_OVERRIDE + offset),
-			    0x4c, 0x80);
-	upper_addr |= (upper_8_bit(PLL_PLL_FL_INT_GAIN_PFILT_BAND_1 + offset)
-		       << 30);
+			  (PLL_PLL_FL_INT_GAIN_PFILT_BAND_1 + offset),
+			  (PLL_PLL_LOCK_OVERRIDE + offset), 0x4c, 0x80);
+	upper_addr |=
+		(upper_8_bit(PLL_PLL_FL_INT_GAIN_PFILT_BAND_1 + offset) << 30);
 	upper_addr |= (upper_8_bit(PLL_PLL_LOCK_OVERRIDE + offset) << 31);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL16,
-			   (PLL_PFILT + offset),
-			   (PLL_IFILT + offset),
-			    0x29, 0x3f);
+			  (PLL_PFILT + offset), (PLL_IFILT + offset), 0x29,
+			  0x3f);
 	upper_addr2 |= (upper_8_bit(PLL_PFILT + offset) << 0);
 	upper_addr2 |= (upper_8_bit(PLL_IFILT + offset) << 1);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL17,
-			   (PLL_SYSTEM_MUXES + offset),
-			   (PLL_CALIBRATION_SETTINGS + offset),
-			    0xe0, 0x44);
+			  (PLL_SYSTEM_MUXES + offset),
+			  (PLL_CALIBRATION_SETTINGS + offset), 0xe0, 0x44);
 	upper_addr2 |= (upper_8_bit(PLL_BAND_SEL_CAL + offset) << 2);
 	upper_addr2 |= (upper_8_bit(PLL_CALIBRATION_SETTINGS + offset) << 3);
 
 	data = DSI_PLL_REG_R(rsc->phy_base, PHY_CMN_CLK_CFG0);
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL18,
-			   PHY_CMN_CTRL_2, PHY_CMN_CLK_CFG0, 0x40, data);
+			  PHY_CMN_CTRL_2, PHY_CMN_CLK_CFG0, 0x40, data);
 
 	if (rsc->slave)
 		DSI_DYN_PLL_REG_W(rsc->slave->dyn_pll_base,
-				   DSI_DYNAMIC_REFRESH_PLL_CTRL10,
-				   PHY_CMN_CLK_CFG0, PHY_CMN_CTRL_0,
-				   data, 0x7f);
+				  DSI_DYNAMIC_REFRESH_PLL_CTRL10,
+				  PHY_CMN_CLK_CFG0, PHY_CMN_CTRL_0, data, 0x7f);
 
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL27,
-			   PHY_CMN_PLL_CNTRL, PHY_CMN_PLL_CNTRL, 0x01, 0x01);
+			  PHY_CMN_PLL_CNTRL, PHY_CMN_PLL_CNTRL, 0x01, 0x01);
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL28,
-			   PHY_CMN_PLL_CNTRL, PHY_CMN_PLL_CNTRL, 0x01, 0x01);
+			  PHY_CMN_PLL_CNTRL, PHY_CMN_PLL_CNTRL, 0x01, 0x01);
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL29,
-			   PHY_CMN_PLL_CNTRL, PHY_CMN_PLL_CNTRL, 0x01, 0x01);
+			  PHY_CMN_PLL_CNTRL, PHY_CMN_PLL_CNTRL, 0x01, 0x01);
 
 	data = DSI_PLL_REG_R(rsc->phy_base, PHY_CMN_CLK_CFG1) | BIT(5);
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL30,
-			   PHY_CMN_CLK_CFG1, PHY_CMN_RBUF_CTRL, data, 0x01);
+			  PHY_CMN_CLK_CFG1, PHY_CMN_RBUF_CTRL, data, 0x01);
 	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_CTRL31,
-			   PHY_CMN_CLK_CFG1, PHY_CMN_CLK_CFG1, data, data);
+			  PHY_CMN_CLK_CFG1, PHY_CMN_CLK_CFG1, data, data);
 
 	if (rsc->slave) {
 		data = DSI_PLL_REG_R(rsc->slave->phy_base, PHY_CMN_CLK_CFG1) |
-			BIT(5);
+		       BIT(5);
 
 		DSI_DYN_PLL_REG_W(rsc->slave->dyn_pll_base,
-				   DSI_DYNAMIC_REFRESH_PLL_CTRL30,
-				   PHY_CMN_CLK_CFG1, PHY_CMN_RBUF_CTRL,
-				   data, 0x01);
+				  DSI_DYNAMIC_REFRESH_PLL_CTRL30,
+				  PHY_CMN_CLK_CFG1, PHY_CMN_RBUF_CTRL, data,
+				  0x01);
 		DSI_DYN_PLL_REG_W(rsc->slave->dyn_pll_base,
-				   DSI_DYNAMIC_REFRESH_PLL_CTRL31,
-				   PHY_CMN_CLK_CFG1, PHY_CMN_CLK_CFG1,
-				   data, data);
+				  DSI_DYNAMIC_REFRESH_PLL_CTRL31,
+				  PHY_CMN_CLK_CFG1, PHY_CMN_CLK_CFG1, data,
+				  data);
 	}
 
-	DSI_PLL_REG_W(rsc->dyn_pll_base,
-		DSI_DYNAMIC_REFRESH_PLL_UPPER_ADDR, upper_addr);
-	DSI_PLL_REG_W(rsc->dyn_pll_base,
-		DSI_DYNAMIC_REFRESH_PLL_UPPER_ADDR2, upper_addr2);
+	DSI_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_UPPER_ADDR,
+		      upper_addr);
+	DSI_PLL_REG_W(rsc->dyn_pll_base, DSI_DYNAMIC_REFRESH_PLL_UPPER_ADDR2,
+		      upper_addr2);
 	wmb(); /* commit register writes */
 }
 
@@ -1487,9 +1476,9 @@ static int dsi_pll_5nm_enable(struct dsi_pll_resource *rsc)
 	DSI_PLL_REG_W(rsc->phy_base, PHY_CMN_PLL_CNTRL, 0x01);
 
 	/*
-	 * ensure all PLL configurations are written prior to checking
-	 * for PLL lock.
-	 */
+   * ensure all PLL configurations are written prior to checking
+   * for PLL lock.
+   */
 	wmb();
 
 	/* Check for PLL lock */
@@ -1500,10 +1489,10 @@ static int dsi_pll_5nm_enable(struct dsi_pll_resource *rsc)
 	}
 
 	/*
-	 * assert power on reset for PHY digital in case the PLL is
-	 * enabled after CX of analog domain power collapse. This needs
-	 * to be done before enabling the global clk.
-	 */
+   * assert power on reset for PHY digital in case the PLL is
+   * enabled after CX of analog domain power collapse. This needs
+   * to be done before enabling the global clk.
+   */
 	dsi_pll_phy_dig_reset(rsc);
 	if (rsc->slave)
 		dsi_pll_phy_dig_reset(rsc->slave);
@@ -1525,12 +1514,12 @@ static int dsi_pll_5nm_disable(struct dsi_pll_resource *rsc)
 	DSI_PLL_DBG(rsc, "stop PLL\n");
 
 	/*
-	 * To avoid any stray glitches while
-	 * abruptly powering down the PLL
-	 * make sure to gate the clock using
-	 * the clock enable bit before powering
-	 * down the PLL
-	 */
+   * To avoid any stray glitches while
+   * abruptly powering down the PLL
+   * make sure to gate the clock using
+   * the clock enable bit before powering
+   * down the PLL
+   */
 	dsi_pll_disable_global_clk(rsc);
 	DSI_PLL_REG_W(rsc->phy_base, PHY_CMN_PLL_CNTRL, 0);
 	dsi_pll_disable_sub(rsc);
@@ -1546,7 +1535,6 @@ static int dsi_pll_5nm_disable(struct dsi_pll_resource *rsc)
 
 int dsi_pll_5nm_configure(void *pll, bool commit)
 {
-
 	int rc = 0;
 	struct dsi_pll_resource *rsc = (struct dsi_pll_resource *)pll;
 

@@ -17,19 +17,19 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "__wlan_dsc.h"
 #include "qdf_list.h"
+#include "qdf_platform.h"
 #include "qdf_status.h"
 #include "qdf_talloc.h"
 #include "qdf_types.h"
-#include "__wlan_dsc.h"
 #include "wlan_dsc.h"
-#include "qdf_platform.h"
 
 #define __dsc_driver_lock(vdev) __dsc_lock((vdev)->psoc->driver)
 #define __dsc_driver_unlock(vdev) __dsc_unlock((vdev)->psoc->driver)
 
-static QDF_STATUS
-__dsc_vdev_create(struct dsc_psoc *psoc, struct dsc_vdev **out_vdev)
+static QDF_STATUS __dsc_vdev_create(struct dsc_psoc *psoc,
+				    struct dsc_vdev **out_vdev)
 {
 	struct dsc_vdev *vdev;
 
@@ -64,7 +64,7 @@ QDF_STATUS dsc_vdev_create(struct dsc_psoc *psoc, struct dsc_vdev **out_vdev)
 {
 	QDF_STATUS status;
 
-	status =  __dsc_vdev_create(psoc, out_vdev);
+	status = __dsc_vdev_create(psoc, out_vdev);
 
 	return status;
 }
@@ -144,11 +144,11 @@ static QDF_STATUS __dsc_vdev_can_trans(struct dsc_vdev *vdev)
 
 	if (__dsc_trans_active_or_queued(&vdev->psoc->trans)) {
 		/* psoc idle shutdown(wifi off) needs to be added in DSC queue
-		 * to avoid wifi on failure while previous psoc idle shutdown
-		 * is in progress and wifi is turned on. And Wifi On also needs
-		 * to be added to the queue so that it waits for SSR to
-		 * complete.
-		 */
+     * to avoid wifi on failure while previous psoc idle shutdown
+     * is in progress and wifi is turned on. And Wifi On also needs
+     * to be added to the queue so that it waits for SSR to
+     * complete.
+     */
 		if (qdf_is_driver_unloading())
 			return QDF_STATUS_E_INVAL;
 		else
@@ -161,8 +161,8 @@ static QDF_STATUS __dsc_vdev_can_trans(struct dsc_vdev *vdev)
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-__dsc_vdev_trans_start_nolock(struct dsc_vdev *vdev, const char *desc)
+static QDF_STATUS __dsc_vdev_trans_start_nolock(struct dsc_vdev *vdev,
+						const char *desc)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
@@ -173,8 +173,8 @@ __dsc_vdev_trans_start_nolock(struct dsc_vdev *vdev, const char *desc)
 	return __dsc_trans_start(&vdev->trans, desc);
 }
 
-static QDF_STATUS
-__dsc_vdev_trans_start(struct dsc_vdev *vdev, const char *desc)
+static QDF_STATUS __dsc_vdev_trans_start(struct dsc_vdev *vdev,
+					 const char *desc)
 {
 	QDF_STATUS status;
 
@@ -203,8 +203,8 @@ QDF_STATUS dsc_vdev_trans_start(struct dsc_vdev *vdev, const char *desc)
 	return status;
 }
 
-static QDF_STATUS
-__dsc_vdev_trans_start_wait(struct dsc_vdev *vdev, const char *desc)
+static QDF_STATUS __dsc_vdev_trans_start_wait(struct dsc_vdev *vdev,
+					      const char *desc)
 {
 	QDF_STATUS status;
 	struct dsc_tran tran = { 0 };
@@ -323,8 +323,8 @@ QDF_STATUS _dsc_vdev_op_start(struct dsc_vdev *vdev, const char *func)
 	QDF_STATUS status;
 
 	/* do not log from here because it can flood log message because vdev
-	 * op protect is per vdev operation
-	 */
+   * op protect is per vdev operation
+   */
 
 	status = __dsc_vdev_op_start(vdev, func);
 
@@ -348,8 +348,8 @@ static void __dsc_vdev_op_stop(struct dsc_vdev *vdev, const char *func)
 void _dsc_vdev_op_stop(struct dsc_vdev *vdev, const char *func)
 {
 	/* do not log from here because it can flood log message because vdev
-	 * op protect is per vdev operation
-	 */
+   * op protect is per vdev operation
+   */
 	__dsc_vdev_op_stop(vdev, func);
 }
 
@@ -386,4 +386,3 @@ void dsc_vdev_cache_command(struct dsc_vdev *vdev, uint8_t cmd_id)
 {
 	vdev->nb_cmd_during_ssr = cmd_id;
 }
-

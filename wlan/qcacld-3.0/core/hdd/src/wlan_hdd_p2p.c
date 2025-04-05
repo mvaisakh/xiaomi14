@@ -23,47 +23,45 @@
  * WLAN Host Device Driver implementation for P2P commands interface
  */
 
+#include "wlan_hdd_p2p.h"
+#include "cds_sched.h"
+#include "cds_utils.h"
+#include "nan_ucfg_api.h"
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <wlan_hdd_hostapd.h>
-#include <net/cfg80211.h>
+#include "qdf_trace.h"
+#include "qdf_types.h"
+#include "sap_api.h"
 #include "sme_api.h"
 #include "sme_qos_api.h"
-#include "wlan_hdd_p2p.h"
-#include "sap_api.h"
-#include "wlan_hdd_main.h"
-#include "qdf_trace.h"
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
-#include <linux/etherdevice.h>
-#include <net/ieee80211_radiotap.h>
-#include "wlan_hdd_tdls.h"
-#include "wlan_hdd_trace.h"
-#include "qdf_types.h"
-#include "qdf_trace.h"
-#include "cds_sched.h"
-#include "wlan_policy_mgr_api.h"
-#include "cds_utils.h"
-#include "wlan_p2p_public_struct.h"
-#include "wlan_p2p_ucfg_api.h"
 #include "wlan_cfg80211_p2p.h"
-#include "wlan_p2p_cfg_api.h"
-#include "wlan_policy_mgr_ucfg.h"
-#include "nan_ucfg_api.h"
-#include "wlan_pkt_capture_ucfg_api.h"
+#include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_main.h"
 #include "wlan_hdd_object_manager.h"
 #include "wlan_hdd_pre_cac.h"
+#include "wlan_hdd_tdls.h"
+#include "wlan_hdd_trace.h"
+#include "wlan_p2p_cfg_api.h"
+#include "wlan_p2p_public_struct.h"
+#include "wlan_p2p_ucfg_api.h"
+#include "wlan_pkt_capture_ucfg_api.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_policy_mgr_ucfg.h"
 #include "wlan_pre_cac_ucfg_api.h"
-#include "wlan_dp_ucfg_api.h"
 #include "wlan_psoc_mlme_ucfg_api.h"
+#include <linux/etherdevice.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
+#include <net/cfg80211.h>
+#include <net/ieee80211_radiotap.h>
+#include <wlan_hdd_hostapd.h>
+#include <wlan_hdd_includes.h>
 
 /* Ms to Time Unit Micro Sec */
-#define MS_TO_TU_MUS(x)   ((x) * 1024)
-#define MAX_MUS_VAL       (INT_MAX / 1024)
+#define MS_TO_TU_MUS(x) ((x) * 1024)
+#define MAX_MUS_VAL (INT_MAX / 1024)
 
 /* Clean up RoC context at hdd_stop_adapter*/
-void
-wlan_hdd_cleanup_remain_on_channel_ctx(struct wlan_hdd_link_info *link_info)
+void wlan_hdd_cleanup_remain_on_channel_ctx(struct wlan_hdd_link_info *link_info)
 {
 	struct wlan_objmgr_vdev *vdev;
 
@@ -128,8 +126,8 @@ static int __wlan_hdd_cfg80211_remain_on_channel(struct wiphy *wiphy,
 
 	status = wlan_cfg80211_roc(vdev, chan, duration, cookie);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_P2P_ID);
-	hdd_debug("remain on channel request, status:%d, cookie:0x%llx",
-		  status, *cookie);
+	hdd_debug("remain on channel request, status:%d, cookie:0x%llx", status,
+		  *cookie);
 
 	return qdf_status_to_os_return(status);
 }
@@ -154,10 +152,8 @@ int wlan_hdd_cfg80211_remain_on_channel(struct wiphy *wiphy,
 	return errno;
 }
 
-static int
-__wlan_hdd_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
-					     struct wireless_dev *wdev,
-					     u64 cookie)
+static int __wlan_hdd_cfg80211_cancel_remain_on_channel(
+	struct wiphy *wiphy, struct wireless_dev *wdev, u64 cookie)
 {
 	QDF_STATUS status;
 	struct net_device *dev = wdev->netdev;
@@ -210,9 +206,8 @@ int wlan_hdd_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 #define WLAN_AUTH_FRAME_MIN_LEN 2
 static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 			      struct ieee80211_channel *chan, bool offchan,
-			      unsigned int wait,
-			      const u8 *buf, size_t len, bool no_cck,
-			      bool dont_wait_for_ack, u64 *cookie)
+			      unsigned int wait, const u8 *buf, size_t len,
+			      bool no_cck, bool dont_wait_for_ack, u64 *cookie)
 {
 	QDF_STATUS status;
 	struct net_device *dev = wdev->netdev;
@@ -224,7 +219,7 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	QDF_STATUS qdf_status;
 	int ret;
 	uint32_t assoc_resp_len, ft_info_len = 0;
-	const uint8_t  *assoc_resp;
+	const uint8_t *assoc_resp;
 	void *ft_info;
 	struct hdd_ap_ctx *ap_ctx;
 
@@ -245,20 +240,19 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	hdd_debug("type %d, sub_type %d", type, sub_type);
 
 	/* When frame to be transmitted is auth mgmt, then trigger
-	 * sme_send_mgmt_tx to send auth frame without need for policy manager.
-	 * Where as wlan_cfg80211_mgmt_tx requires roc and requires approval
-	 * from policy manager.
-	 */
+   * sme_send_mgmt_tx to send auth frame without need for policy manager.
+   * Where as wlan_cfg80211_mgmt_tx requires roc and requires approval
+   * from policy manager.
+   */
 	if ((adapter->device_mode == QDF_STA_MODE ||
 	     adapter->device_mode == QDF_SAP_MODE ||
 	     adapter->device_mode == QDF_P2P_CLIENT_MODE ||
 	     adapter->device_mode == QDF_P2P_GO_MODE ||
 	     adapter->device_mode == QDF_NAN_DISC_MODE) &&
-	    (type == SIR_MAC_MGMT_FRAME &&
-	    sub_type == SIR_MAC_MGMT_AUTH)) {
+	    (type == SIR_MAC_MGMT_FRAME && sub_type == SIR_MAC_MGMT_AUTH)) {
 		/* Request ROC for PASN authentication frame */
-		if (len > (sizeof(struct wlan_frame_hdr) +
-			   WLAN_AUTH_FRAME_MIN_LEN)) {
+		if (len >
+		    (sizeof(struct wlan_frame_hdr) + WLAN_AUTH_FRAME_MIN_LEN)) {
 			auth_algo =
 				*(uint16_t *)(buf +
 					      sizeof(struct wlan_frame_hdr));
@@ -267,7 +261,8 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 			if ((auth_algo == eSIR_FT_AUTH) &&
 			    (adapter->device_mode == QDF_SAP_MODE ||
 			     adapter->device_mode == QDF_P2P_GO_MODE)) {
-				ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(adapter->deflink);
+				ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(
+					adapter->deflink);
 				ap_ctx->during_auth_offload = false;
 			}
 		}
@@ -277,8 +272,8 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 			   adapter->deflink->vdev_id, 0);
 
 		qdf_status = sme_send_mgmt_tx(hdd_ctx->mac_handle,
-					      adapter->deflink->vdev_id,
-					      buf, len);
+					      adapter->deflink->vdev_id, buf,
+					      len);
 
 		if (QDF_IS_STATUS_SUCCESS(qdf_status))
 			return qdf_status_to_os_return(qdf_status);
@@ -286,19 +281,20 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 			return -EINVAL;
 	}
 	/* Only when SAP working on Fast BSS transition mode. Driver offload
-	 * (re)assoc request to hostapd. Here driver receive (re)assoc response
-	 * frame from hostapd.
-	 */
+   * (re)assoc request to hostapd. Here driver receive (re)assoc response
+   * frame from hostapd.
+   */
 	if ((adapter->device_mode == QDF_SAP_MODE ||
 	     adapter->device_mode == QDF_P2P_GO_MODE) &&
 	    (type == SIR_MAC_MGMT_FRAME) &&
 	    (sub_type == SIR_MAC_MGMT_ASSOC_RSP ||
 	     sub_type == SIR_MAC_MGMT_REASSOC_RSP)) {
-		assoc_resp = &((struct ieee80211_mgmt *)buf)->u.assoc_resp.variable[0];
-		assoc_resp_len = len - WLAN_ASSOC_RSP_IES_OFFSET
-			   - sizeof(struct wlan_frame_hdr);
-		if (!wlan_get_ie_ptr_from_eid(DOT11F_EID_FTINFO,
-					      assoc_resp, assoc_resp_len)) {
+		assoc_resp = &((struct ieee80211_mgmt *)buf)
+				      ->u.assoc_resp.variable[0];
+		assoc_resp_len = len - WLAN_ASSOC_RSP_IES_OFFSET -
+				 sizeof(struct wlan_frame_hdr);
+		if (!wlan_get_ie_ptr_from_eid(DOT11F_EID_FTINFO, assoc_resp,
+					      assoc_resp_len)) {
 			hdd_debug("No FT info in Assoc rsp, send it directly");
 			goto off_chan_tx;
 		}
@@ -307,9 +303,9 @@ static int __wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 			return -EINVAL;
 		hdd_debug("get ft_info_len from Assoc rsp :%d", ft_info_len);
 		ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(adapter->deflink);
-		qdf_status = wlansap_update_ft_info(ap_ctx->sap_context,
-						    ((struct ieee80211_mgmt *)buf)->da,
-						    ft_info, ft_info_len, 0);
+		qdf_status = wlansap_update_ft_info(
+			ap_ctx->sap_context, ((struct ieee80211_mgmt *)buf)->da,
+			ft_info, ft_info_len, 0);
 		qdf_mem_free(ft_info);
 
 		if (QDF_IS_STATUS_SUCCESS(qdf_status))
@@ -326,16 +322,17 @@ off_chan_tx:
 	}
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_OS_IF,
-		   TRACE_CODE_HDD_SEND_MGMT_TX,
-		   wlan_vdev_get_id(vdev), 0);
+		   TRACE_CODE_HDD_SEND_MGMT_TX, wlan_vdev_get_id(vdev), 0);
 
-	status = wlan_cfg80211_mgmt_tx(vdev, chan, offchan, wait, buf,
-				       len, no_cck, dont_wait_for_ack, cookie);
+	status = wlan_cfg80211_mgmt_tx(vdev, chan, offchan, wait, buf, len,
+				       no_cck, dont_wait_for_ack, cookie);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_P2P_ID);
-	hdd_debug("device_mode:%d type:%d sub_type:%d chan:%d wait:%d offchan:%d do_not_wait_ack:%d mgmt tx, status:%d, cookie:0x%llx",
-		  adapter->device_mode, type, sub_type,
-		  chan ? chan->center_freq : 0, wait, offchan,
-		  dont_wait_for_ack, status, *cookie);
+	hdd_debug(
+		"device_mode:%d type:%d sub_type:%d chan:%d wait:%d offchan:%d "
+		"do_not_wait_ack:%d mgmt tx, status:%d, cookie:0x%llx",
+		adapter->device_mode, type, sub_type,
+		chan ? chan->center_freq : 0, wait, offchan, dont_wait_for_ack,
+		status, *cookie);
 
 	return 0;
 }
@@ -346,8 +343,7 @@ int wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 #else
 int wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 		     struct ieee80211_channel *chan, bool offchan,
-		     unsigned int wait,
-		     const u8 *buf, size_t len, bool no_cck,
+		     unsigned int wait, const u8 *buf, size_t len, bool no_cck,
 		     bool dont_wait_for_ack, u64 *cookie)
 #endif /* LINUX_VERSION_CODE */
 {
@@ -364,9 +360,8 @@ int wlan_hdd_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 				   params->no_cck, params->dont_wait_for_ack,
 				   cookie);
 #else
-	errno = __wlan_hdd_mgmt_tx(wiphy, wdev, chan, offchan,
-				   wait, buf, len, no_cck,
-				   dont_wait_for_ack, cookie);
+	errno = __wlan_hdd_mgmt_tx(wiphy, wdev, chan, offchan, wait, buf, len,
+				   no_cck, dont_wait_for_ack, cookie);
 #endif /* LINUX_VERSION_CODE */
 
 	osif_vdev_sync_op_stop(vdev_sync);
@@ -441,7 +436,7 @@ int wlan_hdd_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 int hdd_set_p2p_noa(struct net_device *dev, uint8_t *command)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
-	struct p2p_ps_config noa = {0};
+	struct p2p_ps_config noa = { 0 };
 	int count, duration, interval;
 	char *param;
 	int ret;
@@ -454,8 +449,7 @@ int hdd_set_p2p_noa(struct net_device *dev, uint8_t *command)
 	param++;
 	ret = sscanf(param, "%d %d %d", &count, &interval, &duration);
 	if (ret != 3) {
-		hdd_err("P2P_SET GO noa: fail to read params, ret=%d",
-			ret);
+		hdd_err("P2P_SET GO noa: fail to read params, ret=%d", ret);
 		return -EINVAL;
 	}
 	if (count < 0 || interval < 0 || duration < 0 ||
@@ -463,14 +457,14 @@ int hdd_set_p2p_noa(struct net_device *dev, uint8_t *command)
 		hdd_err("Invalid NOA parameters");
 		return -EINVAL;
 	}
-	hdd_debug("P2P_SET GO noa: count=%d interval=%d duration=%d",
-		count, interval, duration);
+	hdd_debug("P2P_SET GO noa: count=%d interval=%d duration=%d", count,
+		  interval, duration);
 	duration = MS_TO_TU_MUS(duration);
 	interval = MS_TO_TU_MUS(interval);
 	/* PS Selection
-	 * Periodic noa (2)
-	 * Single NOA   (4)
-	 */
+   * Periodic noa (2)
+   * Single NOA   (4)
+   */
 	noa.opp_ps = 0;
 	noa.ct_window = 0;
 	if (count == 1) {
@@ -494,8 +488,8 @@ int hdd_set_p2p_noa(struct net_device *dev, uint8_t *command)
 
 	hdd_debug("P2P_PS_ATTR:opp ps %d ct window %d duration %d "
 		  "interval %d count %d single noa duration %d "
-		  "ps selection %x", noa.opp_ps,
-		  noa.ct_window, noa.duration, noa.interval,
+		  "ps selection %x",
+		  noa.opp_ps, noa.ct_window, noa.duration, noa.interval,
 		  noa.count, noa.single_noa_duration, noa.ps_selection);
 
 	return wlan_hdd_set_power_save(adapter, &noa);
@@ -518,7 +512,7 @@ int hdd_set_p2p_noa(struct net_device *dev, uint8_t *command)
 int hdd_set_p2p_opps(struct net_device *dev, uint8_t *command)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
-	struct p2p_ps_config noa = {0};
+	struct p2p_ps_config noa = { 0 };
 	char *param;
 	int legacy_ps, opp_ps, ctwindow;
 	int ret;
@@ -541,12 +535,12 @@ int hdd_set_p2p_opps(struct net_device *dev, uint8_t *command)
 	}
 
 	/* P2P spec: 3.3.2 Power Management and discovery:
-	 *     CTWindow should be at least 10 TU.
-	 * P2P spec: Table 27 - CTWindow and OppPS Parameters field format:
-	 *     CTWindow and OppPS Parameters together is 8 bits.
-	 *     CTWindow uses 7 bits (0-6, Bit 7 is for OppPS)
-	 * 0 indicates that there shall be no CTWindow
-	 */
+   *     CTWindow should be at least 10 TU.
+   * P2P spec: Table 27 - CTWindow and OppPS Parameters field format:
+   *     CTWindow and OppPS Parameters together is 8 bits.
+   *     CTWindow uses 7 bits (0-6, Bit 7 is for OppPS)
+   * 0 indicates that there shall be no CTWindow
+   */
 	if ((ctwindow != -1) && (ctwindow != 0) &&
 	    (!((ctwindow >= 10) && (ctwindow <= 127)))) {
 		hdd_err("Invalid CT window value:%d", ctwindow);
@@ -557,30 +551,30 @@ int hdd_set_p2p_opps(struct net_device *dev, uint8_t *command)
 		  legacy_ps, opp_ps, ctwindow);
 
 	/* PS Selection
-	 * Opportunistic Power Save (1)
-	 */
+   * Opportunistic Power Save (1)
+   */
 
 	/* From wpa_cli user need to use separate command to set ct_window
-	 * and Opps when user want to set ct_window during that time other
-	 * parameters values are coming from wpa_supplicant as -1.
-	 * Example : User want to set ct_window with 30 then wpa_cli command :
-	 * P2P_SET ctwindow 30
-	 * Command Received at hdd_hostapd_ioctl is as below:
-	 * P2P_SET_PS -1 -1 30 (legacy_ps = -1, opp_ps = -1, ctwindow = 30)
-	 *
-	 * e.g., 1: P2P_SET_PS 1 1 30
-	 * Driver sets the Opps and CTwindow as 30 and send it to FW.
-	 * e.g., 2: P2P_SET_PS 1 -1 15
-	 * Driver caches the CTwindow value but not send the command to FW.
-	 * e.g., 3: P2P_SET_PS 1 1 -1
-	 * Driver sends the command to FW with Opps enabled and CT window as
-	 * 15 (last cached CTWindow value).
-	 * (or) : P2P_SET_PS 1 1 20
-	 * Driver sends the command to FW with opps enabled and CT window
-	 * as 20.
-	 *
-	 * legacy_ps param remains unused until required in the future.
-	 */
+   * and Opps when user want to set ct_window during that time other
+   * parameters values are coming from wpa_supplicant as -1.
+   * Example : User want to set ct_window with 30 then wpa_cli command :
+   * P2P_SET ctwindow 30
+   * Command Received at hdd_hostapd_ioctl is as below:
+   * P2P_SET_PS -1 -1 30 (legacy_ps = -1, opp_ps = -1, ctwindow = 30)
+   *
+   * e.g., 1: P2P_SET_PS 1 1 30
+   * Driver sets the Opps and CTwindow as 30 and send it to FW.
+   * e.g., 2: P2P_SET_PS 1 -1 15
+   * Driver caches the CTwindow value but not send the command to FW.
+   * e.g., 3: P2P_SET_PS 1 1 -1
+   * Driver sends the command to FW with Opps enabled and CT window as
+   * 15 (last cached CTWindow value).
+   * (or) : P2P_SET_PS 1 1 20
+   * Driver sends the command to FW with opps enabled and CT window
+   * as 20.
+   *
+   * legacy_ps param remains unused until required in the future.
+   */
 	if (ctwindow != -1)
 		adapter->ctw = ctwindow;
 
@@ -596,11 +590,11 @@ int hdd_set_p2p_opps(struct net_device *dev, uint8_t *command)
 		noa.ps_selection = P2P_POWER_SAVE_TYPE_OPPORTUNISTIC;
 		noa.vdev_id = adapter->deflink->vdev_id;
 
-		hdd_debug("P2P_PS_ATTR: opp ps %d ct window %d duration %d interval %d count %d single noa duration %d ps selection %x",
-			noa.opp_ps, noa.ct_window,
-			noa.duration, noa.interval, noa.count,
-			noa.single_noa_duration,
-			noa.ps_selection);
+		hdd_debug(
+			"P2P_PS_ATTR: opp ps %d ct window %d duration %d interval %d "
+			"count %d single noa duration %d ps selection %x",
+			noa.opp_ps, noa.ct_window, noa.duration, noa.interval,
+			noa.count, noa.single_noa_duration, noa.ps_selection);
 
 		wlan_hdd_set_power_save(adapter, &noa);
 	}
@@ -611,8 +605,8 @@ int hdd_set_p2p_opps(struct net_device *dev, uint8_t *command)
 int hdd_set_p2p_ps(struct net_device *dev, void *msgData)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
-	struct p2p_ps_config noa = {0};
-	struct p2p_app_set_ps *pappnoa = (struct p2p_app_set_ps *) msgData;
+	struct p2p_ps_config noa = { 0 };
+	struct p2p_app_set_ps *pappnoa = (struct p2p_app_set_ps *)msgData;
 
 	noa.opp_ps = pappnoa->opp_ps;
 	noa.ct_window = pappnoa->ct_window;
@@ -637,13 +631,9 @@ int hdd_set_p2p_ps(struct net_device *dev, void *msgData)
  *
  * Return: the pointer of wireless dev, otherwise ERR_PTR.
  */
-static
-struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
-						 const char *name,
-						 unsigned char name_assign_type,
-						 enum nl80211_iftype type,
-						 u32 *flags,
-						 struct vif_params *params)
+static struct wireless_dev *__wlan_hdd_add_virtual_intf(
+	struct wiphy *wiphy, const char *name, unsigned char name_assign_type,
+	enum nl80211_iftype type, u32 *flags, struct vif_params *params)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct hdd_adapter *adapter = NULL;
@@ -652,7 +642,7 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 	QDF_STATUS status;
 	struct wlan_objmgr_vdev *vdev;
 	int ret;
-	struct hdd_adapter_create_param create_params = {0};
+	struct hdd_adapter_create_param create_params = { 0 };
 	uint8_t *device_address = NULL;
 
 	hdd_enter();
@@ -678,8 +668,7 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 		return ERR_PTR(-EINVAL);
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_ADD_VIRTUAL_INTF,
-		   NO_SESSION, type);
+		   TRACE_CODE_HDD_ADD_VIRTUAL_INTF, NO_SESSION, type);
 
 	status = hdd_nl_to_qdf_iface_type(type, &mode);
 	if (QDF_IS_STATUS_ERROR(status))
@@ -705,7 +694,7 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 						   WLAN_OSIF_P2P_ID);
 		if (vdev) {
 			if (ucfg_scan_get_vdev_status(vdev) !=
-							SCAN_NOT_IN_PROGRESS) {
+			    SCAN_NOT_IN_PROGRESS) {
 				wlan_abort_scan(hdd_ctx->pdev, INVAL_PDEV_ID,
 						adapter->deflink->vdev_id,
 						INVALID_SCAN_ID, false);
@@ -721,9 +710,9 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 		if (ucfg_dp_is_local_pkt_capture_enabled(hdd_ctx->psoc) ||
 		    ucfg_mlme_is_sta_mon_conc_supported(hdd_ctx->psoc) ||
 		    ucfg_pkt_capture_get_mode(hdd_ctx->psoc) !=
-						PACKET_CAPTURE_MODE_DISABLE) {
-			ret = wlan_hdd_add_monitor_check(hdd_ctx,
-							 &adapter, name, true,
+			    PACKET_CAPTURE_MODE_DISABLE) {
+			ret = wlan_hdd_add_monitor_check(hdd_ctx, &adapter,
+							 name, true,
 							 name_assign_type);
 			if (ret)
 				return ERR_PTR(-EINVAL);
@@ -743,11 +732,11 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 	if (p2p_dev_addr_admin &&
 	    (mode == QDF_P2P_GO_MODE || mode == QDF_P2P_CLIENT_MODE)) {
 		/*
-		 * Generate the P2P Interface Address. this address must be
-		 * different from the P2P Device Address.
-		 */
+     * Generate the P2P Interface Address. this address must be
+     * different from the P2P Device Address.
+     */
 		struct qdf_mac_addr p2p_device_address =
-						hdd_ctx->p2p_device_address;
+			hdd_ctx->p2p_device_address;
 		p2p_device_address.bytes[4] ^= 0x80;
 		adapter = hdd_open_adapter(hdd_ctx, mode, name,
 					   p2p_device_address.bytes,
@@ -763,8 +752,7 @@ struct wireless_dev *__wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 		if (!device_address)
 			return ERR_PTR(-EINVAL);
 
-		adapter = hdd_open_adapter(hdd_ctx, mode, name,
-					   device_address,
+		adapter = hdd_open_adapter(hdd_ctx, mode, name, device_address,
 					   name_assign_type, true,
 					   &create_params);
 		if (!adapter)
@@ -803,13 +791,9 @@ close_adapter:
 	return ERR_PTR(-EINVAL);
 }
 
-static struct wireless_dev *
-_wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
-			   const char *name,
-			   unsigned char name_assign_type,
-			   enum nl80211_iftype type,
-			   u32 *flags,
-			   struct vif_params *params)
+static struct wireless_dev *_wlan_hdd_add_virtual_intf(
+	struct wiphy *wiphy, const char *name, unsigned char name_assign_type,
+	enum nl80211_iftype type, u32 *flags, struct vif_params *params)
 {
 	struct wireless_dev *wdev;
 	struct osif_vdev_sync *vdev_sync;
@@ -819,8 +803,8 @@ _wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 	if (errno)
 		return ERR_PTR(errno);
 
-	wdev = __wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type,
-					   type, flags, params);
+	wdev = __wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type, type,
+					   flags, params);
 
 	if (IS_ERR_OR_NULL(wdev))
 		goto destroy_sync;
@@ -844,19 +828,16 @@ struct wireless_dev *wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 					       enum nl80211_iftype type,
 					       struct vif_params *params)
 {
-	return _wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type,
-					  type, &params->flags, params);
+	return _wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type, type,
+					  &params->flags, params);
 }
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)) || defined(WITH_BACKPORTS)
-struct wireless_dev *wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
-					       const char *name,
-					       unsigned char name_assign_type,
-					       enum nl80211_iftype type,
-					       u32 *flags,
-					       struct vif_params *params)
+struct wireless_dev *wlan_hdd_add_virtual_intf(
+	struct wiphy *wiphy, const char *name, unsigned char name_assign_type,
+	enum nl80211_iftype type, u32 *flags, struct vif_params *params)
 {
-	return _wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type,
-					  type, flags, params);
+	return _wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type, type,
+					  flags, params);
 }
 #else
 struct wireless_dev *wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
@@ -865,8 +846,8 @@ struct wireless_dev *wlan_hdd_add_virtual_intf(struct wiphy *wiphy,
 					       u32 *flags,
 					       struct vif_params *params)
 {
-	return _wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type,
-					  type, flags, params);
+	return _wlan_hdd_add_virtual_intf(wiphy, name, name_assign_type, type,
+					  flags, params);
 }
 #endif
 
@@ -897,10 +878,9 @@ static void hdd_deinit_mlo_interfaces(struct hdd_context *hdd_ctx,
 	}
 }
 #else
-static inline
-void hdd_deinit_mlo_interfaces(struct hdd_context *hdd_ctx,
-			       struct hdd_adapter *adapter,
-			       bool rtnl_held)
+static inline void hdd_deinit_mlo_interfaces(struct hdd_context *hdd_ctx,
+					     struct hdd_adapter *adapter,
+					     bool rtnl_held)
 {
 }
 #endif
@@ -908,8 +888,7 @@ void hdd_deinit_mlo_interfaces(struct hdd_context *hdd_ctx,
 void hdd_clean_up_interface(struct hdd_context *hdd_ctx,
 			    struct hdd_adapter *adapter)
 {
-	wlan_hdd_release_intf_addr(hdd_ctx,
-				   adapter->mac_addr.bytes);
+	wlan_hdd_release_intf_addr(hdd_ctx, adapter->mac_addr.bytes);
 	hdd_stop_adapter(hdd_ctx, adapter);
 	if (hdd_adapter_is_ml_adapter(adapter)) {
 		hdd_deinit_mlo_interfaces(hdd_ctx, adapter, true);
@@ -922,7 +901,7 @@ void hdd_clean_up_interface(struct hdd_context *hdd_ctx,
 int __wlan_hdd_del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *wdev)
 {
 	struct net_device *dev = wdev->netdev;
-	struct hdd_context *hdd_ctx = (struct hdd_context *) wiphy_priv(wiphy);
+	struct hdd_context *hdd_ctx = (struct hdd_context *)wiphy_priv(wiphy);
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 	int errno;
 
@@ -934,17 +913,17 @@ int __wlan_hdd_del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *wdev)
 	}
 
 	/*
-	 * Clear SOFTAP_INIT_DONE flag to mark SAP unload, so that we do
-	 * not restart SAP after SSR as SAP is already stopped from user space.
-	 */
+   * Clear SOFTAP_INIT_DONE flag to mark SAP unload, so that we do
+   * not restart SAP after SSR as SAP is already stopped from user space.
+   */
 	clear_bit(SOFTAP_INIT_DONE, &adapter->deflink->link_flags);
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_DEL_VIRTUAL_INTF,
-		   adapter->deflink->vdev_id, adapter->device_mode);
+		   TRACE_CODE_HDD_DEL_VIRTUAL_INTF, adapter->deflink->vdev_id,
+		   adapter->device_mode);
 
-	hdd_debug("Device_mode %s(%d)",
-		  qdf_opmode_str(adapter->device_mode), adapter->device_mode);
+	hdd_debug("Device_mode %s(%d)", qdf_opmode_str(adapter->device_mode),
+		  adapter->device_mode);
 
 	errno = wlan_hdd_validate_context(hdd_ctx);
 	if (errno)
@@ -959,10 +938,9 @@ int __wlan_hdd_del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *wdev)
 	    ucfg_pre_cac_is_active(hdd_ctx->psoc)) {
 		ucfg_pre_cac_clean_up(hdd_ctx->psoc);
 		hdd_clean_up_interface(hdd_ctx, adapter);
-	} else if (wlan_hdd_is_session_type_monitor(
-					adapter->device_mode) &&
+	} else if (wlan_hdd_is_session_type_monitor(adapter->device_mode) &&
 		   ucfg_pkt_capture_get_mode(hdd_ctx->psoc) !=
-						PACKET_CAPTURE_MODE_DISABLE) {
+			   PACKET_CAPTURE_MODE_DISABLE) {
 		wlan_hdd_del_monitor(hdd_ctx, adapter, TRUE);
 	} else {
 		hdd_clean_up_interface(hdd_ctx, adapter);
@@ -1005,8 +983,8 @@ int wlan_hdd_del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *wdev)
  *
  * Return: true if it is QOS action frame else false.
  */
-static inline bool
-hdd_is_qos_action_frame(uint8_t *pb_frames, uint32_t frame_len)
+static inline bool hdd_is_qos_action_frame(uint8_t *pb_frames,
+					   uint32_t frame_len)
 {
 	if (frame_len <= WLAN_HDD_PUBLIC_ACTION_FRAME_OFFSET + 1) {
 		hdd_debug("Not a QOS frame len: %d", frame_len);
@@ -1029,7 +1007,7 @@ hdd_is_qos_action_frame(uint8_t *pb_frames, uint32_t frame_len)
 static void
 wlan_hdd_set_rxmgmt_external_auth_flag(enum nl80211_rxmgmt_flags *nl80211_flag)
 {
-		*nl80211_flag |= NL80211_RXMGMT_FLAG_EXTERNAL_AUTH;
+	*nl80211_flag |= NL80211_RXMGMT_FLAG_EXTERNAL_AUTH;
 }
 #else
 static void
@@ -1050,18 +1028,17 @@ static void
 wlan_hdd_cfg80211_convert_rxmgmt_flags(enum rxmgmt_flags flag,
 				       enum nl80211_rxmgmt_flags *nl80211_flag)
 {
-
 	if (flag & RXMGMT_FLAG_EXTERNAL_AUTH) {
 		wlan_hdd_set_rxmgmt_external_auth_flag(nl80211_flag);
 	}
-
 }
 
-static void
-__hdd_indicate_mgmt_frame_to_user(struct hdd_adapter *adapter,
-				  uint32_t frm_len, uint8_t *pb_frames,
-				  uint8_t frame_type, uint32_t rx_freq,
-				  int8_t rx_rssi, enum rxmgmt_flags rx_flags)
+static void __hdd_indicate_mgmt_frame_to_user(struct hdd_adapter *adapter,
+					      uint32_t frm_len,
+					      uint8_t *pb_frames,
+					      uint8_t frame_type,
+					      uint32_t rx_freq, int8_t rx_rssi,
+					      enum rxmgmt_flags rx_flags)
 {
 	uint8_t type = 0;
 	uint8_t sub_type = 0;
@@ -1074,8 +1051,8 @@ __hdd_indicate_mgmt_frame_to_user(struct hdd_adapter *adapter,
 	bool eht_capab;
 	struct hdd_ap_ctx *ap_ctx;
 
-	hdd_debug("Frame Type = %d Frame Length = %d freq = %d",
-		  frame_type, frm_len, rx_freq);
+	hdd_debug("Frame Type = %d Frame Length = %d freq = %d", frame_type,
+		  frm_len, rx_freq);
 
 	if (!adapter) {
 		hdd_err("adapter is NULL");
@@ -1095,10 +1072,9 @@ __hdd_indicate_mgmt_frame_to_user(struct hdd_adapter *adapter,
 
 	type = WLAN_HDD_GET_TYPE_FRM_FC(pb_frames[0]);
 	sub_type = WLAN_HDD_GET_SUBTYPE_FRM_FC(pb_frames[0]);
-	if (type == SIR_MAC_MGMT_FRAME &&
-	    sub_type == SIR_MAC_MGMT_AUTH &&
-	    frm_len > (sizeof(struct wlan_frame_hdr) +
-		       WLAN_AUTH_FRAME_MIN_LEN)) {
+	if (type == SIR_MAC_MGMT_FRAME && sub_type == SIR_MAC_MGMT_AUTH &&
+	    frm_len >
+		    (sizeof(struct wlan_frame_hdr) + WLAN_AUTH_FRAME_MIN_LEN)) {
 		auth_algo = *(uint16_t *)(pb_frames +
 					  sizeof(struct wlan_frame_hdr));
 		if (auth_algo == eSIR_AUTH_TYPE_PASN) {
@@ -1112,10 +1088,11 @@ __hdd_indicate_mgmt_frame_to_user(struct hdd_adapter *adapter,
 	}
 
 	/* Get adapter from Destination mac address of the frame */
-	if (type == SIR_MAC_MGMT_FRAME &&
-	    sub_type != SIR_MAC_MGMT_PROBE_REQ && !is_pasn_auth_frame &&
+	if (type == SIR_MAC_MGMT_FRAME && sub_type != SIR_MAC_MGMT_PROBE_REQ &&
+	    !is_pasn_auth_frame &&
 	    !qdf_is_macaddr_broadcast(
-	     (struct qdf_mac_addr *)&pb_frames[WLAN_HDD_80211_FRM_DA_OFFSET])) {
+		    (struct qdf_mac_addr
+			     *)&pb_frames[WLAN_HDD_80211_FRM_DA_OFFSET])) {
 		dest_addr = &pb_frames[WLAN_HDD_80211_FRM_DA_OFFSET];
 		adapter = hdd_get_adapter_by_macaddr(hdd_ctx, dest_addr);
 		if (!adapter)
@@ -1123,27 +1100,29 @@ __hdd_indicate_mgmt_frame_to_user(struct hdd_adapter *adapter,
 								  dest_addr);
 		if (!adapter) {
 			/*
-			 * Under assumption that we don't receive any action
-			 * frame with BCST as destination,
-			 * we are dropping action frame
-			 */
-			hdd_err("adapter for action frame is NULL Macaddr = "
-				QDF_MAC_ADDR_FMT, QDF_MAC_ADDR_REF(dest_addr));
-			hdd_debug("Frame Type = %d Frame Length = %d subType = %d",
-				  frame_type, frm_len, sub_type);
+       * Under assumption that we don't receive any action
+       * frame with BCST as destination,
+       * we are dropping action frame
+       */
+			hdd_err("adapter for action frame is NULL Macaddr = " QDF_MAC_ADDR_FMT,
+				QDF_MAC_ADDR_REF(dest_addr));
+			hdd_debug(
+				"Frame Type = %d Frame Length = %d subType = %d",
+				frame_type, frm_len, sub_type);
 			/*
-			 * We will receive broadcast management frames
-			 * in OCB mode
-			 */
+       * We will receive broadcast management frames
+       * in OCB mode
+       */
 			adapter = hdd_get_adapter(hdd_ctx, QDF_OCB_MODE);
-			if (!adapter || !qdf_is_macaddr_broadcast(
-			    (struct qdf_mac_addr *)dest_addr)) {
+			if (!adapter ||
+			    !qdf_is_macaddr_broadcast(
+				    (struct qdf_mac_addr *)dest_addr)) {
 				/*
-				 * Under assumption that we don't
-				 * receive any action frame with BCST
-				 * as destination, we are dropping
-				 * action frame
-				 */
+         * Under assumption that we don't
+         * receive any action frame with BCST
+         * as destination, we are dropping
+         * action frame
+         */
 				return;
 			}
 		}
@@ -1180,24 +1159,21 @@ __hdd_indicate_mgmt_frame_to_user(struct hdd_adapter *adapter,
 
 	/* Indicate Frame Over Normal Interface */
 	hdd_debug("Indicate Frame over NL80211 sessionid : %d, idx :%d",
-		   assoc_adapter->deflink->vdev_id,
-		   assoc_adapter->dev->ifindex);
+		  assoc_adapter->deflink->vdev_id, assoc_adapter->dev->ifindex);
 
 	wlan_hdd_cfg80211_convert_rxmgmt_flags(rx_flags, &nl80211_flag);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
-	cfg80211_rx_mgmt(assoc_adapter->dev->ieee80211_ptr,
-			 rx_freq, rx_rssi * 100, pb_frames,
-			 frm_len, NL80211_RXMGMT_FLAG_ANSWERED | nl80211_flag);
+	cfg80211_rx_mgmt(assoc_adapter->dev->ieee80211_ptr, rx_freq,
+			 rx_rssi * 100, pb_frames, frm_len,
+			 NL80211_RXMGMT_FLAG_ANSWERED | nl80211_flag);
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0))
-	cfg80211_rx_mgmt(assoc_adapter->dev->ieee80211_ptr,
-			 rx_freq, rx_rssi * 100, pb_frames,
-			 frm_len, NL80211_RXMGMT_FLAG_ANSWERED,
-			 GFP_ATOMIC);
+	cfg80211_rx_mgmt(assoc_adapter->dev->ieee80211_ptr, rx_freq,
+			 rx_rssi * 100, pb_frames, frm_len,
+			 NL80211_RXMGMT_FLAG_ANSWERED, GFP_ATOMIC);
 #else
 	cfg80211_rx_mgmt(assoc_adapter->dev->ieee80211_ptr, rx_freq,
-			 rx_rssi * 100,
-			 pb_frames, frm_len, GFP_ATOMIC);
+			 rx_rssi * 100, pb_frames, frm_len, GFP_ATOMIC);
 #endif /* LINUX_VERSION_CODE */
 }
 
@@ -1214,21 +1190,21 @@ void hdd_indicate_mgmt_frame_to_user(struct hdd_adapter *adapter,
 		return;
 
 	__hdd_indicate_mgmt_frame_to_user(adapter, frm_len, pb_frames,
-					  frame_type, rx_freq,
-					  rx_rssi, rx_flags);
+					  frame_type, rx_freq, rx_rssi,
+					  rx_flags);
 	osif_vdev_sync_op_stop(vdev_sync);
 }
 
 int wlan_hdd_set_power_save(struct hdd_adapter *adapter,
-	struct p2p_ps_config *ps_config)
+			    struct p2p_ps_config *ps_config)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct hdd_context *hdd_ctx;
 	QDF_STATUS status;
 
 	if (!adapter || !ps_config) {
-		hdd_err("null param, adapter:%pK, ps_config:%pK",
-			adapter, ps_config);
+		hdd_err("null param, adapter:%pK, ps_config:%pK", adapter,
+			ps_config);
 		return -EINVAL;
 	}
 
@@ -1239,11 +1215,13 @@ int wlan_hdd_set_power_save(struct hdd_adapter *adapter,
 		return -EINVAL;
 	}
 
-	hdd_debug("opp ps:%d, ct window:%d, duration:%d, interval:%d, count:%d, single noa duration:%d, ps selection:%d, vdev id:%d",
-		ps_config->opp_ps, ps_config->ct_window,
-		ps_config->duration, ps_config->interval,
-		ps_config->count, ps_config->single_noa_duration,
-		ps_config->ps_selection, ps_config->vdev_id);
+	hdd_debug(
+		"opp ps:%d, ct window:%d, duration:%d, interval:%d, count:%d, "
+		"single noa duration:%d, ps selection:%d, vdev id:%d",
+		ps_config->opp_ps, ps_config->ct_window, ps_config->duration,
+		ps_config->interval, ps_config->count,
+		ps_config->single_noa_duration, ps_config->ps_selection,
+		ps_config->vdev_id);
 
 	status = ucfg_p2p_set_ps(psoc, ps_config);
 	hdd_debug("p2p set power save, status:%d", status);
@@ -1273,26 +1251,24 @@ int wlan_hdd_set_power_save(struct hdd_adapter *adapter,
 static void wlan_hdd_update_mcc_p2p_quota(struct hdd_adapter *adapter,
 					  bool is_set)
 {
-
 	hdd_info("Set/reset P2P quota: %d", is_set);
 	if (is_set) {
 		if (adapter->device_mode == QDF_STA_MODE)
-			wlan_hdd_set_mcc_p2p_quota(adapter,
-				100 - HDD_DEFAULT_MCC_P2P_QUOTA
-			);
+			wlan_hdd_set_mcc_p2p_quota(
+				adapter, 100 - HDD_DEFAULT_MCC_P2P_QUOTA);
 		else if (adapter->device_mode == QDF_P2P_GO_MODE)
-			wlan_hdd_go_set_mcc_p2p_quota(adapter,
-				HDD_DEFAULT_MCC_P2P_QUOTA);
+			wlan_hdd_go_set_mcc_p2p_quota(
+				adapter, HDD_DEFAULT_MCC_P2P_QUOTA);
 		else
 			wlan_hdd_set_mcc_p2p_quota(adapter,
-				HDD_DEFAULT_MCC_P2P_QUOTA);
+						   HDD_DEFAULT_MCC_P2P_QUOTA);
 	} else {
 		if (adapter->device_mode == QDF_P2P_GO_MODE)
 			wlan_hdd_go_set_mcc_p2p_quota(adapter,
-				HDD_RESET_MCC_P2P_QUOTA);
+						      HDD_RESET_MCC_P2P_QUOTA);
 		else
 			wlan_hdd_set_mcc_p2p_quota(adapter,
-				HDD_RESET_MCC_P2P_QUOTA);
+						   HDD_RESET_MCC_P2P_QUOTA);
 	}
 }
 
@@ -1318,7 +1294,7 @@ int32_t wlan_hdd_set_mas(struct hdd_adapter *adapter, uint8_t mas_value)
 						     &enable_mcc_adaptive_sch);
 		if (enable_mcc_adaptive_sch) {
 			ucfg_policy_mgr_set_dynamic_mcc_adaptive_sch(
-							hdd_ctx->psoc, false);
+				hdd_ctx->psoc, false);
 
 			if (QDF_STATUS_SUCCESS != sme_set_mas(false)) {
 				hdd_err("Failed to disable MAS");
@@ -1336,7 +1312,7 @@ int32_t wlan_hdd_set_mas(struct hdd_adapter *adapter, uint8_t mas_value)
 						     &enable_mcc_adaptive_sch);
 		if (enable_mcc_adaptive_sch) {
 			ucfg_policy_mgr_set_dynamic_mcc_adaptive_sch(
-							hdd_ctx->psoc, true);
+				hdd_ctx->psoc, true);
 
 			if (QDF_STATUS_SUCCESS != sme_set_mas(true)) {
 				hdd_err("Failed to enable MAS");
@@ -1361,9 +1337,10 @@ int32_t wlan_hdd_set_mas(struct hdd_adapter *adapter, uint8_t mas_value)
  * Return: operating channel updated in set value
  *
  */
-static uint32_t set_first_connection_operating_channel(
-		struct hdd_context *hdd_ctx, uint32_t set_value,
-		enum QDF_OPMODE dev_mode)
+static uint32_t
+set_first_connection_operating_channel(struct hdd_context *hdd_ctx,
+				       uint32_t set_value,
+				       enum QDF_OPMODE dev_mode)
 {
 	uint8_t operating_channel;
 	uint32_t oper_chan_freq;
@@ -1373,8 +1350,8 @@ static uint32_t set_first_connection_operating_channel(
 		hdd_err(" First adapter operating channel is invalid");
 		return -EINVAL;
 	}
-	operating_channel = wlan_reg_freq_to_chan(hdd_ctx->pdev,
-						  oper_chan_freq);
+	operating_channel =
+		wlan_reg_freq_to_chan(hdd_ctx->pdev, oper_chan_freq);
 
 	hdd_info("First connection channel No.:%d and quota:%dms",
 		 operating_channel, set_value);
@@ -1382,9 +1359,9 @@ static uint32_t set_first_connection_operating_channel(
 	set_value = set_value << 8;
 
 	/*
-	 * Store the channel number of 1st channel at bits 7-0
-	 * of the bit vector
-	 */
+   * Store the channel number of 1st channel at bits 7-0
+   * of the bit vector
+   */
 	return set_value | operating_channel;
 }
 
@@ -1401,15 +1378,15 @@ static uint32_t set_first_connection_operating_channel(
  * Return: operating channel updated in set value
  *
  */
-static uint32_t set_second_connection_operating_channel(
-		struct hdd_context *hdd_ctx, uint32_t set_value,
-		uint8_t vdev_id)
+static uint32_t
+set_second_connection_operating_channel(struct hdd_context *hdd_ctx,
+					uint32_t set_value, uint8_t vdev_id)
 {
 	uint8_t operating_channel;
 
-	operating_channel = wlan_reg_freq_to_chan(hdd_ctx->pdev,
-						  policy_mgr_get_mcc_operating_channel(
-						  hdd_ctx->psoc, vdev_id));
+	operating_channel = wlan_reg_freq_to_chan(
+		hdd_ctx->pdev,
+		policy_mgr_get_mcc_operating_channel(hdd_ctx->psoc, vdev_id));
 
 	if (operating_channel == 0) {
 		hdd_err("Second adapter operating channel is invalid");
@@ -1417,18 +1394,18 @@ static uint32_t set_second_connection_operating_channel(
 	}
 
 	hdd_info("Second connection channel No.:%d and quota:%dms",
-			operating_channel, set_value);
+		 operating_channel, set_value);
 	/*
-	 * Now move the time quota and channel number of the
-	 * 1st adapter to bits 23-16 and bits 15-8 of the bit
-	 * vector, respectively.
-	 */
+   * Now move the time quota and channel number of the
+   * 1st adapter to bits 23-16 and bits 15-8 of the bit
+   * vector, respectively.
+   */
 	set_value = set_value << 8;
 
 	/*
-	 * Set the channel number for 2nd MCC vdev at bits
-	 * 7-0 of set_value
-	 */
+   * Set the channel number for 2nd MCC vdev at bits
+   * 7-0 of set_value
+   */
 	return set_value | operating_channel;
 }
 
@@ -1442,8 +1419,7 @@ static uint32_t set_second_connection_operating_channel(
  * Return: Configuration message posting status, SUCCESS or Fail
  *
  */
-int wlan_hdd_set_mcc_p2p_quota(struct hdd_adapter *adapter,
-			       uint32_t set_value)
+int wlan_hdd_set_mcc_p2p_quota(struct hdd_adapter *adapter, uint32_t set_value)
 {
 	int32_t ret = 0;
 	uint32_t concurrent_state;
@@ -1461,26 +1437,25 @@ int wlan_hdd_set_mcc_p2p_quota(struct hdd_adapter *adapter,
 		return -EINVAL;
 	}
 
-	concurrent_state = policy_mgr_get_concurrency_mode(
-		hdd_ctx->psoc);
+	concurrent_state = policy_mgr_get_concurrency_mode(hdd_ctx->psoc);
 	/*
-	 * Check if concurrency mode is active.
-	 * Need to modify this code to support MCC modes other than STA/P2P
-	 */
+   * Check if concurrency mode is active.
+   * Need to modify this code to support MCC modes other than STA/P2P
+   */
 	if (((concurrent_state & sta_cli_bit_mask) == sta_cli_bit_mask) ||
 	    ((concurrent_state & sta_go_bit_mask) == sta_go_bit_mask)) {
 		hdd_info("STA & P2P are both enabled");
 
 		/*
-		 * The channel numbers for both adapters and the time
-		 * quota for the 1st adapter, i.e., one specified in cmd
-		 * are formatted as a bit vector then passed on to WMA
-		 * +***********************************************************+
-		 * |bit 31-24  | bit 23-16  |   bits 15-8   |   bits 7-0       |
-		 * |  Unused   | Quota for  | chan. # for   |   chan. # for    |
-		 * |           | 1st chan.  | 1st chan.     |   2nd chan.      |
-		 * +***********************************************************+
-		 */
+     * The channel numbers for both adapters and the time
+     * quota for the 1st adapter, i.e., one specified in cmd
+     * are formatted as a bit vector then passed on to WMA
+     * +***********************************************************+
+     * |bit 31-24  | bit 23-16  |   bits 15-8   |   bits 7-0       |
+     * |  Unused   | Quota for  | chan. # for   |   chan. # for    |
+     * |           | 1st chan.  | 1st chan.     |   2nd chan.      |
+     * +***********************************************************+
+     */
 
 		set_value = set_first_connection_operating_channel(
 			hdd_ctx, set_value, adapter->device_mode);
@@ -1520,23 +1495,22 @@ void wlan_hdd_set_mcc_latency(struct hdd_adapter *adapter, int set_value)
 		return;
 	}
 
-	concurrent_state = policy_mgr_get_concurrency_mode(
-		hdd_ctx->psoc);
+	concurrent_state = policy_mgr_get_concurrency_mode(hdd_ctx->psoc);
 	/**
-	 * Check if concurrency mode is active.
-	 * Need to modify this code to support MCC modes other than STA/P2P
-	 */
+   * Check if concurrency mode is active.
+   * Need to modify this code to support MCC modes other than STA/P2P
+   */
 	if (((concurrent_state & sta_cli_bit_mask) == sta_cli_bit_mask) ||
 	    ((concurrent_state & sta_go_bit_mask) == sta_go_bit_mask)) {
 		hdd_info("STA & P2P are both enabled");
 		/*
-		 * The channel number and latency are formatted in
-		 * a bit vector then passed on to WMA layer.
-		 * +**********************************************+
-		 * |bits 31-16 |      bits 15-8    |  bits 7-0    |
-		 * |  Unused   | latency - Chan. 1 |  channel no. |
-		 * +**********************************************+
-		 */
+     * The channel number and latency are formatted in
+     * a bit vector then passed on to WMA layer.
+     * +**********************************************+
+     * |bits 31-16 |      bits 15-8    |  bits 7-0    |
+     * |  Unused   | latency - Chan. 1 |  channel no. |
+     * +**********************************************+
+     */
 		set_value = set_first_connection_operating_channel(
 			hdd_ctx, set_value, adapter->device_mode);
 

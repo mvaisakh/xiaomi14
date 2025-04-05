@@ -14,10 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_iot_sim_utils_api.h>
-#include <qdf_module.h>
 #include "../../core/iot_sim_cmn_api_i.h"
+#include <qdf_module.h>
 #include <wlan_iot_sim_tgt_api.h>
+#include <wlan_iot_sim_utils_api.h>
 #include <wlan_objmgr_pdev_obj.h>
 #include <wlan_objmgr_vdev_obj.h>
 
@@ -50,17 +50,13 @@ QDF_STATUS
 wlan_iot_sim_init(void)
 {
 	if (wlan_objmgr_register_pdev_create_handler(
-		WLAN_IOT_SIM_COMP,
-		wlan_iot_sim_pdev_obj_create_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_IOT_SIM_COMP, wlan_iot_sim_pdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_register_pdev_destroy_handler(
-		WLAN_IOT_SIM_COMP,
-		wlan_iot_sim_pdev_obj_destroy_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_IOT_SIM_COMP, wlan_iot_sim_pdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -71,17 +67,13 @@ QDF_STATUS
 wlan_iot_sim_deinit(void)
 {
 	if (wlan_objmgr_unregister_pdev_create_handler(
-		WLAN_IOT_SIM_COMP,
-		wlan_iot_sim_pdev_obj_create_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_IOT_SIM_COMP, wlan_iot_sim_pdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_unregister_pdev_destroy_handler(
-		WLAN_IOT_SIM_COMP,
-		wlan_iot_sim_pdev_obj_destroy_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_IOT_SIM_COMP, wlan_iot_sim_pdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -91,9 +83,8 @@ wlan_iot_sim_deinit(void)
 void wlan_lmac_if_iot_sim_register_rx_ops(struct wlan_lmac_if_rx_ops *rx_ops)
 {
 	struct wlan_lmac_if_iot_sim_rx_ops *iot_sim_ops =
-						&rx_ops->iot_sim_rx_ops;
+		&rx_ops->iot_sim_rx_ops;
 
 	iot_sim_ops->iot_sim_cmd_handler = iot_sim_cmd_handler;
 	iot_sim_ops->iot_sim_register_cb = iot_sim_register_callbacks;
-
 }

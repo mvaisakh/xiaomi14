@@ -3,13 +3,13 @@
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
-#include <linux/slab.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
 #include <linux/clk.h>
 #include <linux/clk/qcom.h>
+#include <linux/slab.h>
 
-#include "mmrm_debug.h"
 #include "mmrm_clk_rsrc_mgr.h"
+#include "mmrm_debug.h"
 #include "mmrm_fixedpoint.h"
 
 #define Q16_INT(q) ((q) >> 16)
@@ -21,12 +21,13 @@
 /* Max HW DRV Instances (power states 0-4)*/
 #define MAX_POWER_STATES 5
 
-static int mmrm_sw_update_freq(
-	struct mmrm_sw_clk_mgr_info *sinfo, struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
+static int mmrm_sw_update_freq(struct mmrm_sw_clk_mgr_info *sinfo,
+			       struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
 {
 	int rc = 0;
 	u32 i;
-	struct mmrm_driver_data *drv_data = (struct mmrm_driver_data *)sinfo->driver_data;
+	struct mmrm_driver_data *drv_data =
+		(struct mmrm_driver_data *)sinfo->driver_data;
 	struct mmrm_clk_platform_resources *cres = &drv_data->clk_res;
 	struct voltage_corner_set *cset = &cres->corner_set;
 	long clk_val_min, clk_val_max, clk_val, clk_val_round;
@@ -35,10 +36,7 @@ static int mmrm_sw_update_freq(
 	clk_val_min = clk_round_rate(tbl_entry->clk, 1);
 	clk_val_max = clk_round_rate(tbl_entry->clk, ~0UL);
 	d_mpr_h("%s: csid(0x%x): min_clk_rate(%llu) max_clk_rate(%llu)\n",
-		__func__,
-		tbl_entry->clk_src_id,
-		clk_val_min,
-		clk_val_max);
+		__func__, tbl_entry->clk_src_id, clk_val_min, clk_val_max);
 
 	/* init with min val */
 	for (i = 0; i < MMRM_VDD_LEVEL_MAX; i++) {
@@ -46,21 +44,27 @@ static int mmrm_sw_update_freq(
 	}
 
 	/* step through rates */
-	for (clk_val = clk_val_min; clk_val < clk_val_max; clk_val += CLK_RATE_STEP) {
+	for (clk_val = clk_val_min; clk_val < clk_val_max;
+	     clk_val += CLK_RATE_STEP) {
 		/* get next clk rate */
 		clk_val_round = clk_round_rate(tbl_entry->clk, clk_val);
 		if (clk_val_round > clk_val_min) {
 			clk_val_min = clk_val_round;
 
 			/* Get voltage corner */
-			voltage_corner = qcom_clk_get_voltage(tbl_entry->clk, clk_val_round);
-			if (voltage_corner < 0 || voltage_corner > mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_TURBO]) {
+			voltage_corner = qcom_clk_get_voltage(tbl_entry->clk,
+							      clk_val_round);
+			if (voltage_corner < 0 ||
+			    voltage_corner >
+				    mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_TURBO]) {
 				break;
 			}
 
 			/* voltage corner is below svsl1 */
-			if (voltage_corner < mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_LOW_SVS])
-				voltage_corner = mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_LOW_SVS];
+			if (voltage_corner <
+			    mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_LOW_SVS])
+				voltage_corner = mmrm_sw_vdd_corner
+					[MMRM_VDD_LEVEL_LOW_SVS];
 
 			/* match vdd level */
 			for (i = 0; i < MMRM_VDD_LEVEL_MAX; i++) {
@@ -77,43 +81,42 @@ static int mmrm_sw_update_freq(
 
 	/* print results */
 	for (i = 0; i < MMRM_VDD_LEVEL_MAX; i++) {
-		d_mpr_h("%s: csid(0x%x) corner(%s) clk_rate(%llu)\n",
-			__func__,
-			tbl_entry->clk_src_id,
-			cset->corner_tbl[i].name,
+		d_mpr_h("%s: csid(0x%x) corner(%s) clk_rate(%llu)\n", __func__,
+			tbl_entry->clk_src_id, cset->corner_tbl[i].name,
 			tbl_entry->freq[i]);
 	}
 
 	return rc;
 }
 
-static void mmrm_sw_print_client_data(struct mmrm_sw_clk_mgr_info *sinfo,
-			struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
+static void
+mmrm_sw_print_client_data(struct mmrm_sw_clk_mgr_info *sinfo,
+			  struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
 {
-	struct mmrm_driver_data *drv_data = (struct mmrm_driver_data *)sinfo->driver_data;
+	struct mmrm_driver_data *drv_data =
+		(struct mmrm_driver_data *)sinfo->driver_data;
 	struct mmrm_clk_platform_resources *cres = &drv_data->clk_res;
 	struct voltage_corner_set *cset = &cres->corner_set;
 	u32 i, j;
 
 	for (i = 0; i < MMRM_VDD_LEVEL_MAX; i++) {
 		d_mpr_p("%s: csid(0x%x) corner(%s) dyn_pwr(%zu) leak_pwr(%zu)\n",
-				__func__,
-				tbl_entry->clk_src_id,
-				cset->corner_tbl[i].name,
-				tbl_entry->dyn_pwr[i],
-				tbl_entry->leak_pwr[i]);
+			__func__, tbl_entry->clk_src_id,
+			cset->corner_tbl[i].name, tbl_entry->dyn_pwr[i],
+			tbl_entry->leak_pwr[i]);
 
 		for (j = 0; j < MMRM_VDD_LEVEL_MAX; j++) {
 			d_mpr_p("%s: csid(0x%x) total_pwr(%zu) cur_ma(%zu)\n",
-				__func__,
-				tbl_entry->clk_src_id,
-				(tbl_entry->dyn_pwr[i] + tbl_entry->leak_pwr[i]),
+				__func__, tbl_entry->clk_src_id,
+				(tbl_entry->dyn_pwr[i] +
+				 tbl_entry->leak_pwr[i]),
 				tbl_entry->current_ma[i][j]);
 		}
 	}
 }
 
-static void mmrm_sw_print_crm_table(struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
+static void
+mmrm_sw_print_crm_table(struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
 {
 	int i;
 
@@ -121,38 +124,39 @@ static void mmrm_sw_print_crm_table(struct mmrm_sw_clk_client_tbl_entry *tbl_ent
 		return;
 
 	for (i = 0; i < tbl_entry->crm_client_tbl_size; i++)
-		d_mpr_h("%s: csid(0x%x) client tbl idx %d val %llu\n",
-			__func__, tbl_entry->clk_src_id,
-			i, tbl_entry->crm_client_tbl[i]);
+		d_mpr_h("%s: csid(0x%x) client tbl idx %d val %llu\n", __func__,
+			tbl_entry->clk_src_id, i, tbl_entry->crm_client_tbl[i]);
 	d_mpr_h("%s: csid(0x%x) client tbl max rate (idx %d) : %llu\n",
-			__func__, tbl_entry->clk_src_id, tbl_entry->max_rate_idx,
-			tbl_entry->clk_rate);
+		__func__, tbl_entry->clk_src_id, tbl_entry->max_rate_idx,
+		tbl_entry->clk_rate);
 }
 
-static u64 mmrm_sw_get_max_crm_rate(
-	struct mmrm_sw_clk_client_tbl_entry *tbl_entry,
-	struct mmrm_client_data *client_data, unsigned long new_clk_val,
-	int *new_max_rate_idx)
+static u64
+mmrm_sw_get_max_crm_rate(struct mmrm_sw_clk_client_tbl_entry *tbl_entry,
+			 struct mmrm_client_data *client_data,
+			 unsigned long new_clk_val, int *new_max_rate_idx)
 {
 	u32 crm_max_rate, new_val_idx;
 
 	crm_max_rate = tbl_entry->clk_rate;
 	*new_max_rate_idx = tbl_entry->max_rate_idx;
 
-	new_val_idx = (client_data->drv_type == MMRM_CRM_SW_DRV) ?
-			(tbl_entry->crm_client_tbl_size - 1) : (tbl_entry->num_pwr_states *
-			client_data->crm_drv_idx + client_data->pwr_st);
+	new_val_idx =
+		(client_data->drv_type == MMRM_CRM_SW_DRV) ?
+			(tbl_entry->crm_client_tbl_size - 1) :
+			(tbl_entry->num_pwr_states * client_data->crm_drv_idx +
+			 client_data->pwr_st);
 
 	if (new_clk_val > crm_max_rate) {
 		crm_max_rate = new_clk_val;
 		*new_max_rate_idx = new_val_idx;
 	} else {
 		/*
-		 * Get the new crm_max_rate from all SW/HW clients.
-		 * If the index with current max value is being updated with a lower value,
-		 * check if that index still has the max value or if another index has
-		 * the new max value.
-		 */
+     * Get the new crm_max_rate from all SW/HW clients.
+     * If the index with current max value is being updated with a lower value,
+     * check if that index still has the max value or if another index has
+     * the new max value.
+     */
 		if (new_val_idx == tbl_entry->max_rate_idx) {
 			int i;
 
@@ -161,8 +165,10 @@ static u64 mmrm_sw_get_max_crm_rate(
 				if (i == tbl_entry->max_rate_idx)
 					continue;
 
-				if (tbl_entry->crm_client_tbl[i] > crm_max_rate) {
-					crm_max_rate = tbl_entry->crm_client_tbl[i];
+				if (tbl_entry->crm_client_tbl[i] >
+				    crm_max_rate) {
+					crm_max_rate =
+						tbl_entry->crm_client_tbl[i];
 					*new_max_rate_idx = i;
 				}
 			}
@@ -175,7 +181,8 @@ static u64 mmrm_sw_get_max_crm_rate(
 		}
 	}
 
-	d_mpr_h("%s: csid(0x%x) new clk rate(idx %d) = %llu, crm_max_rate(idx %d) = %llu\n",
+	d_mpr_h("%s: csid(0x%x) new clk rate(idx %d) = %llu, crm_max_rate(idx %d) = "
+		"%llu\n",
 		__func__, tbl_entry->clk_src_id, new_val_idx, new_clk_val,
 		*new_max_rate_idx, crm_max_rate);
 
@@ -183,48 +190,49 @@ static u64 mmrm_sw_get_max_crm_rate(
 }
 
 static int mmrm_sw_update_curr(struct mmrm_sw_clk_mgr_info *sinfo,
-	struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
+			       struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
 {
 	u32 i, j;
-	struct mmrm_driver_data *drv_data = (struct mmrm_driver_data *)sinfo->driver_data;
+	struct mmrm_driver_data *drv_data =
+		(struct mmrm_driver_data *)sinfo->driver_data;
 	struct mmrm_clk_platform_resources *cres = &drv_data->clk_res;
 	struct voltage_corner_set *cset = &cres->corner_set;
 	u32 scaling_factor = 0, voltage_factor = 0;
-	fp_t nom_dyn_pwr, nom_leak_pwr, dyn_sc, leak_sc,
-		volt, dyn_pwr, leak_pwr, pwr_mw, nom_freq;
+	fp_t nom_dyn_pwr, nom_leak_pwr, dyn_sc, leak_sc, volt, dyn_pwr,
+		leak_pwr, pwr_mw, nom_freq;
 	u32 c;
 	struct nom_clk_src_info *nom_tbl_entry = NULL;
 
 	for (c = 0; c < sinfo->tot_clk_clients; c++) {
-		if (tbl_entry->clk_src_id == sinfo->clk_client_tbl[c].clk_src_id) {
+		if (tbl_entry->clk_src_id ==
+		    sinfo->clk_client_tbl[c].clk_src_id) {
 			nom_tbl_entry = &cres->nom_clk_set.clk_src_tbl[c];
 			break;
 		}
 	}
 	if (nom_tbl_entry == NULL) {
-		d_mpr_h("%s: can't find 0x%x clock src ID\n",
-			__func__,
+		d_mpr_h("%s: can't find 0x%x clock src ID\n", __func__,
 			tbl_entry->clk_src_id);
 		return -EINVAL;
 	}
 
 	nom_dyn_pwr = FP(Q16_INT(nom_tbl_entry->nom_dyn_pwr),
-		Q16_FRAC(nom_tbl_entry->nom_dyn_pwr), 100);
+			 Q16_FRAC(nom_tbl_entry->nom_dyn_pwr), 100);
 
 	nom_leak_pwr = FP(Q16_INT(nom_tbl_entry->nom_leak_pwr),
-		Q16_FRAC(nom_tbl_entry->nom_leak_pwr), 100);
+			  Q16_FRAC(nom_tbl_entry->nom_leak_pwr), 100);
 
 	nom_freq = tbl_entry->freq[MMRM_VDD_LEVEL_NOM];
 
 	/* update power & current entries for all levels */
 	for (i = 0; i < MMRM_VDD_LEVEL_MAX; i++) {
 		scaling_factor = cset->corner_tbl[i].scaling_factor_dyn;
-		dyn_sc = FP(
-			Q16_INT(scaling_factor), Q16_FRAC(scaling_factor), 100);
+		dyn_sc = FP(Q16_INT(scaling_factor), Q16_FRAC(scaling_factor),
+			    100);
 
 		scaling_factor = cset->corner_tbl[i].scaling_factor_leak;
-		leak_sc = FP(
-			Q16_INT(scaling_factor), Q16_FRAC(scaling_factor), 100);
+		leak_sc = FP(Q16_INT(scaling_factor), Q16_FRAC(scaling_factor),
+			     100);
 
 		/* Frequency scaling */
 		pwr_mw = fp_mult(nom_dyn_pwr, tbl_entry->freq[i]);
@@ -239,21 +247,22 @@ static int mmrm_sw_update_curr(struct mmrm_sw_clk_mgr_info *sinfo,
 
 		for (j = 0; j < MMRM_VDD_LEVEL_MAX; j++) {
 			voltage_factor = cset->corner_tbl[j].volt_factor;
-			volt = FP(Q16_INT(voltage_factor), Q16_FRAC(voltage_factor), 100);
+			volt = FP(Q16_INT(voltage_factor),
+				  Q16_FRAC(voltage_factor), 100);
 
-			tbl_entry->current_ma[i][j] = fp_round(fp_div((dyn_pwr+leak_pwr), volt));
+			tbl_entry->current_ma[i][j] =
+				fp_round(fp_div((dyn_pwr + leak_pwr), volt));
 		}
 	}
 	mmrm_sw_print_client_data(sinfo, tbl_entry);
 	return 0;
 }
 
-static struct mmrm_client *mmrm_sw_clk_client_register(
-	struct mmrm_clk_mgr *sw_clk_mgr,
-	struct mmrm_clk_client_desc clk_desc,
-	enum mmrm_client_priority priority,
-	void *pvt_data,
-	notifier_callback_fn_t not_fn_cb)
+static struct mmrm_client *
+mmrm_sw_clk_client_register(struct mmrm_clk_mgr *sw_clk_mgr,
+			    struct mmrm_clk_client_desc clk_desc,
+			    enum mmrm_client_priority priority, void *pvt_data,
+			    notifier_callback_fn_t not_fn_cb)
 {
 	int rc = 0;
 	struct mmrm_client *clk_client = NULL;
@@ -282,8 +291,8 @@ static struct mmrm_client *mmrm_sw_clk_client_register(
 
 	/* entry not found */
 	if (c == sinfo->tot_clk_clients) {
-		d_mpr_e("%s: unknown clk client 0x%x\n",
-			__func__, clk_client_src_id);
+		d_mpr_e("%s: unknown clk client 0x%x\n", __func__,
+			clk_client_src_id);
 		rc = -EINVAL;
 		goto err_nofree_entry;
 	}
@@ -295,7 +304,8 @@ static struct mmrm_client *mmrm_sw_clk_client_register(
 		if (msm_mmrm_allow_multiple_register) {
 			tbl_entry->ref_count++;
 			d_mpr_h("%s: client csid(0x%x) already registered ref:%d\n",
-				__func__, tbl_entry->clk_src_id, tbl_entry->ref_count);
+				__func__, tbl_entry->clk_src_id,
+				tbl_entry->ref_count);
 			clk_client = tbl_entry->client;
 
 			mmrm_sw_print_client_data(sinfo, tbl_entry);
@@ -303,8 +313,8 @@ static struct mmrm_client *mmrm_sw_clk_client_register(
 			goto exit_found;
 		}
 
-		d_mpr_e("%s: client csid(0x%x) already registered\n",
-			__func__, tbl_entry->clk_src_id);
+		d_mpr_e("%s: client csid(0x%x) already registered\n", __func__,
+			tbl_entry->clk_src_id);
 		rc = -EINVAL;
 		goto err_already_registered;
 	}
@@ -330,10 +340,11 @@ static struct mmrm_client *mmrm_sw_clk_client_register(
 	tbl_entry->pvt_data = pvt_data;
 	tbl_entry->notifier_cb_fn = not_fn_cb;
 
-	if (clk_desc.hw_drv_instances > MAX_HW_DRV_INSTANCES
-		|| clk_desc.num_pwr_states > MAX_POWER_STATES) {
+	if (clk_desc.hw_drv_instances > MAX_HW_DRV_INSTANCES ||
+	    clk_desc.num_pwr_states > MAX_POWER_STATES) {
 		d_mpr_e("%s: Invalid CRM data: HW DRV instances %d power states %d\n",
-			__func__, clk_desc.hw_drv_instances, clk_desc.num_pwr_states);
+			__func__, clk_desc.hw_drv_instances,
+			clk_desc.num_pwr_states);
 		rc = -EINVAL;
 		goto err_invalid_crm_data;
 	}
@@ -341,13 +352,16 @@ static struct mmrm_client *mmrm_sw_clk_client_register(
 	/* CRM-managed client */
 	if (clk_desc.hw_drv_instances > 0 && clk_desc.num_pwr_states > 0) {
 		d_mpr_h("%s: CRM-managed clock client: HW DRV instances %d, power states %d\n",
-			__func__, clk_desc.hw_drv_instances, clk_desc.num_pwr_states);
-		tbl_entry->crm_client_tbl_size = clk_desc.hw_drv_instances *
-			clk_desc.num_pwr_states + 1;
-		tbl_entry->crm_client_tbl = kcalloc(tbl_entry->crm_client_tbl_size,
-			sizeof(u64), GFP_KERNEL);
+			__func__, clk_desc.hw_drv_instances,
+			clk_desc.num_pwr_states);
+		tbl_entry->crm_client_tbl_size =
+			clk_desc.hw_drv_instances * clk_desc.num_pwr_states + 1;
+		tbl_entry->crm_client_tbl =
+			kcalloc(tbl_entry->crm_client_tbl_size, sizeof(u64),
+				GFP_KERNEL);
 		if (!tbl_entry->crm_client_tbl) {
-			d_mpr_e("%s: failed to allocate CRM client table\n", __func__);
+			d_mpr_e("%s: failed to allocate CRM client table\n",
+				__func__);
 			rc = -ENOMEM;
 			goto err_fail_alloc_crm_tbl;
 		}
@@ -358,29 +372,25 @@ static struct mmrm_client *mmrm_sw_clk_client_register(
 	}
 
 	/* print table entry */
-	d_mpr_h("%s: csid(0x%x) name(%s) pri(%d) pvt(%p) notifier(%p) hw_drv_instances(%d) num_pwr_states(%d)\n",
-		__func__,
-		tbl_entry->clk_src_id,
-		tbl_entry->name,
-		tbl_entry->pri,
-		tbl_entry->pvt_data,
-		tbl_entry->notifier_cb_fn,
-		tbl_entry->hw_drv_instances,
-		tbl_entry->num_pwr_states);
+	d_mpr_h("%s: csid(0x%x) name(%s) pri(%d) pvt(%p) notifier(%p) "
+		"hw_drv_instances(%d) num_pwr_states(%d)\n",
+		__func__, tbl_entry->clk_src_id, tbl_entry->name,
+		tbl_entry->pri, tbl_entry->pvt_data, tbl_entry->notifier_cb_fn,
+		tbl_entry->hw_drv_instances, tbl_entry->num_pwr_states);
 
 	/* determine full range of clock freq */
 	rc = mmrm_sw_update_freq(sinfo, tbl_entry);
 	if (rc) {
-		d_mpr_e("%s: csid(0x%x) failed to update freq\n",
-			__func__, tbl_entry->clk_src_id);
+		d_mpr_e("%s: csid(0x%x) failed to update freq\n", __func__,
+			tbl_entry->clk_src_id);
 		goto err_fail_update_entry;
 	}
 
 	/* calculate current & scale power for other levels */
 	rc = mmrm_sw_update_curr(sinfo, tbl_entry);
 	if (rc) {
-		d_mpr_e("%s: csid(0x%x) failed to update current\n",
-			__func__, tbl_entry->clk_src_id);
+		d_mpr_e("%s: csid(0x%x) failed to update current\n", __func__,
+			tbl_entry->clk_src_id);
 		goto err_fail_update_entry;
 	}
 
@@ -415,9 +425,9 @@ err_already_registered:
 }
 
 static int mmrm_sw_clk_client_deregister(struct mmrm_clk_mgr *sw_clk_mgr,
-	struct mmrm_client *client)
+					 struct mmrm_client *client)
 {
-	int rc =  0;
+	int rc = 0;
 	struct mmrm_sw_clk_client_tbl_entry *tbl_entry;
 	struct mmrm_sw_clk_mgr_info *sinfo = &(sw_clk_mgr->data.sw_info);
 
@@ -429,8 +439,8 @@ static int mmrm_sw_clk_client_deregister(struct mmrm_clk_mgr *sw_clk_mgr,
 	}
 
 	if (client->client_uid >= sinfo->tot_clk_clients) {
-		d_mpr_e("%s: invalid client uid (%d)\n",
-			__func__, client->client_uid);
+		d_mpr_e("%s: invalid client uid (%d)\n", __func__,
+			client->client_uid);
 		rc = -EINVAL;
 		goto err_invalid_client;
 	}
@@ -469,9 +479,8 @@ err_invalid_client:
 	return rc;
 }
 
-static int mmrm_sw_get_req_level(
-	struct mmrm_sw_clk_client_tbl_entry *tbl_entry,
-	unsigned long clk_val, u32 *req_level)
+static int mmrm_sw_get_req_level(struct mmrm_sw_clk_client_tbl_entry *tbl_entry,
+				 unsigned long clk_val, u32 *req_level)
 {
 	int rc = 0;
 	int voltage_corner;
@@ -479,11 +488,10 @@ static int mmrm_sw_get_req_level(
 
 	/* get voltage corner */
 	voltage_corner = qcom_clk_get_voltage(tbl_entry->clk, clk_val);
-	if (voltage_corner < 0 || voltage_corner > mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_TURBO]) {
+	if (voltage_corner < 0 ||
+	    voltage_corner > mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_TURBO]) {
 		d_mpr_e("%s: csid(0x%x): invalid voltage corner(%d) for clk rate(%llu)\n",
-			__func__,
-			tbl_entry->clk_src_id,
-			voltage_corner,
+			__func__, tbl_entry->clk_src_id, voltage_corner,
 			clk_val);
 		rc = voltage_corner;
 		goto err_invalid_corner;
@@ -491,10 +499,8 @@ static int mmrm_sw_get_req_level(
 
 	/* voltage corner is below low svs */
 	if (voltage_corner < mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_LOW_SVS]) {
-		d_mpr_h("%s: csid(0x%x): lower voltage corner(%d)\n",
-			__func__,
-			tbl_entry->clk_src_id,
-			voltage_corner);
+		d_mpr_h("%s: csid(0x%x): lower voltage corner(%d)\n", __func__,
+			tbl_entry->clk_src_id, voltage_corner);
 		*req_level = MMRM_VDD_LEVEL_LOW_SVS;
 		goto exit_no_err;
 	}
@@ -507,9 +513,7 @@ static int mmrm_sw_get_req_level(
 
 	if (level == MMRM_VDD_LEVEL_MAX) {
 		d_mpr_e("%s: csid(0x%x): invalid voltage corner(%d) for clk rate(%llu)\n",
-			__func__,
-			tbl_entry->clk_src_id,
-			voltage_corner,
+			__func__, tbl_entry->clk_src_id, voltage_corner,
 			clk_val);
 		rc = -EINVAL;
 		goto err_invalid_corner;
@@ -525,9 +529,9 @@ err_invalid_corner:
 	return rc;
 }
 
-static int mmrm_sw_check_req_level(
-	struct mmrm_sw_clk_mgr_info *sinfo,
-	u32 clk_src_id, u32 req_level, u32 *adj_level)
+static int mmrm_sw_check_req_level(struct mmrm_sw_clk_mgr_info *sinfo,
+				   u32 clk_src_id, u32 req_level,
+				   u32 *adj_level)
 {
 	int rc = 0;
 	struct mmrm_sw_peak_current_data *peak_data = &sinfo->peak_cur_data;
@@ -547,23 +551,23 @@ static int mmrm_sw_check_req_level(
 	if (req_level < peak_data->aggreg_level) {
 		for (c = 0; c < sinfo->tot_clk_clients; c++) {
 			tbl_entry = &sinfo->clk_client_tbl[c];
-			if (IS_ERR_OR_NULL(tbl_entry->clk) || !tbl_entry->clk_rate ||
-				(tbl_entry->clk_src_id == clk_src_id)) {
+			if (IS_ERR_OR_NULL(tbl_entry->clk) ||
+			    !tbl_entry->clk_rate ||
+			    (tbl_entry->clk_src_id == clk_src_id)) {
 				continue;
 			}
 			if (tbl_entry->vdd_level == peak_data->aggreg_level) {
 				break;
 			}
-			if  ((tbl_entry->vdd_level < peak_data->aggreg_level)
-					&& (tbl_entry->vdd_level > req_level))
+			if ((tbl_entry->vdd_level < peak_data->aggreg_level) &&
+			    (tbl_entry->vdd_level > req_level))
 				next_max_entry = tbl_entry;
-
 		}
 		/* reject req level */
 		if (c < sinfo->tot_clk_clients) {
 			level = peak_data->aggreg_level;
-		} else if (!IS_ERR_OR_NULL(next_max_entry)
-			&& next_max_entry->vdd_level > req_level) {
+		} else if (!IS_ERR_OR_NULL(next_max_entry) &&
+			   next_max_entry->vdd_level > req_level) {
 			level = next_max_entry->vdd_level;
 		}
 	}
@@ -577,8 +581,8 @@ err_invalid_level:
 }
 
 static int mmrm_sw_calculate_total_current(
-	struct mmrm_sw_clk_mgr_info *sinfo,
-	u32 req_level, u32 *total_cur, struct mmrm_sw_clk_client_tbl_entry *tbl_entry_new)
+	struct mmrm_sw_clk_mgr_info *sinfo, u32 req_level, u32 *total_cur,
+	struct mmrm_sw_clk_client_tbl_entry *tbl_entry_new)
 {
 	int rc = 0;
 	struct mmrm_sw_clk_client_tbl_entry *tbl_entry;
@@ -593,12 +597,13 @@ static int mmrm_sw_calculate_total_current(
 	/* calculate sum of values (scaled by volt) */
 	for (c = 0; c < sinfo->tot_clk_clients; c++) {
 		tbl_entry = &sinfo->clk_client_tbl[c];
-		if (IS_ERR_OR_NULL(tbl_entry->clk) || !tbl_entry->clk_rate
-			|| (tbl_entry == tbl_entry_new)) {
+		if (IS_ERR_OR_NULL(tbl_entry->clk) || !tbl_entry->clk_rate ||
+		    (tbl_entry == tbl_entry_new)) {
 			continue;
 		}
-		sum_cur += (tbl_entry->current_ma[tbl_entry->vdd_level][req_level]
-			* tbl_entry->num_hw_blocks);
+		sum_cur +=
+			(tbl_entry->current_ma[tbl_entry->vdd_level][req_level] *
+			 tbl_entry->num_hw_blocks);
 	}
 
 	*total_cur = sum_cur;
@@ -609,8 +614,9 @@ err_invalid_level:
 	return rc;
 }
 
-static int mmrm_sw_throttle_low_priority_client(
-	struct mmrm_sw_clk_mgr_info *sinfo, int *delta_cur)
+static int
+mmrm_sw_throttle_low_priority_client(struct mmrm_sw_clk_mgr_info *sinfo,
+				     int *delta_cur)
 {
 	int rc = 0, i;
 	u64 start_ts = 0, end_ts = 0;
@@ -626,50 +632,59 @@ static int mmrm_sw_throttle_low_priority_client(
 
 	init_completion(&timeout);
 
-	for (i = 0; i < sinfo->throttle_clients_data_length ; i++) {
+	for (i = 0; i < sinfo->throttle_clients_data_length; i++) {
 		tbl_entry_throttle_client =
-			&sinfo->clk_client_tbl[sinfo->throttle_clients_info[i].tbl_entry_id];
+			&sinfo->clk_client_tbl[sinfo->throttle_clients_info[i]
+						       .tbl_entry_id];
 		if (!IS_ERR_OR_NULL(tbl_entry_throttle_client)) {
-			now_cur_ma = tbl_entry_throttle_client->current_ma
-				[tbl_entry_throttle_client->vdd_level]
-				[peak_data->aggreg_level];
-			min_cur_ma = tbl_entry_throttle_client->current_ma[clk_min_level]
-				[peak_data->aggreg_level];
+			now_cur_ma =
+				tbl_entry_throttle_client->current_ma
+					[tbl_entry_throttle_client->vdd_level]
+					[peak_data->aggreg_level];
+			min_cur_ma =
+				tbl_entry_throttle_client
+					->current_ma[clk_min_level]
+						    [peak_data->aggreg_level];
 
-			d_mpr_h("%s:csid(0x%x) name(%s)\n",
-				__func__, tbl_entry_throttle_client->clk_src_id,
+			d_mpr_h("%s:csid(0x%x) name(%s)\n", __func__,
+				tbl_entry_throttle_client->clk_src_id,
 				tbl_entry_throttle_client->name);
 			d_mpr_h("%s:now_cur_ma(%llu) min_cur_ma(%llu) delta_cur(%d)\n",
 				__func__, now_cur_ma, min_cur_ma, *delta_cur);
 
-			if ((now_cur_ma > min_cur_ma)
-				&& (now_cur_ma - min_cur_ma > *delta_cur)) {
+			if ((now_cur_ma > min_cur_ma) &&
+			    (now_cur_ma - min_cur_ma > *delta_cur)) {
 				found_client_throttle = true;
 				d_mpr_h("%s: Throttle client csid(0x%x) name(%s)\n",
-					__func__, tbl_entry_throttle_client->clk_src_id,
+					__func__,
+					tbl_entry_throttle_client->clk_src_id,
 					tbl_entry_throttle_client->name);
 				d_mpr_h("%s:now_cur_ma %llu-min_cur_ma %llu>delta_cur %d\n",
-					__func__, now_cur_ma, min_cur_ma, *delta_cur);
+					__func__, now_cur_ma, min_cur_ma,
+					*delta_cur);
 				/* found client to throttle, break from here. */
 				break;
 			}
 		}
 	}
 
-	/*Client to throttle is found, Throttle this client now to minimum clock rate*/
+	/*Client to throttle is found, Throttle this client now to minimum clock
+   * rate*/
 	if (found_client_throttle) {
 		/* Setup notifier */
 
 		notifier_data.cb_type = MMRM_CLIENT_RESOURCE_VALUE_CHANGE;
 		notifier_data.cb_data.val_chng.old_val =
-			tbl_entry_throttle_client->freq[tbl_entry_throttle_client->vdd_level];
+			tbl_entry_throttle_client
+				->freq[tbl_entry_throttle_client->vdd_level];
 		notifier_data.cb_data.val_chng.new_val =
 			tbl_entry_throttle_client->freq[clk_min_level];
 		notifier_data.pvt_data = tbl_entry_throttle_client->pvt_data;
 		start_ts = ktime_get_ns();
 
 		if (tbl_entry_throttle_client->notifier_cb_fn)
-			rc = tbl_entry_throttle_client->notifier_cb_fn(&notifier_data);
+			rc = tbl_entry_throttle_client->notifier_cb_fn(
+				&notifier_data);
 
 		end_ts = ktime_get_ns();
 		d_mpr_h("%s: Client notifier cbk processing time %llu ns\n",
@@ -677,7 +692,8 @@ static int mmrm_sw_throttle_low_priority_client(
 
 		if (rc) {
 			d_mpr_e("%s: Client failed to send SUCCESS in callback(%d)\n",
-				__func__, tbl_entry_throttle_client->clk_src_id);
+				__func__,
+				tbl_entry_throttle_client->clk_src_id);
 			rc = -EINVAL;
 			goto err_clk_set_fail;
 		}
@@ -687,18 +703,20 @@ static int mmrm_sw_throttle_low_priority_client(
 				__func__, (end_ts - start_ts), NOTIFY_TIMEOUT);
 
 		if (tbl_entry_throttle_client->reserve == false) {
-			rc = clk_set_rate(tbl_entry_throttle_client->clk,
-						tbl_entry_throttle_client->freq[clk_min_level]);
+			rc = clk_set_rate(
+				tbl_entry_throttle_client->clk,
+				tbl_entry_throttle_client->freq[clk_min_level]);
 			if (rc) {
 				d_mpr_e("%s: Failed to throttle the clk csid(%d)\n",
-					__func__, tbl_entry_throttle_client->clk_src_id);
+					__func__,
+					tbl_entry_throttle_client->clk_src_id);
 				rc = -EINVAL;
 				goto err_clk_set_fail;
 			}
 		}
 
-		d_mpr_h("%s: %s throttled to %llu\n",
-			__func__, tbl_entry_throttle_client->name,
+		d_mpr_h("%s: %s throttled to %llu\n", __func__,
+			tbl_entry_throttle_client->name,
 			tbl_entry_throttle_client->freq[clk_min_level]);
 		*delta_cur -= now_cur_ma - min_cur_ma;
 
@@ -716,7 +734,7 @@ static int mmrm_sw_throttle_low_priority_client(
 
 		/* Store the throttled clock rate of client */
 		tbl_entry_throttle_client->clk_rate =
-					tbl_entry_throttle_client->freq[clk_min_level];
+			tbl_entry_throttle_client->freq[clk_min_level];
 
 		/* Store the corner level of throttled client */
 		tbl_entry_throttle_client->vdd_level = clk_min_level;
@@ -737,13 +755,13 @@ static void mmrm_sw_dump_enabled_client_info(struct mmrm_sw_clk_mgr_info *sinfo)
 	for (c = 0; c < sinfo->tot_clk_clients; c++) {
 		tbl_entry = &sinfo->clk_client_tbl[c];
 		if (tbl_entry->clk_rate) {
-			d_mpr_e("%s: csid(0x%x) clk_rate(%zu) vdd_level(%zu) cur_ma(%zu) num_hw_blocks(%zu)\n",
-				__func__,
-				tbl_entry->clk_src_id,
-				tbl_entry->clk_rate,
-				tbl_entry->vdd_level,
+			d_mpr_e("%s: csid(0x%x) clk_rate(%zu) vdd_level(%zu) cur_ma(%zu) "
+				"num_hw_blocks(%zu)\n",
+				__func__, tbl_entry->clk_src_id,
+				tbl_entry->clk_rate, tbl_entry->vdd_level,
 				tbl_entry->current_ma[tbl_entry->vdd_level]
-					[peak_data->aggreg_level] * tbl_entry->num_hw_blocks,
+						     [peak_data->aggreg_level] *
+					tbl_entry->num_hw_blocks,
 				tbl_entry->num_hw_blocks);
 		}
 	}
@@ -759,36 +777,45 @@ static int mmrm_reinstate_throttled_client(struct mmrm_sw_clk_mgr_info *sinfo)
 	struct mmrm_sw_throttled_clients_data *iter, *safe_iter = NULL;
 	struct mmrm_client_notifier_data notifier_data;
 	struct mmrm_sw_clk_client_tbl_entry *re_entry_throttle_client;
-	int rc =  0;
+	int rc = 0;
 	u64 start_ts = 0, end_ts = 0;
 
-	list_for_each_entry_safe(iter, safe_iter, &sinfo->throttled_clients, list) {
-		if (!IS_ERR_OR_NULL(iter) && peak_data->aggreg_val +
-			iter->delta_cu_ma <= peak_data->threshold) {
-
-			d_mpr_h("%s: table_id = %d\n", __func__, iter->table_id);
+	list_for_each_entry_safe(iter, safe_iter, &sinfo->throttled_clients,
+				 list) {
+		if (!IS_ERR_OR_NULL(iter) &&
+		    peak_data->aggreg_val + iter->delta_cu_ma <=
+			    peak_data->threshold) {
+			d_mpr_h("%s: table_id = %d\n", __func__,
+				iter->table_id);
 
 			re_entry_throttle_client =
 				&sinfo->clk_client_tbl
-				[sinfo->throttle_clients_info
-				[iter->table_id].tbl_entry_id];
+					 [sinfo->throttle_clients_info
+						  [iter->table_id]
+							  .tbl_entry_id];
 			if (!IS_ERR_OR_NULL(re_entry_throttle_client)) {
 				d_mpr_h("%s:found throttled client name(%s) clsid (0x%x)\n",
-					__func__, re_entry_throttle_client->name,
+					__func__,
+					re_entry_throttle_client->name,
 					re_entry_throttle_client->clk_src_id);
-				notifier_data.cb_type = MMRM_CLIENT_RESOURCE_VALUE_CHANGE;
+				notifier_data.cb_type =
+					MMRM_CLIENT_RESOURCE_VALUE_CHANGE;
 				notifier_data.cb_data.val_chng.old_val =
-					re_entry_throttle_client->freq[MMRM_VDD_LEVEL_LOW_SVS];
+					re_entry_throttle_client
+						->freq[MMRM_VDD_LEVEL_LOW_SVS];
 
 				notifier_data.cb_data.val_chng.new_val =
-					re_entry_throttle_client->freq[iter->prev_vdd_level];
+					re_entry_throttle_client
+						->freq[iter->prev_vdd_level];
 
-				notifier_data.pvt_data = re_entry_throttle_client->pvt_data;
+				notifier_data.pvt_data =
+					re_entry_throttle_client->pvt_data;
 				start_ts = ktime_get_ns();
 
 				if (re_entry_throttle_client->notifier_cb_fn) {
-					rc = re_entry_throttle_client->notifier_cb_fn
-								(&notifier_data);
+					rc = re_entry_throttle_client
+						     ->notifier_cb_fn(
+							     &notifier_data);
 					end_ts = ktime_get_ns();
 					d_mpr_h("%s: Client notifier cbk processing time(%llu)ns\n",
 						__func__, end_ts - start_ts);
@@ -796,11 +823,14 @@ static int mmrm_reinstate_throttled_client(struct mmrm_sw_clk_mgr_info *sinfo)
 					if (rc) {
 						d_mpr_e("%s: Client notifier callback failed(%d)\n",
 							__func__,
-							re_entry_throttle_client->clk_src_id);
+							re_entry_throttle_client
+								->clk_src_id);
 					}
-					if ((end_ts - start_ts) > NOTIFY_TIMEOUT)
+					if ((end_ts - start_ts) >
+					    NOTIFY_TIMEOUT)
 						d_mpr_e("%s: Client notifier took %llu ns\n",
-							__func__, (end_ts - start_ts));
+							__func__,
+							(end_ts - start_ts));
 				}
 				list_del(&iter->list);
 				kfree(iter);
@@ -810,9 +840,10 @@ static int mmrm_reinstate_throttled_client(struct mmrm_sw_clk_mgr_info *sinfo)
 	return 0;
 }
 
-static int mmrm_sw_check_peak_current(struct mmrm_sw_clk_mgr_info *sinfo,
-	struct mmrm_sw_clk_client_tbl_entry *tbl_entry,
-	u32 req_level, u32 clk_val, u32 num_hw_blocks)
+static int
+mmrm_sw_check_peak_current(struct mmrm_sw_clk_mgr_info *sinfo,
+			   struct mmrm_sw_clk_client_tbl_entry *tbl_entry,
+			   u32 req_level, u32 clk_val, u32 num_hw_blocks)
 {
 	int rc = 0;
 	struct mmrm_sw_peak_current_data *peak_data = &sinfo->peak_cur_data;
@@ -823,33 +854,36 @@ static int mmrm_sw_check_peak_current(struct mmrm_sw_clk_mgr_info *sinfo,
 	int delta_cur = 0;
 
 	/* check the req level and adjust according to tbl entries */
-	rc = mmrm_sw_check_req_level(sinfo, tbl_entry->clk_src_id, req_level, &adj_level);
+	rc = mmrm_sw_check_req_level(sinfo, tbl_entry->clk_src_id, req_level,
+				     &adj_level);
 	if (rc) {
 		goto err_invalid_level;
 	}
 
 	/* calculate new cur val as per adj_val */
 	if (clk_val)
-		new_cur = tbl_entry->current_ma[req_level][adj_level] * num_hw_blocks;
-
+		new_cur = tbl_entry->current_ma[req_level][adj_level] *
+			  num_hw_blocks;
 
 	/* calculate old cur */
 	if (tbl_entry->clk_rate) {
-		//old_cur = tbl_entry->current_ma[tbl_entry->vdd_level][adj_level];
+		// old_cur = tbl_entry->current_ma[tbl_entry->vdd_level][adj_level];
 		old_cur = tbl_entry->current_ma[tbl_entry->vdd_level]
-			[peak_data->aggreg_level] * tbl_entry->num_hw_blocks;
+					       [peak_data->aggreg_level] *
+			  tbl_entry->num_hw_blocks;
 	}
 
 	/* 1. adj_level increase: recalculated peak_cur other clients + new_cur
-	 * 2. adj_level decrease: recalculated peak_cur other clients + new_cur
-	 * 3. clk_val increase: aggreg_val + (new_cur - old_cur)
-	 * 4. clk_val decrease: aggreg_val + (new_cur - old_cur)
-	 * 5. clk_val 0: aggreg_val - old_cur
-	 */
+   * 2. adj_level decrease: recalculated peak_cur other clients + new_cur
+   * 3. clk_val increase: aggreg_val + (new_cur - old_cur)
+   * 4. clk_val decrease: aggreg_val + (new_cur - old_cur)
+   * 5. clk_val 0: aggreg_val - old_cur
+   */
 
 	/* recalculate aggregated current with adj level */
 	if (adj_level != peak_data->aggreg_level) {
-		rc = mmrm_sw_calculate_total_current(sinfo, adj_level, &peak_cur, tbl_entry);
+		rc = mmrm_sw_calculate_total_current(sinfo, adj_level,
+						     &peak_cur, tbl_entry);
 		if (rc) {
 			goto err_invalid_level;
 		}
@@ -859,7 +893,8 @@ static int mmrm_sw_check_peak_current(struct mmrm_sw_clk_mgr_info *sinfo,
 	}
 
 	d_mpr_h("%s: csid (0x%x) peak_cur(%zu) new_cur(%zu) old_cur(%zu) delta_cur(%d)\n",
-		__func__, tbl_entry->clk_src_id, peak_cur, new_cur, old_cur, delta_cur);
+		__func__, tbl_entry->clk_src_id, peak_cur, new_cur, old_cur,
+		delta_cur);
 
 	/* negative value, update peak data */
 	if ((signed)peak_cur + delta_cur <= 0) {
@@ -872,18 +907,20 @@ static int mmrm_sw_check_peak_current(struct mmrm_sw_clk_mgr_info *sinfo,
 	if ((signed)peak_cur + delta_cur >= peak_data->threshold) {
 		/* Find low prority client and throttle it*/
 
-		if ((tbl_entry->pri == MMRM_CLIENT_PRIOR_HIGH)
-			&& (msm_mmrm_enable_throttle_feature > 0)) {
-			rc = mmrm_sw_throttle_low_priority_client(sinfo, &delta_cur);
+		if ((tbl_entry->pri == MMRM_CLIENT_PRIOR_HIGH) &&
+		    (msm_mmrm_enable_throttle_feature > 0)) {
+			rc = mmrm_sw_throttle_low_priority_client(sinfo,
+								  &delta_cur);
 			if (rc != 0) {
 				d_mpr_e("%s: Failed to throttle the low priority client\n",
-						__func__);
+					__func__);
 				mmrm_sw_dump_enabled_client_info(sinfo);
 				goto err_peak_overshoot;
 			}
 		} else {
 			d_mpr_e("%s: Client csid(0x%x) name(%s) can't request throtlling\n",
-				__func__, tbl_entry->clk_src_id, tbl_entry->name);
+				__func__, tbl_entry->clk_src_id,
+				tbl_entry->name);
 			mmrm_sw_dump_enabled_client_info(sinfo);
 			rc = -EINVAL;
 			goto err_peak_overshoot;
@@ -896,10 +933,8 @@ static int mmrm_sw_check_peak_current(struct mmrm_sw_clk_mgr_info *sinfo,
 	mmrm_reinstate_throttled_client(sinfo);
 
 exit_no_err:
-	d_mpr_h("%s: aggreg_val(%lu) aggreg_level(%lu)\n",
-		__func__,
-		peak_data->aggreg_val,
-		peak_data->aggreg_level);
+	d_mpr_h("%s: aggreg_val(%lu) aggreg_level(%lu)\n", __func__,
+		peak_data->aggreg_val, peak_data->aggreg_level);
 	return rc;
 
 err_invalid_level:
@@ -908,9 +943,9 @@ err_peak_overshoot:
 }
 
 static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
-	struct mmrm_client *client,
-	struct mmrm_client_data *client_data,
-	unsigned long clk_val)
+				     struct mmrm_client *client,
+				     struct mmrm_client_data *client_data,
+				     unsigned long clk_val)
 {
 	int rc = 0;
 	struct mmrm_sw_clk_client_tbl_entry *tbl_entry;
@@ -929,8 +964,8 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 	}
 
 	if (client->client_uid >= sinfo->tot_clk_clients) {
-		d_mpr_e("%s: invalid client uid (%d)\n",
-			__func__, client->client_uid);
+		d_mpr_e("%s: invalid client uid (%d)\n", __func__,
+			client->client_uid);
 		rc = -EINVAL;
 		goto err_invalid_client;
 	}
@@ -950,45 +985,44 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 	}
 
 	/*
-	 * Clients may set rates that are higher than max supported rate for a clock.
-	 * Round the rate to max supported rate and use this rate for tracking/calculations.
-	 * Use the client-set value to set the rate to clock driver - clock driver internally
-	 * rounds the rate to max supported value.
-	 */
+   * Clients may set rates that are higher than max supported rate for a clock.
+   * Round the rate to max supported rate and use this rate for
+   * tracking/calculations. Use the client-set value to set the rate to clock
+   * driver - clock driver internally rounds the rate to max supported value.
+   */
 	if (clk_val != 0)
 		clk_round_val = clk_round_rate(tbl_entry->clk, clk_val);
 
-	d_mpr_h("%s: csid(0x%x) clk rate %llu, clk round rate %llu\n",
-		__func__, tbl_entry->clk_src_id, clk_val, clk_round_val);
+	d_mpr_h("%s: csid(0x%x) clk rate %llu, clk round rate %llu\n", __func__,
+		tbl_entry->clk_src_id, clk_val, clk_round_val);
 
 	if (tbl_entry->is_crm_client) {
 		if (client_data->crm_drv_idx >= tbl_entry->hw_drv_instances ||
-			client_data->pwr_st >= tbl_entry->num_pwr_states) {
+		    client_data->pwr_st >= tbl_entry->num_pwr_states) {
 			d_mpr_e("%s: invalid CRM data\n", __func__);
 			rc = -EINVAL;
 			goto err_invalid_client_data;
 		}
 
-		crm_max_rate = mmrm_sw_get_max_crm_rate(tbl_entry, client_data,
-						clk_round_val, &max_rate_idx);
+		crm_max_rate = mmrm_sw_get_max_crm_rate(
+			tbl_entry, client_data, clk_round_val, &max_rate_idx);
 	}
 
 	/*
-	 * Check if the requested clk rate is the same as the current clk rate.
-	 * When clk rates are the same, compare this with the current state.
-	 * Skip when duplicate calculations will be made.
-	 * CRM Clients: Always set the rate
-	 * --- current ---- requested --- action ---
-	 * a.  reserve  &&  req_reserve:  skip
-	 * b. !reserve  && !req_reserve:  skip
-	 * c. !reserve  &&  req_reserve:  skip
-	 * d.  reserve  && !req_reserve:  set clk rate
-	 */
+   * Check if the requested clk rate is the same as the current clk rate.
+   * When clk rates are the same, compare this with the current state.
+   * Skip when duplicate calculations will be made.
+   * CRM Clients: Always set the rate
+   * --- current ---- requested --- action ---
+   * a.  reserve  &&  req_reserve:  skip
+   * b. !reserve  && !req_reserve:  skip
+   * c. !reserve  &&  req_reserve:  skip
+   * d.  reserve  && !req_reserve:  set clk rate
+   */
 	req_reserve = client_data->flags & MMRM_CLIENT_DATA_FLAG_RESERVE_ONLY;
 	if (tbl_entry->clk_rate == clk_round_val &&
-		tbl_entry->num_hw_blocks == client_data->num_hw_blocks &&
-		tbl_entry->is_crm_client == false) {
-
+	    tbl_entry->num_hw_blocks == client_data->num_hw_blocks &&
+	    tbl_entry->is_crm_client == false) {
 		d_mpr_h("%s: csid(0x%x) same as previous (rounded) clk rate %llu\n",
 			__func__, tbl_entry->clk_src_id, clk_round_val);
 
@@ -1011,19 +1045,25 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 	/* get corresponding level */
 	if (clk_round_val) {
 		if (!tbl_entry->is_crm_client)
-			rc = mmrm_sw_get_req_level(tbl_entry, clk_round_val, &req_level);
+			rc = mmrm_sw_get_req_level(tbl_entry, clk_round_val,
+						   &req_level);
 		else
-			rc = mmrm_sw_get_req_level(tbl_entry, crm_max_rate, &req_level);
+			rc = mmrm_sw_get_req_level(tbl_entry, crm_max_rate,
+						   &req_level);
 		if (rc || req_level >= MMRM_VDD_LEVEL_MAX) {
-			d_mpr_e("%s: csid(0x%x) unable to get level for clk rate %llu crm_max_rate %llu\n",
-				__func__, tbl_entry->clk_src_id, clk_round_val, crm_max_rate);
+			d_mpr_e("%s: csid(0x%x) unable to get level for clk rate %llu "
+				"crm_max_rate %llu\n",
+				__func__, tbl_entry->clk_src_id, clk_round_val,
+				crm_max_rate);
 			rc = -EINVAL;
 			goto err_invalid_clk_val;
 		}
 		if (!((client_data->num_hw_blocks >= 1) &&
-			   (client_data->num_hw_blocks <= tbl_entry->max_num_hw_blocks))) {
-			d_mpr_e("%s: csid(0x%x) num_hw_block:%d\n",
-				__func__, tbl_entry->clk_src_id, client_data->num_hw_blocks);
+		      (client_data->num_hw_blocks <=
+		       tbl_entry->max_num_hw_blocks))) {
+			d_mpr_e("%s: csid(0x%x) num_hw_block:%d\n", __func__,
+				tbl_entry->clk_src_id,
+				client_data->num_hw_blocks);
 			rc = -EINVAL;
 			goto err_invalid_client_data;
 		}
@@ -1035,11 +1075,13 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 
 	/* check and update for peak current */
 	if (!tbl_entry->is_crm_client) {
-		rc = mmrm_sw_check_peak_current(sinfo, tbl_entry,
-			req_level, clk_round_val, client_data->num_hw_blocks);
+		rc = mmrm_sw_check_peak_current(sinfo, tbl_entry, req_level,
+						clk_round_val,
+						client_data->num_hw_blocks);
 	} else {
-		rc = mmrm_sw_check_peak_current(sinfo, tbl_entry,
-			req_level, crm_max_rate, client_data->num_hw_blocks);
+		rc = mmrm_sw_check_peak_current(sinfo, tbl_entry, req_level,
+						crm_max_rate,
+						client_data->num_hw_blocks);
 	}
 
 	if (rc) {
@@ -1057,11 +1099,14 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 		tbl_entry->max_rate_idx = max_rate_idx;
 		tbl_entry->clk_rate = crm_max_rate;
 		if (client_data->drv_type == MMRM_CRM_SW_DRV)
-			tbl_entry->crm_client_tbl[tbl_entry->crm_client_tbl_size - 1] = clk_round_val;
+			tbl_entry->crm_client_tbl[tbl_entry->crm_client_tbl_size -
+						  1] = clk_round_val;
 		else
 			tbl_entry->crm_client_tbl[tbl_entry->num_pwr_states *
-				client_data->crm_drv_idx +
-				client_data->pwr_st] = clk_round_val;
+							  client_data
+								  ->crm_drv_idx +
+						  client_data->pwr_st] =
+				clk_round_val;
 
 		mmrm_sw_print_crm_table(tbl_entry);
 	}
@@ -1073,14 +1118,15 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 
 	/* check reserve only flag (skip set clock rate) */
 	if (req_reserve && !tbl_entry->is_crm_client) {
-		d_mpr_h("%s: csid(0x%x) skip setting clk rate\n",
-		__func__, tbl_entry->clk_src_id);
+		d_mpr_h("%s: csid(0x%x) skip setting clk rate\n", __func__,
+			tbl_entry->clk_src_id);
 		rc = 0;
 		goto exit_no_err;
 	}
 
 set_clk_rate:
-	if (!tbl_entry->is_crm_client || client_data->drv_type == MMRM_CRM_SW_DRV) {
+	if (!tbl_entry->is_crm_client ||
+	    client_data->drv_type == MMRM_CRM_SW_DRV) {
 		d_mpr_h("%s: csid(0x%x) setting rounded clk rate %llu\n",
 			__func__, tbl_entry->clk_src_id, clk_round_val);
 
@@ -1093,14 +1139,15 @@ set_clk_rate:
 			goto err_clk_set_fail;
 		}
 	} else {
-		d_mpr_h("%s: csid(0x%x) setting rounded clk rate %llu drv_type %u, crm_drv_idx %u, pwr_st %u\n",
-				__func__, tbl_entry->clk_src_id, clk_round_val,
-				CRM_HW_DRV, client_data->crm_drv_idx,
-				client_data->pwr_st);
+		d_mpr_h("%s: csid(0x%x) setting rounded clk rate %llu drv_type %u, "
+			"crm_drv_idx %u, pwr_st %u\n",
+			__func__, tbl_entry->clk_src_id, clk_round_val,
+			CRM_HW_DRV, client_data->crm_drv_idx,
+			client_data->pwr_st);
 
 		rc = qcom_clk_crm_set_rate(tbl_entry->clk, CRM_HW_DRV,
-				client_data->crm_drv_idx,
-				client_data->pwr_st, clk_round_val);
+					   client_data->crm_drv_idx,
+					   client_data->pwr_st, clk_round_val);
 		if (rc) {
 			d_mpr_e("%s: csid(0x%x) failed to set rounded clk rate %llu\n",
 				__func__, tbl_entry->clk_src_id, clk_round_val);
@@ -1111,8 +1158,8 @@ set_clk_rate:
 	}
 
 exit_no_err:
-	d_mpr_h("%s: clk rate (round) %lu set successfully for %s\n",
-			__func__, clk_round_val, tbl_entry->name);
+	d_mpr_h("%s: clk rate (round) %lu set successfully for %s\n", __func__,
+		clk_round_val, tbl_entry->name);
 	return rc;
 
 err_invalid_client:
@@ -1124,19 +1171,18 @@ err_clk_set_fail:
 	return rc;
 }
 
-static int mmrm_sw_clk_client_setval_inrange(struct mmrm_clk_mgr *sw_clk_mgr,
-		struct mmrm_client *client,
-		struct mmrm_client_data *client_data,
-		struct mmrm_client_res_value *val)
+static int mmrm_sw_clk_client_setval_inrange(
+	struct mmrm_clk_mgr *sw_clk_mgr, struct mmrm_client *client,
+	struct mmrm_client_data *client_data, struct mmrm_client_res_value *val)
 {
 	/* TBD: add support for set val in range */
 	return mmrm_sw_clk_client_setval(sw_clk_mgr, client, client_data,
-		val->cur);
+					 val->cur);
 }
 
 static int mmrm_sw_clk_client_getval(struct mmrm_clk_mgr *sw_clk_mgr,
-	struct mmrm_client *client,
-	struct mmrm_client_res_value *val)
+				     struct mmrm_client *client,
+				     struct mmrm_client_res_value *val)
 {
 	int rc = 0;
 	struct mmrm_sw_clk_client_tbl_entry *tbl_entry;
@@ -1150,8 +1196,8 @@ static int mmrm_sw_clk_client_getval(struct mmrm_clk_mgr *sw_clk_mgr,
 	}
 
 	if (client->client_uid >= sinfo->tot_clk_clients) {
-		d_mpr_e("%s: invalid client uid (%d)\n",
-			__func__, client->client_uid);
+		d_mpr_e("%s: invalid client uid (%d)\n", __func__,
+			client->client_uid);
 		rc = -EINVAL;
 		goto err_invalid_client;
 	}
@@ -1176,9 +1222,9 @@ err_invalid_client:
 	return rc;
 }
 
-static int mmrm_sw_clk_print_enabled_client_info(struct mmrm_clk_mgr *sw_clk_mgr,
-	char *buf,
-	int sz)
+static int
+mmrm_sw_clk_print_enabled_client_info(struct mmrm_clk_mgr *sw_clk_mgr,
+				      char *buf, int sz)
 {
 	u32 c, len;
 	u32 left_spaces = (u32)sz;
@@ -1186,28 +1232,37 @@ static int mmrm_sw_clk_print_enabled_client_info(struct mmrm_clk_mgr *sw_clk_mgr
 	struct mmrm_sw_peak_current_data *peak_data = &sinfo->peak_cur_data;
 	struct mmrm_sw_clk_client_tbl_entry *tbl_entry = NULL;
 
-	len = scnprintf(buf, left_spaces, "  csid    clk_rate     vdd_level   cur_ma   num_hw_blocks\n");
+	len = scnprintf(
+		buf, left_spaces,
+		"  csid    clk_rate     vdd_level   cur_ma   num_hw_blocks\n");
 	left_spaces -= len;
 	buf += len;
 
 	if (sinfo != NULL && peak_data != NULL) {
-		for (c = 0; (c < sinfo->tot_clk_clients) && (left_spaces > 1); c++) {
+		for (c = 0; (c < sinfo->tot_clk_clients) && (left_spaces > 1);
+		     c++) {
 			tbl_entry = &sinfo->clk_client_tbl[c];
 			if ((tbl_entry != NULL) && (tbl_entry->clk_rate)) {
-				len = scnprintf(buf, left_spaces, "0x%x    %zu   %zu   %zu   %zu\n",
+				len = scnprintf(
+					buf, left_spaces,
+					"0x%x    %zu   %zu   %zu   %zu\n",
 					tbl_entry->clk_src_id,
 					tbl_entry->clk_rate,
 					tbl_entry->vdd_level,
-					tbl_entry->current_ma[tbl_entry->vdd_level]
-						[peak_data->aggreg_level] * tbl_entry->num_hw_blocks,
+					tbl_entry->current_ma
+							[tbl_entry->vdd_level]
+							[peak_data->aggreg_level] *
+						tbl_entry->num_hw_blocks,
 					tbl_entry->num_hw_blocks);
 				left_spaces -= len;
 				buf += len;
 			}
 		}
 		if (left_spaces > 1) {
-			len = scnprintf(buf, left_spaces, "aggreg_val(%zu) aggreg_level(%zu)\n",
-				peak_data->aggreg_val, peak_data->aggreg_level);
+			len = scnprintf(buf, left_spaces,
+					"aggreg_val(%zu) aggreg_level(%zu)\n",
+					peak_data->aggreg_val,
+					peak_data->aggreg_level);
 			left_spaces -= len;
 		}
 	}
@@ -1224,7 +1279,7 @@ static struct mmrm_clk_mgr_client_ops clk_client_swops = {
 };
 
 static int mmrm_sw_prepare_table(struct mmrm_clk_platform_resources *cres,
-	struct mmrm_sw_clk_mgr_info *sinfo)
+				 struct mmrm_sw_clk_mgr_info *sinfo)
 {
 	int rc = 0;
 	u32 c;
@@ -1237,7 +1292,7 @@ static int mmrm_sw_prepare_table(struct mmrm_clk_platform_resources *cres,
 		nom_tbl_entry = &cres->nom_clk_set.clk_src_tbl[c];
 
 		tbl_entry->clk_src_id = (nom_tbl_entry->domain << 16 |
-			nom_tbl_entry->clk_src_id);
+					 nom_tbl_entry->clk_src_id);
 		tbl_entry->dyn_pwr[MMRM_VDD_LEVEL_NOM] =
 			nom_tbl_entry->nom_dyn_pwr;
 		tbl_entry->leak_pwr[MMRM_VDD_LEVEL_NOM] =
@@ -1245,8 +1300,7 @@ static int mmrm_sw_prepare_table(struct mmrm_clk_platform_resources *cres,
 		tbl_entry->max_num_hw_blocks = nom_tbl_entry->num_hw_block;
 
 		d_mpr_h("%s: updating csid(0x%x) dyn_pwr(%d) leak_pwr(%d) num(%d)\n",
-			__func__,
-			tbl_entry->clk_src_id,
+			__func__, tbl_entry->clk_src_id,
 			tbl_entry->dyn_pwr[MMRM_VDD_LEVEL_NOM],
 			tbl_entry->leak_pwr[MMRM_VDD_LEVEL_NOM],
 			tbl_entry->num_hw_blocks);
@@ -1276,14 +1330,13 @@ int mmrm_init_sw_clk_mgr(void *driver_data)
 
 	/* initialize the tables */
 	tbl_size = sizeof(struct mmrm_sw_clk_client_tbl_entry) *
-		cres->nom_clk_set.count;
+		   cres->nom_clk_set.count;
 
 	sinfo = &(sw_clk_mgr->data.sw_info);
 	sinfo->driver_data = drv_data;
 	sinfo->clk_client_tbl = kzalloc(tbl_size, GFP_KERNEL);
 	if (!sinfo->clk_client_tbl) {
-		d_mpr_e(
-			"%s: failed to allocate memory for clk_client_tbl (%d)\n",
+		d_mpr_e("%s: failed to allocate memory for clk_client_tbl (%d)\n",
 			__func__, cres->nom_clk_set.count);
 		rc = -ENOMEM;
 		goto err_fail_clk_tbl;
@@ -1304,14 +1357,17 @@ int mmrm_init_sw_clk_mgr(void *driver_data)
 	sinfo->peak_cur_data.threshold = cres->peak_threshold;
 	sinfo->peak_cur_data.aggreg_val = 0;
 	sinfo->peak_cur_data.aggreg_level = 0;
-	sinfo->throttle_clients_data_length = cres->throttle_clients_data_length;
+	sinfo->throttle_clients_data_length =
+		cres->throttle_clients_data_length;
 	for (i = 0; i < sinfo->throttle_clients_data_length; i++) {
 		for (j = 0; j < sinfo->tot_clk_clients; j++) {
-			if (sinfo->clk_client_tbl[j].clk_src_id
-					== cres->clsid_threshold_clients[i]) {
-				sinfo->throttle_clients_info[i].csid_throttle_client
-						= cres->clsid_threshold_clients[i];
-				sinfo->throttle_clients_info[i].tbl_entry_id = j;
+			if (sinfo->clk_client_tbl[j].clk_src_id ==
+			    cres->clsid_threshold_clients[i]) {
+				sinfo->throttle_clients_info[i]
+					.csid_throttle_client =
+					cres->clsid_threshold_clients[i];
+				sinfo->throttle_clients_info[i].tbl_entry_id =
+					j;
 				break;
 			}
 		}
@@ -1343,7 +1399,8 @@ int mmrm_destroy_sw_clk_mgr(struct mmrm_clk_mgr *sw_clk_mgr)
 	struct mmrm_sw_clk_mgr_info *sinfo = &(sw_clk_mgr->data.sw_info);
 	struct mmrm_sw_throttled_clients_data *iter, *safe_iter = NULL;
 
-	list_for_each_entry_safe(iter, safe_iter, &sinfo->throttled_clients, list) {
+	list_for_each_entry_safe(iter, safe_iter, &sinfo->throttled_clients,
+				 list) {
 		list_del(&iter->list);
 		kfree(iter);
 	}

@@ -18,8 +18,8 @@
  *  DOC: wlan_twt_ucfg_api.c
  *  This file contains twt ucfg APIs
  */
-#include <wlan_twt_ucfg_api.h>
 #include "twt/core/src/wlan_twt_common.h"
+#include <wlan_twt_ucfg_api.h>
 
 QDF_STATUS ucfg_twt_get_responder(struct wlan_objmgr_psoc *psoc, bool *val)
 {
@@ -27,7 +27,7 @@ QDF_STATUS ucfg_twt_get_responder(struct wlan_objmgr_psoc *psoc, bool *val)
 }
 
 QDF_STATUS ucfg_twt_get_twt_nudge_enabled(struct wlan_objmgr_psoc *psoc,
-					bool *val)
+					  bool *val)
 {
 	return wlan_twt_tgt_caps_get_nudge_enabled(psoc, val);
 }
@@ -45,13 +45,13 @@ QDF_STATUS ucfg_twt_check_all_twt_support(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS ucfg_twt_get_twt_stats_enabled(struct wlan_objmgr_psoc *psoc,
-					bool *val)
+					  bool *val)
 {
 	return wlan_twt_tgt_caps_get_stats_enabled(psoc, val);
 }
 
 QDF_STATUS ucfg_twt_get_twt_ack_supported(struct wlan_objmgr_psoc *psoc,
-					bool *val)
+					  bool *val)
 {
 	return wlan_twt_tgt_caps_get_ack_supported(psoc, val);
 }
@@ -86,16 +86,14 @@ QDF_STATUS ucfg_twt_responder_enable(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 ucfg_twt_set_peer_capabilities(struct wlan_objmgr_psoc *psoc,
-			       struct qdf_mac_addr *peer_mac,
-			       uint8_t peer_cap)
+			       struct qdf_mac_addr *peer_mac, uint8_t peer_cap)
 {
 	return wlan_twt_set_peer_capabilities(psoc, peer_mac, peer_cap);
 }
 
 QDF_STATUS
 ucfg_twt_get_peer_capabilities(struct wlan_objmgr_psoc *psoc,
-			       struct qdf_mac_addr *peer_mac,
-			       uint8_t *peer_cap)
+			       struct qdf_mac_addr *peer_mac, uint8_t *peer_cap)
 {
 	return wlan_twt_get_peer_capabilities(psoc, peer_mac, peer_cap);
 }

@@ -1,31 +1,32 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
-#include <linux/module.h>
-#include <linux/slab.h>
-#include <linux/platform_device.h>
+#include <linux/component.h>
 #include <linux/device.h>
 #include <linux/kernel.h>
-#include <linux/component.h>
+#include <linux/module.h>
+#include <linux/platform_device.h>
+#include <linux/slab.h>
 #include <soc/soundwire.h>
 
 #ifdef CONFIG_DEBUG_FS
 #include <linux/debugfs.h>
 #include <linux/uaccess.h>
 
-#define SWR_SLV_MAX_REG_ADDR    0x2009
-#define SWR_SLV_START_REG_ADDR  0x40
-#define SWR_SLV_MAX_BUF_LEN     20
-#define BYTES_PER_LINE          12
-#define SWR_SLV_RD_BUF_LEN      8
-#define SWR_SLV_WR_BUF_LEN      32
-#define SWR_SLV_MAX_DEVICES     2
+#define SWR_SLV_MAX_REG_ADDR 0x2009
+#define SWR_SLV_START_REG_ADDR 0x40
+#define SWR_SLV_MAX_BUF_LEN 20
+#define BYTES_PER_LINE 12
+#define SWR_SLV_RD_BUF_LEN 8
+#define SWR_SLV_WR_BUF_LEN 32
+#define SWR_SLV_MAX_DEVICES 2
 #endif /* CONFIG_DEBUG_FS */
 
-#define SWR_MAX_RETRY    5
+#define SWR_MAX_RETRY 5
 
 struct wcd939x_slave_priv {
 	struct swr_device *swr_slave;
@@ -73,12 +74,9 @@ static bool is_swr_slv_reg_readable(int reg)
 {
 	int ret = true;
 
-	if (((reg > 0x46) && (reg < 0x4A)) ||
-	    ((reg > 0x4A) && (reg < 0x50)) ||
-	    ((reg > 0x55) && (reg < 0xD0)) ||
-	    ((reg > 0xD0) && (reg < 0xE0)) ||
-	    ((reg > 0xE0) && (reg < 0xF0)) ||
-	    ((reg > 0xF0) && (reg < 0x100)) ||
+	if (((reg > 0x46) && (reg < 0x4A)) || ((reg > 0x4A) && (reg < 0x50)) ||
+	    ((reg > 0x55) && (reg < 0xD0)) || ((reg > 0xD0) && (reg < 0xE0)) ||
+	    ((reg > 0xE0) && (reg < 0xF0)) || ((reg > 0xF0) && (reg < 0x100)) ||
 	    ((reg > 0x105) && (reg < 0x120)) ||
 	    ((reg > 0x205) && (reg < 0x220)) ||
 	    ((reg > 0x305) && (reg < 0x320)) ||
@@ -97,8 +95,8 @@ static bool is_swr_slv_reg_readable(int reg)
 }
 
 static ssize_t wcd939x_swrslave_reg_show(struct swr_device *pdev,
-					char __user *ubuf,
-					size_t count, loff_t *ppos)
+					 char __user *ubuf, size_t count,
+					 loff_t *ppos)
 {
 	int i, reg_val, len;
 	ssize_t total = 0;
@@ -107,8 +105,8 @@ static ssize_t wcd939x_swrslave_reg_show(struct swr_device *pdev,
 	if (!ubuf || !ppos)
 		return 0;
 
-	for (i = (((int) *ppos/BYTES_PER_LINE) + SWR_SLV_START_REG_ADDR);
-		i <= SWR_SLV_MAX_REG_ADDR; i++) {
+	for (i = (((int)*ppos / BYTES_PER_LINE) + SWR_SLV_START_REG_ADDR);
+	     i <= SWR_SLV_MAX_REG_ADDR; i++) {
 		if (!is_swr_slv_reg_readable(i))
 			continue;
 		swr_read(pdev, pdev->dev_num, i, &reg_val, 1);
@@ -117,7 +115,8 @@ static ssize_t wcd939x_swrslave_reg_show(struct swr_device *pdev,
 		if (((total + len) >= count - 1) || (len < 0))
 			break;
 		if (copy_to_user((ubuf + total), tmp_buf, len)) {
-			pr_err_ratelimited("%s: fail to copy reg dump\n", __func__);
+			pr_err_ratelimited("%s: fail to copy reg dump\n",
+					   __func__);
 			total = -EFAULT;
 			goto copy_err;
 		}
@@ -170,14 +169,15 @@ static ssize_t codec_debug_read(struct file *file, char __user *ubuf,
 		return -EINVAL;
 
 	snprintf(lbuf, sizeof(lbuf), "0x%x\n",
-			(wcd939x_slave->read_data & 0xFF));
+		 (wcd939x_slave->read_data & 0xFF));
 
 	return simple_read_from_buffer(ubuf, count, ppos, lbuf,
-					       strnlen(lbuf, 7));
+				       strnlen(lbuf, 7));
 }
 
 static ssize_t codec_debug_peek_write(struct file *file,
-	const char __user *ubuf, size_t cnt, loff_t *ppos)
+				      const char __user *ubuf, size_t cnt,
+				      loff_t *ppos)
 {
 	char lbuf[SWR_SLV_WR_BUF_LEN];
 	int rc = 0;
@@ -219,8 +219,8 @@ static ssize_t codec_debug_peek_write(struct file *file,
 	return rc;
 }
 
-static ssize_t codec_debug_write(struct file *file,
-	const char __user *ubuf, size_t cnt, loff_t *ppos)
+static ssize_t codec_debug_write(struct file *file, const char __user *ubuf,
+				 size_t cnt, loff_t *ppos)
 {
 	char lbuf[SWR_SLV_WR_BUF_LEN];
 	int rc = 0;
@@ -243,8 +243,8 @@ static ssize_t codec_debug_write(struct file *file,
 
 	lbuf[cnt] = '\0';
 	rc = get_parameters(lbuf, param, 2);
-	if (!((param[0] <= SWR_SLV_MAX_REG_ADDR) &&
-		(param[1] <= 0xFF) && (rc == 0)))
+	if (!((param[0] <= SWR_SLV_MAX_REG_ADDR) && (param[1] <= 0xFF) &&
+	      (rc == 0)))
 		return -EINVAL;
 	swr_write(pdev, pdev->dev_num, param[0], &param[1]);
 	if (rc == 0)
@@ -272,8 +272,8 @@ static const struct file_operations codec_debug_dump_ops = {
 };
 #endif
 
-static int wcd939x_slave_bind(struct device *dev,
-				struct device *master, void *data)
+static int wcd939x_slave_bind(struct device *dev, struct device *master,
+			      void *data)
 {
 	int ret = 0;
 	uint8_t devnum = 0;
@@ -293,8 +293,8 @@ static int wcd939x_slave_bind(struct device *dev,
 
 	if (ret) {
 		dev_dbg(&pdev->dev,
-			"%s get devnum %d for dev addr %llx failed\n",
-			__func__, devnum, pdev->addr);
+			"%s get devnum %d for dev addr %llx failed\n", __func__,
+			devnum, pdev->addr);
 		ret = -EPROBE_DEFER;
 		return ret;
 	}
@@ -303,23 +303,22 @@ static int wcd939x_slave_bind(struct device *dev,
 	return ret;
 }
 
-static void wcd939x_slave_unbind(struct device *dev,
-				struct device *master, void *data)
+static void wcd939x_slave_unbind(struct device *dev, struct device *master,
+				 void *data)
 {
 	struct wcd939x_slave_priv *wcd939x_slave = NULL;
 	struct swr_device *pdev = to_swr_device(dev);
 
 	wcd939x_slave = swr_get_dev_data(pdev);
 	if (!wcd939x_slave) {
-		dev_err_ratelimited(&pdev->dev, "%s: wcd939x_slave is NULL\n", __func__);
+		dev_err_ratelimited(&pdev->dev, "%s: wcd939x_slave is NULL\n",
+				    __func__);
 		return;
 	}
 }
 
-static const struct swr_device_id wcd939x_swr_id[] = {
-	{"wcd939x-slave", 0},
-	{}
-};
+static const struct swr_device_id wcd939x_swr_id[] = { { "wcd939x-slave", 0 },
+						       {} };
 
 static const struct of_device_id wcd939x_swr_dt_match[] = {
 	{
@@ -329,7 +328,7 @@ static const struct of_device_id wcd939x_swr_dt_match[] = {
 };
 
 static const struct component_ops wcd939x_slave_comp_ops = {
-	.bind   = wcd939x_slave_bind,
+	.bind = wcd939x_slave_bind,
 	.unbind = wcd939x_slave_unbind,
 };
 
@@ -337,8 +336,8 @@ static int wcd939x_swr_probe(struct swr_device *pdev)
 {
 	struct wcd939x_slave_priv *wcd939x_slave = NULL;
 
-	wcd939x_slave = devm_kzalloc(&pdev->dev,
-				sizeof(struct wcd939x_slave_priv), GFP_KERNEL);
+	wcd939x_slave = devm_kzalloc(
+		&pdev->dev, sizeof(struct wcd939x_slave_priv), GFP_KERNEL);
 	if (!wcd939x_slave)
 		return -ENOMEM;
 
@@ -348,32 +347,25 @@ static int wcd939x_swr_probe(struct swr_device *pdev)
 
 #ifdef CONFIG_DEBUG_FS
 	if (!wcd939x_slave->debugfs_wcd939x_dent) {
-		wcd939x_slave->debugfs_wcd939x_dent = debugfs_create_dir(
-						dev_name(&pdev->dev), 0);
+		wcd939x_slave->debugfs_wcd939x_dent =
+			debugfs_create_dir(dev_name(&pdev->dev), 0);
 		if (!IS_ERR(wcd939x_slave->debugfs_wcd939x_dent)) {
-			wcd939x_slave->debugfs_peek =
-					debugfs_create_file("swrslave_peek",
-					S_IFREG | 0444,
-					wcd939x_slave->debugfs_wcd939x_dent,
-					(void *) pdev,
-					&codec_debug_read_ops);
+			wcd939x_slave->debugfs_peek = debugfs_create_file(
+				"swrslave_peek", S_IFREG | 0444,
+				wcd939x_slave->debugfs_wcd939x_dent,
+				(void *)pdev, &codec_debug_read_ops);
 
-			wcd939x_slave->debugfs_poke =
-					debugfs_create_file("swrslave_poke",
-					S_IFREG | 0444,
-					wcd939x_slave->debugfs_wcd939x_dent,
-					(void *) pdev,
-					&codec_debug_write_ops);
+			wcd939x_slave->debugfs_poke = debugfs_create_file(
+				"swrslave_poke", S_IFREG | 0444,
+				wcd939x_slave->debugfs_wcd939x_dent,
+				(void *)pdev, &codec_debug_write_ops);
 
-			wcd939x_slave->debugfs_reg_dump =
-					debugfs_create_file(
-					"swrslave_reg_dump",
-					S_IFREG | 0444,
-					wcd939x_slave->debugfs_wcd939x_dent,
-					(void *) pdev,
-					&codec_debug_dump_ops);
-                }
-        }
+			wcd939x_slave->debugfs_reg_dump = debugfs_create_file(
+				"swrslave_reg_dump", S_IFREG | 0444,
+				wcd939x_slave->debugfs_wcd939x_dent,
+				(void *)pdev, &codec_debug_dump_ops);
+		}
+	}
 #endif
 
 	return component_add(&pdev->dev, &wcd939x_slave_comp_ops);
@@ -397,14 +389,15 @@ static int wcd939x_swr_remove(struct swr_device *pdev)
 }
 
 static struct swr_driver wcd939x_slave_driver = {
-	.driver = {
-		.name = "wcd939x-slave",
-		.owner = THIS_MODULE,
-		.of_match_table = wcd939x_swr_dt_match,
-	},
-	.probe = wcd939x_swr_probe,
-	.remove = wcd939x_swr_remove,
-	.id_table = wcd939x_swr_id,
+    .driver =
+        {
+            .name = "wcd939x-slave",
+            .owner = THIS_MODULE,
+            .of_match_table = wcd939x_swr_dt_match,
+        },
+    .probe = wcd939x_swr_probe,
+    .remove = wcd939x_swr_remove,
+    .id_table = wcd939x_swr_id,
 };
 
 static int __init wcd939x_slave_init(void)

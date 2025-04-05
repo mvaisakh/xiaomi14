@@ -3,29 +3,28 @@
  * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"%s: " fmt, __func__
+#define pr_fmt(fmt) "%s: " fmt, __func__
 
+#include <linux/bitmap.h>
+#include <linux/clk.h>
+#include <linux/delay.h>
+#include <linux/dma-mapping.h>
 #include <linux/errno.h>
 #include <linux/mutex.h>
 #include <linux/platform_device.h>
-#include <linux/dma-mapping.h>
-#include <linux/delay.h>
 #include <linux/sort.h>
-#include <linux/clk.h>
-#include <linux/bitmap.h>
 
-#include "sde_rotator_r1_hwio.h"
-#include "sde_rotator_util.h"
-#include "sde_rotator_r1_internal.h"
 #include "sde_rotator_core.h"
+#include "sde_rotator_r1_hwio.h"
+#include "sde_rotator_r1_internal.h"
+#include "sde_rotator_util.h"
 
-struct sde_mdp_ctl *sde_mdp_ctl_alloc(struct sde_rot_data_type *mdata,
-					       u32 off)
+struct sde_mdp_ctl *sde_mdp_ctl_alloc(struct sde_rot_data_type *mdata, u32 off)
 {
 	struct sde_mdp_ctl *ctl = NULL;
 	static struct sde_mdp_ctl sde_ctl[5];
-	static const u32 offset[] = {0x00002000, 0x00002200, 0x00002400,
-			     0x00002600, 0x00002800};
+	static const u32 offset[] = { 0x00002000, 0x00002200, 0x00002400,
+				      0x00002600, 0x00002800 };
 
 	if (off >= ARRAY_SIZE(offset)) {
 		SDEROT_ERR("invalid parameters\n");
@@ -62,7 +61,7 @@ struct sde_mdp_mixer *sde_mdp_mixer_assign(u32 id, bool wb)
 	struct sde_mdp_mixer *mixer = NULL;
 	struct sde_rot_data_type *mdata = sde_rot_get_mdata();
 	static struct sde_mdp_mixer sde_mixer[16];
-	static const u32 offset[] = {0x00048000, 0x00049000};
+	static const u32 offset[] = { 0x00048000, 0x00049000 };
 
 	if (id >= ARRAY_SIZE(offset)) {
 		SDEROT_ERR("invalid parameters\n");
@@ -76,13 +75,11 @@ struct sde_mdp_mixer *sde_mdp_mixer_assign(u32 id, bool wb)
 	return mixer;
 }
 
-static void sde_mdp_mixer_setup(struct sde_mdp_ctl *master_ctl,
-	int mixer_mux)
+static void sde_mdp_mixer_setup(struct sde_mdp_ctl *master_ctl, int mixer_mux)
 {
 	int i;
 	struct sde_mdp_ctl *ctl = NULL;
-	struct sde_mdp_mixer *mixer = sde_mdp_mixer_get(master_ctl,
-		mixer_mux);
+	struct sde_mdp_mixer *mixer = sde_mdp_mixer_get(master_ctl, mixer_mux);
 
 	if (!mixer)
 		return;
@@ -130,7 +127,7 @@ int sde_mdp_get_pipe_flush_bits(struct sde_mdp_pipe *pipe)
 	if (pipe->type == SDE_MDP_PIPE_TYPE_DMA)
 		flush_bits |= BIT(pipe->num) << 5;
 	else if (pipe->num == SDE_MDP_SSPP_VIG3 ||
-			pipe->num == SDE_MDP_SSPP_RGB3)
+		 pipe->num == SDE_MDP_SSPP_RGB3)
 		flush_bits |= BIT(pipe->num) << 10;
 	else if (pipe->type == SDE_MDP_PIPE_TYPE_CURSOR)
 		flush_bits |= BIT(22 + pipe->num - SDE_MDP_SSPP_CURSOR0);
@@ -141,7 +138,7 @@ int sde_mdp_get_pipe_flush_bits(struct sde_mdp_pipe *pipe)
 }
 
 int sde_mdp_mixer_pipe_update(struct sde_mdp_pipe *pipe,
-			 struct sde_mdp_mixer *mixer, int params_changed)
+			      struct sde_mdp_mixer *mixer, int params_changed)
 {
 	struct sde_mdp_ctl *ctl;
 
@@ -173,7 +170,7 @@ int sde_mdp_display_wait4comp(struct sde_mdp_ctl *ctl)
 }
 
 int sde_mdp_display_commit(struct sde_mdp_ctl *ctl, void *arg,
-	struct sde_mdp_commit_cb *commit_cb)
+			   struct sde_mdp_commit_cb *commit_cb)
 {
 	int ret = 0;
 	u32 ctl_flush_bits = 0;
@@ -195,7 +192,7 @@ int sde_mdp_display_commit(struct sde_mdp_ctl *ctl, void *arg,
 	sde_mdp_mixer_setup(ctl, SDE_MDP_MIXER_MUX_RIGHT);
 
 	sde_mdp_ctl_write(ctl, SDE_MDP_REG_CTL_TOP, ctl->opmode);
-	ctl->flush_bits |= BIT(17);	/* CTL */
+	ctl->flush_bits |= BIT(17); /* CTL */
 
 	ctl_flush_bits = ctl->flush_bits;
 
@@ -222,7 +219,7 @@ done:
  * dedicated wfd block and writeback block is shared.
  */
 struct sde_mdp_ctl *sde_mdp_ctl_mixer_switch(struct sde_mdp_ctl *ctl,
-					       u32 return_type)
+					     u32 return_type)
 {
 	if (ctl->wb_type == return_type)
 		return ctl;
@@ -236,7 +233,7 @@ struct sde_mdp_writeback *sde_mdp_wb_assign(u32 num, u32 reg_index)
 	struct sde_rot_data_type *mdata = sde_rot_get_mdata();
 	struct sde_mdp_writeback *wb = NULL;
 	static struct sde_mdp_writeback sde_wb[16];
-	static const u32 offset[] = {0x00065000, 0x00065800, 0x00066000};
+	static const u32 offset[] = { 0x00065000, 0x00065800, 0x00066000 };
 
 	if (num >= ARRAY_SIZE(offset)) {
 		SDEROT_ERR("invalid parameters\n");

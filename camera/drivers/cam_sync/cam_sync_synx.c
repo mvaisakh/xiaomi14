@@ -12,13 +12,13 @@ extern unsigned long cam_sync_monitor_mask;
  * struct cam_synx_obj_row - Synx obj row
  */
 struct cam_synx_obj_row {
-	char                            name[CAM_SYNX_OBJ_NAME_LEN];
-	uint32_t                        synx_obj;
-	enum cam_synx_obj_state         state;
-	cam_sync_callback_for_synx_obj  sync_cb;
-	bool                            cb_registered_for_sync;
-	bool                            sync_signal_synx;
-	int32_t                         sync_obj;
+	char name[CAM_SYNX_OBJ_NAME_LEN];
+	uint32_t synx_obj;
+	enum cam_synx_obj_state state;
+	cam_sync_callback_for_synx_obj sync_cb;
+	bool cb_registered_for_sync;
+	bool sync_signal_synx;
+	int32_t sync_obj;
 };
 
 /**
@@ -36,9 +36,8 @@ struct cam_synx_obj_device {
 static struct cam_synx_obj_device *g_cam_synx_obj_dev;
 static char cam_synx_session_name[64] = "Camera_Generic_Synx_Session";
 
-
 static inline struct cam_generic_fence_monitor_entry *
-	__cam_synx_obj_get_monitor_entries(int idx)
+__cam_synx_obj_get_monitor_entries(int idx)
 {
 	struct cam_generic_fence_monitor_data *monitor_data;
 
@@ -51,7 +50,7 @@ static inline struct cam_generic_fence_monitor_entry *
 }
 
 static inline struct cam_generic_fence_monitor_entry *
-	__cam_synx_obj_get_prev_monitor_entries(int idx)
+__cam_synx_obj_get_prev_monitor_entries(int idx)
 {
 	struct cam_generic_fence_monitor_data *monitor_data;
 
@@ -64,7 +63,7 @@ static inline struct cam_generic_fence_monitor_entry *
 }
 
 static int __cam_synx_obj_map_sync_status_util(uint32_t sync_status,
-	uint32_t *out_synx_status)
+					       uint32_t *out_synx_status)
 {
 	if (!out_synx_status)
 		return -EINVAL;
@@ -96,11 +95,13 @@ static void __cam_synx_obj_save_previous_monitor_data(int32_t row_idx)
 
 	/* save current usage details into prev variables */
 	strscpy(row_mon_data->prev_name, row->name, CAM_SYNX_OBJ_NAME_LEN);
-	row_mon_data->prev_obj_id          = row->synx_obj;
-	row_mon_data->prev_sync_id         = row->sync_obj;
-	row_mon_data->prev_state           = row->state;
-	row_mon_data->prev_monitor_head    = atomic64_read(&row_mon_data->monitor_head);
-	row_mon_data->swap_monitor_entries = !row_mon_data->swap_monitor_entries;
+	row_mon_data->prev_obj_id = row->synx_obj;
+	row_mon_data->prev_sync_id = row->sync_obj;
+	row_mon_data->prev_state = row->state;
+	row_mon_data->prev_monitor_head =
+		atomic64_read(&row_mon_data->monitor_head);
+	row_mon_data->swap_monitor_entries =
+		!row_mon_data->swap_monitor_entries;
 }
 
 static void __cam_synx_obj_dump_monitor_array(int32_t row_idx)
@@ -109,11 +110,12 @@ static void __cam_synx_obj_dump_monitor_array(int32_t row_idx)
 	struct cam_synx_obj_row *row;
 
 	if (!g_cam_synx_obj_dev->monitor_data ||
-		!test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask))
+	    !test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask))
 		return;
 
 	if (!CAM_GENERIC_MONITOR_GET_DATA(g_cam_synx_obj_dev->monitor_data,
-		row_idx)->prev_obj_id)
+					  row_idx)
+		     ->prev_obj_id)
 		return;
 
 	row = &g_cam_synx_obj_dev->rows[row_idx];
@@ -125,8 +127,7 @@ static void __cam_synx_obj_dump_monitor_array(int32_t row_idx)
 		g_cam_synx_obj_dev->monitor_data, row_idx);
 	obj_info.fence_type = CAM_GENERIC_FENCE_TYPE_SYNX_OBJ;
 	obj_info.sync_id = row->sync_obj;
-	obj_info.monitor_entries =
-		__cam_synx_obj_get_monitor_entries(row_idx);
+	obj_info.monitor_entries = __cam_synx_obj_get_monitor_entries(row_idx);
 	obj_info.prev_monitor_entries =
 		__cam_synx_obj_get_prev_monitor_entries(row_idx);
 	cam_generic_fence_dump_monitor_array(&obj_info);
@@ -158,26 +159,27 @@ static void __cam_synx_obj_signal_cb(u32 h_synx, int status, void *data)
 	}
 
 	if (synx_obj_row->state == CAM_SYNX_OBJ_STATE_INVALID) {
-		CAM_ERR(CAM_SYNX,
-			"Synx obj :%d is in invalid state: %d",
+		CAM_ERR(CAM_SYNX, "Synx obj :%d is in invalid state: %d",
 			synx_obj_row->synx_obj, synx_obj_row->state);
 		return;
 	}
 
 	CAM_DBG(CAM_SYNX, "Synx obj: %d signaled, signal sync obj: %d",
-		 synx_obj_row->synx_obj, synx_obj_row->sync_obj);
+		synx_obj_row->synx_obj, synx_obj_row->sync_obj);
 
 	if ((synx_obj_row->cb_registered_for_sync) && (synx_obj_row->sync_cb)) {
 		signal_sync_obj.synx_obj = synx_obj_row->synx_obj;
 		switch (status) {
 		case SYNX_STATE_SIGNALED_SUCCESS:
-			signal_sync_obj.status = CAM_SYNC_STATE_SIGNALED_SUCCESS;
+			signal_sync_obj.status =
+				CAM_SYNC_STATE_SIGNALED_SUCCESS;
 			break;
 		case SYNX_STATE_SIGNALED_CANCEL:
 			signal_sync_obj.status = CAM_SYNC_STATE_SIGNALED_CANCEL;
 			break;
 		default:
-			CAM_WARN(CAM_SYNX,
+			CAM_WARN(
+				CAM_SYNX,
 				"Synx signal status %d is neither SUCCESS nor CANCEL, custom code?",
 				status);
 			signal_sync_obj.status = CAM_SYNC_STATE_SIGNALED_ERROR;
@@ -186,28 +188,29 @@ static void __cam_synx_obj_signal_cb(u32 h_synx, int status, void *data)
 		synx_obj_row->state = CAM_SYNX_OBJ_STATE_SIGNALED;
 		synx_obj_row->sync_cb(synx_obj_row->sync_obj, &signal_sync_obj);
 		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
-			&cam_sync_monitor_mask)) {
-			cam_synx_obj_find_obj_in_table(synx_obj_row->synx_obj, &idx);
-			cam_generic_fence_update_monitor_array(idx,
-				&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
+			     &cam_sync_monitor_mask)) {
+			cam_synx_obj_find_obj_in_table(synx_obj_row->synx_obj,
+						       &idx);
+			cam_generic_fence_update_monitor_array(
+				idx, &g_cam_synx_obj_dev->dev_lock,
+				g_cam_synx_obj_dev->monitor_data,
 				CAM_FENCE_OP_UNREGISTER_ON_SIGNAL);
 		}
 	}
-
 }
 
 /*
  * Synx APIs need to be invoked in non atomic context,
  * all these utils invoke synx driver
  */
-static inline int __cam_synx_signal_util(
-	uint32_t synx_hdl, uint32_t signal_status)
+static inline int __cam_synx_signal_util(uint32_t synx_hdl,
+					 uint32_t signal_status)
 {
-	return synx_signal(g_cam_synx_obj_dev->session_handle, synx_hdl, signal_status);
+	return synx_signal(g_cam_synx_obj_dev->session_handle, synx_hdl,
+			   signal_status);
 }
 
-static inline int __cam_synx_deregister_cb_util(
-	uint32_t synx_hdl, void *data)
+static inline int __cam_synx_deregister_cb_util(uint32_t synx_hdl, void *data)
 {
 	struct synx_callback_params cb_params;
 
@@ -216,11 +219,11 @@ static inline int __cam_synx_deregister_cb_util(
 	cb_params.h_synx = synx_hdl;
 	cb_params.cb_func = __cam_synx_obj_signal_cb;
 
-	return synx_cancel_async_wait(g_cam_synx_obj_dev->session_handle, &cb_params);
+	return synx_cancel_async_wait(g_cam_synx_obj_dev->session_handle,
+				      &cb_params);
 }
 
-static inline int __cam_synx_create_hdl_util(
-	struct synx_create_params *params)
+static inline int __cam_synx_create_hdl_util(struct synx_create_params *params)
 {
 	return synx_create(g_cam_synx_obj_dev->session_handle, params);
 }
@@ -230,14 +233,13 @@ static inline int __cam_synx_release_hdl_util(uint32_t synx_hdl)
 	return synx_release(g_cam_synx_obj_dev->session_handle, synx_hdl);
 }
 
-static inline int __cam_synx_import_hdl_util(
-	struct synx_import_params *params)
+static inline int __cam_synx_import_hdl_util(struct synx_import_params *params)
 {
 	return synx_import(g_cam_synx_obj_dev->session_handle, params);
 }
 
-static inline int __cam_synx_register_cb_util(
-	struct synx_callback_params *cb_params)
+static inline int
+__cam_synx_register_cb_util(struct synx_callback_params *cb_params)
 {
 	return synx_async_wait(g_cam_synx_obj_dev->session_handle, cb_params);
 }
@@ -259,23 +261,28 @@ static int __cam_synx_obj_release(int32_t row_idx)
 			row->name, row->synx_obj);
 
 		if (row->cb_registered_for_sync) {
-			if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask))
-				cam_generic_fence_update_monitor_array(row_idx,
-					&g_cam_synx_obj_dev->dev_lock,
+			if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
+				     &cam_sync_monitor_mask))
+				cam_generic_fence_update_monitor_array(
+					row_idx, &g_cam_synx_obj_dev->dev_lock,
 					g_cam_synx_obj_dev->monitor_data,
 					CAM_FENCE_OP_UNREGISTER_ON_SIGNAL);
 			deregister_cb = true;
 		}
 
-		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask))
-			cam_generic_fence_update_monitor_array(row_idx,
-				&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
+		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
+			     &cam_sync_monitor_mask))
+			cam_generic_fence_update_monitor_array(
+				row_idx, &g_cam_synx_obj_dev->dev_lock,
+				g_cam_synx_obj_dev->monitor_data,
 				CAM_FENCE_OP_SIGNAL);
 
 		if (deregister_cb) {
-			spin_unlock_bh(&g_cam_synx_obj_dev->row_spinlocks[row_idx]);
+			spin_unlock_bh(
+				&g_cam_synx_obj_dev->row_spinlocks[row_idx]);
 			rc = __cam_synx_deregister_cb_util(synx_hdl, row);
-			spin_lock_bh(&g_cam_synx_obj_dev->row_spinlocks[row_idx]);
+			spin_lock_bh(
+				&g_cam_synx_obj_dev->row_spinlocks[row_idx]);
 			if (rc) {
 				CAM_DBG(CAM_SYNX,
 					"Failed to deregister cb for synx hdl: %u rc: %d",
@@ -287,17 +294,18 @@ static int __cam_synx_obj_release(int32_t row_idx)
 
 	if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask)) {
 		/* Update monitor entries & save data before row memset to 0 */
-		cam_generic_fence_update_monitor_array(row_idx,
-			&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
-			CAM_FENCE_OP_DESTROY);
+		cam_generic_fence_update_monitor_array(
+			row_idx, &g_cam_synx_obj_dev->dev_lock,
+			g_cam_synx_obj_dev->monitor_data, CAM_FENCE_OP_DESTROY);
 
-		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ_DUMP, &cam_sync_monitor_mask))
+		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ_DUMP,
+			     &cam_sync_monitor_mask))
 			__cam_synx_obj_dump_monitor_array(row_idx);
 		__cam_synx_obj_save_previous_monitor_data(row_idx);
 	}
 
-	CAM_DBG(CAM_SYNX,
-		"Releasing synx_obj: %d[%s] row_idx: %u", row->synx_obj, row->name, row_idx);
+	CAM_DBG(CAM_SYNX, "Releasing synx_obj: %d[%s] row_idx: %u",
+		row->synx_obj, row->name, row_idx);
 
 	/* deinit row */
 	memset(row, 0, sizeof(struct cam_synx_obj_row));
@@ -313,7 +321,8 @@ static int __cam_synx_obj_find_free_idx(uint32_t *idx)
 	bool bit;
 
 	do {
-		*idx = find_first_zero_bit(g_cam_synx_obj_dev->bitmap, CAM_SYNX_MAX_OBJS);
+		*idx = find_first_zero_bit(g_cam_synx_obj_dev->bitmap,
+					   CAM_SYNX_MAX_OBJS);
 		if (*idx >= CAM_SYNX_MAX_OBJS) {
 			CAM_ERR(CAM_SYNC,
 				"Error: Unable to create synx, no free index");
@@ -328,7 +337,7 @@ static int __cam_synx_obj_find_free_idx(uint32_t *idx)
 }
 
 static void __cam_synx_obj_init_row(uint32_t idx, const char *name,
-	uint32_t synx_obj)
+				    uint32_t synx_obj)
 {
 	struct cam_synx_obj_row *row;
 
@@ -338,9 +347,9 @@ static void __cam_synx_obj_init_row(uint32_t idx, const char *name,
 	row->state = CAM_SYNX_OBJ_STATE_ACTIVE;
 	strscpy(row->name, name, CAM_SYNX_OBJ_NAME_LEN);
 	if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask)) {
-		cam_generic_fence_update_monitor_array(idx,
-			&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
-			CAM_FENCE_OP_CREATE);
+		cam_generic_fence_update_monitor_array(
+			idx, &g_cam_synx_obj_dev->dev_lock,
+			g_cam_synx_obj_dev->monitor_data, CAM_FENCE_OP_CREATE);
 	}
 	spin_unlock_bh(&g_cam_synx_obj_dev->row_spinlocks[idx]);
 }
@@ -364,7 +373,7 @@ int cam_synx_obj_find_obj_in_table(uint32_t synx_obj, int32_t *idx)
 		spin_lock_bh(&g_cam_synx_obj_dev->row_spinlocks[i]);
 		row = &g_cam_synx_obj_dev->rows[i];
 		if ((row->state != CAM_SYNX_OBJ_STATE_INVALID) &&
-			(row->synx_obj == synx_obj)) {
+		    (row->synx_obj == synx_obj)) {
 			*idx = i;
 			spin_unlock_bh(&g_cam_synx_obj_dev->row_spinlocks[i]);
 			rc = 0;
@@ -387,7 +396,8 @@ static int __cam_synx_obj_release_obj(uint32_t synx_obj, int32_t *idx)
 }
 
 static int __cam_synx_obj_import(const char *name,
-	struct synx_import_params *params, int32_t *row_idx)
+				 struct synx_import_params *params,
+				 int32_t *row_idx)
 {
 	int rc = -1;
 	uint32_t idx;
@@ -416,8 +426,9 @@ end:
 	return rc;
 }
 
-static int __cam_synx_map_generic_flags_to_create(uint32_t generic_flags,
-	struct synx_create_params *params)
+static int
+__cam_synx_map_generic_flags_to_create(uint32_t generic_flags,
+				       struct synx_create_params *params)
 {
 	if (!params) {
 		CAM_ERR(CAM_SYNX, "Create parameters missing");
@@ -425,16 +436,17 @@ static int __cam_synx_map_generic_flags_to_create(uint32_t generic_flags,
 	}
 
 	/*
-	 * Create Global Always - remove after userspace optimizes and
-	 * determines when global Vs local is needed
-	 */
+   * Create Global Always - remove after userspace optimizes and
+   * determines when global Vs local is needed
+   */
 	params->flags |= SYNX_CREATE_GLOBAL_FENCE;
 
 	return 0;
 }
 
-static int __cam_synx_map_generic_flags_to_import(uint32_t generic_flags,
-	struct synx_import_indv_params *params)
+static int
+__cam_synx_map_generic_flags_to_import(uint32_t generic_flags,
+				       struct synx_import_indv_params *params)
 {
 	if (!params) {
 		CAM_ERR(CAM_SYNX, "Import parameters missing");
@@ -442,16 +454,16 @@ static int __cam_synx_map_generic_flags_to_import(uint32_t generic_flags,
 	}
 
 	/*
-	 * Create Global Always - remove after userspace optimizes and
-	 * determines when global Vs local is needed
-	 */
+   * Create Global Always - remove after userspace optimizes and
+   * determines when global Vs local is needed
+   */
 	params->flags |= SYNX_IMPORT_GLOBAL_FENCE;
 
 	return 0;
 }
 
 int cam_synx_obj_create(const char *name, uint32_t flags, uint32_t *synx_obj,
-	int32_t *row_idx)
+			int32_t *row_idx)
 {
 	int rc = -1;
 	uint32_t idx;
@@ -473,7 +485,8 @@ int cam_synx_obj_create(const char *name, uint32_t flags, uint32_t *synx_obj,
 
 	rc = __cam_synx_create_hdl_util(&params);
 	if (rc) {
-		CAM_ERR(CAM_SYNX, "Failed to create new synx handle rc: %d", rc);
+		CAM_ERR(CAM_SYNX, "Failed to create new synx handle rc: %d",
+			rc);
 		goto free_idx;
 	}
 
@@ -492,7 +505,7 @@ end:
 }
 
 int cam_synx_obj_import_dma_fence(const char *name, uint32_t flags, void *fence,
-	uint32_t *synx_obj, int32_t *row_idx)
+				  uint32_t *synx_obj, int32_t *row_idx)
 {
 	struct synx_import_params params;
 
@@ -518,7 +531,7 @@ int cam_synx_obj_import_dma_fence(const char *name, uint32_t flags, void *fence,
 }
 
 int cam_synx_obj_internal_signal(int32_t row_idx,
-	struct cam_synx_obj_signal *signal_synx_obj)
+				 struct cam_synx_obj_signal *signal_synx_obj)
 {
 	int rc;
 	uint32_t signal_status;
@@ -526,8 +539,7 @@ int cam_synx_obj_internal_signal(int32_t row_idx,
 	struct cam_synx_obj_row *row = NULL;
 
 	if ((row_idx < 0) || (row_idx >= CAM_SYNX_MAX_OBJS)) {
-		CAM_ERR(CAM_SYNX, "synx obj row idx: %d is invalid",
-			row_idx);
+		CAM_ERR(CAM_SYNX, "synx obj row idx: %d is invalid", row_idx);
 		return -EINVAL;
 	}
 
@@ -538,48 +550,57 @@ int cam_synx_obj_internal_signal(int32_t row_idx,
 	row->sync_signal_synx = true;
 
 	if (row->state != CAM_SYNX_OBJ_STATE_ACTIVE) {
-		CAM_ERR(CAM_SYNX, "synx obj: %u not in right state: %d to signal",
+		CAM_ERR(CAM_SYNX,
+			"synx obj: %u not in right state: %d to signal",
 			signal_synx_obj->synx_obj, row->state);
 		rc = -EINVAL;
 		goto monitor_dump;
 	}
 
 	if (row->synx_obj != signal_synx_obj->synx_obj) {
-		CAM_WARN(CAM_SYNX,
-			"Trying to signal synx obj: %u in row: %u having a different synx obj: %u",
+		CAM_WARN(
+			CAM_SYNX,
+			"Trying to signal synx obj: %u in row: %u having a different synx "
+			"obj: %u",
 			signal_synx_obj->synx_obj, row_idx, row->synx_obj);
 		rc = 0;
 		goto monitor_dump;
 	}
 
-	rc = __cam_synx_obj_map_sync_status_util(signal_synx_obj->status, &signal_status);
+	rc = __cam_synx_obj_map_sync_status_util(signal_synx_obj->status,
+						 &signal_status);
 	if (rc) {
 		CAM_WARN(CAM_SYNX,
-			"Signaling undefined status: %d for synx obj: %d",
-			signal_synx_obj->status, signal_synx_obj->synx_obj);
+			 "Signaling undefined status: %d for synx obj: %d",
+			 signal_synx_obj->status, signal_synx_obj->synx_obj);
 	}
 
 	if (row->cb_registered_for_sync) {
-		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask))
-			cam_generic_fence_update_monitor_array(row_idx,
-				&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
+		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
+			     &cam_sync_monitor_mask))
+			cam_generic_fence_update_monitor_array(
+				row_idx, &g_cam_synx_obj_dev->dev_lock,
+				g_cam_synx_obj_dev->monitor_data,
 				CAM_FENCE_OP_UNREGISTER_ON_SIGNAL);
 		deregister_cb = true;
 	}
 
 	if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask))
-		cam_generic_fence_update_monitor_array(row_idx,
-			&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
-			CAM_FENCE_OP_SIGNAL);
+		cam_generic_fence_update_monitor_array(
+			row_idx, &g_cam_synx_obj_dev->dev_lock,
+			g_cam_synx_obj_dev->monitor_data, CAM_FENCE_OP_SIGNAL);
 
 	row->state = CAM_SYNX_OBJ_STATE_SIGNALED;
 	spin_unlock_bh(&g_cam_synx_obj_dev->row_spinlocks[row_idx]);
 
 	if (deregister_cb) {
-		rc = __cam_synx_deregister_cb_util(signal_synx_obj->synx_obj, row);
+		rc = __cam_synx_deregister_cb_util(signal_synx_obj->synx_obj,
+						   row);
 		if (rc) {
-			spin_lock_bh(&g_cam_synx_obj_dev->row_spinlocks[row_idx]);
-			CAM_ERR(CAM_SYNX, "Failed to deregister cb for synx: %u rc: %d",
+			spin_lock_bh(
+				&g_cam_synx_obj_dev->row_spinlocks[row_idx]);
+			CAM_ERR(CAM_SYNX,
+				"Failed to deregister cb for synx: %u rc: %d",
 				signal_synx_obj->synx_obj, rc);
 			goto monitor_dump;
 		}
@@ -587,7 +608,8 @@ int cam_synx_obj_internal_signal(int32_t row_idx,
 
 	rc = __cam_synx_signal_util(signal_synx_obj->synx_obj, signal_status);
 	if (rc) {
-		CAM_ERR(CAM_SYNX, "Failed to signal synx hdl: %u with status: %u rc: %d",
+		CAM_ERR(CAM_SYNX,
+			"Failed to signal synx hdl: %u with status: %u rc: %d",
 			signal_synx_obj->synx_obj, signal_status, rc);
 		goto end;
 	}
@@ -612,9 +634,11 @@ int cam_synx_obj_release(struct cam_synx_obj_release_params *release_params)
 	if (release_params->use_row_idx) {
 		rc = __cam_synx_obj_release_row(release_params->u.synx_row_idx);
 		if (rc < 0)
-			__cam_synx_obj_dump_monitor_array(release_params->u.synx_row_idx);
+			__cam_synx_obj_dump_monitor_array(
+				release_params->u.synx_row_idx);
 	} else {
-		rc = __cam_synx_obj_release_obj(release_params->u.synx_obj, &idx);
+		rc = __cam_synx_obj_release_obj(release_params->u.synx_obj,
+						&idx);
 		if ((rc < 0) && (idx >= 0))
 			__cam_synx_obj_dump_monitor_array(idx);
 	}
@@ -628,7 +652,8 @@ int cam_synx_obj_signal_obj(struct cam_synx_obj_signal *signal_synx_obj)
 
 	rc = cam_synx_obj_find_obj_in_table(signal_synx_obj->synx_obj, &idx);
 	if (rc) {
-		CAM_ERR(CAM_SYNX, "Failed to find synx obj: %u", signal_synx_obj->synx_obj);
+		CAM_ERR(CAM_SYNX, "Failed to find synx obj: %u",
+			signal_synx_obj->synx_obj);
 		return -EINVAL;
 	}
 
@@ -636,7 +661,7 @@ int cam_synx_obj_signal_obj(struct cam_synx_obj_signal *signal_synx_obj)
 }
 
 int cam_synx_obj_register_cb(int32_t *sync_obj, int32_t row_idx,
-	cam_sync_callback_for_synx_obj sync_cb)
+			     cam_sync_callback_for_synx_obj sync_cb)
 {
 	int rc = 0;
 	uint32_t synx_obj = 0;
@@ -650,8 +675,7 @@ int cam_synx_obj_register_cb(int32_t *sync_obj, int32_t row_idx,
 	}
 
 	if ((row_idx < 0) || (row_idx >= CAM_SYNX_MAX_OBJS)) {
-		CAM_ERR(CAM_SYNX, "synx obj idx: %d is invalid",
-			row_idx);
+		CAM_ERR(CAM_SYNX, "synx obj idx: %d is invalid", row_idx);
 		return -EINVAL;
 	}
 
@@ -661,9 +685,10 @@ int cam_synx_obj_register_cb(int32_t *sync_obj, int32_t row_idx,
 
 	if (row->state != CAM_SYNX_OBJ_STATE_ACTIVE) {
 		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
-			&cam_sync_monitor_mask))
-			cam_generic_fence_update_monitor_array(row_idx,
-				&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
+			     &cam_sync_monitor_mask))
+			cam_generic_fence_update_monitor_array(
+				row_idx, &g_cam_synx_obj_dev->dev_lock,
+				g_cam_synx_obj_dev->monitor_data,
 				CAM_FENCE_OP_SKIP_REGISTER_CB);
 		CAM_ERR(CAM_SYNX,
 			"synx obj at idx: %d handle: %d is not active, current state: %d",
@@ -673,16 +698,19 @@ int cam_synx_obj_register_cb(int32_t *sync_obj, int32_t row_idx,
 	}
 
 	/**
-	 * If the cb is already registered, return
-	 */
+   * If the cb is already registered, return
+   */
 	if (row->cb_registered_for_sync) {
 		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
-			&cam_sync_monitor_mask))
-			cam_generic_fence_update_monitor_array(row_idx,
-				&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
+			     &cam_sync_monitor_mask))
+			cam_generic_fence_update_monitor_array(
+				row_idx, &g_cam_synx_obj_dev->dev_lock,
+				g_cam_synx_obj_dev->monitor_data,
 				CAM_FENCE_OP_ALREADY_REGISTERED_CB);
-		CAM_WARN(CAM_SYNX,
-			"synx obj at idx: %d handle: %d has already registered a cb for sync: %d",
+		CAM_WARN(
+			CAM_SYNX,
+			"synx obj at idx: %d handle: %d has already registered a cb for "
+			"sync: %d",
 			row_idx, row->synx_obj, row->sync_obj);
 		goto monitor_dump;
 	}
@@ -698,8 +726,9 @@ int cam_synx_obj_register_cb(int32_t *sync_obj, int32_t row_idx,
 	cb_params.cb_func = __cam_synx_obj_signal_cb;
 
 	if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask))
-		cam_generic_fence_update_monitor_array(row_idx,
-			&g_cam_synx_obj_dev->dev_lock, g_cam_synx_obj_dev->monitor_data,
+		cam_generic_fence_update_monitor_array(
+			row_idx, &g_cam_synx_obj_dev->dev_lock,
+			g_cam_synx_obj_dev->monitor_data,
 			CAM_FENCE_OP_REGISTER_CB);
 
 	spin_unlock_bh(&g_cam_synx_obj_dev->row_spinlocks[row_idx]);
@@ -707,7 +736,8 @@ int cam_synx_obj_register_cb(int32_t *sync_obj, int32_t row_idx,
 	rc = __cam_synx_register_cb_util(&cb_params);
 	if (rc) {
 		CAM_ERR(CAM_SYNX,
-			"Failed to register cb for synx obj: %d rc: %d", synx_obj, rc);
+			"Failed to register cb for synx obj: %d rc: %d",
+			synx_obj, rc);
 		return rc;
 	}
 
@@ -723,8 +753,7 @@ monitor_dump:
 	return rc;
 }
 
-int cam_synx_core_recovery(
-	enum cam_sync_synx_supported_cores cam_core_id)
+int cam_synx_core_recovery(enum cam_sync_synx_supported_cores cam_core_id)
 {
 	int rc;
 	enum synx_client_id client_id = SYNX_CLIENT_MAX;
@@ -749,7 +778,7 @@ int cam_synx_core_recovery(
 
 err:
 	CAM_ERR(CAM_SYNX, "Failed to recover for synx_client: %d rc: %d",
-			client_id, rc);
+		client_id, rc);
 	return rc;
 }
 
@@ -781,11 +810,13 @@ void cam_synx_obj_open(void)
 	if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ, &cam_sync_monitor_mask)) {
 		g_cam_synx_obj_dev->monitor_data = kzalloc(
 			sizeof(struct cam_generic_fence_monitor_data *) *
-			CAM_SYNX_TABLE_SZ, GFP_KERNEL);
+				CAM_SYNX_TABLE_SZ,
+			GFP_KERNEL);
 		if (!g_cam_synx_obj_dev->monitor_data) {
-			CAM_WARN(CAM_DMA_FENCE, "Failed to allocate memory %d",
+			CAM_WARN(
+				CAM_DMA_FENCE, "Failed to allocate memory %d",
 				sizeof(struct cam_generic_fence_monitor_data *) *
-				CAM_SYNX_TABLE_SZ);
+					CAM_SYNX_TABLE_SZ);
 		}
 	}
 	mutex_unlock(&g_cam_synx_obj_dev->dev_lock);
@@ -802,15 +833,15 @@ void cam_synx_obj_close(void)
 		if (row->state == CAM_SYNX_OBJ_STATE_INVALID)
 			continue;
 
-		CAM_DBG(CAM_SYNX, "Releasing synx_obj: %d[%s]",
-			row->synx_obj, row->name);
+		CAM_DBG(CAM_SYNX, "Releasing synx_obj: %d[%s]", row->synx_obj,
+			row->name);
 
 		/* If registered for cb, remove cb */
 		if (row->cb_registered_for_sync) {
 			if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
-				&cam_sync_monitor_mask))
-				cam_generic_fence_update_monitor_array(i,
-					&g_cam_synx_obj_dev->dev_lock,
+				     &cam_sync_monitor_mask))
+				cam_generic_fence_update_monitor_array(
+					i, &g_cam_synx_obj_dev->dev_lock,
 					g_cam_synx_obj_dev->monitor_data,
 					CAM_FENCE_OP_UNREGISTER_CB);
 
@@ -820,19 +851,20 @@ void cam_synx_obj_close(void)
 		/* Signal and release the synx obj */
 		if (row->state != CAM_SYNX_OBJ_STATE_SIGNALED) {
 			if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
-				&cam_sync_monitor_mask))
-				cam_generic_fence_update_monitor_array(i,
-					&g_cam_synx_obj_dev->dev_lock,
+				     &cam_sync_monitor_mask))
+				cam_generic_fence_update_monitor_array(
+					i, &g_cam_synx_obj_dev->dev_lock,
 					g_cam_synx_obj_dev->monitor_data,
 					CAM_FENCE_OP_SIGNAL);
 
-			__cam_synx_signal_util(row->synx_obj, SYNX_STATE_SIGNALED_CANCEL);
+			__cam_synx_signal_util(row->synx_obj,
+					       SYNX_STATE_SIGNALED_CANCEL);
 		}
 
 		if (test_bit(CAM_GENERIC_FENCE_TYPE_SYNX_OBJ,
-			&cam_sync_monitor_mask))
-			cam_generic_fence_update_monitor_array(i,
-				&g_cam_synx_obj_dev->dev_lock,
+			     &cam_sync_monitor_mask))
+			cam_generic_fence_update_monitor_array(
+				i, &g_cam_synx_obj_dev->dev_lock,
 				g_cam_synx_obj_dev->monitor_data,
 				CAM_FENCE_OP_DESTROY);
 
@@ -858,7 +890,8 @@ int cam_synx_obj_driver_init(void)
 {
 	int i;
 
-	g_cam_synx_obj_dev = kzalloc(sizeof(struct cam_synx_obj_device), GFP_KERNEL);
+	g_cam_synx_obj_dev =
+		kzalloc(sizeof(struct cam_synx_obj_device), GFP_KERNEL);
 	if (!g_cam_synx_obj_dev)
 		return -ENOMEM;
 
@@ -870,7 +903,8 @@ int cam_synx_obj_driver_init(void)
 		spin_lock_init(&g_cam_synx_obj_dev->row_spinlocks[i]);
 
 	memset(&g_cam_synx_obj_dev->rows, 0, sizeof(g_cam_synx_obj_dev->rows));
-	memset(&g_cam_synx_obj_dev->bitmap, 0, sizeof(g_cam_synx_obj_dev->bitmap));
+	memset(&g_cam_synx_obj_dev->bitmap, 0,
+	       sizeof(g_cam_synx_obj_dev->bitmap));
 	bitmap_zero(g_cam_synx_obj_dev->bitmap, CAM_SYNX_MAX_OBJS);
 
 	/* zero will be considered an invalid slot */

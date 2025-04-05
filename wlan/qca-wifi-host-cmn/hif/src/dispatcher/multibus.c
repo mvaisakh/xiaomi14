@@ -18,21 +18,21 @@
  */
 
 /* this file dispatches functions to bus specific definitions */
-#include "hif_debug.h"
-#include "hif.h"
-#include "hif_main.h"
-#include "hif_io32.h"
 #include "multibus.h"
 #include "dummy.h"
+#include "hif.h"
+#include "hif_debug.h"
+#include "hif_io32.h"
+#include "hif_main.h"
 #if defined(HIF_PCI) || defined(HIF_SNOC) || defined(HIF_AHB) || \
-    defined(HIF_IPCI)
-#include "ce_main.h"
+	defined(HIF_IPCI)
 #include "ce_api.h"
 #include "ce_internal.h"
+#include "ce_main.h"
 #endif
-#include "htc_services.h"
 #include "a_types.h"
 #include "dummy.h"
+#include "htc_services.h"
 #include "qdf_module.h"
 
 /**
@@ -48,10 +48,8 @@ static void hif_initialize_default_ops(struct hif_softc *hif_sc)
 	/* must be filled in by hif_bus_open */
 	bus_ops->hif_bus_close = NULL;
 	/* dummy implementations */
-	bus_ops->hif_display_stats =
-		&hif_dummy_display_stats;
-	bus_ops->hif_clear_stats =
-		&hif_dummy_clear_stats;
+	bus_ops->hif_display_stats = &hif_dummy_display_stats;
+	bus_ops->hif_clear_stats = &hif_dummy_clear_stats;
 	bus_ops->hif_set_bundle_mode = &hif_dummy_set_bundle_mode;
 	bus_ops->hif_bus_reset_resume = &hif_dummy_bus_reset_resume;
 	bus_ops->hif_bus_suspend_noirq = &hif_dummy_bus_suspend_noirq;
@@ -61,8 +59,7 @@ static void hif_initialize_default_ops(struct hif_softc *hif_sc)
 	bus_ops->hif_map_ce_to_irq = &hif_dummy_map_ce_to_irq;
 	bus_ops->hif_grp_irq_configure = &hif_dummy_grp_irq_configure;
 	bus_ops->hif_grp_irq_deconfigure = &hif_dummy_grp_irq_deconfigure;
-	bus_ops->hif_config_irq_affinity =
-		&hif_dummy_config_irq_affinity;
+	bus_ops->hif_config_irq_affinity = &hif_dummy_config_irq_affinity;
 	bus_ops->hif_config_irq_by_ceid = &hif_dummy_config_irq_by_ceid;
 	bus_ops->hif_enable_grp_irqs = &hif_dummy_enable_grp_irqs;
 	bus_ops->hif_disable_grp_irqs = &hif_dummy_enable_grp_irqs;
@@ -136,8 +133,7 @@ int hif_bus_get_context_size(enum qdf_bus_type bus_type)
  *
  * Return: QDF_STATUS_SUCCESS or error
  */
-QDF_STATUS hif_bus_open(struct hif_softc *hif_sc,
-			enum qdf_bus_type bus_type)
+QDF_STATUS hif_bus_open(struct hif_softc *hif_sc, enum qdf_bus_type bus_type)
 {
 	QDF_STATUS status = QDF_STATUS_E_INVAL;
 
@@ -200,7 +196,6 @@ void hif_bus_prevent_linkdown(struct hif_softc *hif_sc, bool flag)
 	hif_sc->bus_ops.hif_bus_prevent_linkdown(hif_sc, flag);
 }
 
-
 void hif_reset_soc(struct hif_opaque_softc *hif_ctx)
 {
 	struct hif_softc *hif_sc = HIF_GET_SOFTC(hif_ctx);
@@ -250,11 +245,11 @@ int hif_bus_resume_noirq(struct hif_opaque_softc *hif_ctx)
 	return hif_sc->bus_ops.hif_bus_resume_noirq(hif_sc);
 }
 
-int hif_target_sleep_state_adjust(struct hif_softc *hif_sc,
-			      bool sleep_ok, bool wait_for_it)
+int hif_target_sleep_state_adjust(struct hif_softc *hif_sc, bool sleep_ok,
+				  bool wait_for_it)
 {
-	return hif_sc->bus_ops.hif_target_sleep_state_adjust(hif_sc,
-			sleep_ok, wait_for_it);
+	return hif_sc->bus_ops.hif_target_sleep_state_adjust(hif_sc, sleep_ok,
+							     wait_for_it);
 }
 qdf_export_symbol(hif_target_sleep_state_adjust);
 
@@ -287,13 +282,13 @@ int hif_bus_configure(struct hif_softc *hif_sc)
 	return hif_sc->bus_ops.hif_bus_configure(hif_sc);
 }
 
-QDF_STATUS hif_get_config_item(struct hif_opaque_softc *hif_ctx,
-		     int opcode, void *config, uint32_t config_len)
+QDF_STATUS hif_get_config_item(struct hif_opaque_softc *hif_ctx, int opcode,
+			       void *config, uint32_t config_len)
 {
 	struct hif_softc *hif_sc = HIF_GET_SOFTC(hif_ctx);
 
 	return hif_sc->bus_ops.hif_get_config_item(hif_sc, opcode, config,
-						 config_len);
+						   config_len);
 }
 
 void hif_set_mailbox_swap(struct hif_opaque_softc *hif_ctx)
@@ -359,13 +354,12 @@ int hif_dump_registers(struct hif_opaque_softc *hif_hdl)
 }
 
 void hif_dump_target_memory(struct hif_opaque_softc *hif_hdl,
-			    void *ramdump_base,
-			    uint32_t address, uint32_t size)
+			    void *ramdump_base, uint32_t address, uint32_t size)
 {
 	struct hif_softc *hif_sc = HIF_GET_SOFTC(hif_hdl);
 
-	hif_sc->bus_ops.hif_dump_target_memory(hif_sc, ramdump_base,
-					       address, size);
+	hif_sc->bus_ops.hif_dump_target_memory(hif_sc, ramdump_base, address,
+					       size);
 }
 
 void hif_ipa_get_ce_resource(struct hif_opaque_softc *hif_hdl,
@@ -375,8 +369,8 @@ void hif_ipa_get_ce_resource(struct hif_opaque_softc *hif_hdl,
 {
 	struct hif_softc *hif_sc = HIF_GET_SOFTC(hif_hdl);
 
-	hif_sc->bus_ops.hif_ipa_get_ce_resource(hif_sc, ce_sr,
-			ce_sr_ring_size, ce_reg_paddr);
+	hif_sc->bus_ops.hif_ipa_get_ce_resource(hif_sc, ce_sr, ce_sr_ring_size,
+						ce_reg_paddr);
 }
 
 void hif_mask_interrupt_call(struct hif_opaque_softc *hif_hdl)
@@ -415,7 +409,7 @@ void hif_enable_power_management(struct hif_opaque_softc *hif_hdl,
 	struct hif_softc *hif_sc = HIF_GET_SOFTC(hif_hdl);
 
 	hif_sc->bus_ops.hif_enable_power_management(hif_sc,
-				    is_packet_log_enabled);
+						    is_packet_log_enabled);
 }
 
 /**
@@ -442,7 +436,7 @@ void hif_disable_power_management(struct hif_opaque_softc *hif_hdl)
  * Return: none
  */
 void hif_set_bundle_mode(struct hif_opaque_softc *scn, bool enabled,
-				int rx_bundle_cnt)
+			 int rx_bundle_cnt)
 {
 	struct hif_softc *hif_sc = HIF_GET_SOFTC(scn);
 
@@ -632,8 +626,8 @@ void hif_config_irq_clear_cpu_affinity(struct hif_opaque_softc *scn,
 {
 	struct hif_softc *hif_sc = HIF_GET_SOFTC(scn);
 
-	hif_sc->bus_ops.hif_config_irq_clear_cpu_affinity(hif_sc,
-							  intr_ctxt_id, cpu);
+	hif_sc->bus_ops.hif_config_irq_clear_cpu_affinity(hif_sc, intr_ctxt_id,
+							  cpu);
 }
 
 qdf_export_symbol(hif_config_irq_clear_affinity);
@@ -661,14 +655,13 @@ int hif_apps_grp_irqs_enable(struct hif_opaque_softc *hif_ctx)
 	if (!scn)
 		return -EINVAL;
 
-	for (i = 0 ; i < HIF_MAX_GROUP; i++) {
+	for (i = 0; i < HIF_MAX_GROUP; i++) {
 		hif_exec = hif_exec_get_ctx(hif_ctx, i);
 		if (!hif_exec)
 			continue;
 
 		for (j = 0; j < hif_exec->numirq; j++)
-			pfrm_enable_irq(scn->qdf_dev->dev,
-					hif_exec->os_irq[j]);
+			pfrm_enable_irq(scn->qdf_dev->dev, hif_exec->os_irq[j]);
 	}
 
 	return 0;
@@ -685,7 +678,7 @@ int hif_apps_grp_irqs_disable(struct hif_opaque_softc *hif_ctx)
 	if (!scn)
 		return -EINVAL;
 
-	for (i = 0 ; i < HIF_MAX_GROUP; i++) {
+	for (i = 0; i < HIF_MAX_GROUP; i++) {
 		hif_exec = hif_exec_get_ctx(hif_ctx, i);
 		if (!hif_exec)
 			continue;

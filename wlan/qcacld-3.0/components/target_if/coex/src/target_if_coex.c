@@ -18,13 +18,12 @@
 /**
  * DOC: contains coex target if functions
  */
-#include <wlan_coex_main.h>
-#include <target_if_coex.h>
 #include "wlan_coex_public_structs.h"
+#include <target_if_coex.h>
+#include <wlan_coex_main.h>
 
-static QDF_STATUS
-target_if_coex_config_send(struct wlan_objmgr_pdev *pdev,
-			   struct coex_config_params *param)
+static QDF_STATUS target_if_coex_config_send(struct wlan_objmgr_pdev *pdev,
+					     struct coex_config_params *param)
 {
 	wmi_unified_t pdev_wmi_handle;
 
@@ -88,15 +87,14 @@ target_if_dbam_process_event(struct wlan_objmgr_psoc *psoc,
  *
  * Return: 0 on success, and error code on failure
  */
-static int target_if_dbam_response_event_handler(ol_scn_t scn,
-						 uint8_t *data,
+static int target_if_dbam_response_event_handler(ol_scn_t scn, uint8_t *data,
 						 uint32_t len)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	wmi_unified_t wmi_handle;
 	struct wlan_lmac_if_dbam_rx_ops *rx_ops;
-	struct coex_dbam_config_resp resp = {0};
+	struct coex_dbam_config_resp resp = { 0 };
 
 	target_if_debug("scn:%pK, data:%pK, datalen:%d", scn, data, len);
 	if (!scn || !data) {
@@ -174,10 +172,9 @@ target_if_dbam_register_event_handler(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_register_event_handler(wmi_handle,
-					wmi_coex_dbam_complete_event_id,
-					target_if_dbam_response_event_handler,
-					WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_coex_dbam_complete_event_id,
+		target_if_dbam_response_event_handler, WMI_RX_WORK_CTX);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		target_if_err("Failed to register dbam complete event cb");

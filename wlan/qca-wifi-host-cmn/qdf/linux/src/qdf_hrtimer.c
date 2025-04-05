@@ -22,8 +22,8 @@
  * QCA driver framework (QDF) high resolution timers timer APIs
  */
 
-#include "i_qdf_hrtimer.h"
 #include "qdf_hrtimer.h"
+#include "i_qdf_hrtimer.h"
 #include <qdf_module.h>
 
 void qdf_hrtimer_start(qdf_hrtimer_data_t *timer, qdf_ktime_t interval,
@@ -41,10 +41,8 @@ int qdf_hrtimer_cancel(qdf_hrtimer_data_t *timer)
 
 qdf_export_symbol(qdf_hrtimer_cancel);
 
-void qdf_hrtimer_init(qdf_hrtimer_data_t *timer,
-		      qdf_hrtimer_func_t callback,
-		      enum qdf_clock_id clock,
-		      enum qdf_hrtimer_mode mode,
+void qdf_hrtimer_init(qdf_hrtimer_data_t *timer, qdf_hrtimer_func_t callback,
+		      enum qdf_clock_id clock, enum qdf_hrtimer_mode mode,
 		      enum qdf_context_mode ctx)
 {
 	__qdf_hrtimer_init(timer, callback, clock, mode, ctx);
@@ -101,8 +99,7 @@ qdf_ktime_t qdf_hrtimer_cb_get_time(qdf_hrtimer_data_t *timer)
 
 qdf_export_symbol(qdf_hrtimer_cb_get_time);
 
-uint64_t qdf_hrtimer_forward(qdf_hrtimer_data_t *timer,
-			     qdf_ktime_t now,
+uint64_t qdf_hrtimer_forward(qdf_hrtimer_data_t *timer, qdf_ktime_t now,
 			     qdf_ktime_t interval)
 {
 	return __qdf_hrtimer_forward(timer, now, interval);

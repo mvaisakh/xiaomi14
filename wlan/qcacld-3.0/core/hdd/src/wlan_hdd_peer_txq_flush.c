@@ -21,20 +21,20 @@
  *
  */
 
-#include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_peer_txq_flush.h"
-#include <qca_vendor.h>
+#include "osif_sync.h"
+#include "wlan_hdd_main.h"
 #include "wlan_hdd_object_manager.h"
+#include <qca_vendor.h>
+#include <wlan_hdd_includes.h>
 
 const struct nla_policy
-peer_txq_flush_policy[QCA_WLAN_VENDOR_ATTR_FLUSH_PENDING_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_PEER_ADDR] = VENDOR_NLA_POLICY_MAC_ADDR,
-	[QCA_WLAN_VENDOR_ATTR_AC] = { .type = NLA_U8 },
-	[QCA_WLAN_VENDOR_ATTR_TID_MASK] = { .type = NLA_U32 },
-	[QCA_WLAN_VENDOR_ATTR_FLUSH_PENDING_POLICY] = { .type = NLA_U32 },
-};
+	peer_txq_flush_policy[QCA_WLAN_VENDOR_ATTR_FLUSH_PENDING_MAX + 1] = {
+		[QCA_WLAN_VENDOR_ATTR_PEER_ADDR] = VENDOR_NLA_POLICY_MAC_ADDR,
+		[QCA_WLAN_VENDOR_ATTR_AC] = { .type = NLA_U8 },
+		[QCA_WLAN_VENDOR_ATTR_TID_MASK] = { .type = NLA_U32 },
+		[QCA_WLAN_VENDOR_ATTR_FLUSH_PENDING_POLICY] = { .type = NLA_U32 },
+	};
 
 /**
  * map_txq_policy() - Map NL flush policy attribute value to DP
@@ -123,10 +123,10 @@ static int hdd_peer_txq_flush_config(struct hdd_adapter *adapter,
  *
  * Return: 0 on success, negative errno on failure
  */
-static int
-__wlan_hdd_cfg80211_peer_txq_flush_config(struct wiphy *wiphy,
-					  struct wireless_dev *wdev,
-					  const void *data, int data_len)
+static int __wlan_hdd_cfg80211_peer_txq_flush_config(struct wiphy *wiphy,
+						     struct wireless_dev *wdev,
+						     const void *data,
+						     int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -171,8 +171,7 @@ __wlan_hdd_cfg80211_peer_txq_flush_config(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_peer_txq_flush_config(struct wiphy *wiphy,
 					    struct wireless_dev *wdev,
-					    const void *attr,
-					    int attr_len)
+					    const void *attr, int attr_len)
 {
 	int ret;
 	struct osif_vdev_sync *vdev_sync;
@@ -181,8 +180,8 @@ int wlan_hdd_cfg80211_peer_txq_flush_config(struct wiphy *wiphy,
 	if (ret)
 		return ret;
 
-	ret = __wlan_hdd_cfg80211_peer_txq_flush_config(wiphy, wdev,
-							attr, attr_len);
+	ret = __wlan_hdd_cfg80211_peer_txq_flush_config(wiphy, wdev, attr,
+							attr_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 

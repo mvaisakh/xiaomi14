@@ -16,13 +16,13 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "dummy.h"
 #include "hif.h"
+#include "hif_io32.h"
 #include "hif_main.h"
+#include "if_sdio.h"
 #include "multibus.h"
 #include "sdio_api.h"
-#include "hif_io32.h"
-#include "dummy.h"
-#include "if_sdio.h"
 
 /**
  * hif_initialize_sdio_ops() - initialize the sdio ops
@@ -41,7 +41,7 @@ QDF_STATUS hif_initialize_sdio_ops(struct hif_softc *hif_sc)
 	bus_ops->hif_bus_suspend = &hif_sdio_bus_suspend;
 	bus_ops->hif_bus_resume = &hif_sdio_bus_resume;
 	bus_ops->hif_target_sleep_state_adjust =
-			&hif_dummy_target_sleep_state_adjust;
+		&hif_dummy_target_sleep_state_adjust;
 	bus_ops->hif_disable_isr = &hif_dummy_disable_isr;
 	bus_ops->hif_nointrs = &hif_dummy_nointrs;
 	bus_ops->hif_enable_bus = &hif_sdio_enable_bus;
@@ -53,7 +53,7 @@ QDF_STATUS hif_initialize_sdio_ops(struct hif_softc *hif_sc)
 	bus_ops->hif_shutdown_device = &hif_sdio_shutdown;
 	bus_ops->hif_stop = &hif_sdio_stop;
 	bus_ops->hif_cancel_deferred_target_sleep =
-				&hif_dummy_cancel_deferred_target_sleep;
+		&hif_dummy_cancel_deferred_target_sleep;
 	bus_ops->hif_irq_disable = &hif_dummy_irq_disable;
 	bus_ops->hif_irq_enable = &hif_dummy_irq_enable;
 	bus_ops->hif_dump_registers = &hif_dummy_dump_registers;

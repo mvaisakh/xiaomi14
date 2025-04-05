@@ -22,15 +22,14 @@
  *
  */
 
-#include "wlan_hdd_main.h"
-#include "wlan_hdd_eht.h"
-#include "wlan_hdd_sysfs.h"
 #include "wlan_hdd_sysfs_eht_rate.h"
 #include "osif_sync.h"
+#include "wlan_hdd_eht.h"
+#include "wlan_hdd_main.h"
+#include "wlan_hdd_sysfs.h"
 
-static ssize_t
-__hdd_sysfs_set_11be_fixed_rate(struct net_device *net_dev, char const *buf,
-				size_t count)
+static ssize_t __hdd_sysfs_set_11be_fixed_rate(struct net_device *net_dev,
+					       char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -56,8 +55,8 @@ __hdd_sysfs_set_11be_fixed_rate(struct net_device *net_dev, char const *buf,
 		return -EINVAL;
 	}
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -75,9 +74,9 @@ __hdd_sysfs_set_11be_fixed_rate(struct net_device *net_dev, char const *buf,
 	return count;
 }
 
-static ssize_t hdd_sysfs_set_11be_fixed_rate(
-			     struct device *dev, struct device_attribute *attr,
-			     char const *buf, size_t count)
+static ssize_t hdd_sysfs_set_11be_fixed_rate(struct device *dev,
+					     struct device_attribute *attr,
+					     char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -109,4 +108,3 @@ void hdd_sysfs_11be_rate_destroy(struct hdd_adapter *adapter)
 {
 	device_remove_file(&adapter->dev->dev, &dev_attr_11be_rate);
 }
-

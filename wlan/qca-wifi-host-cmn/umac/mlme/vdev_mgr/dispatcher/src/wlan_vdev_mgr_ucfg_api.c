@@ -23,32 +23,30 @@
  * This file provides definitions to APIs to get/set mlme fields in
  * vdev mlme core data structures
  */
-#include <wlan_vdev_mgr_tgt_if_tx_api.h>
 #include "wlan_vdev_mgr_ucfg_api.h"
 #include "include/wlan_vdev_mlme.h"
+#include <qdf_module.h>
 #include <wlan_mlme_dbg.h>
+#include <wlan_vdev_mgr_api.h>
+#include <wlan_vdev_mgr_tgt_if_tx_api.h>
 #include <wlan_vdev_mgr_utils_api.h>
 #include <wlan_vdev_mlme_api.h>
-#include <qdf_module.h>
-#include <wlan_vdev_mgr_api.h>
 
-void ucfg_wlan_vdev_mgr_get_param_bssid(
-				struct wlan_objmgr_vdev *vdev,
-				uint8_t *bssid)
+void ucfg_wlan_vdev_mgr_get_param_bssid(struct wlan_objmgr_vdev *vdev,
+					uint8_t *bssid)
 {
 	wlan_vdev_mgr_get_param_bssid(vdev, bssid);
 }
 qdf_export_symbol(ucfg_wlan_vdev_mgr_get_param_bssid);
 
-void ucfg_wlan_vdev_mgr_get_param_ssid(
-				struct wlan_objmgr_vdev *vdev,
-				uint8_t *ssid, uint8_t *ssid_len)
+void ucfg_wlan_vdev_mgr_get_param_ssid(struct wlan_objmgr_vdev *vdev,
+				       uint8_t *ssid, uint8_t *ssid_len)
 {
 	struct vdev_mlme_mgmt *mlme_mgmt;
 	struct vdev_mlme_obj *vdev_mlme;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-			vdev, WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
@@ -64,15 +62,14 @@ void ucfg_wlan_vdev_mgr_get_param_ssid(
 
 qdf_export_symbol(ucfg_wlan_vdev_mgr_get_param_ssid);
 
-void ucfg_wlan_vdev_mgr_get_beacon_buffer(
-				struct wlan_objmgr_vdev *vdev,
-				qdf_nbuf_t buf)
+void ucfg_wlan_vdev_mgr_get_beacon_buffer(struct wlan_objmgr_vdev *vdev,
+					  qdf_nbuf_t buf)
 {
 	struct vdev_mlme_obj *vdev_mlme;
 	struct vdev_mlme_mgmt *mlme_mgmt;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-			vdev, WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
@@ -86,15 +83,14 @@ void ucfg_wlan_vdev_mgr_get_beacon_buffer(
 
 qdf_export_symbol(ucfg_wlan_vdev_mgr_get_beacon_buffer);
 
-void ucfg_wlan_vdev_mgr_get_trans_bssid(
-				struct wlan_objmgr_vdev *vdev,
-				uint8_t *addr)
+void ucfg_wlan_vdev_mgr_get_trans_bssid(struct wlan_objmgr_vdev *vdev,
+					uint8_t *addr)
 {
 	struct vdev_mlme_obj *vdev_mlme;
 	struct vdev_mlme_mgmt *mlme_mgmt;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-			vdev, WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
@@ -108,9 +104,8 @@ void ucfg_wlan_vdev_mgr_get_trans_bssid(
 
 qdf_export_symbol(ucfg_wlan_vdev_mgr_get_trans_bssid);
 
-void ucfg_wlan_vdev_mgr_get_tsf_adjust(
-				struct wlan_objmgr_vdev *vdev,
-				uint64_t *tsf_adjust)
+void ucfg_wlan_vdev_mgr_get_tsf_adjust(struct wlan_objmgr_vdev *vdev,
+				       uint64_t *tsf_adjust)
 {
 	struct vdev_mlme_obj *vdev_mlme;
 	struct vdev_mlme_proto *mlme_proto;
@@ -129,16 +124,14 @@ void ucfg_wlan_vdev_mgr_get_tsf_adjust(
 
 qdf_export_symbol(ucfg_wlan_vdev_mgr_get_tsf_adjust);
 
-QDF_STATUS ucfg_wlan_vdev_mgr_set_param(
-				struct wlan_objmgr_vdev *vdev,
-				enum wlan_mlme_cfg_id param_id,
-				struct wlan_vdev_mgr_cfg mlme_cfg)
+QDF_STATUS ucfg_wlan_vdev_mgr_set_param(struct wlan_objmgr_vdev *vdev,
+					enum wlan_mlme_cfg_id param_id,
+					struct wlan_vdev_mgr_cfg mlme_cfg)
 {
 	struct vdev_mlme_obj *vdev_mlme;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-							vdev,
-							WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
@@ -150,16 +143,14 @@ QDF_STATUS ucfg_wlan_vdev_mgr_set_param(
 
 qdf_export_symbol(ucfg_wlan_vdev_mgr_set_param);
 
-void ucfg_wlan_vdev_mgr_get_param(
-				struct wlan_objmgr_vdev *vdev,
-				enum wlan_mlme_cfg_id param_id,
-				uint32_t *value)
+void ucfg_wlan_vdev_mgr_get_param(struct wlan_objmgr_vdev *vdev,
+				  enum wlan_mlme_cfg_id param_id,
+				  uint32_t *value)
 {
 	struct vdev_mlme_obj *vdev_mlme;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-							vdev,
-							WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
@@ -176,9 +167,8 @@ QDF_STATUS ucfg_vdev_mgr_cdp_vdev_attach(struct wlan_objmgr_vdev *vdev)
 {
 	struct vdev_mlme_obj *vdev_mlme;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-							vdev,
-							WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 
 	if (!vdev_mlme)
 		return QDF_STATUS_E_FAILURE;
@@ -192,9 +182,8 @@ QDF_STATUS ucfg_vdev_mgr_cdp_vdev_detach(struct wlan_objmgr_vdev *vdev)
 {
 	struct vdev_mlme_obj *vdev_mlme;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-							vdev,
-							WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
@@ -207,9 +196,8 @@ QDF_STATUS ucfg_vdev_mgr_cdp_vdev_detach(struct wlan_objmgr_vdev *vdev)
 qdf_export_symbol(ucfg_vdev_mgr_cdp_vdev_detach);
 #endif
 
-void
-ucfg_util_vdev_mgr_set_acs_mode_for_vdev(struct wlan_objmgr_vdev *vdev,
-					 bool is_acs_mode)
+void ucfg_util_vdev_mgr_set_acs_mode_for_vdev(struct wlan_objmgr_vdev *vdev,
+					      bool is_acs_mode)
 {
 	wlan_util_vdev_mgr_set_acs_mode_for_vdev(vdev, is_acs_mode);
 }

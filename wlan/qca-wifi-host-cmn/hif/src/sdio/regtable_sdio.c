@@ -17,16 +17,16 @@
  */
 
 #include "bmi_msg.h"
-#include "target_type.h"
 #include "cepci.h"
+#include "target_type.h"
 
 #define MISSING 0
-#include "regtable_sdio.h"
-#include "targaddrs.h"
-#include "if_sdio.h"
-#include "ar9888def.h"
 #include "ar6320def.h"
 #include "ar6320v2def.h"
+#include "ar9888def.h"
+#include "if_sdio.h"
+#include "regtable_sdio.h"
+#include "targaddrs.h"
 
 void target_register_tbl_attach(struct hif_softc *scn, u32 target_type)
 {

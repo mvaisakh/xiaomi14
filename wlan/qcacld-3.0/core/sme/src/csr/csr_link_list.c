@@ -24,9 +24,9 @@
  */
 #include "csr_link_list.h"
 #include "qdf_lock.h"
+#include "qdf_mc_timer.h"
 #include "qdf_mem.h"
 #include "qdf_trace.h"
-#include "qdf_mc_timer.h"
 #include "sme_api.h"
 
 static inline void csr_list_init(tListElem *pList)
@@ -127,7 +127,6 @@ uint32_t csr_ll_count(tDblLinkList *pList)
 
 void csr_ll_lock(tDblLinkList *pList)
 {
-
 	if (!pList) {
 		sme_err("Error!! pList is Null");
 		return;
@@ -139,7 +138,6 @@ void csr_ll_lock(tDblLinkList *pList)
 
 void csr_ll_unlock(tDblLinkList *pList)
 {
-
 	if (!pList) {
 		sme_err("Error!! pList is Null");
 		return;
@@ -184,8 +182,8 @@ bool csr_ll_find_entry(tDblLinkList *pList, tListElem *pEntryToFind)
 		pEntry = csr_ll_peek_head(pList, LL_ACCESS_NOLOCK);
 
 		/* Have to make sure we don't loop back to the head of the list,
-		 * which will happen if the entry is NOT on the list.
-		 */
+     * which will happen if the entry is NOT on the list.
+     */
 
 		while (pEntry && (pEntry != &pList->ListHead)) {
 			if (pEntry == pEntryToFind) {
@@ -194,7 +192,6 @@ bool csr_ll_find_entry(tDblLinkList *pList, tListElem *pEntryToFind)
 			}
 			pEntry = pEntry->next;
 		}
-
 	}
 	return fFound;
 }
@@ -259,7 +256,6 @@ void csr_ll_insert_tail(tDblLinkList *pList, tListElem *pEntry,
 void csr_ll_insert_head(tDblLinkList *pList, tListElem *pEntry,
 			bool fInterlocked)
 {
-
 	if (!pList) {
 		sme_err("Error!! pList is Null");
 		return;
@@ -430,8 +426,8 @@ bool csr_ll_remove_entry(tDblLinkList *pList, tListElem *pEntryToRemove,
 		pEntry = csr_ll_peek_head(pList, LL_ACCESS_NOLOCK);
 
 		/* Have to make sure we don't loop back to the head of the
-		 * list, which will happen if the entry is NOT on the list.
-		 */
+     * list, which will happen if the entry is NOT on the list.
+     */
 		while (pEntry && (pEntry != &pList->ListHead)) {
 			if (pEntry == pEntryToRemove) {
 				csr_list_remove_entry(pEntry);
@@ -464,8 +460,8 @@ tListElem *csr_ll_next(tDblLinkList *pList, tListElem *pEntry,
 		if (fInterlocked)
 			csr_ll_lock(pList);
 
-		if (!csrIsListEmpty(&pList->ListHead)
-		    && csr_ll_find_entry(pList, pEntry)) {
+		if (!csrIsListEmpty(&pList->ListHead) &&
+		    csr_ll_find_entry(pList, pEntry)) {
 			pNextEntry = pEntry->next;
 			/* Make sure we don't walk past the head */
 			if (pNextEntry == &pList->ListHead)
@@ -493,8 +489,8 @@ tListElem *csr_ll_previous(tDblLinkList *pList, tListElem *pEntry,
 		if (fInterlocked)
 			csr_ll_lock(pList);
 
-		if (!csrIsListEmpty(&pList->ListHead)
-		    && csr_ll_find_entry(pList, pEntry)) {
+		if (!csrIsListEmpty(&pList->ListHead) &&
+		    csr_ll_find_entry(pList, pEntry)) {
 			pNextEntry = pEntry->last;
 			/* Make sure we don't walk past the head */
 			if (pNextEntry == &pList->ListHead)

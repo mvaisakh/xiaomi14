@@ -18,19 +18,19 @@
 /**
  * DOC: defines driver functions interfacing with linux kernel
  */
-#include <wmi_unified_param.h>
-#include <wlan_osif_request_manager.h>
 #include <osif_sync.h>
-#include <wlan_objmgr_psoc_obj_i.h>
+#include <wlan_cfg80211_coex.h>
 #include <wlan_coex_main.h>
 #include <wlan_coex_ucfg_api.h>
-#include <wlan_cfg80211_coex.h>
+#include <wlan_objmgr_psoc_obj_i.h>
+#include <wlan_osif_request_manager.h>
+#include <wmi_unified_param.h>
 
 const struct nla_policy
-btc_chain_mode_policy[QCA_VENDOR_ATTR_BTC_CHAIN_MODE_MAX + 1] = {
-	[QCA_VENDOR_ATTR_BTC_CHAIN_MODE] = {.type = NLA_U32},
-	[QCA_VENDOR_ATTR_BTC_CHAIN_MODE_RESTART] = {.type = NLA_FLAG},
-};
+	btc_chain_mode_policy[QCA_VENDOR_ATTR_BTC_CHAIN_MODE_MAX + 1] = {
+		[QCA_VENDOR_ATTR_BTC_CHAIN_MODE] = { .type = NLA_U32 },
+		[QCA_VENDOR_ATTR_BTC_CHAIN_MODE_RESTART] = { .type = NLA_FLAG },
+	};
 
 static enum coex_btc_chain_mode
 __wlan_cfg80211_coex_map_btc_chain_mode(enum qca_btc_chain_mode mode)
@@ -90,16 +90,18 @@ __wlan_cfg80211_coex_set_btc_chain_mode(struct wlan_objmgr_vdev *vdev,
 		return -EFAULT;
 	}
 
-	wlan_objmgr_for_each_psoc_vdev(psoc, vdev_id, vdev_tmp) {
+	wlan_objmgr_for_each_psoc_vdev(psoc, vdev_id, vdev_tmp)
+	{
 		status = ucfg_coex_send_btc_chain_mode(vdev_tmp, mode);
 		err = qdf_status_to_os_return(status);
 		if (err) {
-			coex_err("Failed to set btc chain mode to %d for vdev %d",
-				 mode, vdev_id);
+			coex_err(
+				"Failed to set btc chain mode to %d for vdev %d",
+				mode, vdev_id);
 			return err;
 		}
-		coex_debug("Set btc chain mode to %d for vdev %d",
-			   mode, vdev_id);
+		coex_debug("Set btc chain mode to %d for vdev %d", mode,
+			   vdev_id);
 
 		if (!do_restart)
 			continue;
@@ -152,10 +154,9 @@ int wlan_cfg80211_coex_set_btc_chain_mode(struct wlan_objmgr_vdev *vdev,
 		return -EINVAL;
 	}
 
-	coex_debug("vdev_id %u mode %u restart %u",
-		   wlan_vdev_get_id(vdev), chain_mode, restart);
+	coex_debug("vdev_id %u mode %u restart %u", wlan_vdev_get_id(vdev),
+		   chain_mode, restart);
 
-	return __wlan_cfg80211_coex_set_btc_chain_mode(vdev,
-						       chain_mode,
+	return __wlan_cfg80211_coex_set_btc_chain_mode(vdev, chain_mode,
 						       restart);
 }

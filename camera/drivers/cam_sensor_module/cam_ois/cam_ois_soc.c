@@ -4,15 +4,15 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <cam_req_mgr_util.h>
+#include <cam_sensor_cmn_header.h>
+#include <cam_sensor_io.h>
+#include <cam_sensor_util.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
-#include <cam_sensor_cmn_header.h>
-#include <cam_sensor_util.h>
-#include <cam_sensor_io.h>
-#include <cam_req_mgr_util.h>
 
-#include "cam_ois_soc.h"
 #include "cam_debug_util.h"
+#include "cam_ois_soc.h"
 
 /**
  * @e_ctrl: ctrl structure
@@ -21,12 +21,12 @@
  */
 static int cam_ois_get_dt_data(struct cam_ois_ctrl_t *o_ctrl)
 {
-	int                             i, rc = 0;
-	struct cam_hw_soc_info         *soc_info = &o_ctrl->soc_info;
-	struct cam_ois_soc_private     *soc_private =
+	int i, rc = 0;
+	struct cam_hw_soc_info *soc_info = &o_ctrl->soc_info;
+	struct cam_ois_soc_private *soc_private =
 		(struct cam_ois_soc_private *)o_ctrl->soc_info.soc_private;
 	struct cam_sensor_power_ctrl_t *power_info = &soc_private->power_info;
-	struct device_node             *of_node = NULL;
+	struct device_node *of_node = NULL;
 
 	of_node = soc_info->dev->of_node;
 
@@ -37,8 +37,7 @@ static int cam_ois_get_dt_data(struct cam_ois_ctrl_t *o_ctrl)
 	}
 	rc = cam_soc_util_get_dt_properties(soc_info);
 	if (rc < 0) {
-		CAM_ERR(CAM_OIS, "cam_soc_util_get_dt_properties rc %d",
-			rc);
+		CAM_ERR(CAM_OIS, "cam_soc_util_get_dt_properties rc %d", rc);
 		return rc;
 	}
 
@@ -48,17 +47,18 @@ static int cam_ois_get_dt_data(struct cam_ois_ctrl_t *o_ctrl)
 		o_ctrl->io_master_info.master_type = I3C_MASTER;
 	}
 
-	CAM_DBG(CAM_SENSOR, "I3C Target: %s", CAM_BOOL_TO_YESNO(o_ctrl->is_i3c_device));
+	CAM_DBG(CAM_SENSOR, "I3C Target: %s",
+		CAM_BOOL_TO_YESNO(o_ctrl->is_i3c_device));
 
 	/* Initialize regulators to default parameters */
 	for (i = 0; i < soc_info->num_rgltr; i++) {
-		soc_info->rgltr[i] = devm_regulator_get(soc_info->dev,
-					soc_info->rgltr_name[i]);
+		soc_info->rgltr[i] = devm_regulator_get(
+			soc_info->dev, soc_info->rgltr_name[i]);
 		if (IS_ERR_OR_NULL(soc_info->rgltr[i])) {
 			rc = PTR_ERR(soc_info->rgltr[i]);
 			rc = rc ? rc : -EINVAL;
 			CAM_ERR(CAM_OIS, "get failed for regulator %s",
-				 soc_info->rgltr_name[i]);
+				soc_info->rgltr_name[i]);
 			return rc;
 		}
 		CAM_DBG(CAM_OIS, "get for regulator %s",
@@ -76,15 +76,15 @@ static int cam_ois_get_dt_data(struct cam_ois_ctrl_t *o_ctrl)
 	}
 
 	rc = cam_sensor_util_init_gpio_pin_tbl(soc_info,
-		&power_info->gpio_num_info);
+					       &power_info->gpio_num_info);
 	if ((rc < 0) || (!power_info->gpio_num_info)) {
 		CAM_ERR(CAM_OIS, "No/Error OIS GPIOs");
 		return -EINVAL;
 	}
 
 	for (i = 0; i < soc_info->num_clk; i++) {
-		soc_info->clk[i] = devm_clk_get(soc_info->dev,
-			soc_info->clk_name[i]);
+		soc_info->clk[i] =
+			devm_clk_get(soc_info->dev, soc_info->clk_name[i]);
 		if (IS_ERR(soc_info->clk[i])) {
 			CAM_ERR(CAM_OIS, "get failed for %s",
 				soc_info->clk_name[i]);
@@ -107,10 +107,10 @@ static int cam_ois_get_dt_data(struct cam_ois_ctrl_t *o_ctrl)
  */
 int cam_ois_driver_soc_init(struct cam_ois_ctrl_t *o_ctrl)
 {
-	int                             rc = 0;
-	struct cam_hw_soc_info         *soc_info = &o_ctrl->soc_info;
-	struct device_node             *of_node = NULL;
-	struct device_node             *of_parent = NULL;
+	int rc = 0;
+	struct cam_hw_soc_info *soc_info = &o_ctrl->soc_info;
+	struct device_node *of_node = NULL;
+	struct device_node *of_parent = NULL;
 
 	if (!soc_info->dev) {
 		CAM_ERR(CAM_OIS, "soc_info is not initialized");
@@ -125,7 +125,7 @@ int cam_ois_driver_soc_init(struct cam_ois_ctrl_t *o_ctrl)
 
 	if (o_ctrl->ois_device_type == MSM_CAMERA_PLATFORM_DEVICE) {
 		rc = of_property_read_u32(of_node, "cci-master",
-			&o_ctrl->cci_i2c_master);
+					  &o_ctrl->cci_i2c_master);
 		if (rc < 0) {
 			CAM_DBG(CAM_OIS, "failed rc %d", rc);
 			return rc;
@@ -133,7 +133,7 @@ int cam_ois_driver_soc_init(struct cam_ois_ctrl_t *o_ctrl)
 
 		of_parent = of_get_parent(of_node);
 		if (of_property_read_u32(of_parent, "cell-index",
-				&o_ctrl->cci_num) < 0)
+					 &o_ctrl->cci_num) < 0)
 			/* Set default master 0 */
 			o_ctrl->cci_num = CCI_DEVICE_0;
 

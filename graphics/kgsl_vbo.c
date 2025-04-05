@@ -7,8 +7,8 @@
 #include <linux/file.h>
 #include <linux/interval_tree.h>
 #include <linux/seq_file.h>
-#include <linux/sync_file.h>
 #include <linux/slab.h>
+#include <linux/sync_file.h>
 
 #include "kgsl_device.h"
 #include "kgsl_mmu.h"
@@ -20,13 +20,14 @@ struct kgsl_memdesc_bind_range {
 	struct interval_tree_node range;
 };
 
-static struct kgsl_memdesc_bind_range *bind_to_range(struct interval_tree_node *node)
+static struct kgsl_memdesc_bind_range *
+bind_to_range(struct interval_tree_node *node)
 {
 	return container_of(node, struct kgsl_memdesc_bind_range, range);
 }
 
-static struct kgsl_memdesc_bind_range *bind_range_create(u64 start, u64 last,
-		struct kgsl_mem_entry *entry)
+static struct kgsl_memdesc_bind_range *
+bind_range_create(u64 start, u64 last, struct kgsl_mem_entry *entry)
 {
 	struct kgsl_memdesc_bind_range *range =
 		kzalloc(sizeof(*range), GFP_KERNEL);
@@ -52,18 +53,18 @@ static u64 bind_range_len(struct kgsl_memdesc_bind_range *range)
 }
 
 void kgsl_memdesc_print_vbo_ranges(struct kgsl_mem_entry *entry,
-		struct seq_file *s)
+				   struct seq_file *s)
 {
-	struct  interval_tree_node *next;
+	struct interval_tree_node *next;
 	struct kgsl_memdesc *memdesc = &entry->memdesc;
 
 	if (!(memdesc->flags & KGSL_MEMFLAGS_VBO))
 		return;
 
 	/*
-	 * We are called in an atomic context so try to get the mutex but if we
-	 * don't then skip this item
-	 */
+   * We are called in an atomic context so try to get the mutex but if we
+   * don't then skip this item
+   */
 	if (!mutex_trylock(&memdesc->ranges_lock))
 		return;
 
@@ -71,9 +72,9 @@ void kgsl_memdesc_print_vbo_ranges(struct kgsl_mem_entry *entry,
 	while (next) {
 		struct kgsl_memdesc_bind_range *range = bind_to_range(next);
 
-		seq_printf(s, "%5d %5d 0x%16.16lx-0x%16.16lx\n",
-			entry->id, range->entry->id, range->range.start,
-			range->range.last);
+		seq_printf(s, "%5d %5d 0x%16.16lx-0x%16.16lx\n", entry->id,
+			   range->entry->id, range->range.start,
+			   range->range.last);
 
 		next = interval_tree_iter_next(next, 0, ~0UL);
 	}
@@ -81,10 +82,10 @@ void kgsl_memdesc_print_vbo_ranges(struct kgsl_mem_entry *entry,
 	mutex_unlock(&memdesc->ranges_lock);
 }
 
-static void kgsl_memdesc_remove_range(struct kgsl_mem_entry *target,
-		u64 start, u64 last, struct kgsl_mem_entry *entry)
+static void kgsl_memdesc_remove_range(struct kgsl_mem_entry *target, u64 start,
+				      u64 last, struct kgsl_mem_entry *entry)
 {
-	struct  interval_tree_node *node, *next;
+	struct interval_tree_node *node, *next;
 	struct kgsl_memdesc_bind_range *range;
 	struct kgsl_memdesc *memdesc = &target->memdesc;
 
@@ -97,21 +98,25 @@ static void kgsl_memdesc_remove_range(struct kgsl_mem_entry *target,
 		next = interval_tree_iter_next(node, start, last);
 
 		/*
-		 * If entry is null, consider it as a special request. Unbind
-		 * the entire range between start and last in this case.
-		 */
+     * If entry is null, consider it as a special request. Unbind
+     * the entire range between start and last in this case.
+     */
 		if (!entry || range->entry->id == entry->id) {
 			interval_tree_remove(node, &memdesc->ranges);
 			trace_kgsl_mem_remove_bind_range(target,
-				range->range.start, range->entry,
-				bind_range_len(range));
+							 range->range.start,
+							 range->entry,
+							 bind_range_len(range));
 
-			kgsl_mmu_unmap_range(memdesc->pagetable,
-				memdesc, range->range.start, bind_range_len(range));
+			kgsl_mmu_unmap_range(memdesc->pagetable, memdesc,
+					     range->range.start,
+					     bind_range_len(range));
 
 			if (!(memdesc->flags & KGSL_MEMFLAGS_VBO_NO_MAP_ZERO))
-				kgsl_mmu_map_zero_page_to_range(memdesc->pagetable,
-					memdesc, range->range.start, bind_range_len(range));
+				kgsl_mmu_map_zero_page_to_range(
+					memdesc->pagetable, memdesc,
+					range->range.start,
+					bind_range_len(range));
 
 			kgsl_mem_entry_put(range->entry);
 			kfree(range);
@@ -121,10 +126,11 @@ static void kgsl_memdesc_remove_range(struct kgsl_mem_entry *target,
 	mutex_unlock(&memdesc->ranges_lock);
 }
 
-static int kgsl_memdesc_add_range(struct kgsl_mem_entry *target,
-		u64 start, u64 last, struct kgsl_mem_entry *entry, u64 offset)
+static int kgsl_memdesc_add_range(struct kgsl_mem_entry *target, u64 start,
+				  u64 last, struct kgsl_mem_entry *entry,
+				  u64 offset)
 {
-	struct  interval_tree_node *node, *next;
+	struct interval_tree_node *node, *next;
 	struct kgsl_memdesc *memdesc = &target->memdesc;
 	struct kgsl_memdesc_bind_range *range =
 		bind_range_create(start, last, entry);
@@ -135,13 +141,13 @@ static int kgsl_memdesc_add_range(struct kgsl_mem_entry *target,
 	mutex_lock(&memdesc->ranges_lock);
 
 	/*
-	 * If the VBO maps the zero page, then we can unmap the requested range
-	 * in one call. Otherwise we have to figure out what ranges to unmap
-	 * while walking the interval tree.
-	 */
+   * If the VBO maps the zero page, then we can unmap the requested range
+   * in one call. Otherwise we have to figure out what ranges to unmap
+   * while walking the interval tree.
+   */
 	if (!(memdesc->flags & KGSL_MEMFLAGS_VBO_NO_MAP_ZERO))
 		kgsl_mmu_unmap_range(memdesc->pagetable, memdesc, start,
-			last - start + 1);
+				     last - start + 1);
 
 	next = interval_tree_iter_first(&memdesc->ranges, start, last);
 
@@ -153,17 +159,21 @@ static int kgsl_memdesc_add_range(struct kgsl_mem_entry *target,
 		next = interval_tree_iter_next(node, start, last);
 
 		trace_kgsl_mem_remove_bind_range(target, cur->range.start,
-			cur->entry, bind_range_len(cur));
+						 cur->entry,
+						 bind_range_len(cur));
 
 		interval_tree_remove(node, &memdesc->ranges);
 
 		if (start <= cur->range.start) {
 			if (last >= cur->range.last) {
 				/* Unmap the entire cur range */
-				if (memdesc->flags & KGSL_MEMFLAGS_VBO_NO_MAP_ZERO)
-					kgsl_mmu_unmap_range(memdesc->pagetable, memdesc,
+				if (memdesc->flags &
+				    KGSL_MEMFLAGS_VBO_NO_MAP_ZERO)
+					kgsl_mmu_unmap_range(
+						memdesc->pagetable, memdesc,
 						cur->range.start,
-						cur->range.last - cur->range.start + 1);
+						cur->range.last -
+							cur->range.start + 1);
 
 				kgsl_mem_entry_put(cur->entry);
 				kfree(cur);
@@ -172,61 +182,65 @@ static int kgsl_memdesc_add_range(struct kgsl_mem_entry *target,
 
 			/* Unmap the range overlapping cur */
 			if (memdesc->flags & KGSL_MEMFLAGS_VBO_NO_MAP_ZERO)
-				kgsl_mmu_unmap_range(memdesc->pagetable, memdesc,
-					cur->range.start,
-					last - cur->range.start + 1);
+				kgsl_mmu_unmap_range(memdesc->pagetable,
+						     memdesc, cur->range.start,
+						     last - cur->range.start +
+							     1);
 
 			/* Adjust the start of the mapping */
 			cur->range.start = last + 1;
 			/* And put it back into the tree */
 			interval_tree_insert(node, &memdesc->ranges);
 
-			trace_kgsl_mem_add_bind_range(target,
-				cur->range.start, cur->entry, bind_range_len(cur));
+			trace_kgsl_mem_add_bind_range(target, cur->range.start,
+						      cur->entry,
+						      bind_range_len(cur));
 		} else {
 			if (last < cur->range.last) {
 				struct kgsl_memdesc_bind_range *temp;
 
 				/*
-				 * The range is split into two so make a new
-				 * entry for the far side
-				 */
-				temp = bind_range_create(last + 1, cur->range.last,
-					cur->entry);
+         * The range is split into two so make a new
+         * entry for the far side
+         */
+				temp = bind_range_create(
+					last + 1, cur->range.last, cur->entry);
 				/* FIXME: Uhoh, this would be bad */
 				BUG_ON(IS_ERR(temp));
 
 				interval_tree_insert(&temp->range,
-					&memdesc->ranges);
+						     &memdesc->ranges);
 
-				trace_kgsl_mem_add_bind_range(target,
-					temp->range.start,
-					temp->entry, bind_range_len(temp));
+				trace_kgsl_mem_add_bind_range(
+					target, temp->range.start, temp->entry,
+					bind_range_len(temp));
 			}
 
 			/* Unmap the range overlapping cur */
 			if (memdesc->flags & KGSL_MEMFLAGS_VBO_NO_MAP_ZERO)
-				kgsl_mmu_unmap_range(memdesc->pagetable, memdesc,
-					start,
-					min_t(u64, cur->range.last, last) - start + 1);
+				kgsl_mmu_unmap_range(
+					memdesc->pagetable, memdesc, start,
+					min_t(u64, cur->range.last, last) -
+						start + 1);
 
 			cur->range.last = start - 1;
 			interval_tree_insert(node, &memdesc->ranges);
 
 			trace_kgsl_mem_add_bind_range(target, cur->range.start,
-				cur->entry, bind_range_len(cur));
+						      cur->entry,
+						      bind_range_len(cur));
 		}
 	}
 
 	/* Add the new range */
 	interval_tree_insert(&range->range, &memdesc->ranges);
 
-	trace_kgsl_mem_add_bind_range(target, range->range.start,
-		range->entry, bind_range_len(range));
+	trace_kgsl_mem_add_bind_range(target, range->range.start, range->entry,
+				      bind_range_len(range));
 	mutex_unlock(&memdesc->ranges_lock);
 
 	return kgsl_mmu_map_child(memdesc->pagetable, memdesc, start,
-			&entry->memdesc, offset, last - start + 1);
+				  &entry->memdesc, offset, last - start + 1);
 }
 
 static void kgsl_sharedmem_vbo_put_gpuaddr(struct kgsl_memdesc *memdesc)
@@ -235,17 +249,17 @@ static void kgsl_sharedmem_vbo_put_gpuaddr(struct kgsl_memdesc *memdesc)
 	struct kgsl_memdesc_bind_range *range;
 
 	/*
-	 * If the VBO maps the zero range then we can unmap the entire
-	 * pagetable region in one call.
-	 */
+   * If the VBO maps the zero range then we can unmap the entire
+   * pagetable region in one call.
+   */
 	if (!(memdesc->flags & KGSL_MEMFLAGS_VBO_NO_MAP_ZERO))
-		kgsl_mmu_unmap_range(memdesc->pagetable, memdesc,
-			0, memdesc->size);
+		kgsl_mmu_unmap_range(memdesc->pagetable, memdesc, 0,
+				     memdesc->size);
 
 	/*
-	 * FIXME: do we have a use after free potential here?  We might need to
-	 * lock this and set a "do not update" bit
-	 */
+   * FIXME: do we have a use after free potential here?  We might need to
+   * lock this and set a "do not update" bit
+   */
 
 	/* Now delete each range and release the mem entries */
 	next = interval_tree_iter_first(&memdesc->ranges, 0, ~0UL);
@@ -259,8 +273,8 @@ static void kgsl_sharedmem_vbo_put_gpuaddr(struct kgsl_memdesc *memdesc)
 
 		/* Unmap this range */
 		if (memdesc->flags & KGSL_MEMFLAGS_VBO_NO_MAP_ZERO)
-			kgsl_mmu_unmap_range(memdesc->pagetable, memdesc,
-				range->range.start,
+			kgsl_mmu_unmap_range(
+				memdesc->pagetable, memdesc, range->range.start,
 				range->range.last - range->range.start + 1);
 
 		kgsl_mem_entry_put(range->entry);
@@ -279,13 +293,13 @@ static struct kgsl_memdesc_ops kgsl_vbo_ops = {
 };
 
 int kgsl_sharedmem_allocate_vbo(struct kgsl_device *device,
-		struct kgsl_memdesc *memdesc, u64 size, u64 flags)
+				struct kgsl_memdesc *memdesc, u64 size,
+				u64 flags)
 {
 	size = PAGE_ALIGN(size);
 
 	/* Make sure that VBOs are supported by the MMU */
-	if (WARN_ON_ONCE(!kgsl_mmu_has_feature(device,
-		KGSL_MMU_SUPPORT_VBO)))
+	if (WARN_ON_ONCE(!kgsl_mmu_has_feature(device, KGSL_MMU_SUPPORT_VBO)))
 		return -EOPNOTSUPP;
 
 	kgsl_memdesc_init(device, memdesc, flags);
@@ -301,11 +315,10 @@ int kgsl_sharedmem_allocate_vbo(struct kgsl_device *device,
 	return 0;
 }
 
-static bool kgsl_memdesc_check_range(struct kgsl_memdesc *memdesc,
-		u64 offset, u64 length)
+static bool kgsl_memdesc_check_range(struct kgsl_memdesc *memdesc, u64 offset,
+				     u64 length)
 {
-	return ((offset < memdesc->size) &&
-		(offset + length > offset) &&
+	return ((offset < memdesc->size) && (offset + length > offset) &&
 		(offset + length) <= memdesc->size);
 }
 
@@ -327,8 +340,8 @@ static void kgsl_sharedmem_free_bind_op(struct kgsl_sharedmem_bind_op *op)
 
 struct kgsl_sharedmem_bind_op *
 kgsl_sharedmem_create_bind_op(struct kgsl_process_private *private,
-		u32 target_id, void __user *ranges, u32 ranges_nents,
-		u64 ranges_size)
+			      u32 target_id, void __user *ranges,
+			      u32 ranges_nents, u64 ranges_size)
 {
 	struct kgsl_sharedmem_bind_op *op;
 	struct kgsl_mem_entry *target;
@@ -356,11 +369,11 @@ kgsl_sharedmem_create_bind_op(struct kgsl_process_private *private,
 	}
 
 	/*
-	 * Make an array for the individual operations.  Use __GFP_NOWARN and
-	 * __GFP_NORETRY to make sure a very large request quietly fails
-	 */
+   * Make an array for the individual operations.  Use __GFP_NOWARN and
+   * __GFP_NORETRY to make sure a very large request quietly fails
+   */
 	op->ops = kvcalloc(ranges_nents, sizeof(*op->ops),
-		GFP_KERNEL | __GFP_NOWARN | __GFP_NORETRY);
+			   GFP_KERNEL | __GFP_NOWARN | __GFP_NORETRY);
 	if (!op->ops) {
 		kfree(op);
 		kgsl_mem_entry_put(target);
@@ -394,18 +407,21 @@ kgsl_sharedmem_create_bind_op(struct kgsl_process_private *private,
 
 		/* Make sure the range fits in the target */
 		if (!kgsl_memdesc_check_range(&target->memdesc,
-			range.target_offset, range.length))
+					      range.target_offset,
+					      range.length))
 			goto err;
 
 		/*
-		 * Special case: Consider child id 0 as a special request incase of
-		 * unbind. This helps to unbind the specified range (could span multiple
-		 * child buffers) without supplying backing physical buffer information.
-		 */
-		if (range.child_id == 0 && range.op == KGSL_GPUMEM_RANGE_OP_UNBIND) {
+     * Special case: Consider child id 0 as a special request incase of
+     * unbind. This helps to unbind the specified range (could span multiple
+     * child buffers) without supplying backing physical buffer information.
+     */
+		if (range.child_id == 0 &&
+		    range.op == KGSL_GPUMEM_RANGE_OP_UNBIND) {
 			op->ops[i].entry = NULL;
 			op->ops[i].start = range.target_offset;
-			op->ops[i].last = range.target_offset + range.length - 1;
+			op->ops[i].last =
+				range.target_offset + range.length - 1;
 			/* Child offset doesn't matter for unbind. set it to 0 */
 			op->ops[i].child_offset = 0;
 			op->ops[i].op = range.op;
@@ -415,8 +431,8 @@ kgsl_sharedmem_create_bind_op(struct kgsl_process_private *private,
 		}
 
 		/* Get the child object */
-		op->ops[i].entry = kgsl_sharedmem_find_id(private,
-			range.child_id);
+		op->ops[i].entry =
+			kgsl_sharedmem_find_id(private, range.child_id);
 		entry = op->ops[i].entry;
 		if (!entry) {
 			ret = -ENOENT;
@@ -430,9 +446,9 @@ kgsl_sharedmem_create_bind_op(struct kgsl_process_private *private,
 		}
 
 		/*
-		 * Make sure that only secure children are mapped in secure VBOs
-		 * and vice versa
-		 */
+     * Make sure that only secure children are mapped in secure VBOs
+     * and vice versa
+     */
 		if ((target->memdesc.flags & KGSL_MEMFLAGS_SECURE) !=
 		    (entry->memdesc.flags & KGSL_MEMFLAGS_SECURE)) {
 			ret = -EPERM;
@@ -441,7 +457,7 @@ kgsl_sharedmem_create_bind_op(struct kgsl_process_private *private,
 
 		/* Make sure the range operation is valid */
 		if (range.op != KGSL_GPUMEM_RANGE_OP_BIND &&
-			range.op != KGSL_GPUMEM_RANGE_OP_UNBIND)
+		    range.op != KGSL_GPUMEM_RANGE_OP_UNBIND)
 			goto err;
 
 		if (range.op == KGSL_GPUMEM_RANGE_OP_BIND) {
@@ -450,7 +466,8 @@ kgsl_sharedmem_create_bind_op(struct kgsl_process_private *private,
 
 			/* Make sure the range fits in the child */
 			if (!kgsl_memdesc_check_range(&entry->memdesc,
-				range.child_offset, range.length))
+						      range.child_offset,
+						      range.length))
 				goto err;
 		} else {
 			/* For unop operations the child offset must be 0 */
@@ -479,30 +496,28 @@ err:
 
 void kgsl_sharedmem_bind_range_destroy(struct kref *kref)
 {
-	struct kgsl_sharedmem_bind_op *op = container_of(kref,
-		struct kgsl_sharedmem_bind_op, ref);
+	struct kgsl_sharedmem_bind_op *op =
+		container_of(kref, struct kgsl_sharedmem_bind_op, ref);
 
 	kgsl_sharedmem_free_bind_op(op);
 }
 
 static void kgsl_sharedmem_bind_worker(struct work_struct *work)
 {
-	struct kgsl_sharedmem_bind_op *op = container_of(work,
-		struct kgsl_sharedmem_bind_op, work);
+	struct kgsl_sharedmem_bind_op *op =
+		container_of(work, struct kgsl_sharedmem_bind_op, work);
 	int i;
 
 	for (i = 0; i < op->nr_ops; i++) {
 		if (op->ops[i].op == KGSL_GPUMEM_RANGE_OP_BIND)
-			kgsl_memdesc_add_range(op->target,
-				op->ops[i].start,
-				op->ops[i].last,
-				op->ops[i].entry,
-				op->ops[i].child_offset);
+			kgsl_memdesc_add_range(op->target, op->ops[i].start,
+					       op->ops[i].last,
+					       op->ops[i].entry,
+					       op->ops[i].child_offset);
 		else
-			kgsl_memdesc_remove_range(op->target,
-				op->ops[i].start,
-				op->ops[i].last,
-				op->ops[i].entry);
+			kgsl_memdesc_remove_range(op->target, op->ops[i].start,
+						  op->ops[i].last,
+						  op->ops[i].entry);
 
 		/* Release the reference on the child entry */
 		kgsl_mem_entry_put(op->ops[i].entry);
@@ -550,8 +565,8 @@ static const char *bind_fence_get_timeline_name(struct dma_fence *fence)
 
 static void bind_fence_release(struct dma_fence *fence)
 {
-	struct kgsl_sharedmem_bind_fence *bind_fence = container_of(fence,
-		struct kgsl_sharedmem_bind_fence, base);
+	struct kgsl_sharedmem_bind_fence *bind_fence =
+		container_of(fence, struct kgsl_sharedmem_bind_fence, base);
 
 	kgsl_sharedmem_put_bind_op(bind_fence->op);
 	kfree(bind_fence);
@@ -586,7 +601,7 @@ kgsl_sharedmem_bind_fence(struct kgsl_sharedmem_bind_op *op)
 	spin_lock_init(&fence->lock);
 
 	dma_fence_init(&fence->base, &kgsl_sharedmem_bind_fence_ops,
-		&fence->lock, dma_fence_context_alloc(1), 0);
+		       &fence->lock, dma_fence_context_alloc(1), 0);
 
 	fd = get_unused_fd_flags(O_CLOEXEC);
 	if (fd < 0) {
@@ -610,7 +625,7 @@ kgsl_sharedmem_bind_fence(struct kgsl_sharedmem_bind_op *op)
 }
 
 long kgsl_ioctl_gpumem_bind_ranges(struct kgsl_device_private *dev_priv,
-		unsigned int cmd, void *data)
+				   unsigned int cmd, void *data)
 {
 	struct kgsl_process_private *private = dev_priv->process_priv;
 	struct kgsl_gpumem_bind_ranges *param = data;
@@ -629,8 +644,9 @@ long kgsl_ioctl_gpumem_bind_ranges(struct kgsl_device_private *dev_priv,
 		return -EINVAL;
 
 	op = kgsl_sharedmem_create_bind_op(private, param->id,
-		u64_to_user_ptr(param->ranges), param->ranges_nents,
-		param->ranges_size);
+					   u64_to_user_ptr(param->ranges),
+					   param->ranges_nents,
+					   param->ranges_size);
 	if (IS_ERR(op))
 		return PTR_ERR(op);
 
@@ -659,9 +675,9 @@ long kgsl_ioctl_gpumem_bind_ranges(struct kgsl_device_private *dev_priv,
 	}
 
 	/*
-	 * Schedule the work. All the resources will be released after
-	 * the bind operation is done
-	 */
+   * Schedule the work. All the resources will be released after
+   * the bind operation is done
+   */
 	kgsl_sharedmem_bind_ranges(op);
 
 	ret = wait_for_completion_interruptible(&op->comp);

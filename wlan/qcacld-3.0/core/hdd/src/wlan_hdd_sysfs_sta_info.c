@@ -21,9 +21,9 @@
  * implementation for creating sysfs file sta_info
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
 #include "wlan_hdd_sysfs_sta_info.h"
+#include "osif_vdev_sync.h"
+#include <wlan_hdd_includes.h>
 
 static ssize_t __show_sta_info(struct net_device *net_dev, char *buf)
 {
@@ -46,12 +46,12 @@ static ssize_t __show_sta_info(struct net_device *net_dev, char *buf)
 	if (0 != ret_val)
 		goto exit;
 
-	ret_val = scnprintf(buf, PAGE_SIZE,
-			    "%s    get_sta_info:\nstaAddress\n",
+	ret_val = scnprintf(buf, PAGE_SIZE, "%s    get_sta_info:\nstaAddress\n",
 			    net_dev->name);
 
 	hdd_for_each_sta_ref_safe(adapter->sta_info_list, sta, tmp,
-				  STA_INFO_SHOW) {
+				  STA_INFO_SHOW)
+	{
 		if (QDF_IS_ADDR_BROADCAST(sta->sta_mac.bytes)) {
 			hdd_put_sta_info_ref(&adapter->sta_info_list, &sta,
 					     true, STA_INFO_SHOW);
@@ -71,8 +71,7 @@ exit:
 	return ret_val;
 }
 
-static ssize_t show_sta_info(struct device *dev,
-			     struct device_attribute *attr,
+static ssize_t show_sta_info(struct device *dev, struct device_attribute *attr,
 			     char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);

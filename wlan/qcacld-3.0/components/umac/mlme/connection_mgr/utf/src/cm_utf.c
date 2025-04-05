@@ -20,21 +20,21 @@
 
 #ifdef FEATURE_CM_UTF_ENABLE
 #include <cm_utf.h>
-#include <wlan_cm_utf.h>
 #include <include/wlan_mlme_cmn.h>
+#include <wlan_cm_utf.h>
 
 void cm_utf_set_mlme_ops(struct mlme_ext_ops *ext_ops)
 {
 	ext_ops->mlme_cm_ext_connect_start_ind_cb = NULL;
 	ext_ops->mlme_cm_ext_bss_select_ind_cb = NULL;
 	ext_ops->mlme_cm_ext_bss_peer_create_req_cb =
-					wlan_cm_utf_bss_peer_create_req;
+		wlan_cm_utf_bss_peer_create_req;
 	ext_ops->mlme_cm_ext_connect_req_cb = wlan_cm_utf_connect_req;
 	ext_ops->mlme_cm_ext_connect_complete_ind_cb = NULL;
 	ext_ops->mlme_cm_ext_disconnect_start_ind_cb = NULL;
 	ext_ops->mlme_cm_ext_disconnect_req_cb = wlan_cm_utf_disconnect_req;
 	ext_ops->mlme_cm_ext_bss_peer_delete_req_cb =
-					wlan_cm_utf_bss_peer_delete_req;
+		wlan_cm_utf_bss_peer_delete_req;
 	ext_ops->mlme_cm_ext_disconnect_complete_ind_cb = NULL;
 	ext_ops->mlme_cm_ext_vdev_down_req_cb = wlan_cm_utf_vdev_down;
 }

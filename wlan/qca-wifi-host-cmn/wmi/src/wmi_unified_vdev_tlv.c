@@ -18,11 +18,11 @@
  */
 
 #include <osdep.h>
-#include <qdf_module.h>
 #include <qdf_list.h>
+#include <qdf_module.h>
 #include <qdf_platform.h>
-#include <wmi_unified_vdev_tlv.h>
 #include <wlan_vdev_mgr_tgt_if_tx_defs.h>
+#include <wmi_unified_vdev_tlv.h>
 
 static QDF_STATUS
 send_vdev_config_ratemask_cmd_tlv(struct wmi_unified *wmi_handle,
@@ -41,7 +41,7 @@ send_vdev_config_ratemask_cmd_tlv(struct wmi_unified *wmi_handle,
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_vdev_config_ratemask_fixed_param,
 		       WMITLV_GET_STRUCT_TLVLEN(
-				wmi_vdev_config_ratemask_cmd_fixed_param));
+			       wmi_vdev_config_ratemask_cmd_fixed_param));
 	cmd->vdev_id = param->vdev_id;
 	cmd->type = param->type;
 	cmd->mask_lower32 = param->lower32;
@@ -65,9 +65,8 @@ send_vdev_config_ratemask_cmd_tlv(struct wmi_unified *wmi_handle,
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-send_beacon_send_cmd_tlv(struct wmi_unified *wmi_handle,
-			 struct beacon_params *param)
+static QDF_STATUS send_beacon_send_cmd_tlv(struct wmi_unified *wmi_handle,
+					   struct beacon_params *param)
 {
 	QDF_STATUS ret;
 	wmi_bcn_send_from_host_cmd_fixed_param *cmd;
@@ -88,11 +87,10 @@ send_beacon_send_cmd_tlv(struct wmi_unified *wmi_handle,
 		}
 	}
 	cmd = (wmi_bcn_send_from_host_cmd_fixed_param *)wmi_buf_data(wmi_buf);
-	WMITLV_SET_HDR(
-		&cmd->tlv_header,
-		WMITLV_TAG_STRUC_wmi_bcn_send_from_host_cmd_fixed_param,
-		WMITLV_GET_STRUCT_TLVLEN
-				(wmi_bcn_send_from_host_cmd_fixed_param));
+	WMITLV_SET_HDR(&cmd->tlv_header,
+		       WMITLV_TAG_STRUC_wmi_bcn_send_from_host_cmd_fixed_param,
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_bcn_send_from_host_cmd_fixed_param));
 	cmd->vdev_id = param->vdev_id;
 	cmd->data_len = qdf_nbuf_len(param->wbuf);
 	cmd->frame_ctrl = param->frame_ctrl;
@@ -149,10 +147,10 @@ send_peer_filter_set_tx_cmd_tlv(struct wmi_unified *wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 
 	cmd = (wmi_peer_tx_filter_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_peer_tx_filter_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN(
-		       wmi_peer_tx_filter_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_peer_tx_filter_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_peer_tx_filter_cmd_fixed_param));
 
 	cmd->vdev_id = param->vdev_id;
 	cmd->action = param->action;
@@ -184,10 +182,11 @@ send_vdev_set_neighbour_rx_cmd_tlv(struct wmi_unified *wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 	}
 	cmd = (wmi_vdev_filter_nrp_config_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_vdev_filter_nrp_config_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN(
-		       wmi_vdev_filter_nrp_config_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_vdev_filter_nrp_config_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_vdev_filter_nrp_config_cmd_fixed_param));
 	cmd->vdev_id = param->vdev_id;
 	cmd->bssid_idx = param->idx;
 	cmd->action = param->action;
@@ -277,9 +276,8 @@ extract_vdev_delete_resp_tlv(struct wmi_unified *wmi_handle, void *evt_buf,
 }
 
 static QDF_STATUS extract_vdev_peer_delete_all_response_event_tlv(
-		wmi_unified_t wmi_hdl,
-		void *evt_buf,
-		struct peer_delete_all_response *param)
+	wmi_unified_t wmi_hdl, void *evt_buf,
+	struct peer_delete_all_response *param)
 {
 	WMI_VDEV_DELETE_ALL_PEER_RESP_EVENTID_param_tlvs *param_buf;
 	wmi_vdev_delete_all_peer_resp_event_fixed_param *ev;
@@ -287,7 +285,7 @@ static QDF_STATUS extract_vdev_peer_delete_all_response_event_tlv(
 	param_buf = (WMI_VDEV_DELETE_ALL_PEER_RESP_EVENTID_param_tlvs *)evt_buf;
 
 	ev = (wmi_vdev_delete_all_peer_resp_event_fixed_param *)
-							param_buf->fixed_param;
+		     param_buf->fixed_param;
 	if (!ev) {
 		wmi_err("Invalid peer_delete all response");
 		return QDF_STATUS_E_FAILURE;
@@ -299,9 +297,9 @@ static QDF_STATUS extract_vdev_peer_delete_all_response_event_tlv(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-extract_vdev_stopped_param_tlv(struct wmi_unified *wmi_handle,
-			       void *evt_buf, uint32_t *vdev_id)
+static QDF_STATUS extract_vdev_stopped_param_tlv(struct wmi_unified *wmi_handle,
+						 void *evt_buf,
+						 uint32_t *vdev_id)
 {
 	WMI_VDEV_STOPPED_EVENTID_param_tlvs *param_buf;
 	wmi_vdev_stopped_event_fixed_param *resp_event;
@@ -317,10 +315,9 @@ extract_vdev_stopped_param_tlv(struct wmi_unified *wmi_handle,
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_ext_tbttoffset_num_vdevs_tlv(
-						wmi_unified_t wmi_hdl,
-						void *evt_buf,
-						uint32_t *num_vdevs)
+static QDF_STATUS extract_ext_tbttoffset_num_vdevs_tlv(wmi_unified_t wmi_hdl,
+						       void *evt_buf,
+						       uint32_t *num_vdevs)
 {
 	WMI_TBTTOFFSET_EXT_UPDATE_EVENTID_param_tlvs *param_buf;
 	wmi_tbtt_offset_ext_event_fixed_param *tbtt_offset_ext_event;
@@ -337,10 +334,10 @@ static QDF_STATUS extract_ext_tbttoffset_num_vdevs_tlv(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_tbttoffset_update_params_tlv(
-					wmi_unified_t wmi_hdl,
-					void *evt_buf, uint8_t idx,
-					struct tbttoffset_params *tbtt_param)
+static QDF_STATUS
+extract_tbttoffset_update_params_tlv(wmi_unified_t wmi_hdl, void *evt_buf,
+				     uint8_t idx,
+				     struct tbttoffset_params *tbtt_param)
 {
 	WMI_TBTTOFFSET_UPDATE_EVENTID_param_tlvs *param_buf;
 	wmi_tbtt_offset_event_fixed_param *tbtt_offset_event;
@@ -361,18 +358,18 @@ static QDF_STATUS extract_tbttoffset_update_params_tlv(
 		param_buf->tbttoffset_list[tbtt_param->vdev_id];
 	if (param_buf->tbtt_qtime_low_us_list)
 		tbtt_param->vdev_tbtt_qtime_lo =
-		    param_buf->tbtt_qtime_low_us_list[tbtt_param->vdev_id];
+			param_buf->tbtt_qtime_low_us_list[tbtt_param->vdev_id];
 	if (param_buf->tbtt_qtime_high_us_list)
 		tbtt_param->vdev_tbtt_qtime_hi =
-		    param_buf->tbtt_qtime_high_us_list[tbtt_param->vdev_id];
+			param_buf->tbtt_qtime_high_us_list[tbtt_param->vdev_id];
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_ext_tbttoffset_update_params_tlv(
-					wmi_unified_t wmi_hdl,
-					void *evt_buf, uint8_t idx,
-					struct tbttoffset_params *tbtt_param)
+static QDF_STATUS
+extract_ext_tbttoffset_update_params_tlv(wmi_unified_t wmi_hdl, void *evt_buf,
+					 uint8_t idx,
+					 struct tbttoffset_params *tbtt_param)
 {
 	WMI_TBTTOFFSET_EXT_UPDATE_EVENTID_param_tlvs *param_buf;
 	wmi_tbtt_offset_info *tbtt_offset_info;
@@ -392,9 +389,9 @@ static QDF_STATUS extract_ext_tbttoffset_update_params_tlv(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_muedca_params_tlv(wmi_unified_t wmi_hdl,
-					    void *evt_buf,
-					    struct muedca_params *muedca_param_list)
+static QDF_STATUS
+extract_muedca_params_tlv(wmi_unified_t wmi_hdl, void *evt_buf,
+			  struct muedca_params *muedca_param_list)
 {
 	WMI_MUEDCA_PARAMS_CONFIG_EVENTID_param_tlvs *param_buf;
 	wmi_muedca_params_config_event_fixed_param *muedca_param;
@@ -407,18 +404,19 @@ static QDF_STATUS extract_muedca_params_tlv(wmi_unified_t wmi_hdl,
 	}
 	muedca_param = param_buf->fixed_param;
 
-	muedca_param_list->pdev_id = wmi_hdl->ops->
-		convert_target_pdev_id_to_host(wmi_hdl,
-					       muedca_param->pdev_id);
+	muedca_param_list->pdev_id =
+		wmi_hdl->ops->convert_target_pdev_id_to_host(
+			wmi_hdl, muedca_param->pdev_id);
 	for (i = 0; i < WMI_AC_MAX; i++) {
 		muedca_param_list->muedca_aifsn[i] = muedca_param->aifsn[i] &
-						      WMI_MUEDCA_PARAM_MASK;
+						     WMI_MUEDCA_PARAM_MASK;
 		muedca_param_list->muedca_ecwmin[i] = muedca_param->ecwmin[i] &
 						      WMI_MUEDCA_PARAM_MASK;
 		muedca_param_list->muedca_ecwmax[i] = muedca_param->ecwmax[i] &
 						      WMI_MUEDCA_PARAM_MASK;
-		muedca_param_list->muedca_timer[i] = muedca_param->muedca_expiration_time[i] &
-						      WMI_MUEDCA_PARAM_MASK;
+		muedca_param_list->muedca_timer[i] =
+			muedca_param->muedca_expiration_time[i] &
+			WMI_MUEDCA_PARAM_MASK;
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -438,13 +436,13 @@ vdev_param_sr_prohibit_send_tlv(struct wmi_unified *wmi_handle,
 		wmi_err("wmi_buf_alloc failed");
 		return QDF_STATUS_E_FAILURE;
 	}
-	cmd = (wmi_vdev_param_enable_sr_prohibit_fixed_param *)
-	      wmi_buf_data(buf);
-	WMITLV_SET_HDR
-		(&cmd->tlv_header,
+	cmd = (wmi_vdev_param_enable_sr_prohibit_fixed_param *)wmi_buf_data(
+		buf);
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_wmi_vdev_param_enable_sr_prohibit_fixed_param,
-		WMITLV_GET_STRUCT_TLVLEN
-		(wmi_vdev_param_enable_sr_prohibit_fixed_param));
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_vdev_param_enable_sr_prohibit_fixed_param));
 	cmd->vdev_id = param->vdev_id;
 	cmd->tidmap = 0;
 	cmd->prohibit_enable = param->sr_he_siga_val15_allowed;
@@ -466,8 +464,7 @@ static void wmi_vdev_attach_sr_cmds_tlv(struct wmi_ops *wmi_ops)
 	if (!wmi_ops)
 		return;
 
-	wmi_ops->vdev_param_sr_prohibit_send =
-				vdev_param_sr_prohibit_send_tlv;
+	wmi_ops->vdev_param_sr_prohibit_send = vdev_param_sr_prohibit_send_tlv;
 }
 #else
 static inline void wmi_vdev_attach_sr_cmds_tlv(struct wmi_ops *wmi_ops)
@@ -475,9 +472,8 @@ static inline void wmi_vdev_attach_sr_cmds_tlv(struct wmi_ops *wmi_ops)
 }
 #endif
 
-static void
-set_peer_tx_vlan_config(wmi_peer_config_vlan_cmd_fixed_param *cmd,
-			struct peer_vlan_config_param *cfg)
+static void set_peer_tx_vlan_config(wmi_peer_config_vlan_cmd_fixed_param *cmd,
+				    struct peer_vlan_config_param *cfg)
 {
 	WMI_VLAN_TX_SET(cmd->peer_vlan_config_mask, cfg->tx_cmd);
 
@@ -486,10 +482,10 @@ set_peer_tx_vlan_config(wmi_peer_config_vlan_cmd_fixed_param *cmd,
 				   cfg->tx_strip_insert);
 
 	if (cfg->tx_strip_insert_inner && cfg->tx_strip_insert) {
-	/* Setting the strip_insert_vlan_inner bit fo Tx */
+		/* Setting the strip_insert_vlan_inner bit fo Tx */
 		WMI_TX_STRIP_INSERT_VLAN_INNER_SET(cmd->peer_vlan_config_mask,
 						   cfg->tx_strip_insert_inner);
-	/* If Insert inner tag bit is set, then fill inner_tci */
+		/* If Insert inner tag bit is set, then fill inner_tci */
 		WMI_TX_INSERT_VLAN_INNER_TCI_SET(cmd->insert_vlan_tci,
 						 cfg->insert_vlan_inner_tci);
 	}
@@ -504,9 +500,8 @@ set_peer_tx_vlan_config(wmi_peer_config_vlan_cmd_fixed_param *cmd,
 	}
 }
 
-static void
-wmi_set_peer_vlan_config(wmi_peer_config_vlan_cmd_fixed_param *cmd,
-			 struct peer_vlan_config_param *param)
+static void wmi_set_peer_vlan_config(wmi_peer_config_vlan_cmd_fixed_param *cmd,
+				     struct peer_vlan_config_param *param)
 {
 	/* Tx command - Check if cmd is Tx then configure Tx cmd */
 	if (param->tx_cmd)
@@ -548,10 +543,10 @@ send_peer_vlan_config_cmd_tlv(wmi_unified_t wmi,
 		return QDF_STATUS_E_NOMEM;
 
 	cmd = (wmi_peer_config_vlan_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_peer_config_vlan_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-			       (wmi_peer_config_vlan_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_peer_config_vlan_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_peer_config_vlan_cmd_fixed_param));
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(peer_addr, &cmd->peer_macaddr);
 
 	/* vdev id */
@@ -582,22 +577,21 @@ void wmi_vdev_attach_tlv(struct wmi_unified *wmi_handle)
 	wmi_ops->extract_vdev_stopped_param = extract_vdev_stopped_param_tlv;
 	wmi_ops->extract_vdev_start_resp = extract_vdev_start_resp_tlv;
 	wmi_ops->extract_vdev_peer_delete_all_response_event =
-				extract_vdev_peer_delete_all_response_event_tlv;
+		extract_vdev_peer_delete_all_response_event_tlv;
 	wmi_ops->extract_tbttoffset_num_vdevs =
-				extract_tbttoffset_num_vdevs_tlv;
+		extract_tbttoffset_num_vdevs_tlv;
 	wmi_ops->extract_tbttoffset_update_params =
-				extract_tbttoffset_update_params_tlv;
+		extract_tbttoffset_update_params_tlv;
 	wmi_ops->extract_ext_tbttoffset_update_params =
-				extract_ext_tbttoffset_update_params_tlv;
+		extract_ext_tbttoffset_update_params_tlv;
 	wmi_ops->extract_ext_tbttoffset_num_vdevs =
-				extract_ext_tbttoffset_num_vdevs_tlv;
-	wmi_ops->extract_muedca_params_handler =
-				extract_muedca_params_tlv;
+		extract_ext_tbttoffset_num_vdevs_tlv;
+	wmi_ops->extract_muedca_params_handler = extract_muedca_params_tlv;
 	wmi_ops->send_vdev_set_neighbour_rx_cmd =
-				send_vdev_set_neighbour_rx_cmd_tlv;
+		send_vdev_set_neighbour_rx_cmd_tlv;
 	wmi_ops->send_beacon_send_cmd = send_beacon_send_cmd_tlv;
 	wmi_ops->send_vdev_config_ratemask_cmd =
-				send_vdev_config_ratemask_cmd_tlv;
+		send_vdev_config_ratemask_cmd_tlv;
 	wmi_ops->send_peer_filter_set_tx_cmd = send_peer_filter_set_tx_cmd_tlv;
 	wmi_ops->send_peer_vlan_config_cmd = send_peer_vlan_config_cmd_tlv;
 	wmi_vdev_attach_sr_cmds_tlv(wmi_ops);

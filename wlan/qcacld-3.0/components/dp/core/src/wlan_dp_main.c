@@ -15,29 +15,29 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
- /**
-  * DOC: wlan_dp_main.c
-  *
-  *
-  */
+/**
+ * DOC: wlan_dp_main.c
+ *
+ *
+ */
 
 #include "wlan_dp_main.h"
-#include "wlan_dp_public_struct.h"
 #include "cfg_ucfg_api.h"
-#include "wlan_dp_bus_bandwidth.h"
-#include <wlan_objmgr_psoc_obj_i.h>
-#include <wlan_nlink_common.h>
-#include <qdf_net_types.h>
-#include "wlan_objmgr_vdev_obj.h"
-#include "wlan_cm_api.h"
-#include "wlan_dp_nud_tracking.h"
-#include "target_if_dp_comp.h"
-#include "wlan_dp_txrx.h"
 #include "init_deinit_lmac.h"
+#include "target_if_dp_comp.h"
+#include "wlan_cm_api.h"
+#include "wlan_dp_bus_bandwidth.h"
+#include "wlan_dp_nud_tracking.h"
+#include "wlan_dp_public_struct.h"
+#include "wlan_dp_txrx.h"
+#include "wlan_objmgr_vdev_obj.h"
+#include <cdp_txrx_bus.h>
+#include <cdp_txrx_cmn_reg.h>
 #include <hif.h>
 #include <htc_api.h>
-#include <cdp_txrx_cmn_reg.h>
-#include <cdp_txrx_bus.h>
+#include <qdf_net_types.h>
+#include <wlan_nlink_common.h>
+#include <wlan_objmgr_psoc_obj_i.h>
 #if defined(WLAN_DP_PROFILE_SUPPORT) || defined(FEATURE_DIRECT_LINK)
 #include "cdp_txrx_ctrl.h"
 #endif
@@ -49,15 +49,15 @@
 #ifdef WLAN_DP_PROFILE_SUPPORT
 /* Memory profile table based on supported caps */
 static struct wlan_dp_memory_profile_ctx wlan_dp_1x1_he80_1kqam[] = {
-	{DP_TX_DESC_NUM_CFG, 1024},
-	{DP_TX_EXT_DESC_NUM_CFG, 1024},
-	{DP_TX_RING_SIZE_CFG, 1024},
-	{DP_TX_COMPL_RING_SIZE_CFG, 1024},
-	{DP_RX_SW_DESC_NUM_CFG, 1024},
-	{DP_REO_DST_RING_SIZE_CFG, 1024},
-	{DP_RXDMA_BUF_RING_SIZE_CFG, 1024},
-	{DP_RXDMA_REFILL_RING_SIZE_CFG, 1024},
-	{DP_RX_REFILL_POOL_NUM_CFG, 1024},
+	{ DP_TX_DESC_NUM_CFG, 1024 },
+	{ DP_TX_EXT_DESC_NUM_CFG, 1024 },
+	{ DP_TX_RING_SIZE_CFG, 1024 },
+	{ DP_TX_COMPL_RING_SIZE_CFG, 1024 },
+	{ DP_RX_SW_DESC_NUM_CFG, 1024 },
+	{ DP_REO_DST_RING_SIZE_CFG, 1024 },
+	{ DP_RXDMA_BUF_RING_SIZE_CFG, 1024 },
+	{ DP_RXDMA_REFILL_RING_SIZE_CFG, 1024 },
+	{ DP_RX_REFILL_POOL_NUM_CFG, 1024 },
 };
 
 /* Global data structure to save profile info */
@@ -90,7 +90,7 @@ void dp_free_ctx(void)
 {
 	struct wlan_dp_psoc_context *dp_ctx;
 
-	dp_ctx =  dp_get_context();
+	dp_ctx = dp_get_context();
 
 	qdf_spinlock_destroy(&dp_ctx->intf_list_lock);
 	qdf_list_destroy(&dp_ctx->intf_list);
@@ -128,9 +128,7 @@ QDF_STATUS dp_get_next_intf_no_lock(struct wlan_dp_psoc_context *dp_ctx,
 
 	*out_intf = NULL;
 
-	status = qdf_list_peek_next(&dp_ctx->intf_list,
-				    &cur_intf->node,
-				    &node);
+	status = qdf_list_peek_next(&dp_ctx->intf_list, &cur_intf->node, &node);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		return status;
@@ -140,9 +138,8 @@ QDF_STATUS dp_get_next_intf_no_lock(struct wlan_dp_psoc_context *dp_ctx,
 	return status;
 }
 
-struct wlan_dp_intf*
-dp_get_intf_by_macaddr(struct wlan_dp_psoc_context *dp_ctx,
-		       struct qdf_mac_addr *addr)
+struct wlan_dp_intf *dp_get_intf_by_macaddr(struct wlan_dp_psoc_context *dp_ctx,
+					    struct qdf_mac_addr *addr)
 {
 	struct wlan_dp_intf *dp_intf;
 
@@ -159,8 +156,8 @@ dp_get_intf_by_macaddr(struct wlan_dp_psoc_context *dp_ctx,
 	return NULL;
 }
 
-struct wlan_dp_intf*
-dp_get_intf_by_netdev(struct wlan_dp_psoc_context *dp_ctx, qdf_netdev_t dev)
+struct wlan_dp_intf *dp_get_intf_by_netdev(struct wlan_dp_psoc_context *dp_ctx,
+					   qdf_netdev_t dev)
 {
 	struct wlan_dp_intf *dp_intf;
 
@@ -267,8 +264,7 @@ QDF_STATUS dp_get_next_link_no_lock(struct wlan_dp_intf *dp_intf,
 
 	*out_link = NULL;
 
-	status = qdf_list_peek_next(&dp_intf->dp_link_list,
-				    &cur_link->node,
+	status = qdf_list_peek_next(&dp_intf->dp_link_list, &cur_link->node,
 				    &node);
 
 	if (QDF_IS_STATUS_ERROR(status))
@@ -279,8 +275,7 @@ QDF_STATUS dp_get_next_link_no_lock(struct wlan_dp_intf *dp_intf,
 	return status;
 }
 
-static QDF_STATUS
-dp_intf_wait_for_task_complete(struct wlan_dp_intf *dp_intf)
+static QDF_STATUS dp_intf_wait_for_task_complete(struct wlan_dp_intf *dp_intf)
 {
 	int count = DP_TASK_MAX_WAIT_CNT;
 	int r;
@@ -305,11 +300,12 @@ void dp_wait_complete_tasks(struct wlan_dp_psoc_context *dp_ctx)
 {
 	struct wlan_dp_intf *dp_intf, *dp_intf_next = NULL;
 
-	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next) {
+	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next)
+	{
 		/*
-		 * If timeout happens for one interface better to bail out
-		 * instead of waiting for other intefaces task completion
-		 */
+     * If timeout happens for one interface better to bail out
+     * instead of waiting for other intefaces task completion
+     */
 		if (qdf_atomic_read(&dp_intf->num_active_task))
 			if (dp_intf_wait_for_task_complete(dp_intf))
 				break;
@@ -346,9 +342,9 @@ static QDF_STATUS dp_convert_string_to_array(char *str, uint8_t *array,
 	while ((s) && (*len < array_max_len)) {
 		int val;
 		/* Increment length only if sscanf successfully extracted
-		 * one element. Any other return value means error.
-		 * Ignore it.
-		 */
+     * one element. Any other return value means error.
+     * Ignore it.
+     */
 		if (sscanf(s, format, &val) == 1) {
 			array[*len] = (uint8_t)val;
 			*len += 1;
@@ -371,12 +367,11 @@ static QDF_STATUS dp_convert_string_to_array(char *str, uint8_t *array,
  *
  * Return: QDF_STATUS
  */
-static
-QDF_STATUS dp_string_to_u8_array(char *str, uint8_t *array,
-				 uint8_t *len, uint16_t array_max_len)
+static QDF_STATUS dp_string_to_u8_array(char *str, uint8_t *array, uint8_t *len,
+					uint16_t array_max_len)
 {
-	return dp_convert_string_to_array(str, array, len,
-					  array_max_len, false);
+	return dp_convert_string_to_array(str, array, len, array_max_len,
+					  false);
 }
 
 void dp_trace_init(struct wlan_objmgr_psoc *psoc)
@@ -436,19 +431,19 @@ void dp_trace_init(struct wlan_objmgr_psoc *psoc)
 		live_mode = config_params[0];
 		fallthrough;
 	default:
-		dp_debug("live_mode %u thresh %u time_limit %u verbosity %u bitmap 0x%x",
-			 live_mode, thresh, thresh_time_limit,
-			 verbosity, proto_bitmap);
+		dp_debug(
+			"live_mode %u thresh %u time_limit %u verbosity %u bitmap 0x%x",
+			live_mode, thresh, thresh_time_limit, verbosity,
+			proto_bitmap);
 	};
 
-	qdf_dp_trace_init(live_mode, thresh, thresh_time_limit,
-			  verbosity, proto_bitmap);
+	qdf_dp_trace_init(live_mode, thresh, thresh_time_limit, verbosity,
+			  proto_bitmap);
 }
 
 void dp_set_dump_dp_trace(uint16_t cmd_type, uint16_t count)
 {
-	dp_debug("DUMP_DP_TRACE_LEVEL: %d %d",
-		 cmd_type, count);
+	dp_debug("DUMP_DP_TRACE_LEVEL: %d %d", cmd_type, count);
 	if (cmd_type == DUMP_DP_TRACE)
 		qdf_dp_trace_dump_all(count, QDF_TRACE_DEFAULT_PDEV_ID);
 	else if (cmd_type == ENABLE_DP_TRACE_LIVE_MODE)
@@ -516,8 +511,7 @@ static void dp_ini_tcp_settings(struct wlan_dp_psoc_cfg *config,
 		cfg_get(psoc, CFG_DP_ENABLE_TCP_LIMIT_OUTPUT);
 	config->enable_tcp_adv_win_scale =
 		cfg_get(psoc, CFG_DP_ENABLE_TCP_ADV_WIN_SCALE);
-	config->enable_tcp_delack =
-		cfg_get(psoc, CFG_DP_ENABLE_TCP_DELACK);
+	config->enable_tcp_delack = cfg_get(psoc, CFG_DP_ENABLE_TCP_DELACK);
 	config->tcp_delack_thres_high =
 		cfg_get(psoc, CFG_DP_TCP_DELACK_THRESHOLD_HIGH);
 	config->tcp_delack_thres_low =
@@ -548,9 +542,8 @@ static void dp_ini_tcp_settings(struct wlan_dp_psoc_cfg *config,
  * @config : Configuration parameters
  * @psoc: psoc handle
  */
-static void
-dp_trace_cfg_update(struct wlan_dp_psoc_cfg *config,
-		    struct wlan_objmgr_psoc *psoc)
+static void dp_trace_cfg_update(struct wlan_dp_psoc_cfg *config,
+				struct wlan_objmgr_psoc *psoc)
 {
 	qdf_size_t array_out_size;
 
@@ -558,13 +551,12 @@ dp_trace_cfg_update(struct wlan_dp_psoc_cfg *config,
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_DP_DP_TRACE_CONFIG),
 			      config->dp_trace_config,
 			      sizeof(config->dp_trace_config), &array_out_size);
-	config->dp_proto_event_bitmap = cfg_get(psoc,
-						CFG_DP_PROTO_EVENT_BITMAP);
+	config->dp_proto_event_bitmap =
+		cfg_get(psoc, CFG_DP_PROTO_EVENT_BITMAP);
 }
 #else
-static void
-dp_trace_cfg_update(struct wlan_dp_psoc_cfg *config,
-		    struct wlan_objmgr_psoc *psoc)
+static void dp_trace_cfg_update(struct wlan_dp_psoc_cfg *config,
+				struct wlan_objmgr_psoc *psoc)
 {
 }
 #endif
@@ -574,16 +566,14 @@ dp_trace_cfg_update(struct wlan_dp_psoc_cfg *config,
  * @config : Configuration parameters
  * @psoc: psoc handle
  */
-static void
-dp_nud_tracking_cfg_update(struct wlan_dp_psoc_cfg *config,
-			   struct wlan_objmgr_psoc *psoc)
+static void dp_nud_tracking_cfg_update(struct wlan_dp_psoc_cfg *config,
+				       struct wlan_objmgr_psoc *psoc)
 {
 	config->enable_nud_tracking = cfg_get(psoc, CFG_DP_ENABLE_NUD_TRACKING);
 }
 #else
-static void
-dp_nud_tracking_cfg_update(struct wlan_dp_psoc_cfg *config,
-			   struct wlan_objmgr_psoc *psoc)
+static void dp_nud_tracking_cfg_update(struct wlan_dp_psoc_cfg *config,
+				       struct wlan_objmgr_psoc *psoc)
 {
 }
 #endif
@@ -601,8 +591,7 @@ static void dp_ini_tcp_del_ack_settings(struct wlan_dp_psoc_cfg *config,
 		cfg_get(psoc, CFG_DP_DRIVER_TCP_DELACK_HIGH_THRESHOLD);
 	config->del_ack_threshold_low =
 		cfg_get(psoc, CFG_DP_DRIVER_TCP_DELACK_LOW_THRESHOLD);
-	config->del_ack_enable =
-		cfg_get(psoc, CFG_DP_DRIVER_TCP_DELACK_ENABLE);
+	config->del_ack_enable = cfg_get(psoc, CFG_DP_DRIVER_TCP_DELACK_ENABLE);
 	config->del_ack_pkt_count =
 		cfg_get(psoc, CFG_DP_DRIVER_TCP_DELACK_PKT_CNT);
 	config->del_ack_timer_value =
@@ -630,8 +619,7 @@ static void dp_hl_bundle_cfg_update(struct wlan_dp_psoc_cfg *config,
 		cfg_get(psoc, CFG_DP_HL_BUNDLE_LOW_TH);
 	config->pkt_bundle_timer_value =
 		cfg_get(psoc, CFG_DP_HL_BUNDLE_TIMER_VALUE);
-	config->pkt_bundle_size =
-		cfg_get(psoc, CFG_DP_HL_BUNDLE_SIZE);
+	config->pkt_bundle_size = cfg_get(psoc, CFG_DP_HL_BUNDLE_SIZE);
 }
 #else
 static void dp_hl_bundle_cfg_update(struct wlan_dp_psoc_cfg *config,
@@ -681,9 +669,8 @@ static void dp_set_rx_mode_value(struct wlan_dp_psoc_context *dp_ctx)
 		dp_ctx->dynamic_rps = true;
 
 	dp_info("rx_mode:%u dp_rx_threads:%u rx_thread:%u napi:%u rps:%u dynamic rps %u",
-		rx_mode, dp_ctx->enable_dp_rx_threads,
-		dp_ctx->enable_rxthread, dp_ctx->napi_enable,
-		dp_ctx->rps, dp_ctx->dynamic_rps);
+		rx_mode, dp_ctx->enable_dp_rx_threads, dp_ctx->enable_rxthread,
+		dp_ctx->napi_enable, dp_ctx->rps, dp_ctx->dynamic_rps);
 }
 
 /**
@@ -696,8 +683,8 @@ static void dp_cfg_init(struct wlan_dp_psoc_context *ctx)
 	struct wlan_objmgr_psoc *psoc = ctx->psoc;
 	uint16_t cfg_len;
 
-	cfg_len = qdf_str_len(cfg_get(psoc, CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST))
-		  + 1;
+	cfg_len = qdf_str_len(cfg_get(psoc, CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST)) +
+		  1;
 	dp_ini_bus_bandwidth(config, psoc);
 	dp_ini_tcp_settings(config, psoc);
 
@@ -716,7 +703,8 @@ static void dp_cfg_init(struct wlan_dp_psoc_context *ctx)
 	} else {
 		dp_err("ini string length greater than max size %d",
 		       CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST_LEN);
-		cfg_len = qdf_str_len(cfg_default(CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST));
+		cfg_len = qdf_str_len(
+			cfg_default(CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST));
 		qdf_str_lcopy(config->cpu_map_list,
 			      cfg_default(CFG_DP_RPS_RX_QUEUE_CPU_MAP_LIST),
 			      cfg_len);
@@ -726,15 +714,13 @@ static void dp_cfg_init(struct wlan_dp_psoc_context *ctx)
 	dp_set_rx_mode_value(ctx);
 	config->multicast_replay_filter =
 		cfg_get(psoc, CFG_DP_FILTER_MULTICAST_REPLAY);
-	config->rx_wakelock_timeout =
-		cfg_get(psoc, CFG_DP_RX_WAKELOCK_TIMEOUT);
+	config->rx_wakelock_timeout = cfg_get(psoc, CFG_DP_RX_WAKELOCK_TIMEOUT);
 	config->num_dp_rx_threads = cfg_get(psoc, CFG_DP_NUM_DP_RX_THREADS);
 	config->icmp_req_to_fw_mark_interval =
 		cfg_get(psoc, CFG_DP_ICMP_REQ_TO_FW_MARK_INTERVAL);
 
 	config->rx_softirq_max_yield_duration_ns =
-		cfg_get(psoc,
-			CFG_DP_RX_SOFTIRQ_MAX_YIELD_TIME_NS);
+		cfg_get(psoc, CFG_DP_RX_SOFTIRQ_MAX_YIELD_TIME_NS);
 
 	dp_trace_cfg_update(config, psoc);
 	dp_nud_tracking_cfg_update(config, psoc);
@@ -748,8 +734,7 @@ static void dp_cfg_init(struct wlan_dp_psoc_context *ctx)
  *
  * Return: None
  */
-static void
-__dp_process_mic_error(struct wlan_dp_intf *dp_intf)
+static void __dp_process_mic_error(struct wlan_dp_intf *dp_intf)
 {
 	struct wlan_dp_psoc_callbacks *ops = &dp_intf->dp_ctx->dp_ops;
 	struct wlan_objmgr_vdev *vdev;
@@ -762,12 +747,10 @@ __dp_process_mic_error(struct wlan_dp_intf *dp_intf)
 	if ((dp_intf->device_mode == QDF_STA_MODE ||
 	     dp_intf->device_mode == QDF_P2P_CLIENT_MODE) &&
 	    wlan_cm_is_vdev_active(vdev))
-		ops->osif_dp_process_mic_error(dp_intf->mic_work.info,
-						   vdev);
+		ops->osif_dp_process_mic_error(dp_intf->mic_work.info, vdev);
 	else if (dp_intf->device_mode == QDF_SAP_MODE ||
 		 dp_intf->device_mode == QDF_P2P_GO_MODE)
-		ops->osif_dp_process_mic_error(dp_intf->mic_work.info,
-						   vdev);
+		ops->osif_dp_process_mic_error(dp_intf->mic_work.info, vdev);
 	else
 		dp_err("Invalid interface type:%d", dp_intf->device_mode);
 
@@ -780,8 +763,7 @@ __dp_process_mic_error(struct wlan_dp_intf *dp_intf)
  *
  * Return: None
  */
-static void
-dp_process_mic_error(void *data)
+static void dp_process_mic_error(void *data)
 {
 	struct wlan_dp_intf *dp_intf = data;
 
@@ -801,9 +783,8 @@ exit:
 	qdf_spin_unlock_bh(&dp_intf->mic_work.lock);
 }
 
-void
-dp_rx_mic_error_ind(struct cdp_ctrl_objmgr_psoc *psoc, uint8_t pdev_id,
-		    struct cdp_rx_mic_err_info *mic_failure_info)
+void dp_rx_mic_error_ind(struct cdp_ctrl_objmgr_psoc *psoc, uint8_t pdev_id,
+			 struct cdp_rx_mic_err_info *mic_failure_info)
 {
 	struct dp_mic_error_info *dp_mic_info;
 	struct wlan_objmgr_vdev *vdev;
@@ -813,9 +794,9 @@ dp_rx_mic_error_ind(struct cdp_ctrl_objmgr_psoc *psoc, uint8_t pdev_id,
 	if (!psoc)
 		return;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc((struct wlan_objmgr_psoc *)psoc,
-						    mic_failure_info->vdev_id,
-						    WLAN_DP_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+		(struct wlan_objmgr_psoc *)psoc, mic_failure_info->vdev_id,
+		WLAN_DP_ID);
 	if (!vdev)
 		return;
 	dp_link = dp_get_vdev_priv_obj(vdev);
@@ -847,10 +828,10 @@ dp_rx_mic_error_ind(struct cdp_ctrl_objmgr_psoc *psoc, uint8_t pdev_id,
 		return;
 	}
 	/*
-	 * Store mic error info pointer in dp_intf
-	 * for freeing up the allocated memory in case
-	 * the work scheduled below is flushed or deinitialized.
-	 */
+   * Store mic error info pointer in dp_intf
+   * for freeing up the allocated memory in case
+   * the work scheduled below is flushed or deinitialized.
+   */
 	dp_intf->mic_work.status = DP_MIC_SCHEDULED;
 	dp_intf->mic_work.info = dp_mic_info;
 	qdf_sched_work(0, &dp_intf->mic_work.work);
@@ -864,8 +845,7 @@ dp_rx_mic_error_ind(struct cdp_ctrl_objmgr_psoc *psoc, uint8_t pdev_id,
  *
  * Return: None
  */
-static void
-dp_mic_flush_work(struct wlan_dp_intf *dp_intf)
+static void dp_mic_flush_work(struct wlan_dp_intf *dp_intf)
 {
 	dp_info("Flush the MIC error work");
 
@@ -917,8 +897,8 @@ void dp_mic_deinit_work(struct wlan_dp_intf *dp_intf)
 void dp_mic_init_work(struct wlan_dp_intf *dp_intf)
 {
 	qdf_spinlock_create(&dp_intf->mic_work.lock);
-	qdf_create_work(0, &dp_intf->mic_work.work,
-			dp_process_mic_error, dp_intf);
+	qdf_create_work(0, &dp_intf->mic_work.work, dp_process_mic_error,
+			dp_intf);
 	dp_intf->mic_work.status = DP_MIC_INITIALIZED;
 	dp_intf->mic_work.info = NULL;
 }
@@ -939,16 +919,17 @@ dp_intf_get_next_deflink_candidate(struct wlan_dp_intf *dp_intf,
 {
 	struct wlan_dp_link *dp_link, *dp_link_next;
 
-	dp_for_each_link_held_safe(dp_intf, dp_link, dp_link_next) {
+	dp_for_each_link_held_safe(dp_intf, dp_link, dp_link_next)
+	{
 		/*
-		 * dp_link is removed from the list when its deleted.
-		 * But check if its valid or not. Additional check to make
-		 * sure that the next deflink is valid.
-		 */
+     * dp_link is removed from the list when its deleted.
+     * But check if its valid or not. Additional check to make
+     * sure that the next deflink is valid.
+     */
 		if (!is_dp_link_valid(dp_link))
 			continue;
 
-		if (dp_link !=  cur_def_link)
+		if (dp_link != cur_def_link)
 			return dp_link;
 	}
 
@@ -968,13 +949,12 @@ dp_intf_get_next_deflink_candidate(struct wlan_dp_intf *dp_intf,
  * Return: QDF_STATUS
  */
 static inline QDF_STATUS
-dp_change_def_link(struct wlan_dp_intf *dp_intf,
-		   struct wlan_dp_link *dp_link,
+dp_change_def_link(struct wlan_dp_intf *dp_intf, struct wlan_dp_link *dp_link,
 		   struct wlan_mlo_link_switch_req *lswitch_req)
 {
 	struct wlan_dp_psoc_context *dp_ctx = dp_intf->dp_ctx;
 	struct wlan_dp_link *next_def_link;
-	cdp_config_param_type peer_param = {0};
+	cdp_config_param_type peer_param = { 0 };
 	QDF_STATUS status;
 
 	next_def_link = dp_intf_get_next_deflink_candidate(dp_intf, dp_link);
@@ -985,9 +965,9 @@ dp_change_def_link(struct wlan_dp_intf *dp_intf,
 	}
 
 	/*
-	 * Switch dp_vdev related params
-	 *  - Change vdev of MLD peer.
-	 */
+   * Switch dp_vdev related params
+   *  - Change vdev of MLD peer.
+   */
 	dp_info("Peer " QDF_MAC_ADDR_FMT ", change vdev %d -> %d",
 		QDF_MAC_ADDR_REF(lswitch_req->peer_mld_addr.bytes),
 		dp_link->link_id, next_def_link->link_id);
@@ -996,13 +976,12 @@ dp_change_def_link(struct wlan_dp_intf *dp_intf,
 					 /* Current vdev for remote MLD peer */
 					 dp_link->link_id,
 					 lswitch_req->peer_mld_addr.bytes,
-					 CDP_CONFIG_MLD_PEER_VDEV,
-					 peer_param);
+					 CDP_CONFIG_MLD_PEER_VDEV, peer_param);
 
 	/*
-	 * DP link switch checks and process is completed successfully.
-	 * Change the def_link to the partner link
-	 */
+   * DP link switch checks and process is completed successfully.
+   * Change the def_link to the partner link
+   */
 	if (QDF_IS_STATUS_SUCCESS(status))
 		dp_intf->def_link = next_def_link;
 
@@ -1032,10 +1011,10 @@ dp_link_switch_notification(struct wlan_objmgr_vdev *vdev,
 		"), dp_intf %pK (" QDF_MAC_ADDR_FMT
 		") cur_def_link %pK id %d device_mode %d num_links %d",
 		dp_link, dp_link->link_id,
-		QDF_MAC_ADDR_REF(dp_link->mac_addr.bytes),
-		dp_intf, QDF_MAC_ADDR_REF(dp_intf->mac_addr.bytes),
-		dp_intf->def_link, dp_intf->def_link->link_id,
-		dp_intf->device_mode, dp_intf->num_links);
+		QDF_MAC_ADDR_REF(dp_link->mac_addr.bytes), dp_intf,
+		QDF_MAC_ADDR_REF(dp_intf->mac_addr.bytes), dp_intf->def_link,
+		dp_intf->def_link->link_id, dp_intf->device_mode,
+		dp_intf->num_links);
 
 	if (dp_intf->device_mode != QDF_STA_MODE) {
 		/* Link switch supported only for STA mode */
@@ -1063,15 +1042,15 @@ dp_link_switch_notification(struct wlan_objmgr_vdev *vdev,
 	}
 
 exit:
-	dp_info("Link switch req %s (ret %d) for dp_link %pK id %d ("
-		QDF_MAC_ADDR_FMT "), dp_intf %pK (" QDF_MAC_ADDR_FMT
+	dp_info("Link switch req %s (ret %d) for dp_link %pK id %d (" QDF_MAC_ADDR_FMT
+		"), dp_intf %pK (" QDF_MAC_ADDR_FMT
 		") cur_def_link %pK id %d device_mode %d num_links %d",
-		QDF_IS_STATUS_ERROR(status) ? "Failed" : "Successful",
-		status, dp_link, dp_link->link_id,
-		QDF_MAC_ADDR_REF(dp_link->mac_addr.bytes),
-		dp_intf, QDF_MAC_ADDR_REF(dp_intf->mac_addr.bytes),
-		dp_intf->def_link, dp_intf->def_link->link_id,
-		dp_intf->device_mode, dp_intf->num_links);
+		QDF_IS_STATUS_ERROR(status) ? "Failed" : "Successful", status,
+		dp_link, dp_link->link_id,
+		QDF_MAC_ADDR_REF(dp_link->mac_addr.bytes), dp_intf,
+		QDF_MAC_ADDR_REF(dp_intf->mac_addr.bytes), dp_intf->def_link,
+		dp_intf->def_link->link_id, dp_intf->device_mode,
+		dp_intf->num_links);
 
 	return status;
 }
@@ -1094,18 +1073,16 @@ dp_peer_obj_create_notification(struct wlan_objmgr_peer *peer, void *arg)
 	if (!sta_info)
 		return QDF_STATUS_E_NOMEM;
 
-	status = wlan_objmgr_peer_component_obj_attach(peer, WLAN_COMP_DP,
-						       sta_info,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_peer_component_obj_attach(
+		peer, WLAN_COMP_DP, sta_info, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		dp_err("DP peer ("QDF_MAC_ADDR_FMT") attach failed",
-			QDF_MAC_ADDR_REF(peer->macaddr));
+		dp_err("DP peer (" QDF_MAC_ADDR_FMT ") attach failed",
+		       QDF_MAC_ADDR_REF(peer->macaddr));
 		qdf_mem_free(sta_info);
 		return status;
 	}
 
-	qdf_mem_copy(sta_info->sta_mac.bytes, peer->macaddr,
-		     QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(sta_info->sta_mac.bytes, peer->macaddr, QDF_MAC_ADDR_SIZE);
 	sta_info->pending_eap_frm_type = 0;
 	sta_info->dhcp_phase = DHCP_PHASE_ACK;
 	sta_info->dhcp_nego_status = DHCP_NEGO_STOP;
@@ -1131,8 +1108,8 @@ dp_peer_obj_destroy_notification(struct wlan_objmgr_peer *peer, void *arg)
 	status = wlan_objmgr_peer_component_obj_detach(peer, WLAN_COMP_DP,
 						       sta_info);
 	if (QDF_IS_STATUS_ERROR(status))
-		dp_err("DP peer ("QDF_MAC_ADDR_FMT") detach failed",
-			QDF_MAC_ADDR_REF(peer->macaddr));
+		dp_err("DP peer (" QDF_MAC_ADDR_FMT ") detach failed",
+		       QDF_MAC_ADDR_REF(peer->macaddr));
 
 	qdf_mem_free(sta_info);
 
@@ -1159,7 +1136,7 @@ dp_vdev_obj_create_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	dp_ctx =  dp_psoc_get_priv(psoc);
+	dp_ctx = dp_psoc_get_priv(psoc);
 	mac_addr = (struct qdf_mac_addr *)wlan_vdev_mlme_get_macaddr(vdev);
 
 	dev = dp_ctx->dp_ops.dp_get_netdev_by_vdev_mac(mac_addr);
@@ -1199,10 +1176,8 @@ dp_vdev_obj_create_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 	dp_link->vdev = vdev;
 	qdf_spin_unlock_bh(&dp_link->vdev_lock);
 
-	status = wlan_objmgr_vdev_component_obj_attach(vdev,
-						       WLAN_COMP_DP,
-						       (void *)dp_link,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_vdev_component_obj_attach(
+		vdev, WLAN_COMP_DP, (void *)dp_link, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to attach dp_link with vdev");
 		return status;
@@ -1210,9 +1185,9 @@ dp_vdev_obj_create_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 
 	if (dp_intf->num_links == 1) {
 		/*
-		 * Interface level operations to be done only
-		 * when the first link is created
-		 */
+     * Interface level operations to be done only
+     * when the first link is created
+     */
 		dp_intf->def_link = dp_link;
 		dp_intf->device_mode = wlan_vdev_mlme_get_opmode(vdev);
 		qdf_atomic_init(&dp_intf->num_active_task);
@@ -1224,7 +1199,8 @@ dp_vdev_obj_create_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 			dp_intf->sap_tx_block_mask = DP_TX_FN_CLR |
 						     DP_TX_SAP_STOP;
 
-			status = qdf_event_create(&dp_intf->qdf_sta_eap_frm_done_event);
+			status = qdf_event_create(
+				&dp_intf->qdf_sta_eap_frm_done_event);
 			if (!QDF_IS_STATUS_SUCCESS(status)) {
 				dp_err("eap frm done event init failed!!");
 				return status;
@@ -1263,9 +1239,9 @@ dp_vdev_obj_destroy_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 
 	if (dp_intf->num_links == 0) {
 		/*
-		 * Interface level operations are stopped when last
-		 * link is deleted
-		 */
+     * Interface level operations are stopped when last
+     * link is deleted
+     */
 		dp_nud_ignore_tracking(dp_intf, true);
 		dp_nud_reset_tracking(dp_intf);
 		dp_nud_flush_work(dp_intf);
@@ -1273,7 +1249,8 @@ dp_vdev_obj_destroy_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 
 		if (dp_intf->device_mode == QDF_SAP_MODE ||
 		    dp_intf->device_mode == QDF_P2P_GO_MODE) {
-			status = qdf_event_destroy(&dp_intf->qdf_sta_eap_frm_done_event);
+			status = qdf_event_destroy(
+				&dp_intf->qdf_sta_eap_frm_done_event);
 			if (!QDF_IS_STATUS_SUCCESS(status)) {
 				dp_err("eap frm done event destroy failed!!");
 				return status;
@@ -1286,17 +1263,17 @@ dp_vdev_obj_destroy_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 	qdf_mem_zero(&dp_link->conn_info, sizeof(struct wlan_dp_conn_info));
 
 	/*
-	 * If the dp_link which is being destroyed is the default link,
-	 * then find a new link to be made the default link
-	 */
+   * If the dp_link which is being destroyed is the default link,
+   * then find a new link to be made the default link
+   */
 	if (dp_intf->def_link == dp_link)
 		dp_intf->def_link =
 			dp_intf_get_next_deflink_candidate(dp_intf, dp_link);
 
 	/*
-	 * Change this to link level, since during link switch,
-	 * it might not go to 0
-	 */
+   * Change this to link level, since during link switch,
+   * it might not go to 0
+   */
 	status = dp_intf_wait_for_task_complete(dp_intf);
 	if (QDF_IS_STATUS_ERROR(status))
 		return status;
@@ -1307,8 +1284,7 @@ dp_vdev_obj_destroy_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 
 	qdf_spinlock_destroy(&dp_link->vdev_lock);
 
-	status = wlan_objmgr_vdev_component_obj_detach(vdev,
-						       WLAN_COMP_DP,
+	status = wlan_objmgr_vdev_component_obj_detach(vdev, WLAN_COMP_DP,
 						       (void *)dp_link);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to detach dp_link with vdev");
@@ -1332,15 +1308,13 @@ dp_pdev_obj_create_notification(struct wlan_objmgr_pdev *pdev, void *arg)
 		obj_mgr_err("psoc is NULL in pdev");
 		return QDF_STATUS_E_FAILURE;
 	}
-	dp_ctx =  dp_psoc_get_priv(psoc);
+	dp_ctx = dp_psoc_get_priv(psoc);
 	if (!dp_ctx) {
 		dp_err("Failed to get dp_ctx from psoc");
 		return QDF_STATUS_E_FAILURE;
 	}
-	status = wlan_objmgr_pdev_component_obj_attach(pdev,
-						       WLAN_COMP_DP,
-						       (void *)dp_ctx,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_pdev_component_obj_attach(
+		pdev, WLAN_COMP_DP, (void *)dp_ctx, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to attach dp_ctx to pdev");
 		return status;
@@ -1369,8 +1343,7 @@ dp_pdev_obj_destroy_notification(struct wlan_objmgr_pdev *pdev, void *arg)
 		dp_err("Failed to get dp_ctx from pdev");
 		return QDF_STATUS_E_FAILURE;
 	}
-	status = wlan_objmgr_pdev_component_obj_detach(pdev,
-						       WLAN_COMP_DP,
+	status = wlan_objmgr_pdev_component_obj_detach(pdev, WLAN_COMP_DP,
 						       dp_ctx);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to detach dp_ctx from pdev");
@@ -1390,8 +1363,7 @@ dp_psoc_obj_create_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_psoc_component_obj_attach(
-				psoc, WLAN_COMP_DP,
-				dp_ctx, QDF_STATUS_SUCCESS);
+		psoc, WLAN_COMP_DP, dp_ctx, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to attach psoc component obj");
 		return status;
@@ -1417,9 +1389,8 @@ dp_psoc_obj_destroy_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_detach(
-					psoc, WLAN_COMP_DP,
-					dp_ctx);
+	status = wlan_objmgr_psoc_component_obj_detach(psoc, WLAN_COMP_DP,
+						       dp_ctx);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to detach psoc component obj");
 		return status;
@@ -1466,9 +1437,9 @@ struct wlan_dp_psoc_context *dp_get_context(void)
  * Return: QDF_STATUS_SUCCESS - if the conversion is successful
  *         non zero value     - if the conversion is a failure
  */
-static QDF_STATUS
-dp_hex_string_to_u16_array(char *str, uint16_t *int_array, uint8_t *len,
-			   uint8_t int_array_max_len)
+static QDF_STATUS dp_hex_string_to_u16_array(char *str, uint16_t *int_array,
+					     uint8_t *len,
+					     uint8_t int_array_max_len)
 {
 	char *s = str;
 	uint32_t val = 0;
@@ -1476,20 +1447,20 @@ dp_hex_string_to_u16_array(char *str, uint16_t *int_array, uint8_t *len,
 	if (!str || !int_array || !len)
 		return QDF_STATUS_E_INVAL;
 
-	dp_debug("str %pK intArray %pK intArrayMaxLen %d",
-		 s, int_array, int_array_max_len);
+	dp_debug("str %pK intArray %pK intArrayMaxLen %d", s, int_array,
+		 int_array_max_len);
 
 	*len = 0;
 
 	while ((s) && (*len < int_array_max_len)) {
 		/*
-		 * Increment length only if sscanf successfully extracted one
-		 * element. Any other return value means error. Ignore it.
-		 */
+     * Increment length only if sscanf successfully extracted one
+     * element. Any other return value means error. Ignore it.
+     */
 		if (sscanf(s, "%x", &val) == 1) {
 			int_array[*len] = (uint16_t)val;
-			dp_debug("s %pK val %x intArray[%d]=0x%x",
-				 s, val, *len, int_array[*len]);
+			dp_debug("s %pK val %x intArray[%d]=0x%x", s, val, *len,
+				 int_array[*len]);
 			*len += 1;
 		}
 		s = strpbrk(s, " ");
@@ -1509,14 +1480,14 @@ dp_hex_string_to_u16_array(char *str, uint16_t *int_array, uint8_t *len,
  *
  * Return: pointer to interface or null
  */
-static struct
-wlan_dp_intf *dp_get_interface(struct wlan_dp_psoc_context *dp_ctx,
-			       enum QDF_OPMODE mode)
+static struct wlan_dp_intf *
+dp_get_interface(struct wlan_dp_psoc_context *dp_ctx, enum QDF_OPMODE mode)
 {
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_intf *dp_intf_next;
 
-	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next) {
+	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next)
+	{
 		if (!dp_intf)
 			continue;
 
@@ -1552,28 +1523,26 @@ void dp_send_rps_ind(struct wlan_dp_intf *dp_intf)
 	}
 
 	if (QDF_STATUS_SUCCESS !=
-		dp_hex_string_to_u16_array(dp_ctx->dp_cfg.cpu_map_list,
-					   rps_data.cpu_map_list,
-					   &cpu_map_list_len,
-					   WLAN_SVC_IFACE_NUM_QUEUES)) {
+	    dp_hex_string_to_u16_array(dp_ctx->dp_cfg.cpu_map_list,
+				       rps_data.cpu_map_list, &cpu_map_list_len,
+				       WLAN_SVC_IFACE_NUM_QUEUES)) {
 		dp_err("invalid cpu map list");
 		goto err;
 	}
 
-	rps_data.num_queues =
-		(cpu_map_list_len < rps_data.num_queues) ?
-				cpu_map_list_len : rps_data.num_queues;
+	rps_data.num_queues = (cpu_map_list_len < rps_data.num_queues) ?
+				      cpu_map_list_len :
+				      rps_data.num_queues;
 
 	for (i = 0; i < rps_data.num_queues; i++) {
-		dp_info("cpu_map_list[%d] = 0x%x",
-			i, rps_data.cpu_map_list[i]);
+		dp_info("cpu_map_list[%d] = 0x%x", i, rps_data.cpu_map_list[i]);
 	}
 
 	strlcpy(rps_data.ifname, qdf_netdev_get_devname(dp_intf->dev),
 		sizeof(rps_data.ifname));
 	dp_ctx->dp_ops.dp_send_svc_nlink_msg(cds_get_radio_index(),
-					     WLAN_SVC_RPS_ENABLE_IND,
-					     &rps_data, sizeof(rps_data));
+					     WLAN_SVC_RPS_ENABLE_IND, &rps_data,
+					     sizeof(rps_data));
 
 	cds_cfg->rps_enabled = true;
 
@@ -1620,8 +1589,9 @@ void dp_send_rps_disable_ind(struct wlan_dp_intf *dp_intf)
 	strlcpy(rps_data.ifname, qdf_netdev_get_devname(dp_intf->dev),
 		sizeof(rps_data.ifname));
 	dp_intf->dp_ctx->dp_ops.dp_send_svc_nlink_msg(cds_get_radio_index(),
-				    WLAN_SVC_RPS_ENABLE_IND,
-				    &rps_data, sizeof(rps_data));
+						      WLAN_SVC_RPS_ENABLE_IND,
+						      &rps_data,
+						      sizeof(rps_data));
 
 	cds_cfg->rps_enabled = false;
 }
@@ -1638,8 +1608,8 @@ void dp_set_rps(uint8_t vdev_id, bool enable)
 	if (!dp_ctx)
 		return;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(dp_ctx->psoc,
-						    vdev_id, WLAN_DP_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(dp_ctx->psoc, vdev_id,
+						    WLAN_DP_ID);
 	if (!vdev)
 		return;
 
@@ -1691,7 +1661,8 @@ void dp_set_rps_cpu_mask(struct wlan_dp_psoc_context *dp_ctx)
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_intf *dp_intf_next;
 
-	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next) {
+	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next)
+	{
 		if (!dp_intf)
 			continue;
 
@@ -1717,7 +1688,8 @@ void dp_clear_rps_cpu_mask(struct wlan_dp_psoc_context *dp_ctx)
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_intf *dp_intf_next;
 
-	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next) {
+	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next)
+	{
 		if (!dp_intf)
 			continue;
 
@@ -1732,8 +1704,7 @@ QDF_STATUS dp_get_arp_stats_event_handler(struct wlan_objmgr_psoc *psoc,
 	struct wlan_dp_link *dp_link;
 	struct wlan_objmgr_vdev *vdev;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						    rsp->vdev_id,
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, rsp->vdev_id,
 						    WLAN_DP_ID);
 	if (!vdev) {
 		dp_err("Can't get vdev by vdev_id:%d", rsp->vdev_id);
@@ -1770,7 +1741,7 @@ QDF_STATUS dp_get_arp_stats_event_handler(struct wlan_objmgr_psoc *psoc,
 		dp_info("rsp->icmpv4_rsp_recvd :%x", rsp->icmpv4_rsp_recvd);
 		dp_intf->dp_stats.tcp_stats.rx_fw_cnt = rsp->tcp_ack_recvd;
 		dp_intf->dp_stats.icmpv4_stats.rx_fw_cnt =
-							rsp->icmpv4_rsp_recvd;
+			rsp->icmpv4_rsp_recvd;
 	}
 
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_DP_ID);
@@ -1780,8 +1751,8 @@ QDF_STATUS dp_get_arp_stats_event_handler(struct wlan_objmgr_psoc *psoc,
 #ifdef WLAN_OBJMGR_REF_ID_TRACE
 struct wlan_objmgr_vdev *
 __dp_objmgr_get_vdev_by_user(struct wlan_dp_link *dp_link,
-			     wlan_objmgr_ref_dbgid id,
-			     const char *func, int line)
+			     wlan_objmgr_ref_dbgid id, const char *func,
+			     int line)
 {
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
@@ -1805,10 +1776,9 @@ __dp_objmgr_get_vdev_by_user(struct wlan_dp_link *dp_link,
 	return vdev;
 }
 
-void
-__dp_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
-			     wlan_objmgr_ref_dbgid id, const char *func,
-			     int line)
+void __dp_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
+				  wlan_objmgr_ref_dbgid id, const char *func,
+				  int line)
 {
 	if (!vdev) {
 		dp_err("VDEV is NULL (via %s, id %d)", func, id);
@@ -1820,8 +1790,7 @@ __dp_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
 #else
 struct wlan_objmgr_vdev *
 __dp_objmgr_get_vdev_by_user(struct wlan_dp_link *dp_link,
-			     wlan_objmgr_ref_dbgid id,
-			     const char *func)
+			     wlan_objmgr_ref_dbgid id, const char *func)
 {
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
@@ -1844,9 +1813,8 @@ __dp_objmgr_get_vdev_by_user(struct wlan_dp_link *dp_link,
 	return vdev;
 }
 
-void
-__dp_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
-			     wlan_objmgr_ref_dbgid id, const char *func)
+void __dp_objmgr_put_vdev_by_user(struct wlan_objmgr_vdev *vdev,
+				  wlan_objmgr_ref_dbgid id, const char *func)
 {
 	if (!vdev) {
 		dp_err("VDEV is NULL (via %s, id %d)", func, id);
@@ -1875,8 +1843,7 @@ wlan_dp_rx_fisa_attach_target(struct wlan_dp_psoc_context *dp_ctx)
 	QDF_STATUS status;
 
 	status = dp_rx_fst_target_config(dp_ctx);
-	if (status != QDF_STATUS_SUCCESS &&
-	    status != QDF_STATUS_E_NOSUPPORT) {
+	if (status != QDF_STATUS_SUCCESS && status != QDF_STATUS_E_NOSUPPORT) {
 		dp_err("Failed to send htt fst setup config message to target");
 		return status;
 	}
@@ -1910,8 +1877,8 @@ static inline void wlan_dp_rx_fisa_detach(struct wlan_dp_psoc_context *dp_ctx)
 static inline void
 wlan_dp_rx_fisa_cmem_attach(struct wlan_dp_psoc_context *dp_ctx)
 {
-	dp_ctx->fst_cmem_base = cdp_get_fst_cem_base(dp_ctx->cdp_soc,
-						     DP_CMEM_FST_SIZE);
+	dp_ctx->fst_cmem_base =
+		cdp_get_fst_cem_base(dp_ctx->cdp_soc, DP_CMEM_FST_SIZE);
 }
 
 static inline QDF_STATUS
@@ -2052,13 +2019,12 @@ void *wlan_dp_txrx_soc_attach(struct dp_txrx_soc_attach_params *params,
 	    TARGET_TYPE_QCA6490 == params->target_type ||
 	    TARGET_TYPE_QCA6750 == params->target_type) {
 		dp_soc = cdp_soc_attach(LITHIUM_DP, hif_context,
-					params->target_psoc, htc_ctx,
-					qdf_ctx, params->dp_ol_if_ops);
+					params->target_psoc, htc_ctx, qdf_ctx,
+					params->dp_ol_if_ops);
 
 		if (dp_soc)
-			if (!cdp_soc_init(dp_soc, LITHIUM_DP,
-					  hif_context, params->target_psoc,
-					  htc_ctx, qdf_ctx,
+			if (!cdp_soc_init(dp_soc, LITHIUM_DP, hif_context,
+					  params->target_psoc, htc_ctx, qdf_ctx,
 					  params->dp_ol_if_ops))
 				goto err_soc_detach;
 		*is_wifi3_0_target = true;
@@ -2066,24 +2032,22 @@ void *wlan_dp_txrx_soc_attach(struct dp_txrx_soc_attach_params *params,
 		   params->target_type == TARGET_TYPE_MANGO ||
 		   params->target_type == TARGET_TYPE_PEACH) {
 		dp_soc = cdp_soc_attach(BERYLLIUM_DP, hif_context,
-					params->target_psoc,
-					htc_ctx, qdf_ctx,
+					params->target_psoc, htc_ctx, qdf_ctx,
 					params->dp_ol_if_ops);
 		if (dp_soc)
 			if (!cdp_soc_init(dp_soc, BERYLLIUM_DP, hif_context,
-					  params->target_psoc, htc_ctx,
-					  qdf_ctx, params->dp_ol_if_ops))
+					  params->target_psoc, htc_ctx, qdf_ctx,
+					  params->dp_ol_if_ops))
 				goto err_soc_detach;
 		*is_wifi3_0_target = true;
 	} else if (params->target_type == TARGET_TYPE_WCN6450) {
-		dp_soc =
-			cdp_soc_attach(RHINE_DP, hif_context,
-				       params->target_psoc, htc_ctx,
-				       qdf_ctx, params->dp_ol_if_ops);
+		dp_soc = cdp_soc_attach(RHINE_DP, hif_context,
+					params->target_psoc, htc_ctx, qdf_ctx,
+					params->dp_ol_if_ops);
 		if (dp_soc)
 			if (!cdp_soc_init(dp_soc, RHINE_DP, hif_context,
-					  params->target_psoc, htc_ctx,
-					  qdf_ctx, params->dp_ol_if_ops))
+					  params->target_psoc, htc_ctx, qdf_ctx,
+					  params->dp_ol_if_ops))
 				goto err_soc_detach;
 		*is_wifi3_0_target = true;
 	} else {
@@ -2182,7 +2146,7 @@ QDF_STATUS wlan_dp_txrx_pdev_detach(ol_txrx_soc_handle soc, uint8_t pdev_id,
 {
 	struct wlan_dp_psoc_context *dp_ctx;
 
-	dp_ctx =  dp_get_context();
+	dp_ctx = dp_get_context();
 	wlan_dp_rx_fisa_detach(dp_ctx);
 	return cdp_pdev_detach(soc, pdev_id, force);
 }
@@ -2225,8 +2189,8 @@ static void dp_lpass_t2h_msg_handler(void *ctx, HTC_PACKET *pkt)
 static QDF_STATUS
 dp_lpass_connect_htc_service(struct dp_direct_link_context *dp_direct_link_ctx)
 {
-	struct htc_service_connect_req connect = {0};
-	struct htc_service_connect_resp response = {0};
+	struct htc_service_connect_req connect = { 0 };
+	struct htc_service_connect_resp response = { 0 };
 	HTC_HANDLE htc_handle = cds_get_context(QDF_MODULE_ID_HTC);
 	QDF_STATUS status;
 
@@ -2274,8 +2238,7 @@ dp_direct_link_refill_ring_init(struct dp_direct_link_context *direct_link_ctx)
 	pdev_id = wlan_objmgr_pdev_get_pdev_id(direct_link_ctx->dp_ctx->pdev);
 
 	direct_link_ctx->direct_link_refill_ring_hdl =
-				dp_setup_direct_link_refill_ring(soc,
-								 pdev_id);
+		dp_setup_direct_link_refill_ring(soc, pdev_id);
 	if (!direct_link_ctx->direct_link_refill_ring_hdl) {
 		dp_err("Refill ring init for Direct Link failed");
 		return QDF_STATUS_E_FAILURE;
@@ -2382,7 +2345,7 @@ QDF_STATUS dp_config_direct_link(struct wlan_dp_intf *dp_intf,
 	struct wlan_dp_link *dp_link, *dp_link_next;
 	void *htc_handle;
 	bool prev_ll, update_ll, vote_link;
-	cdp_config_param_type vdev_param = {0};
+	cdp_config_param_type vdev_param = { 0 };
 	QDF_STATUS status;
 
 	if (!dp_ctx || !dp_ctx->psoc) {
@@ -2407,12 +2370,12 @@ QDF_STATUS dp_config_direct_link(struct wlan_dp_intf *dp_intf,
 	vote_link = config->config_set ^ config_direct_link;
 	config->config_set = config_direct_link;
 	config->low_latency = enable_low_latency;
-	dp_for_each_link_held_safe(dp_intf, dp_link, dp_link_next) {
+	dp_for_each_link_held_safe(dp_intf, dp_link, dp_link_next)
+	{
 		vdev_param.cdp_vdev_tx_to_fw = config_direct_link;
 		status = cdp_txrx_set_vdev_param(
-				wlan_psoc_get_dp_handle(dp_ctx->psoc),
-				dp_link->link_id, CDP_VDEV_TX_TO_FW,
-				vdev_param);
+			wlan_psoc_get_dp_handle(dp_ctx->psoc), dp_link->link_id,
+			CDP_VDEV_TX_TO_FW, vdev_param);
 		if (QDF_IS_STATUS_ERROR(status))
 			break;
 	}
@@ -2423,10 +2386,10 @@ QDF_STATUS dp_config_direct_link(struct wlan_dp_intf *dp_intf,
 					 HTC_LINK_VOTE_DIRECT_LINK_USER_ID);
 		if (update_ll)
 			hif_prevent_link_low_power_states(
-						htc_get_hif_device(htc_handle));
+				htc_get_hif_device(htc_handle));
 		else if (prev_ll)
 			hif_allow_link_low_power_states(
-						htc_get_hif_device(htc_handle));
+				htc_get_hif_device(htc_handle));
 		dp_info("Direct link config set. Low link latency enabled: %d",
 			enable_low_latency);
 	} else {
@@ -2435,7 +2398,7 @@ QDF_STATUS dp_config_direct_link(struct wlan_dp_intf *dp_intf,
 					   HTC_LINK_VOTE_DIRECT_LINK_USER_ID);
 		if (update_ll)
 			hif_allow_link_low_power_states(
-						htc_get_hif_device(htc_handle));
+				htc_get_hif_device(htc_handle));
 		dp_info("Direct link config cleared.");
 	}
 	qdf_mutex_release(&dp_ctx->dp_direct_link_lock);
@@ -2445,22 +2408,20 @@ QDF_STATUS dp_config_direct_link(struct wlan_dp_intf *dp_intf,
 #endif
 
 #ifdef WLAN_DP_PROFILE_SUPPORT
-struct wlan_dp_memory_profile_info *
-wlan_dp_get_profile_info(void)
+struct wlan_dp_memory_profile_info *wlan_dp_get_profile_info(void)
 {
 	return &g_dp_profile_info;
 }
 
 QDF_STATUS wlan_dp_select_profile_cfg(struct wlan_objmgr_psoc *psoc)
 {
-	struct pld_soc_info info = {0};
+	struct pld_soc_info info = { 0 };
 	struct pld_wlan_hw_cap_info *hw_cap_info;
 	qdf_device_t qdf_dev;
 	bool apply_profile = false;
 	int ret;
 
-	apply_profile = cfg_get(psoc,
-				CFG_DP_APPLY_MEM_PROFILE);
+	apply_profile = cfg_get(psoc, CFG_DP_APPLY_MEM_PROFILE);
 	if (!apply_profile)
 		return QDF_STATUS_E_NOSUPPORT;
 
@@ -2490,9 +2451,9 @@ QDF_STATUS wlan_dp_select_profile_cfg(struct wlan_objmgr_psoc *psoc)
 }
 
 #ifdef WLAN_FEATURE_RX_PREALLOC_BUFFER_POOL
-static void
-wlan_dp_rx_refill_pool_cfg_sync_profile(struct cdp_soc_t *cdp_soc,
-				struct wlan_dp_memory_profile_ctx *profile_ctx)
+static void wlan_dp_rx_refill_pool_cfg_sync_profile(
+	struct cdp_soc_t *cdp_soc,
+	struct wlan_dp_memory_profile_ctx *profile_ctx)
 {
 	cdp_config_param_type val;
 	QDF_STATUS status;
@@ -2504,9 +2465,10 @@ wlan_dp_rx_refill_pool_cfg_sync_profile(struct cdp_soc_t *cdp_soc,
 	    val.cdp_rx_refill_buf_pool_size != profile_ctx->size) {
 		cur_val = val.cdp_rx_refill_buf_pool_size;
 		val.cdp_rx_refill_buf_pool_size = profile_ctx->size;
-		if (cdp_txrx_set_psoc_param(cdp_soc,
-					    CDP_CFG_RX_REFILL_POOL_NUM, val)) {
-			dp_err("unable to sync param type:%u", profile_ctx->param_type);
+		if (cdp_txrx_set_psoc_param(cdp_soc, CDP_CFG_RX_REFILL_POOL_NUM,
+					    val)) {
+			dp_err("unable to sync param type:%u",
+			       profile_ctx->param_type);
 			return;
 		}
 		dp_info("current Rx refill pool size:%u synced with profile:%u",
@@ -2514,9 +2476,9 @@ wlan_dp_rx_refill_pool_cfg_sync_profile(struct cdp_soc_t *cdp_soc,
 	}
 }
 #else
-static inline void
-wlan_dp_rx_refill_pool_cfg_sync_profile(struct cdp_soc_t *cdp_soc,
-				struct wlan_dp_memory_profile_ctx *profile_ctx)
+static inline void wlan_dp_rx_refill_pool_cfg_sync_profile(
+	struct cdp_soc_t *cdp_soc,
+	struct wlan_dp_memory_profile_ctx *profile_ctx)
 {
 }
 #endif
@@ -2525,7 +2487,7 @@ void wlan_dp_soc_cfg_sync_profile(struct cdp_soc_t *cdp_soc)
 {
 	struct wlan_dp_memory_profile_info *profile_info;
 	struct wlan_dp_memory_profile_ctx *profile_ctx;
-	cdp_config_param_type val = {0};
+	cdp_config_param_type val = { 0 };
 	QDF_STATUS status;
 	int cur_val, i;
 
@@ -2535,118 +2497,143 @@ void wlan_dp_soc_cfg_sync_profile(struct cdp_soc_t *cdp_soc)
 
 	for (i = 0; i < profile_info->size; i++) {
 		profile_ctx = &profile_info->ctx[i];
-	       qdf_mem_zero(&val, sizeof(cdp_config_param_type));
+		qdf_mem_zero(&val, sizeof(cdp_config_param_type));
 
 		switch (profile_ctx->param_type) {
 		case DP_TX_DESC_NUM_CFG:
-			status = cdp_txrx_get_psoc_param(cdp_soc,
-						CDP_CFG_TX_DESC_NUM, &val);
+			status = cdp_txrx_get_psoc_param(
+				cdp_soc, CDP_CFG_TX_DESC_NUM, &val);
 			if (QDF_IS_STATUS_SUCCESS(status) &&
 			    val.cdp_tx_desc_num != profile_ctx->size) {
 				cur_val = val.cdp_tx_desc_num;
 				val.cdp_tx_desc_num = profile_ctx->size;
 				if (cdp_txrx_set_psoc_param(cdp_soc,
-						CDP_CFG_TX_DESC_NUM, val)) {
-					dp_err("unable to sync param type:%u", profile_ctx->param_type);
+							    CDP_CFG_TX_DESC_NUM,
+							    val)) {
+					dp_err("unable to sync param type:%u",
+					       profile_ctx->param_type);
 					break;
 				}
-				dp_info("current Tx desc num:%u synced with profile:%u", cur_val, profile_ctx->size);
+				dp_info("current Tx desc num:%u synced with profile:%u",
+					cur_val, profile_ctx->size);
 			}
 			break;
 		case DP_TX_EXT_DESC_NUM_CFG:
-			status = cdp_txrx_get_psoc_param(cdp_soc,
-						CDP_CFG_TX_EXT_DESC_NUM, &val);
+			status = cdp_txrx_get_psoc_param(
+				cdp_soc, CDP_CFG_TX_EXT_DESC_NUM, &val);
 			if (QDF_IS_STATUS_SUCCESS(status) &&
 			    val.cdp_tx_ext_desc_num != profile_ctx->size) {
 				cur_val = val.cdp_tx_ext_desc_num;
 				val.cdp_tx_ext_desc_num = profile_ctx->size;
-				if (cdp_txrx_set_psoc_param(cdp_soc,
-						CDP_CFG_TX_EXT_DESC_NUM, val)) {
-					dp_err("unable to sync param type:%u", profile_ctx->param_type);
+				if (cdp_txrx_set_psoc_param(
+					    cdp_soc, CDP_CFG_TX_EXT_DESC_NUM,
+					    val)) {
+					dp_err("unable to sync param type:%u",
+					       profile_ctx->param_type);
 					break;
 				}
-				dp_info("current Ext Tx desc num:%u synced with profile:%u", cur_val, profile_ctx->size);
+				dp_info("current Ext Tx desc num:%u synced with profile:%u",
+					cur_val, profile_ctx->size);
 			}
 			break;
 		case DP_TX_RING_SIZE_CFG:
-			status = cdp_txrx_get_psoc_param(cdp_soc,
-						CDP_CFG_TX_RING_SIZE, &val);
+			status = cdp_txrx_get_psoc_param(
+				cdp_soc, CDP_CFG_TX_RING_SIZE, &val);
 			if (QDF_IS_STATUS_SUCCESS(status) &&
 			    val.cdp_tx_ring_size != profile_ctx->size) {
 				cur_val = val.cdp_tx_ring_size;
 				val.cdp_tx_ring_size = profile_ctx->size;
-				if (cdp_txrx_set_psoc_param(cdp_soc,
-						CDP_CFG_TX_RING_SIZE, val)) {
-					dp_err("unable to sync param type:%u", profile_ctx->param_type);
+				if (cdp_txrx_set_psoc_param(
+					    cdp_soc, CDP_CFG_TX_RING_SIZE,
+					    val)) {
+					dp_err("unable to sync param type:%u",
+					       profile_ctx->param_type);
 					break;
 				}
-				dp_info("current Tx Ring size:%u synced with profile:%u", cur_val, profile_ctx->size);
+				dp_info("current Tx Ring size:%u synced with profile:%u",
+					cur_val, profile_ctx->size);
 			}
 			break;
 		case DP_TX_COMPL_RING_SIZE_CFG:
-			status = cdp_txrx_get_psoc_param(cdp_soc,
-						CDP_CFG_TX_COMPL_RING_SIZE, &val);
+			status = cdp_txrx_get_psoc_param(
+				cdp_soc, CDP_CFG_TX_COMPL_RING_SIZE, &val);
 			if (QDF_IS_STATUS_SUCCESS(status) &&
 			    val.cdp_tx_comp_ring_size != profile_ctx->size) {
 				cur_val = val.cdp_tx_comp_ring_size;
 				val.cdp_tx_comp_ring_size = profile_ctx->size;
-				if (cdp_txrx_set_psoc_param(cdp_soc,
-							    CDP_CFG_TX_COMPL_RING_SIZE, val)) {
-					dp_err("unable to sync param type:%u", profile_ctx->param_type);
+				if (cdp_txrx_set_psoc_param(
+					    cdp_soc, CDP_CFG_TX_COMPL_RING_SIZE,
+					    val)) {
+					dp_err("unable to sync param type:%u",
+					       profile_ctx->param_type);
 					break;
 				}
-				dp_info("current Tx Comp Ring size:%u synced with profile:%u", cur_val, profile_ctx->size);
+				dp_info("current Tx Comp Ring size:%u synced with profile:%u",
+					cur_val, profile_ctx->size);
 			}
 			break;
 		case DP_RX_SW_DESC_NUM_CFG:
-			status = cdp_txrx_get_psoc_param(cdp_soc,
-						CDP_CFG_RX_SW_DESC_NUM, &val);
+			status = cdp_txrx_get_psoc_param(
+				cdp_soc, CDP_CFG_RX_SW_DESC_NUM, &val);
 			if (QDF_IS_STATUS_SUCCESS(status) &&
 			    val.cdp_rx_sw_desc_num != profile_ctx->size) {
 				cur_val = val.cdp_rx_sw_desc_num;
 				val.cdp_rx_sw_desc_num = profile_ctx->size;
-				if (cdp_txrx_set_psoc_param(cdp_soc,
-							    CDP_CFG_RX_SW_DESC_NUM, val)) {
-					dp_err("unable to sync param type:%u", profile_ctx->param_type);
+				if (cdp_txrx_set_psoc_param(
+					    cdp_soc, CDP_CFG_RX_SW_DESC_NUM,
+					    val)) {
+					dp_err("unable to sync param type:%u",
+					       profile_ctx->param_type);
 					break;
 				}
-				dp_info("current Rx desc num:%u synced with profile:%u", cur_val, profile_ctx->size);
+				dp_info("current Rx desc num:%u synced with profile:%u",
+					cur_val, profile_ctx->size);
 			}
 			break;
 		case DP_REO_DST_RING_SIZE_CFG:
-			status = cdp_txrx_get_psoc_param(cdp_soc,
-						CDP_CFG_REO_DST_RING_SIZE, &val);
+			status = cdp_txrx_get_psoc_param(
+				cdp_soc, CDP_CFG_REO_DST_RING_SIZE, &val);
 			if (QDF_IS_STATUS_SUCCESS(status) &&
 			    val.cdp_reo_dst_ring_size != profile_ctx->size) {
 				cur_val = val.cdp_reo_dst_ring_size;
 				val.cdp_reo_dst_ring_size = profile_ctx->size;
-				if (cdp_txrx_set_psoc_param(cdp_soc,
-							    CDP_CFG_REO_DST_RING_SIZE, val)) {
-					dp_err("unable to sync param type:%u", profile_ctx->param_type);
+				if (cdp_txrx_set_psoc_param(
+					    cdp_soc, CDP_CFG_REO_DST_RING_SIZE,
+					    val)) {
+					dp_err("unable to sync param type:%u",
+					       profile_ctx->param_type);
 					break;
 				}
-				dp_info("current Rx Ring size:%u synced with profile:%u", cur_val, profile_ctx->size);
+				dp_info("current Rx Ring size:%u synced with profile:%u",
+					cur_val, profile_ctx->size);
 			}
 			break;
 		case DP_RXDMA_REFILL_RING_SIZE_CFG:
-			status = cdp_txrx_get_psoc_param(cdp_soc,
-						CDP_CFG_RXDMA_REFILL_RING_SIZE, &val);
+			status = cdp_txrx_get_psoc_param(
+				cdp_soc, CDP_CFG_RXDMA_REFILL_RING_SIZE, &val);
 			if (QDF_IS_STATUS_SUCCESS(status) &&
-			    val.cdp_rxdma_refill_ring_size != profile_ctx->size) {
+			    val.cdp_rxdma_refill_ring_size !=
+				    profile_ctx->size) {
 				cur_val = val.cdp_rxdma_refill_ring_size;
-				val.cdp_rxdma_refill_ring_size = profile_ctx->size;
-				if (cdp_txrx_set_psoc_param(cdp_soc,
-							    CDP_CFG_RXDMA_REFILL_RING_SIZE, val)) {
-					dp_err("unable to sync param type:%u", profile_ctx->param_type);
+				val.cdp_rxdma_refill_ring_size =
+					profile_ctx->size;
+				if (cdp_txrx_set_psoc_param(
+					    cdp_soc,
+					    CDP_CFG_RXDMA_REFILL_RING_SIZE,
+					    val)) {
+					dp_err("unable to sync param type:%u",
+					       profile_ctx->param_type);
 					break;
 				}
-				dp_info("current RXDMA refill ring size:%u synced with profile:%u", cur_val, profile_ctx->size);
+				dp_info("current RXDMA refill ring size:%u synced with profile:%u",
+					cur_val, profile_ctx->size);
 			}
 		case DP_RX_REFILL_POOL_NUM_CFG:
 			wlan_dp_rx_refill_pool_cfg_sync_profile(cdp_soc,
 								profile_ctx);
 		default:
-			dp_debug("Unknown profile param type:%u", profile_ctx->param_type);
+			dp_debug("Unknown profile param type:%u",
+				 profile_ctx->param_type);
 			break;
 		}
 	}
@@ -2656,7 +2643,7 @@ void wlan_dp_pdev_cfg_sync_profile(struct cdp_soc_t *cdp_soc, uint8_t pdev_id)
 {
 	struct wlan_dp_memory_profile_info *profile_info;
 	struct wlan_dp_memory_profile_ctx *profile_ctx;
-	cdp_config_param_type val = {0};
+	cdp_config_param_type val = { 0 };
 	QDF_STATUS status;
 	int cur_val, i;
 
@@ -2667,18 +2654,23 @@ void wlan_dp_pdev_cfg_sync_profile(struct cdp_soc_t *cdp_soc, uint8_t pdev_id)
 	for (i = 0; i < profile_info->size; i++) {
 		profile_ctx = &profile_info->ctx[i];
 		if (profile_ctx->param_type == DP_RXDMA_BUF_RING_SIZE_CFG) {
-			status = cdp_txrx_get_pdev_param(cdp_soc, pdev_id,
-					CDP_CONFIG_RXDMA_BUF_RING_SIZE, &val);
+			status = cdp_txrx_get_pdev_param(
+				cdp_soc, pdev_id,
+				CDP_CONFIG_RXDMA_BUF_RING_SIZE, &val);
 			if (QDF_IS_STATUS_SUCCESS(status) &&
 			    val.cdp_rxdma_buf_ring_size != profile_ctx->size) {
 				cur_val = val.cdp_rxdma_buf_ring_size;
 				val.cdp_rxdma_buf_ring_size = profile_ctx->size;
-				if (cdp_txrx_set_pdev_param(cdp_soc, pdev_id,
-							    CDP_CONFIG_RXDMA_BUF_RING_SIZE, val)) {
-					dp_err("unable to sync param type:%u", profile_ctx->param_type);
+				if (cdp_txrx_set_pdev_param(
+					    cdp_soc, pdev_id,
+					    CDP_CONFIG_RXDMA_BUF_RING_SIZE,
+					    val)) {
+					dp_err("unable to sync param type:%u",
+					       profile_ctx->param_type);
 					return;
 				}
-				dp_info("current RXDMA buf ring size:%u synced with profile:%u", cur_val, profile_ctx->size);
+				dp_info("current RXDMA buf ring size:%u synced with profile:%u",
+					cur_val, profile_ctx->size);
 			}
 			return;
 		}

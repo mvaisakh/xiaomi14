@@ -4,62 +4,63 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/slab.h>
-#include <linux/platform_device.h>
-#include <linux/device.h>
-#include <linux/printk.h>
+#include "wsa884x.h"
+#include "asoc/bolero-slave-internal.h"
+#include "internal.h"
+#include "wsa884x-registers.h"
+#include <asoc/msm-cdc-pinctrl.h>
+#include <asoc/msm-cdc-supply.h>
 #include <linux/bitops.h>
-#include <linux/regulator/consumer.h>
-#include <linux/pm_runtime.h>
+#include <linux/debugfs.h>
 #include <linux/delay.h>
-#include <linux/kernel.h>
+#include <linux/device.h>
 #include <linux/gpio.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/of_gpio.h>
 #include <linux/of_platform.h>
+#include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
+#include <linux/printk.h>
+#include <linux/qti-regmap-debugfs.h>
 #include <linux/regmap.h>
-#include <linux/debugfs.h>
+#include <linux/regulator/consumer.h>
+#include <linux/slab.h>
 #include <soc/soundwire.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
-#include <sound/soc.h>
 #include <sound/soc-dapm.h>
+#include <sound/soc.h>
 #include <sound/tlv.h>
-#include <asoc/msm-cdc-pinctrl.h>
-#include <asoc/msm-cdc-supply.h>
-#include "wsa884x-registers.h"
-#include "wsa884x.h"
-#include "internal.h"
-#include "asoc/bolero-slave-internal.h"
-#include <linux/qti-regmap-debugfs.h>
 
 #define T1_TEMP -10
 #define T2_TEMP 150
 #define LOW_TEMP_THRESHOLD 5
 #define HIGH_TEMP_THRESHOLD 45
-#define TEMP_INVALID	0xFFFF
+#define TEMP_INVALID 0xFFFF
 #define WSA884X_TEMP_RETRY 3
 #define WSA884X_IRQ_RETRY 2
 #define PBR_MAX_VOLTAGE 20
 #define PBR_MAX_CODE 255
-#define WSA884X_IDLE_DETECT_NG_BLOCK_MASK	0x38
-#define MAX_NAME_LEN	40
-#define WSA884X_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
-			SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
-			SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000 |\
-			SNDRV_PCM_RATE_384000)
+#define WSA884X_IDLE_DETECT_NG_BLOCK_MASK 0x38
+#define MAX_NAME_LEN 40
+#define WSA884X_RATES                                                          \
+	(SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 | SNDRV_PCM_RATE_32000 |   \
+	 SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000 | \
+	 SNDRV_PCM_RATE_384000)
 /* Fractional Rates */
-#define WSA884X_FRAC_RATES (SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_88200 |\
-				SNDRV_PCM_RATE_176400 | SNDRV_PCM_RATE_352800)
+#define WSA884X_FRAC_RATES                                                     \
+	(SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_88200 | SNDRV_PCM_RATE_176400 | \
+	 SNDRV_PCM_RATE_352800)
 
-#define WSA884X_FORMATS (SNDRV_PCM_FMTBIT_S16_LE |\
-		SNDRV_PCM_FMTBIT_S24_LE |\
-		SNDRV_PCM_FMTBIT_S24_3LE | SNDRV_PCM_FMTBIT_S32_LE)
+#define WSA884X_FORMATS                                      \
+	(SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE | \
+	 SNDRV_PCM_FMTBIT_S24_3LE | SNDRV_PCM_FMTBIT_S32_LE)
 
-#define REG_FIELD_VALUE(register_name, field_name, value) \
-WSA884X_##register_name, FIELD_MASK(register_name, field_name), \
-value << FIELD_SHIFT(register_name, field_name)
+#define REG_FIELD_VALUE(register_name, field_name, value)               \
+	WSA884X_##register_name, FIELD_MASK(register_name, field_name), \
+		value << FIELD_SHIFT(register_name, field_name)
 
 enum {
 	IDLE_DETECT,
@@ -85,8 +86,11 @@ enum {
 	COMP_OFFSET4,
 };
 
-#define WSA884X_VTH_TO_REG(vth) \
-	((vth) != 0 ? (((vth) - 150) * PBR_MAX_CODE / (PBR_MAX_VOLTAGE * 100) + 1) : 0)
+#define WSA884X_VTH_TO_REG(vth)                                            \
+	((vth) != 0 ?                                                      \
+		 (((vth) - 150) * PBR_MAX_CODE / (PBR_MAX_VOLTAGE * 100) + \
+		  1) :                                                     \
+		 0)
 
 struct wsa_reg_mask_val {
 	u16 reg;
@@ -95,61 +99,62 @@ struct wsa_reg_mask_val {
 };
 
 static const struct wsa_reg_mask_val reg_init[] = {
-	{REG_FIELD_VALUE(CKWD_CTL_1, VPP_SW_CTL, 0x00)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_A2_0, COEF_A2, 0x0A)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_A2_1, COEF_A2, 0x08)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_A3_0, COEF_A3, 0xF3)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_A3_1, COEF_A3, 0x07)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_A4_0, COEF_A4, 0x79)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_A5_0, COEF_A5, 0x0B)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_A6_0, COEF_A6, 0x8A)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_A7_0, COEF_A7, 0x9B)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_C_0, COEF_C3, 0x06)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_C_0, COEF_C2, 0x08)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_C_2, COEF_C7, 0x0F)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_C_3, COEF_C7, 0x20)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_R1, SAT_LIMIT_R1, 0x83)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_R2, SAT_LIMIT_R2, 0x7F)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_R3, SAT_LIMIT_R3, 0x9D)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_R4, SAT_LIMIT_R4, 0x82)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_R5, SAT_LIMIT_R5, 0x8B)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_R6, SAT_LIMIT_R6, 0x9B)},
-	{REG_FIELD_VALUE(CDC_SPK_DSM_R7, SAT_LIMIT_R7, 0x3F)},
-	{REG_FIELD_VALUE(BOP_DEGLITCH_CTL, BOP_DEGLITCH_SETTING, 0x08)},
-	{REG_FIELD_VALUE(VBAT_THRM_FLT_CTL, VBAT_COEF_SEL, 0x04)},
-	{REG_FIELD_VALUE(CLSH_CTL_0, DLY_CODE, 0x06)},
-	{REG_FIELD_VALUE(CLSH_SOFT_MAX, SOFT_MAX, 0xFF)},
-	{REG_FIELD_VALUE(OTP_REG_38, BOOST_ILIM_TUNE, 0x00)},
-	{REG_FIELD_VALUE(OTP_REG_40, ISENSE_RESCAL, 0x08)},
-	{REG_FIELD_VALUE(STB_CTRL1, SLOPE_COMP_CURRENT, 0x0D)},
-	{REG_FIELD_VALUE(ILIM_CTRL1, ILIM_OFFSET_PB, 0x03)},
-	{REG_FIELD_VALUE(CURRENT_LIMIT, CURRENT_LIMIT, 0x09)},
-	{REG_FIELD_VALUE(CKWD_CTL_1, CKWD_VCOMP_VREF_SEL, 0x13)},
-	{REG_FIELD_VALUE(BOP2_PROG, BOP2_VTH, 0x06)},
-	{REG_FIELD_VALUE(BOP2_PROG, BOP2_HYST, 0x06)},
-	{REG_FIELD_VALUE(VBAT_CAL_CTL, RESERVE, 0x02)},
-	{REG_FIELD_VALUE(REF_CTRL, BG_RDY_SEL, 0x01)},
-	{REG_FIELD_VALUE(ZX_CTRL1, ZX_DET_SW_SEL, 0x03)},
+	{ REG_FIELD_VALUE(CKWD_CTL_1, VPP_SW_CTL, 0x00) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_A2_0, COEF_A2, 0x0A) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_A2_1, COEF_A2, 0x08) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_A3_0, COEF_A3, 0xF3) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_A3_1, COEF_A3, 0x07) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_A4_0, COEF_A4, 0x79) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_A5_0, COEF_A5, 0x0B) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_A6_0, COEF_A6, 0x8A) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_A7_0, COEF_A7, 0x9B) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_C_0, COEF_C3, 0x06) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_C_0, COEF_C2, 0x08) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_C_2, COEF_C7, 0x0F) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_C_3, COEF_C7, 0x20) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_R1, SAT_LIMIT_R1, 0x83) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_R2, SAT_LIMIT_R2, 0x7F) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_R3, SAT_LIMIT_R3, 0x9D) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_R4, SAT_LIMIT_R4, 0x82) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_R5, SAT_LIMIT_R5, 0x8B) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_R6, SAT_LIMIT_R6, 0x9B) },
+	{ REG_FIELD_VALUE(CDC_SPK_DSM_R7, SAT_LIMIT_R7, 0x3F) },
+	{ REG_FIELD_VALUE(BOP_DEGLITCH_CTL, BOP_DEGLITCH_SETTING, 0x08) },
+	{ REG_FIELD_VALUE(VBAT_THRM_FLT_CTL, VBAT_COEF_SEL, 0x04) },
+	{ REG_FIELD_VALUE(CLSH_CTL_0, DLY_CODE, 0x06) },
+	{ REG_FIELD_VALUE(CLSH_SOFT_MAX, SOFT_MAX, 0xFF) },
+	{ REG_FIELD_VALUE(OTP_REG_38, BOOST_ILIM_TUNE, 0x00) },
+	{ REG_FIELD_VALUE(OTP_REG_40, ISENSE_RESCAL, 0x08) },
+	{ REG_FIELD_VALUE(STB_CTRL1, SLOPE_COMP_CURRENT, 0x0D) },
+	{ REG_FIELD_VALUE(ILIM_CTRL1, ILIM_OFFSET_PB, 0x03) },
+	{ REG_FIELD_VALUE(CURRENT_LIMIT, CURRENT_LIMIT, 0x09) },
+	{ REG_FIELD_VALUE(CKWD_CTL_1, CKWD_VCOMP_VREF_SEL, 0x13) },
+	{ REG_FIELD_VALUE(BOP2_PROG, BOP2_VTH, 0x06) },
+	{ REG_FIELD_VALUE(BOP2_PROG, BOP2_HYST, 0x06) },
+	{ REG_FIELD_VALUE(VBAT_CAL_CTL, RESERVE, 0x02) },
+	{ REG_FIELD_VALUE(REF_CTRL, BG_RDY_SEL, 0x01) },
+	{ REG_FIELD_VALUE(ZX_CTRL1, ZX_DET_SW_SEL, 0x03) },
 };
 
 static const struct wsa_reg_mask_val reg_init_2S[] = {
-	{REG_FIELD_VALUE(CLSH_CTL_1, SLR_MAX, 0x02)},
-	{REG_FIELD_VALUE(CLSH_V_HD_PA, V_HD_PA, 0x13)},
-	{REG_FIELD_VALUE(UVLO_PROG, UVLO1_VTH, 0x03)},
-	{REG_FIELD_VALUE(UVLO_PROG, UVLO1_HYST, 0x03)},
-	{REG_FIELD_VALUE(DAC_VCM_CTRL_REG2, DAC_VCM_SHIFT, 0x06)},
-	{REG_FIELD_VALUE(DAC_VCM_CTRL_REG3, DAC_VCM_SHIFT, 0x14)},
-	{REG_FIELD_VALUE(DAC_VCM_CTRL_REG4, DAC_VCM_SHIFT, 0x19)},
-	{REG_FIELD_VALUE(DAC_VCM_CTRL_REG5, DAC_VCM_SHIFT, 0x1B)},
-	{REG_FIELD_VALUE(DAC_VCM_CTRL_REG6, DAC_VCM_SHIFT, 0x1C)},
-	{REG_FIELD_VALUE(DAC_VCM_CTRL_REG7, DAC_VCM_SHIFT_FINAL_OVERRIDE, 0x01)},
+	{ REG_FIELD_VALUE(CLSH_CTL_1, SLR_MAX, 0x02) },
+	{ REG_FIELD_VALUE(CLSH_V_HD_PA, V_HD_PA, 0x13) },
+	{ REG_FIELD_VALUE(UVLO_PROG, UVLO1_VTH, 0x03) },
+	{ REG_FIELD_VALUE(UVLO_PROG, UVLO1_HYST, 0x03) },
+	{ REG_FIELD_VALUE(DAC_VCM_CTRL_REG2, DAC_VCM_SHIFT, 0x06) },
+	{ REG_FIELD_VALUE(DAC_VCM_CTRL_REG3, DAC_VCM_SHIFT, 0x14) },
+	{ REG_FIELD_VALUE(DAC_VCM_CTRL_REG4, DAC_VCM_SHIFT, 0x19) },
+	{ REG_FIELD_VALUE(DAC_VCM_CTRL_REG5, DAC_VCM_SHIFT, 0x1B) },
+	{ REG_FIELD_VALUE(DAC_VCM_CTRL_REG6, DAC_VCM_SHIFT, 0x1C) },
+	{ REG_FIELD_VALUE(DAC_VCM_CTRL_REG7, DAC_VCM_SHIFT_FINAL_OVERRIDE,
+			  0x01) },
 };
 
 static const struct wsa_reg_mask_val reg_init_uvlo[] = {
-	{WSA884X_UVLO_PROG, 0xFF, 0x77},
-	{WSA884X_PA_FSM_TIMER0, 0xFF, 0xC0},
-	{WSA884X_UVLO_DEGLITCH_CTL, 0xFF, 0x1D},
-	{WSA884X_UVLO_PROG1, 0xFF, 0x40},
+	{ WSA884X_UVLO_PROG, 0xFF, 0x77 },
+	{ WSA884X_PA_FSM_TIMER0, 0xFF, 0xC0 },
+	{ WSA884X_UVLO_DEGLITCH_CTL, 0xFF, 0x1D },
+	{ WSA884X_UVLO_PROG1, 0xFF, 0x40 },
 };
 
 static int wsa884x_handle_post_irq(void *data);
@@ -228,21 +233,26 @@ static int wsa884x_handle_post_irq(void *data)
 		do {
 			wsa884x->pa_mute = 0;
 			regmap_update_bits(wsa884x->regmap,
-				REG_FIELD_VALUE(PA_FSM_EN, GLOBAL_PA_EN, 0x01));
+					   REG_FIELD_VALUE(PA_FSM_EN,
+							   GLOBAL_PA_EN, 0x01));
 			usleep_range(1000, 1100);
 
-			regmap_read(wsa884x->regmap, WSA884X_INTR_STATUS0, &sts1);
-			regmap_read(wsa884x->regmap, WSA884X_INTR_STATUS1, &sts2);
+			regmap_read(wsa884x->regmap, WSA884X_INTR_STATUS0,
+				    &sts1);
+			regmap_read(wsa884x->regmap, WSA884X_INTR_STATUS1,
+				    &sts2);
 
 			wsa884x->swr_slave->slave_irq_pending =
-					((sts1 || sts2) ? true : false);
+				((sts1 || sts2) ? true : false);
 			pr_debug("%s: IRQs Sts0: %x, Sts1: %x\n", __func__,
 				 sts1, sts2);
 			if (wsa884x->swr_slave->slave_irq_pending) {
 				pr_debug("%s: IRQ retries left: %0d\n",
-					__func__, retry);
+					 __func__, retry);
 				regmap_update_bits(wsa884x->regmap,
-					REG_FIELD_VALUE(PA_FSM_EN, GLOBAL_PA_EN, 0x00));
+						   REG_FIELD_VALUE(PA_FSM_EN,
+								   GLOBAL_PA_EN,
+								   0x00));
 				wsa884x->pa_mute = 1;
 				if (retry--)
 					usleep_range(1000, 1100);
@@ -289,16 +299,11 @@ static bool is_swr_slave_reg_readable(int reg)
 {
 	int ret = true;
 
-	if (((reg > 0x46) && (reg < 0x4A)) ||
-	    ((reg > 0x4A) && (reg < 0x50)) ||
-	    ((reg > 0x55) && (reg < 0x60)) ||
-	    ((reg > 0x60) && (reg < 0x70)) ||
-	    ((reg > 0x70) && (reg < 0xC0)) ||
-	    ((reg > 0xC1) && (reg < 0xC8)) ||
-	    ((reg > 0xC8) && (reg < 0xD0)) ||
-	    ((reg > 0xD0) && (reg < 0xE0)) ||
-	    ((reg > 0xE0) && (reg < 0xF0)) ||
-	    ((reg > 0xF0) && (reg < 0x100)) ||
+	if (((reg > 0x46) && (reg < 0x4A)) || ((reg > 0x4A) && (reg < 0x50)) ||
+	    ((reg > 0x55) && (reg < 0x60)) || ((reg > 0x60) && (reg < 0x70)) ||
+	    ((reg > 0x70) && (reg < 0xC0)) || ((reg > 0xC1) && (reg < 0xC8)) ||
+	    ((reg > 0xC8) && (reg < 0xD0)) || ((reg > 0xD0) && (reg < 0xE0)) ||
+	    ((reg > 0xE0) && (reg < 0xF0)) || ((reg > 0xF0) && (reg < 0x100)) ||
 	    ((reg > 0x105) && (reg < 0x120)) ||
 	    ((reg > 0x205) && (reg < 0x220)) ||
 	    ((reg > 0x305) && (reg < 0x320)) ||
@@ -326,7 +331,7 @@ static bool is_swr_slave_reg_readable(int reg)
 }
 
 static ssize_t swr_slave_reg_show(struct swr_device *pdev, char __user *ubuf,
-					size_t count, loff_t *ppos)
+				  size_t count, loff_t *ppos)
 {
 	int i, reg_val, len;
 	ssize_t total = 0;
@@ -335,22 +340,24 @@ static ssize_t swr_slave_reg_show(struct swr_device *pdev, char __user *ubuf,
 	if (!ubuf || !ppos)
 		return 0;
 
-	for (i = (((int) *ppos/BYTES_PER_LINE) + SWR_SLV_START_REG_ADDR);
-		i <= SWR_SLV_MAX_REG_ADDR; i++) {
+	for (i = (((int)*ppos / BYTES_PER_LINE) + SWR_SLV_START_REG_ADDR);
+	     i <= SWR_SLV_MAX_REG_ADDR; i++) {
 		if (!is_swr_slave_reg_readable(i))
 			continue;
 		swr_read(pdev, pdev->dev_num, i, &reg_val, 1);
 		len = snprintf(tmp_buf, sizeof(tmp_buf), "0x%.3x: 0x%.2x\n", i,
 			       (reg_val & 0xFF));
 		if (len < 0) {
-			pr_err_ratelimited("%s: fail to fill the buffer\n", __func__);
+			pr_err_ratelimited("%s: fail to fill the buffer\n",
+					   __func__);
 			total = -EFAULT;
 			goto copy_err;
 		}
 		if ((total + len) >= count - 1)
 			break;
 		if (copy_to_user((ubuf + total), tmp_buf, len)) {
-			pr_err_ratelimited("%s: fail to copy reg dump\n", __func__);
+			pr_err_ratelimited("%s: fail to copy reg dump\n",
+					   __func__);
 			total = -EFAULT;
 			goto copy_err;
 		}
@@ -402,15 +409,15 @@ static ssize_t codec_debug_read(struct file *file, char __user *ubuf,
 	if (*ppos < 0)
 		return -EINVAL;
 
-	snprintf(lbuf, sizeof(lbuf), "0x%x\n",
-			(wsa884x->read_data & 0xFF));
+	snprintf(lbuf, sizeof(lbuf), "0x%x\n", (wsa884x->read_data & 0xFF));
 
 	return simple_read_from_buffer(ubuf, count, ppos, lbuf,
-					       strnlen(lbuf, 7));
+				       strnlen(lbuf, 7));
 }
 
 static ssize_t codec_debug_peek_write(struct file *file,
-	const char __user *ubuf, size_t cnt, loff_t *ppos)
+				      const char __user *ubuf, size_t cnt,
+				      loff_t *ppos)
 {
 	char lbuf[SWR_SLV_WR_BUF_LEN];
 	int rc = 0;
@@ -452,8 +459,8 @@ static ssize_t codec_debug_peek_write(struct file *file,
 	return rc;
 }
 
-static ssize_t codec_debug_write(struct file *file,
-	const char __user *ubuf, size_t cnt, loff_t *ppos)
+static ssize_t codec_debug_write(struct file *file, const char __user *ubuf,
+				 size_t cnt, loff_t *ppos)
 {
 	char lbuf[SWR_SLV_WR_BUF_LEN];
 	int rc = 0;
@@ -476,8 +483,8 @@ static ssize_t codec_debug_write(struct file *file,
 
 	lbuf[cnt] = '\0';
 	rc = get_parameters(lbuf, param, 2);
-	if (!((param[0] <= SWR_SLV_MAX_REG_ADDR) &&
-		(param[1] <= 0xFF) && (rc == 0)))
+	if (!((param[0] <= SWR_SLV_MAX_REG_ADDR) && (param[1] <= 0xFF) &&
+	      (rc == 0)))
 		return -EINVAL;
 	swr_write(pdev, pdev->dev_num, param[0], &param[1]);
 	if (rc == 0)
@@ -515,36 +522,36 @@ static void wsa884x_regcache_sync(struct wsa884x_priv *wsa884x)
 
 static irqreturn_t wsa884x_saf2war_handle_irq(int irq, void *data)
 {
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t wsa884x_war2saf_handle_irq(int irq, void *data)
 {
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t wsa884x_otp_handle_irq(int irq, void *data)
 {
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t wsa884x_ocp_handle_irq(int irq, void *data)
 {
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t wsa884x_clip_handle_irq(int irq, void *data)
 {
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
@@ -556,34 +563,34 @@ static irqreturn_t wsa884x_pdm_wd_handle_irq(int irq, void *data)
 	if (!wsa884x)
 		return IRQ_NONE;
 	component = wsa884x->component;
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PDM_WD_CTL, PDM_WD_EN, 0x00));
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PDM_WD_CTL, PDM_WD_EN, 0x01));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(PDM_WD_CTL, PDM_WD_EN, 0x00));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(PDM_WD_CTL, PDM_WD_EN, 0x01));
 
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t wsa884x_clk_wd_handle_irq(int irq, void *data)
 {
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t wsa884x_ext_int_handle_irq(int irq, void *data)
 {
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
 static irqreturn_t wsa884x_uvlo_handle_irq(int irq, void *data)
 {
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 	return IRQ_HANDLED;
 }
 
@@ -600,23 +607,23 @@ static irqreturn_t wsa884x_pa_on_err_handle_irq(int irq, void *data)
 	if (!component)
 		return IRQ_NONE;
 
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PA_FSM_EN, GLOBAL_PA_EN, 0x00));
-	pa_fsm_sta = (snd_soc_component_read(component, WSA884X_PA_FSM_STA1)
-			& 0x1F);
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(PA_FSM_EN, GLOBAL_PA_EN, 0x00));
+	pa_fsm_sta =
+		(snd_soc_component_read(component, WSA884X_PA_FSM_STA1) & 0x1F);
 	if (pa_fsm_sta)
 		pa_fsm_err = snd_soc_component_read(component,
-				WSA884X_PA_FSM_ERR_COND0);
+						    WSA884X_PA_FSM_ERR_COND0);
 
-	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n",
-			   __func__, irq);
+	pr_err_ratelimited("%s: interrupt for irq =%d triggered\n", __func__,
+			   irq);
 
-	snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL0,
-				0x10, 0x00);
-	snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL0,
-				0x10, 0x10);
-	snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL0,
-				0x10, 0x00);
+	snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL0, 0x10,
+				      0x00);
+	snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL0, 0x10,
+				      0x10);
+	snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL0, 0x10,
+				      0x00);
 
 	return IRQ_HANDLED;
 }
@@ -639,22 +646,22 @@ static int wsa884x_set_gain_parameters(struct snd_soc_component *component)
 		case G_19P5_DB:
 			wsa884x->comp_offset = COMP_OFFSET1;
 			wsa884x->min_gain = G_M1P5_DB;
-			wsa884x->pa_aux_gain =  PA_AUX_M1P5_DB;
+			wsa884x->pa_aux_gain = PA_AUX_M1P5_DB;
 			break;
 		case G_18_DB:
 			wsa884x->comp_offset = COMP_OFFSET2;
 			wsa884x->min_gain = G_M3_DB;
-			wsa884x->pa_aux_gain =  PA_AUX_M3_DB;
+			wsa884x->pa_aux_gain = PA_AUX_M3_DB;
 			break;
 		case G_16P5_DB:
 			wsa884x->comp_offset = COMP_OFFSET3;
 			wsa884x->min_gain = G_M4P5_DB;
-			wsa884x->pa_aux_gain =  PA_AUX_M4P5_DB;
+			wsa884x->pa_aux_gain = PA_AUX_M4P5_DB;
 			break;
 		default:
 			wsa884x->comp_offset = COMP_OFFSET4;
 			wsa884x->min_gain = G_M6_DB;
-			wsa884x->pa_aux_gain =  PA_AUX_M6_DB;
+			wsa884x->pa_aux_gain = PA_AUX_M6_DB;
 			break;
 		}
 		break;
@@ -662,12 +669,12 @@ static int wsa884x_set_gain_parameters(struct snd_soc_component *component)
 	case EXT_3S:
 		wsa884x->comp_offset = COMP_OFFSET0;
 		wsa884x->min_gain = G_7P5_DB;
-		wsa884x->pa_aux_gain =  PA_AUX_7P5_DB;
+		wsa884x->pa_aux_gain = PA_AUX_7P5_DB;
 		break;
 	case EXT_ABOVE_3S:
 		wsa884x->comp_offset = COMP_OFFSET0;
 		wsa884x->min_gain = G_12_DB;
-		wsa884x->pa_aux_gain =  PA_AUX_12_DB;
+		wsa884x->pa_aux_gain = PA_AUX_12_DB;
 		break;
 	default:
 		wsa884x->comp_offset = COMP_OFFSET0;
@@ -678,27 +685,30 @@ static int wsa884x_set_gain_parameters(struct snd_soc_component *component)
 
 	igain = isense_gain_data[wsa884x->system_gain][wsa884x->rload];
 	vgain = vsense_gain_data[wsa884x->system_gain];
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(ISENSE2, ISENSE_GAIN_CTL, igain));
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(VSENSE1, GAIN_VSENSE_FE, vgain));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(ISENSE2, ISENSE_GAIN_CTL, igain));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(VSENSE1, GAIN_VSENSE_FE, vgain));
 
-	snd_soc_component_update_bits(component,
+	snd_soc_component_update_bits(
+		component,
 		REG_FIELD_VALUE(GAIN_RAMPING_MIN, MIN_GAIN, wsa884x->min_gain));
 
 	if (wsa884x->comp_enable) {
-		snd_soc_component_update_bits(component,
-			REG_FIELD_VALUE(DRE_CTL_0, OFFSET,
-					wsa884x->comp_offset));
-		snd_soc_component_update_bits(component,
+		snd_soc_component_update_bits(
+			component, REG_FIELD_VALUE(DRE_CTL_0, OFFSET,
+						   wsa884x->comp_offset));
+		snd_soc_component_update_bits(
+			component,
 			REG_FIELD_VALUE(DRE_CTL_1, CSR_GAIN_EN, 0x00));
 	} else {
 		wsa884x->pa_aux_gain = pa_aux_no_comp[wsa884x->pa_gain];
-		snd_soc_component_update_bits(component,
+		snd_soc_component_update_bits(
+			component,
 			REG_FIELD_VALUE(DRE_CTL_1, CSR_GAIN_EN, 0x01));
-		snd_soc_component_update_bits(component,
+		snd_soc_component_update_bits(
+			component,
 			REG_FIELD_VALUE(DRE_CTL_1, CSR_GAIN, wsa884x->pa_gain));
-
 	}
 	return 0;
 }
@@ -722,22 +732,36 @@ static int wsa884x_set_pbr_parameters(struct snd_soc_component *component)
 	int vth14_reg_val;
 	int vth15_reg_val;
 
-
-	int vth1_val = pbr_vth1_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth2_val = pbr_vth2_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth3_val = pbr_vth3_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth4_val = pbr_vth4_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth5_val = pbr_vth5_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth6_val = pbr_vth6_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth7_val = pbr_vth7_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth8_val = pbr_vth8_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth9_val = pbr_vth9_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth10_val = pbr_vth10_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth11_val = pbr_vth11_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth12_val = pbr_vth12_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth13_val = pbr_vth13_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth14_val = pbr_vth14_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
-	int vth15_val = pbr_vth15_data[wsa884x->system_gain][wsa884x->bat_cfg][wsa884x->rload];
+	int vth1_val = pbr_vth1_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth2_val = pbr_vth2_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth3_val = pbr_vth3_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth4_val = pbr_vth4_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth5_val = pbr_vth5_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth6_val = pbr_vth6_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth7_val = pbr_vth7_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth8_val = pbr_vth8_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth9_val = pbr_vth9_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				    [wsa884x->rload];
+	int vth10_val = pbr_vth10_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				      [wsa884x->rload];
+	int vth11_val = pbr_vth11_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				      [wsa884x->rload];
+	int vth12_val = pbr_vth12_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				      [wsa884x->rload];
+	int vth13_val = pbr_vth13_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				      [wsa884x->rload];
+	int vth14_val = pbr_vth14_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				      [wsa884x->rload];
+	int vth15_val = pbr_vth15_data[wsa884x->system_gain][wsa884x->bat_cfg]
+				      [wsa884x->rload];
 
 	vth1_reg_val = WSA884X_VTH_TO_REG(vth1_val);
 	vth2_reg_val = WSA884X_VTH_TO_REG(vth2_val);
@@ -774,67 +798,71 @@ static int wsa884x_set_pbr_parameters(struct snd_soc_component *component)
 	return 0;
 }
 
-static void wsa_noise_gate_write(struct snd_soc_component *component,
-			int imode)
+static void wsa_noise_gate_write(struct snd_soc_component *component, int imode)
 {
 	switch (imode) {
 	case NG1:
 		snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL1,
-			WSA884X_IDLE_DETECT_NG_BLOCK_MASK, 0x30);
+					      WSA884X_IDLE_DETECT_NG_BLOCK_MASK,
+					      0x30);
 		break;
 	case NG2:
 		snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL1,
-			WSA884X_IDLE_DETECT_NG_BLOCK_MASK, 0x20);
+					      WSA884X_IDLE_DETECT_NG_BLOCK_MASK,
+					      0x20);
 		break;
 	case NG3:
 		snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL1,
-			WSA884X_IDLE_DETECT_NG_BLOCK_MASK, 0x10);
+					      WSA884X_IDLE_DETECT_NG_BLOCK_MASK,
+					      0x10);
 		break;
 	default:
 		snd_soc_component_update_bits(component, WSA884X_PA_FSM_CTL1,
-			WSA884X_IDLE_DETECT_NG_BLOCK_MASK, 0x8);
+					      WSA884X_IDLE_DETECT_NG_BLOCK_MASK,
+					      0x8);
 		break;
 	}
 }
 
 static int wsa_dev_mode_get(struct snd_kcontrol *kcontrol,
-			   struct snd_ctl_elem_value *ucontrol)
+			    struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-			snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	ucontrol->value.integer.value[0] = wsa884x->dev_mode;
 
 	dev_dbg(component->dev, "%s: mode = 0x%x\n", __func__,
-			wsa884x->dev_mode);
+		wsa884x->dev_mode);
 
 	return 0;
 }
 
 static int wsa_dev_mode_put(struct snd_kcontrol *kcontrol,
-			   struct snd_ctl_elem_value *ucontrol)
+			    struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-			snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 	int dev_mode;
 	int wsa_dev_index;
 
 	if ((ucontrol->value.integer.value[0] >= SPEAKER) &&
-			(ucontrol->value.integer.value[0] < MAX_DEV_MODE))
+	    (ucontrol->value.integer.value[0] < MAX_DEV_MODE))
 		dev_mode = ucontrol->value.integer.value[0];
 	else
 		return -EINVAL;
 
-	dev_dbg(component->dev, "%s: Dev Mode current: %d, new: %d\n",
-		__func__, wsa884x->dev_mode, dev_mode);
+	dev_dbg(component->dev, "%s: Dev Mode current: %d, new: %d\n", __func__,
+		wsa884x->dev_mode, dev_mode);
 
 	/* Check if input parameter is in range */
 	wsa_dev_index = (wsa884x->dev_index - 1) % 2;
 	if ((dev_mode + wsa_dev_index * 2) < (MAX_DEV_MODE * 2)) {
-		wsa884x->dev_mode =  dev_mode;
-		wsa884x->system_gain = wsa884x->sys_gains[dev_mode + wsa_dev_index * 2];
+		wsa884x->dev_mode = dev_mode;
+		wsa884x->system_gain =
+			wsa884x->sys_gains[dev_mode + wsa_dev_index * 2];
 	} else {
 		return -EINVAL;
 	}
@@ -842,12 +870,27 @@ static int wsa_dev_mode_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-static const char * const wsa_pa_gain_text[] = {
-	"G_21_DB", "G_19P5_DB" "G_18_DB", "G_16P5_DB", "G_15_DB", "G_13P5_DB",
-	"G_12_DB", "G_10P5_DB", "G_9_DB", "G_7P5_DB", "G_6_DB", "G_4P5_DB",
-	"G_3_DB", "G_1P5_DB", "G_0_DB", "G_M1P5_DB", "G_M3_DB", "G_M4P5_DB"
-	"G_M6_DB", "G_M7P5_DB", "G_M9_DB"
-};
+static const char *const wsa_pa_gain_text[] = { "G_21_DB",
+						"G_19P5_DB"
+						"G_18_DB",
+						"G_16P5_DB",
+						"G_15_DB",
+						"G_13P5_DB",
+						"G_12_DB",
+						"G_10P5_DB",
+						"G_9_DB",
+						"G_7P5_DB",
+						"G_6_DB",
+						"G_4P5_DB",
+						"G_3_DB",
+						"G_1P5_DB",
+						"G_0_DB",
+						"G_M1P5_DB",
+						"G_M3_DB",
+						"G_M4P5_DB"
+						"G_M6_DB",
+						"G_M7P5_DB",
+						"G_M9_DB" };
 
 static const struct soc_enum wsa_pa_gain_enum =
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(wsa_pa_gain_text), wsa_pa_gain_text);
@@ -856,13 +899,13 @@ static int wsa_pa_gain_get(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-			snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	ucontrol->value.integer.value[0] = wsa884x->pa_gain;
 
 	dev_dbg(component->dev, "%s: PA gain = 0x%x\n", __func__,
-			wsa884x->pa_gain);
+		wsa884x->pa_gain);
 
 	return 0;
 }
@@ -871,22 +914,22 @@ static int wsa_pa_gain_put(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-			snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	dev_dbg(component->dev, "%s: ucontrol->value.integer.value[0]  = %ld\n",
 		__func__, ucontrol->value.integer.value[0]);
 
-	wsa884x->pa_gain =  ucontrol->value.integer.value[0];
+	wsa884x->pa_gain = ucontrol->value.integer.value[0];
 
 	return 0;
 }
 
 static int wsa_get_temp(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
+			struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-			snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 	int temp = 0;
 
@@ -901,14 +944,15 @@ static int wsa_get_temp(struct snd_kcontrol *kcontrol,
 }
 
 static ssize_t wsa884x_codec_version_read(struct snd_info_entry *entry,
-			       void *file_private_data, struct file *file,
-			       char __user *buf, size_t count, loff_t pos)
+					  void *file_private_data,
+					  struct file *file, char __user *buf,
+					  size_t count, loff_t pos)
 {
 	struct wsa884x_priv *wsa884x;
 	char buffer[WSA884X_VERSION_ENTRY_SIZE];
 	int len = 0;
 
-	wsa884x = (struct wsa884x_priv *) entry->private_data;
+	wsa884x = (struct wsa884x_priv *)entry->private_data;
 	if (!wsa884x) {
 		pr_err_ratelimited("%s: wsa884x priv is null\n", __func__);
 		return -EINVAL;
@@ -931,16 +975,14 @@ static struct snd_info_entry_ops wsa884x_codec_info_ops = {
 };
 
 static ssize_t wsa884x_variant_read(struct snd_info_entry *entry,
-				    void *file_private_data,
-				    struct file *file,
-				    char __user *buf, size_t count,
-				    loff_t pos)
+				    void *file_private_data, struct file *file,
+				    char __user *buf, size_t count, loff_t pos)
 {
 	struct wsa884x_priv *wsa884x;
 	char buffer[WSA884X_VARIANT_ENTRY_SIZE];
 	int len = 0;
 
-	wsa884x = (struct wsa884x_priv *) entry->private_data;
+	wsa884x = (struct wsa884x_priv *)entry->private_data;
 	if (!wsa884x) {
 		pr_err_ratelimited("%s: wsa884x priv is null\n", __func__);
 		return -EINVAL;
@@ -992,8 +1034,8 @@ int wsa884x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 
 	wsa884x = snd_soc_component_get_drvdata(component);
 	if (wsa884x->entry) {
-		dev_dbg(wsa884x->dev,
-			"%s:wsa884x module already created\n", __func__);
+		dev_dbg(wsa884x->dev, "%s:wsa884x module already created\n",
+			__func__);
 		return 0;
 	}
 	card = component->card;
@@ -1001,9 +1043,8 @@ int wsa884x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 	snprintf(name, sizeof(name), "%s.%llx", "wsa884x",
 		 wsa884x->swr_slave->addr);
 
-	wsa884x->entry = snd_info_create_module_entry(codec_root->module,
-						(const char *)name,
-						codec_root);
+	wsa884x->entry = snd_info_create_module_entry(
+		codec_root->module, (const char *)name, codec_root);
 	if (!wsa884x->entry) {
 		dev_dbg(component->dev, "%s: failed to create wsa884x entry\n",
 			__func__);
@@ -1015,11 +1056,11 @@ int wsa884x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 		return -ENOMEM;
 	}
 
-	version_entry = snd_info_create_card_entry(card->snd_card,
-						   "version",
+	version_entry = snd_info_create_card_entry(card->snd_card, "version",
 						   wsa884x->entry);
 	if (!version_entry) {
-		dev_dbg(component->dev, "%s: failed to create wsa884x version entry\n",
+		dev_dbg(component->dev,
+			"%s: failed to create wsa884x version entry\n",
 			__func__);
 		snd_info_free_entry(wsa884x->entry);
 		return -ENOMEM;
@@ -1037,8 +1078,7 @@ int wsa884x_codec_info_create_codec_entry(struct snd_info_entry *codec_root,
 	}
 	wsa884x->version_entry = version_entry;
 
-	variant_entry = snd_info_create_card_entry(card->snd_card,
-						   "variant",
+	variant_entry = snd_info_create_card_entry(card->snd_card, "variant",
 						   wsa884x->entry);
 	if (!variant_entry) {
 		dev_dbg(component->dev,
@@ -1094,7 +1134,7 @@ static int wsa884x_get_dev_num(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x;
 
 	if (!component)
@@ -1111,10 +1151,10 @@ static int wsa884x_get_dev_num(struct snd_kcontrol *kcontrol,
 }
 
 static int wsa884x_get_compander(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
+				 struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	ucontrol->value.integer.value[0] = wsa884x->comp_enable;
@@ -1125,37 +1165,41 @@ static int wsa884x_get_compander(struct snd_kcontrol *kcontrol,
  * wsa884x_validate_dt_configuration_params - returns 1 or 0
  * Return: 0 Valid configuration, 1 Invalid configuration
  */
-static bool wsa884x_validate_dt_configuration_params(struct snd_soc_component *component,
-					u8 irload, u8 ibat_cfg_dts, u8 isystem_gain)
+static bool
+wsa884x_validate_dt_configuration_params(struct snd_soc_component *component,
+					 u8 irload, u8 ibat_cfg_dts,
+					 u8 isystem_gain)
 {
 	u8 bat_cfg_reg;
 	bool is_invalid_flag = true;
 
-	bat_cfg_reg = snd_soc_component_read(component, WSA884X_VPHX_SYS_EN_STATUS);
+	bat_cfg_reg =
+		snd_soc_component_read(component, WSA884X_VPHX_SYS_EN_STATUS);
 
 	dev_info(component->dev, "VPHX EN Status: %d", bat_cfg_reg);
 
-	if ((ibat_cfg_dts == EXT_1S) || (ibat_cfg_dts == EXT_2S) || (ibat_cfg_dts == EXT_3S))
+	if ((ibat_cfg_dts == EXT_1S) || (ibat_cfg_dts == EXT_2S) ||
+	    (ibat_cfg_dts == EXT_3S))
 		ibat_cfg_dts = EXT_ABOVE_3S;
 	if ((WSA_4_OHMS <= irload && irload < WSA_MAX_OHMS) &&
-		(G_21_DB <= isystem_gain && isystem_gain < G_MAX_DB) &&
-		(EXT_ABOVE_3S <= ibat_cfg_dts && ibat_cfg_dts < CONFIG_MAX) &&
-		(ibat_cfg_dts == bat_cfg_reg))
-			is_invalid_flag = false;
+	    (G_21_DB <= isystem_gain && isystem_gain < G_MAX_DB) &&
+	    (EXT_ABOVE_3S <= ibat_cfg_dts && ibat_cfg_dts < CONFIG_MAX) &&
+	    (ibat_cfg_dts == bat_cfg_reg))
+		is_invalid_flag = false;
 
 	return is_invalid_flag;
 }
 
 static int wsa884x_set_compander(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
+				 struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 	int value = ucontrol->value.integer.value[0];
 
 	dev_dbg(component->dev, "%s: Compander enable current %d, new %d\n",
-		 __func__, wsa884x->comp_enable, value);
+		__func__, wsa884x->comp_enable, value);
 	wsa884x->comp_enable = value;
 	return 0;
 }
@@ -1164,7 +1208,7 @@ static int wsa884x_get_visense(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	ucontrol->value.integer.value[0] = wsa884x->visense_enable;
@@ -1175,21 +1219,21 @@ static int wsa884x_set_visense(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 	int value = ucontrol->value.integer.value[0];
 
 	dev_dbg(component->dev, "%s: VIsense enable current %d, new %d\n",
-		 __func__, wsa884x->visense_enable, value);
+		__func__, wsa884x->visense_enable, value);
 	wsa884x->visense_enable = value;
 	return 0;
 }
 
 static int wsa884x_get_pbr(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
+			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	ucontrol->value.integer.value[0] = wsa884x->pbr_enable;
@@ -1197,24 +1241,24 @@ static int wsa884x_get_pbr(struct snd_kcontrol *kcontrol,
 }
 
 static int wsa884x_set_pbr(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
+			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 	int value = ucontrol->value.integer.value[0];
 
-	dev_dbg(component->dev, "%s: PBR enable current %d, new %d\n",
-		 __func__, wsa884x->pbr_enable, value);
+	dev_dbg(component->dev, "%s: PBR enable current %d, new %d\n", __func__,
+		wsa884x->pbr_enable, value);
 	wsa884x->pbr_enable = value;
 	return 0;
 }
 
 static int wsa884x_get_cps(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
+			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	ucontrol->value.integer.value[0] = wsa884x->cps_enable;
@@ -1222,53 +1266,52 @@ static int wsa884x_get_cps(struct snd_kcontrol *kcontrol,
 }
 
 static int wsa884x_set_cps(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
+			   struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 	int value = ucontrol->value.integer.value[0];
 
-	dev_dbg(component->dev, "%s: CPS enable current %d, new %d\n",
-		 __func__, wsa884x->cps_enable, value);
+	dev_dbg(component->dev, "%s: CPS enable current %d, new %d\n", __func__,
+		wsa884x->cps_enable, value);
 	wsa884x->cps_enable = value;
 	return 0;
 }
 
 static const struct snd_kcontrol_new wsa884x_snd_controls[] = {
-	SOC_ENUM_EXT("WSA PA Gain", wsa_pa_gain_enum,
-			wsa_pa_gain_get, wsa_pa_gain_put),
+	SOC_ENUM_EXT("WSA PA Gain", wsa_pa_gain_enum, wsa_pa_gain_get,
+		     wsa_pa_gain_put),
 
-	SOC_SINGLE_EXT("WSA Temp", SND_SOC_NOPM, 0, UINT_MAX, 0,
-			wsa_get_temp, NULL),
+	SOC_SINGLE_EXT("WSA Temp", SND_SOC_NOPM, 0, UINT_MAX, 0, wsa_get_temp,
+		       NULL),
 
 	SOC_SINGLE_EXT("WSA Get DevNum", SND_SOC_NOPM, 0, UINT_MAX, 0,
-			wsa884x_get_dev_num, NULL),
+		       wsa884x_get_dev_num, NULL),
 
-	SOC_SINGLE_EXT("WSA MODE", SND_SOC_NOPM, 0, 1, 0,
-			wsa_dev_mode_get, wsa_dev_mode_put),
+	SOC_SINGLE_EXT("WSA MODE", SND_SOC_NOPM, 0, 1, 0, wsa_dev_mode_get,
+		       wsa_dev_mode_put),
 
 	SOC_SINGLE_EXT("COMP Switch", SND_SOC_NOPM, 0, 1, 0,
-			wsa884x_get_compander, wsa884x_set_compander),
+		       wsa884x_get_compander, wsa884x_set_compander),
 
 	SOC_SINGLE_EXT("VISENSE Switch", SND_SOC_NOPM, 0, 1, 0,
-			wsa884x_get_visense, wsa884x_set_visense),
+		       wsa884x_get_visense, wsa884x_set_visense),
 
-	SOC_SINGLE_EXT("PBR Switch", SND_SOC_NOPM, 0, 1, 0,
-		wsa884x_get_pbr, wsa884x_set_pbr),
+	SOC_SINGLE_EXT("PBR Switch", SND_SOC_NOPM, 0, 1, 0, wsa884x_get_pbr,
+		       wsa884x_set_pbr),
 
-	SOC_SINGLE_EXT("CPS Switch", SND_SOC_NOPM, 0, 1, 0,
-		wsa884x_get_cps, wsa884x_set_cps),
+	SOC_SINGLE_EXT("CPS Switch", SND_SOC_NOPM, 0, 1, 0, wsa884x_get_cps,
+		       wsa884x_set_cps),
 
 };
 
-static const struct snd_kcontrol_new swr_dac_port[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new swr_dac_port[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
 static int wsa884x_set_port(struct snd_soc_component *component, int port_idx,
-			u8 *port_id, u8 *num_ch, u8 *ch_mask, u32 *ch_rate,
-			u8 *port_type)
+			    u8 *port_id, u8 *num_ch, u8 *ch_mask, u32 *ch_rate,
+			    u8 *port_type)
 {
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
@@ -1281,10 +1324,10 @@ static int wsa884x_set_port(struct snd_soc_component *component, int port_idx,
 }
 
 static int wsa884x_enable_swr_dac_port(struct snd_soc_dapm_widget *w,
-	struct snd_kcontrol *kcontrol, int event)
+				       struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 	u8 port_id[WSA884X_MAX_SWR_PORTS];
 	u8 num_ch[WSA884X_MAX_SWR_PORTS];
@@ -1293,114 +1336,124 @@ static int wsa884x_enable_swr_dac_port(struct snd_soc_dapm_widget *w,
 	u8 port_type[WSA884X_MAX_SWR_PORTS];
 	u8 num_port = 0;
 
-	dev_dbg(component->dev, "%s: event %d name %s\n", __func__,
-		event, w->name);
+	dev_dbg(component->dev, "%s: event %d name %s\n", __func__, event,
+		w->name);
 	if (wsa884x == NULL)
 		return -EINVAL;
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
-		wsa884x_set_port(component, SWR_DAC_PORT,
-				&port_id[num_port], &num_ch[num_port],
-				&ch_mask[num_port], &ch_rate[num_port],
-				&port_type[num_port]);
+		wsa884x_set_port(component, SWR_DAC_PORT, &port_id[num_port],
+				 &num_ch[num_port], &ch_mask[num_port],
+				 &ch_rate[num_port], &port_type[num_port]);
 		if (wsa884x->dev_mode == RECEIVER)
 			ch_rate[num_port] = SWR_CLK_RATE_4P8MHZ;
 		++num_port;
 
 		if (wsa884x->comp_enable) {
 			wsa884x_set_port(component, SWR_COMP_PORT,
-					&port_id[num_port], &num_ch[num_port],
-					&ch_mask[num_port], &ch_rate[num_port],
-					&port_type[num_port]);
+					 &port_id[num_port], &num_ch[num_port],
+					 &ch_mask[num_port], &ch_rate[num_port],
+					 &port_type[num_port]);
 			++num_port;
-			set_bit(COMP_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask);
+			set_bit(COMP_PORT_EN_STATUS_BIT,
+				&wsa884x->port_status_mask);
 		}
 		if (wsa884x->pbr_enable) {
 			wsa884x_set_port(component, SWR_PBR_PORT,
-					&port_id[num_port], &num_ch[num_port],
-					&ch_mask[num_port], &ch_rate[num_port],
-					&port_type[num_port]);
+					 &port_id[num_port], &num_ch[num_port],
+					 &ch_mask[num_port], &ch_rate[num_port],
+					 &port_type[num_port]);
 			++num_port;
-			set_bit(PBR_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask);
+			set_bit(PBR_PORT_EN_STATUS_BIT,
+				&wsa884x->port_status_mask);
 		}
 		if (wsa884x->visense_enable) {
 			wsa884x_set_port(component, SWR_VISENSE_PORT,
-					&port_id[num_port], &num_ch[num_port],
-					&ch_mask[num_port], &ch_rate[num_port],
-					&port_type[num_port]);
+					 &port_id[num_port], &num_ch[num_port],
+					 &ch_mask[num_port], &ch_rate[num_port],
+					 &port_type[num_port]);
 			++num_port;
-			set_bit(VI_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask);
+			set_bit(VI_PORT_EN_STATUS_BIT,
+				&wsa884x->port_status_mask);
 		}
 		if (wsa884x->cps_enable) {
 			wsa884x_set_port(component, SWR_CPS_PORT,
-					&port_id[num_port], &num_ch[num_port],
-					&ch_mask[num_port], &ch_rate[num_port],
-					&port_type[num_port]);
+					 &port_id[num_port], &num_ch[num_port],
+					 &ch_mask[num_port], &ch_rate[num_port],
+					 &port_type[num_port]);
 			++num_port;
-			set_bit(CPS_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask);
+			set_bit(CPS_PORT_EN_STATUS_BIT,
+				&wsa884x->port_status_mask);
 		}
 		swr_connect_port(wsa884x->swr_slave, &port_id[0], num_port,
-				&ch_mask[0], &ch_rate[0], &num_ch[0],
-					&port_type[0]);
+				 &ch_mask[0], &ch_rate[0], &num_ch[0],
+				 &port_type[0]);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		set_bit(SPKR_STATUS, &wsa884x->status_mask);
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
-		wsa884x_set_port(component, SWR_DAC_PORT,
-				&port_id[num_port], &num_ch[num_port],
-				&ch_mask[num_port], &ch_rate[num_port],
-				&port_type[num_port]);
+		wsa884x_set_port(component, SWR_DAC_PORT, &port_id[num_port],
+				 &num_ch[num_port], &ch_mask[num_port],
+				 &ch_rate[num_port], &port_type[num_port]);
 		++num_port;
 
 		if (wsa884x->comp_enable &&
-			test_bit(COMP_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask)) {
+		    test_bit(COMP_PORT_EN_STATUS_BIT,
+			     &wsa884x->port_status_mask)) {
 			wsa884x_set_port(component, SWR_COMP_PORT,
-					&port_id[num_port], &num_ch[num_port],
-					&ch_mask[num_port], &ch_rate[num_port],
-					&port_type[num_port]);
+					 &port_id[num_port], &num_ch[num_port],
+					 &ch_mask[num_port], &ch_rate[num_port],
+					 &port_type[num_port]);
 			++num_port;
-			clear_bit(COMP_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask);
+			clear_bit(COMP_PORT_EN_STATUS_BIT,
+				  &wsa884x->port_status_mask);
 		}
 		if (wsa884x->pbr_enable &&
-			test_bit(PBR_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask)) {
+		    test_bit(PBR_PORT_EN_STATUS_BIT,
+			     &wsa884x->port_status_mask)) {
 			wsa884x_set_port(component, SWR_PBR_PORT,
-					&port_id[num_port], &num_ch[num_port],
-					&ch_mask[num_port], &ch_rate[num_port],
-					&port_type[num_port]);
+					 &port_id[num_port], &num_ch[num_port],
+					 &ch_mask[num_port], &ch_rate[num_port],
+					 &port_type[num_port]);
 			++num_port;
-			clear_bit(PBR_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask);
+			clear_bit(PBR_PORT_EN_STATUS_BIT,
+				  &wsa884x->port_status_mask);
 		}
 		if (wsa884x->visense_enable &&
-			test_bit(VI_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask)) {
+		    test_bit(VI_PORT_EN_STATUS_BIT,
+			     &wsa884x->port_status_mask)) {
 			wsa884x_set_port(component, SWR_VISENSE_PORT,
-					&port_id[num_port], &num_ch[num_port],
-					&ch_mask[num_port], &ch_rate[num_port],
-					&port_type[num_port]);
+					 &port_id[num_port], &num_ch[num_port],
+					 &ch_mask[num_port], &ch_rate[num_port],
+					 &port_type[num_port]);
 			++num_port;
-			clear_bit(VI_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask);
+			clear_bit(VI_PORT_EN_STATUS_BIT,
+				  &wsa884x->port_status_mask);
 		}
 		if (wsa884x->cps_enable &&
-			test_bit(CPS_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask)) {
+		    test_bit(CPS_PORT_EN_STATUS_BIT,
+			     &wsa884x->port_status_mask)) {
 			wsa884x_set_port(component, SWR_CPS_PORT,
-					&port_id[num_port], &num_ch[num_port],
-					&ch_mask[num_port], &ch_rate[num_port],
-					&port_type[num_port]);
+					 &port_id[num_port], &num_ch[num_port],
+					 &ch_mask[num_port], &ch_rate[num_port],
+					 &port_type[num_port]);
 			++num_port;
-			clear_bit(CPS_PORT_EN_STATUS_BIT, &wsa884x->port_status_mask);
+			clear_bit(CPS_PORT_EN_STATUS_BIT,
+				  &wsa884x->port_status_mask);
 		}
 		swr_disconnect_port(wsa884x->swr_slave, &port_id[0], num_port,
-				&ch_mask[0], &port_type[0]);
+				    &ch_mask[0], &port_type[0]);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		if (swr_set_device_group(wsa884x->swr_slave, SWR_GROUP_NONE))
 			dev_err_ratelimited(component->dev,
-				"%s: set num ch failed\n", __func__);
+					    "%s: set num ch failed\n",
+					    __func__);
 
 		swr_slvdev_datapath_control(wsa884x->swr_slave,
-					    wsa884x->swr_slave->dev_num,
-					    false);
+					    wsa884x->swr_slave->dev_num, false);
 		break;
 	default:
 		break;
@@ -1409,78 +1462,91 @@ static int wsa884x_enable_swr_dac_port(struct snd_soc_dapm_widget *w,
 }
 
 static int wsa884x_spkr_event(struct snd_soc_dapm_widget *w,
-			struct snd_kcontrol *kcontrol, int event)
+			      struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	dev_dbg(component->dev, "%s: %s %d\n", __func__, w->name, event);
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
 		swr_slvdev_datapath_control(wsa884x->swr_slave,
-					    wsa884x->swr_slave->dev_num,
-					    true);
+					    wsa884x->swr_slave->dev_num, true);
 		wsa884x_set_gain_parameters(component);
 		if (wsa884x->dev_mode == SPEAKER) {
-			snd_soc_component_update_bits(component,
+			snd_soc_component_update_bits(
+				component,
 				REG_FIELD_VALUE(DRE_CTL_0, PROG_DELAY, 0x0F));
 		} else {
-			snd_soc_component_update_bits(component,
+			snd_soc_component_update_bits(
+				component,
 				REG_FIELD_VALUE(DRE_CTL_0, PROG_DELAY, 0x03));
-			snd_soc_component_update_bits(component,
+			snd_soc_component_update_bits(
+				component,
 				REG_FIELD_VALUE(CDC_PATH_MODE, RXD_MODE, 0x01));
-			snd_soc_component_update_bits(component,
-				REG_FIELD_VALUE(PWM_CLK_CTL,
-				PWM_CLK_FREQ_SEL, 0x01));
+			snd_soc_component_update_bits(
+				component,
+				REG_FIELD_VALUE(PWM_CLK_CTL, PWM_CLK_FREQ_SEL,
+						0x01));
 		}
 		if (wsa884x->pbr_enable) {
-			snd_soc_component_update_bits(component,
+			snd_soc_component_update_bits(
+				component,
 				REG_FIELD_VALUE(CURRENT_LIMIT,
-				CURRENT_LIMIT_OVRD_EN, 0x00));
+						CURRENT_LIMIT_OVRD_EN, 0x00));
 			switch (wsa884x->bat_cfg) {
 			case CONFIG_1S:
-				snd_soc_component_update_bits(component,
+				snd_soc_component_update_bits(
+					component,
 					REG_FIELD_VALUE(CURRENT_LIMIT,
-					CURRENT_LIMIT, 0x15));
+							CURRENT_LIMIT, 0x15));
 				break;
 			case CONFIG_2S:
-				snd_soc_component_update_bits(component,
+				snd_soc_component_update_bits(
+					component,
 					REG_FIELD_VALUE(CURRENT_LIMIT,
-					CURRENT_LIMIT, 0x11));
+							CURRENT_LIMIT, 0x11));
 				break;
 			case CONFIG_3S:
-				snd_soc_component_update_bits(component,
+				snd_soc_component_update_bits(
+					component,
 					REG_FIELD_VALUE(CURRENT_LIMIT,
-					CURRENT_LIMIT, 0x0D));
+							CURRENT_LIMIT, 0x0D));
 				break;
 			}
 		} else {
-			snd_soc_component_update_bits(component,
+			snd_soc_component_update_bits(
+				component,
 				REG_FIELD_VALUE(CURRENT_LIMIT,
-				CURRENT_LIMIT_OVRD_EN, 0x01));
+						CURRENT_LIMIT_OVRD_EN, 0x01));
 			if (wsa884x->system_gain >= G_12_DB)
-				snd_soc_component_update_bits(component,
+				snd_soc_component_update_bits(
+					component,
 					REG_FIELD_VALUE(CURRENT_LIMIT,
-					CURRENT_LIMIT, 0x15));
+							CURRENT_LIMIT, 0x15));
 			else
-				snd_soc_component_update_bits(component,
+				snd_soc_component_update_bits(
+					component,
 					REG_FIELD_VALUE(CURRENT_LIMIT,
-					CURRENT_LIMIT, 0x09));
+							CURRENT_LIMIT, 0x09));
 		}
 		/* Force remove group */
 		swr_remove_from_group(wsa884x->swr_slave,
 				      wsa884x->swr_slave->dev_num);
 		if (test_bit(SPKR_ADIE_LB, &wsa884x->status_mask) &&
 		    !wsa884x->pa_mute)
-			snd_soc_component_update_bits(component,
+			snd_soc_component_update_bits(
+				component,
 				REG_FIELD_VALUE(PA_FSM_EN, GLOBAL_PA_EN, 0x01));
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
-		snd_soc_component_update_bits(component,
+		snd_soc_component_update_bits(
+			component,
 			REG_FIELD_VALUE(PA_FSM_EN, GLOBAL_PA_EN, 0x00));
 		snd_soc_component_update_bits(component,
-			REG_FIELD_VALUE(PDM_WD_CTL, PDM_WD_EN, 0x00));
+					      REG_FIELD_VALUE(PDM_WD_CTL,
+							      PDM_WD_EN, 0x00));
 		clear_bit(SPKR_STATUS, &wsa884x->status_mask);
 		clear_bit(SPKR_ADIE_LB, &wsa884x->status_mask);
 		wsa884x->pa_mute = 0;
@@ -1491,17 +1557,18 @@ static int wsa884x_spkr_event(struct snd_soc_dapm_widget *w,
 
 static const struct snd_soc_dapm_widget wsa884x_dapm_widgets[] = {
 	SND_SOC_DAPM_INPUT("IN"),
-	SND_SOC_DAPM_MIXER_E("SWR DAC_Port", SND_SOC_NOPM, 0, 0, swr_dac_port,
+	SND_SOC_DAPM_MIXER_E(
+		"SWR DAC_Port", SND_SOC_NOPM, 0, 0, swr_dac_port,
 		ARRAY_SIZE(swr_dac_port), wsa884x_enable_swr_dac_port,
 		SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-		SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+			SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
 
 	SND_SOC_DAPM_SPK("SPKR", wsa884x_spkr_event),
 };
 
 static const struct snd_soc_dapm_route wsa884x_audio_map[] = {
-	{"SWR DAC_Port", "Switch", "IN"},
-	{"SPKR", NULL, "SWR DAC_Port"},
+	{ "SWR DAC_Port", "Switch", "IN" },
+	{ "SPKR", NULL, "SWR DAC_Port" },
 };
 
 int wsa884x_set_channel_map(struct snd_soc_component *component, u8 *port,
@@ -1512,8 +1579,9 @@ int wsa884x_set_channel_map(struct snd_soc_component *component, u8 *port,
 	int i;
 
 	if (!port || !ch_mask || !ch_rate ||
-		(num_port > WSA884X_MAX_SWR_PORTS)) {
-		dev_err_ratelimited(component->dev,
+	    (num_port > WSA884X_MAX_SWR_PORTS)) {
+		dev_err_ratelimited(
+			component->dev,
 			"%s: Invalid port=%pK, ch_mask=%pK, ch_rate=%pK\n",
 			__func__, port, ch_mask, ch_rate);
 		return -EINVAL;
@@ -1541,21 +1609,24 @@ static void wsa884x_codec_init(struct snd_soc_component *component)
 
 	for (i = 0; i < ARRAY_SIZE(reg_init); i++)
 		snd_soc_component_update_bits(component, reg_init[i].reg,
-					reg_init[i].mask, reg_init[i].val);
+					      reg_init[i].mask,
+					      reg_init[i].val);
 
 	/* Register updates for 2S battery configuration */
 	if (wsa884x->bat_cfg == CONFIG_2S) {
 		for (i = 0; i < ARRAY_SIZE(reg_init_2S); i++)
-			snd_soc_component_update_bits(component, reg_init_2S[i].reg,
-						reg_init_2S[i].mask, reg_init_2S[i].val);
+			snd_soc_component_update_bits(component,
+						      reg_init_2S[i].reg,
+						      reg_init_2S[i].mask,
+						      reg_init_2S[i].val);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(reg_init_uvlo); i++)
 		snd_soc_component_update_bits(component, reg_init_uvlo[i].reg,
-					reg_init_uvlo[i].mask, reg_init_uvlo[i].val);
+					      reg_init_uvlo[i].mask,
+					      reg_init_uvlo[i].val);
 
 	wsa_noise_gate_write(component, wsa884x->noise_gate_mode);
-
 }
 
 static int32_t wsa884x_temp_reg_read(struct snd_soc_component *component,
@@ -1564,44 +1635,47 @@ static int32_t wsa884x_temp_reg_read(struct snd_soc_component *component,
 	struct wsa884x_priv *wsa884x = snd_soc_component_get_drvdata(component);
 
 	if (!wsa884x) {
-		dev_err_ratelimited(component->dev, "%s: wsa884x is NULL\n", __func__);
+		dev_err_ratelimited(component->dev, "%s: wsa884x is NULL\n",
+				    __func__);
 		return -EINVAL;
 	}
 
 	mutex_lock(&wsa884x->res_lock);
 
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PA_FSM_BYP0, DC_CAL_EN, 0x01));
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PA_FSM_BYP0, BG_EN, 0x01));
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PA_FSM_BYP0, CLK_WD_EN, 0x01));
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PA_FSM_BYP0, TSADC_EN, 0x01));
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PA_FSM_BYP0, D_UNMUTE, 0x01));
-	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(PA_FSM_BYP0, SPKR_PROT_EN, 0x01));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(PA_FSM_BYP0, DC_CAL_EN, 0x01));
+	snd_soc_component_update_bits(component, REG_FIELD_VALUE(PA_FSM_BYP0,
+								 BG_EN, 0x01));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(PA_FSM_BYP0, CLK_WD_EN, 0x01));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(PA_FSM_BYP0, TSADC_EN, 0x01));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(PA_FSM_BYP0, D_UNMUTE, 0x01));
+	snd_soc_component_update_bits(
+		component, REG_FIELD_VALUE(PA_FSM_BYP0, SPKR_PROT_EN, 0x01));
 
 	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(TADC_VALUE_CTL, TEMP_VALUE_RD_EN, 0x00));
-	wsa_temp_reg->dmeas_msb = snd_soc_component_read(component,
-							WSA884X_TEMP_DIN_MSB);
-	wsa_temp_reg->dmeas_lsb = snd_soc_component_read(component,
-							WSA884X_TEMP_DIN_LSB);
+				      REG_FIELD_VALUE(TADC_VALUE_CTL,
+						      TEMP_VALUE_RD_EN, 0x00));
+	wsa_temp_reg->dmeas_msb =
+		snd_soc_component_read(component, WSA884X_TEMP_DIN_MSB);
+	wsa_temp_reg->dmeas_lsb =
+		snd_soc_component_read(component, WSA884X_TEMP_DIN_LSB);
 	snd_soc_component_update_bits(component,
-		REG_FIELD_VALUE(TADC_VALUE_CTL, TEMP_VALUE_RD_EN, 0x01));
-	wsa_temp_reg->d1_msb = snd_soc_component_read(component,
-						     WSA884X_OTP_REG_1);
-	wsa_temp_reg->d1_lsb = snd_soc_component_read(component,
-						     WSA884X_OTP_REG_2);
-	wsa_temp_reg->d2_msb = snd_soc_component_read(component,
-						     WSA884X_OTP_REG_3);
-	wsa_temp_reg->d2_lsb = snd_soc_component_read(component,
-						     WSA884X_OTP_REG_4);
+				      REG_FIELD_VALUE(TADC_VALUE_CTL,
+						      TEMP_VALUE_RD_EN, 0x01));
+	wsa_temp_reg->d1_msb =
+		snd_soc_component_read(component, WSA884X_OTP_REG_1);
+	wsa_temp_reg->d1_lsb =
+		snd_soc_component_read(component, WSA884X_OTP_REG_2);
+	wsa_temp_reg->d2_msb =
+		snd_soc_component_read(component, WSA884X_OTP_REG_3);
+	wsa_temp_reg->d2_lsb =
+		snd_soc_component_read(component, WSA884X_OTP_REG_4);
 
-	snd_soc_component_update_bits(component,
-				     WSA884X_PA_FSM_BYP0, 0xE7, 0x00);
+	snd_soc_component_update_bits(component, WSA884X_PA_FSM_BYP0, 0xE7,
+				      0x00);
 	mutex_unlock(&wsa884x->res_lock);
 
 	return 0;
@@ -1625,27 +1699,29 @@ static int wsa884x_get_temperature(struct snd_soc_component *component,
 	do {
 		ret = wsa884x_temp_reg_read(component, &reg);
 		if (ret) {
-			pr_err_ratelimited("%s: temp read failed: %d, current temp: %d\n",
+			pr_err_ratelimited(
+				"%s: temp read failed: %d, current temp: %d\n",
 				__func__, ret, wsa884x->curr_temp);
 			if (temp)
 				*temp = wsa884x->curr_temp;
 			return 0;
 		}
 		/*
-		 * Temperature register values are expected to be in the
-		 * following range.
-		 * d1_msb  = 68 - 92 and d1_lsb  = 0, 64, 128, 192
-		 * d2_msb  = 185 -218 and  d2_lsb  = 0, 64, 128, 192
-		 */
+     * Temperature register values are expected to be in the
+     * following range.
+     * d1_msb  = 68 - 92 and d1_lsb  = 0, 64, 128, 192
+     * d2_msb  = 185 -218 and  d2_lsb  = 0, 64, 128, 192
+     */
 		if ((reg.d1_msb < 68 || reg.d1_msb > 92) ||
-		    (!(reg.d1_lsb == 0 || reg.d1_lsb == 64 || reg.d1_lsb == 128 ||
-			reg.d1_lsb == 192)) ||
+		    (!(reg.d1_lsb == 0 || reg.d1_lsb == 64 ||
+		       reg.d1_lsb == 128 || reg.d1_lsb == 192)) ||
 		    (reg.d2_msb < 185 || reg.d2_msb > 218) ||
-		    (!(reg.d2_lsb == 0 || reg.d2_lsb == 64 || reg.d2_lsb == 128 ||
-			reg.d2_lsb == 192))) {
-			printk_ratelimited("%s: Temperature registers[%d %d %d %d] are out of range\n",
-					   __func__, reg.d1_msb, reg.d1_lsb, reg.d2_msb,
-					   reg.d2_lsb);
+		    (!(reg.d2_lsb == 0 || reg.d2_lsb == 64 ||
+		       reg.d2_lsb == 128 || reg.d2_lsb == 192))) {
+			printk_ratelimited(
+				"%s: Temperature registers[%d %d %d %d] are out of range\n",
+				__func__, reg.d1_msb, reg.d1_lsb, reg.d2_msb,
+				reg.d2_lsb);
 		}
 		dmeas = ((reg.dmeas_msb << 0x8) | reg.dmeas_lsb) >> 0x6;
 		d1 = ((reg.d1_msb << 0x8) | reg.d1_lsb) >> 0x6;
@@ -1654,12 +1730,14 @@ static int wsa884x_get_temperature(struct snd_soc_component *component,
 		if (d1 == d2)
 			temp_val = TEMP_INVALID;
 		else
-			temp_val = t1 + (((dmeas - d1) * (t2 - t1))/(d2 - d1));
+			temp_val =
+				t1 + (((dmeas - d1) * (t2 - t1)) / (d2 - d1));
 
 		if (temp_val <= LOW_TEMP_THRESHOLD ||
-			temp_val >= HIGH_TEMP_THRESHOLD) {
-			pr_debug("%s: T0: %d is out of range[%d, %d]\n", __func__,
-				 temp_val, LOW_TEMP_THRESHOLD, HIGH_TEMP_THRESHOLD);
+		    temp_val >= HIGH_TEMP_THRESHOLD) {
+			pr_debug("%s: T0: %d is out of range[%d, %d]\n",
+				 __func__, temp_val, LOW_TEMP_THRESHOLD,
+				 HIGH_TEMP_THRESHOLD);
 			if (retry--)
 				msleep(10);
 		} else {
@@ -1670,8 +1748,8 @@ static int wsa884x_get_temperature(struct snd_soc_component *component,
 	wsa884x->curr_temp = temp_val;
 	if (temp)
 		*temp = temp_val;
-	pr_debug("%s: t0 measured: %d dmeas = %d, d1 = %d, d2 = %d\n",
-		  __func__, temp_val, dmeas, d1, d2);
+	pr_debug("%s: t0 measured: %d dmeas = %d, d1 = %d, d2 = %d\n", __func__,
+		 temp_val, dmeas, d1, d2);
 
 	return ret;
 }
@@ -1683,7 +1761,7 @@ static int wsa884x_codec_probe(struct snd_soc_component *component)
 	struct swr_device *dev;
 	int variant = 0, version = 0;
 	struct snd_soc_dapm_context *dapm =
-			snd_soc_component_get_dapm(component);
+		snd_soc_component_get_dapm(component);
 
 	if (!wsa884x)
 		return -EINVAL;
@@ -1696,12 +1774,12 @@ static int wsa884x_codec_probe(struct snd_soc_component *component)
 	dev = wsa884x->swr_slave;
 	wsa884x->component = component;
 
-	variant = (snd_soc_component_read(component, WSA884X_OTP_REG_0)
-					 & FIELD_MASK(OTP_REG_0, WSA884X_ID));
+	variant = (snd_soc_component_read(component, WSA884X_OTP_REG_0) &
+		   FIELD_MASK(OTP_REG_0, WSA884X_ID));
 	wsa884x->variant = variant;
 
-	version = (snd_soc_component_read(component, WSA884X_CHIP_ID0)
-					& FIELD_MASK(CHIP_ID0, BYTE_0));
+	version = (snd_soc_component_read(component, WSA884X_CHIP_ID0) &
+		   FIELD_MASK(CHIP_ID0, BYTE_0));
 
 	wsa884x->version = version;
 
@@ -1711,7 +1789,7 @@ static int wsa884x_codec_probe(struct snd_soc_component *component)
 
 	memset(w_name, 0, sizeof(w_name));
 	strlcpy(w_name, wsa884x->dai_driver->playback.stream_name,
-				sizeof(w_name));
+		sizeof(w_name));
 	snd_soc_dapm_ignore_suspend(dapm, w_name);
 
 	memset(w_name, 0, sizeof(w_name));
@@ -1775,7 +1853,7 @@ static const struct snd_soc_component_driver soc_codec_dev_wsa884x_wsa = {
 	.num_dapm_widgets = ARRAY_SIZE(wsa884x_dapm_widgets),
 	.dapm_routes = wsa884x_audio_map,
 	.num_dapm_routes = ARRAY_SIZE(wsa884x_audio_map),
-	.suspend =  wsa884x_soc_codec_suspend,
+	.suspend = wsa884x_soc_codec_suspend,
 	.resume = wsa884x_soc_codec_resume,
 };
 
@@ -1784,15 +1862,13 @@ static int wsa884x_gpio_ctrl(struct wsa884x_priv *wsa884x, bool enable)
 	int ret = 0;
 
 	if (enable)
-		ret = msm_cdc_pinctrl_select_active_state(
-						wsa884x->wsa_rst_np);
+		ret = msm_cdc_pinctrl_select_active_state(wsa884x->wsa_rst_np);
 	else
-		ret = msm_cdc_pinctrl_select_sleep_state(
-						wsa884x->wsa_rst_np);
+		ret = msm_cdc_pinctrl_select_sleep_state(wsa884x->wsa_rst_np);
 	if (ret != 0)
 		dev_err_ratelimited(wsa884x->dev,
-			"%s: Failed to turn state %d; ret=%d\n",
-			__func__, enable, ret);
+				    "%s: Failed to turn state %d; ret=%d\n",
+				    __func__, enable, ret);
 
 	return ret;
 }
@@ -1803,7 +1879,8 @@ static int wsa884x_swr_up(struct wsa884x_priv *wsa884x)
 
 	ret = wsa884x_gpio_ctrl(wsa884x, true);
 	if (ret)
-		dev_err_ratelimited(wsa884x->dev, "%s: Failed to enable gpio\n", __func__);
+		dev_err_ratelimited(wsa884x->dev, "%s: Failed to enable gpio\n",
+				    __func__);
 
 	return ret;
 }
@@ -1814,7 +1891,8 @@ static int wsa884x_swr_down(struct wsa884x_priv *wsa884x)
 
 	ret = wsa884x_gpio_ctrl(wsa884x, false);
 	if (ret)
-		dev_err_ratelimited(wsa884x->dev, "%s: Failed to disable gpio\n", __func__);
+		dev_err_ratelimited(wsa884x->dev,
+				    "%s: Failed to disable gpio\n", __func__);
 
 	return ret;
 }
@@ -1836,12 +1914,12 @@ static int wsa884x_swr_reset(struct wsa884x_priv *wsa884x)
 	return 0;
 }
 
-static int wsa884x_event_notify(struct notifier_block *nb,
-				unsigned long val, void *ptr)
+static int wsa884x_event_notify(struct notifier_block *nb, unsigned long val,
+				void *ptr)
 {
 	u16 event = (val & 0xffff);
-	struct wsa884x_priv *wsa884x = container_of(nb, struct wsa884x_priv,
-						    parent_nblock);
+	struct wsa884x_priv *wsa884x =
+		container_of(nb, struct wsa884x_priv, parent_nblock);
 
 	if (!wsa884x)
 		return -EINVAL;
@@ -1855,16 +1933,19 @@ static int wsa884x_event_notify(struct notifier_block *nb,
 		/* Add delay to allow enumerate */
 		usleep_range(20000, 20010);
 		wsa884x_swr_reset(wsa884x);
-		dev_err(wsa884x->dev, "%s: BOLERO_SLV_EVT_SSR_UP Called", __func__);
+		dev_err(wsa884x->dev, "%s: BOLERO_SLV_EVT_SSR_UP Called",
+			__func__);
 		swr_init_port_params(wsa884x->swr_slave, WSA884X_MAX_SWR_PORTS,
-			wsa884x->swr_wsa_port_params);
+				     wsa884x->swr_wsa_port_params);
 		break;
 
 	case BOLERO_SLV_EVT_PA_ON_POST_FSCLK:
 		if (test_bit(SPKR_STATUS, &wsa884x->status_mask)) {
-			snd_soc_component_update_bits(wsa884x->component,
+			snd_soc_component_update_bits(
+				wsa884x->component,
 				REG_FIELD_VALUE(PDM_WD_CTL, PDM_WD_EN, 0x01));
-			snd_soc_component_update_bits(wsa884x->component,
+			snd_soc_component_update_bits(
+				wsa884x->component,
 				REG_FIELD_VALUE(PA_FSM_EN, GLOBAL_PA_EN, 0x01));
 		}
 		break;
@@ -1873,8 +1954,8 @@ static int wsa884x_event_notify(struct notifier_block *nb,
 			set_bit(SPKR_ADIE_LB, &wsa884x->status_mask);
 		break;
 	default:
-		dev_dbg(wsa884x->dev, "%s: unknown event %d\n",
-			__func__, event);
+		dev_dbg(wsa884x->dev, "%s: unknown event %d\n", __func__,
+			event);
 		break;
 	}
 
@@ -1887,21 +1968,21 @@ static int wsa884x_parse_port_params(struct device *dev, char *prop)
 	int ret = 0;
 	u32 cnt = 0;
 	u32 i, j;
-	struct swr_port_params (*map)[SWR_UC_MAX][WSA884X_MAX_SWR_PORTS];
-	struct swr_dev_frame_config (*map_uc)[SWR_UC_MAX];
+	struct swr_port_params(*map)[SWR_UC_MAX][WSA884X_MAX_SWR_PORTS];
+	struct swr_dev_frame_config(*map_uc)[SWR_UC_MAX];
 	struct wsa884x_priv *wsa884x = dev_get_drvdata(dev);
 
 	map = &wsa884x->wsa_port_params;
 	map_uc = &wsa884x->swr_wsa_port_params;
 
-	if (!of_find_property(dev->of_node, prop,
-				&map_size)) {
+	if (!of_find_property(dev->of_node, prop, &map_size)) {
 		dev_err(dev, "missing port mapping prop %s\n", prop);
 		ret = -EINVAL;
 		goto err_port_map;
 	}
 
-	max_uc = map_size / (WSA884X_MAX_SWR_PORTS * SWR_PORT_PARAMS * sizeof(u32));
+	max_uc = map_size /
+		 (WSA884X_MAX_SWR_PORTS * SWR_PORT_PARAMS * sizeof(u32));
 
 	if (max_uc != SWR_UC_MAX) {
 		dev_err(dev, "%s: port params not provided for all usecases\n",
@@ -1916,10 +1997,11 @@ static int wsa884x_parse_port_params(struct device *dev, char *prop)
 		goto err_port_map;
 	}
 	ret = of_property_read_u32_array(dev->of_node, prop, dt_array,
-				WSA884X_MAX_SWR_PORTS * SWR_PORT_PARAMS * max_uc);
+					 WSA884X_MAX_SWR_PORTS *
+						 SWR_PORT_PARAMS * max_uc);
 	if (ret) {
 		dev_err(dev, "%s: Failed to read port mapping from prop %s\n",
-					__func__, prop);
+			__func__, prop);
 		goto err_pdata_fail;
 	}
 
@@ -1946,24 +2028,21 @@ static int wsa884x_enable_supplies(struct device *dev,
 	int ret = 0;
 
 	/* Parse power supplies */
-	msm_cdc_get_power_supplies(dev, &priv->regulator,
-				   &priv->num_supplies);
+	msm_cdc_get_power_supplies(dev, &priv->regulator, &priv->num_supplies);
 	if (!priv->regulator || (priv->num_supplies <= 0)) {
 		dev_err(dev, "%s: no power supplies defined\n", __func__);
 		return -EINVAL;
 	}
 
-	ret = msm_cdc_init_supplies(dev, &priv->supplies,
-				    priv->regulator, priv->num_supplies);
+	ret = msm_cdc_init_supplies(dev, &priv->supplies, priv->regulator,
+				    priv->num_supplies);
 	if (!priv->supplies) {
-		dev_err(dev, "%s: Cannot init wsa supplies\n",
-			__func__);
+		dev_err(dev, "%s: Cannot init wsa supplies\n", __func__);
 		return ret;
 	}
 
-	ret = msm_cdc_enable_static_supplies(dev, priv->supplies,
-					     priv->regulator,
-					     priv->num_supplies);
+	ret = msm_cdc_enable_static_supplies(
+		dev, priv->supplies, priv->regulator, priv->num_supplies);
 	if (ret)
 		dev_err(dev, "%s: wsa static supply enable failed!\n",
 			__func__);
@@ -1972,18 +2051,19 @@ static int wsa884x_enable_supplies(struct device *dev,
 }
 
 static struct snd_soc_dai_driver wsa_dai[] = {
-	{
-		.name = "",
-		.playback = {
-			.stream_name = "",
-			.rates = WSA884X_RATES | WSA884X_FRAC_RATES,
-			.formats = WSA884X_FORMATS,
-			.rate_max = 192000,
-			.rate_min = 8000,
-			.channels_min = 1,
-			.channels_max = 2,
-		},
-	},
+    {
+        .name = "",
+        .playback =
+            {
+                .stream_name = "",
+                .rates = WSA884X_RATES | WSA884X_FRAC_RATES,
+                .formats = WSA884X_FORMATS,
+                .rate_max = 192000,
+                .rate_min = 8000,
+                .channels_min = 1,
+                .channels_max = 2,
+            },
+    },
 };
 
 static int wsa884x_swr_probe(struct swr_device *pdev)
@@ -2002,18 +2082,17 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 	int sys_gain_size, sys_gain_length;
 	int wsa_dev_index;
 
-
 	wsa884x = devm_kzalloc(&pdev->dev, sizeof(struct wsa884x_priv),
-			    GFP_KERNEL);
+			       GFP_KERNEL);
 	if (!wsa884x)
 		return -ENOMEM;
 
-	wsa884x_sub_regmap_irq_chip = devm_kzalloc(&pdev->dev, sizeof(struct regmap_irq_chip),
-				 GFP_KERNEL);
+	wsa884x_sub_regmap_irq_chip = devm_kzalloc(
+		&pdev->dev, sizeof(struct regmap_irq_chip), GFP_KERNEL);
 	if (!wsa884x_sub_regmap_irq_chip)
 		return -ENOMEM;
 	memcpy(wsa884x_sub_regmap_irq_chip, &wsa884x_regmap_irq_chip,
-			sizeof(struct regmap_irq_chip));
+	       sizeof(struct regmap_irq_chip));
 
 	ret = wsa884x_enable_supplies(&pdev->dev, wsa884x);
 	if (ret) {
@@ -2021,8 +2100,8 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 		goto err;
 	}
 
-	wsa884x->wsa_rst_np = of_parse_phandle(pdev->dev.of_node,
-					     "qcom,spkr-sd-n-node", 0);
+	wsa884x->wsa_rst_np =
+		of_parse_phandle(pdev->dev.of_node, "qcom,spkr-sd-n-node", 0);
 	if (!wsa884x->wsa_rst_np) {
 		dev_dbg(&pdev->dev, "%s: pinctrl not defined\n", __func__);
 		goto err_supply;
@@ -2033,27 +2112,26 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 	pin_state_current = msm_cdc_pinctrl_get_state(wsa884x->wsa_rst_np);
 	wsa884x_gpio_ctrl(wsa884x, true);
 	/*
-	 * Add 5msec delay to provide sufficient time for
-	 * soundwire auto enumeration of slave devices as
-	 * per HW requirement.
-	 */
+   * Add 5msec delay to provide sufficient time for
+   * soundwire auto enumeration of slave devices as
+   * per HW requirement.
+   */
 	usleep_range(5000, 5010);
 	ret = swr_get_logical_dev_num(pdev, pdev->addr, &devnum);
 	if (ret) {
 		dev_dbg(&pdev->dev,
-			"%s get devnum %d for dev addr %lx failed\n",
-			__func__, devnum, pdev->addr);
+			"%s get devnum %d for dev addr %lx failed\n", __func__,
+			devnum, pdev->addr);
 		ret = -EPROBE_DEFER;
 		goto err_supply;
 	}
 	pdev->dev_num = devnum;
 
-	wsa884x->regmap = devm_regmap_init_swr(pdev,
-					       &wsa884x_regmap_config);
+	wsa884x->regmap = devm_regmap_init_swr(pdev, &wsa884x_regmap_config);
 	if (IS_ERR(wsa884x->regmap)) {
 		ret = PTR_ERR(wsa884x->regmap);
-		dev_err(&pdev->dev, "%s: regmap_init failed %d\n",
-			__func__, ret);
+		dev_err(&pdev->dev, "%s: regmap_init failed %d\n", __func__,
+			ret);
 		goto dev_err;
 	}
 
@@ -2067,8 +2145,8 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 	ret = wcd_irq_init(&wsa884x->irq_info, &wsa884x->virq);
 
 	if (ret) {
-		dev_err(wsa884x->dev, "%s: IRQ init failed: %d\n",
-			__func__, ret);
+		dev_err(wsa884x->dev, "%s: IRQ init failed: %d\n", __func__,
+			ret);
 		goto dev_err;
 	}
 
@@ -2080,14 +2158,14 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_WAR2SAF,
 			"WSA WAR2SAF", wsa884x_war2saf_handle_irq, wsa884x);
 
-	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_DISABLE,
-			"WSA OTP", wsa884x_otp_handle_irq, wsa884x);
+	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_DISABLE, "WSA OTP",
+			wsa884x_otp_handle_irq, wsa884x);
 
-	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_OCP,
-			"WSA OCP", wsa884x_ocp_handle_irq, wsa884x);
+	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_OCP, "WSA OCP",
+			wsa884x_ocp_handle_irq, wsa884x);
 
-	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_CLIP,
-			"WSA CLIP", wsa884x_clip_handle_irq, wsa884x);
+	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_CLIP, "WSA CLIP",
+			wsa884x_clip_handle_irq, wsa884x);
 
 	wcd_disable_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_CLIP);
 
@@ -2103,24 +2181,25 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 	wcd_disable_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_INTR_PIN);
 
 	/* Under Voltage Lock out (UVLO) interrupt handle */
-	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_UVLO,
-			"WSA UVLO", wsa884x_uvlo_handle_irq, wsa884x);
+	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_UVLO, "WSA UVLO",
+			wsa884x_uvlo_handle_irq, wsa884x);
 
 	wcd_request_irq(&wsa884x->irq_info, WSA884X_IRQ_INT_PA_ON_ERR,
 			"WSA PA ERR", wsa884x_pa_on_err_handle_irq, wsa884x);
 
 	wsa884x->driver = devm_kzalloc(&pdev->dev,
-			sizeof(struct snd_soc_component_driver), GFP_KERNEL);
+				       sizeof(struct snd_soc_component_driver),
+				       GFP_KERNEL);
 	if (!wsa884x->driver) {
 		ret = -ENOMEM;
 		goto err_irq;
 	}
 
 	memcpy(wsa884x->driver, &soc_codec_dev_wsa884x_wsa,
-			sizeof(struct snd_soc_component_driver));
+	       sizeof(struct snd_soc_component_driver));
 
-	wsa884x->dai_driver = devm_kzalloc(&pdev->dev,
-				sizeof(struct snd_soc_dai_driver), GFP_KERNEL);
+	wsa884x->dai_driver = devm_kzalloc(
+		&pdev->dev, sizeof(struct snd_soc_dai_driver), GFP_KERNEL);
 	if (!wsa884x->dai_driver) {
 		ret = -ENOMEM;
 		goto err_mem;
@@ -2140,15 +2219,15 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 
 	snprintf(buffer, sizeof(buffer), "wsa_rx%d", dev_index);
 	wsa884x->dai_driver->name =
-				kstrndup(buffer, strlen(buffer), GFP_KERNEL);
+		kstrndup(buffer, strlen(buffer), GFP_KERNEL);
 
 	snprintf(buffer, sizeof(buffer), "WSA884X_AIF%d Playback", dev_index);
 	wsa884x->dai_driver->playback.stream_name =
-				kstrndup(buffer, strlen(buffer), GFP_KERNEL);
+		kstrndup(buffer, strlen(buffer), GFP_KERNEL);
 
 	/* Number of DAI's used is 1 */
-	ret = snd_soc_register_component(&pdev->dev,
-				wsa884x->driver, wsa884x->dai_driver, 1);
+	ret = snd_soc_register_component(&pdev->dev, wsa884x->driver,
+					 wsa884x->dai_driver, 1);
 
 	component = snd_soc_lookup_component(&pdev->dev, wsa884x->driver->name);
 	if (!component) {
@@ -2157,26 +2236,25 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 		goto err_mem;
 	}
 
-	wsa884x->parent_np = of_parse_phandle(pdev->dev.of_node,
-					      "qcom,bolero-handle", 0);
+	wsa884x->parent_np =
+		of_parse_phandle(pdev->dev.of_node, "qcom,bolero-handle", 0);
 	if (!wsa884x->parent_np)
-		wsa884x->parent_np = of_parse_phandle(pdev->dev.of_node,
-					      "qcom,lpass-cdc-handle", 0);
+		wsa884x->parent_np = of_parse_phandle(
+			pdev->dev.of_node, "qcom,lpass-cdc-handle", 0);
 	if (wsa884x->parent_np) {
 		wsa884x->parent_dev =
-				of_find_device_by_node(wsa884x->parent_np);
+			of_find_device_by_node(wsa884x->parent_np);
 		if (wsa884x->parent_dev) {
 			plat_data = dev_get_platdata(&wsa884x->parent_dev->dev);
 			if (plat_data) {
 				wsa884x->parent_nblock.notifier_call =
-							wsa884x_event_notify;
+					wsa884x_event_notify;
 				if (plat_data->register_notifier)
 					plat_data->register_notifier(
 						plat_data->handle,
-						&wsa884x->parent_nblock,
-						true);
+						&wsa884x->parent_nblock, true);
 				wsa884x->register_notifier =
-						plat_data->register_notifier;
+					plat_data->register_notifier;
 				wsa884x->handle = plat_data->handle;
 			} else {
 				dev_err(&pdev->dev, "%s: plat data not found\n",
@@ -2195,52 +2273,54 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 	wsa884x->dev_index = dev_index;
 	/* wsa_dev_index is macro_agnostic index */
 	wsa_dev_index = (wsa884x->dev_index - 1) % 2;
-	wsa884x->macro_np = of_parse_phandle(pdev->dev.of_node,
-				"qcom,wsa-macro-handle", 0);
+	wsa884x->macro_np =
+		of_parse_phandle(pdev->dev.of_node, "qcom,wsa-macro-handle", 0);
 	if (wsa884x->macro_np) {
-		wsa884x->macro_dev =
-				of_find_device_by_node(wsa884x->macro_np);
+		wsa884x->macro_dev = of_find_device_by_node(wsa884x->macro_np);
 		if (wsa884x->macro_dev) {
 			ret = of_property_read_u32_index(
 				wsa884x->macro_dev->dev.of_node,
-				"qcom,wsa-rloads",
-				wsa_dev_index,
+				"qcom,wsa-rloads", wsa_dev_index,
 				&wsa884x->rload);
 			if (ret) {
 				dev_err(&pdev->dev,
 					"%s: Failed to read wsa rloads\n",
-							__func__);
+					__func__);
 				goto err_mem;
 			}
 
 			ret = of_property_read_u32_index(
 				wsa884x->macro_dev->dev.of_node,
-				"qcom,wsa-bat-cfgs",
-				wsa_dev_index,
+				"qcom,wsa-bat-cfgs", wsa_dev_index,
 				&wsa884x->bat_cfg);
 			if (ret) {
 				dev_err(&pdev->dev,
 					"%s: Failed to read wsa bat cfgs\n",
-							__func__);
+					__func__);
 				goto err_mem;
 			}
 
-			ret = of_property_read_u32(wsa884x->macro_dev->dev.of_node,
+			ret = of_property_read_u32(
+				wsa884x->macro_dev->dev.of_node,
 				"qcom,noise-gate-mode", &noise_gate_mode);
 			if (ret) {
-				dev_info(&pdev->dev,
+				dev_info(
+					&pdev->dev,
 					"%s: Failed to read wsa noise gate mode\n",
-						__func__);
+					__func__);
 				wsa884x->noise_gate_mode = IDLE_DETECT;
 			} else {
-				if (IDLE_DETECT <= noise_gate_mode && noise_gate_mode <= NG3)
-					wsa884x->noise_gate_mode = noise_gate_mode;
+				if (IDLE_DETECT <= noise_gate_mode &&
+				    noise_gate_mode <= NG3)
+					wsa884x->noise_gate_mode =
+						noise_gate_mode;
 				else
 					wsa884x->noise_gate_mode = IDLE_DETECT;
 			}
 
 			if (!of_find_property(wsa884x->macro_dev->dev.of_node,
-				"qcom,wsa-system-gains", &sys_gain_size)) {
+					      "qcom,wsa-system-gains",
+					      &sys_gain_size)) {
 				dev_err(&pdev->dev,
 					"%s: missing wsa-system-gains\n",
 					__func__);
@@ -2256,11 +2336,12 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 			if (ret) {
 				dev_err(&pdev->dev,
 					"%s: Failed to read wsa system gains\n",
-						__func__);
+					__func__);
 				goto err_mem;
 			}
-			wsa884x->system_gain = wsa884x->sys_gains[
-				wsa884x->dev_mode + wsa_dev_index * 2];
+			wsa884x->system_gain =
+				wsa884x->sys_gains[wsa884x->dev_mode +
+						   wsa_dev_index * 2];
 		} else {
 			dev_err(&pdev->dev, "%s: parent dev not found\n",
 				__func__);
@@ -2274,12 +2355,15 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 	dev_dbg(component->dev,
 		"%s: Bat_cfg: 0x%x rload: 0x%x, sys_gain: 0x%x\n", __func__,
 		wsa884x->bat_cfg, wsa884x->rload, wsa884x->system_gain);
-	ret = wsa884x_validate_dt_configuration_params(component, wsa884x->rload,
-		wsa884x->bat_cfg, wsa884x->system_gain);
+	ret = wsa884x_validate_dt_configuration_params(component,
+						       wsa884x->rload,
+						       wsa884x->bat_cfg,
+						       wsa884x->system_gain);
 	if (ret) {
 		dev_err(&pdev->dev,
 			"%s: invalid dt parameter: Bat_cfg: 0x%x rload: 0x%x, sys_gain: 0x%x\n",
-			__func__, wsa884x->bat_cfg, wsa884x->rload, wsa884x->system_gain);
+			__func__, wsa884x->bat_cfg, wsa884x->rload,
+			wsa884x->system_gain);
 		ret = -EINVAL;
 		goto err_mem;
 	}
@@ -2295,62 +2379,60 @@ static int wsa884x_swr_probe(struct swr_device *pdev)
 	snd_soc_component_write(component, WSA884X_ANA_WO_CTL_0, wo0_val);
 	snd_soc_component_write(component, WSA884X_ANA_WO_CTL_1, 0x0);
 	if (wsa884x->rload == WSA_4_OHMS || wsa884x->rload == WSA_6_OHMS)
-		snd_soc_component_update_bits(component,
+		snd_soc_component_update_bits(
+			component,
 			REG_FIELD_VALUE(OCP_CTL, OCP_CURR_LIMIT, 0x07));
 
 	if (wsa884x->dev_mode == SPEAKER) {
-		snd_soc_component_update_bits(component,
+		snd_soc_component_update_bits(
+			component,
 			REG_FIELD_VALUE(DRE_CTL_0, PROG_DELAY, 0x0F));
 	} else {
-		snd_soc_component_update_bits(component,
+		snd_soc_component_update_bits(
+			component,
 			REG_FIELD_VALUE(DRE_CTL_0, PROG_DELAY, 0x03));
 		snd_soc_component_update_bits(component,
-			REG_FIELD_VALUE(CDC_PATH_MODE, RXD_MODE, 0x01));
-		snd_soc_component_update_bits(component,
-			REG_FIELD_VALUE(PWM_CLK_CTL,
-			PWM_CLK_FREQ_SEL, 0x01));
+					      REG_FIELD_VALUE(CDC_PATH_MODE,
+							      RXD_MODE, 0x01));
+		snd_soc_component_update_bits(
+			component,
+			REG_FIELD_VALUE(PWM_CLK_CTL, PWM_CLK_FREQ_SEL, 0x01));
 	}
 	if (wsa884x->bat_cfg != CONFIG_1S && wsa884x->bat_cfg != EXT_1S)
-		snd_soc_component_update_bits(component,
-			REG_FIELD_VALUE(TOP_CTRL1,
-			OCP_LOWVBAT_ITH_SEL_EN, 0x00));
+		snd_soc_component_update_bits(
+			component,
+			REG_FIELD_VALUE(TOP_CTRL1, OCP_LOWVBAT_ITH_SEL_EN,
+					0x00));
 	ret = wsa884x_parse_port_params(&pdev->dev, "qcom,swr-wsa-port-params");
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to read port params\n");
 		goto err;
 	}
 	swr_init_port_params(wsa884x->swr_slave, WSA884X_MAX_SWR_PORTS,
-		wsa884x->swr_wsa_port_params);
+			     wsa884x->swr_wsa_port_params);
 	mutex_init(&wsa884x->res_lock);
 
 #ifdef CONFIG_DEBUG_FS
 	if (!wsa884x->debugfs_dent) {
-		wsa884x->debugfs_dent = debugfs_create_dir(
-					dev_name(&pdev->dev), 0);
+		wsa884x->debugfs_dent =
+			debugfs_create_dir(dev_name(&pdev->dev), 0);
 		if (!IS_ERR(wsa884x->debugfs_dent)) {
-			wsa884x->debugfs_peek =
-				debugfs_create_file("swrslave_peek",
-				S_IFREG | 0444,
-				wsa884x->debugfs_dent,
-				(void *) pdev,
+			wsa884x->debugfs_peek = debugfs_create_file(
+				"swrslave_peek", S_IFREG | 0444,
+				wsa884x->debugfs_dent, (void *)pdev,
 				&codec_debug_read_ops);
 
-		wsa884x->debugfs_poke =
-				debugfs_create_file("swrslave_poke",
-				S_IFREG | 0444,
-				wsa884x->debugfs_dent,
-				(void *) pdev,
+			wsa884x->debugfs_poke = debugfs_create_file(
+				"swrslave_poke", S_IFREG | 0444,
+				wsa884x->debugfs_dent, (void *)pdev,
 				&codec_debug_write_ops);
 
-		wsa884x->debugfs_reg_dump =
-				debugfs_create_file(
-				"swrslave_reg_dump",
-				S_IFREG | 0444,
-				wsa884x->debugfs_dent,
-				(void *) pdev,
+			wsa884x->debugfs_reg_dump = debugfs_create_file(
+				"swrslave_reg_dump", S_IFREG | 0444,
+				wsa884x->debugfs_dent, (void *)pdev,
 				&codec_debug_dump_ops);
+		}
 	}
-}
 #endif
 
 	return 0;
@@ -2376,8 +2458,7 @@ dev_err:
 	swr_remove_device(pdev);
 err_supply:
 	msm_cdc_release_supplies(&pdev->dev, wsa884x->supplies,
-				 wsa884x->regulator,
-				 wsa884x->num_supplies);
+				 wsa884x->regulator, wsa884x->num_supplies);
 err:
 	swr_set_dev_data(pdev, NULL);
 	return ret;
@@ -2395,7 +2476,7 @@ static int wsa884x_swr_remove(struct swr_device *pdev)
 
 	if (wsa884x->register_notifier)
 		wsa884x->register_notifier(wsa884x->handle,
-				&wsa884x->parent_nblock, false);
+					   &wsa884x->parent_nblock, false);
 #ifdef CONFIG_DEBUG_FS
 	debugfs_remove_recursive(wsa884x->debugfs_dent);
 	wsa884x->debugfs_dent = NULL;
@@ -2412,8 +2493,7 @@ static int wsa884x_swr_remove(struct swr_device *pdev)
 		kfree(wsa884x->driver);
 	}
 	msm_cdc_release_supplies(&pdev->dev, wsa884x->supplies,
-				 wsa884x->regulator,
-				 wsa884x->num_supplies);
+				 wsa884x->regulator, wsa884x->num_supplies);
 	swr_set_dev_data(pdev, NULL);
 	return 0;
 }
@@ -2424,18 +2504,18 @@ static int wsa884x_swr_suspend(struct device *dev)
 	struct wsa884x_priv *wsa884x = swr_get_dev_data(to_swr_device(dev));
 
 	if (!wsa884x) {
-		dev_err_ratelimited(dev, "%s: wsa884x private data is NULL\n", __func__);
+		dev_err_ratelimited(dev, "%s: wsa884x private data is NULL\n",
+				    __func__);
 		return -EINVAL;
 	}
 	dev_dbg(dev, "%s: system suspend\n", __func__);
 	if (wsa884x->dapm_bias_off ||
-		(wsa884x->component &&
-		(snd_soc_component_get_bias_level(wsa884x->component) ==
-		 SND_SOC_BIAS_OFF))) {
+	    (wsa884x->component &&
+	     (snd_soc_component_get_bias_level(wsa884x->component) ==
+	      SND_SOC_BIAS_OFF))) {
 		msm_cdc_set_supplies_lpm_mode(dev, wsa884x->supplies,
-					wsa884x->regulator,
-					wsa884x->num_supplies,
-					true);
+					      wsa884x->regulator,
+					      wsa884x->num_supplies, true);
 		set_bit(WSA_SUPPLIES_LPM_MODE, &wsa884x->status_mask);
 	}
 	return 0;
@@ -2451,9 +2531,8 @@ static int wsa884x_swr_resume(struct device *dev)
 	}
 	if (test_bit(WSA_SUPPLIES_LPM_MODE, &wsa884x->status_mask)) {
 		msm_cdc_set_supplies_lpm_mode(dev, wsa884x->supplies,
-					wsa884x->regulator,
-					wsa884x->num_supplies,
-					false);
+					      wsa884x->regulator,
+					      wsa884x->num_supplies, false);
 		clear_bit(WSA_SUPPLIES_LPM_MODE, &wsa884x->status_mask);
 	}
 	dev_dbg(dev, "%s: system resume\n", __func__);
@@ -2466,11 +2545,9 @@ static const struct dev_pm_ops wsa884x_swr_pm_ops = {
 	.resume_early = wsa884x_swr_resume,
 };
 
-static const struct swr_device_id wsa884x_swr_id[] = {
-	{"wsa884x", 0},
-	{"wsa884x_2", 0},
-	{}
-};
+static const struct swr_device_id wsa884x_swr_id[] = { { "wsa884x", 0 },
+						       { "wsa884x_2", 0 },
+						       {} };
 
 static const struct of_device_id wsa884x_swr_dt_match[] = {
 	{
@@ -2483,15 +2560,16 @@ static const struct of_device_id wsa884x_swr_dt_match[] = {
 };
 
 static struct swr_driver wsa884x_swr_driver = {
-	.driver = {
-		.name = "wsa884x",
-		.owner = THIS_MODULE,
-		.pm = &wsa884x_swr_pm_ops,
-		.of_match_table = wsa884x_swr_dt_match,
-	},
-	.probe = wsa884x_swr_probe,
-	.remove = wsa884x_swr_remove,
-	.id_table = wsa884x_swr_id,
+    .driver =
+        {
+            .name = "wsa884x",
+            .owner = THIS_MODULE,
+            .pm = &wsa884x_swr_pm_ops,
+            .of_match_table = wsa884x_swr_dt_match,
+        },
+    .probe = wsa884x_swr_probe,
+    .remove = wsa884x_swr_remove,
+    .id_table = wsa884x_swr_id,
 };
 
 static int __init wsa884x_swr_init(void)

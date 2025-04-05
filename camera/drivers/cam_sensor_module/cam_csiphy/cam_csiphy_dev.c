@@ -5,12 +5,12 @@
  */
 
 #include "cam_csiphy_dev.h"
-#include "cam_req_mgr_dev.h"
-#include "cam_csiphy_soc.h"
 #include "cam_csiphy_core.h"
-#include <media/cam_sensor.h>
+#include "cam_csiphy_soc.h"
+#include "cam_req_mgr_dev.h"
 #include "camera_main.h"
 #include <dt-bindings/msm-camera.h>
+#include <media/cam_sensor.h>
 
 #define CSIPHY_DEBUGFS_NAME_MAX_SIZE 10
 static struct dentry *root_dentry;
@@ -28,8 +28,9 @@ static inline void cam_csiphy_trigger_reg_dump(struct csiphy_device *csiphy_dev)
 	}
 }
 
-static int cam_csiphy_format_secure_phy_lane_info(
-	struct csiphy_device *csiphy_dev, int offset, uint64_t *mask)
+static int
+cam_csiphy_format_secure_phy_lane_info(struct csiphy_device *csiphy_dev,
+				       int offset, uint64_t *mask)
 {
 	struct cam_csiphy_param *param;
 	uint64_t phy_lane_sel_mask = 0;
@@ -58,7 +59,7 @@ static int cam_csiphy_format_secure_phy_lane_info(
 	if (csiphy_dev->soc_info.index > MAX_SUPPORTED_PHY_IDX) {
 		CAM_ERR(CAM_CSIPHY, "Invalid PHY index: %u",
 			csiphy_dev->soc_info.index);
-			return -EINVAL;
+		return -EINVAL;
 	}
 
 	phy_lane_sel_mask |= BIT(csiphy_dev->soc_info.index);
@@ -68,11 +69,10 @@ static int cam_csiphy_format_secure_phy_lane_info(
 		csiphy_dev->soc_info.index, *mask);
 
 	return 0;
-
 }
 
 static int cam_csiphy_get_session_index(struct csiphy_device *csiphy_dev,
-	uint32_t lane_assign)
+					uint32_t lane_assign)
 {
 	int i = 0;
 	struct cam_csiphy_param *param;
@@ -87,8 +87,8 @@ static int cam_csiphy_get_session_index(struct csiphy_device *csiphy_dev,
 	return i;
 }
 
-static void cam_csiphy_populate_secure_info(
-	struct csiphy_device *csiphy_dev, void *data)
+static void cam_csiphy_populate_secure_info(struct csiphy_device *csiphy_dev,
+					    void *data)
 {
 	int i;
 	struct cam_csiphy_secure_info *secure_info =
@@ -99,19 +99,22 @@ static void cam_csiphy_populate_secure_info(
 		param = &csiphy_dev->csiphy_info[i];
 
 		if (param->secure_mode &&
-			param->lane_assign == secure_info->lane_assign) {
-
-			param->secure_info.cdm_hw_idx_mask = secure_info->cdm_hw_idx_mask;
-			param->secure_info.csid_hw_idx_mask = secure_info->csid_hw_idx_mask;
+		    param->lane_assign == secure_info->lane_assign) {
+			param->secure_info.cdm_hw_idx_mask =
+				secure_info->cdm_hw_idx_mask;
+			param->secure_info.csid_hw_idx_mask =
+				secure_info->csid_hw_idx_mask;
 			param->secure_info.vc_mask = secure_info->vc_mask;
 			param->secure_info.phy_lane_sel_mask = 0;
 
-			if (!cam_csiphy_format_secure_phy_lane_info(csiphy_dev, i,
-				&param->csiphy_phy_lane_sel_mask)) {
-				param->secure_info_updated =  true;
+			if (!cam_csiphy_format_secure_phy_lane_info(
+				    csiphy_dev, i,
+				    &param->csiphy_phy_lane_sel_mask)) {
+				param->secure_info_updated = true;
 
 				CAM_DBG(CAM_CSIPHY,
-					"PHY[%d] secure info, phy_lane_mask: 0x%llx, ife: 0x%x, cdm: 0x%x, vc_mask: 0x%llx",
+					"PHY[%d] secure info, phy_lane_mask: 0x%llx, ife: 0x%x, cdm: "
+					"0x%x, vc_mask: 0x%llx",
 					csiphy_dev->soc_info.index,
 					param->csiphy_phy_lane_sel_mask,
 					param->secure_info.csid_hw_idx_mask,
@@ -129,11 +132,12 @@ static void cam_csiphy_populate_secure_info(
 
 	if (i == CSIPHY_MAX_INSTANCES_PER_PHY)
 		CAM_ERR(CAM_CSIPHY, "No matching secure PHY for a session");
-
 }
 
-static void cam_csiphy_subdev_handle_message(struct v4l2_subdev *sd,
-	enum cam_subdev_message_type_t message_type, void *data)
+static void
+cam_csiphy_subdev_handle_message(struct v4l2_subdev *sd,
+				 enum cam_subdev_message_type_t message_type,
+				 void *data)
 {
 	struct csiphy_device *csiphy_dev = v4l2_get_subdevdata(sd);
 	uint32_t phy_idx;
@@ -164,9 +168,11 @@ static void cam_csiphy_subdev_handle_message(struct v4l2_subdev *sd,
 		if (!csiphy_dev->skip_aux_settings) {
 			cam_csiphy_update_auxiliary_mask(csiphy_dev);
 
-			CAM_INFO(CAM_CSIPHY,
+			CAM_INFO(
+				CAM_CSIPHY,
 				"CSIPHY[%u] updating aux settings for data rate idx: %u",
-				csiphy_dev->soc_info.index, csiphy_dev->curr_data_rate_idx);
+				csiphy_dev->soc_info.index,
+				csiphy_dev->curr_data_rate_idx);
 		}
 		break;
 	}
@@ -177,31 +183,34 @@ static void cam_csiphy_subdev_handle_message(struct v4l2_subdev *sd,
 	}
 	case CAM_SUBDEV_MESSAGE_CONN_CSID_INFO: {
 		struct cam_subdev_msg_phy_conn_csid_info *conn_csid_info =
-			(struct cam_subdev_msg_phy_conn_csid_info *) data;
+			(struct cam_subdev_msg_phy_conn_csid_info *)data;
 		int idx;
 		struct cam_csiphy_param *param;
 
-		idx = cam_csiphy_get_session_index(csiphy_dev, conn_csid_info->lane_cfg);
+		idx = cam_csiphy_get_session_index(csiphy_dev,
+						   conn_csid_info->lane_cfg);
 		if (idx >= CSIPHY_MAX_INSTANCES_PER_PHY) {
 			CAM_ERR(CAM_CSIPHY, "Phy session not found %d %d",
-				csiphy_dev->soc_info.index, conn_csid_info->lane_cfg);
+				csiphy_dev->soc_info.index,
+				conn_csid_info->lane_cfg);
 			break;
 		}
 
 		param = &csiphy_dev->csiphy_info[idx];
 		param->conn_csid_idx = conn_csid_info->core_idx;
 
-		CAM_DBG(CAM_CSIPHY, "PHY: %d, CSID: %d connected", csiphy_dev->soc_info.index,
-			param->conn_csid_idx);
+		CAM_DBG(CAM_CSIPHY, "PHY: %d, CSID: %d connected",
+			csiphy_dev->soc_info.index, param->conn_csid_idx);
 		break;
 	}
 	case CAM_SUBDEV_MESSAGE_DRV_INFO: {
 		struct cam_subdev_msg_phy_drv_info *drv_info =
-			(struct cam_subdev_msg_phy_drv_info *) data;
+			(struct cam_subdev_msg_phy_drv_info *)data;
 		int idx;
 		struct cam_csiphy_param *param;
 
-		idx = cam_csiphy_get_session_index(csiphy_dev, drv_info->lane_cfg);
+		idx = cam_csiphy_get_session_index(csiphy_dev,
+						   drv_info->lane_cfg);
 		if (idx >= CSIPHY_MAX_INSTANCES_PER_PHY) {
 			CAM_ERR(CAM_CSIPHY, "Phy session not found %d %d",
 				csiphy_dev->soc_info.index, drv_info->lane_cfg);
@@ -222,50 +231,61 @@ static void cam_csiphy_subdev_handle_message(struct v4l2_subdev *sd,
 	case CAM_SUBDEV_MESSAGE_NOTIFY_HALT_RESUME: {
 		int drv_idx;
 		struct cam_subdev_msg_phy_halt_resume_info *halt_resume_info =
-			(struct cam_subdev_msg_phy_halt_resume_info *) data;
+			(struct cam_subdev_msg_phy_halt_resume_info *)data;
 		int idx;
 		struct cam_csiphy_param *param;
 		unsigned long clk_rate;
 
-		idx = cam_csiphy_get_session_index(csiphy_dev, halt_resume_info->lane_cfg);
+		idx = cam_csiphy_get_session_index(csiphy_dev,
+						   halt_resume_info->lane_cfg);
 		if (idx >= CSIPHY_MAX_INSTANCES_PER_PHY) {
 			CAM_ERR(CAM_CSIPHY, "Phy session not found %d %d",
-				csiphy_dev->soc_info.index, halt_resume_info->lane_cfg);
+				csiphy_dev->soc_info.index,
+				halt_resume_info->lane_cfg);
 			break;
 		}
 
 		param = &csiphy_dev->csiphy_info[idx];
 		drv_idx = param->conn_csid_idx;
 
-		if (!csiphy_dev->soc_info.is_clk_drv_en || !param->use_hw_client_voting ||
-			!param->is_drv_config_en)
+		if (!csiphy_dev->soc_info.is_clk_drv_en ||
+		    !param->use_hw_client_voting || !param->is_drv_config_en)
 			break;
 
 		CAM_DBG(CAM_CSIPHY,
-			"PHY: %d, CSID: %d DRV info : use hw client %d, enable drv config %d, op=%s",
+			"PHY: %d, CSID: %d DRV info : use hw client %d, enable drv config "
+			"%d, op=%s",
 			csiphy_dev->soc_info.index, param->conn_csid_idx,
 			param->use_hw_client_voting, param->is_drv_config_en,
-			(halt_resume_info->csid_state == CAM_SUBDEV_PHY_CSID_HALT) ? "HALT" :
-			"RESUME");
+			(halt_resume_info->csid_state ==
+			 CAM_SUBDEV_PHY_CSID_HALT) ?
+				"HALT" :
+				"RESUME");
 
 		if (halt_resume_info->csid_state == CAM_SUBDEV_PHY_CSID_HALT) {
-			clk_rate =
-				csiphy_dev->soc_info.applied_src_clk_rates.hw_client[drv_idx].high;
+			clk_rate = csiphy_dev->soc_info.applied_src_clk_rates
+					   .hw_client[drv_idx]
+					   .high;
 
-			rc = cam_soc_util_set_src_clk_rate(&csiphy_dev->soc_info,
-				CAM_CLK_SW_CLIENT_IDX, clk_rate, 0);
+			rc = cam_soc_util_set_src_clk_rate(
+				&csiphy_dev->soc_info, CAM_CLK_SW_CLIENT_IDX,
+				clk_rate, 0);
 			if (rc)
 				CAM_ERR(CAM_CSIPHY,
 					"PHY[%d] CSID HALT: csiphy set_rate %ld failed rc: %d",
 					phy_idx, clk_rate, rc);
-		} else if (halt_resume_info->csid_state == CAM_SUBDEV_PHY_CSID_RESUME) {
+		} else if (halt_resume_info->csid_state ==
+			   CAM_SUBDEV_PHY_CSID_RESUME) {
 			int32_t src_idx = csiphy_dev->soc_info.src_clk_idx;
-			uint32_t lowest_clk_level = csiphy_dev->soc_info.lowest_clk_level;
+			uint32_t lowest_clk_level =
+				csiphy_dev->soc_info.lowest_clk_level;
 
-			clk_rate = csiphy_dev->soc_info.clk_rate[lowest_clk_level][src_idx];
+			clk_rate = csiphy_dev->soc_info
+					   .clk_rate[lowest_clk_level][src_idx];
 
-			rc = cam_soc_util_set_src_clk_rate(&csiphy_dev->soc_info,
-				CAM_CLK_SW_CLIENT_IDX, clk_rate, 0);
+			rc = cam_soc_util_set_src_clk_rate(
+				&csiphy_dev->soc_info, CAM_CLK_SW_CLIENT_IDX,
+				clk_rate, 0);
 			if (rc)
 				CAM_ERR(CAM_CSIPHY,
 					"PHY[%d] CSID RESUME: csiphy _set_rate %ld failed rc: %d",
@@ -306,25 +326,26 @@ static int cam_csiphy_debug_register(struct csiphy_device *csiphy_dev)
 
 	/* Create the CSIPHY directory for this csiphy */
 	snprintf(debugfs_name, CSIPHY_DEBUGFS_NAME_MAX_SIZE, "CSIPHY%d",
-		csiphy_dev->soc_info.index);
+		 csiphy_dev->soc_info.index);
 	dbgfileptr = debugfs_create_dir(debugfs_name, root_dentry);
 	if (IS_ERR(dbgfileptr)) {
-		CAM_ERR(CAM_CSIPHY, "Could not create a debugfs PHY indx subdirectory. rc: %ld",
+		CAM_ERR(CAM_CSIPHY,
+			"Could not create a debugfs PHY indx subdirectory. rc: %ld",
 			dbgfileptr);
 		return -ENOENT;
 	}
 
-	debugfs_create_bool("en_common_status_reg_dump", 0644,
-		dbgfileptr, &csiphy_dev->en_common_status_reg_dump);
+	debugfs_create_bool("en_common_status_reg_dump", 0644, dbgfileptr,
+			    &csiphy_dev->en_common_status_reg_dump);
 
-	debugfs_create_bool("en_lane_status_reg_dump", 0644,
-		dbgfileptr, &csiphy_dev->en_lane_status_reg_dump);
+	debugfs_create_bool("en_lane_status_reg_dump", 0644, dbgfileptr,
+			    &csiphy_dev->en_lane_status_reg_dump);
 
-	debugfs_create_bool("en_full_phy_reg_dump", 0644,
-		dbgfileptr, &csiphy_dev->en_full_phy_reg_dump);
+	debugfs_create_bool("en_full_phy_reg_dump", 0644, dbgfileptr,
+			    &csiphy_dev->en_full_phy_reg_dump);
 
-	debugfs_create_bool("skip_aux_settings", 0644,
-		dbgfileptr, &csiphy_dev->skip_aux_settings);
+	debugfs_create_bool("skip_aux_settings", 0644, dbgfileptr,
+			    &csiphy_dev->skip_aux_settings);
 
 	return 0;
 }
@@ -335,10 +356,9 @@ static void cam_csiphy_debug_unregister(void)
 }
 
 static int cam_csiphy_subdev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+					    struct v4l2_subdev_fh *fh)
 {
-	struct csiphy_device *csiphy_dev =
-		v4l2_get_subdevdata(sd);
+	struct csiphy_device *csiphy_dev = v4l2_get_subdevdata(sd);
 
 	if (!csiphy_dev) {
 		CAM_ERR(CAM_CSIPHY, "csiphy_dev ptr is NULL");
@@ -353,7 +373,7 @@ static int cam_csiphy_subdev_close_internal(struct v4l2_subdev *sd,
 }
 
 static int cam_csiphy_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				   struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -365,8 +385,8 @@ static int cam_csiphy_subdev_close(struct v4l2_subdev *sd,
 	return cam_csiphy_subdev_close_internal(sd, fh);
 }
 
-static long cam_csiphy_subdev_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, void *arg)
+static long cam_csiphy_subdev_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
+				    void *arg)
 {
 	struct csiphy_device *csiphy_dev = v4l2_get_subdevdata(sd);
 	int rc = 0;
@@ -397,27 +417,25 @@ static long cam_csiphy_subdev_ioctl(struct v4l2_subdev *sd,
 
 #ifdef CONFIG_COMPAT
 static long cam_csiphy_subdev_compat_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, unsigned long arg)
+					   unsigned int cmd, unsigned long arg)
 {
 	int32_t rc = 0;
 	struct cam_control cmd_data;
 
-	if (copy_from_user(&cmd_data, (void __user *)arg,
-		sizeof(cmd_data))) {
+	if (copy_from_user(&cmd_data, (void __user *)arg, sizeof(cmd_data))) {
 		CAM_ERR(CAM_CSIPHY, "Failed to copy from user_ptr=%pK size=%zu",
 			(void __user *)arg, sizeof(cmd_data));
 		return -EFAULT;
 	}
 
 	/* All the arguments converted to 64 bit here
-	 * Passed to the api in core.c
-	 */
+   * Passed to the api in core.c
+   */
 	switch (cmd) {
 	case VIDIOC_CAM_CONTROL:
 		rc = cam_csiphy_subdev_ioctl(sd, cmd, &cmd_data);
 		if (rc)
-			CAM_ERR(CAM_CSIPHY,
-				"Failed in subdev_ioctl: %d", rc);
+			CAM_ERR(CAM_CSIPHY, "Failed in subdev_ioctl: %d", rc);
 		break;
 	default:
 		CAM_ERR(CAM_CSIPHY, "Invalid compat ioctl cmd: %d", cmd);
@@ -427,7 +445,7 @@ static long cam_csiphy_subdev_compat_ioctl(struct v4l2_subdev *sd,
 
 	if (!rc) {
 		if (copy_to_user((void __user *)arg, &cmd_data,
-			sizeof(cmd_data))) {
+				 sizeof(cmd_data))) {
 			CAM_ERR(CAM_CSIPHY,
 				"Failed to copy to user_ptr=%pK size=%zu",
 				(void __user *)arg, sizeof(cmd_data));
@@ -455,17 +473,17 @@ static const struct v4l2_subdev_internal_ops csiphy_subdev_intern_ops = {
 };
 
 static int cam_csiphy_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
 	struct cam_cpas_register_params cpas_parms;
 	struct csiphy_device *new_csiphy_dev;
-	int32_t               rc = 0;
+	int32_t rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
 	char wq_name[32];
 	int i;
 
-	new_csiphy_dev = devm_kzalloc(&pdev->dev,
-		sizeof(struct csiphy_device), GFP_KERNEL);
+	new_csiphy_dev = devm_kzalloc(&pdev->dev, sizeof(struct csiphy_device),
+				      GFP_KERNEL);
 	if (!new_csiphy_dev)
 		return -ENOMEM;
 
@@ -486,9 +504,9 @@ static int cam_csiphy_component_bind(struct device *dev,
 
 	/* validate PHY fuse only for CSIPHY4 */
 	if ((new_csiphy_dev->soc_info.index == 4) &&
-		!cam_cpas_is_feature_supported(
-			CAM_CPAS_CSIPHY_FUSE,
-			(1 << new_csiphy_dev->soc_info.index), NULL)) {
+	    !cam_cpas_is_feature_supported(
+		    CAM_CPAS_CSIPHY_FUSE, (1 << new_csiphy_dev->soc_info.index),
+		    NULL)) {
 		CAM_ERR(CAM_CSIPHY, "PHY%d is not supported",
 			new_csiphy_dev->soc_info.index);
 		goto csiphy_no_resource;
@@ -497,24 +515,16 @@ static int cam_csiphy_component_bind(struct device *dev,
 	if (cam_cpas_query_domain_id_security_support())
 		new_csiphy_dev->domain_id_security = true;
 
-	new_csiphy_dev->v4l2_dev_str.internal_ops =
-		&csiphy_subdev_intern_ops;
-	new_csiphy_dev->v4l2_dev_str.ops =
-		&csiphy_subdev_ops;
-	snprintf(new_csiphy_dev->device_name,
-		CAM_CTX_DEV_NAME_MAX_LENGTH,
-		"%s%d", CAMX_CSIPHY_DEV_NAME,
-		new_csiphy_dev->soc_info.index);
-	new_csiphy_dev->v4l2_dev_str.name =
-		new_csiphy_dev->device_name;
+	new_csiphy_dev->v4l2_dev_str.internal_ops = &csiphy_subdev_intern_ops;
+	new_csiphy_dev->v4l2_dev_str.ops = &csiphy_subdev_ops;
+	snprintf(new_csiphy_dev->device_name, CAM_CTX_DEV_NAME_MAX_LENGTH,
+		 "%s%d", CAMX_CSIPHY_DEV_NAME, new_csiphy_dev->soc_info.index);
+	new_csiphy_dev->v4l2_dev_str.name = new_csiphy_dev->device_name;
 	new_csiphy_dev->v4l2_dev_str.sd_flags =
 		(V4L2_SUBDEV_FL_HAS_DEVNODE | V4L2_SUBDEV_FL_HAS_EVENTS);
-	new_csiphy_dev->v4l2_dev_str.ent_function =
-		CAM_CSIPHY_DEVICE_TYPE;
-	new_csiphy_dev->v4l2_dev_str.msg_cb =
-		cam_csiphy_subdev_handle_message;
-	new_csiphy_dev->v4l2_dev_str.token =
-		new_csiphy_dev;
+	new_csiphy_dev->v4l2_dev_str.ent_function = CAM_CSIPHY_DEVICE_TYPE;
+	new_csiphy_dev->v4l2_dev_str.msg_cb = cam_csiphy_subdev_handle_message;
+	new_csiphy_dev->v4l2_dev_str.token = new_csiphy_dev;
 	new_csiphy_dev->v4l2_dev_str.close_seq_prior =
 		CAM_SD_CLOSE_MEDIUM_PRIORITY;
 
@@ -567,16 +577,16 @@ static int cam_csiphy_component_bind(struct device *dev,
 	new_csiphy_dev->cpas_handle = cpas_parms.client_handle;
 
 	snprintf(wq_name, 32, "%s%d%s", "csiphy",
-		new_csiphy_dev->soc_info.index, "_wq");
+		 new_csiphy_dev->soc_info.index, "_wq");
 
 	rc = cam_csiphy_register_baseaddress(new_csiphy_dev);
 	if (rc) {
-		CAM_ERR(CAM_CSIPHY, "Failed to register baseaddress, rc: %d", rc);
+		CAM_ERR(CAM_CSIPHY, "Failed to register baseaddress, rc: %d",
+			rc);
 		goto cpas_unregister;
 	}
 
-	CAM_DBG(CAM_CSIPHY, "%s component bound successfully",
-		pdev->name);
+	CAM_DBG(CAM_CSIPHY, "%s component bound successfully", pdev->name);
 
 	cam_csiphy_debug_register(new_csiphy_dev);
 
@@ -593,7 +603,7 @@ csiphy_no_resource:
 }
 
 static void cam_csiphy_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					struct device *master_dev, void *data)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 
@@ -630,7 +640,6 @@ static int32_t cam_csiphy_platform_probe(struct platform_device *pdev)
 	return rc;
 }
 
-
 static int32_t cam_csiphy_device_remove(struct platform_device *pdev)
 {
 	component_del(&pdev->dev, &cam_csiphy_component_ops);
@@ -638,21 +647,22 @@ static int32_t cam_csiphy_device_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id cam_csiphy_dt_match[] = {
-	{.compatible = "qcom,csiphy"},
+	{ .compatible = "qcom,csiphy" },
 	{}
 };
 
 MODULE_DEVICE_TABLE(of, cam_csiphy_dt_match);
 
 struct platform_driver csiphy_driver = {
-	.probe = cam_csiphy_platform_probe,
-	.remove = cam_csiphy_device_remove,
-	.driver = {
-		.name = CAMX_CSIPHY_DEV_NAME,
-		.owner = THIS_MODULE,
-		.of_match_table = cam_csiphy_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_csiphy_platform_probe,
+    .remove = cam_csiphy_device_remove,
+    .driver =
+        {
+            .name = CAMX_CSIPHY_DEV_NAME,
+            .owner = THIS_MODULE,
+            .of_match_table = cam_csiphy_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int32_t cam_csiphy_init_module(void)

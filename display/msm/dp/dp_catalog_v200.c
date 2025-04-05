@@ -6,23 +6,20 @@
 #include <linux/delay.h>
 
 #include "dp_catalog.h"
-#include "dp_reg.h"
 #include "dp_debug.h"
+#include "dp_reg.h"
 
-#define dp_catalog_get_priv_v200(x) ({ \
-	struct dp_catalog *catalog; \
-	catalog = container_of(x, struct dp_catalog, x); \
-	container_of(catalog->sub, \
-		struct dp_catalog_private_v200, sub); \
-})
+#define dp_catalog_get_priv_v200(x)                                        \
+	({                                                                 \
+		struct dp_catalog *catalog;                                \
+		catalog = container_of(x, struct dp_catalog, x);           \
+		container_of(catalog->sub, struct dp_catalog_private_v200, \
+			     sub);                                         \
+	})
 
-#define dp_read(x) ({ \
-	catalog->sub.read(catalog->dpc, io_data, x); \
-})
+#define dp_read(x) ({ catalog->sub.read(catalog->dpc, io_data, x); })
 
-#define dp_write(x, y) ({ \
-	catalog->sub.write(catalog->dpc, io_data, x, y); \
-})
+#define dp_write(x, y) ({ catalog->sub.write(catalog->dpc, io_data, x, y); })
 
 struct dp_catalog_private_v200 {
 	struct device *dev;
@@ -58,7 +55,7 @@ static void dp_catalog_aux_clear_hw_int_v200(struct dp_catalog_aux *aux)
 }
 
 static void dp_catalog_aux_setup_v200(struct dp_catalog_aux *aux,
-		struct dp_aux_cfg *cfg)
+				      struct dp_aux_cfg *cfg)
 {
 	struct dp_catalog_private_v200 *catalog;
 	struct dp_io_data *io_data;
@@ -106,7 +103,7 @@ static void dp_catalog_aux_setup_v200(struct dp_catalog_aux *aux,
 }
 
 static void dp_catalog_panel_config_msa_v200(struct dp_catalog_panel *panel,
-					u32 rate, u32 stream_rate_khz)
+					     u32 rate, u32 stream_rate_khz)
 {
 	u32 pixel_m, pixel_n;
 	u32 mvid, nvid;
@@ -132,8 +129,7 @@ static void dp_catalog_panel_config_msa_v200(struct dp_catalog_panel *panel,
 	io_data = catalog->io->dp_mmss_cc;
 
 	if (panel->stream_id == DP_STREAM_1)
-		strm_reg_off = MMSS_DP_PIXEL1_M_V200 -
-					MMSS_DP_PIXEL_M_V200;
+		strm_reg_off = MMSS_DP_PIXEL1_M_V200 - MMSS_DP_PIXEL_M_V200;
 
 	pixel_m = dp_read(MMSS_DP_PIXEL_M_V200 + strm_reg_off);
 	pixel_n = dp_read(MMSS_DP_PIXEL_N_V200 + strm_reg_off);
@@ -174,7 +170,7 @@ static void dp_catalog_panel_config_msa_v200(struct dp_catalog_panel *panel,
 }
 
 static void dp_catalog_ctrl_lane_mapping_v200(struct dp_catalog_ctrl *ctrl,
-						bool flipped, char *lane_map)
+					      bool flipped, char *lane_map)
 {
 	struct dp_catalog_private_v200 *catalog;
 	struct dp_io_data *io_data;
@@ -216,14 +212,14 @@ static void dp_catalog_ctrl_lane_mapping_v200(struct dp_catalog_ctrl *ctrl,
 			l_map[i] = lane_map[i];
 	}
 
-	lane_map_reg = ((l_map[3]&3)<<6)|((l_map[2]&3)<<4)|((l_map[1]&3)<<2)
-			|(l_map[0]&3);
+	lane_map_reg = ((l_map[3] & 3) << 6) | ((l_map[2] & 3) << 4) |
+		       ((l_map[1] & 3) << 2) | (l_map[0] & 3);
 
 	dp_write(DP_LOGICAL2PHYSICAL_LANE_MAPPING, lane_map_reg);
 }
 
 static void dp_catalog_ctrl_usb_reset_v200(struct dp_catalog_ctrl *ctrl,
-						bool flip)
+					   bool flip)
 {
 }
 
@@ -234,14 +230,15 @@ static void dp_catalog_put_v200(struct dp_catalog *catalog)
 	if (!catalog)
 		return;
 
-	catalog_priv = container_of(catalog->sub,
-			struct dp_catalog_private_v200, sub);
+	catalog_priv =
+		container_of(catalog->sub, struct dp_catalog_private_v200, sub);
 
 	devm_kfree(catalog_priv->dev, catalog_priv);
 }
 
 struct dp_catalog_sub *dp_catalog_get_v200(struct device *dev,
-		struct dp_catalog *catalog, struct dp_catalog_io *io)
+					   struct dp_catalog *catalog,
+					   struct dp_catalog_io *io)
 {
 	struct dp_catalog_private_v200 *catalog_priv;
 
@@ -261,12 +258,12 @@ struct dp_catalog_sub *dp_catalog_get_v200(struct device *dev,
 	catalog_priv->sub.put = dp_catalog_put_v200;
 
 	catalog->aux.clear_hw_interrupts = dp_catalog_aux_clear_hw_int_v200;
-	catalog->aux.setup               = dp_catalog_aux_setup_v200;
+	catalog->aux.setup = dp_catalog_aux_setup_v200;
 
-	catalog->panel.config_msa        = dp_catalog_panel_config_msa_v200;
+	catalog->panel.config_msa = dp_catalog_panel_config_msa_v200;
 
-	catalog->ctrl.lane_mapping       = dp_catalog_ctrl_lane_mapping_v200;
-	catalog->ctrl.usb_reset          = dp_catalog_ctrl_usb_reset_v200;
+	catalog->ctrl.lane_mapping = dp_catalog_ctrl_lane_mapping_v200;
+	catalog->ctrl.usb_reset = dp_catalog_ctrl_usb_reset_v200;
 
 	return &catalog_priv->sub;
 }

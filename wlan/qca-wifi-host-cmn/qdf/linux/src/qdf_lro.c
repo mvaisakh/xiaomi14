@@ -48,9 +48,9 @@ static void qdf_lro_desc_pool_init(struct qdf_lro_desc_pool *lro_desc_pool,
 
 	for (i = 0; i < QDF_LRO_DESC_POOL_SZ; i++) {
 		lro_desc_pool->lro_desc_array[i].lro_desc =
-			 &lro_mgr->lro_arr[i];
+			&lro_mgr->lro_arr[i];
 		list_add_tail(&lro_desc_pool->lro_desc_array[i].lro_node,
-			 &lro_desc_pool->lro_free_list_head);
+			      &lro_desc_pool->lro_free_list_head);
 	}
 }
 
@@ -69,15 +69,14 @@ static void qdf_lro_desc_info_init(struct qdf_lro_s *qdf_info)
 
 	/* Initialize pool of free LRO desc.*/
 	qdf_lro_desc_pool_init(&qdf_info->lro_desc_info.lro_desc_pool,
-		 qdf_info->lro_mgr);
+			       qdf_info->lro_mgr);
 
 	/* Initialize the hash table of LRO desc.*/
 	for (i = 0; i < QDF_LRO_DESC_TABLE_SZ; i++) {
 		/* initialize the flows in the hash table */
-		INIT_LIST_HEAD(&qdf_info->lro_desc_info.
-			 lro_hash_table[i].lro_desc_list);
+		INIT_LIST_HEAD(&qdf_info->lro_desc_info.lro_hash_table[i]
+					.lro_desc_list);
 	}
-
 }
 
 /**
@@ -93,7 +92,7 @@ static void qdf_lro_desc_info_init(struct qdf_lro_s *qdf_info)
  * Return: 0 - success, < 0 - failure
  */
 static int qdf_lro_get_skb_header(struct sk_buff *skb, void **ip_hdr,
-	void **tcpudp_hdr, u64 *hdr_flags, void *priv)
+				  void **tcpudp_hdr, u64 *hdr_flags, void *priv)
 {
 	if (QDF_NBUF_CB_RX_IPV6_PROTO(skb)) {
 		hdr_flags = 0;
@@ -114,20 +113,19 @@ qdf_lro_ctx_t qdf_lro_init(void)
 	uint8_t *lro_mem_ptr;
 
 	/*
-	 * Allocate all the LRO data structures at once and then carve
-	 * them up as needed
-	 */
+   * Allocate all the LRO data structures at once and then carve
+   * them up as needed
+   */
 	lro_info_sz = sizeof(struct qdf_lro_s);
 	lro_mgr_sz = sizeof(struct net_lro_mgr);
-	desc_arr_sz =
-		 (QDF_LRO_DESC_POOL_SZ * sizeof(struct net_lro_desc));
+	desc_arr_sz = (QDF_LRO_DESC_POOL_SZ * sizeof(struct net_lro_desc));
 	desc_pool_sz =
-		 (QDF_LRO_DESC_POOL_SZ * sizeof(struct qdf_lro_desc_entry));
+		(QDF_LRO_DESC_POOL_SZ * sizeof(struct qdf_lro_desc_entry));
 	hash_table_sz =
-		 (sizeof(struct qdf_lro_desc_table) * QDF_LRO_DESC_TABLE_SZ);
+		(sizeof(struct qdf_lro_desc_table) * QDF_LRO_DESC_TABLE_SZ);
 
 	lro_mem_ptr = qdf_mem_malloc(lro_info_sz + lro_mgr_sz + desc_arr_sz +
-					desc_pool_sz + hash_table_sz);
+				     desc_pool_sz + hash_table_sz);
 
 	if (unlikely(!lro_mem_ptr))
 		return NULL;
@@ -144,12 +142,12 @@ qdf_lro_ctx_t qdf_lro_init(void)
 
 	/* LRO descriptor pool */
 	lro_ctx->lro_desc_info.lro_desc_pool.lro_desc_array =
-		 (struct qdf_lro_desc_entry *)lro_mem_ptr;
+		(struct qdf_lro_desc_entry *)lro_mem_ptr;
 	lro_mem_ptr += desc_pool_sz;
 
 	/* hash table to store the LRO descriptors */
 	lro_ctx->lro_desc_info.lro_hash_table =
-		 (struct qdf_lro_desc_table *)lro_mem_ptr;
+		(struct qdf_lro_desc_table *)lro_mem_ptr;
 
 	/* Initialize the LRO descriptors */
 	qdf_lro_desc_info_init(lro_ctx);
@@ -170,7 +168,7 @@ void qdf_lro_deinit(qdf_lro_ctx_t lro_ctx)
 {
 	if (likely(lro_ctx)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "LRO instance %pK is being freed", lro_ctx);
+			  "LRO instance %pK is being freed", lro_ctx);
 		qdf_mem_free(lro_ctx);
 	}
 }
@@ -191,13 +189,12 @@ static inline bool qdf_lro_tcp_flow_match(struct net_lro_desc *lro_desc,
 					  struct tcphdr *tcph)
 {
 	if ((lro_desc->tcph->source != tcph->source) ||
-		 (lro_desc->tcph->dest != tcph->dest) ||
-		 (lro_desc->iph->saddr != iph->saddr) ||
-		 (lro_desc->iph->daddr != iph->daddr))
+	    (lro_desc->tcph->dest != tcph->dest) ||
+	    (lro_desc->iph->saddr != iph->saddr) ||
+	    (lro_desc->iph->daddr != iph->daddr))
 		return false;
 
 	return true;
-
 }
 
 /**
@@ -216,9 +213,9 @@ static inline bool qdf_lro_tcp_flow_match(struct net_lro_desc *lro_desc,
  *
  * Return: 0 - success, < 0 - failure
  */
-static int qdf_lro_desc_find(struct qdf_lro_s *lro_ctx,
-	 struct sk_buff *skb, struct iphdr *iph, struct tcphdr *tcph,
-	 uint32_t flow_hash, struct net_lro_desc **lro_desc)
+static int qdf_lro_desc_find(struct qdf_lro_s *lro_ctx, struct sk_buff *skb,
+			     struct iphdr *iph, struct tcphdr *tcph,
+			     uint32_t flow_hash, struct net_lro_desc **lro_desc)
 {
 	uint32_t i;
 	struct qdf_lro_desc_table *lro_hash_table;
@@ -234,7 +231,7 @@ static int qdf_lro_desc_find(struct qdf_lro_s *lro_ctx,
 
 	if (unlikely(!lro_hash_table)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "Invalid hash entry");
+			  "Invalid hash entry");
 		QDF_ASSERT(0);
 		return -EINVAL;
 	}
@@ -245,20 +242,19 @@ static int qdf_lro_desc_find(struct qdf_lro_s *lro_ctx,
 
 		entry = list_entry(ptr, struct qdf_lro_desc_entry, lro_node);
 		tmp_lro_desc = entry->lro_desc;
-			if (qdf_lro_tcp_flow_match(entry->lro_desc, iph, tcph)) {
-				*lro_desc = entry->lro_desc;
-				return 0;
-			}
+		if (qdf_lro_tcp_flow_match(entry->lro_desc, iph, tcph)) {
+			*lro_desc = entry->lro_desc;
+			return 0;
+		}
 	}
 
 	/* no existing flow found, a new LRO desc needs to be allocated */
 	free_pool = &lro_ctx->lro_desc_info.lro_desc_pool;
-	entry = list_first_entry_or_null(
-		 &free_pool->lro_free_list_head,
-		 struct qdf_lro_desc_entry, lro_node);
+	entry = list_first_entry_or_null(&free_pool->lro_free_list_head,
+					 struct qdf_lro_desc_entry, lro_node);
 	if (unlikely(!entry)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "Could not allocate LRO desc!");
+			  "Could not allocate LRO desc!");
 		return -ENOMEM;
 	}
 
@@ -266,18 +262,17 @@ static int qdf_lro_desc_find(struct qdf_lro_s *lro_ctx,
 
 	if (unlikely(!entry->lro_desc)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "entry->lro_desc is NULL!");
+			  "entry->lro_desc is NULL!");
 		return -EINVAL;
 	}
 
 	memset(entry->lro_desc, 0, sizeof(struct net_lro_desc));
 
 	/*
-	 * lro_desc->active should be 0 and lro_desc->tcp_rcv_tsval
-	 * should be 0 for newly allocated lro descriptors
-	 */
-	list_add_tail(&entry->lro_node,
-		 &lro_hash_table->lro_desc_list);
+   * lro_desc->active should be 0 and lro_desc->tcp_rcv_tsval
+   * should be 0 for newly allocated lro descriptors
+   */
+	list_add_tail(&entry->lro_node, &lro_hash_table->lro_desc_list);
 
 	*lro_desc = entry->lro_desc;
 	return 0;
@@ -298,19 +293,17 @@ static int qdf_lro_desc_find(struct qdf_lro_s *lro_ctx,
  * Return: true: LRO eligible false: LRO ineligible
  */
 bool qdf_lro_get_info(qdf_lro_ctx_t lro_ctx, qdf_nbuf_t nbuf,
-						 struct qdf_lro_info *info,
-						 void **plro_desc)
+		      struct qdf_lro_info *info, void **plro_desc)
 {
 	struct net_lro_desc *lro_desc;
 	struct iphdr *iph;
 	struct tcphdr *tcph;
-	int hw_lro_eligible =
-		 QDF_NBUF_CB_RX_LRO_ELIGIBLE(nbuf) &&
-		 (!QDF_NBUF_CB_RX_TCP_PURE_ACK(nbuf));
+	int hw_lro_eligible = QDF_NBUF_CB_RX_LRO_ELIGIBLE(nbuf) &&
+			      (!QDF_NBUF_CB_RX_TCP_PURE_ACK(nbuf));
 
 	if (unlikely(!lro_ctx)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "Invalid LRO context");
+			  "Invalid LRO context");
 		return false;
 	}
 
@@ -320,17 +313,17 @@ bool qdf_lro_get_info(qdf_lro_ctx_t lro_ctx, qdf_nbuf_t nbuf,
 	iph = (struct iphdr *)info->iph;
 	tcph = (struct tcphdr *)info->tcph;
 	if (0 != qdf_lro_desc_find(lro_ctx, nbuf, iph, tcph,
-		 QDF_NBUF_CB_RX_FLOW_ID(nbuf),
-		 (struct net_lro_desc **)plro_desc)) {
+				   QDF_NBUF_CB_RX_FLOW_ID(nbuf),
+				   (struct net_lro_desc **)plro_desc)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "finding the LRO desc failed");
+			  "finding the LRO desc failed");
 		return false;
 	}
 
 	lro_desc = (struct net_lro_desc *)(*plro_desc);
 	if (unlikely(!lro_desc)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "finding the LRO desc failed");
+			  "finding the LRO desc failed");
 		return false;
 	}
 
@@ -339,16 +332,14 @@ bool qdf_lro_get_info(qdf_lro_ctx_t lro_ctx, qdf_nbuf_t nbuf,
 		if (tcph->doff == 8) {
 			__be32 *topt = (__be32 *)(tcph + 1);
 
-			if (*topt != htonl((TCPOPT_NOP << 24)
-				 |(TCPOPT_NOP << 16)
-				 | (TCPOPT_TIMESTAMP << 8)
-				 | TCPOLEN_TIMESTAMP))
+			if (*topt !=
+			    htonl((TCPOPT_NOP << 24) | (TCPOPT_NOP << 16) |
+				  (TCPOPT_TIMESTAMP << 8) | TCPOLEN_TIMESTAMP))
 				return true;
 
 			/* timestamp should be in right order */
 			topt++;
-			if (after(ntohl(lro_desc->tcp_rcv_tsval),
-					 ntohl(*topt)))
+			if (after(ntohl(lro_desc->tcp_rcv_tsval), ntohl(*topt)))
 				return false;
 
 			/* timestamp reply should not be zero */
@@ -375,7 +366,7 @@ void qdf_lro_desc_free(qdf_lro_ctx_t lro_ctx, void *data)
 
 	if (unlikely(!desc || !lro_ctx)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "invalid input");
+			  "invalid input");
 		return;
 	}
 
@@ -385,17 +376,17 @@ void qdf_lro_desc_free(qdf_lro_ctx_t lro_ctx, void *data)
 
 	if (unlikely(i >= QDF_LRO_DESC_POOL_SZ)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			 "invalid index %d", i);
+			  "invalid index %d", i);
 		return;
 	}
 
-	desc_info =  &lro_ctx->lro_desc_info;
+	desc_info = &lro_ctx->lro_desc_info;
 	entry = &desc_info->lro_desc_pool.lro_desc_array[i];
 
 	list_del_init(&entry->lro_node);
 
-	list_add_tail(&entry->lro_node, &desc_info->
-		 lro_desc_pool.lro_free_list_head);
+	list_add_tail(&entry->lro_node,
+		      &desc_info->lro_desc_pool.lro_free_list_head);
 }
 
 void qdf_lro_flush(qdf_lro_ctx_t lro_ctx)
@@ -423,9 +414,9 @@ void qdf_lro_flush(qdf_lro_ctx_t lro_ctx)
  * Return: LRO descriptor
  */
 static struct net_lro_desc *qdf_lro_get_desc(struct net_lro_mgr *lro_mgr,
-	 struct net_lro_desc *lro_arr,
-	 struct iphdr *iph,
-	 struct tcphdr *tcph)
+					     struct net_lro_desc *lro_arr,
+					     struct iphdr *iph,
+					     struct tcphdr *tcph)
 {
 	int i;
 
@@ -438,13 +429,12 @@ static struct net_lro_desc *qdf_lro_get_desc(struct net_lro_mgr *lro_mgr,
 	return NULL;
 }
 
-void qdf_lro_flush_pkt(qdf_lro_ctx_t lro_ctx,
-		       struct qdf_lro_info *info)
+void qdf_lro_flush_pkt(qdf_lro_ctx_t lro_ctx, struct qdf_lro_info *info)
 {
 	struct net_lro_desc *lro_desc;
 	struct net_lro_mgr *lro_mgr = lro_ctx->lro_mgr;
-	struct iphdr *iph = (struct iphdr *) info->iph;
-	struct tcphdr *tcph = (struct tcphdr *) info->tcph;
+	struct iphdr *iph = (struct iphdr *)info->iph;
+	struct tcphdr *tcph = (struct tcphdr *)info->tcph;
 
 	lro_desc = qdf_lro_get_desc(lro_mgr, lro_mgr->lro_arr, iph, tcph);
 

@@ -5,17 +5,17 @@
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/dma-mapping.h>
-#include <linux/qcom-dma-mapping.h>
-#include <linux/list.h>
+#include "qcedev_smmu.h"
 #include "linux/qcedev.h"
 #include "qcedevi.h"
-#include "qcedev_smmu.h"
 #include "soc/qcom/secure_buffer.h"
+#include <linux/dma-mapping.h>
+#include <linux/list.h>
 #include <linux/mem-buf.h>
+#include <linux/qcom-dma-mapping.h>
 
 static int qcedev_setup_context_bank(struct context_bank_info *cb,
-				struct device *dev)
+				     struct device *dev)
 {
 	if (!dev || !cb) {
 		pr_err("%s err: invalid input params\n", __func__);
@@ -24,8 +24,8 @@ static int qcedev_setup_context_bank(struct context_bank_info *cb,
 	cb->dev = dev;
 
 	if (!dev->dma_parms) {
-		dev->dma_parms = devm_kzalloc(dev,
-				sizeof(*dev->dma_parms), GFP_KERNEL);
+		dev->dma_parms =
+			devm_kzalloc(dev, sizeof(*dev->dma_parms), GFP_KERNEL);
 		if (!dev->dma_parms)
 			return -ENOMEM;
 	}
@@ -47,8 +47,8 @@ int qcedev_parse_context_bank(struct platform_device *pdev)
 		return -EINVAL;
 	}
 	if (!pdev->dev.parent) {
-		pr_err("%s err: failed to find a parent for %s\n",
-			__func__, dev_name(&pdev->dev));
+		pr_err("%s err: failed to find a parent for %s\n", __func__,
+		       dev_name(&pdev->dev));
 		return -EINVAL;
 	}
 
@@ -112,8 +112,8 @@ static bool is_iommu_present(struct qcedev_handle *qce_hndl)
 	return !list_empty(&qce_hndl->cntl->context_banks);
 }
 
-static struct context_bank_info *get_context_bank(
-		struct qcedev_handle *qce_hndl, bool is_secure)
+static struct context_bank_info *
+get_context_bank(struct qcedev_handle *qce_hndl, bool is_secure)
 {
 	struct qcedev_control *podev = qce_hndl->cntl;
 	struct context_bank_info *cb = NULL, *match = NULL;
@@ -128,8 +128,9 @@ static struct context_bank_info *get_context_bank(
 }
 
 static int ion_map_buffer(struct qcedev_handle *qce_hndl,
-		struct qcedev_mem_client *mem_client, int fd,
-		unsigned int fd_size, struct qcedev_reg_buf_info *binfo)
+			  struct qcedev_mem_client *mem_client, int fd,
+			  unsigned int fd_size,
+			  struct qcedev_reg_buf_info *binfo)
 {
 	int rc = 0;
 	struct dma_buf *buf = NULL;
@@ -142,10 +143,11 @@ static int ion_map_buffer(struct qcedev_handle *qce_hndl,
 		return -EINVAL;
 
 	if (is_iommu_present(qce_hndl)) {
-		cb = get_context_bank(qce_hndl, !mem_buf_dma_buf_exclusive_owner(buf));
+		cb = get_context_bank(qce_hndl,
+				      !mem_buf_dma_buf_exclusive_owner(buf));
 		if (!cb) {
 			pr_err("%s: err: failed to get context bank info\n",
-				__func__);
+			       __func__);
 			rc = -EIO;
 			goto map_err;
 		}
@@ -172,7 +174,7 @@ static int ion_map_buffer(struct qcedev_handle *qce_hndl,
 			binfo->ion_buf.mapped_buf_size = sg_dma_len(table->sgl);
 			if (binfo->ion_buf.mapped_buf_size < fd_size) {
 				pr_err("%s: err: mapping failed, size mismatch\n",
-						__func__);
+				       __func__);
 				rc = -ENOMEM;
 				goto map_sg_err;
 			}
@@ -206,23 +208,24 @@ map_err:
 }
 
 static int ion_unmap_buffer(struct qcedev_handle *qce_hndl,
-		struct qcedev_reg_buf_info *binfo)
+			    struct qcedev_reg_buf_info *binfo)
 {
 	struct dma_mapping_info *mapping_info = &binfo->ion_buf.mapping_info;
 
 	if (is_iommu_present(qce_hndl)) {
 		dma_buf_unmap_attachment(mapping_info->attach,
-			mapping_info->table, DMA_BIDIRECTIONAL);
+					 mapping_info->table,
+					 DMA_BIDIRECTIONAL);
 		dma_buf_detach(mapping_info->buf, mapping_info->attach);
 		dma_buf_put(mapping_info->buf);
-
 	}
 	return 0;
 }
 
 static int qcedev_map_buffer(struct qcedev_handle *qce_hndl,
-		struct qcedev_mem_client *mem_client, int fd,
-		unsigned int fd_size, struct qcedev_reg_buf_info *binfo)
+			     struct qcedev_mem_client *mem_client, int fd,
+			     unsigned int fd_size,
+			     struct qcedev_reg_buf_info *binfo)
 {
 	int rc = -1;
 
@@ -242,8 +245,8 @@ static int qcedev_map_buffer(struct qcedev_handle *qce_hndl,
 }
 
 static int qcedev_unmap_buffer(struct qcedev_handle *qce_hndl,
-		struct qcedev_mem_client *mem_client,
-		struct qcedev_reg_buf_info *binfo)
+			       struct qcedev_mem_client *mem_client,
+			       struct qcedev_reg_buf_info *binfo)
 {
 	int rc = -1;
 
@@ -262,9 +265,8 @@ static int qcedev_unmap_buffer(struct qcedev_handle *qce_hndl,
 	return rc;
 }
 
-int qcedev_check_and_map_buffer(void *handle,
-		int fd, unsigned int offset, unsigned int fd_size,
-		unsigned long long *vaddr)
+int qcedev_check_and_map_buffer(void *handle, int fd, unsigned int offset,
+				unsigned int fd_size, unsigned long long *vaddr)
 {
 	bool found = false;
 	struct qcedev_reg_buf_info *binfo = NULL, *temp = NULL;
@@ -303,19 +305,18 @@ int qcedev_check_and_map_buffer(void *handle,
 	/* If buffer fd is not mapped then create a fresh mapping */
 	if (!found) {
 		pr_debug("%s: info: ion fd not registered with driver\n",
-			__func__);
+			 __func__);
 		binfo = kzalloc(sizeof(*binfo), GFP_KERNEL);
 		if (!binfo) {
-			pr_err("%s: err: failed to allocate binfo\n",
-				__func__);
+			pr_err("%s: err: failed to allocate binfo\n", __func__);
 			rc = -ENOMEM;
 			goto error;
 		}
-		rc = qcedev_map_buffer(qce_hndl, mem_client, fd,
-							fd_size, binfo);
+		rc = qcedev_map_buffer(qce_hndl, mem_client, fd, fd_size,
+				       binfo);
 		if (rc) {
 			pr_err("%s: err: failed to map fd (%d) error = %d\n",
-				__func__, fd, rc);
+			       __func__, fd, rc);
 			goto error;
 		}
 
@@ -331,9 +332,8 @@ int qcedev_check_and_map_buffer(void *handle,
 
 	/* Make sure the offset is within the mapped range */
 	if (offset >= mapped_size) {
-		pr_err(
-			"%s: err: Offset (%u) exceeds mapped size(%lu) for fd: %d\n",
-			__func__, offset, mapped_size, fd);
+		pr_err("%s: err: Offset (%u) exceeds mapped size(%lu) for fd: %d\n",
+		       __func__, offset, mapped_size, fd);
 		rc = -ERANGE;
 		goto unmap;
 	}
@@ -375,16 +375,16 @@ int qcedev_check_and_unmap_buffer(void *handle, int fd)
 
 	/* Check if the buffer fd is mapped and present in the regd list. */
 	mutex_lock(&qce_hndl->registeredbufs.lock);
-	list_for_each_entry_safe(binfo, dummy,
-		&qce_hndl->registeredbufs.list, list) {
+	list_for_each_entry_safe(binfo, dummy, &qce_hndl->registeredbufs.list,
+				 list) {
 		if (binfo->ion_buf.ion_fd == fd) {
 			found = true;
 			atomic_dec(&binfo->ref_count);
 
 			/* Unmap only if there are no more references */
 			if (atomic_read(&binfo->ref_count) == 0) {
-				qcedev_unmap_buffer(qce_hndl,
-					mem_client, binfo);
+				qcedev_unmap_buffer(qce_hndl, mem_client,
+						    binfo);
 				list_del(&binfo->list);
 				kfree(binfo);
 			}
@@ -394,8 +394,8 @@ int qcedev_check_and_unmap_buffer(void *handle, int fd)
 	mutex_unlock(&qce_hndl->registeredbufs.lock);
 
 	if (!found) {
-		pr_err("%s: err: calling unmap on unknown fd %d\n",
-			__func__, fd);
+		pr_err("%s: err: calling unmap on unknown fd %d\n", __func__,
+		       fd);
 		return -EINVAL;
 	}
 
@@ -436,4 +436,3 @@ int qcedev_unmap_all_buffers(void *handle)
 
 	return 0;
 }
-

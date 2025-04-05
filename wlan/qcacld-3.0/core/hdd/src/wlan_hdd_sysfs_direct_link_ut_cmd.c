@@ -14,13 +14,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
-#include "os_if_qmi.h"
-#include "cfg_ucfg_api.h"
-#include "wlan_hdd_object_manager.h"
-#include <wlan_hdd_sysfs.h>
 #include "wlan_hdd_sysfs_direct_link_ut_cmd.h"
+#include "cfg_ucfg_api.h"
+#include "os_if_qmi.h"
+#include "osif_vdev_sync.h"
+#include "wlan_hdd_object_manager.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
 
 #define MAX_SYSFS_DIRECT_LNK_UT_USER_COMMAND_LENGTH 512
 
@@ -45,8 +45,8 @@ static ssize_t __hdd_sysfs_direct_link_ut_cmd_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(adapter->hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err("invalid input");
@@ -189,6 +189,5 @@ void hdd_sysfs_direct_link_ut_destroy(struct hdd_adapter *adapter)
 	if (cfg_get(hdd_ctx->psoc, CFG_ENABLE_DIRECT_LINK_UT_CMD) == false)
 		return;
 
-	device_remove_file(&adapter->dev->dev,
-			   &dev_attr_direct_link_ut_cmd);
+	device_remove_file(&adapter->dev->dev, &dev_attr_direct_link_ut_cmd);
 }

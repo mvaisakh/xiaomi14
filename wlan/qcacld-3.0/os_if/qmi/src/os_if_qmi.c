@@ -23,10 +23,10 @@
 #include "os_if_qmi.h"
 #include "wlan_qmi_ucfg_api.h"
 
-QDF_STATUS os_if_qmi_handle_init(struct qmi_handle *qmi_hdl,
-				 qdf_size_t recv_buf_size,
-				 const struct qmi_ops *ops,
-				 const struct qmi_msg_handler *qmi_msg_handlers)
+QDF_STATUS
+os_if_qmi_handle_init(struct qmi_handle *qmi_hdl, qdf_size_t recv_buf_size,
+		      const struct qmi_ops *ops,
+		      const struct qmi_msg_handler *qmi_msg_handlers)
 {
 	int ret;
 
@@ -72,8 +72,8 @@ QDF_STATUS os_if_qmi_connect_to_svc(struct qmi_handle *qmi_hdl,
 	sq.sq_node = qmi_svc->node;
 	sq.sq_port = qmi_svc->port;
 
-	ret = kernel_connect(qmi_hdl->sock, (struct sockaddr *)&sq,
-			     sizeof(sq), 0);
+	ret = kernel_connect(qmi_hdl->sock, (struct sockaddr *)&sq, sizeof(sq),
+			     0);
 	if (ret < 0) {
 		osif_err("Failed to connect to QMI remote service %d", ret);
 		return qdf_status_from_os_return(ret);

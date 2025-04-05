@@ -21,13 +21,13 @@
  */
 
 #include "wlan_ipa_obj_mgmt_api.h"
+#include "qdf_module.h"
+#include "qdf_platform.h"
+#include "target_if_ipa.h"
 #include "wlan_ipa_main.h"
+#include "wlan_ipa_ucfg_api.h"
 #include "wlan_objmgr_global_obj.h"
 #include <wlan_objmgr_global_obj_i.h>
-#include "target_if_ipa.h"
-#include "wlan_ipa_ucfg_api.h"
-#include "qdf_platform.h"
-#include "qdf_module.h"
 
 /* This is as per IPA capbility */
 #define MAX_INSTANCES_SUPPORTED 2
@@ -67,8 +67,7 @@ void ipa_init_deinit_unlock(void)
  * Return: QDF_STATUS_SUCCESS on success
  */
 static QDF_STATUS
-ipa_pdev_obj_destroy_notification(struct wlan_objmgr_pdev *pdev,
-				  void *arg_list)
+ipa_pdev_obj_destroy_notification(struct wlan_objmgr_pdev *pdev, void *arg_list)
 {
 	QDF_STATUS status;
 	struct wlan_ipa_priv *ipa_obj;
@@ -79,15 +78,14 @@ ipa_pdev_obj_destroy_notification(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_SUCCESS;
 	}
 
-	ipa_obj = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-							WLAN_UMAC_COMP_IPA);
+	ipa_obj =
+		wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_IPA);
 	if (!ipa_obj) {
 		ipa_err("Failed to get ipa pdev object");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_pdev_component_obj_detach(pdev,
-						       WLAN_UMAC_COMP_IPA,
+	status = wlan_objmgr_pdev_component_obj_detach(pdev, WLAN_UMAC_COMP_IPA,
 						       ipa_obj);
 	if (QDF_IS_STATUS_ERROR(status))
 		ipa_err("Failed to detach ipa pdev object");
@@ -105,8 +103,7 @@ ipa_pdev_obj_destroy_notification(struct wlan_objmgr_pdev *pdev,
  * Return: QDF_STATUS_SUCCESS on success
  */
 static QDF_STATUS
-ipa_pdev_obj_create_notification(struct wlan_objmgr_pdev *pdev,
-				 void *arg_list)
+ipa_pdev_obj_create_notification(struct wlan_objmgr_pdev *pdev, void *arg_list)
 {
 	QDF_STATUS status;
 	struct wlan_ipa_priv *ipa_obj;
@@ -122,10 +119,8 @@ ipa_pdev_obj_create_notification(struct wlan_objmgr_pdev *pdev,
 	if (!ipa_obj)
 		return QDF_STATUS_E_NOMEM;
 
-	status = wlan_objmgr_pdev_component_obj_attach(pdev,
-						       WLAN_UMAC_COMP_IPA,
-						       (void *)ipa_obj,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_pdev_component_obj_attach(
+		pdev, WLAN_UMAC_COMP_IPA, (void *)ipa_obj, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ipa_err("Failed to attach pdev ipa component");
 		qdf_mem_free(ipa_obj);
@@ -168,9 +163,9 @@ static void ipa_register_ready_cb(void *user_data)
 	ipa_init_deinit_lock();
 
 	/*
-	 * Meanwhile acquiring lock, driver stop modules can happen in parallel,
-	 * validate driver state once again to proceed with IPA init.
-	 */
+   * Meanwhile acquiring lock, driver stop modules can happen in parallel,
+   * validate driver state once again to proceed with IPA init.
+   */
 	if (qdf_is_driver_state_module_stop()) {
 		ipa_err("Driver modules stop in-progress/done, releasing lock");
 		goto out;
@@ -279,8 +274,8 @@ QDF_STATUS ipa_init(void)
 		return status;
 	}
 
-	status = wlan_objmgr_register_pdev_create_handler(WLAN_UMAC_COMP_IPA,
-		ipa_pdev_obj_create_notification, NULL);
+	status = wlan_objmgr_register_pdev_create_handler(
+		WLAN_UMAC_COMP_IPA, ipa_pdev_obj_create_notification, NULL);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ipa_err("Failed to register pdev create handler for ipa");
@@ -288,8 +283,8 @@ QDF_STATUS ipa_init(void)
 		return status;
 	}
 
-	status = wlan_objmgr_register_pdev_destroy_handler(WLAN_UMAC_COMP_IPA,
-		ipa_pdev_obj_destroy_notification, NULL);
+	status = wlan_objmgr_register_pdev_destroy_handler(
+		WLAN_UMAC_COMP_IPA, ipa_pdev_obj_destroy_notification, NULL);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ipa_err("Failed to register pdev destroy handler for ipa");
@@ -301,8 +296,8 @@ QDF_STATUS ipa_init(void)
 	return status;
 
 fail_delete_pdev:
-	wlan_objmgr_unregister_pdev_create_handler(WLAN_UMAC_COMP_IPA,
-		ipa_pdev_obj_create_notification, NULL);
+	wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_IPA, ipa_pdev_obj_create_notification, NULL);
 
 	return status;
 }
@@ -325,13 +320,13 @@ QDF_STATUS ipa_deinit(void)
 
 	qdf_mutex_destroy(&g_init_deinit_lock);
 
-	status = wlan_objmgr_unregister_pdev_destroy_handler(WLAN_UMAC_COMP_IPA,
-				ipa_pdev_obj_destroy_notification, NULL);
+	status = wlan_objmgr_unregister_pdev_destroy_handler(
+		WLAN_UMAC_COMP_IPA, ipa_pdev_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ipa_err("Failed to unregister pdev destroy handler");
 
-	status = wlan_objmgr_unregister_pdev_create_handler(WLAN_UMAC_COMP_IPA,
-				ipa_pdev_obj_create_notification, NULL);
+	status = wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_IPA, ipa_pdev_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ipa_err("Failed to unregister pdev create handler");
 

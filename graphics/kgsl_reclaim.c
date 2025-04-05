@@ -47,12 +47,13 @@ static int kgsl_memdesc_get_reclaimed_pages(struct kgsl_mem_entry *entry)
 		if (IS_ERR(page))
 			return PTR_ERR(page);
 
-		kgsl_page_sync(memdesc->dev, page, PAGE_SIZE, DMA_BIDIRECTIONAL);
+		kgsl_page_sync(memdesc->dev, page, PAGE_SIZE,
+			       DMA_BIDIRECTIONAL);
 
 		/*
-		 * Update the pages array only if vmfault has not
-		 * updated it meanwhile
-		 */
+     * Update the pages array only if vmfault has not
+     * updated it meanwhile
+     */
 		spin_lock(&memdesc->lock);
 		if (!memdesc->pages[i]) {
 			memdesc->pages[i] = page;
@@ -74,8 +75,7 @@ static int kgsl_memdesc_get_reclaimed_pages(struct kgsl_mem_entry *entry)
 	return 0;
 }
 
-int kgsl_reclaim_to_pinned_state(
-		struct kgsl_process_private *process)
+int kgsl_reclaim_to_pinned_state(struct kgsl_process_private *process)
 {
 	struct kgsl_mem_entry *entry, *valid_entry;
 	int next = 0, ret = 0, count;
@@ -87,7 +87,7 @@ int kgsl_reclaim_to_pinned_state(
 
 	count = atomic_read(&process->unpinned_page_count);
 
-	for ( ; ; ) {
+	for (;;) {
 		valid_entry = NULL;
 		spin_lock(&process->mem_lock);
 		entry = idr_get_next(&process->mem_idr, &next);
@@ -128,7 +128,8 @@ static void kgsl_reclaim_foreground_work(struct work_struct *work)
 }
 
 static ssize_t kgsl_proc_state_show(struct kobject *kobj,
-		struct kgsl_process_attribute *attr, char *buf)
+				    struct kgsl_process_attribute *attr,
+				    char *buf)
 {
 	struct kgsl_process_private *process =
 		container_of(kobj, struct kgsl_process_private, kobj);
@@ -140,14 +141,15 @@ static ssize_t kgsl_proc_state_show(struct kobject *kobj,
 }
 
 static ssize_t kgsl_proc_state_store(struct kobject *kobj,
-	struct kgsl_process_attribute *attr, const char *buf, ssize_t count)
+				     struct kgsl_process_attribute *attr,
+				     const char *buf, ssize_t count)
 {
 	struct kgsl_process_private *process =
 		container_of(kobj, struct kgsl_process_private, kobj);
 
 	if (sysfs_streq(buf, "foreground")) {
 		if (!test_and_set_bit(KGSL_PROC_STATE, &process->state) &&
-			kgsl_process_private_get(process))
+		    kgsl_process_private_get(process))
 			kgsl_schedule_work(&process->fg_work);
 	} else if (sysfs_streq(buf, "background")) {
 		clear_bit(KGSL_PROC_STATE, &process->state);
@@ -158,13 +160,15 @@ static ssize_t kgsl_proc_state_store(struct kobject *kobj,
 }
 
 static ssize_t gpumem_reclaimed_show(struct kobject *kobj,
-		struct kgsl_process_attribute *attr, char *buf)
+				     struct kgsl_process_attribute *attr,
+				     char *buf)
 {
 	struct kgsl_process_private *process =
 		container_of(kobj, struct kgsl_process_private, kobj);
 
 	return scnprintf(buf, PAGE_SIZE, "%d\n",
-		atomic_read(&process->unpinned_page_count) << PAGE_SHIFT);
+			 atomic_read(&process->unpinned_page_count)
+				 << PAGE_SHIFT);
 }
 
 PROCESS_ATTR(state, 0644, kgsl_proc_state_show, kgsl_proc_state_store);
@@ -182,7 +186,8 @@ void kgsl_reclaim_proc_sysfs_init(struct kgsl_process_private *process)
 }
 
 ssize_t kgsl_proc_max_reclaim_limit_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
 {
 	int ret;
 
@@ -191,13 +196,14 @@ ssize_t kgsl_proc_max_reclaim_limit_store(struct device *dev,
 }
 
 ssize_t kgsl_proc_max_reclaim_limit_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+					 struct device_attribute *attr,
+					 char *buf)
 {
 	return scnprintf(buf, PAGE_SIZE, "%d\n", kgsl_reclaim_max_page_limit);
 }
 
-ssize_t kgsl_nr_to_scan_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+ssize_t kgsl_nr_to_scan_store(struct device *dev, struct device_attribute *attr,
+			      const char *buf, size_t count)
 {
 	int ret;
 
@@ -205,8 +211,8 @@ ssize_t kgsl_nr_to_scan_store(struct device *dev,
 	return ret ? ret : count;
 }
 
-ssize_t kgsl_nr_to_scan_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+ssize_t kgsl_nr_to_scan_show(struct device *dev, struct device_attribute *attr,
+			     char *buf)
 {
 	return scnprintf(buf, PAGE_SIZE, "%d\n", kgsl_nr_to_scan);
 }
@@ -218,24 +224,23 @@ static void kgsl_release_page_vec(struct pagevec *pvec)
 }
 
 static u32 kgsl_reclaim_process(struct kgsl_process_private *process,
-		u32 pages_to_reclaim)
+				u32 pages_to_reclaim)
 {
 	struct kgsl_memdesc *memdesc;
 	struct kgsl_mem_entry *entry, *valid_entry;
 	u32 next = 0, remaining = pages_to_reclaim;
 
 	/*
-	 * If we do not get the lock here, it means that the buffers are
-	 * being pinned back. So do not keep waiting here as we would anyway
-	 * return empty handed once the lock is acquired.
-	 */
+   * If we do not get the lock here, it means that the buffers are
+   * being pinned back. So do not keep waiting here as we would anyway
+   * return empty handed once the lock is acquired.
+   */
 	if (!mutex_trylock(&process->reclaim_lock))
 		return 0;
 
 	while (remaining) {
-
 		if (atomic_read(&process->unpinned_page_count) >=
-				kgsl_reclaim_max_page_limit)
+		    kgsl_reclaim_max_page_limit)
 			break;
 
 		/* Abort reclaim if process submitted work. */
@@ -256,9 +261,9 @@ static u32 kgsl_reclaim_process(struct kgsl_process_private *process,
 
 		memdesc = &entry->memdesc;
 		if (!entry->pending_free &&
-				(memdesc->priv & KGSL_MEMDESC_CAN_RECLAIM) &&
-				!(memdesc->priv & KGSL_MEMDESC_RECLAIMED) &&
-				!(memdesc->priv & KGSL_MEMDESC_SKIP_RECLAIM))
+		    (memdesc->priv & KGSL_MEMDESC_CAN_RECLAIM) &&
+		    !(memdesc->priv & KGSL_MEMDESC_RECLAIMED) &&
+		    !(memdesc->priv & KGSL_MEMDESC_SKIP_RECLAIM))
 			valid_entry = kgsl_mem_entry_get(entry);
 		spin_unlock(&process->mem_lock);
 
@@ -268,7 +273,7 @@ static u32 kgsl_reclaim_process(struct kgsl_process_private *process,
 		}
 
 		if ((atomic_read(&process->unpinned_page_count) +
-			memdesc->page_count) > kgsl_reclaim_max_page_limit) {
+		     memdesc->page_count) > kgsl_reclaim_max_page_limit) {
 			kgsl_mem_entry_put(entry);
 			next++;
 			continue;
@@ -285,16 +290,17 @@ static u32 kgsl_reclaim_process(struct kgsl_process_private *process,
 			struct pagevec pvec;
 
 			/*
-			 * Pages that are first allocated are by default added to
-			 * unevictable list. To reclaim them, we first clear the
-			 * AS_UNEVICTABLE flag of the shmem file address space thus
-			 * check_move_unevictable_pages() places them on the
-			 * evictable list.
-			 *
-			 * Once reclaim is done, hint that further shmem allocations
-			 * will have to be on the unevictable list.
-			 */
-			mapping_clear_unevictable(memdesc->shmem_filp->f_mapping);
+       * Pages that are first allocated are by default added to
+       * unevictable list. To reclaim them, we first clear the
+       * AS_UNEVICTABLE flag of the shmem file address space thus
+       * check_move_unevictable_pages() places them on the
+       * evictable list.
+       *
+       * Once reclaim is done, hint that further shmem allocations
+       * will have to be on the unevictable list.
+       */
+			mapping_clear_unevictable(
+				memdesc->shmem_filp->f_mapping);
 			pagevec_init(&pvec);
 			for (i = 0; i < memdesc->page_count; i++) {
 				set_page_dirty_lock(memdesc->pages[i]);
@@ -310,7 +316,8 @@ static u32 kgsl_reclaim_process(struct kgsl_process_private *process,
 			if (pagevec_count(&pvec))
 				kgsl_release_page_vec(&pvec);
 
-			reclaim_shmem_address_space(memdesc->shmem_filp->f_mapping);
+			reclaim_shmem_address_space(
+				memdesc->shmem_filp->f_mapping);
 			mapping_set_unevictable(memdesc->shmem_filp->f_mapping);
 			memdesc->priv |= KGSL_MEMDESC_RECLAIMED;
 			trace_kgsl_reclaim_memdesc(entry, true);
@@ -340,7 +347,7 @@ static void kgsl_reclaim_background_work(struct work_struct *work)
 	read_lock(&kgsl_driver.proclist_lock);
 	list_for_each_entry(process, &kgsl_driver.process_list, list) {
 		if (test_bit(KGSL_PROC_STATE, &process->state) ||
-				!kgsl_process_private_get(process))
+		    !kgsl_process_private_get(process))
 			continue;
 
 		bg_proc++;
@@ -357,23 +364,22 @@ static void kgsl_reclaim_background_work(struct work_struct *work)
 		nr_pages -= kgsl_reclaim_process(process, pp_nr_pages);
 	}
 
-	list_for_each_entry_safe(process, next,
-			&kgsl_reclaim_process_list, reclaim_list) {
+	list_for_each_entry_safe(process, next, &kgsl_reclaim_process_list,
+				 reclaim_list) {
 		list_del(&process->reclaim_list);
 		kgsl_process_private_put(process);
 	}
 }
 
 /* Shrinker callback functions */
-static unsigned long
-kgsl_reclaim_shrink_scan_objects(struct shrinker *shrinker,
-		struct shrink_control *sc)
+static unsigned long kgsl_reclaim_shrink_scan_objects(struct shrinker *shrinker,
+						      struct shrink_control *sc)
 {
 	if (!current_is_kswapd())
 		return 0;
 
-	atomic_set(&kgsl_nr_to_reclaim, kgsl_nr_to_scan ?
-					kgsl_nr_to_scan : sc->nr_to_scan);
+	atomic_set(&kgsl_nr_to_reclaim,
+		   kgsl_nr_to_scan ? kgsl_nr_to_scan : sc->nr_to_scan);
 	kgsl_schedule_work(&reclaim_work);
 
 	return atomic_read(&kgsl_nr_to_reclaim);
@@ -381,7 +387,7 @@ kgsl_reclaim_shrink_scan_objects(struct shrinker *shrinker,
 
 static unsigned long
 kgsl_reclaim_shrink_count_objects(struct shrinker *shrinker,
-		struct shrink_control *sc)
+				  struct shrink_control *sc)
 {
 	struct kgsl_process_private *process;
 	unsigned long count_reclaimable = 0;
@@ -392,7 +398,8 @@ kgsl_reclaim_shrink_count_objects(struct shrinker *shrinker,
 	read_lock(&kgsl_driver.proclist_lock);
 	list_for_each_entry(process, &kgsl_driver.process_list, list) {
 		if (!test_bit(KGSL_PROC_STATE, &process->state))
-			count_reclaimable += kgsl_reclaim_max_page_limit -
+			count_reclaimable +=
+				kgsl_reclaim_max_page_limit -
 				atomic_read(&process->unpinned_page_count);
 	}
 	read_unlock(&kgsl_driver.proclist_lock);
@@ -423,7 +430,8 @@ int kgsl_reclaim_start(void)
 
 	/* Initialize shrinker */
 #if (KERNEL_VERSION(6, 0, 0) <= LINUX_VERSION_CODE)
-	ret = register_shrinker(&kgsl_reclaim_shrinker, "kgsl_reclaim_shrinker");
+	ret = register_shrinker(&kgsl_reclaim_shrinker,
+				"kgsl_reclaim_shrinker");
 #else
 	ret = register_shrinker(&kgsl_reclaim_shrinker);
 #endif

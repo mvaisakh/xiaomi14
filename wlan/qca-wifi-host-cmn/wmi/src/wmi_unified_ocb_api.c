@@ -19,26 +19,28 @@
  * DOC: Implement API's specific to DSRC component.
  */
 
-#include <wmi_unified_priv.h>
 #include <wlan_ocb_public_structs.h>
 #include <wmi_unified_ocb_api.h>
+#include <wmi_unified_priv.h>
 
-QDF_STATUS wmi_unified_ocb_start_timing_advert(struct wmi_unified *wmi_hdl,
+QDF_STATUS wmi_unified_ocb_start_timing_advert(
+	struct wmi_unified *wmi_hdl,
 	struct ocb_timing_advert_param *timing_advert)
 {
 	if (wmi_hdl->ops->send_ocb_start_timing_advert_cmd)
-		return wmi_hdl->ops->send_ocb_start_timing_advert_cmd(wmi_hdl,
-							timing_advert);
+		return wmi_hdl->ops->send_ocb_start_timing_advert_cmd(
+			wmi_hdl, timing_advert);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_ocb_stop_timing_advert(struct wmi_unified *wmi_hdl,
+QDF_STATUS wmi_unified_ocb_stop_timing_advert(
+	struct wmi_unified *wmi_hdl,
 	struct ocb_timing_advert_param *timing_advert)
 {
 	if (wmi_hdl->ops->send_ocb_stop_timing_advert_cmd)
-		return wmi_hdl->ops->send_ocb_stop_timing_advert_cmd(wmi_hdl,
-							timing_advert);
+		return wmi_hdl->ops->send_ocb_stop_timing_advert_cmd(
+			wmi_hdl, timing_advert);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -62,8 +64,9 @@ QDF_STATUS wmi_unified_ocb_get_tsf_timer(struct wmi_unified *wmi_hdl,
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_dcc_get_stats_cmd(struct wmi_unified *wmi_hdl,
-			struct ocb_dcc_get_stats_param *get_stats_param)
+QDF_STATUS
+wmi_unified_dcc_get_stats_cmd(struct wmi_unified *wmi_hdl,
+			      struct ocb_dcc_get_stats_param *get_stats_param)
 {
 	if (wmi_hdl->ops->send_dcc_get_stats_cmd)
 		return wmi_hdl->ops->send_dcc_get_stats_cmd(wmi_hdl,
@@ -72,23 +75,25 @@ QDF_STATUS wmi_unified_dcc_get_stats_cmd(struct wmi_unified *wmi_hdl,
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_dcc_clear_stats(struct wmi_unified *wmi_hdl,
-		struct ocb_dcc_clear_stats_param *clear_stats_param)
+QDF_STATUS
+wmi_unified_dcc_clear_stats(struct wmi_unified *wmi_hdl,
+			    struct ocb_dcc_clear_stats_param *clear_stats_param)
 {
 	if (wmi_hdl->ops->send_dcc_clear_stats_cmd)
-		return wmi_hdl->ops->send_dcc_clear_stats_cmd(wmi_hdl,
-				clear_stats_param->vdev_id,
-				clear_stats_param->dcc_stats_bitmap);
+		return wmi_hdl->ops->send_dcc_clear_stats_cmd(
+			wmi_hdl, clear_stats_param->vdev_id,
+			clear_stats_param->dcc_stats_bitmap);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_dcc_update_ndl(struct wmi_unified *wmi_hdl,
-			struct ocb_dcc_update_ndl_param *update_ndl_param)
+QDF_STATUS
+wmi_unified_dcc_update_ndl(struct wmi_unified *wmi_hdl,
+			   struct ocb_dcc_update_ndl_param *update_ndl_param)
 {
 	if (wmi_hdl->ops->send_dcc_update_ndl_cmd)
 		return wmi_hdl->ops->send_dcc_update_ndl_cmd(wmi_hdl,
-					update_ndl_param);
+							     update_ndl_param);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -97,57 +102,48 @@ QDF_STATUS wmi_unified_ocb_set_config(struct wmi_unified *wmi_hdl,
 				      struct ocb_config *config)
 {
 	if (wmi_hdl->ops->send_ocb_set_config_cmd)
-		return wmi_hdl->ops->send_ocb_set_config_cmd(wmi_hdl,
-							     config);
+		return wmi_hdl->ops->send_ocb_set_config_cmd(wmi_hdl, config);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
 wmi_extract_ocb_set_channel_config_resp(struct wmi_unified *wmi_hdl,
-					void *evt_buf,
-					uint32_t *status)
+					void *evt_buf, uint32_t *status)
 {
 	if (wmi_hdl->ops->extract_ocb_chan_config_resp)
-		return wmi_hdl->ops->extract_ocb_chan_config_resp(wmi_hdl,
-								  evt_buf,
-								  status);
+		return wmi_hdl->ops->extract_ocb_chan_config_resp(
+			wmi_hdl, evt_buf, status);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_ocb_tsf_timer(struct wmi_unified *wmi_hdl,
-				     void *evt_buf,
+QDF_STATUS wmi_extract_ocb_tsf_timer(struct wmi_unified *wmi_hdl, void *evt_buf,
 				     struct ocb_get_tsf_timer_response *resp)
 {
 	if (wmi_hdl->ops->extract_ocb_tsf_timer)
-		return wmi_hdl->ops->extract_ocb_tsf_timer(wmi_hdl,
-							   evt_buf,
+		return wmi_hdl->ops->extract_ocb_tsf_timer(wmi_hdl, evt_buf,
 							   resp);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_dcc_update_ndl_resp(struct wmi_unified *wmi_hdl,
-		void *evt_buf, struct ocb_dcc_update_ndl_response *resp)
+QDF_STATUS
+wmi_extract_dcc_update_ndl_resp(struct wmi_unified *wmi_hdl, void *evt_buf,
+				struct ocb_dcc_update_ndl_response *resp)
 {
 	if (wmi_hdl->ops->extract_dcc_update_ndl_resp)
 		return wmi_hdl->ops->extract_dcc_update_ndl_resp(wmi_hdl,
-								 evt_buf,
-								 resp);
+								 evt_buf, resp);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_dcc_stats(struct wmi_unified *wmi_hdl,
-				 void *evt_buf,
+QDF_STATUS wmi_extract_dcc_stats(struct wmi_unified *wmi_hdl, void *evt_buf,
 				 struct ocb_dcc_get_stats_response **resp)
 {
 	if (wmi_hdl->ops->extract_dcc_stats)
-		return wmi_hdl->ops->extract_dcc_stats(wmi_hdl,
-						       evt_buf,
-						       resp);
+		return wmi_hdl->ops->extract_dcc_stats(wmi_hdl, evt_buf, resp);
 
 	return QDF_STATUS_E_FAILURE;
 }
-

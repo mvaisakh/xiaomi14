@@ -17,18 +17,18 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "cfr_cfg.h"
+#include <cfg_ucfg_api.h>
 #include <cfr_defs_i.h>
-#include <qdf_types.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_objmgr_peer_obj.h>
-#include <wlan_cfr_tgt_api.h>
 #include <qdf_streamfs.h>
+#include <qdf_types.h>
 #include <target_if.h>
 #include <target_if_direct_buf_rx_api.h>
+#include <wlan_cfr_tgt_api.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 #include <wlan_osif_priv.h>
-#include <cfg_ucfg_api.h>
-#include "cfr_cfg.h"
 #ifdef WLAN_CFR_PM
 #include "host_diag_core_event.h"
 #endif
@@ -39,8 +39,7 @@
  *
  * Return : true if cfr is disabled, else false.
  */
-static bool
-wlan_cfr_is_ini_disabled(struct wlan_objmgr_pdev *pdev)
+static bool wlan_cfr_is_ini_disabled(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_objmgr_psoc *psoc;
 	uint8_t cfr_disable_bitmap;
@@ -68,8 +67,7 @@ wlan_cfr_is_ini_disabled(struct wlan_objmgr_pdev *pdev)
  *
  * Return : Entry number of DBR ring.
  */
-static uint32_t
-wlan_cfr_get_dbr_num_entries(struct wlan_objmgr_pdev *pdev)
+static uint32_t wlan_cfr_get_dbr_num_entries(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_psoc_host_dbr_ring_caps *dbr_ring_cap;
@@ -172,9 +170,8 @@ wlan_cfr_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 
 	cfr_sc->psoc_obj = psoc;
 
-	wlan_objmgr_psoc_component_obj_attach(psoc, WLAN_UMAC_COMP_CFR,
-					      (void *)cfr_sc,
-					      QDF_STATUS_SUCCESS);
+	wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_CFR, (void *)cfr_sc, QDF_STATUS_SUCCESS);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -184,8 +181,8 @@ wlan_cfr_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	struct psoc_cfr *cfr_sc = NULL;
 
-	cfr_sc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						       WLAN_UMAC_COMP_CFR);
+	cfr_sc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CFR);
 	if (cfr_sc) {
 		wlan_objmgr_psoc_component_obj_detach(psoc, WLAN_UMAC_COMP_CFR,
 						      (void *)cfr_sc);
@@ -240,14 +237,11 @@ static QDF_STATUS wlan_cfr_get_aoa_caps(struct pdev_cfr *pa)
 	}
 
 	qdf_mem_copy(pa->max_agc_gain_per_tbl_2g,
-		     aoa_caps->max_agc_gain_per_tbl_2g,
-		     max_agc_gain_tbl_sz);
+		     aoa_caps->max_agc_gain_per_tbl_2g, max_agc_gain_tbl_sz);
 	qdf_mem_copy(pa->max_agc_gain_per_tbl_5g,
-		     aoa_caps->max_agc_gain_per_tbl_5g,
-		     max_agc_gain_tbl_sz);
+		     aoa_caps->max_agc_gain_per_tbl_5g, max_agc_gain_tbl_sz);
 	qdf_mem_copy(pa->max_agc_gain_per_tbl_6g,
-		     aoa_caps->max_agc_gain_per_tbl_6g,
-		     max_agc_gain_tbl_sz);
+		     aoa_caps->max_agc_gain_per_tbl_6g, max_agc_gain_tbl_sz);
 	qdf_mem_copy(pa->max_bdf_entries_per_tbl,
 		     aoa_caps->max_bdf_entries_per_tbl,
 		     (sizeof(uint8_t) * PSOC_MAX_NUM_AGC_GAIN_TBLS));
@@ -255,25 +249,22 @@ static QDF_STATUS wlan_cfr_get_aoa_caps(struct pdev_cfr *pa)
 	/* table 0's data always starts at offset 0 */
 	pa->start_ent[0] = 0;
 	for (i = 0; i < pa->max_agc_gain_tbls; i++) {
-		pa->max_entries_all_table +=
-			pa->max_bdf_entries_per_tbl[i];
+		pa->max_entries_all_table += pa->max_bdf_entries_per_tbl[i];
 		if ((i + 1) < pa->max_agc_gain_tbls) {
 			pa->start_ent[i + 1] = (pa->max_bdf_entries_per_tbl[i] +
-					pa->start_ent[i]);
+						pa->start_ent[i]);
 		}
 	}
 
-	pa->gain_stop_index_array = qdf_mem_malloc(sizeof(uint16_t) *
-					pa->max_entries_all_table *
-					HOST_MAX_CHAINS);
+	pa->gain_stop_index_array = qdf_mem_malloc(
+		sizeof(uint16_t) * pa->max_entries_all_table * HOST_MAX_CHAINS);
 	if (!pa->gain_stop_index_array) {
 		qdf_err("Failed to allocate gain stop array");
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	pa->enh_phase_delta_array = qdf_mem_malloc(sizeof(uint16_t) *
-					pa->max_entries_all_table *
-					HOST_MAX_CHAINS);
+	pa->enh_phase_delta_array = qdf_mem_malloc(
+		sizeof(uint16_t) * pa->max_entries_all_table * HOST_MAX_CHAINS);
 	if (!pa->enh_phase_delta_array) {
 		qdf_err("Failed to allocate phase delta array");
 		qdf_mem_free(pa->gain_stop_index_array);
@@ -322,8 +313,8 @@ wlan_cfr_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 		qdf_mem_free(pa);
 		return QDF_STATUS_E_INVAL;
 	}
-	pa->lut = (struct look_up_table **)qdf_mem_malloc(pa->lut_num *
-			sizeof(struct look_up_table *));
+	pa->lut = (struct look_up_table **)qdf_mem_malloc(
+		pa->lut_num * sizeof(struct look_up_table *));
 	if (!pa->lut) {
 		cfr_err("Failed to allocate lut, lut num %d", pa->lut_num);
 		qdf_mem_free(pa);
@@ -351,13 +342,12 @@ wlan_cfr_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 }
 
 #ifdef WLAN_RCC_ENHANCED_AOA_SUPPORT
-static inline
-void wlan_cfr_cleanup_enhanced_aoa(struct pdev_cfr *pa)
+static inline void wlan_cfr_cleanup_enhanced_aoa(struct pdev_cfr *pa)
 {
 	/**
-	 * Free enahced AoA related allocations here.
-	 * Caller of this API should ensure pa is not NULL
-	 */
+   * Free enahced AoA related allocations here.
+   * Caller of this API should ensure pa is not NULL
+   */
 	if (pa->gain_stop_index_array)
 		qdf_mem_free(pa->gain_stop_index_array);
 
@@ -365,8 +355,7 @@ void wlan_cfr_cleanup_enhanced_aoa(struct pdev_cfr *pa)
 		qdf_mem_free(pa->enh_phase_delta_array);
 }
 #else
-static inline
-void wlan_cfr_cleanup_enhanced_aoa(struct pdev_cfr *pa)
+static inline void wlan_cfr_cleanup_enhanced_aoa(struct pdev_cfr *pa)
 {
 }
 #endif /* WLAN_RCC_ENHANCED_AOA_SUPPORT */
@@ -518,7 +507,7 @@ static char *cfr_get_dev_name(struct wlan_objmgr_pdev *pdev)
 		return NULL;
 	}
 
-	return  qdf_net_if_get_devname(nif);
+	return qdf_net_if_get_devname(nif);
 }
 #endif
 
@@ -566,8 +555,8 @@ QDF_STATUS cfr_streamfs_init(struct wlan_objmgr_pdev *pdev)
 	}
 
 	pa->chan_ptr = qdf_streamfs_open("cfr_dump", pa->dir_ptr,
-					 pa->subbuf_size,
-					 pa->num_subbufs, NULL);
+					 pa->subbuf_size, pa->num_subbufs,
+					 NULL);
 
 	if (!pa->chan_ptr) {
 		cfr_err("Chan create failed");
@@ -610,7 +599,7 @@ QDF_STATUS cfr_streamfs_write(struct pdev_cfr *pa, const void *write_data,
 			      size_t write_len)
 {
 	if (pa->chan_ptr) {
-	/* write to channel buffer */
+		/* write to channel buffer */
 		qdf_streamfs_write(pa->chan_ptr, (const void *)write_data,
 				   write_len);
 	} else
@@ -622,8 +611,7 @@ QDF_STATUS cfr_streamfs_write(struct pdev_cfr *pa, const void *write_data,
 QDF_STATUS cfr_streamfs_flush(struct pdev_cfr *pa)
 {
 	if (pa->chan_ptr) {
-
-	/* Flush the data write to channel buffer */
+		/* Flush the data write to channel buffer */
 		qdf_streamfs_flush(pa->chan_ptr);
 	} else
 		return QDF_STATUS_E_FAILURE;
@@ -645,8 +633,8 @@ QDF_STATUS cfr_stop_indication(struct wlan_objmgr_vdev *vdev)
 	}
 
 	/* Don't write stop string if there is valid cfr_nl_cb. Since
-	 * userspace needn't stop event string
-	 */
+   * userspace needn't stop event string
+   */
 	if (pa->nl_cb.cfr_nl_cb)
 		return QDF_STATUS_SUCCESS;
 
@@ -671,8 +659,7 @@ QDF_STATUS cfr_prevent_suspend(struct pdev_cfr *pcfr)
 		cfr_debug("acquired wake lock");
 		return QDF_STATUS_E_AGAIN;
 	}
-	qdf_wake_lock_acquire(&pcfr->wake_lock,
-			      WIFI_POWER_EVENT_WAKELOCK_CFR);
+	qdf_wake_lock_acquire(&pcfr->wake_lock, WIFI_POWER_EVENT_WAKELOCK_CFR);
 	qdf_runtime_pm_prevent_suspend(&pcfr->runtime_lock);
 	pcfr->is_prevent_suspend = true;
 
@@ -690,8 +677,7 @@ QDF_STATUS cfr_allow_suspend(struct pdev_cfr *pcfr)
 		cfr_debug("wake lock not acquired");
 		return QDF_STATUS_E_INVAL;
 	}
-	qdf_wake_lock_release(&pcfr->wake_lock,
-			      WIFI_POWER_EVENT_WAKELOCK_CFR);
+	qdf_wake_lock_release(&pcfr->wake_lock, WIFI_POWER_EVENT_WAKELOCK_CFR);
 	qdf_runtime_pm_allow_suspend(&pcfr->runtime_lock);
 	pcfr->is_prevent_suspend = false;
 

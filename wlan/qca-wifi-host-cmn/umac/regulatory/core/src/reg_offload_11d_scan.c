@@ -21,21 +21,20 @@
  * DOC: Add 11d utility functions
  */
 
-#include <wlan_cmn.h>
-#include <reg_services_public_struct.h>
-#include <wlan_scan_public_structs.h>
-#include <wlan_scan_ucfg_api.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include "reg_priv_objs.h"
-#include "reg_utils.h"
-#include "reg_services_common.h"
 #include "reg_offload_11d_scan.h"
 #include "reg_host_11d.h"
+#include "reg_priv_objs.h"
+#include "reg_services_common.h"
+#include "reg_utils.h"
+#include <reg_services_public_struct.h>
+#include <wlan_cmn.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_scan_public_structs.h>
+#include <wlan_scan_ucfg_api.h>
 
 #ifdef TARGET_11D_SCAN
 
-QDF_STATUS reg_set_11d_country(struct wlan_objmgr_pdev *pdev,
-			       uint8_t *country)
+QDF_STATUS reg_set_11d_country(struct wlan_objmgr_pdev *pdev, uint8_t *country)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 	struct set_country country_code;
@@ -67,8 +66,7 @@ QDF_STATUS reg_set_11d_country(struct wlan_objmgr_pdev *pdev,
 		}
 	}
 
-	reg_info("set new 11d country:%c%c to fW",
-		 country[0], country[1]);
+	reg_info("set new 11d country:%c%c to fW", country[0], country[1]);
 
 	qdf_mem_copy(country_code.country, country, REG_ALPHA2_LEN + 1);
 	country_code.pdev_id = pdev_id;
@@ -171,7 +169,7 @@ end:
  */
 static QDF_STATUS reg_sched_11d_msg(struct reg_11d_scan_msg *scan_msg_11d)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	QDF_STATUS status;
 
 	status = wlan_objmgr_psoc_try_get_ref(scan_msg_11d->psoc,
@@ -226,13 +224,13 @@ void reg_run_11d_state_machine(struct wlan_objmgr_psoc *psoc)
 		psoc_priv_obj->enable_11d_supp =
 			psoc_priv_obj->enable_11d_supp_original;
 
-	reg_debug("inside 11d state machine:tmp %d 11d_supp %d org %d set %d pri %d vdev %d",
-		  temp_11d_support,
-		  psoc_priv_obj->enable_11d_supp,
-		  psoc_priv_obj->enable_11d_supp_original,
-		  psoc_priv_obj->user_ctry_set,
-		  psoc_priv_obj->user_ctry_priority,
-		  psoc_priv_obj->vdev_id_for_11d_scan);
+	reg_debug(
+		"inside 11d state machine:tmp %d 11d_supp %d org %d set %d pri %d "
+		"vdev %d",
+		temp_11d_support, psoc_priv_obj->enable_11d_supp,
+		psoc_priv_obj->enable_11d_supp_original,
+		psoc_priv_obj->user_ctry_set, psoc_priv_obj->user_ctry_priority,
+		psoc_priv_obj->vdev_id_for_11d_scan);
 
 	if (temp_11d_support != psoc_priv_obj->enable_11d_supp) {
 		if (psoc_priv_obj->is_11d_offloaded) {
@@ -241,7 +239,7 @@ void reg_run_11d_state_machine(struct wlan_objmgr_psoc *psoc)
 				return;
 			scan_msg_11d->psoc = psoc;
 			scan_msg_11d->enable_11d_supp =
-						psoc_priv_obj->enable_11d_supp;
+				psoc_priv_obj->enable_11d_supp;
 			reg_sched_11d_msg(scan_msg_11d);
 		} else {
 			reg_11d_host_scan(psoc_priv_obj);
@@ -269,8 +267,7 @@ QDF_STATUS reg_11d_vdev_created_update(struct wlan_objmgr_vdev *vdev)
 		return QDF_STATUS_E_FAULT;
 	}
 
-	if ((op_mode == QDF_STA_MODE) ||
-	    (op_mode == QDF_P2P_DEVICE_MODE) ||
+	if ((op_mode == QDF_STA_MODE) || (op_mode == QDF_P2P_DEVICE_MODE) ||
 	    (op_mode == QDF_P2P_CLIENT_MODE)) {
 		vdev_id = wlan_vdev_get_id(vdev);
 		if (!psoc_priv_obj->vdev_cnt_11d) {
@@ -370,9 +367,9 @@ QDF_STATUS reg_save_new_11d_country(struct wlan_objmgr_psoc *psoc,
 	}
 
 	/*
-	 * Need firmware to send channel list event
-	 * for all phys. Therefore set pdev_id to 0xFF
-	 */
+   * Need firmware to send channel list event
+   * for all phys. Therefore set pdev_id to 0xFF
+   */
 	pdev_id = 0xFF;
 	for (ctr = 0; ctr < psoc_priv_obj->num_phy; ctr++)
 		psoc_priv_obj->new_11d_ctry_pending[ctr] = true;

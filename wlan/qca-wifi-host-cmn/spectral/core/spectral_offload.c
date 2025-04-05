@@ -17,13 +17,12 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "../dispatcher/inc/wlan_spectral_tgt_api.h"
 #include "spectral_cmn_api_i.h"
 #include "spectral_ol_api_i.h"
-#include "../dispatcher/inc/wlan_spectral_tgt_api.h"
 
 #ifdef DIRECT_BUF_RX_DEBUG
-static void
-spectral_ctx_init_ol_dma_debug(struct spectral_context *sc)
+static void spectral_ctx_init_ol_dma_debug(struct spectral_context *sc)
 {
 	if (!sc) {
 		spectral_err("spectral context is null!");
@@ -32,14 +31,12 @@ spectral_ctx_init_ol_dma_debug(struct spectral_context *sc)
 	sc->sptrlc_set_dma_debug = tgt_set_spectral_dma_debug;
 }
 #else
-static void
-spectral_ctx_init_ol_dma_debug(struct spectral_context *sc)
+static void spectral_ctx_init_ol_dma_debug(struct spectral_context *sc)
 {
 }
 #endif
 
-void
-spectral_ctx_init_ol(struct spectral_context *sc)
+void spectral_ctx_init_ol(struct spectral_context *sc)
 {
 	if (!sc) {
 		spectral_err("spectral context is null!");

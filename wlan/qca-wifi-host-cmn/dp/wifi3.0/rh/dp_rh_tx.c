@@ -15,20 +15,20 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-#include "cdp_txrx_cmn_struct.h"
-#include "dp_types.h"
-#include "dp_tx.h"
 #include "dp_rh_tx.h"
-#include "dp_tx_desc.h"
-#include <dp_internal.h>
-#include <dp_htt.h>
-#include <hal_rh_api.h>
-#include <hal_rh_tx.h>
+#include "cdp_txrx_cmn_struct.h"
 #include "dp_peer.h"
 #include "dp_rh.h"
+#include "dp_rh_htt.h"
+#include "dp_tx.h"
+#include "dp_tx_desc.h"
+#include "dp_types.h"
 #include <ce_api.h>
 #include <ce_internal.h>
-#include "dp_rh_htt.h"
+#include <dp_htt.h>
+#include <dp_internal.h>
+#include <hal_rh_api.h>
+#include <hal_rh_tx.h>
 
 extern uint8_t sec_type_map[MAX_CDP_SEC_TYPE];
 
@@ -56,8 +56,8 @@ dp_tx_adjust_tso_download_len_rh(qdf_nbuf_t nbuf,
 	eit_hdr_len = msdu_info->u.tso_info.curr_seg->seg.tso_frags[0].length;
 
 	/* If EIT header length is less than the MSDU download length, then
-	 * adjust the download length to just hold EIT header.
-	 */
+   * adjust the download length to just hold EIT header.
+   */
 	if (eit_hdr_len < download_len) {
 		delta = download_len - eit_hdr_len;
 		download_len -= delta;
@@ -89,25 +89,25 @@ void dp_tx_comp_get_params_from_hal_desc_rh(struct dp_soc *soc,
  *
  * Return: TX descriptor handle or NULL (if not found)
  */
-static struct dp_tx_desc_s *
-dp_tx_comp_find_tx_desc_rh(struct dp_soc *soc, uint32_t sw_cookie)
+static struct dp_tx_desc_s *dp_tx_comp_find_tx_desc_rh(struct dp_soc *soc,
+						       uint32_t sw_cookie)
 {
 	uint8_t pool_id;
 	struct dp_tx_desc_s *tx_desc;
 
 	pool_id = (sw_cookie & DP_TX_DESC_ID_POOL_MASK) >>
-			DP_TX_DESC_ID_POOL_OS;
+		  DP_TX_DESC_ID_POOL_OS;
 
 	/* Find Tx descriptor */
 	tx_desc = dp_tx_desc_find(soc, pool_id,
 				  (sw_cookie & DP_TX_DESC_ID_PAGE_MASK) >>
-						DP_TX_DESC_ID_PAGE_OS,
+					  DP_TX_DESC_ID_PAGE_OS,
 				  (sw_cookie & DP_TX_DESC_ID_OFFSET_MASK) >>
-						DP_TX_DESC_ID_OFFSET_OS);
+					  DP_TX_DESC_ID_OFFSET_OS);
 	/* pool id is not matching. Error */
 	if (tx_desc && tx_desc->pool_id != pool_id) {
-		dp_tx_comp_alert("Tx Comp pool id %d not matched %d",
-				 pool_id, tx_desc->pool_id);
+		dp_tx_comp_alert("Tx Comp pool id %d not matched %d", pool_id,
+				 tx_desc->pool_id);
 
 		qdf_assert_always(0);
 	}
@@ -117,13 +117,12 @@ dp_tx_comp_find_tx_desc_rh(struct dp_soc *soc, uint32_t sw_cookie)
 
 void dp_tx_process_htt_completion_rh(struct dp_soc *soc,
 				     struct dp_tx_desc_s *tx_desc,
-				     uint8_t *status,
-				     uint8_t ring_id)
+				     uint8_t *status, uint8_t ring_id)
 {
 }
 
-static inline uint32_t
-dp_tx_adjust_download_len_rh(qdf_nbuf_t nbuf, uint32_t download_len)
+static inline uint32_t dp_tx_adjust_download_len_rh(qdf_nbuf_t nbuf,
+						    uint32_t download_len)
 {
 	uint32_t frag0_len; /* TCL_DATA_CMD */
 	uint32_t frag1_len; /* 64 byte payload */
@@ -148,17 +147,17 @@ static inline void dp_tx_fill_nbuf_data_attr_rh(qdf_nbuf_t nbuf)
 	pkt_offset = qdf_nbuf_get_frag_len(nbuf, 0);
 
 	data_attr = tx_classify << CE_DESC_TX_CLASSIFY_BIT_S;
-	data_attr |= pkt_offset  << CE_DESC_PKT_OFFSET_BIT_S;
+	data_attr |= pkt_offset << CE_DESC_PKT_OFFSET_BIT_S;
 
 	qdf_nbuf_data_attr_set(nbuf, data_attr);
 }
 
 #ifdef DP_TX_HW_DESC_HISTORY
-static inline void
-dp_tx_record_hw_desc_rh(uint8_t *hal_tx_desc_cached, struct dp_soc *soc)
+static inline void dp_tx_record_hw_desc_rh(uint8_t *hal_tx_desc_cached,
+					   struct dp_soc *soc)
 {
 	struct dp_tx_hw_desc_history *tx_hw_desc_history =
-						&soc->tx_hw_desc_history;
+		&soc->tx_hw_desc_history;
 	struct dp_tx_hw_desc_evt *evt;
 	uint32_t idx = 0;
 	uint16_t slot = 0;
@@ -167,8 +166,7 @@ dp_tx_record_hw_desc_rh(uint8_t *hal_tx_desc_cached, struct dp_soc *soc)
 		return;
 
 	dp_get_frag_hist_next_atomic_idx(&tx_hw_desc_history->index, &idx,
-					 &slot,
-					 DP_TX_HW_DESC_HIST_SLOT_SHIFT,
+					 &slot, DP_TX_HW_DESC_HIST_SLOT_SHIFT,
 					 DP_TX_HW_DESC_HIST_PER_SLOT_MAX,
 					 DP_TX_HW_DESC_HIST_MAX);
 
@@ -178,8 +176,8 @@ dp_tx_record_hw_desc_rh(uint8_t *hal_tx_desc_cached, struct dp_soc *soc)
 	evt->tcl_ring_id = 0;
 }
 #else
-static inline void
-dp_tx_record_hw_desc_rh(uint8_t *hal_tx_desc_cached, struct dp_soc *soc)
+static inline void dp_tx_record_hw_desc_rh(uint8_t *hal_tx_desc_cached,
+					   struct dp_soc *soc)
 {
 }
 #endif
@@ -201,19 +199,25 @@ static void dp_tx_update_write_index(struct dp_soc *soc,
 	ret = hif_rtpm_get(HIF_RTPM_GET_ASYNC, HIF_RTPM_ID_DP);
 	if (QDF_IS_STATUS_SUCCESS(ret)) {
 		if (hif_system_pm_state_check(soc->hif_handle)) {
-			ce_ring_set_event(((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring,
-					  CE_RING_FLUSH_EVENT);
-			ce_ring_inc_flush_cnt(((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring);
+			ce_ring_set_event(
+				((struct CE_state *)(tx_ep_info->ce_tx_hdl))
+					->src_ring,
+				CE_RING_FLUSH_EVENT);
+			ce_ring_inc_flush_cnt(
+				((struct CE_state *)(tx_ep_info->ce_tx_hdl))
+					->src_ring);
 		} else {
-			ce_tx_ring_write_idx_update_wrapper(tx_ep_info->ce_tx_hdl,
-							    coalesce);
+			ce_tx_ring_write_idx_update_wrapper(
+				tx_ep_info->ce_tx_hdl, coalesce);
 		}
 		hif_rtpm_put(HIF_RTPM_PUT_ASYNC, HIF_RTPM_ID_DP);
 	} else {
 		dp_runtime_get(soc);
-		ce_ring_set_event(((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring,
-				  CE_RING_FLUSH_EVENT);
-		ce_ring_inc_flush_cnt(((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring);
+		ce_ring_set_event(
+			((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring,
+			CE_RING_FLUSH_EVENT);
+		ce_ring_inc_flush_cnt(
+			((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring);
 		qdf_atomic_inc(&soc->tx_pending_rtpm);
 		dp_runtime_put(soc);
 	}
@@ -223,9 +227,11 @@ static void dp_tx_update_write_index(struct dp_soc *soc,
 				     struct dp_tx_ep_info_rh *tx_ep_info)
 {
 	if (hif_system_pm_state_check(soc->hif_handle)) {
-		ce_ring_set_event(((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring,
-				  CE_RING_FLUSH_EVENT);
-		ce_ring_inc_flush_cnt(((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring);
+		ce_ring_set_event(
+			((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring,
+			CE_RING_FLUSH_EVENT);
+		ce_ring_inc_flush_cnt(
+			((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring);
 	} else {
 		ce_tx_ring_write_idx_update_wrapper(tx_ep_info->ce_tx_hdl,
 						    coalesce);
@@ -235,8 +241,7 @@ static void dp_tx_update_write_index(struct dp_soc *soc,
 static void dp_tx_update_write_index(struct dp_soc *soc,
 				     struct dp_tx_ep_info_rh *tx_ep_info)
 {
-	ce_tx_ring_write_idx_update_wrapper(tx_ep_info->ce_tx_hdl,
-					    coalesce);
+	ce_tx_ring_write_idx_update_wrapper(tx_ep_info->ce_tx_hdl, coalesce);
 }
 #endif
 
@@ -257,9 +262,11 @@ int dp_flush_tx_ring_rh(struct dp_pdev *pdev, int ring_id)
 	ret = hif_rtpm_get(HIF_RTPM_GET_ASYNC, HIF_RTPM_ID_DP);
 	if (ret) {
 		ce_ring_release_lock(tx_ep_info->ce_tx_hdl);
-		ce_ring_set_event(((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring,
-				  CE_RING_FLUSH_EVENT);
-		ce_ring_inc_flush_cnt(((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring);
+		ce_ring_set_event(
+			((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring,
+			CE_RING_FLUSH_EVENT);
+		ce_ring_inc_flush_cnt(
+			((struct CE_state *)(tx_ep_info->ce_tx_hdl))->src_ring);
 		return ret;
 	}
 
@@ -286,14 +293,16 @@ dp_tx_hw_enqueue_rh(struct dp_soc *soc, struct dp_vdev *vdev,
 	int ret;
 
 	/*
-	 * Setting it initialization statically here to avoid
-	 * a memset call jump with qdf_mem_set call
-	 */
+   * Setting it initialization statically here to avoid
+   * a memset call jump with qdf_mem_set call
+   */
 	uint8_t cached_desc[HAL_TX_DESC_LEN_BYTES] = { 0 };
 
-	enum cdp_sec_type sec_type = ((tx_exc_metadata &&
-			tx_exc_metadata->sec_type != CDP_INVALID_SEC_TYPE) ?
-			tx_exc_metadata->sec_type : vdev->sec_type);
+	enum cdp_sec_type sec_type =
+		((tx_exc_metadata &&
+		  tx_exc_metadata->sec_type != CDP_INVALID_SEC_TYPE) ?
+			 tx_exc_metadata->sec_type :
+			 vdev->sec_type);
 
 	QDF_STATUS status = QDF_STATUS_E_RESOURCES;
 
@@ -331,7 +340,7 @@ dp_tx_hw_enqueue_rh(struct dp_soc *soc, struct dp_vdev *vdev,
 
 	/* verify checksum offload configuration*/
 	if ((qdf_nbuf_get_tx_cksum(nbuf) == QDF_NBUF_TX_CKSUM_TCP_UDP) ||
-	    qdf_nbuf_is_tso(nbuf))  {
+	    qdf_nbuf_is_tso(nbuf)) {
 		hal_tx_desc_set_l3_checksum_en(hal_tx_desc_cached, 1);
 		hal_tx_desc_set_l4_checksum_en(hal_tx_desc_cached, 1);
 	}
@@ -345,11 +354,10 @@ dp_tx_hw_enqueue_rh(struct dp_soc *soc, struct dp_vdev *vdev,
 	if (!dp_tx_desc_set_ktimestamp(vdev, tx_desc))
 		dp_tx_desc_set_timestamp(tx_desc);
 
-	dp_verbose_debug("length:%d , type = %d, dma_addr %llx, offset %d desc id %u",
-			 tx_desc->length,
-			 (tx_desc->flags & DP_TX_DESC_FLAG_FRAG),
-			 (uint64_t)tx_desc->dma_addr, tx_desc->pkt_offset,
-			 tx_desc->id);
+	dp_verbose_debug(
+		"length:%d , type = %d, dma_addr %llx, offset %d desc id %u",
+		tx_desc->length, (tx_desc->flags & DP_TX_DESC_FLAG_FRAG),
+		(uint64_t)tx_desc->dma_addr, tx_desc->pkt_offset, tx_desc->id);
 
 	hal_tx_desc_sync(hal_tx_desc_cached, tx_desc->tcl_cmd_vaddr);
 
@@ -380,8 +388,8 @@ dp_tx_hw_enqueue_rh(struct dp_soc *soc, struct dp_vdev *vdev,
 		goto enqueue_fail;
 	}
 
-	coalesce = dp_tx_attempt_coalescing(soc, vdev, tx_desc, tid,
-					    msdu_info, 0);
+	coalesce =
+		dp_tx_attempt_coalescing(soc, vdev, tx_desc, tid, msdu_info, 0);
 
 	dp_tx_update_write_index(soc, tx_ep_info, coalesce);
 	ce_ring_release_lock(tx_ep_info->ce_tx_hdl);
@@ -412,9 +420,9 @@ enqueue_fail:
  * Return: QDF_STATUS_SUCCESS
  *	   QDF_STATUS_E_NOMEM
  */
-static QDF_STATUS
-dp_tx_tcl_desc_pool_alloc_rh(struct dp_soc *soc, uint32_t num_elem,
-			     uint8_t pool_id)
+static QDF_STATUS dp_tx_tcl_desc_pool_alloc_rh(struct dp_soc *soc,
+					       uint32_t num_elem,
+					       uint8_t pool_id)
 {
 	struct dp_soc_rh *rh_soc = dp_get_rh_soc_from_dp_soc(soc);
 	struct dp_tx_tcl_desc_pool_s *tcl_desc_pool;
@@ -429,8 +437,8 @@ dp_tx_tcl_desc_pool_alloc_rh(struct dp_soc *soc, uint32_t num_elem,
 	tcl_desc_pool = &rh_soc->tcl_desc_pool[pool_id];
 	memctx = qdf_get_dma_mem_context(tcl_desc_pool, memctx);
 	dp_desc_multi_pages_mem_alloc(soc, QDF_DP_TX_TCL_DESC_TYPE,
-				      &tcl_desc_pool->desc_pages,
-				      elem_size, num_elem, memctx, false);
+				      &tcl_desc_pool->desc_pages, elem_size,
+				      num_elem, memctx, false);
 
 	if (!tcl_desc_pool->desc_pages.num_pages) {
 		dp_err("failed to allocate tcl desc Pages");
@@ -442,8 +450,7 @@ dp_tx_tcl_desc_pool_alloc_rh(struct dp_soc *soc, uint32_t num_elem,
 
 err_alloc_fail:
 	dp_desc_multi_pages_mem_free(soc, QDF_DP_TX_TCL_DESC_TYPE,
-				     &tcl_desc_pool->desc_pages,
-				     memctx, false);
+				     &tcl_desc_pool->desc_pages, memctx, false);
 	return status;
 }
 
@@ -466,8 +473,7 @@ static void dp_tx_tcl_desc_pool_free_rh(struct dp_soc *soc, uint8_t pool_id)
 	memctx = qdf_get_dma_mem_context(tcl_desc_pool, memctx);
 
 	dp_desc_multi_pages_mem_free(soc, QDF_DP_TX_TCL_DESC_TYPE,
-				     &tcl_desc_pool->desc_pages,
-				     memctx, false);
+				     &tcl_desc_pool->desc_pages, memctx, false);
 }
 
 /**
@@ -480,9 +486,9 @@ static void dp_tx_tcl_desc_pool_free_rh(struct dp_soc *soc, uint8_t pool_id)
  * Return: QDF_STATUS_SUCCESS
  *	   QDF_STATUS_E_FAULT
  */
-static QDF_STATUS
-dp_tx_tcl_desc_pool_init_rh(struct dp_soc *soc, uint32_t num_elem,
-			    uint8_t pool_id)
+static QDF_STATUS dp_tx_tcl_desc_pool_init_rh(struct dp_soc *soc,
+					      uint32_t num_elem,
+					      uint8_t pool_id)
 {
 	struct dp_soc_rh *rh_soc = dp_get_rh_soc_from_dp_soc(soc);
 	struct dp_tx_tcl_desc_pool_s *tcl_desc_pool;
@@ -496,8 +502,7 @@ dp_tx_tcl_desc_pool_init_rh(struct dp_soc *soc, uint32_t num_elem,
 	/* Link tcl descriptors into a freelist */
 	if (qdf_mem_multi_page_link(soc->osdev, &tcl_desc_pool->desc_pages,
 				    tcl_desc_pool->elem_size,
-				    tcl_desc_pool->elem_count,
-				    false)) {
+				    tcl_desc_pool->elem_count, false)) {
 		dp_err("failed to link tcl desc Pages");
 		status = QDF_STATUS_E_FAULT;
 		goto err_link_fail;
@@ -551,8 +556,7 @@ static void dp_tx_alloc_tcl_desc_rh(struct dp_tx_tcl_desc_pool_s *tcl_desc_pool,
 		dma_page->page_p_addr + offset * tcl_desc_pool->elem_size;
 }
 
-QDF_STATUS dp_tx_desc_pool_init_rh(struct dp_soc *soc,
-				   uint32_t num_elem,
+QDF_STATUS dp_tx_desc_pool_init_rh(struct dp_soc *soc, uint32_t num_elem,
 				   uint8_t pool_id)
 {
 	struct dp_soc_rh *rh_soc = dp_get_rh_soc_from_dp_soc(soc);
@@ -597,7 +601,7 @@ QDF_STATUS dp_tx_desc_pool_init_rh(struct dp_soc *soc,
 		page_id = count / num_desc_per_page;
 		offset = count % num_desc_per_page;
 		id = ((pool_id_32 << DP_TX_DESC_ID_POOL_OS) |
-			(page_id << DP_TX_DESC_ID_PAGE_OS) | offset);
+		      (page_id << DP_TX_DESC_ID_PAGE_OS) | offset);
 
 		tx_desc->id = id;
 		tx_desc->pool_id = pool_id;
@@ -631,8 +635,7 @@ void dp_tx_desc_pool_deinit_rh(struct dp_soc *soc,
 	dp_tx_tcl_desc_pool_deinit_rh(soc, pool_id);
 }
 
-QDF_STATUS dp_tx_compute_tx_delay_rh(struct dp_soc *soc,
-				     struct dp_vdev *vdev,
+QDF_STATUS dp_tx_compute_tx_delay_rh(struct dp_soc *soc, struct dp_vdev *vdev,
 				     struct hal_tx_completion_status *ts,
 				     uint32_t *delay_us)
 {
@@ -709,7 +712,8 @@ void dp_tx_compl_handler_rh(struct dp_soc *soc, qdf_nbuf_t htt_msg)
 	msg_word += HTT_SOFT_UMAC_TX_COMPL_IND_SIZE >> 2;
 
 	for (i = 0; i < num_msdus; i++) {
-		sw_cookie = HTT_TX_BUFFER_ADDR_INFO_SW_BUFFER_COOKIE_GET(*(msg_word + 1));
+		sw_cookie = HTT_TX_BUFFER_ADDR_INFO_SW_BUFFER_COOKIE_GET(
+			*(msg_word + 1));
 
 		tx_desc = dp_tx_comp_find_tx_desc_rh(soc, sw_cookie);
 		if (!tx_desc) {
@@ -718,9 +722,9 @@ void dp_tx_compl_handler_rh(struct dp_soc *soc, qdf_nbuf_t htt_msg)
 		}
 
 		/*
-		 * If the descriptor is already freed in vdev_detach,
-		 * continue to next descriptor
-		 */
+     * If the descriptor is already freed in vdev_detach,
+     * continue to next descriptor
+     */
 		if (qdf_unlikely((tx_desc->vdev_id == DP_INVALID_VDEV_ID) &&
 				 !tx_desc->flags)) {
 			dp_tx_comp_info_rl("Descriptor freed in vdev_detach %d",
@@ -746,18 +750,21 @@ void dp_tx_compl_handler_rh(struct dp_soc *soc, qdf_nbuf_t htt_msg)
 			qdf_assert_always(0);
 		}
 
-		if (HTT_TX_BUFFER_ADDR_INFO_RELEASE_SOURCE_GET(*(msg_word + 1)) ==
-		    HTT_TX_MSDU_RELEASE_SOURCE_FW)
+		if (HTT_TX_BUFFER_ADDR_INFO_RELEASE_SOURCE_GET(
+			    *(msg_word + 1)) == HTT_TX_MSDU_RELEASE_SOURCE_FW)
 			tx_desc->buffer_src = HAL_TX_COMP_RELEASE_SOURCE_FW;
 		else
 			tx_desc->buffer_src = HAL_TX_COMP_RELEASE_SOURCE_TQM;
 
-		tx_desc->peer_id = HTT_TX_MSDU_INFO_SW_PEER_ID_GET(*(msg_word + 2));
-		tx_status = HTT_TX_MSDU_INFO_RELEASE_REASON_GET(*(msg_word + 3));
+		tx_desc->peer_id =
+			HTT_TX_MSDU_INFO_SW_PEER_ID_GET(*(msg_word + 2));
+		tx_status =
+			HTT_TX_MSDU_INFO_RELEASE_REASON_GET(*(msg_word + 3));
 
 		tx_desc->tx_status =
 			(tx_status == HTT_TX_MSDU_RELEASE_REASON_FRAME_ACKED ?
-			 HAL_TX_TQM_RR_FRAME_ACKED : HAL_TX_TQM_RR_REM_CMD_REM);
+				 HAL_TX_TQM_RR_FRAME_ACKED :
+				 HAL_TX_TQM_RR_REM_CMD_REM);
 
 		qdf_mem_copy(&tx_desc->comp, msg_word, HTT_TX_MSDU_INFO_SIZE);
 
@@ -777,8 +784,8 @@ next_msdu:
 	}
 
 	/* For now, pass ring_id as 0 (zero) as WCN6450 only
-	 * supports one TX ring.
-	 */
+   * supports one TX ring.
+   */
 	ring_id = 0;
 
 	if (head_desc)

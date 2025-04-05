@@ -18,11 +18,11 @@
  *  DOC: osif_twt_ext_util.c
  */
 #include <include/wlan_mlme_cmn.h>
-#include <osif_twt_util.h>
-#include <osif_twt_rsp.h>
-#include <osif_twt_ext_rsp.h>
-#include <wlan_twt_ucfg_ext_api.h>
 #include <osif_twt_ext_req.h>
+#include <osif_twt_ext_rsp.h>
+#include <osif_twt_rsp.h>
+#include <osif_twt_util.h>
+#include <wlan_twt_ucfg_ext_api.h>
 
 static struct mlme_twt_ops twt_ops = {
 	.mlme_twt_enable_complete_cb = osif_twt_enable_complete_cb,
@@ -52,4 +52,3 @@ QDF_STATUS osif_twt_register_cb(void)
 {
 	return ucfg_twt_set_osif_cb(osif_twt_get_global_ops);
 }
-

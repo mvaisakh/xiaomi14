@@ -20,10 +20,10 @@
  *  This file contains mgmt rx re-ordering tgt layer related function
  *  definitions
  */
-#include <wlan_mgmt_txrx_rx_reo_tgt_api.h>
-#include <wlan_mlo_mgr_cmn.h>
 #include "../../core/src/wlan_mgmt_txrx_rx_reo_i.h"
 #include <../../core/src/wlan_mgmt_txrx_main_i.h>
+#include <wlan_mgmt_txrx_rx_reo_tgt_api.h>
+#include <wlan_mlo_mgr_cmn.h>
 
 QDF_STATUS
 tgt_mgmt_rx_reo_get_num_active_hw_links(struct wlan_objmgr_psoc *psoc,
@@ -63,18 +63,18 @@ tgt_mgmt_rx_reo_get_valid_hw_link_bitmap(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	return mgmt_rx_reo_txops->get_valid_hw_link_bitmap(psoc,
-						valid_hw_link_bitmap);
+	return mgmt_rx_reo_txops->get_valid_hw_link_bitmap(
+		psoc, valid_hw_link_bitmap);
 }
 
 QDF_STATUS
 tgt_mgmt_rx_reo_read_snapshot(
-			struct wlan_objmgr_pdev *pdev,
-			struct mgmt_rx_reo_snapshot_info *snapshot_info,
-			enum mgmt_rx_reo_shared_snapshot_id id,
-			struct mgmt_rx_reo_snapshot_params *value,
-			struct mgmt_rx_reo_shared_snapshot (*raw_snapshot)
-			[MGMT_RX_REO_SNAPSHOT_B2B_READ_SWAR_RETRY_LIMIT])
+	struct wlan_objmgr_pdev *pdev,
+	struct mgmt_rx_reo_snapshot_info *snapshot_info,
+	enum mgmt_rx_reo_shared_snapshot_id id,
+	struct mgmt_rx_reo_snapshot_params *value,
+	struct mgmt_rx_reo_shared_snapshot (
+		*raw_snapshot)[MGMT_RX_REO_SNAPSHOT_B2B_READ_SWAR_RETRY_LIMIT])
 {
 	struct wlan_lmac_if_mgmt_rx_reo_tx_ops *mgmt_rx_reo_txops;
 
@@ -89,9 +89,8 @@ tgt_mgmt_rx_reo_read_snapshot(
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	return mgmt_rx_reo_txops->read_mgmt_rx_reo_snapshot(pdev, snapshot_info,
-							    id, value,
-							    raw_snapshot);
+	return mgmt_rx_reo_txops->read_mgmt_rx_reo_snapshot(
+		pdev, snapshot_info, id, value, raw_snapshot);
 }
 
 /**
@@ -103,14 +102,12 @@ tgt_mgmt_rx_reo_read_snapshot(
  *
  * Return: QDF_STATUS of operation
  */
-static QDF_STATUS
-tgt_mgmt_rx_reo_enter_algo_without_buffer(
-				struct wlan_objmgr_pdev *pdev,
-				struct mgmt_rx_reo_params *reo_params,
-				enum mgmt_rx_reo_frame_descriptor_type type)
+static QDF_STATUS tgt_mgmt_rx_reo_enter_algo_without_buffer(
+	struct wlan_objmgr_pdev *pdev, struct mgmt_rx_reo_params *reo_params,
+	enum mgmt_rx_reo_frame_descriptor_type type)
 {
-	struct mgmt_rx_event_params mgmt_rx_params = {0};
-	struct mgmt_rx_reo_frame_descriptor desc = {0};
+	struct mgmt_rx_event_params mgmt_rx_params = { 0 };
+	struct mgmt_rx_reo_frame_descriptor desc = { 0 };
 	bool is_frm_queued;
 	QDF_STATUS status;
 	int8_t link_id;
@@ -122,7 +119,7 @@ tgt_mgmt_rx_reo_enter_algo_without_buffer(
 	}
 
 	if (!wlan_mgmt_rx_reo_is_feature_enabled_at_pdev(pdev))
-		return  QDF_STATUS_SUCCESS;
+		return QDF_STATUS_SUCCESS;
 
 	if (!reo_params) {
 		mgmt_rx_reo_err("mgmt rx reo params are null");
@@ -175,7 +172,7 @@ tgt_mgmt_rx_reo_fw_consumed_event_handler(struct wlan_objmgr_pdev *pdev,
 					  struct mgmt_rx_reo_params *params)
 {
 	return tgt_mgmt_rx_reo_enter_algo_without_buffer(
-			pdev, params, MGMT_RX_REO_FRAME_DESC_FW_CONSUMED_FRAME);
+		pdev, params, MGMT_RX_REO_FRAME_DESC_FW_CONSUMED_FRAME);
 }
 
 QDF_STATUS
@@ -183,7 +180,7 @@ tgt_mgmt_rx_reo_host_drop_handler(struct wlan_objmgr_pdev *pdev,
 				  struct mgmt_rx_reo_params *params)
 {
 	return tgt_mgmt_rx_reo_enter_algo_without_buffer(
-			pdev, params, MGMT_RX_REO_FRAME_DESC_ERROR_FRAME);
+		pdev, params, MGMT_RX_REO_FRAME_DESC_ERROR_FRAME);
 }
 
 /**
@@ -195,8 +192,8 @@ tgt_mgmt_rx_reo_host_drop_handler(struct wlan_objmgr_pdev *pdev,
  *
  * Return: void
  */
-static void
-psoc_get_hw_link_id_bmap(struct wlan_objmgr_psoc *psoc, void *obj, void *arg)
+static void psoc_get_hw_link_id_bmap(struct wlan_objmgr_psoc *psoc, void *obj,
+				     void *arg)
 {
 	struct wlan_objmgr_pdev *pdev = (struct wlan_objmgr_pdev *)obj;
 	uint32_t *link_bitmap = (uint32_t *)arg;
@@ -217,8 +214,8 @@ tgt_mgmt_rx_reo_release_frames(struct wlan_objmgr_psoc *psoc)
 	mlo_grp_id = wlan_mlo_get_psoc_group_id(psoc);
 
 	wlan_objmgr_iterate_obj_list(psoc, WLAN_PDEV_OP,
-				     psoc_get_hw_link_id_bmap,
-				     &link_bitmap, false, WLAN_MGMT_RX_REO_ID);
+				     psoc_get_hw_link_id_bmap, &link_bitmap,
+				     false, WLAN_MGMT_RX_REO_ID);
 
 	return wlan_mgmt_rx_reo_release_frames(mlo_grp_id, link_bitmap);
 }
@@ -243,10 +240,9 @@ QDF_STATUS tgt_mgmt_rx_reo_filter_config(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS
-tgt_mgmt_rx_reo_get_snapshot_info
-			(struct wlan_objmgr_pdev *pdev,
-			 enum mgmt_rx_reo_shared_snapshot_id id,
-			 struct mgmt_rx_reo_snapshot_info *snapshot_info)
+tgt_mgmt_rx_reo_get_snapshot_info(
+	struct wlan_objmgr_pdev *pdev, enum mgmt_rx_reo_shared_snapshot_id id,
+	struct mgmt_rx_reo_snapshot_info *snapshot_info)
 {
 	struct wlan_lmac_if_mgmt_rx_reo_tx_ops *mgmt_rx_reo_txops;
 
@@ -265,8 +261,7 @@ tgt_mgmt_rx_reo_get_snapshot_info
 								snapshot_info);
 }
 
-bool
-wlan_mgmt_rx_reo_check_simulation_in_progress(struct wlan_objmgr_pdev *pdev)
+bool wlan_mgmt_rx_reo_check_simulation_in_progress(struct wlan_objmgr_pdev *pdev)
 {
 	uint8_t ml_grp_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -290,13 +285,12 @@ wlan_mgmt_rx_reo_check_simulation_in_progress(struct wlan_objmgr_pdev *pdev)
 	return true;
 }
 
-QDF_STATUS tgt_mgmt_rx_reo_frame_handler(
-				struct wlan_objmgr_pdev *pdev,
-				qdf_nbuf_t buf,
-				struct mgmt_rx_event_params *mgmt_rx_params)
+QDF_STATUS
+tgt_mgmt_rx_reo_frame_handler(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t buf,
+			      struct mgmt_rx_event_params *mgmt_rx_params)
 {
 	QDF_STATUS status;
-	struct mgmt_rx_reo_frame_descriptor desc = {0};
+	struct mgmt_rx_reo_frame_descriptor desc = { 0 };
 	bool is_queued;
 	int8_t link_id;
 	uint8_t ml_grp_id;
@@ -392,9 +386,9 @@ QDF_STATUS tgt_mgmt_rx_reo_frame_handler(
 			mgmt_rx_reo_warn_rl("Failed to execute REO algorithm");
 
 		/**
-		 *  If frame is queued, we shouldn't free up params and
-		 *  buf pointers.
-		 */
+     *  If frame is queued, we shouldn't free up params and
+     *  buf pointers.
+     */
 		if (is_queued)
 			return status;
 	}

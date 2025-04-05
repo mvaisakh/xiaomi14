@@ -23,14 +23,13 @@
  * implementation for creating sysfs file reassoc
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
 #include "wlan_hdd_sysfs_reassoc.h"
+#include "osif_vdev_sync.h"
 #include "wlan_cm_roam_ucfg_api.h"
+#include <wlan_hdd_includes.h>
 
-static ssize_t
-__wlan_hdd_store_reassoc_sysfs(struct net_device *net_dev, char const *buf,
-			       size_t count)
+static ssize_t __wlan_hdd_store_reassoc_sysfs(struct net_device *net_dev,
+					      char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -80,8 +79,7 @@ static ssize_t wlan_hdd_store_reassoc_sysfs(struct device *dev,
 	return err_size;
 }
 
-static DEVICE_ATTR(reassoc, 0220,
-		   NULL, wlan_hdd_store_reassoc_sysfs);
+static DEVICE_ATTR(reassoc, 0220, NULL, wlan_hdd_store_reassoc_sysfs);
 
 int hdd_sysfs_reassoc_create(struct hdd_adapter *adapter)
 {

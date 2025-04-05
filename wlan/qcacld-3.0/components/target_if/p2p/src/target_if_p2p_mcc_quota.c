@@ -21,10 +21,10 @@
  * processing
  */
 
-#include <wmi_unified_api.h>
-#include "wlan_p2p_mcc_quota_public_struct.h"
-#include "target_if.h"
 #include "target_if_p2p_mcc_quota.h"
+#include "target_if.h"
+#include "wlan_p2p_mcc_quota_public_struct.h"
+#include <wmi_unified_api.h>
 
 /**
  * target_if_mcc_quota_event_handler() - WMI callback for mcc_quota
@@ -70,8 +70,7 @@ static int target_if_mcc_quota_event_handler(ol_scn_t scn, uint8_t *data,
 	if (!event_info)
 		return -ENOMEM;
 
-	if (wmi_extract_mcc_quota_ev_param(wmi_handle, data,
-					   event_info)) {
+	if (wmi_extract_mcc_quota_ev_param(wmi_handle, data, event_info)) {
 		target_if_err("failed to extract mcc quota event");
 		qdf_mem_free(event_info);
 		return -EINVAL;
@@ -116,19 +115,21 @@ target_if_register_mcc_quota_event_handler(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 	if (reg) {
-		status = wmi_unified_register_event_handler(wmi_handle,
-							    wmi_resmgr_chan_time_quota_changed_eventid,
-							    target_if_mcc_quota_event_handler,
-							    WMI_RX_SERIALIZER_CTX);
+		status = wmi_unified_register_event_handler(
+			wmi_handle, wmi_resmgr_chan_time_quota_changed_eventid,
+			target_if_mcc_quota_event_handler,
+			WMI_RX_SERIALIZER_CTX);
 
-		target_if_debug("wmi register mcc_quota event handle, status:%d",
-				status);
+		target_if_debug(
+			"wmi register mcc_quota event handle, status:%d",
+			status);
 	} else {
-		status = wmi_unified_unregister_event_handler(wmi_handle,
-							      wmi_resmgr_chan_time_quota_changed_eventid);
+		status = wmi_unified_unregister_event_handler(
+			wmi_handle, wmi_resmgr_chan_time_quota_changed_eventid);
 
-		target_if_debug("wmi unregister mcc_quota event handle, status:%d",
-				status);
+		target_if_debug(
+			"wmi unregister mcc_quota event handle, status:%d",
+			status);
 	}
 
 	return status;
@@ -139,5 +140,5 @@ void target_if_mcc_quota_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 	struct wlan_lmac_if_p2p_tx_ops *p2p_tx_ops = &tx_ops->p2p;
 
 	p2p_tx_ops->reg_mcc_quota_ev_handler =
-			target_if_register_mcc_quota_event_handler;
+		target_if_register_mcc_quota_event_handler;
 }

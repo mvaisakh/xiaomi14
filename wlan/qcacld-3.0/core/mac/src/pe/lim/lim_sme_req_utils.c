@@ -30,17 +30,17 @@
  *
  */
 
-#include "wni_api.h"
-#include "wni_cfg.h"
-#include "sir_api.h"
-#include "sch_api.h"
-#include "utils_api.h"
-#include "lim_types.h"
-#include "lim_utils.h"
+#include "lim_sme_req_utils.h"
 #include "lim_assoc_utils.h"
 #include "lim_security_utils.h"
 #include "lim_ser_des_utils.h"
-#include "lim_sme_req_utils.h"
+#include "lim_types.h"
+#include "lim_utils.h"
+#include "sch_api.h"
+#include "sir_api.h"
+#include "utils_api.h"
+#include "wni_api.h"
+#include "wni_cfg.h"
 
 /**
  * lim_is_rsn_ie_valid_in_sme_req_message()
@@ -65,12 +65,11 @@ lim_is_rsn_ie_valid_in_sme_req_message(struct mac_context *mac_ctx,
 	val = mac_ctx->mlme_cfg->feature_flags.enable_rsn;
 	if (rsn_ie->length && !val) {
 		/* Privacy & RSN not enabled in CFG.
-		 * In order to allow mixed mode for Guest access
-		 * allow BSS creation/join with no Privacy capability
-		 * yet advertising WPA IE
-		 */
-		pe_debug("RSN ie len: %d RSN: %d",
-			       rsn_ie->length, val);
+     * In order to allow mixed mode for Guest access
+     * allow BSS creation/join with no Privacy capability
+     * yet advertising WPA IE
+     */
+		pe_debug("RSN ie len: %d RSN: %d", rsn_ie->length, val);
 	}
 
 	if (!rsn_ie->length) {
@@ -84,8 +83,7 @@ lim_is_rsn_ie_valid_in_sme_req_message(struct mac_context *mac_ctx,
 #endif
 	    && (rsn_ie->rsnIEdata[0] != DOT11F_EID_WPA)) {
 		pe_err("RSN/WPA/WAPI EID: %d not [%d || %d]",
-			rsn_ie->rsnIEdata[0], DOT11F_EID_RSN,
-			DOT11F_EID_WPA);
+		       rsn_ie->rsnIEdata[0], DOT11F_EID_RSN, DOT11F_EID_WPA);
 		return false;
 	}
 
@@ -94,15 +92,15 @@ lim_is_rsn_ie_valid_in_sme_req_message(struct mac_context *mac_ctx,
 	while (len > 0) {
 		switch (rsn_ie->rsnIEdata[start]) {
 		case DOT11F_EID_RSN:
-		/* Check validity of RSN IE */
+			/* Check validity of RSN IE */
 			if ((rsn_ie->rsnIEdata[start + 1] >
-			    DOT11F_IE_RSN_MAX_LEN)
-			    || (rsn_ie->rsnIEdata[start + 1] <
-				DOT11F_IE_RSN_MIN_LEN)) {
+			     DOT11F_IE_RSN_MAX_LEN) ||
+			    (rsn_ie->rsnIEdata[start + 1] <
+			     DOT11F_IE_RSN_MIN_LEN)) {
 				pe_err("RSN IE len: %d not [%d,%d]",
-					rsn_ie->rsnIEdata[start + 1],
-					DOT11F_IE_RSN_MIN_LEN,
-					DOT11F_IE_RSN_MAX_LEN);
+				       rsn_ie->rsnIEdata[start + 1],
+				       DOT11F_IE_RSN_MIN_LEN,
+				       DOT11F_IE_RSN_MAX_LEN);
 				return false;
 			}
 			break;
@@ -112,32 +110,33 @@ lim_is_rsn_ie_valid_in_sme_req_message(struct mac_context *mac_ctx,
 				break;
 
 			if (start <= (WLAN_MAX_IE_LEN - sizeof(uint32_t)))
-				val = sir_read_u32((uint8_t *) &
-					rsn_ie->rsnIEdata[start + 2]);
+				val = sir_read_u32(
+					(uint8_t *)&rsn_ie
+						->rsnIEdata[start + 2]);
 
 			if ((rsn_ie->rsnIEdata[start + 1] <
-			     DOT11F_IE_WPA_MIN_LEN)
-			    || (rsn_ie->rsnIEdata[start + 1] >
-				DOT11F_IE_WPA_MAX_LEN)
-			    || (SIR_MAC_WPA_OUI != val)) {
+			     DOT11F_IE_WPA_MIN_LEN) ||
+			    (rsn_ie->rsnIEdata[start + 1] >
+			     DOT11F_IE_WPA_MAX_LEN) ||
+			    (SIR_MAC_WPA_OUI != val)) {
 				pe_err("WPA IE len: %d not [%d,%d] OR data 0x%x not 0x%x",
-					rsn_ie->rsnIEdata[start + 1],
-					DOT11F_IE_WPA_MIN_LEN,
-					DOT11F_IE_WPA_MAX_LEN,
-					val, SIR_MAC_WPA_OUI);
+				       rsn_ie->rsnIEdata[start + 1],
+				       DOT11F_IE_WPA_MIN_LEN,
+				       DOT11F_IE_WPA_MAX_LEN, val,
+				       SIR_MAC_WPA_OUI);
 				return false;
 			}
 			break;
 #ifdef FEATURE_WLAN_WAPI
 		case DOT11F_EID_WAPI:
 			if ((rsn_ie->rsnIEdata[start + 1] >
-			    DOT11F_IE_WAPI_MAX_LEN)
-			    || (rsn_ie->rsnIEdata[start + 1] <
-				DOT11F_IE_WAPI_MIN_LEN)) {
+			     DOT11F_IE_WAPI_MAX_LEN) ||
+			    (rsn_ie->rsnIEdata[start + 1] <
+			     DOT11F_IE_WAPI_MIN_LEN)) {
 				pe_err("WAPI IE len: %d not [%d,%d]",
-					rsn_ie->rsnIEdata[start + 1],
-					DOT11F_IE_WAPI_MIN_LEN,
-					DOT11F_IE_WAPI_MAX_LEN);
+				       rsn_ie->rsnIEdata[start + 1],
+				       DOT11F_IE_WAPI_MIN_LEN,
+				       DOT11F_IE_WAPI_MAX_LEN);
 				return false;
 			}
 			break;
@@ -181,13 +180,13 @@ lim_set_rs_nie_wp_aiefrom_sme_start_bss_req_message(struct mac_context *mac_ctx,
 	val = mac_ctx->mlme_cfg->feature_flags.enable_rsn;
 	if (rsn_ie->length && (!privacy || !val)) {
 		/*
-		 * Privacy & RSN not enabled in CFG.
-		 * In order to allow mixed mode for Guest access
-		 * allow BSS creation/join with no Privacy capability
-		 * yet advertising WPA IE
-		 */
+     * Privacy & RSN not enabled in CFG.
+     * In order to allow mixed mode for Guest access
+     * allow BSS creation/join with no Privacy capability
+     * yet advertising WPA IE
+     */
 		pe_debug("RSN ie len: %d but PRIVACY: %d RSN: %d",
-			rsn_ie->length, privacy, val);
+			 rsn_ie->length, privacy, val);
 	}
 
 	if (!rsn_ie->length)
@@ -195,24 +194,22 @@ lim_set_rs_nie_wp_aiefrom_sme_start_bss_req_message(struct mac_context *mac_ctx,
 
 	if ((rsn_ie->rsnIEdata[0] != WLAN_ELEMID_RSN) &&
 	    (rsn_ie->rsnIEdata[0] != SIR_MAC_WPA_EID)) {
-		pe_err("RSN/WPA EID: %d not [%d || %d]",
-			rsn_ie->rsnIEdata[0], WLAN_ELEMID_RSN,
-			SIR_MAC_WPA_EID);
+		pe_err("RSN/WPA EID: %d not [%d || %d]", rsn_ie->rsnIEdata[0],
+		       WLAN_ELEMID_RSN, SIR_MAC_WPA_EID);
 		return false;
 	}
 	/* Check validity of RSN IE */
 	if ((rsn_ie->rsnIEdata[0] == WLAN_ELEMID_RSN) &&
 	    (rsn_ie->rsnIEdata[1] < SIR_MAC_RSN_IE_MIN_LENGTH)) {
-		pe_err("RSN IE len: %d not [%d,%d]",
-			rsn_ie->rsnIEdata[1], SIR_MAC_RSN_IE_MIN_LENGTH,
-			WLAN_MAX_IE_LEN);
+		pe_err("RSN IE len: %d not [%d,%d]", rsn_ie->rsnIEdata[1],
+		       SIR_MAC_RSN_IE_MIN_LENGTH, WLAN_MAX_IE_LEN);
 		return false;
 	}
 
 	if (rsn_ie->length > rsn_ie->rsnIEdata[1] + 2) {
 		if (rsn_ie->rsnIEdata[0] != WLAN_ELEMID_RSN) {
 			pe_err("First byte: %d in rsnIEdata isn't RSN_EID",
-				rsn_ie->rsnIEdata[1]);
+			       rsn_ie->rsnIEdata[1]);
 			return false;
 		}
 		pe_debug("WPA IE is present along with WPA2 IE");
@@ -228,8 +225,8 @@ lim_set_rs_nie_wp_aiefrom_sme_start_bss_req_message(struct mac_context *mac_ctx,
 			return false;
 		}
 		return true;
-	} else if ((rsn_ie->length == rsn_ie->rsnIEdata[1] + 2)
-		   && (rsn_ie->rsnIEdata[0] == SIR_MAC_WPA_EID)) {
+	} else if ((rsn_ie->length == rsn_ie->rsnIEdata[1] + 2) &&
+		   (rsn_ie->rsnIEdata[0] == SIR_MAC_WPA_EID)) {
 		pe_debug("Only WPA IE is present");
 		ret = dot11f_unpack_ie_wpa(mac_ctx, &rsn_ie->rsnIEdata[6],
 					   rsn_ie->rsnIEdata[1] - 4,
@@ -245,14 +242,12 @@ lim_set_rs_nie_wp_aiefrom_sme_start_bss_req_message(struct mac_context *mac_ctx,
 		return false;
 
 	val = sir_read_u32((uint8_t *)&rsn_ie->rsnIEdata[wpa_idx + 2]);
-	if ((rsn_ie->rsnIEdata[wpa_idx] == SIR_MAC_WPA_EID)
-	    && ((rsn_ie->rsnIEdata[wpa_idx + 1] < SIR_MAC_WPA_IE_MIN_LENGTH)
-	     || (SIR_MAC_WPA_OUI != val))) {
+	if ((rsn_ie->rsnIEdata[wpa_idx] == SIR_MAC_WPA_EID) &&
+	    ((rsn_ie->rsnIEdata[wpa_idx + 1] < SIR_MAC_WPA_IE_MIN_LENGTH) ||
+	     (SIR_MAC_WPA_OUI != val))) {
 		pe_err("WPA IE len: %d not [%d,%d] OR data 0x%x not 0x%x",
-			rsn_ie->rsnIEdata[1],
-			SIR_MAC_RSN_IE_MIN_LENGTH,
-			WLAN_MAX_IE_LEN, val,
-			SIR_MAC_WPA_OUI);
+		       rsn_ie->rsnIEdata[1], SIR_MAC_RSN_IE_MIN_LENGTH,
+		       WLAN_MAX_IE_LEN, val, SIR_MAC_WPA_OUI);
 		return false;
 	} else {
 		/* Both RSN and WPA IEs are present */
@@ -285,9 +280,9 @@ bool lim_is_sme_start_bss_req_valid(struct mac_context *mac_ctx,
 	switch (bss_type) {
 	case eSIR_INFRASTRUCTURE_MODE:
 		/**
-		 * Should not have received start BSS req with bssType
-		 * Infrastructure on STA.
-		 */
+     * Should not have received start BSS req with bssType
+     * Infrastructure on STA.
+     */
 		pe_warn("Invalid bss type: %d in eWNI_SME_START_BSS_REQ",
 			bss_type);
 		return false;
@@ -298,9 +293,9 @@ bool lim_is_sme_start_bss_req_valid(struct mac_context *mac_ctx,
 		break;
 	default:
 		/**
-		 * Should not have received start BSS req with bssType
-		 * other than Infrastructure/IBSS.
-		 */
+     * Should not have received start BSS req with bssType
+     * other than Infrastructure/IBSS.
+     */
 		pe_warn("Invalid bss type: %d in eWNI_SME_START_BSS_REQ",
 			bss_type);
 		return false;
@@ -310,9 +305,9 @@ bool lim_is_sme_start_bss_req_valid(struct mac_context *mac_ctx,
 						    &start_bss_req->rsnIE))
 		return false;
 
-	if (start_bss_req->nwType != eSIR_11A_NW_TYPE
-	    && start_bss_req->nwType != eSIR_11B_NW_TYPE
-	    && start_bss_req->nwType != eSIR_11G_NW_TYPE)
+	if (start_bss_req->nwType != eSIR_11A_NW_TYPE &&
+	    start_bss_req->nwType != eSIR_11B_NW_TYPE &&
+	    start_bss_req->nwType != eSIR_11G_NW_TYPE)
 		return false;
 
 	if (start_bss_req->nwType == eSIR_11A_NW_TYPE) {
@@ -350,10 +345,8 @@ bool lim_is_sme_start_bss_req_valid(struct mac_context *mac_ctx,
 			continue;
 
 		pe_warn("Invalid operational 11B rates");
-		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE,
-				   QDF_TRACE_LEVEL_WARN,
-				   opr_rates->rate,
-				   opr_rates->numRates);
+		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_WARN,
+				   opr_rates->rate, opr_rates->numRates);
 		return false;
 	}
 	return true;

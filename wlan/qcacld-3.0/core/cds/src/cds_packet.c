@@ -23,16 +23,16 @@
  *      Network Protocol packet/buffer support interfaces
  */
 
+#include "cds_utils.h"
+#include "qdf_mem.h"
+#include "qdf_nbuf.h"
 #include <cds_packet.h>
 #include <i_cds_packet.h>
 #include <qdf_mc_timer.h>
 #include <qdf_trace.h>
 #include <wlan_hdd_main.h>
-#include "qdf_nbuf.h"
-#include "qdf_mem.h"
-#include "cds_utils.h"
 
-#define TX_PKT_MIN_HEADROOM          (64)
+#define TX_PKT_MIN_HEADROOM (64)
 
 QDF_STATUS cds_pkt_return_packet(cds_pkt_t *packet)
 {
@@ -56,8 +56,7 @@ QDF_STATUS
 cds_pkt_get_packet_length(cds_pkt_t *pPacket, uint16_t *pPacketSize)
 {
 	/* Validate the parameter pointers */
-	if (unlikely((!pPacket) || (!pPacketSize)) ||
-	    (!pPacket->pkt_buf)) {
+	if (unlikely((!pPacket) || (!pPacketSize)) || (!pPacket->pkt_buf)) {
 		cds_alert("NULL pointer");
 		return QDF_STATUS_E_INVAL;
 	}
@@ -74,9 +73,9 @@ QDF_STATUS cds_packet_alloc_debug(uint16_t size, void **data, void **ppPacket,
 	qdf_nbuf_t nbuf;
 
 	nbuf = qdf_nbuf_alloc_debug(NULL,
-		roundup(size + TX_PKT_MIN_HEADROOM, 4),
-		TX_PKT_MIN_HEADROOM, sizeof(uint32_t), false,
-				     func_name, line_num);
+				    roundup(size + TX_PKT_MIN_HEADROOM, 4),
+				    TX_PKT_MIN_HEADROOM, sizeof(uint32_t),
+				    false, func_name, line_num);
 
 	if (nbuf) {
 		qdf_nbuf_put_tail(nbuf, size);
@@ -112,5 +111,5 @@ QDF_STATUS cds_packet_alloc(uint16_t size, void **data, void **ppPacket)
 
 void cds_packet_free(void *pPacket)
 {
-	qdf_nbuf_free((qdf_nbuf_t) pPacket);
+	qdf_nbuf_free((qdf_nbuf_t)pPacket);
 }

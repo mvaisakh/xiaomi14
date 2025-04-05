@@ -4,19 +4,19 @@
  */
 
 #include "cam_aperture_dev.h"
-#include "cam_req_mgr_dev.h"
-#include "cam_aperture_soc.h"
 #include "cam_aperture_core.h"
+#include "cam_aperture_soc.h"
+#include "cam_compat.h"
+#include "cam_req_mgr_dev.h"
 #include "cam_trace.h"
 #include "camera_main.h"
-#include "cam_compat.h"
 /* xiaomi add for cci debug start */
 #include "cam_cci_debug_util.h"
 /* xiaomi add for cci debug end */
 
 static struct cam_i3c_aperture_data {
-	struct cam_aperture_ctrl_t                  *a_ctrl;
-	struct completion                            probe_complete;
+	struct cam_aperture_ctrl_t *a_ctrl;
+	struct completion probe_complete;
 } g_i3c_aperture_data[MAX_CAMERAS];
 
 struct completion *cam_aperture_get_i3c_completion(uint32_t index)
@@ -25,10 +25,9 @@ struct completion *cam_aperture_get_i3c_completion(uint32_t index)
 }
 
 static int cam_aperture_subdev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+					      struct v4l2_subdev_fh *fh)
 {
-	struct cam_aperture_ctrl_t *a_ctrl =
-		v4l2_get_subdevdata(sd);
+	struct cam_aperture_ctrl_t *a_ctrl = v4l2_get_subdevdata(sd);
 
 	if (!a_ctrl) {
 		CAM_ERR(CAM_APERTURE, "a_ctrl ptr is NULL");
@@ -43,7 +42,7 @@ static int cam_aperture_subdev_close_internal(struct v4l2_subdev *sd,
 }
 
 static int cam_aperture_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				     struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -56,19 +55,19 @@ static int cam_aperture_subdev_close(struct v4l2_subdev *sd,
 	return cam_aperture_subdev_close_internal(sd, fh);
 }
 
-static long cam_aperture_subdev_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, void *arg)
+static long cam_aperture_subdev_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
+				      void *arg)
 {
 	int rc = 0;
-	struct cam_aperture_ctrl_t *a_ctrl =
-		v4l2_get_subdevdata(sd);
+	struct cam_aperture_ctrl_t *a_ctrl = v4l2_get_subdevdata(sd);
 
 	switch (cmd) {
 	case VIDIOC_CAM_CONTROL:
 		rc = cam_aperture_driver_cmd(a_ctrl, arg);
 		if (rc) {
 			if (rc == -EBADR)
-				CAM_INFO(CAM_APERTURE,
+				CAM_INFO(
+					CAM_APERTURE,
 					"Failed for driver_cmd: %d, it has been flushed",
 					rc);
 			else
@@ -94,13 +93,13 @@ static long cam_aperture_subdev_ioctl(struct v4l2_subdev *sd,
 
 #ifdef CONFIG_COMPAT
 static long cam_aperture_init_subdev_do_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, unsigned long arg)
+					      unsigned int cmd,
+					      unsigned long arg)
 {
 	struct cam_control cmd_data;
 	int32_t rc = 0;
 
-	if (copy_from_user(&cmd_data, (void __user *)arg,
-		sizeof(cmd_data))) {
+	if (copy_from_user(&cmd_data, (void __user *)arg, sizeof(cmd_data))) {
 		CAM_ERR(CAM_APERTURE,
 			"Failed to copy from user_ptr=%pK size=%zu",
 			(void __user *)arg, sizeof(cmd_data));
@@ -126,7 +125,7 @@ static long cam_aperture_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 
 	if (!rc) {
 		if (copy_to_user((void __user *)arg, &cmd_data,
-			sizeof(cmd_data))) {
+				 sizeof(cmd_data))) {
 			CAM_ERR(CAM_APERTURE,
 				"Failed to copy to user_ptr=%pK size=%zu",
 				(void __user *)arg, sizeof(cmd_data));
@@ -156,44 +155,39 @@ static int cam_aperture_init_subdev(struct cam_aperture_ctrl_t *a_ctrl)
 {
 	int rc = 0;
 
-	a_ctrl->v4l2_dev_str.internal_ops =
-		&cam_aperture_internal_ops;
-	a_ctrl->v4l2_dev_str.ops =
-		&cam_aperture_subdev_ops;
+	a_ctrl->v4l2_dev_str.internal_ops = &cam_aperture_internal_ops;
+	a_ctrl->v4l2_dev_str.ops = &cam_aperture_subdev_ops;
 	strlcpy(a_ctrl->device_name, CAMX_APERTURE_DEV_NAME,
 		sizeof(a_ctrl->device_name));
-	a_ctrl->v4l2_dev_str.name =
-		a_ctrl->device_name;
+	a_ctrl->v4l2_dev_str.name = a_ctrl->device_name;
 	a_ctrl->v4l2_dev_str.sd_flags =
 		(V4L2_SUBDEV_FL_HAS_DEVNODE | V4L2_SUBDEV_FL_HAS_EVENTS);
-	a_ctrl->v4l2_dev_str.ent_function =
-		CAM_APERTURE_DEVICE_TYPE;
+	a_ctrl->v4l2_dev_str.ent_function = CAM_APERTURE_DEVICE_TYPE;
 	a_ctrl->v4l2_dev_str.token = a_ctrl;
-	a_ctrl->v4l2_dev_str.close_seq_prior =
-		 CAM_SD_CLOSE_MEDIUM_PRIORITY;
+	a_ctrl->v4l2_dev_str.close_seq_prior = CAM_SD_CLOSE_MEDIUM_PRIORITY;
 
 	rc = cam_register_subdev(&(a_ctrl->v4l2_dev_str));
 	if (rc)
-		CAM_ERR(CAM_APERTURE,
-			"Fail with cam_register_subdev rc: %d", rc);
+		CAM_ERR(CAM_APERTURE, "Fail with cam_register_subdev rc: %d",
+			rc);
 
 	return rc;
 }
 
 static int cam_aperture_i2c_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+					   struct device *master_dev,
+					   void *data)
 {
-	int32_t                          rc = 0;
-	int32_t                          i = 0;
-	struct i2c_client               *client;
-	struct cam_aperture_ctrl_t      *a_ctrl;
-	struct cam_hw_soc_info          *soc_info = NULL;
+	int32_t rc = 0;
+	int32_t i = 0;
+	struct i2c_client *client;
+	struct cam_aperture_ctrl_t *a_ctrl;
+	struct cam_hw_soc_info *soc_info = NULL;
 	struct cam_aperture_soc_private *soc_private = NULL;
 
 	client = container_of(dev, struct i2c_client, dev);
 	if (!client) {
-		CAM_ERR(CAM_APERTURE,
-			"Failed to get i2c client");
+		CAM_ERR(CAM_APERTURE, "Failed to get i2c client");
 		return -EFAULT;
 	}
 
@@ -204,8 +198,8 @@ static int cam_aperture_i2c_component_bind(struct device *dev,
 
 	i2c_set_clientdata(client, a_ctrl);
 
-	soc_private = kzalloc(sizeof(struct cam_aperture_soc_private),
-		GFP_KERNEL);
+	soc_private =
+		kzalloc(sizeof(struct cam_aperture_soc_private), GFP_KERNEL);
 	if (!soc_private) {
 		rc = -ENOMEM;
 		goto free_ctrl;
@@ -233,8 +227,8 @@ static int cam_aperture_i2c_component_bind(struct device *dev,
 			soc_private->i2c_info.slave_addr;
 
 	a_ctrl->i2c_data.per_frame =
-		kzalloc(sizeof(struct i2c_settings_array) *
-		MAX_PER_FRAME_ARRAY, GFP_KERNEL);
+		kzalloc(sizeof(struct i2c_settings_array) * MAX_PER_FRAME_ARRAY,
+			GFP_KERNEL);
 	if (a_ctrl->i2c_data.per_frame == NULL) {
 		rc = -ENOMEM;
 		goto unreg_subdev;
@@ -247,12 +241,9 @@ static int cam_aperture_i2c_component_bind(struct device *dev,
 
 	a_ctrl->bridge_intf.device_hdl = -1;
 	a_ctrl->bridge_intf.link_hdl = -1;
-	a_ctrl->bridge_intf.ops.get_dev_info =
-		cam_aperture_publish_dev_info;
-	a_ctrl->bridge_intf.ops.link_setup =
-		cam_aperture_establish_link;
-	a_ctrl->bridge_intf.ops.apply_req =
-		cam_aperture_apply_request;
+	a_ctrl->bridge_intf.ops.get_dev_info = cam_aperture_publish_dev_info;
+	a_ctrl->bridge_intf.ops.link_setup = cam_aperture_establish_link;
+	a_ctrl->bridge_intf.ops.apply_req = cam_aperture_apply_request;
 	a_ctrl->last_flush_req = 0;
 	a_ctrl->cam_act_state = CAM_APERTURE_INIT;
 
@@ -268,17 +259,17 @@ free_ctrl:
 }
 
 static void cam_aperture_i2c_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					      struct device *master_dev,
+					      void *data)
 {
-	struct i2c_client               *client = NULL;
-	struct cam_aperture_ctrl_t      *a_ctrl = NULL;
+	struct i2c_client *client = NULL;
+	struct cam_aperture_ctrl_t *a_ctrl = NULL;
 	struct cam_aperture_soc_private *soc_private;
-	struct cam_sensor_power_ctrl_t  *power_info;
+	struct cam_sensor_power_ctrl_t *power_info;
 
 	client = container_of(dev, struct i2c_client, dev);
 	if (!client) {
-		CAM_ERR(CAM_APERTURE,
-			"Failed to get i2c client");
+		CAM_ERR(CAM_APERTURE, "Failed to get i2c client");
 		return;
 	}
 
@@ -312,7 +303,7 @@ const static struct component_ops cam_aperture_i2c_component_ops = {
 };
 
 static int32_t cam_aperture_driver_i2c_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+					     const struct i2c_device_id *id)
 {
 	int rc = 0;
 
@@ -324,7 +315,7 @@ static int32_t cam_aperture_driver_i2c_probe(struct i2c_client *client,
 
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		CAM_ERR(CAM_APERTURE, "%s :: i2c_check_functionality failed",
-			 client->name);
+			client->name);
 		return -EFAULT;
 	}
 
@@ -337,14 +328,12 @@ static int32_t cam_aperture_driver_i2c_probe(struct i2c_client *client,
 }
 
 #if KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE
-void cam_aperture_driver_i2c_remove(
-	struct i2c_client *client)
+void cam_aperture_driver_i2c_remove(struct i2c_client *client)
 {
 	component_del(&client->dev, &cam_aperture_i2c_component_ops);
 }
 #else
-static int32_t cam_aperture_driver_i2c_remove(
-	struct i2c_client *client)
+static int32_t cam_aperture_driver_i2c_remove(struct i2c_client *client)
 {
 	component_del(&client->dev, &cam_aperture_i2c_component_ops);
 	return 0;
@@ -352,22 +341,24 @@ static int32_t cam_aperture_driver_i2c_remove(
 #endif
 
 static int cam_aperture_platform_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+						struct device *master_dev,
+						void *data)
 {
-	int32_t                          rc = 0;
-	int32_t                          i = 0;
-	bool                             i3c_i2c_target;
-	struct cam_aperture_ctrl_t       *a_ctrl = NULL;
-	struct cam_aperture_soc_private  *soc_private = NULL;
+	int32_t rc = 0;
+	int32_t i = 0;
+	bool i3c_i2c_target;
+	struct cam_aperture_ctrl_t *a_ctrl = NULL;
+	struct cam_aperture_soc_private *soc_private = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	i3c_i2c_target = of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
+	i3c_i2c_target =
+		of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
 	if (i3c_i2c_target)
 		return 0;
 
 	/* Create aperture control structure */
-	a_ctrl = devm_kzalloc(&pdev->dev,
-		sizeof(struct cam_aperture_ctrl_t), GFP_KERNEL);
+	a_ctrl = devm_kzalloc(&pdev->dev, sizeof(struct cam_aperture_ctrl_t),
+			      GFP_KERNEL);
 	if (!a_ctrl)
 		return -ENOMEM;
 
@@ -378,15 +369,15 @@ static int cam_aperture_platform_component_bind(struct device *dev,
 	a_ctrl->soc_info.dev_name = pdev->name;
 	a_ctrl->io_master_info.master_type = CCI_MASTER;
 
-	a_ctrl->io_master_info.cci_client = kzalloc(sizeof(
-		struct cam_sensor_cci_client), GFP_KERNEL);
+	a_ctrl->io_master_info.cci_client =
+		kzalloc(sizeof(struct cam_sensor_cci_client), GFP_KERNEL);
 	if (!(a_ctrl->io_master_info.cci_client)) {
 		rc = -ENOMEM;
 		goto free_ctrl;
 	}
 
-	soc_private = kzalloc(sizeof(struct cam_aperture_soc_private),
-		GFP_KERNEL);
+	soc_private =
+		kzalloc(sizeof(struct cam_aperture_soc_private), GFP_KERNEL);
 	if (!soc_private) {
 		rc = -ENOMEM;
 		goto free_cci_client;
@@ -395,8 +386,8 @@ static int cam_aperture_platform_component_bind(struct device *dev,
 	soc_private->power_info.dev = &pdev->dev;
 
 	a_ctrl->i2c_data.per_frame =
-		kzalloc(sizeof(struct i2c_settings_array) *
-		MAX_PER_FRAME_ARRAY, GFP_KERNEL);
+		kzalloc(sizeof(struct i2c_settings_array) * MAX_PER_FRAME_ARRAY,
+			GFP_KERNEL);
 	if (a_ctrl->i2c_data.per_frame == NULL) {
 		rc = -ENOMEM;
 		goto free_soc;
@@ -422,14 +413,10 @@ static int cam_aperture_platform_component_bind(struct device *dev,
 
 	a_ctrl->bridge_intf.device_hdl = -1;
 	a_ctrl->bridge_intf.link_hdl = -1;
-	a_ctrl->bridge_intf.ops.get_dev_info =
-		cam_aperture_publish_dev_info;
-	a_ctrl->bridge_intf.ops.link_setup =
-		cam_aperture_establish_link;
-	a_ctrl->bridge_intf.ops.apply_req =
-		cam_aperture_apply_request;
-	a_ctrl->bridge_intf.ops.flush_req =
-		cam_aperture_flush_request;
+	a_ctrl->bridge_intf.ops.get_dev_info = cam_aperture_publish_dev_info;
+	a_ctrl->bridge_intf.ops.link_setup = cam_aperture_establish_link;
+	a_ctrl->bridge_intf.ops.apply_req = cam_aperture_apply_request;
+	a_ctrl->bridge_intf.ops.flush_req = cam_aperture_flush_request;
 	a_ctrl->last_flush_req = 0;
 
 	platform_set_drvdata(pdev, a_ctrl);
@@ -439,11 +426,12 @@ static int cam_aperture_platform_component_bind(struct device *dev,
 		a_ctrl->soc_info.index);
 
 	g_i3c_aperture_data[a_ctrl->soc_info.index].a_ctrl = a_ctrl;
-	init_completion(&g_i3c_aperture_data[a_ctrl->soc_info.index].probe_complete);
+	init_completion(
+		&g_i3c_aperture_data[a_ctrl->soc_info.index].probe_complete);
 
 	/* xiaomi add for cci debug start */
-	rc = cam_cci_dev_create_debugfs_entry(a_ctrl->device_name,
-		a_ctrl->soc_info.index, CAM_APERTURE_NAME,
+	rc = cam_cci_dev_create_debugfs_entry(
+		a_ctrl->device_name, a_ctrl->soc_info.index, CAM_APERTURE_NAME,
 		&a_ctrl->io_master_info, a_ctrl->cci_i2c_master,
 		&a_ctrl->cci_debug);
 	if (rc) {
@@ -466,15 +454,17 @@ free_ctrl:
 }
 
 static void cam_aperture_platform_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+						   struct device *master_dev,
+						   void *data)
 {
-	struct cam_aperture_ctrl_t      *a_ctrl;
+	struct cam_aperture_ctrl_t *a_ctrl;
 	struct cam_aperture_soc_private *soc_private;
-	struct cam_sensor_power_ctrl_t  *power_info;
-	bool                             i3c_i2c_target;
+	struct cam_sensor_power_ctrl_t *power_info;
+	bool i3c_i2c_target;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	i3c_i2c_target = of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
+	i3c_i2c_target =
+		of_property_read_bool(pdev->dev.of_node, "i3c-i2c-target");
 	if (i3c_i2c_target)
 		return;
 
@@ -513,20 +503,18 @@ const static struct component_ops cam_aperture_platform_component_ops = {
 	.unbind = cam_aperture_platform_component_unbind,
 };
 
-static int32_t cam_aperture_platform_remove(
-	struct platform_device *pdev)
+static int32_t cam_aperture_platform_remove(struct platform_device *pdev)
 {
 	component_del(&pdev->dev, &cam_aperture_platform_component_ops);
 	return 0;
 }
 
 static const struct of_device_id cam_aperture_driver_dt_match[] = {
-	{.compatible = "qcom,aperture"},
+	{ .compatible = "qcom,aperture" },
 	{}
 };
 
-static int32_t cam_aperture_driver_platform_probe(
-	struct platform_device *pdev)
+static int32_t cam_aperture_driver_platform_probe(struct platform_device *pdev)
 {
 	int rc = 0;
 
@@ -541,37 +529,38 @@ static int32_t cam_aperture_driver_platform_probe(
 MODULE_DEVICE_TABLE(of, cam_aperture_driver_dt_match);
 
 struct platform_driver cam_aperture_platform_driver = {
-	.probe = cam_aperture_driver_platform_probe,
-	.driver = {
-		.name = "qcom,aperture",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_aperture_driver_dt_match,
-		.suppress_bind_attrs = true,
-	},
-	.remove = cam_aperture_platform_remove,
+    .probe = cam_aperture_driver_platform_probe,
+    .driver =
+        {
+            .name = "qcom,aperture",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_aperture_driver_dt_match,
+            .suppress_bind_attrs = true,
+        },
+    .remove = cam_aperture_platform_remove,
 };
 
-static const struct i2c_device_id i2c_id[] = {
-	{APERTURE_DRIVER_I2C, (kernel_ulong_t)NULL},
-	{ }
-};
+static const struct i2c_device_id i2c_id[] = { { APERTURE_DRIVER_I2C,
+						 (kernel_ulong_t)NULL },
+					       {} };
 
 static const struct of_device_id cam_aperture_i2c_driver_dt_match[] = {
-	{.compatible = "qcom,cam-i2c-aperture"},
+	{ .compatible = "qcom,cam-i2c-aperture" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, cam_aperture_i2c_driver_dt_match);
 
 struct i2c_driver cam_aperture_i2c_driver = {
-	.id_table = i2c_id,
-	.probe  = cam_aperture_driver_i2c_probe,
-	.remove = cam_aperture_driver_i2c_remove,
-	.driver = {
-		.of_match_table = cam_aperture_i2c_driver_dt_match,
-		.owner = THIS_MODULE,
-		.name = APERTURE_DRIVER_I2C,
-		.suppress_bind_attrs = true,
-	},
+    .id_table = i2c_id,
+    .probe = cam_aperture_driver_i2c_probe,
+    .remove = cam_aperture_driver_i2c_remove,
+    .driver =
+        {
+            .of_match_table = cam_aperture_i2c_driver_dt_match,
+            .owner = THIS_MODULE,
+            .name = APERTURE_DRIVER_I2C,
+            .suppress_bind_attrs = true,
+        },
 };
 
 static struct i3c_device_id aperture_i3c_id[MAX_I3C_DEVICE_ID_ENTRIES + 1];
@@ -579,9 +568,9 @@ static struct i3c_device_id aperture_i3c_id[MAX_I3C_DEVICE_ID_ENTRIES + 1];
 static int cam_aperture_i3c_driver_probe(struct i3c_device *client)
 {
 	int32_t rc = 0;
-	struct cam_aperture_ctrl_t       *a_ctrl = NULL;
-	uint32_t                          index;
-	struct device                    *dev;
+	struct cam_aperture_ctrl_t *a_ctrl = NULL;
+	uint32_t index;
+	struct device *dev;
 
 	if (!client) {
 		CAM_INFO(CAM_APERTURE, "Null Client pointer");
@@ -594,12 +583,14 @@ static int cam_aperture_i3c_driver_probe(struct i3c_device *client)
 
 	rc = of_property_read_u32(dev->of_node, "cell-index", &index);
 	if (rc) {
-		CAM_ERR(CAM_APERTURE, "device %s failed to read cell-index", dev_name(dev));
+		CAM_ERR(CAM_APERTURE, "device %s failed to read cell-index",
+			dev_name(dev));
 		return rc;
 	}
 
 	if (index >= MAX_CAMERAS) {
-		CAM_ERR(CAM_APERTURE, "Invalid Cell-Index: %u for %s", index, dev_name(dev));
+		CAM_ERR(CAM_APERTURE, "Invalid Cell-Index: %u for %s", index,
+			dev_name(dev));
 		return -EINVAL;
 	}
 
@@ -620,15 +611,16 @@ static int cam_aperture_i3c_driver_probe(struct i3c_device *client)
 }
 
 static struct i3c_driver cam_aperture_i3c_driver = {
-	.id_table = aperture_i3c_id,
-	.probe = cam_aperture_i3c_driver_probe,
-	.remove = cam_i3c_driver_remove,
-	.driver = {
-		.owner = THIS_MODULE,
-		.name = APERTURE_DRIVER_I3C,
-		.of_match_table = cam_aperture_driver_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .id_table = aperture_i3c_id,
+    .probe = cam_aperture_i3c_driver_probe,
+    .remove = cam_i3c_driver_remove,
+    .driver =
+        {
+            .owner = THIS_MODULE,
+            .name = APERTURE_DRIVER_I3C,
+            .of_match_table = cam_aperture_driver_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_aperture_driver_init(void)
@@ -639,8 +631,8 @@ int cam_aperture_driver_init(void)
 
 	rc = platform_driver_register(&cam_aperture_platform_driver);
 	if (rc < 0) {
-		CAM_ERR(CAM_APERTURE,
-			"platform_driver_register failed rc = %d", rc);
+		CAM_ERR(CAM_APERTURE, "platform_driver_register failed rc = %d",
+			rc);
 		return rc;
 	}
 	rc = i2c_add_driver(&cam_aperture_i2c_driver);
@@ -649,7 +641,8 @@ int cam_aperture_driver_init(void)
 		goto i2c_register_err;
 	}
 
-	memset(aperture_i3c_id, 0, sizeof(struct i3c_device_id) * (MAX_I3C_DEVICE_ID_ENTRIES + 1));
+	memset(aperture_i3c_id, 0,
+	       sizeof(struct i3c_device_id) * (MAX_I3C_DEVICE_ID_ENTRIES + 1));
 
 	dev = of_find_node_by_path(I3C_SENSOR_DEV_ID_DT_PATH);
 	if (!dev) {
@@ -658,18 +651,20 @@ int cam_aperture_driver_init(void)
 	}
 
 	rc = cam_sensor_count_elems_i3c_device_id(dev, &num_entries,
-		"i3c-aperture-id-table");
+						  "i3c-aperture-id-table");
 	if (rc)
 		return 0;
 
-	rc = cam_sensor_fill_i3c_device_id(dev, num_entries,
-		"i3c-aperture-id-table", aperture_i3c_id);
+	rc = cam_sensor_fill_i3c_device_id(
+		dev, num_entries, "i3c-aperture-id-table", aperture_i3c_id);
 	if (rc)
 		goto i3c_register_err;
 
-	rc = i3c_driver_register_with_owner(&cam_aperture_i3c_driver, THIS_MODULE);
+	rc = i3c_driver_register_with_owner(&cam_aperture_i3c_driver,
+					    THIS_MODULE);
 	if (rc) {
-		CAM_ERR(CAM_APERTURE, "i3c_driver registration failed, rc: %d", rc);
+		CAM_ERR(CAM_APERTURE, "i3c_driver registration failed, rc: %d",
+			rc);
 		goto i3c_register_err;
 	}
 

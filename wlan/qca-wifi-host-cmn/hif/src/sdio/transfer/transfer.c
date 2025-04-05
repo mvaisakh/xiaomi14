@@ -17,29 +17,27 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-
 #define ATH_MODULE_NAME hif
-#include <qdf_types.h>
-#include <qdf_status.h>
-#include <qdf_timer.h>
-#include <qdf_time.h>
-#include <qdf_lock.h>
-#include <qdf_mem.h>
-#include <qdf_util.h>
-#include <qdf_defer.h>
-#include <qdf_atomic.h>
-#include <qdf_nbuf.h>
-#include <athdefs.h>
-#include <qdf_net_types.h>
+#include "transfer.h"
+#include "hif_sdio_internal.h"
+#include <a_debug.h>
+#include <a_osapi.h>
 #include <a_types.h>
 #include <athdefs.h>
-#include <a_osapi.h>
 #include <hif.h>
-#include <htc_services.h>
-#include <a_debug.h>
 #include <htc_internal.h>
-#include "hif_sdio_internal.h"
-#include "transfer.h"
+#include <htc_services.h>
+#include <qdf_atomic.h>
+#include <qdf_defer.h>
+#include <qdf_lock.h>
+#include <qdf_mem.h>
+#include <qdf_nbuf.h>
+#include <qdf_net_types.h>
+#include <qdf_status.h>
+#include <qdf_time.h>
+#include <qdf_timer.h>
+#include <qdf_types.h>
+#include <qdf_util.h>
 
 /**
  * hif_dev_rw_completion_handler() - Completion routine
@@ -66,8 +64,8 @@ QDF_STATUS hif_dev_rw_completion_handler(void *ctx, QDF_STATUS status)
 
 	txCompHandler = pdev->hif_callbacks.txCompletionHandler;
 	if (txCompHandler) {
-		txCompHandler(pdev->hif_callbacks.Context, buf,
-			      xfer_id, toeplitz_hash_result);
+		txCompHandler(pdev->hif_callbacks.Context, buf, xfer_id,
+			      toeplitz_hash_result);
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -109,14 +107,15 @@ QDF_STATUS hif_dev_send_buffer(struct hif_sdio_device *pdev, uint32_t xfer_id,
 
 	if (frag_count > 1) {
 		/* Header data length should be total sending length.
-		 * Subtract internal data length of netbuf
-		 */
-		head_len = sizeof(struct hif_sendContext) +
+     * Subtract internal data length of netbuf
+     */
+		head_len =
+			sizeof(struct hif_sendContext) +
 			(nbytes - qdf_nbuf_get_frag_len(buf, frag_count - 1));
 	} else {
 		/*
-		 * | hif_sendContext | netbuf->data
-		 */
+     * | hif_sendContext | netbuf->data
+     */
 		head_len = sizeof(struct hif_sendContext);
 	}
 
@@ -140,15 +139,14 @@ QDF_STATUS hif_dev_send_buffer(struct hif_sdio_device *pdev, uint32_t xfer_id,
 	sctx->transferID = xfer_id;
 	sctx->head_data_len = head_len;
 	/*
-	 * Copy data to head part of netbuf or head of allocated buffer.
-	 * if buffer is new allocated, the last buffer should be copied also.
-	 * It assume last fragment is internal buffer of netbuf
-	 * sometime total length of fragments larger than nbytes
-	 */
+   * Copy data to head part of netbuf or head of allocated buffer.
+   * if buffer is new allocated, the last buffer should be copied also.
+   * It assume last fragment is internal buffer of netbuf
+   * sometime total length of fragments larger than nbytes
+   */
 	pData = (unsigned char *)sctx + sizeof(struct hif_sendContext);
 	for (i = 0, count = sctx->bNewAlloc ? frag_count : frag_count - 1;
-	     i < count;
-	     i++) {
+	     i < count; i++) {
 		int frag_len = qdf_nbuf_get_frag_len(buf, i);
 		unsigned char *frag_addr = qdf_nbuf_get_frag_vaddr(buf, i);
 
@@ -169,10 +167,10 @@ QDF_STATUS hif_dev_send_buffer(struct hif_sdio_device *pdev, uint32_t xfer_id,
 
 	if (status == QDF_STATUS_E_PENDING) {
 		/*
-		 * it will return QDF_STATUS_E_PENDING in native HIF
-		 * implementation, which should be treated as successful
-		 * result here.
-		 */
+     * it will return QDF_STATUS_E_PENDING in native HIF
+     * implementation, which should be treated as successful
+     * result here.
+     */
 		status = QDF_STATUS_SUCCESS;
 	}
 
@@ -233,39 +231,38 @@ QDF_STATUS hif_dev_alloc_and_prepare_rx_packets(struct hif_sdio_device *pdev,
 			num_messages = 1;
 		} else {
 			/* HTC header indicates that every packet to follow
-			 * has the same padded length so that it can
-			 * be optimally fetched as a full bundle
-			 */
+       * has the same padded length so that it can
+       * be optimally fetched as a full bundle
+       */
 			num_messages = GET_RECV_BUNDLE_COUNT(hdr->Flags);
 			/* the count doesn't include the starter frame, just
-			 * a count of frames to follow
-			 */
+       * a count of frames to follow
+       */
 			num_messages++;
 
 			hif_info("HTC header : %u messages in bundle",
 				 num_messages);
 		}
 
-		full_length = DEV_CALC_RECV_PADDED_LEN(pdev,
-						       hdr->PayloadLen +
-						       sizeof(HTC_FRAME_HDR));
+		full_length = DEV_CALC_RECV_PADDED_LEN(
+			pdev, hdr->PayloadLen + sizeof(HTC_FRAME_HDR));
 
 		/* get packet buffers for each message, if there was a
-		 * bundle detected in the header,
-		 * use pHdr as a template to fetch all packets in the bundle
-		 */
+     * bundle detected in the header,
+     * use pHdr as a template to fetch all packets in the bundle
+     */
 		for (j = 0; j < num_messages; j++) {
 			/* reset flag, any packets allocated using the
-			 * RecvAlloc() API cannot be recycled on cleanup,
-			 * they must be explicitly returned
-			 */
+       * RecvAlloc() API cannot be recycled on cleanup,
+       * they must be explicitly returned
+       */
 			no_recycle = false;
 			packet = hif_dev_alloc_rx_buffer(pdev);
 
 			if (!packet) {
 				/* No error, simply need to mark that
-				 * we are waiting for buffers.
-				 */
+         * we are waiting for buffers.
+         */
 				pdev->RecvStateFlags |= HTC_RECV_WAIT_BUFFERS;
 				/* pDev->EpWaitingForBuffers = pEndpoint->Id; */
 				status = QDF_STATUS_E_RESOURCES;
@@ -278,28 +275,27 @@ QDF_STATUS hif_dev_alloc_and_prepare_rx_packets(struct hif_sdio_device *pdev,
 
 			if (no_recycle) {
 				/* flag that these packets cannot be recycled,
-				 * they have to be returned to the user
-				 */
+         * they have to be returned to the user
+         */
 				packet->PktInfo.AsRx.HTCRxFlags |=
 					HTC_RX_PKT_NO_RECYCLE;
 			}
 			/* add packet to queue (also incase we need to
-			 * cleanup down below)
-			 */
+       * cleanup down below)
+       */
 			HTC_PACKET_ENQUEUE(queue, packet);
 
 			/* if (HTC_STOPPING(target)) {
-			 *      status = QDF_STATUS_E_CANCELED;
-			 *      break;
-			 *  }
-			 */
+       *      status = QDF_STATUS_E_CANCELED;
+       *      break;
+       *  }
+       */
 
 			/* make sure  message can fit in the endpoint buffer */
 			if (full_length > packet->BufferLength) {
 				hif_err("Payload Length Error");
 				hif_err("header reports payload: %u(%u)",
-					hdr->PayloadLen,
-					full_length);
+					hdr->PayloadLen, full_length);
 				hif_err("endpoint buffer size: %d",
 					packet->BufferLength);
 				status = QDF_STATUS_E_INVAL;
@@ -308,10 +304,10 @@ QDF_STATUS hif_dev_alloc_and_prepare_rx_packets(struct hif_sdio_device *pdev,
 
 			if (j > 0) {
 				/* for messages fetched in a bundle the expected
-				 * lookahead is unknown as we are only using the
-				 * lookahead of the first packet as a template
-				 * of what to expect for lengths
-				 */
+         * lookahead is unknown as we are only using the
+         * lookahead of the first packet as a template
+         * of what to expect for lengths
+         */
 				packet->PktInfo.AsRx.HTCRxFlags |=
 					HTC_RX_PKT_REFRESH_HDR;
 				/* set it to something invalid */
@@ -321,12 +317,11 @@ QDF_STATUS hif_dev_alloc_and_prepare_rx_packets(struct hif_sdio_device *pdev,
 					look_aheads[i];
 			}
 			/* set the amount of data to fetch */
-			packet->ActualLength =
-				hdr->PayloadLen + HTC_HDR_LENGTH;
+			packet->ActualLength = hdr->PayloadLen + HTC_HDR_LENGTH;
 			if ((j == (num_messages - 1)) &&
 			    ((hdr->Flags) & HTC_FLAGS_RECV_1MORE_BLOCK))
 				packet->PktInfo.AsRx.HTCRxFlags |=
-				HTC_RX_PKT_LAST_BUNDLED_PKT_HAS_ADDTIONAL_BLOCK;
+					HTC_RX_PKT_LAST_BUNDLED_PKT_HAS_ADDTIONAL_BLOCK;
 			packet->Endpoint = hdr->EndpointID;
 			packet->Completion = NULL;
 		}
@@ -338,8 +333,7 @@ QDF_STATUS hif_dev_alloc_and_prepare_rx_packets(struct hif_sdio_device *pdev,
 	UNLOCK_HIF_DEV_RX(pdev);
 
 	/* for NO RESOURCE error, no need to flush data queue */
-	if (QDF_IS_STATUS_ERROR(status)	&&
-	    (status != QDF_STATUS_E_RESOURCES)) {
+	if (QDF_IS_STATUS_ERROR(status) && (status != QDF_STATUS_E_RESOURCES)) {
 		while (!HTC_QUEUE_EMPTY(queue)) {
 			qdf_nbuf_t netbuf;
 
@@ -396,8 +390,7 @@ QDF_STATUS hif_dev_process_trailer(struct hif_sdio_device *pdev,
 
 		if (record->Length > length) {
 			/* no room left in buffer for record */
-			hif_err("Invalid record len: (%u, %u)",
-				record->Length,
+			hif_err("Invalid record len: (%u, %u)", record->Length,
 				record->RecordID);
 			hif_err("Buffer has %d bytes left", length);
 			status = QDF_STATUS_E_PROTO;
@@ -434,9 +427,9 @@ QDF_STATUS hif_dev_process_trailer(struct hif_sdio_device *pdev,
 					look_ahead->LookAhead3;
 
 				if (AR_DEBUG_LVL_CHECK(ATH_DEBUG_RECV)) {
-					debug_dump_bytes((uint8_t *)
-							 next_look_aheads, 4,
-							 "Next Look Ahead");
+					debug_dump_bytes(
+						(uint8_t *)next_look_aheads, 4,
+						"Next Look Ahead");
 				}
 				/* just one normal lookahead */
 				if (num_look_aheads)
@@ -445,7 +438,7 @@ QDF_STATUS hif_dev_process_trailer(struct hif_sdio_device *pdev,
 			break;
 		case HTC_RECORD_LOOKAHEAD_BUNDLE:
 			A_ASSERT(record->Length >=
-					sizeof(HTC_BUNDLED_LOOKAHEAD_REPORT));
+				 sizeof(HTC_BUNDLED_LOOKAHEAD_REPORT));
 			if ((record->Length >=
 			     sizeof(HTC_BUNDLED_LOOKAHEAD_REPORT)) &&
 			    next_look_aheads) {
@@ -454,7 +447,8 @@ QDF_STATUS hif_dev_process_trailer(struct hif_sdio_device *pdev,
 				int i;
 
 				pBundledLookAheadRpt =
-				(HTC_BUNDLED_LOOKAHEAD_REPORT *)record_buf;
+					(HTC_BUNDLED_LOOKAHEAD_REPORT *)
+						record_buf;
 
 				if (AR_DEBUG_LVL_CHECK(ATH_DEBUG_RECV)) {
 					debug_dump_bytes(record_buf,
@@ -463,12 +457,12 @@ QDF_STATUS hif_dev_process_trailer(struct hif_sdio_device *pdev,
 				}
 
 				if ((record->Length /
-				     (sizeof(HTC_BUNDLED_LOOKAHEAD_REPORT)))
-					> HTC_MAX_MSG_PER_BUNDLE_RX) {
+				     (sizeof(HTC_BUNDLED_LOOKAHEAD_REPORT))) >
+				    HTC_MAX_MSG_PER_BUNDLE_RX) {
 					/* this should never happen, the target
-					 * restricts the number of messages per
-					 * bundle configured by the host
-					 */
+           * restricts the number of messages per
+           * bundle configured by the host
+           */
 					A_ASSERT(false);
 					status = QDF_STATUS_E_PROTO;
 					break;
@@ -476,17 +470,16 @@ QDF_STATUS hif_dev_process_trailer(struct hif_sdio_device *pdev,
 				for (i = 0;
 				     i <
 				     (int)(record->Length /
-					   (sizeof
-					    (HTC_BUNDLED_LOOKAHEAD_REPORT)));
+					   (sizeof(HTC_BUNDLED_LOOKAHEAD_REPORT)));
 				     i++) {
 					((uint8_t *)(&next_look_aheads[i]))[0] =
-					   pBundledLookAheadRpt->LookAhead0;
+						pBundledLookAheadRpt->LookAhead0;
 					((uint8_t *)(&next_look_aheads[i]))[1] =
-					   pBundledLookAheadRpt->LookAhead1;
+						pBundledLookAheadRpt->LookAhead1;
 					((uint8_t *)(&next_look_aheads[i]))[2] =
-					   pBundledLookAheadRpt->LookAhead2;
+						pBundledLookAheadRpt->LookAhead2;
 					((uint8_t *)(&next_look_aheads[i]))[3] =
-					   pBundledLookAheadRpt->LookAhead3;
+						pBundledLookAheadRpt->LookAhead3;
 					pBundledLookAheadRpt++;
 				}
 				if (num_look_aheads)
@@ -508,8 +501,7 @@ QDF_STATUS hif_dev_process_trailer(struct hif_sdio_device *pdev,
 	}
 
 	if (QDF_IS_STATUS_ERROR(status))
-		debug_dump_bytes(orig_buffer, orig_length,
-				 "BAD Recv Trailer");
+		debug_dump_bytes(orig_buffer, orig_length, "BAD Recv Trailer");
 
 	hif_debug("status = %d", status);
 
@@ -544,11 +536,10 @@ QDF_STATUS hif_dev_process_recv_header(struct hif_sdio_device *pdev,
 
 	do {
 		/* note, we cannot assume the alignment of pBuffer,
-		 * so we use the safe macros to
-		 * retrieve 16 bit fields
-		 */
-		payloadLen = HTC_GET_FIELD(buf, HTC_FRAME_HDR,
-					   PAYLOADLEN);
+     * so we use the safe macros to
+     * retrieve 16 bit fields
+     */
+		payloadLen = HTC_GET_FIELD(buf, HTC_FRAME_HDR, PAYLOADLEN);
 
 		((uint8_t *)&look_ahead)[0] = buf[0];
 		((uint8_t *)&look_ahead)[1] = buf[1];
@@ -557,13 +548,13 @@ QDF_STATUS hif_dev_process_recv_header(struct hif_sdio_device *pdev,
 
 		if (packet->PktInfo.AsRx.HTCRxFlags & HTC_RX_PKT_REFRESH_HDR) {
 			/* refresh expected hdr, since this was unknown
-			 * at the time we grabbed the packets
-			 * as part of a bundle
-			 */
+       * at the time we grabbed the packets
+       * as part of a bundle
+       */
 			packet->PktInfo.AsRx.ExpectedHdr = look_ahead;
 			/* refresh actual length since we now have the
-			 * real header
-			 */
+       * real header
+       */
 			packet->ActualLength = payloadLen + HTC_HDR_LENGTH;
 
 			/* validate the actual header that was refreshed  */
@@ -573,8 +564,8 @@ QDF_STATUS hif_dev_process_recv_header(struct hif_sdio_device *pdev,
 				hif_err("Invalid HDR payload length(%d)",
 					payloadLen);
 				/* limit this to max buffer just to print out
-				 * some of the buffer
-				 */
+         * some of the buffer
+         */
 				packet->ActualLength =
 					min(packet->ActualLength,
 					    packet->BufferLength);
@@ -582,8 +573,8 @@ QDF_STATUS hif_dev_process_recv_header(struct hif_sdio_device *pdev,
 				break;
 			}
 
-			if (packet->Endpoint
-			    != HTC_GET_FIELD(buf, HTC_FRAME_HDR, ENDPOINTID)) {
+			if (packet->Endpoint !=
+			    HTC_GET_FIELD(buf, HTC_FRAME_HDR, ENDPOINTID)) {
 				hif_err("Refreshed HDR EP (%d)",
 					HTC_GET_FIELD(buf, HTC_FRAME_HDR,
 						      ENDPOINTID));
@@ -596,20 +587,18 @@ QDF_STATUS hif_dev_process_recv_header(struct hif_sdio_device *pdev,
 
 		if (look_ahead != packet->PktInfo.AsRx.ExpectedHdr) {
 			/* somehow the lookahead that gave us the full read
-			 * length did not reflect the actual header
-			 * in the pending message
-			 */
+       * length did not reflect the actual header
+       * in the pending message
+       */
 			hif_err("Lookahead mismatch!");
-			hif_err("pPkt:0x%lX flags:0x%X",
-				(unsigned long)packet,
+			hif_err("pPkt:0x%lX flags:0x%X", (unsigned long)packet,
 				packet->PktInfo.AsRx.HTCRxFlags);
-			hif_err("Look_ahead 0x%08X != 0x%08X",
-				look_ahead,
+			hif_err("Look_ahead 0x%08X != 0x%08X", look_ahead,
 				packet->PktInfo.AsRx.ExpectedHdr);
 #ifdef ATH_DEBUG_MODULE
-			debug_dump_bytes((uint8_t *)&packet->PktInfo.AsRx.
-					 ExpectedHdr, 4,
-					 "Expected Message look_ahead");
+			debug_dump_bytes(
+				(uint8_t *)&packet->PktInfo.AsRx.ExpectedHdr, 4,
+				"Expected Message look_ahead");
 			debug_dump_bytes(buf, sizeof(HTC_FRAME_HDR),
 					 "Current Frame Header");
 #ifdef HTC_CAPTURE_LAST_FRAME
@@ -645,28 +634,25 @@ QDF_STATUS hif_dev_process_recv_header(struct hif_sdio_device *pdev,
 				break;
 			}
 
-			if (packet->PktInfo.AsRx.
-			    HTCRxFlags & HTC_RX_PKT_IGNORE_LOOKAHEAD) {
+			if (packet->PktInfo.AsRx.HTCRxFlags &
+			    HTC_RX_PKT_IGNORE_LOOKAHEAD) {
 				/* this packet was fetched as part of an HTC
-				 * bundle as the lookahead is not valid.
-				 * Next packet may have already been fetched as
-				 * part of the bundle
-				 */
+         * bundle as the lookahead is not valid.
+         * Next packet may have already been fetched as
+         * part of the bundle
+         */
 				next_look_aheads = NULL;
 				num_look_aheads = NULL;
 			}
 
 			/* process trailer data that follows HDR and
-			 * application payload
-			 */
-			status =
-			hif_dev_process_trailer(pdev,
-						(buf + HTC_HDR_LENGTH +
-						 payloadLen - temp),
-						temp,
-						next_look_aheads,
-						num_look_aheads,
-						packet->Endpoint);
+       * application payload
+       */
+			status = hif_dev_process_trailer(
+				pdev,
+				(buf + HTC_HDR_LENGTH + payloadLen - temp),
+				temp, next_look_aheads, num_look_aheads,
+				packet->Endpoint);
 
 			if (QDF_IS_STATUS_ERROR(status))
 				break;
@@ -675,8 +661,7 @@ QDF_STATUS hif_dev_process_recv_header(struct hif_sdio_device *pdev,
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		/* dump the whole packet */
-		debug_dump_bytes(buf, packet->ActualLength,
-				 "BAD HTC Recv PKT");
+		debug_dump_bytes(buf, packet->ActualLength, "BAD HTC Recv PKT");
 	} else {
 		if (AR_DEBUG_LVL_CHECK(ATH_DEBUG_RECV)) {
 			if (packet->ActualLength > 0) {
@@ -686,8 +671,7 @@ QDF_STATUS hif_dev_process_recv_header(struct hif_sdio_device *pdev,
 			}
 		}
 	}
-	AR_DEBUG_PRINTF(ATH_DEBUG_RECV,
-			("-hif_dev_process_recv_header\n"));
+	AR_DEBUG_PRINTF(ATH_DEBUG_RECV, ("-hif_dev_process_recv_header\n"));
 	return status;
 }
 

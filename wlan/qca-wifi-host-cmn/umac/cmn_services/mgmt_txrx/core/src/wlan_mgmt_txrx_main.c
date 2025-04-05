@@ -23,13 +23,13 @@
  *  mgmt txrx component.
  */
 
-#include "wlan_mgmt_txrx_main_i.h"
 #include "qdf_nbuf.h"
+#include "wlan_mgmt_txrx_main_i.h"
 #include "wlan_objmgr_pdev_obj.h"
 #include "wlan_objmgr_psoc_obj.h"
 
 QDF_STATUS wlan_mgmt_txrx_desc_pool_init(
-			struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
+	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
 {
 	struct wlan_objmgr_pdev *pdev;
 	struct wlan_objmgr_psoc *psoc;
@@ -55,30 +55,27 @@ QDF_STATUS wlan_mgmt_txrx_desc_pool_init(
 	psoc_id = wlan_psoc_get_id(psoc);
 
 	mgmt_txrx_debug(
-			"mgmt_txrx ctx: %pK pdev: %pK pdev_id: %d psoc_id: %d mgmt desc pool size %d",
-			mgmt_txrx_pdev_ctx, pdev,
-			pdev_id, psoc_id,
-			MGMT_DESC_POOL_MAX);
+		"mgmt_txrx ctx: %pK pdev: %pK pdev_id: %d psoc_id: %d mgmt "
+		"desc pool size %d",
+		mgmt_txrx_pdev_ctx, pdev, pdev_id, psoc_id, MGMT_DESC_POOL_MAX);
 	mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool = qdf_mem_malloc(
-			MGMT_DESC_POOL_MAX *
-			sizeof(struct mgmt_txrx_desc_elem_t));
+		MGMT_DESC_POOL_MAX * sizeof(struct mgmt_txrx_desc_elem_t));
 
 	if (!mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool)
 		return QDF_STATUS_E_NOMEM;
 
 	qdf_list_create(&mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list,
-					MGMT_DESC_POOL_MAX);
+			MGMT_DESC_POOL_MAX);
 
 	for (i = 0; i < MGMT_DESC_POOL_MAX; i++) {
 		mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[i].desc_id = i;
 		mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[i].in_use = false;
 		qdf_list_insert_front(
-				&mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list,
-				&mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[i].entry);
+			&mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list,
+			&mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[i].entry);
 	}
 
-	qdf_spinlock_create(
-		&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
+	qdf_spinlock_create(&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
 
 	mgmt_txrx_debug("exit pdev_id:%d psoc_id:%d", pdev_id, psoc_id);
 
@@ -86,7 +83,7 @@ QDF_STATUS wlan_mgmt_txrx_desc_pool_init(
 }
 
 void wlan_mgmt_txrx_desc_pool_deinit(
-			struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
+	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
 {
 	uint32_t i;
 	uint32_t pool_size;
@@ -101,8 +98,8 @@ void wlan_mgmt_txrx_desc_pool_deinit(
 	pool_size = mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list.max_size;
 	for (i = 0; i < pool_size; i++) {
 		status = qdf_list_remove_node(
-				&mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list,
-				&mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[i].entry);
+			&mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list,
+			&mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[i].entry);
 		if (status != QDF_STATUS_SUCCESS)
 			mgmt_txrx_err(
 				"Failed to get mgmt desc from freelist, desc id: %d: status %d",
@@ -117,8 +114,8 @@ void wlan_mgmt_txrx_desc_pool_deinit(
 		&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
 }
 
-struct mgmt_txrx_desc_elem_t *wlan_mgmt_txrx_desc_get(
-			struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
+struct mgmt_txrx_desc_elem_t *
+wlan_mgmt_txrx_desc_get(struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx)
 {
 	QDF_STATUS status;
 	qdf_list_node_t *desc_node;
@@ -126,29 +123,26 @@ struct mgmt_txrx_desc_elem_t *wlan_mgmt_txrx_desc_get(
 
 	qdf_spin_lock_bh(&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
 	if (qdf_list_peek_front(&mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list,
-			    &desc_node)
-			!= QDF_STATUS_SUCCESS) {
+				&desc_node) != QDF_STATUS_SUCCESS) {
 		qdf_spin_unlock_bh(
 			&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
 		mgmt_txrx_err("Descriptor freelist empty for mgmt_txrx_ctx %pK",
-				mgmt_txrx_pdev_ctx);
+			      mgmt_txrx_pdev_ctx);
 		return NULL;
 	}
 
 	status = qdf_list_remove_node(
-				&mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list,
-				desc_node);
+		&mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list, desc_node);
 	if (status != QDF_STATUS_SUCCESS) {
 		qdf_spin_unlock_bh(
 			&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
 		mgmt_txrx_err("Failed to get descriptor from list: status %d",
-					status);
+			      status);
 		qdf_assert_always(0);
 	}
 
 	mgmt_txrx_desc = qdf_container_of(desc_node,
-					  struct mgmt_txrx_desc_elem_t,
-					  entry);
+					  struct mgmt_txrx_desc_elem_t, entry);
 	mgmt_txrx_desc->in_use = true;
 
 	qdf_spin_unlock_bh(&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
@@ -159,13 +153,12 @@ struct mgmt_txrx_desc_elem_t *wlan_mgmt_txrx_desc_get(
 	qdf_runtime_pm_prevent_suspend(
 		&mgmt_txrx_pdev_ctx->wakelock_tx_runtime_cmp);
 
-
 	return mgmt_txrx_desc;
 }
 
 void wlan_mgmt_txrx_desc_put(
-			struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx,
-			uint32_t desc_id)
+	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx,
+	uint32_t desc_id)
 {
 	struct mgmt_txrx_desc_elem_t *desc;
 	bool release_wakelock = false;
@@ -173,8 +166,8 @@ void wlan_mgmt_txrx_desc_put(
 	desc = &mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[desc_id];
 	qdf_spin_lock_bh(&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
 	if (!desc->in_use) {
-		qdf_spin_unlock_bh(&mgmt_txrx_pdev_ctx->mgmt_desc_pool.
-				   desc_pool_lock);
+		qdf_spin_unlock_bh(
+			&mgmt_txrx_pdev_ctx->mgmt_desc_pool.desc_pool_lock);
 		mgmt_txrx_err("desc %d is freed", desc_id);
 		return;
 	}
@@ -206,8 +199,7 @@ void wlan_mgmt_txrx_desc_put(
 
 #ifdef WLAN_IOT_SIM_SUPPORT
 QDF_STATUS iot_sim_mgmt_tx_update(struct wlan_objmgr_psoc *psoc,
-				  struct wlan_objmgr_vdev *vdev,
-				  qdf_nbuf_t buf)
+				  struct wlan_objmgr_vdev *vdev, qdf_nbuf_t buf)
 {
 	struct wlan_lmac_if_rx_ops *rx_ops;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -218,11 +210,8 @@ QDF_STATUS iot_sim_mgmt_tx_update(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 	if (rx_ops->iot_sim_rx_ops.iot_sim_cmd_handler) {
-		status = rx_ops->iot_sim_rx_ops.iot_sim_cmd_handler(vdev,
-								    buf,
-								    NULL,
-								    true,
-								    NULL);
+		status = rx_ops->iot_sim_rx_ops.iot_sim_cmd_handler(
+			vdev, buf, NULL, true, NULL);
 		if (status == QDF_STATUS_E_NULL_VALUE)
 			mgmt_txrx_err("iot_sim frame drop");
 		else
@@ -233,8 +222,7 @@ QDF_STATUS iot_sim_mgmt_tx_update(struct wlan_objmgr_psoc *psoc,
 }
 #else
 QDF_STATUS iot_sim_mgmt_tx_update(struct wlan_objmgr_psoc *psoc,
-				  struct wlan_objmgr_vdev *vdev,
-				  qdf_nbuf_t buf)
+				  struct wlan_objmgr_vdev *vdev, qdf_nbuf_t buf)
 {
 	return QDF_STATUS_SUCCESS;
 }

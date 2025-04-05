@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,20 +22,20 @@
  * WLAN Host Device Driver implementation to create sysfs
  * unit_test_target
  */
-#include "wlan_hdd_main.h"
+#include "wlan_hdd_sysfs_unit_test.h"
 #include "osif_psoc_sync.h"
 #include "osif_vdev_sync.h"
 #include "wlan_dsc_test.h"
+#include "wlan_hdd_main.h"
 #include "wlan_hdd_sysfs.h"
-#include "wlan_hdd_sysfs_unit_test.h"
 #include "wlan_module_ids.h"
 #include "wma.h"
 
 #define MAX_USER_COMMAND_SIZE_UNIT_TEST_TARGET 256
 
-static ssize_t __hdd_sysfs_unit_test_target_store(
-		struct net_device *net_dev,
-		const char __user *buf, size_t count)
+static ssize_t __hdd_sysfs_unit_test_target_store(struct net_device *net_dev,
+						  const char __user *buf,
+						  size_t count)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -66,15 +67,16 @@ static ssize_t __hdd_sysfs_unit_test_target_store(
 		return -EINVAL;
 	}
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
 	}
 
-	hdd_nofl_info("unit_test_target: count %zu buf_local:(%s) net_devname %s",
-		      count, buf_local, net_dev->name);
+	hdd_nofl_info(
+		"unit_test_target: count %zu buf_local:(%s) net_devname %s",
+		count, buf_local, net_dev->name);
 
 	sptr = buf_local;
 	/* Get module_id */
@@ -91,8 +93,7 @@ static ssize_t __hdd_sysfs_unit_test_target_store(
 	if (kstrtou32(token, 0, &args_num))
 		return -EINVAL;
 
-	if (module_id < WLAN_MODULE_ID_MIN ||
-	    module_id >= WLAN_MODULE_ID_MAX) {
+	if (module_id < WLAN_MODULE_ID_MIN || module_id >= WLAN_MODULE_ID_MAX) {
 		hdd_err_rl("Invalid MODULE ID %d", module_id);
 		return -EINVAL;
 	}
@@ -117,9 +118,7 @@ static ssize_t __hdd_sysfs_unit_test_target_store(
 	else
 		vdev_id = adapter->deflink->vdev_id;
 
-	status = sme_send_unit_test_cmd(vdev_id,
-					module_id,
-					args_num,
+	status = sme_send_unit_test_cmd(vdev_id, module_id, args_num,
 					&apps_args[0]);
 	if (status != QDF_STATUS_SUCCESS) {
 		hdd_err_rl("sme_send_unit_test_cmd returned %d", status);
@@ -141,8 +140,7 @@ static ssize_t hdd_sysfs_unit_test_target_store(struct device *dev,
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_unit_test_target_store(
-				net_dev, buf, count);
+	errno_size = __hdd_sysfs_unit_test_target_store(net_dev, buf, count);
 	if (errno_size < 0)
 		hdd_err_rl("errno_size %zd", errno_size);
 
@@ -151,8 +149,8 @@ static ssize_t hdd_sysfs_unit_test_target_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(unit_test_target, 0220,
-		   NULL, hdd_sysfs_unit_test_target_store);
+static DEVICE_ATTR(unit_test_target, 0220, NULL,
+		   hdd_sysfs_unit_test_target_store);
 
 int hdd_sysfs_unit_test_target_create(struct hdd_adapter *adapter)
 {
@@ -170,4 +168,3 @@ void hdd_sysfs_unit_test_target_destroy(struct hdd_adapter *adapter)
 {
 	device_remove_file(&adapter->dev->dev, &dev_attr_unit_test_target);
 }
-

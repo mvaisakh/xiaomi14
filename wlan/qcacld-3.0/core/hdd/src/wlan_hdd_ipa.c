@@ -24,23 +24,23 @@
  */
 
 /* Include Files */
-#include <wlan_hdd_includes.h>
-#include <wlan_hdd_ipa.h>
-#include "wlan_policy_mgr_api.h"
 #include "wlan_ipa_ucfg_api.h"
-#include <wlan_hdd_softap_tx_rx.h>
+#include "wlan_policy_mgr_api.h"
 #include <linux/inetdevice.h>
 #include <qdf_trace.h>
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_ipa.h>
+#include <wlan_hdd_softap_tx_rx.h>
 /* Test against msm kernel version */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)) && \
 	IS_ENABLED(CONFIG_SCHED_WALT)
 #include <linux/sched/walt.h>
 #endif
-#include "wlan_hdd_object_manager.h"
 #include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_object_manager.h"
 
 #ifdef IPA_OFFLOAD
-#if (defined(QCA_CONFIG_SMP) && defined(PF_WAKE_UP_IDLE)) ||\
+#if (defined(QCA_CONFIG_SMP) && defined(PF_WAKE_UP_IDLE)) || \
 	IS_ENABLED(CONFIG_SCHED_WALT)
 /**
  * hdd_ipa_get_wake_up_idle() - Get PF_WAKE_UP_IDLE flag in the task structure
@@ -131,7 +131,7 @@ static int hdd_ipa_aggregated_rx_ind(qdf_nbuf_t skb)
 {
 	int ret;
 
-	ret =  hdd_ipa_send_to_nw_stack(skb);
+	ret = hdd_ipa_send_to_nw_stack(skb);
 	return ret;
 }
 #else
@@ -144,16 +144,16 @@ static int hdd_ipa_aggregated_rx_ind(qdf_nbuf_t skb)
 
 	ip_h = (struct iphdr *)(skb->data);
 	if ((skb->protocol == htons(ETH_P_IP)) &&
-		(ip_h->protocol == IPPROTO_ICMP)) {
+	    (ip_h->protocol == IPPROTO_ICMP)) {
 		result = hdd_ipa_send_to_nw_stack(skb);
 	} else {
 		/* Call netif_rx_ni for every IPA_WLAN_RX_SOFTIRQ_THRESH packets
-		 * to avoid excessive softirq's.
-		 */
+     * to avoid excessive softirq's.
+     */
 		if (atomic_dec_and_test(&softirq_mitigation_cntr)) {
 			result = hdd_ipa_send_to_nw_stack(skb);
 			atomic_set(&softirq_mitigation_cntr,
-					IPA_WLAN_RX_SOFTIRQ_THRESH);
+				   IPA_WLAN_RX_SOFTIRQ_THRESH);
 		} else {
 			result = netif_rx(skb);
 		}
@@ -165,7 +165,7 @@ static int hdd_ipa_aggregated_rx_ind(qdf_nbuf_t skb)
 
 void hdd_ipa_send_nbuf_to_network(qdf_nbuf_t nbuf, qdf_netdev_t dev)
 {
-	struct hdd_adapter *adapter = (struct hdd_adapter *) netdev_priv(dev);
+	struct hdd_adapter *adapter = (struct hdd_adapter *)netdev_priv(dev);
 	struct wlan_objmgr_vdev *vdev;
 	int result;
 	bool delivered = false;
@@ -204,11 +204,9 @@ void hdd_ipa_send_nbuf_to_network(qdf_nbuf_t nbuf, qdf_netdev_t dev)
 	qdf_dp_trace_set_track(nbuf, QDF_RX);
 
 	ucfg_dp_event_eapol_log(nbuf, QDF_RX);
-	qdf_dp_trace_log_pkt(adapter->deflink->vdev_id,
-			     nbuf, QDF_RX, QDF_TRACE_DEFAULT_PDEV_ID,
-			     adapter->device_mode);
-	DPTRACE(qdf_dp_trace(nbuf,
-			     QDF_DP_TRACE_RX_HDD_PACKET_PTR_RECORD,
+	qdf_dp_trace_log_pkt(adapter->deflink->vdev_id, nbuf, QDF_RX,
+			     QDF_TRACE_DEFAULT_PDEV_ID, adapter->device_mode);
+	DPTRACE(qdf_dp_trace(nbuf, QDF_DP_TRACE_RX_HDD_PACKET_PTR_RECORD,
 			     QDF_TRACE_DEFAULT_PDEV_ID,
 			     qdf_nbuf_data_addr(nbuf),
 			     sizeof(qdf_nbuf_data(nbuf)), QDF_RX));
@@ -217,9 +215,9 @@ void hdd_ipa_send_nbuf_to_network(qdf_nbuf_t nbuf, qdf_netdev_t dev)
 				      QDF_RX));
 
 	/*
-	 * Set PF_WAKE_UP_IDLE flag in the task structure
-	 * This task and any task woken by this will be waken to idle CPU
-	 */
+   * Set PF_WAKE_UP_IDLE flag in the task structure
+   * This task and any task woken by this will be waken to idle CPU
+   */
 	enabled = hdd_ipa_get_wake_up_idle();
 	if (!enabled)
 		hdd_ipa_set_wake_up_idle(true);
@@ -230,9 +228,9 @@ void hdd_ipa_send_nbuf_to_network(qdf_nbuf_t nbuf, qdf_netdev_t dev)
 	len = nbuf->len;
 
 	/*
-	 * Update STA RX exception packet stats.
-	 * For SAP as part of IPA HW stats are updated.
-	 */
+   * Update STA RX exception packet stats.
+   * For SAP as part of IPA HW stats are updated.
+   */
 
 	if (is_eapol && SEND_EAPOL_OVER_NL) {
 		if (adapter->device_mode == QDF_SAP_MODE) {
@@ -244,9 +242,8 @@ void hdd_ipa_send_nbuf_to_network(qdf_nbuf_t nbuf, qdf_netdev_t dev)
 		}
 
 		if (ta_addr) {
-			if (wlan_hdd_cfg80211_rx_control_port(adapter->dev,
-							      ta_addr, nbuf,
-							      false))
+			if (wlan_hdd_cfg80211_rx_control_port(
+				    adapter->dev, ta_addr, nbuf, false))
 				result = NET_RX_SUCCESS;
 			else
 				result = NET_RX_DROP;
@@ -262,17 +259,16 @@ void hdd_ipa_send_nbuf_to_network(qdf_nbuf_t nbuf, qdf_netdev_t dev)
 	if (result == NET_RX_SUCCESS)
 		delivered = true;
 	/*
-	 * adapter->vdev is directly dereferenced because this is per packet
-	 * path, hdd_get_vdev_by_user() usage will be very costly as it involves
-	 * lock access.
-	 * Expectation here is vdev will be present during TX/RX processing
-	 * and also DP internally maintaining vdev ref count
-	 */
-	ucfg_dp_inc_rx_pkt_stats(adapter->deflink->vdev,
-				 len, delivered);
+   * adapter->vdev is directly dereferenced because this is per packet
+   * path, hdd_get_vdev_by_user() usage will be very costly as it involves
+   * lock access.
+   * Expectation here is vdev will be present during TX/RX processing
+   * and also DP internally maintaining vdev ref count
+   */
+	ucfg_dp_inc_rx_pkt_stats(adapter->deflink->vdev, len, delivered);
 	/*
-	 * Restore PF_WAKE_UP_IDLE flag in the task structure
-	 */
+   * Restore PF_WAKE_UP_IDLE flag in the task structure
+   */
 	if (!enabled)
 		hdd_ipa_set_wake_up_idle(false);
 }

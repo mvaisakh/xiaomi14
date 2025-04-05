@@ -24,27 +24,30 @@ QDF_STATUS wlan_if_mgr_init(void)
 {
 	QDF_STATUS status;
 
-	status = wlan_objmgr_register_psoc_create_handler(WLAN_UMAC_COMP_IF_MGR,
-		wlan_if_mgr_psoc_created_notification, NULL);
+	status = wlan_objmgr_register_psoc_create_handler(
+		WLAN_UMAC_COMP_IF_MGR, wlan_if_mgr_psoc_created_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ifmgr_err("Failed to register psoc create handler");
 		goto fail_create_psoc;
 	}
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_UMAC_COMP_IF_MGR,
-			wlan_if_mgr_psoc_destroyed_notification, NULL);
+		WLAN_UMAC_COMP_IF_MGR, wlan_if_mgr_psoc_destroyed_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ifmgr_err("Failed to create psoc delete handler");
 		goto fail_psoc_destroy;
 	}
-	ifmgr_debug("interface mgr psoc create and delete handler registered with objmgr");
+	ifmgr_debug(
+		"interface mgr psoc create and delete handler registered with objmgr");
 
 	return status;
 
 fail_psoc_destroy:
-	wlan_objmgr_unregister_psoc_create_handler(WLAN_UMAC_COMP_IF_MGR,
-			wlan_if_mgr_psoc_created_notification, NULL);
+	wlan_objmgr_unregister_psoc_create_handler(
+		WLAN_UMAC_COMP_IF_MGR, wlan_if_mgr_psoc_created_notification,
+		NULL);
 fail_create_psoc:
 	return status;
 }
@@ -54,18 +57,19 @@ QDF_STATUS wlan_if_mgr_deinit(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_IF_MGR,
-			wlan_if_mgr_psoc_created_notification, NULL);
+		WLAN_UMAC_COMP_IF_MGR, wlan_if_mgr_psoc_created_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ifmgr_err("Failed to deregister psoc create handler");
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_IF_MGR,
-			wlan_if_mgr_psoc_destroyed_notification, NULL);
+		WLAN_UMAC_COMP_IF_MGR, wlan_if_mgr_psoc_destroyed_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ifmgr_err("Failed to deregister psoc delete handler");
 
-	ifmgr_debug("interface mgr psoc create and delete handler deregistered with objmgr");
+	ifmgr_debug(
+		"interface mgr psoc create and delete handler deregistered with objmgr");
 
 	return status;
 }
@@ -86,4 +90,3 @@ wlan_if_mgr_psoc_destroyed_notification(struct wlan_objmgr_psoc *psoc,
 
 	return status;
 }
-

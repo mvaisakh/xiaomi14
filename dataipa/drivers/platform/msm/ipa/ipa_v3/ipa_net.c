@@ -15,13 +15,13 @@
  *
  */
 
-#include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/module.h>
 #include "ipa.h"
 #include "ipa_i.h"
 #include "ipa_qmi_service.h"
 #include "rndis_ipa.h"
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 
 static int __init ipa_late_init(void)
 {
@@ -31,15 +31,13 @@ static int __init ipa_late_init(void)
 
 	rc = ipa3_wwan_platform_driver_register();
 	if (rc) {
-		IPAERR("ipa3_wwan_platform_driver_register failed: %d\n",
-			   rc);
+		IPAERR("ipa3_wwan_platform_driver_register failed: %d\n", rc);
 		ipa3_wwan_cleanup();
 	}
 
 	rc = rndis_ipa_init_module();
 	if (rc) {
-		IPAERR("rndis_ipa_init_module failed: %d\n",
-			   rc);
+		IPAERR("rndis_ipa_init_module failed: %d\n", rc);
 		rndis_ipa_cleanup_module();
 	}
 
@@ -57,4 +55,3 @@ module_exit(ipa_late_exit);
 
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("IPA late init module");
-

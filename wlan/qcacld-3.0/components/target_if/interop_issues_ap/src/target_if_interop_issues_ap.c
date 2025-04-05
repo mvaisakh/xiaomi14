@@ -27,11 +27,11 @@
 #include <qdf_status.h>
 #include <qdf_types.h>
 #include <target_if.h>
-#include <wlan_tgt_def_config.h>
-#include <wlan_osif_priv.h>
-#include <wlan_interop_issues_ap_tgt_api.h>
-#include <wlan_interop_issues_ap_api.h>
 #include <target_if_interop_issues_ap.h>
+#include <wlan_interop_issues_ap_api.h>
+#include <wlan_interop_issues_ap_tgt_api.h>
+#include <wlan_osif_priv.h>
+#include <wlan_tgt_def_config.h>
 #include <wmi_unified_interop_issues_ap_api.h>
 
 /**
@@ -48,7 +48,7 @@ static int target_if_interop_issues_ap_event_handler(ol_scn_t sc,
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct wlan_interop_issues_ap_event data = {0};
+	struct wlan_interop_issues_ap_event data = { 0 };
 	int ret;
 
 	TARGET_IF_ENTER();
@@ -83,8 +83,7 @@ static int target_if_interop_issues_ap_event_handler(ol_scn_t sc,
  * Return: QDF_STATUS
  */
 QDF_STATUS
-target_if_interop_issues_ap_register_event_handler(
-						struct wlan_objmgr_psoc *psoc)
+target_if_interop_issues_ap_register_event_handler(struct wlan_objmgr_psoc *psoc)
 {
 	QDF_STATUS ret_val;
 	struct wmi_unified *wmi_handle;
@@ -99,11 +98,9 @@ target_if_interop_issues_ap_register_event_handler(
 		target_if_err("wmi_handle is null");
 		return QDF_STATUS_E_INVAL;
 	}
-	ret_val =
-	   wmi_unified_register_event_handler(wmi_handle,
-				wmi_pdev_interop_issues_ap_event_id,
-				target_if_interop_issues_ap_event_handler,
-				WMI_RX_WORK_CTX);
+	ret_val = wmi_unified_register_event_handler(
+		wmi_handle, wmi_pdev_interop_issues_ap_event_id,
+		target_if_interop_issues_ap_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(ret_val))
 		target_if_err("Failed to register event cb");
 
@@ -118,7 +115,7 @@ target_if_interop_issues_ap_register_event_handler(
  */
 QDF_STATUS
 target_if_interop_issues_ap_unregister_event_handler(
-						struct wlan_objmgr_psoc *psoc)
+	struct wlan_objmgr_psoc *psoc)
 {
 	struct wmi_unified *wmi_handle;
 
@@ -132,8 +129,8 @@ target_if_interop_issues_ap_unregister_event_handler(
 		target_if_err("wmi_handle is null");
 		return QDF_STATUS_E_INVAL;
 	}
-	wmi_unified_unregister_event_handler(wmi_handle,
-					wmi_pdev_interop_issues_ap_event_id);
+	wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_pdev_interop_issues_ap_event_id);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -161,8 +158,9 @@ target_if_set_interop_issues_ap_req(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-target_if_interop_issues_ap_register_tx_ops(struct wlan_objmgr_psoc *psoc,
-				  struct wlan_interop_issues_ap_tx_ops *tx_ops)
+target_if_interop_issues_ap_register_tx_ops(
+	struct wlan_objmgr_psoc *psoc,
+	struct wlan_interop_issues_ap_tx_ops *tx_ops)
 {
 	if (!tx_ops) {
 		target_if_err("tx ops is NULL!");
@@ -175,8 +173,9 @@ target_if_interop_issues_ap_register_tx_ops(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-target_if_interop_issues_ap_unregister_tx_ops(struct wlan_objmgr_psoc *psoc,
-				  struct wlan_interop_issues_ap_tx_ops *tx_ops)
+target_if_interop_issues_ap_unregister_tx_ops(
+	struct wlan_objmgr_psoc *psoc,
+	struct wlan_interop_issues_ap_tx_ops *tx_ops)
 {
 	if (!tx_ops) {
 		target_if_err("tx ops is NULL!");

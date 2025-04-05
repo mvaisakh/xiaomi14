@@ -17,14 +17,14 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "__wlan_dsc.h"
+#include "cds_api.h"
 #include "qdf_list.h"
 #include "qdf_mem.h"
 #include "qdf_status.h"
 #include "qdf_str.h"
 #include "qdf_threads.h"
 #include "qdf_timer.h"
-#include "__wlan_dsc.h"
-#include "cds_api.h"
 
 #ifdef WLAN_DSC_DEBUG
 static void __dsc_dbg_op_timeout(void *opaque_op)
@@ -32,8 +32,8 @@ static void __dsc_dbg_op_timeout(void *opaque_op)
 	struct dsc_op *op = opaque_op;
 
 	qdf_print_thread_trace(op->thread);
-	QDF_DEBUG_PANIC("Operation '%s' exceeded %ums",
-			op->func, DSC_OP_TIMEOUT_MS);
+	QDF_DEBUG_PANIC("Operation '%s' exceeded %ums", op->func,
+			DSC_OP_TIMEOUT_MS);
 }
 
 /**
@@ -105,7 +105,8 @@ static void __dsc_dbg_ops_remove(struct dsc_ops *ops, const char *func)
 	struct dsc_op *op;
 
 	/* Global pending op depth is usually <=3. Use linear search for now */
-	qdf_list_for_each(&ops->list, op, node) {
+	qdf_list_for_each(&ops->list, op, node)
+	{
 		if (!qdf_str_eq(op->func, func))
 			continue;
 
@@ -122,18 +123,23 @@ static void __dsc_dbg_ops_remove(struct dsc_ops *ops, const char *func)
 	QDF_DEBUG_PANIC("Driver op '%s' is not pending", func);
 }
 #else
-static inline void __dsc_dbg_ops_init(struct dsc_ops *ops) { }
+static inline void __dsc_dbg_ops_init(struct dsc_ops *ops)
+{
+}
 
-static inline void __dsc_dbg_ops_deinit(struct dsc_ops *ops) { }
+static inline void __dsc_dbg_ops_deinit(struct dsc_ops *ops)
+{
+}
 
-static inline QDF_STATUS
-__dsc_dbg_ops_insert(struct dsc_ops *ops, const char *func)
+static inline QDF_STATUS __dsc_dbg_ops_insert(struct dsc_ops *ops,
+					      const char *func)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline void
-__dsc_dbg_ops_remove(struct dsc_ops *ops, const char *func) { }
+static inline void __dsc_dbg_ops_remove(struct dsc_ops *ops, const char *func)
+{
+}
 #endif /* WLAN_DSC_DEBUG */
 
 void __dsc_ops_init(struct dsc_ops *ops)
@@ -229,8 +235,8 @@ static void __dsc_dbg_tran_wait_timeout(void *opaque_tran)
 	struct dsc_tran *tran = opaque_tran;
 
 	qdf_print_thread_trace(tran->thread);
-	QDF_DEBUG_PANIC("Transition '%s' waited more than %ums",
-			tran->desc, DSC_TRANS_WAIT_TIMEOUT_MS);
+	QDF_DEBUG_PANIC("Transition '%s' waited more than %ums", tran->desc,
+			DSC_TRANS_WAIT_TIMEOUT_MS);
 }
 
 /**
@@ -272,7 +278,9 @@ static inline QDF_STATUS __dsc_dbg_trans_timeout_start(struct dsc_trans *trans)
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline void __dsc_dbg_trans_timeout_stop(struct dsc_trans *trans) { }
+static inline void __dsc_dbg_trans_timeout_stop(struct dsc_trans *trans)
+{
+}
 
 static inline QDF_STATUS
 __dsc_dbg_tran_wait_timeout_start(struct dsc_tran *tran)
@@ -280,7 +288,9 @@ __dsc_dbg_tran_wait_timeout_start(struct dsc_tran *tran)
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline void __dsc_dbg_tran_wait_timeout_stop(struct dsc_tran *tran) { }
+static inline void __dsc_dbg_tran_wait_timeout_stop(struct dsc_tran *tran)
+{
+}
 #endif /* WLAN_DSC_DEBUG */
 
 void __dsc_trans_init(struct dsc_trans *trans)
@@ -419,4 +429,3 @@ QDF_STATUS __dsc_tran_wait(struct dsc_tran *tran)
 
 	return QDF_STATUS_SUCCESS;
 }
-

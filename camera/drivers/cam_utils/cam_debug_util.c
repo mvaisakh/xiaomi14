@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
-#include <linux/io.h>
-#include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/debugfs.h>
 #include "cam_trace.h"
+#include <linux/debugfs.h>
+#include <linux/io.h>
+#include <linux/module.h>
+#include <linux/slab.h>
 
 #include "cam_debug_util.h"
 /* xiaomi add hw trigger - begin */
-#include <linux/gpio.h>
 #include "cam_res_mgr_api.h"
 #include <cam_soc_util.h>
+#include <linux/gpio.h>
 /* xiaomi add hw trigger - end */
 
 unsigned long long debug_mdl;
@@ -36,9 +37,9 @@ module_param(debug_bypass_drivers, uint, 0644);
 struct camera_debug_settings cam_debug;
 
 /* xiaomi add hw trigger - begin */
-static int cam_hw_trigger_cnt  = 5;
+static int cam_hw_trigger_cnt = 5;
 // cam_hw_trigger[5] = {gpio, value, module_id, gpio_module, delay}
-static uint cam_hw_trigger[5] = {0, 0, 0, 0, 1000};
+static uint cam_hw_trigger[5] = { 0, 0, 0, 0, 1000 };
 module_param_array(cam_hw_trigger, uint, &cam_hw_trigger_cnt, 0644);
 
 int cam_debug_hw_trigger(unsigned int module_id, bool status)
@@ -46,28 +47,31 @@ int cam_debug_hw_trigger(unsigned int module_id, bool status)
 	int rc = 0;
 	int restore_value = 0;
 
-	if (!status ||	0 == cam_hw_trigger[0] ||
-			0 == cam_hw_trigger[4] ||
-			!(cam_hw_trigger[2] & module_id))
+	if (!status || 0 == cam_hw_trigger[0] || 0 == cam_hw_trigger[4] ||
+	    !(cam_hw_trigger[2] & module_id))
 		return rc;
 
-	rc = gpio_request_one(cam_hw_trigger[0], cam_hw_trigger[3], "CAM_HW_TRIGGER");
+	rc = gpio_request_one(cam_hw_trigger[0], cam_hw_trigger[3],
+			      "CAM_HW_TRIGGER");
 	if (rc) {
-		CAM_ERR(CAM_UTIL, "[cam_hw_trigger] GPIO %d:%s request failed, rc = %d",
+		CAM_ERR(CAM_UTIL,
+			"[cam_hw_trigger] GPIO %d:%s request failed, rc = %d",
 			cam_hw_trigger[0], "CAM_HW_TRIGGER", rc);
 		return rc;
 	}
 
 	restore_value = gpio_get_value_cansleep(cam_hw_trigger[0]);
 	if (restore_value != 0 && restore_value != 1) {
-		CAM_ERR(CAM_UTIL, "[cam_hw_trigger] Failed to get GPIO %d:%s status",
+		CAM_ERR(CAM_UTIL,
+			"[cam_hw_trigger] Failed to get GPIO %d:%s status",
 			cam_hw_trigger[0], "CAM_HW_TRIGGER");
 		rc = -EIO;
 		goto end_free;
 	}
 
 	if (restore_value == cam_hw_trigger[1]) {
-		CAM_ERR(CAM_UTIL, "[cam_hw_trigger] GPIO %d:%s is already in state %d",
+		CAM_ERR(CAM_UTIL,
+			"[cam_hw_trigger] GPIO %d:%s is already in state %d",
 			cam_hw_trigger[0], "CAM_HW_TRIGGER", cam_hw_trigger[1]);
 		goto end_free;
 	}
@@ -89,7 +93,6 @@ end_free:
 }
 /* xiaomi add hw trigger - end */
 
-
 struct dentry *cam_debugfs_root;
 
 void cam_debugfs_init(void)
@@ -109,7 +112,9 @@ void cam_debugfs_init(void)
 
 	tmp = debugfs_create_dir("camera", NULL);
 	if (IS_ERR_VALUE(tmp)) {
-		CAM_ERR(CAM_UTIL, "failed to create debugfs root folder (rc=%d)", PTR_ERR(tmp));
+		CAM_ERR(CAM_UTIL,
+			"failed to create debugfs root folder (rc=%d)",
+			PTR_ERR(tmp));
 		return;
 	}
 
@@ -143,8 +148,9 @@ int cam_debugfs_create_subdir(const char *name, struct dentry **subdir)
 
 	tmp = debugfs_create_dir(name, cam_debugfs_root);
 	if (IS_ERR_VALUE(tmp)) {
-		CAM_ERR(CAM_UTIL, "failed to create debugfs subdir (name=%s, rc=%d)", name,
-			PTR_ERR(tmp));
+		CAM_ERR(CAM_UTIL,
+			"failed to create debugfs subdir (name=%s, rc=%d)",
+			name, PTR_ERR(tmp));
 		return PTR_ERR(tmp);
 	}
 
@@ -238,7 +244,8 @@ static int cam_debug_parse_cpas_settings(const char *setting, u64 value)
 }
 
 ssize_t cam_debug_sysfs_node_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+				   struct device_attribute *attr,
+				   const char *buf, size_t count)
 {
 	int rc = 0;
 	char *local_buf = NULL, *local_buf_temp = NULL;
@@ -248,14 +255,14 @@ ssize_t cam_debug_sysfs_node_store(struct device *dev,
 	u64 value;
 
 	CAM_INFO(CAM_UTIL, "Sysfs debug attr name:[%s] buf:[%s] bytes:[%d]",
-		attr->attr.name, buf, count);
+		 attr->attr.name, buf, count);
 	local_buf = kmemdup(buf, (count + sizeof(char)), GFP_KERNEL);
 	local_buf_temp = local_buf;
 	driver = strsep(&local_buf, "#");
 	if (!driver) {
 		CAM_ERR(CAM_UTIL,
-			"Invalid input driver name buf:[%s], count:%d",
-			buf, count);
+			"Invalid input driver name buf:[%s], count:%d", buf,
+			count);
 		goto error;
 	}
 
@@ -268,8 +275,8 @@ ssize_t cam_debug_sysfs_node_store(struct device *dev,
 
 	value_str = strsep(&local_buf, "=");
 	if (!value_str) {
-		CAM_ERR(CAM_UTIL, "Invalid input value buf:[%s], count:%d",
-			buf, count);
+		CAM_ERR(CAM_UTIL, "Invalid input value buf:[%s], count:%d", buf,
+			count);
 		goto error;
 	}
 
@@ -280,7 +287,8 @@ ssize_t cam_debug_sysfs_node_store(struct device *dev,
 		goto error;
 	}
 
-	CAM_INFO(CAM_UTIL,
+	CAM_INFO(
+		CAM_UTIL,
 		"Processing sysfs store for driver:[%s], setting:[%s], value:[%llu]",
 		driver, setting, value);
 
@@ -301,19 +309,23 @@ error:
 	return -EPERM;
 }
 
-static inline void __cam_print_to_buffer(char *buf, const size_t buf_size, size_t *len,
-	unsigned int tag, enum cam_debug_module_id module_id, const char *fmt, va_list args)
+static inline void __cam_print_to_buffer(char *buf, const size_t buf_size,
+					 size_t *len, unsigned int tag,
+					 enum cam_debug_module_id module_id,
+					 const char *fmt, va_list args)
 {
 	size_t buf_len = *len;
 
-	buf_len += scnprintf(buf + buf_len, (buf_size - buf_len), "\n%-8s: %s:\t",
-			CAM_LOG_TAG_NAME(tag), CAM_DBG_MOD_NAME(module_id));
+	buf_len += scnprintf(buf + buf_len, (buf_size - buf_len),
+			     "\n%-8s: %s:\t", CAM_LOG_TAG_NAME(tag),
+			     CAM_DBG_MOD_NAME(module_id));
 	buf_len += vscnprintf(buf + buf_len, (buf_size - buf_len), fmt, args);
 	*len = buf_len;
 }
 
-void cam_print_to_buffer(char *buf, const size_t buf_size, size_t *len, unsigned int tag,
-	unsigned long long module_id, const char *fmt, ...)
+void cam_print_to_buffer(char *buf, const size_t buf_size, size_t *len,
+			 unsigned int tag, unsigned long long module_id,
+			 const char *fmt, ...)
 {
 	va_list args;
 
@@ -332,7 +344,8 @@ static void __cam_print_log(int type, const char *fmt, ...)
 	if ((type & CAM_PRINT_LOG) && (debug_type != 1))
 		vprintk(fmt, args1);
 	if ((type & CAM_PRINT_TRACE) && (debug_type != 0)) {
-		/* skip the first character which is used by printk to identify the log level */
+		/* skip the first character which is used by printk to identify the log
+     * level */
 		trace_cam_log_debug(fmt + sizeof(KERN_INFO) - 1, &args2);
 	}
 	va_end(args2);
@@ -340,13 +353,15 @@ static void __cam_print_log(int type, const char *fmt, ...)
 	va_end(args);
 }
 
-void cam_print_log(int type, int module, int tag, const char *func,
-	int line, const char *fmt, ...)
+void cam_print_log(int type, int module, int tag, const char *func, int line,
+		   const char *fmt, ...)
 {
-	char buf[CAM_LOG_BUF_LEN] = {0,};
+	char buf[CAM_LOG_BUF_LEN] = {
+		0,
+	};
 
 	struct timespec64 ts;
-	uint64_t          ms=0, sec=0, min=0, hrs=0;
+	uint64_t ms = 0, sec = 0, min = 0, hrs = 0;
 
 	va_list args;
 
@@ -358,9 +373,8 @@ void cam_print_log(int type, int module, int tag, const char *func,
 
 	va_start(args, fmt);
 	vscnprintf(buf, CAM_LOG_BUF_LEN, fmt, args);
-	__cam_print_log(type, __CAM_LOG_FMT,
-		hrs, min, sec, ms,
-		CAM_LOG_TAG_NAME(tag), CAM_DBG_MOD_NAME(module), func,
-		line, buf);
+	__cam_print_log(type, __CAM_LOG_FMT, hrs, min, sec, ms,
+			CAM_LOG_TAG_NAME(tag), CAM_DBG_MOD_NAME(module), func,
+			line, buf);
 	va_end(args);
 }

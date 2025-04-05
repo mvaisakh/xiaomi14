@@ -17,19 +17,19 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "linux/device.h"
-#include "linux/netdevice.h"
+#include "osif_vdev_sync.h"
 #include "__osif_psoc_sync.h"
 #include "__osif_vdev_sync.h"
-#include "osif_vdev_sync.h"
+#include "linux/device.h"
+#include "linux/netdevice.h"
 #include "qdf_lock.h"
 #include "qdf_status.h"
 #include "qdf_types.h"
 #include <qdf_trace.h>
 #include <wlan_cfg80211.h>
 
-static struct osif_vdev_sync __osif_vdev_sync_arr[WLAN_MAX_VDEVS +
-						  WLAN_MAX_ML_VDEVS];
+static struct osif_vdev_sync
+	__osif_vdev_sync_arr[WLAN_MAX_VDEVS + WLAN_MAX_ML_VDEVS];
 static qdf_spinlock_t __osif_vdev_sync_lock;
 
 #define osif_vdev_sync_lock_create() qdf_spinlock_create(&__osif_vdev_sync_lock)
@@ -191,8 +191,7 @@ typedef QDF_STATUS (*vdev_start_func)(struct dsc_vdev *, const char *);
 static int
 __osif_vdev_sync_start_callback(struct net_device *net_dev,
 				struct osif_vdev_sync **out_vdev_sync,
-				const char *desc,
-				vdev_start_func vdev_start_cb)
+				const char *desc, vdev_start_func vdev_start_cb)
 {
 	QDF_STATUS status;
 	struct osif_vdev_sync *vdev_sync;
@@ -212,11 +211,9 @@ __osif_vdev_sync_start_callback(struct net_device *net_dev,
 	return 0;
 }
 
-static int
-__osif_vdev_sync_start_wait_callback(struct net_device *net_dev,
-				     struct osif_vdev_sync **out_vdev_sync,
-				     const char *desc,
-				     vdev_start_func vdev_start_cb)
+static int __osif_vdev_sync_start_wait_callback(
+	struct net_device *net_dev, struct osif_vdev_sync **out_vdev_sync,
+	const char *desc, vdev_start_func vdev_start_cb)
 {
 	QDF_STATUS status;
 	struct osif_vdev_sync *vdev_sync;
@@ -262,9 +259,8 @@ int __osif_vdev_sync_trans_start_wait(struct net_device *net_dev,
 	int errno;
 
 	/* since dsc_vdev_trans_start_wait may sleep do not take lock here */
-	errno = __osif_vdev_sync_start_wait_callback(net_dev,
-						     out_vdev_sync, desc,
-						     dsc_vdev_trans_start_wait);
+	errno = __osif_vdev_sync_start_wait_callback(
+		net_dev, out_vdev_sync, desc, dsc_vdev_trans_start_wait);
 
 	if (!errno)
 		osif_vdev_sync_wait_for_ops(*out_vdev_sync);
@@ -336,4 +332,3 @@ void osif_vdev_cache_command(struct osif_vdev_sync *vdev_sync, uint8_t cmd_id)
 	dsc_vdev_cache_command(vdev_sync->dsc_vdev, cmd_id);
 	osif_debug("Set cache cmd to %d", cmd_id);
 }
-

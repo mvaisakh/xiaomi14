@@ -16,14 +16,14 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "i_bmi.h"
 #include "cds_api.h"
+#include "i_bmi.h"
 
 /* APIs visible to the driver */
 
 QDF_STATUS
-bmi_read_memory(uint32_t address,
-		uint8_t *buffer, uint32_t length, struct ol_context *ol_ctx)
+bmi_read_memory(uint32_t address, uint8_t *buffer, uint32_t length,
+		struct ol_context *ol_ctx)
 {
 	struct hif_opaque_softc *scn = ol_ctx->scn;
 	uint32_t cid;
@@ -48,43 +48,43 @@ bmi_read_memory(uint32_t address,
 	}
 
 	bmi_assert(BMI_COMMAND_FITS(BMI_DATASZ_MAX + sizeof(cid) +
-			sizeof(address) + sizeof(length)));
+				    sizeof(address) + sizeof(length)));
 	qdf_mem_zero(bmi_cmd_buff, BMI_DATASZ_MAX + sizeof(cid) +
-			sizeof(address) + sizeof(length));
+					   sizeof(address) + sizeof(length));
 	qdf_mem_zero(bmi_rsp_buff, BMI_DATASZ_MAX + sizeof(cid) +
-			sizeof(address) + sizeof(length));
+					   sizeof(address) + sizeof(length));
 
 	cid = BMI_READ_MEMORY;
 	align = 0;
 	remaining = length;
 
 	while (remaining) {
-		rxlen = (remaining < BMI_DATASZ_MAX) ?
-				remaining : BMI_DATASZ_MAX;
+		rxlen = (remaining < BMI_DATASZ_MAX) ? remaining :
+						       BMI_DATASZ_MAX;
 		offset = 0;
 		qdf_mem_copy(&(bmi_cmd_buff[offset]), &cid, sizeof(cid));
 		offset += sizeof(cid);
 		qdf_mem_copy(&(bmi_cmd_buff[offset]), &address,
-						sizeof(address));
+			     sizeof(address));
 		offset += sizeof(address);
 		qdf_mem_copy(&(bmi_cmd_buff[offset]), &rxlen, sizeof(rxlen));
 		offset += sizeof(length);
 
 		/* note we reuse the same buffer to receive on */
 		status = hif_exchange_bmi_msg(scn, cmd, rsp, bmi_cmd_buff,
-						offset, bmi_rsp_buff, &rxlen,
-						BMI_EXCHANGE_TIMEOUT_MS);
+					      offset, bmi_rsp_buff, &rxlen,
+					      BMI_EXCHANGE_TIMEOUT_MS);
 		if (status) {
 			BMI_ERR("Unable to read from the device");
 			return QDF_STATUS_E_FAILURE;
 		}
 		if (remaining == rxlen) {
 			qdf_mem_copy(&buffer[length - remaining + align],
-					bmi_rsp_buff, rxlen - align);
+				     bmi_rsp_buff, rxlen - align);
 			/* last align bytes are invalid */
 		} else {
 			qdf_mem_copy(&buffer[length - remaining + align],
-				 bmi_rsp_buff, rxlen);
+				     bmi_rsp_buff, rxlen);
 		}
 		remaining -= rxlen;
 		address += rxlen;
@@ -94,7 +94,7 @@ bmi_read_memory(uint32_t address,
 }
 
 QDF_STATUS bmi_write_memory(uint32_t address, uint8_t *buffer, uint32_t length,
-						struct ol_context *ol_ctx)
+			    struct ol_context *ol_ctx)
 {
 	struct hif_opaque_softc *scn = ol_ctx->scn;
 	uint32_t cid;
@@ -142,18 +142,18 @@ QDF_STATUS bmi_write_memory(uint32_t address, uint8_t *buffer, uint32_t length,
 		qdf_mem_copy(&(bmi_cmd_buff[offset]), &cid, sizeof(cid));
 		offset += sizeof(cid);
 		qdf_mem_copy(&(bmi_cmd_buff[offset]), &address,
-						sizeof(address));
+			     sizeof(address));
 		offset += sizeof(address);
 		qdf_mem_copy(&(bmi_cmd_buff[offset]), &txlen, sizeof(txlen));
 		offset += sizeof(txlen);
 		qdf_mem_copy(&(bmi_cmd_buff[offset]), src, txlen);
 		offset += txlen;
 		status = hif_exchange_bmi_msg(scn, cmd, rsp, bmi_cmd_buff,
-						offset, NULL, NULL,
-						BMI_EXCHANGE_TIMEOUT_MS);
+					      offset, NULL, NULL,
+					      BMI_EXCHANGE_TIMEOUT_MS);
 		if (status) {
 			BMI_ERR("Unable to write to the device; status:%d",
-								status);
+				status);
 			return QDF_STATUS_E_FAILURE;
 		}
 		remaining -= txlen;
@@ -192,9 +192,8 @@ bmi_execute(uint32_t address, A_UINT32 *param, struct ol_context *ol_ctx)
 	qdf_mem_zero(bmi_cmd_buff, size);
 	qdf_mem_zero(bmi_rsp_buff, size);
 
-
-	BMI_DBG("BMI Execute: device: 0x%pK, address: 0x%x, param: %d",
-						scn, address, *param);
+	BMI_DBG("BMI Execute: device: 0x%pK, address: 0x%x, param: %d", scn,
+		address, *param);
 
 	cid = BMI_EXECUTE;
 
@@ -207,7 +206,7 @@ bmi_execute(uint32_t address, A_UINT32 *param, struct ol_context *ol_ctx)
 	offset += sizeof(*param);
 	param_len = sizeof(*param);
 	status = hif_exchange_bmi_msg(scn, cmd, rsp, bmi_cmd_buff, offset,
-					bmi_rsp_buff, &param_len, 0);
+				      bmi_rsp_buff, &param_len, 0);
 	if (status) {
 		BMI_ERR("Unable to read from the device status:%d", status);
 		return QDF_STATUS_E_FAILURE;
@@ -219,8 +218,7 @@ bmi_execute(uint32_t address, A_UINT32 *param, struct ol_context *ol_ctx)
 	return QDF_STATUS_SUCCESS;
 }
 
-inline QDF_STATUS
-bmi_no_command(struct ol_context *ol_ctx)
+inline QDF_STATUS bmi_no_command(struct ol_context *ol_ctx)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -306,7 +304,7 @@ QDF_STATUS bmi_done_local(struct ol_context *ol_ctx)
 	qdf_mem_copy(info->bmi_cmd_buff, &cid, sizeof(cid));
 
 	status = hif_exchange_bmi_msg(scn, cmd, rsp, info->bmi_cmd_buff,
-				sizeof(cid), NULL, NULL, 0);
+				      sizeof(cid), NULL, NULL, 0);
 	if (status) {
 		BMI_ERR("Failed to write to the device; status:%d", status);
 		return QDF_STATUS_E_FAILURE;
@@ -314,16 +312,16 @@ QDF_STATUS bmi_done_local(struct ol_context *ol_ctx)
 
 	if (info->bmi_cmd_buff) {
 		qdf_mem_free_consistent(qdf_dev, qdf_dev->dev,
-					MAX_BMI_CMDBUF_SZ,
-				    info->bmi_cmd_buff, info->bmi_cmd_da, 0);
+					MAX_BMI_CMDBUF_SZ, info->bmi_cmd_buff,
+					info->bmi_cmd_da, 0);
 		info->bmi_cmd_buff = NULL;
 		info->bmi_cmd_da = 0;
 	}
 
 	if (info->bmi_rsp_buff) {
 		qdf_mem_free_consistent(qdf_dev, qdf_dev->dev,
-					MAX_BMI_CMDBUF_SZ,
-				    info->bmi_rsp_buff, info->bmi_rsp_da, 0);
+					MAX_BMI_CMDBUF_SZ, info->bmi_rsp_buff,
+					info->bmi_rsp_da, 0);
 		info->bmi_rsp_buff = NULL;
 		info->bmi_rsp_da = 0;
 	}

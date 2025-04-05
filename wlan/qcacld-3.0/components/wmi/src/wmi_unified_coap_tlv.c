@@ -18,9 +18,9 @@
  * DOC: Implement API's specific to CoAP component.
  */
 
-#include <wmi_unified_priv.h>
-#include "wmi.h"
 #include "ol_defines.h"
+#include "wmi.h"
+#include <wmi_unified_priv.h>
 
 /*
  * send_coap_add_pattern_cmd_tlv() - Send wmi cmd for adding CoAP pattern
@@ -39,18 +39,18 @@ send_coap_add_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 	uint8_t *buf_ptr;
 	uint32_t len, coapmsg_len_align, verify_len_align;
 
-	wmi_debug("vdev id %d pattern id %d timeout %d src ip 0x%x:%d coap msg len %d",
-		  param->vdev_id, param->pattern_id, param->cache_timeout,
-		  param->src_ip_v4, param->src_udp_port,
-		  param->coapmsg_len);
+	wmi_debug(
+		"vdev id %d pattern id %d timeout %d src ip 0x%x:%d coap msg len %d",
+		param->vdev_id, param->pattern_id, param->cache_timeout,
+		param->src_ip_v4, param->src_udp_port, param->coapmsg_len);
 
 	wmi_debug("filter: dest ip 0x%x:%d is bc %d verify offset %d len %d",
 		  param->dest_ip_v4, param->dest_udp_port,
 		  param->dest_ip_v4_is_bc, param->verify_offset,
 		  param->verify_len);
 
-	if (!param->verify || !param->verify_len ||
-	    !param->coapmsg || !param->coapmsg_len) {
+	if (!param->verify || !param->verify_len || !param->coapmsg ||
+	    !param->coapmsg_len) {
 		wmi_err("invalid param");
 		return QDF_STATUS_E_INVAL;
 	}
@@ -58,7 +58,7 @@ send_coap_add_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 	coapmsg_len_align = qdf_align(param->coapmsg_len, 4);
 	verify_len_align = qdf_align(param->verify_len, 4);
 	len = sizeof(*cmd) + WMI_TLV_HDR_SIZE + coapmsg_len_align +
-		WMI_TLV_HDR_SIZE + verify_len_align;
+	      WMI_TLV_HDR_SIZE + verify_len_align;
 	buf = wmi_buf_alloc(wmi_handle, len);
 	if (!buf)
 		return QDF_STATUS_E_NOMEM;
@@ -66,7 +66,8 @@ send_coap_add_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 	buf_ptr = wmi_buf_data(buf);
 	cmd = (WMI_WOW_COAP_ADD_PATTERN_CMD_fixed_param *)buf_ptr;
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_WMI_WOW_COAP_ADD_PATTERN_CMD_fixed_param,
 		WMITLV_GET_STRUCT_TLVLEN(
 			WMI_WOW_COAP_ADD_PATTERN_CMD_fixed_param));
@@ -98,8 +99,8 @@ send_coap_add_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 	qdf_mem_copy(buf_ptr, param->coapmsg, param->coapmsg_len);
 	buf_ptr += coapmsg_len_align;
 
-	wmi_mtrace(WMI_WOW_COAP_ADD_PATTERN_CMDID,
-		   cmd->vdev_id, cmd->pattern_id);
+	wmi_mtrace(WMI_WOW_COAP_ADD_PATTERN_CMDID, cmd->vdev_id,
+		   cmd->pattern_id);
 	status = wmi_unified_cmd_send(wmi_handle, buf, len,
 				      WMI_WOW_COAP_ADD_PATTERN_CMDID);
 	if (status != QDF_STATUS_SUCCESS) {
@@ -119,9 +120,9 @@ send_coap_add_pattern_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-send_coap_del_pattern_cmd_tlv(wmi_unified_t wmi_handle,
-			      uint8_t vdev_id, uint32_t pattern_id)
+static QDF_STATUS send_coap_del_pattern_cmd_tlv(wmi_unified_t wmi_handle,
+						uint8_t vdev_id,
+						uint32_t pattern_id)
 {
 	WMI_WOW_COAP_DEL_PATTERN_CMD_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -136,15 +137,16 @@ send_coap_del_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 
 	cmd = (WMI_WOW_COAP_DEL_PATTERN_CMD_fixed_param *)wmi_buf_data(buf);
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		 WMITLV_TAG_STRUC_WMI_WOW_COAP_DEL_PATTERN_CMD_fixed_param,
-		 WMITLV_GET_STRUCT_TLVLEN(
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_WMI_WOW_COAP_DEL_PATTERN_CMD_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
 			WMI_WOW_COAP_DEL_PATTERN_CMD_fixed_param));
 
 	cmd->vdev_id = vdev_id;
 	cmd->pattern_id = pattern_id;
-	wmi_mtrace(WMI_WOW_COAP_DEL_PATTERN_CMDID,
-		   cmd->vdev_id, cmd->pattern_id);
+	wmi_mtrace(WMI_WOW_COAP_DEL_PATTERN_CMDID, cmd->vdev_id,
+		   cmd->pattern_id);
 	status = wmi_unified_cmd_send(wmi_handle, buf, len,
 				      WMI_WOW_COAP_DEL_PATTERN_CMDID);
 	if (status != QDF_STATUS_SUCCESS) {
@@ -164,9 +166,8 @@ send_coap_del_pattern_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-send_coap_add_keepalive_pattern_cmd_tlv(wmi_unified_t wmi_handle,
-			struct coap_offload_periodic_tx_param *param)
+static QDF_STATUS send_coap_add_keepalive_pattern_cmd_tlv(
+	wmi_unified_t wmi_handle, struct coap_offload_periodic_tx_param *param)
 {
 	WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMD_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -174,11 +175,11 @@ send_coap_add_keepalive_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 	uint8_t *buf_ptr;
 	uint32_t len, coapmsg_len_align;
 
-	wmi_debug("vdev id %d pattern id %d ip src 0x%x:%d dest 0x%x:%d bc %d timeout %d",
-		  param->vdev_id, param->pattern_id, param->src_ip_v4,
-		  param->src_udp_port, param->dest_ip_v4,
-		  param->dest_udp_port, param->dest_ip_v4_is_bc,
-		  param->timeout);
+	wmi_debug(
+		"vdev id %d pattern id %d ip src 0x%x:%d dest 0x%x:%d bc %d timeout %d",
+		param->vdev_id, param->pattern_id, param->src_ip_v4,
+		param->src_udp_port, param->dest_ip_v4, param->dest_udp_port,
+		param->dest_ip_v4_is_bc, param->timeout);
 
 	if (!param->coapmsg || !param->coapmsg_len) {
 		wmi_err("invalid CoAP message");
@@ -194,10 +195,11 @@ send_coap_add_keepalive_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 	buf_ptr = wmi_buf_data(buf);
 	cmd = (WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMD_fixed_param *)buf_ptr;
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
-	WMITLV_TAG_STRUC_WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMD_fixed_param,
-	WMITLV_GET_STRUCT_TLVLEN(
-		WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMD_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMD_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMD_fixed_param));
 
 	cmd->vdev_id = param->vdev_id;
 	cmd->pattern_id = param->pattern_id;
@@ -221,8 +223,8 @@ send_coap_add_keepalive_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 	qdf_mem_copy(buf_ptr, param->coapmsg, param->coapmsg_len);
 	buf_ptr += coapmsg_len_align;
 
-	wmi_mtrace(WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMDID,
-		   cmd->vdev_id, cmd->pattern_id);
+	wmi_mtrace(WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMDID, cmd->vdev_id,
+		   cmd->pattern_id);
 	status = wmi_unified_cmd_send(wmi_handle, buf, len,
 				      WMI_WOW_COAP_ADD_KEEPALIVE_PATTERN_CMDID);
 	if (status != QDF_STATUS_SUCCESS) {
@@ -261,15 +263,16 @@ send_coap_del_keepalive_pattern_cmd_tlv(wmi_unified_t wmi_handle,
 	buf_ptr = wmi_buf_data(buf);
 	cmd = (WMI_WOW_COAP_DEL_KEEPALIVE_PATTERN_CMD_fixed_param *)buf_ptr;
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_WMI_WOW_COAP_DEL_KEEPALIVE_PATTERN_CMD_fixed_param,
 		WMITLV_GET_STRUCT_TLVLEN(
 			WMI_WOW_COAP_DEL_PATTERN_CMD_fixed_param));
 
 	cmd->vdev_id = vdev_id;
 	cmd->pattern_id = pattern_id;
-	wmi_mtrace(WMI_WOW_COAP_DEL_KEEPALIVE_PATTERN_CMDID,
-		   cmd->vdev_id, cmd->pattern_id);
+	wmi_mtrace(WMI_WOW_COAP_DEL_KEEPALIVE_PATTERN_CMDID, cmd->vdev_id,
+		   cmd->pattern_id);
 	status = wmi_unified_cmd_send(wmi_handle, buf, len,
 				      WMI_WOW_COAP_DEL_KEEPALIVE_PATTERN_CMDID);
 	if (status != QDF_STATUS_SUCCESS) {
@@ -290,9 +293,9 @@ send_coap_del_keepalive_pattern_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-send_coap_cache_get_cmd_tlv(wmi_unified_t wmi_handle,
-			    uint8_t vdev_id, uint32_t pattern_id)
+static QDF_STATUS send_coap_cache_get_cmd_tlv(wmi_unified_t wmi_handle,
+					      uint8_t vdev_id,
+					      uint32_t pattern_id)
 {
 	WMI_WOW_COAP_GET_BUF_INFO_CMD_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -306,15 +309,16 @@ send_coap_cache_get_cmd_tlv(wmi_unified_t wmi_handle,
 
 	cmd = (WMI_WOW_COAP_GET_BUF_INFO_CMD_fixed_param *)wmi_buf_data(buf);
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_WMI_WOW_COAP_GET_BUF_INFO_CMD_fixed_param,
 		WMITLV_GET_STRUCT_TLVLEN(
 			WMI_WOW_COAP_GET_BUF_INFO_CMD_fixed_param));
 
 	cmd->vdev_id = vdev_id;
 	cmd->pattern_id = pattern_id;
-	wmi_mtrace(WMI_WOW_COAP_GET_BUF_INFO_CMDID,
-		   cmd->vdev_id, cmd->pattern_id);
+	wmi_mtrace(WMI_WOW_COAP_GET_BUF_INFO_CMDID, cmd->vdev_id,
+		   cmd->pattern_id);
 	status = wmi_unified_cmd_send(wmi_handle, buf, len,
 				      WMI_WOW_COAP_GET_BUF_INFO_CMDID);
 	if (status != QDF_STATUS_SUCCESS) {
@@ -337,9 +341,9 @@ send_coap_cache_get_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-coap_extract_buf_info_tlv(wmi_unified_t wmi_handle, void *evt_buf,
-			  struct coap_buf_info *info)
+static QDF_STATUS coap_extract_buf_info_tlv(wmi_unified_t wmi_handle,
+					    void *evt_buf,
+					    struct coap_buf_info *info)
 {
 	WMI_WOW_COAP_BUF_INFO_EVENT_fixed_param *buf_info_ev;
 	WMI_WOW_COAP_BUF_INFO_EVENTID_param_tlvs *param_buf = evt_buf;
@@ -356,8 +360,7 @@ coap_extract_buf_info_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 	}
 
 	if (buf_info_ev->vdev_id > WLAN_MAX_VDEVS) {
-		wmi_debug("received invalid vdev_id %d",
-			  buf_info_ev->vdev_id);
+		wmi_debug("received invalid vdev_id %d", buf_info_ev->vdev_id);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -399,13 +402,14 @@ coap_extract_buf_info_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 		qdf_mem_copy(buf_node->payload, payload, buf_node->len);
 		qdf_list_insert_back(&info->info_list, &buf_node->node);
 
-		wmi_debug("idx %d: src ip 0x%x tsf 0x%llx payload len %d",
-			  i, buf_node->src_ip, buf_node->tsf, buf_node->len);
+		wmi_debug("idx %d: src ip 0x%x tsf 0x%llx payload len %d", i,
+			  buf_node->src_ip, buf_node->tsf, buf_node->len);
 	}
 
-	wmi_debug("vdev_id %d req_id %d num_tuple %d payload len %d more info %d",
-		  info->vdev_id, info->req_id, num_tuple,
-		  num_payload, info->more_info);
+	wmi_debug(
+		"vdev_id %d req_id %d num_tuple %d payload len %d more info %d",
+		info->vdev_id, info->req_id, num_tuple, num_payload,
+		info->more_info);
 	return QDF_STATUS_SUCCESS;
 }
 

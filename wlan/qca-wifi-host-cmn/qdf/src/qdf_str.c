@@ -16,9 +16,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "qdf_str.h"
 #include "qdf_mem.h"
 #include "qdf_module.h"
-#include "qdf_str.h"
 #include "qdf_trace.h"
 
 QDF_STATUS qdf_str_dup(char **dest, const char *src)
@@ -56,17 +56,16 @@ void qdf_str_right_trim(char *str)
 }
 qdf_export_symbol(qdf_str_right_trim);
 
-uint32_t
-qdf_str_copy_all_before_char(char *str, uint32_t str_len,
-			     char *dst, uint32_t dst_len, char c)
+uint32_t qdf_str_copy_all_before_char(char *str, uint32_t str_len, char *dst,
+				      uint32_t dst_len, char c)
 {
 	uint32_t len = 0;
 
 	if (!str)
 		return len;
 
-	while ((len < str_len) && (len < dst_len) &&
-	       (*str != '\0') && (*str != c)) {
+	while ((len < str_len) && (len < dst_len) && (*str != '\0') &&
+	       (*str != c)) {
 		*dst++ = *str++;
 		len++;
 	}

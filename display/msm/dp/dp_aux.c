@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved. Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/delay.h>
@@ -13,50 +13,55 @@
 #endif
 
 #include "dp_aux.h"
-#include "dp_hpd.h"
 #include "dp_debug.h"
+#include "dp_hpd.h"
 
-#define DP_AUX_ENUM_STR(x)		#x
+#define DP_AUX_ENUM_STR(x) #x
 #define DP_AUX_IPC_NUM_PAGES 10
 
-#define DP_AUX_DEBUG(dp_aux, fmt, ...) \
-	do { \
-		if (dp_aux) \
-			ipc_log_string(dp_aux->ipc_log_context, "[d][%-4d]"fmt,\
-					current->pid, ##__VA_ARGS__); \
-		DP_DEBUG_V(fmt, ##__VA_ARGS__); \
+#define DP_AUX_DEBUG(dp_aux, fmt, ...)                                \
+	do {                                                          \
+		if (dp_aux)                                           \
+			ipc_log_string(dp_aux->ipc_log_context,       \
+				       "[d][%-4d]" fmt, current->pid, \
+				       ##__VA_ARGS__);                \
+		DP_DEBUG_V(fmt, ##__VA_ARGS__);                       \
 	} while (0)
 
-#define DP_AUX_WARN(dp_aux, fmt, ...) \
-	do { \
-		if (dp_aux) \
-			ipc_log_string(dp_aux->ipc_log_context, "[w][%-4d]"fmt,\
-					current->pid, ##__VA_ARGS__); \
-		DP_WARN_V(fmt, ##__VA_ARGS__); \
+#define DP_AUX_WARN(dp_aux, fmt, ...)                                 \
+	do {                                                          \
+		if (dp_aux)                                           \
+			ipc_log_string(dp_aux->ipc_log_context,       \
+				       "[w][%-4d]" fmt, current->pid, \
+				       ##__VA_ARGS__);                \
+		DP_WARN_V(fmt, ##__VA_ARGS__);                        \
 	} while (0)
 
-#define DP_AUX_WARN_RATELIMITED(dp_aux, fmt, ...) \
-	do { \
-		if (dp_aux) \
-			ipc_log_string(dp_aux->ipc_log_context, "[w][%-4d]"fmt,\
-					current->pid, ##__VA_ARGS__); \
-		DP_WARN_RATELIMITED_V(fmt, ##__VA_ARGS__); \
+#define DP_AUX_WARN_RATELIMITED(dp_aux, fmt, ...)                     \
+	do {                                                          \
+		if (dp_aux)                                           \
+			ipc_log_string(dp_aux->ipc_log_context,       \
+				       "[w][%-4d]" fmt, current->pid, \
+				       ##__VA_ARGS__);                \
+		DP_WARN_RATELIMITED_V(fmt, ##__VA_ARGS__);            \
 	} while (0)
 
-#define DP_AUX_ERR(dp_aux, fmt, ...) \
-	do { \
-		if (dp_aux) \
-			ipc_log_string(dp_aux->ipc_log_context, "[e][%-4d]"fmt,\
-					current->pid, ##__VA_ARGS__); \
-		DP_ERR_V(fmt, ##__VA_ARGS__); \
+#define DP_AUX_ERR(dp_aux, fmt, ...)                                  \
+	do {                                                          \
+		if (dp_aux)                                           \
+			ipc_log_string(dp_aux->ipc_log_context,       \
+				       "[e][%-4d]" fmt, current->pid, \
+				       ##__VA_ARGS__);                \
+		DP_ERR_V(fmt, ##__VA_ARGS__);                         \
 	} while (0)
 
-#define DP_AUX_ERR_RATELIMITED(dp_aux, fmt, ...) \
-	do { \
-		if (dp_aux) \
-			ipc_log_string(dp_aux->ipc_log_context, "[e][%-4d]"fmt,\
-					current->pid, ##__VA_ARGS__); \
-		DP_ERR_RATELIMITED_V(fmt, ##__VA_ARGS__); \
+#define DP_AUX_ERR_RATELIMITED(dp_aux, fmt, ...)                      \
+	do {                                                          \
+		if (dp_aux)                                           \
+			ipc_log_string(dp_aux->ipc_log_context,       \
+				       "[e][%-4d]" fmt, current->pid, \
+				       ##__VA_ARGS__);                \
+		DP_ERR_RATELIMITED_V(fmt, ##__VA_ARGS__);             \
 	} while (0)
 
 enum {
@@ -97,27 +102,27 @@ struct dp_aux_private {
 };
 
 static void dp_aux_hex_dump(struct drm_dp_aux *drm_aux,
-		struct drm_dp_aux_msg *msg)
+			    struct drm_dp_aux_msg *msg)
 {
 	char prefix[64];
 	int i, linelen, remaining = msg->size;
 	const int rowsize = 16;
 	u8 linebuf[64];
-	struct dp_aux_private *aux = container_of(drm_aux,
-		struct dp_aux_private, drm_aux);
+	struct dp_aux_private *aux =
+		container_of(drm_aux, struct dp_aux_private, drm_aux);
 	struct dp_aux *dp_aux = &aux->dp_aux;
 
 	snprintf(prefix, sizeof(prefix), "%s %s %4xh(%2zu): ",
-		(msg->request & DP_AUX_I2C_MOT) ? "I2C" : "NAT",
-		(msg->request & DP_AUX_I2C_READ) ? "RD" : "WR",
-		msg->address, msg->size);
+		 (msg->request & DP_AUX_I2C_MOT) ? "I2C" : "NAT",
+		 (msg->request & DP_AUX_I2C_READ) ? "RD" : "WR", msg->address,
+		 msg->size);
 
 	for (i = 0; i < msg->size; i += rowsize) {
 		linelen = min(remaining, rowsize);
 		remaining -= rowsize;
 
 		hex_dump_to_buffer(msg->buffer + i, linelen, rowsize, 1,
-			linebuf, sizeof(linebuf), false);
+				   linebuf, sizeof(linebuf), false);
 
 		if (msg->size == 1 && msg->address == 0)
 			DP_DEBUG_V("%s%s\n", prefix, linebuf);
@@ -146,8 +151,7 @@ static char *dp_aux_get_error(u32 aux_error)
 	}
 }
 
-static u32 dp_aux_write(struct dp_aux_private *aux,
-		struct drm_dp_aux_msg *msg)
+static u32 dp_aux_write(struct dp_aux_private *aux, struct drm_dp_aux_msg *msg)
 {
 	u32 data[4], reg, len;
 	u8 *msgdata = msg->buffer;
@@ -161,9 +165,9 @@ static u32 dp_aux_write(struct dp_aux_private *aux,
 		len = msg->size + 4;
 
 	/*
-	 * cmd fifo only has depth of 144 bytes
-	 * limit buf length to 128 bytes here
-	 */
+   * cmd fifo only has depth of 144 bytes
+   * limit buf length to 128 bytes here
+   */
 	if (len > aux_cmd_fifo_len) {
 		DP_AUX_ERR(dp_aux, "buf len error\n");
 		return 0;
@@ -172,11 +176,11 @@ static u32 dp_aux_write(struct dp_aux_private *aux,
 	/* Pack cmd and write to HW */
 	data[0] = (msg->address >> 16) & 0xf; /* addr[19:16] */
 	if (aux->read)
-		data[0] |=  BIT(4); /* R/W */
+		data[0] |= BIT(4); /* R/W */
 
-	data[1] = (msg->address >> 8) & 0xff;	/* addr[15:8] */
-	data[2] = msg->address & 0xff;		/* addr[7:0] */
-	data[3] = (msg->size - 1) & 0xff;	/* len[7:0] */
+	data[1] = (msg->address >> 8) & 0xff; /* addr[15:8] */
+	data[2] = msg->address & 0xff; /* addr[7:0] */
+	data[3] = (msg->size - 1) & 0xff; /* len[7:0] */
 
 	for (i = 0; i < len; i++) {
 		reg = (i < 4) ? data[i] : msgdata[i - 4];
@@ -209,17 +213,17 @@ static u32 dp_aux_write(struct dp_aux_private *aux,
 }
 
 static int dp_aux_cmd_fifo_tx(struct dp_aux_private *aux,
-		struct drm_dp_aux_msg *msg)
+			      struct drm_dp_aux_msg *msg)
 {
 	u32 ret = 0, len = 0, timeout;
-	int const aux_timeout_ms = HZ/4;
+	int const aux_timeout_ms = HZ / 4;
 	struct dp_aux *dp_aux = &aux->dp_aux;
 	char prefix[64];
 
 	snprintf(prefix, sizeof(prefix), "%s %s %4xh(%2zu): ",
-			(msg->request & DP_AUX_I2C_MOT) ? "I2C" : "NAT",
-			(msg->request & DP_AUX_I2C_READ) ? "RD" : "WR",
-			msg->address, msg->size);
+		 (msg->request & DP_AUX_I2C_MOT) ? "I2C" : "NAT",
+		 (msg->request & DP_AUX_I2C_READ) ? "RD" : "WR", msg->address,
+		 msg->size);
 
 	reinit_completion(&aux->comp);
 
@@ -231,7 +235,8 @@ static int dp_aux_cmd_fifo_tx(struct dp_aux_private *aux,
 
 	timeout = wait_for_completion_timeout(&aux->comp, aux_timeout_ms);
 	if (!timeout) {
-		DP_AUX_WARN_RATELIMITED(dp_aux, "aux timeout during [%s]\n", prefix);
+		DP_AUX_WARN_RATELIMITED(dp_aux, "aux timeout during [%s]\n",
+					prefix);
 		return -ETIMEDOUT;
 	}
 
@@ -239,7 +244,8 @@ static int dp_aux_cmd_fifo_tx(struct dp_aux_private *aux,
 		ret = len;
 	} else {
 		DP_AUX_WARN_RATELIMITED(dp_aux, "aux err [%s] during [%s]\n",
-				dp_aux_get_error(aux->aux_error_num), prefix);
+					dp_aux_get_error(aux->aux_error_num),
+					prefix);
 		ret = -EINVAL;
 	}
 
@@ -247,7 +253,7 @@ static int dp_aux_cmd_fifo_tx(struct dp_aux_private *aux,
 }
 
 static void dp_aux_cmd_fifo_rx(struct dp_aux_private *aux,
-		struct drm_dp_aux_msg *msg)
+			       struct drm_dp_aux_msg *msg)
 {
 	u32 data;
 	u8 *dp;
@@ -259,7 +265,7 @@ static void dp_aux_cmd_fifo_rx(struct dp_aux_private *aux,
 
 	data = 0;
 	data |= DP_AUX_DATA_INDEX_WRITE; /* INDEX_WRITE */
-	data |= BIT(0);  /* read */
+	data |= BIT(0); /* read */
 
 	aux->catalog->data = data;
 	aux->catalog->write_data(aux->catalog);
@@ -275,8 +281,9 @@ static void dp_aux_cmd_fifo_rx(struct dp_aux_private *aux,
 
 		actual_i = (data >> 16) & 0xFF;
 		if (i != actual_i)
-			DP_AUX_WARN(dp_aux, "Index mismatch: expected %d, found %d\n",
-				i, actual_i);
+			DP_AUX_WARN(dp_aux,
+				    "Index mismatch: expected %d, found %d\n",
+				    i, actual_i);
 	}
 }
 
@@ -362,8 +369,7 @@ static void dp_aux_reconfig(struct dp_aux *dp_aux)
 
 	aux = container_of(dp_aux, struct dp_aux_private, dp_aux);
 
-	aux->catalog->update_aux_cfg(aux->catalog,
-			aux->cfg, PHY_AUX_CFG1);
+	aux->catalog->update_aux_cfg(aux->catalog, aux->cfg, PHY_AUX_CFG1);
 	aux->catalog->reset(aux->catalog);
 }
 
@@ -382,18 +388,18 @@ static void dp_aux_abort_transaction(struct dp_aux *dp_aux, bool abort)
 }
 
 static void dp_aux_update_offset_and_segment(struct dp_aux_private *aux,
-		struct drm_dp_aux_msg *input_msg)
+					     struct drm_dp_aux_msg *input_msg)
 {
 	u32 const edid_address = 0x50;
 	u32 const segment_address = 0x30;
 	bool i2c_read = input_msg->request &
-		(DP_AUX_I2C_READ & DP_AUX_NATIVE_READ);
+			(DP_AUX_I2C_READ & DP_AUX_NATIVE_READ);
 	u8 *data = NULL;
 
-	if (aux->native || i2c_read || ((input_msg->address != edid_address) &&
-		(input_msg->address != segment_address)))
+	if (aux->native || i2c_read ||
+	    ((input_msg->address != edid_address) &&
+	     (input_msg->address != segment_address)))
 		return;
-
 
 	data = input_msg->buffer;
 	if (input_msg->address == segment_address)
@@ -415,7 +421,8 @@ static void dp_aux_update_offset_and_segment(struct dp_aux_private *aux,
  * sinks that do not handle the i2c middle-of-transaction flag correctly.
  */
 static void dp_aux_transfer_helper(struct dp_aux_private *aux,
-		struct drm_dp_aux_msg *input_msg, bool send_seg)
+				   struct drm_dp_aux_msg *input_msg,
+				   bool send_seg)
 {
 	struct drm_dp_aux_msg helper_msg;
 	u32 const message_size = 0x10;
@@ -423,17 +430,17 @@ static void dp_aux_transfer_helper(struct dp_aux_private *aux,
 	u32 const edid_block_length = 0x80;
 	bool i2c_mot = input_msg->request & DP_AUX_I2C_MOT;
 	bool i2c_read = input_msg->request &
-		(DP_AUX_I2C_READ & DP_AUX_NATIVE_READ);
+			(DP_AUX_I2C_READ & DP_AUX_NATIVE_READ);
 
 	if (!i2c_mot || !i2c_read || (input_msg->size == 0))
 		return;
 
 	/*
-	 * Sending the segment value and EDID offset will be performed
-	 * from the DRM upstream EDID driver for each block. Avoid
-	 * duplicate AUX transactions related to this while reading the
-	 * first 16 bytes of each block.
-	 */
+   * Sending the segment value and EDID offset will be performed
+   * from the DRM upstream EDID driver for each block. Avoid
+   * duplicate AUX transactions related to this while reading the
+   * first 16 bytes of each block.
+   */
 	if (!(aux->offset % edid_block_length) || !send_seg)
 		goto end;
 
@@ -443,12 +450,12 @@ static void dp_aux_transfer_helper(struct dp_aux_private *aux,
 	aux->no_send_stop = true;
 
 	/*
-	 * Send the segment address for i2c reads for segment > 0 and for which
-	 * the middle-of-transaction flag is set. This is required to support
-	 * EDID reads of more than 2 blocks as the segment address is reset to 0
-	 * since we are overriding the middle-of-transaction flag for read
-	 * transactions.
-	 */
+   * Send the segment address for i2c reads for segment > 0 and for which
+   * the middle-of-transaction flag is set. This is required to support
+   * EDID reads of more than 2 blocks as the segment address is reset to 0
+   * since we are overriding the middle-of-transaction flag for read
+   * transactions.
+   */
 	if (aux->segment) {
 		memset(&helper_msg, 0, sizeof(helper_msg));
 		helper_msg.address = segment_address;
@@ -458,12 +465,12 @@ static void dp_aux_transfer_helper(struct dp_aux_private *aux,
 	}
 
 	/*
-	 * Send the offset address for every i2c read in which the
-	 * middle-of-transaction flag is set. This will ensure that the sink
-	 * will update its read pointer and return the correct portion of the
-	 * EDID buffer in the subsequent i2c read trasntion triggered in the
-	 * native AUX transfer function.
-	 */
+   * Send the offset address for every i2c read in which the
+   * middle-of-transaction flag is set. This will ensure that the sink
+   * will update its read pointer and return the correct portion of the
+   * EDID buffer in the subsequent i2c read trasntion triggered in the
+   * native AUX transfer function.
+   */
 	memset(&helper_msg, 0, sizeof(helper_msg));
 	helper_msg.address = input_msg->address;
 	helper_msg.buffer = &aux->offset;
@@ -476,7 +483,7 @@ end:
 }
 
 static int dp_aux_transfer_ready(struct dp_aux_private *aux,
-		struct drm_dp_aux_msg *msg, bool send_seg)
+				 struct drm_dp_aux_msg *msg, bool send_seg)
 {
 	int ret = 0;
 	int const aux_cmd_native_max = 16;
@@ -492,16 +499,16 @@ static int dp_aux_transfer_ready(struct dp_aux_private *aux,
 
 	/* Ignore address only message */
 	if ((msg->size == 0) || (msg->buffer == NULL)) {
-		msg->reply = aux->native ?
-			DP_AUX_NATIVE_REPLY_ACK : DP_AUX_I2C_REPLY_ACK;
+		msg->reply = aux->native ? DP_AUX_NATIVE_REPLY_ACK :
+					   DP_AUX_I2C_REPLY_ACK;
 		goto error;
 	}
 
 	/* msg sanity check */
 	if ((aux->native && (msg->size > aux_cmd_native_max)) ||
-		(msg->size > aux_cmd_i2c_max)) {
+	    (msg->size > aux_cmd_i2c_max)) {
 		DP_AUX_ERR(dp_aux, "%s: invalid msg: size(%zu), request(%x)\n",
-			__func__, msg->size, msg->request);
+			   __func__, msg->size, msg->request);
 		ret = -EINVAL;
 		goto error;
 	}
@@ -528,7 +535,7 @@ error:
 static inline bool dp_aux_is_sideband_msg(u32 address, size_t size)
 {
 	return (address >= 0x1000 && address + size < 0x1800) ||
-			(address >= 0x2000 && address + size < 0x2200);
+	       (address >= 0x2000 && address + size < 0x2200);
 }
 
 /*
@@ -537,12 +544,12 @@ static inline bool dp_aux_is_sideband_msg(u32 address, size_t size)
  * if the waiting is timeout.
  */
 static ssize_t dp_aux_transfer(struct drm_dp_aux *drm_aux,
-		struct drm_dp_aux_msg *msg)
+			       struct drm_dp_aux_msg *msg)
 {
 	ssize_t ret;
 	int const retry_count = 5;
-	struct dp_aux_private *aux = container_of(drm_aux,
-		struct dp_aux_private, drm_aux);
+	struct dp_aux_private *aux =
+		container_of(drm_aux, struct dp_aux_private, drm_aux);
 
 	mutex_lock(&aux->mutex);
 
@@ -559,8 +566,8 @@ static ssize_t dp_aux_transfer(struct drm_dp_aux *drm_aux,
 	if ((ret < 0) && !atomic_read(&aux->aborted)) {
 		aux->retry_cnt++;
 		if (!(aux->retry_cnt % retry_count))
-			aux->catalog->update_aux_cfg(aux->catalog,
-				aux->cfg, PHY_AUX_CFG1);
+			aux->catalog->update_aux_cfg(aux->catalog, aux->cfg,
+						     PHY_AUX_CFG1);
 		aux->catalog->reset(aux->catalog);
 		goto unlock_exit;
 	} else if (ret < 0) {
@@ -573,12 +580,12 @@ static ssize_t dp_aux_transfer(struct drm_dp_aux *drm_aux,
 
 		dp_aux_hex_dump(drm_aux, msg);
 
-		msg->reply = aux->native ?
-			DP_AUX_NATIVE_REPLY_ACK : DP_AUX_I2C_REPLY_ACK;
+		msg->reply = aux->native ? DP_AUX_NATIVE_REPLY_ACK :
+					   DP_AUX_I2C_REPLY_ACK;
 	} else {
 		/* Reply defer to retry */
-		msg->reply = aux->native ?
-			DP_AUX_NATIVE_REPLY_DEFER : DP_AUX_I2C_REPLY_DEFER;
+		msg->reply = aux->native ? DP_AUX_NATIVE_REPLY_DEFER :
+					   DP_AUX_I2C_REPLY_DEFER;
 	}
 
 	/* Return requested size for success or retry */
@@ -592,18 +599,17 @@ unlock_exit:
 }
 
 static ssize_t dp_aux_bridge_transfer(struct drm_dp_aux *drm_aux,
-		struct drm_dp_aux_msg *msg)
+				      struct drm_dp_aux_msg *msg)
 {
-	struct dp_aux_private *aux = container_of(drm_aux,
-			struct dp_aux_private, drm_aux);
+	struct dp_aux_private *aux =
+		container_of(drm_aux, struct dp_aux_private, drm_aux);
 	ssize_t size;
 
 	if (aux->bridge_in_transfer) {
 		size = dp_aux_transfer(drm_aux, msg);
 	} else {
 		aux->bridge_in_transfer = true;
-		size = aux->aux_bridge->transfer(aux->aux_bridge,
-				drm_aux, msg);
+		size = aux->aux_bridge->transfer(aux->aux_bridge, drm_aux, msg);
 		aux->bridge_in_transfer = false;
 		dp_aux_hex_dump(drm_aux, msg);
 	}
@@ -612,10 +618,10 @@ static ssize_t dp_aux_bridge_transfer(struct drm_dp_aux *drm_aux,
 }
 
 static ssize_t dp_aux_transfer_debug(struct drm_dp_aux *drm_aux,
-		struct drm_dp_aux_msg *msg)
+				     struct drm_dp_aux_msg *msg)
 {
-	struct dp_aux_private *aux = container_of(drm_aux,
-			struct dp_aux_private, drm_aux);
+	struct dp_aux_private *aux =
+		container_of(drm_aux, struct dp_aux_private, drm_aux);
 	ssize_t size;
 	int aborted;
 
@@ -634,8 +640,7 @@ static ssize_t dp_aux_transfer_debug(struct drm_dp_aux *drm_aux,
 			size = dp_aux_transfer(drm_aux, msg);
 	} else {
 		aux->sim_in_transfer = true;
-		size = aux->sim_bridge->transfer(aux->sim_bridge,
-				drm_aux, msg);
+		size = aux->sim_bridge->transfer(aux->sim_bridge, drm_aux, msg);
 		aux->sim_in_transfer = false;
 		dp_aux_hex_dump(drm_aux, msg);
 	}
@@ -715,7 +720,8 @@ static int dp_aux_register(struct dp_aux *dp_aux, struct drm_device *drm_dev)
 	atomic_set(&aux->aborted, 1);
 	ret = drm_dp_aux_register(&aux->drm_aux);
 	if (ret) {
-		DP_AUX_ERR(dp_aux, "%s: failed to register drm aux: %d\n", __func__, ret);
+		DP_AUX_ERR(dp_aux, "%s: failed to register drm aux: %d\n",
+			   __func__, ret);
 		goto exit;
 	}
 	dp_aux->drm_aux = &aux->drm_aux;
@@ -741,7 +747,7 @@ static void dp_aux_deregister(struct dp_aux *dp_aux)
 }
 
 static void dp_aux_set_sim_mode(struct dp_aux *dp_aux,
-		struct dp_aux_bridge *sim_bridge)
+				struct dp_aux_bridge *sim_bridge)
 {
 	struct dp_aux_private *aux;
 
@@ -769,8 +775,8 @@ static void dp_aux_set_sim_mode(struct dp_aux *dp_aux,
 }
 
 #if IS_ENABLED(CONFIG_QCOM_FSA4480_I2C)
-static int dp_aux_configure_fsa_switch(struct dp_aux *dp_aux,
-		bool enable, int orientation)
+static int dp_aux_configure_fsa_switch(struct dp_aux *dp_aux, bool enable,
+				       int orientation)
 {
 	struct dp_aux_private *aux;
 	int rc = 0;
@@ -805,21 +811,22 @@ static int dp_aux_configure_fsa_switch(struct dp_aux *dp_aux,
 		}
 	}
 
-	DP_AUX_DEBUG(dp_aux, "enable=%d, orientation=%d, event=%d\n",
-			enable, orientation, event);
+	DP_AUX_DEBUG(dp_aux, "enable=%d, orientation=%d, event=%d\n", enable,
+		     orientation, event);
 
 	rc = fsa4480_switch_event(aux->aux_switch_node, event);
 
 	if (rc)
-		DP_AUX_ERR(dp_aux, "failed to configure fsa4480 i2c device (%d)\n", rc);
+		DP_AUX_ERR(dp_aux,
+			   "failed to configure fsa4480 i2c device (%d)\n", rc);
 end:
 	return rc;
 }
 #endif
 
 #if IS_ENABLED(CONFIG_QCOM_WCD939X_I2C)
-static int dp_aux_configure_wcd_switch(struct dp_aux *dp_aux,
-		bool enable, int orientation)
+static int dp_aux_configure_wcd_switch(struct dp_aux *dp_aux, bool enable,
+				       int orientation)
 {
 	struct dp_aux_private *aux;
 	int rc = 0;
@@ -840,7 +847,8 @@ static int dp_aux_configure_wcd_switch(struct dp_aux *dp_aux,
 		goto end;
 	}
 
-	if ((aux->switch_enable == enable) && (aux->switch_orientation == orientation))
+	if ((aux->switch_enable == enable) &&
+	    (aux->switch_orientation == orientation))
 		goto end;
 
 	if (enable) {
@@ -860,12 +868,13 @@ static int dp_aux_configure_wcd_switch(struct dp_aux *dp_aux,
 		}
 	}
 
-	DP_AUX_DEBUG(dp_aux, "enable=%d, orientation=%d, event=%d\n",
-			enable, orientation, event);
+	DP_AUX_DEBUG(dp_aux, "enable=%d, orientation=%d, event=%d\n", enable,
+		     orientation, event);
 
 	rc = wcd_usbss_switch_update(event, status);
 	if (rc) {
-		DP_AUX_ERR(dp_aux, "failed to configure wcd939x i2c device (%d)\n", rc);
+		DP_AUX_ERR(dp_aux,
+			   "failed to configure wcd939x i2c device (%d)\n", rc);
 	} else {
 		aux->switch_enable = enable;
 		aux->switch_orientation = orientation;
@@ -876,8 +885,10 @@ end:
 #endif
 
 struct dp_aux *dp_aux_get(struct device *dev, struct dp_catalog_aux *catalog,
-		struct dp_parser *parser, struct device_node *aux_switch,
-		struct dp_aux_bridge *aux_bridge, void *ipc_log_context)
+			  struct dp_parser *parser,
+			  struct device_node *aux_switch,
+			  struct dp_aux_bridge *aux_bridge,
+			  void *ipc_log_context)
 {
 	int rc = 0;
 	struct dp_aux_private *aux;
@@ -908,9 +919,9 @@ struct dp_aux *dp_aux_get(struct device *dev, struct dp_catalog_aux *catalog,
 	aux->retry_cnt = 0;
 	aux->switch_orientation = -1;
 
-	dp_aux->isr     = dp_aux_isr;
-	dp_aux->init    = dp_aux_init;
-	dp_aux->deinit  = dp_aux_deinit;
+	dp_aux->isr = dp_aux_isr;
+	dp_aux->init = dp_aux_init;
+	dp_aux->deinit = dp_aux_deinit;
 	dp_aux->drm_aux_register = dp_aux_register;
 	dp_aux->drm_aux_deregister = dp_aux_deregister;
 	dp_aux->reconfig = dp_aux_reconfig;

@@ -25,13 +25,13 @@
 
 #include <wmi_unified_param.h>
 
+#include "../../core/src/wlan_mgmt_txrx_main_i.h"
+#include "wlan_mgmt_txrx_rx_reo_tgt_api.h"
 #include "wlan_mgmt_txrx_tgt_api.h"
 #include "wlan_mgmt_txrx_utils_api.h"
-#include "../../core/src/wlan_mgmt_txrx_main_i.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_peer_obj.h"
 #include "wlan_objmgr_pdev_obj.h"
-#include "wlan_mgmt_txrx_rx_reo_tgt_api.h"
+#include "wlan_objmgr_peer_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
 
 /**
  * mgmt_get_spec_mgmt_action_subtype() - gets spec mgmt action subtype
@@ -80,8 +80,7 @@ mgmt_get_spec_mgmt_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_qos_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_qos_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -118,8 +117,7 @@ mgmt_get_qos_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_dls_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_dls_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -150,8 +148,7 @@ mgmt_get_dls_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_back_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_back_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -182,8 +179,7 @@ mgmt_get_back_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_public_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_public_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -238,8 +234,7 @@ mgmt_get_public_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_rrm_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_rrm_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -270,8 +265,7 @@ mgmt_get_rrm_action_subtype(uint8_t action_code)
 	return frm_type;
 }
 
-static enum mgmt_frame_type
-mgmt_get_ft_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_ft_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -305,8 +299,7 @@ mgmt_get_ft_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_ht_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_ht_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -381,8 +374,7 @@ mgmt_get_sa_query_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_pdpa_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_pdpa_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -416,8 +408,7 @@ mgmt_get_pdpa_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_wnm_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_wnm_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -481,8 +472,7 @@ mgmt_get_wnm_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_tdls_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_tdls_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -537,8 +527,7 @@ mgmt_get_tdls_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_mesh_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_mesh_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -631,8 +620,7 @@ mgmt_get_self_prot_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_wmm_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_wmm_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -663,8 +651,7 @@ mgmt_get_wmm_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_vht_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_vht_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -695,8 +682,7 @@ mgmt_get_vht_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_fst_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_fst_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -736,8 +722,7 @@ mgmt_get_fst_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_rvs_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_rvs_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -777,8 +762,7 @@ mgmt_get_rvs_action_subtype(uint8_t action_code)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_get_twt_action_subtype(uint8_t action_code)
+static enum mgmt_frame_type mgmt_get_twt_action_subtype(uint8_t action_code)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -861,13 +845,13 @@ static enum mgmt_frame_type
 mgmt_txrx_get_action_frm_subtype(uint8_t *mpdu_data_ptr)
 {
 	struct action_frm_hdr *action_hdr =
-			(struct action_frm_hdr *)mpdu_data_ptr;
+		(struct action_frm_hdr *)mpdu_data_ptr;
 	enum mgmt_frame_type frm_type;
 
 	switch (action_hdr->action_category) {
 	case ACTION_CATEGORY_SPECTRUM_MGMT:
 		frm_type = mgmt_get_spec_mgmt_action_subtype(
-						action_hdr->action_code);
+			action_hdr->action_code);
 		break;
 	case ACTION_FAST_BSS_TRNST:
 		frm_type = mgmt_get_ft_action_subtype(action_hdr->action_code);
@@ -879,12 +863,12 @@ mgmt_txrx_get_action_frm_subtype(uint8_t *mpdu_data_ptr)
 		frm_type = mgmt_get_dls_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_BACK:
-		frm_type = mgmt_get_back_action_subtype(
-						action_hdr->action_code);
+		frm_type =
+			mgmt_get_back_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_PUBLIC:
-		frm_type = mgmt_get_public_action_subtype(
-						action_hdr->action_code);
+		frm_type =
+			mgmt_get_public_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_RRM:
 		frm_type = mgmt_get_rrm_action_subtype(action_hdr->action_code);
@@ -894,26 +878,26 @@ mgmt_txrx_get_action_frm_subtype(uint8_t *mpdu_data_ptr)
 		break;
 	case ACTION_CATEGORY_SA_QUERY:
 		frm_type = mgmt_get_sa_query_action_subtype(
-						action_hdr->action_code);
+			action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION:
-		frm_type = mgmt_get_pdpa_action_subtype(
-						action_hdr->action_code);
+		frm_type =
+			mgmt_get_pdpa_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_WNM:
 		frm_type = mgmt_get_wnm_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_TDLS:
-		frm_type = mgmt_get_tdls_action_subtype(
-						action_hdr->action_code);
+		frm_type =
+			mgmt_get_tdls_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_MESH_ACTION:
-		frm_type = mgmt_get_mesh_action_subtype(
-						action_hdr->action_code);
+		frm_type =
+			mgmt_get_mesh_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_SELF_PROTECTED:
 		frm_type = mgmt_get_self_prot_action_subtype(
-						action_hdr->action_code);
+			action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_WMM:
 		frm_type = mgmt_get_wmm_action_subtype(action_hdr->action_code);
@@ -931,16 +915,14 @@ mgmt_txrx_get_action_frm_subtype(uint8_t *mpdu_data_ptr)
 		frm_type = mgmt_get_fst_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_RVS:
-		frm_type =
-			mgmt_get_rvs_action_subtype(action_hdr->action_code);
+		frm_type = mgmt_get_rvs_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_USIG:
-		frm_type =
-			mgmt_get_twt_action_subtype(action_hdr->action_code);
+		frm_type = mgmt_get_twt_action_subtype(action_hdr->action_code);
 		break;
 	case ACTION_CATEGORY_PROTECTED_EHT:
 		frm_type = mgmt_get_protected_eht_action_subtype(
-				action_hdr->action_code);
+			action_hdr->action_code);
 		break;
 	default:
 		frm_type = MGMT_FRM_UNSPECIFIED;
@@ -960,8 +942,8 @@ mgmt_txrx_get_action_frm_subtype(uint8_t *mpdu_data_ptr)
  *
  * Return: mgmt frame type
  */
-static enum mgmt_frame_type
-mgmt_txrx_get_frm_type(uint8_t mgmt_subtype, uint8_t *mpdu_data_ptr)
+static enum mgmt_frame_type mgmt_txrx_get_frm_type(uint8_t mgmt_subtype,
+						   uint8_t *mpdu_data_ptr)
 {
 	enum mgmt_frame_type frm_type;
 
@@ -1034,23 +1016,18 @@ static QDF_STATUS simulation_frame_update(struct wlan_objmgr_psoc *psoc,
 		pdevid = rx_param->pdev_id;
 		dbgid = WLAN_IOT_SIM_ID;
 		if (qdf_is_macaddr_broadcast((struct qdf_mac_addr *)addr)) {
-			pdev = wlan_objmgr_get_pdev_by_id(psoc, pdevid,
-							  dbgid);
+			pdev = wlan_objmgr_get_pdev_by_id(psoc, pdevid, dbgid);
 			if (pdev) {
 				vdev = wlan_objmgr_pdev_get_first_vdev(pdev,
 								       dbgid);
 				wlan_objmgr_pdev_release_ref(pdev, dbgid);
 			}
 		} else
-			vdev = wlan_objmgr_get_vdev_by_macaddr_from_psoc(psoc,
-									 pdevid,
-									 addr,
-									 dbgid);
+			vdev = wlan_objmgr_get_vdev_by_macaddr_from_psoc(
+				psoc, pdevid, addr, dbgid);
 		if (vdev) {
-			status = rx_ops->iot_sim_rx_ops.
-					iot_sim_cmd_handler(vdev, buf,
-							    NULL, false,
-							    rx_param);
+			status = rx_ops->iot_sim_rx_ops.iot_sim_cmd_handler(
+				vdev, buf, NULL, false, rx_param);
 			if (status == QDF_STATUS_E_NULL_VALUE) {
 				wlan_objmgr_vdev_release_ref(vdev, dbgid);
 				mgmt_txrx_debug("iot_sim:Pkt processed at RX");
@@ -1081,9 +1058,9 @@ static QDF_STATUS simulation_frame_update(struct wlan_objmgr_psoc *psoc,
  *
  * Return : QDF_STATUS if success, else QDF_STATUS_E_RESOURCES
  */
-static QDF_STATUS wlan_mgmt_rx_beacon_rate_limit(struct wlan_objmgr_psoc *psoc,
-						 struct mgmt_rx_event_params
-						 *mgmt_rx_params)
+static QDF_STATUS
+wlan_mgmt_rx_beacon_rate_limit(struct wlan_objmgr_psoc *psoc,
+			       struct mgmt_rx_event_params *mgmt_rx_params)
 {
 	struct wlan_objmgr_pdev *pdev = NULL;
 
@@ -1091,13 +1068,14 @@ static QDF_STATUS wlan_mgmt_rx_beacon_rate_limit(struct wlan_objmgr_psoc *psoc,
 					  WLAN_MGMT_SB_ID);
 
 	if (pdev && pdev->pdev_objmgr.bcn.bcn_rate_limit) {
-		uint64_t b_limit = qdf_do_div(
-				(wlan_pdev_get_max_beacon_count(pdev) *
-				 wlan_pdev_get_max_beacon_limit(pdev)), 100);
+		uint64_t b_limit =
+			qdf_do_div((wlan_pdev_get_max_beacon_count(pdev) *
+				    wlan_pdev_get_max_beacon_limit(pdev)),
+				   100);
 		wlan_pdev_incr_wlan_beacon_count(pdev);
 
 		if (wlan_pdev_get_wlan_beacon_count(pdev) >=
-					wlan_pdev_get_max_beacon_count(pdev))
+		    wlan_pdev_get_max_beacon_count(pdev))
 			wlan_pdev_set_wlan_beacon_count(pdev, 0);
 
 		if (wlan_pdev_get_wlan_beacon_count(pdev) >= b_limit) {
@@ -1124,18 +1102,19 @@ static QDF_STATUS wlan_mgmt_rx_beacon_rate_limit(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF_STATUS_SUCCESS in case of success
  */
-static QDF_STATUS wlan_mgmt_txrx_rx_handler_list_copy(
-			struct mgmt_rx_handler *rx_handler,
-			struct mgmt_rx_handler **rx_handler_head,
-			struct mgmt_rx_handler **rx_handler_tail)
+static QDF_STATUS
+wlan_mgmt_txrx_rx_handler_list_copy(struct mgmt_rx_handler *rx_handler,
+				    struct mgmt_rx_handler **rx_handler_head,
+				    struct mgmt_rx_handler **rx_handler_tail)
 {
 	struct mgmt_rx_handler *rx_handler_node;
 
 	while (rx_handler) {
 		rx_handler_node =
-				qdf_mem_malloc_atomic(sizeof(*rx_handler_node));
+			qdf_mem_malloc_atomic(sizeof(*rx_handler_node));
 		if (!rx_handler_node) {
-			mgmt_txrx_err_rl("Couldn't allocate memory for rx handler node");
+			mgmt_txrx_err_rl(
+				"Couldn't allocate memory for rx handler node");
 			return QDF_STATUS_E_NOMEM;
 		}
 
@@ -1156,20 +1135,17 @@ static QDF_STATUS wlan_mgmt_txrx_rx_handler_list_copy(
 	return QDF_STATUS_SUCCESS;
 }
 
-static bool
-mgmt_rx_is_bssid_valid(struct qdf_mac_addr *mac_addr)
+static bool mgmt_rx_is_bssid_valid(struct qdf_mac_addr *mac_addr)
 {
-	if (qdf_is_macaddr_group(mac_addr) ||
-	    qdf_is_macaddr_zero(mac_addr))
+	if (qdf_is_macaddr_group(mac_addr) || qdf_is_macaddr_zero(mac_addr))
 		return false;
 
 	return true;
 }
 
-QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
-			struct wlan_objmgr_psoc *psoc,
-			qdf_nbuf_t buf,
-			struct mgmt_rx_event_params *mgmt_rx_params)
+QDF_STATUS
+tgt_mgmt_txrx_rx_frame_handler(struct wlan_objmgr_psoc *psoc, qdf_nbuf_t buf,
+			       struct mgmt_rx_event_params *mgmt_rx_params)
 {
 	struct mgmt_txrx_priv_psoc_context *mgmt_txrx_psoc_ctx;
 	struct ieee80211_frame *wh;
@@ -1202,9 +1178,9 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 	buflen = qdf_nbuf_len(buf);
 
 	/**
-	 * TO DO (calculate pdev)
-	 * Waiting for a new parameter: pdev id to get added in rx event
-	 */
+   * TO DO (calculate pdev)
+   * Waiting for a new parameter: pdev id to get added in rx event
+   */
 
 	mgmt_type = (wh)->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
 	mgmt_subtype = (wh)->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK;
@@ -1217,13 +1193,15 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	is_from_addr_valid = mgmt_rx_is_bssid_valid((struct qdf_mac_addr *)
-							      wh->i_addr2);
-	is_bssid_valid = mgmt_rx_is_bssid_valid((struct qdf_mac_addr *)
-							      wh->i_addr3);
+	is_from_addr_valid =
+		mgmt_rx_is_bssid_valid((struct qdf_mac_addr *)wh->i_addr2);
+	is_bssid_valid =
+		mgmt_rx_is_bssid_valid((struct qdf_mac_addr *)wh->i_addr3);
 
 	if (!is_from_addr_valid && !is_bssid_valid) {
-		mgmt_txrx_debug_rl("from addr "QDF_MAC_ADDR_FMT" bssid addr "QDF_MAC_ADDR_FMT" both not valid, dropping them",
+		mgmt_txrx_debug_rl("from addr " QDF_MAC_ADDR_FMT
+				   " bssid addr " QDF_MAC_ADDR_FMT
+				   " both not valid, dropping them",
 				   QDF_MAC_ADDR_REF(wh->i_addr2),
 				   QDF_MAC_ADDR_REF(wh->i_addr3));
 		qdf_nbuf_free(buf);
@@ -1234,7 +1212,9 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 	    (mgmt_subtype == MGMT_SUBTYPE_BEACON ||
 	     mgmt_subtype == MGMT_SUBTYPE_PROBE_RESP) &&
 	    !(is_from_addr_valid && is_bssid_valid)) {
-		mgmt_txrx_debug_rl("from addr "QDF_MAC_ADDR_FMT" bssid addr "QDF_MAC_ADDR_FMT" not valid, modifying them",
+		mgmt_txrx_debug_rl("from addr " QDF_MAC_ADDR_FMT
+				   " bssid addr " QDF_MAC_ADDR_FMT
+				   " not valid, modifying them",
 				   QDF_MAC_ADDR_REF(wh->i_addr2),
 				   QDF_MAC_ADDR_REF(wh->i_addr3));
 		if (!is_from_addr_valid)
@@ -1246,15 +1226,15 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 	}
 
 	/* mpdu_data_ptr is pointer to action header */
-	mpdu_data_ptr = (uint8_t *)qdf_nbuf_data(buf) +
-			sizeof(struct ieee80211_frame);
+	mpdu_data_ptr =
+		(uint8_t *)qdf_nbuf_data(buf) + sizeof(struct ieee80211_frame);
 
 	if (wh->i_fc[1] & IEEE80211_FC1_ORDER) {
 		/* Adjust the offset taking into consideration HT control field
-		 * length, in the case when peer sends a frame with HT/VHT/HE
-		 * ctrl field in the header(when frame is transmitted in TB
-		 * PPDU format).
-		 */
+     * length, in the case when peer sends a frame with HT/VHT/HE
+     * ctrl field in the header(when frame is transmitted in TB
+     * PPDU format).
+     */
 		mpdu_data_ptr += IEEE80211_HT_CTRL_LEN;
 		len = IEEE80211_HT_CTRL_LEN;
 		mgmt_txrx_debug_rl("HT control field present!");
@@ -1263,25 +1243,24 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 	if ((wh->i_fc[1] & IEEE80211_FC1_WEP) &&
 	    !qdf_is_macaddr_group((struct qdf_mac_addr *)wh->i_addr1) &&
 	    !qdf_is_macaddr_broadcast((struct qdf_mac_addr *)wh->i_addr1)) {
-
-		if (buflen > (sizeof(struct ieee80211_frame) +
-			WLAN_HDR_EXT_IV_LEN))
+		if (buflen >
+		    (sizeof(struct ieee80211_frame) + WLAN_HDR_EXT_IV_LEN))
 			ivp = data + sizeof(struct ieee80211_frame) + len;
 
 		/* Set mpdu_data_ptr based on EXT IV bit
-		 * if EXT IV bit set, CCMP using PMF 8 bytes of IV is present
-		 * else for WEP using PMF, 4 bytes of IV is present
-		 */
+     * if EXT IV bit set, CCMP using PMF 8 bytes of IV is present
+     * else for WEP using PMF, 4 bytes of IV is present
+     */
 		if (ivp && (ivp[WLAN_HDR_IV_LEN] & WLAN_HDR_EXT_IV_BIT)) {
-			if (buflen <= (sizeof(struct ieee80211_frame)
-					+ IEEE80211_CCMP_HEADERLEN)) {
+			if (buflen <= (sizeof(struct ieee80211_frame) +
+				       IEEE80211_CCMP_HEADERLEN)) {
 				qdf_nbuf_free(buf);
 				return QDF_STATUS_E_FAILURE;
 			}
 			mpdu_data_ptr += IEEE80211_CCMP_HEADERLEN;
 		} else {
-			if (buflen <= (sizeof(struct ieee80211_frame)
-					+ WLAN_HDR_EXT_IV_LEN)) {
+			if (buflen <= (sizeof(struct ieee80211_frame) +
+				       WLAN_HDR_EXT_IV_LEN)) {
 				qdf_nbuf_free(buf);
 				return QDF_STATUS_E_FAILURE;
 			}
@@ -1293,8 +1272,8 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 		frm_type = mgmt_txrx_get_frm_type(mgmt_subtype, mpdu_data_ptr);
 		if (frm_type == MGMT_FRM_UNSPECIFIED) {
 			mgmt_txrx_debug_rl(
-			"Unspecified mgmt frame type fc: %x %x", wh->i_fc[0],
-								wh->i_fc[1]);
+				"Unspecified mgmt frame type fc: %x %x",
+				wh->i_fc[0], wh->i_fc[1]);
 			qdf_nbuf_free(buf);
 			return QDF_STATUS_E_FAILURE;
 		}
@@ -1306,12 +1285,12 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 	    !(mgmt_subtype == MGMT_SUBTYPE_BEACON ||
 	      mgmt_subtype == MGMT_SUBTYPE_PROBE_RESP ||
 	      mgmt_subtype == MGMT_SUBTYPE_PROBE_REQ))
-		mgmt_txrx_debug("Rcvd mgmt frame subtype %x (frame type %u) from "QDF_MAC_ADDR_FMT", seq_num = %d, rssi = %d tsf_delta: %u",
-				mgmt_subtype, frm_type,
-				QDF_MAC_ADDR_REF(wh->i_addr2),
-				(le16toh(*(uint16_t *)wh->i_seq) >>
-				WLAN_SEQ_SEQ_SHIFT), mgmt_rx_params->rssi,
-				mgmt_rx_params->tsf_delta);
+		mgmt_txrx_debug(
+			"Rcvd mgmt frame subtype %x (frame type %u) from " QDF_MAC_ADDR_FMT
+			", seq_num = %d, rssi = %d tsf_delta: %u",
+			mgmt_subtype, frm_type, QDF_MAC_ADDR_REF(wh->i_addr2),
+			(le16toh(*(uint16_t *)wh->i_seq) >> WLAN_SEQ_SEQ_SHIFT),
+			mgmt_rx_params->rssi, mgmt_rx_params->tsf_delta);
 
 	/* Print a hexdump of packet for host debug */
 	if (mgmt_type == IEEE80211_FC0_TYPE_MGT &&
@@ -1329,8 +1308,9 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 		pn = mgmt_rx_params->pn_params.prev_pn;
 		prev_pn = qdf_le64_to_cpu(*((uint64_t *)pn));
 
-		mgmt_txrx_debug("Current PN=0x%llx Previous PN=0x%llx. Packet dumped below",
-				curr_pn, prev_pn);
+		mgmt_txrx_debug(
+			"Current PN=0x%llx Previous PN=0x%llx. Packet dumped below",
+			curr_pn, prev_pn);
 		qdf_trace_hex_dump(QDF_MODULE_ID_MGMT_TXRX,
 				   QDF_TRACE_LEVEL_DEBUG, data, buflen);
 	}
@@ -1339,16 +1319,17 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 		return QDF_STATUS_E_FAILURE;
 
 	mgmt_txrx_psoc_ctx = (struct mgmt_txrx_priv_psoc_context *)
-			wlan_objmgr_psoc_get_comp_private_obj(psoc,
-				WLAN_UMAC_COMP_MGMT_TXRX);
+		wlan_objmgr_psoc_get_comp_private_obj(psoc,
+						      WLAN_UMAC_COMP_MGMT_TXRX);
 
 	qdf_spin_lock_bh(&mgmt_txrx_psoc_ctx->mgmt_txrx_psoc_ctx_lock);
 	rx_handler = mgmt_txrx_psoc_ctx->mgmt_rx_comp_cb[frm_type];
 	if (rx_handler) {
-		status = wlan_mgmt_txrx_rx_handler_list_copy(rx_handler,
-				&rx_handler_head, &rx_handler_tail);
+		status = wlan_mgmt_txrx_rx_handler_list_copy(
+			rx_handler, &rx_handler_head, &rx_handler_tail);
 		if (status != QDF_STATUS_SUCCESS) {
-			qdf_spin_unlock_bh(&mgmt_txrx_psoc_ctx->mgmt_txrx_psoc_ctx_lock);
+			qdf_spin_unlock_bh(
+				&mgmt_txrx_psoc_ctx->mgmt_txrx_psoc_ctx_lock);
 			qdf_nbuf_free(buf);
 			goto rx_handler_mem_free;
 		}
@@ -1356,13 +1337,14 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 
 	if (mgmt_type == IEEE80211_FC0_TYPE_MGT) {
 		rx_handler =
-		mgmt_txrx_psoc_ctx->mgmt_rx_comp_cb[MGMT_FRAME_TYPE_ALL];
+			mgmt_txrx_psoc_ctx->mgmt_rx_comp_cb[MGMT_FRAME_TYPE_ALL];
 		if (rx_handler) {
 			status = wlan_mgmt_txrx_rx_handler_list_copy(
 				rx_handler, &rx_handler_head, &rx_handler_tail);
 			if (status != QDF_STATUS_SUCCESS) {
 				qdf_spin_unlock_bh(
-				  &mgmt_txrx_psoc_ctx->mgmt_txrx_psoc_ctx_lock);
+					&mgmt_txrx_psoc_ctx
+						 ->mgmt_txrx_psoc_ctx_lock);
 				qdf_nbuf_free(buf);
 				goto rx_handler_mem_free;
 			}
@@ -1370,7 +1352,8 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 	}
 
 	if (!rx_handler_head) {
-		qdf_spin_unlock_bh(&mgmt_txrx_psoc_ctx->mgmt_txrx_psoc_ctx_lock);
+		qdf_spin_unlock_bh(
+			&mgmt_txrx_psoc_ctx->mgmt_txrx_psoc_ctx_lock);
 		mgmt_txrx_debug("No rx callback registered for frm_type: %d",
 				frm_type);
 		qdf_nbuf_free(buf);
@@ -1389,22 +1372,21 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 
 	mac_addr = (uint8_t *)wh->i_addr2;
 	/*
-	 * peer can be NULL in following 2 scenarios:
-	 * 1. broadcast frame received
-	 * 2. operating in monitor mode
-	 *
-	 * and in both scenarios, the receiver of frame
-	 * is expected to do processing accordingly considerng
-	 * the fact that peer = NULL can be received and is a valid
-	 * scenario.
-	 */
-	peer = wlan_objmgr_get_peer(psoc, mgmt_rx_params->pdev_id,
-				    mac_addr, WLAN_MGMT_SB_ID);
-	if (!peer && !qdf_is_macaddr_broadcast(
-	    (struct qdf_mac_addr *)wh->i_addr1)) {
+   * peer can be NULL in following 2 scenarios:
+   * 1. broadcast frame received
+   * 2. operating in monitor mode
+   *
+   * and in both scenarios, the receiver of frame
+   * is expected to do processing accordingly considerng
+   * the fact that peer = NULL can be received and is a valid
+   * scenario.
+   */
+	peer = wlan_objmgr_get_peer(psoc, mgmt_rx_params->pdev_id, mac_addr,
+				    WLAN_MGMT_SB_ID);
+	if (!peer &&
+	    !qdf_is_macaddr_broadcast((struct qdf_mac_addr *)wh->i_addr1)) {
 		mac_addr = (uint8_t *)wh->i_addr1;
-		peer = wlan_objmgr_get_peer(psoc,
-					    mgmt_rx_params->pdev_id,
+		peer = wlan_objmgr_get_peer(psoc, mgmt_rx_params->pdev_id,
 					    mac_addr, WLAN_MGMT_SB_ID);
 	}
 
@@ -1417,12 +1399,11 @@ QDF_STATUS tgt_mgmt_txrx_rx_frame_handler(
 			continue;
 		}
 
-		rx_handler->rx_cb(psoc, peer, copy_buf,
-					mgmt_rx_params, frm_type);
+		rx_handler->rx_cb(psoc, peer, copy_buf, mgmt_rx_params,
+				  frm_type);
 		rx_handler = rx_handler->next;
 	}
-	rx_handler->rx_cb(psoc, peer, buf,
-				mgmt_rx_params, frm_type);
+	rx_handler->rx_cb(psoc, peer, buf, mgmt_rx_params, frm_type);
 
 	if (peer)
 		wlan_objmgr_peer_release_ref(peer, WLAN_MGMT_SB_ID);
@@ -1437,21 +1418,21 @@ rx_handler_mem_free:
 	return status;
 }
 
-QDF_STATUS tgt_mgmt_txrx_tx_completion_handler(
-			struct wlan_objmgr_pdev *pdev,
-			uint32_t desc_id, uint32_t status,
-			void *tx_compl_params)
+QDF_STATUS tgt_mgmt_txrx_tx_completion_handler(struct wlan_objmgr_pdev *pdev,
+					       uint32_t desc_id,
+					       uint32_t status,
+					       void *tx_compl_params)
 {
 	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx;
 	struct mgmt_txrx_desc_elem_t *mgmt_desc;
 	void *cb_context;
 	mgmt_tx_download_comp_cb tx_compl_cb;
-	mgmt_ota_comp_cb  ota_comp_cb;
+	mgmt_ota_comp_cb ota_comp_cb;
 	qdf_nbuf_t nbuf;
 
 	mgmt_txrx_pdev_ctx = (struct mgmt_txrx_priv_pdev_context *)
-			wlan_objmgr_pdev_get_comp_private_obj(pdev,
-				WLAN_UMAC_COMP_MGMT_TXRX);
+		wlan_objmgr_pdev_get_comp_private_obj(pdev,
+						      WLAN_UMAC_COMP_MGMT_TXRX);
 	if (!mgmt_txrx_pdev_ctx) {
 		mgmt_txrx_err("Mgmt txrx context empty for pdev %pK", pdev);
 		return QDF_STATUS_E_NULL_VALUE;
@@ -1462,8 +1443,8 @@ QDF_STATUS tgt_mgmt_txrx_tx_completion_handler(
 	}
 	mgmt_desc = &mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[desc_id];
 	if (!mgmt_desc || !mgmt_desc->in_use) {
-		mgmt_txrx_err("Mgmt desc empty for id %d pdev %pK ",
-				desc_id, pdev);
+		mgmt_txrx_err("Mgmt desc empty for id %d pdev %pK ", desc_id,
+			      pdev);
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 	tx_compl_cb = mgmt_desc->tx_dwnld_cmpl_cb;
@@ -1471,21 +1452,21 @@ QDF_STATUS tgt_mgmt_txrx_tx_completion_handler(
 	nbuf = mgmt_desc->nbuf;
 
 	/*
-	 *      TO DO
-	 * Make the API more generic to handle tx download completion as well
-	 * as OTA completion separately.
-	 */
+   *      TO DO
+   * Make the API more generic to handle tx download completion as well
+   * as OTA completion separately.
+   */
 
 	/*
-	 * 1. If the tx frame is sent by any UMAC converged component then it
-	 *    passes the context as NULL while calling mgmt txrx API for
-	 *    sending mgmt frame. If context is NULL, peer will be passed as
-	 *    cb_context in completion callbacks.
-	 * 2. If the tx frame is sent by legacy MLME then it passes the context
-	 *    as its specific context (for ex- mac context in case of MCL) while
-	 *    calling mgmt txrx API for sending mgmt frame. This caller specific
-	 *    context is passed as cb_context in completion callbacks.
-	 */
+   * 1. If the tx frame is sent by any UMAC converged component then it
+   *    passes the context as NULL while calling mgmt txrx API for
+   *    sending mgmt frame. If context is NULL, peer will be passed as
+   *    cb_context in completion callbacks.
+   * 2. If the tx frame is sent by legacy MLME then it passes the context
+   *    as its specific context (for ex- mac context in case of MCL) while
+   *    calling mgmt txrx API for sending mgmt frame. This caller specific
+   *    context is passed as cb_context in completion callbacks.
+   */
 	if (mgmt_desc->context)
 		cb_context = mgmt_desc->context;
 	else
@@ -1504,25 +1485,24 @@ QDF_STATUS tgt_mgmt_txrx_tx_completion_handler(
 
 no_registered_cb:
 	/*
-	 * decrementing the peer ref count that was incremented while
-	 * accessing peer in wlan_mgmt_txrx_mgmt_frame_tx
-	 */
+   * decrementing the peer ref count that was incremented while
+   * accessing peer in wlan_mgmt_txrx_mgmt_frame_tx
+   */
 	wlan_objmgr_peer_release_ref(mgmt_desc->peer, WLAN_MGMT_NB_ID);
 	wlan_mgmt_txrx_desc_put(mgmt_txrx_pdev_ctx, desc_id);
 	return QDF_STATUS_SUCCESS;
 }
 
-qdf_nbuf_t tgt_mgmt_txrx_get_nbuf_from_desc_id(
-			struct wlan_objmgr_pdev *pdev,
-			uint32_t desc_id)
+qdf_nbuf_t tgt_mgmt_txrx_get_nbuf_from_desc_id(struct wlan_objmgr_pdev *pdev,
+					       uint32_t desc_id)
 {
 	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx;
 	struct mgmt_txrx_desc_elem_t *mgmt_desc;
 	qdf_nbuf_t buf;
 
 	mgmt_txrx_pdev_ctx = (struct mgmt_txrx_priv_pdev_context *)
-			wlan_objmgr_pdev_get_comp_private_obj(pdev,
-				WLAN_UMAC_COMP_MGMT_TXRX);
+		wlan_objmgr_pdev_get_comp_private_obj(pdev,
+						      WLAN_UMAC_COMP_MGMT_TXRX);
 	if (!mgmt_txrx_pdev_ctx) {
 		mgmt_txrx_err("Mgmt txrx context empty for pdev %pK", pdev);
 		goto fail;
@@ -1535,7 +1515,7 @@ qdf_nbuf_t tgt_mgmt_txrx_get_nbuf_from_desc_id(
 	mgmt_desc = &mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[desc_id];
 	if (!mgmt_desc || !mgmt_desc->in_use) {
 		mgmt_txrx_err("Mgmt descriptor unavailable for id %d pdev %pK",
-				desc_id, pdev);
+			      desc_id, pdev);
 		goto fail;
 	}
 	buf = mgmt_desc->nbuf;
@@ -1546,17 +1526,16 @@ fail:
 }
 
 struct wlan_objmgr_peer *
-tgt_mgmt_txrx_get_peer_from_desc_id(
-			struct wlan_objmgr_pdev *pdev,
-			uint32_t desc_id)
+tgt_mgmt_txrx_get_peer_from_desc_id(struct wlan_objmgr_pdev *pdev,
+				    uint32_t desc_id)
 {
 	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx;
 	struct mgmt_txrx_desc_elem_t *mgmt_desc;
 	struct wlan_objmgr_peer *peer;
 
 	mgmt_txrx_pdev_ctx = (struct mgmt_txrx_priv_pdev_context *)
-			wlan_objmgr_pdev_get_comp_private_obj(pdev,
-				WLAN_UMAC_COMP_MGMT_TXRX);
+		wlan_objmgr_pdev_get_comp_private_obj(pdev,
+						      WLAN_UMAC_COMP_MGMT_TXRX);
 	if (!mgmt_txrx_pdev_ctx) {
 		mgmt_txrx_err("Mgmt txrx context empty for pdev %pK", pdev);
 		goto fail;
@@ -1565,7 +1544,7 @@ tgt_mgmt_txrx_get_peer_from_desc_id(
 	mgmt_desc = &mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[desc_id];
 	if (!mgmt_desc || !mgmt_desc->in_use) {
 		mgmt_txrx_err("Mgmt descriptor unavailable for id %d pdev %pK",
-				desc_id, pdev);
+			      desc_id, pdev);
 		goto fail;
 	}
 
@@ -1576,17 +1555,16 @@ fail:
 	return NULL;
 }
 
-uint8_t tgt_mgmt_txrx_get_vdev_id_from_desc_id(
-			struct wlan_objmgr_pdev *pdev,
-			uint32_t desc_id)
+uint8_t tgt_mgmt_txrx_get_vdev_id_from_desc_id(struct wlan_objmgr_pdev *pdev,
+					       uint32_t desc_id)
 {
 	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx;
 	struct mgmt_txrx_desc_elem_t *mgmt_desc;
 	uint8_t vdev_id;
 
 	mgmt_txrx_pdev_ctx = (struct mgmt_txrx_priv_pdev_context *)
-			wlan_objmgr_pdev_get_comp_private_obj(pdev,
-				WLAN_UMAC_COMP_MGMT_TXRX);
+		wlan_objmgr_pdev_get_comp_private_obj(pdev,
+						      WLAN_UMAC_COMP_MGMT_TXRX);
 	if (!mgmt_txrx_pdev_ctx) {
 		mgmt_txrx_err("Mgmt txrx context empty for pdev %pK", pdev);
 		goto fail;
@@ -1599,7 +1577,7 @@ uint8_t tgt_mgmt_txrx_get_vdev_id_from_desc_id(
 	mgmt_desc = &mgmt_txrx_pdev_ctx->mgmt_desc_pool.pool[desc_id];
 	if (!mgmt_desc || !mgmt_desc->in_use) {
 		mgmt_txrx_err("Mgmt descriptor unavailable for id %d pdev %pK",
-				desc_id, pdev);
+			      desc_id, pdev);
 		goto fail;
 	}
 
@@ -1610,22 +1588,21 @@ fail:
 	return WLAN_UMAC_VDEV_ID_MAX;
 }
 
-uint32_t tgt_mgmt_txrx_get_free_desc_pool_count(
-			struct wlan_objmgr_pdev *pdev)
+uint32_t tgt_mgmt_txrx_get_free_desc_pool_count(struct wlan_objmgr_pdev *pdev)
 {
 	struct mgmt_txrx_priv_pdev_context *mgmt_txrx_pdev_ctx;
 	uint32_t free_desc_count = WLAN_INVALID_MGMT_DESC_COUNT;
 
 	mgmt_txrx_pdev_ctx = (struct mgmt_txrx_priv_pdev_context *)
-			wlan_objmgr_pdev_get_comp_private_obj(pdev,
-			WLAN_UMAC_COMP_MGMT_TXRX);
+		wlan_objmgr_pdev_get_comp_private_obj(pdev,
+						      WLAN_UMAC_COMP_MGMT_TXRX);
 	if (!mgmt_txrx_pdev_ctx) {
 		mgmt_txrx_err("Mgmt txrx context empty for pdev %pK", pdev);
 		goto fail;
 	}
 
-	free_desc_count = qdf_list_size(
-		&(mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list));
+	free_desc_count =
+		qdf_list_size(&(mgmt_txrx_pdev_ctx->mgmt_desc_pool.free_list));
 
 fail:
 	return free_desc_count;
@@ -1665,10 +1642,9 @@ tgt_mgmt_txrx_unregister_ev_handler(struct wlan_objmgr_psoc *psoc)
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS tgt_mgmt_txrx_process_rx_frame(
-			struct wlan_objmgr_pdev *pdev,
-			qdf_nbuf_t buf,
-			struct mgmt_rx_event_params *mgmt_rx_params)
+QDF_STATUS
+tgt_mgmt_txrx_process_rx_frame(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t buf,
+			       struct mgmt_rx_event_params *mgmt_rx_params)
 {
 	QDF_STATUS status;
 	struct wlan_lmac_if_mgmt_txrx_tx_ops *mgmt_txrx_tx_ops;
@@ -1685,19 +1661,18 @@ QDF_STATUS tgt_mgmt_txrx_process_rx_frame(
 	status = mgmt_txrx_tx_ops->rx_frame_legacy_handler(pdev, buf,
 							   mgmt_rx_params);
 	/**
-	 * Free up the mgmt rx params.
-	 * nbuf shouldn't be freed here as it is taken care by
-	 * rx_frame_legacy_handler.
-	 */
+   * Free up the mgmt rx params.
+   * nbuf shouldn't be freed here as it is taken care by
+   * rx_frame_legacy_handler.
+   */
 	free_mgmt_rx_event_params(mgmt_rx_params);
 
 	return status;
 }
 
-QDF_STATUS tgt_mgmt_txrx_rx_frame_entry(
-			struct wlan_objmgr_pdev *pdev,
-			qdf_nbuf_t buf,
-			struct mgmt_rx_event_params *mgmt_rx_params)
+QDF_STATUS
+tgt_mgmt_txrx_rx_frame_entry(struct wlan_objmgr_pdev *pdev, qdf_nbuf_t buf,
+			     struct mgmt_rx_event_params *mgmt_rx_params)
 {
 	/* Call the MGMT Rx REO handler */
 	return tgt_mgmt_rx_reo_frame_handler(pdev, buf, mgmt_rx_params);

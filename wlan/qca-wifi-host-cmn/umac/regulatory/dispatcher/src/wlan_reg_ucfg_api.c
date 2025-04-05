@@ -23,28 +23,28 @@
  *      contains regulatory user config interface definitions
  */
 
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_reg_ucfg_api.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <../../core/src/reg_priv_objs.h>
-#include <../../core/src/reg_utils.h>
-#include <../../core/src/reg_services_common.h>
-#include <../../core/src/reg_opclass.h>
-#include <../../core/src/reg_lte.h>
-#include <../../core/src/reg_offload_11d_scan.h>
 #include <../../core/src/reg_build_chan_list.h>
 #include <../../core/src/reg_callbacks.h>
+#include <../../core/src/reg_lte.h>
+#include <../../core/src/reg_offload_11d_scan.h>
+#include <../../core/src/reg_opclass.h>
+#include <../../core/src/reg_priv_objs.h>
+#include <../../core/src/reg_services_common.h>
+#include <../../core/src/reg_utils.h>
 #include <qdf_module.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
+#include <wlan_reg_ucfg_api.h>
 
 QDF_STATUS ucfg_reg_register_event_handler(uint8_t vdev_id, reg_event_cb cb,
-		void *arg)
+					   void *arg)
 {
 	/* Register a event cb handler */
 	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS ucfg_reg_unregister_event_handler(uint8_t vdev_id, reg_event_cb cb,
-		void *arg)
+					     void *arg)
 {
 	/* unregister a event cb handler */
 	return QDF_STATUS_SUCCESS;
@@ -56,8 +56,9 @@ QDF_STATUS ucfg_reg_init_handler(uint8_t pdev_id)
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS ucfg_reg_get_current_chan_list(struct wlan_objmgr_pdev *pdev,
-					  struct regulatory_channel *chan_list)
+QDF_STATUS
+ucfg_reg_get_current_chan_list(struct wlan_objmgr_pdev *pdev,
+			       struct regulatory_channel *chan_list)
 {
 	return reg_get_current_chan_list(pdev, chan_list);
 }
@@ -76,7 +77,7 @@ bool ucfg_reg_get_en_chan_144(struct wlan_objmgr_pdev *pdev)
 }
 
 QDF_STATUS ucfg_reg_set_config_vars(struct wlan_objmgr_psoc *psoc,
-				 struct reg_config_vars config_vars)
+				    struct reg_config_vars config_vars)
 {
 	return reg_set_config_vars(psoc, config_vars);
 }
@@ -88,8 +89,7 @@ bool ucfg_reg_is_regdb_offloaded(struct wlan_objmgr_psoc *psoc)
 
 void ucfg_reg_program_mas_chan_list(struct wlan_objmgr_psoc *psoc,
 				    struct regulatory_channel *reg_channels,
-				    uint8_t *alpha2,
-				    enum dfs_reg dfs_region)
+				    uint8_t *alpha2, enum dfs_reg dfs_region)
 {
 	reg_program_mas_chan_list(psoc, reg_channels, alpha2, dfs_region);
 }
@@ -147,7 +147,7 @@ QDF_STATUS ucfg_reg_set_fcc_constraint(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS ucfg_reg_get_current_country(struct wlan_objmgr_psoc *psoc,
-					       uint8_t *country_code)
+					uint8_t *country_code)
 {
 	return reg_read_current_country(psoc, country_code);
 }
@@ -158,18 +158,17 @@ QDF_STATUS ucfg_reg_set_default_country(struct wlan_objmgr_psoc *psoc,
 	return reg_set_default_country(psoc, country);
 }
 
-bool ucfg_reg_get_keep_6ghz_sta_cli_connection(
-					struct wlan_objmgr_pdev *pdev)
+bool ucfg_reg_get_keep_6ghz_sta_cli_connection(struct wlan_objmgr_pdev *pdev)
 {
 	return reg_get_keep_6ghz_sta_cli_connection(pdev);
 }
 
-QDF_STATUS ucfg_reg_set_keep_6ghz_sta_cli_connection(
-					struct wlan_objmgr_pdev *pdev,
-					bool keep_6ghz_sta_cli_connection)
+QDF_STATUS
+ucfg_reg_set_keep_6ghz_sta_cli_connection(struct wlan_objmgr_pdev *pdev,
+					  bool keep_6ghz_sta_cli_connection)
 {
-	return reg_set_keep_6ghz_sta_cli_connection(pdev,
-						keep_6ghz_sta_cli_connection);
+	return reg_set_keep_6ghz_sta_cli_connection(
+		pdev, keep_6ghz_sta_cli_connection);
 }
 
 bool ucfg_reg_is_user_country_set_allowed(struct wlan_objmgr_psoc *psoc)
@@ -189,8 +188,7 @@ QDF_STATUS ucfg_reg_get_default_country(struct wlan_objmgr_psoc *psoc,
 	return reg_read_default_country(psoc, country_code);
 }
 
-QDF_STATUS ucfg_reg_set_country(struct wlan_objmgr_pdev *pdev,
-				uint8_t *country)
+QDF_STATUS ucfg_reg_set_country(struct wlan_objmgr_pdev *pdev, uint8_t *country)
 {
 	return reg_set_country(pdev, country);
 }
@@ -230,8 +228,9 @@ QDF_STATUS ucfg_reg_register_afc_req_rx_callback(struct wlan_objmgr_pdev *pdev,
 
 qdf_export_symbol(ucfg_reg_register_afc_req_rx_callback);
 
-QDF_STATUS ucfg_reg_unregister_afc_req_rx_callback(struct wlan_objmgr_pdev *pdev,
-						   afc_req_rx_evt_handler cbf)
+QDF_STATUS
+ucfg_reg_unregister_afc_req_rx_callback(struct wlan_objmgr_pdev *pdev,
+					afc_req_rx_evt_handler cbf)
 {
 	return reg_unregister_afc_req_rx_callback(pdev, cbf);
 }
@@ -255,17 +254,16 @@ ucfg_reg_unregister_afc_power_event_callback(struct wlan_objmgr_pdev *pdev,
 
 QDF_STATUS
 ucfg_reg_register_afc_payload_reset_event_callback(
-		struct wlan_objmgr_pdev *pdev,
-		afc_payload_reset_tx_evt_handler cbf,
-		void *arg) {
+	struct wlan_objmgr_pdev *pdev, afc_payload_reset_tx_evt_handler cbf,
+	void *arg)
+{
 	return reg_register_afc_payload_reset_event_callback(pdev, cbf, arg);
 }
 
 qdf_export_symbol(ucfg_reg_register_afc_payload_reset_event_callback);
 
 QDF_STATUS ucfg_reg_unregister_afc_payload_reset_event_callback(
-		struct wlan_objmgr_pdev *pdev,
-		afc_payload_reset_tx_evt_handler cbf)
+	struct wlan_objmgr_pdev *pdev, afc_payload_reset_tx_evt_handler cbf)
 {
 	return reg_unregister_afc_payload_reset_event_callback(pdev, cbf);
 }
@@ -284,9 +282,8 @@ QDF_STATUS ucfg_reg_get_afc_req_info(struct wlan_objmgr_pdev *pdev,
 	return status;
 }
 
-void
-ucfg_reg_free_afc_req(struct wlan_objmgr_pdev *pdev,
-		      struct wlan_afc_host_request *afc_req)
+void ucfg_reg_free_afc_req(struct wlan_objmgr_pdev *pdev,
+			   struct wlan_afc_host_request *afc_req)
 {
 	reg_free_afc_req(pdev, afc_req);
 }
@@ -299,7 +296,7 @@ enum country_src ucfg_reg_get_cc_and_src(struct wlan_objmgr_psoc *psoc,
 }
 
 void ucfg_reg_unit_simulate_ch_avoid(struct wlan_objmgr_psoc *psoc,
-	struct ch_avoid_ind_type *ch_avoid)
+				     struct ch_avoid_ind_type *ch_avoid)
 {
 	reg_process_ch_avoid_event(psoc, ch_avoid);
 }
@@ -333,23 +330,25 @@ QDF_STATUS ucfg_reg_11d_vdev_created_update(struct wlan_objmgr_vdev *vdev)
 #endif
 
 QDF_STATUS ucfg_reg_update_hal_cap_wireless_modes(struct wlan_objmgr_psoc *psoc,
-					       uint64_t modes, uint8_t phy_id)
+						  uint64_t modes,
+						  uint8_t phy_id)
 {
 	return reg_update_hal_cap_wireless_modes(psoc, modes, phy_id);
 }
 
 qdf_export_symbol(ucfg_reg_update_hal_cap_wireless_modes);
 
-struct wlan_psoc_host_hal_reg_capabilities_ext *ucfg_reg_get_hal_reg_cap(
-				struct wlan_objmgr_psoc *psoc)
+struct wlan_psoc_host_hal_reg_capabilities_ext *
+ucfg_reg_get_hal_reg_cap(struct wlan_objmgr_psoc *psoc)
 {
 	return reg_get_hal_reg_cap(psoc);
 }
 qdf_export_symbol(ucfg_reg_get_hal_reg_cap);
 
-QDF_STATUS ucfg_reg_set_hal_reg_cap(struct wlan_objmgr_psoc *psoc,
-		struct wlan_psoc_host_hal_reg_capabilities_ext *hal_reg_cap,
-		uint16_t phy_cnt)
+QDF_STATUS ucfg_reg_set_hal_reg_cap(
+	struct wlan_objmgr_psoc *psoc,
+	struct wlan_psoc_host_hal_reg_capabilities_ext *hal_reg_cap,
+	uint16_t phy_cnt)
 
 {
 	return reg_set_hal_reg_cap(psoc, hal_reg_cap, phy_cnt);
@@ -363,9 +362,8 @@ QDF_STATUS ucfg_reg_update_hal_reg_range_caps(struct wlan_objmgr_psoc *psoc,
 					      uint32_t high_5g_chan,
 					      uint8_t phy_id)
 {
-	return reg_update_hal_reg_range_caps(psoc, low_2g_chan,
-				      high_2g_chan, low_5g_chan, high_5g_chan,
-				      phy_id);
+	return reg_update_hal_reg_range_caps(psoc, low_2g_chan, high_2g_chan,
+					     low_5g_chan, high_5g_chan, phy_id);
 }
 
 qdf_export_symbol(ucfg_reg_update_hal_reg_range_caps);
@@ -500,12 +498,9 @@ ucfg_reg_afc_start(struct wlan_objmgr_pdev *pdev, uint64_t req_id)
 #endif
 
 #ifndef CONFIG_REG_CLIENT
-QDF_STATUS ucfg_reg_enable_disable_opclass_chans(struct wlan_objmgr_pdev *pdev,
-						 bool is_disable,
-						 uint8_t opclass,
-						 uint8_t *ieee_chan_list,
-						 uint8_t chan_list_size,
-						 bool global_tbl_lookup)
+QDF_STATUS ucfg_reg_enable_disable_opclass_chans(
+	struct wlan_objmgr_pdev *pdev, bool is_disable, uint8_t opclass,
+	uint8_t *ieee_chan_list, uint8_t chan_list_size, bool global_tbl_lookup)
 {
 	return reg_enable_disable_opclass_chans(pdev, is_disable, opclass,
 						ieee_chan_list, chan_list_size,

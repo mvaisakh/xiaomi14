@@ -23,10 +23,10 @@
  * this file can be accessed internally in action_oui component only.
  */
 
+#include "target_if_action_oui.h"
 #include "wlan_action_oui_main.h"
 #include "wlan_action_oui_public_struct.h"
 #include "wlan_action_oui_tgt_api.h"
-#include "target_if_action_oui.h"
 #include <qdf_str.h>
 #include <wlan_utility.h>
 
@@ -45,8 +45,8 @@
  * Return: If conversion is successful return true else false
  */
 static bool action_oui_string_to_hex(uint8_t *token, uint8_t *hex,
-			      uint32_t no_of_lengths,
-			      uint32_t *possible_lengths)
+				     uint32_t no_of_lengths,
+				     uint32_t *possible_lengths)
 {
 	uint32_t token_len = qdf_str_len(token);
 	uint32_t hex_str_len;
@@ -87,8 +87,7 @@ static bool action_oui_string_to_hex(uint8_t *token, uint8_t *hex,
  *
  * Return: converted string
  */
-static
-uint8_t *action_oui_token_string(enum action_oui_token_type token_id)
+static uint8_t *action_oui_token_string(enum action_oui_token_type token_id)
 {
 	switch (token_id) {
 		CASE_RETURN_STRING(ACTION_OUI_TOKEN);
@@ -102,7 +101,7 @@ uint8_t *action_oui_token_string(enum action_oui_token_type token_id)
 		CASE_RETURN_STRING(ACTION_OUI_END_TOKEN);
 	}
 
-	return (uint8_t *) "UNKNOWN";
+	return (uint8_t *)"UNKNOWN";
 }
 
 /**
@@ -118,13 +117,12 @@ uint8_t *action_oui_token_string(enum action_oui_token_type token_id)
  *
  * Return: If conversion is successful return true else false
  */
-static
-bool validate_and_convert_oui(uint8_t *token,
-			struct action_oui_extension *ext,
-			enum action_oui_token_type *action_token)
+static bool validate_and_convert_oui(uint8_t *token,
+				     struct action_oui_extension *ext,
+				     enum action_oui_token_type *action_token)
 {
 	bool valid;
-	uint32_t expected_token_len[2] = {6, 10};
+	uint32_t expected_token_len[2] = { 6, 10 };
 
 	valid = action_oui_string_to_hex(token, ext->oui, 2,
 					 expected_token_len);
@@ -153,8 +151,8 @@ bool validate_and_convert_oui(uint8_t *token,
  */
 static bool
 validate_and_convert_data_length(uint8_t *token,
-				struct action_oui_extension *ext,
-				enum action_oui_token_type *action_token)
+				 struct action_oui_extension *ext,
+				 enum action_oui_token_type *action_token)
 {
 	uint32_t token_len = qdf_str_len(token);
 	int ret;
@@ -173,7 +171,7 @@ validate_and_convert_data_length(uint8_t *token,
 
 	if ((uint32_t)len > ACTION_OUI_MAX_DATA_LENGTH) {
 		action_oui_err("action OUI data len is more than %u",
-			ACTION_OUI_MAX_DATA_LENGTH);
+			       ACTION_OUI_MAX_DATA_LENGTH);
 		return false;
 	}
 
@@ -200,13 +198,12 @@ validate_and_convert_data_length(uint8_t *token,
  *
  * Return: If conversion is successful return true else false
  */
-static bool
-validate_and_convert_data(uint8_t *token,
-			      struct action_oui_extension *ext,
-			      enum action_oui_token_type *action_token)
+static bool validate_and_convert_data(uint8_t *token,
+				      struct action_oui_extension *ext,
+				      enum action_oui_token_type *action_token)
 {
 	bool valid;
-	uint32_t expected_token_len[1] = {2 * ext->data_length};
+	uint32_t expected_token_len[1] = { 2 * ext->data_length };
 
 	valid = action_oui_string_to_hex(token, ext->data, 1,
 					 expected_token_len);
@@ -232,9 +229,8 @@ validate_and_convert_data(uint8_t *token,
  * Return: If conversion is successful return true else false
  */
 static bool
-validate_and_convert_data_mask(uint8_t *token,
-				   struct action_oui_extension *ext,
-				   enum action_oui_token_type *action_token)
+validate_and_convert_data_mask(uint8_t *token, struct action_oui_extension *ext,
+			       enum action_oui_token_type *action_token)
 {
 	bool valid;
 	uint32_t expected_token_len[1];
@@ -252,7 +248,7 @@ validate_and_convert_data_mask(uint8_t *token,
 	expected_token_len[0] = 2 * data_mask_length;
 
 	valid = action_oui_string_to_hex(token, ext->data_mask, 1,
-				  expected_token_len);
+					 expected_token_len);
 	if (!valid)
 		return false;
 
@@ -277,9 +273,8 @@ validate_and_convert_data_mask(uint8_t *token,
  * Return: If conversion is successful return true else false
  */
 static bool
-validate_and_convert_info_mask(uint8_t *token,
-				   struct action_oui_extension *ext,
-				   enum action_oui_token_type *action_token)
+validate_and_convert_info_mask(uint8_t *token, struct action_oui_extension *ext,
+			       enum action_oui_token_type *action_token)
 {
 	uint32_t token_len = qdf_str_len(token);
 	uint8_t hex_value = 0;
@@ -287,13 +282,15 @@ validate_and_convert_info_mask(uint8_t *token,
 	int ret;
 
 	if (token_len != 2) {
-		action_oui_err("action OUI info mask str token len is not of 2 chars");
+		action_oui_err(
+			"action OUI info mask str token len is not of 2 chars");
 		return false;
 	}
 
 	ret = kstrtou8(token, 16, &hex_value);
 	if (ret) {
-		action_oui_err("Invalid char in action OUI info mask str token");
+		action_oui_err(
+			"Invalid char in action OUI info mask str token");
 		return false;
 	}
 
@@ -312,9 +309,9 @@ validate_and_convert_info_mask(uint8_t *token,
 	}
 
 	/*
-	 * If OUI bit is not set in the info presence, we need to ignore the
-	 * OUI and OUI Data. Set OUI and OUI data length to 0 here.
-	 */
+   * If OUI bit is not set in the info presence, we need to ignore the
+   * OUI and OUI Data. Set OUI and OUI data length to 0 here.
+   */
 	if (!(info_mask & ACTION_OUI_INFO_OUI)) {
 		ext->oui_length = 0;
 		ext->data_length = 0;
@@ -344,15 +341,14 @@ validate_and_convert_info_mask(uint8_t *token,
  * Return: If conversion is successful return true else false
  */
 static bool
-validate_and_convert_mac_addr(uint8_t *token,
-				  struct action_oui_extension *ext,
-				  enum action_oui_token_type *action_token)
+validate_and_convert_mac_addr(uint8_t *token, struct action_oui_extension *ext,
+			      enum action_oui_token_type *action_token)
 {
-	uint32_t expected_token_len[1] = {2 * QDF_MAC_ADDR_SIZE};
+	uint32_t expected_token_len[1] = { 2 * QDF_MAC_ADDR_SIZE };
 	bool valid;
 
 	valid = action_oui_string_to_hex(token, ext->mac_addr, 1,
-				  expected_token_len);
+					 expected_token_len);
 	if (!valid)
 		return false;
 
@@ -377,23 +373,23 @@ validate_and_convert_mac_addr(uint8_t *token,
  * Return: If conversion is successful return true else false
  */
 static bool
-validate_and_convert_mac_mask(uint8_t *token,
-				  struct action_oui_extension *ext,
-				  enum action_oui_token_type *action_token)
+validate_and_convert_mac_mask(uint8_t *token, struct action_oui_extension *ext,
+			      enum action_oui_token_type *action_token)
 {
-	uint32_t expected_token_len[1] = {2};
+	uint32_t expected_token_len[1] = { 2 };
 	uint32_t info_mask = ext->info_mask;
 	bool valid;
 	uint32_t mac_mask_length;
 
 	valid = action_oui_string_to_hex(token, ext->mac_mask, 1,
-				  expected_token_len);
+					 expected_token_len);
 	if (!valid)
 		return false;
 
 	mac_mask_length = qdf_str_len(token) / 2;
 	if (mac_mask_length > ACTION_OUI_MAC_MASK_LENGTH) {
-		action_oui_err("action OUI mac mask str token len is more than %u chars",
+		action_oui_err(
+			"action OUI mac mask str token len is more than %u chars",
 			expected_token_len[0]);
 		return false;
 	}
@@ -430,20 +426,21 @@ validate_and_convert_capability(uint8_t *token,
 				struct action_oui_extension *ext,
 				enum action_oui_token_type *action_token)
 {
-	uint32_t expected_token_len[1] = {2};
+	uint32_t expected_token_len[1] = { 2 };
 	uint32_t info_mask = ext->info_mask;
 	uint32_t capability_length;
 	uint8_t caps_0;
 	bool valid;
 
 	valid = action_oui_string_to_hex(token, ext->capability, 1,
-				  expected_token_len);
+					 expected_token_len);
 	if (!valid)
 		return false;
 
 	capability_length = qdf_str_len(token) / 2;
 	if (capability_length > ACTION_OUI_MAX_CAPABILITY_LENGTH) {
-		action_oui_err("action OUI capability str token len is more than %u chars",
+		action_oui_err(
+			"action OUI capability str token len is more than %u chars",
 			expected_token_len[0]);
 		return false;
 	}
@@ -452,13 +449,17 @@ validate_and_convert_capability(uint8_t *token,
 
 	if ((info_mask & ACTION_OUI_INFO_AP_CAPABILITY_NSS) &&
 	    (!(caps_0 & ACTION_OUI_CAPABILITY_NSS_MASK))) {
-		action_oui_err("Info presence for NSS is set but respective bits in capability are not set");
+		action_oui_err(
+			"Info presence for NSS is set but respective bits in "
+			"capability are not set");
 		return false;
 	}
 
 	if ((info_mask & ACTION_OUI_INFO_AP_CAPABILITY_BAND) &&
 	    (!(caps_0 & ACTION_OUI_CAPABILITY_BAND_MASK))) {
-		action_oui_err("Info presence for BAND is set but respective bits in capability are not set");
+		action_oui_err(
+			"Info presence for BAND is set but respective bits in "
+			"capability are not set");
 		return false;
 	}
 
@@ -489,7 +490,7 @@ action_oui_extension_store(struct action_oui_psoc_priv *psoc_priv,
 
 	qdf_mutex_acquire(&oui_priv->extension_lock);
 	if (qdf_list_size(&oui_priv->extension_list) ==
-			  ACTION_OUI_MAX_EXTENSIONS) {
+	    ACTION_OUI_MAX_EXTENSIONS) {
 		qdf_mutex_release(&oui_priv->extension_lock);
 		action_oui_err("Reached maximum OUI extensions");
 		return QDF_STATUS_E_FAILURE;
@@ -510,10 +511,10 @@ action_oui_extension_store(struct action_oui_psoc_priv *psoc_priv,
 }
 
 QDF_STATUS
-action_oui_parse(struct action_oui_psoc_priv *psoc_priv,
-		 uint8_t *oui_string, enum action_oui_id action_id)
+action_oui_parse(struct action_oui_psoc_priv *psoc_priv, uint8_t *oui_string,
+		 enum action_oui_id action_id)
 {
-	struct action_oui_extension ext = {0};
+	struct action_oui_extension ext = { 0 };
 	enum action_oui_token_type action_token = ACTION_OUI_TOKEN;
 	char *str1;
 	char *str2;
@@ -545,9 +546,9 @@ action_oui_parse(struct action_oui_psoc_priv *psoc_priv,
 	while (str1) {
 		str2 = (char *)qdf_str_left_trim(str1);
 		if (str2[0] == '\0') {
-			action_oui_err("Invalid spaces in action oui: %u at extension: %u for token: %s",
-				action_id,
-				oui_index + 1,
+			action_oui_err(
+				"Invalid spaces in action oui: %u at extension: %u for token: %s",
+				action_id, oui_index + 1,
 				action_oui_token_string(action_token));
 			valid = false;
 			break;
@@ -555,7 +556,8 @@ action_oui_parse(struct action_oui_psoc_priv *psoc_priv,
 
 		token = strsep(&str2, " ");
 		if (!token) {
-			action_oui_err("Invalid string for token: %s at extension: %u in action oui: %u",
+			action_oui_err(
+				"Invalid string for token: %s at extension: %u in action oui: %u",
 				action_oui_token_string(action_token),
 				oui_index + 1, action_id);
 			valid = false;
@@ -565,7 +567,6 @@ action_oui_parse(struct action_oui_psoc_priv *psoc_priv,
 		str1 = str2;
 
 		switch (action_token) {
-
 		case ACTION_OUI_TOKEN:
 			valid = validate_and_convert_oui(token, &ext,
 							 &action_token);
@@ -573,37 +574,37 @@ action_oui_parse(struct action_oui_psoc_priv *psoc_priv,
 
 		case ACTION_OUI_DATA_LENGTH_TOKEN:
 			valid = validate_and_convert_data_length(token, &ext,
-								&action_token);
+								 &action_token);
 			break;
 
 		case ACTION_OUI_DATA_TOKEN:
 			valid = validate_and_convert_data(token, &ext,
-							&action_token);
+							  &action_token);
 			break;
 
 		case ACTION_OUI_DATA_MASK_TOKEN:
 			valid = validate_and_convert_data_mask(token, &ext,
-							&action_token);
+							       &action_token);
 			break;
 
 		case ACTION_OUI_INFO_MASK_TOKEN:
 			valid = validate_and_convert_info_mask(token, &ext,
-							&action_token);
+							       &action_token);
 			break;
 
 		case ACTION_OUI_MAC_ADDR_TOKEN:
 			valid = validate_and_convert_mac_addr(token, &ext,
-							&action_token);
+							      &action_token);
 			break;
 
 		case ACTION_OUI_MAC_MASK_TOKEN:
 			valid = validate_and_convert_mac_mask(token, &ext,
-							&action_token);
+							      &action_token);
 			break;
 
 		case ACTION_OUI_CAPABILITY_TOKEN:
 			valid = validate_and_convert_capability(token, &ext,
-							&action_token);
+								&action_token);
 			break;
 
 		default:
@@ -612,10 +613,10 @@ action_oui_parse(struct action_oui_psoc_priv *psoc_priv,
 		}
 
 		if (!valid) {
-			action_oui_err("Invalid string for token: %s at extension: %u in action oui: %u",
+			action_oui_err(
+				"Invalid string for token: %s at extension: %u in action oui: %u",
 				action_oui_token_string(action_token),
-				oui_index + 1,
-				action_id);
+				oui_index + 1, action_id);
 			break;
 		}
 
@@ -625,7 +626,8 @@ action_oui_parse(struct action_oui_psoc_priv *psoc_priv,
 		status = action_oui_extension_store(psoc_priv, oui_priv, ext);
 		if (!QDF_IS_STATUS_SUCCESS(status)) {
 			valid = false;
-			action_oui_err("sme set of extension: %u for action oui: %u failed",
+			action_oui_err(
+				"sme set of extension: %u for action oui: %u failed",
 				oui_index + 1, action_id);
 			break;
 		}
@@ -643,40 +645,42 @@ action_oui_parse(struct action_oui_psoc_priv *psoc_priv,
 	}
 
 	if (oui_count_exceed) {
-		action_oui_err("Reached Maximum extensions: %u in action_oui: %u, ignoring the rest",
+		action_oui_err(
+			"Reached Maximum extensions: %u in action_oui: %u, ignoring the rest",
 			ACTION_OUI_MAX_EXTENSIONS, action_id);
 		return QDF_STATUS_SUCCESS;
 	}
 
 	if (action_token != ACTION_OUI_TOKEN &&
-	    action_token != ACTION_OUI_END_TOKEN &&
-	    valid && !str1) {
-		action_oui_err("No string for token: %s at extension: %u in action oui: %u",
-			action_oui_token_string(action_token),
-			oui_index + 1,
+	    action_token != ACTION_OUI_END_TOKEN && valid && !str1) {
+		action_oui_err(
+			"No string for token: %s at extension: %u in action oui: %u",
+			action_oui_token_string(action_token), oui_index + 1,
 			action_id);
 		valid = false;
 	}
 
 	if (!oui_index) {
-		action_oui_err("Not able to parse any extension in action oui: %u",
+		action_oui_err(
+			"Not able to parse any extension in action oui: %u",
 			action_id);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	if (valid)
-		action_oui_debug("All extensions: %u parsed successfully in action oui: %u",
-			  oui_index, action_id);
+		action_oui_debug(
+			"All extensions: %u parsed successfully in action oui: %u",
+			oui_index, action_id);
 	else
-		action_oui_err("First %u extensions parsed successfully in action oui: %u",
+		action_oui_err(
+			"First %u extensions parsed successfully in action oui: %u",
 			oui_index, action_id);
 
 	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS
-action_oui_parse_string(struct wlan_objmgr_psoc *psoc,
-			const uint8_t *in_str,
+action_oui_parse_string(struct wlan_objmgr_psoc *psoc, const uint8_t *in_str,
 			enum action_oui_id action_id)
 {
 	struct action_oui_psoc_priv *psoc_priv;
@@ -729,7 +733,7 @@ exit:
 }
 
 QDF_STATUS action_oui_send(struct action_oui_psoc_priv *psoc_priv,
-			enum action_oui_id action_id)
+			   enum action_oui_id action_id)
 {
 	QDF_STATUS status;
 	struct action_oui_request *req;
@@ -769,12 +773,10 @@ QDF_STATUS action_oui_send(struct action_oui_psoc_priv *psoc_priv,
 	extension = req->extension;
 	qdf_list_peek_front(extension_list, &node);
 	while (node) {
-		ext_priv = qdf_container_of(node,
-					   struct action_oui_extension_priv,
-					   item);
+		ext_priv = qdf_container_of(
+			node, struct action_oui_extension_priv, item);
 		*extension = ext_priv->extension;
-		status = qdf_list_peek_next(extension_list, node,
-						&next_node);
+		status = qdf_list_peek_next(extension_list, node, &next_node);
 		if (!QDF_IS_STATUS_SUCCESS(status))
 			break;
 		node = next_node;
@@ -798,9 +800,8 @@ QDF_STATUS action_oui_send(struct action_oui_psoc_priv *psoc_priv,
  *
  * Return: true or false
  */
-static bool
-check_for_vendor_oui_data(struct action_oui_extension *extension,
-			  const uint8_t *oui_ptr)
+static bool check_for_vendor_oui_data(struct action_oui_extension *extension,
+				      const uint8_t *oui_ptr)
 {
 	const uint8_t *data;
 	uint8_t i, j, elem_len, data_len;
@@ -818,8 +819,7 @@ check_for_vendor_oui_data(struct action_oui_extension *extension,
 		return false;
 
 	data = &oui_ptr[2 + extension->oui_length];
-	for (i = 0, j = 0;
-	     (i < data_len && j < extension->data_mask_length);
+	for (i = 0, j = 0; (i < data_len && j < extension->data_mask_length);
 	     i++) {
 		if ((extension->data_mask[j] & data_mask) &&
 		    !(extension->data[i] == data[i]))
@@ -842,9 +842,8 @@ check_for_vendor_oui_data(struct action_oui_extension *extension,
  *
  * Return: true or false
  */
-static bool
-check_for_vendor_ap_mac(struct action_oui_extension *extension,
-			struct action_oui_search_attr *attr)
+static bool check_for_vendor_ap_mac(struct action_oui_extension *extension,
+				    struct action_oui_search_attr *attr)
 {
 	uint8_t i;
 	uint8_t mac_mask = 0x80;
@@ -877,10 +876,9 @@ check_for_vendor_ap_capabilities(struct action_oui_extension *extension,
 
 	if (extension->info_mask & ACTION_OUI_INFO_AP_CAPABILITY_NSS) {
 		nss_mask = 1 << (attr->nss - 1);
-		if (!((*extension->capability &
-		    ACTION_OUI_CAPABILITY_NSS_MASK) &
-		    nss_mask))
-		return false;
+		if (!((*extension->capability & ACTION_OUI_CAPABILITY_NSS_MASK) &
+		      nss_mask))
+			return false;
 	}
 
 	if (extension->info_mask & ACTION_OUI_INFO_AP_CAPABILITY_HT) {
@@ -907,9 +905,9 @@ check_for_vendor_ap_capabilities(struct action_oui_extension *extension,
 
 	if (extension->info_mask & ACTION_OUI_INFO_AP_CAPABILITY_BAND &&
 	    ((attr->enable_5g &&
-	    !(*extension->capability & ACTION_CAPABILITY_5G_BAND_MASK)) ||
-	    (attr->enable_2g &&
-	    !(*extension->capability & ACTION_OUI_CAPABILITY_2G_BAND_MASK))))
+	      !(*extension->capability & ACTION_CAPABILITY_5G_BAND_MASK)) ||
+	     (attr->enable_2g &&
+	      !(*extension->capability & ACTION_OUI_CAPABILITY_2G_BAND_MASK))))
 		return false;
 
 	return true;
@@ -924,21 +922,18 @@ action_oui_get_oui_ptr(struct action_oui_extension *extension,
 
 	return wlan_get_vendor_ie_ptr_from_oui(extension->oui,
 					       extension->oui_length,
-					       attr->ie_data,
-					       attr->ie_length);
+					       attr->ie_data, attr->ie_length);
 }
 
-bool
-action_oui_is_empty(struct action_oui_psoc_priv *psoc_priv,
-		    enum action_oui_id action_id)
+bool action_oui_is_empty(struct action_oui_psoc_priv *psoc_priv,
+			 enum action_oui_id action_id)
 {
 	struct action_oui_priv *oui_priv;
 	qdf_list_t *extension_list;
 
 	oui_priv = psoc_priv->oui_priv[action_id];
 	if (!oui_priv) {
-		action_oui_debug("action oui for id %d is empty",
-				 action_id);
+		action_oui_debug("action oui for id %d is empty", action_id);
 		return true;
 	}
 
@@ -955,10 +950,9 @@ action_oui_is_empty(struct action_oui_psoc_priv *psoc_priv,
 	return false;
 }
 
-bool
-action_oui_search(struct action_oui_psoc_priv *psoc_priv,
-		  struct action_oui_search_attr *attr,
-		  enum action_oui_id action_id)
+bool action_oui_search(struct action_oui_psoc_priv *psoc_priv,
+		       struct action_oui_search_attr *attr,
+		       enum action_oui_id action_id)
 {
 	struct action_oui_priv *oui_priv;
 	struct action_oui_extension_priv *priv_ext;
@@ -972,8 +966,7 @@ action_oui_search(struct action_oui_psoc_priv *psoc_priv,
 
 	oui_priv = psoc_priv->oui_priv[action_id];
 	if (!oui_priv) {
-		action_oui_debug("action oui for id %d is empty",
-				 action_id);
+		action_oui_debug("action oui for id %d is empty", action_id);
 		return false;
 	}
 
@@ -986,28 +979,26 @@ action_oui_search(struct action_oui_psoc_priv *psoc_priv,
 
 	qdf_list_peek_front(extension_list, &node);
 	while (node) {
-		priv_ext = qdf_container_of(node,
-					   struct action_oui_extension_priv,
-					   item);
+		priv_ext = qdf_container_of(
+			node, struct action_oui_extension_priv, item);
 		extension = &priv_ext->extension;
 
 		/*
-		 * If a wildcard OUI bit is not set in the info_mask, proceed
-		 * to other checks skipping the OUI and vendor data checks
-		 */
+     * If a wildcard OUI bit is not set in the info_mask, proceed
+     * to other checks skipping the OUI and vendor data checks
+     */
 
 		if (!(extension->info_mask & ACTION_OUI_INFO_OUI))
 			wildcard_oui = true;
 
 		oui_ptr = action_oui_get_oui_ptr(extension, attr);
 
-		if (!oui_ptr  && !wildcard_oui)
+		if (!oui_ptr && !wildcard_oui)
 			goto next;
 
 		if (extension->data_length && !wildcard_oui &&
 		    !check_for_vendor_oui_data(extension, oui_ptr))
 			goto next;
-
 
 		if ((extension->info_mask & ACTION_OUI_INFO_MAC_ADDRESS) &&
 		    !check_for_vendor_ap_mac(extension, attr))
@@ -1022,8 +1013,8 @@ action_oui_search(struct action_oui_psoc_priv *psoc_priv,
 		qdf_mutex_release(&oui_priv->extension_lock);
 		return true;
 next:
-		qdf_status = qdf_list_peek_next(extension_list,
-						node, &next_node);
+		qdf_status =
+			qdf_list_peek_next(extension_list, node, &next_node);
 		if (!QDF_IS_STATUS_SUCCESS(qdf_status))
 			break;
 

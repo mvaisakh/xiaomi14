@@ -23,14 +23,13 @@
  * WLAN Host Device Driver TWT - Target Wake Time Implementation
  */
 #include "wma_twt.h"
-#include "wmi_unified_twt_api.h"
 #include "wma_internal.h"
 #include "wmi_unified_priv.h"
+#include "wmi_unified_twt_api.h"
 
 #if defined(WLAN_SUPPORT_TWT) && defined(WLAN_TWT_CONV_SUPPORTED)
 
-void wma_update_bcast_twt_support(tp_wma_handle wh,
-				  struct wma_tgt_cfg *tgt_cfg)
+void wma_update_bcast_twt_support(tp_wma_handle wh, struct wma_tgt_cfg *tgt_cfg)
 {
 }
 
@@ -97,7 +96,7 @@ void wma_send_twt_enable_cmd(uint32_t pdev_id,
 			     struct twt_enable_disable_conf *conf)
 {
 	t_wma_handle *wma = cds_get_context(QDF_MODULE_ID_WMA);
-	struct wmi_twt_enable_param twt_enable_params = {0};
+	struct wmi_twt_enable_param twt_enable_params = { 0 };
 	int32_t ret;
 
 	if (!wma)
@@ -123,9 +122,8 @@ void wma_send_twt_enable_cmd(uint32_t pdev_id,
  *
  * Return: 0 on success, negative value on failure
  */
-static
-int wma_twt_en_complete_event_handler(void *handle,
-				      uint8_t *event, uint32_t len)
+static int wma_twt_en_complete_event_handler(void *handle, uint8_t *event,
+					     uint32_t len)
 {
 	struct wmi_twt_enable_complete_event_param param;
 	tp_wma_handle wma_handle = handle;
@@ -145,9 +143,7 @@ int wma_twt_en_complete_event_handler(void *handle,
 
 	if (wmi_handle->ops->extract_twt_enable_comp_event)
 		status = wmi_handle->ops->extract_twt_enable_comp_event(
-								wmi_handle,
-								event,
-								&param);
+			wmi_handle, event, &param);
 	wma_debug("TWT: Received TWT enable comp event, status:%d", status);
 
 	if (mac->sme.twt_enable_cb)
@@ -160,7 +156,7 @@ void wma_send_twt_disable_cmd(uint32_t pdev_id,
 			      struct twt_enable_disable_conf *conf)
 {
 	t_wma_handle *wma = cds_get_context(QDF_MODULE_ID_WMA);
-	struct wmi_twt_disable_param twt_disable_params = {0};
+	struct wmi_twt_disable_param twt_disable_params = { 0 };
 	int32_t ret;
 
 	if (!wma)
@@ -185,9 +181,8 @@ void wma_send_twt_disable_cmd(uint32_t pdev_id,
  *
  * Return: 0 on success, negative value on failure
  */
-static
-int wma_twt_disable_comp_event_handler(void *handle, uint8_t *data,
-				       uint32_t len)
+static int wma_twt_disable_comp_event_handler(void *handle, uint8_t *data,
+					      uint32_t len)
 {
 	struct mac_context *mac;
 	struct wmi_twt_disable_complete_event event;
@@ -253,12 +248,12 @@ QDF_STATUS wma_twt_process_add_dialog(t_wma_handle *wma_handle,
  *
  * Return: 0 on success, negative value on failure
  */
-static
-int wma_twt_add_dialog_complete_event_handler(void *handle,
-					      uint8_t *event, uint32_t len)
+static int wma_twt_add_dialog_complete_event_handler(void *handle,
+						     uint8_t *event,
+						     uint32_t len)
 {
 	struct wma_twt_add_dialog_complete_event *add_dialog_event;
-	struct scheduler_msg sme_msg = {0};
+	struct scheduler_msg sme_msg = { 0 };
 	tp_wma_handle wma_handle = handle;
 	wmi_unified_t wmi_handle;
 	struct mac_context *mac = cds_get_context(QDF_MODULE_ID_PE);
@@ -278,16 +273,15 @@ int wma_twt_add_dialog_complete_event_handler(void *handle,
 	if (!add_dialog_event)
 		return -ENOMEM;
 
-	status = wmi_extract_twt_add_dialog_comp_event(wmi_handle, event,
-						       &add_dialog_event->params);
+	status = wmi_extract_twt_add_dialog_comp_event(
+		wmi_handle, event, &add_dialog_event->params);
 	if (QDF_IS_STATUS_ERROR(status))
 		goto exit;
 
 	if (add_dialog_event->params.num_additional_twt_params) {
-		status = wmi_extract_twt_add_dialog_comp_additional_params(wmi_handle,
-									   event,
-									   len, 0,
-									   &add_dialog_event->additional_params);
+		status = wmi_extract_twt_add_dialog_comp_additional_params(
+			wmi_handle, event, len, 0,
+			&add_dialog_event->additional_params);
 		if (QDF_IS_STATUS_ERROR(status))
 			goto exit;
 	}
@@ -298,8 +292,7 @@ int wma_twt_add_dialog_complete_event_handler(void *handle,
 	sme_msg.type = eWNI_SME_TWT_ADD_DIALOG_EVENT;
 	sme_msg.bodyptr = add_dialog_event;
 	sme_msg.bodyval = 0;
-	status = scheduler_post_message(QDF_MODULE_ID_WMA,
-					QDF_MODULE_ID_SME,
+	status = scheduler_post_message(QDF_MODULE_ID_WMA, QDF_MODULE_ID_SME,
 					QDF_MODULE_ID_SME, &sme_msg);
 	if (QDF_IS_STATUS_ERROR(status))
 		goto exit;
@@ -336,12 +329,12 @@ wma_twt_process_del_dialog(t_wma_handle *wma_handle,
  *
  * Return: 0 on success, negative value on failure
  */
-static
-int wma_twt_del_dialog_complete_event_handler(void *handle,
-					      uint8_t *event, uint32_t len)
+static int wma_twt_del_dialog_complete_event_handler(void *handle,
+						     uint8_t *event,
+						     uint32_t len)
 {
 	struct wmi_twt_del_dialog_complete_event_param *param;
-	struct scheduler_msg sme_msg = {0};
+	struct scheduler_msg sme_msg = { 0 };
 	tp_wma_handle wma_handle = handle;
 	wmi_unified_t wmi_handle;
 	struct mac_context *mac = cds_get_context(QDF_MODULE_ID_PE);
@@ -361,15 +354,14 @@ int wma_twt_del_dialog_complete_event_handler(void *handle,
 	if (!param)
 		return -ENOMEM;
 
-	status = wmi_extract_twt_del_dialog_comp_event(wmi_handle, event,
-						       param);
+	status =
+		wmi_extract_twt_del_dialog_comp_event(wmi_handle, event, param);
 	wma_debug("TWT: Extract TWT del dlg comp event, status:%d", status);
 
 	sme_msg.type = eWNI_SME_TWT_DEL_DIALOG_EVENT;
 	sme_msg.bodyptr = param;
 	sme_msg.bodyval = 0;
-	status = scheduler_post_message(QDF_MODULE_ID_WMA,
-					QDF_MODULE_ID_SME,
+	status = scheduler_post_message(QDF_MODULE_ID_WMA, QDF_MODULE_ID_SME,
 					QDF_MODULE_ID_SME, &sme_msg);
 	if (QDF_IS_STATUS_ERROR(status))
 		return -EINVAL;
@@ -420,12 +412,12 @@ wma_twt_process_nudge_dialog(t_wma_handle *wma_handle,
  *
  * Return: 0 on success, negative value on failure
  */
-static
-int wma_twt_pause_dialog_complete_event_handler(void *handle, uint8_t *event,
-						uint32_t len)
+static int wma_twt_pause_dialog_complete_event_handler(void *handle,
+						       uint8_t *event,
+						       uint32_t len)
 {
 	struct wmi_twt_pause_dialog_complete_event_param *param;
-	struct scheduler_msg sme_msg = {0};
+	struct scheduler_msg sme_msg = { 0 };
 	tp_wma_handle wma_handle = handle;
 	wmi_unified_t wmi_handle;
 	struct mac_context *mac = cds_get_context(QDF_MODULE_ID_PE);
@@ -446,16 +438,14 @@ int wma_twt_pause_dialog_complete_event_handler(void *handle, uint8_t *event,
 		return -ENOMEM;
 
 	if (wmi_handle->ops->extract_twt_pause_dialog_comp_event)
-		status = wmi_handle->ops->extract_twt_pause_dialog_comp_event(wmi_handle,
-									      event,
-									      param);
+		status = wmi_handle->ops->extract_twt_pause_dialog_comp_event(
+			wmi_handle, event, param);
 	wma_debug("TWT: Extract pause dialog comp event status:%d", status);
 
 	sme_msg.type = eWNI_SME_TWT_PAUSE_DIALOG_EVENT;
 	sme_msg.bodyptr = param;
 	sme_msg.bodyval = 0;
-	status = scheduler_post_message(QDF_MODULE_ID_WMA,
-					QDF_MODULE_ID_SME,
+	status = scheduler_post_message(QDF_MODULE_ID_WMA, QDF_MODULE_ID_SME,
 					QDF_MODULE_ID_SME, &sme_msg);
 	if (QDF_IS_STATUS_ERROR(status))
 		return -EINVAL;
@@ -472,12 +462,12 @@ int wma_twt_pause_dialog_complete_event_handler(void *handle, uint8_t *event,
  *
  * Return: 0 on success, negative value on failure
  */
-static
-int wma_twt_nudge_dialog_complete_event_handler(void *handle, uint8_t *event,
-						uint32_t len)
+static int wma_twt_nudge_dialog_complete_event_handler(void *handle,
+						       uint8_t *event,
+						       uint32_t len)
 {
 	struct wmi_twt_nudge_dialog_complete_event_param *param;
-	struct scheduler_msg sme_msg = {0};
+	struct scheduler_msg sme_msg = { 0 };
 	tp_wma_handle wma_handle = handle;
 	wmi_unified_t wmi_handle;
 	struct mac_context *mac = cds_get_context(QDF_MODULE_ID_PE);
@@ -501,15 +491,14 @@ int wma_twt_nudge_dialog_complete_event_handler(void *handle, uint8_t *event,
 
 	if (wmi_handle->ops->extract_twt_nudge_dialog_comp_event)
 		status = wmi_handle->ops->extract_twt_nudge_dialog_comp_event(
-						      wmi_handle, event, param);
+			wmi_handle, event, param);
 
 	wma_debug("TWT: Extract nudge dialog comp event status:%d", status);
 
 	sme_msg.type = eWNI_SME_TWT_NUDGE_DIALOG_EVENT;
 	sme_msg.bodyptr = param;
 	sme_msg.bodyval = 0;
-	status = scheduler_post_message(QDF_MODULE_ID_WMA,
-					QDF_MODULE_ID_SME,
+	status = scheduler_post_message(QDF_MODULE_ID_WMA, QDF_MODULE_ID_SME,
 					QDF_MODULE_ID_SME, &sme_msg);
 	if (QDF_IS_STATUS_ERROR(status))
 		return -EINVAL;
@@ -540,11 +529,11 @@ wma_twt_process_resume_dialog(t_wma_handle *wma_handle,
  *
  * Return: 0 on success, negative value on failure
  */
-static
-int wma_twt_notify_event_handler(void *handle, uint8_t *event, uint32_t len)
+static int wma_twt_notify_event_handler(void *handle, uint8_t *event,
+					uint32_t len)
 {
 	struct wmi_twt_notify_event_param *param;
-	struct scheduler_msg sme_msg = {0};
+	struct scheduler_msg sme_msg = { 0 };
 	tp_wma_handle wma_handle = handle;
 	wmi_unified_t wmi_handle;
 	struct mac_context *mac = cds_get_context(QDF_MODULE_ID_PE);
@@ -567,16 +556,14 @@ int wma_twt_notify_event_handler(void *handle, uint8_t *event, uint32_t len)
 		return -ENOMEM;
 
 	if (wmi_handle->ops->extract_twt_notify_event)
-		status = wmi_handle->ops->extract_twt_notify_event(wmi_handle,
-								   event,
-								   param);
+		status = wmi_handle->ops->extract_twt_notify_event(
+			wmi_handle, event, param);
 	wma_debug("Extract Notify event status:%d", status);
 
 	sme_msg.type = eWNI_SME_TWT_NOTIFY_EVENT;
 	sme_msg.bodyptr = param;
 	sme_msg.bodyval = 0;
-	status = scheduler_post_message(QDF_MODULE_ID_WMA,
-					QDF_MODULE_ID_SME,
+	status = scheduler_post_message(QDF_MODULE_ID_WMA, QDF_MODULE_ID_SME,
 					QDF_MODULE_ID_SME, &sme_msg);
 	if (QDF_IS_STATUS_ERROR(status))
 		return -EINVAL;
@@ -593,12 +580,12 @@ int wma_twt_notify_event_handler(void *handle, uint8_t *event, uint32_t len)
  *
  * Return: 0 on success, negative value on failure
  */
-static
-int wma_twt_resume_dialog_complete_event_handler(void *handle, uint8_t *event,
-						 uint32_t len)
+static int wma_twt_resume_dialog_complete_event_handler(void *handle,
+							uint8_t *event,
+							uint32_t len)
 {
 	struct wmi_twt_resume_dialog_complete_event_param *param;
-	struct scheduler_msg sme_msg = {0};
+	struct scheduler_msg sme_msg = { 0 };
 	tp_wma_handle wma_handle = handle;
 	wmi_unified_t wmi_handle;
 	struct mac_context *mac = cds_get_context(QDF_MODULE_ID_PE);
@@ -619,16 +606,14 @@ int wma_twt_resume_dialog_complete_event_handler(void *handle, uint8_t *event,
 		return -ENOMEM;
 
 	if (wmi_handle->ops->extract_twt_resume_dialog_comp_event)
-		status = wmi_handle->ops->extract_twt_resume_dialog_comp_event(wmi_handle,
-									       event,
-									       param);
+		status = wmi_handle->ops->extract_twt_resume_dialog_comp_event(
+			wmi_handle, event, param);
 	wma_debug("TWT: Extract resume dialog comp event status:%d", status);
 
 	sme_msg.type = eWNI_SME_TWT_RESUME_DIALOG_EVENT;
 	sme_msg.bodyptr = param;
 	sme_msg.bodyval = 0;
-	status = scheduler_post_message(QDF_MODULE_ID_WMA,
-					QDF_MODULE_ID_SME,
+	status = scheduler_post_message(QDF_MODULE_ID_WMA, QDF_MODULE_ID_SME,
 					QDF_MODULE_ID_SME, &sme_msg);
 	if (QDF_IS_STATUS_ERROR(status))
 		return -EINVAL;
@@ -636,9 +621,8 @@ int wma_twt_resume_dialog_complete_event_handler(void *handle, uint8_t *event,
 	return status;
 }
 
-static
-int wma_twt_ack_complete_event_handler(void *handle, uint8_t *event,
-				       uint32_t len)
+static int wma_twt_ack_complete_event_handler(void *handle, uint8_t *event,
+					      uint32_t len)
 {
 	struct wmi_twt_ack_complete_event_param *param;
 	tp_wma_handle wma_handle = handle;
@@ -660,8 +644,7 @@ int wma_twt_ack_complete_event_handler(void *handle, uint8_t *event,
 	if (!param)
 		return -ENOMEM;
 
-	status = wmi_extract_twt_ack_comp_event(wmi_handle, event,
-						param);
+	status = wmi_extract_twt_ack_comp_event(wmi_handle, event, param);
 
 	wma_debug("TWT: Received TWT ack comp event, status:%d", status);
 
@@ -685,11 +668,9 @@ exit:
  *
  * Return: None
  */
-void wma_update_bcast_twt_support(tp_wma_handle wh,
-				  struct wma_tgt_cfg *tgt_cfg)
+void wma_update_bcast_twt_support(tp_wma_handle wh, struct wma_tgt_cfg *tgt_cfg)
 {
-	if (wmi_service_enabled(wh->wmi_handle,
-				wmi_service_bcast_twt_support))
+	if (wmi_service_enabled(wh->wmi_handle, wmi_service_bcast_twt_support))
 		tgt_cfg->legacy_bcast_twt_support = true;
 	else
 		tgt_cfg->legacy_bcast_twt_support = false;
@@ -729,41 +710,29 @@ void wma_register_twt_events(tp_wma_handle wma_handle)
 					   wmi_twt_disable_complete_event_id,
 					   wma_twt_disable_comp_event_handler,
 					   WMA_RX_SERIALIZER_CTX);
-	wmi_unified_register_event_handler
-				(wma_handle->wmi_handle,
-				 wmi_twt_add_dialog_complete_event_id,
-				 wma_twt_add_dialog_complete_event_handler,
-				 WMA_RX_WORK_CTX);
-	wmi_unified_register_event_handler
-				(wma_handle->wmi_handle,
-				 wmi_twt_del_dialog_complete_event_id,
-				 wma_twt_del_dialog_complete_event_handler,
-				 WMA_RX_WORK_CTX);
+	wmi_unified_register_event_handler(
+		wma_handle->wmi_handle, wmi_twt_add_dialog_complete_event_id,
+		wma_twt_add_dialog_complete_event_handler, WMA_RX_WORK_CTX);
+	wmi_unified_register_event_handler(
+		wma_handle->wmi_handle, wmi_twt_del_dialog_complete_event_id,
+		wma_twt_del_dialog_complete_event_handler, WMA_RX_WORK_CTX);
 
-	wmi_unified_register_event_handler
-				(wma_handle->wmi_handle,
-				 wmi_twt_pause_dialog_complete_event_id,
-				 wma_twt_pause_dialog_complete_event_handler,
-				 WMA_RX_WORK_CTX);
-	wmi_unified_register_event_handler
-				(wma_handle->wmi_handle,
-				 wmi_twt_resume_dialog_complete_event_id,
-				 wma_twt_resume_dialog_complete_event_handler,
-				 WMA_RX_WORK_CTX);
-	wmi_unified_register_event_handler
-				(wma_handle->wmi_handle,
-				 wmi_twt_nudge_dialog_complete_event_id,
-				 wma_twt_nudge_dialog_complete_event_handler,
-				 WMA_RX_WORK_CTX);
-	wmi_unified_register_event_handler
-				(wma_handle->wmi_handle,
-				 wmi_twt_notify_event_id,
-				 wma_twt_notify_event_handler,
-				 WMA_RX_SERIALIZER_CTX);
-	wmi_unified_register_event_handler
-				(wma_handle->wmi_handle,
-				 wmi_twt_ack_complete_event_id,
-				 wma_twt_ack_complete_event_handler,
-				 WMA_RX_WORK_CTX);
+	wmi_unified_register_event_handler(
+		wma_handle->wmi_handle, wmi_twt_pause_dialog_complete_event_id,
+		wma_twt_pause_dialog_complete_event_handler, WMA_RX_WORK_CTX);
+	wmi_unified_register_event_handler(
+		wma_handle->wmi_handle, wmi_twt_resume_dialog_complete_event_id,
+		wma_twt_resume_dialog_complete_event_handler, WMA_RX_WORK_CTX);
+	wmi_unified_register_event_handler(
+		wma_handle->wmi_handle, wmi_twt_nudge_dialog_complete_event_id,
+		wma_twt_nudge_dialog_complete_event_handler, WMA_RX_WORK_CTX);
+	wmi_unified_register_event_handler(wma_handle->wmi_handle,
+					   wmi_twt_notify_event_id,
+					   wma_twt_notify_event_handler,
+					   WMA_RX_SERIALIZER_CTX);
+	wmi_unified_register_event_handler(wma_handle->wmi_handle,
+					   wmi_twt_ack_complete_event_id,
+					   wma_twt_ack_complete_event_handler,
+					   WMA_RX_WORK_CTX);
 }
 #endif

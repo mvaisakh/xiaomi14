@@ -19,10 +19,10 @@
  * DOC: contains interface prototypes for OS_IF layer
  */
 
+#include <init_deinit_lmac.h>
 #include <qdf_trace.h>
 #include <son_ucfg_api.h>
 #include <wlan_mlme_main.h>
-#include <init_deinit_lmac.h>
 
 qdf_freq_t
 ucfg_son_get_operation_chan_freq_vdev_id(struct wlan_objmgr_pdev *pdev,
@@ -32,11 +32,10 @@ ucfg_son_get_operation_chan_freq_vdev_id(struct wlan_objmgr_pdev *pdev,
 }
 
 void ucfg_son_get_min_and_max_power(struct wlan_objmgr_psoc *psoc,
-				    int8_t *max_tx_power,
-				    int8_t *min_tx_power)
+				    int8_t *max_tx_power, int8_t *min_tx_power)
 {
 	struct wlan_psoc_target_capability_info *target_cap =
-					lmac_get_target_cap(psoc);
+		lmac_get_target_cap(psoc);
 
 	*max_tx_power = 0;
 	*min_tx_power = 0;
@@ -63,12 +62,10 @@ uint32_t ucfg_son_get_sta_count(struct wlan_objmgr_vdev *vdev)
 	return sta_count;
 }
 
-uint32_t ucfg_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
-				qdf_freq_t freq, bool flag_160,
-				struct ch_params *chan_params)
+uint32_t ucfg_son_get_chan_flag(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+				bool flag_160, struct ch_params *chan_params)
 {
-	return wlan_son_get_chan_flag(pdev, freq, flag_160,
-				      chan_params);
+	return wlan_son_get_chan_flag(pdev, freq, flag_160, chan_params);
 }
 
 QDF_STATUS ucfg_son_set_peer_kickout_allow(struct wlan_objmgr_vdev *vdev,
@@ -81,15 +78,15 @@ QDF_STATUS ucfg_son_set_peer_kickout_allow(struct wlan_objmgr_vdev *vdev,
 QDF_STATUS ucfg_son_register_deliver_opmode_cb(struct wlan_objmgr_psoc *psoc,
 					       mlme_deliver_cb cb)
 {
-	return wlan_son_register_mlme_deliver_cb(psoc, cb,
-					SON_MLME_DELIVER_CB_TYPE_OPMODE);
+	return wlan_son_register_mlme_deliver_cb(
+		psoc, cb, SON_MLME_DELIVER_CB_TYPE_OPMODE);
 }
 
 QDF_STATUS ucfg_son_register_deliver_smps_cb(struct wlan_objmgr_psoc *psoc,
 					     mlme_deliver_cb cb)
 {
 	return wlan_son_register_mlme_deliver_cb(psoc, cb,
-					SON_MLME_DELIVER_CB_TYPE_SMPS);
+						 SON_MLME_DELIVER_CB_TYPE_SMPS);
 }
 
 int ucfg_son_cbs_init(void)
@@ -102,14 +99,12 @@ int ucfg_son_cbs_deinit(void)
 	return wlan_son_cbs_deinit();
 }
 
-int ucfg_son_set_cbs(struct wlan_objmgr_vdev *vdev,
-		     bool enable)
+int ucfg_son_set_cbs(struct wlan_objmgr_vdev *vdev, bool enable)
 {
 	return wlan_son_set_cbs(vdev, enable);
 }
 
-int ucfg_son_set_cbs_wait_time(struct wlan_objmgr_vdev *vdev,
-			       uint32_t val)
+int ucfg_son_set_cbs_wait_time(struct wlan_objmgr_vdev *vdev, uint32_t val)
 {
 	return wlan_son_set_cbs_wait_time(vdev, val);
 }
@@ -143,8 +138,7 @@ ucfg_son_vdev_get_supported_txrx_streams(struct wlan_objmgr_vdev *vdev,
 					 uint32_t *num_tx_streams,
 					 uint32_t *num_rx_streams)
 {
-	return wlan_son_vdev_get_supported_txrx_streams(vdev,
-							num_tx_streams,
+	return wlan_son_vdev_get_supported_txrx_streams(vdev, num_tx_streams,
 							num_rx_streams);
 }
 
@@ -152,7 +146,7 @@ QDF_STATUS ucfg_son_get_vht_cap(struct wlan_objmgr_psoc *psoc,
 				int32_t *vht_caps)
 {
 	struct wlan_psoc_target_capability_info *target_cap =
-					lmac_get_target_cap(psoc);
+		lmac_get_target_cap(psoc);
 
 	if (!target_cap)
 		return QDF_STATUS_E_NULL_VALUE;

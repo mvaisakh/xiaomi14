@@ -4,42 +4,42 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/module.h>
-#include "camera_main.h"
-#include "cam_ife_csid_dev.h"
 #include "cam_ife_csid_common.h"
+#include "cam_ife_csid_dev.h"
 #include "cam_ife_csid_hw_ver1.h"
 #include "cam_ife_csid_lite17x.h"
 #include "cam_ife_csid_lite480.h"
 #include "cam_ife_csid_lite680.h"
 #include "cam_ife_csid_lite780.h"
 #include "cam_ife_csid_lite880.h"
+#include "camera_main.h"
+#include <linux/module.h>
 
-#define CAM_CSID_LITE_DRV_NAME                    "csid_lite"
+#define CAM_CSID_LITE_DRV_NAME "csid_lite"
 
 static struct cam_ife_csid_core_info cam_ife_csid_lite_17x_hw_info = {
 	.csid_reg = &cam_ife_csid_lite_17x_reg_info,
-	.sw_version  = CAM_IFE_CSID_VER_1_0,
+	.sw_version = CAM_IFE_CSID_VER_1_0,
 };
 
 static struct cam_ife_csid_core_info cam_ife_csid_lite_480_hw_info = {
 	.csid_reg = &cam_ife_csid_lite_480_reg_info,
-	.sw_version  = CAM_IFE_CSID_VER_1_0,
+	.sw_version = CAM_IFE_CSID_VER_1_0,
 };
 
 static struct cam_ife_csid_core_info cam_ife_csid_lite_680_hw_info = {
 	.csid_reg = &cam_ife_csid_lite_680_reg_info,
-	.sw_version  = CAM_IFE_CSID_VER_2_0,
+	.sw_version = CAM_IFE_CSID_VER_2_0,
 };
 
 static struct cam_ife_csid_core_info cam_ife_csid_lite_780_hw_info = {
 	.csid_reg = &cam_ife_csid_lite_780_reg_info,
-	.sw_version  = CAM_IFE_CSID_VER_2_0,
+	.sw_version = CAM_IFE_CSID_VER_2_0,
 };
 
 static struct cam_ife_csid_core_info cam_ife_csid_lite_880_hw_info = {
 	.csid_reg = &cam_ife_csid_lite_880_reg_info,
-	.sw_version  = CAM_IFE_CSID_VER_2_0,
+	.sw_version = CAM_IFE_CSID_VER_2_0,
 };
 
 static const struct of_device_id cam_ife_csid_lite_dt_match[] = {
@@ -89,14 +89,15 @@ static const struct of_device_id cam_ife_csid_lite_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_ife_csid_lite_dt_match);
 
 struct platform_driver cam_ife_csid_lite_driver = {
-	.probe = cam_ife_csid_probe,
-	.remove = cam_ife_csid_remove,
-	.driver = {
-		.name = CAM_CSID_LITE_DRV_NAME,
-		.owner = THIS_MODULE,
-		.of_match_table = cam_ife_csid_lite_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_ife_csid_probe,
+    .remove = cam_ife_csid_remove,
+    .driver =
+        {
+            .name = CAM_CSID_LITE_DRV_NAME,
+            .owner = THIS_MODULE,
+            .of_match_table = cam_ife_csid_lite_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_ife_csid_lite_init_module(void)

@@ -23,15 +23,15 @@
  * This file provides regulatory data base parser functions.
  */
 
-#include <qdf_types.h>
-#include <wlan_cmn.h>
-#include <reg_services_public_struct.h>
-#include "reg_db.h"
 #include "reg_db_parser.h"
-#include <qdf_mem.h>
-#include <wlan_objmgr_psoc_obj.h>
+#include "reg_db.h"
 #include "reg_priv_objs.h"
 #include "reg_utils.h"
+#include <qdf_mem.h>
+#include <qdf_types.h>
+#include <reg_services_public_struct.h>
+#include <wlan_cmn.h>
+#include <wlan_objmgr_psoc_obj.h>
 
 #ifdef CONFIG_REG_CLIENT
 /**
@@ -44,8 +44,7 @@
  *
  * Return: None
  */
-static void
-reg_update_alpha2_from_domain(struct cur_regulatory_info *reg_info)
+static void reg_update_alpha2_from_domain(struct cur_regulatory_info *reg_info)
 {
 	uint16_t i;
 	int num_countries;
@@ -129,7 +128,7 @@ QDF_STATUS reg_regrules_assign(uint8_t dmn_id_2g, uint8_t dmn_id_5g,
 	}
 
 	if ((r_r_2g == reg_info->reg_rules_2g_ptr) &&
-			(r_r_5g == reg_info->reg_rules_5g_ptr))
+	    (r_r_5g == reg_info->reg_rules_5g_ptr))
 		return QDF_STATUS_E_FAILURE;
 
 	return QDF_STATUS_SUCCESS;
@@ -159,7 +158,7 @@ QDF_STATUS reg_get_rdpair_from_country_iso(uint8_t *alpha2,
 
 	for (j = 0; j < num_reg_dmn; j++) {
 		if (g_reg_dmn_pairs[j].reg_dmn_pair_id ==
-				g_all_countries[i].reg_dmn_pair_id)
+		    g_all_countries[i].reg_dmn_pair_id)
 			break;
 	}
 
@@ -220,7 +219,7 @@ QDF_STATUS reg_get_rdpair_from_country_code(uint16_t cc,
 
 	for (j = 0; j < num_reg_dmn; j++) {
 		if (g_reg_dmn_pairs[j].reg_dmn_pair_id ==
-				g_all_countries[i].reg_dmn_pair_id)
+		    g_all_countries[i].reg_dmn_pair_id)
 			break;
 	}
 
@@ -236,9 +235,8 @@ QDF_STATUS reg_get_rdpair_from_country_code(uint16_t cc,
 }
 
 static inline QDF_STATUS reg_get_reginfo_from_country_code_and_regdmn_pair(
-		struct cur_regulatory_info *reg_info,
-		uint16_t country_index,
-		uint16_t regdmn_pair)
+	struct cur_regulatory_info *reg_info, uint16_t country_index,
+	uint16_t regdmn_pair)
 {
 	uint8_t rule_size_2g, rule_size_5g;
 	uint8_t dmn_id_5g, dmn_id_2g;
@@ -252,12 +250,11 @@ static inline QDF_STATUS reg_get_reginfo_from_country_code_and_regdmn_pair(
 	rule_size_5g = QDF_ARRAY_SIZE(regdomains_5g[dmn_id_5g].reg_rule_id);
 
 	if (((rule_size_2g + rule_size_5g) >=
-				regdomains_2g[dmn_id_2g].num_reg_rules +
-				regdomains_5g[dmn_id_5g].num_reg_rules)) {
-
+	     regdomains_2g[dmn_id_2g].num_reg_rules +
+		     regdomains_5g[dmn_id_5g].num_reg_rules)) {
 		qdf_mem_copy(reg_info->alpha2,
-			g_all_countries[country_index].alpha2,
-			sizeof(g_all_countries[country_index].alpha2));
+			     g_all_countries[country_index].alpha2,
+			     sizeof(g_all_countries[country_index].alpha2));
 
 		reg_info->ctry_code =
 			g_all_countries[country_index].country_code;
@@ -271,16 +268,14 @@ static inline QDF_STATUS reg_get_reginfo_from_country_code_and_regdmn_pair(
 			reg_info->max_bw_2g =
 				g_all_countries[country_index].max_bw_2g;
 		else
-			reg_info->max_bw_2g =
-				regdomains_2g[dmn_id_2g].max_bw;
+			reg_info->max_bw_2g = regdomains_2g[dmn_id_2g].max_bw;
 
 		if (g_all_countries[country_index].max_bw_5g <
 		    regdomains_5g[dmn_id_5g].max_bw)
 			reg_info->max_bw_5g =
 				g_all_countries[country_index].max_bw_5g;
 		else
-			reg_info->max_bw_5g =
-				regdomains_5g[dmn_id_5g].max_bw;
+			reg_info->max_bw_5g = regdomains_5g[dmn_id_5g].max_bw;
 
 		reg_info->min_bw_2g = regdomains_2g[dmn_id_2g].min_bw;
 		reg_info->min_bw_5g = regdomains_5g[dmn_id_5g].min_bw;
@@ -293,15 +288,17 @@ static inline QDF_STATUS reg_get_reginfo_from_country_code_and_regdmn_pair(
 		reg_info->num_5g_reg_rules =
 			regdomains_5g[dmn_id_5g].num_reg_rules;
 
-		reg_info->reg_rules_2g_ptr = (struct cur_reg_rule *)
-			qdf_mem_malloc((reg_info->num_2g_reg_rules) *
-					sizeof(struct cur_reg_rule));
-		reg_info->reg_rules_5g_ptr = (struct cur_reg_rule *)
-			qdf_mem_malloc((reg_info->num_5g_reg_rules) *
-					sizeof(struct cur_reg_rule));
+		reg_info->reg_rules_2g_ptr =
+			(struct cur_reg_rule *)qdf_mem_malloc(
+				(reg_info->num_2g_reg_rules) *
+				sizeof(struct cur_reg_rule));
+		reg_info->reg_rules_5g_ptr =
+			(struct cur_reg_rule *)qdf_mem_malloc(
+				(reg_info->num_5g_reg_rules) *
+				sizeof(struct cur_reg_rule));
 
-		err = reg_regrules_assign(dmn_id_2g, dmn_id_5g,
-				ant_gain_2g, ant_gain_5g, reg_info);
+		err = reg_regrules_assign(dmn_id_2g, dmn_id_5g, ant_gain_2g,
+					  ant_gain_5g, reg_info);
 
 		if (err == QDF_STATUS_E_FAILURE) {
 			reg_err("No rule for country index = %d regdmn_pair = %d",
@@ -311,16 +308,16 @@ static inline QDF_STATUS reg_get_reginfo_from_country_code_and_regdmn_pair(
 
 		return QDF_STATUS_SUCCESS;
 	} else if (!(((rule_size_2g + rule_size_5g) >=
-				regdomains_2g[dmn_id_2g].num_reg_rules +
-				regdomains_5g[dmn_id_5g].num_reg_rules)))
-	    return QDF_STATUS_E_NOMEM;
+		      regdomains_2g[dmn_id_2g].num_reg_rules +
+			      regdomains_5g[dmn_id_5g].num_reg_rules)))
+		return QDF_STATUS_E_NOMEM;
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline QDF_STATUS reg_get_reginfo_from_regdmn_pair(
-		struct cur_regulatory_info *reg_info,
-		uint16_t regdmn_pair)
+static inline QDF_STATUS
+reg_get_reginfo_from_regdmn_pair(struct cur_regulatory_info *reg_info,
+				 uint16_t regdmn_pair)
 {
 	uint8_t rule_size_2g, rule_size_5g;
 	uint8_t dmn_id_5g, dmn_id_2g;
@@ -334,9 +331,8 @@ static inline QDF_STATUS reg_get_reginfo_from_regdmn_pair(
 	rule_size_5g = QDF_ARRAY_SIZE(regdomains_5g[dmn_id_5g].reg_rule_id);
 
 	if (((rule_size_2g + rule_size_5g) >=
-		    regdomains_2g[dmn_id_2g].num_reg_rules +
-		    regdomains_5g[dmn_id_5g].num_reg_rules)) {
-
+	     regdomains_2g[dmn_id_2g].num_reg_rules +
+		     regdomains_5g[dmn_id_5g].num_reg_rules)) {
 		qdf_mem_zero(reg_info->alpha2, sizeof(reg_info->alpha2));
 
 		reg_info->reg_dmn_pair =
@@ -362,15 +358,17 @@ static inline QDF_STATUS reg_get_reginfo_from_regdmn_pair(
 		reg_info->num_5g_reg_rules =
 			regdomains_5g[dmn_id_5g].num_reg_rules;
 
-		reg_info->reg_rules_2g_ptr = (struct cur_reg_rule *)
-			qdf_mem_malloc((reg_info->num_2g_reg_rules) *
-					sizeof(struct cur_reg_rule));
-		reg_info->reg_rules_5g_ptr = (struct cur_reg_rule *)
-			qdf_mem_malloc((reg_info->num_5g_reg_rules) *
-					sizeof(struct cur_reg_rule));
+		reg_info->reg_rules_2g_ptr =
+			(struct cur_reg_rule *)qdf_mem_malloc(
+				(reg_info->num_2g_reg_rules) *
+				sizeof(struct cur_reg_rule));
+		reg_info->reg_rules_5g_ptr =
+			(struct cur_reg_rule *)qdf_mem_malloc(
+				(reg_info->num_5g_reg_rules) *
+				sizeof(struct cur_reg_rule));
 
-		err = reg_regrules_assign(dmn_id_2g, dmn_id_5g,
-			ant_gain_2g, ant_gain_5g, reg_info);
+		err = reg_regrules_assign(dmn_id_2g, dmn_id_5g, ant_gain_2g,
+					  ant_gain_5g, reg_info);
 		if (err == QDF_STATUS_E_FAILURE) {
 			reg_err("No rule for regdmn_pair = %d\n", regdmn_pair);
 			return QDF_STATUS_E_FAILURE;
@@ -378,21 +376,20 @@ static inline QDF_STATUS reg_get_reginfo_from_regdmn_pair(
 
 		return QDF_STATUS_SUCCESS;
 	} else if (!(((rule_size_2g + rule_size_5g) >=
-			regdomains_2g[dmn_id_2g].num_reg_rules +
-			regdomains_5g[dmn_id_5g].num_reg_rules)))
+		      regdomains_2g[dmn_id_2g].num_reg_rules +
+			      regdomains_5g[dmn_id_5g].num_reg_rules)))
 		return QDF_STATUS_E_NOMEM;
 
 	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS reg_get_cur_reginfo(struct cur_regulatory_info *reg_info,
-			       uint16_t country_index,
-			       uint16_t regdmn_pair)
+			       uint16_t country_index, uint16_t regdmn_pair)
 {
 	if ((country_index != (uint16_t)(-1)) &&
 	    (regdmn_pair != (uint16_t)(-1)))
 		return reg_get_reginfo_from_country_code_and_regdmn_pair(
-				reg_info, country_index, regdmn_pair);
+			reg_info, country_index, regdmn_pair);
 	else if (regdmn_pair != (uint16_t)(-1))
 		return reg_get_reginfo_from_regdmn_pair(reg_info, regdmn_pair);
 	else

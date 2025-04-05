@@ -4,7 +4,7 @@
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[sde-kms_utils:%s:%d] " fmt, __func__, __LINE__
+#define pr_fmt(fmt) "[sde-kms_utils:%s:%d] " fmt, __func__, __LINE__
 
 #include "sde_kms.h"
 
@@ -16,18 +16,15 @@ void sde_kms_info_reset(struct sde_kms_info *info)
 	}
 }
 
-void sde_kms_info_add_keyint(struct sde_kms_info *info,
-		const char *key,
-		int64_t value)
+void sde_kms_info_add_keyint(struct sde_kms_info *info, const char *key,
+			     int64_t value)
 {
 	uint32_t len;
 
 	if (info && key) {
 		len = snprintf(info->data + info->len,
-				SDE_KMS_INFO_MAX_SIZE - info->len,
-				"%s=%lld\n",
-				key,
-				value);
+			       SDE_KMS_INFO_MAX_SIZE - info->len, "%s=%lld\n",
+			       key, value);
 
 		/* check if snprintf truncated the string */
 		if ((info->len + len) < SDE_KMS_INFO_MAX_SIZE)
@@ -35,18 +32,15 @@ void sde_kms_info_add_keyint(struct sde_kms_info *info,
 	}
 }
 
-void sde_kms_info_add_keystr(struct sde_kms_info *info,
-		const char *key,
-		const char *value)
+void sde_kms_info_add_keystr(struct sde_kms_info *info, const char *key,
+			     const char *value)
 {
 	uint32_t len;
 
 	if (info && key && value) {
 		len = snprintf(info->data + info->len,
-				SDE_KMS_INFO_MAX_SIZE - info->len,
-				"%s=%s\n",
-				key,
-				value);
+			       SDE_KMS_INFO_MAX_SIZE - info->len, "%s=%s\n",
+			       key, value);
 
 		/* check if snprintf truncated the string */
 		if ((info->len + len) < SDE_KMS_INFO_MAX_SIZE)
@@ -54,16 +48,13 @@ void sde_kms_info_add_keystr(struct sde_kms_info *info,
 	}
 }
 
-void sde_kms_info_start(struct sde_kms_info *info,
-		const char *key)
+void sde_kms_info_start(struct sde_kms_info *info, const char *key)
 {
 	uint32_t len;
 
 	if (info && key) {
 		len = snprintf(info->data + info->len,
-				SDE_KMS_INFO_MAX_SIZE - info->len,
-				"%s=",
-				key);
+			       SDE_KMS_INFO_MAX_SIZE - info->len, "%s=", key);
 
 		info->start = true;
 
@@ -73,16 +64,14 @@ void sde_kms_info_start(struct sde_kms_info *info,
 	}
 }
 
-void sde_kms_info_append(struct sde_kms_info *info,
-		const char *str)
+void sde_kms_info_append(struct sde_kms_info *info, const char *str)
 {
 	uint32_t len;
 
 	if (info) {
 		len = snprintf(info->data + info->staged_len,
-				SDE_KMS_INFO_MAX_SIZE - info->staged_len,
-				"%s",
-				str);
+			       SDE_KMS_INFO_MAX_SIZE - info->staged_len, "%s",
+			       str);
 
 		/* check if snprintf truncated the string */
 		if ((info->staged_len + len) < SDE_KMS_INFO_MAX_SIZE) {
@@ -92,7 +81,8 @@ void sde_kms_info_append(struct sde_kms_info *info,
 	}
 }
 
-void sde_kms_info_add_list(struct sde_kms_info *info, const char *key, uint32_t *value, size_t size)
+void sde_kms_info_add_list(struct sde_kms_info *info, const char *key,
+			   uint32_t *value, size_t size)
 {
 	uint32_t i, len;
 
@@ -115,8 +105,7 @@ void sde_kms_info_add_list(struct sde_kms_info *info, const char *key, uint32_t 
 }
 
 void sde_kms_info_append_format(struct sde_kms_info *info,
-		uint32_t pixel_format,
-		uint64_t modifier)
+				uint32_t pixel_format, uint64_t modifier)
 {
 	uint32_t len;
 
@@ -125,24 +114,23 @@ void sde_kms_info_append_format(struct sde_kms_info *info,
 
 	if (modifier) {
 		len = snprintf(info->data + info->staged_len,
-				SDE_KMS_INFO_MAX_SIZE - info->staged_len,
-				info->start ?
-				"%c%c%c%c/%llX/%llX" : " %c%c%c%c/%llX/%llX",
-				(pixel_format >> 0) & 0xFF,
-				(pixel_format >> 8) & 0xFF,
-				(pixel_format >> 16) & 0xFF,
-				(pixel_format >> 24) & 0xFF,
-				(modifier >> 56) & 0xFF,
-				modifier & ((1ULL << 56) - 1));
+			       SDE_KMS_INFO_MAX_SIZE - info->staged_len,
+			       info->start ? "%c%c%c%c/%llX/%llX" :
+					     " %c%c%c%c/%llX/%llX",
+			       (pixel_format >> 0) & 0xFF,
+			       (pixel_format >> 8) & 0xFF,
+			       (pixel_format >> 16) & 0xFF,
+			       (pixel_format >> 24) & 0xFF,
+			       (modifier >> 56) & 0xFF,
+			       modifier & ((1ULL << 56) - 1));
 	} else {
 		len = snprintf(info->data + info->staged_len,
-				SDE_KMS_INFO_MAX_SIZE - info->staged_len,
-				info->start ?
-				"%c%c%c%c" : " %c%c%c%c",
-				(pixel_format >> 0) & 0xFF,
-				(pixel_format >> 8) & 0xFF,
-				(pixel_format >> 16) & 0xFF,
-				(pixel_format >> 24) & 0xFF);
+			       SDE_KMS_INFO_MAX_SIZE - info->staged_len,
+			       info->start ? "%c%c%c%c" : " %c%c%c%c",
+			       (pixel_format >> 0) & 0xFF,
+			       (pixel_format >> 8) & 0xFF,
+			       (pixel_format >> 16) & 0xFF,
+			       (pixel_format >> 24) & 0xFF);
 	}
 
 	/* check if snprintf truncated the string */
@@ -159,8 +147,7 @@ void sde_kms_info_stop(struct sde_kms_info *info)
 	if (info) {
 		/* insert final delimiter */
 		len = snprintf(info->data + info->staged_len,
-				SDE_KMS_INFO_MAX_SIZE - info->staged_len,
-				"\n");
+			       SDE_KMS_INFO_MAX_SIZE - info->staged_len, "\n");
 
 		/* check if snprintf truncated the string */
 		if ((info->staged_len + len) < SDE_KMS_INFO_MAX_SIZE)
@@ -168,8 +155,9 @@ void sde_kms_info_stop(struct sde_kms_info *info)
 	}
 }
 
-void sde_kms_info_append_dnsc_blur_filter_info(struct sde_kms_info *info,
-		struct sde_dnsc_blur_filter_info *filter_info)
+void sde_kms_info_append_dnsc_blur_filter_info(
+	struct sde_kms_info *info,
+	struct sde_dnsc_blur_filter_info *filter_info)
 {
 	int i;
 	uint32_t len, cur_len;
@@ -177,21 +165,25 @@ void sde_kms_info_append_dnsc_blur_filter_info(struct sde_kms_info *info,
 	if (!info)
 		return;
 
-	len = snprintf(info->data + info->staged_len, SDE_KMS_INFO_MAX_SIZE - info->staged_len,
-			info->start ?
-				"%c/%c/%c/%c/%c/%c/%c/%c/%c/" : " %c/%c/%c/%c/%c/%c/%c/%c/%c/",
-			filter_info->filter & 0xFF, filter_info->src_min & 0xFF,
-			filter_info->src_max & 0xFF, filter_info->dst_min & 0xFF,
-			filter_info->dst_max & 0xFF, filter_info->min_ratio & 0xFF,
-			filter_info->max_ratio & 0xFF, filter_info->fraction_support & 0xFF,
-			filter_info->ratio_count & 0xFF);
+	len = snprintf(info->data + info->staged_len,
+		       SDE_KMS_INFO_MAX_SIZE - info->staged_len,
+		       info->start ? "%c/%c/%c/%c/%c/%c/%c/%c/%c/" :
+				     " %c/%c/%c/%c/%c/%c/%c/%c/%c/",
+		       filter_info->filter & 0xFF, filter_info->src_min & 0xFF,
+		       filter_info->src_max & 0xFF, filter_info->dst_min & 0xFF,
+		       filter_info->dst_max & 0xFF,
+		       filter_info->min_ratio & 0xFF,
+		       filter_info->max_ratio & 0xFF,
+		       filter_info->fraction_support & 0xFF,
+		       filter_info->ratio_count & 0xFF);
 
 	cur_len = len;
 	for (i = 0; i < filter_info->ratio_count; i++) {
-		len = snprintf(info->data + (info->staged_len + cur_len),
-				SDE_KMS_INFO_MAX_SIZE - (info->staged_len + cur_len),
-				(i == filter_info->ratio_count - 1) ? "%c" : "%c,",
-				filter_info->ratio[i]);
+		len = snprintf(
+			info->data + (info->staged_len + cur_len),
+			SDE_KMS_INFO_MAX_SIZE - (info->staged_len + cur_len),
+			(i == filter_info->ratio_count - 1) ? "%c" : "%c,",
+			filter_info->ratio[i]);
 		cur_len += len;
 	}
 
@@ -203,8 +195,7 @@ void sde_kms_info_append_dnsc_blur_filter_info(struct sde_kms_info *info,
 }
 
 void sde_kms_rect_intersect(const struct sde_rect *r1,
-		const struct sde_rect *r2,
-		struct sde_rect *result)
+			    const struct sde_rect *r2, struct sde_rect *result)
 {
 	int l, t, r, b;
 
@@ -227,7 +218,7 @@ void sde_kms_rect_intersect(const struct sde_rect *r1,
 }
 
 void sde_kms_rect_merge_rectangles(const struct msm_roi_list *rois,
-		struct sde_rect *result)
+				   struct sde_rect *result)
 {
 	struct drm_clip_rect clip;
 	const struct drm_clip_rect *roi_rect;
@@ -254,17 +245,14 @@ void sde_kms_rect_merge_rectangles(const struct msm_roi_list *rois,
 		clip.y2 = max(clip.y2, roi_rect->y2);
 
 		SDE_DEBUG("roi%d (%d,%d),(%d,%d) -> crtc (%d,%d),(%d,%d)\n", i,
-				roi_rect->x1, roi_rect->y1,
-				roi_rect->x2, roi_rect->y2,
-				clip.x1, clip.y1,
-				clip.x2, clip.y2);
+			  roi_rect->x1, roi_rect->y1, roi_rect->x2,
+			  roi_rect->y2, clip.x1, clip.y1, clip.x2, clip.y2);
 	}
 
-	if (clip.x2  && clip.y2) {
+	if (clip.x2 && clip.y2) {
 		result->x = clip.x1;
 		result->y = clip.y1;
 		result->w = clip.x2 - clip.x1;
 		result->h = clip.y2 - clip.y1;
 	}
 }
-

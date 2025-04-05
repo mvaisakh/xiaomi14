@@ -12,17 +12,15 @@
 #include "kgsl_device.h"
 #include "kgsl_trace.h"
 
-
-static u32 _ab_buslevel_update(struct kgsl_pwrctrl *pwr,
-		u32 ib)
+static u32 _ab_buslevel_update(struct kgsl_pwrctrl *pwr, u32 ib)
 {
 	if (!ib)
 		return 0;
 
 	/*
-	 * In the absence of any other settings, make ab 25% of ib
-	 * where the ib vote is in kbps
-	 */
+   * In the absence of any other settings, make ab 25% of ib
+   * where the ib vote is in kbps
+   */
 	if ((!pwr->bus_percent_ab) && (!pwr->bus_ab_mbytes))
 		return 25 * ib / 100000;
 
@@ -32,8 +30,7 @@ static u32 _ab_buslevel_update(struct kgsl_pwrctrl *pwr,
 	return (pwr->bus_percent_ab * pwr->bus_max) / 100;
 }
 
-int kgsl_bus_update(struct kgsl_device *device,
-			 enum kgsl_bus_vote vote_state)
+int kgsl_bus_update(struct kgsl_device *device, enum kgsl_bus_vote vote_state)
 {
 	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
 	/* FIXME: this might be wrong? */
@@ -43,15 +40,15 @@ int kgsl_bus_update(struct kgsl_device *device,
 
 	/* the bus should be ON to update the active frequency */
 	if ((vote_state != KGSL_BUS_VOTE_OFF) &&
-		!(test_bit(KGSL_PWRFLAGS_AXI_ON, &pwr->power_flags)))
+	    !(test_bit(KGSL_PWRFLAGS_AXI_ON, &pwr->power_flags)))
 		return 0;
 	/*
-	 * If the bus should remain on calculate our request and submit it,
-	 * otherwise request bus level 0, off.
-	 */
+   * If the bus should remain on calculate our request and submit it,
+   * otherwise request bus level 0, off.
+   */
 	if (vote_state == KGSL_BUS_VOTE_ON) {
 		buslevel = min_t(int, pwr->pwrlevels[0].bus_max,
-				cur + pwr->bus_mod);
+				 cur + pwr->bus_mod);
 		buslevel = max_t(int, buslevel, 1);
 	} else if (vote_state == KGSL_BUS_VOTE_MINIMUM) {
 		/* Request bus level 1, minimum non-zero value */
@@ -80,8 +77,7 @@ void kgsl_icc_set_tag(struct kgsl_pwrctrl *pwr, int buslevel)
 		icc_set_tag(pwr->icc_path, ACTIVE_ONLY_TAG);
 }
 
-static void validate_pwrlevels(struct kgsl_device *device, u32 *ibs,
-		int count)
+static void validate_pwrlevels(struct kgsl_device *device, u32 *ibs, int count)
 {
 	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
 	int i;
@@ -90,37 +86,41 @@ static void validate_pwrlevels(struct kgsl_device *device, u32 *ibs,
 		struct kgsl_pwrlevel *pwrlevel = &pwr->pwrlevels[i];
 
 		if (pwrlevel->bus_freq >= count) {
-			dev_err(device->dev, "Bus setting for GPU freq %d is out of bounds\n",
+			dev_err(device->dev,
+				"Bus setting for GPU freq %d is out of bounds\n",
 				pwrlevel->gpu_freq);
 			pwrlevel->bus_freq = count - 1;
 		}
 
 		if (pwrlevel->bus_max >= count) {
-			dev_err(device->dev, "Bus max for GPU freq %d is out of bounds\n",
+			dev_err(device->dev,
+				"Bus max for GPU freq %d is out of bounds\n",
 				pwrlevel->gpu_freq);
 			pwrlevel->bus_max = count - 1;
 		}
 
 		if (pwrlevel->bus_min >= count) {
-			dev_err(device->dev, "Bus min for GPU freq %d is out of bounds\n",
+			dev_err(device->dev,
+				"Bus min for GPU freq %d is out of bounds\n",
 				pwrlevel->gpu_freq);
 			pwrlevel->bus_min = count - 1;
 		}
 
 		if (pwrlevel->bus_min > pwrlevel->bus_max) {
-			dev_err(device->dev, "Bus min is bigger than bus max for GPU freq %d\n",
+			dev_err(device->dev,
+				"Bus min is bigger than bus max for GPU freq %d\n",
 				pwrlevel->gpu_freq);
 			pwrlevel->bus_min = pwrlevel->bus_max;
 		}
 	}
 }
 
-u32 *kgsl_bus_get_table(struct platform_device *pdev,
-		const char *name, int *count)
+u32 *kgsl_bus_get_table(struct platform_device *pdev, const char *name,
+			int *count)
 {
 	u32 *levels;
-	int i, num = of_property_count_elems_of_size(pdev->dev.of_node,
-		name, sizeof(u32));
+	int i, num = of_property_count_elems_of_size(pdev->dev.of_node, name,
+						     sizeof(u32));
 
 	/* If the bus wasn't specified, then build a static table */
 	if (num <= 0)
@@ -131,8 +131,8 @@ u32 *kgsl_bus_get_table(struct platform_device *pdev,
 		return ERR_PTR(-ENOMEM);
 
 	for (i = 0; i < num; i++)
-		of_property_read_u32_index(pdev->dev.of_node,
-			name, i, &levels[i]);
+		of_property_read_u32_index(pdev->dev.of_node, name, i,
+					   &levels[i]);
 
 	*count = num;
 	return levels;

@@ -17,13 +17,13 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "htc_credit_history.h"
 #include "htc_debug.h"
 #include "htc_internal.h"
-#include "htc_credit_history.h"
-#include <qdf_lock.h>
-#include <qdf_hang_event_notifier.h>
-#include <qdf_notifier.h>
 #include "qdf_ssr_driver_dump.h"
+#include <qdf_hang_event_notifier.h>
+#include <qdf_lock.h>
+#include <qdf_notifier.h>
 
 struct HTC_CREDIT_HISTORY {
 	enum htc_credit_exchange_type type;
@@ -40,8 +40,8 @@ struct htc_hang_data_fixed_param {
 static qdf_spinlock_t g_htc_credit_lock;
 static uint32_t g_htc_credit_history_idx;
 static uint32_t g_htc_credit_history_length;
-static
-struct HTC_CREDIT_HISTORY htc_credit_history_buffer[HTC_CREDIT_HISTORY_MAX];
+static struct HTC_CREDIT_HISTORY
+	htc_credit_history_buffer[HTC_CREDIT_HISTORY_MAX];
 
 #define NUM_HANG_CREDIT_HISTORY 1
 
@@ -84,9 +84,9 @@ void htc_credit_history_init(void)
 	qdf_ssr_driver_dump_register_region("htc_credit_history_idx",
 					    &g_htc_credit_history_idx,
 					    sizeof(g_htc_credit_history_idx));
-	qdf_ssr_driver_dump_register_region("htc_credit_history_length",
-					    &g_htc_credit_history_length,
-					    sizeof(g_htc_credit_history_length));
+	qdf_ssr_driver_dump_register_region(
+		"htc_credit_history_length", &g_htc_credit_history_length,
+		sizeof(g_htc_credit_history_length));
 }
 
 /**
@@ -146,16 +146,13 @@ void htc_print_credit_history(HTC_HANDLE htc, uint32_t count,
 	      "Time (seconds)     Type                         Credits    Queue Depth");
 	while (count) {
 		struct HTC_CREDIT_HISTORY *hist =
-						&htc_credit_history_buffer[idx];
+			&htc_credit_history_buffer[idx];
 		uint64_t secs, usecs;
 
 		qdf_log_timestamp_to_secs(hist->time, &secs, &usecs);
-		print(print_priv, "% 8lld.%06lld    %-25s    %-7.d    %d",
-		      secs,
-		      usecs,
-		      htc_credit_exchange_type_str(hist->type),
-		      hist->tx_credit,
-		      hist->htc_tx_queue_depth);
+		print(print_priv, "% 8lld.%06lld    %-25s    %-7.d    %d", secs,
+		      usecs, htc_credit_exchange_type_str(hist->type),
+		      hist->tx_credit, hist->htc_tx_queue_depth);
 
 		--count;
 		++idx;
@@ -169,8 +166,8 @@ void htc_print_credit_history(HTC_HANDLE htc, uint32_t count,
 #ifdef WLAN_HANG_EVENT
 void htc_log_hang_credit_history(struct notifier_block *block, void *data)
 {
-	qdf_notif_block *notif_block = qdf_container_of(block, qdf_notif_block,
-							notif_block);
+	qdf_notif_block *notif_block =
+		qdf_container_of(block, qdf_notif_block, notif_block);
 	struct qdf_notifer_data *htc_hang_data = data;
 	uint32_t count = NUM_HANG_CREDIT_HISTORY, idx, total_len;
 	HTC_HANDLE htc;
@@ -200,7 +197,7 @@ void htc_log_hang_credit_history(struct notifier_block *block, void *data)
 
 	while (count) {
 		struct HTC_CREDIT_HISTORY *hist =
-						&htc_credit_history_buffer[idx];
+			&htc_credit_history_buffer[idx];
 		htc_buf_ptr = htc_hang_data->hang_data + htc_hang_data->offset;
 		cmd = (struct htc_hang_data_fixed_param *)htc_buf_ptr;
 
@@ -209,7 +206,8 @@ void htc_log_hang_credit_history(struct notifier_block *block, void *data)
 
 		QDF_HANG_EVT_SET_HDR(&cmd->tlv_header,
 				     HANG_EVT_TAG_HTC_CREDIT_HIST,
-		QDF_HANG_GET_STRUCT_TLVLEN(struct htc_hang_data_fixed_param));
+				     QDF_HANG_GET_STRUCT_TLVLEN(
+					     struct htc_hang_data_fixed_param));
 		qdf_mem_copy(&cmd->credit_hist, hist, sizeof(*hist));
 		--count;
 		++idx;

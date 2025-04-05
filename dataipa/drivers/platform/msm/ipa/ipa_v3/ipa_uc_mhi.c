@@ -7,11 +7,11 @@
 #include "ipa_i.h"
 
 /* MHI uC interface definitions */
-#define IPA_HW_INTERFACE_MHI_VERSION            0x0004
+#define IPA_HW_INTERFACE_MHI_VERSION 0x0004
 
-#define IPA_HW_MAX_NUMBER_OF_CHANNELS	2
-#define IPA_HW_MAX_NUMBER_OF_EVENTRINGS	2
-#define IPA_HW_MAX_CHANNEL_HANDLE	(IPA_HW_MAX_NUMBER_OF_CHANNELS-1)
+#define IPA_HW_MAX_NUMBER_OF_CHANNELS 2
+#define IPA_HW_MAX_NUMBER_OF_EVENTRINGS 2
+#define IPA_HW_MAX_CHANNEL_HANDLE (IPA_HW_MAX_NUMBER_OF_CHANNELS - 1)
 
 /**
  * Values that represent the MHI commands from CPU to IPA HW.
@@ -32,18 +32,17 @@
  * @IPA_CPU_2_HW_CMD_MHI_STOP_EVENT_UPDATE: Cmd to stop event ring processing.
  */
 enum ipa_cpu_2_hw_mhi_commands {
-	IPA_CPU_2_HW_CMD_MHI_INIT
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 0),
-	IPA_CPU_2_HW_CMD_MHI_INIT_CHANNEL
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 1),
-	IPA_CPU_2_HW_CMD_MHI_UPDATE_MSI
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 2),
-	IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 3),
-	IPA_CPU_2_HW_CMD_MHI_DL_UL_SYNC_INFO
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 4),
-	IPA_CPU_2_HW_CMD_MHI_STOP_EVENT_UPDATE
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 5)
+	IPA_CPU_2_HW_CMD_MHI_INIT = FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 0),
+	IPA_CPU_2_HW_CMD_MHI_INIT_CHANNEL =
+		FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 1),
+	IPA_CPU_2_HW_CMD_MHI_UPDATE_MSI =
+		FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 2),
+	IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE =
+		FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 3),
+	IPA_CPU_2_HW_CMD_MHI_DL_UL_SYNC_INFO =
+		FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 4),
+	IPA_CPU_2_HW_CMD_MHI_STOP_EVENT_UPDATE =
+		FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 5)
 };
 
 /**
@@ -53,8 +52,8 @@ enum ipa_cpu_2_hw_mhi_commands {
  *	IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE commands.
  */
 enum ipa_hw_2_cpu_mhi_responses {
-	IPA_HW_2_CPU_RESPONSE_MHI_CHANGE_CHANNEL_STATE
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 0),
+	IPA_HW_2_CPU_RESPONSE_MHI_CHANGE_CHANNEL_STATE =
+		FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 0),
 };
 
 /**
@@ -65,10 +64,10 @@ enum ipa_hw_2_cpu_mhi_responses {
  *	interrupt was asserted when MHI engine is suspended
  */
 enum ipa_hw_2_cpu_mhi_events {
-	IPA_HW_2_CPU_EVENT_MHI_CHANNEL_ERROR
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 0),
-	IPA_HW_2_CPU_EVENT_MHI_CHANNEL_WAKE_UP_REQUEST
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 1),
+	IPA_HW_2_CPU_EVENT_MHI_CHANNEL_ERROR =
+		FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 0),
+	IPA_HW_2_CPU_EVENT_MHI_CHANNEL_WAKE_UP_REQUEST =
+		FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 1),
 };
 
 /**
@@ -91,18 +90,12 @@ enum ipa_hw_channel_errors {
  * @IPA_HW_LINK_ERROR: Link error
  */
 enum ipa_hw_mhi_errors {
-	IPA_HW_INVALID_MMIO_ERROR
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 0),
-	IPA_HW_INVALID_CHANNEL_ERROR
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 1),
-	IPA_HW_INVALID_EVENT_ERROR
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 2),
-	IPA_HW_NO_ED_IN_RING_ERROR
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 4),
-	IPA_HW_LINK_ERROR
-		= FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 5),
+	IPA_HW_INVALID_MMIO_ERROR = FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 0),
+	IPA_HW_INVALID_CHANNEL_ERROR = FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 1),
+	IPA_HW_INVALID_EVENT_ERROR = FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 2),
+	IPA_HW_NO_ED_IN_RING_ERROR = FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 4),
+	IPA_HW_LINK_ERROR = FEATURE_ENUM_VAL(IPA_HW_FEATURE_MHI, 5),
 };
-
 
 /**
  * Structure referring to the common and MHI section of 128B shared memory
@@ -143,7 +136,6 @@ struct IpaHwSharedMemMhiMapping_t {
 	u32 reserved_3B_38;
 	u32 reserved_3F_3C;
 };
-
 
 /**
  * Structure holding the parameters for IPA_CPU_2_HW_CMD_MHI_INIT command.
@@ -187,11 +179,11 @@ struct IpaHwMhiInitCmdData_t {
  */
 union IpaHwMhiInitChannelCmdData_t {
 	struct IpaHwMhiInitChannelCmdParams_t {
-		u32 channelHandle:8;
-		u32 contexArrayIndex:8;
-		u32 bamPipeId:6;
-		u32 channelDirection:2;
-		u32 reserved:8;
+		u32 channelHandle : 8;
+		u32 contexArrayIndex : 8;
+		u32 bamPipeId : 6;
+		u32 channelDirection : 2;
+		u32 reserved : 8;
 	} params;
 	u32 raw32b;
 };
@@ -226,10 +218,10 @@ struct IpaHwMhiMsiCmdData_t {
  */
 union IpaHwMhiChangeChannelStateCmdData_t {
 	struct IpaHwMhiChangeChannelStateCmdParams_t {
-		u32 requestedState:8;
-		u32 channelHandle:8;
-		u32 LPTransitionRejected:8;
-		u32 reserved:8;
+		u32 requestedState : 8;
+		u32 channelHandle : 8;
+		u32 LPTransitionRejected : 8;
+		u32 reserved : 8;
 	} params;
 	u32 raw32b;
 };
@@ -244,8 +236,8 @@ union IpaHwMhiChangeChannelStateCmdData_t {
  */
 union IpaHwMhiStopEventUpdateData_t {
 	struct IpaHwMhiStopEventUpdateDataParams_t {
-		u32 channelHandle:8;
-		u32 reserved:24;
+		u32 channelHandle : 8;
+		u32 reserved : 24;
 	} params;
 	u32 raw32b;
 };
@@ -262,9 +254,9 @@ union IpaHwMhiStopEventUpdateData_t {
  */
 union IpaHwMhiChangeChannelStateResponseData_t {
 	struct IpaHwMhiChangeChannelStateResponseParams_t {
-		u32 state:8;
-		u32 channelHandle:8;
-		u32 additonalParams:16;
+		u32 state : 8;
+		u32 channelHandle : 8;
+		u32 additonalParams : 16;
 	} params;
 	u32 raw32b;
 };
@@ -280,9 +272,9 @@ union IpaHwMhiChangeChannelStateResponseData_t {
  */
 union IpaHwMhiChannelErrorEventData_t {
 	struct IpaHwMhiChannelErrorEventParams_t {
-		u32 errorType:8;
-		u32 channelHandle:8;
-		u32 reserved:16;
+		u32 errorType : 8;
+		u32 channelHandle : 8;
+		u32 reserved : 16;
 	} params;
 	u32 raw32b;
 };
@@ -297,8 +289,8 @@ union IpaHwMhiChannelErrorEventData_t {
  */
 union IpaHwMhiChannelWakeupEventData_t {
 	struct IpaHwMhiChannelWakeupEventParams_t {
-		u32 channelHandle:8;
-		u32 reserved:24;
+		u32 channelHandle : 8;
+		u32 reserved : 24;
 	} params;
 	u32 raw32b;
 };
@@ -373,8 +365,8 @@ struct IpaHwStatsMhiCnlInfoData_t {
  */
 struct IpaHwStatsMhiInfoData_t {
 	struct IpaHwStatsMhiCmnInfoData_t mhiCmnStats;
-	struct IpaHwStatsMhiCnlInfoData_t mhiCnlStats[
-						IPA_HW_MAX_NUMBER_OF_CHANNELS];
+	struct IpaHwStatsMhiCnlInfoData_t
+		mhiCnlStats[IPA_HW_MAX_NUMBER_OF_CHANNELS];
 };
 
 /**
@@ -420,12 +412,12 @@ struct IpaHwConfigMhiMsiInfoData_t {
  */
 struct IpaHwConfigMhiCnlInfoData_t {
 	u16 transferRingSize;
-	u8  transferRingIndex;
-	u8  eventRingIndex;
-	u8  bamPipeIndex;
-	u8  isOutChannel;
-	u8  reserved_0;
-	u8  reserved_1;
+	u8 transferRingIndex;
+	u8 eventRingIndex;
+	u8 bamPipeIndex;
+	u8 isOutChannel;
+	u8 reserved_0;
+	u8 reserved_1;
 };
 
 /**
@@ -442,10 +434,10 @@ struct IpaHwConfigMhiEventInfoData_t {
 	u32 msiVec;
 	u16 intmodtValue;
 	u16 eventRingSize;
-	u8  eventRingIndex;
-	u8  reserved_0;
-	u8  reserved_1;
-	u8  reserved_2;
+	u8 eventRingIndex;
+	u8 reserved_0;
+	u8 reserved_1;
+	u8 reserved_2;
 };
 
 /**
@@ -458,12 +450,11 @@ struct IpaHwConfigMhiEventInfoData_t {
 struct IpaHwConfigMhiInfoData_t {
 	struct IpaHwConfigMhiCmnInfoData_t mhiCmnCfg;
 	struct IpaHwConfigMhiMsiInfoData_t mhiMsiCfg;
-	struct IpaHwConfigMhiCnlInfoData_t mhiCnlCfg[
-						IPA_HW_MAX_NUMBER_OF_CHANNELS];
-	struct IpaHwConfigMhiEventInfoData_t mhiEvtCfg[
-					IPA_HW_MAX_NUMBER_OF_EVENTRINGS];
+	struct IpaHwConfigMhiCnlInfoData_t
+		mhiCnlCfg[IPA_HW_MAX_NUMBER_OF_CHANNELS];
+	struct IpaHwConfigMhiEventInfoData_t
+		mhiEvtCfg[IPA_HW_MAX_NUMBER_OF_EVENTRINGS];
 };
-
 
 struct ipa3_uc_mhi_ctx {
 	u8 expected_responseOp;
@@ -474,31 +465,34 @@ struct ipa3_uc_mhi_ctx {
 	struct IpaHwStatsMhiInfoData_t *mhi_uc_stats_mmio;
 };
 
-#define PRINT_COMMON_STATS(x) \
-	(nBytes += scnprintf(&dbg_buff[nBytes], size - nBytes, \
-	#x "=0x%x\n", ipa3_uc_mhi_ctx->mhi_uc_stats_mmio->mhiCmnStats.x))
+#define PRINT_COMMON_STATS(x)                                      \
+	(nBytes +=                                                 \
+	 scnprintf(&dbg_buff[nBytes], size - nBytes, #x "=0x%x\n", \
+		   ipa3_uc_mhi_ctx->mhi_uc_stats_mmio->mhiCmnStats.x))
 
-#define PRINT_CHANNEL_STATS(ch, x) \
-	(nBytes += scnprintf(&dbg_buff[nBytes], size - nBytes, \
-	#x "=0x%x\n", ipa3_uc_mhi_ctx->mhi_uc_stats_mmio->mhiCnlStats[ch].x))
+#define PRINT_CHANNEL_STATS(ch, x)                                 \
+	(nBytes +=                                                 \
+	 scnprintf(&dbg_buff[nBytes], size - nBytes, #x "=0x%x\n", \
+		   ipa3_uc_mhi_ctx->mhi_uc_stats_mmio->mhiCnlStats[ch].x))
 
 struct ipa3_uc_mhi_ctx *ipa3_uc_mhi_ctx;
 
-static int ipa3_uc_mhi_response_hdlr(struct IpaHwSharedMemCommonMapping_t
-	*uc_sram_mmio, u32 *uc_status)
+static int
+ipa3_uc_mhi_response_hdlr(struct IpaHwSharedMemCommonMapping_t *uc_sram_mmio,
+			  u32 *uc_status)
 {
 	IPADBG("responseOp=%d\n", uc_sram_mmio->responseOp);
 	if (uc_sram_mmio->responseOp == ipa3_uc_mhi_ctx->expected_responseOp &&
 	    uc_sram_mmio->responseParams ==
-	    ipa3_uc_mhi_ctx->expected_responseParams) {
+		    ipa3_uc_mhi_ctx->expected_responseParams) {
 		*uc_status = 0;
 		return 0;
 	}
 	return -EINVAL;
 }
 
-static void ipa3_uc_mhi_event_hdlr(struct IpaHwSharedMemCommonMapping_t
-	*uc_sram_mmio)
+static void
+ipa3_uc_mhi_event_hdlr(struct IpaHwSharedMemCommonMapping_t *uc_sram_mmio)
 {
 	if (ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp ==
 	    IPA_HW_2_CPU_EVENT_MHI_CHANNEL_ERROR) {
@@ -507,8 +501,8 @@ static void ipa3_uc_mhi_event_hdlr(struct IpaHwSharedMemCommonMapping_t
 		IPAERR("Channel error\n");
 		evt.raw32b = uc_sram_mmio->eventParams;
 		IPAERR("errorType=%d channelHandle=%d reserved=%d\n",
-			evt.params.errorType, evt.params.channelHandle,
-			evt.params.reserved);
+		       evt.params.errorType, evt.params.channelHandle,
+		       evt.params.reserved);
 	} else if (ipa3_ctx->uc_ctx.uc_sram_mmio->eventOp ==
 		   IPA_HW_2_CPU_EVENT_MHI_CHANNEL_WAKE_UP_REQUEST) {
 		union IpaHwMhiChannelWakeupEventData_t evt;
@@ -516,7 +510,7 @@ static void ipa3_uc_mhi_event_hdlr(struct IpaHwSharedMemCommonMapping_t
 		IPADBG("WakeUp channel request\n");
 		evt.raw32b = uc_sram_mmio->eventParams;
 		IPADBG("channelHandle=%d reserved=%d\n",
-			evt.params.channelHandle, evt.params.reserved);
+		       evt.params.channelHandle, evt.params.reserved);
 		ipa3_uc_mhi_ctx->wakeup_request_cb();
 	}
 }
@@ -527,10 +521,10 @@ static void ipa3_uc_mhi_event_log_info_hdlr(
 	struct Ipa3HwEventInfoData_t *evt_info_ptr;
 	u32 size;
 
-	if ((uc_event_top_mmio->protocolMask & (1 << IPA_HW_FEATURE_MHI))
-		== 0) {
+	if ((uc_event_top_mmio->protocolMask & (1 << IPA_HW_FEATURE_MHI)) ==
+	    0) {
 		IPAERR("MHI feature missing 0x%x\n",
-			uc_event_top_mmio->protocolMask);
+		       uc_event_top_mmio->protocolMask);
 		return;
 	}
 
@@ -538,8 +532,7 @@ static void ipa3_uc_mhi_event_log_info_hdlr(
 	size = evt_info_ptr->featureInfo[IPA_HW_FEATURE_MHI].params.size;
 	if (size != sizeof(struct IpaHwStatsMhiInfoData_t)) {
 		IPAERR("mhi stats sz invalid exp=%zu is=%u\n",
-			sizeof(struct IpaHwStatsMhiInfoData_t),
-			size);
+		       sizeof(struct IpaHwStatsMhiInfoData_t), size);
 		return;
 	}
 
@@ -548,18 +541,17 @@ static void ipa3_uc_mhi_event_log_info_hdlr(
 		evt_info_ptr->featureInfo[IPA_HW_FEATURE_MHI].params.offset;
 	IPAERR("MHI stats ofst=0x%x\n", ipa3_uc_mhi_ctx->mhi_uc_stats_ofst);
 	if (ipa3_uc_mhi_ctx->mhi_uc_stats_ofst +
-		sizeof(struct IpaHwStatsMhiInfoData_t) >=
-		ipa3_ctx->ctrl->ipa_reg_base_ofst +
-		ipahal_get_reg_n_ofst(IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
-		ipa3_ctx->smem_sz) {
+		    sizeof(struct IpaHwStatsMhiInfoData_t) >=
+	    ipa3_ctx->ctrl->ipa_reg_base_ofst +
+		    ipahal_get_reg_n_ofst(IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
+		    ipa3_ctx->smem_sz) {
 		IPAERR("uc_mhi_stats 0x%x outside SRAM\n",
-			ipa3_uc_mhi_ctx->mhi_uc_stats_ofst);
+		       ipa3_uc_mhi_ctx->mhi_uc_stats_ofst);
 		return;
 	}
 
-	ipa3_uc_mhi_ctx->mhi_uc_stats_mmio =
-		ioremap(ipa3_ctx->ipa_wrapper_base +
-		ipa3_uc_mhi_ctx->mhi_uc_stats_ofst,
+	ipa3_uc_mhi_ctx->mhi_uc_stats_mmio = ioremap(
+		ipa3_ctx->ipa_wrapper_base + ipa3_uc_mhi_ctx->mhi_uc_stats_ofst,
 		sizeof(struct IpaHwStatsMhiInfoData_t));
 	if (!ipa3_uc_mhi_ctx->mhi_uc_stats_mmio) {
 		IPAERR("fail to ioremap uc mhi stats\n");
@@ -614,8 +606,8 @@ void ipa3_uc_mhi_cleanup(void)
 }
 
 int ipa3_uc_mhi_init_engine(struct ipa_mhi_msi_info *msi, u32 mmio_addr,
-	u32 host_ctrl_addr, u32 host_data_addr, u32 first_ch_idx,
-	u32 first_evt_idx)
+			    u32 host_ctrl_addr, u32 host_data_addr,
+			    u32 first_ch_idx, u32 first_evt_idx)
 {
 	int res;
 	struct ipa_mem_buffer mem;
@@ -637,7 +629,7 @@ int ipa3_uc_mhi_init_engine(struct ipa_mhi_msi_info *msi, u32 mmio_addr,
 
 	mem.size = sizeof(*init_cmd_data);
 	mem.base = dma_alloc_coherent(ipa3_ctx->pdev, mem.size, &mem.phys_base,
-		GFP_KERNEL);
+				      GFP_KERNEL);
 	if (!mem.base) {
 		IPAERR("fail to alloc DMA buff of size %d\n", mem.size);
 		res = -ENOMEM;
@@ -651,11 +643,11 @@ int ipa3_uc_mhi_init_engine(struct ipa_mhi_msi_info *msi, u32 mmio_addr,
 	init_cmd_data->firstChannelIndex = first_ch_idx;
 	init_cmd_data->firstEventRingIndex = first_evt_idx;
 	res = ipa3_uc_send_cmd((u32)mem.phys_base, IPA_CPU_2_HW_CMD_MHI_INIT, 0,
-		false, HZ);
+			       false, HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		dma_free_coherent(ipa3_ctx->pdev, mem.size, mem.base,
-			mem.phys_base);
+				  mem.phys_base);
 		goto disable_clks;
 	}
 
@@ -663,7 +655,7 @@ int ipa3_uc_mhi_init_engine(struct ipa_mhi_msi_info *msi, u32 mmio_addr,
 
 	mem.size = sizeof(*msi_cmd);
 	mem.base = dma_alloc_coherent(ipa3_ctx->pdev, mem.size, &mem.phys_base,
-		GFP_KERNEL);
+				      GFP_KERNEL);
 	if (!mem.base) {
 		IPAERR("fail to alloc DMA buff of size %d\n", mem.size);
 		res = -ENOMEM;
@@ -676,11 +668,11 @@ int ipa3_uc_mhi_init_engine(struct ipa_mhi_msi_info *msi, u32 mmio_addr,
 	msi_cmd->msiData = msi->data;
 	msi_cmd->msiMask = msi->mask;
 	res = ipa3_uc_send_cmd((u32)mem.phys_base,
-		IPA_CPU_2_HW_CMD_MHI_UPDATE_MSI, 0, false, HZ);
+			       IPA_CPU_2_HW_CMD_MHI_UPDATE_MSI, 0, false, HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		dma_free_coherent(ipa3_ctx->pdev, mem.size, mem.base,
-			mem.phys_base);
+				  mem.phys_base);
 		goto disable_clks;
 	}
 
@@ -691,11 +683,10 @@ int ipa3_uc_mhi_init_engine(struct ipa_mhi_msi_info *msi, u32 mmio_addr,
 disable_clks:
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 	return res;
-
 }
 
 int ipa3_uc_mhi_init_channel(int ipa_ep_idx, int channelHandle,
-	int contexArrayIndex, int channelDirection)
+			     int contexArrayIndex, int channelDirection)
 
 {
 	int res;
@@ -707,7 +698,7 @@ int ipa3_uc_mhi_init_channel(int ipa_ep_idx, int channelHandle,
 		return -EFAULT;
 	}
 
-	if (ipa_ep_idx < 0  || ipa_ep_idx >= ipa3_ctx->ipa_num_pipes) {
+	if (ipa_ep_idx < 0 || ipa_ep_idx >= ipa3_ctx->ipa_num_pipes) {
 		IPAERR("Invalid ipa_ep_idx.\n");
 		return -EINVAL;
 	}
@@ -728,7 +719,7 @@ int ipa3_uc_mhi_init_channel(int ipa_ep_idx, int channelHandle,
 	init_cmd.params.channelDirection = channelDirection;
 
 	res = ipa3_uc_send_cmd(init_cmd.raw32b,
-		IPA_CPU_2_HW_CMD_MHI_INIT_CHANNEL, 0, false, HZ);
+			       IPA_CPU_2_HW_CMD_MHI_INIT_CHANNEL, 0, false, HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		goto disable_clks;
@@ -740,7 +731,6 @@ disable_clks:
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 	return res;
 }
-
 
 int ipa3_uc_mhi_reset_channel(int channelHandle)
 {
@@ -765,7 +755,8 @@ int ipa3_uc_mhi_reset_channel(int channelHandle)
 	cmd.params.requestedState = IPA_HW_MHI_CHANNEL_STATE_DISABLE;
 	cmd.params.channelHandle = channelHandle;
 	res = ipa3_uc_send_cmd(cmd.raw32b,
-		IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE, 0, false, HZ);
+			       IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE, 0,
+			       false, HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		goto disable_clks;
@@ -801,7 +792,8 @@ int ipa3_uc_mhi_suspend_channel(int channelHandle)
 	cmd.params.requestedState = IPA_HW_MHI_CHANNEL_STATE_SUSPEND;
 	cmd.params.channelHandle = channelHandle;
 	res = ipa3_uc_send_cmd(cmd.raw32b,
-		IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE, 0, false, HZ);
+			       IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE, 0,
+			       false, HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		goto disable_clks;
@@ -838,7 +830,8 @@ int ipa3_uc_mhi_resume_channel(int channelHandle, bool LPTransitionRejected)
 	cmd.params.channelHandle = channelHandle;
 	cmd.params.LPTransitionRejected = LPTransitionRejected;
 	res = ipa3_uc_send_cmd(cmd.raw32b,
-		IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE, 0, false, HZ);
+			       IPA_CPU_2_HW_CMD_MHI_CHANGE_CHANNEL_STATE, 0,
+			       false, HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		goto disable_clks;
@@ -870,7 +863,8 @@ int ipa3_uc_mhi_stop_event_update_channel(int channelHandle)
 	ipa3_uc_mhi_ctx->expected_responseParams = cmd.raw32b;
 
 	res = ipa3_uc_send_cmd(cmd.raw32b,
-		IPA_CPU_2_HW_CMD_MHI_STOP_EVENT_UPDATE, 0, false, HZ);
+			       IPA_CPU_2_HW_CMD_MHI_STOP_EVENT_UPDATE, 0, false,
+			       HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		goto disable_clks;
@@ -892,15 +886,16 @@ int ipa3_uc_mhi_send_dl_ul_sync_info(union IpaHwMhiDlUlSyncCmdData_t *cmd)
 	}
 
 	IPADBG("isDlUlSyncEnabled=0x%x UlAccmVal=0x%x\n",
-		cmd->params.isDlUlSyncEnabled, cmd->params.UlAccmVal);
+	       cmd->params.isDlUlSyncEnabled, cmd->params.UlAccmVal);
 	IPADBG("ulMsiEventThreshold=0x%x dlMsiEventThreshold=0x%x\n",
-		cmd->params.ulMsiEventThreshold,
-		cmd->params.dlMsiEventThreshold);
+	       cmd->params.ulMsiEventThreshold,
+	       cmd->params.dlMsiEventThreshold);
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 
 	res = ipa3_uc_send_cmd(cmd->raw32b,
-		IPA_CPU_2_HW_CMD_MHI_DL_UL_SYNC_INFO, 0, false, HZ);
+			       IPA_CPU_2_HW_CMD_MHI_DL_UL_SYNC_INFO, 0, false,
+			       HZ);
 	if (res) {
 		IPAERR("ipa3_uc_send_cmd failed %d\n", res);
 		goto disable_clks;
@@ -922,15 +917,15 @@ int ipa3_uc_mhi_print_stats(char *dbg_buff, int size)
 		return 0;
 	}
 
-	nBytes += scnprintf(&dbg_buff[nBytes], size - nBytes,
-		"Common Stats:\n");
+	nBytes +=
+		scnprintf(&dbg_buff[nBytes], size - nBytes, "Common Stats:\n");
 	PRINT_COMMON_STATS(numULDLSync);
 	PRINT_COMMON_STATS(numULTimerExpired);
 	PRINT_COMMON_STATS(numChEvCtxWpRead);
 
 	for (i = 0; i < IPA_HW_MAX_NUMBER_OF_CHANNELS; i++) {
 		nBytes += scnprintf(&dbg_buff[nBytes], size - nBytes,
-			"Channel %d Stats:\n", i);
+				    "Channel %d Stats:\n", i);
 		PRINT_CHANNEL_STATS(i, doorbellInt);
 		PRINT_CHANNEL_STATS(i, reProccesed);
 		PRINT_CHANNEL_STATS(i, bamFifoFull);

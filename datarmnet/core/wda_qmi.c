@@ -12,9 +12,9 @@
  *
  */
 
+#include "rmnet_qmi.h"
 #include <linux/rtnetlink.h>
 #include <linux/soc/qcom/qmi.h>
-#include "rmnet_qmi.h"
 #define CREATE_TRACE_POINTS
 #include "wda.h"
 #undef CREATE_TRACE_POINTS
@@ -34,7 +34,7 @@ static void wda_svc_config(struct work_struct *work);
 /* **************************************************** */
 #define WDA_SERVICE_ID_V01 0x1A
 #define WDA_SERVICE_VERS_V01 0x01
-#define WDA_TIMEOUT_JF  msecs_to_jiffies(1000)
+#define WDA_TIMEOUT_JF msecs_to_jiffies(1000)
 
 #define QMI_WDA_SET_POWERSAVE_CONFIG_REQ_V01 0x002D
 #define QMI_WDA_SET_POWERSAVE_CONFIG_RESP_V01 0x002D
@@ -91,200 +91,183 @@ struct wda_set_powersave_mode_resp_msg_v01 {
 
 static struct qmi_elem_info wda_set_powersave_config_req_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= 1,
-		.elem_size	= sizeof(struct data_ep_id_type_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x01,
-		.offset		= offsetof(struct
-				wda_set_powersave_config_req_msg_v01,
-				ep_id),
-		.ei_array	= data_ep_id_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = 1,
+		.elem_size = sizeof(struct data_ep_id_type_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x01,
+		.offset = offsetof(struct wda_set_powersave_config_req_msg_v01,
+				   ep_id),
+		.ei_array = data_ep_id_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(uint8_t),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-				wda_set_powersave_config_req_msg_v01,
-				req_data_cfg_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(uint8_t),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct wda_set_powersave_config_req_msg_v01,
+				   req_data_cfg_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_SIGNED_4_BYTE_ENUM,
-		.elem_len	= 1,
-		.elem_size	= sizeof(enum
-					 wda_powersave_config_mask_enum_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-				wda_set_powersave_config_req_msg_v01,
-				req_data_cfg),
-		.ei_array	= NULL,
+		.data_type = QMI_SIGNED_4_BYTE_ENUM,
+		.elem_len = 1,
+		.elem_size = sizeof(enum wda_powersave_config_mask_enum_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct wda_set_powersave_config_req_msg_v01,
+				   req_data_cfg),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info wda_set_powersave_config_resp_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= 1,
-		.elem_size	= sizeof(struct qmi_response_type_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x02,
-		.offset		= offsetof(struct
-					wda_set_powersave_config_resp_msg_v01,
-					   resp),
-		.ei_array	= qmi_response_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = 1,
+		.elem_size = sizeof(struct qmi_response_type_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x02,
+		.offset = offsetof(struct wda_set_powersave_config_resp_msg_v01,
+				   resp),
+		.ei_array = qmi_response_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(uint8_t),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					wda_set_powersave_config_resp_msg_v01,
-					   data_cfg_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(uint8_t),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct wda_set_powersave_config_resp_msg_v01,
+				   data_cfg_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_SIGNED_4_BYTE_ENUM,
-		.elem_len	= 1,
-		.elem_size	= sizeof(enum
-					 wda_powersave_config_mask_enum_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					wda_set_powersave_config_resp_msg_v01,
-					   data_cfg),
-		.ei_array	= NULL,
+		.data_type = QMI_SIGNED_4_BYTE_ENUM,
+		.elem_len = 1,
+		.elem_size = sizeof(enum wda_powersave_config_mask_enum_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct wda_set_powersave_config_resp_msg_v01,
+				   data_cfg),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info wda_set_powersave_mode_req_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(uint8_t),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x01,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_req_msg_v01,
-					   powersave_control_flag),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(uint8_t),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x01,
+		.offset = offsetof(struct wda_set_powersave_mode_req_msg_v01,
+				   powersave_control_flag),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_req_msg_v01,
-					   allow_dfc_notify_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct wda_set_powersave_mode_req_msg_v01,
+				   allow_dfc_notify_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_req_msg_v01,
-					   allow_dfc_notify),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct wda_set_powersave_mode_req_msg_v01,
+				   allow_dfc_notify),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x11,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_req_msg_v01,
-					   allow_bearer_id_list_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x11,
+		.offset = offsetof(struct wda_set_powersave_mode_req_msg_v01,
+				   allow_bearer_id_list_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_DATA_LEN,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x11,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_req_msg_v01,
-					   allow_bearer_id_list_len),
-		.ei_array	= NULL,
+		.data_type = QMI_DATA_LEN,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x11,
+		.offset = offsetof(struct wda_set_powersave_mode_req_msg_v01,
+				   allow_bearer_id_list_len),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= PS_MAX_BEARERS,
-		.elem_size	= sizeof(u8),
-		.array_type	= VAR_LEN_ARRAY,
-		.tlv_type	= 0x11,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_req_msg_v01,
-					   allow_bearer_id_list),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = PS_MAX_BEARERS,
+		.elem_size = sizeof(u8),
+		.array_type = VAR_LEN_ARRAY,
+		.tlv_type = 0x11,
+		.offset = offsetof(struct wda_set_powersave_mode_req_msg_v01,
+				   allow_bearer_id_list),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x12,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_req_msg_v01,
-					   auto_shut_allow_bearer_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x12,
+		.offset = offsetof(struct wda_set_powersave_mode_req_msg_v01,
+				   auto_shut_allow_bearer_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x12,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_req_msg_v01,
-					   auto_shut_allow_bearer),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x12,
+		.offset = offsetof(struct wda_set_powersave_mode_req_msg_v01,
+				   auto_shut_allow_bearer),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info wda_set_powersave_mode_resp_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= 1,
-		.elem_size	= sizeof(struct qmi_response_type_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x02,
-		.offset		= offsetof(struct
-					   wda_set_powersave_mode_resp_msg_v01,
-					   resp),
-		.ei_array	= qmi_response_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = 1,
+		.elem_size = sizeof(struct qmi_response_type_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x02,
+		.offset = offsetof(struct wda_set_powersave_mode_resp_msg_v01,
+				   resp),
+		.ei_array = qmi_response_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
@@ -293,7 +276,7 @@ static int wda_set_powersave_mode_req(void *wda_data, uint8_t enable,
 {
 	struct wda_qmi_data *data = (struct wda_qmi_data *)wda_data;
 	struct wda_set_powersave_mode_resp_msg_v01 *resp;
-	struct wda_set_powersave_mode_req_msg_v01  *req;
+	struct wda_set_powersave_mode_req_msg_v01 *req;
 	struct qmi_txn txn;
 	int ret;
 
@@ -313,8 +296,8 @@ static int wda_set_powersave_mode_req(void *wda_data, uint8_t enable,
 	ret = qmi_txn_init(&data->handle, &txn,
 			   wda_set_powersave_mode_resp_msg_v01_ei, resp);
 	if (ret < 0) {
-		pr_err("%s() Failed init for response, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed init for response, err: %d\n", __func__,
+		       ret);
 		goto out;
 	}
 
@@ -334,23 +317,22 @@ static int wda_set_powersave_mode_req(void *wda_data, uint8_t enable,
 	}
 
 	ret = qmi_send_request(&data->handle, &data->ssctl, &txn,
-			QMI_WDA_SET_POWERSAVE_MODE_REQ_V01,
-			QMI_WDA_SET_POWERSAVE_MODE_REQ_V01_MAX_MSG_LEN,
-			wda_set_powersave_mode_req_msg_v01_ei, req);
+			       QMI_WDA_SET_POWERSAVE_MODE_REQ_V01,
+			       QMI_WDA_SET_POWERSAVE_MODE_REQ_V01_MAX_MSG_LEN,
+			       wda_set_powersave_mode_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		pr_err("%s() Failed sending request, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed sending request, err: %d\n", __func__, ret);
 		goto out;
 	}
 
 	ret = qmi_txn_wait(&txn, WDA_TIMEOUT_JF);
 	if (ret < 0) {
-		pr_err("%s() Response waiting failed, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Response waiting failed, err: %d\n", __func__,
+		       ret);
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		pr_err("%s() Request rejected, result: %d, err: %d\n",
-			__func__, resp->resp.result, resp->resp.error);
+		pr_err("%s() Request rejected, result: %d, err: %d\n", __func__,
+		       resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 	}
 
@@ -363,10 +345,10 @@ out:
 static int wda_set_powersave_config_req(struct qmi_handle *wda_handle,
 					int dl_marker)
 {
-	struct wda_qmi_data *data = container_of(wda_handle,
-						 struct wda_qmi_data, handle);
+	struct wda_qmi_data *data =
+		container_of(wda_handle, struct wda_qmi_data, handle);
 	struct wda_set_powersave_config_resp_msg_v01 *resp;
-	struct wda_set_powersave_config_req_msg_v01  *req;
+	struct wda_set_powersave_config_req_msg_v01 *req;
 	struct qmi_txn txn;
 	int ret;
 
@@ -383,8 +365,8 @@ static int wda_set_powersave_config_req(struct qmi_handle *wda_handle,
 	ret = qmi_txn_init(wda_handle, &txn,
 			   wda_set_powersave_config_resp_msg_v01_ei, resp);
 	if (ret < 0) {
-		pr_err("%s() Failed init for response, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed init for response, err: %d\n", __func__,
+		       ret);
 		goto out;
 	}
 
@@ -394,9 +376,9 @@ static int wda_set_powersave_config_req(struct qmi_handle *wda_handle,
 	req->req_data_cfg = dl_marker ? WDA_DATA_POWERSAVE_CONFIG_ALL_MASK_V01 :
 					WDA_DATA_POWERSAVE_CONFIG_FLOW_CTL_V01;
 	ret = qmi_send_request(wda_handle, &data->ssctl, &txn,
-			QMI_WDA_SET_POWERSAVE_CONFIG_REQ_V01,
-			QMI_WDA_SET_POWERSAVE_CONFIG_REQ_V01_MAX_MSG_LEN,
-			wda_set_powersave_config_req_msg_v01_ei, req);
+			       QMI_WDA_SET_POWERSAVE_CONFIG_REQ_V01,
+			       QMI_WDA_SET_POWERSAVE_CONFIG_REQ_V01_MAX_MSG_LEN,
+			       wda_set_powersave_config_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
 		pr_err("%s() Failed sending request, err: %d\n", __func__, ret);
@@ -405,11 +387,11 @@ static int wda_set_powersave_config_req(struct qmi_handle *wda_handle,
 
 	ret = qmi_txn_wait(&txn, WDA_TIMEOUT_JF);
 	if (ret < 0) {
-		pr_err("%s() Response waiting failed, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Response waiting failed, err: %d\n", __func__,
+		       ret);
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
 		pr_err("%s() Request rejected, result: %d, error: %d\n",
-			__func__, resp->resp.result, resp->resp.error);
+		       __func__, resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 	}
 
@@ -421,8 +403,8 @@ out:
 
 static void wda_svc_config(struct work_struct *work)
 {
-	struct wda_qmi_data *data = container_of(work, struct wda_qmi_data,
-						 svc_arrive);
+	struct wda_qmi_data *data =
+		container_of(work, struct wda_qmi_data, svc_arrive);
 	struct qmi_info *qmi;
 	int rc, dl_marker = 0;
 
@@ -462,8 +444,7 @@ static void wda_svc_config(struct work_struct *work)
 
 	qmi->wda_pending = NULL;
 	qmi->wda_client = (void *)data;
-	trace_wda_client_state_up(data->svc.instance,
-				  data->svc.ep_type,
+	trace_wda_client_state_up(data->svc.instance, data->svc.ep_type,
 				  data->svc.iface_id);
 
 	rtnl_unlock();
@@ -474,8 +455,8 @@ static void wda_svc_config(struct work_struct *work)
 
 static int wda_svc_arrive(struct qmi_handle *qmi, struct qmi_service *svc)
 {
-	struct wda_qmi_data *data = container_of(qmi, struct wda_qmi_data,
-						 handle);
+	struct wda_qmi_data *data =
+		container_of(qmi, struct wda_qmi_data, handle);
 
 	data->ssctl.sq_family = AF_QIPCRTR;
 	data->ssctl.sq_node = svc->node;
@@ -488,8 +469,8 @@ static int wda_svc_arrive(struct qmi_handle *qmi, struct qmi_service *svc)
 
 static void wda_svc_exit(struct qmi_handle *qmi, struct qmi_service *svc)
 {
-	struct wda_qmi_data *data = container_of(qmi, struct wda_qmi_data,
-						 handle);
+	struct wda_qmi_data *data =
+		container_of(qmi, struct wda_qmi_data, handle);
 
 	if (!data)
 		pr_info("%s() data is null\n", __func__);
@@ -500,8 +481,7 @@ static struct qmi_ops server_ops = {
 	.del_server = wda_svc_exit,
 };
 
-int
-wda_qmi_client_init(void *port, struct svc_info *psvc, struct qmi_info *qmi)
+int wda_qmi_client_init(void *port, struct svc_info *psvc, struct qmi_info *qmi)
 {
 	struct wda_qmi_data *data;
 	int rc = -ENOMEM;

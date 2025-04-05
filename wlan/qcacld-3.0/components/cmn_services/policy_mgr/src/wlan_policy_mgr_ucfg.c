@@ -17,10 +17,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 #include "wlan_policy_mgr_ucfg.h"
-#include "wlan_policy_mgr_i.h"
 #include "cfg_ucfg_api.h"
-#include "wlan_policy_mgr_api.h"
 #include "wlan_nan_api.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_policy_mgr_i.h"
 
 #ifdef WLAN_FEATURE_SR
 /**
@@ -48,7 +48,8 @@ policy_mgr_init_same_mac_conc_sr_status(struct wlan_objmgr_psoc *psoc)
 #else
 static void
 policy_mgr_init_same_mac_conc_sr_status(struct wlan_objmgr_psoc *psoc)
-{}
+{
+}
 #endif
 
 static QDF_STATUS policy_mgr_init_cfg(struct wlan_objmgr_psoc *psoc)
@@ -68,13 +69,13 @@ static QDF_STATUS policy_mgr_init_cfg(struct wlan_objmgr_psoc *psoc)
 
 	if (wlan_is_mlo_sta_nan_ndi_allowed(psoc)) {
 		cfg->max_conc_cxns = cfg_get(psoc, CFG_MAX_CONC_CXNS) + 1;
-		 policy_mgr_err("max_conc_cxns %d nan", cfg->max_conc_cxns);
+		policy_mgr_err("max_conc_cxns %d nan", cfg->max_conc_cxns);
 	} else {
 		cfg->max_conc_cxns = cfg_get(psoc, CFG_MAX_CONC_CXNS);
 		policy_mgr_err("max_conc_cxns %d non-nan", cfg->max_conc_cxns);
 	}
-	cfg->max_conc_cxns = QDF_MIN(cfg->max_conc_cxns,
-				     MAX_NUMBER_OF_CONC_CONNECTIONS);
+	cfg->max_conc_cxns =
+		QDF_MIN(cfg->max_conc_cxns, MAX_NUMBER_OF_CONC_CONNECTIONS);
 	cfg->conc_rule1 = cfg_get(psoc, CFG_ENABLE_CONC_RULE1);
 	cfg->conc_rule2 = cfg_get(psoc, CFG_ENABLE_CONC_RULE2);
 	cfg->pcl_band_priority = cfg_get(psoc, CFG_PCL_BAND_PRIORITY);
@@ -85,32 +86,29 @@ static QDF_STATUS policy_mgr_init_cfg(struct wlan_objmgr_psoc *psoc)
 		cfg_get(psoc, CFG_ENABLE_MCC_ADAPTIVE_SCH_ENABLED_NAME);
 	cfg->enable_sta_cxn_5g_band =
 		cfg_get(psoc, CFG_ENABLE_STA_CONNECTION_IN_5GHZ);
-	cfg->allow_mcc_go_diff_bi =
-		cfg_get(psoc, CFG_ALLOW_MCC_GO_DIFF_BI);
-	cfg->dual_mac_feature =
-		cfg_get(psoc, CFG_DUAL_MAC_FEATURE_DISABLE);
+	cfg->allow_mcc_go_diff_bi = cfg_get(psoc, CFG_ALLOW_MCC_GO_DIFF_BI);
+	cfg->dual_mac_feature = cfg_get(psoc, CFG_DUAL_MAC_FEATURE_DISABLE);
 	cfg->sbs_enable = 0;
-	cfg->is_force_1x1_enable =
-		cfg_get(psoc, CFG_FORCE_1X1_FEATURE);
+	cfg->is_force_1x1_enable = cfg_get(psoc, CFG_FORCE_1X1_FEATURE);
 	cfg->sta_sap_scc_on_dfs_chnl =
 		cfg_get(psoc, CFG_STA_SAP_SCC_ON_DFS_CHAN);
 	cfg->sap_only_allow_sta_dfs_indoor_chan =
 		cfg_get(psoc, CFG_SAP_ONLY_ALLOW_STA_DFS_INDOOR_CHAN);
 
 	/*
-	 * Override concurrency sta+sap indoor flag to true if global indoor
-	 * flag is true
-	 */
+   * Override concurrency sta+sap indoor flag to true if global indoor
+   * flag is true
+   */
 	cfg->sta_sap_scc_on_indoor_channel =
 		cfg_get(psoc, CFG_STA_SAP_SCC_ON_INDOOR_CHAN);
 	if (cfg_get(psoc, CFG_INDOOR_CHANNEL_SUPPORT))
 		cfg->sta_sap_scc_on_indoor_channel = true;
 
 	/*
-	 * Force set sta_sap_scc_on_dfs_chnl on Non-DBS HW so that standalone
-	 * SAP is not allowed on DFS channel on non-DBS HW, Also, force SCC in
-	 * case of STA+SAP
-	 */
+   * Force set sta_sap_scc_on_dfs_chnl on Non-DBS HW so that standalone
+   * SAP is not allowed on DFS channel on non-DBS HW, Also, force SCC in
+   * case of STA+SAP
+   */
 	if (cfg->sta_sap_scc_on_dfs_chnl == 2 &&
 	    !cfg_get(psoc, CFG_ENABLE_DFS_MASTER_CAPABILITY))
 		cfg->sta_sap_scc_on_dfs_chnl = 0;
@@ -192,13 +190,13 @@ QDF_STATUS ucfg_policy_mgr_set_sys_pref(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS ucfg_policy_mgr_get_conc_rule1(struct wlan_objmgr_psoc *psoc,
-						uint8_t *conc_rule1)
+					  uint8_t *conc_rule1)
 {
 	return policy_mgr_get_conc_rule1(psoc, conc_rule1);
 }
 
 QDF_STATUS ucfg_policy_mgr_get_conc_rule2(struct wlan_objmgr_psoc *psoc,
-						uint8_t *conc_rule2)
+					  uint8_t *conc_rule2)
 {
 	return policy_mgr_get_conc_rule2(psoc, conc_rule2);
 }
@@ -209,21 +207,20 @@ QDF_STATUS ucfg_policy_mgr_get_chnl_select_plcy(struct wlan_objmgr_psoc *psoc,
 	return policy_mgr_get_chnl_select_plcy(psoc, chnl_select_plcy);
 }
 
-
-QDF_STATUS ucfg_policy_mgr_set_dynamic_mcc_adaptive_sch(
-					struct wlan_objmgr_psoc *psoc,
-					bool dynamic_mcc_adaptive_sch)
+QDF_STATUS
+ucfg_policy_mgr_set_dynamic_mcc_adaptive_sch(struct wlan_objmgr_psoc *psoc,
+					     bool dynamic_mcc_adaptive_sch)
 {
 	return policy_mgr_set_dynamic_mcc_adaptive_sch(
-					psoc, dynamic_mcc_adaptive_sch);
+		psoc, dynamic_mcc_adaptive_sch);
 }
 
-QDF_STATUS ucfg_policy_mgr_get_dynamic_mcc_adaptive_sch(
-					struct wlan_objmgr_psoc *psoc,
-					bool *dynamic_mcc_adaptive_sch)
+QDF_STATUS
+ucfg_policy_mgr_get_dynamic_mcc_adaptive_sch(struct wlan_objmgr_psoc *psoc,
+					     bool *dynamic_mcc_adaptive_sch)
 {
 	return policy_mgr_get_dynamic_mcc_adaptive_sch(
-					psoc, dynamic_mcc_adaptive_sch);
+		psoc, dynamic_mcc_adaptive_sch);
 }
 
 QDF_STATUS ucfg_policy_mgr_get_mcc_adaptive_sch(struct wlan_objmgr_psoc *psoc,
@@ -232,8 +229,9 @@ QDF_STATUS ucfg_policy_mgr_get_mcc_adaptive_sch(struct wlan_objmgr_psoc *psoc,
 	return policy_mgr_get_mcc_adaptive_sch(psoc, mcc_adaptive_sch);
 }
 
-QDF_STATUS ucfg_policy_mgr_get_sta_cxn_5g_band(struct wlan_objmgr_psoc *psoc,
-					       uint8_t *enable_sta_cxn_5g_band)
+QDF_STATUS
+ucfg_policy_mgr_get_sta_cxn_5g_band(struct wlan_objmgr_psoc *psoc,
+				    uint8_t *enable_sta_cxn_5g_band)
 {
 	return policy_mgr_get_sta_cxn_5g_band(psoc, enable_sta_cxn_5g_band);
 }
@@ -276,11 +274,10 @@ QDF_STATUS ucfg_policy_mgr_set_max_conc_cxns(struct wlan_objmgr_psoc *psoc,
 QDF_STATUS
 ucfg_policy_mgr_get_radio_combinations(struct wlan_objmgr_psoc *psoc,
 				       struct radio_combination *comb,
-				       uint32_t comb_max,
-				       uint32_t *comb_num)
+				       uint32_t comb_max, uint32_t *comb_num)
 {
-	return policy_mgr_get_radio_combinations(psoc, comb,
-						 comb_max, comb_num);
+	return policy_mgr_get_radio_combinations(psoc, comb, comb_max,
+						 comb_num);
 }
 
 QDF_STATUS
@@ -291,9 +288,8 @@ ucfg_policy_mgr_get_sta_sap_scc_on_dfs_chnl(struct wlan_objmgr_psoc *psoc,
 						      sta_sap_scc_on_dfs_chnl);
 }
 
-bool
-ucfg_policy_mgr_get_dfs_master_dynamic_enabled(struct wlan_objmgr_psoc *psoc,
-					       uint8_t vdev_id)
+bool ucfg_policy_mgr_get_dfs_master_dynamic_enabled(
+	struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 {
 	return policy_mgr_get_dfs_master_dynamic_enabled(psoc, vdev_id);
 }
@@ -327,9 +323,9 @@ ucfg_policy_mgr_get_indoor_chnl_marking(struct wlan_objmgr_psoc *psoc,
 	return policy_mgr_get_indoor_chnl_marking(psoc, indoor_chnl_marking);
 }
 
-bool
-ucfg_policy_mgr_get_sta_sap_scc_on_indoor_chnl(struct wlan_objmgr_psoc *psoc)
+bool ucfg_policy_mgr_get_sta_sap_scc_on_indoor_chnl(
+	struct wlan_objmgr_psoc *psoc)
 {
-	return policy_mgr_get_sta_sap_scc_allowed_on_indoor_chnl(psoc) ?
-								true : false;
+	return policy_mgr_get_sta_sap_scc_allowed_on_indoor_chnl(psoc) ? true :
+									 false;
 }

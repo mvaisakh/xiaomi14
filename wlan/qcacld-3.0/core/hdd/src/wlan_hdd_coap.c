@@ -21,11 +21,11 @@
  *
  */
 
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_coap.h"
 #include "osif_sync.h"
-#include "wlan_hdd_object_manager.h"
 #include "wlan_cfg80211_coap.h"
+#include "wlan_hdd_main.h"
+#include "wlan_hdd_object_manager.h"
 
 /**
  * __wlan_hdd_cfg80211_coap_offload() - configure CoAP offloading
@@ -36,10 +36,9 @@
  *
  * Return: An error code or 0 on success.
  */
-static int
-__wlan_hdd_cfg80211_coap_offload(struct wiphy *wiphy,
-				 struct wireless_dev *wdev,
-				 const void *data, int data_len)
+static int __wlan_hdd_cfg80211_coap_offload(struct wiphy *wiphy,
+					    struct wireless_dev *wdev,
+					    const void *data, int data_len)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(wdev->netdev);
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -70,8 +69,8 @@ __wlan_hdd_cfg80211_coap_offload(struct wiphy *wiphy,
 }
 
 int wlan_hdd_cfg80211_coap_offload(struct wiphy *wiphy,
-				   struct wireless_dev *wdev,
-				   const void *data, int data_len)
+				   struct wireless_dev *wdev, const void *data,
+				   int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;

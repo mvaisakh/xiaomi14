@@ -3,15 +3,14 @@
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
  */
 
-
-#include <linux/module.h>
-#include "cam_tfe_csid_core.h"
 #include "cam_tfe_csid530.h"
 #include "cam_tfe_csid640.h"
+#include "cam_tfe_csid_core.h"
 #include "cam_tfe_csid_dev.h"
 #include "camera_main.h"
+#include <linux/module.h>
 
-#define CAM_TFE_CSID_DRV_NAME                    "tfe_csid"
+#define CAM_TFE_CSID_DRV_NAME "tfe_csid"
 
 static const struct of_device_id cam_tfe_csid_dt_match[] = {
 	{
@@ -28,13 +27,14 @@ static const struct of_device_id cam_tfe_csid_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_tfe_csid_dt_match);
 
 struct platform_driver cam_tfe_csid_driver = {
-	.probe = cam_tfe_csid_probe,
-	.remove = cam_tfe_csid_remove,
-	.driver = {
-		.name = CAM_TFE_CSID_DRV_NAME,
-		.of_match_table = cam_tfe_csid_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_tfe_csid_probe,
+    .remove = cam_tfe_csid_remove,
+    .driver =
+        {
+            .name = CAM_TFE_CSID_DRV_NAME,
+            .of_match_table = cam_tfe_csid_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_tfe_csid_init_module(void)

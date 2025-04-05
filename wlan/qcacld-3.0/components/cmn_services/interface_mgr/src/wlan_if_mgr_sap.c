@@ -18,20 +18,20 @@
 /*
  * DOC: contains interface manager public api
  */
+#include "wlan_if_mgr_ap.h"
+#include "wlan_if_mgr_main.h"
+#include "wlan_if_mgr_public_struct.h"
+#include "wlan_if_mgr_roam.h"
+#include "wlan_mlme_vdev_mgr_interface.h"
 #include "wlan_objmgr_psoc_obj.h"
 #include "wlan_objmgr_vdev_obj.h"
-#include "wlan_if_mgr_public_struct.h"
-#include "wlan_if_mgr_ap.h"
-#include "wlan_if_mgr_roam.h"
-#include "wlan_policy_mgr_api.h"
-#include "wlan_if_mgr_main.h"
-#include "wlan_p2p_cfg_api.h"
-#include "wlan_tdls_api.h"
 #include "wlan_p2p_api.h"
-#include "wlan_mlme_vdev_mgr_interface.h"
+#include "wlan_p2p_cfg_api.h"
 #include "wlan_p2p_ucfg_api.h"
-#include "wlan_vdev_mgr_utils_api.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_tdls_api.h"
 #include "wlan_tdls_tgt_api.h"
+#include "wlan_vdev_mgr_utils_api.h"
 
 QDF_STATUS if_mgr_ap_start_bss(struct wlan_objmgr_vdev *vdev,
 			       struct if_mgr_event_data *event_data)
@@ -56,7 +56,7 @@ QDF_STATUS if_mgr_ap_start_bss(struct wlan_objmgr_vdev *vdev,
 
 	if (policy_mgr_is_hw_mode_change_in_progress(psoc)) {
 		if (!QDF_IS_STATUS_SUCCESS(
-		    policy_mgr_wait_for_connection_update(psoc))) {
+			    policy_mgr_wait_for_connection_update(psoc))) {
 			ifmgr_err("qdf wait for event failed!!");
 			return QDF_STATUS_E_FAILURE;
 		}
@@ -95,12 +95,12 @@ if_mgr_ap_start_bss_complete(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_FAILURE;
 
 	/*
-	 * Due to audio share glitch with P2P GO caused by
-	 * roam scan on concurrent interface, disable
-	 * roaming if "p2p_disable_roam" ini is enabled.
-	 * Donot re-enable roaming again on other STA interface
-	 * if p2p GO is active on any vdev.
-	 */
+   * Due to audio share glitch with P2P GO caused by
+   * roam scan on concurrent interface, disable
+   * roaming if "p2p_disable_roam" ini is enabled.
+   * Donot re-enable roaming again on other STA interface
+   * if p2p GO is active on any vdev.
+   */
 	if (cfg_p2p_is_roam_config_disabled(psoc) &&
 	    wlan_vdev_mlme_get_opmode(vdev) == QDF_P2P_GO_MODE) {
 		ifmgr_debug("p2p go mode, keep roam disabled");
@@ -112,11 +112,11 @@ if_mgr_ap_start_bss_complete(struct wlan_objmgr_vdev *vdev,
 		policy_mgr_check_sap_go_force_scc(psoc, vdev,
 						  CSA_REASON_GO_BSS_STARTED);
 	ifmgr_debug("check for SAP restart");
-	policy_mgr_check_concurrent_intf_and_restart_sap(psoc,
-				wlan_util_vdev_mgr_get_acs_mode_for_vdev(vdev));
+	policy_mgr_check_concurrent_intf_and_restart_sap(
+		psoc, wlan_util_vdev_mgr_get_acs_mode_for_vdev(vdev));
 	/*
-	 * Enable TDLS again on concurrent STA
-	 */
+   * Enable TDLS again on concurrent STA
+   */
 	if (event_data && QDF_IS_STATUS_ERROR(event_data->status))
 		wlan_tdls_notify_start_bss_failure(psoc);
 
@@ -148,12 +148,12 @@ if_mgr_ap_stop_bss_complete(struct wlan_objmgr_vdev *vdev,
 	    wlan_vdev_mlme_get_opmode(vdev) == QDF_P2P_GO_MODE)
 		wlan_handle_emlsr_sta_concurrency(psoc, false, true);
 	/*
-	 * Due to audio share glitch with P2P GO caused by
-	 * roam scan on concurrent interface, disable
-	 * roaming if "p2p_disable_roam" ini is enabled.
-	 * Re-enable roaming on other STA interface if p2p GO
-	 * is active on any vdev.
-	 */
+   * Due to audio share glitch with P2P GO caused by
+   * roam scan on concurrent interface, disable
+   * roaming if "p2p_disable_roam" ini is enabled.
+   * Re-enable roaming on other STA interface if p2p GO
+   * is active on any vdev.
+   */
 	if (cfg_p2p_is_roam_config_disabled(psoc) &&
 	    wlan_vdev_mlme_get_opmode(vdev) == QDF_P2P_GO_MODE) {
 		ifmgr_debug("p2p go disconnected enable roam");
@@ -209,8 +209,8 @@ if_mgr_ap_csa_start(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_FAILURE;
 
 	/*
-	 * Disable TDLS off-channel before VDEV restart
-	 */
+   * Disable TDLS off-channel before VDEV restart
+   */
 	wlan_tdls_notify_channel_switch_start(psoc, vdev);
 
 	return QDF_STATUS_SUCCESS;

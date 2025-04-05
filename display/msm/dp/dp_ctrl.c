@@ -4,10 +4,10 @@
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/types.h>
+#include <drm/drm_fixed.h>
 #include <linux/completion.h>
 #include <linux/delay.h>
-#include <drm/drm_fixed.h>
+#include <linux/types.h>
 #include <linux/version.h>
 
 #include "dp_ctrl.h"
@@ -16,32 +16,32 @@
 
 #define DP_MST_DEBUG(fmt, ...) DP_DEBUG(fmt, ##__VA_ARGS__)
 
-#define DP_CTRL_INTR_READY_FOR_VIDEO     BIT(0)
-#define DP_CTRL_INTR_IDLE_PATTERN_SENT  BIT(3)
+#define DP_CTRL_INTR_READY_FOR_VIDEO BIT(0)
+#define DP_CTRL_INTR_IDLE_PATTERN_SENT BIT(3)
 
-#define DP_CTRL_INTR_MST_DP0_VCPF_SENT	BIT(0)
-#define DP_CTRL_INTR_MST_DP1_VCPF_SENT	BIT(3)
+#define DP_CTRL_INTR_MST_DP0_VCPF_SENT BIT(0)
+#define DP_CTRL_INTR_MST_DP1_VCPF_SENT BIT(3)
 
 /* dp state ctrl */
-#define ST_TRAIN_PATTERN_1		BIT(0)
-#define ST_TRAIN_PATTERN_2		BIT(1)
-#define ST_TRAIN_PATTERN_3		BIT(2)
-#define ST_TRAIN_PATTERN_4		BIT(3)
-#define ST_SYMBOL_ERR_RATE_MEASUREMENT	BIT(4)
-#define ST_PRBS7			BIT(5)
-#define ST_CUSTOM_80_BIT_PATTERN	BIT(6)
-#define ST_SEND_VIDEO			BIT(7)
-#define ST_PUSH_IDLE			BIT(8)
-#define MST_DP0_PUSH_VCPF		BIT(12)
-#define MST_DP0_FORCE_VCPF		BIT(13)
-#define MST_DP1_PUSH_VCPF		BIT(14)
-#define MST_DP1_FORCE_VCPF		BIT(15)
+#define ST_TRAIN_PATTERN_1 BIT(0)
+#define ST_TRAIN_PATTERN_2 BIT(1)
+#define ST_TRAIN_PATTERN_3 BIT(2)
+#define ST_TRAIN_PATTERN_4 BIT(3)
+#define ST_SYMBOL_ERR_RATE_MEASUREMENT BIT(4)
+#define ST_PRBS7 BIT(5)
+#define ST_CUSTOM_80_BIT_PATTERN BIT(6)
+#define ST_SEND_VIDEO BIT(7)
+#define ST_PUSH_IDLE BIT(8)
+#define MST_DP0_PUSH_VCPF BIT(12)
+#define MST_DP0_FORCE_VCPF BIT(13)
+#define MST_DP1_PUSH_VCPF BIT(14)
+#define MST_DP1_FORCE_VCPF BIT(15)
 
-#define MR_LINK_TRAINING1  0x8
+#define MR_LINK_TRAINING1 0x8
 #define MR_LINK_SYMBOL_ERM 0x80
 #define MR_LINK_PRBS7 0x100
 #define MR_LINK_CUSTOM80 0x200
-#define MR_LINK_TRAINING4  0x40
+#define MR_LINK_TRAINING4 0x40
 
 #define DP_MAX_LANES 4
 
@@ -125,7 +125,7 @@ static void dp_ctrl_state_ctrl(struct dp_ctrl_private *ctrl, u32 state)
 }
 
 static void dp_ctrl_push_idle(struct dp_ctrl_private *ctrl,
-				enum dp_stream_id strm)
+			      enum dp_stream_id strm)
 {
 	int const idle_pattern_completion_timeout_ms = HZ / 10;
 	u32 state = 0x0;
@@ -150,7 +150,7 @@ trigger_idle:
 	dp_ctrl_state_ctrl(ctrl, state);
 
 	if (!wait_for_completion_timeout(&ctrl->idle_comp,
-			idle_pattern_completion_timeout_ms))
+					 idle_pattern_completion_timeout_ms))
 		DP_WARN("time out\n");
 	else
 		DP_DEBUG("mainlink off done\n");
@@ -165,7 +165,7 @@ trigger_idle:
  * configuration, output format and sink/panel timing information.
  */
 static void dp_ctrl_configure_source_link_params(struct dp_ctrl_private *ctrl,
-		bool enable)
+						 bool enable)
 {
 	if (!ctrl->power->clk_status(ctrl->power, DP_LINK_PM)) {
 		DP_WARN("DP link clocks are off\n");
@@ -179,14 +179,14 @@ static void dp_ctrl_configure_source_link_params(struct dp_ctrl_private *ctrl,
 
 	if (enable) {
 		ctrl->catalog->lane_mapping(ctrl->catalog, ctrl->orientation,
-						ctrl->parser->l_map);
+					    ctrl->parser->l_map);
 		ctrl->catalog->lane_pnswap(ctrl->catalog,
-						ctrl->parser->l_pnswap);
+					   ctrl->parser->l_pnswap);
 		ctrl->catalog->mst_config(ctrl->catalog, ctrl->mst_mode);
 		ctrl->catalog->config_ctrl(ctrl->catalog,
-				ctrl->link->link_params.lane_count);
-		ctrl->catalog->mainlink_levels(ctrl->catalog,
-				ctrl->link->link_params.lane_count);
+					   ctrl->link->link_params.lane_count);
+		ctrl->catalog->mainlink_levels(
+			ctrl->catalog, ctrl->link->link_params.lane_count);
 		ctrl->catalog->mainlink_ctrl(ctrl->catalog, true);
 	} else {
 		ctrl->catalog->mainlink_ctrl(ctrl->catalog, false);
@@ -225,11 +225,11 @@ static int dp_ctrl_update_sink_vx_px(struct dp_ctrl_private *ctrl)
 	for (i = 0; i < size; i++)
 		buf[i] = v_level | p_level | max_level_reached;
 
-	DP_DEBUG("lanes: %d, swing: 0x%x, pre-emp: 0x%x\n",
-			size, v_level, p_level);
+	DP_DEBUG("lanes: %d, swing: 0x%x, pre-emp: 0x%x\n", size, v_level,
+		 p_level);
 
-	ret = drm_dp_dpcd_write(ctrl->aux->drm_aux,
-		DP_TRAINING_LANE0_SET, buf, size);
+	ret = drm_dp_dpcd_write(ctrl->aux->drm_aux, DP_TRAINING_LANE0_SET, buf,
+				size);
 
 	return ret <= 0 ? -EINVAL : 0;
 }
@@ -243,8 +243,8 @@ static void dp_ctrl_update_hw_vx_px(struct dp_ctrl_private *ctrl)
 	    ctrl->link->link_params.bw_code == DP_LINK_BW_8_1)
 		high = true;
 
-	ctrl->catalog->update_vx_px(ctrl->catalog,
-		link->phy_params.v_level, link->phy_params.p_level, high);
+	ctrl->catalog->update_vx_px(ctrl->catalog, link->phy_params.v_level,
+				    link->phy_params.p_level, high);
 }
 
 static int dp_ctrl_update_sink_pattern(struct dp_ctrl_private *ctrl, u8 pattern)
@@ -257,14 +257,14 @@ static int dp_ctrl_update_sink_pattern(struct dp_ctrl_private *ctrl, u8 pattern)
 	if (pattern && pattern != DP_TRAINING_PATTERN_4)
 		buf |= DP_LINK_SCRAMBLING_DISABLE;
 
-	ret = drm_dp_dpcd_writeb(ctrl->aux->drm_aux,
-		DP_TRAINING_PATTERN_SET, buf);
+	ret = drm_dp_dpcd_writeb(ctrl->aux->drm_aux, DP_TRAINING_PATTERN_SET,
+				 buf);
 
 	return ret <= 0 ? -EINVAL : 0;
 }
 
 static int dp_ctrl_read_link_status(struct dp_ctrl_private *ctrl,
-					u8 *link_status)
+				    u8 *link_status)
 {
 	int ret = 0, len;
 	u32 const offset = DP_LANE_ALIGN_STATUS_UPDATED - DP_LANE0_1_STATUS;
@@ -272,7 +272,7 @@ static int dp_ctrl_read_link_status(struct dp_ctrl_private *ctrl,
 
 	while (--link_status_read_max_retries) {
 		len = drm_dp_dpcd_read_link_status(ctrl->aux->drm_aux,
-			link_status);
+						   link_status);
 		if (len != DP_LINK_STATUS_SIZE) {
 			DP_ERR("DP link status read failed, err: %d\n", len);
 			ret = len;
@@ -318,7 +318,7 @@ static bool dp_ctrl_is_link_rate_rbr(struct dp_ctrl_private *ctrl)
 }
 
 static u8 dp_ctrl_get_active_lanes(struct dp_ctrl_private *ctrl,
-				u8 *link_status)
+				   u8 *link_status)
 {
 	u8 lane, count = 0;
 
@@ -375,7 +375,8 @@ static int dp_ctrl_link_training_1(struct dp_ctrl_private *ctrl)
 			break;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0))
-		drm_dp_link_train_clock_recovery_delay(ctrl->aux->drm_aux, ctrl->panel->dpcd);
+		drm_dp_link_train_clock_recovery_delay(ctrl->aux->drm_aux,
+						       ctrl->panel->dpcd);
 #else
 		drm_dp_link_train_clock_recovery_delay(ctrl->panel->dpcd);
 #endif
@@ -384,13 +385,14 @@ static int dp_ctrl_link_training_1(struct dp_ctrl_private *ctrl)
 		if (ret)
 			break;
 
-		if (!drm_dp_clock_recovery_ok(link_status,
-			ctrl->link->link_params.lane_count))
+		if (!drm_dp_clock_recovery_ok(
+			    link_status, ctrl->link->link_params.lane_count))
 			ret = -EINVAL;
 		else
 			break;
 
-		if (ctrl->link->phy_params.v_level == ctrl->link->phy_params.max_v_level) {
+		if (ctrl->link->phy_params.v_level ==
+		    ctrl->link->phy_params.max_v_level) {
 			DP_ERR_RATELIMITED_V("max v_level reached\n");
 			break;
 		}
@@ -464,7 +466,8 @@ static void dp_ctrl_clear_training_pattern(struct dp_ctrl_private *ctrl)
 {
 	dp_ctrl_update_sink_pattern(ctrl, 0);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0))
-	drm_dp_link_train_channel_eq_delay(ctrl->aux->drm_aux, ctrl->panel->dpcd);
+	drm_dp_link_train_channel_eq_delay(ctrl->aux->drm_aux,
+					   ctrl->panel->dpcd);
 #else
 	drm_dp_link_train_channel_eq_delay(ctrl->panel->dpcd);
 #endif
@@ -514,7 +517,8 @@ static int dp_ctrl_link_training_2(struct dp_ctrl_private *ctrl)
 			break;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0))
-		drm_dp_link_train_channel_eq_delay(ctrl->aux->drm_aux, ctrl->panel->dpcd);
+		drm_dp_link_train_channel_eq_delay(ctrl->aux->drm_aux,
+						   ctrl->panel->dpcd);
 #else
 		drm_dp_link_train_channel_eq_delay(ctrl->panel->dpcd);
 #endif
@@ -524,14 +528,14 @@ static int dp_ctrl_link_training_2(struct dp_ctrl_private *ctrl)
 			break;
 
 		/* check if CR bits still remain set */
-		if (!drm_dp_clock_recovery_ok(link_status,
-			ctrl->link->link_params.lane_count)) {
+		if (!drm_dp_clock_recovery_ok(
+			    link_status, ctrl->link->link_params.lane_count)) {
 			ret = -EINVAL;
 			break;
 		}
 
 		if (!drm_dp_channel_eq_ok(link_status,
-			ctrl->link->link_params.lane_count))
+					  ctrl->link->link_params.lane_count))
 			ret = -EINVAL;
 		else
 			break;
@@ -559,29 +563,29 @@ static int dp_ctrl_link_train(struct dp_ctrl_private *ctrl)
 {
 	int ret = 0;
 	u8 const encoding = 0x1, downspread = 0x00;
-	struct drm_dp_link link_info = {0};
+	struct drm_dp_link link_info = { 0 };
 
 	ctrl->link->phy_params.p_level = 0;
 	ctrl->link->phy_params.v_level = 0;
 
 	link_info.num_lanes = ctrl->link->link_params.lane_count;
-	link_info.rate = drm_dp_bw_code_to_link_rate(
-		ctrl->link->link_params.bw_code);
+	link_info.rate =
+		drm_dp_bw_code_to_link_rate(ctrl->link->link_params.bw_code);
 	link_info.capabilities = ctrl->panel->link_info.capabilities;
 
 	ret = dp_link_configure(ctrl->aux->drm_aux, &link_info);
 	if (ret)
 		goto end;
 
-	ret = drm_dp_dpcd_writeb(ctrl->aux->drm_aux,
-		DP_DOWNSPREAD_CTRL, downspread);
+	ret = drm_dp_dpcd_writeb(ctrl->aux->drm_aux, DP_DOWNSPREAD_CTRL,
+				 downspread);
 	if (ret <= 0) {
 		ret = -EINVAL;
 		goto end;
 	}
 
 	ret = drm_dp_dpcd_writeb(ctrl->aux->drm_aux,
-		DP_MAIN_LINK_CHANNEL_CODING_SET, encoding);
+				 DP_MAIN_LINK_CHANNEL_CODING_SET, encoding);
 	if (ret <= 0) {
 		ret = -EINVAL;
 		goto end;
@@ -625,15 +629,15 @@ static int dp_ctrl_setup_main_link(struct dp_ctrl_private *ctrl)
 		goto end;
 
 	/*
-	 * As part of previous calls, DP controller state might have
-	 * transitioned to PUSH_IDLE. In order to start transmitting a link
-	 * training pattern, we have to first to a DP software reset.
-	 */
+   * As part of previous calls, DP controller state might have
+   * transitioned to PUSH_IDLE. In order to start transmitting a link
+   * training pattern, we have to first to a DP software reset.
+   */
 	ctrl->catalog->reset(ctrl->catalog);
 
 	if (ctrl->fec_mode)
 		drm_dp_dpcd_writeb(ctrl->aux->drm_aux, DP_FEC_CONFIGURATION,
-				0x01);
+				   0x01);
 
 	ret = dp_ctrl_link_train(ctrl);
 
@@ -641,8 +645,8 @@ end:
 	return ret;
 }
 
-static void dp_ctrl_set_clock_rate(struct dp_ctrl_private *ctrl,
-		char *name, enum dp_pm_type clk_type, u32 rate)
+static void dp_ctrl_set_clock_rate(struct dp_ctrl_private *ctrl, char *name,
+				   enum dp_pm_type clk_type, u32 rate)
 {
 	u32 num = ctrl->parser->mp[clk_type].num_clk;
 	struct dss_clk *cfg = ctrl->parser->mp[clk_type].clk_config;
@@ -711,7 +715,7 @@ static void dp_ctrl_disable_link_clock(struct dp_ctrl_private *ctrl)
 }
 
 static void dp_ctrl_select_training_pattern(struct dp_ctrl_private *ctrl,
-						bool downgrade)
+					    bool downgrade)
 {
 	u32 pattern;
 
@@ -751,19 +755,19 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 	link_params = &ctrl->link->link_params;
 
 	catalog->phy_lane_cfg(catalog, ctrl->orientation,
-				link_params->lane_count);
+			      link_params->lane_count);
 
 	while (1) {
-		DP_DEBUG("bw_code=%d, lane_count=%d\n",
-			link_params->bw_code, link_params->lane_count);
+		DP_DEBUG("bw_code=%d, lane_count=%d\n", link_params->bw_code,
+			 link_params->lane_count);
 
 		rc = dp_ctrl_enable_link_clock(ctrl);
 		if (rc)
 			break;
 
 		ctrl->catalog->late_phy_init(ctrl->catalog,
-			ctrl->link->link_params.lane_count,
-			ctrl->orientation);
+					     ctrl->link->link_params.lane_count,
+					     ctrl->orientation);
 
 		dp_ctrl_configure_source_link_params(ctrl, true);
 
@@ -782,12 +786,12 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 			break;
 
 		/*
-		 * Shallow means link training failure is not important.
-		 * If it fails, we still keep the link clocks on.
-		 * In this mode, the system expects DP to be up
-		 * even though the cable is removed. Disconnect interrupt
-		 * will eventually trigger and shutdown DP.
-		 */
+     * Shallow means link training failure is not important.
+     * If it fails, we still keep the link clocks on.
+     * In this mode, the system expects DP to be up
+     * even though the cable is removed. Disconnect interrupt
+     * will eventually trigger and shutdown DP.
+     */
 		if (shallow) {
 			rc = 0;
 			break;
@@ -812,7 +816,7 @@ static int dp_ctrl_link_setup(struct dp_ctrl_private *ctrl, bool shallow)
 }
 
 static int dp_ctrl_enable_stream_clocks(struct dp_ctrl_private *ctrl,
-		struct dp_panel *dp_panel)
+					struct dp_panel *dp_panel)
 {
 	int ret = 0;
 	u32 pclk;
@@ -820,7 +824,7 @@ static int dp_ctrl_enable_stream_clocks(struct dp_ctrl_private *ctrl,
 	char clk_name[32] = "";
 
 	ret = ctrl->power->set_pixel_clk_parent(ctrl->power,
-			dp_panel->stream_id);
+						dp_panel->stream_id);
 
 	if (ret)
 		return ret;
@@ -833,20 +837,20 @@ static int dp_ctrl_enable_stream_clocks(struct dp_ctrl_private *ctrl,
 		strlcpy(clk_name, "strm1_pixel_clk", 32);
 	} else {
 		DP_ERR("Invalid stream:%d for clk enable\n",
-				dp_panel->stream_id);
+		       dp_panel->stream_id);
 		return -EINVAL;
 	}
 
 	pclk = dp_panel->pinfo.widebus_en ?
-		(dp_panel->pinfo.pixel_clk_khz >> 1) :
-		(dp_panel->pinfo.pixel_clk_khz);
+		       (dp_panel->pinfo.pixel_clk_khz >> 1) :
+		       (dp_panel->pinfo.pixel_clk_khz);
 
 	dp_ctrl_set_clock_rate(ctrl, clk_name, clk_type, pclk);
 
 	ret = ctrl->power->clk_enable(ctrl->power, clk_type, true);
 	if (ret) {
 		DP_ERR("Unabled to start stream:%d clocks\n",
-				dp_panel->stream_id);
+		       dp_panel->stream_id);
 		ret = -EINVAL;
 	}
 
@@ -854,19 +858,19 @@ static int dp_ctrl_enable_stream_clocks(struct dp_ctrl_private *ctrl,
 }
 
 static int dp_ctrl_disable_stream_clocks(struct dp_ctrl_private *ctrl,
-		struct dp_panel *dp_panel)
+					 struct dp_panel *dp_panel)
 {
 	int ret = 0;
 
 	if (dp_panel->stream_id == DP_STREAM_0) {
-		return ctrl->power->clk_enable(ctrl->power,
-				DP_STREAM0_PM, false);
+		return ctrl->power->clk_enable(ctrl->power, DP_STREAM0_PM,
+					       false);
 	} else if (dp_panel->stream_id == DP_STREAM_1) {
-		return ctrl->power->clk_enable(ctrl->power,
-				DP_STREAM1_PM, false);
+		return ctrl->power->clk_enable(ctrl->power, DP_STREAM1_PM,
+					       false);
 	} else {
 		DP_ERR("Invalid stream:%d for clk disable\n",
-				dp_panel->stream_id);
+		       dp_panel->stream_id);
 		ret = -EINVAL;
 	}
 	return ret;
@@ -1045,10 +1049,10 @@ static void dp_ctrl_process_phy_test_request(struct dp_ctrl *dp_ctrl)
 	DP_DEBUG("start\n");
 
 	/*
-	 * The global reset will need DP link ralated clocks to be
-	 * running. Add the global reset just before disabling the
-	 * link clocks and core clocks.
-	 */
+   * The global reset will need DP link ralated clocks to be
+   * running. Add the global reset just before disabling the
+   * link clocks and core clocks.
+   */
 	ctrl->catalog->reset(ctrl->catalog);
 	ctrl->dp_ctrl.stream_pre_off(&ctrl->dp_ctrl, ctrl->panel);
 	ctrl->dp_ctrl.stream_off(&ctrl->dp_ctrl, ctrl->panel);
@@ -1056,8 +1060,8 @@ static void dp_ctrl_process_phy_test_request(struct dp_ctrl *dp_ctrl)
 
 	ctrl->aux->init(ctrl->aux, ctrl->parser->aux_cfg);
 
-	ret = ctrl->dp_ctrl.on(&ctrl->dp_ctrl, ctrl->mst_mode,
-			ctrl->fec_mode, ctrl->dsc_mode, false);
+	ret = ctrl->dp_ctrl.on(&ctrl->dp_ctrl, ctrl->mst_mode, ctrl->fec_mode,
+			       ctrl->dsc_mode, false);
 	if (ret)
 		DP_ERR("failed to enable DP controller\n");
 
@@ -1078,8 +1082,7 @@ static void dp_ctrl_send_phy_test_pattern(struct dp_ctrl_private *ctrl)
 
 	pattern_sent = ctrl->catalog->read_phy_pattern(ctrl->catalog);
 	DP_DEBUG("pattern_request: %s. pattern_sent: 0x%x\n",
-			dp_link_get_phy_test_pattern(pattern_requested),
-			pattern_sent);
+		 dp_link_get_phy_test_pattern(pattern_requested), pattern_sent);
 
 	switch (pattern_sent) {
 	case MR_LINK_TRAINING1:
@@ -1087,8 +1090,8 @@ static void dp_ctrl_send_phy_test_pattern(struct dp_ctrl_private *ctrl)
 			success = true;
 		break;
 	case MR_LINK_SYMBOL_ERM:
-		if ((pattern_requested == DP_PHY_TEST_PATTERN_ERROR_COUNT)
-			|| (pattern_requested == DP_PHY_TEST_PATTERN_CP2520))
+		if ((pattern_requested == DP_PHY_TEST_PATTERN_ERROR_COUNT) ||
+		    (pattern_requested == DP_PHY_TEST_PATTERN_CP2520))
 			success = true;
 		break;
 	case MR_LINK_PRBS7:
@@ -1109,11 +1112,12 @@ static void dp_ctrl_send_phy_test_pattern(struct dp_ctrl_private *ctrl)
 	}
 
 	DP_DEBUG("%s: %s\n", success ? "success" : "failed",
-			dp_link_get_phy_test_pattern(pattern_requested));
+		 dp_link_get_phy_test_pattern(pattern_requested));
 }
 
 static void dp_ctrl_mst_calculate_rg(struct dp_ctrl_private *ctrl,
-		struct dp_panel *panel, u32 *p_x_int, u32 *p_y_frac_enum)
+				     struct dp_panel *panel, u32 *p_x_int,
+				     u32 *p_y_frac_enum)
 {
 	u64 min_slot_cnt, max_slot_cnt;
 	u64 raw_target_sc, target_sc_fixp;
@@ -1152,11 +1156,11 @@ static void dp_ctrl_mst_calculate_rg(struct dp_ctrl_private *ctrl,
 	/* apply fec and dsc overhead factor */
 	if (panel->pinfo.dsc_overhead_fp)
 		raw_target_sc = drm_fixp_mul(raw_target_sc,
-					panel->pinfo.dsc_overhead_fp);
+					     panel->pinfo.dsc_overhead_fp);
 
 	if (panel->fec_overhead_fp)
-		raw_target_sc = drm_fixp_mul(raw_target_sc,
-					panel->fec_overhead_fp);
+		raw_target_sc =
+			drm_fixp_mul(raw_target_sc, panel->fec_overhead_fp);
 
 	DP_DEBUG("raw_target_sc after overhead:0x%llx\n", raw_target_sc);
 
@@ -1207,7 +1211,7 @@ static void dp_ctrl_mst_calculate_rg(struct dp_ctrl_private *ctrl,
 }
 
 static void dp_ctrl_mst_stream_setup(struct dp_ctrl_private *ctrl,
-		struct dp_panel *panel)
+				     struct dp_panel *panel)
 {
 	u32 x_int, y_frac_enum, lanes, bw_code;
 	int i;
@@ -1218,10 +1222,10 @@ static void dp_ctrl_mst_stream_setup(struct dp_ctrl_private *ctrl,
 	DP_MST_DEBUG("mst stream channel allocation\n");
 
 	for (i = DP_STREAM_0; i < DP_STREAM_MAX; i++) {
-		ctrl->catalog->channel_alloc(ctrl->catalog,
-				i,
-				ctrl->mst_ch_info.slot_info[i].start_slot,
-				ctrl->mst_ch_info.slot_info[i].tot_slots);
+		ctrl->catalog->channel_alloc(
+			ctrl->catalog, i,
+			ctrl->mst_ch_info.slot_info[i].start_slot,
+			ctrl->mst_ch_info.slot_info[i].tot_slots);
 	}
 
 	lanes = ctrl->link->link_params.lane_count;
@@ -1229,18 +1233,19 @@ static void dp_ctrl_mst_stream_setup(struct dp_ctrl_private *ctrl,
 
 	dp_ctrl_mst_calculate_rg(ctrl, panel, &x_int, &y_frac_enum);
 
-	ctrl->catalog->update_rg(ctrl->catalog, panel->stream_id,
-			x_int, y_frac_enum);
+	ctrl->catalog->update_rg(ctrl->catalog, panel->stream_id, x_int,
+				 y_frac_enum);
 
 	DP_MST_DEBUG("mst stream:%d, start_slot:%d, tot_slots:%d\n",
-			panel->stream_id,
-			panel->channel_start_slot, panel->channel_total_slots);
+		     panel->stream_id, panel->channel_start_slot,
+		     panel->channel_total_slots);
 
-	DP_MST_DEBUG("mst lane_cnt:%d, bw:%d, x_int:%d, y_frac:%d\n",
-			lanes, bw_code, x_int, y_frac_enum);
+	DP_MST_DEBUG("mst lane_cnt:%d, bw:%d, x_int:%d, y_frac:%d\n", lanes,
+		     bw_code, x_int, y_frac_enum);
 }
 
-static void dp_ctrl_dsc_setup(struct dp_ctrl_private *ctrl, struct dp_panel *panel)
+static void dp_ctrl_dsc_setup(struct dp_ctrl_private *ctrl,
+			      struct dp_panel *panel)
 {
 	int rlen;
 	u32 dsc_enable;
@@ -1250,16 +1255,16 @@ static void dp_ctrl_dsc_setup(struct dp_ctrl_private *ctrl, struct dp_panel *pan
 		return;
 
 	/* Set DP_DSC_ENABLE DPCD register if compression is enabled for SST monitor.
-	 * Set DP_DSC_ENABLE DPCD register if compression is enabled for
-	 * atleast 1 of the MST monitor.
-	 */
+   * Set DP_DSC_ENABLE DPCD register if compression is enabled for
+   * atleast 1 of the MST monitor.
+   */
 	dsc_enable = (pinfo->comp_info.enabled == true) ? 1 : 0;
 
 	if (ctrl->mst_mode && (panel->stream_id == DP_STREAM_1) && !dsc_enable)
 		return;
 
 	rlen = drm_dp_dpcd_writeb(ctrl->aux->drm_aux, DP_DSC_ENABLE,
-			dsc_enable);
+				  dsc_enable);
 	if (rlen < 1)
 		DP_WARN("failed to enable sink dsc\n");
 }
@@ -1318,7 +1323,7 @@ static int dp_ctrl_stream_on(struct dp_ctrl *dp_ctrl, struct dp_panel *panel)
 }
 
 static void dp_ctrl_mst_stream_pre_off(struct dp_ctrl *dp_ctrl,
-		struct dp_panel *panel)
+				       struct dp_panel *panel)
 {
 	struct dp_ctrl_private *ctrl;
 	bool act_complete;
@@ -1330,10 +1335,10 @@ static void dp_ctrl_mst_stream_pre_off(struct dp_ctrl *dp_ctrl,
 		return;
 
 	for (i = DP_STREAM_0; i < DP_STREAM_MAX; i++) {
-		ctrl->catalog->channel_alloc(ctrl->catalog,
-				i,
-				ctrl->mst_ch_info.slot_info[i].start_slot,
-				ctrl->mst_ch_info.slot_info[i].tot_slots);
+		ctrl->catalog->channel_alloc(
+			ctrl->catalog, i,
+			ctrl->mst_ch_info.slot_info[i].start_slot,
+			ctrl->mst_ch_info.slot_info[i].tot_slots);
 	}
 
 	ctrl->catalog->trigger_act(ctrl->catalog);
@@ -1347,7 +1352,7 @@ static void dp_ctrl_mst_stream_pre_off(struct dp_ctrl *dp_ctrl,
 }
 
 static void dp_ctrl_stream_pre_off(struct dp_ctrl *dp_ctrl,
-		struct dp_panel *panel)
+				   struct dp_panel *panel)
 {
 	struct dp_ctrl_private *ctrl;
 
@@ -1382,8 +1387,8 @@ static void dp_ctrl_stream_off(struct dp_ctrl *dp_ctrl, struct dp_panel *panel)
 	ctrl->stream_count--;
 }
 
-static int dp_ctrl_on(struct dp_ctrl *dp_ctrl, bool mst_mode,
-		bool fec_mode, bool dsc_mode, bool shallow)
+static int dp_ctrl_on(struct dp_ctrl *dp_ctrl, bool mst_mode, bool fec_mode,
+		      bool dsc_mode, bool shallow)
 {
 	int rc = 0;
 	struct dp_ctrl_private *ctrl;
@@ -1421,9 +1426,8 @@ static int dp_ctrl_on(struct dp_ctrl *dp_ctrl, bool mst_mode,
 			ctrl->panel->link_info.num_lanes;
 	}
 
-	DP_DEBUG("bw_code=%d, lane_count=%d\n",
-		ctrl->link->link_params.bw_code,
-		ctrl->link->link_params.lane_count);
+	DP_DEBUG("bw_code=%d, lane_count=%d\n", ctrl->link->link_params.bw_code,
+		 ctrl->link->link_params.lane_count);
 
 	/* backup initial lane count and bw code */
 	ctrl->initial_lane_count = ctrl->link->link_params.lane_count;
@@ -1466,8 +1470,8 @@ static void dp_ctrl_off(struct dp_ctrl *dp_ctrl)
 }
 
 static void dp_ctrl_set_mst_channel_info(struct dp_ctrl *dp_ctrl,
-		enum dp_stream_id strm,
-		u32 start_slot, u32 tot_slots)
+					 enum dp_stream_id strm, u32 start_slot,
+					 u32 tot_slots)
 {
 	struct dp_ctrl_private *ctrl;
 
@@ -1492,8 +1496,8 @@ static void dp_ctrl_isr(struct dp_ctrl *dp_ctrl)
 	ctrl = container_of(dp_ctrl, struct dp_ctrl_private, dp_ctrl);
 
 	ctrl->catalog->get_interrupt(ctrl->catalog);
-	SDE_EVT32_EXTERNAL(ctrl->catalog->isr, ctrl->catalog->isr3, ctrl->catalog->isr5,
-			ctrl->catalog->isr6);
+	SDE_EVT32_EXTERNAL(ctrl->catalog->isr, ctrl->catalog->isr3,
+			   ctrl->catalog->isr5, ctrl->catalog->isr6);
 
 	if (ctrl->catalog->isr & DP_CTRL_INTR_READY_FOR_VIDEO)
 		dp_ctrl_video_ready(ctrl);
@@ -1550,8 +1554,7 @@ struct dp_ctrl *dp_ctrl_get(struct dp_ctrl_in *in)
 	struct dp_ctrl_private *ctrl;
 	struct dp_ctrl *dp_ctrl;
 
-	if (!in->dev || !in->panel || !in->aux ||
-	    !in->link || !in->catalog) {
+	if (!in->dev || !in->panel || !in->aux || !in->link || !in->catalog) {
 		DP_ERR("invalid input\n");
 		rc = -EINVAL;
 		goto error;
@@ -1567,26 +1570,26 @@ struct dp_ctrl *dp_ctrl_get(struct dp_ctrl_in *in)
 	init_completion(&ctrl->video_comp);
 
 	/* in parameters */
-	ctrl->parser   = in->parser;
-	ctrl->panel    = in->panel;
-	ctrl->power    = in->power;
-	ctrl->aux      = in->aux;
-	ctrl->link     = in->link;
-	ctrl->catalog  = in->catalog;
-	ctrl->pll  = in->pll;
-	ctrl->dev  = in->dev;
+	ctrl->parser = in->parser;
+	ctrl->panel = in->panel;
+	ctrl->power = in->power;
+	ctrl->aux = in->aux;
+	ctrl->link = in->link;
+	ctrl->catalog = in->catalog;
+	ctrl->pll = in->pll;
+	ctrl->dev = in->dev;
 	ctrl->mst_mode = false;
 	ctrl->fec_mode = false;
 
 	dp_ctrl = &ctrl->dp_ctrl;
 
 	/* out parameters */
-	dp_ctrl->init      = dp_ctrl_host_init;
-	dp_ctrl->deinit    = dp_ctrl_host_deinit;
-	dp_ctrl->on        = dp_ctrl_on;
-	dp_ctrl->off       = dp_ctrl_off;
-	dp_ctrl->abort     = dp_ctrl_abort;
-	dp_ctrl->isr       = dp_ctrl_isr;
+	dp_ctrl->init = dp_ctrl_host_init;
+	dp_ctrl->deinit = dp_ctrl_host_deinit;
+	dp_ctrl->on = dp_ctrl_on;
+	dp_ctrl->off = dp_ctrl_off;
+	dp_ctrl->abort = dp_ctrl_abort;
+	dp_ctrl->isr = dp_ctrl_isr;
 	dp_ctrl->link_maintenance = dp_ctrl_link_maintenance;
 	dp_ctrl->process_phy_test_request = dp_ctrl_process_phy_test_request;
 	dp_ctrl->stream_on = dp_ctrl_stream_on;

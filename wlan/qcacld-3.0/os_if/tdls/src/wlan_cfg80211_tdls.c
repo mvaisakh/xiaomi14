@@ -21,30 +21,30 @@
  * DOC: defines driver functions interfacing with linux kernel
  */
 
-#include <qdf_list.h>
-#include <qdf_status.h>
-#include <linux/wireless.h>
+#include "sir_api.h"
+#include "wlan_cfg80211_mc_cp_stats.h"
+#include "wlan_cm_roam_api.h"
+#include "wlan_hdd_main.h"
+#include "wlan_hdd_object_manager.h"
+#include "wlan_mlo_mgr_sta.h"
+#include "wlan_tdls_ucfg_api.h"
 #include <linux/netdevice.h>
+#include <linux/wireless.h>
 #include <net/cfg80211.h>
+#include <qdf_list.h>
+#include <qdf_mem.h>
+#include <qdf_status.h>
 #include <wlan_cfg80211.h>
 #include <wlan_cfg80211_tdls.h>
 #include <wlan_osif_priv.h>
+#include <wlan_reg_services_api.h>
 #include <wlan_tdls_public_structs.h>
 #include <wlan_tdls_ucfg_api.h>
-#include <qdf_mem.h>
 #include <wlan_utility.h>
-#include <wlan_reg_services_api.h>
-#include "wlan_cfg80211_mc_cp_stats.h"
-#include "sir_api.h"
-#include "wlan_tdls_ucfg_api.h"
-#include "wlan_cm_roam_api.h"
-#include "wlan_mlo_mgr_sta.h"
-#include "wlan_hdd_main.h"
-#include "wlan_hdd_object_manager.h"
 
 static int wlan_cfg80211_tdls_validate_mac_addr(const uint8_t *mac)
 {
-	static const uint8_t temp_mac[QDF_MAC_ADDR_SIZE] = {0};
+	static const uint8_t temp_mac[QDF_MAC_ADDR_SIZE] = { 0 };
 
 	if (!qdf_mem_cmp(mac, temp_mac, QDF_MAC_ADDR_SIZE)) {
 		osif_debug("Invalid Mac address " QDF_MAC_ADDR_FMT
@@ -120,8 +120,7 @@ static int wlan_cfg80211_tdls_add_peer(struct wlan_objmgr_vdev *vdev,
 	if (status)
 		return status;
 
-	osif_debug("Add TDLS peer " QDF_MAC_ADDR_FMT,
-		   QDF_MAC_ADDR_REF(mac));
+	osif_debug("Add TDLS peer " QDF_MAC_ADDR_FMT, QDF_MAC_ADDR_REF(mac));
 
 	add_peer_req = qdf_mem_malloc(sizeof(*add_peer_req));
 	if (!add_peer_req)
@@ -129,7 +128,8 @@ static int wlan_cfg80211_tdls_add_peer(struct wlan_objmgr_vdev *vdev,
 
 	osif_priv = wlan_vdev_get_ospriv(vdev);
 	if (!osif_priv || !osif_priv->osif_tdls) {
-		osif_err("osif_tdls_vdev or osif_priv is NULL for the current vdev");
+		osif_err(
+			"osif_tdls_vdev or osif_priv is NULL for the current vdev");
 		status = -EINVAL;
 		goto error;
 	}
@@ -147,8 +147,8 @@ static int wlan_cfg80211_tdls_add_peer(struct wlan_objmgr_vdev *vdev,
 	}
 
 	rc = wait_for_completion_timeout(
-	    &tdls_priv->tdls_add_peer_comp,
-	    msecs_to_jiffies(WAIT_TIME_TDLS_ADD_STA));
+		&tdls_priv->tdls_add_peer_comp,
+		msecs_to_jiffies(WAIT_TIME_TDLS_ADD_STA));
 	if (!rc) {
 		osif_err("timeout for tdls add peer indication %ld", rc);
 		status = -EPERM;
@@ -201,8 +201,7 @@ int wlan_cfg80211_tdls_add_peer_mlo(struct hdd_adapter *adapter,
 	return status;
 }
 
-static bool
-is_duplicate_freq(qdf_freq_t *arr, uint8_t index, qdf_freq_t freq)
+static bool is_duplicate_freq(qdf_freq_t *arr, uint8_t index, qdf_freq_t freq)
 {
 	int i;
 
@@ -213,14 +212,10 @@ is_duplicate_freq(qdf_freq_t *arr, uint8_t index, qdf_freq_t freq)
 	return false;
 }
 
-static uint8_t
-tdls_fill_chan_freq_from_supported_ch_list(struct wlan_objmgr_pdev *pdev,
-					   const uint8_t *country,
-					   const uint8_t *src_chans,
-					   uint8_t src_chan_num,
-					   uint8_t src_opclass,
-					   uint8_t *num_freq,
-					   qdf_freq_t *freq_lst)
+static uint8_t tdls_fill_chan_freq_from_supported_ch_list(
+	struct wlan_objmgr_pdev *pdev, const uint8_t *country,
+	const uint8_t *src_chans, uint8_t src_chan_num, uint8_t src_opclass,
+	uint8_t *num_freq, qdf_freq_t *freq_lst)
 {
 	uint8_t i = 0, j = 0, num_unique_freq = *num_freq;
 	uint8_t chan_count;
@@ -228,12 +223,11 @@ tdls_fill_chan_freq_from_supported_ch_list(struct wlan_objmgr_pdev *pdev,
 	uint8_t next_ch;
 	qdf_freq_t freq;
 
-	for (i = 0; i < src_chan_num &&
-	     num_unique_freq < WLAN_MAC_MAX_SUPP_CHANNELS; i += 2) {
-		freq = wlan_reg_country_chan_opclass_to_freq(pdev, country,
-							     src_chans[i],
-							     src_opclass,
-							     false);
+	for (i = 0;
+	     i < src_chan_num && num_unique_freq < WLAN_MAC_MAX_SUPP_CHANNELS;
+	     i += 2) {
+		freq = wlan_reg_country_chan_opclass_to_freq(
+			pdev, country, src_chans[i], src_opclass, false);
 
 		if (!freq || is_duplicate_freq(freq_lst, num_unique_freq, freq))
 			continue;
@@ -252,11 +246,11 @@ tdls_fill_chan_freq_from_supported_ch_list(struct wlan_objmgr_pdev *pdev,
 		osif_debug("freq %d index %d ", freq, num_unique_freq);
 
 		for (j = 1; j < chan_count &&
-		     num_unique_freq < WLAN_MAC_MAX_SUPP_CHANNELS; j++) {
+			    num_unique_freq < WLAN_MAC_MAX_SUPP_CHANNELS;
+		     j++) {
 			next_ch += wifi_chan_index;
 			freq = wlan_reg_country_chan_opclass_to_freq(
-							pdev, country, next_ch,
-							src_opclass, false);
+				pdev, country, next_ch, src_opclass, false);
 
 			if (!freq ||
 			    is_duplicate_freq(freq_lst, num_unique_freq, freq))
@@ -310,19 +304,17 @@ tdls_calc_channels_from_staparams(struct wlan_objmgr_vdev *vdev,
 	src_opclass = params->supported_oper_classes;
 	dest_freq = req_info->supported_chan_freq;
 	pdev = wlan_vdev_get_pdev(vdev);
-	status = wlan_cm_get_country_code(pdev, wlan_vdev_get_id(vdev),
-					  country);
+	status =
+		wlan_cm_get_country_code(pdev, wlan_vdev_get_id(vdev), country);
 
-	osif_debug("Country info from AP:%c%c 0x%x", country[0],
-		   country[1], country[2]);
+	osif_debug("Country info from AP:%c%c 0x%x", country[0], country[1],
+		   country[2]);
 
 	for (i = 0; i < params->supported_oper_classes_len; i++)
 		tdls_fill_chan_freq_from_supported_ch_list(
-						pdev, country, src_chans,
-						params->supported_channels_len,
-						src_opclass[i],
-						&num_unique_freq,
-						dest_freq);
+			pdev, country, src_chans,
+			params->supported_channels_len, src_opclass[i],
+			&num_unique_freq, dest_freq);
 
 	osif_debug("Unique Channel List: supported_channels ");
 	for (i = 0; i < num_unique_freq; i++)
@@ -348,7 +340,8 @@ wlan_cfg80211_tdls_extract_6ghz_params(struct tdls_update_peer_params *req_info,
 		     params->link_sta_params.he_6ghz_capa,
 		     sizeof(req_info->he_6ghz_cap));
 }
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) && defined(CONFIG_BAND_6GHZ)
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) && \
+	defined(CONFIG_BAND_6GHZ)
 static void
 wlan_cfg80211_tdls_extract_6ghz_params(struct tdls_update_peer_params *req_info,
 				       struct station_parameters *params)
@@ -418,8 +411,7 @@ wlan_cfg80211_tdls_extract_he_params(struct tdls_update_peer_params *req_info,
 	if (req_info->he_cap_len > MAX_TDLS_HE_CAP_LEN)
 		req_info->he_cap_len = MAX_TDLS_HE_CAP_LEN;
 
-	qdf_mem_copy(&req_info->he_cap, params->he_capa,
-		     req_info->he_cap_len);
+	qdf_mem_copy(&req_info->he_cap, params->he_capa, req_info->he_cap_len);
 
 	if (tdls_6g_support)
 		wlan_cfg80211_tdls_extract_6ghz_params(req_info, params);
@@ -490,8 +482,7 @@ wlan_cfg80211_tdls_extract_params(struct wlan_objmgr_vdev *vdev,
 {
 	int i;
 
-	osif_debug("sta cap %d, uapsd_queue %d, max_sp %d",
-		   params->capability,
+	osif_debug("sta cap %d, uapsd_queue %d, max_sp %d", params->capability,
 		   params->uapsd_queues, params->max_sp);
 
 	if (!req_info) {
@@ -503,9 +494,10 @@ wlan_cfg80211_tdls_extract_params(struct wlan_objmgr_vdev *vdev,
 	req_info->max_sp = params->max_sp;
 
 	if (params->supported_oper_classes_len > WLAN_MAX_SUPP_OPER_CLASSES) {
-		osif_debug("received oper classes:%d, resetting it to max supported: %d",
-			   params->supported_oper_classes_len,
-			   WLAN_MAX_SUPP_OPER_CLASSES);
+		osif_debug(
+			"received oper classes:%d, resetting it to max supported: %d",
+			params->supported_oper_classes_len,
+			WLAN_MAX_SUPP_OPER_CLASSES);
 		params->supported_oper_classes_len = WLAN_MAX_SUPP_OPER_CLASSES;
 	}
 
@@ -529,16 +521,16 @@ wlan_cfg80211_tdls_extract_params(struct wlan_objmgr_vdev *vdev,
 	}
 
 	req_info->supported_rates_len =
-				params->link_sta_params.supported_rates_len;
+		params->link_sta_params.supported_rates_len;
 
 	/* Note: The Maximum size of supported_rates sent by the Supplicant is
-	 * 32. The supported_rates array, for all the structures propagating
-	 * until Add Sta to the firmware, has to be modified if the supplicant
-	 * (ieee80211) is modified to send more rates.
-	 */
+   * 32. The supported_rates array, for all the structures propagating
+   * until Add Sta to the firmware, has to be modified if the supplicant
+   * (ieee80211) is modified to send more rates.
+   */
 
 	/* To avoid Data Corruption, set to max length to SIR_MAC_MAX_SUPP_RATES
-	 */
+   */
 	if (req_info->supported_rates_len > WLAN_MAC_MAX_SUPP_RATES)
 		req_info->supported_rates_len = WLAN_MAC_MAX_SUPP_RATES;
 
@@ -586,8 +578,7 @@ wlan_cfg80211_tdls_extract_params(struct wlan_objmgr_vdev *vdev,
 {
 	int i;
 
-	osif_debug("sta cap %d, uapsd_queue %d, max_sp %d",
-		   params->capability,
+	osif_debug("sta cap %d, uapsd_queue %d, max_sp %d", params->capability,
 		   params->uapsd_queues, params->max_sp);
 
 	if (!req_info) {
@@ -599,9 +590,10 @@ wlan_cfg80211_tdls_extract_params(struct wlan_objmgr_vdev *vdev,
 	req_info->max_sp = params->max_sp;
 
 	if (params->supported_oper_classes_len > WLAN_MAX_SUPP_OPER_CLASSES) {
-		osif_debug("received oper classes:%d, resetting it to max supported: %d",
-			   params->supported_oper_classes_len,
-			   WLAN_MAX_SUPP_OPER_CLASSES);
+		osif_debug(
+			"received oper classes:%d, resetting it to max supported: %d",
+			params->supported_oper_classes_len,
+			WLAN_MAX_SUPP_OPER_CLASSES);
 		params->supported_oper_classes_len = WLAN_MAX_SUPP_OPER_CLASSES;
 	}
 
@@ -627,19 +619,18 @@ wlan_cfg80211_tdls_extract_params(struct wlan_objmgr_vdev *vdev,
 	req_info->supported_rates_len = params->supported_rates_len;
 
 	/* Note : The Maximum sizeof supported_rates sent by the Supplicant is
-	 * 32. The supported_rates array , for all the structures propagating
-	 * till Add Sta to the firmware has to be modified , if the supplicant
-	 * (ieee80211) is modified to send more rates.
-	 */
+   * 32. The supported_rates array , for all the structures propagating
+   * till Add Sta to the firmware has to be modified , if the supplicant
+   * (ieee80211) is modified to send more rates.
+   */
 
 	/* To avoid Data Currption , set to max length to SIR_MAC_MAX_SUPP_RATES
-	 */
+   */
 	if (req_info->supported_rates_len > WLAN_MAC_MAX_SUPP_RATES)
 		req_info->supported_rates_len = WLAN_MAC_MAX_SUPP_RATES;
 
 	if (req_info->supported_rates_len) {
-		qdf_mem_copy(req_info->supported_rates,
-			     params->supported_rates,
+		qdf_mem_copy(req_info->supported_rates, params->supported_rates,
 			     req_info->supported_rates_len);
 		osif_debug("Supported Rates with Length %d",
 			   req_info->supported_rates_len);
@@ -691,8 +682,7 @@ int wlan_cfg80211_tdls_update_peer(struct wlan_objmgr_vdev *vdev,
 	if (status)
 		return status;
 
-	osif_debug("Update TDLS peer " QDF_MAC_ADDR_FMT,
-		   QDF_MAC_ADDR_REF(mac));
+	osif_debug("Update TDLS peer " QDF_MAC_ADDR_FMT, QDF_MAC_ADDR_REF(mac));
 
 	is_mlo_vdev = wlan_vdev_mlme_is_mlo_vdev(vdev);
 	if (is_mlo_vdev) {
@@ -718,8 +708,7 @@ int wlan_cfg80211_tdls_update_peer(struct wlan_objmgr_vdev *vdev,
 	tdls_11ax_support = ucfg_tdls_is_fw_11ax_capable(psoc);
 	tdls_6g_support = ucfg_tdls_is_fw_6g_capable(psoc);
 	wlan_cfg80211_tdls_extract_params(vdev, req_info, params,
-					  tdls_11ax_support,
-					  tdls_6g_support);
+					  tdls_11ax_support, tdls_6g_support);
 
 	osif_priv = wlan_vdev_get_ospriv(vdev);
 	if (!osif_priv || !osif_priv->osif_tdls) {
@@ -792,7 +781,7 @@ static enum tdls_command_type tdls_oper_to_cmd(enum nl80211_tdls_operation oper)
 }
 
 int wlan_cfg80211_tdls_configure_mode(struct wlan_objmgr_vdev *vdev,
-						uint32_t trigger_mode)
+				      uint32_t trigger_mode)
 {
 	enum tdls_feature_mode tdls_mode;
 	struct tdls_set_mode_params set_mode_params;
@@ -826,8 +815,7 @@ int wlan_cfg80211_tdls_configure_mode(struct wlan_objmgr_vdev *vdev,
 	return status;
 }
 
-int wlan_cfg80211_tdls_oper(struct wlan_objmgr_vdev *vdev,
-			    const uint8_t *peer,
+int wlan_cfg80211_tdls_oper(struct wlan_objmgr_vdev *vdev, const uint8_t *peer,
 			    enum nl80211_tdls_operation oper)
 {
 	struct vdev_osif_priv *osif_priv;
@@ -865,15 +853,14 @@ int wlan_cfg80211_tdls_oper(struct wlan_objmgr_vdev *vdev,
 	case NL80211_TDLS_SETUP:
 		status = ucfg_tdls_oper(vdev, peer, cmd);
 		if (QDF_IS_STATUS_ERROR(status)) {
-			osif_err("%s fail %d",
-				 tdls_oper_to_str(oper), status);
+			osif_err("%s fail %d", tdls_oper_to_str(oper), status);
 			status = -EIO;
 			goto error;
 		}
 		break;
 	case NL80211_TDLS_DISABLE_LINK:
-		wlan_vdev_mlme_feat_ext2_cap_clear(vdev,
-						   WLAN_VDEV_FEXT2_MLO_STA_TDLS);
+		wlan_vdev_mlme_feat_ext2_cap_clear(
+			vdev, WLAN_VDEV_FEXT2_MLO_STA_TDLS);
 
 		osif_priv = wlan_vdev_get_ospriv(vdev);
 
@@ -911,7 +898,7 @@ error:
 }
 
 void wlan_cfg80211_tdls_rx_callback(void *user_data,
-	struct tdls_rx_mgmt_frame *rx_frame)
+				    struct tdls_rx_mgmt_frame *rx_frame)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_vdev *vdev, *assoc_vdev;
@@ -925,8 +912,8 @@ void wlan_cfg80211_tdls_rx_callback(void *user_data,
 		return;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-		rx_frame->vdev_id, WLAN_TDLS_NB_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, rx_frame->vdev_id,
+						    WLAN_TDLS_NB_ID);
 	if (!vdev) {
 		osif_err("vdev is null");
 		return;
@@ -982,8 +969,7 @@ static void wlan_cfg80211_update_tdls_peers_rssi(struct wlan_objmgr_vdev *vdev)
 	struct qdf_mac_addr bcast_mac = QDF_MAC_ADDR_BCAST_INIT;
 
 	rssi_info = wlan_cfg80211_mc_cp_stats_get_peer_rssi(
-			vdev, bcast_mac.bytes,
-			&ret);
+		vdev, bcast_mac.bytes, &ret);
 	if (ret || !rssi_info) {
 		osif_err("get peer rssi fail");
 		wlan_cfg80211_mc_cp_stats_free_stats_event(rssi_info);
@@ -997,8 +983,8 @@ static void wlan_cfg80211_update_tdls_peers_rssi(struct wlan_objmgr_vdev *vdev)
 	wlan_cfg80211_mc_cp_stats_free_stats_event(rssi_info);
 }
 
-int wlan_cfg80211_tdls_get_all_peers(struct wlan_objmgr_vdev *vdev,
-				char *buf, int buflen)
+int wlan_cfg80211_tdls_get_all_peers(struct wlan_objmgr_vdev *vdev, char *buf,
+				     int buflen)
 {
 	struct vdev_osif_priv *osif_priv;
 	struct osif_tdls_vdev *tdls_priv;
@@ -1008,29 +994,30 @@ int wlan_cfg80211_tdls_get_all_peers(struct wlan_objmgr_vdev *vdev,
 
 	osif_priv = wlan_vdev_get_ospriv(vdev);
 	if (!osif_priv || !osif_priv->osif_tdls) {
-		osif_err("osif_tdls_vdev or osif_priv is NULL for the current vdev");
+		osif_err(
+			"osif_tdls_vdev or osif_priv is NULL for the current vdev");
 		return -EINVAL;
 	}
 
 	tdls_priv = osif_priv->osif_tdls;
 
 	/*
-	 * We shouldn't use completion_done here for checking for completion
-	 * as this will always return false, as tdls_user_cmd_comp.done will
-	 * remain in init state always. So, the very first command will also
-	 * not work.
-	 * In general completion_done is used to check if there are multiple
-	 * threads waiting on the complete event that's why it will return true
-	 * only when tdls_user_cmd_comp.done is set with complete()
-	 * In general completion_done will return true only when
-	 * tdls_user_cmd_comp.done is set that will happen in complete().
-	 * Also, if there is already a thread waiting for wait_for_completion,
-	 * this function will
-	 * return true only after the wait timer is over or condition is
-	 * met as wait_for_completion will hold out the hold lock and will
-	 * will prevent completion_done from returning.
-	 * Better to use a flag to determine command condition.
-	 */
+   * We shouldn't use completion_done here for checking for completion
+   * as this will always return false, as tdls_user_cmd_comp.done will
+   * remain in init state always. So, the very first command will also
+   * not work.
+   * In general completion_done is used to check if there are multiple
+   * threads waiting on the complete event that's why it will return true
+   * only when tdls_user_cmd_comp.done is set with complete()
+   * In general completion_done will return true only when
+   * tdls_user_cmd_comp.done is set that will happen in complete().
+   * Also, if there is already a thread waiting for wait_for_completion,
+   * this function will
+   * return true only after the wait timer is over or condition is
+   * met as wait_for_completion will hold out the hold lock and will
+   * will prevent completion_done from returning.
+   * Better to use a flag to determine command condition.
+   */
 	if (tdls_priv->tdls_user_cmd_in_progress) {
 		osif_err("TDLS user cmd still in progress, reject this one");
 		return -EBUSY;
@@ -1043,8 +1030,7 @@ int wlan_cfg80211_tdls_get_all_peers(struct wlan_objmgr_vdev *vdev,
 	status = ucfg_tdls_get_all_peers(vdev, buf, buflen);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		osif_err("ucfg_tdls_get_all_peers failed err %d", status);
-		len = scnprintf(buf, buflen,
-				"\nucfg_tdls_send_mgmt failed\n");
+		len = scnprintf(buf, buflen, "\nucfg_tdls_send_mgmt failed\n");
 		goto error_get_tdls_peers;
 	}
 
@@ -1056,8 +1042,7 @@ int wlan_cfg80211_tdls_get_all_peers(struct wlan_objmgr_vdev *vdev,
 		msecs_to_jiffies(WAIT_TIME_FOR_TDLS_USER_CMD));
 
 	if (0 == rc) {
-		osif_err("TDLS user cmd get all peers timed out rc %ld",
-			 rc);
+		osif_err("TDLS user cmd get all peers timed out rc %ld", rc);
 		len = scnprintf(buf, buflen,
 				"\nTDLS user cmd get all peers timed out\n");
 		goto error_get_tdls_peers;
@@ -1092,12 +1077,11 @@ bool wlan_cfg80211_tdls_is_fw_6ghz_capable(struct wlan_objmgr_vdev *vdev)
 }
 #endif
 
-static int
-wlan_cfg80211_tdls_mgmt(struct wlan_objmgr_vdev *vdev,
-			const uint8_t *peer_mac,
-			uint8_t action_code, uint8_t dialog_token,
-			uint16_t status_code, uint32_t peer_capability,
-			const uint8_t *buf, size_t len, int link_id)
+static int wlan_cfg80211_tdls_mgmt(struct wlan_objmgr_vdev *vdev,
+				   const uint8_t *peer_mac, uint8_t action_code,
+				   uint8_t dialog_token, uint16_t status_code,
+				   uint32_t peer_capability, const uint8_t *buf,
+				   size_t len, int link_id)
 {
 	struct tdls_action_frame_request mgmt_req;
 	struct vdev_osif_priv *osif_priv;
@@ -1122,14 +1106,15 @@ wlan_cfg80211_tdls_mgmt(struct wlan_objmgr_vdev *vdev,
 
 	/* make sure doesn't call send_mgmt() while it is pending */
 	if (TDLS_VDEV_MAGIC == tdls_priv->mgmt_tx_completion_status) {
-		osif_err(QDF_MAC_ADDR_FMT " action %d couldn't sent, as one is pending. return EBUSY",
-			 QDF_MAC_ADDR_REF(peer_mac), action_code);
+		osif_err(
+			QDF_MAC_ADDR_FMT
+			" action %d couldn't sent, as one is pending. return EBUSY",
+			QDF_MAC_ADDR_REF(peer_mac), action_code);
 		return -EBUSY;
 	}
 
 	/* Reset TDLS VDEV magic */
 	tdls_priv->mgmt_tx_completion_status = TDLS_VDEV_MAGIC;
-
 
 	/*prepare the request */
 
@@ -1145,8 +1130,8 @@ wlan_cfg80211_tdls_mgmt(struct wlan_objmgr_vdev *vdev,
 	mgmt_req.vdev_id = wlan_vdev_get_id(vdev);
 	mgmt_req.session_id = mgmt_req.vdev_id;
 	/* populate management req params */
-	qdf_mem_copy(mgmt_req.tdls_mgmt.peer_mac.bytes,
-		     peer_mac, QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(mgmt_req.tdls_mgmt.peer_mac.bytes, peer_mac,
+		     QDF_MAC_ADDR_SIZE);
 	mgmt_req.tdls_mgmt.dialog = dialog_token;
 	mgmt_req.tdls_mgmt.frame_type = action_code;
 	mgmt_req.tdls_mgmt.len = len;
@@ -1175,11 +1160,11 @@ wlan_cfg80211_tdls_mgmt(struct wlan_objmgr_vdev *vdev,
 		&tdls_priv->tdls_mgmt_comp,
 		msecs_to_jiffies(WAIT_TIME_FOR_TDLS_MGMT));
 
-	if ((0 == rc) || (QDF_STATUS_SUCCESS !=
-				tdls_priv->mgmt_tx_completion_status)) {
+	if ((0 == rc) ||
+	    (QDF_STATUS_SUCCESS != tdls_priv->mgmt_tx_completion_status)) {
 		osif_err("%s rc %ld mgmtTxCompletionStatus %u",
 			 !rc ? "Mgmt Tx Completion timed out" :
-			 "Mgmt Tx Completion failed",
+			       "Mgmt Tx Completion failed",
 			 rc, tdls_priv->mgmt_tx_completion_status);
 
 		tdls_priv->mgmt_tx_completion_status = false;
@@ -1187,8 +1172,8 @@ wlan_cfg80211_tdls_mgmt(struct wlan_objmgr_vdev *vdev,
 		goto error_mgmt_req;
 	}
 
-	osif_debug("Mgmt Tx Completion status %ld TxCompletion %u",
-		   rc, tdls_priv->mgmt_tx_completion_status);
+	osif_debug("Mgmt Tx Completion status %ld TxCompletion %u", rc,
+		   tdls_priv->mgmt_tx_completion_status);
 
 	if (TDLS_SETUP_RESPONSE == action_code ||
 	    TDLS_SETUP_CONFIRM == action_code) {
@@ -1206,11 +1191,11 @@ error_mgmt_req:
 	return status;
 }
 
-int
-wlan_cfg80211_tdls_mgmt_mlo(struct hdd_adapter *adapter, const uint8_t *peer,
-			    uint8_t action_code, uint8_t dialog_token,
-			    uint16_t status_code, uint32_t peer_capability,
-			    const uint8_t *buf, size_t len, int link_id)
+int wlan_cfg80211_tdls_mgmt_mlo(struct hdd_adapter *adapter,
+				const uint8_t *peer, uint8_t action_code,
+				uint8_t dialog_token, uint16_t status_code,
+				uint32_t peer_capability, const uint8_t *buf,
+				size_t len, int link_id)
 {
 	struct wlan_objmgr_vdev *tdls_link_vdev = NULL;
 	struct wlan_objmgr_vdev *mlo_vdev = NULL;
@@ -1246,9 +1231,8 @@ wlan_cfg80211_tdls_mgmt_mlo(struct hdd_adapter *adapter, const uint8_t *peer,
 				}
 				/* Get the candidate vdev per link id */
 				link_id_vdev = true;
-				vdev = wlan_key_get_link_vdev(adapter,
-							      WLAN_OSIF_TDLS_ID,
-							      link_id);
+				vdev = wlan_key_get_link_vdev(
+					adapter, WLAN_OSIF_TDLS_ID, link_id);
 				if (!vdev) {
 					osif_err("vdev is null");
 					return -EINVAL;
@@ -1256,8 +1240,8 @@ wlan_cfg80211_tdls_mgmt_mlo(struct hdd_adapter *adapter, const uint8_t *peer,
 			} else if (action_code == TDLS_DISCOVERY_REQUEST) {
 				if (ucfg_tdls_discovery_on_going(vdev)) {
 					osif_err("discovery request is going");
-					hdd_objmgr_put_vdev_by_user(vdev,
-							     WLAN_OSIF_TDLS_ID);
+					hdd_objmgr_put_vdev_by_user(
+						vdev, WLAN_OSIF_TDLS_ID);
 					return -EAGAIN;
 				}
 				dis_req_more = true;
@@ -1270,7 +1254,7 @@ wlan_cfg80211_tdls_mgmt_mlo(struct hdd_adapter *adapter, const uint8_t *peer,
 
 	if (dis_req_more) {
 		/* it needs to send discovery request on each vdev */
-		for (i = 0 ;  i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
+		for (i = 0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
 			mlo_vdev = ucfg_tdls_get_mlo_vdev(vdev, i,
 							  WLAN_OSIF_TDLS_ID);
 			if (!mlo_vdev) {
@@ -1278,17 +1262,17 @@ wlan_cfg80211_tdls_mgmt_mlo(struct hdd_adapter *adapter, const uint8_t *peer,
 				continue;
 			}
 			ret = wlan_cfg80211_tdls_mgmt(mlo_vdev, peer,
-						      action_code,
-						      dialog_token, status_code,
+						      action_code, dialog_token,
+						      status_code,
 						      peer_capability, buf, len,
 						      link_id);
 			ucfg_tdls_release_mlo_vdev(mlo_vdev, WLAN_OSIF_TDLS_ID);
 		}
 	} else {
-		ret = wlan_cfg80211_tdls_mgmt(vdev, peer,
-					      action_code, dialog_token,
-					      status_code, peer_capability,
-					      buf, len, link_id);
+		ret = wlan_cfg80211_tdls_mgmt(vdev, peer, action_code,
+					      dialog_token, status_code,
+					      peer_capability, buf, len,
+					      link_id);
 	}
 
 	if (vdev && link_id_vdev)
@@ -1352,14 +1336,12 @@ wlan_cfg80211_tdls_indicate_discovery(struct tdls_osif_indication *ind)
 
 	osif_vdev = wlan_vdev_get_ospriv(ind->vdev);
 
-	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev,
-				   ind->peer_mac, -1,
-				   NL80211_TDLS_DISCOVERY_REQ,
-				   false, GFP_KERNEL);
+	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev, ind->peer_mac, -1,
+				   NL80211_TDLS_DISCOVERY_REQ, false,
+				   GFP_KERNEL);
 }
 
-static void
-wlan_cfg80211_tdls_indicate_setup(struct tdls_osif_indication *ind)
+static void wlan_cfg80211_tdls_indicate_setup(struct tdls_osif_indication *ind)
 {
 	struct vdev_osif_priv *osif_vdev;
 	int link_id = -1;
@@ -1369,9 +1351,8 @@ wlan_cfg80211_tdls_indicate_setup(struct tdls_osif_indication *ind)
 		link_id = wlan_vdev_get_link_id(ind->vdev);
 
 	osif_debug("Indication to request TDLS setup on link id %d", link_id);
-	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev,
-				   ind->peer_mac, link_id,
-				   NL80211_TDLS_SETUP, false,
+	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev, ind->peer_mac,
+				   link_id, NL80211_TDLS_SETUP, false,
 				   GFP_KERNEL);
 }
 
@@ -1383,9 +1364,9 @@ wlan_cfg80211_tdls_indicate_teardown(struct tdls_osif_indication *ind)
 	osif_vdev = wlan_vdev_get_ospriv(ind->vdev);
 
 	osif_debug("Teardown reason %d", ind->reason);
-	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev,
-				   ind->peer_mac, -1, NL80211_TDLS_TEARDOWN,
-				   ind->reason, GFP_KERNEL);
+	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev, ind->peer_mac, -1,
+				   NL80211_TDLS_TEARDOWN, ind->reason,
+				   GFP_KERNEL);
 }
 #else
 static void
@@ -1395,22 +1376,20 @@ wlan_cfg80211_tdls_indicate_discovery(struct tdls_osif_indication *ind)
 
 	osif_vdev = wlan_vdev_get_ospriv(ind->vdev);
 
-	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev,
-				   ind->peer_mac, NL80211_TDLS_DISCOVERY_REQ,
-				   false, GFP_KERNEL);
+	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev, ind->peer_mac,
+				   NL80211_TDLS_DISCOVERY_REQ, false,
+				   GFP_KERNEL);
 }
 
-static void
-wlan_cfg80211_tdls_indicate_setup(struct tdls_osif_indication *ind)
+static void wlan_cfg80211_tdls_indicate_setup(struct tdls_osif_indication *ind)
 {
 	struct vdev_osif_priv *osif_vdev;
 
 	osif_vdev = wlan_vdev_get_ospriv(ind->vdev);
 
 	osif_debug("Indication to request TDLS setup");
-	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev,
-				   ind->peer_mac, NL80211_TDLS_SETUP, false,
-				   GFP_KERNEL);
+	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev, ind->peer_mac,
+				   NL80211_TDLS_SETUP, false, GFP_KERNEL);
 }
 
 static void
@@ -1421,9 +1400,9 @@ wlan_cfg80211_tdls_indicate_teardown(struct tdls_osif_indication *ind)
 	osif_vdev = wlan_vdev_get_ospriv(ind->vdev);
 
 	osif_debug("Teardown reason %d", ind->reason);
-	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev,
-				   ind->peer_mac, NL80211_TDLS_TEARDOWN,
-				   ind->reason, GFP_KERNEL);
+	cfg80211_tdls_oper_request(osif_vdev->wdev->netdev, ind->peer_mac,
+				   NL80211_TDLS_TEARDOWN, ind->reason,
+				   GFP_KERNEL);
 }
 #endif
 

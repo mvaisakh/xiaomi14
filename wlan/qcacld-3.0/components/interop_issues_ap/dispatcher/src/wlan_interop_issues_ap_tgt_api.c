@@ -21,11 +21,11 @@
  *
  * This file provide API definitions to update interop issues ap from interface
  */
-#include <wlan_objmgr_cmn.h>
-#include <wlan_objmgr_pdev_obj.h>
 #include <scheduler_api.h>
 #include <wlan_interop_issues_ap_api.h>
 #include <wlan_interop_issues_ap_tgt_api.h>
+#include <wlan_objmgr_cmn.h>
+#include <wlan_objmgr_pdev_obj.h>
 
 static QDF_STATUS wlan_interop_issues_ap_flush_cbk(struct scheduler_msg *msg)
 {
@@ -44,8 +44,7 @@ static QDF_STATUS wlan_interop_issues_ap_info_cbk(struct scheduler_msg *msg)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	data = msg->bodyptr;
-	data->pdev = wlan_objmgr_get_pdev_by_id(data->psoc,
-						data->pdev_id,
+	data->pdev = wlan_objmgr_get_pdev_by_id(data->psoc, data->pdev_id,
 						WLAN_INTEROP_ISSUES_AP_ID);
 	if (!data->pdev) {
 		interop_issues_ap_err("pdev is null.");
@@ -64,10 +63,11 @@ err:
 	return status;
 }
 
-QDF_STATUS tgt_interop_issues_ap_info_callback(struct wlan_objmgr_psoc *psoc,
-				      struct wlan_interop_issues_ap_event *rap)
+QDF_STATUS
+tgt_interop_issues_ap_info_callback(struct wlan_objmgr_psoc *psoc,
+				    struct wlan_interop_issues_ap_event *rap)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	QDF_STATUS status;
 	struct wlan_interop_issues_ap_event *data;
 
@@ -93,8 +93,9 @@ QDF_STATUS tgt_interop_issues_ap_info_callback(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-QDF_STATUS tgt_set_interop_issues_ap_req(struct wlan_objmgr_psoc *psoc,
-				struct wlan_interop_issues_ap_info *rap)
+QDF_STATUS
+tgt_set_interop_issues_ap_req(struct wlan_objmgr_psoc *psoc,
+			      struct wlan_interop_issues_ap_info *rap)
 {
 	struct interop_issues_ap_psoc_priv_obj *obj;
 

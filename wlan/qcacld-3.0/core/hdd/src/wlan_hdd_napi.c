@@ -24,13 +24,13 @@
  */
 #include <linux/smp.h> /* get_cpu */
 
-#include "wlan_hdd_napi.h"
-#include "cds_api.h"       /* cds_get_context */
-#include "hif.h"           /* hif_map_service...*/
-#include "wlan_hdd_main.h" /* hdd_err/warn... */
-#include "qdf_types.h"     /* QDF_MODULE_ID_... */
+#include "cds_api.h" /* cds_get_context */
 #include "ce_api.h"
+#include "hif.h" /* hif_map_service...*/
+#include "qdf_types.h" /* QDF_MODULE_ID_... */
 #include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_main.h" /* hdd_err/warn... */
+#include "wlan_hdd_napi.h"
 
 /*  guaranteed to be initialized to zero/NULL by the standard */
 static struct qca_napi_data *hdd_napi_ctx;
@@ -96,8 +96,8 @@ static uint32_t hdd_napi_get_map(void)
  */
 int hdd_napi_create(void)
 {
-	struct  hif_opaque_softc *hif_ctx;
-	int     rc = 0;
+	struct hif_opaque_softc *hif_ctx;
+	int rc = 0;
 	struct hdd_context *hdd_ctx;
 	uint8_t feature_flags = 0;
 	struct qca_napi_data *napid = hdd_napi_get_all();
@@ -118,16 +118,13 @@ int hdd_napi_create(void)
 	}
 
 	feature_flags = QCA_NAPI_FEATURE_CPU_CORRECTION |
-		QCA_NAPI_FEATURE_IRQ_BLACKLISTING |
-		QCA_NAPI_FEATURE_CORE_CTL_BOOST;
+			QCA_NAPI_FEATURE_IRQ_BLACKLISTING |
+			QCA_NAPI_FEATURE_CORE_CTL_BOOST;
 
-	rc = hif_napi_create(hif_ctx, hdd_napi_poll,
-			     QCA_NAPI_BUDGET,
-			     QCA_NAPI_DEF_SCALE,
-			     feature_flags);
+	rc = hif_napi_create(hif_ctx, hdd_napi_poll, QCA_NAPI_BUDGET,
+			     QCA_NAPI_DEF_SCALE, feature_flags);
 	if (rc < 0) {
-		hdd_err("ERR(%d) creating NAPI instances",
-			rc);
+		hdd_err("ERR(%d) creating NAPI instances", rc);
 		goto exit;
 	}
 
@@ -141,10 +138,9 @@ int hdd_napi_create(void)
 
 	rc = hdd_napi_event(NAPI_EVT_INI_FILE,
 			    (void *)ucfg_dp_get_napi_enabled(hdd_ctx->psoc));
-	napid->user_cpu_affin_mask =
-		hdd_ctx->config->napi_cpu_affinity_mask;
+	napid->user_cpu_affin_mask = hdd_ctx->config->napi_cpu_affinity_mask;
 
- exit:
+exit:
 	NAPI_DEBUG("<-- [rc=%d]", rc);
 	return rc;
 }
@@ -176,15 +172,16 @@ int hdd_napi_destroy(int force)
 		else
 			for (i = 0; i < CE_COUNT_MAX; i++)
 				if (hdd_napi_map & (0x01 << i)) {
-					if (0 <= hif_napi_destroy(
-						    hif_ctx,
-						    NAPI_PIPE2ID(i), force)) {
+					if (0 <=
+					    hif_napi_destroy(hif_ctx,
+							     NAPI_PIPE2ID(i),
+							     force)) {
 						rc++;
 						hdd_napi_map &= ~(0x01 << i);
 					} else
 						hdd_err("cannot destroy napi %d: (pipe:%d), f=%d\n",
-							i,
-							NAPI_PIPE2ID(i), force);
+							i, NAPI_PIPE2ID(i),
+							force);
 				}
 	} else {
 		struct hif_opaque_softc *hif_ctx;
@@ -198,9 +195,9 @@ int hdd_napi_destroy(int force)
 	}
 
 	/* if all instances are removed, it is likely that hif_context has been
-	 * removed as well, so the cached value of the napi context also needs
-	 * to be removed
-	 */
+   * removed as well, so the cached value of the napi context also needs
+   * to be removed
+   */
 	if (force)
 		QDF_ASSERT(hdd_napi_map == 0);
 	if (0 == hdd_napi_map)
@@ -247,7 +244,7 @@ int hdd_napi_enabled(int id)
  */
 int hdd_napi_event(enum qca_napi_event event, void *data)
 {
-	int rc = -EFAULT;  /* assume err */
+	int rc = -EFAULT; /* assume err */
 	struct hif_opaque_softc *hif;
 
 	NAPI_DEBUG("-->(event=%d, aux=%pK)", event, data);
@@ -300,16 +297,16 @@ static int hdd_napi_perfd_cpufreq(enum qca_napi_tput_state req_state)
 
 	switch (req_state) {
 	case QCA_NAPI_TPUT_LO:
-		req.magic    = WLAN_CORE_MINFREQ_MAGIC;
+		req.magic = WLAN_CORE_MINFREQ_MAGIC;
 		req.reserved = 0; /* unused */
 		req.coremask = 0; /* not valid */
-		req.freq     = 0; /* reset */
+		req.freq = 0; /* reset */
 		break;
 	case QCA_NAPI_TPUT_HI:
-		req.magic    = WLAN_CORE_MINFREQ_MAGIC;
+		req.magic = WLAN_CORE_MINFREQ_MAGIC;
 		req.reserved = 0; /* unused */
 		req.coremask = 0x0f0; /* perf cluster */
-		req.freq     = 700;   /* KHz */
+		req.freq = 700; /* KHz */
 		break;
 	default:
 		hdd_err("invalid req_state (%d)", req_state);
@@ -318,11 +315,10 @@ static int hdd_napi_perfd_cpufreq(enum qca_napi_tput_state req_state)
 	} /* switch */
 
 	NAPI_DEBUG("CPU min freq to %d",
-		   (req.freq == 0)?"Resetting":"Setting", req.freq);
+		   (req.freq == 0) ? "Resetting" : "Setting", req.freq);
 	/* the following service function returns void */
-	wlan_hdd_send_svc_nlink_msg(hdd_ctx->radio_index,
-				WLAN_SVC_CORE_MINFREQ,
-				&req, sizeof(struct wlan_core_minfreq));
+	wlan_hdd_send_svc_nlink_msg(hdd_ctx->radio_index, WLAN_SVC_CORE_MINFREQ,
+				    &req, sizeof(struct wlan_core_minfreq));
 hnpc_ret:
 	NAPI_DEBUG("<--[rc=%d]", rc);
 	return rc;
@@ -353,8 +349,7 @@ hnpc_ret:
  *         !0: error, or action error code
  */
 int hdd_napi_apply_throughput_policy(struct hdd_context *hddctx,
-				     uint64_t tx_packets,
-				     uint64_t rx_packets)
+				     uint64_t tx_packets, uint64_t rx_packets)
 {
 	int rc = 0;
 	uint64_t packets = tx_packets + rx_packets;
@@ -436,9 +431,7 @@ int hdd_napi_serialize(int is_on)
 		/* make sure that bus_bandwidth trigger is executed */
 		hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 		if (hdd_ctx)
-			ucfg_dp_set_current_throughput_level(hdd_ctx->psoc,
-							     -1);
-
+			ucfg_dp_set_current_throughput_level(hdd_ctx->psoc, -1);
 	}
 	return rc;
 }
@@ -476,22 +469,23 @@ int hdd_display_napi_stats(void)
 	struct qca_napi_info *napii;
 	struct qca_napi_stat *napis;
 	/*
-	 * Expecting each NAPI bucket item to need at max 5 numerals + space for
-	 * formatting. For example "10000 " Thus the array needs to have
-	 * (5 + 1) * QCA_NAPI_NUM_BUCKETS bytes of space. Leaving one space at
-	 * the end of the "buf" array for end of string char.
-	 */
-	char buf[6 * QCA_NAPI_NUM_BUCKETS + 1] = {'\0'};
+   * Expecting each NAPI bucket item to need at max 5 numerals + space for
+   * formatting. For example "10000 " Thus the array needs to have
+   * (5 + 1) * QCA_NAPI_NUM_BUCKETS bytes of space. Leaving one space at
+   * the end of the "buf" array for end of string char.
+   */
+	char buf[6 * QCA_NAPI_NUM_BUCKETS + 1] = { '\0' };
 
 	napid = hdd_napi_get_all();
 	if (!napid) {
 		hdd_err("unable to retrieve napi structure");
 		return -EFAULT;
 	}
-	hdd_nofl_info("[NAPI %u][BL %d]:  scheds   polls   comps    done t-lim p-lim  corr  max_time napi-buckets(%d)",
-		      napid->napi_mode,
-		      hif_napi_cpu_denylist(napid, DENYLIST_QUERY),
-		      QCA_NAPI_NUM_BUCKETS);
+	hdd_nofl_info(
+		"[NAPI %u][BL %d]:  scheds   polls   comps    done t-lim p-lim "
+		" corr  max_time napi-buckets(%d)",
+		napid->napi_mode, hif_napi_cpu_denylist(napid, DENYLIST_QUERY),
+		QCA_NAPI_NUM_BUCKETS);
 
 	for (i = 0; i < CE_COUNT_MAX; i++)
 		if (napid->ce_map & (0x01 << i)) {
@@ -505,24 +499,21 @@ int hdd_display_napi_stats(void)
 				max = sizeof(buf);
 				for (k = 0; k < QCA_NAPI_NUM_BUCKETS; k++) {
 					n += scnprintf(
-						buf + n, max - n,
-						" %d",
+						buf + n, max - n, " %d",
 						napis->napi_budget_uses[k]);
 				}
 
 				if (napis->napi_schedules != 0)
-					hdd_nofl_info("NAPI[%2d]CPU[%d]: %7d %7d %7d %7d %5d %5d %5d %9llu %s",
-						      i, j,
-						      napis->napi_schedules,
-						      napis->napi_polls,
-						      napis->napi_completes,
-						      napis->napi_workdone,
-						      napis->time_limit_reached,
-						      napis->
-							rxpkt_thresh_reached,
-						      napis->cpu_corrected,
-						      napis->napi_max_poll_time,
-						      buf);
+					hdd_nofl_info(
+						"NAPI[%2d]CPU[%d]: %7d %7d %7d %7d %5d %5d %5d %9llu %s",
+						i, j, napis->napi_schedules,
+						napis->napi_polls,
+						napis->napi_completes,
+						napis->napi_workdone,
+						napis->time_limit_reached,
+						napis->rxpkt_thresh_reached,
+						napis->cpu_corrected,
+						napis->napi_max_poll_time, buf);
 			}
 		}
 

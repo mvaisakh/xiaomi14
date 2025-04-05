@@ -3,11 +3,10 @@
  * Copyright (c) 2016, 2020 The Linux Foundation. All rights reserved.
  */
 
+#include "audio_ssr.h"
 #include <linux/module.h>
 #include <linux/remoteproc.h>
 #include <linux/remoteproc/qcom_rproc.h>
-#include "audio_ssr.h"
-
 
 /**
  * audio_ssr_register -
@@ -20,7 +19,7 @@
  */
 void *audio_ssr_register(const char *domain_name, struct notifier_block *nb)
 {
-	if (domain_name  == NULL) {
+	if (domain_name == NULL) {
 		pr_err("%s: Invalid domain name\n", __func__);
 		return ERR_PTR(-EINVAL);
 	}
@@ -43,4 +42,3 @@ int audio_ssr_deregister(void *handle, struct notifier_block *nb)
 	return qcom_unregister_ssr_notifier(handle, nb);
 }
 EXPORT_SYMBOL(audio_ssr_deregister);
-

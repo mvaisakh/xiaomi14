@@ -3,31 +3,30 @@
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/module.h>
-#include <linux/slab.h>
-#include <linux/platform_device.h>
-#include <linux/device.h>
-#include <linux/delay.h>
-#include <linux/kernel.h>
+#include "rouleur.h"
+#include "asoc/bolero-slave-internal.h"
+#include "internal.h"
+#include "pm2250-spmi.h"
+#include "rouleur-registers.h"
+#include <asoc/msm-cdc-pinctrl.h>
+#include <asoc/msm-cdc-supply.h>
+#include <asoc/wcdcal-hwdep.h>
+#include <dt-bindings/sound/audio-codec-port-types.h>
 #include <linux/component.h>
-#include <linux/regmap.h>
-#include <linux/pm_runtime.h>
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/of_platform.h>
+#include <linux/platform_device.h>
+#include <linux/pm_runtime.h>
+#include <linux/power_supply.h>
+#include <linux/regmap.h>
+#include <linux/slab.h>
+#include <soc/soundwire.h>
+#include <sound/soc-dapm.h>
 #include <sound/soc.h>
 #include <sound/tlv.h>
-#include <soc/soundwire.h>
-#include <sound/soc.h>
-#include <sound/soc-dapm.h>
-#include "internal.h"
-#include "rouleur.h"
-#include <asoc/wcdcal-hwdep.h>
-#include "rouleur-registers.h"
-#include "pm2250-spmi.h"
-#include <asoc/msm-cdc-pinctrl.h>
-#include <dt-bindings/sound/audio-codec-port-types.h>
-#include <asoc/msm-cdc-supply.h>
-#include <linux/power_supply.h>
-#include "asoc/bolero-slave-internal.h"
 
 #define DRV_NAME "rouleur_codec"
 
@@ -107,7 +106,7 @@ static int rouleur_handle_post_irq(void *data)
 	regmap_read(rouleur->regmap, ROULEUR_DIG_SWR_INTR_STATUS_2, &status3);
 
 	rouleur->tx_swr_dev->slave_irq_pending =
-			((status1 || status2 || status3) ? true : false);
+		((status1 || status2 || status3) ? true : false);
 
 	return IRQ_HANDLED;
 }
@@ -116,24 +115,24 @@ static int rouleur_init_reg(struct snd_soc_component *component)
 {
 	/* Disable HPH OCP */
 	snd_soc_component_update_bits(component, ROULEUR_ANA_HPHPA_CNP_CTL_2,
-					0x03, 0x00);
+				      0x03, 0x00);
 	/* Enable surge protection */
-	snd_soc_component_update_bits(component, ROULEUR_ANA_SURGE_EN,
-					0xC0, 0xC0);
+	snd_soc_component_update_bits(component, ROULEUR_ANA_SURGE_EN, 0xC0,
+				      0xC0);
 	/* Disable mic bias pull down */
-	snd_soc_component_update_bits(component, ROULEUR_ANA_MICBIAS_MICB_1_2_EN,
-					0x01, 0x00);
+	snd_soc_component_update_bits(
+		component, ROULEUR_ANA_MICBIAS_MICB_1_2_EN, 0x01, 0x00);
 	return 0;
 }
 
 static int rouleur_set_port_params(struct snd_soc_component *component,
-				u8 slv_prt_type, u8 *port_id, u8 *num_ch,
-				u8 *ch_mask, u32 *ch_rate,
-				u8 *port_type, u8 path)
+				   u8 slv_prt_type, u8 *port_id, u8 *num_ch,
+				   u8 *ch_mask, u32 *ch_rate, u8 *port_type,
+				   u8 path)
 {
 	int i, j;
 	u8 num_ports = 0;
-	struct codec_port_info (*map)[MAX_PORT][MAX_CH_PER_PORT] = NULL;
+	struct codec_port_info(*map)[MAX_PORT][MAX_CH_PER_PORT] = NULL;
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 
 	switch (path) {
@@ -146,8 +145,8 @@ static int rouleur_set_port_params(struct snd_soc_component *component,
 		num_ports = rouleur->num_tx_ports;
 		break;
 	default:
-		dev_err(component->dev, "%s Invalid path: %d\n",
-			__func__, path);
+		dev_err(component->dev, "%s Invalid path: %d\n", __func__,
+			path);
 		return -EINVAL;
 	}
 
@@ -159,7 +158,7 @@ static int rouleur_set_port_params(struct snd_soc_component *component,
 	}
 
 	dev_err(component->dev, "%s Failed to find slave port for type %u\n",
-					__func__, slv_prt_type);
+		__func__, slv_prt_type);
 	return -EINVAL;
 found:
 	*port_id = i;
@@ -171,8 +170,7 @@ found:
 	return 0;
 }
 
-static int rouleur_parse_port_mapping(struct device *dev,
-			char *prop, u8 path)
+static int rouleur_parse_port_mapping(struct device *dev, char *prop, u8 path)
 {
 	u32 *dt_array, map_size, map_length;
 	u32 port_num = 0, ch_mask, ch_rate, old_port_num = 0;
@@ -180,7 +178,7 @@ static int rouleur_parse_port_mapping(struct device *dev,
 	u32 i, ch_iter = 0;
 	int ret = 0;
 	u8 *num_ports = NULL;
-	struct codec_port_info (*map)[MAX_PORT][MAX_CH_PER_PORT] = NULL;
+	struct codec_port_info(*map)[MAX_PORT][MAX_CH_PER_PORT] = NULL;
 	struct rouleur_priv *rouleur = dev_get_drvdata(dev);
 
 	switch (path) {
@@ -193,13 +191,11 @@ static int rouleur_parse_port_mapping(struct device *dev,
 		num_ports = &rouleur->num_tx_ports;
 		break;
 	default:
-		dev_err(dev, "%s Invalid path: %d\n",
-			__func__, path);
+		dev_err(dev, "%s Invalid path: %d\n", __func__, path);
 		return -EINVAL;
 	}
 
-	if (!of_find_property(dev->of_node, prop,
-				&map_size)) {
+	if (!of_find_property(dev->of_node, prop, &map_size)) {
 		dev_err(dev, "missing port mapping prop %s\n", prop);
 		ret = -EINVAL;
 		goto err;
@@ -214,10 +210,10 @@ static int rouleur_parse_port_mapping(struct device *dev,
 		goto err;
 	}
 	ret = of_property_read_u32_array(dev->of_node, prop, dt_array,
-				NUM_SWRS_DT_PARAMS * map_length);
+					 NUM_SWRS_DT_PARAMS * map_length);
 	if (ret) {
 		dev_err(dev, "%s: Failed to read  port mapping from prop %s\n",
-					__func__, prop);
+			__func__, prop);
 		ret = -EINVAL;
 		goto err_pdata_fail;
 	}
@@ -248,7 +244,7 @@ err:
 }
 
 static int rouleur_tx_connect_port(struct snd_soc_component *component,
-					u8 slv_port_type, u8 enable)
+				   u8 slv_port_type, u8 enable)
 {
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	u8 port_id;
@@ -260,8 +256,8 @@ static int rouleur_tx_connect_port(struct snd_soc_component *component,
 	int ret = 0;
 
 	ret = rouleur_set_port_params(component, slv_port_type, &port_id,
-				&num_ch, &ch_mask, &ch_rate,
-				&port_type, CODEC_TX);
+				      &num_ch, &ch_mask, &ch_rate, &port_type,
+				      CODEC_TX);
 
 	if (ret) {
 		dev_err(rouleur->dev, "%s:Failed to set port params: %d\n",
@@ -270,17 +266,15 @@ static int rouleur_tx_connect_port(struct snd_soc_component *component,
 	}
 
 	if (enable)
-		ret = swr_connect_port(rouleur->tx_swr_dev, &port_id,
-					num_port, &ch_mask, &ch_rate,
-					 &num_ch, &port_type);
+		ret = swr_connect_port(rouleur->tx_swr_dev, &port_id, num_port,
+				       &ch_mask, &ch_rate, &num_ch, &port_type);
 	else
 		ret = swr_disconnect_port(rouleur->tx_swr_dev, &port_id,
-					num_port, &ch_mask, &port_type);
+					  num_port, &ch_mask, &port_type);
 	return ret;
-
 }
 static int rouleur_rx_connect_port(struct snd_soc_component *component,
-					u8 slv_port_type, u8 enable)
+				   u8 slv_port_type, u8 enable)
 {
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	u8 port_id;
@@ -292,8 +286,8 @@ static int rouleur_rx_connect_port(struct snd_soc_component *component,
 	int ret = 0;
 
 	ret = rouleur_set_port_params(component, slv_port_type, &port_id,
-				&num_ch, &ch_mask, &ch_rate,
-				&port_type, CODEC_RX);
+				      &num_ch, &ch_mask, &ch_rate, &port_type,
+				      CODEC_RX);
 
 	if (ret) {
 		dev_err(rouleur->dev, "%s:Failed to set port params: %d\n",
@@ -302,12 +296,11 @@ static int rouleur_rx_connect_port(struct snd_soc_component *component,
 	}
 
 	if (enable)
-		ret = swr_connect_port(rouleur->rx_swr_dev, &port_id,
-					num_port, &ch_mask, &ch_rate,
-					&num_ch, &port_type);
+		ret = swr_connect_port(rouleur->rx_swr_dev, &port_id, num_port,
+				       &ch_mask, &ch_rate, &num_ch, &port_type);
 	else
 		ret = swr_disconnect_port(rouleur->rx_swr_dev, &port_id,
-					num_port, &ch_mask, &port_type);
+					  num_port, &ch_mask, &port_type);
 	return ret;
 }
 
@@ -317,10 +310,10 @@ int rouleur_global_mbias_enable(struct snd_soc_component *component)
 
 	mutex_lock(&rouleur->main_bias_lock);
 	if (rouleur->mbias_cnt == 0) {
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_MBIAS_EN, 0x20, 0x20);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_MBIAS_EN, 0x10, 0x10);
+		snd_soc_component_update_bits(component, ROULEUR_ANA_MBIAS_EN,
+					      0x20, 0x20);
+		snd_soc_component_update_bits(component, ROULEUR_ANA_MBIAS_EN,
+					      0x10, 0x10);
 		usleep_range(1000, 1100);
 	}
 	rouleur->mbias_cnt++;
@@ -341,10 +334,10 @@ int rouleur_global_mbias_disable(struct snd_soc_component *component)
 	}
 	rouleur->mbias_cnt--;
 	if (rouleur->mbias_cnt == 0) {
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_MBIAS_EN, 0x10, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_MBIAS_EN, 0x20, 0x00);
+		snd_soc_component_update_bits(component, ROULEUR_ANA_MBIAS_EN,
+					      0x10, 0x00);
+		snd_soc_component_update_bits(component, ROULEUR_ANA_MBIAS_EN,
+					      0x20, 0x00);
 	}
 	mutex_unlock(&rouleur->main_bias_lock);
 
@@ -357,20 +350,20 @@ static int rouleur_rx_clk_enable(struct snd_soc_component *component)
 
 	mutex_lock(&rouleur->rx_clk_lock);
 	if (rouleur->rx_clk_cnt == 0) {
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x10, 0x10);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x20, 0x20);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x10, 0x10);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x20, 0x20);
 		usleep_range(5000, 5100);
 		rouleur_global_mbias_enable(component);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_FSM_CLK, 0x7F, 0x11);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_FSM_CLK, 0x80, 0x80);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_NCP_VCTRL, 0x07, 0x06);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_NCP_EN, 0x01, 0x01);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_HPHPA_FSM_CLK, 0x7F, 0x11);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_HPHPA_FSM_CLK, 0x80, 0x80);
+		snd_soc_component_update_bits(component, ROULEUR_ANA_NCP_VCTRL,
+					      0x07, 0x06);
+		snd_soc_component_update_bits(component, ROULEUR_ANA_NCP_EN,
+					      0x01, 0x01);
 		usleep_range(500, 510);
 	}
 	rouleur->rx_clk_cnt++;
@@ -391,18 +384,17 @@ static int rouleur_rx_clk_disable(struct snd_soc_component *component)
 	}
 	rouleur->rx_clk_cnt--;
 	if (rouleur->rx_clk_cnt == 0) {
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_FSM_CLK, 0x80, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_FSM_CLK, 0x7F, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_NCP_EN, 0x01, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x20, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x10, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_HPHPA_FSM_CLK, 0x80, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_HPHPA_FSM_CLK, 0x7F, 0x00);
+		snd_soc_component_update_bits(component, ROULEUR_ANA_NCP_EN,
+					      0x01, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x20, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x10, 0x00);
 		rouleur_global_mbias_disable(component);
-
 	}
 	mutex_unlock(&rouleur->rx_clk_lock);
 	return 0;
@@ -438,70 +430,64 @@ static int rouleur_codec_hphl_dac_event(struct snd_soc_dapm_widget *w,
 					int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		rouleur_rx_clk_enable(component);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_CNP_CTL_1,
-				0x02, 0x02);
-		snd_soc_component_update_bits(component,
-				ROULEUR_SWR_HPHPA_HD2,
-				0x38, 0x38);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_HPHPA_CNP_CTL_1, 0x02, 0x02);
+		snd_soc_component_update_bits(component, ROULEUR_SWR_HPHPA_HD2,
+					      0x38, 0x38);
 		set_bit(HPH_COMP_DELAY, &rouleur->status_mask);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		if (rouleur->comp1_enable) {
-			snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
-				0x02, 0x02);
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_COMP_CTL_0, 0x02,
+				0x02);
 
 			if (rouleur->comp2_enable)
-				snd_soc_component_update_bits(component,
-					ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
-					0x01, 0x01);
+				snd_soc_component_update_bits(
+					component,
+					ROULEUR_DIG_SWR_CDC_COMP_CTL_0, 0x01,
+					0x01);
 			/*
-			 * 5ms sleep is required after COMP is enabled as per
-			 * HW requirement
-			 */
+       * 5ms sleep is required after COMP is enabled as per
+       * HW requirement
+       */
 			if (test_bit(HPH_COMP_DELAY, &rouleur->status_mask)) {
 				usleep_range(5000, 5100);
 				clear_bit(HPH_COMP_DELAY,
-					&rouleur->status_mask);
+					  &rouleur->status_mask);
 			}
 		} else {
-			snd_soc_component_update_bits(component,
-					ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
-					0x02, 0x00);
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_COMP_CTL_0, 0x02,
+				0x00);
 		}
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX0_CTL,
-				0x80, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
-				0x04, 0x04);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x01, 0x01);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX0_CTL, 0x80, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL, 0x04, 0x04);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x01, 0x01);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL,
-				0x01, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
-				0x04, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX0_CTL,
-				0x80, 0x80);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x01, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL, 0x04, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX0_CTL, 0x80, 0x80);
 		if (rouleur->comp1_enable)
-			snd_soc_component_update_bits(component,
-					ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
-					0x02, 0x00);
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_COMP_CTL_0, 0x02,
+				0x00);
 		break;
 	}
 
@@ -513,115 +499,102 @@ static int rouleur_codec_hphr_dac_event(struct snd_soc_dapm_widget *w,
 					int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		rouleur_rx_clk_enable(component);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_HPHPA_CNP_CTL_1,
-				0x02, 0x02);
-		snd_soc_component_update_bits(component,
-				ROULEUR_SWR_HPHPA_HD2,
-				0x07, 0x07);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_HPHPA_CNP_CTL_1, 0x02, 0x02);
+		snd_soc_component_update_bits(component, ROULEUR_SWR_HPHPA_HD2,
+					      0x07, 0x07);
 		set_bit(HPH_COMP_DELAY, &rouleur->status_mask);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		if (rouleur->comp2_enable) {
-			snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
-				0x01, 0x01);
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_COMP_CTL_0, 0x01,
+				0x01);
 
 			if (rouleur->comp1_enable)
-				snd_soc_component_update_bits(component,
-					ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
-					0x02, 0x02);
+				snd_soc_component_update_bits(
+					component,
+					ROULEUR_DIG_SWR_CDC_COMP_CTL_0, 0x02,
+					0x02);
 			/*
-			 * 5ms sleep is required after COMP is enabled as per
-			 * HW requirement
-			 */
+       * 5ms sleep is required after COMP is enabled as per
+       * HW requirement
+       */
 			if (test_bit(HPH_COMP_DELAY, &rouleur->status_mask)) {
 				usleep_range(5000, 5100);
 				clear_bit(HPH_COMP_DELAY,
-					&rouleur->status_mask);
+					  &rouleur->status_mask);
 			}
 		} else {
-			snd_soc_component_update_bits(component,
-					ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
-					0x01, 0x00);
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_COMP_CTL_0, 0x01,
+				0x00);
 		}
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX1_CTL,
-				0x80, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
-				0x08, 0x08);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x02, 0x02);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX1_CTL, 0x80, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL, 0x08, 0x08);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x02, 0x02);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		snd_soc_component_update_bits(component,
-			ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x02, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
-				0x08, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX1_CTL,
-				0x80, 0x80);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x02, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL, 0x08, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX1_CTL, 0x80, 0x80);
 		if (rouleur->comp2_enable)
-			snd_soc_component_update_bits(component,
-					ROULEUR_DIG_SWR_CDC_COMP_CTL_0,
-					0x01, 0x00);
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_COMP_CTL_0, 0x01,
+				0x00);
 		break;
-
 	}
 
 	return 0;
 }
 
 static int rouleur_codec_ear_lo_dac_event(struct snd_soc_dapm_widget *w,
-				       struct snd_kcontrol *kcontrol,
-				       int event)
+					  struct snd_kcontrol *kcontrol,
+					  int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		rouleur_rx_clk_enable(component);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX0_CTL,
-				0x80, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL,
-				0x01, 0x01);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
-				0x04, 0x04);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX0_CTL, 0x80, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x01, 0x01);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL, 0x04, 0x04);
 
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_CLK_CTL,
-				0x01, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL,
-				0x04, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_RX0_CTL,
-				0x80, 0x80);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_CLK_CTL, 0x01, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX_GAIN_CTL, 0x04, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_RX0_CTL, 0x80, 0x80);
 
 		break;
 	};
 	return 0;
-
 }
 
 static int rouleur_codec_enable_hphr_pa(struct snd_soc_dapm_widget *w,
@@ -629,35 +602,34 @@ static int rouleur_codec_enable_hphr_pa(struct snd_soc_dapm_widget *w,
 					int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	int ret = 0;
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
-				    rouleur->rx_swr_dev->dev_num,
-				    true);
+						  rouleur->rx_swr_dev->dev_num,
+						  true);
 
 		set_bit(HPH_PA_DELAY, &rouleur->status_mask);
 		usleep_range(200, 210);
 		/* Enable HD2 Config for HPHR if foundry id is SEC */
 		if (rouleur->foundry_id == FOUNDRY_ID_SEC)
-			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_HPHR_HD2_ENABLE,
-						0x04);
-		snd_soc_component_update_bits(component,
-			ROULEUR_DIG_SWR_PDM_WD_CTL1,
-			0x03, 0x03);
+			rouleur->update_wcd_event(
+				rouleur->handle, SLV_BOLERO_EVT_HPHR_HD2_ENABLE,
+				0x04);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_PDM_WD_CTL1, 0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		/*
-		 * 5ms sleep is required after PA is enabled as per
-		 * HW requirement.
-		 */
+     * 5ms sleep is required after PA is enabled as per
+     * HW requirement.
+     */
 		if (test_bit(HPH_PA_DELAY, &rouleur->status_mask)) {
 			usleep_range(5000, 5100);
 			clear_bit(HPH_PA_DELAY, &rouleur->status_mask);
@@ -665,18 +637,17 @@ static int rouleur_codec_enable_hphr_pa(struct snd_soc_dapm_widget *w,
 
 		if (rouleur->update_wcd_event)
 			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_RX_MUTE,
-						(WCD_RX2 << 0x10));
-		wcd_enable_irq(&rouleur->irq_info,
-				ROULEUR_IRQ_HPHR_PDM_WD_INT);
+						  SLV_BOLERO_EVT_RX_MUTE,
+						  (WCD_RX2 << 0x10));
+		wcd_enable_irq(&rouleur->irq_info, ROULEUR_IRQ_HPHR_PDM_WD_INT);
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
 		wcd_disable_irq(&rouleur->irq_info,
 				ROULEUR_IRQ_HPHR_PDM_WD_INT);
 		if (rouleur->update_wcd_event)
 			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_RX_MUTE,
-						(WCD_RX2 << 0x10 | 0x1));
+						  SLV_BOLERO_EVT_RX_MUTE,
+						  (WCD_RX2 << 0x10 | 0x1));
 		blocking_notifier_call_chain(&rouleur->mbhc->notifier,
 					     WCD_EVENT_PRE_HPHR_PA_OFF,
 					     &rouleur->mbhc->wcd_mbhc);
@@ -684,25 +655,23 @@ static int rouleur_codec_enable_hphr_pa(struct snd_soc_dapm_widget *w,
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		/*
-		 * 5ms sleep is required after PA is disabled as per
-		 * HW requirement.
-		 */
+     * 5ms sleep is required after PA is disabled as per
+     * HW requirement.
+     */
 		if (test_bit(HPH_PA_DELAY, &rouleur->status_mask)) {
-
 			usleep_range(5000, 5100);
 			clear_bit(HPH_PA_DELAY, &rouleur->status_mask);
 		}
 
 		if (rouleur->foundry_id == FOUNDRY_ID_SEC)
-			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_HPHR_HD2_ENABLE,
-						0x00);
+			rouleur->update_wcd_event(
+				rouleur->handle, SLV_BOLERO_EVT_HPHR_HD2_ENABLE,
+				0x00);
 		blocking_notifier_call_chain(&rouleur->mbhc->notifier,
 					     WCD_EVENT_POST_HPHR_PA_OFF,
 					     &rouleur->mbhc->wcd_mbhc);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL1,
-				0x03, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_PDM_WD_CTL1, 0x03, 0x00);
 		break;
 	};
 	return ret;
@@ -713,33 +682,32 @@ static int rouleur_codec_enable_hphl_pa(struct snd_soc_dapm_widget *w,
 					int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	int ret = 0;
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
-				    rouleur->rx_swr_dev->dev_num,
-				    true);
+						  rouleur->rx_swr_dev->dev_num,
+						  true);
 		set_bit(HPH_PA_DELAY, &rouleur->status_mask);
 		usleep_range(200, 210);
 		if (rouleur->foundry_id == FOUNDRY_ID_SEC)
-			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_HPHL_HD2_ENABLE,
-						0x04);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL0,
-				0x03, 0x03);
+			rouleur->update_wcd_event(
+				rouleur->handle, SLV_BOLERO_EVT_HPHL_HD2_ENABLE,
+				0x04);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_PDM_WD_CTL0, 0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		/*
-		 * 5ms sleep is required after PA is enabled as per
-		 * HW requirement.
-		 */
+     * 5ms sleep is required after PA is enabled as per
+     * HW requirement.
+     */
 		if (test_bit(HPH_PA_DELAY, &rouleur->status_mask)) {
 			usleep_range(5000, 5100);
 			clear_bit(HPH_PA_DELAY, &rouleur->status_mask);
@@ -747,18 +715,17 @@ static int rouleur_codec_enable_hphl_pa(struct snd_soc_dapm_widget *w,
 
 		if (rouleur->update_wcd_event)
 			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_RX_MUTE,
-						(WCD_RX1 << 0x10));
-		wcd_enable_irq(&rouleur->irq_info,
-				ROULEUR_IRQ_HPHL_PDM_WD_INT);
+						  SLV_BOLERO_EVT_RX_MUTE,
+						  (WCD_RX1 << 0x10));
+		wcd_enable_irq(&rouleur->irq_info, ROULEUR_IRQ_HPHL_PDM_WD_INT);
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
 		wcd_disable_irq(&rouleur->irq_info,
 				ROULEUR_IRQ_HPHL_PDM_WD_INT);
 		if (rouleur->update_wcd_event)
 			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_RX_MUTE,
-						(WCD_RX1 << 0x10 | 0x1));
+						  SLV_BOLERO_EVT_RX_MUTE,
+						  (WCD_RX1 << 0x10 | 0x1));
 		blocking_notifier_call_chain(&rouleur->mbhc->notifier,
 					     WCD_EVENT_PRE_HPHL_PA_OFF,
 					     &rouleur->mbhc->wcd_mbhc);
@@ -766,24 +733,23 @@ static int rouleur_codec_enable_hphl_pa(struct snd_soc_dapm_widget *w,
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		/*
-		 * 5ms sleep is required after PA is disabled as per
-		 * HW requirement.
-		 */
+     * 5ms sleep is required after PA is disabled as per
+     * HW requirement.
+     */
 		if (test_bit(HPH_PA_DELAY, &rouleur->status_mask)) {
 			usleep_range(5000, 5100);
 			clear_bit(HPH_PA_DELAY, &rouleur->status_mask);
 		}
 
 		if (rouleur->foundry_id == FOUNDRY_ID_SEC)
-			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_HPHL_HD2_ENABLE,
-						0x00);
+			rouleur->update_wcd_event(
+				rouleur->handle, SLV_BOLERO_EVT_HPHL_HD2_ENABLE,
+				0x00);
 		blocking_notifier_call_chain(&rouleur->mbhc->notifier,
 					     WCD_EVENT_POST_HPHL_PA_OFF,
 					     &rouleur->mbhc->wcd_mbhc);
-		snd_soc_component_update_bits(component,
-			ROULEUR_DIG_SWR_PDM_WD_CTL0,
-			0x03, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_PDM_WD_CTL0, 0x03, 0x00);
 
 		break;
 	};
@@ -791,148 +757,130 @@ static int rouleur_codec_enable_hphl_pa(struct snd_soc_dapm_widget *w,
 }
 
 static int rouleur_codec_enable_ear_pa(struct snd_soc_dapm_widget *w,
-				       struct snd_kcontrol *kcontrol,
-				       int event)
+				       struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	int ret = 0;
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
-			    rouleur->rx_swr_dev->dev_num,
-			    true);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL_5,
-				0x04, 0x00);
+						  rouleur->rx_swr_dev->dev_num,
+						  true);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL_5, 0x04, 0x00);
 		usleep_range(1000, 1010);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL_4,
-				0x0F, 0x0F);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL_4, 0x0F, 0x0F);
 		usleep_range(1000, 1010);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x40, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL, 0x40, 0x00);
 		if (rouleur->foundry_id == FOUNDRY_ID_SEC)
-			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_HPHL_HD2_ENABLE,
-						0x04);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL0,
-				0x03, 0x03);
+			rouleur->update_wcd_event(
+				rouleur->handle, SLV_BOLERO_EVT_HPHL_HD2_ENABLE,
+				0x04);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_PDM_WD_CTL0, 0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		usleep_range(5000, 5100);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL_4,
-				0x0F, 0x04);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL_4, 0x0F, 0x04);
 		if (rouleur->update_wcd_event)
 			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_RX_MUTE,
-						(WCD_RX1 << 0x10));
-		wcd_enable_irq(&rouleur->irq_info,
-				ROULEUR_IRQ_HPHL_PDM_WD_INT);
+						  SLV_BOLERO_EVT_RX_MUTE,
+						  (WCD_RX1 << 0x10));
+		wcd_enable_irq(&rouleur->irq_info, ROULEUR_IRQ_HPHL_PDM_WD_INT);
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
 		wcd_disable_irq(&rouleur->irq_info,
 				ROULEUR_IRQ_HPHL_PDM_WD_INT);
 		if (rouleur->update_wcd_event)
 			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_RX_MUTE,
-						(WCD_RX1 << 0x10 | 0x1));
+						  SLV_BOLERO_EVT_RX_MUTE,
+						  (WCD_RX1 << 0x10 | 0x1));
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		usleep_range(5000, 5100);
 		if (rouleur->foundry_id == FOUNDRY_ID_SEC)
-			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_HPHL_HD2_ENABLE,
-						0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL0,
-				0x03, 0x00);
+			rouleur->update_wcd_event(
+				rouleur->handle, SLV_BOLERO_EVT_HPHL_HD2_ENABLE,
+				0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_PDM_WD_CTL0, 0x03, 0x00);
 	};
 	return ret;
 }
 
 static int rouleur_codec_enable_lo_pa(struct snd_soc_dapm_widget *w,
-				       struct snd_kcontrol *kcontrol,
-				       int event)
+				      struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	int ret = 0;
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
-			    rouleur->rx_swr_dev->dev_num,
-			    true);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL_5,
-				0x04, 0x00);
+						  rouleur->rx_swr_dev->dev_num,
+						  true);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL_5, 0x04, 0x00);
 		usleep_range(1000, 1010);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL_4,
-				0x0F, 0x0F);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL_4, 0x0F, 0x0F);
 		usleep_range(1000, 1010);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x40, 0x40);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL0,
-				0x03, 0x03);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL, 0x40, 0x40);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_PDM_WD_CTL0, 0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		usleep_range(5000, 5100);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL_4,
-				0x0F, 0x04);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL_4, 0x0F, 0x04);
 		if (rouleur->update_wcd_event)
 			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_RX_MUTE,
-						(WCD_RX1 << 0x10));
-		wcd_enable_irq(&rouleur->irq_info,
-				ROULEUR_IRQ_HPHL_PDM_WD_INT);
+						  SLV_BOLERO_EVT_RX_MUTE,
+						  (WCD_RX1 << 0x10));
+		wcd_enable_irq(&rouleur->irq_info, ROULEUR_IRQ_HPHL_PDM_WD_INT);
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
 		wcd_disable_irq(&rouleur->irq_info,
-					ROULEUR_IRQ_HPHL_PDM_WD_INT);
+				ROULEUR_IRQ_HPHL_PDM_WD_INT);
 		if (rouleur->update_wcd_event)
 			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_RX_MUTE,
-						(WCD_RX1 << 0x10 | 0x1));
+						  SLV_BOLERO_EVT_RX_MUTE,
+						  (WCD_RX1 << 0x10 | 0x1));
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x40, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL, 0x40, 0x00);
 		usleep_range(5000, 5100);
-		snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_PDM_WD_CTL0,
-				0x03, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_PDM_WD_CTL0, 0x03, 0x00);
 	};
 	return ret;
 }
 
 static int rouleur_enable_rx1(struct snd_soc_dapm_widget *w,
-			      struct snd_kcontrol *kcontrol,
-			      int event)
+			      struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
@@ -954,11 +902,11 @@ static int rouleur_enable_rx2(struct snd_soc_dapm_widget *w,
 			      struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
@@ -978,11 +926,10 @@ static int rouleur_enable_rx2(struct snd_soc_dapm_widget *w,
 }
 
 static int rouleur_codec_enable_dmic(struct snd_soc_dapm_widget *w,
-				     struct snd_kcontrol *kcontrol,
-				     int event)
+				     struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	u16 dmic_clk_reg;
 	s32 *dmic_clk_cnt;
@@ -1004,8 +951,8 @@ static int rouleur_codec_enable_dmic(struct snd_soc_dapm_widget *w,
 		return -EINVAL;
 	}
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (dmic) {
 	case 0:
@@ -1019,47 +966,45 @@ static int rouleur_codec_enable_dmic(struct snd_soc_dapm_widget *w,
 		return -EINVAL;
 	};
 	dev_dbg(component->dev, "%s: event %d DMIC%d dmic_clk_cnt %d\n",
-			__func__, event,  dmic, *dmic_clk_cnt);
+		__func__, event, dmic, *dmic_clk_cnt);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
-		snd_soc_component_update_bits(component,
-			ROULEUR_DIG_SWR_CDC_AMIC_CTL, 0x02, 0x00);
-		snd_soc_component_update_bits(component,
-			dmic_clk_reg, 0x08, 0x08);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_AMIC_CTL, 0x02, 0x00);
+		snd_soc_component_update_bits(component, dmic_clk_reg, 0x08,
+					      0x08);
 		rouleur_tx_connect_port(component, DMIC0 + (w->shift), true);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		rouleur_tx_connect_port(component, DMIC0 + (w->shift), false);
-		snd_soc_component_update_bits(component,
-			dmic_clk_reg, 0x08, 0x00);
-		snd_soc_component_update_bits(component,
-			ROULEUR_DIG_SWR_CDC_AMIC_CTL, 0x02, 0x02);
+		snd_soc_component_update_bits(component, dmic_clk_reg, 0x08,
+					      0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_DIG_SWR_CDC_AMIC_CTL, 0x02, 0x02);
 		break;
-
 	};
 	return 0;
 }
 
 static int rouleur_tx_swr_ctrl(struct snd_soc_dapm_widget *w,
-				    struct snd_kcontrol *kcontrol,
-				    int event)
+			       struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	int ret = 0;
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		ret = swr_slvdev_datapath_control(rouleur->tx_swr_dev,
-		    rouleur->tx_swr_dev->dev_num,
-		    true);
+						  rouleur->tx_swr_dev->dev_num,
+						  true);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		ret = swr_slvdev_datapath_control(rouleur->tx_swr_dev,
-		    rouleur->tx_swr_dev->dev_num,
-		    false);
+						  rouleur->tx_swr_dev->dev_num,
+						  false);
 		break;
 	};
 
@@ -1067,50 +1012,50 @@ static int rouleur_tx_swr_ctrl(struct snd_soc_dapm_widget *w,
 }
 
 static int rouleur_codec_enable_adc(struct snd_soc_dapm_widget *w,
-				    struct snd_kcontrol *kcontrol,
-				    int event)
+				    struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
-	struct rouleur_priv *rouleur =
-			snd_soc_component_get_drvdata(component);
+		snd_soc_dapm_to_component(w->dapm);
+	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		/* Enable BCS for Headset mic */
-		if (w->shift == 1 && !(snd_soc_component_read32(component,
-				ROULEUR_ANA_TX_AMIC2) & 0x10)) {
+		if (w->shift == 1 &&
+		    !(snd_soc_component_read32(component,
+					       ROULEUR_ANA_TX_AMIC2) &
+		      0x10)) {
 			rouleur_tx_connect_port(component, MBHC, true);
 			set_bit(AMIC2_BCS_ENABLE, &rouleur->status_mask);
 		}
 		rouleur_tx_connect_port(component, ADC1 + (w->shift), true);
 		rouleur_global_mbias_enable(component);
 		if (w->shift)
-			snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_TX_ANA_MODE_0_1,
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_TX_ANA_MODE_0_1,
 				0x30, 0x30);
 		else
-			snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_TX_ANA_MODE_0_1,
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_TX_ANA_MODE_0_1,
 				0x03, 0x03);
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		rouleur_tx_connect_port(component, ADC1 + (w->shift), false);
 		if (w->shift == 1 &&
-			test_bit(AMIC2_BCS_ENABLE, &rouleur->status_mask)) {
+		    test_bit(AMIC2_BCS_ENABLE, &rouleur->status_mask)) {
 			rouleur_tx_connect_port(component, MBHC, false);
 			clear_bit(AMIC2_BCS_ENABLE, &rouleur->status_mask);
 		}
 		if (w->shift)
-			snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_TX_ANA_MODE_0_1,
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_TX_ANA_MODE_0_1,
 				0x30, 0x00);
 		else
-			snd_soc_component_update_bits(component,
-				ROULEUR_DIG_SWR_CDC_TX_ANA_MODE_0_1,
+			snd_soc_component_update_bits(
+				component, ROULEUR_DIG_SWR_CDC_TX_ANA_MODE_0_1,
 				0x03, 0x00);
 		rouleur_global_mbias_disable(component);
 		break;
@@ -1146,10 +1091,9 @@ EXPORT_SYMBOL(rouleur_get_micb_vout_ctl_val);
  * return 0 if adjustment is success or error code in case of failure
  */
 int rouleur_mbhc_micb_adjust_voltage(struct snd_soc_component *component,
-				   int req_volt, int micb_num)
+				     int req_volt, int micb_num)
 {
-	struct rouleur_priv *rouleur =
-			snd_soc_component_get_drvdata(component);
+	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	int cur_vout_ctl, req_vout_ctl;
 	int micb_reg, micb_val, micb_en;
 	int ret = 0;
@@ -1176,15 +1120,16 @@ int rouleur_mbhc_micb_adjust_voltage(struct snd_soc_component *component,
 	mutex_lock(&rouleur->micb_lock);
 
 	/*
-	 * If requested micbias voltage is same as current micbias
-	 * voltage, then just return. Otherwise, adjust voltage as
-	 * per requested value. If micbias is already enabled, then
-	 * to avoid slow micbias ramp-up or down enable pull-up
-	 * momentarily, change the micbias value and then re-enable
-	 * micbias.
-	 */
-	cur_vout_ctl = (snd_soc_component_read32(component,
-				ROULEUR_ANA_MICBIAS_LDO_1_SETTING)) & 0xF8;
+   * If requested micbias voltage is same as current micbias
+   * voltage, then just return. Otherwise, adjust voltage as
+   * per requested value. If micbias is already enabled, then
+   * to avoid slow micbias ramp-up or down enable pull-up
+   * momentarily, change the micbias value and then re-enable
+   * micbias.
+   */
+	cur_vout_ctl = (snd_soc_component_read32(
+			       component, ROULEUR_ANA_MICBIAS_LDO_1_SETTING)) &
+		       0xF8;
 	cur_vout_ctl = cur_vout_ctl >> 3;
 	req_vout_ctl = rouleur_get_micb_vout_ctl_val(req_volt);
 	if (req_vout_ctl < 0) {
@@ -1196,24 +1141,26 @@ int rouleur_mbhc_micb_adjust_voltage(struct snd_soc_component *component,
 		goto exit;
 	}
 
-	dev_dbg(component->dev, "%s: micb_num: %d, cur_mv: %d, req_mv: %d, micb_en: %d\n",
-		 __func__, micb_num, WCD_VOUT_CTL_TO_MICB(cur_vout_ctl),
-		 req_volt, micb_en);
+	dev_dbg(component->dev,
+		"%s: micb_num: %d, cur_mv: %d, req_mv: %d, micb_en: %d\n",
+		__func__, micb_num, WCD_VOUT_CTL_TO_MICB(cur_vout_ctl),
+		req_volt, micb_en);
 
 	if (micb_en == 0x1)
 		snd_soc_component_update_bits(component, micb_reg, pullup_mask,
 					      pullup_mask);
 
 	snd_soc_component_update_bits(component,
-		ROULEUR_ANA_MICBIAS_LDO_1_SETTING, 0xF8, req_vout_ctl << 3);
+				      ROULEUR_ANA_MICBIAS_LDO_1_SETTING, 0xF8,
+				      req_vout_ctl << 3);
 
 	if (micb_en == 0x1) {
-		snd_soc_component_update_bits(component, micb_reg,
-					      pullup_mask, 0x00);
+		snd_soc_component_update_bits(component, micb_reg, pullup_mask,
+					      0x00);
 		/*
-		 * Add 2ms delay as per HW requirement after enabling
-		 * micbias
-		 */
+     * Add 2ms delay as per HW requirement after enabling
+     * micbias
+     */
 		usleep_range(2000, 2100);
 	}
 exit:
@@ -1222,10 +1169,9 @@ exit:
 }
 EXPORT_SYMBOL(rouleur_mbhc_micb_adjust_voltage);
 
-int rouleur_micbias_control(struct snd_soc_component *component,
-				int micb_num, int req, bool is_dapm)
+int rouleur_micbias_control(struct snd_soc_component *component, int micb_num,
+			    int req, bool is_dapm)
 {
-
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	int micb_index = micb_num - 1;
 	u16 micb_reg;
@@ -1236,8 +1182,9 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 	int ret = 0;
 
 	if ((micb_index < 0) || (micb_index > ROULEUR_MAX_MICBIAS - 1)) {
-		dev_err(component->dev, "%s: Invalid micbias index, micb_ind:%d\n",
-			__func__, micb_index);
+		dev_err(component->dev,
+			"%s: Invalid micbias index, micb_ind:%d\n", __func__,
+			micb_index);
 		return -EINVAL;
 	}
 	switch (micb_num) {
@@ -1270,8 +1217,9 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 	switch (req) {
 	case MICB_PULLUP_ENABLE:
 		if (!rouleur->dev_up) {
-			dev_dbg(component->dev, "%s: enable req %d wcd device down\n",
-				__func__, req);
+			dev_dbg(component->dev,
+				"%s: enable req %d wcd device down\n", __func__,
+				req);
 			ret = -ENODEV;
 			goto done;
 		}
@@ -1279,12 +1227,13 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 		if ((rouleur->pullup_ref[micb_index] == 1) &&
 		    (rouleur->micb_ref[micb_index] == 0))
 			snd_soc_component_update_bits(component, micb_reg,
-				pullup_mask, pullup_mask);
+						      pullup_mask, pullup_mask);
 		break;
 	case MICB_PULLUP_DISABLE:
 		if (!rouleur->dev_up) {
-			dev_dbg(component->dev, "%s: enable req %d wcd device down\n",
-				__func__, req);
+			dev_dbg(component->dev,
+				"%s: enable req %d wcd device down\n", __func__,
+				req);
 			ret = -ENODEV;
 			goto done;
 		}
@@ -1293,45 +1242,47 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 		if ((rouleur->pullup_ref[micb_index] == 0) &&
 		    (rouleur->micb_ref[micb_index] == 0))
 			snd_soc_component_update_bits(component, micb_reg,
-				pullup_mask, 0x00);
+						      pullup_mask, 0x00);
 		break;
 	case MICB_ENABLE:
 		if (!rouleur->dev_up) {
-			dev_dbg(component->dev, "%s: enable req %d wcd device down\n",
-				__func__, req);
+			dev_dbg(component->dev,
+				"%s: enable req %d wcd device down\n", __func__,
+				req);
 			ret = -ENODEV;
 			goto done;
 		}
 		rouleur->micb_ref[micb_index]++;
 		if (rouleur->micb_ref[micb_index] == 1) {
 			rouleur_global_mbias_enable(component);
-			snd_soc_component_update_bits(component,
-				micb_reg, enable_mask, enable_mask);
+			snd_soc_component_update_bits(component, micb_reg,
+						      enable_mask, enable_mask);
 			if (post_on_event)
 				blocking_notifier_call_chain(
 					&rouleur->mbhc->notifier, post_on_event,
 					&rouleur->mbhc->wcd_mbhc);
 		}
 		if (is_dapm && post_dapm_on && rouleur->mbhc)
-			blocking_notifier_call_chain(
-				&rouleur->mbhc->notifier, post_dapm_on,
-				&rouleur->mbhc->wcd_mbhc);
+			blocking_notifier_call_chain(&rouleur->mbhc->notifier,
+						     post_dapm_on,
+						     &rouleur->mbhc->wcd_mbhc);
 		break;
 	case MICB_DISABLE:
 		if (rouleur->micb_ref[micb_index] > 0)
 			rouleur->micb_ref[micb_index]--;
 		if (!rouleur->dev_up) {
-			dev_dbg(component->dev, "%s: enable req %d wcd device down\n",
-				__func__, req);
+			dev_dbg(component->dev,
+				"%s: enable req %d wcd device down\n", __func__,
+				req);
 			ret = -ENODEV;
 			goto done;
 		}
 		if ((rouleur->micb_ref[micb_index] == 0) &&
 		    (rouleur->pullup_ref[micb_index] > 0)) {
 			snd_soc_component_update_bits(component, micb_reg,
-				pullup_mask, pullup_mask);
-                        snd_soc_component_update_bits(component, micb_reg,
-                                enable_mask, 0x00);
+						      pullup_mask, pullup_mask);
+			snd_soc_component_update_bits(component, micb_reg,
+						      enable_mask, 0x00);
 			rouleur_global_mbias_disable(component);
 		} else if ((rouleur->micb_ref[micb_index] == 0) &&
 			   (rouleur->pullup_ref[micb_index] == 0)) {
@@ -1339,8 +1290,8 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 				blocking_notifier_call_chain(
 					&rouleur->mbhc->notifier, pre_off_event,
 					&rouleur->mbhc->wcd_mbhc);
-                        snd_soc_component_update_bits(component, micb_reg,
-                                enable_mask, 0x00);
+			snd_soc_component_update_bits(component, micb_reg,
+						      enable_mask, 0x00);
 			rouleur_global_mbias_disable(component);
 			if (post_off_event && rouleur->mbhc)
 				blocking_notifier_call_chain(
@@ -1349,14 +1300,15 @@ int rouleur_micbias_control(struct snd_soc_component *component,
 					&rouleur->mbhc->wcd_mbhc);
 		}
 		if (is_dapm && post_dapm_off && rouleur->mbhc)
-			blocking_notifier_call_chain(
-				&rouleur->mbhc->notifier, post_dapm_off,
-				&rouleur->mbhc->wcd_mbhc);
+			blocking_notifier_call_chain(&rouleur->mbhc->notifier,
+						     post_dapm_off,
+						     &rouleur->mbhc->wcd_mbhc);
 		break;
 	};
 
-	dev_dbg(component->dev, "%s: micb_num:%d, micb_ref: %d, pullup_ref: %d\n",
-		__func__, micb_num, rouleur->micb_ref[micb_index],
+	dev_dbg(component->dev,
+		"%s: micb_num:%d, micb_ref: %d, pullup_ref: %d\n", __func__,
+		micb_num, rouleur->micb_ref[micb_index],
 		rouleur->pullup_ref[micb_index]);
 done:
 	mutex_unlock(&rouleur->micb_lock);
@@ -1371,11 +1323,11 @@ void rouleur_disable_bcs_before_slow_insert(struct snd_soc_component *component,
 
 	if (rouleur->update_wcd_event) {
 		if (bcs_disable)
-			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_BCS_CLK_OFF, 0);
+			rouleur->update_wcd_event(
+				rouleur->handle, SLV_BOLERO_EVT_BCS_CLK_OFF, 0);
 		else
-			rouleur->update_wcd_event(rouleur->handle,
-						SLV_BOLERO_EVT_BCS_CLK_OFF, 1);
+			rouleur->update_wcd_event(
+				rouleur->handle, SLV_BOLERO_EVT_BCS_CLK_OFF, 1);
 	}
 }
 
@@ -1403,15 +1355,15 @@ static bool get_usbc_hs_status(struct snd_soc_component *component,
 			       struct wcd_mbhc_config *mbhc_cfg)
 {
 	if (mbhc_cfg->enable_usbc_analog) {
-		if (!(snd_soc_component_read32(component, ROULEUR_ANA_MBHC_MECH)
-			& 0x20))
+		if (!(snd_soc_component_read32(component,
+					       ROULEUR_ANA_MBHC_MECH) &
+		      0x20))
 			return true;
 	}
 	return false;
 }
 
-static int rouleur_event_notify(struct notifier_block *block,
-				unsigned long val,
+static int rouleur_event_notify(struct notifier_block *block, unsigned long val,
 				void *data)
 {
 	u16 event = (val & 0xffff);
@@ -1422,28 +1374,23 @@ static int rouleur_event_notify(struct notifier_block *block,
 
 	switch (event) {
 	case BOLERO_SLV_EVT_PA_OFF_PRE_SSR:
-		snd_soc_component_update_bits(component,
-					ROULEUR_ANA_HPHPA_CNP_CTL_2,
-					0xC0, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x40, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x80, 0x00);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x40, 0x40);
-		snd_soc_component_update_bits(component,
-				ROULEUR_ANA_COMBOPA_CTL,
-				0x80, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_HPHPA_CNP_CTL_2, 0xC0, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL, 0x40, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL, 0x80, 0x00);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL, 0x40, 0x40);
+		snd_soc_component_update_bits(
+			component, ROULEUR_ANA_COMBOPA_CTL, 0x80, 0x00);
 		break;
 	case BOLERO_SLV_EVT_SSR_DOWN:
 		rouleur->dev_up = false;
 		rouleur->mbhc->wcd_mbhc.deinit_in_progress = true;
 		mbhc = &rouleur->mbhc->wcd_mbhc;
-		rouleur->usbc_hs_status = get_usbc_hs_status(component,
-						mbhc->mbhc_cfg);
+		rouleur->usbc_hs_status =
+			get_usbc_hs_status(component, mbhc->mbhc_cfg);
 		rouleur_mbhc_ssr_down(rouleur->mbhc, component);
 		rouleur_reset(rouleur->dev, 0x01);
 		break;
@@ -1462,8 +1409,8 @@ static int rouleur_event_notify(struct notifier_block *block,
 		mbhc = &rouleur->mbhc->wcd_mbhc;
 		ret = rouleur_mbhc_post_ssr_init(rouleur->mbhc, component);
 		if (ret) {
-			dev_err(component->dev, "%s: mbhc initialization failed\n",
-				__func__);
+			dev_err(component->dev,
+				"%s: mbhc initialization failed\n", __func__);
 		} else {
 			rouleur_mbhc_hs_detect(component, mbhc->mbhc_cfg);
 			if (rouleur->usbc_hs_status)
@@ -1483,11 +1430,11 @@ static int __rouleur_codec_enable_micbias(struct snd_soc_dapm_widget *w,
 					  int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	int micb_num;
 
-	dev_dbg(component->dev, "%s: wname: %s, event: %d\n",
-		__func__, w->name, event);
+	dev_dbg(component->dev, "%s: wname: %s, event: %d\n", __func__, w->name,
+		event);
 
 	if (strnstr(w->name, "MIC BIAS1", sizeof("MIC BIAS1")))
 		micb_num = MIC_BIAS_1;
@@ -1503,10 +1450,10 @@ static int __rouleur_codec_enable_micbias(struct snd_soc_dapm_widget *w,
 		/* Micbias LD0 enable not supported for MicBias 3*/
 		if (micb_num == MIC_BIAS_3)
 			rouleur_micbias_control(component, micb_num,
-				MICB_PULLUP_ENABLE, true);
+						MICB_PULLUP_ENABLE, true);
 		else
 			rouleur_micbias_control(component, micb_num,
-				MICB_ENABLE, true);
+						MICB_ENABLE, true);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		usleep_range(1000, 1100);
@@ -1514,15 +1461,14 @@ static int __rouleur_codec_enable_micbias(struct snd_soc_dapm_widget *w,
 	case SND_SOC_DAPM_POST_PMD:
 		if (micb_num == MIC_BIAS_3)
 			rouleur_micbias_control(component, micb_num,
-				MICB_PULLUP_DISABLE, true);
+						MICB_PULLUP_DISABLE, true);
 		else
 			rouleur_micbias_control(component, micb_num,
-				MICB_DISABLE, true);
+						MICB_DISABLE, true);
 		break;
 	};
 
 	return 0;
-
 }
 
 static int rouleur_codec_enable_micbias(struct snd_soc_dapm_widget *w,
@@ -1536,11 +1482,11 @@ static int __rouleur_codec_enable_micbias_pullup(struct snd_soc_dapm_widget *w,
 						 int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	int micb_num;
 
-	dev_dbg(component->dev, "%s: wname: %s, event: %d\n",
-		__func__, w->name, event);
+	dev_dbg(component->dev, "%s: wname: %s, event: %d\n", __func__, w->name,
+		event);
 
 	if (strnstr(w->name, "VA MIC BIAS1", sizeof("VA MIC BIAS1")))
 		micb_num = MIC_BIAS_1;
@@ -1553,8 +1499,8 @@ static int __rouleur_codec_enable_micbias_pullup(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
-		rouleur_micbias_control(component, micb_num,
-					MICB_PULLUP_ENABLE, true);
+		rouleur_micbias_control(component, micb_num, MICB_PULLUP_ENABLE,
+					true);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		/* 1 msec delay as per HW requirement */
@@ -1567,7 +1513,6 @@ static int __rouleur_codec_enable_micbias_pullup(struct snd_soc_dapm_widget *w,
 	};
 
 	return 0;
-
 }
 
 static int rouleur_codec_enable_micbias_pullup(struct snd_soc_dapm_widget *w,
@@ -1580,9 +1525,8 @@ static int rouleur_codec_enable_micbias_pullup(struct snd_soc_dapm_widget *w,
 static int rouleur_get_compander(struct snd_kcontrol *kcontrol,
 				 struct snd_ctl_elem_value *ucontrol)
 {
-
 	struct snd_soc_component *component =
-				snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	bool hphr;
 	struct soc_multi_mixer_control *mc;
@@ -1591,7 +1535,7 @@ static int rouleur_get_compander(struct snd_kcontrol *kcontrol,
 	hphr = mc->shift;
 
 	ucontrol->value.integer.value[0] = hphr ? rouleur->comp2_enable :
-						rouleur->comp1_enable;
+						  rouleur->comp1_enable;
 	return 0;
 }
 
@@ -1599,7 +1543,7 @@ static int rouleur_set_compander(struct snd_kcontrol *kcontrol,
 				 struct snd_ctl_elem_value *ucontrol)
 {
 	struct snd_soc_component *component =
-			snd_soc_kcontrol_component(kcontrol);
+		snd_soc_kcontrol_component(kcontrol);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	int value = ucontrol->value.integer.value[0];
 	bool hphr;
@@ -1616,11 +1560,11 @@ static int rouleur_set_compander(struct snd_kcontrol *kcontrol,
 }
 
 static int rouleur_codec_enable_pa_vpos(struct snd_soc_dapm_widget *w,
-					 struct snd_kcontrol *kcontrol,
-					 int event)
+					struct snd_kcontrol *kcontrol,
+					int event)
 {
 	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
+		snd_soc_dapm_to_component(w->dapm);
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	struct rouleur_pdata *pdata = NULL;
 	int ret = 0;
@@ -1632,8 +1576,8 @@ static int rouleur_codec_enable_pa_vpos(struct snd_soc_dapm_widget *w,
 		return -EINVAL;
 	}
 
-	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__,
-		w->name, event);
+	dev_dbg(component->dev, "%s wname: %s event: %d\n", __func__, w->name,
+		event);
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
@@ -1644,11 +1588,9 @@ static int rouleur_codec_enable_pa_vpos(struct snd_soc_dapm_widget *w,
 			clear_bit(ALLOW_VPOS_DISABLE, &rouleur->status_mask);
 			return 0;
 		}
-		ret = msm_cdc_enable_ondemand_supply(rouleur->dev,
-						rouleur->supplies,
-						pdata->regulator,
-						pdata->num_supplies,
-						"cdc-pa-vpos");
+		ret = msm_cdc_enable_ondemand_supply(
+			rouleur->dev, rouleur->supplies, pdata->regulator,
+			pdata->num_supplies, "cdc-pa-vpos");
 		if (ret == -EINVAL) {
 			dev_err(component->dev, "%s: pa vpos is not enabled\n",
 				__func__);
@@ -1656,17 +1598,17 @@ static int rouleur_codec_enable_pa_vpos(struct snd_soc_dapm_widget *w,
 		}
 		clear_bit(ALLOW_VPOS_DISABLE, &rouleur->status_mask);
 		/*
-		 * 200us sleep is required after LDO15 is enabled as per
-		 * HW requirement
-		 */
+     * 200us sleep is required after LDO15 is enabled as per
+     * HW requirement
+     */
 		usleep_range(200, 250);
 
 		break;
 	case SND_SOC_DAPM_POST_PMD:
 		set_bit(ALLOW_VPOS_DISABLE, &rouleur->status_mask);
 		ret = swr_slvdev_datapath_control(rouleur->rx_swr_dev,
-				rouleur->rx_swr_dev->dev_num,
-				false);
+						  rouleur->rx_swr_dev->dev_num,
+						  false);
 		break;
 	}
 	return 0;
@@ -1674,64 +1616,51 @@ static int rouleur_codec_enable_pa_vpos(struct snd_soc_dapm_widget *w,
 
 static const struct snd_kcontrol_new rouleur_snd_controls[] = {
 	SOC_SINGLE_EXT("HPHL_COMP Switch", SND_SOC_NOPM, 0, 1, 0,
-		rouleur_get_compander, rouleur_set_compander),
+		       rouleur_get_compander, rouleur_set_compander),
 	SOC_SINGLE_EXT("HPHR_COMP Switch", SND_SOC_NOPM, 1, 1, 0,
-		rouleur_get_compander, rouleur_set_compander),
+		       rouleur_get_compander, rouleur_set_compander),
 
 	SOC_SINGLE_TLV("HPHL Volume", ROULEUR_ANA_HPHPA_L_GAIN, 0, 20, 1,
-					line_gain),
+		       line_gain),
 	SOC_SINGLE_TLV("HPHR Volume", ROULEUR_ANA_HPHPA_R_GAIN, 0, 20, 1,
-					line_gain),
+		       line_gain),
 	SOC_SINGLE_TLV("ADC1 Volume", ROULEUR_ANA_TX_AMIC1, 0, 8, 0,
-			analog_gain),
+		       analog_gain),
 	SOC_SINGLE_TLV("ADC2 Volume", ROULEUR_ANA_TX_AMIC2, 0, 8, 0,
-			analog_gain),
+		       analog_gain),
 };
 
-static const struct snd_kcontrol_new adc1_switch[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new adc1_switch[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
-static const struct snd_kcontrol_new adc2_switch[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new adc2_switch[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
-static const struct snd_kcontrol_new dmic1_switch[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new dmic1_switch[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
-static const struct snd_kcontrol_new dmic2_switch[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new dmic2_switch[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
-static const struct snd_kcontrol_new ear_rdac_switch[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new ear_rdac_switch[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
-static const struct snd_kcontrol_new lo_rdac_switch[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new lo_rdac_switch[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
-static const struct snd_kcontrol_new hphl_rdac_switch[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new hphl_rdac_switch[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
-static const struct snd_kcontrol_new hphr_rdac_switch[] = {
-	SOC_DAPM_SINGLE("Switch", SND_SOC_NOPM, 0, 1, 0)
-};
+static const struct snd_kcontrol_new hphr_rdac_switch[] = { SOC_DAPM_SINGLE(
+	"Switch", SND_SOC_NOPM, 0, 1, 0) };
 
-static const char * const adc2_mux_text[] = {
-	"INP2", "INP3"
-};
+static const char *const adc2_mux_text[] = { "INP2", "INP3" };
 
-static const struct soc_enum adc2_enum =
-	SOC_ENUM_SINGLE(ROULEUR_ANA_TX_AMIC2, 4,
-		ARRAY_SIZE(adc2_mux_text), adc2_mux_text);
-
+static const struct soc_enum adc2_enum = SOC_ENUM_SINGLE(
+	ROULEUR_ANA_TX_AMIC2, 4, ARRAY_SIZE(adc2_mux_text), adc2_mux_text);
 
 static const struct snd_kcontrol_new tx_adc2_mux =
 	SOC_DAPM_ENUM("ADC2 MUX Mux", adc2_enum);
-
 
 static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 
@@ -1744,91 +1673,93 @@ static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 
 	/*tx widgets*/
 	SND_SOC_DAPM_ADC_E("ADC1", NULL, SND_SOC_NOPM, 0, 0,
-				rouleur_codec_enable_adc,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+			   rouleur_codec_enable_adc,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_ADC_E("ADC2", NULL, SND_SOC_NOPM, 1, 0,
-				rouleur_codec_enable_adc,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+			   rouleur_codec_enable_adc,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 
-	SND_SOC_DAPM_MUX("ADC2 MUX", SND_SOC_NOPM, 0, 0,
-				&tx_adc2_mux),
+	SND_SOC_DAPM_MUX("ADC2 MUX", SND_SOC_NOPM, 0, 0, &tx_adc2_mux),
 
 	/*tx mixers*/
-	SND_SOC_DAPM_MIXER_E("ADC1_MIXER", SND_SOC_NOPM, 0, 0,
-				adc1_switch, ARRAY_SIZE(adc1_switch),
-				rouleur_tx_swr_ctrl, SND_SOC_DAPM_PRE_PMU |
-				SND_SOC_DAPM_POST_PMD),
-	SND_SOC_DAPM_MIXER_E("ADC2_MIXER", SND_SOC_NOPM, 0, 0,
-				adc2_switch, ARRAY_SIZE(adc2_switch),
-				rouleur_tx_swr_ctrl, SND_SOC_DAPM_PRE_PMU |
-				SND_SOC_DAPM_POST_PMD),
+	SND_SOC_DAPM_MIXER_E("ADC1_MIXER", SND_SOC_NOPM, 0, 0, adc1_switch,
+			     ARRAY_SIZE(adc1_switch), rouleur_tx_swr_ctrl,
+			     SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+	SND_SOC_DAPM_MIXER_E("ADC2_MIXER", SND_SOC_NOPM, 0, 0, adc2_switch,
+			     ARRAY_SIZE(adc2_switch), rouleur_tx_swr_ctrl,
+			     SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 
 	/* micbias widgets*/
 	SND_SOC_DAPM_MICBIAS_E("MIC BIAS1", SND_SOC_NOPM, 0, 0,
-				rouleur_codec_enable_micbias,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_POST_PMD),
+			       rouleur_codec_enable_micbias,
+			       SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				       SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_MICBIAS_E("MIC BIAS2", SND_SOC_NOPM, 0, 0,
-				rouleur_codec_enable_micbias,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_POST_PMD),
+			       rouleur_codec_enable_micbias,
+			       SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				       SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_MICBIAS_E("MIC BIAS3", SND_SOC_NOPM, 0, 0,
-				rouleur_codec_enable_micbias,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_POST_PMD),
+			       rouleur_codec_enable_micbias,
+			       SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				       SND_SOC_DAPM_POST_PMD),
 
 	SND_SOC_DAPM_SUPPLY("PA_VPOS", SND_SOC_NOPM, 0, 0,
-			     rouleur_codec_enable_pa_vpos,
-			     SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+			    rouleur_codec_enable_pa_vpos,
+			    SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 
 	/*rx widgets*/
 	SND_SOC_DAPM_PGA_E("EAR PGA", ROULEUR_ANA_COMBOPA_CTL, 7, 0, NULL, 0,
-				rouleur_codec_enable_ear_pa,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+			   rouleur_codec_enable_ear_pa,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				   SND_SOC_DAPM_PRE_PMD |
+				   SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_PGA_E("LO PGA", ROULEUR_ANA_COMBOPA_CTL, 7, 0, NULL, 0,
-				rouleur_codec_enable_lo_pa,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+			   rouleur_codec_enable_lo_pa,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				   SND_SOC_DAPM_PRE_PMD |
+				   SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_PGA_E("HPHL PGA", ROULEUR_ANA_HPHPA_CNP_CTL_2, 7, 0, NULL,
-				0, rouleur_codec_enable_hphl_pa,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+			   0, rouleur_codec_enable_hphl_pa,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				   SND_SOC_DAPM_PRE_PMD |
+				   SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_PGA_E("HPHR PGA", ROULEUR_ANA_HPHPA_CNP_CTL_2, 6, 0, NULL,
-				0, rouleur_codec_enable_hphr_pa,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+			   0, rouleur_codec_enable_hphr_pa,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				   SND_SOC_DAPM_PRE_PMD |
+				   SND_SOC_DAPM_POST_PMD),
 
-	SND_SOC_DAPM_DAC_E("RDAC1", NULL, SND_SOC_NOPM, 0, 0,
-				rouleur_codec_hphl_dac_event,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
-	SND_SOC_DAPM_DAC_E("RDAC2", NULL, SND_SOC_NOPM, 0, 0,
-				rouleur_codec_hphr_dac_event,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+	SND_SOC_DAPM_DAC_E(
+		"RDAC1", NULL, SND_SOC_NOPM, 0, 0, rouleur_codec_hphl_dac_event,
+		SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+			SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+	SND_SOC_DAPM_DAC_E(
+		"RDAC2", NULL, SND_SOC_NOPM, 0, 0, rouleur_codec_hphr_dac_event,
+		SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+			SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_DAC_E("RDAC3", NULL, SND_SOC_NOPM, 0, 0,
-				rouleur_codec_ear_lo_dac_event,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+			   rouleur_codec_ear_lo_dac_event,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				   SND_SOC_DAPM_PRE_PMD |
+				   SND_SOC_DAPM_POST_PMD),
 
 	SND_SOC_DAPM_MIXER_E("RX1", SND_SOC_NOPM, 0, 0, NULL, 0,
-				rouleur_enable_rx1, SND_SOC_DAPM_PRE_PMU |
-				SND_SOC_DAPM_POST_PMD),
+			     rouleur_enable_rx1,
+			     SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_MIXER_E("RX2", SND_SOC_NOPM, 0, 0, NULL, 0,
-				rouleur_enable_rx2, SND_SOC_DAPM_PRE_PMU |
-				SND_SOC_DAPM_POST_PMD),
+			     rouleur_enable_rx2,
+			     SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 
 	/* rx mixer widgets*/
 
-	SND_SOC_DAPM_MIXER("EAR_RDAC", SND_SOC_NOPM, 0, 0,
-			   ear_rdac_switch, ARRAY_SIZE(ear_rdac_switch)),
-	SND_SOC_DAPM_MIXER("LO_RDAC", SND_SOC_NOPM, 0, 0,
-			   lo_rdac_switch, ARRAY_SIZE(lo_rdac_switch)),
-	SND_SOC_DAPM_MIXER("HPHL_RDAC", SND_SOC_NOPM, 0, 0,
-			   hphl_rdac_switch, ARRAY_SIZE(hphl_rdac_switch)),
-	SND_SOC_DAPM_MIXER("HPHR_RDAC", SND_SOC_NOPM, 0, 0,
-			   hphr_rdac_switch, ARRAY_SIZE(hphr_rdac_switch)),
+	SND_SOC_DAPM_MIXER("EAR_RDAC", SND_SOC_NOPM, 0, 0, ear_rdac_switch,
+			   ARRAY_SIZE(ear_rdac_switch)),
+	SND_SOC_DAPM_MIXER("LO_RDAC", SND_SOC_NOPM, 0, 0, lo_rdac_switch,
+			   ARRAY_SIZE(lo_rdac_switch)),
+	SND_SOC_DAPM_MIXER("HPHL_RDAC", SND_SOC_NOPM, 0, 0, hphl_rdac_switch,
+			   ARRAY_SIZE(hphl_rdac_switch)),
+	SND_SOC_DAPM_MIXER("HPHR_RDAC", SND_SOC_NOPM, 0, 0, hphr_rdac_switch,
+			   ARRAY_SIZE(hphr_rdac_switch)),
 
 	/*output widgets tx*/
 
@@ -1843,34 +1774,32 @@ static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 
 	/* micbias pull up widgets*/
 	SND_SOC_DAPM_MICBIAS_E("VA MIC BIAS1", SND_SOC_NOPM, 0, 0,
-				rouleur_codec_enable_micbias_pullup,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_POST_PMD),
+			       rouleur_codec_enable_micbias_pullup,
+			       SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				       SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_MICBIAS_E("VA MIC BIAS2", SND_SOC_NOPM, 0, 0,
-				rouleur_codec_enable_micbias_pullup,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_POST_PMD),
+			       rouleur_codec_enable_micbias_pullup,
+			       SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				       SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_MICBIAS_E("VA MIC BIAS3", SND_SOC_NOPM, 0, 0,
-				rouleur_codec_enable_micbias_pullup,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
-				SND_SOC_DAPM_POST_PMD),
+			       rouleur_codec_enable_micbias_pullup,
+			       SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+				       SND_SOC_DAPM_POST_PMD),
 
 	SND_SOC_DAPM_ADC_E("DMIC1", NULL, SND_SOC_NOPM, 0, 0,
-				rouleur_codec_enable_dmic,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+			   rouleur_codec_enable_dmic,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 	SND_SOC_DAPM_ADC_E("DMIC2", NULL, SND_SOC_NOPM, 1, 0,
-				rouleur_codec_enable_dmic,
-				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+			   rouleur_codec_enable_dmic,
+			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 
 	/*tx mixer widgets*/
-	SND_SOC_DAPM_MIXER_E("DMIC1_MIXER", SND_SOC_NOPM, 0,
-				0, dmic1_switch, ARRAY_SIZE(dmic1_switch),
-				rouleur_tx_swr_ctrl, SND_SOC_DAPM_PRE_PMU |
-				SND_SOC_DAPM_POST_PMD),
-	SND_SOC_DAPM_MIXER_E("DMIC2_MIXER", SND_SOC_NOPM, 0,
-				0, dmic2_switch, ARRAY_SIZE(dmic2_switch),
-				rouleur_tx_swr_ctrl, SND_SOC_DAPM_PRE_PMU |
-				SND_SOC_DAPM_POST_PMD),
+	SND_SOC_DAPM_MIXER_E("DMIC1_MIXER", SND_SOC_NOPM, 0, 0, dmic1_switch,
+			     ARRAY_SIZE(dmic1_switch), rouleur_tx_swr_ctrl,
+			     SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
+	SND_SOC_DAPM_MIXER_E("DMIC2_MIXER", SND_SOC_NOPM, 0, 0, dmic2_switch,
+			     ARRAY_SIZE(dmic2_switch), rouleur_tx_swr_ctrl,
+			     SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),
 
 	/*output widgets*/
 	SND_SOC_DAPM_OUTPUT("DMIC1_OUTPUT"),
@@ -1878,58 +1807,56 @@ static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 };
 
 static const struct snd_soc_dapm_route rouleur_audio_map[] = {
-	{"ADC1_OUTPUT", NULL, "ADC1_MIXER"},
-	{"ADC1_MIXER", "Switch", "ADC1"},
-	{"ADC1", NULL, "AMIC1"},
+	{ "ADC1_OUTPUT", NULL, "ADC1_MIXER" },
+	{ "ADC1_MIXER", "Switch", "ADC1" },
+	{ "ADC1", NULL, "AMIC1" },
 
-	{"ADC2_OUTPUT", NULL, "ADC2_MIXER"},
-	{"ADC2_MIXER", "Switch", "ADC2"},
-	{"ADC2", NULL, "ADC2 MUX"},
-	{"ADC2 MUX", "INP3", "AMIC3"},
-	{"ADC2 MUX", "INP2", "AMIC2"},
+	{ "ADC2_OUTPUT", NULL, "ADC2_MIXER" },
+	{ "ADC2_MIXER", "Switch", "ADC2" },
+	{ "ADC2", NULL, "ADC2 MUX" },
+	{ "ADC2 MUX", "INP3", "AMIC3" },
+	{ "ADC2 MUX", "INP2", "AMIC2" },
 
-	{"IN1_HPHL", NULL, "PA_VPOS"},
-	{"RX1", NULL, "IN1_HPHL"},
-	{"RDAC1", NULL, "RX1"},
-	{"HPHL_RDAC", "Switch", "RDAC1"},
-	{"HPHL PGA", NULL, "HPHL_RDAC"},
-	{"HPHL", NULL, "HPHL PGA"},
+	{ "IN1_HPHL", NULL, "PA_VPOS" },
+	{ "RX1", NULL, "IN1_HPHL" },
+	{ "RDAC1", NULL, "RX1" },
+	{ "HPHL_RDAC", "Switch", "RDAC1" },
+	{ "HPHL PGA", NULL, "HPHL_RDAC" },
+	{ "HPHL", NULL, "HPHL PGA" },
 
-	{"IN2_HPHR", NULL, "PA_VPOS"},
-	{"RX2", NULL, "IN2_HPHR"},
-	{"RDAC2", NULL, "RX2"},
-	{"HPHR_RDAC", "Switch", "RDAC2"},
-	{"HPHR PGA", NULL, "HPHR_RDAC"},
-	{"HPHR", NULL, "HPHR PGA"},
+	{ "IN2_HPHR", NULL, "PA_VPOS" },
+	{ "RX2", NULL, "IN2_HPHR" },
+	{ "RDAC2", NULL, "RX2" },
+	{ "HPHR_RDAC", "Switch", "RDAC2" },
+	{ "HPHR PGA", NULL, "HPHR_RDAC" },
+	{ "HPHR", NULL, "HPHR PGA" },
 
-	{"RDAC3", NULL, "RX1"},
-	{"EAR_RDAC", "Switch", "RDAC3"},
-	{"EAR PGA", NULL, "EAR_RDAC"},
-	{"EAR", NULL, "EAR PGA"},
+	{ "RDAC3", NULL, "RX1" },
+	{ "EAR_RDAC", "Switch", "RDAC3" },
+	{ "EAR PGA", NULL, "EAR_RDAC" },
+	{ "EAR", NULL, "EAR PGA" },
 
-	{"RDAC3", NULL, "RX1"},
-	{"LO_RDAC", "Switch", "RDAC3"},
-	{"LO PGA", NULL, "LO_RDAC"},
-	{"LO", NULL, "LO PGA"},
+	{ "RDAC3", NULL, "RX1" },
+	{ "LO_RDAC", "Switch", "RDAC3" },
+	{ "LO PGA", NULL, "LO_RDAC" },
+	{ "LO", NULL, "LO PGA" },
 
-	{"DMIC1_OUTPUT", NULL, "DMIC1_MIXER"},
-	{"DMIC1_MIXER", "Switch", "DMIC1"},
+	{ "DMIC1_OUTPUT", NULL, "DMIC1_MIXER" },
+	{ "DMIC1_MIXER", "Switch", "DMIC1" },
 
-	{"DMIC2_OUTPUT", NULL, "DMIC2_MIXER"},
-	{"DMIC2_MIXER", "Switch", "DMIC2"},
+	{ "DMIC2_OUTPUT", NULL, "DMIC2_MIXER" },
+	{ "DMIC2_MIXER", "Switch", "DMIC2" },
 };
 
 static ssize_t rouleur_version_read(struct snd_info_entry *entry,
-				   void *file_private_data,
-				   struct file *file,
-				   char __user *buf, size_t count,
-				   loff_t pos)
+				    void *file_private_data, struct file *file,
+				    char __user *buf, size_t count, loff_t pos)
 {
 	struct rouleur_priv *priv;
 	char buffer[ROULEUR_VERSION_ENTRY_SIZE];
 	int len = 0;
 
-	priv = (struct rouleur_priv *) entry->private_data;
+	priv = (struct rouleur_priv *)entry->private_data;
 	if (!priv) {
 		pr_err("%s: rouleur priv is null\n", __func__);
 		return -EINVAL;
@@ -1961,7 +1888,7 @@ static struct snd_info_entry_ops rouleur_info_ops = {
  * Return: 0 on success or negative error code on failure.
  */
 int rouleur_info_create_codec_entry(struct snd_info_entry *codec_root,
-				   struct snd_soc_component *component)
+				    struct snd_soc_component *component)
 {
 	struct snd_info_entry *version_entry;
 	struct rouleur_priv *priv;
@@ -1972,23 +1899,23 @@ int rouleur_info_create_codec_entry(struct snd_info_entry *codec_root,
 
 	priv = snd_soc_component_get_drvdata(component);
 	if (priv->entry) {
-		dev_dbg(priv->dev,
-			"%s:rouleur module already created\n", __func__);
+		dev_dbg(priv->dev, "%s:rouleur module already created\n",
+			__func__);
 		return 0;
 	}
 	card = component->card;
-	priv->entry = snd_info_create_subdir(codec_root->module,
-					     "rouleur", codec_root);
+	priv->entry = snd_info_create_subdir(codec_root->module, "rouleur",
+					     codec_root);
 	if (!priv->entry) {
 		dev_dbg(component->dev, "%s: failed to create rouleur entry\n",
 			__func__);
 		return -ENOMEM;
 	}
-	version_entry = snd_info_create_card_entry(card->snd_card,
-						   "version",
+	version_entry = snd_info_create_card_entry(card->snd_card, "version",
 						   priv->entry);
 	if (!version_entry) {
-		dev_dbg(component->dev, "%s: failed to create rouleur version entry\n",
+		dev_dbg(component->dev,
+			"%s: failed to create rouleur version entry\n",
 			__func__);
 		return -ENOMEM;
 	}
@@ -2009,7 +1936,7 @@ int rouleur_info_create_codec_entry(struct snd_info_entry *codec_root,
 EXPORT_SYMBOL(rouleur_info_create_codec_entry);
 
 static int rouleur_set_micbias_data(struct rouleur_priv *rouleur,
-			      struct rouleur_pdata *pdata)
+				    struct rouleur_pdata *pdata)
 {
 	int vout_ctl = 0;
 	int rc = 0;
@@ -2032,7 +1959,7 @@ done:
 }
 
 static int rouleur_battery_supply_cb(struct notifier_block *nb,
-			unsigned long event, void *data)
+				     unsigned long event, void *data)
 {
 	struct power_supply *psy = data;
 	struct rouleur_priv *rouleur =
@@ -2048,18 +1975,20 @@ static int rouleur_battery_supply_cb(struct notifier_block *nb,
 static int rouleur_read_battery_soc(struct rouleur_priv *rouleur, int *soc_val)
 {
 	static struct power_supply *batt_psy;
-	union power_supply_propval ret = {0,};
+	union power_supply_propval ret = {
+		0,
+	};
 	int err = 0;
 
 	*soc_val = 100;
 	if (!batt_psy)
 		batt_psy = power_supply_get_by_name("battery");
 	if (batt_psy) {
-		err = power_supply_get_property(batt_psy,
-				POWER_SUPPLY_PROP_CAPACITY, &ret);
+		err = power_supply_get_property(
+			batt_psy, POWER_SUPPLY_PROP_CAPACITY, &ret);
 		if (err) {
-			pr_err("%s: battery SoC read error:%d\n",
-				__func__, err);
+			pr_err("%s: battery SoC read error:%d\n", __func__,
+			       err);
 			return err;
 		}
 		*soc_val = ret.intval;
@@ -2094,17 +2023,14 @@ static void rouleur_evaluate_soc(struct work_struct *work)
 			__func__, soc_val);
 		/* Reduce PA Gain by 6DB for low SoC */
 		if (rouleur->update_wcd_event)
-			rouleur->update_wcd_event(rouleur->handle,
-					SLV_BOLERO_EVT_RX_PA_GAIN_UPDATE,
-					true);
+			rouleur->update_wcd_event(
+				rouleur->handle,
+				SLV_BOLERO_EVT_RX_PA_GAIN_UPDATE, true);
 		rouleur->low_soc = true;
-		ret = msm_cdc_set_supply_min_voltage(rouleur->dev,
-						 rouleur->supplies,
-						 pdata->regulator,
-						 pdata->num_supplies,
-						 "cdc-vdd-mic-bias",
-						 LOW_SOC_MBIAS_REG_MIN_VOLTAGE,
-						 true);
+		ret = msm_cdc_set_supply_min_voltage(
+			rouleur->dev, rouleur->supplies, pdata->regulator,
+			pdata->num_supplies, "cdc-vdd-mic-bias",
+			LOW_SOC_MBIAS_REG_MIN_VOLTAGE, true);
 		if (ret < 0)
 			dev_err(rouleur->dev,
 				"%s unable to set mbias min voltage\n",
@@ -2113,16 +2039,15 @@ static void rouleur_evaluate_soc(struct work_struct *work)
 		if (rouleur->low_soc == true) {
 			/* Reset PA Gain to default for normal SoC */
 			if (rouleur->update_wcd_event)
-				rouleur->update_wcd_event(rouleur->handle,
+				rouleur->update_wcd_event(
+					rouleur->handle,
 					SLV_BOLERO_EVT_RX_PA_GAIN_UPDATE,
 					false);
-			ret = msm_cdc_set_supply_min_voltage(rouleur->dev,
-						rouleur->supplies,
-						pdata->regulator,
-						pdata->num_supplies,
-						"cdc-vdd-mic-bias",
-						LOW_SOC_MBIAS_REG_MIN_VOLTAGE,
-						false);
+			ret = msm_cdc_set_supply_min_voltage(
+				rouleur->dev, rouleur->supplies,
+				pdata->regulator, pdata->num_supplies,
+				"cdc-vdd-mic-bias",
+				LOW_SOC_MBIAS_REG_MIN_VOLTAGE, false);
 			if (ret < 0)
 				dev_err(rouleur->dev,
 					"%s unable to set mbias min voltage\n",
@@ -2141,21 +2066,21 @@ static void rouleur_get_foundry_id(struct rouleur_priv *rouleur)
 		return;
 	}
 
-	ret = pm2250_spmi_read(rouleur->spmi_dev,
-				rouleur->foundry_id_reg, &rouleur->foundry_id);
+	ret = pm2250_spmi_read(rouleur->spmi_dev, rouleur->foundry_id_reg,
+			       &rouleur->foundry_id);
 	if (ret == 0)
 		pr_debug("%s: rouleur foundry id = %x\n", rouleur->foundry_id,
 			 __func__);
 	else
-		pr_debug("%s: rouleur error in spmi read ret = %d\n",
-			 __func__, ret);
+		pr_debug("%s: rouleur error in spmi read ret = %d\n", __func__,
+			 ret);
 }
 
 static int rouleur_soc_codec_probe(struct snd_soc_component *component)
 {
 	struct rouleur_priv *rouleur = snd_soc_component_get_drvdata(component);
 	struct snd_soc_dapm_context *dapm =
-			snd_soc_component_get_dapm(component);
+		snd_soc_component_get_dapm(component);
 	int ret = -EINVAL;
 
 	dev_info(component->dev, "%s()\n", __func__);
@@ -2167,9 +2092,8 @@ static int rouleur_soc_codec_probe(struct snd_soc_component *component)
 	rouleur->component = component;
 	snd_soc_component_init_regmap(component, rouleur->regmap);
 
-	rouleur->fw_data = devm_kzalloc(component->dev,
-					sizeof(*(rouleur->fw_data)),
-					GFP_KERNEL);
+	rouleur->fw_data = devm_kzalloc(
+		component->dev, sizeof(*(rouleur->fw_data)), GFP_KERNEL);
 	if (!rouleur->fw_data) {
 		dev_err(component->dev, "Failed to allocate fw_data\n");
 		ret = -ENOMEM;
@@ -2177,8 +2101,8 @@ static int rouleur_soc_codec_probe(struct snd_soc_component *component)
 	}
 
 	set_bit(WCD9XXX_MBHC_CAL, rouleur->fw_data->cal_bit);
-	ret = wcd_cal_create_hwdep(rouleur->fw_data,
-				   WCD9XXX_CODEC_HWDEP_NODE, component);
+	ret = wcd_cal_create_hwdep(rouleur->fw_data, WCD9XXX_CODEC_HWDEP_NODE,
+				   component);
 
 	if (ret < 0) {
 		dev_err(component->dev, "%s hwdep failed %d\n", __func__, ret);
@@ -2210,12 +2134,11 @@ static int rouleur_soc_codec_probe(struct snd_soc_component *component)
 	rouleur_get_foundry_id(rouleur);
 
 	rouleur->version = ROULEUR_VERSION_1_0;
-       /* Register event notifier */
+	/* Register event notifier */
 	rouleur->nblock.notifier_call = rouleur_event_notify;
 	if (rouleur->register_notifier) {
 		ret = rouleur->register_notifier(rouleur->handle,
-						&rouleur->nblock,
-						true);
+						 &rouleur->nblock, true);
 		if (ret) {
 			dev_err(component->dev,
 				"%s: Failed to register notifier %d\n",
@@ -2245,9 +2168,8 @@ static void rouleur_soc_codec_remove(struct snd_soc_component *component)
 		return;
 
 	if (rouleur->register_notifier)
-		rouleur->register_notifier(rouleur->handle,
-						&rouleur->nblock,
-						false);
+		rouleur->register_notifier(rouleur->handle, &rouleur->nblock,
+					   false);
 }
 
 static int rouleur_soc_codec_suspend(struct snd_soc_component *component)
@@ -2306,24 +2228,19 @@ static int rouleur_suspend(struct device *dev)
 	}
 
 	if (test_bit(ALLOW_VPOS_DISABLE, &rouleur->status_mask)) {
-		ret = msm_cdc_disable_ondemand_supply(rouleur->dev,
-						rouleur->supplies,
-						pdata->regulator,
-						pdata->num_supplies,
-						"cdc-pa-vpos");
+		ret = msm_cdc_disable_ondemand_supply(
+			rouleur->dev, rouleur->supplies, pdata->regulator,
+			pdata->num_supplies, "cdc-pa-vpos");
 		if (ret == -EINVAL) {
-			dev_err(dev, "%s: pa vpos is not disabled\n",
-				__func__);
+			dev_err(dev, "%s: pa vpos is not disabled\n", __func__);
 			return 0;
 		}
 		clear_bit(ALLOW_VPOS_DISABLE, &rouleur->status_mask);
 	}
 	if (rouleur->dapm_bias_off) {
-		 msm_cdc_set_supplies_lpm_mode(rouleur->dev,
-					      rouleur->supplies,
+		msm_cdc_set_supplies_lpm_mode(rouleur->dev, rouleur->supplies,
 					      pdata->regulator,
-					      pdata->num_supplies,
-					      true);
+					      pdata->num_supplies, true);
 		set_bit(WCD_SUPPLIES_LPM_MODE, &rouleur->status_mask);
 	}
 	return 0;
@@ -2349,11 +2266,9 @@ static int rouleur_resume(struct device *dev)
 	}
 
 	if (test_bit(WCD_SUPPLIES_LPM_MODE, &rouleur->status_mask)) {
-		msm_cdc_set_supplies_lpm_mode(rouleur->dev,
-						rouleur->supplies,
-						pdata->regulator,
-						pdata->num_supplies,
-						false);
+		msm_cdc_set_supplies_lpm_mode(rouleur->dev, rouleur->supplies,
+					      pdata->regulator,
+					      pdata->num_supplies, false);
 		clear_bit(WCD_SUPPLIES_LPM_MODE, &rouleur->status_mask);
 	}
 
@@ -2397,42 +2312,33 @@ static void rouleur_dt_parse_micbias_info(struct device *dev,
 	int rc = 0;
 
 	/* MB1 */
-	if (of_find_property(dev->of_node, "qcom,cdc-micbias1-mv",
-				    NULL)) {
-		rc = rouleur_read_of_property_u32(dev,
-						  "qcom,cdc-micbias1-mv",
+	if (of_find_property(dev->of_node, "qcom,cdc-micbias1-mv", NULL)) {
+		rc = rouleur_read_of_property_u32(dev, "qcom,cdc-micbias1-mv",
 						  &prop_val);
 		if (!rc)
 			mb->micb1_mv = prop_val;
 	} else {
-		dev_info(dev, "%s: Micbias1 DT property not found\n",
-			__func__);
+		dev_info(dev, "%s: Micbias1 DT property not found\n", __func__);
 	}
 
 	/* MB2 */
-	if (of_find_property(dev->of_node, "qcom,cdc-micbias2-mv",
-				    NULL)) {
-		rc = rouleur_read_of_property_u32(dev,
-						  "qcom,cdc-micbias2-mv",
+	if (of_find_property(dev->of_node, "qcom,cdc-micbias2-mv", NULL)) {
+		rc = rouleur_read_of_property_u32(dev, "qcom,cdc-micbias2-mv",
 						  &prop_val);
 		if (!rc)
 			mb->micb2_mv = prop_val;
 	} else {
-		dev_info(dev, "%s: Micbias2 DT property not found\n",
-			__func__);
+		dev_info(dev, "%s: Micbias2 DT property not found\n", __func__);
 	}
 
 	/* MB3 */
-	if (of_find_property(dev->of_node, "qcom,cdc-micbias3-mv",
-				    NULL)) {
-		rc = rouleur_read_of_property_u32(dev,
-						  "qcom,cdc-micbias3-mv",
+	if (of_find_property(dev->of_node, "qcom,cdc-micbias3-mv", NULL)) {
+		rc = rouleur_read_of_property_u32(dev, "qcom,cdc-micbias3-mv",
 						  &prop_val);
 		if (!rc)
 			mb->micb3_mv = prop_val;
 	} else {
-		dev_info(dev, "%s: Micbias3 DT property not found\n",
-			__func__);
+		dev_info(dev, "%s: Micbias3 DT property not found\n", __func__);
 	}
 }
 
@@ -2442,17 +2348,16 @@ struct rouleur_pdata *rouleur_populate_dt_data(struct device *dev)
 	u32 reg;
 	int ret = 0;
 
-	pdata = kzalloc(sizeof(struct rouleur_pdata),
-				GFP_KERNEL);
+	pdata = kzalloc(sizeof(struct rouleur_pdata), GFP_KERNEL);
 	if (!pdata)
 		return NULL;
 
-	pdata->spmi_np = of_parse_phandle(dev->of_node,
-					"qcom,pmic-spmi-node", 0);
+	pdata->spmi_np =
+		of_parse_phandle(dev->of_node, "qcom,pmic-spmi-node", 0);
 	if (!pdata->spmi_np) {
 		dev_err(dev, "%s: Looking up %s property in node %s failed\n",
-				__func__, "qcom,pmic-spmi-node",
-				dev->of_node->full_name);
+			__func__, "qcom,pmic-spmi-node",
+			dev->of_node->full_name);
 		kfree(pdata);
 		return NULL;
 	}
@@ -2467,8 +2372,7 @@ struct rouleur_pdata *rouleur_populate_dt_data(struct device *dev)
 	pdata->reset_reg = reg;
 
 	if (of_property_read_u32(dev->of_node, "qcom,foundry-id-reg", &reg))
-		dev_dbg(dev, "%s: Failed to obtain foundry id\n",
-			__func__);
+		dev_dbg(dev, "%s: Failed to obtain foundry id\n", __func__);
 	else
 		pdata->foundry_id_reg = reg;
 
@@ -2540,7 +2444,7 @@ static int rouleur_bind(struct device *dev)
 	pdev = of_find_device_by_node(pdata->spmi_np);
 	if (!pdev) {
 		dev_err(dev, "%s: platform device from SPMI node is NULL\n",
-				__func__);
+			__func__);
 		ret = -EINVAL;
 		goto err_bind_all;
 	}
@@ -2548,11 +2452,10 @@ static int rouleur_bind(struct device *dev)
 	rouleur->spmi_dev = &pdev->dev;
 	rouleur->reset_reg = pdata->reset_reg;
 	rouleur->foundry_id_reg = pdata->foundry_id_reg;
-	ret = msm_cdc_init_supplies(dev, &rouleur->supplies,
-				    pdata->regulator, pdata->num_supplies);
+	ret = msm_cdc_init_supplies(dev, &rouleur->supplies, pdata->regulator,
+				    pdata->num_supplies);
 	if (!rouleur->supplies) {
-		dev_err(dev, "%s: Cannot init wcd supplies\n",
-			__func__);
+		dev_err(dev, "%s: Cannot init wcd supplies\n", __func__);
 		goto err_bind_all;
 	}
 
@@ -2571,22 +2474,19 @@ static int rouleur_bind(struct device *dev)
 	}
 	rouleur->update_wcd_event = plat_data->update_wcd_event;
 	if (!rouleur->update_wcd_event) {
-		dev_err(dev, "%s: update_wcd_event api is null!\n",
-			__func__);
+		dev_err(dev, "%s: update_wcd_event api is null!\n", __func__);
 		ret = -EINVAL;
 		goto err_bind_all;
 	}
 	rouleur->register_notifier = plat_data->register_notifier;
 	if (!rouleur->register_notifier) {
-		dev_err(dev, "%s: register_notifier api is null!\n",
-			__func__);
+		dev_err(dev, "%s: register_notifier api is null!\n", __func__);
 		ret = -EINVAL;
 		goto err_bind_all;
 	}
 
-	ret = msm_cdc_enable_static_supplies(dev, rouleur->supplies,
-					     pdata->regulator,
-					     pdata->num_supplies);
+	ret = msm_cdc_enable_static_supplies(
+		dev, rouleur->supplies, pdata->regulator, pdata->num_supplies);
 	if (ret) {
 		dev_err(dev, "%s: wcd static supply enable failed!\n",
 			__func__);
@@ -2597,17 +2497,17 @@ static int rouleur_bind(struct device *dev)
 	usleep_range(20, 30);
 	rouleur_reset(dev, 0x00);
 	/*
-	 * Add 5msec delay to provide sufficient time for
-	 * soundwire auto enumeration of slave devices as
-	 * as per HW requirement.
-	 */
+   * Add 5msec delay to provide sufficient time for
+   * soundwire auto enumeration of slave devices as
+   * as per HW requirement.
+   */
 	usleep_range(5000, 5010);
 	rouleur->wakeup = rouleur_wakeup;
 
 	ret = component_bind_all(dev, rouleur);
 	if (ret) {
-		dev_err(dev, "%s: Slave bind failed, ret = %d\n",
-			__func__, ret);
+		dev_err(dev, "%s: Slave bind failed, ret = %d\n", __func__,
+			ret);
 		goto err_bind_all;
 	}
 
@@ -2622,7 +2522,7 @@ static int rouleur_bind(struct device *dev)
 	rouleur->rx_swr_dev = get_matching_swr_slave_device(pdata->rx_slave);
 	if (!rouleur->rx_swr_dev) {
 		dev_err(dev, "%s: Could not find RX swr slave device\n",
-			 __func__);
+			__func__);
 		ret = -ENODEV;
 		goto err;
 	}
@@ -2638,8 +2538,7 @@ static int rouleur_bind(struct device *dev)
 	rouleur->regmap = devm_regmap_init_swr(rouleur->tx_swr_dev,
 					       &rouleur_regmap_config);
 	if (!rouleur->regmap) {
-		dev_err(dev, "%s: Regmap init failed\n",
-				__func__);
+		dev_err(dev, "%s: Regmap init failed\n", __func__);
 		goto err;
 	}
 
@@ -2656,8 +2555,7 @@ static int rouleur_bind(struct device *dev)
 	ret = wcd_irq_init(&rouleur->irq_info, &rouleur->virq);
 
 	if (ret) {
-		dev_err(dev, "%s: IRQ init failed: %d\n",
-			__func__, ret);
+		dev_err(dev, "%s: IRQ init failed: %d\n", __func__, ret);
 		goto err;
 	}
 	rouleur->tx_swr_dev->slave_irq = rouleur->virq;
@@ -2681,11 +2579,9 @@ static int rouleur_bind(struct device *dev)
 	wcd_disable_irq(&rouleur->irq_info, ROULEUR_IRQ_HPHR_PDM_WD_INT);
 	wcd_disable_irq(&rouleur->irq_info, ROULEUR_IRQ_HPHL_PDM_WD_INT);
 
-	ret = snd_soc_register_component(dev, &soc_codec_dev_rouleur,
-				     NULL, 0);
+	ret = snd_soc_register_component(dev, &soc_codec_dev_rouleur, NULL, 0);
 	if (ret) {
-		dev_err(dev, "%s: Codec registration failed\n",
-				__func__);
+		dev_err(dev, "%s: Codec registration failed\n", __func__);
 		goto err_irq;
 	}
 
@@ -2721,12 +2617,12 @@ static void rouleur_unbind(struct device *dev)
 }
 
 static const struct of_device_id rouleur_dt_match[] = {
-	{ .compatible = "qcom,rouleur-codec" , .data = "rouleur" },
+	{ .compatible = "qcom,rouleur-codec", .data = "rouleur" },
 	{}
 };
 
 static const struct component_master_ops rouleur_comp_ops = {
-	.bind   = rouleur_bind,
+	.bind = rouleur_bind,
 	.unbind = rouleur_unbind,
 };
 
@@ -2741,7 +2637,7 @@ static void rouleur_release_of(struct device *dev, void *data)
 }
 
 static int rouleur_add_slave_components(struct device *dev,
-				struct component_match **matchptr)
+					struct component_match **matchptr)
 {
 	struct device_node *np, *rx_node, *tx_node;
 
@@ -2753,21 +2649,17 @@ static int rouleur_add_slave_components(struct device *dev,
 		return -ENODEV;
 	}
 	of_node_get(rx_node);
-	component_match_add_release(dev, matchptr,
-			rouleur_release_of,
-			rouleur_compare_of,
-			rx_node);
+	component_match_add_release(dev, matchptr, rouleur_release_of,
+				    rouleur_compare_of, rx_node);
 
 	tx_node = of_parse_phandle(np, "qcom,tx-slave", 0);
 	if (!tx_node) {
 		dev_err(dev, "%s: Tx-slave node not defined\n", __func__);
-			return -ENODEV;
+		return -ENODEV;
 	}
 	of_node_get(tx_node);
-	component_match_add_release(dev, matchptr,
-			rouleur_release_of,
-			rouleur_compare_of,
-			tx_node);
+	component_match_add_release(dev, matchptr, rouleur_release_of,
+				    rouleur_compare_of, tx_node);
 	return 0;
 }
 
@@ -2780,8 +2672,8 @@ static int rouleur_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	return component_master_add_with_match(&pdev->dev,
-					&rouleur_comp_ops, match);
+	return component_master_add_with_match(&pdev->dev, &rouleur_comp_ops,
+					       match);
 }
 
 static int rouleur_remove(struct platform_device *pdev)
@@ -2800,20 +2692,20 @@ static const struct dev_pm_ops rouleur_dev_pm_ops = {
 #endif
 
 static struct platform_driver rouleur_codec_driver = {
-	.probe = rouleur_probe,
-	.remove = rouleur_remove,
-	.driver = {
-		.name = "rouleur_codec",
-		.owner = THIS_MODULE,
-		.of_match_table = of_match_ptr(rouleur_dt_match),
+    .probe = rouleur_probe,
+    .remove = rouleur_remove,
+    .driver =
+        {
+            .name = "rouleur_codec",
+            .owner = THIS_MODULE,
+            .of_match_table = of_match_ptr(rouleur_dt_match),
 #ifdef CONFIG_PM_SLEEP
-		.pm = &rouleur_dev_pm_ops,
+            .pm = &rouleur_dev_pm_ops,
 #endif
-		.suppress_bind_attrs = true,
-	},
+            .suppress_bind_attrs = true,
+        },
 };
 
 module_platform_driver(rouleur_codec_driver);
 MODULE_DESCRIPTION("Rouleur Codec driver");
 MODULE_LICENSE("GPL v2");
-

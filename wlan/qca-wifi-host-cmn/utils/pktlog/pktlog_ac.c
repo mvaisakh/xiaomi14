@@ -34,12 +34,12 @@
 
 #ifndef REMOVE_PKT_LOG
 
-#include "qdf_mem.h"
 #include "athdefs.h"
-#include "pktlog_ac_i.h"
 #include "cds_api.h"
-#include "wma_types.h"
 #include "htc.h"
+#include "pktlog_ac_i.h"
+#include "qdf_mem.h"
+#include "wma_types.h"
 #include <cdp_txrx_cmn_struct.h>
 #include <cdp_txrx_ctrl.h>
 #ifdef PKTLOG_LEGACY
@@ -65,7 +65,7 @@ struct ol_pl_arch_dep_funcs ol_pl_funcs = {
 	.pktlog_init = pktlog_init,
 	.pktlog_enable = pktlog_enable,
 	.pktlog_setsize = pktlog_setsize,
-	.pktlog_disable = pktlog_disable,       /* valid for f/w disable */
+	.pktlog_disable = pktlog_disable, /* valid for f/w disable */
 };
 
 struct pktlog_dev_t pl_dev = {
@@ -73,9 +73,9 @@ struct pktlog_dev_t pl_dev = {
 };
 
 void pktlog_sethandle(struct pktlog_dev_t **pl_handle,
-		     struct hif_opaque_softc *scn)
+		      struct hif_opaque_softc *scn)
 {
-	pl_dev.scn = (ol_ath_generic_softc_handle) scn;
+	pl_dev.scn = (ol_ath_generic_softc_handle)scn;
 	*pl_handle = &pl_dev;
 }
 
@@ -84,8 +84,7 @@ void pktlog_set_pdev_id(struct pktlog_dev_t *pl_dev, uint8_t pdev_id)
 	pl_dev->pdev_id = pdev_id;
 }
 
-void pktlog_set_callback_regtype(
-		enum pktlog_callback_regtype callback_type)
+void pktlog_set_callback_regtype(enum pktlog_callback_regtype callback_type)
 {
 	struct pktlog_dev_t *pl_dev = get_pktlog_handle();
 
@@ -127,8 +126,7 @@ static A_STATUS pktlog_wma_post_msg(WMI_PKTLOG_EVENT event_types,
 	msg.bodyptr = param;
 	msg.bodyval = 0;
 
-	status = scheduler_post_message(QDF_MODULE_ID_WMA,
-					QDF_MODULE_ID_WMA,
+	status = scheduler_post_message(QDF_MODULE_ID_WMA, QDF_MODULE_ID_WMA,
 					QDF_MODULE_ID_WMA, &msg);
 
 	if (status != QDF_STATUS_SUCCESS) {
@@ -139,9 +137,9 @@ static A_STATUS pktlog_wma_post_msg(WMI_PKTLOG_EVENT event_types,
 	return A_OK;
 }
 
-static inline A_STATUS
-pktlog_enable_tgt(struct hif_opaque_softc *_scn, uint32_t log_state,
-		 bool ini_triggered, uint8_t user_triggered)
+static inline A_STATUS pktlog_enable_tgt(struct hif_opaque_softc *_scn,
+					 uint32_t log_state, bool ini_triggered,
+					 uint8_t user_triggered)
 {
 	uint32_t types = 0;
 
@@ -175,8 +173,7 @@ pktlog_enable_tgt(struct hif_opaque_softc *_scn, uint32_t log_state,
  *
  * Return: zero on success, non-zero on failure
  */
-static inline A_STATUS
-wdi_pktlog_subscribe(uint8_t pdev_id, int32_t log_state)
+static inline A_STATUS wdi_pktlog_subscribe(uint8_t pdev_id, int32_t log_state)
 {
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 
@@ -203,22 +200,19 @@ wdi_pktlog_subscribe(uint8_t pdev_id, int32_t log_state)
 		}
 	}
 	if (log_state & ATH_PKTLOG_RCFIND) {
-		if (cdp_wdi_event_sub(soc, pdev_id,
-				      &PKTLOG_RCFIND_SUBSCRIBER,
+		if (cdp_wdi_event_sub(soc, pdev_id, &PKTLOG_RCFIND_SUBSCRIBER,
 				      WDI_EVENT_RATE_FIND)) {
 			return A_ERROR;
 		}
 	}
 	if (log_state & ATH_PKTLOG_RCUPDATE) {
-		if (cdp_wdi_event_sub(soc, pdev_id,
-				      &PKTLOG_RCUPDATE_SUBSCRIBER,
+		if (cdp_wdi_event_sub(soc, pdev_id, &PKTLOG_RCUPDATE_SUBSCRIBER,
 				      WDI_EVENT_RATE_UPDATE)) {
 			return A_ERROR;
 		}
 	}
 	if (log_state & ATH_PKTLOG_SW_EVENT) {
-		if (cdp_wdi_event_sub(soc, pdev_id,
-				      &PKTLOG_SW_EVENT_SUBSCRIBER,
+		if (cdp_wdi_event_sub(soc, pdev_id, &PKTLOG_SW_EVENT_SUBSCRIBER,
 				      WDI_EVENT_SW_EVENT)) {
 			return A_ERROR;
 		}
@@ -227,8 +221,7 @@ wdi_pktlog_subscribe(uint8_t pdev_id, int32_t log_state)
 	return A_OK;
 }
 #else
-static inline A_STATUS
-wdi_pktlog_subscribe(uint8_t pdev_id, int32_t log_state)
+static inline A_STATUS wdi_pktlog_subscribe(uint8_t pdev_id, int32_t log_state)
 {
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 
@@ -237,45 +230,38 @@ wdi_pktlog_subscribe(uint8_t pdev_id, int32_t log_state)
 		return A_ERROR;
 	}
 
-	if ((log_state & ATH_PKTLOG_TX) ||
-	    (log_state  & ATH_PKTLOG_RCFIND) ||
+	if ((log_state & ATH_PKTLOG_TX) || (log_state & ATH_PKTLOG_RCFIND) ||
 	    (log_state & ATH_PKTLOG_RCUPDATE) ||
 	    (log_state & ATH_PKTLOG_SW_EVENT)) {
-		if (cdp_wdi_event_sub(soc,
-				      pdev_id,
-				      &PKTLOG_OFFLOAD_SUBSCRIBER,
+		if (cdp_wdi_event_sub(soc, pdev_id, &PKTLOG_OFFLOAD_SUBSCRIBER,
 				      WDI_EVENT_OFFLOAD_ALL)) {
 			return A_ERROR;
 		}
 	}
 
 	if (log_state & ATH_PKTLOG_RX) {
-		if (cdp_wdi_event_sub(soc, pdev_id,
-				      &PKTLOG_RX_SUBSCRIBER,
+		if (cdp_wdi_event_sub(soc, pdev_id, &PKTLOG_RX_SUBSCRIBER,
 				      WDI_EVENT_RX_DESC)) {
 			return A_ERROR;
 		}
 	}
 
 	if (log_state & ATH_PKTLOG_SW_EVENT) {
-		if (cdp_wdi_event_sub(soc, pdev_id,
-				      &PKTLOG_SW_EVENT_SUBSCRIBER,
+		if (cdp_wdi_event_sub(soc, pdev_id, &PKTLOG_SW_EVENT_SUBSCRIBER,
 				      WDI_EVENT_SW_EVENT)) {
 			return A_ERROR;
 		}
 	}
 
 	if (log_state & ATH_PKTLOG_LITE_T2H) {
-		if (cdp_wdi_event_sub(soc, pdev_id,
-				      &PKTLOG_LITE_T2H_SUBSCRIBER,
+		if (cdp_wdi_event_sub(soc, pdev_id, &PKTLOG_LITE_T2H_SUBSCRIBER,
 				      WDI_EVENT_LITE_T2H)) {
 			return A_ERROR;
 		}
 	}
 
 	if (log_state & ATH_PKTLOG_LITE_RX) {
-		if (cdp_wdi_event_sub(soc, pdev_id,
-				      &PKTLOG_LITE_RX_SUBSCRIBER,
+		if (cdp_wdi_event_sub(soc, pdev_id, &PKTLOG_LITE_RX_SUBSCRIBER,
 				      WDI_EVENT_LITE_RX)) {
 			return A_ERROR;
 		}
@@ -286,77 +272,70 @@ wdi_pktlog_subscribe(uint8_t pdev_id, int32_t log_state)
 #endif
 
 void pktlog_callback(void *pdev, enum WDI_EVENT event, void *log_data,
-		u_int16_t peer_id, uint32_t status)
+		     u_int16_t peer_id, uint32_t status)
 {
 	switch (event) {
-	case WDI_EVENT_OFFLOAD_ALL:
-	{
+	case WDI_EVENT_OFFLOAD_ALL: {
 		if (process_offload_pktlog_wifi3(pdev, log_data)) {
 			qdf_print("Unable to process offload info");
 			return;
 		}
 		break;
 	}
-	case WDI_EVENT_TX_STATUS:
-	{
+	case WDI_EVENT_TX_STATUS: {
 		/*
-		 * process TX message
-		 */
+     * process TX message
+     */
 		if (process_tx_info(pdev, log_data)) {
 			qdf_print("Unable to process TX info");
 			return;
 		}
 		break;
 	}
-	case WDI_EVENT_RX_DESC:
-	{
+	case WDI_EVENT_RX_DESC: {
 		/*
-		 * process RX message for local frames
-		 */
+     * process RX message for local frames
+     */
 		if (process_rx_info(pdev, log_data)) {
 			qdf_print("Unable to process RX info");
 			return;
 		}
 		break;
 	}
-	case WDI_EVENT_RX_DESC_REMOTE:
-	{
+	case WDI_EVENT_RX_DESC_REMOTE: {
 		/*
-		 * process RX message for remote frames
-		 */
+     * process RX message for remote frames
+     */
 		if (process_rx_info_remote(pdev, log_data)) {
 			qdf_print("Unable to process RX info");
 			return;
 		}
 		break;
 	}
-	case WDI_EVENT_RATE_FIND:
-	{
+	case WDI_EVENT_RATE_FIND: {
 		/*
-		 * process RATE_FIND message
-		 */
+     * process RATE_FIND message
+     */
 		if (process_rate_find(pdev, log_data)) {
 			qdf_print("Unable to process RC_FIND info");
 			return;
 		}
 		break;
 	}
-	case WDI_EVENT_RATE_UPDATE:
-	{
+	case WDI_EVENT_RATE_UPDATE: {
 		/*
-		 * process RATE_UPDATE message
-		 */
+     * process RATE_UPDATE message
+     */
 		if (process_rate_update(pdev, log_data)) {
 			qdf_print("Unable to process RC_UPDATE");
 			return;
 		}
 		break;
 	}
-	case WDI_EVENT_SW_EVENT:
-	{
+	case WDI_EVENT_SW_EVENT: {
 		/*
-		 * process SW EVENT message
-		 */
+     * process SW EVENT message
+     */
 		if (process_sw_event(pdev, log_data)) {
 			qdf_print("Unable to process SW_EVENT");
 			return;
@@ -368,21 +347,18 @@ void pktlog_callback(void *pdev, enum WDI_EVENT event, void *log_data,
 	}
 }
 
-void
-lit_pktlog_callback(void *context, enum WDI_EVENT event, void *log_data,
-			u_int16_t peer_id, uint32_t status)
+void lit_pktlog_callback(void *context, enum WDI_EVENT event, void *log_data,
+			 u_int16_t peer_id, uint32_t status)
 {
 	switch (event) {
-	case WDI_EVENT_RX_DESC:
-	{
+	case WDI_EVENT_RX_DESC: {
 		if (process_rx_desc_remote_wifi3(context, log_data)) {
 			qdf_print("Unable to process RX info");
 			return;
 		}
 		break;
 	}
-	case WDI_EVENT_LITE_T2H:
-	{
+	case WDI_EVENT_LITE_T2H: {
 		if (process_pktlog_lite_wifi3(context, log_data,
 					      PKTLOG_TYPE_LITE_T2H)) {
 			qdf_print("Unable to process lite_t2h");
@@ -390,8 +366,7 @@ lit_pktlog_callback(void *context, enum WDI_EVENT event, void *log_data,
 		}
 		break;
 	}
-	case WDI_EVENT_LITE_RX:
-	{
+	case WDI_EVENT_LITE_RX: {
 		if (process_pktlog_lite_wifi3(context, log_data,
 					      PKTLOG_TYPE_LITE_RX)) {
 			qdf_print("Unable to process lite_rx");
@@ -412,15 +387,13 @@ wdi_pktlog_unsubscribe(uint8_t pdev_id, uint32_t log_state)
 	/* TODO: WIN implementation to get soc */
 
 	if (log_state & ATH_PKTLOG_TX) {
-		if (cdp_wdi_event_unsub(soc, pdev_id,
-					&PKTLOG_TX_SUBSCRIBER,
+		if (cdp_wdi_event_unsub(soc, pdev_id, &PKTLOG_TX_SUBSCRIBER,
 					WDI_EVENT_TX_STATUS)) {
 			return A_ERROR;
 		}
 	}
 	if (log_state & ATH_PKTLOG_RX) {
-		if (cdp_wdi_event_unsub(soc, pdev_id,
-					&PKTLOG_RX_SUBSCRIBER,
+		if (cdp_wdi_event_unsub(soc, pdev_id, &PKTLOG_RX_SUBSCRIBER,
 					WDI_EVENT_RX_DESC)) {
 			return A_ERROR;
 		}
@@ -432,8 +405,7 @@ wdi_pktlog_unsubscribe(uint8_t pdev_id, uint32_t log_state)
 	}
 
 	if (log_state & ATH_PKTLOG_RCFIND) {
-		if (cdp_wdi_event_unsub(soc, pdev_id,
-					&PKTLOG_RCFIND_SUBSCRIBER,
+		if (cdp_wdi_event_unsub(soc, pdev_id, &PKTLOG_RCFIND_SUBSCRIBER,
 					WDI_EVENT_RATE_FIND)) {
 			return A_ERROR;
 		}
@@ -461,20 +433,17 @@ wdi_pktlog_unsubscribe(uint8_t pdev_id, uint32_t log_state)
 {
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 
-	if ((log_state & ATH_PKTLOG_TX) ||
-	    (log_state  & ATH_PKTLOG_RCFIND) ||
+	if ((log_state & ATH_PKTLOG_TX) || (log_state & ATH_PKTLOG_RCFIND) ||
 	    (log_state & ATH_PKTLOG_RCUPDATE) ||
 	    (log_state & ATH_PKTLOG_SW_EVENT)) {
-		if (cdp_wdi_event_unsub(soc,
-					pdev_id,
+		if (cdp_wdi_event_unsub(soc, pdev_id,
 					&PKTLOG_OFFLOAD_SUBSCRIBER,
 					WDI_EVENT_OFFLOAD_ALL)) {
 			return A_ERROR;
 		}
 	}
 	if (log_state & ATH_PKTLOG_RX) {
-		if (cdp_wdi_event_unsub(soc, pdev_id,
-					&PKTLOG_RX_SUBSCRIBER,
+		if (cdp_wdi_event_unsub(soc, pdev_id, &PKTLOG_RX_SUBSCRIBER,
 					WDI_EVENT_RX_DESC)) {
 			return A_ERROR;
 		}
@@ -526,10 +495,10 @@ int pktlog_disable(struct hif_opaque_softc *scn)
 
 	if (pl_info->curr_pkt_state == PKTLOG_OPR_IN_PROGRESS ||
 	    pl_info->curr_pkt_state ==
-			PKTLOG_OPR_IN_PROGRESS_READ_START_PKTLOG_DISABLED ||
+		    PKTLOG_OPR_IN_PROGRESS_READ_START_PKTLOG_DISABLED ||
 	    pl_info->curr_pkt_state == PKTLOG_OPR_IN_PROGRESS_READ_COMPLETE ||
 	    pl_info->curr_pkt_state ==
-			PKTLOG_OPR_IN_PROGRESS_CLEARBUFF_COMPLETE)
+		    PKTLOG_OPR_IN_PROGRESS_CLEARBUFF_COMPLETE)
 		return -EBUSY;
 
 	save_pktlog_state = pl_info->curr_pkt_state;
@@ -542,7 +511,7 @@ int pktlog_disable(struct hif_opaque_softc *scn)
 	}
 
 	if (pl_dev->is_pktlog_cb_subscribed &&
-		wdi_pktlog_unsubscribe(pdev_id, pl_info->log_state)) {
+	    wdi_pktlog_unsubscribe(pdev_id, pl_info->log_state)) {
 		pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
 		qdf_print("Cannot unsubscribe pktlog from the WDI");
 		return -EINVAL;
@@ -671,10 +640,10 @@ int __pktlog_enable(struct hif_opaque_softc *scn, int32_t log_state,
 
 	pl_info->curr_pkt_state = PKTLOG_OPR_IN_PROGRESS;
 	/* is_iwpriv_command : 0 indicates its a vendor command
-	 * log_state: 0 indicates pktlog disable command
-	 * vendor_cmd_send flag; false means no vendor pktlog enable
-	 * command was sent previously
-	 */
+   * log_state: 0 indicates pktlog disable command
+   * vendor_cmd_send flag; false means no vendor pktlog enable
+   * command was sent previously
+   */
 	if (is_iwpriv_command == 0 && log_state == 0 &&
 	    pl_dev->vendor_cmd_send == false) {
 		pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
@@ -700,7 +669,6 @@ int __pktlog_enable(struct hif_opaque_softc *scn, int32_t log_state,
 				ASSERT(0);
 				return -ENOMEM;
 			}
-
 		}
 
 		qdf_spin_lock_bh(&pl_info->log_lock);
@@ -725,7 +693,7 @@ int __pktlog_enable(struct hif_opaque_softc *scn, int32_t log_state,
 			error = wdi_pktlog_subscribe(pdev_id, log_state);
 			if (error) {
 				pl_info->curr_pkt_state =
-						PKTLOG_OPR_NOT_IN_PROGRESS;
+					PKTLOG_OPR_NOT_IN_PROGRESS;
 				qdf_print("Unable to subscribe to the WDI");
 				return -EINVAL;
 			}
@@ -737,7 +705,7 @@ int __pktlog_enable(struct hif_opaque_softc *scn, int32_t log_state,
 		}
 		/* WMI command to enable pktlog on the firmware */
 		if (pktlog_enable_tgt(scn, log_state, ini_triggered,
-				user_triggered)) {
+				      user_triggered)) {
 			pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
 			qdf_print("Device cannot be enabled");
 			return -EINVAL;
@@ -759,8 +727,8 @@ int __pktlog_enable(struct hif_opaque_softc *scn, int32_t log_state,
 }
 
 int pktlog_enable(struct hif_opaque_softc *scn, int32_t log_state,
-		 bool ini_triggered, uint8_t user_triggered,
-		 uint32_t is_iwpriv_command)
+		  bool ini_triggered, uint8_t user_triggered,
+		  uint32_t is_iwpriv_command)
 {
 	struct pktlog_dev_t *pl_dev;
 	struct ath_pktlog_info *pl_info;
@@ -781,8 +749,8 @@ int pktlog_enable(struct hif_opaque_softc *scn, int32_t log_state,
 	}
 
 	mutex_lock(&pl_info->pktlog_mutex);
-	err = __pktlog_enable(scn, log_state, ini_triggered,
-				user_triggered, is_iwpriv_command);
+	err = __pktlog_enable(scn, log_state, ini_triggered, user_triggered,
+			      is_iwpriv_command);
 	mutex_unlock(&pl_info->pktlog_mutex);
 	return err;
 }
@@ -826,9 +794,11 @@ static int __pktlog_setsize(struct hif_opaque_softc *scn, int32_t size)
 	max_allowed_buff_size = (buff_size ? buff_size : ONE_MEGABYTE);
 
 	if (size < ONE_MEGABYTE || size > max_allowed_buff_size) {
-		qdf_print("Cannot Set Pktlog Buffer size of %d bytes.Min required is %d MB and Max allowed is %d MB",
-			  size, (ONE_MEGABYTE / ONE_MEGABYTE),
-			  (max_allowed_buff_size / ONE_MEGABYTE));
+		qdf_print(
+			"Cannot Set Pktlog Buffer size of %d bytes.Min required is %d MB "
+			"and Max allowed is %d MB",
+			size, (ONE_MEGABYTE / ONE_MEGABYTE),
+			(max_allowed_buff_size / ONE_MEGABYTE));
 		pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
 		qdf_print("Invalid requested buff size");
 		return -EINVAL;
@@ -842,16 +812,16 @@ static int __pktlog_setsize(struct hif_opaque_softc *scn, int32_t size)
 
 	if (pl_info->log_state) {
 		pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
-		qdf_print("Logging should be disabled before changing buffer size");
+		qdf_print(
+			"Logging should be disabled before changing buffer size");
 		return -EINVAL;
 	}
 
 	qdf_spin_lock_bh(&pl_info->log_lock);
 	if (pl_info->buf) {
 		if (pl_dev->is_pktlog_cb_subscribed &&
-			wdi_pktlog_unsubscribe(pdev_id, pl_info->log_state)) {
-			pl_info->curr_pkt_state =
-				PKTLOG_OPR_NOT_IN_PROGRESS;
+		    wdi_pktlog_unsubscribe(pdev_id, pl_info->log_state)) {
+			pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
 			qdf_spin_unlock_bh(&pl_info->log_lock);
 			qdf_print("Cannot unsubscribe pktlog from the WDI");
 			return -EFAULT;
@@ -922,7 +892,7 @@ int pktlog_clearbuff(struct hif_opaque_softc *scn, bool clear_buff)
 
 	if (pl_info->curr_pkt_state < PKTLOG_OPR_IN_PROGRESS_READ_COMPLETE ||
 	    pl_info->curr_pkt_state ==
-				PKTLOG_OPR_IN_PROGRESS_CLEARBUFF_COMPLETE)
+		    PKTLOG_OPR_IN_PROGRESS_CLEARBUFF_COMPLETE)
 		return -EBUSY;
 
 	save_pktlog_state = pl_info->curr_pkt_state;
@@ -930,7 +900,8 @@ int pktlog_clearbuff(struct hif_opaque_softc *scn, bool clear_buff)
 
 	if (pl_info->log_state) {
 		pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
-		qdf_print("Logging should be disabled before clearing pktlog buffer");
+		qdf_print(
+			"Logging should be disabled before clearing pktlog buffer");
 		return -EINVAL;
 	}
 
@@ -977,29 +948,23 @@ void pktlog_process_fw_msg(uint8_t pdev_id, uint32_t *buff, uint32_t len)
 	pl_fw_data.data = pl_hdr;
 	pl_fw_data.len = len;
 
-	log_type =
-		(*(pl_hdr + 1) & ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
-		ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
+	log_type = (*(pl_hdr + 1) & ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
+		   ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 
-	if ((log_type == PKTLOG_TYPE_TX_CTRL)
-		|| (log_type == PKTLOG_TYPE_TX_STAT)
-		|| (log_type == PKTLOG_TYPE_TX_MSDU_ID)
-		|| (log_type == PKTLOG_TYPE_TX_FRM_HDR)
-		|| (log_type == PKTLOG_TYPE_TX_VIRT_ADDR))
-		wdi_event_handler(WDI_EVENT_TX_STATUS,
-				  pdev_id, &pl_fw_data);
+	if ((log_type == PKTLOG_TYPE_TX_CTRL) ||
+	    (log_type == PKTLOG_TYPE_TX_STAT) ||
+	    (log_type == PKTLOG_TYPE_TX_MSDU_ID) ||
+	    (log_type == PKTLOG_TYPE_TX_FRM_HDR) ||
+	    (log_type == PKTLOG_TYPE_TX_VIRT_ADDR))
+		wdi_event_handler(WDI_EVENT_TX_STATUS, pdev_id, &pl_fw_data);
 	else if (log_type == PKTLOG_TYPE_RC_FIND)
-		wdi_event_handler(WDI_EVENT_RATE_FIND,
-				  pdev_id, &pl_fw_data);
+		wdi_event_handler(WDI_EVENT_RATE_FIND, pdev_id, &pl_fw_data);
 	else if (log_type == PKTLOG_TYPE_RC_UPDATE)
-		wdi_event_handler(WDI_EVENT_RATE_UPDATE,
-				  pdev_id, &pl_fw_data);
+		wdi_event_handler(WDI_EVENT_RATE_UPDATE, pdev_id, &pl_fw_data);
 	else if (log_type == PKTLOG_TYPE_RX_STAT)
-		wdi_event_handler(WDI_EVENT_RX_DESC,
-				  pdev_id, &pl_fw_data);
+		wdi_event_handler(WDI_EVENT_RX_DESC, pdev_id, &pl_fw_data);
 	else if (log_type == PKTLOG_TYPE_SW_EVENT)
-		wdi_event_handler(WDI_EVENT_SW_EVENT,
-				  pdev_id, &pl_fw_data);
+		wdi_event_handler(WDI_EVENT_SW_EVENT, pdev_id, &pl_fw_data);
 }
 
 #if defined(QCA_WIFI_3_0_ADRASTEA)
@@ -1007,8 +972,7 @@ static inline int pktlog_nbuf_check_sanity(qdf_nbuf_t nbuf)
 {
 	int rc = 0; /* sane */
 
-	if ((!nbuf) ||
-	    (nbuf->data < nbuf->head) ||
+	if ((!nbuf) || (nbuf->data < nbuf->head) ||
 	    ((nbuf->data + skb_headlen(nbuf)) > skb_end_pointer(nbuf)))
 		rc = -EINVAL;
 
@@ -1024,14 +988,13 @@ static inline int pktlog_nbuf_check_sanity(qdf_nbuf_t nbuf)
 static void pktlog_t2h_msg_handler(void *context, HTC_PACKET *pkt)
 {
 	struct pktlog_dev_t *pdev = (struct pktlog_dev_t *)context;
-	qdf_nbuf_t pktlog_t2h_msg = (qdf_nbuf_t) pkt->pPktContext;
+	qdf_nbuf_t pktlog_t2h_msg = (qdf_nbuf_t)pkt->pPktContext;
 	uint32_t *msg_word;
 	uint32_t msg_len;
 
 	/* check for sanity of the packet, have seen corrupted pkts */
 	if (pktlog_nbuf_check_sanity(pktlog_t2h_msg)) {
-		qdf_print("packet 0x%pK corrupted? Leaking...",
-			  pktlog_t2h_msg);
+		qdf_print("packet 0x%pK corrupted? Leaking...", pktlog_t2h_msg);
 		/* do not free; may crash! */
 		QDF_ASSERT(0);
 		return;
@@ -1048,7 +1011,7 @@ static void pktlog_t2h_msg_handler(void *context, HTC_PACKET *pkt)
 	/* confirm alignment */
 	qdf_assert((((unsigned long)qdf_nbuf_data(pktlog_t2h_msg)) & 0x3) == 0);
 
-	msg_word = (uint32_t *) qdf_nbuf_data(pktlog_t2h_msg);
+	msg_word = (uint32_t *)qdf_nbuf_data(pktlog_t2h_msg);
 	msg_len = qdf_nbuf_len(pktlog_t2h_msg);
 	pktlog_process_fw_msg(pdev->pdev_id, msg_word, msg_len);
 
@@ -1122,9 +1085,9 @@ static int pktlog_htc_connect_service(struct pktlog_dev_t *pdev)
 
 	connect.EpCallbacks.EpSendFull = pktlog_h2t_full;
 	/*
-	 * Specify how deep to let a queue get before htc_send_pkt will
-	 * call the EpSendFull function due to excessive send queue depth.
-	 */
+   * Specify how deep to let a queue get before htc_send_pkt will
+   * call the EpSendFull function due to excessive send queue depth.
+   */
 	connect.MaxSendQueueDepth = PKTLOG_MAX_SEND_QUEUE_DEPTH;
 
 	/* disable flow control for HTT data message service */
@@ -1137,13 +1100,13 @@ static int pktlog_htc_connect_service(struct pktlog_dev_t *pdev)
 
 	if (status != QDF_STATUS_SUCCESS) {
 		pdev->mt_pktlog_enabled = false;
-		return -EIO;       /* failure */
+		return -EIO; /* failure */
 	}
 
 	pdev->htc_endpoint = response.Endpoint;
 	pdev->mt_pktlog_enabled = true;
 
-	return 0;               /* success */
+	return 0; /* success */
 }
 
 /**

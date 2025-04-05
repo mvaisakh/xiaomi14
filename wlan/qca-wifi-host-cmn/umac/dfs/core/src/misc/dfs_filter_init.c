@@ -23,13 +23,13 @@
  * various ioctls to set and get radar detection thresholds.
  */
 
+#include "../dfs_filter_init.h"
+#include "../dfs_internal.h"
+#include "../dfs_partial_offload_radar.h"
 #include "../dfs_zero_cac.h"
 #include "wlan_dfs_lmac_api.h"
 #include "wlan_dfs_mlme_api.h"
 #include "wlan_dfs_tgt_api.h"
-#include "../dfs_internal.h"
-#include "../dfs_filter_init.h"
-#include "../dfs_partial_offload_radar.h"
 
 #ifndef WLAN_DFS_STATIC_MEM_ALLOC
 /*
@@ -117,7 +117,7 @@ static os_timer_func(dfs_task)
 	OS_GET_TIMER_ARG(dfs, struct wlan_dfs *);
 
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "dfs is NULL");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs is NULL");
 		return;
 	}
 
@@ -132,11 +132,8 @@ static os_timer_func(dfs_task)
  */
 static void dfs_main_task_timer_init(struct wlan_dfs *dfs)
 {
-	qdf_timer_init(NULL,
-			&(dfs->wlan_dfs_task_timer),
-			dfs_task,
-			(void *)(dfs),
-			QDF_TIMER_TYPE_WAKE_APPS);
+	qdf_timer_init(NULL, &(dfs->wlan_dfs_task_timer), dfs_task,
+		       (void *)(dfs), QDF_TIMER_TYPE_WAKE_APPS);
 }
 
 /**
@@ -168,8 +165,8 @@ static QDF_STATUS dfs_alloc_mem_filter(struct dfs_filtertype *radarf)
 	uint8_t i;
 
 	for (i = 0; i < DFS_MAX_NUM_RADAR_FILTERS; i++) {
-		radarf->ft_filters[i] = qdf_mem_malloc(sizeof(struct
-							      dfs_filter));
+		radarf->ft_filters[i] =
+			qdf_mem_malloc(sizeof(struct dfs_filter));
 		if (!radarf->ft_filters[i]) {
 			/* Free all the filter if malloc failed */
 			dfs_free_filter(radarf);
@@ -187,7 +184,7 @@ int dfs_main_attach(struct wlan_dfs *dfs)
 	struct wlan_dfs_radar_tab_info radar_info;
 
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "dfs is NULL");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs is NULL");
 		return 0;
 	}
 
@@ -198,11 +195,11 @@ int dfs_main_attach(struct wlan_dfs *dfs)
 	}
 
 	/*
-	 * Zero out radar_info. It's possible that the attach function
-	 * won't fetch an initial regulatory configuration; you really
-	 * do want to ensure that the contents indicates there aren't
-	 * any filters.
-	 */
+   * Zero out radar_info. It's possible that the attach function
+   * won't fetch an initial regulatory configuration; you really
+   * do want to ensure that the contents indicates there aren't
+   * any filters.
+   */
 	qdf_mem_zero(&radar_info, sizeof(radar_info));
 
 	lmac_get_caps(dfs->dfs_pdev_obj, &(dfs->dfs_caps));
@@ -233,7 +230,7 @@ int dfs_main_attach(struct wlan_dfs *dfs)
 
 	for (i = 0; i < DFS_MAX_EVENTS; i++)
 		STAILQ_INSERT_TAIL(&(dfs->dfs_eventq), &dfs->events[i],
-				re_list);
+				   re_list);
 
 	dfs->pulses = dfs_alloc_dfs_pulseline();
 	if (!(dfs->pulses)) {
@@ -246,13 +243,12 @@ int dfs_main_attach(struct wlan_dfs *dfs)
 
 	/* Allocate memory for radar filters. */
 	for (n = 0; n < DFS_MAX_RADAR_TYPES; n++) {
-		dfs->dfs_radarf[n] = (struct dfs_filtertype *)
-			qdf_mem_malloc(sizeof(struct dfs_filtertype));
+		dfs->dfs_radarf[n] = (struct dfs_filtertype *)qdf_mem_malloc(
+			sizeof(struct dfs_filtertype));
 		if (!(dfs->dfs_radarf[n]))
 			goto bad1;
 
-		qdf_mem_zero(dfs->dfs_radarf[n],
-			     sizeof(struct dfs_filtertype));
+		qdf_mem_zero(dfs->dfs_radarf[n], sizeof(struct dfs_filtertype));
 		status = dfs_alloc_mem_filter(dfs->dfs_radarf[n]);
 		if (!QDF_IS_STATUS_SUCCESS(status)) {
 			dfs_alert(dfs, WLAN_DEBUG_DFS_ALWAYS,
@@ -263,13 +259,13 @@ int dfs_main_attach(struct wlan_dfs *dfs)
 
 	/* Allocate memory for radar table. */
 	dfs->dfs_ftindextable = (int8_t **)qdf_mem_malloc(
-			DFS_NUM_FT_IDX_TBL_ROWS*sizeof(int8_t *));
+		DFS_NUM_FT_IDX_TBL_ROWS * sizeof(int8_t *));
 	if (!(dfs->dfs_ftindextable))
 		goto bad1;
 
 	for (n = 0; n < DFS_NUM_FT_IDX_TBL_ROWS; n++) {
-		dfs->dfs_ftindextable[n] = qdf_mem_malloc(
-				DFS_MAX_RADAR_OVERLAP*sizeof(int8_t));
+		dfs->dfs_ftindextable[n] =
+			qdf_mem_malloc(DFS_MAX_RADAR_OVERLAP * sizeof(int8_t));
 		if (!(dfs->dfs_ftindextable[n]))
 			goto bad2;
 	}
@@ -285,22 +281,23 @@ int dfs_main_attach(struct wlan_dfs *dfs)
 	dfs->dfs_b5radars = NULL;
 
 	/*
-	 * If dfs_init_radar_filters() fails, we can abort here and
-	 * reconfigure when the first valid channel + radar config
-	 * is available.
-	 */
+   * If dfs_init_radar_filters() fails, we can abort here and
+   * reconfigure when the first valid channel + radar config
+   * is available.
+   */
 	if (dfs_init_radar_filters(dfs, &radar_info)) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "Radar Filter Initialization Failed");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,
+			"Radar Filter Initialization Failed");
 		return 1;
 	}
 
 	dfs->wlan_dfs_false_rssi_thres = RSSI_POSSIBLY_FALSE;
 	dfs->wlan_dfs_peak_mag = SEARCH_FFT_REPORT_PEAK_MAG_THRSH;
-	dfs->dfs_phyerr_freq_min     = 0x7fffffff;
-	dfs->dfs_phyerr_freq_max     = 0;
+	dfs->dfs_phyerr_freq_min = 0x7fffffff;
+	dfs->dfs_phyerr_freq_max = 0;
 	dfs->dfs_phyerr_queued_count = 0;
-	dfs->dfs_phyerr_w53_counter  = 0;
-	dfs->dfs_pri_multiplier      = 2;
+	dfs->dfs_phyerr_w53_counter = 0;
+	dfs->dfs_pri_multiplier = 2;
 	dfs_get_radars(dfs);
 
 	return 0;

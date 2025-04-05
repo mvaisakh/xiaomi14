@@ -18,11 +18,10 @@
  * DOC: Public API implementation of pre cac called by north bound iface.
  */
 
-#include "../../core/src/wlan_pre_cac_main.h"
 #include "wlan_pre_cac_ucfg_api.h"
+#include "../../core/src/wlan_pre_cac_main.h"
 
-void ucfg_pre_cac_complete_set(struct wlan_objmgr_vdev *vdev,
-			       bool status)
+void ucfg_pre_cac_complete_set(struct wlan_objmgr_vdev *vdev, bool status)
 {
 	pre_cac_complete_set(vdev, status);
 }
@@ -37,8 +36,7 @@ void ucfg_pre_cac_stop(struct wlan_objmgr_psoc *psoc)
 	pre_cac_stop(psoc);
 }
 
-void ucfg_pre_cac_set_freq(struct wlan_objmgr_vdev *vdev,
-			   qdf_freq_t freq)
+void ucfg_pre_cac_set_freq(struct wlan_objmgr_vdev *vdev, qdf_freq_t freq)
 {
 	pre_cac_set_freq(vdev, freq);
 }
@@ -54,8 +52,7 @@ void ucfg_pre_cac_set_freq_before_pre_cac(struct wlan_objmgr_vdev *vdev,
 	return pre_cac_set_freq_before_pre_cac(vdev, freq);
 }
 
-void ucfg_pre_cac_adapter_set(struct wlan_objmgr_vdev *vdev,
-			      bool status)
+void ucfg_pre_cac_adapter_set(struct wlan_objmgr_vdev *vdev, bool status)
 {
 	pre_cac_adapter_set(vdev, status);
 }
@@ -65,8 +62,7 @@ bool ucfg_pre_cac_adapter_is_active(struct wlan_objmgr_vdev *vdev)
 	return pre_cac_adapter_is_active(vdev);
 }
 
-void ucfg_pre_cac_get_vdev_id(struct wlan_objmgr_psoc *psoc,
-			      uint8_t *vdev_id)
+void ucfg_pre_cac_get_vdev_id(struct wlan_objmgr_psoc *psoc, uint8_t *vdev_id)
 {
 	pre_cac_get_vdev_id(psoc, vdev_id);
 }

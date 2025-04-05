@@ -3,11 +3,11 @@
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/slab.h>
-#include <linux/device.h>
 #include <linux/delay.h>
-#include <linux/module.h>
+#include <linux/device.h>
 #include <linux/kthread.h>
+#include <linux/module.h>
+#include <linux/slab.h>
 #include <linux/soc/qcom/altmode-glink.h>
 #include <linux/usb/dwc3-msm.h>
 #include <linux/usb/pd_vdo.h>
@@ -15,7 +15,6 @@
 #include "dp_altmode.h"
 #include "dp_debug.h"
 #include "sde_dbg.h"
-
 
 #define ALTMODE_CONFIGURE_MASK (0x3f)
 #define ALTMODE_HPD_STATE_MASK (0x40)
@@ -70,7 +69,8 @@ static int dp_altmode_set_usb_dp_mode(struct dp_altmode_private *altmode)
 	}
 
 	while (timeout) {
-		rc = dwc3_msm_set_dp_mode(&usb_pdev->dev, altmode->connected, altmode->lanes);
+		rc = dwc3_msm_set_dp_mode(&usb_pdev->dev, altmode->connected,
+					  altmode->lanes);
 		if (rc != -EBUSY && rc != -EAGAIN)
 			break;
 
@@ -90,7 +90,7 @@ static int dp_altmode_set_usb_dp_mode(struct dp_altmode_private *altmode)
 }
 
 static void dp_altmode_send_pan_ack(struct altmode_client *amclient,
-		u8 port_index)
+				    u8 port_index)
 {
 	int rc;
 	struct altmode_pan_ack_msg ack;
@@ -110,10 +110,9 @@ static void dp_altmode_send_pan_ack(struct altmode_client *amclient,
 static int dp_altmode_notify(void *priv, void *data, size_t len)
 {
 	int rc = 0;
-	struct dp_altmode_private *altmode =
-			(struct dp_altmode_private *) priv;
+	struct dp_altmode_private *altmode = (struct dp_altmode_private *)priv;
 	u8 port_index, dp_data, orientation;
-	u8 *payload = (u8 *) data;
+	u8 *payload = (u8 *)data;
 	u8 pin, hpd_state, hpd_irq;
 	bool force_multi_func = altmode->dp_altmode.base.force_multi_func;
 
@@ -127,21 +126,24 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 
 	altmode->dp_altmode.base.hpd_high = !!hpd_state;
 	altmode->dp_altmode.base.hpd_irq = !!hpd_irq;
-	altmode->dp_altmode.base.multi_func = force_multi_func ? true :
-		!(pin == DPAM_HPD_C || pin == DPAM_HPD_E || pin == DPAM_HPD_OUT);
+	altmode->dp_altmode.base.multi_func =
+		force_multi_func ? true :
+				   !(pin == DPAM_HPD_C || pin == DPAM_HPD_E ||
+				     pin == DPAM_HPD_OUT);
 
 	DP_DEBUG("payload=0x%x\n", dp_data);
 	DP_DEBUG("port_index=%d, orientation=%d, pin=%d, hpd_state=%d\n",
-			port_index, orientation, pin, hpd_state);
+		 port_index, orientation, pin, hpd_state);
 	DP_DEBUG("multi_func=%d, hpd_high=%d, hpd_irq=%d\n",
-			altmode->dp_altmode.base.multi_func,
-			altmode->dp_altmode.base.hpd_high,
-			altmode->dp_altmode.base.hpd_irq);
+		 altmode->dp_altmode.base.multi_func,
+		 altmode->dp_altmode.base.hpd_high,
+		 altmode->dp_altmode.base.hpd_irq);
 	DP_DEBUG("connected=%d\n", altmode->connected);
 	SDE_EVT32_EXTERNAL(dp_data, port_index, orientation, pin, hpd_state,
-			altmode->dp_altmode.base.multi_func,
-			altmode->dp_altmode.base.hpd_high,
-			altmode->dp_altmode.base.hpd_irq, altmode->connected);
+			   altmode->dp_altmode.base.multi_func,
+			   altmode->dp_altmode.base.hpd_high,
+			   altmode->dp_altmode.base.hpd_irq,
+			   altmode->connected);
 
 	if (!pin) {
 		/* Cable detach */
@@ -154,7 +156,8 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 
 			rc = dp_altmode_set_usb_dp_mode(altmode);
 			if (rc)
-				DP_ERR("failed to clear usb dp mode, rc: %d\n", rc);
+				DP_ERR("failed to clear usb dp mode, rc: %d\n",
+				       rc);
 		}
 		goto ack;
 	}
@@ -169,7 +172,8 @@ static int dp_altmode_notify(void *priv, void *data, size_t len)
 		if (altmode->dp_altmode.base.multi_func)
 			altmode->lanes = 2;
 
-		DP_DEBUG("Connected=%d, lanes=%d\n",altmode->connected,altmode->lanes);
+		DP_DEBUG("Connected=%d, lanes=%d\n", altmode->connected,
+			 altmode->lanes);
 
 		switch (orientation) {
 		case 0:
@@ -212,7 +216,7 @@ static void dp_altmode_register(void *priv)
 {
 	struct dp_altmode_private *altmode = priv;
 	struct altmode_client_data cd = {
-		.callback	= &dp_altmode_notify,
+		.callback = &dp_altmode_notify,
 	};
 
 	cd.name = "displayport";
@@ -222,7 +226,7 @@ static void dp_altmode_register(void *priv)
 	altmode->amclient = altmode_register_client(altmode->dev, &cd);
 	if (IS_ERR_OR_NULL(altmode->amclient))
 		DP_ERR("failed to register as client: %ld\n",
-				PTR_ERR(altmode->amclient));
+		       PTR_ERR(altmode->amclient));
 	else
 		DP_DEBUG("success\n");
 }
@@ -233,8 +237,8 @@ static int dp_altmode_simulate_connect(struct dp_hpd *dp_hpd, bool hpd)
 	struct dp_altmode_private *altmode;
 
 	dp_altmode = container_of(dp_hpd, struct dp_altmode, base);
-	altmode = container_of(dp_altmode, struct dp_altmode_private,
-			dp_altmode);
+	altmode =
+		container_of(dp_altmode, struct dp_altmode_private, dp_altmode);
 
 	dp_altmode->base.hpd_high = hpd;
 	altmode->forced_disconnect = !hpd;
@@ -255,13 +259,13 @@ static int dp_altmode_simulate_attention(struct dp_hpd *dp_hpd, int vdo)
 	struct dp_altmode *status;
 
 	dp_altmode = container_of(dp_hpd, struct dp_altmode, base);
-	altmode = container_of(dp_altmode, struct dp_altmode_private,
-			dp_altmode);
+	altmode =
+		container_of(dp_altmode, struct dp_altmode_private, dp_altmode);
 
 	status = &altmode->dp_altmode;
 
-	status->base.hpd_high  = (vdo & BIT(7)) ? true : false;
-	status->base.hpd_irq   = (vdo & BIT(8)) ? true : false;
+	status->base.hpd_high = (vdo & BIT(7)) ? true : false;
+	status->base.hpd_irq = (vdo & BIT(8)) ? true : false;
 
 	if (altmode->dp_cb && altmode->dp_cb->attention)
 		altmode->dp_cb->attention(altmode->dev);
@@ -315,8 +319,8 @@ void dp_altmode_put(struct dp_hpd *dp_hpd)
 	if (!dp_altmode)
 		return;
 
-	altmode = container_of(dp_altmode, struct dp_altmode_private,
-			dp_altmode);
+	altmode =
+		container_of(dp_altmode, struct dp_altmode_private, dp_altmode);
 
 	altmode_deregister_client(altmode->amclient);
 	altmode_deregister_notifier(altmode->dev, altmode);

@@ -21,28 +21,27 @@
  * This file provides OS dependent perf API's.
  */
 
-#include <linux/version.h>
-#include <linux/kernel.h>
-#include <linux/uaccess.h>
 #include <linux/fs.h>
-#include <linux/proc_fs.h>
-#include <linux/vmalloc.h>
+#include <linux/kernel.h>
 #include <linux/list.h>
+#include <linux/proc_fs.h>
 #include <linux/spinlock.h>
+#include <linux/uaccess.h>
+#include <linux/version.h>
+#include <linux/vmalloc.h>
 
-#include <qdf_perf.h>
 #include <qdf_module.h>
+#include <qdf_perf.h>
 #ifdef QCA_PERF_PROFILING
 
-qdf_perf_entry_t     perf_root = {{0, 0} };
+qdf_perf_entry_t perf_root = { { 0, 0 } };
 
 /**
  * qdf_perfmod_init() - Module init
  *
  * return: int
  */
-int
-qdf_perfmod_init(void)
+int qdf_perfmod_init(void)
 {
 	QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_INFO,
 		  "Perf Debug Module Init");
@@ -58,8 +57,7 @@ qdf_export_symbol(qdf_perfmod_init);
  *
  * Return: none
  */
-void
-qdf_perfmod_exit(void)
+void qdf_perfmod_exit(void)
 {
 	QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_INFO,
 		  "Perf Debug Module Exit");
@@ -75,12 +73,11 @@ qdf_export_symbol(qdf_perfmod_exit);
  *
  * return: perf id
  */
-qdf_perf_id_t
-__qdf_perf_init(qdf_perf_id_t parent, uint8_t *id_name,
-		qdf_perf_cntr_t type)
+qdf_perf_id_t __qdf_perf_init(qdf_perf_id_t parent, uint8_t *id_name,
+			      qdf_perf_cntr_t type)
 {
-	qdf_perf_entry_t    *entry  = NULL;
-	qdf_perf_entry_t    *pentry = PERF_ENTRY(parent);
+	qdf_perf_entry_t *entry = NULL;
+	qdf_perf_entry_t *pentry = PERF_ENTRY(parent);
 
 	if (type >= CNTR_LAST) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
@@ -115,16 +112,16 @@ __qdf_perf_init(qdf_perf_id_t parent, uint8_t *id_name,
 		goto done;
 	}
 
-	entry->parent   = pentry;
-	entry->proc     = create_proc_entry(id_name, S_IFREG|S_IRUGO|S_IWUSR,
+	entry->parent = pentry;
+	entry->proc = create_proc_entry(id_name, S_IFREG | S_IRUGO | S_IWUSR,
 					pentry->proc);
-	entry->proc->data       = entry;
-	entry->proc->read_proc  = api_tbl[type].proc_read;
+	entry->proc->data = entry;
+	entry->proc->read_proc = api_tbl[type].proc_read;
 	entry->proc->write_proc = api_tbl[type].proc_write;
 
 	/*
-	 * Initialize the Event with default values
-	 */
+   * Initialize the Event with default values
+   */
 	api_tbl[type].init(entry, api_tbl[type].def_val);
 
 done:
@@ -138,10 +135,9 @@ qdf_export_symbol(__qdf_perf_init);
  *
  * @return: bool
  */
-bool __qdf_perf_destroy(qdf_perf_id_t  id)
+bool __qdf_perf_destroy(qdf_perf_id_t id)
 {
-	qdf_perf_entry_t     *entry  = PERF_ENTRY(id),
-		*parent = entry->parent;
+	qdf_perf_entry_t *entry = PERF_ENTRY(id), *parent = entry->parent;
 
 	if (!list_empty(&entry->child)) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,

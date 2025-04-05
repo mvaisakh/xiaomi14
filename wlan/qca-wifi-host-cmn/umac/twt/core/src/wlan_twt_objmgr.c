@@ -19,11 +19,11 @@
  * DOC: wlan_twt_objmgr.c
  * This file defines the APIs of TWT component.
  */
-#include "wlan_twt_common.h"
-#include "wlan_twt_priv.h"
-#include "wlan_twt_objmgr_handler.h"
-#include "wlan_objmgr_peer_obj.h"
 #include "include/wlan_mlme_cmn.h"
+#include "wlan_objmgr_peer_obj.h"
+#include "wlan_twt_common.h"
+#include "wlan_twt_objmgr_handler.h"
+#include "wlan_twt_priv.h"
 
 QDF_STATUS
 wlan_twt_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc, void *arg)
@@ -39,8 +39,7 @@ wlan_twt_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 	twt_psoc_obj->disable_context.context = NULL;
 	twt_psoc_obj->twt_pmo_disabled = 0;
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						       WLAN_UMAC_COMP_TWT,
+	status = wlan_objmgr_psoc_component_obj_attach(psoc, WLAN_UMAC_COMP_TWT,
 						       (void *)twt_psoc_obj,
 						       QDF_STATUS_SUCCESS);
 
@@ -60,15 +59,14 @@ wlan_twt_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 	QDF_STATUS status;
 	struct twt_psoc_priv_obj *twt_psoc_obj;
 
-	twt_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						WLAN_UMAC_COMP_TWT);
+	twt_psoc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_TWT);
 	if (!twt_psoc_obj) {
 		twt_err("Failed to get twt obj in psoc");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-						       WLAN_UMAC_COMP_TWT,
+	status = wlan_objmgr_psoc_component_obj_detach(psoc, WLAN_UMAC_COMP_TWT,
 						       twt_psoc_obj);
 
 	if (QDF_IS_STATUS_ERROR(status))
@@ -91,10 +89,8 @@ wlan_twt_vdev_obj_create_handler(struct wlan_objmgr_vdev *vdev, void *arg)
 
 	twt_vdev_obj->twt_wait_for_notify = false;
 
-	status = wlan_objmgr_vdev_component_obj_attach(vdev,
-						       WLAN_UMAC_COMP_TWT,
-						       twt_vdev_obj,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_vdev_component_obj_attach(
+		vdev, WLAN_UMAC_COMP_TWT, twt_vdev_obj, QDF_STATUS_SUCCESS);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_mem_free(twt_vdev_obj);
@@ -126,15 +122,14 @@ wlan_twt_vdev_obj_destroy_handler(struct wlan_objmgr_vdev *vdev, void *arg)
 		return status;
 	}
 
-	twt_vdev_obj = wlan_objmgr_vdev_get_comp_private_obj(vdev,
-							    WLAN_UMAC_COMP_TWT);
+	twt_vdev_obj =
+		wlan_objmgr_vdev_get_comp_private_obj(vdev, WLAN_UMAC_COMP_TWT);
 	if (!twt_vdev_obj) {
 		twt_err("Failed to get twt obj in vdev");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_vdev_component_obj_detach(vdev,
-						       WLAN_UMAC_COMP_TWT,
+	status = wlan_objmgr_vdev_component_obj_detach(vdev, WLAN_UMAC_COMP_TWT,
 						       twt_vdev_obj);
 
 	if (QDF_IS_STATUS_ERROR(status))
@@ -162,10 +157,8 @@ wlan_twt_peer_obj_create_handler(struct wlan_objmgr_peer *peer, void *arg)
 
 	twt_lock_create(&twt_peer_obj->twt_peer_lock);
 
-	status = wlan_objmgr_peer_component_obj_attach(peer,
-						       WLAN_UMAC_COMP_TWT,
-						       twt_peer_obj,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_peer_component_obj_attach(
+		peer, WLAN_UMAC_COMP_TWT, twt_peer_obj, QDF_STATUS_SUCCESS);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		twt_lock_destroy(&twt_peer_obj->twt_peer_lock);
@@ -189,8 +182,8 @@ wlan_twt_peer_obj_destroy_handler(struct wlan_objmgr_peer *peer, void *arg)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	twt_peer_obj = wlan_objmgr_peer_get_comp_private_obj(peer,
-						WLAN_UMAC_COMP_TWT);
+	twt_peer_obj =
+		wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_TWT);
 	if (!twt_peer_obj) {
 		twt_err("twt_peer_obj is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -241,4 +234,3 @@ wlan_twt_psoc_set_pmo_enable(struct wlan_objmgr_psoc *psoc,
 
 	return QDF_STATUS_SUCCESS;
 }
-

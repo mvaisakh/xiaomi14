@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
-#include <linux/module.h>
-#include <linux/slab.h>
-#include <linux/mod_devicetable.h>
-#include <linux/of_device.h>
-#include <linux/timer.h>
-#include "ipe_core.h"
-#include "ipe_soc.h"
-#include "cam_hw.h"
-#include "cam_hw_intf.h"
-#include "cam_io_util.h"
-#include "cam_icp_hw_intf.h"
-#include "cam_icp_hw_mgr_intf.h"
 #include "cam_cpas_api.h"
 #include "cam_debug_util.h"
+#include "cam_hw.h"
+#include "cam_hw_intf.h"
+#include "cam_icp_hw_intf.h"
+#include "cam_icp_hw_mgr_intf.h"
+#include "cam_io_util.h"
 #include "camera_main.h"
+#include "ipe_core.h"
+#include "ipe_soc.h"
+#include <linux/mod_devicetable.h>
+#include <linux/module.h>
+#include <linux/of_device.h>
+#include <linux/slab.h>
+#include <linux/timer.h>
 
 static struct cam_ipe_device_hw_info cam_ipe_hw_info[] = {
 	{
@@ -47,8 +48,8 @@ static struct cam_ipe_device_hw_info cam_ipe680_hw_info[] = {
 };
 
 int cam_ipe_register_cpas(struct cam_hw_soc_info *soc_info,
-	struct cam_ipe_device_core_info *core_info,
-	uint32_t hw_idx)
+			  struct cam_ipe_device_core_info *core_info,
+			  uint32_t hw_idx)
 {
 	struct cam_cpas_register_params cpas_register_params;
 	int rc;
@@ -69,26 +70,25 @@ int cam_ipe_register_cpas(struct cam_hw_soc_info *soc_info,
 	return rc;
 }
 
-static int cam_ipe_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+static int cam_ipe_component_bind(struct device *dev, struct device *master_dev,
+				  void *data)
 {
-	struct cam_hw_info            *ipe_dev = NULL;
-	struct cam_hw_intf            *ipe_dev_intf = NULL;
-	const struct of_device_id         *match_dev = NULL;
-	struct cam_ipe_device_core_info   *core_info = NULL;
-	struct cam_ipe_device_hw_info     *hw_info = NULL;
-	int                                rc = 0;
+	struct cam_hw_info *ipe_dev = NULL;
+	struct cam_hw_intf *ipe_dev_intf = NULL;
+	const struct of_device_id *match_dev = NULL;
+	struct cam_ipe_device_core_info *core_info = NULL;
+	struct cam_ipe_device_hw_info *hw_info = NULL;
+	int rc = 0;
 	struct cam_cpas_query_cap query;
 	uint32_t *cam_caps, num_cap_mask;
 	uint32_t hw_idx;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	of_property_read_u32(pdev->dev.of_node,
-		"cell-index", &hw_idx);
+	of_property_read_u32(pdev->dev.of_node, "cell-index", &hw_idx);
 
-	rc = cam_cpas_get_hw_info(&query.camera_family,
-			&query.camera_version, &query.cpas_version,
-			&cam_caps, &num_cap_mask, NULL, NULL);
+	rc = cam_cpas_get_hw_info(&query.camera_family, &query.camera_version,
+				  &query.cpas_version, &cam_caps, &num_cap_mask,
+				  NULL, NULL);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "failed to get hw info rc=%d", rc);
 		return rc;
@@ -120,13 +120,12 @@ static int cam_ipe_component_bind(struct device *dev,
 	ipe_dev_intf->hw_type = CAM_ICP_DEV_IPE;
 
 	CAM_DBG(CAM_ICP, "IPE component bind type %d index %d",
-		ipe_dev_intf->hw_type,
-		ipe_dev_intf->hw_idx);
+		ipe_dev_intf->hw_type, ipe_dev_intf->hw_idx);
 
 	platform_set_drvdata(pdev, ipe_dev_intf);
 
-	ipe_dev->core_info = kzalloc(sizeof(struct cam_ipe_device_core_info),
-		GFP_KERNEL);
+	ipe_dev->core_info =
+		kzalloc(sizeof(struct cam_ipe_device_core_info), GFP_KERNEL);
 	if (!ipe_dev->core_info) {
 		kfree(ipe_dev);
 		kfree(ipe_dev_intf);
@@ -134,8 +133,8 @@ static int cam_ipe_component_bind(struct device *dev,
 	}
 	core_info = (struct cam_ipe_device_core_info *)ipe_dev->core_info;
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_DBG(CAM_ICP, "No ipe hardware info");
 		kfree(ipe_dev->core_info);
@@ -148,7 +147,7 @@ static int cam_ipe_component_bind(struct device *dev,
 	core_info->ipe_hw_info = hw_info;
 
 	rc = cam_ipe_init_soc_resources(&ipe_dev->soc_info, cam_ipe_irq,
-		ipe_dev);
+					ipe_dev);
 	if (rc < 0) {
 		CAM_ERR(CAM_ICP, "failed to init_soc");
 		kfree(ipe_dev->core_info);
@@ -159,8 +158,8 @@ static int cam_ipe_component_bind(struct device *dev,
 
 	CAM_DBG(CAM_ICP, "cam_ipe_init_soc_resources : %pK",
 		(void *)&ipe_dev->soc_info);
-	rc = cam_ipe_register_cpas(&ipe_dev->soc_info,
-		core_info, ipe_dev_intf->hw_idx);
+	rc = cam_ipe_register_cpas(&ipe_dev->soc_info, core_info,
+				   ipe_dev_intf->hw_idx);
 	if (rc < 0) {
 		kfree(ipe_dev->core_info);
 		kfree(ipe_dev);
@@ -179,11 +178,11 @@ static int cam_ipe_component_bind(struct device *dev,
 }
 
 static void cam_ipe_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
-	struct cam_hw_info            *ipe_dev = NULL;
-	struct cam_hw_intf            *ipe_dev_intf = NULL;
-	struct cam_ipe_device_core_info   *core_info = NULL;
+	struct cam_hw_info *ipe_dev = NULL;
+	struct cam_hw_intf *ipe_dev_intf = NULL;
+	struct cam_ipe_device_core_info *core_info = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	CAM_DBG(CAM_ICP, "Unbinding component: %s", pdev->name);
@@ -196,7 +195,6 @@ static void cam_ipe_component_unbind(struct device *dev,
 	kfree(ipe_dev);
 	kfree(ipe_dev_intf);
 }
-
 
 const static struct component_ops cam_ipe_component_ops = {
 	.bind = cam_ipe_component_bind,
@@ -235,14 +233,15 @@ static const struct of_device_id cam_ipe_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_ipe_dt_match);
 
 struct platform_driver cam_ipe_driver = {
-	.probe = cam_ipe_probe,
-	.remove = cam_ipe_remove,
-	.driver = {
-		.name = "cam-ipe",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_ipe_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_ipe_probe,
+    .remove = cam_ipe_remove,
+    .driver =
+        {
+            .name = "cam-ipe",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_ipe_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_ipe_init_module(void)

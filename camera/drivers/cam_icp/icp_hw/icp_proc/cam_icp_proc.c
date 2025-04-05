@@ -3,12 +3,13 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include "cam_debug_util.h"
 #include "cam_icp_proc.h"
+#include "cam_debug_util.h"
 
 uint32_t icp_request_cnt[CAM_ICP_MAX_ICP_HW_TYPE];
 
-static int cam_icp_get_device_num(enum cam_icp_hw_type dev_type, uint32_t *num_dev)
+static int cam_icp_get_device_num(enum cam_icp_hw_type dev_type,
+				  uint32_t *num_dev)
 {
 	int rc = 0;
 
@@ -27,8 +28,10 @@ static int cam_icp_get_device_num(enum cam_icp_hw_type dev_type, uint32_t *num_d
 	return rc;
 }
 
-int cam_icp_alloc_processor_devs(struct device_node *np, enum cam_icp_hw_type *icp_hw_type,
-	struct cam_hw_intf ***devices, uint32_t *hw_dev_cnt)
+int cam_icp_alloc_processor_devs(struct device_node *np,
+				 enum cam_icp_hw_type *icp_hw_type,
+				 struct cam_hw_intf ***devices,
+				 uint32_t *hw_dev_cnt)
 {
 	uint32_t num_icp_found = 0, num_icp_listed;
 	int rc, i;
@@ -70,8 +73,9 @@ int cam_icp_alloc_processor_devs(struct device_node *np, enum cam_icp_hw_type *i
 
 	if (icp_request_cnt[i] > num_icp_found) {
 		CAM_ERR(CAM_ICP,
-			"number of ICP_V%u total requested: %u exceeds number of icp hw available: %u",
-			i+1, icp_request_cnt[i], num_icp_found);
+			"number of ICP_V%u total requested: %u exceeds number of icp hw "
+			"available: %u",
+			i + 1, icp_request_cnt[i], num_icp_found);
 		return -EINVAL;
 	}
 
@@ -91,7 +95,8 @@ int cam_icp_alloc_processor_devs(struct device_node *np, enum cam_icp_hw_type *i
 	return rc;
 }
 
-int cam_icp_get_hfi_device_ops(uint32_t hw_type, const struct hfi_ops **hfi_proc_ops)
+int cam_icp_get_hfi_device_ops(uint32_t hw_type,
+			       const struct hfi_ops **hfi_proc_ops)
 {
 	int rc = 0;
 

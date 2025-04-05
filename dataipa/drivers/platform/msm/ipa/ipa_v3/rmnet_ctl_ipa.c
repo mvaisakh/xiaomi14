@@ -3,12 +3,12 @@
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/string.h>
-#include <linux/skbuff.h>
-#include <linux/workqueue.h>
 #include "ipa.h"
-#include <uapi/linux/msm_rmnet.h>
 #include "ipa_i.h"
+#include <linux/skbuff.h>
+#include <linux/string.h>
+#include <linux/workqueue.h>
+#include <uapi/linux/msm_rmnet.h>
 
 enum ipa_rmnet_ctl_state {
 	IPA_RMNET_CTL_NOT_REG,
@@ -20,9 +20,9 @@ enum ipa_rmnet_ctl_state {
 #define IPA_RMNET_CTL_PIPE_NOT_READY (0)
 #define IPA_RMNET_CTL_PIPE_TX_READY (1 << 0)
 #define IPA_RMNET_CTL_PIPE_RX_READY (1 << 1)
-#define IPA_RMNET_CTL_PIPE_READY_ALL (IPA_RMNET_CTL_PIPE_TX_READY | \
-	IPA_RMNET_CTL_PIPE_RX_READY) /* TX Ready + RX ready */
-
+#define IPA_RMNET_CTL_PIPE_READY_ALL   \
+	(IPA_RMNET_CTL_PIPE_TX_READY | \
+	 IPA_RMNET_CTL_PIPE_RX_READY) /* TX Ready + RX ready */
 
 #define IPA_WWAN_CONS_DESC_FIFO_SZ 256
 #define RMNET_CTRL_QUEUE_MAX (2 * IPA_WWAN_CONS_DESC_FIFO_SZ)
@@ -67,12 +67,12 @@ struct rmnet_ctl_ipa3_context {
 static struct rmnet_ctl_ipa3_context *rmnet_ctl_ipa3_ctx;
 
 static void rmnet_ctl_wakeup_ipa(struct work_struct *work);
-static DECLARE_DELAYED_WORK(rmnet_ctl_wakeup_work,
-	rmnet_ctl_wakeup_ipa);
+static DECLARE_DELAYED_WORK(rmnet_ctl_wakeup_work, rmnet_ctl_wakeup_ipa);
 static void apps_rmnet_ctl_tx_complete_notify(void *priv,
-	enum ipa_dp_evt_type evt, unsigned long data);
-static void apps_rmnet_ctl_receive_notify(void *priv,
-	enum ipa_dp_evt_type evt, unsigned long data);
+					      enum ipa_dp_evt_type evt,
+					      unsigned long data);
+static void apps_rmnet_ctl_receive_notify(void *priv, enum ipa_dp_evt_type evt,
+					  unsigned long data);
 static int ipa3_rmnet_ctl_register_pm_client(void);
 static void ipa3_rmnet_ctl_deregister_pm_client(void);
 
@@ -86,30 +86,28 @@ int ipa3_rmnet_ctl_init(void)
 	}
 
 	if (ipa_get_ep_mapping(IPA_CLIENT_APPS_WAN_LOW_LAT_PROD) == -1 ||
-		ipa_get_ep_mapping(IPA_CLIENT_APPS_WAN_LOW_LAT_CONS) == -1)
-	{
+	    ipa_get_ep_mapping(IPA_CLIENT_APPS_WAN_LOW_LAT_CONS) == -1) {
 		IPAERR("invalid low lat endpoints\n");
 		return -EINVAL;
 	}
 
-	rmnet_ctl_ipa3_ctx = kzalloc(sizeof(*rmnet_ctl_ipa3_ctx),
-			GFP_KERNEL);
+	rmnet_ctl_ipa3_ctx = kzalloc(sizeof(*rmnet_ctl_ipa3_ctx), GFP_KERNEL);
 
 	if (!rmnet_ctl_ipa3_ctx)
 		return -ENOMEM;
 
 	snprintf(buff, IPA_RESOURCE_NAME_MAX, "rmnet_ctlwq");
-	rmnet_ctl_ipa3_ctx->wq = alloc_workqueue(buff,
-		WQ_MEM_RECLAIM | WQ_UNBOUND | WQ_SYSFS, 1);
+	rmnet_ctl_ipa3_ctx->wq = alloc_workqueue(
+		buff, WQ_MEM_RECLAIM | WQ_UNBOUND | WQ_SYSFS, 1);
 	if (!rmnet_ctl_ipa3_ctx->wq) {
 		kfree(rmnet_ctl_ipa3_ctx);
 		rmnet_ctl_ipa3_ctx = NULL;
 		return -ENOMEM;
 	}
 	memset(&rmnet_ctl_ipa3_ctx->apps_to_ipa_low_lat_ep_cfg, 0,
-		sizeof(struct ipa_sys_connect_params));
+	       sizeof(struct ipa_sys_connect_params));
 	memset(&rmnet_ctl_ipa3_ctx->ipa_to_apps_low_lat_ep_cfg, 0,
-		sizeof(struct ipa_sys_connect_params));
+	       sizeof(struct ipa_sys_connect_params));
 	skb_queue_head_init(&rmnet_ctl_ipa3_ctx->tx_queue);
 	rmnet_ctl_ipa3_ctx->state = IPA_RMNET_CTL_NOT_REG;
 	mutex_init(&rmnet_ctl_ipa3_ctx->lock);
@@ -119,12 +117,9 @@ int ipa3_rmnet_ctl_init(void)
 }
 
 int ipa_register_rmnet_ctl_cb(
-	void (*ipa_rmnet_ctl_ready_cb)(void *user_data1),
-	void *user_data1,
-	void (*ipa_rmnet_ctl_stop_cb)(void *user_data2),
-	void *user_data2,
-	void (*ipa_rmnet_ctl_rx_notify_cb)(
-	void *user_data3, void *rx_data),
+	void (*ipa_rmnet_ctl_ready_cb)(void *user_data1), void *user_data1,
+	void (*ipa_rmnet_ctl_stop_cb)(void *user_data2), void *user_data2,
+	void (*ipa_rmnet_ctl_rx_notify_cb)(void *user_data3, void *rx_data),
 	void *user_data3)
 {
 	/* check ipa3_ctx existed or not */
@@ -145,7 +140,7 @@ int ipa_register_rmnet_ctl_cb(
 
 	mutex_lock(&rmnet_ctl_ipa3_ctx->lock);
 	if (rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_NOT_REG &&
-		rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_PIPE_READY) {
+	    rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_PIPE_READY) {
 		IPADBG("rmnet_ctl registered already\n");
 		mutex_unlock(&rmnet_ctl_ipa3_ctx->lock);
 		return -EEXIST;
@@ -189,7 +184,7 @@ int ipa_unregister_rmnet_ctl_cb(void)
 
 	mutex_lock(&rmnet_ctl_ipa3_ctx->lock);
 	if (rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_REGD &&
-		rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_START) {
+	    rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_START) {
 		IPADBG("rmnet_ctl unregistered already\n");
 		mutex_unlock(&rmnet_ctl_ipa3_ctx->lock);
 		return 0;
@@ -214,7 +209,7 @@ int ipa_unregister_rmnet_ctl_cb(void)
 EXPORT_SYMBOL(ipa_unregister_rmnet_ctl_cb);
 
 int ipa3_setup_apps_low_lat_cons_pipe(bool rmnet_config,
-	struct rmnet_ingress_param *ingress_param)
+				      struct rmnet_ingress_param *ingress_param)
 {
 	struct ipa_sys_connect_params *ipa_low_lat_ep_cfg;
 	int ret = 0;
@@ -224,24 +219,22 @@ int ipa3_setup_apps_low_lat_cons_pipe(bool rmnet_config,
 		IPAERR("low lat pipe is disabled");
 		return 0;
 	}
-	ep_idx = ipa_get_ep_mapping(
-		IPA_CLIENT_APPS_WAN_LOW_LAT_CONS);
+	ep_idx = ipa_get_ep_mapping(IPA_CLIENT_APPS_WAN_LOW_LAT_CONS);
 	if (ep_idx == IPA_EP_NOT_ALLOCATED) {
 		IPADBG("Low lat datapath not supported\n");
 		return -ENXIO;
 	}
 	if (rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_NOT_REG &&
-		rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_REGD) {
+	    rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_REGD) {
 		IPADBG("rmnet_ctl in bad state %d\n",
-			rmnet_ctl_ipa3_ctx->state);
+		       rmnet_ctl_ipa3_ctx->state);
 		return -ENXIO;
 	}
-	ipa_low_lat_ep_cfg =
-		&rmnet_ctl_ipa3_ctx->ipa_to_apps_low_lat_ep_cfg;
+	ipa_low_lat_ep_cfg = &rmnet_ctl_ipa3_ctx->ipa_to_apps_low_lat_ep_cfg;
 	/*
-	 * Removing bypass aggr from assign_policy
-	 * and placing it here for future enablement
-	 */
+   * Removing bypass aggr from assign_policy
+   * and placing it here for future enablement
+   */
 	ipa_low_lat_ep_cfg->ipa_ep_cfg.aggr.aggr_en = IPA_BYPASS_AGGR;
 	if (rmnet_config && ingress_param) {
 		/* Open for future cs offload disablement on low lat pipe */
@@ -266,33 +259,23 @@ int ipa3_setup_apps_low_lat_cons_pipe(bool rmnet_config,
 		ipa_low_lat_ep_cfg->ext_ioctl_v2 = false;
 		ipa_low_lat_ep_cfg->ipa_ep_cfg.cfg.cs_offload_en =
 			IPA_ENABLE_CS_DL_QMAP;
-		ipa_low_lat_ep_cfg->ipa_ep_cfg.aggr.aggr_byte_limit =
-			0;
-		ipa_low_lat_ep_cfg->ipa_ep_cfg.aggr.aggr_pkt_limit =
-			0;
+		ipa_low_lat_ep_cfg->ipa_ep_cfg.aggr.aggr_byte_limit = 0;
+		ipa_low_lat_ep_cfg->ipa_ep_cfg.aggr.aggr_pkt_limit = 0;
 	}
 
 	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_len = 8;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata_valid
-		= 1;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata
-		= 1;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_pkt_size_valid
-		= 1;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_pkt_size
-		= 2;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_total_len_or_pad_valid
-		= true;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_total_len_or_pad
-		= 0;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_payload_len_inc_padding
-		= true;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_total_len_or_pad_offset
-		= 0;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_little_endian
-		= 0;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.metadata_mask.metadata_mask
-		= 0xFF000000;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata_valid = 1;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata = 1;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_pkt_size_valid = 1;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_pkt_size = 2;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_total_len_or_pad_valid =
+		true;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_total_len_or_pad = 0;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_payload_len_inc_padding =
+		true;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_total_len_or_pad_offset = 0;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr_ext.hdr_little_endian = 0;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.metadata_mask.metadata_mask = 0xFF000000;
 	ipa_low_lat_ep_cfg->client = IPA_CLIENT_APPS_WAN_LOW_LAT_CONS;
 	ipa_low_lat_ep_cfg->notify = apps_rmnet_ctl_receive_notify;
 	ipa_low_lat_ep_cfg->priv = NULL;
@@ -307,16 +290,16 @@ int ipa3_setup_apps_low_lat_cons_pipe(bool rmnet_config,
 	}
 	rmnet_ctl_ipa3_ctx->pipe_state |= IPA_RMNET_CTL_PIPE_RX_READY;
 	if (rmnet_ctl_ipa3_ctx->cb_info.ready_cb) {
-		(*(rmnet_ctl_ipa3_ctx->cb_info.ready_cb))
-			(rmnet_ctl_ipa3_ctx->cb_info.ready_cb_user_data);
+		(*(rmnet_ctl_ipa3_ctx->cb_info.ready_cb))(
+			rmnet_ctl_ipa3_ctx->cb_info.ready_cb_user_data);
 	}
 	/*
-	 * if no ready_cb yet, which means rmnet_ctl not
-	 * register to IPA, we will move state to pipe
-	 * ready and will wait for register event
-	 * coming and move to start state.
-	 * The ready_cb will called from regsiter itself.
-	 */
+   * if no ready_cb yet, which means rmnet_ctl not
+   * register to IPA, we will move state to pipe
+   * ready and will wait for register event
+   * coming and move to start state.
+   * The ready_cb will called from regsiter itself.
+   */
 	mutex_lock(&rmnet_ctl_ipa3_ctx->lock);
 	if (rmnet_ctl_ipa3_ctx->state == IPA_RMNET_CTL_NOT_REG)
 		rmnet_ctl_ipa3_ctx->state = IPA_RMNET_CTL_PIPE_READY;
@@ -328,7 +311,7 @@ int ipa3_setup_apps_low_lat_cons_pipe(bool rmnet_config,
 }
 
 int ipa3_setup_apps_low_lat_prod_pipe(bool rmnet_config,
-	struct rmnet_egress_param *egress_param)
+				      struct rmnet_egress_param *egress_param)
 {
 	struct ipa_sys_connect_params *ipa_low_lat_ep_cfg;
 	int ret = 0;
@@ -338,14 +321,12 @@ int ipa3_setup_apps_low_lat_prod_pipe(bool rmnet_config,
 		IPAERR("Low lat pipe is disabled");
 		return 0;
 	}
-	ep_idx = ipa_get_ep_mapping(
-		IPA_CLIENT_APPS_WAN_LOW_LAT_PROD);
+	ep_idx = ipa_get_ep_mapping(IPA_CLIENT_APPS_WAN_LOW_LAT_PROD);
 	if (ep_idx == IPA_EP_NOT_ALLOCATED) {
 		IPAERR("low lat pipe not supported\n");
 		return -EFAULT;
 	}
-	ipa_low_lat_ep_cfg =
-		&rmnet_ctl_ipa3_ctx->apps_to_ipa_low_lat_ep_cfg;
+	ipa_low_lat_ep_cfg = &rmnet_ctl_ipa3_ctx->apps_to_ipa_low_lat_ep_cfg;
 	if (rmnet_config && egress_param) {
 		/* Open for future cs offload disablement on low lat pipe */
 		IPAERR("Configuring low lat prod with rmnet config\n");
@@ -356,12 +337,13 @@ int ipa3_setup_apps_low_lat_prod_pipe(bool rmnet_config,
 			ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_len = 8;
 			ipa_low_lat_ep_cfg->ipa_ep_cfg.cfg.cs_offload_en =
 				IPA_ENABLE_CS_OFFLOAD_UL;
-			ipa_low_lat_ep_cfg->ipa_ep_cfg.cfg.cs_metadata_hdr_offset
-				= 1;
-			ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata_valid
-				= 1;
+			ipa_low_lat_ep_cfg->ipa_ep_cfg.cfg
+				.cs_metadata_hdr_offset = 1;
+			ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr
+				.hdr_ofst_metadata_valid = 1;
 			/* modem want offset at 0! */
-			ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata = 0;
+			ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata =
+				0;
 		} else {
 			ipa_low_lat_ep_cfg->ipa_ep_cfg.cfg.cs_offload_en =
 				IPA_DISABLE_CS_OFFLOAD;
@@ -378,29 +360,21 @@ int ipa3_setup_apps_low_lat_prod_pipe(bool rmnet_config,
 		ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_len = 8;
 		ipa_low_lat_ep_cfg->ipa_ep_cfg.cfg.cs_offload_en =
 			IPA_ENABLE_CS_OFFLOAD_UL;
-		ipa_low_lat_ep_cfg->ipa_ep_cfg.aggr.aggr_en =
-			IPA_BYPASS_AGGR;
-		ipa_low_lat_ep_cfg->ipa_ep_cfg.cfg.cs_metadata_hdr_offset
-			= 1;
-		ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata_valid
-			= 1;
+		ipa_low_lat_ep_cfg->ipa_ep_cfg.aggr.aggr_en = IPA_BYPASS_AGGR;
+		ipa_low_lat_ep_cfg->ipa_ep_cfg.cfg.cs_metadata_hdr_offset = 1;
+		ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata_valid = 1;
 		/* modem want offset at 0! */
 		ipa_low_lat_ep_cfg->ipa_ep_cfg.hdr.hdr_ofst_metadata = 0;
 	}
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.mode.dst =
-		IPA_CLIENT_Q6_WAN_CONS;
-	ipa_low_lat_ep_cfg->ipa_ep_cfg.mode.mode =
-		IPA_DMA;
-	ipa_low_lat_ep_cfg->client =
-		IPA_CLIENT_APPS_WAN_LOW_LAT_PROD;
-	ipa_low_lat_ep_cfg->notify =
-		apps_rmnet_ctl_tx_complete_notify;
-	ipa_low_lat_ep_cfg->desc_fifo_sz =
-		IPA_SYS_TX_DATA_DESC_FIFO_SZ_8K;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.mode.dst = IPA_CLIENT_Q6_WAN_CONS;
+	ipa_low_lat_ep_cfg->ipa_ep_cfg.mode.mode = IPA_DMA;
+	ipa_low_lat_ep_cfg->client = IPA_CLIENT_APPS_WAN_LOW_LAT_PROD;
+	ipa_low_lat_ep_cfg->notify = apps_rmnet_ctl_tx_complete_notify;
+	ipa_low_lat_ep_cfg->desc_fifo_sz = IPA_SYS_TX_DATA_DESC_FIFO_SZ_8K;
 	ipa_low_lat_ep_cfg->priv = NULL;
 
 	ret = ipa_setup_sys_pipe(ipa_low_lat_ep_cfg,
-		&rmnet_ctl_ipa3_ctx->apps_to_ipa3_low_lat_hdl);
+				 &rmnet_ctl_ipa3_ctx->apps_to_ipa3_low_lat_hdl);
 	if (ret) {
 		IPAERR("failed to config apps low lat prod pipe\n");
 		return ret;
@@ -414,17 +388,17 @@ int ipa3_teardown_apps_low_lat_pipes(void)
 	int ret = 0;
 
 	if (rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_PIPE_READY &&
-		rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_START &&
-		rmnet_ctl_ipa3_ctx->pipe_state == IPA_RMNET_CTL_PIPE_NOT_READY) {
+	    rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_START &&
+	    rmnet_ctl_ipa3_ctx->pipe_state == IPA_RMNET_CTL_PIPE_NOT_READY) {
 		IPAERR("rmnet_ctl in bad state %d\n",
-			rmnet_ctl_ipa3_ctx->state);
+		       rmnet_ctl_ipa3_ctx->state);
 		return -EFAULT;
 	}
 	if (rmnet_ctl_ipa3_ctx->pipe_state == IPA_RMNET_CTL_PIPE_READY ||
-		rmnet_ctl_ipa3_ctx->state == IPA_RMNET_CTL_START) {
+	    rmnet_ctl_ipa3_ctx->state == IPA_RMNET_CTL_START) {
 		if (rmnet_ctl_ipa3_ctx->cb_info.stop_cb) {
-			(*(rmnet_ctl_ipa3_ctx->cb_info.stop_cb))
-				(rmnet_ctl_ipa3_ctx->cb_info.stop_cb_user_data);
+			(*(rmnet_ctl_ipa3_ctx->cb_info.stop_cb))(
+				rmnet_ctl_ipa3_ctx->cb_info.stop_cb_user_data);
 		} else {
 			IPAERR("Invalid stop_cb\n");
 			return -EFAULT;
@@ -473,25 +447,20 @@ int ipa_rmnet_ctl_xmit(struct sk_buff *skb)
 	spin_lock_irqsave(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 	/* we cannot infinitely queue the packet */
 	if (skb_queue_len(&rmnet_ctl_ipa3_ctx->tx_queue) >=
-		RMNET_CTRL_QUEUE_MAX) {
+	    RMNET_CTRL_QUEUE_MAX) {
 		IPAERR("rmnet_ctl tx queue full\n");
 		rmnet_ctl_ipa3_ctx->stats.tx_pkt_dropped++;
-		rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped +=
-			skb->len;
-		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock,
-			flags);
+		rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped += skb->len;
+		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 		kfree_skb(skb);
 		return -EAGAIN;
 	}
 
 	if (rmnet_ctl_ipa3_ctx->state != IPA_RMNET_CTL_START) {
-		IPAERR("bad rmnet_ctl state %d\n",
-			rmnet_ctl_ipa3_ctx->state);
+		IPAERR("bad rmnet_ctl state %d\n", rmnet_ctl_ipa3_ctx->state);
 		rmnet_ctl_ipa3_ctx->stats.tx_pkt_dropped++;
-		rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped +=
-			skb->len;
-		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock,
-			flags);
+		rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped += skb->len;
+		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 		kfree_skb(skb);
 		return 0;
 	}
@@ -499,8 +468,7 @@ int ipa_rmnet_ctl_xmit(struct sk_buff *skb)
 	/* if queue is not empty, means we still have pending wq */
 	if (skb_queue_len(&rmnet_ctl_ipa3_ctx->tx_queue) != 0) {
 		skb_queue_tail(&rmnet_ctl_ipa3_ctx->tx_queue, skb);
-		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock,
-			flags);
+		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 		return 0;
 	}
 
@@ -509,22 +477,19 @@ int ipa_rmnet_ctl_xmit(struct sk_buff *skb)
 	if (ret == -EINPROGRESS) {
 		skb_queue_tail(&rmnet_ctl_ipa3_ctx->tx_queue, skb);
 		/*
-		 * delayed work is required here since we need to
-		 * reschedule in the same workqueue context on error
-		 */
+     * delayed work is required here since we need to
+     * reschedule in the same workqueue context on error
+     */
 		queue_delayed_work(rmnet_ctl_ipa3_ctx->wq,
-			&rmnet_ctl_wakeup_work, 0);
-		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock,
-			flags);
+				   &rmnet_ctl_wakeup_work, 0);
+		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 		return 0;
 	} else if (ret) {
-		IPAERR("[%s] fatal: ipa pm activate failed %d\n",
-			__func__, ret);
+		IPAERR("[%s] fatal: ipa pm activate failed %d\n", __func__,
+		       ret);
 		rmnet_ctl_ipa3_ctx->stats.tx_pkt_dropped++;
-		rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped +=
-			skb->len;
-		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock,
-			flags);
+		rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped += skb->len;
+		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 		kfree_skb(skb);
 		return 0;
 	}
@@ -532,20 +497,18 @@ int ipa_rmnet_ctl_xmit(struct sk_buff *skb)
 
 	len = skb->len;
 	/*
-	 * both data packets and command will be routed to
-	 * IPA_CLIENT_Q6_WAN_CONS based on DMA settings
-	 */
+   * both data packets and command will be routed to
+   * IPA_CLIENT_Q6_WAN_CONS based on DMA settings
+   */
 	ret = ipa_tx_dp(IPA_CLIENT_APPS_WAN_LOW_LAT_PROD, skb, NULL);
 	if (ret) {
 		if (ret == -EPIPE) {
 			IPAERR("Low lat fatal: pipe is not valid\n");
-			spin_lock_irqsave(&rmnet_ctl_ipa3_ctx->tx_lock,
-				flags);
+			spin_lock_irqsave(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 			rmnet_ctl_ipa3_ctx->stats.tx_pkt_dropped++;
-			rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped +=
-				skb->len;
+			rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped += skb->len;
 			spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock,
-				flags);
+					       flags);
 			kfree_skb(skb);
 			return 0;
 		}
@@ -562,10 +525,9 @@ int ipa_rmnet_ctl_xmit(struct sk_buff *skb)
 	ret = 0;
 
 out:
-	if (atomic_read(
-		&rmnet_ctl_ipa3_ctx->stats.outstanding_pkts)
-		== 0)
-		ipa_pm_deferred_deactivate(rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
+	if (atomic_read(&rmnet_ctl_ipa3_ctx->stats.outstanding_pkts) == 0)
+		ipa_pm_deferred_deactivate(
+			rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
 	spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 	return ret;
 }
@@ -581,11 +543,10 @@ static void rmnet_ctl_wakeup_ipa(struct work_struct *work)
 	/* calling from WQ */
 	ret = ipa_pm_activate_sync(rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
 	if (ret) {
-		IPAERR("[%s] fatal: ipa pm activate failed %d\n",
-			__func__, ret);
+		IPAERR("[%s] fatal: ipa pm activate failed %d\n", __func__,
+		       ret);
 		queue_delayed_work(rmnet_ctl_ipa3_ctx->wq,
-			&rmnet_ctl_wakeup_work,
-			msecs_to_jiffies(1));
+				   &rmnet_ctl_wakeup_work, msecs_to_jiffies(1));
 		return;
 	}
 
@@ -598,16 +559,16 @@ static void rmnet_ctl_wakeup_ipa(struct work_struct *work)
 		len = skb->len;
 		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 		/*
-		 * both data packets and command will be routed to
-		 * IPA_CLIENT_Q6_WAN_CONS based on DMA settings
-		 */
+     * both data packets and command will be routed to
+     * IPA_CLIENT_Q6_WAN_CONS based on DMA settings
+     */
 		ret = ipa_tx_dp(IPA_CLIENT_APPS_WAN_LOW_LAT_PROD, skb, NULL);
 		if (ret) {
 			if (ret == -EPIPE) {
 				/* try to drain skb from queue if pipe teardown */
 				IPAERR_RL("Low lat fatal: pipe is not valid\n");
 				spin_lock_irqsave(&rmnet_ctl_ipa3_ctx->tx_lock,
-					flags);
+						  flags);
 				rmnet_ctl_ipa3_ctx->stats.tx_pkt_dropped++;
 				rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped +=
 					skb->len;
@@ -616,7 +577,8 @@ static void rmnet_ctl_wakeup_ipa(struct work_struct *work)
 			}
 			spin_lock_irqsave(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 			skb_queue_head(&rmnet_ctl_ipa3_ctx->tx_queue, skb);
-			spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
+			spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock,
+					       flags);
 			goto delayed_work;
 		}
 
@@ -629,16 +591,13 @@ static void rmnet_ctl_wakeup_ipa(struct work_struct *work)
 	goto out;
 
 delayed_work:
-	queue_delayed_work(rmnet_ctl_ipa3_ctx->wq,
-		&rmnet_ctl_wakeup_work,
-		msecs_to_jiffies(1));
+	queue_delayed_work(rmnet_ctl_ipa3_ctx->wq, &rmnet_ctl_wakeup_work,
+			   msecs_to_jiffies(1));
 out:
-	if (atomic_read(
-		&rmnet_ctl_ipa3_ctx->stats.outstanding_pkts)
-		== 0) {
-		ipa_pm_deferred_deactivate(rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
+	if (atomic_read(&rmnet_ctl_ipa3_ctx->stats.outstanding_pkts) == 0) {
+		ipa_pm_deferred_deactivate(
+			rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
 	}
-
 }
 
 /**
@@ -652,29 +611,27 @@ out:
  * This function will be called in defered context in IPA wq.
  */
 static void apps_rmnet_ctl_tx_complete_notify(void *priv,
-	enum ipa_dp_evt_type evt, unsigned long data)
+					      enum ipa_dp_evt_type evt,
+					      unsigned long data)
 {
 	struct sk_buff *skb = (struct sk_buff *)data;
 	unsigned long flags;
 
 	if (evt != IPA_WRITE_DONE) {
 		IPAERR("unsupported evt on Tx callback, Drop the packet\n");
-		spin_lock_irqsave(&rmnet_ctl_ipa3_ctx->tx_lock,
-			flags);
+		spin_lock_irqsave(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 		rmnet_ctl_ipa3_ctx->stats.tx_pkt_dropped++;
-		rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped +=
-			skb->len;
-		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock,
-			flags);
+		rmnet_ctl_ipa3_ctx->stats.tx_byte_dropped += skb->len;
+		spin_unlock_irqrestore(&rmnet_ctl_ipa3_ctx->tx_lock, flags);
 		kfree_skb(skb);
 		return;
 	}
 
 	atomic_dec(&rmnet_ctl_ipa3_ctx->stats.outstanding_pkts);
 
-	if (atomic_read(
-		&rmnet_ctl_ipa3_ctx->stats.outstanding_pkts) == 0)
-		ipa_pm_deferred_deactivate(rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
+	if (atomic_read(&rmnet_ctl_ipa3_ctx->stats.outstanding_pkts) == 0)
+		ipa_pm_deferred_deactivate(
+			rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
 
 	kfree_skb(skb);
 }
@@ -688,8 +645,8 @@ static void apps_rmnet_ctl_tx_complete_notify(void *priv,
  *
  * IPA will pass a packet to the Linux network stack with skb->data
  */
-static void apps_rmnet_ctl_receive_notify(void *priv,
-	enum ipa_dp_evt_type evt, unsigned long data)
+static void apps_rmnet_ctl_receive_notify(void *priv, enum ipa_dp_evt_type evt,
+					  unsigned long data)
 {
 	void *rx_notify_cb_rx_data;
 	struct sk_buff *low_lat_data;
@@ -706,13 +663,13 @@ static void apps_rmnet_ctl_receive_notify(void *priv,
 		rx_notify_cb_rx_data = (void *)data;
 		if (rmnet_ctl_ipa3_ctx->cb_info.rx_notify_cb) {
 			(*(rmnet_ctl_ipa3_ctx->cb_info.rx_notify_cb))(
-			rmnet_ctl_ipa3_ctx->cb_info.rx_notify_cb_user_data,
-			rx_notify_cb_rx_data);
+				rmnet_ctl_ipa3_ctx->cb_info
+					.rx_notify_cb_user_data,
+				rx_notify_cb_rx_data);
 		} else
 			goto fail;
 		rmnet_ctl_ipa3_ctx->stats.rx_pkt_rcvd++;
-		rmnet_ctl_ipa3_ctx->stats.rx_byte_rcvd +=
-			len;
+		rmnet_ctl_ipa3_ctx->stats.rx_byte_rcvd += len;
 	} else {
 		IPAERR("Invalid evt %d received in rmnet_ctl\n", evt);
 		goto fail;
@@ -724,7 +681,6 @@ fail:
 	rmnet_ctl_ipa3_ctx->stats.rx_pkt_dropped++;
 }
 
-
 static int ipa3_rmnet_ctl_register_pm_client(void)
 {
 	int result;
@@ -733,7 +689,8 @@ static int ipa3_rmnet_ctl_register_pm_client(void)
 	memset(&pm_reg, 0, sizeof(pm_reg));
 	pm_reg.name = "rmnet_ctl";
 	pm_reg.group = IPA_PM_GROUP_APPS;
-	result = ipa_pm_register(&pm_reg, &rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
+	result =
+		ipa_pm_register(&pm_reg, &rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
 	if (result) {
 		IPAERR("failed to create IPA PM client %d\n", result);
 		return result;
@@ -749,4 +706,3 @@ static void ipa3_rmnet_ctl_deregister_pm_client(void)
 	ipa_pm_deactivate_sync(rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
 	ipa_pm_deregister(rmnet_ctl_ipa3_ctx->rmnet_ctl_pm_hdl);
 }
-

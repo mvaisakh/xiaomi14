@@ -21,38 +21,37 @@
  */
 
 #include "wlan_mlme_main.h"
-#include "include/wlan_vdev_mlme.h"
 #include "cfg_ucfg_api.h"
-#include "wmi_unified.h"
-#include "wlan_scan_public_structs.h"
-#include "wlan_psoc_mlme_api.h"
-#include "wlan_vdev_mlme_api.h"
+#include "include/wlan_vdev_mlme.h"
+#include "twt/core/src/wlan_twt_cfg.h"
+#include "wifi_pos_ucfg_i.h"
 #include "wlan_mlme_api.h"
+#include "wlan_mlme_ucfg_api.h"
+#include "wlan_mlme_vdev_mgr_interface.h"
+#include "wlan_mlo_mgr_sta.h"
+#include "wlan_psoc_mlme_api.h"
+#include "wlan_scan_api.h"
+#include "wlan_scan_public_structs.h"
+#include "wlan_vdev_mlme_api.h"
+#include "wmi_unified.h"
 #include <wlan_crypto_global_api.h>
 #include <wlan_mlo_mgr_cmn.h>
-#include "wlan_mlme_ucfg_api.h"
-#include "wifi_pos_ucfg_i.h"
-#include "wlan_mlo_mgr_sta.h"
-#include "twt/core/src/wlan_twt_cfg.h"
-#include "wlan_scan_api.h"
-#include "wlan_mlme_vdev_mgr_interface.h"
 
-#define NUM_OF_SOUNDING_DIMENSIONS     1 /*Nss - 1, (Nss = 2 for 2x2)*/
+#define NUM_OF_SOUNDING_DIMENSIONS 1 /*Nss - 1, (Nss = 2 for 2x2)*/
 
 /* Time to passive scan dwell for scan to get channel stats, in milliseconds */
 #define MLME_GET_CHAN_STATS_PASSIVE_SCAN_TIME 40
 #define MLME_GET_CHAN_STATS_WIDE_BAND_PASSIVE_SCAN_TIME 110
 
-struct wlan_mlme_psoc_ext_obj *mlme_get_psoc_ext_obj_fl(
-			       struct wlan_objmgr_psoc *psoc,
-			       const char *func, uint32_t line)
+struct wlan_mlme_psoc_ext_obj *
+mlme_get_psoc_ext_obj_fl(struct wlan_objmgr_psoc *psoc, const char *func,
+			 uint32_t line)
 {
-
 	return wlan_psoc_mlme_get_ext_hdl(psoc);
 }
 
-struct wlan_mlme_nss_chains *mlme_get_dynamic_vdev_config(
-				struct wlan_objmgr_vdev *vdev)
+struct wlan_mlme_nss_chains *
+mlme_get_dynamic_vdev_config(struct wlan_objmgr_vdev *vdev)
 {
 	struct mlme_legacy_priv *mlme_priv;
 
@@ -95,7 +94,7 @@ mlme_fill_freq_in_scan_start_request(struct wlan_objmgr_vdev *vdev,
 
 	operation_chan_freq = wlan_get_operation_chan_freq(vdev);
 	associated_ch_width =
-			mlme_priv->connect_info.assoc_chan_info.assoc_ch_width;
+		mlme_priv->connect_info.assoc_chan_info.assoc_ch_width;
 	if (associated_ch_width == CH_WIDTH_INVALID) {
 		mlme_debug("vdev %d : Invalid associated ch width for freq %d",
 			   req->scan_req.vdev_id, operation_chan_freq);
@@ -103,9 +102,9 @@ mlme_fill_freq_in_scan_start_request(struct wlan_objmgr_vdev *vdev,
 	}
 
 	req->scan_req.dwell_time_passive =
-			MLME_GET_CHAN_STATS_PASSIVE_SCAN_TIME;
+		MLME_GET_CHAN_STATS_PASSIVE_SCAN_TIME;
 	req->scan_req.dwell_time_passive_6g =
-			MLME_GET_CHAN_STATS_PASSIVE_SCAN_TIME;
+		MLME_GET_CHAN_STATS_PASSIVE_SCAN_TIME;
 
 	if (associated_ch_width == CH_WIDTH_20MHZ) {
 		mlme_debug("vdev %d :Trigger scan for associated freq %d bw %d",
@@ -129,10 +128,10 @@ mlme_fill_freq_in_scan_start_request(struct wlan_objmgr_vdev *vdev,
 		if (operation_chan_freq > sec_2g_freq) {
 			req->scan_req.chan_list.chan[0].freq = sec_2g_freq;
 			req->scan_req.chan_list.chan[1].freq =
-							operation_chan_freq;
+				operation_chan_freq;
 		} else {
 			req->scan_req.chan_list.chan[0].freq =
-							operation_chan_freq;
+				operation_chan_freq;
 			req->scan_req.chan_list.chan[1].freq = sec_2g_freq;
 		}
 
@@ -154,10 +153,10 @@ mlme_fill_freq_in_scan_start_request(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_NOMEM;
 
 	scan_chan_list->num_chan = 0;
-	first_freq  = range->start_freq;
+	first_freq = range->start_freq;
 	for (; first_freq <= range->end_freq; first_freq += BW_20_MHZ) {
 		scan_chan_list->chan[scan_chan_list->num_chan].freq =
-								first_freq;
+			first_freq;
 		scan_chan_list->num_chan++;
 	}
 
@@ -165,11 +164,13 @@ mlme_fill_freq_in_scan_start_request(struct wlan_objmgr_vdev *vdev,
 
 	mlme_debug("vdev %d : freq %d bw %d, range [%d-%d], Total freq %d",
 		   req->scan_req.vdev_id, operation_chan_freq,
-		   associated_ch_width, range->start_freq,
-		   range->end_freq, req->scan_req.chan_list.num_chan);
+		   associated_ch_width, range->start_freq, range->end_freq,
+		   req->scan_req.chan_list.num_chan);
 
 	buff_len = (QDF_MIN(req->scan_req.chan_list.num_chan,
-		    MLME_MAX_CHAN_TO_PRINT) * MLME_CHAN_WEIGHT_CHAR_LEN) + 1;
+			    MLME_MAX_CHAN_TO_PRINT) *
+		    MLME_CHAN_WEIGHT_CHAR_LEN) +
+		   1;
 
 	chan_buff = qdf_mem_malloc(buff_len);
 	if (!chan_buff) {
@@ -178,7 +179,7 @@ mlme_fill_freq_in_scan_start_request(struct wlan_objmgr_vdev *vdev,
 	}
 	for (i = 0; i < req->scan_req.chan_list.num_chan; i++) {
 		req->scan_req.chan_list.chan[i].freq =
-					scan_chan_list->chan[i].freq;
+			scan_chan_list->chan[i].freq;
 		buff_num += qdf_scnprintf(chan_buff + buff_num,
 					  buff_len - buff_num, " %d",
 					  req->scan_req.chan_list.chan[i].freq);
@@ -450,7 +451,7 @@ mlme_update_freq_in_scan_start_req(struct wlan_objmgr_vdev *vdev,
  */
 static QDF_STATUS
 mlme_fill_freq_in_mlo_wide_band_scan_start_req(struct wlan_objmgr_vdev *vdev,
-					struct scan_start_request *req)
+					       struct scan_start_request *req)
 {
 	struct wlan_mlo_dev_context *mlo_dev_ctx;
 	struct wlan_mlo_sta *sta_ctx = NULL;
@@ -493,8 +494,8 @@ mlme_fill_freq_in_mlo_wide_band_scan_start_req(struct wlan_objmgr_vdev *vdev,
 				return QDF_STATUS_E_FAILURE;
 			}
 
-			status = mlme_update_freq_in_scan_start_req(mlo_vdev,
-						req, associated_ch_width);
+			status = mlme_update_freq_in_scan_start_req(
+				mlo_vdev, req, associated_ch_width);
 			if (QDF_IS_STATUS_ERROR(status))
 				return QDF_STATUS_E_FAILURE;
 		}
@@ -507,7 +508,7 @@ mlme_fill_freq_in_mlo_wide_band_scan_start_req(struct wlan_objmgr_vdev *vdev,
 #else
 static inline QDF_STATUS
 mlme_fill_freq_in_mlo_wide_band_scan_start_req(struct wlan_objmgr_vdev *vdev,
-					struct scan_start_request *req)
+					       struct scan_start_request *req)
 {
 	return QDF_STATUS_E_FAILURE;
 }
@@ -537,7 +538,7 @@ mlme_fill_freq_in_wide_scan_start_request(struct wlan_objmgr_vdev *vdev,
 
 	if (wlan_vdev_mlme_is_mlo_vdev(vdev)) {
 		status = mlme_fill_freq_in_mlo_wide_band_scan_start_req(vdev,
-						req);
+									req);
 		if (QDF_IS_STATUS_ERROR(status))
 			return QDF_STATUS_E_FAILURE;
 		goto update_param;
@@ -561,15 +562,15 @@ mlme_fill_freq_in_wide_scan_start_request(struct wlan_objmgr_vdev *vdev,
 
 update_param:
 	req->scan_req.dwell_time_passive =
-			MLME_GET_CHAN_STATS_WIDE_BAND_PASSIVE_SCAN_TIME;
+		MLME_GET_CHAN_STATS_WIDE_BAND_PASSIVE_SCAN_TIME;
 	req->scan_req.dwell_time_passive_6g =
-			MLME_GET_CHAN_STATS_WIDE_BAND_PASSIVE_SCAN_TIME;
+		MLME_GET_CHAN_STATS_WIDE_BAND_PASSIVE_SCAN_TIME;
 
 	req->scan_req.scan_f_wide_band = true;
 	/*
-	 * FW report CCA busy for each possible 20Mhz subbands of the
-	 * wideband scan channel if below flag is true
-	 */
+   * FW report CCA busy for each possible 20Mhz subbands of the
+   * wideband scan channel if below flag is true
+   */
 	req->scan_req.scan_f_report_cca_busy_for_each_20mhz = true;
 
 	return QDF_STATUS_SUCCESS;
@@ -614,7 +615,7 @@ QDF_STATUS mlme_connected_chan_stats_request(struct wlan_objmgr_psoc *psoc,
 
 	/* Fill channel list as per fw capability */
 	if (wlan_psoc_nif_fw_ext2_cap_get(psoc,
-			WLAN_CCA_BUSY_INFO_FOREACH_20MHZ)) {
+					  WLAN_CCA_BUSY_INFO_FOREACH_20MHZ)) {
 		status = mlme_fill_freq_in_wide_scan_start_request(vdev, req);
 		if (QDF_IS_STATUS_ERROR(status))
 			goto release;
@@ -672,8 +673,8 @@ uint32_t mlme_get_vdev_he_ops(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 	return he_ops;
 }
 
-struct wlan_mlme_nss_chains *mlme_get_ini_vdev_config(
-				struct wlan_objmgr_vdev *vdev)
+struct wlan_mlme_nss_chains *
+mlme_get_ini_vdev_config(struct wlan_objmgr_vdev *vdev)
 {
 	struct mlme_legacy_priv *mlme_priv;
 
@@ -712,9 +713,8 @@ QDF_STATUS mlme_init_rate_config(struct vdev_mlme_obj *vdev_mlme)
 	mlme_priv->opr_rate_set.max_len =
 		QDF_MIN(CFG_OPERATIONAL_RATE_SET_LEN, CFG_STR_DATA_LEN);
 	mlme_priv->opr_rate_set.len = 0;
-	mlme_priv->ext_opr_rate_set.max_len =
-		QDF_MIN(CFG_EXTENDED_OPERATIONAL_RATE_SET_LEN,
-			CFG_STR_DATA_LEN);
+	mlme_priv->ext_opr_rate_set.max_len = QDF_MIN(
+		CFG_EXTENDED_OPERATIONAL_RATE_SET_LEN, CFG_STR_DATA_LEN);
 	mlme_priv->ext_opr_rate_set.len = 0;
 	mlme_priv->mcs_rate_set.max_len =
 		QDF_MIN(CFG_SUPPORTED_MCS_SET_LEN, CFG_STR_DATA_LEN);
@@ -734,7 +734,7 @@ QDF_STATUS mlme_init_connect_chan_info_config(struct vdev_mlme_obj *vdev_mlme)
 	}
 
 	mlme_priv->connect_info.assoc_chan_info.assoc_ch_width =
-							CH_WIDTH_INVALID;
+		CH_WIDTH_INVALID;
 	mlme_priv->connect_info.assoc_chan_info.sec_2g_freq = 0;
 
 	return QDF_STATUS_SUCCESS;
@@ -752,17 +752,17 @@ QDF_STATUS mlme_get_peer_mic_len(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	peer = wlan_objmgr_get_peer(psoc, pdev_id,
-				    peer_mac, WLAN_LEGACY_MAC_ID);
+	peer = wlan_objmgr_get_peer(psoc, pdev_id, peer_mac,
+				    WLAN_LEGACY_MAC_ID);
 	if (!peer) {
-		mlme_legacy_debug("Peer of peer_mac "QDF_MAC_ADDR_FMT" not found",
+		mlme_legacy_debug("Peer of peer_mac " QDF_MAC_ADDR_FMT
+				  " not found",
 				  QDF_MAC_ADDR_REF(peer_mac));
 		return QDF_STATUS_E_INVAL;
 	}
 
-	key_cipher =
-		wlan_crypto_get_peer_param(peer,
-					   WLAN_CRYPTO_PARAM_UCAST_CIPHER);
+	key_cipher = wlan_crypto_get_peer_param(peer,
+						WLAN_CRYPTO_PARAM_UCAST_CIPHER);
 
 	wlan_objmgr_peer_release_ref(peer, WLAN_LEGACY_MAC_ID);
 
@@ -779,15 +779,16 @@ QDF_STATUS mlme_get_peer_mic_len(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id,
 		*mic_hdr_len = IEEE80211_CCMP_HEADERLEN;
 		*mic_len = IEEE80211_CCMP_MICLEN;
 	}
-	mlme_legacy_debug("peer "QDF_MAC_ADDR_FMT" hdr_len %d mic_len %d key_cipher 0x%x",
-			  QDF_MAC_ADDR_REF(peer_mac),
-			  *mic_hdr_len, *mic_len, key_cipher);
+	mlme_legacy_debug("peer " QDF_MAC_ADDR_FMT
+			  " hdr_len %d mic_len %d key_cipher 0x%x",
+			  QDF_MAC_ADDR_REF(peer_mac), *mic_hdr_len, *mic_len,
+			  key_cipher);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-void
-wlan_acquire_peer_key_wakelock(struct wlan_objmgr_pdev *pdev, uint8_t *mac_addr)
+void wlan_acquire_peer_key_wakelock(struct wlan_objmgr_pdev *pdev,
+				    uint8_t *mac_addr)
 {
 	uint8_t pdev_id;
 	struct wlan_objmgr_peer *peer;
@@ -822,14 +823,14 @@ wlan_acquire_peer_key_wakelock(struct wlan_objmgr_pdev *pdev, uint8_t *mac_addr)
 	qdf_wake_lock_timeout_acquire(&peer_priv->peer_set_key_wakelock,
 				      MLME_PEER_SET_KEY_WAKELOCK_TIMEOUT);
 	qdf_runtime_pm_prevent_suspend(
-			&peer_priv->peer_set_key_runtime_wakelock);
+		&peer_priv->peer_set_key_runtime_wakelock);
 	peer_priv->is_key_wakelock_set = true;
 
 	wlan_objmgr_peer_release_ref(peer, WLAN_LEGACY_MAC_ID);
 }
 
-void
-wlan_release_peer_key_wakelock(struct wlan_objmgr_pdev *pdev, uint8_t *mac_addr)
+void wlan_release_peer_key_wakelock(struct wlan_objmgr_pdev *pdev,
+				    uint8_t *mac_addr)
 {
 	uint8_t pdev_id;
 	struct wlan_objmgr_peer *peer;
@@ -863,15 +864,13 @@ wlan_release_peer_key_wakelock(struct wlan_objmgr_pdev *pdev, uint8_t *mac_addr)
 		   QDF_MAC_ADDR_REF(mac_addr));
 	qdf_wake_lock_release(&peer_priv->peer_set_key_wakelock,
 			      WIFI_POWER_EVENT_WAKELOCK_WMI_CMD_RSP);
-	qdf_runtime_pm_allow_suspend(
-			&peer_priv->peer_set_key_runtime_wakelock);
+	qdf_runtime_pm_allow_suspend(&peer_priv->peer_set_key_runtime_wakelock);
 
 	wlan_objmgr_peer_release_ref(peer, WLAN_LEGACY_MAC_ID);
 }
 
 QDF_STATUS
-mlme_peer_object_created_notification(struct wlan_objmgr_peer *peer,
-				      void *arg)
+mlme_peer_object_created_notification(struct wlan_objmgr_peer *peer, void *arg)
 {
 	struct peer_mlme_priv_obj *peer_priv;
 	QDF_STATUS status;
@@ -926,9 +925,8 @@ mlme_peer_object_destroyed_notification(struct wlan_objmgr_peer *peer,
 	qdf_runtime_lock_deinit(&peer_priv->peer_set_key_runtime_wakelock);
 	qdf_wake_lock_destroy(&peer_priv->peer_set_key_wakelock);
 
-	status = wlan_objmgr_peer_component_obj_detach(peer,
-						       WLAN_UMAC_COMP_MLME,
-						       peer_priv);
+	status = wlan_objmgr_peer_component_obj_detach(
+		peer, WLAN_UMAC_COMP_MLME, peer_priv);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_legacy_err("unable to detach peer_priv obj to peer obj");
@@ -954,23 +952,18 @@ static void mlme_init_chainmask_cfg(struct wlan_objmgr_psoc *psoc,
 	chainmask_info->tx_chain_mask_1ss =
 		cfg_get(psoc, CFG_TX_CHAIN_MASK_1SS);
 
-	chainmask_info->num_11b_tx_chains =
-		cfg_get(psoc, CFG_11B_NUM_TX_CHAIN);
+	chainmask_info->num_11b_tx_chains = cfg_get(psoc, CFG_11B_NUM_TX_CHAIN);
 
 	chainmask_info->num_11ag_tx_chains =
 		cfg_get(psoc, CFG_11AG_NUM_TX_CHAIN);
 
-	chainmask_info->tx_chain_mask_2g =
-		cfg_get(psoc, CFG_TX_CHAIN_MASK_2G);
+	chainmask_info->tx_chain_mask_2g = cfg_get(psoc, CFG_TX_CHAIN_MASK_2G);
 
-	chainmask_info->rx_chain_mask_2g =
-		cfg_get(psoc, CFG_RX_CHAIN_MASK_2G);
+	chainmask_info->rx_chain_mask_2g = cfg_get(psoc, CFG_RX_CHAIN_MASK_2G);
 
-	chainmask_info->tx_chain_mask_5g =
-		cfg_get(psoc, CFG_TX_CHAIN_MASK_5G);
+	chainmask_info->tx_chain_mask_5g = cfg_get(psoc, CFG_TX_CHAIN_MASK_5G);
 
-	chainmask_info->rx_chain_mask_5g =
-		cfg_get(psoc, CFG_RX_CHAIN_MASK_5G);
+	chainmask_info->rx_chain_mask_5g = cfg_get(psoc, CFG_RX_CHAIN_MASK_5G);
 
 	chainmask_info->enable_bt_chain_separation =
 		cfg_get(psoc, CFG_ENABLE_BT_CHAIN_SEPARATION);
@@ -990,10 +983,8 @@ static void mlme_init_ratemask_cfg(struct wlan_objmgr_psoc *psoc,
 		return;
 	}
 
-	status = qdf_uint32_array_parse(cfg_get(psoc, CFG_RATEMASK_SET),
-					masks,
-					CFG_MLME_RATE_MASK_LEN,
-					&len);
+	status = qdf_uint32_array_parse(cfg_get(psoc, CFG_RATEMASK_SET), masks,
+					CFG_MLME_RATE_MASK_LEN, &len);
 
 	if (status != QDF_STATUS_SUCCESS || len != CFG_MLME_RATE_MASK_LEN) {
 		/* Do not enable ratemask if config is invalid */
@@ -1022,16 +1013,14 @@ static void mlme_init_pmf_cfg(struct wlan_objmgr_psoc *psoc,
 }
 
 #ifdef WLAN_FEATURE_LPSS
-static inline void
-mlme_init_lpass_support_cfg(struct wlan_objmgr_psoc *psoc,
-			    struct wlan_mlme_generic *gen)
+static inline void mlme_init_lpass_support_cfg(struct wlan_objmgr_psoc *psoc,
+					       struct wlan_mlme_generic *gen)
 {
 	gen->lpass_support = cfg_get(psoc, CFG_ENABLE_LPASS_SUPPORT);
 }
 #else
-static inline void
-mlme_init_lpass_support_cfg(struct wlan_objmgr_psoc *psoc,
-			    struct wlan_mlme_generic *gen)
+static inline void mlme_init_lpass_support_cfg(struct wlan_objmgr_psoc *psoc,
+					       struct wlan_mlme_generic *gen)
 {
 	gen->lpass_support = cfg_default(CFG_ENABLE_LPASS_SUPPORT);
 }
@@ -1066,17 +1055,17 @@ static void mlme_init_wds_config_cfg(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void mlme_init_disable_vlp_sta_conn_to_sp_ap(
-						struct wlan_objmgr_psoc *psoc,
-						struct wlan_mlme_generic *gen)
+static void
+mlme_init_disable_vlp_sta_conn_to_sp_ap(struct wlan_objmgr_psoc *psoc,
+					struct wlan_mlme_generic *gen)
 {
 	gen->disable_vlp_sta_conn_to_sp_ap =
 		cfg_default(CFG_DISABLE_VLP_STA_CONN_TO_SP_AP);
 }
 #else
-static void mlme_init_disable_vlp_sta_conn_to_sp_ap(
-						struct wlan_objmgr_psoc *psoc,
-						struct wlan_mlme_generic *gen)
+static void
+mlme_init_disable_vlp_sta_conn_to_sp_ap(struct wlan_objmgr_psoc *psoc,
+					struct wlan_mlme_generic *gen)
 {
 }
 #endif
@@ -1110,17 +1099,15 @@ static void mlme_init_standard_6ghz_conn_policy(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void mlme_init_mgmt_hw_tx_retry_count_cfg(
-			struct wlan_objmgr_psoc *psoc,
-			struct wlan_mlme_generic *gen)
+static void mlme_init_mgmt_hw_tx_retry_count_cfg(struct wlan_objmgr_psoc *psoc,
+						 struct wlan_mlme_generic *gen)
 {
 	uint32_t i;
 	qdf_size_t out_size = 0;
 	uint8_t count_array[MGMT_FRM_HW_TX_RETRY_COUNT_STR_LEN];
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_MGMT_FRAME_HW_TX_RETRY_COUNT),
-			      count_array,
-			      MGMT_FRM_HW_TX_RETRY_COUNT_STR_LEN,
+			      count_array, MGMT_FRM_HW_TX_RETRY_COUNT_STR_LEN,
 			      &out_size);
 
 	for (i = 0; i + 1 < out_size; i += 2) {
@@ -1130,18 +1117,18 @@ static void mlme_init_mgmt_hw_tx_retry_count_cfg(
 			continue;
 		}
 		if (count_array[i + 1] >= MAX_MGMT_HW_TX_RETRY_COUNT) {
-			mlme_legacy_debug("mgmt hw tx retry count %d for frm %d, limit to %d",
-					  count_array[i + 1],
-					  count_array[i],
-					  MAX_MGMT_HW_TX_RETRY_COUNT);
+			mlme_legacy_debug(
+				"mgmt hw tx retry count %d for frm %d, limit to %d",
+				count_array[i + 1], count_array[i],
+				MAX_MGMT_HW_TX_RETRY_COUNT);
 			gen->mgmt_hw_tx_retry_count[count_array[i]] =
-						MAX_MGMT_HW_TX_RETRY_COUNT;
+				MAX_MGMT_HW_TX_RETRY_COUNT;
 		} else {
-			mlme_legacy_debug("mgmt hw tx retry count %d for frm %d",
-					  count_array[i + 1],
-					  count_array[i]);
+			mlme_legacy_debug(
+				"mgmt hw tx retry count %d for frm %d",
+				count_array[i + 1], count_array[i]);
 			gen->mgmt_hw_tx_retry_count[count_array[i]] =
-							count_array[i + 1];
+				count_array[i + 1];
 		}
 	}
 }
@@ -1168,9 +1155,10 @@ static void mlme_init_emlsr_mode(struct wlan_objmgr_psoc *psoc,
  * Return: None
  */
 static void mlme_init_tl2m_negotiation_support(struct wlan_objmgr_psoc *psoc,
-						 struct wlan_mlme_generic *gen)
+					       struct wlan_mlme_generic *gen)
 {
-	gen->t2lm_negotiation_support = cfg_default(CFG_T2LM_NEGOTIATION_SUPPORT);
+	gen->t2lm_negotiation_support =
+		cfg_default(CFG_T2LM_NEGOTIATION_SUPPORT);
 }
 #else
 static void mlme_init_emlsr_mode(struct wlan_objmgr_psoc *psoc,
@@ -1179,7 +1167,7 @@ static void mlme_init_emlsr_mode(struct wlan_objmgr_psoc *psoc,
 }
 
 static void mlme_init_tl2m_negotiation_support(struct wlan_objmgr_psoc *psoc,
-						 struct wlan_mlme_generic *gen)
+					       struct wlan_mlme_generic *gen)
 {
 }
 #endif
@@ -1200,7 +1188,8 @@ static void mlme_init_sr_ini_cfg(struct wlan_objmgr_psoc *psoc,
 #else
 static void mlme_init_sr_ini_cfg(struct wlan_objmgr_psoc *psoc,
 				 struct wlan_mlme_generic *gen)
-{}
+{
+}
 #endif
 
 static void mlme_init_generic_cfg(struct wlan_objmgr_psoc *psoc,
@@ -1209,37 +1198,26 @@ static void mlme_init_generic_cfg(struct wlan_objmgr_psoc *psoc,
 	gen->rtt3_enabled = cfg_default(CFG_RTT3_ENABLE);
 	gen->rtt_mac_randomization =
 		cfg_get(psoc, CFG_ENABLE_RTT_MAC_RANDOMIZATION);
-	gen->band_capability =
-		cfg_get(psoc, CFG_BAND_CAPABILITY);
+	gen->band_capability = cfg_get(psoc, CFG_BAND_CAPABILITY);
 	if (!gen->band_capability)
 		gen->band_capability = REG_BAND_MASK_ALL;
 	gen->band = gen->band_capability;
-	gen->select_5ghz_margin =
-		cfg_get(psoc, CFG_SELECT_5GHZ_MARGIN);
-	gen->sub_20_chan_width =
-		cfg_get(psoc, CFG_SUB_20_CHANNEL_WIDTH);
-	gen->ito_repeat_count =
-		cfg_get(psoc, CFG_ITO_REPEAT_COUNT);
+	gen->select_5ghz_margin = cfg_get(psoc, CFG_SELECT_5GHZ_MARGIN);
+	gen->sub_20_chan_width = cfg_get(psoc, CFG_SUB_20_CHANNEL_WIDTH);
+	gen->ito_repeat_count = cfg_get(psoc, CFG_ITO_REPEAT_COUNT);
 	gen->dropped_pkt_disconnect_thresh =
 		cfg_get(psoc, CFG_DROPPED_PKT_DISCONNECT_THRESHOLD);
-	gen->prevent_link_down =
-		cfg_get(psoc, CFG_PREVENT_LINK_DOWN);
-	gen->memory_deep_sleep =
-		cfg_get(psoc, CFG_ENABLE_MEM_DEEP_SLEEP);
+	gen->prevent_link_down = cfg_get(psoc, CFG_PREVENT_LINK_DOWN);
+	gen->memory_deep_sleep = cfg_get(psoc, CFG_ENABLE_MEM_DEEP_SLEEP);
 	gen->cck_tx_fir_override =
 		cfg_get(psoc, CFG_ENABLE_CCK_TX_FIR_OVERRIDE);
-	gen->crash_inject =
-		cfg_get(psoc, CFG_ENABLE_CRASH_INJECT);
-	gen->self_recovery =
-		cfg_get(psoc, CFG_ENABLE_SELF_RECOVERY);
-	gen->sap_dot11mc =
-		cfg_get(psoc, CFG_SAP_DOT11MC);
+	gen->crash_inject = cfg_get(psoc, CFG_ENABLE_CRASH_INJECT);
+	gen->self_recovery = cfg_get(psoc, CFG_ENABLE_SELF_RECOVERY);
+	gen->sap_dot11mc = cfg_get(psoc, CFG_SAP_DOT11MC);
 	gen->fatal_event_trigger =
 		cfg_get(psoc, CFG_ENABLE_FATAL_EVENT_TRIGGER);
-	gen->optimize_ca_event =
-		cfg_get(psoc, CFG_OPTIMIZE_CA_EVENT);
-	gen->fw_timeout_crash =
-		cfg_get(psoc, CFG_CRASH_FW_TIMEOUT);
+	gen->optimize_ca_event = cfg_get(psoc, CFG_OPTIMIZE_CA_EVENT);
+	gen->fw_timeout_crash = cfg_get(psoc, CFG_CRASH_FW_TIMEOUT);
 	gen->debug_packet_log = cfg_get(psoc, CFG_ENABLE_DEBUG_PACKET_LOG);
 	gen->enable_deauth_to_disassoc_map =
 		cfg_get(psoc, CFG_ENABLE_DEAUTH_TO_DISASSOC_MAP);
@@ -1258,10 +1236,8 @@ static void mlme_init_generic_cfg(struct wlan_objmgr_psoc *psoc,
 	gen->enable_ring_buffer = cfg_get(psoc, CFG_ENABLE_RING_BUFFER);
 	gen->enable_peer_unmap_conf_support =
 		cfg_get(psoc, CFG_DP_ENABLE_PEER_UMAP_CONF_SUPPORT);
-	gen->dfs_chan_ageout_time =
-		cfg_get(psoc, CFG_DFS_CHAN_AGEOUT_TIME);
-	gen->sae_connect_retries =
-		cfg_get(psoc, CFG_SAE_CONNECION_RETRIES);
+	gen->dfs_chan_ageout_time = cfg_get(psoc, CFG_DFS_CHAN_AGEOUT_TIME);
+	gen->sae_connect_retries = cfg_get(psoc, CFG_SAE_CONNECION_RETRIES);
 	gen->monitor_mode_concurrency =
 		cfg_get(psoc, CFG_MONITOR_MODE_CONCURRENCY);
 	gen->tx_retry_multiplier = cfg_get(psoc, CFG_TX_RETRY_MULTIPLIER);
@@ -1292,43 +1268,35 @@ static void mlme_init_edca_ani_cfg(struct wlan_objmgr_psoc *psoc,
 
 	/* parse the ETSI edca parameters from cfg string for BK,BE,VI,VO ac */
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ANI_ACBK_LOCAL),
-			      edca_params->ani_acbk_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->ani_acbk_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->ani_acbk_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ANI_ACBE_LOCAL),
-			      edca_params->ani_acbe_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->ani_acbe_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->ani_acbe_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ANI_ACVI_LOCAL),
-			      edca_params->ani_acvi_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->ani_acvi_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->ani_acvi_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ANI_ACVO_LOCAL),
-			      edca_params->ani_acvo_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->ani_acvo_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->ani_acvo_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ANI_ACBK),
-			      edca_params->ani_acbk_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->ani_acbk_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->ani_acbk_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ANI_ACBE),
-			      edca_params->ani_acbe_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->ani_acbe_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->ani_acbe_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ANI_ACVI),
-			      edca_params->ani_acvi_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->ani_acvi_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->ani_acvi_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ANI_ACVO),
-			      edca_params->ani_acvo_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->ani_acvo_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->ani_acvo_b.len);
 }
 
@@ -1348,43 +1316,35 @@ static void mlme_init_edca_wme_cfg(struct wlan_objmgr_psoc *psoc,
 
 	/* parse the WME edca parameters from cfg string for BK,BE,VI,VO ac */
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_WME_ACBK_LOCAL),
-			      edca_params->wme_acbk_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->wme_acbk_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->wme_acbk_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_WME_ACBE_LOCAL),
-			      edca_params->wme_acbe_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->wme_acbe_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->wme_acbe_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_WME_ACVI_LOCAL),
-			      edca_params->wme_acvi_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->wme_acvi_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->wme_acvi_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_WME_ACVO_LOCAL),
-			      edca_params->wme_acvo_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->wme_acvo_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->wme_acvo_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_WME_ACBK),
-			      edca_params->wme_acbk_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->wme_acbk_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->wme_acbk_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_WME_ACBE),
-			      edca_params->wme_acbe_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->wme_acbe_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->wme_acbe_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_WME_ACVI),
-			      edca_params->wme_acvi_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->wme_acvi_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->wme_acvi_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_WME_ACVO),
-			      edca_params->wme_acvo_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->wme_acvo_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->wme_acvo_b.len);
 }
 
@@ -1404,86 +1364,61 @@ static void mlme_init_edca_etsi_cfg(struct wlan_objmgr_psoc *psoc,
 
 	/* parse the ETSI edca parameters from cfg string for BK,BE,VI,VO ac */
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ETSI_ACBK_LOCAL),
-			      edca_params->etsi_acbk_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->etsi_acbk_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->etsi_acbk_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ETSI_ACBE_LOCAL),
-			      edca_params->etsi_acbe_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->etsi_acbe_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->etsi_acbe_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ETSI_ACVI_LOCAL),
-			      edca_params->etsi_acvi_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->etsi_acvi_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->etsi_acvi_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ETSI_ACVO_LOCAL),
-			      edca_params->etsi_acvo_l.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->etsi_acvo_l.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->etsi_acvo_l.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ETSI_ACBK),
-			      edca_params->etsi_acbk_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->etsi_acbk_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->etsi_acbk_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ETSI_ACBE),
-			      edca_params->etsi_acbe_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->etsi_acbe_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->etsi_acbe_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ETSI_ACVI),
-			      edca_params->etsi_acvi_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->etsi_acvi_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->etsi_acvi_b.len);
 
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_EDCA_ETSI_ACVO),
-			      edca_params->etsi_acvo_b.data,
-			      CFG_EDCA_DATA_LEN,
+			      edca_params->etsi_acvo_b.data, CFG_EDCA_DATA_LEN,
 			      &edca_params->etsi_acvo_b.len);
 }
 
-static void
-mlme_init_qos_edca_params(struct wlan_objmgr_psoc *psoc,
-			  struct wlan_mlme_edca_params *edca_params)
+static void mlme_init_qos_edca_params(struct wlan_objmgr_psoc *psoc,
+				      struct wlan_mlme_edca_params *edca_params)
 {
+	edca_params->enable_edca_params = cfg_get(psoc, CFG_EDCA_ENABLE_PARAM);
 
-	edca_params->enable_edca_params =
-			cfg_get(psoc, CFG_EDCA_ENABLE_PARAM);
+	edca_params->enable_wmm_txop = cfg_get(psoc, CFG_ENABLE_WMM_TXOP);
+	edca_params->edca_ac_vo.vo_cwmin = cfg_get(psoc, CFG_EDCA_VO_CWMIN);
+	edca_params->edca_ac_vo.vo_cwmax = cfg_get(psoc, CFG_EDCA_VO_CWMAX);
+	edca_params->edca_ac_vo.vo_aifs = cfg_get(psoc, CFG_EDCA_VO_AIFS);
 
-	edca_params->enable_wmm_txop =
-			cfg_get(psoc, CFG_ENABLE_WMM_TXOP);
-	edca_params->edca_ac_vo.vo_cwmin =
-			cfg_get(psoc, CFG_EDCA_VO_CWMIN);
-	edca_params->edca_ac_vo.vo_cwmax =
-			cfg_get(psoc, CFG_EDCA_VO_CWMAX);
-	edca_params->edca_ac_vo.vo_aifs =
-			cfg_get(psoc, CFG_EDCA_VO_AIFS);
+	edca_params->edca_ac_vi.vi_cwmin = cfg_get(psoc, CFG_EDCA_VI_CWMIN);
+	edca_params->edca_ac_vi.vi_cwmax = cfg_get(psoc, CFG_EDCA_VI_CWMAX);
+	edca_params->edca_ac_vi.vi_aifs = cfg_get(psoc, CFG_EDCA_VI_AIFS);
 
-	edca_params->edca_ac_vi.vi_cwmin =
-			cfg_get(psoc, CFG_EDCA_VI_CWMIN);
-	edca_params->edca_ac_vi.vi_cwmax =
-			cfg_get(psoc, CFG_EDCA_VI_CWMAX);
-	edca_params->edca_ac_vi.vi_aifs =
-			cfg_get(psoc, CFG_EDCA_VI_AIFS);
+	edca_params->edca_ac_bk.bk_cwmin = cfg_get(psoc, CFG_EDCA_BK_CWMIN);
+	edca_params->edca_ac_bk.bk_cwmax = cfg_get(psoc, CFG_EDCA_BK_CWMAX);
+	edca_params->edca_ac_bk.bk_aifs = cfg_get(psoc, CFG_EDCA_BK_AIFS);
 
-	edca_params->edca_ac_bk.bk_cwmin =
-			cfg_get(psoc, CFG_EDCA_BK_CWMIN);
-	edca_params->edca_ac_bk.bk_cwmax =
-			cfg_get(psoc, CFG_EDCA_BK_CWMAX);
-	edca_params->edca_ac_bk.bk_aifs =
-			cfg_get(psoc, CFG_EDCA_BK_AIFS);
+	edca_params->edca_ac_be.be_cwmin = cfg_get(psoc, CFG_EDCA_BE_CWMIN);
+	edca_params->edca_ac_be.be_cwmax = cfg_get(psoc, CFG_EDCA_BE_CWMAX);
+	edca_params->edca_ac_be.be_aifs = cfg_get(psoc, CFG_EDCA_BE_AIFS);
 
-	edca_params->edca_ac_be.be_cwmin =
-			cfg_get(psoc, CFG_EDCA_BE_CWMIN);
-	edca_params->edca_ac_be.be_cwmax =
-			cfg_get(psoc, CFG_EDCA_BE_CWMAX);
-	edca_params->edca_ac_be.be_aifs =
-			cfg_get(psoc, CFG_EDCA_BE_AIFS);
-
-	edca_params->edca_param_type =
-			cfg_get(psoc, CFG_EDCA_PIFS_PARAM_TYPE);
+	edca_params->edca_param_type = cfg_get(psoc, CFG_EDCA_PIFS_PARAM_TYPE);
 
 	edca_params->enable_edca_params = 0;
 }
@@ -1501,31 +1436,27 @@ static void mlme_init_timeout_cfg(struct wlan_objmgr_psoc *psoc,
 				  struct wlan_mlme_timeout *timeouts)
 {
 	timeouts->join_failure_timeout =
-			cfg_get(psoc, CFG_JOIN_FAILURE_TIMEOUT);
+		cfg_get(psoc, CFG_JOIN_FAILURE_TIMEOUT);
 	timeouts->join_failure_timeout_ori = timeouts->join_failure_timeout;
 	timeouts->probe_req_retry_timeout = JOIN_PROBE_REQ_TIMER_MS;
 	timeouts->auth_failure_timeout =
-			cfg_get(psoc, CFG_AUTH_FAILURE_TIMEOUT);
-	timeouts->auth_rsp_timeout =
-			cfg_get(psoc, CFG_AUTH_RSP_TIMEOUT);
+		cfg_get(psoc, CFG_AUTH_FAILURE_TIMEOUT);
+	timeouts->auth_rsp_timeout = cfg_get(psoc, CFG_AUTH_RSP_TIMEOUT);
 	timeouts->assoc_failure_timeout =
-			cfg_get(psoc, CFG_ASSOC_FAILURE_TIMEOUT);
+		cfg_get(psoc, CFG_ASSOC_FAILURE_TIMEOUT);
 	timeouts->reassoc_failure_timeout =
-			cfg_get(psoc, CFG_REASSOC_FAILURE_TIMEOUT);
-	timeouts->olbc_detect_timeout =
-			cfg_get(psoc, CFG_OLBC_DETECT_TIMEOUT);
-	timeouts->addts_rsp_timeout =
-			cfg_get(psoc, CFG_ADDTS_RSP_TIMEOUT);
+		cfg_get(psoc, CFG_REASSOC_FAILURE_TIMEOUT);
+	timeouts->olbc_detect_timeout = cfg_get(psoc, CFG_OLBC_DETECT_TIMEOUT);
+	timeouts->addts_rsp_timeout = cfg_get(psoc, CFG_ADDTS_RSP_TIMEOUT);
 	timeouts->heart_beat_threshold =
-			cfg_get(psoc, CFG_HEART_BEAT_THRESHOLD);
+		cfg_get(psoc, CFG_HEART_BEAT_THRESHOLD);
 	timeouts->ap_keep_alive_timeout =
-			cfg_get(psoc, CFG_AP_KEEP_ALIVE_TIMEOUT);
+		cfg_get(psoc, CFG_AP_KEEP_ALIVE_TIMEOUT);
 	timeouts->ap_link_monitor_timeout =
-			cfg_get(psoc, CFG_AP_LINK_MONITOR_TIMEOUT);
-	timeouts->wmi_wq_watchdog_timeout =
-			cfg_get(psoc, CFG_WMI_WQ_WATCHDOG);
+		cfg_get(psoc, CFG_AP_LINK_MONITOR_TIMEOUT);
+	timeouts->wmi_wq_watchdog_timeout = cfg_get(psoc, CFG_WMI_WQ_WATCHDOG);
 	timeouts->sae_auth_failure_timeout =
-			cfg_get(psoc, CFG_SAE_AUTH_FAILURE_TIMEOUT);
+		cfg_get(psoc, CFG_SAE_AUTH_FAILURE_TIMEOUT);
 }
 
 static void mlme_init_ht_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
@@ -1558,21 +1489,17 @@ static void mlme_init_ht_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
 
 	/* HT Capabilities - HT Caps Info Field */
 	u1.val_16 = (uint16_t)cfg_default(CFG_HT_CAP_INFO);
-	u1.ht_cap_info.adv_coding_cap =
-				cfg_get(psoc, CFG_RX_LDPC_ENABLE);
+	u1.ht_cap_info.adv_coding_cap = cfg_get(psoc, CFG_RX_LDPC_ENABLE);
 	u1.ht_cap_info.rx_stbc = cfg_get(psoc, CFG_RX_STBC_ENABLE);
 	u1.ht_cap_info.tx_stbc = cfg_get(psoc, CFG_TX_STBC_ENABLE);
-	u1.ht_cap_info.short_gi_20_mhz =
-				cfg_get(psoc, CFG_SHORT_GI_20MHZ);
-	u1.ht_cap_info.short_gi_40_mhz =
-				cfg_get(psoc, CFG_SHORT_GI_40MHZ);
+	u1.ht_cap_info.short_gi_20_mhz = cfg_get(psoc, CFG_SHORT_GI_20MHZ);
+	u1.ht_cap_info.short_gi_40_mhz = cfg_get(psoc, CFG_SHORT_GI_40MHZ);
 	ht_caps->ht_cap_info = u1.ht_cap_info;
 
 	/* HT Capapabilties - AMPDU Params */
 	ht_caps->ampdu_params.max_rx_ampdu_factor =
 		cfg_get(psoc, CFG_MAX_RX_AMPDU_FACTOR);
-	ht_caps->ampdu_params.mpdu_density =
-		cfg_get(psoc, CFG_MPDU_DENSITY);
+	ht_caps->ampdu_params.mpdu_density = cfg_get(psoc, CFG_MPDU_DENSITY);
 	ht_caps->ampdu_params.reserved = 0;
 
 	/* HT Capabilities - Extended Capabilities field */
@@ -1605,140 +1532,111 @@ static void mlme_init_qos_cfg(struct wlan_objmgr_psoc *psoc,
 			      struct wlan_mlme_qos *qos_aggr_params)
 {
 	qos_aggr_params->tx_aggregation_size =
-				cfg_get(psoc, CFG_TX_AGGREGATION_SIZE);
+		cfg_get(psoc, CFG_TX_AGGREGATION_SIZE);
 	qos_aggr_params->tx_aggregation_size_be =
-				cfg_get(psoc, CFG_TX_AGGREGATION_SIZEBE);
+		cfg_get(psoc, CFG_TX_AGGREGATION_SIZEBE);
 	qos_aggr_params->tx_aggregation_size_bk =
-				cfg_get(psoc, CFG_TX_AGGREGATION_SIZEBK);
+		cfg_get(psoc, CFG_TX_AGGREGATION_SIZEBK);
 	qos_aggr_params->tx_aggregation_size_vi =
-				cfg_get(psoc, CFG_TX_AGGREGATION_SIZEVI);
+		cfg_get(psoc, CFG_TX_AGGREGATION_SIZEVI);
 	qos_aggr_params->tx_aggregation_size_vo =
-				cfg_get(psoc, CFG_TX_AGGREGATION_SIZEVO);
+		cfg_get(psoc, CFG_TX_AGGREGATION_SIZEVO);
 	qos_aggr_params->rx_aggregation_size =
-				cfg_get(psoc, CFG_RX_AGGREGATION_SIZE);
+		cfg_get(psoc, CFG_RX_AGGREGATION_SIZE);
 	qos_aggr_params->tx_aggr_sw_retry_threshold_be =
-				cfg_get(psoc, CFG_TX_AGGR_SW_RETRY_BE);
+		cfg_get(psoc, CFG_TX_AGGR_SW_RETRY_BE);
 	qos_aggr_params->tx_aggr_sw_retry_threshold_bk =
-				cfg_get(psoc, CFG_TX_AGGR_SW_RETRY_BK);
+		cfg_get(psoc, CFG_TX_AGGR_SW_RETRY_BK);
 	qos_aggr_params->tx_aggr_sw_retry_threshold_vi =
-				cfg_get(psoc, CFG_TX_AGGR_SW_RETRY_VI);
+		cfg_get(psoc, CFG_TX_AGGR_SW_RETRY_VI);
 	qos_aggr_params->tx_aggr_sw_retry_threshold_vo =
-				cfg_get(psoc, CFG_TX_AGGR_SW_RETRY_VO);
+		cfg_get(psoc, CFG_TX_AGGR_SW_RETRY_VO);
 	qos_aggr_params->tx_aggr_sw_retry_threshold =
-				cfg_get(psoc, CFG_TX_AGGR_SW_RETRY);
+		cfg_get(psoc, CFG_TX_AGGR_SW_RETRY);
 	qos_aggr_params->tx_non_aggr_sw_retry_threshold_be =
-				cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY_BE);
+		cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY_BE);
 	qos_aggr_params->tx_non_aggr_sw_retry_threshold_bk =
-				cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY_BK);
+		cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY_BK);
 	qos_aggr_params->tx_non_aggr_sw_retry_threshold_vi =
-				cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY_VI);
+		cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY_VI);
 	qos_aggr_params->tx_non_aggr_sw_retry_threshold_vo =
-				cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY_VO);
+		cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY_VO);
 	qos_aggr_params->tx_non_aggr_sw_retry_threshold =
-				cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY);
+		cfg_get(psoc, CFG_TX_NON_AGGR_SW_RETRY);
 	qos_aggr_params->sap_max_inactivity_override =
-				cfg_get(psoc, CFG_SAP_MAX_INACTIVITY_OVERRIDE);
-	qos_aggr_params->sap_uapsd_enabled =
-				cfg_get(psoc, CFG_SAP_QOS_UAPSD);
+		cfg_get(psoc, CFG_SAP_MAX_INACTIVITY_OVERRIDE);
+	qos_aggr_params->sap_uapsd_enabled = cfg_get(psoc, CFG_SAP_QOS_UAPSD);
 }
 
 static void mlme_init_mbo_cfg(struct wlan_objmgr_psoc *psoc,
 			      struct wlan_mlme_mbo *mbo_params)
 {
 	mbo_params->mbo_candidate_rssi_thres =
-			cfg_get(psoc, CFG_MBO_CANDIDATE_RSSI_THRESHOLD);
+		cfg_get(psoc, CFG_MBO_CANDIDATE_RSSI_THRESHOLD);
 	mbo_params->mbo_current_rssi_thres =
-			cfg_get(psoc, CFG_MBO_CURRENT_RSSI_THRESHOLD);
+		cfg_get(psoc, CFG_MBO_CURRENT_RSSI_THRESHOLD);
 	mbo_params->mbo_current_rssi_mcc_thres =
-			cfg_get(psoc, CFG_MBO_CUR_RSSI_MCC_THRESHOLD);
+		cfg_get(psoc, CFG_MBO_CUR_RSSI_MCC_THRESHOLD);
 	mbo_params->mbo_candidate_rssi_btc_thres =
-			cfg_get(psoc, CFG_MBO_CAND_RSSI_BTC_THRESHOLD);
+		cfg_get(psoc, CFG_MBO_CAND_RSSI_BTC_THRESHOLD);
 }
 
-static void mlme_init_vht_cap_cfg(struct wlan_objmgr_psoc *psoc,
-				  struct mlme_vht_capabilities_info
-				  *vht_cap_info)
+static void
+mlme_init_vht_cap_cfg(struct wlan_objmgr_psoc *psoc,
+		      struct mlme_vht_capabilities_info *vht_cap_info)
 {
-	vht_cap_info->supp_chan_width =
-			cfg_default(CFG_VHT_SUPP_CHAN_WIDTH);
+	vht_cap_info->supp_chan_width = cfg_default(CFG_VHT_SUPP_CHAN_WIDTH);
 	vht_cap_info->num_soundingdim =
-			cfg_default(CFG_VHT_NUM_SOUNDING_DIMENSIONS);
-	vht_cap_info->htc_vhtc =
-			cfg_default(CFG_VHT_HTC_VHTC);
-	vht_cap_info->link_adap_cap =
-			cfg_default(CFG_VHT_LINK_ADAPTATION_CAP);
-	vht_cap_info->rx_antpattern =
-			cfg_default(CFG_VHT_RX_ANT_PATTERN);
-	vht_cap_info->tx_antpattern =
-			cfg_default(CFG_VHT_TX_ANT_PATTERN);
+		cfg_default(CFG_VHT_NUM_SOUNDING_DIMENSIONS);
+	vht_cap_info->htc_vhtc = cfg_default(CFG_VHT_HTC_VHTC);
+	vht_cap_info->link_adap_cap = cfg_default(CFG_VHT_LINK_ADAPTATION_CAP);
+	vht_cap_info->rx_antpattern = cfg_default(CFG_VHT_RX_ANT_PATTERN);
+	vht_cap_info->tx_antpattern = cfg_default(CFG_VHT_TX_ANT_PATTERN);
 	vht_cap_info->rx_supp_data_rate =
-			cfg_default(CFG_VHT_RX_SUPP_DATA_RATE);
+		cfg_default(CFG_VHT_RX_SUPP_DATA_RATE);
 	vht_cap_info->tx_supp_data_rate =
-			cfg_default(CFG_VHT_TX_SUPP_DATA_RATE);
-	vht_cap_info->txop_ps =
-			cfg_default(CFG_VHT_TXOP_PS);
-	vht_cap_info->rx_mcs_map =
-			CFG_VHT_RX_MCS_MAP_STADEF;
-	vht_cap_info->tx_mcs_map =
-			CFG_VHT_TX_MCS_MAP_STADEF;
-	vht_cap_info->basic_mcs_set =
-			CFG_VHT_BASIC_MCS_SET_STADEF;
+		cfg_default(CFG_VHT_TX_SUPP_DATA_RATE);
+	vht_cap_info->txop_ps = cfg_default(CFG_VHT_TXOP_PS);
+	vht_cap_info->rx_mcs_map = CFG_VHT_RX_MCS_MAP_STADEF;
+	vht_cap_info->tx_mcs_map = CFG_VHT_TX_MCS_MAP_STADEF;
+	vht_cap_info->basic_mcs_set = CFG_VHT_BASIC_MCS_SET_STADEF;
 
 	vht_cap_info->tx_bfee_ant_supp =
-			cfg_get(psoc, CFG_VHT_BEAMFORMEE_ANT_SUPP);
+		cfg_get(psoc, CFG_VHT_BEAMFORMEE_ANT_SUPP);
 
 	vht_cap_info->enable_txbf_20mhz =
-			cfg_get(psoc, CFG_VHT_ENABLE_TXBF_IN_20MHZ);
-	vht_cap_info->ampdu_len =
-			cfg_get(psoc, CFG_VHT_MPDU_LEN);
+		cfg_get(psoc, CFG_VHT_ENABLE_TXBF_IN_20MHZ);
+	vht_cap_info->ampdu_len = cfg_get(psoc, CFG_VHT_MPDU_LEN);
 
-	vht_cap_info->ldpc_coding_cap =
-			cfg_get(psoc, CFG_RX_LDPC_ENABLE);
-	vht_cap_info->short_gi_80mhz =
-			cfg_get(psoc, CFG_SHORT_GI_40MHZ);
-	vht_cap_info->short_gi_160mhz =
-			cfg_get(psoc, CFG_SHORT_GI_40MHZ);
-	vht_cap_info->tx_stbc =
-			cfg_get(psoc, CFG_TX_STBC_ENABLE);
-	vht_cap_info->rx_stbc =
-			cfg_get(psoc, CFG_RX_STBC_ENABLE);
+	vht_cap_info->ldpc_coding_cap = cfg_get(psoc, CFG_RX_LDPC_ENABLE);
+	vht_cap_info->short_gi_80mhz = cfg_get(psoc, CFG_SHORT_GI_40MHZ);
+	vht_cap_info->short_gi_160mhz = cfg_get(psoc, CFG_SHORT_GI_40MHZ);
+	vht_cap_info->tx_stbc = cfg_get(psoc, CFG_TX_STBC_ENABLE);
+	vht_cap_info->rx_stbc = cfg_get(psoc, CFG_RX_STBC_ENABLE);
 
-	vht_cap_info->su_bformee =
-		cfg_get(psoc, CFG_VHT_SU_BEAMFORMEE_CAP);
+	vht_cap_info->su_bformee = cfg_get(psoc, CFG_VHT_SU_BEAMFORMEE_CAP);
 
-	vht_cap_info->mu_bformer =
-			cfg_default(CFG_VHT_MU_BEAMFORMER_CAP);
+	vht_cap_info->mu_bformer = cfg_default(CFG_VHT_MU_BEAMFORMER_CAP);
 
 	vht_cap_info->enable_mu_bformee =
-			cfg_get(psoc, CFG_VHT_ENABLE_MU_BFORMEE_CAP_FEATURE);
+		cfg_get(psoc, CFG_VHT_ENABLE_MU_BFORMEE_CAP_FEATURE);
 	vht_cap_info->ampdu_len_exponent =
-			cfg_get(psoc, CFG_VHT_AMPDU_LEN_EXPONENT);
-	vht_cap_info->channel_width =
-			cfg_get(psoc, CFG_VHT_CHANNEL_WIDTH);
-	vht_cap_info->rx_mcs =
-			cfg_get(psoc, CFG_VHT_ENABLE_RX_MCS_8_9);
-	vht_cap_info->tx_mcs =
-			cfg_get(psoc, CFG_VHT_ENABLE_TX_MCS_8_9);
-	vht_cap_info->rx_mcs2x2 =
-			cfg_get(psoc, CFG_VHT_ENABLE_RX_MCS2x2_8_9);
-	vht_cap_info->tx_mcs2x2 =
-			cfg_get(psoc, CFG_VHT_ENABLE_TX_MCS2x2_8_9);
-	vht_cap_info->enable_vht20_mcs9 =
-			cfg_get(psoc, CFG_ENABLE_VHT20_MCS9);
-	vht_cap_info->enable2x2 =
-			cfg_get(psoc, CFG_VHT_ENABLE_2x2_CAP_FEATURE);
-	vht_cap_info->enable_paid =
-			cfg_get(psoc, CFG_VHT_ENABLE_PAID_FEATURE);
-	vht_cap_info->enable_gid =
-			cfg_get(psoc, CFG_VHT_ENABLE_GID_FEATURE);
-	vht_cap_info->b24ghz_band =
-			cfg_get(psoc, CFG_ENABLE_VHT_FOR_24GHZ);
+		cfg_get(psoc, CFG_VHT_AMPDU_LEN_EXPONENT);
+	vht_cap_info->channel_width = cfg_get(psoc, CFG_VHT_CHANNEL_WIDTH);
+	vht_cap_info->rx_mcs = cfg_get(psoc, CFG_VHT_ENABLE_RX_MCS_8_9);
+	vht_cap_info->tx_mcs = cfg_get(psoc, CFG_VHT_ENABLE_TX_MCS_8_9);
+	vht_cap_info->rx_mcs2x2 = cfg_get(psoc, CFG_VHT_ENABLE_RX_MCS2x2_8_9);
+	vht_cap_info->tx_mcs2x2 = cfg_get(psoc, CFG_VHT_ENABLE_TX_MCS2x2_8_9);
+	vht_cap_info->enable_vht20_mcs9 = cfg_get(psoc, CFG_ENABLE_VHT20_MCS9);
+	vht_cap_info->enable2x2 = cfg_get(psoc, CFG_VHT_ENABLE_2x2_CAP_FEATURE);
+	vht_cap_info->enable_paid = cfg_get(psoc, CFG_VHT_ENABLE_PAID_FEATURE);
+	vht_cap_info->enable_gid = cfg_get(psoc, CFG_VHT_ENABLE_GID_FEATURE);
+	vht_cap_info->b24ghz_band = cfg_get(psoc, CFG_ENABLE_VHT_FOR_24GHZ);
 	vht_cap_info->vendor_24ghz_band =
-			cfg_get(psoc, CFG_ENABLE_VENDOR_VHT_FOR_24GHZ);
-	vht_cap_info->tx_bfee_sap =
-			cfg_get(psoc, CFG_VHT_ENABLE_TXBF_SAP_MODE);
+		cfg_get(psoc, CFG_ENABLE_VENDOR_VHT_FOR_24GHZ);
+	vht_cap_info->tx_bfee_sap = cfg_get(psoc, CFG_VHT_ENABLE_TXBF_SAP_MODE);
 	vht_cap_info->vendor_vhtie =
-			cfg_get(psoc, CFG_ENABLE_SUBFEE_IN_VENDOR_VHTIE);
+		cfg_get(psoc, CFG_ENABLE_SUBFEE_IN_VENDOR_VHTIE);
 
 	if (vht_cap_info->enable2x2)
 		vht_cap_info->su_bformer =
@@ -1750,7 +1648,7 @@ static void mlme_init_vht_cap_cfg(struct wlan_objmgr_psoc *psoc,
 	vht_cap_info->tx_bf_cap = cfg_default(CFG_TX_BF_CAP);
 	vht_cap_info->as_cap = cfg_default(CFG_AS_CAP);
 	vht_cap_info->disable_ldpc_with_txbf_ap =
-			cfg_get(psoc, CFG_DISABLE_LDPC_WITH_TXBF_AP);
+		cfg_get(psoc, CFG_DISABLE_LDPC_WITH_TXBF_AP);
 }
 
 static void mlme_init_rates_in_cfg(struct wlan_objmgr_psoc *psoc,
@@ -1759,12 +1657,11 @@ static void mlme_init_rates_in_cfg(struct wlan_objmgr_psoc *psoc,
 	rates->cfp_period = cfg_default(CFG_CFP_PERIOD);
 	rates->cfp_max_duration = cfg_default(CFG_CFP_MAX_DURATION);
 	rates->max_htmcs_txdata = cfg_get(psoc, CFG_MAX_HT_MCS_FOR_TX_DATA);
-	rates->disable_abg_rate_txdata = cfg_get(psoc,
-					CFG_DISABLE_ABG_RATE_FOR_TX_DATA);
-	rates->sap_max_mcs_txdata = cfg_get(psoc,
-					CFG_SAP_MAX_MCS_FOR_TX_DATA);
-	rates->disable_high_ht_mcs_2x2 = cfg_get(psoc,
-					 CFG_DISABLE_HIGH_HT_RX_MCS_2x2);
+	rates->disable_abg_rate_txdata =
+		cfg_get(psoc, CFG_DISABLE_ABG_RATE_FOR_TX_DATA);
+	rates->sap_max_mcs_txdata = cfg_get(psoc, CFG_SAP_MAX_MCS_FOR_TX_DATA);
+	rates->disable_high_ht_mcs_2x2 =
+		cfg_get(psoc, CFG_DISABLE_HIGH_HT_RX_MCS_2x2);
 
 	rates->supported_11b.max_len = CFG_SUPPORTED_RATES_11B_LEN;
 	qdf_uint8_array_parse(cfg_default(CFG_SUPPORTED_RATES_11B),
@@ -1815,49 +1712,49 @@ static void mlme_init_dfs_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_DFS_RADAR_PRI_MULTIPLIER);
 }
 
-static void mlme_init_feature_flag_in_cfg(
-				struct wlan_objmgr_psoc *psoc,
-				struct wlan_mlme_feature_flag *feature_flags)
+static void
+mlme_init_feature_flag_in_cfg(struct wlan_objmgr_psoc *psoc,
+			      struct wlan_mlme_feature_flag *feature_flags)
 {
 	feature_flags->accept_short_slot_assoc =
-				cfg_default(CFG_ACCEPT_SHORT_SLOT_ASSOC_ONLY);
+		cfg_default(CFG_ACCEPT_SHORT_SLOT_ASSOC_ONLY);
 	feature_flags->enable_hcf = cfg_default(CFG_HCF_ENABLED);
 	feature_flags->enable_rsn = cfg_default(CFG_RSN_ENABLED);
 	feature_flags->enable_short_preamble_11g =
-				cfg_default(CFG_11G_SHORT_PREAMBLE_ENABLED);
+		cfg_default(CFG_11G_SHORT_PREAMBLE_ENABLED);
 	feature_flags->enable_short_slot_time_11g =
-				cfg_default(CFG_11G_SHORT_SLOT_TIME_ENABLED);
+		cfg_default(CFG_11G_SHORT_SLOT_TIME_ENABLED);
 	feature_flags->channel_bonding_mode =
-				cfg_default(CFG_CHANNEL_BONDING_MODE);
+		cfg_default(CFG_CHANNEL_BONDING_MODE);
 	feature_flags->enable_block_ack = cfg_default(CFG_BLOCK_ACK_ENABLED);
 	feature_flags->enable_ampdu = cfg_get(psoc, CFG_ENABLE_AMPDUPS);
-	feature_flags->mcc_rts_cts_prot = cfg_get(psoc,
-						  CFG_FW_MCC_RTS_CTS_PROT);
-	feature_flags->mcc_bcast_prob_rsp = cfg_get(psoc,
-						    CFG_FW_MCC_BCAST_PROB_RESP);
+	feature_flags->mcc_rts_cts_prot =
+		cfg_get(psoc, CFG_FW_MCC_RTS_CTS_PROT);
+	feature_flags->mcc_bcast_prob_rsp =
+		cfg_get(psoc, CFG_FW_MCC_BCAST_PROB_RESP);
 	feature_flags->enable_mcc = cfg_get(psoc, CFG_MCC_FEATURE);
 	feature_flags->channel_bonding_mode_24ghz =
-			cfg_get(psoc, CFG_CHANNEL_BONDING_MODE_24GHZ);
+		cfg_get(psoc, CFG_CHANNEL_BONDING_MODE_24GHZ);
 	feature_flags->channel_bonding_mode_5ghz =
-			cfg_get(psoc, CFG_CHANNEL_BONDING_MODE_5GHZ);
+		cfg_get(psoc, CFG_CHANNEL_BONDING_MODE_5GHZ);
 }
 
-static void mlme_init_sap_protection_cfg(struct wlan_objmgr_psoc *psoc,
-					 struct wlan_mlme_sap_protection
-					 *sap_protection_params)
+static void mlme_init_sap_protection_cfg(
+	struct wlan_objmgr_psoc *psoc,
+	struct wlan_mlme_sap_protection *sap_protection_params)
 {
 	sap_protection_params->protection_enabled =
-				cfg_default(CFG_PROTECTION_ENABLED);
+		cfg_default(CFG_PROTECTION_ENABLED);
 	sap_protection_params->protection_force_policy =
-				cfg_default(CFG_FORCE_POLICY_PROTECTION);
+		cfg_default(CFG_FORCE_POLICY_PROTECTION);
 	sap_protection_params->ignore_peer_ht_opmode =
-				cfg_get(psoc, CFG_IGNORE_PEER_HT_MODE);
+		cfg_get(psoc, CFG_IGNORE_PEER_HT_MODE);
 	sap_protection_params->enable_ap_obss_protection =
-				cfg_get(psoc, CFG_AP_OBSS_PROTECTION_ENABLE);
+		cfg_get(psoc, CFG_AP_OBSS_PROTECTION_ENABLE);
 	sap_protection_params->is_ap_prot_enabled =
-				cfg_get(psoc, CFG_AP_ENABLE_PROTECTION_MODE);
+		cfg_get(psoc, CFG_AP_ENABLE_PROTECTION_MODE);
 	sap_protection_params->ap_protection_mode =
-				cfg_get(psoc, CFG_AP_PROTECTION_MODE);
+		cfg_get(psoc, CFG_AP_PROTECTION_MODE);
 }
 
 #ifdef WLAN_FEATURE_11AX
@@ -1875,15 +1772,13 @@ static void mlme_init_he_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
 	bool is_twt_enabled = false;
 
 	he_caps->dot11_he_cap.htc_he = cfg_default(CFG_HE_CONTROL);
-	he_caps->dot11_he_cap.twt_request =
-			cfg_get(psoc, CFG_TWT_REQUESTOR);
-	he_caps->dot11_he_cap.twt_responder =
-			cfg_get(psoc, CFG_TWT_RESPONDER);
+	he_caps->dot11_he_cap.twt_request = cfg_get(psoc, CFG_TWT_REQUESTOR);
+	he_caps->dot11_he_cap.twt_responder = cfg_get(psoc, CFG_TWT_RESPONDER);
 	/*
-	 * Broadcast TWT capability will be filled in
-	 * populate_dot11f_he_caps() based on STA/SAP
-	 * role and "twt_bcast_req_resp_config" ini
-	 */
+   * Broadcast TWT capability will be filled in
+   * populate_dot11f_he_caps() based on STA/SAP
+   * role and "twt_bcast_req_resp_config" ini
+   */
 	he_caps->dot11_he_cap.broadcast_twt = 0;
 
 	is_twt_enabled = wlan_twt_cfg_is_twt_enabled(psoc);
@@ -1891,10 +1786,9 @@ static void mlme_init_he_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
 	if (is_twt_enabled)
 		he_caps->dot11_he_cap.flex_twt_sched =
 			cfg_default(CFG_HE_FLEX_TWT_SCHED);
-	he_caps->dot11_he_cap.fragmentation =
-			cfg_default(CFG_HE_FRAGMENTATION);
+	he_caps->dot11_he_cap.fragmentation = cfg_default(CFG_HE_FRAGMENTATION);
 	he_caps->dot11_he_cap.max_num_frag_msdu_amsdu_exp =
-			cfg_default(CFG_HE_MAX_FRAG_MSDU);
+		cfg_default(CFG_HE_MAX_FRAG_MSDU);
 	he_caps->dot11_he_cap.min_frag_size = cfg_default(CFG_HE_MIN_FRAG_SIZE);
 	he_caps->dot11_he_cap.trigger_frm_mac_pad =
 		cfg_default(CFG_HE_TRIG_PAD);
@@ -1904,30 +1798,30 @@ static void mlme_init_he_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_default(CFG_HE_LINK_ADAPTATION);
 	he_caps->dot11_he_cap.all_ack = cfg_default(CFG_HE_ALL_ACK);
 	he_caps->dot11_he_cap.trigd_rsp_sched =
-			cfg_default(CFG_HE_TRIGD_RSP_SCHEDULING);
+		cfg_default(CFG_HE_TRIGD_RSP_SCHEDULING);
 	he_caps->dot11_he_cap.a_bsr = cfg_default(CFG_HE_BUFFER_STATUS_RPT);
 	he_caps->dot11_he_cap.ba_32bit_bitmap = cfg_default(CFG_HE_BA_32BIT);
 	he_caps->dot11_he_cap.mu_cascade = cfg_default(CFG_HE_MU_CASCADING);
 	he_caps->dot11_he_cap.ack_enabled_multitid =
-			cfg_default(CFG_HE_MULTI_TID);
+		cfg_default(CFG_HE_MULTI_TID);
 	he_caps->dot11_he_cap.omi_a_ctrl = cfg_default(CFG_HE_OMI);
 	he_caps->dot11_he_cap.ofdma_ra = cfg_default(CFG_HE_OFDMA_RA);
 	he_caps->dot11_he_cap.max_ampdu_len_exp_ext =
-			cfg_default(CFG_HE_MAX_AMPDU_LEN);
+		cfg_default(CFG_HE_MAX_AMPDU_LEN);
 	he_caps->dot11_he_cap.amsdu_frag = cfg_default(CFG_HE_AMSDU_FRAG);
 
 	he_caps->dot11_he_cap.rx_ctrl_frame = cfg_default(CFG_HE_RX_CTRL);
 	he_caps->dot11_he_cap.bsrp_ampdu_aggr =
-			cfg_default(CFG_HE_BSRP_AMPDU_AGGR);
+		cfg_default(CFG_HE_BSRP_AMPDU_AGGR);
 	he_caps->dot11_he_cap.qtp = cfg_default(CFG_HE_QTP);
 	he_caps->dot11_he_cap.a_bqr = cfg_default(CFG_HE_A_BQR);
 	he_caps->dot11_he_cap.spatial_reuse_param_rspder =
-			cfg_default(CFG_HE_SR_RESPONDER);
+		cfg_default(CFG_HE_SR_RESPONDER);
 	he_caps->dot11_he_cap.ndp_feedback_supp =
-			cfg_default(CFG_HE_NDP_FEEDBACK_SUPP);
+		cfg_default(CFG_HE_NDP_FEEDBACK_SUPP);
 	he_caps->dot11_he_cap.ops_supp = cfg_default(CFG_HE_OPS_SUPP);
 	he_caps->dot11_he_cap.amsdu_in_ampdu =
-			cfg_default(CFG_HE_AMSDU_IN_AMPDU);
+		cfg_default(CFG_HE_AMSDU_IN_AMPDU);
 
 	chan_width = cfg_default(CFG_HE_CHAN_WIDTH);
 	he_caps->dot11_he_cap.chan_width_0 = HE_CH_WIDTH_GET_BIT(chan_width, 0);
@@ -1939,37 +1833,36 @@ static void mlme_init_he_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
 	he_caps->dot11_he_cap.chan_width_6 = HE_CH_WIDTH_GET_BIT(chan_width, 6);
 
 	he_caps->dot11_he_cap.multi_tid_aggr_tx_supp =
-			cfg_default(CFG_HE_MTID_AGGR_TX);
+		cfg_default(CFG_HE_MTID_AGGR_TX);
 	he_caps->dot11_he_cap.he_sub_ch_sel_tx_supp =
-			cfg_default(CFG_HE_SUB_CH_SEL_TX);
+		cfg_default(CFG_HE_SUB_CH_SEL_TX);
 	he_caps->dot11_he_cap.ul_2x996_tone_ru_supp =
-			cfg_default(CFG_HE_UL_2X996_RU);
+		cfg_default(CFG_HE_UL_2X996_RU);
 	he_caps->dot11_he_cap.om_ctrl_ul_mu_data_dis_rx =
-			cfg_default(CFG_HE_OM_CTRL_UL_MU_DIS_RX);
+		cfg_default(CFG_HE_OM_CTRL_UL_MU_DIS_RX);
 	he_caps->dot11_he_cap.he_dynamic_smps =
-			cfg_default(CFG_HE_DYNAMIC_SMPS);
+		cfg_default(CFG_HE_DYNAMIC_SMPS);
 	he_caps->dot11_he_cap.punctured_sounding_supp =
-			cfg_default(CFG_HE_PUNCTURED_SOUNDING);
+		cfg_default(CFG_HE_PUNCTURED_SOUNDING);
 	he_caps->dot11_he_cap.ht_vht_trg_frm_rx_supp =
-			cfg_default(CFG_HE_HT_VHT_TRG_FRM_RX);
+		cfg_default(CFG_HE_HT_VHT_TRG_FRM_RX);
 	he_caps->dot11_he_cap.rx_pream_puncturing =
-			cfg_get(psoc, CFG_HE_RX_PREAM_PUNC);
+		cfg_get(psoc, CFG_HE_RX_PREAM_PUNC);
 	he_caps->dot11_he_cap.device_class =
-			cfg_default(CFG_HE_CLASS_OF_DEVICE);
+		cfg_default(CFG_HE_CLASS_OF_DEVICE);
 	he_caps->dot11_he_cap.ldpc_coding = cfg_default(CFG_HE_LDPC);
 	he_caps->dot11_he_cap.he_1x_ltf_800_gi_ppdu =
-			cfg_default(CFG_HE_LTF_PPDU);
+		cfg_default(CFG_HE_LTF_PPDU);
 	he_caps->dot11_he_cap.midamble_tx_rx_max_nsts =
-			cfg_default(CFG_HE_MIDAMBLE_RX_MAX_NSTS);
+		cfg_default(CFG_HE_MIDAMBLE_RX_MAX_NSTS);
 	he_caps->dot11_he_cap.he_4x_ltf_3200_gi_ndp =
-			cfg_default(CFG_HE_LTF_NDP);
+		cfg_default(CFG_HE_LTF_NDP);
 	he_caps->dot11_he_cap.tb_ppdu_tx_stbc_lt_80mhz =
-			cfg_default(CFG_HE_TX_STBC_LT80);
+		cfg_default(CFG_HE_TX_STBC_LT80);
 	he_caps->dot11_he_cap.rx_stbc_lt_80mhz =
-			cfg_default(CFG_HE_RX_STBC_LT80);
+		cfg_default(CFG_HE_RX_STBC_LT80);
 	he_caps->dot11_he_cap.doppler = cfg_default(CFG_HE_DOPPLER);
-	he_caps->dot11_he_cap.ul_mu =
-			cfg_get(psoc, CFG_HE_UL_MUMIMO);
+	he_caps->dot11_he_cap.ul_mu = cfg_get(psoc, CFG_HE_UL_MUMIMO);
 	he_caps->dot11_he_cap.dcm_enc_tx = cfg_default(CFG_HE_DCM_TX);
 	he_caps->dot11_he_cap.dcm_enc_rx = cfg_default(CFG_HE_DCM_RX);
 	he_caps->dot11_he_cap.ul_he_mu = cfg_default(CFG_HE_MU_PPDU);
@@ -1977,62 +1870,62 @@ static void mlme_init_he_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
 	he_caps->dot11_he_cap.su_beamformee = cfg_default(CFG_HE_SU_BEAMFORMEE);
 	he_caps->dot11_he_cap.mu_beamformer = cfg_default(CFG_HE_MU_BEAMFORMER);
 	he_caps->dot11_he_cap.bfee_sts_lt_80 =
-			cfg_default(CFG_HE_BFEE_STS_LT80);
+		cfg_default(CFG_HE_BFEE_STS_LT80);
 	he_caps->dot11_he_cap.bfee_sts_gt_80 =
-			cfg_default(CFG_HE_BFEE_STS_GT80);
+		cfg_default(CFG_HE_BFEE_STS_GT80);
 	he_caps->dot11_he_cap.num_sounding_lt_80 =
-			cfg_default(CFG_HE_NUM_SOUND_LT80);
+		cfg_default(CFG_HE_NUM_SOUND_LT80);
 	he_caps->dot11_he_cap.num_sounding_gt_80 =
-			cfg_default(CFG_HE_NUM_SOUND_GT80);
+		cfg_default(CFG_HE_NUM_SOUND_GT80);
 	he_caps->dot11_he_cap.su_feedback_tone16 =
-			cfg_default(CFG_HE_SU_FEED_TONE16);
+		cfg_default(CFG_HE_SU_FEED_TONE16);
 	he_caps->dot11_he_cap.mu_feedback_tone16 =
-			cfg_default(CFG_HE_MU_FEED_TONE16);
+		cfg_default(CFG_HE_MU_FEED_TONE16);
 	he_caps->dot11_he_cap.codebook_su = cfg_default(CFG_HE_CODEBOOK_SU);
 	he_caps->dot11_he_cap.codebook_mu = cfg_default(CFG_HE_CODEBOOK_MU);
 	he_caps->dot11_he_cap.beamforming_feedback =
-			cfg_default(CFG_HE_BFRM_FEED);
+		cfg_default(CFG_HE_BFRM_FEED);
 	he_caps->dot11_he_cap.he_er_su_ppdu = cfg_default(CFG_HE_ER_SU_PPDU);
 	he_caps->dot11_he_cap.dl_mu_mimo_part_bw =
-			cfg_default(CFG_HE_DL_PART_BW);
+		cfg_default(CFG_HE_DL_PART_BW);
 	he_caps->dot11_he_cap.ppet_present = cfg_default(CFG_HE_PPET_PRESENT);
 	he_caps->dot11_he_cap.srp = cfg_default(CFG_HE_SRP);
 	he_caps->dot11_he_cap.power_boost = cfg_default(CFG_HE_POWER_BOOST);
 	he_caps->dot11_he_cap.he_ltf_800_gi_4x = cfg_default(CFG_HE_4x_LTF_GI);
 	he_caps->dot11_he_cap.max_nc = cfg_default(CFG_HE_MAX_NC);
 	he_caps->dot11_he_cap.tb_ppdu_tx_stbc_gt_80mhz =
-			cfg_default(CFG_HE_TX_STBC_GT80);
+		cfg_default(CFG_HE_TX_STBC_GT80);
 	he_caps->dot11_he_cap.rx_stbc_gt_80mhz =
-			cfg_default(CFG_HE_RX_STBC_GT80);
+		cfg_default(CFG_HE_RX_STBC_GT80);
 	he_caps->dot11_he_cap.er_he_ltf_800_gi_4x =
-			cfg_default(CFG_HE_ER_4x_LTF_GI);
+		cfg_default(CFG_HE_ER_4x_LTF_GI);
 	he_caps->dot11_he_cap.he_ppdu_20_in_40Mhz_2G =
-			cfg_default(CFG_HE_PPDU_20_IN_40MHZ_2G);
+		cfg_default(CFG_HE_PPDU_20_IN_40MHZ_2G);
 	he_caps->dot11_he_cap.he_ppdu_20_in_160_80p80Mhz =
-			cfg_default(CFG_HE_PPDU_20_IN_160_80P80MHZ);
+		cfg_default(CFG_HE_PPDU_20_IN_160_80P80MHZ);
 	he_caps->dot11_he_cap.he_ppdu_80_in_160_80p80Mhz =
-			cfg_default(CFG_HE_PPDU_80_IN_160_80P80MHZ);
-		he_caps->dot11_he_cap.er_1x_he_ltf_gi =
-			cfg_default(CFG_HE_ER_1X_HE_LTF_GI);
+		cfg_default(CFG_HE_PPDU_80_IN_160_80P80MHZ);
+	he_caps->dot11_he_cap.er_1x_he_ltf_gi =
+		cfg_default(CFG_HE_ER_1X_HE_LTF_GI);
 	he_caps->dot11_he_cap.midamble_tx_rx_1x_he_ltf =
-			cfg_default(CFG_HE_MIDAMBLE_TXRX_1X_HE_LTF);
+		cfg_default(CFG_HE_MIDAMBLE_TXRX_1X_HE_LTF);
 	he_caps->dot11_he_cap.dcm_max_bw = cfg_default(CFG_HE_DCM_MAX_BW);
 	he_caps->dot11_he_cap.longer_than_16_he_sigb_ofdm_sym =
-			cfg_default(CFG_HE_LONGER_16_SIGB_OFDM_SYM);
+		cfg_default(CFG_HE_LONGER_16_SIGB_OFDM_SYM);
 	he_caps->dot11_he_cap.non_trig_cqi_feedback =
-			cfg_default(CFG_HE_NON_TRIG_CQI_FEEDBACK);
+		cfg_default(CFG_HE_NON_TRIG_CQI_FEEDBACK);
 	he_caps->dot11_he_cap.tx_1024_qam_lt_242_tone_ru =
-			cfg_default(CFG_HE_TX_1024_QAM_LT_242_RU);
+		cfg_default(CFG_HE_TX_1024_QAM_LT_242_RU);
 	he_caps->dot11_he_cap.rx_1024_qam_lt_242_tone_ru =
-			cfg_default(CFG_HE_RX_1024_QAM_LT_242_RU);
+		cfg_default(CFG_HE_RX_1024_QAM_LT_242_RU);
 	he_caps->dot11_he_cap.rx_full_bw_su_he_mu_compress_sigb =
-			cfg_default(CFG_HE_RX_FULL_BW_MU_CMPR_SIGB);
+		cfg_default(CFG_HE_RX_FULL_BW_MU_CMPR_SIGB);
 	he_caps->dot11_he_cap.rx_full_bw_su_he_mu_non_cmpr_sigb =
-			cfg_default(CFG_HE_RX_FULL_BW_MU_NON_CMPR_SIGB);
+		cfg_default(CFG_HE_RX_FULL_BW_MU_NON_CMPR_SIGB);
 	he_caps->dot11_he_cap.rx_he_mcs_map_lt_80 =
-			cfg_get(psoc, CFG_HE_RX_MCS_MAP_LT_80);
+		cfg_get(psoc, CFG_HE_RX_MCS_MAP_LT_80);
 	he_caps->dot11_he_cap.tx_he_mcs_map_lt_80 =
-			cfg_get(psoc, CFG_HE_TX_MCS_MAP_LT_80);
+		cfg_get(psoc, CFG_HE_TX_MCS_MAP_LT_80);
 	value = cfg_get(psoc, CFG_HE_RX_MCS_MAP_160);
 	qdf_mem_copy(he_caps->dot11_he_cap.rx_he_mcs_map_160, &value,
 		     sizeof(uint16_t));
@@ -2047,25 +1940,20 @@ static void mlme_init_he_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
 		     sizeof(uint16_t));
 	he_caps->he_ops_basic_mcs_nss = cfg_default(CFG_HE_OPS_BASIC_MCS_NSS);
 	he_caps->he_dynamic_fragmentation =
-			cfg_get(psoc, CFG_HE_DYNAMIC_FRAGMENTATION);
-	he_caps->enable_ul_mimo =
-			cfg_get(psoc, CFG_ENABLE_UL_MIMO);
-	he_caps->enable_ul_ofdm =
-			cfg_get(psoc, CFG_ENABLE_UL_OFDMA);
-	he_caps->he_sta_obsspd =
-			cfg_get(psoc, CFG_HE_STA_OBSSPD);
+		cfg_get(psoc, CFG_HE_DYNAMIC_FRAGMENTATION);
+	he_caps->enable_ul_mimo = cfg_get(psoc, CFG_ENABLE_UL_MIMO);
+	he_caps->enable_ul_ofdm = cfg_get(psoc, CFG_ENABLE_UL_OFDMA);
+	he_caps->he_sta_obsspd = cfg_get(psoc, CFG_HE_STA_OBSSPD);
 	qdf_mem_zero(he_caps->he_ppet_2g, MLME_HE_PPET_LEN);
 	qdf_mem_zero(he_caps->he_ppet_5g, MLME_HE_PPET_LEN);
 
 	mcs_12_13 = cfg_get(psoc, CFG_HE_MCS_12_13_SUPPORT);
 	/* Get 2.4Ghz and 5Ghz value */
-	mlme_cfg->he_caps.he_mcs_12_13_supp_2g =
-		QDF_GET_BITS(mcs_12_13,
-			     HE_MCS12_13_24G_INDEX * HE_MCS12_13_BITS,
-			     HE_MCS12_13_BITS);
+	mlme_cfg->he_caps.he_mcs_12_13_supp_2g = QDF_GET_BITS(
+		mcs_12_13, HE_MCS12_13_24G_INDEX * HE_MCS12_13_BITS,
+		HE_MCS12_13_BITS);
 	mlme_cfg->he_caps.he_mcs_12_13_supp_5g =
-		QDF_GET_BITS(mcs_12_13,
-			     HE_MCS12_13_5G_INDEX * HE_MCS12_13_BITS,
+		QDF_GET_BITS(mcs_12_13, HE_MCS12_13_5G_INDEX * HE_MCS12_13_BITS,
 			     HE_MCS12_13_BITS);
 }
 #else
@@ -2082,7 +1970,8 @@ static void mlme_init_twt_cfg(struct wlan_objmgr_psoc *psoc,
 	uint32_t bcast_conf = cfg_get(psoc, CFG_BCAST_TWT_REQ_RESP);
 
 	twt_cfg->is_twt_enabled = cfg_get(psoc, CFG_ENABLE_TWT);
-	twt_cfg->twt_congestion_timeout = cfg_get(psoc, CFG_TWT_CONGESTION_TIMEOUT);
+	twt_cfg->twt_congestion_timeout =
+		cfg_get(psoc, CFG_TWT_CONGESTION_TIMEOUT);
 	twt_cfg->enable_twt_24ghz = cfg_get(psoc, CFG_ENABLE_TWT_24GHZ);
 	twt_cfg->is_bcast_requestor_enabled = CFG_TWT_GET_BCAST_REQ(bcast_conf);
 	twt_cfg->is_bcast_responder_enabled = CFG_TWT_GET_BCAST_RES(bcast_conf);
@@ -2101,27 +1990,27 @@ static void mlme_init_eht_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
 	struct wlan_mlme_eht_caps *eht_caps = &mlme_cfg->eht_caps;
 
 	eht_caps->dot11_eht_cap.su_beamformer =
-			cfg_default(CFG_EHT_SU_BEAMFORMER);
+		cfg_default(CFG_EHT_SU_BEAMFORMER);
 	eht_caps->dot11_eht_cap.su_beamformee =
-			cfg_default(CFG_EHT_SU_BEAMFORMEE);
+		cfg_default(CFG_EHT_SU_BEAMFORMEE);
 	eht_caps->dot11_eht_cap.mu_bformer_le_80mhz =
-			cfg_default(CFG_EHT_MU_BFORMER_LE_80MHZ);
+		cfg_default(CFG_EHT_MU_BFORMER_LE_80MHZ);
 	eht_caps->dot11_eht_cap.mu_bformer_160mhz =
-			cfg_default(CFG_EHT_MU_BFORMER_160MHZ);
+		cfg_default(CFG_EHT_MU_BFORMER_160MHZ);
 	eht_caps->dot11_eht_cap.mu_bformer_320mhz =
-			cfg_default(CFG_EHT_MU_BFORMER_320MHZ);
+		cfg_default(CFG_EHT_MU_BFORMER_320MHZ);
 	eht_caps->dot11_eht_cap.bfee_ss_le_80mhz =
-			cfg_default(CFG_EHT_BFEE_SS_LE_80MHZ);
+		cfg_default(CFG_EHT_BFEE_SS_LE_80MHZ);
 	eht_caps->dot11_eht_cap.bfee_ss_160mhz =
-			cfg_default(CFG_EHT_BFEE_SS_160MHZ);
+		cfg_default(CFG_EHT_BFEE_SS_160MHZ);
 	eht_caps->dot11_eht_cap.bfee_ss_320mhz =
-			cfg_default(CFG_EHT_BFEE_SS_320MHZ);
+		cfg_default(CFG_EHT_BFEE_SS_320MHZ);
 	eht_caps->dot11_eht_cap.num_sounding_dim_le_80mhz =
-			cfg_default(CFG_EHT_NUM_SOUNDING_DIM_LE_80MHZ);
+		cfg_default(CFG_EHT_NUM_SOUNDING_DIM_LE_80MHZ);
 	eht_caps->dot11_eht_cap.num_sounding_dim_160mhz =
-			cfg_default(CFG_EHT_NUM_SOUNDING_DIM_160MHZ);
+		cfg_default(CFG_EHT_NUM_SOUNDING_DIM_160MHZ);
 	eht_caps->dot11_eht_cap.num_sounding_dim_320mhz =
-			cfg_default(CFG_EHT_NUM_SOUNDING_DIM_320MHZ);
+		cfg_default(CFG_EHT_NUM_SOUNDING_DIM_320MHZ);
 }
 #else
 static void mlme_init_eht_cap_in_cfg(struct wlan_objmgr_psoc *psoc,
@@ -2156,8 +2045,7 @@ static bool is_sae_sap_enabled(struct wlan_objmgr_psoc *psoc)
 	return false;
 }
 #endif
-uint16_t wlan_get_rand_from_lst_for_freq(uint16_t *freq_lst,
-					 uint8_t num_chan)
+uint16_t wlan_get_rand_from_lst_for_freq(uint16_t *freq_lst, uint8_t num_chan)
 {
 	uint8_t i;
 	uint32_t rand_byte = 0;
@@ -2190,17 +2078,16 @@ static void mlme_init_sap_cfg(struct wlan_objmgr_psoc *psoc,
 	sap_cfg->tele_bcn_max_li = cfg_get(psoc, CFG_TELE_BCN_MAX_LI);
 	sap_cfg->sap_get_peer_info = cfg_get(psoc, CFG_SAP_GET_PEER_INFO);
 	sap_cfg->sap_allow_all_chan_param_name =
-			cfg_get(psoc, CFG_SAP_ALLOW_ALL_CHANNEL_PARAM);
+		cfg_get(psoc, CFG_SAP_ALLOW_ALL_CHANNEL_PARAM);
 	sap_cfg->sap_max_no_peers = cfg_get(psoc, CFG_SAP_MAX_NO_PEERS);
 	sap_cfg->sap_max_offload_peers =
-			cfg_get(psoc, CFG_SAP_MAX_OFFLOAD_PEERS);
+		cfg_get(psoc, CFG_SAP_MAX_OFFLOAD_PEERS);
 	sap_cfg->sap_max_offload_reorder_buffs =
-			cfg_get(psoc, CFG_SAP_MAX_OFFLOAD_REORDER_BUFFS);
+		cfg_get(psoc, CFG_SAP_MAX_OFFLOAD_REORDER_BUFFS);
 	sap_cfg->sap_ch_switch_beacon_cnt =
-			cfg_get(psoc, CFG_SAP_CH_SWITCH_BEACON_CNT);
+		cfg_get(psoc, CFG_SAP_CH_SWITCH_BEACON_CNT);
 	sap_cfg->sap_ch_switch_mode = cfg_get(psoc, CFG_SAP_CH_SWITCH_MODE);
-	sap_cfg->sap_internal_restart =
-			cfg_get(psoc, CFG_SAP_INTERNAL_RESTART);
+	sap_cfg->sap_internal_restart = cfg_get(psoc, CFG_SAP_INTERNAL_RESTART);
 	sap_cfg->chan_switch_hostapd_rate_enabled_name =
 		cfg_get(psoc, CFG_CHAN_SWITCH_HOSTAPD_RATE_ENABLED_NAME);
 	sap_cfg->reduced_beacon_interval =
@@ -2219,19 +2106,15 @@ static void mlme_init_sap_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_AP_ENABLE_RANDOM_BSSID);
 	sap_cfg->sap_mcc_chnl_avoid =
 		cfg_get(psoc, CFG_SAP_MCC_CHANNEL_AVOIDANCE);
-	sap_cfg->sap_11ac_override =
-		cfg_get(psoc, CFG_SAP_11AC_OVERRIDE);
-	sap_cfg->go_11ac_override =
-		cfg_get(psoc, CFG_GO_11AC_OVERRIDE);
+	sap_cfg->sap_11ac_override = cfg_get(psoc, CFG_SAP_11AC_OVERRIDE);
+	sap_cfg->go_11ac_override = cfg_get(psoc, CFG_GO_11AC_OVERRIDE);
 	sap_cfg->sap_sae_enabled = is_sae_sap_enabled(psoc);
 	sap_cfg->is_sap_bcast_deauth_enabled =
 		cfg_get(psoc, CFG_IS_SAP_BCAST_DEAUTH_ENABLED);
 	sap_cfg->is_6g_sap_fd_enabled =
 		cfg_get(psoc, CFG_6G_SAP_FILS_DISCOVERY_ENABLED);
-	sap_cfg->disable_bcn_prot =
-		cfg_get(psoc, CFG_DISABLE_SAP_BCN_PROT);
-	sap_cfg->sap_ps_with_twt_enable =
-		cfg_get(psoc, CFG_SAP_PS_WITH_TWT);
+	sap_cfg->disable_bcn_prot = cfg_get(psoc, CFG_DISABLE_SAP_BCN_PROT);
+	sap_cfg->sap_ps_with_twt_enable = cfg_get(psoc, CFG_SAP_PS_WITH_TWT);
 }
 
 static void mlme_init_obss_ht40_cfg(struct wlan_objmgr_psoc *psoc,
@@ -2243,14 +2126,14 @@ static void mlme_init_obss_ht40_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_OBSS_HT40_SCAN_PASSIVE_DWELL_TIME);
 	obss_ht40->width_trigger_interval =
 		cfg_get(psoc, CFG_OBSS_HT40_SCAN_WIDTH_TRIGGER_INTERVAL);
-	obss_ht40->passive_per_channel = (uint32_t)
-		cfg_default(CFG_OBSS_HT40_SCAN_PASSIVE_TOTAL_PER_CHANNEL);
-	obss_ht40->active_per_channel = (uint32_t)
-		cfg_default(CFG_OBSS_HT40_SCAN_ACTIVE_TOTAL_PER_CHANNEL);
-	obss_ht40->width_trans_delay = (uint32_t)
-		cfg_default(CFG_OBSS_HT40_WIDTH_CH_TRANSITION_DELAY);
-	obss_ht40->scan_activity_threshold = (uint32_t)
-		cfg_default(CFG_OBSS_HT40_SCAN_ACTIVITY_THRESHOLD);
+	obss_ht40->passive_per_channel = (uint32_t)cfg_default(
+		CFG_OBSS_HT40_SCAN_PASSIVE_TOTAL_PER_CHANNEL);
+	obss_ht40->active_per_channel = (uint32_t)cfg_default(
+		CFG_OBSS_HT40_SCAN_ACTIVE_TOTAL_PER_CHANNEL);
+	obss_ht40->width_trans_delay =
+		(uint32_t)cfg_default(CFG_OBSS_HT40_WIDTH_CH_TRANSITION_DELAY);
+	obss_ht40->scan_activity_threshold =
+		(uint32_t)cfg_default(CFG_OBSS_HT40_SCAN_ACTIVITY_THRESHOLD);
 	obss_ht40->is_override_ht20_40_24g =
 		cfg_get(psoc, CFG_OBSS_HT40_OVERRIDE_HT40_20_24GHZ);
 	obss_ht40->obss_detection_offload_enabled =
@@ -2284,9 +2167,8 @@ mlme_is_freq_present_in_list(struct acs_weight *normalize_weight_chan_list,
 	return false;
 }
 
-static void
-mlme_acs_parse_weight_list(struct wlan_objmgr_psoc *psoc,
-			   struct wlan_mlme_acs *acs)
+static void mlme_acs_parse_weight_list(struct wlan_objmgr_psoc *psoc,
+				       struct wlan_mlme_acs *acs)
 {
 	char *acs_weight, *str1, *str2 = NULL, *acs_weight_temp, is_range = '-';
 	int freq1, freq2, normalize_factor;
@@ -2305,7 +2187,7 @@ mlme_acs_parse_weight_list(struct wlan_objmgr_psoc *psoc,
 		     ACS_WEIGHT_MAX_STR_LEN);
 	acs_weight_temp = acs_weight;
 
-	while(acs_weight_temp) {
+	while (acs_weight_temp) {
 		str1 = strsep(&acs_weight_temp, ",");
 		if (!str1)
 			goto end;
@@ -2323,7 +2205,7 @@ mlme_acs_parse_weight_list(struct wlan_objmgr_psoc *psoc,
 			if (num_acs_weight_range == MAX_ACS_WEIGHT_RANGE)
 				continue;
 			range_list[num_acs_weight_range].normalize_weight =
-							normalize_factor;
+				normalize_factor;
 			range_list[num_acs_weight_range].start_freq = freq1;
 			range_list[num_acs_weight_range++].end_freq = freq2;
 		} else {
@@ -2336,14 +2218,14 @@ mlme_acs_parse_weight_list(struct wlan_objmgr_psoc *psoc,
 							 num_acs_weight, freq1,
 							 &index)) {
 				weight_list[index].normalize_weight =
-							normalize_factor;
+					normalize_factor;
 			} else {
 				if (num_acs_weight == NUM_CHANNELS)
 					continue;
 
 				weight_list[num_acs_weight].chan_freq = freq1;
 				weight_list[num_acs_weight++].normalize_weight =
-							normalize_factor;
+					normalize_factor;
 			}
 		}
 	}
@@ -2358,26 +2240,22 @@ end:
 static void mlme_init_acs_cfg(struct wlan_objmgr_psoc *psoc,
 			      struct wlan_mlme_acs *acs)
 {
-	acs->is_acs_with_more_param =
-		cfg_get(psoc, CFG_ACS_WITH_MORE_PARAM);
+	acs->is_acs_with_more_param = cfg_get(psoc, CFG_ACS_WITH_MORE_PARAM);
 	acs->auto_channel_select_weight =
 		cfg_get(psoc, CFG_AUTO_CHANNEL_SELECT_WEIGHT);
 	acs->is_vendor_acs_support =
 		cfg_get(psoc, CFG_USER_AUTO_CHANNEL_SELECTION);
-	acs->force_sap_start =
-		cfg_get(psoc, CFG_ACS_FORCE_START_SAP);
+	acs->force_sap_start = cfg_get(psoc, CFG_ACS_FORCE_START_SAP);
 	acs->is_acs_support_for_dfs_ltecoex =
 		cfg_get(psoc, CFG_USER_ACS_DFS_LTE);
-	acs->is_external_acs_policy =
-		cfg_get(psoc, CFG_EXTERNAL_ACS_POLICY);
+	acs->is_external_acs_policy = cfg_get(psoc, CFG_EXTERNAL_ACS_POLICY);
 	acs->np_chan_weightage = cfg_get(psoc, CFG_ACS_NP_CHAN_WEIGHT);
 	acs->acs_prefer_6ghz_psc = cfg_default(CFG_ACS_PREFER_6GHZ_PSC);
 	mlme_acs_parse_weight_list(psoc, acs);
 }
 
-static void
-mlme_init_product_details_cfg(struct wlan_mlme_product_details_cfg
-			      *product_details)
+static void mlme_init_product_details_cfg(
+	struct wlan_mlme_product_details_cfg *product_details)
 {
 	qdf_str_lcopy(product_details->manufacturer_name,
 		      cfg_default(CFG_MFR_NAME),
@@ -2388,8 +2266,7 @@ mlme_init_product_details_cfg(struct wlan_mlme_product_details_cfg
 	qdf_str_lcopy(product_details->manufacture_product_version,
 		      cfg_default(CFG_MFR_PRODUCT_VERSION),
 		      sizeof(product_details->manufacture_product_version));
-	qdf_str_lcopy(product_details->model_name,
-		      cfg_default(CFG_MODEL_NAME),
+	qdf_str_lcopy(product_details->model_name, cfg_default(CFG_MODEL_NAME),
 		      sizeof(product_details->model_name));
 	qdf_str_lcopy(product_details->model_number,
 		      cfg_default(CFG_MODEL_NUMBER),
@@ -2400,20 +2277,16 @@ mlme_init_product_details_cfg(struct wlan_mlme_product_details_cfg
 static void mlme_init_sta_mlo_cfg(struct wlan_objmgr_psoc *psoc,
 				  struct wlan_mlme_sta_cfg *sta)
 {
-	sta->mlo_support_link_num =
-		cfg_default(CFG_MLO_SUPPORT_LINK_NUM);
-	sta->mlo_support_link_band =
-		cfg_default(CFG_MLO_SUPPORT_LINK_BAND);
+	sta->mlo_support_link_num = cfg_default(CFG_MLO_SUPPORT_LINK_NUM);
+	sta->mlo_support_link_band = cfg_default(CFG_MLO_SUPPORT_LINK_BAND);
 	sta->mlo_max_simultaneous_links =
 		cfg_default(CFG_MLO_MAX_SIMULTANEOUS_LINKS);
-	sta->mlo_prefer_percentage =
-		cfg_get(psoc, CFG_MLO_PREFER_PERCENTAGE);
+	sta->mlo_prefer_percentage = cfg_get(psoc, CFG_MLO_PREFER_PERCENTAGE);
 	sta->mlo_same_link_mld_address =
 		cfg_default(CFG_MLO_SAME_LINK_MLD_ADDR);
 }
 
-static bool
-wlan_get_vdev_link_removed_flag(struct wlan_objmgr_vdev *vdev)
+static bool wlan_get_vdev_link_removed_flag(struct wlan_objmgr_vdev *vdev)
 {
 	bool is_mlo_link_removed = false;
 	uint8_t link_id;
@@ -2425,9 +2298,8 @@ wlan_get_vdev_link_removed_flag(struct wlan_objmgr_vdev *vdev)
 	link_id = wlan_vdev_get_link_id(vdev);
 	link_info = mlo_mgr_get_ap_link_by_link_id(vdev, link_id);
 	if (link_info)
-		is_mlo_link_removed =
-			!!qdf_atomic_test_bit(LS_F_AP_REMOVAL_BIT,
-					      &link_info->link_status_flags);
+		is_mlo_link_removed = !!qdf_atomic_test_bit(
+			LS_F_AP_REMOVAL_BIT, &link_info->link_status_flags);
 	else
 		mlme_legacy_err("link info null, id %d", link_id);
 
@@ -2453,8 +2325,8 @@ bool wlan_get_vdev_link_removed_flag_by_vdev_id(struct wlan_objmgr_psoc *psoc,
 	return is_mlo_link_removed;
 }
 
-static QDF_STATUS
-wlan_set_vdev_link_removed_flag(struct wlan_objmgr_vdev *vdev, bool removed)
+static QDF_STATUS wlan_set_vdev_link_removed_flag(struct wlan_objmgr_vdev *vdev,
+						  bool removed)
 {
 	uint8_t link_id;
 	struct mlo_link_info *link_info;
@@ -2476,9 +2348,8 @@ wlan_set_vdev_link_removed_flag(struct wlan_objmgr_vdev *vdev, bool removed)
 		mlme_legacy_err("link info null, id %d", link_id);
 		return QDF_STATUS_E_INVAL;
 	}
-	is_mlo_link_removed =
-		!!qdf_atomic_test_bit(LS_F_AP_REMOVAL_BIT,
-				      &link_info->link_status_flags);
+	is_mlo_link_removed = !!qdf_atomic_test_bit(
+		LS_F_AP_REMOVAL_BIT, &link_info->link_status_flags);
 	if (removed == is_mlo_link_removed)
 		return QDF_STATUS_SUCCESS;
 
@@ -2559,38 +2430,28 @@ static void mlme_init_sta_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_INFRA_STA_KEEP_ALIVE_PERIOD);
 	sta->bss_max_idle_period =
 		(uint32_t)cfg_default(CFG_STA_BSS_MAX_IDLE_PERIOD);
-	sta->tgt_gtx_usr_cfg =
-		cfg_get(psoc, CFG_TGT_GTX_USR_CFG);
-	sta->pmkid_modes =
-		cfg_get(psoc, CFG_PMKID_MODES);
-	sta->ignore_peer_erp_info =
-		cfg_get(psoc, CFG_IGNORE_PEER_ERP_INFO);
+	sta->tgt_gtx_usr_cfg = cfg_get(psoc, CFG_TGT_GTX_USR_CFG);
+	sta->pmkid_modes = cfg_get(psoc, CFG_PMKID_MODES);
+	sta->ignore_peer_erp_info = cfg_get(psoc, CFG_IGNORE_PEER_ERP_INFO);
 	sta->sta_prefer_80mhz_over_160mhz =
 		cfg_get(psoc, CFG_STA_PREFER_80MHZ_OVER_160MHZ);
-	sta->enable_5g_ebt =
-		cfg_get(psoc, CFG_PPS_ENABLE_5G_EBT);
+	sta->enable_5g_ebt = cfg_get(psoc, CFG_PPS_ENABLE_5G_EBT);
 	sta->deauth_before_connection =
 		cfg_get(psoc, CFG_ENABLE_DEAUTH_BEFORE_CONNECTION);
-	sta->dot11p_mode =
-		cfg_get(psoc, CFG_DOT11P_MODE);
+	sta->dot11p_mode = cfg_get(psoc, CFG_DOT11P_MODE);
 	sta->enable_go_cts2self_for_sta =
 		cfg_get(psoc, CFG_ENABLE_GO_CTS2SELF_FOR_STA);
-	sta->qcn_ie_support =
-		cfg_get(psoc, CFG_QCN_IE_SUPPORT);
+	sta->qcn_ie_support = cfg_get(psoc, CFG_QCN_IE_SUPPORT);
 	sta->fils_max_chan_guard_time =
 		cfg_get(psoc, CFG_FILS_MAX_CHAN_GUARD_TIME);
 	sta->deauth_retry_cnt = cfg_get(psoc, CFG_DEAUTH_RETRY_CNT);
-	sta->single_tid =
-		cfg_get(psoc, CFG_SINGLE_TID_RC);
+	sta->single_tid = cfg_get(psoc, CFG_SINGLE_TID_RC);
 	sta->sta_miracast_mcc_rest_time =
 		cfg_get(psoc, CFG_STA_MCAST_MCC_REST_TIME);
-	sta->wait_cnf_timeout =
-		(uint32_t)cfg_default(CFG_WT_CNF_TIMEOUT);
-	sta->current_rssi =
-		(uint32_t)cfg_default(CFG_CURRENT_RSSI);
+	sta->wait_cnf_timeout = (uint32_t)cfg_default(CFG_WT_CNF_TIMEOUT);
+	sta->current_rssi = (uint32_t)cfg_default(CFG_CURRENT_RSSI);
 	sta->allow_tpc_from_ap = cfg_get(psoc, CFG_TX_POWER_CTRL);
-	sta->sta_keepalive_method =
-		cfg_get(psoc, CFG_STA_KEEPALIVE_METHOD);
+	sta->sta_keepalive_method = cfg_get(psoc, CFG_STA_KEEPALIVE_METHOD);
 	sta->max_li_modulated_dtim_time_ms =
 		cfg_get(psoc, CFG_MAX_LI_MODULATED_DTIM_MS);
 
@@ -2623,17 +2484,15 @@ static void mlme_init_stats_cfg(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-mlme_init_adaptive_11r_cfg(struct wlan_objmgr_psoc *psoc,
-			   struct wlan_mlme_lfr_cfg *lfr)
+static void mlme_init_adaptive_11r_cfg(struct wlan_objmgr_psoc *psoc,
+				       struct wlan_mlme_lfr_cfg *lfr)
 {
 	lfr->enable_adaptive_11r = cfg_get(psoc, CFG_ADAPTIVE_11R);
 }
 
 #else
-static inline void
-mlme_init_adaptive_11r_cfg(struct wlan_objmgr_psoc *psoc,
-			   struct wlan_mlme_lfr_cfg *lfr)
+static inline void mlme_init_adaptive_11r_cfg(struct wlan_objmgr_psoc *psoc,
+					      struct wlan_mlme_lfr_cfg *lfr)
 {
 }
 #endif
@@ -2647,17 +2506,15 @@ mlme_init_adaptive_11r_cfg(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-mlme_init_sae_single_pmk_cfg(struct wlan_objmgr_psoc *psoc,
-			     struct wlan_mlme_lfr_cfg *lfr)
+static void mlme_init_sae_single_pmk_cfg(struct wlan_objmgr_psoc *psoc,
+					 struct wlan_mlme_lfr_cfg *lfr)
 {
 	lfr->sae_single_pmk_feature_enabled = cfg_get(psoc, CFG_SAE_SINGLE_PMK);
 }
 
 #else
-static inline void
-mlme_init_sae_single_pmk_cfg(struct wlan_objmgr_psoc *psoc,
-			     struct wlan_mlme_lfr_cfg *lfr)
+static inline void mlme_init_sae_single_pmk_cfg(struct wlan_objmgr_psoc *psoc,
+						struct wlan_mlme_lfr_cfg *lfr)
 {
 }
 #endif
@@ -2668,21 +2525,18 @@ static void mlme_init_roam_offload_cfg(struct wlan_objmgr_psoc *psoc,
 {
 	bool val = false;
 
-	lfr->lfr3_roaming_offload =
-		cfg_get(psoc, CFG_LFR3_ROAMING_OFFLOAD);
+	lfr->lfr3_roaming_offload = cfg_get(psoc, CFG_LFR3_ROAMING_OFFLOAD);
 	lfr->lfr3_dual_sta_roaming_enabled =
 		cfg_get(psoc, CFG_ENABLE_DUAL_STA_ROAM_OFFLOAD);
-	lfr->enable_self_bss_roam = cfg_get(psoc, CFG_LFR3_ENABLE_SELF_BSS_ROAM);
+	lfr->enable_self_bss_roam =
+		cfg_get(psoc, CFG_LFR3_ENABLE_SELF_BSS_ROAM);
 	lfr->enable_roam_reason_vsie =
 		cfg_get(psoc, CFG_ENABLE_ROAM_REASON_VSIE);
 	lfr->enable_disconnect_roam_offload =
 		cfg_get(psoc, CFG_LFR_ENABLE_DISCONNECT_ROAM);
-	lfr->enable_idle_roam =
-		cfg_get(psoc, CFG_LFR_ENABLE_IDLE_ROAM);
-	lfr->idle_roam_rssi_delta =
-		cfg_get(psoc, CFG_LFR_IDLE_ROAM_RSSI_DELTA);
-	lfr->roam_info_stats_num =
-		cfg_get(psoc, CFG_LFR3_ROAM_INFO_STATS_NUM);
+	lfr->enable_idle_roam = cfg_get(psoc, CFG_LFR_ENABLE_IDLE_ROAM);
+	lfr->idle_roam_rssi_delta = cfg_get(psoc, CFG_LFR_IDLE_ROAM_RSSI_DELTA);
+	lfr->roam_info_stats_num = cfg_get(psoc, CFG_LFR3_ROAM_INFO_STATS_NUM);
 
 	ucfg_mlme_get_connection_roaming_ini_present(psoc, &val);
 	if (val) {
@@ -2696,8 +2550,7 @@ static void mlme_init_roam_offload_cfg(struct wlan_objmgr_psoc *psoc,
 	lfr->idle_data_packet_count =
 		cfg_get(psoc, CFG_LFR_IDLE_ROAM_PACKET_COUNT);
 	lfr->idle_roam_min_rssi = cfg_get(psoc, CFG_LFR_IDLE_ROAM_MIN_RSSI);
-	lfr->roam_trigger_bitmap =
-		cfg_get(psoc, CFG_ROAM_TRIGGER_BITMAP);
+	lfr->roam_trigger_bitmap = cfg_get(psoc, CFG_ROAM_TRIGGER_BITMAP);
 	lfr->vendor_btm_param.user_roam_reason = DISABLE_VENDOR_BTM_CONFIG;
 
 	lfr->idle_roam_band = cfg_get(psoc, CFG_LFR_IDLE_ROAM_BAND);
@@ -2706,9 +2559,8 @@ static void mlme_init_roam_offload_cfg(struct wlan_objmgr_psoc *psoc,
 	qdf_mem_zero(&lfr->roam_rt_stats, sizeof(lfr->roam_rt_stats));
 }
 
-void
-wlan_mlme_defer_pmk_set_in_roaming(struct wlan_objmgr_psoc *psoc,
-				   uint8_t vdev_id, bool set_pmk_pending)
+void wlan_mlme_defer_pmk_set_in_roaming(struct wlan_objmgr_psoc *psoc,
+					uint8_t vdev_id, bool set_pmk_pending)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct mlme_legacy_priv *mlme_priv;
@@ -2736,9 +2588,8 @@ wlan_mlme_defer_pmk_set_in_roaming(struct wlan_objmgr_psoc *psoc,
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
 }
 
-bool
-wlan_mlme_is_pmk_set_deferred(struct wlan_objmgr_psoc *psoc,
-			      uint8_t vdev_id)
+bool wlan_mlme_is_pmk_set_deferred(struct wlan_objmgr_psoc *psoc,
+				   uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct mlme_legacy_priv *mlme_priv;
@@ -2813,25 +2664,24 @@ mlme_init_bss_load_trigger_params(struct wlan_objmgr_psoc *psoc,
 	ucfg_mlme_get_connection_roaming_ini_present(psoc, &val);
 	if (val)
 		bss_load_trig->sample_time =
-				cfg_get(psoc, CFG_ROAM_CU_MONITOR_TIME) * 1000;
+			cfg_get(psoc, CFG_ROAM_CU_MONITOR_TIME) * 1000;
 	else
-		bss_load_trig->sample_time = cfg_get(psoc,
-						     CFG_BSS_LOAD_SAMPLE_TIME);
+		bss_load_trig->sample_time =
+			cfg_get(psoc, CFG_BSS_LOAD_SAMPLE_TIME);
 
 	bss_load_trig->rssi_threshold_6ghz =
-			cfg_get(psoc, CFG_BSS_LOAD_TRIG_6G_RSSI_THRES);
+		cfg_get(psoc, CFG_BSS_LOAD_TRIG_6G_RSSI_THRES);
 	bss_load_trig->rssi_threshold_5ghz =
-			cfg_get(psoc, CFG_BSS_LOAD_TRIG_5G_RSSI_THRES);
+		cfg_get(psoc, CFG_BSS_LOAD_TRIG_5G_RSSI_THRES);
 	bss_load_trig->rssi_threshold_24ghz =
-			cfg_get(psoc, CFG_BSS_LOAD_TRIG_2G_RSSI_THRES);
+		cfg_get(psoc, CFG_BSS_LOAD_TRIG_2G_RSSI_THRES);
 }
 
 void mlme_reinit_control_config_lfr_params(struct wlan_objmgr_psoc *psoc,
 					   struct wlan_mlme_lfr_cfg *lfr)
 {
 	/* Restore the params set through SETDFSSCANMODE */
-	lfr->roaming_dfs_channel =
-		cfg_get(psoc, CFG_LFR_ROAMING_DFS_CHANNEL);
+	lfr->roaming_dfs_channel = cfg_get(psoc, CFG_LFR_ROAMING_DFS_CHANNEL);
 
 	/* Restore the params set through SETWESMODE */
 	lfr->wes_mode_enabled = cfg_get(psoc, CFG_LFR_ENABLE_WES_MODE);
@@ -2843,14 +2693,12 @@ static void mlme_init_lfr_cfg(struct wlan_objmgr_psoc *psoc,
 	qdf_size_t neighbor_scan_chan_list_num = 0;
 	bool val = false;
 
-	lfr->mawc_roam_enabled =
-		cfg_get(psoc, CFG_LFR_MAWC_ROAM_ENABLED);
+	lfr->mawc_roam_enabled = cfg_get(psoc, CFG_LFR_MAWC_ROAM_ENABLED);
 	lfr->enable_fast_roam_in_concurrency =
 		cfg_get(psoc, CFG_LFR_ENABLE_FAST_ROAM_IN_CONCURRENCY);
 	lfr->early_stop_scan_enable =
 		cfg_get(psoc, CFG_LFR_EARLY_STOP_SCAN_ENABLE);
-	lfr->enable_5g_band_pref =
-		cfg_get(psoc, CFG_LFR_ENABLE_5G_BAND_PREF);
+	lfr->enable_5g_band_pref = cfg_get(psoc, CFG_LFR_ENABLE_5G_BAND_PREF);
 	lfr->lfr_enabled = cfg_get(psoc, CFG_LFR_FEATURE_ENABLED);
 	lfr->mawc_enabled = cfg_get(psoc, CFG_LFR_MAWC_FEATURE_ENABLED);
 	lfr->fast_transition_enabled =
@@ -2876,8 +2724,7 @@ static void mlme_init_lfr_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_LFR_ROAM_DENSE_TRAFFIC_THRESHOLD);
 	lfr->roam_dense_rssi_thre_offset =
 		cfg_get(psoc, CFG_LFR_ROAM_DENSE_RSSI_THRE_OFFSET);
-	lfr->roam_dense_min_aps =
-		cfg_get(psoc, CFG_LFR_ROAM_DENSE_MIN_APS);
+	lfr->roam_dense_min_aps = cfg_get(psoc, CFG_LFR_ROAM_DENSE_MIN_APS);
 	lfr->roam_bg_scan_bad_rssi_threshold =
 		cfg_get(psoc, CFG_LFR_ROAM_BG_SCAN_BAD_RSSI_THRESHOLD);
 	lfr->roam_bg_scan_client_bitmap =
@@ -2892,16 +2739,14 @@ static void mlme_init_lfr_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_RX_DATA_INACTIVITY_TIME);
 	lfr->adaptive_roamscan_dwell_mode =
 		cfg_get(psoc, CFG_LFR_ADAPTIVE_ROAMSCAN_DWELL_MODE);
-	lfr->per_roam_enable =
-		cfg_get(psoc, CFG_LFR_PER_ROAM_ENABLE);
+	lfr->per_roam_enable = cfg_get(psoc, CFG_LFR_PER_ROAM_ENABLE);
 	lfr->per_roam_config_high_rate_th =
 		cfg_get(psoc, CFG_LFR_PER_ROAM_CONFIG_HIGH_RATE_TH);
 	lfr->per_roam_config_low_rate_th =
 		cfg_get(psoc, CFG_LFR_PER_ROAM_CONFIG_LOW_RATE_TH);
 	lfr->per_roam_config_rate_th_percent =
 		cfg_get(psoc, CFG_LFR_PER_ROAM_CONFIG_RATE_TH_PERCENT);
-	lfr->per_roam_rest_time =
-		cfg_get(psoc, CFG_LFR_PER_ROAM_REST_TIME);
+	lfr->per_roam_rest_time = cfg_get(psoc, CFG_LFR_PER_ROAM_REST_TIME);
 	lfr->per_roam_monitor_time =
 		cfg_get(psoc, CFG_LFR_PER_ROAM_MONITOR_TIME);
 	lfr->per_roam_min_candidate_rssi =
@@ -2928,8 +2773,7 @@ static void mlme_init_lfr_cfg(struct wlan_objmgr_psoc *psoc,
 			cfg_get(psoc, CFG_LFR_5G_MAX_RSSI_PENALIZE);
 	}
 
-	lfr->max_num_pre_auth = (uint32_t)
-		cfg_default(CFG_LFR_MAX_NUM_PRE_AUTH);
+	lfr->max_num_pre_auth = (uint32_t)cfg_default(CFG_LFR_MAX_NUM_PRE_AUTH);
 	lfr->roam_preauth_no_ack_timeout =
 		cfg_get(psoc, CFG_LFR3_ROAM_PREAUTH_NO_ACK_TIMEOUT);
 	lfr->roam_preauth_retry_count =
@@ -2969,24 +2813,19 @@ static void mlme_init_lfr_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_LFR_ROAM_BMISS_FIRST_BCNT);
 	lfr->roam_bmiss_final_bcnt =
 		cfg_get(psoc, CFG_LFR_ROAM_BMISS_FINAL_BCNT);
-	lfr->roaming_dfs_channel =
-		cfg_get(psoc, CFG_LFR_ROAMING_DFS_CHANNEL);
+	lfr->roaming_dfs_channel = cfg_get(psoc, CFG_LFR_ROAMING_DFS_CHANNEL);
 	lfr->roam_scan_hi_rssi_maxcount =
 		cfg_get(psoc, CFG_LFR_ROAM_SCAN_HI_RSSI_MAXCOUNT);
 	lfr->roam_scan_hi_rssi_delta =
 		cfg_get(psoc, CFG_LFR_ROAM_SCAN_HI_RSSI_DELTA);
 	lfr->roam_scan_hi_rssi_delay =
 		cfg_get(psoc, CFG_LFR_ROAM_SCAN_HI_RSSI_DELAY);
-	lfr->roam_scan_hi_rssi_ub =
-		cfg_get(psoc, CFG_LFR_ROAM_SCAN_HI_RSSI_UB);
-	lfr->roam_prefer_5ghz =
-		cfg_get(psoc, CFG_LFR_ROAM_PREFER_5GHZ);
-	lfr->roam_intra_band =
-		cfg_get(psoc, CFG_LFR_ROAM_INTRA_BAND);
+	lfr->roam_scan_hi_rssi_ub = cfg_get(psoc, CFG_LFR_ROAM_SCAN_HI_RSSI_UB);
+	lfr->roam_prefer_5ghz = cfg_get(psoc, CFG_LFR_ROAM_PREFER_5GHZ);
+	lfr->roam_intra_band = cfg_get(psoc, CFG_LFR_ROAM_INTRA_BAND);
 	lfr->roam_scan_home_away_time =
 		cfg_get(psoc, CFG_LFR_ROAM_SCAN_HOME_AWAY_TIME);
-	lfr->roam_scan_n_probes =
-		cfg_get(psoc, CFG_LFR_ROAM_SCAN_N_PROBES);
+	lfr->roam_scan_n_probes = cfg_get(psoc, CFG_LFR_ROAM_SCAN_N_PROBES);
 	lfr->delay_before_vdev_stop =
 		cfg_get(psoc, CFG_LFR_DELAY_BEFORE_VDEV_STOP);
 	qdf_uint8_array_parse(cfg_get(psoc, CFG_LFR_NEIGHBOR_SCAN_CHANNEL_LIST),
@@ -2994,19 +2833,16 @@ static void mlme_init_lfr_cfg(struct wlan_objmgr_psoc *psoc,
 			      CFG_VALID_CHANNEL_LIST_LEN,
 			      &neighbor_scan_chan_list_num);
 	lfr->neighbor_scan_channel_list_num =
-				(uint8_t)neighbor_scan_chan_list_num;
-	lfr->ho_delay_for_rx =
-		cfg_get(psoc, CFG_LFR3_ROAM_HO_DELAY_FOR_RX);
+		(uint8_t)neighbor_scan_chan_list_num;
+	lfr->ho_delay_for_rx = cfg_get(psoc, CFG_LFR3_ROAM_HO_DELAY_FOR_RX);
 	lfr->min_delay_btw_roam_scans =
 		cfg_get(psoc, CFG_LFR_MIN_DELAY_BTW_ROAM_SCAN);
 	lfr->roam_trigger_reason_bitmask =
 		cfg_get(psoc, CFG_LFR_ROAM_SCAN_TRIGGER_REASON_BITMASK);
-	lfr->enable_ftopen =
-		cfg_get(psoc, CFG_LFR_ROAM_FT_OPEN_ENABLE);
+	lfr->enable_ftopen = cfg_get(psoc, CFG_LFR_ROAM_FT_OPEN_ENABLE);
 	lfr->roam_force_rssi_trigger =
 		cfg_get(psoc, CFG_LFR_ROAM_FORCE_RSSI_TRIGGER);
-	lfr->roaming_scan_policy =
-		cfg_get(psoc, CFG_ROAM_SCAN_SCAN_POLICY);
+	lfr->roaming_scan_policy = cfg_get(psoc, CFG_ROAM_SCAN_SCAN_POLICY);
 
 	if (val)
 		lfr->roam_scan_inactivity_time =
@@ -3057,22 +2893,23 @@ static void mlme_init_power_cfg(struct wlan_objmgr_psoc *psoc,
 	qdf_mem_copy(power->power_usage.data, cfg_get(psoc, CFG_POWER_USAGE),
 		     power->power_usage.len);
 	power->current_tx_power_level =
-			(uint8_t)cfg_default(CFG_CURRENT_TX_POWER_LEVEL);
+		(uint8_t)cfg_default(CFG_CURRENT_TX_POWER_LEVEL);
 	power->local_power_constraint =
-			(uint8_t)cfg_default(CFG_LOCAL_POWER_CONSTRAINT);
+		(uint8_t)cfg_default(CFG_LOCAL_POWER_CONSTRAINT);
 	power->use_local_tpe = cfg_get(psoc, CFG_USE_LOCAL_TPE);
 	power->skip_tpe = cfg_get(psoc, CFG_SKIP_TPE_CONSIDERATION);
 }
 
-static void mlme_init_roam_scoring_cfg(struct wlan_objmgr_psoc *psoc,
-				struct wlan_mlme_roam_scoring_cfg *scoring_cfg)
+static void
+mlme_init_roam_scoring_cfg(struct wlan_objmgr_psoc *psoc,
+			   struct wlan_mlme_roam_scoring_cfg *scoring_cfg)
 {
 	bool val = false;
 
 	scoring_cfg->enable_scoring_for_roam =
 		cfg_get(psoc, CFG_ENABLE_SCORING_FOR_ROAM);
 	scoring_cfg->roam_trigger_bitmap =
-			cfg_get(psoc, CFG_ROAM_SCORE_DELTA_TRIGGER_BITMAP);
+		cfg_get(psoc, CFG_ROAM_SCORE_DELTA_TRIGGER_BITMAP);
 	scoring_cfg->roam_score_delta = cfg_get(psoc, CFG_ROAM_SCORE_DELTA);
 	scoring_cfg->apsd_enabled = (bool)cfg_default(CFG_APSD_ENABLED);
 
@@ -3115,25 +2952,22 @@ static void mlme_init_oce_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_ENABLE_FILS_DISCOVERY_SAP);
 	esp_for_roam_enabled = cfg_get(psoc, CFG_ENABLE_ESP_FEATURE);
 
-	if (!rssi_assoc_reject_enabled ||
-	    !oce->enable_bcast_probe_rsp) {
+	if (!rssi_assoc_reject_enabled || !oce->enable_bcast_probe_rsp) {
 		oce->oce_sta_enabled = 0;
 	}
 
 	val = (probe_req_rate_enabled *
-	WMI_VDEV_OCE_PROBE_REQUEST_RATE_FEATURE_BITMAP) +
-	(probe_resp_rate_enabled *
-	WMI_VDEV_OCE_PROBE_RESPONSE_RATE_FEATURE_BITMAP) +
-	(beacon_rate_enabled *
-	WMI_VDEV_OCE_BEACON_RATE_FEATURE_BITMAP) +
-	(probe_req_deferral_enabled *
-	 WMI_VDEV_OCE_PROBE_REQUEST_DEFERRAL_FEATURE_BITMAP) +
-	(fils_discovery_sap_enabled *
-	 WMI_VDEV_OCE_FILS_DISCOVERY_FRAME_FEATURE_BITMAP) +
-	(esp_for_roam_enabled *
-	 WMI_VDEV_OCE_ESP_FEATURE_BITMAP) +
-	(rssi_assoc_reject_enabled *
-	 WMI_VDEV_OCE_REASSOC_REJECT_FEATURE_BITMAP);
+	       WMI_VDEV_OCE_PROBE_REQUEST_RATE_FEATURE_BITMAP) +
+	      (probe_resp_rate_enabled *
+	       WMI_VDEV_OCE_PROBE_RESPONSE_RATE_FEATURE_BITMAP) +
+	      (beacon_rate_enabled * WMI_VDEV_OCE_BEACON_RATE_FEATURE_BITMAP) +
+	      (probe_req_deferral_enabled *
+	       WMI_VDEV_OCE_PROBE_REQUEST_DEFERRAL_FEATURE_BITMAP) +
+	      (fils_discovery_sap_enabled *
+	       WMI_VDEV_OCE_FILS_DISCOVERY_FRAME_FEATURE_BITMAP) +
+	      (esp_for_roam_enabled * WMI_VDEV_OCE_ESP_FEATURE_BITMAP) +
+	      (rssi_assoc_reject_enabled *
+	       WMI_VDEV_OCE_REASSOC_REJECT_FEATURE_BITMAP);
 	oce->feature_bitmap = val;
 }
 
@@ -3141,13 +2975,13 @@ static void mlme_init_nss_chains(struct wlan_objmgr_psoc *psoc,
 				 struct wlan_mlme_nss_chains *nss_chains)
 {
 	nss_chains->num_rx_chains[NSS_CHAINS_BAND_2GHZ] =
-					    cfg_get(psoc, CFG_NUM_RX_CHAINS_2G);
+		cfg_get(psoc, CFG_NUM_RX_CHAINS_2G);
 	nss_chains->num_rx_chains[NSS_CHAINS_BAND_5GHZ] =
-					    cfg_get(psoc, CFG_NUM_RX_CHAINS_5G);
+		cfg_get(psoc, CFG_NUM_RX_CHAINS_5G);
 	nss_chains->num_tx_chains[NSS_CHAINS_BAND_2GHZ] =
-					    cfg_get(psoc, CFG_NUM_TX_CHAINS_2G);
+		cfg_get(psoc, CFG_NUM_TX_CHAINS_2G);
 	nss_chains->num_tx_chains[NSS_CHAINS_BAND_5GHZ] =
-					    cfg_get(psoc, CFG_NUM_TX_CHAINS_5G);
+		cfg_get(psoc, CFG_NUM_TX_CHAINS_5G);
 
 	nss_chains->tx_nss[NSS_CHAINS_BAND_2GHZ] = cfg_get(psoc, CFG_TX_NSS_2G);
 	nss_chains->tx_nss[NSS_CHAINS_BAND_5GHZ] = cfg_get(psoc, CFG_TX_NSS_5G);
@@ -3159,18 +2993,17 @@ static void mlme_init_nss_chains(struct wlan_objmgr_psoc *psoc,
 	nss_chains->num_tx_chains_11a = cfg_get(psoc, CFG_NUM_TX_CHAINS_11a);
 
 	nss_chains->disable_rx_mrc[NSS_CHAINS_BAND_2GHZ] =
-					   cfg_get(psoc, CFG_DISABLE_RX_MRC_2G);
+		cfg_get(psoc, CFG_DISABLE_RX_MRC_2G);
 	nss_chains->disable_rx_mrc[NSS_CHAINS_BAND_5GHZ] =
-					   cfg_get(psoc, CFG_DISABLE_RX_MRC_5G);
+		cfg_get(psoc, CFG_DISABLE_RX_MRC_5G);
 	nss_chains->disable_tx_mrc[NSS_CHAINS_BAND_2GHZ] =
-					   cfg_get(psoc, CFG_DISABLE_TX_MRC_2G);
+		cfg_get(psoc, CFG_DISABLE_TX_MRC_2G);
 	nss_chains->disable_tx_mrc[NSS_CHAINS_BAND_5GHZ] =
-					   cfg_get(psoc, CFG_DISABLE_TX_MRC_5G);
+		cfg_get(psoc, CFG_DISABLE_TX_MRC_5G);
 	nss_chains->enable_dynamic_nss_chains_cfg =
-			cfg_get(psoc, CFG_ENABLE_DYNAMIC_NSS_CHAIN_CONFIG);
+		cfg_get(psoc, CFG_ENABLE_DYNAMIC_NSS_CHAIN_CONFIG);
 	nss_chains->restart_sap_on_dyn_nss_chains_cfg =
-			cfg_get(psoc,
-				CFG_RESTART_SAP_ON_DYNAMIC_NSS_CHAINS_CONFIG);
+		cfg_get(psoc, CFG_RESTART_SAP_ON_DYNAMIC_NSS_CHAINS_CONFIG);
 }
 
 static void mlme_init_wep_cfg(struct wlan_mlme_wep_cfg *wep_params)
@@ -3178,9 +3011,9 @@ static void mlme_init_wep_cfg(struct wlan_mlme_wep_cfg *wep_params)
 	wep_params->is_privacy_enabled = cfg_default(CFG_PRIVACY_ENABLED);
 	wep_params->auth_type = cfg_default(CFG_AUTHENTICATION_TYPE);
 	wep_params->is_shared_key_auth =
-			cfg_default(CFG_SHARED_KEY_AUTH_ENABLE);
+		cfg_default(CFG_SHARED_KEY_AUTH_ENABLE);
 	wep_params->is_auth_open_system =
-			cfg_default(CFG_OPEN_SYSTEM_AUTH_ENABLE);
+		cfg_default(CFG_OPEN_SYSTEM_AUTH_ENABLE);
 
 	wep_params->wep_default_key_id = cfg_default(CFG_WEP_DEFAULT_KEYID);
 }
@@ -3191,9 +3024,9 @@ mlme_init_wifi_pos_11az_config(struct wlan_objmgr_psoc *psoc,
 			       struct wlan_mlme_wifi_pos_cfg *wifi_pos_cfg)
 {
 	bool rsta_sec_ltf_enabled =
-			cfg_get(psoc, CFG_RESPONDER_SECURE_LTF_SUPPORT);
-	bool rsta_11az_ranging_enabled = cfg_get(psoc,
-						 CFG_RESPONDER_11AZ_SUPPORT);
+		cfg_get(psoc, CFG_RESPONDER_SECURE_LTF_SUPPORT);
+	bool rsta_11az_ranging_enabled =
+		cfg_get(psoc, CFG_RESPONDER_11AZ_SUPPORT);
 
 	wifi_pos_set_rsta_11az_ranging_cap(rsta_11az_ranging_enabled);
 	wifi_pos_set_rsta_sec_ltf_cap(rsta_sec_ltf_enabled);
@@ -3202,7 +3035,8 @@ mlme_init_wifi_pos_11az_config(struct wlan_objmgr_psoc *psoc,
 static inline void
 mlme_init_wifi_pos_11az_config(struct wlan_objmgr_psoc *psoc,
 			       struct wlan_mlme_wifi_pos_cfg *wifi_pos_cfg)
-{}
+{
+}
 #endif
 
 static void mlme_init_wifi_pos_cfg(struct wlan_objmgr_psoc *psoc,
@@ -3242,64 +3076,57 @@ static void mlme_init_wmm_in_cfg(struct wlan_objmgr_psoc *psoc,
 
 	wmm_params->ac_vo.dir_ac_vo = cfg_get(psoc, CFG_QOS_WMM_DIR_AC_VO);
 	wmm_params->ac_vo.nom_msdu_size_ac_vo =
-			cfg_get(psoc, CFG_QOS_WMM_NOM_MSDU_SIZE_AC_VO);
+		cfg_get(psoc, CFG_QOS_WMM_NOM_MSDU_SIZE_AC_VO);
 	wmm_params->ac_vo.mean_data_rate_ac_vo =
-			cfg_get(psoc, CFG_QOS_WMM_MEAN_DATA_RATE_AC_VO);
+		cfg_get(psoc, CFG_QOS_WMM_MEAN_DATA_RATE_AC_VO);
 	wmm_params->ac_vo.min_phy_rate_ac_vo =
-			cfg_get(psoc, CFG_QOS_WMM_MIN_PHY_RATE_AC_VO);
+		cfg_get(psoc, CFG_QOS_WMM_MIN_PHY_RATE_AC_VO);
 	wmm_params->ac_vo.sba_ac_vo = cfg_get(psoc, CFG_QOS_WMM_SBA_AC_VO);
 	wmm_params->ac_vo.uapsd_vo_srv_intv =
-			cfg_get(psoc, CFG_QOS_WMM_UAPSD_VO_SRV_INTV);
+		cfg_get(psoc, CFG_QOS_WMM_UAPSD_VO_SRV_INTV);
 	wmm_params->ac_vo.uapsd_vo_sus_intv =
-			cfg_get(psoc, CFG_QOS_WMM_UAPSD_VO_SUS_INTV);
+		cfg_get(psoc, CFG_QOS_WMM_UAPSD_VO_SUS_INTV);
 
-	wmm_params->ac_vi.dir_ac_vi =
-		cfg_get(psoc, CFG_QOS_WMM_DIR_AC_VI);
+	wmm_params->ac_vi.dir_ac_vi = cfg_get(psoc, CFG_QOS_WMM_DIR_AC_VI);
 	wmm_params->ac_vi.nom_msdu_size_ac_vi =
 		cfg_get(psoc, CFG_QOS_WMM_NOM_MSDU_SIZE_AC_VI);
 	wmm_params->ac_vi.mean_data_rate_ac_vi =
 		cfg_get(psoc, CFG_QOS_WMM_MEAN_DATA_RATE_AC_VI);
 	wmm_params->ac_vi.min_phy_rate_ac_vi =
 		cfg_get(psoc, CFG_QOS_WMM_MIN_PHY_RATE_AC_VI);
-	wmm_params->ac_vi.sba_ac_vi =
-		cfg_get(psoc, CFG_QOS_WMM_SBA_AC_VI);
+	wmm_params->ac_vi.sba_ac_vi = cfg_get(psoc, CFG_QOS_WMM_SBA_AC_VI);
 	wmm_params->ac_vi.uapsd_vi_srv_intv =
 		cfg_get(psoc, CFG_QOS_WMM_UAPSD_VI_SRV_INTV);
 	wmm_params->ac_vi.uapsd_vi_sus_intv =
 		cfg_get(psoc, CFG_QOS_WMM_UAPSD_VI_SUS_INTV);
 
-	wmm_params->ac_be.dir_ac_be =
-		cfg_get(psoc, CFG_QOS_WMM_DIR_AC_BE);
+	wmm_params->ac_be.dir_ac_be = cfg_get(psoc, CFG_QOS_WMM_DIR_AC_BE);
 	wmm_params->ac_be.nom_msdu_size_ac_be =
 		cfg_get(psoc, CFG_QOS_WMM_NOM_MSDU_SIZE_AC_BE);
 	wmm_params->ac_be.mean_data_rate_ac_be =
 		cfg_get(psoc, CFG_QOS_WMM_MEAN_DATA_RATE_AC_BE);
 	wmm_params->ac_be.min_phy_rate_ac_be =
 		cfg_get(psoc, CFG_QOS_WMM_MIN_PHY_RATE_AC_BE);
-	wmm_params->ac_be.sba_ac_be =
-		cfg_get(psoc, CFG_QOS_WMM_SBA_AC_BE);
+	wmm_params->ac_be.sba_ac_be = cfg_get(psoc, CFG_QOS_WMM_SBA_AC_BE);
 	wmm_params->ac_be.uapsd_be_srv_intv =
 		cfg_get(psoc, CFG_QOS_WMM_UAPSD_BE_SRV_INTV);
 	wmm_params->ac_be.uapsd_be_sus_intv =
 		cfg_get(psoc, CFG_QOS_WMM_UAPSD_BE_SUS_INTV);
 
-	wmm_params->ac_bk.dir_ac_bk =
-		cfg_get(psoc, CFG_QOS_WMM_DIR_AC_BK);
+	wmm_params->ac_bk.dir_ac_bk = cfg_get(psoc, CFG_QOS_WMM_DIR_AC_BK);
 	wmm_params->ac_bk.nom_msdu_size_ac_bk =
 		cfg_get(psoc, CFG_QOS_WMM_NOM_MSDU_SIZE_AC_BK);
 	wmm_params->ac_bk.mean_data_rate_ac_bk =
 		cfg_get(psoc, CFG_QOS_WMM_MEAN_DATA_RATE_AC_BK);
 	wmm_params->ac_bk.min_phy_rate_ac_bk =
 		cfg_get(psoc, CFG_QOS_WMM_MIN_PHY_RATE_AC_BK);
-	wmm_params->ac_bk.sba_ac_bk =
-		cfg_get(psoc, CFG_QOS_WMM_SBA_AC_BK);
+	wmm_params->ac_bk.sba_ac_bk = cfg_get(psoc, CFG_QOS_WMM_SBA_AC_BK);
 	wmm_params->ac_bk.uapsd_bk_srv_intv =
 		cfg_get(psoc, CFG_QOS_WMM_UAPSD_BK_SRV_INTV);
 	wmm_params->ac_bk.uapsd_bk_sus_intv =
 		cfg_get(psoc, CFG_QOS_WMM_UAPSD_BK_SUS_INTV);
 
-	wmm_params->wmm_config.wmm_mode =
-		cfg_get(psoc, CFG_QOS_WMM_MODE);
+	wmm_params->wmm_config.wmm_mode = cfg_get(psoc, CFG_QOS_WMM_MODE);
 	wmm_params->wmm_config.b80211e_is_enabled =
 		cfg_get(psoc, CFG_QOS_WMM_80211E_ENABLED);
 	wmm_params->wmm_config.uapsd_mask =
@@ -3314,7 +3141,6 @@ static void mlme_init_wmm_in_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_QOS_ADDTS_WHEN_ACM_IS_OFF);
 	wmm_params->delayed_trigger_frm_int =
 		cfg_get(psoc, CFG_TL_DELAYED_TRGR_FRM_INTERVAL);
-
 }
 
 static void mlme_init_wps_params_cfg(struct wlan_objmgr_psoc *psoc,
@@ -3323,13 +3149,13 @@ static void mlme_init_wps_params_cfg(struct wlan_objmgr_psoc *psoc,
 	wps_params->enable_wps = cfg_default(CFG_WPS_ENABLE);
 	wps_params->wps_cfg_method = cfg_default(CFG_WPS_CFG_METHOD);
 	wps_params->wps_device_password_id =
-				cfg_default(CFG_WPS_DEVICE_PASSWORD_ID);
+		cfg_default(CFG_WPS_DEVICE_PASSWORD_ID);
 	wps_params->wps_device_sub_category =
-				cfg_default(CFG_WPS_DEVICE_SUB_CATEGORY);
+		cfg_default(CFG_WPS_DEVICE_SUB_CATEGORY);
 	wps_params->wps_primary_device_category =
-				cfg_default(CFG_WPS_PRIMARY_DEVICE_CATEGORY);
+		cfg_default(CFG_WPS_PRIMARY_DEVICE_CATEGORY);
 	wps_params->wps_primary_device_oui =
-				cfg_default(CFG_WPS_PIMARY_DEVICE_OUI);
+		cfg_default(CFG_WPS_PIMARY_DEVICE_OUI);
 	wps_params->wps_state = cfg_default(CFG_WPS_STATE);
 	wps_params->wps_version = cfg_default(CFG_WPS_VERSION);
 	wps_params->wps_uuid.max_len = MLME_CFG_WPS_UUID_MAX_LEN;
@@ -3356,27 +3182,26 @@ static void mlme_init_btm_cfg(struct wlan_objmgr_psoc *psoc,
 	btm->btm_sticky_time = cfg_get(psoc, CFG_BTM_STICKY_TIME);
 	btm->rct_validity_timer = cfg_get(psoc, CFG_BTM_VALIDITY_TIMER);
 	btm->disassoc_timer_threshold =
-			cfg_get(psoc, CFG_BTM_DISASSOC_TIMER_THRESHOLD);
+		cfg_get(psoc, CFG_BTM_DISASSOC_TIMER_THRESHOLD);
 	btm->btm_query_bitmask = cfg_get(psoc, CFG_BTM_QUERY_BITMASK);
 	btm->btm_trig_min_candidate_score =
-			cfg_get(psoc, CFG_MIN_BTM_CANDIDATE_SCORE);
+		cfg_get(psoc, CFG_MIN_BTM_CANDIDATE_SCORE);
 }
 
-static void
-mlme_init_roam_score_config(struct wlan_objmgr_psoc *psoc,
-			    struct wlan_mlme_cfg *mlme_cfg)
+static void mlme_init_roam_score_config(struct wlan_objmgr_psoc *psoc,
+					struct wlan_mlme_cfg *mlme_cfg)
 {
 	struct roam_trigger_score_delta *score_delta_param;
 	struct roam_trigger_min_rssi *min_rssi_param;
 
 	score_delta_param = &mlme_cfg->trig_score_delta[IDLE_ROAM_TRIGGER];
 	score_delta_param->roam_score_delta =
-			cfg_get(psoc, CFG_IDLE_ROAM_SCORE_DELTA);
+		cfg_get(psoc, CFG_IDLE_ROAM_SCORE_DELTA);
 	score_delta_param->trigger_reason = ROAM_TRIGGER_REASON_IDLE;
 
 	score_delta_param = &mlme_cfg->trig_score_delta[BTM_ROAM_TRIGGER];
 	score_delta_param->roam_score_delta =
-			cfg_get(psoc, CFG_BTM_ROAM_SCORE_DELTA);
+		cfg_get(psoc, CFG_BTM_ROAM_SCORE_DELTA);
 	score_delta_param->trigger_reason = ROAM_TRIGGER_REASON_BTM;
 
 	min_rssi_param = &mlme_cfg->trig_min_rssi[DEAUTH_MIN_RSSI];
@@ -3385,15 +3210,12 @@ mlme_init_roam_score_config(struct wlan_objmgr_psoc *psoc,
 	min_rssi_param->trigger_reason = ROAM_TRIGGER_REASON_DEAUTH;
 
 	min_rssi_param = &mlme_cfg->trig_min_rssi[BMISS_MIN_RSSI];
-	min_rssi_param->min_rssi =
-		cfg_get(psoc, CFG_BMISS_ROAM_MIN_RSSI);
+	min_rssi_param->min_rssi = cfg_get(psoc, CFG_BMISS_ROAM_MIN_RSSI);
 	min_rssi_param->trigger_reason = ROAM_TRIGGER_REASON_BMISS;
 
 	min_rssi_param = &mlme_cfg->trig_min_rssi[MIN_RSSI_2G_TO_5G_ROAM];
-	min_rssi_param->min_rssi =
-		cfg_get(psoc, CFG_2G_TO_5G_ROAM_MIN_RSSI);
+	min_rssi_param->min_rssi = cfg_get(psoc, CFG_2G_TO_5G_ROAM_MIN_RSSI);
 	min_rssi_param->trigger_reason = ROAM_TRIGGER_REASON_HIGH_RSSI;
-
 }
 
 #ifdef MULTI_CLIENT_LL_SUPPORT
@@ -3402,7 +3224,7 @@ mlme_init_wlm_multi_client_ll_support(struct wlan_objmgr_psoc *psoc,
 				      struct wlan_mlme_fe_wlm *wlm_config)
 {
 	wlm_config->multi_client_ll_support =
-			cfg_get(psoc, CFG_WLM_MULTI_CLIENT_LL_SUPPORT);
+		cfg_get(psoc, CFG_WLM_MULTI_CLIENT_LL_SUPPORT);
 }
 
 QDF_STATUS
@@ -3416,7 +3238,7 @@ mlme_get_cfg_multi_client_ll_ini_support(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 
 	*multi_client_ll_support =
-			mlme_obj->cfg.wlm_config.multi_client_ll_support;
+		mlme_obj->cfg.wlm_config.multi_client_ll_support;
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -3459,8 +3281,7 @@ static void mlme_init_fe_wlm_in_cfg(struct wlan_objmgr_psoc *psoc,
 			  wlm_config->latency_flags[0],
 			  wlm_config->latency_host_flags[0]);
 
-	status = qdf_uint64_parse(cfg_get(psoc, CFG_LATENCY_FLAGS_XR),
-				  &flags);
+	status = qdf_uint64_parse(cfg_get(psoc, CFG_LATENCY_FLAGS_XR), &flags);
 	if (status != QDF_STATUS_SUCCESS) {
 		flags = 0;
 		mlme_legacy_err("xr latency flags parsing failed");
@@ -3472,8 +3293,7 @@ static void mlme_init_fe_wlm_in_cfg(struct wlan_objmgr_psoc *psoc,
 			  wlm_config->latency_flags[1],
 			  wlm_config->latency_host_flags[1]);
 
-	status = qdf_uint64_parse(cfg_get(psoc, CFG_LATENCY_FLAGS_LOW),
-				  &flags);
+	status = qdf_uint64_parse(cfg_get(psoc, CFG_LATENCY_FLAGS_LOW), &flags);
 	if (status != QDF_STATUS_SUCCESS) {
 		flags = 0;
 		mlme_legacy_err("low latency flags parsing failed");
@@ -3536,7 +3356,7 @@ static void mlme_init_powersave_params(struct wlan_objmgr_psoc *psoc,
 	ps_cfg->bmps_min_listen_interval = cfg_get(psoc, CFG_BMPS_MINIMUM_LI);
 	ps_cfg->bmps_max_listen_interval = cfg_get(psoc, CFG_BMPS_MAXIMUM_LI);
 	ps_cfg->dtim_selection_diversity =
-				cfg_get(psoc, CFG_DTIM_SELECTION_DIVERSITY);
+		cfg_get(psoc, CFG_DTIM_SELECTION_DIVERSITY);
 }
 
 #if defined(CONFIG_AFC_SUPPORT) && defined(CONFIG_BAND_6GHZ)
@@ -3545,12 +3365,10 @@ static void mlme_init_afc_cfg(struct wlan_objmgr_psoc *psoc,
 {
 	reg->enable_6ghz_sp_pwrmode_supp =
 		cfg_get(psoc, CFG_6GHZ_SP_POWER_MODE_SUPP);
-	reg->afc_disable_timer_check =
-		cfg_default(CFG_AFC_TIMER_CHECK_DIS);
+	reg->afc_disable_timer_check = cfg_default(CFG_AFC_TIMER_CHECK_DIS);
 	reg->afc_disable_request_id_check =
 		cfg_default(CFG_AFC_REQ_ID_CHECK_DIS);
-	reg->is_afc_reg_noaction =
-		cfg_default(CFG_AFC_REG_NO_ACTION);
+	reg->is_afc_reg_noaction = cfg_default(CFG_AFC_REG_NO_ACTION);
 }
 #else
 static inline void mlme_init_afc_cfg(struct wlan_objmgr_psoc *psoc,
@@ -3563,8 +3381,7 @@ static inline void mlme_init_afc_cfg(struct wlan_objmgr_psoc *psoc,
 static void mlme_init_mwc_cfg(struct wlan_objmgr_psoc *psoc,
 			      struct wlan_mlme_mwc *mwc)
 {
-	mwc->mws_coex_4g_quick_tdm =
-		cfg_get(psoc, CFG_MWS_COEX_4G_QUICK_FTDM);
+	mwc->mws_coex_4g_quick_tdm = cfg_get(psoc, CFG_MWS_COEX_4G_QUICK_FTDM);
 	mwc->mws_coex_5g_nr_pwr_limit =
 		cfg_get(psoc, CFG_MWS_COEX_5G_NR_PWR_LIMIT);
 	mwc->mws_coex_pcc_channel_avoid_delay =
@@ -3611,8 +3428,9 @@ static void mlme_init_coex_unsafe_chan_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_COEX_UNSAFE_CHAN_NB_USER_PREFER);
 }
 
-static void mlme_init_coex_unsafe_chan_reg_disable_cfg(
-		struct wlan_objmgr_psoc *psoc, struct wlan_mlme_reg *reg)
+static void
+mlme_init_coex_unsafe_chan_reg_disable_cfg(struct wlan_objmgr_psoc *psoc,
+					   struct wlan_mlme_reg *reg)
 {
 	reg->coex_unsafe_chan_reg_disable =
 		cfg_get(psoc, CFG_COEX_UNSAFE_CHAN_REG_DISABLE);
@@ -3623,8 +3441,9 @@ static void mlme_init_coex_unsafe_chan_cfg(struct wlan_objmgr_psoc *psoc,
 {
 }
 
-static void mlme_init_coex_unsafe_chan_reg_disable_cfg(
-		struct wlan_objmgr_psoc *psoc, struct wlan_mlme_reg *reg)
+static void
+mlme_init_coex_unsafe_chan_reg_disable_cfg(struct wlan_objmgr_psoc *psoc,
+					   struct wlan_mlme_reg *reg)
 {
 }
 #endif
@@ -3634,20 +3453,19 @@ static void mlme_init_reg_cfg(struct wlan_objmgr_psoc *psoc,
 {
 	reg->self_gen_frm_pwr = cfg_get(psoc, CFG_SELF_GEN_FRM_PWR);
 	reg->etsi_srd_chan_in_master_mode =
-			cfg_get(psoc, CFG_ETSI_SRD_CHAN_IN_MASTER_MODE);
+		cfg_get(psoc, CFG_ETSI_SRD_CHAN_IN_MASTER_MODE);
 	reg->fcc_5dot9_ghz_chan_in_master_mode =
-			cfg_get(psoc, CFG_FCC_5DOT9_GHZ_CHAN_IN_MASTER_MODE);
+		cfg_get(psoc, CFG_FCC_5DOT9_GHZ_CHAN_IN_MASTER_MODE);
 	reg->restart_beaconing_on_ch_avoid =
-			cfg_get(psoc, CFG_RESTART_BEACONING_ON_CH_AVOID);
+		cfg_get(psoc, CFG_RESTART_BEACONING_ON_CH_AVOID);
 	reg->indoor_channel_support = cfg_get(psoc, CFG_INDOOR_CHANNEL_SUPPORT);
-	reg->enable_11d_in_world_mode = cfg_get(psoc,
-						CFG_ENABLE_11D_IN_WORLD_MODE);
+	reg->enable_11d_in_world_mode =
+		cfg_get(psoc, CFG_ENABLE_11D_IN_WORLD_MODE);
 	reg->scan_11d_interval = cfg_get(psoc, CFG_SCAN_11D_INTERVAL);
-	reg->enable_pending_chan_list_req = cfg_get(psoc,
-					CFG_ENABLE_PENDING_CHAN_LIST_REQ);
-	reg->ignore_fw_reg_offload_ind = cfg_get(
-						psoc,
-						CFG_IGNORE_FW_REG_OFFLOAD_IND);
+	reg->enable_pending_chan_list_req =
+		cfg_get(psoc, CFG_ENABLE_PENDING_CHAN_LIST_REQ);
+	reg->ignore_fw_reg_offload_ind =
+		cfg_get(psoc, CFG_IGNORE_FW_REG_OFFLOAD_IND);
 	reg->retain_nol_across_regdmn_update =
 		cfg_get(psoc, CFG_RETAIN_NOL_ACROSS_REG_DOMAIN);
 
@@ -3660,9 +3478,8 @@ static void mlme_init_reg_cfg(struct wlan_objmgr_psoc *psoc,
 	mlme_init_coex_unsafe_chan_reg_disable_cfg(psoc, reg);
 }
 
-static void
-mlme_init_dot11_mode_cfg(struct wlan_objmgr_psoc *psoc,
-			 struct wlan_mlme_dot11_mode *dot11_mode)
+static void mlme_init_dot11_mode_cfg(struct wlan_objmgr_psoc *psoc,
+				     struct wlan_mlme_dot11_mode *dot11_mode)
 {
 	dot11_mode->dot11_mode = cfg_default(CFG_DOT11_MODE);
 	dot11_mode->vdev_type_dot11_mode = cfg_get(psoc, CFG_VDEV_DOT11_MODE);
@@ -3675,9 +3492,8 @@ mlme_init_dot11_mode_cfg(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-mlme_iot_parse_aggr_info(struct wlan_objmgr_psoc *psoc,
-			 struct wlan_mlme_iot *iot)
+static void mlme_iot_parse_aggr_info(struct wlan_objmgr_psoc *psoc,
+				     struct wlan_mlme_iot *iot)
 {
 	char *aggr_info, *oui, *msdu, *mpdu, *aggr_info_temp;
 	uint32_t ampdu_sz, amsdu_sz, index = 0, oui_len, cfg_str_len;
@@ -3728,8 +3544,8 @@ mlme_iot_parse_aggr_info(struct wlan_objmgr_psoc *psoc,
 
 		ret = kstrtou32(msdu, 10, &amsdu_sz);
 		if (ret || amsdu_sz > IOT_AGGR_MSDU_MAX_NUM) {
-			mlme_legacy_err("invalid msdu no. %s [%u]",
-					msdu, amsdu_sz);
+			mlme_legacy_err("invalid msdu no. %s [%u]", msdu,
+					amsdu_sz);
 			goto end;
 		}
 
@@ -3742,16 +3558,16 @@ mlme_iot_parse_aggr_info(struct wlan_objmgr_psoc *psoc,
 
 		ret = kstrtou32(mpdu, 10, &ampdu_sz);
 		if (ret || ampdu_sz > IOT_AGGR_MPDU_MAX_NUM) {
-			mlme_legacy_err("invalid mpdu no. %s [%u]",
-					mpdu, ampdu_sz);
+			mlme_legacy_err("invalid mpdu no. %s [%u]", mpdu,
+					ampdu_sz);
 			goto end;
 		}
 
-		mlme_legacy_debug("id %u oui[%s] len %u msdu %u mpdu %u",
-				  index, oui, oui_len, amsdu_sz, ampdu_sz);
+		mlme_legacy_debug("id %u oui[%s] len %u msdu %u mpdu %u", index,
+				  oui, oui_len, amsdu_sz, ampdu_sz);
 
-		ret = qdf_hex_str_to_binary(aggr_info_list[index].oui,
-					    oui, oui_len);
+		ret = qdf_hex_str_to_binary(aggr_info_list[index].oui, oui,
+					    oui_len);
 		if (ret) {
 			mlme_legacy_err("oui error: %d", ret);
 			goto end;
@@ -3780,9 +3596,8 @@ end:
  *
  * Return: None
  */
-static void
-mlme_init_iot_cfg(struct wlan_objmgr_psoc *psoc,
-		  struct wlan_mlme_iot *iot)
+static void mlme_init_iot_cfg(struct wlan_objmgr_psoc *psoc,
+			      struct wlan_mlme_iot *iot)
 {
 	mlme_iot_parse_aggr_info(psoc, iot);
 }
@@ -3793,12 +3608,11 @@ mlme_init_iot_cfg(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-mlme_init_dual_sta_config(struct wlan_mlme_generic *gen)
+static void mlme_init_dual_sta_config(struct wlan_mlme_generic *gen)
 {
 	gen->dual_sta_policy.primary_vdev_id = WLAN_UMAC_VDEV_ID_MAX;
 	gen->dual_sta_policy.concurrent_sta_policy =
-				QCA_WLAN_CONCURRENT_STA_POLICY_UNBIASED;
+		QCA_WLAN_CONCURRENT_STA_POLICY_UNBIASED;
 }
 
 #ifdef WLAN_FEATURE_MCC_QUOTA
@@ -3808,16 +3622,14 @@ mlme_init_dual_sta_config(struct wlan_mlme_generic *gen)
  *
  * Return: None
  */
-static void
-mlme_init_user_mcc_quota_config(struct wlan_mlme_generic *gen)
+static void mlme_init_user_mcc_quota_config(struct wlan_mlme_generic *gen)
 {
 	gen->user_mcc_quota.quota = 0;
 	gen->user_mcc_quota.op_mode = QDF_MAX_NO_OF_MODE;
 	gen->user_mcc_quota.vdev_id = WLAN_UMAC_VDEV_ID_MAX;
 }
 #else
-static void
-mlme_init_user_mcc_quota_config(struct wlan_mlme_generic *gen)
+static void mlme_init_user_mcc_quota_config(struct wlan_mlme_generic *gen)
 {
 }
 #endif
@@ -3933,12 +3745,12 @@ void mlme_set_self_disconnect_ies(struct wlan_objmgr_vdev *vdev,
 	}
 
 	mlme_priv->disconnect_info.self_discon_ies.ptr =
-				qdf_mem_malloc(ie->len);
+		qdf_mem_malloc(ie->len);
 	if (!mlme_priv->disconnect_info.self_discon_ies.ptr)
 		return;
 
-	qdf_mem_copy(mlme_priv->disconnect_info.self_discon_ies.ptr,
-		     ie->ptr, ie->len);
+	qdf_mem_copy(mlme_priv->disconnect_info.self_discon_ies.ptr, ie->ptr,
+		     ie->len);
 	mlme_priv->disconnect_info.self_discon_ies.len = ie->len;
 
 	mlme_legacy_debug("Self disconnect IEs");
@@ -3999,12 +3811,12 @@ void mlme_set_peer_disconnect_ies(struct wlan_objmgr_vdev *vdev,
 	}
 
 	mlme_priv->disconnect_info.peer_discon_ies.ptr =
-					qdf_mem_malloc(ie->len);
+		qdf_mem_malloc(ie->len);
 	if (!mlme_priv->disconnect_info.peer_discon_ies.ptr)
 		return;
 
-	qdf_mem_copy(mlme_priv->disconnect_info.peer_discon_ies.ptr,
-		     ie->ptr, ie->len);
+	qdf_mem_copy(mlme_priv->disconnect_info.peer_discon_ies.ptr, ie->ptr,
+		     ie->len);
 	mlme_priv->disconnect_info.peer_discon_ies.len = ie->len;
 
 	mlme_legacy_debug("peer disconnect IEs");
@@ -4297,8 +4109,7 @@ void wlan_vdev_set_dot11mode(struct wlan_mlme_cfg *mac_mlme_cfg,
 	uint8_t dot11_mode_indx;
 	uint8_t *mld_addr;
 	enum mlme_vdev_dot11_mode vdev_dot11_mode;
-	uint32_t mac_dot11_mode =
-			mac_mlme_cfg->dot11_mode.vdev_type_dot11_mode;
+	uint32_t mac_dot11_mode = mac_mlme_cfg->dot11_mode.vdev_type_dot11_mode;
 
 	switch (device_mode) {
 	default:
@@ -4349,14 +4160,14 @@ bool wlan_is_open_wep_cipher(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
 						    WLAN_LEGACY_MAC_ID);
 	if (!vdev)
 		return is_open_wep;
-	ucast_cipher = wlan_crypto_get_param(vdev,
-					     WLAN_CRYPTO_PARAM_UCAST_CIPHER);
+	ucast_cipher =
+		wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_UCAST_CIPHER);
 	if (!ucast_cipher ||
 	    ((QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_NONE) ==
 	      ucast_cipher)) ||
-	      QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP) ||
-	      QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP_40) ||
-	      QDF_HAS_PARAM(ucast_cipher,  WLAN_CRYPTO_CIPHER_WEP_104))
+	    QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP) ||
+	    QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP_40) ||
+	    QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP_104))
 		is_open_wep = true;
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_MAC_ID);
 
@@ -4367,8 +4178,8 @@ bool wlan_vdev_is_open_mode(struct wlan_objmgr_vdev *vdev)
 {
 	int32_t ucast_cipher;
 
-	ucast_cipher = wlan_crypto_get_param(vdev,
-					     WLAN_CRYPTO_PARAM_UCAST_CIPHER);
+	ucast_cipher =
+		wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_UCAST_CIPHER);
 	if (!ucast_cipher ||
 	    ((QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_NONE) ==
 	      ucast_cipher)))
@@ -4408,8 +4219,8 @@ bool wlan_vdev_id_is_11n_allowed(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
 						    WLAN_LEGACY_MAC_ID);
 	if (!vdev)
 		return is_11n_allowed;
-	ucast_cipher = wlan_crypto_get_param(vdev,
-					     WLAN_CRYPTO_PARAM_UCAST_CIPHER);
+	ucast_cipher =
+		wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_UCAST_CIPHER);
 
 	if (ucast_cipher == -1)
 		goto err;
@@ -4430,7 +4241,6 @@ err:
 	return is_11n_allowed;
 }
 
-
 bool wlan_is_vdev_id_up(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
@@ -4448,7 +4258,6 @@ bool wlan_is_vdev_id_up(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
 
 	return is_up;
 }
-
 
 QDF_STATUS
 wlan_get_op_chan_freq_info_vdev_id(struct wlan_objmgr_pdev *pdev,
@@ -4478,12 +4287,12 @@ wlan_get_op_chan_freq_info_vdev_id(struct wlan_objmgr_pdev *pdev,
 		goto rel_ref;
 
 	/* If operating mode is STA / P2P-CLI then get the channel width
-	 * from phymode. This is due the reason where actual operating
-	 * channel width is configured as part of WMI_PEER_ASSOC_CMDID
-	 * which could be downgraded while the peer associated.
-	 * If there is a failure or operating mode is not STA / P2P-CLI
-	 * then get channel width from wlan_channel.
-	 */
+   * from phymode. This is due the reason where actual operating
+   * channel width is configured as part of WMI_PEER_ASSOC_CMDID
+   * which could be downgraded while the peer associated.
+   * If there is a failure or operating mode is not STA / P2P-CLI
+   * then get channel width from wlan_channel.
+   */
 	status = wlan_mlme_get_sta_ch_width(vdev, ch_width);
 	if (QDF_IS_STATUS_ERROR(status))
 		*ch_width = chan->ch_width;
@@ -4498,10 +4307,10 @@ rel_ref:
 	return status;
 }
 
-QDF_STATUS wlan_strip_ie(uint8_t *addn_ie, uint16_t *addn_ielen,
-			 uint8_t eid, enum size_of_len_field size_of_len_field,
-			 uint8_t *oui, uint8_t oui_length,
-			 uint8_t *extracted_ie, uint32_t eid_max_len)
+QDF_STATUS wlan_strip_ie(uint8_t *addn_ie, uint16_t *addn_ielen, uint8_t eid,
+			 enum size_of_len_field size_of_len_field, uint8_t *oui,
+			 uint8_t oui_length, uint8_t *extracted_ie,
+			 uint32_t eid_max_len)
 {
 	uint8_t *tmp_buf = NULL;
 	uint16_t tmp_len = 0;
@@ -4525,7 +4334,7 @@ QDF_STATUS wlan_strip_ie(uint8_t *addn_ie, uint16_t *addn_ielen,
 		qdf_mem_zero(extracted_ie, eid_max_len + size_of_len_field + 1);
 
 	while (left >= 2) {
-		elem_id  = ptr[0];
+		elem_id = ptr[0];
 		left -= 1;
 		if (size_of_len_field == TWO_BYTE) {
 			elem_len = *((uint16_t *)&ptr[1]);
@@ -4542,23 +4351,22 @@ QDF_STATUS wlan_strip_ie(uint8_t *addn_ie, uint16_t *addn_ielen,
 		}
 
 		if (eid != elem_id ||
-				(oui && qdf_mem_cmp(oui,
-						&ptr[size_of_len_field + 1],
-						oui_length))) {
+		    (oui && qdf_mem_cmp(oui, &ptr[size_of_len_field + 1],
+					oui_length))) {
 			qdf_mem_copy(tmp_buf + tmp_len, &ptr[0],
 				     elem_len + size_of_len_field + 1);
 			tmp_len += (elem_len + size_of_len_field + 1);
 		} else {
 			/*
-			 * eid matched and if provided OUI also matched
-			 * take oui IE and store in provided buffer.
-			 */
+       * eid matched and if provided OUI also matched
+       * take oui IE and store in provided buffer.
+       */
 			if (extracted_ie) {
 				ie_len = elem_len + size_of_len_field + 1;
 				if (ie_len <= eid_max_len - extracted_ie_len) {
-					qdf_mem_copy(
-					extracted_ie + extracted_ie_len,
-					&ptr[0], ie_len);
+					qdf_mem_copy(extracted_ie +
+							     extracted_ie_len,
+						     &ptr[0], ie_len);
 					extracted_ie_len += ie_len;
 				}
 			}
@@ -4574,8 +4382,8 @@ QDF_STATUS wlan_strip_ie(uint8_t *addn_ie, uint16_t *addn_ielen,
 	return QDF_STATUS_SUCCESS;
 }
 
-bool wlan_is_channel_present_in_list(qdf_freq_t *freq_lst,
-				     uint32_t num_chan, qdf_freq_t chan_freq)
+bool wlan_is_channel_present_in_list(qdf_freq_t *freq_lst, uint32_t num_chan,
+				     qdf_freq_t chan_freq)
 {
 	int i = 0;
 
@@ -4599,8 +4407,7 @@ bool wlan_roam_is_channel_valid(struct wlan_mlme_reg *reg, qdf_freq_t chan_freq)
 	uint32_t len = reg->valid_channel_list_num;
 
 	for (i = 0; (i < len); i++) {
-		if (wlan_reg_is_dsrc_freq(
-			reg->valid_channel_freq_list[i]))
+		if (wlan_reg_is_dsrc_freq(reg->valid_channel_freq_list[i]))
 			continue;
 
 		if (chan_freq == reg->valid_channel_freq_list[i]) {
@@ -4634,8 +4441,7 @@ int8_t wlan_get_cfg_max_tx_power(struct wlan_objmgr_psoc *psoc,
 		cfg_length = mlme_obj->cfg.power.max_tx_power_24.len;
 
 	} else if (wlan_reg_is_6ghz_chan_freq(ch_freq)) {
-		return wlan_reg_get_channel_reg_power_for_freq(pdev,
-							       ch_freq);
+		return wlan_reg_get_channel_reg_power_for_freq(pdev, ch_freq);
 	} else {
 		return max_tx_pwr;
 	}
@@ -4683,8 +4489,7 @@ error:
 }
 
 #if defined(WLAN_FEATURE_HOST_ROAM) || defined(WLAN_FEATURE_ROAM_OFFLOAD)
-static
-const char *mlme_roam_state_to_string(enum roam_offload_state state)
+static const char *mlme_roam_state_to_string(enum roam_offload_state state)
 {
 	switch (state) {
 	case WLAN_ROAM_INIT:
@@ -4706,21 +4511,19 @@ const char *mlme_roam_state_to_string(enum roam_offload_state state)
 	}
 }
 
-static void
-mlme_print_roaming_state(uint8_t vdev_id, enum roam_offload_state cur_state,
-			 enum roam_offload_state new_state)
+static void mlme_print_roaming_state(uint8_t vdev_id,
+				     enum roam_offload_state cur_state,
+				     enum roam_offload_state new_state)
 {
-	mlme_nofl_debug("CM_RSO: vdev%d: [%s(%d)] --> [%s(%d)]",
-			vdev_id, mlme_roam_state_to_string(cur_state),
-			cur_state,
+	mlme_nofl_debug("CM_RSO: vdev%d: [%s(%d)] --> [%s(%d)]", vdev_id,
+			mlme_roam_state_to_string(cur_state), cur_state,
 			mlme_roam_state_to_string(new_state), new_state);
 
 	/* TODO: Try to print the state change requestor also */
 }
 
-bool
-mlme_get_supplicant_disabled_roaming(struct wlan_objmgr_psoc *psoc,
-				     uint8_t vdev_id)
+bool mlme_get_supplicant_disabled_roaming(struct wlan_objmgr_psoc *psoc,
+					  uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct mlme_legacy_priv *mlme_priv;
@@ -4772,8 +4575,8 @@ void mlme_set_supplicant_disabled_roaming(struct wlan_objmgr_psoc *psoc,
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
 }
 
-uint32_t
-mlme_get_roam_trigger_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
+uint32_t mlme_get_roam_trigger_bitmap(struct wlan_objmgr_psoc *psoc,
+				      uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct mlme_legacy_priv *mlme_priv;
@@ -4824,8 +4627,8 @@ void mlme_set_roam_trigger_bitmap(struct wlan_objmgr_psoc *psoc,
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
 }
 
-uint8_t
-mlme_get_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
+uint8_t mlme_get_operations_bitmap(struct wlan_objmgr_psoc *psoc,
+				   uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct mlme_legacy_priv *mlme_priv;
@@ -4854,9 +4657,9 @@ mlme_get_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 	return bitmap;
 }
 
-void
-mlme_set_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
-			   enum wlan_cm_rso_control_requestor reqs, bool clear)
+void mlme_set_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
+				enum wlan_cm_rso_control_requestor reqs,
+				bool clear)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct mlme_legacy_priv *mlme_priv;
@@ -4886,8 +4689,8 @@ mlme_set_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
 }
 
-void
-mlme_clear_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
+void mlme_clear_operations_bitmap(struct wlan_objmgr_psoc *psoc,
+				  uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct mlme_legacy_priv *mlme_priv;
@@ -4910,8 +4713,7 @@ mlme_clear_operations_bitmap(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
 }
 
-QDF_STATUS mlme_get_cfg_wlm_level(struct wlan_objmgr_psoc *psoc,
-				  uint8_t *level)
+QDF_STATUS mlme_get_cfg_wlm_level(struct wlan_objmgr_psoc *psoc, uint8_t *level)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -4924,8 +4726,7 @@ QDF_STATUS mlme_get_cfg_wlm_level(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS mlme_get_cfg_wlm_reset(struct wlan_objmgr_psoc *psoc,
-				  bool *reset)
+QDF_STATUS mlme_get_cfg_wlm_reset(struct wlan_objmgr_psoc *psoc, bool *reset)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -4938,8 +4739,8 @@ QDF_STATUS mlme_get_cfg_wlm_reset(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
-enum roam_offload_state
-mlme_get_roam_state(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
+enum roam_offload_state mlme_get_roam_state(struct wlan_objmgr_psoc *psoc,
+					    uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct mlme_legacy_priv *mlme_priv;
@@ -5011,8 +4812,7 @@ mlme_store_fw_scan_channels(struct wlan_objmgr_psoc *psoc,
 	for (i = 0; i < chan_list->numChan; i++)
 		lfr->saved_freq_list.freq[i] = chan_list->chanParam[i].freq;
 
-	mlme_legacy_debug("ROAM: save %d channels",
-			  chan_list->numChan);
+	mlme_legacy_debug("ROAM: save %d channels", chan_list->numChan);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -5062,15 +4862,14 @@ QDF_STATUS wlan_mlme_get_mac_vdev_id(struct wlan_objmgr_pdev *pdev,
 	if (!vdev)
 		return QDF_STATUS_E_INVAL;
 
-	qdf_mem_copy(self_mac->bytes,
-		     wlan_vdev_mlme_get_macaddr(vdev), QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(self_mac->bytes, wlan_vdev_mlme_get_macaddr(vdev),
+		     QDF_MAC_ADDR_SIZE);
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_MAC_ID);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-qdf_freq_t
-wlan_get_sap_user_config_freq(struct wlan_objmgr_vdev *vdev)
+qdf_freq_t wlan_get_sap_user_config_freq(struct wlan_objmgr_vdev *vdev)
 {
 	struct mlme_legacy_priv *mlme_priv;
 	enum QDF_OPMODE opmode = QDF_MAX_NO_OF_MODE;
@@ -5091,8 +4890,7 @@ wlan_get_sap_user_config_freq(struct wlan_objmgr_vdev *vdev)
 }
 
 QDF_STATUS
-wlan_set_sap_user_config_freq(struct wlan_objmgr_vdev *vdev,
-			      qdf_freq_t freq)
+wlan_set_sap_user_config_freq(struct wlan_objmgr_vdev *vdev, qdf_freq_t freq)
 {
 	struct mlme_legacy_priv *mlme_priv;
 	enum QDF_OPMODE opmode = QDF_MAX_NO_OF_MODE;
@@ -5114,8 +4912,7 @@ wlan_set_sap_user_config_freq(struct wlan_objmgr_vdev *vdev,
 }
 
 #ifdef CONFIG_BAND_6GHZ
-bool
-wlan_get_tpc_update_required_for_sta(struct wlan_objmgr_vdev *vdev)
+bool wlan_get_tpc_update_required_for_sta(struct wlan_objmgr_vdev *vdev)
 {
 	struct mlme_legacy_priv *mlme_priv;
 	enum QDF_OPMODE opmode;
@@ -5170,8 +4967,8 @@ QDF_STATUS wlan_mlme_get_sta_tx_nss(struct wlan_objmgr_psoc *psoc,
 	enum band_info operating_band;
 	QDF_STATUS status;
 
-	status = wlan_mlme_cfg_get_dynamic_nss_chains_support
-					(psoc, &dynamic_nss_chains_support);
+	status = wlan_mlme_cfg_get_dynamic_nss_chains_support(
+		psoc, &dynamic_nss_chains_support);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("Failed to get dynamic_nss_chains_support");
 		return QDF_STATUS_E_INVAL;
@@ -5217,8 +5014,8 @@ QDF_STATUS wlan_mlme_get_sta_rx_nss(struct wlan_objmgr_psoc *psoc,
 	enum band_info operating_band;
 	QDF_STATUS status;
 
-	status = wlan_mlme_cfg_get_dynamic_nss_chains_support
-					(psoc, &dynamic_nss_chains_support);
+	status = wlan_mlme_cfg_get_dynamic_nss_chains_support(
+		psoc, &dynamic_nss_chains_support);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("Failed to get dynamic_nss_chains_support");
 		return QDF_STATUS_E_INVAL;

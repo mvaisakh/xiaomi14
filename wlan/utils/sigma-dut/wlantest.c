@@ -8,9 +8,8 @@
  */
 
 #include "sigma_dut.h"
-#include <sys/un.h>
 #include "wlantest_ctrl.h"
-
+#include <sys/un.h>
 
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
@@ -18,9 +17,8 @@
 
 int hwaddr_aton(const char *txt, unsigned char *addr);
 
-
-static u8 * attr_get(u8 *buf, size_t buflen, enum wlantest_ctrl_attr attr,
-		     size_t *len)
+static u8 *attr_get(u8 *buf, size_t buflen, enum wlantest_ctrl_attr attr,
+		    size_t *len)
 {
 	u8 *pos = buf;
 
@@ -43,11 +41,10 @@ static u8 * attr_get(u8 *buf, size_t buflen, enum wlantest_ctrl_attr attr,
 	return NULL;
 }
 
-
-static u8 * attr_hdr_add(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
-			 size_t len)
+static u8 *attr_hdr_add(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
+			size_t len)
 {
-	if (pos == NULL || end - pos < (int) (8 + len))
+	if (pos == NULL || end - pos < (int)(8 + len))
 		return NULL;
 	WPA_PUT_BE32(pos, attr);
 	pos += 4;
@@ -56,13 +53,12 @@ static u8 * attr_hdr_add(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
 	return pos;
 }
 
-
-static u8 * attr_add_str(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
-			 const char *str)
+static u8 *attr_add_str(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
+			const char *str)
 {
 	size_t len = strlen(str);
 
-	if (pos == NULL || end - pos < (int) (8 + len))
+	if (pos == NULL || end - pos < (int)(8 + len))
 		return NULL;
 	WPA_PUT_BE32(pos, attr);
 	pos += 4;
@@ -73,9 +69,8 @@ static u8 * attr_add_str(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
 	return pos;
 }
 
-
-static u8 * attr_add_be32(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
-			  u32 val)
+static u8 *attr_add_be32(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
+			 u32 val)
 {
 	if (pos == NULL || end - pos < 12)
 		return NULL;
@@ -87,7 +82,6 @@ static u8 * attr_add_be32(u8 *pos, u8 *end, enum wlantest_ctrl_attr attr,
 	pos += 4;
 	return pos;
 }
-
 
 static int open_wlantest(void)
 {
@@ -104,7 +98,7 @@ static int open_wlantest(void)
 	addr.sun_family = AF_UNIX;
 	strlcpy(addr.sun_path + 1, WLANTEST_SOCK_NAME,
 		sizeof(addr.sun_path) - 1);
-	if (connect(s, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+	if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("connect");
 		close(s);
 		return -1;
@@ -113,9 +107,8 @@ static int open_wlantest(void)
 	return s;
 }
 
-
-static int cmd_send_and_recv(int s, const u8 *cmd, size_t cmd_len,
-			     u8 *resp, size_t max_resp_len)
+static int cmd_send_and_recv(int s, const u8 *cmd, size_t cmd_len, u8 *resp,
+			     size_t max_resp_len)
 {
 	int res;
 	enum wlantest_ctrl_cmd cmd_resp;
@@ -133,7 +126,6 @@ static int cmd_send_and_recv(int s, const u8 *cmd, size_t cmd_len,
 	return -1;
 }
 
-
 static int cmd_simple(int s, enum wlantest_ctrl_cmd cmd)
 {
 	u8 buf[4];
@@ -143,7 +135,6 @@ static int cmd_simple(int s, enum wlantest_ctrl_cmd cmd)
 	return res < 0 ? -1 : 0;
 }
 
-
 static int run_wlantest_simple(struct sigma_dut *dut, struct sigma_conn *conn,
 			       enum wlantest_ctrl_cmd cmd)
 {
@@ -151,7 +142,8 @@ static int run_wlantest_simple(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
@@ -161,7 +153,6 @@ static int run_wlantest_simple(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return ret < 0 ? -2 : 1;
 }
-
 
 static enum sigma_cmd_result cmd_wlantest_version(struct sigma_dut *dut,
 						  struct sigma_conn *conn,
@@ -177,7 +168,8 @@ static enum sigma_cmd_result cmd_wlantest_version(struct sigma_dut *dut,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
@@ -188,8 +180,8 @@ static enum sigma_cmd_result cmd_wlantest_version(struct sigma_dut *dut,
 	if (rlen < 0)
 		return -2;
 
-	version = (char *) attr_get(resp + 4, rlen - 4, WLANTEST_ATTR_VERSION,
-				    &len);
+	version = (char *)attr_get(resp + 4, rlen - 4, WLANTEST_ATTR_VERSION,
+				   &len);
 	if (version == NULL)
 		return -2;
 
@@ -204,7 +196,6 @@ static enum sigma_cmd_result cmd_wlantest_version(struct sigma_dut *dut,
 	return 0;
 }
 
-
 enum sigma_cmd_result cmd_wlantest_set_channel(struct sigma_dut *dut,
 					       struct sigma_conn *conn,
 					       struct sigma_cmd *cmd)
@@ -213,7 +204,8 @@ enum sigma_cmd_result cmd_wlantest_set_channel(struct sigma_dut *dut,
 	const char *chan;
 
 	if (dut->sniffer_ifname == NULL) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Sniffer "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Sniffer "
 			  "interface not available");
 		return 0;
 	}
@@ -228,16 +220,16 @@ enum sigma_cmd_result cmd_wlantest_set_channel(struct sigma_dut *dut,
 		snprintf(buf, sizeof(buf), "ifconfig %s down",
 			 dut->sniffer_ifname);
 		if (system(buf) != 0) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Failed to run '%s'", buf);
+			sigma_dut_print(dut, DUT_MSG_INFO, "Failed to run '%s'",
+					buf);
 			return -2;
 		}
 
 		snprintf(buf, sizeof(buf), "iw dev %s set type monitor",
 			 dut->sniffer_ifname);
 		if (system(buf) != 0) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Failed to run '%s'", buf);
+			sigma_dut_print(dut, DUT_MSG_INFO, "Failed to run '%s'",
+					buf);
 			return -2;
 		}
 	}
@@ -260,14 +252,12 @@ enum sigma_cmd_result cmd_wlantest_set_channel(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static enum sigma_cmd_result cmd_wlantest_flush(struct sigma_dut *dut,
 						struct sigma_conn *conn,
 						struct sigma_cmd *cmd)
 {
 	return run_wlantest_simple(dut, conn, WLANTEST_CTRL_FLUSH);
 }
-
 
 enum sigma_cmd_result cmd_wlantest_send_frame(struct sigma_dut *dut,
 					      struct sigma_conn *conn,
@@ -281,16 +271,19 @@ enum sigma_cmd_result cmd_wlantest_send_frame(struct sigma_dut *dut,
 	const char *val;
 	int s;
 
-	/* wlantest_send_frame,PMFFrameType,disassoc,PMFProtected,Unprotected,sender,AP,bssid,00:11:22:33:44:55,stationID,00:66:77:88:99:aa */
+	/* wlantest_send_frame,PMFFrameType,disassoc,PMFProtected,Unprotected,sender,AP,bssid,00:11:22:33:44:55,stationID,00:66:77:88:99:aa
+   */
 
 	if (dut->mode == SIGMA_MODE_STATION) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Convert "
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Convert "
 				"wlantest_send_frame to sta_send_frame");
 		return cmd_sta_send_frame(dut, conn, cmd);
 	}
 
 	if (dut->mode == SIGMA_MODE_AP) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Convert "
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Convert "
 				"wlantest_send_frame to ap_send_frame");
 		return cmd_ap_send_frame(dut, conn, cmd);
 	}
@@ -318,7 +311,8 @@ enum sigma_cmd_result cmd_wlantest_send_frame(struct sigma_dut *dut,
 	else if (strcasecmp(val, "reassocreq") == 0)
 		frame = WLANTEST_FRAME_REASSOCREQ;
 	else {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Unsupported "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Unsupported "
 			  "PMFFrameType");
 		return 0;
 	}
@@ -336,7 +330,8 @@ enum sigma_cmd_result cmd_wlantest_send_frame(struct sigma_dut *dut,
 	else if (strcasecmp(val, "Unprotected") == 0)
 		prot = WLANTEST_INJECT_UNPROTECTED;
 	else {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Unsupported "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Unsupported "
 			  "PMFProtected");
 		return 0;
 	}
@@ -352,7 +347,8 @@ enum sigma_cmd_result cmd_wlantest_send_frame(struct sigma_dut *dut,
 		pos = attr_add_be32(pos, end, WLANTEST_ATTR_INJECT_SENDER_AP,
 				    0);
 	} else {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Unsupported "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Unsupported "
 			  "sender");
 		return 0;
 	}
@@ -380,7 +376,8 @@ enum sigma_cmd_result cmd_wlantest_send_frame(struct sigma_dut *dut,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
@@ -390,7 +387,6 @@ enum sigma_cmd_result cmd_wlantest_send_frame(struct sigma_dut *dut,
 		return -2;
 	return 1;
 }
-
 
 static enum sigma_cmd_result
 cmd_wlantest_add_passphrase(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -431,7 +427,8 @@ cmd_wlantest_add_passphrase(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
@@ -441,7 +438,6 @@ cmd_wlantest_add_passphrase(struct sigma_dut *dut, struct sigma_conn *conn,
 		return -2;
 	return 1;
 }
-
 
 static enum sigma_cmd_result
 cmd_wlantest_clear_sta_counters(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -486,7 +482,8 @@ cmd_wlantest_clear_sta_counters(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
@@ -496,7 +493,6 @@ cmd_wlantest_clear_sta_counters(struct sigma_dut *dut, struct sigma_conn *conn,
 		return -2;
 	return 1;
 }
-
 
 static enum sigma_cmd_result
 cmd_wlantest_clear_bss_counters(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -528,7 +524,8 @@ cmd_wlantest_clear_bss_counters(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
@@ -538,7 +535,6 @@ cmd_wlantest_clear_bss_counters(struct sigma_dut *dut, struct sigma_conn *conn,
 		return -2;
 	return 1;
 }
-
 
 static enum sigma_cmd_result
 cmd_wlantest_clear_tdls_counters(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -585,8 +581,7 @@ cmd_wlantest_clear_tdls_counters(struct sigma_dut *dut, struct sigma_conn *conn,
 	if (val == NULL)
 		return -1;
 	if (val) {
-		pos = attr_hdr_add(pos, end, WLANTEST_ATTR_STA2_ADDR,
-				   ETH_ALEN);
+		pos = attr_hdr_add(pos, end, WLANTEST_ATTR_STA2_ADDR, ETH_ALEN);
 		if (hwaddr_aton(val, pos) < 0) {
 			send_resp(dut, conn, SIGMA_INVALID,
 				  "errorCode,Invalid stationID2");
@@ -597,7 +592,8 @@ cmd_wlantest_clear_tdls_counters(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
@@ -607,7 +603,6 @@ cmd_wlantest_clear_tdls_counters(struct sigma_dut *dut, struct sigma_conn *conn,
 		return -2;
 	return 1;
 }
-
 
 struct sta_counters {
 	const char *name;
@@ -630,10 +625,8 @@ static const struct sta_counters sta_counters[] = {
 	{ "invalid_disassoc_rx", WLANTEST_STA_COUNTER_INVALID_DISASSOC_RX },
 	{ "valid_saqueryreq_tx", WLANTEST_STA_COUNTER_VALID_SAQUERYREQ_TX },
 	{ "valid_saqueryreq_rx", WLANTEST_STA_COUNTER_VALID_SAQUERYREQ_RX },
-	{ "invalid_saqueryreq_tx",
-	  WLANTEST_STA_COUNTER_INVALID_SAQUERYREQ_TX },
-	{ "invalid_saqueryreq_rx",
-	  WLANTEST_STA_COUNTER_INVALID_SAQUERYREQ_RX },
+	{ "invalid_saqueryreq_tx", WLANTEST_STA_COUNTER_INVALID_SAQUERYREQ_TX },
+	{ "invalid_saqueryreq_rx", WLANTEST_STA_COUNTER_INVALID_SAQUERYREQ_RX },
 	{ "valid_saqueryresp_tx", WLANTEST_STA_COUNTER_VALID_SAQUERYRESP_TX },
 	{ "valid_saqueryresp_rx", WLANTEST_STA_COUNTER_VALID_SAQUERYRESP_RX },
 	{ "invalid_saqueryresp_tx",
@@ -645,10 +638,8 @@ static const struct sta_counters sta_counters[] = {
 	{ "reassocresp_comeback", WLANTEST_STA_COUNTER_REASSOCRESP_COMEBACK },
 	{ "ping_ok_first_assoc", WLANTEST_STA_COUNTER_PING_OK_FIRST_ASSOC },
 	{ "valid_deauth_rx_ack", WLANTEST_STA_COUNTER_VALID_DEAUTH_RX_ACK },
-	{ "valid_disassoc_rx_ack",
-	  WLANTEST_STA_COUNTER_VALID_DISASSOC_RX_ACK },
-	{ "invalid_deauth_rx_ack",
-	  WLANTEST_STA_COUNTER_INVALID_DEAUTH_RX_ACK },
+	{ "valid_disassoc_rx_ack", WLANTEST_STA_COUNTER_VALID_DISASSOC_RX_ACK },
+	{ "invalid_deauth_rx_ack", WLANTEST_STA_COUNTER_INVALID_DEAUTH_RX_ACK },
 	{ "invalid_disassoc_rx_ack",
 	  WLANTEST_STA_COUNTER_INVALID_DISASSOC_RX_ACK },
 	{ "deauth_rx_asleep", WLANTEST_STA_COUNTER_DEAUTH_RX_ASLEEP },
@@ -722,13 +713,13 @@ cmd_wlantest_get_sta_counter(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
 	rlen = cmd_send_and_recv(s, buf, pos - buf, resp, sizeof(resp));
 	close(s);
-
 
 	pos = attr_get(resp + 4, rlen - 4, WLANTEST_ATTR_COUNTER, &len);
 	if (pos == NULL || len != 4)
@@ -737,7 +728,6 @@ cmd_wlantest_get_sta_counter(struct sigma_dut *dut, struct sigma_conn *conn,
 	send_resp(dut, conn, SIGMA_COMPLETE, ret);
 	return 0;
 }
-
 
 struct bss_counters {
 	const char *name;
@@ -799,7 +789,8 @@ cmd_wlantest_get_bss_counter(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
@@ -813,7 +804,6 @@ cmd_wlantest_get_bss_counter(struct sigma_dut *dut, struct sigma_conn *conn,
 	send_resp(dut, conn, SIGMA_COMPLETE, ret);
 	return 0;
 }
-
 
 struct tdls_counters {
 	const char *name;
@@ -881,8 +871,7 @@ cmd_wlantest_get_tdls_counter(struct sigma_dut *dut, struct sigma_conn *conn,
 	if (val == NULL)
 		return -1;
 	if (val) {
-		pos = attr_hdr_add(pos, end, WLANTEST_ATTR_STA2_ADDR,
-				   ETH_ALEN);
+		pos = attr_hdr_add(pos, end, WLANTEST_ATTR_STA2_ADDR, ETH_ALEN);
 		if (hwaddr_aton(val, pos) < 0) {
 			send_resp(dut, conn, SIGMA_INVALID,
 				  "errorCode,Invalid stationID");
@@ -907,13 +896,13 @@ cmd_wlantest_get_tdls_counter(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
 	rlen = cmd_send_and_recv(s, buf, pos - buf, resp, sizeof(resp));
 	close(s);
-
 
 	pos = attr_get(resp + 4, rlen - 4, WLANTEST_ATTR_COUNTER, &len);
 	if (pos == NULL || len != 4)
@@ -922,7 +911,6 @@ cmd_wlantest_get_tdls_counter(struct sigma_dut *dut, struct sigma_conn *conn,
 	send_resp(dut, conn, SIGMA_COMPLETE, ret);
 	return 0;
 }
-
 
 struct sta_infos {
 	const char *name;
@@ -993,18 +981,17 @@ static enum sigma_cmd_result cmd_wlantest_info_sta(struct sigma_dut *dut,
 		send_resp(dut, conn, SIGMA_INVALID, "errorCode,Invalid field");
 		return 0;
 	}
-	pos = attr_add_be32(pos, end, WLANTEST_ATTR_STA_INFO,
-			    sta_infos[i].num);
+	pos = attr_add_be32(pos, end, WLANTEST_ATTR_STA_INFO, sta_infos[i].num);
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
 	rlen = cmd_send_and_recv(s, buf, pos - buf, resp, sizeof(resp));
 	close(s);
-
 
 	pos = attr_get(resp + 4, rlen - 4, WLANTEST_ATTR_INFO, &len);
 	if (pos == NULL)
@@ -1017,7 +1004,6 @@ static enum sigma_cmd_result cmd_wlantest_info_sta(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, ret);
 	return 0;
 }
-
 
 struct bss_infos {
 	const char *name;
@@ -1076,18 +1062,17 @@ static enum sigma_cmd_result cmd_wlantest_info_bss(struct sigma_dut *dut,
 		send_resp(dut, conn, SIGMA_INVALID, "errorCode,Invalid field");
 		return 0;
 	}
-	pos = attr_add_be32(pos, end, WLANTEST_ATTR_BSS_INFO,
-			    bss_infos[i].num);
+	pos = attr_add_be32(pos, end, WLANTEST_ATTR_BSS_INFO, bss_infos[i].num);
 
 	s = open_wlantest();
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,wlantest not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,wlantest not "
 			  "available");
 		return 0;
 	}
 	rlen = cmd_send_and_recv(s, buf, pos - buf, resp, sizeof(resp));
 	close(s);
-
 
 	pos = attr_get(resp + 4, rlen - 4, WLANTEST_ATTR_INFO, &len);
 	if (pos == NULL)
@@ -1101,15 +1086,13 @@ static enum sigma_cmd_result cmd_wlantest_info_bss(struct sigma_dut *dut,
 	return 0;
 }
 
-
 void wlantest_register_cmds(void)
 {
 	sigma_dut_reg_cmd("wlantest_version", NULL, cmd_wlantest_version);
 	sigma_dut_reg_cmd("wlantest_set_channel", NULL,
 			  cmd_wlantest_set_channel);
 	sigma_dut_reg_cmd("wlantest_flush", NULL, cmd_wlantest_flush);
-	sigma_dut_reg_cmd("wlantest_send_frame", NULL,
-			  cmd_wlantest_send_frame);
+	sigma_dut_reg_cmd("wlantest_send_frame", NULL, cmd_wlantest_send_frame);
 	sigma_dut_reg_cmd("wlantest_add_passphrase", NULL,
 			  cmd_wlantest_add_passphrase);
 	sigma_dut_reg_cmd("wlantest_clear_sta_counters", NULL,

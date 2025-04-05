@@ -15,46 +15,75 @@ void select_interface(bool use_smcinvoke)
 {
 	if (use_smcinvoke) {
 		ta_interface.trusted_app_hdcp1_init = &hdcp1_init_smcinvoke;
-		ta_interface.trusted_app_hdcp1_feature_supported = &hdcp1_feature_supported_smcinvoke;
-		ta_interface.trusted_app_hdcp1_set_enc = &hdcp1_set_enc_smcinvoke;
-		ta_interface.trusted_app_hdcp1_ops_notify = &hdcp1_ops_notify_smcinvoke;
+		ta_interface.trusted_app_hdcp1_feature_supported =
+			&hdcp1_feature_supported_smcinvoke;
+		ta_interface.trusted_app_hdcp1_set_enc =
+			&hdcp1_set_enc_smcinvoke;
+		ta_interface.trusted_app_hdcp1_ops_notify =
+			&hdcp1_ops_notify_smcinvoke;
 		ta_interface.trusted_app_hdcp1_start = &hdcp1_start_smcinvoke;
 		ta_interface.trusted_app_hdcp1_stop = &hdcp1_stop_smcinvoke;
 		ta_interface.trusted_app_hdcp2_init = &hdcp2_init_smcinvoke;
 		ta_interface.trusted_app_hdcp2_deinit = &hdcp2_deinit_smcinvoke;
-		ta_interface.trusted_app_hdcp2_app_start = &hdcp2_app_start_smcinvoke;
-		ta_interface.trusted_app_hdcp2_app_start_auth = &hdcp2_app_start_auth_smcinvoke;
-		ta_interface.trusted_app_hdcp2_app_process_msg = &hdcp2_app_process_msg_smcinvoke;
-		ta_interface.trusted_app_hdcp2_app_enable_encryption = &hdcp2_app_enable_encryption_smcinvoke;
-		ta_interface.trusted_app_hdcp2_app_timeout = &hdcp2_app_timeout_smcinvoke;
-		ta_interface.trusted_app_hdcp2_app_query_stream = &hdcp2_app_query_stream_smcinvoke;
-		ta_interface.trusted_app_hdcp2_app_stop = &hdcp2_app_stop_smcinvoke;
-		ta_interface.trusted_app_hdcp2_feature_supported = &hdcp2_feature_supported_smcinvoke;
-		ta_interface.trusted_app_hdcp2_force_encryption = &hdcp2_force_encryption_smcinvoke;
-		ta_interface.trusted_app_hdcp2_open_stream = &hdcp2_open_stream_smcinvoke;
-		ta_interface.trusted_app_hdcp2_close_stream = &hdcp2_close_stream_smcinvoke;
-		ta_interface.trusted_app_hdcp2_update_app_data = &hdcp2_update_app_data_smcinvoke;
+		ta_interface.trusted_app_hdcp2_app_start =
+			&hdcp2_app_start_smcinvoke;
+		ta_interface.trusted_app_hdcp2_app_start_auth =
+			&hdcp2_app_start_auth_smcinvoke;
+		ta_interface.trusted_app_hdcp2_app_process_msg =
+			&hdcp2_app_process_msg_smcinvoke;
+		ta_interface.trusted_app_hdcp2_app_enable_encryption =
+			&hdcp2_app_enable_encryption_smcinvoke;
+		ta_interface.trusted_app_hdcp2_app_timeout =
+			&hdcp2_app_timeout_smcinvoke;
+		ta_interface.trusted_app_hdcp2_app_query_stream =
+			&hdcp2_app_query_stream_smcinvoke;
+		ta_interface.trusted_app_hdcp2_app_stop =
+			&hdcp2_app_stop_smcinvoke;
+		ta_interface.trusted_app_hdcp2_feature_supported =
+			&hdcp2_feature_supported_smcinvoke;
+		ta_interface.trusted_app_hdcp2_force_encryption =
+			&hdcp2_force_encryption_smcinvoke;
+		ta_interface.trusted_app_hdcp2_open_stream =
+			&hdcp2_open_stream_smcinvoke;
+		ta_interface.trusted_app_hdcp2_close_stream =
+			&hdcp2_close_stream_smcinvoke;
+		ta_interface.trusted_app_hdcp2_update_app_data =
+			&hdcp2_update_app_data_smcinvoke;
 	} else {
 		ta_interface.trusted_app_hdcp1_init = &hdcp1_init_qseecom;
-		ta_interface.trusted_app_hdcp1_feature_supported = &hdcp1_feature_supported_qseecom;
+		ta_interface.trusted_app_hdcp1_feature_supported =
+			&hdcp1_feature_supported_qseecom;
 		ta_interface.trusted_app_hdcp1_set_enc = &hdcp1_set_enc_qseecom;
-		ta_interface.trusted_app_hdcp1_ops_notify = &hdcp1_ops_notify_qseecom;
+		ta_interface.trusted_app_hdcp1_ops_notify =
+			&hdcp1_ops_notify_qseecom;
 		ta_interface.trusted_app_hdcp1_start = &hdcp1_start_qseecom;
 		ta_interface.trusted_app_hdcp1_stop = &hdcp1_stop_qseecom;
 		ta_interface.trusted_app_hdcp2_init = &hdcp2_init_qseecom;
 		ta_interface.trusted_app_hdcp2_deinit = &hdcp2_deinit_qseecom;
-		ta_interface.trusted_app_hdcp2_app_start = &hdcp2_app_start_qseecom;
-		ta_interface.trusted_app_hdcp2_app_start_auth = &hdcp2_app_start_auth_qseecom;
-		ta_interface.trusted_app_hdcp2_app_process_msg = &hdcp2_app_process_msg_qseecom;
-		ta_interface.trusted_app_hdcp2_app_timeout = &hdcp2_app_timeout_qseecom;
-		ta_interface.trusted_app_hdcp2_app_enable_encryption = &hdcp2_app_enable_encryption_qseecom;
-		ta_interface.trusted_app_hdcp2_app_query_stream = &hdcp2_app_query_stream_qseecom;
-		ta_interface.trusted_app_hdcp2_app_stop = &hdcp2_app_stop_qseecom;
-		ta_interface.trusted_app_hdcp2_feature_supported = &hdcp2_feature_supported_qseecom;
-		ta_interface.trusted_app_hdcp2_force_encryption = &hdcp2_force_encryption_qseecom;
-		ta_interface.trusted_app_hdcp2_open_stream = &hdcp2_open_stream_qseecom;
-		ta_interface.trusted_app_hdcp2_close_stream = &hdcp2_close_stream_qseecom;
-		ta_interface.trusted_app_hdcp2_update_app_data = &hdcp2_update_app_data_qseecom;
+		ta_interface.trusted_app_hdcp2_app_start =
+			&hdcp2_app_start_qseecom;
+		ta_interface.trusted_app_hdcp2_app_start_auth =
+			&hdcp2_app_start_auth_qseecom;
+		ta_interface.trusted_app_hdcp2_app_process_msg =
+			&hdcp2_app_process_msg_qseecom;
+		ta_interface.trusted_app_hdcp2_app_timeout =
+			&hdcp2_app_timeout_qseecom;
+		ta_interface.trusted_app_hdcp2_app_enable_encryption =
+			&hdcp2_app_enable_encryption_qseecom;
+		ta_interface.trusted_app_hdcp2_app_query_stream =
+			&hdcp2_app_query_stream_qseecom;
+		ta_interface.trusted_app_hdcp2_app_stop =
+			&hdcp2_app_stop_qseecom;
+		ta_interface.trusted_app_hdcp2_feature_supported =
+			&hdcp2_feature_supported_qseecom;
+		ta_interface.trusted_app_hdcp2_force_encryption =
+			&hdcp2_force_encryption_qseecom;
+		ta_interface.trusted_app_hdcp2_open_stream =
+			&hdcp2_open_stream_qseecom;
+		ta_interface.trusted_app_hdcp2_close_stream =
+			&hdcp2_close_stream_qseecom;
+		ta_interface.trusted_app_hdcp2_update_app_data =
+			&hdcp2_update_app_data_qseecom;
 	}
 }
 
@@ -69,12 +98,10 @@ int hdcp1_count_ones(u8 *array, u8 len)
 	return count;
 }
 
-
-
 int hdcp1_validate_aksv(u32 aksv_msb, u32 aksv_lsb)
 {
 	int const number_of_ones = 20;
-	u8 aksv[5] = {0};
+	u8 aksv[5] = { 0 };
 
 	pr_debug("AKSV=%02x%08x\n", aksv_msb, aksv_lsb);
 
@@ -92,8 +119,6 @@ int hdcp1_validate_aksv(u32 aksv_msb, u32 aksv_lsb)
 
 	return 0;
 }
-
-
 
 bool hdcp2_feature_supported(void *data)
 {
@@ -120,7 +145,7 @@ int hdcp2_force_encryption(void *ctx, uint32_t enable)
 EXPORT_SYMBOL(hdcp2_force_encryption);
 
 int hdcp2_app_comm(void *ctx, enum hdcp2_app_cmd cmd,
-				   struct hdcp2_app_data *app_data)
+		   struct hdcp2_app_data *app_data)
 {
 	int ret = 0;
 	uint32_t req_len = 0;
@@ -138,19 +163,23 @@ int hdcp2_app_comm(void *ctx, enum hdcp2_app_cmd cmd,
 		ret = ta_interface.trusted_app_hdcp2_app_start(ctx, req_len);
 		break;
 	case HDCP2_CMD_START_AUTH:
-		ret = ta_interface.trusted_app_hdcp2_app_start_auth(ctx, req_len);
+		ret = ta_interface.trusted_app_hdcp2_app_start_auth(ctx,
+								    req_len);
 		break;
 	case HDCP2_CMD_PROCESS_MSG:
-		ret = ta_interface.trusted_app_hdcp2_app_process_msg(ctx, req_len);
+		ret = ta_interface.trusted_app_hdcp2_app_process_msg(ctx,
+								     req_len);
 		break;
 	case HDCP2_CMD_TIMEOUT:
 		ret = ta_interface.trusted_app_hdcp2_app_timeout(ctx, req_len);
 		break;
 	case HDCP2_CMD_EN_ENCRYPTION:
-		ret = ta_interface.trusted_app_hdcp2_app_enable_encryption(ctx, req_len);
+		ret = ta_interface.trusted_app_hdcp2_app_enable_encryption(
+			ctx, req_len);
 		break;
 	case HDCP2_CMD_QUERY_STREAM:
-		ret = ta_interface.trusted_app_hdcp2_app_query_stream(ctx, req_len);
+		ret = ta_interface.trusted_app_hdcp2_app_query_stream(ctx,
+								      req_len);
 		break;
 	case HDCP2_CMD_STOP:
 		ret = ta_interface.trusted_app_hdcp2_app_stop(ctx);
@@ -171,13 +200,13 @@ error:
 EXPORT_SYMBOL(hdcp2_app_comm);
 
 int hdcp2_open_stream(void *ctx, uint8_t vc_payload_id, uint8_t stream_number,
-		  uint32_t *stream_id)
+		      uint32_t *stream_id)
 {
 	int ret = 0;
 
 	mutex_lock(&hdcp2_mutex_g);
-	ret = ta_interface.trusted_app_hdcp2_open_stream(ctx, vc_payload_id, stream_number,
-		   stream_id);
+	ret = ta_interface.trusted_app_hdcp2_open_stream(
+		ctx, vc_payload_id, stream_number, stream_id);
 	mutex_unlock(&hdcp2_mutex_g);
 
 	return ret;
@@ -260,7 +289,8 @@ int hdcp1_ops_notify(void *data, void *topo, bool is_authenticated)
 {
 	int ret = 0;
 
-	ret = ta_interface.trusted_app_hdcp1_ops_notify(data, topo, is_authenticated);
+	ret = ta_interface.trusted_app_hdcp1_ops_notify(data, topo,
+							is_authenticated);
 
 	return ret;
 }
@@ -294,11 +324,11 @@ static int __init hdcp_module_init(void)
 	np = of_find_compatible_node(NULL, NULL, "qcom,hdcp");
 	if (!np) {
 		/*select qseecom interface as default if hdcp node
-		*is not present in dtsi
-		 */
-		 select_interface(use_smcinvoke);
+     *is not present in dtsi
+     */
+		select_interface(use_smcinvoke);
 		return 0;
-		}
+	}
 
 	use_smcinvoke = of_property_read_bool(np, "qcom,use-smcinvoke");
 

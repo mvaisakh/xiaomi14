@@ -4,29 +4,30 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/slab.h>
-#include "cam_cpas_api.h"
 #include "cam_custom_sub_mod_soc.h"
+#include "cam_cpas_api.h"
 #include "cam_debug_util.h"
+#include <linux/slab.h>
 
 int cam_custom_hw_sub_mod_init_soc_resources(struct cam_hw_soc_info *soc_info,
-	irq_handler_t irq_handler, void *data)
+					     irq_handler_t irq_handler,
+					     void *data)
 {
-	int                               rc = 0, i;
+	int rc = 0, i;
 	struct cam_custom_hw_soc_private *soc_private = NULL;
-	struct cam_cpas_register_params   cpas_register_param;
-	void                             *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = {0};
+	struct cam_cpas_register_params cpas_register_param;
+	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = { 0 };
 
 	rc = cam_soc_util_get_dt_properties(soc_info);
 	if (rc < 0) {
-		CAM_ERR(CAM_CUSTOM,
-			"Error! Get DT properties failed rc=%d", rc);
+		CAM_ERR(CAM_CUSTOM, "Error! Get DT properties failed rc=%d",
+			rc);
 		/* For Test Purposes */
 		return 0;
 	}
 
-	soc_private = kzalloc(sizeof(struct cam_custom_hw_soc_private),
-		GFP_KERNEL);
+	soc_private =
+		kzalloc(sizeof(struct cam_custom_hw_soc_private), GFP_KERNEL);
 	if (!soc_private) {
 		CAM_DBG(CAM_CUSTOM, "Error! soc_private Alloc Failed");
 		return -ENOMEM;
@@ -36,7 +37,8 @@ int cam_custom_hw_sub_mod_init_soc_resources(struct cam_hw_soc_info *soc_info,
 	for (i = 0; i < soc_info->irq_count; i++)
 		irq_data[i] = data;
 
-	rc = cam_soc_util_request_platform_resource(soc_info, irq_handler, &(irq_data[0]));
+	rc = cam_soc_util_request_platform_resource(soc_info, irq_handler,
+						    &(irq_data[0]));
 	if (rc < 0) {
 		CAM_ERR(CAM_CUSTOM,
 			"Error! Request platform resources failed rc=%d", rc);
@@ -56,8 +58,7 @@ int cam_custom_hw_sub_mod_init_soc_resources(struct cam_hw_soc_info *soc_info,
 	if (rc < 0)
 		goto release_soc;
 
-	soc_private->cpas_handle =
-		cpas_register_param.client_handle;
+	soc_private->cpas_handle = cpas_register_param.client_handle;
 
 	rc = cam_cpas_select_qos_settings(CAM_CPAS_QOS_CUSTOM_SETTINGS_MASK);
 	if (rc) {
@@ -79,7 +80,7 @@ release_soc:
 
 int cam_custom_hw_sub_mod_deinit_soc_resources(struct cam_hw_soc_info *soc_info)
 {
-	int                               rc = 0;
+	int rc = 0;
 	struct cam_custom_hw_soc_private *soc_private = NULL;
 
 	if (!soc_info) {
@@ -108,10 +109,10 @@ int cam_custom_hw_sub_mod_deinit_soc_resources(struct cam_hw_soc_info *soc_info)
 
 int cam_custom_hw_sub_mod_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 {
-	int                               rc = 0;
+	int rc = 0;
 	struct cam_custom_hw_soc_private *soc_private = soc_info->soc_private;
-	struct cam_ahb_vote               ahb_vote;
-	struct cam_axi_vote axi_vote =    {0};
+	struct cam_ahb_vote ahb_vote;
+	struct cam_axi_vote axi_vote = { 0 };
 
 	ahb_vote.type = CAM_VOTE_ABSOLUTE;
 	ahb_vote.vote.level = CAM_LOWSVS_D1_VOTE;
@@ -134,8 +135,10 @@ int cam_custom_hw_sub_mod_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 		goto end;
 	}
 
-	rc = cam_soc_util_enable_platform_resource(soc_info, CAM_CLK_SW_CLIENT_IDX, true,
-		soc_info->lowest_clk_level, true);
+	rc = cam_soc_util_enable_platform_resource(soc_info,
+						   CAM_CLK_SW_CLIENT_IDX, true,
+						   soc_info->lowest_clk_level,
+						   true);
 	if (rc) {
 		CAM_ERR(CAM_CUSTOM, "Error! enable platform failed rc=%d", rc);
 		goto stop_cpas;
@@ -149,11 +152,10 @@ end:
 	return rc;
 }
 
-int cam_custom_hw_sub_mod_disable_soc_resources(
-	struct cam_hw_soc_info *soc_info)
+int cam_custom_hw_sub_mod_disable_soc_resources(struct cam_hw_soc_info *soc_info)
 {
 	int rc = 0;
-	struct cam_custom_hw_soc_private       *soc_private;
+	struct cam_custom_hw_soc_private *soc_private;
 
 	if (!soc_info) {
 		CAM_ERR(CAM_CUSTOM, "Error! Invalid params");
@@ -162,7 +164,8 @@ int cam_custom_hw_sub_mod_disable_soc_resources(
 	}
 	soc_private = soc_info->soc_private;
 
-	rc = cam_soc_util_disable_platform_resource(soc_info, CAM_CLK_SW_CLIENT_IDX, true, true);
+	rc = cam_soc_util_disable_platform_resource(
+		soc_info, CAM_CLK_SW_CLIENT_IDX, true, true);
 	if (rc) {
 		CAM_ERR(CAM_CUSTOM, "Disable platform failed rc=%d", rc);
 		return rc;

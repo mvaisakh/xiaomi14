@@ -21,12 +21,12 @@
  * API implementation
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_lmac_if_def.h>
-#include "wlan_p2p_public_struct.h"
+#include "wlan_p2p_mcc_quota_tgt_api.h"
 #include "../../core/src/wlan_p2p_main.h"
 #include "../../core/src/wlan_p2p_mcc_quota.h"
-#include "wlan_p2p_mcc_quota_tgt_api.h"
+#include "wlan_p2p_public_struct.h"
+#include <wlan_lmac_if_def.h>
+#include <wlan_objmgr_psoc_obj.h>
 
 QDF_STATUS tgt_p2p_mcc_quota_event_cb(struct wlan_objmgr_psoc *psoc,
 				      struct mcc_quota_info *event_info)
@@ -45,8 +45,7 @@ QDF_STATUS tgt_p2p_mcc_quota_event_cb(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-tgt_p2p_register_mcc_quota_ev_handler(struct wlan_objmgr_psoc *psoc,
-				      bool reg)
+tgt_p2p_register_mcc_quota_ev_handler(struct wlan_objmgr_psoc *psoc, bool reg)
 {
 	struct wlan_lmac_if_tx_ops *tx_ops;
 	struct wlan_lmac_if_p2p_tx_ops *p2p_tx_ops;
@@ -61,8 +60,7 @@ tgt_p2p_register_mcc_quota_ev_handler(struct wlan_objmgr_psoc *psoc,
 	if (p2p_tx_ops->reg_mcc_quota_ev_handler)
 		status = p2p_tx_ops->reg_mcc_quota_ev_handler(psoc, reg);
 
-	p2p_debug("register %d mcc quota event, status:%d",
-		  reg, status);
+	p2p_debug("register %d mcc quota event, status:%d", reg, status);
 
 	return status;
 }

@@ -20,8 +20,8 @@
  */
 
 #ifdef FEATURE_CM_UTF_ENABLE
-#include <wlan_cm_utf.h>
 #include <qdf_str.h>
+#include <wlan_cm_utf.h>
 
 struct wlan_cm_utf_raw_bcn {
 	uint32_t channel_number;
@@ -65,21 +65,18 @@ static void wlan_cm_utf_scan_db_update(struct wlan_objmgr_vdev *vdev,
 			mlme_err("Failed to allocate event memory");
 			return;
 		}
-		if (sscanf(token,
-			   "%2x:%2x:%2x:%2x:%2x:%2x ,%u ,%u ,%u ,%s",
+		if (sscanf(token, "%2x:%2x:%2x:%2x:%2x:%2x ,%u ,%u ,%u ,%s",
 			   (unsigned int *)&event->bssid[0],
 			   (unsigned int *)&event->bssid[1],
 			   (unsigned int *)&event->bssid[2],
 			   (unsigned int *)&event->bssid[3],
 			   (unsigned int *)&event->bssid[4],
 			   (unsigned int *)&event->bssid[5],
-			   &event->channel_number,
-			   (unsigned int *)&event->band,
-			   &event->rssi,
-			   event->ssid) != 10) {
+			   &event->channel_number, (unsigned int *)&event->band,
+			   &event->rssi, event->ssid) != 10) {
 			goto free_buf;
 		}
-		ssid.ssid_id = 0;	//Element id for ssid
+		ssid.ssid_id = 0; // Element id for ssid
 		ssid.ssid_len = strlen(event->ssid);
 		qdf_mem_copy(ssid.ssid, event->ssid, strlen(event->ssid));
 
@@ -93,9 +90,7 @@ static void wlan_cm_utf_scan_db_update(struct wlan_objmgr_vdev *vdev,
 		rx_param->snr = event->rssi;
 		rx_param->channel = event->channel_number;
 		rx_param->chan_freq = wlan_reg_chan_band_to_freq(
-						pdev,
-						event->channel_number,
-						BIT(event->band));
+			pdev, event->channel_number, BIT(event->band));
 
 		rx_param->pdev_id = 0;
 		frame_len = sizeof(struct wlan_frame_hdr) +
@@ -115,13 +110,13 @@ static void wlan_cm_utf_scan_db_update(struct wlan_objmgr_vdev *vdev,
 		hdr = (struct wlan_frame_hdr *)qdf_nbuf_data(buf);
 		qdf_mem_copy(hdr->i_addr3, event->bssid, QDF_MAC_ADDR_SIZE);
 		qdf_mem_copy(hdr->i_addr2, event->bssid, QDF_MAC_ADDR_SIZE);
-		ie = (struct ie_header *)(((uint8_t *)qdf_nbuf_data(buf))
-				+ sizeof(struct wlan_frame_hdr)
-				+ offsetof(struct wlan_bcn_frame, ie));
+		ie = (struct ie_header *)(((uint8_t *)qdf_nbuf_data(buf)) +
+					  sizeof(struct wlan_frame_hdr) +
+					  offsetof(struct wlan_bcn_frame, ie));
 
 		qdf_mem_copy(ie, &ssid, sizeof(struct ie_ssid));
-		tgt_scan_bcn_probe_rx_callback(psoc, NULL, buf,
-					       rx_param, MGMT_BEACON);
+		tgt_scan_bcn_probe_rx_callback(psoc, NULL, buf, rx_param,
+					       MGMT_BEACON);
 free_buf:
 		if (event) {
 			qdf_mem_free(event);
@@ -140,11 +135,11 @@ int wlan_cm_utf_scan_db_update_show(qdf_debugfs_file_t m, void *v)
 }
 
 ssize_t wlan_cm_utf_scan_db_update_write(struct file *file,
-					 const char __user *buf,
-					 size_t count, loff_t *ppos)
+					 const char __user *buf, size_t count,
+					 loff_t *ppos)
 {
 	struct wlan_cm_utf *cm_utf =
-			((struct seq_file *)file->private_data)->private;
+		((struct seq_file *)file->private_data)->private;
 	char *locbuf;
 
 	if ((!buf) || (count <= 0))

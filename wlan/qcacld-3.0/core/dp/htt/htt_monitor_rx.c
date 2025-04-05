@@ -17,22 +17,22 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <qdf_mem.h>         /* qdf_mem_malloc,free, etc. */
-#include <qdf_types.h>          /* qdf_print, bool */
-#include <qdf_nbuf.h>           /* qdf_nbuf_t, etc. */
-#include <qdf_timer.h>		/* qdf_timer_free */
+#include <qdf_mem.h> /* qdf_mem_malloc,free, etc. */
+#include <qdf_nbuf.h> /* qdf_nbuf_t, etc. */
+#include <qdf_timer.h> /* qdf_timer_free */
+#include <qdf_types.h> /* qdf_print, bool */
 
-#include <htt.h>                /* HTT_HL_RX_DESC_SIZE */
-#include <ol_cfg.h>
-#include <ol_rx.h>
-#include <ol_htt_rx_api.h>
-#include <htt_internal.h>       /* HTT_ASSERT, htt_pdev_t, HTT_RX_BUF_SIZE */
 #include "regtable.h"
+#include <htt.h> /* HTT_HL_RX_DESC_SIZE */
+#include <htt_internal.h> /* HTT_ASSERT, htt_pdev_t, HTT_RX_BUF_SIZE */
+#include <ol_cfg.h>
+#include <ol_htt_rx_api.h>
+#include <ol_rx.h>
 
-#include <cds_ieee80211_common.h>   /* ieee80211_frame, ieee80211_qoscntl */
+#include "ol_txrx_types.h"
+#include <cds_ieee80211_common.h> /* ieee80211_frame, ieee80211_qoscntl */
 #include <cds_utils.h>
 #include <wlan_policy_mgr_api.h>
-#include "ol_txrx_types.h"
 #ifdef DEBUG_DMA_DONE
 #include <asm/barrier.h>
 #include <wma_api.h>
@@ -82,10 +82,10 @@ void htt_rx_mon_note_capture_channel(htt_pdev_handle pdev, int mon_ch)
  *
  * Return: 1 on success and 0 on failure.
  */
-static
-int htt_mon_rx_handle_amsdu_packet(qdf_nbuf_t msdu, htt_pdev_handle pdev,
-				   uint32_t **msg_word, uint32_t amsdu_len,
-				   uint32_t *frag_cnt)
+static int htt_mon_rx_handle_amsdu_packet(qdf_nbuf_t msdu, htt_pdev_handle pdev,
+					  uint32_t **msg_word,
+					  uint32_t amsdu_len,
+					  uint32_t *frag_cnt)
 {
 	qdf_nbuf_t frag_nbuf;
 	qdf_nbuf_t prev_frag_nbuf;
@@ -101,8 +101,8 @@ int htt_mon_rx_handle_amsdu_packet(qdf_nbuf_t msdu, htt_pdev_handle pdev,
 		return 0;
 	}
 	*frag_cnt = *frag_cnt + 1;
-	last_frag = ((struct htt_rx_in_ord_paddr_ind_msdu_t *)*msg_word)->
-		msdu_info;
+	last_frag =
+		((struct htt_rx_in_ord_paddr_ind_msdu_t *)*msg_word)->msdu_info;
 	qdf_nbuf_append_ext_list(msdu, frag_nbuf, amsdu_len);
 	qdf_nbuf_set_pktlen(frag_nbuf, HTT_RX_BUF_SIZE);
 	qdf_nbuf_unmap(pdev->osdev, frag_nbuf, QDF_DMA_FROM_DEVICE);
@@ -111,17 +111,16 @@ int htt_mon_rx_handle_amsdu_packet(qdf_nbuf_t msdu, htt_pdev_handle pdev,
 	amsdu_len -= len;
 	qdf_nbuf_trim_tail(frag_nbuf, HTT_RX_BUF_SIZE - len);
 
-	HTT_PKT_DUMP(qdf_trace_hex_dump(QDF_MODULE_ID_TXRX,
-					QDF_TRACE_LEVEL_INFO_HIGH,
-					qdf_nbuf_data(frag_nbuf),
-					qdf_nbuf_len(frag_nbuf)));
+	HTT_PKT_DUMP(qdf_trace_hex_dump(
+		QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_INFO_HIGH,
+		qdf_nbuf_data(frag_nbuf), qdf_nbuf_len(frag_nbuf)));
 	prev_frag_nbuf = frag_nbuf;
 	while (!last_frag) {
 		*msg_word += HTT_RX_IN_ORD_PADDR_IND_MSDU_DWORDS;
 		paddr = htt_rx_in_ord_paddr_get(*msg_word);
 		frag_nbuf = htt_rx_in_order_netbuf_pop(pdev, paddr);
-		last_frag = ((struct htt_rx_in_ord_paddr_ind_msdu_t *)
-			     *msg_word)->msdu_info;
+		last_frag = ((struct htt_rx_in_ord_paddr_ind_msdu_t *)*msg_word)
+				    ->msdu_info;
 
 		if (qdf_unlikely(!frag_nbuf)) {
 			qdf_print("netbuf pop failed!");
@@ -135,10 +134,9 @@ int htt_mon_rx_handle_amsdu_packet(qdf_nbuf_t msdu, htt_pdev_handle pdev,
 		len = QDF_MIN(amsdu_len, HTT_RX_BUF_SIZE);
 		amsdu_len -= len;
 		qdf_nbuf_trim_tail(frag_nbuf, HTT_RX_BUF_SIZE - len);
-		HTT_PKT_DUMP(qdf_trace_hex_dump(QDF_MODULE_ID_TXRX,
-						QDF_TRACE_LEVEL_INFO_HIGH,
-						qdf_nbuf_data(frag_nbuf),
-						qdf_nbuf_len(frag_nbuf)));
+		HTT_PKT_DUMP(qdf_trace_hex_dump(
+			QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_INFO_HIGH,
+			qdf_nbuf_data(frag_nbuf), qdf_nbuf_len(frag_nbuf)));
 
 		qdf_nbuf_set_next(prev_frag_nbuf, frag_nbuf);
 		prev_frag_nbuf = frag_nbuf;
@@ -148,7 +146,7 @@ int htt_mon_rx_handle_amsdu_packet(qdf_nbuf_t msdu, htt_pdev_handle pdev,
 }
 
 #define SHORT_PREAMBLE 1
-#define LONG_PREAMBLE  0
+#define LONG_PREAMBLE 0
 #ifdef HELIUMPLUS
 /**
  * htt_rx_get_rate() - get rate info in terms of 500Kbps from htt_rx_desc
@@ -361,9 +359,9 @@ static void htt_mon_rx_get_phy_info(struct htt_host_rx_desc_base *rx_desc,
 
 	switch (preamble_type) {
 	case 4:
-	/* legacy */
+		/* legacy */
 		rx_status->rate = htt_rx_get_rate(l_sig_rate_select, l_sig_rate,
-						&preamble);
+						  &preamble);
 		break;
 	case 8:
 		is_stbc = ((VHT_SIG_A_2(rx_desc) >> 4) & 3);
@@ -374,15 +372,13 @@ static void htt_mon_rx_get_phy_info(struct htt_host_rx_desc_base *rx_desc,
 		bw = (VHT_SIG_A_1(rx_desc) >> 7) & 0x01;
 		mcs = (VHT_SIG_A_1(rx_desc) & 0x7f);
 		nss = mcs >> 3;
-		beamformed =
-			(VHT_SIG_A_2(rx_desc) >> 8) & 0x1;
+		beamformed = (VHT_SIG_A_2(rx_desc) >> 8) & 0x1;
 		break;
 	case 0x0c:
 		is_stbc = (VHT_SIG_A_2(rx_desc) >> 3) & 1;
 		ldpc = (VHT_SIG_A_2(rx_desc) >> 2) & 1;
 		fallthrough;
-	case 0x0d:
-	{
+	case 0x0d: {
 		uint8_t gid_in_sig = ((VHT_SIG_A_1(rx_desc) >> 4) & 0x3f);
 
 		vht_flags = 1;
@@ -390,15 +386,14 @@ static void htt_mon_rx_get_phy_info(struct htt_host_rx_desc_base *rx_desc,
 		bw = (VHT_SIG_A_1(rx_desc) & 0x03);
 		if (gid_in_sig == 0 || gid_in_sig == 63) {
 			/* SU case */
-			mcs = (VHT_SIG_A_2(rx_desc) >> 4) &
-				0xf;
-			nss = (VHT_SIG_A_1(rx_desc) >> 10) &
-				0x7;
+			mcs = (VHT_SIG_A_2(rx_desc) >> 4) & 0xf;
+			nss = (VHT_SIG_A_1(rx_desc) >> 10) & 0x7;
 		} else {
 			/* MU case */
 			uint8_t sta_user_pos =
-				(uint8_t)((rx_desc->ppdu_start.reserved_4a >> 8)
-					  & 0x3);
+				(uint8_t)((rx_desc->ppdu_start.reserved_4a >>
+					   8) &
+					  0x3);
 			mcs = (rx_desc->ppdu_start.vht_sig_b >> 16);
 			if (bw >= 2)
 				mcs >>= 3;
@@ -406,7 +401,8 @@ static void htt_mon_rx_get_phy_info(struct htt_host_rx_desc_base *rx_desc,
 				mcs >>= 1;
 			mcs &= 0xf;
 			nss = (((VHT_SIG_A_1(rx_desc) >> 10) +
-				sta_user_pos * 3) & 0x7);
+				sta_user_pos * 3) &
+			       0x7);
 		}
 		beamformed = (VHT_SIG_A_2(rx_desc) >> 8) & 0x1;
 	}
@@ -521,17 +517,16 @@ int htt_rx_mon_amsdu_rx_in_order_pop_ll(htt_pdev_handle pdev,
 	msg_word = (uint32_t *)rx_ind_data;
 
 	*replenish_cnt = 0;
-	HTT_PKT_DUMP(qdf_trace_hex_dump(QDF_MODULE_ID_TXRX,
-					QDF_TRACE_LEVEL_INFO_HIGH,
-					(void *)rx_ind_data,
-					(int)qdf_nbuf_len(rx_ind_msg)));
+	HTT_PKT_DUMP(qdf_trace_hex_dump(
+		QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_INFO_HIGH,
+		(void *)rx_ind_data, (int)qdf_nbuf_len(rx_ind_msg)));
 
 	/* Get the total number of MSDUs */
 	msdu_count = HTT_RX_IN_ORD_PADDR_IND_MSDU_CNT_GET(*(msg_word + 1));
 	HTT_RX_CHECK_MSDU_COUNT(msdu_count);
 
-	msg_word = (uint32_t *)(rx_ind_data +
-				 HTT_RX_IN_ORD_PADDR_IND_HDR_BYTES);
+	msg_word =
+		(uint32_t *)(rx_ind_data + HTT_RX_IN_ORD_PADDR_IND_HDR_BYTES);
 	paddr = htt_rx_in_ord_paddr_get(msg_word);
 	msdu = htt_rx_in_order_netbuf_pop(pdev, paddr);
 
@@ -545,29 +540,31 @@ int htt_rx_mon_amsdu_rx_in_order_pop_ll(htt_pdev_handle pdev,
 	while (msdu_count > 0) {
 		msdu_count--;
 		/*
-		 * Set the netbuf length to be the entire buffer length
-		 * initially, so the unmap will unmap the entire buffer.
-		 */
+     * Set the netbuf length to be the entire buffer length
+     * initially, so the unmap will unmap the entire buffer.
+     */
 		qdf_nbuf_set_pktlen(msdu, HTT_RX_BUF_SIZE);
 		qdf_nbuf_unmap(pdev->osdev, msdu, QDF_DMA_FROM_DEVICE);
 
 		/*
-		 * cache consistency has been taken care of by the
-		 * qdf_nbuf_unmap
-		 */
+     * cache consistency has been taken care of by the
+     * qdf_nbuf_unmap
+     */
 		rx_desc = htt_rx_desc(msdu);
 		if ((unsigned int)(*(uint32_t *)&rx_desc->attention) &
-				RX_DESC_ATTN_MPDU_LEN_ERR_BIT) {
+		    RX_DESC_ATTN_MPDU_LEN_ERR_BIT) {
 			qdf_nbuf_free(msdu);
 			last_frag = ((struct htt_rx_in_ord_paddr_ind_msdu_t *)
-			     msg_word)->msdu_info;
+					     msg_word)
+					    ->msdu_info;
 			while (!last_frag) {
 				msg_word += HTT_RX_IN_ORD_PADDR_IND_MSDU_DWORDS;
 				paddr = htt_rx_in_ord_paddr_get(msg_word);
 				msdu = htt_rx_in_order_netbuf_pop(pdev, paddr);
-				last_frag = ((struct
-					htt_rx_in_ord_paddr_ind_msdu_t *)
-					msg_word)->msdu_info;
+				last_frag =
+					((struct htt_rx_in_ord_paddr_ind_msdu_t
+						  *)msg_word)
+						->msdu_info;
 				if (qdf_unlikely(!msdu)) {
 					qdf_print("netbuf pop failed!");
 					return 0;
@@ -588,9 +585,9 @@ int htt_rx_mon_amsdu_rx_in_order_pop_ll(htt_pdev_handle pdev,
 		HTT_PKT_DUMP(htt_print_rx_desc(rx_desc));
 
 		/*
-		 * Only the first mpdu has valid preamble type, so use it
-		 * till the last mpdu is reached
-		 */
+     * Only the first mpdu has valid preamble type, so use it
+     * till the last mpdu is reached
+     */
 		if (rx_desc->attention.first_mpdu) {
 			preamble_type = rx_desc->ppdu_start.preamble_type;
 			if (preamble_type == 8 || preamble_type == 9 ||
@@ -614,9 +611,9 @@ int htt_rx_mon_amsdu_rx_in_order_pop_ll(htt_pdev_handle pdev,
 		}
 
 		/*
-		 * Make the netbuf's data pointer point to the payload rather
-		 * than the descriptor.
-		 */
+     * Make the netbuf's data pointer point to the payload rather
+     * than the descriptor.
+     */
 		if (rx_desc->attention.first_mpdu) {
 			memset(&g_ppdu_rx_status, 0,
 			       sizeof(struct mon_rx_status));
@@ -624,72 +621,70 @@ int htt_rx_mon_amsdu_rx_in_order_pop_ll(htt_pdev_handle pdev,
 						 &g_ppdu_rx_status);
 		}
 		/*
-		 * For certain platform, 350 bytes of headroom is already
-		 * appended to accommodate radiotap header but
-		 * qdf_nbuf_update_radiotap() API again will try to create
-		 * a room for radiotap header. To make our design simple
-		 * let qdf_nbuf_update_radiotap() API create a room for radiotap
-		 * header and update it, do qdf_nbuf_pull_head() operation and
-		 * pull 350 bytes of headroom.
-		 *
-		 *
-		 *
-		 *               (SKB buffer)
-		 * skb->head --> +-----------+ <-- skb->data
-		 *               |           |     (Before pulling headroom)
-		 *               |           |
-		 *               |   HEAD    |  350 bytes of headroom
-		 *               |           |
-		 *               |           |
-		 *               +-----------+ <-- skb->data
-		 *               |           |     (After pulling headroom)
-		 *               |           |
-		 *               |   DATA    |
-		 *               |           |
-		 *               |           |
-		 *               +-----------+
-		 *               |           |
-		 *               |           |
-		 *               |   TAIL    |
-		 *               |           |
-		 *               |           |
-		 *               +-----------+
-		 *
-		 */
+     * For certain platform, 350 bytes of headroom is already
+     * appended to accommodate radiotap header but
+     * qdf_nbuf_update_radiotap() API again will try to create
+     * a room for radiotap header. To make our design simple
+     * let qdf_nbuf_update_radiotap() API create a room for radiotap
+     * header and update it, do qdf_nbuf_pull_head() operation and
+     * pull 350 bytes of headroom.
+     *
+     *
+     *
+     *               (SKB buffer)
+     * skb->head --> +-----------+ <-- skb->data
+     *               |           |     (Before pulling headroom)
+     *               |           |
+     *               |   HEAD    |  350 bytes of headroom
+     *               |           |
+     *               |           |
+     *               +-----------+ <-- skb->data
+     *               |           |     (After pulling headroom)
+     *               |           |
+     *               |   DATA    |
+     *               |           |
+     *               |           |
+     *               +-----------+
+     *               |           |
+     *               |           |
+     *               |   TAIL    |
+     *               |           |
+     *               |           |
+     *               +-----------+
+     *
+     */
 		if (qdf_nbuf_head(msdu) == qdf_nbuf_data(msdu))
 			qdf_nbuf_pull_head(msdu, HTT_RX_STD_DESC_RESERVATION);
 		qdf_nbuf_update_radiotap(&g_ppdu_rx_status, msdu,
 					 HTT_RX_STD_DESC_RESERVATION);
-		amsdu_len = HTT_RX_IN_ORD_PADDR_IND_MSDU_LEN_GET(*(msg_word +
-						NEXT_FIELD_OFFSET_IN32));
+		amsdu_len = HTT_RX_IN_ORD_PADDR_IND_MSDU_LEN_GET(
+			*(msg_word + NEXT_FIELD_OFFSET_IN32));
 
 		/*
-		 * MAX_RX_PAYLOAD_SZ when we have AMSDU packet. amsdu_len in
-		 * which case is the total length of sum of all AMSDU's
-		 */
+     * MAX_RX_PAYLOAD_SZ when we have AMSDU packet. amsdu_len in
+     * which case is the total length of sum of all AMSDU's
+     */
 		len = QDF_MIN(amsdu_len, MAX_RX_PAYLOAD_SZ);
 		amsdu_len -= len;
-		qdf_nbuf_trim_tail(msdu, HTT_RX_BUF_SIZE -
-				   (RX_STD_DESC_SIZE + len));
+		qdf_nbuf_trim_tail(msdu,
+				   HTT_RX_BUF_SIZE - (RX_STD_DESC_SIZE + len));
 
-		HTT_PKT_DUMP(qdf_trace_hex_dump(QDF_MODULE_ID_TXRX,
-						QDF_TRACE_LEVEL_INFO_HIGH,
-						qdf_nbuf_data(msdu),
-						qdf_nbuf_len(msdu)));
-		last_frag = ((struct htt_rx_in_ord_paddr_ind_msdu_t *)
-			     msg_word)->msdu_info;
+		HTT_PKT_DUMP(qdf_trace_hex_dump(
+			QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_INFO_HIGH,
+			qdf_nbuf_data(msdu), qdf_nbuf_len(msdu)));
+		last_frag = ((struct htt_rx_in_ord_paddr_ind_msdu_t *)msg_word)
+				    ->msdu_info;
 
 		/* Handle amsdu packet */
 		if (!last_frag) {
 			/*
-			 * For AMSDU packet msdu->len is sum of all the msdu's
-			 * length, msdu->data_len is sum of length's of
-			 * remaining msdu's other than parent.
-			 */
-			if (!htt_mon_rx_handle_amsdu_packet(msdu, pdev,
-							    &msg_word,
-							    amsdu_len,
-							    replenish_cnt)) {
+       * For AMSDU packet msdu->len is sum of all the msdu's
+       * length, msdu->data_len is sum of length's of
+       * remaining msdu's other than parent.
+       */
+			if (!htt_mon_rx_handle_amsdu_packet(
+				    msdu, pdev, &msg_word, amsdu_len,
+				    replenish_cnt)) {
 				qdf_print("failed to handle amsdu packet");
 				return 0;
 			}
@@ -722,9 +717,9 @@ next_pop:
 #endif /* CONFIG_HL_SUPPORT */
 
 #if defined(FEATURE_MONITOR_MODE_SUPPORT)
-#if !defined(QCA6290_HEADERS_DEF) && !defined(QCA6390_HEADERS_DEF) && \
-    !defined(QCA6490_HEADERS_DEF) && !defined(QCA6750_HEADERS_DEF) && \
-    !defined(KIWI_HEADERS_DEF)
+#if !defined(QCA6290_HEADERS_DEF) && !defined(QCA6390_HEADERS_DEF) &&     \
+	!defined(QCA6490_HEADERS_DEF) && !defined(QCA6750_HEADERS_DEF) && \
+	!defined(KIWI_HEADERS_DEF)
 static void
 htt_rx_parse_ppdu_start_status(struct htt_host_rx_desc_base *rx_desc,
 			       struct ieee80211_rx_status *rs)
@@ -736,22 +731,22 @@ htt_rx_parse_ppdu_start_status(struct htt_host_rx_desc_base *rx_desc,
 
 	/* PHY rate */
 	/*
-	 * rs_ratephy coding
-	 * [b3 - b0]
-	 * 0 -> OFDM
-	 * 1 -> CCK
-	 * 2 -> HT
-	 * 3 -> VHT
-	 * OFDM / CCK
-	 * [b7  - b4 ] => LSIG rate
-	 * [b23 - b8 ] => service field
-	 * (b'12 static/dynamic,
-	 * b'14..b'13 BW for VHT)
-	 * [b31 - b24 ] => Reserved
-	 * HT / VHT
-	 * [b15 - b4 ] => SIG A_2 12 LSBs
-	 * [b31 - b16] => SIG A_1 16 LSBs
-	 */
+   * rs_ratephy coding
+   * [b3 - b0]
+   * 0 -> OFDM
+   * 1 -> CCK
+   * 2 -> HT
+   * 3 -> VHT
+   * OFDM / CCK
+   * [b7  - b4 ] => LSIG rate
+   * [b23 - b8 ] => service field
+   * (b'12 static/dynamic,
+   * b'14..b'13 BW for VHT)
+   * [b31 - b24 ] => Reserved
+   * HT / VHT
+   * [b15 - b4 ] => SIG A_2 12 LSBs
+   * [b31 - b16] => SIG A_1 16 LSBs
+   */
 	if (ppdu_start->preamble_type == 0x4) {
 		rs->rs_ratephy = ppdu_start->l_sig_rate_select;
 		rs->rs_ratephy |= ppdu_start->l_sig_rate << 4;
@@ -765,8 +760,8 @@ htt_rx_parse_ppdu_start_status(struct htt_host_rx_desc_base *rx_desc,
 			(ppdu_start->ht_sig_vht_sig_ah_sig_a_1 & 0xFFFF) << 16;
 #else
 		rs->rs_ratephy |= (ppdu_start->ht_sig_vht_sig_a_2 & 0xFFF) << 4;
-		rs->rs_ratephy |=
-			(ppdu_start->ht_sig_vht_sig_a_1 & 0xFFFF) << 16;
+		rs->rs_ratephy |= (ppdu_start->ht_sig_vht_sig_a_1 & 0xFFFF)
+				  << 16;
 #endif
 	}
 }
@@ -783,15 +778,14 @@ static qdf_nbuf_t htt_rx_qdf_noclone_buf(qdf_nbuf_t buf)
  * corresponding to an MPDU back into an MPDU by linking up the skbs.
  */
 qdf_nbuf_t
-htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
-				qdf_nbuf_t head_msdu,
+htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev, qdf_nbuf_t head_msdu,
 				struct ieee80211_rx_status *rx_status,
 				unsigned int clone_not_reqd)
 {
 	qdf_nbuf_t msdu, mpdu_buf, prev_buf, msdu_orig, head_frag_list_cloned;
 	unsigned int decap_format, wifi_hdr_len, sec_hdr_len, msdu_llc_len,
-		 mpdu_buf_len, decap_hdr_pull_bytes, frag_list_sum_len, dir,
-		 is_amsdu, is_first_frag, amsdu_pad, msdu_len;
+		mpdu_buf_len, decap_hdr_pull_bytes, frag_list_sum_len, dir,
+		is_amsdu, is_first_frag, amsdu_pad, msdu_len;
 	struct htt_host_rx_desc_base *rx_desc;
 	char *hdr_desc;
 	unsigned char *dest;
@@ -799,8 +793,8 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 	struct ieee80211_qoscntl *qos;
 
 	/* The nbuf has been pulled just beyond the status and points to the
-	 * payload
-	 */
+   * payload
+   */
 	msdu_orig = head_msdu;
 	rx_desc = htt_rx_desc(msdu_orig);
 
@@ -809,8 +803,8 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 		htt_rx_parse_ppdu_start_status(rx_desc, rx_status);
 
 		/* The timestamp is no longer valid - It will be valid only for
-		 * the last MPDU
-		 */
+     * the last MPDU
+     */
 		rx_status->rs_tstamp.tsf = ~0;
 	}
 
@@ -820,13 +814,13 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 	head_frag_list_cloned = NULL;
 
 	/* Easy case - The MSDU status indicates that this is a non-decapped
-	 * packet in RAW mode.
-	 * return
-	 */
+   * packet in RAW mode.
+   * return
+   */
 	if (decap_format == HW_RX_DECAP_FORMAT_RAW) {
 		/* Note that this path might suffer from headroom unavailabilty,
-		 * but the RX status is usually enough
-		 */
+     * but the RX status is usually enough
+     */
 		if (clone_not_reqd)
 			mpdu_buf = htt_rx_qdf_noclone_buf(head_msdu);
 		else
@@ -894,10 +888,10 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 	}
 
 	/* Decap mode:
-	 * Calculate the amount of header in decapped packet to knock off based
-	 * on the decap type and the corresponding number of raw bytes to copy
-	 * status header
-	 */
+   * Calculate the amount of header in decapped packet to knock off based
+   * on the decap type and the corresponding number of raw bytes to copy
+   * status header
+   */
 
 	hdr_desc = &rx_desc->rx_hdr_status[0];
 
@@ -911,8 +905,7 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 
 	is_amsdu = 0;
 	if (wh->i_fc[0] & QDF_IEEE80211_FC0_SUBTYPE_QOS) {
-		qos = (struct ieee80211_qoscntl *)
-		      (hdr_desc + wifi_hdr_len);
+		qos = (struct ieee80211_qoscntl *)(hdr_desc + wifi_hdr_len);
 		wifi_hdr_len += 2;
 
 		is_amsdu = (qos->i_qos[0] & IEEE80211_QOS_AMSDU);
@@ -930,9 +923,9 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 	decap_hdr_pull_bytes = 14;
 
 	/* Allocate a new nbuf for holding the 802.11 header retrieved from the
-	 * status of the now decapped first msdu. Leave enough headroom for
-	 * accommodating any radio-tap /prism like PHY header
-	 */
+   * status of the now decapped first msdu. Leave enough headroom for
+   * accommodating any radio-tap /prism like PHY header
+   */
 #define HTT_MAX_MONITOR_HEADER (512)
 	mpdu_buf = qdf_nbuf_alloc(pdev->osdev,
 				  HTT_MAX_MONITOR_HEADER + mpdu_buf_len,
@@ -942,8 +935,8 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 		goto mpdu_stitch_fail;
 
 	/* Copy the MPDU related header and enc headers into the first buffer
-	 * - Note that there can be a 2 byte pad between heaader and enc header
-	 */
+   * - Note that there can be a 2 byte pad between heaader and enc header
+   */
 
 	prev_buf = mpdu_buf;
 	dest = qdf_nbuf_put_tail(prev_buf, wifi_hdr_len);
@@ -953,8 +946,8 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 	hdr_desc += wifi_hdr_len;
 
 	/* NOTE - This padding is present only in the RAW header status - not
-	 * when the MSDU data payload is in RAW format.
-	 */
+   * when the MSDU data payload is in RAW format.
+   */
 	/* Skip the "IV pad" */
 	if (wifi_hdr_len & 0x3)
 		hdr_desc += 2;
@@ -1000,17 +993,17 @@ htt_rx_restitch_mpdu_from_msdus(htt_pdev_handle pdev,
 			msdu_llc_len + qdf_nbuf_len(msdu) + amsdu_pad;
 
 		/*
-		 * Set up intra-AMSDU pad to be added to start of next buffer -
-		 * AMSDU pad is 4 byte pad on AMSDU subframe
-		 */
+     * Set up intra-AMSDU pad to be added to start of next buffer -
+     * AMSDU pad is 4 byte pad on AMSDU subframe
+     */
 		amsdu_pad = (msdu_llc_len + qdf_nbuf_len(msdu)) & 0x3;
 		amsdu_pad = amsdu_pad ? (4 - amsdu_pad) : 0;
 
 		/*
-		 * TODO FIXME How do we handle MSDUs that have fraglist - Should
-		 * probably iterate all the frags cloning them along the way and
-		 * and also updating the prev_buf pointer
-		 */
+     * TODO FIXME How do we handle MSDUs that have fraglist - Should
+     * probably iterate all the frags cloning them along the way and
+     * and also updating the prev_buf pointer
+     */
 
 		/* Move to the next */
 		prev_buf = msdu;
@@ -1031,8 +1024,8 @@ mpdu_stitch_done:
 		rx_status->rs_tstamp.tsf = rx_desc->ppdu_end.tsf_timestamp;
 #endif
 	/* All the nbufs have been linked into the ext list
-	 * and then unlink the nbuf list
-	 */
+   * and then unlink the nbuf list
+   */
 	if (clone_not_reqd) {
 		msdu = head_msdu;
 		while (msdu) {

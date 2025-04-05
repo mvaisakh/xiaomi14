@@ -3,66 +3,66 @@
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
+#include "ipa.h"
+#include "ipa_common_i.h"
+#include "ipa_i.h"
+#include "ipa_odu_bridge.h"
+#include "ipa_pm.h"
+#include <linux/cdev.h>
 #include <linux/debugfs.h>
 #include <linux/export.h>
 #include <linux/fs.h>
 #include <linux/if_ether.h>
 #include <linux/ioctl.h>
+#include <linux/ipv6.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/msm_ipa.h>
 #include <linux/mutex.h>
 #include <linux/skbuff.h>
 #include <linux/types.h>
-#include <linux/ipv6.h>
 #include <net/addrconf.h>
-#include "ipa.h"
-#include <linux/cdev.h>
-#include "ipa_odu_bridge.h"
-#include "ipa_common_i.h"
-#include "ipa_pm.h"
-#include "ipa_i.h"
 
 #define IPA_GSB_DRV_NAME "ipa_gsb"
 
 #define MAX_SUPPORTED_IFACE 5
 
-#define IPA_GSB_DBG(fmt, args...) \
-	do { \
-		pr_debug(IPA_GSB_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_GSB_DBG(fmt, args...)                                            \
+	do {                                                                 \
+		pr_debug(IPA_GSB_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                       \
+				IPA_GSB_DRV_NAME " %s:%d " fmt, ##args);     \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                   \
+				IPA_GSB_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-#define IPA_GSB_DBG_LOW(fmt, args...) \
-	do { \
-		pr_debug(IPA_GSB_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_GSB_DBG_LOW(fmt, args...)                                        \
+	do {                                                                 \
+		pr_debug(IPA_GSB_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                   \
+				IPA_GSB_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-#define IPA_GSB_ERR(fmt, args...) \
-	do { \
-		pr_err(IPA_GSB_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_GSB_ERR(fmt, args...)                                          \
+	do {                                                               \
+		pr_err(IPA_GSB_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+		       ##args);                                            \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                     \
+				IPA_GSB_DRV_NAME " %s:%d " fmt, ##args);   \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                 \
+				IPA_GSB_DRV_NAME " %s:%d " fmt, ##args);   \
 	} while (0)
 
-#define IPA_GSB_ERR_RL(fmt, args...) \
-	do { \
-		pr_err_ratelimited_ipa(IPA_GSB_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPA_GSB_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_GSB_ERR_RL(fmt, args...)                                     \
+	do {                                                             \
+		pr_err_ratelimited_ipa(IPA_GSB_DRV_NAME " %s:%d " fmt,   \
+				       __func__, __LINE__, ##args);      \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                   \
+				IPA_GSB_DRV_NAME " %s:%d " fmt, ##args); \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),               \
+				IPA_GSB_DRV_NAME " %s:%d " fmt, ##args); \
 	} while (0)
 
 #define IPA_GSB_MAX_MSG_LEN 512
@@ -78,13 +78,12 @@ static char dbg_buff[IPA_GSB_MAX_MSG_LEN];
 #define IPA_GSB_AGGR_BYTE_LIMIT 14
 #define IPA_GSB_AGGR_TIME_LIMIT 1000 /* 1000 us */
 
-
 /**
  * struct stats - driver statistics,
  * @num_ul_packets: number of uplink packets
  * @num_dl_packets: number of downlink packets
  * @num_insufficient_headroom_packets: number of
-	packets with insufficient headroom
+        packets with insufficient headroom
  */
 struct stats {
 	u64 num_ul_packets;
@@ -172,10 +171,8 @@ struct ipa_gsb_context {
 static struct ipa_gsb_context *ipa_gsb_ctx;
 
 #ifdef CONFIG_DEBUG_FS
-static ssize_t ipa_gsb_debugfs_stats(struct file *file,
-				  char __user *ubuf,
-				  size_t count,
-				  loff_t *ppos)
+static ssize_t ipa_gsb_debugfs_stats(struct file *file, char __user *ubuf,
+				     size_t count, loff_t *ppos)
 {
 	int i, nbytes = 0;
 	struct ipa_gsb_iface_info *iface = NULL;
@@ -186,22 +183,21 @@ static ssize_t ipa_gsb_debugfs_stats(struct file *file,
 		if (iface != NULL) {
 			iface_stats = iface->iface_stats;
 			nbytes += scnprintf(&dbg_buff[nbytes],
-				IPA_GSB_MAX_MSG_LEN - nbytes,
-				"netdev: %s\n",
-				iface->netdev_name);
+					    IPA_GSB_MAX_MSG_LEN - nbytes,
+					    "netdev: %s\n", iface->netdev_name);
 
 			nbytes += scnprintf(&dbg_buff[nbytes],
-				IPA_GSB_MAX_MSG_LEN - nbytes,
-				"UL packets: %lld\n",
-				iface_stats.num_ul_packets);
+					    IPA_GSB_MAX_MSG_LEN - nbytes,
+					    "UL packets: %lld\n",
+					    iface_stats.num_ul_packets);
 
 			nbytes += scnprintf(&dbg_buff[nbytes],
-				IPA_GSB_MAX_MSG_LEN - nbytes,
-				"DL packets: %lld\n",
-				iface_stats.num_dl_packets);
+					    IPA_GSB_MAX_MSG_LEN - nbytes,
+					    "DL packets: %lld\n",
+					    iface_stats.num_dl_packets);
 
-			nbytes += scnprintf(&dbg_buff[nbytes],
-				IPA_GSB_MAX_MSG_LEN - nbytes,
+			nbytes += scnprintf(
+				&dbg_buff[nbytes], IPA_GSB_MAX_MSG_LEN - nbytes,
 				"packets with insufficient headroom: %lld\n",
 				iface_stats.num_insufficient_headroom_packets);
 		}
@@ -223,9 +219,8 @@ static void ipa_gsb_debugfs_init(void)
 		return;
 	}
 
-	dfile_stats =
-		debugfs_create_file("stats", read_only_mode, dent,
-					NULL, &ipa_gsb_stats_ops);
+	dfile_stats = debugfs_create_file("stats", read_only_mode, dent, NULL,
+					  &ipa_gsb_stats_ops);
 	if (!dfile_stats || IS_ERR(dfile_stats)) {
 		IPA_GSB_ERR("fail to create file stats\n");
 		goto fail;
@@ -260,8 +255,7 @@ static int ipa_gsb_driver_init(struct odu_bridge_params *params)
 		return -EFAULT;
 	}
 
-	ipa_gsb_ctx = kzalloc(sizeof(*ipa_gsb_ctx),
-		GFP_KERNEL);
+	ipa_gsb_ctx = kzalloc(sizeof(*ipa_gsb_ctx), GFP_KERNEL);
 
 	if (!ipa_gsb_ctx)
 		return -ENOMEM;
@@ -287,47 +281,48 @@ static int ipa_gsb_commit_partial_hdr(struct ipa_gsb_iface_info *iface_info)
 	}
 
 	hdr = kzalloc(sizeof(struct ipa_ioc_add_hdr) +
-		2 * sizeof(struct ipa_hdr_add), GFP_KERNEL);
+			      2 * sizeof(struct ipa_hdr_add),
+		      GFP_KERNEL);
 	if (!hdr)
 		return -ENOMEM;
 
 	hdr->commit = 0;
 	hdr->num_hdrs = 2;
 
-	snprintf(hdr->hdr[0].name, sizeof(hdr->hdr[0].name),
-			 "%s_ipv4", iface_info->netdev_name);
-	snprintf(hdr->hdr[1].name, sizeof(hdr->hdr[1].name),
-			 "%s_ipv6", iface_info->netdev_name);
+	snprintf(hdr->hdr[0].name, sizeof(hdr->hdr[0].name), "%s_ipv4",
+		 iface_info->netdev_name);
+	snprintf(hdr->hdr[1].name, sizeof(hdr->hdr[1].name), "%s_ipv6",
+		 iface_info->netdev_name);
 	/*
-	 * partial header:
-	 * [hdl][QMAP ID][pkt size][Dummy Header][ETH header]
-	 */
+   * partial header:
+   * [hdl][QMAP ID][pkt size][Dummy Header][ETH header]
+   */
 	for (i = IPA_IP_v4; i < IPA_IP_MAX; i++) {
 		/*
-		 * Optimization: add dummy header to reserve space
-		 * for rndis header, so we can do the skb_clone
-		 * instead of deep copy.
-		 */
+     * Optimization: add dummy header to reserve space
+     * for rndis header, so we can do the skb_clone
+     * instead of deep copy.
+     */
 		hdr->hdr[i].hdr_len = ETH_HLEN +
-			sizeof(struct ipa_gsb_mux_hdr) +
-			IPA_GSB_SKB_DUMMY_HEADER;
+				      sizeof(struct ipa_gsb_mux_hdr) +
+				      IPA_GSB_SKB_DUMMY_HEADER;
 		hdr->hdr[i].type = IPA_HDR_L2_ETHERNET_II;
 		hdr->hdr[i].is_partial = 1;
 		hdr->hdr[i].is_eth2_ofst_valid = 1;
 		hdr->hdr[i].eth2_ofst = sizeof(struct ipa_gsb_mux_hdr) +
-			IPA_GSB_SKB_DUMMY_HEADER;
+					IPA_GSB_SKB_DUMMY_HEADER;
 		/* populate iface handle */
 		hdr->hdr[i].hdr[0] = iface_info->iface_hdl;
 		/* populate src ETH address */
 		memcpy(&hdr->hdr[i].hdr[10 + IPA_GSB_SKB_DUMMY_HEADER],
-			iface_info->device_ethaddr, 6);
+		       iface_info->device_ethaddr, 6);
 		/* populate Ethertype */
 		if (i == IPA_IP_v4)
 			*(u16 *)(hdr->hdr[i].hdr + 16 +
-				IPA_GSB_SKB_DUMMY_HEADER) = htons(ETH_P_IP);
+				 IPA_GSB_SKB_DUMMY_HEADER) = htons(ETH_P_IP);
 		else
 			*(u16 *)(hdr->hdr[i].hdr + 16 +
-				IPA_GSB_SKB_DUMMY_HEADER) = htons(ETH_P_IPV6);
+				 IPA_GSB_SKB_DUMMY_HEADER) = htons(ETH_P_IPV6);
 	}
 
 	if (ipa_add_hdr(hdr)) {
@@ -337,13 +332,12 @@ static int ipa_gsb_commit_partial_hdr(struct ipa_gsb_iface_info *iface_info)
 	}
 
 	for (i = IPA_IP_v4; i < IPA_IP_MAX; i++)
-		iface_info->partial_hdr_hdl[i] =
-			hdr->hdr[i].hdr_hdl;
+		iface_info->partial_hdr_hdl[i] = hdr->hdr[i].hdr_hdl;
 
 	IPA_GSB_DBG("added partial hdr hdl for ipv4: %d\n",
-		iface_info->partial_hdr_hdl[IPA_IP_v4]);
+		    iface_info->partial_hdr_hdl[IPA_IP_v4]);
 	IPA_GSB_DBG("added partial hdr hdl for ipv6: %d\n",
-		iface_info->partial_hdr_hdl[IPA_IP_v6]);
+		    iface_info->partial_hdr_hdl[IPA_IP_v6]);
 
 	kfree(hdr);
 	return 0;
@@ -354,7 +348,8 @@ static void ipa_gsb_delete_partial_hdr(struct ipa_gsb_iface_info *iface_info)
 	struct ipa_ioc_del_hdr *del_hdr;
 
 	del_hdr = kzalloc(sizeof(struct ipa_ioc_del_hdr) +
-		2 * sizeof(struct ipa_hdr_del), GFP_KERNEL);
+				  2 * sizeof(struct ipa_hdr_del),
+			  GFP_KERNEL);
 	if (!del_hdr)
 		return;
 
@@ -367,9 +362,9 @@ static void ipa_gsb_delete_partial_hdr(struct ipa_gsb_iface_info *iface_info)
 		IPA_GSB_ERR("failed to delete partial hdr\n");
 
 	IPA_GSB_DBG("deleted partial hdr hdl for ipv4: %d\n",
-		iface_info->partial_hdr_hdl[IPA_IP_v4]);
+		    iface_info->partial_hdr_hdl[IPA_IP_v4]);
 	IPA_GSB_DBG("deleted partial hdr hdl for ipv6: %d\n",
-		iface_info->partial_hdr_hdl[IPA_IP_v6]);
+		    iface_info->partial_hdr_hdl[IPA_IP_v6]);
 
 	kfree(del_hdr);
 }
@@ -389,14 +384,14 @@ static int ipa_gsb_reg_intf_props(struct ipa_gsb_iface_info *iface_info)
 	tx_prop[0].ip = IPA_IP_v4;
 	tx_prop[0].dst_pipe = IPA_CLIENT_ODU_EMB_CONS;
 	tx_prop[0].hdr_l2_type = IPA_HDR_L2_ETHERNET_II;
-	snprintf(tx_prop[0].hdr_name, sizeof(tx_prop[0].hdr_name),
-			 "%s_ipv4", iface_info->netdev_name);
+	snprintf(tx_prop[0].hdr_name, sizeof(tx_prop[0].hdr_name), "%s_ipv4",
+		 iface_info->netdev_name);
 
 	tx_prop[1].ip = IPA_IP_v6;
 	tx_prop[1].dst_pipe = IPA_CLIENT_ODU_EMB_CONS;
 	tx_prop[1].hdr_l2_type = IPA_HDR_L2_ETHERNET_II;
-	snprintf(tx_prop[1].hdr_name, sizeof(tx_prop[1].hdr_name),
-			 "%s_ipv6", iface_info->netdev_name);
+	snprintf(tx_prop[1].hdr_name, sizeof(tx_prop[1].hdr_name), "%s_ipv6",
+		 iface_info->netdev_name);
 
 	/* populate rx prop */
 	rx.num_props = 2;
@@ -431,7 +426,7 @@ static void ipa_gsb_dereg_intf_props(struct ipa_gsb_iface_info *iface_info)
 		IPA_GSB_ERR("fail to dereg intf props\n");
 
 	IPA_GSB_DBG("deregistered iface props for %s\n",
-		iface_info->netdev_name);
+		    iface_info->netdev_name);
 }
 
 static void ipa_gsb_pm_cb(void *user_data, enum ipa_pm_cb_event event)
@@ -462,8 +457,7 @@ static int ipa_gsb_register_pm(void)
 	reg_params.user_data = NULL;
 	reg_params.group = IPA_PM_GROUP_DEFAULT;
 
-	ret = ipa_pm_register(&reg_params,
-		&ipa_gsb_ctx->pm_hdl);
+	ret = ipa_pm_register(&reg_params, &ipa_gsb_ctx->pm_hdl);
 	if (ret) {
 		IPA_GSB_ERR("fail to register with PM %d\n", ret);
 		goto fail_pm_reg;
@@ -471,7 +465,7 @@ static int ipa_gsb_register_pm(void)
 	IPA_GSB_DBG("ipa pm hdl: %d\n", ipa_gsb_ctx->pm_hdl);
 
 	ret = ipa_pm_associate_ipa_cons_to_client(ipa_gsb_ctx->pm_hdl,
-		IPA_CLIENT_ODU_EMB_CONS);
+						  IPA_CLIENT_ODU_EMB_CONS);
 	if (ret) {
 		IPA_GSB_ERR("fail to associate cons with PM %d\n", ret);
 		goto fail_pm_cons;
@@ -492,8 +486,8 @@ int ipa_bridge_init(struct ipa_bridge_init_params *params, u32 *hdl)
 	struct ipa_gsb_iface_info *new_intf;
 
 	if (!params || !params->wakeup_request || !hdl ||
-		!params->info.netdev_name || !params->info.tx_dp_notify ||
-		!params->info.send_dl_skb) {
+	    !params->info.netdev_name || !params->info.tx_dp_notify ||
+	    !params->info.send_dl_skb) {
 		IPA_GSB_ERR("Invalid parameters\n");
 		return -EINVAL;
 	}
@@ -506,8 +500,7 @@ int ipa_bridge_init(struct ipa_bridge_init_params *params, u32 *hdl)
 			IPA_GSB_ERR("fail to init ipa gsb driver\n");
 			return -EFAULT;
 		}
-		ipa_gsb_ctx->ipa_sys_desc_size =
-			params->info.ipa_desc_size;
+		ipa_gsb_ctx->ipa_sys_desc_size = params->info.ipa_desc_size;
 		IPA_GSB_DBG("desc size: %d\n", ipa_gsb_ctx->ipa_sys_desc_size);
 	}
 
@@ -515,20 +508,20 @@ int ipa_bridge_init(struct ipa_bridge_init_params *params, u32 *hdl)
 
 	if (params->info.ipa_desc_size != ipa_gsb_ctx->ipa_sys_desc_size) {
 		IPA_GSB_ERR("unmatch: orig desc size %d, new desc size %d\n",
-			ipa_gsb_ctx->ipa_sys_desc_size,
-			params->info.ipa_desc_size);
+			    ipa_gsb_ctx->ipa_sys_desc_size,
+			    params->info.ipa_desc_size);
 		mutex_unlock(&ipa_gsb_ctx->lock);
 		return -EFAULT;
 	}
 
 	for (i = 0; i < MAX_SUPPORTED_IFACE; i++)
 		if (ipa_gsb_ctx->iface[i] != NULL &&
-			strnlen(ipa_gsb_ctx->iface[i]->netdev_name,
-					IPA_RESOURCE_NAME_MAX) ==
-			strnlen(params->info.netdev_name,
-					IPA_RESOURCE_NAME_MAX) &&
-			strcmp(ipa_gsb_ctx->iface[i]->netdev_name,
-				params->info.netdev_name) == 0) {
+		    strnlen(ipa_gsb_ctx->iface[i]->netdev_name,
+			    IPA_RESOURCE_NAME_MAX) ==
+			    strnlen(params->info.netdev_name,
+				    IPA_RESOURCE_NAME_MAX) &&
+		    strcmp(ipa_gsb_ctx->iface[i]->netdev_name,
+			   params->info.netdev_name) == 0) {
 			IPA_GSB_ERR("intf was added before.\n");
 			mutex_unlock(&ipa_gsb_ctx->lock);
 			return -EFAULT;
@@ -563,7 +556,7 @@ int ipa_bridge_init(struct ipa_bridge_init_params *params, u32 *hdl)
 	new_intf->send_dl_skb = params->info.send_dl_skb;
 	new_intf->iface_hdl = *hdl;
 	memcpy(new_intf->device_ethaddr, params->info.device_ethaddr,
-		sizeof(new_intf->device_ethaddr));
+	       sizeof(new_intf->device_ethaddr));
 
 	if (ipa_gsb_commit_partial_hdr(new_intf) != 0) {
 		IPA_GSB_ERR("fail to commit partial hdrs\n");
@@ -671,7 +664,7 @@ int ipa_bridge_cleanup(u32 hdl)
 EXPORT_SYMBOL(ipa_bridge_cleanup);
 
 static void ipa_gsb_cons_cb(void *priv, enum ipa_dp_evt_type evt,
-	unsigned long data)
+			    unsigned long data)
 {
 	struct sk_buff *skb;
 	struct sk_buff *skb2;
@@ -697,17 +690,18 @@ static void ipa_gsb_cons_cb(void *priv, enum ipa_dp_evt_type evt,
 		mux_hdr = (struct ipa_gsb_mux_hdr *)skb->data;
 		pkt_size = mux_hdr->pkt_size;
 		/* 4-byte padding */
-		pad_byte = ((pkt_size + sizeof(*mux_hdr) + ETH_HLEN +
-			3 + IPA_GSB_SKB_DUMMY_HEADER) & ~3) -
-			(pkt_size + sizeof(*mux_hdr) +
-			ETH_HLEN + IPA_GSB_SKB_DUMMY_HEADER);
+		pad_byte = ((pkt_size + sizeof(*mux_hdr) + ETH_HLEN + 3 +
+			     IPA_GSB_SKB_DUMMY_HEADER) &
+			    ~3) -
+			   (pkt_size + sizeof(*mux_hdr) + ETH_HLEN +
+			    IPA_GSB_SKB_DUMMY_HEADER);
 		hdl = mux_hdr->iface_hdl;
 		if (hdl >= MAX_SUPPORTED_IFACE) {
 			IPA_GSB_ERR("invalid hdl: %d\n", hdl);
 			break;
 		}
 		IPA_GSB_DBG_LOW("pkt_size: %d, pad_byte: %d, hdl: %d\n",
-			pkt_size, pad_byte, hdl);
+				pkt_size, pad_byte, hdl);
 
 		/* remove 4 byte mux header AND dummy header*/
 		skb_pull(skb, sizeof(*mux_hdr) + IPA_GSB_SKB_DUMMY_HEADER);
@@ -741,7 +735,7 @@ static void ipa_gsb_cons_cb(void *priv, enum ipa_dp_evt_type evt,
 }
 
 static void ipa_gsb_tx_dp_notify(void *priv, enum ipa_dp_evt_type evt,
-	unsigned long data)
+				 unsigned long data)
 {
 	struct sk_buff *skb;
 	struct ipa_gsb_mux_hdr *mux_hdr;
@@ -767,7 +761,7 @@ static void ipa_gsb_tx_dp_notify(void *priv, enum ipa_dp_evt_type evt,
 	*(u32 *)mux_hdr = ntohl(*(u32 *)mux_hdr);
 	hdl = mux_hdr->iface_hdl;
 	if ((hdl < 0) || (hdl >= MAX_SUPPORTED_IFACE) ||
-		!ipa_gsb_ctx->iface[hdl]) {
+	    !ipa_gsb_ctx->iface[hdl]) {
 		IPA_GSB_ERR("invalid hdl: %d and cb, drop the skb\n", hdl);
 		dev_kfree_skb_any(skb);
 		return;
@@ -776,9 +770,8 @@ static void ipa_gsb_tx_dp_notify(void *priv, enum ipa_dp_evt_type evt,
 
 	/* remove 4 byte mux header */
 	skb_pull(skb, sizeof(struct ipa_gsb_mux_hdr));
-	ipa_gsb_ctx->iface[hdl]->tx_dp_notify(
-	   ipa_gsb_ctx->iface[hdl]->priv, evt,
-	   (unsigned long)skb);
+	ipa_gsb_ctx->iface[hdl]->tx_dp_notify(ipa_gsb_ctx->iface[hdl]->priv,
+					      evt, (unsigned long)skb);
 }
 
 static int ipa_gsb_connect_sys_pipe(void)
@@ -800,8 +793,7 @@ static int ipa_gsb_connect_sys_pipe(void)
 	prod_params.desc_fifo_sz = ipa_gsb_ctx->ipa_sys_desc_size;
 	prod_params.priv = NULL;
 	prod_params.notify = ipa_gsb_tx_dp_notify;
-	res = ipa_setup_sys_pipe(&prod_params,
-		&ipa_gsb_ctx->prod_hdl);
+	res = ipa_setup_sys_pipe(&prod_params, &ipa_gsb_ctx->prod_hdl);
 	if (res) {
 		IPA_GSB_ERR("fail to setup prod sys pipe %d\n", res);
 		goto fail_prod;
@@ -809,9 +801,9 @@ static int ipa_gsb_connect_sys_pipe(void)
 
 	/* configure TX EP */
 	cons_params.client = IPA_CLIENT_ODU_EMB_CONS;
-	cons_params.ipa_ep_cfg.hdr.hdr_len =
-		ETH_HLEN + sizeof(struct ipa_gsb_mux_hdr) +
-		IPA_GSB_SKB_DUMMY_HEADER;
+	cons_params.ipa_ep_cfg.hdr.hdr_len = ETH_HLEN +
+					     sizeof(struct ipa_gsb_mux_hdr) +
+					     IPA_GSB_SKB_DUMMY_HEADER;
 	cons_params.ipa_ep_cfg.hdr.hdr_ofst_pkt_size_valid = 1;
 	cons_params.ipa_ep_cfg.hdr.hdr_ofst_pkt_size = 2;
 	cons_params.ipa_ep_cfg.hdr_ext.hdr_pad_to_alignment = 2;
@@ -820,22 +812,19 @@ static int ipa_gsb_connect_sys_pipe(void)
 	/* setup aggregation */
 	cons_params.ipa_ep_cfg.aggr.aggr_en = IPA_ENABLE_AGGR;
 	cons_params.ipa_ep_cfg.aggr.aggr = IPA_GENERIC;
-	cons_params.ipa_ep_cfg.aggr.aggr_time_limit =
-		IPA_GSB_AGGR_TIME_LIMIT;
-	cons_params.ipa_ep_cfg.aggr.aggr_byte_limit =
-		IPA_GSB_AGGR_BYTE_LIMIT;
+	cons_params.ipa_ep_cfg.aggr.aggr_time_limit = IPA_GSB_AGGR_TIME_LIMIT;
+	cons_params.ipa_ep_cfg.aggr.aggr_byte_limit = IPA_GSB_AGGR_BYTE_LIMIT;
 	cons_params.desc_fifo_sz = ipa_gsb_ctx->ipa_sys_desc_size;
 	cons_params.priv = NULL;
 	cons_params.notify = ipa_gsb_cons_cb;
-	res = ipa_setup_sys_pipe(&cons_params,
-		&ipa_gsb_ctx->cons_hdl);
+	res = ipa_setup_sys_pipe(&cons_params, &ipa_gsb_ctx->cons_hdl);
 	if (res) {
 		IPA_GSB_ERR("fail to setup cons sys pipe %d\n", res);
 		goto fail_cons;
 	}
 
-	IPA_GSB_DBG("prod_hdl = %d, cons_hdl = %d\n",
-		ipa_gsb_ctx->prod_hdl, ipa_gsb_ctx->cons_hdl);
+	IPA_GSB_DBG("prod_hdl = %d, cons_hdl = %d\n", ipa_gsb_ctx->prod_hdl,
+		    ipa_gsb_ctx->cons_hdl);
 
 	return 0;
 
@@ -898,11 +887,9 @@ int ipa_bridge_connect(u32 hdl)
 	ipa_gsb_ctx->iface[hdl]->is_resumed = true;
 
 	ipa_gsb_ctx->num_connected_iface++;
-	IPA_GSB_DBG("connected iface: %d\n",
-		ipa_gsb_ctx->num_connected_iface);
+	IPA_GSB_DBG("connected iface: %d\n", ipa_gsb_ctx->num_connected_iface);
 	ipa_gsb_ctx->num_resumed_iface++;
-	IPA_GSB_DBG("num resumed iface: %d\n",
-		ipa_gsb_ctx->num_resumed_iface);
+	IPA_GSB_DBG("num resumed iface: %d\n", ipa_gsb_ctx->num_resumed_iface);
 	mutex_unlock(&ipa_gsb_ctx->lock);
 	mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
 	return 0;
@@ -913,8 +900,8 @@ static int ipa_gsb_disconnect_sys_pipe(void)
 {
 	int ret;
 
-	IPA_GSB_DBG("prod_hdl = %d, cons_hdl = %d\n",
-		ipa_gsb_ctx->prod_hdl, ipa_gsb_ctx->cons_hdl);
+	IPA_GSB_DBG("prod_hdl = %d, cons_hdl = %d\n", ipa_gsb_ctx->prod_hdl,
+		    ipa_gsb_ctx->cons_hdl);
 
 	ret = ipa_teardown_sys_pipe(ipa_gsb_ctx->prod_hdl);
 	if (ret) {
@@ -984,14 +971,13 @@ int ipa_bridge_disconnect(u32 hdl)
 	/* disconnect = suspend + disconnect */
 	ipa_gsb_ctx->iface[hdl]->is_connected = false;
 	ipa_gsb_ctx->num_connected_iface--;
-	IPA_GSB_DBG("connected iface: %d\n",
-		ipa_gsb_ctx->num_connected_iface);
+	IPA_GSB_DBG("connected iface: %d\n", ipa_gsb_ctx->num_connected_iface);
 
 	if (ipa_gsb_ctx->iface[hdl]->is_resumed) {
 		ipa_gsb_ctx->iface[hdl]->is_resumed = false;
 		ipa_gsb_ctx->num_resumed_iface--;
 		IPA_GSB_DBG("num resumed iface: %d\n",
-			ipa_gsb_ctx->num_resumed_iface);
+			    ipa_gsb_ctx->num_resumed_iface);
 	}
 
 fail:
@@ -1047,12 +1033,9 @@ int ipa_bridge_resume(u32 hdl)
 			return ret;
 		}
 
-		ret = ipa3_start_gsi_channel(
-			ipa_gsb_ctx->cons_hdl);
+		ret = ipa3_start_gsi_channel(ipa_gsb_ctx->cons_hdl);
 		if (ret) {
-			IPA_GSB_ERR(
-				"fail to start con ep %d\n",
-				ret);
+			IPA_GSB_ERR("fail to start con ep %d\n", ret);
 			mutex_unlock(&ipa_gsb_ctx->lock);
 			mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
 			return ret;
@@ -1062,7 +1045,7 @@ int ipa_bridge_resume(u32 hdl)
 	ipa_gsb_ctx->iface[hdl]->is_resumed = true;
 	ipa_gsb_ctx->num_resumed_iface++;
 	IPA_GSB_DBG_LOW("num resumed iface: %d\n",
-		ipa_gsb_ctx->num_resumed_iface);
+			ipa_gsb_ctx->num_resumed_iface);
 
 	mutex_unlock(&ipa_gsb_ctx->lock);
 	mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
@@ -1111,12 +1094,9 @@ int ipa_bridge_suspend(u32 hdl)
 
 	mutex_lock(&ipa_gsb_ctx->lock);
 	if (ipa_gsb_ctx->num_resumed_iface == 1) {
-		ret = ipa_stop_gsi_channel(
-			ipa_gsb_ctx->cons_hdl);
+		ret = ipa_stop_gsi_channel(ipa_gsb_ctx->cons_hdl);
 		if (ret) {
-			IPA_GSB_ERR(
-				"fail to stop cons ep %d\n",
-				ret);
+			IPA_GSB_ERR("fail to stop cons ep %d\n", ret);
 			atomic_set(&ipa_gsb_ctx->suspend_in_progress, 0);
 			mutex_unlock(&ipa_gsb_ctx->lock);
 			mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
@@ -1137,7 +1117,7 @@ int ipa_bridge_suspend(u32 hdl)
 	ipa_gsb_ctx->iface[hdl]->is_resumed = false;
 	ipa_gsb_ctx->num_resumed_iface--;
 	IPA_GSB_DBG_LOW("num resumed iface: %d\n",
-		ipa_gsb_ctx->num_resumed_iface);
+			ipa_gsb_ctx->num_resumed_iface);
 	atomic_set(&ipa_gsb_ctx->suspend_in_progress, 0);
 	mutex_unlock(&ipa_gsb_ctx->lock);
 	mutex_unlock(&ipa_gsb_ctx->iface_lock[hdl]);
@@ -1163,8 +1143,7 @@ int ipa_bridge_set_perf_profile(u32 hdl, u32 bandwidth)
 
 	mutex_lock(&ipa_gsb_ctx->iface_lock[hdl]);
 
-	ret = ipa_pm_set_throughput(ipa_gsb_ctx->pm_hdl,
-		bandwidth);
+	ret = ipa_pm_set_throughput(ipa_gsb_ctx->pm_hdl, bandwidth);
 	if (ret)
 		IPA_GSB_ERR("fail to set perf profile\n");
 
@@ -1173,8 +1152,7 @@ int ipa_bridge_set_perf_profile(u32 hdl, u32 bandwidth)
 }
 EXPORT_SYMBOL(ipa_bridge_set_perf_profile);
 
-int ipa_bridge_tx_dp(u32 hdl, struct sk_buff *skb,
-	struct ipa_tx_meta *metadata)
+int ipa_bridge_tx_dp(u32 hdl, struct sk_buff *skb, struct ipa_tx_meta *metadata)
 {
 	struct ipa_gsb_mux_hdr *mux_hdr;
 	struct sk_buff *skb2;
@@ -1207,8 +1185,8 @@ int ipa_bridge_tx_dp(u32 hdl, struct sk_buff *skb,
 	/* make sure skb has enough headroom */
 	if (unlikely(skb_headroom(skb) < sizeof(struct ipa_gsb_mux_hdr))) {
 		IPA_GSB_DBG_LOW("skb doesn't have enough headroom\n");
-		skb2 = skb_copy_expand(skb, sizeof(struct ipa_gsb_mux_hdr),
-			0, GFP_ATOMIC);
+		skb2 = skb_copy_expand(skb, sizeof(struct ipa_gsb_mux_hdr), 0,
+				       GFP_ATOMIC);
 		if (!skb2) {
 			dev_kfree_skb_any(skb);
 			return -ENOMEM;
@@ -1219,8 +1197,8 @@ int ipa_bridge_tx_dp(u32 hdl, struct sk_buff *skb,
 	}
 
 	/* add 4 byte header for mux */
-	mux_hdr = (struct ipa_gsb_mux_hdr *)skb_push(skb,
-		sizeof(struct ipa_gsb_mux_hdr));
+	mux_hdr = (struct ipa_gsb_mux_hdr *)skb_push(
+		skb, sizeof(struct ipa_gsb_mux_hdr));
 	mux_hdr->iface_hdl = (u8)hdl;
 	/* change to network order */
 	*(u32 *)mux_hdr = htonl(*(u32 *)mux_hdr);

@@ -4,17 +4,17 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/slab.h>
-#include "cam_cpas_api.h"
 #include "cam_sfe_soc.h"
+#include "cam_cpas_api.h"
 #include "cam_debug_util.h"
+#include <linux/slab.h>
 
 static int cam_sfe_get_dt_properties(struct cam_hw_soc_info *soc_info)
 {
-	struct cam_sfe_soc_private       *soc_private = soc_info->soc_private;
-	struct platform_device           *pdev = soc_info->pdev;
-	uint32_t                          num_pid = 0;
-	int                               i, rc = 0;
+	struct cam_sfe_soc_private *soc_private = soc_info->soc_private;
+	struct platform_device *pdev = soc_info->pdev;
+	uint32_t num_pid = 0;
+	int i, rc = 0;
 
 	rc = cam_soc_util_get_dt_properties(soc_info);
 	if (rc) {
@@ -23,10 +23,11 @@ static int cam_sfe_get_dt_properties(struct cam_hw_soc_info *soc_info)
 	}
 
 	rc = of_property_read_u32(pdev->dev.of_node, "rt-wrapper-base",
-		&soc_private->rt_wrapper_base);
+				  &soc_private->rt_wrapper_base);
 	if (rc) {
 		soc_private->rt_wrapper_base = 0;
-		CAM_DBG(CAM_ISP, "rc: %d Error reading rt_wrapper_base for core_idx: %u",
+		CAM_DBG(CAM_ISP,
+			"rc: %d Error reading rt_wrapper_base for core_idx: %u",
 			rc, soc_info->index);
 		rc = 0;
 	}
@@ -35,32 +36,33 @@ static int cam_sfe_get_dt_properties(struct cam_hw_soc_info *soc_info)
 	num_pid = of_property_count_u32_elems(pdev->dev.of_node, "cam_hw_pid");
 	CAM_DBG(CAM_SFE, "sfe:%d pid count %d", soc_info->index, num_pid);
 
-	if (num_pid <= 0  || num_pid > CAM_ISP_HW_MAX_PID_VAL)
+	if (num_pid <= 0 || num_pid > CAM_ISP_HW_MAX_PID_VAL)
 		goto end;
 
 	for (i = 0; i < num_pid; i++)
 		of_property_read_u32_index(pdev->dev.of_node, "cam_hw_pid", i,
-			&soc_private->pid[i]);
+					   &soc_private->pid[i]);
 
 	soc_private->num_pid = num_pid;
 end:
 	return rc;
 }
 
-static int cam_sfe_request_platform_resource(
-	struct cam_hw_soc_info *soc_info,
-	irq_handler_t irq_handler_func, void *data)
+static int cam_sfe_request_platform_resource(struct cam_hw_soc_info *soc_info,
+					     irq_handler_t irq_handler_func,
+					     void *data)
 {
 	int rc = 0, i;
-	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = {0};
+	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = { 0 };
 
 	for (i = 0; i < soc_info->irq_count; i++)
 		irq_data[i] = data;
 
-	rc = cam_soc_util_request_platform_resource(soc_info, irq_handler_func, &(irq_data[0]));
+	rc = cam_soc_util_request_platform_resource(soc_info, irq_handler_func,
+						    &(irq_data[0]));
 	if (rc)
-		CAM_ERR(CAM_SFE,
-			"Error Request platform resource failed rc=%d", rc);
+		CAM_ERR(CAM_SFE, "Error Request platform resource failed rc=%d",
+			rc);
 
 	return rc;
 }
@@ -71,21 +73,20 @@ static int cam_sfe_release_platform_resource(struct cam_hw_soc_info *soc_info)
 
 	rc = cam_soc_util_release_platform_resource(soc_info);
 	if (rc)
-		CAM_ERR(CAM_SFE,
-			"Error Release platform resource failed rc=%d", rc);
+		CAM_ERR(CAM_SFE, "Error Release platform resource failed rc=%d",
+			rc);
 
 	return rc;
 }
 
 int cam_sfe_init_soc_resources(struct cam_hw_soc_info *soc_info,
-	irq_handler_t irq_handler_func, void *irq_data)
+			       irq_handler_t irq_handler_func, void *irq_data)
 {
 	int rc = 0;
-	struct cam_sfe_soc_private       *soc_private;
-	struct cam_cpas_register_params   cpas_register_param;
+	struct cam_sfe_soc_private *soc_private;
+	struct cam_cpas_register_params cpas_register_param;
 
-	soc_private = kzalloc(sizeof(struct cam_sfe_soc_private),
-		GFP_KERNEL);
+	soc_private = kzalloc(sizeof(struct cam_sfe_soc_private), GFP_KERNEL);
 	if (!soc_private)
 		return -ENOMEM;
 
@@ -109,8 +110,8 @@ int cam_sfe_init_soc_resources(struct cam_hw_soc_info *soc_info,
 		goto free_soc_private;
 	}
 
-	rc = cam_sfe_request_platform_resource(soc_info,
-		irq_handler_func, irq_data);
+	rc = cam_sfe_request_platform_resource(soc_info, irq_handler_func,
+					       irq_data);
 	if (rc < 0) {
 		CAM_ERR(CAM_SFE,
 			"Error Request platform resources failed rc=%d", rc);
@@ -143,7 +144,7 @@ free_soc_private:
 int cam_sfe_deinit_soc_resources(struct cam_hw_soc_info *soc_info)
 {
 	int rc = 0;
-	struct cam_sfe_soc_private       *soc_private;
+	struct cam_sfe_soc_private *soc_private;
 
 	if (!soc_info) {
 		CAM_ERR(CAM_SFE, "Error soc_info NULL");
@@ -171,10 +172,10 @@ int cam_sfe_deinit_soc_resources(struct cam_hw_soc_info *soc_info)
 
 int cam_sfe_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 {
-	int                               rc = 0;
-	struct cam_sfe_soc_private       *soc_private;
-	struct cam_ahb_vote               ahb_vote;
-	struct cam_axi_vote               axi_vote = {0};
+	int rc = 0;
+	struct cam_sfe_soc_private *soc_private;
+	struct cam_ahb_vote ahb_vote;
+	struct cam_axi_vote axi_vote = { 0 };
 
 	if (!soc_info) {
 		CAM_ERR(CAM_SFE, "Error! Invalid params");
@@ -183,7 +184,7 @@ int cam_sfe_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 	}
 	soc_private = soc_info->soc_private;
 
-	ahb_vote.type       = CAM_VOTE_ABSOLUTE;
+	ahb_vote.type = CAM_VOTE_ABSOLUTE;
 	ahb_vote.vote.level = CAM_LOWSVS_D1_VOTE;
 	axi_vote.num_paths = 1;
 	axi_vote.axi_path[0].path_data_type = CAM_AXI_PATH_DATA_SFE_NRDI;
@@ -192,8 +193,7 @@ int cam_sfe_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 	axi_vote.axi_path[0].mnoc_ab_bw = CAM_CPAS_DEFAULT_RT_AXI_BW;
 	axi_vote.axi_path[0].mnoc_ib_bw = CAM_CPAS_DEFAULT_RT_AXI_BW;
 
-	rc = cam_cpas_start(soc_private->cpas_handle,
-			&ahb_vote, &axi_vote);
+	rc = cam_cpas_start(soc_private->cpas_handle, &ahb_vote, &axi_vote);
 	if (rc) {
 		CAM_ERR(CAM_SFE, "CPAS start failed rc=%d", rc);
 		rc = -EFAULT;
@@ -207,12 +207,14 @@ int cam_sfe_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 	}
 
 	/*
-	 * using sfe index - assuming csid and sfe are one to one map on chipsets where
-	 * cesta is present.
-	 */
-	rc = cam_soc_util_enable_platform_resource(soc_info,
-		(soc_info->is_clk_drv_en ? soc_info->index : CAM_CLK_SW_CLIENT_IDX), true,
-		soc_info->lowest_clk_level, true);
+   * using sfe index - assuming csid and sfe are one to one map on chipsets
+   * where cesta is present.
+   */
+	rc = cam_soc_util_enable_platform_resource(
+		soc_info,
+		(soc_info->is_clk_drv_en ? soc_info->index :
+					   CAM_CLK_SW_CLIENT_IDX),
+		true, soc_info->lowest_clk_level, true);
 	if (rc) {
 		CAM_ERR(CAM_SFE, "Enable platform failed rc=%d", rc);
 		goto stop_cpas;
@@ -227,13 +229,13 @@ end:
 }
 
 int cam_sfe_soc_enable_clk(struct cam_hw_soc_info *soc_info,
-	const char *clk_name)
+			   const char *clk_name)
 {
 	return -EPERM;
 }
 
 int cam_sfe_soc_disable_clk(struct cam_hw_soc_info *soc_info,
-	const char *clk_name)
+			    const char *clk_name)
 {
 	return -EPERM;
 }
@@ -241,7 +243,7 @@ int cam_sfe_soc_disable_clk(struct cam_hw_soc_info *soc_info,
 int cam_sfe_disable_soc_resources(struct cam_hw_soc_info *soc_info)
 {
 	int rc = 0;
-	struct cam_sfe_soc_private       *soc_private;
+	struct cam_sfe_soc_private *soc_private;
 
 	if (!soc_info) {
 		CAM_ERR(CAM_SFE, "Invalid params");
@@ -251,8 +253,11 @@ int cam_sfe_disable_soc_resources(struct cam_hw_soc_info *soc_info)
 
 	soc_private = soc_info->soc_private;
 
-	rc = cam_soc_util_disable_platform_resource(soc_info,
-		(soc_info->is_clk_drv_en ? soc_info->index : CAM_CLK_SW_CLIENT_IDX), true, true);
+	rc = cam_soc_util_disable_platform_resource(
+		soc_info,
+		(soc_info->is_clk_drv_en ? soc_info->index :
+					   CAM_CLK_SW_CLIENT_IDX),
+		true, true);
 	if (rc)
 		CAM_ERR(CAM_SFE, "Disable platform failed rc=%d", rc);
 

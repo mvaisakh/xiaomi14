@@ -21,8 +21,8 @@
  */
 
 #include "wlan_disa_obj_mgmt_api.h"
-#include "wlan_disa_main.h"
 #include "target_if_disa.h"
+#include "wlan_disa_main.h"
 #include "wlan_disa_tgt_api.h"
 #include "wlan_objmgr_global_obj.h"
 
@@ -47,24 +47,21 @@ QDF_STATUS disa_init(void)
 	}
 
 	status = wlan_objmgr_register_psoc_create_handler(
-			WLAN_UMAC_COMP_DISA,
-			disa_psoc_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_DISA, disa_psoc_object_created_notification,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS) {
 		disa_err("unable to register psoc create handler");
 		goto err_free_ctx;
 	}
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_UMAC_COMP_DISA,
-			disa_psoc_object_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_DISA, disa_psoc_object_destroyed_notification,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS) {
 		disa_err("unable to register psoc destroy handler");
 		wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_UMAC_COMP_DISA,
-				disa_psoc_object_created_notification,
-				NULL);
+			WLAN_UMAC_COMP_DISA,
+			disa_psoc_object_created_notification, NULL);
 	} else {
 		goto out;
 	}
@@ -91,16 +88,14 @@ QDF_STATUS disa_deinit(void)
 
 	DISA_ENTER();
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_DISA,
-			disa_psoc_object_destroyed_notification,
-			NULL);
+		WLAN_UMAC_COMP_DISA, disa_psoc_object_destroyed_notification,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		disa_err("unable to unregister psoc create handle");
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_DISA,
-			disa_psoc_object_created_notification,
-			NULL);
+		WLAN_UMAC_COMP_DISA, disa_psoc_object_created_notification,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		disa_err("unable to unregister psoc create handle");
 
@@ -119,8 +114,8 @@ QDF_STATUS disa_deinit(void)
  *
  * Return QDF_STATUS status in case of success else return error
  */
-QDF_STATUS disa_psoc_object_created_notification(
-		struct wlan_objmgr_psoc *psoc, void *arg)
+QDF_STATUS disa_psoc_object_created_notification(struct wlan_objmgr_psoc *psoc,
+						 void *arg)
 {
 	struct disa_psoc_priv_obj *disa_priv;
 	QDF_STATUS status;
@@ -134,8 +129,9 @@ QDF_STATUS disa_psoc_object_created_notification(
 	}
 
 	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-			 WLAN_UMAC_COMP_DISA,
-			(void *)disa_priv, QDF_STATUS_SUCCESS);
+						       WLAN_UMAC_COMP_DISA,
+						       (void *)disa_priv,
+						       QDF_STATUS_SUCCESS);
 	if (status != QDF_STATUS_SUCCESS) {
 		disa_err("Failed to attach disa_priv with psoc");
 		qdf_mem_free(disa_priv);
@@ -160,8 +156,9 @@ out:
  *
  * Return QDF_STATUS status in case of success else return error
  */
-QDF_STATUS disa_psoc_object_destroyed_notification(
-		struct wlan_objmgr_psoc *psoc, void *arg)
+QDF_STATUS
+disa_psoc_object_destroyed_notification(struct wlan_objmgr_psoc *psoc,
+					void *arg)
 {
 	struct disa_psoc_priv_obj *disa_priv = NULL;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -170,9 +167,8 @@ QDF_STATUS disa_psoc_object_destroyed_notification(
 
 	disa_priv = disa_psoc_get_priv(psoc);
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-			 WLAN_UMAC_COMP_DISA,
-			(void *)disa_priv);
+	status = wlan_objmgr_psoc_component_obj_detach(
+		psoc, WLAN_UMAC_COMP_DISA, (void *)disa_priv);
 
 	if (status != QDF_STATUS_SUCCESS)
 		disa_err("Failed to detach disa_priv with psoc");
@@ -204,6 +200,4 @@ QDF_STATUS disa_psoc_enable(struct wlan_objmgr_psoc *psoc)
 QDF_STATUS disa_psoc_disable(struct wlan_objmgr_psoc *psoc)
 {
 	return tgt_disa_unregister_ev_handlers(psoc);
-
 }
-

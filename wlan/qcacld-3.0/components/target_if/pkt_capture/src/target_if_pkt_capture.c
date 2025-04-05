@@ -23,12 +23,12 @@
  * in target_if internally.
  */
 
+#include <init_deinit_lmac.h>
+#include <target_if.h>
 #include <target_if_pkt_capture.h>
+#include <wlan_pkt_capture_api.h>
 #include <wlan_pkt_capture_tgt_api.h>
 #include <wmi_unified_api.h>
-#include <target_if.h>
-#include <init_deinit_lmac.h>
-#include <wlan_pkt_capture_api.h>
 
 /**
  * target_if_set_packet_capture_mode() - set packet capture mode
@@ -40,8 +40,7 @@
  */
 static QDF_STATUS
 target_if_set_packet_capture_mode(struct wlan_objmgr_psoc *psoc,
-				  uint8_t vdev_id,
-				  enum pkt_capture_mode mode)
+				  uint8_t vdev_id, enum pkt_capture_mode mode)
 {
 	wmi_unified_t wmi_handle = lmac_get_wmi_unified_hdl(psoc);
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -52,8 +51,7 @@ target_if_set_packet_capture_mode(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	target_if_debug("psoc:%pK, vdev_id:%d mode:%d",
-			psoc, vdev_id, mode);
+	target_if_debug("psoc:%pK, vdev_id:%d mode:%d", psoc, vdev_id, mode);
 
 	param.vdev_id = vdev_id;
 	param.param_id = wmi_vdev_param_packet_capture_mode;
@@ -78,10 +76,9 @@ target_if_set_packet_capture_mode(struct wlan_objmgr_psoc *psoc,
  * Return: QDF_STATUS
  */
 static QDF_STATUS
-target_if_set_packet_capture_config
-			(struct wlan_objmgr_psoc *psoc,
-			 uint8_t vdev_id,
-			 enum pkt_capture_config config_value)
+target_if_set_packet_capture_config(struct wlan_objmgr_psoc *psoc,
+				    uint8_t vdev_id,
+				    enum pkt_capture_config config_value)
 {
 	wmi_unified_t wmi_handle = lmac_get_wmi_unified_hdl(psoc);
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -100,8 +97,8 @@ target_if_set_packet_capture_config
 		return QDF_STATUS_E_INVAL;
 	}
 
-	target_if_debug("psoc:%pK, vdev_id:%d config_value:%d",
-			psoc, vdev_id, config_value);
+	target_if_debug("psoc:%pK, vdev_id:%d config_value:%d", psoc, vdev_id,
+			config_value);
 
 	param.vdev_id = vdev_id;
 	param.param_id = wmi_vdev_param_smart_monitor_config;
@@ -118,10 +115,9 @@ target_if_set_packet_capture_config
 }
 #else
 static QDF_STATUS
-target_if_set_packet_capture_config
-			(struct wlan_objmgr_psoc *psoc,
-			 uint8_t vdev_id,
-			 enum pkt_capture_config config_value)
+target_if_set_packet_capture_config(struct wlan_objmgr_psoc *psoc,
+				    uint8_t vdev_id,
+				    enum pkt_capture_config config_value)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -136,11 +132,8 @@ target_if_set_packet_capture_config
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-target_if_set_packet_capture_beacon_interval
-			(struct wlan_objmgr_psoc *psoc,
-			 uint8_t vdev_id,
-			 uint32_t nth_value)
+static QDF_STATUS target_if_set_packet_capture_beacon_interval(
+	struct wlan_objmgr_psoc *psoc, uint8_t vdev_id, uint32_t nth_value)
 {
 	wmi_unified_t wmi_handle = lmac_get_wmi_unified_hdl(psoc);
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -151,8 +144,8 @@ target_if_set_packet_capture_beacon_interval
 		return QDF_STATUS_E_INVAL;
 	}
 
-	target_if_debug("psoc:%pK, vdev_id:%d nth_value:%d",
-			psoc, vdev_id, nth_value);
+	target_if_debug("psoc:%pK, vdev_id:%d nth_value:%d", psoc, vdev_id,
+			nth_value);
 
 	param.vdev_id = vdev_id;
 	param.param_id = wmi_vdev_param_nth_beacon_to_host;
@@ -175,9 +168,9 @@ target_if_set_packet_capture_beacon_interval
  *
  * Return: 0 for success or error code
  */
-static int
-target_if_mgmt_offload_data_event_handler(void *handle, uint8_t *data,
-					  uint32_t data_len)
+static int target_if_mgmt_offload_data_event_handler(void *handle,
+						     uint8_t *data,
+						     uint32_t data_len)
 {
 	static uint8_t limit_prints_invalid_len = RATE_LIMIT - 1;
 	struct mgmt_offload_event_params params;
@@ -225,15 +218,14 @@ target_if_mgmt_offload_data_event_handler(void *handle, uint8_t *data,
 		limit_prints_invalid_len++;
 		if (limit_prints_invalid_len == RATE_LIMIT) {
 			pkt_capture_debug(
-			"Invalid mgmt packet, data_len %u, params.buf_len %u",
-			data_len, params.buf_len);
+				"Invalid mgmt packet, data_len %u, params.buf_len %u",
+				data_len, params.buf_len);
 			limit_prints_invalid_len = 0;
 		}
 		return -EINVAL;
 	}
 
-	wbuf = qdf_nbuf_alloc(NULL,
-			      roundup(params.buf_len + RESERVE_BYTES, 4),
+	wbuf = qdf_nbuf_alloc(NULL, roundup(params.buf_len + RESERVE_BYTES, 4),
 			      RESERVE_BYTES, 4, false);
 	if (!wbuf) {
 		pkt_capture_err("Failed to allocate wbuf for mgmt pkt len(%u)",
@@ -247,8 +239,7 @@ target_if_mgmt_offload_data_event_handler(void *handle, uint8_t *data,
 
 	status = params.tx_status;
 	if (QDF_STATUS_SUCCESS !=
-		ucfg_pkt_capture_process_mgmt_tx_data(pdev, &params,
-						      wbuf, status))
+	    ucfg_pkt_capture_process_mgmt_tx_data(pdev, &params, wbuf, status))
 		qdf_nbuf_free(wbuf);
 
 	return 0;
@@ -285,12 +276,12 @@ target_if_register_mgmt_data_offload_event(struct wlan_objmgr_psoc *psoc)
 		QDF_STATUS status;
 
 		status = wmi_unified_register_event_handler(
-				wmi_handle,
-				wmi_mgmt_offload_data_event_id,
-				target_if_mgmt_offload_data_event_handler,
-				WMI_RX_WORK_CTX);
+			wmi_handle, wmi_mgmt_offload_data_event_id,
+			target_if_mgmt_offload_data_event_handler,
+			WMI_RX_WORK_CTX);
 		if (QDF_IS_STATUS_ERROR(status)) {
-			pkt_capture_err("Failed to register MGMT offload handler");
+			pkt_capture_err(
+				"Failed to register MGMT offload handler");
 			return QDF_STATUS_E_FAILURE;
 		}
 	}
@@ -328,9 +319,8 @@ target_if_unregister_mgmt_data_offload_event(struct wlan_objmgr_psoc *psoc)
 }
 
 #ifdef WLAN_FEATURE_PKT_CAPTURE_V2
-static int
-target_if_smart_monitor_event_handler(void *handle, uint8_t *data,
-				      uint32_t len)
+static int target_if_smart_monitor_event_handler(void *handle, uint8_t *data,
+						 uint32_t len)
 {
 	struct smu_event_params params;
 	struct wmi_unified *wmi_handle;
@@ -392,12 +382,11 @@ target_if_register_smart_monitor_event(struct wlan_objmgr_psoc *psoc)
 		uint8_t status;
 
 		status = wmi_unified_register_event_handler(
-				wmi_handle,
-				wmi_vdev_smart_monitor_event_id,
-				target_if_smart_monitor_event_handler,
-				WMI_RX_WORK_CTX);
+			wmi_handle, wmi_vdev_smart_monitor_event_id,
+			target_if_smart_monitor_event_handler, WMI_RX_WORK_CTX);
 		if (status) {
-			pkt_capture_err("Failed to register smart monitor handler");
+			pkt_capture_err(
+				"Failed to register smart monitor handler");
 			return QDF_STATUS_E_FAILURE;
 		}
 	}
@@ -426,7 +415,8 @@ target_if_unregister_smart_monitor_event(struct wlan_objmgr_psoc *psoc)
 	status = wmi_unified_unregister_event(wmi_handle,
 					      wmi_vdev_smart_monitor_event_id);
 	if (status)
-		pkt_capture_err("unregister smart monitor event handler failed");
+		pkt_capture_err(
+			"unregister smart monitor event handler failed");
 
 	return status;
 }
@@ -443,8 +433,8 @@ target_if_unregister_smart_monitor_event(struct wlan_objmgr_psoc *psoc)
 	return QDF_STATUS_SUCCESS;
 }
 #endif
-void
-target_if_pkt_capture_register_rx_ops(struct wlan_pkt_capture_rx_ops *rx_ops)
+void target_if_pkt_capture_register_rx_ops(
+	struct wlan_pkt_capture_rx_ops *rx_ops)
 {
 	if (!rx_ops) {
 		target_if_err("packet capture rx_ops is null");
@@ -452,20 +442,20 @@ target_if_pkt_capture_register_rx_ops(struct wlan_pkt_capture_rx_ops *rx_ops)
 	}
 
 	rx_ops->pkt_capture_register_ev_handlers =
-				target_if_register_mgmt_data_offload_event;
+		target_if_register_mgmt_data_offload_event;
 
 	rx_ops->pkt_capture_unregister_ev_handlers =
-				target_if_unregister_mgmt_data_offload_event;
+		target_if_unregister_mgmt_data_offload_event;
 
 	rx_ops->pkt_capture_register_smart_monitor_event =
-				target_if_register_smart_monitor_event;
+		target_if_register_smart_monitor_event;
 
 	rx_ops->pkt_capture_unregister_smart_monitor_event =
-				target_if_unregister_smart_monitor_event;
+		target_if_unregister_smart_monitor_event;
 }
 
-void
-target_if_pkt_capture_register_tx_ops(struct wlan_pkt_capture_tx_ops *tx_ops)
+void target_if_pkt_capture_register_tx_ops(
+	struct wlan_pkt_capture_tx_ops *tx_ops)
 {
 	if (!tx_ops) {
 		target_if_err("packet capture tx_ops is null");
@@ -475,5 +465,5 @@ target_if_pkt_capture_register_tx_ops(struct wlan_pkt_capture_tx_ops *tx_ops)
 	tx_ops->pkt_capture_send_mode = target_if_set_packet_capture_mode;
 	tx_ops->pkt_capture_send_config = target_if_set_packet_capture_config;
 	tx_ops->pkt_capture_send_beacon_interval =
-				target_if_set_packet_capture_beacon_interval;
+		target_if_set_packet_capture_beacon_interval;
 }

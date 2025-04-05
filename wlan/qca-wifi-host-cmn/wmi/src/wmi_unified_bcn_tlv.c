@@ -15,10 +15,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+#include "wmi_unified_bcn_api.h"
 #include <osdep.h>
 #include <wmi.h>
 #include <wmi_unified_priv.h>
-#include "wmi_unified_bcn_api.h"
 
 /**
  * send_bcn_buf_ll_cmd_tlv() - prepare and send beacon buffer to fw for LL
@@ -27,9 +27,9 @@
  *
  * Return: QDF_STATUS_SUCCESS for success otherwise failure
  */
-static QDF_STATUS send_bcn_buf_ll_cmd_tlv(
-		wmi_unified_t wmi_handle,
-		wmi_bcn_send_from_host_cmd_fixed_param *param)
+static QDF_STATUS
+send_bcn_buf_ll_cmd_tlv(wmi_unified_t wmi_handle,
+			wmi_bcn_send_from_host_cmd_fixed_param *param)
 {
 	wmi_bcn_send_from_host_cmd_fixed_param *cmd;
 	wmi_buf_t wmi_buf;
@@ -42,8 +42,8 @@ static QDF_STATUS send_bcn_buf_ll_cmd_tlv(
 	cmd = (wmi_bcn_send_from_host_cmd_fixed_param *)wmi_buf_data(wmi_buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_bcn_send_from_host_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-			       (wmi_bcn_send_from_host_cmd_fixed_param));
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_bcn_send_from_host_cmd_fixed_param));
 	cmd->vdev_id = param->vdev_id;
 	cmd->data_len = param->data_len;
 	cmd->frame_ctrl = param->frame_ctrl;

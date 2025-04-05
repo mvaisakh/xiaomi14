@@ -23,21 +23,21 @@
  * c file for ahb specific implementations.
  */
 
+#include "if_ahb.h"
+#include "ahb_api.h"
+#include "ce_api.h"
+#include "ce_main.h"
+#include "ce_tasklet.h"
 #include "hif.h"
-#include "target_type.h"
-#include "hif_main.h"
 #include "hif_debug.h"
 #include "hif_io32.h"
-#include "ce_main.h"
-#include "ce_api.h"
-#include "ce_tasklet.h"
-#include "if_ahb.h"
-#include "if_pci.h"
-#include "ahb_api.h"
-#include "pci_api.h"
+#include "hif_main.h"
 #include "hif_napi.h"
+#include "if_pci.h"
+#include "pci_api.h"
 #include "qal_vbus_dev.h"
 #include "qdf_irq.h"
+#include "target_type.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
 #define IRQF_DISABLED 0x00000020
@@ -49,63 +49,63 @@
 static uint16_t ic_irqnum[HIF_IC_MAX_IRQ];
 /* integrated chip irq names */
 const char *ic_irqname[HIF_IC_MAX_IRQ] = {
-"misc-pulse1",
-"misc-latch",
-"sw-exception",
-"watchdog",
-"ce0",
-"ce1",
-"ce2",
-"ce3",
-"ce4",
-"ce5",
-"ce6",
-"ce7",
-"ce8",
-"ce9",
-"ce10",
-"ce11",
-"host2wbm-desc-feed",
-"host2reo-re-injection",
-"host2reo-command",
-"host2rxdma-monitor-ring3",
-"host2rxdma-monitor-ring2",
-"host2rxdma-monitor-ring1",
-"reo2ost-exception",
-"wbm2host-rx-release",
-"reo2host-status",
-"reo2host-destination-ring4",
-"reo2host-destination-ring3",
-"reo2host-destination-ring2",
-"reo2host-destination-ring1",
-"rxdma2host-monitor-destination-mac3",
-"rxdma2host-monitor-destination-mac2",
-"rxdma2host-monitor-destination-mac1",
-"ppdu-end-interrupts-mac3",
-"ppdu-end-interrupts-mac2",
-"ppdu-end-interrupts-mac1",
-"rxdma2host-monitor-status-ring-mac3",
-"rxdma2host-monitor-status-ring-mac2",
-"rxdma2host-monitor-status-ring-mac1",
-"host2rxdma-host-buf-ring-mac3",
-"host2rxdma-host-buf-ring-mac2",
-"host2rxdma-host-buf-ring-mac1",
-"rxdma2host-destination-ring-mac3",
-"rxdma2host-destination-ring-mac2",
-"rxdma2host-destination-ring-mac1",
-"host2tcl-input-ring4",
-"host2tcl-input-ring3",
-"host2tcl-input-ring2",
-"host2tcl-input-ring1",
-"wbm2host-tx-completions-ring4",
-"wbm2host-tx-completions-ring3",
-"wbm2host-tx-completions-ring2",
-"wbm2host-tx-completions-ring1",
-"tcl2host-status-ring",
-"txmon2host-monitor-destination-mac3",
-"txmon2host-monitor-destination-mac2",
-"txmon2host-monitor-destination-mac1",
-"host2tx-monitor-ring1",
+	"misc-pulse1",
+	"misc-latch",
+	"sw-exception",
+	"watchdog",
+	"ce0",
+	"ce1",
+	"ce2",
+	"ce3",
+	"ce4",
+	"ce5",
+	"ce6",
+	"ce7",
+	"ce8",
+	"ce9",
+	"ce10",
+	"ce11",
+	"host2wbm-desc-feed",
+	"host2reo-re-injection",
+	"host2reo-command",
+	"host2rxdma-monitor-ring3",
+	"host2rxdma-monitor-ring2",
+	"host2rxdma-monitor-ring1",
+	"reo2ost-exception",
+	"wbm2host-rx-release",
+	"reo2host-status",
+	"reo2host-destination-ring4",
+	"reo2host-destination-ring3",
+	"reo2host-destination-ring2",
+	"reo2host-destination-ring1",
+	"rxdma2host-monitor-destination-mac3",
+	"rxdma2host-monitor-destination-mac2",
+	"rxdma2host-monitor-destination-mac1",
+	"ppdu-end-interrupts-mac3",
+	"ppdu-end-interrupts-mac2",
+	"ppdu-end-interrupts-mac1",
+	"rxdma2host-monitor-status-ring-mac3",
+	"rxdma2host-monitor-status-ring-mac2",
+	"rxdma2host-monitor-status-ring-mac1",
+	"host2rxdma-host-buf-ring-mac3",
+	"host2rxdma-host-buf-ring-mac2",
+	"host2rxdma-host-buf-ring-mac1",
+	"rxdma2host-destination-ring-mac3",
+	"rxdma2host-destination-ring-mac2",
+	"rxdma2host-destination-ring-mac1",
+	"host2tcl-input-ring4",
+	"host2tcl-input-ring3",
+	"host2tcl-input-ring2",
+	"host2tcl-input-ring1",
+	"wbm2host-tx-completions-ring4",
+	"wbm2host-tx-completions-ring3",
+	"wbm2host-tx-completions-ring2",
+	"wbm2host-tx-completions-ring1",
+	"tcl2host-status-ring",
+	"txmon2host-monitor-destination-mac3",
+	"txmon2host-monitor-destination-mac2",
+	"txmon2host-monitor-destination-mac1",
+	"host2tx-monitor-ring1",
 };
 
 /**
@@ -186,7 +186,6 @@ void hif_ahb_close(struct hif_softc *scn)
  */
 QDF_STATUS hif_ahb_open(struct hif_softc *hif_ctx, enum qdf_bus_type bus_type)
 {
-
 	struct hif_pci_softc *sc = HIF_GET_PCI_SOFTC(hif_ctx);
 
 	qdf_spinlock_create(&sc->irq_lock);
@@ -215,7 +214,7 @@ static void hif_ahb_get_bar_addr_pld(struct hif_pci_softc *sc,
 	ret = pld_get_soc_info(dev, &info);
 	sc->mem = info.v_addr;
 	pld_set_bar_addr(dev, info.v_addr);
-	sc->ce_sc.ol_sc.mem    = info.v_addr;
+	sc->ce_sc.ol_sc.mem = info.v_addr;
 	sc->ce_sc.ol_sc.mem_pa = info.p_addr;
 }
 
@@ -253,8 +252,7 @@ int hif_ahb_configure_irq_by_ceid(struct hif_softc *scn, int ce_id)
 	}
 
 	ic_irqnum[HIF_IC_CE0_IRQ_OFFSET + ce_id] = irq;
-	ret = pfrm_request_irq(&pdev->dev, irq,
-			       hif_ahb_interrupt_handler,
+	ret = pfrm_request_irq(&pdev->dev, irq, hif_ahb_interrupt_handler,
 			       IRQF_TRIGGER_RISING,
 			       ic_irqname[HIF_IC_CE0_IRQ_OFFSET + ce_id],
 			       &hif_state->tasklets[ce_id]);
@@ -329,8 +327,8 @@ int hif_ahb_configure_grp_irq(struct hif_softc *scn,
 		qdf_dev_set_irq_status_flags(irq, QDF_IRQ_DISABLE_UNLAZY);
 		qdf_spin_unlock_irqrestore(&hif_ext_group->irq_lock);
 
-		ret = pfrm_request_irq(scn->qdf_dev->dev,
-				       irq, hif_ext_group_interrupt_handler,
+		ret = pfrm_request_irq(scn->qdf_dev->dev, irq,
+				       hif_ext_group_interrupt_handler,
 				       IRQF_TRIGGER_RISING | IRQF_SHARED,
 				       ic_irqname[hif_ext_group->irq[j]],
 				       hif_ext_group);
@@ -365,20 +363,19 @@ void hif_ahb_deconfigure_grp_irq(struct hif_softc *scn)
 				irq = hif_ext_group->os_irq[j];
 				hif_ext_group->irq_enabled = false;
 				qdf_dev_clear_irq_status_flags(
-							irq,
-							QDF_IRQ_DISABLE_UNLAZY);
+					irq, QDF_IRQ_DISABLE_UNLAZY);
 			}
 			qdf_spin_unlock_irqrestore(&hif_ext_group->irq_lock);
 
 			/* Avoid holding the irq_lock while freeing the irq
-			 * as the same lock is being held by the irq handler
-			 * while disabling the irq. This causes a deadlock
-			 * between free_irq and irq_handler.
-			 */
+       * as the same lock is being held by the irq handler
+       * while disabling the irq. This causes a deadlock
+       * between free_irq and irq_handler.
+       */
 			for (j = 0; j < hif_ext_group->numirq; j++) {
 				irq = hif_ext_group->os_irq[j];
-				pfrm_free_irq(scn->qdf_dev->dev,
-					      irq, hif_ext_group);
+				pfrm_free_irq(scn->qdf_dev->dev, irq,
+					      hif_ext_group);
 			}
 		}
 	}
@@ -412,10 +409,9 @@ void hif_ahb_disable_bus(struct hif_softc *scn)
 	tgt_info = &scn->target_info;
 	/*Disable WIFI clock input*/
 	if (sc->mem) {
-		status = pfrm_platform_get_resource(
-				scn->qdf_dev->dev,
-				(struct qdf_pfm_hndl *)pdev, &vmres,
-				IORESOURCE_MEM, 0);
+		status = pfrm_platform_get_resource(scn->qdf_dev->dev,
+						    (struct qdf_pfm_hndl *)pdev,
+						    &vmres, IORESOURCE_MEM, 0);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			hif_info("Failed to get IORESOURCE_MEM");
 			return;
@@ -465,10 +461,9 @@ void hif_ahb_disable_bus(struct hif_softc *scn)
  *
  * Return: QDF_STATUS
  */
-QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc,
-		struct device *dev, void *bdev,
-		const struct hif_bus_id *bid,
-		enum hif_enable_type type)
+QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc, struct device *dev,
+			      void *bdev, const struct hif_bus_id *bid,
+			      enum hif_enable_type type)
 {
 	int ret = 0;
 	int hif_type;
@@ -487,11 +482,11 @@ QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc,
 	sc->dev = &pdev->dev;
 	sc->devid = id->driver_data;
 
-	ret = hif_get_device_type(id->driver_data, revision_id,
-			&hif_type, &target_type);
+	ret = hif_get_device_type(id->driver_data, revision_id, &hif_type,
+				  &target_type);
 	if (ret < 0) {
-		hif_err("Invalid device ret %d id %d revision_id %d",
-			ret, (int)id->driver_data, revision_id);
+		hif_err("Invalid device ret %d id %d revision_id %d", ret,
+			(int)id->driver_data, revision_id);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -513,8 +508,7 @@ QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc,
 	} else {
 		status = pfrm_platform_get_resource(&pdev->dev,
 						    (struct qdf_pfm_hndl *)pdev,
-						    &vmres,
-						    IORESOURCE_MEM, 0);
+						    &vmres, IORESOURCE_MEM, 0);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			hif_err("Failed to get IORESOURCE_MEM");
 			return status;
@@ -528,14 +522,10 @@ QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc,
 		/* Arrange for access to Target SoC registers. */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
 		status = pfrm_devm_ioremap_resource(
-					dev,
-					(struct qdf_vbus_resource *)memres,
-					&mem);
+			dev, (struct qdf_vbus_resource *)memres, &mem);
 #else
 		status = pfrm_devm_request_and_ioremap(
-					dev,
-					(struct qdf_vbus_resource *)memres,
-					&mem);
+			dev, (struct qdf_vbus_resource *)memres, &mem);
 #endif
 		if (QDF_IS_STATUS_ERROR(status)) {
 			hif_err("ath: ioremap error");
@@ -572,9 +562,9 @@ QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc,
 	hif_register_tbl_attach(ol_sc, hif_type);
 	hif_target_register_tbl_attach(ol_sc, target_type);
 	/*
-	 * In QCA5018 CE region moved to SOC outside WCSS block.
-	 * Allocate separate I/O remap to access CE registers.
-	 */
+   * In QCA5018 CE region moved to SOC outside WCSS block.
+   * Allocate separate I/O remap to access CE registers.
+   */
 	if (tgt_info->target_type == TARGET_TYPE_QCA5018 ||
 	    tgt_info->target_type == TARGET_TYPE_QCA5332) {
 		struct hif_softc *scn = HIF_GET_SOFTC(sc);
@@ -592,9 +582,9 @@ QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc,
 		struct hif_softc *scn = HIF_GET_SOFTC(sc);
 
 		/*
-		 * In QCA5332 CMEM region is outside WCSS block.
-		 * Allocate separate I/O remap to access CMEM address.
-		 */
+     * In QCA5332 CMEM region is outside WCSS block.
+     * Allocate separate I/O remap to access CMEM address.
+     */
 		sc->mem_cmem = qdf_ioremap(HOST_CMEM_ADDRESS, HOST_CMEM_SIZE);
 		if (IS_ERR(sc->mem_cmem)) {
 			hif_err("CE: ioremap failed");
@@ -603,10 +593,10 @@ QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc,
 		ol_sc->mem_cmem = sc->mem_cmem;
 
 		/*
-		 * PMM SCRATCH Register for QCA5332
-		 */
-		sc->mem_pmm_base = qdf_ioremap(PMM_SCRATCH_BASE,
-						   PMM_SCRATCH_SIZE);
+     * PMM SCRATCH Register for QCA5332
+     */
+		sc->mem_pmm_base =
+			qdf_ioremap(PMM_SCRATCH_BASE, PMM_SCRATCH_SIZE);
 		if (IS_ERR(sc->mem_pmm_base)) {
 			hif_err("CE: ioremap failed");
 			return QDF_STATUS_E_IO;
@@ -614,8 +604,8 @@ QDF_STATUS hif_ahb_enable_bus(struct hif_softc *ol_sc,
 		ol_sc->mem_pmm_base = sc->mem_pmm_base;
 	}
 
-	hif_info("X - hif_type = 0x%x, target_type = 0x%x",
-		hif_type, target_type);
+	hif_info("X - hif_type = 0x%x, target_type = 0x%x", hif_type,
+		 target_type);
 
 	return QDF_STATUS_SUCCESS;
 err_cleanup1:
@@ -655,8 +645,8 @@ void hif_ahb_nointrs(struct hif_softc *scn)
 			pfrm_free_irq(scn->qdf_dev->dev, sc->irq, sc);
 		} else {
 			for (i = 0; i < scn->ce_count; i++) {
-				if (host_ce_conf[i].flags
-						& CE_ATTR_DISABLE_INTR)
+				if (host_ce_conf[i].flags &
+				    CE_ATTR_DISABLE_INTR)
 					continue;
 				if (!hif_state->tasklets[i].inited)
 					continue;
@@ -669,7 +659,6 @@ void hif_ahb_nointrs(struct hif_softc *scn)
 		}
 	}
 	scn->request_irq_done = false;
-
 }
 
 /**
@@ -686,7 +675,8 @@ void hif_ahb_irq_enable(struct hif_softc *scn, int ce_id)
 	uint32_t regval;
 	uint32_t reg_offset = 0;
 	struct HIF_CE_state *hif_state = HIF_GET_CE_STATE(scn);
-	struct CE_pipe_config *target_ce_conf = &hif_state->target_ce_config[ce_id];
+	struct CE_pipe_config *target_ce_conf =
+		&hif_state->target_ce_config[ce_id];
 	struct hif_target_info *tgt_info = &scn->target_info;
 	void *mem = scn->mem_ce ? scn->mem_ce : scn->mem;
 
@@ -712,14 +702,14 @@ void hif_ahb_irq_enable(struct hif_softc *scn, int ce_id)
 			    tgt_info->target_type == TARGET_TYPE_QCA5018 ||
 			    tgt_info->target_type == TARGET_TYPE_QCA6018) {
 				/* Enable destination ring interrupts for
-				 * 8074, 8074V2, 6018 and 50xx
-				 */
-				regval = hif_read32_mb(scn, mem +
-					HOST_IE_ADDRESS_3);
+         * 8074, 8074V2, 6018 and 50xx
+         */
+				regval = hif_read32_mb(scn,
+						       mem + HOST_IE_ADDRESS_3);
 				regval |= HOST_IE_REG3_CE_BIT(ce_id);
 
-				hif_write32_mb(scn, mem +
-					       HOST_IE_ADDRESS_3, regval);
+				hif_write32_mb(scn, mem + HOST_IE_ADDRESS_3,
+					       regval);
 			}
 			qdf_spin_unlock_irqrestore(&hif_state->irq_reg_lock);
 		}
@@ -740,7 +730,8 @@ void hif_ahb_irq_disable(struct hif_softc *scn, int ce_id)
 	uint32_t regval;
 	uint32_t reg_offset = 0;
 	struct HIF_CE_state *hif_state = HIF_GET_CE_STATE(scn);
-	struct CE_pipe_config *target_ce_conf = &hif_state->target_ce_config[ce_id];
+	struct CE_pipe_config *target_ce_conf =
+		&hif_state->target_ce_config[ce_id];
 	struct hif_target_info *tgt_info = &scn->target_info;
 	void *mem = scn->mem_ce ? scn->mem_ce : scn->mem;
 
@@ -766,14 +757,14 @@ void hif_ahb_irq_disable(struct hif_softc *scn, int ce_id)
 			    tgt_info->target_type == TARGET_TYPE_QCA5018 ||
 			    tgt_info->target_type == TARGET_TYPE_QCA6018) {
 				/* Disable destination ring interrupts for
-				 * 8074, 8074V2, 6018 and 50xx
-				 */
-				regval = hif_read32_mb(scn, mem +
-					HOST_IE_ADDRESS_3);
+         * 8074, 8074V2, 6018 and 50xx
+         */
+				regval = hif_read32_mb(scn,
+						       mem + HOST_IE_ADDRESS_3);
 				regval &= ~HOST_IE_REG3_CE_BIT(ce_id);
 
-				hif_write32_mb(scn, mem +
-					       HOST_IE_ADDRESS_3, regval);
+				hif_write32_mb(scn, mem + HOST_IE_ADDRESS_3,
+					       regval);
 			}
 			qdf_spin_unlock_irqrestore(&hif_state->irq_reg_lock);
 		}
@@ -850,8 +841,7 @@ void hif_display_ahb_irq_regs(struct hif_softc *scn)
 		    tgt_info->target_type == TARGET_TYPE_QCA5332 ||
 		    tgt_info->target_type == TARGET_TYPE_QCA5018 ||
 		    tgt_info->target_type == TARGET_TYPE_QCA6018) {
-			regval = hif_read32_mb(scn, mem +
-					       HOST_IE_ADDRESS_3);
+			regval = hif_read32_mb(scn, mem + HOST_IE_ADDRESS_3);
 			hif_nofl_err("IRQ enable register 3 value 0x%08x",
 				     regval);
 		}

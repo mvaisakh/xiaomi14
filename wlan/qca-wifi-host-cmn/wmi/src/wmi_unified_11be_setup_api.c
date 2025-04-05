@@ -30,8 +30,7 @@ QDF_STATUS wmi_mlo_setup_cmd_send(wmi_unified_t wmi_handle,
 				  struct wmi_mlo_setup_params *params)
 {
 	if (wmi_handle->ops->mlo_setup_cmd_send)
-		return wmi_handle->ops->mlo_setup_cmd_send(
-				wmi_handle, params);
+		return wmi_handle->ops->mlo_setup_cmd_send(wmi_handle, params);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -47,8 +46,8 @@ QDF_STATUS wmi_mlo_teardown_cmd_send(wmi_unified_t wmi_handle,
 				     struct wmi_mlo_teardown_params *params)
 {
 	if (wmi_handle->ops->mlo_teardown_cmd_send)
-		return wmi_handle->ops->mlo_teardown_cmd_send(
-				wmi_handle, params);
+		return wmi_handle->ops->mlo_teardown_cmd_send(wmi_handle,
+							      params);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -64,8 +63,7 @@ QDF_STATUS wmi_mlo_ready_cmd_send(wmi_unified_t wmi_handle,
 				  struct wmi_mlo_ready_params *params)
 {
 	if (wmi_handle->ops->mlo_ready_cmd_send)
-		return wmi_handle->ops->mlo_ready_cmd_send(
-				wmi_handle, params);
+		return wmi_handle->ops->mlo_ready_cmd_send(wmi_handle, params);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -79,13 +77,12 @@ QDF_STATUS wmi_mlo_ready_cmd_send(wmi_unified_t wmi_handle,
  *  Return: QDF_STATUS code
  */
 QDF_STATUS
-wmi_extract_mlo_setup_cmpl_event(wmi_unified_t wmi_handle,
-				 uint8_t *buf,
+wmi_extract_mlo_setup_cmpl_event(wmi_unified_t wmi_handle, uint8_t *buf,
 				 struct wmi_mlo_setup_complete_params *params)
 {
 	if (wmi_handle->ops->extract_mlo_setup_cmpl_event)
 		return wmi_handle->ops->extract_mlo_setup_cmpl_event(
-				wmi_handle, buf, params);
+			wmi_handle, buf, params);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -99,13 +96,12 @@ wmi_extract_mlo_setup_cmpl_event(wmi_unified_t wmi_handle,
  *  Return: QDF_STATUS code
  */
 QDF_STATUS
-wmi_extract_mlo_teardown_cmpl_event(wmi_unified_t wmi_handle,
-				    uint8_t *buf,
+wmi_extract_mlo_teardown_cmpl_event(wmi_unified_t wmi_handle, uint8_t *buf,
 				    struct wmi_mlo_teardown_cmpl_params *param)
 {
 	if (wmi_handle->ops->extract_mlo_teardown_cmpl_event)
 		return wmi_handle->ops->extract_mlo_teardown_cmpl_event(
-				wmi_handle, buf, param);
+			wmi_handle, buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }

@@ -22,8 +22,8 @@
  * Implementation for creating sysfs file monitor_mode_channel
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_vdev_sync.h"
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_monitor_mode_channel.h>
 
@@ -49,8 +49,8 @@ __hdd_sysfs_monitor_mode_channel_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -78,10 +78,10 @@ __hdd_sysfs_monitor_mode_channel_store(struct net_device *net_dev,
 	if (val1 > 256)
 		ret = wlan_hdd_set_mon_chan(adapter, val1, val2);
 	else
-		ret = wlan_hdd_set_mon_chan(adapter,
-					    wlan_reg_legacy_chan_to_freq(
-							hdd_ctx->pdev, val1),
-					    val2);
+		ret = wlan_hdd_set_mon_chan(
+			adapter,
+			wlan_reg_legacy_chan_to_freq(hdd_ctx->pdev, val1),
+			val2);
 
 	return count;
 }
@@ -99,16 +99,16 @@ hdd_sysfs_monitor_mode_channel_store(struct device *dev,
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_monitor_mode_channel_store(net_dev,
-							    buf, count);
+	errno_size =
+		__hdd_sysfs_monitor_mode_channel_store(net_dev, buf, count);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
 	return errno_size;
 }
 
-static DEVICE_ATTR(monitor_mode_channel, 0220,
-		   NULL, hdd_sysfs_monitor_mode_channel_store);
+static DEVICE_ATTR(monitor_mode_channel, 0220, NULL,
+		   hdd_sysfs_monitor_mode_channel_store);
 
 int hdd_sysfs_monitor_mode_channel_create(struct hdd_adapter *adapter)
 {

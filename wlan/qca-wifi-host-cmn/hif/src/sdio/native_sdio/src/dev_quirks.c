@@ -17,26 +17,26 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/mmc/card.h>
-#include <linux/mmc/mmc.h>
-#include <linux/mmc/host.h>
-#include <linux/mmc/sdio_func.h>
-#include <linux/mmc/sdio_ids.h>
-#include <linux/mmc/sdio.h>
-#include <linux/mmc/sd.h>
-#include <linux/kthread.h>
-#include <linux/version.h>
-#include <linux/module.h>
-#include <qdf_atomic.h>
-#include <cds_utils.h>
-#include <qdf_timer.h>
-#include <cds_api.h>
-#include <qdf_time.h>
+#include "hif_internal.h"
 #include "hif_sdio_dev.h"
 #include "if_sdio.h"
 #include "regtable_sdio.h"
 #include "wma_api.h"
-#include "hif_internal.h"
+#include <cds_api.h>
+#include <cds_utils.h>
+#include <linux/kthread.h>
+#include <linux/mmc/card.h>
+#include <linux/mmc/host.h>
+#include <linux/mmc/mmc.h>
+#include <linux/mmc/sd.h>
+#include <linux/mmc/sdio.h>
+#include <linux/mmc/sdio_func.h>
+#include <linux/mmc/sdio_ids.h>
+#include <linux/module.h>
+#include <linux/version.h>
+#include <qdf_atomic.h>
+#include <qdf_time.h>
+#include <qdf_timer.h>
 #include <transfer/transfer.h>
 
 /* QUIRK PARAMETERS */
@@ -77,11 +77,13 @@ MODULE_PARM_DESC(mmcclock, "Set MMC driver Clock value");
 #ifdef CONFIG_X86
 unsigned int asyncintdelay = 2;
 module_param(asyncintdelay, uint, 0644);
-MODULE_PARM_DESC(asyncintdelay,	"Delay clock count for async interrupt, 2 is default, valid values are 1 and 2");
+MODULE_PARM_DESC(asyncintdelay, "Delay clock count for async interrupt, 2 is "
+				"default, valid values are 1 and 2");
 #else
 unsigned int asyncintdelay;
 module_param(asyncintdelay, uint, 0644);
-MODULE_PARM_DESC(asyncintdelay,	"Delay clock count for async interrupt, 0 is default, valid values are 1 and 2");
+MODULE_PARM_DESC(asyncintdelay, "Delay clock count for async interrupt, 0 is "
+				"default, valid values are 1 and 2");
 #endif
 
 unsigned int brokenirq;
@@ -124,7 +126,7 @@ void hif_sdio_quirk_force_drive_strength(struct hif_softc *ol_sc,
 
 	value = 0;
 	addr = CCCR_SDIO_DRIVER_STRENGTH_ENABLE_ADDR;
-	err = func0_cmd52_read_byte(func->card,	addr, &value);
+	err = func0_cmd52_read_byte(func->card, addr, &value);
 	if (err) {
 		hif_err("Read CCCR 0x%02X failed: %d", addr, err);
 		return;
@@ -136,8 +138,8 @@ void hif_sdio_quirk_force_drive_strength(struct hif_softc *ol_sc,
 		CCCR_SDIO_DRIVER_STRENGTH_ENABLE_D;
 	err = func0_cmd52_write_byte(func->card, addr, value);
 	if (err)
-		hif_err("Write CCCR 0x%02X to 0x%02X failed: %d",
-			addr, value, err);
+		hif_err("Write CCCR 0x%02X to 0x%02X failed: %d", addr, value,
+			err);
 }
 
 /**
@@ -162,10 +164,9 @@ int hif_sdio_quirk_async_intr(struct hif_softc *ol_sc, struct sdio_func *func)
 	switch (manfid) {
 	case MANUFACTURER_ID_AR6003_BASE:
 		set_async_irq = 1;
-		ret =
-		func0_cmd52_write_byte(func->card,
-				       CCCR_SDIO_IRQ_MODE_REG_AR6003,
-				       SDIO_IRQ_MODE_ASYNC_4BIT_IRQ_AR6003);
+		ret = func0_cmd52_write_byte(
+			func->card, CCCR_SDIO_IRQ_MODE_REG_AR6003,
+			SDIO_IRQ_MODE_ASYNC_4BIT_IRQ_AR6003);
 		if (ret)
 			return ret;
 		break;
@@ -173,16 +174,14 @@ int hif_sdio_quirk_async_intr(struct hif_softc *ol_sc, struct sdio_func *func)
 	case MANUFACTURER_ID_QCA9377_BASE:
 	case MANUFACTURER_ID_QCA9379_BASE:
 		set_async_irq = 1;
-		ret = func0_cmd52_read_byte(func->card,
-					    CCCR_SDIO_IRQ_MODE_REG_AR6320,
-					    &data);
+		ret = func0_cmd52_read_byte(
+			func->card, CCCR_SDIO_IRQ_MODE_REG_AR6320, &data);
 		if (ret)
 			return ret;
 
 		data |= SDIO_IRQ_MODE_ASYNC_4BIT_IRQ_AR6320;
-		ret = func0_cmd52_write_byte(func->card,
-					     CCCR_SDIO_IRQ_MODE_REG_AR6320,
-					     data);
+		ret = func0_cmd52_write_byte(
+			func->card, CCCR_SDIO_IRQ_MODE_REG_AR6320, data);
 		if (ret)
 			return ret;
 		break;
@@ -190,22 +189,20 @@ int hif_sdio_quirk_async_intr(struct hif_softc *ol_sc, struct sdio_func *func)
 
 	if (asyncintdelay) {
 		/* Set CCCR 0xF0[7:6] to increase async interrupt delay clock
-		 * to fix interrupt missing issue on dell 8460p
-		 */
+     * to fix interrupt missing issue on dell 8460p
+     */
 
-		ret = func0_cmd52_read_byte(func->card,
-					    CCCR_SDIO_ASYNC_INT_DELAY_ADDRESS,
-					    &data);
+		ret = func0_cmd52_read_byte(
+			func->card, CCCR_SDIO_ASYNC_INT_DELAY_ADDRESS, &data);
 		if (ret)
 			return ret;
 
 		data = (data & ~CCCR_SDIO_ASYNC_INT_DELAY_MASK) |
-			((asyncintdelay << CCCR_SDIO_ASYNC_INT_DELAY_LSB) &
-			 CCCR_SDIO_ASYNC_INT_DELAY_MASK);
+		       ((asyncintdelay << CCCR_SDIO_ASYNC_INT_DELAY_LSB) &
+			CCCR_SDIO_ASYNC_INT_DELAY_MASK);
 
-		ret = func0_cmd52_write_byte(func->card,
-					     CCCR_SDIO_ASYNC_INT_DELAY_ADDRESS,
-					     data);
+		ret = func0_cmd52_write_byte(
+			func->card, CCCR_SDIO_ASYNC_INT_DELAY_ADDRESS, data);
 		if (ret)
 			return ret;
 	}
@@ -264,12 +261,10 @@ void hif_sdio_quirk_write_cccr(struct hif_softc *ol_sc, struct sdio_func *func)
 		if (err)
 			hif_err("Write CCCR 0x%02X to 0x%02X failed: %d",
 				(unsigned int)writecccr1,
-				(unsigned int)writecccr1value,
-				err);
+				(unsigned int)writecccr1value, err);
 		else
 			hif_info("%s Write CCCR 0x%02X to 0x%02X OK",
-				 (unsigned int)writecccr1,
-				 writecccr1value);
+				 (unsigned int)writecccr1, writecccr1value);
 	}
 
 	if (writecccr2) {
@@ -278,8 +273,7 @@ void hif_sdio_quirk_write_cccr(struct hif_softc *ol_sc, struct sdio_func *func)
 		if (err)
 			hif_err("Write CCCR 0x%02X to 0x%02X failed: %d",
 				(unsigned int)writecccr2,
-				(unsigned int)writecccr2value,
-				err);
+				(unsigned int)writecccr2value, err);
 		else
 			hif_info("%s Write CCCR 0x%02X to 0x%02X OK",
 				 (unsigned int)writecccr2,
@@ -291,8 +285,7 @@ void hif_sdio_quirk_write_cccr(struct hif_softc *ol_sc, struct sdio_func *func)
 		if (err)
 			hif_err("Write CCCR 0x%02X to 0x%02X failed: %d",
 				(unsigned int)writecccr3,
-				(unsigned int)writecccr3value,
-				err);
+				(unsigned int)writecccr3value, err);
 		else
 			hif_info("%s Write CCCR 0x%02X to 0x%02X OK",
 				 (unsigned int)writecccr3,
@@ -304,8 +297,7 @@ void hif_sdio_quirk_write_cccr(struct hif_softc *ol_sc, struct sdio_func *func)
 		if (err)
 			hif_err("Write CCCR 0x%02X to 0x%02X failed: %d",
 				(unsigned int)writecccr4,
-				(unsigned int)writecccr4value,
-				err);
+				(unsigned int)writecccr4value, err);
 		else
 			hif_info("%s Write CCCR 0x%02X to 0x%02X OK",
 				 (unsigned int)writecccr4,
@@ -328,7 +320,7 @@ int hif_sdio_quirk_mod_strength(struct hif_softc *ol_sc, struct sdio_func *func)
 	int ret = 0;
 	uint32_t addr, value;
 	struct hif_sdio_dev *device = get_hif_device(ol_sc, func);
-	uint16_t  manfid = device->id->device & MANUFACTURER_ID_AR6K_BASE_MASK;
+	uint16_t manfid = device->id->device & MANUFACTURER_ID_AR6K_BASE_MASK;
 
 	if (!modstrength) /* TODO: Dont set this : scn is not populated yet */
 		return 0;
@@ -375,7 +367,8 @@ int hif_sdio_quirk_mod_strength(struct hif_softc *ol_sc, struct sdio_func *func)
 static int hif_cmd52_write_byte_8bit(struct sdio_func *func)
 {
 	return func0_cmd52_write_byte(func->card, SDIO_CCCR_IF,
-			SDIO_BUS_CD_DISABLE | SDIO_BUS_WIDTH_8BIT);
+				      SDIO_BUS_CD_DISABLE |
+					      SDIO_BUS_WIDTH_8BIT);
 }
 #else
 static int hif_cmd52_write_byte_8bit(struct sdio_func *func)
@@ -410,24 +403,23 @@ QDF_STATUS hif_sdio_set_bus_speed(struct hif_softc *ol_sc,
 #if (KERNEL_VERSION(3, 16, 0) > LINUX_VERSION_CODE)
 	if (sdio_card_highspeed(func->card))
 #else
-		if (mmc_card_hs(func->card))
+	if (mmc_card_hs(func->card))
 #endif
-			clock = 50000000;
-		else
-			clock = func->card->cis.max_dtr;
+		clock = 50000000;
+	else
+		clock = func->card->cis.max_dtr;
 
 	if (clock > device->host->f_max)
 		clock = device->host->f_max;
 
-	hif_info("Clock setting: (%d,%d)",
-		 func->card->cis.max_dtr, device->host->f_max);
+	hif_info("Clock setting: (%d,%d)", func->card->cis.max_dtr,
+		 device->host->f_max);
 
 	/* Limit clock if specified */
 	if (mmcclock > 0) {
 		hif_info("Limit clock from %d to %d", clock, clock_set);
 		device->host->ios.clock = clock_set;
-		device->host->ops->set_ios(device->host,
-				&device->host->ios);
+		device->host->ops->set_ios(device->host, &device->host->ios);
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -461,33 +453,26 @@ QDF_STATUS hif_sdio_set_bus_width(struct hif_softc *ol_sc,
 	/* Set MMC Bus Width: 1-1Bit, 4-4Bit, 8-8Bit */
 	if (mmcbuswidth == 1) {
 		data = SDIO_BUS_CD_DISABLE | SDIO_BUS_WIDTH_1BIT;
-		ret = func0_cmd52_write_byte(func->card,
-					     SDIO_CCCR_IF,
-					     data);
+		ret = func0_cmd52_write_byte(func->card, SDIO_CCCR_IF, data);
 		if (ret)
 			hif_err("Bus Width 0x%x failed %d", data, ret);
 		device->host->ios.bus_width = MMC_BUS_WIDTH_1;
-		device->host->ops->set_ios(device->host,
-					   &device->host->ios);
+		device->host->ops->set_ios(device->host, &device->host->ios);
 	} else if (mmcbuswidth == 4 &&
 		   (device->host->caps & MMC_CAP_4_BIT_DATA)) {
 		data = SDIO_BUS_CD_DISABLE | SDIO_BUS_WIDTH_4BIT;
-		ret = func0_cmd52_write_byte(func->card,
-					     SDIO_CCCR_IF,
-					     data);
+		ret = func0_cmd52_write_byte(func->card, SDIO_CCCR_IF, data);
 		if (ret)
 			hif_err("Bus Width 0x%x failed: %d", data, ret);
 		device->host->ios.bus_width = MMC_BUS_WIDTH_4;
-		device->host->ops->set_ios(device->host,
-				&device->host->ios);
+		device->host->ops->set_ios(device->host, &device->host->ios);
 	} else if (mmcbuswidth == 8 &&
 		   (device->host->caps & MMC_CAP_8_BIT_DATA)) {
 		ret = hif_cmd52_write_byte_8bit(func);
 		if (ret)
 			hif_err("Bus Width 8 failed: %d", ret);
 		device->host->ios.bus_width = MMC_BUS_WIDTH_8;
-		device->host->ops->set_ios(device->host,
-				&device->host->ios);
+		device->host->ops->set_ios(device->host, &device->host->ios);
 	} else {
 		hif_err("Unsupported bus width %d", mmcbuswidth);
 		status = QDF_STATUS_E_FAILURE;
@@ -501,7 +486,6 @@ out:
 #endif
 	return status;
 }
-
 
 /**
  * hif_mask_interrupt() - Disable hif device irq
@@ -548,8 +532,8 @@ static void hif_irq_handler(struct sdio_func *func)
 	struct hif_sdio_dev *device = get_hif_device(NULL, func);
 	atomic_set(&device->irq_handling, 1);
 	/* release the host during intr so we can use
-	 * it when we process cmds
-	 */
+   * it when we process cmds
+   */
 	sdio_release_host(device->func);
 	device->htc_callbacks.dsr_handler(device->htc_callbacks.context);
 	sdio_claim_host(device->func);
@@ -575,10 +559,10 @@ void hif_un_mask_interrupt(struct hif_sdio_dev *device)
 
 	HIF_ENTER();
 	/*
-	 * On HP Elitebook 8460P, interrupt mode is not stable
-	 * in high throughput, so polling method should be used
-	 * instead of interrupt mode.
-	 */
+   * On HP Elitebook 8460P, interrupt mode is not stable
+   * in high throughput, so polling method should be used
+   * instead of interrupt mode.
+   */
 	if (brokenirq) {
 		hif_info("Using broken IRQ mode");
 		device->func->card->host->caps &= ~MMC_CAP_SDIO_IRQ;
@@ -600,8 +584,7 @@ void hif_un_mask_interrupt(struct hif_sdio_dev *device)
  * Return success or failure
  */
 QDF_STATUS hif_sdio_func_disable(struct hif_sdio_dev *device,
-				 struct sdio_func *func,
-				 bool reset)
+				 struct sdio_func *func, bool reset)
 {
 	int ret = 0;
 	uint16_t manfid;
@@ -621,8 +604,7 @@ QDF_STATUS hif_sdio_func_disable(struct hif_sdio_dev *device,
 
 	if (reset && status == QDF_STATUS_SUCCESS)
 		ret = func0_cmd52_write_byte(device->func->card,
-					     SDIO_CCCR_ABORT,
-					     (1 << 3));
+					     SDIO_CCCR_ABORT, (1 << 3));
 
 	if (ret) {
 		status = QDF_STATUS_E_FAILURE;
@@ -646,7 +628,7 @@ QDF_STATUS reinit_sdio(struct hif_sdio_dev *device)
 	struct mmc_host *host;
 	struct mmc_card *card;
 	struct sdio_func *func;
-	uint8_t  cmd52_resp;
+	uint8_t cmd52_resp;
 	uint32_t clock;
 	uint16_t manfid;
 
@@ -672,12 +654,12 @@ QDF_STATUS reinit_sdio(struct hif_sdio_dev *device)
 				sdio_card_state(card);
 				/* no need to break */
 			} else {
-				err = func0_cmd52_write_byte(card,
-							     SDIO_CCCR_SPEED,
-							     (cmd52_resp |
-							      SDIO_SPEED_EHS));
+				err = func0_cmd52_write_byte(
+					card, SDIO_CCCR_SPEED,
+					(cmd52_resp | SDIO_SPEED_EHS));
 				if (err) {
-					hif_err("CCCR speed set failed: %d", err);
+					hif_err("CCCR speed set failed: %d",
+						err);
 					break;
 				}
 				sdio_card_set_highspeed(card);
@@ -695,11 +677,11 @@ QDF_STATUS reinit_sdio(struct hif_sdio_dev *device)
 		if (clock > host->f_max)
 			clock = host->f_max;
 		/*
-		 * In fpga mode the clk should be set to 12500000,
-		 * or will result in scan channel setting timeout error.
-		 * So in fpga mode, please set module parameter mmcclock
-		 * to 12500000.
-		 */
+     * In fpga mode the clk should be set to 12500000,
+     * or will result in scan channel setting timeout error.
+     * So in fpga mode, please set module parameter mmcclock
+     * to 12500000.
+     */
 		if (mmcclock > 0)
 			clock = mmcclock;
 		host->ios.clock = clock;
@@ -707,9 +689,9 @@ QDF_STATUS reinit_sdio(struct hif_sdio_dev *device)
 
 		if (card->host->caps & MMC_CAP_4_BIT_DATA) {
 			/* Set bus width & disable card detect resistor */
-			err = func0_cmd52_write_byte(card, SDIO_CCCR_IF,
-						     SDIO_BUS_CD_DISABLE |
-						     SDIO_BUS_WIDTH_4BIT);
+			err = func0_cmd52_write_byte(
+				card, SDIO_CCCR_IF,
+				SDIO_BUS_CD_DISABLE | SDIO_BUS_WIDTH_4BIT);
 			if (err) {
 				hif_err("Set bus mode failed: %d", err);
 				break;

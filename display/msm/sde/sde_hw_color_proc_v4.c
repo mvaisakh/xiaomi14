@@ -3,26 +3,26 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
-#include <drm/msm_drm_pp.h>
-#include "sde_hw_color_proc_common_v4.h"
 #include "sde_hw_color_proc_v4.h"
 #include "sde_dbg.h"
+#include "sde_hw_color_proc_common_v4.h"
+#include <drm/msm_drm_pp.h>
 
 #define DEMURAV1_CFG0_PARAM4_MASK 5
 #define DEMURAV2_CFG0_PARAM4_MASK 7
 
 static int sde_write_3d_gamut(struct sde_hw_blk_reg_map *hw,
-		struct drm_msm_3d_gamut *payload, u32 base,
-		u32 *opcode, u32 pipe, u32 scale_tbl_a_len,
-		u32 scale_tbl_b_len)
+			      struct drm_msm_3d_gamut *payload, u32 base,
+			      u32 *opcode, u32 pipe, u32 scale_tbl_a_len,
+			      u32 scale_tbl_b_len)
 {
 	u32 reg, tbl_len, tbl_off, scale_off, i, j;
 	u32 scale_tbl_len, scale_tbl_off;
 	u32 *scale_data;
 
 	if (!payload || !opcode || !hw) {
-		DRM_ERROR("invalid payload %pK opcode %pK hw %pK\n",
-			payload, opcode, hw);
+		DRM_ERROR("invalid payload %pK opcode %pK hw %pK\n", payload,
+			  opcode, hw);
 		return -EINVAL;
 	}
 
@@ -40,8 +40,8 @@ static int sde_write_3d_gamut(struct sde_hw_blk_reg_map *hw,
 			else
 				*opcode = gamut_mode_17b;
 			scale_off = (*opcode == gamut_mode_17) ?
-				GAMUT_SCALEA_OFFSET_OFF :
-				GAMUT_SCALEB_OFFSET_OFF;
+					    GAMUT_SCALEA_OFFSET_OFF :
+					    GAMUT_SCALEB_OFFSET_OFF;
 		}
 		break;
 	case GAMUT_3D_MODE_13:
@@ -51,10 +51,10 @@ static int sde_write_3d_gamut(struct sde_hw_blk_reg_map *hw,
 		else
 			*opcode = gamut_mode_13a;
 		tbl_len = GAMUT_3D_MODE13_TBL_SZ;
-		tbl_off = (*opcode == gamut_mode_13a) ? 0 :
-			GAMUT_MODE_13B_OFF;
+		tbl_off = (*opcode == gamut_mode_13a) ? 0 : GAMUT_MODE_13B_OFF;
 		scale_off = (*opcode == gamut_mode_13a) ?
-			GAMUT_SCALEA_OFFSET_OFF : GAMUT_SCALEB_OFFSET_OFF;
+				    GAMUT_SCALEA_OFFSET_OFF :
+				    GAMUT_SCALEB_OFFSET_OFF;
 		*opcode <<= 2;
 		break;
 	case GAMUT_3D_MODE_5:
@@ -78,9 +78,9 @@ static int sde_write_3d_gamut(struct sde_hw_blk_reg_map *hw,
 		SDE_REG_WRITE(hw, base + GAMUT_TABLE_SEL_OFF, reg);
 		for (j = 0; j < tbl_len; j++) {
 			SDE_REG_WRITE(hw, base + GAMUT_LOWER_COLOR_OFF,
-					payload->col[i][j].c2_c1);
+				      payload->col[i][j].c2_c1);
 			SDE_REG_WRITE(hw, base + GAMUT_UPPER_COLOR_OFF,
-					payload->col[i][j].c0);
+				      payload->col[i][j].c0);
 		}
 	}
 
@@ -95,8 +95,8 @@ static int sde_write_3d_gamut(struct sde_hw_blk_reg_map *hw,
 			scale_data = &payload->scale_off[i][0];
 			for (j = 0; j < scale_tbl_len; j++)
 				SDE_REG_WRITE(hw,
-					scale_tbl_off + (j * sizeof(u32)),
-					scale_data[j]);
+					      scale_tbl_off + (j * sizeof(u32)),
+					      scale_data[j]);
 		}
 	}
 	SDE_REG_WRITE(hw, base, *opcode);
@@ -123,8 +123,8 @@ void sde_setup_dspp_3d_gamutv4(struct sde_hw_dspp *ctx, void *cfg)
 
 	payload = hw_cfg->payload;
 	sde_write_3d_gamut(&ctx->hw, payload, ctx->cap->sblk->gamut.base,
-		&op_mode, DSPP, GAMUT_3D_SCALE_OFF_SZ, GAMUT_3D_SCALEB_OFF_SZ);
-
+			   &op_mode, DSPP, GAMUT_3D_SCALE_OFF_SZ,
+			   GAMUT_3D_SCALEB_OFF_SZ);
 }
 
 void sde_setup_dspp_3d_gamutv41(struct sde_hw_dspp *ctx, void *cfg)
@@ -147,7 +147,8 @@ void sde_setup_dspp_3d_gamutv41(struct sde_hw_dspp *ctx, void *cfg)
 
 	payload = hw_cfg->payload;
 	sde_write_3d_gamut(&ctx->hw, payload, ctx->cap->sblk->gamut.base,
-		&op_mode, DSPP, GAMUT_3D_SCALE_OFF_SZ, GAMUT_3D_SCALE_OFF_SZ);
+			   &op_mode, DSPP, GAMUT_3D_SCALE_OFF_SZ,
+			   GAMUT_3D_SCALE_OFF_SZ);
 }
 
 void sde_setup_dspp_igcv3(struct sde_hw_dspp *ctx, void *cfg)
@@ -171,7 +172,7 @@ void sde_setup_dspp_igcv3(struct sde_hw_dspp *ctx, void *cfg)
 
 	if (hw_cfg->len != sizeof(struct drm_msm_igc_lut)) {
 		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-				hw_cfg->len, sizeof(struct drm_msm_igc_lut));
+			  hw_cfg->len, sizeof(struct drm_msm_igc_lut));
 		return;
 	}
 
@@ -196,7 +197,7 @@ void sde_setup_dspp_igcv3(struct sde_hw_dspp *ctx, void *cfg)
 
 	if (lut_cfg->flags & IGC_DITHER_ENABLE) {
 		SDE_REG_WRITE(&ctx->hw, IGC_DITHER_OFF,
-			lut_cfg->strength & IGC_DITHER_DATA_MASK);
+			      lut_cfg->strength & IGC_DITHER_DATA_MASK);
 	}
 
 	SDE_REG_WRITE(&ctx->hw, IGC_OPMODE_OFF, IGC_EN);
@@ -223,7 +224,7 @@ void sde_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 
 	if (hw_cfg->len != sizeof(struct drm_msm_pcc)) {
 		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-				hw_cfg->len, sizeof(struct drm_msm_pcc));
+			  hw_cfg->len, sizeof(struct drm_msm_pcc));
 		return;
 	}
 
@@ -234,30 +235,30 @@ void sde_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 		switch (i) {
 		case 0:
 			coeffs = &pcc_cfg->r;
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_RR_OFF, pcc_cfg->r_rr);
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_GG_OFF, pcc_cfg->r_gg);
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_BB_OFF, pcc_cfg->r_bb);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_RR_OFF,
+				      pcc_cfg->r_rr);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_GG_OFF,
+				      pcc_cfg->r_gg);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_BB_OFF,
+				      pcc_cfg->r_bb);
 			break;
 		case 1:
 			coeffs = &pcc_cfg->g;
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_RR_OFF, pcc_cfg->g_rr);
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_GG_OFF, pcc_cfg->g_gg);
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_BB_OFF, pcc_cfg->g_bb);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_RR_OFF,
+				      pcc_cfg->g_rr);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_GG_OFF,
+				      pcc_cfg->g_gg);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_BB_OFF,
+				      pcc_cfg->g_bb);
 			break;
 		case 2:
 			coeffs = &pcc_cfg->b;
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_RR_OFF, pcc_cfg->b_rr);
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_GG_OFF, pcc_cfg->b_gg);
-			SDE_REG_WRITE(&ctx->hw,
-				base + PCC_BB_OFF, pcc_cfg->b_bb);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_RR_OFF,
+				      pcc_cfg->b_rr);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_GG_OFF,
+				      pcc_cfg->b_gg);
+			SDE_REG_WRITE(&ctx->hw, base + PCC_BB_OFF,
+				      pcc_cfg->b_bb);
 			break;
 		default:
 			DRM_ERROR("invalid pcc plane: %d\n", i);
@@ -296,7 +297,7 @@ void sde_setup_dspp_ltm_threshv1(struct sde_hw_dspp *ctx, void *cfg)
 	thresh = *((u64 *)hw_cfg->payload);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->ltm.base + 0x60,
-			(thresh & 0x3FF));
+		      (thresh & 0x3FF));
 }
 
 void sde_setup_dspp_ltm_hist_bufferv1(struct sde_hw_dspp *ctx, u64 addr)
@@ -313,16 +314,17 @@ void sde_setup_dspp_ltm_hist_bufferv1(struct sde_hw_dspp *ctx, u64 addr)
 	lh_addr = (u64)(&hist->stats_02[0]);
 	hs_addr = (u64)(&hist->stats_03[0]);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->ltm.base + 0x70,
-			(addr & 0xFFFFFF00));
+		      (addr & 0xFFFFFF00));
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->ltm.base + 0x74,
-			(lh_addr & 0xFFFFFF00));
+		      (lh_addr & 0xFFFFFF00));
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->ltm.base + 0x78,
-			(hs_addr & 0xFFFFFF00));
+		      (hs_addr & 0xFFFFFF00));
 }
 
-static void sde_setup_dspp_ltm_hist_ctrl_common(struct sde_hw_dspp *ctx,
-					u64 addr, u32 op_mode,
-					struct sde_ltm_phase_info *phase)
+static void
+sde_setup_dspp_ltm_hist_ctrl_common(struct sde_hw_dspp *ctx, u64 addr,
+				    u32 op_mode,
+				    struct sde_ltm_phase_info *phase)
 {
 	u32 offset;
 
@@ -349,11 +351,11 @@ static void sde_setup_dspp_ltm_hist_ctrl_common(struct sde_hw_dspp *ctx,
 	sde_setup_dspp_ltm_hist_bufferv1(ctx, addr);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->ltm.base + 0x4,
-			(op_mode & 0x1FFFFFF));
+		      (op_mode & 0x1FFFFFF));
 }
 
 void sde_setup_dspp_ltm_hist_ctrlv1(struct sde_hw_dspp *ctx, void *cfg,
-					bool enable, u64 addr)
+				    bool enable, u64 addr)
 {
 	struct sde_hw_cp_cfg *hw_cfg = cfg;
 	struct sde_ltm_phase_info phase;
@@ -379,7 +381,7 @@ void sde_setup_dspp_ltm_hist_ctrlv1(struct sde_hw_dspp *ctx, void *cfg,
 			op_mode &= LTM_CONFIG_MERGE_MODE_ONLY;
 
 		SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->ltm.base + 0x4,
-			(op_mode & 0x1FFFFFF));
+			      (op_mode & 0x1FFFFFF));
 		return;
 	}
 
@@ -394,7 +396,7 @@ void sde_setup_dspp_ltm_hist_ctrlv1(struct sde_hw_dspp *ctx, void *cfg,
 }
 
 void sde_setup_dspp_ltm_hist_ctrlv1_2(struct sde_hw_dspp *ctx, void *cfg,
-					bool enable, u64 addr)
+				      bool enable, u64 addr)
 {
 	struct sde_hw_cp_cfg *hw_cfg = cfg;
 	struct sde_ltm_phase_info phase;
@@ -420,7 +422,7 @@ void sde_setup_dspp_ltm_hist_ctrlv1_2(struct sde_hw_dspp *ctx, void *cfg,
 			op_mode = 0x0;
 
 		SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->ltm.base + 0x4,
-			(op_mode & 0x1FFFFFF));
+			      (op_mode & 0x1FFFFFF));
 		return;
 	}
 
@@ -443,7 +445,7 @@ void sde_ltm_read_intr_status(struct sde_hw_dspp *ctx, u32 *status)
 
 	if (!ctx || !status) {
 		DRM_ERROR("invalid parameters ctx %pK status %pK\n", ctx,
-				status);
+			  status);
 		return;
 	}
 
@@ -481,7 +483,8 @@ void sde_ltm_clear_merge_mode(struct sde_hw_dspp *ctx)
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->ltm.base + 0x04, clear);
 }
 
-void sde_demura_backlight_cfg(struct sde_hw_dspp *ctx, u64 val, struct sde_hw_cp_cfg *hw_cfg)
+void sde_demura_backlight_cfg(struct sde_hw_dspp *ctx, u64 val,
+			      struct sde_hw_cp_cfg *hw_cfg)
 {
 	u32 demura_base;
 	u32 backlight, gain[2];
@@ -511,31 +514,32 @@ void sde_demura_backlight_cfg(struct sde_hw_dspp *ctx, u64 val, struct sde_hw_cp
 	backlight = backlight & REG_MASK(16);
 	if (backlight <= 41) {
 		/* Gain0.....Gain7
-		* {0, 0, 0, 3, 2, 2, 1, 1}
-		*/
+     * {0, 0, 0, 3, 2, 2, 1, 1}
+     */
 		gain[0] = (0x0 & 0x3f) | ((0x0 & 0x3f) << 8) |
 			  ((0x0 & 0x3f) << 16) | ((0x3 & 0x3f) << 24);
 		gain[1] = (0x2 & 0x3f) | ((0x2 & 0x3f) << 8) |
 			  ((0x1 & 0x3f) << 16) | ((0x1 & 0x3f) << 24);
 	} else if (backlight <= 164) {
 		/* Gain0.....Gain7
-		* {0, 0, 0, 2, 1, 1, 2, 3}
-		*/
+     * {0, 0, 0, 2, 1, 1, 2, 3}
+     */
 		gain[0] = (0x0 & 0x3f) | ((0x0 & 0x3f) << 8) |
 			  ((0x0 & 0x3f) << 16) | ((0x2 & 0x3f) << 24);
 		gain[1] = (0x1 & 0x3f) | ((0x1 & 0x3f) << 8) |
 			  ((0x2 & 0x3f) << 16) | ((0x3 & 0x3f) << 24);
 	} else {
 		/* check for demura v2 and assign mask bit accordingly */
-		if (ctx->cap->sblk->demura.version == SDE_COLOR_PROCESS_VER(0x2, 0x0))
+		if (ctx->cap->sblk->demura.version ==
+		    SDE_COLOR_PROCESS_VER(0x2, 0x0))
 			mask_bits = DEMURAV2_CFG0_PARAM4_MASK;
 
 		gain[0] = (dcfg->cfg0_param4[0] & REG_MASK(mask_bits)) |
-			((dcfg->cfg0_param4[1] & REG_MASK(mask_bits)) << 8) |
+			  ((dcfg->cfg0_param4[1] & REG_MASK(mask_bits)) << 8) |
 			  ((dcfg->cfg0_param4[2] & REG_MASK(mask_bits)) << 16) |
 			  ((dcfg->cfg0_param4[3] & REG_MASK(mask_bits)) << 24);
 		gain[1] = (dcfg->cfg0_param4[4] & REG_MASK(mask_bits)) |
-			((dcfg->cfg0_param4[5] & REG_MASK(mask_bits)) << 8) |
+			  ((dcfg->cfg0_param4[5] & REG_MASK(mask_bits)) << 8) |
 			  ((dcfg->cfg0_param4[6] & REG_MASK(mask_bits)) << 16) |
 			  ((dcfg->cfg0_param4[7] & REG_MASK(mask_bits)) << 24);
 	}
@@ -544,7 +548,7 @@ void sde_demura_backlight_cfg(struct sde_hw_dspp *ctx, u64 val, struct sde_hw_cp
 }
 
 void sde_setup_fp16_cscv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+			  enum sde_sspp_multirect_index index, void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	struct drm_msm_fp16_csc *fp16_csc;
@@ -552,7 +556,7 @@ void sde_setup_fp16_cscv1(struct sde_hw_pipe *ctx,
 
 	if (!ctx || !data || index == SDE_SSPP_RECT_MAX) {
 		DRM_ERROR("invalid parameter\tctx: %pK\tdata: %pK\tindex: %d\n",
-				ctx, data, index);
+			  ctx, data, index);
 		return;
 	}
 
@@ -562,8 +566,9 @@ void sde_setup_fp16_cscv1(struct sde_hw_pipe *ctx,
 		csc_base = ctx->cap->sblk->fp16_csc_blk[1].base;
 
 	if (!csc_base) {
-		DRM_ERROR("invalid offset for FP16 CSC CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for FP16 CSC CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 
@@ -572,21 +577,24 @@ void sde_setup_fp16_cscv1(struct sde_hw_pipe *ctx,
 		goto write_base;
 
 	if (hw_cfg->len != sizeof(struct drm_msm_fp16_csc) ||
-			!hw_cfg->payload) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
-				ctx->idx, index, hw_cfg->len, hw_cfg->payload);
+	    !hw_cfg->payload) {
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
+			ctx->idx, index, hw_cfg->len, hw_cfg->payload);
 		return;
 	}
 
 	if (fp16_csc->cfg_param_0_len != FP16_CSC_CFG0_PARAM_LEN) {
-		DRM_ERROR("invalid param 0 length! Got: %d\tExpected: %d\tpipe: %d\tindex: %d\n",
-				fp16_csc->cfg_param_0_len, FP16_CSC_CFG0_PARAM_LEN,
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid param 0 length! Got: %d\tExpected: %d\tpipe: %d\tindex: %d\n",
+			fp16_csc->cfg_param_0_len, FP16_CSC_CFG0_PARAM_LEN,
+			ctx->idx, index);
 		return;
-	} else if (fp16_csc->cfg_param_1_len !=  FP16_CSC_CFG1_PARAM_LEN) {
-		DRM_ERROR("invalid param 1 length! Got: %d\tExpected: %d\tpipe: %d\tindex: %d\n",
-				fp16_csc->cfg_param_1_len, FP16_CSC_CFG1_PARAM_LEN,
-				ctx->idx, index);
+	} else if (fp16_csc->cfg_param_1_len != FP16_CSC_CFG1_PARAM_LEN) {
+		DRM_ERROR(
+			"invalid param 1 length! Got: %d\tExpected: %d\tpipe: %d\tindex: %d\n",
+			fp16_csc->cfg_param_1_len, FP16_CSC_CFG1_PARAM_LEN,
+			ctx->idx, index);
 		return;
 	}
 
@@ -614,7 +622,7 @@ write_base:
 }
 
 void sde_setup_fp16_gcv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+			 enum sde_sspp_multirect_index index, void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	struct drm_msm_fp16_gc *fp16_gc;
@@ -622,15 +630,16 @@ void sde_setup_fp16_gcv1(struct sde_hw_pipe *ctx,
 
 	if (!ctx || !data || index == SDE_SSPP_RECT_MAX) {
 		DRM_ERROR("invalid parameter\tctx: %pK\tdata: %pK\tindex: %d\n",
-				ctx, data, index);
+			  ctx, data, index);
 		return;
 	}
 
 	fp16_gc = (struct drm_msm_fp16_gc *)(hw_cfg->payload);
 	if (fp16_gc && (hw_cfg->len != sizeof(struct drm_msm_fp16_gc) ||
 			fp16_gc->mode == FP16_GC_MODE_INVALID)) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tmode: %d",
-				ctx->idx, index, hw_cfg->len, fp16_gc->mode);
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tmode: %d",
+			ctx->idx, index, hw_cfg->len, fp16_gc->mode);
 		return;
 	}
 
@@ -640,8 +649,9 @@ void sde_setup_fp16_gcv1(struct sde_hw_pipe *ctx,
 		gc_base = ctx->cap->sblk->fp16_gc_blk[1].base;
 
 	if (!gc_base) {
-		DRM_ERROR("invalid offset for FP16 GC CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for FP16 GC CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 
@@ -661,7 +671,7 @@ void sde_setup_fp16_gcv1(struct sde_hw_pipe *ctx,
 }
 
 void sde_setup_fp16_igcv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+			  enum sde_sspp_multirect_index index, void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	bool *fp16_igc;
@@ -669,11 +679,12 @@ void sde_setup_fp16_igcv1(struct sde_hw_pipe *ctx,
 
 	if (!ctx || !data || index == SDE_SSPP_RECT_MAX) {
 		DRM_ERROR("invalid parameter\tctx: %pK\tdata: %pK\tindex: %d\n",
-				ctx, data, index);
+			  ctx, data, index);
 		return;
 	} else if (hw_cfg->len != sizeof(bool)) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d",
-				ctx->idx, index, hw_cfg->len);
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d",
+			ctx->idx, index, hw_cfg->len);
 		return;
 	}
 
@@ -683,8 +694,9 @@ void sde_setup_fp16_igcv1(struct sde_hw_pipe *ctx,
 		igc_base = ctx->cap->sblk->fp16_igc_blk[1].base;
 
 	if (!igc_base) {
-		DRM_ERROR("invalid offset for FP16 IGC CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for FP16 IGC CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 
@@ -700,7 +712,7 @@ void sde_setup_fp16_igcv1(struct sde_hw_pipe *ctx,
 }
 
 void sde_setup_fp16_unmultv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+			     enum sde_sspp_multirect_index index, void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	bool *fp16_unmult;
@@ -708,11 +720,12 @@ void sde_setup_fp16_unmultv1(struct sde_hw_pipe *ctx,
 
 	if (!ctx || !data || index == SDE_SSPP_RECT_MAX) {
 		DRM_ERROR("invalid parameter\tctx: %pK\tdata: %pK\tindex: %d\n",
-				ctx, data, index);
+			  ctx, data, index);
 		return;
 	} else if (hw_cfg->len != sizeof(bool)) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d",
-				ctx->idx, index, hw_cfg->len);
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d",
+			ctx->idx, index, hw_cfg->len);
 		return;
 	}
 
@@ -722,8 +735,9 @@ void sde_setup_fp16_unmultv1(struct sde_hw_pipe *ctx,
 		unmult_base = ctx->cap->sblk->fp16_unmult_blk[1].base;
 
 	if (!unmult_base) {
-		DRM_ERROR("invalid offset for FP16 UNMULT CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for FP16 UNMULT CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 
@@ -787,12 +801,12 @@ void sde_demura_pu_cfg(struct sde_hw_dspp *dspp, void *cfg)
 			temp = (8 * (1 << 21)) / hw_cfg->panel_height;
 		temp = temp * (roi_list->roi[0].y1);
 	}
-	SDE_REG_WRITE(&dspp->hw, dspp->cap->sblk->demura.base + 0x60,
-			temp);
+	SDE_REG_WRITE(&dspp->hw, dspp->cap->sblk->demura.base + 0x60, temp);
 
-	SDE_EVT32(0x60, temp, dspp->idx, ((roi_list) ? roi_list->roi[0].y1 : -1),
-			((roi_list) ? roi_list->roi[0].y2 : -1),
-			((hw_cfg) ? hw_cfg->panel_height : -1));
+	SDE_EVT32(0x60, temp, dspp->idx,
+		  ((roi_list) ? roi_list->roi[0].y1 : -1),
+		  ((roi_list) ? roi_list->roi[0].y2 : -1),
+		  ((hw_cfg) ? hw_cfg->panel_height : -1));
 }
 
 int sde_spr_check_init_cfg(struct sde_hw_dspp *ctx, void *cfg)
@@ -810,11 +824,13 @@ int sde_spr_check_init_cfg(struct sde_hw_dspp *ctx, void *cfg)
 	spr_payload = hw_cfg->payload;
 
 	if (spr_payload->cfg18_en) {
-		bool invalid = spr_payload->cfg11[0] != 1 || spr_payload->cfg11[1] != 0 ||
+		bool invalid = spr_payload->cfg11[0] != 1 ||
+			       spr_payload->cfg11[1] != 0 ||
 			       spr_payload->cfg11[2] != 1;
 
 		if (spr_payload->cfg4 || invalid) {
-			DRM_ERROR("CFG18 can't be enabled with this config. CFG4: %u CFG11: %u\n",
+			DRM_ERROR(
+				"CFG18 can't be enabled with this config. CFG4: %u CFG11: %u\n",
 				spr_payload->cfg4, invalid);
 			return -EINVAL;
 		}
@@ -838,10 +854,11 @@ int sde_spr_check_udc_cfg(struct sde_hw_dspp *ctx, void *cfg)
 
 	spr_payload = hw_cfg->payload;
 	invalid = !(spr_payload->init_cfg11[0] || spr_payload->init_cfg11[1] ||
-			spr_payload->init_cfg11[2]);
+		    spr_payload->init_cfg11[2]);
 
 	if (spr_payload->init_cfg4 || invalid) {
-		DRM_ERROR("SPR UDC can not be used with this config. CFG4: %u CFG11: %u",
+		DRM_ERROR(
+			"SPR UDC can not be used with this config. CFG4: %u CFG11: %u",
 			spr_payload->init_cfg4, invalid);
 		return -EINVAL;
 	}
@@ -850,11 +867,15 @@ int sde_spr_check_udc_cfg(struct sde_hw_dspp *ctx, void *cfg)
 		uint32_t max_h, max_v, limit;
 		uint32_t cfg_1_start = (SPR_UDC_PARAM_SIZE_2 / 3) * i;
 		uint32_t x1 =
-			spr_payload->cfg1[(SPR_UDC_PARAM_SIZE_1 / 3) * i] & 0xffff;
+			spr_payload->cfg1[(SPR_UDC_PARAM_SIZE_1 / 3) * i] &
+			0xffff;
 		uint32_t y1 =
-			spr_payload->cfg1[(SPR_UDC_PARAM_SIZE_1 / 3) * i + 1] & 0xffff;
-		uint32_t w = spr_payload->cfg1[(SPR_UDC_PARAM_SIZE_1 / 3) * i + 2];
-		uint32_t lines = spr_payload->cfg1[(SPR_UDC_PARAM_SIZE_1 / 3) * i + 3];
+			spr_payload->cfg1[(SPR_UDC_PARAM_SIZE_1 / 3) * i + 1] &
+			0xffff;
+		uint32_t w =
+			spr_payload->cfg1[(SPR_UDC_PARAM_SIZE_1 / 3) * i + 2];
+		uint32_t lines =
+			spr_payload->cfg1[(SPR_UDC_PARAM_SIZE_1 / 3) * i + 3];
 		uint32_t x2 = x1 + w;
 		uint32_t y2 = y1 + lines;
 
@@ -893,17 +914,19 @@ int sde_spr_check_udc_cfg(struct sde_hw_dspp *ctx, void *cfg)
 		j = 0;
 		limit = (w >> 1) + 1;
 		for (j = 0; j < lines; j++) {
-			uint32_t o1 = spr_payload->cfg2[cfg_1_start + (j*2)];
-			uint32_t o2 = spr_payload->cfg2[cfg_1_start + (j*2) + 1];
-
+			uint32_t o1 = spr_payload->cfg2[cfg_1_start + (j * 2)];
+			uint32_t o2 =
+				spr_payload->cfg2[cfg_1_start + (j * 2) + 1];
 
 			if (o1 > limit) {
-				DRM_ERROR("Invalid CFG2 - C%u L%u, o1 exceeds limits",
-						i, j);
+				DRM_ERROR(
+					"Invalid CFG2 - C%u L%u, o1 exceeds limits",
+					i, j);
 				return -EINVAL;
 			} else if (o2 > limit) {
-				DRM_ERROR("Invalid CFG2 - C%u L%u, o2 exceeds limits",
-						i, j);
+				DRM_ERROR(
+					"Invalid CFG2 - C%u L%u, o2 exceeds limits",
+					i, j);
 				return -EINVAL;
 			}
 		}
@@ -927,7 +950,7 @@ int sde_spr_read_opr_value(struct sde_hw_dspp *ctx, uint32_t *opr_value)
 }
 
 void sde_setup_ucsc_cscv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+			  enum sde_sspp_multirect_index index, void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	drm_msm_ucsc_csc *ucsc_csc;
@@ -935,7 +958,7 @@ void sde_setup_ucsc_cscv1(struct sde_hw_pipe *ctx,
 
 	if (!ctx || !data || index == SDE_SSPP_RECT_MAX) {
 		DRM_ERROR("invalid parameter\tctx: %pK\tdata: %pK\tindex: %d\n",
-				ctx, data, index);
+			  ctx, data, index);
 		return;
 	}
 
@@ -945,8 +968,9 @@ void sde_setup_ucsc_cscv1(struct sde_hw_pipe *ctx,
 		csc_base = ctx->cap->sblk->ucsc_csc_blk[1].base;
 
 	if (!csc_base) {
-		DRM_ERROR("invalid offset for UCSC CSC CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for UCSC CSC CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 
@@ -954,22 +978,24 @@ void sde_setup_ucsc_cscv1(struct sde_hw_pipe *ctx,
 	if (!ucsc_csc)
 		goto write_base;
 
-	if (hw_cfg->len != sizeof(drm_msm_ucsc_csc) ||
-			!hw_cfg->payload) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
-				ctx->idx, index, hw_cfg->len, hw_cfg->payload);
+	if (hw_cfg->len != sizeof(drm_msm_ucsc_csc) || !hw_cfg->payload) {
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
+			ctx->idx, index, hw_cfg->len, hw_cfg->payload);
 		return;
 	}
 
 	if (ucsc_csc->cfg_param_0_len != UCSC_CSC_CFG0_PARAM_LEN) {
-		DRM_ERROR("invalid param 0 length! Got: %d\tExpected: %d\tpipe: %d\tindex: %d\n",
-				ucsc_csc->cfg_param_0_len, UCSC_CSC_CFG0_PARAM_LEN,
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid param 0 length! Got: %d\tExpected: %d\tpipe: %d\tindex: %d\n",
+			ucsc_csc->cfg_param_0_len, UCSC_CSC_CFG0_PARAM_LEN,
+			ctx->idx, index);
 		return;
-	} else if (ucsc_csc->cfg_param_1_len !=  UCSC_CSC_CFG1_PARAM_LEN) {
-		DRM_ERROR("invalid param 1 length! Got: %d\tExpected: %d\tpipe: %d\tindex: %d\n",
-				ucsc_csc->cfg_param_1_len, UCSC_CSC_CFG1_PARAM_LEN,
-				ctx->idx, index);
+	} else if (ucsc_csc->cfg_param_1_len != UCSC_CSC_CFG1_PARAM_LEN) {
+		DRM_ERROR(
+			"invalid param 1 length! Got: %d\tExpected: %d\tpipe: %d\tindex: %d\n",
+			ucsc_csc->cfg_param_1_len, UCSC_CSC_CFG1_PARAM_LEN,
+			ctx->idx, index);
 		return;
 	}
 
@@ -997,7 +1023,7 @@ write_base:
 }
 
 void sde_setup_ucsc_gcv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+			 enum sde_sspp_multirect_index index, void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	int *ucsc_gc;
@@ -1005,7 +1031,7 @@ void sde_setup_ucsc_gcv1(struct sde_hw_pipe *ctx,
 
 	if (!ctx || !data || index == SDE_SSPP_RECT_MAX) {
 		DRM_ERROR("invalid parameter\tctx: %pK\tdata: %pK\tindex: %d\n",
-				ctx, data, index);
+			  ctx, data, index);
 		return;
 	}
 
@@ -1015,16 +1041,18 @@ void sde_setup_ucsc_gcv1(struct sde_hw_pipe *ctx,
 		gc_base = ctx->cap->sblk->ucsc_gc_blk[1].base;
 
 	if (!gc_base) {
-		DRM_ERROR("invalid offset for UCSC GC CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for UCSC GC CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 
 	ucsc_gc = (int *)(hw_cfg->payload);
 
 	if (!ucsc_gc || (hw_cfg->len != sizeof(int))) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
-				ctx->idx, index, hw_cfg->len, ucsc_gc);
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
+			ctx->idx, index, hw_cfg->len, ucsc_gc);
 		return;
 	}
 
@@ -1037,8 +1065,7 @@ void sde_setup_ucsc_gcv1(struct sde_hw_pipe *ctx,
 	if (ucsc_gc && *ucsc_gc) {
 		gc |= BIT(4);
 
-		switch (*ucsc_gc)
-		{
+		switch (*ucsc_gc) {
 		case UCSC_GC_MODE_SRGB:
 			break;
 		case UCSC_GC_MODE_PQ:
@@ -1048,10 +1075,11 @@ void sde_setup_ucsc_gcv1(struct sde_hw_pipe *ctx,
 			gc |= BIT(6);
 			break;
 		case UCSC_GC_MODE_HLG:
-			gc |= BIT(5)|BIT(6);
+			gc |= BIT(5) | BIT(6);
 			break;
 		default:
-			DRM_ERROR("Invalid UCSC GC mode \tmode: %d\n", *ucsc_gc);
+			DRM_ERROR("Invalid UCSC GC mode \tmode: %d\n",
+				  *ucsc_gc);
 			return;
 		}
 	}
@@ -1061,7 +1089,7 @@ reset_gc:
 }
 
 void sde_setup_ucsc_igcv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+			  enum sde_sspp_multirect_index index, void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	int *ucsc_igc;
@@ -1069,7 +1097,7 @@ void sde_setup_ucsc_igcv1(struct sde_hw_pipe *ctx,
 
 	if (!ctx || !data || index == SDE_SSPP_RECT_MAX) {
 		DRM_ERROR("invalid parameter\tctx: %pK\tdata: %pK\tindex: %d\n",
-				ctx, data, index);
+			  ctx, data, index);
 		return;
 	}
 
@@ -1079,16 +1107,18 @@ void sde_setup_ucsc_igcv1(struct sde_hw_pipe *ctx,
 		igc_base = ctx->cap->sblk->ucsc_igc_blk[1].base;
 
 	if (!igc_base) {
-		DRM_ERROR("invalid offset for UCSC GC CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for UCSC GC CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 
 	ucsc_igc = (int *)(hw_cfg->payload);
 
 	if (!ucsc_igc || (hw_cfg->len != sizeof(int))) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
-				ctx->idx, index, hw_cfg->len, ucsc_igc);
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
+			ctx->idx, index, hw_cfg->len, ucsc_igc);
 		return;
 	}
 
@@ -1101,8 +1131,7 @@ void sde_setup_ucsc_igcv1(struct sde_hw_pipe *ctx,
 	if (ucsc_igc && *ucsc_igc) {
 		igc |= BIT(1);
 
-		switch (*ucsc_igc)
-		{
+		switch (*ucsc_igc) {
 		case UCSC_IGC_MODE_SRGB:
 			break;
 		case UCSC_IGC_MODE_REC709:
@@ -1112,13 +1141,14 @@ void sde_setup_ucsc_igcv1(struct sde_hw_pipe *ctx,
 			igc |= BIT(9);
 			break;
 		case UCSC_IGC_MODE_HLG:
-			igc |= BIT(8)|BIT(9);
+			igc |= BIT(8) | BIT(9);
 			break;
 		case UCSC_IGC_MODE_PQ:
 			igc |= BIT(10);
 			break;
 		default:
-		    DRM_ERROR("Invalid UCSC IGC mode \tmode: %d\n", *ucsc_igc);
+			DRM_ERROR("Invalid UCSC IGC mode \tmode: %d\n",
+				  *ucsc_igc);
 			return;
 		}
 	}
@@ -1128,7 +1158,7 @@ reset_igc:
 }
 
 void sde_setup_ucsc_unmultv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+			     enum sde_sspp_multirect_index index, void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	bool *ucsc_unmult;
@@ -1136,11 +1166,12 @@ void sde_setup_ucsc_unmultv1(struct sde_hw_pipe *ctx,
 
 	if (!ctx || !data || index == SDE_SSPP_RECT_MAX) {
 		DRM_ERROR("invalid parameter\tctx: %pK\tdata: %pK\tindex: %d\n",
-				ctx, data, index);
+			  ctx, data, index);
 		return;
 	} else if (hw_cfg->len != sizeof(bool) || !hw_cfg->payload) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
-				  ctx->idx, index, hw_cfg->len, hw_cfg->payload);
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
+			ctx->idx, index, hw_cfg->len, hw_cfg->payload);
 		return;
 	}
 
@@ -1150,8 +1181,9 @@ void sde_setup_ucsc_unmultv1(struct sde_hw_pipe *ctx,
 		unmult_base = ctx->cap->sblk->ucsc_unmult_blk[1].base;
 
 	if (!unmult_base) {
-		DRM_ERROR("invalid offset for UCSC UNMULT CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for UCSC UNMULT CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 
@@ -1159,38 +1191,43 @@ void sde_setup_ucsc_unmultv1(struct sde_hw_pipe *ctx,
 	ucsc_unmult = (bool *)(hw_cfg->payload);
 
 	if (ucsc_unmult && *ucsc_unmult)
-		unmult |= BIT(0)|BIT(18);
+		unmult |= BIT(0) | BIT(18);
 	else
-		unmult &= ~(BIT(0)|BIT(18));
+		unmult &= ~(BIT(0) | BIT(18));
 
 	SDE_REG_WRITE(&ctx->hw, unmult_base, unmult);
 }
 
 void sde_setup_ucsc_alpha_ditherv1(struct sde_hw_pipe *ctx,
-		enum sde_sspp_multirect_index index, void *data)
+				   enum sde_sspp_multirect_index index,
+				   void *data)
 {
 	struct sde_hw_cp_cfg *hw_cfg = data;
 	bool *ucsc_alpha_dither;
 	u32 alpha_dither_base, alpha_dither;
 
 	if (!ctx || index == SDE_SSPP_RECT_MAX) {
-		DRM_ERROR("invalid parameter\tctx: %pK\tindex: %d\n",
-				ctx, index);
+		DRM_ERROR("invalid parameter\tctx: %pK\tindex: %d\n", ctx,
+			  index);
 		return;
 	} else if (hw_cfg->len != sizeof(bool) || !hw_cfg->payload) {
-		DRM_ERROR("invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
-				  ctx->idx, index, hw_cfg->len, hw_cfg->payload);
+		DRM_ERROR(
+			"invalid hw_cfg payload\tpipe: %d\tindex: %d\tlen: %d\tpayload: %pK\n",
+			ctx->idx, index, hw_cfg->len, hw_cfg->payload);
 		return;
 	}
 
 	if (index == SDE_SSPP_RECT_SOLO || index == SDE_SSPP_RECT_0)
-		alpha_dither_base = ctx->cap->sblk->ucsc_alpha_dither_blk[0].base;
+		alpha_dither_base =
+			ctx->cap->sblk->ucsc_alpha_dither_blk[0].base;
 	else
-		alpha_dither_base = ctx->cap->sblk->ucsc_alpha_dither_blk[1].base;
+		alpha_dither_base =
+			ctx->cap->sblk->ucsc_alpha_dither_blk[1].base;
 
 	if (!alpha_dither_base) {
-		DRM_ERROR("invalid offset for UCSC ALPHA DITHER CP block\tpipe: %d\tindex: %d\n",
-				ctx->idx, index);
+		DRM_ERROR(
+			"invalid offset for UCSC ALPHA DITHER CP block\tpipe: %d\tindex: %d\n",
+			ctx->idx, index);
 		return;
 	}
 

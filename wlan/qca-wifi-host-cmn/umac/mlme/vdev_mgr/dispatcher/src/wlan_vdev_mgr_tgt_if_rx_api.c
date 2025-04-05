@@ -22,24 +22,23 @@
  *
  * This file provide definition for APIs registered for LMAC MLME Rx Ops
  */
-#include <qdf_types.h>
-#include <qdf_module.h>
-#include <wlan_vdev_mgr_tgt_if_rx_defs.h>
-#include <wlan_vdev_mgr_tgt_if_rx_api.h>
-#include <include/wlan_vdev_mlme.h>
-#include <wlan_mlme_dbg.h>
-#include <wlan_vdev_mlme_api.h>
-#include <target_if_vdev_mgr_tx_ops.h>
-#include <wlan_psoc_mlme_main.h>
-#include <include/wlan_psoc_mlme.h>
 #include <include/wlan_mlme_cmn.h>
+#include <include/wlan_psoc_mlme.h>
+#include <include/wlan_vdev_mlme.h>
+#include <qdf_module.h>
+#include <qdf_types.h>
+#include <target_if_vdev_mgr_tx_ops.h>
+#include <wlan_mlme_dbg.h>
+#include <wlan_psoc_mlme_main.h>
+#include <wlan_vdev_mgr_tgt_if_rx_api.h>
+#include <wlan_vdev_mgr_tgt_if_rx_defs.h>
 #include <wlan_vdev_mgr_utils_api.h>
+#include <wlan_vdev_mlme_api.h>
 #ifdef WLAN_POLICY_MGR_ENABLE
 #include "wlan_policy_mgr_api.h"
 #endif
 
-void
-tgt_vdev_mgr_reset_response_timer_info(struct wlan_objmgr_psoc *psoc)
+void tgt_vdev_mgr_reset_response_timer_info(struct wlan_objmgr_psoc *psoc)
 {
 	struct psoc_mlme_obj *psoc_mlme;
 	struct vdev_response_timer *vdev_rsp;
@@ -47,8 +46,7 @@ tgt_vdev_mgr_reset_response_timer_info(struct wlan_objmgr_psoc *psoc)
 
 	psoc_mlme = mlme_psoc_get_priv(psoc);
 	if (!psoc_mlme) {
-		mlme_err("PSOC_%d PSOC_MLME is NULL",
-			 wlan_psoc_get_id(psoc));
+		mlme_err("PSOC_%d PSOC_MLME is NULL", wlan_psoc_get_id(psoc));
 		return;
 	}
 
@@ -84,9 +82,9 @@ tgt_vdev_mgr_get_response_timer_info(struct wlan_objmgr_psoc *psoc,
 
 qdf_export_symbol(tgt_vdev_mgr_get_response_timer_info);
 
-static QDF_STATUS tgt_vdev_mgr_start_response_handler(
-					struct wlan_objmgr_psoc *psoc,
-					struct vdev_start_response *rsp)
+static QDF_STATUS
+tgt_vdev_mgr_start_response_handler(struct wlan_objmgr_psoc *psoc,
+				    struct vdev_start_response *rsp)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct vdev_mlme_obj *vdev_mlme;
@@ -112,18 +110,17 @@ static QDF_STATUS tgt_vdev_mgr_start_response_handler(
 	}
 
 	if ((vdev_mlme->ops) && vdev_mlme->ops->mlme_vdev_ext_start_rsp)
-		status = vdev_mlme->ops->mlme_vdev_ext_start_rsp(
-								vdev_mlme,
-								rsp);
+		status =
+			vdev_mlme->ops->mlme_vdev_ext_start_rsp(vdev_mlme, rsp);
 
 tgt_vdev_mgr_start_response_handler_end:
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_VDEV_TARGET_IF_ID);
 	return status;
 }
 
-static QDF_STATUS tgt_vdev_mgr_stop_response_handler(
-					struct wlan_objmgr_psoc *psoc,
-					struct vdev_stop_response *rsp)
+static QDF_STATUS
+tgt_vdev_mgr_stop_response_handler(struct wlan_objmgr_psoc *psoc,
+				   struct vdev_stop_response *rsp)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct vdev_mlme_obj *vdev_mlme;
@@ -149,18 +146,16 @@ static QDF_STATUS tgt_vdev_mgr_stop_response_handler(
 	}
 
 	if ((vdev_mlme->ops) && vdev_mlme->ops->mlme_vdev_ext_stop_rsp)
-		status = vdev_mlme->ops->mlme_vdev_ext_stop_rsp(
-								vdev_mlme,
-								rsp);
+		status = vdev_mlme->ops->mlme_vdev_ext_stop_rsp(vdev_mlme, rsp);
 
 tgt_vdev_mgr_stop_response_handler_end:
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_VDEV_TARGET_IF_ID);
 	return status;
 }
 
-static QDF_STATUS tgt_vdev_mgr_delete_response_handler(
-					struct wlan_objmgr_psoc *psoc,
-					struct vdev_delete_response *rsp)
+static QDF_STATUS
+tgt_vdev_mgr_delete_response_handler(struct wlan_objmgr_psoc *psoc,
+				     struct vdev_delete_response *rsp)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 
@@ -169,8 +164,7 @@ static QDF_STATUS tgt_vdev_mgr_delete_response_handler(
 }
 
 static QDF_STATUS tgt_vdev_mgr_peer_delete_all_response_handler(
-					struct wlan_objmgr_psoc *psoc,
-					struct peer_delete_all_response *rsp)
+	struct wlan_objmgr_psoc *psoc, struct peer_delete_all_response *rsp)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct vdev_mlme_obj *vdev_mlme;
@@ -181,8 +175,7 @@ static QDF_STATUS tgt_vdev_mgr_peer_delete_all_response_handler(
 		return QDF_STATUS_E_INVAL;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						    rsp->vdev_id,
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, rsp->vdev_id,
 						    WLAN_VDEV_TARGET_IF_ID);
 	if (!vdev) {
 		mlme_err("VDEV is NULL");
@@ -199,8 +192,7 @@ static QDF_STATUS tgt_vdev_mgr_peer_delete_all_response_handler(
 	if ((vdev_mlme->ops) &&
 	    vdev_mlme->ops->mlme_vdev_ext_peer_delete_all_rsp)
 		status = vdev_mlme->ops->mlme_vdev_ext_peer_delete_all_rsp(
-								vdev_mlme,
-								rsp);
+			vdev_mlme, rsp);
 
 tgt_vdev_mgr_peer_delete_all_response_handler_end:
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_VDEV_TARGET_IF_ID);
@@ -216,8 +208,8 @@ tgt_vdev_mgr_offload_bcn_tx_status_event_handler(uint32_t vdev_id,
 	return status;
 }
 
-static QDF_STATUS
-tgt_vdev_mgr_tbttoffset_update_handler(uint32_t num_vdevs, bool is_ext)
+static QDF_STATUS tgt_vdev_mgr_tbttoffset_update_handler(uint32_t num_vdevs,
+							 bool is_ext)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 
@@ -233,8 +225,7 @@ tgt_vdev_mgr_ext_tbttoffset_update_handle(uint32_t num_vdevs, bool is_ext)
 }
 
 static QDF_STATUS tgt_vdev_mgr_multi_vdev_restart_resp_handler(
-					struct wlan_objmgr_psoc *psoc,
-					struct multi_vdev_restart_resp *resp)
+	struct wlan_objmgr_psoc *psoc, struct multi_vdev_restart_resp *resp)
 {
 	return mlme_vdev_ops_ext_hdl_multivdev_restart_resp(psoc, resp);
 }
@@ -255,36 +246,34 @@ tgt_psoc_get_wakelock_info(struct wlan_objmgr_psoc *psoc)
 }
 
 static inline void
-tgt_psoc_reg_wakelock_info_rx_op(struct wlan_lmac_if_mlme_rx_ops
-				     *mlme_rx_ops)
+tgt_psoc_reg_wakelock_info_rx_op(struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
 {
 	mlme_rx_ops->psoc_get_wakelock_info = tgt_psoc_get_wakelock_info;
 }
 #else
 static inline void
-tgt_psoc_reg_wakelock_info_rx_op(struct wlan_lmac_if_mlme_rx_ops
-				     *mlme_rx_ops)
+tgt_psoc_reg_wakelock_info_rx_op(struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
 {
 }
 #endif
 
 #ifdef WLAN_FEATURE_DYNAMIC_MAC_ADDR_UPDATE
 static inline void tgt_vdev_mgr_reg_set_mac_address_response(
-				struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
+	struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
 {
 	mlme_rx_ops->vdev_mgr_set_mac_addr_response =
-				wlan_vdev_mlme_notify_set_mac_addr_response;
+		wlan_vdev_mlme_notify_set_mac_addr_response;
 }
 #else
 static inline void tgt_vdev_mgr_reg_set_mac_address_response(
-				struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
+	struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
 {
 }
 #endif
 
-static void tgt_vdev_mgr_set_max_channel_switch_time(
-		struct wlan_objmgr_psoc *psoc, uint32_t *vdev_ids,
-		uint32_t num_vdevs)
+static void
+tgt_vdev_mgr_set_max_channel_switch_time(struct wlan_objmgr_psoc *psoc,
+					 uint32_t *vdev_ids, uint32_t num_vdevs)
 {
 	struct wlan_objmgr_vdev *vdev = NULL;
 	struct vdev_mlme_obj *vdev_mlme = NULL;
@@ -294,11 +283,11 @@ static void tgt_vdev_mgr_set_max_channel_switch_time(
 	QDF_STATUS status;
 
 	/* Compute and populate the max channel switch time and time of the last
-	 * beacon sent on the CSA triggered channel for all the vdevs.
-	 */
+   * beacon sent on the CSA triggered channel for all the vdevs.
+   */
 	for (i = 0; i < num_vdevs; i++) {
-		vdev = wlan_objmgr_get_vdev_by_id_from_psoc
-		    (psoc, vdev_ids[i], WLAN_VDEV_TARGET_IF_ID);
+		vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+			psoc, vdev_ids[i], WLAN_VDEV_TARGET_IF_ID);
 		if (!vdev) {
 			mlme_err("VDEV is NULL");
 			continue;
@@ -307,17 +296,17 @@ static void tgt_vdev_mgr_set_max_channel_switch_time(
 		vdev_mlme = wlan_vdev_mlme_get_cmpt_obj(vdev);
 		if (!vdev_mlme) {
 			mlme_err("VDEV_%d: PSOC_%d VDEV_MLME is NULL",
-				 vdev_ids[i],
-				 wlan_psoc_get_id(psoc));
+				 vdev_ids[i], wlan_psoc_get_id(psoc));
 			wlan_objmgr_vdev_release_ref(vdev,
 						     WLAN_VDEV_TARGET_IF_ID);
 			continue;
 		}
 
-		status = wlan_util_vdev_mgr_compute_max_channel_switch_time
-			(vdev, &max_chan_switch_time);
+		status = wlan_util_vdev_mgr_compute_max_channel_switch_time(
+			vdev, &max_chan_switch_time);
 		if (QDF_IS_STATUS_ERROR(status)) {
-			mlme_err("Failed to get the max channel switch time value");
+			mlme_err(
+				"Failed to get the max channel switch time value");
 			wlan_objmgr_vdev_release_ref(vdev,
 						     WLAN_VDEV_TARGET_IF_ID);
 			continue;
@@ -347,7 +336,8 @@ tgt_vdev_mgr_csa_received_handler(struct wlan_objmgr_psoc *psoc,
 
 	/* If received CSA is with no-TX mode, then only move SAP / GO */
 	if (!csa_event->switch_mode) {
-		mlme_err("CSA IE Received without no-Tx mode, ignoring 1st SAP / GO movement");
+		mlme_err(
+			"CSA IE Received without no-Tx mode, ignoring 1st SAP / GO movement");
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -371,15 +361,15 @@ tgt_vdev_mgr_quiet_offload_handler(struct wlan_objmgr_psoc *psoc,
 	return wlan_util_vdev_mgr_quiet_offload(psoc, quiet_event);
 }
 
-static inline void tgt_vdev_mgr_reg_quiet_offload(
-				struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
+static inline void
+tgt_vdev_mgr_reg_quiet_offload(struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
 {
 	mlme_rx_ops->vdev_mgr_quiet_offload =
-				tgt_vdev_mgr_quiet_offload_handler;
+		tgt_vdev_mgr_quiet_offload_handler;
 }
 #else
-static inline void tgt_vdev_mgr_reg_quiet_offload(
-				struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
+static inline void
+tgt_vdev_mgr_reg_quiet_offload(struct wlan_lmac_if_mlme_rx_ops *mlme_rx_ops)
 {
 }
 #endif
@@ -406,8 +396,7 @@ void tgt_vdev_mgr_register_rx_ops(struct wlan_lmac_if_rx_ops *rx_ops)
 		tgt_vdev_mgr_multi_vdev_restart_resp_handler;
 	mlme_rx_ops->vdev_mgr_set_max_channel_switch_time =
 		tgt_vdev_mgr_set_max_channel_switch_time;
-	mlme_rx_ops->vdev_mgr_csa_received =
-		tgt_vdev_mgr_csa_received_handler;
+	mlme_rx_ops->vdev_mgr_csa_received = tgt_vdev_mgr_csa_received_handler;
 	tgt_psoc_reg_wakelock_info_rx_op(&rx_ops->mops);
 	tgt_vdev_mgr_reg_set_mac_address_response(mlme_rx_ops);
 	tgt_vdev_mgr_reg_quiet_offload(mlme_rx_ops);

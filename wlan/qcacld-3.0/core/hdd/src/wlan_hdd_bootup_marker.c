@@ -24,8 +24,8 @@
  */
 
 #include "wlan_hdd_bootup_marker.h"
-#include <soc/qcom/boot_stats.h>
 #include <qdf_trace.h>
+#include <soc/qcom/boot_stats.h>
 
 #ifdef DYNAMIC_SINGLE_CHIP
 #define PREFIX_MARKER DYNAMIC_SINGLE_CHIP
@@ -44,8 +44,7 @@
 #define WLAN_MARKER WLAN_PLACEMARKER_PREFIX " " PREFIX_MARKER " "
 #endif
 
-void hdd_place_marker(struct hdd_adapter *adapter,
-		      const char *format,
+void hdd_place_marker(struct hdd_adapter *adapter, const char *format,
 		      uint8_t *mac)
 {
 	char marker[100];
@@ -64,11 +63,9 @@ void hdd_place_marker(struct hdd_adapter *adapter,
 				     qdf_opmode_str(adapter->device_mode),
 				     format);
 	} else {
-		qdf_snprintf(marker, sizeof(marker),
-			     (WLAN_MARKER "%s"),
+		qdf_snprintf(marker, sizeof(marker), (WLAN_MARKER "%s"),
 			     format);
 	}
 
 	place_marker(marker);
 }
-

@@ -20,9 +20,9 @@
  */
 
 #include "wlan_pmo_pkt_filter.h"
-#include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_main.h"
 #include "wlan_pmo_obj_mgmt_public_struct.h"
+#include "wlan_pmo_tgt_api.h"
 
 #define PMO_PKT_FILTERS_DEFAULT 12
 #define PMO_PKT_FILTERS_DISABLED 0xffffffff
@@ -32,14 +32,16 @@ uint32_t pmo_get_num_packet_filters(struct wlan_objmgr_psoc *psoc)
 	struct pmo_psoc_priv_obj *psoc_ctx;
 	bool pkt_filter = false;
 
-	pmo_psoc_with_ctx(psoc, psoc_ctx) {
+	pmo_psoc_with_ctx(psoc, psoc_ctx)
+	{
 		pkt_filter = pmo_intersect_packet_filter(psoc_ctx);
 	}
 
 	return pkt_filter ? PMO_PKT_FILTERS_DEFAULT : PMO_PKT_FILTERS_DISABLED;
 }
 
-QDF_STATUS pmo_core_set_pkt_filter(struct wlan_objmgr_psoc *psoc,
+QDF_STATUS
+pmo_core_set_pkt_filter(struct wlan_objmgr_psoc *psoc,
 			struct pmo_rcv_pkt_fltr_cfg *pmo_set_pkt_fltr_req,
 			uint8_t vdev_id)
 {
@@ -71,12 +73,12 @@ out:
 	pmo_exit();
 
 	return status;
-
 }
 
-QDF_STATUS pmo_core_clear_pkt_filter(struct wlan_objmgr_psoc *psoc,
-		struct pmo_rcv_pkt_fltr_clear_param *pmo_clr_pkt_fltr_param,
-		uint8_t vdev_id)
+QDF_STATUS pmo_core_clear_pkt_filter(
+	struct wlan_objmgr_psoc *psoc,
+	struct pmo_rcv_pkt_fltr_clear_param *pmo_clr_pkt_fltr_param,
+	uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
@@ -96,8 +98,8 @@ QDF_STATUS pmo_core_clear_pkt_filter(struct wlan_objmgr_psoc *psoc,
 		goto out;
 	}
 
-	status = pmo_tgt_clear_pkt_filter(vdev, pmo_clr_pkt_fltr_param,
-								vdev_id);
+	status =
+		pmo_tgt_clear_pkt_filter(vdev, pmo_clr_pkt_fltr_param, vdev_id);
 	if (status != QDF_STATUS_SUCCESS)
 		goto dec_ref;
 
@@ -107,5 +109,4 @@ out:
 	pmo_exit();
 
 	return status;
-
 }

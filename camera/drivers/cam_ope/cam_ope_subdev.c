@@ -4,36 +4,36 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/delay.h>
-#include <linux/io.h>
-#include <linux/of.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/iommu.h>
-#include <linux/timer.h>
-#include <linux/platform_device.h>
-#include <linux/videodev2.h>
-#include <media/v4l2-fh.h>
-#include <media/v4l2-device.h>
-#include <media/v4l2-event.h>
-#include <media/v4l2-ioctl.h>
-#include <media/v4l2-subdev.h>
-#include <media/cam_req_mgr.h>
-#include <media/cam_defs.h>
-#include <media/cam_ope.h>
-#include "cam_req_mgr_dev.h"
-#include "cam_subdev.h"
-#include "cam_node.h"
 #include "cam_context.h"
+#include "cam_context_utils.h"
+#include "cam_debug_util.h"
+#include "cam_hw_mgr_intf.h"
+#include "cam_node.h"
 #include "cam_ope_context.h"
 #include "cam_ope_hw_mgr_intf.h"
-#include "cam_hw_mgr_intf.h"
-#include "cam_debug_util.h"
+#include "cam_req_mgr_dev.h"
 #include "cam_smmu_api.h"
+#include "cam_subdev.h"
 #include "camera_main.h"
-#include "cam_context_utils.h"
+#include <linux/delay.h>
+#include <linux/io.h>
+#include <linux/iommu.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
+#include <linux/timer.h>
+#include <linux/videodev2.h>
+#include <media/cam_defs.h>
+#include <media/cam_ope.h>
+#include <media/cam_req_mgr.h>
+#include <media/v4l2-device.h>
+#include <media/v4l2-event.h>
+#include <media/v4l2-fh.h>
+#include <media/v4l2-ioctl.h>
+#include <media/v4l2-subdev.h>
 
-#define OPE_DEV_NAME        "cam-ope"
+#define OPE_DEV_NAME "cam-ope"
 
 struct cam_ope_subdev {
 	struct cam_subdev sd;
@@ -47,12 +47,12 @@ struct cam_ope_subdev {
 
 static struct cam_ope_subdev g_ope_dev;
 
-static void cam_ope_dev_iommu_fault_handler(
-	struct cam_smmu_pf_info *pf_smmu_info)
+static void
+cam_ope_dev_iommu_fault_handler(struct cam_smmu_pf_info *pf_smmu_info)
 {
 	int i, rc;
 	struct cam_node *node = NULL;
-	struct cam_hw_dump_pf_args pf_args = {0};
+	struct cam_hw_dump_pf_args pf_args = { 0 };
 
 	if (!pf_smmu_info || !pf_smmu_info->token) {
 		CAM_ERR(CAM_OPE, "invalid token in page handler cb");
@@ -74,12 +74,13 @@ static void cam_ope_dev_iommu_fault_handler(
 		rc = cam_context_send_pf_evt(NULL, &pf_args);
 		if (rc)
 			CAM_ERR(CAM_OPE,
-				"Failed to notify PF event to userspace rc: %d", rc);
+				"Failed to notify PF event to userspace rc: %d",
+				rc);
 	}
 }
 
 static int cam_ope_subdev_open(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+			       struct v4l2_subdev_fh *fh)
 {
 	struct cam_hw_mgr_intf *hw_mgr_intf = NULL;
 	struct cam_node *node = v4l2_get_subdevdata(sd);
@@ -115,7 +116,7 @@ end:
 }
 
 static int cam_ope_subdev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+					 struct v4l2_subdev_fh *fh)
 {
 	int rc = 0;
 	struct cam_hw_mgr_intf *hw_mgr_intf = NULL;
@@ -154,7 +155,7 @@ end:
 }
 
 static int cam_ope_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -172,7 +173,7 @@ const struct v4l2_subdev_internal_ops cam_ope_subdev_internal_ops = {
 };
 
 static int cam_ope_subdev_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+					 struct device *master_dev, void *data)
 {
 	int rc = 0, i = 0;
 	struct cam_node *node;
@@ -190,13 +191,13 @@ static int cam_ope_subdev_component_bind(struct device *dev,
 	g_ope_dev.sd.internal_ops = &cam_ope_subdev_internal_ops;
 	g_ope_dev.sd.close_seq_prior = CAM_SD_CLOSE_MEDIUM_PRIORITY;
 	rc = cam_subdev_probe(&g_ope_dev.sd, pdev, OPE_DEV_NAME,
-		CAM_OPE_DEVICE_TYPE);
+			      CAM_OPE_DEVICE_TYPE);
 	if (rc) {
 		CAM_ERR(CAM_OPE, "OPE cam_subdev_probe failed:%d", rc);
 		return rc;
 	}
 
-	node = (struct cam_node *) g_ope_dev.sd.token;
+	node = (struct cam_node *)g_ope_dev.sd.token;
 
 	hw_mgr_intf = kzalloc(sizeof(*hw_mgr_intf), GFP_KERNEL);
 	if (!hw_mgr_intf) {
@@ -205,7 +206,7 @@ static int cam_ope_subdev_component_bind(struct device *dev,
 	}
 
 	rc = cam_ope_hw_mgr_init(pdev->dev.of_node, (uint64_t *)hw_mgr_intf,
-		&iommu_hdl);
+				 &iommu_hdl);
 	if (rc) {
 		CAM_ERR(CAM_OPE, "OPE HW manager init failed: %d", rc);
 		goto hw_init_fail;
@@ -213,23 +214,23 @@ static int cam_ope_subdev_component_bind(struct device *dev,
 
 	for (i = 0; i < OPE_CTX_MAX; i++) {
 		g_ope_dev.ctx_ope[i].base = &g_ope_dev.ctx[i];
-		rc = cam_ope_context_init(&g_ope_dev.ctx_ope[i],
-			hw_mgr_intf, i, iommu_hdl);
+		rc = cam_ope_context_init(&g_ope_dev.ctx_ope[i], hw_mgr_intf, i,
+					  iommu_hdl);
 		if (rc) {
 			CAM_ERR(CAM_OPE, "OPE context init failed");
 			goto ctx_fail;
 		}
 	}
 
-	rc = cam_node_init(node, hw_mgr_intf, g_ope_dev.ctx,
-		OPE_CTX_MAX, OPE_DEV_NAME);
+	rc = cam_node_init(node, hw_mgr_intf, g_ope_dev.ctx, OPE_CTX_MAX,
+			   OPE_DEV_NAME);
 	if (rc) {
 		CAM_ERR(CAM_OPE, "OPE node init failed");
 		goto ctx_fail;
 	}
 
-	cam_smmu_set_client_page_fault_handler(iommu_hdl,
-		cam_ope_dev_iommu_fault_handler, node);
+	cam_smmu_set_client_page_fault_handler(
+		iommu_hdl, cam_ope_dev_iommu_fault_handler, node);
 
 	g_ope_dev.open_cnt = 0;
 	mutex_init(&g_ope_dev.ope_lock);
@@ -250,7 +251,8 @@ hw_alloc_fail:
 }
 
 static void cam_ope_subdev_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					    struct device *master_dev,
+					    void *data)
 {
 	int i;
 	struct v4l2_subdev *sd;
@@ -306,19 +308,19 @@ static int cam_ope_subdev_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id cam_ope_dt_match[] = {
-	{.compatible = "qcom,cam-ope"},
+	{ .compatible = "qcom,cam-ope" },
 	{}
 };
 
-
 struct platform_driver cam_ope_subdev_driver = {
-	.probe = cam_ope_subdev_probe,
-	.remove = cam_ope_subdev_remove,
-	.driver = {
-		.name = "cam_ope",
-		.of_match_table = cam_ope_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_ope_subdev_probe,
+    .remove = cam_ope_subdev_remove,
+    .driver =
+        {
+            .name = "cam_ope",
+            .of_match_table = cam_ope_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_ope_subdev_init_module(void)
@@ -333,4 +335,3 @@ void cam_ope_subdev_exit_module(void)
 
 MODULE_DESCRIPTION("MSM OPE driver");
 MODULE_LICENSE("GPL v2");
-

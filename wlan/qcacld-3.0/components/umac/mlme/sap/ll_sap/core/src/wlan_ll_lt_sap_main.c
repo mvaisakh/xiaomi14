@@ -19,7 +19,7 @@
 bool ll_lt_sap_is_supported(void)
 {
 	/* To do, check the FW capability to decide if this is supported
-	 * or not supported.
-	 */
+   * or not supported.
+   */
 	return true;
 }

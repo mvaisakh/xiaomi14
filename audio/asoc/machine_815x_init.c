@@ -3,9 +3,9 @@
  * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
  */
 
+#include "machine_815x_init.h"
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include "machine_815x_init.h"
 
 static int __init audio_machine_815x_init(void)
 {

@@ -8,25 +8,25 @@
 #include <linux/qcom_scm.h>
 #include <linux/soc/qcom/mdt_loader.h>
 
+#include "cam_common_util.h"
+#include "cam_compat.h"
 #include "cam_cpas_api.h"
 #include "cam_debug_util.h"
 #include "cam_hw.h"
 #include "cam_hw_intf.h"
-#include "cam_icp_hw_mgr_intf.h"
 #include "cam_icp_hw_intf.h"
+#include "cam_icp_hw_mgr_intf.h"
+#include "cam_icp_proc_common.h"
+#include "cam_icp_soc_common.h"
+#include "cam_icp_v2_core.h"
+#include "cam_presil_hw_access.h"
 #include "hfi_intf.h"
 #include "hfi_sys_defs.h"
-#include "cam_icp_proc_common.h"
-#include "cam_icp_v2_core.h"
-#include "cam_common_util.h"
-#include "cam_compat.h"
-#include "cam_presil_hw_access.h"
-#include "cam_icp_soc_common.h"
 
 #define TZ_STATE_SUSPEND 0
-#define TZ_STATE_RESUME  1
+#define TZ_STATE_RESUME 1
 
-#define ICP_FW_NAME_MAX_SIZE    32
+#define ICP_FW_NAME_MAX_SIZE 32
 
 #define ICP_V2_IRQ_TEST_TIMEOUT 1000
 
@@ -37,7 +37,8 @@ static const struct hfi_ops hfi_icp_v2_ops = {
 };
 
 static int cam_icp_v2_ubwc_configure(struct cam_hw_soc_info *soc_info,
-	struct cam_icp_v2_core_info *core_info, void *args, uint32_t arg_size)
+				     struct cam_icp_v2_core_info *core_info,
+				     void *args, uint32_t arg_size)
 {
 	struct cam_icp_soc_info *soc_priv;
 	struct cam_icp_ubwc_cfg_cmd *ubwc_cmd = args;
@@ -46,14 +47,14 @@ static int cam_icp_v2_ubwc_configure(struct cam_hw_soc_info *soc_info,
 	if (!soc_info || !core_info || !args) {
 		CAM_ERR(CAM_ICP,
 			"Invalid args: soc info is %s core info is %s cmd args is %s",
-			CAM_IS_NULL_TO_STR(soc_info), CAM_IS_NULL_TO_STR(core_info),
+			CAM_IS_NULL_TO_STR(soc_info),
+			CAM_IS_NULL_TO_STR(core_info),
 			CAM_IS_NULL_TO_STR(args));
 		return -EINVAL;
 	}
 
 	if (arg_size != sizeof(struct cam_icp_ubwc_cfg_cmd)) {
-		CAM_ERR(CAM_ICP, "Invalid ubwc cfg arg size: %u",
-			arg_size);
+		CAM_ERR(CAM_ICP, "Invalid ubwc cfg arg size: %u", arg_size);
 		return -EINVAL;
 	}
 
@@ -63,11 +64,12 @@ static int cam_icp_v2_ubwc_configure(struct cam_hw_soc_info *soc_info,
 	ubwc_proc_cmd.ubwc_cfg_dev_mask = ubwc_cmd->ubwc_cfg_dev_mask;
 
 	return cam_icp_proc_ubwc_configure(&ubwc_proc_cmd,
-		ubwc_cmd->disable_ubwc_comp, core_info->hfi_handle);
+					   ubwc_cmd->disable_ubwc_comp,
+					   core_info->hfi_handle);
 }
 
 static int cam_icp_v2_cpas_vote(struct cam_icp_v2_core_info *core_info,
-	struct cam_icp_cpas_vote *vote)
+				struct cam_icp_cpas_vote *vote)
 {
 	if (!core_info)
 		return -EINVAL;
@@ -76,7 +78,7 @@ static int cam_icp_v2_cpas_vote(struct cam_icp_v2_core_info *core_info,
 }
 
 static bool cam_icp_v2_cpas_cb(uint32_t handle, void *user_data,
-	struct cam_cpas_irq_data *irq_data)
+			       struct cam_cpas_irq_data *irq_data)
 {
 	bool ret = false;
 	(void)user_data;
@@ -87,14 +89,14 @@ static bool cam_icp_v2_cpas_cb(uint32_t handle, void *user_data,
 	switch (irq_data->irq_type) {
 	case CAM_CAMNOC_IRQ_IPE_BPS_UBWC_DECODE_ERROR:
 		CAM_ERR_RATE_LIMIT(CAM_ICP,
-			"IPE/BPS UBWC decode error status=0x%08x",
-			irq_data->u.dec_err.decerr_status.value);
+				   "IPE/BPS UBWC decode error status=0x%08x",
+				   irq_data->u.dec_err.decerr_status.value);
 		ret = true;
 		break;
 	case CAM_CAMNOC_IRQ_IPE_BPS_UBWC_ENCODE_ERROR:
 		CAM_ERR_RATE_LIMIT(CAM_ICP,
-			"IPE/BPS UBWC encode error status=0x%08x",
-			irq_data->u.enc_err.encerr_status.value);
+				   "IPE/BPS UBWC encode error status=0x%08x",
+				   irq_data->u.enc_err.encerr_status.value);
 		ret = true;
 		break;
 	default:
@@ -148,15 +150,15 @@ int cam_icp_v2_cpas_unregister(struct cam_hw_intf *icp_v2_intf)
 }
 
 static int __icp_v2_cpas_start(struct cam_icp_v2_core_info *core_info,
-	struct cam_icp_cpas_vote *vote)
+			       struct cam_icp_cpas_vote *vote)
 {
 	int rc;
 
 	if (!core_info || core_info->cpas_start)
 		return -EINVAL;
 
-	rc = cam_cpas_start(core_info->cpas_handle,
-		&vote->ahb_vote, &vote->axi_vote);
+	rc = cam_cpas_start(core_info->cpas_handle, &vote->ahb_vote,
+			    &vote->axi_vote);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "failed to start cpas rc=%d", rc);
 		return rc;
@@ -245,7 +247,8 @@ int cam_icp_v2_hw_init(void *priv, void *args, uint32_t arg_size)
 			int32_t clk_rate = 0;
 
 			clk_rate = cam_wrapper_clk_get_rate(
-				icp_v2->soc_info.clk[icp_v2->soc_info.src_clk_idx]);
+				icp_v2->soc_info
+					.clk[icp_v2->soc_info.src_clk_idx]);
 			hfi_send_freq_info(core_info->hfi_handle, clk_rate);
 		}
 	}
@@ -261,8 +264,7 @@ soc_fail:
 	return rc;
 }
 
-int cam_icp_v2_hw_deinit(void *priv, void *args,
-	uint32_t arg_size)
+int cam_icp_v2_hw_deinit(void *priv, void *args, uint32_t arg_size)
 {
 	struct cam_hw_info *icp_v2_info = priv;
 	struct cam_icp_v2_core_info *core_info;
@@ -272,7 +274,8 @@ int cam_icp_v2_hw_deinit(void *priv, void *args,
 
 	if (!icp_v2_info || !args) {
 		CAM_ERR(CAM_ICP, "ICP device info is %s cmd args is %s",
-			CAM_IS_NULL_TO_STR(icp_v2_info), CAM_IS_NULL_TO_STR(args));
+			CAM_IS_NULL_TO_STR(icp_v2_info),
+			CAM_IS_NULL_TO_STR(args));
 		return -EINVAL;
 	}
 
@@ -296,8 +299,7 @@ int cam_icp_v2_hw_deinit(void *priv, void *args,
 
 	rc = cam_icp_soc_resources_disable(&icp_v2_info->soc_info);
 	if (rc)
-		CAM_WARN(CAM_ICP,
-			"failed to disable soc resources rc=%d", rc);
+		CAM_WARN(CAM_ICP, "failed to disable soc resources rc=%d", rc);
 
 	rc = cam_icp_v2_cpas_stop(icp_v2_info->core_info);
 	if (rc)
@@ -311,7 +313,7 @@ int cam_icp_v2_hw_deinit(void *priv, void *args,
 }
 
 static void prepare_boot(struct cam_hw_info *icp_v2_info,
-	struct cam_icp_boot_args *args)
+			 struct cam_icp_boot_args *args)
 {
 	struct cam_icp_v2_core_info *core_info = icp_v2_info->core_info;
 	unsigned long flags;
@@ -368,14 +370,14 @@ static int __cam_icp_v2_power_collapse(struct cam_hw_info *icp_v2_info)
 	base = icp_v2_info->soc_info.reg_map[sys_base_idx].mem_base;
 
 	/**
-	 * Need to poll here to confirm that FW has triggered WFI
-	 * and Host can then proceed. No interrupt is expected
-	 * from FW at this time.
-	 */
+   * Need to poll here to confirm that FW has triggered WFI
+   * and Host can then proceed. No interrupt is expected
+   * from FW at this time.
+   */
 	if (cam_common_read_poll_timeout(base + ICP_V2_SYS_STATUS,
-		PC_POLL_DELAY_US, PC_POLL_TIMEOUT_US,
-		ICP_V2_STANDBYWFI, ICP_V2_STANDBYWFI,
-		&status)) {
+					 PC_POLL_DELAY_US, PC_POLL_TIMEOUT_US,
+					 ICP_V2_STANDBYWFI, ICP_V2_STANDBYWFI,
+					 &status)) {
 		CAM_ERR(CAM_ICP, "WFI poll timed out: status=0x%08x", status);
 		return -ETIMEDOUT;
 	}
@@ -389,8 +391,8 @@ static int __cam_icp_v2_power_resume(struct cam_hw_info *icp_v2_info)
 {
 	int32_t sys_base_idx, dom_mask_base_idx;
 	void __iomem *sys_base, *dom_mask_base;
-	struct cam_icp_soc_info     *soc_priv;
-	struct cam_hw_soc_info      *soc_info;
+	struct cam_icp_soc_info *soc_priv;
+	struct cam_hw_soc_info *soc_info;
 	struct cam_icp_v2_core_info *core_info = NULL;
 
 	if (!icp_v2_info) {
@@ -412,28 +414,28 @@ static int __cam_icp_v2_power_resume(struct cam_hw_info *icp_v2_info)
 
 	sys_base = icp_v2_info->soc_info.reg_map[sys_base_idx].mem_base;
 
-	cam_io_w_mb(ICP_V2_FUNC_RESET,
-		sys_base + ICP_V2_SYS_RESET);
+	cam_io_w_mb(ICP_V2_FUNC_RESET, sys_base + ICP_V2_SYS_RESET);
 
 	if (soc_priv->qos_val)
 		cam_io_w_mb(soc_priv->qos_val, sys_base + ICP_V2_SYS_ACCESS);
 
 	/* Program domain ID reg mask values if reg base is available */
 	if (dom_mask_base_idx >= 0) {
-		dom_mask_base = icp_v2_info->soc_info.reg_map[dom_mask_base_idx].mem_base;
+		dom_mask_base = icp_v2_info->soc_info.reg_map[dom_mask_base_idx]
+					.mem_base;
 
-		CAM_DBG(CAM_ICP, "domain_cfg0, offset: 0x%x: 0x%x, domain_cfg1, offset: 0x%x: 0x%x",
+		CAM_DBG(CAM_ICP,
+			"domain_cfg0, offset: 0x%x: 0x%x, domain_cfg1, offset: 0x%x: 0x%x",
 			ICP_V2_DOM_0_CFG_OFFSET, ICP_V2_DOMAIN_MASK_CFG_0,
 			ICP_V2_DOM_1_CFG_OFFSET, ICP_V2_DOMAIN_MASK_CFG_1);
 
 		cam_io_w_mb(ICP_V2_DOMAIN_MASK_CFG_0,
-			dom_mask_base + ICP_V2_DOM_0_CFG_OFFSET);
+			    dom_mask_base + ICP_V2_DOM_0_CFG_OFFSET);
 		cam_io_w_mb(ICP_V2_DOMAIN_MASK_CFG_1,
-			dom_mask_base + ICP_V2_DOM_1_CFG_OFFSET);
+			    dom_mask_base + ICP_V2_DOM_1_CFG_OFFSET);
 	}
 
-	cam_io_w_mb(ICP_V2_EN_CPU,
-		sys_base + ICP_V2_SYS_CONTROL);
+	cam_io_w_mb(ICP_V2_EN_CPU, sys_base + ICP_V2_SYS_CONTROL);
 
 	return 0;
 }
@@ -444,13 +446,13 @@ static int32_t __cam_non_sec_load_fw(void *device_priv)
 {
 	int32_t rc = 0;
 	uint32_t fw_size;
-	char firmware_name[ICP_FW_NAME_MAX_SIZE] = {0};
-	const char               *fw_name;
-	const uint8_t            *fw_start = NULL;
-	struct cam_hw_info       *icp_v2_dev = device_priv;
-	struct cam_hw_soc_info   *soc_info = NULL;
+	char firmware_name[ICP_FW_NAME_MAX_SIZE] = { 0 };
+	const char *fw_name;
+	const uint8_t *fw_start = NULL;
+	struct cam_hw_info *icp_v2_dev = device_priv;
+	struct cam_hw_soc_info *soc_info = NULL;
 	struct cam_icp_v2_core_info *core_info = NULL;
-	struct platform_device   *pdev = NULL;
+	struct platform_device *pdev = NULL;
 
 	if (!device_priv) {
 		CAM_ERR(CAM_ICP, "Invalid cam_dev_info");
@@ -462,13 +464,12 @@ static int32_t __cam_non_sec_load_fw(void *device_priv)
 	pdev = soc_info->pdev;
 
 	/**
-	 * Use paddr to map 0xE0400000 and 0xE0420000 as these
-	 * addresses are routed internally by the core. These segments
-	 * are used by the firmware to make use of the rom packing feature.
-	 */
+   * Use paddr to map 0xE0400000 and 0xE0420000 as these
+   * addresses are routed internally by the core. These segments
+   * are used by the firmware to make use of the rom packing feature.
+   */
 
-	rc = of_property_read_string(pdev->dev.of_node, "fw_name",
-		&fw_name);
+	rc = of_property_read_string(pdev->dev.of_node, "fw_name", &fw_name);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "FW image name not found");
 		return rc;
@@ -480,14 +481,13 @@ static int32_t __cam_non_sec_load_fw(void *device_priv)
 		return -EINVAL;
 	}
 
-	scnprintf(firmware_name, ARRAY_SIZE(firmware_name),
-		"%s.elf", fw_name);
+	scnprintf(firmware_name, ARRAY_SIZE(firmware_name), "%s.elf", fw_name);
 
 	rc = firmware_request_nowarn(&core_info->fw_params.fw_elf,
-		firmware_name, &pdev->dev);
+				     firmware_name, &pdev->dev);
 	if (rc) {
-		CAM_ERR(CAM_ICP, "Failed to locate %s fw: %d",
-			firmware_name, rc);
+		CAM_ERR(CAM_ICP, "Failed to locate %s fw: %d", firmware_name,
+			rc);
 		return rc;
 	}
 
@@ -512,14 +512,13 @@ static int32_t __cam_non_sec_load_fw(void *device_priv)
 	}
 
 	if (core_info->fw_params.fw_buf_len < fw_size) {
-		CAM_ERR(CAM_ICP, "mismatch in fw size: %u %llu",
-			fw_size, core_info->fw_params.fw_buf_len);
+		CAM_ERR(CAM_ICP, "mismatch in fw size: %u %llu", fw_size,
+			core_info->fw_params.fw_buf_len);
 		rc = -EINVAL;
 		goto fw_download_failed;
 	}
 
-	rc = cam_icp_program_fw(fw_start,
-		core_info->fw_params.fw_kva_addr);
+	rc = cam_icp_program_fw(fw_start, core_info->fw_params.fw_kva_addr);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "fw program is failed");
 		goto fw_download_failed;
@@ -537,24 +536,23 @@ static int __cam_non_sec_load_fw(struct cam_hw_info *icp_v2_info)
 		return -EINVAL;
 	}
 
-	cam_presil_send_event(CAM_PRESIL_EVENT_HFI_REG_ON_FIRST_REG_START_FW_DOWNLOAD, 0xFF);
+	cam_presil_send_event(
+		CAM_PRESIL_EVENT_HFI_REG_ON_FIRST_REG_START_FW_DOWNLOAD, 0xFF);
 
 	return 0;
 }
 #endif /* #ifndef CONFIG_CAM_PRESIL */
 
 /* Used for non secure FW load */
-static int cam_icp_v2_non_sec_boot(
-	struct cam_hw_info *icp_v2_info,
-	struct cam_icp_boot_args *args,
-	uint32_t arg_size)
+static int cam_icp_v2_non_sec_boot(struct cam_hw_info *icp_v2_info,
+				   struct cam_icp_boot_args *args,
+				   uint32_t arg_size)
 {
 	int rc;
 	struct cam_icp_soc_info *soc_priv;
 
 	if (!icp_v2_info || !args) {
-		CAM_ERR(CAM_ICP,
-			"invalid args: icp_v2_dev=%pK args=%pK",
+		CAM_ERR(CAM_ICP, "invalid args: icp_v2_dev=%pK args=%pK",
 			icp_v2_info, args);
 		return -EINVAL;
 	}
@@ -567,7 +565,8 @@ static int cam_icp_v2_non_sec_boot(
 	soc_priv = (struct cam_icp_soc_info *)icp_v2_info->soc_info.soc_private;
 	if (icp_v2_info->soc_info.num_mem_block > ICP_V2_BASE_MAX) {
 		CAM_ERR(CAM_ICP, "check reg config in DT v 0x%x n %d",
-			soc_priv->hw_version, icp_v2_info->soc_info.num_mem_block);
+			soc_priv->hw_version,
+			icp_v2_info->soc_info.num_mem_block);
 		return -EINVAL;
 	}
 
@@ -575,8 +574,7 @@ static int cam_icp_v2_non_sec_boot(
 
 	rc = __cam_non_sec_load_fw(icp_v2_info);
 	if (rc) {
-		CAM_ERR(CAM_ICP,
-			"firmware download failed rc=%d", rc);
+		CAM_ERR(CAM_ICP, "firmware download failed rc=%d", rc);
 		goto err;
 	}
 
@@ -594,12 +592,11 @@ err:
 }
 
 #if IS_REACHABLE(CONFIG_QCOM_MDT_LOADER)
-static int __load_firmware(struct platform_device *pdev,
-	uint32_t fw_pas_id)
+static int __load_firmware(struct platform_device *pdev, uint32_t fw_pas_id)
 {
 	const char *fw_name;
 	const struct firmware *firmware = NULL;
-	char firmware_name[ICP_FW_NAME_MAX_SIZE] = {0};
+	char firmware_name[ICP_FW_NAME_MAX_SIZE] = { 0 };
 	void *vaddr = NULL;
 	struct device_node *node;
 	struct resource res;
@@ -613,8 +610,7 @@ static int __load_firmware(struct platform_device *pdev,
 		return -EINVAL;
 	}
 
-	rc = of_property_read_string(pdev->dev.of_node, "fw_name",
-		&fw_name);
+	rc = of_property_read_string(pdev->dev.of_node, "fw_name", &fw_name);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "FW image name not found");
 		return rc;
@@ -626,8 +622,7 @@ static int __load_firmware(struct platform_device *pdev,
 		return -EINVAL;
 	}
 
-	scnprintf(firmware_name, ARRAY_SIZE(firmware_name),
-		"%s.mbn", fw_name);
+	scnprintf(firmware_name, ARRAY_SIZE(firmware_name), "%s.mbn", fw_name);
 
 	node = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
 	if (!node) {
@@ -647,8 +642,7 @@ static int __load_firmware(struct platform_device *pdev,
 
 	rc = firmware_request_nowarn(&firmware, firmware_name, &pdev->dev);
 	if (rc) {
-		CAM_ERR(CAM_ICP,
-			"error requesting %s firmware rc=%d",
+		CAM_ERR(CAM_ICP, "error requesting %s firmware rc=%d",
 			firmware_name, rc);
 		return rc;
 	}
@@ -671,7 +665,7 @@ static int __load_firmware(struct platform_device *pdev,
 	}
 
 	rc = qcom_mdt_load(&pdev->dev, firmware, firmware_name, fw_pas_id,
-			vaddr, res_start, res_size, NULL);
+			   vaddr, res_start, res_size, NULL);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "failed to load firmware rc=%d", rc);
 		goto out;
@@ -687,18 +681,17 @@ out:
 #endif
 
 static int cam_icp_v2_boot(struct cam_hw_info *icp_v2_info,
-	struct cam_icp_boot_args *args, uint32_t arg_size)
+			   struct cam_icp_boot_args *args, uint32_t arg_size)
 {
 	int rc;
 	struct cam_icp_v2_core_info *core_info = NULL;
-	struct cam_icp_soc_info     *soc_priv;
+	struct cam_icp_soc_info *soc_priv;
 
 	if (!IS_REACHABLE(CONFIG_QCOM_MDT_LOADER))
 		return -EOPNOTSUPP;
 
 	if (!icp_v2_info || !args) {
-		CAM_ERR(CAM_ICP,
-			"invalid args: icp_v2_info=%pK args=%pK",
+		CAM_ERR(CAM_ICP, "invalid args: icp_v2_info=%pK args=%pK",
 			icp_v2_info, args);
 		return -EINVAL;
 	}
@@ -751,7 +744,8 @@ static int cam_icp_v2_shutdown(struct cam_hw_info *icp_v2_info)
 		void __iomem *base;
 
 		if (sys_base_idx < 0) {
-			CAM_ERR(CAM_ICP, "No reg base idx found for ICP_SYS: %d",
+			CAM_ERR(CAM_ICP,
+				"No reg base idx found for ICP_SYS: %d",
 				sys_base_idx);
 			return -EINVAL;
 		}
@@ -764,8 +758,8 @@ static int cam_icp_v2_shutdown(struct cam_hw_info *icp_v2_info)
 	return rc;
 }
 
-static void __cam_icp_v2_core_reg_dump(
-	struct cam_hw_info *icp_v2_info, uint32_t dump_type)
+static void __cam_icp_v2_core_reg_dump(struct cam_hw_info *icp_v2_info,
+				       uint32_t dump_type)
 {
 	int i;
 	int32_t csr_base_idx;
@@ -775,22 +769,27 @@ static void __cam_icp_v2_core_reg_dump(
 	void __iomem *irq_base, *csr_base, *csr_gp_base;
 
 	csr_base_idx = core_info->reg_base_idx[ICP_V2_CSR_BASE];
-	csr_base =  icp_v2_info->soc_info.reg_map[csr_base_idx].mem_base;
+	csr_base = icp_v2_info->soc_info.reg_map[csr_base_idx].mem_base;
 	csr_gp_base = csr_base + ICP_V2_GEN_PURPOSE_REG_OFFSET;
-	irq_base = icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx].mem_base;
+	irq_base = icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx]
+			   .mem_base;
 
 	if (dump_type & CAM_ICP_DUMP_STATUS_REGISTERS)
 		CAM_INFO(CAM_ICP, "ICP PFault status:0x%x",
-			cam_io_r_mb(irq_base + core_info->hw_info->pfault_info));
+			 cam_io_r_mb(irq_base +
+				     core_info->hw_info->pfault_info));
 
 	if (dump_type & CAM_ICP_DUMP_CSR_REGISTERS) {
 		for (i = 0; i < ICP_V2_CSR_GP_REG_COUNT;) {
-			CAM_INFO_BUF(CAM_ICP, log_info, 512, &len,
+			CAM_INFO_BUF(
+				CAM_ICP, log_info, 512, &len,
 				"GP_%d: 0x%x GP_%d: 0x%x GP_%d: 0x%x GP_%d: 0x%x",
-				i, cam_io_r_mb(csr_gp_base + (i << 2)),
-				(i + 1), cam_io_r_mb(csr_gp_base + ((i + 1) << 2)),
-				(i + 2), cam_io_r_mb(csr_gp_base + ((i + 2) << 2)),
-				(i + 3), cam_io_r_mb(csr_gp_base + ((i + 3) << 2)));
+				i, cam_io_r_mb(csr_gp_base + (i << 2)), (i + 1),
+				cam_io_r_mb(csr_gp_base + ((i + 1) << 2)),
+				(i + 2),
+				cam_io_r_mb(csr_gp_base + ((i + 2) << 2)),
+				(i + 3),
+				cam_io_r_mb(csr_gp_base + ((i + 3) << 2)));
 			i += 4;
 		}
 
@@ -800,7 +799,7 @@ static void __cam_icp_v2_core_reg_dump(
 
 /* API controls collapse/resume of ICP */
 static int cam_icp_v2_core_control(struct cam_hw_info *icp_v2_info,
-	uint32_t state)
+				   uint32_t state)
 {
 	int rc = 0;
 	struct cam_icp_v2_core_info *core_info =
@@ -811,10 +810,12 @@ static int cam_icp_v2_core_control(struct cam_hw_info *icp_v2_info,
 	if (core_info->use_sec_pil) {
 		rc = qcom_scm_set_remote_state(state, soc_priv->fw_pas_id);
 		if (rc) {
-			CAM_ERR(CAM_ICP,
-				"remote state set to %s failed rc=%d",
-				(state == TZ_STATE_RESUME ? "resume" : "suspend"), rc);
-			__cam_icp_v2_core_reg_dump(icp_v2_info, CAM_ICP_DUMP_STATUS_REGISTERS);
+			CAM_ERR(CAM_ICP, "remote state set to %s failed rc=%d",
+				(state == TZ_STATE_RESUME ? "resume" :
+							    "suspend"),
+				rc);
+			__cam_icp_v2_core_reg_dump(
+				icp_v2_info, CAM_ICP_DUMP_STATUS_REGISTERS);
 		}
 	} else {
 		if (state == TZ_STATE_RESUME) {
@@ -824,7 +825,8 @@ static int cam_icp_v2_core_control(struct cam_hw_info *icp_v2_info,
 		} else {
 			rc = __cam_icp_v2_power_collapse(icp_v2_info);
 			if (rc)
-				CAM_ERR(CAM_ICP, "ICP collapse failed rc=%d", rc);
+				CAM_ERR(CAM_ICP, "ICP collapse failed rc=%d",
+					rc);
 		}
 	}
 
@@ -832,29 +834,29 @@ static int cam_icp_v2_core_control(struct cam_hw_info *icp_v2_info,
 }
 
 static inline int cam_icp_v2_download_fw(struct cam_hw_info *icp_v2_info,
-	struct cam_icp_boot_args *args, uint32_t arg_size)
+					 struct cam_icp_boot_args *args,
+					 uint32_t arg_size)
 {
 	int rc;
 
-	CAM_INFO(CAM_ICP, "Loading Secure PIL : %s", CAM_BOOL_TO_YESNO(args->use_sec_pil));
+	CAM_INFO(CAM_ICP, "Loading Secure PIL : %s",
+		 CAM_BOOL_TO_YESNO(args->use_sec_pil));
 
 	if (args->use_sec_pil)
-		rc = cam_icp_v2_boot(
-			icp_v2_info, args, arg_size);
+		rc = cam_icp_v2_boot(icp_v2_info, args, arg_size);
 	else
-		rc = cam_icp_v2_non_sec_boot(
-			icp_v2_info, args, arg_size);
+		rc = cam_icp_v2_non_sec_boot(icp_v2_info, args, arg_size);
 
 	return rc;
 }
 
 static int __cam_icp_v2_update_clk_rate(struct cam_hw_info *icp_v2_info,
-	void *args, uint32_t arg_size)
+					void *args, uint32_t arg_size)
 {
 	int32_t clk_level = 0, rc;
-	struct cam_ahb_vote       ahb_vote;
+	struct cam_ahb_vote ahb_vote;
 	struct cam_icp_v2_core_info *core_info = NULL;
-	struct cam_hw_soc_info   *soc_info = NULL;
+	struct cam_hw_soc_info *soc_info = NULL;
 
 	if (!args) {
 		CAM_ERR(CAM_ICP, "Invalid args is NULL");
@@ -874,27 +876,24 @@ static int __cam_icp_v2_update_clk_rate(struct cam_hw_info *icp_v2_info,
 	}
 
 	clk_level = *((int32_t *)args);
-	CAM_DBG(CAM_ICP,
-		"Update ICP clock to level [%d]", clk_level);
-	rc = cam_icp_soc_update_clk_rate(soc_info, clk_level, core_info->hfi_handle);
+	CAM_DBG(CAM_ICP, "Update ICP clock to level [%d]", clk_level);
+	rc = cam_icp_soc_update_clk_rate(soc_info, clk_level,
+					 core_info->hfi_handle);
 	if (rc)
-		CAM_WARN(CAM_ICP,
-			"Failed to update clk to level: %d rc: %d",
-			clk_level, rc);
+		CAM_WARN(CAM_ICP, "Failed to update clk to level: %d rc: %d",
+			 clk_level, rc);
 
 	ahb_vote.type = CAM_VOTE_ABSOLUTE;
 	ahb_vote.vote.level = clk_level;
-	rc = cam_cpas_update_ahb_vote(
-		core_info->cpas_handle, &ahb_vote);
+	rc = cam_cpas_update_ahb_vote(core_info->cpas_handle, &ahb_vote);
 	if (rc)
-		CAM_WARN(CAM_ICP,
-			"Failed to update ahb vote rc: %d", rc);
+		CAM_WARN(CAM_ICP, "Failed to update ahb vote rc: %d", rc);
 
 	return rc;
 }
 
 static int __cam_icp_v2_fw_mini_dump(struct cam_icp_v2_core_info *core_info,
-	struct cam_icp_hw_dump_args *args)
+				     struct cam_icp_hw_dump_args *args)
 {
 	if (!core_info) {
 		CAM_ERR(CAM_ICP, "Invalid param %pK", core_info);
@@ -902,7 +901,7 @@ static int __cam_icp_v2_fw_mini_dump(struct cam_icp_v2_core_info *core_info,
 	}
 
 	return cam_icp_proc_mini_dump(args, core_info->fw_params.fw_kva_addr,
-		core_info->fw_params.fw_buf_len);
+				      core_info->fw_params.fw_buf_len);
 }
 
 static int cam_icp_v2_send_fw_init(struct cam_icp_v2_core_info *core_info)
@@ -916,7 +915,8 @@ static int cam_icp_v2_send_fw_init(struct cam_icp_v2_core_info *core_info)
 
 	rc = hfi_send_system_cmd(core_info->hfi_handle, HFI_CMD_SYS_INIT, 0, 0);
 	if (rc) {
-		CAM_ERR(CAM_ICP, "Fail to send sys init command for hfi handle: %d",
+		CAM_ERR(CAM_ICP,
+			"Fail to send sys init command for hfi handle: %d",
 			core_info->hfi_handle);
 		return rc;
 	}
@@ -933,9 +933,11 @@ static int cam_icp_v2_pc_prep(struct cam_icp_v2_core_info *core_info)
 		return -EINVAL;
 	}
 
-	rc = hfi_send_system_cmd(core_info->hfi_handle, HFI_CMD_SYS_PC_PREP, 0, 0);
+	rc = hfi_send_system_cmd(core_info->hfi_handle, HFI_CMD_SYS_PC_PREP, 0,
+				 0);
 	if (rc) {
-		CAM_ERR(CAM_ICP, "Fail to send PC collapse command for hfi handle: %d",
+		CAM_ERR(CAM_ICP,
+			"Fail to send PC collapse command for hfi handle: %d",
 			core_info->hfi_handle);
 		return rc;
 	}
@@ -944,11 +946,12 @@ static int cam_icp_v2_pc_prep(struct cam_icp_v2_core_info *core_info)
 }
 
 int cam_icp_v2_set_hfi_handle(struct cam_icp_v2_core_info *core_info,
-	void *args, uint32_t arg_size)
+			      void *args, uint32_t arg_size)
 {
 	if (!core_info || !args) {
 		CAM_ERR(CAM_ICP, "Core info is %s and args is %s",
-			CAM_IS_NULL_TO_STR(core_info), CAM_IS_NULL_TO_STR(args));
+			CAM_IS_NULL_TO_STR(core_info),
+			CAM_IS_NULL_TO_STR(args));
 		return -EINVAL;
 	}
 
@@ -963,8 +966,8 @@ int cam_icp_v2_set_hfi_handle(struct cam_icp_v2_core_info *core_info,
 	return 0;
 }
 
-int cam_icp_v2_process_cmd(void *priv, uint32_t cmd_type,
-	void *args, uint32_t arg_size)
+int cam_icp_v2_process_cmd(void *priv, uint32_t cmd_type, void *args,
+			   uint32_t arg_size)
 {
 	struct cam_hw_info *icp_v2_info = priv;
 	int rc = -EINVAL;
@@ -976,7 +979,8 @@ int cam_icp_v2_process_cmd(void *priv, uint32_t cmd_type,
 
 	switch (cmd_type) {
 	case CAM_ICP_CMD_SET_HFI_HANDLE:
-		rc = cam_icp_v2_set_hfi_handle(icp_v2_info->core_info, args, arg_size);
+		rc = cam_icp_v2_set_hfi_handle(icp_v2_info->core_info, args,
+					       arg_size);
 		break;
 	case CAM_ICP_CMD_PROC_SHUTDOWN:
 		rc = cam_icp_v2_shutdown(icp_v2_info);
@@ -1001,7 +1005,8 @@ int cam_icp_v2_process_cmd(void *priv, uint32_t cmd_type,
 		break;
 	case CAM_ICP_CMD_UBWC_CFG:
 		rc = cam_icp_v2_ubwc_configure(&icp_v2_info->soc_info,
-			icp_v2_info->core_info, args, arg_size);
+					       icp_v2_info->core_info, args,
+					       arg_size);
 		break;
 	case CAM_ICP_SEND_INIT:
 		rc = cam_icp_v2_send_fw_init(icp_v2_info->core_info);
@@ -1029,7 +1034,7 @@ int cam_icp_v2_process_cmd(void *priv, uint32_t cmd_type,
 			break;
 		}
 
-		dump_type = *(uint32_t *) args;
+		dump_type = *(uint32_t *)args;
 		__cam_icp_v2_core_reg_dump(icp_v2_info, dump_type);
 		rc = 0;
 		break;
@@ -1057,12 +1062,14 @@ irqreturn_t cam_icp_v2_handle_irq(int irq_num, void *data)
 	}
 
 	core_info = icp_v2_info->core_info;
-	irq_base = icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx].mem_base;
+	irq_base = icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx]
+			   .mem_base;
 
 	status = cam_io_r_mb(irq_base + core_info->hw_info->ob_irq_status);
 
 	cam_io_w_mb(status, irq_base + core_info->hw_info->ob_irq_clear);
-	cam_io_w_mb(ICP_V2_IRQ_CLEAR_CMD, irq_base + core_info->hw_info->ob_irq_cmd);
+	cam_io_w_mb(ICP_V2_IRQ_CLEAR_CMD,
+		    irq_base + core_info->hw_info->ob_irq_cmd);
 
 	if (core_info->is_irq_test) {
 		CAM_INFO(CAM_ICP, "ICP_V2 IRQ verified (status=0x%x)", status);
@@ -1075,20 +1082,21 @@ irqreturn_t cam_icp_v2_handle_irq(int irq_num, void *data)
 	if (status & ICP_V2_WDT_BITE_WS0) {
 		wd0_base_idx = core_info->reg_base_idx[ICP_V2_WD0_BASE];
 
-		cam_io_w_mb(0x0,
+		cam_io_w_mb(
+			0x0,
 			icp_v2_info->soc_info.reg_map[wd0_base_idx].mem_base +
-			ICP_V2_WD_CTRL);
-		cam_io_w_mb(0x1,
+				ICP_V2_WD_CTRL);
+		cam_io_w_mb(
+			0x1,
 			icp_v2_info->soc_info.reg_map[wd0_base_idx].mem_base +
-			ICP_V2_WD_INTCLR);
+				ICP_V2_WD_INTCLR);
 		CAM_ERR_RATE_LIMIT(CAM_ICP, "Fatal: Watchdog Bite from ICP");
 		recover = true;
 	}
 
 	spin_lock(&icp_v2_info->hw_lock);
 	if (core_info->irq_cb.cb)
-		core_info->irq_cb.cb(core_info->irq_cb.data,
-			recover);
+		core_info->irq_cb.cb(core_info->irq_cb.data, recover);
 	spin_unlock(&icp_v2_info->hw_lock);
 
 	return IRQ_HANDLED;
@@ -1106,8 +1114,9 @@ void cam_icp_v2_irq_raise(void *priv)
 
 	core_info = icp_v2_info->core_info;
 	cam_io_w_mb(ICP_V2_HOST2ICPINT,
-		icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx].mem_base +
-		core_info->hw_info->host2icpint);
+		    icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx]
+				    .mem_base +
+			    core_info->hw_info->host2icpint);
 }
 
 void cam_icp_v2_irq_enable(void *priv)
@@ -1122,8 +1131,9 @@ void cam_icp_v2_irq_enable(void *priv)
 
 	core_info = icp_v2_info->core_info;
 	cam_io_w_mb(ICP_V2_WDT_BITE_WS0 | ICP_V2_ICP2HOSTINT,
-		icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx].mem_base +
-		core_info->hw_info->ob_irq_mask);
+		    icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx]
+				    .mem_base +
+			    core_info->hw_info->ob_irq_mask);
 }
 
 int cam_icp_v2_test_irq_line(void *priv)
@@ -1140,18 +1150,23 @@ int cam_icp_v2_test_irq_line(void *priv)
 	}
 
 	core_info = icp_v2_info->core_info;
-	irq_membase = icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx].mem_base;
+	irq_membase = icp_v2_info->soc_info.reg_map[core_info->irq_regbase_idx]
+			      .mem_base;
 
 	reinit_completion(&icp_v2_info->hw_complete);
 	core_info->is_irq_test = true;
 
 	cam_icp_v2_hw_init(priv, NULL, 0);
 
-	cam_io_w_mb(ICP_V2_WDT_BARK_WS0, irq_membase + core_info->hw_info->ob_irq_mask);
-	cam_io_w_mb(ICP_V2_WDT_BARK_WS0, irq_membase + core_info->hw_info->ob_irq_set);
-	cam_io_w_mb(ICP_V2_IRQ_SET_CMD, irq_membase + core_info->hw_info->ob_irq_cmd);
+	cam_io_w_mb(ICP_V2_WDT_BARK_WS0,
+		    irq_membase + core_info->hw_info->ob_irq_mask);
+	cam_io_w_mb(ICP_V2_WDT_BARK_WS0,
+		    irq_membase + core_info->hw_info->ob_irq_set);
+	cam_io_w_mb(ICP_V2_IRQ_SET_CMD,
+		    irq_membase + core_info->hw_info->ob_irq_cmd);
 
-	rem_jiffies = cam_common_wait_for_completion_timeout(&icp_v2_info->hw_complete,
+	rem_jiffies = cam_common_wait_for_completion_timeout(
+		&icp_v2_info->hw_complete,
 		msecs_to_jiffies(ICP_V2_IRQ_TEST_TIMEOUT));
 	if (!rem_jiffies)
 		CAM_ERR(CAM_ICP, "ICP IRQ verification timed out");
@@ -1213,7 +1228,8 @@ static int cam_icp_v2_setup_register_base_indexes(
 	}
 
 	rc = cam_common_util_get_string_index(soc_info->mem_block_name,
-		soc_info->num_mem_block, "icp_csr", &index);
+					      soc_info->num_mem_block,
+					      "icp_csr", &index);
 	if ((rc == 0) && (index < num_reg_map)) {
 		regbase_index[ICP_V2_CSR_BASE] = index;
 	} else {
@@ -1224,7 +1240,8 @@ static int cam_icp_v2_setup_register_base_indexes(
 	}
 
 	rc = cam_common_util_get_string_index(soc_info->mem_block_name,
-		soc_info->num_mem_block, "icp_wd0", &index);
+					      soc_info->num_mem_block,
+					      "icp_wd0", &index);
 	if ((rc == 0) && (index < num_reg_map)) {
 		regbase_index[ICP_V2_WD0_BASE] = index;
 	} else {
@@ -1236,7 +1253,8 @@ static int cam_icp_v2_setup_register_base_indexes(
 
 	if (hw_version == CAM_ICP_V2_VERSION) {
 		rc = cam_common_util_get_string_index(soc_info->mem_block_name,
-			soc_info->num_mem_block, "icp_cirq", &index);
+						      soc_info->num_mem_block,
+						      "icp_cirq", &index);
 		if ((rc == 0) && (index < num_reg_map)) {
 			regbase_index[ICP_V2_CIRQ_BASE] = index;
 		} else {
@@ -1252,10 +1270,11 @@ static int cam_icp_v2_setup_register_base_indexes(
 
 	/* optional - ICP SYS map */
 	rc = cam_common_util_get_string_index(soc_info->mem_block_name,
-		soc_info->num_mem_block, "icp_sys", &index);
+					      soc_info->num_mem_block,
+					      "icp_sys", &index);
 	if ((rc == 0) && (index < num_reg_map)) {
 		regbase_index[ICP_V2_SYS_BASE] = index;
-	}  else {
+	} else {
 		CAM_DBG(CAM_ICP,
 			"Failed to get index for icp_sys, rc: %d index: %u num_reg_map: %u",
 			rc, index, num_reg_map);
@@ -1264,12 +1283,14 @@ static int cam_icp_v2_setup_register_base_indexes(
 
 	/* optional - for non secure FW loading */
 	rc = cam_common_util_get_string_index(soc_info->mem_block_name,
-		soc_info->num_mem_block, "icp_dom_mask", &index);
+					      soc_info->num_mem_block,
+					      "icp_dom_mask", &index);
 	if ((rc == 0) && (index < num_reg_map)) {
 		regbase_index[ICP_V2_DOM_MASK_BASE] = index;
 	} else {
 		CAM_DBG(CAM_ICP,
-			"Failed to get index for icp_dom_mask, rc: %d index: %u num_reg_map: %u",
+			"Failed to get index for icp_dom_mask, rc: %d index: %u "
+			"num_reg_map: %u",
 			rc, index, num_reg_map);
 		regbase_index[ICP_V2_DOM_MASK_BASE] = -1;
 	}
@@ -1277,9 +1298,8 @@ static int cam_icp_v2_setup_register_base_indexes(
 	return 0;
 }
 
-int cam_icp_v2_core_init(
-	struct cam_hw_soc_info *soc_info,
-	struct cam_icp_v2_core_info *core_info)
+int cam_icp_v2_core_init(struct cam_hw_soc_info *soc_info,
+			 struct cam_icp_v2_core_info *core_info)
 {
 	int rc = 0;
 	struct cam_icp_soc_info *soc_priv;
@@ -1287,7 +1307,9 @@ int cam_icp_v2_core_init(
 	soc_priv = (struct cam_icp_soc_info *)soc_info->soc_private;
 
 	rc = cam_icp_v2_setup_register_base_indexes(soc_info,
-		soc_priv->hw_version, core_info->reg_base_idx, ICP_V2_BASE_MAX);
+						    soc_priv->hw_version,
+						    core_info->reg_base_idx,
+						    ICP_V2_BASE_MAX);
 	if (rc)
 		return rc;
 

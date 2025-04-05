@@ -19,21 +19,21 @@
  * component.
  */
 
-#include <wlan_lmac_if_def.h>
-#include "wifi_pos_api.h"
 #include "wifi_pos_pasn_api.h"
-#include "wifi_pos_utils_i.h"
-#include "wifi_pos_main_i.h"
 #include "os_if_wifi_pos.h"
 #include "os_if_wifi_pos_utils.h"
 #include "target_if_wifi_pos.h"
 #include "target_if_wifi_pos_rx_ops.h"
+#include "wifi_pos_api.h"
+#include "wifi_pos_main_i.h"
+#include "wifi_pos_utils_i.h"
+#include "wlan_lmac_if_def.h"
 #include "wlan_objmgr_cmn.h"
 #include "wlan_objmgr_global_obj.h"
-#include "wlan_objmgr_psoc_obj.h"
 #include "wlan_objmgr_peer_obj.h"
-#include "wlan_lmac_if_def.h"
+#include "wlan_objmgr_psoc_obj.h"
 #include "wlan_vdev_mgr_tgt_if_tx_api.h"
+#include <wlan_lmac_if_def.h>
 
 #if defined(WIFI_POS_CONVERGED) && defined(WLAN_FEATURE_RTT_11AZ_SUPPORT)
 uint8_t wifi_pos_get_pasn_peer_count(struct wlan_objmgr_vdev *vdev)
@@ -89,7 +89,8 @@ void wifi_pos_set_11az_failed_peers(struct wlan_objmgr_vdev *vdev,
 	for (i = 0; i < WLAN_MAX_11AZ_PEERS; i++) {
 		if (qdf_is_macaddr_equal(mac_addr,
 					 &pasn_context->failed_peer_list[i])) {
-			wifi_pos_debug("Peer: " QDF_MAC_ADDR_FMT " already exists in failed list",
+			wifi_pos_debug("Peer: " QDF_MAC_ADDR_FMT
+				       " already exists in failed list",
 				       QDF_MAC_ADDR_REF(mac_addr->bytes));
 			return;
 		}
@@ -98,11 +99,12 @@ void wifi_pos_set_11az_failed_peers(struct wlan_objmgr_vdev *vdev,
 add_failed_peer:
 	for (i = 0; i < WLAN_MAX_11AZ_PEERS; i++) {
 		if (qdf_is_macaddr_broadcast(
-					&pasn_context->failed_peer_list[i])) {
+			    &pasn_context->failed_peer_list[i])) {
 			qdf_copy_macaddr(&pasn_context->failed_peer_list[i],
 					 mac_addr);
 			pasn_context->num_failed_peers++;
-			wifi_pos_debug("Added failed peer: " QDF_MAC_ADDR_FMT " at idx[%d]",
+			wifi_pos_debug("Added failed peer: " QDF_MAC_ADDR_FMT
+				       " at idx[%d]",
 				       QDF_MAC_ADDR_REF(mac_addr->bytes), i);
 
 			return;
@@ -155,7 +157,10 @@ void wifi_pos_add_peer_to_list(struct wlan_objmgr_vdev *vdev,
 			pasn_context->num_unsecure_peers++;
 
 		wifi_pos_debug("Added %s peer: " QDF_MAC_ADDR_FMT " at idx[%d]",
-			       (req->peer_type == WLAN_WIFI_POS_PASN_SECURE_PEER) ? "secure" : "insecure",
+			       (req->peer_type ==
+				WLAN_WIFI_POS_PASN_SECURE_PEER) ?
+				       "secure" :
+				       "insecure",
 			       QDF_MAC_ADDR_REF(dst_entry->peer_mac.bytes), i);
 
 		break;
@@ -171,10 +176,10 @@ void wifi_pos_add_peer_to_list(struct wlan_objmgr_vdev *vdev,
  *
  * Return: None
  */
-static
-void wifi_pos_move_peers_to_fail_list(struct wlan_objmgr_vdev *vdev,
-				      struct qdf_mac_addr *peer_mac,
-				      enum wifi_pos_pasn_peer_type peer_type)
+static void
+wifi_pos_move_peers_to_fail_list(struct wlan_objmgr_vdev *vdev,
+				 struct qdf_mac_addr *peer_mac,
+				 enum wifi_pos_pasn_peer_type peer_type)
 {
 	uint8_t i;
 	struct wifi_pos_vdev_priv_obj *vdev_pos_obj;
@@ -194,10 +199,10 @@ void wifi_pos_move_peers_to_fail_list(struct wlan_objmgr_vdev *vdev,
 	pasn_context = &vdev_pos_obj->pasn_context;
 
 	/*
-	 * Broadcast mac address will be sent by caller when initiate
-	 * external auth fails and to move the entire list to failed
-	 * peers list
-	 */
+   * Broadcast mac address will be sent by caller when initiate
+   * external auth fails and to move the entire list to failed
+   * peers list
+   */
 	if (qdf_is_macaddr_broadcast(peer_mac)) {
 		/* Clear the entire list and move it to failed peers list */
 		if (peer_type == WLAN_WIFI_POS_PASN_SECURE_PEER)
@@ -212,13 +217,13 @@ void wifi_pos_move_peers_to_fail_list(struct wlan_objmgr_vdev *vdev,
 
 		for (i = 0; i < WLAN_MAX_11AZ_PEERS; i++) {
 			/*
-			 * if valid entry exist in the list, set that mac
-			 * address to failed list and clear that mac from the
-			 * secure/insecure list
-			 */
+       * if valid entry exist in the list, set that mac
+       * address to failed list and clear that mac from the
+       * secure/insecure list
+       */
 			if (!qdf_is_macaddr_broadcast(&list[i].peer_mac)) {
 				wifi_pos_set_11az_failed_peers(
-						vdev, &list[i].peer_mac);
+					vdev, &list[i].peer_mac);
 				qdf_set_macaddr_broadcast(&list[i].peer_mac);
 			}
 		}
@@ -229,20 +234,20 @@ void wifi_pos_move_peers_to_fail_list(struct wlan_objmgr_vdev *vdev,
 	secure_list = pasn_context->secure_peer_list;
 	unsecure_list = pasn_context->unsecure_peer_list;
 	/*
-	 * This condition is hit when peer create confirm for a pasn
-	 * peer is received with failure status
-	 */
+   * This condition is hit when peer create confirm for a pasn
+   * peer is received with failure status
+   */
 	for (i = 0; i < WLAN_MAX_11AZ_PEERS; i++) {
 		/*
-		 * Clear the individual entry that exist for the given
-		 * mac address in secure/insecure list
-		 */
+     * Clear the individual entry that exist for the given
+     * mac address in secure/insecure list
+     */
 		if (qdf_is_macaddr_equal(peer_mac, &secure_list[i].peer_mac)) {
 			entry_to_copy = secure_list[i].peer_mac;
 			qdf_set_macaddr_broadcast(&secure_list[i].peer_mac);
 			pasn_context->num_secure_peers--;
 		} else if (qdf_is_macaddr_equal(peer_mac,
-			   &unsecure_list[i].peer_mac)) {
+						&unsecure_list[i].peer_mac)) {
 			entry_to_copy = unsecure_list[i].peer_mac;
 			qdf_set_macaddr_broadcast(&unsecure_list[i].peer_mac);
 			pasn_context->num_unsecure_peers--;
@@ -255,11 +260,9 @@ void wifi_pos_move_peers_to_fail_list(struct wlan_objmgr_vdev *vdev,
 	}
 }
 
-static QDF_STATUS
-wifi_pos_request_external_pasn_auth(struct wlan_objmgr_psoc *psoc,
-				    struct wlan_objmgr_vdev *vdev,
-				    struct wlan_pasn_request *peer_list,
-				    uint8_t num_peers)
+static QDF_STATUS wifi_pos_request_external_pasn_auth(
+	struct wlan_objmgr_psoc *psoc, struct wlan_objmgr_vdev *vdev,
+	struct wlan_pasn_request *peer_list, uint8_t num_peers)
 {
 	struct wifi_pos_vdev_priv_obj *vdev_pos_obj;
 	struct wifi_pos_osif_ops *osif_cb;
@@ -270,8 +273,7 @@ wifi_pos_request_external_pasn_auth(struct wlan_objmgr_psoc *psoc,
 
 	osif_cb = wifi_pos_get_osif_callbacks();
 	if (!osif_cb || !osif_cb->osif_initiate_pasn_cb) {
-		wifi_pos_err("OSIF %s cb is NULL",
-			     !osif_cb ? "" : "PASN");
+		wifi_pos_err("OSIF %s cb is NULL", !osif_cb ? "" : "PASN");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -281,19 +283,17 @@ wifi_pos_request_external_pasn_auth(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = osif_cb->osif_initiate_pasn_cb(vdev, peer_list,
-						num_peers, true);
+	status = osif_cb->osif_initiate_pasn_cb(vdev, peer_list, num_peers,
+						true);
 	if (QDF_IS_STATUS_ERROR(status))
 		wifi_pos_err("Initiate PASN auth failed");
 
 	return status;
 }
 
-static QDF_STATUS
-wifi_pos_request_flush_pasn_keys(struct wlan_objmgr_psoc *psoc,
-				 struct wlan_objmgr_vdev *vdev,
-				 struct wlan_pasn_request *peer_list,
-				 uint8_t num_peers)
+static QDF_STATUS wifi_pos_request_flush_pasn_keys(
+	struct wlan_objmgr_psoc *psoc, struct wlan_objmgr_vdev *vdev,
+	struct wlan_pasn_request *peer_list, uint8_t num_peers)
 {
 	struct wifi_pos_vdev_priv_obj *vdev_pos_obj;
 	struct wifi_pos_osif_ops *osif_cb;
@@ -301,8 +301,7 @@ wifi_pos_request_flush_pasn_keys(struct wlan_objmgr_psoc *psoc,
 
 	osif_cb = wifi_pos_get_osif_callbacks();
 	if (!osif_cb || !osif_cb->osif_initiate_pasn_cb) {
-		wifi_pos_err("OSIF %s cb is NULL",
-			     !osif_cb ? "" : "PASN");
+		wifi_pos_err("OSIF %s cb is NULL", !osif_cb ? "" : "PASN");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -318,25 +317,23 @@ wifi_pos_request_flush_pasn_keys(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-static QDF_STATUS
-wifi_pos_check_and_initiate_pasn_authentication(struct wlan_objmgr_psoc *psoc,
-						struct wlan_objmgr_vdev *vdev,
-						struct wifi_pos_11az_context *pasn_ctx)
+static QDF_STATUS wifi_pos_check_and_initiate_pasn_authentication(
+	struct wlan_objmgr_psoc *psoc, struct wlan_objmgr_vdev *vdev,
+	struct wifi_pos_11az_context *pasn_ctx)
 {
 	struct qdf_mac_addr bcast_mac = QDF_MAC_ADDR_BCAST_INIT;
 	QDF_STATUS status;
 
-	if (pasn_ctx->num_pending_peer_creation ||
-	    !pasn_ctx->num_secure_peers)
+	if (pasn_ctx->num_pending_peer_creation || !pasn_ctx->num_secure_peers)
 		return QDF_STATUS_SUCCESS;
 
-	status = wifi_pos_request_external_pasn_auth(psoc, vdev,
-						     pasn_ctx->secure_peer_list,
-						     pasn_ctx->num_secure_peers);
+	status = wifi_pos_request_external_pasn_auth(
+		psoc, vdev, pasn_ctx->secure_peer_list,
+		pasn_ctx->num_secure_peers);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wifi_pos_err("Initiate Pasn Authentication failed");
-		wifi_pos_move_peers_to_fail_list(vdev, &bcast_mac,
-						 WLAN_WIFI_POS_PASN_SECURE_PEER);
+		wifi_pos_move_peers_to_fail_list(
+			vdev, &bcast_mac, WLAN_WIFI_POS_PASN_SECURE_PEER);
 		/* TODO send PASN_STATUS cmd from here */
 	}
 
@@ -375,13 +372,14 @@ QDF_STATUS wifi_pos_handle_ranging_peer_create(struct wlan_objmgr_psoc *psoc,
 		peer = wlan_objmgr_get_peer_by_mac(psoc, req[i].peer_mac.bytes,
 						   WLAN_WIFI_POS_CORE_ID);
 		/*
-		 * If already PASN peer is found, then this is a request to
-		 * initiate PASN authentication alone and not to send
-		 * peer create to fw
-		 */
+     * If already PASN peer is found, then this is a request to
+     * initiate PASN authentication alone and not to send
+     * peer create to fw
+     */
 		if (peer &&
 		    (wlan_peer_get_peer_type(peer) == WLAN_PEER_RTT_PASN)) {
-			wifi_pos_debug("PASN Peer: " QDF_MAC_ADDR_FMT "already exists",
+			wifi_pos_debug("PASN Peer: " QDF_MAC_ADDR_FMT
+				       "already exists",
 				       QDF_MAC_ADDR_REF(req[i].peer_mac.bytes));
 			wifi_pos_add_peer_to_list(vdev, &req[i], false);
 			wlan_objmgr_peer_release_ref(peer,
@@ -389,11 +387,12 @@ QDF_STATUS wifi_pos_handle_ranging_peer_create(struct wlan_objmgr_psoc *psoc,
 			continue;
 		} else if (peer) {
 			/*
-			 * If a peer with given mac address already exists which
-			 * is not a PASN peer, then move this peer to failed
-			 * list
-			 */
-			wifi_pos_debug("Peer: " QDF_MAC_ADDR_FMT "of type:%d already exist",
+       * If a peer with given mac address already exists which
+       * is not a PASN peer, then move this peer to failed
+       * list
+       */
+			wifi_pos_debug("Peer: " QDF_MAC_ADDR_FMT
+				       "of type:%d already exist",
 				       QDF_MAC_ADDR_REF(req[i].peer_mac.bytes),
 				       wlan_peer_get_peer_type(peer));
 			wifi_pos_set_11az_failed_peers(vdev, &req[i].peer_mac);
@@ -411,14 +410,14 @@ QDF_STATUS wifi_pos_handle_ranging_peer_create(struct wlan_objmgr_psoc *psoc,
 
 		wifi_pos_update_pasn_peer_count(vdev, true);
 		if (req[i].is_ltf_keyseed_required) {
-			peer = wlan_objmgr_get_peer_by_mac(psoc,
-							   req[i].peer_mac.bytes,
-							   WLAN_WIFI_POS_CORE_ID);
+			peer = wlan_objmgr_get_peer_by_mac(
+				psoc, req[i].peer_mac.bytes,
+				WLAN_WIFI_POS_CORE_ID);
 			if (peer) {
 				wifi_pos_set_peer_ltf_keyseed_required(peer,
 								       true);
-				wlan_objmgr_peer_release_ref(peer,
-							     WLAN_WIFI_POS_CORE_ID);
+				wlan_objmgr_peer_release_ref(
+					peer, WLAN_WIFI_POS_CORE_ID);
 			}
 		}
 
@@ -438,12 +437,12 @@ QDF_STATUS wifi_pos_handle_ranging_peer_create(struct wlan_objmgr_psoc *psoc,
 	}
 
 	/*
-	 * If peer already exists for all the entries provided in the request,
-	 * then fw peer create will not be sent again. Just the secure list
-	 * will be updated and num_pending_peer_creation will be 0.
-	 * In this case initiate the PASN auth directly without waiting for
-	 * peer create response.
-	 */
+   * If peer already exists for all the entries provided in the request,
+   * then fw peer create will not be sent again. Just the secure list
+   * will be updated and num_pending_peer_creation will be 0.
+   * In this case initiate the PASN auth directly without waiting for
+   * peer create response.
+   */
 	pasn_context = &vdev_pos_obj->pasn_context;
 	status = wifi_pos_check_and_initiate_pasn_authentication(psoc, vdev,
 								 pasn_context);
@@ -482,13 +481,14 @@ wifi_pos_handle_ranging_peer_create_rsp(struct wlan_objmgr_psoc *psoc,
 	if (pasn_context->num_pending_peer_creation)
 		pasn_context->num_pending_peer_creation--;
 
-	wifi_pos_debug("Received peer create response for " QDF_MAC_ADDR_FMT " status:%d pending_count:%d",
+	wifi_pos_debug("Received peer create response for " QDF_MAC_ADDR_FMT
+		       " status:%d pending_count:%d",
 		       QDF_MAC_ADDR_REF(peer_mac->bytes), peer_create_status,
 		       pasn_context->num_pending_peer_creation);
 
 	if (peer_create_status) {
-		wifi_pos_move_peers_to_fail_list(vdev, peer_mac,
-						 WLAN_WIFI_POS_PASN_PEER_TYPE_MAX);
+		wifi_pos_move_peers_to_fail_list(
+			vdev, peer_mac, WLAN_WIFI_POS_PASN_PEER_TYPE_MAX);
 		wifi_pos_update_pasn_peer_count(vdev, false);
 	}
 
@@ -529,7 +529,8 @@ QDF_STATUS wifi_pos_handle_ranging_peer_delete(struct wlan_objmgr_psoc *psoc,
 
 	if (vdev_pos_obj->is_delete_all_pasn_peer_in_progress) {
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_WIFI_POS_CORE_ID);
-		wifi_pos_err("Vdev delete all peer in progress. Ignore individual peer delete");
+		wifi_pos_err(
+			"Vdev delete all peer in progress. Ignore individual peer delete");
 		return QDF_STATUS_SUCCESS;
 	}
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_WIFI_POS_CORE_ID);
@@ -550,7 +551,7 @@ QDF_STATUS wifi_pos_handle_ranging_peer_delete(struct wlan_objmgr_psoc *psoc,
 		if (peer &&
 		    (wlan_peer_get_peer_type(peer) == WLAN_PEER_RTT_PASN)) {
 			no_fw_peer_delete = WIFI_POS_IS_PEER_ALREADY_DELETED(
-							req[i].control_flags);
+				req[i].control_flags);
 			wifi_pos_debug("Delete PASN Peer: " QDF_MAC_ADDR_FMT,
 				       QDF_MAC_ADDR_REF(req[i].peer_mac.bytes));
 
@@ -558,18 +559,19 @@ QDF_STATUS wifi_pos_handle_ranging_peer_delete(struct wlan_objmgr_psoc *psoc,
 			peer_count++;
 
 			status = legacy_cb->pasn_peer_delete_cb(
-					psoc, &req[i].peer_mac,
-					vdev_id, no_fw_peer_delete);
+				psoc, &req[i].peer_mac, vdev_id,
+				no_fw_peer_delete);
 
 			wlan_objmgr_peer_release_ref(peer,
 						     WLAN_WIFI_POS_CORE_ID);
 			continue;
 		} else {
-			wifi_pos_debug("PASN Peer: " QDF_MAC_ADDR_FMT "doesn't exist",
+			wifi_pos_debug("PASN Peer: " QDF_MAC_ADDR_FMT
+				       "doesn't exist",
 				       QDF_MAC_ADDR_REF(req[i].peer_mac.bytes));
 			if (peer)
 				wlan_objmgr_peer_release_ref(
-						peer, WLAN_WIFI_POS_CORE_ID);
+					peer, WLAN_WIFI_POS_CORE_ID);
 
 			continue;
 		}
@@ -588,8 +590,7 @@ QDF_STATUS wifi_pos_handle_ranging_peer_delete(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wifi_pos_request_flush_pasn_keys(psoc, vdev,
-						  del_peer_list,
+	status = wifi_pos_request_flush_pasn_keys(psoc, vdev, del_peer_list,
 						  peer_count);
 	if (QDF_IS_STATUS_ERROR(status))
 		wifi_pos_err("Failed to indicate peer deauth to userspace");
@@ -707,9 +708,8 @@ bool wifi_pos_is_ltf_keyseed_required_for_peer(struct wlan_objmgr_peer *peer)
 	return peer_priv->is_ltf_keyseed_required;
 }
 
-static
-void wifi_pos_delete_objmgr_ranging_peer(struct wlan_objmgr_psoc *psoc,
-					 void *object, void *arg)
+static void wifi_pos_delete_objmgr_ranging_peer(struct wlan_objmgr_psoc *psoc,
+						void *object, void *arg)
 {
 	struct wlan_objmgr_peer *peer = object;
 	struct wlan_objmgr_vdev *vdev = arg;
@@ -751,15 +751,15 @@ wifi_pos_cleanup_pasn_peers(struct wlan_objmgr_psoc *psoc,
 	struct wifi_pos_vdev_priv_obj *vdev_pos_obj;
 
 	wifi_pos_debug("Iterate and delete PASN peers");
-	status = wlan_objmgr_iterate_obj_list(psoc, WLAN_PEER_OP,
-					      wifi_pos_delete_objmgr_ranging_peer,
-					      vdev, 0, WLAN_WIFI_POS_CORE_ID);
+	status = wlan_objmgr_iterate_obj_list(
+		psoc, WLAN_PEER_OP, wifi_pos_delete_objmgr_ranging_peer, vdev,
+		0, WLAN_WIFI_POS_CORE_ID);
 	if (QDF_IS_STATUS_ERROR(status))
 		wifi_pos_err("Delete objmgr peers failed");
 
 	/*
-	 * PASN Peer count should be zero here
-	 */
+   * PASN Peer count should be zero here
+   */
 	vdev_pos_obj = wifi_pos_get_vdev_priv_obj(vdev);
 	if (vdev_pos_obj)
 		vdev_pos_obj->num_pasn_peers = 0;
@@ -832,8 +832,8 @@ wifi_pos_vdev_delete_all_ranging_peers_rsp(struct wlan_objmgr_psoc *psoc,
 	}
 
 	/*
-	 * Should have deleted all the pasn peers when we reach here
-	 */
+   * Should have deleted all the pasn peers when we reach here
+   */
 	vdev_pos_obj->is_delete_all_pasn_peer_in_progress = false;
 	vdev_pos_obj->num_pasn_peers = 0;
 

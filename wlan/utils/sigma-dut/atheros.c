@@ -9,7 +9,6 @@
 #include "sigma_dut.h"
 #include "wpa_helpers.h"
 
-
 static enum sigma_cmd_result cmd_sta_atheros(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
 					     struct sigma_cmd *cmd)
@@ -39,8 +38,10 @@ static enum sigma_cmd_result cmd_sta_atheros(struct sigma_dut *dut,
 		if (timeout == 0)
 			return INVALID_SEND_STATUS;
 		dut->default_timeout = timeout;
-		sigma_dut_print(dut, DUT_MSG_INFO, "Set DUT default timeout "
-				"to %u seconds", dut->default_timeout);
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Set DUT default timeout "
+				"to %u seconds",
+				dut->default_timeout);
 		snprintf(buf, sizeof(buf), "OK");
 	} else
 		return ERROR_SEND_STATUS;
@@ -49,7 +50,7 @@ static enum sigma_cmd_result cmd_sta_atheros(struct sigma_dut *dut,
 	if (i < 0)
 		return ERROR_SEND_STATUS;
 	pos = buf;
-	while (*pos && i + 1 < (int) sizeof(resp)) {
+	while (*pos && i + 1 < (int)sizeof(resp)) {
 		char c = *pos++;
 		if (c == '\n' || c == '\r' || c == ',')
 			c = '^';
@@ -61,12 +62,10 @@ static enum sigma_cmd_result cmd_sta_atheros(struct sigma_dut *dut,
 	return STATUS_SENT;
 }
 
-
 static int req_intf(struct sigma_cmd *cmd)
 {
 	return get_param(cmd, "interface") == NULL ? -1 : 0;
 }
-
 
 #ifdef NL80211_SUPPORT
 static enum sigma_cmd_result cmd_atheros_config_scan(struct sigma_dut *dut,
@@ -90,8 +89,7 @@ static enum sigma_cmd_result cmd_atheros_config_scan(struct sigma_dut *dut,
 	    nla_put_u32(msg, NL80211_ATTR_VENDOR_SUBCMD,
 			QCA_NL80211_VENDOR_SUBCMD_SET_WIFI_CONFIGURATION) ||
 	    !(params = nla_nest_start(msg, NL80211_ATTR_VENDOR_DATA)) ||
-	    nla_put_u8(msg,
-		       QCA_WLAN_VENDOR_ATTR_CONFIG_SCAN_ENABLE,
+	    nla_put_u8(msg, QCA_WLAN_VENDOR_ATTR_CONFIG_SCAN_ENABLE,
 		       atoi(val))) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s: err in adding vendor_cmd and vendor_data",
@@ -112,7 +110,6 @@ static enum sigma_cmd_result cmd_atheros_config_scan(struct sigma_dut *dut,
 	return STATUS_SENT;
 }
 #endif /* NL80211_SUPPORT */
-
 
 void atheros_register_cmds(void)
 {

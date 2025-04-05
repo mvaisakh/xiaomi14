@@ -24,48 +24,49 @@
  *
  */
 
-#include <wlan_hdd_includes.h>
 #include "wlan_hdd_sta_info.h"
+#include <wlan_hdd_includes.h>
 
 #define HDD_MAX_PEERS 32
 
 char *sta_info_string_from_dbgid(wlan_sta_info_dbgid id)
 {
 	static const char *strings[] = {
-				"STA_INFO_ID_RESERVED",
-				"STA_INFO_CFG80211_GET_LINK_PROPERTIES",
-				"STA_INFO_SOFTAP_INSPECT_TX_EAP_PKT",
-				"STA_INFO_SOFTAP_CHECK_WAIT_FOR_TX_EAP_PKT",
-				"STA_INFO_SOFTAP_INSPECT_DHCP_PACKET",
-				"STA_INFO_SOFTAP_HARD_START_XMIT",
-				"STA_INFO_SOFTAP_INIT_TX_RX_STA",
-				"STA_INFO_SOFTAP_RX_PACKET_CBK",
-				"STA_INFO_SOFTAP_REGISTER_STA",
-				"STA_INFO_GET_CACHED_STATION_REMOTE",
-				"STA_INFO_HDD_GET_STATION_REMOTE",
-				"STA_INFO_WLAN_HDD_CFG80211_GET_STATION",
-				"STA_INFO_SOFTAP_DEAUTH_CURRENT_STA",
-				"STA_INFO_SOFTAP_DEAUTH_ALL_STA",
-				"STA_INFO_CFG80211_DEL_STATION",
-				"STA_INFO_HDD_CLEAR_ALL_STA",
-				"STA_INFO_FILL_STATION_INFO",
-				"STA_INFO_HOSTAPD_SAP_EVENT_CB",
-				"STA_INFO_SAP_INDICATE_DISCONNECT_FOR_STA",
-				"STA_INFO_IS_PEER_ASSOCIATED",
-				"STA_INFO_SAP_SET_TWO_INTS_GETNONE",
-				"STA_INFO_SAP_GETASSOC_STAMACADDR",
-				"STA_INFO_SOFTAP_GET_STA_INFO",
-				"STA_INFO_GET_SOFTAP_LINKSPEED",
-				"STA_INFO_CONNECTION_IN_PROGRESS_ITERATOR",
-				"STA_INFO_SOFTAP_STOP_BSS",
-				"STA_INFO_SOFTAP_CHANGE_STA_STATE",
-				"STA_INFO_CLEAR_CACHED_STA_INFO",
-				"STA_INFO_ATTACH_DETACH",
-				"STA_INFO_SHOW",
-				"STA_INFO_SOFTAP_IPA_RX_PKT_CALLBACK",
-				"STA_INFO_WLAN_HDD_CFG80211_DUMP_STATION",
-				"STA_INFO_SON_GET_DATRATE_INFO",
-				"STA_INFO_ID_MAX"};
+		"STA_INFO_ID_RESERVED",
+		"STA_INFO_CFG80211_GET_LINK_PROPERTIES",
+		"STA_INFO_SOFTAP_INSPECT_TX_EAP_PKT",
+		"STA_INFO_SOFTAP_CHECK_WAIT_FOR_TX_EAP_PKT",
+		"STA_INFO_SOFTAP_INSPECT_DHCP_PACKET",
+		"STA_INFO_SOFTAP_HARD_START_XMIT",
+		"STA_INFO_SOFTAP_INIT_TX_RX_STA",
+		"STA_INFO_SOFTAP_RX_PACKET_CBK",
+		"STA_INFO_SOFTAP_REGISTER_STA",
+		"STA_INFO_GET_CACHED_STATION_REMOTE",
+		"STA_INFO_HDD_GET_STATION_REMOTE",
+		"STA_INFO_WLAN_HDD_CFG80211_GET_STATION",
+		"STA_INFO_SOFTAP_DEAUTH_CURRENT_STA",
+		"STA_INFO_SOFTAP_DEAUTH_ALL_STA",
+		"STA_INFO_CFG80211_DEL_STATION",
+		"STA_INFO_HDD_CLEAR_ALL_STA",
+		"STA_INFO_FILL_STATION_INFO",
+		"STA_INFO_HOSTAPD_SAP_EVENT_CB",
+		"STA_INFO_SAP_INDICATE_DISCONNECT_FOR_STA",
+		"STA_INFO_IS_PEER_ASSOCIATED",
+		"STA_INFO_SAP_SET_TWO_INTS_GETNONE",
+		"STA_INFO_SAP_GETASSOC_STAMACADDR",
+		"STA_INFO_SOFTAP_GET_STA_INFO",
+		"STA_INFO_GET_SOFTAP_LINKSPEED",
+		"STA_INFO_CONNECTION_IN_PROGRESS_ITERATOR",
+		"STA_INFO_SOFTAP_STOP_BSS",
+		"STA_INFO_SOFTAP_CHANGE_STA_STATE",
+		"STA_INFO_CLEAR_CACHED_STA_INFO",
+		"STA_INFO_ATTACH_DETACH",
+		"STA_INFO_SHOW",
+		"STA_INFO_SOFTAP_IPA_RX_PKT_CALLBACK",
+		"STA_INFO_WLAN_HDD_CFG80211_DUMP_STATION",
+		"STA_INFO_SON_GET_DATRATE_INFO",
+		"STA_INFO_ID_MAX"
+	};
 	int32_t num_dbg_strings = QDF_ARRAY_SIZE(strings);
 
 	if (id >= num_dbg_strings) {
@@ -151,10 +152,9 @@ void hdd_sta_info_detach(struct hdd_sta_info_obj *sta_info_container,
 	qdf_spin_unlock_bh(&sta_info_container->sta_obj_lock);
 }
 
-struct hdd_station_info *hdd_get_sta_info_by_id(
-				struct hdd_sta_info_obj *sta_info_container,
-				const int idx,
-				wlan_sta_info_dbgid sta_info_dbgid)
+struct hdd_station_info *
+hdd_get_sta_info_by_id(struct hdd_sta_info_obj *sta_info_container,
+		       const int idx, wlan_sta_info_dbgid sta_info_dbgid)
 {
 	struct hdd_station_info *sta_info = NULL;
 	int i = 0;
@@ -166,12 +166,13 @@ struct hdd_station_info *hdd_get_sta_info_by_id(
 
 	qdf_spin_lock_bh(&sta_info_container->sta_obj_lock);
 
-	qdf_list_for_each(&sta_info_container->sta_obj, sta_info, sta_node) {
+	qdf_list_for_each(&sta_info_container->sta_obj, sta_info, sta_node)
+	{
 		if (qdf_is_macaddr_broadcast(&sta_info->sta_mac))
 			continue;
 		if (i == idx) {
-			hdd_take_sta_info_ref(sta_info_container,
-					      sta_info, false, sta_info_dbgid);
+			hdd_take_sta_info_ref(sta_info_container, sta_info,
+					      false, sta_info_dbgid);
 			qdf_spin_unlock_bh(&sta_info_container->sta_obj_lock);
 			return sta_info;
 		}
@@ -183,10 +184,10 @@ struct hdd_station_info *hdd_get_sta_info_by_id(
 	return NULL;
 }
 
-struct hdd_station_info *hdd_get_sta_info_by_mac(
-				struct hdd_sta_info_obj *sta_info_container,
-				const uint8_t *mac_addr,
-				wlan_sta_info_dbgid sta_info_dbgid)
+struct hdd_station_info *
+hdd_get_sta_info_by_mac(struct hdd_sta_info_obj *sta_info_container,
+			const uint8_t *mac_addr,
+			wlan_sta_info_dbgid sta_info_dbgid)
 {
 	struct hdd_station_info *sta_info = NULL;
 
@@ -198,13 +199,14 @@ struct hdd_station_info *hdd_get_sta_info_by_mac(
 
 	qdf_spin_lock_bh(&sta_info_container->sta_obj_lock);
 
-	qdf_list_for_each(&sta_info_container->sta_obj, sta_info, sta_node) {
+	qdf_list_for_each(&sta_info_container->sta_obj, sta_info, sta_node)
+	{
 		if (qdf_is_macaddr_equal(&sta_info->sta_mac,
 					 (struct qdf_mac_addr *)mac_addr) ||
 		    qdf_is_macaddr_equal(&sta_info->mld_addr,
 					 (struct qdf_mac_addr *)mac_addr)) {
-			hdd_take_sta_info_ref(sta_info_container,
-					      sta_info, false, sta_info_dbgid);
+			hdd_take_sta_info_ref(sta_info_container, sta_info,
+					      false, sta_info_dbgid);
 			qdf_spin_unlock_bh(&sta_info_container->sta_obj_lock);
 			return sta_info;
 		}
@@ -240,10 +242,10 @@ void hdd_take_sta_info_ref(struct hdd_sta_info_obj *sta_info_container,
 		qdf_spin_unlock_bh(&sta_info_container->sta_obj_lock);
 }
 
-void
-hdd_put_sta_info_ref(struct hdd_sta_info_obj *sta_info_container,
-		     struct hdd_station_info **sta_info, bool lock_required,
-		     wlan_sta_info_dbgid sta_info_dbgid)
+void hdd_put_sta_info_ref(struct hdd_sta_info_obj *sta_info_container,
+			  struct hdd_station_info **sta_info,
+			  bool lock_required,
+			  wlan_sta_info_dbgid sta_info_dbgid)
 {
 	struct hdd_station_info *info;
 	struct qdf_mac_addr addr;
@@ -269,11 +271,11 @@ hdd_put_sta_info_ref(struct hdd_sta_info_obj *sta_info_container,
 		qdf_spin_lock_bh(&sta_info_container->sta_obj_lock);
 
 	/*
-	 * In case the put_ref is called more than twice for a single take_ref,
-	 * this will result in either a BUG or page fault. In both the cases,
-	 * the root cause would be known and the buggy put_ref can be taken
-	 * care of.
-	 */
+   * In case the put_ref is called more than twice for a single take_ref,
+   * this will result in either a BUG or page fault. In both the cases,
+   * the root cause would be known and the buggy put_ref can be taken
+   * care of.
+   */
 	if (!qdf_atomic_read(&info->ref_cnt_dbgid[sta_info_dbgid])) {
 		hdd_err("Sta_info ref count put is detected without get for debug id %s",
 			sta_info_string_from_dbgid(sta_info_dbgid));
@@ -318,7 +320,8 @@ void hdd_clear_cached_sta_info(struct hdd_adapter *adapter)
 	}
 
 	hdd_for_each_sta_ref_safe(adapter->cache_sta_info_list, sta_info, tmp,
-				  STA_INFO_CLEAR_CACHED_STA_INFO) {
+				  STA_INFO_CLEAR_CACHED_STA_INFO)
+	{
 		hdd_sta_info_detach(&adapter->cache_sta_info_list, &sta_info);
 		hdd_put_sta_info_ref(&adapter->cache_sta_info_list, &sta_info,
 				     true, STA_INFO_CLEAR_CACHED_STA_INFO);
@@ -359,8 +362,7 @@ hdd_get_next_sta_info_no_lock(struct hdd_sta_info_obj *sta_info_container,
 	*out_sta_info = NULL;
 
 	status = qdf_list_peek_next(&sta_info_container->sta_obj,
-				    &current_sta_info->sta_node,
-				    &node);
+				    &current_sta_info->sta_node, &node);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		return status;
@@ -370,4 +372,3 @@ hdd_get_next_sta_info_no_lock(struct hdd_sta_info_obj *sta_info_container,
 
 	return QDF_STATUS_SUCCESS;
 }
-

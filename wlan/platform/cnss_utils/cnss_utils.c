@@ -3,12 +3,12 @@
 
 #define pr_fmt(fmt) "cnss_utils: " fmt
 
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/etherdevice.h>
 #include <linux/debugfs.h>
+#include <linux/etherdevice.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/of.h>
+#include <linux/slab.h>
 #ifdef CONFIG_CNSS_OUT_OF_TREE
 #include "cnss_utils.h"
 #else
@@ -55,8 +55,8 @@ static struct cnss_utils_priv {
 	enum cnss_utils_device_type cnss_device_type;
 } *cnss_utils_priv;
 
-int cnss_utils_set_wlan_unsafe_channel(struct device *dev,
-				       u16 *unsafe_ch_list, u16 ch_count)
+int cnss_utils_set_wlan_unsafe_channel(struct device *dev, u16 *unsafe_ch_list,
+				       u16 ch_count)
 {
 	struct cnss_utils_priv *priv = cnss_utils_priv;
 
@@ -74,8 +74,8 @@ int cnss_utils_set_wlan_unsafe_channel(struct device *dev,
 	if (ch_count == 0)
 		goto end;
 
-	memcpy(priv->unsafe_channel_list.unsafe_ch_list,
-	       unsafe_ch_list, ch_count * sizeof(u16));
+	memcpy(priv->unsafe_channel_list.unsafe_ch_list, unsafe_ch_list,
+	       ch_count * sizeof(u16));
 
 end:
 	mutex_unlock(&priv->unsafe_channel_list_lock);
@@ -84,8 +84,7 @@ end:
 }
 EXPORT_SYMBOL(cnss_utils_set_wlan_unsafe_channel);
 
-int cnss_utils_get_wlan_unsafe_channel(struct device *dev,
-				       u16 *unsafe_ch_list,
+int cnss_utils_get_wlan_unsafe_channel(struct device *dev, u16 *unsafe_ch_list,
 				       u16 *ch_count, u16 buf_len)
 {
 	struct cnss_utils_priv *priv = cnss_utils_priv;
@@ -114,8 +113,8 @@ int cnss_utils_get_wlan_unsafe_channel(struct device *dev,
 }
 EXPORT_SYMBOL(cnss_utils_get_wlan_unsafe_channel);
 
-enum cnss_utils_device_type cnss_utils_update_device_type(
-			enum cnss_utils_device_type  device_type)
+enum cnss_utils_device_type
+cnss_utils_update_device_type(enum cnss_utils_device_type device_type)
 {
 	struct cnss_utils_priv *priv = cnss_utils_priv;
 
@@ -137,8 +136,8 @@ enum cnss_utils_device_type cnss_utils_update_device_type(
 }
 EXPORT_SYMBOL(cnss_utils_update_device_type);
 
-int cnss_utils_wlan_set_dfs_nol(struct device *dev,
-				const void *info, u16 info_len)
+int cnss_utils_wlan_set_dfs_nol(struct device *dev, const void *info,
+				u16 info_len)
 {
 	void *temp;
 	void *old_nol_info;
@@ -167,8 +166,7 @@ int cnss_utils_wlan_set_dfs_nol(struct device *dev,
 }
 EXPORT_SYMBOL(cnss_utils_wlan_set_dfs_nol);
 
-int cnss_utils_wlan_get_dfs_nol(struct device *dev,
-				void *info, u16 info_len)
+int cnss_utils_wlan_get_dfs_nol(struct device *dev, void *info, u16 info_len)
 {
 	int len;
 	struct cnss_dfs_nol_info *dfs_info;
@@ -183,8 +181,7 @@ int cnss_utils_wlan_get_dfs_nol(struct device *dev,
 	spin_lock_bh(&priv->dfs_nol_info_lock);
 
 	dfs_info = &priv->dfs_nol_info;
-	if (!dfs_info->dfs_nol_info ||
-	    dfs_info->dfs_nol_info_len == 0) {
+	if (!dfs_info->dfs_nol_info || dfs_info->dfs_nol_info_len == 0) {
 		spin_unlock_bh(&priv->dfs_nol_info_lock);
 		return -ENOENT;
 	}
@@ -260,9 +257,8 @@ static int set_wlan_mac_address(const u8 *mac_list, const uint32_t len,
 	for (iter = 0; iter < no_of_mac_addr;
 	     ++iter, temp += ETH_ALEN, mac_list += ETH_ALEN) {
 		ether_addr_copy(temp, mac_list);
-		pr_debug("MAC_ADDR:%02x:%02x:%02x:%02x:%02x:%02x\n",
-			 temp[0], temp[1], temp[2],
-			 temp[3], temp[4], temp[5]);
+		pr_debug("MAC_ADDR:%02x:%02x:%02x:%02x:%02x:%02x\n", temp[0],
+			 temp[1], temp[2], temp[3], temp[4], temp[5]);
 	}
 	return 0;
 }
@@ -280,8 +276,8 @@ int cnss_utils_set_wlan_derived_mac_address(const u8 *mac_list,
 }
 EXPORT_SYMBOL(cnss_utils_set_wlan_derived_mac_address);
 
-static u8 *get_wlan_mac_address(struct device *dev,
-				u32 *num, enum mac_type type)
+static u8 *get_wlan_mac_address(struct device *dev, u32 *num,
+				enum mac_type type)
 {
 	struct cnss_utils_priv *priv = cnss_utils_priv;
 	struct cnss_wlan_mac_addr *addr = NULL;
@@ -312,8 +308,7 @@ u8 *cnss_utils_get_wlan_mac_address(struct device *dev, uint32_t *num)
 }
 EXPORT_SYMBOL(cnss_utils_get_wlan_mac_address);
 
-u8 *cnss_utils_get_wlan_derived_mac_address(struct device *dev,
-					    uint32_t *num)
+u8 *cnss_utils_get_wlan_derived_mac_address(struct device *dev, uint32_t *num)
 {
 	return get_wlan_mac_address(dev, num, CNSS_MAC_DERIVED);
 }
@@ -343,8 +338,8 @@ enum cnss_utils_cc_src cnss_utils_get_cc_source(struct device *dev)
 EXPORT_SYMBOL(cnss_utils_get_cc_source);
 
 static ssize_t cnss_utils_mac_write(struct file *fp,
-				    const char __user *user_buf,
-				    size_t count, loff_t *off)
+				    const char __user *user_buf, size_t count,
+				    loff_t *off)
 {
 	struct cnss_utils_priv *priv =
 		((struct seq_file *)fp->private_data)->private;
@@ -420,9 +415,10 @@ static int cnss_utils_mac_show(struct seq_file *s, void *data)
 		seq_puts(s, "\nProvisioned MAC addresseses\n");
 		for (i = 0; i < addr->no_of_mac_addr_set; i++) {
 			ether_addr_copy(mac, addr->mac_addr[i]);
-			seq_printf(s, "MAC_ADDR:%02x:%02x:%02x:%02x:%02x:%02x\n",
-				   mac[0], mac[1], mac[2],
-				   mac[3], mac[4], mac[5]);
+			seq_printf(s,
+				   "MAC_ADDR:%02x:%02x:%02x:%02x:%02x:%02x\n",
+				   mac[0], mac[1], mac[2], mac[3], mac[4],
+				   mac[5]);
 		}
 	}
 
@@ -431,9 +427,10 @@ static int cnss_utils_mac_show(struct seq_file *s, void *data)
 		seq_puts(s, "\nDerived MAC addresseses\n");
 		for (i = 0; i < addr->no_of_mac_addr_set; i++) {
 			ether_addr_copy(mac, addr->mac_addr[i]);
-			seq_printf(s, "MAC_ADDR:%02x:%02x:%02x:%02x:%02x:%02x\n",
-				   mac[0], mac[1], mac[2],
-				   mac[3], mac[4], mac[5]);
+			seq_printf(s,
+				   "MAC_ADDR:%02x:%02x:%02x:%02x:%02x:%02x\n",
+				   mac[0], mac[1], mac[2], mac[3], mac[4],
+				   mac[5]);
 		}
 	}
 
@@ -446,12 +443,12 @@ static int cnss_utils_mac_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cnss_utils_mac_fops = {
-	.read		= seq_read,
-	.write		= cnss_utils_mac_write,
-	.release	= single_release,
-	.open		= cnss_utils_mac_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = cnss_utils_mac_write,
+	.release = single_release,
+	.open = cnss_utils_mac_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static int cnss_utils_debugfs_create(struct cnss_utils_priv *priv)

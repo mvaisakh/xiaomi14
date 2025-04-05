@@ -3,29 +3,29 @@
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/slab.h>
-#include <linux/mod_devicetable.h>
-#include <linux/of_device.h>
 #include "cam_tfe_dev.h"
+#include "cam_debug_util.h"
 #include "cam_tfe_core.h"
 #include "cam_tfe_soc.h"
-#include "cam_debug_util.h"
 #include "camera_main.h"
+#include <linux/mod_devicetable.h>
+#include <linux/of_device.h>
+#include <linux/slab.h>
 
-static struct cam_isp_hw_intf_data  cam_tfe_hw_list[CAM_TFE_HW_NUM_MAX];
+static struct cam_isp_hw_intf_data cam_tfe_hw_list[CAM_TFE_HW_NUM_MAX];
 
-static int cam_tfe_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+static int cam_tfe_component_bind(struct device *dev, struct device *master_dev,
+				  void *data)
 {
-	struct cam_hw_info                *tfe_hw = NULL;
-	struct cam_hw_intf                *tfe_hw_intf = NULL;
-	const struct of_device_id         *match_dev = NULL;
-	struct cam_tfe_hw_core_info       *core_info = NULL;
-	struct cam_tfe_hw_info            *hw_info = NULL;
-	struct cam_tfe_soc_private        *tfe_soc_priv;
-	int                                rc = 0;
+	struct cam_hw_info *tfe_hw = NULL;
+	struct cam_hw_intf *tfe_hw_intf = NULL;
+	const struct of_device_id *match_dev = NULL;
+	struct cam_tfe_hw_core_info *core_info = NULL;
+	struct cam_tfe_hw_info *hw_info = NULL;
+	struct cam_tfe_soc_private *tfe_soc_priv;
+	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
-	uint32_t  i;
+	uint32_t i;
 
 	tfe_hw_intf = kzalloc(sizeof(struct cam_hw_intf), GFP_KERNEL);
 	if (!tfe_hw_intf) {
@@ -33,8 +33,8 @@ static int cam_tfe_component_bind(struct device *dev,
 		goto end;
 	}
 
-	of_property_read_u32(pdev->dev.of_node,
-		"cell-index", &tfe_hw_intf->hw_idx);
+	of_property_read_u32(pdev->dev.of_node, "cell-index",
+			     &tfe_hw_intf->hw_idx);
 
 	tfe_hw = kzalloc(sizeof(struct cam_hw_info), GFP_KERNEL);
 	if (!tfe_hw) {
@@ -64,8 +64,8 @@ static int cam_tfe_component_bind(struct device *dev,
 
 	platform_set_drvdata(pdev, tfe_hw_intf);
 
-	tfe_hw->core_info = kzalloc(sizeof(struct cam_tfe_hw_core_info),
-		GFP_KERNEL);
+	tfe_hw->core_info =
+		kzalloc(sizeof(struct cam_tfe_hw_core_info), GFP_KERNEL);
 	if (!tfe_hw->core_info) {
 		CAM_DBG(CAM_ISP, "Failed to alloc for core");
 		rc = -ENOMEM;
@@ -73,8 +73,8 @@ static int cam_tfe_component_bind(struct device *dev,
 	}
 	core_info = (struct cam_tfe_hw_core_info *)tfe_hw->core_info;
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_ISP, "Of_match Failed");
 		rc = -EINVAL;
@@ -84,15 +84,14 @@ static int cam_tfe_component_bind(struct device *dev,
 	core_info->tfe_hw_info = hw_info;
 	core_info->core_index = tfe_hw_intf->hw_idx;
 
-	rc = cam_tfe_init_soc_resources(&tfe_hw->soc_info, cam_tfe_irq,
-		tfe_hw);
+	rc = cam_tfe_init_soc_resources(&tfe_hw->soc_info, cam_tfe_irq, tfe_hw);
 	if (rc < 0) {
 		CAM_ERR(CAM_ISP, "Failed to init soc rc=%d", rc);
 		goto free_core_info;
 	}
 
-	rc = cam_tfe_core_init(core_info, &tfe_hw->soc_info,
-		tfe_hw_intf, hw_info);
+	rc = cam_tfe_core_init(core_info, &tfe_hw->soc_info, tfe_hw_intf,
+			       hw_info);
 	if (rc < 0) {
 		CAM_ERR(CAM_ISP, "Failed to init core rc=%d", rc);
 		goto deinit_soc;
@@ -138,12 +137,12 @@ end:
 }
 
 static void cam_tfe_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
-	struct cam_hw_info		  *tfe_hw = NULL;
-	struct cam_hw_intf		  *tfe_hw_intf = NULL;
-	struct cam_tfe_hw_core_info	  *core_info = NULL;
-	int				   rc = 0;
+	struct cam_hw_info *tfe_hw = NULL;
+	struct cam_hw_intf *tfe_hw_intf = NULL;
+	struct cam_tfe_hw_core_info *core_info = NULL;
+	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	tfe_hw_intf = platform_get_drvdata(pdev);
@@ -152,8 +151,8 @@ static void cam_tfe_component_unbind(struct device *dev,
 		return;
 	}
 
-	CAM_DBG(CAM_ISP, "type %d index %d",
-		tfe_hw_intf->hw_type, tfe_hw_intf->hw_idx);
+	CAM_DBG(CAM_ISP, "type %d index %d", tfe_hw_intf->hw_type,
+		tfe_hw_intf->hw_idx);
 
 	if (tfe_hw_intf->hw_idx < CAM_TFE_HW_NUM_MAX)
 		cam_tfe_hw_list[tfe_hw_intf->hw_idx].hw_intf = NULL;
@@ -213,8 +212,7 @@ int cam_tfe_remove(struct platform_device *pdev)
 	return 0;
 }
 
-int cam_tfe_hw_init(struct cam_isp_hw_intf_data **tfe_hw_intf,
-	uint32_t hw_idx)
+int cam_tfe_hw_init(struct cam_isp_hw_intf_data **tfe_hw_intf, uint32_t hw_idx)
 {
 	int rc = 0;
 

@@ -17,11 +17,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <qdf_lock.h>
 #include "adma.h"
 #include "hif_sdio_internal.h"
-#include "pld_sdio.h"
 #include "if_sdio.h"
+#include "pld_sdio.h"
+#include <qdf_lock.h>
 
 /**
  * hif_dev_get_fifo_address() - get the fifo addresses for dma
@@ -31,8 +31,7 @@
  *
  * Return : 0 for success, non-zero for error
  */
-int hif_dev_get_fifo_address(struct hif_sdio_dev *pdev,
-			     void *c,
+int hif_dev_get_fifo_address(struct hif_sdio_dev *pdev, void *c,
 			     uint32_t config_len)
 {
 	/* SDIO AL handles DMA Addresses */
@@ -212,11 +211,8 @@ void hif_dev_unmask_interrupts(struct hif_sdio_device *pdev)
  *
  * Return: adma channel handle
  */
-struct sdio_al_channel_handle *hif_dev_map_pipe_to_adma_chan
-(
-struct hif_sdio_device *dev,
-uint8_t pipeid
-)
+struct sdio_al_channel_handle *
+hif_dev_map_pipe_to_adma_chan(struct hif_sdio_device *dev, uint8_t pipeid)
 {
 	struct hif_sdio_dev *pdev = dev->HIFDevice;
 
@@ -259,8 +255,8 @@ uint8_t hif_dev_map_adma_chan_to_pipe(struct hif_sdio_device *pdev,
  *
  * Return 0 for success and non-zero for failure to map
  */
-int hif_get_send_address(struct hif_sdio_device *pdev,
-			 uint8_t pipe, unsigned long *addr)
+int hif_get_send_address(struct hif_sdio_device *pdev, uint8_t pipe,
+			 unsigned long *addr)
 {
 	struct sdio_al_channel_handle *chan = NULL;
 
@@ -296,8 +292,7 @@ void hif_fixup_write_param(struct hif_sdio_dev *pdev, uint32_t req,
 
 #define HIF_MAX_RX_Q_ALLOC 0 /* TODO */
 #define HIF_RX_Q_ALLOC_THRESHOLD 100
-QDF_STATUS hif_disable_func(struct hif_sdio_dev *device,
-			    struct sdio_func *func,
+QDF_STATUS hif_disable_func(struct hif_sdio_dev *device, struct sdio_func *func,
 			    bool reset)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -310,7 +305,7 @@ QDF_STATUS hif_disable_func(struct hif_sdio_dev *device,
 #if HIF_MAX_RX_Q_ALLOC
 	qdf_spin_lock_irqsave(&device->rx_q_lock);
 
-	for (; device->rx_q.count; ) {
+	for (; device->rx_q.count;) {
 		qdf_list_remove_back(&device->rx_q, &node);
 		rx_q_elem = container_of(node, struct rx_q_entry, entry);
 		if (rx_q_elem) {
@@ -472,22 +467,18 @@ void hif_sdio_rx_q_alloc(void *ctx)
 #include <linux/qcn_sdio_al.h>
 
 struct sdio_al_channel_data qcn7605_chan[HIF_SDIO_MAX_AL_CHANNELS] = {
-	{
-		.name = "SDIO_AL_WLAN_CH0", /* HTT */
-		.client_data = NULL, /* populate from client handle */
-		.ul_xfer_cb = ul_xfer_cb,
-		.dl_xfer_cb = dl_xfer_cb,
-		.dl_data_avail_cb = dl_data_avail_cb,
-		.dl_meta_data_cb = NULL
-	},
-	{
-		.name = "SDIO_AL_WLAN_CH1", /* WMI */
-		.client_data = NULL, /* populate from client handle */
-		.ul_xfer_cb = ul_xfer_cb,
-		.dl_xfer_cb = dl_xfer_cb,
-		.dl_data_avail_cb = dl_data_avail_cb,
-		.dl_meta_data_cb = NULL
-	}
+	{ .name = "SDIO_AL_WLAN_CH0", /* HTT */
+	  .client_data = NULL, /* populate from client handle */
+	  .ul_xfer_cb = ul_xfer_cb,
+	  .dl_xfer_cb = dl_xfer_cb,
+	  .dl_data_avail_cb = dl_data_avail_cb,
+	  .dl_meta_data_cb = NULL },
+	{ .name = "SDIO_AL_WLAN_CH1", /* WMI */
+	  .client_data = NULL, /* populate from client handle */
+	  .ul_xfer_cb = ul_xfer_cb,
+	  .dl_xfer_cb = dl_xfer_cb,
+	  .dl_data_avail_cb = dl_data_avail_cb,
+	  .dl_meta_data_cb = NULL }
 };
 
 /**
@@ -523,16 +514,14 @@ int hif_dev_register_channels(struct hif_sdio_dev *dev, struct sdio_func *func)
 	}
 
 	for (chan = 0; chan < dev->adma_chans_used; chan++) {
-		dev->al_chan[chan] =
-		pld_sdio_register_sdio_al_channel(dev->al_client,
-						  chan_data[chan]);
+		dev->al_chan[chan] = pld_sdio_register_sdio_al_channel(
+			dev->al_client, chan_data[chan]);
 		if (!dev->al_chan[chan] || IS_ERR(dev->al_chan[chan])) {
 			ret = -EINVAL;
 			hif_err("Channel registration failed");
 		} else {
 			dev->al_chan[chan]->priv = (void *)dev;
-			hif_info("chan %s : id : %u",
-				 chan_data[chan]->name,
+			hif_info("chan %s : id : %u", chan_data[chan]->name,
 				 dev->al_chan[chan]->channel_id);
 		}
 	}
@@ -577,10 +566,8 @@ void hif_dev_unregister_channels(struct hif_sdio_dev *dev,
  * Return: 0, pending  on success, error number otherwise.
  */
 QDF_STATUS
-hif_read_write(struct hif_sdio_dev *dev,
-	       unsigned long sdio_al_ch_handle,
-	       char *cbuffer, uint32_t length,
-	       uint32_t request, void *context)
+hif_read_write(struct hif_sdio_dev *dev, unsigned long sdio_al_ch_handle,
+	       char *cbuffer, uint32_t length, uint32_t request, void *context)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct sdio_al_channel_handle *ch;
@@ -597,15 +584,13 @@ hif_read_write(struct hif_sdio_dev *dev,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if (!(request & HIF_ASYNCHRONOUS) &&
-	    !(request & HIF_SYNCHRONOUS)) {
+	if (!(request & HIF_ASYNCHRONOUS) && !(request & HIF_SYNCHRONOUS)) {
 		hif_err("Invalid request mode: %d", request);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	/*sdio r/w action is not needed when suspend, so just return */
-	if ((dev->is_suspend) &&
-	    (dev->power_config == HIF_DEVICE_POWER_CUT)) {
+	if ((dev->is_suspend) && (dev->power_config == HIF_DEVICE_POWER_CUT)) {
 		hif_info("skip in suspend");
 		return QDF_STATUS_SUCCESS;
 	}
@@ -628,9 +613,7 @@ hif_read_write(struct hif_sdio_dev *dev,
 	dir = (request & HIF_SDIO_WRITE) ? SDIO_AL_TX : SDIO_AL_RX;
 
 	if (request & HIF_SYNCHRONOUS) {
-		ret = sdio_al_queue_transfer(ch,
-					     dir,
-					     bus_req->buffer,
+		ret = sdio_al_queue_transfer(ch, dir, bus_req->buffer,
 					     bus_req->length,
 					     1); /* higher priority */
 		if (ret) {
@@ -645,17 +628,14 @@ hif_read_write(struct hif_sdio_dev *dev,
 		if ((status == QDF_STATUS_SUCCESS) && (dir == SDIO_AL_RX)) {
 			nbuf = (qdf_nbuf_t)context;
 			payload_len = HTC_GET_FIELD(bus_req->buffer,
-						    HTC_FRAME_HDR,
-						    PAYLOADLEN);
+						    HTC_FRAME_HDR, PAYLOADLEN);
 			qdf_nbuf_set_pktlen(nbuf, payload_len + HTC_HDR_LENGTH);
 			device = (struct hif_sdio_device *)dev->htc_context;
 			rx_comp = device->hif_callbacks.rxCompletionHandler;
 			rx_comp(device->hif_callbacks.Context, nbuf, 0);
 		}
 	} else {
-		ret = sdio_al_queue_transfer_async(ch,
-						   dir,
-						   bus_req->buffer,
+		ret = sdio_al_queue_transfer_async(ch, dir, bus_req->buffer,
 						   bus_req->length,
 						   1, /* higher priority */
 						   (void *)bus_req);
@@ -680,8 +660,7 @@ hif_read_write(struct hif_sdio_dev *dev,
  * Return: None
  */
 void ul_xfer_cb(struct sdio_al_channel_handle *ch_handle,
-		struct sdio_al_xfer_result *result,
-		void *ctx)
+		struct sdio_al_xfer_result *result, void *ctx)
 {
 	struct bus_request *req = (struct bus_request *)ctx;
 	struct hif_sdio_dev *dev;
@@ -741,9 +720,9 @@ void dl_data_avail_cb(struct sdio_al_channel_handle *ch_handle,
 	}
 
 	/* allocate a buffer for reading the data from the chip.
-	 * Note that this is raw, unparsed buffer and will be
-	 * processed in the transfer done callback.
-	 */
+   * Note that this is raw, unparsed buffer and will be
+   * processed in the transfer done callback.
+   */
 	/* TODO, use global buffer instead of runtime allocations */
 	nbuf = qdf_nbuf_alloc(NULL, len, 0, 4, false);
 
@@ -756,7 +735,7 @@ void dl_data_avail_cb(struct sdio_al_channel_handle *ch_handle,
 		       HIF_RD_ASYNC_BLOCK_FIX, nbuf);
 }
 
-#define is_pad_block(buf)	(*((uint32_t *)buf) == 0xbabababa)
+#define is_pad_block(buf) (*((uint32_t *)buf) == 0xbabababa)
 uint16_t g_dbg_payload_len;
 
 /**
@@ -768,8 +747,7 @@ uint16_t g_dbg_payload_len;
  * Return: None
  */
 void dl_xfer_cb(struct sdio_al_channel_handle *ch_handle,
-		struct sdio_al_xfer_result *result,
-		void *ctx)
+		struct sdio_al_xfer_result *result, void *ctx)
 {
 	unsigned char *buf;
 	qdf_nbuf_t nbuf;
@@ -840,8 +818,7 @@ void dl_xfer_cb(struct sdio_al_channel_handle *ch_handle,
 		/* Check if payload fits in skb */
 		if (qdf_nbuf_tailroom(nbuf) < payload_len + HTC_HEADER_LEN) {
 			hif_err("Payload + HTC_HDR %d > skb tailroom %d",
-				(payload_len + 8),
-				qdf_nbuf_tailroom(nbuf));
+				(payload_len + 8), qdf_nbuf_tailroom(nbuf));
 			qdf_nbuf_free(nbuf);
 			break;
 		}

@@ -23,11 +23,11 @@
 
 #include "wlan_dfs_lmac_api.h"
 #include "../../core/src/dfs_internal.h"
-#include <wlan_reg_services_api.h>
 #include <wlan_lmac_if_def.h>
+#include <wlan_reg_services_api.h>
 
 void lmac_get_caps(struct wlan_objmgr_pdev *pdev,
-		struct wlan_dfs_caps *dfs_caps)
+		   struct wlan_dfs_caps *dfs_caps)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_dfs_tx_ops *dfs_tx_ops;
@@ -36,7 +36,7 @@ void lmac_get_caps(struct wlan_objmgr_pdev *pdev,
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return;
 	}
 
@@ -56,7 +56,7 @@ uint64_t lmac_get_tsf64(struct wlan_objmgr_pdev *pdev)
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return tsf64;
 	}
 
@@ -77,7 +77,7 @@ void lmac_dfs_disable(struct wlan_objmgr_pdev *pdev, int no_cac)
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return;
 	}
 
@@ -87,10 +87,8 @@ void lmac_dfs_disable(struct wlan_objmgr_pdev *pdev, int no_cac)
 		dfs_tx_ops->dfs_disable(pdev, no_cac);
 }
 
-void lmac_dfs_enable(struct wlan_objmgr_pdev *pdev,
-		int *is_fastclk,
-		struct wlan_dfs_phyerr_param *param,
-		int dfsdomain)
+void lmac_dfs_enable(struct wlan_objmgr_pdev *pdev, int *is_fastclk,
+		     struct wlan_dfs_phyerr_param *param, int dfsdomain)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_dfs_tx_ops *dfs_tx_ops;
@@ -99,21 +97,18 @@ void lmac_dfs_enable(struct wlan_objmgr_pdev *pdev,
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return;
 	}
 
 	dfs_tx_ops = &tx_ops->dfs_tx_ops;
 
 	if (dfs_tx_ops->dfs_enable)
-		dfs_tx_ops->dfs_enable(pdev,
-				is_fastclk,
-				param,
-				dfsdomain);
+		dfs_tx_ops->dfs_enable(pdev, is_fastclk, param, dfsdomain);
 }
 
 void lmac_dfs_get_thresholds(struct wlan_objmgr_pdev *pdev,
-		struct wlan_dfs_phyerr_param *param)
+			     struct wlan_dfs_phyerr_param *param)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_dfs_tx_ops *dfs_tx_ops;
@@ -122,7 +117,7 @@ void lmac_dfs_get_thresholds(struct wlan_objmgr_pdev *pdev,
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return;
 	}
 
@@ -142,7 +137,7 @@ uint16_t lmac_get_ah_devid(struct wlan_objmgr_pdev *pdev)
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return devid;
 	}
 
@@ -164,7 +159,7 @@ uint32_t lmac_get_ext_busy(struct wlan_objmgr_pdev *pdev)
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return ext_chan_busy;
 	}
 
@@ -185,7 +180,7 @@ void lmac_set_use_cac_prssi(struct wlan_objmgr_pdev *pdev)
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return;
 	}
 
@@ -205,7 +200,7 @@ uint32_t lmac_get_target_type(struct wlan_objmgr_pdev *pdev)
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return target_type;
 	}
 
@@ -218,7 +213,7 @@ uint32_t lmac_get_target_type(struct wlan_objmgr_pdev *pdev)
 }
 
 uint32_t lmac_get_phymode_info(struct wlan_objmgr_pdev *pdev,
-		uint32_t chan_mode)
+			       uint32_t chan_mode)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_dfs_tx_ops *dfs_tx_ops;
@@ -228,7 +223,7 @@ uint32_t lmac_get_phymode_info(struct wlan_objmgr_pdev *pdev,
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return mode_info;
 	}
 
@@ -253,7 +248,7 @@ bool lmac_is_host_dfs_check_support_enabled(struct wlan_objmgr_pdev *pdev)
 	psoc = wlan_pdev_get_psoc(pdev);
 	tx_ops = wlan_psoc_get_lmac_if_txops(psoc);
 	if (!tx_ops) {
-		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS,  "tx_ops is null");
+		dfs_err(NULL, WLAN_DEBUG_DFS_ALWAYS, "tx_ops is null");
 		return enabled;
 	}
 

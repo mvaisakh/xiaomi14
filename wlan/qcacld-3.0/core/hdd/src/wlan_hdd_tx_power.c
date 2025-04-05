@@ -25,20 +25,20 @@
  */
 
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
-#include <wma_api.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_tx_power.h>
+#include <wma_api.h>
 
 #define MAX_TXPOWER_SCALE 4
 
 const struct nla_policy
-txpower_scale_policy[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE] = { .type = NLA_U8 },
-};
+	txpower_scale_policy[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_MAX + 1] = {
+		[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE] = { .type = NLA_U8 },
+	};
 
 /**
  * __wlan_hdd_cfg80211_txpower_scale () - txpower scaling
@@ -51,8 +51,7 @@ txpower_scale_policy[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_MAX + 1] = {
  */
 static int __wlan_hdd_cfg80211_txpower_scale(struct wiphy *wiphy,
 					     struct wireless_dev *wdev,
-					     const void *data,
-					     int data_len)
+					     const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -86,8 +85,7 @@ static int __wlan_hdd_cfg80211_txpower_scale(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	scale_value = nla_get_u8(tb
-		    [QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE]);
+	scale_value = nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE]);
 
 	if (scale_value > MAX_TXPOWER_SCALE) {
 		hdd_err("Invalid tx power scale level");
@@ -105,8 +103,7 @@ static int __wlan_hdd_cfg80211_txpower_scale(struct wiphy *wiphy,
 }
 
 int wlan_hdd_cfg80211_txpower_scale(struct wiphy *wiphy,
-				    struct wireless_dev *wdev,
-				    const void *data,
+				    struct wireless_dev *wdev, const void *data,
 				    int data_len)
 {
 	struct osif_vdev_sync *vdev_sync;
@@ -124,9 +121,9 @@ int wlan_hdd_cfg80211_txpower_scale(struct wiphy *wiphy,
 }
 
 const struct nla_policy txpower_scale_decr_db_policy
-[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_DECR_DB_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_DECR_DB] = { .type = NLA_U8 },
-};
+	[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_DECR_DB_MAX + 1] = {
+		[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_DECR_DB] = { .type = NLA_U8 },
+	};
 
 /**
  * __wlan_hdd_cfg80211_txpower_scale_decr_db () - txpower scaling
@@ -137,11 +134,10 @@ const struct nla_policy txpower_scale_decr_db_policy
  *
  * Return: 0 on success, negative errno on failure
  */
-static int
-__wlan_hdd_cfg80211_txpower_scale_decr_db(struct wiphy *wiphy,
-					  struct wireless_dev *wdev,
-					  const void *data,
-					  int data_len)
+static int __wlan_hdd_cfg80211_txpower_scale_decr_db(struct wiphy *wiphy,
+						     struct wireless_dev *wdev,
+						     const void *data,
+						     int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -164,10 +160,9 @@ __wlan_hdd_cfg80211_txpower_scale_decr_db(struct wiphy *wiphy,
 
 	adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 
-	if (wlan_cfg80211_nla_parse(tb,
-				QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_DECR_DB_MAX,
-				data, data_len,
-				txpower_scale_decr_db_policy)) {
+	if (wlan_cfg80211_nla_parse(
+		    tb, QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_DECR_DB_MAX, data,
+		    data_len, txpower_scale_decr_db_policy)) {
 		hdd_err("Invalid ATTR");
 		return -EINVAL;
 	}
@@ -177,8 +172,8 @@ __wlan_hdd_cfg80211_txpower_scale_decr_db(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	scale_value = nla_get_u8(tb
-		    [QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_DECR_DB]);
+	scale_value =
+		nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_TXPOWER_SCALE_DECR_DB]);
 
 	status = wma_set_tx_power_scale_decr_db(adapter->deflink->vdev_id,
 						scale_value);
@@ -193,8 +188,7 @@ __wlan_hdd_cfg80211_txpower_scale_decr_db(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_txpower_scale_decr_db(struct wiphy *wiphy,
 					    struct wireless_dev *wdev,
-					    const void *data,
-					    int data_len)
+					    const void *data, int data_len)
 {
 	struct osif_vdev_sync *vdev_sync;
 	int errno;
@@ -203,11 +197,10 @@ int wlan_hdd_cfg80211_txpower_scale_decr_db(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_txpower_scale_decr_db(wiphy, wdev,
-							  data, data_len);
+	errno = __wlan_hdd_cfg80211_txpower_scale_decr_db(wiphy, wdev, data,
+							  data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
 	return errno;
 }
-

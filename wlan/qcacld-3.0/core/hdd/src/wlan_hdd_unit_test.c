@@ -22,19 +22,19 @@
  * config wlan_hdd_unit_test which will be used by wext and
  * debugfs unit_test_host
  */
-#include "wlan_hdd_main.h"
+#include "wlan_hdd_unit_test.h"
 #include "qdf_delayed_work_test.h"
 #include "qdf_hashtable_test.h"
 #include "qdf_periodic_work_test.h"
 #include "qdf_ptr_hash_test.h"
 #include "qdf_slist_test.h"
-#include "qdf_talloc_test.h"
 #include "qdf_str.h"
+#include "qdf_talloc_test.h"
 #include "qdf_trace.h"
 #include "qdf_tracker_test.h"
 #include "qdf_types_test.h"
 #include "wlan_dsc_test.h"
-#include "wlan_hdd_unit_test.h"
+#include "wlan_hdd_main.h"
 
 typedef uint32_t (*hdd_ut_callback)(void);
 
@@ -58,14 +58,14 @@ struct hdd_ut_entry hdd_ut_entries[] = {
 
 #define hdd_for_each_ut_entry(cursor) \
 	for (cursor = hdd_ut_entries; \
-	     cursor < hdd_ut_entries + ARRAY_SIZE(hdd_ut_entries); \
-	     cursor++)
+	     cursor < hdd_ut_entries + ARRAY_SIZE(hdd_ut_entries); cursor++)
 
 static struct hdd_ut_entry *hdd_ut_lookup(const char *name)
 {
 	struct hdd_ut_entry *entry;
 
-	hdd_for_each_ut_entry(entry) {
+	hdd_for_each_ut_entry(entry)
+	{
 		if (qdf_str_eq(entry->name, name))
 			return entry;
 	}
@@ -96,8 +96,7 @@ int wlan_hdd_unit_test(struct hdd_context *hdd_ctx, const char *name)
 	hdd_nofl_info("Unit tests begin");
 
 	if (!name || !name[0] || qdf_str_eq(name, "all")) {
-		hdd_for_each_ut_entry(entry)
-			errors += hdd_ut_single(entry);
+		hdd_for_each_ut_entry(entry) errors += hdd_ut_single(entry);
 	} else {
 		entry = hdd_ut_lookup(name);
 		if (entry) {

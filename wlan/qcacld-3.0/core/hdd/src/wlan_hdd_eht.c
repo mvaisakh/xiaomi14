@@ -23,15 +23,15 @@
  *
  */
 
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_eht.h"
 #include "osif_sync.h"
-#include "wlan_utility.h"
-#include "wlan_mlme_ucfg_api.h"
 #include "qc_sap_ioctl.h"
-#include "wma_api.h"
+#include "wlan_hdd_main.h"
+#include "wlan_mlme_ucfg_api.h"
 #include "wlan_osif_features.h"
 #include "wlan_psoc_mlme_ucfg_api.h"
+#include "wlan_utility.h"
+#include "wma_api.h"
 
 #if defined(WLAN_FEATURE_11BE) && defined(CFG80211_11BE_BASIC)
 #define CHAN_WIDTH_SET_40MHZ_IN_2G \
@@ -46,7 +46,7 @@
 void hdd_update_tgt_eht_cap(struct hdd_context *hdd_ctx,
 			    struct wma_tgt_cfg *cfg)
 {
-	tDot11fIEeht_cap eht_cap_ini = {0};
+	tDot11fIEeht_cap eht_cap_ini = { 0 };
 
 	ucfg_mlme_update_tgt_eht_cap(hdd_ctx->psoc, cfg);
 	sme_update_tgt_eht_cap(hdd_ctx->mac_handle, cfg, &eht_cap_ini);
@@ -59,8 +59,8 @@ void hdd_update_tgt_eht_cap(struct hdd_context *hdd_ctx,
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *      1          1           1           2        Variable Len  Variable Len
  */
-void wlan_hdd_get_mlo_link_id(struct hdd_beacon_data *beacon,
-			      uint8_t *link_id, uint8_t *num_link)
+void wlan_hdd_get_mlo_link_id(struct hdd_beacon_data *beacon, uint8_t *link_id,
+			      uint8_t *num_link)
 {
 	const uint8_t *mlie, *cmn_info_ie, *link_info_ie;
 	uint8_t total_len, cmn_info_len, link_info_len;
@@ -79,19 +79,19 @@ void wlan_hdd_get_mlo_link_id(struct hdd_beacon_data *beacon,
 		cmn_info_len = *cmn_info_ie;
 
 		/* 802.11 Common info sub-element in Multi-link element
-		 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 * |Cmn info Len |MLD MAC| Link ID | .....
-		 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-		 *        1          6        0/1
-		 */
+     * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     * |Cmn info Len |MLD MAC| Link ID | .....
+     * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     *        1          6        0/1
+     */
 
 		*link_id = *(cmn_info_ie + 1 + QDF_MAC_ADDR_SIZE);
 
 		/* Length of link info equal total length minus below:
-		 * 1-Byte Extn Ele ID
-		 * 2-Byte Multi link control
-		 * Length of Common info sub-element
-		 */
+     * 1-Byte Extn Ele ID
+     * 2-Byte Multi link control
+     * Length of Common info sub-element
+     */
 
 		link_info_ie = cmn_info_ie + cmn_info_len;
 		link_info_len = total_len - cmn_info_len - 3;
@@ -122,14 +122,13 @@ void wlan_hdd_check_11be_support(struct hdd_beacon_data *beacon,
 		config->SapHw_mode = eCSR_DOT11_MODE_11be;
 }
 
-static void
-hdd_update_wiphy_eht_caps_6ghz(struct hdd_context *hdd_ctx,
-			       tDot11fIEeht_cap eht_cap)
+static void hdd_update_wiphy_eht_caps_6ghz(struct hdd_context *hdd_ctx,
+					   tDot11fIEeht_cap eht_cap)
 {
 	struct ieee80211_supported_band *band_6g =
-		   hdd_ctx->wiphy->bands[HDD_NL80211_BAND_6GHZ];
+		hdd_ctx->wiphy->bands[HDD_NL80211_BAND_6GHZ];
 	uint8_t *phy_info =
-		    hdd_ctx->iftype_data_6g->eht_cap.eht_cap_elem.phy_cap_info;
+		hdd_ctx->iftype_data_6g->eht_cap.eht_cap_elem.phy_cap_info;
 	struct ieee80211_sband_iftype_data *iftype_sta;
 	struct ieee80211_sband_iftype_data *iftype_ap;
 
@@ -144,7 +143,6 @@ hdd_update_wiphy_eht_caps_6ghz(struct hdd_context *hdd_ctx,
 	band_6g->iftype_data = hdd_ctx->iftype_data_6g;
 	iftype_sta = hdd_ctx->iftype_data_6g;
 	iftype_ap = hdd_ctx->iftype_data_6g + 1;
-
 
 	hdd_ctx->iftype_data_6g->eht_cap.has_eht = eht_cap.present;
 	if (hdd_ctx->iftype_data_6g->eht_cap.has_eht &&
@@ -175,14 +173,14 @@ void hdd_update_wiphy_eht_cap(struct hdd_context *hdd_ctx)
 {
 	tDot11fIEeht_cap eht_cap_cfg;
 	struct ieee80211_supported_band *band_2g =
-			hdd_ctx->wiphy->bands[HDD_NL80211_BAND_2GHZ];
+		hdd_ctx->wiphy->bands[HDD_NL80211_BAND_2GHZ];
 	struct ieee80211_supported_band *band_5g =
-			hdd_ctx->wiphy->bands[HDD_NL80211_BAND_5GHZ];
+		hdd_ctx->wiphy->bands[HDD_NL80211_BAND_5GHZ];
 	QDF_STATUS status;
 	uint8_t *phy_info_5g =
-		    hdd_ctx->iftype_data_5g->eht_cap.eht_cap_elem.phy_cap_info;
+		hdd_ctx->iftype_data_5g->eht_cap.eht_cap_elem.phy_cap_info;
 	uint8_t *phy_info_2g =
-		    hdd_ctx->iftype_data_2g->eht_cap.eht_cap_elem.phy_cap_info;
+		hdd_ctx->iftype_data_2g->eht_cap.eht_cap_elem.phy_cap_info;
 	bool eht_capab;
 	struct ieee80211_sband_iftype_data *iftype_sta;
 	struct ieee80211_sband_iftype_data *iftype_ap;
@@ -298,8 +296,8 @@ int hdd_set_11be_rate_code(struct hdd_adapter *adapter, uint16_t rate_code)
 		  rate_code, rix, preamble, nss);
 
 	ret = wma_cli_set_command(adapter->deflink->vdev_id,
-				  wmi_vdev_param_fixed_rate,
-				  rate_code, VDEV_CMD);
+				  wmi_vdev_param_fixed_rate, rate_code,
+				  VDEV_CMD);
 
 	return ret;
 }
@@ -334,15 +332,14 @@ static inline uint8_t hdd_map_eht_gi_to_os(enum txrate_gi guard_interval)
  * Return: none
  */
 void wlan_hdd_fill_os_eht_rateflags(struct rate_info *os_rate,
-				    enum tx_rate_info rate_flags,
-				    uint8_t dcm,
+				    enum tx_rate_info rate_flags, uint8_t dcm,
 				    enum txrate_gi guard_interval)
 {
 	/* as fw not yet report ofdma to host, so don't
-	 * fill RATE_INFO_BW_EHT_RU.
-	 */
-	if (rate_flags & (TX_RATE_EHT80 | TX_RATE_EHT40 |
-	    TX_RATE_EHT20 | TX_RATE_EHT160 | TX_RATE_EHT320)) {
+   * fill RATE_INFO_BW_EHT_RU.
+   */
+	if (rate_flags & (TX_RATE_EHT80 | TX_RATE_EHT40 | TX_RATE_EHT20 |
+			  TX_RATE_EHT160 | TX_RATE_EHT320)) {
 		if (rate_flags & TX_RATE_EHT320)
 			hdd_set_rate_bw(os_rate, HDD_RATE_BW_320);
 		else if (rate_flags & TX_RATE_EHT160)
@@ -357,15 +354,14 @@ void wlan_hdd_fill_os_eht_rateflags(struct rate_info *os_rate,
 }
 
 #ifdef FEATURE_RX_LINKSPEED_ROAM_TRIGGER
-void
-wlan_hdd_refill_os_eht_rateflags(struct rate_info *os_rate, uint8_t preamble)
+void wlan_hdd_refill_os_eht_rateflags(struct rate_info *os_rate,
+				      uint8_t preamble)
 {
 	if (preamble == DOT11_BE)
 		os_rate->flags |= RATE_INFO_FLAGS_EHT_MCS;
 }
 
-void
-wlan_hdd_refill_os_eht_bw(struct rate_info *os_rate, enum rx_tlv_bw bw)
+void wlan_hdd_refill_os_eht_bw(struct rate_info *os_rate, enum rx_tlv_bw bw)
 {
 	if (bw == RX_TLV_BW_320MHZ)
 		os_rate->bw = RATE_INFO_BW_320;

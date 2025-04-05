@@ -21,8 +21,8 @@
  */
 
 #include "wlan_qmi_main.h"
-#include "wlan_qmi_public_struct.h"
 #include "wlan_qmi_objmgr.h"
+#include "wlan_qmi_public_struct.h"
 
 QDF_STATUS
 qmi_psoc_obj_create_notification(struct wlan_objmgr_psoc *psoc, void *arg)
@@ -36,9 +36,8 @@ qmi_psoc_obj_create_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 
 	qmi_ctx->psoc = psoc;
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc, WLAN_UMAC_COMP_QMI,
-						       qmi_ctx,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_QMI, qmi_ctx, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qmi_err("Failed to attach psoc QMI component obj");
 		qdf_mem_free(qmi_ctx);

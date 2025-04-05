@@ -19,8 +19,8 @@
  *
  * Implementation for mlo epcs public ucfg API interfaces.
  */
-#include "wlan_epcs_api.h"
 #include "wlan_mlo_epcs_ucfg_api.h"
+#include "wlan_epcs_api.h"
 
 QDF_STATUS ucfg_epcs_deliver_cmd(struct wlan_objmgr_vdev *vdev,
 				 enum wlan_epcs_evt event)

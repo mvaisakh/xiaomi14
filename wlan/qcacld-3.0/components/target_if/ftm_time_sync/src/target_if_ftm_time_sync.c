@@ -21,8 +21,8 @@
  * in target_if internally.
  */
 
-#include "target_if.h"
 #include "target_if_ftm_time_sync.h"
+#include "target_if.h"
 #include "wlan_ftm_time_sync_public_struct.h"
 #include "wlan_ftm_time_sync_tgt_api.h"
 #include <wmi_unified_api.h>
@@ -55,9 +55,9 @@ target_if_ftm_time_sync_send_trigger(struct wlan_objmgr_psoc *psoc,
 							   mode);
 }
 
-static int
-target_if_time_sync_ftm_start_stop_event_handler(ol_scn_t scn_handle,
-						 uint8_t *data, uint32_t len)
+static int target_if_time_sync_ftm_start_stop_event_handler(ol_scn_t scn_handle,
+							    uint8_t *data,
+							    uint32_t len)
 {
 	struct ftm_time_sync_start_stop_params param;
 	struct wlan_objmgr_psoc *psoc;
@@ -81,7 +81,7 @@ target_if_time_sync_ftm_start_stop_event_handler(ol_scn_t scn_handle,
 	}
 
 	if (wmi_unified_extract_time_sync_ftm_start_stop_params(
-			wmi_handle, data, &param) != QDF_STATUS_SUCCESS) {
+		    wmi_handle, data, &param) != QDF_STATUS_SUCCESS) {
 		target_if_err("Extraction of time sync ftm start stop failed");
 		return -EINVAL;
 	}
@@ -104,9 +104,9 @@ target_if_ftm_time_sync_start_stop_event(struct wlan_objmgr_psoc *psoc)
 	}
 
 	status = wmi_unified_register_event_handler(
-			wmi_handle, wmi_wlan_time_sync_ftm_start_stop_event_id,
-			target_if_time_sync_ftm_start_stop_event_handler,
-			WMI_RX_SERIALIZER_CTX);
+		wmi_handle, wmi_wlan_time_sync_ftm_start_stop_event_id,
+		target_if_time_sync_ftm_start_stop_event_handler,
+		WMI_RX_SERIALIZER_CTX);
 	if (status) {
 		target_if_err("Ftm time_sync start stop event register failed");
 		return QDF_STATUS_E_FAILURE;
@@ -115,10 +115,8 @@ target_if_ftm_time_sync_start_stop_event(struct wlan_objmgr_psoc *psoc)
 	return status;
 }
 
-static int
-target_if_time_sync_initiator_target_offset_event_handler(ol_scn_t scn_handle,
-						      uint8_t *data,
-						      uint32_t len)
+static int target_if_time_sync_initiator_target_offset_event_handler(
+	ol_scn_t scn_handle, uint8_t *data, uint32_t len)
 {
 	struct ftm_time_sync_offset param;
 	struct wlan_objmgr_psoc *psoc;
@@ -142,8 +140,9 @@ target_if_time_sync_initiator_target_offset_event_handler(ol_scn_t scn_handle,
 	}
 
 	if (wmi_unified_extract_time_sync_ftm_offset(
-			wmi_handle, data, &param) != QDF_STATUS_SUCCESS) {
-		target_if_err("Extraction of time_sync ftm offset param failed");
+		    wmi_handle, data, &param) != QDF_STATUS_SUCCESS) {
+		target_if_err(
+			"Extraction of time_sync ftm offset param failed");
 		return -EINVAL;
 	}
 
@@ -165,10 +164,10 @@ target_if_ftm_time_sync_initiator_target_offset(struct wlan_objmgr_psoc *psoc)
 	}
 
 	status = wmi_unified_register_event_handler(
-			wmi_handle,
-			wmi_wlan_time_sync_q_initiator_target_offset_eventid,
-			target_if_time_sync_initiator_target_offset_event_handler,
-			WMI_RX_SERIALIZER_CTX);
+		wmi_handle,
+		wmi_wlan_time_sync_q_initiator_target_offset_eventid,
+		target_if_time_sync_initiator_target_offset_event_handler,
+		WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Ftm time_sync offset event register failed");
 		return QDF_STATUS_E_FAILURE;
@@ -190,16 +189,15 @@ target_if_ftm_time_sync_unregister_ev_handlers(struct wlan_objmgr_psoc *psoc)
 	}
 
 	ret = wmi_unified_unregister_event(
-				wmi_handle,
-				wmi_wlan_time_sync_ftm_start_stop_event_id);
+		wmi_handle, wmi_wlan_time_sync_ftm_start_stop_event_id);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("failed to unregister time sync start/stop evt");
 		status = ret;
 	}
 
 	ret = wmi_unified_unregister_event(
-			wmi_handle,
-			wmi_wlan_time_sync_q_initiator_target_offset_eventid);
+		wmi_handle,
+		wmi_wlan_time_sync_q_initiator_target_offset_eventid);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("failed to unregister time sync offset evt");
 		status = ret;
@@ -212,7 +210,7 @@ target_if_ftm_time_sync_unregister_ev_handlers(struct wlan_objmgr_psoc *psoc)
 }
 
 void target_if_ftm_time_sync_register_rx_ops(
-				struct wlan_ftm_time_sync_rx_ops *rx_ops)
+	struct wlan_ftm_time_sync_rx_ops *rx_ops)
 {
 	if (!rx_ops) {
 		target_if_err("FTM time_sync rx_ops is null");
@@ -220,13 +218,13 @@ void target_if_ftm_time_sync_register_rx_ops(
 	}
 
 	rx_ops->ftm_time_sync_register_start_stop =
-				target_if_ftm_time_sync_start_stop_event;
+		target_if_ftm_time_sync_start_stop_event;
 	rx_ops->ftm_time_sync_regiser_initiator_target_offset =
-				target_if_ftm_time_sync_initiator_target_offset;
+		target_if_ftm_time_sync_initiator_target_offset;
 }
 
 void target_if_ftm_time_sync_register_tx_ops(
-				struct wlan_ftm_time_sync_tx_ops *tx_ops)
+	struct wlan_ftm_time_sync_tx_ops *tx_ops)
 {
 	if (!tx_ops) {
 		target_if_err("FTM time_sync tx_ops is null");
@@ -235,6 +233,5 @@ void target_if_ftm_time_sync_register_tx_ops(
 
 	tx_ops->ftm_time_sync_send_qtime = target_if_ftm_time_sync_send_qtime;
 	tx_ops->ftm_time_sync_send_trigger =
-				target_if_ftm_time_sync_send_trigger;
+		target_if_ftm_time_sync_send_trigger;
 }
-

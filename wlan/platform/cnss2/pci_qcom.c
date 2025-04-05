@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved. */
+/* Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
 
-#include "pci_platform.h"
 #include "debug.h"
+#include "pci_platform.h"
 
 static struct cnss_msi_config msi_config = {
 	.total_vectors = 32,
 	.total_users = MSI_USERS,
-	.users = (struct cnss_msi_user[]) {
-		{ .name = "MHI", .num_vectors = 3, .base_vector = 0 },
-		{ .name = "CE", .num_vectors = 10, .base_vector = 3 },
-		{ .name = "WAKE", .num_vectors = 1, .base_vector = 13 },
-		{ .name = "DP", .num_vectors = 18, .base_vector = 14 },
-	},
+	.users =
+		(struct cnss_msi_user[]){
+			{ .name = "MHI", .num_vectors = 3, .base_vector = 0 },
+			{ .name = "CE", .num_vectors = 10, .base_vector = 3 },
+			{ .name = "WAKE", .num_vectors = 1, .base_vector = 13 },
+			{ .name = "DP", .num_vectors = 18, .base_vector = 14 },
+		},
 };
 
 #ifdef CONFIG_ONE_MSI_VECTOR
@@ -25,12 +27,13 @@ static struct cnss_msi_config msi_config = {
 static struct cnss_msi_config msi_config_one_msi = {
 	.total_vectors = 1,
 	.total_users = 4,
-	.users = (struct cnss_msi_user[]) {
-		{ .name = "MHI", .num_vectors = 1, .base_vector = 0 },
-		{ .name = "CE", .num_vectors = 1, .base_vector = 0 },
-		{ .name = "WAKE", .num_vectors = 1, .base_vector = 0 },
-		{ .name = "DP", .num_vectors = 1, .base_vector = 0 },
-	},
+	.users =
+		(struct cnss_msi_user[]){
+			{ .name = "MHI", .num_vectors = 1, .base_vector = 0 },
+			{ .name = "CE", .num_vectors = 1, .base_vector = 0 },
+			{ .name = "WAKE", .num_vectors = 1, .base_vector = 0 },
+			{ .name = "DP", .num_vectors = 1, .base_vector = 0 },
+		},
 };
 #endif
 
@@ -52,21 +55,20 @@ int cnss_pci_disable_pc(struct cnss_pci_data *pci_priv, bool vote)
 {
 	struct pci_dev *pci_dev = pci_priv->pci_dev;
 
-	return msm_pcie_pm_control(vote ? MSM_PCIE_DISABLE_PC :
-				   MSM_PCIE_ENABLE_PC,
-				   pci_dev->bus->number, pci_dev, NULL,
-				   PM_OPTIONS_DEFAULT);
+	return msm_pcie_pm_control(
+		vote ? MSM_PCIE_DISABLE_PC : MSM_PCIE_ENABLE_PC,
+		pci_dev->bus->number, pci_dev, NULL, PM_OPTIONS_DEFAULT);
 }
 
-int cnss_pci_set_link_bandwidth(struct cnss_pci_data *pci_priv,
-				u16 link_speed, u16 link_width)
+int cnss_pci_set_link_bandwidth(struct cnss_pci_data *pci_priv, u16 link_speed,
+				u16 link_width)
 {
-	return msm_pcie_set_link_bandwidth(pci_priv->pci_dev,
-					   link_speed, link_width);
+	return msm_pcie_set_link_bandwidth(pci_priv->pci_dev, link_speed,
+					   link_width);
 }
 
-int cnss_pci_set_max_link_speed(struct cnss_pci_data *pci_priv,
-				u32 rc_num, u16 link_speed)
+int cnss_pci_set_max_link_speed(struct cnss_pci_data *pci_priv, u32 rc_num,
+				u16 link_speed)
 {
 	return msm_pcie_set_target_link_speed(rc_num, link_speed, false);
 }
@@ -118,11 +120,12 @@ static int cnss_pci_set_link_up(struct cnss_pci_data *pci_priv)
 	u32 pm_options = PM_OPTIONS_DEFAULT;
 	int ret;
 
-	ret = msm_pcie_pm_control(pm_ops, pci_dev->bus->number, pci_dev,
-				  NULL, pm_options);
+	ret = msm_pcie_pm_control(pm_ops, pci_dev->bus->number, pci_dev, NULL,
+				  pm_options);
 	if (ret)
-		cnss_pr_err("Failed to resume PCI link with default option, err = %d\n",
-			    ret);
+		cnss_pr_err(
+			"Failed to resume PCI link with default option, err = %d\n",
+			ret);
 
 	return ret;
 }
@@ -150,11 +153,12 @@ static int cnss_pci_set_link_down(struct cnss_pci_data *pci_priv)
 		pm_ops = MSM_PCIE_SUSPEND;
 	}
 
-	ret = msm_pcie_pm_control(pm_ops, pci_dev->bus->number, pci_dev,
-				  NULL, pm_options);
+	ret = msm_pcie_pm_control(pm_ops, pci_dev->bus->number, pci_dev, NULL,
+				  pm_options);
 	if (ret)
-		cnss_pr_err("Failed to suspend PCI link with default option, err = %d\n",
-			    ret);
+		cnss_pr_err(
+			"Failed to suspend PCI link with default option, err = %d\n",
+			ret);
 
 	return ret;
 }
@@ -236,7 +240,7 @@ static void cnss_pci_event_cb(struct msm_pcie_notify *notify)
 	case MSM_PCIE_EVENT_WAKEUP:
 		if ((cnss_pci_get_monitor_wake_intr(pci_priv) &&
 		     cnss_pci_get_auto_suspended(pci_priv)) ||
-		     dev->power.runtime_status == RPM_SUSPENDING) {
+		    dev->power.runtime_status == RPM_SUSPENDING) {
 			cnss_pci_set_monitor_wake_intr(pci_priv, false);
 			cnss_pci_pm_request_resume(pci_priv);
 		}
@@ -263,13 +267,12 @@ int cnss_reg_pci_event(struct cnss_pci_data *pci_priv)
 
 	pci_event = &pci_priv->msm_pci_event;
 	pci_event->events = MSM_PCIE_EVENT_LINK_RECOVER |
-			    MSM_PCIE_EVENT_LINKDOWN |
-			    MSM_PCIE_EVENT_WAKEUP;
+			    MSM_PCIE_EVENT_LINKDOWN | MSM_PCIE_EVENT_WAKEUP;
 
 	if (cnss_pci_get_drv_supported(pci_priv))
 		pci_event->events = pci_event->events |
-			MSM_PCIE_EVENT_DRV_CONNECT |
-			MSM_PCIE_EVENT_DRV_DISCONNECT;
+				    MSM_PCIE_EVENT_DRV_CONNECT |
+				    MSM_PCIE_EVENT_DRV_DISCONNECT;
 
 	pci_event->user = pci_priv->pci_dev;
 	pci_event->mode = MSM_PCIE_TRIGGER_CALLBACK;
@@ -289,8 +292,7 @@ void cnss_dereg_pci_event(struct cnss_pci_data *pci_priv)
 	msm_pcie_deregister_event(&pci_priv->msm_pci_event);
 }
 
-int cnss_wlan_adsp_pc_enable(struct cnss_pci_data *pci_priv,
-			     bool control)
+int cnss_wlan_adsp_pc_enable(struct cnss_pci_data *pci_priv, bool control)
 {
 	struct pci_dev *pci_dev = pci_priv->pci_dev;
 	int ret = 0;
@@ -377,8 +379,8 @@ retry:
 		}
 	} else {
 		/* Since DRV suspend cannot be done in Gen 3, set it to
-		 * Gen 2 if current link speed is larger than Gen 2.
-		 */
+     * Gen 2 if current link speed is larger than Gen 2.
+     */
 		if (pci_priv->drv_connected_last &&
 		    pci_priv->cur_link_speed > PCI_EXP_LNKSTA_CLS_5_0GB)
 			cnss_set_pci_link_status(pci_priv, PCI_GEN2);
@@ -417,7 +419,8 @@ int cnss_pci_prevent_l1(struct device *dev)
 
 	ret = _cnss_pci_prevent_l1(pci_priv);
 	if (ret == -EIO) {
-		cnss_pr_err("Failed to prevent PCIe L1, considered as link down\n");
+		cnss_pr_err(
+			"Failed to prevent PCIe L1, considered as link down\n");
 		cnss_pci_link_down(dev);
 	}
 
@@ -464,8 +467,7 @@ int cnss_pci_get_one_msi_assignment(struct cnss_pci_data *pci_priv)
 	return 0;
 }
 
-bool cnss_pci_fallback_one_msi(struct cnss_pci_data *pci_priv,
-			       int *num_vectors)
+bool cnss_pci_fallback_one_msi(struct cnss_pci_data *pci_priv, int *num_vectors)
 {
 	struct pci_dev *pci_dev = pci_priv->pci_dev;
 	struct cnss_msi_config *msi_config;
@@ -476,8 +478,7 @@ bool cnss_pci_fallback_one_msi(struct cnss_pci_data *pci_priv,
 		cnss_pr_err("one msi_config is NULL!\n");
 		return false;
 	}
-	*num_vectors = pci_alloc_irq_vectors(pci_dev,
-					     msi_config->total_vectors,
+	*num_vectors = pci_alloc_irq_vectors(pci_dev, msi_config->total_vectors,
 					     msi_config->total_vectors,
 					     PCI_IRQ_MSI);
 	if (*num_vectors < 0) {
@@ -512,8 +513,7 @@ int cnss_pci_get_one_msi_assignment(struct cnss_pci_data *pci_priv)
 	return 0;
 }
 
-bool cnss_pci_fallback_one_msi(struct cnss_pci_data *pci_priv,
-			       int *num_vectors)
+bool cnss_pci_fallback_one_msi(struct cnss_pci_data *pci_priv, int *num_vectors)
 {
 	return false;
 }
@@ -582,7 +582,7 @@ int cnss_pci_init_smmu(struct cnss_pci_data *pci_priv)
 		cnss_register_iommu_fault_handler_irq(pci_priv);
 	}
 
-	ret = of_property_read_u32_array(of_node,  "qcom,iommu-dma-addr-pool",
+	ret = of_property_read_u32_array(of_node, "qcom,iommu-dma-addr-pool",
 					 addr_win, ARRAY_SIZE(addr_win));
 	if (ret) {
 		cnss_pr_err("Invalid SMMU size window, err = %d\n", ret);
@@ -593,8 +593,7 @@ int cnss_pci_init_smmu(struct cnss_pci_data *pci_priv)
 	pci_priv->smmu_iova_start = addr_win[0];
 	pci_priv->smmu_iova_len = addr_win[1];
 	cnss_pr_dbg("smmu_iova_start: %pa, smmu_iova_len: 0x%zx\n",
-		    &pci_priv->smmu_iova_start,
-		    pci_priv->smmu_iova_len);
+		    &pci_priv->smmu_iova_start, pci_priv->smmu_iova_len);
 
 	res = platform_get_resource_byname(plat_priv->plat_dev, IORESOURCE_MEM,
 					   "smmu_iova_ipa");
@@ -602,13 +601,14 @@ int cnss_pci_init_smmu(struct cnss_pci_data *pci_priv)
 		pci_priv->smmu_iova_ipa_start = res->start;
 		pci_priv->smmu_iova_ipa_current = res->start;
 		pci_priv->smmu_iova_ipa_len = resource_size(res);
-		cnss_pr_dbg("smmu_iova_ipa_start: %pa, smmu_iova_ipa_len: 0x%zx\n",
-			    &pci_priv->smmu_iova_ipa_start,
-			    pci_priv->smmu_iova_ipa_len);
+		cnss_pr_dbg(
+			"smmu_iova_ipa_start: %pa, smmu_iova_ipa_len: 0x%zx\n",
+			&pci_priv->smmu_iova_ipa_start,
+			pci_priv->smmu_iova_ipa_len);
 	}
 
-	pci_priv->iommu_geometry = of_property_read_bool(of_node,
-							 "qcom,iommu-geometry");
+	pci_priv->iommu_geometry =
+		of_property_read_bool(of_node, "qcom,iommu-geometry");
 	cnss_pr_dbg("iommu_geometry: %d\n", pci_priv->iommu_geometry);
 
 	of_node_put(of_node);
@@ -616,8 +616,7 @@ int cnss_pci_init_smmu(struct cnss_pci_data *pci_priv)
 	return 0;
 }
 
-int _cnss_pci_get_reg_dump(struct cnss_pci_data *pci_priv,
-			   u8 *buf, u32 len)
+int _cnss_pci_get_reg_dump(struct cnss_pci_data *pci_priv, u8 *buf, u32 len)
 {
 	return msm_pcie_reg_dump(pci_priv->pci_dev, buf, len);
 }
@@ -641,15 +640,17 @@ int cnss_pci_of_reserved_mem_device_init(struct cnss_pci_data *pci_priv)
 	int ret;
 
 	/* Use of_reserved_mem_device_init_by_idx() if reserved memory is
-	 * attached to platform device of_node.
-	 */
+   * attached to platform device of_node.
+   */
 	ret = of_reserved_mem_device_init(dev_pci);
 	if (ret) {
 		if (ret == -EINVAL)
-			cnss_pr_vdbg("Ignore, no specific reserved-memory assigned\n");
+			cnss_pr_vdbg(
+				"Ignore, no specific reserved-memory assigned\n");
 		else
-			cnss_pr_err("Failed to init reserved mem device, err = %d\n",
-				    ret);
+			cnss_pr_err(
+				"Failed to init reserved mem device, err = %d\n",
+				ret);
 	}
 	if (dev_pci->cma_area)
 		cnss_pr_dbg("CMA area is %s\n",
@@ -667,4 +668,3 @@ void cnss_pci_wake_gpio_deinit(struct cnss_pci_data *pci_priv)
 {
 }
 #endif
-

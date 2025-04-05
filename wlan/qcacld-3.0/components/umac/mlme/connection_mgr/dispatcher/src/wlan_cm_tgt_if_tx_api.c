@@ -21,18 +21,17 @@
  * Implementation for the Common Roaming interfaces.
  */
 
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_psoc_mlme_api.h"
-#include "wlan_policy_mgr_api.h"
-#include "wlan_mlme_ucfg_api.h"
-#include "wlan_reg_services_api.h"
 #include "wlan_cm_tgt_if_tx_api.h"
 #include "wlan_mlme_public_struct.h"
+#include "wlan_mlme_ucfg_api.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_psoc_mlme_api.h"
+#include "wlan_reg_services_api.h"
 #include "wma.h"
 
-static inline
-struct wlan_cm_roam_tx_ops *wlan_cm_roam_get_tx_ops_from_vdev(
-				struct wlan_objmgr_vdev *vdev)
+static inline struct wlan_cm_roam_tx_ops *
+wlan_cm_roam_get_tx_ops_from_vdev(struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_mlme_psoc_ext_obj *psoc_ext_priv;
 	struct wlan_cm_roam_tx_ops *tx_ops;
@@ -70,9 +69,9 @@ wlan_cm_roam_send_set_vdev_pcl(struct wlan_objmgr_psoc *psoc,
 	bool is_channel_allowed;
 
 	/*
-	 * If vdev_id is WLAN_UMAC_VDEV_ID_MAX, then PDEV pcl command
-	 * needs to be sent
-	 */
+   * If vdev_id is WLAN_UMAC_VDEV_ID_MAX, then PDEV pcl command
+   * needs to be sent
+   */
 	if (!pcl_req || pcl_req->vdev_id == WLAN_UMAC_VDEV_ID_MAX)
 		return QDF_STATUS_E_FAILURE;
 
@@ -123,8 +122,8 @@ wlan_cm_roam_send_set_vdev_pcl(struct wlan_objmgr_psoc *psoc,
 		weights->saved_num_chan = 0;
 
 	status = policy_mgr_get_valid_chan_weights(
-			psoc, (struct policy_mgr_pcl_chan_weights *)weights,
-			PM_STA_MODE, vdev);
+		psoc, (struct policy_mgr_pcl_chan_weights *)weights,
+		PM_STA_MODE, vdev);
 
 	qdf_mem_free(freq_list);
 
@@ -137,7 +136,7 @@ wlan_cm_roam_send_set_vdev_pcl(struct wlan_objmgr_psoc *psoc,
 		     band_capability == BIT(REG_BAND_6G) ||
 		     pcl_req->band_mask == BIT(REG_BAND_5G) ||
 		     pcl_req->band_mask == BIT(REG_BAND_6G)) &&
-		     WLAN_REG_IS_24GHZ_CH_FREQ(weights->saved_chan_list[i]))
+		    WLAN_REG_IS_24GHZ_CH_FREQ(weights->saved_chan_list[i]))
 			weights->weighed_valid_list[i] =
 				WEIGHT_OF_DISALLOWED_CHANNELS;
 
@@ -149,7 +148,7 @@ wlan_cm_roam_send_set_vdev_pcl(struct wlan_objmgr_psoc *psoc,
 
 		is_channel_allowed =
 			policy_mgr_is_sta_chan_valid_for_connect_and_roam(
-					pdev, weights->saved_chan_list[i]);
+				pdev, weights->saved_chan_list[i]);
 		if (!is_channel_allowed)
 			weights->weighed_valid_list[i] =
 				WEIGHT_OF_DISALLOWED_CHANNELS;
@@ -196,8 +195,8 @@ QDF_STATUS wlan_cm_tgt_send_roam_rt_stats_config(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = roam_tx_ops->send_roam_rt_stats_config(vdev,
-							req->vdev_id, req->cfg);
+	status = roam_tx_ops->send_roam_rt_stats_config(vdev, req->vdev_id,
+							req->cfg);
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_debug("vdev %d fail to send roam rt stats config",
 			   req->vdev_id);
@@ -261,7 +260,7 @@ wlan_cm_tgt_exclude_rm_partial_scan_freq(struct wlan_objmgr_psoc *psoc,
 	}
 
 	status = roam_tx_ops->send_exclude_rm_partial_scan_freq(
-					vdev, exclude_rm_partial_scan_freq);
+		vdev, exclude_rm_partial_scan_freq);
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_debug("vdev %d fail to exclude roam partial scan freq",
 			   vdev_id);
@@ -272,9 +271,8 @@ wlan_cm_tgt_exclude_rm_partial_scan_freq(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS wlan_cm_tgt_send_roam_full_scan_6ghz_on_disc(
-					struct wlan_objmgr_psoc *psoc,
-					uint8_t vdev_id,
-					uint8_t roam_full_scan_6ghz_on_disc)
+	struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
+	uint8_t roam_full_scan_6ghz_on_disc)
 {
 	QDF_STATUS status;
 	struct wlan_cm_roam_tx_ops *roam_tx_ops;
@@ -294,7 +292,7 @@ QDF_STATUS wlan_cm_tgt_send_roam_full_scan_6ghz_on_disc(
 	}
 
 	status = roam_tx_ops->send_roam_full_scan_6ghz_on_disc(
-					vdev, roam_full_scan_6ghz_on_disc);
+		vdev, roam_full_scan_6ghz_on_disc);
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_debug("vdev %d fail to send inclusion of 6 GHz channels",
 			   vdev_id);
@@ -325,8 +323,8 @@ QDF_STATUS wlan_cm_tgt_send_roam_linkspeed_state(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = roam_tx_ops->send_roam_linkspeed_state(vdev,
-							req->vdev_id, req->cfg);
+	status = roam_tx_ops->send_roam_linkspeed_state(vdev, req->vdev_id,
+							req->cfg);
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_debug("vdev %d fail to send roam linkspeed state",
 			   req->vdev_id);
@@ -360,9 +358,8 @@ wlan_cm_tgt_send_roam_vendor_handoff_config(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = roam_tx_ops->send_roam_vendor_handoff_config(vdev,
-							      req->vdev_id,
-							      req->param_id);
+	status = roam_tx_ops->send_roam_vendor_handoff_config(
+		vdev, req->vdev_id, req->param_id);
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_debug("vdev %d fail to send roam vendor handoff config",
 			   req->vdev_id);
@@ -380,7 +377,7 @@ QDF_STATUS wlan_cm_tgt_send_roam_offload_init(struct wlan_objmgr_psoc *psoc,
 	QDF_STATUS status;
 	struct wlan_cm_roam_tx_ops *roam_tx_ops;
 	struct wlan_objmgr_vdev *vdev;
-	struct wlan_roam_offload_init_params init_msg = {0};
+	struct wlan_roam_offload_init_params init_msg = { 0 };
 	uint32_t disable_4way_hs_offload;
 	bool bmiss_skip_full_scan;
 
@@ -405,7 +402,7 @@ QDF_STATUS wlan_cm_tgt_send_roam_offload_init(struct wlan_objmgr_psoc *psoc,
 	init_msg.vdev_id = vdev_id;
 	if (is_init) {
 		init_msg.roam_offload_flag = WLAN_ROAM_FW_OFFLOAD_ENABLE |
-				 WLAN_ROAM_BMISS_FINAL_SCAN_ENABLE;
+					     WLAN_ROAM_BMISS_FINAL_SCAN_ENABLE;
 
 		wlan_mlme_get_4way_hs_offload(psoc, &disable_4way_hs_offload);
 		if (!disable_4way_hs_offload)
@@ -423,7 +420,7 @@ QDF_STATUS wlan_cm_tgt_send_roam_offload_init(struct wlan_objmgr_psoc *psoc,
 			init_msg.roam_offload_flag |=
 				WLAN_ROAM_BMISS_FINAL_SCAN_TYPE;
 	}
-	mlme_debug("vdev_id:%d, is_init:%d, flag:%d",  vdev_id, is_init,
+	mlme_debug("vdev_id:%d, is_init:%d, flag:%d", vdev_id, is_init,
 		   init_msg.roam_offload_flag);
 
 	status = roam_tx_ops->send_roam_offload_init_req(vdev, &init_msg);
@@ -466,8 +463,8 @@ QDF_STATUS wlan_cm_tgt_send_roam_start_req(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS wlan_cm_tgt_send_roam_stop_req(struct wlan_objmgr_psoc *psoc,
-					 uint8_t vdev_id,
-					 struct wlan_roam_stop_config *req)
+					  uint8_t vdev_id,
+					  struct wlan_roam_stop_config *req)
 {
 	QDF_STATUS status;
 	struct wlan_cm_roam_tx_ops *roam_tx_ops;
@@ -495,9 +492,9 @@ QDF_STATUS wlan_cm_tgt_send_roam_stop_req(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-QDF_STATUS wlan_cm_tgt_send_roam_update_req(struct wlan_objmgr_psoc *psoc,
-					    uint8_t vdev_id,
-					    struct wlan_roam_update_config *req)
+QDF_STATUS
+wlan_cm_tgt_send_roam_update_req(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
+				 struct wlan_roam_update_config *req)
 {
 	QDF_STATUS status;
 	struct wlan_cm_roam_tx_ops *roam_tx_ops;
@@ -553,9 +550,9 @@ QDF_STATUS wlan_cm_tgt_send_roam_abort_req(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-QDF_STATUS wlan_cm_tgt_send_roam_per_config(struct wlan_objmgr_psoc *psoc,
-					   uint8_t vdev_id,
-					   struct wlan_per_roam_config_req *req)
+QDF_STATUS
+wlan_cm_tgt_send_roam_per_config(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
+				 struct wlan_per_roam_config_req *req)
 {
 	QDF_STATUS status;
 	struct wlan_cm_roam_tx_ops *roam_tx_ops;
@@ -598,8 +595,7 @@ QDF_STATUS wlan_cm_tgt_send_roam_triggers(struct wlan_objmgr_psoc *psoc,
 
 	roam_tx_ops = wlan_cm_roam_get_tx_ops_from_vdev(vdev);
 	if (!roam_tx_ops || !roam_tx_ops->send_roam_triggers) {
-		mlme_err("CM_RSO: vdev %d send_roam_triggers is NULL",
-			 vdev_id);
+		mlme_err("CM_RSO: vdev %d send_roam_triggers is NULL", vdev_id);
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_NB_ID);
 		return QDF_STATUS_E_INVAL;
 	}
@@ -686,9 +682,8 @@ wlan_cm_tgt_send_roam_invoke_req(struct wlan_objmgr_psoc *psoc,
 	struct wlan_cm_roam_tx_ops *roam_tx_ops;
 	struct wlan_objmgr_vdev *vdev;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						    roam_invoke_req->vdev_id,
-						    WLAN_MLME_NB_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+		psoc, roam_invoke_req->vdev_id, WLAN_MLME_NB_ID);
 	if (!vdev)
 		return QDF_STATUS_E_INVAL;
 
@@ -719,8 +714,7 @@ wlan_cm_tgt_send_roam_sync_complete_cmd(struct wlan_objmgr_psoc *psoc,
 	struct wlan_cm_roam_tx_ops *roam_tx_ops;
 	struct wlan_objmgr_vdev *vdev;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						    vdev_id,
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
 						    WLAN_MLME_NB_ID);
 	if (!vdev)
 		return QDF_STATUS_E_INVAL;
@@ -736,8 +730,9 @@ wlan_cm_tgt_send_roam_sync_complete_cmd(struct wlan_objmgr_psoc *psoc,
 
 	status = roam_tx_ops->send_roam_sync_complete_cmd(vdev);
 	if (QDF_IS_STATUS_ERROR(status))
-		mlme_debug("CM_RSO: vdev %d fail to send roam sync complete cmd",
-			   vdev_id);
+		mlme_debug(
+			"CM_RSO: vdev %d fail to send roam sync complete cmd",
+			vdev_id);
 
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_NB_ID);
 

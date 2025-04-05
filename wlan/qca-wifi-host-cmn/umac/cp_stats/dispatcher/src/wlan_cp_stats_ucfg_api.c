@@ -23,9 +23,9 @@
  * This file provide API definitions required for northbound interaction
  */
 
-#include <wlan_cp_stats_utils_api.h>
-#include <wlan_cp_stats_ucfg_api.h>
 #include "../../core/src/wlan_cp_stats_obj_mgr_handler.h"
+#include <wlan_cp_stats_ucfg_api.h>
+#include <wlan_cp_stats_utils_api.h>
 
 #ifdef WLAN_SUPPORT_INFRA_CTRL_PATH_STATS
 QDF_STATUS
@@ -60,10 +60,10 @@ ucfg_send_telemetry_cp_stats_request(struct wlan_objmgr_pdev *pdev,
 qdf_export_symbol(ucfg_send_telemetry_cp_stats_request);
 #endif
 
-#if defined(WLAN_SUPPORT_TWT) && defined (WLAN_TWT_CONV_SUPPORTED)
+#if defined(WLAN_SUPPORT_TWT) && defined(WLAN_TWT_CONV_SUPPORTED)
 int ucfg_cp_stats_twt_get_peer_session_params(
-					struct wlan_objmgr_psoc *psoc_obj,
-					struct twt_session_stats_info *params)
+	struct wlan_objmgr_psoc *psoc_obj,
+	struct twt_session_stats_info *params)
 {
 	return wlan_cp_stats_twt_get_peer_session_params(psoc_obj, params);
 }

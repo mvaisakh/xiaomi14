@@ -15,13 +15,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_mlo_mgr_cmn.h>
-#include <wlan_mlo_mgr_public_structs.h>
-#include "wlan_mlo_mgr_main.h"
 #include "qdf_module.h"
 #include "qdf_types.h"
 #include "wlan_cmn.h"
+#include "wlan_mlo_mgr_main.h"
 #include "wlan_mlo_mgr_peer.h"
+#include <wlan_mlo_mgr_cmn.h>
+#include <wlan_mlo_mgr_public_structs.h>
 
 struct aid_search {
 	struct wlan_mlo_peer_context *ml_peer;
@@ -38,8 +38,8 @@ struct mac_addr_search {
 	struct qdf_mac_addr mac_addr;
 };
 
-static inline struct wlan_mlo_peer_context *wlan_mlo_peer_list_peek_head(
-					qdf_list_t *peer_list)
+static inline struct wlan_mlo_peer_context *
+wlan_mlo_peer_list_peek_head(qdf_list_t *peer_list)
 {
 	struct wlan_mlo_peer_context *ml_peer;
 	qdf_list_node_t *peer_node = NULL;
@@ -48,14 +48,14 @@ static inline struct wlan_mlo_peer_context *wlan_mlo_peer_list_peek_head(
 	if (qdf_list_peek_front(peer_list, &peer_node) != QDF_STATUS_SUCCESS)
 		return NULL;
 
-	ml_peer = qdf_container_of(peer_node,
-				   struct wlan_mlo_peer_context, peer_node);
+	ml_peer = qdf_container_of(peer_node, struct wlan_mlo_peer_context,
+				   peer_node);
 	return ml_peer;
 }
 
-static inline struct wlan_mlo_peer_context *wlan_mlo_peer_get_next_mlpeer(
-					qdf_list_t *peer_list,
-					struct wlan_mlo_peer_context *ml_peer)
+static inline struct wlan_mlo_peer_context *
+wlan_mlo_peer_get_next_mlpeer(qdf_list_t *peer_list,
+			      struct wlan_mlo_peer_context *ml_peer)
 {
 	struct wlan_mlo_peer_context *next_peer;
 	qdf_list_node_t *node = &ml_peer->peer_node;
@@ -66,18 +66,18 @@ static inline struct wlan_mlo_peer_context *wlan_mlo_peer_get_next_mlpeer(
 		return NULL;
 
 	if (qdf_list_peek_next(peer_list, node, &next_node) !=
-				QDF_STATUS_SUCCESS)
+	    QDF_STATUS_SUCCESS)
 		return NULL;
 
-	next_peer = qdf_container_of(next_node,
-				     struct wlan_mlo_peer_context, peer_node);
+	next_peer = qdf_container_of(next_node, struct wlan_mlo_peer_context,
+				     peer_node);
 
 	return next_peer;
 }
 
-struct wlan_mlo_peer_context *mlo_get_mlpeer(
-				struct wlan_mlo_dev_context *ml_dev,
-				const struct qdf_mac_addr *ml_addr)
+struct wlan_mlo_peer_context *
+mlo_get_mlpeer(struct wlan_mlo_dev_context *ml_dev,
+	       const struct qdf_mac_addr *ml_addr)
 {
 	uint8_t hash_index;
 	struct wlan_mlo_peer_list *mlo_peer_list;
@@ -92,16 +92,16 @@ struct wlan_mlo_peer_context *mlo_get_mlpeer(
 	/* Get first vdev */
 	ml_peer = wlan_mlo_peer_list_peek_head(peer_hash_list);
 	/**
-	 * Iterate through pdev's vdev list, till vdev id matches with
-	 * entry of vdev list
-	 */
+   * Iterate through pdev's vdev list, till vdev id matches with
+   * entry of vdev list
+   */
 	while (ml_peer) {
 		if (qdf_is_macaddr_equal(&ml_peer->peer_mld_addr, ml_addr))
 			return ml_peer;
 
 		/* get next vdev */
-		next_ml_peer = wlan_mlo_peer_get_next_mlpeer(peer_hash_list,
-							     ml_peer);
+		next_ml_peer =
+			wlan_mlo_peer_get_next_mlpeer(peer_hash_list, ml_peer);
 		ml_peer = next_ml_peer;
 	}
 
@@ -109,8 +109,7 @@ struct wlan_mlo_peer_context *mlo_get_mlpeer(
 }
 
 QDF_STATUS wlan_mlo_iterate_ml_peerlist(struct wlan_mlo_dev_context *ml_dev,
-					wlan_mlo_op_handler handler,
-					void *arg)
+					wlan_mlo_op_handler handler, void *arg)
 {
 	uint8_t hash_index;
 	struct wlan_mlo_peer_list *peerlist;
@@ -127,9 +126,9 @@ QDF_STATUS wlan_mlo_iterate_ml_peerlist(struct wlan_mlo_dev_context *ml_dev,
 		/* Get first vdev */
 		ml_peer = wlan_mlo_peer_list_peek_head(peer_hash_list);
 		/**
-		 * Iterate through pdev's vdev list, till vdev id matches with
-		 * entry of vdev list
-		 */
+     * Iterate through pdev's vdev list, till vdev id matches with
+     * entry of vdev list
+     */
 		while (ml_peer) {
 			status = handler(ml_dev, ml_peer, arg);
 			if (status == QDF_STATUS_SUCCESS) {
@@ -149,8 +148,7 @@ QDF_STATUS wlan_mlo_iterate_ml_peerlist(struct wlan_mlo_dev_context *ml_dev,
 
 static QDF_STATUS
 wlan_find_mlpeer_link_mac_addr(struct wlan_mlo_dev_context *ml_dev,
-			       void *iter_ml_peer,
-			       void *arg)
+			       void *iter_ml_peer, void *arg)
 {
 	struct mac_addr_search *link_mac_arg = (struct mac_addr_search *)arg;
 	struct wlan_mlo_link_peer_entry *link_peer;
@@ -158,15 +156,15 @@ wlan_find_mlpeer_link_mac_addr(struct wlan_mlo_dev_context *ml_dev,
 	uint8_t i;
 
 	ml_peer = (struct wlan_mlo_peer_context *)iter_ml_peer;
-	mlo_debug("MLD ID %d ML Peer mac " QDF_MAC_ADDR_FMT,
-		  ml_dev->mld_id,
+	mlo_debug("MLD ID %d ML Peer mac " QDF_MAC_ADDR_FMT, ml_dev->mld_id,
 		  QDF_MAC_ADDR_REF(ml_peer->peer_mld_addr.bytes));
 	for (i = 0; i < MAX_MLO_LINK_PEERS; i++) {
 		link_peer = &ml_peer->peer_list[i];
 
-		mlo_debug("MLD ID %d, index %d ML Peer exists with mac " QDF_MAC_ADDR_FMT,
-			  i, ml_dev->mld_id,
-			  QDF_MAC_ADDR_REF(link_peer->link_addr.bytes));
+		mlo_debug(
+			"MLD ID %d, index %d ML Peer exists with mac " QDF_MAC_ADDR_FMT,
+			i, ml_dev->mld_id,
+			QDF_MAC_ADDR_REF(link_peer->link_addr.bytes));
 		if (qdf_is_macaddr_equal(&link_mac_arg->mac_addr,
 					 &link_peer->link_addr)) {
 			link_mac_arg->ml_peer = ml_peer;
@@ -179,15 +177,13 @@ wlan_find_mlpeer_link_mac_addr(struct wlan_mlo_dev_context *ml_dev,
 
 static QDF_STATUS
 wlan_find_mlpeer_mld_mac_addr(struct wlan_mlo_dev_context *ml_dev,
-			      void *iter_ml_peer,
-			      void *arg)
+			      void *iter_ml_peer, void *arg)
 {
 	struct mac_addr_search *mld_mac_arg = (struct mac_addr_search *)arg;
 	struct wlan_mlo_peer_context *ml_peer;
 
 	ml_peer = (struct wlan_mlo_peer_context *)iter_ml_peer;
-	mlo_debug("MLD ID %d ML Peer mac " QDF_MAC_ADDR_FMT,
-		  ml_dev->mld_id,
+	mlo_debug("MLD ID %d ML Peer mac " QDF_MAC_ADDR_FMT, ml_dev->mld_id,
 		  QDF_MAC_ADDR_REF(ml_peer->peer_mld_addr.bytes));
 
 	if (qdf_is_macaddr_equal(&mld_mac_arg->mac_addr,
@@ -200,8 +196,7 @@ wlan_find_mlpeer_mld_mac_addr(struct wlan_mlo_dev_context *ml_dev,
 }
 
 static QDF_STATUS wlan_find_mlpeer_aid(struct wlan_mlo_dev_context *ml_dev,
-				       void *iter_ml_peer,
-				       void *arg)
+				       void *iter_ml_peer, void *arg)
 {
 	struct aid_search *aid_arg = (struct aid_search *)arg;
 	struct wlan_mlo_peer_context *ml_peer;
@@ -218,8 +213,7 @@ static QDF_STATUS wlan_find_mlpeer_aid(struct wlan_mlo_dev_context *ml_dev,
 
 static QDF_STATUS
 wlan_find_mlpeer_ml_peerid(struct wlan_mlo_dev_context *ml_dev,
-			   void *iter_ml_peer,
-			   void *arg)
+			   void *iter_ml_peer, void *arg)
 {
 	struct mlpeerid_search *mlpeer_id_arg = (struct mlpeerid_search *)arg;
 	struct wlan_mlo_peer_context *ml_peer;
@@ -234,9 +228,9 @@ wlan_find_mlpeer_ml_peerid(struct wlan_mlo_dev_context *ml_dev,
 	return QDF_STATUS_E_NOENT;
 }
 
-struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_linkmac(
-				struct wlan_mlo_dev_context *ml_dev,
-				struct qdf_mac_addr *link_mac)
+struct wlan_mlo_peer_context *
+wlan_mlo_get_mlpeer_by_linkmac(struct wlan_mlo_dev_context *ml_dev,
+			       struct qdf_mac_addr *link_mac)
 {
 	struct mac_addr_search link_mac_arg;
 	QDF_STATUS status;
@@ -244,9 +238,8 @@ struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_linkmac(
 	mlo_debug("MLD ID %d ML Peer search with link mac " QDF_MAC_ADDR_FMT,
 		  ml_dev->mld_id, QDF_MAC_ADDR_REF(link_mac->bytes));
 	qdf_copy_macaddr(&link_mac_arg.mac_addr, link_mac);
-	status = wlan_mlo_iterate_ml_peerlist(ml_dev,
-					      wlan_find_mlpeer_link_mac_addr,
-					      &link_mac_arg);
+	status = wlan_mlo_iterate_ml_peerlist(
+		ml_dev, wlan_find_mlpeer_link_mac_addr, &link_mac_arg);
 	if (status == QDF_STATUS_SUCCESS)
 		return link_mac_arg.ml_peer;
 
@@ -257,16 +250,15 @@ struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_linkmac(
 
 qdf_export_symbol(wlan_mlo_get_mlpeer_by_linkmac);
 
-struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_aid(
-				struct wlan_mlo_dev_context *ml_dev,
-				uint16_t assoc_id)
+struct wlan_mlo_peer_context *
+wlan_mlo_get_mlpeer_by_aid(struct wlan_mlo_dev_context *ml_dev,
+			   uint16_t assoc_id)
 {
 	struct aid_search aid_arg;
 	QDF_STATUS status;
 
 	aid_arg.aid = assoc_id;
-	status = wlan_mlo_iterate_ml_peerlist(ml_dev,
-					      wlan_find_mlpeer_aid,
+	status = wlan_mlo_iterate_ml_peerlist(ml_dev, wlan_find_mlpeer_aid,
 					      &aid_arg);
 	if (status == QDF_STATUS_SUCCESS)
 		return aid_arg.ml_peer;
@@ -276,9 +268,9 @@ struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_aid(
 	return NULL;
 }
 
-struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_mld_mac(
-				struct wlan_mlo_dev_context *ml_dev,
-				struct qdf_mac_addr *mld_mac)
+struct wlan_mlo_peer_context *
+wlan_mlo_get_mlpeer_by_mld_mac(struct wlan_mlo_dev_context *ml_dev,
+			       struct qdf_mac_addr *mld_mac)
 {
 	struct mac_addr_search mld_mac_arg;
 	QDF_STATUS status;
@@ -286,9 +278,8 @@ struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_mld_mac(
 	mlo_debug("MLD ID %d ML Peer search with mld mac " QDF_MAC_ADDR_FMT,
 		  ml_dev->mld_id, QDF_MAC_ADDR_REF(mld_mac->bytes));
 	qdf_copy_macaddr(&mld_mac_arg.mac_addr, mld_mac);
-	status = wlan_mlo_iterate_ml_peerlist(ml_dev,
-					      wlan_find_mlpeer_mld_mac_addr,
-					      &mld_mac_arg);
+	status = wlan_mlo_iterate_ml_peerlist(
+		ml_dev, wlan_find_mlpeer_mld_mac_addr, &mld_mac_arg);
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return mld_mac_arg.ml_peer;
 
@@ -299,9 +290,9 @@ struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_mld_mac(
 
 qdf_export_symbol(wlan_mlo_get_mlpeer_by_mld_mac);
 
-struct wlan_mlo_peer_context
-*wlan_mlo_get_mlpeer_by_peer_mladdr(struct qdf_mac_addr *mldaddr,
-				struct wlan_mlo_dev_context **mldev)
+struct wlan_mlo_peer_context *
+wlan_mlo_get_mlpeer_by_peer_mladdr(struct qdf_mac_addr *mldaddr,
+				   struct wlan_mlo_dev_context **mldev)
 {
 	struct wlan_mlo_dev_context *mld_cur;
 	struct wlan_mlo_dev_context *mld_next;
@@ -331,17 +322,16 @@ struct wlan_mlo_peer_context
 	return NULL;
 }
 
-struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_ml_peerid(
-				struct wlan_mlo_dev_context *ml_dev,
-				uint16_t ml_peerid)
+struct wlan_mlo_peer_context *
+wlan_mlo_get_mlpeer_by_ml_peerid(struct wlan_mlo_dev_context *ml_dev,
+				 uint16_t ml_peerid)
 {
 	struct mlpeerid_search peerid_arg;
 	QDF_STATUS status;
 
 	peerid_arg.ml_peerid = ml_peerid;
-	status = wlan_mlo_iterate_ml_peerlist(ml_dev,
-					      wlan_find_mlpeer_ml_peerid,
-					      &peerid_arg);
+	status = wlan_mlo_iterate_ml_peerlist(
+		ml_dev, wlan_find_mlpeer_ml_peerid, &peerid_arg);
 	if (status == QDF_STATUS_SUCCESS)
 		return peerid_arg.ml_peer;
 
@@ -352,9 +342,9 @@ struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer_by_ml_peerid(
 
 qdf_export_symbol(wlan_mlo_get_mlpeer_by_ml_peerid);
 
-struct wlan_mlo_peer_context *wlan_mlo_get_mlpeer(
-				struct wlan_mlo_dev_context *ml_dev,
-				struct qdf_mac_addr *ml_addr)
+struct wlan_mlo_peer_context *
+wlan_mlo_get_mlpeer(struct wlan_mlo_dev_context *ml_dev,
+		    struct qdf_mac_addr *ml_addr)
 {
 	struct wlan_mlo_peer_context *ml_peer;
 	struct wlan_mlo_peer_list *mlo_peer_list;
@@ -380,8 +370,8 @@ static void wlan_mlo_peerlist_add_tail(qdf_list_t *obj_list,
 	qdf_list_insert_back(obj_list, &obj->peer_node);
 }
 
-static QDF_STATUS wlan_mlo_peerlist_remove_mlpeer(
-				qdf_list_t *obj_list,
+static QDF_STATUS
+wlan_mlo_peerlist_remove_mlpeer(qdf_list_t *obj_list,
 				struct wlan_mlo_peer_context *ml_peer)
 {
 	qdf_list_node_t *peer_node = NULL;
@@ -436,8 +426,7 @@ QDF_STATUS mlo_dev_mlpeer_detach(struct wlan_mlo_dev_context *ml_dev,
 	ml_peerlist_lock_acquire(mlo_peer_list);
 	hash_index = WLAN_PEER_HASH(ml_peer->peer_mld_addr.bytes);
 	status = wlan_mlo_peerlist_remove_mlpeer(
-					&mlo_peer_list->peer_hash[hash_index],
-					ml_peer);
+		&mlo_peer_list->peer_hash[hash_index], ml_peer);
 	ml_peerlist_lock_release(mlo_peer_list);
 
 	mlo_debug("MLD ID %d ML Peer " QDF_MAC_ADDR_FMT " is detached",
@@ -457,7 +446,7 @@ QDF_STATUS mlo_dev_mlpeer_list_init(struct wlan_mlo_dev_context *ml_dev)
 	for (i = 0; i < WLAN_PEER_HASHSIZE; i++)
 		qdf_list_create(&mlo_peer_list->peer_hash[i],
 				WLAN_UMAC_PSOC_MAX_PEERS +
-				WLAN_MAX_PSOC_TEMP_PEERS);
+					WLAN_MAX_PSOC_TEMP_PEERS);
 
 	return QDF_STATUS_SUCCESS;
 }

@@ -8,8 +8,8 @@
 
 #include "dsi_display_test.h"
 
-static void dsi_display_test_dump_modes(struct dsi_display_mode *mode, u32
-					count)
+static void dsi_display_test_dump_modes(struct dsi_display_mode *mode,
+					u32 count)
 {
 }
 

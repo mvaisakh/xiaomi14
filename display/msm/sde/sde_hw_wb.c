@@ -4,60 +4,59 @@
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
+#include "sde_hw_wb.h"
+#include "sde_dbg.h"
+#include "sde_formats.h"
+#include "sde_hw_catalog.h"
 #include "sde_hw_mdss.h"
 #include "sde_hwio.h"
-#include "sde_hw_catalog.h"
-#include "sde_hw_wb.h"
-#include "sde_formats.h"
-#include "sde_dbg.h"
 #include "sde_kms.h"
 #include "sde_vbif.h"
 
-#define WB_DST_FORMAT			0x000
-#define WB_DST_OP_MODE			0x004
-#define WB_DST_PACK_PATTERN		0x008
-#define WB_DST0_ADDR			0x00C
-#define WB_DST1_ADDR			0x010
-#define WB_DST2_ADDR			0x014
-#define WB_DST3_ADDR			0x018
-#define WB_DST_YSTRIDE0			0x01C
-#define WB_DST_YSTRIDE1			0x020
-#define WB_TS_WR_CLIENT	                0x040
-#define WB_DST_WRITE_CONFIG		0x048
-#define WB_OUT_SIZE			0x074
-#define WB_ALPHA_X_VALUE		0x078
-#define WB_DANGER_LUT			0x084
-#define WB_SAFE_LUT			0x088
-#define WB_QOS_CTRL			0x090
-#define WB_CREQ_LUT_0			0x098
-#define WB_CREQ_LUT_1			0x09C
-#define WB_UBWC_STATIC_CTRL		0x144
-#define WB_MUX				0x150
-#define WB_CROP_CTRL			0x154
-#define WB_CROP_OFFSET			0x158
-#define WB_CLK_CTRL			0x178
-#define WB_CLK_STATUS			0x17C
-#define WB_LINE_COUNT			0x184
-#define WB_PROG_LINE_COUNT		0x188
-#define WB_CSC_BASE			0x260
-#define WB_DST_ADDR_SW_STATUS		0x2B0
-#define WB_CDP_CNTL			0x2B4
-#define WB_UBWC_ERROR_STATUS		0x2BC
-#define WB_OUT_IMAGE_SIZE		0x2C0
-#define WB_OUT_XY			0x2C4
-#define WB_SYS_CACHE_MODE		0x094
+#define WB_DST_FORMAT 0x000
+#define WB_DST_OP_MODE 0x004
+#define WB_DST_PACK_PATTERN 0x008
+#define WB_DST0_ADDR 0x00C
+#define WB_DST1_ADDR 0x010
+#define WB_DST2_ADDR 0x014
+#define WB_DST3_ADDR 0x018
+#define WB_DST_YSTRIDE0 0x01C
+#define WB_DST_YSTRIDE1 0x020
+#define WB_TS_WR_CLIENT 0x040
+#define WB_DST_WRITE_CONFIG 0x048
+#define WB_OUT_SIZE 0x074
+#define WB_ALPHA_X_VALUE 0x078
+#define WB_DANGER_LUT 0x084
+#define WB_SAFE_LUT 0x088
+#define WB_QOS_CTRL 0x090
+#define WB_CREQ_LUT_0 0x098
+#define WB_CREQ_LUT_1 0x09C
+#define WB_UBWC_STATIC_CTRL 0x144
+#define WB_MUX 0x150
+#define WB_CROP_CTRL 0x154
+#define WB_CROP_OFFSET 0x158
+#define WB_CLK_CTRL 0x178
+#define WB_CLK_STATUS 0x17C
+#define WB_LINE_COUNT 0x184
+#define WB_PROG_LINE_COUNT 0x188
+#define WB_CSC_BASE 0x260
+#define WB_DST_ADDR_SW_STATUS 0x2B0
+#define WB_CDP_CNTL 0x2B4
+#define WB_UBWC_ERROR_STATUS 0x2BC
+#define WB_OUT_IMAGE_SIZE 0x2C0
+#define WB_OUT_XY 0x2C4
+#define WB_SYS_CACHE_MODE 0x094
 
-#define CWB_CTRL_SRC_SEL		0x0
-#define CWB_CTRL_MODE			0x4
+#define CWB_CTRL_SRC_SEL 0x0
+#define CWB_CTRL_MODE 0x4
 
 /* WB_QOS_CTRL */
-#define WB_QOS_CTRL_DANGER_SAFE_EN	BIT(0)
+#define WB_QOS_CTRL_DANGER_SAFE_EN BIT(0)
 
-static struct sde_wb_cfg *_wb_offset(enum sde_wb wb,
-		struct sde_mdss_cfg *m,
-		void __iomem *addr,
-		struct sde_hw_blk_reg_map *b)
+static struct sde_wb_cfg *_wb_offset(enum sde_wb wb, struct sde_mdss_cfg *m,
+				     void __iomem *addr,
+				     struct sde_hw_blk_reg_map *b)
 {
 	int i;
 
@@ -74,12 +73,12 @@ static struct sde_wb_cfg *_wb_offset(enum sde_wb wb,
 	return ERR_PTR(-EINVAL);
 }
 
-static void _sde_hw_cwb_ctrl_init(struct sde_mdss_cfg *m,
-		void __iomem *addr, struct sde_hw_blk_reg_map *b)
+static void _sde_hw_cwb_ctrl_init(struct sde_mdss_cfg *m, void __iomem *addr,
+				  struct sde_hw_blk_reg_map *b)
 {
 	int i;
 	u32 blk_off;
-	char name[64] = {0};
+	char name[64] = { 0 };
 
 	if (!b)
 		return;
@@ -94,17 +93,17 @@ static void _sde_hw_cwb_ctrl_init(struct sde_mdss_cfg *m,
 		snprintf(name, sizeof(name), "cwb%d", i);
 		blk_off = b->blk_off + (m->cwb_blk_stride * i);
 
-		sde_dbg_reg_register_dump_range(SDE_DBG_NAME, name,
-				blk_off, blk_off + b->length, 0xff);
+		sde_dbg_reg_register_dump_range(SDE_DBG_NAME, name, blk_off,
+						blk_off + b->length, 0xff);
 	}
 }
 
-static void _sde_hw_dcwb_ctrl_init(struct sde_mdss_cfg *m,
-		void __iomem *addr, struct sde_hw_wb *hw_wb)
+static void _sde_hw_dcwb_ctrl_init(struct sde_mdss_cfg *m, void __iomem *addr,
+				   struct sde_hw_wb *hw_wb)
 {
 	int i, j;
 	u32 blk_off;
-	char name[64] = {0};
+	char name[64] = { 0 };
 
 	if (!hw_wb)
 		return;
@@ -118,16 +117,19 @@ static void _sde_hw_dcwb_ctrl_init(struct sde_mdss_cfg *m,
 
 		for (i = 0; i < MAX_CWB_BLOCKSIZE; i++) {
 			snprintf(name, sizeof(name), "dcwb%d", i);
-			blk_off = hw_wb->dcwb_hw[j].blk_off + (m->cwb_blk_stride * i);
+			blk_off = hw_wb->dcwb_hw[j].blk_off +
+				  (m->cwb_blk_stride * i);
 
-			sde_dbg_reg_register_dump_range(SDE_DBG_NAME, name,
-					blk_off, blk_off + hw_wb->dcwb_hw[j].length, 0xff);
+			sde_dbg_reg_register_dump_range(
+				SDE_DBG_NAME, name, blk_off,
+				blk_off + hw_wb->dcwb_hw[j].length, 0xff);
 		}
 	}
 }
 
 static void _sde_hw_dcwb_pp_ctrl_init(struct sde_mdss_cfg *m,
-		void __iomem *addr, struct sde_hw_wb *hw_wb)
+				      void __iomem *addr,
+				      struct sde_hw_wb *hw_wb)
 {
 	int i = 0, dcwb_pp_count = 0;
 	struct sde_pingpong_cfg *pp_blk = NULL;
@@ -142,14 +144,21 @@ static void _sde_hw_dcwb_pp_ctrl_init(struct sde_mdss_cfg *m,
 		if (test_bit(SDE_PINGPONG_CWB_DITHER, &pp_blk->features)) {
 			if (dcwb_pp_count < DCWB_MAX - DCWB_0) {
 				hw_wb->dcwb_pp_hw[dcwb_pp_count].caps = pp_blk;
-				hw_wb->dcwb_pp_hw[dcwb_pp_count].idx = pp_blk->id;
-				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.base_off = addr;
-				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.blk_off = pp_blk->base;
-				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.length = pp_blk->len;
-				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.hw_rev = m->hw_rev;
-				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.log_mask = SDE_DBG_MASK_WB;
+				hw_wb->dcwb_pp_hw[dcwb_pp_count].idx =
+					pp_blk->id;
+				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.base_off =
+					addr;
+				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.blk_off =
+					pp_blk->base;
+				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.length =
+					pp_blk->len;
+				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.hw_rev =
+					m->hw_rev;
+				hw_wb->dcwb_pp_hw[dcwb_pp_count].hw.log_mask =
+					SDE_DBG_MASK_WB;
 			} else {
-				DRM_ERROR("Invalid dcwb pp count %d more than %d",
+				DRM_ERROR(
+					"Invalid dcwb pp count %d more than %d",
 					dcwb_pp_count, DCWB_MAX - DCWB_0);
 				return;
 			}
@@ -159,7 +168,7 @@ static void _sde_hw_dcwb_pp_ctrl_init(struct sde_mdss_cfg *m,
 }
 
 static void sde_hw_wb_setup_outaddress(struct sde_hw_wb *ctx,
-		struct sde_hw_wb_cfg *data)
+				       struct sde_hw_wb_cfg *data)
 {
 	struct sde_hw_blk_reg_map *c = &ctx->hw;
 
@@ -170,7 +179,7 @@ static void sde_hw_wb_setup_outaddress(struct sde_hw_wb *ctx,
 }
 
 static void sde_hw_wb_setup_format(struct sde_hw_wb *ctx,
-		struct sde_hw_wb_cfg *data)
+				   struct sde_hw_wb_cfg *data)
 {
 	struct sde_hw_blk_reg_map *c = &ctx->hw;
 	const struct sde_format *fmt = data->dest.format;
@@ -181,17 +190,14 @@ static void sde_hw_wb_setup_format(struct sde_hw_wb *ctx,
 
 	chroma_samp = fmt->chroma_sample;
 
-	dst_format = (chroma_samp << 23) |
-			(fmt->fetch_planes << 19) |
-			(fmt->bits[C3_ALPHA] << 6) |
-			(fmt->bits[C2_R_Cr] << 4) |
-			(fmt->bits[C1_B_Cb] << 2) |
-			(fmt->bits[C0_G_Y] << 0);
+	dst_format = (chroma_samp << 23) | (fmt->fetch_planes << 19) |
+		     (fmt->bits[C3_ALPHA] << 6) | (fmt->bits[C2_R_Cr] << 4) |
+		     (fmt->bits[C1_B_Cb] << 2) | (fmt->bits[C0_G_Y] << 0);
 
 	if (fmt->bits[C3_ALPHA] || fmt->alpha_enable) {
 		dst_format |= BIT(8); /* DSTC3_EN */
 		if (!fmt->alpha_enable ||
-				!(ctx->caps->features & BIT(SDE_WB_PIPE_ALPHA)))
+		    !(ctx->caps->features & BIT(SDE_WB_PIPE_ALPHA)))
 			dst_format |= BIT(14); /* DST_ALPHA_X */
 	}
 
@@ -208,20 +214,17 @@ static void sde_hw_wb_setup_format(struct sde_hw_wb *ctx,
 	if (data->rotate_90)
 		dst_format |= BIT(11);
 
-	pattern = (fmt->element[3] << 24) |
-			(fmt->element[2] << 16) |
-			(fmt->element[1] << 8)  |
-			(fmt->element[0] << 0);
+	pattern = (fmt->element[3] << 24) | (fmt->element[2] << 16) |
+		  (fmt->element[1] << 8) | (fmt->element[0] << 0);
 
 	dst_format |= (fmt->unpack_align_msb << 18) |
-			(fmt->unpack_tight << 17) |
-			((fmt->unpack_count - 1) << 12) |
-			((fmt->bpp - 1) << 9);
+		      (fmt->unpack_tight << 17) |
+		      ((fmt->unpack_count - 1) << 12) | ((fmt->bpp - 1) << 9);
 
 	ystride0 = data->dest.plane_pitch[0] |
-			(data->dest.plane_pitch[1] << 16);
+		   (data->dest.plane_pitch[1] << 16);
 	ystride1 = data->dest.plane_pitch[2] |
-			(data->dest.plane_pitch[3] << 16);
+		   (data->dest.plane_pitch[3] << 16);
 
 	if (data->roi.h && data->roi.w)
 		outsize = (data->roi.h << 16) | data->roi.w;
@@ -236,13 +239,14 @@ static void sde_hw_wb_setup_format(struct sde_hw_wb *ctx,
 			write_config |= 0x8;
 		if (IS_UBWC_20_SUPPORTED(ctx->catalog->ubwc_rev))
 			SDE_REG_WRITE(c, WB_UBWC_STATIC_CTRL,
-					(ctx->mdp->ubwc_swizzle << 0) |
-					(ctx->mdp->highest_bank_bit << 4));
+				      (ctx->mdp->ubwc_swizzle << 0) |
+					      (ctx->mdp->highest_bank_bit
+					       << 4));
 		if (IS_UBWC_10_SUPPORTED(ctx->catalog->ubwc_rev))
 			SDE_REG_WRITE(c, WB_UBWC_STATIC_CTRL,
-					(ctx->mdp->ubwc_swizzle << 0) |
-					BIT(8) |
-					(ctx->mdp->highest_bank_bit << 4));
+				      (ctx->mdp->ubwc_swizzle << 0) | BIT(8) |
+					      (ctx->mdp->highest_bank_bit
+					       << 4));
 	}
 
 	if (data->is_secure)
@@ -273,7 +277,8 @@ static void sde_hw_wb_roi(struct sde_hw_wb *ctx, struct sde_hw_wb_cfg *wb)
 	SDE_REG_WRITE(c, WB_OUT_SIZE, out_size);
 }
 
-static void sde_hw_wb_crop(struct sde_hw_wb *ctx, struct sde_hw_wb_cfg *wb, bool crop)
+static void sde_hw_wb_crop(struct sde_hw_wb *ctx, struct sde_hw_wb_cfg *wb,
+			   bool crop)
 {
 	struct sde_hw_blk_reg_map *c = &ctx->hw;
 	u32 crop_xy;
@@ -289,7 +294,7 @@ static void sde_hw_wb_crop(struct sde_hw_wb *ctx, struct sde_hw_wb_cfg *wb, bool
 }
 
 static void sde_hw_wb_setup_qos_lut(struct sde_hw_wb *ctx,
-		struct sde_hw_wb_qos_cfg *cfg)
+				    struct sde_hw_wb_qos_cfg *cfg)
 {
 	struct sde_hw_blk_reg_map *c = &ctx->hw;
 	u32 qos_ctrl = 0;
@@ -317,7 +322,7 @@ static void sde_hw_wb_setup_qos_lut(struct sde_hw_wb *ctx,
 }
 
 static void sde_hw_wb_setup_cdp(struct sde_hw_wb *ctx,
-		struct sde_hw_wb_cdp_cfg *cfg)
+				struct sde_hw_wb_cdp_cfg *cfg)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 cdp_cntl = 0;
@@ -337,10 +342,8 @@ static void sde_hw_wb_setup_cdp(struct sde_hw_wb *ctx,
 	SDE_REG_WRITE(c, WB_CDP_CNTL, cdp_cntl);
 }
 
-static void sde_hw_wb_bind_pingpong_blk(
-		struct sde_hw_wb *ctx,
-		bool enable,
-		const enum sde_pingpong pp)
+static void sde_hw_wb_bind_pingpong_blk(struct sde_hw_wb *ctx, bool enable,
+					const enum sde_pingpong pp)
 {
 	struct sde_hw_blk_reg_map *c;
 	int mux_cfg = 0xF;
@@ -355,10 +358,8 @@ static void sde_hw_wb_bind_pingpong_blk(
 	SDE_REG_WRITE(c, WB_MUX, mux_cfg);
 }
 
-static void sde_hw_wb_bind_dcwb_pp_blk(
-		struct sde_hw_wb *ctx,
-		bool enable,
-		const enum sde_pingpong pp)
+static void sde_hw_wb_bind_dcwb_pp_blk(struct sde_hw_wb *ctx, bool enable,
+				       const enum sde_pingpong pp)
 {
 	struct sde_hw_blk_reg_map *c;
 	int mux_cfg = 0xF;
@@ -374,8 +375,9 @@ static void sde_hw_wb_bind_dcwb_pp_blk(
 }
 
 static void sde_hw_wb_program_dcwb_ctrl(struct sde_hw_wb *ctx,
-	const enum sde_dcwb cur_idx, const enum sde_cwb data_src,
-	int tap_location, bool enable)
+					const enum sde_dcwb cur_idx,
+					const enum sde_cwb data_src,
+					int tap_location, bool enable)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 blk_base;
@@ -386,7 +388,8 @@ static void sde_hw_wb_program_dcwb_ctrl(struct sde_hw_wb *ctx,
 
 	idx = (cur_idx < DCWB_2) ? 0 : 1;
 	c = &ctx->dcwb_hw[idx];
-	blk_base  = ctx->catalog->cwb_blk_stride * ((cur_idx - DCWB_0) % MAX_CWB_BLOCKSIZE);
+	blk_base = ctx->catalog->cwb_blk_stride *
+		   ((cur_idx - DCWB_0) % MAX_CWB_BLOCKSIZE);
 
 	if (enable) {
 		SDE_REG_WRITE(c, blk_base + CWB_CTRL_SRC_SEL, data_src - CWB_0);
@@ -398,8 +401,9 @@ static void sde_hw_wb_program_dcwb_ctrl(struct sde_hw_wb *ctx,
 }
 
 static void sde_hw_wb_program_cwb_ctrl(struct sde_hw_wb *ctx,
-	const enum sde_cwb cur_idx, const enum sde_cwb data_src,
-	bool dspp_out, bool enable)
+				       const enum sde_cwb cur_idx,
+				       const enum sde_cwb data_src,
+				       bool dspp_out, bool enable)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 blk_base;
@@ -408,7 +412,7 @@ static void sde_hw_wb_program_cwb_ctrl(struct sde_hw_wb *ctx,
 		return;
 
 	c = &ctx->cwb_hw;
-	blk_base  = ctx->catalog->cwb_blk_stride * (cur_idx - CWB_0);
+	blk_base = ctx->catalog->cwb_blk_stride * (cur_idx - CWB_0);
 
 	if (enable) {
 		SDE_REG_WRITE(c, blk_base + CWB_CTRL_SRC_SEL, data_src - CWB_0);
@@ -419,7 +423,8 @@ static void sde_hw_wb_program_cwb_ctrl(struct sde_hw_wb *ctx,
 	}
 }
 
-static void sde_hw_wb_setup_sys_cache(struct sde_hw_wb *ctx, struct sde_hw_wb_sc_cfg *cfg)
+static void sde_hw_wb_setup_sys_cache(struct sde_hw_wb *ctx,
+				      struct sde_hw_wb_sc_cfg *cfg)
 {
 	u32 val = 0;
 
@@ -442,7 +447,9 @@ static void sde_hw_wb_setup_sys_cache(struct sde_hw_wb *ctx, struct sde_hw_wb_sc
 }
 
 static void sde_hw_wb_program_cwb_dither_ctrl(struct sde_hw_wb *ctx,
-		const enum sde_dcwb dcwb_idx, void *cfg, size_t len, bool enable)
+					      const enum sde_dcwb dcwb_idx,
+					      void *cfg, size_t len,
+					      bool enable)
 {
 	struct sde_hw_pingpong *pp = NULL;
 	struct sde_hw_blk_reg_map *c = NULL;
@@ -478,7 +485,7 @@ static void sde_hw_wb_program_cwb_dither_ctrl(struct sde_hw_wb *ctx,
 
 	if (!test_bit(SDE_PINGPONG_CWB_DITHER, &pp->caps->features)) {
 		DRM_ERROR("Invalid ping-pong cwb config dcwb idx %d pp id %d\n",
-			dcwb_idx, pp_id);
+			  dcwb_idx, pp_id);
 		return;
 	}
 
@@ -487,21 +494,23 @@ static void sde_hw_wb_program_cwb_dither_ctrl(struct sde_hw_wb *ctx,
 	dither_data = (struct drm_msm_dither *)cfg;
 	if (!dither_data || !enable) {
 		SDE_REG_WRITE(c, dither_base, 0);
-		SDE_DEBUG("cwb dither disabled, dcwb_idx %u pp_id %u\n", dcwb_idx, pp_id);
+		SDE_DEBUG("cwb dither disabled, dcwb_idx %u pp_id %u\n",
+			  dcwb_idx, pp_id);
 		return;
 	}
 
 	if (len != sizeof(struct drm_msm_dither)) {
 		SDE_ERROR("input len %zu, expected len %zu\n", len,
-			sizeof(struct drm_msm_dither));
+			  sizeof(struct drm_msm_dither));
 		return;
 	}
 
 	if (dither_data->c0_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
-		dither_data->c1_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
-		dither_data->c2_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
-		dither_data->c3_bitdepth >= DITHER_DEPTH_MAP_INDEX) {
-		SDE_ERROR("Invalid bitdepth [c0, c1, c2, c3] = [%u, %u, %u, %u]\n",
+	    dither_data->c1_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
+	    dither_data->c2_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
+	    dither_data->c3_bitdepth >= DITHER_DEPTH_MAP_INDEX) {
+		SDE_ERROR(
+			"Invalid bitdepth [c0, c1, c2, c3] = [%u, %u, %u, %u]\n",
 			dither_data->c0_bitdepth, dither_data->c1_bitdepth,
 			dither_data->c2_bitdepth, dither_data->c3_bitdepth);
 		return;
@@ -518,23 +527,25 @@ static void sde_hw_wb_program_cwb_dither_ctrl(struct sde_hw_wb *ctx,
 	for (idx = 0; idx < DITHER_MATRIX_SZ - 3; idx += 4) {
 		offset += 4;
 		data = (dither_data->matrix[idx] & REG_MASK(4)) |
-			((dither_data->matrix[idx + 1] & REG_MASK(4)) << 4) |
-			((dither_data->matrix[idx + 2] & REG_MASK(4)) << 8) |
-			((dither_data->matrix[idx + 3] & REG_MASK(4)) << 12);
+		       ((dither_data->matrix[idx + 1] & REG_MASK(4)) << 4) |
+		       ((dither_data->matrix[idx + 2] & REG_MASK(4)) << 8) |
+		       ((dither_data->matrix[idx + 3] & REG_MASK(4)) << 12);
 		SDE_REG_WRITE(c, dither_base + offset, data);
 	}
 
 	/* Enable dither */
-	if (test_bit(SDE_PINGPONG_DITHER_LUMA, &pp->caps->features)
-			&& (dither_data->flags & DITHER_LUMA_MODE))
+	if (test_bit(SDE_PINGPONG_DITHER_LUMA, &pp->caps->features) &&
+	    (dither_data->flags & DITHER_LUMA_MODE))
 		SDE_REG_WRITE(c, dither_base, 0x11);
 	else
 		SDE_REG_WRITE(c, dither_base, 1);
-	SDE_DEBUG("cwb dither enabled, dcwb_idx %u pp_id %u\n", dcwb_idx, pp_id);
+	SDE_DEBUG("cwb dither enabled, dcwb_idx %u pp_id %u\n", dcwb_idx,
+		  pp_id);
 }
 
 static bool sde_hw_wb_setup_clk_force_ctrl(struct sde_hw_blk_reg_map *hw,
-		enum sde_clk_ctrl_type clk_ctrl, bool enable)
+					   enum sde_clk_ctrl_type clk_ctrl,
+					   bool enable)
 {
 	u32 reg_val, new_val;
 
@@ -558,7 +569,8 @@ static bool sde_hw_wb_setup_clk_force_ctrl(struct sde_hw_blk_reg_map *hw,
 }
 
 static int sde_hw_wb_get_clk_ctrl_status(struct sde_hw_blk_reg_map *hw,
-		enum sde_clk_ctrl_type clk_ctrl, bool *status)
+					 enum sde_clk_ctrl_type clk_ctrl,
+					 bool *status)
 {
 	if (!hw)
 		return -EINVAL;
@@ -607,8 +619,7 @@ static void sde_hw_wb_clear_ubwc_error(struct sde_hw_wb *ctx)
 	return SDE_REG_WRITE(c, WB_UBWC_ERROR_STATUS, BIT(31));
 }
 
-static void _setup_wb_ops(struct sde_hw_wb_ops *ops,
-	unsigned long features)
+static void _setup_wb_ops(struct sde_hw_wb_ops *ops, unsigned long features)
 {
 	ops->setup_outaddress = sde_hw_wb_setup_outaddress;
 	ops->setup_outformat = sde_hw_wb_setup_format;
@@ -638,7 +649,8 @@ static void _setup_wb_ops(struct sde_hw_wb_ops *ops,
 		ops->setup_sys_cache = sde_hw_wb_setup_sys_cache;
 
 	if (test_bit(SDE_WB_CWB_DITHER_CTRL, &features))
-		ops->program_cwb_dither_ctrl = sde_hw_wb_program_cwb_dither_ctrl;
+		ops->program_cwb_dither_ctrl =
+			sde_hw_wb_program_cwb_dither_ctrl;
 
 	if (test_bit(SDE_WB_PROG_LINE, &features)) {
 		ops->get_line_count = sde_hw_wb_get_line_count;
@@ -646,11 +658,10 @@ static void _setup_wb_ops(struct sde_hw_wb_ops *ops,
 	}
 }
 
-struct sde_hw_blk_reg_map *sde_hw_wb_init(enum sde_wb idx,
-		void __iomem *addr,
-		struct sde_mdss_cfg *m,
-		struct sde_hw_mdp *hw_mdp,
-		struct sde_vbif_clk_client *clk_client)
+struct sde_hw_blk_reg_map *
+sde_hw_wb_init(enum sde_wb idx, void __iomem *addr, struct sde_mdss_cfg *m,
+	       struct sde_hw_mdp *hw_mdp,
+	       struct sde_vbif_clk_client *clk_client)
 {
 	struct sde_hw_wb *c;
 	struct sde_wb_cfg *cfg;
@@ -681,15 +692,19 @@ struct sde_hw_blk_reg_map *sde_hw_wb_init(enum sde_wb idx,
 		if (SDE_CLK_CTRL_WB_VALID(cfg->clk_ctrl)) {
 			clk_client->hw = &c->hw;
 			clk_client->clk_ctrl = cfg->clk_ctrl;
-			clk_client->ops.get_clk_ctrl_status = sde_hw_wb_get_clk_ctrl_status;
-			clk_client->ops.setup_clk_force_ctrl = sde_hw_wb_setup_clk_force_ctrl;
+			clk_client->ops.get_clk_ctrl_status =
+				sde_hw_wb_get_clk_ctrl_status;
+			clk_client->ops.setup_clk_force_ctrl =
+				sde_hw_wb_setup_clk_force_ctrl;
 		} else {
-			SDE_ERROR("invalid wb clk ctrl type %d\n", cfg->clk_ctrl);
+			SDE_ERROR("invalid wb clk ctrl type %d\n",
+				  cfg->clk_ctrl);
 		}
 	}
 
 	sde_dbg_reg_register_dump_range(SDE_DBG_NAME, cfg->name, c->hw.blk_off,
-			c->hw.blk_off + c->hw.length, c->hw.xin_id);
+					c->hw.blk_off + c->hw.length,
+					c->hw.xin_id);
 
 	if (test_bit(SDE_WB_CWB_CTRL, &cfg->features))
 		_sde_hw_cwb_ctrl_init(m, addr, &c->cwb_hw);

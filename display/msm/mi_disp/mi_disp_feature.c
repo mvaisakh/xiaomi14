@@ -6,34 +6,34 @@
 
 #define pr_fmt(fmt) "mi_disp_feature:[%s:%d] " fmt, __func__, __LINE__
 
+#include <linux/cdev.h>
+#include <linux/crypto.h>
+#include <linux/debugfs.h>
+#include <linux/delay.h>
+#include <linux/freezer.h>
+#include <linux/fs.h>
+#include <linux/kthread.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
-#include <linux/slab.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/uaccess.h>
-#include <linux/crypto.h>
-#include <linux/spinlock.h>
 #include <linux/sched/clock.h>
+#include <linux/slab.h>
+#include <linux/spinlock.h>
 #include <linux/types.h>
-#include <linux/delay.h>
-#include <linux/debugfs.h>
+#include <linux/uaccess.h>
 #include <linux/wait.h>
-#include <linux/freezer.h>
-#include <linux/kthread.h>
 #include <uapi/linux/sched/types.h>
 
-#include <drm/mi_disp.h>
-#include "mi_disp_print.h"
 #include "mi_disp_core.h"
 #include "mi_disp_feature.h"
 #include "mi_disp_file.h"
-#include "mi_disp_sysfs.h"
 #include "mi_disp_lhbm.h"
+#include "mi_disp_print.h"
+#include "mi_disp_sysfs.h"
+#include <drm/mi_disp.h>
 
-#include "mi_disp_procfs.h"
 #include "mi_disp_debugfs.h"
 #include "mi_disp_log.h"
+#include "mi_disp_procfs.h"
 
 struct disp_feature *g_disp_feature = NULL;
 
@@ -64,9 +64,9 @@ static int mi_disp_feature_thread_create(struct disp_feature *df, int disp_id)
 
 	dd_ptr->worker = kthread_create_worker(0, "disp_feature:%d", disp_id);
 	if (IS_ERR(dd_ptr->worker)) {
-		DISP_ERROR("failed to create disp_feature:%d kthread\n", disp_id);
+		DISP_ERROR("failed to create disp_feature:%d kthread\n",
+			   disp_id);
 		return PTR_ERR(dd_ptr->worker);
-
 	}
 	/* set realtime priority */
 	sched_set_fifo(dd_ptr->worker->task);
@@ -78,7 +78,6 @@ static int mi_disp_feature_thread_create(struct disp_feature *df, int disp_id)
 
 	return ret;
 }
-
 
 static int mi_disp_feature_thread_destroy(struct disp_feature *df, int disp_id)
 {
@@ -100,7 +99,6 @@ static int mi_disp_feature_thread_destroy(struct disp_feature *df, int disp_id)
 	return ret;
 }
 
-
 int mi_disp_feature_attach_display(void *display, int disp_id, int intf_type)
 {
 	struct disp_feature *df = mi_get_disp_feature();
@@ -116,9 +114,10 @@ int mi_disp_feature_attach_display(void *display, int disp_id, int intf_type)
 		return -EINVAL;
 	}
 
-	if (!is_support_disp_id(disp_id) || !is_support_disp_intf_type(intf_type)) {
+	if (!is_support_disp_id(disp_id) ||
+	    !is_support_disp_intf_type(intf_type)) {
 		DISP_ERROR("unknown disp_id(%d) or intf_type(%d) params\n",
-			disp_id, intf_type);
+			   disp_id, intf_type);
 		return -EINVAL;
 	}
 
@@ -128,11 +127,12 @@ int mi_disp_feature_attach_display(void *display, int disp_id, int intf_type)
 	dd_ptr->disp_id = disp_id;
 	dd_ptr->intf_type = intf_type;
 
-	dd_ptr->dev = device_create(df->class, df->pdev, 0, dd_ptr,
-			"disp-%s-%d", get_disp_intf_type_name(intf_type), disp_id);
+	dd_ptr->dev =
+		device_create(df->class, df->pdev, 0, dd_ptr, "disp-%s-%d",
+			      get_disp_intf_type_name(intf_type), disp_id);
 	if (IS_ERR(dd_ptr->dev)) {
 		DISP_ERROR("create device failed for disp-%s-%d\n",
-			get_disp_intf_type_name(intf_type), disp_id);
+			   get_disp_intf_type_name(intf_type), disp_id);
 		ret = -ENODEV;
 		goto err_exit;
 	}
@@ -167,8 +167,9 @@ int mi_disp_feature_attach_display(void *display, int disp_id, int intf_type)
 		goto err_procfs;
 	}
 
-	DISP_INFO("attach %s display(%s intf) success\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(intf_type));
+	DISP_INFO("attach %s display(%s intf) success\n",
+		  get_disp_id_name(disp_id),
+		  get_disp_intf_type_name(intf_type));
 
 	return 0;
 
@@ -202,9 +203,10 @@ int mi_disp_feature_detach_display(void *display, int disp_id, int intf_type)
 		return -EINVAL;
 	}
 
-	if (!is_support_disp_id(disp_id) || !is_support_disp_intf_type(intf_type)) {
+	if (!is_support_disp_id(disp_id) ||
+	    !is_support_disp_intf_type(intf_type)) {
 		DISP_ERROR("unknown disp_id(%d) or intf_type(%d) params\n",
-			disp_id, intf_type);
+			   disp_id, intf_type);
 		return -EINVAL;
 	}
 
@@ -239,8 +241,9 @@ int mi_disp_feature_detach_display(void *display, int disp_id, int intf_type)
 	dd_ptr->display = NULL;
 	dd_ptr->intf_type = MI_INTF_MAX;
 
-	DISP_INFO("detach %s display(%s intf) success\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(intf_type));
+	DISP_INFO("detach %s display(%s intf) success\n",
+		  get_disp_id_name(disp_id),
+		  get_disp_intf_type_name(intf_type));
 
 	return ret;
 }
@@ -254,27 +257,28 @@ void mi_disp_feature_event_notify(struct disp_event *event, u8 *payload)
 	int len = 0;
 
 	if (!df || !event || !event->length || !payload) {
-		DISP_ERROR("dev %pK, event %pK disp_id %d len %d payload %pK\n", df, event,
-		((event) ? (event->disp_id) : -1),  ((event) ? (event->length) : -1), payload);
+		DISP_ERROR("dev %pK, event %pK disp_id %d len %d payload %pK\n",
+			   df, event, ((event) ? (event->disp_id) : -1),
+			   ((event) ? (event->length) : -1), payload);
 		return;
 	}
 
 	if (!is_support_disp_id(event->disp_id) ||
-		!is_support_disp_event_type(event->type)) {
+	    !is_support_disp_event_type(event->type)) {
 		DISP_ERROR("invalid display id(%d) or event type(%d)!\n",
-			event->disp_id, event->type);
+			   event->disp_id, event->type);
 		return;
 	}
 
 	spin_lock_irqsave(&df->client_spinlock, flags);
 
 	list_for_each_entry(client, &df->client_list, link) {
-		if(!test_bit(event->type, client->disp[event->disp_id].evbit))
+		if (!test_bit(event->type, client->disp[event->disp_id].evbit))
 			continue;
 		len = sizeof(struct disp_pending_event) + event->length;
 		if (client->event_space < len) {
 			DISP_WARN("Insufficient space %d for event %x len %d\n",
-				client->event_space, event->type, len);
+				  client->event_space, event->type, len);
 			continue;
 		}
 		notify = kzalloc(len, GFP_ATOMIC);
@@ -283,15 +287,18 @@ void mi_disp_feature_event_notify(struct disp_event *event, u8 *payload)
 
 		notify->event.base.disp_id = event->disp_id;
 		notify->event.base.type = event->type;
-		notify->event.base.length = sizeof(struct disp_event_resp) + event->length;
+		notify->event.base.length =
+			sizeof(struct disp_event_resp) + event->length;
 		memcpy(notify->event.data, payload, event->length);
 		client->event_space -= notify->event.base.length;
 		list_add_tail(&notify->link, &client->event_list);
 
-		DISP_DEBUG("%s display event type: %s\n", get_disp_id_name(event->disp_id),
-			get_disp_event_type_name(event->type));
-		DISP_DEBUG("%s display event length: %d\n", get_disp_id_name(event->disp_id),
-			notify->event.base.length);
+		DISP_DEBUG("%s display event type: %s\n",
+			   get_disp_id_name(event->disp_id),
+			   get_disp_event_type_name(event->type));
+		DISP_DEBUG("%s display event length: %d\n",
+			   get_disp_id_name(event->disp_id),
+			   notify->event.base.length);
 
 		wake_up_interruptible(&client->event_wait);
 	}
@@ -299,14 +306,14 @@ void mi_disp_feature_event_notify(struct disp_event *event, u8 *payload)
 	spin_unlock_irqrestore(&df->client_spinlock, flags);
 }
 
-int mi_disp_feature_event_notify_by_type(int disp_id, u32 type, u32 len, u64 val)
+int mi_disp_feature_event_notify_by_type(int disp_id, u32 type, u32 len,
+					 u64 val)
 {
 	struct disp_event event;
 
-	if (!is_support_disp_id(disp_id) ||
-		!is_support_disp_event_type(type)) {
+	if (!is_support_disp_id(disp_id) || !is_support_disp_event_type(type)) {
 		DISP_ERROR("invalid display id(%d) or event type(%d)!\n",
-			event.disp_id, event.type);
+			   event.disp_id, event.type);
 		return -EINVAL;
 	}
 
@@ -325,26 +332,27 @@ void mi_disp_feature_sysfs_notify(int disp_id, int sysfs_node)
 	if (!df)
 		return;
 
-	if (is_support_disp_id(disp_id) && is_support_disp_sysfs_node(sysfs_node)) {
+	if (is_support_disp_id(disp_id) &&
+	    is_support_disp_sysfs_node(sysfs_node)) {
 		sysfs_notify(&df->d_display[disp_id].dev->kobj, NULL,
-				get_disp_sysfs_node_name(sysfs_node));
+			     get_disp_sysfs_node_name(sysfs_node));
 	} else {
 		DISP_ERROR("invalid display id(%d) or sysfs_node(%d)!\n",
-			disp_id, sysfs_node);
+			   disp_id, sysfs_node);
 	}
 }
 
 static const struct file_operations disp_feature_fops = {
-	.owner           = THIS_MODULE,
-	.open            = mi_disp_open,
-	.release         = mi_disp_release,
-	.unlocked_ioctl  = mi_disp_ioctl,
+	.owner = THIS_MODULE,
+	.open = mi_disp_open,
+	.release = mi_disp_release,
+	.unlocked_ioctl = mi_disp_ioctl,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl    = mi_disp_ioctl_compat,
+	.compat_ioctl = mi_disp_ioctl_compat,
 #endif
-	.poll            = mi_disp_poll,
-	.read            = mi_disp_read,
-	.llseek          = no_llseek,
+	.poll = mi_disp_poll,
+	.read = mi_disp_read,
+	.llseek = no_llseek,
 };
 
 int mi_disp_feature_init(void)
@@ -377,17 +385,20 @@ int mi_disp_feature_init(void)
 	}
 
 	ret = mi_disp_cdev_register(DISP_FEATURE_DEVICE_NAME,
-				&disp_feature_fops, &df->cdev);
+				    &disp_feature_fops, &df->cdev);
 	if (ret < 0) {
-		DISP_ERROR("cdev register failed for %s\n", DISP_FEATURE_DEVICE_NAME);
+		DISP_ERROR("cdev register failed for %s\n",
+			   DISP_FEATURE_DEVICE_NAME);
 		goto err_alloc_mem;
 	}
 
 	df->dev_id = df->cdev->dev;
 	df->class = disp_core->class;
-	df->pdev = device_create(df->class, NULL, df->dev_id, df, DISP_FEATURE_DEVICE_NAME);
+	df->pdev = device_create(df->class, NULL, df->dev_id, df,
+				 DISP_FEATURE_DEVICE_NAME);
 	if (IS_ERR(df->pdev)) {
-		DISP_ERROR("create device failed for %s\n", DISP_FEATURE_DEVICE_NAME);
+		DISP_ERROR("create device failed for %s\n",
+			   DISP_FEATURE_DEVICE_NAME);
 		ret = -ENODEV;
 		goto err_cdev_register;
 	}
@@ -429,4 +440,3 @@ void mi_disp_feature_deinit(void)
 	mi_disp_log_deinit();
 	mi_disp_core_deinit();
 }
-

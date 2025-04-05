@@ -23,10 +23,10 @@
  */
 
 /* Include Files */
-#include <qdf_threads.h>
-#include <qdf_types.h>
-#include <qdf_trace.h>
 #include <linux/jiffies.h>
+#include <qdf_threads.h>
+#include <qdf_trace.h>
+#include <qdf_types.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
 #include <linux/sched.h>
 #else
@@ -37,13 +37,13 @@
 	IS_ENABLED(CONFIG_SCHED_WALT)
 #include <linux/sched/walt.h>
 #endif
+#include <linux/cpumask.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
 #include <linux/kthread.h>
 #include <linux/stacktrace.h>
 #include <qdf_defer.h>
 #include <qdf_module.h>
-#include <linux/cpumask.h>
 /* Function declarations and documentation */
 
 typedef int (*qdf_thread_os_func)(void *data);
@@ -151,8 +151,8 @@ qdf_thread_t *qdf_thread_run(qdf_thread_func callback, void *context)
 {
 	struct task_struct *thread;
 
-	thread = kthread_create((qdf_thread_os_func)callback, context,
-				"qdf %u", qdf_thread_id++);
+	thread = kthread_create((qdf_thread_os_func)callback, context, "qdf %u",
+				qdf_thread_id++);
 	if (IS_ERR(thread))
 		return NULL;
 
@@ -194,8 +194,8 @@ qdf_export_symbol(qdf_wake_up_process);
  * 3) backported kernels defining BACKPORTED_EXPORT_SAVE_STACK_TRACE_TSK_ARM
  */
 #if ((defined(WLAN_HOST_ARCH_ARM) && !WLAN_HOST_ARCH_ARM) || \
-	LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) || \
-	defined(BACKPORTED_EXPORT_SAVE_STACK_TRACE_TSK_ARM)) && \
+     LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) ||       \
+     defined(BACKPORTED_EXPORT_SAVE_STACK_TRACE_TSK_ARM)) && \
 	defined(CONFIG_STACKTRACE) && !defined(CONFIG_ARCH_STACKWALK)
 #define QDF_PRINT_TRACE_COUNT 32
 
@@ -204,7 +204,7 @@ void qdf_print_thread_trace(qdf_thread_t *thread)
 {
 	const int spaces = 4;
 	struct task_struct *task = thread;
-	unsigned long entries[QDF_PRINT_TRACE_COUNT] = {0};
+	unsigned long entries[QDF_PRINT_TRACE_COUNT] = { 0 };
 	struct stack_trace trace = {
 		.nr_entries = 0,
 		.skip = 0,
@@ -220,7 +220,7 @@ void qdf_print_thread_trace(qdf_thread_t *thread)
 {
 	const int spaces = 4;
 	struct task_struct *task = thread;
-	unsigned long entries[QDF_PRINT_TRACE_COUNT] = {0};
+	unsigned long entries[QDF_PRINT_TRACE_COUNT] = { 0 };
 	struct stack_trace trace = {
 		.nr_entries = 0,
 		.skip = 0,
@@ -234,7 +234,9 @@ void qdf_print_thread_trace(qdf_thread_t *thread)
 #endif
 
 #else
-void qdf_print_thread_trace(qdf_thread_t *thread) { }
+void qdf_print_thread_trace(qdf_thread_t *thread)
+{
+}
 #endif /* KERNEL_VERSION(4, 14, 0) */
 qdf_export_symbol(qdf_print_thread_trace);
 
@@ -256,8 +258,8 @@ const char *qdf_get_current_comm(void)
 }
 qdf_export_symbol(qdf_get_current_comm);
 
-void
-qdf_thread_set_cpus_allowed_mask(qdf_thread_t *thread, qdf_cpu_mask *new_mask)
+void qdf_thread_set_cpus_allowed_mask(qdf_thread_t *thread,
+				      qdf_cpu_mask *new_mask)
 {
 	set_cpus_allowed_ptr(thread, new_mask);
 }
@@ -298,8 +300,7 @@ bool qdf_cpumask_empty(const qdf_cpu_mask *srcp)
 
 qdf_export_symbol(qdf_cpumask_empty);
 
-void qdf_cpumask_copy(qdf_cpu_mask *dstp,
-		      const qdf_cpu_mask *srcp)
+void qdf_cpumask_copy(qdf_cpu_mask *dstp, const qdf_cpu_mask *srcp)
 {
 	return cpumask_copy(dstp, srcp);
 }
@@ -314,43 +315,38 @@ void qdf_cpumask_or(qdf_cpu_mask *dstp, qdf_cpu_mask *src1p,
 
 qdf_export_symbol(qdf_cpumask_or);
 
-void
-qdf_thread_cpumap_print_to_pagebuf(bool list, char *new_mask_str,
-				   qdf_cpu_mask *new_mask)
+void qdf_thread_cpumap_print_to_pagebuf(bool list, char *new_mask_str,
+					qdf_cpu_mask *new_mask)
 {
 	cpumap_print_to_pagebuf(list, new_mask_str, new_mask);
 }
 
 qdf_export_symbol(qdf_thread_cpumap_print_to_pagebuf);
 
-bool
-qdf_cpumask_and(qdf_cpu_mask *dstp, const qdf_cpu_mask *src1p,
-		const qdf_cpu_mask *src2p)
+bool qdf_cpumask_and(qdf_cpu_mask *dstp, const qdf_cpu_mask *src1p,
+		     const qdf_cpu_mask *src2p)
 {
 	return cpumask_and(dstp, src1p, src2p);
 }
 
 qdf_export_symbol(qdf_cpumask_and);
 
-bool
-qdf_cpumask_andnot(qdf_cpu_mask *dstp, const qdf_cpu_mask *src1p,
-		   const qdf_cpu_mask *src2p)
+bool qdf_cpumask_andnot(qdf_cpu_mask *dstp, const qdf_cpu_mask *src1p,
+			const qdf_cpu_mask *src2p)
 {
 	return cpumask_andnot(dstp, src1p, src2p);
 }
 
 qdf_export_symbol(qdf_cpumask_andnot);
 
-bool
-qdf_cpumask_equal(const qdf_cpu_mask *src1p, const qdf_cpu_mask *src2p)
+bool qdf_cpumask_equal(const qdf_cpu_mask *src1p, const qdf_cpu_mask *src2p)
 {
 	return cpumask_equal(src1p, src2p);
 }
 
 qdf_export_symbol(qdf_cpumask_equal);
 
-void
-qdf_cpumask_complement(qdf_cpu_mask *dstp, const qdf_cpu_mask *srcp)
+void qdf_cpumask_complement(qdf_cpu_mask *dstp, const qdf_cpu_mask *srcp)
 {
 	cpumask_complement(dstp, srcp);
 }

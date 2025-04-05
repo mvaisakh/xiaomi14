@@ -21,9 +21,9 @@
  */
 
 #include "wlan_ipa_ucfg_api.h"
-#include "wlan_ipa_main.h"
 #include "cfg_ucfg_api.h"
 #include "qdf_module.h"
+#include "wlan_ipa_main.h"
 
 void ucfg_ipa_set_pld_enable(bool flag)
 {
@@ -74,16 +74,14 @@ bool ucfg_ipa_is_vlan_enabled(void)
 
 qdf_export_symbol(ucfg_ipa_is_vlan_enabled);
 
-void ucfg_ipa_set_pdev_id(struct wlan_objmgr_psoc *psoc,
-			  uint8_t pdev_id)
+void ucfg_ipa_set_pdev_id(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id)
 {
 	return ipa_set_pdev_id(psoc, pdev_id);
 }
 
 qdf_export_symbol(ucfg_ipa_set_pdev_id);
 
-void ucfg_ipa_set_dp_handle(struct wlan_objmgr_psoc *psoc,
-				     void *dp_soc)
+void ucfg_ipa_set_dp_handle(struct wlan_objmgr_psoc *psoc, void *dp_soc)
 {
 	return ipa_set_dp_handle(psoc, dp_soc);
 }
@@ -126,8 +124,7 @@ void ucfg_ipa_dump_info(struct wlan_objmgr_pdev *pdev)
 
 qdf_export_symbol(ucfg_ipa_dump_info);
 
-void ucfg_ipa_uc_stat_request(struct wlan_objmgr_pdev *pdev,
-			      uint8_t reason)
+void ucfg_ipa_uc_stat_request(struct wlan_objmgr_pdev *pdev, uint8_t reason)
 {
 	return ipa_uc_stat_request(pdev, reason);
 }

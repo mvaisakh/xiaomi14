@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 #define pr_fmt(fmt) "%s:%s: " fmt, KBUILD_MODNAME, __func__
 
-#include <linux/module.h>
-#include <linux/irq.h>
 #include <linux/interrupt.h>
+#include <linux/irq.h>
 #include <linux/irqdomain.h>
+#include <linux/module.h>
 #include <linux/platform_device.h>
 
+#include <asm/memory.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
-#include <asm/memory.h>
 #include <linux/sizes.h>
 
 #include <linux/hwspinlock.h>
@@ -21,11 +22,11 @@
 
 #include <linux/sysfs.h>
 
-#include "ipclite_client.h"
 #include "ipclite.h"
+#include "ipclite_client.h"
 
-#define GLOBAL_ATOMICS_ENABLED	1
-#define GLOBAL_ATOMICS_DISABLED	0
+#define GLOBAL_ATOMICS_ENABLED 1
+#define GLOBAL_ATOMICS_DISABLED 0
 #define FIFO_FULL_RESERVE 8
 #define FIFO_ALIGNMENT 8
 
@@ -62,13 +63,15 @@ static void IPCLITE_OS_INMEM_LOG(const char *psztStr, ...)
 
 	va_start(pArgs, psztStr);
 
-	/* Incrementing the index atomically and storing the index in local variable */
-	local_index = ipclite_global_atomic_inc((ipclite_atomic_int32_t *)
-							&ipclite_dbg_info->debug_log_index);
+	/* Incrementing the index atomically and storing the index in local variable
+   */
+	local_index = ipclite_global_atomic_inc(
+		(ipclite_atomic_int32_t *)&ipclite_dbg_info->debug_log_index);
 	local_index %= IPCLITE_LOG_BUF_SIZE;
 
 	/* Writes data on the index location */
-	vsnprintf(ipclite_dbg_inmem->IPCLITELog[local_index], IPCLITE_LOG_MSG_SIZE, psztStr, pArgs);
+	vsnprintf(ipclite_dbg_inmem->IPCLITELog[local_index],
+		  IPCLITE_LOG_MSG_SIZE, psztStr, pArgs);
 
 	va_end(pArgs);
 }
@@ -91,54 +94,66 @@ static void ipclite_dump_debug_struct(void)
 	}
 
 	/* Dumping the debug structures */
-	pr_info("------------------- Dumping IPCLite Debug Structure -------------------\n");
+	pr_info("------------------- Dumping IPCLite Debug Structure "
+		"-------------------\n");
 
 	for (host = 0; host < IPCMEM_NUM_HOSTS; host++) {
 		if (!is_host_enabled(host))
 			continue;
-		temp_dbg_struct = (struct ipclite_debug_struct *)
-					(((char *)ipclite_dbg_struct) +
-					(sizeof(*temp_dbg_struct) * host));
+		temp_dbg_struct =
+			(struct ipclite_debug_struct
+				 *)(((char *)ipclite_dbg_struct) +
+				    (sizeof(*temp_dbg_struct) * host));
 
-		pr_info("---------- Host ID: %d dbg_mem:%p ----------\n",
-				host, temp_dbg_struct);
+		pr_info("---------- Host ID: %d dbg_mem:%p ----------\n", host,
+			temp_dbg_struct);
 		pr_info("Total Signals Sent : %d Total Signals Received : %d\n",
-				temp_dbg_struct->dbg_info_overall.total_numsig_sent,
-				temp_dbg_struct->dbg_info_overall.total_numsig_recv);
-		pr_info("Last Signal Sent to Host ID : %d Last Signal Received from Host ID : %d\n",
-				temp_dbg_struct->dbg_info_overall.last_sent_host_id,
-				temp_dbg_struct->dbg_info_overall.last_recv_host_id);
+			temp_dbg_struct->dbg_info_overall.total_numsig_sent,
+			temp_dbg_struct->dbg_info_overall.total_numsig_recv);
+		pr_info("Last Signal Sent to Host ID : %d Last Signal Received from Host "
+			"ID : %d\n",
+			temp_dbg_struct->dbg_info_overall.last_sent_host_id,
+			temp_dbg_struct->dbg_info_overall.last_recv_host_id);
 		pr_info("Last Signal ID Sent : %d Last Signal ID Received : %d\n",
-				temp_dbg_struct->dbg_info_overall.last_sigid_sent,
-				temp_dbg_struct->dbg_info_overall.last_sigid_recv);
+			temp_dbg_struct->dbg_info_overall.last_sigid_sent,
+			temp_dbg_struct->dbg_info_overall.last_sigid_recv);
 
 		for (i = 0; i < IPCMEM_NUM_HOSTS; i++) {
 			if (!is_host_enabled(i))
 				continue;
-			pr_info("----------> Host ID : %d Host ID : %d\n", host, i);
+			pr_info("----------> Host ID : %d Host ID : %d\n", host,
+				i);
 			pr_info("No. of Messages Sent : %d No. of Messages Received : %d\n",
-			temp_dbg_struct->dbg_info_host[i].numsig_sent,
-			temp_dbg_struct->dbg_info_host[i].numsig_recv);
+				temp_dbg_struct->dbg_info_host[i].numsig_sent,
+				temp_dbg_struct->dbg_info_host[i].numsig_recv);
 			pr_info("No. of Interrupts Received : %d\n",
-			temp_dbg_struct->dbg_info_host[i].num_intr);
+				temp_dbg_struct->dbg_info_host[i].num_intr);
 			pr_info("TX Write Index : %d TX Read Index : %d\n",
-			temp_dbg_struct->dbg_info_host[i].tx_wr_index,
-			temp_dbg_struct->dbg_info_host[i].tx_rd_index);
+				temp_dbg_struct->dbg_info_host[i].tx_wr_index,
+				temp_dbg_struct->dbg_info_host[i].tx_rd_index);
 			pr_info("TX Write Index[0] : %d TX Read Index[0] : %d\n",
-			temp_dbg_struct->dbg_info_host[i].prev_tx_wr_index[0],
-			temp_dbg_struct->dbg_info_host[i].prev_tx_rd_index[0]);
+				temp_dbg_struct->dbg_info_host[i]
+					.prev_tx_wr_index[0],
+				temp_dbg_struct->dbg_info_host[i]
+					.prev_tx_rd_index[0]);
 			pr_info("TX Write Index[1] : %d TX Read Index[1] : %d\n",
-			temp_dbg_struct->dbg_info_host[i].prev_tx_wr_index[1],
-			temp_dbg_struct->dbg_info_host[i].prev_tx_rd_index[1]);
+				temp_dbg_struct->dbg_info_host[i]
+					.prev_tx_wr_index[1],
+				temp_dbg_struct->dbg_info_host[i]
+					.prev_tx_rd_index[1]);
 			pr_info("RX Write Index : %d RX Read Index : %d\n",
-			temp_dbg_struct->dbg_info_host[i].rx_wr_index,
-			temp_dbg_struct->dbg_info_host[i].rx_rd_index);
+				temp_dbg_struct->dbg_info_host[i].rx_wr_index,
+				temp_dbg_struct->dbg_info_host[i].rx_rd_index);
 			pr_info("RX Write Index[0] : %d RX Read Index[0] : %d\n",
-			temp_dbg_struct->dbg_info_host[i].prev_rx_wr_index[0],
-			temp_dbg_struct->dbg_info_host[i].prev_rx_rd_index[0]);
+				temp_dbg_struct->dbg_info_host[i]
+					.prev_rx_wr_index[0],
+				temp_dbg_struct->dbg_info_host[i]
+					.prev_rx_rd_index[0]);
 			pr_info("RX Write Index[1] : %d RX Read Index[1] : %d\n",
-			temp_dbg_struct->dbg_info_host[i].prev_rx_wr_index[1],
-			temp_dbg_struct->dbg_info_host[i].prev_rx_rd_index[1]);
+				temp_dbg_struct->dbg_info_host[i]
+					.prev_rx_wr_index[1],
+				temp_dbg_struct->dbg_info_host[i]
+					.prev_rx_rd_index[1]);
 		}
 	}
 	return;
@@ -165,11 +180,12 @@ static void ipclite_dump_inmem_logs(void)
 	pr_info("------------------- Dumping In-Memory Logs -------------------\n");
 
 	/* Storing the index atomically in local variable */
-	local_index = ipclite_global_atomic_load_u32((ipclite_atomic_uint32_t *)
-							&ipclite_dbg_info->debug_log_index);
+	local_index = ipclite_global_atomic_load_u32(
+		(ipclite_atomic_uint32_t *)&ipclite_dbg_info->debug_log_index);
 
 	/* Printing from current index till the end of buffer */
-	for (i = local_index % IPCLITE_LOG_BUF_SIZE; i < IPCLITE_LOG_BUF_SIZE; i++) {
+	for (i = local_index % IPCLITE_LOG_BUF_SIZE; i < IPCLITE_LOG_BUF_SIZE;
+	     i++) {
 		if (ipclite_dbg_inmem->IPCLITELog[i][0])
 			pr_info("%s\n", ipclite_dbg_inmem->IPCLITELog[i]);
 	}
@@ -189,15 +205,18 @@ static void ipclite_hw_mutex_acquire(void)
 
 	if (ipclite != NULL) {
 		if (!global_atomic_support) {
-			ret = hwspin_lock_timeout_irqsave(ipclite->hwlock,
-					HWSPINLOCK_TIMEOUT,
-					&ipclite->ipclite_hw_mutex->flags);
+			ret = hwspin_lock_timeout_irqsave(
+				ipclite->hwlock, HWSPINLOCK_TIMEOUT,
+				&ipclite->ipclite_hw_mutex->flags);
 			if (ret) {
-				IPCLITE_OS_LOG(IPCLITE_ERR, "Hw mutex lock acquire failed\n");
+				IPCLITE_OS_LOG(
+					IPCLITE_ERR,
+					"Hw mutex lock acquire failed\n");
 				return;
 			}
 
-			ipclite->ipcmem.toc_data.host_info->hwlock_owner = IPCMEM_APPS;
+			ipclite->ipcmem.toc_data.host_info->hwlock_owner =
+				IPCMEM_APPS;
 
 			IPCLITE_OS_LOG(IPCLITE_DBG, "Hw mutex lock acquired\n");
 		}
@@ -208,8 +227,10 @@ static void ipclite_hw_mutex_release(void)
 {
 	if (ipclite != NULL) {
 		if (!global_atomic_support) {
-			ipclite->ipcmem.toc_data.host_info->hwlock_owner = IPCMEM_INVALID_HOST;
-			hwspin_unlock_irqrestore(ipclite->hwlock,
+			ipclite->ipcmem.toc_data.host_info->hwlock_owner =
+				IPCMEM_INVALID_HOST;
+			hwspin_unlock_irqrestore(
+				ipclite->hwlock,
 				&ipclite->ipclite_hw_mutex->flags);
 			IPCLITE_OS_LOG(IPCLITE_DBG, "Hw mutex lock release\n");
 		}
@@ -228,7 +249,8 @@ void ipclite_atomic_init_i32(ipclite_atomic_int32_t *addr, int32_t data)
 }
 EXPORT_SYMBOL(ipclite_atomic_init_i32);
 
-void ipclite_global_atomic_store_u32(ipclite_atomic_uint32_t *addr, uint32_t data)
+void ipclite_global_atomic_store_u32(ipclite_atomic_uint32_t *addr,
+				     uint32_t data)
 {
 	/* callback to acquire hw mutex lock if atomic support is not enabled */
 	ipclite->ipclite_hw_mutex->acquire();
@@ -284,7 +306,8 @@ int32_t ipclite_global_atomic_load_i32(ipclite_atomic_int32_t *addr)
 }
 EXPORT_SYMBOL(ipclite_global_atomic_load_i32);
 
-uint32_t ipclite_global_test_and_set_bit(uint32_t nr, ipclite_atomic_uint32_t *addr)
+uint32_t ipclite_global_test_and_set_bit(uint32_t nr,
+					 ipclite_atomic_uint32_t *addr)
 {
 	uint32_t ret;
 	uint32_t mask = (1 << nr);
@@ -301,7 +324,8 @@ uint32_t ipclite_global_test_and_set_bit(uint32_t nr, ipclite_atomic_uint32_t *a
 }
 EXPORT_SYMBOL(ipclite_global_test_and_set_bit);
 
-uint32_t ipclite_global_test_and_clear_bit(uint32_t nr, ipclite_atomic_uint32_t *addr)
+uint32_t ipclite_global_test_and_clear_bit(uint32_t nr,
+					   ipclite_atomic_uint32_t *addr)
 {
 	uint32_t ret;
 	uint32_t mask = (1 << nr);
@@ -374,8 +398,8 @@ static size_t ipcmem_rx_avail(struct ipclite_fifo *rx_fifo)
 	return len;
 }
 
-static void ipcmem_rx_peak(struct ipclite_fifo *rx_fifo,
-			       void *data, size_t count)
+static void ipcmem_rx_peak(struct ipclite_fifo *rx_fifo, void *data,
+			   size_t count)
 {
 	size_t len;
 	u32 tail;
@@ -396,8 +420,8 @@ static void ipcmem_rx_peak(struct ipclite_fifo *rx_fifo,
 		memcpy_fromio(data + len, rx_fifo->fifo, (count - len));
 }
 
-static void ipcmem_rx_advance(struct ipclite_fifo *rx_fifo,
-				  size_t count, uint32_t core_id)
+static void ipcmem_rx_advance(struct ipclite_fifo *rx_fifo, size_t count,
+			      uint32_t core_id)
 {
 	u32 tail;
 
@@ -412,16 +436,20 @@ static void ipcmem_rx_advance(struct ipclite_fifo *rx_fifo,
 	/* Storing the debug data in debug structures */
 	if (ipclite_debug_control & IPCLITE_DBG_STRUCT) {
 		ipclite_dbg_struct->dbg_info_host[core_id].prev_rx_wr_index[1] =
-				ipclite_dbg_struct->dbg_info_host[core_id].prev_rx_wr_index[0];
+			ipclite_dbg_struct->dbg_info_host[core_id]
+				.prev_rx_wr_index[0];
 		ipclite_dbg_struct->dbg_info_host[core_id].prev_rx_wr_index[0] =
-				ipclite_dbg_struct->dbg_info_host[core_id].rx_wr_index;
-		ipclite_dbg_struct->dbg_info_host[core_id].rx_wr_index = *rx_fifo->head;
+			ipclite_dbg_struct->dbg_info_host[core_id].rx_wr_index;
+		ipclite_dbg_struct->dbg_info_host[core_id].rx_wr_index =
+			*rx_fifo->head;
 
 		ipclite_dbg_struct->dbg_info_host[core_id].prev_rx_rd_index[1] =
-				ipclite_dbg_struct->dbg_info_host[core_id].prev_rx_rd_index[0];
+			ipclite_dbg_struct->dbg_info_host[core_id]
+				.prev_rx_rd_index[0];
 		ipclite_dbg_struct->dbg_info_host[core_id].prev_rx_rd_index[0] =
-				ipclite_dbg_struct->dbg_info_host[core_id].rx_rd_index;
-		ipclite_dbg_struct->dbg_info_host[core_id].rx_rd_index = *rx_fifo->tail;
+			ipclite_dbg_struct->dbg_info_host[core_id].rx_rd_index;
+		ipclite_dbg_struct->dbg_info_host[core_id].rx_rd_index =
+			*rx_fifo->tail;
 
 		ipclite_dbg_struct->dbg_info_overall.total_numsig_recv++;
 		ipclite_dbg_struct->dbg_info_host[core_id].numsig_recv++;
@@ -454,8 +482,8 @@ static size_t ipcmem_tx_avail(struct ipclite_fifo *tx_fifo)
 }
 
 static unsigned int ipcmem_tx_write_one(struct ipclite_fifo *tx_fifo,
-					    unsigned int head,
-					    const void *data, size_t count)
+					unsigned int head, const void *data,
+					size_t count)
 {
 	size_t len;
 
@@ -476,8 +504,8 @@ static unsigned int ipcmem_tx_write_one(struct ipclite_fifo *tx_fifo,
 	return head;
 }
 
-static void ipcmem_tx_write(struct ipclite_fifo *tx_fifo,
-			const void *data, size_t dlen, uint32_t core_id, uint32_t signal_id)
+static void ipcmem_tx_write(struct ipclite_fifo *tx_fifo, const void *data,
+			    size_t dlen, uint32_t core_id, uint32_t signal_id)
 {
 	unsigned int head;
 
@@ -494,26 +522,32 @@ static void ipcmem_tx_write(struct ipclite_fifo *tx_fifo,
 	*tx_fifo->head = cpu_to_le32(head);
 
 	IPCLITE_OS_LOG(IPCLITE_DBG, "head : %d core_id : %d signal_id : %d\n",
-						*tx_fifo->head, core_id, signal_id);
+		       *tx_fifo->head, core_id, signal_id);
 
 	/* Storing the debug data in debug structures */
 	if (ipclite_debug_control & IPCLITE_DBG_STRUCT) {
 		ipclite_dbg_struct->dbg_info_host[core_id].prev_tx_wr_index[1] =
-				ipclite_dbg_struct->dbg_info_host[core_id].prev_tx_wr_index[0];
+			ipclite_dbg_struct->dbg_info_host[core_id]
+				.prev_tx_wr_index[0];
 		ipclite_dbg_struct->dbg_info_host[core_id].prev_tx_wr_index[0] =
-				ipclite_dbg_struct->dbg_info_host[core_id].tx_wr_index;
-		ipclite_dbg_struct->dbg_info_host[core_id].tx_wr_index = *tx_fifo->head;
+			ipclite_dbg_struct->dbg_info_host[core_id].tx_wr_index;
+		ipclite_dbg_struct->dbg_info_host[core_id].tx_wr_index =
+			*tx_fifo->head;
 
 		ipclite_dbg_struct->dbg_info_host[core_id].prev_tx_rd_index[1] =
-				ipclite_dbg_struct->dbg_info_host[core_id].prev_tx_rd_index[0];
+			ipclite_dbg_struct->dbg_info_host[core_id]
+				.prev_tx_rd_index[0];
 		ipclite_dbg_struct->dbg_info_host[core_id].prev_tx_rd_index[0] =
-				ipclite_dbg_struct->dbg_info_host[core_id].tx_rd_index;
-		ipclite_dbg_struct->dbg_info_host[core_id].tx_rd_index = *tx_fifo->tail;
+			ipclite_dbg_struct->dbg_info_host[core_id].tx_rd_index;
+		ipclite_dbg_struct->dbg_info_host[core_id].tx_rd_index =
+			*tx_fifo->tail;
 
 		ipclite_dbg_struct->dbg_info_overall.total_numsig_sent++;
 		ipclite_dbg_struct->dbg_info_host[core_id].numsig_sent++;
-		ipclite_dbg_struct->dbg_info_overall.last_sent_host_id = core_id;
-		ipclite_dbg_struct->dbg_info_overall.last_sigid_sent = signal_id;
+		ipclite_dbg_struct->dbg_info_overall.last_sent_host_id =
+			core_id;
+		ipclite_dbg_struct->dbg_info_overall.last_sigid_sent =
+			signal_id;
 	}
 }
 
@@ -522,14 +556,13 @@ static size_t ipclite_rx_avail(struct ipclite_channel *channel)
 	return channel->rx_fifo->avail(channel->rx_fifo);
 }
 
-static void ipclite_rx_peak(struct ipclite_channel *channel,
-			       void *data, size_t count)
+static void ipclite_rx_peak(struct ipclite_channel *channel, void *data,
+			    size_t count)
 {
 	channel->rx_fifo->peak(channel->rx_fifo, data, count);
 }
 
-static void ipclite_rx_advance(struct ipclite_channel *channel,
-					size_t count)
+static void ipclite_rx_advance(struct ipclite_channel *channel, size_t count)
 {
 	channel->rx_fifo->advance(channel->rx_fifo, count, channel->remote_pid);
 }
@@ -539,11 +572,12 @@ static size_t ipclite_tx_avail(struct ipclite_channel *channel)
 	return channel->tx_fifo->avail(channel->tx_fifo);
 }
 
-static void ipclite_tx_write(struct ipclite_channel *channel,
-				const void *data, size_t dlen)
+static void ipclite_tx_write(struct ipclite_channel *channel, const void *data,
+			     size_t dlen)
 {
-	channel->tx_fifo->write(channel->tx_fifo, data, dlen, channel->remote_pid,
-								channel->irq_info->signal_id);
+	channel->tx_fifo->write(channel->tx_fifo, data, dlen,
+				channel->remote_pid,
+				channel->irq_info->signal_id);
 }
 
 static int ipclite_rx_data(struct ipclite_channel *channel, size_t avail)
@@ -552,8 +586,10 @@ static int ipclite_rx_data(struct ipclite_channel *channel, size_t avail)
 	int ret = 0;
 
 	if (avail < sizeof(data)) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Not enough data in fifo, Core : %d Signal : %d\n",
-						channel->remote_pid, channel->irq_info->signal_id);
+		IPCLITE_OS_LOG(
+			IPCLITE_ERR,
+			"Not enough data in fifo, Core : %d Signal : %d\n",
+			channel->remote_pid, channel->irq_info->signal_id);
 		return -EAGAIN;
 	}
 
@@ -562,7 +598,7 @@ static int ipclite_rx_data(struct ipclite_channel *channel, size_t avail)
 	if (synx_client.reg_complete == 1) {
 		if (synx_client.callback)
 			synx_client.callback(channel->remote_pid, data,
-								synx_client.priv_data);
+					     synx_client.priv_data);
 	}
 	ipclite_rx_advance(channel, ALIGN(sizeof(data), 8));
 	return ret;
@@ -574,8 +610,10 @@ static int ipclite_rx_test_data(struct ipclite_channel *channel, size_t avail)
 	int ret = 0;
 
 	if (avail < sizeof(data)) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Not enough data in fifo, Core : %d Signal : %d\n",
-						channel->remote_pid, channel->irq_info->signal_id);
+		IPCLITE_OS_LOG(
+			IPCLITE_ERR,
+			"Not enough data in fifo, Core : %d Signal : %d\n",
+			channel->remote_pid, channel->irq_info->signal_id);
 		return -EAGAIN;
 	}
 
@@ -584,7 +622,7 @@ static int ipclite_rx_test_data(struct ipclite_channel *channel, size_t avail)
 	if (test_client.reg_complete == 1) {
 		if (test_client.callback)
 			test_client.callback(channel->remote_pid, data,
-								test_client.priv_data);
+					     test_client.priv_data);
 	}
 	ipclite_rx_advance(channel, ALIGN(sizeof(data), 8));
 	return ret;
@@ -599,16 +637,21 @@ static irqreturn_t ipclite_intr(int irq, void *data)
 	uint64_t msg;
 
 	irq_info = (struct ipclite_irq_info *)data;
-	channel = container_of(irq_info, struct ipclite_channel, irq_info[irq_info->signal_id]);
+	channel = container_of(irq_info, struct ipclite_channel,
+			       irq_info[irq_info->signal_id]);
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "Interrupt received from Core : %d Signal : %d\n",
-							channel->remote_pid, irq_info->signal_id);
+	IPCLITE_OS_LOG(IPCLITE_DBG,
+		       "Interrupt received from Core : %d Signal : %d\n",
+		       channel->remote_pid, irq_info->signal_id);
 
 	/* Storing the debug data in debug structures */
 	if (ipclite_debug_control & IPCLITE_DBG_STRUCT) {
-		ipclite_dbg_struct->dbg_info_host[channel->remote_pid].num_intr++;
-		ipclite_dbg_struct->dbg_info_overall.last_recv_host_id = channel->remote_pid;
-		ipclite_dbg_struct->dbg_info_overall.last_sigid_recv = irq_info->signal_id;
+		ipclite_dbg_struct->dbg_info_host[channel->remote_pid]
+			.num_intr++;
+		ipclite_dbg_struct->dbg_info_overall.last_recv_host_id =
+			channel->remote_pid;
+		ipclite_dbg_struct->dbg_info_overall.last_sigid_recv =
+			irq_info->signal_id;
 	}
 
 	if (irq_info->signal_id == IPCLITE_MSG_SIGNAL) {
@@ -619,9 +662,11 @@ static irqreturn_t ipclite_intr(int irq, void *data)
 
 			ret = ipclite_rx_data(channel, avail);
 		}
-		IPCLITE_OS_LOG(IPCLITE_DBG, "checking messages in rx_fifo done\n");
+		IPCLITE_OS_LOG(IPCLITE_DBG,
+			       "checking messages in rx_fifo done\n");
 	} else if (irq_info->signal_id == IPCLITE_VERSION_SIGNAL) {
-		IPCLITE_OS_LOG(IPCLITE_DBG, "Versioning is currently not enabled\n");
+		IPCLITE_OS_LOG(IPCLITE_DBG,
+			       "Versioning is currently not enabled\n");
 	} else if (irq_info->signal_id == IPCLITE_TEST_SIGNAL) {
 		for (;;) {
 			avail = ipclite_rx_avail(channel);
@@ -630,26 +675,31 @@ static irqreturn_t ipclite_intr(int irq, void *data)
 
 			ret = ipclite_rx_test_data(channel, avail);
 		}
-		IPCLITE_OS_LOG(IPCLITE_DBG, "checking messages in rx_fifo done\n");
+		IPCLITE_OS_LOG(IPCLITE_DBG,
+			       "checking messages in rx_fifo done\n");
 	} else {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Wrong Interrupt Signal from core : %d signal : %d\n",
-							channel->remote_pid, irq_info->signal_id);
+		IPCLITE_OS_LOG(
+			IPCLITE_ERR,
+			"Wrong Interrupt Signal from core : %d signal : %d\n",
+			channel->remote_pid, irq_info->signal_id);
 	}
 
 	return IRQ_HANDLED;
 }
 
-static int ipclite_tx(struct ipclite_channel *channel,
-			uint64_t data, size_t dlen, uint32_t ipclite_signal)
+static int ipclite_tx(struct ipclite_channel *channel, uint64_t data,
+		      size_t dlen, uint32_t ipclite_signal)
 {
 	unsigned long flags;
 	int ret = 0;
 
 	if (channel->status != ACTIVE) {
-		if (channel->status == IN_PROGRESS && *channel->gstatus_ptr == ACTIVE) {
+		if (channel->status == IN_PROGRESS &&
+		    *channel->gstatus_ptr == ACTIVE) {
 			channel->status = ACTIVE;
 		} else {
-			IPCLITE_OS_LOG(IPCLITE_ERR, "Cannot Send, Channel not active\n");
+			IPCLITE_OS_LOG(IPCLITE_ERR,
+				       "Cannot Send, Channel not active\n");
 			return -EOPNOTSUPP;
 		}
 	}
@@ -683,25 +733,31 @@ static int ipclite_send_debug_info(int32_t proc_id)
 	channel = &ipclite->channel[proc_id];
 
 	if (channel->status != ACTIVE) {
-		if (channel->status == IN_PROGRESS && *channel->gstatus_ptr == ACTIVE) {
+		if (channel->status == IN_PROGRESS &&
+		    *channel->gstatus_ptr == ACTIVE) {
 			channel->status = ACTIVE;
 		} else {
-			IPCLITE_OS_LOG(IPCLITE_ERR, "Cannot Send, Core %d is Inactive\n", proc_id);
+			IPCLITE_OS_LOG(IPCLITE_ERR,
+				       "Cannot Send, Core %d is Inactive\n",
+				       proc_id);
 			return -EOPNOTSUPP;
 		}
 	}
 
-	ret = mbox_send_message(channel->irq_info[IPCLITE_DEBUG_SIGNAL].mbox_chan, NULL);
+	ret = mbox_send_message(
+		channel->irq_info[IPCLITE_DEBUG_SIGNAL].mbox_chan, NULL);
 	if (ret < 0) {
-		IPCLITE_OS_LOG(IPCLITE_ERR,
-				"Debug Signal sending failed to Core : %d Signal : %d ret : %d\n",
-							proc_id, IPCLITE_DEBUG_SIGNAL, ret);
+		IPCLITE_OS_LOG(
+			IPCLITE_ERR,
+			"Debug Signal sending failed to Core : %d Signal : %d ret : %d\n",
+			proc_id, IPCLITE_DEBUG_SIGNAL, ret);
 		return ret;
 	}
 
-	IPCLITE_OS_LOG(IPCLITE_DBG,
-				"Debug Signal send completed to core : %d signal : %d ret : %d\n",
-							proc_id, IPCLITE_DEBUG_SIGNAL, ret);
+	IPCLITE_OS_LOG(
+		IPCLITE_DBG,
+		"Debug Signal send completed to core : %d signal : %d ret : %d\n",
+		proc_id, IPCLITE_DEBUG_SIGNAL, ret);
 	return 0;
 }
 
@@ -717,25 +773,31 @@ int ipclite_ssr_update(int32_t proc_id)
 	channel = &ipclite->channel[proc_id];
 
 	if (channel->status != ACTIVE) {
-		if (channel->status == IN_PROGRESS && *channel->gstatus_ptr == ACTIVE) {
+		if (channel->status == IN_PROGRESS &&
+		    *channel->gstatus_ptr == ACTIVE) {
 			channel->status = ACTIVE;
 		} else {
-			IPCLITE_OS_LOG(IPCLITE_ERR, "Cannot Send, Core %d is Inactive\n", proc_id);
+			IPCLITE_OS_LOG(IPCLITE_ERR,
+				       "Cannot Send, Core %d is Inactive\n",
+				       proc_id);
 			return -EOPNOTSUPP;
 		}
 	}
 
-	ret = mbox_send_message(channel->irq_info[IPCLITE_SSR_SIGNAL].mbox_chan, NULL);
+	ret = mbox_send_message(channel->irq_info[IPCLITE_SSR_SIGNAL].mbox_chan,
+				NULL);
 	if (ret < 0) {
-		IPCLITE_OS_LOG(IPCLITE_ERR,
-				"SSR Signal sending failed to Core : %d Signal : %d ret : %d\n",
-							proc_id, IPCLITE_SSR_SIGNAL, ret);
+		IPCLITE_OS_LOG(
+			IPCLITE_ERR,
+			"SSR Signal sending failed to Core : %d Signal : %d ret : %d\n",
+			proc_id, IPCLITE_SSR_SIGNAL, ret);
 		return ret;
 	}
 
-	IPCLITE_OS_LOG(IPCLITE_DBG,
-				"SSR Signal send completed to core : %d signal : %d ret : %d\n",
-							proc_id, IPCLITE_SSR_SIGNAL, ret);
+	IPCLITE_OS_LOG(
+		IPCLITE_DBG,
+		"SSR Signal send completed to core : %d signal : %d ret : %d\n",
+		proc_id, IPCLITE_SSR_SIGNAL, ret);
 	return 0;
 }
 
@@ -744,11 +806,13 @@ void ipclite_recover(enum ipcmem_host_type core_id)
 	int ret, host, host0, host1;
 	uint32_t p;
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "IPCLite Recover - Crashed Core : %d\n", core_id);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "IPCLite Recover - Crashed Core : %d\n",
+		       core_id);
 
 	/* verify and reset the hw mutex lock */
 	if (core_id == ipclite->ipcmem.toc_data.host_info->hwlock_owner) {
-		ipclite->ipcmem.toc_data.host_info->hwlock_owner = IPCMEM_INVALID_HOST;
+		ipclite->ipcmem.toc_data.host_info->hwlock_owner =
+			IPCMEM_INVALID_HOST;
 		hwspin_unlock_raw(ipclite->hwlock);
 		IPCLITE_OS_LOG(IPCLITE_DBG, "HW Lock Reset\n");
 	}
@@ -761,11 +825,14 @@ void ipclite_recover(enum ipcmem_host_type core_id)
 		if (host0 != core_id && host1 != core_id)
 			continue;
 
-		ipclite_global_atomic_store_i32((ipclite_atomic_int32_t *)
-			(&(ipclite->ipcmem.partition[p]->hdr.status)), 0);
+		ipclite_global_atomic_store_i32(
+			(ipclite_atomic_int32_t *)(&(
+				ipclite->ipcmem.partition[p]->hdr.status)),
+			0);
 
-		IPCLITE_OS_LOG(IPCLITE_DBG, "Global Channel Status : [%d][%d] : %d\n",
-					host0, host1, ipclite->ipcmem.partition[p]->hdr.status);
+		IPCLITE_OS_LOG(IPCLITE_DBG,
+			       "Global Channel Status : [%d][%d] : %d\n", host0,
+			       host1, ipclite->ipcmem.partition[p]->hdr.status);
 	}
 
 	/* Resets the TX/RX queue */
@@ -773,15 +840,16 @@ void ipclite_recover(enum ipcmem_host_type core_id)
 	*(ipclite->channel[core_id].rx_fifo->tail) = 0;
 
 	IPCLITE_OS_LOG(IPCLITE_DBG, "TX Fifo Reset : %d\n",
-						*(ipclite->channel[core_id].tx_fifo->head));
+		       *(ipclite->channel[core_id].tx_fifo->head));
 	IPCLITE_OS_LOG(IPCLITE_DBG, "RX Fifo Reset : %d\n",
-						*(ipclite->channel[core_id].rx_fifo->tail));
+		       *(ipclite->channel[core_id].rx_fifo->tail));
 
 	/* Increment the Global Channel Status for APPS and crashed core*/
-	ipclite_global_atomic_inc((ipclite_atomic_int32_t *)
-					ipclite->channel[core_id].gstatus_ptr);
+	ipclite_global_atomic_inc(
+		(ipclite_atomic_int32_t *)ipclite->channel[core_id].gstatus_ptr);
 
-	ipclite->channel[core_id].status = *ipclite->channel[core_id].gstatus_ptr;
+	ipclite->channel[core_id].status =
+		*ipclite->channel[core_id].gstatus_ptr;
 
 	/* Update other cores about SSR */
 	for (host = 1; host < IPCMEM_NUM_HOSTS; host++) {
@@ -789,9 +857,12 @@ void ipclite_recover(enum ipcmem_host_type core_id)
 			continue;
 		ret = ipclite_ssr_update(host);
 		if (ret < 0)
-			IPCLITE_OS_LOG(IPCLITE_ERR, "Failed to send SSR update to core %d\n", host);
+			IPCLITE_OS_LOG(IPCLITE_ERR,
+				       "Failed to send SSR update to core %d\n",
+				       host);
 		else
-			IPCLITE_OS_LOG(IPCLITE_DBG, "SSR update sent to core %d\n", host);
+			IPCLITE_OS_LOG(IPCLITE_DBG,
+				       "SSR update sent to core %d\n", host);
 	}
 	mutex_unlock(&ssr_mutex);
 
@@ -815,10 +886,12 @@ int ipclite_msg_send(int32_t proc_id, uint64_t data)
 	}
 
 	ret = ipclite_tx(&ipclite->channel[proc_id], data, sizeof(data),
-								IPCLITE_MSG_SIGNAL);
+			 IPCLITE_MSG_SIGNAL);
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "Message send complete to core : %d signal : %d ret : %d\n",
-								proc_id, IPCLITE_MSG_SIGNAL, ret);
+	IPCLITE_OS_LOG(
+		IPCLITE_DBG,
+		"Message send complete to core : %d signal : %d ret : %d\n",
+		proc_id, IPCLITE_MSG_SIGNAL, ret);
 	return ret;
 }
 EXPORT_SYMBOL(ipclite_msg_send);
@@ -847,10 +920,12 @@ int ipclite_test_msg_send(int32_t proc_id, uint64_t data)
 	}
 
 	ret = ipclite_tx(&ipclite->channel[proc_id], data, sizeof(data),
-									IPCLITE_TEST_SIGNAL);
+			 IPCLITE_TEST_SIGNAL);
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "Test Msg send complete to core : %d signal : %d ret : %d\n",
-								proc_id, IPCLITE_TEST_SIGNAL, ret);
+	IPCLITE_OS_LOG(
+		IPCLITE_DBG,
+		"Test Msg send complete to core : %d signal : %d ret : %d\n",
+		proc_id, IPCLITE_TEST_SIGNAL, ret);
 	return ret;
 }
 EXPORT_SYMBOL(ipclite_test_msg_send);
@@ -891,14 +966,14 @@ static int map_ipcmem(struct ipclite_info *ipclite, const char *name)
 
 	ipclite->ipcmem.mem.aux_base = (u64)r.start;
 	ipclite->ipcmem.mem.size = resource_size(&r);
-	ipclite->ipcmem.mem.virt_base = devm_ioremap_wc(dev, r.start,
-					resource_size(&r));
+	ipclite->ipcmem.mem.virt_base =
+		devm_ioremap_wc(dev, r.start, resource_size(&r));
 	if (!ipclite->ipcmem.mem.virt_base)
 		return -ENOMEM;
 
 	IPCLITE_OS_LOG(IPCLITE_DBG, "aux_base = %lx, size=%d,virt_base=%p\n",
-			ipclite->ipcmem.mem.aux_base, ipclite->ipcmem.mem.size,
-			ipclite->ipcmem.mem.virt_base);
+		       ipclite->ipcmem.mem.aux_base, ipclite->ipcmem.mem.size,
+		       ipclite->ipcmem.mem.virt_base);
 
 	return ret;
 }
@@ -928,30 +1003,40 @@ static int32_t setup_toc(struct ipclite_mem *ipcmem)
 	struct ipcmem_toc_data *toc_data = &ipcmem->toc_data;
 
 	/* Setup Offsets */
-	offsets->host_info		= offset += IPCMEM_TOC_VAR_OFFSET;
-	offsets->global_entry		= offset += sizeof(struct ipcmem_host_info);
-	offsets->partition_info		= offset += sizeof(struct ipcmem_partition_entry);
-	offsets->partition_entry	= offset += sizeof(struct ipcmem_partition_info);
+	offsets->host_info = offset += IPCMEM_TOC_VAR_OFFSET;
+	offsets->global_entry = offset += sizeof(struct ipcmem_host_info);
+	offsets->partition_info = offset +=
+		sizeof(struct ipcmem_partition_entry);
+	offsets->partition_entry = offset +=
+		sizeof(struct ipcmem_partition_info);
 	// offsets->debug		= virt_base + size - 64K;
-	/* Offset to be used for any new structure added in toc (after partition_entry) */
-	// offsets->new_struct	= offset += sizeof(struct ipcmem_partition_entry)*IPCMEM_NUM_HOSTS;
+	/* Offset to be used for any new structure added in toc (after
+   * partition_entry) */
+	// offsets->new_struct	= offset += sizeof(struct
+	// ipcmem_partition_entry)*IPCMEM_NUM_HOSTS;
 
 	IPCLITE_OS_LOG(IPCLITE_DBG, "toc_data offsets:");
 	IPCLITE_OS_LOG(IPCLITE_DBG, "host_info = 0x%X", offsets->host_info);
-	IPCLITE_OS_LOG(IPCLITE_DBG, "global_entry = 0x%X", offsets->global_entry);
-	IPCLITE_OS_LOG(IPCLITE_DBG, "partition_info = 0x%X", offsets->partition_info);
-	IPCLITE_OS_LOG(IPCLITE_DBG, "partition_entry = 0x%X", offsets->partition_entry);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "global_entry = 0x%X",
+		       offsets->global_entry);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "partition_info = 0x%X",
+		       offsets->partition_info);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "partition_entry = 0x%X",
+		       offsets->partition_entry);
 
 	/* Point structures to the appropriate offset in TOC */
-	toc_data->host_info		= ADD_OFFSET(virt_base, offsets->host_info);
-	toc_data->global_entry		= ADD_OFFSET(virt_base, offsets->global_entry);
-	toc_data->partition_info	= ADD_OFFSET(virt_base, offsets->partition_info);
-	toc_data->partition_entry	= ADD_OFFSET(virt_base, offsets->partition_entry);
+	toc_data->host_info = ADD_OFFSET(virt_base, offsets->host_info);
+	toc_data->global_entry = ADD_OFFSET(virt_base, offsets->global_entry);
+	toc_data->partition_info =
+		ADD_OFFSET(virt_base, offsets->partition_info);
+	toc_data->partition_entry =
+		ADD_OFFSET(virt_base, offsets->partition_entry);
 
 	return 0;
 }
 
-static void setup_global_partition(struct ipclite_mem *ipcmem, uint32_t base_offset)
+static void setup_global_partition(struct ipclite_mem *ipcmem,
+				   uint32_t base_offset)
 {
 	/*Fill in global partition details*/
 	ipcmem->toc_data.global_entry->base_offset = base_offset;
@@ -960,18 +1045,20 @@ static void setup_global_partition(struct ipclite_mem *ipcmem, uint32_t base_off
 	ipcmem->toc_data.global_entry->host0 = IPCMEM_GLOBAL_HOST;
 	ipcmem->toc_data.global_entry->host1 = IPCMEM_GLOBAL_HOST;
 
-	ipcmem->global_partition = ADD_OFFSET(ipcmem->mem.virt_base, base_offset);
+	ipcmem->global_partition =
+		ADD_OFFSET(ipcmem->mem.virt_base, base_offset);
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "base_offset =%x,ipcmem->global_partition = %p\n",
-				base_offset,
-				ipcmem->global_partition);
+	IPCLITE_OS_LOG(IPCLITE_DBG,
+		       "base_offset =%x,ipcmem->global_partition = %p\n",
+		       base_offset, ipcmem->global_partition);
 
 	ipcmem->global_partition->hdr = global_partition_hdr;
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "hdr.type = %x,hdr.offset = %x,hdr.size = %d\n",
-				ipcmem->global_partition->hdr.partition_type,
-				ipcmem->global_partition->hdr.region_offset,
-				ipcmem->global_partition->hdr.region_size);
+	IPCLITE_OS_LOG(IPCLITE_DBG,
+		       "hdr.type = %x,hdr.offset = %x,hdr.size = %d\n",
+		       ipcmem->global_partition->hdr.partition_type,
+		       ipcmem->global_partition->hdr.region_offset,
+		       ipcmem->global_partition->hdr.region_size);
 }
 
 static void update_partition(struct ipclite_mem *ipcmem, uint32_t p)
@@ -981,25 +1068,29 @@ static void update_partition(struct ipclite_mem *ipcmem, uint32_t p)
 
 	IPCLITE_OS_LOG(IPCLITE_DBG, "host0 = %d, host1=%d\n", host0, host1);
 
-	ipcmem->partition[p] = ADD_OFFSET(ipcmem->mem.virt_base,
-					ipcmem->toc_data.partition_entry[p].base_offset);
+	ipcmem->partition[p] =
+		ADD_OFFSET(ipcmem->mem.virt_base,
+			   ipcmem->toc_data.partition_entry[p].base_offset);
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "partition[%d] = %p,partition_base_offset[%d]=%lx",
-				p, ipcmem->partition[p],
-				p, ipcmem->toc_data.partition_entry[p].base_offset);
+	IPCLITE_OS_LOG(IPCLITE_DBG,
+		       "partition[%d] = %p,partition_base_offset[%d]=%lx", p,
+		       ipcmem->partition[p], p,
+		       ipcmem->toc_data.partition_entry[p].base_offset);
 
 	if (host0 == host1)
 		ipcmem->partition[p]->hdr = loopback_partition_hdr;
 	else
 		ipcmem->partition[p]->hdr = default_partition_hdr;
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "hdr.type = %x,hdr.offset = %x,hdr.size = %d",
-				ipcmem->partition[p]->hdr.type,
-				ipcmem->partition[p]->hdr.desc_offset,
-				ipcmem->partition[p]->hdr.desc_size);
+	IPCLITE_OS_LOG(IPCLITE_DBG,
+		       "hdr.type = %x,hdr.offset = %x,hdr.size = %d",
+		       ipcmem->partition[p]->hdr.type,
+		       ipcmem->partition[p]->hdr.desc_offset,
+		       ipcmem->partition[p]->hdr.desc_size);
 }
 
-static int32_t setup_partitions(struct ipclite_mem *ipcmem, uint32_t base_offset)
+static int32_t setup_partitions(struct ipclite_mem *ipcmem,
+				uint32_t base_offset)
 {
 	uint32_t p, host0, host1;
 	uint32_t num_entry = 0;
@@ -1009,13 +1100,19 @@ static int32_t setup_partitions(struct ipclite_mem *ipcmem, uint32_t base_offset
 		if (!is_host_enabled(host0))
 			continue;
 		for (host1 = host0; host1 < IPCMEM_NUM_HOSTS; host1++) {
-			if (!is_host_enabled(host1) || is_loopback_except_apps(host0, host1))
+			if (!is_host_enabled(host1) ||
+			    is_loopback_except_apps(host0, host1))
 				continue;
-			ipcmem->toc_data.partition_entry[num_entry].base_offset = base_offset;
-			ipcmem->toc_data.partition_entry[num_entry].size = DEFAULT_PARTITION_SIZE;
-			ipcmem->toc_data.partition_entry[num_entry].flags = DEFAULT_PARTITION_FLAGS;
-			ipcmem->toc_data.partition_entry[num_entry].host0 = host0;
-			ipcmem->toc_data.partition_entry[num_entry].host1 = host1;
+			ipcmem->toc_data.partition_entry[num_entry].base_offset =
+				base_offset;
+			ipcmem->toc_data.partition_entry[num_entry].size =
+				DEFAULT_PARTITION_SIZE;
+			ipcmem->toc_data.partition_entry[num_entry].flags =
+				DEFAULT_PARTITION_FLAGS;
+			ipcmem->toc_data.partition_entry[num_entry].host0 =
+				host0;
+			ipcmem->toc_data.partition_entry[num_entry].host1 =
+				host1;
 
 			base_offset += DEFAULT_PARTITION_SIZE;
 			num_entry++;
@@ -1023,7 +1120,8 @@ static int32_t setup_partitions(struct ipclite_mem *ipcmem, uint32_t base_offset
 	}
 	IPCLITE_OS_LOG(IPCLITE_DBG, "total partitions = %u", num_entry);
 
-	ipcmem->partition = kcalloc(num_entry, sizeof(*ipcmem->partition), GFP_KERNEL);
+	ipcmem->partition =
+		kcalloc(num_entry, sizeof(*ipcmem->partition), GFP_KERNEL);
 	if (!ipcmem->partition) {
 		IPCLITE_OS_LOG(IPCLITE_ERR, "Partition Allocation failed");
 		return -ENOMEM;
@@ -1035,7 +1133,8 @@ static int32_t setup_partitions(struct ipclite_mem *ipcmem, uint32_t base_offset
 
 	/*Set up info to parse partition entries*/
 	ipcmem->toc_data.partition_info->num_entries = partitions = num_entry;
-	ipcmem->toc_data.partition_info->entry_size = sizeof(struct ipcmem_partition_entry);
+	ipcmem->toc_data.partition_info->entry_size =
+		sizeof(struct ipcmem_partition_entry);
 	return 0;
 }
 
@@ -1088,15 +1187,17 @@ static int32_t ipcmem_init(struct ipclite_mem *ipcmem, struct device_node *pn)
 	return 0;
 }
 
-static int ipclite_channel_irq_init(struct device *parent, struct device_node *node,
-								struct ipclite_channel *channel)
+static int ipclite_channel_irq_init(struct device *parent,
+				    struct device_node *node,
+				    struct ipclite_channel *channel)
 {
 	int ret = 0;
 	u32 index;
 	struct ipclite_irq_info *irq_info;
 	struct device *dev;
 	char strs[MAX_CHANNEL_SIGNALS][IPCLITE_SIGNAL_LABEL_SIZE] = {
-			"msg", "mem-init", "version", "test", "ssr", "debug"};
+		"msg", "mem-init", "version", "test", "ssr", "debug"
+	};
 
 	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
 	if (!dev)
@@ -1105,16 +1206,17 @@ static int ipclite_channel_irq_init(struct device *parent, struct device_node *n
 	dev->parent = parent;
 	dev->of_node = node;
 	dev_set_name(dev, "%s:%pOFn", dev_name(parent->parent), node);
-	IPCLITE_OS_LOG(IPCLITE_DBG, "Registering %s device\n", dev_name(parent->parent));
+	IPCLITE_OS_LOG(IPCLITE_DBG, "Registering %s device\n",
+		       dev_name(parent->parent));
 	ret = device_register(dev);
 	if (ret) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "failed to register ipclite child node\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "failed to register ipclite child node\n");
 		put_device(dev);
 		return ret;
 	}
 
-	ret = of_property_read_u32(dev->of_node, "index",
-				   &index);
+	ret = of_property_read_u32(dev->of_node, "index", &index);
 	if (ret) {
 		IPCLITE_OS_LOG(IPCLITE_ERR, "failed to parse index\n");
 		goto err_dev;
@@ -1126,10 +1228,12 @@ static int ipclite_channel_irq_init(struct device *parent, struct device_node *n
 	irq_info->mbox_client.dev = dev;
 	irq_info->mbox_client.knows_txdone = true;
 	irq_info->mbox_chan = mbox_request_channel(&irq_info->mbox_client, 0);
-	IPCLITE_OS_LOG(IPCLITE_DBG, "irq_info[%d].mbox_chan=%p\n", index, irq_info->mbox_chan);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "irq_info[%d].mbox_chan=%p\n", index,
+		       irq_info->mbox_chan);
 	if (IS_ERR(irq_info->mbox_chan)) {
 		if (PTR_ERR(irq_info->mbox_chan) != -EPROBE_DEFER)
-			IPCLITE_OS_LOG(IPCLITE_ERR, "failed to acquire IPC channel\n");
+			IPCLITE_OS_LOG(IPCLITE_ERR,
+				       "failed to acquire IPC channel\n");
 		goto err_dev;
 	}
 
@@ -1137,15 +1241,15 @@ static int ipclite_channel_irq_init(struct device *parent, struct device_node *n
 	irq_info->irq = of_irq_get(dev->of_node, 0);
 	IPCLITE_OS_LOG(IPCLITE_DBG, "irq[%d] = %d\n", index, irq_info->irq);
 	irq_info->signal_id = index;
-	ret = devm_request_irq(dev, irq_info->irq,
-			       ipclite_intr,
-			       IRQF_NO_SUSPEND | IRQF_SHARED,
-			       irq_info->irqname, irq_info);
+	ret = devm_request_irq(dev, irq_info->irq, ipclite_intr,
+			       IRQF_NO_SUSPEND | IRQF_SHARED, irq_info->irqname,
+			       irq_info);
 	if (ret) {
 		IPCLITE_OS_LOG(IPCLITE_ERR, "failed to request IRQ\n");
 		goto err_dev;
 	}
-	IPCLITE_OS_LOG(IPCLITE_DBG, "Interrupt init completed, ret = %d\n", ret);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "Interrupt init completed, ret = %d\n",
+		       ret);
 	return 0;
 
 err_dev:
@@ -1168,33 +1272,37 @@ int32_t get_global_partition_info(struct global_region_info *global_ipcmem)
 		return -EINVAL;
 
 	global_partition = ipclite->ipcmem.global_partition;
-	global_ipcmem->virt_base = (void *)((char *)global_partition +
-							global_partition->hdr.region_offset);
+	global_ipcmem->virt_base =
+		(void *)((char *)global_partition +
+			 global_partition->hdr.region_offset);
 	global_ipcmem->size = (size_t)(global_partition->hdr.region_size);
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "base = %p, size=%lx\n", global_ipcmem->virt_base,
-									global_ipcmem->size);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "base = %p, size=%lx\n",
+		       global_ipcmem->virt_base, global_ipcmem->size);
 	return 0;
 }
 EXPORT_SYMBOL(get_global_partition_info);
 
-static struct ipcmem_partition_header *get_ipcmem_partition_hdr(struct ipclite_mem ipcmem, int local_pid,
-								int remote_pid)
+static struct ipcmem_partition_header *
+get_ipcmem_partition_hdr(struct ipclite_mem ipcmem, int local_pid,
+			 int remote_pid)
 {
 	uint32_t p;
 	uint32_t found = -1;
 
 	for (p = 0; p < partitions; p++) {
-		if (ipcmem.toc_data.partition_entry[p].host0 == local_pid
-			&& ipcmem.toc_data.partition_entry[p].host1 == remote_pid) {
+		if (ipcmem.toc_data.partition_entry[p].host0 == local_pid &&
+		    ipcmem.toc_data.partition_entry[p].host1 == remote_pid) {
 			found = p;
 			break;
 		}
 	}
 
 	if (found < partitions)
-		return (struct ipcmem_partition_header *)((char *)ipcmem.mem.virt_base +
-					ipcmem.toc_data.partition_entry[found].base_offset);
+		return (struct ipcmem_partition_header
+				*)((char *)ipcmem.mem.virt_base +
+				   ipcmem.toc_data.partition_entry[found]
+					   .base_offset);
 	else
 		return NULL;
 }
@@ -1208,8 +1316,7 @@ static void ipclite_channel_release(struct device *dev)
 /* Sets up following fields of IPCLite channel structure:
  *	remote_pid,tx_fifo, rx_fifo
  */
-static int ipclite_channel_init(struct device *parent,
-								struct device_node *node)
+static int ipclite_channel_init(struct device *parent, struct device_node *node)
 {
 	struct ipclite_fifo *rx_fifo;
 	struct ipclite_fifo *tx_fifo;
@@ -1231,10 +1338,12 @@ static int ipclite_channel_init(struct device *parent,
 	dev->of_node = node;
 	dev->release = ipclite_channel_release;
 	dev_set_name(dev, "%s:%pOFn", dev_name(parent->parent), node);
-	IPCLITE_OS_LOG(IPCLITE_DBG, "Registering %s device\n", dev_name(parent->parent));
+	IPCLITE_OS_LOG(IPCLITE_DBG, "Registering %s device\n",
+		       dev_name(parent->parent));
 	ret = device_register(dev);
 	if (ret) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "failed to register ipclite device\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "failed to register ipclite device\n");
 		put_device(dev);
 		kfree(dev);
 		return ret;
@@ -1248,15 +1357,18 @@ static int ipclite_channel_init(struct device *parent,
 		dev_err(dev, "failed to parse qcom,remote-pid\n");
 		goto err_put_dev;
 	}
-	IPCLITE_OS_LOG(IPCLITE_DBG, "remote_pid = %d, local_pid=%d\n", remote_pid, local_pid);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "remote_pid = %d, local_pid=%d\n",
+		       remote_pid, local_pid);
 
-	ipclite_hw_mutex = devm_kzalloc(dev, sizeof(*ipclite_hw_mutex), GFP_KERNEL);
+	ipclite_hw_mutex =
+		devm_kzalloc(dev, sizeof(*ipclite_hw_mutex), GFP_KERNEL);
 	if (!ipclite_hw_mutex) {
 		ret = -ENOMEM;
 		goto err_put_dev;
 	}
 
-	ret = of_property_read_u32(dev->of_node, "global_atomic", &global_atomic);
+	ret = of_property_read_u32(dev->of_node, "global_atomic",
+				   &global_atomic);
 	if (ret) {
 		dev_err(dev, "failed to parse global_atomic\n");
 		goto err_put_dev;
@@ -1270,9 +1382,11 @@ static int ipclite_channel_init(struct device *parent,
 		ret = -ENOMEM;
 		goto err_put_dev;
 	}
-	IPCLITE_OS_LOG(IPCLITE_DBG, "rx_fifo = %p, tx_fifo=%p\n", rx_fifo, tx_fifo);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "rx_fifo = %p, tx_fifo=%p\n", rx_fifo,
+		       tx_fifo);
 
-	partition_hdr = get_ipcmem_partition_hdr(ipclite->ipcmem, local_pid, remote_pid);
+	partition_hdr = get_ipcmem_partition_hdr(ipclite->ipcmem, local_pid,
+						 remote_pid);
 	IPCLITE_OS_LOG(IPCLITE_DBG, "partition_hdr = %p\n", partition_hdr);
 	if (!partition_hdr) {
 		ret = -ENOMEM;
@@ -1283,9 +1397,11 @@ static int ipclite_channel_init(struct device *parent,
 	IPCLITE_OS_LOG(IPCLITE_DBG, "descs = %p\n", descs);
 
 	if (local_pid < remote_pid) {
-		tx_fifo->fifo = (char *)partition_hdr + partition_hdr->fifo0_offset;
+		tx_fifo->fifo =
+			(char *)partition_hdr + partition_hdr->fifo0_offset;
 		tx_fifo->length = partition_hdr->fifo0_size;
-		rx_fifo->fifo = (char *)partition_hdr + partition_hdr->fifo1_offset;
+		rx_fifo->fifo =
+			(char *)partition_hdr + partition_hdr->fifo1_offset;
 		rx_fifo->length = partition_hdr->fifo1_size;
 
 		tx_fifo->tail = &descs[0];
@@ -1294,9 +1410,11 @@ static int ipclite_channel_init(struct device *parent,
 		rx_fifo->head = &descs[3];
 
 	} else {
-		tx_fifo->fifo = (char *)partition_hdr + partition_hdr->fifo1_offset;
+		tx_fifo->fifo =
+			(char *)partition_hdr + partition_hdr->fifo1_offset;
 		tx_fifo->length = partition_hdr->fifo1_size;
-		rx_fifo->fifo = (char *)partition_hdr + partition_hdr->fifo0_offset;
+		rx_fifo->fifo =
+			(char *)partition_hdr + partition_hdr->fifo0_offset;
 		rx_fifo->length = partition_hdr->fifo0_size;
 
 		rx_fifo->tail = &descs[0];
@@ -1332,9 +1450,11 @@ static int ipclite_channel_init(struct device *parent,
 
 	for_each_available_child_of_node(dev->of_node, child) {
 		ret = ipclite_channel_irq_init(dev, child,
-				&ipclite->channel[remote_pid]);
+					       &ipclite->channel[remote_pid]);
 		if (ret) {
-			IPCLITE_OS_LOG(IPCLITE_ERR, "irq setup for ipclite channel failed\n");
+			IPCLITE_OS_LOG(
+				IPCLITE_ERR,
+				"irq setup for ipclite channel failed\n");
 			goto err_put_dev;
 		}
 	}
@@ -1367,7 +1487,8 @@ static void probe_subsystem(struct device *dev, struct device_node *np)
 }
 
 static ssize_t ipclite_dbg_lvl_write(struct kobject *kobj,
-				struct kobj_attribute *attr, const char *buf, size_t count)
+				     struct kobj_attribute *attr,
+				     const char *buf, size_t count)
 {
 	int ret = 0, host = 0;
 
@@ -1380,7 +1501,8 @@ static ssize_t ipclite_dbg_lvl_write(struct kobject *kobj,
 
 	/* Check if debug structure is initialized */
 	if (!ipclite_dbg_info) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Debug structures not initialized\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Debug structures not initialized\n");
 		return -ENOMEM;
 	}
 
@@ -1396,16 +1518,20 @@ static ssize_t ipclite_dbg_lvl_write(struct kobject *kobj,
 			continue;
 		ret = ipclite_send_debug_info(host);
 		if (ret < 0)
-			IPCLITE_OS_LOG(IPCLITE_ERR, "Failed to send the debug info %d\n", host);
+			IPCLITE_OS_LOG(IPCLITE_ERR,
+				       "Failed to send the debug info %d\n",
+				       host);
 		else
-			IPCLITE_OS_LOG(IPCLITE_DBG, "Debug info sent to host %d\n", host);
+			IPCLITE_OS_LOG(IPCLITE_DBG,
+				       "Debug info sent to host %d\n", host);
 	}
 
 	return count;
 }
 
 static ssize_t ipclite_dbg_ctrl_write(struct kobject *kobj,
-				struct kobj_attribute *attr, const char *buf, size_t count)
+				      struct kobj_attribute *attr,
+				      const char *buf, size_t count)
 {
 	int ret = 0, host = 0;
 
@@ -1418,7 +1544,8 @@ static ssize_t ipclite_dbg_ctrl_write(struct kobject *kobj,
 
 	/* Check if debug structures are initialized */
 	if (!ipclite_dbg_info || !ipclite_dbg_struct || !ipclite_dbg_inmem) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Debug structures not initialized\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Debug structures not initialized\n");
 		return -ENOMEM;
 	}
 
@@ -1434,16 +1561,20 @@ static ssize_t ipclite_dbg_ctrl_write(struct kobject *kobj,
 			continue;
 		ret = ipclite_send_debug_info(host);
 		if (ret < 0)
-			IPCLITE_OS_LOG(IPCLITE_ERR, "Failed to send the debug info %d\n", host);
+			IPCLITE_OS_LOG(IPCLITE_ERR,
+				       "Failed to send the debug info %d\n",
+				       host);
 		else
-			IPCLITE_OS_LOG(IPCLITE_DBG, "Debug info sent to host %d\n", host);
+			IPCLITE_OS_LOG(IPCLITE_DBG,
+				       "Debug info sent to host %d\n", host);
 	}
 
 	return count;
 }
 
 static ssize_t ipclite_dbg_dump_write(struct kobject *kobj,
-				struct kobj_attribute *attr, const char *buf, size_t count)
+				      struct kobj_attribute *attr,
+				      const char *buf, size_t count)
 {
 	int ret = 0;
 
@@ -1456,7 +1587,8 @@ static ssize_t ipclite_dbg_dump_write(struct kobject *kobj,
 
 	/* Check if debug structures are initialized */
 	if (!ipclite_dbg_info || !ipclite_dbg_struct || !ipclite_dbg_inmem) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Debug structures not initialized\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Debug structures not initialized\n");
 		return -ENOMEM;
 	}
 
@@ -1470,12 +1602,12 @@ static ssize_t ipclite_dbg_dump_write(struct kobject *kobj,
 	return count;
 }
 
-struct kobj_attribute sysfs_dbg_lvl = __ATTR(ipclite_debug_level, 0660,
-					NULL, ipclite_dbg_lvl_write);
-struct kobj_attribute sysfs_dbg_ctrl = __ATTR(ipclite_debug_control, 0660,
-					NULL, ipclite_dbg_ctrl_write);
-struct kobj_attribute sysfs_dbg_dump = __ATTR(ipclite_debug_dump, 0660,
-					NULL, ipclite_dbg_dump_write);
+struct kobj_attribute sysfs_dbg_lvl =
+	__ATTR(ipclite_debug_level, 0660, NULL, ipclite_dbg_lvl_write);
+struct kobj_attribute sysfs_dbg_ctrl =
+	__ATTR(ipclite_debug_control, 0660, NULL, ipclite_dbg_ctrl_write);
+struct kobj_attribute sysfs_dbg_dump =
+	__ATTR(ipclite_debug_dump, 0660, NULL, ipclite_dbg_dump_write);
 
 static int ipclite_debug_sysfs_setup(void)
 {
@@ -1484,26 +1616,30 @@ static int ipclite_debug_sysfs_setup(void)
 	/* Creating a directory in /sys/kernel/ */
 	sysfs_kobj = kobject_create_and_add("ipclite", kernel_kobj);
 	if (!sysfs_kobj) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Cannot create and add sysfs directory\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Cannot create and add sysfs directory\n");
 		return -ENOMEM;
 	}
 
 	/* Creating sysfs files/interfaces for debug */
 	ret = sysfs_create_file(sysfs_kobj, &sysfs_dbg_lvl.attr);
 	if (ret) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Cannot create sysfs debug level file\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Cannot create sysfs debug level file\n");
 		return ret;
 	}
 
 	ret = sysfs_create_file(sysfs_kobj, &sysfs_dbg_ctrl.attr);
 	if (ret) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Cannot create sysfs debug control file\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Cannot create sysfs debug control file\n");
 		return ret;
 	}
 
 	ret = sysfs_create_file(sysfs_kobj, &sysfs_dbg_dump.attr);
 	if (ret) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Cannot create sysfs debug dump file\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Cannot create sysfs debug dump file\n");
 		return ret;
 	}
 
@@ -1513,28 +1649,38 @@ static int ipclite_debug_sysfs_setup(void)
 static int ipclite_debug_info_setup(void)
 {
 	/* Setting up the Debug Structures */
-	ipclite_dbg_info = (struct ipclite_debug_info *)(((char *)ipclite->ipcmem.mem.virt_base +
-						ipclite->ipcmem.mem.size) - DEBUG_PARTITION_SIZE);
+	ipclite_dbg_info = (struct ipclite_debug_info
+				    *)(((char *)ipclite->ipcmem.mem.virt_base +
+					ipclite->ipcmem.mem.size) -
+				       DEBUG_PARTITION_SIZE);
 	if (!ipclite_dbg_info)
 		return -EADDRNOTAVAIL;
 
-	ipclite_dbg_struct = (struct ipclite_debug_struct *)
-					(((char *)ipclite_dbg_info + IPCLITE_DEBUG_INFO_SIZE) +
-					(sizeof(*ipclite_dbg_struct) * IPCMEM_APPS));
+	ipclite_dbg_struct =
+		(struct ipclite_debug_struct *)(((char *)ipclite_dbg_info +
+						 IPCLITE_DEBUG_INFO_SIZE) +
+						(sizeof(*ipclite_dbg_struct) *
+						 IPCMEM_APPS));
 	if (!ipclite_dbg_struct)
 		return -EADDRNOTAVAIL;
 
-	ipclite_dbg_inmem = (struct ipclite_debug_inmem_buf *)
-					(((char *)ipclite_dbg_info + IPCLITE_DEBUG_INFO_SIZE) +
-					(sizeof(*ipclite_dbg_struct) * IPCMEM_NUM_HOSTS));
+	ipclite_dbg_inmem =
+		(struct ipclite_debug_inmem_buf *)(((char *)ipclite_dbg_info +
+						    IPCLITE_DEBUG_INFO_SIZE) +
+						   (sizeof(*ipclite_dbg_struct) *
+						    IPCMEM_NUM_HOSTS));
 
 	if (!ipclite_dbg_inmem)
 		return -EADDRNOTAVAIL;
 
-	IPCLITE_OS_LOG(IPCLITE_DBG, "virtual_base_ptr = %p total_size : %d debug_size : %d\n",
-		ipclite->ipcmem.mem.virt_base, ipclite->ipcmem.mem.size, DEBUG_PARTITION_SIZE);
-	IPCLITE_OS_LOG(IPCLITE_DBG, "dbg_info : %p dbg_struct : %p dbg_inmem : %p\n",
-					ipclite_dbg_info, ipclite_dbg_struct, ipclite_dbg_inmem);
+	IPCLITE_OS_LOG(
+		IPCLITE_DBG,
+		"virtual_base_ptr = %p total_size : %d debug_size : %d\n",
+		ipclite->ipcmem.mem.virt_base, ipclite->ipcmem.mem.size,
+		DEBUG_PARTITION_SIZE);
+	IPCLITE_OS_LOG(IPCLITE_DBG,
+		       "dbg_info : %p dbg_struct : %p dbg_inmem : %p\n",
+		       ipclite_dbg_info, ipclite_dbg_struct, ipclite_dbg_inmem);
 
 	return 0;
 }
@@ -1563,7 +1709,8 @@ static int ipclite_probe(struct platform_device *pdev)
 		ret = hwlock_id;
 		goto release;
 	}
-	IPCLITE_OS_LOG(IPCLITE_DBG, "Hwlock id retrieved, hwlock_id=%d\n", hwlock_id);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "Hwlock id retrieved, hwlock_id=%d\n",
+		       hwlock_id);
 
 	ipclite->hwlock = hwspin_lock_request_specific(hwlock_id);
 	if (!ipclite->hwlock) {
@@ -1571,8 +1718,9 @@ static int ipclite_probe(struct platform_device *pdev)
 		ret = -ENXIO;
 		goto release;
 	}
-	IPCLITE_OS_LOG(IPCLITE_DBG, "Hwlock id assigned successfully, hwlock=%p\n",
-									ipclite->hwlock);
+	IPCLITE_OS_LOG(IPCLITE_DBG,
+		       "Hwlock id assigned successfully, hwlock=%p\n",
+		       ipclite->hwlock);
 
 	/* Initializing Local Mutex Lock for SSR functionality */
 	mutex_init(&ssr_mutex);
@@ -1594,14 +1742,16 @@ static int ipclite_probe(struct platform_device *pdev)
 	/* Set up sysfs for debug  */
 	ret = ipclite_debug_sysfs_setup();
 	if (ret) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Failed to Set up IPCLite Debug Sysfs\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Failed to Set up IPCLite Debug Sysfs\n");
 		goto release;
 	}
 
 	/* Mapping Debug Memory */
 	ret = ipclite_debug_info_setup();
 	if (ret) {
-		IPCLITE_OS_LOG(IPCLITE_ERR, "Failed to Set up IPCLite Debug Structures\n");
+		IPCLITE_OS_LOG(IPCLITE_ERR,
+			       "Failed to Set up IPCLite Debug Structures\n");
 		goto release;
 	}
 
@@ -1609,20 +1759,23 @@ static int ipclite_probe(struct platform_device *pdev)
 	for_each_available_child_of_node(pn, cn)
 		probe_subsystem(&pdev->dev, cn);
 	/* Broadcast init_done signal to all subsystems once mbox channels
-	 * are set up
-	 */
+   * are set up
+   */
 	broadcast = ipclite->channel[IPCMEM_APPS];
-	ret = mbox_send_message(broadcast.irq_info[IPCLITE_MEM_INIT_SIGNAL].mbox_chan,
-								 NULL);
+	ret = mbox_send_message(
+		broadcast.irq_info[IPCLITE_MEM_INIT_SIGNAL].mbox_chan, NULL);
 	if (ret < 0)
 		goto mem_release;
 
-	mbox_client_txdone(broadcast.irq_info[IPCLITE_MEM_INIT_SIGNAL].mbox_chan, 0);
+	mbox_client_txdone(
+		broadcast.irq_info[IPCLITE_MEM_INIT_SIGNAL].mbox_chan, 0);
 
 	if (global_atomic_support) {
-		ipclite->ipcmem.toc->hdr.feature_mask |= GLOBAL_ATOMIC_SUPPORT_BMSK;
+		ipclite->ipcmem.toc->hdr.feature_mask |=
+			GLOBAL_ATOMIC_SUPPORT_BMSK;
 	}
-	IPCLITE_OS_LOG(IPCLITE_DBG, "global_atomic_support : %d\n", global_atomic_support);
+	IPCLITE_OS_LOG(IPCLITE_DBG, "global_atomic_support : %d\n",
+		       global_atomic_support);
 
 	/* Should be called after all Global TOC related init is done */
 	insert_magic_number();
@@ -1643,11 +1796,11 @@ static int ipclite_probe(struct platform_device *pdev)
 
 mem_release:
 	/* If the remote subsystem has already completed the init and actively
-	 * using IPCMEM, re-assigning IPCMEM memory back to HLOS can lead to crash
-	 * Solution: Either we don't take back the memory or make sure APPS completes
-	 * init before any other subsystem initializes IPCLite (we won't have to send
-	 * braodcast)
-	 */
+   * using IPCMEM, re-assigning IPCMEM memory back to HLOS can lead to crash
+   * Solution: Either we don't take back the memory or make sure APPS completes
+   * init before any other subsystem initializes IPCLite (we won't have to send
+   * braodcast)
+   */
 release:
 	kfree(ipclite);
 	ipclite = NULL;
@@ -1657,17 +1810,18 @@ error:
 }
 
 static const struct of_device_id ipclite_of_match[] = {
-	{ .compatible = "qcom,ipclite"},
+	{ .compatible = "qcom,ipclite" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, ipclite_of_match);
 
 static struct platform_driver ipclite_driver = {
-	.probe = ipclite_probe,
-	.driver = {
-		.name = "ipclite",
-		.of_match_table = ipclite_of_match,
-	},
+    .probe = ipclite_probe,
+    .driver =
+        {
+            .name = "ipclite",
+            .of_match_table = ipclite_of_match,
+        },
 };
 
 module_platform_driver(ipclite_driver);

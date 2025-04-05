@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2016-2021, The Linux Foundation. All rights reserved. */
-/* Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved. */
+/* Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
 
-
+#include "debug.h"
+#include "bus.h"
+#include "main.h"
+#include "pci.h"
+#include <linux/debugfs.h>
 #include <linux/err.h>
 #include <linux/seq_file.h>
-#include <linux/debugfs.h>
-#include "main.h"
-#include "bus.h"
-#include "debug.h"
-#include "pci.h"
 
-#define MMIO_REG_ACCESS_MEM_TYPE		0xFF
-#define MMIO_REG_RAW_ACCESS_MEM_TYPE		0xFE
-#define DEFAULT_KERNEL_LOG_LEVEL		INFO_LOG
-#define DEFAULT_IPC_LOG_LEVEL			DEBUG_LOG
+#define MMIO_REG_ACCESS_MEM_TYPE 0xFF
+#define MMIO_REG_RAW_ACCESS_MEM_TYPE 0xFE
+#define DEFAULT_KERNEL_LOG_LEVEL INFO_LOG
+#define DEFAULT_IPC_LOG_LEVEL DEBUG_LOG
 
 enum log_level cnss_kernel_log_level = DEFAULT_KERNEL_LOG_LEVEL;
 
@@ -38,8 +38,14 @@ static u32 cnss_get_ipc_log_level(void)
 	return cnss_ipc_log_level;
 }
 #else
-static int cnss_set_ipc_log_level(int val) { return -EINVAL; }
-static u32 cnss_get_ipc_log_level(void) { return MAX_LOG; }
+static int cnss_set_ipc_log_level(int val)
+{
+	return -EINVAL;
+}
+static u32 cnss_get_ipc_log_level(void)
+{
+	return MAX_LOG;
+}
 #endif
 
 static int cnss_pin_connect_show(struct seq_file *s, void *data)
@@ -66,11 +72,11 @@ static int cnss_pin_connect_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cnss_pin_connect_fops = {
-	.read		= seq_read,
-	.release	= single_release,
-	.open		= cnss_pin_connect_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.release = single_release,
+	.open = cnss_pin_connect_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static int cnss_stats_show_state(struct seq_file *s,
@@ -208,11 +214,11 @@ static int cnss_stats_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cnss_stats_fops = {
-	.read		= seq_read,
-	.release	= single_release,
-	.open		= cnss_stats_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.release = single_release,
+	.open = cnss_stats_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static ssize_t cnss_dev_boot_debug_write(struct file *fp,
@@ -257,9 +263,8 @@ static ssize_t cnss_dev_boot_debug_write(struct file *fp,
 					     CNSS_DRIVER_EVENT_POWER_UP,
 					     CNSS_EVENT_SYNC, NULL);
 	} else if (sysfs_streq(cmd, "shutdown")) {
-		ret = cnss_driver_event_post(plat_priv,
-					     CNSS_DRIVER_EVENT_POWER_DOWN,
-					     0, NULL);
+		ret = cnss_driver_event_post(
+			plat_priv, CNSS_DRIVER_EVENT_POWER_DOWN, 0, NULL);
 		clear_bit(CNSS_DRIVER_DEBUG, &plat_priv->driver_state);
 	} else if (sysfs_streq(cmd, "assert_host_sol")) {
 		ret = cnss_set_host_sol_value(plat_priv, 1);
@@ -314,13 +319,21 @@ static int cnss_dev_boot_debug_show(struct seq_file *s, void *data)
 	seq_puts(s, "download: download FW and do QMI handshake with FW\n");
 	seq_puts(s, "linkup: bring up PCIe link\n");
 	seq_puts(s, "linkdown: bring down PCIe link\n");
-	seq_puts(s, "powerup: full power on sequence to boot device, download FW and do QMI handshake with FW\n");
+	seq_puts(
+		s,
+		"powerup: full power on sequence to boot device, download FW and "
+		"do QMI handshake with FW\n");
 	seq_puts(s, "shutdown: full power off sequence to shutdown device\n");
 	seq_puts(s, "assert: trigger firmware assert\n");
 	seq_puts(s, "set_cbc_done: Set cold boot calibration done status\n");
 	seq_puts(s, "\npdc_update usage:");
-	seq_puts(s, "1. echo pdc_update {class: wlan_pdc ss: <pdc_ss>, res: <vreg>.<mode>, <seq>: <val>} > <debugfs_path>/cnss/dev_boot\n");
-	seq_puts(s, "2. echo pdc_update {class: wlan_pdc ss: <pdc_ss>, res: pdc, enable: <val>} > <debugfs_path>/cnss/dev_boot\n");
+	seq_puts(
+		s,
+		"1. echo pdc_update {class: wlan_pdc ss: <pdc_ss>, res: "
+		"<vreg>.<mode>, <seq>: <val>} > <debugfs_path>/cnss/dev_boot\n");
+	seq_puts(s,
+		 "2. echo pdc_update {class: wlan_pdc ss: <pdc_ss>, res: pdc, "
+		 "enable: <val>} > <debugfs_path>/cnss/dev_boot\n");
 
 	return 0;
 }
@@ -331,12 +344,12 @@ static int cnss_dev_boot_debug_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cnss_dev_boot_debug_fops = {
-	.read		= seq_read,
-	.write		= cnss_dev_boot_debug_write,
-	.release	= single_release,
-	.open		= cnss_dev_boot_debug_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = cnss_dev_boot_debug_write,
+	.release = single_release,
+	.open = cnss_dev_boot_debug_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static int cnss_reg_read_debug_show(struct seq_file *s, void *data)
@@ -345,22 +358,31 @@ static int cnss_reg_read_debug_show(struct seq_file *s, void *data)
 
 	mutex_lock(&plat_priv->dev_lock);
 	if (!plat_priv->diag_reg_read_buf) {
-		seq_puts(s, "\nUsage: echo <mem_type> <offset> <data_len> > <debugfs_path>/cnss/reg_read\n");
-		seq_puts(s, "Use mem_type = 0xff for register read by IO access, data_len will be ignored\n");
-		seq_puts(s, "Use mem_type = 0xfe for register read by raw IO access which skips sanity checks, data_len will be ignored\n");
+		seq_puts(s, "\nUsage: echo <mem_type> <offset> <data_len> > "
+			    "<debugfs_path>/cnss/reg_read\n");
+		seq_puts(
+			s,
+			"Use mem_type = 0xff for register read by IO access, data_len "
+			"will be ignored\n");
+		seq_puts(
+			s,
+			"Use mem_type = 0xfe for register read by raw IO access which "
+			"skips sanity checks, data_len will be ignored\n");
 		seq_puts(s, "Use other mem_type for register read by QMI\n");
 		mutex_unlock(&plat_priv->dev_lock);
 		return 0;
 	}
 
-	seq_printf(s, "\nRegister read, address: 0x%x memory type: 0x%x length: 0x%x\n\n",
-		   plat_priv->diag_reg_read_addr,
-		   plat_priv->diag_reg_read_mem_type,
-		   plat_priv->diag_reg_read_len);
+	seq_printf(
+		s,
+		"\nRegister read, address: 0x%x memory type: 0x%x length: 0x%x\n\n",
+		plat_priv->diag_reg_read_addr,
+		plat_priv->diag_reg_read_mem_type,
+		plat_priv->diag_reg_read_len);
 
 	seq_hex_dump(s, "", DUMP_PREFIX_OFFSET, 32, 4,
-		     plat_priv->diag_reg_read_buf,
-		     plat_priv->diag_reg_read_len, false);
+		     plat_priv->diag_reg_read_buf, plat_priv->diag_reg_read_len,
+		     false);
 
 	plat_priv->diag_reg_read_len = 0;
 	kfree(plat_priv->diag_reg_read_buf);
@@ -421,9 +443,9 @@ static ssize_t cnss_reg_read_debug_write(struct file *fp,
 
 	if (mem_type == MMIO_REG_ACCESS_MEM_TYPE ||
 	    mem_type == MMIO_REG_RAW_ACCESS_MEM_TYPE) {
-		ret = cnss_bus_debug_reg_read(plat_priv, reg_offset, &reg_val,
-					      mem_type ==
-					      MMIO_REG_RAW_ACCESS_MEM_TYPE);
+		ret = cnss_bus_debug_reg_read(
+			plat_priv, reg_offset, &reg_val,
+			mem_type == MMIO_REG_RAW_ACCESS_MEM_TYPE);
 		if (ret)
 			return ret;
 		cnss_pr_dbg("Read 0x%x from register offset 0x%x\n", reg_val,
@@ -446,9 +468,8 @@ static ssize_t cnss_reg_read_debug_write(struct file *fp,
 		return -ENOMEM;
 	}
 
-	ret = cnss_wlfw_athdiag_read_send_sync(plat_priv, reg_offset,
-					       mem_type, data_len,
-					       reg_buf);
+	ret = cnss_wlfw_athdiag_read_send_sync(plat_priv, reg_offset, mem_type,
+					       data_len, reg_buf);
 	if (ret) {
 		kfree(reg_buf);
 		mutex_unlock(&plat_priv->dev_lock);
@@ -470,18 +491,22 @@ static int cnss_reg_read_debug_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cnss_reg_read_debug_fops = {
-	.read		= seq_read,
-	.write		= cnss_reg_read_debug_write,
-	.open		= cnss_reg_read_debug_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = cnss_reg_read_debug_write,
+	.open = cnss_reg_read_debug_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static int cnss_reg_write_debug_show(struct seq_file *s, void *data)
 {
-	seq_puts(s, "\nUsage: echo <mem_type> <offset> <reg_val> > <debugfs_path>/cnss/reg_write\n");
+	seq_puts(s, "\nUsage: echo <mem_type> <offset> <reg_val> > "
+		    "<debugfs_path>/cnss/reg_write\n");
 	seq_puts(s, "Use mem_type = 0xff for register write by IO access\n");
-	seq_puts(s, "Use mem_type = 0xfe for register write by raw IO access which skips sanity checks\n");
+	seq_puts(
+		s,
+		"Use mem_type = 0xfe for register write by raw IO access which "
+		"skips sanity checks\n");
 	seq_puts(s, "Use other mem_type for register write by QMI\n");
 
 	return 0;
@@ -536,9 +561,9 @@ static ssize_t cnss_reg_write_debug_write(struct file *fp,
 
 	if (mem_type == MMIO_REG_ACCESS_MEM_TYPE ||
 	    mem_type == MMIO_REG_RAW_ACCESS_MEM_TYPE) {
-		ret = cnss_bus_debug_reg_write(plat_priv, reg_offset, reg_val,
-					       mem_type ==
-					       MMIO_REG_RAW_ACCESS_MEM_TYPE);
+		ret = cnss_bus_debug_reg_write(
+			plat_priv, reg_offset, reg_val,
+			mem_type == MMIO_REG_RAW_ACCESS_MEM_TYPE);
 		if (ret)
 			return ret;
 		cnss_pr_dbg("Wrote 0x%x to register offset 0x%x\n", reg_val,
@@ -552,8 +577,7 @@ static ssize_t cnss_reg_write_debug_write(struct file *fp,
 	}
 
 	ret = cnss_wlfw_athdiag_write_send_sync(plat_priv, reg_offset, mem_type,
-						sizeof(u32),
-						(u8 *)&reg_val);
+						sizeof(u32), (u8 *)&reg_val);
 	if (ret)
 		return ret;
 
@@ -566,11 +590,11 @@ static int cnss_reg_write_debug_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cnss_reg_write_debug_fops = {
-	.read		= seq_read,
-	.write		= cnss_reg_write_debug_write,
-	.open		= cnss_reg_write_debug_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = cnss_reg_write_debug_write,
+	.open = cnss_reg_write_debug_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static ssize_t cnss_runtime_pm_debug_write(struct file *fp,
@@ -646,7 +670,8 @@ static int cnss_runtime_pm_debug_show(struct seq_file *s, void *data)
 	if (!pci_priv)
 		return -ENODEV;
 
-	seq_puts(s, "\nUsage: echo <action> > <debugfs_path>/cnss/runtime_pm\n");
+	seq_puts(s,
+		 "\nUsage: echo <action> > <debugfs_path>/cnss/runtime_pm\n");
 	seq_puts(s, "<action> can be one of below:\n");
 	seq_puts(s, "usage_count: get runtime PM usage count\n");
 	seq_puts(s, "reques_resume: do async runtime PM resume\n");
@@ -664,8 +689,8 @@ static int cnss_runtime_pm_debug_show(struct seq_file *s, void *data)
 		   atomic_read(&pci_priv->pm_stats.runtime_get));
 	seq_printf(s, "%s: %u\n", "put count",
 		   atomic_read(&pci_priv->pm_stats.runtime_put));
-	seq_printf(s, "%-10s%-10s%-10s%-15s%-15s\n",
-		   "id:", "get",  "put", "get time(us)", "put time(us)");
+	seq_printf(s, "%-10s%-10s%-10s%-15s%-15s\n", "id:", "get", "put",
+		   "get time(us)", "put time(us)");
 	for (i = 0; i < RTPM_ID_MAX; i++) {
 		seq_printf(s, "%d%-9s", i, ":");
 		seq_printf(s, "%-10d",
@@ -687,11 +712,11 @@ static int cnss_runtime_pm_debug_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations cnss_runtime_pm_debug_fops = {
-	.read		= seq_read,
-	.write		= cnss_runtime_pm_debug_write,
-	.open		= cnss_runtime_pm_debug_open,
-	.owner		= THIS_MODULE,
-	.llseek		= seq_lseek,
+	.read = seq_read,
+	.write = cnss_runtime_pm_debug_write,
+	.open = cnss_runtime_pm_debug_open,
+	.owner = THIS_MODULE,
+	.llseek = seq_lseek,
 };
 
 static int process_drv(struct cnss_plat_data *plat_priv, bool enabled)
@@ -799,8 +824,8 @@ static int cnss_show_quirks_state(struct seq_file *s,
 	unsigned long state;
 
 	seq_printf(s, "quirks: 0x%lx (", plat_priv->ctrl_params.quirks);
-	for (i = 0, state = plat_priv->ctrl_params.quirks;
-	     state != 0; state >>= 1, i++) {
+	for (i = 0, state = plat_priv->ctrl_params.quirks; state != 0;
+	     state >>= 1, i++) {
 		if (!(state & 0x1))
 			continue;
 		if (skip++)
@@ -862,13 +887,16 @@ static int cnss_control_params_debug_show(struct seq_file *s, void *data)
 	struct cnss_plat_data *cnss_priv = s->private;
 	u32 ipc_log_level;
 
-	seq_puts(s, "\nUsage: echo <params_name> <value> > <debugfs_path>/cnss/control_params\n");
+	seq_puts(s, "\nUsage: echo <params_name> <value> > "
+		    "<debugfs_path>/cnss/control_params\n");
 	seq_puts(s, "<params_name> can be one of below:\n");
 	seq_puts(s, "quirks: Debug quirks for driver\n");
 	seq_puts(s, "mhi_timeout: Timeout for MHI operation in milliseconds\n");
 	seq_puts(s, "qmi_timeout: Timeout for QMI message in milliseconds\n");
 	seq_puts(s, "bdf_type: Type of board data file to be downloaded\n");
-	seq_puts(s, "time_sync_period: Time period to do time sync with device in milliseconds\n");
+	seq_puts(s,
+		 "time_sync_period: Time period to do time sync with device in "
+		 "milliseconds\n");
 
 	seq_puts(s, "\nCurrent value:\n");
 	cnss_show_quirks_state(s, cnss_priv);
@@ -933,11 +961,9 @@ static int cnss_dynamic_feature_show(struct seq_file *s, void *data)
 	return 0;
 }
 
-static int cnss_dynamic_feature_open(struct inode *inode,
-				     struct file *file)
+static int cnss_dynamic_feature_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, cnss_dynamic_feature_show,
-			   inode->i_private);
+	return single_open(file, cnss_dynamic_feature_show, inode->i_private);
 }
 
 static const struct file_operations cnss_dynamic_feature_fops = {
@@ -1111,15 +1137,15 @@ void cnss_debug_ipc_log_print(void *log_ctx, char *process, const char *fn,
 
 static int cnss_ipc_logging_init(void)
 {
-	cnss_ipc_log_context = ipc_log_context_create(CNSS_IPC_LOG_PAGES,
-						      "cnss", 0);
+	cnss_ipc_log_context =
+		ipc_log_context_create(CNSS_IPC_LOG_PAGES, "cnss", 0);
 	if (!cnss_ipc_log_context) {
 		cnss_pr_err("Unable to create IPC log context\n");
 		return -EINVAL;
 	}
 
-	cnss_ipc_log_long_context = ipc_log_context_create(CNSS_IPC_LOG_PAGES,
-							   "cnss-long", 0);
+	cnss_ipc_log_long_context =
+		ipc_log_context_create(CNSS_IPC_LOG_PAGES, "cnss-long", 0);
 	if (!cnss_ipc_log_long_context) {
 		cnss_pr_err("Unable to create IPC long log context\n");
 		ipc_log_context_destroy(cnss_ipc_log_context);
@@ -1142,8 +1168,13 @@ static void cnss_ipc_logging_deinit(void)
 	}
 }
 #else
-static int cnss_ipc_logging_init(void) { return 0; }
-static void cnss_ipc_logging_deinit(void) {}
+static int cnss_ipc_logging_init(void)
+{
+	return 0;
+}
+static void cnss_ipc_logging_deinit(void)
+{
+}
 void cnss_debug_ipc_log_print(void *log_ctx, char *process, const char *fn,
 			      enum log_level kern_log_level,
 			      enum log_level ipc_log_level, char *fmt, ...)

@@ -18,20 +18,20 @@
  * DOC: osif_twt_ext_rsp.c
  *
  */
-#include <wlan_cfg80211.h>
 #include <osif_twt_ext_req.h>
-#include <osif_twt_rsp.h>
 #include <osif_twt_ext_rsp.h>
+#include <osif_twt_rsp.h>
+#include <wlan_cfg80211.h>
+#include <wlan_cm_api.h>
+#include <wlan_cm_ucfg_api.h>
+#include <wlan_cp_stats_ucfg_api.h>
 #include <wlan_objmgr_psoc_obj.h>
 #include <wlan_osif_priv.h>
 #include <wlan_osif_request_manager.h>
-#include <wlan_cm_api.h>
-#include <wlan_twt_ucfg_api.h>
-#include <wlan_cm_ucfg_api.h>
 #include <wlan_reg_ucfg_api.h>
+#include <wlan_twt_ucfg_api.h>
 #include <wlan_twt_ucfg_ext_api.h>
 #include <wlan_twt_ucfg_ext_cfg.h>
-#include <wlan_cp_stats_ucfg_api.h>
 
 /**
  * osif_twt_get_setup_event_len() - Calculates the length of twt
@@ -42,8 +42,7 @@
  *
  * Return: Length of twt setup nl response
  */
-static
-uint32_t osif_twt_get_setup_event_len(bool additional_params_present)
+static uint32_t osif_twt_get_setup_event_len(bool additional_params_present)
 {
 	uint32_t len = 0;
 
@@ -285,8 +284,7 @@ twt_nudge_status_to_vendor_twt_status(enum HOST_TWT_NUDGE_STATUS status)
  * Return: qca_wlan_vendor_twt_setup_resp_type values for valid
  * HOST_TWT_COMMAND value and -EINVAL for invalid value
  */
-static
-int twt_add_cmd_to_vendor_twt_resp_type(enum HOST_TWT_COMMAND type)
+static int twt_add_cmd_to_vendor_twt_resp_type(enum HOST_TWT_COMMAND type)
 {
 	switch (type) {
 	case HOST_TWT_COMMAND_ACCEPT_TWT:
@@ -346,7 +344,7 @@ osif_twt_setup_pack_resp_nlmsg(struct sk_buff *reply_skb,
 
 	sp_offset_tsf = event->additional_params.sp_tsf_us_hi;
 	sp_offset_tsf = (sp_offset_tsf << 32) |
-			 event->additional_params.sp_tsf_us_lo;
+			event->additional_params.sp_tsf_us_lo;
 
 	attr = QCA_WLAN_VENDOR_ATTR_TWT_SETUP_FLOW_ID;
 	if (nla_put_u8(reply_skb, attr, event->params.dialog_id)) {
@@ -355,8 +353,8 @@ osif_twt_setup_pack_resp_nlmsg(struct sk_buff *reply_skb,
 	}
 
 	attr = QCA_WLAN_VENDOR_ATTR_TWT_SETUP_STATUS;
-	vendor_status = twt_add_status_to_vendor_twt_status(
-							event->params.status);
+	vendor_status =
+		twt_add_status_to_vendor_twt_status(event->params.status);
 	if (nla_put_u8(reply_skb, attr, vendor_status)) {
 		osif_err("Failed to put setup status");
 		return QDF_STATUS_E_FAILURE;
@@ -368,7 +366,7 @@ osif_twt_setup_pack_resp_nlmsg(struct sk_buff *reply_skb,
 	}
 
 	response_type = twt_add_cmd_to_vendor_twt_resp_type(
-					event->additional_params.twt_cmd);
+		event->additional_params.twt_cmd);
 	if (response_type == -EINVAL) {
 		osif_err("Invalid response type from firmware");
 		return QDF_STATUS_E_FAILURE;
@@ -405,7 +403,7 @@ osif_twt_setup_pack_resp_nlmsg(struct sk_buff *reply_skb,
 	}
 
 	wake_intvl_mantis_tu = (event->additional_params.wake_intvl_us /
-				 TWT_WAKE_INTVL_MULTIPLICATION_FACTOR);
+				TWT_WAKE_INTVL_MULTIPLICATION_FACTOR);
 
 	attr = QCA_WLAN_VENDOR_ATTR_TWT_SETUP_WAKE_INTVL_MANTISSA;
 	if (nla_put_u32(reply_skb, attr, wake_intvl_mantis_tu)) {
@@ -413,7 +411,7 @@ osif_twt_setup_pack_resp_nlmsg(struct sk_buff *reply_skb,
 		return QDF_STATUS_E_FAILURE;
 	}
 	osif_debug("Send mantissa_us:%d, mantissa_tu:%d to userspace",
-		  wake_intvl_mantis_us, wake_intvl_mantis_tu);
+		   wake_intvl_mantis_us, wake_intvl_mantis_tu);
 
 	attr = QCA_WLAN_VENDOR_ATTR_TWT_SETUP_WAKE_INTVL_EXP;
 	if (nla_put_u8(reply_skb, attr, 0)) {
@@ -528,8 +526,8 @@ osif_twt_notify_pack_nlmsg(struct sk_buff *reply_skb,
 
 	if (event->status != HOST_TWT_NOTIFY_EVENT_READY) {
 		attr = QCA_WLAN_VENDOR_ATTR_CONFIG_TWT_NOTIFY_STATUS;
-		vendor_status = twt_notify_status_to_vendor_twt_status(
-								event->status);
+		vendor_status =
+			twt_notify_status_to_vendor_twt_status(event->status);
 		if (nla_put_u8(reply_skb, attr, vendor_status)) {
 			osif_err("Failed to put notify status");
 			return QDF_STATUS_E_FAILURE;
@@ -547,9 +545,9 @@ osif_twt_notify_pack_nlmsg(struct sk_buff *reply_skb,
  * Return: QDF_STATUS_SUCCESS on Success, other QDF_STATUS error codes
  * on failure
  */
-static QDF_STATUS
-osif_twt_teardown_pack_resp_nlmsg(struct sk_buff *reply_skb,
-			     struct twt_del_dialog_complete_event_param *event)
+static QDF_STATUS osif_twt_teardown_pack_resp_nlmsg(
+	struct sk_buff *reply_skb,
+	struct twt_del_dialog_complete_event_param *event)
 {
 	struct nlattr *config_attr;
 	enum qca_wlan_vendor_twt_status vendor_status;
@@ -601,9 +599,9 @@ osif_twt_teardown_pack_resp_nlmsg(struct sk_buff *reply_skb,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_twt_resume_pack_resp_nlmsg(struct sk_buff *reply_skb,
-			   struct twt_resume_dialog_complete_event_param *event)
+static QDF_STATUS osif_twt_resume_pack_resp_nlmsg(
+	struct sk_buff *reply_skb,
+	struct twt_resume_dialog_complete_event_param *event)
 {
 	struct nlattr *config_attr;
 	int vendor_status, attr;
@@ -654,9 +652,9 @@ osif_twt_resume_pack_resp_nlmsg(struct sk_buff *reply_skb,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_twt_nudge_pack_resp_nlmsg(struct sk_buff *reply_skb,
-			      struct twt_nudge_dialog_complete_event_param *event)
+static QDF_STATUS osif_twt_nudge_pack_resp_nlmsg(
+	struct sk_buff *reply_skb,
+	struct twt_nudge_dialog_complete_event_param *event)
 {
 	struct nlattr *config_attr;
 	int vendor_status, attr;
@@ -683,9 +681,9 @@ osif_twt_nudge_pack_resp_nlmsg(struct sk_buff *reply_skb,
 
 	tsf_val = event->next_twt_tsf_us_hi;
 	tsf_val = (tsf_val << 32) | event->next_twt_tsf_us_lo;
-	if (wlan_cfg80211_nla_put_u64(reply_skb,
-				 QCA_WLAN_VENDOR_ATTR_TWT_NUDGE_WAKE_TIME_TSF,
-				 tsf_val)) {
+	if (wlan_cfg80211_nla_put_u64(
+		    reply_skb, QCA_WLAN_VENDOR_ATTR_TWT_NUDGE_WAKE_TIME_TSF,
+		    tsf_val)) {
 		osif_err("get_params failed to put TSF Value");
 		return QDF_STATUS_E_INVAL;
 	}
@@ -726,11 +724,11 @@ osif_twt_send_get_capabilities_response(struct wlan_objmgr_psoc *psoc,
 	int ret;
 
 	/*
-	 * Userspace will query the TWT get capabilities before
-	 * issuing a get capabilities request. If the STA is
-	 * connected, then check the "enable_twt_24ghz" ini
-	 * value to advertise the TWT requestor capability.
-	 */
+   * Userspace will query the TWT get capabilities before
+   * issuing a get capabilities request. If the STA is
+   * connected, then check the "enable_twt_24ghz" ini
+   * value to advertise the TWT requestor capability.
+   */
 	connected_band = ucfg_cm_get_connected_band(vdev);
 	ucfg_twt_cfg_get_24ghz_enabled(psoc, &val);
 
@@ -740,8 +738,8 @@ osif_twt_send_get_capabilities_response(struct wlan_objmgr_psoc *psoc,
 
 	/* fill the self_capability bitmap  */
 	ucfg_twt_cfg_get_requestor(psoc, &twt_req);
-	osif_debug("is_twt_24ghz_allowed: %d twt_req: %d",
-		   is_twt_24ghz_allowed, twt_req);
+	osif_debug("is_twt_24ghz_allowed: %d twt_req: %d", is_twt_24ghz_allowed,
+		   twt_req);
 	if (twt_req && is_twt_24ghz_allowed)
 		self_cap |= QCA_WLAN_TWT_CAPA_REQUESTOR;
 
@@ -765,14 +763,13 @@ osif_twt_send_get_capabilities_response(struct wlan_objmgr_psoc *psoc,
 	osif_debug("self_cap: 0x%x peer_cap: 0x%x", self_cap, peer_cap);
 	osif_priv = wlan_vdev_get_ospriv(vdev);
 	/*
-	 * Length of attribute QCA_WLAN_VENDOR_ATTR_TWT_CAPABILITIES_SELF &
-	 * QCA_WLAN_VENDOR_ATTR_TWT_CAPABILITIES_PEER
-	 */
+   * Length of attribute QCA_WLAN_VENDOR_ATTR_TWT_CAPABILITIES_SELF &
+   * QCA_WLAN_VENDOR_ATTR_TWT_CAPABILITIES_PEER
+   */
 	skb_len += 2 * nla_total_size(sizeof(u16)) + NLA_HDRLEN;
 
 	reply_skb = wlan_cfg80211_vendor_cmd_alloc_reply_skb(
-							osif_priv->wdev->wiphy,
-							skb_len);
+		osif_priv->wdev->wiphy, skb_len);
 	if (!reply_skb) {
 		osif_err("TWT: get_caps alloc reply skb failed");
 		return QDF_STATUS_E_NOMEM;
@@ -787,14 +784,14 @@ osif_twt_send_get_capabilities_response(struct wlan_objmgr_psoc *psoc,
 	}
 
 	if (nla_put_u16(reply_skb, QCA_WLAN_VENDOR_ATTR_TWT_CAPABILITIES_SELF,
-	    self_cap)) {
+			self_cap)) {
 		osif_err("TWT: Failed to fill capabilities");
 		qdf_status = QDF_STATUS_E_FAILURE;
 		goto free_skb;
 	}
 
 	if (nla_put_u16(reply_skb, QCA_WLAN_VENDOR_ATTR_TWT_CAPABILITIES_PEER,
-	    peer_cap)) {
+			peer_cap)) {
 		osif_err("TWT: Failed to fill capabilities");
 		qdf_status = QDF_STATUS_E_FAILURE;
 		goto free_skb;
@@ -811,9 +808,8 @@ free_skb:
 	return qdf_status;
 }
 
-static void
-osif_twt_setup_response(struct wlan_objmgr_psoc *psoc,
-			struct twt_add_dialog_complete_event *event)
+static void osif_twt_setup_response(struct wlan_objmgr_psoc *psoc,
+				    struct twt_add_dialog_complete_event *event)
 {
 	struct sk_buff *twt_vendor_event;
 	struct wireless_dev *wdev;
@@ -823,9 +819,8 @@ osif_twt_setup_response(struct wlan_objmgr_psoc *psoc,
 	QDF_STATUS status;
 	bool additional_params_present = false;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						event->params.vdev_id,
-						WLAN_TWT_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, event->params.vdev_id,
+						    WLAN_TWT_ID);
 	if (!vdev) {
 		osif_err("vdev is null");
 		return;
@@ -848,9 +843,8 @@ osif_twt_setup_response(struct wlan_objmgr_psoc *psoc,
 
 	data_len = osif_twt_get_setup_event_len(additional_params_present);
 	twt_vendor_event = wlan_cfg80211_vendor_event_alloc(
-				wdev->wiphy, wdev, data_len,
-				QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX,
-				GFP_KERNEL);
+		wdev->wiphy, wdev, data_len,
+		QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX, GFP_KERNEL);
 	if (!twt_vendor_event) {
 		osif_err("TWT: Alloc setup resp skb fail");
 		goto fail;
@@ -880,8 +874,8 @@ osif_twt_teardown_response(struct wlan_objmgr_psoc *psoc,
 	size_t data_len;
 	QDF_STATUS status;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						event->vdev_id, WLAN_TWT_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, event->vdev_id,
+						    WLAN_TWT_ID);
 	if (!vdev) {
 		osif_err("vdev is null");
 		return;
@@ -902,9 +896,8 @@ osif_twt_teardown_response(struct wlan_objmgr_psoc *psoc,
 	data_len = osif_twt_get_event_len() + nla_total_size(sizeof(u8));
 	data_len += NLA_HDRLEN;
 	twt_vendor_event = wlan_cfg80211_vendor_event_alloc(
-				wdev->wiphy, wdev, data_len,
-				QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX,
-				GFP_KERNEL);
+		wdev->wiphy, wdev, data_len,
+		QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX, GFP_KERNEL);
 	if (!twt_vendor_event) {
 		osif_err("TWT: Alloc teardown resp skb fail");
 		goto fail;
@@ -930,10 +923,12 @@ osif_twt_setup_complete_cb(struct wlan_objmgr_psoc *psoc,
 {
 	uint32_t vdev_id = event->params.vdev_id;
 
-	osif_debug("TWT: add dialog_id:%d, status:%d vdev_id:%d renego_fail:%d peer mac_addr "
-		  QDF_MAC_ADDR_FMT, event->params.dialog_id,
-		  event->params.status, vdev_id, renego_fail,
-		  QDF_MAC_ADDR_REF(event->params.peer_macaddr.bytes));
+	osif_debug(
+		"TWT: add dialog_id:%d, status:%d vdev_id:%d renego_fail:%d peer "
+		"mac_addr " QDF_MAC_ADDR_FMT,
+		event->params.dialog_id, event->params.status, vdev_id,
+		renego_fail,
+		QDF_MAC_ADDR_REF(event->params.peer_macaddr.bytes));
 
 	osif_twt_setup_response(psoc, event);
 
@@ -949,10 +944,10 @@ osif_twt_teardown_complete_cb(struct wlan_objmgr_psoc *psoc,
 {
 	uint32_t vdev_id = event->vdev_id;
 
-	osif_debug("TWT: del dialog_id:%d status:%d vdev_id:%d peer mac_addr "
-		  QDF_MAC_ADDR_FMT, event->dialog_id,
-		  event->status, vdev_id,
-		  QDF_MAC_ADDR_REF(event->peer_macaddr.bytes));
+	osif_debug("TWT: del dialog_id:%d status:%d vdev_id:%d peer "
+		   "mac_addr " QDF_MAC_ADDR_FMT,
+		   event->dialog_id, event->status, vdev_id,
+		   QDF_MAC_ADDR_REF(event->peer_macaddr.bytes));
 
 	osif_twt_teardown_response(psoc, event);
 
@@ -961,7 +956,7 @@ osif_twt_teardown_complete_cb(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 osif_twt_resume_complete_cb(struct wlan_objmgr_psoc *psoc,
-			   struct twt_resume_dialog_complete_event_param *event)
+			    struct twt_resume_dialog_complete_event_param *event)
 {
 	struct wireless_dev *wdev;
 	struct vdev_osif_priv *osif_priv;
@@ -990,18 +985,17 @@ osif_twt_resume_complete_cb(struct wlan_objmgr_psoc *psoc,
 		goto fail;
 	}
 
-	osif_debug("TWT: resume dialog_id:%d status:%d vdev_id:%d peer macaddr "
-		   QDF_MAC_ADDR_FMT, event->dialog_id,
-		   event->status, vdev_id,
+	osif_debug("TWT: resume dialog_id:%d status:%d vdev_id:%d peer "
+		   "macaddr " QDF_MAC_ADDR_FMT,
+		   event->dialog_id, event->status, vdev_id,
 		   QDF_MAC_ADDR_REF(event->peer_macaddr.bytes));
 
 	data_len = osif_twt_get_event_len() + nla_total_size(sizeof(u8));
 	data_len += NLA_HDRLEN;
 
 	twt_vendor_event = wlan_cfg80211_vendor_event_alloc(
-				wdev->wiphy, wdev, data_len,
-				QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX,
-				GFP_KERNEL);
+		wdev->wiphy, wdev, data_len,
+		QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX, GFP_KERNEL);
 	if (!twt_vendor_event) {
 		osif_err("TWT: Alloc resume resp skb fail");
 		goto fail;
@@ -1030,7 +1024,7 @@ osif_twt_nudge_complete_cb(struct wlan_objmgr_psoc *psoc,
 	uint32_t vdev_id = event->vdev_id;
 	struct sk_buff *twt_vendor_event;
 	size_t data_len;
-	QDF_STATUS  status = QDF_STATUS_E_FAILURE;
+	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, event->vdev_id,
 						    WLAN_TWT_ID);
@@ -1051,9 +1045,9 @@ osif_twt_nudge_complete_cb(struct wlan_objmgr_psoc *psoc,
 		goto fail;
 	}
 
-	osif_debug("TWT: nudge dialog_id:%d status:%d vdev_id:%d peer macaddr "
-		   QDF_MAC_ADDR_FMT, event->dialog_id,
-		   event->status, vdev_id,
+	osif_debug("TWT: nudge dialog_id:%d status:%d vdev_id:%d peer "
+		   "macaddr " QDF_MAC_ADDR_FMT,
+		   event->dialog_id, event->status, vdev_id,
 		   QDF_MAC_ADDR_REF(event->peer_macaddr.bytes));
 
 	data_len = osif_twt_get_event_len() + nla_total_size(sizeof(u8)) +
@@ -1061,9 +1055,8 @@ osif_twt_nudge_complete_cb(struct wlan_objmgr_psoc *psoc,
 	data_len += NLA_HDRLEN;
 
 	twt_vendor_event = wlan_cfg80211_vendor_event_alloc(
-				wdev->wiphy, wdev, data_len,
-				QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX,
-				GFP_KERNEL);
+		wdev->wiphy, wdev, data_len,
+		QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX, GFP_KERNEL);
 	if (!twt_vendor_event) {
 		osif_err("TWT: Alloc nudge resp skb fail");
 		goto fail;
@@ -1080,7 +1073,6 @@ osif_twt_nudge_complete_cb(struct wlan_objmgr_psoc *psoc,
 fail:
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_TWT_ID);
 	return status;
-
 }
 
 /**
@@ -1089,8 +1081,7 @@ fail:
  *
  * Return: Length of twt notify nl response
  */
-static
-uint32_t osif_twt_get_notify_event_len(void)
+static uint32_t osif_twt_get_notify_event_len(void)
 {
 	uint32_t len = 0;
 
@@ -1141,9 +1132,8 @@ osif_twt_notify_complete_cb(struct wlan_objmgr_psoc *psoc,
 	data_len += NLA_HDRLEN;
 
 	twt_vendor_event = wlan_cfg80211_vendor_event_alloc(
-				wdev->wiphy, wdev, data_len,
-				QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX,
-				GFP_KERNEL);
+		wdev->wiphy, wdev, data_len,
+		QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX, GFP_KERNEL);
 	if (!twt_vendor_event) {
 		osif_err("Notify skb alloc failed");
 		status = QDF_STATUS_E_INVAL;
@@ -1214,9 +1204,9 @@ twt_pause_status_to_vendor_twt_status(enum HOST_TWT_PAUSE_STATUS status)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-osif_twt_pause_pack_resp_nlmsg(struct sk_buff *reply_skb,
-			struct twt_pause_dialog_complete_event_param *event)
+static QDF_STATUS osif_twt_pause_pack_resp_nlmsg(
+	struct sk_buff *reply_skb,
+	struct twt_pause_dialog_complete_event_param *event)
 {
 	struct nlattr *config_attr;
 	int vendor_status, attr;
@@ -1291,18 +1281,17 @@ osif_twt_pause_complete_cb(struct wlan_objmgr_psoc *psoc,
 		goto fail;
 	}
 
-	osif_debug("TWT: pause dialog_id:%d status:%d vdev_id:%d peer macaddr "
-		   QDF_MAC_ADDR_FMT, event->dialog_id,
-		   event->status, vdev_id,
+	osif_debug("TWT: pause dialog_id:%d status:%d vdev_id:%d peer "
+		   "macaddr " QDF_MAC_ADDR_FMT,
+		   event->dialog_id, event->status, vdev_id,
 		   QDF_MAC_ADDR_REF(event->peer_macaddr.bytes));
 
 	data_len = osif_twt_get_event_len() + nla_total_size(sizeof(u8));
 	data_len += NLA_HDRLEN;
 
 	twt_vendor_event = wlan_cfg80211_vendor_event_alloc(
-				wdev->wiphy, wdev, data_len,
-				QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX,
-				GFP_KERNEL);
+		wdev->wiphy, wdev, data_len,
+		QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT_INDEX, GFP_KERNEL);
 	if (!twt_vendor_event) {
 		osif_err("TWT: Alloc pause resp skb fail");
 		goto fail;
@@ -1350,7 +1339,7 @@ osif_twt_ack_complete_cb(struct wlan_objmgr_psoc *psoc,
 		osif_request_complete(request);
 	} else {
 		osif_err("Invalid TWT ack. Expected cmd: %d Actual cmd: %d",
-				status_priv->twt_cmd_ack, params->twt_cmd_ack);
+			 status_priv->twt_cmd_ack, params->twt_cmd_ack);
 	}
 
 	osif_request_put(request);
@@ -1363,7 +1352,7 @@ osif_get_session_wake_duration(struct wlan_objmgr_vdev *vdev,
 			       struct qdf_mac_addr *peer_macaddr)
 {
 	struct wlan_objmgr_psoc *psoc;
-	struct twt_session_stats_info params = {0};
+	struct twt_session_stats_info params = { 0 };
 	int num_twt_session = 0;
 
 	psoc = wlan_vdev_get_psoc(vdev);
@@ -1373,8 +1362,8 @@ osif_get_session_wake_duration(struct wlan_objmgr_vdev *vdev,
 	osif_debug("Get_params peer mac_addr " QDF_MAC_ADDR_FMT,
 		   QDF_MAC_ADDR_REF(params.peer_mac.bytes));
 
-	num_twt_session = ucfg_cp_stats_twt_get_peer_session_params(psoc,
-								    &params);
+	num_twt_session =
+		ucfg_cp_stats_twt_get_peer_session_params(psoc, &params);
 	if (num_twt_session)
 		return params.wake_dura_us;
 
@@ -1405,11 +1394,9 @@ twt_get_stats_status_to_vendor_twt_status(enum HOST_TWT_GET_STATS_STATUS status)
  *
  * Return: QDF_STATUS_SUCCESS on success, else other qdf error values
  */
-static QDF_STATUS
-osif_twt_pack_get_stats_resp_nlmsg(struct wlan_objmgr_vdev *vdev,
-				   struct sk_buff *reply_skb,
-				   struct twt_infra_cp_stats_event *params,
-				   uint32_t num_session_stats)
+static QDF_STATUS osif_twt_pack_get_stats_resp_nlmsg(
+	struct wlan_objmgr_vdev *vdev, struct sk_buff *reply_skb,
+	struct twt_infra_cp_stats_event *params, uint32_t num_session_stats)
 {
 	struct nlattr *config_attr, *nla_params;
 	int i, attr;
@@ -1447,9 +1434,8 @@ osif_twt_pack_get_stats_resp_nlmsg(struct wlan_objmgr_vdev *vdev,
 			return QDF_STATUS_E_INVAL;
 		}
 
-		duration = osif_get_session_wake_duration(vdev,
-						params[i].dialog_id,
-						&params[i].peer_macaddr);
+		duration = osif_get_session_wake_duration(
+			vdev, params[i].dialog_id, &params[i].peer_macaddr);
 		attr = QCA_WLAN_VENDOR_ATTR_TWT_STATS_SESSION_WAKE_DURATION;
 		if (nla_put_u32(reply_skb, attr, duration)) {
 			osif_err("get_params failed to put Wake duration");
@@ -1509,8 +1495,8 @@ osif_twt_pack_get_stats_resp_nlmsg(struct wlan_objmgr_vdev *vdev,
 		}
 
 		attr = QCA_WLAN_VENDOR_ATTR_TWT_STATS_STATUS;
-		vendor_status =
-		    twt_get_stats_status_to_vendor_twt_status(params[i].status);
+		vendor_status = twt_get_stats_status_to_vendor_twt_status(
+			params[i].status);
 		if (nla_put_u32(reply_skb, attr, vendor_status)) {
 			osif_err("get_params failed to put status");
 			return QDF_STATUS_E_INVAL;
@@ -1569,8 +1555,8 @@ QDF_STATUS osif_twt_get_stats_response(struct wlan_objmgr_vdev *vdev,
 	}
 
 	skb_len = osif_get_twt_get_stats_event_len();
-	reply_skb = wlan_cfg80211_vendor_cmd_alloc_reply_skb(wdev->wiphy,
-							     skb_len);
+	reply_skb =
+		wlan_cfg80211_vendor_cmd_alloc_reply_skb(wdev->wiphy, skb_len);
 	if (!reply_skb) {
 		osif_err("Get stats - alloc reply_skb failed");
 		return QDF_STATUS_E_NOMEM;
@@ -1587,4 +1573,3 @@ QDF_STATUS osif_twt_get_stats_response(struct wlan_objmgr_vdev *vdev,
 	ret = wlan_cfg80211_vendor_cmd_reply(reply_skb);
 	return qdf_status_from_os_return(ret);
 }
-

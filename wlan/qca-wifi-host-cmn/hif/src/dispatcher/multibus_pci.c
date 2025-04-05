@@ -17,13 +17,13 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "ce_api.h"
+#include "dummy.h"
 #include "hif.h"
+#include "hif_io32.h"
 #include "hif_main.h"
 #include "multibus.h"
 #include "pci_api.h"
-#include "hif_io32.h"
-#include "dummy.h"
-#include "ce_api.h"
 
 /**
  * hif_initialize_pci_ops() - initialize the pci ops
@@ -64,7 +64,7 @@ QDF_STATUS hif_initialize_pci_ops(struct hif_softc *hif_sc)
 	bus_ops->hif_shutdown_device = &hif_ce_stop;
 	bus_ops->hif_stop = &hif_ce_stop;
 	bus_ops->hif_cancel_deferred_target_sleep =
-					&hif_pci_cancel_deferred_target_sleep;
+		&hif_pci_cancel_deferred_target_sleep;
 	bus_ops->hif_irq_disable = &hif_pci_irq_disable;
 	bus_ops->hif_irq_enable = &hif_pci_irq_enable;
 	bus_ops->hif_dump_registers = &hif_pci_dump_registers;
@@ -73,24 +73,20 @@ QDF_STATUS hif_initialize_pci_ops(struct hif_softc *hif_sc)
 	bus_ops->hif_reg_write32 = &hif_pci_reg_write32;
 	bus_ops->hif_ipa_get_ce_resource = &hif_ce_ipa_get_ce_resource;
 	bus_ops->hif_mask_interrupt_call = &hif_dummy_mask_interrupt_call;
-	bus_ops->hif_enable_power_management =
-		&hif_pci_enable_power_management;
+	bus_ops->hif_enable_power_management = &hif_pci_enable_power_management;
 	bus_ops->hif_disable_power_management =
 		&hif_pci_disable_power_management;
 	bus_ops->hif_grp_irq_configure = &hif_pci_configure_grp_irq;
 	bus_ops->hif_grp_irq_deconfigure = &hif_pci_deconfigure_grp_irq;
-	bus_ops->hif_display_stats =
-		&hif_pci_display_stats;
-	bus_ops->hif_clear_stats =
-		&hif_pci_clear_stats;
+	bus_ops->hif_display_stats = &hif_pci_display_stats;
+	bus_ops->hif_clear_stats = &hif_pci_clear_stats;
 	bus_ops->hif_addr_in_boundary = &hif_pci_addr_in_boundary;
 
 	/* default to legacy mapping handler; override as needed */
 	bus_ops->hif_map_ce_to_irq = &hif_pci_legacy_map_ce_to_irq;
 	bus_ops->hif_needs_bmi = &hif_pci_needs_bmi;
 
-	bus_ops->hif_config_irq_affinity =
-		&hif_pci_config_irq_affinity;
+	bus_ops->hif_config_irq_affinity = &hif_pci_config_irq_affinity;
 	bus_ops->hif_config_irq_by_ceid = &hif_ce_msi_configure_irq_by_ceid;
 	bus_ops->hif_config_irq_clear_cpu_affinity =
 		&hif_pci_config_irq_clear_cpu_affinity;

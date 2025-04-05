@@ -20,8 +20,8 @@
  * DOC: Implement API's specific to P2P component.
  */
 
-#include <wmi_unified_priv.h>
 #include <wmi_unified_p2p_api.h>
+#include <wmi_unified_priv.h>
 
 QDF_STATUS wmi_unified_set_p2pgo_oppps_req(wmi_unified_t wmi_handle,
 					   struct p2p_ps_params *oppps)
@@ -43,8 +43,7 @@ QDF_STATUS wmi_unified_set_p2pgo_noa_req_cmd(wmi_unified_t wmi_handle,
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_p2p_noa_ev_param(wmi_unified_t wmi_handle,
-					void *evt_buf,
+QDF_STATUS wmi_extract_p2p_noa_ev_param(wmi_unified_t wmi_handle, void *evt_buf,
 					struct p2p_noa_info *param)
 {
 	if (!wmi_handle) {
@@ -54,7 +53,7 @@ QDF_STATUS wmi_extract_p2p_noa_ev_param(wmi_unified_t wmi_handle,
 
 	if (wmi_handle->ops->extract_p2p_noa_ev_param)
 		return wmi_handle->ops->extract_p2p_noa_ev_param(
-				wmi_handle, evt_buf, param);
+			wmi_handle, evt_buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -71,7 +70,7 @@ wmi_extract_mac_addr_rx_filter_evt_param(wmi_unified_t wmi_handle,
 
 	if (wmi_handle->ops->extract_mac_addr_rx_filter_evt_param)
 		return wmi_handle->ops->extract_mac_addr_rx_filter_evt_param(
-				wmi_handle, evt_buf, param);
+			wmi_handle, evt_buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -118,9 +117,8 @@ QDF_STATUS wmi_extract_p2p_lo_stop_ev_param(wmi_unified_t wmi_handle,
 
 	if (wmi_handle->ops->extract_p2p_lo_stop_ev_param)
 		return wmi_handle->ops->extract_p2p_lo_stop_ev_param(
-				wmi_handle, evt_buf, param);
+			wmi_handle, evt_buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
 #endif /* End of FEATURE_P2P_LISTEN_OFFLOAD*/
-

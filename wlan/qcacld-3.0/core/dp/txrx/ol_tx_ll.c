@@ -17,43 +17,43 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <qdf_atomic.h>         /* qdf_atomic_inc, etc. */
-#include <qdf_lock.h>           /* qdf_os_spinlock */
-#include <qdf_time.h>           /* qdf_system_ticks, etc. */
-#include <qdf_nbuf.h>           /* qdf_nbuf_t */
-#include <qdf_net_types.h>      /* QDF_NBUF_TX_EXT_TID_INVALID */
+#include <qdf_atomic.h> /* qdf_atomic_inc, etc. */
+#include <qdf_lock.h> /* qdf_os_spinlock */
+#include <qdf_nbuf.h> /* qdf_nbuf_t */
+#include <qdf_net_types.h> /* QDF_NBUF_TX_EXT_TID_INVALID */
+#include <qdf_time.h> /* qdf_system_ticks, etc. */
 
-#include "queue.h"          /* TAILQ */
+#include "queue.h" /* TAILQ */
 #ifdef QCA_COMPUTE_TX_DELAY
-#include <enet.h>               /* ethernet_hdr_t, etc. */
-#include <ipv6_defs.h>          /* ipv6_traffic_class */
+#include <enet.h> /* ethernet_hdr_t, etc. */
+#include <ipv6_defs.h> /* ipv6_traffic_class */
 #endif
 
-#include <ol_txrx_api.h>        /* ol_txrx_vdev_handle, etc. */
-#include <ol_htt_tx_api.h>      /* htt_tx_compl_desc_id */
-#include <ol_txrx_htt_api.h>    /* htt_tx_status */
+#include <ol_htt_tx_api.h> /* htt_tx_compl_desc_id */
+#include <ol_txrx_api.h> /* ol_txrx_vdev_handle, etc. */
+#include <ol_txrx_htt_api.h> /* htt_tx_status */
 
-#include <ol_ctrl_txrx_api.h>
 #include <cdp_txrx_tx_delay.h>
-#include <ol_txrx_types.h>      /* ol_txrx_vdev_t, etc */
-#include <ol_tx_desc.h>         /* ol_tx_desc_find, ol_tx_desc_frame_free */
+#include <ol_ctrl_txrx_api.h>
+#include <ol_tx_desc.h> /* ol_tx_desc_find, ol_tx_desc_frame_free */
+#include <ol_txrx_types.h> /* ol_txrx_vdev_t, etc */
 #ifdef QCA_COMPUTE_TX_DELAY
-#include <ol_tx_classify.h>     /* ol_tx_dest_addr_find */
+#include <ol_tx_classify.h> /* ol_tx_dest_addr_find */
 #endif
-#include <ol_txrx_internal.h>   /* OL_TX_DESC_NO_REFS, etc. */
 #include <ol_osif_txrx_api.h>
-#include <ol_tx.h>              /* ol_tx_reinject */
+#include <ol_tx.h> /* ol_tx_reinject */
 #include <ol_tx_send.h>
+#include <ol_txrx_internal.h> /* OL_TX_DESC_NO_REFS, etc. */
 
-#include <ol_cfg.h>             /* ol_cfg_is_high_latency */
+#include <ol_cfg.h> /* ol_cfg_is_high_latency */
 #include <ol_tx_sched.h>
 #ifdef QCA_SUPPORT_SW_TXRX_ENCAP
-#include <ol_txrx_encap.h>      /* OL_TX_RESTORE_HDR, etc */
+#include <ol_txrx_encap.h> /* OL_TX_RESTORE_HDR, etc */
 #endif
+#include <cdp_txrx_handle.h>
 #include <ol_tx_queue.h>
 #include <ol_txrx.h>
 #include <pktlog_ac_fmt.h>
-#include <cdp_txrx_handle.h>
 
 void ol_tx_init_pdev(ol_txrx_pdev_handle pdev)
 {
@@ -61,8 +61,8 @@ void ol_tx_init_pdev(ol_txrx_pdev_handle pdev)
 		       &pdev->target_tx_credit);
 }
 
-qdf_nbuf_t ol_tx_reinject(struct ol_txrx_vdev_t *vdev,
-			  qdf_nbuf_t msdu, uint16_t peer_id)
+qdf_nbuf_t ol_tx_reinject(struct ol_txrx_vdev_t *vdev, qdf_nbuf_t msdu,
+			  uint16_t peer_id)
 {
 	struct ol_tx_desc_t *tx_desc = NULL;
 	struct ol_txrx_msdu_info_t msdu_info;
@@ -94,10 +94,8 @@ qdf_nbuf_t ol_tx_reinject(struct ol_txrx_vdev_t *vdev,
  * succeeds, that guarantees that the target has room to accept
  * the new tx frame.
  */
-struct ol_tx_desc_t *
-ol_tx_prepare_ll(ol_txrx_vdev_handle vdev,
-		 qdf_nbuf_t msdu,
-		 struct ol_txrx_msdu_info_t *msdu_info)
+struct ol_tx_desc_t *ol_tx_prepare_ll(ol_txrx_vdev_handle vdev, qdf_nbuf_t msdu,
+				      struct ol_txrx_msdu_info_t *msdu_info)
 {
 	struct ol_tx_desc_t *tx_desc;
 	struct ol_txrx_pdev_t *pdev = vdev->pdev;
@@ -106,24 +104,20 @@ ol_tx_prepare_ll(ol_txrx_vdev_handle vdev,
 	tx_desc = ol_tx_desc_ll(pdev, vdev, msdu, msdu_info);
 	if (qdf_unlikely(!tx_desc)) {
 		/*
-		 * If TSO packet, free associated
-		 * remaining TSO segment descriptors
-		 */
+     * If TSO packet, free associated
+     * remaining TSO segment descriptors
+     */
 		if (qdf_nbuf_is_tso(msdu))
-			ol_free_remaining_tso_segs(
-					vdev, msdu_info, true);
-		TXRX_STATS_MSDU_LIST_INCR(
-				pdev, tx.dropped.host_reject, msdu);
+			ol_free_remaining_tso_segs(vdev, msdu_info, true);
+		TXRX_STATS_MSDU_LIST_INCR(pdev, tx.dropped.host_reject, msdu);
 		return NULL;
 	}
 
 	return tx_desc;
 }
 
-qdf_nbuf_t
-ol_tx_non_std_ll(struct ol_txrx_vdev_t *vdev,
-		 enum ol_tx_spec tx_spec,
-		 qdf_nbuf_t msdu_list)
+qdf_nbuf_t ol_tx_non_std_ll(struct ol_txrx_vdev_t *vdev,
+			    enum ol_tx_spec tx_spec, qdf_nbuf_t msdu_list)
 {
 	qdf_nbuf_t msdu = msdu_list;
 	htt_pdev_handle htt_pdev = vdev->pdev->htt_pdev;
@@ -133,11 +127,11 @@ ol_tx_non_std_ll(struct ol_txrx_vdev_t *vdev,
 	msdu_info.htt.action.tx_comp_req = 0;
 
 	/*
-	 * The msdu_list variable could be used instead of the msdu var,
-	 * but just to clarify which operations are done on a single MSDU
-	 * vs. a list of MSDUs, use a distinct variable for single MSDUs
-	 * within the list.
-	 */
+   * The msdu_list variable could be used instead of the msdu var,
+   * but just to clarify which operations are done on a single MSDU
+   * vs. a list of MSDUs, use a distinct variable for single MSDUs
+   * within the list.
+   */
 	while (msdu) {
 		qdf_nbuf_t next;
 		struct ol_tx_desc_t *tx_desc = NULL;
@@ -151,10 +145,10 @@ ol_tx_non_std_ll(struct ol_txrx_vdev_t *vdev,
 			return msdu;
 
 		/*
-		 * The netbuf may get linked into a different list inside the
-		 * ol_tx_send function, so store the next pointer before the
-		 * tx_send call.
-		 */
+     * The netbuf may get linked into a different list inside the
+     * ol_tx_send function, so store the next pointer before the
+     * tx_send call.
+     */
 		next = qdf_nbuf_next(msdu);
 
 		if (tx_spec != OL_TX_SPEC_STD) {
@@ -177,65 +171,60 @@ ol_tx_non_std_ll(struct ol_txrx_vdev_t *vdev,
 			}
 		}
 		/*
-		 * If debug display is enabled, show the meta-data being
-		 * downloaded to the target via the HTT tx descriptor.
-		 */
+     * If debug display is enabled, show the meta-data being
+     * downloaded to the target via the HTT tx descriptor.
+     */
 		htt_tx_desc_display(tx_desc->htt_tx_desc);
 		ol_tx_send(vdev->pdev, tx_desc, msdu, vdev->vdev_id);
 		msdu = next;
 	}
-	return NULL;            /* all MSDUs were accepted */
+	return NULL; /* all MSDUs were accepted */
 }
 
 void ol_tx_trace_pkt(qdf_nbuf_t skb, uint16_t msdu_id, uint8_t vdev_id,
 		     enum QDF_OPMODE op_mode)
 {
-	DPTRACE(qdf_dp_trace_ptr(skb,
-				 QDF_DP_TRACE_TXRX_FAST_PACKET_PTR_RECORD,
-				 QDF_TRACE_DEFAULT_PDEV_ID,
-				 qdf_nbuf_data_addr(skb),
-				 sizeof(qdf_nbuf_data(skb)),
-				 msdu_id, vdev_id, 0,
-				 op_mode));
+	DPTRACE(qdf_dp_trace_ptr(
+		skb, QDF_DP_TRACE_TXRX_FAST_PACKET_PTR_RECORD,
+		QDF_TRACE_DEFAULT_PDEV_ID, qdf_nbuf_data_addr(skb),
+		sizeof(qdf_nbuf_data(skb)), msdu_id, vdev_id, 0, op_mode));
 
 	qdf_dp_trace_log_pkt(vdev_id, skb, QDF_TX, QDF_TRACE_DEFAULT_PDEV_ID,
 			     op_mode);
 
 	DPTRACE(qdf_dp_trace_data_pkt(skb, QDF_TRACE_DEFAULT_PDEV_ID,
-				      QDF_DP_TRACE_TX_PACKET_RECORD,
-				      msdu_id, QDF_TX));
+				      QDF_DP_TRACE_TX_PACKET_RECORD, msdu_id,
+				      QDF_TX));
 }
 
 #if defined(HELIUMPLUS)
 void ol_txrx_dump_frag_desc(char *msg, struct ol_tx_desc_t *tx_desc)
 {
-	uint32_t                *frag_ptr_i_p;
-	int                     i;
+	uint32_t *frag_ptr_i_p;
+	int i;
 
-	ol_txrx_err("OL TX Descriptor 0x%pK msdu_id %d",
-		    tx_desc, tx_desc->id);
+	ol_txrx_err("OL TX Descriptor 0x%pK msdu_id %d", tx_desc, tx_desc->id);
 	ol_txrx_err("HTT TX Descriptor vaddr: 0x%pK paddr: %pad",
 		    tx_desc->htt_tx_desc, &tx_desc->htt_tx_desc_paddr);
 	ol_txrx_err("Fragment Descriptor 0x%pK (paddr=%pad)",
 		    tx_desc->htt_frag_desc, &tx_desc->htt_frag_desc_paddr);
 
 	/*
-	 * it looks from htt_tx_desc_frag() that tx_desc->htt_frag_desc
-	 * is already de-referrable (=> in virtual address space)
-	 */
+   * it looks from htt_tx_desc_frag() that tx_desc->htt_frag_desc
+   * is already de-referrable (=> in virtual address space)
+   */
 	frag_ptr_i_p = tx_desc->htt_frag_desc;
 
 	/* Dump 6 words of TSO flags */
-	print_hex_dump(KERN_DEBUG, "MLE Desc:TSO Flags:  ",
-		       DUMP_PREFIX_NONE, 8, 4,
-		       frag_ptr_i_p, 24, true);
+	print_hex_dump(KERN_DEBUG, "MLE Desc:TSO Flags:  ", DUMP_PREFIX_NONE, 8,
+		       4, frag_ptr_i_p, 24, true);
 
 	frag_ptr_i_p += 6; /* Skip 6 words of TSO flags */
 
 	i = 0;
 	while (*frag_ptr_i_p) {
-		print_hex_dump(KERN_DEBUG, "MLE Desc:Frag Ptr:  ",
-			       DUMP_PREFIX_NONE, 8, 4,
+		print_hex_dump(KERN_DEBUG,
+			       "MLE Desc:Frag Ptr:  ", DUMP_PREFIX_NONE, 8, 4,
 			       frag_ptr_i_p, 8, true);
 		i++;
 		if (i > 5) /* max 6 times: frag_ptr0 to frag_ptr5 */
@@ -247,11 +236,9 @@ void ol_txrx_dump_frag_desc(char *msg, struct ol_tx_desc_t *tx_desc)
 #endif /* HELIUMPLUS */
 
 struct ol_tx_desc_t *
-ol_txrx_mgmt_tx_desc_alloc(
-	struct ol_txrx_pdev_t *pdev,
-	struct ol_txrx_vdev_t *vdev,
-	qdf_nbuf_t tx_mgmt_frm,
-	struct ol_txrx_msdu_info_t *tx_msdu_info)
+ol_txrx_mgmt_tx_desc_alloc(struct ol_txrx_pdev_t *pdev,
+			   struct ol_txrx_vdev_t *vdev, qdf_nbuf_t tx_mgmt_frm,
+			   struct ol_txrx_msdu_info_t *tx_msdu_info)
 {
 	struct ol_tx_desc_t *tx_desc;
 
@@ -259,51 +246,46 @@ ol_txrx_mgmt_tx_desc_alloc(
 	tx_msdu_info->htt.action.tx_comp_req = 0;
 	tx_desc = ol_tx_desc_ll(pdev, vdev, tx_mgmt_frm, tx_msdu_info);
 	/* FIX THIS -
-	 * The FW currently has trouble using the host's fragments table
-	 * for management frames.  Until this is fixed, rather than
-	 * specifying the fragment table to the FW, specify just the
-	 * address of the initial fragment.
-	 */
+   * The FW currently has trouble using the host's fragments table
+   * for management frames.  Until this is fixed, rather than
+   * specifying the fragment table to the FW, specify just the
+   * address of the initial fragment.
+   */
 #if defined(HELIUMPLUS)
 	/* ol_txrx_dump_frag_desc("ol_txrx_mgmt_send(): after ol_tx_desc_ll",
-	 *			  tx_desc);
-	 */
+   *			  tx_desc);
+   */
 #endif /* defined(HELIUMPLUS) */
 	if (tx_desc) {
 		/*
-		 * Following the call to ol_tx_desc_ll, frag 0 is the
-		 * HTT tx HW descriptor, and the frame payload is in
-		 * frag 1.
-		 */
+     * Following the call to ol_tx_desc_ll, frag 0 is the
+     * HTT tx HW descriptor, and the frame payload is in
+     * frag 1.
+     */
 		htt_tx_desc_frags_table_set(
-				pdev->htt_pdev,
-				tx_desc->htt_tx_desc,
-				qdf_nbuf_get_frag_paddr(tx_mgmt_frm, 1),
-				0, 0);
+			pdev->htt_pdev, tx_desc->htt_tx_desc,
+			qdf_nbuf_get_frag_paddr(tx_mgmt_frm, 1), 0, 0);
 #if defined(HELIUMPLUS) && defined(HELIUMPLUS_DEBUG)
-		ol_txrx_dump_frag_desc(
-				"after htt_tx_desc_frags_table_set",
-				tx_desc);
+		ol_txrx_dump_frag_desc("after htt_tx_desc_frags_table_set",
+				       tx_desc);
 #endif /* defined(HELIUMPLUS) */
 	}
 
 	return tx_desc;
 }
 
-int ol_txrx_mgmt_send_frame(
-	struct ol_txrx_vdev_t *vdev,
-	struct ol_tx_desc_t *tx_desc,
-	qdf_nbuf_t tx_mgmt_frm,
-	struct ol_txrx_msdu_info_t *tx_msdu_info,
-	uint16_t chanfreq)
+int ol_txrx_mgmt_send_frame(struct ol_txrx_vdev_t *vdev,
+			    struct ol_tx_desc_t *tx_desc,
+			    qdf_nbuf_t tx_mgmt_frm,
+			    struct ol_txrx_msdu_info_t *tx_msdu_info,
+			    uint16_t chanfreq)
 {
 	struct ol_txrx_pdev_t *pdev = vdev->pdev;
 
 	htt_tx_desc_set_chanfreq(tx_desc->htt_tx_desc, chanfreq);
 	QDF_NBUF_CB_TX_PACKET_TRACK(tx_desc->netbuf) =
-					QDF_NBUF_TX_PKT_MGMT_TRACK;
-	ol_tx_send_nonstd(pdev, tx_desc, tx_mgmt_frm,
-			  htt_pkt_type_mgmt);
+		QDF_NBUF_TX_PKT_MGMT_TRACK;
+	ol_tx_send_nonstd(pdev, tx_desc, tx_mgmt_frm, htt_pkt_type_mgmt);
 
 	return 0;
 }
@@ -330,15 +312,15 @@ void ol_free_remaining_tso_segs(ol_txrx_vdev_handle vdev,
 	}
 
 	/*
-	 * TSO segment are mapped already, therefore,
-	 * 1. unmap the tso segments,
-	 * 2. free tso num segment if it is a last segment, and
-	 * 3. free the tso segments.
-	 */
+   * TSO segment are mapped already, therefore,
+   * 1. unmap the tso segments,
+   * 2. free tso num segment if it is a last segment, and
+   * 3. free the tso segments.
+   */
 
 	if (is_tso_seg_mapping_done) {
 		struct qdf_tso_num_seg_elem_t *tso_num_desc =
-				msdu_info->tso_info.tso_num_seg_list;
+			msdu_info->tso_info.tso_num_seg_list;
 
 		if (qdf_unlikely(!tso_num_desc)) {
 			ol_txrx_err("TSO common info is NULL!");
@@ -349,16 +331,18 @@ void ol_free_remaining_tso_segs(ol_txrx_vdev_handle vdev,
 			qdf_spin_lock_bh(&pdev->tso_seg_pool.tso_mutex);
 			tso_num_desc->num_seg.tso_cmn_num_seg--;
 
-			is_last_seg = (tso_num_desc->num_seg.tso_cmn_num_seg ==
-				       0) ? true : false;
+			is_last_seg =
+				(tso_num_desc->num_seg.tso_cmn_num_seg == 0) ?
+					true :
+					false;
 			qdf_nbuf_unmap_tso_segment(pdev->osdev, free_seg,
 						   is_last_seg);
 			qdf_spin_unlock_bh(&pdev->tso_seg_pool.tso_mutex);
 
 			if (is_last_seg) {
-				ol_tso_num_seg_free(pdev,
-						    msdu_info->tso_info.
-						    tso_num_seg_list);
+				ol_tso_num_seg_free(
+					pdev,
+					msdu_info->tso_info.tso_num_seg_list);
 				msdu_info->tso_info.tso_num_seg_list = NULL;
 			}
 
@@ -369,9 +353,9 @@ void ol_free_remaining_tso_segs(ol_txrx_vdev_handle vdev,
 		}
 	} else {
 		/*
-		 * TSO segment are not mapped therefore,
-		 * free the tso segments only.
-		 */
+     * TSO segment are not mapped therefore,
+     * free the tso segments only.
+     */
 		while (free_seg) {
 			next_seg = free_seg->next;
 			free_seg->force_free = 1;
@@ -390,8 +374,7 @@ void ol_free_remaining_tso_segs(ol_txrx_vdev_handle vdev,
  *
  * Return: 0 - success, >0 - error
  */
-uint8_t ol_tx_prepare_tso(ol_txrx_vdev_handle vdev,
-			  qdf_nbuf_t msdu,
+uint8_t ol_tx_prepare_tso(ol_txrx_vdev_handle vdev, qdf_nbuf_t msdu,
 			  struct ol_txrx_msdu_info_t *msdu_info)
 {
 	msdu_info->tso_info.curr_seg = NULL;
@@ -410,8 +393,7 @@ uint8_t ol_tx_prepare_tso(ol_txrx_vdev_handle vdev,
 						       TSOSEG_LOC_PREPARETSO);
 				tso_seg->next =
 					msdu_info->tso_info.tso_seg_list;
-				msdu_info->tso_info.tso_seg_list
-					= tso_seg;
+				msdu_info->tso_info.tso_seg_list = tso_seg;
 				num_seg--;
 			} else {
 				/* Free above allocated TSO segments till now */
@@ -424,8 +406,8 @@ uint8_t ol_tx_prepare_tso(ol_txrx_vdev_handle vdev,
 		}
 		tso_num_seg = ol_tso_num_seg_alloc(vdev->pdev);
 		if (tso_num_seg) {
-			tso_num_seg->next = msdu_info->tso_info.
-						tso_num_seg_list;
+			tso_num_seg->next =
+				msdu_info->tso_info.tso_num_seg_list;
 			msdu_info->tso_info.tso_num_seg_list = tso_num_seg;
 		} else {
 			/* Free the already allocated num of segments */
@@ -435,8 +417,8 @@ uint8_t ol_tx_prepare_tso(ol_txrx_vdev_handle vdev,
 			return 1;
 		}
 
-		if (qdf_unlikely(!qdf_nbuf_get_tso_info(vdev->pdev->osdev,
-						msdu, &msdu_info->tso_info))) {
+		if (qdf_unlikely(!qdf_nbuf_get_tso_info(
+			    vdev->pdev->osdev, msdu, &msdu_info->tso_info))) {
 			/* Free the already allocated num of segments */
 			msdu_info->tso_info.curr_seg =
 				msdu_info->tso_info.tso_seg_list;
@@ -444,8 +426,7 @@ uint8_t ol_tx_prepare_tso(ol_txrx_vdev_handle vdev,
 			return 1;
 		}
 
-		msdu_info->tso_info.curr_seg =
-			msdu_info->tso_info.tso_seg_list;
+		msdu_info->tso_info.curr_seg = msdu_info->tso_info.tso_seg_list;
 		num_seg = msdu_info->tso_info.num_segs;
 	} else {
 		msdu_info->tso_info.is_tso = 0;
@@ -465,14 +446,13 @@ uint8_t ol_tx_prepare_tso(ol_txrx_vdev_handle vdev,
  * Return: None
  */
 void ol_tx_tso_update_stats(struct ol_txrx_pdev_t *pdev,
-			    struct qdf_tso_info_t  *tso_info, qdf_nbuf_t msdu,
+			    struct qdf_tso_info_t *tso_info, qdf_nbuf_t msdu,
 			    uint32_t tso_msdu_idx)
 {
 	TXRX_STATS_TSO_HISTOGRAM(pdev, tso_info->num_segs);
 	TXRX_STATS_TSO_GSO_SIZE_UPDATE(pdev, tso_msdu_idx,
 				       qdf_nbuf_tcp_tso_size(msdu));
-	TXRX_STATS_TSO_TOTAL_LEN_UPDATE(pdev,
-					tso_msdu_idx, qdf_nbuf_len(msdu));
+	TXRX_STATS_TSO_TOTAL_LEN_UPDATE(pdev, tso_msdu_idx, qdf_nbuf_len(msdu));
 	TXRX_STATS_TSO_NUM_FRAGS_UPDATE(pdev, tso_msdu_idx,
 					qdf_nbuf_get_nr_frags(msdu));
 }
@@ -494,8 +474,7 @@ uint32_t ol_tx_tso_get_stats_idx(struct ol_txrx_pdev_t *pdev)
 	qdf_spin_lock_bh(&pdev->stats.pub.tx.tso.tso_stats_lock);
 	msdu_stats_idx = pdev->stats.pub.tx.tso.tso_info.tso_msdu_idx;
 	pdev->stats.pub.tx.tso.tso_info.tso_msdu_idx++;
-	pdev->stats.pub.tx.tso.tso_info.tso_msdu_idx &=
-					NUM_MAX_TSO_MSDUS_MASK;
+	pdev->stats.pub.tx.tso.tso_info.tso_msdu_idx &= NUM_MAX_TSO_MSDUS_MASK;
 	qdf_spin_unlock_bh(&pdev->stats.pub.tx.tso.tso_stats_lock);
 
 	TXRX_STATS_TSO_RESET_MSDU(pdev, msdu_stats_idx);
@@ -548,9 +527,9 @@ void ol_tso_seg_list_init(struct ol_txrx_pdev_t *pdev, uint32_t num_seg)
 		c_element = c_element->next;
 	}
 	/*
-	 * NULL check for the last c_element of the list or
-	 * first c_element if num_seg is equal to 1.
-	 */
+   * NULL check for the last c_element of the list or
+   * first c_element if num_seg is equal to 1.
+   */
 	if (qdf_unlikely(!c_element)) {
 		ol_txrx_err("c_element NULL for seg %d", i);
 		QDF_BUG(0);
@@ -584,8 +563,7 @@ void ol_tso_seg_list_deinit(struct ol_txrx_pdev_t *pdev)
 	struct qdf_tso_seg_elem_t *temp;
 
 	/* pool size 0 implies that tso seg list is not initialised*/
-	if (!pdev->tso_seg_pool.freelist &&
-	    pdev->tso_seg_pool.pool_size == 0)
+	if (!pdev->tso_seg_pool.freelist && pdev->tso_seg_pool.pool_size == 0)
 		return;
 
 	qdf_spin_lock_bh(&pdev->tso_seg_pool.tso_mutex);
@@ -646,8 +624,8 @@ void ol_tso_num_seg_list_init(struct ol_txrx_pdev_t *pdev, uint32_t num_seg)
 			QDF_BUG(0);
 			pdev->tso_num_seg_pool.num_seg_pool_size = i;
 			pdev->tso_num_seg_pool.num_free = i;
-			qdf_spinlock_create(&pdev->tso_num_seg_pool.
-							tso_num_seg_mutex);
+			qdf_spinlock_create(
+				&pdev->tso_num_seg_pool.tso_num_seg_mutex);
 			return;
 		}
 		c_element->next =
@@ -655,9 +633,9 @@ void ol_tso_num_seg_list_init(struct ol_txrx_pdev_t *pdev, uint32_t num_seg)
 		c_element = c_element->next;
 	}
 	/*
-	 * NULL check for the last c_element of the list or
-	 * first c_element if num_seg is equal to 1.
-	 */
+   * NULL check for the last c_element of the list or
+   * first c_element if num_seg is equal to 1.
+   */
 	if (qdf_unlikely(!c_element)) {
 		ol_txrx_err("c_element NULL for num of seg %d", i);
 		QDF_BUG(0);
@@ -746,39 +724,35 @@ void ol_txrx_stats_display_tso(ol_txrx_pdev_handle pdev)
 		       pdev->stats.pub.tx.tso.tso_hist.pkts_20_plus);
 
 	txrx_nofl_info("TSO History Buffer: Total size %d, current_index %d",
-		       NUM_MAX_TSO_MSDUS,
-		       TXRX_STATS_TSO_MSDU_IDX(pdev));
+		       NUM_MAX_TSO_MSDUS, TXRX_STATS_TSO_MSDU_IDX(pdev));
 
 	for (msdu_idx = 0; msdu_idx < NUM_MAX_TSO_MSDUS; msdu_idx++) {
 		if (TXRX_STATS_TSO_MSDU_TOTAL_LEN(pdev, msdu_idx) == 0)
 			continue;
-		txrx_nofl_info("jumbo pkt idx: %d num segs %d gso_len %d total_len %d nr_frags %d",
-			       msdu_idx,
-			       TXRX_STATS_TSO_MSDU_NUM_SEG(pdev, msdu_idx),
-			       TXRX_STATS_TSO_MSDU_GSO_SIZE(pdev, msdu_idx),
-			       TXRX_STATS_TSO_MSDU_TOTAL_LEN(pdev, msdu_idx),
-			       TXRX_STATS_TSO_MSDU_NR_FRAGS(pdev, msdu_idx));
+		txrx_nofl_info(
+			"jumbo pkt idx: %d num segs %d gso_len %d total_len %d nr_frags %d",
+			msdu_idx, TXRX_STATS_TSO_MSDU_NUM_SEG(pdev, msdu_idx),
+			TXRX_STATS_TSO_MSDU_GSO_SIZE(pdev, msdu_idx),
+			TXRX_STATS_TSO_MSDU_TOTAL_LEN(pdev, msdu_idx),
+			TXRX_STATS_TSO_MSDU_NR_FRAGS(pdev, msdu_idx));
 
 		for (seg_idx = 0;
-			 ((seg_idx < TXRX_STATS_TSO_MSDU_NUM_SEG(pdev,
-			   msdu_idx)) && (seg_idx < NUM_MAX_TSO_SEGS));
-			 seg_idx++) {
+		     ((seg_idx < TXRX_STATS_TSO_MSDU_NUM_SEG(pdev, msdu_idx)) &&
+		      (seg_idx < NUM_MAX_TSO_SEGS));
+		     seg_idx++) {
 			struct qdf_tso_seg_t tso_seg =
-				 TXRX_STATS_TSO_SEG(pdev, msdu_idx, seg_idx);
+				TXRX_STATS_TSO_SEG(pdev, msdu_idx, seg_idx);
 
 			txrx_nofl_info("seg idx: %d", seg_idx);
 			txrx_nofl_info("tso_enable: %d",
 				       tso_seg.tso_flags.tso_enable);
-			txrx_nofl_info("fin %d syn %d rst %d psh %d ack %d urg %d ece %d cwr %d ns %d",
-				       tso_seg.tso_flags.fin,
-				       tso_seg.tso_flags.syn,
-				       tso_seg.tso_flags.rst,
-				       tso_seg.tso_flags.psh,
-				       tso_seg.tso_flags.ack,
-				       tso_seg.tso_flags.urg,
-				       tso_seg.tso_flags.ece,
-				       tso_seg.tso_flags.cwr,
-				       tso_seg.tso_flags.ns);
+			txrx_nofl_info(
+				"fin %d syn %d rst %d psh %d ack %d urg %d ece %d cwr %d ns %d",
+				tso_seg.tso_flags.fin, tso_seg.tso_flags.syn,
+				tso_seg.tso_flags.rst, tso_seg.tso_flags.psh,
+				tso_seg.tso_flags.ack, tso_seg.tso_flags.urg,
+				tso_seg.tso_flags.ece, tso_seg.tso_flags.cwr,
+				tso_seg.tso_flags.ns);
 			txrx_nofl_info("tcp_seq_num: 0x%x ip_id: %d",
 				       tso_seg.tso_flags.tcp_seq_num,
 				       tso_seg.tso_flags.ip_id);

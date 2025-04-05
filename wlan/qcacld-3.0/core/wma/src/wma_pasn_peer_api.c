@@ -19,26 +19,26 @@
  *  This file contains PASN peer related operations.
  */
 
+#include "wma_pasn_peer_api.h"
+#include "init_deinit_lmac.h"
+#include "qdf_mem.h"
+#include "qdf_types.h"
+#include "wifi_pos_api.h"
+#include "wifi_pos_pasn_api.h"
 #include "wma.h"
 #include "wma_api.h"
-#include "wmi_unified_api.h"
-#include "wmi_unified.h"
-#include "qdf_types.h"
-#include "qdf_mem.h"
-#include "wma_types.h"
 #include "wma_internal.h"
-#include "wma_pasn_peer_api.h"
-#include "wifi_pos_pasn_api.h"
-#include "wifi_pos_api.h"
-#include "init_deinit_lmac.h"
+#include "wma_types.h"
+#include "wmi_unified.h"
+#include "wmi_unified_api.h"
 
 QDF_STATUS
 wma_pasn_peer_remove(struct wlan_objmgr_psoc *psoc,
-		     struct qdf_mac_addr *peer_addr,
-		     uint8_t vdev_id,  bool no_fw_peer_delete)
+		     struct qdf_mac_addr *peer_addr, uint8_t vdev_id,
+		     bool no_fw_peer_delete)
 {
 	tp_wma_handle wma = cds_get_context(QDF_MODULE_ID_WMA);
-	struct peer_delete_cmd_params del_param = {0};
+	struct peer_delete_cmd_params del_param = { 0 };
 	QDF_STATUS qdf_status;
 	uint8_t peer_vdev_id;
 
@@ -48,22 +48,23 @@ wma_pasn_peer_remove(struct wlan_objmgr_psoc *psoc,
 	}
 
 	if (!wma_objmgr_peer_exist(wma, peer_addr->bytes, &peer_vdev_id)) {
-		wma_err("peer doesn't exist peer_addr " QDF_MAC_ADDR_FMT " vdevid %d",
+		wma_err("peer doesn't exist peer_addr " QDF_MAC_ADDR_FMT
+			" vdevid %d",
 			QDF_MAC_ADDR_REF(peer_addr->bytes), vdev_id);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	if (peer_vdev_id != vdev_id) {
-		wma_err("peer " QDF_MAC_ADDR_FMT " is on vdev id %d but delete req on vdevid %d",
-			QDF_MAC_ADDR_REF(peer_addr->bytes),
-			peer_vdev_id, vdev_id);
+		wma_err("peer " QDF_MAC_ADDR_FMT
+			" is on vdev id %d but delete req on vdevid %d",
+			QDF_MAC_ADDR_REF(peer_addr->bytes), peer_vdev_id,
+			vdev_id);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	del_param.vdev_id = vdev_id;
 	qdf_status = wmi_unified_peer_delete_send(wma->wmi_handle,
-						  peer_addr->bytes,
-						  &del_param);
+						  peer_addr->bytes, &del_param);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		wma_err("Peer delete could not be sent to firmware %d",
 			qdf_status);
@@ -78,8 +79,7 @@ wma_pasn_peer_remove(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 wma_pasn_peer_create(struct wlan_objmgr_psoc *psoc,
-		     struct qdf_mac_addr *peer_addr,
-		     uint8_t vdev_id)
+		     struct qdf_mac_addr *peer_addr, uint8_t vdev_id)
 {
 	tp_wma_handle wma = cds_get_context(QDF_MODULE_ID_WMA);
 	target_resource_config *wlan_res_cfg;
@@ -101,15 +101,13 @@ wma_pasn_peer_create(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if (wma->interfaces[vdev_id].peer_count >=
-	    wlan_res_cfg->num_peers) {
+	if (wma->interfaces[vdev_id].peer_count >= wlan_res_cfg->num_peers) {
 		wma_err("the peer count exceeds the limit %d",
 			wma->interfaces[vdev_id].peer_count);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (qdf_is_macaddr_group(peer_addr) ||
-	    qdf_is_macaddr_zero(peer_addr)) {
+	if (qdf_is_macaddr_group(peer_addr) || qdf_is_macaddr_zero(peer_addr)) {
 		wma_err("Invalid peer address received reject it");
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -117,9 +115,9 @@ wma_pasn_peer_create(struct wlan_objmgr_psoc *psoc,
 	wma_acquire_wakelock(&wma->wmi_cmd_rsp_wake_lock,
 			     WMA_PEER_CREATE_RESPONSE_TIMEOUT);
 	/*
-	 * The peer object should be created before sending the WMI peer
-	 * create command to firmware.
-	 */
+   * The peer object should be created before sending the WMI peer
+   * create command to firmware.
+   */
 	obj_peer = wma_create_objmgr_peer(wma, vdev_id, peer_addr->bytes,
 					  WMI_PEER_TYPE_PASN, NULL);
 	if (!obj_peer) {
@@ -130,8 +128,8 @@ wma_pasn_peer_create(struct wlan_objmgr_psoc *psoc,
 	param.peer_addr = peer_addr->bytes;
 	param.peer_type = WMI_PEER_TYPE_PASN;
 	param.vdev_id = vdev_id;
-	if (wmi_unified_peer_create_send(wma->wmi_handle,
-					 &param) != QDF_STATUS_SUCCESS) {
+	if (wmi_unified_peer_create_send(wma->wmi_handle, &param) !=
+	    QDF_STATUS_SUCCESS) {
 		wma_err("Unable to create peer in Target");
 		wlan_objmgr_peer_obj_delete(obj_peer);
 		wma_release_wakelock(&wma->wmi_cmd_rsp_wake_lock);
@@ -140,12 +138,11 @@ wma_pasn_peer_create(struct wlan_objmgr_psoc *psoc,
 	}
 
 	/*
-	 * If fw doesn't advertise peer create confirm event support,
-	 * use the legacy peer create API
-	 */
-	is_tgt_peer_conf_supported =
-		wlan_psoc_nif_fw_ext_cap_get(wma->psoc,
-					     WLAN_SOC_F_PEER_CREATE_RESP);
+   * If fw doesn't advertise peer create confirm event support,
+   * use the legacy peer create API
+   */
+	is_tgt_peer_conf_supported = wlan_psoc_nif_fw_ext_cap_get(
+		wma->psoc, WLAN_SOC_F_PEER_CREATE_RESP);
 	if (!is_tgt_peer_conf_supported) {
 		wma_release_wakelock(&wma->wmi_cmd_rsp_wake_lock);
 		return QDF_STATUS_SUCCESS;
@@ -174,7 +171,8 @@ wma_pasn_peer_create(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	wma_debug("Created ranging peer peer_addr " QDF_MAC_ADDR_FMT " vdev_id %d",
+	wma_debug("Created ranging peer peer_addr " QDF_MAC_ADDR_FMT
+		  " vdev_id %d",
 		  QDF_MAC_ADDR_REF(peer_addr->bytes), vdev_id);
 
 	return status;
@@ -204,10 +202,10 @@ wma_pasn_handle_peer_create_conf(tp_wma_handle wma,
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_WMA_ID);
 
 	/*
-	 * Only in I-sta case update the wifi pos module to
-	 * track the peer to initiate PASN authentication.
-	 * For R-STA, return from here.
-	 */
+   * Only in I-sta case update the wifi pos module to
+   * track the peer to initiate PASN authentication.
+   * For R-STA, return from here.
+   */
 	if (mode != QDF_STA_MODE) {
 		wma_debug("PASN opmode:%d is not sta", mode);
 		return QDF_STATUS_SUCCESS;
@@ -292,8 +290,7 @@ wma_delete_all_pasn_peers(tp_wma_handle wma, struct wlan_objmgr_vdev *vdev)
 
 	wma_acquire_wakelock(&wma->wmi_cmd_rsp_wake_lock,
 			     WMA_PEER_DELETE_RESPONSE_TIMEOUT);
-	wma_err("Delete all ranging peers vdev:%d",
-		wlan_vdev_get_id(vdev));
+	wma_err("Delete all ranging peers vdev:%d", wlan_vdev_get_id(vdev));
 	status = rx_ops->wifi_pos_vdev_delete_all_ranging_peers_cb(vdev);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wma_release_wakelock(&wma->wmi_cmd_rsp_wake_lock);
@@ -301,8 +298,7 @@ wma_delete_all_pasn_peers(tp_wma_handle wma, struct wlan_objmgr_vdev *vdev)
 		return status;
 	}
 
-	msg = wma_fill_hold_req(wma, vdev_id,
-				WMA_PASN_PEER_DELETE_REQUEST,
+	msg = wma_fill_hold_req(wma, vdev_id, WMA_PASN_PEER_DELETE_REQUEST,
 				WMA_PASN_PEER_DELETE_RESPONSE, NULL,
 				WMA_PEER_DELETE_RESPONSE_TIMEOUT);
 	if (!msg) {

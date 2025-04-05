@@ -6,18 +6,18 @@
 
 #include <linux/delay.h>
 #include <linux/io.h>
-#include <linux/of.h>
-#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/of.h>
 
-#include "cam_node.h"
-#include "cam_hw_mgr_intf.h"
-#include "cam_cre_hw_mgr.h"
+#include "cam_context_utils.h"
 #include "cam_cre_dev.h"
+#include "cam_cre_hw_mgr.h"
 #include "cam_debug_util.h"
+#include "cam_hw_mgr_intf.h"
+#include "cam_node.h"
 #include "cam_smmu_api.h"
 #include "camera_main.h"
-#include "cam_context_utils.h"
 
 #define CAM_CRE_DEV_NAME "cam-cre"
 
@@ -32,12 +32,12 @@ struct cam_cre_subdev {
 };
 static struct cam_cre_subdev g_cre_dev;
 
-static void cam_cre_dev_iommu_fault_handler(
-	struct cam_smmu_pf_info *pf_smmu_info)
+static void
+cam_cre_dev_iommu_fault_handler(struct cam_smmu_pf_info *pf_smmu_info)
 {
 	int i, rc;
 	struct cam_node *node = NULL;
-	struct cam_hw_dump_pf_args pf_args = {0};
+	struct cam_hw_dump_pf_args pf_args = { 0 };
 
 	if (!pf_smmu_info || !pf_smmu_info->token) {
 		CAM_ERR(CAM_CRE, "invalid token in page handler cb");
@@ -60,14 +60,14 @@ static void cam_cre_dev_iommu_fault_handler(
 		rc = cam_context_send_pf_evt(NULL, &pf_args);
 		if (rc)
 			CAM_ERR(CAM_CRE,
-				"Failed to notify PF event to userspace rc: %d", rc);
+				"Failed to notify PF event to userspace rc: %d",
+				rc);
 	}
 }
 
 static int cam_cre_subdev_open(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+			       struct v4l2_subdev_fh *fh)
 {
-
 	mutex_lock(&g_cre_dev.cre_lock);
 	g_cre_dev.open_cnt++;
 	mutex_unlock(&g_cre_dev.cre_lock);
@@ -76,11 +76,10 @@ static int cam_cre_subdev_open(struct v4l2_subdev *sd,
 }
 
 static int cam_cre_subdev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+					 struct v4l2_subdev_fh *fh)
 {
 	int rc = 0;
 	struct cam_node *node = v4l2_get_subdevdata(sd);
-
 
 	mutex_lock(&g_cre_dev.cre_lock);
 	if (g_cre_dev.open_cnt <= 0) {
@@ -106,7 +105,7 @@ end:
 }
 
 static int cam_cre_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -124,7 +123,7 @@ static const struct v4l2_subdev_internal_ops cam_cre_subdev_internal_ops = {
 };
 
 static int cam_cre_subdev_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+					 struct device *master_dev, void *data)
 {
 	int i;
 	int rc = 0;
@@ -136,7 +135,7 @@ static int cam_cre_subdev_component_bind(struct device *dev,
 	g_cre_dev.sd.pdev = pdev;
 	g_cre_dev.sd.internal_ops = &cam_cre_subdev_internal_ops;
 	rc = cam_subdev_probe(&g_cre_dev.sd, pdev, CAM_CRE_DEV_NAME,
-		CAM_CRE_DEVICE_TYPE);
+			      CAM_CRE_DEVICE_TYPE);
 	if (rc) {
 		CAM_ERR(CAM_CRE, "CRE cam_subdev_probe failed %d", rc);
 		goto err;
@@ -150,35 +149,34 @@ static int cam_cre_subdev_component_bind(struct device *dev,
 		goto hw_alloc_fail;
 	}
 
-	rc = cam_cre_hw_mgr_init(pdev->dev.of_node, hw_mgr_intf,
-		&iommu_hdl);
+	rc = cam_cre_hw_mgr_init(pdev->dev.of_node, hw_mgr_intf, &iommu_hdl);
 	if (rc) {
 		CAM_ERR(CAM_CRE, "Can not initialize CRE HWmanager %d", rc);
 		goto hw_init_fail;
 	}
 
-	memset(g_cre_dev.ctx_cre, 0,  sizeof(g_cre_dev.ctx_cre));
+	memset(g_cre_dev.ctx_cre, 0, sizeof(g_cre_dev.ctx_cre));
 	for (i = 0; i < CAM_CRE_CTX_MAX; i++) {
 		g_cre_dev.ctx_cre[i].base = &g_cre_dev.ctx[i];
-		rc = cam_cre_context_init(&g_cre_dev.ctx_cre[i],
-			hw_mgr_intf, i, iommu_hdl);
+		rc = cam_cre_context_init(&g_cre_dev.ctx_cre[i], hw_mgr_intf, i,
+					  iommu_hdl);
 		if (rc) {
-			CAM_ERR(CAM_CRE, "CRE context init failed %d %d",
-				i, rc);
+			CAM_ERR(CAM_CRE, "CRE context init failed %d %d", i,
+				rc);
 			goto ctx_init_fail;
 		}
 	}
 
-	rc = cam_node_init(node, hw_mgr_intf, g_cre_dev.ctx,
-		CAM_CRE_CTX_MAX, CAM_CRE_DEV_NAME);
+	rc = cam_node_init(node, hw_mgr_intf, g_cre_dev.ctx, CAM_CRE_CTX_MAX,
+			   CAM_CRE_DEV_NAME);
 	if (rc) {
 		CAM_ERR(CAM_CRE, "CRE node init failed %d", rc);
 		goto ctx_init_fail;
 	}
 
 	node->sd_handler = cam_cre_subdev_close_internal;
-	cam_smmu_set_client_page_fault_handler(iommu_hdl,
-		cam_cre_dev_iommu_fault_handler, node);
+	cam_smmu_set_client_page_fault_handler(
+		iommu_hdl, cam_cre_dev_iommu_fault_handler, node);
 
 	g_cre_dev.open_cnt = 0;
 	mutex_init(&g_cre_dev.cre_lock);
@@ -201,7 +199,8 @@ err:
 }
 
 static void cam_cre_subdev_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					    struct device *master_dev,
+					    void *data)
 {
 	int i;
 
@@ -244,13 +243,14 @@ static const struct of_device_id cam_cre_subdev_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_cre_subdev_dt_match);
 
 struct platform_driver cam_cre_subdev_driver = {
-	.probe = cam_cre_subdev_probe,
-	.remove = cam_cre_subdev_remove,
-	.driver = {
-		.name = "cam_cre",
-		.of_match_table = cam_cre_subdev_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_cre_subdev_probe,
+    .remove = cam_cre_subdev_remove,
+    .driver =
+        {
+            .name = "cam_cre",
+            .of_match_table = cam_cre_subdev_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_cre_subdev_init_module(void)

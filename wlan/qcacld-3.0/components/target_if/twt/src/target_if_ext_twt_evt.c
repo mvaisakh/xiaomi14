@@ -18,17 +18,17 @@
  *  DOC: target_if_ext_twt_evt.c
  *  This file contains twt component's target related function definitions
  */
+#include "twt/core/src/wlan_twt_main.h"
 #include <qdf_util.h>
-#include <wlan_twt_public_structs.h>
-#include <wlan_lmac_if_def.h>
 #include <target_if.h>
 #include <target_if_ext_twt.h>
+#include <wlan_lmac_if_def.h>
 #include <wlan_twt_api.h>
-#include "twt/core/src/wlan_twt_main.h"
+#include <wlan_twt_public_structs.h>
 
-static int
-target_if_twt_setup_complete_event_handler(ol_scn_t scn, uint8_t *event,
-					   uint32_t len)
+static int target_if_twt_setup_complete_event_handler(ol_scn_t scn,
+						      uint8_t *event,
+						      uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -60,8 +60,8 @@ target_if_twt_setup_complete_event_handler(ol_scn_t scn, uint8_t *event,
 	if (!data)
 		return -ENOMEM;
 
-	qdf_status = wmi_extract_twt_add_dialog_comp_event(wmi_handle,
-						event, &data->params);
+	qdf_status = wmi_extract_twt_add_dialog_comp_event(wmi_handle, event,
+							   &data->params);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("extract twt add dialog event failed (status=%d)",
 			      qdf_status);
@@ -70,8 +70,7 @@ target_if_twt_setup_complete_event_handler(ol_scn_t scn, uint8_t *event,
 
 	if (data->params.num_additional_twt_params) {
 		qdf_status = wmi_extract_twt_add_dialog_comp_additional_params(
-						wmi_handle, event, len, 0,
-						&data->additional_params);
+			wmi_handle, event, len, 0, &data->additional_params);
 		if (QDF_IS_STATUS_ERROR(qdf_status))
 			goto done;
 	}
@@ -84,9 +83,9 @@ done:
 	return qdf_status_to_os_return(qdf_status);
 }
 
-static int
-target_if_twt_teardown_complete_event_handler(ol_scn_t scn, uint8_t *event,
-					      uint32_t len)
+static int target_if_twt_teardown_complete_event_handler(ol_scn_t scn,
+							 uint8_t *event,
+							 uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -118,8 +117,8 @@ target_if_twt_teardown_complete_event_handler(ol_scn_t scn, uint8_t *event,
 	if (!data)
 		return -ENOMEM;
 
-	qdf_status = wmi_extract_twt_del_dialog_comp_event(wmi_handle,
-							   event, data);
+	qdf_status =
+		wmi_extract_twt_del_dialog_comp_event(wmi_handle, event, data);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("extract twt del dialog event failed (status=%d)",
 			      qdf_status);
@@ -132,7 +131,6 @@ done:
 	qdf_mem_free(data);
 
 	return qdf_status_to_os_return(qdf_status);
-
 }
 
 /**
@@ -143,9 +141,9 @@ done:
  *
  * Return: 0 on success, negative value on failure
  */
-static int
-target_if_twt_pause_complete_event_handler(ol_scn_t scn, uint8_t *event,
-					   uint32_t len)
+static int target_if_twt_pause_complete_event_handler(ol_scn_t scn,
+						      uint8_t *event,
+						      uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -177,11 +175,12 @@ target_if_twt_pause_complete_event_handler(ol_scn_t scn, uint8_t *event,
 	if (!param)
 		return -ENOMEM;
 
-	qdf_status = wmi_extract_twt_pause_dialog_comp_event(wmi_handle,
-							     event, param);
+	qdf_status = wmi_extract_twt_pause_dialog_comp_event(wmi_handle, event,
+							     param);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
-		target_if_err("extract twt pause dialog event failed (status=%d)",
-			     qdf_status);
+		target_if_err(
+			"extract twt pause dialog event failed (status=%d)",
+			qdf_status);
 		goto done;
 	}
 
@@ -201,9 +200,9 @@ done:
  *
  * Return: 0 on success, negative value on failure
  */
-static int
-target_if_twt_resume_complete_event_handler(ol_scn_t scn, uint8_t *event,
-					    uint32_t len)
+static int target_if_twt_resume_complete_event_handler(ol_scn_t scn,
+						       uint8_t *event,
+						       uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -235,8 +234,8 @@ target_if_twt_resume_complete_event_handler(ol_scn_t scn, uint8_t *event,
 	if (!param)
 		return -ENOMEM;
 
-	qdf_status = wmi_extract_twt_resume_dialog_comp_event(wmi_handle,
-							      event, param);
+	qdf_status = wmi_extract_twt_resume_dialog_comp_event(wmi_handle, event,
+							      param);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("extract twt resume event failed (status=%d)",
 			      qdf_status);
@@ -259,9 +258,9 @@ done:
  *
  * Return: 0 on success, negative value on failure
  */
-static int
-target_if_twt_nudge_complete_event_handler(ol_scn_t scn, uint8_t *event,
-					   uint32_t len)
+static int target_if_twt_nudge_complete_event_handler(ol_scn_t scn,
+						      uint8_t *event,
+						      uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -293,8 +292,8 @@ target_if_twt_nudge_complete_event_handler(ol_scn_t scn, uint8_t *event,
 	if (!param)
 		return -ENOMEM;
 
-	qdf_status = wmi_extract_twt_nudge_dialog_comp_event(wmi_handle,
-							     event, param);
+	qdf_status = wmi_extract_twt_nudge_dialog_comp_event(wmi_handle, event,
+							     param);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		target_if_err("extract twt nudge event failed (status=%d)",
 			      qdf_status);
@@ -309,9 +308,8 @@ done:
 	return qdf_status_to_os_return(qdf_status);
 }
 
-static int
-target_if_twt_notify_event_handler(ol_scn_t scn, uint8_t *event,
-				   uint32_t len)
+static int target_if_twt_notify_event_handler(ol_scn_t scn, uint8_t *event,
+					      uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -358,9 +356,9 @@ done:
 	return qdf_status_to_os_return(qdf_status);
 }
 
-static int
-target_if_twt_ack_complete_event_handler(ol_scn_t scn, uint8_t *event,
-					 uint32_t len)
+static int target_if_twt_ack_complete_event_handler(ol_scn_t scn,
+						    uint8_t *event,
+						    uint32_t len)
 {
 	QDF_STATUS qdf_status;
 	struct wmi_unified *wmi_handle;
@@ -419,71 +417,57 @@ target_if_twt_register_ext_events(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_register_event_handler
-			(wmi_handle,
-			 wmi_twt_add_dialog_complete_event_id,
-			 target_if_twt_setup_complete_event_handler,
-			 WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_add_dialog_complete_event_id,
+		target_if_twt_setup_complete_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt add dialog event cb");
 		return status;
 	}
 
-	status = wmi_unified_register_event_handler
-			(wmi_handle,
-			 wmi_twt_del_dialog_complete_event_id,
-			 target_if_twt_teardown_complete_event_handler,
-			 WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_del_dialog_complete_event_id,
+		target_if_twt_teardown_complete_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt del dialog event cb");
 		return status;
 	}
 
-	status = wmi_unified_register_event_handler
-			(wmi_handle,
-			 wmi_twt_pause_dialog_complete_event_id,
-			 target_if_twt_pause_complete_event_handler,
-			 WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_pause_dialog_complete_event_id,
+		target_if_twt_pause_complete_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt pause dialog event cb");
 		return status;
 	}
 
-	status = wmi_unified_register_event_handler
-			(wmi_handle,
-			 wmi_twt_resume_dialog_complete_event_id,
-			 target_if_twt_resume_complete_event_handler,
-			 WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_resume_dialog_complete_event_id,
+		target_if_twt_resume_complete_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt resume dialog event cb");
 		return status;
 	}
 
-	status = wmi_unified_register_event_handler
-			(wmi_handle,
-			 wmi_twt_nudge_dialog_complete_event_id,
-			 target_if_twt_nudge_complete_event_handler,
-			 WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_nudge_dialog_complete_event_id,
+		target_if_twt_nudge_complete_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt nudge dialog event cb");
 		return status;
 	}
 
-	status = wmi_unified_register_event_handler
-				(wmi_handle,
-				 wmi_twt_notify_event_id,
-				 target_if_twt_notify_event_handler,
-				 WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_notify_event_id,
+		target_if_twt_notify_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt notify event cb");
 		return status;
 	}
 
-	status = wmi_unified_register_event_handler
-				(wmi_handle,
-				 wmi_twt_ack_complete_event_id,
-				 target_if_twt_ack_complete_event_handler,
-				 WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_ack_complete_event_id,
+		target_if_twt_ack_complete_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt ack event cb");
 		return status;
@@ -504,50 +488,50 @@ target_if_twt_deregister_ext_events(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	status = wmi_unified_unregister_event_handler(wmi_handle,
-					wmi_twt_add_dialog_complete_event_id);
+	status = wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_twt_add_dialog_complete_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt add dialog event cb");
 		return status;
 	}
 
-	status = wmi_unified_unregister_event_handler(wmi_handle,
-					wmi_twt_del_dialog_complete_event_id);
+	status = wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_twt_del_dialog_complete_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt del dialog event cb");
 		return status;
 	}
 
-	status = wmi_unified_unregister_event_handler(wmi_handle,
-					wmi_twt_pause_dialog_complete_event_id);
+	status = wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_twt_pause_dialog_complete_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt pause dialog event cb");
 		return status;
 	}
 
-	status = wmi_unified_unregister_event_handler(wmi_handle,
-				wmi_twt_resume_dialog_complete_event_id);
+	status = wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_twt_resume_dialog_complete_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt resume dialog event");
 		return status;
 	}
 
-	status = wmi_unified_unregister_event_handler(wmi_handle,
-					wmi_twt_nudge_dialog_complete_event_id);
+	status = wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_twt_nudge_dialog_complete_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt nudge dialog event cb");
 		return status;
 	}
 
 	status = wmi_unified_unregister_event_handler(wmi_handle,
-					wmi_twt_notify_event_id);
+						      wmi_twt_notify_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt notify event cb");
 		return status;
 	}
 
-	status = wmi_unified_unregister_event_handler(wmi_handle,
-					wmi_twt_ack_complete_event_id);
+	status = wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_twt_ack_complete_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt ack complete event cb");
 		return status;
@@ -555,4 +539,3 @@ target_if_twt_deregister_ext_events(struct wlan_objmgr_psoc *psoc)
 
 	return status;
 }
-

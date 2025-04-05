@@ -13,15 +13,14 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#include "htc_hang_event.h"
+#include "htc_credit_history.h"
+#include "htc_internal.h"
 #include <qdf_hang_event_notifier.h>
 #include <qdf_notifier.h>
-#include "htc_hang_event.h"
-#include "htc_internal.h"
-#include "htc_credit_history.h"
 
 static int htc_recovery_notifier_call(struct notifier_block *block,
-				      unsigned long state,
-				      void *data)
+				      unsigned long state, void *data)
 {
 	htc_log_hang_credit_history(block, data);
 

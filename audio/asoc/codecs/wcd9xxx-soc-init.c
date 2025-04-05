@@ -3,8 +3,8 @@
  * Copyright (c) 2017, 2021 The Linux Foundation. All rights reserved.
  */
 
-#include <linux/module.h>
 #include "audio-ext-clk-up.h"
+#include <linux/module.h>
 
 static int __init wcd9xxx_soc_init(void)
 {

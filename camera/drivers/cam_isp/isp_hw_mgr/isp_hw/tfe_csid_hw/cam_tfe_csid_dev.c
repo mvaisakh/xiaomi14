@@ -3,29 +3,29 @@
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/slab.h>
+#include "cam_tfe_csid_dev.h"
+#include "cam_debug_util.h"
+#include "cam_tfe_csid_core.h"
+#include "cam_tfe_csid_hw_intf.h"
+#include "camera_main.h"
 #include <linux/mod_devicetable.h>
 #include <linux/of_device.h>
-#include "cam_tfe_csid_core.h"
-#include "cam_tfe_csid_dev.h"
-#include "cam_tfe_csid_hw_intf.h"
-#include "cam_debug_util.h"
-#include "camera_main.h"
+#include <linux/slab.h>
 
 static struct cam_hw_intf *cam_tfe_csid_hw_list[CAM_TFE_CSID_HW_NUM_MAX] = {
-	0, 0, 0};
+	0, 0, 0
+};
 
 static int cam_tfe_csid_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				       struct device *master_dev, void *data)
 {
-
-	struct cam_hw_intf             *csid_hw_intf;
-	struct cam_hw_info             *csid_hw_info;
-	struct cam_tfe_csid_hw         *csid_dev = NULL;
-	const struct of_device_id      *match_dev = NULL;
-	struct cam_tfe_csid_hw_info    *csid_hw_data = NULL;
-	uint32_t                        csid_dev_idx;
-	int                             rc = 0;
+	struct cam_hw_intf *csid_hw_intf;
+	struct cam_hw_info *csid_hw_info;
+	struct cam_tfe_csid_hw *csid_dev = NULL;
+	const struct of_device_id *match_dev = NULL;
+	struct cam_tfe_csid_hw_info *csid_hw_data = NULL;
+	uint32_t csid_dev_idx;
+	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	CAM_DBG(CAM_ISP, "probe called");
@@ -51,8 +51,8 @@ static int cam_tfe_csid_component_bind(struct device *dev,
 	/* get tfe csid hw index */
 	of_property_read_u32(pdev->dev.of_node, "cell-index", &csid_dev_idx);
 	/* get tfe csid hw information */
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_ISP, "No matching table for the tfe csid hw");
 		rc = -EINVAL;
@@ -69,7 +69,7 @@ static int cam_tfe_csid_component_bind(struct device *dev,
 	csid_hw_info->soc_info.dev_name = pdev->name;
 	csid_hw_info->soc_info.index = csid_dev_idx;
 
-	csid_hw_data = (struct cam_tfe_csid_hw_info  *)match_dev->data;
+	csid_hw_data = (struct cam_tfe_csid_hw_info *)match_dev->data;
 	/* need to setup the pdev before call the tfe hw probe init */
 	csid_dev->csid_info = csid_hw_data;
 
@@ -78,8 +78,7 @@ static int cam_tfe_csid_component_bind(struct device *dev,
 		goto free_dev;
 
 	platform_set_drvdata(pdev, csid_dev);
-	CAM_DBG(CAM_ISP, "CSID:%d probe successful",
-		csid_hw_intf->hw_idx);
+	CAM_DBG(CAM_ISP, "CSID:%d probe successful", csid_hw_intf->hw_idx);
 
 	if (csid_hw_intf->hw_idx < CAM_TFE_CSID_HW_NUM_MAX)
 		cam_tfe_csid_hw_list[csid_hw_intf->hw_idx] = csid_hw_intf;
@@ -99,19 +98,18 @@ err:
 }
 
 void cam_tfe_csid_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				   struct device *master_dev, void *data)
 {
-	struct cam_tfe_csid_hw         *csid_dev = NULL;
-	struct cam_hw_intf             *csid_hw_intf;
-	struct cam_hw_info             *csid_hw_info;
+	struct cam_tfe_csid_hw *csid_dev = NULL;
+	struct cam_hw_intf *csid_hw_intf;
+	struct cam_hw_info *csid_hw_info;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	csid_dev = (struct cam_tfe_csid_hw *)platform_get_drvdata(pdev);
 	csid_hw_intf = csid_dev->hw_intf;
 	csid_hw_info = csid_dev->hw_info;
 
-	CAM_DBG(CAM_ISP, "CSID:%d remove",
-		csid_dev->hw_intf->hw_idx);
+	CAM_DBG(CAM_ISP, "CSID:%d remove", csid_dev->hw_intf->hw_idx);
 
 	cam_tfe_csid_hw_deinit(csid_dev);
 
@@ -143,8 +141,7 @@ int cam_tfe_csid_remove(struct platform_device *pdev)
 	return 0;
 }
 
-int cam_tfe_csid_hw_init(struct cam_hw_intf **tfe_csid_hw,
-	uint32_t hw_idx)
+int cam_tfe_csid_hw_init(struct cam_hw_intf **tfe_csid_hw, uint32_t hw_idx)
 {
 	int rc = 0;
 

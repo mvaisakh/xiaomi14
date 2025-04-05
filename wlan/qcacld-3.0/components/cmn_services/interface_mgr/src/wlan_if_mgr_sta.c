@@ -18,28 +18,28 @@
 /*
  * DOC: contains interface manager public api
  */
+#include "wlan_if_mgr_sta.h"
+#include "nan_ucfg_api.h"
+#include "wlan_if_mgr_main.h"
+#include "wlan_if_mgr_public_struct.h"
+#include "wlan_if_mgr_roam.h"
+#include "wlan_mlme_vdev_mgr_interface.h"
+#include "wlan_nan_api.h"
 #include "wlan_objmgr_psoc_obj.h"
 #include "wlan_objmgr_vdev_obj.h"
-#include "wlan_if_mgr_public_struct.h"
-#include "wlan_if_mgr_sta.h"
-#include "wlan_if_mgr_roam.h"
-#include "wlan_if_mgr_main.h"
-#include "nan_ucfg_api.h"
-#include "wlan_policy_mgr_api.h"
 #include "wlan_p2p_ucfg_api.h"
-#include "wlan_tdls_ucfg_api.h"
+#include "wlan_policy_mgr_api.h"
 #include "wlan_tdls_api.h"
+#include "wlan_tdls_ucfg_api.h"
 #include <wlan_cm_api.h>
-#include <wlan_mlo_mgr_public_structs.h>
-#include <wlan_mlo_mgr_cmn.h>
 #include <wlan_cm_roam_api.h>
-#include "wlan_nan_api.h"
-#include "wlan_mlme_vdev_mgr_interface.h"
+#include <wlan_mlo_mgr_cmn.h>
+#include <wlan_mlo_mgr_public_structs.h>
 #ifdef WLAN_FEATURE_11BE_MLO
 #include <wlan_mlo_mgr_sta.h>
 #endif
-#include "wlan_vdev_mgr_utils_api.h"
 #include "wlan_tdls_api.h"
+#include "wlan_vdev_mgr_utils_api.h"
 
 QDF_STATUS if_mgr_connect_start(struct wlan_objmgr_vdev *vdev,
 				struct if_mgr_event_data *event_data)
@@ -60,16 +60,14 @@ QDF_STATUS if_mgr_connect_start(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_FAILURE;
 
 	/*
-	 * Disable NAN Discovery if incoming connection is P2P or if a STA
-	 * connection already exists and if this is a case of STA+STA
-	 * or SAP+STA concurrency
-	 */
-	sta_cnt = policy_mgr_get_mode_specific_conn_info(psoc, NULL,
-							 vdev_id_list,
-							 PM_STA_MODE);
-	sap_cnt = policy_mgr_get_mode_specific_conn_info(psoc, NULL,
-							 &vdev_id_list[sta_cnt],
-							 PM_SAP_MODE);
+   * Disable NAN Discovery if incoming connection is P2P or if a STA
+   * connection already exists and if this is a case of STA+STA
+   * or SAP+STA concurrency
+   */
+	sta_cnt = policy_mgr_get_mode_specific_conn_info(
+		psoc, NULL, vdev_id_list, PM_STA_MODE);
+	sap_cnt = policy_mgr_get_mode_specific_conn_info(
+		psoc, NULL, &vdev_id_list[sta_cnt], PM_SAP_MODE);
 	op_mode = wlan_vdev_mlme_get_opmode(vdev);
 
 	if (op_mode == QDF_STA_MODE || op_mode == QDF_P2P_CLIENT_MODE)
@@ -80,10 +78,10 @@ QDF_STATUS if_mgr_connect_start(struct wlan_objmgr_vdev *vdev,
 			if (vdev_id_list[i] == wlan_vdev_get_id(vdev))
 				disable_nan = false;
 			/* 1. Don't disable nan if firmware supports
-			 *    ML STA + NAN + NDP.
-			 * 2. Disable nan if legacy sta + nan +
-			 *    ML STA(primary link) comes up.
-			 */
+       *    ML STA + NAN + NDP.
+       * 2. Disable nan if legacy sta + nan +
+       *    ML STA(primary link) comes up.
+       */
 			if (wlan_vdev_mlme_is_mlo_link_vdev(vdev) &&
 			    wlan_is_mlo_sta_nan_ndi_allowed(psoc))
 				disable_nan = false;
@@ -96,13 +94,12 @@ QDF_STATUS if_mgr_connect_start(struct wlan_objmgr_vdev *vdev,
 		wlan_tdls_handle_p2p_client_connect(psoc, vdev);
 
 	/*
-	 * STA+NDI concurrency gets preference over NDI+NDI. Disable
-	 * first NDI in case an NDI+NDI concurrency exists if FW does
-	 * not support 4 port concurrency of two NDI + NAN with STA.
-	 */
+   * STA+NDI concurrency gets preference over NDI+NDI. Disable
+   * first NDI in case an NDI+NDI concurrency exists if FW does
+   * not support 4 port concurrency of two NDI + NAN with STA.
+   */
 	if (!ucfg_nan_is_sta_nan_ndi_4_port_allowed(psoc))
-		ucfg_nan_check_and_disable_unsupported_ndi(psoc,
-							   false);
+		ucfg_nan_check_and_disable_unsupported_ndi(psoc, false);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -118,11 +115,11 @@ QDF_STATUS if_mgr_connect_active(struct wlan_objmgr_vdev *vdev,
 
 	if (!wlan_vdev_mlme_is_mlo_link_vdev(vdev)) {
 		/*
-		 * In case of STA+STA concurrency, firmware might try to roam
-		 * to same AP where host is trying to do association on the other
-		 * STA iface. Roaming is disabled on all the ifaces to avoid
-		 * this scenario.
-		 */
+     * In case of STA+STA concurrency, firmware might try to roam
+     * to same AP where host is trying to do association on the other
+     * STA iface. Roaming is disabled on all the ifaces to avoid
+     * this scenario.
+     */
 		if_mgr_disable_roaming(pdev, vdev, RSO_CONNECT_START);
 	}
 
@@ -148,25 +145,25 @@ QDF_STATUS if_mgr_connect_complete(struct wlan_objmgr_vdev *vdev,
 	vdev_id = wlan_vdev_get_id(vdev);
 	if (QDF_IS_STATUS_SUCCESS(status)) {
 		/*
-		 * Due to audio share glitch with P2P clients caused by roam
-		 * scan on concurrent interface, disable roaming if
-		 * "p2p_disable_roam" ini is enabled. Donot re-enable roaming
-		 * again on other STA interface if p2p client connection is
-		 * active on any vdev.
-		 */
+     * Due to audio share glitch with P2P clients caused by roam
+     * scan on concurrent interface, disable roaming if
+     * "p2p_disable_roam" ini is enabled. Donot re-enable roaming
+     * again on other STA interface if p2p client connection is
+     * active on any vdev.
+     */
 		if (ucfg_p2p_is_roam_config_disabled(psoc) &&
 		    wlan_vdev_mlme_get_opmode(vdev) == QDF_P2P_CLIENT_MODE) {
 			ifmgr_debug("p2p client active, keep roam disabled");
 		} else {
 			ifmgr_debug("set pcl when connection on vdev id:%d",
-				     vdev_id);
+				    vdev_id);
 			policy_mgr_set_pcl_for_connected_vdev(psoc, vdev_id,
 							      false);
 			/*
-			 * Enable roaming on other STA iface except this one.
-			 * Firmware doesn't support connection on one STA iface
-			 * while roaming on other STA iface.
-			 */
+       * Enable roaming on other STA iface except this one.
+       * Firmware doesn't support connection on one STA iface
+       * while roaming on other STA iface.
+       */
 			if_mgr_enable_roaming(pdev, vdev, RSO_CONNECT_START);
 		}
 	} else {
@@ -174,10 +171,10 @@ QDF_STATUS if_mgr_connect_complete(struct wlan_objmgr_vdev *vdev,
 		ucfg_tdls_notify_connect_failure(psoc);
 
 		/*
-		 * Enable roaming on other STA iface except this one.
-		 * Firmware doesn't support connection on one STA iface
-		 * while roaming on other STA iface.
-		 */
+     * Enable roaming on other STA iface except this one.
+     * Firmware doesn't support connection on one STA iface
+     * while roaming on other STA iface.
+     */
 		if_mgr_enable_roaming(pdev, vdev, RSO_CONNECT_START);
 	}
 
@@ -187,8 +184,8 @@ QDF_STATUS if_mgr_connect_complete(struct wlan_objmgr_vdev *vdev,
 		wlan_handle_emlsr_sta_concurrency(psoc, false, true);
 
 	if (!wlan_cm_is_vdev_roaming(vdev))
-		policy_mgr_check_concurrent_intf_and_restart_sap(psoc,
-				wlan_util_vdev_mgr_get_acs_mode_for_vdev(vdev));
+		policy_mgr_check_concurrent_intf_and_restart_sap(
+			psoc, wlan_util_vdev_mgr_get_acs_mode_for_vdev(vdev));
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -238,8 +235,8 @@ QDF_STATUS if_mgr_disconnect_complete(struct wlan_objmgr_vdev *vdev,
 		return status;
 	}
 
-	policy_mgr_check_concurrent_intf_and_restart_sap(psoc,
-				wlan_util_vdev_mgr_get_acs_mode_for_vdev(vdev));
+	policy_mgr_check_concurrent_intf_and_restart_sap(
+		psoc, wlan_util_vdev_mgr_get_acs_mode_for_vdev(vdev));
 
 	status = if_mgr_enable_roaming_on_connected_sta(pdev, vdev);
 	if (status) {

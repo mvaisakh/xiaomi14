@@ -3,9 +3,9 @@
  * Copyright (c) 2015, 2018-2019, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/regmap.h>
-#include <linux/device.h>
 #include "wsa881x-registers-analog.h"
+#include <linux/device.h>
+#include <linux/regmap.h>
 
 const u8 wsa881x_ana_reg_readable[WSA881X_CACHE_SIZE] = {
 	[WSA881X_CHIP_ID0] = 1,

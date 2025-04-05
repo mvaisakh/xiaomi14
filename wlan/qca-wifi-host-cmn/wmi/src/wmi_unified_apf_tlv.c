@@ -16,27 +16,25 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wmi_unified_priv.h>
 #include "wmi_unified_apf_tlv.h"
 #include "wmi.h"
+#include <wmi_unified_priv.h>
 
-QDF_STATUS wmi_send_set_active_apf_mode_cmd_tlv(wmi_unified_t wmi_handle,
-					    uint8_t vdev_id,
-					    enum wmi_host_active_apf_mode
-								     ucast_mode,
-					    enum wmi_host_active_apf_mode
-							       mcast_bcast_mode)
+QDF_STATUS wmi_send_set_active_apf_mode_cmd_tlv(
+	wmi_unified_t wmi_handle, uint8_t vdev_id,
+	enum wmi_host_active_apf_mode ucast_mode,
+	enum wmi_host_active_apf_mode mcast_bcast_mode)
 {
 	const WMITLV_TAG_ID tag_id =
 		WMITLV_TAG_STRUC_wmi_bpf_set_vdev_active_mode_cmd_fixed_param;
 	const uint32_t tlv_len = WMITLV_GET_STRUCT_TLVLEN(
-				wmi_bpf_set_vdev_active_mode_cmd_fixed_param);
+		wmi_bpf_set_vdev_active_mode_cmd_fixed_param);
 	QDF_STATUS status;
 	wmi_bpf_set_vdev_active_mode_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
 
 	wmi_debug("Sending WMI_BPF_SET_VDEV_ACTIVE_MODE_CMDID(%u, %d, %d)",
-		 vdev_id, ucast_mode, mcast_bcast_mode);
+		  vdev_id, ucast_mode, mcast_bcast_mode);
 
 	/* allocate command buffer */
 	buf = wmi_buf_alloc(wmi_handle, sizeof(*cmd));
@@ -59,7 +57,7 @@ QDF_STATUS wmi_send_set_active_apf_mode_cmd_tlv(wmi_unified_t wmi_handle,
 				      WMI_BPF_SET_VDEV_ACTIVE_MODE_CMDID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wmi_err("Failed to send WMI_BPF_SET_VDEV_ACTIVE_MODE_CMDID:%d",
-			 status);
+			status);
 		wmi_buf_free(buf);
 		return status;
 	}
@@ -68,8 +66,7 @@ QDF_STATUS wmi_send_set_active_apf_mode_cmd_tlv(wmi_unified_t wmi_handle,
 }
 
 QDF_STATUS wmi_send_apf_enable_cmd_tlv(wmi_unified_t wmi_handle,
-				       uint32_t vdev_id,
-				       bool enable)
+				       uint32_t vdev_id, bool enable)
 {
 	wmi_bpf_set_vdev_enable_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -80,11 +77,11 @@ QDF_STATUS wmi_send_apf_enable_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	cmd = (wmi_bpf_set_vdev_enable_cmd_fixed_param *) wmi_buf_data(buf);
+	cmd = (wmi_bpf_set_vdev_enable_cmd_fixed_param *)wmi_buf_data(buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
-		WMITLV_TAG_STRUC_wmi_bpf_set_vdev_enable_cmd_fixed_param,
-		WMITLV_GET_STRUCT_TLVLEN(
-			wmi_bpf_set_vdev_enable_cmd_fixed_param));
+		       WMITLV_TAG_STRUC_wmi_bpf_set_vdev_enable_cmd_fixed_param,
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_bpf_set_vdev_enable_cmd_fixed_param));
 	cmd->vdev_id = vdev_id;
 	cmd->is_enabled = enable;
 
@@ -99,9 +96,9 @@ QDF_STATUS wmi_send_apf_enable_cmd_tlv(wmi_unified_t wmi_handle,
 }
 
 QDF_STATUS
-wmi_send_apf_write_work_memory_cmd_tlv(wmi_unified_t wmi_handle,
-				       struct wmi_apf_write_memory_params
-							      *apf_write_params)
+wmi_send_apf_write_work_memory_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct wmi_apf_write_memory_params *apf_write_params)
 {
 	wmi_bpf_set_vdev_work_memory_cmd_fixed_param *cmd;
 	uint32_t wmi_buf_len;
@@ -111,11 +108,10 @@ wmi_send_apf_write_work_memory_cmd_tlv(wmi_unified_t wmi_handle,
 
 	wmi_buf_len = sizeof(*cmd);
 	if (apf_write_params->length) {
-		aligned_len = roundup(apf_write_params->length,
-				      sizeof(A_UINT32));
+		aligned_len =
+			roundup(apf_write_params->length, sizeof(A_UINT32));
 
 		wmi_buf_len += WMI_TLV_HDR_SIZE + aligned_len;
-
 	}
 
 	buf = wmi_buf_alloc(wmi_handle, wmi_buf_len);
@@ -126,7 +122,8 @@ wmi_send_apf_write_work_memory_cmd_tlv(wmi_unified_t wmi_handle,
 
 	buf_ptr = wmi_buf_data(buf);
 	cmd = (wmi_bpf_set_vdev_work_memory_cmd_fixed_param *)buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_wmi_bpf_set_vdev_work_memory_cmd_fixed_param,
 		WMITLV_GET_STRUCT_TLVLEN(
 			wmi_bpf_set_vdev_work_memory_cmd_fixed_param));
@@ -138,8 +135,7 @@ wmi_send_apf_write_work_memory_cmd_tlv(wmi_unified_t wmi_handle,
 
 	if (apf_write_params->length) {
 		buf_ptr += sizeof(*cmd);
-		WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_BYTE,
-			       aligned_len);
+		WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_BYTE, aligned_len);
 		buf_ptr += WMI_TLV_HDR_SIZE;
 		qdf_mem_copy(buf_ptr, apf_write_params->buf,
 			     apf_write_params->length);
@@ -156,9 +152,9 @@ wmi_send_apf_write_work_memory_cmd_tlv(wmi_unified_t wmi_handle,
 }
 
 QDF_STATUS
-wmi_send_apf_read_work_memory_cmd_tlv(wmi_unified_t wmi_handle,
-				      struct wmi_apf_read_memory_params
-							       *apf_read_params)
+wmi_send_apf_read_work_memory_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct wmi_apf_read_memory_params *apf_read_params)
 {
 	wmi_bpf_get_vdev_work_memory_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -169,10 +165,10 @@ wmi_send_apf_read_work_memory_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	cmd = (wmi_bpf_get_vdev_work_memory_cmd_fixed_param *)
-							wmi_buf_data(buf);
+	cmd = (wmi_bpf_get_vdev_work_memory_cmd_fixed_param *)wmi_buf_data(buf);
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_wmi_bpf_get_vdev_work_memory_cmd_fixed_param,
 		WMITLV_GET_STRUCT_TLVLEN(
 			wmi_bpf_get_vdev_work_memory_cmd_fixed_param));
@@ -191,10 +187,9 @@ wmi_send_apf_read_work_memory_cmd_tlv(wmi_unified_t wmi_handle,
 }
 
 QDF_STATUS
-wmi_extract_apf_read_memory_resp_event_tlv(wmi_unified_t wmi_handle,
-				void *evt_buf,
-				struct wmi_apf_read_memory_resp_event_params
-									  *resp)
+wmi_extract_apf_read_memory_resp_event_tlv(
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct wmi_apf_read_memory_resp_event_params *resp)
 {
 	WMI_BPF_GET_VDEV_WORK_MEMORY_RESP_EVENTID_param_tlvs *param_buf;
 	wmi_bpf_get_vdev_work_memory_resp_evt_fixed_param *data_event;
@@ -213,8 +208,7 @@ wmi_extract_apf_read_memory_resp_event_tlv(wmi_unified_t wmi_handle,
 
 	if (data_event->length > param_buf->num_data) {
 		wmi_err("FW msg data_len %d more than TLV hdr %d",
-			 data_event->length,
-			 param_buf->num_data);
+			data_event->length, param_buf->num_data);
 		return QDF_STATUS_E_INVAL;
 	}
 

@@ -21,8 +21,8 @@
 #include "hal_li_hw_headers.h"
 #include "hal_li_reo.h"
 
-#include "hal_rx.h"
 #include "hal_li_rx.h"
+#include "hal_rx.h"
 #include "hal_tx.h"
 #include <hal_api_mon.h>
 
@@ -34,39 +34,38 @@ static uint16_t hal_get_rx_max_ba_window_li(int tid)
 static uint32_t hal_get_reo_qdesc_size_li(uint32_t ba_window_size, int tid)
 {
 	/* Hardcode the ba_window_size to HAL_RX_MAX_BA_WINDOW for
-	 * NON_QOS_TID until HW issues are resolved.
-	 */
+   * NON_QOS_TID until HW issues are resolved.
+   */
 	if (tid != HAL_NON_QOS_TID)
 		ba_window_size = hal_get_rx_max_ba_window_li(tid);
 
 	/* Return descriptor size corresponding to window size of 2 since
-	 * we set ba_window_size to 2 while setting up REO descriptors as
-	 * a WAR to get 2k jump exception aggregates are received without
-	 * a BA session.
-	 */
+   * we set ba_window_size to 2 while setting up REO descriptors as
+   * a WAR to get 2k jump exception aggregates are received without
+   * a BA session.
+   */
 	if (ba_window_size <= 1) {
 		if (tid != HAL_NON_QOS_TID)
 			return sizeof(struct rx_reo_queue) +
-				sizeof(struct rx_reo_queue_ext);
+			       sizeof(struct rx_reo_queue_ext);
 		else
 			return sizeof(struct rx_reo_queue);
 	}
 
 	if (ba_window_size <= 105)
 		return sizeof(struct rx_reo_queue) +
-			sizeof(struct rx_reo_queue_ext);
+		       sizeof(struct rx_reo_queue_ext);
 
 	if (ba_window_size <= 210)
 		return sizeof(struct rx_reo_queue) +
-			(2 * sizeof(struct rx_reo_queue_ext));
+		       (2 * sizeof(struct rx_reo_queue_ext));
 
 	return sizeof(struct rx_reo_queue) +
-		(3 * sizeof(struct rx_reo_queue_ext));
+	       (3 * sizeof(struct rx_reo_queue_ext));
 }
 
 void hal_set_link_desc_addr_li(void *desc, uint32_t cookie,
-			       qdf_dma_addr_t link_desc_paddr,
-			       uint8_t bm_id)
+			       qdf_dma_addr_t link_desc_paddr, uint8_t bm_id)
 {
 	uint32_t *buf_addr = (uint32_t *)desc;
 
@@ -144,8 +143,8 @@ static uint32_t hal_rx_tlv_decap_format_get_li(void *hw_desc_addr)
  *
  * Return: void
  */
-static void hal_rx_dump_pkt_tlvs_li(hal_soc_handle_t hal_soc_hdl,
-				uint8_t *buf, uint8_t dbg_level)
+static void hal_rx_dump_pkt_tlvs_li(hal_soc_handle_t hal_soc_hdl, uint8_t *buf,
+				    uint8_t dbg_level)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
@@ -165,9 +164,8 @@ static void hal_rx_dump_pkt_tlvs_li(hal_soc_handle_t hal_soc_hdl,
  *
  * Return: 0 on success, -EINVAL on failure.
  */
-static int
-hal_rx_tlv_get_offload_info_li(uint8_t *rx_tlv,
-			       struct hal_offload_info *offload_info)
+static int hal_rx_tlv_get_offload_info_li(uint8_t *rx_tlv,
+					  struct hal_offload_info *offload_info)
 {
 	offload_info->flow_id = HAL_RX_TLV_GET_FLOW_ID_TOEPLITZ(rx_tlv);
 	offload_info->ipv6_proto = HAL_RX_TLV_GET_IPV6(rx_tlv);
@@ -176,7 +174,7 @@ hal_rx_tlv_get_offload_info_li(uint8_t *rx_tlv,
 
 	if (offload_info->tcp_proto) {
 		offload_info->tcp_pure_ack =
-					HAL_RX_TLV_GET_TCP_PURE_ACK(rx_tlv);
+			HAL_RX_TLV_GET_TCP_PURE_ACK(rx_tlv);
 		offload_info->tcp_offset = HAL_RX_TLV_GET_TCP_OFFSET(rx_tlv);
 		offload_info->tcp_win = HAL_RX_TLV_GET_TCP_WIN(rx_tlv);
 		offload_info->tcp_seq_num = HAL_RX_TLV_GET_TCP_SEQ(rx_tlv);
@@ -215,7 +213,7 @@ static uint32_t hal_rx_msdu_start_msdu_len_get_li(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_start *msdu_start =
-			&pkt_tlvs->msdu_start_tlv.rx_msdu_start;
+		&pkt_tlvs->msdu_start_tlv.rx_msdu_start;
 	uint32_t msdu_len;
 
 	msdu_len = HAL_RX_MSDU_START_MSDU_LEN_GET(msdu_start);
@@ -233,7 +231,7 @@ static uint32_t hal_rx_msdu_start_msdu_len_get_li(uint8_t *buf)
 static int hal_rx_get_proto_params_li(uint8_t *buf, void *proto_params)
 {
 	struct hal_proto_params *param =
-				(struct hal_proto_params *)proto_params;
+		(struct hal_proto_params *)proto_params;
 
 	param->tcp_proto = HAL_RX_TLV_GET_TCP_PROTO(buf);
 	param->udp_proto = HAL_RX_TLV_GET_UDP_PROTO(buf);
@@ -288,12 +286,10 @@ static inline uint8_t *hal_rx_pkt_hdr_get_li(uint8_t *buf)
  * Return: void
  */
 static inline void
-hal_rx_priv_info_set_in_tlv_li(uint8_t *buf, uint8_t *priv_data,
-			       uint32_t len)
+hal_rx_priv_info_set_in_tlv_li(uint8_t *buf, uint8_t *priv_data, uint32_t len)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
-	uint32_t copy_len = (len > RX_PADDING0_BYTES) ?
-			    RX_PADDING0_BYTES : len;
+	uint32_t copy_len = (len > RX_PADDING0_BYTES) ? RX_PADDING0_BYTES : len;
 
 	qdf_mem_copy(pkt_tlvs->rx_padding0, priv_data, copy_len);
 }
@@ -307,12 +303,10 @@ hal_rx_priv_info_set_in_tlv_li(uint8_t *buf, uint8_t *priv_data,
  * Return: void
  */
 static inline void
-hal_rx_priv_info_get_from_tlv_li(uint8_t *buf, uint8_t *priv_data,
-			       uint32_t len)
+hal_rx_priv_info_get_from_tlv_li(uint8_t *buf, uint8_t *priv_data, uint32_t len)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
-	uint32_t copy_len = (len > RX_PADDING0_BYTES) ?
-			    RX_PADDING0_BYTES : len;
+	uint32_t copy_len = (len > RX_PADDING0_BYTES) ? RX_PADDING0_BYTES : len;
 
 	qdf_mem_copy(priv_data, pkt_tlvs->rx_padding0, copy_len);
 }
@@ -351,10 +345,10 @@ uint32_t hal_rx_wbm_err_src_get_li(hal_ring_desc_t ring_desc)
 uint8_t hal_rx_ret_buf_manager_get_li(hal_ring_desc_t ring_desc)
 {
 	/*
-	 * The following macro takes buf_addr_info as argument,
-	 * but since buf_addr_info is the first field in ring_desc
-	 * Hence the following call is OK
-	 */
+   * The following macro takes buf_addr_info as argument,
+   * but since buf_addr_info is the first field in ring_desc
+   * Hence the following call is OK
+   */
 	return HAL_RX_BUF_RBM_GET(ring_desc);
 }
 
@@ -372,11 +366,12 @@ static void hal_rx_reo_buf_paddr_get_li(hal_ring_desc_t rx_desc,
 					struct hal_buf_info *buf_info)
 {
 	struct reo_destination_ring *reo_ring =
-		 (struct reo_destination_ring *)rx_desc;
+		(struct reo_destination_ring *)rx_desc;
 
 	buf_info->paddr =
-	 (HAL_RX_REO_BUFFER_ADDR_31_0_GET(reo_ring) |
-	  ((uint64_t)(HAL_RX_REO_BUFFER_ADDR_39_32_GET(reo_ring)) << 32));
+		(HAL_RX_REO_BUFFER_ADDR_31_0_GET(reo_ring) |
+		 ((uint64_t)(HAL_RX_REO_BUFFER_ADDR_39_32_GET(reo_ring))
+		  << 32));
 	buf_info->sw_cookie = HAL_RX_REO_BUF_COOKIE_GET(reo_ring);
 }
 
@@ -397,23 +392,23 @@ static void hal_rx_msdu_link_desc_set_li(hal_soc_handle_t hal_soc_hdl,
 					 uint8_t bm_action)
 {
 	/*
-	 * The offsets for fields used in this function are same in
-	 * wbm_release_ring for Lithium and wbm_release_ring_tx
-	 * for Beryllium. hence we can use wbm_release_ring directly.
-	 */
+   * The offsets for fields used in this function are same in
+   * wbm_release_ring for Lithium and wbm_release_ring_tx
+   * for Beryllium. hence we can use wbm_release_ring directly.
+   */
 	struct wbm_release_ring *wbm_rel_srng =
-			(struct wbm_release_ring *)src_srng_desc;
+		(struct wbm_release_ring *)src_srng_desc;
 	uint32_t addr_31_0;
 	uint8_t addr_39_32;
 
 	/* Structure copy !!! */
 	wbm_rel_srng->released_buff_or_desc_addr_info =
-			*(struct buffer_addr_info *)buf_addr_info;
+		*(struct buffer_addr_info *)buf_addr_info;
 
 	addr_31_0 =
-	wbm_rel_srng->released_buff_or_desc_addr_info.buffer_addr_31_0;
+		wbm_rel_srng->released_buff_or_desc_addr_info.buffer_addr_31_0;
 	addr_39_32 =
-	wbm_rel_srng->released_buff_or_desc_addr_info.buffer_addr_39_32;
+		wbm_rel_srng->released_buff_or_desc_addr_info.buffer_addr_39_32;
 
 	HAL_DESC_SET_FIELD(src_srng_desc, HAL_SW2WBM_RELEASE_RING,
 			   RELEASE_SOURCE_MODULE, HAL_RX_WBM_ERR_SRC_SW);
@@ -424,11 +419,11 @@ static void hal_rx_msdu_link_desc_set_li(hal_soc_handle_t hal_soc_hdl,
 			   HAL_RX_WBM_BUF_TYPE_MSDU_LINK_DESC);
 
 	/* WBM error is indicated when any of the link descriptors given to
-	 * WBM has a NULL address, and one those paths is the link descriptors
-	 * released from host after processing RXDMA errors,
-	 * or from Rx defrag path, and we want to add an assert here to ensure
-	 * host is not releasing descriptors with NULL address.
-	 */
+   * WBM has a NULL address, and one those paths is the link descriptors
+   * released from host after processing RXDMA errors,
+   * or from Rx defrag path, and we want to add an assert here to ensure
+   * host is not releasing descriptors with NULL address.
+   */
 
 	if (qdf_unlikely(!addr_31_0 && !addr_39_32)) {
 		hal_dump_wbm_rel_desc(src_srng_desc);
@@ -436,22 +431,20 @@ static void hal_rx_msdu_link_desc_set_li(hal_soc_handle_t hal_soc_hdl,
 	}
 }
 
-static
-void hal_rx_buf_cookie_rbm_get_li(uint32_t *buf_addr_info_hdl,
-				  hal_buf_info_t buf_info_hdl)
+static void hal_rx_buf_cookie_rbm_get_li(uint32_t *buf_addr_info_hdl,
+					 hal_buf_info_t buf_info_hdl)
 {
-	struct hal_buf_info *buf_info =
-		(struct hal_buf_info *)buf_info_hdl;
+	struct hal_buf_info *buf_info = (struct hal_buf_info *)buf_info_hdl;
 	struct buffer_addr_info *buf_addr_info =
 		(struct buffer_addr_info *)buf_addr_info_hdl;
 
 	buf_info->sw_cookie = HAL_RX_BUF_COOKIE_GET(buf_addr_info);
 	/*
-	 * buffer addr info is the first member of ring desc, so the typecast
-	 * can be done.
-	 */
-	buf_info->rbm = hal_rx_ret_buf_manager_get_li
-				((hal_ring_desc_t)buf_addr_info);
+   * buffer addr info is the first member of ring desc, so the typecast
+   * can be done.
+   */
+	buf_info->rbm =
+		hal_rx_ret_buf_manager_get_li((hal_ring_desc_t)buf_addr_info);
 }
 
 /**
@@ -486,17 +479,17 @@ static inline void hal_rx_msdu_list_get_li(hal_soc_handle_t hal_soc_hdl,
 	hal_debug("msdu_link=%pK msdu_details=%pK", msdu_link, msdu_details);
 	for (i = 0; i < HAL_RX_NUM_MSDU_DESC; i++) {
 		/* num_msdus received in mpdu descriptor may be incorrect
-		 * sometimes due to HW issue. Check msdu buffer address also
-		 */
-		if (!i && (HAL_RX_BUFFER_ADDR_31_0_GET(
-			&msdu_details[i].buffer_addr_info_details) == 0))
+     * sometimes due to HW issue. Check msdu buffer address also
+     */
+		if (!i &&
+		    (HAL_RX_BUFFER_ADDR_31_0_GET(
+			     &msdu_details[i].buffer_addr_info_details) == 0))
 			break;
 		if (HAL_RX_BUFFER_ADDR_31_0_GET(
-			&msdu_details[i].buffer_addr_info_details) == 0) {
+			    &msdu_details[i].buffer_addr_info_details) == 0) {
 			/* set the last msdu bit in the prev msdu_desc_info */
-			msdu_desc_info =
-				hal_rx_msdu_desc_info_get_ptr
-					(&msdu_details[i - 1], hal_soc);
+			msdu_desc_info = hal_rx_msdu_desc_info_get_ptr(
+				&msdu_details[i - 1], hal_soc);
 			HAL_RX_LAST_MSDU_IN_MPDU_FLAG_SET(msdu_desc_info, 1);
 			break;
 		}
@@ -510,21 +503,22 @@ static inline void hal_rx_msdu_list_get_li(hal_soc_handle_t hal_soc_hdl,
 			HAL_RX_LAST_MSDU_IN_MPDU_FLAG_SET(msdu_desc_info, 1);
 
 		msdu_list->msdu_info[i].msdu_flags =
-			 hal_rx_msdu_flags_get(hal_soc_hdl, msdu_desc_info);
+			hal_rx_msdu_flags_get(hal_soc_hdl, msdu_desc_info);
 		msdu_list->msdu_info[i].msdu_len =
-			 HAL_RX_MSDU_PKT_LENGTH_GET(msdu_desc_info);
+			HAL_RX_MSDU_PKT_LENGTH_GET(msdu_desc_info);
 
 		/* addr field in buf_info will not be valid */
 		hal_rx_buf_cookie_rbm_get_li(
-				(uint32_t *)
-				&msdu_details[i].buffer_addr_info_details,
-				&buf_info);
+			(uint32_t *)&msdu_details[i].buffer_addr_info_details,
+			&buf_info);
 		msdu_list->sw_cookie[i] = buf_info.sw_cookie;
 		msdu_list->rbm[i] = buf_info.rbm;
-		msdu_list->paddr[i] = HAL_RX_BUFFER_ADDR_31_0_GET(
-			   &msdu_details[i].buffer_addr_info_details) |
-			   (uint64_t)HAL_RX_BUFFER_ADDR_39_32_GET(
-			   &msdu_details[i].buffer_addr_info_details) << 32;
+		msdu_list->paddr[i] =
+			HAL_RX_BUFFER_ADDR_31_0_GET(
+				&msdu_details[i].buffer_addr_info_details) |
+			(uint64_t)HAL_RX_BUFFER_ADDR_39_32_GET(
+				&msdu_details[i].buffer_addr_info_details)
+				<< 32;
 		hal_debug("i=%d sw_cookie=%d", i, msdu_list->sw_cookie[i]);
 	}
 	*num_msdus = i;
@@ -540,7 +534,8 @@ static inline void hal_rx_msdu_list_get_li(hal_soc_handle_t hal_soc_hdl,
  *
  */
 static void hal_rxdma_buff_addr_info_set_li(void *rxdma_entry,
-			qdf_dma_addr_t paddr, uint32_t cookie, uint8_t manager)
+					    qdf_dma_addr_t paddr,
+					    uint32_t cookie, uint8_t manager)
 {
 	uint32_t paddr_lo = ((u64)paddr & 0x00000000ffffffff);
 	uint32_t paddr_hi = ((u64)paddr & 0xffffffff00000000) >> 32;
@@ -560,7 +555,7 @@ static void hal_rxdma_buff_addr_info_set_li(void *rxdma_entry,
 static uint32_t hal_rx_get_reo_error_code_li(hal_ring_desc_t rx_desc)
 {
 	struct reo_destination_ring *reo_desc =
-			(struct reo_destination_ring *)rx_desc;
+		(struct reo_destination_ring *)rx_desc;
 
 	return HAL_RX_REO_ERROR_GET(reo_desc);
 }
@@ -581,23 +576,23 @@ hal_gen_reo_remap_val_generic_li(enum hal_reo_remap_reg remap_reg,
 	switch (remap_reg) {
 	case HAL_REO_REMAP_REG_IX0:
 		ix_val = HAL_REO_REMAP_IX0(ix0_map[0], 0) |
-			HAL_REO_REMAP_IX0(ix0_map[1], 1) |
-			HAL_REO_REMAP_IX0(ix0_map[2], 2) |
-			HAL_REO_REMAP_IX0(ix0_map[3], 3) |
-			HAL_REO_REMAP_IX0(ix0_map[4], 4) |
-			HAL_REO_REMAP_IX0(ix0_map[5], 5) |
-			HAL_REO_REMAP_IX0(ix0_map[6], 6) |
-			HAL_REO_REMAP_IX0(ix0_map[7], 7);
+			 HAL_REO_REMAP_IX0(ix0_map[1], 1) |
+			 HAL_REO_REMAP_IX0(ix0_map[2], 2) |
+			 HAL_REO_REMAP_IX0(ix0_map[3], 3) |
+			 HAL_REO_REMAP_IX0(ix0_map[4], 4) |
+			 HAL_REO_REMAP_IX0(ix0_map[5], 5) |
+			 HAL_REO_REMAP_IX0(ix0_map[6], 6) |
+			 HAL_REO_REMAP_IX0(ix0_map[7], 7);
 		break;
 	case HAL_REO_REMAP_REG_IX2:
 		ix_val = HAL_REO_REMAP_IX2(ix0_map[0], 16) |
-			HAL_REO_REMAP_IX2(ix0_map[1], 17) |
-			HAL_REO_REMAP_IX2(ix0_map[2], 18) |
-			HAL_REO_REMAP_IX2(ix0_map[3], 19) |
-			HAL_REO_REMAP_IX2(ix0_map[4], 20) |
-			HAL_REO_REMAP_IX2(ix0_map[5], 21) |
-			HAL_REO_REMAP_IX2(ix0_map[6], 22) |
-			HAL_REO_REMAP_IX2(ix0_map[7], 23);
+			 HAL_REO_REMAP_IX2(ix0_map[1], 17) |
+			 HAL_REO_REMAP_IX2(ix0_map[2], 18) |
+			 HAL_REO_REMAP_IX2(ix0_map[3], 19) |
+			 HAL_REO_REMAP_IX2(ix0_map[4], 20) |
+			 HAL_REO_REMAP_IX2(ix0_map[5], 21) |
+			 HAL_REO_REMAP_IX2(ix0_map[6], 22) |
+			 HAL_REO_REMAP_IX2(ix0_map[7], 23);
 		break;
 	default:
 		break;
@@ -614,9 +609,9 @@ hal_gen_reo_remap_val_generic_li(enum hal_reo_remap_reg remap_reg,
  *
  * Return: None
  */
-static inline void
-hal_rx_tlv_csum_err_get_li(uint8_t *rx_tlv_hdr, uint32_t *ip_csum_err,
-			   uint32_t *tcp_udp_csum_err)
+static inline void hal_rx_tlv_csum_err_get_li(uint8_t *rx_tlv_hdr,
+					      uint32_t *ip_csum_err,
+					      uint32_t *tcp_udp_csum_err)
 {
 	*ip_csum_err = hal_rx_attn_ip_cksum_fail_get(rx_tlv_hdr);
 	*tcp_udp_csum_err = hal_rx_attn_tcp_udp_cksum_fail_get(rx_tlv_hdr);
@@ -632,8 +627,7 @@ static uint8_t hal_rx_reo_buf_type_get_li(hal_ring_desc_t rx_desc)
 	return HAL_RX_REO_BUF_TYPE_GET(rx_desc);
 }
 
-static
-uint32_t hal_rx_tlv_mpdu_len_err_get_li(void *hw_desc_addr)
+static uint32_t hal_rx_tlv_mpdu_len_err_get_li(void *hw_desc_addr)
 {
 	struct rx_attention *rx_attn;
 	struct rx_mon_pkt_tlvs *rx_desc =
@@ -644,8 +638,7 @@ uint32_t hal_rx_tlv_mpdu_len_err_get_li(void *hw_desc_addr)
 	return HAL_RX_GET(rx_attn, RX_ATTENTION_1, MPDU_LENGTH_ERR);
 }
 
-static
-uint32_t hal_rx_tlv_mpdu_fcs_err_get_li(void *hw_desc_addr)
+static uint32_t hal_rx_tlv_mpdu_fcs_err_get_li(void *hw_desc_addr)
 {
 	struct rx_attention *rx_attn;
 	struct rx_mon_pkt_tlvs *rx_desc =
@@ -686,8 +679,7 @@ static uint32_t hal_rx_hw_desc_mpdu_user_id_li(void *hw_desc_addr)
 		(struct rx_mon_pkt_tlvs *)hw_desc_addr;
 	uint32_t user_id;
 
-	user_id = HAL_RX_GET_USER_TLV32_USERID(
-		&rx_desc->mpdu_start_tlv);
+	user_id = HAL_RX_GET_USER_TLV32_USERID(&rx_desc->mpdu_start_tlv);
 
 	return user_id;
 }
@@ -701,12 +693,11 @@ static uint32_t hal_rx_hw_desc_mpdu_user_id_li(void *hw_desc_addr)
  *
  * Return: none
  */
-static inline void
-hal_rx_msdu_start_msdu_len_set_li(uint8_t *buf, uint32_t len)
+static inline void hal_rx_msdu_start_msdu_len_set_li(uint8_t *buf, uint32_t len)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_start *msdu_start =
-			&pkt_tlvs->msdu_start_tlv.rx_msdu_start;
+		&pkt_tlvs->msdu_start_tlv.rx_msdu_start;
 	void *wrd1;
 
 	wrd1 = (uint8_t *)msdu_start + RX_MSDU_START_1_MSDU_LENGTH_OFFSET;
@@ -740,8 +731,7 @@ static inline uint32_t hal_rx_tlv_bw_get_li(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV header
  * Return: uint32_t(frequency)
  */
-static inline uint32_t
-hal_rx_tlv_get_freq_li(uint8_t *buf)
+static inline uint32_t hal_rx_tlv_get_freq_li(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_start *msdu_start =
@@ -760,8 +750,7 @@ hal_rx_tlv_get_freq_li(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV headers
  * Return: uint32_t(sgi)
  */
-static inline uint32_t
-hal_rx_tlv_sgi_get_li(uint8_t *buf)
+static inline uint32_t hal_rx_tlv_sgi_get_li(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_start *msdu_start =
@@ -780,8 +769,7 @@ hal_rx_tlv_sgi_get_li(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV headers
  * Return: uint32_t(rate_mcs)
  */
-static inline uint32_t
-hal_rx_tlv_rate_mcs_get_li(uint8_t *buf)
+static inline uint32_t hal_rx_tlv_rate_mcs_get_li(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_start *msdu_start =
@@ -819,8 +807,7 @@ static inline uint32_t hal_rx_tlv_get_pkt_type_li(uint8_t *buf)
  *
  * reutm: uint32_t(first_msdu)
  */
-static inline uint32_t
-hal_rx_tlv_first_mpdu_get_li(uint8_t *buf)
+static inline uint32_t hal_rx_tlv_first_mpdu_get_li(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_attention *rx_attn = &pkt_tlvs->attn_tlv.rx_attn;
@@ -838,8 +825,7 @@ hal_rx_tlv_first_mpdu_get_li(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV header
  * Return: uint32_t(key id)
  */
-static inline uint8_t
-hal_rx_msdu_get_keyid_li(uint8_t *buf)
+static inline uint8_t hal_rx_msdu_get_keyid_li(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
@@ -857,8 +843,7 @@ hal_rx_msdu_get_keyid_li(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV header
  * Return: uint32_t(decryt status)
  */
-static inline uint32_t
-hal_rx_tlv_get_is_decrypted_li(uint8_t *buf)
+static inline uint32_t hal_rx_tlv_get_is_decrypted_li(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_attention *rx_attn = &pkt_tlvs->attn_tlv.rx_attn;
@@ -896,73 +881,56 @@ hal_rx_msdu_reo_dst_ind_get_li(hal_soc_handle_t hal_soc_hdl,
 	msdu_details = hal_rx_link_desc_msdu0_ptr(msdu_link, hal_soc);
 
 	/* The first msdu in the link should exist */
-	msdu_desc_info = hal_rx_msdu_desc_info_get_ptr(&msdu_details[0],
-						       hal_soc);
+	msdu_desc_info =
+		hal_rx_msdu_desc_info_get_ptr(&msdu_details[0], hal_soc);
 	dst_ind = HAL_RX_MSDU_REO_DST_IND_GET(msdu_desc_info);
 	return dst_ind;
 }
 
-static inline void
-hal_mpdu_desc_info_set_li(hal_soc_handle_t hal_soc_hdl,
-			  void *ent_desc,
-			  void *mpdu_desc,
-			  uint32_t seq_no)
+static inline void hal_mpdu_desc_info_set_li(hal_soc_handle_t hal_soc_hdl,
+					     void *ent_desc, void *mpdu_desc,
+					     uint32_t seq_no)
 {
 	struct rx_mpdu_desc_info *mpdu_desc_info =
-			(struct rx_mpdu_desc_info *)mpdu_desc;
+		(struct rx_mpdu_desc_info *)mpdu_desc;
 
-	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info,
-				  MSDU_COUNT, 0x1);
-	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info,
-				  MPDU_SEQUENCE_NUMBER, seq_no);
+	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info, MSDU_COUNT, 0x1);
+	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info, MPDU_SEQUENCE_NUMBER, seq_no);
 	/* unset frag bit */
-	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info,
-				  FRAGMENT_FLAG, 0x0);
+	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info, FRAGMENT_FLAG, 0x0);
 	/* set sa/da valid bits */
-	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info,
-				  SA_IS_VALID, 0x1);
-	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info,
-				  DA_IS_VALID, 0x1);
-	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info,
-				  RAW_MPDU, 0x0);
+	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info, SA_IS_VALID, 0x1);
+	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info, DA_IS_VALID, 0x1);
+	HAL_RX_MPDU_DESC_INFO_SET(mpdu_desc_info, RAW_MPDU, 0x0);
 }
 
-static inline void
-hal_msdu_desc_info_set_li(hal_soc_handle_t hal_soc_hdl,
-			  void *msdu_desc, uint32_t dst_ind,
-			  uint32_t nbuf_len)
+static inline void hal_msdu_desc_info_set_li(hal_soc_handle_t hal_soc_hdl,
+					     void *msdu_desc, uint32_t dst_ind,
+					     uint32_t nbuf_len)
 {
 	struct rx_msdu_desc_info *msdu_desc_info =
 		(struct rx_msdu_desc_info *)msdu_desc;
 
-	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info,
-				  FIRST_MSDU_IN_MPDU_FLAG, 1);
-	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info,
-				  LAST_MSDU_IN_MPDU_FLAG, 1);
-	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info,
-				  MSDU_CONTINUATION, 0x0);
-	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info,
-				  REO_DESTINATION_INDICATION,
+	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info, FIRST_MSDU_IN_MPDU_FLAG, 1);
+	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info, LAST_MSDU_IN_MPDU_FLAG, 1);
+	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info, MSDU_CONTINUATION, 0x0);
+	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info, REO_DESTINATION_INDICATION,
 				  dst_ind);
-	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info,
-				  MSDU_LENGTH, nbuf_len);
-	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info,
-				  SA_IS_VALID, 1);
-	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info,
-				  DA_IS_VALID, 1);
+	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info, MSDU_LENGTH, nbuf_len);
+	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info, SA_IS_VALID, 1);
+	HAL_RX_MSDU_DESC_INFO_SET(msdu_desc_info, DA_IS_VALID, 1);
 }
 
-static inline
-uint8_t *hal_get_reo_ent_desc_qdesc_addr_li(uint8_t *desc)
+static inline uint8_t *hal_get_reo_ent_desc_qdesc_addr_li(uint8_t *desc)
 {
 	return desc + REO_ENTRANCE_RING_4_RX_REO_QUEUE_DESC_ADDR_31_0_OFFSET;
 }
 
-static inline
-void hal_set_reo_ent_desc_reo_dest_ind_li(uint8_t *desc, uint32_t dst_ind)
+static inline void hal_set_reo_ent_desc_reo_dest_ind_li(uint8_t *desc,
+							uint32_t dst_ind)
 {
-	HAL_RX_FLD_SET(desc, REO_ENTRANCE_RING_5,
-		       REO_DESTINATION_INDICATION, dst_ind);
+	HAL_RX_FLD_SET(desc, REO_ENTRANCE_RING_5, REO_DESTINATION_INDICATION,
+		       dst_ind);
 }
 
 static inline void
@@ -970,19 +938,20 @@ hal_rx_wbm_rel_buf_paddr_get_li(hal_ring_desc_t rx_desc,
 				struct hal_buf_info *buf_info)
 {
 	struct wbm_release_ring *wbm_rel_ring =
-		 (struct wbm_release_ring *)rx_desc;
+		(struct wbm_release_ring *)rx_desc;
 
 	buf_info->paddr =
-	 (HAL_RX_WBM_BUF_ADDR_31_0_GET(wbm_rel_ring) |
-	  ((uint64_t)(HAL_RX_WBM_BUF_ADDR_39_32_GET(wbm_rel_ring)) << 32));
+		(HAL_RX_WBM_BUF_ADDR_31_0_GET(wbm_rel_ring) |
+		 ((uint64_t)(HAL_RX_WBM_BUF_ADDR_39_32_GET(wbm_rel_ring))
+		  << 32));
 
 	buf_info->sw_cookie = HAL_RX_WBM_BUF_COOKIE_GET(wbm_rel_ring);
 }
 
 static QDF_STATUS hal_reo_status_update_li(hal_soc_handle_t hal_soc_hdl,
 					   hal_ring_desc_t reo_desc,
-					   void *st_handle,
-					   uint32_t tlv, int *num_ref)
+					   void *st_handle, uint32_t tlv,
+					   int *num_ref)
 {
 	union hal_reo_status *reo_status_ref;
 
@@ -990,9 +959,8 @@ static QDF_STATUS hal_reo_status_update_li(hal_soc_handle_t hal_soc_hdl,
 
 	switch (tlv) {
 	case HAL_REO_QUEUE_STATS_STATUS_TLV:
-		hal_reo_queue_stats_status_li(reo_desc,
-					      &reo_status_ref->queue_status,
-					      hal_soc_hdl);
+		hal_reo_queue_stats_status_li(
+			reo_desc, &reo_status_ref->queue_status, hal_soc_hdl);
 		*num_ref = reo_status_ref->queue_status.header.cmd_num;
 		break;
 	case HAL_REO_FLUSH_QUEUE_STATUS_TLV:
@@ -1009,35 +977,31 @@ static QDF_STATUS hal_reo_status_update_li(hal_soc_handle_t hal_soc_hdl,
 		break;
 	case HAL_REO_UNBLK_CACHE_STATUS_TLV:
 		hal_reo_unblock_cache_status_li(
-					reo_desc, hal_soc_hdl,
-					&reo_status_ref->unblk_cache_status);
+			reo_desc, hal_soc_hdl,
+			&reo_status_ref->unblk_cache_status);
 		*num_ref = reo_status_ref->unblk_cache_status.header.cmd_num;
 		break;
 	case HAL_REO_TIMOUT_LIST_STATUS_TLV:
 		hal_reo_flush_timeout_list_status_li(
-					reo_desc,
-					&reo_status_ref->fl_timeout_status,
-					hal_soc_hdl);
+			reo_desc, &reo_status_ref->fl_timeout_status,
+			hal_soc_hdl);
 		*num_ref = reo_status_ref->fl_timeout_status.header.cmd_num;
 		break;
 	case HAL_REO_DESC_THRES_STATUS_TLV:
 		hal_reo_desc_thres_reached_status_li(
-						reo_desc,
-						&reo_status_ref->thres_status,
-						hal_soc_hdl);
+			reo_desc, &reo_status_ref->thres_status, hal_soc_hdl);
 		*num_ref = reo_status_ref->thres_status.header.cmd_num;
 		break;
 	case HAL_REO_UPDATE_RX_QUEUE_STATUS_TLV:
 		hal_reo_rx_update_queue_status_li(
-					reo_desc,
-					&reo_status_ref->rx_queue_status,
-					hal_soc_hdl);
+			reo_desc, &reo_status_ref->rx_queue_status,
+			hal_soc_hdl);
 		*num_ref = reo_status_ref->rx_queue_status.header.cmd_num;
 		break;
 	default:
 		QDF_TRACE(QDF_MODULE_ID_DP_REO, QDF_TRACE_LEVEL_WARN,
-			  "hal_soc %pK: no handler for TLV:%d",
-			   hal_soc_hdl, tlv);
+			  "hal_soc %pK: no handler for TLV:%d", hal_soc_hdl,
+			  tlv);
 		return QDF_STATUS_E_FAILURE;
 	} /* switch */
 
@@ -1063,27 +1027,26 @@ static inline uint8_t hal_rx_get_phy_ppdu_id_size_li(void)
 void hal_hw_txrx_default_ops_attach_li(struct hal_soc *hal_soc)
 {
 	hal_soc->ops->hal_get_reo_qdesc_size = hal_get_reo_qdesc_size_li;
-	hal_soc->ops->hal_get_rx_max_ba_window =
-					hal_get_rx_max_ba_window_li;
+	hal_soc->ops->hal_get_rx_max_ba_window = hal_get_rx_max_ba_window_li;
 	hal_soc->ops->hal_set_link_desc_addr = hal_set_link_desc_addr_li;
 	hal_soc->ops->hal_tx_init_data_ring = hal_tx_init_data_ring_li;
 	hal_soc->ops->hal_get_ba_aging_timeout = hal_get_ba_aging_timeout_li;
 	hal_soc->ops->hal_set_ba_aging_timeout = hal_set_ba_aging_timeout_li;
 	hal_soc->ops->hal_get_reo_reg_base_offset =
-					hal_get_reo_reg_base_offset_li;
+		hal_get_reo_reg_base_offset_li;
 	hal_soc->ops->hal_rx_get_tlv_size = hal_rx_get_tlv_size_generic_li;
 	hal_soc->ops->hal_rx_msdu_is_wlan_mcast =
-					hal_rx_msdu_is_wlan_mcast_generic_li;
+		hal_rx_msdu_is_wlan_mcast_generic_li;
 	hal_soc->ops->hal_rx_tlv_decap_format_get =
-					hal_rx_tlv_decap_format_get_li;
+		hal_rx_tlv_decap_format_get_li;
 	hal_soc->ops->hal_rx_dump_pkt_tlvs = hal_rx_dump_pkt_tlvs_li;
 	hal_soc->ops->hal_rx_tlv_get_offload_info =
-					hal_rx_tlv_get_offload_info_li;
+		hal_rx_tlv_get_offload_info_li;
 	hal_soc->ops->hal_rx_tlv_phy_ppdu_id_get =
-					hal_rx_attn_phy_ppdu_id_get_li;
+		hal_rx_attn_phy_ppdu_id_get_li;
 	hal_soc->ops->hal_rx_tlv_msdu_done_get = hal_rx_attn_msdu_done_get_li;
 	hal_soc->ops->hal_rx_tlv_msdu_len_get =
-					hal_rx_msdu_start_msdu_len_get_li;
+		hal_rx_msdu_start_msdu_len_get_li;
 	hal_soc->ops->hal_rx_get_proto_params = hal_rx_get_proto_params_li;
 	hal_soc->ops->hal_rx_get_l3_l4_offsets = hal_rx_get_l3_l4_offsets_li;
 
@@ -1091,38 +1054,35 @@ void hal_hw_txrx_default_ops_attach_li(struct hal_soc *hal_soc)
 	hal_soc->ops->hal_rx_msdu_link_desc_set = hal_rx_msdu_link_desc_set_li;
 	hal_soc->ops->hal_rx_buf_cookie_rbm_get = hal_rx_buf_cookie_rbm_get_li;
 	hal_soc->ops->hal_rx_ret_buf_manager_get =
-						hal_rx_ret_buf_manager_get_li;
+		hal_rx_ret_buf_manager_get_li;
 	hal_soc->ops->hal_rxdma_buff_addr_info_set =
-					hal_rxdma_buff_addr_info_set_li;
+		hal_rxdma_buff_addr_info_set_li;
 	hal_soc->ops->hal_rx_msdu_flags_get = hal_rx_msdu_flags_get_li;
 	hal_soc->ops->hal_rx_get_reo_error_code = hal_rx_get_reo_error_code_li;
-	hal_soc->ops->hal_gen_reo_remap_val =
-				hal_gen_reo_remap_val_generic_li;
-	hal_soc->ops->hal_rx_tlv_csum_err_get =
-					hal_rx_tlv_csum_err_get_li;
-	hal_soc->ops->hal_rx_mpdu_desc_info_get =
-					hal_rx_mpdu_desc_info_get_li;
+	hal_soc->ops->hal_gen_reo_remap_val = hal_gen_reo_remap_val_generic_li;
+	hal_soc->ops->hal_rx_tlv_csum_err_get = hal_rx_tlv_csum_err_get_li;
+	hal_soc->ops->hal_rx_mpdu_desc_info_get = hal_rx_mpdu_desc_info_get_li;
 	hal_soc->ops->hal_rx_err_status_get = hal_rx_err_status_get_li;
 	hal_soc->ops->hal_rx_reo_buf_type_get = hal_rx_reo_buf_type_get_li;
 	hal_soc->ops->hal_rx_pkt_hdr_get = hal_rx_pkt_hdr_get_li;
 	hal_soc->ops->hal_rx_wbm_err_src_get = hal_rx_wbm_err_src_get_li;
 	hal_soc->ops->hal_rx_wbm_rel_buf_paddr_get =
-					hal_rx_wbm_rel_buf_paddr_get_li;
+		hal_rx_wbm_rel_buf_paddr_get_li;
 	hal_soc->ops->hal_rx_priv_info_set_in_tlv =
-					hal_rx_priv_info_set_in_tlv_li;
+		hal_rx_priv_info_set_in_tlv_li;
 	hal_soc->ops->hal_rx_priv_info_get_from_tlv =
-					hal_rx_priv_info_get_from_tlv_li;
+		hal_rx_priv_info_get_from_tlv_li;
 	hal_soc->ops->hal_rx_tlv_mpdu_len_err_get =
-					hal_rx_tlv_mpdu_len_err_get_li;
+		hal_rx_tlv_mpdu_len_err_get_li;
 	hal_soc->ops->hal_rx_tlv_mpdu_fcs_err_get =
-					hal_rx_tlv_mpdu_fcs_err_get_li;
+		hal_rx_tlv_mpdu_fcs_err_get_li;
 	hal_soc->ops->hal_reo_send_cmd = hal_reo_send_cmd_li;
 	hal_soc->ops->hal_rx_desc_get_80211_hdr = hal_rx_desc_get_80211_hdr_li;
 	hal_soc->ops->hal_rx_hw_desc_mpdu_user_id =
-					hal_rx_hw_desc_mpdu_user_id_li;
+		hal_rx_hw_desc_mpdu_user_id_li;
 	hal_soc->ops->hal_reo_qdesc_setup = hal_reo_qdesc_setup_li;
 	hal_soc->ops->hal_rx_tlv_msdu_len_set =
-					hal_rx_msdu_start_msdu_len_set_li;
+		hal_rx_msdu_start_msdu_len_set_li;
 	hal_soc->ops->hal_rx_tlv_bw_get = hal_rx_tlv_bw_get_li;
 	hal_soc->ops->hal_rx_tlv_get_freq = hal_rx_tlv_get_freq_li;
 	hal_soc->ops->hal_rx_tlv_sgi_get = hal_rx_tlv_sgi_get_li;
@@ -1130,20 +1090,20 @@ void hal_hw_txrx_default_ops_attach_li(struct hal_soc *hal_soc)
 	hal_soc->ops->hal_rx_tlv_get_pkt_type = hal_rx_tlv_get_pkt_type_li;
 	hal_soc->ops->hal_rx_tlv_first_mpdu_get = hal_rx_tlv_first_mpdu_get_li;
 	hal_soc->ops->hal_rx_tlv_get_is_decrypted =
-			hal_rx_tlv_get_is_decrypted_li;
+		hal_rx_tlv_get_is_decrypted_li;
 	hal_soc->ops->hal_rx_msdu_get_keyid = hal_rx_msdu_get_keyid_li;
 	hal_soc->ops->hal_rx_msdu_reo_dst_ind_get =
-			hal_rx_msdu_reo_dst_ind_get_li;
+		hal_rx_msdu_reo_dst_ind_get_li;
 	hal_soc->ops->hal_msdu_desc_info_set = hal_msdu_desc_info_set_li;
 	hal_soc->ops->hal_mpdu_desc_info_set = hal_mpdu_desc_info_set_li;
 	hal_soc->ops->hal_reo_status_update = hal_reo_status_update_li;
 	hal_soc->ops->hal_get_tlv_hdr_size = hal_get_tlv_hdr_size_li;
 	hal_soc->ops->hal_get_reo_ent_desc_qdesc_addr =
-			hal_get_reo_ent_desc_qdesc_addr_li;
+		hal_get_reo_ent_desc_qdesc_addr_li;
 	hal_soc->ops->hal_rx_get_qdesc_addr = hal_rx_get_qdesc_addr_li;
 	hal_soc->ops->hal_set_reo_ent_desc_reo_dest_ind =
-			hal_set_reo_ent_desc_reo_dest_ind_li;
+		hal_set_reo_ent_desc_reo_dest_ind_li;
 	hal_soc->ops->hal_get_idle_link_bm_id = hal_get_idle_link_bm_id_li;
 	hal_soc->ops->hal_rx_get_phy_ppdu_id_size =
-						hal_rx_get_phy_ppdu_id_size_li;
+		hal_rx_get_phy_ppdu_id_size_li;
 }

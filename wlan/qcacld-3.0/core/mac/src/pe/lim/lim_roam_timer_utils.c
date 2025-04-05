@@ -22,10 +22,10 @@
  * Host based roaming timers implementation
  */
 
-#include "lim_types.h"
-#include "lim_utils.h"
 #include "lim_assoc_utils.h"
 #include "lim_security_utils.h"
+#include "lim_types.h"
+#include "lim_utils.h"
 
 /**
  * lim_create_timers_host_roam() - Create timers used in host based roaming
@@ -40,10 +40,10 @@ uint32_t lim_create_timers_host_roam(struct mac_context *mac_ctx)
 	uint32_t cfg_value;
 
 	cfg_value = SYS_MS_TO_TICKS(
-			mac_ctx->mlme_cfg->timeouts.reassoc_failure_timeout);
+		mac_ctx->mlme_cfg->timeouts.reassoc_failure_timeout);
 	/* Create Association failure timer and activate it later */
-	if (tx_timer_create(mac_ctx,
-			&mac_ctx->lim.lim_timers.gLimReassocFailureTimer,
+	if (tx_timer_create(
+		    mac_ctx, &mac_ctx->lim.lim_timers.gLimReassocFailureTimer,
 		    "REASSOC FAILURE TIMEOUT", lim_assoc_failure_timer_handler,
 		    LIM_REASSOC, cfg_value, 0, TX_NO_ACTIVATE) != TX_SUCCESS) {
 		pe_err("failed to create Reassoc timer");
@@ -52,10 +52,10 @@ uint32_t lim_create_timers_host_roam(struct mac_context *mac_ctx)
 	cfg_value = 1000;
 	cfg_value = SYS_MS_TO_TICKS(cfg_value);
 	if (tx_timer_create(mac_ctx,
-			&mac_ctx->lim.lim_timers.gLimFTPreAuthRspTimer,
-			"FT PREAUTH RSP TIMEOUT",
-			lim_timer_handler, SIR_LIM_FT_PREAUTH_RSP_TIMEOUT,
-			cfg_value, 0, TX_NO_ACTIVATE) != TX_SUCCESS) {
+			    &mac_ctx->lim.lim_timers.gLimFTPreAuthRspTimer,
+			    "FT PREAUTH RSP TIMEOUT", lim_timer_handler,
+			    SIR_LIM_FT_PREAUTH_RSP_TIMEOUT, cfg_value, 0,
+			    TX_NO_ACTIVATE) != TX_SUCCESS) {
 		pe_err("failed to create Join fail timer");
 		goto err_roam_timer;
 	}
@@ -97,41 +97,40 @@ void lim_deactivate_timers_host_roam(struct mac_context *mac_ctx)
  * Return: None
  */
 void lim_deactivate_and_change_timer_host_roam(struct mac_context *mac_ctx,
-		uint32_t timer_id)
+					       uint32_t timer_id)
 {
 	uint32_t val = 0;
 
 	switch (timer_id) {
 	case eLIM_REASSOC_FAIL_TIMER:
-		if (tx_timer_deactivate
-			(&mac_ctx->lim.lim_timers.gLimReassocFailureTimer) !=
-				TX_SUCCESS)
+		if (tx_timer_deactivate(
+			    &mac_ctx->lim.lim_timers.gLimReassocFailureTimer) !=
+		    TX_SUCCESS)
 			pe_warn("unable to deactivate Reassoc fail timer");
 
 		val = SYS_MS_TO_TICKS(
 			mac_ctx->mlme_cfg->timeouts.reassoc_failure_timeout);
-		if (tx_timer_change
-			(&mac_ctx->lim.lim_timers.gLimReassocFailureTimer, val,
-			 0) != TX_SUCCESS)
+		if (tx_timer_change(
+			    &mac_ctx->lim.lim_timers.gLimReassocFailureTimer,
+			    val, 0) != TX_SUCCESS)
 			pe_warn("unable to change Reassoc fail timer");
 		break;
 
 	case eLIM_FT_PREAUTH_RSP_TIMER:
-		if (tx_timer_deactivate
-			(&mac_ctx->lim.lim_timers.gLimFTPreAuthRspTimer) !=
-			TX_SUCCESS) {
+		if (tx_timer_deactivate(
+			    &mac_ctx->lim.lim_timers.gLimFTPreAuthRspTimer) !=
+		    TX_SUCCESS) {
 			pe_err("Unable to deactivate Preauth Fail timer");
 			return;
 		}
 		val = 1000;
 		val = SYS_MS_TO_TICKS(val);
 		if (tx_timer_change(
-				&mac_ctx->lim.lim_timers.gLimFTPreAuthRspTimer,
-				val, 0) != TX_SUCCESS) {
+			    &mac_ctx->lim.lim_timers.gLimFTPreAuthRspTimer, val,
+			    0) != TX_SUCCESS) {
 			pe_err("Unable to change Join Failure timer");
 			return;
 		}
 		break;
 	}
 }
-

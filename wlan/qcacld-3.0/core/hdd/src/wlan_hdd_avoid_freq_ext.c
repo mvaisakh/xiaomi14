@@ -23,22 +23,20 @@
 
 /* Include Files */
 
-#include <osif_psoc_sync.h>
 #include "wlan_hdd_avoid_freq_ext.h"
-#include "wlan_reg_ucfg_api.h"
 #include "wlan_reg_services_api.h"
+#include "wlan_reg_ucfg_api.h"
+#include <osif_psoc_sync.h>
 
 #define AVOID_FREQ_EXT_MAX QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_MAX
 
-const struct nla_policy
-avoid_freq_ext_policy [QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_MAX + 1] = {
+const struct nla_policy avoid_freq_ext_policy[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_MAX +
+					      1] = {
 	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_RANGE] = { .type = NLA_NESTED },
-	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_START] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_END] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_POWER_CAP_DBM] = {.type =
-								NLA_S32},
-	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_IFACES_BITMASK] = {.type =
-								NLA_U32},
+	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_START] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_END] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_POWER_CAP_DBM] = { .type = NLA_S32 },
+	[QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_IFACES_BITMASK] = { .type = NLA_U32 },
 };
 
 /**
@@ -54,10 +52,9 @@ avoid_freq_ext_policy [QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_MAX + 1] = {
  *
  * Return: 0 on success; errno on failure
  */
-static int
-__wlan_hdd_cfg80211_avoid_freq_ext(struct wiphy *wiphy,
-				   struct wireless_dev *wdev,
-		const void *data, int data_len)
+static int __wlan_hdd_cfg80211_avoid_freq_ext(struct wiphy *wiphy,
+					      struct wireless_dev *wdev,
+					      const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	int ret = 0;
@@ -102,9 +99,7 @@ __wlan_hdd_cfg80211_avoid_freq_ext(struct wiphy *wiphy,
 
 	ret = wlan_cfg80211_nla_parse(tb,
 				      QCA_WLAN_VENDOR_ATTR_AVOID_FREQUENCY_MAX,
-				      data,
-				      data_len,
-				      avoid_freq_ext_policy);
+				      data, data_len, avoid_freq_ext_policy);
 	if (ret) {
 		hdd_err_rl("Invalid avoid freq ext ATTR");
 		ret = -EINVAL;
@@ -137,10 +132,9 @@ __wlan_hdd_cfg80211_avoid_freq_ext(struct wiphy *wiphy,
 			break;
 		}
 
-		if (wlan_cfg80211_nla_parse(tb2, AVOID_FREQ_EXT_MAX,
-					    nla_data(freq_ext),
-					    nla_len(freq_ext),
-					    avoid_freq_ext_policy)) {
+		if (wlan_cfg80211_nla_parse(
+			    tb2, AVOID_FREQ_EXT_MAX, nla_data(freq_ext),
+			    nla_len(freq_ext), avoid_freq_ext_policy)) {
 			hdd_err_rl("nla_parse failed");
 			ret = -EINVAL;
 			goto out;
@@ -168,17 +162,17 @@ __wlan_hdd_cfg80211_avoid_freq_ext(struct wiphy *wiphy,
 		    !avoid_freq_range->end_freq && (i < 1)) {
 			hdd_debug_rl("Clear unsafe channel list");
 		} else if (!wlan_reg_is_same_band_freqs(
-			   avoid_freq_range->start_freq,
-			   avoid_freq_range->end_freq)) {
-			hdd_debug_rl("start freq %d end freq %d not in same band",
-				     avoid_freq_range->start_freq,
-				     avoid_freq_range->end_freq);
+				   avoid_freq_range->start_freq,
+				   avoid_freq_range->end_freq)) {
+			hdd_debug_rl(
+				"start freq %d end freq %d not in same band",
+				avoid_freq_range->start_freq,
+				avoid_freq_range->end_freq);
 			ret = -EINVAL;
 			goto out;
 		}
 
-		if (avoid_freq_range->end_freq <
-		    avoid_freq_range->start_freq) {
+		if (avoid_freq_range->end_freq < avoid_freq_range->start_freq) {
 			ret = -EINVAL;
 			goto out;
 		}
@@ -191,17 +185,17 @@ __wlan_hdd_cfg80211_avoid_freq_ext(struct wiphy *wiphy,
 			avoid_freq_range->is_valid_txpower = true;
 		}
 
-		hdd_debug_rl("ext avoid freq start: %u end: %u txpower %d mask %d",
-			     avoid_freq_range->start_freq,
-			     avoid_freq_range->end_freq,
-			     avoid_freq_range->txpower,
-			     avoid_freq_list.restriction_mask);
+		hdd_debug_rl(
+			"ext avoid freq start: %u end: %u txpower %d mask %d",
+			avoid_freq_range->start_freq,
+			avoid_freq_range->end_freq, avoid_freq_range->txpower,
+			avoid_freq_list.restriction_mask);
 		i++;
 	}
 
 	if (i < CH_AVOID_MAX_RANGE) {
-		hdd_warn_rl("Number of freq range %u less than expected %u",
-			    i, CH_AVOID_MAX_RANGE);
+		hdd_warn_rl("Number of freq range %u less than expected %u", i,
+			    CH_AVOID_MAX_RANGE);
 		avoid_freq_list.ch_avoid_range_cnt = i;
 	}
 

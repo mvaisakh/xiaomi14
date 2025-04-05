@@ -21,15 +21,14 @@
  * Implementation for creating sysfs file radar
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_vdev_sync.h"
+#include "wlan_dfs_tgt_api.h"
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_radar.h>
-#include "wlan_dfs_tgt_api.h"
 
-static ssize_t
-__hdd_sysfs_radar_store(struct net_device *net_dev,
-			char const *buf, size_t count)
+static ssize_t __hdd_sysfs_radar_store(struct net_device *net_dev,
+				       char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_ap_ctx *ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(adapter->deflink);
@@ -52,8 +51,8 @@ __hdd_sysfs_radar_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -61,8 +60,8 @@ __hdd_sysfs_radar_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("set_radar: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("set_radar: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get set_value */
 	token = strsep(&sptr, " ");
@@ -90,10 +89,9 @@ __hdd_sysfs_radar_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_radar_store(struct device *dev,
-		      struct device_attribute *attr,
-		      char const *buf, size_t count)
+static ssize_t hdd_sysfs_radar_store(struct device *dev,
+				     struct device_attribute *attr,
+				     char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -110,8 +108,7 @@ hdd_sysfs_radar_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(radar, 0220,
-		   NULL, hdd_sysfs_radar_store);
+static DEVICE_ATTR(radar, 0220, NULL, hdd_sysfs_radar_store);
 
 int hdd_sysfs_radar_create(struct hdd_adapter *adapter)
 {

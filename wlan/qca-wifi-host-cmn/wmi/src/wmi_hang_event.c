@@ -15,9 +15,9 @@
  */
 #include <qdf_hang_event_notifier.h>
 #include <qdf_notifier.h>
+#include <qdf_trace.h>
 #include <wmi_hang_event.h>
 #include <wmi_unified_priv.h>
-#include <qdf_trace.h>
 
 struct wmi_hang_data_fixed_param {
 	uint16_t tlv_header; /* tlv tag and length */
@@ -33,8 +33,8 @@ struct wmi_hang_data_fixed_param {
 static void wmi_log_history(struct notifier_block *block, void *data,
 			    uint8_t wmi_history)
 {
-	qdf_notif_block *notif_block = qdf_container_of(block, qdf_notif_block,
-							notif_block);
+	qdf_notif_block *notif_block =
+		qdf_container_of(block, qdf_notif_block, notif_block);
 	struct qdf_notifer_data *wmi_hang_data = data;
 	int nread, pos, total_len;
 	unsigned int wmi_ring_size = NUM_HANG_WMI_HISTORY;
@@ -80,10 +80,12 @@ static void wmi_log_history(struct notifier_block *block, void *data,
 			wmi_buf_ptr = (wmi_hang_data->hang_data +
 				       wmi_hang_data->offset);
 			cmd = ((struct wmi_hang_data_fixed_param *)wmi_buf_ptr);
-			QDF_HANG_EVT_SET_HDR(&cmd->tlv_header,
-					     HANG_EVT_TAG_WMI_EVT_HIST,
-		  QDF_HANG_GET_STRUCT_TLVLEN(struct wmi_hang_data_fixed_param));
-		     wmi_evt = &(((struct wmi_event_debug *)wmi_log->buf)[pos]);
+			QDF_HANG_EVT_SET_HDR(
+				&cmd->tlv_header, HANG_EVT_TAG_WMI_EVT_HIST,
+				QDF_HANG_GET_STRUCT_TLVLEN(
+					struct wmi_hang_data_fixed_param));
+			wmi_evt = &(
+				((struct wmi_event_debug *)wmi_log->buf)[pos]);
 			cmd->event = wmi_evt->event;
 			qdf_log_timestamp_to_secs(wmi_evt->time, &secs, &usecs);
 			cmd->time = secs;
@@ -93,10 +95,12 @@ static void wmi_log_history(struct notifier_block *block, void *data,
 			wmi_buf_ptr = (wmi_hang_data->hang_data +
 				       wmi_hang_data->offset);
 			cmd = ((struct wmi_hang_data_fixed_param *)wmi_buf_ptr);
-			QDF_HANG_EVT_SET_HDR(&cmd->tlv_header,
-					     HANG_EVT_TAG_WMI_CMD_HIST,
-		 QDF_HANG_GET_STRUCT_TLVLEN(struct wmi_hang_data_fixed_param));
-		   wmi_cmd = &(((struct wmi_command_debug *)wmi_log->buf)[pos]);
+			QDF_HANG_EVT_SET_HDR(
+				&cmd->tlv_header, HANG_EVT_TAG_WMI_CMD_HIST,
+				QDF_HANG_GET_STRUCT_TLVLEN(
+					struct wmi_hang_data_fixed_param));
+			wmi_cmd = &((
+				(struct wmi_command_debug *)wmi_log->buf)[pos]);
 			cmd->event = wmi_cmd->command;
 			qdf_log_timestamp_to_secs(wmi_cmd->time, &secs, &usecs);
 			cmd->time = secs;
@@ -112,8 +116,7 @@ static void wmi_log_history(struct notifier_block *block, void *data,
 }
 
 static int wmi_recovery_notifier_call(struct notifier_block *block,
-				      unsigned long state,
-				      void *data)
+				      unsigned long state, void *data)
 {
 	wmi_log_history(block, data, WMI_EVT_HIST);
 	wmi_log_history(block, data, WMI_CMD_HIST);

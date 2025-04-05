@@ -22,15 +22,14 @@
  *
  */
 
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_btc_chain_mode.h"
 #include "osif_sync.h"
-#include "wlan_coex_ucfg_api.h"
-#include "wlan_hdd_object_manager.h"
 #include "wlan_cfg80211_coex.h"
+#include "wlan_coex_ucfg_api.h"
+#include "wlan_hdd_main.h"
+#include "wlan_hdd_object_manager.h"
 
-static QDF_STATUS
-wlan_hdd_btc_chain_mode_handler(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS wlan_hdd_btc_chain_mode_handler(struct wlan_objmgr_vdev *vdev)
 {
 	QDF_STATUS status;
 	struct hdd_adapter *adapter;
@@ -63,7 +62,7 @@ wlan_hdd_btc_chain_mode_handler(struct wlan_objmgr_vdev *vdev)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	adapter =  link_info->adapter;
+	adapter = link_info->adapter;
 	status = ucfg_coex_psoc_get_btc_chain_mode(psoc, &mode);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("failed to get cur BTC chain mode, status %d", status);
@@ -77,13 +76,15 @@ wlan_hdd_btc_chain_mode_handler(struct wlan_objmgr_vdev *vdev)
 	}
 
 	nss = ((mode == WLAN_COEX_BTC_CHAIN_MODE_FDD ||
-		mode == WLAN_COEX_BTC_CHAIN_MODE_HYBRID) ? 1 : 2);
+		mode == WLAN_COEX_BTC_CHAIN_MODE_HYBRID) ?
+		       1 :
+		       2);
 
-	hdd_debug("update nss to %d for vdev %d, device mode %d",
-		  nss, link_info->vdev_id, adapter->device_mode);
+	hdd_debug("update nss to %d for vdev %d, device mode %d", nss,
+		  link_info->vdev_id, adapter->device_mode);
 	band = NSS_CHAINS_BAND_2GHZ;
-	sme_update_nss_in_mlme_cfg(mac_handle, nss, nss,
-				   adapter->device_mode, band);
+	sme_update_nss_in_mlme_cfg(mac_handle, nss, nss, adapter->device_mode,
+				   band);
 	sme_update_vdev_type_nss(mac_handle, nss, band);
 
 	status = wlan_objmgr_vdev_try_get_ref(vdev, WLAN_OSIF_ID);
@@ -96,13 +97,13 @@ wlan_hdd_btc_chain_mode_handler(struct wlan_objmgr_vdev *vdev)
 	freq = hdd_get_link_info_home_channel(link_info);
 
 	/*
-	 * BT coex chain mode is for COEX between BT and WiFi-2.4G.
-	 * Nss and related parameters have been updated upon for
-	 * NSS_CHAINS_BAND_2GHZ.
-	 * If the current home channel is NOT 2.4G, these parameters
-	 * will take effect when switching to 2.4G, so no need to do
-	 * restart here.
-	 */
+   * BT coex chain mode is for COEX between BT and WiFi-2.4G.
+   * Nss and related parameters have been updated upon for
+   * NSS_CHAINS_BAND_2GHZ.
+   * If the current home channel is NOT 2.4G, these parameters
+   * will take effect when switching to 2.4G, so no need to do
+   * restart here.
+   */
 	if (!WLAN_REG_IS_24GHZ_CH_FREQ(freq))
 		return QDF_STATUS_SUCCESS;
 
@@ -125,10 +126,8 @@ wlan_hdd_btc_chain_mode_handler(struct wlan_objmgr_vdev *vdev)
 
 void wlan_hdd_register_btc_chain_mode_handler(struct wlan_objmgr_psoc *psoc)
 {
-	ucfg_coex_register_cfg_updated_handler(psoc,
-					       COEX_CONFIG_BTC_CHAIN_MODE,
-					       wlan_hdd_btc_chain_mode_handler
-					       );
+	ucfg_coex_register_cfg_updated_handler(psoc, COEX_CONFIG_BTC_CHAIN_MODE,
+					       wlan_hdd_btc_chain_mode_handler);
 }
 
 /**
@@ -162,8 +161,10 @@ static int __wlan_hdd_cfg80211_set_btc_chain_mode(struct wiphy *wiphy,
 		return errno;
 
 	if (hdd_ctx->num_rf_chains < 2) {
-		hdd_debug("Num of chains [%u] is less than 2, setting BTC separate chain mode is not allowed",
-			  hdd_ctx->num_rf_chains);
+		hdd_debug(
+			"Num of chains [%u] is less than 2, setting BTC separate chain "
+			"mode is not allowed",
+			hdd_ctx->num_rf_chains);
 		return -EINVAL;
 	}
 
@@ -197,8 +198,8 @@ int wlan_hdd_cfg80211_set_btc_chain_mode(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_set_btc_chain_mode(wiphy, wdev,
-						       data, data_len);
+	errno = __wlan_hdd_cfg80211_set_btc_chain_mode(wiphy, wdev, data,
+						       data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 

@@ -24,23 +24,24 @@
    DEPENDENCIES:
    ============================================================================*/
 
-#include "qdf_types.h"
-#include "i_host_diag_core_log.h"
-#include "host_diag_core_event.h"
-#include "wlan_nlink_common.h"
-#include "cds_sched.h"
-#include "wlan_ptt_sock_svc.h"
-#include "wlan_nlink_srv.h"
 #include "cds_api.h"
-#include "wlan_ps_wow_diag.h"
+#include "cds_sched.h"
+#include "host_diag_core_event.h"
+#include "i_host_diag_core_log.h"
 #include "qdf_str.h"
+#include "qdf_types.h"
+#include "wlan_nlink_common.h"
+#include "wlan_nlink_srv.h"
+#include "wlan_ps_wow_diag.h"
+#include "wlan_ptt_sock_svc.h"
 
-#define PTT_MSG_DIAG_CMDS_TYPE   (0x5050)
+#define PTT_MSG_DIAG_CMDS_TYPE (0x5050)
 
-#define DIAG_TYPE_LOGS   (1)
+#define DIAG_TYPE_LOGS (1)
 #define DIAG_TYPE_EVENTS (2)
 
-#define DIAG_SWAP16(A) ((((uint16_t)(A) & 0xff00) >> 8) | (((uint16_t)(A) & 0x00ff) << 8))
+#define DIAG_SWAP16(A) \
+	((((uint16_t)(A) & 0xff00) >> 8) | (((uint16_t)(A) & 0x00ff) << 8))
 
 typedef struct event_report_s {
 	uint32_t diag_type;
@@ -55,7 +56,7 @@ typedef struct event_report_s {
    This function sets the logging code in the given log record.
 
    \param  - ptr - Pointer to the log header type.
-		- code - log code.
+                - code - log code.
    \return - None
 
    --------------------------------------------------------------------------*/
@@ -64,7 +65,7 @@ void host_diag_log_set_code(void *ptr, uint16_t code)
 {
 	if (ptr) {
 		/* All log packets are required to start with 'log_header_type' */
-		((log_hdr_type *) ptr)->code = code;
+		((log_hdr_type *)ptr)->code = code;
 	}
 }
 
@@ -75,7 +76,7 @@ void host_diag_log_set_code(void *ptr, uint16_t code)
    This function sets the length field in the given log record.
 
    \param  - ptr - Pointer to the log header type.
-		- length - log length.
+                - length - log length.
 
    \return - None
 
@@ -85,7 +86,7 @@ void host_diag_log_set_length(void *ptr, uint16_t length)
 {
 	if (ptr) {
 		/* All log packets are required to start with 'log_header_type' */
-		((log_hdr_type *) ptr)->len = (uint16_t) length;
+		((log_hdr_type *)ptr)->len = (uint16_t)length;
 	}
 }
 
@@ -93,7 +94,8 @@ void host_diag_log_set_length(void *ptr, uint16_t length)
 
    \brief host_diag_log_submit() -
 
-   This function sends the log data to the ptt socket app only if it is registered with the driver.
+   This function sends the log data to the ptt socket app only if it is
+   registered with the driver.
 
    \param  - ptr - Pointer to the log header type.
 
@@ -103,7 +105,7 @@ void host_diag_log_set_length(void *ptr, uint16_t length)
 
 void host_diag_log_submit(void *plog_hdr_ptr)
 {
-	log_hdr_type *pHdr = (log_hdr_type *) plog_hdr_ptr;
+	log_hdr_type *pHdr = (log_hdr_type *)plog_hdr_ptr;
 	tAniHdr *wmsg = NULL;
 	uint8_t *pBuf;
 	uint16_t data_len;
@@ -120,24 +122,24 @@ void host_diag_log_submit(void *plog_hdr_ptr)
 
 		total_len = sizeof(tAniHdr) + sizeof(uint32_t) + data_len;
 
-		pBuf = (uint8_t *) qdf_mem_malloc(total_len);
+		pBuf = (uint8_t *)qdf_mem_malloc(total_len);
 
 		if (!pBuf)
 			return;
 
-		wmsg = (tAniHdr *) pBuf;
+		wmsg = (tAniHdr *)pBuf;
 		wmsg->type = PTT_MSG_DIAG_CMDS_TYPE;
 		wmsg->length = total_len;
 		wmsg->length = DIAG_SWAP16(wmsg->length);
 		pBuf += sizeof(tAniHdr);
 
 		/*  Diag Type events or log */
-		*(uint32_t *) pBuf = DIAG_TYPE_LOGS;
+		*(uint32_t *)pBuf = DIAG_TYPE_LOGS;
 		pBuf += sizeof(uint32_t);
 
 		memcpy(pBuf, pHdr, data_len);
-		ptt_sock_send_msg_to_app (wmsg, 0, ANI_NL_MSG_PUMAC,
-			INVALID_PID);
+		ptt_sock_send_msg_to_app(wmsg, 0, ANI_NL_MSG_PUMAC,
+					 INVALID_PID);
 		qdf_mem_free((void *)wmsg);
 	}
 	return;
@@ -156,10 +158,10 @@ void host_diag_log_submit(void *plog_hdr_ptr)
  *
  */
 void host_diag_log_wlock(uint32_t reason, const char *wake_lock_name,
-		uint32_t timeout, uint32_t status)
+			 uint32_t timeout, uint32_t status)
 {
 	WLAN_HOST_DIAG_EVENT_DEF(wlan_diag_event,
-			struct host_event_wlan_wake_lock);
+				 struct host_event_wlan_wake_lock);
 
 	if ((nl_srv_is_initialized() != 0) ||
 	    (cds_is_wakelock_enabled() == false))
@@ -169,9 +171,8 @@ void host_diag_log_wlock(uint32_t reason, const char *wake_lock_name,
 	wlan_diag_event.reason = reason;
 	wlan_diag_event.timeout = timeout;
 	wlan_diag_event.name_len = strlen(wake_lock_name);
-	strlcpy(&wlan_diag_event.name[0],
-			wake_lock_name,
-			wlan_diag_event.name_len+1);
+	strlcpy(&wlan_diag_event.name[0], wake_lock_name,
+		wlan_diag_event.name_len + 1);
 
 	WLAN_HOST_DIAG_EVENT_REPORT(&wlan_diag_event, EVENT_WLAN_WAKE_LOCK);
 }
@@ -207,18 +208,18 @@ void host_diag_event_report_payload(uint16_t event_Id, uint16_t length,
 	if (cds_is_multicast_logging()) {
 		total_len = sizeof(tAniHdr) + sizeof(event_report_t) + length;
 
-		pBuf = (uint8_t *) qdf_mem_malloc(total_len);
+		pBuf = (uint8_t *)qdf_mem_malloc(total_len);
 
 		if (!pBuf)
 			return;
 
-		wmsg = (tAniHdr *) pBuf;
+		wmsg = (tAniHdr *)pBuf;
 		wmsg->type = PTT_MSG_DIAG_CMDS_TYPE;
 		wmsg->length = total_len;
 		wmsg->length = DIAG_SWAP16(wmsg->length);
 		pBuf += sizeof(tAniHdr);
 
-		pEvent_report = (event_report_t *) pBuf;
+		pEvent_report = (event_report_t *)pBuf;
 		pEvent_report->diag_type = DIAG_TYPE_EVENTS;
 		pEvent_report->event_id = event_Id;
 		pEvent_report->length = length;
@@ -227,11 +228,12 @@ void host_diag_event_report_payload(uint16_t event_Id, uint16_t length,
 
 		memcpy(pBuf, pPayload, length);
 
-		ret = ptt_sock_send_msg_to_app
-			    (wmsg, 0, ANI_NL_MSG_PUMAC, INVALID_PID);
+		ret = ptt_sock_send_msg_to_app(wmsg, 0, ANI_NL_MSG_PUMAC,
+					       INVALID_PID);
 		if ((ret < 0) && (ret != -ESRCH)) {
-			QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
-				  "Ptt Socket error sending message to the app!!");
+			QDF_TRACE(
+				QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
+				"Ptt Socket error sending message to the app!!");
 			qdf_mem_free((void *)wmsg);
 			return;
 		}
@@ -240,7 +242,6 @@ void host_diag_event_report_payload(uint16_t event_Id, uint16_t length,
 	}
 
 	return;
-
 }
 
 /**
@@ -256,12 +257,12 @@ void host_diag_event_report_payload(uint16_t event_Id, uint16_t length,
 void host_log_low_resource_failure(uint8_t event_sub_type)
 {
 	WLAN_HOST_DIAG_EVENT_DEF(wlan_diag_event,
-			struct host_event_wlan_low_resource_failure);
+				 struct host_event_wlan_low_resource_failure);
 
 	wlan_diag_event.event_sub_type = event_sub_type;
 
 	WLAN_HOST_DIAG_EVENT_REPORT(&wlan_diag_event,
-					EVENT_WLAN_LOW_RESOURCE_FAILURE);
+				    EVENT_WLAN_LOW_RESOURCE_FAILURE);
 }
 
 void host_log_rsn_info(uint8_t *ucast_cipher, uint8_t *mcast_cipher,
@@ -270,22 +271,16 @@ void host_log_rsn_info(uint8_t *ucast_cipher, uint8_t *mcast_cipher,
 	WLAN_HOST_DIAG_EVENT_DEF(wlan_diag_event,
 				 struct event_wlan_csr_rsn_info);
 
-	qdf_mem_copy(wlan_diag_event.ucast_cipher, ucast_cipher,
-		     RSN_OUI_SIZE);
-	qdf_mem_copy(wlan_diag_event.mcast_cipher, mcast_cipher,
-		     RSN_OUI_SIZE);
-	qdf_mem_copy(wlan_diag_event.akm_suite, akm_suite,
-		     RSN_OUI_SIZE);
-	qdf_mem_copy(wlan_diag_event.group_mgmt, group_mgmt,
-		     RSN_OUI_SIZE);
+	qdf_mem_copy(wlan_diag_event.ucast_cipher, ucast_cipher, RSN_OUI_SIZE);
+	qdf_mem_copy(wlan_diag_event.mcast_cipher, mcast_cipher, RSN_OUI_SIZE);
+	qdf_mem_copy(wlan_diag_event.akm_suite, akm_suite, RSN_OUI_SIZE);
+	qdf_mem_copy(wlan_diag_event.group_mgmt, group_mgmt, RSN_OUI_SIZE);
 
-	WLAN_HOST_DIAG_EVENT_REPORT(&wlan_diag_event,
-				    EVENT_WLAN_RSN_INFO);
+	WLAN_HOST_DIAG_EVENT_REPORT(&wlan_diag_event, EVENT_WLAN_RSN_INFO);
 }
 
-void
-host_log_wlan_auth_info(uint16_t auth_algo_num, uint16_t auth_tx_seq_num,
-			uint16_t auth_status_code)
+void host_log_wlan_auth_info(uint16_t auth_algo_num, uint16_t auth_tx_seq_num,
+			     uint16_t auth_status_code)
 {
 	WLAN_HOST_DIAG_EVENT_DEF(wlan_diag_event,
 				 struct event_wlan_lim_auth_info);
@@ -294,8 +289,7 @@ host_log_wlan_auth_info(uint16_t auth_algo_num, uint16_t auth_tx_seq_num,
 	wlan_diag_event.auth_transaction_seq_num = auth_tx_seq_num;
 	wlan_diag_event.auth_status_code = auth_status_code;
 
-	WLAN_HOST_DIAG_EVENT_REPORT(&wlan_diag_event,
-				    EVENT_WLAN_AUTH_INFO);
+	WLAN_HOST_DIAG_EVENT_REPORT(&wlan_diag_event, EVENT_WLAN_AUTH_INFO);
 }
 
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
@@ -310,13 +304,12 @@ host_log_wlan_auth_info(uint16_t auth_algo_num, uint16_t auth_tx_seq_num,
 void qdf_wow_wakeup_host_event(uint8_t wow_wakeup_cause)
 {
 	WLAN_HOST_DIAG_EVENT_DEF(wowRequest,
-		host_event_wlan_powersave_wow_payload_type);
+				 host_event_wlan_powersave_wow_payload_type);
 	qdf_mem_zero(&wowRequest, sizeof(wowRequest));
 
 	wowRequest.event_subtype = WLAN_WOW_WAKEUP;
 	wowRequest.wow_wakeup_cause = wow_wakeup_cause;
-	WLAN_HOST_DIAG_EVENT_REPORT(&wowRequest,
-		EVENT_WLAN_POWERSAVE_WOW);
+	WLAN_HOST_DIAG_EVENT_REPORT(&wowRequest, EVENT_WLAN_POWERSAVE_WOW);
 }
 
 void host_log_acs_req_event(uint8_t *intf, const uint8_t *hw_mode, uint16_t bw,
@@ -344,12 +337,11 @@ void host_log_acs_scan_start(uint32_t scan_id, uint8_t vdev_id)
 	acs_scan_start.scan_id = scan_id;
 	acs_scan_start.vdev_id = vdev_id;
 
-	WLAN_HOST_DIAG_EVENT_REPORT(&acs_scan_start,
-				    EVENT_WLAN_ACS_SCAN_START);
+	WLAN_HOST_DIAG_EVENT_REPORT(&acs_scan_start, EVENT_WLAN_ACS_SCAN_START);
 }
 
-void host_log_acs_scan_done(const uint8_t *status,
-			    uint8_t vdev_id, uint32_t scan_id)
+void host_log_acs_scan_done(const uint8_t *status, uint8_t vdev_id,
+			    uint32_t scan_id)
 {
 	WLAN_HOST_DIAG_EVENT_DEF(acs_scan_done,
 				 struct host_event_wlan_acs_scan_done);
@@ -400,8 +392,7 @@ void host_log_device_status(uint16_t status_code)
 	qdf_mem_zero(driver_status.driver_version,
 		     sizeof(driver_status.driver_version));
 
-	WLAN_HOST_DIAG_EVENT_REPORT(&driver_status,
-				    EVENT_WLAN_BRINGUP_STATUS);
+	WLAN_HOST_DIAG_EVENT_REPORT(&driver_status, EVENT_WLAN_BRINGUP_STATUS);
 }
 
 #endif

@@ -28,9 +28,9 @@
 #include "wlan_cp_stats_obj_mgr_handler.h"
 #include "wlan_cp_stats_defs.h"
 #include "wlan_cp_stats_ol_api.h"
-#include <wlan_cp_stats_ucfg_api.h>
 #include "wlan_cp_stats_utils_api.h"
 #include <target_if_cp_stats.h>
+#include <wlan_cp_stats_ucfg_api.h>
 #include <wlan_twt_public_structs.h>
 
 QDF_STATUS
@@ -79,16 +79,14 @@ wlan_cp_stats_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 	csc->psoc_cs = psoc_cs;
 	if (csc->cp_stats_psoc_obj_init) {
 		if (QDF_STATUS_SUCCESS !=
-				csc->cp_stats_psoc_obj_init(psoc_cs)) {
+		    csc->cp_stats_psoc_obj_init(psoc_cs)) {
 			cp_stats_err("Failed to initialize psoc handlers");
 			goto wlan_cp_stats_psoc_obj_create_handler_return;
 		}
 	}
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						       WLAN_UMAC_COMP_CP_STATS,
-						       csc,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_CP_STATS, csc, QDF_STATUS_SUCCESS);
 
 wlan_cp_stats_psoc_obj_create_handler_return:
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -130,8 +128,8 @@ wlan_cp_stats_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	wlan_objmgr_psoc_component_obj_detach(psoc,
-					      WLAN_UMAC_COMP_CP_STATS, csc);
+	wlan_objmgr_psoc_component_obj_detach(psoc, WLAN_UMAC_COMP_CP_STATS,
+					      csc);
 	if (csc->cp_stats_psoc_obj_deinit)
 		csc->cp_stats_psoc_obj_deinit(csc->psoc_cs);
 	qdf_mem_free(csc->psoc_cs);
@@ -170,16 +168,14 @@ wlan_cp_stats_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 	pdev_cs->pdev_obj = pdev;
 	if (csc->cp_stats_pdev_obj_init) {
 		if (QDF_STATUS_SUCCESS !=
-				csc->cp_stats_pdev_obj_init(pdev_cs)) {
+		    csc->cp_stats_pdev_obj_init(pdev_cs)) {
 			cp_stats_err("Failed to initialize pdev handlers");
 			goto wlan_cp_stats_pdev_obj_create_handler_return;
 		}
 	}
 
-	status = wlan_objmgr_pdev_component_obj_attach(pdev,
-						       WLAN_UMAC_COMP_CP_STATS,
-						       pdev_cs,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_pdev_component_obj_attach(
+		pdev, WLAN_UMAC_COMP_CP_STATS, pdev_cs, QDF_STATUS_SUCCESS);
 
 	cp_stats_debug("pdev cp stats object attached");
 wlan_cp_stats_pdev_obj_create_handler_return:
@@ -207,8 +203,8 @@ wlan_cp_stats_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	pdev_cs = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						WLAN_UMAC_COMP_CP_STATS);
+	pdev_cs = wlan_objmgr_pdev_get_comp_private_obj(
+		pdev, WLAN_UMAC_COMP_CP_STATS);
 	if (!pdev_cs) {
 		cp_stats_err("pdev is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -257,16 +253,14 @@ wlan_cp_stats_vdev_obj_create_handler(struct wlan_objmgr_vdev *vdev, void *arg)
 	vdev_cs->vdev_obj = vdev;
 	if (csc->cp_stats_vdev_obj_init) {
 		if (QDF_STATUS_SUCCESS !=
-				csc->cp_stats_vdev_obj_init(vdev_cs)) {
+		    csc->cp_stats_vdev_obj_init(vdev_cs)) {
 			cp_stats_err("Failed to initialize vdev handlers");
 			goto wlan_cp_stats_vdev_obj_create_handler_return;
 		}
 	}
 
-	status = wlan_objmgr_vdev_component_obj_attach(vdev,
-						       WLAN_UMAC_COMP_CP_STATS,
-						       vdev_cs,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_vdev_component_obj_attach(
+		vdev, WLAN_UMAC_COMP_CP_STATS, vdev_cs, QDF_STATUS_SUCCESS);
 
 wlan_cp_stats_vdev_obj_create_handler_return:
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -294,8 +288,8 @@ wlan_cp_stats_vdev_obj_destroy_handler(struct wlan_objmgr_vdev *vdev, void *arg)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	vdev_cs = wlan_objmgr_vdev_get_comp_private_obj(vdev,
-						WLAN_UMAC_COMP_CP_STATS);
+	vdev_cs = wlan_objmgr_vdev_get_comp_private_obj(
+		vdev, WLAN_UMAC_COMP_CP_STATS);
 	if (!vdev_cs) {
 		cp_stats_err("vdev is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -344,16 +338,14 @@ wlan_cp_stats_peer_obj_create_handler(struct wlan_objmgr_peer *peer, void *arg)
 	peer_cs->peer_obj = peer;
 	if (csc->cp_stats_peer_obj_init) {
 		if (QDF_STATUS_SUCCESS !=
-				csc->cp_stats_peer_obj_init(peer_cs)) {
+		    csc->cp_stats_peer_obj_init(peer_cs)) {
 			cp_stats_err("Failed to initialize peer handlers");
 			goto wlan_cp_stats_peer_obj_create_handler_return;
 		}
 	}
 
-	status = wlan_objmgr_peer_component_obj_attach(peer,
-						       WLAN_UMAC_COMP_CP_STATS,
-						       peer_cs,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_peer_component_obj_attach(
+		peer, WLAN_UMAC_COMP_CP_STATS, peer_cs, QDF_STATUS_SUCCESS);
 
 wlan_cp_stats_peer_obj_create_handler_return:
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -381,8 +373,8 @@ wlan_cp_stats_peer_obj_destroy_handler(struct wlan_objmgr_peer *peer, void *arg)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	peer_cs = wlan_objmgr_peer_get_comp_private_obj(peer,
-						WLAN_UMAC_COMP_CP_STATS);
+	peer_cs = wlan_objmgr_peer_get_comp_private_obj(
+		peer, WLAN_UMAC_COMP_CP_STATS);
 	if (!peer_cs) {
 		cp_stats_err("peer is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -508,7 +500,7 @@ wlan_cp_stats_send_telemetry_cp_req(struct wlan_objmgr_pdev *pdev,
 }
 #endif
 
-#if defined(WLAN_SUPPORT_TWT) && defined (WLAN_TWT_CONV_SUPPORTED)
+#if defined(WLAN_SUPPORT_TWT) && defined(WLAN_TWT_CONV_SUPPORTED)
 /**
  * wlan_cp_stats_twt_get_peer_session_param() - Obtains twt session parameters
  * of a peer if twt session is valid
@@ -559,11 +551,9 @@ wlan_cp_stats_twt_get_peer_session_param(struct peer_cp_stats *peer_cp_stat_prv,
  *
  * Return: total number of valid twt sessions
  */
-static int
-wlan_cp_stats_twt_get_all_peer_session_params(
-					struct wlan_objmgr_psoc *psoc_obj,
-					uint8_t vdev_id,
-					struct twt_session_stats_info *params)
+static int wlan_cp_stats_twt_get_all_peer_session_params(
+	struct wlan_objmgr_psoc *psoc_obj, uint8_t vdev_id,
+	struct twt_session_stats_info *params)
 {
 	qdf_list_t *peer_list;
 	struct wlan_objmgr_peer *peer, *peer_next;
@@ -599,15 +589,13 @@ wlan_cp_stats_twt_get_all_peer_session_params(
 						    WLAN_CP_STATS_ID);
 	while (peer) {
 		cp_stats_peer_obj = wlan_objmgr_peer_get_comp_private_obj(
-						peer, WLAN_UMAC_COMP_CP_STATS);
+			peer, WLAN_UMAC_COMP_CP_STATS);
 
 		peer_cp_stat_prv = wlan_cp_stats_get_peer_stats_obj(peer);
 		if (peer_cp_stat_prv) {
 			wlan_cp_stats_peer_obj_lock(peer_cp_stat_prv);
 			wlan_cp_stats_twt_get_peer_session_param(
-							peer_cp_stat_prv,
-							params,
-							&num_twt_session);
+				peer_cp_stat_prv, params, &num_twt_session);
 			wlan_cp_stats_peer_obj_unlock(peer_cp_stat_prv);
 		}
 
@@ -618,20 +606,21 @@ wlan_cp_stats_twt_get_all_peer_session_params(
 		}
 
 		if (opmode == QDF_SAP_MODE &&
-		    num_twt_session >= (sap_num_peer * WLAN_MAX_TWT_SESSIONS_PER_PEER)) {
+		    num_twt_session >=
+			    (sap_num_peer * WLAN_MAX_TWT_SESSIONS_PER_PEER)) {
 			wlan_objmgr_peer_release_ref(peer, WLAN_CP_STATS_ID);
 			goto done;
 		}
 
 		peer_next = wlan_peer_get_next_active_peer_of_vdev(
-						vdev, peer_list, peer,
-						WLAN_CP_STATS_ID);
+			vdev, peer_list, peer, WLAN_CP_STATS_ID);
 		wlan_objmgr_peer_release_ref(peer, WLAN_CP_STATS_ID);
 		peer = peer_next;
 	}
 done:
 	if (!num_twt_session)
-		cp_stats_err("Unable to find a peer with twt session established");
+		cp_stats_err(
+			"Unable to find a peer with twt session established");
 
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_CP_STATS_ID);
 	return num_twt_session;
@@ -650,12 +639,9 @@ done:
  * Return: Success if stats are copied for a peer with given dialog,
  * else failure
  */
-static QDF_STATUS
-wlan_cp_stats_twt_get_peer_session_param_by_dlg_id(
-				struct peer_cp_stats *peer_cp_stats_priv,
-				uint32_t input_dialog_id,
-				struct twt_session_stats_info *dest_param,
-				int *num_twt_session)
+static QDF_STATUS wlan_cp_stats_twt_get_peer_session_param_by_dlg_id(
+	struct peer_cp_stats *peer_cp_stats_priv, uint32_t input_dialog_id,
+	struct twt_session_stats_info *dest_param, int *num_twt_session)
 {
 	struct twt_session_stats_info *src_param;
 	uint32_t event_type;
@@ -670,7 +656,7 @@ wlan_cp_stats_twt_get_peer_session_param_by_dlg_id(
 		src_param = &peer_cp_stats_priv->twt_param[i];
 		if (!event_type ||
 		    (src_param->dialog_id != input_dialog_id &&
-		    input_dialog_id != TWT_ALL_SESSIONS_DIALOG_ID))
+		     input_dialog_id != TWT_ALL_SESSIONS_DIALOG_ID))
 			continue;
 
 		if (event_type == HOST_TWT_SESSION_SETUP ||
@@ -697,11 +683,9 @@ wlan_cp_stats_twt_get_peer_session_param_by_dlg_id(
  *
  * Return: total number of valid twt session
  */
-static int
-wlan_cp_stats_twt_get_single_peer_session_params(
-					struct wlan_objmgr_psoc *psoc_obj,
-					uint8_t *mac_addr, uint32_t dialog_id,
-					struct twt_session_stats_info *params)
+static int wlan_cp_stats_twt_get_single_peer_session_params(
+	struct wlan_objmgr_psoc *psoc_obj, uint8_t *mac_addr,
+	uint32_t dialog_id, struct twt_session_stats_info *params)
 {
 	struct wlan_objmgr_peer *peer;
 	struct peer_cp_stats *peer_cp_stats_priv;
@@ -725,13 +709,11 @@ wlan_cp_stats_twt_get_single_peer_session_params(
 	wlan_cp_stats_peer_obj_lock(peer_cp_stats_priv);
 
 	qdf_status = wlan_cp_stats_twt_get_peer_session_param_by_dlg_id(
-							peer_cp_stats_priv,
-							dialog_id,
-							params,
-							&num_twt_session);
+		peer_cp_stats_priv, dialog_id, params, &num_twt_session);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
-		cp_stats_debug("No TWT session for " QDF_MAC_ADDR_FMT " dialog_id %d",
-			QDF_MAC_ADDR_REF(mac_addr), dialog_id);
+		cp_stats_debug("No TWT session for " QDF_MAC_ADDR_FMT
+			       " dialog_id %d",
+			       QDF_MAC_ADDR_REF(mac_addr), dialog_id);
 	}
 
 	wlan_cp_stats_peer_obj_unlock(peer_cp_stats_priv);
@@ -740,9 +722,8 @@ wlan_cp_stats_twt_get_single_peer_session_params(
 	return num_twt_session;
 }
 
-int
-wlan_cp_stats_twt_get_peer_session_params(struct wlan_objmgr_psoc *psoc,
-					  struct twt_session_stats_info *params)
+int wlan_cp_stats_twt_get_peer_session_params(
+	struct wlan_objmgr_psoc *psoc, struct twt_session_stats_info *params)
 {
 	uint8_t *mac_addr;
 	uint32_t dialog_id;
@@ -757,24 +738,20 @@ wlan_cp_stats_twt_get_peer_session_params(struct wlan_objmgr_psoc *psoc,
 	vdev_id = params[0].vdev_id;
 
 	/*
-	 * Currently for STA case, twt_get_params nl is sending only dialog_id
-	 * and mac_addr is being filled by driver in STA peer case.
-	 * For SAP case, twt_get_params nl is sending dialog_id and
-	 * peer mac_addr. When twt_get_params add mac_addr and dialog_id of
-	 * STA/SAP, we need handle unicast/multicast macaddr in
-	 * wlan_cp_stats_twt_get_peer_session_params.
-	 */
+   * Currently for STA case, twt_get_params nl is sending only dialog_id
+   * and mac_addr is being filled by driver in STA peer case.
+   * For SAP case, twt_get_params nl is sending dialog_id and
+   * peer mac_addr. When twt_get_params add mac_addr and dialog_id of
+   * STA/SAP, we need handle unicast/multicast macaddr in
+   * wlan_cp_stats_twt_get_peer_session_params.
+   */
 	if (!QDF_IS_ADDR_BROADCAST(mac_addr))
 		num_twt_session =
 			wlan_cp_stats_twt_get_single_peer_session_params(
-								psoc, mac_addr,
-								dialog_id,
-								params);
+				psoc, mac_addr, dialog_id, params);
 	else
 		num_twt_session = wlan_cp_stats_twt_get_all_peer_session_params(
-								psoc, vdev_id,
-								params);
+			psoc, vdev_id, params);
 	return num_twt_session;
 }
 #endif /* WLAN_SUPPORT_TWT */
-

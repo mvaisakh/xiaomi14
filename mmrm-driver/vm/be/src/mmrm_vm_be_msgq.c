@@ -4,16 +4,16 @@
  */
 
 #include <linux/gunyah/gh_msgq.h>
-#include <linux/kthread.h>
-#include <linux/slab.h>
-#include <linux/notifier.h>
 #include <linux/gunyah/gh_rm_drv.h>
-#include <linux/workqueue.h>
+#include <linux/kthread.h>
 #include <linux/list.h>
+#include <linux/notifier.h>
+#include <linux/slab.h>
+#include <linux/workqueue.h>
 
 #include "mmrm_vm_be.h"
-#include "mmrm_vm_interface.h"
 #include "mmrm_vm_debug.h"
+#include "mmrm_vm_interface.h"
 
 #define MAX_ERR_COUNT 5
 
@@ -24,8 +24,7 @@ static int is_valid_mmrm_message(struct mmrm_vm_request_msg_pkt *pkt)
 	int rc = -1;
 	struct mmrm_vm_msg_hdr *hdr = &pkt->hdr;
 
-	if (hdr->version == MMRM_VM_VER_1 &&
-		hdr->type == MMRM_VM_TYPE_DATA)
+	if (hdr->version == MMRM_VM_VER_1 && hdr->type == MMRM_VM_TYPE_DATA)
 		rc = 0;
 
 	return rc;
@@ -39,11 +38,11 @@ static void mmrm_vm_msgq_msg_handler(struct work_struct *work)
 {
 	struct mmrm_vm_thread_info *pthread_info =
 		container_of(work, struct mmrm_vm_thread_info, msgq_work.work);
-	struct mmrm_vm_driver_data *mmrm_vm =
-		container_of(pthread_info, struct mmrm_vm_driver_data, thread_info);
+	struct mmrm_vm_driver_data *mmrm_vm = container_of(
+		pthread_info, struct mmrm_vm_driver_data, thread_info);
 	struct mmrm_vm_msg *msg;
 	struct mmrm_vm_msg *next_msg;
-	struct list_head   head;
+	struct list_head head;
 	struct mmrm_vm_request_msg_pkt *pkt;
 
 	if (IS_ERR_OR_NULL(work))
@@ -94,7 +93,7 @@ static int mmrm_vm_be_msgq_listener(void *data)
 			return -ENOMEM;
 
 		ret = gh_msgq_recv(pmsg_info->msgq_handle, msg->msg_buf,
-				GH_MSGQ_MAX_MSG_SIZE_BYTES, &size, 0);
+				   GH_MSGQ_MAX_MSG_SIZE_BYTES, &size, 0);
 		if (ret < 0) {
 			kfree(msg);
 			d_mpr_e("gh_msgq_recv failed, rc=%d\n", ret);
@@ -113,7 +112,8 @@ static int mmrm_vm_be_msgq_listener(void *data)
 		mutex_unlock(&thread_info->list_lock);
 
 		queue_delayed_work(thread_info->msg_workq,
-				 &thread_info->msgq_work, msecs_to_jiffies(0));
+				   &thread_info->msgq_work,
+				   msecs_to_jiffies(0));
 	}
 
 	return 0;
@@ -125,7 +125,8 @@ static int mmrm_vm_be_msgq_listener(void *data)
  * msg: message buffer pointer
  * msg_size: message size
  */
-int mmrm_vm_msgq_send(struct mmrm_vm_driver_data *mmrm_vm, void *msg, size_t msg_size)
+int mmrm_vm_msgq_send(struct mmrm_vm_driver_data *mmrm_vm, void *msg,
+		      size_t msg_size)
 {
 	if (!mmrm_vm->msg_info.msgq_handle) {
 		d_mpr_e("Failed to send msg, invalid msgq handle\n");
@@ -134,11 +135,12 @@ int mmrm_vm_msgq_send(struct mmrm_vm_driver_data *mmrm_vm, void *msg, size_t msg
 
 	if (msg_size > GH_MSGQ_MAX_MSG_SIZE_BYTES) {
 		d_mpr_e("msg size unsupported for msgq: %ld > %d\n", msg_size,
-				GH_MSGQ_MAX_MSG_SIZE_BYTES);
+			GH_MSGQ_MAX_MSG_SIZE_BYTES);
 		return -E2BIG;
 	}
 
-	return gh_msgq_send(mmrm_vm->msg_info.msgq_handle, msg, msg_size, GH_MSGQ_TX_PUSH);
+	return gh_msgq_send(mmrm_vm->msg_info.msgq_handle, msg, msg_size,
+			    GH_MSGQ_TX_PUSH);
 }
 
 /**
@@ -146,8 +148,9 @@ int mmrm_vm_msgq_send(struct mmrm_vm_driver_data *mmrm_vm, void *msg, size_t msg
  * msg_info: gunyah meesage info
  * vm_status_payload: gunyah notification message status info
  */
-int mmrm_vm_be_gh_validate_register(struct mmrm_vm_gh_msgq_info *msg_info,
-		struct gh_rm_notif_vm_status_payload *vm_status_payload)
+int mmrm_vm_be_gh_validate_register(
+	struct mmrm_vm_gh_msgq_info *msg_info,
+	struct gh_rm_notif_vm_status_payload *vm_status_payload)
 {
 	gh_vmid_t peer_vmid;
 	gh_vmid_t self_vmid;
@@ -165,7 +168,8 @@ int mmrm_vm_be_gh_validate_register(struct mmrm_vm_gh_msgq_info *msg_info,
 	if (peer_vmid != vm_status_payload->vmid)
 		return NOTIFY_DONE;
 
-	d_mpr_l("%s: vmid=%d peer_vmid=%d\n", __func__, vm_status_payload->vmid, peer_vmid);
+	d_mpr_l("%s: vmid=%d peer_vmid=%d\n", __func__, vm_status_payload->vmid,
+		peer_vmid);
 
 	if (msg_info->msgq_handle) {
 		return rc;
@@ -177,8 +181,8 @@ int mmrm_vm_be_gh_validate_register(struct mmrm_vm_gh_msgq_info *msg_info,
 
 	if (IS_ERR_OR_NULL(msg_info->msgq_handle)) {
 		rc = -1;
-		d_mpr_e("%s: gunyah message queue registration failed :%ld\n", __func__,
-			PTR_ERR(msg_info->msgq_handle));
+		d_mpr_e("%s: gunyah message queue registration failed :%ld\n",
+			__func__, PTR_ERR(msg_info->msgq_handle));
 	}
 
 	return rc;
@@ -190,12 +194,13 @@ int mmrm_vm_be_gh_validate_register(struct mmrm_vm_gh_msgq_info *msg_info,
  * cmd: gunyah notification status category info
  * data: user defined data pointer
  */
-static int mmrm_vm_be_msgq_cb(struct notifier_block *nb, unsigned long cmd, void *data)
+static int mmrm_vm_be_msgq_cb(struct notifier_block *nb, unsigned long cmd,
+			      void *data)
 {
 	struct gh_rm_notif_vm_status_payload *vm_status_payload;
 	struct mmrm_vm_driver_data *mmrm_vm;
 	struct mmrm_vm_gh_msgq_info *msg_info;
-	struct  mmrm_vm_thread_info *thread_info;
+	struct mmrm_vm_thread_info *thread_info;
 	int rc;
 
 	if (IS_ERR_OR_NULL(nb))
@@ -209,9 +214,9 @@ static int mmrm_vm_be_msgq_cb(struct notifier_block *nb, unsigned long cmd, void
 		return NOTIFY_DONE;
 
 	/*
-	 * check VM status, only GH_TRUSTED_VM notification activate
-	 * GUNYAH message queue registering
-	 */
+   * check VM status, only GH_TRUSTED_VM notification activate
+   * GUNYAH message queue registering
+   */
 	vm_status_payload = (struct gh_rm_notif_vm_status_payload *)data;
 	rc = mmrm_vm_be_gh_validate_register(msg_info, vm_status_payload);
 	if (rc != 0) {
@@ -220,8 +225,9 @@ static int mmrm_vm_be_msgq_cb(struct notifier_block *nb, unsigned long cmd, void
 
 	d_mpr_e("%s: msgq registration successful\n", __func__);
 
-	thread_info->msgq_listener_thread = kthread_run(mmrm_vm_be_msgq_listener,
-			(void *)mmrm_vm, "mmrm_msgq_listener");
+	thread_info->msgq_listener_thread =
+		kthread_run(mmrm_vm_be_msgq_listener, (void *)mmrm_vm,
+			    "mmrm_msgq_listener");
 	if (IS_ERR_OR_NULL(thread_info->msgq_listener_thread)) {
 		return NOTIFY_DONE;
 	};
@@ -262,7 +268,8 @@ int mmrm_vm_msgq_init(struct mmrm_vm_driver_data *mmrm_vm)
 	msg_info->status |= MMRM_VM_MSG_STATUS_NOTIFIER;
 	mutex_init(&thread_info->list_lock);
 	INIT_LIST_HEAD(&thread_info->queued_msg);
-	thread_info->msg_workq = create_singlethread_workqueue("vm_message_workq");
+	thread_info->msg_workq =
+		create_singlethread_workqueue("vm_message_workq");
 	if (IS_ERR_OR_NULL(thread_info->msg_workq)) {
 		d_mpr_e("%s:  create workqueue thread failed\n", __func__);
 		goto err_workqueue;
@@ -305,7 +312,8 @@ int mmrm_vm_msgq_deinit(struct mmrm_vm_driver_data *mmrm_vm)
 	if (msg_info->msgq_handle) {
 		rc = gh_msgq_unregister(msg_info->msgq_handle);
 		if (rc != 0)
-			d_mpr_e("%s: msgq gunyah unregistration failed: err:%d\n", __func__, rc);
+			d_mpr_e("%s: msgq gunyah unregistration failed: err:%d\n",
+				__func__, rc);
 		msg_info->msgq_handle = NULL;
 	}
 

@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights
+ * reserved. Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/usb/usbpd.h>
-#include <linux/slab.h>
-#include <linux/device.h>
 #include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/slab.h>
+#include <linux/usb/usbpd.h>
 
-#include "dp_usbpd.h"
 #include "dp_debug.h"
+#include "dp_usbpd.h"
 
 /* DP specific VDM commands */
-#define DP_USBPD_VDM_STATUS	0x10
-#define DP_USBPD_VDM_CONFIGURE	0x11
+#define DP_USBPD_VDM_STATUS 0x10
+#define DP_USBPD_VDM_CONFIGURE 0x11
 
 /* USBPD-TypeC specific Macros */
-#define VDM_VERSION		0x0
-#define USB_C_DP_SID		0xFF01
+#define VDM_VERSION 0x0
+#define USB_C_DP_SID 0xFF01
 
 enum dp_usbpd_pin_assignment {
 	DP_USBPD_PIN_A,
@@ -41,11 +41,11 @@ enum dp_usbpd_events {
 };
 
 enum dp_usbpd_alt_mode {
-	DP_USBPD_ALT_MODE_NONE	    = 0,
-	DP_USBPD_ALT_MODE_INIT	    = BIT(0),
-	DP_USBPD_ALT_MODE_DISCOVER  = BIT(1),
-	DP_USBPD_ALT_MODE_ENTER	    = BIT(2),
-	DP_USBPD_ALT_MODE_STATUS    = BIT(3),
+	DP_USBPD_ALT_MODE_NONE = 0,
+	DP_USBPD_ALT_MODE_INIT = BIT(0),
+	DP_USBPD_ALT_MODE_DISCOVER = BIT(1),
+	DP_USBPD_ALT_MODE_ENTER = BIT(2),
+	DP_USBPD_ALT_MODE_STATUS = BIT(3),
 	DP_USBPD_ALT_MODE_CONFIGURE = BIT(4),
 };
 
@@ -72,36 +72,54 @@ struct dp_usbpd_private {
 static const char *dp_usbpd_pin_name(u8 pin)
 {
 	switch (pin) {
-	case DP_USBPD_PIN_A: return "DP_USBPD_PIN_ASSIGNMENT_A";
-	case DP_USBPD_PIN_B: return "DP_USBPD_PIN_ASSIGNMENT_B";
-	case DP_USBPD_PIN_C: return "DP_USBPD_PIN_ASSIGNMENT_C";
-	case DP_USBPD_PIN_D: return "DP_USBPD_PIN_ASSIGNMENT_D";
-	case DP_USBPD_PIN_E: return "DP_USBPD_PIN_ASSIGNMENT_E";
-	case DP_USBPD_PIN_F: return "DP_USBPD_PIN_ASSIGNMENT_F";
-	default: return "UNKNOWN";
+	case DP_USBPD_PIN_A:
+		return "DP_USBPD_PIN_ASSIGNMENT_A";
+	case DP_USBPD_PIN_B:
+		return "DP_USBPD_PIN_ASSIGNMENT_B";
+	case DP_USBPD_PIN_C:
+		return "DP_USBPD_PIN_ASSIGNMENT_C";
+	case DP_USBPD_PIN_D:
+		return "DP_USBPD_PIN_ASSIGNMENT_D";
+	case DP_USBPD_PIN_E:
+		return "DP_USBPD_PIN_ASSIGNMENT_E";
+	case DP_USBPD_PIN_F:
+		return "DP_USBPD_PIN_ASSIGNMENT_F";
+	default:
+		return "UNKNOWN";
 	}
 }
 
 static const char *dp_usbpd_port_name(enum dp_usbpd_port port)
 {
 	switch (port) {
-	case DP_USBPD_PORT_NONE: return "DP_USBPD_PORT_NONE";
-	case DP_USBPD_PORT_UFP_D: return "DP_USBPD_PORT_UFP_D";
-	case DP_USBPD_PORT_DFP_D: return "DP_USBPD_PORT_DFP_D";
-	case DP_USBPD_PORT_D_UFP_D: return "DP_USBPD_PORT_D_UFP_D";
-	default: return "DP_USBPD_PORT_NONE";
+	case DP_USBPD_PORT_NONE:
+		return "DP_USBPD_PORT_NONE";
+	case DP_USBPD_PORT_UFP_D:
+		return "DP_USBPD_PORT_UFP_D";
+	case DP_USBPD_PORT_DFP_D:
+		return "DP_USBPD_PORT_DFP_D";
+	case DP_USBPD_PORT_D_UFP_D:
+		return "DP_USBPD_PORT_D_UFP_D";
+	default:
+		return "DP_USBPD_PORT_NONE";
 	}
 }
 
 static const char *dp_usbpd_cmd_name(u8 cmd)
 {
 	switch (cmd) {
-	case USBPD_SVDM_DISCOVER_MODES: return "USBPD_SVDM_DISCOVER_MODES";
-	case USBPD_SVDM_ENTER_MODE: return "USBPD_SVDM_ENTER_MODE";
-	case USBPD_SVDM_ATTENTION: return "USBPD_SVDM_ATTENTION";
-	case DP_USBPD_VDM_STATUS: return "DP_USBPD_VDM_STATUS";
-	case DP_USBPD_VDM_CONFIGURE: return "DP_USBPD_VDM_CONFIGURE";
-	default: return "DP_USBPD_VDM_ERROR";
+	case USBPD_SVDM_DISCOVER_MODES:
+		return "USBPD_SVDM_DISCOVER_MODES";
+	case USBPD_SVDM_ENTER_MODE:
+		return "USBPD_SVDM_ENTER_MODE";
+	case USBPD_SVDM_ATTENTION:
+		return "USBPD_SVDM_ATTENTION";
+	case DP_USBPD_VDM_STATUS:
+		return "DP_USBPD_VDM_STATUS";
+	case DP_USBPD_VDM_CONFIGURE:
+		return "DP_USBPD_VDM_CONFIGURE";
+	default:
+		return "DP_USBPD_VDM_ERROR";
 	}
 }
 
@@ -145,20 +163,20 @@ static void dp_usbpd_get_status(struct dp_usbpd_private *pd)
 	u32 buf = pd->vdo;
 	int port = buf & 0x3;
 
-	status->low_pow_st     = (buf & BIT(2)) ? true : false;
-	status->adaptor_dp_en  = (buf & BIT(3)) ? true : false;
+	status->low_pow_st = (buf & BIT(2)) ? true : false;
+	status->adaptor_dp_en = (buf & BIT(3)) ? true : false;
 	status->base.multi_func = (buf & BIT(4)) ? true : false;
 	status->usb_config_req = (buf & BIT(5)) ? true : false;
-	status->exit_dp_mode   = (buf & BIT(6)) ? true : false;
-	status->base.hpd_high  = (buf & BIT(7)) ? true : false;
-	status->base.hpd_irq   = (buf & BIT(8)) ? true : false;
+	status->exit_dp_mode = (buf & BIT(6)) ? true : false;
+	status->base.hpd_high = (buf & BIT(7)) ? true : false;
+	status->base.hpd_irq = (buf & BIT(8)) ? true : false;
 
 	DP_DEBUG("low_pow_st = %d, adaptor_dp_en = %d, multi_func = %d\n",
-			status->low_pow_st, status->adaptor_dp_en,
-			status->base.multi_func);
+		 status->low_pow_st, status->adaptor_dp_en,
+		 status->base.multi_func);
 	DP_DEBUG("usb_config_req = %d, exit_dp_mode = %d, hpd_high =%d\n",
-			status->usb_config_req,
-			status->exit_dp_mode, status->base.hpd_high);
+		 status->usb_config_req, status->exit_dp_mode,
+		 status->base.hpd_high);
 	DP_DEBUG("hpd_irq = %d\n", status->base.hpd_irq);
 
 	dp_usbpd_init_port(&status->port, port);
@@ -201,35 +219,32 @@ static u32 dp_usbpd_gen_config_pkt(struct dp_usbpd_private *pd)
 }
 
 static void dp_usbpd_send_event(struct dp_usbpd_private *pd,
-		enum dp_usbpd_events event)
+				enum dp_usbpd_events event)
 {
 	u32 config;
 
 	switch (event) {
 	case DP_USBPD_EVT_DISCOVER:
-		usbpd_send_svdm(pd->pd, USB_C_DP_SID,
-			USBPD_SVDM_DISCOVER_MODES,
-			SVDM_CMD_TYPE_INITIATOR, 0x0, 0x0, 0x0);
+		usbpd_send_svdm(pd->pd, USB_C_DP_SID, USBPD_SVDM_DISCOVER_MODES,
+				SVDM_CMD_TYPE_INITIATOR, 0x0, 0x0, 0x0);
 		break;
 	case DP_USBPD_EVT_ENTER:
-		usbpd_send_svdm(pd->pd, USB_C_DP_SID,
-			USBPD_SVDM_ENTER_MODE,
-			SVDM_CMD_TYPE_INITIATOR, 0x1, 0x0, 0x0);
+		usbpd_send_svdm(pd->pd, USB_C_DP_SID, USBPD_SVDM_ENTER_MODE,
+				SVDM_CMD_TYPE_INITIATOR, 0x1, 0x0, 0x0);
 		break;
 	case DP_USBPD_EVT_EXIT:
-		usbpd_send_svdm(pd->pd, USB_C_DP_SID,
-			USBPD_SVDM_EXIT_MODE,
-			SVDM_CMD_TYPE_INITIATOR, 0x1, 0x0, 0x0);
+		usbpd_send_svdm(pd->pd, USB_C_DP_SID, USBPD_SVDM_EXIT_MODE,
+				SVDM_CMD_TYPE_INITIATOR, 0x1, 0x0, 0x0);
 		break;
 	case DP_USBPD_EVT_STATUS:
 		config = 0x1; /* DFP_D connected */
 		usbpd_send_svdm(pd->pd, USB_C_DP_SID, DP_USBPD_VDM_STATUS,
-			SVDM_CMD_TYPE_INITIATOR, 0x1, &config, 0x1);
+				SVDM_CMD_TYPE_INITIATOR, 0x1, &config, 0x1);
 		break;
 	case DP_USBPD_EVT_CONFIGURE:
 		config = dp_usbpd_gen_config_pkt(pd);
 		usbpd_send_svdm(pd->pd, USB_C_DP_SID, DP_USBPD_VDM_CONFIGURE,
-			SVDM_CMD_TYPE_INITIATOR, 0x1, &config, 0x1);
+				SVDM_CMD_TYPE_INITIATOR, 0x1, &config, 0x1);
 		break;
 	default:
 		DP_ERR("unknown event:%d\n", event);
@@ -237,7 +252,7 @@ static void dp_usbpd_send_event(struct dp_usbpd_private *pd,
 }
 
 static void dp_usbpd_connect_cb(struct usbpd_svid_handler *hdlr,
-		bool peer_usb_comm)
+				bool peer_usb_comm)
 {
 	struct dp_usbpd_private *pd;
 
@@ -270,8 +285,8 @@ static void dp_usbpd_disconnect_cb(struct usbpd_svid_handler *hdlr)
 		pd->dp_cb->disconnect(pd->dev);
 }
 
-static int dp_usbpd_validate_callback(u8 cmd,
-	enum usbpd_svdm_cmd_type cmd_type, int num_vdos)
+static int dp_usbpd_validate_callback(u8 cmd, enum usbpd_svdm_cmd_type cmd_type,
+				      int num_vdos)
 {
 	int ret = 0;
 
@@ -309,24 +324,23 @@ end:
 	return ret;
 }
 
-
 static int dp_usbpd_get_ss_lanes(struct dp_usbpd_private *pd)
 {
 	int rc = 0;
 	int timeout = 250;
 
 	/*
-	 * By default, USB reserves two lanes for Super Speed.
-	 * Which means DP has remaining two lanes to operate on.
-	 * If multi-function is not supported, request USB to
-	 * release the Super Speed lanes so that DP can use
-	 * all four lanes in case DPCD indicates support for
-	 * four lanes.
-	 */
+   * By default, USB reserves two lanes for Super Speed.
+   * Which means DP has remaining two lanes to operate on.
+   * If multi-function is not supported, request USB to
+   * release the Super Speed lanes so that DP can use
+   * all four lanes in case DPCD indicates support for
+   * four lanes.
+   */
 	if (!pd->dp_usbpd.base.multi_func) {
 		while (timeout) {
 			rc = pd->svid_handler.request_usb_ss_lane(
-					pd->pd, &pd->svid_handler);
+				pd->pd, &pd->svid_handler);
 			if (rc != -EBUSY)
 				break;
 
@@ -342,8 +356,8 @@ static int dp_usbpd_get_ss_lanes(struct dp_usbpd_private *pd)
 }
 
 static void dp_usbpd_response_cb(struct usbpd_svid_handler *hdlr, u8 cmd,
-				enum usbpd_svdm_cmd_type cmd_type,
-				const u32 *vdos, int num_vdos)
+				 enum usbpd_svdm_cmd_type cmd_type,
+				 const u32 *vdos, int num_vdos)
 {
 	struct dp_usbpd_private *pd;
 	int rc = 0;
@@ -351,7 +365,7 @@ static void dp_usbpd_response_cb(struct usbpd_svid_handler *hdlr, u8 cmd,
 	pd = container_of(hdlr, struct dp_usbpd_private, svid_handler);
 
 	DP_DEBUG("callback -> cmd: %s, *vdos = 0x%x, num_vdos = %d\n",
-				dp_usbpd_cmd_name(cmd), *vdos, num_vdos);
+		 dp_usbpd_cmd_name(cmd), *vdos, num_vdos);
 
 	if (dp_usbpd_validate_callback(cmd, cmd_type, num_vdos)) {
 		DP_DEBUG("invalid callback received\n");
@@ -445,8 +459,8 @@ static int dp_usbpd_simulate_connect(struct dp_hpd *dp_hpd, bool hpd)
 	pd->dp_usbpd.base.alt_mode_cfg_done = hpd;
 
 	DP_DEBUG("hpd_high=%d, forced_disconnect=%d, orientation=%d\n",
-			dp_usbpd->base.hpd_high, pd->forced_disconnect,
-			pd->dp_usbpd.base.orientation);
+		 dp_usbpd->base.hpd_high, pd->forced_disconnect,
+		 pd->dp_usbpd.base.orientation);
 	if (hpd)
 		pd->dp_cb->configure(pd->dev);
 	else
@@ -524,11 +538,11 @@ struct dp_hpd *dp_usbpd_get(struct device *dev, struct dp_hpd_cb *cb)
 	struct dp_usbpd_private *usbpd;
 	struct dp_usbpd *dp_usbpd;
 	struct usbpd_svid_handler svid_handler = {
-		.svid		= USB_C_DP_SID,
-		.vdm_received	= NULL,
-		.connect	= &dp_usbpd_connect_cb,
-		.svdm_received	= &dp_usbpd_response_cb,
-		.disconnect	= &dp_usbpd_disconnect_cb,
+		.svid = USB_C_DP_SID,
+		.vdm_received = NULL,
+		.connect = &dp_usbpd_connect_cb,
+		.svdm_received = &dp_usbpd_response_cb,
+		.disconnect = &dp_usbpd_disconnect_cb,
 	};
 
 	if (!cb) {

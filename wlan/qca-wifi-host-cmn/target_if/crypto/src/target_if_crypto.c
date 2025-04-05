@@ -21,26 +21,26 @@
  * DOC: offload lmac interface APIs definitions for crypto
  */
 
-#include <qdf_mem.h>
-#include <qdf_status.h>
-#include <target_if_crypto.h>
-#include <wmi_unified_priv.h>
-#include <wmi_unified_param.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <target_if.h>
-#include <wlan_crypto_global_def.h>
-#include <wlan_crypto_global_api.h>
-#include <wlan_objmgr_vdev_obj.h>
-#include <cdp_txrx_cmn_struct.h>
-#include <cds_api.h>
-#include <cdp_txrx_cmn.h>
-#include <wmi_unified_api.h>
-#include <wmi_unified_crypto_api.h>
-#include <cdp_txrx_peer_ops.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_peer_obj.h>
 #include "wlan_crypto_def_i.h"
 #include "wlan_crypto_obj_mgr_i.h"
+#include <cdp_txrx_cmn.h>
+#include <cdp_txrx_cmn_struct.h>
+#include <cdp_txrx_peer_ops.h>
+#include <cds_api.h>
+#include <qdf_mem.h>
+#include <qdf_status.h>
+#include <target_if.h>
+#include <target_if_crypto.h>
+#include <wlan_crypto_global_api.h>
+#include <wlan_crypto_global_def.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
+#include <wmi_unified_api.h>
+#include <wmi_unified_crypto_api.h>
+#include <wmi_unified_param.h>
+#include <wmi_unified_priv.h>
 
 #ifdef FEATURE_WLAN_WAPI
 #ifdef FEATURE_WAPI_BIG_ENDIAN
@@ -54,15 +54,15 @@ static void wlan_crypto_set_wapi_key(struct wlan_objmgr_vdev *vdev,
 				     enum wlan_crypto_cipher_type cipher_type,
 				     struct set_key_params *params)
 {
-	static const unsigned char tx_iv[16] = {0x5c, 0x36, 0x5c, 0x36, 0x5c,
-						0x36, 0x5c, 0x36, 0x5c, 0x36,
-						0x5c, 0x36, 0x5c, 0x36, 0x5c,
-						0x36};
+	static const unsigned char tx_iv[16] = { 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x36 };
 
-	static const unsigned char rx_iv[16] = {0x5c, 0x36, 0x5c, 0x36, 0x5c,
-						0x36, 0x5c, 0x36, 0x5c, 0x36,
-						0x5c, 0x36, 0x5c, 0x36, 0x5c,
-						0x37};
+	static const unsigned char rx_iv[16] = { 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x37 };
 
 	if (cipher_type != WLAN_CRYPTO_CIPHER_WAPI_SMS4 &&
 	    cipher_type != WLAN_CRYPTO_CIPHER_WAPI_GCM4)
@@ -70,16 +70,12 @@ static void wlan_crypto_set_wapi_key(struct wlan_objmgr_vdev *vdev,
 
 	if (vdev->vdev_mlme.vdev_opmode == QDF_SAP_MODE ||
 	    vdev->vdev_mlme.vdev_opmode == QDF_P2P_GO_MODE) {
-			qdf_mem_copy(&params->rx_iv, &tx_iv,
-					 WLAN_CRYPTO_WAPI_IV_SIZE);
-			qdf_mem_copy(params->tx_iv, &rx_iv,
-					 WLAN_CRYPTO_WAPI_IV_SIZE);
+		qdf_mem_copy(&params->rx_iv, &tx_iv, WLAN_CRYPTO_WAPI_IV_SIZE);
+		qdf_mem_copy(params->tx_iv, &rx_iv, WLAN_CRYPTO_WAPI_IV_SIZE);
 	} else {
-			qdf_mem_copy(params->rx_iv, &rx_iv,
-					 WLAN_CRYPTO_WAPI_IV_SIZE);
-			qdf_mem_copy(params->tx_iv, &tx_iv,
-					 WLAN_CRYPTO_WAPI_IV_SIZE);
-		}
+		qdf_mem_copy(params->rx_iv, &rx_iv, WLAN_CRYPTO_WAPI_IV_SIZE);
+		qdf_mem_copy(params->tx_iv, &tx_iv, WLAN_CRYPTO_WAPI_IV_SIZE);
+	}
 
 	params->key_txmic_len = WLAN_CRYPTO_MIC_LEN;
 	params->key_rxmic_len = WLAN_CRYPTO_MIC_LEN;
@@ -90,24 +86,22 @@ static void wlan_crypto_set_wapi_key(struct wlan_objmgr_vdev *vdev,
 				     enum wlan_crypto_cipher_type cipher_type,
 				     struct set_key_params *params)
 {
-	static const unsigned char tx_iv[16] = {0x36, 0x5c, 0x36, 0x5c, 0x36,
-						0x5c, 0x36, 0x5c, 0x36, 0x5c,
-						0x36, 0x5c, 0x36, 0x5c, 0x36,
-						0x5c};
+	static const unsigned char tx_iv[16] = { 0x36, 0x5c, 0x36, 0x5c,
+						 0x36, 0x5c, 0x36, 0x5c,
+						 0x36, 0x5c, 0x36, 0x5c,
+						 0x36, 0x5c, 0x36, 0x5c };
 
-	static const unsigned char rx_iv[16] = {0x5c, 0x36, 0x5c, 0x36, 0x5c,
-						0x36, 0x5c, 0x36, 0x5c, 0x36,
-						0x5c, 0x36, 0x5c, 0x36, 0x5c,
-						0x37};
+	static const unsigned char rx_iv[16] = { 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x36,
+						 0x5c, 0x36, 0x5c, 0x37 };
 
 	if (cipher_type != WLAN_CRYPTO_CIPHER_WAPI_SMS4 &&
 	    cipher_type != WLAN_CRYPTO_CIPHER_WAPI_GCM4)
 		return;
 
-	qdf_mem_copy(&params->rx_iv, &rx_iv,
-		     WLAN_CRYPTO_WAPI_IV_SIZE);
-	qdf_mem_copy(&params->tx_iv, &tx_iv,
-		     WLAN_CRYPTO_WAPI_IV_SIZE);
+	qdf_mem_copy(&params->rx_iv, &rx_iv, WLAN_CRYPTO_WAPI_IV_SIZE);
+	qdf_mem_copy(&params->tx_iv, &tx_iv, WLAN_CRYPTO_WAPI_IV_SIZE);
 
 	if (vdev->vdev_mlme.vdev_opmode == QDF_SAP_MODE) {
 		if (pairwise)
@@ -137,7 +131,7 @@ target_if_crypto_vdev_set_param(struct wlan_objmgr_psoc *psoc, uint32_t vdev_id,
 				uint32_t param_id, uint32_t param_value)
 {
 	wmi_unified_t wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
-	struct vdev_set_params param = {0};
+	struct vdev_set_params param = { 0 };
 
 	if (!wmi_handle) {
 		target_if_err("Invalid wmi handle");
@@ -145,8 +139,9 @@ target_if_crypto_vdev_set_param(struct wlan_objmgr_psoc *psoc, uint32_t vdev_id,
 	}
 
 	if (vdev_id >= WLAN_MAX_VDEVS) {
-		target_if_err("vdev_id: %d is invalid, reject the req: param id %d val %d",
-			      vdev_id, param_id, param_value);
+		target_if_err(
+			"vdev_id: %d is invalid, reject the req: param id %d val %d",
+			vdev_id, param_id, param_value);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -161,14 +156,14 @@ QDF_STATUS target_if_crypto_set_key(struct wlan_objmgr_vdev *vdev,
 				    struct wlan_crypto_key *req,
 				    enum wlan_crypto_key_type key_type)
 {
-	struct set_key_params params = {0};
+	struct set_key_params params = { 0 };
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_pdev *pdev;
 	struct wlan_objmgr_peer *peer;
 	enum cdp_sec_type sec_type = cdp_sec_type_none;
 	enum wlan_peer_type peer_type = 0;
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
-	uint32_t pn[4] = {0, 0, 0, 0};
+	uint32_t pn[4] = { 0, 0, 0, 0 };
 	bool peer_exist = false;
 	uint8_t def_tx_idx;
 	wmi_unified_t pdev_wmi_handle;
@@ -208,8 +203,8 @@ QDF_STATUS target_if_crypto_set_key(struct wlan_objmgr_vdev *vdev,
 		pairwise = true;
 		params.key_flags |= PAIRWISE_USAGE;
 	}
-	qdf_mem_copy(&params.key_rsc_counter,
-		     &req->keyrsc[0], sizeof(uint64_t));
+	qdf_mem_copy(&params.key_rsc_counter, &req->keyrsc[0],
+		     sizeof(uint64_t));
 
 	target_if_debug("key_type %d, mac: %02x:%02x:%02x:%02x:%02x:%02x",
 			key_type, req->macaddr[0], req->macaddr[1],
@@ -217,9 +212,8 @@ QDF_STATUS target_if_crypto_set_key(struct wlan_objmgr_vdev *vdev,
 			req->macaddr[5]);
 
 	if (wlan_vdev_mlme_get_opmode(vdev) != QDF_NAN_DISC_MODE) {
-		peer_exist = cdp_find_peer_exist(soc,
-						 pdev->pdev_objmgr.wlan_pdev_id,
-						 req->macaddr);
+		peer_exist = cdp_find_peer_exist(
+			soc, pdev->pdev_objmgr.wlan_pdev_id, req->macaddr);
 
 		peer = wlan_objmgr_get_peer_by_mac(psoc, req->macaddr,
 						   WLAN_CRYPTO_ID);
@@ -270,19 +264,19 @@ QDF_STATUS target_if_crypto_set_key(struct wlan_objmgr_vdev *vdev,
 	if (peer_type == WLAN_PEER_RTT_PASN)
 		goto send_install_key;
 
-	cdp_set_pn_check(soc, vdev->vdev_objmgr.vdev_id, req->macaddr,
-			 sec_type, pn);
+	cdp_set_pn_check(soc, vdev->vdev_objmgr.vdev_id, req->macaddr, sec_type,
+			 pn);
 
 	cdp_set_key_sec_type(soc, vdev->vdev_objmgr.vdev_id, req->macaddr,
 			     sec_type, pairwise);
 
 	cdp_set_key(soc, vdev->vdev_objmgr.vdev_id, req->macaddr, pairwise,
 		    (uint32_t *)(req->keyval + WLAN_CRYPTO_IV_SIZE +
-		     WLAN_CRYPTO_MIC_LEN));
+				 WLAN_CRYPTO_MIC_LEN));
 send_install_key:
 	target_if_debug("vdev_id:%d, key: idx:%d,len:%d", params.vdev_id,
 			params.key_idx, params.key_len);
-	target_if_debug("peer mac "QDF_MAC_ADDR_FMT,
+	target_if_debug("peer mac " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(params.peer_mac));
 	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_CRYPTO, QDF_TRACE_LEVEL_DEBUG,
 			   &params.key_rsc_counter, sizeof(uint64_t));
@@ -305,9 +299,9 @@ send_install_key:
  *
  * Return: 0 for success or error code
  */
-static int
-target_if_crypto_install_key_comp_evt_handler(void *handle, uint8_t *event,
-					      uint32_t len)
+static int target_if_crypto_install_key_comp_evt_handler(void *handle,
+							 uint8_t *event,
+							 uint32_t len)
 {
 	struct wlan_crypto_comp_priv *priv_obj;
 	struct wlan_objmgr_psoc *psoc;
@@ -334,16 +328,16 @@ target_if_crypto_install_key_comp_evt_handler(void *handle, uint8_t *event,
 		return -EINVAL;
 	}
 
-	status = wmi_extract_install_key_comp_event(wmi_handle, event,
-						    len, &params);
+	status = wmi_extract_install_key_comp_event(wmi_handle, event, len,
+						    &params);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("received invalid buf from target");
 		return -EINVAL;
 	}
 
-	target_if_debug("vdev %d mac " QDF_MAC_ADDR_FMT " ix %x flags %x status %d",
-			params.vdev_id,
-			QDF_MAC_ADDR_REF(params.peer_macaddr),
+	target_if_debug("vdev %d mac " QDF_MAC_ADDR_FMT
+			" ix %x flags %x status %d",
+			params.vdev_id, QDF_MAC_ADDR_REF(params.peer_macaddr),
 			params.key_ix, params.key_flags, params.status);
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, params.vdev_id,
@@ -386,10 +380,9 @@ target_if_crypto_register_events(struct wlan_objmgr_psoc *psoc)
 	}
 
 	status = wmi_unified_register_event_handler(
-			get_wmi_unified_hdl_from_psoc(psoc),
-			wmi_vdev_install_key_complete_event_id,
-			target_if_crypto_install_key_comp_evt_handler,
-			WMI_RX_WORK_CTX);
+		get_wmi_unified_hdl_from_psoc(psoc),
+		wmi_vdev_install_key_complete_event_id,
+		target_if_crypto_install_key_comp_evt_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("register_event_handler failed: err %d", status);
 		return status;
@@ -407,8 +400,8 @@ target_if_crypto_deregister_events(struct wlan_objmgr_psoc *psoc)
 	}
 
 	wmi_unified_unregister_event_handler(
-			get_wmi_unified_hdl_from_psoc(psoc),
-			wmi_vdev_install_key_complete_event_id);
+		get_wmi_unified_hdl_from_psoc(psoc),
+		wmi_vdev_install_key_complete_event_id);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -432,7 +425,8 @@ target_if_crypto_set_ltf_keyseed(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-QDF_STATUS target_if_crypto_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
+QDF_STATUS
+target_if_crypto_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	struct wlan_lmac_if_crypto_tx_ops *crypto;
 
@@ -444,10 +438,9 @@ QDF_STATUS target_if_crypto_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 
 	crypto->set_key = target_if_crypto_set_key;
 	crypto->set_ltf_keyseed = target_if_crypto_set_ltf_keyseed;
-	crypto->set_vdev_param  = target_if_crypto_vdev_set_param;
+	crypto->set_vdev_param = target_if_crypto_vdev_set_param;
 	crypto->register_events = target_if_crypto_register_events;
 	crypto->deregister_events = target_if_crypto_deregister_events;
 
 	return QDF_STATUS_SUCCESS;
 }
-

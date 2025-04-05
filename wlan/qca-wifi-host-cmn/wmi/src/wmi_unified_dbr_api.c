@@ -17,8 +17,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "wmi_unified_priv.h"
 #include "qdf_module.h"
+#include "wmi_unified_priv.h"
 
 QDF_STATUS wmi_unified_dbr_ring_cfg(wmi_unified_t wmi_handle,
 				    struct direct_buf_rx_cfg_req *cfg)
@@ -29,54 +29,48 @@ QDF_STATUS wmi_unified_dbr_ring_cfg(wmi_unified_t wmi_handle,
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_dbr_buf_release_fixed(
-			wmi_unified_t wmi_handle,
-			uint8_t *evt_buf,
-			struct direct_buf_rx_rsp *param)
+QDF_STATUS wmi_extract_dbr_buf_release_fixed(wmi_unified_t wmi_handle,
+					     uint8_t *evt_buf,
+					     struct direct_buf_rx_rsp *param)
 {
 	if (wmi_handle->ops->extract_dbr_buf_release_fixed)
 		return wmi_handle->ops->extract_dbr_buf_release_fixed(
-				wmi_handle,
-				evt_buf, param);
+			wmi_handle, evt_buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_dbr_buf_release_entry(
-			wmi_unified_t wmi_handle,
-			uint8_t *evt_buf, uint8_t idx,
-			struct direct_buf_rx_entry *param)
+QDF_STATUS
+wmi_extract_dbr_buf_release_entry(wmi_unified_t wmi_handle, uint8_t *evt_buf,
+				  uint8_t idx,
+				  struct direct_buf_rx_entry *param)
 {
 	if (wmi_handle->ops->extract_dbr_buf_release_entry)
 		return wmi_handle->ops->extract_dbr_buf_release_entry(
-				wmi_handle,
-				evt_buf, idx, param);
+			wmi_handle, evt_buf, idx, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_dbr_buf_metadata(
-			wmi_unified_t wmi_handle,
-			uint8_t *evt_buf, uint8_t idx,
-			struct direct_buf_rx_metadata *param)
+QDF_STATUS wmi_extract_dbr_buf_metadata(wmi_unified_t wmi_handle,
+					uint8_t *evt_buf, uint8_t idx,
+					struct direct_buf_rx_metadata *param)
 {
 	if (wmi_handle->ops->extract_dbr_buf_metadata)
 		return wmi_handle->ops->extract_dbr_buf_metadata(
-				wmi_handle,
-				evt_buf, idx, param);
+			wmi_handle, evt_buf, idx, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_extract_dbr_buf_cv_metadata(
-			wmi_unified_t wmi_handle,
-			uint8_t *evt_buf, uint8_t idx,
-			struct direct_buf_rx_cv_metadata *param)
+QDF_STATUS
+wmi_extract_dbr_buf_cv_metadata(wmi_unified_t wmi_handle, uint8_t *evt_buf,
+				uint8_t idx,
+				struct direct_buf_rx_cv_metadata *param)
 {
 	if (wmi_handle->ops->extract_dbr_buf_cv_metadata)
 		return wmi_handle->ops->extract_dbr_buf_cv_metadata(
-				wmi_handle,
-				evt_buf, idx, param);
+			wmi_handle, evt_buf, idx, param);
 
 	return QDF_STATUS_E_FAILURE;
 }

@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights
+ * reserved. Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/interrupt.h>
-#include <linux/delay.h>
-#include <linux/kernel.h>
-#include <linux/kthread.h>
-#include <linux/slab.h>
-#include <linux/device.h>
-#include <linux/gpio/consumer.h>
-#include <linux/sde_io_util.h>
-#include <linux/of_gpio.h>
 #include "dp_gpio_hpd.h"
 #include "dp_debug.h"
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/gpio/consumer.h>
+#include <linux/interrupt.h>
+#include <linux/kernel.h>
+#include <linux/kthread.h>
+#include <linux/of_gpio.h>
+#include <linux/sde_io_util.h>
+#include <linux/slab.h>
 
 struct dp_gpio_hpd_private {
 	struct device *dev;
@@ -40,9 +40,8 @@ static int dp_gpio_hpd_connect(struct dp_gpio_hpd_private *gpio_hpd, bool hpd)
 	gpio_hpd->base.alt_mode_cfg_done = hpd;
 	gpio_hpd->base.hpd_irq = false;
 
-	if (!gpio_hpd->cb ||
-		!gpio_hpd->cb->configure ||
-		!gpio_hpd->cb->disconnect) {
+	if (!gpio_hpd->cb || !gpio_hpd->cb->configure ||
+	    !gpio_hpd->cb->disconnect) {
 		DP_ERR("invalid cb\n");
 		rc = -EINVAL;
 		goto error;
@@ -98,10 +97,10 @@ static irqreturn_t dp_gpio_isr(int unused, void *data)
 		return IRQ_HANDLED;
 
 	/* In DP 1.2 spec, 100msec is recommended for the detection
-	 * of HPD connect event. Here we'll poll HPD status for
-	 * 50x2ms = 100ms and if HPD is always low, we know DP is
-	 * disconnected. If HPD is high, HPD_IRQ will be handled
-	 */
+   * of HPD connect event. Here we'll poll HPD status for
+   * 50x2ms = 100ms and if HPD is always low, we know DP is
+   * disconnected. If HPD is high, HPD_IRQ will be handled
+   */
 	for (i = 0; i < disconnect_timeout_retry; i++) {
 		if (hpd) {
 			dp_gpio_hpd_attention(gpio_hpd);
@@ -119,27 +118,23 @@ static irqreturn_t dp_gpio_isr(int unused, void *data)
 static void dp_gpio_hpd_work(struct work_struct *work)
 {
 	struct delayed_work *dw = to_delayed_work(work);
-	struct dp_gpio_hpd_private *gpio_hpd = container_of(dw,
-		struct dp_gpio_hpd_private, work);
+	struct dp_gpio_hpd_private *gpio_hpd =
+		container_of(dw, struct dp_gpio_hpd_private, work);
 	int ret;
 
 	if (gpio_hpd->hpd) {
-		devm_free_irq(gpio_hpd->dev,
-			gpio_hpd->irq, gpio_hpd);
-		ret = devm_request_threaded_irq(gpio_hpd->dev,
-			gpio_hpd->irq, NULL,
-			dp_gpio_isr,
-			IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
-			"dp-gpio-intp", gpio_hpd);
+		devm_free_irq(gpio_hpd->dev, gpio_hpd->irq, gpio_hpd);
+		ret = devm_request_threaded_irq(
+			gpio_hpd->dev, gpio_hpd->irq, NULL, dp_gpio_isr,
+			IRQF_TRIGGER_FALLING | IRQF_ONESHOT, "dp-gpio-intp",
+			gpio_hpd);
 		dp_gpio_hpd_connect(gpio_hpd, true);
 	} else {
-		devm_free_irq(gpio_hpd->dev,
-				gpio_hpd->irq, gpio_hpd);
-		ret = devm_request_threaded_irq(gpio_hpd->dev,
-			gpio_hpd->irq, NULL,
-			dp_gpio_isr,
-			IRQF_TRIGGER_RISING | IRQF_ONESHOT,
-			"dp-gpio-intp", gpio_hpd);
+		devm_free_irq(gpio_hpd->dev, gpio_hpd->irq, gpio_hpd);
+		ret = devm_request_threaded_irq(
+			gpio_hpd->dev, gpio_hpd->irq, NULL, dp_gpio_isr,
+			IRQF_TRIGGER_RISING | IRQF_ONESHOT, "dp-gpio-intp",
+			gpio_hpd);
 		dp_gpio_hpd_connect(gpio_hpd, false);
 	}
 
@@ -198,9 +193,8 @@ int dp_gpio_hpd_register(struct dp_hpd *dp_hpd)
 
 	edge = gpio_hpd->hpd ? IRQF_TRIGGER_FALLING : IRQF_TRIGGER_RISING;
 	rc = devm_request_threaded_irq(gpio_hpd->dev, gpio_hpd->irq, NULL,
-		dp_gpio_isr,
-		edge | IRQF_ONESHOT,
-		"dp-gpio-intp", gpio_hpd);
+				       dp_gpio_isr, edge | IRQF_ONESHOT,
+				       "dp-gpio-intp", gpio_hpd);
 	if (rc) {
 		DP_ERR("Failed to request INTP threaded IRQ: %d\n", rc);
 		return rc;
@@ -212,13 +206,12 @@ int dp_gpio_hpd_register(struct dp_hpd *dp_hpd)
 	return rc;
 }
 
-struct dp_hpd *dp_gpio_hpd_get(struct device *dev,
-	struct dp_hpd_cb *cb)
+struct dp_hpd *dp_gpio_hpd_get(struct device *dev, struct dp_hpd_cb *cb)
 {
 	int rc = 0;
 	const char *hpd_gpio_name = "qcom,dp-hpd-gpio";
 	struct dp_gpio_hpd_private *gpio_hpd;
-	struct dp_pinctrl pinctrl = {0};
+	struct dp_pinctrl pinctrl = { 0 };
 	unsigned int gpio;
 
 	if (!dev || !cb) {
@@ -242,11 +235,11 @@ struct dp_hpd *dp_gpio_hpd_get(struct device *dev,
 
 	pinctrl.pin = devm_pinctrl_get(dev);
 	if (!IS_ERR_OR_NULL(pinctrl.pin)) {
-		pinctrl.state_hpd_active = pinctrl_lookup_state(pinctrl.pin,
-						"mdss_dp_hpd_active");
+		pinctrl.state_hpd_active =
+			pinctrl_lookup_state(pinctrl.pin, "mdss_dp_hpd_active");
 		if (!IS_ERR_OR_NULL(pinctrl.state_hpd_active)) {
 			rc = pinctrl_select_state(pinctrl.pin,
-					pinctrl.state_hpd_active);
+						  pinctrl.state_hpd_active);
 			if (rc) {
 				DP_ERR("failed to set hpd active state\n");
 				goto gpio_error;
@@ -260,7 +253,7 @@ struct dp_hpd *dp_gpio_hpd_get(struct device *dev,
 	gpio_hpd->gpio_cfg.value = 0;
 
 	rc = gpio_request(gpio_hpd->gpio_cfg.gpio,
-		gpio_hpd->gpio_cfg.gpio_name);
+			  gpio_hpd->gpio_cfg.gpio_name);
 	if (rc) {
 		DP_ERR("%s: failed to request gpio\n", hpd_gpio_name);
 		goto gpio_error;

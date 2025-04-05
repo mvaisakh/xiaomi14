@@ -34,7 +34,7 @@ int qdf_set_dp_pkt_add_ts_info(enum qdf_pkt_supported_proto proto,
 	dp_pkt_ts_info.proto_info[dp_pkt_ts_info.current_index].proto = proto;
 	dp_pkt_ts_info.proto_info[dp_pkt_ts_info.current_index].port = port;
 	dp_pkt_ts_info.proto_info[dp_pkt_ts_info.current_index++].offset =
-									offset;
+		offset;
 	dp_pkt_add_timestamp = 1;
 	return 0;
 }
@@ -45,8 +45,7 @@ void qdf_clear_dp_pkt_add_ts_info(void)
 	qdf_mem_zero(&dp_pkt_ts_info, sizeof(dp_pkt_ts_info));
 }
 
-static
-const char *qdf_get_proto_str(enum qdf_pkt_supported_proto proto)
+static const char *qdf_get_proto_str(enum qdf_pkt_supported_proto proto)
 {
 	switch (proto) {
 	case QDF_PKT_PROTO_TCP:
@@ -77,12 +76,12 @@ int qdf_show_dp_pkt_add_ts_info(char *buf, size_t size)
 			  dp_pkt_ts_info.proto_info[i].offset);
 		if (size - cnt <= 0)
 			continue;
-		cnt += scnprintf(buf + cnt, size - cnt,
-				 "Protocol: %s Destination Port %d Offset %d\n",
-				 qdf_get_proto_str(
-					 dp_pkt_ts_info.proto_info[i].proto),
-				 dp_pkt_ts_info.proto_info[i].port,
-				 dp_pkt_ts_info.proto_info[i].offset);
+		cnt += scnprintf(
+			buf + cnt, size - cnt,
+			"Protocol: %s Destination Port %d Offset %d\n",
+			qdf_get_proto_str(dp_pkt_ts_info.proto_info[i].proto),
+			dp_pkt_ts_info.proto_info[i].port,
+			dp_pkt_ts_info.proto_info[i].offset);
 	}
 	return cnt;
 }
@@ -92,40 +91,40 @@ bool qdf_is_dp_pkt_timestamp_enabled(void)
 	return dp_pkt_add_timestamp;
 }
 
-static inline
-uint32_t qdf_get_tcp_offset(qdf_nbuf_t nbuf, uint16_t offset)
+static inline uint32_t qdf_get_tcp_offset(qdf_nbuf_t nbuf, uint16_t offset)
 {
 	uint16_t ip_header_len, tcp_header_len, tcp_header_off;
 	uint8_t *skb_data = (uint8_t *)qdf_nbuf_data(nbuf);
 
-	ip_header_len = ((uint8_t)(*(uint8_t *)
-				(skb_data + QDF_NBUF_TRAC_IPV4_OFFSET)) &
-			QDF_NBUF_TRAC_IPV4_HEADER_MASK) << 2;
+	ip_header_len =
+		((uint8_t)(*(uint8_t *)(skb_data + QDF_NBUF_TRAC_IPV4_OFFSET)) &
+		 QDF_NBUF_TRAC_IPV4_HEADER_MASK)
+		<< 2;
 	tcp_header_off = QDF_NBUF_TRAC_IPV4_OFFSET + ip_header_len;
-	tcp_header_len = ((uint8_t)(*(uint8_t *)
-				(skb_data + tcp_header_off +
-				 QDF_NBUF_TRAC_TCP_HEADER_LEN_OFFSET))) >> 2;
+	tcp_header_len =
+		((uint8_t)(*(uint8_t *)(skb_data + tcp_header_off +
+					QDF_NBUF_TRAC_TCP_HEADER_LEN_OFFSET))) >>
+		2;
 	return tcp_header_off + tcp_header_len + offset;
 }
 
-static inline
-uint32_t qdf_get_udp_offset(qdf_nbuf_t nbuf, uint16_t offset)
+static inline uint32_t qdf_get_udp_offset(qdf_nbuf_t nbuf, uint16_t offset)
 {
 	uint16_t ip_header_len, udp_header_len;
 	uint8_t *skb_data = (uint8_t *)qdf_nbuf_data(nbuf);
 
-	ip_header_len = ((uint8_t)(*(uint8_t *)
-				(skb_data + QDF_NBUF_TRAC_IPV4_OFFSET)) &
-			QDF_NBUF_TRAC_IPV4_HEADER_MASK) << 2;
+	ip_header_len =
+		((uint8_t)(*(uint8_t *)(skb_data + QDF_NBUF_TRAC_IPV4_OFFSET)) &
+		 QDF_NBUF_TRAC_IPV4_HEADER_MASK)
+		<< 2;
 	udp_header_len = 8;
-	return  QDF_NBUF_TRAC_IPV4_OFFSET + ip_header_len +
-		udp_header_len + offset;
+	return QDF_NBUF_TRAC_IPV4_OFFSET + ip_header_len + udp_header_len +
+	       offset;
 }
 
-static inline
-void qdf_add_ts(qdf_nbuf_t nbuf, uint32_t offset,
-		enum qdf_pkt_timestamp_index index, uint64_t time,
-		enum qdf_pkt_supported_proto proto)
+static inline void qdf_add_ts(qdf_nbuf_t nbuf, uint32_t offset,
+			      enum qdf_pkt_timestamp_index index, uint64_t time,
+			      enum qdf_pkt_supported_proto proto)
 {
 	struct ts *ts_ptr;
 	struct ts_info *ts_info;
@@ -157,12 +156,12 @@ void qdf_add_dp_pkt_timestamp(qdf_nbuf_t nbuf,
 
 	if (dp_pkt_ts_info.enable_protocol_bitmap & QDF_PKT_PROTO_TCP_BIT) {
 		if (qdf_nbuf_is_ipv4_tcp_pkt(nbuf)) {
-			port =
-			    QDF_SWAP_U16(qdf_nbuf_data_get_tcp_dst_port(nbuf));
+			port = QDF_SWAP_U16(
+				qdf_nbuf_data_get_tcp_dst_port(nbuf));
 			for (i = 0; i < dp_pkt_ts_info.current_index; i++) {
-				offset =  dp_pkt_ts_info.proto_info[i].offset;
+				offset = dp_pkt_ts_info.proto_info[i].offset;
 				if (dp_pkt_ts_info.proto_info[i].proto ==
-				    QDF_PKT_PROTO_TCP &&
+					    QDF_PKT_PROTO_TCP &&
 				    dp_pkt_ts_info.proto_info[i].port == port) {
 					qdf_add_ts(nbuf, offset, index, time,
 						   QDF_PKT_PROTO_TCP);
@@ -175,12 +174,12 @@ void qdf_add_dp_pkt_timestamp(qdf_nbuf_t nbuf,
 
 	if (dp_pkt_ts_info.enable_protocol_bitmap & QDF_PKT_PROTO_UDP_BIT) {
 		if (qdf_nbuf_is_ipv4_udp_pkt(nbuf)) {
-			port =
-			    QDF_SWAP_U16(qdf_nbuf_data_get_tcp_dst_port(nbuf));
+			port = QDF_SWAP_U16(
+				qdf_nbuf_data_get_tcp_dst_port(nbuf));
 			for (i = 0; i < dp_pkt_ts_info.current_index; i++) {
-				offset =  dp_pkt_ts_info.proto_info[i].offset;
+				offset = dp_pkt_ts_info.proto_info[i].offset;
 				if (dp_pkt_ts_info.proto_info[i].proto ==
-				    QDF_PKT_PROTO_UDP &&
+					    QDF_PKT_PROTO_UDP &&
 				    dp_pkt_ts_info.proto_info[i].port == port) {
 					qdf_add_ts(nbuf, offset, index, time,
 						   QDF_PKT_PROTO_UDP);

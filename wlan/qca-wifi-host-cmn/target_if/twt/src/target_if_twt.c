@@ -18,12 +18,12 @@
  *  DOC: target_if_twt.c
  *  This file contains twt component's target related function definitions
  */
+#include "twt/core/src/wlan_twt_common.h"
+#include "twt/core/src/wlan_twt_priv.h"
+#include <target_if_ext_twt.h>
 #include <target_if_twt.h>
 #include <target_if_twt_cmd.h>
 #include <target_if_twt_evt.h>
-#include <target_if_ext_twt.h>
-#include "twt/core/src/wlan_twt_common.h"
-#include "twt/core/src/wlan_twt_priv.h"
 
 QDF_STATUS
 target_if_twt_register_events(struct wlan_objmgr_psoc *psoc)
@@ -37,24 +37,22 @@ target_if_twt_register_events(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_register_event_handler(wmi_handle,
-					wmi_twt_enable_complete_event_id,
-					target_if_twt_en_complete_event_handler,
-					WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_enable_complete_event_id,
+		target_if_twt_en_complete_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt enable event cb");
-		if (status ==  QDF_STATUS_E_NOSUPPORT)
+		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 		return status;
 	}
 
-	status = wmi_unified_register_event_handler(wmi_handle,
-				wmi_twt_disable_complete_event_id,
-				target_if_twt_disable_comp_event_handler,
-				WMI_RX_WORK_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_twt_disable_complete_event_id,
+		target_if_twt_disable_comp_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt disable event cb");
-		if (status ==  QDF_STATUS_E_NOSUPPORT)
+		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 		return status;
 	}
@@ -62,7 +60,7 @@ target_if_twt_register_events(struct wlan_objmgr_psoc *psoc)
 	status = target_if_twt_register_ext_events(psoc);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to register twt ext events");
-		if (status ==  QDF_STATUS_E_NOSUPPORT)
+		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 		return status;
 	}
@@ -87,20 +85,20 @@ target_if_twt_deregister_events(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	status = wmi_unified_unregister_event_handler(wmi_handle,
-					wmi_twt_enable_complete_event_id);
+	status = wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_twt_enable_complete_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt enable event cb");
-		if (status ==  QDF_STATUS_E_NOSUPPORT)
+		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 		return status;
 	}
 
-	status = wmi_unified_unregister_event_handler(wmi_handle,
-					 wmi_twt_disable_complete_event_id);
+	status = wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_twt_disable_complete_event_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt disable event cb");
-		if (status ==  QDF_STATUS_E_NOSUPPORT)
+		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 		return status;
 	}
@@ -108,7 +106,7 @@ target_if_twt_deregister_events(struct wlan_objmgr_psoc *psoc)
 	status = target_if_twt_deregister_ext_events(psoc);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Failed to deregister twt ext events");
-		if (status ==  QDF_STATUS_E_NOSUPPORT)
+		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 		return status;
 	}
@@ -143,8 +141,7 @@ target_if_twt_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 }
 
 QDF_STATUS
-target_if_twt_set_twt_ack_support(struct wlan_objmgr_psoc *psoc,
-				  bool val)
+target_if_twt_set_twt_ack_support(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	struct twt_psoc_priv_obj *twt_psoc =
 		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_TWT);
@@ -169,8 +166,8 @@ target_if_twt_fill_tgt_caps(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	twt_psoc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-							 WLAN_UMAC_COMP_TWT);
+	twt_psoc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_TWT);
 	if (!twt_psoc) {
 		target_if_err("null twt psoc priv obj");
 		return QDF_STATUS_E_FAILURE;
@@ -224,18 +221,15 @@ target_if_twt_fill_tgt_caps(struct wlan_objmgr_psoc *psoc,
 		caps->restricted_twt_support = false;
 
 	target_if_debug("req:%d res:%d legacy_bcast_twt_support:%d",
-		caps->twt_requestor,
-		caps->twt_responder,
-		caps->legacy_bcast_twt_support);
+			caps->twt_requestor, caps->twt_responder,
+			caps->legacy_bcast_twt_support);
 	target_if_debug("twt_bcast_req_support:%d twt_bcast_res_support:%d",
-		caps->twt_bcast_req_support,
-		caps->twt_bcast_res_support);
+			caps->twt_bcast_req_support,
+			caps->twt_bcast_res_support);
 	target_if_debug("nudge_enabled:%d all_twt_enabled:%d stats_enabled:%d",
-		caps->twt_nudge_enabled,
-		caps->all_twt_enabled,
-		caps->twt_stats_enabled);
+			caps->twt_nudge_enabled, caps->all_twt_enabled,
+			caps->twt_stats_enabled);
 	target_if_debug("restricted_twt_support:%d",
 			caps->restricted_twt_support);
 	return QDF_STATUS_SUCCESS;
 }
-

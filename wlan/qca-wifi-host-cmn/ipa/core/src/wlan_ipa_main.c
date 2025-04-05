@@ -22,10 +22,10 @@
  */
 
 #include "wlan_ipa_main.h"
-#include "wlan_ipa_core.h"
-#include "wlan_ipa_tgt_api.h"
 #include "cfg_ucfg_api.h"
+#include "wlan_ipa_core.h"
 #include "wlan_ipa_obj_mgmt_api.h"
+#include "wlan_ipa_tgt_api.h"
 
 static struct wlan_ipa_config *g_ipa_config;
 static bool g_ipa_hw_support;
@@ -119,8 +119,9 @@ QDF_STATUS ipa_obj_cleanup(struct wlan_ipa_priv *ipa_ctx)
 	return wlan_ipa_cleanup(ipa_ctx);
 }
 
-QDF_STATUS ipa_send_uc_offload_enable_disable(struct wlan_objmgr_pdev *pdev,
-				struct ipa_uc_offload_control_params *req)
+QDF_STATUS
+ipa_send_uc_offload_enable_disable(struct wlan_objmgr_pdev *pdev,
+				   struct ipa_uc_offload_control_params *req)
 {
 	return tgt_ipa_uc_offload_enable_disable(pdev, req);
 }
@@ -142,8 +143,7 @@ void ipa_set_dp_handle(struct wlan_objmgr_psoc *psoc, void *dp_soc)
 		return;
 	}
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0,
-					  WLAN_IPA_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_IPA_ID);
 
 	if (!pdev) {
 		ipa_err("Failed to get pdev handle");
@@ -171,8 +171,7 @@ void ipa_set_pdev_id(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id)
 		return;
 	}
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0,
-					  WLAN_IPA_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_IPA_ID);
 
 	if (!pdev) {
 		ipa_err("Failed to get pdev handle");
@@ -317,8 +316,8 @@ void ipa_uc_stat_request(struct wlan_objmgr_pdev *pdev, uint8_t reason)
 	return wlan_ipa_uc_stat_request(ipa_obj, reason);
 }
 
-void ipa_uc_stat_query(struct wlan_objmgr_pdev *pdev,
-		       uint32_t *ipa_tx_diff, uint32_t *ipa_rx_diff)
+void ipa_uc_stat_query(struct wlan_objmgr_pdev *pdev, uint32_t *ipa_tx_diff,
+		       uint32_t *ipa_rx_diff)
 {
 	struct wlan_ipa_priv *ipa_obj;
 
@@ -581,8 +580,7 @@ QDF_STATUS ipa_resume(struct wlan_objmgr_pdev *pdev)
 	return wlan_ipa_resume(ipa_obj);
 }
 
-QDF_STATUS ipa_uc_ol_init(struct wlan_objmgr_pdev *pdev,
-			  qdf_device_t osdev)
+QDF_STATUS ipa_uc_ol_init(struct wlan_objmgr_pdev *pdev, qdf_device_t osdev)
 {
 	struct wlan_ipa_priv *ipa_obj;
 
@@ -665,8 +663,7 @@ out:
 	return status;
 }
 
-QDF_STATUS ipa_send_mcc_scc_msg(struct wlan_objmgr_pdev *pdev,
-				bool mcc_mode)
+QDF_STATUS ipa_send_mcc_scc_msg(struct wlan_objmgr_pdev *pdev, bool mcc_mode)
 {
 	struct wlan_ipa_priv *ipa_obj;
 
@@ -736,8 +733,8 @@ bool ipa_is_fw_wdi_activated(struct wlan_objmgr_pdev *pdev)
 	return wlan_ipa_is_fw_wdi_activated(ipa_obj);
 }
 
-void ipa_uc_cleanup_sta(struct wlan_objmgr_pdev *pdev,
-			qdf_netdev_t net_dev, uint8_t session_id)
+void ipa_uc_cleanup_sta(struct wlan_objmgr_pdev *pdev, qdf_netdev_t net_dev,
+			uint8_t session_id)
 {
 	struct wlan_ipa_priv *ipa_obj;
 
@@ -772,8 +769,8 @@ QDF_STATUS ipa_uc_disconnect_ap(struct wlan_objmgr_pdev *pdev,
 	return wlan_ipa_uc_disconnect_ap(ipa_obj, net_dev);
 }
 
-void ipa_cleanup_dev_iface(struct wlan_objmgr_pdev *pdev,
-			   qdf_netdev_t net_dev, uint8_t session_id)
+void ipa_cleanup_dev_iface(struct wlan_objmgr_pdev *pdev, qdf_netdev_t net_dev,
+			   uint8_t session_id)
 {
 	struct wlan_ipa_priv *ipa_obj;
 
@@ -870,17 +867,14 @@ void ipa_component_config_update(struct wlan_objmgr_psoc *psoc)
 		ipa_info("IPA disabled from platform driver");
 	}
 
-	g_ipa_config->desc_size =
-		cfg_get(psoc, CFG_DP_IPA_DESC_SIZE);
-	g_ipa_config->txbuf_count =
-		qdf_rounddown_pow_of_two(cfg_get(psoc,
-						 CFG_DP_IPA_UC_TX_BUF_COUNT));
+	g_ipa_config->desc_size = cfg_get(psoc, CFG_DP_IPA_DESC_SIZE);
+	g_ipa_config->txbuf_count = qdf_rounddown_pow_of_two(
+		cfg_get(psoc, CFG_DP_IPA_UC_TX_BUF_COUNT));
 	g_ipa_config->ipa_bw_high =
 		cfg_get(psoc, CFG_DP_IPA_HIGH_BANDWIDTH_MBPS);
 	g_ipa_config->ipa_bw_medium =
 		cfg_get(psoc, CFG_DP_IPA_MEDIUM_BANDWIDTH_MBPS);
-	g_ipa_config->ipa_bw_low =
-		cfg_get(psoc, CFG_DP_IPA_LOW_BANDWIDTH_MBPS);
+	g_ipa_config->ipa_bw_low = cfg_get(psoc, CFG_DP_IPA_LOW_BANDWIDTH_MBPS);
 	g_ipa_config->bus_bw_high =
 		cfg_get(psoc, CFG_DP_BUS_BANDWIDTH_HIGH_THRESHOLD);
 	g_ipa_config->bus_bw_medium =
@@ -889,8 +883,7 @@ void ipa_component_config_update(struct wlan_objmgr_psoc *psoc)
 		cfg_get(psoc, CFG_DP_BUS_BANDWIDTH_LOW_THRESHOLD);
 	g_ipa_config->ipa_force_voting =
 		cfg_get(psoc, CFG_DP_IPA_ENABLE_FORCE_VOTING);
-	g_ipa_config->ipa_wds =
-		cfg_get(psoc, CFG_DP_IPA_WDS_STATUS);
+	g_ipa_config->ipa_wds = cfg_get(psoc, CFG_DP_IPA_WDS_STATUS);
 	g_ipa_config->ipa_vlan_support =
 		cfg_get(psoc, CFG_DP_IPA_ENABLE_VLAN_SUPPORT);
 }

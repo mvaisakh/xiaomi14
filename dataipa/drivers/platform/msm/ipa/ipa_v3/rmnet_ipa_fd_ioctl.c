@@ -5,60 +5,47 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include "ipa_i.h"
+#include "ipa_qmi_service.h"
+#include <linux/cdev.h>
+#include <linux/compat.h>
+#include <linux/device.h>
+#include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/fs.h>
-#include <linux/cdev.h>
-#include <linux/device.h>
+#include <linux/rmnet_ipa_fd_ioctl.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
-#include <linux/compat.h>
-#include <linux/rmnet_ipa_fd_ioctl.h>
-#include "ipa_qmi_service.h"
-#include "ipa_i.h"
 
 #define DRIVER_NAME "wwan_ioctl"
 
 #ifdef CONFIG_COMPAT
-#define WAN_IOC_ADD_FLT_RULE32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_ADD_FLT_RULE, \
-		compat_uptr_t)
-#define WAN_IOC_ADD_FLT_RULE_INDEX32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_ADD_FLT_INDEX, \
-		compat_uptr_t)
-#define WAN_IOC_POLL_TETHERING_STATS32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_POLL_TETHERING_STATS, \
-		compat_uptr_t)
-#define WAN_IOC_SET_DATA_QUOTA32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_SET_DATA_QUOTA, \
-		compat_uptr_t)
-#define WAN_IOC_SET_TETHER_CLIENT_PIPE32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_SET_TETHER_CLIENT_PIPE, \
-		compat_uptr_t)
-#define WAN_IOC_QUERY_TETHER_STATS32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_QUERY_TETHER_STATS, \
-		compat_uptr_t)
-#define WAN_IOC_RESET_TETHER_STATS32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_RESET_TETHER_STATS, \
-		compat_uptr_t)
-#define WAN_IOC_QUERY_DL_FILTER_STATS32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_QUERY_DL_FILTER_STATS, \
-		compat_uptr_t)
-#define WAN_IOC_QUERY_TETHER_STATS_ALL32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_QUERY_TETHER_STATS_ALL, \
-		compat_uptr_t)
-#define WAN_IOC_NOTIFY_WAN_STATE32 _IOWR(WAN_IOC_MAGIC, \
-		WAN_IOCTL_NOTIFY_WAN_STATE, \
-		compat_uptr_t)
-#define WAN_IOCTL_ENABLE_PER_CLIENT_STATS32 _IOWR(WAN_IOC_MAGIC, \
-			WAN_IOCTL_ENABLE_PER_CLIENT_STATS, \
-			compat_uptr_t)
-#define WAN_IOCTL_QUERY_PER_CLIENT_STATS32 _IOWR(WAN_IOC_MAGIC, \
-			WAN_IOCTL_QUERY_PER_CLIENT_STATS, \
-			compat_uptr_t)
-#define WAN_IOCTL_SET_LAN_CLIENT_INFO32 _IOWR(WAN_IOC_MAGIC, \
-			WAN_IOCTL_SET_LAN_CLIENT_INFO, \
-			compat_uptr_t)
+#define WAN_IOC_ADD_FLT_RULE32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_ADD_FLT_RULE, compat_uptr_t)
+#define WAN_IOC_ADD_FLT_RULE_INDEX32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_ADD_FLT_INDEX, compat_uptr_t)
+#define WAN_IOC_POLL_TETHERING_STATS32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_POLL_TETHERING_STATS, compat_uptr_t)
+#define WAN_IOC_SET_DATA_QUOTA32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_SET_DATA_QUOTA, compat_uptr_t)
+#define WAN_IOC_SET_TETHER_CLIENT_PIPE32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_SET_TETHER_CLIENT_PIPE, compat_uptr_t)
+#define WAN_IOC_QUERY_TETHER_STATS32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_QUERY_TETHER_STATS, compat_uptr_t)
+#define WAN_IOC_RESET_TETHER_STATS32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_RESET_TETHER_STATS, compat_uptr_t)
+#define WAN_IOC_QUERY_DL_FILTER_STATS32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_QUERY_DL_FILTER_STATS, compat_uptr_t)
+#define WAN_IOC_QUERY_TETHER_STATS_ALL32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_QUERY_TETHER_STATS_ALL, compat_uptr_t)
+#define WAN_IOC_NOTIFY_WAN_STATE32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_NOTIFY_WAN_STATE, compat_uptr_t)
+#define WAN_IOCTL_ENABLE_PER_CLIENT_STATS32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_ENABLE_PER_CLIENT_STATS, compat_uptr_t)
+#define WAN_IOCTL_QUERY_PER_CLIENT_STATS32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_QUERY_PER_CLIENT_STATS, compat_uptr_t)
+#define WAN_IOCTL_SET_LAN_CLIENT_INFO32 \
+	_IOWR(WAN_IOC_MAGIC, WAN_IOCTL_SET_LAN_CLIENT_INFO, compat_uptr_t)
 #endif
 
 static unsigned int dev_num = 1;
@@ -67,29 +54,26 @@ static unsigned int ipa3_process_ioctl = 1;
 static struct class *class;
 static dev_t device;
 
-static long ipa3_wan_ioctl(struct file *filp,
-		unsigned int cmd,
-		unsigned long arg)
+static long ipa3_wan_ioctl(struct file *filp, unsigned int cmd,
+			   unsigned long arg)
 {
 	int retval = 0, rc = 0, rmv_offload_req__msg_size = 0;
 	u32 pyld_sz;
 	u8 *param = NULL;
 
-	IPAWANDBG("device %s got ioctl events :>>>\n",
-		DRIVER_NAME);
+	IPAWANDBG("device %s got ioctl events :>>>\n", DRIVER_NAME);
 
 	rmv_offload_req__msg_size =
 		sizeof(struct ipa_remove_offload_connection_req_msg_v01);
 	if (!ipa3_process_ioctl) {
-
 		if ((cmd == WAN_IOC_SET_LAN_CLIENT_INFO) ||
-			(cmd == WAN_IOC_CLEAR_LAN_CLIENT_INFO)) {
+		    (cmd == WAN_IOC_CLEAR_LAN_CLIENT_INFO)) {
 			IPAWANDBG("Modem is in SSR\n");
 			IPAWANDBG("Still allow IOCTL for exceptions (%d)\n",
-				cmd);
+				  cmd);
 		} else {
 			IPAWANERR_RL("Modem is in SSR, ignoring ioctl (%d)\n",
-				cmd);
+				     cmd);
 			return -EAGAIN;
 		}
 	}
@@ -97,7 +81,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 	switch (cmd) {
 	case WAN_IOC_ADD_FLT_RULE_EX:
 		IPAWANDBG("device %s got WAN_IOC_ADD_FLT_RULE_EX :>>>\n",
-			DRIVER_NAME);
+			  DRIVER_NAME);
 		pyld_sz = sizeof(struct ipa_install_fltr_rule_req_ex_msg_v01);
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
@@ -106,7 +90,8 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (ipa3_qmi_filter_request_ex_send(
-			(struct ipa_install_fltr_rule_req_ex_msg_v01 *)param)) {
+			    (struct ipa_install_fltr_rule_req_ex_msg_v01 *)
+				    param)) {
 			IPAWANDBG("IPACM->Q6 add filter rule failed\n");
 			retval = -EFAULT;
 			break;
@@ -119,7 +104,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 	case WAN_IOC_ADD_OFFLOAD_CONNECTION:
 		IPAWANDBG("device %s got WAN_IOC_ADD_OFFLOAD_CONNECTION :>>>\n",
-		DRIVER_NAME);
+			  DRIVER_NAME);
 		pyld_sz = sizeof(struct ipa_add_offload_connection_req_msg_v01);
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
@@ -128,8 +113,8 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (ipa3_qmi_add_offload_request_send(
-			(struct ipa_add_offload_connection_req_msg_v01 *)
-			param)) {
+			    (struct ipa_add_offload_connection_req_msg_v01 *)
+				    param)) {
 			IPAWANDBG("IPACM->Q6 add offload connection failed\n");
 			retval = -EFAULT;
 			break;
@@ -142,7 +127,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 	case WAN_IOC_RMV_OFFLOAD_CONNECTION:
 		IPAWANDBG("device %s got WAN_IOC_RMV_OFFLOAD_CONNECTION :>>>\n",
-		DRIVER_NAME);
+			  DRIVER_NAME);
 		pyld_sz = rmv_offload_req__msg_size;
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
@@ -151,8 +136,8 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (ipa3_qmi_rmv_offload_request_send(
-			(struct ipa_remove_offload_connection_req_msg_v01 *)
-				param)) {
+			    (struct ipa_remove_offload_connection_req_msg_v01 *)
+				    param)) {
 			IPAWANDBG("IPACM->Q6 add offload connection failed\n");
 			retval = -EFAULT;
 			break;
@@ -165,9 +150,9 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 	case WAN_IOC_ADD_UL_FLT_RULE:
 		IPAWANDBG("device %s got WAN_IOC_UL_ADD_FLT_RULE :>>>\n",
-			DRIVER_NAME);
-		pyld_sz =
-		sizeof(struct ipa_configure_ul_firewall_rules_req_msg_v01);
+			  DRIVER_NAME);
+		pyld_sz = sizeof(
+			struct ipa_configure_ul_firewall_rules_req_msg_v01);
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
 		if (IS_ERR(param)) {
@@ -175,8 +160,8 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (ipa3_qmi_ul_filter_request_send(
-			(struct ipa_configure_ul_firewall_rules_req_msg_v01 *)
-			param)) {
+			    (struct ipa_configure_ul_firewall_rules_req_msg_v01
+				     *)param)) {
 			IPAWANDBG("IPACM->Q6 add ul filter rule failed\n");
 			retval = -EFAULT;
 			break;
@@ -189,7 +174,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 	case WAN_IOC_ADD_FLT_RULE_INDEX:
 		IPAWANDBG("device %s got WAN_IOC_ADD_FLT_RULE_INDEX :>>>\n",
-			DRIVER_NAME);
+			  DRIVER_NAME);
 		pyld_sz = sizeof(struct ipa_fltr_installed_notif_req_msg_v01);
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
@@ -198,7 +183,8 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (ipa3_qmi_filter_notify_send(
-		(struct ipa_fltr_installed_notif_req_msg_v01 *)param)) {
+			    (struct ipa_fltr_installed_notif_req_msg_v01 *)
+				    param)) {
 			IPAWANDBG("IPACM->Q6 rule index fail\n");
 			retval = -EFAULT;
 			break;
@@ -211,7 +197,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 	case WAN_IOC_VOTE_FOR_BW_MBPS:
 		IPAWANDBG("device %s got WAN_IOC_VOTE_FOR_BW_MBPS :>>>\n",
-			DRIVER_NAME);
+			  DRIVER_NAME);
 		pyld_sz = sizeof(uint32_t);
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
@@ -240,7 +226,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (rmnet_ipa3_poll_tethering_stats(
-		(struct wan_ioctl_poll_tethering_stats *)param)) {
+			    (struct wan_ioctl_poll_tethering_stats *)param)) {
 			IPAWANERR_RL("WAN_IOCTL_POLL_TETHERING_STATS failed\n");
 			retval = -EFAULT;
 			break;
@@ -253,7 +239,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 	case WAN_IOC_SET_DATA_QUOTA:
 		IPAWANDBG_LOW("device %s got WAN_IOCTL_SET_DATA_QUOTA :>>>\n",
-			DRIVER_NAME);
+			      DRIVER_NAME);
 		pyld_sz = sizeof(struct wan_ioctl_set_data_quota);
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
@@ -279,11 +265,13 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 #ifdef IPA_DATA_WARNING_QUOTA
 	case WAN_IOC_SET_DATA_QUOTA_WARNING:
-		IPAWANDBG_LOW("device %s got WAN_IOC_SET_DATA_QUOTA_WARNING :>>>\n",
+		IPAWANDBG_LOW(
+			"device %s got WAN_IOC_SET_DATA_QUOTA_WARNING :>>>\n",
 			DRIVER_NAME);
 		pyld_sz = sizeof(struct wan_ioctl_set_data_quota_warning);
 		if (pyld_sz > _IOC_SIZE(cmd)) {
-			IPAWANERR("SET_DATA_QUOTA_WARNING failed, invalid params\n");
+			IPAWANERR(
+				"SET_DATA_QUOTA_WARNING failed, invalid params\n");
 			retval = -EINVAL;
 			break;
 		}
@@ -319,7 +307,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (rmnet_ipa3_set_tether_client_pipe(
-			(struct wan_ioctl_set_tether_client_pipe *)param)) {
+			    (struct wan_ioctl_set_tether_client_pipe *)param)) {
 			IPAWANERR("WAN_IOC_SET_TETHER_CLIENT_PIPE failed\n");
 			retval = -EFAULT;
 			break;
@@ -337,7 +325,8 @@ static long ipa3_wan_ioctl(struct file *filp,
 		}
 
 		if (rmnet_ipa3_query_tethering_stats(
-			(struct wan_ioctl_query_tether_stats *)param, false)) {
+			    (struct wan_ioctl_query_tether_stats *)param,
+			    false)) {
 			IPAWANERR("WAN_IOC_QUERY_TETHER_STATS failed\n");
 			retval = -EFAULT;
 			break;
@@ -360,7 +349,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 		}
 
 		if (rmnet_ipa3_query_tethering_stats_all(
-			(struct wan_ioctl_query_tether_stats_all *)param)) {
+			    (struct wan_ioctl_query_tether_stats_all *)param)) {
 			IPAWANERR("WAN_IOC_QUERY_TETHER_STATS failed\n");
 			retval = -EFAULT;
 			break;
@@ -374,7 +363,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 	case WAN_IOC_RESET_TETHER_STATS:
 		IPAWANDBG_LOW("device %s got WAN_IOC_RESET_TETHER_STATS :>>>\n",
-			DRIVER_NAME);
+			      DRIVER_NAME);
 		pyld_sz = sizeof(struct wan_ioctl_reset_tether_stats);
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
@@ -384,7 +373,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 		}
 
 		if (rmnet_ipa3_reset_tethering_stats(
-				(struct wan_ioctl_reset_tether_stats *)param)) {
+			    (struct wan_ioctl_reset_tether_stats *)param)) {
 			IPAWANERR("WAN_IOC_RESET_TETHER_STATS failed\n");
 			retval = -EFAULT;
 			break;
@@ -393,7 +382,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 
 	case WAN_IOC_NOTIFY_WAN_STATE:
 		IPAWANDBG_LOW("device %s got WAN_IOC_NOTIFY_WAN_STATE :>>>\n",
-			DRIVER_NAME);
+			      DRIVER_NAME);
 		pyld_sz = sizeof(struct wan_ioctl_notify_wan_state);
 		param = vmemdup_user((const void __user *)arg, pyld_sz);
 
@@ -403,14 +392,14 @@ static long ipa3_wan_ioctl(struct file *filp,
 		}
 
 		if (ipa3_wwan_set_modem_state(
-			(struct wan_ioctl_notify_wan_state *)param)) {
+			    (struct wan_ioctl_notify_wan_state *)param)) {
 			IPAWANERR("WAN_IOC_NOTIFY_WAN_STATE failed\n");
 			retval = -EFAULT;
 			break;
 		}
 
 		if (ipa_mpm_notify_wan_state(
-			(struct wan_ioctl_notify_wan_state *)param)) {
+			    (struct wan_ioctl_notify_wan_state *)param)) {
 			IPAWANERR("WAN_IOC_NOTIFY_WAN_STATE failed\n");
 			retval = -EPERM;
 		}
@@ -424,8 +413,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 			retval = PTR_ERR(param);
 			break;
 		}
-		if (rmnet_ipa3_enable_per_client_stats(
-			(bool *)param)) {
+		if (rmnet_ipa3_enable_per_client_stats((bool *)param)) {
 			IPAWANERR("WAN_IOC_ENABLE_PER_CLIENT_STATS failed\n");
 			retval = -EFAULT;
 			break;
@@ -441,11 +429,11 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (ipa3_ctx->ipa_hw_type >= IPA_HW_v4_5)
-			retval = rmnet_ipa3_query_per_client_stats_v2(
-			  (struct wan_ioctl_query_per_client_stats *)param);
+			retval = rmnet_ipa3_query_per_client_stats_v2((
+				struct wan_ioctl_query_per_client_stats *)param);
 		else
-			retval = rmnet_ipa3_query_per_client_stats(
-			  (struct wan_ioctl_query_per_client_stats *)param);
+			retval = rmnet_ipa3_query_per_client_stats((
+				struct wan_ioctl_query_per_client_stats *)param);
 		if (retval) {
 			IPAWANERR("WAN_IOC_QUERY_PER_CLIENT_STATS failed\n");
 			break;
@@ -467,7 +455,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (rmnet_ipa3_set_lan_client_info(
-			(struct wan_ioctl_lan_client_info *)param)) {
+			    (struct wan_ioctl_lan_client_info *)param)) {
 			IPAWANERR("WAN_IOC_SET_LAN_CLIENT_INFO failed\n");
 			retval = -EFAULT;
 			break;
@@ -484,13 +472,12 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (rmnet_ipa3_clear_lan_client_info(
-			(struct wan_ioctl_lan_client_info *)param)) {
+			    (struct wan_ioctl_lan_client_info *)param)) {
 			IPAWANERR("WAN_IOC_CLEAR_LAN_CLIENT_INFO failed\n");
 			retval = -EFAULT;
 			break;
 		}
 		break;
-
 
 	case WAN_IOC_SEND_LAN_CLIENT_MSG:
 		IPAWANDBG_LOW("got WAN_IOC_SEND_LAN_CLIENT_MSG :>>>\n");
@@ -502,8 +489,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 			break;
 		}
 		if (rmnet_ipa3_send_lan_client_msg(
-			(struct wan_ioctl_send_lan_client_msg *)
-			param)) {
+			    (struct wan_ioctl_send_lan_client_msg *)param)) {
 			IPAWANERR("IOC_SEND_LAN_CLIENT_MSG failed\n");
 			retval = -EFAULT;
 			break;
@@ -526,9 +512,7 @@ static long ipa3_wan_ioctl(struct file *filp,
 			retval = PTR_ERR(param);
 			break;
 		}
-		if (rmnet_ipa3_get_wan_mtu(
-			(struct ipa_mtu_info *)
-			param)) {
+		if (rmnet_ipa3_get_wan_mtu((struct ipa_mtu_info *)param)) {
 			IPAWANERR("WAN_IOC_GET_WAN_MTU failed\n");
 			retval = -EFAULT;
 			break;
@@ -550,9 +534,8 @@ static long ipa3_wan_ioctl(struct file *filp,
 }
 
 #ifdef CONFIG_COMPAT
-long ipa3_compat_wan_ioctl(struct file *file,
-		unsigned int cmd,
-		unsigned long arg)
+long ipa3_compat_wan_ioctl(struct file *file, unsigned int cmd,
+			   unsigned long arg)
 {
 	switch (cmd) {
 	case WAN_IOC_ADD_FLT_RULE32:
@@ -582,7 +565,7 @@ long ipa3_compat_wan_ioctl(struct file *file,
 	default:
 		return -ENOIOCTLCMD;
 	}
-	return ipa3_wan_ioctl(file, cmd, (unsigned long) compat_ptr(arg));
+	return ipa3_wan_ioctl(file, cmd, (unsigned long)compat_ptr(arg));
 }
 #endif
 
@@ -623,8 +606,7 @@ int ipa3_wan_ioctl_init(void)
 		goto class_err;
 	}
 
-	dev = device_create(class, NULL, device,
-		NULL, DRIVER_NAME);
+	dev = device_create(class, NULL, device, NULL, DRIVER_NAME);
 	if (IS_ERR(dev)) {
 		IPAWANERR(":device_create err.\n");
 		goto device_err;
@@ -639,8 +621,8 @@ int ipa3_wan_ioctl_init(void)
 
 	ipa3_process_ioctl = 1;
 
-	IPAWANDBG("IPA %s major(%d) initial ok :>>>>\n",
-	DRIVER_NAME, wan_ioctl_major);
+	IPAWANDBG("IPA %s major(%d) initial ok :>>>>\n", DRIVER_NAME,
+		  wan_ioctl_major);
 	return 0;
 
 cdev_add_err:

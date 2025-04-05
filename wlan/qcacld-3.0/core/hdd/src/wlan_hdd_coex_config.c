@@ -24,31 +24,30 @@
  *
  */
 
-#include "wlan_hdd_main.h"
-#include "wmi_unified_param.h"
 #include "wlan_hdd_coex_config.h"
-#include "qca_vendor.h"
-#include "wlan_osif_request_manager.h"
 #include "osif_sync.h"
+#include "qca_vendor.h"
 #include "wlan_fwol_ucfg_api.h"
+#include "wlan_hdd_main.h"
+#include "wlan_osif_request_manager.h"
+#include "wmi_unified_param.h"
 
-const struct nla_policy
-coex_config_three_way_policy[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_MAX + 1] = {
-	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_CONFIG_TYPE] = {
-							      .type = NLA_U32},
-	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_1] = {.type = NLA_U32},
-	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_2] = {.type = NLA_U32},
-	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_3] = {.type = NLA_U32},
-	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_4] = {.type = NLA_U32},
+const struct nla_policy coex_config_three_way_policy[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_MAX +
+						     1] = {
+	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_CONFIG_TYPE] = { .type = NLA_U32 },
+	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_1] = { .type = NLA_U32 },
+	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_2] = { .type = NLA_U32 },
+	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_3] = { .type = NLA_U32 },
+	[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_4] = { .type = NLA_U32 },
 };
 
 static const uint32_t
-config_type_to_wmi_tbl[QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_TYPE_MAX] = {
-	[QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_COEX_RESET] =
-		WMI_COEX_CONFIG_THREE_WAY_COEX_RESET,
-	[QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_COEX_START] =
-		WMI_COEX_CONFIG_THREE_WAY_COEX_START,
-};
+	config_type_to_wmi_tbl[QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_TYPE_MAX] = {
+		[QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_COEX_RESET] =
+			WMI_COEX_CONFIG_THREE_WAY_COEX_RESET,
+		[QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_COEX_START] =
+			WMI_COEX_CONFIG_THREE_WAY_COEX_START,
+	};
 
 /**
  * __wlan_hdd_cfg80211_set_coex_config() - set coex configuration
@@ -68,8 +67,8 @@ static int __wlan_hdd_cfg80211_set_coex_config(struct wiphy *wiphy,
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct nlattr *tb[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_MAX + 1];
 	uint32_t config_type;
-	struct coex_config_params coex_cfg_params = {0};
-	struct wlan_fwol_coex_config config = {0};
+	struct coex_config_params coex_cfg_params = { 0 };
+	struct wlan_fwol_coex_config config = { 0 };
 	int errno;
 	QDF_STATUS status;
 
@@ -94,10 +93,9 @@ static int __wlan_hdd_cfg80211_set_coex_config(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	if (wlan_cfg80211_nla_parse(tb,
-				    QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_MAX,
-				    data, data_len,
-				    coex_config_three_way_policy)) {
+	if (wlan_cfg80211_nla_parse(
+		    tb, QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_MAX, data,
+		    data_len, coex_config_three_way_policy)) {
 		hdd_err("Invalid coex config ATTR");
 		return -EINVAL;
 	}
@@ -111,22 +109,21 @@ static int __wlan_hdd_cfg80211_set_coex_config(struct wiphy *wiphy,
 		tb[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_CONFIG_TYPE]);
 	if (config_type >= QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_TYPE_MAX) {
 		hdd_err("config_type value %d exceeded Max value %d",
-			config_type,
-			QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_TYPE_MAX);
+			config_type, QCA_WLAN_VENDOR_ATTR_COEX_CONFIG_TYPE_MAX);
 		return -EINVAL;
 	}
 	coex_cfg_params.config_type = config_type_to_wmi_tbl[config_type];
 	if (coex_cfg_params.config_type <
-	    WMI_COEX_CONFIG_THREE_WAY_DELAY_PARA ||
+		    WMI_COEX_CONFIG_THREE_WAY_DELAY_PARA ||
 	    coex_cfg_params.config_type >
-	    WMI_COEX_CONFIG_THREE_WAY_COEX_START) {
+		    WMI_COEX_CONFIG_THREE_WAY_COEX_START) {
 		hdd_err("config_type_wmi val error %d",
 			coex_cfg_params.config_type);
 		return -EINVAL;
 	}
 
-	hdd_debug("config_type %d, config_type_wmi %d",
-		  config_type, coex_cfg_params.config_type);
+	hdd_debug("config_type %d, config_type_wmi %d", config_type,
+		  coex_cfg_params.config_type);
 
 	if (!tb[QCA_VENDOR_ATTR_COEX_CONFIG_THREE_WAY_PRIORITY_1]) {
 		hdd_err("coex config - attr priority1 failed");
@@ -195,8 +192,8 @@ int wlan_hdd_cfg80211_set_coex_config(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_set_coex_config(wiphy, wdev,
-						    data, data_len);
+	errno = __wlan_hdd_cfg80211_set_coex_config(wiphy, wdev, data,
+						    data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 

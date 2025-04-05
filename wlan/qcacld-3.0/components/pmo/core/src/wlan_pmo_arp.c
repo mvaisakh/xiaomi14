@@ -21,13 +21,12 @@
  */
 
 #include "wlan_pmo_arp.h"
-#include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_main.h"
 #include "wlan_pmo_obj_mgmt_public_struct.h"
+#include "wlan_pmo_tgt_api.h"
 
-static QDF_STATUS pmo_core_cache_arp_in_vdev_priv(
-			struct pmo_arp_req *arp_req,
-			struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS pmo_core_cache_arp_in_vdev_priv(struct pmo_arp_req *arp_req,
+						  struct wlan_objmgr_vdev *vdev)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct pmo_arp_offload_params *request = NULL;
@@ -48,17 +47,18 @@ static QDF_STATUS pmo_core_cache_arp_in_vdev_priv(
 		goto free_req;
 
 	qdf_mem_copy(&request->bssid.bytes, &peer_bssid.bytes,
-			QDF_MAC_ADDR_SIZE);
-	pmo_debug("vdev self mac addr: "QDF_MAC_ADDR_FMT" bss peer mac addr: "QDF_MAC_ADDR_FMT,
-		QDF_MAC_ADDR_REF(wlan_vdev_mlme_get_macaddr(vdev)),
-		QDF_MAC_ADDR_REF(peer_bssid.bytes));
+		     QDF_MAC_ADDR_SIZE);
+	pmo_debug("vdev self mac addr: " QDF_MAC_ADDR_FMT
+		  " bss peer mac addr: " QDF_MAC_ADDR_FMT,
+		  QDF_MAC_ADDR_REF(wlan_vdev_mlme_get_macaddr(vdev)),
+		  QDF_MAC_ADDR_REF(peer_bssid.bytes));
 
 	request->enable = PMO_OFFLOAD_ENABLE;
 	request->is_offload_applied = false;
 	/* converting u32 to IPV4 address */
 	for (index = 0; index < QDF_IPV4_ADDR_SIZE; index++)
 		request->host_ipv4_addr[index] =
-		(arp_req->ipv4_addr >> (index * 8)) & 0xFF;
+			(arp_req->ipv4_addr >> (index * 8)) & 0xFF;
 
 	/* cache arp request */
 	qdf_spin_lock_bh(&vdev_ctx->pmo_vdev_lock);
@@ -78,8 +78,8 @@ exit_with_status:
 	return status;
 }
 
-static QDF_STATUS pmo_core_flush_arp_from_vdev_priv(
-			struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS
+pmo_core_flush_arp_from_vdev_priv(struct wlan_objmgr_vdev *vdev)
 {
 	struct pmo_vdev_priv_obj *vdev_ctx;
 
@@ -100,8 +100,7 @@ static QDF_STATUS pmo_core_flush_arp_from_vdev_priv(
 }
 
 static QDF_STATUS
-pmo_core_do_enable_arp_offload(struct wlan_objmgr_vdev *vdev,
-			       uint8_t vdev_id,
+pmo_core_do_enable_arp_offload(struct wlan_objmgr_vdev *vdev, uint8_t vdev_id,
 			       enum pmo_offload_trigger trigger)
 {
 	QDF_STATUS status;
@@ -143,8 +142,9 @@ out:
 	return status;
 }
 
-static QDF_STATUS pmo_core_do_disable_arp_offload(struct wlan_objmgr_vdev *vdev,
-		uint8_t vdev_id, enum pmo_offload_trigger trigger)
+static QDF_STATUS
+pmo_core_do_disable_arp_offload(struct wlan_objmgr_vdev *vdev, uint8_t vdev_id,
+				enum pmo_offload_trigger trigger)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct pmo_psoc_priv_obj *psoc_ctx;
@@ -178,8 +178,7 @@ out:
 	return status;
 }
 
-static QDF_STATUS pmo_core_arp_offload_sanity(
-			struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS pmo_core_arp_offload_sanity(struct wlan_objmgr_vdev *vdev)
 {
 	struct pmo_vdev_priv_obj *vdev_ctx;
 
@@ -196,7 +195,7 @@ static QDF_STATUS pmo_core_arp_offload_sanity(
 
 	if (!pmo_core_is_vdev_supports_offload(vdev)) {
 		pmo_debug("vdev in invalid opmode for arp offload %d",
-			pmo_get_vdev_opmode(vdev));
+			  pmo_get_vdev_opmode(vdev));
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -233,7 +232,8 @@ QDF_STATUS pmo_core_arp_check_offload(struct wlan_objmgr_psoc *psoc,
 
 	if (wlan_vdev_mlme_get_is_mlo_link(psoc, vdev_id)) {
 		pmo_debug("ARP offload not supported for MLO partner link "
-			  "with vdev_id[%d]", vdev_id);
+			  "with vdev_id[%d]",
+			  vdev_id);
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_PMO_ID);
 		return QDF_STATUS_E_INVAL;
 	}
@@ -250,7 +250,8 @@ QDF_STATUS pmo_core_arp_check_offload(struct wlan_objmgr_psoc *psoc,
 		qdf_spin_unlock_bh(&vdev_ctx->pmo_vdev_lock);
 
 		if (active_offload_cond && is_applied_cond) {
-			pmo_debug("active offload is enabled and offload already sent");
+			pmo_debug(
+				"active offload is enabled and offload already sent");
 			wlan_objmgr_vdev_release_ref(vdev, WLAN_PMO_ID);
 			return QDF_STATUS_E_INVAL;
 		}
@@ -277,9 +278,8 @@ QDF_STATUS pmo_core_cache_arp_offload_req(struct pmo_arp_req *arp_req)
 		goto out;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(arp_req->psoc,
-						    arp_req->vdev_id,
-						    WLAN_PMO_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+		arp_req->psoc, arp_req->vdev_id, WLAN_PMO_ID);
 	if (!vdev) {
 		pmo_err("vdev is NULL");
 		status = QDF_STATUS_E_INVAL;
@@ -291,7 +291,7 @@ QDF_STATUS pmo_core_cache_arp_offload_req(struct pmo_arp_req *arp_req)
 		goto dec_ref;
 
 	pmo_debug("Cache arp for vdev id: %d psoc: %pK vdev: %pK",
-			arp_req->vdev_id, arp_req->psoc, vdev);
+		  arp_req->vdev_id, arp_req->psoc, vdev);
 
 	status = pmo_core_cache_arp_in_vdev_priv(arp_req, vdev);
 dec_ref:
@@ -333,8 +333,9 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_core_enable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
-		enum pmo_offload_trigger trigger)
+QDF_STATUS
+pmo_core_enable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
+				   enum pmo_offload_trigger trigger)
 {
 	QDF_STATUS status;
 	uint8_t vdev_id;
@@ -354,8 +355,8 @@ QDF_STATUS pmo_core_enable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
 		goto put_ref;
 
 	vdev_id = pmo_vdev_get_id(vdev);
-	pmo_debug("Enable arp offload in fwr vdev id: %d vdev: %pK",
-		vdev_id, vdev);
+	pmo_debug("Enable arp offload in fwr vdev id: %d vdev: %pK", vdev_id,
+		  vdev);
 
 	status = pmo_core_do_enable_arp_offload(vdev, vdev_id, trigger);
 
@@ -366,8 +367,9 @@ out:;
 	return status;
 }
 
-QDF_STATUS pmo_core_disable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
-		enum pmo_offload_trigger trigger)
+QDF_STATUS
+pmo_core_disable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
+				    enum pmo_offload_trigger trigger)
 {
 	QDF_STATUS status;
 	uint8_t vdev_id;
@@ -387,8 +389,8 @@ QDF_STATUS pmo_core_disable_arp_offload_in_fwr(struct wlan_objmgr_vdev *vdev,
 		goto def_ref;
 
 	vdev_id = pmo_vdev_get_id(vdev);
-	pmo_debug("Disable arp offload in fwr vdev id: %d vdev: %pK",
-		vdev_id, vdev);
+	pmo_debug("Disable arp offload in fwr vdev id: %d vdev: %pK", vdev_id,
+		  vdev);
 
 	status = pmo_core_do_disable_arp_offload(vdev, vdev_id, trigger);
 def_ref:

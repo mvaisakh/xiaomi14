@@ -9,22 +9,22 @@
 #define IPA_UC_NTN_DB_PA_RX 0x79620D8
 
 static void ipa3_uc_ntn_event_log_info_handler(
-struct IpaHwEventLogInfoData_t *uc_event_top_mmio)
+	struct IpaHwEventLogInfoData_t *uc_event_top_mmio)
 {
 	struct Ipa3HwEventInfoData_t *statsPtr = &uc_event_top_mmio->statsInfo;
 
-	if ((uc_event_top_mmio->protocolMask &
-		(1 << IPA_HW_PROTOCOL_ETH)) == 0) {
+	if ((uc_event_top_mmio->protocolMask & (1 << IPA_HW_PROTOCOL_ETH)) ==
+	    0) {
 		IPAERR("NTN protocol missing 0x%x\n",
-			uc_event_top_mmio->protocolMask);
+		       uc_event_top_mmio->protocolMask);
 		return;
 	}
 
 	if (statsPtr->featureInfo[IPA_HW_PROTOCOL_ETH].params.size !=
-		sizeof(struct Ipa3HwStatsNTNInfoData_t)) {
+	    sizeof(struct Ipa3HwStatsNTNInfoData_t)) {
 		IPAERR("NTN stats sz invalid exp=%zu is=%u\n",
-			sizeof(struct Ipa3HwStatsNTNInfoData_t),
-			statsPtr->featureInfo[IPA_HW_PROTOCOL_ETH].params.size);
+		       sizeof(struct Ipa3HwStatsNTNInfoData_t),
+		       statsPtr->featureInfo[IPA_HW_PROTOCOL_ETH].params.size);
 		return;
 	}
 
@@ -33,19 +33,19 @@ struct IpaHwEventLogInfoData_t *uc_event_top_mmio)
 		statsPtr->featureInfo[IPA_HW_PROTOCOL_ETH].params.offset;
 	IPAERR("NTN stats ofst=0x%x\n", ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_ofst);
 	if (ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_ofst +
-		sizeof(struct Ipa3HwStatsNTNInfoData_t) >=
-		ipa3_ctx->ctrl->ipa_reg_base_ofst +
-		ipahal_get_reg_n_ofst(IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
-		ipa3_ctx->smem_sz) {
+		    sizeof(struct Ipa3HwStatsNTNInfoData_t) >=
+	    ipa3_ctx->ctrl->ipa_reg_base_ofst +
+		    ipahal_get_reg_n_ofst(IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
+		    ipa3_ctx->smem_sz) {
 		IPAERR("uc_ntn_stats 0x%x outside SRAM\n",
-			   ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_ofst);
+		       ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_ofst);
 		return;
 	}
 
 	ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio =
 		ioremap(ipa3_ctx->ipa_wrapper_base +
-		ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_ofst,
-		sizeof(struct Ipa3HwStatsNTNInfoData_t));
+				ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_ofst,
+			sizeof(struct Ipa3HwStatsNTNInfoData_t));
 	if (!ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio) {
 		IPAERR("fail to ioremap uc ntn stats\n");
 		return;
@@ -63,10 +63,12 @@ struct IpaHwEventLogInfoData_t *uc_event_top_mmio)
  */
 int ipa3_get_ntn_stats(struct Ipa3HwStatsNTNInfoData_t *stats)
 {
-#define TX_STATS(x, y) stats->tx_ch_stats[x].y = \
-	ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio->tx_ch_stats[0].y
-#define RX_STATS(x, y) stats->rx_ch_stats[x].y = \
-	ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio->rx_ch_stats[x].y
+#define TX_STATS(x, y)            \
+	stats->tx_ch_stats[x].y = \
+		ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio->tx_ch_stats[0].y
+#define RX_STATS(x, y)            \
+	stats->rx_ch_stats[x].y = \
+		ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio->rx_ch_stats[x].y
 
 	int i = 0;
 
@@ -76,9 +78,8 @@ int ipa3_get_ntn_stats(struct Ipa3HwStatsNTNInfoData_t *stats)
 	}
 
 	if (!stats || !ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio) {
-		IPAERR("bad parms stats=%pK ntn_stats=%pK\n",
-			stats,
-			ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio);
+		IPAERR("bad parms stats=%pK ntn_stats=%pK\n", stats,
+		       ipa3_ctx->uc_ntn_ctx.ntn_uc_stats_mmio);
 		return -EINVAL;
 	}
 
@@ -123,7 +124,6 @@ int ipa3_get_ntn_stats(struct Ipa3HwStatsNTNInfoData_t *stats)
 	return 0;
 }
 
-
 int ipa3_ntn_uc_reg_rdyCB(void (*ipa_ready_cb)(void *), void *user_data)
 {
 	int ret;
@@ -159,11 +159,9 @@ static void ipa3_uc_ntn_loaded_handler(void)
 	}
 
 	if (ipa3_ctx->uc_ntn_ctx.uc_ready_cb) {
-		ipa3_ctx->uc_ntn_ctx.uc_ready_cb(
-			ipa3_ctx->uc_ntn_ctx.priv);
+		ipa3_ctx->uc_ntn_ctx.uc_ready_cb(ipa3_ctx->uc_ntn_ctx.priv);
 
-		ipa3_ctx->uc_ntn_ctx.uc_ready_cb =
-			NULL;
+		ipa3_ctx->uc_ntn_ctx.uc_ready_cb = NULL;
 		ipa3_ctx->uc_ntn_ctx.priv = NULL;
 	}
 }
@@ -174,8 +172,7 @@ int ipa3_ntn_init(void)
 
 	uc_ntn_cbs.ipa_uc_event_log_info_hdlr =
 		ipa3_uc_ntn_event_log_info_handler;
-	uc_ntn_cbs.ipa_uc_loaded_hdlr =
-		ipa3_uc_ntn_loaded_handler;
+	uc_ntn_cbs.ipa_uc_loaded_hdlr = ipa3_uc_ntn_loaded_handler;
 
 	ipa3_uc_register_handlers(IPA_HW_FEATURE_NTN, &uc_ntn_cbs);
 
@@ -188,8 +185,8 @@ int ipa3_ntn_init(void)
 	return 0;
 }
 
-static int ipa3_uc_send_ntn_setup_pipe_cmd(
-	struct ipa_ntn_setup_info *ntn_info, u8 dir)
+static int ipa3_uc_send_ntn_setup_pipe_cmd(struct ipa_ntn_setup_info *ntn_info,
+					   u8 dir)
 {
 	int ipa_ep_idx;
 	int result = 0;
@@ -211,10 +208,8 @@ static int ipa3_uc_send_ntn_setup_pipe_cmd(
 
 	IPADBG("client=%d ep=%d\n", ntn_info->client, ipa_ep_idx);
 
-	IPADBG("ring_base_pa = 0x%pa\n",
-			&ntn_info->ring_base_pa);
-	IPADBG("ring_base_iova = 0x%pa\n",
-			&ntn_info->ring_base_iova);
+	IPADBG("ring_base_pa = 0x%pa\n", &ntn_info->ring_base_pa);
+	IPADBG("ring_base_iova = 0x%pa\n", &ntn_info->ring_base_iova);
 	IPADBG("ntn_ring_size = %d\n", ntn_info->ntn_ring_size);
 	IPADBG("buff_pool_base_pa = 0x%pa\n", &ntn_info->buff_pool_base_pa);
 	IPADBG("buff_pool_base_iova = 0x%pa\n", &ntn_info->buff_pool_base_iova);
@@ -227,15 +222,15 @@ static int ipa3_uc_send_ntn_setup_pipe_cmd(
 	else
 		cmd.size = sizeof(*cmd_data);
 	cmd.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, cmd.size,
-			&cmd.phys_base, GFP_KERNEL);
+				      &cmd.phys_base, GFP_KERNEL);
 	if (cmd.base == NULL) {
 		IPAERR("fail to get DMA memory.\n");
 		return -ENOMEM;
 	}
 
 	if (ipa3_ctx->ipa_hw_type >= IPA_HW_v4_0) {
-		cmd_data_v4_0 = (struct IpaHwOffloadSetUpCmdData_t_v4_0 *)
-			cmd.base;
+		cmd_data_v4_0 =
+			(struct IpaHwOffloadSetUpCmdData_t_v4_0 *)cmd.base;
 		cmd_data_v4_0->protocol = IPA_HW_PROTOCOL_ETH;
 		Ntn_params = &cmd_data_v4_0->SetupCh_params.ntn_params;
 	} else {
@@ -262,9 +257,9 @@ static int ipa3_uc_send_ntn_setup_pipe_cmd(
 	Ntn_params->dir = dir;
 
 	result = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-				IPA_CPU_2_HW_CMD_OFFLOAD_CHANNEL_SET_UP,
-				IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
-				false, 10*HZ);
+				  IPA_CPU_2_HW_CMD_OFFLOAD_CHANNEL_SET_UP,
+				  IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
+				  false, 10 * HZ);
 	if (result)
 		result = -EFAULT;
 
@@ -273,7 +268,7 @@ static int ipa3_uc_send_ntn_setup_pipe_cmd(
 }
 
 static int ipa3_smmu_map_uc_ntn_pipes(struct ipa_ntn_setup_info *params,
-	bool map)
+				      bool map)
 {
 	struct iommu_domain *smmu_domain;
 	int result = 0;
@@ -291,56 +286,56 @@ static int ipa3_smmu_map_uc_ntn_pipes(struct ipa_ntn_setup_info *params,
 	}
 
 	/* only map/unmap once the ntn_reg_base_ptr_pa */
-	map_unmap_once = (map && ipa3_ctx->uc_ntn_ctx.smmu_mapped == 0)
-	|| (!map && ipa3_ctx->uc_ntn_ctx.smmu_mapped == 1);
+	map_unmap_once = (map && ipa3_ctx->uc_ntn_ctx.smmu_mapped == 0) ||
+			 (!map && ipa3_ctx->uc_ntn_ctx.smmu_mapped == 1);
 
-	IPADBG(" %s uC regs, smmu_mapped %d\n",
-		map ? "map" : "unmap", ipa3_ctx->uc_ntn_ctx.smmu_mapped);
+	IPADBG(" %s uC regs, smmu_mapped %d\n", map ? "map" : "unmap",
+	       ipa3_ctx->uc_ntn_ctx.smmu_mapped);
 
 	if (map_unmap_once) {
-		result = ipa3_smmu_map_peer_reg(rounddown(
-				params->ntn_reg_base_ptr_pa, PAGE_SIZE),
-				map, IPA_SMMU_CB_UC);
+		result = ipa3_smmu_map_peer_reg(
+			rounddown(params->ntn_reg_base_ptr_pa, PAGE_SIZE), map,
+			IPA_SMMU_CB_UC);
 		if (result) {
 			IPAERR("failed to %s uC regs %d\n",
-				map ? "map" : "unmap", result);
+			       map ? "map" : "unmap", result);
 			goto fail;
 		}
 		/* backup the ntn_reg_base_ptr_pa_r */
 		ipa3_ctx->uc_ntn_ctx.ntn_reg_base_ptr_pa_rd =
-			rounddown(params->ntn_reg_base_ptr_pa,
-			PAGE_SIZE);
+			rounddown(params->ntn_reg_base_ptr_pa, PAGE_SIZE);
 		IPADBG(" %s ntn_reg_base_ptr_pa regs 0X%0x smmu_mapped %d\n",
-			map ? "map" : "unmap",
-			(unsigned long long)
-			ipa3_ctx->uc_ntn_ctx.ntn_reg_base_ptr_pa_rd,
-			ipa3_ctx->uc_ntn_ctx.smmu_mapped);
+		       map ? "map" : "unmap",
+		       (unsigned long long)
+			       ipa3_ctx->uc_ntn_ctx.ntn_reg_base_ptr_pa_rd,
+		       ipa3_ctx->uc_ntn_ctx.smmu_mapped);
 	}
 	/* update smmu_mapped reference count */
 	if (map) {
 		ipa3_ctx->uc_ntn_ctx.smmu_mapped++;
 		IPADBG("uc_ntn_ctx.smmu_mapped %d\n",
-			ipa3_ctx->uc_ntn_ctx.smmu_mapped);
+		       ipa3_ctx->uc_ntn_ctx.smmu_mapped);
 	} else {
 		if (ipa3_ctx->uc_ntn_ctx.smmu_mapped == 0) {
 			IPAERR("Invalid smmu_mapped %d\n",
-				ipa3_ctx->uc_ntn_ctx.smmu_mapped);
+			       ipa3_ctx->uc_ntn_ctx.smmu_mapped);
 			goto fail;
 		} else {
 			ipa3_ctx->uc_ntn_ctx.smmu_mapped--;
 			IPADBG("uc_ntn_ctx.smmu_mapped %d\n",
-				ipa3_ctx->uc_ntn_ctx.smmu_mapped);
+			       ipa3_ctx->uc_ntn_ctx.smmu_mapped);
 		}
 	}
 
 	if (params->smmu_enabled) {
 		IPADBG("smmu is enabled on EMAC\n");
 		result = ipa3_smmu_map_peer_buff((u64)params->ring_base_iova,
-			params->ntn_ring_size, map, params->ring_base_sgt,
-			IPA_SMMU_CB_UC);
+						 params->ntn_ring_size, map,
+						 params->ring_base_sgt,
+						 IPA_SMMU_CB_UC);
 		if (result) {
 			IPAERR("failed to %s ntn ring %d\n",
-				map ? "map" : "unmap", result);
+			       map ? "map" : "unmap", result);
 			goto fail_map_ring;
 		}
 		result = ipa3_smmu_map_peer_buff(
@@ -349,23 +344,25 @@ static int ipa3_smmu_map_uc_ntn_pipes(struct ipa_ntn_setup_info *params,
 			params->buff_pool_base_sgt, IPA_SMMU_CB_UC);
 		if (result) {
 			IPAERR("failed to %s pool buffs %d\n",
-				map ? "map" : "unmap", result);
+			       map ? "map" : "unmap", result);
 			goto fail_map_buffer_smmu_enabled;
 		}
 	} else {
 		IPADBG("smmu is disabled on EMAC\n");
 		result = ipa3_smmu_map_peer_buff((u64)params->ring_base_pa,
-			params->ntn_ring_size, map, NULL, IPA_SMMU_CB_UC);
+						 params->ntn_ring_size, map,
+						 NULL, IPA_SMMU_CB_UC);
 		if (result) {
 			IPAERR("failed to %s ntn ring %d\n",
-				map ? "map" : "unmap", result);
+			       map ? "map" : "unmap", result);
 			goto fail_map_ring;
 		}
 		result = ipa3_smmu_map_peer_buff(params->buff_pool_base_pa,
-			params->num_buffers * 4, map, NULL, IPA_SMMU_CB_UC);
+						 params->num_buffers * 4, map,
+						 NULL, IPA_SMMU_CB_UC);
 		if (result) {
 			IPAERR("failed to %s pool buffs %d\n",
-				map ? "map" : "unmap", result);
+			       map ? "map" : "unmap", result);
 			goto fail_map_buffer_smmu_disabled;
 		}
 	}
@@ -385,12 +382,13 @@ static int ipa3_smmu_map_uc_ntn_pipes(struct ipa_ntn_setup_info *params,
 		iova = (u64)params->data_buff_list[i].iova;
 		pa = (phys_addr_t)params->data_buff_list[i].pa;
 		IPA_SMMU_ROUND_TO_PAGE(iova, pa, params->data_buff_size, iova_p,
-			pa_p, size_p);
-		IPADBG("%s 0x%llx to 0x%pa size %d\n", map ? "mapping" :
-			"unmapping", iova_p, &pa_p, size_p);
+				       pa_p, size_p);
+		IPADBG("%s 0x%llx to 0x%pa size %d\n",
+		       map ? "mapping" : "unmapping", iova_p, &pa_p, size_p);
 		if (map) {
 			result = ipa3_iommu_map(smmu_domain, iova_p, pa_p,
-				size_p, IOMMU_READ | IOMMU_WRITE);
+						size_p,
+						IOMMU_READ | IOMMU_WRITE);
 			if (result)
 				IPAERR("Fail to map 0x%llx\n", iova);
 		} else {
@@ -409,23 +407,27 @@ static int ipa3_smmu_map_uc_ntn_pipes(struct ipa_ntn_setup_info *params,
 
 fail_map_data_buff_smmu_enabled:
 	ipa3_smmu_map_peer_buff((u64)params->buff_pool_base_iova,
-		params->num_buffers * 4, !map, NULL, IPA_SMMU_CB_UC);
+				params->num_buffers * 4, !map, NULL,
+				IPA_SMMU_CB_UC);
 	goto fail_map_buffer_smmu_enabled;
 fail_map_data_buff_smmu_disabled:
 	ipa3_smmu_map_peer_buff(params->buff_pool_base_pa,
-		params->num_buffers * 4, !map, NULL, IPA_SMMU_CB_UC);
+				params->num_buffers * 4, !map, NULL,
+				IPA_SMMU_CB_UC);
 	goto fail_map_buffer_smmu_disabled;
 fail_map_buffer_smmu_enabled:
 	ipa3_smmu_map_peer_buff((u64)params->ring_base_iova,
-		params->ntn_ring_size, !map, params->ring_base_sgt,
-		IPA_SMMU_CB_UC);
+				params->ntn_ring_size, !map,
+				params->ring_base_sgt, IPA_SMMU_CB_UC);
 	goto fail_map_ring;
 fail_map_buffer_smmu_disabled:
 	ipa3_smmu_map_peer_buff((u64)params->ring_base_pa,
-			params->ntn_ring_size, !map, NULL, IPA_SMMU_CB_UC);
+				params->ntn_ring_size, !map, NULL,
+				IPA_SMMU_CB_UC);
 fail_map_ring:
 	ipa3_smmu_map_peer_reg(rounddown(params->ntn_reg_base_ptr_pa,
-		PAGE_SIZE), !map, IPA_SMMU_CB_UC);
+					 PAGE_SIZE),
+			       !map, IPA_SMMU_CB_UC);
 fail:
 	return result;
 }
@@ -434,8 +436,8 @@ fail:
  * ipa3_setup_uc_ntn_pipes() - setup uc offload pipes
  */
 int ipa3_setup_uc_ntn_pipes(struct ipa_ntn_conn_in_params *in,
-	ipa_notify_cb notify, void *priv, u8 hdr_len,
-	struct ipa_ntn_conn_out_params *outp)
+			    ipa_notify_cb notify, void *priv, u8 hdr_len,
+			    struct ipa_ntn_conn_out_params *outp)
 {
 	struct ipa3_ep_context *ep_ul;
 	struct ipa3_ep_context *ep_dl;
@@ -451,17 +453,15 @@ int ipa3_setup_uc_ntn_pipes(struct ipa_ntn_conn_in_params *in,
 
 	ipa_ep_idx_ul = ipa_get_ep_mapping(in->ul.client);
 	if (ipa_ep_idx_ul == IPA_EP_NOT_ALLOCATED ||
-		ipa_ep_idx_ul >= ipa3_get_max_num_pipes()) {
-		IPAERR("fail to alloc UL EP ipa_ep_idx_ul=%d\n",
-			ipa_ep_idx_ul);
+	    ipa_ep_idx_ul >= ipa3_get_max_num_pipes()) {
+		IPAERR("fail to alloc UL EP ipa_ep_idx_ul=%d\n", ipa_ep_idx_ul);
 		return -EFAULT;
 	}
 
 	ipa_ep_idx_dl = ipa_get_ep_mapping(in->dl.client);
 	if (ipa_ep_idx_dl == IPA_EP_NOT_ALLOCATED ||
-		ipa_ep_idx_dl >= ipa3_get_max_num_pipes()) {
-		IPAERR("fail to alloc DL EP ipa_ep_idx_dl=%d\n",
-			ipa_ep_idx_dl);
+	    ipa_ep_idx_dl >= ipa3_get_max_num_pipes()) {
+		IPAERR("fail to alloc DL EP ipa_ep_idx_dl=%d\n", ipa_ep_idx_dl);
 		return -EFAULT;
 	}
 
@@ -469,8 +469,8 @@ int ipa3_setup_uc_ntn_pipes(struct ipa_ntn_conn_in_params *in,
 	ep_dl = &ipa3_ctx->ep[ipa_ep_idx_dl];
 
 	if (ep_ul->valid || ep_dl->valid) {
-		IPAERR("EP already allocated ul:%d dl:%d\n",
-			   ep_ul->valid, ep_dl->valid);
+		IPAERR("EP already allocated ul:%d dl:%d\n", ep_ul->valid,
+		       ep_dl->valid);
 		return -EFAULT;
 	}
 
@@ -512,7 +512,7 @@ int ipa3_setup_uc_ntn_pipes(struct ipa_ntn_conn_in_params *in,
 	result = ipa3_enable_data_path(ipa_ep_idx_ul);
 	if (result) {
 		IPAERR("Enable data path failed res=%d pipe=%d.\n", result,
-			ipa_ep_idx_ul);
+		       ipa_ep_idx_ul);
 		result = -EFAULT;
 		goto fail_smmu_unmap_ul;
 	}
@@ -525,11 +525,9 @@ int ipa3_setup_uc_ntn_pipes(struct ipa_ntn_conn_in_params *in,
 	ipa3_install_dflt_flt_rules(ipa_ep_idx_ul);
 	/* Rx: IPA_UC_MAILBOX_m_n m = 1, n =3 mmio*/
 	outp->ul_uc_db_iomem = ipa3_ctx->mmio +
-		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-		1, 3);
+			       ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n, 1, 3);
 	ep_ul->uc_offload_state |= IPA_UC_OFFLOAD_CONNECTED;
-	IPADBG("client %d (ep: %d) connected\n", in->ul.client,
-		ipa_ep_idx_ul);
+	IPADBG("client %d (ep: %d) connected\n", in->ul.client, ipa_ep_idx_ul);
 
 	/* setup dl ep cfg */
 	ep_dl->valid = 1;
@@ -554,7 +552,7 @@ int ipa3_setup_uc_ntn_pipes(struct ipa_ntn_conn_in_params *in,
 	result = ipa3_enable_data_path(ipa_ep_idx_dl);
 	if (result) {
 		IPAERR("Enable data path failed res=%d pipe=%d.\n", result,
-			ipa_ep_idx_dl);
+		       ipa_ep_idx_dl);
 		result = -EFAULT;
 		goto fail_smmu_unmap_dl;
 	}
@@ -566,13 +564,11 @@ int ipa3_setup_uc_ntn_pipes(struct ipa_ntn_conn_in_params *in,
 	}
 	/* Tx: IPA_UC_MAILBOX_m_n m = 1, n =4 mmio */
 	outp->dl_uc_db_iomem = ipa3_ctx->mmio +
-		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-		1, 4);
+			       ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n, 1, 4);
 	ep_dl->uc_offload_state |= IPA_UC_OFFLOAD_CONNECTED;
 
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
-	IPADBG("client %d (ep: %d) connected\n", in->dl.client,
-		ipa_ep_idx_dl);
+	IPADBG("client %d (ep: %d) connected\n", in->dl.client, ipa_ep_idx_dl);
 
 	return 0;
 
@@ -594,8 +590,8 @@ EXPORT_SYMBOL(ipa3_setup_uc_ntn_pipes);
  * ipa3_tear_down_uc_offload_pipes() - tear down uc offload pipes
  */
 
-int ipa3_tear_down_uc_offload_pipes(int ipa_ep_idx_ul,
-		int ipa_ep_idx_dl, struct ipa_ntn_conn_in_params *params)
+int ipa3_tear_down_uc_offload_pipes(int ipa_ep_idx_ul, int ipa_ep_idx_dl,
+				    struct ipa_ntn_conn_in_params *params)
 {
 	struct ipa_mem_buffer cmd;
 	struct ipa3_ep_context *ep_ul, *ep_dl;
@@ -608,16 +604,14 @@ int ipa3_tear_down_uc_offload_pipes(int ipa_ep_idx_ul,
 	IPADBG("ep_dl = %d\n", ipa_ep_idx_dl);
 
 	if (ipa_ep_idx_ul == IPA_EP_NOT_ALLOCATED ||
-		ipa_ep_idx_ul >= IPA3_MAX_NUM_PIPES) {
-		IPAERR("ipa_ep_idx_ul %d invalid\n",
-			ipa_ep_idx_ul);
+	    ipa_ep_idx_ul >= IPA3_MAX_NUM_PIPES) {
+		IPAERR("ipa_ep_idx_ul %d invalid\n", ipa_ep_idx_ul);
 		return -EFAULT;
 	}
 
 	if (ipa_ep_idx_dl == IPA_EP_NOT_ALLOCATED ||
-		ipa_ep_idx_dl >= IPA3_MAX_NUM_PIPES) {
-		IPAERR("ep ipa_ep_idx_dl %d invalid\n",
-			ipa_ep_idx_dl);
+	    ipa_ep_idx_dl >= IPA3_MAX_NUM_PIPES) {
+		IPAERR("ep ipa_ep_idx_dl %d invalid\n", ipa_ep_idx_dl);
 		return -EFAULT;
 	}
 
@@ -625,9 +619,9 @@ int ipa3_tear_down_uc_offload_pipes(int ipa_ep_idx_ul,
 	ep_dl = &ipa3_ctx->ep[ipa_ep_idx_dl];
 
 	if (ep_ul->uc_offload_state != IPA_UC_OFFLOAD_CONNECTED ||
-		ep_dl->uc_offload_state != IPA_UC_OFFLOAD_CONNECTED) {
+	    ep_dl->uc_offload_state != IPA_UC_OFFLOAD_CONNECTED) {
 		IPAERR("channel bad state: ul %d dl %d\n",
-			ep_ul->uc_offload_state, ep_dl->uc_offload_state);
+		       ep_ul->uc_offload_state, ep_dl->uc_offload_state);
 		return -EFAULT;
 	}
 
@@ -639,7 +633,7 @@ int ipa3_tear_down_uc_offload_pipes(int ipa_ep_idx_ul,
 	else
 		cmd.size = sizeof(*cmd_data);
 	cmd.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, cmd.size,
-		&cmd.phys_base, GFP_KERNEL);
+				      &cmd.phys_base, GFP_KERNEL);
 	if (cmd.base == NULL) {
 		IPAERR("fail to get DMA memory.\n");
 		return -ENOMEM;
@@ -647,8 +641,8 @@ int ipa3_tear_down_uc_offload_pipes(int ipa_ep_idx_ul,
 
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 	if (ipa3_ctx->ipa_hw_type >= IPA_HW_v4_0) {
-		cmd_data_v4_0 = (struct IpaHwOffloadCommonChCmdData_t_v4_0 *)
-			cmd.base;
+		cmd_data_v4_0 =
+			(struct IpaHwOffloadCommonChCmdData_t_v4_0 *)cmd.base;
 		cmd_data_v4_0->protocol = IPA_HW_PROTOCOL_ETH;
 		tear = &cmd_data_v4_0->CommonCh_params.ntn_params;
 	} else {
@@ -660,17 +654,17 @@ int ipa3_tear_down_uc_offload_pipes(int ipa_ep_idx_ul,
 	/* teardown the DL pipe */
 	ipa3_disable_data_path(ipa_ep_idx_dl);
 	/*
-	 * Reset ep before sending cmd otherwise disconnect
-	 * during data transfer will result into
-	 * enormous suspend interrupts
-	 */
+   * Reset ep before sending cmd otherwise disconnect
+   * during data transfer will result into
+   * enormous suspend interrupts
+   */
 	memset(&ipa3_ctx->ep[ipa_ep_idx_dl], 0, sizeof(struct ipa3_ep_context));
 	IPADBG("dl client (ep: %d) disconnected\n", ipa_ep_idx_dl);
 	tear->params.ipa_pipe_number = ipa_ep_idx_dl;
 	result = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-				IPA_CPU_2_HW_CMD_OFFLOAD_CHANNEL_TEAR_DOWN,
-				IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
-				false, 10*HZ);
+				  IPA_CPU_2_HW_CMD_OFFLOAD_CHANNEL_TEAR_DOWN,
+				  IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
+				  false, 10 * HZ);
 	if (result) {
 		IPAERR("fail to tear down dl pipe\n");
 		result = -EFAULT;
@@ -689,9 +683,9 @@ int ipa3_tear_down_uc_offload_pipes(int ipa_ep_idx_ul,
 
 	tear->params.ipa_pipe_number = ipa_ep_idx_ul;
 	result = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-				IPA_CPU_2_HW_CMD_OFFLOAD_CHANNEL_TEAR_DOWN,
-				IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
-				false, 10*HZ);
+				  IPA_CPU_2_HW_CMD_OFFLOAD_CHANNEL_TEAR_DOWN,
+				  IPA_HW_2_CPU_OFFLOAD_CMD_STATUS_SUCCESS,
+				  false, 10 * HZ);
 	if (result) {
 		IPAERR("fail to tear down ul pipe\n");
 		result = -EFAULT;

@@ -18,45 +18,40 @@
  * DOC: defines driver functions interfacing with linux kernel
  */
 
+#include "qdf_module.h"
+#include <linux/netdevice.h>
+#include <linux/wireless.h>
 #include <qdf_list.h>
 #include <qdf_status.h>
-#include <linux/wireless.h>
-#include <linux/netdevice.h>
 #include <wlan_cfg80211.h>
-#include <wlan_osif_priv.h>
-#include <wlan_gpio_ucfg_api.h>
 #include <wlan_cfg80211_gpio.h>
-#include "qdf_module.h"
+#include <wlan_gpio_ucfg_api.h>
+#include <wlan_osif_priv.h>
 
-const struct nla_policy
-wlan_cfg80211_gpio_config_policy[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_COMMAND] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_PINNUM] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_VALUE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_PULL_TYPE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_INTR_MODE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_DIR] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_MUX_CONFIG] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_DRIVE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_INTERNAL_CONFIG] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
+const struct nla_policy wlan_cfg80211_gpio_config_policy[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_MAX +
+							 1] = {
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_COMMAND] = { .type = NLA_U32,
+						      .len = sizeof(uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_PINNUM] = { .type = NLA_U32,
+						     .len = sizeof(uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_VALUE] = { .type = NLA_U32,
+						    .len = sizeof(uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_PULL_TYPE] = { .type = NLA_U32,
+							.len = sizeof(
+								uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_INTR_MODE] = { .type = NLA_U32,
+							.len = sizeof(
+								uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_DIR] = { .type = NLA_U32,
+						  .len = sizeof(uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_MUX_CONFIG] = { .type = NLA_U32,
+							 .len = sizeof(
+								 uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_DRIVE] = { .type = NLA_U32,
+						    .len = sizeof(uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_INTERNAL_CONFIG] = { .type = NLA_U32,
+							      .len = sizeof(
+								      uint32_t) },
 };
 
 /**
@@ -164,8 +159,7 @@ convert_vendor_gpio_output_value(enum qca_gpio_value value)
  *
  * Return: wmi unified gpio output drive config
  */
-static enum gpio_drive
-convert_vendor_gpio_drive(enum qca_gpio_drive drive)
+static enum gpio_drive convert_vendor_gpio_drive(enum qca_gpio_drive drive)
 {
 	switch (drive) {
 	case QCA_WLAN_GPIO_DRIVE_2MA:
@@ -201,7 +195,7 @@ convert_vendor_gpio_drive(enum qca_gpio_drive drive)
 static enum gpio_init_enable
 convert_vendor_gpio_init_enable(uint32_t internal_config)
 {
-	if(internal_config)
+	if (internal_config)
 		return WMI_HOST_GPIO_INIT_DISABLE;
 	else
 		return WMI_HOST_GPIO_INIT_ENABLE;
@@ -214,9 +208,8 @@ convert_vendor_gpio_init_enable(uint32_t internal_config)
  *
  * Return: 0 on success; errno on failure
  */
-static int
-wlan_set_gpio_config(struct wlan_objmgr_psoc *psoc,
-		     struct nlattr **attr)
+static int wlan_set_gpio_config(struct wlan_objmgr_psoc *psoc,
+				struct nlattr **attr)
 {
 	struct gpio_config_params cfg_param;
 	struct nlattr *gpio_attr;
@@ -308,9 +301,8 @@ wlan_set_gpio_config(struct wlan_objmgr_psoc *psoc,
  *
  * Return: 0 on success; errno on failure
  */
-static int
-wlan_set_gpio_output(struct wlan_objmgr_psoc *psoc,
-		     struct nlattr **attr)
+static int wlan_set_gpio_output(struct wlan_objmgr_psoc *psoc,
+				struct nlattr **attr)
 {
 	struct gpio_output_params out_param;
 	struct nlattr *gpio_attr;
@@ -352,11 +344,9 @@ wlan_set_gpio_output(struct wlan_objmgr_psoc *psoc,
  *
  * Return: 0 on success; errno on failure
  */
-int
-wlan_cfg80211_start_gpio_config(struct wiphy *wiphy,
-				struct wlan_objmgr_psoc *psoc,
-				const void *data,
-				int data_len)
+int wlan_cfg80211_start_gpio_config(struct wiphy *wiphy,
+				    struct wlan_objmgr_psoc *psoc,
+				    const void *data, int data_len)
 {
 	uint32_t command;
 	struct nlattr *attr[QCA_WLAN_VENDOR_ATTR_GPIO_PARAM_MAX + 1];
@@ -388,4 +378,3 @@ wlan_cfg80211_start_gpio_config(struct wiphy *wiphy,
 	return ret;
 }
 qdf_export_symbol(wlan_cfg80211_start_gpio_config);
-

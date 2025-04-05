@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
-* Copyright (c) 2020, The Linux Foundation. All rights reserved.
-*/
+ * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ */
 
 #include "gsihal_i.h"
 #include "gsihal_reg.h"
@@ -12,15 +12,12 @@ int gsihal_init(enum gsi_ver gsi_ver, void __iomem *base)
 {
 	int result = 0;
 
-	GSIDBG("initializing GSI HAL, GSI ver %d, base = %pK\n",
-		gsi_ver, base);
+	GSIDBG("initializing GSI HAL, GSI ver %d, base = %pK\n", gsi_ver, base);
 
 	if (gsihal_ctx) {
 		GSIDBG("gsihal already initialized\n");
 		if (base != gsihal_ctx->base) {
-			GSIERR(
-				"base address of early init is differnet.\n"
-			);
+			GSIERR("base address of early init is differnet.\n");
 			WARN_ON(1);
 		}
 		result = -EEXIST;

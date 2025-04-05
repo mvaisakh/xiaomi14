@@ -16,24 +16,24 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_qct_sys.h>
-#include <cds_api.h>
-#include <sir_types.h>
-#include <sir_params.h>          /* needed for tSirMbMsg */
-#include <sir_api.h>             /* needed for SIR_... message types */
-#include <wni_api.h>             /* needed for WNI_... message types */
 #include "ani_global.h"
-#include "wma_types.h"
-#include "sme_api.h"
 #include "mac_init_api.h"
 #include "qdf_trace.h"
+#include "sme_api.h"
+#include "wma_types.h"
+#include <cds_api.h>
+#include <sir_api.h> /* needed for SIR_... message types */
+#include <sir_params.h> /* needed for tSirMbMsg */
+#include <sir_types.h>
+#include <wlan_qct_sys.h>
+#include <wni_api.h> /* needed for WNI_... message types */
 
 /*
  * Cookie for SYS messages.  Note that anyone posting a SYS Message
  * has to write the COOKIE in the reserved field of the message.  The
  * SYS Module relies on this COOKIE
  */
-#define SYS_MSG_COOKIE      0xFACE
+#define SYS_MSG_COOKIE 0xFACE
 
 /* SYS stop timeout 30 seconds */
 #define SYS_STOP_TIMEOUT (30000)
@@ -141,18 +141,18 @@ static QDF_STATUS sys_mc_process_msg(struct scheduler_msg *pMsg)
 	}
 
 	/*
-	 * All 'new' SYS messages are identified by a cookie in the reserved
-	 * field of the message as well as the message type.  This prevents
-	 * the possibility of overlap in the message types defined for new
-	 * SYS messages with the 'legacy' message types.  The legacy messages
-	 * will not have this cookie in the reserved field
-	 */
+   * All 'new' SYS messages are identified by a cookie in the reserved
+   * field of the message as well as the message type.  This prevents
+   * the possibility of overlap in the message types defined for new
+   * SYS messages with the 'legacy' message types.  The legacy messages
+   * will not have this cookie in the reserved field
+   */
 	if (SYS_MSG_COOKIE == pMsg->reserved) {
 		/* Process all the new SYS messages.. */
 		switch (pMsg->type) {
 		case SYS_MSG_ID_UMAC_STOP:
 			QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_ERROR,
-				"Processing SYS MC STOP");
+				  "Processing SYS MC STOP");
 			mac_handle = cds_get_context(QDF_MODULE_ID_PE);
 			if (!mac_handle)
 				break;
@@ -171,16 +171,14 @@ static QDF_STATUS sys_mc_process_msg(struct scheduler_msg *pMsg)
 			break;
 		default:
 			QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_ERROR,
-				"Unknown message type msgType= %d [0x%08x]",
-				pMsg->type, pMsg->type);
+				  "Unknown message type msgType= %d [0x%08x]",
+				  pMsg->type, pMsg->type);
 			break;
-
 		}
 	} else {
-		QDF_TRACE(QDF_MODULE_ID_SYS,
-				QDF_TRACE_LEVEL_ERROR,
-				"Rx SYS unknown MC msgtype= %d [0x%08X]",
-				pMsg->type, pMsg->type);
+		QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_ERROR,
+			  "Rx SYS unknown MC msgtype= %d [0x%08X]", pMsg->type,
+			  pMsg->type);
 		QDF_ASSERT(0);
 		qdf_status = QDF_STATUS_E_BADMSG;
 
@@ -223,11 +221,10 @@ void sys_process_mmh_msg(struct mac_context *mac, struct scheduler_msg *msg)
 	}
 
 	/*
-	 * Post now the message to the appropriate module for handling
-	 */
+   * Post now the message to the appropriate module for handling
+   */
 	if (QDF_STATUS_SUCCESS != scheduler_post_message(QDF_MODULE_ID_SYS,
 							 QDF_MODULE_ID_SYS,
-							 dest_module,
-							 msg))
+							 dest_module, msg))
 		qdf_mem_free(msg->bodyptr);
 }

@@ -3,11 +3,11 @@
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/types.h>
 #include <linux/of_platform.h>
+#include <linux/types.h>
 
-#include "mmrm_internal.h"
 #include "mmrm_debug.h"
+#include "mmrm_internal.h"
 
 static struct mmrm_common_data common_pt_data[] = {
 	{
@@ -45,7 +45,8 @@ static struct mmrm_platform_data commom_pt_platform_data = {
 	.common_data = common_pt_data,
 	.common_data_length = ARRAY_SIZE(common_pt_data),
 	.throttle_clk_clients_data = common_pt_throttle_clients_data,
-	.throttle_clk_clients_data_length = ARRAY_SIZE(common_pt_throttle_clients_data),
+	.throttle_clk_clients_data_length =
+		ARRAY_SIZE(common_pt_throttle_clients_data),
 };
 
 static const struct of_device_id mmrm_dt_match[] = {
@@ -111,7 +112,7 @@ int mmrm_deinit(struct mmrm_driver_data *drv_data)
 	int rc = 0;
 
 	if (!drv_data || !drv_data->clk_mgr_ops ||
-		!drv_data->clk_mgr_ops->destroy_clk_mgr) {
+	    !drv_data->clk_mgr_ops->destroy_clk_mgr) {
 		d_mpr_e("%s: invalid driver data or clk mgr ops\n", __func__);
 		return -EINVAL;
 	}

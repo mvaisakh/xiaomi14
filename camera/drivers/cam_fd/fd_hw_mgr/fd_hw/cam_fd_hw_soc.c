@@ -4,31 +4,31 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/device.h>
-#include <linux/platform_device.h>
-#include <linux/of.h>
-#include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
 #include <linux/clk/qcom.h>
+#include <linux/device.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
+#include <linux/slab.h>
 
 #include "cam_fd_hw_core.h"
 #include "cam_fd_hw_soc.h"
 
 static bool cam_fd_hw_util_cpas_callback(uint32_t handle, void *userdata,
-	struct cam_cpas_irq_data *irq_data)
+					 struct cam_cpas_irq_data *irq_data)
 {
 	if (!irq_data)
 		return false;
 
-	CAM_DBG(CAM_FD, "CPAS hdl=%d, udata=%pK, irq_type=%d",
-		handle, userdata, irq_data->irq_type);
+	CAM_DBG(CAM_FD, "CPAS hdl=%d, udata=%pK, irq_type=%d", handle, userdata,
+		irq_data->irq_type);
 
 	return false;
 }
 
-static int cam_fd_hw_soc_util_setup_regbase_indices(
-	struct cam_hw_soc_info *soc_info)
+static int
+cam_fd_hw_soc_util_setup_regbase_indices(struct cam_hw_soc_info *soc_info)
 {
 	struct cam_fd_soc_private *soc_private =
 		(struct cam_fd_soc_private *)soc_info->soc_private;
@@ -39,14 +39,15 @@ static int cam_fd_hw_soc_util_setup_regbase_indices(
 		soc_private->regbase_index[i] = -1;
 
 	if ((soc_info->num_mem_block > CAM_SOC_MAX_BLOCK) ||
-		(soc_info->num_mem_block != CAM_FD_REG_MAX)) {
+	    (soc_info->num_mem_block != CAM_FD_REG_MAX)) {
 		CAM_ERR(CAM_FD, "Invalid num_mem_block=%d",
 			soc_info->num_mem_block);
 		return -EINVAL;
 	}
 
 	rc = cam_common_util_get_string_index(soc_info->mem_block_name,
-		soc_info->num_mem_block, "fd_core", &index);
+					      soc_info->num_mem_block,
+					      "fd_core", &index);
 	if ((rc == 0) && (index < CAM_FD_REG_MAX)) {
 		soc_private->regbase_index[CAM_FD_REG_CORE] = index;
 	} else {
@@ -56,7 +57,8 @@ static int cam_fd_hw_soc_util_setup_regbase_indices(
 	}
 
 	rc = cam_common_util_get_string_index(soc_info->mem_block_name,
-		soc_info->num_mem_block, "fd_wrapper", &index);
+					      soc_info->num_mem_block,
+					      "fd_wrapper", &index);
 	if ((rc == 0) && (index < CAM_FD_REG_MAX)) {
 		soc_private->regbase_index[CAM_FD_REG_WRAPPER] = index;
 	} else {
@@ -73,7 +75,8 @@ static int cam_fd_hw_soc_util_setup_regbase_indices(
 }
 
 void cam_fd_soc_register_write(struct cam_hw_soc_info *soc_info,
-	enum cam_fd_reg_base reg_base, uint32_t reg_offset, uint32_t reg_value)
+			       enum cam_fd_reg_base reg_base,
+			       uint32_t reg_offset, uint32_t reg_value)
 {
 	struct cam_fd_soc_private *soc_private =
 		(struct cam_fd_soc_private *)soc_info->soc_private;
@@ -83,19 +86,20 @@ void cam_fd_soc_register_write(struct cam_hw_soc_info *soc_info,
 		reg_base, reg_offset, reg_value);
 
 	cam_io_w_mb(reg_value,
-		soc_info->reg_map[reg_index].mem_base + reg_offset);
+		    soc_info->reg_map[reg_index].mem_base + reg_offset);
 }
 
 uint32_t cam_fd_soc_register_read(struct cam_hw_soc_info *soc_info,
-	enum cam_fd_reg_base reg_base, uint32_t reg_offset)
+				  enum cam_fd_reg_base reg_base,
+				  uint32_t reg_offset)
 {
 	struct cam_fd_soc_private *soc_private =
 		(struct cam_fd_soc_private *)soc_info->soc_private;
 	int32_t reg_index = soc_private->regbase_index[reg_base];
 	uint32_t reg_value;
 
-	reg_value = cam_io_r_mb(
-		soc_info->reg_map[reg_index].mem_base + reg_offset);
+	reg_value =
+		cam_io_r_mb(soc_info->reg_map[reg_index].mem_base + reg_offset);
 
 	CAM_DBG(CAM_FD, "FD_REG_READ: Base[%d] Offset[0x%8x] Value[0x%8x]",
 		reg_base, reg_offset, reg_value);
@@ -107,7 +111,7 @@ int cam_fd_soc_enable_resources(struct cam_hw_soc_info *soc_info)
 {
 	struct cam_fd_soc_private *soc_private = soc_info->soc_private;
 	struct cam_ahb_vote ahb_vote;
-	struct cam_axi_vote axi_vote = {0};
+	struct cam_axi_vote axi_vote = { 0 };
 	int rc;
 
 	ahb_vote.type = CAM_VOTE_ABSOLUTE;
@@ -124,15 +128,16 @@ int cam_fd_soc_enable_resources(struct cam_hw_soc_info *soc_info)
 	axi_vote.axi_path[1].mnoc_ab_bw = 7200000;
 	axi_vote.axi_path[1].mnoc_ib_bw = 7200000;
 
-
 	rc = cam_cpas_start(soc_private->cpas_handle, &ahb_vote, &axi_vote);
 	if (rc) {
 		CAM_ERR(CAM_FD, "Error in CPAS START, rc=%d", rc);
 		return -EFAULT;
 	}
 
-	rc = cam_soc_util_enable_platform_resource(soc_info, CAM_CLK_SW_CLIENT_IDX, true,
-		soc_info->lowest_clk_level, true);
+	rc = cam_soc_util_enable_platform_resource(soc_info,
+						   CAM_CLK_SW_CLIENT_IDX, true,
+						   soc_info->lowest_clk_level,
+						   true);
 	if (rc) {
 		CAM_ERR(CAM_FD, "Error enable platform failed, rc=%d", rc);
 		goto stop_cpas;
@@ -147,7 +152,6 @@ stop_cpas:
 	return rc;
 }
 
-
 int cam_fd_soc_disable_resources(struct cam_hw_soc_info *soc_info)
 {
 	struct cam_fd_soc_private *soc_private;
@@ -159,7 +163,8 @@ int cam_fd_soc_disable_resources(struct cam_hw_soc_info *soc_info)
 	}
 	soc_private = soc_info->soc_private;
 
-	rc = cam_soc_util_disable_platform_resource(soc_info, CAM_CLK_SW_CLIENT_IDX, true, true);
+	rc = cam_soc_util_disable_platform_resource(
+		soc_info, CAM_CLK_SW_CLIENT_IDX, true, true);
 	if (rc) {
 		CAM_ERR(CAM_FD, "disable platform resources failed, rc=%d", rc);
 		return rc;
@@ -176,12 +181,12 @@ int cam_fd_soc_disable_resources(struct cam_hw_soc_info *soc_info)
 }
 
 int cam_fd_soc_init_resources(struct cam_hw_soc_info *soc_info,
-	irq_handler_t irq_handler, void *private_data)
+			      irq_handler_t irq_handler, void *private_data)
 {
 	struct cam_fd_soc_private *soc_private;
 	struct cam_cpas_register_params cpas_register_param;
 	int rc, i;
-	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = {0};
+	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = { 0 };
 
 	rc = cam_soc_util_get_dt_properties(soc_info);
 	if (rc) {
@@ -192,7 +197,8 @@ int cam_fd_soc_init_resources(struct cam_hw_soc_info *soc_info,
 	for (i = 0; i < soc_info->irq_count; i++)
 		irq_data[i] = private_data;
 
-	rc = cam_soc_util_request_platform_resource(soc_info, irq_handler, &(irq_data[0]));
+	rc = cam_soc_util_request_platform_resource(soc_info, irq_handler,
+						    &(irq_data[0]));
 	if (rc) {
 		CAM_ERR(CAM_FD, "Failed in request_platform_resource rc=%d",
 			rc);

@@ -18,10 +18,10 @@
  * DOC: osif_twt_rsp.c
  *
  */
-#include <qdf_status.h>
-#include <wlan_cfg80211.h>
 #include <osif_twt_rsp.h>
 #include <osif_twt_util.h>
+#include <qdf_status.h>
+#include <wlan_cfg80211.h>
 #include <wlan_osif_request_manager.h>
 
 /**
@@ -97,4 +97,3 @@ osif_twt_disable_complete_cb(struct wlan_objmgr_psoc *psoc,
 	osif_request_put(request);
 	return QDF_STATUS_SUCCESS;
 }
-

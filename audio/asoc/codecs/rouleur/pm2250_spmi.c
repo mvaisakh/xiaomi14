@@ -3,10 +3,10 @@
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  */
 
+#include <linux/init.h>
+#include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
-#include <linux/module.h>
-#include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/pm.h>
 #include <linux/regmap.h>
@@ -21,7 +21,7 @@ struct pm2250_spmi {
 
 static const struct of_device_id pm2250_id_table[] = {
 	{ .compatible = "qcom,pm2250-spmi" },
-	{ },
+	{},
 };
 MODULE_DEVICE_TABLE(of, pm2250_id_table);
 
@@ -114,12 +114,13 @@ static int pm2250_spmi_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver pm2250_spmi_driver = {
-	.probe		= pm2250_spmi_probe,
-	.remove		= pm2250_spmi_remove,
-	.driver	= {
-		.name		= "pm2250-spmi",
-		.of_match_table	= pm2250_id_table,
-	},
+    .probe = pm2250_spmi_probe,
+    .remove = pm2250_spmi_remove,
+    .driver =
+        {
+            .name = "pm2250-spmi",
+            .of_match_table = pm2250_id_table,
+        },
 };
 module_platform_driver(pm2250_spmi_driver);
 

@@ -4,17 +4,17 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/of.h>
-#include <linux/of_gpio.h>
-#include <cam_sensor_cmn_header.h>
-#include <cam_sensor_util.h>
-#include <cam_sensor_io.h>
-#include <cam_req_mgr_util.h>
 #include "cam_sensor_soc.h"
 #include "cam_soc_util.h"
+#include <cam_req_mgr_util.h>
+#include <cam_sensor_cmn_header.h>
+#include <cam_sensor_io.h>
+#include <cam_sensor_util.h>
+#include <linux/of.h>
+#include <linux/of_gpio.h>
 
 int32_t cam_sensor_get_sub_module_index(struct device_node *of_node,
-	struct cam_sensor_board_info *s_info)
+					struct cam_sensor_board_info *s_info)
 {
 	int rc = 0, i = 0;
 	uint32_t val = 0;
@@ -41,7 +41,7 @@ int32_t cam_sensor_get_sub_module_index(struct device_node *of_node,
 		of_node_put(src_node);
 	}
 
-	//xiaomi add
+	// xiaomi add
 	src_node = of_parse_phandle(of_node, "aperture-src", 0);
 	if (!src_node) {
 		CAM_DBG(CAM_SENSOR, "src_node NULL");
@@ -56,7 +56,7 @@ int32_t cam_sensor_get_sub_module_index(struct device_node *of_node,
 		sensor_info->subdev_id[SUB_MODULE_APERTURE] = val;
 		of_node_put(src_node);
 	}
-	//xiaomi end
+	// xiaomi end
 
 	src_node = of_parse_phandle(of_node, "ois-src", 0);
 	if (!src_node) {
@@ -65,7 +65,7 @@ int32_t cam_sensor_get_sub_module_index(struct device_node *of_node,
 		rc = of_property_read_u32(src_node, "cell-index", &val);
 		CAM_DBG(CAM_SENSOR, " ois cell index %d, rc %d", val, rc);
 		if (rc < 0) {
-			CAM_ERR(CAM_SENSOR, "failed %d",  rc);
+			CAM_ERR(CAM_SENSOR, "failed %d", rc);
 			of_node_put(src_node);
 			return rc;
 		}
@@ -121,12 +121,12 @@ static int32_t cam_sensor_init_bus_params(struct cam_sensor_ctrl_t *s_ctrl)
 		return -EINVAL;
 	}
 
-	CAM_DBG(CAM_SENSOR,
-		"master_type: %d", s_ctrl->io_master_info.master_type);
+	CAM_DBG(CAM_SENSOR, "master_type: %d",
+		s_ctrl->io_master_info.master_type);
 	/* Initialize cci_client */
 	if (s_ctrl->io_master_info.master_type == CCI_MASTER) {
-		s_ctrl->io_master_info.cci_client = kzalloc(sizeof(
-			struct cam_sensor_cci_client), GFP_KERNEL);
+		s_ctrl->io_master_info.cci_client = kzalloc(
+			sizeof(struct cam_sensor_cci_client), GFP_KERNEL);
 		if (!(s_ctrl->io_master_info.cci_client)) {
 			CAM_ERR(CAM_SENSOR, "Memory allocation failed");
 			return -ENOMEM;
@@ -139,7 +139,7 @@ static int32_t cam_sensor_init_bus_params(struct cam_sensor_ctrl_t *s_ctrl)
 	} else {
 		CAM_ERR(CAM_SENSOR,
 			"Invalid master / Master type Not supported : %d",
-				s_ctrl->io_master_info.master_type);
+			s_ctrl->io_master_info.master_type);
 		return -EINVAL;
 	}
 
@@ -167,8 +167,8 @@ static int32_t cam_sensor_driver_get_dt_data(struct cam_sensor_ctrl_t *s_ctrl)
 		goto FREE_SENSOR_DATA;
 	}
 
-	rc =  cam_sensor_util_init_gpio_pin_tbl(soc_info,
-			&sensordata->power_info.gpio_num_info);
+	rc = cam_sensor_util_init_gpio_pin_tbl(
+		soc_info, &sensordata->power_info.gpio_num_info);
 	if (rc < 0) {
 		CAM_ERR(CAM_SENSOR, "Failed to read gpios %d", rc);
 		goto FREE_SENSOR_DATA;
@@ -192,23 +192,20 @@ static int32_t cam_sensor_driver_get_dt_data(struct cam_sensor_ctrl_t *s_ctrl)
 
 	/* Store the index of BoB regulator if it is available */
 	for (i = 0; i < soc_info->num_rgltr; i++) {
-		if (!strcmp(soc_info->rgltr_name[i],
-			"cam_bob")) {
-			CAM_DBG(CAM_SENSOR,
-				"i: %d cam_bob", i);
+		if (!strcmp(soc_info->rgltr_name[i], "cam_bob")) {
+			CAM_DBG(CAM_SENSOR, "i: %d cam_bob", i);
 			s_ctrl->bob_reg_index = i;
-			soc_info->rgltr[i] = devm_regulator_get(soc_info->dev,
-				soc_info->rgltr_name[i]);
+			soc_info->rgltr[i] = devm_regulator_get(
+				soc_info->dev, soc_info->rgltr_name[i]);
 			if (IS_ERR_OR_NULL(soc_info->rgltr[i])) {
-				CAM_WARN(CAM_SENSOR,
-					"Regulator: %s get failed",
-					soc_info->rgltr_name[i]);
+				CAM_WARN(CAM_SENSOR, "Regulator: %s get failed",
+					 soc_info->rgltr_name[i]);
 				soc_info->rgltr[i] = NULL;
 			} else {
 				if (!of_property_read_bool(of_node,
-					"pwm-switch")) {
+							   "pwm-switch")) {
 					CAM_DBG(CAM_SENSOR,
-					"No BoB PWM switch param defined");
+						"No BoB PWM switch param defined");
 					s_ctrl->bob_pwm_switch = false;
 				} else {
 					s_ctrl->bob_pwm_switch = true;
@@ -221,74 +218,78 @@ static int32_t cam_sensor_driver_get_dt_data(struct cam_sensor_ctrl_t *s_ctrl)
 	rc = cam_sensor_get_sub_module_index(of_node, sensordata);
 	if (rc < 0) {
 		CAM_ERR(CAM_SENSOR, "failed to get sub module index, rc=%d",
-			 rc);
+			rc);
 		goto FREE_SENSOR_DATA;
 	}
 
 	rc = cam_sensor_init_bus_params(s_ctrl);
 	if (rc < 0) {
-		CAM_ERR(CAM_SENSOR,
-			"Failed in Initialize Bus params, rc %d", rc);
+		CAM_ERR(CAM_SENSOR, "Failed in Initialize Bus params, rc %d",
+			rc);
 		goto FREE_SENSOR_DATA;
 	}
 
 	if (s_ctrl->io_master_info.master_type == CCI_MASTER) {
-
 		/* Get CCI master */
 		if (of_property_read_u32(of_node, "cci-master",
-			&s_ctrl->cci_i2c_master)) {
+					 &s_ctrl->cci_i2c_master)) {
 			/* Set default master 0 */
 			s_ctrl->cci_i2c_master = MASTER_0;
 		}
-		CAM_DBG(CAM_SENSOR, "cci-master %d",
-			s_ctrl->cci_i2c_master);
+		CAM_DBG(CAM_SENSOR, "cci-master %d", s_ctrl->cci_i2c_master);
 
 		of_parent = of_get_parent(of_node);
 		if (of_property_read_u32(of_parent, "cell-index",
-				&s_ctrl->cci_num) < 0)
+					 &s_ctrl->cci_num) < 0)
 			/* Set default master 0 */
 			s_ctrl->cci_num = CCI_DEVICE_0;
 
-		s_ctrl->io_master_info.cci_client->cci_device
-			= s_ctrl->cci_num;
+		s_ctrl->io_master_info.cci_client->cci_device = s_ctrl->cci_num;
 
 		CAM_DBG(CAM_SENSOR, "cci-index %d", s_ctrl->cci_num);
 	}
 
 	if (of_property_read_u32(of_node, "sensor-position-pitch",
-		&sensordata->pos_pitch) < 0) {
+				 &sensordata->pos_pitch) < 0) {
 		CAM_DBG(CAM_SENSOR, "Invalid sensor position");
 		sensordata->pos_pitch = 360;
 	}
 	if (of_property_read_u32(of_node, "sensor-position-roll",
-		&sensordata->pos_roll) < 0) {
+				 &sensordata->pos_roll) < 0) {
 		CAM_DBG(CAM_SENSOR, "Invalid sensor position");
 		sensordata->pos_roll = 360;
 	}
 	if (of_property_read_u32(of_node, "sensor-position-yaw",
-		&sensordata->pos_yaw) < 0) {
+				 &sensordata->pos_yaw) < 0) {
 		CAM_DBG(CAM_SENSOR, "Invalid sensor position");
 		sensordata->pos_yaw = 360;
 	}
 
-	if (of_property_read_u32(of_node, "aon-camera-id", &s_ctrl->aon_camera_id)) {
-		CAM_DBG(CAM_SENSOR, "cell_idx: %d is not used for AON usecase", soc_info->index);
+	if (of_property_read_u32(of_node, "aon-camera-id",
+				 &s_ctrl->aon_camera_id)) {
+		CAM_DBG(CAM_SENSOR, "cell_idx: %d is not used for AON usecase",
+			soc_info->index);
 		s_ctrl->aon_camera_id = NOT_AON_CAM;
 	} else {
-		CAM_INFO(CAM_SENSOR,
+		CAM_INFO(
+			CAM_SENSOR,
 			"AON Sensor detected in cell_idx: %d aon_camera_id: %d phy_index: %d",
 			soc_info->index, s_ctrl->aon_camera_id,
 			s_ctrl->sensordata->subdev_id[SUB_MODULE_CSIPHY]);
 		if ((s_ctrl->sensordata->subdev_id[SUB_MODULE_CSIPHY] == 2) &&
-			(s_ctrl->aon_camera_id != AON_CAM2)) {
-			CAM_ERR(CAM_SENSOR, "Incorrect AON camera id for cphy_index %d",
-				s_ctrl->sensordata->subdev_id[SUB_MODULE_CSIPHY]);
+		    (s_ctrl->aon_camera_id != AON_CAM2)) {
+			CAM_ERR(CAM_SENSOR,
+				"Incorrect AON camera id for cphy_index %d",
+				s_ctrl->sensordata
+					->subdev_id[SUB_MODULE_CSIPHY]);
 			s_ctrl->aon_camera_id = NOT_AON_CAM;
 		}
 		if ((s_ctrl->sensordata->subdev_id[SUB_MODULE_CSIPHY] == 4) &&
-			(s_ctrl->aon_camera_id != AON_CAM1)) {
-			CAM_ERR(CAM_SENSOR, "Incorrect AON camera id for cphy_index %d",
-				s_ctrl->sensordata->subdev_id[SUB_MODULE_CSIPHY]);
+		    (s_ctrl->aon_camera_id != AON_CAM1)) {
+			CAM_ERR(CAM_SENSOR,
+				"Incorrect AON camera id for cphy_index %d",
+				s_ctrl->sensordata
+					->subdev_id[SUB_MODULE_CSIPHY]);
 			s_ctrl->aon_camera_id = NOT_AON_CAM;
 		}
 	}
@@ -324,15 +325,16 @@ int32_t cam_sensor_parse_dt(struct cam_sensor_ctrl_t *s_ctrl)
 
 	/* Initialize mutex */
 	mutex_init(&(s_ctrl->cam_sensor_mutex));
-	init_power_sync_mutex(s_ctrl->io_master_info.cci_client, s_ctrl->cci_i2c_master);//xiaomi add
+	init_power_sync_mutex(s_ctrl->io_master_info.cci_client,
+			      s_ctrl->cci_i2c_master); // xiaomi add
 
 	/* Initialize default parameters */
 	for (i = 0; i < soc_info->num_clk; i++) {
-		soc_info->clk[i] = devm_clk_get(soc_info->dev,
-					soc_info->clk_name[i]);
+		soc_info->clk[i] =
+			devm_clk_get(soc_info->dev, soc_info->clk_name[i]);
 		if (IS_ERR(soc_info->clk[i])) {
 			CAM_ERR(CAM_SENSOR, "get failed for %s",
-				 soc_info->clk_name[i]);
+				soc_info->clk_name[i]);
 			rc = -ENOENT;
 			return rc;
 		} else if (!soc_info->clk[i]) {
@@ -343,13 +345,13 @@ int32_t cam_sensor_parse_dt(struct cam_sensor_ctrl_t *s_ctrl)
 	}
 	/* Initialize regulators to default parameters */
 	for (i = 0; i < soc_info->num_rgltr; i++) {
-		soc_info->rgltr[i] = devm_regulator_get(soc_info->dev,
-					soc_info->rgltr_name[i]);
+		soc_info->rgltr[i] = devm_regulator_get(
+			soc_info->dev, soc_info->rgltr_name[i]);
 		if (IS_ERR_OR_NULL(soc_info->rgltr[i])) {
 			rc = PTR_ERR(soc_info->rgltr[i]);
 			rc = rc ? rc : -EINVAL;
 			CAM_ERR(CAM_SENSOR, "get failed for regulator %s",
-				 soc_info->rgltr_name[i]);
+				soc_info->rgltr_name[i]);
 			return rc;
 		}
 		CAM_DBG(CAM_SENSOR, "get for regulator %s",

@@ -22,11 +22,11 @@
  * This file provides QDF debug file system APIs
  */
 
-#include <qdf_debugfs.h>
 #include <i_qdf_debugfs.h>
+#include <qdf_debugfs.h>
 #include <qdf_mem.h>
-#include <qdf_trace.h>
 #include <qdf_module.h>
+#include <qdf_trace.h>
 
 /* A private structure definition to qdf sequence */
 struct qdf_debugfs_seq_priv {
@@ -237,9 +237,9 @@ static int qdf_seq_open(struct inode *inode, struct file *file)
 	int rc;
 
 	/**
-	 * Note: seq_open() will allocate a struct seq_file and store its
-	 * pointer in @file->private_data. It warns if private_data is not NULL.
-	 */
+   * Note: seq_open() will allocate a struct seq_file and store its
+   * pointer in @file->private_data. It warns if private_data is not NULL.
+   */
 
 	rc = seq_open(file, &__qdf_debugfs_seq_ops);
 
@@ -336,8 +336,8 @@ qdf_dentry_t qdf_debugfs_create_file(const char *name, uint16_t mode,
 }
 qdf_export_symbol(qdf_debugfs_create_file);
 
-void qdf_debugfs_create_u8(const char *name, uint16_t mode,
-			   qdf_dentry_t parent, u8 *value)
+void qdf_debugfs_create_u8(const char *name, uint16_t mode, qdf_dentry_t parent,
+			   u8 *value)
 {
 	umode_t filemode;
 
@@ -368,8 +368,7 @@ void qdf_debugfs_create_u16(const char *name, uint16_t mode,
 
 qdf_export_symbol(qdf_debugfs_create_u16);
 
-void qdf_debugfs_create_u32(const char *name,
-			    uint16_t mode,
+void qdf_debugfs_create_u32(const char *name, uint16_t mode,
 			    qdf_dentry_t parent, u32 *value)
 {
 	umode_t filemode;
@@ -491,22 +490,21 @@ static int qdf_debugfs_single_show(struct seq_file *seq, void *v)
 /* .open() */
 static int qdf_debugfs_single_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, qdf_debugfs_single_show,
-			   inode->i_private);
+	return single_open(file, qdf_debugfs_single_show, inode->i_private);
 }
 
 /* File operations for the simplified version */
 static const struct file_operations qdf_debugfs_fops_simple = {
-	.owner          = THIS_MODULE,
-	.open           = qdf_debugfs_single_open,
-	.release        = single_release,
-	.read           = seq_read,
-	.llseek         = seq_lseek,
+	.owner = THIS_MODULE,
+	.open = qdf_debugfs_single_open,
+	.release = single_release,
+	.read = seq_read,
+	.llseek = seq_lseek,
 };
 
-qdf_dentry_t qdf_debugfs_create_file_simplified(
-	const char *name, uint16_t mode,
-	qdf_dentry_t parent, struct qdf_debugfs_fops *fops)
+qdf_dentry_t qdf_debugfs_create_file_simplified(const char *name, uint16_t mode,
+						qdf_dentry_t parent,
+						struct qdf_debugfs_fops *fops)
 {
 	qdf_dentry_t file;
 	umode_t filemode;
@@ -555,8 +553,7 @@ qdf_dentry_t qdf_debugfs_create_blob(const char *name, umode_t mode,
 qdf_export_symbol(qdf_debugfs_create_blob);
 
 qdf_dentry_t qdf_debugfs_create_entry(const char *name, uint16_t mode,
-				      qdf_dentry_t parent,
-				      qdf_entry_t data,
+				      qdf_dentry_t parent, qdf_entry_t data,
 				      const qdf_file_ops_t fops)
 {
 	qdf_dentry_t file;

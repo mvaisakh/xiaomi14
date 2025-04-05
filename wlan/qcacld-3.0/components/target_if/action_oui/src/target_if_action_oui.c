@@ -23,12 +23,11 @@
  */
 
 #include "target_if_action_oui.h"
-#include "wlan_action_oui_tgt_api.h"
 #include "wlan_action_oui_public_struct.h"
+#include "wlan_action_oui_tgt_api.h"
 
-static QDF_STATUS
-target_if_action_oui_send_req(struct wlan_objmgr_psoc *psoc,
-			      struct action_oui_request *req)
+static QDF_STATUS target_if_action_oui_send_req(struct wlan_objmgr_psoc *psoc,
+						struct action_oui_request *req)
 {
 	void *wmi_hdl;
 
@@ -39,8 +38,7 @@ target_if_action_oui_send_req(struct wlan_objmgr_psoc *psoc,
 	return wmi_unified_send_action_oui_cmd(wmi_hdl, req);
 }
 
-void
-target_if_action_oui_register_tx_ops(struct action_oui_tx_ops *tx_ops)
+void target_if_action_oui_register_tx_ops(struct action_oui_tx_ops *tx_ops)
 {
 	if (!tx_ops) {
 		target_if_err("action_oui tx_ops is null");

@@ -25,10 +25,8 @@
 
 #include <wlan_cfg80211_vdev_mlme.h>
 
-int
-wlan_cfg80211_vdev_mlme_get_param_ssid(struct wlan_objmgr_vdev *vdev,
-				       uint8_t *ssid,
-				       uint8_t *ssid_len)
+int wlan_cfg80211_vdev_mlme_get_param_ssid(struct wlan_objmgr_vdev *vdev,
+					   uint8_t *ssid, uint8_t *ssid_len)
 {
 	if (!vdev) {
 		osif_err("VDEV is NULL!!!!");
@@ -39,9 +37,8 @@ wlan_cfg80211_vdev_mlme_get_param_ssid(struct wlan_objmgr_vdev *vdev,
 	return qdf_status_to_os_return(QDF_STATUS_SUCCESS);
 }
 
-int
-wlan_cfg80211_vdev_mlme_get_trans_bssid(struct wlan_objmgr_vdev *vdev,
-					uint8_t *addr)
+int wlan_cfg80211_vdev_mlme_get_trans_bssid(struct wlan_objmgr_vdev *vdev,
+					    uint8_t *addr)
 {
 	if (!vdev) {
 		osif_err("VDEV is NULL!!!!");
@@ -52,10 +49,9 @@ wlan_cfg80211_vdev_mlme_get_trans_bssid(struct wlan_objmgr_vdev *vdev,
 	return qdf_status_to_os_return(QDF_STATUS_SUCCESS);
 }
 
-void
-wlan_cfg80211_vdev_mlme_set_param(struct wlan_objmgr_vdev *vdev,
-				  enum wlan_mlme_cfg_id param_id,
-				  struct wlan_vdev_mgr_cfg mlme_cfg)
+void wlan_cfg80211_vdev_mlme_set_param(struct wlan_objmgr_vdev *vdev,
+				       enum wlan_mlme_cfg_id param_id,
+				       struct wlan_vdev_mgr_cfg mlme_cfg)
 {
 	if (!vdev) {
 		osif_err("VDEV is NULL!!!!");
@@ -65,10 +61,9 @@ wlan_cfg80211_vdev_mlme_set_param(struct wlan_objmgr_vdev *vdev,
 	ucfg_wlan_vdev_mgr_set_param(vdev, param_id, mlme_cfg);
 }
 
-void
-wlan_cfg80211_vdev_mlme_get_param(struct wlan_objmgr_vdev *vdev,
-				  enum wlan_mlme_cfg_id param_id,
-				  uint32_t *value)
+void wlan_cfg80211_vdev_mlme_get_param(struct wlan_objmgr_vdev *vdev,
+				       enum wlan_mlme_cfg_id param_id,
+				       uint32_t *value)
 {
 	if (!vdev) {
 		osif_err("VDEV is NULL!!!!");

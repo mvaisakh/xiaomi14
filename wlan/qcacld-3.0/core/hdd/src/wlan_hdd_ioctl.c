@@ -19,48 +19,48 @@
 
 /* Include Files */
 
-#include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <wlan_hdd_wowl.h>
-#include <wlan_hdd_stats.h>
-#include "cfg_ucfg_api.h"
-#include "wlan_hdd_trace.h"
 #include "wlan_hdd_ioctl.h"
+#include "cfg_ucfg_api.h"
+#include "osif_sync.h"
+#include "scheduler_api.h"
+#include "target_type.h"
+#include "wlan_hdd_driver_ops.h"
+#include "wlan_hdd_hostapd.h"
+#include "wlan_hdd_napi.h"
+#include "wlan_hdd_p2p.h"
 #include "wlan_hdd_power.h"
 #include "wlan_hdd_regulatory.h"
-#include "wlan_osif_request_manager.h"
-#include "wlan_hdd_driver_ops.h"
-#include "wlan_policy_mgr_api.h"
-#include "wlan_hdd_hostapd.h"
-#include "scheduler_api.h"
-#include "wlan_reg_ucfg_api.h"
-#include "wlan_hdd_p2p.h"
-#include <linux/ctype.h>
-#include "wma.h"
-#include "wlan_hdd_napi.h"
+#include "wlan_hdd_trace.h"
 #include "wlan_mlme_ucfg_api.h"
-#include "target_type.h"
-#ifdef FEATURE_WLAN_ESE
-#include <sme_api.h>
-#include <sir_api.h>
-#endif
-#include "wlan_hdd_object_manager.h"
-#include "hif.h"
-#include "wlan_scan_ucfg_api.h"
+#include "wlan_osif_request_manager.h"
+#include "wlan_policy_mgr_api.h"
 #include "wlan_reg_ucfg_api.h"
+#include "wma.h"
+#include <linux/ctype.h>
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_stats.h>
+#include <wlan_hdd_wowl.h>
+#ifdef FEATURE_WLAN_ESE
+#include <sir_api.h>
+#include <sme_api.h>
+#endif
+#include "hif.h"
 #include "qdf_func_tracker.h"
 #include "wlan_cm_roam_ucfg_api.h"
+#include "wlan_hdd_object_manager.h"
+#include "wlan_reg_ucfg_api.h"
+#include "wlan_scan_ucfg_api.h"
 
 #if defined(LINUX_QCMBR)
-#define SIOCIOCTLTX99 (SIOCDEVPRIVATE+13)
+#define SIOCIOCTLTX99 (SIOCDEVPRIVATE + 13)
 #endif
 
 /*
  * Size of Driver command strings from upper layer
  */
-#define SIZE_OF_SETROAMMODE             11      /* size of SETROAMMODE */
-#define SIZE_OF_GETROAMMODE             11      /* size of GETROAMMODE */
-#define SIZE_OF_SETSUSPENDMODE          14
+#define SIZE_OF_SETROAMMODE 11 /* size of SETROAMMODE */
+#define SIZE_OF_GETROAMMODE 11 /* size of GETROAMMODE */
+#define SIZE_OF_SETSUSPENDMODE 14
 
 /*
  * Size of GETCOUNTRYREV output = (sizeof("GETCOUNTRYREV") = 14) + one (space) +
@@ -78,7 +78,7 @@
  * Maximum buffer size used for returning the data back to user space
  */
 #define WLAN_MAX_BUF_SIZE 1024
-#define WLAN_PRIV_DATA_MAX_LEN    8192
+#define WLAN_PRIV_DATA_MAX_LEN 8192
 
 /*
  * Driver miracast parameters:
@@ -140,8 +140,7 @@ struct android_wifi_af_params {
  * string and the handler.
  */
 typedef int (*hdd_drv_cmd_handler_t)(struct wlan_hdd_link_info *link_info,
-				     struct hdd_context *hdd_ctx,
-				     uint8_t *cmd,
+				     struct hdd_context *hdd_ctx, uint8_t *cmd,
 				     uint8_t cmd_name_len,
 				     struct hdd_priv_data *priv_data);
 
@@ -158,8 +157,8 @@ struct hdd_drv_cmd {
 };
 
 #ifdef WLAN_FEATURE_EXTWOW_SUPPORT
-#define WLAN_WAIT_TIME_READY_TO_EXTWOW   2000
-#define WLAN_HDD_MAX_TCP_PORT            65535
+#define WLAN_WAIT_TIME_READY_TO_EXTWOW 2000
+#define WLAN_HDD_MAX_TCP_PORT 65535
 #endif
 
 /**
@@ -185,8 +184,7 @@ struct tsm_priv {
 	tAniTrafStrmMetrics tsm_metrics;
 };
 
-static void hdd_get_tsm_stats_cb(tAniTrafStrmMetrics tsm_metrics,
-				 void *context)
+static void hdd_get_tsm_stats_cb(tAniTrafStrmMetrics tsm_metrics, void *context)
 {
 	struct osif_request *request;
 	struct tsm_priv *priv;
@@ -201,11 +199,9 @@ static void hdd_get_tsm_stats_cb(tAniTrafStrmMetrics tsm_metrics,
 	osif_request_complete(request);
 	osif_request_put(request);
 	hdd_exit();
-
 }
 
-static int hdd_get_tsm_stats(struct hdd_adapter *adapter,
-			     const uint8_t tid,
+static int hdd_get_tsm_stats(struct hdd_adapter *adapter, const uint8_t tid,
 			     tAniTrafStrmMetrics *tsm_metrics)
 {
 	struct hdd_context *hdd_ctx;
@@ -236,8 +232,7 @@ static int hdd_get_tsm_stats(struct hdd_adapter *adapter,
 	cookie = osif_request_cookie(request);
 
 	status = sme_get_tsm_stats(hdd_ctx->mac_handle, hdd_get_tsm_stats_cb,
-				   hdd_sta_ctx->conn_info.bssid,
-				   cookie, tid);
+				   hdd_sta_ctx->conn_info.bssid, cookie, tid);
 	if (QDF_STATUS_SUCCESS != status) {
 		hdd_err("Unable to retrieve tsm statistics");
 		ret = qdf_status_to_os_return(status);
@@ -253,7 +248,7 @@ static int hdd_get_tsm_stats(struct hdd_adapter *adapter,
 	priv = osif_request_priv(request);
 	*tsm_metrics = priv->tsm_metrics;
 
- cleanup:
+cleanup:
 	osif_request_put(request);
 
 	return ret;
@@ -321,17 +316,17 @@ static bool hdd_check_and_fill_freq(uint32_t in_chan, qdf_freq_t *freq,
  *
  * Return: 0 if parsing is successful; -EINVAL otherwise
  */
-static int _hdd_parse_bssid_and_chan(const uint8_t **data,
-				     uint8_t *bssid, qdf_freq_t *freq,
+static int _hdd_parse_bssid_and_chan(const uint8_t **data, uint8_t *bssid,
+				     qdf_freq_t *freq,
 				     struct wlan_objmgr_pdev *pdev)
 {
 	const uint8_t *in_ptr;
-	int            v = 0;
-	int            temp_int;
-	uint8_t        temp_buf[32];
+	int v = 0;
+	int temp_int;
+	uint8_t temp_buf[32];
 
 	/* 12 hexa decimal digits, 5 ':' and '\0' */
-	uint8_t        mac_addr[18];
+	uint8_t mac_addr[18];
 
 	if (!data || !*data)
 		return -EINVAL;
@@ -357,22 +352,16 @@ static int _hdd_parse_bssid_and_chan(const uint8_t **data,
 	v = sscanf(in_ptr, "%17s", mac_addr);
 	if (!((1 == v) && hdd_is_valid_mac_address(mac_addr))) {
 		hdd_err("Invalid MAC address or All hex inputs are not read (%d)",
-			 v);
+			v);
 		goto error;
 	}
 
-	bssid[0] = hex_to_bin(mac_addr[0]) << 4 |
-			hex_to_bin(mac_addr[1]);
-	bssid[1] = hex_to_bin(mac_addr[3]) << 4 |
-			hex_to_bin(mac_addr[4]);
-	bssid[2] = hex_to_bin(mac_addr[6]) << 4 |
-			hex_to_bin(mac_addr[7]);
-	bssid[3] = hex_to_bin(mac_addr[9]) << 4 |
-			hex_to_bin(mac_addr[10]);
-	bssid[4] = hex_to_bin(mac_addr[12]) << 4 |
-			hex_to_bin(mac_addr[13]);
-	bssid[5] = hex_to_bin(mac_addr[15]) << 4 |
-			hex_to_bin(mac_addr[16]);
+	bssid[0] = hex_to_bin(mac_addr[0]) << 4 | hex_to_bin(mac_addr[1]);
+	bssid[1] = hex_to_bin(mac_addr[3]) << 4 | hex_to_bin(mac_addr[4]);
+	bssid[2] = hex_to_bin(mac_addr[6]) << 4 | hex_to_bin(mac_addr[7]);
+	bssid[3] = hex_to_bin(mac_addr[9]) << 4 | hex_to_bin(mac_addr[10]);
+	bssid[4] = hex_to_bin(mac_addr[12]) << 4 | hex_to_bin(mac_addr[13]);
+	bssid[5] = hex_to_bin(mac_addr[15]) << 4 | hex_to_bin(mac_addr[16]);
 
 	/* point to the next argument */
 	in_ptr = strnchr(in_ptr, strlen(in_ptr), SPACE_ASCII_VALUE);
@@ -423,12 +412,11 @@ error:
  *
  * Return: 0 for success non-zero for failure
  */
-static int
-hdd_parse_send_action_frame_v1_data(const uint8_t *command,
-				    uint8_t *bssid,
-				    qdf_freq_t *freq, uint8_t *dwell_time,
-				    uint8_t **buf, uint8_t *buf_len,
-				    struct wlan_objmgr_pdev *pdev)
+static int hdd_parse_send_action_frame_v1_data(const uint8_t *command,
+					       uint8_t *bssid, qdf_freq_t *freq,
+					       uint8_t *dwell_time,
+					       uint8_t **buf, uint8_t *buf_len,
+					       struct wlan_objmgr_pdev *pdev)
 {
 	const uint8_t *in_ptr = command;
 	const uint8_t *end_ptr;
@@ -489,30 +477,29 @@ hdd_parse_send_action_frame_v1_data(const uint8_t *command,
 		return -EINVAL;
 
 	/*
-	 * Allocate the number of bytes based on the number of input characters
-	 * whether it is even or odd.
-	 * if the number of input characters are even, then we need N/2 byte.
-	 * if the number of input characters are odd, then we need do (N+1)/2
-	 * to compensate rounding off.
-	 * For example, if N = 18, then (18 + 1)/2 = 9 bytes are enough.
-	 * If N = 19, then we need 10 bytes, hence (19 + 1)/2 = 10 bytes
-	 */
+   * Allocate the number of bytes based on the number of input characters
+   * whether it is even or odd.
+   * if the number of input characters are even, then we need N/2 byte.
+   * if the number of input characters are odd, then we need do (N+1)/2
+   * to compensate rounding off.
+   * For example, if N = 18, then (18 + 1)/2 = 9 bytes are enough.
+   * If N = 19, then we need 10 bytes, hence (19 + 1)/2 = 10 bytes
+   */
 	*buf = qdf_mem_malloc((*buf_len + 1) / 2);
 	if (!*buf)
 		return -ENOMEM;
 
 	/* the buffer received from the upper layer is character buffer,
-	 * we need to prepare the buffer taking 2 characters in to a U8 hex
-	 * decimal number for example 7f0000f0...form a buffer to contain 7f
-	 * in 0th location, 00 in 1st and f0 in 3rd location
-	 */
+   * we need to prepare the buffer taking 2 characters in to a U8 hex
+   * decimal number for example 7f0000f0...form a buffer to contain 7f
+   * in 0th location, 00 in 1st and f0 in 3rd location
+   */
 	for (i = 0, j = 0; j < *buf_len; j += 2) {
 		if (j + 1 == *buf_len) {
 			temp_u8 = hex_to_bin(in_ptr[j]);
 		} else {
-			temp_u8 =
-				(hex_to_bin(in_ptr[j]) << 4) |
-				(hex_to_bin(in_ptr[j + 1]));
+			temp_u8 = (hex_to_bin(in_ptr[j]) << 4) |
+				  (hex_to_bin(in_ptr[j + 1]));
 		}
 		(*buf)[i++] = temp_u8;
 	}
@@ -568,7 +555,8 @@ static int hdd_parse_reassoc_command_v1_data(const uint8_t *command,
  *
  * Return: 0 for success non-zero for failure
  */
-static int hdd_parse_reassoc_v1(struct hdd_adapter *adapter, const char *command)
+static int hdd_parse_reassoc_v1(struct hdd_adapter *adapter,
+				const char *command)
 {
 	qdf_freq_t freq = 0;
 	tSirMacAddr bssid;
@@ -588,8 +576,7 @@ static int hdd_parse_reassoc_v1(struct hdd_adapter *adapter, const char *command
 	qdf_mem_copy(target_bssid.bytes, bssid, sizeof(tSirMacAddr));
 	status = ucfg_wlan_cm_roam_invoke(hdd_ctx->pdev,
 					  adapter->deflink->vdev_id,
-					  &target_bssid, freq,
-					  CM_ROAMING_HOST);
+					  &target_bssid, freq, CM_ROAMING_HOST);
 	return qdf_status_to_os_return(status);
 }
 
@@ -607,8 +594,7 @@ static int hdd_parse_reassoc_v1(struct hdd_adapter *adapter, const char *command
  * Return: 0 for success non-zero for failure
  */
 static int hdd_parse_reassoc_v2(struct hdd_adapter *adapter,
-				const char *command,
-				int total_len)
+				const char *command, int total_len)
 {
 	struct android_wifi_reassoc_params params;
 	tSirMacAddr bssid;
@@ -628,16 +614,16 @@ static int hdd_parse_reassoc_v2(struct hdd_adapter *adapter,
 	/* The params are located after "REASSOC " */
 	memcpy(&params, command + 8, sizeof(params));
 
-	if (!mac_pton(params.bssid, (u8 *) &bssid)) {
+	if (!mac_pton(params.bssid, (u8 *)&bssid)) {
 		hdd_err("MAC address parsing failed");
 		ret = -EINVAL;
 	} else {
 		/*
-		 * In Reassoc command, user can send channel number or frequency
-		 * along with BSSID. If params.channel param of REASSOC command
-		 * is less than WNI_CFG_CURRENT_CHANNEL_STAMAX, then host
-		 * consider this as channel number else frequency.
-		 */
+     * In Reassoc command, user can send channel number or frequency
+     * along with BSSID. If params.channel param of REASSOC command
+     * is less than WNI_CFG_CURRENT_CHANNEL_STAMAX, then host
+     * consider this as channel number else frequency.
+     */
 		if (!hdd_check_and_fill_freq(params.channel, &freq, pdev))
 			return -EINVAL;
 
@@ -673,18 +659,18 @@ static int hdd_parse_reassoc(struct hdd_adapter *adapter, const char *command,
 	int ret;
 
 	/* both versions start with "REASSOC "
-	 * v1 has a bssid and channel # as an ASCII string
-	 *    REASSOC xx:xx:xx:xx:xx:xx CH/FREQ
-	 * v2 has a C struct
-	 *    REASSOC <binary c struct>
-	 *
-	 * The first field in the v2 struct is also the bssid in ASCII.
-	 * But in the case of a v2 message the BSSID is NUL-terminated.
-	 * Hence we can peek at that offset to see if this is V1 or V2
-	 * REASSOC xx:xx:xx:xx:xx:xx*
-	 *           1111111111222222
-	 * 01234567890123456789012345
-	 */
+   * v1 has a bssid and channel # as an ASCII string
+   *    REASSOC xx:xx:xx:xx:xx:xx CH/FREQ
+   * v2 has a C struct
+   *    REASSOC <binary c struct>
+   *
+   * The first field in the v2 struct is also the bssid in ASCII.
+   * But in the case of a v2 message the BSSID is NUL-terminated.
+   * Hence we can peek at that offset to see if this is V1 or V2
+   * REASSOC xx:xx:xx:xx:xx:xx*
+   *           1111111111222222
+   * 01234567890123456789012345
+   */
 
 	if (total_len < 26) {
 		hdd_err("Invalid command, total_len = %d", total_len);
@@ -712,10 +698,10 @@ static int hdd_parse_reassoc(struct hdd_adapter *adapter, const char *command,
  *
  * Return: 0 for success non-zero for failure
  */
-static int
-hdd_sendactionframe(struct hdd_adapter *adapter, const uint8_t *bssid,
-		    const qdf_freq_t freq, const uint8_t dwell_time,
-		    const int payload_len, const uint8_t *payload)
+static int hdd_sendactionframe(struct hdd_adapter *adapter,
+			       const uint8_t *bssid, const qdf_freq_t freq,
+			       const uint8_t dwell_time, const int payload_len,
+			       const uint8_t *payload)
 {
 	struct ieee80211_channel chan;
 	int frame_len, ret = 0;
@@ -725,7 +711,7 @@ hdd_sendactionframe(struct hdd_adapter *adapter, const uint8_t *bssid,
 	struct hdd_station_ctx *sta_ctx;
 	struct hdd_context *hdd_ctx;
 	tpSirMacVendorSpecificFrameHdr vendor =
-		(tpSirMacVendorSpecificFrameHdr) payload;
+		(tpSirMacVendorSpecificFrameHdr)payload;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0))
 	struct cfg80211_mgmt_tx_params params;
 #endif
@@ -753,11 +739,10 @@ hdd_sendactionframe(struct hdd_adapter *adapter, const uint8_t *bssid,
 	}
 
 	/*
-	 * if the target bssid is different from currently associated AP,
-	 * then no need to send action frame
-	 */
-	if (memcmp(bssid, sta_ctx->conn_info.bssid.bytes,
-			QDF_MAC_ADDR_SIZE)) {
+   * if the target bssid is different from currently associated AP,
+   * then no need to send action frame
+   */
+	if (memcmp(bssid, sta_ctx->conn_info.bssid.bytes, QDF_MAC_ADDR_SIZE)) {
 		hdd_warn("STA is not associated to this AP");
 		ret = -EINVAL;
 		goto exit;
@@ -765,39 +750,39 @@ hdd_sendactionframe(struct hdd_adapter *adapter, const uint8_t *bssid,
 
 	chan.center_freq = freq;
 	/* Check if it is specific action frame */
-	if (vendor->category ==
-	    ACTION_CATEGORY_VENDOR_SPECIFIC) {
+	if (vendor->category == ACTION_CATEGORY_VENDOR_SPECIFIC) {
 		static const uint8_t oui[] = { 0x00, 0x00, 0xf0 };
 
 		if (!qdf_mem_cmp(vendor->Oui, oui, 3)) {
 			/*
-			 * if the freq number is different from operating
-			 * freq then no need to send action frame
-			 */
+       * if the freq number is different from operating
+       * freq then no need to send action frame
+       */
 			if (freq) {
 				if (freq != sta_ctx->conn_info.chan_freq) {
-					hdd_warn("freq(%u) is different from operating freq(%u)",
-						 freq,
-						 sta_ctx->conn_info.chan_freq);
+					hdd_warn(
+						"freq(%u) is different from operating freq(%u)",
+						freq,
+						sta_ctx->conn_info.chan_freq);
 					ret = -EINVAL;
 					goto exit;
 				}
 				/*
-				 * If channel number is specified and same
-				 * as home channel, ensure that action frame
-				 * is sent immediately by cancelling
-				 * roaming scans. Otherwise large dwell times
-				 * may cause long delays in sending action
-				 * frames.
-				 */
+         * If channel number is specified and same
+         * as home channel, ensure that action frame
+         * is sent immediately by cancelling
+         * roaming scans. Otherwise large dwell times
+         * may cause long delays in sending action
+         * frames.
+         */
 				ucfg_cm_abort_roam_scan(
-						hdd_ctx->pdev,
-						adapter->deflink->vdev_id);
+					hdd_ctx->pdev,
+					adapter->deflink->vdev_id);
 			} else {
 				/*
-				 * 0 is accepted as current home frequency,
-				 * delayed transmission of action frame is ok.
-				 */
+         * 0 is accepted as current home frequency,
+         * delayed transmission of action frame is ok.
+         */
 				chan.center_freq = sta_ctx->conn_info.chan_freq;
 			}
 		}
@@ -819,8 +804,7 @@ hdd_sendactionframe(struct hdd_adapter *adapter, const uint8_t *bssid,
 	hdr->frame_control =
 		cpu_to_le16(IEEE80211_FTYPE_MGMT | IEEE80211_STYPE_ACTION);
 	qdf_mem_copy(hdr->addr1, bssid, QDF_MAC_ADDR_SIZE);
-	qdf_mem_copy(hdr->addr2, adapter->mac_addr.bytes,
-		     QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(hdr->addr2, adapter->mac_addr.bytes, QDF_MAC_ADDR_SIZE);
 	qdf_mem_copy(hdr->addr3, bssid, QDF_MAC_ADDR_SIZE);
 	qdf_mem_copy(hdr + 1, payload, payload_len);
 
@@ -834,9 +818,7 @@ hdd_sendactionframe(struct hdd_adapter *adapter, const uint8_t *bssid,
 	params.dont_wait_for_ack = 1;
 	ret = wlan_hdd_mgmt_tx(NULL, &adapter->wdev, &params, &cookie);
 #else
-	ret = wlan_hdd_mgmt_tx(NULL,
-			       &(adapter->wdev),
-			       &chan, 0,
+	ret = wlan_hdd_mgmt_tx(NULL, &(adapter->wdev), &chan, 0,
 
 			       dwell_time, frame, frame_len, 1, 1, &cookie);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0) */
@@ -865,8 +847,8 @@ exit:
  *
  * Return: 0 for success non-zero for failure
  */
-static int
-hdd_parse_sendactionframe_v1(struct hdd_adapter *adapter, const char *command)
+static int hdd_parse_sendactionframe_v1(struct hdd_adapter *adapter,
+					const char *command)
 {
 	qdf_freq_t freq = 0;
 	uint8_t dwell_time = 0;
@@ -883,8 +865,8 @@ hdd_parse_sendactionframe_v1(struct hdd_adapter *adapter, const char *command)
 	if (ret) {
 		hdd_nofl_err("Failed to parse send action frame data");
 	} else {
-		ret = hdd_sendactionframe(adapter, bssid, freq,
-					  dwell_time, payload_len, payload);
+		ret = hdd_sendactionframe(adapter, bssid, freq, dwell_time,
+					  payload_len, payload);
 		qdf_mem_free(payload);
 	}
 
@@ -905,9 +887,8 @@ hdd_parse_sendactionframe_v1(struct hdd_adapter *adapter, const char *command)
  *
  * Return: 0 for success non-zero for failure
  */
-static int
-hdd_parse_sendactionframe_v2(struct hdd_adapter *adapter,
-			     const char *command, int total_len)
+static int hdd_parse_sendactionframe_v2(struct hdd_adapter *adapter,
+					const char *command, int total_len)
 {
 	struct android_wifi_af_params *params;
 	tSirMacAddr bssid;
@@ -929,7 +910,7 @@ hdd_parse_sendactionframe_v2(struct hdd_adapter *adapter,
 	params = (struct android_wifi_af_params *)(command + 16);
 
 	if (params->len <= 0 || params->len > ANDROID_WIFI_ACTION_FRAME_SIZE ||
-		(params->len > (total_len - len_wo_payload))) {
+	    (params->len > (total_len - len_wo_payload))) {
 		hdd_err("Invalid payload length: %d", params->len);
 		return -EINVAL;
 	}
@@ -976,28 +957,27 @@ hdd_parse_sendactionframe_v2(struct hdd_adapter *adapter,
  *
  * Return: 0 for success non-zero for failure
  */
-static int
-hdd_parse_sendactionframe(struct hdd_adapter *adapter, const char *command,
-			  int total_len)
+static int hdd_parse_sendactionframe(struct hdd_adapter *adapter,
+				     const char *command, int total_len)
 {
 	int ret;
 
 	/*
-	 * both versions start with "SENDACTIONFRAME "
-	 * v1 has a bssid and other parameters as an ASCII string
-	 *    SENDACTIONFRAME xx:xx:xx:xx:xx:xx CH DWELL LEN FRAME
-	 * v2 has a C struct
-	 *    SENDACTIONFRAME <binary c struct>
-	 *
-	 * The first field in the v2 struct is also the bssid in ASCII.
-	 * But in the case of a v2 message the BSSID is NUL-terminated.
-	 * Hence we can peek at that offset to see if this is V1 or V2
-	 * SENDACTIONFRAME xx:xx:xx:xx:xx:xx*
-	 *           111111111122222222223333
-	 * 0123456789012345678901234567890123
-	 * For both the commands, a valid command must have atleast
-	 * first 34 length of data.
-	 */
+   * both versions start with "SENDACTIONFRAME "
+   * v1 has a bssid and other parameters as an ASCII string
+   *    SENDACTIONFRAME xx:xx:xx:xx:xx:xx CH DWELL LEN FRAME
+   * v2 has a C struct
+   *    SENDACTIONFRAME <binary c struct>
+   *
+   * The first field in the v2 struct is also the bssid in ASCII.
+   * But in the case of a v2 message the BSSID is NUL-terminated.
+   * Hence we can peek at that offset to see if this is V1 or V2
+   * SENDACTIONFRAME xx:xx:xx:xx:xx:xx*
+   *           111111111122222222223333
+   * 0123456789012345678901234567890123
+   * For both the commands, a valid command must have atleast
+   * first 34 length of data.
+   */
 	if (total_len < 34) {
 		hdd_err("Invalid command (total_len=%d)", total_len);
 		return -EINVAL;
@@ -1032,11 +1012,10 @@ hdd_parse_sendactionframe(struct hdd_adapter *adapter, const char *command,
  *
  * Return: 0 for success non-zero for failure
  */
-static int
-hdd_parse_channellist(struct hdd_context *hdd_ctx,
-		      const uint8_t *command,
-		      uint32_t *channel_freq_list,
-		      uint8_t *num_channels)
+static int hdd_parse_channellist(struct hdd_context *hdd_ctx,
+				 const uint8_t *command,
+				 uint32_t *channel_freq_list,
+				 uint8_t *num_channels)
 {
 	const uint8_t *in_ptr = command;
 	int temp_int;
@@ -1065,8 +1044,8 @@ hdd_parse_channellist(struct hdd_context *hdd_ctx,
 		return -EINVAL;
 
 	v = kstrtos32(buf, 10, &temp_int);
-	if ((v < 0) ||
-	    (temp_int <= 0) || (temp_int > CFG_VALID_CHANNEL_LIST_LEN))
+	if ((v < 0) || (temp_int <= 0) ||
+	    (temp_int > CFG_VALID_CHANNEL_LIST_LEN))
 		return -EINVAL;
 
 	*num_channels = temp_int;
@@ -1075,9 +1054,9 @@ hdd_parse_channellist(struct hdd_context *hdd_ctx,
 
 	for (j = 0; j < (*num_channels); j++) {
 		/*
-		 * in_ptr pointing to the beginning of first space after number
-		 * of channels
-		 */
+     * in_ptr pointing to the beginning of first space after number
+     * of channels
+     */
 		in_ptr = strpbrk(in_ptr, " ");
 		/* no channel list after the number of channels argument */
 		if (!in_ptr) {
@@ -1092,9 +1071,9 @@ hdd_parse_channellist(struct hdd_context *hdd_ctx,
 			in_ptr++;
 
 		/*
-		 * no channel list after the number of channels
-		 * argument and spaces
-		 */
+     * no channel list after the number of channels
+     * argument and spaces
+     */
 		if ('\0' == *in_ptr) {
 			if ((j != 0) && (*num_channels == j))
 				return 0;
@@ -1107,8 +1086,7 @@ hdd_parse_channellist(struct hdd_context *hdd_ctx,
 			return -EINVAL;
 
 		v = kstrtos32(buf, 10, &temp_int);
-		if ((v < 0) ||
-		    (temp_int <= 0) ||
+		if ((v < 0) || (temp_int <= 0) ||
 		    (temp_int > WNI_CFG_CURRENT_CHANNEL_STAMAX)) {
 			return -EINVAL;
 		}
@@ -1125,7 +1103,6 @@ cnt_mismatch:
 	hdd_debug("Mismatch in ch cnt: %d and num of ch: %d", *num_channels, j);
 	*num_channels = 0;
 	return -EINVAL;
-
 }
 
 /**
@@ -1215,7 +1192,6 @@ static QDF_STATUS hdd_parse_plm_cmd(uint8_t *command,
 
 	hdd_debug("PLM req %s", req->enable ? "START" : "STOP");
 	if (req->enable) {
-
 		in_ptr = strpbrk(in_ptr, " ");
 
 		if (!in_ptr)
@@ -1339,8 +1315,8 @@ static QDF_STATUS hdd_parse_plm_cmd(uint8_t *command,
 				return QDF_STATUS_E_FAILURE;
 
 			/* remove empty spaces */
-			while ((SPACE_ASCII_VALUE == *in_ptr)
-			       && ('\0' != *in_ptr))
+			while ((SPACE_ASCII_VALUE == *in_ptr) &&
+			       ('\0' != *in_ptr))
 				in_ptr++;
 
 			ret = sscanf(in_ptr, "%31s ", buf);
@@ -1390,8 +1366,8 @@ static QDF_STATUS hdd_parse_plm_cmd(uint8_t *command,
 				return QDF_STATUS_E_FAILURE;
 
 			/* remove empty spaces */
-			while ((SPACE_ASCII_VALUE == *in_ptr)
-			       && ('\0' != *in_ptr))
+			while ((SPACE_ASCII_VALUE == *in_ptr) &&
+			       ('\0' != *in_ptr))
 				in_ptr++;
 
 			ret = sscanf(in_ptr, "%31s ", buf);
@@ -1463,11 +1439,9 @@ static int hdd_enable_ext_wow(struct hdd_adapter *adapter,
 	cookie = osif_request_cookie(request);
 
 	status = sme_configure_ext_wow(hdd_ctx->mac_handle, &params,
-				       &wlan_hdd_ready_to_extwow,
-				       cookie);
+				       &wlan_hdd_ready_to_extwow, cookie);
 	if (QDF_STATUS_SUCCESS != status) {
-		hdd_err("sme_configure_ext_wow returned failure %d",
-			 status);
+		hdd_err("sme_configure_ext_wow returned failure %d", status);
 		rc = -EPERM;
 		goto exit;
 	}
@@ -1497,8 +1471,7 @@ static int hdd_enable_ext_wow(struct hdd_adapter *adapter,
 		}
 		rc = wlan_hdd_bus_suspend();
 		if (rc) {
-			hdd_err("wlan_hdd_bus_suspend failed, status = %d",
-				rc);
+			hdd_err("wlan_hdd_bus_suspend failed, status = %d", rc);
 			wlan_hdd_cfg80211_resume_wlan(hdd_ctx->wiphy);
 			goto exit;
 		}
@@ -1538,8 +1511,7 @@ static int hdd_enable_ext_wow_parser(struct hdd_adapter *adapter, int vdev_id,
 		 hdd_ctx->is_extwow_app_type2_param_set)
 		params.type = value;
 	else {
-		hdd_err("Set app params before enable it value %d",
-			 value);
+		hdd_err("Set app params before enable it value %d", value);
 		return -EINVAL;
 	}
 
@@ -1562,15 +1534,15 @@ static int hdd_set_app_type1_params(mac_handle_t mac_handle,
 	status = sme_configure_app_type1_params(mac_handle, &params);
 	if (QDF_STATUS_SUCCESS != status) {
 		hdd_err("sme_configure_app_type1_params returned failure %d",
-			 status);
+			status);
 		return -EPERM;
 	}
 
 	return 0;
 }
 
-static int hdd_set_app_type1_parser(struct hdd_adapter *adapter,
-				    char *arg, int len)
+static int hdd_set_app_type1_parser(struct hdd_adapter *adapter, char *arg,
+				    int len)
 {
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	char id[20], password[20];
@@ -1595,11 +1567,10 @@ static int hdd_set_app_type1_parser(struct hdd_adapter *adapter,
 	params.pass_length = strlen(password);
 	qdf_mem_copy(params.password, password, params.pass_length);
 
-	hdd_debug("%d "QDF_MAC_ADDR_FMT" %.8s %u %.16s %u",
-		  params.vdev_id,
+	hdd_debug("%d " QDF_MAC_ADDR_FMT " %.8s %u %.16s %u", params.vdev_id,
 		  QDF_MAC_ADDR_REF(params.wakee_mac_addr.bytes),
-		  params.identification_id, params.id_length,
-		  params.password, params.pass_length);
+		  params.identification_id, params.id_length, params.password,
+		  params.pass_length);
 
 	return hdd_set_app_type1_params(hdd_ctx->mac_handle, &params);
 }
@@ -1615,15 +1586,15 @@ static int hdd_set_app_type2_params(mac_handle_t mac_handle,
 	status = sme_configure_app_type2_params(mac_handle, &params);
 	if (QDF_STATUS_SUCCESS != status) {
 		hdd_err("sme_configure_app_type2_params returned failure %d",
-			 status);
+			status);
 		return -EPERM;
 	}
 
 	return 0;
 }
 
-static int hdd_set_app_type2_parser(struct hdd_adapter *adapter,
-				    char *arg, int len)
+static int hdd_set_app_type2_parser(struct hdd_adapter *adapter, char *arg,
+				    int len)
 {
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	char mac_addr[20], rc4_key[20];
@@ -1670,8 +1641,8 @@ static int hdd_set_app_type2_parser(struct hdd_adapter *adapter,
 		return -EINVAL;
 	}
 
-	qdf_mem_copy(&params.gateway_mac.bytes, (uint8_t *) &gateway_mac,
-			QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(&params.gateway_mac.bytes, (uint8_t *)&gateway_mac,
+		     QDF_MAC_ADDR_SIZE);
 
 	params.rc4_key_len = strlen(rc4_key);
 	qdf_mem_copy(params.rc4_key, rc4_key, params.rc4_key_len);
@@ -1680,37 +1651,38 @@ static int hdd_set_app_type2_parser(struct hdd_adapter *adapter,
 
 	if (!params.tcp_src_port)
 		params.tcp_src_port =
-		  ucfg_pmo_extwow_app2_tcp_src_port(hdd_ctx->psoc);
+			ucfg_pmo_extwow_app2_tcp_src_port(hdd_ctx->psoc);
 
 	if (!params.tcp_dst_port)
 		params.tcp_dst_port =
-		  ucfg_pmo_extwow_app2_tcp_dst_port(hdd_ctx->psoc);
+			ucfg_pmo_extwow_app2_tcp_dst_port(hdd_ctx->psoc);
 
 	if (!params.keepalive_init)
 		params.keepalive_init =
-		  ucfg_pmo_extwow_app2_init_ping_interval(hdd_ctx->psoc);
+			ucfg_pmo_extwow_app2_init_ping_interval(hdd_ctx->psoc);
 
 	if (!params.keepalive_min)
 		params.keepalive_min =
-		  ucfg_pmo_extwow_app2_min_ping_interval(hdd_ctx->psoc);
+			ucfg_pmo_extwow_app2_min_ping_interval(hdd_ctx->psoc);
 
 	if (!params.keepalive_max)
 		params.keepalive_max =
-		  ucfg_pmo_extwow_app2_max_ping_interval(hdd_ctx->psoc);
+			ucfg_pmo_extwow_app2_max_ping_interval(hdd_ctx->psoc);
 
 	if (!params.keepalive_inc)
 		params.keepalive_inc =
-		  ucfg_pmo_extwow_app2_inc_ping_interval(hdd_ctx->psoc);
+			ucfg_pmo_extwow_app2_inc_ping_interval(hdd_ctx->psoc);
 
 	if (!params.tcp_tx_timeout_val)
 		params.tcp_tx_timeout_val =
-		  ucfg_pmo_extwow_app2_tcp_tx_timeout(hdd_ctx->psoc);
+			ucfg_pmo_extwow_app2_tcp_tx_timeout(hdd_ctx->psoc);
 
 	if (!params.tcp_rx_timeout_val)
 		params.tcp_rx_timeout_val =
-		  ucfg_pmo_extwow_app2_tcp_rx_timeout(hdd_ctx->psoc);
+			ucfg_pmo_extwow_app2_tcp_rx_timeout(hdd_ctx->psoc);
 
-	hdd_debug(QDF_MAC_ADDR_FMT" %.16s %u %u %u %u %u %u %u %u %u %u %u %u %u",
+	hdd_debug(QDF_MAC_ADDR_FMT
+		  " %.16s %u %u %u %u %u %u %u %u %u %u %u %u %u",
 		  QDF_MAC_ADDR_REF(gateway_mac), rc4_key, params.ip_id,
 		  params.ip_device_ip, params.ip_server_ip, params.tcp_seq,
 		  params.tcp_ack_seq, params.tcp_src_port, params.tcp_dst_port,
@@ -1811,9 +1783,10 @@ static int hdd_set_dwell_time_6g(struct wlan_objmgr_psoc *psoc,
 
 		value = value + 20;
 		temp = kstrtou32(value, 10, &val);
-		if (temp || !cfg_in_range(CFG_ACTIVE_MAX_6G_CHANNEL_TIME,
-					  val)) {
-			hdd_err_rl("argument passed for SETDWELLTIME 6G MAX is incorrect");
+		if (temp ||
+		    !cfg_in_range(CFG_ACTIVE_MAX_6G_CHANNEL_TIME, val)) {
+			hdd_err_rl(
+				"argument passed for SETDWELLTIME 6G MAX is incorrect");
 			return -EFAULT;
 		}
 		status = ucfg_scan_cfg_set_active_6g_dwelltime(psoc, val);
@@ -1823,9 +1796,10 @@ static int hdd_set_dwell_time_6g(struct wlan_objmgr_psoc *psoc,
 
 		value = value + 28;
 		temp = kstrtou32(value, 10, &val);
-		if (temp || !cfg_in_range(CFG_PASSIVE_MAX_6G_CHANNEL_TIME,
-					  val)) {
-			hdd_err_rl("argument passed for SETDWELLTIME PASSIVE 6G MAX is incorrect");
+		if (temp ||
+		    !cfg_in_range(CFG_PASSIVE_MAX_6G_CHANNEL_TIME, val)) {
+			hdd_err_rl(
+				"argument passed for SETDWELLTIME PASSIVE 6G MAX is incorrect");
 			return -EFAULT;
 		}
 		status = ucfg_scan_cfg_set_passive_6g_dwelltime(psoc, val);
@@ -1874,8 +1848,7 @@ static int hdd_get_dwell_time(struct wlan_objmgr_psoc *psoc, uint8_t *command,
 	if (strncmp(command, "GETDWELLTIME 2G MAX", 19) == 0) {
 		ucfg_scan_cfg_get_active_2g_dwelltime(psoc, &val);
 		hdd_debug("active 2g dwelltime:%d", val);
-		*len = scnprintf(extra, n, "GETDWELLTIME 2G MAX %u\n",
-				 val);
+		*len = scnprintf(extra, n, "GETDWELLTIME 2G MAX %u\n", val);
 		return 0;
 	}
 	if (strncmp(command, "GETDWELLTIME", 12) == 0) {
@@ -1906,7 +1879,8 @@ static int hdd_set_dwell_time(struct wlan_objmgr_psoc *psoc, uint8_t *command)
 		value = value + 24;
 		temp = kstrtou32(value, 10, &val);
 		if (temp || !cfg_in_range(CFG_ACTIVE_MAX_CHANNEL_TIME, val)) {
-			hdd_err_rl("argument passed for SETDWELLTIME ACTIVE MAX is incorrect");
+			hdd_err_rl(
+				"argument passed for SETDWELLTIME ACTIVE MAX is incorrect");
 			return -EFAULT;
 		}
 		ucfg_scan_cfg_set_active_dwelltime(psoc, val);
@@ -1917,7 +1891,8 @@ static int hdd_set_dwell_time(struct wlan_objmgr_psoc *psoc, uint8_t *command)
 		value = value + 25;
 		temp = kstrtou32(value, 10, &val);
 		if (temp || !cfg_in_range(CFG_PASSIVE_MAX_CHANNEL_TIME, val)) {
-			hdd_err_rl("argument passed for SETDWELLTIME PASSIVE MAX is incorrect");
+			hdd_err_rl(
+				"argument passed for SETDWELLTIME PASSIVE MAX is incorrect");
 			return -EFAULT;
 		}
 		ucfg_scan_cfg_set_passive_dwelltime(psoc, val);
@@ -1927,9 +1902,10 @@ static int hdd_set_dwell_time(struct wlan_objmgr_psoc *psoc, uint8_t *command)
 
 		value = value + 20;
 		temp = kstrtou32(value, 10, &val);
-		if (temp || !cfg_in_range(CFG_ACTIVE_MAX_2G_CHANNEL_TIME,
-					  val)) {
-			hdd_err_rl("argument passed for SETDWELLTIME 2G MAX is incorrect");
+		if (temp ||
+		    !cfg_in_range(CFG_ACTIVE_MAX_2G_CHANNEL_TIME, val)) {
+			hdd_err_rl(
+				"argument passed for SETDWELLTIME 2G MAX is incorrect");
 			return -EFAULT;
 		}
 		ucfg_scan_cfg_set_active_2g_dwelltime(psoc, val);
@@ -1940,7 +1916,8 @@ static int hdd_set_dwell_time(struct wlan_objmgr_psoc *psoc, uint8_t *command)
 		value = value + 13;
 		temp = kstrtou32(value, 10, &val);
 		if (temp || !cfg_in_range(CFG_ACTIVE_MAX_CHANNEL_TIME, val)) {
-			hdd_err_rl("argument passed for SETDWELLTIME is incorrect");
+			hdd_err_rl(
+				"argument passed for SETDWELLTIME is incorrect");
 			return -EFAULT;
 		}
 		ucfg_scan_cfg_set_active_dwelltime(psoc, val);
@@ -1989,7 +1966,7 @@ static int hdd_conc_set_dwell_time(struct hdd_adapter *adapter,
 			return -EFAULT;
 		}
 		ucfg_scan_cfg_set_conc_active_dwelltime(
-				(WLAN_HDD_GET_CTX(adapter))->psoc, val);
+			(WLAN_HDD_GET_CTX(adapter))->psoc, val);
 	} else if (strncmp(command, "CONCSETDWELLTIME PASSIVE MAX", 28) == 0) {
 		if (drv_cmd_validate(command, 28)) {
 			hdd_err("Invalid driver command");
@@ -2004,7 +1981,7 @@ static int hdd_conc_set_dwell_time(struct hdd_adapter *adapter,
 			return -EFAULT;
 		}
 		ucfg_scan_cfg_set_conc_passive_dwelltime(
-				(WLAN_HDD_GET_CTX(adapter))->psoc, val);
+			(WLAN_HDD_GET_CTX(adapter))->psoc, val);
 	} else {
 		retval = -EINVAL;
 	}
@@ -2033,9 +2010,7 @@ static int hdd_enable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[1] = 1;
 
 		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						WLAN_MODULE_TX,
-						2,
-						arg);
+						WLAN_MODULE_TX, 2, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 
@@ -2043,9 +2018,7 @@ static int hdd_enable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[1] = 1;
 
 		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						WLAN_MODULE_TX,
-						2,
-						arg);
+						WLAN_MODULE_TX, 2, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 
@@ -2054,9 +2027,7 @@ static int hdd_enable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[2] = 1;
 
 		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						WLAN_MODULE_TX,
-						3,
-						arg);
+						WLAN_MODULE_TX, 3, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 
@@ -2065,8 +2036,8 @@ static int hdd_enable_unit_test_commands(struct hdd_adapter *adapter,
 			arg[1] = 3000;
 
 			status = sme_send_unit_test_cmd(
-						adapter->deflink->vdev_id,
-						WLAN_MODULE_RX,	2, arg);
+				adapter->deflink->vdev_id, WLAN_MODULE_RX, 2,
+				arg);
 			if (status != QDF_STATUS_SUCCESS)
 				return qdf_status_to_os_return(status);
 		}
@@ -2076,8 +2047,8 @@ static int hdd_enable_unit_test_commands(struct hdd_adapter *adapter,
 			arg[1] = 3000;
 
 			status = sme_send_unit_test_cmd(
-						adapter->deflink->vdev_id,
-						WLAN_MODULE_RX, 2, arg);
+				adapter->deflink->vdev_id, WLAN_MODULE_RX, 2,
+				arg);
 			if (status != QDF_STATUS_SUCCESS)
 				return qdf_status_to_os_return(status);
 		}
@@ -2085,10 +2056,8 @@ static int hdd_enable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[0] = 7;
 		arg[1] = 1;
 
-		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						0x44,
-						2,
-						arg);
+		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id, 0x44,
+						2, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 	} else {
@@ -2118,9 +2087,7 @@ static int hdd_disable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[1] = 0;
 
 		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						WLAN_MODULE_TX,
-						2,
-						arg);
+						WLAN_MODULE_TX, 2, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 
@@ -2128,9 +2095,7 @@ static int hdd_disable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[1] = 0;
 
 		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						WLAN_MODULE_TX,
-						2,
-						arg);
+						WLAN_MODULE_TX, 2, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 
@@ -2138,9 +2103,7 @@ static int hdd_disable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[1] = 0;
 
 		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						WLAN_MODULE_RX,
-						2,
-						arg);
+						WLAN_MODULE_RX, 2, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 
@@ -2148,9 +2111,7 @@ static int hdd_disable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[1] = 0;
 
 		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						WLAN_MODULE_RX,
-						2,
-						arg);
+						WLAN_MODULE_RX, 2, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 
@@ -2158,10 +2119,8 @@ static int hdd_disable_unit_test_commands(struct hdd_adapter *adapter,
 		arg[0] = 7;
 		arg[1] = 0;
 
-		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id,
-						0x44,
-						2,
-						arg);
+		status = sme_send_unit_test_cmd(adapter->deflink->vdev_id, 0x44,
+						2, arg);
 		if (status != QDF_STATUS_SUCCESS)
 			return qdf_status_to_os_return(status);
 	} else {
@@ -2229,8 +2188,8 @@ static int wlan_hdd_get_link_status(struct hdd_adapter *adapter)
 	sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter->deflink);
 	if (!hdd_cm_is_vdev_associated(adapter->deflink)) {
 		/* If not associated, then expected link status return
-		 * value is 0
-		 */
+     * value is 0
+     */
 		hdd_warn("Not associated!");
 		return 0;
 	}
@@ -2243,8 +2202,8 @@ static int wlan_hdd_get_link_status(struct hdd_adapter *adapter)
 	cookie = osif_request_cookie(request);
 
 	status = sme_get_link_status(adapter->hdd_ctx->mac_handle,
-				     hdd_get_link_status_cb,
-				     cookie, adapter->deflink->vdev_id);
+				     hdd_get_link_status_cb, cookie,
+				     adapter->deflink->vdev_id);
 	if (QDF_STATUS_SUCCESS != status) {
 		hdd_err("Unable to retrieve link status");
 		/* return a cached value */
@@ -2262,10 +2221,10 @@ static int wlan_hdd_get_link_status(struct hdd_adapter *adapter)
 	}
 
 	/*
-	 * either we never sent a request, we sent a request and
-	 * received a response or we sent a request and timed out.
-	 * regardless we are done with the request.
-	 */
+   * either we never sent a request, we sent a request and
+   * received a response or we sent a request and timed out.
+   * regardless we are done with the request.
+   */
 	osif_request_put(request);
 
 	/* either callback updated adapter stats or it has cached data */
@@ -2294,8 +2253,7 @@ static int wlan_hdd_get_link_status(struct hdd_adapter *adapter)
  * Return: 0 for success non-zero for failure
  */
 static int hdd_parse_ese_beacon_req(struct wlan_objmgr_pdev *pdev,
-				    uint8_t *command,
-				    tCsrEseBeaconReq *req)
+				    uint8_t *command, tCsrEseBeaconReq *req)
 {
 	uint8_t *in_ptr = command;
 	uint8_t input = 0;
@@ -2334,23 +2292,23 @@ static int hdd_parse_ese_beacon_req(struct wlan_objmgr_pdev *pdev,
 	for (j = 0; j < (req->numBcnReqIe); j++) {
 		for (i = 0; i < 4; i++) {
 			/*
-			 * in_ptr pointing to the beginning of 1st space
-			 * after number of ie fields
-			 */
+       * in_ptr pointing to the beginning of 1st space
+       * after number of ie fields
+       */
 			in_ptr = strpbrk(in_ptr, " ");
 			/* no ie data after the number of ie fields argument */
 			if (!in_ptr)
 				return -EINVAL;
 
 			/* remove empty space */
-			while ((SPACE_ASCII_VALUE == *in_ptr)
-			       && ('\0' != *in_ptr))
+			while ((SPACE_ASCII_VALUE == *in_ptr) &&
+			       ('\0' != *in_ptr))
 				in_ptr++;
 
 			/*
-			 * no ie data after the number of ie fields
-			 * argument and spaces
-			 */
+       * no ie data after the number of ie fields
+       * argument and spaces
+       */
 			if ('\0' == *in_ptr)
 				return -EINVAL;
 
@@ -2366,11 +2324,10 @@ static int hdd_parse_ese_beacon_req(struct wlan_objmgr_pdev *pdev,
 			case 0: /* Measurement token */
 				if (!temp_int) {
 					hdd_err("Invalid Measurement Token: %u",
-						  temp_int);
+						temp_int);
 					return -EINVAL;
 				}
-				req->bcnReq[j].measurementToken =
-					temp_int;
+				req->bcnReq[j].measurementToken = temp_int;
 				break;
 
 			case 1: /* Channel number */
@@ -2378,47 +2335,46 @@ static int hdd_parse_ese_beacon_req(struct wlan_objmgr_pdev *pdev,
 				    (temp_int >
 				     WNI_CFG_CURRENT_CHANNEL_STAMAX)) {
 					hdd_err("Invalid Channel Number: %u",
-						  temp_int);
+						temp_int);
 					return -EINVAL;
 				}
 				req->bcnReq[j].ch_freq =
-				wlan_reg_legacy_chan_to_freq(pdev, temp_int);
+					wlan_reg_legacy_chan_to_freq(pdev,
+								     temp_int);
 				break;
 
 			case 2: /* Scan mode */
-				if ((temp_int < eSIR_PASSIVE_SCAN)
-				    || (temp_int > eSIR_BEACON_TABLE)) {
+				if ((temp_int < eSIR_PASSIVE_SCAN) ||
+				    (temp_int > eSIR_BEACON_TABLE)) {
 					hdd_err("Invalid Scan Mode: %u Expected{0|1|2}",
-						  temp_int);
+						temp_int);
 					return -EINVAL;
 				}
 				req->bcnReq[j].scanMode = temp_int;
 				break;
 
 			case 3: /* Measurement duration */
-				if ((!temp_int
-				     && (req->bcnReq[j].scanMode !=
-					 eSIR_BEACON_TABLE)) ||
+				if ((!temp_int && (req->bcnReq[j].scanMode !=
+						   eSIR_BEACON_TABLE)) ||
 				    (req->bcnReq[j].scanMode ==
-						eSIR_BEACON_TABLE)) {
+				     eSIR_BEACON_TABLE)) {
 					hdd_err("Invalid Measurement Duration: %u",
-						  temp_int);
+						temp_int);
 					return -EINVAL;
 				}
-				req->bcnReq[j].measurementDuration =
-					temp_int;
+				req->bcnReq[j].measurementDuration = temp_int;
 				break;
 			}
 		}
 	}
 
 	for (j = 0; j < req->numBcnReqIe; j++) {
-		hdd_debug("Index: %d Measurement Token: %u ch_freq: %u Scan Mode: %u Measurement Duration: %u",
-			  j,
-			  req->bcnReq[j].measurementToken,
-			  req->bcnReq[j].ch_freq,
-			  req->bcnReq[j].scanMode,
-			  req->bcnReq[j].measurementDuration);
+		hdd_debug(
+			"Index: %d Measurement Token: %u ch_freq: %u Scan Mode: %u "
+			"Measurement Duration: %u",
+			j, req->bcnReq[j].measurementToken,
+			req->bcnReq[j].ch_freq, req->bcnReq[j].scanMode,
+			req->bcnReq[j].measurementDuration);
 	}
 
 	return 0;
@@ -2467,27 +2423,27 @@ static int hdd_parse_get_cckm_ie(uint8_t *command, uint8_t **cckm_ie,
 	if (*cckm_ie_len <= 0)
 		return -EINVAL;
 	/*
-	 * Allocate the number of bytes based on the number of input characters
-	 * whether it is even or odd.
-	 * if the number of input characters are even, then we need N / 2 byte.
-	 * if the number of input characters are odd, then we need do
-	 * (N + 1) / 2 to compensate rounding off.
-	 * For example, if N = 18, then (18 + 1) / 2 = 9 bytes are enough.
-	 * If N = 19, then we need 10 bytes, hence (19 + 1) / 2 = 10 bytes
-	 */
+   * Allocate the number of bytes based on the number of input characters
+   * whether it is even or odd.
+   * if the number of input characters are even, then we need N / 2 byte.
+   * if the number of input characters are odd, then we need do
+   * (N + 1) / 2 to compensate rounding off.
+   * For example, if N = 18, then (18 + 1) / 2 = 9 bytes are enough.
+   * If N = 19, then we need 10 bytes, hence (19 + 1) / 2 = 10 bytes
+   */
 	*cckm_ie = qdf_mem_malloc((*cckm_ie_len + 1) / 2);
 	if (!*cckm_ie)
 		return -ENOMEM;
 
 	/*
-	 * the buffer received from the upper layer is character buffer,
-	 * we need to prepare the buffer taking 2 characters in to a U8 hex
-	 * decimal number for example 7f0000f0...form a buffer to contain
-	 * 7f in 0th location, 00 in 1st and f0 in 3rd location
-	 */
+   * the buffer received from the upper layer is character buffer,
+   * we need to prepare the buffer taking 2 characters in to a U8 hex
+   * decimal number for example 7f0000f0...form a buffer to contain
+   * 7f in 0th location, 00 in 1st and f0 in 3rd location
+   */
 	for (i = 0, j = 0; j < *cckm_ie_len; j += 2) {
 		temp_u8 = (hex_to_bin(in_ptr[j]) << 4) |
-			   (hex_to_bin(in_ptr[j + 1]));
+			  (hex_to_bin(in_ptr[j + 1]));
 		(*cckm_ie)[i++] = temp_u8;
 	}
 	*cckm_ie_len = i;
@@ -2497,7 +2453,7 @@ static int hdd_parse_get_cckm_ie(uint8_t *command, uint8_t **cckm_ie,
 
 int wlan_hdd_set_mc_rate(struct wlan_hdd_link_info *link_info, int target_rate)
 {
-	tSirRateUpdateInd rate_update = {0};
+	tSirRateUpdateInd rate_update = { 0 };
 	QDF_STATUS status;
 	struct hdd_adapter *adapter = link_info->adapter;
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
@@ -2529,7 +2485,8 @@ int wlan_hdd_set_mc_rate(struct wlan_hdd_link_info *link_info, int target_rate)
 	rate_update.mcastDataRate5GHz = target_rate;
 	rate_update.bcastDataRate = -1;
 	qdf_copy_macaddr(&rate_update.bssid, &adapter->mac_addr);
-	hdd_debug("MC Target rate %d, mac = "QDF_MAC_ADDR_FMT", dev_mode %s(%d)",
+	hdd_debug("MC Target rate %d, mac = " QDF_MAC_ADDR_FMT
+		  ", dev_mode %s(%d)",
 		  rate_update.mcastDataRate24GHz,
 		  QDF_MAC_ADDR_REF(rate_update.bssid.bytes),
 		  qdf_opmode_str(adapter->device_mode), adapter->device_mode);
@@ -2542,23 +2499,20 @@ int wlan_hdd_set_mc_rate(struct wlan_hdd_link_info *link_info, int target_rate)
 }
 
 static int drv_cmd_p2p_dev_addr(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
 	struct qdf_mac_addr *addr = &hdd_ctx->p2p_device_address;
-	size_t user_size = qdf_min(sizeof(addr->bytes),
-				   (size_t)priv_data->total_len);
+	size_t user_size =
+		qdf_min(sizeof(addr->bytes), (size_t)priv_data->total_len);
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_P2P_DEV_ADDR_IOCTL,
-		   link_info->vdev_id,
+		   TRACE_CODE_HDD_P2P_DEV_ADDR_IOCTL, link_info->vdev_id,
 		   (unsigned int)(*(addr->bytes + 2) << 24 |
-				*(addr->bytes + 3) << 16 |
-				*(addr->bytes + 4) << 8 |
-				*(addr->bytes + 5)));
-
+				  *(addr->bytes + 3) << 16 |
+				  *(addr->bytes + 4) << 8 |
+				  *(addr->bytes + 5)));
 
 	if (copy_to_user(priv_data->buf, addr->bytes, user_size)) {
 		hdd_err("failed to copy data to user buffer");
@@ -2582,8 +2536,7 @@ static int drv_cmd_p2p_dev_addr(struct wlan_hdd_link_info *link_info,
  * Return: 0 on success, non-zero on failure
  */
 static int drv_cmd_p2p_set_noa(struct wlan_hdd_link_info *link_info,
-			       struct hdd_context *hdd_ctx,
-			       uint8_t *command,
+			       struct hdd_context *hdd_ctx, uint8_t *command,
 			       uint8_t command_len,
 			       struct hdd_priv_data *priv_data)
 {
@@ -2604,8 +2557,7 @@ static int drv_cmd_p2p_set_noa(struct wlan_hdd_link_info *link_info,
  * Return: 0 on success, non-zero on failure
  */
 static int drv_cmd_p2p_set_ps(struct wlan_hdd_link_info *link_info,
-			      struct hdd_context *hdd_ctx,
-			      uint8_t *command,
+			      struct hdd_context *hdd_ctx, uint8_t *command,
 			      uint8_t command_len,
 			      struct hdd_priv_data *priv_data)
 {
@@ -2613,8 +2565,7 @@ static int drv_cmd_p2p_set_ps(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_set_band(struct wlan_hdd_link_info *link_info,
-			    struct hdd_context *hdd_ctx,
-			    uint8_t *command,
+			    struct hdd_context *hdd_ctx, uint8_t *command,
 			    uint8_t command_len,
 			    struct hdd_priv_data *priv_data)
 {
@@ -2623,9 +2574,9 @@ static int drv_cmd_set_band(struct wlan_hdd_link_info *link_info,
 	uint32_t band_bitmap;
 
 	/*
-	 * Parse the band value passed from userspace. The first 8 bytes
-	 * should be "SETBAND " and the 9th byte should be a UI band value
-	 */
+   * Parse the band value passed from userspace. The first 8 bytes
+   * should be "SETBAND " and the 9th byte should be a UI band value
+   */
 	err = kstrtou8(command + command_len + 1, 10, &band);
 	if (err) {
 		hdd_err("error %d parsing userspace band parameter", err);
@@ -2638,8 +2589,7 @@ static int drv_cmd_set_band(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_set_wmmps(struct wlan_hdd_link_info *link_info,
-			     struct hdd_context *hdd_ctx,
-			     uint8_t *command,
+			     struct hdd_context *hdd_ctx, uint8_t *command,
 			     uint8_t command_len,
 			     struct hdd_priv_data *priv_data)
 {
@@ -2648,8 +2598,7 @@ static int drv_cmd_set_wmmps(struct wlan_hdd_link_info *link_info,
 
 static inline int __drv_cmd_country(struct wlan_hdd_link_info *link_info,
 				    struct hdd_context *hdd_ctx,
-				    uint8_t *command,
-				    uint8_t command_len,
+				    uint8_t *command, uint8_t command_len,
 				    struct hdd_priv_data *priv_data)
 {
 	char *country_code;
@@ -2666,8 +2615,7 @@ static inline int __drv_cmd_country(struct wlan_hdd_link_info *link_info,
 	country_code++;
 
 	/* removing empty spaces */
-	while ((*country_code == SPACE_ASCII_VALUE) &&
-	       (*country_code != '\0'))
+	while ((*country_code == SPACE_ASCII_VALUE) && (*country_code != '\0'))
 		country_code++;
 
 	/* no or less than 2  arguments followed by spaces */
@@ -2678,8 +2626,7 @@ static inline int __drv_cmd_country(struct wlan_hdd_link_info *link_info,
 }
 
 static inline int drv_cmd_country(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command,
+				  struct hdd_context *hdd_ctx, uint8_t *command,
 				  uint8_t command_len,
 				  struct hdd_priv_data *priv_data)
 {
@@ -2708,19 +2655,18 @@ static inline int drv_cmd_country(struct wlan_hdd_link_info *link_info,
  * Return: On success 0, negative value on error.
  */
 static int drv_cmd_get_country(struct wlan_hdd_link_info *link_info,
-			       struct hdd_context *hdd_ctx,
-			       uint8_t *command, uint8_t command_len,
+			       struct hdd_context *hdd_ctx, uint8_t *command,
+			       uint8_t command_len,
 			       struct hdd_priv_data *priv_data)
 {
-	uint8_t buf[SIZE_OF_GETCOUNTRYREV_OUTPUT] = {0};
+	uint8_t buf[SIZE_OF_GETCOUNTRYREV_OUTPUT] = { 0 };
 	uint8_t cc[REG_ALPHA2_LEN + 1];
 	int ret = 0, len;
 
 	qdf_mem_copy(cc, hdd_ctx->reg.alpha2, REG_ALPHA2_LEN);
 	cc[REG_ALPHA2_LEN] = '\0';
 
-	len = scnprintf(buf, sizeof(buf), "%s %s",
-			"GETCOUNTRYREV", cc);
+	len = scnprintf(buf, sizeof(buf), "%s %s", "GETCOUNTRYREV", cc);
 	hdd_debug("buf = %s", buf);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 	if (copy_to_user(priv_data->buf, buf, len)) {
@@ -2741,10 +2687,11 @@ static int drv_apf_enable(struct hdd_adapter *adapter, bool apf_enable)
 	QDF_STATUS status;
 	hdd_prevent_suspend(WIFI_POWER_EVENT_WAKELOCK_WOW);
 	status = sme_set_apf_enable_disable(hdd_adapter_get_mac_handle(adapter),
-					    adapter->deflink->vdev_id, apf_enable);
+					    adapter->deflink->vdev_id,
+					    apf_enable);
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		hdd_err("Unable to post sme apf enable/disable message (status-%d)",
-				status);
+			status);
 		return -EINVAL;
 	}
 	adapter->apf_context.apf_enabled = apf_enable;
@@ -2754,15 +2701,14 @@ static int drv_apf_enable(struct hdd_adapter *adapter, bool apf_enable)
 
 static int drv_cmd_set_roam_trigger(struct wlan_hdd_link_info *link_info,
 				    struct hdd_context *hdd_ctx,
-				    uint8_t *command,
-				    uint8_t command_len,
+				    uint8_t *command, uint8_t command_len,
 				    struct hdd_priv_data *priv_data)
 {
 	int ret;
 	uint8_t *value = command;
 	int8_t rssi = 0;
-	uint8_t lookup_threshold = cfg_default(
-					CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD);
+	uint8_t lookup_threshold =
+		cfg_default(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD);
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	/* Move pointer to ahead of SETROAMTRIGGER<delimiter> */
@@ -2772,9 +2718,9 @@ static int drv_cmd_set_roam_trigger(struct wlan_hdd_link_info *link_info,
 	ret = kstrtos8(value, 10, &rssi);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed Input value may be out of range[%d - %d]",
 			cfg_min(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD),
 			cfg_max(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD));
@@ -2782,12 +2728,11 @@ static int drv_cmd_set_roam_trigger(struct wlan_hdd_link_info *link_info,
 		goto exit;
 	}
 
-	if (!cfg_in_range(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD,
-			  rssi)) {
+	if (!cfg_in_range(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD, rssi)) {
 		hdd_err("Neighbor lookup threshold value %d is out of range (Min: %d Max: %d)",
-			  lookup_threshold,
-			  cfg_min(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD),
-			  cfg_max(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD));
+			lookup_threshold,
+			cfg_min(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD),
+			cfg_max(CFG_LFR_NEIGHBOR_LOOKUP_RSSI_THRESHOLD));
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -2795,16 +2740,14 @@ static int drv_cmd_set_roam_trigger(struct wlan_hdd_link_info *link_info,
 	lookup_threshold = abs(rssi);
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_SETROAMTRIGGER_IOCTL,
-		   link_info->vdev_id, lookup_threshold);
+		   TRACE_CODE_HDD_SETROAMTRIGGER_IOCTL, link_info->vdev_id,
+		   lookup_threshold);
 
 	hdd_debug("Set Roam trigger: Neighbor lookup threshold = %d",
 		  lookup_threshold);
 
 	status = sme_set_neighbor_lookup_rssi_threshold(
-						    hdd_ctx->mac_handle,
-						    link_info->vdev_id,
-						    lookup_threshold);
+		hdd_ctx->mac_handle, link_info->vdev_id, lookup_threshold);
 	if (QDF_STATUS_SUCCESS != status) {
 		hdd_err("Failed to set roam trigger, try again");
 		ret = -EPERM;
@@ -2817,8 +2760,7 @@ exit:
 
 static int drv_cmd_get_roam_trigger(struct wlan_hdd_link_info *link_info,
 				    struct hdd_context *hdd_ctx,
-				    uint8_t *command,
-				    uint8_t command_len,
+				    uint8_t *command, uint8_t command_len,
 				    struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -2829,18 +2771,16 @@ static int drv_cmd_get_roam_trigger(struct wlan_hdd_link_info *link_info,
 	QDF_STATUS status;
 
 	status = ucfg_cm_get_neighbor_lookup_rssi_threshold(
-						hdd_ctx->psoc,
-						link_info->vdev_id,
-						&lookup_threshold);
+		hdd_ctx->psoc, link_info->vdev_id, &lookup_threshold);
 	if (QDF_IS_STATUS_ERROR(status))
 		return qdf_status_to_os_return(status);
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_GETROAMTRIGGER_IOCTL,
-		   link_info->vdev_id, lookup_threshold);
+		   TRACE_CODE_HDD_GETROAMTRIGGER_IOCTL, link_info->vdev_id,
+		   lookup_threshold);
 
-	hdd_debug("vdev_id: %u, lookup_threshold: %u",
-		  link_info->vdev_id, lookup_threshold);
+	hdd_debug("vdev_id: %u, lookup_threshold: %u", link_info->vdev_id,
+		  lookup_threshold);
 
 	rssi = (-1) * lookup_threshold;
 
@@ -2856,8 +2796,7 @@ static int drv_cmd_get_roam_trigger(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_set_roam_scan_period(struct wlan_hdd_link_info *link_info,
 					struct hdd_context *hdd_ctx,
-					uint8_t *command,
-					uint8_t command_len,
+					uint8_t *command, uint8_t command_len,
 					struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -2885,17 +2824,19 @@ static int drv_cmd_set_roam_scan_period(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &roam_scan_period);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		if (flag)
 			hdd_err("kstrtou8 failed Input value may be out of range[%d - %d]",
 				cfg_min(CFG_ROAM_SCAN_FIRST_TIMER),
 				cfg_max(CFG_ROAM_SCAN_FIRST_TIMER));
 		else
 			hdd_err("kstrtou8 failed Input value may be out of range[%d - %d]",
-				(cfg_min(CFG_LFR_EMPTY_SCAN_REFRESH_PERIOD) / 1000),
-				(cfg_max(CFG_LFR_EMPTY_SCAN_REFRESH_PERIOD) / 1000));
+				(cfg_min(CFG_LFR_EMPTY_SCAN_REFRESH_PERIOD) /
+				 1000),
+				(cfg_max(CFG_LFR_EMPTY_SCAN_REFRESH_PERIOD) /
+				 1000));
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -2907,13 +2848,15 @@ static int drv_cmd_set_roam_scan_period(struct wlan_hdd_link_info *link_info,
 	}
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_SETROAMSCANPERIOD_IOCTL,
-		   link_info->vdev_id, roam_scan_period);
+		   TRACE_CODE_HDD_SETROAMSCANPERIOD_IOCTL, link_info->vdev_id,
+		   roam_scan_period);
 
 	empty_scan_refresh_period = roam_scan_period * 1000;
 
-	hdd_debug("Received Command to Set roam scan period (Empty Scan refresh period) = %d",
-		  roam_scan_period);
+	hdd_debug(
+		"Received Command to Set roam scan period (Empty Scan refresh "
+		"period) = %d",
+		roam_scan_period);
 
 	sme_update_empty_scan_refresh_period(hdd_ctx->mac_handle,
 					     link_info->vdev_id,
@@ -2925,8 +2868,7 @@ exit:
 
 static int drv_cmd_get_roam_scan_period(struct wlan_hdd_link_info *link_info,
 					struct hdd_context *hdd_ctx,
-					uint8_t *command,
-					uint8_t command_len,
+					uint8_t *command, uint8_t command_len,
 					struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -2936,9 +2878,7 @@ static int drv_cmd_get_roam_scan_period(struct wlan_hdd_link_info *link_info,
 	QDF_STATUS status;
 
 	status = ucfg_cm_get_empty_scan_refresh_period(
-						hdd_ctx->psoc,
-						link_info->vdev_id,
-						&empty_scan_refresh_period);
+		hdd_ctx->psoc, link_info->vdev_id, &empty_scan_refresh_period);
 	if (QDF_IS_STATUS_ERROR(status))
 		return qdf_status_to_os_return(status);
 
@@ -2946,12 +2886,10 @@ static int drv_cmd_get_roam_scan_period(struct wlan_hdd_link_info *link_info,
 		  link_info->vdev_id, empty_scan_refresh_period);
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_GETROAMSCANPERIOD_IOCTL,
-		   link_info->vdev_id,
+		   TRACE_CODE_HDD_GETROAMSCANPERIOD_IOCTL, link_info->vdev_id,
 		   empty_scan_refresh_period);
 
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-			"GETROAMSCANPERIOD",
+	len = scnprintf(extra, sizeof(extra), "%s %d", "GETROAMSCANPERIOD",
 			(empty_scan_refresh_period / 1000));
 	/* Returned value is in units of seconds */
 	len = QDF_MIN(priv_data->total_len, len + 1);
@@ -2963,11 +2901,9 @@ static int drv_cmd_get_roam_scan_period(struct wlan_hdd_link_info *link_info,
 	return ret;
 }
 
-static int
-drv_cmd_set_roam_scan_refresh_period(struct wlan_hdd_link_info *link_info,
-				     struct hdd_context *hdd_ctx,
-				     uint8_t *command, uint8_t command_len,
-				     struct hdd_priv_data *priv_data)
+static int drv_cmd_set_roam_scan_refresh_period(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret;
 	uint8_t *value = command;
@@ -2983,33 +2919,36 @@ drv_cmd_set_roam_scan_refresh_period(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &roam_scan_refresh_period);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed Input value may be out of range[%d - %d]",
-			(cfg_min(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD)
-			 / 1000),
-			(cfg_max(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD)
-			 / 1000));
+			(cfg_min(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD) /
+			 1000),
+			(cfg_max(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD) /
+			 1000));
 		ret = -EINVAL;
 		goto exit;
 	}
 
 	if (!cfg_in_range(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD,
 			  roam_scan_refresh_period)) {
-		hdd_err("Neighbor scan results refresh period value %d is out of range (Min: %d Max: %d)",
+		hdd_err("Neighbor scan results refresh period value %d is out of range "
+			"(Min: %d Max: %d)",
 			roam_scan_refresh_period,
-			(cfg_min(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD)
-			 / 1000),
-			(cfg_max(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD)
-			 / 1000));
+			(cfg_min(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD) /
+			 1000),
+			(cfg_max(CFG_LFR_NEIGHBOR_SCAN_RESULTS_REFRESH_PERIOD) /
+			 1000));
 		ret = -EINVAL;
 		goto exit;
 	}
 	neighbor_scan_refresh_period = roam_scan_refresh_period * 1000;
 
-	hdd_debug("Received Command to Set roam scan refresh period (Scan refresh period) = %d",
-		  neighbor_scan_refresh_period);
+	hdd_debug(
+		"Received Command to Set roam scan refresh period (Scan refresh "
+		"period) = %d",
+		neighbor_scan_refresh_period);
 
 	sme_set_neighbor_scan_refresh_period(hdd_ctx->mac_handle,
 					     link_info->vdev_id,
@@ -3019,11 +2958,9 @@ exit:
 	return ret;
 }
 
-static int
-drv_cmd_get_roam_scan_refresh_period(struct wlan_hdd_link_info *link_info,
-				     struct hdd_context *hdd_ctx,
-				     uint8_t *command, uint8_t command_len,
-				     struct hdd_priv_data *priv_data)
+static int drv_cmd_get_roam_scan_refresh_period(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint16_t value = 0;
@@ -3032,8 +2969,7 @@ drv_cmd_get_roam_scan_refresh_period(struct wlan_hdd_link_info *link_info,
 
 	ucfg_cm_get_neighbor_scan_refresh_period(hdd_ctx->psoc, &value);
 	len = scnprintf(extra, sizeof(extra), "%s %d",
-			"GETROAMSCANREFRESHPERIOD",
-			(value / 1000));
+			"GETROAMSCANREFRESHPERIOD", (value / 1000));
 	/* Returned value is in units of seconds */
 	len = QDF_MIN(priv_data->total_len, len + 1);
 	if (copy_to_user(priv_data->buf, &extra, len)) {
@@ -3045,8 +2981,7 @@ drv_cmd_get_roam_scan_refresh_period(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_set_roam_mode(struct wlan_hdd_link_info *link_info,
-				 struct hdd_context *hdd_ctx,
-				 uint8_t *command,
+				 struct hdd_context *hdd_ctx, uint8_t *command,
 				 uint8_t command_len,
 				 struct hdd_priv_data *priv_data)
 {
@@ -3062,9 +2997,9 @@ static int drv_cmd_set_roam_mode(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &roam_mode);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_FEATURE_ENABLED),
 			cfg_max(CFG_LFR_FEATURE_ENABLED));
@@ -3072,16 +3007,15 @@ static int drv_cmd_set_roam_mode(struct wlan_hdd_link_info *link_info,
 		goto exit;
 	}
 
-	hdd_debug("Received Command to Set Roam Mode = %d",
-		  roam_mode);
+	hdd_debug("Received Command to Set Roam Mode = %d", roam_mode);
 	/*
-	 * Note that
-	 *     SETROAMMODE 0 is to enable LFR while
-	 *     SETROAMMODE 1 is to disable LFR, but
-	 *     notify_is_fast_roam_ini_feature_enabled 0/1 is to
-	 *     enable/disable. So, we have to invert the value
-	 *     to call sme_update_is_fast_roam_ini_feature_enabled.
-	 */
+   * Note that
+   *     SETROAMMODE 0 is to enable LFR while
+   *     SETROAMMODE 1 is to disable LFR, but
+   *     notify_is_fast_roam_ini_feature_enabled 0/1 is to
+   *     enable/disable. So, we have to invert the value
+   *     to call sme_update_is_fast_roam_ini_feature_enabled.
+   */
 	if (roam_mode) {
 		/* Roam enable */
 		roam_mode = cfg_min(CFG_LFR_FEATURE_ENABLED);
@@ -3095,10 +3029,10 @@ static int drv_cmd_set_roam_mode(struct wlan_hdd_link_info *link_info,
 		ucfg_mlme_set_roam_scan_offload_enabled(hdd_ctx->psoc,
 							(bool)roam_mode);
 		sme_update_is_fast_roam_ini_feature_enabled(
-			    mac_handle, link_info->vdev_id, roam_mode);
+			mac_handle, link_info->vdev_id, roam_mode);
 	} else {
 		sme_update_is_fast_roam_ini_feature_enabled(
-			    mac_handle, link_info->vdev_id, roam_mode);
+			mac_handle, link_info->vdev_id, roam_mode);
 		ucfg_mlme_set_roam_scan_offload_enabled(hdd_ctx->psoc,
 							roam_mode);
 	}
@@ -3109,8 +3043,7 @@ exit:
 
 static int drv_cmd_set_suspend_mode(struct wlan_hdd_link_info *link_info,
 				    struct hdd_context *hdd_ctx,
-				    uint8_t *command,
-				    uint8_t command_len,
+				    uint8_t *command, uint8_t command_len,
 				    struct hdd_priv_data *priv_data)
 {
 	struct hdd_adapter *adapter = link_info->adapter;
@@ -3131,15 +3064,16 @@ static int drv_cmd_set_suspend_mode(struct wlan_hdd_link_info *link_info,
 	errno = kstrtou8(value, 10, &idle_monitor);
 	if (errno < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("Range validation failed");
 		return -EINVAL;
 	}
 
-	//MIUI: ADD
-	//idle_monitor: 0-screen on/monitor off/APF disable, 1: screen off/monitor on/APF enable.
+	// MIUI: ADD
+	// idle_monitor: 0-screen on/monitor off/APF disable, 1: screen off/monitor
+	// on/APF enable.
 	drv_apf_enable(adapter, idle_monitor);
 	hdd_debug("APF status and idle_monitor:%d, ", idle_monitor);
 
@@ -3153,8 +3087,7 @@ static int drv_cmd_set_suspend_mode(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_get_roam_mode(struct wlan_hdd_link_info *link_info,
-				 struct hdd_context *hdd_ctx,
-				 uint8_t *command,
+				 struct hdd_context *hdd_ctx, uint8_t *command,
 				 uint8_t command_len,
 				 struct hdd_priv_data *priv_data)
 {
@@ -3164,8 +3097,8 @@ static int drv_cmd_get_roam_mode(struct wlan_hdd_link_info *link_info,
 	uint8_t len;
 
 	/*
-	 * roamMode value shall be inverted because the sementics is different.
-	 */
+   * roamMode value shall be inverted because the sementics is different.
+   */
 	if (roam_mode)
 		roam_mode = cfg_min(CFG_LFR_FEATURE_ENABLED);
 	else
@@ -3182,8 +3115,7 @@ static int drv_cmd_get_roam_mode(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_set_roam_delta(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command,
+				  struct hdd_context *hdd_ctx, uint8_t *command,
 				  uint8_t command_len,
 				  struct hdd_priv_data *priv_data)
 {
@@ -3198,9 +3130,9 @@ static int drv_cmd_set_roam_delta(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &roam_rssi_diff);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_ROAM_RSSI_DIFF),
 			cfg_max(CFG_LFR_ROAM_RSSI_DIFF));
@@ -3210,8 +3142,7 @@ static int drv_cmd_set_roam_delta(struct wlan_hdd_link_info *link_info,
 
 	if (!cfg_in_range(CFG_LFR_ROAM_RSSI_DIFF, roam_rssi_diff)) {
 		hdd_err("Roam rssi diff value %d is out of range (Min: %d Max: %d)",
-			roam_rssi_diff,
-			cfg_min(CFG_LFR_ROAM_RSSI_DIFF),
+			roam_rssi_diff, cfg_min(CFG_LFR_ROAM_RSSI_DIFF),
 			cfg_max(CFG_LFR_ROAM_RSSI_DIFF));
 		ret = -EINVAL;
 		goto exit;
@@ -3220,8 +3151,7 @@ static int drv_cmd_set_roam_delta(struct wlan_hdd_link_info *link_info,
 	hdd_debug("Received Command to Set roam rssi diff = %d",
 		  roam_rssi_diff);
 
-	sme_update_roam_rssi_diff(hdd_ctx->mac_handle,
-				  link_info->vdev_id,
+	sme_update_roam_rssi_diff(hdd_ctx->mac_handle, link_info->vdev_id,
 				  roam_rssi_diff);
 
 exit:
@@ -3229,8 +3159,7 @@ exit:
 }
 
 static int drv_cmd_get_roam_delta(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command,
+				  struct hdd_context *hdd_ctx, uint8_t *command,
 				  uint8_t command_len,
 				  struct hdd_priv_data *priv_data)
 {
@@ -3240,20 +3169,17 @@ static int drv_cmd_get_roam_delta(struct wlan_hdd_link_info *link_info,
 	uint8_t len;
 	QDF_STATUS status;
 
-	status = ucfg_cm_get_roam_rssi_diff(hdd_ctx->psoc,
-					    link_info->vdev_id,
+	status = ucfg_cm_get_roam_rssi_diff(hdd_ctx->psoc, link_info->vdev_id,
 					    &rssi_diff);
 	if (QDF_IS_STATUS_ERROR(status))
 		return qdf_status_to_os_return(status);
 
-	hdd_debug("vdev_id: %u, rssi_diff: %u",
-		  link_info->vdev_id, rssi_diff);
+	hdd_debug("vdev_id: %u, rssi_diff: %u", link_info->vdev_id, rssi_diff);
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_GETROAMDELTA_IOCTL,
-		   link_info->vdev_id, rssi_diff);
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-			command, rssi_diff);
+		   TRACE_CODE_HDD_GETROAMDELTA_IOCTL, link_info->vdev_id,
+		   rssi_diff);
+	len = scnprintf(extra, sizeof(extra), "%s %d", command, rssi_diff);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 
 	if (copy_to_user(priv_data->buf, &extra, len)) {
@@ -3265,8 +3191,7 @@ static int drv_cmd_get_roam_delta(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_get_band(struct wlan_hdd_link_info *link_info,
-			    struct hdd_context *hdd_ctx,
-			    uint8_t *command,
+			    struct hdd_context *hdd_ctx, uint8_t *command,
 			    uint8_t command_len,
 			    struct hdd_priv_data *priv_data)
 {
@@ -3277,8 +3202,7 @@ static int drv_cmd_get_band(struct wlan_hdd_link_info *link_info,
 	hdd_get_band_helper(hdd_ctx, &band);
 
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_GETBAND_IOCTL,
-		   link_info->vdev_id, band);
+		   TRACE_CODE_HDD_GETBAND_IOCTL, link_info->vdev_id, band);
 
 	len = scnprintf(extra, sizeof(extra), "%s %d", command, band);
 	len = QDF_MIN(priv_data->total_len, len + 1);
@@ -3309,11 +3233,11 @@ struct roam_ch_priv {
  *
  * Return: none
  */
-static void
-hdd_dump_roam_scan_ch_list(uint32_t *chan_list, uint16_t num_channels)
+static void hdd_dump_roam_scan_ch_list(uint32_t *chan_list,
+				       uint16_t num_channels)
 {
 	uint8_t i, j;
-	uint8_t ch_cache_str[128] = {0};
+	uint8_t ch_cache_str[128] = { 0 };
 
 	/* print channel list after sorting in ascending order */
 	for (i = 0, j = 0; i < num_channels; i++) {
@@ -3337,14 +3261,15 @@ hdd_dump_roam_scan_ch_list(uint32_t *chan_list, uint16_t num_channels)
  *
  * Return: none
  */
-static void
-hdd_sort_roam_scan_ch_list(uint32_t *chan_list, uint16_t num_channels)
+static void hdd_sort_roam_scan_ch_list(uint32_t *chan_list,
+				       uint16_t num_channels)
 {
 	uint8_t i, j;
 	uint32_t swap = 0;
 
-	for (i = 0; i < (num_channels - 1) &&
-	     i < WNI_CFG_VALID_CHANNEL_LIST_LEN; i++) {
+	for (i = 0;
+	     i < (num_channels - 1) && i < WNI_CFG_VALID_CHANNEL_LIST_LEN;
+	     i++) {
 		for (j = 0; j < (num_channels - i - 1); j++) {
 			if (chan_list[j] < chan_list[j + 1]) {
 				swap = chan_list[j];
@@ -3356,31 +3281,31 @@ hdd_sort_roam_scan_ch_list(uint32_t *chan_list, uint16_t num_channels)
 }
 
 void hdd_get_roam_scan_ch_cb(hdd_handle_t hdd_handle,
-			     struct roam_scan_ch_resp *roam_ch,
-			     void *context)
+			     struct roam_scan_ch_resp *roam_ch, void *context)
 {
 	struct osif_request *request;
 	struct roam_ch_priv *priv;
 	uint8_t *event = NULL, i = 0;
-	uint32_t  *freq = NULL, len;
+	uint32_t *freq = NULL, len;
 	struct hdd_context *hdd_ctx = hdd_handle_to_context(hdd_handle);
 
-	hdd_debug("roam scan ch list event received : vdev_id:%d command resp: %d",
-		  roam_ch->vdev_id, roam_ch->command_resp);
+	hdd_debug(
+		"roam scan ch list event received : vdev_id:%d command resp: %d",
+		roam_ch->vdev_id, roam_ch->command_resp);
 	/**
-	 * If command response is set in the response message, then it is
-	 * getroamscanchannels command response else this event is asynchronous
-	 * event raised by firmware.
-	 */
+   * If command response is set in the response message, then it is
+   * getroamscanchannels command response else this event is asynchronous
+   * event raised by firmware.
+   */
 	if (!roam_ch->command_resp) {
 		/*
-		 * Maximum allowed channel count is 30 in supplicant vendor
-		 * event of RCL list. So if number of channels present in
-		 * channel list received from FW is more than 30 channels then
-		 * restrict it to 30 channels only.
-		 */
+     * Maximum allowed channel count is 30 in supplicant vendor
+     * event of RCL list. So if number of channels present in
+     * channel list received from FW is more than 30 channels then
+     * restrict it to 30 channels only.
+     */
 		if (roam_ch->num_channels > MAX_RCL_CHANNEL_COUNT)
-			roam_ch->num_channels =  MAX_RCL_CHANNEL_COUNT;
+			roam_ch->num_channels = MAX_RCL_CHANNEL_COUNT;
 
 		len = roam_ch->num_channels * sizeof(roam_ch->chan_list[0]);
 		if (!len) {
@@ -3397,12 +3322,13 @@ void hdd_get_roam_scan_ch_cb(hdd_handle_t hdd_handle,
 		hdd_dump_roam_scan_ch_list(roam_ch->chan_list,
 					   roam_ch->num_channels);
 		for (i = 0; i < roam_ch->num_channels &&
-		     i < WNI_CFG_VALID_CHANNEL_LIST_LEN; i++) {
+			    i < WNI_CFG_VALID_CHANNEL_LIST_LEN;
+		     i++) {
 			freq[i] = roam_ch->chan_list[i];
 		}
 
-		hdd_send_roam_scan_ch_list_event(hdd_ctx, roam_ch->vdev_id,
-						 len, event);
+		hdd_send_roam_scan_ch_list_event(hdd_ctx, roam_ch->vdev_id, len,
+						 event);
 		qdf_mem_free(event);
 		return;
 	}
@@ -3419,16 +3345,17 @@ void hdd_get_roam_scan_ch_cb(hdd_handle_t hdd_handle,
 
 	priv->roam_ch.num_channels = roam_ch->num_channels;
 	for (i = 0; i < priv->roam_ch.num_channels &&
-	     i < WNI_CFG_VALID_CHANNEL_LIST_LEN; i++)
+		    i < WNI_CFG_VALID_CHANNEL_LIST_LEN;
+	     i++)
 		priv->roam_ch.chan_list[i] = roam_ch->chan_list[i];
 
 	osif_request_complete(request);
 	osif_request_put(request);
 }
 
-static uint32_t
-hdd_get_roam_chan_from_fw(struct hdd_adapter *adapter, uint32_t *chan_list,
-			  uint8_t *num_channels)
+static uint32_t hdd_get_roam_chan_from_fw(struct hdd_adapter *adapter,
+					  uint32_t *chan_list,
+					  uint8_t *num_channels)
 {
 	QDF_STATUS status = QDF_STATUS_E_INVAL;
 	struct hdd_context *hdd_ctx;
@@ -3438,9 +3365,9 @@ hdd_get_roam_chan_from_fw(struct hdd_adapter *adapter, uint32_t *chan_list,
 	struct roam_ch_priv *priv;
 	struct roam_scan_ch_resp *p_roam_ch;
 	static const struct osif_request_params params = {
-		.priv_size = sizeof(*priv) +
-			     sizeof(priv->roam_ch.chan_list[0]) *
-			     WNI_CFG_VALID_CHANNEL_LIST_LEN,
+		.priv_size =
+			sizeof(*priv) + sizeof(priv->roam_ch.chan_list[0]) *
+						WNI_CFG_VALID_CHANNEL_LIST_LEN,
 		.timeout_ms = WLAN_WAIT_TIME_STATS,
 	};
 
@@ -3482,9 +3409,8 @@ cleanup:
 	return ret;
 }
 
-int
-hdd_get_roam_scan_freq(struct hdd_adapter *adapter, mac_handle_t mac_handle,
-		       uint32_t *chan_list, uint8_t *num_channels)
+int hdd_get_roam_scan_freq(struct hdd_adapter *adapter, mac_handle_t mac_handle,
+			   uint32_t *chan_list, uint8_t *num_channels)
 {
 	int ret = 0;
 
@@ -3506,7 +3432,7 @@ hdd_get_roam_scan_freq(struct hdd_adapter *adapter, mac_handle_t mac_handle,
 
 	if (sme_get_roam_scan_channel_list(mac_handle, chan_list, num_channels,
 					   adapter->deflink->vdev_id) !=
-					   QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		hdd_err("failed to get roam scan channel list");
 		return -EFAULT;
 	}
@@ -3539,9 +3465,8 @@ static int printk_adapter(void *priv, const char *fmt, ...)
 	return ret;
 }
 
-void hdd_ioctl_log_buffer(int log_id, uint32_t count, qdf_abstract_print
-							     *custom_print,
-							     void *print_ctx)
+void hdd_ioctl_log_buffer(int log_id, uint32_t count,
+			  qdf_abstract_print *custom_print, void *print_ctx)
 {
 	qdf_abstract_print *print;
 
@@ -3592,8 +3517,7 @@ void hdd_dump_log_buffer(void *print_ctx, qdf_abstract_print *custom_print)
 #endif
 
 static int drv_cmd_get_ccx_mode(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -3605,19 +3529,19 @@ static int drv_cmd_get_ccx_mode(struct wlan_hdd_link_info *link_info,
 
 	hdd_get_pmkid_modes(hdd_ctx, &pmkid_modes);
 	/*
-	 * Check if the features PMKID/ESE/11R are supported simultaneously,
-	 * then this operation is not permitted (return FAILURE)
-	 */
-	if (ese_mode &&
-	    (pmkid_modes.fw_okc || pmkid_modes.fw_pmksa_cache) &&
+   * Check if the features PMKID/ESE/11R are supported simultaneously,
+   * then this operation is not permitted (return FAILURE)
+   */
+	if (ese_mode && (pmkid_modes.fw_okc || pmkid_modes.fw_pmksa_cache) &&
 	    ucfg_cm_get_is_ft_feature_enabled(hdd_ctx->psoc)) {
-		hdd_warn("PMKID/ESE/11R are supported simultaneously hence this operation is not permitted!");
+		hdd_warn(
+			"PMKID/ESE/11R are supported simultaneously hence this operation "
+			"is not permitted!");
 		ret = -EPERM;
 		goto exit;
 	}
 
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-			"GETCCXMODE", ese_mode);
+	len = scnprintf(extra, sizeof(extra), "%s %d", "GETCCXMODE", ese_mode);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 	if (copy_to_user(priv_data->buf, &extra, len)) {
 		hdd_err("failed to copy data to user buffer");
@@ -3630,8 +3554,7 @@ exit:
 }
 
 static int drv_cmd_get_okc_mode(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -3642,19 +3565,21 @@ static int drv_cmd_get_okc_mode(struct wlan_hdd_link_info *link_info,
 
 	hdd_get_pmkid_modes(hdd_ctx, &pmkid_modes);
 	/*
-	 * Check if the features OKC/ESE/11R are supported simultaneously,
-	 * then this operation is not permitted (return FAILURE)
-	 */
+   * Check if the features OKC/ESE/11R are supported simultaneously,
+   * then this operation is not permitted (return FAILURE)
+   */
 	if (pmkid_modes.fw_okc &&
 	    ucfg_cm_get_is_ese_feature_enabled(hdd_ctx->psoc) &&
 	    ucfg_cm_get_is_ft_feature_enabled(hdd_ctx->psoc)) {
-		hdd_warn("PMKID/ESE/11R are supported simultaneously hence this operation is not permitted!");
+		hdd_warn(
+			"PMKID/ESE/11R are supported simultaneously hence this operation "
+			"is not permitted!");
 		ret = -EPERM;
 		goto exit;
 	}
 
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-			"GETOKCMODE", pmkid_modes.fw_okc);
+	len = scnprintf(extra, sizeof(extra), "%s %d", "GETOKCMODE",
+			pmkid_modes.fw_okc);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 
 	if (copy_to_user(priv_data->buf, &extra, len)) {
@@ -3668,8 +3593,7 @@ exit:
 }
 
 static int drv_cmd_get_fast_roam(struct wlan_hdd_link_info *link_info,
-				 struct hdd_context *hdd_ctx,
-				 uint8_t *command,
+				 struct hdd_context *hdd_ctx, uint8_t *command,
 				 uint8_t command_len,
 				 struct hdd_priv_data *priv_data)
 {
@@ -3678,8 +3602,7 @@ static int drv_cmd_get_fast_roam(struct wlan_hdd_link_info *link_info,
 	char extra[32];
 	uint8_t len = 0;
 
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-			"GETFASTROAM", lfr_mode);
+	len = scnprintf(extra, sizeof(extra), "%s %d", "GETFASTROAM", lfr_mode);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 
 	if (copy_to_user(priv_data->buf, &extra, len)) {
@@ -3692,8 +3615,7 @@ static int drv_cmd_get_fast_roam(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_get_fast_transition(struct wlan_hdd_link_info *link_info,
 				       struct hdd_context *hdd_ctx,
-				       uint8_t *command,
-				       uint8_t command_len,
+				       uint8_t *command, uint8_t command_len,
 				       struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -3701,8 +3623,7 @@ static int drv_cmd_get_fast_transition(struct wlan_hdd_link_info *link_info,
 	char extra[32];
 	uint8_t len = 0;
 
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-					"GETFASTTRANSITION", ft);
+	len = scnprintf(extra, sizeof(extra), "%s %d", "GETFASTTRANSITION", ft);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 
 	if (copy_to_user(priv_data->buf, &extra, len)) {
@@ -3713,11 +3634,9 @@ static int drv_cmd_get_fast_transition(struct wlan_hdd_link_info *link_info,
 	return ret;
 }
 
-static int
-drv_cmd_set_roam_scan_channel_min_time(struct wlan_hdd_link_info *link_info,
-				       struct hdd_context *hdd_ctx,
-				       uint8_t *command, uint8_t command_len,
-				       struct hdd_priv_data *priv_data)
+static int drv_cmd_set_roam_scan_channel_min_time(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint8_t *value = command;
@@ -3730,9 +3649,9 @@ drv_cmd_set_roam_scan_channel_min_time(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &min_time);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_NEIGHBOR_SCAN_MIN_CHAN_TIME),
 			cfg_max(CFG_LFR_NEIGHBOR_SCAN_MIN_CHAN_TIME));
@@ -3742,8 +3661,7 @@ drv_cmd_set_roam_scan_channel_min_time(struct wlan_hdd_link_info *link_info,
 
 	if (!cfg_in_range(CFG_LFR_NEIGHBOR_SCAN_MIN_CHAN_TIME, min_time)) {
 		hdd_err("scan min channel time value %d is out of range (Min: %d Max: %d)",
-			min_time,
-			cfg_min(CFG_LFR_NEIGHBOR_SCAN_MIN_CHAN_TIME),
+			min_time, cfg_min(CFG_LFR_NEIGHBOR_SCAN_MIN_CHAN_TIME),
 			cfg_max(CFG_LFR_NEIGHBOR_SCAN_MIN_CHAN_TIME));
 		ret = -EINVAL;
 		goto exit;
@@ -3753,11 +3671,10 @@ drv_cmd_set_roam_scan_channel_min_time(struct wlan_hdd_link_info *link_info,
 		   TRACE_CODE_HDD_SETROAMSCANCHANNELMINTIME_IOCTL,
 		   link_info->vdev_id, min_time);
 
-	hdd_debug("Received Command to change channel min time = %d",
-		  min_time);
+	hdd_debug("Received Command to change channel min time = %d", min_time);
 
-	sme_set_neighbor_scan_min_chan_time(hdd_ctx->mac_handle,
-					    min_time, link_info->vdev_id);
+	sme_set_neighbor_scan_min_chan_time(hdd_ctx->mac_handle, min_time,
+					    link_info->vdev_id);
 
 exit:
 	return ret;
@@ -3765,19 +3682,16 @@ exit:
 
 static int drv_cmd_send_action_frame(struct wlan_hdd_link_info *link_info,
 				     struct hdd_context *hdd_ctx,
-				     uint8_t *command,
-				     uint8_t command_len,
+				     uint8_t *command, uint8_t command_len,
 				     struct hdd_priv_data *priv_data)
 {
 	return hdd_parse_sendactionframe(link_info->adapter, command,
 					 priv_data->total_len);
 }
 
-static int
-drv_cmd_get_roam_scan_channel_min_time(struct wlan_hdd_link_info *link_info,
-				       struct hdd_context *hdd_ctx,
-				       uint8_t *command, uint8_t command_len,
-				       struct hdd_priv_data *priv_data)
+static int drv_cmd_get_roam_scan_channel_min_time(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint16_t val;
@@ -3805,8 +3719,7 @@ drv_cmd_get_roam_scan_channel_min_time(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_set_scan_channel_time(struct wlan_hdd_link_info *link_info,
 					 struct hdd_context *hdd_ctx,
-					 uint8_t *command,
-					 uint8_t command_len,
+					 uint8_t *command, uint8_t command_len,
 					 struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -3820,9 +3733,9 @@ static int drv_cmd_set_scan_channel_time(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou16(value, 10, &max_time);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou16 failed range [%d - %d]",
 			cfg_min(CFG_LFR_NEIGHBOR_SCAN_MAX_CHAN_TIME),
 			cfg_max(CFG_LFR_NEIGHBOR_SCAN_MAX_CHAN_TIME));
@@ -3832,19 +3745,16 @@ static int drv_cmd_set_scan_channel_time(struct wlan_hdd_link_info *link_info,
 
 	if (!cfg_in_range(CFG_LFR_NEIGHBOR_SCAN_MAX_CHAN_TIME, max_time)) {
 		hdd_err("lfr mode value %d is out of range (Min: %d Max: %d)",
-			max_time,
-			cfg_min(CFG_LFR_NEIGHBOR_SCAN_MAX_CHAN_TIME),
+			max_time, cfg_min(CFG_LFR_NEIGHBOR_SCAN_MAX_CHAN_TIME),
 			cfg_max(CFG_LFR_NEIGHBOR_SCAN_MAX_CHAN_TIME));
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	hdd_debug("Received Command to change channel max time = %d",
-		  max_time);
+	hdd_debug("Received Command to change channel max time = %d", max_time);
 
 	sme_set_neighbor_scan_max_chan_time(hdd_ctx->mac_handle,
-					    link_info->vdev_id,
-					    max_time);
+					    link_info->vdev_id, max_time);
 
 exit:
 	return ret;
@@ -3852,8 +3762,7 @@ exit:
 
 static int drv_cmd_get_scan_channel_time(struct wlan_hdd_link_info *link_info,
 					 struct hdd_context *hdd_ctx,
-					 uint8_t *command,
-					 uint8_t command_len,
+					 uint8_t *command, uint8_t command_len,
 					 struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -3864,12 +3773,12 @@ static int drv_cmd_get_scan_channel_time(struct wlan_hdd_link_info *link_info,
 	val = ucfg_cm_get_neighbor_scan_max_chan_time(hdd_ctx->psoc,
 						      link_info->vdev_id);
 
-	hdd_debug("vdev_id: %u, scan channel time: %u",
-		  link_info->vdev_id, val);
+	hdd_debug("vdev_id: %u, scan channel time: %u", link_info->vdev_id,
+		  val);
 
 	/* value is interms of msec */
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-			"GETSCANCHANNELTIME", val);
+	len = scnprintf(extra, sizeof(extra), "%s %d", "GETSCANCHANNELTIME",
+			val);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 
 	if (copy_to_user(priv_data->buf, &extra, len)) {
@@ -3882,8 +3791,7 @@ static int drv_cmd_get_scan_channel_time(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_set_scan_home_time(struct wlan_hdd_link_info *link_info,
 				      struct hdd_context *hdd_ctx,
-				      uint8_t *command,
-				      uint8_t command_len,
+				      uint8_t *command, uint8_t command_len,
 				      struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -3897,9 +3805,9 @@ static int drv_cmd_set_scan_home_time(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou16(value, 10, &val);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou16 failed range [%d - %d]",
 			cfg_min(CFG_LFR_NEIGHBOR_SCAN_TIMER_PERIOD),
 			cfg_max(CFG_LFR_NEIGHBOR_SCAN_TIMER_PERIOD));
@@ -3909,18 +3817,16 @@ static int drv_cmd_set_scan_home_time(struct wlan_hdd_link_info *link_info,
 
 	if (!cfg_in_range(CFG_LFR_NEIGHBOR_SCAN_TIMER_PERIOD, val)) {
 		hdd_err("scan home time value %d is out of range (Min: %d Max: %d)",
-			val,
-			cfg_min(CFG_LFR_NEIGHBOR_SCAN_TIMER_PERIOD),
+			val, cfg_min(CFG_LFR_NEIGHBOR_SCAN_TIMER_PERIOD),
 			cfg_max(CFG_LFR_NEIGHBOR_SCAN_TIMER_PERIOD));
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	hdd_debug("Received Command to change scan home time = %d",
-		  val);
+	hdd_debug("Received Command to change scan home time = %d", val);
 
-	sme_set_neighbor_scan_period(hdd_ctx->mac_handle,
-				     link_info->vdev_id, val);
+	sme_set_neighbor_scan_period(hdd_ctx->mac_handle, link_info->vdev_id,
+				     val);
 
 exit:
 	return ret;
@@ -3928,8 +3834,7 @@ exit:
 
 static int drv_cmd_get_scan_home_time(struct wlan_hdd_link_info *link_info,
 				      struct hdd_context *hdd_ctx,
-				      uint8_t *command,
-				      uint8_t command_len,
+				      uint8_t *command, uint8_t command_len,
 				      struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -3939,12 +3844,10 @@ static int drv_cmd_get_scan_home_time(struct wlan_hdd_link_info *link_info,
 
 	val = ucfg_cm_get_neighbor_scan_period(hdd_ctx->psoc,
 					       link_info->vdev_id);
-	hdd_debug("vdev_id: %u, scan home time: %u",
-		  link_info->vdev_id, val);
+	hdd_debug("vdev_id: %u, scan home time: %u", link_info->vdev_id, val);
 
 	/* value is interms of msec */
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-			"GETSCANHOMETIME", val);
+	len = scnprintf(extra, sizeof(extra), "%s %d", "GETSCANHOMETIME", val);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 
 	if (copy_to_user(priv_data->buf, &extra, len)) {
@@ -3957,8 +3860,7 @@ static int drv_cmd_get_scan_home_time(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_set_roam_intra_band(struct wlan_hdd_link_info *link_info,
 				       struct hdd_context *hdd_ctx,
-				       uint8_t *command,
-				       uint8_t command_len,
+				       uint8_t *command, uint8_t command_len,
 				       struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -3972,9 +3874,9 @@ static int drv_cmd_set_roam_intra_band(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &val);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_ROAM_INTRA_BAND),
 			cfg_max(CFG_LFR_ROAM_INTRA_BAND));
@@ -3982,8 +3884,7 @@ static int drv_cmd_set_roam_intra_band(struct wlan_hdd_link_info *link_info,
 		goto exit;
 	}
 
-	hdd_debug("Received Command to change intra band = %d",
-		  val);
+	hdd_debug("Received Command to change intra band = %d", val);
 
 	ucfg_mlme_set_roam_intra_band(hdd_ctx->psoc, (bool)val);
 
@@ -4004,8 +3905,7 @@ exit:
 
 static int drv_cmd_get_roam_intra_band(struct wlan_hdd_link_info *link_info,
 				       struct hdd_context *hdd_ctx,
-				       uint8_t *command,
-				       uint8_t command_len,
+				       uint8_t *command, uint8_t command_len,
 				       struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -4015,8 +3915,7 @@ static int drv_cmd_get_roam_intra_band(struct wlan_hdd_link_info *link_info,
 
 	ucfg_cm_get_roam_intra_band(hdd_ctx->psoc, &val);
 	/* value is interms of msec */
-	len = scnprintf(extra, sizeof(extra), "%s %d",
-			"GETROAMINTRABAND", val);
+	len = scnprintf(extra, sizeof(extra), "%s %d", "GETROAMINTRABAND", val);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 	if (copy_to_user(priv_data->buf, &extra, len)) {
 		hdd_err("failed to copy data to user buffer");
@@ -4028,8 +3927,7 @@ static int drv_cmd_get_roam_intra_band(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_set_scan_n_probes(struct wlan_hdd_link_info *link_info,
 				     struct hdd_context *hdd_ctx,
-				     uint8_t *command,
-				     uint8_t command_len,
+				     uint8_t *command, uint8_t command_len,
 				     struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -4043,9 +3941,9 @@ static int drv_cmd_set_scan_n_probes(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &nprobes);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_ROAM_SCAN_N_PROBES),
 			cfg_max(CFG_LFR_ROAM_SCAN_N_PROBES));
@@ -4055,18 +3953,16 @@ static int drv_cmd_set_scan_n_probes(struct wlan_hdd_link_info *link_info,
 
 	if (!cfg_in_range(CFG_LFR_ROAM_SCAN_N_PROBES, nprobes)) {
 		hdd_err("NProbes value %d is out of range (Min: %d Max: %d)",
-			nprobes,
-			cfg_min(CFG_LFR_ROAM_SCAN_N_PROBES),
+			nprobes, cfg_min(CFG_LFR_ROAM_SCAN_N_PROBES),
 			cfg_max(CFG_LFR_ROAM_SCAN_N_PROBES));
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	hdd_debug("Received Command to Set nProbes = %d",
-		  nprobes);
+	hdd_debug("Received Command to Set nProbes = %d", nprobes);
 
-	sme_update_roam_scan_n_probes(hdd_ctx->mac_handle,
-				      link_info->vdev_id, nprobes);
+	sme_update_roam_scan_n_probes(hdd_ctx->mac_handle, link_info->vdev_id,
+				      nprobes);
 
 exit:
 	return ret;
@@ -4074,8 +3970,7 @@ exit:
 
 static int drv_cmd_get_scan_n_probes(struct wlan_hdd_link_info *link_info,
 				     struct hdd_context *hdd_ctx,
-				     uint8_t *command,
-				     uint8_t command_len,
+				     uint8_t *command, uint8_t command_len,
 				     struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -4089,8 +3984,7 @@ static int drv_cmd_get_scan_n_probes(struct wlan_hdd_link_info *link_info,
 	if (QDF_IS_STATUS_ERROR(status))
 		return qdf_status_to_os_return(status);
 
-	hdd_debug("vdev_id: %u, scan_n_probes: %u",
-		  link_info->vdev_id, val);
+	hdd_debug("vdev_id: %u, scan_n_probes: %u", link_info->vdev_id, val);
 
 	len = scnprintf(extra, sizeof(extra), "%s %d", command, val);
 	len = QDF_MIN(priv_data->total_len, len + 1);
@@ -4121,9 +4015,9 @@ static int drv_cmd_set_scan_home_away_time(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou16(value, 10, &home_away_time);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_ROAM_SCAN_HOME_AWAY_TIME),
 			cfg_max(CFG_LFR_ROAM_SCAN_HOME_AWAY_TIME));
@@ -4143,9 +4037,8 @@ static int drv_cmd_set_scan_home_away_time(struct wlan_hdd_link_info *link_info,
 	hdd_debug("Received Command to Set scan away time = %d",
 		  home_away_time);
 
-	sme_update_roam_scan_home_away_time(hdd_ctx->mac_handle,
-					    link_info->vdev_id,
-					    home_away_time, true);
+	sme_update_roam_scan_home_away_time(
+		hdd_ctx->mac_handle, link_info->vdev_id, home_away_time, true);
 
 exit:
 	return ret;
@@ -4159,18 +4052,17 @@ static int drv_cmd_get_scan_home_away_time(struct wlan_hdd_link_info *link_info,
 {
 	int ret = 0;
 	uint16_t val;
-	char extra[32] = {0};
+	char extra[32] = { 0 };
 	uint8_t len = 0;
 	QDF_STATUS status;
 
 	status = ucfg_cm_get_roam_scan_home_away_time(hdd_ctx->psoc,
-						      link_info->vdev_id,
-						      &val);
+						      link_info->vdev_id, &val);
 	if (QDF_IS_STATUS_ERROR(status))
 		return qdf_status_to_os_return(status);
 
-	hdd_debug("vdev_id: %u, scan home away time: %u",
-		  link_info->vdev_id, val);
+	hdd_debug("vdev_id: %u, scan home away time: %u", link_info->vdev_id,
+		  val);
 
 	len = scnprintf(extra, sizeof(extra), "%s %d", command, val);
 	len = QDF_MIN(priv_data->total_len, len + 1);
@@ -4184,18 +4076,15 @@ static int drv_cmd_get_scan_home_away_time(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_reassoc(struct wlan_hdd_link_info *link_info,
-			   struct hdd_context *hdd_ctx,
-			   uint8_t *command,
-			   uint8_t command_len,
-			   struct hdd_priv_data *priv_data)
+			   struct hdd_context *hdd_ctx, uint8_t *command,
+			   uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	return hdd_parse_reassoc(link_info->adapter, command,
 				 priv_data->total_len);
 }
 
 static int drv_cmd_set_wes_mode(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -4210,9 +4099,9 @@ static int drv_cmd_set_wes_mode(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &wes_mode);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_ENABLE_WES_MODE),
 			cfg_max(CFG_LFR_ENABLE_WES_MODE));
@@ -4229,8 +4118,7 @@ exit:
 }
 
 static int drv_cmd_get_wes_mode(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -4249,16 +4137,13 @@ static int drv_cmd_get_wes_mode(struct wlan_hdd_link_info *link_info,
 	return ret;
 }
 
-static int
-drv_cmd_set_opportunistic_rssi_diff(struct wlan_hdd_link_info *link_info,
-				    struct hdd_context *hdd_ctx,
-				    uint8_t *command, uint8_t command_len,
-				    struct hdd_priv_data *priv_data)
+static int drv_cmd_set_opportunistic_rssi_diff(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint8_t *value = command;
-	uint8_t diff =
-		cfg_default(CFG_LFR_OPPORTUNISTIC_SCAN_THRESHOLD_DIFF);
+	uint8_t diff = cfg_default(CFG_LFR_OPPORTUNISTIC_SCAN_THRESHOLD_DIFF);
 
 	/* Move pointer to ahead of SETOPPORTUNISTICRSSIDIFF<delimiter> */
 	value = value + command_len + 1;
@@ -4267,9 +4152,9 @@ drv_cmd_set_opportunistic_rssi_diff(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &diff);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed");
 		ret = -EINVAL;
 		goto exit;
@@ -4278,19 +4163,16 @@ drv_cmd_set_opportunistic_rssi_diff(struct wlan_hdd_link_info *link_info,
 	hdd_debug("Received Command to Set Opportunistic Threshold diff = %d",
 		  diff);
 
-	sme_set_roam_opportunistic_scan_threshold_diff(hdd_ctx->mac_handle,
-						       link_info->vdev_id,
-						       diff);
+	sme_set_roam_opportunistic_scan_threshold_diff(
+		hdd_ctx->mac_handle, link_info->vdev_id, diff);
 
 exit:
 	return ret;
 }
 
-static int
-drv_cmd_get_opportunistic_rssi_diff(struct wlan_hdd_link_info *link_info,
-				    struct hdd_context *hdd_ctx,
-				    uint8_t *command, uint8_t command_len,
-				    struct hdd_priv_data *priv_data)
+static int drv_cmd_get_opportunistic_rssi_diff(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	int8_t val = 0;
@@ -4308,11 +4190,9 @@ drv_cmd_get_opportunistic_rssi_diff(struct wlan_hdd_link_info *link_info,
 	return ret;
 }
 
-static int
-drv_cmd_set_roam_rescan_rssi_diff(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command, uint8_t command_len,
-				  struct hdd_priv_data *priv_data)
+static int drv_cmd_set_roam_rescan_rssi_diff(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint8_t *value = command;
@@ -4325,9 +4205,9 @@ drv_cmd_set_roam_rescan_rssi_diff(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &rescan_rssi_diff);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed");
 		ret = -EINVAL;
 		goto exit;
@@ -4336,18 +4216,16 @@ drv_cmd_set_roam_rescan_rssi_diff(struct wlan_hdd_link_info *link_info,
 	hdd_debug("Received Command to Set Roam Rescan RSSI Diff = %d",
 		  rescan_rssi_diff);
 
-	sme_set_roam_rescan_rssi_diff(hdd_ctx->mac_handle,
-				      link_info->vdev_id, rescan_rssi_diff);
+	sme_set_roam_rescan_rssi_diff(hdd_ctx->mac_handle, link_info->vdev_id,
+				      rescan_rssi_diff);
 
 exit:
 	return ret;
 }
 
-static int
-drv_cmd_get_roam_rescan_rssi_diff(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command, uint8_t command_len,
-				  struct hdd_priv_data *priv_data)
+static int drv_cmd_get_roam_rescan_rssi_diff(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint8_t val = 0;
@@ -4366,8 +4244,7 @@ drv_cmd_get_roam_rescan_rssi_diff(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_set_fast_roam(struct wlan_hdd_link_info *link_info,
-				 struct hdd_context *hdd_ctx,
-				 uint8_t *command,
+				 struct hdd_context *hdd_ctx, uint8_t *command,
 				 uint8_t command_len,
 				 struct hdd_priv_data *priv_data)
 {
@@ -4382,9 +4259,9 @@ static int drv_cmd_set_fast_roam(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &lfr_mode);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_FEATURE_ENABLED),
 			cfg_max(CFG_LFR_FEATURE_ENABLED));
@@ -4392,13 +4269,11 @@ static int drv_cmd_set_fast_roam(struct wlan_hdd_link_info *link_info,
 		goto exit;
 	}
 
-	hdd_debug("Received Command to change lfr mode = %d",
-		  lfr_mode);
+	hdd_debug("Received Command to change lfr mode = %d", lfr_mode);
 
 	ucfg_mlme_set_lfr_enabled(hdd_ctx->psoc, (bool)lfr_mode);
-	sme_update_is_fast_roam_ini_feature_enabled(hdd_ctx->mac_handle,
-						    link_info->vdev_id,
-						    lfr_mode);
+	sme_update_is_fast_roam_ini_feature_enabled(
+		hdd_ctx->mac_handle, link_info->vdev_id, lfr_mode);
 
 exit:
 	return ret;
@@ -4406,8 +4281,7 @@ exit:
 
 static int drv_cmd_set_fast_transition(struct wlan_hdd_link_info *link_info,
 				       struct hdd_context *hdd_ctx,
-				       uint8_t *command,
-				       uint8_t command_len,
+				       uint8_t *command, uint8_t command_len,
 				       struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -4421,9 +4295,9 @@ static int drv_cmd_set_fast_transition(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &ft);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_FAST_TRANSITION_ENABLED),
 			cfg_max(CFG_LFR_FAST_TRANSITION_ENABLED));
@@ -4440,8 +4314,7 @@ exit:
 }
 
 static int drv_cmd_fast_reassoc(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -4468,8 +4341,8 @@ static int drv_cmd_fast_reassoc(struct wlan_hdd_link_info *link_info,
 		goto exit;
 	}
 
-	ret = hdd_parse_reassoc_command_v1_data(value, bssid,
-						&freq, hdd_ctx->pdev);
+	ret = hdd_parse_reassoc_command_v1_data(value, bssid, &freq,
+						hdd_ctx->pdev);
 	if (ret) {
 		hdd_err("Failed to parse reassoc command data");
 		goto exit;
@@ -4484,8 +4357,7 @@ exit:
 }
 
 static int drv_cmd_set_okc_mode(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -4499,13 +4371,15 @@ static int drv_cmd_set_okc_mode(struct wlan_hdd_link_info *link_info,
 	hdd_get_pmkid_modes(hdd_ctx, &pmkid_modes);
 
 	/*
-	 * Check if the features PMKID/ESE/11R are supported simultaneously,
-	 * then this operation is not permitted (return FAILURE)
-	 */
+   * Check if the features PMKID/ESE/11R are supported simultaneously,
+   * then this operation is not permitted (return FAILURE)
+   */
 	if (ucfg_cm_get_is_ese_feature_enabled(hdd_ctx->psoc) &&
 	    pmkid_modes.fw_okc &&
 	    ucfg_cm_get_is_ft_feature_enabled(hdd_ctx->psoc)) {
-		hdd_warn("PMKID/ESE/11R are supported simultaneously hence this operation is not permitted!");
+		hdd_warn(
+			"PMKID/ESE/11R are supported simultaneously hence this operation "
+			"is not permitted!");
 		ret = -EPERM;
 		goto exit;
 	}
@@ -4524,18 +4398,17 @@ static int drv_cmd_set_okc_mode(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou32(value, 10, &okc_mode);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("value out of range [0 - 1]");
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	if ((okc_mode < 0) ||
-	    (okc_mode > 1)) {
+	if ((okc_mode < 0) || (okc_mode > 1)) {
 		hdd_err("Okc mode value %d is out of range (Min: 0 Max: 1)",
-			  okc_mode);
+			okc_mode);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -4545,8 +4418,7 @@ static int drv_cmd_set_okc_mode(struct wlan_hdd_link_info *link_info,
 		cur_pmkid_modes |= CFG_PMKID_MODES_OKC;
 	else
 		cur_pmkid_modes &= ~CFG_PMKID_MODES_OKC;
-	status = ucfg_mlme_set_pmkid_modes(hdd_ctx->psoc,
-					   cur_pmkid_modes);
+	status = ucfg_mlme_set_pmkid_modes(hdd_ctx->psoc, cur_pmkid_modes);
 	if (status != QDF_STATUS_SUCCESS) {
 		ret = -EPERM;
 		hdd_err("set pmkid modes failed");
@@ -4556,8 +4428,7 @@ exit:
 }
 
 static int drv_cmd_bt_coex_mode(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -4582,8 +4453,7 @@ static int drv_cmd_bt_coex_mode(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_scan_active(struct wlan_hdd_link_info *link_info,
-			       struct hdd_context *hdd_ctx,
-			       uint8_t *command,
+			       struct hdd_context *hdd_ctx, uint8_t *command,
 			       uint8_t command_len,
 			       struct hdd_priv_data *priv_data)
 {
@@ -4592,8 +4462,7 @@ static int drv_cmd_scan_active(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_scan_passive(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -4602,8 +4471,7 @@ static int drv_cmd_scan_passive(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_get_dwell_time(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command,
+				  struct hdd_context *hdd_ctx, uint8_t *command,
 				  uint8_t command_len,
 				  struct hdd_priv_data *priv_data)
 {
@@ -4612,8 +4480,8 @@ static int drv_cmd_get_dwell_time(struct wlan_hdd_link_info *link_info,
 	uint8_t len = 0;
 
 	memset(extra, 0, sizeof(extra));
-	ret = hdd_get_dwell_time(hdd_ctx->psoc, command, extra,
-				 sizeof(extra), &len);
+	ret = hdd_get_dwell_time(hdd_ctx->psoc, command, extra, sizeof(extra),
+				 &len);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 	if (ret != 0 || copy_to_user(priv_data->buf, &extra, len)) {
 		hdd_err("failed to copy data to user buffer");
@@ -4626,8 +4494,7 @@ exit:
 }
 
 static int drv_cmd_set_dwell_time(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command,
+				  struct hdd_context *hdd_ctx, uint8_t *command,
 				  uint8_t command_len,
 				  struct hdd_priv_data *priv_data)
 {
@@ -4635,8 +4502,7 @@ static int drv_cmd_set_dwell_time(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_conc_set_dwell_time(struct wlan_hdd_link_info *link_info,
-				       struct hdd_context *hdd_ctx,
-				       u8 *command,
+				       struct hdd_context *hdd_ctx, u8 *command,
 				       u8 command_len,
 				       struct hdd_priv_data *priv_data)
 {
@@ -4644,8 +4510,7 @@ static int drv_cmd_conc_set_dwell_time(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_miracast(struct wlan_hdd_link_info *link_info,
-			    struct hdd_context *hdd_ctx,
-			    uint8_t *command,
+			    struct hdd_context *hdd_ctx, uint8_t *command,
 			    uint8_t command_len,
 			    struct hdd_priv_data *priv_data)
 {
@@ -4663,9 +4528,9 @@ static int drv_cmd_miracast(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &filter_type);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range");
 		ret = -EINVAL;
 		goto exit;
@@ -4678,15 +4543,14 @@ static int drv_cmd_miracast(struct wlan_hdd_link_info *link_info,
 	case MIRACAST_SINK:
 		break;
 	case MIRACAST_CONN_OPT_ENABLED:
-	case MIRACAST_CONN_OPT_DISABLED:
-		{
-			wma_cli_set_command(
-				link_info->vdev_id,
-				wmi_pdev_param_power_collapse_enable,
-				(filter_type == MIRACAST_CONN_OPT_ENABLED ?
-				 0 : 1), PDEV_CMD);
-			return 0;
-		}
+	case MIRACAST_CONN_OPT_DISABLED: {
+		wma_cli_set_command(
+			link_info->vdev_id,
+			wmi_pdev_param_power_collapse_enable,
+			(filter_type == MIRACAST_CONN_OPT_ENABLED ? 0 : 1),
+			PDEV_CMD);
+		return 0;
+	}
 	default:
 		hdd_err("accepted Values: 0-Disabled, 1-Source, 2-Sink, 128,129");
 		ret = -EINVAL;
@@ -4695,10 +4559,9 @@ static int drv_cmd_miracast(struct wlan_hdd_link_info *link_info,
 
 	/* Filtertype value should be either 0-Disabled, 1-Source, 2-sink */
 	hdd_ctx->miracast_value = filter_type;
-	ucfg_mlme_set_vdev_traffic_low_latency(hdd_ctx->psoc,
-					       link_info->vdev_id,
-					       filter_type !=
-					       MIRACAST_DISABLED);
+	ucfg_mlme_set_vdev_traffic_low_latency(
+		hdd_ctx->psoc, link_info->vdev_id,
+		filter_type != MIRACAST_DISABLED);
 
 	ret_status = sme_set_miracast(hdd_ctx->mac_handle, filter_type);
 	if (QDF_STATUS_SUCCESS != ret_status) {
@@ -4721,8 +4584,7 @@ exit:
 
 static int drv_cmd_tput_debug_mode_enable(struct wlan_hdd_link_info *link_info,
 					  struct hdd_context *hdd_ctx,
-					  u8 *command,
-					  u8 command_len,
+					  u8 *command, u8 command_len,
 					  struct hdd_priv_data *priv_data)
 {
 	return hdd_enable_unit_test_commands(link_info->adapter, hdd_ctx);
@@ -4730,19 +4592,16 @@ static int drv_cmd_tput_debug_mode_enable(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_tput_debug_mode_disable(struct wlan_hdd_link_info *link_info,
 					   struct hdd_context *hdd_ctx,
-					   u8 *command,
-					   u8 command_len,
+					   u8 *command, u8 command_len,
 					   struct hdd_priv_data *priv_data)
 {
 	return hdd_disable_unit_test_commands(link_info->adapter, hdd_ctx);
 }
 
 #ifdef FEATURE_WLAN_ESE
-static int
-drv_cmd_set_ccx_roam_scan_channels(struct wlan_hdd_link_info *link_info,
-				   struct hdd_context *hdd_ctx,
-				   uint8_t *command, uint8_t command_len,
-				   struct hdd_priv_data *priv_data)
+static int drv_cmd_set_ccx_roam_scan_channels(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint8_t *value = command;
@@ -4793,8 +4652,7 @@ exit:
 }
 
 static int drv_cmd_get_tsm_stats(struct wlan_hdd_link_info *link_info,
-				 struct hdd_context *hdd_ctx,
-				 uint8_t *command,
+				 struct hdd_context *hdd_ctx, uint8_t *command,
 				 uint8_t command_len,
 				 struct hdd_priv_data *priv_data)
 {
@@ -4805,7 +4663,7 @@ static int drv_cmd_get_tsm_stats(struct wlan_hdd_link_info *link_info,
 	uint8_t tid = 0;
 	struct hdd_adapter *adapter = link_info->adapter;
 	struct hdd_station_ctx *sta_ctx;
-	tAniTrafStrmMetrics tsm_metrics = {0};
+	tAniTrafStrmMetrics tsm_metrics = { 0 };
 
 	if ((QDF_STA_MODE != adapter->device_mode) &&
 	    (QDF_P2P_CLIENT_MODE != adapter->device_mode)) {
@@ -4831,59 +4689,54 @@ static int drv_cmd_get_tsm_stats(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &tid);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
-		hdd_err("kstrtou8 failed range [%d - %d]",
-			  TID_MIN_VALUE,
-			  TID_MAX_VALUE);
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
+		hdd_err("kstrtou8 failed range [%d - %d]", TID_MIN_VALUE,
+			TID_MAX_VALUE);
 		ret = -EINVAL;
 		goto exit;
 	}
 	if ((tid < TID_MIN_VALUE) || (tid > TID_MAX_VALUE)) {
-		hdd_err("tid value %d is out of range (Min: %d Max: %d)",
-			  tid, TID_MIN_VALUE, TID_MAX_VALUE);
+		hdd_err("tid value %d is out of range (Min: %d Max: %d)", tid,
+			TID_MIN_VALUE, TID_MAX_VALUE);
 		ret = -EINVAL;
 		goto exit;
 	}
-	hdd_debug("Received Command to get tsm stats tid = %d",
-		 tid);
+	hdd_debug("Received Command to get tsm stats tid = %d", tid);
 	ret = hdd_get_tsm_stats(adapter, tid, &tsm_metrics);
 	if (ret) {
 		hdd_err("failed to get tsm stats");
 		goto exit;
 	}
 	hdd_debug(
-		"UplinkPktQueueDly(%d) UplinkPktQueueDlyHist[0](%d) UplinkPktQueueDlyHist[1](%d) UplinkPktQueueDlyHist[2](%d) UplinkPktQueueDlyHist[3](%d) UplinkPktTxDly(%u) UplinkPktLoss(%d) UplinkPktCount(%d) RoamingCount(%d) RoamingDly(%d)",
-		  tsm_metrics.UplinkPktQueueDly,
-		  tsm_metrics.UplinkPktQueueDlyHist[0],
-		  tsm_metrics.UplinkPktQueueDlyHist[1],
-		  tsm_metrics.UplinkPktQueueDlyHist[2],
-		  tsm_metrics.UplinkPktQueueDlyHist[3],
-		  tsm_metrics.UplinkPktTxDly,
-		  tsm_metrics.UplinkPktLoss,
-		  tsm_metrics.UplinkPktCount,
-		  tsm_metrics.RoamingCount,
-		  tsm_metrics.RoamingDly);
+		"UplinkPktQueueDly(%d) UplinkPktQueueDlyHist[0](%d) "
+		"UplinkPktQueueDlyHist[1](%d) UplinkPktQueueDlyHist[2](%d) "
+		"UplinkPktQueueDlyHist[3](%d) UplinkPktTxDly(%u) UplinkPktLoss(%d) "
+		"UplinkPktCount(%d) RoamingCount(%d) RoamingDly(%d)",
+		tsm_metrics.UplinkPktQueueDly,
+		tsm_metrics.UplinkPktQueueDlyHist[0],
+		tsm_metrics.UplinkPktQueueDlyHist[1],
+		tsm_metrics.UplinkPktQueueDlyHist[2],
+		tsm_metrics.UplinkPktQueueDlyHist[3],
+		tsm_metrics.UplinkPktTxDly, tsm_metrics.UplinkPktLoss,
+		tsm_metrics.UplinkPktCount, tsm_metrics.RoamingCount,
+		tsm_metrics.RoamingDly);
 	/*
-	 * Output TSM stats is of the format
-	 * GETTSMSTATS [PktQueueDly]
-	 * [PktQueueDlyHist[0]]:[PktQueueDlyHist[1]] ...[RoamingDly]
-	 * eg., GETTSMSTATS 10 1:0:0:161 20 1 17 8 39800
-	 */
-	len = scnprintf(extra,
-			sizeof(extra),
-			"%s %d %d:%d:%d:%d %u %d %d %d %d",
-			command,
+   * Output TSM stats is of the format
+   * GETTSMSTATS [PktQueueDly]
+   * [PktQueueDlyHist[0]]:[PktQueueDlyHist[1]] ...[RoamingDly]
+   * eg., GETTSMSTATS 10 1:0:0:161 20 1 17 8 39800
+   */
+	len = scnprintf(extra, sizeof(extra),
+			"%s %d %d:%d:%d:%d %u %d %d %d %d", command,
 			tsm_metrics.UplinkPktQueueDly,
 			tsm_metrics.UplinkPktQueueDlyHist[0],
 			tsm_metrics.UplinkPktQueueDlyHist[1],
 			tsm_metrics.UplinkPktQueueDlyHist[2],
 			tsm_metrics.UplinkPktQueueDlyHist[3],
-			tsm_metrics.UplinkPktTxDly,
-			tsm_metrics.UplinkPktLoss,
-			tsm_metrics.UplinkPktCount,
-			tsm_metrics.RoamingCount,
+			tsm_metrics.UplinkPktTxDly, tsm_metrics.UplinkPktLoss,
+			tsm_metrics.UplinkPktCount, tsm_metrics.RoamingCount,
 			tsm_metrics.RoamingDly);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 	if (copy_to_user(priv_data->buf, &extra, len)) {
@@ -4897,8 +4750,7 @@ exit:
 }
 
 static int drv_cmd_set_cckm_ie(struct wlan_hdd_link_info *link_info,
-			       struct hdd_context *hdd_ctx,
-			       uint8_t *command,
+			       struct hdd_context *hdd_ctx, uint8_t *command,
 			       uint8_t command_len,
 			       struct hdd_priv_data *priv_data)
 {
@@ -4915,7 +4767,7 @@ static int drv_cmd_set_cckm_ie(struct wlan_hdd_link_info *link_info,
 
 	if (cckm_ie_len > DOT11F_IE_RSN_MAX_LEN) {
 		hdd_err("CCKM Ie input length is more than max[%d]",
-			  DOT11F_IE_RSN_MAX_LEN);
+			DOT11F_IE_RSN_MAX_LEN);
 		if (cckm_ie) {
 			qdf_mem_free(cckm_ie);
 			cckm_ie = NULL;
@@ -4936,14 +4788,13 @@ exit:
 }
 
 static int drv_cmd_ccx_beacon_req(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command,
+				  struct hdd_context *hdd_ctx, uint8_t *command,
 				  uint8_t command_len,
 				  struct hdd_priv_data *priv_data)
 {
 	int ret;
 	uint8_t *value = command;
-	tCsrEseBeaconReq req = {0};
+	tCsrEseBeaconReq req = { 0 };
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct hdd_adapter *adapter = link_info->adapter;
 
@@ -4966,25 +4817,23 @@ static int drv_cmd_ccx_beacon_req(struct wlan_hdd_link_info *link_info,
 		if (!req.numBcnReqIe)
 			return -EINVAL;
 
-		hdd_indicate_ese_bcn_report_no_results(adapter,
-			req.bcnReq[0].measurementToken,
+		hdd_indicate_ese_bcn_report_no_results(
+			adapter, req.bcnReq[0].measurementToken,
 			0x02, /* BIT(1) set for measurement done */
-			0);   /* no BSS */
+			0); /* no BSS */
 		goto exit;
 	}
 
 	status = sme_set_ese_beacon_request(hdd_ctx->mac_handle,
-					    link_info->vdev_id,
-					    &req);
+					    link_info->vdev_id, &req);
 
 	if (QDF_STATUS_E_RESOURCES == status) {
 		hdd_err("sme_set_ese_beacon_request failed (%d), a request already in progress",
-			  status);
+			status);
 		ret = -EBUSY;
 		goto exit;
 	} else if (QDF_STATUS_SUCCESS != status) {
-		hdd_err("sme_set_ese_beacon_request failed (%d)",
-			status);
+		hdd_err("sme_set_ese_beacon_request failed (%d)", status);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -5006,8 +4855,7 @@ exit:
  * Return: 0 on success; negative errno otherwise
  */
 static int drv_cmd_ccx_plm_req(struct wlan_hdd_link_info *link_info,
-			       struct hdd_context *hdd_ctx,
-			       uint8_t *command,
+			       struct hdd_context *hdd_ctx, uint8_t *command,
 			       uint8_t command_len,
 			       struct hdd_priv_data *priv_data)
 {
@@ -5041,8 +4889,7 @@ static int drv_cmd_ccx_plm_req(struct wlan_hdd_link_info *link_info,
  * Return: 0 on success; negative errno otherwise
  */
 static int drv_cmd_set_ccx_mode(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -5055,13 +4902,15 @@ static int drv_cmd_set_ccx_mode(struct wlan_hdd_link_info *link_info,
 	hdd_get_pmkid_modes(hdd_ctx, &pmkid_modes);
 	mac_handle = hdd_ctx->mac_handle;
 	/*
-	 * Check if the features OKC/ESE/11R are supported simultaneously,
-	 * then this operation is not permitted (return FAILURE)
-	 */
+   * Check if the features OKC/ESE/11R are supported simultaneously,
+   * then this operation is not permitted (return FAILURE)
+   */
 	if (ucfg_cm_get_is_ese_feature_enabled(hdd_ctx->psoc) &&
 	    pmkid_modes.fw_okc &&
 	    ucfg_cm_get_is_ft_feature_enabled(hdd_ctx->psoc)) {
-		hdd_warn("OKC/ESE/11R are supported simultaneously hence this operation is not permitted!");
+		hdd_warn(
+			"OKC/ESE/11R are supported simultaneously hence this operation is "
+			"not permitted!");
 		ret = -EPERM;
 		goto exit;
 	}
@@ -5073,9 +4922,9 @@ static int drv_cmd_set_ccx_mode(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &ese_mode);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
 			cfg_min(CFG_LFR_ESE_FEATURE_ENABLED),
 			cfg_max(CFG_LFR_ESE_FEATURE_ENABLED));
@@ -5085,8 +4934,7 @@ static int drv_cmd_set_ccx_mode(struct wlan_hdd_link_info *link_info,
 
 	hdd_debug("Received Command to change ese mode = %d", ese_mode);
 
-	sme_update_is_ese_feature_enabled(mac_handle,
-					  link_info->vdev_id,
+	sme_update_is_ese_feature_enabled(mac_handle, link_info->vdev_id,
 					  ese_mode);
 
 exit:
@@ -5095,8 +4943,8 @@ exit:
 #endif /* FEATURE_WLAN_ESE */
 
 static int drv_cmd_set_mc_rate(struct wlan_hdd_link_info *link_info,
-			       struct hdd_context *hdd_ctx,
-			       uint8_t *command, uint8_t command_len,
+			       struct hdd_context *hdd_ctx, uint8_t *command,
+			       uint8_t command_len,
 			       struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -5116,8 +4964,7 @@ static int drv_cmd_set_mc_rate(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_max_tx_power(struct wlan_hdd_link_info *link_info,
-				struct hdd_context *hdd_ctx,
-				uint8_t *command,
+				struct hdd_context *hdd_ctx, uint8_t *command,
 				uint8_t command_len,
 				struct hdd_priv_data *priv_data)
 {
@@ -5137,7 +4984,8 @@ static int drv_cmd_max_tx_power(struct wlan_hdd_link_info *link_info,
 	}
 
 	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
-					   dbgid) {
+					   dbgid)
+	{
 		/* Assign correct self MAC address */
 		if (adapter->device_mode == QDF_SAP_MODE ||
 		    adapter->device_mode == QDF_P2P_GO_MODE) {
@@ -5151,24 +4999,23 @@ static int drv_cmd_max_tx_power(struct wlan_hdd_link_info *link_info,
 						 &sta_ctx->conn_info.bssid);
 		}
 
-		qdf_copy_macaddr(&selfmac,
-				 &adapter->mac_addr);
+		qdf_copy_macaddr(&selfmac, &adapter->mac_addr);
 
-		hdd_debug("Device mode %d max tx power %d selfMac: "
-			  QDF_MAC_ADDR_FMT " bssId: " QDF_MAC_ADDR_FMT,
-			  adapter->device_mode, tx_power,
-			  QDF_MAC_ADDR_REF(selfmac.bytes),
-			  QDF_MAC_ADDR_REF(bssid.bytes));
+		hdd_debug(
+			"Device mode %d max tx power %d selfMac: " QDF_MAC_ADDR_FMT
+			" bssId: " QDF_MAC_ADDR_FMT,
+			adapter->device_mode, tx_power,
+			QDF_MAC_ADDR_REF(selfmac.bytes),
+			QDF_MAC_ADDR_REF(bssid.bytes));
 
-		status = sme_set_max_tx_power(hdd_ctx->mac_handle,
-					      bssid, selfmac, tx_power);
+		status = sme_set_max_tx_power(hdd_ctx->mac_handle, bssid,
+					      selfmac, tx_power);
 		if (QDF_STATUS_SUCCESS != status) {
 			hdd_err("Set max tx power failed");
 			ret = -EINVAL;
 			hdd_adapter_dev_put_debug(adapter, dbgid);
 			if (next_adapter)
-				hdd_adapter_dev_put_debug(next_adapter,
-							  dbgid);
+				hdd_adapter_dev_put_debug(next_adapter, dbgid);
 			goto exit;
 		}
 		hdd_debug("Set max tx power success");
@@ -5195,33 +5042,31 @@ static int drv_cmd_set_dfs_scan_mode(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &dfs_scan_mode);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed range [%d - %d]",
-			  cfg_min(CFG_LFR_ROAMING_DFS_CHANNEL),
-			  cfg_max(CFG_LFR_ROAMING_DFS_CHANNEL));
+			cfg_min(CFG_LFR_ROAMING_DFS_CHANNEL),
+			cfg_max(CFG_LFR_ROAMING_DFS_CHANNEL));
 		ret = -EINVAL;
 		goto exit;
 	}
 
 	if (!cfg_in_range(CFG_LFR_ROAMING_DFS_CHANNEL, dfs_scan_mode)) {
 		hdd_err("dfs_scan_mode value %d is out of range (Min: %d Max: %d)",
-			  dfs_scan_mode,
-			  cfg_min(CFG_LFR_ROAMING_DFS_CHANNEL),
-			  cfg_max(CFG_LFR_ROAMING_DFS_CHANNEL));
+			dfs_scan_mode, cfg_min(CFG_LFR_ROAMING_DFS_CHANNEL),
+			cfg_max(CFG_LFR_ROAMING_DFS_CHANNEL));
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	hdd_debug("Received Command to Set DFS Scan Mode = %d",
-		  dfs_scan_mode);
+	hdd_debug("Received Command to Set DFS Scan Mode = %d", dfs_scan_mode);
 
 	/* When DFS scanning is disabled, the DFS channels need to be
-	 * removed from the operation of device.
-	 */
-	ret = wlan_hdd_enable_dfs_chan_scan(hdd_ctx,
-			dfs_scan_mode != ROAMING_DFS_CHANNEL_DISABLED);
+   * removed from the operation of device.
+   */
+	ret = wlan_hdd_enable_dfs_chan_scan(
+		hdd_ctx, dfs_scan_mode != ROAMING_DFS_CHANNEL_DISABLED);
 	if (ret < 0) {
 		/* Some conditions prevented it from disabling DFS channels */
 		hdd_err("disable/enable DFS channel request was denied");
@@ -5237,8 +5082,7 @@ exit:
 
 static int drv_cmd_get_dfs_scan_mode(struct wlan_hdd_link_info *link_info,
 				     struct hdd_context *hdd_ctx,
-				     uint8_t *command,
-				     uint8_t command_len,
+				     uint8_t *command, uint8_t command_len,
 				     struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -5258,8 +5102,7 @@ static int drv_cmd_get_dfs_scan_mode(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_get_link_status(struct wlan_hdd_link_info *link_info,
 				   struct hdd_context *hdd_ctx,
-				   uint8_t *command,
-				   uint8_t command_len,
+				   uint8_t *command, uint8_t command_len,
 				   struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -5279,8 +5122,7 @@ static int drv_cmd_get_link_status(struct wlan_hdd_link_info *link_info,
 
 #ifdef WLAN_FEATURE_EXTWOW_SUPPORT
 static int drv_cmd_enable_ext_wow(struct wlan_hdd_link_info *link_info,
-				  struct hdd_context *hdd_ctx,
-				  uint8_t *command,
+				  struct hdd_context *hdd_ctx, uint8_t *command,
 				  uint8_t command_len,
 				  struct hdd_priv_data *priv_data)
 {
@@ -5295,14 +5137,13 @@ static int drv_cmd_enable_ext_wow(struct wlan_hdd_link_info *link_info,
 		return -EINVAL;
 	}
 
-	return hdd_enable_ext_wow_parser(link_info->adapter,
-					 link_info->vdev_id, set_value);
+	return hdd_enable_ext_wow_parser(link_info->adapter, link_info->vdev_id,
+					 set_value);
 }
 
 static int drv_cmd_set_app1_params(struct wlan_hdd_link_info *link_info,
 				   struct hdd_context *hdd_ctx,
-				   uint8_t *command,
-				   uint8_t command_len,
+				   uint8_t *command, uint8_t command_len,
 				   struct hdd_priv_data *priv_data)
 {
 	int ret;
@@ -5311,8 +5152,8 @@ static int drv_cmd_set_app1_params(struct wlan_hdd_link_info *link_info,
 	/* Move pointer to ahead of SETAPP1PARAMS */
 	value = value + command_len;
 
-	ret = hdd_set_app_type1_parser(link_info->adapter,
-				       value, strlen(value));
+	ret = hdd_set_app_type1_parser(link_info->adapter, value,
+				       strlen(value));
 	if (ret >= 0)
 		hdd_ctx->is_extwow_app_type1_param_set = true;
 
@@ -5321,8 +5162,7 @@ static int drv_cmd_set_app1_params(struct wlan_hdd_link_info *link_info,
 
 static int drv_cmd_set_app2_params(struct wlan_hdd_link_info *link_info,
 				   struct hdd_context *hdd_ctx,
-				   uint8_t *command,
-				   uint8_t command_len,
+				   uint8_t *command, uint8_t command_len,
 				   struct hdd_priv_data *priv_data)
 {
 	int ret;
@@ -5331,8 +5171,8 @@ static int drv_cmd_set_app2_params(struct wlan_hdd_link_info *link_info,
 	/* Move pointer to ahead of SETAPP2PARAMS */
 	value = value + command_len;
 
-	ret = hdd_set_app_type2_parser(link_info->adapter,
-				       value, strlen(value));
+	ret = hdd_set_app_type2_parser(link_info->adapter, value,
+				       strlen(value));
 	if (ret >= 0)
 		hdd_ctx->is_extwow_app_type2_param_set = true;
 
@@ -5345,10 +5185,9 @@ static int drv_cmd_set_app2_params(struct wlan_hdd_link_info *link_info,
  * argv: 1 means that force scan on gaming mode
  */
 static int driver_cmd_set_scan_ext_flag(struct wlan_hdd_link_info *link_info,
-				   struct hdd_context *hdd_ctx,
-				   uint8_t *command,
-				   uint8_t command_len,
-				   struct hdd_priv_data *priv_data)
+					struct hdd_context *hdd_ctx,
+					uint8_t *command, uint8_t command_len,
+					struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint8_t *value = command;
@@ -5361,16 +5200,17 @@ static int driver_cmd_set_scan_ext_flag(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &external_flag);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed Input value may be out of range");
 		ret = -EINVAL;
 		return ret;
 	}
 
 	link_info->adapter->scan_ext_flag = external_flag;
-	hdd_debug("driver_cmd_set_scan_ext_flag: %d ", link_info->adapter->scan_ext_flag);
+	hdd_debug("driver_cmd_set_scan_ext_flag: %d ",
+		  link_info->adapter->scan_ext_flag);
 	return ret;
 }
 #endif /* CFG_SUPPORT_SCAN_EXT_FLAG */
@@ -5389,11 +5229,9 @@ static int driver_cmd_set_scan_ext_flag(struct wlan_hdd_link_info *link_info,
  *
  * Return: 0 on success; negative errno otherwise
  */
-static int
-drv_cmd_tdls_secondary_channel_offset(struct wlan_hdd_link_info *link_info,
-				      struct hdd_context *hdd_ctx,
-				      uint8_t *command, uint8_t command_len,
-				      struct hdd_priv_data *priv_data)
+static int drv_cmd_tdls_secondary_channel_offset(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	int ret;
 	uint8_t *value = command;
@@ -5428,8 +5266,7 @@ drv_cmd_tdls_secondary_channel_offset(struct wlan_hdd_link_info *link_info,
  */
 static int drv_cmd_tdls_off_channel_mode(struct wlan_hdd_link_info *link_info,
 					 struct hdd_context *hdd_ctx,
-					 uint8_t *command,
-					 uint8_t command_len,
+					 uint8_t *command, uint8_t command_len,
 					 struct hdd_priv_data *priv_data)
 {
 	int ret;
@@ -5445,8 +5282,8 @@ static int drv_cmd_tdls_off_channel_mode(struct wlan_hdd_link_info *link_info,
 
 	hdd_debug("Tdls offchannel mode:%d", set_value);
 
-	ret = hdd_set_tdls_offchannelmode(hdd_ctx,
-					  link_info->adapter, set_value);
+	ret = hdd_set_tdls_offchannelmode(hdd_ctx, link_info->adapter,
+					  set_value);
 
 	return ret;
 }
@@ -5465,8 +5302,7 @@ static int drv_cmd_tdls_off_channel_mode(struct wlan_hdd_link_info *link_info,
  */
 static int drv_cmd_tdls_off_channel(struct wlan_hdd_link_info *link_info,
 				    struct hdd_context *hdd_ctx,
-				    uint8_t *command,
-				    uint8_t command_len,
+				    uint8_t *command, uint8_t command_len,
 				    struct hdd_priv_data *priv_data)
 {
 	int ret;
@@ -5483,13 +5319,12 @@ static int drv_cmd_tdls_off_channel(struct wlan_hdd_link_info *link_info,
 		return -EINVAL;
 
 	ch_freq = wlan_reg_legacy_chan_to_freq(hdd_ctx->pdev, channel);
-	reg_state =
-		wlan_reg_get_channel_state_for_pwrmode(hdd_ctx->pdev, ch_freq,
-						       REG_CURRENT_PWR_MODE);
+	reg_state = wlan_reg_get_channel_state_for_pwrmode(
+		hdd_ctx->pdev, ch_freq, REG_CURRENT_PWR_MODE);
 
 	if (reg_state == CHANNEL_STATE_DFS ||
-		reg_state == CHANNEL_STATE_DISABLE ||
-		reg_state == CHANNEL_STATE_INVALID) {
+	    reg_state == CHANNEL_STATE_DISABLE ||
+	    reg_state == CHANNEL_STATE_INVALID) {
 		hdd_err("reg state of the  channel %d is %d and not supported",
 			channel, reg_state);
 		return -EINVAL;
@@ -5515,8 +5350,8 @@ static int drv_cmd_tdls_off_channel(struct wlan_hdd_link_info *link_info,
  * Return: 0 on success; negative errno otherwise
  */
 static int drv_cmd_tdls_scan(struct wlan_hdd_link_info *link_info,
-			     struct hdd_context *hdd_ctx,
-			     uint8_t *command, uint8_t command_len,
+			     struct hdd_context *hdd_ctx, uint8_t *command,
+			     uint8_t command_len,
 			     struct hdd_priv_data *priv_data)
 {
 	int ret;
@@ -5539,8 +5374,8 @@ static int drv_cmd_tdls_scan(struct wlan_hdd_link_info *link_info,
 #endif
 
 static int drv_cmd_get_rssi(struct wlan_hdd_link_info *link_info,
-			    struct hdd_context *hdd_ctx,
-			    uint8_t *command, uint8_t command_len,
+			    struct hdd_context *hdd_ctx, uint8_t *command,
+			    uint8_t command_len,
 			    struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
@@ -5563,8 +5398,7 @@ static int drv_cmd_get_rssi(struct wlan_hdd_link_info *link_info,
 }
 
 static int drv_cmd_get_linkspeed(struct wlan_hdd_link_info *link_info,
-				 struct hdd_context *hdd_ctx,
-				 uint8_t *command,
+				 struct hdd_context *hdd_ctx, uint8_t *command,
 				 uint8_t command_len,
 				 struct hdd_priv_data *priv_data)
 {
@@ -5602,7 +5436,7 @@ static int drv_cmd_get_linkspeed(struct wlan_hdd_link_info *link_info,
  * Return: 0 for success, non-zero for failure
  */
 static int hdd_set_rx_filter(struct hdd_adapter *adapter, bool action,
-			uint8_t pattern)
+			     uint8_t pattern)
 {
 	int ret;
 	uint8_t i, j;
@@ -5626,37 +5460,36 @@ static int hdd_set_rx_filter(struct hdd_adapter *adapter, bool action,
 	}
 
 	/*
-	 * If action is false it means start dropping packets
-	 * Set addr_filter_pattern which will be used when sending
-	 * MC/BC address list to target
-	 */
+   * If action is false it means start dropping packets
+   * Set addr_filter_pattern which will be used when sending
+   * MC/BC address list to target
+   */
 	if (!action)
 		adapter->addr_filter_pattern = pattern;
 	else
 		adapter->addr_filter_pattern = 0;
 
 	if (((adapter->device_mode == QDF_STA_MODE) ||
-		(adapter->device_mode == QDF_P2P_CLIENT_MODE)) &&
-		adapter->mc_addr_list.mc_cnt &&
-		hdd_cm_is_vdev_associated(adapter->deflink)) {
-
-
+	     (adapter->device_mode == QDF_P2P_CLIENT_MODE)) &&
+	    adapter->mc_addr_list.mc_cnt &&
+	    hdd_cm_is_vdev_associated(adapter->deflink)) {
 		filter = qdf_mem_malloc(sizeof(*filter));
 		if (!filter)
 			return -ENOMEM;
 
 		filter->action = action;
 		for (i = 0, j = 0; i < adapter->mc_addr_list.mc_cnt; i++) {
-			if (!memcmp(adapter->mc_addr_list.addr[i],
-				&pattern, 1)) {
+			if (!memcmp(adapter->mc_addr_list.addr[i], &pattern,
+				    1)) {
 				memcpy(filter->multicastAddr[j].bytes,
-					adapter->mc_addr_list.addr[i],
-					sizeof(adapter->mc_addr_list.addr[i]));
+				       adapter->mc_addr_list.addr[i],
+				       sizeof(adapter->mc_addr_list.addr[i]));
 
-				hdd_debug("%s RX filter : addr ="
-				    QDF_MAC_ADDR_FMT,
-				    action ? "setting" : "clearing",
-				    QDF_MAC_ADDR_REF(filter->multicastAddr[j].bytes));
+				hdd_debug(
+					"%s RX filter : addr =" QDF_MAC_ADDR_FMT,
+					action ? "setting" : "clearing",
+					QDF_MAC_ADDR_REF(
+						filter->multicastAddr[j].bytes));
 				j++;
 			}
 			if (j == SIR_MAX_NUM_MULTICAST_ADDRESS)
@@ -5668,8 +5501,8 @@ static int hdd_set_rx_filter(struct hdd_adapter *adapter, bool action,
 					filter);
 		qdf_mem_free(filter);
 	} else {
-		hdd_debug("mode %d mc_cnt %d",
-			  adapter->device_mode, adapter->mc_addr_list.mc_cnt);
+		hdd_debug("mode %d mc_cnt %d", adapter->device_mode,
+			  adapter->mc_addr_list.mc_cnt);
 	}
 
 	return 0;
@@ -5702,8 +5535,8 @@ static int hdd_set_rx_filter(struct hdd_adapter *adapter, bool action,
  * Return: 0 for success, non-zero for failure
  */
 static int hdd_driver_rxfilter_command_handler(uint8_t *command,
-						struct hdd_adapter *adapter,
-						bool action)
+					       struct hdd_adapter *adapter,
+					       bool action)
 {
 	int ret = 0;
 	uint8_t *value;
@@ -5747,8 +5580,8 @@ static int drv_cmd_rx_filter_remove(struct wlan_hdd_link_info *link_info,
 				    uint8_t *command, uint8_t command_len,
 				    struct hdd_priv_data *priv_data)
 {
-	return hdd_driver_rxfilter_command_handler(command,
-						   link_info->adapter, false);
+	return hdd_driver_rxfilter_command_handler(command, link_info->adapter,
+						   false);
 }
 
 /**
@@ -5760,12 +5593,12 @@ static int drv_cmd_rx_filter_remove(struct wlan_hdd_link_info *link_info,
  * @priv_data: Pointer to private data in command
  */
 static int drv_cmd_rx_filter_add(struct wlan_hdd_link_info *link_info,
-				 struct hdd_context *hdd_ctx,
-				 uint8_t *command, uint8_t command_len,
+				 struct hdd_context *hdd_ctx, uint8_t *command,
+				 uint8_t command_len,
 				 struct hdd_priv_data *priv_data)
 {
-	return hdd_driver_rxfilter_command_handler(command,
-						   link_info->adapter, true);
+	return hdd_driver_rxfilter_command_handler(command, link_info->adapter,
+						   true);
 }
 #endif /* WLAN_FEATURE_PACKET_FILTERING */
 
@@ -5837,12 +5670,12 @@ static bool hdd_is_supported_chain_mask_2x2(struct hdd_context *hdd_ctx)
 	QDF_STATUS status;
 	bool bval = false;
 
-/*
-	 * Revisit and the update logic to determine the number
-	 * of TX/RX chains supported in the system when
-	 * antenna sharing per band chain mask support is
-	 * brought in
-	 */
+	/*
+   * Revisit and the update logic to determine the number
+   * of TX/RX chains supported in the system when
+   * antenna sharing per band chain mask support is
+   * brought in
+   */
 	status = ucfg_mlme_get_vht_enable2x2(hdd_ctx->psoc, &bval);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		hdd_err("unable to get vht_enable2x2");
@@ -5863,11 +5696,11 @@ static bool hdd_is_supported_chain_mask_1x1(struct hdd_context *hdd_ctx)
 	bool bval = false;
 
 	/*
-	 * Revisit and update the logic to determine the number
-	 * of TX/RX chains supported in the system when
-	 * antenna sharing per band chain mask support is
-	 * brought in
-	 */
+   * Revisit and update the logic to determine the number
+   * of TX/RX chains supported in the system when
+   * antenna sharing per band chain mask support is
+   * brought in
+   */
 	status = ucfg_mlme_get_vht_enable2x2(hdd_ctx->psoc, &bval);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		hdd_err("unable to get vht_enable2x2");
@@ -5891,11 +5724,11 @@ QDF_STATUS hdd_update_smps_antenna_mode(struct hdd_context *hdd_ctx, int mode)
 		smps_mode = HDD_SMPS_MODE_DISABLED;
 	}
 
-	hdd_debug("Update SME SMPS enable: %d mode: %d",
-		 smps_enable, smps_mode);
+	hdd_debug("Update SME SMPS enable: %d mode: %d", smps_enable,
+		  smps_mode);
 	mac_handle = hdd_ctx->mac_handle;
-	status = sme_update_mimo_power_save(mac_handle, smps_enable,
-					    smps_mode, false);
+	status = sme_update_mimo_power_save(mac_handle, smps_enable, smps_mode,
+					    false);
 	if (QDF_STATUS_SUCCESS != status) {
 		hdd_err("Update SMPS config failed enable: %d mode: %d status: %d",
 			smps_enable, smps_mode, status);
@@ -5904,16 +5737,15 @@ QDF_STATUS hdd_update_smps_antenna_mode(struct hdd_context *hdd_ctx, int mode)
 
 	hdd_ctx->current_antenna_mode = mode;
 	/*
-	 * Update the user requested nss in the mac context.
-	 * This will be used in tdls protocol engine to form tdls
-	 * Management frames.
-	 */
+   * Update the user requested nss in the mac context.
+   * This will be used in tdls protocol engine to form tdls
+   * Management frames.
+   */
 	sme_update_user_configured_nss(mac_handle,
 				       hdd_ctx->current_antenna_mode);
 
 	hdd_debug("Successfully switched to mode: %d x %d",
-		 hdd_ctx->current_antenna_mode,
-		 hdd_ctx->current_antenna_mode);
+		  hdd_ctx->current_antenna_mode, hdd_ctx->current_antenna_mode);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -5948,7 +5780,7 @@ wlan_hdd_soc_set_antenna_mode_cb(enum set_antenna_mode_status status,
 
 int hdd_set_antenna_mode(struct wlan_hdd_link_info *link_info, int mode)
 {
-	struct hdd_adapter *adapter =  link_info->adapter;
+	struct hdd_adapter *adapter = link_info->adapter;
 	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	struct sir_antenna_mode_param params;
 	QDF_STATUS status;
@@ -5975,9 +5807,8 @@ int hdd_set_antenna_mode(struct wlan_hdd_link_info *link_info, int mode)
 	}
 
 	if (hdd_ctx->dynamic_nss_chains_support)
-		return hdd_set_dynamic_antenna_mode(link_info,
-						    params.num_rx_chains,
-						    params.num_tx_chains);
+		return hdd_set_dynamic_antenna_mode(
+			link_info, params.num_rx_chains, params.num_tx_chains);
 
 	if ((HDD_ANTENNA_MODE_2X2 == mode) &&
 	    (!hdd_is_supported_chain_mask_2x2(hdd_ctx))) {
@@ -6010,8 +5841,7 @@ int hdd_set_antenna_mode(struct wlan_hdd_link_info *link_info, int mode)
 	params.set_antenna_mode_ctx = osif_request_cookie(request);
 	params.set_antenna_mode_resp = (void *)wlan_hdd_soc_set_antenna_mode_cb;
 	hdd_debug("Set antenna mode rx chains: %d tx chains: %d",
-		 params.num_rx_chains,
-		 params.num_tx_chains);
+		  params.num_rx_chains, params.num_tx_chains);
 
 	status = sme_soc_set_antenna_mode(hdd_ctx->mac_handle, &params);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -6035,8 +5865,8 @@ int hdd_set_antenna_mode(struct wlan_hdd_link_info *link_info, int mode)
 request_put:
 	osif_request_put(request);
 exit:
-	hdd_debug("Set antenna status: %d current mode: %d",
-		 ret, hdd_ctx->current_antenna_mode);
+	hdd_debug("Set antenna status: %d current mode: %d", ret,
+		  hdd_ctx->current_antenna_mode);
 
 	return ret;
 }
@@ -6080,10 +5910,9 @@ static int drv_cmd_set_antenna_mode(struct wlan_hdd_link_info *link_info,
  *
  * Return: None
  */
-static void
-hdd_get_dynamic_antenna_mode(uint32_t *antenna_mode,
-			     bool dynamic_nss_chains_support,
-			     struct wlan_objmgr_vdev *vdev)
+static void hdd_get_dynamic_antenna_mode(uint32_t *antenna_mode,
+					 bool dynamic_nss_chains_support,
+					 struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_mlme_nss_chains *nss_chains_dynamic_cfg;
 
@@ -6096,9 +5925,9 @@ hdd_get_dynamic_antenna_mode(uint32_t *antenna_mode,
 		return;
 	}
 	/*
-	 * At present, this command doesn't include band, so by default
-	 * it will return the band 2ghz present rf chains.
-	 */
+   * At present, this command doesn't include band, so by default
+   * it will return the band 2ghz present rf chains.
+   */
 	*antenna_mode =
 		nss_chains_dynamic_cfg->num_rx_chains[NSS_CHAINS_BAND_2GHZ];
 }
@@ -6136,8 +5965,7 @@ static inline int drv_cmd_get_antenna_mode(struct wlan_hdd_link_info *link_info,
 	hdd_get_dynamic_antenna_mode(&antenna_mode,
 				     hdd_ctx->dynamic_nss_chains_support, vdev);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_ID);
-	len = scnprintf(extra, sizeof(extra), "%s %d", command,
-			antenna_mode);
+	len = scnprintf(extra, sizeof(extra), "%s %d", command, antenna_mode);
 	len = QDF_MIN(priv_data->total_len, len + 1);
 	if (copy_to_user(priv_data->buf, &extra, len)) {
 		hdd_err("Failed to copy data to user buffer");
@@ -6153,10 +5981,8 @@ static inline int drv_cmd_get_antenna_mode(struct wlan_hdd_link_info *link_info,
  * dummy (no-op) hdd driver command handler
  */
 static int drv_cmd_dummy(struct wlan_hdd_link_info *link_info,
-			 struct hdd_context *hdd_ctx,
-			 uint8_t *command,
-			 uint8_t command_len,
-			 struct hdd_priv_data *priv_data)
+			 struct hdd_context *hdd_ctx, uint8_t *command,
+			 uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	hdd_debug("%s: Ignoring driver command \"%s\"",
 		  link_info->adapter->dev->name, command);
@@ -6167,17 +5993,15 @@ static int drv_cmd_dummy(struct wlan_hdd_link_info *link_info,
  * handler for any unsupported wlan hdd driver command
  */
 static int drv_cmd_invalid(struct hdd_adapter *adapter,
-			   struct hdd_context *hdd_ctx,
-			   uint8_t *command,
-			   uint8_t command_len,
-			   struct hdd_priv_data *priv_data)
+			   struct hdd_context *hdd_ctx, uint8_t *command,
+			   uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	qdf_mtrace(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
-		   TRACE_CODE_HDD_UNSUPPORTED_IOCTL,
-		   adapter->deflink->vdev_id, 0);
+		   TRACE_CODE_HDD_UNSUPPORTED_IOCTL, adapter->deflink->vdev_id,
+		   0);
 
-	hdd_debug("%s: Unsupported driver command \"%s\"",
-		  adapter->dev->name, command);
+	hdd_debug("%s: Unsupported driver command \"%s\"", adapter->dev->name,
+		  command);
 
 	return -ENOTSUPP;
 }
@@ -6194,8 +6018,7 @@ static int hdd_apply_fcc_constraint(struct hdd_context *hdd_ctx,
 {
 	QDF_STATUS status;
 
-	status = ucfg_reg_set_fcc_constraint(hdd_ctx->pdev,
-					     fcc_constraint);
+	status = ucfg_reg_set_fcc_constraint(hdd_ctx->pdev, fcc_constraint);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Failed to update tx power for channels 12/13");
 		return qdf_status_to_os_return(status);
@@ -6222,24 +6045,21 @@ static int hdd_apply_fcc_constraint(struct hdd_context *hdd_ctx,
  *
  * Return:  Return 0 incase of success else return error number
  */
-static int
-hdd_apply_fcc_constraint_update_band(struct wlan_hdd_link_info *link_info,
-				     struct hdd_context *hdd_ctx,
-				     bool fcc_constraint,
-				     bool dis_6g_keep_sta_cli_conn,
-				     uint32_t band_bitmap)
+static int hdd_apply_fcc_constraint_update_band(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	bool fcc_constraint, bool dis_6g_keep_sta_cli_conn,
+	uint32_t band_bitmap)
 {
 	QDF_STATUS status;
 
-	status = ucfg_reg_set_fcc_constraint(hdd_ctx->pdev,
-					     fcc_constraint);
+	status = ucfg_reg_set_fcc_constraint(hdd_ctx->pdev, fcc_constraint);
 	if (status) {
 		hdd_err("Failed to update tx power for channels 12/13");
 		return qdf_status_to_os_return(status);
 	}
 
-	status = ucfg_reg_set_keep_6ghz_sta_cli_connection(hdd_ctx->pdev,
-						dis_6g_keep_sta_cli_conn);
+	status = ucfg_reg_set_keep_6ghz_sta_cli_connection(
+		hdd_ctx->pdev, dis_6g_keep_sta_cli_conn);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Failed to update keep sta cli connection");
 		return qdf_status_to_os_return(status);
@@ -6272,18 +6092,18 @@ static int drv_cmd_set_fcc_channel(struct wlan_hdd_link_info *link_info,
 	bool modify_band = false;
 
 	/*
-	 * This command would be called by user-space when it detects WLAN
-	 * ON after airplane mode is set. When APM is set, WLAN turns off.
-	 * But it can be turned back on. Otherwise; when APM is turned back
-	 * off, WLAN would turn back on. So at that point the command is
-	 * expected to come down.
-	 * a) 0 means reduce power as per fcc constraint and disable 6 GHz band
-	 *    but keep existing STA/P2P Client connections intact.
-	 * b) 1 means reduce power as per fcc constraint and enable 6 GHz band.
-	 * c) 2 means reset fcc constraint but disable 6 GHz band but keep
-	 *    existing STA/P2P Client connections intact.
-	 * d) -1 means reset fcc constraint and enable 6 GHz band.
-	 */
+   * This command would be called by user-space when it detects WLAN
+   * ON after airplane mode is set. When APM is set, WLAN turns off.
+   * But it can be turned back on. Otherwise; when APM is turned back
+   * off, WLAN would turn back on. So at that point the command is
+   * expected to come down.
+   * a) 0 means reduce power as per fcc constraint and disable 6 GHz band
+   *    but keep existing STA/P2P Client connections intact.
+   * b) 1 means reduce power as per fcc constraint and enable 6 GHz band.
+   * c) 2 means reset fcc constraint but disable 6 GHz band but keep
+   *    existing STA/P2P Client connections intact.
+   * d) -1 means reset fcc constraint and enable 6 GHz band.
+   */
 
 	err = kstrtos8(command + command_len + 1, 10, &input_value);
 	if (err) {
@@ -6315,8 +6135,8 @@ static int drv_cmd_set_fcc_channel(struct wlan_hdd_link_info *link_info,
 		return -EINVAL;
 	}
 
-	status = ucfg_mlme_is_rf_test_mode_enabled(hdd_ctx->psoc,
-						   &rf_test_mode);
+	status =
+		ucfg_mlme_is_rf_test_mode_enabled(hdd_ctx->psoc, &rf_test_mode);
 	if (!QDF_IS_STATUS_SUCCESS(status_6G)) {
 		hdd_err("Get rf test mode failed");
 		return qdf_status_to_os_return(status);
@@ -6339,24 +6159,21 @@ static int drv_cmd_set_fcc_channel(struct wlan_hdd_link_info *link_info,
 		}
 
 		hdd_debug("Current band bitmap = %d, set band bitmap = %d",
-			  curr_band_bitmap,
-			  band_bitmap);
+			  curr_band_bitmap, band_bitmap);
 
 		if (band_bitmap != curr_band_bitmap)
 			modify_band = true;
 
 		if (ucfg_reg_is_fcc_constraint_set(hdd_ctx->pdev) ==
-		    fcc_constraint &&
+			    fcc_constraint &&
 		    ucfg_reg_get_keep_6ghz_sta_cli_connection(hdd_ctx->pdev) ==
-		    dis_6g_keep_sta_cli_conn) {
+			    dis_6g_keep_sta_cli_conn) {
 			hdd_debug("Same FCC constraint and band bitmap value");
 			return 0;
 		} else if (modify_band) {
-			return hdd_apply_fcc_constraint_update_band(link_info,
-						hdd_ctx,
-						fcc_constraint,
-						dis_6g_keep_sta_cli_conn,
-						band_bitmap);
+			return hdd_apply_fcc_constraint_update_band(
+				link_info, hdd_ctx, fcc_constraint,
+				dis_6g_keep_sta_cli_conn, band_bitmap);
 		}
 	} else {
 		if (ucfg_reg_is_fcc_constraint_set(hdd_ctx->pdev) ==
@@ -6384,8 +6201,8 @@ static int drv_cmd_set_fcc_channel(struct wlan_hdd_link_info *link_info,
  * Return: 0 for success, non-zero for failure
  */
 static int hdd_parse_set_channel_switch_command(uint8_t *value,
-					 uint32_t *chan_number,
-					 uint32_t *chan_bw)
+						uint32_t *chan_number,
+						uint32_t *chan_bw)
 {
 	const uint8_t *in_ptr = value;
 	int ret;
@@ -6450,14 +6267,14 @@ static int drv_cmd_set_channel_switch(struct wlan_hdd_link_info *link_info,
 	enum phy_ch_width width;
 
 	if ((adapter->device_mode != QDF_P2P_GO_MODE) &&
-		(adapter->device_mode != QDF_SAP_MODE)) {
+	    (adapter->device_mode != QDF_SAP_MODE)) {
 		hdd_err("IOCTL CHANNEL_SWITCH not supported for mode %d",
 			adapter->device_mode);
 		return -EINVAL;
 	}
 
-	status = hdd_parse_set_channel_switch_command(value,
-							&chan_number, &chan_bw);
+	status = hdd_parse_set_channel_switch_command(value, &chan_number,
+						      &chan_bw);
 	if (status) {
 		hdd_err("Invalid CHANNEL_SWITCH command");
 		return status;
@@ -6529,14 +6346,13 @@ void wlan_hdd_free_cache_channels(struct hdd_context *hdd_ctx)
 static int hdd_alloc_chan_cache(struct hdd_context *hdd_ctx, int num_chan)
 {
 	hdd_ctx->original_channels =
-			qdf_mem_malloc(sizeof(struct hdd_cache_channels));
+		qdf_mem_malloc(sizeof(struct hdd_cache_channels));
 	if (!hdd_ctx->original_channels)
 		return -ENOMEM;
 
 	hdd_ctx->original_channels->num_channels = num_chan;
-	hdd_ctx->original_channels->channel_info =
-					qdf_mem_malloc(num_chan *
-					sizeof(struct hdd_cache_channel_info));
+	hdd_ctx->original_channels->channel_info = qdf_mem_malloc(
+		num_chan * sizeof(struct hdd_cache_channel_info));
 	if (!hdd_ctx->original_channels->channel_info) {
 		hdd_ctx->original_channels->num_channels = 0;
 		qdf_mem_free(hdd_ctx->original_channels);
@@ -6605,7 +6421,8 @@ static void disconnect_sta_and_restart_sap(struct hdd_context *hdd_ctx,
 		}
 
 		ap_ctx = WLAN_HDD_GET_AP_CTX_PTR(adapter->deflink);
-		if (check_disable_channels(hdd_ctx, ap_ctx->operating_chan_freq))
+		if (check_disable_channels(hdd_ctx,
+					   ap_ctx->operating_chan_freq))
 			policy_mgr_check_sap_restart(hdd_ctx->psoc,
 						     adapter->deflink->vdev_id);
 next_adapter:
@@ -6657,7 +6474,7 @@ static int hdd_parse_disable_chan_cmd(struct hdd_adapter *adapter, uint8_t *ptr)
 	param++;
 
 	/*removing empty spaces*/
-	while ((SPACE_ASCII_VALUE  == *param) && ('\0' !=  *param))
+	while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
 		param++;
 
 	/*no argument followed by spaces*/
@@ -6679,9 +6496,9 @@ static int hdd_parse_disable_chan_cmd(struct hdd_adapter *adapter, uint8_t *ptr)
 
 	if (!temp_int) {
 		/*
-		 * Restore and Free the cache channels when the command is
-		 * received with num channels as 0
-		 */
+     * Restore and Free the cache channels when the command is
+     * received with num channels as 0
+     */
 		wlan_hdd_restore_channels(hdd_ctx);
 		return 0;
 	}
@@ -6709,9 +6526,9 @@ static int hdd_parse_disable_chan_cmd(struct hdd_adapter *adapter, uint8_t *ptr)
 
 	for (j = 0; j < num_channels; j++) {
 		/*
-		 * param pointing to the beginning of first space
-		 * after number of channels
-		 */
+     * param pointing to the beginning of first space
+     * after number of channels
+     */
 		param = strpbrk(param, " ");
 		/*no channel list after the number of channels argument*/
 		if (!param) {
@@ -6745,8 +6562,8 @@ static int hdd_parse_disable_chan_cmd(struct hdd_adapter *adapter, uint8_t *ptr)
 		}
 
 		hdd_debug("channel[%d] = %d", j, temp_int);
-		chan_freq_list[j] = wlan_reg_legacy_chan_to_freq(hdd_ctx->pdev,
-								 temp_int);
+		chan_freq_list[j] =
+			wlan_reg_legacy_chan_to_freq(hdd_ctx->pdev, temp_int);
 	}
 
 	/*extra arguments check*/
@@ -6755,7 +6572,7 @@ static int hdd_parse_disable_chan_cmd(struct hdd_adapter *adapter, uint8_t *ptr)
 		while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
 			param++;
 
-		if ('\0' !=  *param) {
+		if ('\0' != *param) {
 			hdd_err("Invalid argument received");
 			ret = -EINVAL;
 			goto parse_failed;
@@ -6763,26 +6580,24 @@ static int hdd_parse_disable_chan_cmd(struct hdd_adapter *adapter, uint8_t *ptr)
 	}
 
 	/*
-	 * If command is received first time, cache the channels to
-	 * be disabled else compare the channels received in the
-	 * command with the cached channels, if channel list matches
-	 * return success otherwise return failure.
-	 */
+   * If command is received first time, cache the channels to
+   * be disabled else compare the channels received in the
+   * command with the cached channels, if channel list matches
+   * return success otherwise return failure.
+   */
 	if (!is_command_repeated) {
 		for (j = 0; j < num_channels; j++)
 			hdd_ctx->original_channels->channel_info[j].freq =
-							chan_freq_list[j];
+				chan_freq_list[j];
 
 		/* Cache the channel list in regulatory also */
-		ucfg_reg_cache_channel_freq_state(hdd_ctx->pdev,
-						  chan_freq_list,
+		ucfg_reg_cache_channel_freq_state(hdd_ctx->pdev, chan_freq_list,
 						  num_channels);
 	} else {
 		for (i = 0; i < num_channels; i++) {
 			for (j = 0; j < num_channels; j++)
-				if (hdd_ctx->original_channels->
-					channel_info[i].freq ==
-							chan_freq_list[j])
+				if (hdd_ctx->original_channels->channel_info[i]
+					    .freq == chan_freq_list[j])
 					break;
 			if (j == num_channels) {
 				ret = -EINVAL;
@@ -6800,9 +6615,8 @@ mem_alloc_failed:
 		ret = wlan_hdd_disable_channels(hdd_ctx);
 		if (ret)
 			return ret;
-		disconnect_sta_and_restart_sap(
-					hdd_ctx,
-					REASON_OPER_CHANNEL_BAND_CHANGE);
+		disconnect_sta_and_restart_sap(hdd_ctx,
+					       REASON_OPER_CHANNEL_BAND_CHANGE);
 	}
 
 	hdd_exit();
@@ -6823,8 +6637,7 @@ parse_failed:
 
 static int drv_cmd_set_disable_chan_list(struct wlan_hdd_link_info *link_info,
 					 struct hdd_context *hdd_ctx,
-					 uint8_t *command,
-					 uint8_t command_len,
+					 uint8_t *command, uint8_t command_len,
 					 struct hdd_priv_data *priv_data)
 {
 	return hdd_parse_disable_chan_cmd(link_info->adapter, command);
@@ -6855,10 +6668,10 @@ static int hdd_get_disable_ch_list(struct hdd_context *hdd_ctx, uint8_t *buf,
 				"GET_DISABLE_CHANNEL_LIST", num_ch);
 		ch_list = hdd_ctx->original_channels->channel_info;
 		for (i = 0; (i < num_ch) && (len < buf_len - 1); i++) {
-			len += scnprintf(buf + len, buf_len - len,
-					 " %d",
-					 wlan_reg_freq_to_chan(hdd_ctx->pdev,
-							      ch_list[i].freq));
+			len += scnprintf(
+				buf + len, buf_len - len, " %d",
+				wlan_reg_freq_to_chan(hdd_ctx->pdev,
+						      ch_list[i].freq));
 		}
 	}
 	qdf_mutex_release(&hdd_ctx->cache_channel_lock);
@@ -6871,7 +6684,7 @@ static int drv_cmd_get_disable_chan_list(struct wlan_hdd_link_info *link_info,
 					 uint8_t *command, uint8_t command_len,
 					 struct hdd_priv_data *priv_data)
 {
-	char extra[512] = {0};
+	char extra[512] = { 0 };
 	int max_len, copied_length;
 
 	hdd_debug("Received Command to get disable Channels list");
@@ -6893,11 +6706,9 @@ static int drv_cmd_get_disable_chan_list(struct wlan_hdd_link_info *link_info,
 }
 #else
 
-static inline int
-drv_cmd_set_disable_chan_list(struct wlan_hdd_link_info *link_info,
-			      struct hdd_context *hdd_ctx,
-			      uint8_t *command, uint8_t command_len,
-			      struct hdd_priv_data *priv_data)
+static inline int drv_cmd_set_disable_chan_list(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	return 0;
 }
@@ -6906,11 +6717,9 @@ void wlan_hdd_free_cache_channels(struct hdd_context *hdd_ctx)
 {
 }
 
-static inline int
-drv_cmd_get_disable_chan_list(struct wlan_hdd_link_info *link_info,
-			      struct hdd_context *hdd_ctx,
-			      uint8_t *command, uint8_t command_len,
-			      struct hdd_priv_data *priv_data)
+static inline int drv_cmd_get_disable_chan_list(
+	struct wlan_hdd_link_info *link_info, struct hdd_context *hdd_ctx,
+	uint8_t *command, uint8_t command_len, struct hdd_priv_data *priv_data)
 {
 	return 0;
 }
@@ -6918,8 +6727,8 @@ drv_cmd_get_disable_chan_list(struct wlan_hdd_link_info *link_info,
 
 #ifdef FEATURE_ANI_LEVEL_REQUEST
 static int drv_cmd_get_ani_level(struct wlan_hdd_link_info *link_info,
-				 struct hdd_context *hdd_ctx,
-				 uint8_t *command, uint8_t command_len,
+				 struct hdd_context *hdd_ctx, uint8_t *command,
+				 uint8_t command_len,
 				 struct hdd_priv_data *priv_data)
 {
 	struct hdd_adapter *adapter = link_info->adapter;
@@ -6945,7 +6754,7 @@ static int drv_cmd_get_ani_level(struct wlan_hdd_link_info *link_info,
 	param++;
 
 	/* Removing empty spaces*/
-	while ((SPACE_ASCII_VALUE  == *param) && ('\0' !=  *param))
+	while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
 		param++;
 
 	/*no argument followed by spaces */
@@ -6972,9 +6781,9 @@ static int drv_cmd_get_ani_level(struct wlan_hdd_link_info *link_info,
 
 	for (j = 0; j < num_freqs; j++) {
 		/*
-		 * Param pointing to the beginning of first space
-		 * after number of channels.
-		 */
+     * Param pointing to the beginning of first space
+     * after number of channels.
+     */
 		param = strpbrk(param, " ");
 		/*no channel list after the number of channels argument*/
 		if (!param) {
@@ -7011,7 +6820,7 @@ static int drv_cmd_get_ani_level(struct wlan_hdd_link_info *link_info,
 		while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
 			param++;
 
-		if ('\0' !=  *param) {
+		if ('\0' != *param) {
 			hdd_err("Invalid argument received");
 			ret = -EINVAL;
 			goto parse_failed;
@@ -7020,9 +6829,8 @@ static int drv_cmd_get_ani_level(struct wlan_hdd_link_info *link_info,
 
 	qdf_mem_zero(ani, sizeof(ani));
 	hdd_debug("num_freq: %d", num_freqs);
-	if (QDF_IS_STATUS_ERROR(wlan_hdd_get_ani_level(adapter, ani,
-						       parsed_freqs,
-						       num_freqs))) {
+	if (QDF_IS_STATUS_ERROR(wlan_hdd_get_ani_level(
+		    adapter, ani, parsed_freqs, num_freqs))) {
 		hdd_err("Unable to retrieve ani level");
 		return -EINVAL;
 	}
@@ -7034,12 +6842,12 @@ static int drv_cmd_get_ani_level(struct wlan_hdd_link_info *link_info,
 	}
 
 	/*
-	 * Find the number of channels that are populated. If freq is not
-	 * filled then stop count there
-	 */
-	for (num_recv_channels = 0;
-	     (num_recv_channels < num_freqs &&
-	     ani[num_recv_channels].chan_freq); num_recv_channels++)
+   * Find the number of channels that are populated. If freq is not
+   * filled then stop count there
+   */
+	for (num_recv_channels = 0; (num_recv_channels < num_freqs &&
+				     ani[num_recv_channels].chan_freq);
+	     num_recv_channels++)
 		;
 
 	for (j = 0; j < num_recv_channels; j++) {
@@ -7086,8 +6894,7 @@ static inline int drv_cmd_get_ani_level(struct wlan_hdd_link_info *link_info,
 #ifdef FUNC_CALL_MAP
 static int drv_cmd_get_function_call_map(struct wlan_hdd_link_info *link_info,
 					 struct hdd_context *hdd_ctx,
-					 uint8_t *command,
-					 uint8_t command_len,
+					 uint8_t *command, uint8_t command_len,
 					 struct hdd_priv_data *priv_data)
 {
 	char *cc_buf = qdf_mem_malloc(QDF_FUNCTION_CALL_MAP_BUF_LEN);
@@ -7106,7 +6913,7 @@ static int drv_cmd_get_function_call_map(struct wlan_hdd_link_info *link_info,
 	param++;
 
 	/*removing empty spaces*/
-	while ((SPACE_ASCII_VALUE  == *param) && ('\0' !=  *param))
+	while ((SPACE_ASCII_VALUE == *param) && ('\0' != *param))
 		param++;
 
 	/*no argument followed by spaces*/
@@ -7126,10 +6933,10 @@ static int drv_cmd_get_function_call_map(struct wlan_hdd_link_info *link_info,
 
 	/* Read the buffer */
 	if (temp_int) {
-	/*
-	 * These logs are required as these indicates the start and end of the
-	 * dump for the auto script to parse
-	 */
+		/*
+     * These logs are required as these indicates the start and end of the
+     * dump for the auto script to parse
+     */
 		hdd_info("Function call map dump start");
 		qdf_get_func_call_map(cc_buf);
 		qdf_trace_hex_dump(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_DEBUG,
@@ -7146,10 +6953,9 @@ static int drv_cmd_get_function_call_map(struct wlan_hdd_link_info *link_info,
 #endif
 
 static int drv_cmd_set_phymode(struct wlan_hdd_link_info *link_info,
-					struct hdd_context *hdd_ctx,
-					uint8_t *command,
-					uint8_t command_len,
-					struct hdd_priv_data *priv_data)
+			       struct hdd_context *hdd_ctx, uint8_t *command,
+			       uint8_t command_len,
+			       struct hdd_priv_data *priv_data)
 {
 	int ret = 0;
 	uint8_t *value = command;
@@ -7160,9 +6966,9 @@ static int drv_cmd_set_phymode(struct wlan_hdd_link_info *link_info,
 	ret = kstrtou8(value, 10, &new_phymode);
 	if (ret < 0) {
 		/*
-		 * If the input value is greater than max value of datatype,
-		 * then also kstrtou8 fails
-		 */
+     * If the input value is greater than max value of datatype,
+     * then also kstrtou8 fails
+     */
 		hdd_err("kstrtou8 failed Input value may be out of range");
 		ret = -EINVAL;
 		goto exit;
@@ -7177,120 +6983,120 @@ exit:
  * IOCTL driver commands and the handler for each of them.
  */
 static const struct hdd_drv_cmd hdd_drv_cmds[] = {
-	{"P2P_DEV_ADDR",              drv_cmd_p2p_dev_addr, false},
-	{"P2P_SET_NOA",               drv_cmd_p2p_set_noa, true},
-	{"P2P_SET_PS",                drv_cmd_p2p_set_ps, true},
-	{"SETBAND",                   drv_cmd_set_band, true},
-	{"SETWMMPS",                  drv_cmd_set_wmmps, true},
-	{"COUNTRY",                   drv_cmd_country, true},
-	{"SETCOUNTRYREV",             drv_cmd_country, true},
-	{"GETCOUNTRYREV",             drv_cmd_get_country, false},
-	{"SETSUSPENDMODE",            drv_cmd_set_suspend_mode, true},
-	{"SET_AP_WPS_P2P_IE",         drv_cmd_dummy, false},
-	{"SETROAMTRIGGER",            drv_cmd_set_roam_trigger, true},
-	{"GETROAMTRIGGER",            drv_cmd_get_roam_trigger, false},
-	{"SETROAMSCANPERIOD",         drv_cmd_set_roam_scan_period, true},
-	{"GETROAMSCANPERIOD",         drv_cmd_get_roam_scan_period, false},
-	{"SETROAMSCANREFRESHPERIOD",  drv_cmd_set_roam_scan_refresh_period,
-	 true},
-	{"GETROAMSCANREFRESHPERIOD",  drv_cmd_get_roam_scan_refresh_period,
-	 false},
-	{"SETROAMMODE",               drv_cmd_set_roam_mode, true},
-	{"GETROAMMODE",               drv_cmd_get_roam_mode, false},
-	{"SETROAMDELTA",              drv_cmd_set_roam_delta, true},
-	{"GETROAMDELTA",              drv_cmd_get_roam_delta, false},
-	{"GETBAND",                   drv_cmd_get_band, false},
-	{"GETCCXMODE",                drv_cmd_get_ccx_mode, false},
-	{"GETOKCMODE",                drv_cmd_get_okc_mode, false},
-	{"GETFASTROAM",               drv_cmd_get_fast_roam, false},
-	{"GETFASTTRANSITION",         drv_cmd_get_fast_transition, false},
-	{"SETROAMSCANCHANNELMINTIME", drv_cmd_set_roam_scan_channel_min_time,
-	 true},
-	{"SENDACTIONFRAME",           drv_cmd_send_action_frame, true},
-	{"GETROAMSCANCHANNELMINTIME", drv_cmd_get_roam_scan_channel_min_time,
-	 false},
-	{"SETSCANCHANNELTIME",        drv_cmd_set_scan_channel_time, true},
-	{"GETSCANCHANNELTIME",        drv_cmd_get_scan_channel_time, false},
-	{"SETSCANHOMETIME",           drv_cmd_set_scan_home_time, true},
-	{"GETSCANHOMETIME",           drv_cmd_get_scan_home_time, false},
-	{"SETROAMINTRABAND",          drv_cmd_set_roam_intra_band, true},
-	{"GETROAMINTRABAND",          drv_cmd_get_roam_intra_band, false},
-	{"SETSCANNPROBES",            drv_cmd_set_scan_n_probes, true},
-	{"GETSCANNPROBES",            drv_cmd_get_scan_n_probes, false},
-	{"SETSCANHOMEAWAYTIME",       drv_cmd_set_scan_home_away_time, true},
-	{"GETSCANHOMEAWAYTIME",       drv_cmd_get_scan_home_away_time, false},
-	{"REASSOC",                   drv_cmd_reassoc, true},
-	{"SETWESMODE",                drv_cmd_set_wes_mode, true},
-	{"GETWESMODE",                drv_cmd_get_wes_mode, false},
-	{"SETOPPORTUNISTICRSSIDIFF",  drv_cmd_set_opportunistic_rssi_diff,
-	 true},
-	{"GETOPPORTUNISTICRSSIDIFF",  drv_cmd_get_opportunistic_rssi_diff,
-	 false},
-	{"SETROAMRESCANRSSIDIFF",     drv_cmd_set_roam_rescan_rssi_diff, true},
-	{"GETROAMRESCANRSSIDIFF",     drv_cmd_get_roam_rescan_rssi_diff, false},
-	{"SETFASTROAM",               drv_cmd_set_fast_roam, true},
-	{"SETFASTTRANSITION",         drv_cmd_set_fast_transition, true},
-	{"FASTREASSOC",               drv_cmd_fast_reassoc, true},
-	{"SETOKCMODE",                drv_cmd_set_okc_mode, true},
-	{"BTCOEXMODE",                drv_cmd_bt_coex_mode, true},
-	{"SCAN-ACTIVE",               drv_cmd_scan_active, false},
-	{"SCAN-PASSIVE",              drv_cmd_scan_passive, false},
-	{"CONCSETDWELLTIME",          drv_cmd_conc_set_dwell_time, true},
-	{"GETDWELLTIME",              drv_cmd_get_dwell_time, false},
-	{"SETDWELLTIME",              drv_cmd_set_dwell_time, true},
-	{"MIRACAST",                  drv_cmd_miracast, true},
-	{"TPUT_DEBUG_MODE_ENABLE",    drv_cmd_tput_debug_mode_enable, false},
-	{"TPUT_DEBUG_MODE_DISABLE",   drv_cmd_tput_debug_mode_disable, false},
+	{ "P2P_DEV_ADDR", drv_cmd_p2p_dev_addr, false },
+	{ "P2P_SET_NOA", drv_cmd_p2p_set_noa, true },
+	{ "P2P_SET_PS", drv_cmd_p2p_set_ps, true },
+	{ "SETBAND", drv_cmd_set_band, true },
+	{ "SETWMMPS", drv_cmd_set_wmmps, true },
+	{ "COUNTRY", drv_cmd_country, true },
+	{ "SETCOUNTRYREV", drv_cmd_country, true },
+	{ "GETCOUNTRYREV", drv_cmd_get_country, false },
+	{ "SETSUSPENDMODE", drv_cmd_set_suspend_mode, true },
+	{ "SET_AP_WPS_P2P_IE", drv_cmd_dummy, false },
+	{ "SETROAMTRIGGER", drv_cmd_set_roam_trigger, true },
+	{ "GETROAMTRIGGER", drv_cmd_get_roam_trigger, false },
+	{ "SETROAMSCANPERIOD", drv_cmd_set_roam_scan_period, true },
+	{ "GETROAMSCANPERIOD", drv_cmd_get_roam_scan_period, false },
+	{ "SETROAMSCANREFRESHPERIOD", drv_cmd_set_roam_scan_refresh_period,
+	  true },
+	{ "GETROAMSCANREFRESHPERIOD", drv_cmd_get_roam_scan_refresh_period,
+	  false },
+	{ "SETROAMMODE", drv_cmd_set_roam_mode, true },
+	{ "GETROAMMODE", drv_cmd_get_roam_mode, false },
+	{ "SETROAMDELTA", drv_cmd_set_roam_delta, true },
+	{ "GETROAMDELTA", drv_cmd_get_roam_delta, false },
+	{ "GETBAND", drv_cmd_get_band, false },
+	{ "GETCCXMODE", drv_cmd_get_ccx_mode, false },
+	{ "GETOKCMODE", drv_cmd_get_okc_mode, false },
+	{ "GETFASTROAM", drv_cmd_get_fast_roam, false },
+	{ "GETFASTTRANSITION", drv_cmd_get_fast_transition, false },
+	{ "SETROAMSCANCHANNELMINTIME", drv_cmd_set_roam_scan_channel_min_time,
+	  true },
+	{ "SENDACTIONFRAME", drv_cmd_send_action_frame, true },
+	{ "GETROAMSCANCHANNELMINTIME", drv_cmd_get_roam_scan_channel_min_time,
+	  false },
+	{ "SETSCANCHANNELTIME", drv_cmd_set_scan_channel_time, true },
+	{ "GETSCANCHANNELTIME", drv_cmd_get_scan_channel_time, false },
+	{ "SETSCANHOMETIME", drv_cmd_set_scan_home_time, true },
+	{ "GETSCANHOMETIME", drv_cmd_get_scan_home_time, false },
+	{ "SETROAMINTRABAND", drv_cmd_set_roam_intra_band, true },
+	{ "GETROAMINTRABAND", drv_cmd_get_roam_intra_band, false },
+	{ "SETSCANNPROBES", drv_cmd_set_scan_n_probes, true },
+	{ "GETSCANNPROBES", drv_cmd_get_scan_n_probes, false },
+	{ "SETSCANHOMEAWAYTIME", drv_cmd_set_scan_home_away_time, true },
+	{ "GETSCANHOMEAWAYTIME", drv_cmd_get_scan_home_away_time, false },
+	{ "REASSOC", drv_cmd_reassoc, true },
+	{ "SETWESMODE", drv_cmd_set_wes_mode, true },
+	{ "GETWESMODE", drv_cmd_get_wes_mode, false },
+	{ "SETOPPORTUNISTICRSSIDIFF", drv_cmd_set_opportunistic_rssi_diff,
+	  true },
+	{ "GETOPPORTUNISTICRSSIDIFF", drv_cmd_get_opportunistic_rssi_diff,
+	  false },
+	{ "SETROAMRESCANRSSIDIFF", drv_cmd_set_roam_rescan_rssi_diff, true },
+	{ "GETROAMRESCANRSSIDIFF", drv_cmd_get_roam_rescan_rssi_diff, false },
+	{ "SETFASTROAM", drv_cmd_set_fast_roam, true },
+	{ "SETFASTTRANSITION", drv_cmd_set_fast_transition, true },
+	{ "FASTREASSOC", drv_cmd_fast_reassoc, true },
+	{ "SETOKCMODE", drv_cmd_set_okc_mode, true },
+	{ "BTCOEXMODE", drv_cmd_bt_coex_mode, true },
+	{ "SCAN-ACTIVE", drv_cmd_scan_active, false },
+	{ "SCAN-PASSIVE", drv_cmd_scan_passive, false },
+	{ "CONCSETDWELLTIME", drv_cmd_conc_set_dwell_time, true },
+	{ "GETDWELLTIME", drv_cmd_get_dwell_time, false },
+	{ "SETDWELLTIME", drv_cmd_set_dwell_time, true },
+	{ "MIRACAST", drv_cmd_miracast, true },
+	{ "TPUT_DEBUG_MODE_ENABLE", drv_cmd_tput_debug_mode_enable, false },
+	{ "TPUT_DEBUG_MODE_DISABLE", drv_cmd_tput_debug_mode_disable, false },
 #ifdef FEATURE_WLAN_ESE
-	{"SETCCXROAMSCANCHANNELS",    drv_cmd_set_ccx_roam_scan_channels, true},
-	{"GETTSMSTATS",               drv_cmd_get_tsm_stats, true},
-	{"SETCCKMIE",                 drv_cmd_set_cckm_ie, true},
-	{"CCXBEACONREQ",	      drv_cmd_ccx_beacon_req, true},
-	{"CCXPLMREQ",                 drv_cmd_ccx_plm_req, true},
-	{"SETCCXMODE",                drv_cmd_set_ccx_mode, true},
+	{ "SETCCXROAMSCANCHANNELS", drv_cmd_set_ccx_roam_scan_channels, true },
+	{ "GETTSMSTATS", drv_cmd_get_tsm_stats, true },
+	{ "SETCCKMIE", drv_cmd_set_cckm_ie, true },
+	{ "CCXBEACONREQ", drv_cmd_ccx_beacon_req, true },
+	{ "CCXPLMREQ", drv_cmd_ccx_plm_req, true },
+	{ "SETCCXMODE", drv_cmd_set_ccx_mode, true },
 #endif /* FEATURE_WLAN_ESE */
-	{"SETMCRATE",                 drv_cmd_set_mc_rate, true},
-	{"MAXTXPOWER",                drv_cmd_max_tx_power, true},
-	{"SETDFSSCANMODE",            drv_cmd_set_dfs_scan_mode, true},
-	{"GETDFSSCANMODE",            drv_cmd_get_dfs_scan_mode, false},
-	{"GETLINKSTATUS",             drv_cmd_get_link_status, false},
+	{ "SETMCRATE", drv_cmd_set_mc_rate, true },
+	{ "MAXTXPOWER", drv_cmd_max_tx_power, true },
+	{ "SETDFSSCANMODE", drv_cmd_set_dfs_scan_mode, true },
+	{ "GETDFSSCANMODE", drv_cmd_get_dfs_scan_mode, false },
+	{ "GETLINKSTATUS", drv_cmd_get_link_status, false },
 #ifdef WLAN_FEATURE_EXTWOW_SUPPORT
-	{"ENABLEEXTWOW",              drv_cmd_enable_ext_wow, true},
-	{"SETAPP1PARAMS",             drv_cmd_set_app1_params, true},
-	{"SETAPP2PARAMS",             drv_cmd_set_app2_params, true},
+	{ "ENABLEEXTWOW", drv_cmd_enable_ext_wow, true },
+	{ "SETAPP1PARAMS", drv_cmd_set_app1_params, true },
+	{ "SETAPP2PARAMS", drv_cmd_set_app2_params, true },
 #endif
 #ifdef FEATURE_WLAN_TDLS
-	{"TDLSSECONDARYCHANNELOFFSET", drv_cmd_tdls_secondary_channel_offset,
-	 true},
-	{"TDLSOFFCHANNELMODE",        drv_cmd_tdls_off_channel_mode, true},
-	{"TDLSOFFCHANNEL",            drv_cmd_tdls_off_channel, true},
-	{"TDLSSCAN",                  drv_cmd_tdls_scan, true},
+	{ "TDLSSECONDARYCHANNELOFFSET", drv_cmd_tdls_secondary_channel_offset,
+	  true },
+	{ "TDLSOFFCHANNELMODE", drv_cmd_tdls_off_channel_mode, true },
+	{ "TDLSOFFCHANNEL", drv_cmd_tdls_off_channel, true },
+	{ "TDLSSCAN", drv_cmd_tdls_scan, true },
 #endif
-	{"RSSI",                      drv_cmd_get_rssi, false},
-	{"LINKSPEED",                 drv_cmd_get_linkspeed, false},
+	{ "RSSI", drv_cmd_get_rssi, false },
+	{ "LINKSPEED", drv_cmd_get_linkspeed, false },
 #ifdef WLAN_FEATURE_PACKET_FILTERING
-	{"RXFILTER-REMOVE",           drv_cmd_rx_filter_remove, true},
-	{"RXFILTER-ADD",              drv_cmd_rx_filter_add, true},
+	{ "RXFILTER-REMOVE", drv_cmd_rx_filter_remove, true },
+	{ "RXFILTER-ADD", drv_cmd_rx_filter_add, true },
 #endif
-	{"SET_FCC_CHANNEL",           drv_cmd_set_fcc_channel, true},
-	{"CHANNEL_SWITCH",            drv_cmd_set_channel_switch, true},
-	{"SETANTENNAMODE",            drv_cmd_set_antenna_mode, true},
-	{"GETANTENNAMODE",            drv_cmd_get_antenna_mode, false},
-	{"SET_DISABLE_CHANNEL_LIST",  drv_cmd_set_disable_chan_list, true},
-	{"GET_DISABLE_CHANNEL_LIST",  drv_cmd_get_disable_chan_list, false},
-	{"GET_ANI_LEVEL",             drv_cmd_get_ani_level, false},
+	{ "SET_FCC_CHANNEL", drv_cmd_set_fcc_channel, true },
+	{ "CHANNEL_SWITCH", drv_cmd_set_channel_switch, true },
+	{ "SETANTENNAMODE", drv_cmd_set_antenna_mode, true },
+	{ "GETANTENNAMODE", drv_cmd_get_antenna_mode, false },
+	{ "SET_DISABLE_CHANNEL_LIST", drv_cmd_set_disable_chan_list, true },
+	{ "GET_DISABLE_CHANNEL_LIST", drv_cmd_get_disable_chan_list, false },
+	{ "GET_ANI_LEVEL", drv_cmd_get_ani_level, false },
 #ifdef FUNC_CALL_MAP
-	{"GET_FUNCTION_CALL_MAP",     drv_cmd_get_function_call_map, true},
+	{ "GET_FUNCTION_CALL_MAP", drv_cmd_get_function_call_map, true },
 #endif
-	{"STOP",                      drv_cmd_dummy, false},
-	{"SET_PHYMODE",               drv_cmd_set_phymode, true},
+	{ "STOP", drv_cmd_dummy, false },
+	{ "SET_PHYMODE", drv_cmd_set_phymode, true },
 	/* Deprecated commands */
-	{"RXFILTER-START",            drv_cmd_dummy, false},
-	{"RXFILTER-STOP",             drv_cmd_dummy, false},
-	{"BTCOEXSCAN-START",          drv_cmd_dummy, false},
-	{"BTCOEXSCAN-STOP",           drv_cmd_dummy, false},
+	{ "RXFILTER-START", drv_cmd_dummy, false },
+	{ "RXFILTER-STOP", drv_cmd_dummy, false },
+	{ "BTCOEXSCAN-START", drv_cmd_dummy, false },
+	{ "BTCOEXSCAN-STOP", drv_cmd_dummy, false },
 #ifdef CFG_SUPPORT_SCAN_EXT_FLAG
-	{"SetScanExtFlag",            driver_cmd_set_scan_ext_flag, true},
+	{ "SetScanExtFlag", driver_cmd_set_scan_ext_flag, true },
 #endif
 };
 
@@ -7331,7 +7137,6 @@ static int hdd_drv_cmd_process(struct wlan_hdd_link_info *link_info,
 	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 
 	for (i = 0; i < cmd_num_total; i++) {
-
 		cmd_i = (uint8_t *)hdd_drv_cmds[i].cmd;
 		handler = hdd_drv_cmds[i].handler;
 		len = strlen(cmd_i);
@@ -7346,8 +7151,7 @@ static int hdd_drv_cmd_process(struct wlan_hdd_link_info *link_info,
 			if (args && drv_cmd_validate(cmd, len))
 				return -EINVAL;
 
-			return handler(link_info, hdd_ctx,
-				       cmd, len, priv_data);
+			return handler(link_info, hdd_ctx, cmd, len, priv_data);
 		}
 	}
 
@@ -7389,14 +7193,14 @@ static int hdd_driver_command(struct wlan_hdd_link_info *link_info,
 	}
 
 	/*
-	 * Note that valid pointers are provided by caller
-	 */
+   * Note that valid pointers are provided by caller
+   */
 
 	/* copy to local struct to avoid numerous changes to legacy code */
 	if (priv_data->total_len <= 0 ||
 	    priv_data->total_len > WLAN_PRIV_DATA_MAX_LEN) {
 		hdd_warn("Invalid priv_data.total_len: %d!!!",
-			  priv_data->total_len);
+			 priv_data->total_len);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -7439,11 +7243,10 @@ static int hdd_driver_compat_ioctl(struct wlan_hdd_link_info *link_info,
 	int ret = 0;
 
 	/*
-	 * Note that adapter and ifr have already been verified by caller,
-	 * and HDD context has also been validated
-	 */
-	if (copy_from_user(&compat_priv_data, data,
-			   sizeof(compat_priv_data))) {
+   * Note that adapter and ifr have already been verified by caller,
+   * and HDD context has also been validated
+   */
+	if (copy_from_user(&compat_priv_data, data, sizeof(compat_priv_data))) {
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -7470,9 +7273,9 @@ static int hdd_driver_ioctl(struct wlan_hdd_link_info *link_info,
 	int ret = 0;
 
 	/*
-	 * Note that adapter and ifr have already been verified by caller,
-	 * and HDD context has also been validated
-	 */
+   * Note that adapter and ifr have already been verified by caller,
+   * and HDD context has also been validated
+   */
 	if (copy_from_user(&priv_data, data, sizeof(priv_data)))
 		ret = -EFAULT;
 	else
@@ -7518,7 +7321,7 @@ static int __hdd_ioctl(struct net_device *dev, void __user *data, int cmd)
 		ret = -EINVAL;
 		goto exit;
 	}
-#if  defined(QCA_WIFI_FTM) && defined(LINUX_QCMBR)
+#if defined(QCA_WIFI_FTM) && defined(LINUX_QCMBR)
 	if (QDF_GLOBAL_FTM_MODE == hdd_get_conparam()) {
 		if (SIOCIOCTLTX99 == cmd) {
 			ret = wlan_hdd_qcmbr_unified_ioctl(adapter, data);

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights
+ * reserved. Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/clk.h>
-#include <linux/pm_runtime.h>
 #include "dp_power.h"
 #include "dp_catalog.h"
 #include "dp_debug.h"
 #include "dp_pll.h"
+#include <linux/clk.h>
+#include <linux/pm_runtime.h>
 
-#define DP_CLIENT_NAME_SIZE	20
-#define XO_CLK_KHZ	19200
+#define DP_CLIENT_NAME_SIZE 20
+#define XO_CLK_KHZ 19200
 
 struct dp_power_private {
 	struct dp_parser *parser;
@@ -45,16 +45,15 @@ static int dp_power_regulator_init(struct dp_power_private *power)
 	pdev = power->pdev;
 
 	for (i = DP_CORE_PM; !rc && (i < DP_MAX_PM); i++) {
-		rc = msm_dss_get_vreg(&pdev->dev,
-			parser->mp[i].vreg_config,
-			parser->mp[i].num_vreg, 1);
+		rc = msm_dss_get_vreg(&pdev->dev, parser->mp[i].vreg_config,
+				      parser->mp[i].num_vreg, 1);
 		if (rc) {
 			DP_ERR("failed to init vregs for %s\n",
-				dp_parser_pm_name(i));
+			       dp_parser_pm_name(i));
 			for (j = i - 1; j >= DP_CORE_PM; j--) {
 				msm_dss_get_vreg(&pdev->dev,
-				parser->mp[j].vreg_config,
-				parser->mp[j].num_vreg, 0);
+						 parser->mp[j].vreg_config,
+						 parser->mp[j].num_vreg, 0);
 			}
 
 			goto error;
@@ -74,12 +73,11 @@ static void dp_power_regulator_deinit(struct dp_power_private *power)
 	pdev = power->pdev;
 
 	for (i = DP_CORE_PM; (i < DP_MAX_PM); i++) {
-		rc = msm_dss_get_vreg(&pdev->dev,
-			parser->mp[i].vreg_config,
-			parser->mp[i].num_vreg, 0);
+		rc = msm_dss_get_vreg(&pdev->dev, parser->mp[i].vreg_config,
+				      parser->mp[i].num_vreg, 0);
 		if (rc)
 			DP_ERR("failed to deinit vregs for %s\n",
-				dp_parser_pm_name(i));
+			       dp_parser_pm_name(i));
 	}
 }
 
@@ -97,7 +95,7 @@ static void dp_power_phy_gdsc(struct dp_power *dp_power, bool on)
 
 	if (rc)
 		DP_ERR("Fail to %s dp_phy_gdsc regulator ret =%d\n",
-				on ? "enable" : "disable", rc);
+		       on ? "enable" : "disable", rc);
 }
 
 static int dp_power_regulator_ctrl(struct dp_power_private *power, bool enable)
@@ -109,30 +107,30 @@ static int dp_power_regulator_ctrl(struct dp_power_private *power, bool enable)
 
 	for (i = DP_CORE_PM; i < DP_MAX_PM; i++) {
 		/*
-		 * The DP_PLL_PM regulator is controlled by dp_display based
-		 * on the link configuration.
-		 */
+     * The DP_PLL_PM regulator is controlled by dp_display based
+     * on the link configuration.
+     */
 		if (i == DP_PLL_PM) {
-			/* DP GDSC vote is needed for new chipsets, define gdsc phandle if needed */
+			/* DP GDSC vote is needed for new chipsets, define gdsc phandle if needed
+       */
 			dp_power_phy_gdsc(&power->dp_power, enable);
 			DP_DEBUG("skipping: '%s' vregs for %s\n",
-					enable ? "enable" : "disable",
-					dp_parser_pm_name(i));
+				 enable ? "enable" : "disable",
+				 dp_parser_pm_name(i));
 			continue;
 		}
 
-		rc = msm_dss_enable_vreg(
-			parser->mp[i].vreg_config,
-			parser->mp[i].num_vreg, enable);
+		rc = msm_dss_enable_vreg(parser->mp[i].vreg_config,
+					 parser->mp[i].num_vreg, enable);
 		if (rc) {
 			DP_ERR("failed to '%s' vregs for %s\n",
-					enable ? "enable" : "disable",
-					dp_parser_pm_name(i));
+			       enable ? "enable" : "disable",
+			       dp_parser_pm_name(i));
 			if (enable) {
-				for (j = i-1; j >= DP_CORE_PM; j--) {
+				for (j = i - 1; j >= DP_CORE_PM; j--) {
 					msm_dss_enable_vreg(
-					parser->mp[j].vreg_config,
-					parser->mp[j].num_vreg, 0);
+						parser->mp[j].vreg_config,
+						parser->mp[j].num_vreg, 0);
 				}
 			}
 			goto error;
@@ -153,19 +151,16 @@ static int dp_power_pinctrl_set(struct dp_power_private *power, bool active)
 	if (IS_ERR_OR_NULL(parser->pinctrl.pin))
 		return 0;
 
-	pin_state = active ? parser->pinctrl.state_active
-				: parser->pinctrl.state_suspend;
+	pin_state = active ? parser->pinctrl.state_active :
+			     parser->pinctrl.state_suspend;
 	if (!IS_ERR_OR_NULL(pin_state)) {
-		rc = pinctrl_select_state(parser->pinctrl.pin,
-				pin_state);
+		rc = pinctrl_select_state(parser->pinctrl.pin, pin_state);
 		if (rc)
 			DP_ERR("can not set %s pins\n",
-			       active ? "dp_active"
-			       : "dp_sleep");
+			       active ? "dp_active" : "dp_sleep");
 	} else {
 		DP_ERR("invalid '%s' pinstate\n",
-		       active ? "dp_active"
-		       : "dp_sleep");
+		       active ? "dp_active" : "dp_sleep");
 	}
 
 	return rc;
@@ -206,7 +201,7 @@ static int dp_power_clk_init(struct dp_power_private *power, bool enable)
 			rc = msm_dss_get_clk(dev, pm->clk_config, pm->num_clk);
 			if (rc) {
 				DP_ERR("failed to get %s clk. err=%d\n",
-					dp_parser_pm_name(module), rc);
+				       dp_parser_pm_name(module), rc);
 				goto exit;
 			}
 		}
@@ -214,7 +209,7 @@ static int dp_power_clk_init(struct dp_power_private *power, bool enable)
 		power->pixel_clk_rcg = clk_get(dev, "pixel_clk_rcg");
 		if (IS_ERR(power->pixel_clk_rcg)) {
 			DP_ERR("Unable to get DP pixel clk RCG: %ld\n",
-					PTR_ERR(power->pixel_clk_rcg));
+			       PTR_ERR(power->pixel_clk_rcg));
 			rc = PTR_ERR(power->pixel_clk_rcg);
 			power->pixel_clk_rcg = NULL;
 			goto err_pixel_clk_rcg;
@@ -223,7 +218,7 @@ static int dp_power_clk_init(struct dp_power_private *power, bool enable)
 		power->pixel_parent = clk_get(dev, "pixel_parent");
 		if (IS_ERR(power->pixel_parent)) {
 			DP_ERR("Unable to get DP pixel RCG parent: %d\n",
-					PTR_ERR(power->pixel_parent));
+			       PTR_ERR(power->pixel_parent));
 			rc = PTR_ERR(power->pixel_parent);
 			power->pixel_parent = NULL;
 			goto err_pixel_parent;
@@ -231,7 +226,8 @@ static int dp_power_clk_init(struct dp_power_private *power, bool enable)
 
 		power->xo_clk = clk_get(dev, "rpmh_cxo_clk");
 		if (IS_ERR(power->xo_clk)) {
-			DP_ERR("Unable to get XO clk: %d\n", PTR_ERR(power->xo_clk));
+			DP_ERR("Unable to get XO clk: %d\n",
+			       PTR_ERR(power->xo_clk));
 			rc = PTR_ERR(power->xo_clk);
 			power->xo_clk = NULL;
 			goto err_xo_clk;
@@ -241,7 +237,7 @@ static int dp_power_clk_init(struct dp_power_private *power, bool enable)
 			power->pixel1_clk_rcg = clk_get(dev, "pixel1_clk_rcg");
 			if (IS_ERR(power->pixel1_clk_rcg)) {
 				DP_ERR("Unable to get DP pixel1 clk RCG: %d\n",
-						PTR_ERR(power->pixel1_clk_rcg));
+				       PTR_ERR(power->pixel1_clk_rcg));
 				rc = PTR_ERR(power->pixel1_clk_rcg);
 				power->pixel1_clk_rcg = NULL;
 				goto err_pixel1_clk_rcg;
@@ -251,18 +247,19 @@ static int dp_power_clk_init(struct dp_power_private *power, bool enable)
 		power->link_clk_rcg = clk_get(dev, "link_clk_src");
 		if (IS_ERR(power->link_clk_rcg)) {
 			DP_ERR("Unable to get DP link clk RCG: %ld\n",
-					PTR_ERR(power->link_clk_rcg));
+			       PTR_ERR(power->link_clk_rcg));
 			rc = PTR_ERR(power->link_clk_rcg);
 			power->link_clk_rcg = NULL;
 			goto err_link_clk_rcg;
 		}
 
-		/* If link_parent node is available, convert clk rates to HZ for byte2 ops */
+		/* If link_parent node is available, convert clk rates to HZ for byte2 ops
+     */
 		power->pll->clk_factor = 1000;
 		power->link_parent = clk_get(dev, "link_parent");
 		if (IS_ERR(power->link_parent)) {
 			DP_WARN("Unable to get DP link parent: %ld\n",
-					PTR_ERR(power->link_parent));
+				PTR_ERR(power->link_parent));
 			power->link_parent = NULL;
 			power->pll->clk_factor = 1;
 		}
@@ -301,7 +298,8 @@ exit:
 	return rc;
 }
 
-static int dp_power_park_module(struct dp_power_private *power, enum dp_pm_type module)
+static int dp_power_park_module(struct dp_power_private *power,
+				enum dp_pm_type module)
 {
 	struct dss_module_power *mp;
 	struct clk *clk = NULL;
@@ -353,9 +351,8 @@ exit:
 	return rc;
 }
 
-
 static int dp_power_clk_set_rate(struct dp_power_private *power,
-		enum dp_pm_type module, bool enable)
+				 enum dp_pm_type module, bool enable)
 {
 	int rc = 0;
 	struct dss_module_power *mp;
@@ -384,7 +381,7 @@ static int dp_power_clk_set_rate(struct dp_power_private *power,
 		rc = msm_dss_enable_clk(mp->clk_config, mp->num_clk, 0);
 		if (rc) {
 			DP_ERR("failed to disable clks\n");
-				goto exit;
+			goto exit;
 		}
 
 		dp_power_park_module(power, module);
@@ -393,7 +390,8 @@ exit:
 	return rc;
 }
 
-static bool dp_power_clk_status(struct dp_power *dp_power, enum dp_pm_type pm_type)
+static bool dp_power_clk_status(struct dp_power *dp_power,
+				enum dp_pm_type pm_type)
 {
 	struct dp_power_private *power;
 
@@ -417,7 +415,7 @@ static bool dp_power_clk_status(struct dp_power *dp_power, enum dp_pm_type pm_ty
 }
 
 static int dp_power_clk_enable(struct dp_power *dp_power,
-		enum dp_pm_type pm_type, bool enable)
+			       enum dp_pm_type pm_type, bool enable)
 {
 	int rc = 0;
 	struct dss_module_power *mp;
@@ -435,13 +433,14 @@ static int dp_power_clk_enable(struct dp_power *dp_power,
 
 	if (pm_type >= DP_MAX_PM) {
 		DP_ERR("unsupported power module: %s\n",
-				dp_parser_pm_name(pm_type));
+		       dp_parser_pm_name(pm_type));
 		return -EINVAL;
 	}
 
 	if (enable) {
 		if (dp_power_clk_status(dp_power, pm_type)) {
-			DP_DEBUG("%s clks already enabled\n", dp_parser_pm_name(pm_type));
+			DP_DEBUG("%s clks already enabled\n",
+				 dp_parser_pm_name(pm_type));
 			return 0;
 		}
 
@@ -451,7 +450,7 @@ static int dp_power_clk_enable(struct dp_power *dp_power,
 			rc = dp_power_clk_set_rate(power, pm_type, enable);
 			if (rc) {
 				DP_ERR("failed to enable clks: %s. err=%d\n",
-					dp_parser_pm_name(DP_CORE_PM), rc);
+				       dp_parser_pm_name(DP_CORE_PM), rc);
 				goto error;
 			} else {
 				power->core_clks_on = true;
@@ -459,7 +458,8 @@ static int dp_power_clk_enable(struct dp_power *dp_power,
 		}
 
 		if (pm_type == DP_LINK_PM && power->link_parent) {
-			rc = clk_set_parent(power->link_clk_rcg, power->link_parent);
+			rc = clk_set_parent(power->link_clk_rcg,
+					    power->link_parent);
 			if (rc) {
 				DP_ERR("failed to set link parent\n");
 				goto error;
@@ -470,9 +470,9 @@ static int dp_power_clk_enable(struct dp_power *dp_power,
 	rc = dp_power_clk_set_rate(power, pm_type, enable);
 	if (rc) {
 		DP_ERR("failed to '%s' clks for: %s. err=%d\n",
-			enable ? "enable" : "disable",
-			dp_parser_pm_name(pm_type), rc);
-			goto error;
+		       enable ? "enable" : "disable",
+		       dp_parser_pm_name(pm_type), rc);
+		goto error;
 	}
 
 	if (pm_type == DP_CORE_PM)
@@ -490,11 +490,11 @@ static int dp_power_clk_enable(struct dp_power *dp_power,
 		power->strm1_clks_parked = false;
 
 	/*
-	 * This log is printed only when user connects or disconnects
-	 * a DP cable. As this is a user-action and not a frequent
-	 * usecase, it is not going to flood the kernel logs. Also,
-	 * helpful in debugging the NOC issues.
-	 */
+   * This log is printed only when user connects or disconnects
+   * a DP cable. As this is a user-action and not a frequent
+   * usecase, it is not going to flood the kernel logs. Also,
+   * helpful in debugging the NOC issues.
+   */
 	DP_INFO("core:%s link:%s strm0:%s strm1:%s\n",
 		power->core_clks_on ? "on" : "off",
 		power->link_clks_on ? "on" : "off",
@@ -509,8 +509,10 @@ static int dp_power_request_gpios(struct dp_power_private *power)
 	int rc = 0, i;
 	struct device *dev;
 	struct dss_module_power *mp;
-	static const char * const gpio_names[] = {
-		"aux_enable", "aux_sel", "usbplug_cc",
+	static const char *const gpio_names[] = {
+		"aux_enable",
+		"aux_sel",
+		"usbplug_cc",
 	};
 
 	if (!power) {
@@ -528,7 +530,7 @@ static int dp_power_request_gpios(struct dp_power_private *power)
 			rc = gpio_request(gpio, gpio_names[i]);
 			if (rc) {
 				DP_ERR("request %s gpio failed, rc=%d\n",
-					       gpio_names[i], rc);
+				       gpio_names[i], rc);
 				goto error;
 			}
 		}
@@ -561,22 +563,21 @@ static void dp_power_set_gpio(struct dp_power_private *power, bool flip)
 
 		if (gpio_is_valid(config->gpio)) {
 			DP_DEBUG("gpio %s, value %d\n", config->gpio_name,
-				config->value);
+				 config->value);
 
 			if (dp_power_find_gpio(config->gpio_name, "aux-en") ||
 			    dp_power_find_gpio(config->gpio_name, "aux-sel"))
 				gpio_direction_output(config->gpio,
-					config->value);
+						      config->value);
 			else
 				gpio_set_value(config->gpio, config->value);
-
 		}
 		config++;
 	}
 }
 
 static int dp_power_config_gpios(struct dp_power_private *power, bool flip,
-					bool enable)
+				 bool enable)
 {
 	int rc = 0, i;
 	struct dss_module_power *mp;
@@ -605,12 +606,16 @@ static int dp_power_config_gpios(struct dp_power_private *power, bool flip,
 	return 0;
 }
 
-static int dp_power_mmrm_init(struct dp_power *dp_power, struct sde_power_handle *phandle, void *dp,
-	int (*dp_display_mmrm_callback)(struct mmrm_client_notifier_data *notifier_data))
+static int
+dp_power_mmrm_init(struct dp_power *dp_power, struct sde_power_handle *phandle,
+		   void *dp,
+		   int (*dp_display_mmrm_callback)(
+			   struct mmrm_client_notifier_data *notifier_data))
 {
 	int rc = 0;
 	enum dp_pm_type module;
-	struct dp_power_private *power = container_of(dp_power, struct dp_power_private, dp_power);
+	struct dp_power_private *power =
+		container_of(dp_power, struct dp_power_private, dp_power);
 	struct device *dev = &power->pdev->dev;
 
 	for (module = DP_CORE_PM; module < DP_MAX_PM; module++) {
@@ -619,7 +624,7 @@ static int dp_power_mmrm_init(struct dp_power *dp_power, struct sde_power_handle
 			continue;
 
 		rc = msm_dss_mmrm_register(dev, pm, dp_display_mmrm_callback,
-					dp, &phandle->mmrm_enable);
+					   dp, &phandle->mmrm_enable);
 		if (rc)
 			DP_ERR("mmrm register failed rc=%d\n", rc);
 	}
@@ -628,7 +633,8 @@ static int dp_power_mmrm_init(struct dp_power *dp_power, struct sde_power_handle
 }
 
 static int dp_power_client_init(struct dp_power *dp_power,
-	struct sde_power_handle *phandle, struct drm_device *drm_dev)
+				struct sde_power_handle *phandle,
+				struct drm_device *drm_dev)
 {
 	int rc = 0;
 	struct dp_power_private *power;
@@ -721,13 +727,13 @@ static int dp_power_set_pixel_clk_parent(struct dp_power *dp_power, u32 strm_id)
 	if (strm_id == DP_STREAM_0) {
 		if (power->pixel_clk_rcg && power->pixel_parent)
 			rc = clk_set_parent(power->pixel_clk_rcg,
-					power->pixel_parent);
+					    power->pixel_parent);
 		else
 			DP_WARN("skipped for strm_id=%d\n", strm_id);
 	} else if (strm_id == DP_STREAM_1) {
 		if (power->pixel1_clk_rcg && power->pixel_parent)
 			rc = clk_set_parent(power->pixel1_clk_rcg,
-					power->pixel_parent);
+					    power->pixel_parent);
 		else
 			DP_WARN("skipped for strm_id=%d\n", strm_id);
 	}

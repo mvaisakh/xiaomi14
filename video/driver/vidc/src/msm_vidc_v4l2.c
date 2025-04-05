@@ -5,13 +5,13 @@
  */
 
 #include "msm_vidc_v4l2.h"
-#include "msm_vidc_internal.h"
-#include "msm_vidc_core.h"
-#include "msm_vidc_inst.h"
-#include "msm_vidc_driver.h"
-#include "msm_vidc_debug.h"
 #include "msm_vidc.h"
+#include "msm_vidc_core.h"
+#include "msm_vidc_debug.h"
+#include "msm_vidc_driver.h"
 #include "msm_vidc_events.h"
+#include "msm_vidc_inst.h"
+#include "msm_vidc_internal.h"
 
 extern struct msm_vidc_core *g_core;
 
@@ -19,8 +19,7 @@ static struct msm_vidc_inst *get_vidc_inst(struct file *filp, void *fh)
 {
 	if (!filp || !filp->private_data)
 		return NULL;
-	return container_of(filp->private_data,
-					struct msm_vidc_inst, fh);
+	return container_of(filp->private_data, struct msm_vidc_inst, fh);
 }
 
 unsigned int msm_v4l2_poll(struct file *filp, struct poll_table_struct *pt)
@@ -88,8 +87,7 @@ int msm_v4l2_close(struct file *filp)
 	return rc;
 }
 
-int msm_v4l2_querycap(struct file *filp, void *fh,
-			struct v4l2_capability *cap)
+int msm_v4l2_querycap(struct file *filp, void *fh, struct v4l2_capability *cap)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -119,8 +117,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_enum_fmt(struct file *filp, void *fh,
-					struct v4l2_fmtdesc *f)
+int msm_v4l2_enum_fmt(struct file *filp, void *fh, struct v4l2_fmtdesc *f)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -180,8 +177,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_s_fmt(struct file *filp, void *fh,
-					struct v4l2_format *f)
+int msm_v4l2_s_fmt(struct file *filp, void *fh, struct v4l2_format *f)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -211,8 +207,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_g_fmt(struct file *filp, void *fh,
-					struct v4l2_format *f)
+int msm_v4l2_g_fmt(struct file *filp, void *fh, struct v4l2_format *f)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -242,8 +237,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_s_selection(struct file *filp, void *fh,
-					struct v4l2_selection *s)
+int msm_v4l2_s_selection(struct file *filp, void *fh, struct v4l2_selection *s)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -273,8 +267,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_g_selection(struct file *filp, void *fh,
-					struct v4l2_selection *s)
+int msm_v4l2_g_selection(struct file *filp, void *fh, struct v4l2_selection *s)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -304,8 +297,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_s_parm(struct file *filp, void *fh,
-					struct v4l2_streamparm *a)
+int msm_v4l2_s_parm(struct file *filp, void *fh, struct v4l2_streamparm *a)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -335,8 +327,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_g_parm(struct file *filp, void *fh,
-					struct v4l2_streamparm *a)
+int msm_v4l2_g_parm(struct file *filp, void *fh, struct v4l2_streamparm *a)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -366,8 +357,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_reqbufs(struct file *filp, void *fh,
-				struct v4l2_requestbuffers *b)
+int msm_v4l2_reqbufs(struct file *filp, void *fh, struct v4l2_requestbuffers *b)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -397,8 +387,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_querybuf(struct file *filp, void *fh,
-				struct v4l2_buffer *b)
+int msm_v4l2_querybuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -429,7 +418,7 @@ unlock:
 }
 
 int msm_v4l2_create_bufs(struct file *filp, void *fh,
-				struct v4l2_create_buffers *b)
+			 struct v4l2_create_buffers *b)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -459,8 +448,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_prepare_buf(struct file *filp, void *fh,
-				struct v4l2_buffer *b)
+int msm_v4l2_prepare_buf(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	struct video_device *vdev = video_devdata(filp);
@@ -491,8 +479,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_qbuf(struct file *filp, void *fh,
-				struct v4l2_buffer *b)
+int msm_v4l2_qbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	struct video_device *vdev = video_devdata(filp);
@@ -505,13 +492,13 @@ int msm_v4l2_qbuf(struct file *filp, void *fh,
 	}
 
 	/*
-	 * do not acquire inst lock here. acquire it in msm_vb2_buf_queue.
-	 * for requests, msm_vb2_buf_queue() is not called from here.
-	 * instead it's called as part of msm_v4l2_request_queue().
-	 * hence acquire the inst lock in common function i.e
-	 * msm_vb2_buf_queue, to handle both requests and non-request
-	 * scenarios.
-	 */
+   * do not acquire inst lock here. acquire it in msm_vb2_buf_queue.
+   * for requests, msm_vb2_buf_queue() is not called from here.
+   * instead it's called as part of msm_v4l2_request_queue().
+   * hence acquire the inst lock in common function i.e
+   * msm_vb2_buf_queue, to handle both requests and non-request
+   * scenarios.
+   */
 	rc = msm_vidc_qbuf(inst, vdev->v4l2_dev->mdev, b);
 	if (rc)
 		goto exit;
@@ -522,8 +509,7 @@ exit:
 	return rc;
 }
 
-int msm_v4l2_dqbuf(struct file *filp, void *fh,
-				struct v4l2_buffer *b)
+int msm_v4l2_dqbuf(struct file *filp, void *fh, struct v4l2_buffer *b)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -548,8 +534,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_streamon(struct file *filp, void *fh,
-				enum v4l2_buf_type i)
+int msm_v4l2_streamon(struct file *filp, void *fh, enum v4l2_buf_type i)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -570,8 +555,7 @@ exit:
 	return rc;
 }
 
-int msm_v4l2_streamoff(struct file *filp, void *fh,
-				enum v4l2_buf_type i)
+int msm_v4l2_streamoff(struct file *filp, void *fh, enum v4l2_buf_type i)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -596,7 +580,7 @@ int msm_v4l2_streamoff(struct file *filp, void *fh,
 }
 
 int msm_v4l2_subscribe_event(struct v4l2_fh *fh,
-				const struct v4l2_event_subscription *sub)
+			     const struct v4l2_event_subscription *sub)
 {
 	struct msm_vidc_inst *inst;
 	int rc = 0;
@@ -628,7 +612,7 @@ unlock:
 }
 
 int msm_v4l2_unsubscribe_event(struct v4l2_fh *fh,
-				const struct v4l2_event_subscription *sub)
+			       const struct v4l2_event_subscription *sub)
 {
 	struct msm_vidc_inst *inst;
 	int rc = 0;
@@ -686,7 +670,7 @@ unlock:
 }
 
 int msm_v4l2_decoder_cmd(struct file *filp, void *fh,
-				struct v4l2_decoder_cmd *dec)
+			 struct v4l2_decoder_cmd *dec)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	enum msm_vidc_event event;
@@ -710,13 +694,13 @@ int msm_v4l2_decoder_cmd(struct file *filp, void *fh,
 		rc = -EINVAL;
 		goto unlock;
 	}
-	if (dec->cmd != V4L2_DEC_CMD_START &&
-		dec->cmd != V4L2_DEC_CMD_STOP) {
+	if (dec->cmd != V4L2_DEC_CMD_START && dec->cmd != V4L2_DEC_CMD_STOP) {
 		i_vpr_e(inst, "%s: invalid cmd %#x\n", __func__, dec->cmd);
 		rc = -EINVAL;
 		goto unlock;
 	}
-	event = (dec->cmd == V4L2_DEC_CMD_START ? MSM_VIDC_CMD_START : MSM_VIDC_CMD_STOP);
+	event = (dec->cmd == V4L2_DEC_CMD_START ? MSM_VIDC_CMD_START :
+						  MSM_VIDC_CMD_STOP);
 	rc = inst->event_handle(inst, event, NULL);
 	if (rc)
 		goto unlock;
@@ -761,7 +745,7 @@ unlock:
 }
 
 int msm_v4l2_encoder_cmd(struct file *filp, void *fh,
-				struct v4l2_encoder_cmd *enc)
+			 struct v4l2_encoder_cmd *enc)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	enum msm_vidc_event event;
@@ -785,13 +769,13 @@ int msm_v4l2_encoder_cmd(struct file *filp, void *fh,
 		rc = -EINVAL;
 		goto unlock;
 	}
-	if (enc->cmd != V4L2_ENC_CMD_START &&
-		enc->cmd != V4L2_ENC_CMD_STOP) {
+	if (enc->cmd != V4L2_ENC_CMD_START && enc->cmd != V4L2_ENC_CMD_STOP) {
 		i_vpr_e(inst, "%s: invalid cmd %#x\n", __func__, enc->cmd);
 		rc = -EINVAL;
 		goto unlock;
 	}
-	event = (enc->cmd == V4L2_ENC_CMD_START ? MSM_VIDC_CMD_START : MSM_VIDC_CMD_STOP);
+	event = (enc->cmd == V4L2_ENC_CMD_START ? MSM_VIDC_CMD_START :
+						  MSM_VIDC_CMD_STOP);
 	rc = inst->event_handle(inst, event, NULL);
 	if (rc)
 		goto unlock;
@@ -805,15 +789,14 @@ unlock:
 }
 
 int msm_v4l2_enum_framesizes(struct file *filp, void *fh,
-				struct v4l2_frmsizeenum *fsize)
+			     struct v4l2_frmsizeenum *fsize)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
 
 	inst = get_inst_ref(g_core, inst);
 	if (!inst || !fsize) {
-		d_vpr_e("%s: invalid params: %pK %pK\n",
-				__func__, inst, fsize);
+		d_vpr_e("%s: invalid params: %pK %pK\n", __func__, inst, fsize);
 		return -EINVAL;
 	}
 
@@ -837,15 +820,14 @@ unlock:
 }
 
 int msm_v4l2_enum_frameintervals(struct file *filp, void *fh,
-				struct v4l2_frmivalenum *fival)
+				 struct v4l2_frmivalenum *fival)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
 
 	inst = get_inst_ref(g_core, inst);
 	if (!inst || !fival) {
-		d_vpr_e("%s: invalid params: %pK %pK\n",
-			__func__, inst, fival);
+		d_vpr_e("%s: invalid params: %pK %pK\n", __func__, inst, fival);
 		return -EINVAL;
 	}
 
@@ -868,8 +850,7 @@ unlock:
 	return rc;
 }
 
-int msm_v4l2_queryctrl(struct file *filp, void *fh,
-	struct v4l2_queryctrl *ctrl)
+int msm_v4l2_queryctrl(struct file *filp, void *fh, struct v4l2_queryctrl *ctrl)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
@@ -900,15 +881,14 @@ unlock:
 }
 
 int msm_v4l2_querymenu(struct file *filp, void *fh,
-	struct v4l2_querymenu *qmenu)
+		       struct v4l2_querymenu *qmenu)
 {
 	struct msm_vidc_inst *inst = get_vidc_inst(filp, fh);
 	int rc = 0;
 
 	inst = get_inst_ref(g_core, inst);
 	if (!inst || !qmenu) {
-		d_vpr_e("%s: invalid params %pK %pK\n",
-			__func__, inst, qmenu);
+		d_vpr_e("%s: invalid params %pK %pK\n", __func__, inst, qmenu);
 		return -EINVAL;
 	}
 

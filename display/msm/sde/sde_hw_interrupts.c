@@ -7,10 +7,10 @@
 #include <linux/bitops.h>
 #include <linux/slab.h>
 
-#include "sde_kms.h"
 #include "sde_hw_interrupts.h"
-#include "sde_hw_util.h"
 #include "sde_hw_mdss.h"
+#include "sde_hw_util.h"
+#include "sde_kms.h"
 
 /**
  * Register offsets in MDSS register file for the interrupt registers
@@ -18,19 +18,19 @@
  * device tree and get stored in the catalog(irq_offset_list) until they
  * are added to the sde_irq_tbl during the table initialization.
  */
-#define HW_INTR_STATUS			0x0010
-#define MDP_AD4_INTR_EN_OFF		0x41c
-#define MDP_AD4_INTR_CLEAR_OFF		0x424
-#define MDP_AD4_INTR_STATUS_OFF		0x420
-#define MDP_INTF_TEAR_INTR_EN_OFF	0x0
-#define MDP_INTF_TEAR_INTR_STATUS_OFF	0x4
-#define MDP_INTF_TEAR_INTR_CLEAR_OFF	0x8
-#define MDP_LTM_INTR_EN_OFF		0x50
-#define MDP_LTM_INTR_STATUS_OFF		0x54
-#define MDP_LTM_INTR_CLEAR_OFF		0x58
-#define MDP_WB_INTR_EN_OFF		0x18C
-#define MDP_WB_INTR_STATUS_OFF		0x190
-#define MDP_WB_INTR_CLEAR_OFF		0x194
+#define HW_INTR_STATUS 0x0010
+#define MDP_AD4_INTR_EN_OFF 0x41c
+#define MDP_AD4_INTR_CLEAR_OFF 0x424
+#define MDP_AD4_INTR_STATUS_OFF 0x420
+#define MDP_INTF_TEAR_INTR_EN_OFF 0x0
+#define MDP_INTF_TEAR_INTR_STATUS_OFF 0x4
+#define MDP_INTF_TEAR_INTR_CLEAR_OFF 0x8
+#define MDP_LTM_INTR_EN_OFF 0x50
+#define MDP_LTM_INTR_STATUS_OFF 0x54
+#define MDP_LTM_INTR_CLEAR_OFF 0x58
+#define MDP_WB_INTR_EN_OFF 0x18C
+#define MDP_WB_INTR_STATUS_OFF 0x190
+#define MDP_WB_INTR_CLEAR_OFF 0x194
 
 /**
  * WB interrupt status bit definitions
@@ -225,197 +225,177 @@ struct sde_irq_type {
  */
 static struct sde_irq_type sde_irq_intr_map[] = {
 
-	{ SDE_IRQ_TYPE_WB_WFD_COMP, WB_0, SDE_INTR_WB_0_DONE, -1},
-	{ SDE_IRQ_TYPE_WB_WFD_COMP, WB_1, SDE_INTR_WB_1_DONE, -1},
-	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_0, SDE_INTR_WD_TIMER_0_DONE, -1},
-	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_1, SDE_INTR_WD_TIMER_1_DONE, -1},
+	{ SDE_IRQ_TYPE_WB_WFD_COMP, WB_0, SDE_INTR_WB_0_DONE, -1 },
+	{ SDE_IRQ_TYPE_WB_WFD_COMP, WB_1, SDE_INTR_WB_1_DONE, -1 },
+	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_0, SDE_INTR_WD_TIMER_0_DONE, -1 },
+	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_1, SDE_INTR_WD_TIMER_1_DONE, -1 },
 
-	{ SDE_IRQ_TYPE_WB_WFD_COMP, WB_2, SDE_INTR_WB_2_DONE, -1},
-	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_2, SDE_INTR_WD_TIMER_2_DONE, -1},
-	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_3, SDE_INTR_WD_TIMER_3_DONE, -1},
-	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_4, SDE_INTR_WD_TIMER_4_DONE, -1},
+	{ SDE_IRQ_TYPE_WB_WFD_COMP, WB_2, SDE_INTR_WB_2_DONE, -1 },
+	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_2, SDE_INTR_WD_TIMER_2_DONE, -1 },
+	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_3, SDE_INTR_WD_TIMER_3_DONE, -1 },
+	{ SDE_IRQ_TYPE_WD_TIMER, WD_TIMER_4, SDE_INTR_WD_TIMER_4_DONE, -1 },
 
-	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_0,
-		SDE_INTR_PING_PONG_0_DONE, -1},
-	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_1,
-		SDE_INTR_PING_PONG_1_DONE, -1},
-	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_2,
-		SDE_INTR_PING_PONG_2_DONE, -1},
-	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_3,
-		SDE_INTR_PING_PONG_3_DONE, -1},
+	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_0, SDE_INTR_PING_PONG_0_DONE,
+	  -1 },
+	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_1, SDE_INTR_PING_PONG_1_DONE,
+	  -1 },
+	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_2, SDE_INTR_PING_PONG_2_DONE,
+	  -1 },
+	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_3, SDE_INTR_PING_PONG_3_DONE,
+	  -1 },
 
 	{ SDE_IRQ_TYPE_PING_PONG_RD_PTR, PINGPONG_0,
-		SDE_INTR_PING_PONG_0_RD_PTR, -1},
+	  SDE_INTR_PING_PONG_0_RD_PTR, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_RD_PTR, PINGPONG_1,
-		SDE_INTR_PING_PONG_1_RD_PTR, -1},
+	  SDE_INTR_PING_PONG_1_RD_PTR, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_RD_PTR, PINGPONG_2,
-		SDE_INTR_PING_PONG_2_RD_PTR, -1},
+	  SDE_INTR_PING_PONG_2_RD_PTR, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_RD_PTR, PINGPONG_3,
-		SDE_INTR_PING_PONG_3_RD_PTR, -1},
+	  SDE_INTR_PING_PONG_3_RD_PTR, -1 },
 
 	{ SDE_IRQ_TYPE_PING_PONG_WR_PTR, PINGPONG_0,
-		SDE_INTR_PING_PONG_0_WR_PTR, -1},
+	  SDE_INTR_PING_PONG_0_WR_PTR, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_WR_PTR, PINGPONG_1,
-		SDE_INTR_PING_PONG_1_WR_PTR, -1},
+	  SDE_INTR_PING_PONG_1_WR_PTR, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_WR_PTR, PINGPONG_2,
-		SDE_INTR_PING_PONG_2_WR_PTR, -1},
+	  SDE_INTR_PING_PONG_2_WR_PTR, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_WR_PTR, PINGPONG_3,
-		SDE_INTR_PING_PONG_3_WR_PTR, -1},
+	  SDE_INTR_PING_PONG_3_WR_PTR, -1 },
 
 	{ SDE_IRQ_TYPE_PING_PONG_AUTO_REF, PINGPONG_0,
-		SDE_INTR_PING_PONG_0_AUTOREFRESH_DONE, -1},
+	  SDE_INTR_PING_PONG_0_AUTOREFRESH_DONE, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_AUTO_REF, PINGPONG_1,
-		SDE_INTR_PING_PONG_1_AUTOREFRESH_DONE, -1},
+	  SDE_INTR_PING_PONG_1_AUTOREFRESH_DONE, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_AUTO_REF, PINGPONG_2,
-		SDE_INTR_PING_PONG_2_AUTOREFRESH_DONE, -1},
+	  SDE_INTR_PING_PONG_2_AUTOREFRESH_DONE, -1 },
 	{ SDE_IRQ_TYPE_PING_PONG_AUTO_REF, PINGPONG_3,
-		SDE_INTR_PING_PONG_3_AUTOREFRESH_DONE, -1},
+	  SDE_INTR_PING_PONG_3_AUTOREFRESH_DONE, -1 },
 
-	{ SDE_IRQ_TYPE_INTF_UNDER_RUN, INTF_0, SDE_INTR_INTF_0_UNDERRUN, -1},
-	{ SDE_IRQ_TYPE_INTF_VSYNC, INTF_0, SDE_INTR_INTF_0_VSYNC, -1},
-	{ SDE_IRQ_TYPE_INTF_UNDER_RUN, INTF_1, SDE_INTR_INTF_1_UNDERRUN, -1},
-	{ SDE_IRQ_TYPE_INTF_VSYNC, INTF_1, SDE_INTR_INTF_1_VSYNC, -1},
+	{ SDE_IRQ_TYPE_INTF_UNDER_RUN, INTF_0, SDE_INTR_INTF_0_UNDERRUN, -1 },
+	{ SDE_IRQ_TYPE_INTF_VSYNC, INTF_0, SDE_INTR_INTF_0_VSYNC, -1 },
+	{ SDE_IRQ_TYPE_INTF_UNDER_RUN, INTF_1, SDE_INTR_INTF_1_UNDERRUN, -1 },
+	{ SDE_IRQ_TYPE_INTF_VSYNC, INTF_1, SDE_INTR_INTF_1_VSYNC, -1 },
 
-	{ SDE_IRQ_TYPE_INTF_UNDER_RUN, INTF_2, SDE_INTR_INTF_2_UNDERRUN, -1},
-	{ SDE_IRQ_TYPE_INTF_VSYNC, INTF_2, SDE_INTR_INTF_2_VSYNC, -1},
-	{ SDE_IRQ_TYPE_INTF_UNDER_RUN, INTF_3, SDE_INTR_INTF_3_UNDERRUN, -1},
-	{ SDE_IRQ_TYPE_INTF_VSYNC, INTF_3, SDE_INTR_INTF_3_VSYNC, -1},
+	{ SDE_IRQ_TYPE_INTF_UNDER_RUN, INTF_2, SDE_INTR_INTF_2_UNDERRUN, -1 },
+	{ SDE_IRQ_TYPE_INTF_VSYNC, INTF_2, SDE_INTR_INTF_2_VSYNC, -1 },
+	{ SDE_IRQ_TYPE_INTF_UNDER_RUN, INTF_3, SDE_INTR_INTF_3_UNDERRUN, -1 },
+	{ SDE_IRQ_TYPE_INTF_VSYNC, INTF_3, SDE_INTR_INTF_3_VSYNC, -1 },
 };
 
 static struct sde_irq_type sde_irq_intr2_map[] = {
-	{ SDE_IRQ_TYPE_CTL_START, CTL_0,
-		SDE_INTR_CTL_0_START, -1},
-	{ SDE_IRQ_TYPE_CTL_START, CTL_1,
-		SDE_INTR_CTL_1_START, -1},
-	{ SDE_IRQ_TYPE_CTL_START, CTL_2,
-		SDE_INTR_CTL_2_START, -1},
-	{ SDE_IRQ_TYPE_CTL_START, CTL_3,
-		SDE_INTR_CTL_3_START, -1},
-	{ SDE_IRQ_TYPE_CTL_START, CTL_4,
-		SDE_INTR_CTL_4_START, -1},
-	{ SDE_IRQ_TYPE_CTL_START, CTL_5,
-		SDE_INTR_CTL_5_START, -1},
+	{ SDE_IRQ_TYPE_CTL_START, CTL_0, SDE_INTR_CTL_0_START, -1 },
+	{ SDE_IRQ_TYPE_CTL_START, CTL_1, SDE_INTR_CTL_1_START, -1 },
+	{ SDE_IRQ_TYPE_CTL_START, CTL_2, SDE_INTR_CTL_2_START, -1 },
+	{ SDE_IRQ_TYPE_CTL_START, CTL_3, SDE_INTR_CTL_3_START, -1 },
+	{ SDE_IRQ_TYPE_CTL_START, CTL_4, SDE_INTR_CTL_4_START, -1 },
+	{ SDE_IRQ_TYPE_CTL_START, CTL_5, SDE_INTR_CTL_5_START, -1 },
 
-	{ SDE_IRQ_TYPE_CTL_DONE, CTL_0,
-		SDE_INTR_CTL_0_DONE, -1},
-	{ SDE_IRQ_TYPE_CTL_DONE, CTL_1,
-		SDE_INTR_CTL_1_DONE, -1},
-	{ SDE_IRQ_TYPE_CTL_DONE, CTL_2,
-		SDE_INTR_CTL_2_DONE, -1},
-	{ SDE_IRQ_TYPE_CTL_DONE, CTL_3,
-		SDE_INTR_CTL_3_DONE, -1},
-	{ SDE_IRQ_TYPE_CTL_DONE, CTL_4,
-		SDE_INTR_CTL_4_DONE, -1},
-	{ SDE_IRQ_TYPE_CTL_DONE, CTL_5,
-		SDE_INTR_CTL_5_DONE, -1},
+	{ SDE_IRQ_TYPE_CTL_DONE, CTL_0, SDE_INTR_CTL_0_DONE, -1 },
+	{ SDE_IRQ_TYPE_CTL_DONE, CTL_1, SDE_INTR_CTL_1_DONE, -1 },
+	{ SDE_IRQ_TYPE_CTL_DONE, CTL_2, SDE_INTR_CTL_2_DONE, -1 },
+	{ SDE_IRQ_TYPE_CTL_DONE, CTL_3, SDE_INTR_CTL_3_DONE, -1 },
+	{ SDE_IRQ_TYPE_CTL_DONE, CTL_4, SDE_INTR_CTL_4_DONE, -1 },
+	{ SDE_IRQ_TYPE_CTL_DONE, CTL_5, SDE_INTR_CTL_5_DONE, -1 },
 
-	{ SDE_IRQ_TYPE_CWB_OVERFLOW, PINGPONG_CWB_0, SDE_INTR_CWB_OVERFLOW, -1},
-	{ SDE_IRQ_TYPE_CWB_OVERFLOW, PINGPONG_CWB_2, SDE_INTR_CWB_2_OVERFLOW, -1},
+	{ SDE_IRQ_TYPE_CWB_OVERFLOW, PINGPONG_CWB_0, SDE_INTR_CWB_OVERFLOW,
+	  -1 },
+	{ SDE_IRQ_TYPE_CWB_OVERFLOW, PINGPONG_CWB_2, SDE_INTR_CWB_2_OVERFLOW,
+	  -1 },
 
-	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_4,
-		SDE_INTR_PING_PONG_4_DONE, -1},
-	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_5,
-		SDE_INTR_PING_PONG_5_DONE, -1},
+	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_4, SDE_INTR_PING_PONG_4_DONE,
+	  -1 },
+	{ SDE_IRQ_TYPE_PING_PONG_COMP, PINGPONG_5, SDE_INTR_PING_PONG_5_DONE,
+	  -1 },
 };
 
 static struct sde_irq_type sde_irq_hist_map[] = {
-	{ SDE_IRQ_TYPE_HIST_VIG_DONE, SSPP_VIG0, SDE_INTR_HIST_VIG_0_DONE, -1},
+	{ SDE_IRQ_TYPE_HIST_VIG_DONE, SSPP_VIG0, SDE_INTR_HIST_VIG_0_DONE, -1 },
 	{ SDE_IRQ_TYPE_HIST_VIG_RSTSEQ, SSPP_VIG0,
-		SDE_INTR_HIST_VIG_0_RSTSEQ_DONE, -1},
-	{ SDE_IRQ_TYPE_HIST_VIG_DONE, SSPP_VIG1, SDE_INTR_HIST_VIG_1_DONE, -1},
+	  SDE_INTR_HIST_VIG_0_RSTSEQ_DONE, -1 },
+	{ SDE_IRQ_TYPE_HIST_VIG_DONE, SSPP_VIG1, SDE_INTR_HIST_VIG_1_DONE, -1 },
 	{ SDE_IRQ_TYPE_HIST_VIG_RSTSEQ, SSPP_VIG1,
-		SDE_INTR_HIST_VIG_1_RSTSEQ_DONE, -1},
-	{ SDE_IRQ_TYPE_HIST_VIG_DONE, SSPP_VIG2, SDE_INTR_HIST_VIG_2_DONE, -1},
+	  SDE_INTR_HIST_VIG_1_RSTSEQ_DONE, -1 },
+	{ SDE_IRQ_TYPE_HIST_VIG_DONE, SSPP_VIG2, SDE_INTR_HIST_VIG_2_DONE, -1 },
 	{ SDE_IRQ_TYPE_HIST_VIG_RSTSEQ, SSPP_VIG2,
-		SDE_INTR_HIST_VIG_2_RSTSEQ_DONE, -1},
-	{ SDE_IRQ_TYPE_HIST_VIG_DONE, SSPP_VIG3, SDE_INTR_HIST_VIG_3_DONE, -1},
+	  SDE_INTR_HIST_VIG_2_RSTSEQ_DONE, -1 },
+	{ SDE_IRQ_TYPE_HIST_VIG_DONE, SSPP_VIG3, SDE_INTR_HIST_VIG_3_DONE, -1 },
 	{ SDE_IRQ_TYPE_HIST_VIG_RSTSEQ, SSPP_VIG3,
-		SDE_INTR_HIST_VIG_3_RSTSEQ_DONE, -1},
+	  SDE_INTR_HIST_VIG_3_RSTSEQ_DONE, -1 },
 
-	{ SDE_IRQ_TYPE_HIST_DSPP_DONE, DSPP_0, SDE_INTR_HIST_DSPP_0_DONE, -1},
+	{ SDE_IRQ_TYPE_HIST_DSPP_DONE, DSPP_0, SDE_INTR_HIST_DSPP_0_DONE, -1 },
 	{ SDE_IRQ_TYPE_HIST_DSPP_RSTSEQ, DSPP_0,
-		SDE_INTR_HIST_DSPP_0_RSTSEQ_DONE, -1},
-	{ SDE_IRQ_TYPE_HIST_DSPP_DONE, DSPP_1, SDE_INTR_HIST_DSPP_1_DONE, -1},
+	  SDE_INTR_HIST_DSPP_0_RSTSEQ_DONE, -1 },
+	{ SDE_IRQ_TYPE_HIST_DSPP_DONE, DSPP_1, SDE_INTR_HIST_DSPP_1_DONE, -1 },
 	{ SDE_IRQ_TYPE_HIST_DSPP_RSTSEQ, DSPP_1,
-		SDE_INTR_HIST_DSPP_1_RSTSEQ_DONE, -1},
-	{ SDE_IRQ_TYPE_HIST_DSPP_DONE, DSPP_2, SDE_INTR_HIST_DSPP_2_DONE, -1},
+	  SDE_INTR_HIST_DSPP_1_RSTSEQ_DONE, -1 },
+	{ SDE_IRQ_TYPE_HIST_DSPP_DONE, DSPP_2, SDE_INTR_HIST_DSPP_2_DONE, -1 },
 	{ SDE_IRQ_TYPE_HIST_DSPP_RSTSEQ, DSPP_2,
-		SDE_INTR_HIST_DSPP_2_RSTSEQ_DONE, -1},
-	{ SDE_IRQ_TYPE_HIST_DSPP_DONE, DSPP_3, SDE_INTR_HIST_DSPP_3_DONE, -1},
+	  SDE_INTR_HIST_DSPP_2_RSTSEQ_DONE, -1 },
+	{ SDE_IRQ_TYPE_HIST_DSPP_DONE, DSPP_3, SDE_INTR_HIST_DSPP_3_DONE, -1 },
 	{ SDE_IRQ_TYPE_HIST_DSPP_RSTSEQ, DSPP_3,
-		SDE_INTR_HIST_DSPP_3_RSTSEQ_DONE, -1},
+	  SDE_INTR_HIST_DSPP_3_RSTSEQ_DONE, -1 },
 };
 
 static struct sde_irq_type sde_irq_intf_map[] = {
-	{ SDE_IRQ_TYPE_SFI_VIDEO_IN, -1,
-		SDE_INTR_VIDEO_INTO_STATIC, -1},
-	{ SDE_IRQ_TYPE_SFI_VIDEO_OUT, -1,
-		SDE_INTR_VIDEO_OUTOF_STATIC, -1},
-	{ SDE_IRQ_TYPE_SFI_CMD_0_IN, -1,
-		SDE_INTR_DSICMD_0_INTO_STATIC, -1},
-	{ SDE_IRQ_TYPE_SFI_CMD_0_OUT, -1,
-		SDE_INTR_DSICMD_0_OUTOF_STATIC, -1},
+	{ SDE_IRQ_TYPE_SFI_VIDEO_IN, -1, SDE_INTR_VIDEO_INTO_STATIC, -1 },
+	{ SDE_IRQ_TYPE_SFI_VIDEO_OUT, -1, SDE_INTR_VIDEO_OUTOF_STATIC, -1 },
+	{ SDE_IRQ_TYPE_SFI_CMD_0_IN, -1, SDE_INTR_DSICMD_0_INTO_STATIC, -1 },
+	{ SDE_IRQ_TYPE_SFI_CMD_0_OUT, -1, SDE_INTR_DSICMD_0_OUTOF_STATIC, -1 },
 
-	{ SDE_IRQ_TYPE_SFI_CMD_1_IN, -1,
-		SDE_INTR_DSICMD_1_INTO_STATIC, -1},
-	{ SDE_IRQ_TYPE_SFI_CMD_1_OUT, -1,
-		SDE_INTR_DSICMD_1_OUTOF_STATIC, -1},
-	{ SDE_IRQ_TYPE_SFI_CMD_2_IN, -1,
-		SDE_INTR_DSICMD_2_INTO_STATIC, -1},
-	{ SDE_IRQ_TYPE_SFI_CMD_2_OUT, -1,
-		SDE_INTR_DSICMD_2_OUTOF_STATIC, -1},
+	{ SDE_IRQ_TYPE_SFI_CMD_1_IN, -1, SDE_INTR_DSICMD_1_INTO_STATIC, -1 },
+	{ SDE_IRQ_TYPE_SFI_CMD_1_OUT, -1, SDE_INTR_DSICMD_1_OUTOF_STATIC, -1 },
+	{ SDE_IRQ_TYPE_SFI_CMD_2_IN, -1, SDE_INTR_DSICMD_2_INTO_STATIC, -1 },
+	{ SDE_IRQ_TYPE_SFI_CMD_2_OUT, -1, SDE_INTR_DSICMD_2_OUTOF_STATIC, -1 },
 
-	{ SDE_IRQ_TYPE_PROG_LINE, -1, SDE_INTR_PROG_LINE, -1},
-	{ SDE_IRQ_TYPE_WD_TIMER, -1, SDE_INTR_WD_TIMER_0_DONE, -1},
+	{ SDE_IRQ_TYPE_PROG_LINE, -1, SDE_INTR_PROG_LINE, -1 },
+	{ SDE_IRQ_TYPE_WD_TIMER, -1, SDE_INTR_WD_TIMER_0_DONE, -1 },
 };
 
 static struct sde_irq_type sde_irq_ad4_map[] = {
-	{ SDE_IRQ_TYPE_AD4_BL_DONE, -1, SDE_INTR_BACKLIGHT_UPDATED, -1},
+	{ SDE_IRQ_TYPE_AD4_BL_DONE, -1, SDE_INTR_BACKLIGHT_UPDATED, -1 },
 };
 
 static struct sde_irq_type sde_irq_intf_te_map[] = {
 	{ SDE_IRQ_TYPE_INTF_TEAR_AUTO_REF, -1,
-		SDE_INTR_INTF_TEAR_AUTOREFRESH_DONE, -1},
-	{ SDE_IRQ_TYPE_INTF_TEAR_WR_PTR, -1,
-		SDE_INTR_INTF_TEAR_WR_PTR, -1},
-	{ SDE_IRQ_TYPE_INTF_TEAR_RD_PTR, -1,
-		SDE_INTR_INTF_TEAR_RD_PTR, -1},
+	  SDE_INTR_INTF_TEAR_AUTOREFRESH_DONE, -1 },
+	{ SDE_IRQ_TYPE_INTF_TEAR_WR_PTR, -1, SDE_INTR_INTF_TEAR_WR_PTR, -1 },
+	{ SDE_IRQ_TYPE_INTF_TEAR_RD_PTR, -1, SDE_INTR_INTF_TEAR_RD_PTR, -1 },
 	{ SDE_IRQ_TYPE_INTF_TEAR_TEAR_DETECT, -1,
-		SDE_INTR_INTF_TEAR_TEAR_DETECTED, -1},
-	{ SDE_IRQ_TYPE_INTF_TEAR_TE_ASSERT, -1,
-		SDE_INTR_INTF_TEAR_TE_DETECTED, -1},
+	  SDE_INTR_INTF_TEAR_TEAR_DETECTED, -1 },
+	{ SDE_IRQ_TYPE_INTF_TEAR_TE_ASSERT, -1, SDE_INTR_INTF_TEAR_TE_DETECTED,
+	  -1 },
 	{ SDE_IRQ_TYPE_INTF_TEAR_TE_DEASSERT, -1,
-		SDE_INTR_INTF_TEAR_TE_DEASSERT_DETECTED, -1},
+	  SDE_INTR_INTF_TEAR_TE_DEASSERT_DETECTED, -1 },
 };
 
 static struct sde_irq_type sde_irq_ltm_map[] = {
-	{ SDE_IRQ_TYPE_LTM_STATS_DONE, -1, SDE_INTR_LTM_STATS_DONE, -1},
-	{ SDE_IRQ_TYPE_LTM_STATS_WB_PB, -1, SDE_INTR_LTM_STATS_WB_PB, -1},
+	{ SDE_IRQ_TYPE_LTM_STATS_DONE, -1, SDE_INTR_LTM_STATS_DONE, -1 },
+	{ SDE_IRQ_TYPE_LTM_STATS_WB_PB, -1, SDE_INTR_LTM_STATS_WB_PB, -1 },
 };
 
 static struct sde_irq_type sde_irq_wb_map[] = {
-	{ SDE_IRQ_TYPE_WB_PROG_LINE, -1, SDE_INTR_WB_PROG_LINE, -1},
+	{ SDE_IRQ_TYPE_WB_PROG_LINE, -1, SDE_INTR_WB_PROG_LINE, -1 },
 };
 
 static int sde_hw_intr_irqidx_lookup(struct sde_hw_intr *intr,
-	enum sde_intr_type intr_type, u32 instance_idx)
+				     enum sde_intr_type intr_type,
+				     u32 instance_idx)
 {
 	int i;
 
 	for (i = 0; i < intr->sde_irq_map_size; i++) {
 		if (intr_type == intr->sde_irq_map[i].intr_type &&
-			instance_idx == intr->sde_irq_map[i].instance_idx)
+		    instance_idx == intr->sde_irq_map[i].instance_idx)
 			return i;
 	}
 
-	pr_debug("IRQ lookup fail!! intr_type=%d, instance_idx=%d\n",
-			intr_type, instance_idx);
+	pr_debug("IRQ lookup fail!! intr_type=%d, instance_idx=%d\n", intr_type,
+		 instance_idx);
 	return -EINVAL;
 }
 
 static void sde_hw_intr_dispatch_irq(struct sde_hw_intr *intr,
-		void (*cbfunc)(void *, int),
-		void *arg)
+				     void (*cbfunc)(void *, int), void *arg)
 {
 	int reg_idx;
 	int irq_idx;
@@ -429,71 +409,72 @@ static void sde_hw_intr_dispatch_irq(struct sde_hw_intr *intr,
 		return;
 
 	/*
-	 * The dispatcher will save the IRQ status before calling here.
-	 * Now need to go through each IRQ status and find matching
-	 * irq lookup index.
-	 */
+   * The dispatcher will save the IRQ status before calling here.
+   * Now need to go through each IRQ status and find matching
+   * irq lookup index.
+   */
 	spin_lock_irqsave(&intr->irq_lock, irq_flags);
 	for (reg_idx = 0; reg_idx < intr->sde_irq_size; reg_idx++) {
 		/*
-		 * Each Interrupt register has dynamic range of indexes,
-		 * initialized during hw_intr_init when sde_irq_tbl is created.
-		 */
+     * Each Interrupt register has dynamic range of indexes,
+     * initialized during hw_intr_init when sde_irq_tbl is created.
+     */
 		start_idx = intr->sde_irq_tbl[reg_idx].map_idx_start;
 		end_idx = intr->sde_irq_tbl[reg_idx].map_idx_end;
 
 		if (start_idx >= intr->sde_irq_map_size ||
-				end_idx > intr->sde_irq_map_size)
+		    end_idx > intr->sde_irq_map_size)
 			continue;
 
 		/* Skip the interrupts which are not enabled */
-		 if (!intr->cache_irq_mask[reg_idx])
+		if (!intr->cache_irq_mask[reg_idx])
 			continue;
 
 		/* Read interrupt status */
-		irq_status = SDE_REG_READ(&intr->hw, intr->sde_irq_tbl[reg_idx].status_off);
+		irq_status = SDE_REG_READ(
+			&intr->hw, intr->sde_irq_tbl[reg_idx].status_off);
 
 		/* Read enable mask */
-		enable_mask = SDE_REG_READ(&intr->hw, intr->sde_irq_tbl[reg_idx].en_off);
+		enable_mask = SDE_REG_READ(&intr->hw,
+					   intr->sde_irq_tbl[reg_idx].en_off);
 
 		/* and clear the interrupt */
 		if (irq_status)
-			SDE_REG_WRITE(&intr->hw, intr->sde_irq_tbl[reg_idx].clr_off,
-					irq_status);
+			SDE_REG_WRITE(&intr->hw,
+				      intr->sde_irq_tbl[reg_idx].clr_off,
+				      irq_status);
 
 		/* Finally update IRQ status based on enable mask */
 		irq_status &= enable_mask;
 
 		/*
-		 * Search through matching intr status from irq map.
-		 * start_idx and end_idx defined the search range in
-		 * the sde_irq_map.
-		 */
-		for (irq_idx = start_idx;
-				(irq_idx < end_idx) && irq_status;
-				irq_idx++)
+     * Search through matching intr status from irq map.
+     * start_idx and end_idx defined the search range in
+     * the sde_irq_map.
+     */
+		for (irq_idx = start_idx; (irq_idx < end_idx) && irq_status;
+		     irq_idx++)
 			if ((irq_status &
-				intr->sde_irq_map[irq_idx].irq_mask) &&
-				(intr->sde_irq_map[irq_idx].reg_idx ==
-				 reg_idx)) {
+			     intr->sde_irq_map[irq_idx].irq_mask) &&
+			    (intr->sde_irq_map[irq_idx].reg_idx == reg_idx)) {
 				/*
-				 * Once a match on irq mask, perform a callback
-				 * to the given cbfunc. cbfunc will take care
-				 * the interrupt status clearing. If cbfunc is
-				 * not provided, then the interrupt clearing
-				 * is here.
-				 */
+         * Once a match on irq mask, perform a callback
+         * to the given cbfunc. cbfunc will take care
+         * the interrupt status clearing. If cbfunc is
+         * not provided, then the interrupt clearing
+         * is here.
+         */
 				if (cbfunc)
 					cbfunc(arg, irq_idx);
 				else
 					intr->ops.clear_intr_status_nolock(
-							intr, irq_idx);
+						intr, irq_idx);
 
 				/*
-				 * When callback finish, clear the irq_status
-				 * with the matching mask. Once irq_status
-				 * is all cleared, the search can be stopped.
-				 */
+         * When callback finish, clear the irq_status
+         * with the matching mask. Once irq_status
+         * is all cleared, the search can be stopped.
+         */
 				irq_status &=
 					~intr->sde_irq_map[irq_idx].irq_mask;
 			}
@@ -548,8 +529,8 @@ static int sde_hw_intr_enable_irq_nolock(struct sde_hw_intr *intr, int irq_idx)
 		intr->cache_irq_mask[reg_idx] = cache_irq_mask;
 	}
 
-	pr_debug("%s MASK:0x%.8x, CACHE-MASK:0x%.8x\n", dbgstr,
-			irq->irq_mask, cache_irq_mask);
+	pr_debug("%s MASK:0x%.8x, CACHE-MASK:0x%.8x\n", dbgstr, irq->irq_mask,
+		 cache_irq_mask);
 
 	return 0;
 }
@@ -597,8 +578,8 @@ static int sde_hw_intr_disable_irq_nolock(struct sde_hw_intr *intr, int irq_idx)
 		intr->cache_irq_mask[reg_idx] = cache_irq_mask;
 	}
 
-	pr_debug("%s MASK:0x%.8x, CACHE-MASK:0x%.8x\n", dbgstr,
-			irq->irq_mask, cache_irq_mask);
+	pr_debug("%s MASK:0x%.8x, CACHE-MASK:0x%.8x\n", dbgstr, irq->irq_mask,
+		 cache_irq_mask);
 
 	return 0;
 }
@@ -612,7 +593,7 @@ static int sde_hw_intr_clear_irqs(struct sde_hw_intr *intr)
 
 	for (i = 0; i < intr->sde_irq_size; i++)
 		SDE_REG_WRITE(&intr->hw, intr->sde_irq_tbl[i].clr_off,
-				0xffffffff);
+			      0xffffffff);
 
 	/* ensure register writes go through */
 	wmb();
@@ -629,7 +610,7 @@ static int sde_hw_intr_disable_irqs(struct sde_hw_intr *intr)
 
 	for (i = 0; i < intr->sde_irq_size; i++)
 		SDE_REG_WRITE(&intr->hw, intr->sde_irq_tbl[i].en_off,
-				0x00000000);
+			      0x00000000);
 
 	/* ensure register writes go through */
 	wmb();
@@ -638,7 +619,7 @@ static int sde_hw_intr_disable_irqs(struct sde_hw_intr *intr)
 }
 
 static int sde_hw_intr_get_interrupt_sources(struct sde_hw_intr *intr,
-		uint32_t *sources)
+					     uint32_t *sources)
 {
 	if (!intr || !sources)
 		return -EINVAL;
@@ -649,7 +630,7 @@ static int sde_hw_intr_get_interrupt_sources(struct sde_hw_intr *intr,
 }
 
 static void sde_hw_intr_clear_intr_status_nolock(struct sde_hw_intr *intr,
-		int irq_idx)
+						 int irq_idx)
 {
 	int reg_idx;
 
@@ -668,14 +649,14 @@ static void sde_hw_intr_clear_intr_status_nolock(struct sde_hw_intr *intr,
 	}
 
 	SDE_REG_WRITE(&intr->hw, intr->sde_irq_tbl[reg_idx].clr_off,
-			intr->sde_irq_map[irq_idx].irq_mask);
+		      intr->sde_irq_map[irq_idx].irq_mask);
 
 	/* ensure register writes go through */
 	wmb();
 }
 
 static void sde_hw_intr_clear_interrupt_status(struct sde_hw_intr *intr,
-		int irq_idx)
+					       int irq_idx)
 {
 	unsigned long irq_flags;
 
@@ -688,7 +669,7 @@ static void sde_hw_intr_clear_interrupt_status(struct sde_hw_intr *intr,
 }
 
 static u32 sde_hw_intr_get_intr_status_nolock(struct sde_hw_intr *intr,
-		int irq_idx, bool clear)
+					      int irq_idx, bool clear)
 {
 	int reg_idx;
 	u32 intr_status;
@@ -707,12 +688,12 @@ static u32 sde_hw_intr_get_intr_status_nolock(struct sde_hw_intr *intr,
 		return 0;
 	}
 
-	intr_status = SDE_REG_READ(&intr->hw,
-			intr->sde_irq_tbl[reg_idx].status_off) &
-					intr->sde_irq_map[irq_idx].irq_mask;
+	intr_status =
+		SDE_REG_READ(&intr->hw, intr->sde_irq_tbl[reg_idx].status_off) &
+		intr->sde_irq_map[irq_idx].irq_mask;
 	if (intr_status && clear)
 		SDE_REG_WRITE(&intr->hw, intr->sde_irq_tbl[reg_idx].clr_off,
-				intr_status);
+			      intr_status);
 
 	/* ensure register writes go through */
 	wmb();
@@ -721,7 +702,7 @@ static u32 sde_hw_intr_get_intr_status_nolock(struct sde_hw_intr *intr,
 }
 
 static u32 sde_hw_intr_get_interrupt_status(struct sde_hw_intr *intr,
-		int irq_idx, bool clear)
+					    int irq_idx, bool clear)
 {
 	int reg_idx;
 	unsigned long irq_flags;
@@ -743,12 +724,12 @@ static u32 sde_hw_intr_get_interrupt_status(struct sde_hw_intr *intr,
 
 	spin_lock_irqsave(&intr->irq_lock, irq_flags);
 
-	intr_status = SDE_REG_READ(&intr->hw,
-			intr->sde_irq_tbl[reg_idx].status_off) &
-					intr->sde_irq_map[irq_idx].irq_mask;
+	intr_status =
+		SDE_REG_READ(&intr->hw, intr->sde_irq_tbl[reg_idx].status_off) &
+		intr->sde_irq_map[irq_idx].irq_mask;
 	if (intr_status && clear)
 		SDE_REG_WRITE(&intr->hw, intr->sde_irq_tbl[reg_idx].clr_off,
-				intr_status);
+			      intr_status);
 
 	/* ensure register writes go through */
 	wmb();
@@ -759,7 +740,7 @@ static u32 sde_hw_intr_get_interrupt_status(struct sde_hw_intr *intr,
 }
 
 static int _set_sde_irq_tbl_offset_top(struct sde_intr_reg *sde_irq,
-		struct sde_intr_irq_offsets *item)
+				       struct sde_intr_irq_offsets *item)
 {
 	u32 base_offset;
 
@@ -785,7 +766,7 @@ static int _set_sde_irq_tbl_offset_top(struct sde_intr_reg *sde_irq,
 		break;
 	default:
 		pr_err("invalid TOP intr for instance %d\n",
-				item->instance_idx);
+		       item->instance_idx);
 		return -EINVAL;
 	}
 
@@ -793,7 +774,7 @@ static int _set_sde_irq_tbl_offset_top(struct sde_intr_reg *sde_irq,
 }
 
 static int _set_sde_irq_tbl_offset(struct sde_intr_reg *sde_irq,
-		struct sde_intr_irq_offsets *item)
+				   struct sde_intr_irq_offsets *item)
 {
 	u32 base_offset, rc = 0;
 
@@ -818,8 +799,8 @@ static int _set_sde_irq_tbl_offset(struct sde_intr_reg *sde_irq,
 	case SDE_INTR_HWBLK_INTF_TEAR:
 		sde_irq->clr_off = base_offset + MDP_INTF_TEAR_INTR_CLEAR_OFF;
 		sde_irq->en_off = base_offset + MDP_INTF_TEAR_INTR_EN_OFF;
-		sde_irq->status_off = base_offset +
-				MDP_INTF_TEAR_INTR_STATUS_OFF;
+		sde_irq->status_off =
+			base_offset + MDP_INTF_TEAR_INTR_STATUS_OFF;
 		break;
 	case SDE_INTR_HWBLK_LTM:
 		sde_irq->clr_off = base_offset + MDP_LTM_INTR_CLEAR_OFF;
@@ -833,8 +814,7 @@ static int _set_sde_irq_tbl_offset(struct sde_intr_reg *sde_irq,
 		break;
 
 	default:
-		pr_err("unrecognized intr blk type %d\n",
-				item->type);
+		pr_err("unrecognized intr blk type %d\n", item->type);
 		rc = -EINVAL;
 	}
 
@@ -857,7 +837,8 @@ static void __setup_intr_ops(struct sde_hw_intr_ops *ops)
 }
 
 static struct sde_mdss_base_cfg *__intr_offset(struct sde_mdss_cfg *m,
-		void __iomem *addr, struct sde_hw_blk_reg_map *hw)
+					       void __iomem *addr,
+					       struct sde_hw_blk_reg_map *hw)
 {
 	if (!m || !addr || !hw || m->mdp_count == 0)
 		return NULL;
@@ -929,8 +910,8 @@ static inline u32 _get_irq_map_size(struct sde_intr_irq_offsets *item)
 	return ret;
 }
 
-static inline struct sde_irq_type *_get_irq_map_addr_top(
-		enum sde_intr_top_intr inst)
+static inline struct sde_irq_type *
+_get_irq_map_addr_top(enum sde_intr_top_intr inst)
 {
 	struct sde_irq_type *ret = NULL;
 
@@ -951,8 +932,8 @@ static inline struct sde_irq_type *_get_irq_map_addr_top(
 	return ret;
 }
 
-static inline struct sde_irq_type *_get_irq_map_addr(
-		struct sde_intr_irq_offsets *item)
+static inline struct sde_irq_type *
+_get_irq_map_addr(struct sde_intr_irq_offsets *item)
 {
 	struct sde_irq_type *ret = NULL;
 
@@ -983,7 +964,8 @@ static inline struct sde_irq_type *_get_irq_map_addr(
 }
 
 static int _sde_copy_regs(struct sde_irq_type *sde_irq_map, u32 size,
-	struct sde_intr_irq_offsets *item, u32 low_idx, u32 high_idx)
+			  struct sde_intr_irq_offsets *item, u32 low_idx,
+			  u32 high_idx)
 {
 	int i, j = 0;
 	struct sde_irq_type *src = _get_irq_map_addr(item);
@@ -993,9 +975,9 @@ static int _sde_copy_regs(struct sde_irq_type *sde_irq_map, u32 size,
 		return -EINVAL;
 
 	if (low_idx >= size || high_idx > size ||
-		(high_idx - low_idx > src_size)) {
-		pr_err("invalid size l:%d h:%d dst:%d src:%d\n",
-			low_idx, high_idx, size, src_size);
+	    (high_idx - low_idx > src_size)) {
+		pr_err("invalid size l:%d h:%d dst:%d src:%d\n", low_idx,
+		       high_idx, size, src_size);
 		return -EINVAL;
 	}
 
@@ -1006,7 +988,7 @@ static int _sde_copy_regs(struct sde_irq_type *sde_irq_map, u32 size,
 }
 
 static int _sde_hw_intr_init_irq_tables(struct sde_hw_intr *intr,
-	struct sde_mdss_cfg *m)
+					struct sde_mdss_cfg *m)
 {
 	struct sde_intr_irq_offsets *item;
 	int i, sde_irq_tbl_idx = 0, ret = 0;
@@ -1019,14 +1001,14 @@ static int _sde_hw_intr_init_irq_tables(struct sde_hw_intr *intr,
 		high_idx = low_idx + _get_irq_map_size(item);
 
 		if (sde_irq_tbl_idx >= intr->sde_irq_size ||
-			sde_irq_tbl_idx < 0) {
+		    sde_irq_tbl_idx < 0) {
 			ret = -EINVAL;
 			goto exit;
 		}
 
 		/* init sde_irq_map with the global irq mapping table */
 		if (_sde_copy_regs(intr->sde_irq_map, intr->sde_irq_map_size,
-				item, low_idx, high_idx)) {
+				   item, low_idx, high_idx)) {
 			ret = -EINVAL;
 			goto exit;
 		}
@@ -1036,19 +1018,19 @@ static int _sde_hw_intr_init_irq_tables(struct sde_hw_intr *intr,
 			intr->sde_irq_map[i].reg_idx = sde_irq_tbl_idx;
 			if (item->type != SDE_INTR_HWBLK_TOP)
 				intr->sde_irq_map[i].instance_idx =
-						item->instance_idx;
+					item->instance_idx;
 			pr_debug("sde_irq_map[%d].reg_idx=%d .inst_idx = %d\n",
-				i, sde_irq_tbl_idx, item->instance_idx);
+				 i, sde_irq_tbl_idx, item->instance_idx);
 		}
 
 		/* track the idx of the mapping table for this irq in
-		 * sde_irq_map, this to only access the indexes of this
-		 * irq during the irq dispatch
-		 */
+     * sde_irq_map, this to only access the indexes of this
+     * irq during the irq dispatch
+     */
 		intr->sde_irq_tbl[sde_irq_tbl_idx].map_idx_start = low_idx;
 		intr->sde_irq_tbl[sde_irq_tbl_idx].map_idx_end = high_idx;
 		ret = _set_sde_irq_tbl_offset(
-				&intr->sde_irq_tbl[sde_irq_tbl_idx], item);
+			&intr->sde_irq_tbl[sde_irq_tbl_idx], item);
 		if (ret)
 			goto exit;
 
@@ -1062,8 +1044,7 @@ exit:
 	return ret;
 }
 
-struct sde_hw_intr *sde_hw_intr_init(void __iomem *addr,
-		struct sde_mdss_cfg *m)
+struct sde_hw_intr *sde_hw_intr_init(void __iomem *addr, struct sde_mdss_cfg *m)
 {
 	struct sde_hw_intr *intr = NULL;
 	struct sde_mdss_base_cfg *cfg;
@@ -1096,8 +1077,8 @@ struct sde_hw_intr *sde_hw_intr_init(void __iomem *addr,
 		size = _get_irq_map_size(item);
 		if (!size || irq_map_count >= UINT_MAX - size) {
 			pr_err("wrong map cnt idx:%d blk:%d/%d sz:%d cnt:%d\n",
-				irq_regs_count, item->type, item->instance_idx,
-				size, irq_map_count);
+			       irq_regs_count, item->type, item->instance_idx,
+			       size, irq_map_count);
 			ret = -EINVAL;
 			goto exit;
 		}
@@ -1107,16 +1088,16 @@ struct sde_hw_intr *sde_hw_intr_init(void __iomem *addr,
 	}
 
 	if (irq_regs_count == 0 || irq_map_count == 0) {
-		pr_err("invalid irq map: %d %d\n",
-				irq_regs_count, irq_map_count);
+		pr_err("invalid irq map: %d %d\n", irq_regs_count,
+		       irq_map_count);
 		ret = -EINVAL;
 		goto exit;
 	}
 
 	/* Allocate table for the irq registers */
 	intr->sde_irq_size = irq_regs_count;
-	intr->sde_irq_tbl = kcalloc(irq_regs_count, sizeof(*intr->sde_irq_tbl),
-		GFP_KERNEL);
+	intr->sde_irq_tbl =
+		kcalloc(irq_regs_count, sizeof(*intr->sde_irq_tbl), GFP_KERNEL);
 	if (intr->sde_irq_tbl == NULL) {
 		ret = -ENOMEM;
 		goto exit;
@@ -1124,8 +1105,8 @@ struct sde_hw_intr *sde_hw_intr_init(void __iomem *addr,
 
 	/* Allocate table with the valid interrupts bits */
 	intr->sde_irq_map_size = irq_map_count;
-	intr->sde_irq_map = kcalloc(irq_map_count, sizeof(*intr->sde_irq_map),
-		GFP_KERNEL);
+	intr->sde_irq_map =
+		kcalloc(irq_map_count, sizeof(*intr->sde_irq_map), GFP_KERNEL);
 	if (intr->sde_irq_map == NULL) {
 		ret = -ENOMEM;
 		goto exit;
@@ -1136,8 +1117,8 @@ struct sde_hw_intr *sde_hw_intr_init(void __iomem *addr,
 	if (ret)
 		goto exit;
 
-	intr->cache_irq_mask = kcalloc(intr->sde_irq_size,
-			sizeof(*intr->cache_irq_mask), GFP_KERNEL);
+	intr->cache_irq_mask = kcalloc(
+		intr->sde_irq_size, sizeof(*intr->cache_irq_mask), GFP_KERNEL);
 	if (intr->cache_irq_mask == NULL) {
 		ret = -ENOMEM;
 		goto exit;
@@ -1153,4 +1134,3 @@ exit:
 
 	return intr;
 }
-

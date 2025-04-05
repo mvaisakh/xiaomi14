@@ -20,9 +20,9 @@
 /**
  * DOC: Public API initialization of crypto service with object manager
  */
-#include <qdf_types.h>
-#include "wlan_crypto_main_i.h"
 #include "wlan_crypto_main.h"
+#include "wlan_crypto_main_i.h"
+#include <qdf_types.h>
 
 QDF_STATUS wlan_crypto_init(void)
 {

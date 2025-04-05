@@ -4,31 +4,30 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <dt-bindings/msm-camera.h>
 #include <linux/delay.h>
 #include <linux/io.h>
-#include <linux/of.h>
-#include <linux/module.h>
 #include <linux/iommu.h>
-#include <linux/timer.h>
 #include <linux/kernel.h>
-#include <dt-bindings/msm-camera.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/timer.h>
 
 #include <media/cam_req_mgr.h>
 
-#include "cam_custom_dev.h"
-#include "cam_hw_mgr_intf.h"
-#include "cam_custom_hw_mgr_intf.h"
-#include "cam_node.h"
-#include "cam_debug_util.h"
-#include "cam_smmu_api.h"
 #include "cam_compat.h"
+#include "cam_custom_dev.h"
+#include "cam_custom_hw_mgr_intf.h"
+#include "cam_debug_util.h"
+#include "cam_hw_mgr_intf.h"
+#include "cam_node.h"
+#include "cam_smmu_api.h"
 #include "camera_main.h"
 
 static struct cam_custom_dev g_custom_dev;
 static uint32_t g_num_custom_hws;
 
-static void cam_custom_dev_iommu_fault_handler(
-	struct cam_smmu_pf_info *pf_info)
+static void cam_custom_dev_iommu_fault_handler(struct cam_smmu_pf_info *pf_info)
 {
 	int i = 0;
 	struct cam_node *node = NULL;
@@ -45,14 +44,12 @@ static void cam_custom_dev_iommu_fault_handler(
 }
 
 static const struct of_device_id cam_custom_dt_match[] = {
-	{
-		.compatible = "qcom,cam-custom"
-	},
+	{ .compatible = "qcom,cam-custom" },
 	{}
 };
 
 static int cam_custom_subdev_open(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				  struct v4l2_subdev_fh *fh)
 {
 	mutex_lock(&g_custom_dev.custom_dev_mutex);
 	g_custom_dev.open_cnt++;
@@ -62,7 +59,7 @@ static int cam_custom_subdev_open(struct v4l2_subdev *sd,
 }
 
 static int cam_custom_subdev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+					    struct v4l2_subdev_fh *fh)
 {
 	int rc = 0;
 	struct cam_node *node = v4l2_get_subdevdata(sd);
@@ -90,7 +87,7 @@ end:
 }
 
 static int cam_custom_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				   struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -108,45 +105,44 @@ static const struct v4l2_subdev_internal_ops cam_custom_subdev_internal_ops = {
 };
 
 static int cam_custom_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
 	int rc = -EINVAL;
 	int i;
-	struct cam_hw_mgr_intf         hw_mgr_intf;
-	struct cam_node                *node;
+	struct cam_hw_mgr_intf hw_mgr_intf;
+	struct cam_node *node;
 	int iommu_hdl = -1;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	g_custom_dev.sd.internal_ops = &cam_custom_subdev_internal_ops;
 	g_custom_dev.sd.close_seq_prior = CAM_SD_CLOSE_HIGH_PRIORITY;
 
-	if (!cam_cpas_is_feature_supported(CAM_CPAS_CUSTOM_FUSE, BIT(0), NULL)) {
+	if (!cam_cpas_is_feature_supported(CAM_CPAS_CUSTOM_FUSE, BIT(0),
+					   NULL)) {
 		CAM_DBG(CAM_CUSTOM, "CUSTOM:0 is not supported");
 		goto err;
 	}
 
 	rc = cam_subdev_probe(&g_custom_dev.sd, pdev, CAM_CUSTOM_DEV_NAME,
-		CAM_CUSTOM_DEVICE_TYPE);
+			      CAM_CUSTOM_DEVICE_TYPE);
 	if (rc) {
 		CAM_ERR(CAM_CUSTOM, "Custom device cam_subdev_probe failed!");
 		goto err;
 	}
-	node = (struct cam_node *) g_custom_dev.sd.token;
+	node = (struct cam_node *)g_custom_dev.sd.token;
 
 	memset(&hw_mgr_intf, 0, sizeof(hw_mgr_intf));
-	rc = cam_custom_hw_mgr_init(pdev->dev.of_node,
-		&hw_mgr_intf, &iommu_hdl);
+	rc = cam_custom_hw_mgr_init(pdev->dev.of_node, &hw_mgr_intf,
+				    &iommu_hdl);
 	if (rc != 0) {
 		CAM_ERR(CAM_CUSTOM, "Can not initialized Custom HW manager!");
 		goto unregister;
 	}
 
 	for (i = 0; i < CAM_CUSTOM_HW_MAX_INSTANCES; i++) {
-		rc = cam_custom_dev_context_init(&g_custom_dev.ctx_custom[i],
-			&g_custom_dev.ctx[i],
-			&node->crm_node_intf,
-			&node->hw_mgr_intf,
-			i, iommu_hdl);
+		rc = cam_custom_dev_context_init(
+			&g_custom_dev.ctx_custom[i], &g_custom_dev.ctx[i],
+			&node->crm_node_intf, &node->hw_mgr_intf, i, iommu_hdl);
 		if (rc) {
 			CAM_ERR(CAM_CUSTOM, "Custom context init failed!");
 			goto unregister;
@@ -154,15 +150,15 @@ static int cam_custom_component_bind(struct device *dev,
 	}
 
 	rc = cam_node_init(node, &hw_mgr_intf, g_custom_dev.ctx,
-		CAM_CUSTOM_HW_MAX_INSTANCES, CAM_CUSTOM_DEV_NAME);
+			   CAM_CUSTOM_HW_MAX_INSTANCES, CAM_CUSTOM_DEV_NAME);
 	if (rc) {
 		CAM_ERR(CAM_CUSTOM, "Custom HW node init failed!");
 		goto unregister;
 	}
 
 	node->sd_handler = cam_custom_subdev_close_internal;
-	cam_smmu_set_client_page_fault_handler(iommu_hdl,
-		cam_custom_dev_iommu_fault_handler, node);
+	cam_smmu_set_client_page_fault_handler(
+		iommu_hdl, cam_custom_dev_iommu_fault_handler, node);
 
 	mutex_init(&g_custom_dev.custom_dev_mutex);
 
@@ -180,11 +176,12 @@ void cam_custom_get_num_hws(uint32_t *custom_num)
 	if (custom_num)
 		*custom_num = g_num_custom_hws;
 	else
-		CAM_ERR(CAM_CUSTOM, "Invalid argument, g_num_custom_hws: %u", g_num_custom_hws);
+		CAM_ERR(CAM_CUSTOM, "Invalid argument, g_num_custom_hws: %u",
+			g_num_custom_hws);
 }
 
 static void cam_custom_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					struct device *master_dev, void *data)
 {
 	int rc = 0;
 	int i;
@@ -193,8 +190,8 @@ static void cam_custom_component_unbind(struct device *dev,
 	for (i = 0; i < CAM_CUSTOM_HW_MAX_INSTANCES; i++) {
 		rc = cam_custom_dev_context_deinit(&g_custom_dev.ctx_custom[i]);
 		if (rc)
-			CAM_ERR(CAM_CUSTOM,
-				"Custom context %d deinit failed", i);
+			CAM_ERR(CAM_CUSTOM, "Custom context %d deinit failed",
+				i);
 	}
 
 	rc = cam_subdev_remove(&g_custom_dev.sd);
@@ -230,13 +227,14 @@ static int cam_custom_dev_probe(struct platform_device *pdev)
 }
 
 struct platform_driver custom_driver = {
-	.probe = cam_custom_dev_probe,
-	.remove = cam_custom_dev_remove,
-	.driver = {
-		.name = "cam_custom",
-		.of_match_table = cam_custom_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_custom_dev_probe,
+    .remove = cam_custom_dev_remove,
+    .driver =
+        {
+            .name = "cam_custom",
+            .of_match_table = cam_custom_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_custom_dev_init_module(void)

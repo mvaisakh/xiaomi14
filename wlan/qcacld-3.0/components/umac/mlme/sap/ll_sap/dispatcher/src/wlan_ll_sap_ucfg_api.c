@@ -19,8 +19,8 @@
 /**
  * DOC: This file contains ll_sap north bound interface definitions
  */
-#include "../../core/src/wlan_ll_sap_main.h"
 #include "../../core/src/wlan_ll_lt_sap_main.h"
+#include "../../core/src/wlan_ll_sap_main.h"
 #include <wlan_ll_sap_ucfg_api.h>
 
 QDF_STATUS ucfg_ll_sap_init(void)
@@ -37,4 +37,3 @@ bool ucfg_is_ll_lt_sap_supported(void)
 {
 	return ll_lt_sap_is_supported();
 }
-

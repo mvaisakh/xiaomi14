@@ -20,17 +20,15 @@
  * Implementation for creating sysfs file scan_config
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_psoc_sync.h"
+#include "wlan_policy_mgr_ucfg.h"
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_scan_config.h>
-#include "wlan_policy_mgr_ucfg.h"
 
-static ssize_t
-__hdd_sysfs_scan_config_store(struct hdd_context *hdd_ctx,
-			      struct kobj_attribute *attr,
-			       const char *buf,
-			       size_t count)
+static ssize_t __hdd_sysfs_scan_config_store(struct hdd_context *hdd_ctx,
+					     struct kobj_attribute *attr,
+					     const char *buf, size_t count)
 {
 	uint8_t dual_mac_feature = DISABLE_DBS_CXN_AND_SCAN;
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -42,8 +40,8 @@ __hdd_sysfs_scan_config_store(struct hdd_context *hdd_ctx,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -51,8 +49,7 @@ __hdd_sysfs_scan_config_store(struct hdd_context *hdd_ctx,
 	}
 
 	sptr = buf_local;
-	hdd_debug("set_scan_cfg: count %zu buf_local:(%s)",
-		  count, buf_local);
+	hdd_debug("set_scan_cfg: count %zu buf_local:(%s)", count, buf_local);
 
 	/* Get val1 */
 	token = strsep(&sptr, " ");
@@ -85,17 +82,14 @@ __hdd_sysfs_scan_config_store(struct hdd_context *hdd_ctx,
 		return -EPERM;
 	}
 	hdd_debug("%d %d %d", val1, val2, val3);
-	policy_mgr_set_dual_mac_scan_config(hdd_ctx->psoc,
-					    val1, val2, val3);
+	policy_mgr_set_dual_mac_scan_config(hdd_ctx->psoc, val1, val2, val3);
 
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_scan_config_store(struct kobject *kobj,
-			    struct kobj_attribute *attr,
-			    const char *buf,
-			    size_t count)
+static ssize_t hdd_sysfs_scan_config_store(struct kobject *kobj,
+					   struct kobj_attribute *attr,
+					   const char *buf, size_t count)
 {
 	struct osif_psoc_sync *psoc_sync;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
@@ -106,13 +100,12 @@ hdd_sysfs_scan_config_store(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_scan_config_store(hdd_ctx, attr,
-						   buf, count);
+	errno_size = __hdd_sysfs_scan_config_store(hdd_ctx, attr, buf, count);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -120,8 +113,7 @@ hdd_sysfs_scan_config_store(struct kobject *kobj,
 }
 
 static struct kobj_attribute set_scan_cfg_attribute =
-	__ATTR(scan_config, 0220, NULL,
-	       hdd_sysfs_scan_config_store);
+	__ATTR(scan_config, 0220, NULL, hdd_sysfs_scan_config_store);
 
 int hdd_sysfs_scan_config_create(struct kobject *driver_kobject)
 {
@@ -132,16 +124,14 @@ int hdd_sysfs_scan_config_create(struct kobject *driver_kobject)
 		return -EINVAL;
 	}
 
-	error = sysfs_create_file(driver_kobject,
-				  &set_scan_cfg_attribute.attr);
+	error = sysfs_create_file(driver_kobject, &set_scan_cfg_attribute.attr);
 	if (error)
 		hdd_err("could not create scan_config sysfs file");
 
 	return error;
 }
 
-void
-hdd_sysfs_scan_config_destroy(struct kobject *driver_kobject)
+void hdd_sysfs_scan_config_destroy(struct kobject *driver_kobject)
 {
 	if (!driver_kobject) {
 		hdd_err("could not get driver kobject!");

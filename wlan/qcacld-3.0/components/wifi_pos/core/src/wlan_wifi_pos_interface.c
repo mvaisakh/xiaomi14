@@ -17,8 +17,8 @@
  * DOC: define internal APIs related to the mlme component, legacy APIs are
  *	called for the time being, but will be cleaned up after convergence
  */
-#include "wifi_pos_api.h"
 #include "wlan_wifi_pos_interface.h"
+#include "wifi_pos_api.h"
 #include "wma_pasn_peer_api.h"
 
 #if defined(WIFI_POS_CONVERGED) && defined(WLAN_FEATURE_RTT_11AZ_SUPPORT)
@@ -68,13 +68,12 @@ wlan_wifi_pos_vdev_delete_resume(struct wlan_objmgr_vdev *vdev)
 	return wma_pasn_peer_delete_all_complete(vdev);
 }
 
-bool
-wlan_wifi_pos_pasn_peer_delete_all(struct wlan_objmgr_psoc *psoc,
-				   uint8_t vdev_id)
+bool wlan_wifi_pos_pasn_peer_delete_all(struct wlan_objmgr_psoc *psoc,
+					uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct pasn_peer_delete_msg *req;
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
@@ -107,8 +106,7 @@ wlan_wifi_pos_pasn_peer_delete_all(struct wlan_objmgr_psoc *psoc,
 	msg.type = WIFI_POS_PASN_PEER_DELETE_ALL;
 	msg.bodyptr = req;
 
-	status = scheduler_post_message(QDF_MODULE_ID_WIFIPOS,
-					QDF_MODULE_ID_PE,
+	status = scheduler_post_message(QDF_MODULE_ID_WIFIPOS, QDF_MODULE_ID_PE,
 					QDF_MODULE_ID_PE, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_mem_free(req);

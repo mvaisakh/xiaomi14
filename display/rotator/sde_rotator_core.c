@@ -4,38 +4,37 @@
  * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"%s:%d: " fmt, __func__, __LINE__
+#define pr_fmt(fmt) "%s:%d: " fmt, __func__, __LINE__
 
-#include <linux/platform_device.h>
-#include <linux/module.h>
-#include <linux/fs.h>
-#include <linux/file.h>
-#include <linux/uaccess.h>
-#include <linux/of.h>
+#include <asm/cacheflush.h>
 #include <linux/clk.h>
 #include <linux/debugfs.h>
-#include <linux/regulator/consumer.h>
 #include <linux/dma-direction.h>
+#include <linux/file.h>
+#include <linux/fs.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
 #include <linux/qcom_scm.h>
-#include <soc/qcom/secure_buffer.h>
-#include <asm/cacheflush.h>
-#include <uapi/linux/sched/types.h>
 #include <linux/qtee_shmbridge.h>
+#include <linux/regulator/consumer.h>
+#include <linux/uaccess.h>
+#include <soc/qcom/secure_buffer.h>
+#include <uapi/linux/sched/types.h>
 
 #include "sde_rotator_base.h"
 #include "sde_rotator_core.h"
+#include "sde_rotator_debug.h"
 #include "sde_rotator_dev.h"
-#include "sde_rotator_util.h"
 #include "sde_rotator_io_util.h"
-#include "sde_rotator_smmu.h"
 #include "sde_rotator_r1.h"
 #include "sde_rotator_r3.h"
+#include "sde_rotator_smmu.h"
 #include "sde_rotator_trace.h"
-#include "sde_rotator_debug.h"
-
+#include "sde_rotator_util.h"
 
 /* Rotator device id to be used in SCM call */
-#define SDE_ROTATOR_DEVICE	21
+#define SDE_ROTATOR_DEVICE 21
 
 /*
  * SCM call function id to be used for switching between secure and non
@@ -47,21 +46,21 @@
 #define ROT_HW_ACQUIRE_TIMEOUT_IN_MS 100
 
 /* waiting for inline hw start */
-#define ROT_INLINE_START_TIMEOUT_IN_MS	(10000 + 500)
+#define ROT_INLINE_START_TIMEOUT_IN_MS (10000 + 500)
 
 /* default pixel per clock ratio */
-#define ROT_PIXEL_PER_CLK_NUMERATOR	36
-#define ROT_PIXEL_PER_CLK_DENOMINATOR	10
-#define ROT_FUDGE_FACTOR_NUMERATOR	105
-#define ROT_FUDGE_FACTOR_DENOMINATOR	100
-#define ROT_OVERHEAD_NUMERATOR		27
-#define ROT_OVERHEAD_DENOMINATOR	10000
+#define ROT_PIXEL_PER_CLK_NUMERATOR 36
+#define ROT_PIXEL_PER_CLK_DENOMINATOR 10
+#define ROT_FUDGE_FACTOR_NUMERATOR 105
+#define ROT_FUDGE_FACTOR_DENOMINATOR 100
+#define ROT_OVERHEAD_NUMERATOR 27
+#define ROT_OVERHEAD_DENOMINATOR 10000
 
 /* Minimum Rotator Clock value */
-#define ROT_MIN_ROT_CLK			20000000
+#define ROT_MIN_ROT_CLK 20000000
 
 /* default minimum bandwidth vote */
-#define ROT_ENABLE_BW_VOTE		64000
+#define ROT_ENABLE_BW_VOTE 64000
 /*
  * Max rotator hw blocks possible. Used for upper array limits instead of
  * alloc and freeing small array
@@ -70,15 +69,15 @@
 
 #define BUS_VOTE_19_MHZ 153600000
 
-#define ROT_HAS_UBWC(caps) (test_bit(SDE_CAPS_UBWC_2, caps) ||\
-		test_bit(SDE_CAPS_UBWC_3, caps) ||\
-		test_bit(SDE_CAPS_UBWC_4, caps))
+#define ROT_HAS_UBWC(caps)                                                     \
+	(test_bit(SDE_CAPS_UBWC_2, caps) || test_bit(SDE_CAPS_UBWC_3, caps) || \
+	 test_bit(SDE_CAPS_UBWC_4, caps))
 
 /* forward prototype */
 static int sde_rotator_update_perf(struct sde_rot_mgr *mgr);
 
 static int sde_rotator_bus_scale_set_quota(struct sde_rot_bus_data_type *bus,
-		u64 quota)
+					   u64 quota)
 {
 	int ret = 0, i = 0, j = 0;
 	u64 ab = 0;
@@ -101,7 +100,7 @@ static int sde_rotator_bus_scale_set_quota(struct sde_rot_bus_data_type *bus,
 	for (i = 0; i < bus->data_paths_cnt; i++) {
 		if (bus->data_bus_hdl[i]) {
 			ret = icc_set_bw(bus->data_bus_hdl[i], Bps_to_icc(ab),
-				Bps_to_icc(ab));
+					 Bps_to_icc(ab));
 			if (ret)
 				goto err;
 		}
@@ -115,7 +114,7 @@ err:
 	ab = div_u64(bus->curr_quota_val, bus->data_paths_cnt);
 	for (j = 0; j < i; j++)
 		icc_set_bw(bus->data_bus_hdl[j], Bps_to_icc(ab),
-			Bps_to_icc(ab));
+			   Bps_to_icc(ab));
 	ATRACE_END("msm_bus_scale_req_rot");
 	pr_err("failed to set data bus quota %llu\n", quota);
 
@@ -141,16 +140,15 @@ static int sde_rotator_enable_reg_bus(struct sde_rot_mgr *mgr, u64 quota)
 		changed++;
 
 	SDEROT_DBG("%s, changed=%d register bus %s\n", __func__, changed,
-		quota ? "Enable":"Disable");
+		   quota ? "Enable" : "Disable");
 
 	if (changed) {
 		ATRACE_BEGIN("msm_bus_scale_req_rot_reg");
 
 		reg_bus_value = sde_get_rot_reg_bus_value(usecase_ndx);
 		ret = icc_set_bw(mgr->reg_bus.data_bus_hdl[0],
-			reg_bus_value->ab, reg_bus_value->ib);
+				 reg_bus_value->ab, reg_bus_value->ib);
 		ATRACE_END("msm_bus_scale_req_rot_reg");
-
 	}
 	if (ret) {
 		pr_err("rotator: set reg bus failed ab=%llu, lb=%llu\n",
@@ -168,21 +166,21 @@ static int sde_rotator_enable_reg_bus(struct sde_rot_mgr *mgr, u64 quota)
  * are added together to get the required rate for that hw block.
  * The max of each hw block becomes the final clock rate voted for
  */
-static unsigned long sde_rotator_clk_rate_calc(
-	struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private)
+static unsigned long
+sde_rotator_clk_rate_calc(struct sde_rot_mgr *mgr,
+			  struct sde_rot_file_private *private)
 {
 	struct sde_rot_perf *perf;
-	unsigned long clk_rate[ROT_MAX_HW_BLOCKS] = {0};
+	unsigned long clk_rate[ROT_MAX_HW_BLOCKS] = { 0 };
 	unsigned long total_clk_rate = 0;
 	int i, wb_idx;
 
 	list_for_each_entry(perf, &private->perf_list, list) {
 		bool rate_accounted_for = false;
 		/*
-		 * If there is one session that has two work items across
-		 * different hw blocks rate is accounted for in both blocks.
-		 */
+     * If there is one session that has two work items across
+     * different hw blocks rate is accounted for in both blocks.
+     */
 		for (i = 0; i < mgr->queue_count; i++) {
 			if (perf->work_distribution[i]) {
 				clk_rate[i] += perf->clk_rate;
@@ -191,13 +189,13 @@ static unsigned long sde_rotator_clk_rate_calc(
 		}
 
 		/*
-		 * Sessions that are open but not distributed on any hw block
-		 * Still need to be accounted for. Rate is added to last known
-		 * wb idx.
-		 */
+     * Sessions that are open but not distributed on any hw block
+     * Still need to be accounted for. Rate is added to last known
+     * wb idx.
+     */
 		wb_idx = perf->last_wb_idx;
 		if ((!rate_accounted_for) && (wb_idx >= 0) &&
-				(wb_idx < mgr->queue_count))
+		    (wb_idx < mgr->queue_count))
 			clk_rate[wb_idx] += perf->clk_rate;
 	}
 
@@ -219,7 +217,7 @@ static struct clk *sde_rotator_get_clk(struct sde_rot_mgr *mgr, u32 clk_idx)
 }
 
 static void sde_rotator_set_clk_rate(struct sde_rot_mgr *mgr,
-		unsigned long rate, u32 clk_idx)
+				     unsigned long rate, u32 clk_idx)
 {
 	unsigned long clk_rate;
 	struct clk *clk = sde_rotator_get_clk(mgr, clk_idx);
@@ -233,7 +231,7 @@ static void sde_rotator_set_clk_rate(struct sde_rot_mgr *mgr,
 			ret = clk_set_rate(clk, clk_rate);
 			if (ret < 0)
 				SDEROT_ERR("clk_set_rate failed, err:%d\n",
-						ret);
+					   ret);
 			else
 				SDEROT_DBG("rotator clk rate=%lu\n", clk_rate);
 		}
@@ -285,11 +283,11 @@ static int sde_rotator_footswitch_ctrl(struct sde_rot_mgr *mgr, bool on)
 
 	if (!sde_rot_mgr_pd_enabled(mgr))
 		ret = sde_rot_enable_vreg(mgr->module_power.vreg_config,
-			mgr->module_power.num_vreg, on);
+					  mgr->module_power.num_vreg, on);
 	if (ret) {
 		pr_err("rotator regulator failed to %s ret:%d client:%d\n",
-		      on ? "enable" : "disable", ret,
-				      sde_rot_mgr_pd_enabled(mgr));
+		       on ? "enable" : "disable", ret,
+		       sde_rot_mgr_pd_enabled(mgr));
 		return ret;
 	}
 
@@ -355,31 +353,31 @@ int sde_rotator_clk_ctrl(struct sde_rot_mgr *mgr, int enable)
 
 		if (enable) {
 			ret = sde_rotator_enable_clk(mgr,
-						SDE_ROTATOR_CLK_MNOC_AHB);
+						     SDE_ROTATOR_CLK_MNOC_AHB);
 			if (ret)
 				goto error_mnoc_ahb;
 			ret = sde_rotator_enable_clk(mgr,
-						SDE_ROTATOR_CLK_GCC_AHB);
+						     SDE_ROTATOR_CLK_GCC_AHB);
 			if (ret)
 				goto error_gcc_ahb;
 			ret = sde_rotator_enable_clk(mgr,
-						SDE_ROTATOR_CLK_GCC_AXI);
+						     SDE_ROTATOR_CLK_GCC_AXI);
 			if (ret)
 				goto error_gcc_axi;
 			ret = sde_rotator_enable_clk(mgr,
-						SDE_ROTATOR_CLK_MDSS_AHB);
+						     SDE_ROTATOR_CLK_MDSS_AHB);
 			if (ret)
 				goto error_mdss_ahb;
 			ret = sde_rotator_enable_clk(mgr,
-						SDE_ROTATOR_CLK_MDSS_AXI);
+						     SDE_ROTATOR_CLK_MDSS_AXI);
 			if (ret)
 				goto error_mdss_axi;
 			ret = sde_rotator_enable_clk(mgr,
-						SDE_ROTATOR_CLK_MDSS_ROT);
+						     SDE_ROTATOR_CLK_MDSS_ROT);
 			if (ret)
 				goto error_mdss_rot;
-			ret = sde_rotator_enable_clk(mgr,
-						SDE_ROTATOR_CLK_MDSS_ROT_SUB);
+			ret = sde_rotator_enable_clk(
+				mgr, SDE_ROTATOR_CLK_MDSS_ROT_SUB);
 			if (ret)
 				goto error_rot_sub;
 
@@ -396,7 +394,7 @@ int sde_rotator_clk_ctrl(struct sde_rot_mgr *mgr, int enable)
 			trace_rot_bw_ao_as_context(0);
 		} else {
 			sde_rotator_disable_clk(mgr,
-					SDE_ROTATOR_CLK_MDSS_ROT_SUB);
+						SDE_ROTATOR_CLK_MDSS_ROT_SUB);
 			sde_rotator_disable_clk(mgr, SDE_ROTATOR_CLK_MDSS_ROT);
 			sde_rotator_disable_clk(mgr, SDE_ROTATOR_CLK_MDSS_AXI);
 			sde_rotator_disable_clk(mgr, SDE_ROTATOR_CLK_MDSS_AHB);
@@ -455,8 +453,8 @@ static int sde_rotator_resource_ctrl(struct sde_rot_mgr *mgr, int enable)
 		ret = pm_runtime_put_sync(&mgr->pdev->dev);
 	}
 
-	SDEROT_DBG("%s: res_cnt=%d pm=%d enable=%d\n",
-		__func__, mgr->res_ref_cnt, ret, enable);
+	SDEROT_DBG("%s: res_cnt=%d pm=%d enable=%d\n", __func__,
+		   mgr->res_ref_cnt, ret, enable);
 	ATRACE_INT("res_cnt", mgr->res_ref_cnt);
 
 	return ret;
@@ -464,7 +462,7 @@ static int sde_rotator_resource_ctrl(struct sde_rot_mgr *mgr, int enable)
 
 /* caller is expected to hold perf->work_dis_lock lock */
 static bool sde_rotator_is_work_pending(struct sde_rot_mgr *mgr,
-	struct sde_rot_perf *perf)
+					struct sde_rot_perf *perf)
 {
 	int i;
 
@@ -513,7 +511,7 @@ static int sde_rotator_signal_output(struct sde_rot_entry *entry)
 	}
 
 	SDEROT_DBG("signal fence s:%d.%d\n", entry->item.session_id,
-			entry->item.sequence_id);
+		   entry->item.sequence_id);
 
 	sde_rotator_inc_timeline(rot_timeline, 1);
 
@@ -523,7 +521,8 @@ static int sde_rotator_signal_output(struct sde_rot_entry *entry)
 }
 
 static int sde_rotator_import_buffer(struct sde_layer_buffer *buffer,
-	struct sde_mdp_data *data, u32 flags, struct device *dev, bool input)
+				     struct sde_mdp_data *data, u32 flags,
+				     struct device *dev, bool input)
 {
 	int i, ret = 0;
 	struct sde_fb_data planes[SDE_ROT_MAX_PLANES];
@@ -534,7 +533,7 @@ static int sde_rotator_import_buffer(struct sde_layer_buffer *buffer,
 
 	if (buffer->plane_count > SDE_ROT_MAX_PLANES) {
 		SDEROT_ERR("buffer plane_count exceeds MAX_PLANE limit:%d\n",
-				buffer->plane_count);
+			   buffer->plane_count);
 		return -EINVAL;
 	}
 
@@ -552,8 +551,9 @@ static int sde_rotator_import_buffer(struct sde_layer_buffer *buffer,
 		planes[i].len = buffer->planes[i].len;
 	}
 
-	ret =  sde_mdp_data_get_and_validate_size(data, planes,
-			buffer->plane_count, flags, dev, true, dir, buffer);
+	ret = sde_mdp_data_get_and_validate_size(data, planes,
+						 buffer->plane_count, flags,
+						 dev, true, dir, buffer);
 
 	return ret;
 }
@@ -570,14 +570,13 @@ static int sde_rotator_secure_session_ctrl(bool enable)
 	bool qtee_en = qtee_shmbridge_is_enabled();
 
 	if (test_bit(SDE_CAPS_SEC_ATTACH_DETACH_SMMU, mdata->sde_caps_map)) {
-
 		if (qtee_en) {
 			ret = qtee_shmbridge_allocate_shm(sizeof(uint32_t),
-				&shm);
+							  &shm);
 			if (ret)
 				return -ENOMEM;
 
-			sid_info = (uint32_t *) shm.vaddr;
+			sid_info = (uint32_t *)shm.vaddr;
 			mem_addr = shm.paddr;
 			mem_size = sizeof(uint32_t);
 		} else {
@@ -593,19 +592,20 @@ static int sde_rotator_secure_session_ctrl(bool enable)
 
 		if (!mdata->sec_cam_en && enable) {
 			/*
-			 * Enable secure camera operation
-			 * Send SCM call to hypervisor to switch the
-			 * secure_vmid to secure context
-			 */
+       * Enable secure camera operation
+       * Send SCM call to hypervisor to switch the
+       * secure_vmid to secure context
+       */
 			vmid = VMID_CP_CAMERA_PREVIEW;
 
 			mdata->sec_cam_en = 1;
 			sde_smmu_secure_ctrl(0);
 
-			ret = qcom_scm_mem_protect_sd_ctrl(SDE_ROTATOR_DEVICE,
-						mem_addr, mem_size, vmid);
+			ret = qcom_scm_mem_protect_sd_ctrl(
+				SDE_ROTATOR_DEVICE, mem_addr, mem_size, vmid);
 			if (ret) {
-				SDEROT_ERR("qcom_scm_mem_protect ret=%d\n", ret);
+				SDEROT_ERR("qcom_scm_mem_protect ret=%d\n",
+					   ret);
 				/* failure, attach smmu */
 				mdata->sec_cam_en = 0;
 				sde_smmu_secure_ctrl(1);
@@ -614,35 +614,36 @@ static int sde_rotator_secure_session_ctrl(bool enable)
 			}
 
 			SDEROT_DBG(
-			  "scm(1) sid0x%x dev0x%llx vmid0x%llx qtee_en%d ret%d\n",
-				sid_info[0], SDE_ROTATOR_DEVICE, vmid,
-				qtee_en, ret);
-			SDEROT_EVTLOG(1, sid_info, sid_info[0], SDE_ROTATOR_DEVICE,
-					vmid, qtee_en, ret);
+				"scm(1) sid0x%x dev0x%llx vmid0x%llx qtee_en%d ret%d\n",
+				sid_info[0], SDE_ROTATOR_DEVICE, vmid, qtee_en,
+				ret);
+			SDEROT_EVTLOG(1, sid_info, sid_info[0],
+				      SDE_ROTATOR_DEVICE, vmid, qtee_en, ret);
 		} else if (mdata->sec_cam_en && !enable) {
 			/*
-			 * Disable secure camera operation
-			 * Send SCM call to hypervisor to switch the
-			 * secure_vmid to non-secure context
-			 */
+       * Disable secure camera operation
+       * Send SCM call to hypervisor to switch the
+       * secure_vmid to non-secure context
+       */
 			vmid = VMID_CP_PIXEL;
 			mdata->sec_cam_en = 0;
 
-			ret = qcom_scm_mem_protect_sd_ctrl(SDE_ROTATOR_DEVICE,
-					mem_addr, mem_size, vmid);
+			ret = qcom_scm_mem_protect_sd_ctrl(
+				SDE_ROTATOR_DEVICE, mem_addr, mem_size, vmid);
 			if (ret)
-				SDEROT_ERR("qcom_scm_mem_protect ret=%d\n", ret);
+				SDEROT_ERR("qcom_scm_mem_protect ret=%d\n",
+					   ret);
 
 			SDEROT_DBG(
-			  "scm(0) sid0x%x dev0x%llx vmid0x%llx qtee_en%d ret%d\n",
-				sid_info[0], SDE_ROTATOR_DEVICE, vmid,
-				qtee_en, ret);
+				"scm(0) sid0x%x dev0x%llx vmid0x%llx qtee_en%d ret%d\n",
+				sid_info[0], SDE_ROTATOR_DEVICE, vmid, qtee_en,
+				ret);
 
 			/* force smmu to reattach */
 			sde_smmu_secure_ctrl(1);
 
-			SDEROT_EVTLOG(0, sid_info, sid_info[0], SDE_ROTATOR_DEVICE,
-					vmid, qtee_en, ret);
+			SDEROT_EVTLOG(0, sid_info, sid_info[0],
+				      SDE_ROTATOR_DEVICE, vmid, qtee_en, ret);
 		}
 	} else {
 		return 0;
@@ -657,7 +658,6 @@ end:
 	return ret;
 }
 
-
 static int sde_rotator_map_and_check_data(struct sde_rot_entry *entry)
 {
 	int ret;
@@ -671,18 +671,18 @@ static int sde_rotator_map_and_check_data(struct sde_rot_entry *entry)
 	input = &entry->item.input;
 	output = &entry->item.output;
 
-	rotation = (entry->item.flags &  SDE_ROTATION_90) ? true : false;
+	rotation = (entry->item.flags & SDE_ROTATION_90) ? true : false;
 
 	ret = sde_smmu_ctrl(1);
 	if (ret < 0)
 		return ret;
 
-	secure = (entry->item.flags & SDE_ROTATION_SECURE_CAMERA) ?
-			true : false;
+	secure = (entry->item.flags & SDE_ROTATION_SECURE_CAMERA) ? true :
+								    false;
 	ret = sde_rotator_secure_session_ctrl(secure);
 	if (ret) {
 		SDEROT_ERR("failed secure session enabling/disabling %d\n",
-			ret);
+			   ret);
 		goto end;
 	}
 
@@ -713,8 +713,8 @@ static int sde_rotator_map_and_check_data(struct sde_rot_entry *entry)
 		goto end;
 	}
 
-	ret = sde_mdp_get_plane_sizes(
-			in_fmt, input->width, input->height, &ps, 0, rotation);
+	ret = sde_mdp_get_plane_sizes(in_fmt, input->width, input->height, &ps,
+				      0, rotation);
 	if (ret) {
 		SDEROT_ERR("fail to get input plane size ret=%d\n", ret);
 		goto end;
@@ -727,7 +727,7 @@ static int sde_rotator_map_and_check_data(struct sde_rot_entry *entry)
 	}
 
 	ret = sde_mdp_get_plane_sizes(out_fmt, output->width, output->height,
-			&ps, 0, rotation);
+				      &ps, 0, rotation);
 	if (ret) {
 		SDEROT_ERR("fail to get output plane size ret=%d\n", ret);
 		goto end;
@@ -745,9 +745,8 @@ end:
 	return ret;
 }
 
-static struct sde_rot_perf *__sde_rotator_find_session(
-	struct sde_rot_file_private *private,
-	u32 session_id)
+static struct sde_rot_perf *
+__sde_rotator_find_session(struct sde_rot_file_private *private, u32 session_id)
 {
 	struct sde_rot_perf *perf, *perf_next;
 	bool found = false;
@@ -763,9 +762,8 @@ static struct sde_rot_perf *__sde_rotator_find_session(
 	return perf;
 }
 
-static struct sde_rot_perf *sde_rotator_find_session(
-	struct sde_rot_file_private *private,
-	u32 session_id)
+static struct sde_rot_perf *
+sde_rotator_find_session(struct sde_rot_file_private *private, u32 session_id)
 {
 	struct sde_rot_perf *perf;
 
@@ -781,7 +779,7 @@ static void sde_rotator_release_data(struct sde_rot_entry *entry)
 }
 
 static int sde_rotator_import_data(struct sde_rot_mgr *mgr,
-	struct sde_rot_entry *entry)
+				   struct sde_rot_entry *entry)
 {
 	int ret;
 	struct sde_layer_buffer *input;
@@ -804,18 +802,18 @@ static int sde_rotator_import_data(struct sde_rot_mgr *mgr,
 		flag |= SDE_SECURE_CAMERA_SESSION;
 
 	ret = sde_rotator_import_buffer(input, &entry->src_buf, flag,
-				&mgr->pdev->dev, true);
+					&mgr->pdev->dev, true);
 	if (ret) {
 		SDEROT_ERR("fail to import input buffer ret=%d\n", ret);
 		return ret;
 	}
 
 	/*
-	 * driver assumes output buffer is ready to be written
-	 * immediately
-	 */
+   * driver assumes output buffer is ready to be written
+   * immediately
+   */
 	ret = sde_rotator_import_buffer(output, &entry->dst_buf, flag,
-				&mgr->pdev->dev, false);
+					&mgr->pdev->dev, false);
 	if (ret) {
 		SDEROT_ERR("fail to import output buffer ret=%d\n", ret);
 		return ret;
@@ -833,11 +831,12 @@ static int sde_rotator_import_data(struct sde_rot_mgr *mgr,
  * Parameters are validated by caller.
  */
 static int sde_rotator_require_reconfiguration(struct sde_rot_mgr *mgr,
-		struct sde_rot_hw_resource *hw, struct sde_rot_entry *entry)
+					       struct sde_rot_hw_resource *hw,
+					       struct sde_rot_entry *entry)
 {
 	/* OT setting change may impact queued entries */
 	if (entry->perf && (entry->perf->rdot_limit != mgr->rdot_limit ||
-			entry->perf->wrot_limit != mgr->wrot_limit))
+			    entry->perf->wrot_limit != mgr->wrot_limit))
 		return true;
 
 	/* sbuf mode is exclusive and may impact queued entries */
@@ -855,16 +854,16 @@ static int sde_rotator_require_reconfiguration(struct sde_rot_mgr *mgr,
  * Parameters are validated by caller.
  */
 static int sde_rotator_is_hw_idle(struct sde_rot_mgr *mgr,
-		struct sde_rot_hw_resource *hw)
+				  struct sde_rot_hw_resource *hw)
 {
 	int i;
 
 	/*
-	 * Wait until all queues are idle in order to update global
-	 * setting such as VBIF QoS.  This check can be relaxed if global
-	 * settings can be updated individually by entries already
-	 * queued in hw queue, i.e. REGDMA can update VBIF directly.
-	 */
+   * Wait until all queues are idle in order to update global
+   * setting such as VBIF QoS.  This check can be relaxed if global
+   * settings can be updated individually by entries already
+   * queued in hw queue, i.e. REGDMA can update VBIF directly.
+   */
 	for (i = 0; i < mgr->queue_count; i++) {
 		struct sde_rot_hw_resource *hw_res = mgr->commitq[i].hw;
 
@@ -884,20 +883,20 @@ static int sde_rotator_is_hw_idle(struct sde_rot_mgr *mgr,
  * Parameters are validated by caller.
  */
 static int sde_rotator_is_hw_available(struct sde_rot_mgr *mgr,
-		struct sde_rot_hw_resource *hw, struct sde_rot_entry *entry)
+				       struct sde_rot_hw_resource *hw,
+				       struct sde_rot_entry *entry)
 {
 	/*
-	 * Wait until hw is idle if reconfiguration is required; otherwise,
-	 * wait until free queue entry is available
-	 */
+   * Wait until hw is idle if reconfiguration is required; otherwise,
+   * wait until free queue entry is available
+   */
 	if (sde_rotator_require_reconfiguration(mgr, hw, entry)) {
 		SDEROT_DBG(
 			"wait4idle active=%d pending=%d rdot:%u/%u wrot:%u/%u s:%d.%d\n",
-				atomic_read(&hw->num_active), hw->pending_count,
-				mgr->rdot_limit, entry->perf->rdot_limit,
-				mgr->wrot_limit, entry->perf->wrot_limit,
-				entry->item.session_id,
-				entry->item.sequence_id);
+			atomic_read(&hw->num_active), hw->pending_count,
+			mgr->rdot_limit, entry->perf->rdot_limit,
+			mgr->wrot_limit, entry->perf->wrot_limit,
+			entry->item.session_id, entry->item.sequence_id);
 		return sde_rotator_is_hw_idle(mgr, hw);
 	} else if (mgr->sbuf_ctx && mgr->sbuf_ctx != entry->private) {
 		SDEROT_DBG("wait until sbuf mode is off\n");
@@ -913,7 +912,7 @@ static int sde_rotator_is_hw_available(struct sde_rot_mgr *mgr,
  * @req: Pointer to rotation request
  */
 static void sde_rotator_req_wait_for_idle(struct sde_rot_mgr *mgr,
-		struct sde_rot_entry_container *req)
+					  struct sde_rot_entry_container *req)
 {
 	struct sde_rot_queue *queue;
 	struct sde_rot_hw_resource *hw;
@@ -931,7 +930,8 @@ static void sde_rotator_req_wait_for_idle(struct sde_rot_mgr *mgr,
 		hw = queue->hw;
 		while (atomic_read(&hw->num_active) > 1) {
 			sde_rot_mgr_unlock(mgr);
-			ret = wait_event_timeout(hw->wait_queue,
+			ret = wait_event_timeout(
+				hw->wait_queue,
 				atomic_read(&hw->num_active) <= 1,
 				msecs_to_jiffies(mgr->hwacquire_timeout));
 			sde_rot_mgr_lock(mgr);
@@ -950,8 +950,9 @@ static void sde_rotator_req_wait_for_idle(struct sde_rot_mgr *mgr,
  * @queue: Pointer to rotator queue
  * @entry: Pointer to rotation entry
  */
-static struct sde_rot_hw_resource *sde_rotator_get_hw_resource(
-	struct sde_rot_queue *queue, struct sde_rot_entry *entry)
+static struct sde_rot_hw_resource *
+sde_rotator_get_hw_resource(struct sde_rot_queue *queue,
+			    struct sde_rot_entry *entry)
 {
 	struct sde_rot_hw_resource *hw;
 	struct sde_rot_mgr *mgr;
@@ -968,7 +969,8 @@ static struct sde_rot_hw_resource *sde_rotator_get_hw_resource(
 	WARN_ON(atomic_read(&hw->num_active) > hw->max_active);
 	while (!sde_rotator_is_hw_available(mgr, hw, entry)) {
 		sde_rot_mgr_unlock(mgr);
-		ret = wait_event_timeout(hw->wait_queue,
+		ret = wait_event_timeout(
+			hw->wait_queue,
 			sde_rotator_is_hw_available(mgr, hw, entry),
 			msecs_to_jiffies(mgr->hwacquire_timeout));
 		sde_rot_mgr_lock(mgr);
@@ -978,29 +980,28 @@ static struct sde_rot_hw_resource *sde_rotator_get_hw_resource(
 				atomic_read(&hw->num_active),
 				hw->pending_count);
 			SDEROT_EVTLOG(entry->item.session_id,
-					entry->item.sequence_id,
-					atomic_read(&hw->num_active),
-					hw->pending_count,
-					SDE_ROT_EVTLOG_ERROR);
+				      entry->item.sequence_id,
+				      atomic_read(&hw->num_active),
+				      hw->pending_count, SDE_ROT_EVTLOG_ERROR);
 			return NULL;
 		}
 	}
 	atomic_inc(&hw->num_active);
 	SDEROT_EVTLOG(atomic_read(&hw->num_active), hw->pending_count,
-			mgr->rdot_limit, entry->perf->rdot_limit,
-			mgr->wrot_limit, entry->perf->wrot_limit,
-			entry->item.session_id, entry->item.sequence_id);
+		      mgr->rdot_limit, entry->perf->rdot_limit, mgr->wrot_limit,
+		      entry->perf->wrot_limit, entry->item.session_id,
+		      entry->item.sequence_id);
 	SDEROT_DBG("active=%d pending=%d rdot=%u/%u wrot=%u/%u s:%d.%d\n",
-			atomic_read(&hw->num_active), hw->pending_count,
-			mgr->rdot_limit, entry->perf->rdot_limit,
-			mgr->wrot_limit, entry->perf->wrot_limit,
-			entry->item.session_id, entry->item.sequence_id);
+		   atomic_read(&hw->num_active), hw->pending_count,
+		   mgr->rdot_limit, entry->perf->rdot_limit, mgr->wrot_limit,
+		   entry->perf->wrot_limit, entry->item.session_id,
+		   entry->item.sequence_id);
 	mgr->rdot_limit = entry->perf->rdot_limit;
 	mgr->wrot_limit = entry->perf->wrot_limit;
 
 	if (!mgr->sbuf_ctx && entry->perf->config.output.sbuf) {
 		SDEROT_DBG("acquire sbuf s:%d.%d\n", entry->item.session_id,
-				entry->item.sequence_id);
+			   entry->item.sequence_id);
 		SDEROT_EVTLOG(entry->item.session_id, entry->item.sequence_id);
 		mgr->sbuf_ctx = entry->private;
 	}
@@ -1015,7 +1016,8 @@ static struct sde_rot_hw_resource *sde_rotator_get_hw_resource(
  * @hw: Pointer to hw resource to be returned
  */
 static void sde_rotator_put_hw_resource(struct sde_rot_queue *queue,
-		struct sde_rot_entry *entry, struct sde_rot_hw_resource *hw)
+					struct sde_rot_entry *entry,
+					struct sde_rot_hw_resource *hw)
 {
 	struct sde_rot_mgr *mgr;
 	int i;
@@ -1030,15 +1032,15 @@ static void sde_rotator_put_hw_resource(struct sde_rot_queue *queue,
 	WARN_ON(atomic_read(&hw->num_active) < 1);
 	if (!atomic_add_unless(&hw->num_active, -1, 0))
 		SDEROT_ERR("underflow active=%d pending=%d s:%d.%d\n",
-			atomic_read(&hw->num_active), hw->pending_count,
-			entry->item.session_id, entry->item.sequence_id);
+			   atomic_read(&hw->num_active), hw->pending_count,
+			   entry->item.session_id, entry->item.sequence_id);
 	/*
-	 * Wake up all queues in case any entry is waiting for hw idle,
-	 * in order to update global settings, such as VBIF QoS.
-	 * This can be relaxed to the given hw resource if global
-	 * settings can be updated individually by entries already
-	 * queued in hw queue.
-	 */
+   * Wake up all queues in case any entry is waiting for hw idle,
+   * in order to update global settings, such as VBIF QoS.
+   * This can be relaxed to the given hw resource if global
+   * settings can be updated individually by entries already
+   * queued in hw queue.
+   */
 	for (i = 0; i < mgr->queue_count; i++) {
 		struct sde_rot_hw_resource *hw_res = mgr->commitq[i].hw;
 
@@ -1046,10 +1048,10 @@ static void sde_rotator_put_hw_resource(struct sde_rot_queue *queue,
 			wake_up(&hw_res->wait_queue);
 	}
 	SDEROT_EVTLOG(atomic_read(&hw->num_active), hw->pending_count,
-			entry->item.session_id, entry->item.sequence_id);
+		      entry->item.session_id, entry->item.sequence_id);
 	SDEROT_DBG("active=%d pending=%d s:%d.%d\n",
-			atomic_read(&hw->num_active), hw->pending_count,
-			entry->item.session_id, entry->item.sequence_id);
+		   atomic_read(&hw->num_active), hw->pending_count,
+		   entry->item.session_id, entry->item.sequence_id);
 }
 
 /*
@@ -1069,19 +1071,19 @@ static int sde_rotator_init_queue(struct sde_rot_mgr *mgr)
 
 	for (i = 0; i < mgr->queue_count; i++) {
 		snprintf(name, sizeof(name), "rot_commitq_%d_%d",
-				mgr->device->id, i);
+			 mgr->device->id, i);
 		SDEROT_DBG("work queue name=%s\n", name);
 		kthread_init_worker(&mgr->commitq[i].rot_kw);
-		mgr->commitq[i].rot_thread = kthread_run(kthread_worker_fn,
-				&mgr->commitq[i].rot_kw, name);
+		mgr->commitq[i].rot_thread = kthread_run(
+			kthread_worker_fn, &mgr->commitq[i].rot_kw, name);
 		if (IS_ERR(mgr->commitq[i].rot_thread)) {
 			ret = -EPERM;
 			mgr->commitq[i].rot_thread = NULL;
 			break;
 		}
 
-		ret = sched_setscheduler(mgr->commitq[i].rot_thread,
-			SCHED_FIFO, &param);
+		ret = sched_setscheduler(mgr->commitq[i].rot_thread, SCHED_FIFO,
+					 &param);
 		if (ret) {
 			SDEROT_ERR(
 				"failed to set kthread priority for commitq %d\n",
@@ -1099,20 +1101,20 @@ static int sde_rotator_init_queue(struct sde_rot_mgr *mgr)
 		return -ENOMEM;
 
 	for (i = 0; i < mgr->queue_count; i++) {
-		snprintf(name, sizeof(name), "rot_doneq_%d_%d",
-				mgr->device->id, i);
+		snprintf(name, sizeof(name), "rot_doneq_%d_%d", mgr->device->id,
+			 i);
 		SDEROT_DBG("work queue name=%s\n", name);
 		kthread_init_worker(&mgr->doneq[i].rot_kw);
-		mgr->doneq[i].rot_thread = kthread_run(kthread_worker_fn,
-				&mgr->doneq[i].rot_kw, name);
+		mgr->doneq[i].rot_thread = kthread_run(
+			kthread_worker_fn, &mgr->doneq[i].rot_kw, name);
 		if (IS_ERR(mgr->doneq[i].rot_thread)) {
 			ret = -EPERM;
 			mgr->doneq[i].rot_thread = NULL;
 			break;
 		}
 
-		ret = sched_setscheduler(mgr->doneq[i].rot_thread,
-			SCHED_FIFO, &param);
+		ret = sched_setscheduler(mgr->doneq[i].rot_thread, SCHED_FIFO,
+					 &param);
 		if (ret) {
 			SDEROT_ERR(
 				"failed to set kthread priority for doneq %d\n",
@@ -1165,8 +1167,8 @@ static void sde_rotator_deinit_queue(struct sde_rot_mgr *mgr)
  * Caller is responsible for calling cleanup function if error is returned
  */
 static int sde_rotator_assign_queue(struct sde_rot_mgr *mgr,
-	struct sde_rot_entry *entry,
-	struct sde_rot_file_private *private)
+				    struct sde_rot_entry *entry,
+				    struct sde_rot_file_private *private)
 {
 	struct sde_rot_perf *perf;
 	struct sde_rot_queue *queue;
@@ -1214,7 +1216,7 @@ static int sde_rotator_assign_queue(struct sde_rot_mgr *mgr,
 }
 
 static void sde_rotator_unassign_queue(struct sde_rot_mgr *mgr,
-	struct sde_rot_entry *entry)
+				       struct sde_rot_entry *entry)
 {
 	struct sde_rot_queue *queue = entry->commitq;
 
@@ -1238,8 +1240,8 @@ static void sde_rotator_unassign_queue(struct sde_rot_mgr *mgr,
 }
 
 void sde_rotator_queue_request(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rot_entry_container *req)
+			       struct sde_rot_file_private *private,
+			       struct sde_rot_entry_container *req)
 {
 	struct sde_rot_entry *entry;
 	struct sde_rot_queue *queue;
@@ -1276,7 +1278,8 @@ void sde_rotator_queue_request(struct sde_rot_mgr *mgr,
 }
 
 static u32 sde_rotator_calc_buf_bw(struct sde_mdp_format_params *fmt,
-		uint32_t width, uint32_t height, uint32_t frame_rate)
+				   uint32_t width, uint32_t height,
+				   uint32_t frame_rate)
 {
 	u32 bw;
 
@@ -1312,7 +1315,7 @@ static int sde_rotator_find_max_fps(struct sde_rot_mgr *mgr)
 }
 
 static int sde_rotator_calc_perf(struct sde_rot_mgr *mgr,
-		struct sde_rot_perf *perf)
+				 struct sde_rot_perf *perf)
 {
 	struct sde_rotation_config *config = &perf->config;
 	u32 read_bw, write_bw;
@@ -1334,39 +1337,40 @@ static int sde_rotator_calc_perf(struct sde_rot_mgr *mgr,
 	}
 
 	/*
-	 * rotator processes 4 pixels per clock, but the actual throughtput
-	 * is 3.6. We also need to take into account for overhead time. Final
-	 * equation is:
-	 *        W x H / throughput / (1/fps - overhead) * fudge_factor
-	 */
+   * rotator processes 4 pixels per clock, but the actual throughtput
+   * is 3.6. We also need to take into account for overhead time. Final
+   * equation is:
+   *        W x H / throughput / (1/fps - overhead) * fudge_factor
+   */
 	max_fps = sde_rotator_find_max_fps(mgr);
 	perf->clk_rate = config->input.width * config->input.height;
 	perf->clk_rate = (perf->clk_rate * mgr->pixel_per_clk.denom) /
-			mgr->pixel_per_clk.numer;
+			 mgr->pixel_per_clk.numer;
 	perf->clk_rate *= max_fps;
 	perf->clk_rate = (perf->clk_rate * mgr->fudge_factor.numer) /
-			mgr->fudge_factor.denom;
+			 mgr->fudge_factor.denom;
 	perf->clk_rate *= mgr->overhead.denom;
 
 	/*
-	 * check for override overhead default value
-	 */
+   * check for override overhead default value
+   */
 	if (rot_dev->min_overhead_us > (mgr->overhead.numer * 100))
-		perf->clk_rate = DIV_ROUND_UP_ULL(perf->clk_rate,
-				(mgr->overhead.denom - max_fps *
-				(rot_dev->min_overhead_us / 100)));
+		perf->clk_rate = DIV_ROUND_UP_ULL(
+			perf->clk_rate,
+			(mgr->overhead.denom -
+			 max_fps * (rot_dev->min_overhead_us / 100)));
 	else
-		perf->clk_rate = DIV_ROUND_UP_ULL(perf->clk_rate,
-				(mgr->overhead.denom - max_fps *
-				mgr->overhead.numer));
+		perf->clk_rate = DIV_ROUND_UP_ULL(
+			perf->clk_rate,
+			(mgr->overhead.denom - max_fps * mgr->overhead.numer));
 
 	/* use client provided clock if specified */
 	if (config->flags & SDE_ROTATION_EXT_PERF)
 		perf->clk_rate = config->clk_rate;
 
 	/*
-	 * check for Override clock calculation
-	 */
+   * check for Override clock calculation
+   */
 	if (rot_dev->min_rot_clk > perf->clk_rate)
 		perf->clk_rate = rot_dev->min_rot_clk;
 
@@ -1375,26 +1379,26 @@ static int sde_rotator_calc_perf(struct sde_rot_mgr *mgr,
 
 	if (mgr->max_rot_clk && (perf->clk_rate > mgr->max_rot_clk)) {
 		SDEROT_ERR("invalid clock:%ld exceeds max:%ld allowed\n",
-				perf->clk_rate, mgr->max_rot_clk);
+			   perf->clk_rate, mgr->max_rot_clk);
 		return -EINVAL;
 	}
 
-	read_bw =  sde_rotator_calc_buf_bw(in_fmt, config->input.width,
-				config->input.height, max_fps);
+	read_bw = sde_rotator_calc_buf_bw(in_fmt, config->input.width,
+					  config->input.height, max_fps);
 
 	write_bw = sde_rotator_calc_buf_bw(out_fmt, config->output.width,
-				config->output.height, max_fps);
+					   config->output.height, max_fps);
 
 	read_bw = sde_apply_comp_ratio_factor(read_bw, in_fmt,
-			&config->input.comp_ratio);
+					      &config->input.comp_ratio);
 	write_bw = sde_apply_comp_ratio_factor(write_bw, out_fmt,
-			&config->output.comp_ratio);
+					       &config->output.comp_ratio);
 
 	perf->bw = read_bw + write_bw;
 
 	/*
-	 * check for override bw calculation
-	 */
+   * check for override bw calculation
+   */
 	if (rot_dev->min_bw > perf->bw)
 		perf->bw = rot_dev->min_bw;
 
@@ -1402,18 +1406,20 @@ static int sde_rotator_calc_perf(struct sde_rot_mgr *mgr,
 	if (config->flags & SDE_ROTATION_EXT_PERF)
 		perf->bw = config->data_bw;
 
-	perf->rdot_limit = sde_mdp_get_ot_limit(
-			config->input.width, config->input.height,
-			config->input.format, config->frame_rate, true);
-	perf->wrot_limit = sde_mdp_get_ot_limit(
-			config->input.width, config->input.height,
-			config->input.format, config->frame_rate, false);
+	perf->rdot_limit = sde_mdp_get_ot_limit(config->input.width,
+						config->input.height,
+						config->input.format,
+						config->frame_rate, true);
+	perf->wrot_limit = sde_mdp_get_ot_limit(config->input.width,
+						config->input.height,
+						config->input.format,
+						config->frame_rate, false);
 
 	SDEROT_DBG("clk:%lu, rdBW:%d, wrBW:%d, rdOT:%d, wrOT:%d\n",
-			perf->clk_rate, read_bw, write_bw, perf->rdot_limit,
-			perf->wrot_limit);
+		   perf->clk_rate, read_bw, write_bw, perf->rdot_limit,
+		   perf->wrot_limit);
 	SDEROT_EVTLOG(perf->clk_rate, read_bw, write_bw, perf->rdot_limit,
-			perf->wrot_limit);
+		      perf->wrot_limit);
 	return 0;
 }
 
@@ -1443,9 +1449,9 @@ static int sde_rotator_update_perf(struct sde_rot_mgr *mgr)
 	return 0;
 }
 
-static void sde_rotator_release_from_work_distribution(
-		struct sde_rot_mgr *mgr,
-		struct sde_rot_entry *entry)
+static void
+sde_rotator_release_from_work_distribution(struct sde_rot_mgr *mgr,
+					   struct sde_rot_entry *entry)
 {
 	if (entry->work_assigned) {
 		bool free_perf = false;
@@ -1454,8 +1460,8 @@ static void sde_rotator_release_from_work_distribution(
 		if (entry->perf->work_distribution[wb_idx])
 			entry->perf->work_distribution[wb_idx]--;
 
-		if (!entry->perf->work_distribution[wb_idx]
-				&& list_empty(&entry->perf->list)) {
+		if (!entry->perf->work_distribution[wb_idx] &&
+		    list_empty(&entry->perf->list)) {
 			/* close session has offloaded perf free to us */
 			free_perf = true;
 		}
@@ -1465,14 +1471,14 @@ static void sde_rotator_release_from_work_distribution(
 			if (mgr->pending_close_bw_vote < entry->perf->bw) {
 				SDEROT_ERR(
 					"close bw vote underflow %llu / %llu\n",
-						mgr->pending_close_bw_vote,
-						entry->perf->bw);
+					mgr->pending_close_bw_vote,
+					entry->perf->bw);
 				mgr->pending_close_bw_vote = 0;
 			} else {
 				mgr->pending_close_bw_vote -= entry->perf->bw;
 			}
 			devm_kfree(&mgr->pdev->dev,
-				entry->perf->work_distribution);
+				   entry->perf->work_distribution);
 			devm_kfree(&mgr->pdev->dev, entry->perf);
 			sde_rotator_update_perf(mgr);
 			sde_rotator_clk_ctrl(mgr, false);
@@ -1483,7 +1489,7 @@ static void sde_rotator_release_from_work_distribution(
 }
 
 static void sde_rotator_release_entry(struct sde_rot_mgr *mgr,
-	struct sde_rot_entry *entry)
+				      struct sde_rot_entry *entry)
 {
 	sde_rotator_release_from_work_distribution(mgr, entry);
 	sde_rotator_clear_fence(entry);
@@ -1521,29 +1527,29 @@ static void sde_rotator_commit_handler(struct kthread_work *work)
 	ret = sched_setscheduler(entry->fenceq->rot_thread, SCHED_FIFO, &param);
 	if (ret) {
 		SDEROT_WARN("Fail to set kthread priority for fenceq: %d\n",
-				ret);
+			    ret);
 	}
 
 	mgr = entry->private->mgr;
 
-	SDEROT_EVTLOG(
-		entry->item.session_id, entry->item.sequence_id,
-		entry->item.src_rect.x, entry->item.src_rect.y,
-		entry->item.src_rect.w, entry->item.src_rect.h,
-		entry->item.dst_rect.x, entry->item.dst_rect.y,
-		entry->item.dst_rect.w, entry->item.dst_rect.h,
-		entry->item.flags,
-		entry->dnsc_factor_w, entry->dnsc_factor_h);
+	SDEROT_EVTLOG(entry->item.session_id, entry->item.sequence_id,
+		      entry->item.src_rect.x, entry->item.src_rect.y,
+		      entry->item.src_rect.w, entry->item.src_rect.h,
+		      entry->item.dst_rect.x, entry->item.dst_rect.y,
+		      entry->item.dst_rect.w, entry->item.dst_rect.h,
+		      entry->item.flags, entry->dnsc_factor_w,
+		      entry->dnsc_factor_h);
 
 	SDEDEV_DBG(mgr->device,
-		"commit handler s:%d.%u src:(%d,%d,%d,%d) dst:(%d,%d,%d,%d) f:0x%x dnsc:%u/%u\n",
-		entry->item.session_id, entry->item.sequence_id,
-		entry->item.src_rect.x, entry->item.src_rect.y,
-		entry->item.src_rect.w, entry->item.src_rect.h,
-		entry->item.dst_rect.x, entry->item.dst_rect.y,
-		entry->item.dst_rect.w, entry->item.dst_rect.h,
-		entry->item.flags,
-		entry->dnsc_factor_w, entry->dnsc_factor_h);
+		   "commit handler s:%d.%u src:(%d,%d,%d,%d) dst:(%d,%d,%d,%d) "
+		   "f:0x%x dnsc:%u/%u\n",
+		   entry->item.session_id, entry->item.sequence_id,
+		   entry->item.src_rect.x, entry->item.src_rect.y,
+		   entry->item.src_rect.w, entry->item.src_rect.h,
+		   entry->item.dst_rect.x, entry->item.dst_rect.y,
+		   entry->item.dst_rect.w, entry->item.dst_rect.h,
+		   entry->item.flags, entry->dnsc_factor_w,
+		   entry->dnsc_factor_h);
 
 	sde_rot_mgr_lock(mgr);
 
@@ -1574,8 +1580,8 @@ static void sde_rotator_commit_handler(struct kthread_work *work)
 	rot_trace.dst_w = entry->item.dst_rect.w;
 	rot_trace.dst_h = entry->item.dst_rect.h;
 
-	trace_rot_entry_commit(
-		entry->item.session_id, entry->item.sequence_id, &rot_trace);
+	trace_rot_entry_commit(entry->item.session_id, entry->item.sequence_id,
+			       &rot_trace);
 
 	ATRACE_INT("sde_smmu_ctrl", 0);
 	ret = sde_smmu_ctrl(1);
@@ -1604,7 +1610,7 @@ static void sde_rotator_commit_handler(struct kthread_work *work)
 	if (ret) {
 		SDEROT_WARN("timeout waiting for inline start\n");
 		SDEROT_EVTLOG(entry->item.session_id, entry->item.sequence_id,
-				SDE_ROT_EVTLOG_ERROR);
+			      SDE_ROT_EVTLOG_ERROR);
 		goto kickoff_error;
 	}
 
@@ -1612,7 +1618,7 @@ static void sde_rotator_commit_handler(struct kthread_work *work)
 	if (ret) {
 		SDEROT_ERR("fail to do kickoff %d\n", ret);
 		SDEROT_EVTLOG(entry->item.session_id, entry->item.sequence_id,
-				SDE_ROT_EVTLOG_ERROR);
+			      SDE_ROT_EVTLOG_ERROR);
 		goto kickoff_error;
 	}
 
@@ -1626,9 +1632,9 @@ static void sde_rotator_commit_handler(struct kthread_work *work)
 	return;
 kickoff_error:
 	/*
-	 * Wait for any pending operations to complete before cancelling this
-	 * one so that the system is left in a consistent state.
-	 */
+   * Wait for any pending operations to complete before cancelling this
+   * one so that the system is left in a consistent state.
+   */
 	sde_rotator_req_wait_for_idle(mgr, request);
 	mgr->ops_cancel_hw(hw, entry);
 error:
@@ -1675,15 +1681,16 @@ static void sde_rotator_done_handler(struct kthread_work *work)
 	mgr = entry->private->mgr;
 	hw = entry->commitq->hw;
 
-	SDEDEV_DBG(mgr->device,
-		"done handler s:%d.%u src:(%d,%d,%d,%d) dst:(%d,%d,%d,%d) f:0x%x dsnc:%u/%u\n",
+	SDEDEV_DBG(
+		mgr->device,
+		"done handler s:%d.%u src:(%d,%d,%d,%d) dst:(%d,%d,%d,%d) f:0x%x "
+		"dsnc:%u/%u\n",
 		entry->item.session_id, entry->item.sequence_id,
 		entry->item.src_rect.x, entry->item.src_rect.y,
 		entry->item.src_rect.w, entry->item.src_rect.h,
 		entry->item.dst_rect.x, entry->item.dst_rect.y,
 		entry->item.dst_rect.w, entry->item.dst_rect.h,
-		entry->item.flags,
-		entry->dnsc_factor_w, entry->dnsc_factor_h);
+		entry->item.flags, entry->dnsc_factor_w, entry->dnsc_factor_h);
 
 	SDEROT_EVTLOG(entry->item.session_id, 0);
 	ret = mgr->ops_wait_for_entry(hw, entry);
@@ -1715,7 +1722,7 @@ static void sde_rotator_done_handler(struct kthread_work *work)
 	rot_trace.dst_h = entry->item.dst_rect.h;
 
 	trace_rot_entry_done(entry->item.session_id, entry->item.sequence_id,
-			&rot_trace);
+			     &rot_trace);
 
 	sde_rot_mgr_lock(mgr);
 	sde_rotator_put_hw_resource(entry->commitq, entry, entry->commitq->hw);
@@ -1735,32 +1742,33 @@ static void sde_rotator_done_handler(struct kthread_work *work)
 }
 
 static bool sde_rotator_verify_format(struct sde_rot_mgr *mgr,
-	struct sde_mdp_format_params *in_fmt,
-	struct sde_mdp_format_params *out_fmt, bool rotation, u32 mode)
+				      struct sde_mdp_format_params *in_fmt,
+				      struct sde_mdp_format_params *out_fmt,
+				      bool rotation, u32 mode)
 {
 	u8 in_v_subsample, in_h_subsample;
 	u8 out_v_subsample, out_h_subsample;
 
 	if (!sde_rotator_is_valid_pixfmt(mgr, in_fmt->format, true, mode)) {
 		SDEROT_ERR("Invalid input format 0x%x (%4.4s)\n",
-				in_fmt->format, (char *)&in_fmt->format);
+			   in_fmt->format, (char *)&in_fmt->format);
 		goto verify_error;
 	}
 
 	if (!sde_rotator_is_valid_pixfmt(mgr, out_fmt->format, false, mode)) {
 		SDEROT_ERR("Invalid output format 0x%x (%4.4s)\n",
-				out_fmt->format, (char *)&out_fmt->format);
+			   out_fmt->format, (char *)&out_fmt->format);
 		goto verify_error;
 	}
 
 	if ((in_fmt->is_yuv != out_fmt->is_yuv) ||
-		(in_fmt->pixel_mode != out_fmt->pixel_mode) ||
-		(in_fmt->unpack_tight != out_fmt->unpack_tight)) {
+	    (in_fmt->pixel_mode != out_fmt->pixel_mode) ||
+	    (in_fmt->unpack_tight != out_fmt->unpack_tight)) {
 		SDEROT_ERR(
 			"Rotator does not support CSC yuv:%d/%d pm:%d/%d ut:%d/%d\n",
-			in_fmt->is_yuv, out_fmt->is_yuv,
-			in_fmt->pixel_mode, out_fmt->pixel_mode,
-			in_fmt->unpack_tight, out_fmt->unpack_tight);
+			in_fmt->is_yuv, out_fmt->is_yuv, in_fmt->pixel_mode,
+			out_fmt->pixel_mode, in_fmt->unpack_tight,
+			out_fmt->unpack_tight);
 		goto verify_error;
 	}
 
@@ -1768,9 +1776,9 @@ static bool sde_rotator_verify_format(struct sde_rot_mgr *mgr,
 	if (memcmp(in_fmt->bits, out_fmt->bits, sizeof(in_fmt->bits))) {
 		/* Exception is that RGB can drop alpha or add X */
 		if (in_fmt->is_yuv || out_fmt->alpha_enable ||
-			(in_fmt->bits[C2_R_Cr] != out_fmt->bits[C2_R_Cr]) ||
-			(in_fmt->bits[C0_G_Y] != out_fmt->bits[C0_G_Y]) ||
-			(in_fmt->bits[C1_B_Cb] != out_fmt->bits[C1_B_Cb])) {
+		    (in_fmt->bits[C2_R_Cr] != out_fmt->bits[C2_R_Cr]) ||
+		    (in_fmt->bits[C0_G_Y] != out_fmt->bits[C0_G_Y]) ||
+		    (in_fmt->bits[C1_B_Cb] != out_fmt->bits[C1_B_Cb])) {
 			SDEROT_ERR("Bit format does not match\n");
 			goto verify_error;
 		}
@@ -1779,12 +1787,14 @@ static bool sde_rotator_verify_format(struct sde_rot_mgr *mgr,
 	/* Need to make sure that sub-sampling persists through rotation */
 	if (rotation) {
 		sde_mdp_get_v_h_subsample_rate(in_fmt->chroma_sample,
-			&in_v_subsample, &in_h_subsample);
+					       &in_v_subsample,
+					       &in_h_subsample);
 		sde_mdp_get_v_h_subsample_rate(out_fmt->chroma_sample,
-			&out_v_subsample, &out_h_subsample);
+					       &out_v_subsample,
+					       &out_h_subsample);
 
 		if ((in_v_subsample != out_h_subsample) ||
-				(in_h_subsample != out_v_subsample)) {
+		    (in_h_subsample != out_v_subsample)) {
 			SDEROT_ERR("Rotation has invalid subsampling\n");
 			goto verify_error;
 		}
@@ -1799,15 +1809,14 @@ static bool sde_rotator_verify_format(struct sde_rot_mgr *mgr,
 
 verify_error:
 	SDEROT_ERR("in_fmt=0x%x (%4.4s), out_fmt=0x%x (%4.4s), mode=%d\n",
-			in_fmt->format, (char *)&in_fmt->format,
-			out_fmt->format, (char *)&out_fmt->format,
-			mode);
+		   in_fmt->format, (char *)&in_fmt->format, out_fmt->format,
+		   (char *)&out_fmt->format, mode);
 	return false;
 }
 
-static struct sde_mdp_format_params *__verify_input_config(
-		struct sde_rot_mgr *mgr,
-		struct sde_rotation_config *config)
+static struct sde_mdp_format_params *
+__verify_input_config(struct sde_rot_mgr *mgr,
+		      struct sde_rotation_config *config)
 {
 	struct sde_mdp_format_params *in_fmt;
 	u8 in_v_subsample, in_h_subsample;
@@ -1830,27 +1839,26 @@ static struct sde_mdp_format_params *__verify_input_config(
 		return NULL;
 	}
 
-	sde_mdp_get_v_h_subsample_rate(in_fmt->chroma_sample,
-		&in_v_subsample, &in_h_subsample);
+	sde_mdp_get_v_h_subsample_rate(in_fmt->chroma_sample, &in_v_subsample,
+				       &in_h_subsample);
 
 	/* Dimension of image needs to be divisible by subsample rate  */
 	if ((config->input.height % in_v_subsample) ||
-			(config->input.width % in_h_subsample)) {
+	    (config->input.width % in_h_subsample)) {
 		if (!verify_input_only)
 			SDEROT_ERR(
 				"In ROI, subsample mismatch, w=%d, h=%d, vss%d, hss%d\n",
-					config->input.width,
-					config->input.height,
-					in_v_subsample, in_h_subsample);
+				config->input.width, config->input.height,
+				in_v_subsample, in_h_subsample);
 		return NULL;
 	}
 
 	return in_fmt;
 }
 
-static struct sde_mdp_format_params *__verify_output_config(
-		struct sde_rot_mgr *mgr,
-		struct sde_rotation_config *config)
+static struct sde_mdp_format_params *
+__verify_output_config(struct sde_rot_mgr *mgr,
+		       struct sde_rotation_config *config)
 {
 	struct sde_mdp_format_params *out_fmt;
 	u8 out_v_subsample, out_h_subsample;
@@ -1873,18 +1881,17 @@ static struct sde_mdp_format_params *__verify_output_config(
 		return NULL;
 	}
 
-	sde_mdp_get_v_h_subsample_rate(out_fmt->chroma_sample,
-		&out_v_subsample, &out_h_subsample);
+	sde_mdp_get_v_h_subsample_rate(out_fmt->chroma_sample, &out_v_subsample,
+				       &out_h_subsample);
 
 	/* Dimension of image needs to be divisible by subsample rate  */
 	if ((config->output.height % out_v_subsample) ||
-			(config->output.width % out_h_subsample)) {
+	    (config->output.width % out_h_subsample)) {
 		if (!verify_input_only)
 			SDEROT_ERR(
 				"Out ROI, subsample mismatch, w=%d, h=%d, vss%d, hss%d\n",
-					config->output.width,
-					config->output.height,
-					out_v_subsample, out_h_subsample);
+				config->output.width, config->output.height,
+				out_v_subsample, out_h_subsample);
 		return NULL;
 	}
 
@@ -1892,7 +1899,7 @@ static struct sde_mdp_format_params *__verify_output_config(
 }
 
 int sde_rotator_verify_config_input(struct sde_rot_mgr *mgr,
-		struct sde_rotation_config *config)
+				    struct sde_rotation_config *config)
 {
 	struct sde_mdp_format_params *in_fmt;
 
@@ -1904,7 +1911,7 @@ int sde_rotator_verify_config_input(struct sde_rot_mgr *mgr,
 }
 
 int sde_rotator_verify_config_output(struct sde_rot_mgr *mgr,
-		struct sde_rotation_config *config)
+				     struct sde_rotation_config *config)
 {
 	struct sde_mdp_format_params *out_fmt;
 
@@ -1916,7 +1923,7 @@ int sde_rotator_verify_config_output(struct sde_rot_mgr *mgr,
 }
 
 int sde_rotator_verify_config_all(struct sde_rot_mgr *mgr,
-	struct sde_rotation_config *config)
+				  struct sde_rotation_config *config)
 {
 	struct sde_mdp_format_params *in_fmt, *out_fmt;
 	bool rotation;
@@ -1930,7 +1937,7 @@ int sde_rotator_verify_config_all(struct sde_rot_mgr *mgr,
 	rotation = (config->flags & SDE_ROTATION_90) ? true : false;
 
 	mode = config->output.sbuf ? SDE_ROTATOR_MODE_SBUF :
-				SDE_ROTATOR_MODE_OFFLINE;
+				     SDE_ROTATOR_MODE_OFFLINE;
 
 	in_fmt = __verify_input_config(mgr, config);
 	if (!in_fmt)
@@ -1943,26 +1950,26 @@ int sde_rotator_verify_config_all(struct sde_rot_mgr *mgr,
 	if (!sde_rotator_verify_format(mgr, in_fmt, out_fmt, rotation, mode)) {
 		SDEROT_ERR(
 			"Rot format pairing invalid, in_fmt:0x%x, out_fmt:0x%x\n",
-					config->input.format,
-					config->output.format);
+			config->input.format, config->output.format);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static int sde_rotator_validate_item_matches_session(
-	struct sde_rotation_config *config, struct sde_rotation_item *item)
+static int
+sde_rotator_validate_item_matches_session(struct sde_rotation_config *config,
+					  struct sde_rotation_item *item)
 {
 	int ret;
 
-	ret = __compare_session_item_rect(&config->input,
-		&item->src_rect, item->input.format, true);
+	ret = __compare_session_item_rect(&config->input, &item->src_rect,
+					  item->input.format, true);
 	if (ret)
 		return ret;
 
-	ret = __compare_session_item_rect(&config->output,
-		&item->dst_rect, item->output.format, false);
+	ret = __compare_session_item_rect(&config->output, &item->dst_rect,
+					  item->output.format, false);
 	if (ret)
 		return ret;
 
@@ -1981,20 +1988,20 @@ static int sde_rotator_validate_img_roi(struct sde_rotation_item *item)
 
 	fmt = sde_get_format_params(item->output.format);
 	if (!fmt) {
-		SDEROT_DBG("invalid output format:%d\n",
-					item->output.format);
+		SDEROT_DBG("invalid output format:%d\n", item->output.format);
 		return -EINVAL;
 	}
 
 	if (sde_mdp_is_ubwc_format(fmt))
-		ret = sde_validate_offset_for_ubwc_format(fmt,
-			item->dst_rect.x, item->dst_rect.y);
+		ret = sde_validate_offset_for_ubwc_format(fmt, item->dst_rect.x,
+							  item->dst_rect.y);
 
 	return ret;
 }
 
-static int sde_rotator_validate_fmt_and_item_flags(
-	struct sde_rotation_config *config, struct sde_rotation_item *item)
+static int
+sde_rotator_validate_fmt_and_item_flags(struct sde_rotation_config *config,
+					struct sde_rotation_item *item)
 {
 	struct sde_mdp_format_params *in_fmt, *out_fmt;
 	struct sde_rot_data_type *mdata = sde_rot_get_mdata();
@@ -2003,14 +2010,14 @@ static int sde_rotator_validate_fmt_and_item_flags(
 	in_fmt = sde_get_format_params(item->input.format);
 	out_fmt = sde_get_format_params(item->output.format);
 	if ((item->flags & SDE_ROTATION_DEINTERLACE) &&
-			sde_mdp_is_ubwc_format(in_fmt)) {
+	    sde_mdp_is_ubwc_format(in_fmt)) {
 		SDEROT_DBG("cannot perform deinterlace on tiled formats\n");
 		return -EINVAL;
 	}
 
 	has_ubwc = ROT_HAS_UBWC(mdata->sde_caps_map);
 	if (!has_ubwc && (sde_mdp_is_ubwc_format(in_fmt) ||
-		sde_mdp_is_ubwc_format(out_fmt))) {
+			  sde_mdp_is_ubwc_format(out_fmt))) {
 		SDEROT_ERR("ubwc format is not supported\n");
 		return -EINVAL;
 	}
@@ -2019,8 +2026,8 @@ static int sde_rotator_validate_fmt_and_item_flags(
 }
 
 static int sde_rotator_validate_entry(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rot_entry *entry)
+				      struct sde_rot_file_private *private,
+				      struct sde_rot_entry *entry)
 {
 	int ret;
 	struct sde_rotation_item *item;
@@ -2040,7 +2047,7 @@ static int sde_rotator_validate_entry(struct sde_rot_mgr *mgr,
 	ret = sde_rotator_validate_item_matches_session(&perf->config, item);
 	if (ret) {
 		SDEROT_DBG("Work item does not match session:%u\n",
-					item->session_id);
+			   item->session_id);
 		return ret;
 	}
 
@@ -2067,8 +2074,8 @@ static int sde_rotator_validate_entry(struct sde_rot_mgr *mgr,
  * to call sde_rotator_remove_request to clean up resources.
  */
 static int sde_rotator_add_request(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rot_entry_container *req)
+				   struct sde_rot_file_private *private,
+				   struct sde_rot_entry_container *req)
 {
 	struct sde_rot_entry *entry;
 	struct sde_rotation_item *item;
@@ -2103,17 +2110,15 @@ static int sde_rotator_add_request(struct sde_rot_mgr *mgr,
 		entry->request = req;
 
 		kthread_init_work(&entry->commit_work,
-				sde_rotator_commit_handler);
-		kthread_init_work(&entry->done_work,
-				sde_rotator_done_handler);
-		SDEROT_DBG(
-			"Entry added. wbidx=%u, src{%u,%u,%u,%u}f=%x dst{%u,%u,%u,%u}f=%x session_id=%u\n",
-			item->wb_idx,
-			item->src_rect.x, item->src_rect.y,
-			item->src_rect.w, item->src_rect.h, item->input.format,
-			item->dst_rect.x, item->dst_rect.y,
-			item->dst_rect.w, item->dst_rect.h, item->output.format,
-			item->session_id);
+				  sde_rotator_commit_handler);
+		kthread_init_work(&entry->done_work, sde_rotator_done_handler);
+		SDEROT_DBG("Entry added. wbidx=%u, src{%u,%u,%u,%u}f=%x "
+			   "dst{%u,%u,%u,%u}f=%x session_id=%u\n",
+			   item->wb_idx, item->src_rect.x, item->src_rect.y,
+			   item->src_rect.w, item->src_rect.h,
+			   item->input.format, item->dst_rect.x,
+			   item->dst_rect.y, item->dst_rect.w, item->dst_rect.h,
+			   item->output.format, item->session_id);
 	}
 
 	list_add(&req->list, &private->req_list);
@@ -2122,8 +2127,8 @@ static int sde_rotator_add_request(struct sde_rot_mgr *mgr,
 }
 
 void sde_rotator_remove_request(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rot_entry_container *req)
+				struct sde_rot_file_private *private,
+				struct sde_rot_entry_container *req)
 {
 	int i;
 
@@ -2139,17 +2144,17 @@ void sde_rotator_remove_request(struct sde_rot_mgr *mgr,
 
 /* This function should be called with req_lock */
 static void sde_rotator_cancel_request(struct sde_rot_mgr *mgr,
-	struct sde_rot_entry_container *req)
+				       struct sde_rot_entry_container *req)
 {
 	struct sde_rot_entry *entry;
 	int i;
 
 	if (atomic_read(&req->pending_count)) {
 		/*
-		 * To avoid signal the rotation entry output fence in the wrong
-		 * order, all the entries in the same request needs to be
-		 * canceled first, before signaling the output fence.
-		 */
+     * To avoid signal the rotation entry output fence in the wrong
+     * order, all the entries in the same request needs to be
+     * canceled first, before signaling the output fence.
+     */
 		SDEROT_DBG("cancel work start\n");
 		sde_rot_mgr_unlock(mgr);
 		for (i = req->count - 1; i >= 0; i--) {
@@ -2171,7 +2176,7 @@ static void sde_rotator_cancel_request(struct sde_rot_mgr *mgr,
 }
 
 void sde_rotator_cancel_all_requests(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private)
+				     struct sde_rot_file_private *private)
 {
 	struct sde_rot_entry_container *req, *req_next;
 
@@ -2181,8 +2186,9 @@ void sde_rotator_cancel_all_requests(struct sde_rot_mgr *mgr,
 		sde_rotator_cancel_request(mgr, req);
 }
 
-static void sde_rotator_free_completed_request(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private)
+static void
+sde_rotator_free_completed_request(struct sde_rot_mgr *mgr,
+				   struct sde_rot_file_private *private)
 {
 	struct sde_rot_entry_container *req, *req_next;
 
@@ -2194,9 +2200,9 @@ static void sde_rotator_free_completed_request(struct sde_rot_mgr *mgr,
 	}
 }
 
-static void sde_rotator_release_rotator_perf_session(
-	struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private)
+static void
+sde_rotator_release_rotator_perf_session(struct sde_rot_mgr *mgr,
+					 struct sde_rot_file_private *private)
 {
 	struct sde_rot_perf *perf, *perf_next;
 
@@ -2224,8 +2230,8 @@ static void sde_rotator_release_all(struct sde_rot_mgr *mgr)
 }
 
 int sde_rotator_validate_request(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rot_entry_container *req)
+				 struct sde_rot_file_private *private,
+				 struct sde_rot_entry_container *req)
 {
 	int i, ret = 0;
 	struct sde_rot_entry *entry;
@@ -2237,8 +2243,7 @@ int sde_rotator_validate_request(struct sde_rot_mgr *mgr,
 
 	for (i = 0; i < req->count; i++) {
 		entry = req->entries + i;
-		ret = sde_rotator_validate_entry(mgr, private,
-			entry);
+		ret = sde_rotator_validate_entry(mgr, private, entry);
 		if (ret) {
 			SDEROT_DBG("invalid entry\n");
 			return ret;
@@ -2249,7 +2254,8 @@ int sde_rotator_validate_request(struct sde_rot_mgr *mgr,
 }
 
 static int sde_rotator_open_session(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private, u32 session_id)
+				    struct sde_rot_file_private *private,
+				    u32 session_id)
 {
 	struct sde_rotation_config config;
 	struct sde_rot_perf *perf;
@@ -2277,8 +2283,8 @@ static int sde_rotator_open_session(struct sde_rot_mgr *mgr,
 	if (!perf)
 		return -ENOMEM;
 
-	perf->work_distribution = devm_kzalloc(&mgr->pdev->dev,
-		sizeof(u32) * mgr->queue_count, GFP_KERNEL);
+	perf->work_distribution = devm_kzalloc(
+		&mgr->pdev->dev, sizeof(u32) * mgr->queue_count, GFP_KERNEL);
 	if (!perf->work_distribution) {
 		ret = -ENOMEM;
 		goto alloc_err;
@@ -2310,9 +2316,9 @@ static int sde_rotator_open_session(struct sde_rot_mgr *mgr,
 	}
 
 	SDEROT_DBG("open session id=%u in{%u,%u}f:%u out{%u,%u}f:%u\n",
-		config.session_id, config.input.width, config.input.height,
-		config.input.format, config.output.width, config.output.height,
-		config.output.format);
+		   config.session_id, config.input.width, config.input.height,
+		   config.input.format, config.output.width,
+		   config.output.height, config.output.format);
 
 	goto done;
 enable_clk_err:
@@ -2328,7 +2334,8 @@ done:
 }
 
 static int sde_rotator_close_session(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private, u32 session_id)
+				     struct sde_rot_file_private *private,
+				     u32 session_id)
 {
 	struct sde_rot_perf *perf;
 	bool offload_release_work = false;
@@ -2369,8 +2376,8 @@ done:
 }
 
 static int sde_rotator_config_session(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rotation_config *config)
+				      struct sde_rot_file_private *private,
+				      struct sde_rotation_config *config)
 {
 	int ret = 0;
 	struct sde_rot_perf *perf;
@@ -2384,7 +2391,7 @@ static int sde_rotator_config_session(struct sde_rot_mgr *mgr,
 	perf = sde_rotator_find_session(private, config->session_id);
 	if (!perf) {
 		SDEROT_ERR("No session with id=%u could be found\n",
-			config->session_id);
+			   config->session_id);
 		return -EINVAL;
 	}
 
@@ -2414,25 +2421,25 @@ static int sde_rotator_config_session(struct sde_rot_mgr *mgr,
 		goto done;
 	}
 
-	SDEROT_DBG(
-		"reconfig session id=%u in{%u,%u}f:%x out{%u,%u}f:%x fps:%d clk:%lu bw:%llu\n",
-		config->session_id, config->input.width, config->input.height,
-		config->input.format, config->output.width,
-		config->output.height, config->output.format,
-		config->frame_rate, perf->clk_rate, perf->bw);
+	SDEROT_DBG("reconfig session id=%u in{%u,%u}f:%x out{%u,%u}f:%x fps:%d "
+		   "clk:%lu bw:%llu\n",
+		   config->session_id, config->input.width,
+		   config->input.height, config->input.format,
+		   config->output.width, config->output.height,
+		   config->output.format, config->frame_rate, perf->clk_rate,
+		   perf->bw);
 	SDEROT_EVTLOG(config->session_id, config->input.width,
-			config->input.height, config->input.format,
-			config->output.width, config->output.height,
-			config->output.format, config->frame_rate);
+		      config->input.height, config->input.format,
+		      config->output.width, config->output.height,
+		      config->output.format, config->frame_rate);
 done:
 	return ret;
 }
 
-struct sde_rot_entry_container *sde_rotator_req_init(
-	struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rotation_item *items,
-	u32 count, u32 flags)
+struct sde_rot_entry_container *
+sde_rotator_req_init(struct sde_rot_mgr *mgr,
+		     struct sde_rot_file_private *private,
+		     struct sde_rotation_item *items, u32 count, u32 flags)
 {
 	struct sde_rot_entry_container *req;
 	int size, i;
@@ -2451,8 +2458,9 @@ struct sde_rot_entry_container *sde_rotator_req_init(
 
 	INIT_LIST_HEAD(&req->list);
 	req->count = count;
-	req->entries = (struct sde_rot_entry *)
-		((void *)req + sizeof(struct sde_rot_entry_container));
+	req->entries =
+		(struct sde_rot_entry *)((void *)req +
+					 sizeof(struct sde_rot_entry_container));
 	req->flags = flags;
 	atomic_set(&req->pending_count, count);
 	atomic_set(&req->failed_count, 0);
@@ -2469,7 +2477,7 @@ struct sde_rot_entry_container *sde_rotator_req_init(
 }
 
 void sde_rotator_req_reset_start(struct sde_rot_mgr *mgr,
-		struct sde_rot_entry_container *req)
+				 struct sde_rot_entry_container *req)
 {
 	int i;
 
@@ -2481,7 +2489,7 @@ void sde_rotator_req_reset_start(struct sde_rot_mgr *mgr,
 }
 
 void sde_rotator_req_set_start(struct sde_rot_mgr *mgr,
-		struct sde_rot_entry_container *req)
+			       struct sde_rot_entry_container *req)
 {
 	struct kthread_work *commit_work;
 	int i;
@@ -2505,7 +2513,7 @@ void sde_rotator_req_set_start(struct sde_rot_mgr *mgr,
 }
 
 int sde_rotator_req_wait_start(struct sde_rot_mgr *mgr,
-		struct sde_rot_entry_container *req)
+			       struct sde_rot_entry_container *req)
 {
 	struct completion *inline_start;
 	int i, ret;
@@ -2515,14 +2523,15 @@ int sde_rotator_req_wait_start(struct sde_rot_mgr *mgr,
 
 	/* only wait for sbuf mode */
 	if (!mgr->sbuf_ctx || !req->count ||
-			mgr->sbuf_ctx != req->entries[0].private)
+	    mgr->sbuf_ctx != req->entries[0].private)
 		return 0;
 
 	for (i = 0; i < req->count; i++) {
 		inline_start = &req->entries[i].item.inline_start;
 
 		sde_rot_mgr_unlock(mgr);
-		ret = wait_for_completion_timeout(inline_start,
+		ret = wait_for_completion_timeout(
+			inline_start,
 			msecs_to_jiffies(ROT_INLINE_START_TIMEOUT_IN_MS));
 		sde_rot_mgr_lock(mgr);
 	}
@@ -2532,8 +2541,8 @@ int sde_rotator_req_wait_start(struct sde_rot_mgr *mgr,
 }
 
 void sde_rotator_req_finish(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rot_entry_container *req)
+			    struct sde_rot_file_private *private,
+			    struct sde_rot_entry_container *req)
 {
 	if (!mgr || !private || !req) {
 		SDEROT_ERR("null parameters\n");
@@ -2544,8 +2553,8 @@ void sde_rotator_req_finish(struct sde_rot_mgr *mgr,
 }
 
 void sde_rotator_abort_inline_request(struct sde_rot_mgr *mgr,
-		struct sde_rot_file_private *private,
-		struct sde_rot_entry_container *req)
+				      struct sde_rot_file_private *private,
+				      struct sde_rot_entry_container *req)
 {
 	struct kthread_work *commit_work;
 	struct kthread_work *done_work;
@@ -2583,8 +2592,8 @@ void sde_rotator_abort_inline_request(struct sde_rot_mgr *mgr,
 }
 
 int sde_rotator_handle_request_common(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rot_entry_container *req)
+				      struct sde_rot_file_private *private,
+				      struct sde_rot_entry_container *req)
 {
 	int ret;
 
@@ -2605,7 +2614,7 @@ int sde_rotator_handle_request_common(struct sde_rot_mgr *mgr,
 }
 
 static int sde_rotator_open(struct sde_rot_mgr *mgr,
-		struct sde_rot_file_private **pprivate)
+			    struct sde_rot_file_private **pprivate)
 {
 	struct sde_rot_file_private *private;
 
@@ -2615,8 +2624,7 @@ static int sde_rotator_open(struct sde_rot_mgr *mgr,
 	if (atomic_read(&mgr->device_suspended))
 		return -EPERM;
 
-	private = devm_kzalloc(&mgr->pdev->dev, sizeof(*private),
-		GFP_KERNEL);
+	private = devm_kzalloc(&mgr->pdev->dev, sizeof(*private), GFP_KERNEL);
 	if (!private)
 		return -ENOMEM;
 
@@ -2632,7 +2640,7 @@ static int sde_rotator_open(struct sde_rot_mgr *mgr,
 }
 
 static bool sde_rotator_file_priv_allowed(struct sde_rot_mgr *mgr,
-		struct sde_rot_file_private *priv)
+					  struct sde_rot_file_private *priv)
 {
 	struct sde_rot_file_private *_priv, *_priv_next;
 	bool ret = false;
@@ -2647,7 +2655,7 @@ static bool sde_rotator_file_priv_allowed(struct sde_rot_mgr *mgr,
 }
 
 static int sde_rotator_close(struct sde_rot_mgr *mgr,
-		struct sde_rot_file_private *private)
+			     struct sde_rot_file_private *private)
 {
 	if (!mgr || !private)
 		return -ENODEV;
@@ -2659,9 +2667,9 @@ static int sde_rotator_close(struct sde_rot_mgr *mgr,
 	}
 
 	/*
-	 * if secure camera session was enabled
-	 * go back to non secure state
-	 */
+   * if secure camera session was enabled
+   * go back to non secure state
+   */
 	sde_rotator_secure_session_ctrl(false);
 	sde_rotator_release_rotator_perf_session(mgr, private);
 
@@ -2672,8 +2680,8 @@ static int sde_rotator_close(struct sde_rot_mgr *mgr,
 	return 0;
 }
 
-static ssize_t caps_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+static ssize_t caps_show(struct device *dev, struct device_attribute *attr,
+			 char *buf)
 {
 	size_t len = PAGE_SIZE;
 	int cnt = 0;
@@ -2683,7 +2691,7 @@ static ssize_t caps_show(struct device *dev,
 		return cnt;
 
 #define SPRINT(fmt, ...) \
-		(cnt += scnprintf(buf + cnt, len - cnt, fmt, ##__VA_ARGS__))
+	(cnt += scnprintf(buf + cnt, len - cnt, fmt, ##__VA_ARGS__))
 
 	SPRINT("queue_count=%d\n", mgr->queue_count);
 	SPRINT("downscale=1\n");
@@ -2695,8 +2703,8 @@ static ssize_t caps_show(struct device *dev,
 	return cnt;
 }
 
-static ssize_t state_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+static ssize_t state_show(struct device *dev, struct device_attribute *attr,
+			  char *buf)
 {
 	size_t len = PAGE_SIZE;
 	int cnt = 0;
@@ -2707,7 +2715,7 @@ static ssize_t state_show(struct device *dev,
 		return cnt;
 
 #define SPRINT(fmt, ...) \
-		(cnt += scnprintf(buf + cnt, len - cnt, fmt, ##__VA_ARGS__))
+	(cnt += scnprintf(buf + cnt, len - cnt, fmt, ##__VA_ARGS__))
 
 	SPRINT("reg_bus_bw=%llu\n", mgr->reg_bus.curr_quota_val);
 	SPRINT("data_bus_bw=%llu\n", mgr->data_bus.curr_quota_val);
@@ -2719,7 +2727,7 @@ static ssize_t state_show(struct device *dev,
 	for (i = 0; i < mgr->num_rot_clk; i++)
 		if (mgr->rot_clk[i].clk)
 			SPRINT("%s=%lu\n", mgr->rot_clk[i].clk_name,
-					clk_get_rate(mgr->rot_clk[i].clk));
+			       clk_get_rate(mgr->rot_clk[i].clk));
 
 	if (mgr->ops_hw_show_state)
 		cnt += mgr->ops_hw_show_state(mgr, attr, buf + cnt, len - cnt);
@@ -2730,32 +2738,29 @@ static ssize_t state_show(struct device *dev,
 static DEVICE_ATTR_RO(caps);
 static DEVICE_ATTR_RO(state);
 
-static struct attribute *sde_rotator_fs_attrs[] = {
-	&dev_attr_caps.attr,
-	&dev_attr_state.attr,
-	NULL
-};
+static struct attribute *sde_rotator_fs_attrs[] = { &dev_attr_caps.attr,
+						    &dev_attr_state.attr,
+						    NULL };
 
 static struct attribute_group sde_rotator_fs_attr_group = {
 	.attrs = sde_rotator_fs_attrs
 };
 
 static int sde_rotator_parse_dt_bus(struct sde_rot_mgr *mgr,
-	struct platform_device *dev)
+				    struct platform_device *dev)
 {
 	char bus_name[32];
 	int ret = 0, i = 0;
 
-	mgr->reg_bus.data_bus_hdl[0] = of_icc_get(&dev->dev,
-						  "qcom,sde-reg-bus");
+	mgr->reg_bus.data_bus_hdl[0] =
+		of_icc_get(&dev->dev, "qcom,sde-reg-bus");
 
 	if (mgr->reg_bus.data_bus_hdl[0] == NULL) {
 		mgr->reg_bus.data_paths_cnt = 0;
 		pr_debug("rotator: reg bus dt node missing\n");
 		goto data_bus;
 	} else if (IS_ERR(mgr->reg_bus.data_bus_hdl[0])) {
-		SDEROT_ERR("sde rotator parse reg bus failed. ret=%d\n",
-			   ret);
+		SDEROT_ERR("sde rotator parse reg bus failed. ret=%d\n", ret);
 		mgr->reg_bus.data_bus_hdl[0] = NULL;
 		ret = -EINVAL;
 		return ret;
@@ -2766,11 +2771,11 @@ data_bus:
 	for (i = 0; i < SDE_ROTATION_BUS_PATH_MAX; i++) {
 		snprintf(bus_name, 32, "%s%d", "qcom,rot-data-bus", i);
 		ret = of_property_match_string(dev->dev.of_node,
-			"interconnect-names", bus_name);
+					       "interconnect-names", bus_name);
 		if (ret < 0) {
 			if (!mgr->data_bus.data_paths_cnt) {
 				pr_debug("rotator: bus %s dt node missing\n",
-					bus_name);
+					 bus_name);
 				return 0;
 			} else {
 				goto end;
@@ -2794,8 +2799,8 @@ data_bus:
 	}
 
 end:
-	if (of_find_property(dev->dev.of_node,
-			     "qcom,msm-bus,active-only", NULL)) {
+	if (of_find_property(dev->dev.of_node, "qcom,msm-bus,active-only",
+			     NULL)) {
 		mgr->data_bus.bus_active_only = true;
 		for (i = 0; i < mgr->data_bus.data_paths_cnt; i++) {
 			icc_set_tag(mgr->data_bus.data_bus_hdl[i],
@@ -2807,13 +2812,13 @@ end:
 }
 
 static int sde_rotator_parse_dt(struct sde_rot_mgr *mgr,
-	struct platform_device *dev)
+				struct platform_device *dev)
 {
 	int ret = 0;
 	u32 data;
 
-	ret = of_property_read_u32(dev->dev.of_node,
-		"qcom,mdss-wb-count", &data);
+	ret = of_property_read_u32(dev->dev.of_node, "qcom,mdss-wb-count",
+				   &data);
 	if (!ret) {
 		if (data > ROT_MAX_HW_BLOCKS) {
 			SDEROT_ERR(
@@ -2833,7 +2838,7 @@ static int sde_rotator_parse_dt(struct sde_rot_mgr *mgr,
 }
 
 static void sde_rotator_put_dt_vreg_data(struct device *dev,
-	struct sde_module_power *mp)
+					 struct sde_module_power *mp)
 {
 	if (!mp) {
 		SDEROT_ERR("%s: invalid input\n", __func__);
@@ -2849,7 +2854,7 @@ static void sde_rotator_put_dt_vreg_data(struct device *dev,
 }
 
 static int sde_rotator_get_dt_vreg_data(struct device *dev,
-	struct sde_module_power *mp)
+					struct sde_module_power *mp)
 {
 	const char *st = NULL;
 	struct device_node *of_node = NULL;
@@ -2867,22 +2872,22 @@ static int sde_rotator_get_dt_vreg_data(struct device *dev,
 	dt_vreg_total = of_property_count_strings(of_node, "qcom,supply-names");
 	if (dt_vreg_total < 0) {
 		SDEROT_ERR("%s: vreg not found. rc=%d\n", __func__,
-			dt_vreg_total);
+			   dt_vreg_total);
 		return 0;
 	}
 	mp->num_vreg = dt_vreg_total;
-	mp->vreg_config = devm_kzalloc(dev, sizeof(struct sde_vreg) *
-		dt_vreg_total, GFP_KERNEL);
+	mp->vreg_config = devm_kzalloc(
+		dev, sizeof(struct sde_vreg) * dt_vreg_total, GFP_KERNEL);
 	if (!mp->vreg_config)
 		return -ENOMEM;
 
 	/* vreg-name */
 	for (i = 0; i < dt_vreg_total; i++) {
-		rc = of_property_read_string_index(of_node,
-			"qcom,supply-names", i, &st);
+		rc = of_property_read_string_index(of_node, "qcom,supply-names",
+						   i, &st);
 		if (rc) {
 			SDEROT_ERR("%s: error reading name. i=%d, rc=%d\n",
-				__func__, i, rc);
+				   __func__, i, rc);
 			goto error;
 		}
 		snprintf(mp->vreg_config[i].vreg_name, 32, "%s", st);
@@ -2891,12 +2896,11 @@ static int sde_rotator_get_dt_vreg_data(struct device *dev,
 
 	for (i = 0; i < dt_vreg_total; i++) {
 		SDEROT_DBG("%s: %s min=%d, max=%d, enable=%d disable=%d\n",
-			__func__,
-			mp->vreg_config[i].vreg_name,
-			mp->vreg_config[i].min_voltage,
-			mp->vreg_config[i].max_voltage,
-			mp->vreg_config[i].enable_load,
-			mp->vreg_config[i].disable_load);
+			   __func__, mp->vreg_config[i].vreg_name,
+			   mp->vreg_config[i].min_voltage,
+			   mp->vreg_config[i].max_voltage,
+			   mp->vreg_config[i].enable_load,
+			   mp->vreg_config[i].disable_load);
 	}
 	return rc;
 
@@ -2924,8 +2928,9 @@ static void sde_rotator_bus_scale_unregister(struct sde_rot_mgr *mgr)
 }
 
 static inline int sde_rotator_search_dt_clk(struct platform_device *pdev,
-		struct sde_rot_mgr *mgr, char *clk_name, int clk_idx,
-		bool mandatory)
+					    struct sde_rot_mgr *mgr,
+					    char *clk_name, int clk_idx,
+					    bool mandatory)
 {
 	struct clk *tmp;
 	int rc = 0;
@@ -2945,29 +2950,28 @@ static inline int sde_rotator_search_dt_clk(struct platform_device *pdev,
 	}
 
 	strlcpy(mgr->rot_clk[clk_idx].clk_name, clk_name,
-			sizeof(mgr->rot_clk[clk_idx].clk_name));
+		sizeof(mgr->rot_clk[clk_idx].clk_name));
 
 	mgr->rot_clk[clk_idx].clk = tmp;
 	return mandatory ? rc : 0;
 }
 
 static int sde_rotator_parse_dt_clk(struct platform_device *pdev,
-		struct sde_rot_mgr *mgr)
+				    struct sde_rot_mgr *mgr)
 {
 	u32 rc = 0;
 	int num_clk;
 
-	num_clk = of_property_count_strings(pdev->dev.of_node,
-			"clock-names");
+	num_clk = of_property_count_strings(pdev->dev.of_node, "clock-names");
 	if ((num_clk <= 0) || (num_clk > SDE_ROTATOR_CLK_MAX)) {
 		SDEROT_ERR("Number of clocks are out of range: %d\n", num_clk);
 		goto clk_err;
 	}
 
 	mgr->num_rot_clk = SDE_ROTATOR_CLK_MAX;
-	mgr->rot_clk = devm_kzalloc(&pdev->dev,
-			sizeof(struct sde_rot_clk) * mgr->num_rot_clk,
-			GFP_KERNEL);
+	mgr->rot_clk = devm_kzalloc(
+		&pdev->dev, sizeof(struct sde_rot_clk) * mgr->num_rot_clk,
+		GFP_KERNEL);
 	if (!mgr->rot_clk) {
 		rc = -ENOMEM;
 		mgr->num_rot_clk = 0;
@@ -2975,37 +2979,38 @@ static int sde_rotator_parse_dt_clk(struct platform_device *pdev,
 	}
 
 	if (sde_rotator_search_dt_clk(pdev, mgr, "mnoc_clk",
-			SDE_ROTATOR_CLK_MNOC_AHB, false) ||
-			sde_rotator_search_dt_clk(pdev, mgr, "gcc_iface",
-				SDE_ROTATOR_CLK_GCC_AHB, false) ||
-			sde_rotator_search_dt_clk(pdev, mgr, "gcc_bus",
-				SDE_ROTATOR_CLK_GCC_AXI, false) ||
-			sde_rotator_search_dt_clk(pdev, mgr, "iface_clk",
-				SDE_ROTATOR_CLK_MDSS_AHB, true) ||
-			sde_rotator_search_dt_clk(pdev, mgr, "axi_clk",
-				SDE_ROTATOR_CLK_MDSS_AXI, false) ||
-			sde_rotator_search_dt_clk(pdev, mgr, "rot_core_clk",
-				SDE_ROTATOR_CLK_MDSS_ROT, false)) {
+				      SDE_ROTATOR_CLK_MNOC_AHB, false) ||
+	    sde_rotator_search_dt_clk(pdev, mgr, "gcc_iface",
+				      SDE_ROTATOR_CLK_GCC_AHB, false) ||
+	    sde_rotator_search_dt_clk(pdev, mgr, "gcc_bus",
+				      SDE_ROTATOR_CLK_GCC_AXI, false) ||
+	    sde_rotator_search_dt_clk(pdev, mgr, "iface_clk",
+				      SDE_ROTATOR_CLK_MDSS_AHB, true) ||
+	    sde_rotator_search_dt_clk(pdev, mgr, "axi_clk",
+				      SDE_ROTATOR_CLK_MDSS_AXI, false) ||
+	    sde_rotator_search_dt_clk(pdev, mgr, "rot_core_clk",
+				      SDE_ROTATOR_CLK_MDSS_ROT, false)) {
 		rc = -EINVAL;
 		goto clk_err;
 	}
 
 	/*
-	 * If 'MDSS_ROT' is already present, place 'rot_clk' under
-	 * MDSS_ROT_SUB. Otherwise, place it directly into MDSS_ROT.
-	 */
+   * If 'MDSS_ROT' is already present, place 'rot_clk' under
+   * MDSS_ROT_SUB. Otherwise, place it directly into MDSS_ROT.
+   */
 	if (sde_rotator_get_clk(mgr, SDE_ROTATOR_CLK_MDSS_ROT))
 		rc = sde_rotator_search_dt_clk(pdev, mgr, "rot_clk",
-				SDE_ROTATOR_CLK_MDSS_ROT_SUB, true);
+					       SDE_ROTATOR_CLK_MDSS_ROT_SUB,
+					       true);
 	else
 		rc = sde_rotator_search_dt_clk(pdev, mgr, "rot_clk",
-				SDE_ROTATOR_CLK_MDSS_ROT, true);
+					       SDE_ROTATOR_CLK_MDSS_ROT, true);
 clk_err:
 	return rc;
 }
 
 static int sde_rotator_register_clk(struct platform_device *pdev,
-		struct sde_rot_mgr *mgr)
+				    struct sde_rot_mgr *mgr)
 {
 	int ret;
 
@@ -3026,13 +3031,13 @@ static void sde_rotator_unregister_clk(struct sde_rot_mgr *mgr)
 }
 
 static int sde_rotator_res_init(struct platform_device *pdev,
-	struct sde_rot_mgr *mgr)
+				struct sde_rot_mgr *mgr)
 {
 	int ret;
 
 	if (!sde_rot_mgr_pd_enabled(mgr)) {
-		ret = sde_rotator_get_dt_vreg_data(
-				&pdev->dev, &mgr->module_power);
+		ret = sde_rotator_get_dt_vreg_data(&pdev->dev,
+						   &mgr->module_power);
 		if (ret)
 			return ret;
 	}
@@ -3059,7 +3064,7 @@ static void sde_rotator_res_destroy(struct sde_rot_mgr *mgr)
 }
 
 int sde_rotator_core_init(struct sde_rot_mgr **pmgr,
-		struct platform_device *pdev)
+			  struct platform_device *pdev)
 {
 	struct sde_rot_data_type *mdata = sde_rot_get_mdata();
 	struct sde_rot_mgr *mgr;
@@ -3070,8 +3075,7 @@ int sde_rotator_core_init(struct sde_rot_mgr **pmgr,
 		return -EINVAL;
 	}
 
-	mgr = devm_kzalloc(&pdev->dev, sizeof(struct sde_rot_mgr),
-		GFP_KERNEL);
+	mgr = devm_kzalloc(&pdev->dev, sizeof(struct sde_rot_mgr), GFP_KERNEL);
 	if (!mgr)
 		return -ENOMEM;
 
@@ -3093,7 +3097,7 @@ int sde_rotator_core_init(struct sde_rot_mgr **pmgr,
 	INIT_LIST_HEAD(&mgr->file_list);
 
 	ret = sysfs_create_group(&mgr->device->kobj,
-			&sde_rotator_fs_attr_group);
+				 &sde_rotator_fs_attr_group);
 	if (ret) {
 		SDEROT_ERR("unable to register rotator sysfs nodes\n");
 		goto error_create_sysfs;
@@ -3127,43 +3131,37 @@ int sde_rotator_core_init(struct sde_rot_mgr **pmgr,
 	mdata->mdss_version = SDE_REG_READ(mdata, SDE_REG_HW_VERSION);
 	SDEROT_DBG("mdss revision %x\n", mdata->mdss_version);
 
-	if (IS_SDE_MAJOR_MINOR_SAME(mdata->mdss_version,
-			SDE_MDP_HW_REV_107)) {
+	if (IS_SDE_MAJOR_MINOR_SAME(mdata->mdss_version, SDE_MDP_HW_REV_107)) {
 		mgr->ops_hw_init = sde_rotator_r1_init;
 	} else if (IS_SDE_MAJOR_MINOR_SAME(mdata->mdss_version,
-			SDE_MDP_HW_REV_300) ||
-		IS_SDE_MAJOR_MINOR_SAME(mdata->mdss_version,
-			SDE_MDP_HW_REV_400) ||
-		IS_SDE_MAJOR_MINOR_SAME(mdata->mdss_version,
-			SDE_MDP_HW_REV_410) ||
-		IS_SDE_MAJOR_SAME(mdata->mdss_version,
-			SDE_MDP_HW_REV_500) ||
-		IS_SDE_MAJOR_SAME(mdata->mdss_version,
-			SDE_MDP_HW_REV_600)) {
+					   SDE_MDP_HW_REV_300) ||
+		   IS_SDE_MAJOR_MINOR_SAME(mdata->mdss_version,
+					   SDE_MDP_HW_REV_400) ||
+		   IS_SDE_MAJOR_MINOR_SAME(mdata->mdss_version,
+					   SDE_MDP_HW_REV_410) ||
+		   IS_SDE_MAJOR_SAME(mdata->mdss_version, SDE_MDP_HW_REV_500) ||
+		   IS_SDE_MAJOR_SAME(mdata->mdss_version, SDE_MDP_HW_REV_600)) {
 		mgr->ops_hw_init = sde_rotator_r3_init;
 		mgr->min_rot_clk = ROT_MIN_ROT_CLK;
 
 		/*
-		 * on platforms where the maxlinewidth is greater than
-		 * default we need to have a max clock rate check to
-		 * ensure we do not cross the max allowed clock for rotator
-		 */
-		if (IS_SDE_MAJOR_SAME(mdata->mdss_version,
-			SDE_MDP_HW_REV_500))
+     * on platforms where the maxlinewidth is greater than
+     * default we need to have a max clock rate check to
+     * ensure we do not cross the max allowed clock for rotator
+     */
+		if (IS_SDE_MAJOR_SAME(mdata->mdss_version, SDE_MDP_HW_REV_500))
 			mgr->max_rot_clk = ROT_R3_MAX_ROT_CLK;
 
 		if (!IS_SDE_MAJOR_SAME(mdata->mdss_version,
-					SDE_MDP_HW_REV_600) &&
-				!sde_rotator_get_clk(mgr,
-					SDE_ROTATOR_CLK_MDSS_AXI)) {
+				       SDE_MDP_HW_REV_600) &&
+		    !sde_rotator_get_clk(mgr, SDE_ROTATOR_CLK_MDSS_AXI)) {
 			SDEROT_ERR("unable to get mdss_axi_clk\n");
 			ret = -EINVAL;
 			goto error_map_hw_ops;
 		}
 	} else {
 		ret = -ENODEV;
-		SDEROT_ERR("unsupported sde version %x\n",
-				mdata->mdss_version);
+		SDEROT_ERR("unsupported sde version %x\n", mdata->mdss_version);
 		goto error_map_hw_ops;
 	}
 
@@ -3269,7 +3267,7 @@ int sde_rotator_runtime_suspend(struct device *dev)
 
 	if (mgr->rot_enable_clk_cnt) {
 		SDEROT_ERR("invalid runtime suspend request %d\n",
-				mgr->rot_enable_clk_cnt);
+			   mgr->rot_enable_clk_cnt);
 		return -EBUSY;
 	}
 
@@ -3338,7 +3336,6 @@ int sde_rotator_pm_suspend(struct device *dev)
 		return -ENODEV;
 	}
 
-
 	sde_rot_mgr_lock(mgr);
 	atomic_inc(&mgr->device_suspended);
 	sde_rotator_suspend_cancel_rot_work(mgr);
@@ -3366,10 +3363,10 @@ int sde_rotator_pm_resume(struct device *dev)
 	}
 
 	/*
-	 * It is possible that the runtime status of the device may
-	 * have been active when the system was suspended. Reset the runtime
-	 * status to suspended state after a complete system resume.
-	 */
+   * It is possible that the runtime status of the device may
+   * have been active when the system was suspended. Reset the runtime
+   * status to suspended state after a complete system resume.
+   */
 	pm_runtime_disable(dev);
 	pm_runtime_set_suspended(dev);
 	pm_runtime_set_active(dev);
@@ -3430,8 +3427,8 @@ int sde_rotator_resume(struct platform_device *dev)
  * Note each file open (sde_rot_file_private) is mapped to one session only.
  */
 int sde_rotator_session_open(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private **pprivate, int session_id,
-	struct sde_rot_queue_v1 *queue)
+			     struct sde_rot_file_private **pprivate,
+			     int session_id, struct sde_rot_queue_v1 *queue)
 {
 	int ret;
 	struct sde_rot_file_private *private;
@@ -3465,7 +3462,8 @@ error_open:
  * sde_rotator_session_close - external wrapper for close function
  */
 void sde_rotator_session_close(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private, int session_id)
+			       struct sde_rot_file_private *private,
+			       int session_id)
 {
 	if (!mgr || !private) {
 		SDEROT_ERR("null parameters\n");
@@ -3482,8 +3480,8 @@ void sde_rotator_session_close(struct sde_rot_mgr *mgr,
  * sde_rotator_session_config - external wrapper for config function
  */
 int sde_rotator_session_config(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rotation_config *config)
+			       struct sde_rot_file_private *private,
+			       struct sde_rotation_config *config)
 {
 	if (!mgr || !private || !config) {
 		SDEROT_ERR("null parameters\n");
@@ -3497,8 +3495,8 @@ int sde_rotator_session_config(struct sde_rot_mgr *mgr,
  * sde_rotator_session_validate - validate session
  */
 int sde_rotator_session_validate(struct sde_rot_mgr *mgr,
-	struct sde_rot_file_private *private,
-	struct sde_rotation_config *config)
+				 struct sde_rot_file_private *private,
+				 struct sde_rotation_config *config)
 {
 	int ret;
 

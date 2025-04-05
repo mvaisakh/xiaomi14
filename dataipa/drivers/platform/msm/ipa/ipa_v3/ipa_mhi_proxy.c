@@ -3,57 +3,53 @@
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
+#include <linux/device.h>
 #include <linux/dma-mapping.h>
 #include <linux/list.h>
-#include <linux/slab.h>
-#include <linux/device.h>
-#include <linux/module.h>
-#include <linux/version.h>
 #include <linux/mhi.h>
+#include <linux/module.h>
+#include <linux/slab.h>
+#include <linux/version.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 #include <linux/mhi_misc.h>
 #include <linux/pm_runtime.h>
 #endif
-#include "ipa_qmi_service.h"
 #include "ipa_common_i.h"
 #include "ipa_i.h"
+#include "ipa_qmi_service.h"
 
 #define IMP_DRV_NAME "ipa_mhi_proxy"
 
-#define IMP_DBG(fmt, args...) \
-	do { \
-		pr_debug(IMP_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IMP_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IMP_DRV_NAME " %s:%d " fmt, ## args); \
+#define IMP_DBG(fmt, args...)                                            \
+	do {                                                             \
+		pr_debug(IMP_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                        \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                   \
+				IMP_DRV_NAME " %s:%d " fmt, ##args);     \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),               \
+				IMP_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-#define IMP_DBG_LOW(fmt, args...) \
-	do { \
-		pr_debug(IMP_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IMP_DRV_NAME " %s:%d " fmt, ## args); \
+#define IMP_DBG_LOW(fmt, args...)                                        \
+	do {                                                             \
+		pr_debug(IMP_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                        \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),               \
+				IMP_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
 
-
-#define IMP_ERR(fmt, args...) \
-	do { \
-		pr_err(IMP_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-				IMP_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-				IMP_DRV_NAME " %s:%d " fmt, ## args); \
+#define IMP_ERR(fmt, args...)                                          \
+	do {                                                           \
+		pr_err(IMP_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+		       ##args);                                        \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                 \
+				IMP_DRV_NAME " %s:%d " fmt, ##args);   \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),             \
+				IMP_DRV_NAME " %s:%d " fmt, ##args);   \
 	} while (0)
 
-
-#define IMP_FUNC_ENTRY() \
-	IMP_DBG_LOW("ENTRY\n")
-#define IMP_FUNC_EXIT() \
-	IMP_DBG_LOW("EXIT\n")
+#define IMP_FUNC_ENTRY() IMP_DBG_LOW("ENTRY\n")
+#define IMP_FUNC_EXIT() IMP_DBG_LOW("EXIT\n")
 
 #define IMP_IPA_UC_UL_CH_n 0
 #define IMP_IPA_UC_UL_EV_n 1
@@ -76,21 +72,22 @@ static void imp_mhi_status_cb(struct mhi_device *, enum MHI_CB);
 #endif
 
 static struct mhi_driver mhi_driver = {
-	.id_table = mhi_driver_match_table,
-	.probe = imp_mhi_probe_cb,
-	.remove = imp_mhi_remove_cb,
-	.status_cb = imp_mhi_status_cb,
-	.driver = {
-		.name = IMP_DRV_NAME,
-		.owner = THIS_MODULE,
-	},
+    .id_table = mhi_driver_match_table,
+    .probe = imp_mhi_probe_cb,
+    .remove = imp_mhi_remove_cb,
+    .status_cb = imp_mhi_status_cb,
+    .driver =
+        {
+            .name = IMP_DRV_NAME,
+            .owner = THIS_MODULE,
+        },
 };
 
 struct imp_channel_context_type {
-	u32 chstate:8;
-	u32 brsmode:2;
-	u32 pollcfg:6;
-	u32 reserved:16;
+	u32 chstate : 8;
+	u32 brsmode : 2;
+	u32 pollcfg : 6;
+	u32 reserved : 16;
 
 	u32 chtype;
 
@@ -106,9 +103,9 @@ struct imp_channel_context_type {
 } __packed;
 
 struct imp_event_context_type {
-	u32 reserved:8;
-	u32 intmodc:8;
-	u32 intmodt:16;
+	u32 reserved : 8;
+	u32 intmodc : 8;
+	u32 intmodt : 16;
 
 	u32 ertype;
 
@@ -159,7 +156,6 @@ struct imp_channel_props {
 	phys_addr_t doorbell;
 	u16 uc_mbox_n;
 	struct imp_channel_context_type ch_ctx;
-
 };
 
 struct imp_channel {
@@ -167,12 +163,7 @@ struct imp_channel {
 	struct imp_event event;
 };
 
-enum imp_state {
-	IMP_INVALID = 0,
-	IMP_PROBED,
-	IMP_READY,
-	IMP_STARTED
-};
+enum imp_state { IMP_INVALID = 0, IMP_PROBED, IMP_READY, IMP_STARTED };
 
 struct imp_qmi_cache {
 	struct ipa_mhi_ready_indication_msg_v01 ready_ind;
@@ -196,7 +187,6 @@ struct imp_context {
 	bool in_lpm;
 	bool lpm_disabled;
 	struct imp_qmi_cache qmi;
-
 };
 
 static struct imp_context *imp_ctx;
@@ -212,8 +202,7 @@ static void _populate_smmu_info(struct ipa_mhi_ready_indication_msg_v01 *req)
 
 static void imp_mhi_trigger_ready_ind(void)
 {
-	struct ipa_mhi_ready_indication_msg_v01 *req
-		= &imp_ctx->qmi.ready_ind;
+	struct ipa_mhi_ready_indication_msg_v01 *req = &imp_ctx->qmi.ready_ind;
 	int ret;
 	struct imp_channel *ch;
 	struct ipa_mhi_ch_init_info_type_v01 *ch_info;
@@ -239,17 +228,15 @@ static void imp_mhi_trigger_ready_ind(void)
 	ch_info->er_id = ch->event.props.id;
 
 	/* uC is a doorbell proxy between local Q6 and remote Q6 */
-	ch_info->ch_doorbell_addr = ipa3_ctx->ipa_wrapper_base +
-		ipahal_get_reg_base() +
-		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-		IMP_IPA_UC_m,
-		ch->props.uc_mbox_n);
+	ch_info->ch_doorbell_addr =
+		ipa3_ctx->ipa_wrapper_base + ipahal_get_reg_base() +
+		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n, IMP_IPA_UC_m,
+				       ch->props.uc_mbox_n);
 
-	ch_info->er_doorbell_addr = ipa3_ctx->ipa_wrapper_base +
-		ipahal_get_reg_base() +
-		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-		IMP_IPA_UC_m,
-		ch->event.props.uc_mbox_n);
+	ch_info->er_doorbell_addr =
+		ipa3_ctx->ipa_wrapper_base + ipahal_get_reg_base() +
+		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n, IMP_IPA_UC_m,
+				       ch->event.props.uc_mbox_n);
 	req->ch_info_arr_len++;
 
 	/* DL channel */
@@ -261,17 +248,15 @@ static void imp_mhi_trigger_ready_ind(void)
 	ch_info->er_id = ch->event.props.id;
 
 	/* uC is a doorbell proxy between local Q6 and remote Q6 */
-	ch_info->ch_doorbell_addr = ipa3_ctx->ipa_wrapper_base +
-		ipahal_get_reg_base() +
-		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-		IMP_IPA_UC_m,
-		ch->props.uc_mbox_n);
+	ch_info->ch_doorbell_addr =
+		ipa3_ctx->ipa_wrapper_base + ipahal_get_reg_base() +
+		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n, IMP_IPA_UC_m,
+				       ch->props.uc_mbox_n);
 
-	ch_info->er_doorbell_addr = ipa3_ctx->ipa_wrapper_base +
-		ipahal_get_reg_base() +
-		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-		IMP_IPA_UC_m,
-		ch->event.props.uc_mbox_n);
+	ch_info->er_doorbell_addr =
+		ipa3_ctx->ipa_wrapper_base + ipahal_get_reg_base() +
+		ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n, IMP_IPA_UC_m,
+				       ch->event.props.uc_mbox_n);
 	req->ch_info_arr_len++;
 
 	IMP_DBG("sending IND to modem\n");
@@ -299,8 +284,7 @@ static struct imp_channel *imp_get_ch_by_id(u16 id)
 }
 
 static struct ipa_mhi_er_info_type_v01 *
-	_find_ch_in_er_info_arr(struct ipa_mhi_alloc_channel_req_msg_v01 *req,
-	u16 id)
+_find_ch_in_er_info_arr(struct ipa_mhi_alloc_channel_req_msg_v01 *req, u16 id)
 {
 	int i;
 
@@ -315,17 +299,18 @@ static struct ipa_mhi_er_info_type_v01 *
 
 /* round addresses for closest page per SMMU requirements */
 static inline void imp_smmu_round_to_page(uint64_t iova, uint64_t pa,
-	uint64_t size, unsigned long *iova_p, phys_addr_t *pa_p, u32 *size_p)
+					  uint64_t size, unsigned long *iova_p,
+					  phys_addr_t *pa_p, u32 *size_p)
 {
 	*iova_p = rounddown(iova, PAGE_SIZE);
 	*pa_p = rounddown(pa, PAGE_SIZE);
 	*size_p = roundup(size + pa - *pa_p, PAGE_SIZE);
 }
 
-static void __map_smmu_info(struct device *dev,
-	struct imp_iova_addr *partition, int num_mapping,
-	struct ipa_mhi_mem_addr_info_type_v01 *map_info,
-	bool map)
+static void __map_smmu_info(struct device *dev, struct imp_iova_addr *partition,
+			    int num_mapping,
+			    struct ipa_mhi_mem_addr_info_type_v01 *map_info,
+			    bool map)
 {
 	int i;
 	struct iommu_domain *domain;
@@ -342,37 +327,37 @@ static void __map_smmu_info(struct device *dev,
 	for (i = 0; i < num_mapping; i++) {
 		int prot = IOMMU_READ | IOMMU_WRITE;
 		u32 ipa_base = ipa3_ctx->ipa_wrapper_base +
-			ipa3_ctx->ctrl->ipa_reg_base_ofst;
+			       ipa3_ctx->ctrl->ipa_reg_base_ofst;
 		u32 ipa_size = ipa3_ctx->ipa_wrapper_size;
 
 		imp_smmu_round_to_page(map_info[i].iova, map_info[i].pa,
-			map_info[i].size, &iova_p, &pa_p, &size_p);
+				       map_info[i].size, &iova_p, &pa_p,
+				       &size_p);
 
 		if (map) {
 			/* boundary check */
 			WARN_ON(partition->base > iova_p ||
 				(partition->base + partition->size) <
-				(iova_p + size_p));
+					(iova_p + size_p));
 
 			/* for IPA uC MBOM we need to map with device type */
 			if (pa_p - ipa_base < ipa_size)
 				prot |= IOMMU_MMIO;
 
-			IMP_DBG("mapping 0x%lx to 0x%pa size %d\n",
-				iova_p, &pa_p, size_p);
-			iommu_map(domain,
-				iova_p, pa_p, size_p, prot);
+			IMP_DBG("mapping 0x%lx to 0x%pa size %d\n", iova_p,
+				&pa_p, size_p);
+			iommu_map(domain, iova_p, pa_p, size_p, prot);
 		} else {
-			IMP_DBG("unmapping 0x%lx to 0x%pa size %d\n",
-				iova_p, &pa_p, size_p);
+			IMP_DBG("unmapping 0x%lx to 0x%pa size %d\n", iova_p,
+				&pa_p, size_p);
 			iommu_unmap(domain, iova_p, size_p);
 		}
 	}
 }
 
-static int __imp_configure_mhi_device(
-	struct ipa_mhi_alloc_channel_req_msg_v01 *req,
-	struct ipa_mhi_alloc_channel_resp_msg_v01 *resp)
+static int
+__imp_configure_mhi_device(struct ipa_mhi_alloc_channel_req_msg_v01 *req,
+			   struct ipa_mhi_alloc_channel_resp_msg_v01 *resp)
 {
 	struct mhi_buf ch_config[2];
 	int i;
@@ -396,17 +381,16 @@ static int __imp_configure_mhi_device(
 			resp->alloc_resp_arr_len = ridx;
 			resp->resp.result = IPA_QMI_RESULT_FAILURE_V01;
 			/* return INCOMPATIBLE_STATE in any case */
-			resp->resp.error =
-				IPA_QMI_ERR_INCOMPATIBLE_STATE_V01;
+			resp->resp.error = IPA_QMI_ERR_INCOMPATIBLE_STATE_V01;
 			return -EINVAL;
 		}
 
 		/* populate CCA */
 		if (req->tr_info_arr[i].brst_mode_type ==
-			QMI_IPA_BURST_MODE_ENABLED_V01)
+		    QMI_IPA_BURST_MODE_ENABLED_V01)
 			ch->props.ch_ctx.brsmode = 3;
 		else if (req->tr_info_arr[i].brst_mode_type ==
-			QMI_IPA_BURST_MODE_DISABLED_V01)
+			 QMI_IPA_BURST_MODE_DISABLED_V01)
 			ch->props.ch_ctx.brsmode = 2;
 		else
 			ch->props.ch_ctx.brsmode = 0;
@@ -452,7 +436,7 @@ static int __imp_configure_mhi_device(
 
 		IMP_DBG("Configuring MHI device for ch %d\n", ch->props.id);
 		ret = mhi_device_configure(imp_ctx->md.mhi_dev, ch->props.dir,
-			ch_config, 2);
+					   ch_config, 2);
 		/* configure mhi-host, no need check mhi state */
 		if (ret) {
 			IMP_ERR("mhi_device_configure failed for ch %d\n",
@@ -480,8 +464,8 @@ static int __imp_configure_mhi_device(
  *
  * Return: QMI return codes
  */
-struct ipa_mhi_alloc_channel_resp_msg_v01 *imp_handle_allocate_channel_req(
-		struct ipa_mhi_alloc_channel_req_msg_v01 *req)
+struct ipa_mhi_alloc_channel_resp_msg_v01 *
+imp_handle_allocate_channel_req(struct ipa_mhi_alloc_channel_req_msg_v01 *req)
 {
 	int ret;
 	struct ipa_mhi_alloc_channel_resp_msg_v01 *resp =
@@ -514,7 +498,7 @@ struct ipa_mhi_alloc_channel_resp_msg_v01 *imp_handle_allocate_channel_req(
 
 	if ((req->ctrl_addr_map_info_len == 0 ||
 	     req->data_addr_map_info_len == 0) &&
-	     imp_ctx->dev_info.smmu_enabled) {
+	    imp_ctx->dev_info.smmu_enabled) {
 		IMP_ERR("no mapping provided, but smmu is enabled\n");
 		resp->resp.result = IPA_QMI_RESULT_FAILURE_V01;
 		resp->resp.error = IPA_QMI_ERR_INTERNAL_V01;
@@ -523,27 +507,25 @@ struct ipa_mhi_alloc_channel_resp_msg_v01 *imp_handle_allocate_channel_req(
 	}
 
 	if (imp_ctx->dev_info.smmu_enabled) {
-		/* map CTRL */
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+/* map CTRL */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 		__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent->parent,
-		#else
+#else
 		__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent,
-		#endif
-			&imp_ctx->dev_info.ctrl,
-			req->ctrl_addr_map_info_len,
-			req->ctrl_addr_map_info,
-			true);
+#endif
+				&imp_ctx->dev_info.ctrl,
+				req->ctrl_addr_map_info_len,
+				req->ctrl_addr_map_info, true);
 
-		/* map DATA */
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+/* map DATA */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 		__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent->parent,
-		#else
+#else
 		__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent,
-		#endif
-			&imp_ctx->dev_info.data,
-			req->data_addr_map_info_len,
-			req->data_addr_map_info,
-			true);
+#endif
+				&imp_ctx->dev_info.data,
+				req->data_addr_map_info_len,
+				req->data_addr_map_info, true);
 	}
 
 	resp->alloc_resp_arr_valid = true;
@@ -552,20 +534,17 @@ struct ipa_mhi_alloc_channel_resp_msg_v01 *imp_handle_allocate_channel_req(
 		goto fail_smmu;
 
 	IMP_DBG("Starting MHI channels %d and %d\n",
-		imp_ctx->md.ul_chan.props.id,
-		imp_ctx->md.dl_chan.props.id);
+		imp_ctx->md.ul_chan.props.id, imp_ctx->md.dl_chan.props.id);
 	ret = mhi_prepare_for_transfer(imp_ctx->md.mhi_dev);
 	if (ret) {
 		IMP_ERR("mhi_prepare_for_transfer failed %d\n", ret);
-		resp->alloc_resp_arr[resp->alloc_resp_arr_len]
-			.ch_id = imp_ctx->md.ul_chan.props.id;
-		resp->alloc_resp_arr[resp->alloc_resp_arr_len]
-			.is_success = 0;
+		resp->alloc_resp_arr[resp->alloc_resp_arr_len].ch_id =
+			imp_ctx->md.ul_chan.props.id;
+		resp->alloc_resp_arr[resp->alloc_resp_arr_len].is_success = 0;
 		resp->alloc_resp_arr_len++;
-		resp->alloc_resp_arr[resp->alloc_resp_arr_len]
-			.ch_id = imp_ctx->md.dl_chan.props.id;
-		resp->alloc_resp_arr[resp->alloc_resp_arr_len]
-			.is_success = 0;
+		resp->alloc_resp_arr[resp->alloc_resp_arr_len].ch_id =
+			imp_ctx->md.dl_chan.props.id;
+		resp->alloc_resp_arr[resp->alloc_resp_arr_len].is_success = 0;
 		resp->alloc_resp_arr_len++;
 		resp->resp.result = IPA_QMI_RESULT_FAILURE_V01;
 		/* return INCOMPATIBLE_STATE in any case */
@@ -573,16 +552,14 @@ struct ipa_mhi_alloc_channel_resp_msg_v01 *imp_handle_allocate_channel_req(
 		goto fail_smmu;
 	}
 
-	resp->alloc_resp_arr[resp->alloc_resp_arr_len]
-		.ch_id = imp_ctx->md.ul_chan.props.id;
-	resp->alloc_resp_arr[resp->alloc_resp_arr_len]
-		.is_success = 1;
+	resp->alloc_resp_arr[resp->alloc_resp_arr_len].ch_id =
+		imp_ctx->md.ul_chan.props.id;
+	resp->alloc_resp_arr[resp->alloc_resp_arr_len].is_success = 1;
 	resp->alloc_resp_arr_len++;
 
-	resp->alloc_resp_arr[resp->alloc_resp_arr_len]
-		.ch_id = imp_ctx->md.dl_chan.props.id;
-	resp->alloc_resp_arr[resp->alloc_resp_arr_len]
-		.is_success = 1;
+	resp->alloc_resp_arr[resp->alloc_resp_arr_len].ch_id =
+		imp_ctx->md.dl_chan.props.id;
+	resp->alloc_resp_arr[resp->alloc_resp_arr_len].is_success = 1;
 	resp->alloc_resp_arr_len++;
 
 	imp_ctx->state = IMP_STARTED;
@@ -594,27 +571,25 @@ struct ipa_mhi_alloc_channel_resp_msg_v01 *imp_handle_allocate_channel_req(
 
 fail_smmu:
 	if (imp_ctx->dev_info.smmu_enabled) {
-		/* unmap CTRL */
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+/* unmap CTRL */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 		__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent->parent,
-		#else
+#else
 		__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent,
-		#endif
-			&imp_ctx->dev_info.ctrl,
-			req->ctrl_addr_map_info_len,
-			req->ctrl_addr_map_info,
-			false);
+#endif
+				&imp_ctx->dev_info.ctrl,
+				req->ctrl_addr_map_info_len,
+				req->ctrl_addr_map_info, false);
 
-		/* unmap DATA */
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+/* unmap DATA */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 		__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent->parent,
-		#else
+#else
 		__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent,
-		#endif
-			&imp_ctx->dev_info.data,
-			req->data_addr_map_info_len,
-			req->data_addr_map_info,
-			false);
+#endif
+				&imp_ctx->dev_info.data,
+				req->data_addr_map_info_len,
+				req->data_addr_map_info, false);
 	}
 	mutex_unlock(&imp_ctx->mutex);
 	return resp;
@@ -627,12 +602,11 @@ fail_smmu:
  *
  * Return: 0 on success, negative otherwise
  */
-struct ipa_mhi_clk_vote_resp_msg_v01
-	*imp_handle_vote_req(bool vote)
+struct ipa_mhi_clk_vote_resp_msg_v01 *imp_handle_vote_req(bool vote)
 {
 	int ret;
 	struct ipa_mhi_clk_vote_resp_msg_v01 *resp =
-	&imp_ctx->qmi.clk_vote_resp;
+		&imp_ctx->qmi.clk_vote_resp;
 
 	IMP_DBG_LOW("vote %d\n", vote);
 	memset(resp, 0, sizeof(struct ipa_mhi_clk_vote_resp_msg_v01));
@@ -642,9 +616,9 @@ struct ipa_mhi_clk_vote_resp_msg_v01
 	mutex_lock(&imp_ctx->mutex);
 
 	/*
-	 * returning success for clock unvote request - since it could
-	 * be 5G modem SSR scenario where clocks are already OFF.
-	 */
+   * returning success for clock unvote request - since it could
+   * be 5G modem SSR scenario where clocks are already OFF.
+   */
 	if (!vote && imp_ctx->state == IMP_INVALID) {
 		IMP_DBG("Unvote in Invalid state, no op for clock unvote\n");
 		mutex_unlock(&imp_ctx->mutex);
@@ -665,35 +639,34 @@ struct ipa_mhi_clk_vote_resp_msg_v01
 	mutex_unlock(&imp_ctx->mutex);
 
 	/*
-	 * Unlock the mutex before calling into mhi for clock vote
-	 * to avoid deadlock on imp mutex.
-	 * Calls into mhi are synchronous and imp callbacks are
-	 * executed from mhi context.
-	 */
+   * Unlock the mutex before calling into mhi for clock vote
+   * to avoid deadlock on imp mutex.
+   * Calls into mhi are synchronous and imp callbacks are
+   * executed from mhi context.
+   */
 	if (vote) {
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 		pm_runtime_get_sync(imp_ctx->md.mhi_dev->dev.parent->parent);
 		ret = mhi_device_get_sync(imp_ctx->md.mhi_dev);
-		#else
+#else
 		ret = mhi_device_get_sync(imp_ctx->md.mhi_dev,
-				MHI_VOTE_BUS | MHI_VOTE_DEVICE);
-		#endif
+					  MHI_VOTE_BUS | MHI_VOTE_DEVICE);
+#endif
 		if (ret) {
 			IMP_ERR("mhi_sync_get failed %d\n", ret);
 			resp->resp.result = IPA_QMI_RESULT_FAILURE_V01;
 			/* return INCOMPATIBLE_STATE in any case */
-			resp->resp.error =
-					IPA_QMI_ERR_INCOMPATIBLE_STATE_V01;
+			resp->resp.error = IPA_QMI_ERR_INCOMPATIBLE_STATE_V01;
 			return resp;
 		}
 	} else {
-	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 		mhi_device_put(imp_ctx->md.mhi_dev);
 		pm_runtime_put(imp_ctx->md.mhi_dev->dev.parent->parent);
-	#else
+#else
 		mhi_device_put(imp_ctx->md.mhi_dev,
-			MHI_VOTE_BUS | MHI_VOTE_DEVICE);
-	#endif
+			       MHI_VOTE_BUS | MHI_VOTE_DEVICE);
+#endif
 	}
 
 	mutex_lock(&imp_ctx->mutex);
@@ -730,44 +703,40 @@ static void imp_mhi_shutdown(void)
 
 	IMP_FUNC_ENTRY();
 
-	if (imp_ctx->state == IMP_STARTED ||
-		imp_ctx->state == IMP_READY) {
+	if (imp_ctx->state == IMP_STARTED || imp_ctx->state == IMP_READY) {
 		req.cleanup_valid = true;
 		req.cleanup = true;
 		ipa3_qmi_send_mhi_cleanup_request(&req);
 		if (imp_ctx->dev_info.smmu_enabled) {
-			struct ipa_mhi_alloc_channel_req_msg_v01 *creq
-				= &imp_ctx->qmi.alloc_ch_req;
+			struct ipa_mhi_alloc_channel_req_msg_v01 *creq =
+				&imp_ctx->qmi.alloc_ch_req;
 
-			/* unmap CTRL */
-			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+/* unmap CTRL */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 			__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent->parent,
-			#else
+#else
 			__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent,
-			#endif
-				&imp_ctx->dev_info.ctrl,
-				creq->ctrl_addr_map_info_len,
-				creq->ctrl_addr_map_info,
-				false);
+#endif
+					&imp_ctx->dev_info.ctrl,
+					creq->ctrl_addr_map_info_len,
+					creq->ctrl_addr_map_info, false);
 
-			/* unmap DATA */
-			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+/* unmap DATA */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 			__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent->parent,
-			#else
+#else
 			__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent,
-			#endif
-				&imp_ctx->dev_info.data,
-				creq->data_addr_map_info_len,
-				creq->data_addr_map_info,
-				false);
+#endif
+					&imp_ctx->dev_info.data,
+					creq->data_addr_map_info_len,
+					creq->data_addr_map_info, false);
 		}
 		if (imp_ctx->lpm_disabled) {
-		#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 			pm_runtime_put(imp_ctx->md.mhi_dev->dev.parent->parent);
-		#else
-			mhi_device_put(imp_ctx->md.mhi_dev,
-				MHI_VOTE_BUS);
-		#endif
+#else
+			mhi_device_put(imp_ctx->md.mhi_dev, MHI_VOTE_BUS);
+#endif
 			imp_ctx->lpm_disabled = false;
 		}
 
@@ -780,15 +749,15 @@ static void imp_mhi_shutdown(void)
 			u32 size_p;
 
 			imp_smmu_round_to_page(imp_ctx->dev_info.chdb_base,
-				imp_ctx->dev_info.chdb_base, PAGE_SIZE,
-				&iova_p, &pa_p, &size_p);
+					       imp_ctx->dev_info.chdb_base,
+					       PAGE_SIZE, &iova_p, &pa_p,
+					       &size_p);
 
 			iommu_unmap(cb->iommu_domain, iova_p, size_p);
 		}
 	}
 	if (!imp_ctx->in_lpm &&
-		(imp_ctx->state == IMP_READY ||
-			imp_ctx->state == IMP_STARTED)) {
+	    (imp_ctx->state == IMP_READY || imp_ctx->state == IMP_STARTED)) {
 		IMP_DBG("devote IMP with state= %d\n", imp_ctx->state);
 		IPA_ACTIVE_CLIENTS_DEC_SPECIAL("IMP");
 	}
@@ -799,7 +768,7 @@ static void imp_mhi_shutdown(void)
 }
 
 static int imp_mhi_probe_cb(struct mhi_device *mhi_dev,
-	const struct mhi_device_id *id)
+			    const struct mhi_device_id *id)
 {
 	struct imp_channel *ch;
 	struct imp_event *ev;
@@ -846,15 +815,15 @@ static int imp_mhi_probe_cb(struct mhi_device *mhi_dev,
 	ch->props.dir = DMA_TO_DEVICE;
 	ch->props.doorbell = imp_ctx->dev_info.chdb_base + ch->props.id * 8;
 	ch->props.uc_mbox_n = IMP_IPA_UC_UL_CH_n;
-	IMP_DBG("ul ch id %d doorbell 0x%pa uc_mbox_n %d\n",
-		ch->props.id, &ch->props.doorbell, ch->props.uc_mbox_n);
+	IMP_DBG("ul ch id %d doorbell 0x%pa uc_mbox_n %d\n", ch->props.id,
+		&ch->props.doorbell, ch->props.uc_mbox_n);
 
 	ret = ipa3_uc_send_remote_ipa_info(ch->props.doorbell,
-		ch->props.uc_mbox_n);
+					   ch->props.uc_mbox_n);
 	if (ret)
 		goto fail;
 	IMP_DBG("mapped ch db 0x%pad to mbox %d\n", &ch->props.doorbell,
-			ch->props.uc_mbox_n);
+		ch->props.uc_mbox_n);
 
 	ev->props.id = mhi_dev->ul_event_id;
 	ev->props.doorbell = imp_ctx->dev_info.erdb_base + ev->props.id * 8;
@@ -862,7 +831,7 @@ static int imp_mhi_probe_cb(struct mhi_device *mhi_dev,
 	IMP_DBG("allocated ev %d\n", ev->props.id);
 
 	ret = ipa3_uc_send_remote_ipa_info(ev->props.doorbell,
-		ev->props.uc_mbox_n);
+					   ev->props.uc_mbox_n);
 	if (ret)
 		goto fail;
 	IMP_DBG("mapped ch db 0x%pad to mbox %d\n", &ev->props.doorbell,
@@ -876,11 +845,11 @@ static int imp_mhi_probe_cb(struct mhi_device *mhi_dev,
 	ch->props.id = mhi_dev->dl_chan_id;
 	ch->props.doorbell = imp_ctx->dev_info.chdb_base + ch->props.id * 8;
 	ch->props.uc_mbox_n = IMP_IPA_UC_DL_CH_n;
-	IMP_DBG("dl ch id %d doorbell 0x%pa uc_mbox_n %d\n",
-		ch->props.id, &ch->props.doorbell, ch->props.uc_mbox_n);
+	IMP_DBG("dl ch id %d doorbell 0x%pa uc_mbox_n %d\n", ch->props.id,
+		&ch->props.doorbell, ch->props.uc_mbox_n);
 
 	ret = ipa3_uc_send_remote_ipa_info(ch->props.doorbell,
-		ch->props.uc_mbox_n);
+					   ch->props.uc_mbox_n);
 	if (ret)
 		goto fail;
 	IMP_DBG("mapped ch db 0x%pad to mbox %d\n", &ch->props.doorbell,
@@ -892,29 +861,28 @@ static int imp_mhi_probe_cb(struct mhi_device *mhi_dev,
 	IMP_DBG("allocated ev %d\n", ev->props.id);
 
 	ret = ipa3_uc_send_remote_ipa_info(ev->props.doorbell,
-		ev->props.uc_mbox_n);
+					   ev->props.uc_mbox_n);
 	if (ret)
 		goto fail;
 	IMP_DBG("mapped ch db 0x%pad to mbox %d\n", &ev->props.doorbell,
 		ev->props.uc_mbox_n);
 
 	/*
-	 * Map MHI doorbells to IPA uC SMMU.
-	 * Both channel and event doorbells resides in a single page.
-	 */
+   * Map MHI doorbells to IPA uC SMMU.
+   * Both channel and event doorbells resides in a single page.
+   */
 	if (!ipa3_ctx->s1_bypass_arr[IPA_SMMU_CB_UC]) {
-		struct ipa_smmu_cb_ctx *cb =
-			ipa3_get_smmu_ctx(IPA_SMMU_CB_UC);
+		struct ipa_smmu_cb_ctx *cb = ipa3_get_smmu_ctx(IPA_SMMU_CB_UC);
 		unsigned long iova_p;
 		phys_addr_t pa_p;
 		u32 size_p;
 
 		imp_smmu_round_to_page(imp_ctx->dev_info.chdb_base,
-			imp_ctx->dev_info.chdb_base, PAGE_SIZE,
-			&iova_p, &pa_p, &size_p);
+				       imp_ctx->dev_info.chdb_base, PAGE_SIZE,
+				       &iova_p, &pa_p, &size_p);
 
 		ret = ipa3_iommu_map(cb->iommu_domain, iova_p, pa_p, size_p,
-			IOMMU_READ | IOMMU_WRITE | IOMMU_MMIO);
+				     IOMMU_READ | IOMMU_WRITE | IOMMU_MMIO);
 		if (ret)
 			goto fail;
 	}
@@ -943,7 +911,8 @@ static void imp_mhi_remove_cb(struct mhi_device *mhi_dev)
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
-static void imp_mhi_status_cb(struct mhi_device *mhi_dev, enum mhi_callback mhi_cb)
+static void imp_mhi_status_cb(struct mhi_device *mhi_dev,
+			      enum mhi_callback mhi_cb)
 #else
 static void imp_mhi_status_cb(struct mhi_device *mhi_dev, enum MHI_CB mhi_cb)
 #endif
@@ -1004,12 +973,12 @@ static int imp_probe(struct platform_device *pdev)
 	imp_ctx->dev_info.pdev = pdev;
 	imp_ctx->dev_info.smmu_enabled = true;
 	ret = imp_read_iova_from_dtsi("qcom,ctrl-iova",
-		&imp_ctx->dev_info.ctrl);
+				      &imp_ctx->dev_info.ctrl);
 	if (ret)
 		imp_ctx->dev_info.smmu_enabled = false;
 
 	ret = imp_read_iova_from_dtsi("qcom,data-iova",
-		&imp_ctx->dev_info.data);
+				      &imp_ctx->dev_info.data);
 	if (ret)
 		imp_ctx->dev_info.smmu_enabled = false;
 
@@ -1018,14 +987,14 @@ static int imp_probe(struct platform_device *pdev)
 	/* Read the MHI CH/ER DB address from DT. */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 	if (of_property_read_u32(pdev->dev.of_node, "qcom,mhi-chdb-base",
-		&imp_ctx->dev_info.chdb_base)) {
+				 &imp_ctx->dev_info.chdb_base)) {
 		IMP_ERR("failed to read of_node %s\n", "qcom,mhi-chdb-base");
 		return -EINVAL;
 	}
 	IMP_DBG("chdb-base=0x%x\n", imp_ctx->dev_info.chdb_base);
 
 	if (of_property_read_u32(pdev->dev.of_node, "qcom,mhi-erdb-base",
-		&imp_ctx->dev_info.erdb_base)) {
+				 &imp_ctx->dev_info.erdb_base)) {
 		IMP_ERR("failed to read of_node %s\n", "qcom,mhi-erdb-base");
 		return -EINVAL;
 	}
@@ -1049,8 +1018,8 @@ static int imp_remove(struct platform_device *pdev)
 	IMP_FUNC_ENTRY();
 	mhi_driver_unregister(&mhi_driver);
 	mutex_lock(&imp_ctx->mutex);
-	if (!imp_ctx->in_lpm && (imp_ctx->state == IMP_READY ||
-		imp_ctx->state == IMP_STARTED)) {
+	if (!imp_ctx->in_lpm &&
+	    (imp_ctx->state == IMP_READY || imp_ctx->state == IMP_STARTED)) {
 		IMP_DBG("devote IMP with state= %d\n", imp_ctx->state);
 		IPA_ACTIVE_CLIENTS_DEC_SPECIAL("IMP");
 	}
@@ -1072,12 +1041,13 @@ static const struct of_device_id imp_dt_match[] = {
 MODULE_DEVICE_TABLE(of, imp_dt_match);
 
 static struct platform_driver ipa_mhi_proxy_driver = {
-	.driver = {
-		.name = "ipa_mhi_proxy",
-		.of_match_table = imp_dt_match,
-	},
-	.probe = imp_probe,
-	.remove = imp_remove,
+    .driver =
+        {
+            .name = "ipa_mhi_proxy",
+            .of_match_table = imp_dt_match,
+        },
+    .probe = imp_probe,
+    .remove = imp_remove,
 };
 
 /**
@@ -1091,7 +1061,6 @@ static struct platform_driver ipa_mhi_proxy_driver = {
  */
 void imp_handle_modem_ready(void)
 {
-
 	if (!imp_ctx) {
 		imp_ctx = kzalloc(sizeof(*imp_ctx), GFP_KERNEL);
 		if (!imp_ctx)
@@ -1137,30 +1106,28 @@ void imp_handle_modem_shutdown(void)
 
 	if (imp_ctx->state == IMP_READY) {
 		if (imp_ctx->dev_info.smmu_enabled) {
-			struct ipa_mhi_alloc_channel_req_msg_v01 *creq
-				= &imp_ctx->qmi.alloc_ch_req;
+			struct ipa_mhi_alloc_channel_req_msg_v01 *creq =
+				&imp_ctx->qmi.alloc_ch_req;
 
-			/* unmap CTRL */
-			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+/* unmap CTRL */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 			__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent->parent,
-			#else
+#else
 			__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent,
-			#endif
-				&imp_ctx->dev_info.ctrl,
-				creq->ctrl_addr_map_info_len,
-				creq->ctrl_addr_map_info,
-				false);
+#endif
+					&imp_ctx->dev_info.ctrl,
+					creq->ctrl_addr_map_info_len,
+					creq->ctrl_addr_map_info, false);
 
-			/* unmap DATA */
-			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+/* unmap DATA */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 			__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent->parent,
-			#else
+#else
 			__map_smmu_info(imp_ctx->md.mhi_dev->dev.parent,
-			#endif
-				&imp_ctx->dev_info.data,
-				creq->data_addr_map_info_len,
-				creq->data_addr_map_info,
-				false);
+#endif
+					&imp_ctx->dev_info.data,
+					creq->data_addr_map_info_len,
+					creq->data_addr_map_info, false);
 		}
 	}
 

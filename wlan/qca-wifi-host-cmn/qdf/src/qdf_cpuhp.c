@@ -99,8 +99,7 @@ QDF_STATUS qdf_cpuhp_deinit(void)
 }
 
 QDF_STATUS qdf_cpuhp_register(struct qdf_cpuhp_handler **out_handler,
-			      void *context,
-			      qdf_cpuhp_callback up_callback,
+			      void *context, qdf_cpuhp_callback up_callback,
 			      qdf_cpuhp_callback down_callback)
 {
 	QDF_STATUS status;
@@ -155,4 +154,3 @@ void qdf_cpuhp_unregister(struct qdf_cpuhp_handler **out_handler)
 	qdf_mem_free(handler);
 	*out_handler = NULL;
 }
-

@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2012-2015, 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2012-2015, 2020-2021, The Linux Foundation. All rights
+ * reserved. Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,36 +21,35 @@
  * initiate vdev manager operations
  */
 
-#include "wlan_cm_vdev_api.h"
-#include "wlan_scan_utils_api.h"
-#include "wlan_mlme_dbg.h"
-#include "wlan_cm_api.h"
-#include "wlan_policy_mgr_api.h"
-#include "wlan_p2p_api.h"
-#include "wlan_tdls_api.h"
-#include "wlan_mlme_vdev_mgr_interface.h"
-#include "wni_api.h"
-#include "wlan_crypto_global_api.h"
-#include "wlan_scan_api.h"
-#include "wlan_logging_sock_svc.h"
 #include "cfg_ucfg_api.h"
-#include "wlan_roam_debug.h"
-#include "wlan_mlo_mgr_sta.h"
-#include "wlan_mlo_mgr_roam.h"
-#include "wlan_reg_ucfg_api.h"
+#include "wlan_cm_api.h"
+#include "wlan_cm_vdev_api.h"
+#include "wlan_crypto_global_api.h"
+#include "wlan_dp_api.h"
+#include "wlan_logging_sock_svc.h"
 #include "wlan_mlme_api.h"
-#include "wlan_reg_services_api.h"
-#include "wlan_psoc_mlme_api.h"
-#include "wlan_t2lm_api.h"
-#include "wlan_mlo_t2lm.h"
+#include "wlan_mlme_dbg.h"
+#include "wlan_mlme_vdev_mgr_interface.h"
 #include "wlan_mlo_link_force.h"
 #include "wlan_mlo_mgr_link_switch.h"
-#include "wlan_dp_api.h"
+#include "wlan_mlo_mgr_roam.h"
+#include "wlan_mlo_mgr_sta.h"
+#include "wlan_mlo_t2lm.h"
+#include "wlan_p2p_api.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_psoc_mlme_api.h"
+#include "wlan_reg_services_api.h"
+#include "wlan_reg_ucfg_api.h"
+#include "wlan_roam_debug.h"
+#include "wlan_scan_api.h"
+#include "wlan_scan_utils_api.h"
+#include "wlan_t2lm_api.h"
+#include "wlan_tdls_api.h"
+#include "wni_api.h"
 
 #ifdef WLAN_FEATURE_FILS_SK
-void cm_update_hlp_info(struct wlan_objmgr_vdev *vdev,
-			const uint8_t *gen_ie, uint16_t len,
-			bool flush)
+void cm_update_hlp_info(struct wlan_objmgr_vdev *vdev, const uint8_t *gen_ie,
+			uint16_t len, bool flush)
 {
 	struct mlme_legacy_priv *mlme_priv;
 
@@ -77,13 +77,14 @@ void cm_update_hlp_info(struct wlan_objmgr_vdev *vdev,
 
 	if (!mlme_priv->connect_info.hlp_ie) {
 		mlme_priv->connect_info.hlp_ie =
-				qdf_mem_malloc(FILS_MAX_HLP_DATA_LEN);
+			qdf_mem_malloc(FILS_MAX_HLP_DATA_LEN);
 		if (!mlme_priv->connect_info.hlp_ie)
 			return;
 	}
 
 	qdf_mem_copy(mlme_priv->connect_info.hlp_ie +
-		     mlme_priv->connect_info.hlp_ie_len, gen_ie, len);
+			     mlme_priv->connect_info.hlp_ie_len,
+		     gen_ie, len);
 	mlme_priv->connect_info.hlp_ie_len += len;
 	mlme_debug("hlp_ie_len %d len %d", mlme_priv->connect_info.hlp_ie_len,
 		   len);
@@ -109,7 +110,7 @@ void cm_wait_for_key_time_out_handler(void *data)
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 	struct wait_for_key_timer *wait_key_timer =
-				(struct wait_for_key_timer *)data;
+		(struct wait_for_key_timer *)data;
 
 	vdev = wait_key_timer->vdev;
 	vdev_id = vdev->vdev_objmgr.vdev_id;
@@ -130,7 +131,7 @@ void cm_wait_for_key_time_out_handler(void *data)
 		cm_csr_set_ss_none(vdev_id);
 		if (wlan_cm_is_vdev_id_roam_reassoc_state(vdev))
 			mlme_obj->cfg.timeouts.heart_beat_threshold =
-					cfg_default(CFG_HEART_BEAT_THRESHOLD);
+				cfg_default(CFG_HEART_BEAT_THRESHOLD);
 
 		wlan_cm_disconnect_on_wait_key_timeout(psoc, vdev);
 	}
@@ -166,8 +167,9 @@ QDF_STATUS cm_start_wait_for_key_timer(struct wlan_objmgr_vdev *vdev,
 	if (wlan_cm_is_vdev_id_roam_reassoc_state(vdev))
 		mlme_obj->cfg.timeouts.heart_beat_threshold = 0;
 
-	return qdf_mc_timer_start(&vdev_mlme->ext_vdev_ptr->wait_key_timer.timer,
-				  interval / QDF_MC_TIMER_TO_MS_UNIT);
+	return qdf_mc_timer_start(
+		&vdev_mlme->ext_vdev_ptr->wait_key_timer.timer,
+		interval / QDF_MC_TIMER_TO_MS_UNIT);
 }
 
 void cm_stop_wait_for_key_timer(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
@@ -196,7 +198,7 @@ void cm_stop_wait_for_key_timer(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 
 	if (wlan_cm_is_vdev_id_roam_reassoc_state(vdev))
 		mlme_obj->cfg.timeouts.heart_beat_threshold =
-					cfg_default(CFG_HEART_BEAT_THRESHOLD);
+			cfg_default(CFG_HEART_BEAT_THRESHOLD);
 
 	qdf_mc_timer_stop(&vdev_mlme->ext_vdev_ptr->wait_key_timer.timer);
 
@@ -209,7 +211,7 @@ void cm_update_wait_for_key_timer(struct wlan_objmgr_vdev *vdev,
 {
 	cm_csr_set_ss_wait_for_key(vdev_id);
 
-	if (QDF_IS_STATUS_ERROR(cm_start_wait_for_key_timer(vdev,  interval))) {
+	if (QDF_IS_STATUS_ERROR(cm_start_wait_for_key_timer(vdev, interval))) {
 		mlme_err("Failed wait for key timer start");
 		cm_csr_set_ss_none(vdev_id);
 	}
@@ -253,8 +255,8 @@ end:
 }
 
 QDF_STATUS cm_get_rssi_snr_by_bssid(struct wlan_objmgr_pdev *pdev,
-				    struct qdf_mac_addr *bssid,
-				    int8_t *rssi, int8_t *snr)
+				    struct qdf_mac_addr *bssid, int8_t *rssi,
+				    int8_t *snr)
 {
 	struct scan_filter *scan_filter;
 	qdf_list_t *list = NULL;
@@ -270,8 +272,8 @@ QDF_STATUS cm_get_rssi_snr_by_bssid(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_NOMEM;
 
 	scan_filter->num_of_bssid = 1;
-	qdf_mem_copy(scan_filter->bssid_list[0].bytes,
-		     bssid, sizeof(struct qdf_mac_addr));
+	qdf_mem_copy(scan_filter->bssid_list[0].bytes, bssid,
+		     sizeof(struct qdf_mac_addr));
 	scan_filter->ignore_auth_enc_type = true;
 	list = wlan_scan_get_result(pdev, scan_filter);
 	qdf_mem_free(scan_filter);
@@ -282,7 +284,7 @@ QDF_STATUS cm_get_rssi_snr_by_bssid(struct wlan_objmgr_pdev *pdev,
 		goto error;
 	}
 
-	qdf_list_peek_front(list, (qdf_list_node_t **) &first_node);
+	qdf_list_peek_front(list, (qdf_list_node_t **)&first_node);
 	if (first_node && first_node->entry) {
 		if (rssi)
 			*rssi = first_node->entry->rssi_raw;
@@ -299,13 +301,12 @@ error:
 
 #ifdef FEATURE_WLAN_DIAG_SUPPORT_CSR
 #ifdef WLAN_FEATURE_11BE
-static const
-char *cm_diag_get_eht_dot11_mode_str(enum mgmt_dot11_mode dot11mode)
+static const char *
+cm_diag_get_eht_dot11_mode_str(enum mgmt_dot11_mode dot11mode)
 {
-
 	switch (dot11mode) {
-	CASE_RETURN_STRING(DOT11_MODE_11BE);
-	CASE_RETURN_STRING(DOT11_MODE_11BE_ONLY);
+		CASE_RETURN_STRING(DOT11_MODE_11BE);
+		CASE_RETURN_STRING(DOT11_MODE_11BE_ONLY);
 	default:
 		return "Unknown";
 	}
@@ -314,14 +315,14 @@ char *cm_diag_get_eht_dot11_mode_str(enum mgmt_dot11_mode dot11mode)
 static const char *cm_diag_get_320_ch_width_str(uint8_t ch_width)
 {
 	switch (ch_width) {
-	CASE_RETURN_STRING(BW_320MHZ);
+		CASE_RETURN_STRING(BW_320MHZ);
 	default:
 		return "Unknown";
 	}
 }
 #else
-static const
-char *cm_diag_get_eht_dot11_mode_str(enum mgmt_dot11_mode dot11mode)
+static const char *
+cm_diag_get_eht_dot11_mode_str(enum mgmt_dot11_mode dot11mode)
 {
 	return "Unknown";
 }
@@ -335,13 +336,13 @@ static const char *cm_diag_get_320_ch_width_str(uint8_t ch_width)
 static const char *cm_diag_get_ch_width_str(uint8_t ch_width)
 {
 	switch (ch_width) {
-	CASE_RETURN_STRING(BW_20MHZ);
-	CASE_RETURN_STRING(BW_40MHZ);
-	CASE_RETURN_STRING(BW_80MHZ);
-	CASE_RETURN_STRING(BW_160MHZ);
-	CASE_RETURN_STRING(BW_80P80MHZ);
-	CASE_RETURN_STRING(BW_5MHZ);
-	CASE_RETURN_STRING(BW_10MHZ);
+		CASE_RETURN_STRING(BW_20MHZ);
+		CASE_RETURN_STRING(BW_40MHZ);
+		CASE_RETURN_STRING(BW_80MHZ);
+		CASE_RETURN_STRING(BW_160MHZ);
+		CASE_RETURN_STRING(BW_80P80MHZ);
+		CASE_RETURN_STRING(BW_5MHZ);
+		CASE_RETURN_STRING(BW_10MHZ);
 	default:
 		return cm_diag_get_320_ch_width_str(ch_width);
 	}
@@ -350,18 +351,18 @@ static const char *cm_diag_get_ch_width_str(uint8_t ch_width)
 static const char *cm_diag_get_dot11_mode_str(enum mgmt_dot11_mode dot11mode)
 {
 	switch (dot11mode) {
-	CASE_RETURN_STRING(DOT11_MODE_AUTO);
-	CASE_RETURN_STRING(DOT11_MODE_ABG);
-	CASE_RETURN_STRING(DOT11_MODE_11A);
-	CASE_RETURN_STRING(DOT11_MODE_11B);
-	CASE_RETURN_STRING(DOT11_MODE_11G);
-	CASE_RETURN_STRING(DOT11_MODE_11N);
-	CASE_RETURN_STRING(DOT11_MODE_11AC);
-	CASE_RETURN_STRING(DOT11_MODE_11G_ONLY);
-	CASE_RETURN_STRING(DOT11_MODE_11N_ONLY);
-	CASE_RETURN_STRING(DOT11_MODE_11AC_ONLY);
-	CASE_RETURN_STRING(DOT11_MODE_11AX);
-	CASE_RETURN_STRING(DOT11_MODE_11AX_ONLY);
+		CASE_RETURN_STRING(DOT11_MODE_AUTO);
+		CASE_RETURN_STRING(DOT11_MODE_ABG);
+		CASE_RETURN_STRING(DOT11_MODE_11A);
+		CASE_RETURN_STRING(DOT11_MODE_11B);
+		CASE_RETURN_STRING(DOT11_MODE_11G);
+		CASE_RETURN_STRING(DOT11_MODE_11N);
+		CASE_RETURN_STRING(DOT11_MODE_11AC);
+		CASE_RETURN_STRING(DOT11_MODE_11G_ONLY);
+		CASE_RETURN_STRING(DOT11_MODE_11N_ONLY);
+		CASE_RETURN_STRING(DOT11_MODE_11AC_ONLY);
+		CASE_RETURN_STRING(DOT11_MODE_11AX);
+		CASE_RETURN_STRING(DOT11_MODE_11AX_ONLY);
 	default:
 		return cm_diag_get_eht_dot11_mode_str(dot11mode);
 	}
@@ -370,14 +371,14 @@ static const char *cm_diag_get_dot11_mode_str(enum mgmt_dot11_mode dot11mode)
 static const char *cm_diag_get_encr_type_str(uint8_t encr_type)
 {
 	switch (encr_type) {
-	CASE_RETURN_STRING(ENC_MODE_OPEN);
-	CASE_RETURN_STRING(ENC_MODE_WEP40);
-	CASE_RETURN_STRING(ENC_MODE_WEP104);
-	CASE_RETURN_STRING(ENC_MODE_TKIP);
-	CASE_RETURN_STRING(ENC_MODE_AES);
-	CASE_RETURN_STRING(ENC_MODE_AES_GCMP);
-	CASE_RETURN_STRING(ENC_MODE_AES_GCMP_256);
-	CASE_RETURN_STRING(ENC_MODE_SMS4);
+		CASE_RETURN_STRING(ENC_MODE_OPEN);
+		CASE_RETURN_STRING(ENC_MODE_WEP40);
+		CASE_RETURN_STRING(ENC_MODE_WEP104);
+		CASE_RETURN_STRING(ENC_MODE_TKIP);
+		CASE_RETURN_STRING(ENC_MODE_AES);
+		CASE_RETURN_STRING(ENC_MODE_AES_GCMP);
+		CASE_RETURN_STRING(ENC_MODE_AES_GCMP_256);
+		CASE_RETURN_STRING(ENC_MODE_SMS4);
 	default:
 		return "Unknown";
 	}
@@ -629,9 +630,8 @@ static void cm_diag_fill_wapi_auth_type(uint8_t *auth_type, uint32_t akm)
 		*auth_type = AUTH_WAPI_PSK;
 }
 
-static void cm_diag_get_auth_type(uint8_t *auth_type,
-				  uint32_t authmodeset, uint32_t akm,
-				  uint32_t ucastcipherset)
+static void cm_diag_get_auth_type(uint8_t *auth_type, uint32_t authmodeset,
+				  uint32_t akm, uint32_t ucastcipherset)
 {
 	if (!authmodeset) {
 		*auth_type = AUTH_OPEN;
@@ -762,8 +762,7 @@ void cm_connect_info(struct wlan_objmgr_vdev *vdev, bool connect_success,
 	qdf_mem_zero(&conn_stats,
 		     sizeof(struct host_event_wlan_connection_stats));
 
-	qdf_mem_copy(conn_stats.bssid, bssid->bytes,
-		     QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(conn_stats.bssid, bssid->bytes, QDF_MAC_ADDR_SIZE);
 
 	conn_stats.ssid_len = ssid->length;
 	if (conn_stats.ssid_len > WLAN_SSID_MAX_LEN)
@@ -793,7 +792,7 @@ void cm_connect_info(struct wlan_objmgr_vdev *vdev, bool connect_success,
 		return;
 	}
 	conn_stats.qos_capability =
-			vdev_mlme->ext_vdev_ptr->connect_info.qos_enabled;
+		vdev_mlme->ext_vdev_ptr->connect_info.qos_enabled;
 
 	crypto_params = wlan_crypto_vdev_get_crypto_params(vdev);
 
@@ -802,25 +801,26 @@ void cm_connect_info(struct wlan_objmgr_vdev *vdev, bool connect_success,
 		return;
 	}
 
-	cm_diag_get_auth_type(&conn_stats.auth_type,
-			   crypto_params->authmodeset,
-			   crypto_params->key_mgmt,
-			   crypto_params->ucastcipherset);
+	cm_diag_get_auth_type(&conn_stats.auth_type, crypto_params->authmodeset,
+			      crypto_params->key_mgmt,
+			      crypto_params->ucastcipherset);
 
 	conn_stats.encryption_type =
-	     cm_get_diag_enc_type(crypto_params->ucastcipherset);
+		cm_get_diag_enc_type(crypto_params->ucastcipherset);
 
 	conn_stats.result_code = connect_success;
 	conn_stats.reason_code = 0;
 	conn_stats.op_freq = freq;
 
 	max_supported_nss = mlme_obj->cfg.vht_caps.vht_cap_info.enable2x2 ?
-			    MAX_VDEV_NSS : 1;
+				    MAX_VDEV_NSS :
+				    1;
 	mlme_nofl_debug("+---------CONNECTION INFO START------------+");
-	mlme_nofl_debug("VDEV-ID: %d self_mac:"QDF_MAC_ADDR_FMT,
+	mlme_nofl_debug("VDEV-ID: %d self_mac:" QDF_MAC_ADDR_FMT,
 			wlan_vdev_get_id(vdev),
 			QDF_MAC_ADDR_REF(wlan_vdev_mlme_get_macaddr(vdev)));
-	mlme_nofl_debug("ssid: " QDF_SSID_FMT " bssid: " QDF_MAC_ADDR_FMT " RSSI: %d dBm",
+	mlme_nofl_debug("ssid: " QDF_SSID_FMT " bssid: " QDF_MAC_ADDR_FMT
+			" RSSI: %d dBm",
 			QDF_SSID_REF(conn_stats.ssid_len, conn_stats.ssid),
 			QDF_MAC_ADDR_REF(conn_stats.bssid), conn_stats.rssi);
 	mlme_nofl_debug("Channel Freq: %d channel_bw: %s dot11Mode: %s",
@@ -831,8 +831,8 @@ void cm_connect_info(struct wlan_objmgr_vdev *vdev, bool connect_success,
 			cm_diag_get_akm_str(conn_stats.auth_type,
 					    crypto_params->key_mgmt),
 			cm_diag_get_encr_type_str(conn_stats.encryption_type));
-	mlme_nofl_debug("DUT_NSS: %d | Intersected NSS:%d",
-			max_supported_nss, wlan_vdev_mlme_get_nss(vdev));
+	mlme_nofl_debug("DUT_NSS: %d | Intersected NSS:%d", max_supported_nss,
+			wlan_vdev_mlme_get_nss(vdev));
 	mlme_nofl_debug("Qos enable: %d | Associated: %s",
 			conn_stats.qos_capability,
 			(conn_stats.result_code ? "yes" : "no"));
@@ -851,8 +851,7 @@ void cm_connect_info(struct wlan_objmgr_vdev *vdev, bool connect_success,
 void cm_diag_get_auth_enc_type_vdev_id(struct wlan_objmgr_psoc *psoc,
 				       uint8_t *auth_type,
 				       uint8_t *ucast_cipher,
-				       uint8_t *mcast_cipher,
-				       uint8_t vdev_id)
+				       uint8_t *mcast_cipher, uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct wlan_crypto_params *crypto_params;
@@ -871,8 +870,7 @@ void cm_diag_get_auth_enc_type_vdev_id(struct wlan_objmgr_psoc *psoc,
 		return;
 	}
 	if (auth_type)
-		cm_diag_get_auth_type(auth_type,
-				      crypto_params->authmodeset,
+		cm_diag_get_auth_type(auth_type, crypto_params->authmodeset,
 				      crypto_params->key_mgmt,
 				      crypto_params->ucastcipherset);
 	if (ucast_cipher)
@@ -882,22 +880,21 @@ void cm_diag_get_auth_enc_type_vdev_id(struct wlan_objmgr_psoc *psoc,
 		*mcast_cipher =
 			cm_get_diag_enc_type(crypto_params->ucastcipherset);
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_CM_ID);
-
 }
 
 #ifdef WLAN_UNIT_TEST
 static const char *cm_diag_get_persona(enum mgmt_bss_type persona)
 {
 	switch (persona) {
-	CASE_RETURN_STRING(STA_PERSONA);
-	CASE_RETURN_STRING(SAP_PERSONA);
-	CASE_RETURN_STRING(P2P_CLIENT_PERSONA);
-	CASE_RETURN_STRING(P2P_GO_PERSONA);
-	CASE_RETURN_STRING(FTM_PERSONA);
-	CASE_RETURN_STRING(MONITOR_PERSONA);
-	CASE_RETURN_STRING(P2P_DEVICE_PERSONA);
-	CASE_RETURN_STRING(NDI_PERSONA);
-	CASE_RETURN_STRING(WDS_PERSONA);
+		CASE_RETURN_STRING(STA_PERSONA);
+		CASE_RETURN_STRING(SAP_PERSONA);
+		CASE_RETURN_STRING(P2P_CLIENT_PERSONA);
+		CASE_RETURN_STRING(P2P_GO_PERSONA);
+		CASE_RETURN_STRING(FTM_PERSONA);
+		CASE_RETURN_STRING(MONITOR_PERSONA);
+		CASE_RETURN_STRING(P2P_DEVICE_PERSONA);
+		CASE_RETURN_STRING(NDI_PERSONA);
+		CASE_RETURN_STRING(WDS_PERSONA);
 	default:
 		return "Unknown";
 	}
@@ -906,21 +903,21 @@ static const char *cm_diag_get_persona(enum mgmt_bss_type persona)
 static const char *cm_diag_get_auth_type_str(uint8_t auth_type)
 {
 	switch (auth_type) {
-	CASE_RETURN_STRING(AUTH_OPEN);
-	CASE_RETURN_STRING(AUTH_SHARED);
-	CASE_RETURN_STRING(AUTH_WPA_EAP);
-	CASE_RETURN_STRING(AUTH_WPA_PSK);
-	CASE_RETURN_STRING(AUTH_WPA2_EAP);
-	CASE_RETURN_STRING(AUTH_WPA2_PSK);
-	CASE_RETURN_STRING(AUTH_WAPI_CERT);
-	CASE_RETURN_STRING(AUTH_WAPI_PSK);
+		CASE_RETURN_STRING(AUTH_OPEN);
+		CASE_RETURN_STRING(AUTH_SHARED);
+		CASE_RETURN_STRING(AUTH_WPA_EAP);
+		CASE_RETURN_STRING(AUTH_WPA_PSK);
+		CASE_RETURN_STRING(AUTH_WPA2_EAP);
+		CASE_RETURN_STRING(AUTH_WPA2_PSK);
+		CASE_RETURN_STRING(AUTH_WAPI_CERT);
+		CASE_RETURN_STRING(AUTH_WAPI_PSK);
 	default:
 		return "Unknown";
 	}
 }
 
-void cm_get_sta_cxn_info(struct wlan_objmgr_vdev *vdev,
-			 char *buf, uint32_t buf_sz)
+void cm_get_sta_cxn_info(struct wlan_objmgr_vdev *vdev, char *buf,
+			 uint32_t buf_sz)
 {
 	struct qdf_mac_addr bss_peer_mac;
 	struct wlan_ssid ssid;
@@ -956,7 +953,7 @@ void cm_get_sta_cxn_info(struct wlan_objmgr_vdev *vdev,
 		return;
 
 	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tbssid: "QDF_MAC_ADDR_FMT,
+			     "\n\tbssid: " QDF_MAC_ADDR_FMT,
 			     QDF_MAC_ADDR_REF(bss_peer_mac.bytes));
 
 	status = wlan_vdev_mlme_get_ssid(vdev, ssid.ssid, &ssid.length);
@@ -964,39 +961,35 @@ void cm_get_sta_cxn_info(struct wlan_objmgr_vdev *vdev,
 		return;
 	if (ssid.length > WLAN_SSID_MAX_LEN)
 		ssid.length = WLAN_SSID_MAX_LEN;
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tssid: %.*s", ssid.length,
-			     ssid.ssid);
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tssid: %.*s",
+			     ssid.length, ssid.ssid);
 
 	cm_get_rssi_snr_by_bssid(pdev, &bss_peer_mac, &rssi, NULL);
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\trssi: %d", rssi);
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\trssi: %d", rssi);
 
 	des_chan = wlan_vdev_mlme_get_des_chan(vdev);
 	ch_width = cm_get_diag_ch_width(des_chan->ch_width);
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tbw: %s", cm_diag_get_ch_width_str(ch_width));
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tbw: %s",
+			     cm_diag_get_ch_width_str(ch_width));
 	dot11mode = cm_diag_dot11_mode_from_phy_mode(des_chan->ch_phymode);
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tdot11mode: %s",
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tdot11mode: %s",
 			     cm_diag_get_dot11_mode_str(dot11mode));
 
 	opmode = wlan_vdev_mlme_get_opmode(vdev);
 	type = cm_get_diag_persona(opmode);
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tbss_type: %s", cm_diag_get_persona(type));
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tbss_type: %s",
+			     cm_diag_get_persona(type));
 
 	oper_freq = wlan_get_operation_chan_freq(vdev);
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tch_freq: %d", oper_freq);
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tch_freq: %d",
+			     oper_freq);
 
 	vdev_mlme = wlan_vdev_mlme_get_cmpt_obj(vdev);
 	if (!vdev_mlme) {
 		mlme_err("vdev component object is NULL");
 		return;
 	}
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tQoS: %d",
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tQoS: %d",
 			     vdev_mlme->ext_vdev_ptr->connect_info.qos_enabled);
 
 	crypto_params = wlan_crypto_vdev_get_crypto_params(vdev);
@@ -1007,15 +1000,13 @@ void cm_get_sta_cxn_info(struct wlan_objmgr_vdev *vdev,
 	}
 
 	cm_diag_get_auth_type(&authtype, crypto_params->authmodeset,
-			   crypto_params->key_mgmt,
-			   crypto_params->ucastcipherset);
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tauth_type: %s",
+			      crypto_params->key_mgmt,
+			      crypto_params->ucastcipherset);
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tauth_type: %s",
 			     cm_diag_get_auth_type_str(authtype));
 
 	enctype = cm_get_diag_enc_type(crypto_params->ucastcipherset);
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tencry_type: %s",
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tencry_type: %s",
 			     cm_diag_get_encr_type_str(enctype));
 
 	conn_info = policy_mgr_get_conn_info(&max_cxn);
@@ -1023,8 +1014,8 @@ void cm_get_sta_cxn_info(struct wlan_objmgr_vdev *vdev,
 		if ((conn_info->vdev_id == wlan_vdev_get_id(vdev)) &&
 		    (conn_info->in_use))
 			break;
-	len += qdf_scnprintf(buf + len, buf_sz - len,
-			     "\n\tmac: %d", conn_info->mac);
+	len += qdf_scnprintf(buf + len, buf_sz - len, "\n\tmac: %d",
+			     conn_info->mac);
 	nss = wlan_vdev_mlme_get_nss(vdev);
 	len += qdf_scnprintf(buf + len, buf_sz - len,
 			     "\n\torig_nss: %dx%d neg_nss: %dx%d",
@@ -1065,31 +1056,29 @@ QDF_STATUS cm_connect_start_ind(struct wlan_objmgr_vdev *vdev,
 		rso_cfg->orig_sec_info.rsn_caps = req->crypto.rsn_caps;
 		rso_cfg->orig_sec_info.authmodeset = req->crypto.auth_type;
 		rso_cfg->orig_sec_info.ucastcipherset =
-					req->crypto.ciphers_pairwise;
+			req->crypto.ciphers_pairwise;
 		rso_cfg->orig_sec_info.mcastcipherset =
-					req->crypto.group_cipher;
+			req->crypto.group_cipher;
 		rso_cfg->orig_sec_info.key_mgmt = req->crypto.akm_suites;
 		/*
-		 * reset the roam channel list entries present in the rso
-		 * config which gets stored during connect resp failure in
-		 * wlan_cm_send_connect_rsp
-		 */
+     * reset the roam channel list entries present in the rso
+     * config which gets stored during connect resp failure in
+     * wlan_cm_send_connect_rsp
+     */
 		rso_cfg->tried_candidate_freq_list.num_chan = 0;
 	}
 
-	if (wlan_get_vendor_ie_ptr_from_oui(HS20_OUI_TYPE,
-					    HS20_OUI_TYPE_SIZE,
+	if (wlan_get_vendor_ie_ptr_from_oui(HS20_OUI_TYPE, HS20_OUI_TYPE_SIZE,
 					    req->assoc_ie.ptr,
 					    req->assoc_ie.len)) {
 		src_cfg.bool_value = true;
 		wlan_cm_roam_cfg_set_value(wlan_vdev_get_psoc(vdev),
-					   wlan_vdev_get_id(vdev),
-					   HS_20_AP, &src_cfg);
+					   wlan_vdev_get_id(vdev), HS_20_AP,
+					   &src_cfg);
 	}
 	if (req->source != CM_MLO_LINK_SWITCH_CONNECT)
-		ml_nlink_conn_change_notify(
-			psoc, wlan_vdev_get_id(vdev),
-			ml_nlink_connect_start_evt, NULL);
+		ml_nlink_conn_change_notify(psoc, wlan_vdev_get_id(vdev),
+					    ml_nlink_connect_start_evt, NULL);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1150,19 +1139,20 @@ cm_get_ml_partner_info(struct scan_cache_entry *scan_entry,
 	mlme_debug("sta mlo support link num: %d", mlo_support_link_num);
 
 	/* TODO: Make sure that scan_entry->ml_info->link_info is a sorted
-	 * list.
-	 * When candidates are selected by filter, partner link is set as
-	 * valid in scan entry when mlo band match, then valid partner link is
-	 * copied to join request, after that partner link valid bit in scan
-	 * entry should be cleared to not affect next connect request.
-	 */
+   * list.
+   * When candidates are selected by filter, partner link is set as
+   * valid in scan entry when mlo band match, then valid partner link is
+   * copied to join request, after that partner link valid bit in scan
+   * entry should be cleared to not affect next connect request.
+   */
 	for (i = 0; i < scan_entry->ml_info.num_links; i++) {
-		mlme_debug("freq: %d, link id: %d is valid %d "QDF_MAC_ADDR_FMT,
-			   scan_entry->ml_info.link_info[i].freq,
-			   scan_entry->ml_info.link_info[i].link_id,
-			   scan_entry->ml_info.link_info[i].is_valid_link,
-			   QDF_MAC_ADDR_REF(
-			   scan_entry->ml_info.link_info[i].link_addr.bytes));
+		mlme_debug(
+			"freq: %d, link id: %d is valid %d " QDF_MAC_ADDR_FMT,
+			scan_entry->ml_info.link_info[i].freq,
+			scan_entry->ml_info.link_info[i].link_id,
+			scan_entry->ml_info.link_info[i].is_valid_link,
+			QDF_MAC_ADDR_REF(scan_entry->ml_info.link_info[i]
+						 .link_addr.bytes));
 		if (mlo_support_link_num && j >= mlo_support_link_num - 1)
 			break;
 
@@ -1192,7 +1182,7 @@ static void cm_update_mlo_mgr_info(struct wlan_objmgr_vdev *vdev,
 {
 	struct qdf_mac_addr link_addr;
 	uint8_t link_id, i;
-	struct wlan_channel channel = {0};
+	struct wlan_channel channel = { 0 };
 	struct mlo_partner_info *partner_info;
 
 	if (wlan_vdev_mlme_is_mlo_link_vdev(vdev))
@@ -1247,15 +1237,14 @@ cm_copy_join_req_info_from_cm_connect_req(struct wlan_objmgr_vdev *vdev,
 }
 #endif
 
-static QDF_STATUS
-cm_copy_join_params(struct wlan_objmgr_vdev *vdev,
-		    struct cm_vdev_join_req *join_req,
-		    struct wlan_cm_vdev_connect_req *req)
+static QDF_STATUS cm_copy_join_params(struct wlan_objmgr_vdev *vdev,
+				      struct cm_vdev_join_req *join_req,
+				      struct wlan_cm_vdev_connect_req *req)
 {
 	if (req->assoc_ie.len) {
 		join_req->assoc_ie.ptr = qdf_mem_malloc(req->assoc_ie.len);
 		if (!join_req->assoc_ie.ptr)
-		return QDF_STATUS_E_NOMEM;
+			return QDF_STATUS_E_NOMEM;
 		qdf_mem_copy(join_req->assoc_ie.ptr, req->assoc_ie.ptr,
 			     req->assoc_ie.len);
 		join_req->assoc_ie.len = req->assoc_ie.len;
@@ -1298,9 +1287,8 @@ QDF_STATUS wlan_cm_send_connect_rsp(struct scheduler_msg *msg)
 
 	rsp = msg->bodyptr;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(rsp->psoc,
-						    rsp->connect_rsp.vdev_id,
-						    WLAN_MLME_CM_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+		rsp->psoc, rsp->connect_rsp.vdev_id, WLAN_MLME_CM_ID);
 	if (!vdev) {
 		mlme_err(CM_PREFIX_FMT "vdev not found",
 			 CM_PREFIX_REF(rsp->connect_rsp.vdev_id,
@@ -1312,8 +1300,7 @@ QDF_STATUS wlan_cm_send_connect_rsp(struct scheduler_msg *msg)
 	/*  check and delete bss peer in case of failure */
 	if (QDF_IS_STATUS_ERROR(rsp->connect_rsp.connect_status) &&
 	    (wlan_vdev_mlme_is_init_state(vdev) == QDF_STATUS_SUCCESS)) {
-		peer = wlan_objmgr_vdev_try_get_bsspeer(vdev,
-							WLAN_MLME_CM_ID);
+		peer = wlan_objmgr_vdev_try_get_bsspeer(vdev, WLAN_MLME_CM_ID);
 		if (peer) {
 			cm_send_bss_peer_delete_req(vdev);
 			wlan_objmgr_peer_release_ref(peer, WLAN_MLME_CM_ID);
@@ -1321,18 +1308,18 @@ QDF_STATUS wlan_cm_send_connect_rsp(struct scheduler_msg *msg)
 	}
 
 	/*
-	 * Host creates a ROAM_SCAN_CHAN list with BSSID entries present
-	 * in the scan database. If the connection to an AP fails due to
-	 * Auth/Join/Assoc timeout, Host removes the AP entry from the
-	 * Scan database, assuming it’s not reachable (to avoid
-	 * reconnecting to the AP as it's not responding). Due to this,
-	 * FW does not include the frequency(s), for which the
-	 * connection failed, in roam scan.
-	 * To avoid this, store the frequency(s) of all the candidates
-	 * to which the driver tried connection in the rso config during
-	 * connect resp failure and use the same list to update the roam
-	 * channel list on the top of entries present in scan db.
-	 */
+   * Host creates a ROAM_SCAN_CHAN list with BSSID entries present
+   * in the scan database. If the connection to an AP fails due to
+   * Auth/Join/Assoc timeout, Host removes the AP entry from the
+   * Scan database, assuming it’s not reachable (to avoid
+   * reconnecting to the AP as it's not responding). Due to this,
+   * FW does not include the frequency(s), for which the
+   * connection failed, in roam scan.
+   * To avoid this, store the frequency(s) of all the candidates
+   * to which the driver tried connection in the rso config during
+   * connect resp failure and use the same list to update the roam
+   * channel list on the top of entries present in scan db.
+   */
 	if (QDF_IS_STATUS_ERROR(rsp->connect_rsp.connect_status))
 		cm_update_tried_candidate_freq_list(rsp->psoc, vdev,
 						    &rsp->connect_rsp);
@@ -1369,12 +1356,11 @@ cm_update_hlp_data_from_assoc_ie(struct wlan_objmgr_vdev *vdev,
 	if (hlp_ext_ie)
 		cm_update_hlp_info(vdev, hlp_ext_ie, hlp_ext_ie[1] + 2, false);
 
-	fragment_ie = wlan_get_ie_ptr_from_eid(DOT11F_EID_FRAGMENT_IE,
-					       req->assoc_ie.ptr,
-					       req->assoc_ie.len);
+	fragment_ie = wlan_get_ie_ptr_from_eid(
+		DOT11F_EID_FRAGMENT_IE, req->assoc_ie.ptr, req->assoc_ie.len);
 	if (fragment_ie)
-		cm_update_hlp_info(vdev, fragment_ie,
-				   fragment_ie[1] + 2, false);
+		cm_update_hlp_info(vdev, fragment_ie, fragment_ie[1] + 2,
+				   false);
 }
 
 QDF_STATUS
@@ -1406,7 +1392,7 @@ cm_handle_connect_req(struct wlan_objmgr_vdev *vdev,
 	if (!join_req)
 		return QDF_STATUS_E_NOMEM;
 
-	status = cm_copy_join_params(vdev ,join_req, req);
+	status = cm_copy_join_params(vdev, join_req, req);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err(CM_PREFIX_FMT "Failed to copy join req",
 			 CM_PREFIX_REF(req->vdev_id, req->cm_id));
@@ -1438,8 +1424,7 @@ cm_handle_connect_req(struct wlan_objmgr_vdev *vdev,
 	msg.type = CM_CONNECT_REQ;
 	msg.flush_callback = cm_flush_join_req;
 
-	status = scheduler_post_message(QDF_MODULE_ID_MLME,
-					QDF_MODULE_ID_PE,
+	status = scheduler_post_message(QDF_MODULE_ID_MLME, QDF_MODULE_ID_PE,
 					QDF_MODULE_ID_PE, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err(CM_PREFIX_FMT "msg post fail",
@@ -1482,8 +1467,7 @@ static void cm_set_peer_mld_info(struct cm_peer_create_req *req,
 QDF_STATUS
 cm_send_bss_peer_create_req(struct wlan_objmgr_vdev *vdev,
 			    struct qdf_mac_addr *peer_mac,
-			    struct qdf_mac_addr *mld_mac,
-			    bool is_assoc_peer)
+			    struct qdf_mac_addr *mld_mac, bool is_assoc_peer)
 {
 	struct scheduler_msg msg;
 	QDF_STATUS status;
@@ -1505,8 +1489,7 @@ cm_send_bss_peer_create_req(struct wlan_objmgr_vdev *vdev,
 	msg.bodyptr = req;
 	msg.type = CM_BSS_PEER_CREATE_REQ;
 
-	status = scheduler_post_message(QDF_MODULE_ID_MLME,
-					QDF_MODULE_ID_PE,
+	status = scheduler_post_message(QDF_MODULE_ID_MLME, QDF_MODULE_ID_PE,
 					QDF_MODULE_ID_PE, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("vdev %d: post fail", req->vdev_id);
@@ -1514,7 +1497,6 @@ cm_send_bss_peer_create_req(struct wlan_objmgr_vdev *vdev,
 	}
 
 	return status;
-
 }
 
 #ifdef WLAN_FEATURE_FILS_SK
@@ -1541,11 +1523,10 @@ static void cm_process_connect_complete(struct wlan_objmgr_psoc *psoc,
 
 	if (bcn_probe_rsp->ptr &&
 	    bcn_probe_rsp->len > sizeof(struct wlan_frame_hdr)) {
-		cm_update_prev_ap_ie(psoc, vdev_id,
-				     bcn_probe_rsp->len -
-				     sizeof(struct wlan_frame_hdr),
-				     bcn_probe_rsp->ptr +
-				     sizeof(struct wlan_frame_hdr));
+		cm_update_prev_ap_ie(
+			psoc, vdev_id,
+			bcn_probe_rsp->len - sizeof(struct wlan_frame_hdr),
+			bcn_probe_rsp->ptr + sizeof(struct wlan_frame_hdr));
 	}
 	akm = wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_KEY_MGMT);
 	if (QDF_HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FT_SAE) ||
@@ -1558,15 +1539,15 @@ static void cm_process_connect_complete(struct wlan_objmgr_psoc *psoc,
 	cm_csr_set_joined(vdev_id);
 	cm_csr_send_set_ie(vdev);
 
-	ucast_cipher = wlan_crypto_get_param(vdev,
-					     WLAN_CRYPTO_PARAM_UCAST_CIPHER);
+	ucast_cipher =
+		wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_UCAST_CIPHER);
 	if (!rsp->is_wps_connection &&
 	    (is_fils_connection(rsp) || !ucast_cipher ||
-	    QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_NONE) ==
-			  ucast_cipher ||
-	    QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP_40) ||
-	    QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP_104) ||
-	    QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP))) {
+	     QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_NONE) ==
+		     ucast_cipher ||
+	     QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP_40) ||
+	     QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP_104) ||
+	     QDF_HAS_PARAM(ucast_cipher, WLAN_CRYPTO_CIPHER_WEP))) {
 		cm_csr_set_ss_none(vdev_id);
 		if (wlan_vdev_mlme_is_mlo_vdev(vdev))
 			mlo_enable_rso(pdev, vdev, rsp);
@@ -1574,19 +1555,15 @@ static void cm_process_connect_complete(struct wlan_objmgr_psoc *psoc,
 			cm_roam_start_init_on_connect(pdev, vdev_id);
 	} else {
 		if (rsp->is_wps_connection)
-			key_interval =
-				WAIT_FOR_WPS_KEY_TIMEOUT_PERIOD;
+			key_interval = WAIT_FOR_WPS_KEY_TIMEOUT_PERIOD;
 		else
-			key_interval =
-				WAIT_FOR_KEY_TIMEOUT_PERIOD;
+			key_interval = WAIT_FOR_KEY_TIMEOUT_PERIOD;
 		cm_update_wait_for_key_timer(vdev, vdev_id, key_interval);
 	}
-
 }
 
 #ifdef WLAN_FEATURE_11BE_MLO
-static QDF_STATUS
-cm_update_tid_mapping(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS cm_update_tid_mapping(struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_t2lm_context *t2lm_ctx;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -1612,14 +1589,12 @@ cm_update_tid_mapping(struct wlan_objmgr_vdev *vdev)
 	return status;
 }
 #else
-static inline QDF_STATUS
-cm_update_tid_mapping(struct wlan_objmgr_vdev *vdev)
+static inline QDF_STATUS cm_update_tid_mapping(struct wlan_objmgr_vdev *vdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
 #endif
-static void
-cm_install_link_vdev_keys(struct wlan_objmgr_vdev *vdev)
+static void cm_install_link_vdev_keys(struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_objmgr_peer *peer;
 	struct wlan_crypto_key *crypto_key;
@@ -1636,8 +1611,7 @@ cm_install_link_vdev_keys(struct wlan_objmgr_vdev *vdev)
 
 	vdev_id = wlan_vdev_get_id(vdev);
 	op_mode = wlan_vdev_mlme_get_opmode(vdev);
-	if (op_mode != QDF_STA_MODE ||
-	    !wlan_vdev_mlme_is_mlo_link_vdev(vdev))
+	if (op_mode != QDF_STA_MODE || !wlan_vdev_mlme_is_mlo_link_vdev(vdev))
 		return;
 
 	peer = wlan_objmgr_vdev_try_get_bsspeer(vdev, WLAN_MLME_CM_ID);
@@ -1651,9 +1625,11 @@ cm_install_link_vdev_keys(struct wlan_objmgr_vdev *vdev)
 		if (!crypto_key)
 			continue;
 
-		pairwise = crypto_key->key_type ? WLAN_CRYPTO_KEY_TYPE_UNICAST : WLAN_CRYPTO_KEY_TYPE_GROUP;
-		mlo_debug("MLO:send keys for vdev_id %d, key_idx %d, pairwise %d",
-			  vdev_id, i, pairwise);
+		pairwise = crypto_key->key_type ? WLAN_CRYPTO_KEY_TYPE_UNICAST :
+						  WLAN_CRYPTO_KEY_TYPE_GROUP;
+		mlo_debug(
+			"MLO:send keys for vdev_id %d, key_idx %d, pairwise %d",
+			vdev_id, i, pairwise);
 		mlme_cm_osif_send_keys(vdev, i, pairwise,
 				       crypto_key->cipher_type);
 	}
@@ -1692,9 +1668,9 @@ cm_connect_complete_ind(struct wlan_objmgr_vdev *vdev,
 
 	cm_csr_connect_done_ind(vdev, rsp);
 
-	cm_connect_info(vdev, QDF_IS_STATUS_SUCCESS(rsp->connect_status) ?
-			true : false, &rsp->bssid, &rsp->ssid,
-			rsp->freq);
+	cm_connect_info(
+		vdev, QDF_IS_STATUS_SUCCESS(rsp->connect_status) ? true : false,
+		&rsp->bssid, &rsp->ssid, rsp->freq);
 
 	if (QDF_IS_STATUS_SUCCESS(rsp->connect_status)) {
 		if (rsp->cm_id & CM_ID_LSWITCH_BIT)
@@ -1705,18 +1681,16 @@ cm_connect_complete_ind(struct wlan_objmgr_vdev *vdev,
 		if (policy_mgr_ml_link_vdev_need_to_be_disabled(psoc, vdev,
 								false))
 			policy_mgr_move_vdev_from_connection_to_disabled_tbl(
-								psoc, vdev_id);
+				psoc, vdev_id);
 		else
 			policy_mgr_incr_active_session(psoc, op_mode, vdev_id);
 		ml_nlink_conn_change_notify(
-			psoc, vdev_id,
-			ml_nlink_connect_completion_evt, NULL);
+			psoc, vdev_id, ml_nlink_connect_completion_evt, NULL);
 		cm_process_connect_complete(psoc, pdev, vdev, rsp);
 		cm_install_link_vdev_keys(vdev);
-		wlan_tdls_notify_sta_connect(vdev_id,
-					     mlme_get_tdls_chan_switch_prohibited(vdev),
-					     mlme_get_tdls_prohibited(vdev),
-					     vdev);
+		wlan_tdls_notify_sta_connect(
+			vdev_id, mlme_get_tdls_chan_switch_prohibited(vdev),
+			mlme_get_tdls_prohibited(vdev), vdev);
 		wlan_p2p_status_connect(vdev);
 		cm_update_tid_mapping(vdev);
 		cm_update_associated_ch_info(vdev, true);
@@ -1724,9 +1698,8 @@ cm_connect_complete_ind(struct wlan_objmgr_vdev *vdev,
 
 	mlo_roam_connect_complete(vdev);
 
-	if (op_mode == QDF_STA_MODE &&
-		(wlan_vdev_mlme_is_mlo_link_vdev(vdev) ||
-	    !wlan_vdev_mlme_is_mlo_vdev(vdev)))
+	if (op_mode == QDF_STA_MODE && (wlan_vdev_mlme_is_mlo_link_vdev(vdev) ||
+					!wlan_vdev_mlme_is_mlo_vdev(vdev)))
 		wlan_cm_roam_state_change(pdev, vdev_id, WLAN_ROAM_INIT,
 					  REASON_CONNECT);
 
@@ -1743,7 +1716,8 @@ static void cm_free_tspec_ie(struct cm_vdev_join_rsp *rsp)
 
 #else
 static void cm_free_tspec_ie(struct cm_vdev_join_rsp *rsp)
-{}
+{
+}
 #endif
 
 void wlan_cm_free_connect_rsp(struct cm_vdev_join_rsp *rsp)
@@ -1801,8 +1775,7 @@ bool cm_is_vdevid_active(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
 	return active;
 }
 
-static
-QDF_STATUS cm_handle_hw_mode_change_resp_cb(struct scheduler_msg *msg)
+static QDF_STATUS cm_handle_hw_mode_change_resp_cb(struct scheduler_msg *msg)
 {
 	struct cm_vdev_hw_mode_rsp *rsp;
 
@@ -1820,11 +1793,11 @@ QDF_STATUS cm_handle_hw_mode_change_resp_cb(struct scheduler_msg *msg)
 
 QDF_STATUS
 wlan_cm_handle_hw_mode_change_resp(struct wlan_objmgr_pdev *pdev,
-				   uint8_t vdev_id,
-				   wlan_cm_id cm_id, QDF_STATUS status)
+				   uint8_t vdev_id, wlan_cm_id cm_id,
+				   QDF_STATUS status)
 {
 	struct cm_vdev_hw_mode_rsp *rsp;
-	struct scheduler_msg rsp_msg = {0};
+	struct scheduler_msg rsp_msg = { 0 };
 	QDF_STATUS qdf_status;
 
 	rsp = qdf_mem_malloc(sizeof(*rsp));

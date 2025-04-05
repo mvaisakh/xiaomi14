@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -153,10 +154,8 @@ tgt_pkt_capture_send_beacon_interval(struct wlan_objmgr_vdev *vdev,
 	if (!tx_ops->pkt_capture_send_beacon_interval)
 		return status;
 
-	status = tx_ops->pkt_capture_send_beacon_interval
-						(psoc,
-						 wlan_vdev_get_id(vdev),
-						 nth_value);
+	status = tx_ops->pkt_capture_send_beacon_interval(
+		psoc, wlan_vdev_get_id(vdev), nth_value);
 	if (QDF_IS_STATUS_ERROR(status))
 		pkt_capture_err("Unable to send beacon interval to fw");
 

@@ -20,26 +20,25 @@
 #define ATH_MODULE_NAME hif
 #include "a_debug.h"
 
-#include <qdf_types.h>
-#include <qdf_status.h>
-#include <qdf_timer.h>
-#include <qdf_time.h>
-#include <qdf_lock.h>
-#include <qdf_mem.h>
-#include <qdf_util.h>
-#include <qdf_defer.h>
-#include <qdf_atomic.h>
-#include <qdf_nbuf.h>
-#include <athdefs.h>
-#include <qdf_net_types.h>
-#include <a_types.h>
-#include <athdefs.h>
-#include <a_osapi.h>
-#include <hif.h>
-#include <htc_services.h>
 #include "hif_sdio_internal.h"
 #include "if_sdio.h"
 #include "regtable_sdio.h"
+#include <a_osapi.h>
+#include <a_types.h>
+#include <athdefs.h>
+#include <hif.h>
+#include <htc_services.h>
+#include <qdf_atomic.h>
+#include <qdf_defer.h>
+#include <qdf_lock.h>
+#include <qdf_mem.h>
+#include <qdf_nbuf.h>
+#include <qdf_net_types.h>
+#include <qdf_status.h>
+#include <qdf_time.h>
+#include <qdf_timer.h>
+#include <qdf_types.h>
+#include <qdf_util.h>
 
 /**
  * hif_dev_alloc_rx_buffer() - allocate rx buffer.
@@ -61,12 +60,10 @@ HTC_PACKET *hif_dev_alloc_rx_buffer(struct hif_sdio_device *pdev)
 		hif_err_rl("Allocate netbuf failed");
 		return NULL;
 	}
-	packet = (HTC_PACKET *) qdf_nbuf_data(netbuf);
+	packet = (HTC_PACKET *)qdf_nbuf_data(netbuf);
 	qdf_nbuf_reserve(netbuf, headsize);
 
-	SET_HTC_PACKET_INFO_RX_REFILL(packet,
-				      pdev,
-				      qdf_nbuf_data(netbuf),
+	SET_HTC_PACKET_INFO_RX_REFILL(packet, pdev, qdf_nbuf_data(netbuf),
 				      bufsize, ENDPOINT_0);
 	SET_HTC_PACKET_NET_BUF_CONTEXT(packet, netbuf);
 	return packet;
@@ -82,9 +79,9 @@ HTC_PACKET *hif_dev_alloc_rx_buffer(struct hif_sdio_device *pdev)
  * Return: int
  */
 struct hif_sdio_device *hif_dev_create(struct hif_sdio_dev *hif_device,
-			struct hif_msg_callbacks *callbacks, void *target)
+				       struct hif_msg_callbacks *callbacks,
+				       void *target)
 {
-
 	QDF_STATUS status;
 	struct hif_sdio_device *pdev;
 
@@ -102,8 +99,8 @@ struct hif_sdio_device *hif_dev_create(struct hif_sdio_dev *hif_device,
 	pdev->HIFDevice = hif_device;
 	pdev->pTarget = target;
 	status = hif_configure_device(NULL, hif_device,
-				      HIF_DEVICE_SET_HTC_CONTEXT,
-				      (void *)pdev, sizeof(pdev));
+				      HIF_DEVICE_SET_HTC_CONTEXT, (void *)pdev,
+				      sizeof(pdev));
 	if (status != QDF_STATUS_SUCCESS)
 		hif_err("set context failed");
 
@@ -125,8 +122,8 @@ void hif_dev_destroy(struct hif_sdio_device *pdev)
 	QDF_STATUS status;
 
 	status = hif_configure_device(NULL, pdev->HIFDevice,
-				      HIF_DEVICE_SET_HTC_CONTEXT,
-				      (void *)NULL, 0);
+				      HIF_DEVICE_SET_HTC_CONTEXT, (void *)NULL,
+				      0);
 	if (status != QDF_STATUS_SUCCESS)
 		hif_err("set context failed");
 
@@ -191,12 +188,12 @@ QDF_STATUS hif_dev_enable_interrupts(struct hif_sdio_device *pdev)
 	HIF_ENTER();
 
 	/* for good measure, make sure interrupt are disabled
-	 * before unmasking at the HIF layer.
-	 * The rationale here is that between device insertion
-	 * (where we clear the interrupts the first time)
-	 * and when HTC is finally ready to handle interrupts,
-	 * other software can perform target "soft" resets.
-	 */
+   * before unmasking at the HIF layer.
+   * The rationale here is that between device insertion
+   * (where we clear the interrupts the first time)
+   * and when HTC is finally ready to handle interrupts,
+   * other software can perform target "soft" resets.
+   */
 	status = hif_dev_disable_interrupts(pdev);
 
 	/* Unmask the host controller interrupts */
@@ -238,15 +235,14 @@ QDF_STATUS hif_dev_setup(struct hif_sdio_device *pdev)
 	pdev->HifIRQProcessingMode = HIF_DEVICE_IRQ_ASYNC_SYNC;
 
 	/* see if the HIF layer overrides this assumption */
-	hif_configure_device(NULL, hif_device,
-			     HIF_DEVICE_GET_IRQ_PROC_MODE,
+	hif_configure_device(NULL, hif_device, HIF_DEVICE_GET_IRQ_PROC_MODE,
 			     &pdev->HifIRQProcessingMode,
 			     sizeof(pdev->HifIRQProcessingMode));
 
 	switch (pdev->HifIRQProcessingMode) {
 	case HIF_DEVICE_IRQ_SYNC_ONLY:
 		AR_DEBUG_PRINTF(ATH_DEBUG_WARN,
-			("HIF Interrupt processing is SYNC ONLY\n"));
+				("HIF Interrupt processing is SYNC ONLY\n"));
 		/* see if HIF layer wants HTC to yield */
 		hif_configure_device(NULL, hif_device,
 				     HIF_DEVICE_GET_IRQ_YIELD_PARAMS,
@@ -254,15 +250,17 @@ QDF_STATUS hif_dev_setup(struct hif_sdio_device *pdev)
 				     sizeof(pdev->HifIRQYieldParams));
 
 		if (pdev->HifIRQYieldParams.recv_packet_yield_count > 0) {
-			AR_DEBUG_PRINTF(ATH_DEBUG_WARN,
+			AR_DEBUG_PRINTF(
+				ATH_DEBUG_WARN,
 				("HIF req of DSR yield per %d RECV packets\n",
-				 pdev->HifIRQYieldParams.
-				 recv_packet_yield_count));
+				 pdev->HifIRQYieldParams
+					 .recv_packet_yield_count));
 			pdev->DSRCanYield = true;
 		}
 		break;
 	case HIF_DEVICE_IRQ_ASYNC_SYNC:
-		AR_DEBUG_PRINTF(ATH_DEBUG_TRC,
+		AR_DEBUG_PRINTF(
+			ATH_DEBUG_TRC,
 			("HIF Interrupt processing is ASYNC and SYNC\n"));
 		break;
 	default:
@@ -273,8 +271,8 @@ QDF_STATUS hif_dev_setup(struct hif_sdio_device *pdev)
 	pdev->HifMaskUmaskRecvEvent = NULL;
 
 	/* see if the HIF layer implements the mask/unmask recv
-	 * events function
-	 */
+   * events function
+   */
 	hif_configure_device(NULL, hif_device,
 			     HIF_DEVICE_GET_RECV_EVENT_MASK_UNMASK_FUNC,
 			     &pdev->HifMaskUmaskRecvEvent,

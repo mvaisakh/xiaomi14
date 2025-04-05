@@ -16,13 +16,13 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+#include <init_deinit_lmac.h>
 #include <target_if_spatial_reuse.h>
+#include <target_if_vdev_mgr_tx_ops.h>
 #include <wlan_lmac_if_def.h>
+#include <wlan_vdev_mlme_api.h>
 #include <wmi_unified_api.h>
 #include <wmi_unified_vdev_api.h>
-#include <target_if_vdev_mgr_tx_ops.h>
-#include <init_deinit_lmac.h>
-#include <wlan_vdev_mlme_api.h>
 
 static QDF_STATUS spatial_reuse_send_cfg(struct wlan_objmgr_vdev *vdev,
 					 uint8_t sr_ctrl,
@@ -44,11 +44,9 @@ static QDF_STATUS spatial_reuse_send_cfg(struct wlan_objmgr_vdev *vdev,
 		QDF_SET_BITS(pparam.param_value, NON_SRG_SPR_ENABLE_POS,
 			     NON_SRG_SPR_ENABLE_SIZE, NON_SRG_SPR_ENABLE);
 		QDF_SET_BITS(pparam.param_value, SR_PARAM_VAL_DBM_POS,
-			     NON_SRG_PARAM_VAL_DBM_SIZE,
-			     SR_PARAM_VAL_DBM_UNIT);
+			     NON_SRG_PARAM_VAL_DBM_SIZE, SR_PARAM_VAL_DBM_UNIT);
 		QDF_SET_BITS(pparam.param_value, NON_SRG_MAX_PD_OFFSET_POS,
-			     NON_SRG_MAX_PD_OFFSET_SIZE,
-			     non_srg_max_pd_offset);
+			     NON_SRG_MAX_PD_OFFSET_SIZE, non_srg_max_pd_offset);
 	}
 
 	return wmi_unified_pdev_param_send(wmi_handle, &pparam,
@@ -92,12 +90,12 @@ spatial_reuse_send_bss_color_bit_map(struct wlan_objmgr_vdev *vdev,
 	wlan_vdev_obj_lock(vdev);
 	wlan_vdev_mlme_get_srg_bss_color_bit_map(vdev, &srg_color_bit_map);
 	wlan_vdev_obj_unlock(vdev);
-	bit_map_0 = (uint32_t) srg_color_bit_map;
-	bit_map_1 = (uint32_t) (srg_color_bit_map >> 32);
+	bit_map_0 = (uint32_t)srg_color_bit_map;
+	bit_map_1 = (uint32_t)(srg_color_bit_map >> 32);
 
 	status = wmi_unified_send_self_srg_bss_color_bitmap_set_cmd(
-					wmi_handle, bit_map_0, bit_map_1,
-					pdev->pdev_objmgr.wlan_pdev_id);
+		wmi_handle, bit_map_0, bit_map_1,
+		pdev->pdev_objmgr.wlan_pdev_id);
 	return status;
 }
 
@@ -119,12 +117,12 @@ spatial_reuse_send_partial_bssid_bit_map(struct wlan_objmgr_vdev *vdev,
 	wlan_vdev_mlme_get_srg_partial_bssid_bit_map(vdev,
 						     &partial_bssid_bit_map);
 	wlan_vdev_obj_unlock(vdev);
-	bit_map_0 = (uint32_t) partial_bssid_bit_map;
-	bit_map_1 = (uint32_t) (partial_bssid_bit_map >> 32);
+	bit_map_0 = (uint32_t)partial_bssid_bit_map;
+	bit_map_1 = (uint32_t)(partial_bssid_bit_map >> 32);
 
 	status = wmi_unified_send_self_srg_partial_bssid_bitmap_set_cmd(
-					wmi_handle, bit_map_0, bit_map_1,
-					pdev->pdev_objmgr.wlan_pdev_id);
+		wmi_handle, bit_map_0, bit_map_1,
+		pdev->pdev_objmgr.wlan_pdev_id);
 	return status;
 }
 #else
@@ -143,10 +141,8 @@ spatial_reuse_send_partial_bssid_bit_map(struct wlan_objmgr_vdev *vdev,
 }
 #endif
 
-static QDF_STATUS
-spatial_reuse_send_pd_threshold(struct wlan_objmgr_pdev *pdev,
-				uint8_t vdev_id,
-				uint32_t val)
+static QDF_STATUS spatial_reuse_send_pd_threshold(struct wlan_objmgr_pdev *pdev,
+						  uint8_t vdev_id, uint32_t val)
 {
 	struct vdev_set_params vdev_param;
 	struct wmi_unified *wmi_handle;
@@ -156,9 +152,8 @@ spatial_reuse_send_pd_threshold(struct wlan_objmgr_pdev *pdev,
 	if (!wmi_handle)
 		return QDF_STATUS_E_INVAL;
 
-	sr_supported =
-		wmi_service_enabled(wmi_handle,
-				    wmi_service_srg_srp_spatial_reuse_support);
+	sr_supported = wmi_service_enabled(
+		wmi_handle, wmi_service_srg_srp_spatial_reuse_support);
 
 	if (sr_supported) {
 		qdf_mem_zero(&vdev_param, sizeof(vdev_param));
@@ -214,8 +209,7 @@ spatial_reuse_set_sr_enable_disable(struct wlan_objmgr_vdev *vdev,
 			wlan_vdev_obj_unlock(vdev);
 		}
 
-		mlme_debug("srp param val: %u, enable: %d",
-			   val, is_sr_enable);
+		mlme_debug("srp param val: %u, enable: %d", val, is_sr_enable);
 		if (is_sr_enable) {
 			status = spatial_reuse_send_bss_color_bit_map(vdev,
 								      pdev);
@@ -226,9 +220,8 @@ spatial_reuse_set_sr_enable_disable(struct wlan_objmgr_vdev *vdev,
 			if (status != QDF_STATUS_SUCCESS)
 				return status;
 		}
-		status =
-		spatial_reuse_send_pd_threshold(pdev, vdev->vdev_objmgr.vdev_id,
-						val);
+		status = spatial_reuse_send_pd_threshold(
+			pdev, vdev->vdev_objmgr.vdev_id, val);
 		if (status != QDF_STATUS_SUCCESS)
 			return status;
 	} else {
@@ -242,9 +235,9 @@ void target_if_spatial_reuse_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	tx_ops->spatial_reuse_tx_ops.send_cfg = spatial_reuse_send_cfg;
 	tx_ops->spatial_reuse_tx_ops.send_sr_prohibit_cfg =
-					spatial_reuse_send_sr_prohibit_cfg;
+		spatial_reuse_send_sr_prohibit_cfg;
 	tx_ops->spatial_reuse_tx_ops.target_if_set_sr_enable_disable =
-					spatial_reuse_set_sr_enable_disable;
+		spatial_reuse_set_sr_enable_disable;
 	tx_ops->spatial_reuse_tx_ops.target_if_sr_update =
-					spatial_reuse_send_pd_threshold;
+		spatial_reuse_send_pd_threshold;
 }

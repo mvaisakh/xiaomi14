@@ -4,13 +4,13 @@
  * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include <asoc/msm-cdc-supply.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/of_irq.h>
 #include <linux/of_device.h>
-#include <linux/slab.h>
+#include <linux/of_irq.h>
 #include <linux/regulator/consumer.h>
-#include <asoc/msm-cdc-supply.h>
+#include <linux/slab.h>
 #include <sound/soc.h>
 
 #define CODEC_DT_MAX_PROP_SIZE 40
@@ -62,7 +62,8 @@ static int msm_cdc_dt_parse_vreg_info(struct device *dev,
 	cdc_vreg->optimum_uA = prop_val;
 
 	/* Parse supply - LPM or NOM mode(default NOM) */
-	snprintf(prop_name, CODEC_DT_MAX_PROP_SIZE, "qcom,%s-lpm-supported", name);
+	snprintf(prop_name, CODEC_DT_MAX_PROP_SIZE, "qcom,%s-lpm-supported",
+		 name);
 	rc = of_property_read_u32(dev->of_node, prop_name, &prop_val);
 	if (rc) {
 		dev_dbg(dev, "%s: Looking up %s property in node %s failed",
@@ -74,7 +75,8 @@ static int msm_cdc_dt_parse_vreg_info(struct device *dev,
 	}
 
 	/* Parse supply - retention mode */
-	snprintf(prop_name, CODEC_DT_MAX_PROP_SIZE, "qcom,%s-rem-supported", name);
+	snprintf(prop_name, CODEC_DT_MAX_PROP_SIZE, "qcom,%s-rem-supported",
+		 name);
 	rc = of_property_read_u32(dev->of_node, prop_name, &prop_val);
 	if (rc) {
 		dev_dbg(dev, "%s: Looking up %s property in node %s failed",
@@ -85,7 +87,8 @@ static int msm_cdc_dt_parse_vreg_info(struct device *dev,
 		cdc_vreg->rem_supported = prop_val;
 	}
 
-	dev_info(dev, "%s: %s: vol=[%d %d]uV, curr=[%d]uA, ond %d lpm %d rem %d\n",
+	dev_info(dev,
+		 "%s: %s: vol=[%d %d]uV, curr=[%d]uA, ond %d lpm %d rem %d\n",
 		 __func__, cdc_vreg->name, cdc_vreg->min_uV, cdc_vreg->max_uV,
 		 cdc_vreg->optimum_uA, cdc_vreg->ondemand,
 		 cdc_vreg->lpm_supported, cdc_vreg->rem_supported);
@@ -137,7 +140,9 @@ static int msm_cdc_check_supply_param(struct device *dev,
 	}
 
 	if (!cdc_vreg || (num_supplies <= 0)) {
-		dev_err_ratelimited(dev, "%s: supply check failed: vreg: %pK, num_supplies: %d\n",
+		dev_err_ratelimited(
+			dev,
+			"%s: supply check failed: vreg: %pK, num_supplies: %d\n",
 			__func__, cdc_vreg, num_supplies);
 		return -EINVAL;
 	}
@@ -160,15 +165,15 @@ static int msm_cdc_check_supply_param(struct device *dev,
 bool msm_cdc_is_ondemand_supply(struct device *dev,
 				struct regulator_bulk_data *supplies,
 				struct cdc_regulator *cdc_vreg,
-				int num_supplies,
-				char *supply_name)
+				int num_supplies, char *supply_name)
 {
 	bool rc = false;
 	int ret, i;
 
 	if ((!supply_name) || (!supplies)) {
-		pr_err_ratelimited("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		pr_err_ratelimited(
+			"%s: either dev or supplies or cdc_vreg is NULL\n",
+			__func__);
 		return rc;
 	}
 	/* input parameter validation */
@@ -178,7 +183,7 @@ bool msm_cdc_is_ondemand_supply(struct device *dev,
 
 	for (i = 0; i < num_supplies; i++) {
 		if (cdc_vreg[i].ondemand &&
-			!strcmp(cdc_vreg[i].name, supply_name))
+		    !strcmp(cdc_vreg[i].name, supply_name))
 			return true;
 	}
 
@@ -202,17 +207,17 @@ EXPORT_SYMBOL(msm_cdc_is_ondemand_supply);
  *
  * Return true/false
  */
-bool msm_cdc_supply_supports_retention_mode(struct device *dev,
-				struct regulator_bulk_data *supplies,
-				struct cdc_regulator *cdc_vreg,
-				int num_supplies, char *supply_name)
+bool msm_cdc_supply_supports_retention_mode(
+	struct device *dev, struct regulator_bulk_data *supplies,
+	struct cdc_regulator *cdc_vreg, int num_supplies, char *supply_name)
 {
 	bool rc = false;
 	int ret, i;
 
 	if ((!supply_name) || (!supplies)) {
-		pr_err_ratelimited("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		pr_err_ratelimited(
+			"%s: either dev or supplies or cdc_vreg is NULL\n",
+			__func__);
 		return rc;
 	}
 	/* input parameter validation */
@@ -222,7 +227,7 @@ bool msm_cdc_supply_supports_retention_mode(struct device *dev,
 
 	for (i = 0; i < num_supplies; i++) {
 		if (cdc_vreg[i].rem_supported &&
-			!strcmp(cdc_vreg[i].name, supply_name))
+		    !strcmp(cdc_vreg[i].name, supply_name))
 			return true;
 	}
 
@@ -244,17 +249,17 @@ EXPORT_SYMBOL(msm_cdc_supply_supports_retention_mode);
  * Return true/false
  */
 bool msm_cdc_check_supply_vote(struct device *dev,
-				struct regulator_bulk_data *supplies,
-				struct cdc_regulator *cdc_vreg,
-				int num_supplies,
-				char *supply_name)
+			       struct regulator_bulk_data *supplies,
+			       struct cdc_regulator *cdc_vreg, int num_supplies,
+			       char *supply_name)
 {
 	bool rc = false;
 	int ret, i;
 
 	if ((!supply_name) || (!supplies)) {
-		pr_err_ratelimited("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		pr_err_ratelimited(
+			"%s: either dev or supplies or cdc_vreg is NULL\n",
+			__func__);
 		return rc;
 	}
 
@@ -288,16 +293,17 @@ EXPORT_SYMBOL(msm_cdc_check_supply_vote);
  * Return error code if unable to set voltage
  */
 int msm_cdc_set_supply_min_voltage(struct device *dev,
-				    struct regulator_bulk_data *supplies,
-				    struct cdc_regulator *cdc_vreg,
-				    int num_supplies, char *supply_name,
-				    int vval_min, bool override_min_vol)
+				   struct regulator_bulk_data *supplies,
+				   struct cdc_regulator *cdc_vreg,
+				   int num_supplies, char *supply_name,
+				   int vval_min, bool override_min_vol)
 {
 	int rc = 0, i;
 
 	if ((!supply_name) || (!supplies)) {
-		pr_err_ratelimited("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		pr_err_ratelimited(
+			"%s: either dev or supplies or cdc_vreg is NULL\n",
+			__func__);
 		return -EINVAL;
 	}
 	/* input parameter validation */
@@ -308,10 +314,12 @@ int msm_cdc_set_supply_min_voltage(struct device *dev,
 		if (!strcmp(cdc_vreg[i].name, supply_name)) {
 			if (override_min_vol)
 				regulator_set_voltage(supplies[i].consumer,
-					vval_min, cdc_vreg[i].max_uV);
+						      vval_min,
+						      cdc_vreg[i].max_uV);
 			else
 				regulator_set_voltage(supplies[i].consumer,
-				    cdc_vreg[i].min_uV, cdc_vreg[i].max_uV);
+						      cdc_vreg[i].min_uV,
+						      cdc_vreg[i].max_uV);
 			break;
 		}
 	}
@@ -335,14 +343,14 @@ EXPORT_SYMBOL(msm_cdc_set_supply_min_voltage);
 int msm_cdc_disable_ondemand_supply(struct device *dev,
 				    struct regulator_bulk_data *supplies,
 				    struct cdc_regulator *cdc_vreg,
-				    int num_supplies,
-				    char *supply_name)
+				    int num_supplies, char *supply_name)
 {
 	int rc, i;
 
 	if ((!supply_name) || (!supplies)) {
-		pr_err_ratelimited("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		pr_err_ratelimited(
+			"%s: either dev or supplies or cdc_vreg is NULL\n",
+			__func__);
 		return -EINVAL;
 	}
 	/* input parameter validation */
@@ -352,10 +360,11 @@ int msm_cdc_disable_ondemand_supply(struct device *dev,
 
 	for (i = 0; i < num_supplies; i++) {
 		if (cdc_vreg[i].ondemand &&
-			!strcmp(cdc_vreg[i].name, supply_name)) {
+		    !strcmp(cdc_vreg[i].name, supply_name)) {
 			rc = regulator_disable(supplies[i].consumer);
 			if (rc)
-				dev_err_ratelimited(dev,
+				dev_err_ratelimited(
+					dev,
 					"%s: failed to disable supply %s, err:%d\n",
 					__func__, supplies[i].supply, rc);
 			cdc_vreg[i].vote = false;
@@ -364,7 +373,7 @@ int msm_cdc_disable_ondemand_supply(struct device *dev,
 	}
 	if (i == num_supplies) {
 		dev_err_ratelimited(dev, "%s: not able to find supply %s\n",
-			__func__, supply_name);
+				    __func__, supply_name);
 		rc = -EINVAL;
 	}
 
@@ -387,14 +396,14 @@ EXPORT_SYMBOL(msm_cdc_disable_ondemand_supply);
 int msm_cdc_enable_ondemand_supply(struct device *dev,
 				   struct regulator_bulk_data *supplies,
 				   struct cdc_regulator *cdc_vreg,
-				   int num_supplies,
-				   char *supply_name)
+				   int num_supplies, char *supply_name)
 {
 	int rc, i;
 
 	if ((!supply_name) || (!supplies)) {
-		pr_err_ratelimited("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		pr_err_ratelimited(
+			"%s: either dev or supplies or cdc_vreg is NULL\n",
+			__func__);
 		return -EINVAL;
 	}
 	/* input parameter validation */
@@ -404,10 +413,12 @@ int msm_cdc_enable_ondemand_supply(struct device *dev,
 
 	for (i = 0; i < num_supplies; i++) {
 		if (cdc_vreg[i].ondemand &&
-			!strcmp(cdc_vreg[i].name, supply_name)) {
+		    !strcmp(cdc_vreg[i].name, supply_name)) {
 			rc = regulator_enable(supplies[i].consumer);
 			if (rc)
-				dev_err_ratelimited(dev, "%s: failed to enable supply %s, rc: %d\n",
+				dev_err_ratelimited(
+					dev,
+					"%s: failed to enable supply %s, rc: %d\n",
 					__func__, supplies[i].supply, rc);
 			cdc_vreg[i].vote = true;
 			break;
@@ -415,7 +426,7 @@ int msm_cdc_enable_ondemand_supply(struct device *dev,
 	}
 	if (i == num_supplies) {
 		dev_err_ratelimited(dev, "%s: not able to find supply %s\n",
-			__func__, supply_name);
+				    __func__, supply_name);
 		rc = -EINVAL;
 	}
 
@@ -437,16 +448,14 @@ EXPORT_SYMBOL(msm_cdc_enable_ondemand_supply);
  * Return error code if set current fail
  */
 int msm_cdc_set_supplies_lpm_mode(struct device *dev,
-				struct regulator_bulk_data *supplies,
-				struct cdc_regulator *cdc_vreg,
-				int num_supplies,
-				bool flag)
+				  struct regulator_bulk_data *supplies,
+				  struct cdc_regulator *cdc_vreg,
+				  int num_supplies, bool flag)
 {
 	int rc = 0, i;
 
 	if (!supplies) {
-		pr_err_ratelimited("%s: supplies is NULL\n",
-				__func__);
+		pr_err_ratelimited("%s: supplies is NULL\n", __func__);
 		return -EINVAL;
 	}
 	/* input parameter validation */
@@ -456,17 +465,18 @@ int msm_cdc_set_supplies_lpm_mode(struct device *dev,
 
 	for (i = 0; i < num_supplies; i++) {
 		if (cdc_vreg[i].lpm_supported) {
-			rc = regulator_set_load(
-				supplies[i].consumer,
-				flag ? 0 : cdc_vreg[i].optimum_uA);
+			rc = regulator_set_load(supplies[i].consumer,
+						flag ? 0 :
+						       cdc_vreg[i].optimum_uA);
 			if (rc)
-				dev_err_ratelimited(dev,
+				dev_err_ratelimited(
+					dev,
 					"%s: failed to set supply %s to %s, err:%d\n",
 					__func__, supplies[i].supply,
-					flag ? "LPM" : "NOM",
-					rc);
+					flag ? "LPM" : "NOM", rc);
 			else
-				dev_dbg(dev, "%s: regulator %s load set to %s\n",
+				dev_dbg(dev,
+					"%s: regulator %s load set to %s\n",
 					__func__, supplies[i].supply,
 					flag ? "LPM" : "NOM");
 		}
@@ -496,7 +506,7 @@ int msm_cdc_disable_static_supplies(struct device *dev,
 
 	if ((!dev) || (!supplies) || (!cdc_vreg)) {
 		pr_err("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		       __func__);
 		return -EINVAL;
 	}
 	/* input parameter validation */
@@ -510,12 +520,13 @@ int msm_cdc_disable_static_supplies(struct device *dev,
 
 		rc = regulator_disable(supplies[i].consumer);
 		if (rc)
-			dev_err(dev, "%s: failed to disable supply %s, err:%d\n",
+			dev_err(dev,
+				"%s: failed to disable supply %s, err:%d\n",
 				__func__, supplies[i].supply, rc);
 		else {
 			cdc_vreg[i].vote = false;
-			dev_dbg(dev, "%s: disabled regulator %s\n",
-				__func__, supplies[i].supply);
+			dev_dbg(dev, "%s: disabled regulator %s\n", __func__,
+				supplies[i].supply);
 		}
 	}
 
@@ -536,15 +547,14 @@ EXPORT_SYMBOL(msm_cdc_disable_static_supplies);
  */
 int msm_cdc_release_supplies(struct device *dev,
 			     struct regulator_bulk_data *supplies,
-			     struct cdc_regulator *cdc_vreg,
-			     int num_supplies)
+			     struct cdc_regulator *cdc_vreg, int num_supplies)
 {
 	int rc = 0;
 	int i;
 
 	if ((!dev) || (!supplies) || (!cdc_vreg)) {
 		pr_err("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		       __func__);
 		return -EINVAL;
 	}
 	/* input parameter validation */
@@ -552,8 +562,7 @@ int msm_cdc_release_supplies(struct device *dev,
 	if (rc)
 		return rc;
 
-	msm_cdc_disable_static_supplies(dev, supplies, cdc_vreg,
-					num_supplies);
+	msm_cdc_disable_static_supplies(dev, supplies, cdc_vreg, num_supplies);
 	for (i = 0; i < num_supplies; i++) {
 		if (regulator_count_voltages(supplies[i].consumer) < 0)
 			continue;
@@ -587,7 +596,7 @@ int msm_cdc_enable_static_supplies(struct device *dev,
 
 	if ((!dev) || (!supplies) || (!cdc_vreg)) {
 		pr_err("%s: either dev or supplies or cdc_vreg is NULL\n",
-				__func__);
+		       __func__);
 		return -EINVAL;
 	}
 	/* input parameter validation */
@@ -616,7 +625,8 @@ int msm_cdc_enable_static_supplies(struct device *dev,
 			if (regulator_disable(supplies[i].consumer) == 0)
 				cdc_vreg[i].vote = false;
 			else
-				dev_err(dev, "%s: failed to disable supply %s during unwind\n",
+				dev_err(dev,
+					"%s: failed to disable supply %s during unwind\n",
 					__func__, supplies[i].supply);
 		}
 	}
@@ -638,11 +648,10 @@ EXPORT_SYMBOL(msm_cdc_enable_static_supplies);
  */
 int msm_cdc_init_supplies(struct device *dev,
 			  struct regulator_bulk_data **supplies,
-			  struct cdc_regulator *cdc_vreg,
-			  int num_supplies)
+			  struct cdc_regulator *cdc_vreg, int num_supplies)
 {
-	return msm_cdc_init_supplies_v2(dev, supplies, cdc_vreg,
-					num_supplies, false);
+	return msm_cdc_init_supplies_v2(dev, supplies, cdc_vreg, num_supplies,
+					false);
 }
 EXPORT_SYMBOL(msm_cdc_init_supplies);
 
@@ -660,17 +669,16 @@ EXPORT_SYMBOL(msm_cdc_init_supplies);
  * Return error code if supply init is failed
  */
 int msm_cdc_init_supplies_v2(struct device *dev,
-			  struct regulator_bulk_data **supplies,
-			  struct cdc_regulator *cdc_vreg,
-			  int num_supplies, u32 vote_regulator_on_demand)
+			     struct regulator_bulk_data **supplies,
+			     struct cdc_regulator *cdc_vreg, int num_supplies,
+			     u32 vote_regulator_on_demand)
 {
 	struct regulator_bulk_data *vsup;
 	int rc;
 	int i;
 
 	if (!dev || !cdc_vreg) {
-		pr_err("%s: device pointer or dce_vreg is NULL\n",
-				__func__);
+		pr_err("%s: device pointer or dce_vreg is NULL\n", __func__);
 		return -EINVAL;
 	}
 	/* input parameter validation */
@@ -679,15 +687,13 @@ int msm_cdc_init_supplies_v2(struct device *dev,
 		return rc;
 
 	vsup = devm_kcalloc(dev, num_supplies,
-			    sizeof(struct regulator_bulk_data),
-			    GFP_KERNEL);
+			    sizeof(struct regulator_bulk_data), GFP_KERNEL);
 	if (!vsup)
 		return -ENOMEM;
 
 	for (i = 0; i < num_supplies; i++) {
 		if (!cdc_vreg[i].name) {
-			dev_err(dev, "%s: supply name not defined\n",
-				__func__);
+			dev_err(dev, "%s: supply name not defined\n", __func__);
 			rc = -EINVAL;
 			goto err_supply;
 		}
@@ -696,8 +702,7 @@ int msm_cdc_init_supplies_v2(struct device *dev,
 
 	rc = devm_regulator_bulk_get(dev, num_supplies, vsup);
 	if (rc) {
-		dev_err(dev, "%s: failed to get supplies (%d)\n",
-			__func__, rc);
+		dev_err(dev, "%s: failed to get supplies (%d)\n", __func__, rc);
 		goto err_supply;
 	}
 
@@ -711,18 +716,19 @@ int msm_cdc_init_supplies_v2(struct device *dev,
 
 		cdc_vreg[i].regulator = vsup[i].consumer;
 
-		rc = regulator_set_voltage(vsup[i].consumer,
-					   cdc_vreg[i].min_uV,
+		rc = regulator_set_voltage(vsup[i].consumer, cdc_vreg[i].min_uV,
 					   cdc_vreg[i].max_uV);
 		if (rc) {
-			dev_err(dev, "%s: set regulator voltage failed for %s, err:%d\n",
+			dev_err(dev,
+				"%s: set regulator voltage failed for %s, err:%d\n",
 				__func__, vsup[i].supply, rc);
 			goto err_supply;
 		}
 		rc = regulator_set_load(vsup[i].consumer,
 					cdc_vreg[i].optimum_uA);
 		if (rc < 0) {
-			dev_err(dev, "%s: set regulator optimum mode failed for %s, err:%d\n",
+			dev_err(dev,
+				"%s: set regulator optimum mode failed for %s, err:%d\n",
 				__func__, vsup[i].supply, rc);
 			goto err_supply;
 		}
@@ -767,11 +773,12 @@ int msm_cdc_get_power_supplies(struct device *dev,
 		pr_err_ratelimited("%s: device pointer is NULL\n", __func__);
 		return -EINVAL;
 	}
-	static_sup_cnt = of_property_count_strings(dev->of_node,
-						   static_prop_name);
+	static_sup_cnt =
+		of_property_count_strings(dev->of_node, static_prop_name);
 	if (static_sup_cnt < 0) {
-		dev_err_ratelimited(dev, "%s: Failed to get static supplies(%d)\n",
-			__func__, static_sup_cnt);
+		dev_err_ratelimited(dev,
+				    "%s: Failed to get static supplies(%d)\n",
+				    __func__, static_sup_cnt);
 		rc = static_sup_cnt;
 		goto err_supply_cnt;
 	}
@@ -779,20 +786,19 @@ int msm_cdc_get_power_supplies(struct device *dev,
 	if (ond_sup_cnt < 0)
 		ond_sup_cnt = 0;
 
-	cp_sup_cnt = of_property_count_strings(dev->of_node,
-					       cp_prop_name);
+	cp_sup_cnt = of_property_count_strings(dev->of_node, cp_prop_name);
 	if (cp_sup_cnt < 0)
 		cp_sup_cnt = 0;
 
 	num_supplies = static_sup_cnt + ond_sup_cnt + cp_sup_cnt;
 	if (num_supplies <= 0) {
-		dev_err_ratelimited(dev, "%s: supply count is 0 or negative\n", __func__);
+		dev_err_ratelimited(dev, "%s: supply count is 0 or negative\n",
+				    __func__);
 		rc = -EINVAL;
 		goto err_supply_cnt;
 	}
 
-	cdc_reg = devm_kcalloc(dev, num_supplies,
-			       sizeof(struct cdc_regulator),
+	cdc_reg = devm_kcalloc(dev, num_supplies, sizeof(struct cdc_regulator),
 			       GFP_KERNEL);
 	if (!cdc_reg) {
 		rc = -ENOMEM;
@@ -802,26 +808,27 @@ int msm_cdc_get_power_supplies(struct device *dev,
 	rc = msm_cdc_parse_supplies(dev, cdc_reg, static_prop_name,
 				    static_sup_cnt, false);
 	if (rc) {
-		dev_err_ratelimited(dev, "%s: failed to parse static supplies(%d)\n",
-				__func__, rc);
+		dev_err_ratelimited(dev,
+				    "%s: failed to parse static supplies(%d)\n",
+				    __func__, rc);
 		goto err_sup;
 	}
 
 	rc = msm_cdc_parse_supplies(dev, &cdc_reg[static_sup_cnt],
-				    ond_prop_name, ond_sup_cnt,
-				    true);
+				    ond_prop_name, ond_sup_cnt, true);
 	if (rc) {
-		dev_err_ratelimited(dev, "%s: failed to parse demand supplies(%d)\n",
-				__func__, rc);
+		dev_err_ratelimited(dev,
+				    "%s: failed to parse demand supplies(%d)\n",
+				    __func__, rc);
 		goto err_sup;
 	}
 
-	rc = msm_cdc_parse_supplies(dev,
-				    &cdc_reg[static_sup_cnt + ond_sup_cnt],
+	rc = msm_cdc_parse_supplies(dev, &cdc_reg[static_sup_cnt + ond_sup_cnt],
 				    cp_prop_name, cp_sup_cnt, true);
 	if (rc) {
-		dev_err_ratelimited(dev, "%s: failed to parse cp supplies(%d)\n",
-				__func__, rc);
+		dev_err_ratelimited(dev,
+				    "%s: failed to parse cp supplies(%d)\n",
+				    __func__, rc);
 		goto err_sup;
 	}
 
@@ -888,18 +895,20 @@ int msm_cdc_enable_wcd_supply(struct cdc_wcd_supply *cdc_supply, bool enable)
 
 	if (enable)
 		rc = snd_soc_dapm_force_enable_pin(
-					snd_soc_component_get_dapm(component),
-					cdc_supply->name);
+			snd_soc_component_get_dapm(component),
+			cdc_supply->name);
 	else
 		rc = snd_soc_dapm_disable_pin(
-					snd_soc_component_get_dapm(component),
-					cdc_supply->name);
+			snd_soc_component_get_dapm(component),
+			cdc_supply->name);
 
 	if (!rc)
 		snd_soc_dapm_sync(snd_soc_component_get_dapm(component));
 	else
-		dev_err_ratelimited(component->dev, "%s: micbias %s force %s pin failed\n",
-			__func__, cdc_supply->name, (enable ? "enable" : "disable"));
+		dev_err_ratelimited(component->dev,
+				    "%s: micbias %s force %s pin failed\n",
+				    __func__, cdc_supply->name,
+				    (enable ? "enable" : "disable"));
 
 	return rc;
 }

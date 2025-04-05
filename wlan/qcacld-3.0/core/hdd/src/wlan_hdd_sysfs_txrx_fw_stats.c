@@ -21,22 +21,21 @@
  * implementation for creating sysfs file txrx_fw_stats
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs.h>
-#include <wlan_hdd_sysfs_txrx_fw_stats.h>
 #include "wma.h"
 #include "wma_api.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
+#include <wlan_hdd_sysfs_txrx_fw_stats.h>
 
-static int hdd_sysfs_set_vdev(struct hdd_adapter *adapter,
-			      int id, const char *id_string,
-			      int value)
+static int hdd_sysfs_set_vdev(struct hdd_adapter *adapter, int id,
+			      const char *id_string, int value)
 {
 	int errno;
 
 	hdd_debug("%s %d", id_string, value);
-	errno = wma_cli_set_command(adapter->deflink->vdev_id,
-				    id, value, VDEV_CMD);
+	errno = wma_cli_set_command(adapter->deflink->vdev_id, id, value,
+				    VDEV_CMD);
 	if (errno)
 		hdd_err("Failed to set firmware, errno %d", errno);
 
@@ -44,11 +43,10 @@ static int hdd_sysfs_set_vdev(struct hdd_adapter *adapter,
 }
 
 #define hdd_sysfs_set_vdev(adapter, id, value) \
-			   hdd_sysfs_set_vdev(adapter, id, #id, value)
+	hdd_sysfs_set_vdev(adapter, id, #id, value)
 
-static ssize_t
-__hdd_sysfs_txrx_fw_stats_store(struct net_device *net_dev,
-				char const *buf, size_t count)
+static ssize_t __hdd_sysfs_txrx_fw_stats_store(struct net_device *net_dev,
+					       char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -68,8 +66,8 @@ __hdd_sysfs_txrx_fw_stats_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -87,8 +85,8 @@ __hdd_sysfs_txrx_fw_stats_store(struct net_device *net_dev,
 	if (kstrtou32(token, 0, &value))
 		return -EINVAL;
 
-	ret = hdd_sysfs_set_vdev(adapter,
-				 WMA_VDEV_TXRX_FWSTATS_ENABLE_CMDID, value);
+	ret = hdd_sysfs_set_vdev(adapter, WMA_VDEV_TXRX_FWSTATS_ENABLE_CMDID,
+				 value);
 
 	if (ret) {
 		hdd_err_rl("failed to set txrx fw stats: %d", ret);
@@ -98,10 +96,9 @@ __hdd_sysfs_txrx_fw_stats_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_txrx_fw_stats_store(struct device *dev,
-			      struct device_attribute *attr,
-			      char const *buf, size_t count)
+static ssize_t hdd_sysfs_txrx_fw_stats_store(struct device *dev,
+					     struct device_attribute *attr,
+					     char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -118,15 +115,13 @@ hdd_sysfs_txrx_fw_stats_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(txrx_fw_stats, 0220,
-		   NULL, hdd_sysfs_txrx_fw_stats_store);
+static DEVICE_ATTR(txrx_fw_stats, 0220, NULL, hdd_sysfs_txrx_fw_stats_store);
 
 int hdd_sysfs_txrx_fw_stats_create(struct hdd_adapter *adapter)
 {
 	int error;
 
-	error = device_create_file(&adapter->dev->dev,
-				   &dev_attr_txrx_fw_stats);
+	error = device_create_file(&adapter->dev->dev, &dev_attr_txrx_fw_stats);
 	if (error)
 		hdd_err("could not create txrx_fw_stats sysfs file");
 

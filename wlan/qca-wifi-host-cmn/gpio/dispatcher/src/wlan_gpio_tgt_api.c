@@ -20,10 +20,10 @@
  *
  * This file provide API definitions to update gpio configuration from interface
  */
+#include <qdf_module.h>
+#include <target_type.h>
 #include <wlan_gpio_priv_api.h>
 #include <wlan_gpio_tgt_api.h>
-#include <target_type.h>
-#include <qdf_module.h>
 
 QDF_STATUS tgt_set_gpio_config_req(struct wlan_objmgr_psoc *psoc,
 				   struct gpio_config_params *param)
@@ -60,7 +60,7 @@ QDF_STATUS tgt_set_gpio_output_req(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS tgt_gpio_config(struct wlan_objmgr_psoc *psoc, uint32_t gpio_num,
 			   uint32_t input, uint32_t pull_type,
-			   uint32_t intr_mode,  uint32_t mux_config_val,
+			   uint32_t intr_mode, uint32_t mux_config_val,
 			   uint32_t drive, uint32_t init_enable)
 {
 	struct gpio_config_params param;

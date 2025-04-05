@@ -21,11 +21,11 @@
 #include "csr_cmd_process.c"
 #include "csr_link_list.c"
 #include "csr_util.c"
-#include "sme_qos.c"
 #include "sme_api.c"
 #include "sme_power_save.c"
-#include "sme_trace.c"
+#include "sme_qos.c"
 #include "sme_rrm.c"
+#include "sme_trace.c"
 
 #ifdef WLAN_FEATURE_NAN
 #include "nan_datapath_api.c"

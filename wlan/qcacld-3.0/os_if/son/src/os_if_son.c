@@ -24,17 +24,17 @@
  */
 
 #include <os_if_son.h>
-#include <qdf_trace.h>
 #include <qdf_module.h>
-#include <wlan_cfg80211.h>
+#include <qdf_trace.h>
 #include <son_ucfg_api.h>
+#include <wlan_cfg80211.h>
+#include <wlan_dcs_ucfg_api.h>
 #include <wlan_dfs_ucfg_api.h>
-#include <wlan_reg_ucfg_api.h>
-#include <wlan_vdev_mgr_ucfg_api.h>
 #include <wlan_mlme_ucfg_api.h>
 #include <wlan_reg_services_api.h>
+#include <wlan_reg_ucfg_api.h>
 #include <wlan_scan_ucfg_api.h>
-#include <wlan_dcs_ucfg_api.h>
+#include <wlan_vdev_mgr_ucfg_api.h>
 
 static struct son_callbacks g_son_os_if_cb;
 static struct wlan_os_if_son_ops g_son_os_if_txrx_ops;
@@ -80,8 +80,8 @@ uint32_t os_if_son_is_acs_in_progress(struct wlan_objmgr_vdev *vdev)
 	}
 
 	acs_in_progress = g_son_os_if_cb.os_if_is_acs_in_progress(vdev);
-	osif_debug("vdev %d acs_in_progress %d",
-		   wlan_vdev_get_id(vdev), acs_in_progress);
+	osif_debug("vdev %d acs_in_progress %d", wlan_vdev_get_id(vdev),
+		   acs_in_progress);
 
 	return acs_in_progress;
 }
@@ -97,8 +97,8 @@ uint32_t os_if_son_is_cac_in_progress(struct wlan_objmgr_vdev *vdev)
 	}
 
 	cac_in_progress = ucfg_son_is_cac_in_progress(vdev);
-	osif_debug("vdev %d cac_in_progress %d",
-		   wlan_vdev_get_id(vdev), cac_in_progress);
+	osif_debug("vdev %d cac_in_progress %d", wlan_vdev_get_id(vdev),
+		   cac_in_progress);
 
 	return cac_in_progress;
 }
@@ -123,8 +123,8 @@ int os_if_son_set_chan_ext_offset(struct wlan_objmgr_vdev *vdev,
 }
 qdf_export_symbol(os_if_son_set_chan_ext_offset);
 
-enum sec20_chan_offset os_if_son_get_chan_ext_offset(
-						struct wlan_objmgr_vdev *vdev)
+enum sec20_chan_offset
+os_if_son_get_chan_ext_offset(struct wlan_objmgr_vdev *vdev)
 {
 	enum sec20_chan_offset chan_ext_offset;
 
@@ -134,8 +134,8 @@ enum sec20_chan_offset os_if_son_get_chan_ext_offset(
 	}
 
 	chan_ext_offset = g_son_os_if_cb.os_if_get_chan_ext_offset(vdev);
-	osif_debug("vdev %d chan_ext_offset %d",
-		   wlan_vdev_get_id(vdev), chan_ext_offset);
+	osif_debug("vdev %d chan_ext_offset %d", wlan_vdev_get_id(vdev),
+		   chan_ext_offset);
 
 	return chan_ext_offset;
 }
@@ -152,8 +152,8 @@ int os_if_son_set_bandwidth(struct wlan_objmgr_vdev *vdev,
 	}
 
 	ret = g_son_os_if_cb.os_if_set_bandwidth(vdev, son_bandwidth);
-	osif_debug("vdev %d son_bandwidth %d ret %d",
-		   wlan_vdev_get_id(vdev), son_bandwidth, ret);
+	osif_debug("vdev %d son_bandwidth %d ret %d", wlan_vdev_get_id(vdev),
+		   son_bandwidth, ret);
 
 	return ret;
 }
@@ -169,15 +169,15 @@ uint32_t os_if_son_get_bandwidth(struct wlan_objmgr_vdev *vdev)
 	}
 
 	bandwidth = g_son_os_if_cb.os_if_get_bandwidth(vdev);
-	osif_debug("vdev %d son_bandwidth %d",
-		   wlan_vdev_get_id(vdev), bandwidth);
+	osif_debug("vdev %d son_bandwidth %d", wlan_vdev_get_id(vdev),
+		   bandwidth);
 
 	return bandwidth;
 }
 qdf_export_symbol(os_if_son_get_bandwidth);
 
-static uint32_t os_if_band_bitmap_to_son_band_info(
-					uint32_t reg_wifi_band_bitmap)
+static uint32_t
+os_if_band_bitmap_to_son_band_info(uint32_t reg_wifi_band_bitmap)
 {
 	uint32_t son_band_info = FULL_BAND_RADIO;
 
@@ -216,8 +216,7 @@ uint32_t os_if_son_get_band_info(struct wlan_objmgr_vdev *vdev)
 	}
 
 	band_info = os_if_band_bitmap_to_son_band_info(reg_wifi_band_bitmap);
-	osif_debug("vdev %d band_info %d",
-		   wlan_vdev_get_id(vdev), band_info);
+	osif_debug("vdev %d band_info %d", wlan_vdev_get_id(vdev), band_info);
 
 	return band_info;
 }
@@ -254,14 +253,14 @@ static void os_if_son_fill_chan_info(struct ieee80211_channel_info *chan_info,
  *
  * Return: void
  */
-static void os_if_son_update_chan_info(
-			struct wlan_objmgr_pdev *pdev, bool flag_160,
-			struct regulatory_channel *cur_chan_list,
-			struct ieee80211_channel_info *chan_info,
-			uint64_t half_and_quarter_rate_flags)
+static void os_if_son_update_chan_info(struct wlan_objmgr_pdev *pdev,
+				       bool flag_160,
+				       struct regulatory_channel *cur_chan_list,
+				       struct ieee80211_channel_info *chan_info,
+				       uint64_t half_and_quarter_rate_flags)
 {
 	qdf_freq_t primary_freq = cur_chan_list->center_freq;
-	struct ch_params chan_params = {0};
+	struct ch_params chan_params = { 0 };
 
 	if (!chan_info) {
 		osif_err("null chan info");
@@ -271,9 +270,8 @@ static void os_if_son_update_chan_info(
 		chan_info->flags |=
 			VENDOR_CHAN_FLAG2(QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_B);
 	else
-		chan_info->flags |= ucfg_son_get_chan_flag(pdev, primary_freq,
-							   flag_160,
-							   &chan_params);
+		chan_info->flags |= ucfg_son_get_chan_flag(
+			pdev, primary_freq, flag_160, &chan_params);
 	if (cur_chan_list->chan_flags & REGULATORY_CHAN_RADAR) {
 		chan_info->flags_ext |=
 			QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_EXT_DFS;
@@ -290,8 +288,7 @@ static void os_if_son_update_chan_info(
 			QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_EXT_PSC;
 
 	os_if_son_fill_chan_info(chan_info, cur_chan_list->chan_num,
-				 primary_freq,
-				 chan_params.center_freq_seg0,
+				 primary_freq, chan_params.center_freq_seg0,
 				 chan_params.center_freq_seg1);
 }
 
@@ -338,14 +335,14 @@ int os_if_son_get_chan_list(struct wlan_objmgr_vdev *vdev,
 	}
 
 	cur_chan_list = qdf_mem_malloc(NUM_CHANNELS *
-			sizeof(struct regulatory_channel));
+				       sizeof(struct regulatory_channel));
 	if (!cur_chan_list) {
 		osif_err("cur_chan_list allocation fails");
 		return -EINVAL;
 	}
 
-	if (wlan_reg_get_current_chan_list(
-	    pdev, cur_chan_list) != QDF_STATUS_SUCCESS) {
+	if (wlan_reg_get_current_chan_list(pdev, cur_chan_list) !=
+	    QDF_STATUS_SUCCESS) {
 		qdf_mem_free(cur_chan_list);
 		osif_err("fail to get current chan list");
 		return -EINVAL;
@@ -360,8 +357,8 @@ int os_if_son_get_chan_list(struct wlan_objmgr_vdev *vdev,
 
 		chan = &cur_chan_list[i];
 		if ((chan->chan_flags & REGULATORY_CHAN_DISABLED) &&
-		    chan->state == CHANNEL_STATE_DISABLE &&
-		    !chan->nol_chan && !chan->nol_history)
+		    chan->state == CHANNEL_STATE_DISABLE && !chan->nol_chan &&
+		    !chan->nol_history)
 			continue;
 		if (WLAN_REG_IS_6GHZ_CHAN_FREQ(primary_freq)) {
 			if (!flag_6ghz ||
@@ -382,18 +379,17 @@ int os_if_son_get_chan_list(struct wlan_objmgr_vdev *vdev,
 				continue;
 			band_flags = QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_5GHZ;
 			/**
-			 * If 4.9G Half and Quarter rates are supported
-			 * by the channel, update them as separate entries
-			 * to the list
-			 */
+       * If 4.9G Half and Quarter rates are supported
+       * by the channel, update them as separate entries
+       * to the list
+       */
 			if (BW_WITHIN(chan->min_bw, BW_10_MHZ, chan->max_bw)) {
 				os_if_son_fill_chan_info(&chan_info[*nchans],
 							 chan->chan_num,
 							 primary_freq, 0, 0);
 				chan_info[*nchans].flags |=
 					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HALF;
-				chan_info[*nchans].flags |=
-					VENDOR_CHAN_FLAG2(
+				chan_info[*nchans].flags |= VENDOR_CHAN_FLAG2(
 					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_A);
 				half_and_quarter_rate_flags =
 					chan_info[*nchans].flags;
@@ -405,9 +401,8 @@ int os_if_son_get_chan_list(struct wlan_objmgr_vdev *vdev,
 							 chan->chan_num,
 							 primary_freq, 0, 0);
 				chan_info[*nchans].flags |=
-				    QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_QUARTER;
-				chan_info[*nchans].flags |=
-					VENDOR_CHAN_FLAG2(
+					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_QUARTER;
+				chan_info[*nchans].flags |= VENDOR_CHAN_FLAG2(
 					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_A);
 				half_and_quarter_rate_flags =
 					chan_info[*nchans].flags;
@@ -458,16 +453,15 @@ int os_if_son_get_bssid(struct wlan_objmgr_vdev *vdev,
 	}
 
 	ucfg_wlan_vdev_mgr_get_param_bssid(vdev, bssid);
-	osif_debug("vdev %d bssid " QDF_MAC_ADDR_FMT,
-		   wlan_vdev_get_id(vdev), QDF_MAC_ADDR_REF(bssid));
+	osif_debug("vdev %d bssid " QDF_MAC_ADDR_FMT, wlan_vdev_get_id(vdev),
+		   QDF_MAC_ADDR_REF(bssid));
 
 	return 0;
 }
 qdf_export_symbol(os_if_son_get_bssid);
 
 int os_if_son_get_ssid(struct wlan_objmgr_vdev *vdev,
-		       char ssid[WLAN_SSID_MAX_LEN + 1],
-		       uint8_t *ssid_len)
+		       char ssid[WLAN_SSID_MAX_LEN + 1], uint8_t *ssid_len)
 {
 	if (!vdev) {
 		osif_err("null vdev");
@@ -475,16 +469,15 @@ int os_if_son_get_ssid(struct wlan_objmgr_vdev *vdev,
 	}
 
 	ucfg_wlan_vdev_mgr_get_param_ssid(vdev, ssid, ssid_len);
-	osif_debug("vdev %d ssid " QDF_SSID_FMT,
-		   wlan_vdev_get_id(vdev),
+	osif_debug("vdev %d ssid " QDF_SSID_FMT, wlan_vdev_get_id(vdev),
 		   QDF_SSID_REF(*ssid_len, ssid));
 
 	return 0;
 }
 qdf_export_symbol(os_if_son_get_ssid);
 
-int os_if_son_set_chan(struct wlan_objmgr_vdev *vdev,
-		       int chan, enum wlan_band_id son_band)
+int os_if_son_set_chan(struct wlan_objmgr_vdev *vdev, int chan,
+		       enum wlan_band_id son_band)
 {
 	int ret;
 
@@ -494,15 +487,14 @@ int os_if_son_set_chan(struct wlan_objmgr_vdev *vdev,
 	}
 
 	ret = g_son_os_if_cb.os_if_set_chan(vdev, chan, son_band);
-	osif_debug("vdev %d chan %d son_band %d", wlan_vdev_get_id(vdev),
-		   chan, son_band);
+	osif_debug("vdev %d chan %d son_band %d", wlan_vdev_get_id(vdev), chan,
+		   son_band);
 
 	return ret;
 }
 qdf_export_symbol(os_if_son_set_chan);
 
-int os_if_son_set_cac_timeout(struct wlan_objmgr_vdev *vdev,
-			      int cac_timeout)
+int os_if_son_set_cac_timeout(struct wlan_objmgr_vdev *vdev, int cac_timeout)
 {
 	struct wlan_objmgr_pdev *pdev;
 	int status;
@@ -517,20 +509,19 @@ int os_if_son_set_cac_timeout(struct wlan_objmgr_vdev *vdev,
 		return -EINVAL;
 	}
 
-	if (QDF_IS_STATUS_ERROR(ucfg_dfs_override_cac_timeout(
-		pdev, cac_timeout, &status))) {
+	if (QDF_IS_STATUS_ERROR(ucfg_dfs_override_cac_timeout(pdev, cac_timeout,
+							      &status))) {
 		osif_err("cac timeout override fails");
 		return -EINVAL;
 	}
-	osif_debug("vdev %d cac_timeout %d status %d",
-		   wlan_vdev_get_id(vdev), cac_timeout, status);
+	osif_debug("vdev %d cac_timeout %d status %d", wlan_vdev_get_id(vdev),
+		   cac_timeout, status);
 
 	return status;
 }
 qdf_export_symbol(os_if_son_set_cac_timeout);
 
-int os_if_son_get_cac_timeout(struct wlan_objmgr_vdev *vdev,
-			      int *cac_timeout)
+int os_if_son_get_cac_timeout(struct wlan_objmgr_vdev *vdev, int *cac_timeout)
 {
 	struct wlan_objmgr_pdev *pdev;
 	int status;
@@ -546,12 +537,12 @@ int os_if_son_get_cac_timeout(struct wlan_objmgr_vdev *vdev,
 	}
 
 	if (QDF_IS_STATUS_ERROR(ucfg_dfs_get_override_cac_timeout(
-		pdev, cac_timeout, &status))) {
+		    pdev, cac_timeout, &status))) {
 		osif_err("fails to get cac timeout");
 		return -EINVAL;
 	}
-	osif_debug("vdev %d cac_timeout %d status %d",
-		   wlan_vdev_get_id(vdev), *cac_timeout, status);
+	osif_debug("vdev %d cac_timeout %d status %d", wlan_vdev_get_id(vdev),
+		   *cac_timeout, status);
 
 	return status;
 }
@@ -567,8 +558,8 @@ int os_if_son_set_country_code(struct wlan_objmgr_vdev *vdev,
 		return -EINVAL;
 	}
 	ret = g_son_os_if_cb.os_if_set_country_code(vdev, country_code);
-	osif_debug("vdev %d country_code %s ret %d",
-		   wlan_vdev_get_id(vdev), country_code, ret);
+	osif_debug("vdev %d country_code %s ret %d", wlan_vdev_get_id(vdev),
+		   country_code, ret);
 
 	return ret;
 }
@@ -590,15 +581,14 @@ int os_if_son_get_country_code(struct wlan_objmgr_vdev *vdev,
 		return -EINVAL;
 	}
 	status = ucfg_reg_get_current_country(psoc, country_code);
-	osif_debug("vdev %d country_code %s status %d",
-		   wlan_vdev_get_id(vdev), country_code, status);
+	osif_debug("vdev %d country_code %s status %d", wlan_vdev_get_id(vdev),
+		   country_code, status);
 
 	return qdf_status_to_os_return(status);
 }
 qdf_export_symbol(os_if_son_get_country_code);
 
-int os_if_son_set_candidate_freq(struct wlan_objmgr_vdev *vdev,
-				 qdf_freq_t freq)
+int os_if_son_set_candidate_freq(struct wlan_objmgr_vdev *vdev, qdf_freq_t freq)
 {
 	int ret;
 
@@ -625,8 +615,7 @@ qdf_freq_t os_if_son_get_candidate_freq(struct wlan_objmgr_vdev *vdev)
 	}
 
 	freq = g_son_os_if_cb.os_if_get_candidate_freq(vdev);
-	osif_debug("vdev %d candidate_freq %d",
-		   wlan_vdev_get_id(vdev), freq);
+	osif_debug("vdev %d candidate_freq %d", wlan_vdev_get_id(vdev), freq);
 
 	return freq;
 }
@@ -732,9 +721,8 @@ uint8_t os_if_son_get_chan_util(struct wlan_objmgr_vdev *vdev)
 		osif_err("null psoc");
 		return 0;
 	}
-	status = policy_mgr_get_mac_id_by_session_id(psoc,
-						     wlan_vdev_get_id(vdev),
-						     &mac_id);
+	status = policy_mgr_get_mac_id_by_session_id(
+		psoc, wlan_vdev_get_id(vdev), &mac_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		osif_err("Failed to get mac_id");
 		return 0;
@@ -765,9 +753,8 @@ void os_if_son_get_phy_stats(struct wlan_objmgr_vdev *vdev,
 		osif_err("null psoc");
 		return;
 	}
-	status = policy_mgr_get_mac_id_by_session_id(psoc,
-						     wlan_vdev_get_id(vdev),
-						     &mac_id);
+	status = policy_mgr_get_mac_id_by_session_id(
+		psoc, wlan_vdev_get_id(vdev), &mac_id);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		osif_err("Failed to get mac_id");
 		return;
@@ -783,10 +770,11 @@ void os_if_son_get_phy_stats(struct wlan_objmgr_vdev *vdev,
 	else
 		phy_stats->free_medium = 0;
 	phy_stats->chan_nf = dcs_son_stats.chan_nf;
-	osif_debug("rx_util %d tx_util %d obss_rx_util %d free_medium %d noise floor %d",
-		   phy_stats->ap_rx_util, phy_stats->ap_tx_util,
-		   phy_stats->obss_rx_util, phy_stats->free_medium,
-		   phy_stats->chan_nf);
+	osif_debug(
+		"rx_util %d tx_util %d obss_rx_util %d free_medium %d noise floor %d",
+		phy_stats->ap_rx_util, phy_stats->ap_tx_util,
+		phy_stats->obss_rx_util, phy_stats->free_medium,
+		phy_stats->chan_nf);
 }
 qdf_export_symbol(os_if_son_get_phy_stats);
 
@@ -812,8 +800,7 @@ int os_if_son_cbs_deinit(void)
 
 qdf_export_symbol(os_if_son_cbs_deinit);
 
-int os_if_son_set_cbs(struct wlan_objmgr_vdev *vdev,
-		      bool enable)
+int os_if_son_set_cbs(struct wlan_objmgr_vdev *vdev, bool enable)
 {
 	int ret;
 
@@ -824,8 +811,7 @@ int os_if_son_set_cbs(struct wlan_objmgr_vdev *vdev,
 
 qdf_export_symbol(os_if_son_set_cbs);
 
-int os_if_son_set_cbs_wait_time(struct wlan_objmgr_vdev *vdev,
-				uint32_t val)
+int os_if_son_set_cbs_wait_time(struct wlan_objmgr_vdev *vdev, uint32_t val)
 {
 	int ret;
 
@@ -859,8 +845,8 @@ int os_if_son_set_phymode(struct wlan_objmgr_vdev *vdev,
 	}
 
 	ret = g_son_os_if_cb.os_if_set_phymode(vdev, mode);
-	osif_debug("vdev %d phymode %d ret %d",
-		   wlan_vdev_get_id(vdev), mode, ret);
+	osif_debug("vdev %d phymode %d ret %d", wlan_vdev_get_id(vdev), mode,
+		   ret);
 
 	return ret;
 }
@@ -876,8 +862,7 @@ enum ieee80211_phymode os_if_son_get_phymode(struct wlan_objmgr_vdev *vdev)
 	}
 
 	phymode = g_son_os_if_cb.os_if_get_phymode(vdev);
-	osif_debug("vdev %d phymode %d",
-		   wlan_vdev_get_id(vdev), phymode);
+	osif_debug("vdev %d phymode %d", wlan_vdev_get_id(vdev), phymode);
 
 	return phymode;
 }
@@ -888,10 +873,10 @@ static QDF_STATUS os_if_son_get_apcap(struct wlan_objmgr_vdev *vdev,
 {
 	uint32_t num_rx_streams = 0;
 	uint32_t num_tx_streams = 0;
-	uint32_t  value;
+	uint32_t value;
 	struct mlme_ht_capabilities_info ht_cap_info;
 	struct wlan_objmgr_psoc *psoc;
-	tDot11fIEhe_cap he_cap = {0};
+	tDot11fIEhe_cap he_cap = { 0 };
 	bool enabled;
 	QDF_STATUS status;
 	int32_t vht_caps = 0;
@@ -942,26 +927,26 @@ static QDF_STATUS os_if_son_get_apcap(struct wlan_objmgr_vdev *vdev,
 		apcap->hecap.max_tx_nss = num_tx_streams;
 		apcap->hecap.max_rx_nss = num_rx_streams;
 		apcap->hecap.he_su_ppdu_1x_ltf_800ns_gi =
-					he_cap.he_1x_ltf_800_gi_ppdu;
+			he_cap.he_1x_ltf_800_gi_ppdu;
 		apcap->hecap.he_ndp_4x_ltf_3200ns_gi =
-					he_cap.he_4x_ltf_3200_gi_ndp;
+			he_cap.he_4x_ltf_3200_gi_ndp;
 		apcap->hecap.he_su_bfer = he_cap.su_beamformer;
 		apcap->hecap.he_su_bfee = he_cap.su_beamformee;
 		apcap->hecap.he_mu_bfer = he_cap.mu_beamformer;
 		apcap->hecap.supported_he_mcs[0] = he_cap.rx_he_mcs_map_lt_80;
 		apcap->hecap.supported_he_mcs[1] = he_cap.tx_he_mcs_map_lt_80;
 		apcap->hecap.supported_he_mcs[2] =
-					he_cap.rx_he_mcs_map_160[0][0] |
-					(he_cap.rx_he_mcs_map_160[0][1] << 8);
+			he_cap.rx_he_mcs_map_160[0][0] |
+			(he_cap.rx_he_mcs_map_160[0][1] << 8);
 		apcap->hecap.supported_he_mcs[3] =
-					he_cap.tx_he_mcs_map_160[0][0] |
-					(he_cap.tx_he_mcs_map_160[0][1] << 8);
+			he_cap.tx_he_mcs_map_160[0][0] |
+			(he_cap.tx_he_mcs_map_160[0][1] << 8);
 		apcap->hecap.supported_he_mcs[4] =
-					he_cap.rx_he_mcs_map_80_80[0][0] |
-					(he_cap.rx_he_mcs_map_80_80[0][1] << 8);
+			he_cap.rx_he_mcs_map_80_80[0][0] |
+			(he_cap.rx_he_mcs_map_80_80[0][1] << 8);
 		apcap->hecap.supported_he_mcs[5] =
-					he_cap.tx_he_mcs_map_80_80[0][0] |
-					(he_cap.tx_he_mcs_map_80_80[0][1] << 8);
+			he_cap.tx_he_mcs_map_80_80[0][0] |
+			(he_cap.tx_he_mcs_map_80_80[0][1] << 8);
 		apcap->hecap.he_ul_mumimo = QDF_GET_BITS(he_cap.ul_mu, 0, 1);
 		apcap->hecap.he_ul_muofdma = QDF_GET_BITS(he_cap.ul_mu, 1, 1);
 		apcap->hecap.he_dl_muofdma = he_cap.dl_mu_mimo_part_bw;
@@ -970,8 +955,8 @@ static QDF_STATUS os_if_son_get_apcap(struct wlan_objmgr_vdev *vdev,
 }
 
 QDF_STATUS os_if_son_vdev_ops(struct wlan_objmgr_vdev *vdev,
-			      enum wlan_mlme_vdev_param type,
-			      void *data, void *ret)
+			      enum wlan_mlme_vdev_param type, void *data,
+			      void *ret)
 {
 	union wlan_mlme_vdev_data *in = (union wlan_mlme_vdev_data *)data;
 	union wlan_mlme_vdev_data *out = (union wlan_mlme_vdev_data *)ret;
@@ -1006,8 +991,7 @@ QDF_STATUS os_if_son_vdev_ops(struct wlan_objmgr_vdev *vdev,
 	case VDEV_GET_CHAN:
 		if (!out)
 			return QDF_STATUS_E_INVAL;
-		qdf_mem_copy(&out->chan,
-			     wlan_vdev_get_active_channel(vdev),
+		qdf_mem_copy(&out->chan, wlan_vdev_get_active_channel(vdev),
 			     sizeof(out->chan));
 		break;
 	case VDEV_GET_CHAN_WIDTH:
@@ -1098,8 +1082,7 @@ QDF_STATUS os_if_son_peer_ops(struct wlan_objmgr_peer *peer,
 	/* SET/CLR API start */
 	case PEER_SET_KICKOUT:
 		qdf_mem_copy(&mac.bytes, peer->macaddr, QDF_MAC_ADDR_SIZE);
-		ret_val =
-		    g_son_os_if_cb.os_if_kickout_mac(vdev, &mac);
+		ret_val = g_son_os_if_cb.os_if_kickout_mac(vdev, &mac);
 		if (ret_val) {
 			osif_err("Failed to kickout peer " QDF_MAC_ADDR_FMT,
 				 QDF_MAC_ADDR_REF(peer->macaddr));
@@ -1111,8 +1094,8 @@ QDF_STATUS os_if_son_peer_ops(struct wlan_objmgr_peer *peer,
 			osif_err("invalid input parameter");
 			return QDF_STATUS_E_INVAL;
 		}
-		status = ucfg_son_set_peer_kickout_allow(vdev, peer,
-							 in->enable);
+		status =
+			ucfg_son_set_peer_kickout_allow(vdev, peer, in->enable);
 		osif_debug("kickout allow %d, status %d", in->enable, status);
 		break;
 	case PEER_SET_EXT_STATS:
@@ -1122,11 +1105,9 @@ QDF_STATUS os_if_son_peer_ops(struct wlan_objmgr_peer *peer,
 		osif_debug("Enable: %d peer_ext_stats_count: %u ret_val: %d",
 			   in->enable, peer_ext_stats_count, ret_val);
 		if ((!!ret_val) != in->enable) {
-			status =
-			     wlan_son_peer_ext_stat_enable(pdev, peer->macaddr,
-							   vdev,
-							   peer_ext_stats_count,
-							   in->enable);
+			status = wlan_son_peer_ext_stat_enable(
+				pdev, peer->macaddr, vdev, peer_ext_stats_count,
+				in->enable);
 			osif_debug("status: %u", status);
 			if (status == QDF_STATUS_SUCCESS) {
 				peer_ext_stats_count++;
@@ -1135,14 +1116,14 @@ QDF_STATUS os_if_son_peer_ops(struct wlan_objmgr_peer *peer,
 			} else {
 				if (peer_ext_stats_count)
 					peer_ext_stats_count--;
-				wlan_peer_mlme_flag_clear
-						(peer, WLAN_PEER_F_EXT_STATS);
+				wlan_peer_mlme_flag_clear(
+					peer, WLAN_PEER_F_EXT_STATS);
 			}
 		}
 		break;
 	case PEER_REQ_INST_STAT:
-		status = wlan_son_peer_req_inst_stats(pdev, peer->macaddr,
-						      vdev);
+		status =
+			wlan_son_peer_req_inst_stats(pdev, peer->macaddr, vdev);
 		if (status != QDF_STATUS_SUCCESS)
 			osif_err("Type: %d is failed", type);
 		break;
@@ -1176,8 +1157,7 @@ QDF_STATUS os_if_son_scan_db_iterate(struct wlan_objmgr_pdev *pdev,
 qdf_export_symbol(os_if_son_scan_db_iterate);
 
 bool os_if_son_acl_is_probe_wh_set(struct wlan_objmgr_vdev *vdev,
-				   const uint8_t *mac_addr,
-				   uint8_t probe_rssi)
+				   const uint8_t *mac_addr, uint8_t probe_rssi)
 {
 	return false;
 }
@@ -1273,8 +1253,7 @@ void os_if_son_get_sta_list(struct wlan_objmgr_vdev *vdev,
 
 qdf_export_symbol(os_if_son_get_sta_list);
 
-void os_if_son_deauth_peer_sta(struct wlan_objmgr_vdev *vdev,
-			       uint8_t *peer_mac,
+void os_if_son_deauth_peer_sta(struct wlan_objmgr_vdev *vdev, uint8_t *peer_mac,
 			       bool ignore_frame)
 {
 	if (!vdev || !peer_mac) {
@@ -1287,8 +1266,7 @@ void os_if_son_deauth_peer_sta(struct wlan_objmgr_vdev *vdev,
 
 qdf_export_symbol(os_if_son_deauth_peer_sta);
 
-void os_if_son_modify_acl(struct wlan_objmgr_vdev *vdev,
-			  uint8_t *peer_mac,
+void os_if_son_modify_acl(struct wlan_objmgr_vdev *vdev, uint8_t *peer_mac,
 			  bool allow_auth)
 {
 	if (!vdev || !peer_mac) {
@@ -1301,10 +1279,10 @@ void os_if_son_modify_acl(struct wlan_objmgr_vdev *vdev,
 
 qdf_export_symbol(os_if_son_modify_acl);
 
-static
-int os_if_son_reg_get_ap_hw_cap(struct wlan_objmgr_pdev *pdev,
-				struct wlan_radio_basic_capabilities *hwcap,
-				bool skip_6ghz)
+static int
+os_if_son_reg_get_ap_hw_cap(struct wlan_objmgr_pdev *pdev,
+			    struct wlan_radio_basic_capabilities *hwcap,
+			    bool skip_6ghz)
 {
 	QDF_STATUS status;
 	uint8_t idx;
@@ -1332,10 +1310,10 @@ int os_if_son_reg_get_ap_hw_cap(struct wlan_objmgr_pdev *pdev,
 	osif_debug("n_opclasses: %u", n_opclasses);
 
 	for (idx = 0; reg_ap_cap[idx].op_class && idx < n_opclasses; idx++) {
-		osif_debug("idx: %d op_class: %u ch_width: %d  max_tx_pwr_dbm: %u",
-			   idx, reg_ap_cap[idx].op_class,
-			   reg_ap_cap[idx].ch_width,
-			   reg_ap_cap[idx].max_tx_pwr_dbm);
+		osif_debug(
+			"idx: %d op_class: %u ch_width: %d  max_tx_pwr_dbm: %u",
+			idx, reg_ap_cap[idx].op_class, reg_ap_cap[idx].ch_width,
+			reg_ap_cap[idx].max_tx_pwr_dbm);
 		if (reg_ap_cap[idx].ch_width == BW_160_MHZ)
 			continue;
 		if (skip_6ghz &&
@@ -1346,9 +1324,9 @@ int os_if_son_reg_get_ap_hw_cap(struct wlan_objmgr_pdev *pdev,
 		}
 		hwcap->opclasses[nsoc].opclass = reg_ap_cap[idx].op_class;
 		hwcap->opclasses[nsoc].max_tx_pwr_dbm =
-					reg_ap_cap[idx].max_tx_pwr_dbm;
+			reg_ap_cap[idx].max_tx_pwr_dbm;
 		hwcap->opclasses[nsoc].num_non_oper_chan =
-					reg_ap_cap[idx].num_non_supported_chan;
+			reg_ap_cap[idx].num_non_supported_chan;
 		qdf_mem_copy(hwcap->opclasses[nsoc].non_oper_chan_num,
 			     reg_ap_cap[idx].non_sup_chan_list,
 			     reg_ap_cap[idx].num_non_supported_chan);
@@ -1398,16 +1376,16 @@ static void os_if_son_reg_get_op_channels(struct wlan_objmgr_pdev *pdev,
 		osif_err("Failed to get SAP regulatory capabilities");
 		goto end_reg_get_op_channels;
 	}
-	osif_debug("n_opclasses: %u op_chan->opclass: %u",
-		   n_opclasses, op_chan->opclass);
+	osif_debug("n_opclasses: %u op_chan->opclass: %u", n_opclasses,
+		   op_chan->opclass);
 	for (idx = 0; reg_ap_cap[idx].op_class && idx < n_opclasses; idx++) {
 		if ((reg_ap_cap[idx].ch_width == BW_160_MHZ) ||
 		    (op_chan->opclass != reg_ap_cap[idx].op_class))
 			continue;
-		osif_debug("idx: %d op_class: %u ch_width: %d  max_tx_pwr_dbm: %u",
-			   idx, reg_ap_cap[idx].op_class,
-			   reg_ap_cap[idx].ch_width,
-			   reg_ap_cap[idx].max_tx_pwr_dbm);
+		osif_debug(
+			"idx: %d op_class: %u ch_width: %d  max_tx_pwr_dbm: %u",
+			idx, reg_ap_cap[idx].op_class, reg_ap_cap[idx].ch_width,
+			reg_ap_cap[idx].max_tx_pwr_dbm);
 		if (reg_ap_cap[idx].op_class == op_chan->opclass) {
 			switch (reg_ap_cap[idx].ch_width) {
 			case BW_20_MHZ:
@@ -1418,33 +1396,34 @@ static void os_if_son_reg_get_op_channels(struct wlan_objmgr_pdev *pdev,
 				op_chan->ch_width = CH_WIDTH_40MHZ;
 				break;
 			case BW_80_MHZ:
-				if (reg_ap_cap[idx].behav_limit == BIT(BEHAV_BW80_PLUS) &&
-				    ucfg_mlme_get_restricted_80p80_bw_supp(psoc))
+				if (reg_ap_cap[idx].behav_limit ==
+					    BIT(BEHAV_BW80_PLUS) &&
+				    ucfg_mlme_get_restricted_80p80_bw_supp(
+					    psoc))
 					op_chan->ch_width = CH_WIDTH_80P80MHZ;
 				else
 					op_chan->ch_width = CH_WIDTH_80MHZ;
 				break;
 			case BW_160_MHZ:
-				op_chan->ch_width  = CH_WIDTH_160MHZ;
+				op_chan->ch_width = CH_WIDTH_160MHZ;
 				break;
 			default:
 				op_chan->ch_width = INVALID_WIDTH;
 				break;
 			}
 			op_chan->num_oper_chan =
-					reg_ap_cap[idx].num_supported_chan;
+				reg_ap_cap[idx].num_supported_chan;
 			qdf_mem_copy(op_chan->oper_chan_num,
 				     reg_ap_cap[idx].sup_chan_list,
 				     reg_ap_cap[idx].num_supported_chan);
 		}
 	}
-	osif_debug("num of supported channel: %u",
-		   op_chan->num_oper_chan);
+	osif_debug("num of supported channel: %u", op_chan->num_oper_chan);
 	/*
-	 * TBD: DFS channel support needs to be added
-	 * Variable nsoc will be update whenever we add DFS
-	 * channel support for Easymesh.
-	 */
+   * TBD: DFS channel support needs to be added
+   * Variable nsoc will be update whenever we add DFS
+   * channel support for Easymesh.
+   */
 	op_chan->num_supp_op_classes = nsoc;
 
 end_reg_get_op_channels:
@@ -1453,13 +1432,13 @@ end_reg_get_op_channels:
 }
 
 /* size of sec chan offset element */
-#define IEEE80211_SEC_CHAN_OFFSET_BYTES             3
+#define IEEE80211_SEC_CHAN_OFFSET_BYTES 3
 /* no secondary channel */
-#define IEEE80211_SEC_CHAN_OFFSET_SCN               0
+#define IEEE80211_SEC_CHAN_OFFSET_SCN 0
 /* secondary channel above */
-#define IEEE80211_SEC_CHAN_OFFSET_SCA               1
+#define IEEE80211_SEC_CHAN_OFFSET_SCA 1
 /* secondary channel below */
-#define IEEE80211_SEC_CHAN_OFFSET_SCB               3
+#define IEEE80211_SEC_CHAN_OFFSET_SCB 3
 
 static void os_if_son_reg_get_opclass_details(struct wlan_objmgr_pdev *pdev,
 					      struct wlan_op_class *op_class)
@@ -1471,7 +1450,7 @@ static void os_if_son_reg_get_opclass_details(struct wlan_objmgr_pdev *pdev,
 	uint8_t chan_idx;
 	uint8_t max_supp_op_class = REG_MAX_SUPP_OPER_CLASSES;
 	struct regdmn_ap_cap_opclass_t *reg_ap_cap =
-			qdf_mem_malloc(max_supp_op_class * sizeof(*reg_ap_cap));
+		qdf_mem_malloc(max_supp_op_class * sizeof(*reg_ap_cap));
 
 	if (!reg_ap_cap) {
 		osif_err("Memory allocation failure");
@@ -1487,9 +1466,8 @@ static void os_if_son_reg_get_opclass_details(struct wlan_objmgr_pdev *pdev,
 	osif_debug("n_opclasses: %u", n_opclasses);
 
 	for (idx = 0; reg_ap_cap[idx].op_class && idx < n_opclasses; idx++) {
-		osif_debug("idx: %d op_class: %u ch_width: %d",
-			   idx, reg_ap_cap[idx].op_class,
-			   reg_ap_cap[idx].ch_width);
+		osif_debug("idx: %d op_class: %u ch_width: %d", idx,
+			   reg_ap_cap[idx].op_class, reg_ap_cap[idx].ch_width);
 		if ((op_class->opclass != reg_ap_cap[idx].op_class) ||
 		    (reg_ap_cap[idx].ch_width == BW_160_MHZ))
 			continue;
@@ -1508,7 +1486,7 @@ static void os_if_son_reg_get_opclass_details(struct wlan_objmgr_pdev *pdev,
 				op_class->ch_width = CH_WIDTH_80MHZ;
 			break;
 		case BW_160_MHZ:
-			op_class->ch_width  = CH_WIDTH_160MHZ;
+			op_class->ch_width = CH_WIDTH_160MHZ;
 			break;
 		default:
 			op_class->ch_width = CH_WIDTH_INVALID;
@@ -1546,7 +1524,7 @@ static void os_if_son_reg_get_opclass_details(struct wlan_objmgr_pdev *pdev,
 			op_class->channels[chan_idx++] =
 				reg_ap_cap[idx].non_sup_chan_list[i++];
 
-		 op_class->num_chan = chan_idx;
+		op_class->num_chan = chan_idx;
 	}
 
 end_reg_get_opclass_details:
@@ -1555,8 +1533,8 @@ end_reg_get_opclass_details:
 }
 
 QDF_STATUS os_if_son_pdev_ops(struct wlan_objmgr_pdev *pdev,
-			      enum wlan_mlme_pdev_param type,
-			      void *data, void *ret)
+			      enum wlan_mlme_pdev_param type, void *data,
+			      void *ret)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	union wlan_mlme_pdev_data *in = (union wlan_mlme_pdev_data *)data;
@@ -1630,8 +1608,7 @@ int os_if_son_deliver_ald_event(struct wlan_objmgr_vdev *vdev,
 
 qdf_export_symbol(os_if_son_deliver_ald_event);
 
-struct wlan_objmgr_vdev *
-os_if_son_get_vdev_by_netdev(struct net_device *dev)
+struct wlan_objmgr_vdev *os_if_son_get_vdev_by_netdev(struct net_device *dev)
 {
 	return g_son_os_if_cb.os_if_get_vdev_by_netdev(dev);
 }
@@ -1690,8 +1667,7 @@ int os_if_son_get_acs_report(struct wlan_objmgr_vdev *vdev,
 
 qdf_export_symbol(os_if_son_get_acs_report);
 
-void
-wlan_os_if_son_ops_register_cb(void (*handler)(struct wlan_os_if_son_ops *))
+void wlan_os_if_son_ops_register_cb(void (*handler)(struct wlan_os_if_son_ops *))
 {
 	os_if_son_ops_cb = handler;
 }
@@ -1745,27 +1721,27 @@ int os_if_son_parse_generic_nl_cmd(struct wiphy *wiphy,
 		return -EINVAL;
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_COMMAND])
-		param.command = nla_get_u32(tb
-				[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_COMMAND]);
+		param.command = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_COMMAND]);
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_VALUE])
-		param.value = nla_get_u32(tb
-				[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_VALUE]);
+		param.value = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_VALUE]);
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_DATA]) {
-		param.data = nla_data(tb
-				[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_DATA]);
-		param.data_len = nla_len(tb
-				[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_DATA]);
+		param.data =
+			nla_data(tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_DATA]);
+		param.data_len =
+			nla_len(tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_DATA]);
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_LENGTH])
-		param.length = nla_get_u32(tb
-				[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_LENGTH]);
+		param.length = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_LENGTH]);
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_FLAGS])
-		param.flags = nla_get_u32(tb
-				[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_FLAGS]);
+		param.flags = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_CONFIG_GENERIC_FLAGS]);
 
 	return rx_ops->parse_generic_nl_cmd(wiphy, wdev, &param, type);
 }
@@ -1786,7 +1762,7 @@ QDF_STATUS os_if_son_get_node_datarate_info(struct wlan_objmgr_vdev *vdev,
 	}
 
 	if (WLAN_ADDR_EQ(wlan_vdev_mlme_get_macaddr(vdev), mac_addr) ==
-							   QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		node_info->max_chwidth = os_if_son_get_chwidth(vdev);
 		node_info->phymode = os_if_son_get_phymode(vdev);
 		node_info->num_streams = os_if_son_get_rx_streams(vdev);
@@ -1798,10 +1774,12 @@ QDF_STATUS os_if_son_get_node_datarate_info(struct wlan_objmgr_vdev *vdev,
 			osif_err("invalid mcs index");
 			return QDF_STATUS_E_INVAL;
 		}
-		osif_debug("node info: max_chwidth: %u, phymode: %u, num_streams: %d, max_mcs: %d, max_txpower: %d",
-			   node_info->max_chwidth, node_info->phymode,
-			   node_info->num_streams, node_info->max_MCS,
-			   node_info->max_txpower);
+		osif_debug(
+			"node info: max_chwidth: %u, phymode: %u, num_streams: %d, "
+			"max_mcs: %d, max_txpower: %d",
+			node_info->max_chwidth, node_info->phymode,
+			node_info->num_streams, node_info->max_MCS,
+			node_info->max_txpower);
 	} else {
 		if (!g_son_os_if_cb.os_if_get_node_info) {
 			osif_err("Callback not registered");

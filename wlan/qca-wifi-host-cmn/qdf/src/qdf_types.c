@@ -17,12 +17,12 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "qdf_types.h"
 #include "qdf_mem.h"
 #include "qdf_module.h"
 #include "qdf_status.h"
 #include "qdf_str.h"
 #include "qdf_trace.h"
-#include "qdf_types.h"
 
 const char *qdf_opmode_str(const enum QDF_OPMODE opmode)
 {
@@ -219,8 +219,8 @@ static QDF_STATUS qdf_consume_radix(const char **str, uint8_t *out_radix)
 	return QDF_STATUS_E_FAILURE;
 }
 
-static QDF_STATUS
-__qdf_int_parse_lazy(const char **int_str, uint64_t *out_int, bool *out_negate)
+static QDF_STATUS __qdf_int_parse_lazy(const char **int_str, uint64_t *out_int,
+				       bool *out_negate)
 {
 	QDF_STATUS status;
 	bool negate = false;
@@ -260,8 +260,8 @@ __qdf_int_parse_lazy(const char **int_str, uint64_t *out_int, bool *out_negate)
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-qdf_int_parse(const char *int_str, uint64_t *out_int, bool *out_negate)
+static QDF_STATUS qdf_int_parse(const char *int_str, uint64_t *out_int,
+				bool *out_negate)
 {
 	QDF_STATUS status;
 	bool negate;
@@ -546,23 +546,23 @@ static inline void qdf_ipv6_apply_zero_comp(struct qdf_ipv6_addr *addr,
 					    uint8_t zero_comp_index)
 {
 	/* Given the following hypothetical ipv6 address:
-	 * |---------------------------------------|
-	 * | 01 | ab | cd | ef |    |    |    |    |
-	 * |---------------------------------------|
-	 *           ^--- zero_comp_index (2)
-	 * from -----^
-	 * to ---------------------------^
-	 * |    hextets (4)    |
-	 *                     |   zero comp size  |
-	 *           | to move |
-	 *
-	 * We need to apply the zero compression such that we get:
-	 * |---------------------------------------|
-	 * | 01 | ab | 00 | 00 | 00 | 00 | cd | ef |
-	 * |---------------------------------------|
-	 *           |     zero comp     |
-	 *                               |  moved  |
-	 */
+   * |---------------------------------------|
+   * | 01 | ab | cd | ef |    |    |    |    |
+   * |---------------------------------------|
+   *           ^--- zero_comp_index (2)
+   * from -----^
+   * to ---------------------------^
+   * |    hextets (4)    |
+   *                     |   zero comp size  |
+   *           | to move |
+   *
+   * We need to apply the zero compression such that we get:
+   * |---------------------------------------|
+   * | 01 | ab | 00 | 00 | 00 | 00 | cd | ef |
+   * |---------------------------------------|
+   *           |     zero comp     |
+   *                               |  moved  |
+   */
 
 	size_t zero_comp_size = (QDF_IPV6_ADDR_HEXTET_COUNT - hextets) * 2;
 	size_t bytes_to_move = (hextets - zero_comp_index) * 2;

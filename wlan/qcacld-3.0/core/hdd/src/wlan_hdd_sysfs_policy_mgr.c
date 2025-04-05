@@ -15,13 +15,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "osif_sync.h"
 #include <wlan_hdd_main.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_policy_mgr.h>
-#include "osif_sync.h"
 #include <wlan_policy_mgr_api.h>
-#include <wma_api.h>
 #include <wlan_policy_mgr_ucfg.h>
+#include <wma_api.h>
 
 static ssize_t hdd_pm_cinfo_show(struct hdd_context *hdd_ctx)
 {
@@ -59,8 +59,7 @@ static ssize_t hdd_pm_cinfo_show(struct hdd_context *hdd_ctx)
 }
 
 static ssize_t hdd_sysfs_pm_cminfo_show(struct kobject *kobj,
-					struct kobj_attribute *attr,
-					char *buf)
+					struct kobj_attribute *attr, char *buf)
 {
 	struct osif_psoc_sync *psoc_sync;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
@@ -69,8 +68,8 @@ static ssize_t hdd_sysfs_pm_cminfo_show(struct kobject *kobj,
 	if (wlan_hdd_validate_context(hdd_ctx))
 		return 0;
 
-	err_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					   &psoc_sync);
+	err_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (err_size)
 		return err_size;
 
@@ -80,15 +79,13 @@ static ssize_t hdd_sysfs_pm_cminfo_show(struct kobject *kobj,
 	return err_size;
 }
 
-static ssize_t
-__hdd_sysfs_pm_pcl_store(struct hdd_context *hdd_ctx,
-			 struct kobj_attribute *attr,
-			 const char *buf,
-			 size_t count)
+static ssize_t __hdd_sysfs_pm_pcl_store(struct hdd_context *hdd_ctx,
+					struct kobj_attribute *attr,
+					const char *buf, size_t count)
 {
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
-	uint8_t weight_list[NUM_CHANNELS] = {0};
-	uint32_t pcl[NUM_CHANNELS] = {0};
+	uint8_t weight_list[NUM_CHANNELS] = { 0 };
+	uint32_t pcl[NUM_CHANNELS] = { 0 };
 	uint32_t pcl_len = 0, val, i = 0;
 	char *sptr, *token;
 	QDF_STATUS status;
@@ -97,8 +94,8 @@ __hdd_sysfs_pm_pcl_store(struct hdd_context *hdd_ctx,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -106,8 +103,7 @@ __hdd_sysfs_pm_pcl_store(struct hdd_context *hdd_ctx,
 	}
 
 	sptr = buf_local;
-	hdd_debug("pm_pcl: count %zu buf_local:(%s)",
-		  count, buf_local);
+	hdd_debug("pm_pcl: count %zu buf_local:(%s)", count, buf_local);
 
 	/* Get val */
 	token = strsep(&sptr, " ");
@@ -121,8 +117,7 @@ __hdd_sysfs_pm_pcl_store(struct hdd_context *hdd_ctx,
 		return -EINVAL;
 	}
 
-	status = policy_mgr_get_pcl(hdd_ctx->psoc, val,
-				    pcl, &pcl_len,
+	status = policy_mgr_get_pcl(hdd_ctx->psoc, val, pcl, &pcl_len,
 				    weight_list, QDF_ARRAY_SIZE(weight_list),
 				    WLAN_INVALID_VDEV_ID);
 
@@ -130,18 +125,16 @@ __hdd_sysfs_pm_pcl_store(struct hdd_context *hdd_ctx,
 		hdd_err("can't get pcl policy manager");
 
 	hdd_debug("PCL Freq list for role[%d] is {", val);
-	for (i = 0 ; i < pcl_len; i++)
+	for (i = 0; i < pcl_len; i++)
 		hdd_debug(" %d, ", pcl[i]);
 	hdd_debug("}--------->\n");
 
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_pm_pcl_store(struct kobject *kobj,
-		       struct kobj_attribute *attr,
-		       const char *buf,
-		       size_t count)
+static ssize_t hdd_sysfs_pm_pcl_store(struct kobject *kobj,
+				      struct kobj_attribute *attr,
+				      const char *buf, size_t count)
 {
 	struct osif_psoc_sync *psoc_sync;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
@@ -152,13 +145,12 @@ hdd_sysfs_pm_pcl_store(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_pm_pcl_store(hdd_ctx, attr,
-					      buf, count);
+	errno_size = __hdd_sysfs_pm_pcl_store(hdd_ctx, attr, buf, count);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -166,12 +158,10 @@ hdd_sysfs_pm_pcl_store(struct kobject *kobj,
 }
 
 static struct kobj_attribute pm_pcl_attribute =
-	__ATTR(pm_pcl, 0220, NULL,
-	       hdd_sysfs_pm_pcl_store);
+	__ATTR(pm_pcl, 0220, NULL, hdd_sysfs_pm_pcl_store);
 
 static struct kobj_attribute pm_cinfo_attribute =
-	__ATTR(pm_cinfo, 0440,
-	       hdd_sysfs_pm_cminfo_show, NULL);
+	__ATTR(pm_cinfo, 0440, hdd_sysfs_pm_cminfo_show, NULL);
 
 int hdd_sysfs_pm_pcl_create(struct kobject *driver_kobject)
 {
@@ -182,16 +172,14 @@ int hdd_sysfs_pm_pcl_create(struct kobject *driver_kobject)
 		return -EINVAL;
 	}
 
-	error = sysfs_create_file(driver_kobject,
-				  &pm_pcl_attribute.attr);
+	error = sysfs_create_file(driver_kobject, &pm_pcl_attribute.attr);
 	if (error)
 		hdd_err("could not create pm_pcl sysfs file");
 
 	return error;
 }
 
-void
-hdd_sysfs_pm_pcl_destroy(struct kobject *driver_kobject)
+void hdd_sysfs_pm_pcl_destroy(struct kobject *driver_kobject)
 {
 	if (!driver_kobject) {
 		hdd_err("could not get driver kobject!");
@@ -210,4 +198,3 @@ void hdd_sysfs_pm_cinfo_destroy(struct kobject *driver_kobject)
 {
 	sysfs_remove_file(driver_kobject, &pm_cinfo_attribute.attr);
 }
-

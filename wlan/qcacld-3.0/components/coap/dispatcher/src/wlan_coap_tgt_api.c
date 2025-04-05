@@ -18,10 +18,10 @@
  * DOC: contains CoAP south bound interface definitions
  */
 
+#include "wlan_objmgr_pdev_obj.h"
 #include <wlan_coap_main.h>
 #include <wlan_coap_tgt_api.h>
 #include <wlan_lmac_if_def.h>
-#include "wlan_objmgr_pdev_obj.h"
 
 static inline struct wlan_lmac_if_coap_tx_ops *
 wlan_psoc_get_coap_txops(struct wlan_objmgr_psoc *psoc)
@@ -134,8 +134,9 @@ tgt_send_coap_offload_reply_disable(struct wlan_objmgr_vdev *vdev,
 }
 
 QDF_STATUS
-tgt_send_coap_offload_periodic_tx_enable(struct wlan_objmgr_vdev *vdev,
-			struct coap_offload_periodic_tx_param *param)
+tgt_send_coap_offload_periodic_tx_enable(
+	struct wlan_objmgr_vdev *vdev,
+	struct coap_offload_periodic_tx_param *param)
 {
 	struct wlan_lmac_if_coap_tx_ops *coap_ops;
 

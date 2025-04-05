@@ -18,8 +18,8 @@
  *
  */
 
-#include "wlan_dp_main.h"
 #include "wlan_dp_api.h"
+#include "wlan_dp_main.h"
 #include <wlan_dp_fisa_rx.h>
 
 void wlan_dp_update_peer_map_unmap_version(uint8_t *version)

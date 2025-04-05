@@ -20,13 +20,13 @@
  * DOC: Implements public API for pmo to interact with target/WMI
  */
 
-#include "wlan_pmo_tgt_api.h"
+#include "wlan_pmo_main.h"
 #include "wlan_pmo_mc_addr_filtering_public_struct.h"
 #include "wlan_pmo_obj_mgmt_public_struct.h"
-#include "wlan_pmo_main.h"
+#include "wlan_pmo_tgt_api.h"
 
 QDF_STATUS pmo_tgt_set_mc_filter_req(struct wlan_objmgr_vdev *vdev,
-		struct qdf_mac_addr multicast_addr)
+				     struct qdf_mac_addr multicast_addr)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -43,8 +43,7 @@ QDF_STATUS pmo_tgt_set_mc_filter_req(struct wlan_objmgr_vdev *vdev,
 		goto out;
 	}
 
-	status = pmo_tx_ops.send_set_mc_filter_req(
-			vdev, multicast_addr);
+	status = pmo_tx_ops.send_set_mc_filter_req(vdev, multicast_addr);
 	if (status != QDF_STATUS_SUCCESS)
 		pmo_err("Failed to add/clear mc filter");
 out:
@@ -54,7 +53,7 @@ out:
 }
 
 QDF_STATUS pmo_tgt_clear_mc_filter_req(struct wlan_objmgr_vdev *vdev,
-		struct qdf_mac_addr multicast_addr)
+				       struct qdf_mac_addr multicast_addr)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -71,8 +70,7 @@ QDF_STATUS pmo_tgt_clear_mc_filter_req(struct wlan_objmgr_vdev *vdev,
 		goto out;
 	}
 
-	status = pmo_tx_ops.send_clear_mc_filter_req(
-			vdev, multicast_addr);
+	status = pmo_tx_ops.send_clear_mc_filter_req(vdev, multicast_addr);
 	if (status != QDF_STATUS_SUCCESS)
 		pmo_err("Failed to add/clear mc filter");
 out:
@@ -97,8 +95,9 @@ bool pmo_tgt_get_multiple_mc_filter_support(struct wlan_objmgr_vdev *vdev)
 	return pmo_tx_ops.get_multiple_mc_filter_support(psoc);
 }
 
-QDF_STATUS pmo_tgt_set_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
-		struct pmo_mc_addr_list *mc_list)
+QDF_STATUS
+pmo_tgt_set_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
+				   struct pmo_mc_addr_list *mc_list)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -113,8 +112,7 @@ QDF_STATUS pmo_tgt_set_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
 		goto out;
 	}
 
-	status = pmo_tx_ops.send_set_multiple_mc_filter_req(
-			vdev, mc_list);
+	status = pmo_tx_ops.send_set_multiple_mc_filter_req(vdev, mc_list);
 	if (status != QDF_STATUS_SUCCESS)
 		pmo_err("Failed to add/clear multiple mc filter");
 out:
@@ -122,8 +120,9 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_clear_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
-		struct pmo_mc_addr_list *mc_list)
+QDF_STATUS
+pmo_tgt_clear_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
+				     struct pmo_mc_addr_list *mc_list)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -138,13 +137,10 @@ QDF_STATUS pmo_tgt_clear_multiple_mc_filter_req(struct wlan_objmgr_vdev *vdev,
 		goto out;
 	}
 
-	status = pmo_tx_ops.send_clear_multiple_mc_filter_req(
-			vdev, mc_list);
+	status = pmo_tx_ops.send_clear_multiple_mc_filter_req(vdev, mc_list);
 	if (status != QDF_STATUS_SUCCESS)
 		pmo_err("Failed to add/clear multiple mc filter");
 out:
 
 	return status;
 }
-
-

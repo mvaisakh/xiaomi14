@@ -4,51 +4,51 @@
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 #include <linux/iopoll.h>
 
-#include "sde_hw_mdss.h"
-#include "sde_hwio.h"
-#include "sde_hw_catalog.h"
-#include "sde_hw_pingpong.h"
 #include "sde_dbg.h"
+#include "sde_hw_catalog.h"
+#include "sde_hw_mdss.h"
+#include "sde_hw_pingpong.h"
+#include "sde_hwio.h"
 #include "sde_kms.h"
 
-#define PP_TEAR_CHECK_EN                0x000
-#define PP_SYNC_CONFIG_VSYNC            0x004
-#define PP_SYNC_CONFIG_HEIGHT           0x008
-#define PP_SYNC_WRCOUNT                 0x00C
-#define PP_VSYNC_INIT_VAL               0x010
-#define PP_INT_COUNT_VAL                0x014
-#define PP_SYNC_THRESH                  0x018
-#define PP_START_POS                    0x01C
-#define PP_RD_PTR_IRQ                   0x020
-#define PP_WR_PTR_IRQ                   0x024
-#define PP_OUT_LINE_COUNT               0x028
-#define PP_LINE_COUNT                   0x02C
-#define PP_AUTOREFRESH_CONFIG           0x030
+#define PP_TEAR_CHECK_EN 0x000
+#define PP_SYNC_CONFIG_VSYNC 0x004
+#define PP_SYNC_CONFIG_HEIGHT 0x008
+#define PP_SYNC_WRCOUNT 0x00C
+#define PP_VSYNC_INIT_VAL 0x010
+#define PP_INT_COUNT_VAL 0x014
+#define PP_SYNC_THRESH 0x018
+#define PP_START_POS 0x01C
+#define PP_RD_PTR_IRQ 0x020
+#define PP_WR_PTR_IRQ 0x024
+#define PP_OUT_LINE_COUNT 0x028
+#define PP_LINE_COUNT 0x02C
+#define PP_AUTOREFRESH_CONFIG 0x030
 
-#define PP_FBC_MODE                     0x034
-#define PP_FBC_BUDGET_CTL               0x038
-#define PP_FBC_LOSSY_MODE               0x03C
-#define PP_DSC_MODE                     0x0a0
-#define PP_DCE_DATA_IN_SWAP             0x0ac
-#define PP_DCE_DATA_OUT_SWAP            0x0c8
+#define PP_FBC_MODE 0x034
+#define PP_FBC_BUDGET_CTL 0x038
+#define PP_FBC_LOSSY_MODE 0x03C
+#define PP_DSC_MODE 0x0a0
+#define PP_DCE_DATA_IN_SWAP 0x0ac
+#define PP_DCE_DATA_OUT_SWAP 0x0c8
 
 #define DITHER_VER_MAJOR_1 1
 /* supports LUMA Dither */
 #define DITHER_VER_MAJOR_2 2
 
 #define MERGE_3D_MODE 0x004
-#define MERGE_3D_MUX  0x000
+#define MERGE_3D_MUX 0x000
 
-#define PPB_FIFO_SIZE_CFG               0x01C
-#define PPB_FIFO_SIZE_MASK              0x0FFF
+#define PPB_FIFO_SIZE_CFG 0x01C
+#define PPB_FIFO_SIZE_MASK 0x0FFF
 
 static struct sde_merge_3d_cfg *_merge_3d_offset(enum sde_merge_3d idx,
-		struct sde_mdss_cfg *m,
-		void __iomem *addr,
-		struct sde_hw_blk_reg_map *b)
+						 struct sde_mdss_cfg *m,
+						 void __iomem *addr,
+						 struct sde_hw_blk_reg_map *b)
 {
 	int i;
 
@@ -67,7 +67,7 @@ static struct sde_merge_3d_cfg *_merge_3d_offset(enum sde_merge_3d idx,
 }
 
 static void _sde_hw_merge_3d_setup_blend_mode(struct sde_hw_merge_3d *ctx,
-			enum sde_3d_blend_mode cfg)
+					      enum sde_3d_blend_mode cfg)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 mode = 0;
@@ -97,15 +97,15 @@ static void sde_hw_merge_3d_reset_blend_mode(struct sde_hw_merge_3d *ctx)
 }
 
 static void _setup_merge_3d_ops(struct sde_hw_merge_3d_ops *ops,
-	const struct sde_merge_3d_cfg *hw_cap)
+				const struct sde_merge_3d_cfg *hw_cap)
 {
 	ops->setup_blend_mode = _sde_hw_merge_3d_setup_blend_mode;
 	ops->reset_blend_mode = sde_hw_merge_3d_reset_blend_mode;
 }
 
 static struct sde_hw_merge_3d *_sde_pp_merge_3d_init(enum sde_merge_3d idx,
-		void __iomem *addr,
-		struct sde_mdss_cfg *m)
+						     void __iomem *addr,
+						     struct sde_mdss_cfg *m)
 {
 	struct sde_hw_merge_3d *c;
 	struct sde_merge_3d_cfg *cfg;
@@ -131,8 +131,9 @@ static struct sde_hw_merge_3d *_sde_pp_merge_3d_init(enum sde_merge_3d idx,
 
 	if (!(merge3d_init_mask & BIT(idx))) {
 		sde_dbg_reg_register_dump_range(SDE_DBG_NAME, cfg->name,
-				c->hw.blk_off, c->hw.blk_off + c->hw.length,
-				c->hw.xin_id);
+						c->hw.blk_off,
+						c->hw.blk_off + c->hw.length,
+						c->hw.xin_id);
 		merge3d_init_mask |= BIT(idx);
 	}
 
@@ -140,9 +141,9 @@ static struct sde_hw_merge_3d *_sde_pp_merge_3d_init(enum sde_merge_3d idx,
 }
 
 static struct sde_pingpong_cfg *_pingpong_offset(enum sde_pingpong pp,
-		struct sde_mdss_cfg *m,
-		void __iomem *addr,
-		struct sde_hw_blk_reg_map *b)
+						 struct sde_mdss_cfg *m,
+						 void __iomem *addr,
+						 struct sde_hw_blk_reg_map *b)
 {
 	int i;
 
@@ -161,7 +162,7 @@ static struct sde_pingpong_cfg *_pingpong_offset(enum sde_pingpong pp,
 }
 
 static int sde_hw_pp_setup_te_config(struct sde_hw_pingpong *pp,
-		struct sde_hw_tear_check *te)
+				     struct sde_hw_tear_check *te)
 {
 	struct sde_hw_blk_reg_map *c;
 	int cfg;
@@ -183,16 +184,16 @@ static int sde_hw_pp_setup_te_config(struct sde_hw_pingpong *pp,
 	SDE_REG_WRITE(c, PP_WR_PTR_IRQ, te->wr_ptr_irq);
 	SDE_REG_WRITE(c, PP_START_POS, te->start_pos);
 	SDE_REG_WRITE(c, PP_SYNC_THRESH,
-			((te->sync_threshold_continue << 16) |
-			 te->sync_threshold_start));
+		      ((te->sync_threshold_continue << 16) |
+		       te->sync_threshold_start));
 	SDE_REG_WRITE(c, PP_SYNC_WRCOUNT,
-			(te->start_pos + te->sync_threshold_start + 1));
+		      (te->start_pos + te->sync_threshold_start + 1));
 
 	return 0;
 }
 
 static void sde_hw_pp_update_te(struct sde_hw_pingpong *pp,
-		struct sde_hw_tear_check *te)
+				struct sde_hw_tear_check *te)
 {
 	struct sde_hw_blk_reg_map *c;
 	int cfg;
@@ -208,7 +209,7 @@ static void sde_hw_pp_update_te(struct sde_hw_pingpong *pp,
 }
 
 static int sde_hw_pp_setup_autorefresh_config(struct sde_hw_pingpong *pp,
-		struct sde_hw_autorefresh *cfg)
+					      struct sde_hw_autorefresh *cfg)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 refresh_cfg;
@@ -229,7 +230,7 @@ static int sde_hw_pp_setup_autorefresh_config(struct sde_hw_pingpong *pp,
 }
 
 static int sde_hw_pp_get_autorefresh_config(struct sde_hw_pingpong *pp,
-		struct sde_hw_autorefresh *cfg)
+					    struct sde_hw_autorefresh *cfg)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 val;
@@ -246,7 +247,7 @@ static int sde_hw_pp_get_autorefresh_config(struct sde_hw_pingpong *pp,
 }
 
 static int sde_hw_pp_poll_timeout_wr_ptr(struct sde_hw_pingpong *pp,
-		u32 timeout_us)
+					 u32 timeout_us)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 val;
@@ -255,8 +256,8 @@ static int sde_hw_pp_poll_timeout_wr_ptr(struct sde_hw_pingpong *pp,
 		return -EINVAL;
 
 	c = &pp->hw;
-	return read_poll_timeout(sde_reg_read, val, (val & 0xffff) >= 1,
-					10, false, timeout_us, c, PP_LINE_COUNT);
+	return read_poll_timeout(sde_reg_read, val, (val & 0xffff) >= 1, 10,
+				 false, timeout_us, c, PP_LINE_COUNT);
 }
 
 static void sde_hw_pp_dsc_enable(struct sde_hw_pingpong *pp)
@@ -301,8 +302,8 @@ static int sde_hw_pp_setup_dsc(struct sde_hw_pingpong *pp)
 	return 0;
 }
 
-static int sde_hw_pp_setup_dither(struct sde_hw_pingpong *pp,
-					void *cfg, size_t len)
+static int sde_hw_pp_setup_dither(struct sde_hw_pingpong *pp, void *cfg,
+				  size_t len)
 {
 	struct sde_hw_blk_reg_map *c;
 	struct drm_msm_dither *dither = (struct drm_msm_dither *)cfg;
@@ -321,14 +322,14 @@ static int sde_hw_pp_setup_dither(struct sde_hw_pingpong *pp,
 
 	if (len != sizeof(struct drm_msm_dither)) {
 		DRM_ERROR("input len %zu, expected len %zu\n", len,
-			sizeof(struct drm_msm_dither));
+			  sizeof(struct drm_msm_dither));
 		return -EINVAL;
 	}
 
 	if (dither->c0_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
-		dither->c1_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
-		dither->c2_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
-		dither->c3_bitdepth >= DITHER_DEPTH_MAP_INDEX)
+	    dither->c1_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
+	    dither->c2_bitdepth >= DITHER_DEPTH_MAP_INDEX ||
+	    dither->c3_bitdepth >= DITHER_DEPTH_MAP_INDEX)
 		return -EINVAL;
 
 	offset += 4;
@@ -342,14 +343,14 @@ static int sde_hw_pp_setup_dither(struct sde_hw_pingpong *pp,
 	for (i = 0; i < DITHER_MATRIX_SZ - 3; i += 4) {
 		offset += 4;
 		data = (dither->matrix[i] & REG_MASK(4)) |
-			((dither->matrix[i + 1] & REG_MASK(4)) << 4) |
-			((dither->matrix[i + 2] & REG_MASK(4)) << 8) |
-			((dither->matrix[i + 3] & REG_MASK(4)) << 12);
+		       ((dither->matrix[i + 1] & REG_MASK(4)) << 4) |
+		       ((dither->matrix[i + 2] & REG_MASK(4)) << 8) |
+		       ((dither->matrix[i + 3] & REG_MASK(4)) << 12);
 		SDE_REG_WRITE(c, base + offset, data);
 	}
 
-	if (test_bit(SDE_PINGPONG_DITHER_LUMA, &pp->caps->features)
-				&& (dither->flags & DITHER_LUMA_MODE))
+	if (test_bit(SDE_PINGPONG_DITHER_LUMA, &pp->caps->features) &&
+	    (dither->flags & DITHER_LUMA_MODE))
 		SDE_REG_WRITE(c, base, 0x11);
 	else
 		SDE_REG_WRITE(c, base, 1);
@@ -370,7 +371,7 @@ static int sde_hw_pp_enable_te(struct sde_hw_pingpong *pp, bool enable)
 }
 
 static int sde_hw_pp_connect_external_te(struct sde_hw_pingpong *pp,
-		bool enable_external_te)
+					 bool enable_external_te)
 {
 	struct sde_hw_blk_reg_map *c = &pp->hw;
 	u32 cfg;
@@ -393,7 +394,7 @@ static int sde_hw_pp_connect_external_te(struct sde_hw_pingpong *pp,
 }
 
 static int sde_hw_pp_get_vsync_info(struct sde_hw_pingpong *pp,
-		struct sde_hw_pp_vsync_info *info)
+				    struct sde_hw_pp_vsync_info *info)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 val;
@@ -459,7 +460,7 @@ static void sde_hw_pp_set_ppb_fifo_size(struct sde_hw_pingpong *pp, u32 pixels)
 }
 
 static void sde_hw_pp_setup_3d_merge_mode(struct sde_hw_pingpong *pp,
-					enum sde_3d_blend_mode cfg)
+					  enum sde_3d_blend_mode cfg)
 {
 	if (pp->merge_3d && pp->merge_3d->ops.setup_blend_mode)
 		pp->merge_3d->ops.setup_blend_mode(pp->merge_3d, cfg);
@@ -477,7 +478,7 @@ static unsigned long sde_hw_pp_get_caps(struct sde_hw_pingpong *pp)
 }
 
 static void _setup_pingpong_ops(struct sde_hw_pingpong_ops *ops,
-	const struct sde_pingpong_cfg *hw_cap)
+				const struct sde_pingpong_cfg *hw_cap)
 {
 	u32 version = 0;
 
@@ -520,8 +521,8 @@ static void _setup_pingpong_ops(struct sde_hw_pingpong_ops *ops,
 };
 
 struct sde_hw_blk_reg_map *sde_hw_pingpong_init(enum sde_pingpong idx,
-		void __iomem *addr,
-		struct sde_mdss_cfg *m)
+						void __iomem *addr,
+						struct sde_mdss_cfg *m)
 {
 	struct sde_hw_pingpong *c;
 	struct sde_pingpong_cfg *cfg;
@@ -541,23 +542,24 @@ struct sde_hw_blk_reg_map *sde_hw_pingpong_init(enum sde_pingpong idx,
 	c->dcwb_idx = cfg->dcwb_id;
 	if (test_bit(SDE_PINGPONG_MERGE_3D, &cfg->features)) {
 		c->merge_3d = _sde_pp_merge_3d_init(cfg->merge_3d_id, addr, m);
-			if (IS_ERR(c->merge_3d)) {
-				SDE_ERROR("invalid merge_3d block %d\n", idx);
-				return ERR_PTR(-ENOMEM);
-			}
+		if (IS_ERR(c->merge_3d)) {
+			SDE_ERROR("invalid merge_3d block %d\n", idx);
+			return ERR_PTR(-ENOMEM);
+		}
 	}
 
 	_setup_pingpong_ops(&c->ops, c->caps);
 
 	sde_dbg_reg_register_dump_range(SDE_DBG_NAME, cfg->name, c->hw.blk_off,
-			c->hw.blk_off + c->hw.length, c->hw.xin_id);
+					c->hw.blk_off + c->hw.length,
+					c->hw.xin_id);
 
 	if (cfg->sblk->dither.base && cfg->sblk->dither.len) {
-		sde_dbg_reg_register_dump_range(SDE_DBG_NAME,
-			cfg->sblk->dither.name,
+		sde_dbg_reg_register_dump_range(
+			SDE_DBG_NAME, cfg->sblk->dither.name,
 			c->hw.blk_off + cfg->sblk->dither.base,
 			c->hw.blk_off + cfg->sblk->dither.base +
-			cfg->sblk->dither.len,
+				cfg->sblk->dither.len,
 			c->hw.xin_id);
 	}
 

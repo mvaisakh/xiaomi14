@@ -29,43 +29,39 @@
 
 /*=========================================================================*/
 /*!
-	@file
-	ipa_nat_testREG.c
+        @file
+        ipa_nat_testREG.c
 
-	@brief
-	Verify the following scenario:
-	1. Add ipv4 table
-	2. Delete ipv4 table
+        @brief
+        Verify the following scenario:
+        1. Add ipv4 table
+        2. Delete ipv4 table
 */
 /*=========================================================================*/
 
 #include "ipa_nat_test.h"
 
-int ipa_nat_testREG(
-	const char* nat_mem_type,
-	u32 pub_ip_add,
-	int total_entries,
-	u32 tbl_hdl,
-	int sep,
-	void* arb_data_ptr)
+int ipa_nat_testREG(const char *nat_mem_type, u32 pub_ip_add, int total_entries,
+		    u32 tbl_hdl, int sep, void *arb_data_ptr)
 {
-	int* ireg_ptr = (int*) arb_data_ptr;
+	int *ireg_ptr = (int *)arb_data_ptr;
 
-	int  i, ret;
+	int i, ret;
 
 	IPADBG("In\n");
 
-	for ( i = 0; i < *ireg_ptr; i++ )
-	{
-		IPADBG("Executing iteration %d\n", i+1);
+	for (i = 0; i < *ireg_ptr; i++) {
+		IPADBG("Executing iteration %d\n", i + 1);
 
 		IPADBG("Calling ipa_nat_add_ipv4_tbl()\n");
 
-		ret = ipa_nat_add_ipv4_tbl(pub_ip_add, nat_mem_type, total_entries, &tbl_hdl);
+		ret = ipa_nat_add_ipv4_tbl(pub_ip_add, nat_mem_type,
+					   total_entries, &tbl_hdl);
 
 		CHECK_ERR_TBL_STOP(ret, tbl_hdl);
 
-		IPADBG("Iteration %d creation of nat ipv4 table successful\n", i+1);
+		IPADBG("Iteration %d creation of nat ipv4 table successful\n",
+		       i + 1);
 
 		IPADBG("Calling ipa_nat_del_ipv4_tbl()\n");
 
@@ -73,7 +69,8 @@ int ipa_nat_testREG(
 
 		CHECK_ERR(ret);
 
-		IPADBG("Iteration %d deletion of ipv4 nat table successful\n", i+1);
+		IPADBG("Iteration %d deletion of ipv4 nat table successful\n",
+		       i + 1);
 	}
 
 	IPADBG("Executed %d iterations:\n", i);

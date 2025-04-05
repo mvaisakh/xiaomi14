@@ -23,29 +23,29 @@
  * This file contains the WLAN factory test mode implementation
  */
 
+#include "cds_reg_service.h"
 #include "cds_sched.h"
-#include <cds_api.h>
-#include "sir_types.h"
+#include "i_cds_packet.h"
+#include "mac_init_api.h"
 #include "qdf_types.h"
+#include "qwlan_version.h"
 #include "sir_api.h"
 #include "sir_mac_prot_def.h"
+#include "sir_types.h"
 #include "sme_api.h"
-#include "mac_init_api.h"
-#include "wlan_qct_sys.h"
-#include "wlan_hdd_misc.h"
-#include "i_cds_packet.h"
-#include "cds_reg_service.h"
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_lpass.h"
-#include "qwlan_version.h"
+#include "wlan_hdd_main.h"
+#include "wlan_hdd_misc.h"
+#include "wlan_qct_sys.h"
 #include "wma_types.h"
+#include <cds_api.h>
 
 #ifdef QCA_WIFI_FTM
 
-#include "wlan_hdd_cfg80211.h"
 #include "hif.h"
-#include <wlan_ioctl_ftm.h>
+#include "wlan_hdd_cfg80211.h"
 #include <wlan_cfg80211_ftm.h>
+#include <wlan_ioctl_ftm.h>
 
 /**
  * hdd_update_cds_config_ftm() - API to update cds configuration parameters
@@ -103,7 +103,7 @@ static int wlan_hdd_qcmbr_ioctl(struct hdd_adapter *adapter, void __user *data)
 		return QDF_STATUS_E_FAILURE;
 
 	ret = wlan_ioctl_ftm_testmode_cmd(hdd_ctx->pdev, cmd,
-				(uint8_t *)data + sizeof(cmd));
+					  (uint8_t *)data + sizeof(cmd));
 
 	return ret;
 }

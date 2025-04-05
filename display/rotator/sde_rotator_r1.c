@@ -3,22 +3,22 @@
  * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"%s: " fmt, __func__
+#define pr_fmt(fmt) "%s: " fmt, __func__
 
-#include <linux/platform_device.h>
-#include <linux/module.h>
-#include <linux/fs.h>
-#include <linux/file.h>
-#include <linux/delay.h>
 #include <linux/debugfs.h>
+#include <linux/delay.h>
+#include <linux/file.h>
+#include <linux/fs.h>
 #include <linux/interrupt.h>
+#include <linux/module.h>
+#include <linux/platform_device.h>
 
-#include "sde_rotator_r1_hwio.h"
 #include "sde_rotator_core.h"
-#include "sde_rotator_util.h"
-#include "sde_rotator_r1_internal.h"
 #include "sde_rotator_r1.h"
 #include "sde_rotator_r1_debug.h"
+#include "sde_rotator_r1_hwio.h"
+#include "sde_rotator_r1_internal.h"
+#include "sde_rotator_util.h"
 
 struct sde_mdp_hw_resource {
 	struct sde_rot_hw_resource hw;
@@ -37,101 +37,58 @@ struct sde_rotator_r1_data {
 };
 
 static u32 sde_hw_rotator_input_pixfmts[] = {
-	SDE_PIX_FMT_XRGB_8888,
-	SDE_PIX_FMT_ARGB_8888,
-	SDE_PIX_FMT_ABGR_8888,
-	SDE_PIX_FMT_RGBA_8888,
-	SDE_PIX_FMT_BGRA_8888,
-	SDE_PIX_FMT_RGBX_8888,
-	SDE_PIX_FMT_BGRX_8888,
-	SDE_PIX_FMT_XBGR_8888,
-	SDE_PIX_FMT_RGBA_5551,
-	SDE_PIX_FMT_ARGB_1555,
-	SDE_PIX_FMT_ABGR_1555,
-	SDE_PIX_FMT_BGRA_5551,
-	SDE_PIX_FMT_BGRX_5551,
-	SDE_PIX_FMT_RGBX_5551,
-	SDE_PIX_FMT_XBGR_1555,
-	SDE_PIX_FMT_XRGB_1555,
-	SDE_PIX_FMT_ARGB_4444,
-	SDE_PIX_FMT_RGBA_4444,
-	SDE_PIX_FMT_BGRA_4444,
-	SDE_PIX_FMT_ABGR_4444,
-	SDE_PIX_FMT_RGBX_4444,
-	SDE_PIX_FMT_XRGB_4444,
-	SDE_PIX_FMT_BGRX_4444,
-	SDE_PIX_FMT_XBGR_4444,
-	SDE_PIX_FMT_RGB_888,
-	SDE_PIX_FMT_BGR_888,
-	SDE_PIX_FMT_RGB_565,
-	SDE_PIX_FMT_BGR_565,
-	SDE_PIX_FMT_Y_CB_CR_H2V2,
-	SDE_PIX_FMT_Y_CR_CB_H2V2,
-	SDE_PIX_FMT_Y_CR_CB_GH2V2,
-	SDE_PIX_FMT_Y_CBCR_H2V2,
-	SDE_PIX_FMT_Y_CRCB_H2V2,
-	SDE_PIX_FMT_Y_CBCR_H1V2,
-	SDE_PIX_FMT_Y_CRCB_H1V2,
-	SDE_PIX_FMT_Y_CBCR_H2V1,
-	SDE_PIX_FMT_Y_CRCB_H2V1,
-	SDE_PIX_FMT_YCBYCR_H2V1,
-	SDE_PIX_FMT_Y_CBCR_H2V2_VENUS,
-	SDE_PIX_FMT_Y_CRCB_H2V2_VENUS,
-	SDE_PIX_FMT_RGBA_8888_UBWC,
-	SDE_PIX_FMT_RGBX_8888_UBWC,
-	SDE_PIX_FMT_RGB_565_UBWC,
-	SDE_PIX_FMT_Y_CBCR_H2V2_UBWC,
+	SDE_PIX_FMT_XRGB_8888,	       SDE_PIX_FMT_ARGB_8888,
+	SDE_PIX_FMT_ABGR_8888,	       SDE_PIX_FMT_RGBA_8888,
+	SDE_PIX_FMT_BGRA_8888,	       SDE_PIX_FMT_RGBX_8888,
+	SDE_PIX_FMT_BGRX_8888,	       SDE_PIX_FMT_XBGR_8888,
+	SDE_PIX_FMT_RGBA_5551,	       SDE_PIX_FMT_ARGB_1555,
+	SDE_PIX_FMT_ABGR_1555,	       SDE_PIX_FMT_BGRA_5551,
+	SDE_PIX_FMT_BGRX_5551,	       SDE_PIX_FMT_RGBX_5551,
+	SDE_PIX_FMT_XBGR_1555,	       SDE_PIX_FMT_XRGB_1555,
+	SDE_PIX_FMT_ARGB_4444,	       SDE_PIX_FMT_RGBA_4444,
+	SDE_PIX_FMT_BGRA_4444,	       SDE_PIX_FMT_ABGR_4444,
+	SDE_PIX_FMT_RGBX_4444,	       SDE_PIX_FMT_XRGB_4444,
+	SDE_PIX_FMT_BGRX_4444,	       SDE_PIX_FMT_XBGR_4444,
+	SDE_PIX_FMT_RGB_888,	       SDE_PIX_FMT_BGR_888,
+	SDE_PIX_FMT_RGB_565,	       SDE_PIX_FMT_BGR_565,
+	SDE_PIX_FMT_Y_CB_CR_H2V2,      SDE_PIX_FMT_Y_CR_CB_H2V2,
+	SDE_PIX_FMT_Y_CR_CB_GH2V2,     SDE_PIX_FMT_Y_CBCR_H2V2,
+	SDE_PIX_FMT_Y_CRCB_H2V2,       SDE_PIX_FMT_Y_CBCR_H1V2,
+	SDE_PIX_FMT_Y_CRCB_H1V2,       SDE_PIX_FMT_Y_CBCR_H2V1,
+	SDE_PIX_FMT_Y_CRCB_H2V1,       SDE_PIX_FMT_YCBYCR_H2V1,
+	SDE_PIX_FMT_Y_CBCR_H2V2_VENUS, SDE_PIX_FMT_Y_CRCB_H2V2_VENUS,
+	SDE_PIX_FMT_RGBA_8888_UBWC,    SDE_PIX_FMT_RGBX_8888_UBWC,
+	SDE_PIX_FMT_RGB_565_UBWC,      SDE_PIX_FMT_Y_CBCR_H2V2_UBWC,
 };
 
 static u32 sde_hw_rotator_output_pixfmts[] = {
-	SDE_PIX_FMT_XRGB_8888,
-	SDE_PIX_FMT_ARGB_8888,
-	SDE_PIX_FMT_ABGR_8888,
-	SDE_PIX_FMT_RGBA_8888,
-	SDE_PIX_FMT_BGRA_8888,
-	SDE_PIX_FMT_RGBX_8888,
-	SDE_PIX_FMT_BGRX_8888,
-	SDE_PIX_FMT_XBGR_8888,
-	SDE_PIX_FMT_RGBA_5551,
-	SDE_PIX_FMT_ARGB_1555,
-	SDE_PIX_FMT_ABGR_1555,
-	SDE_PIX_FMT_BGRA_5551,
-	SDE_PIX_FMT_BGRX_5551,
-	SDE_PIX_FMT_RGBX_5551,
-	SDE_PIX_FMT_XBGR_1555,
-	SDE_PIX_FMT_XRGB_1555,
-	SDE_PIX_FMT_ARGB_4444,
-	SDE_PIX_FMT_RGBA_4444,
-	SDE_PIX_FMT_BGRA_4444,
-	SDE_PIX_FMT_ABGR_4444,
-	SDE_PIX_FMT_RGBX_4444,
-	SDE_PIX_FMT_XRGB_4444,
-	SDE_PIX_FMT_BGRX_4444,
-	SDE_PIX_FMT_XBGR_4444,
-	SDE_PIX_FMT_RGB_888,
-	SDE_PIX_FMT_BGR_888,
-	SDE_PIX_FMT_RGB_565,
-	SDE_PIX_FMT_BGR_565,
-	SDE_PIX_FMT_Y_CB_CR_H2V2,
-	SDE_PIX_FMT_Y_CR_CB_H2V2,
-	SDE_PIX_FMT_Y_CR_CB_GH2V2,
-	SDE_PIX_FMT_Y_CBCR_H2V2,
-	SDE_PIX_FMT_Y_CRCB_H2V2,
-	SDE_PIX_FMT_Y_CBCR_H1V2,
-	SDE_PIX_FMT_Y_CRCB_H1V2,
-	SDE_PIX_FMT_Y_CBCR_H2V1,
-	SDE_PIX_FMT_Y_CRCB_H2V1,
-	SDE_PIX_FMT_YCBYCR_H2V1,
-	SDE_PIX_FMT_Y_CBCR_H2V2_VENUS,
-	SDE_PIX_FMT_Y_CRCB_H2V2_VENUS,
-	SDE_PIX_FMT_RGBA_8888_UBWC,
-	SDE_PIX_FMT_RGBX_8888_UBWC,
-	SDE_PIX_FMT_RGB_565_UBWC,
-	SDE_PIX_FMT_Y_CBCR_H2V2_UBWC,
+	SDE_PIX_FMT_XRGB_8888,	       SDE_PIX_FMT_ARGB_8888,
+	SDE_PIX_FMT_ABGR_8888,	       SDE_PIX_FMT_RGBA_8888,
+	SDE_PIX_FMT_BGRA_8888,	       SDE_PIX_FMT_RGBX_8888,
+	SDE_PIX_FMT_BGRX_8888,	       SDE_PIX_FMT_XBGR_8888,
+	SDE_PIX_FMT_RGBA_5551,	       SDE_PIX_FMT_ARGB_1555,
+	SDE_PIX_FMT_ABGR_1555,	       SDE_PIX_FMT_BGRA_5551,
+	SDE_PIX_FMT_BGRX_5551,	       SDE_PIX_FMT_RGBX_5551,
+	SDE_PIX_FMT_XBGR_1555,	       SDE_PIX_FMT_XRGB_1555,
+	SDE_PIX_FMT_ARGB_4444,	       SDE_PIX_FMT_RGBA_4444,
+	SDE_PIX_FMT_BGRA_4444,	       SDE_PIX_FMT_ABGR_4444,
+	SDE_PIX_FMT_RGBX_4444,	       SDE_PIX_FMT_XRGB_4444,
+	SDE_PIX_FMT_BGRX_4444,	       SDE_PIX_FMT_XBGR_4444,
+	SDE_PIX_FMT_RGB_888,	       SDE_PIX_FMT_BGR_888,
+	SDE_PIX_FMT_RGB_565,	       SDE_PIX_FMT_BGR_565,
+	SDE_PIX_FMT_Y_CB_CR_H2V2,      SDE_PIX_FMT_Y_CR_CB_H2V2,
+	SDE_PIX_FMT_Y_CR_CB_GH2V2,     SDE_PIX_FMT_Y_CBCR_H2V2,
+	SDE_PIX_FMT_Y_CRCB_H2V2,       SDE_PIX_FMT_Y_CBCR_H1V2,
+	SDE_PIX_FMT_Y_CRCB_H1V2,       SDE_PIX_FMT_Y_CBCR_H2V1,
+	SDE_PIX_FMT_Y_CRCB_H2V1,       SDE_PIX_FMT_YCBYCR_H2V1,
+	SDE_PIX_FMT_Y_CBCR_H2V2_VENUS, SDE_PIX_FMT_Y_CRCB_H2V2_VENUS,
+	SDE_PIX_FMT_RGBA_8888_UBWC,    SDE_PIX_FMT_RGBX_8888_UBWC,
+	SDE_PIX_FMT_RGB_565_UBWC,      SDE_PIX_FMT_Y_CBCR_H2V2_UBWC,
 };
 
-static struct sde_mdp_hw_resource *sde_rotator_hw_alloc(
-	struct sde_rot_mgr *mgr, u32 ctl_id, u32 wb_id, int irq_num)
+static struct sde_mdp_hw_resource *sde_rotator_hw_alloc(struct sde_rot_mgr *mgr,
+							u32 ctl_id, u32 wb_id,
+							int irq_num)
 {
 	struct sde_mdp_hw_resource *mdp_hw;
 	struct sde_rot_data_type *mdata = sde_rot_get_mdata();
@@ -139,7 +96,7 @@ static struct sde_mdp_hw_resource *sde_rotator_hw_alloc(
 	int ret = 0;
 
 	mdp_hw = devm_kzalloc(&mgr->pdev->dev,
-			sizeof(struct sde_mdp_hw_resource), GFP_KERNEL);
+			      sizeof(struct sde_mdp_hw_resource), GFP_KERNEL);
 	if (!mdp_hw)
 		return ERR_PTR(-ENOMEM);
 
@@ -176,7 +133,7 @@ static struct sde_mdp_hw_resource *sde_rotator_hw_alloc(
 		mdp_hw->ctl->opmode = SDE_MDP_CTL_OP_ROT0_MODE;
 		break;
 	case SDE_MDP_WB_LAYERMIXER1:
-		mdp_hw->ctl->opmode =  SDE_MDP_CTL_OP_ROT1_MODE;
+		mdp_hw->ctl->opmode = SDE_MDP_CTL_OP_ROT1_MODE;
 		break;
 	default:
 		SDEROT_ERR("invalid layer mixer=%d\n", mdp_hw->mixer->num);
@@ -224,7 +181,7 @@ error:
 }
 
 static void sde_rotator_hw_free(struct sde_rot_mgr *mgr,
-	struct sde_mdp_hw_resource *mdp_hw)
+				struct sde_mdp_hw_resource *mdp_hw)
 {
 	struct sde_mdp_mixer *mixer;
 	struct sde_mdp_ctl *ctl;
@@ -236,8 +193,7 @@ static void sde_rotator_hw_free(struct sde_rot_mgr *mgr,
 
 	sde_mdp_pipe_destroy(mdp_hw->pipe);
 
-	ctl = sde_mdp_ctl_mixer_switch(mixer->ctl,
-		SDE_MDP_WB_CTL_TYPE_BLOCK);
+	ctl = sde_mdp_ctl_mixer_switch(mixer->ctl, SDE_MDP_WB_CTL_TYPE_BLOCK);
 	if (ctl) {
 		if (ctl->ops.stop_fnc)
 			ctl->ops.stop_fnc(ctl, 0);
@@ -247,8 +203,8 @@ static void sde_rotator_hw_free(struct sde_rot_mgr *mgr,
 	devm_kfree(&mgr->pdev->dev, mdp_hw);
 }
 
-static struct sde_rot_hw_resource *sde_rotator_hw_alloc_ext(
-	struct sde_rot_mgr *mgr, u32 pipe_id, u32 wb_id)
+static struct sde_rot_hw_resource *
+sde_rotator_hw_alloc_ext(struct sde_rot_mgr *mgr, u32 pipe_id, u32 wb_id)
 {
 	struct sde_mdp_hw_resource *mdp_hw;
 	struct sde_rotator_r1_data *hw_data;
@@ -263,13 +219,13 @@ static struct sde_rot_hw_resource *sde_rotator_hw_alloc_ext(
 }
 
 static void sde_rotator_hw_free_ext(struct sde_rot_mgr *mgr,
-	struct sde_rot_hw_resource *hw)
+				    struct sde_rot_hw_resource *hw)
 {
 	/* currently nothing specific for this device */
 }
 
 static void sde_rotator_translate_rect(struct sde_rect *dst,
-	struct sde_rect *src)
+				       struct sde_rect *src)
 {
 	dst->x = src->x;
 	dst->y = src->y;
@@ -297,7 +253,7 @@ static u32 sde_rotator_translate_flags(u32 input)
 }
 
 static int sde_rotator_config_hw(struct sde_rot_hw_resource *hw,
-	struct sde_rot_entry *entry)
+				 struct sde_rot_entry *entry)
 {
 	struct sde_mdp_hw_resource *mdp_hw;
 	struct sde_mdp_pipe *pipe;
@@ -325,30 +281,29 @@ static int sde_rotator_config_hw(struct sde_rot_hw_resource *hw,
 
 	ret = sde_mdp_pipe_queue_data(pipe, &entry->src_buf);
 	SDEROT_DBG("Config pipe. src{%u,%u,%u,%u}f=%u\n"
-		"dst{%u,%u,%u,%u}f=%u session_id=%u\n",
-		item->src_rect.x, item->src_rect.y,
-		item->src_rect.w, item->src_rect.h, item->input.format,
-		item->dst_rect.x, item->dst_rect.y,
-		item->dst_rect.w, item->dst_rect.h, item->output.format,
-		item->session_id);
+		   "dst{%u,%u,%u,%u}f=%u session_id=%u\n",
+		   item->src_rect.x, item->src_rect.y, item->src_rect.w,
+		   item->src_rect.h, item->input.format, item->dst_rect.x,
+		   item->dst_rect.y, item->dst_rect.w, item->dst_rect.h,
+		   item->output.format, item->session_id);
 
 	return ret;
 }
 
 static int sde_rotator_cancel_hw(struct sde_rot_hw_resource *hw,
-	struct sde_rot_entry *entry)
+				 struct sde_rot_entry *entry)
 {
 	return 0;
 }
 
 static int sde_rotator_abort_hw(struct sde_rot_hw_resource *hw,
-	struct sde_rot_entry *entry)
+				struct sde_rot_entry *entry)
 {
 	return 0;
 }
 
 static int sde_rotator_kickoff_entry(struct sde_rot_hw_resource *hw,
-	struct sde_rot_entry *entry)
+				     struct sde_rot_entry *entry)
 {
 	struct sde_mdp_hw_resource *mdp_hw;
 	int ret;
@@ -369,7 +324,7 @@ static int sde_rotator_kickoff_entry(struct sde_rot_hw_resource *hw,
 }
 
 static int sde_rotator_wait_for_entry(struct sde_rot_hw_resource *hw,
-	struct sde_rot_entry *entry)
+				      struct sde_rot_entry *entry)
 {
 	struct sde_mdp_hw_resource *mdp_hw;
 	int ret;
@@ -390,7 +345,7 @@ static int sde_rotator_wait_for_entry(struct sde_rot_hw_resource *hw,
 }
 
 static int sde_rotator_hw_validate_entry(struct sde_rot_mgr *mgr,
-	struct sde_rot_entry *entry)
+					 struct sde_rot_entry *entry)
 {
 	int ret = 0;
 	u16 src_w, src_h, dst_w, dst_h, bit;
@@ -433,9 +388,9 @@ static int sde_rotator_hw_validate_entry(struct sde_rot_mgr *mgr,
 		}
 	}
 
-	fmt =  sde_get_format_params(item->output.format);
+	fmt = sde_get_format_params(item->output.format);
 	if (sde_mdp_is_ubwc_format(fmt) &&
-		(entry->dnsc_factor_h || entry->dnsc_factor_w)) {
+	    (entry->dnsc_factor_h || entry->dnsc_factor_w)) {
 		SDEROT_DBG("downscale with ubwc not support\n");
 		ret = -EINVAL;
 	}
@@ -456,7 +411,8 @@ dnsc_err:
 }
 
 static ssize_t sde_rotator_hw_show_caps(struct sde_rot_mgr *mgr,
-		struct device_attribute *attr, char *buf, ssize_t len)
+					struct device_attribute *attr,
+					char *buf, ssize_t len)
 {
 	struct sde_rotator_r1_data *hw_data;
 	int cnt = 0;
@@ -467,7 +423,7 @@ static ssize_t sde_rotator_hw_show_caps(struct sde_rot_mgr *mgr,
 	hw_data = mgr->hw_data;
 
 #define SPRINT(fmt, ...) \
-		(cnt += scnprintf(buf + cnt, len - cnt, fmt, ##__VA_ARGS__))
+	(cnt += scnprintf(buf + cnt, len - cnt, fmt, ##__VA_ARGS__))
 
 	SPRINT("wb_id=%d\n", hw_data->wb_id);
 	SPRINT("ctl_id=%d\n", hw_data->ctl_id);
@@ -475,7 +431,8 @@ static ssize_t sde_rotator_hw_show_caps(struct sde_rot_mgr *mgr,
 }
 
 static ssize_t sde_rotator_hw_show_state(struct sde_rot_mgr *mgr,
-		struct device_attribute *attr, char *buf, ssize_t len)
+					 struct device_attribute *attr,
+					 char *buf, ssize_t len)
 {
 	struct sde_rotator_r1_data *hw_data;
 	int cnt = 0;
@@ -486,7 +443,7 @@ static ssize_t sde_rotator_hw_show_state(struct sde_rot_mgr *mgr,
 	hw_data = mgr->hw_data;
 
 #define SPRINT(fmt, ...) \
-		(cnt += scnprintf(buf + cnt, len - cnt, fmt, ##__VA_ARGS__))
+	(cnt += scnprintf(buf + cnt, len - cnt, fmt, ##__VA_ARGS__))
 
 	if (hw_data && hw_data->mdp_hw) {
 		struct sde_rot_hw_resource *hw = &hw_data->mdp_hw->hw;
@@ -507,8 +464,8 @@ static ssize_t sde_rotator_hw_show_state(struct sde_rot_mgr *mgr,
  * @input: true for input port; false for output port
  * @mode: operating mode
  */
-static u32 sde_hw_rotator_get_pixfmt(struct sde_rot_mgr *mgr,
-		int index, bool input, u32 mode)
+static u32 sde_hw_rotator_get_pixfmt(struct sde_rot_mgr *mgr, int index,
+				     bool input, u32 mode)
 {
 	if (input) {
 		if (index < ARRAY_SIZE(sde_hw_rotator_input_pixfmts))
@@ -531,7 +488,7 @@ static u32 sde_hw_rotator_get_pixfmt(struct sde_rot_mgr *mgr,
  * @mode: operating mode
  */
 static int sde_hw_rotator_is_valid_pixfmt(struct sde_rot_mgr *mgr, u32 pixfmt,
-		bool input, u32 mode)
+					  bool input, u32 mode)
 {
 	int i;
 
@@ -549,7 +506,7 @@ static int sde_hw_rotator_is_valid_pixfmt(struct sde_rot_mgr *mgr, u32 pixfmt,
 }
 
 static int sde_rotator_hw_parse_dt(struct sde_rotator_r1_data *hw_data,
-		struct platform_device *dev)
+				   struct platform_device *dev)
 {
 	int ret = 0;
 	u32 data;
@@ -557,18 +514,16 @@ static int sde_rotator_hw_parse_dt(struct sde_rotator_r1_data *hw_data,
 	if (!hw_data || !dev)
 		return -EINVAL;
 
-	ret = of_property_read_u32(dev->dev.of_node,
-			"qcom,mdss-wb-id", &data);
+	ret = of_property_read_u32(dev->dev.of_node, "qcom,mdss-wb-id", &data);
 	if (ret)
 		hw_data->wb_id = -1;
 	else
-		hw_data->wb_id = (int) data;
-	ret = of_property_read_u32(dev->dev.of_node,
-			"qcom,mdss-ctl-id", &data);
+		hw_data->wb_id = (int)data;
+	ret = of_property_read_u32(dev->dev.of_node, "qcom,mdss-ctl-id", &data);
 	if (ret)
 		hw_data->ctl_id = -1;
 	else
-		hw_data->ctl_id = (int) data;
+		hw_data->ctl_id = (int)data;
 
 	return ret;
 }
@@ -605,11 +560,11 @@ struct intr_callback {
 struct intr_callback sde_intr_cb[SDE_ROTATOR_INTR_MAX];
 
 int sde_mdp_set_intr_callback(u32 intr_type, u32 intf_num,
-			       void (*fnc_ptr)(void *), void *arg)
+			      void (*fnc_ptr)(void *), void *arg)
 {
 	if (intf_num >= SDE_ROTATOR_INTR_MAX) {
-		SDEROT_WARN("invalid intr type=%u intf_num=%u\n",
-				intr_type, intf_num);
+		SDEROT_WARN("invalid intr type=%u intf_num=%u\n", intr_type,
+			    intf_num);
 		return -EINVAL;
 	}
 
@@ -634,7 +589,8 @@ static irqreturn_t sde_irq_handler(int irq, void *ptr)
 
 		if (cb->func) {
 			writel_relaxed(SDE_MDP_INTR_WB_0_DONE,
-				mdata->mdp_base + SDE_MDP_REG_INTR_CLEAR);
+				       mdata->mdp_base +
+					       SDE_MDP_REG_INTR_CLEAR);
 			cb->func(cb->arg);
 			ret = IRQ_HANDLED;
 		}
@@ -645,7 +601,8 @@ static irqreturn_t sde_irq_handler(int irq, void *ptr)
 
 		if (cb->func) {
 			writel_relaxed(SDE_MDP_INTR_WB_1_DONE,
-				mdata->mdp_base + SDE_MDP_REG_INTR_CLEAR);
+				       mdata->mdp_base +
+					       SDE_MDP_REG_INTR_CLEAR);
 			cb->func(cb->arg);
 			ret = IRQ_HANDLED;
 		}
@@ -682,7 +639,7 @@ int sde_rotator_r1_init(struct sde_rot_mgr *mgr)
 	}
 
 	hw_data = devm_kzalloc(&mgr->pdev->dev,
-			sizeof(struct sde_rotator_r1_data), GFP_KERNEL);
+			       sizeof(struct sde_rotator_r1_data), GFP_KERNEL);
 	if (hw_data == NULL)
 		return -ENOMEM;
 
@@ -711,9 +668,9 @@ int sde_rotator_r1_init(struct sde_rot_mgr *mgr)
 		SDEROT_ERR("fail to get rotator irq\n");
 	} else {
 		ret = devm_request_threaded_irq(&mgr->pdev->dev,
-				hw_data->irq_num,
-				sde_irq_handler, NULL,
-				0, "sde_rotator_r1", mdata);
+						hw_data->irq_num,
+						sde_irq_handler, NULL, 0,
+						"sde_rotator_r1", mdata);
 		if (ret) {
 			SDEROT_ERR("fail to request irq r:%d\n", ret);
 			hw_data->irq_num = -1;
@@ -722,8 +679,8 @@ int sde_rotator_r1_init(struct sde_rot_mgr *mgr)
 		}
 	}
 
-	hw_data->mdp_hw = sde_rotator_hw_alloc(mgr, hw_data->ctl_id,
-			hw_data->wb_id, hw_data->irq_num);
+	hw_data->mdp_hw = sde_rotator_hw_alloc(
+		mgr, hw_data->ctl_id, hw_data->wb_id, hw_data->irq_num);
 	if (IS_ERR_OR_NULL(hw_data->mdp_hw))
 		goto error_hw_alloc;
 

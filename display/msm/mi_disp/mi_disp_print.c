@@ -4,9 +4,9 @@
  * Copyright (c) 2020 XiaoMi, Inc. All rights reserved.
  */
 
-#include <linux/types.h>
 #include <linux/rtc.h>
 #include <linux/time.h>
+#include <linux/types.h>
 
 #include "mi_disp_config.h"
 #include "mi_disp_debugfs.h"
@@ -22,8 +22,9 @@ void mi_disp_printk(const char *level, const char *format, ...)
 	vaf.fmt = format;
 	vaf.va = &args;
 
-	printk("%s" "[" DISP_NAME ":%ps] %pV",
-			level, __builtin_return_address(0), &vaf);
+	printk("%s"
+	       "[" DISP_NAME ":%ps] %pV",
+	       level, __builtin_return_address(0), &vaf);
 
 	va_end(args);
 }
@@ -41,7 +42,7 @@ void mi_disp_dbg(const char *format, ...)
 	vaf.va = &args;
 
 	printk(KERN_DEBUG "[" DISP_NAME ":%ps] %pV",
-			__builtin_return_address(0), &vaf);
+	       __builtin_return_address(0), &vaf);
 
 	va_end(args);
 }
@@ -63,11 +64,11 @@ void mi_disp_local_time_printk(const char *level, const char *format, ...)
 	vaf.fmt = format;
 	vaf.va = &args;
 
-	printk("%s" "[" DISP_NAME ":%ps][%d-%02d-%02d %02d:%02d:%02d.%06lu] %pV",
-			level, __builtin_return_address(0),
-			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-			tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_nsec / 1000,
-			&vaf);
+	printk("%s"
+	       "[" DISP_NAME ":%ps][%d-%02d-%02d %02d:%02d:%02d.%06lu] %pV",
+	       level, __builtin_return_address(0), tm.tm_year + 1900,
+	       tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+	       tv.tv_nsec / 1000, &vaf);
 
 	va_end(args);
 }
@@ -92,11 +93,11 @@ void mi_disp_local_time_dbg(const char *format, ...)
 	vaf.fmt = format;
 	vaf.va = &args;
 
-	printk(KERN_DEBUG "[" DISP_NAME ":%ps][%d-%02d-%02d %02d:%02d:%02d.%06lu] %pV",
-			 __builtin_return_address(0),
-			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-			tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_nsec / 1000,
-			&vaf);
+	printk(KERN_DEBUG "[" DISP_NAME
+			  ":%ps][%d-%02d-%02d %02d:%02d:%02d.%06lu] %pV",
+	       __builtin_return_address(0), tm.tm_year + 1900, tm.tm_mon + 1,
+	       tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_nsec / 1000,
+	       &vaf);
 
 	va_end(args);
 }

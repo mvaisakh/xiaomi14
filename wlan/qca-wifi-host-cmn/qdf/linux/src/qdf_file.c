@@ -17,32 +17,29 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/firmware.h>
 #include "qdf_file.h"
 #include "qdf_mem.h"
 #include "qdf_module.h"
 #include "qdf_status.h"
 #include "qdf_trace.h"
 #include "qdf_types.h"
+#include <linux/firmware.h>
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0))
-static inline
-int qdf_firmware_request_nowarn(const struct firmware **fw,
-				const char *name,
-				struct device *device)
+static inline int qdf_firmware_request_nowarn(const struct firmware **fw,
+					      const char *name,
+					      struct device *device)
 {
 	return firmware_request_nowarn(fw, name, device);
 }
 #else
-static inline
-int qdf_firmware_request_nowarn(const struct firmware **fw,
-				const char *name,
-				struct device *device)
+static inline int qdf_firmware_request_nowarn(const struct firmware **fw,
+					      const char *name,
+					      struct device *device)
 {
 	return request_firmware(fw, name, device);
 }
 #endif
-
 
 QDF_STATUS qdf_file_read(const char *path, char **out_buf)
 {
@@ -98,8 +95,8 @@ QDF_STATUS qdf_module_param_file_read(const char *path, char **out_buf)
 	}
 
 	/* qdf_untracked_mem_malloc zeros new memory; +1 size
-	 * ensures null-termination
-	 */
+   * ensures null-termination
+   */
 	buf = qdf_untracked_mem_malloc(fw->size + 1);
 	if (!buf) {
 		release_firmware(fw);

@@ -89,13 +89,13 @@ wlan_extscan_global_init(struct wlan_objmgr_psoc *psoc,
 
 	extscan_def->extscan_enabled = true;
 	extscan_def->extscan_passive_max_chn_time =
-			cfg_get(psoc, CFG_EXTSCAN_PASSIVE_MAX_CHANNEL_TIME);
+		cfg_get(psoc, CFG_EXTSCAN_PASSIVE_MAX_CHANNEL_TIME);
 	extscan_def->extscan_passive_min_chn_time =
-			cfg_get(psoc, CFG_EXTSCAN_PASSIVE_MIN_CHANNEL_TIME);
+		cfg_get(psoc, CFG_EXTSCAN_PASSIVE_MIN_CHANNEL_TIME);
 	extscan_def->extscan_active_max_chn_time =
-			cfg_get(psoc, CFG_EXTSCAN_ACTIVE_MAX_CHANNEL_TIME);
+		cfg_get(psoc, CFG_EXTSCAN_ACTIVE_MAX_CHANNEL_TIME);
 	extscan_def->extscan_active_min_chn_time =
-			cfg_get(psoc, CFG_EXTSCAN_ACTIVE_MIN_CHANNEL_TIME);
+		cfg_get(psoc, CFG_EXTSCAN_ACTIVE_MIN_CHANNEL_TIME);
 	return QDF_STATUS_SUCCESS;
 }
 

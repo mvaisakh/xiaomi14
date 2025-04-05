@@ -24,16 +24,16 @@
  *
  */
 
-#include <cdp_txrx_ctrl.h>
-#include <qdf_nbuf.h>
-#include "target_if_cfr.h"
-#include "init_deinit_lmac.h"
-#include <wlan_objmgr_psoc_obj.h>
-#include "wlan_cfr_utils_api.h"
 #include "target_if_cfr_adrastea.h"
 #include "cfg_ucfg_api.h"
 #include "cfr_cfg.h"
+#include "init_deinit_lmac.h"
+#include "target_if_cfr.h"
+#include "wlan_cfr_utils_api.h"
+#include <cdp_txrx_ctrl.h>
+#include <qdf_nbuf.h>
 #include <target_if.h>
+#include <wlan_objmgr_psoc_obj.h>
 
 #ifdef WLAN_CFR_ADRASTEA
 QDF_STATUS cfr_adrastea_init_pdev(struct wlan_objmgr_psoc *psoc,
@@ -53,15 +53,15 @@ QDF_STATUS cfr_adrastea_init_pdev(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	cfr_pdev = wlan_objmgr_pdev_get_comp_private_obj(
-					pdev, WLAN_UMAC_COMP_CFR);
+	cfr_pdev =
+		wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!cfr_pdev) {
 		cfr_err("null pdev cfr");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	cfr_psoc = wlan_objmgr_psoc_get_comp_private_obj(
-					psoc, WLAN_UMAC_COMP_CFR);
+	cfr_psoc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CFR);
 
 	if (!cfr_psoc) {
 		cfr_err("null psoc cfr");
@@ -103,18 +103,18 @@ QDF_STATUS cfr_adrastea_init_pdev(struct wlan_objmgr_psoc *psoc,
 	num_mem_chunks = info->num_mem_chunks;
 
 	/*
-	 * Copy the host mem chunk info allocated during init
-	 * for CFR capture in cfr pdev
-	 */
+   * Copy the host mem chunk info allocated during init
+   * for CFR capture in cfr pdev
+   */
 	for (idx = 0; idx < num_mem_chunks; idx++) {
 		if (info->mem_chunks[idx].req_id ==
-					CFR_CAPTURE_HOST_MEM_REQ_ID) {
+		    CFR_CAPTURE_HOST_MEM_REQ_ID) {
 			cfr_pdev->cfr_mem_chunk.vaddr =
-						info->mem_chunks[idx].vaddr;
+				info->mem_chunks[idx].vaddr;
 			cfr_pdev->cfr_mem_chunk.paddr =
-						info->mem_chunks[idx].paddr;
+				info->mem_chunks[idx].paddr;
 			cfr_pdev->cfr_mem_chunk.req_id =
-						info->mem_chunks[idx].req_id;
+				info->mem_chunks[idx].req_id;
 			cfr_pdev->cfr_mem_chunk.len = info->mem_chunks[idx].len;
 
 			/* Initialize the read index with default value */
@@ -144,8 +144,7 @@ QDF_STATUS cfr_adrastea_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(
-					pdev, WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!pcfr) {
 		cfr_err("null pdev cfr");
 		return QDF_STATUS_E_FAILURE;

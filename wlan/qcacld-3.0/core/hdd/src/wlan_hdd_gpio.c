@@ -18,18 +18,18 @@
 /**
  * DOC: defines driver functions interfacing with linux kernel
  */
-#include <qdf_list.h>
-#include <qdf_status.h>
-#include <linux/wireless.h>
-#include <linux/netdevice.h>
-#include <wlan_cfg80211.h>
-#include <wlan_osif_priv.h>
-#include <osif_psoc_sync.h>
-#include <qdf_mem.h>
-#include <wlan_utility.h>
-#include "wlan_hdd_main.h"
 #include "cfg_ucfg_api.h"
+#include "wlan_hdd_main.h"
+#include <linux/netdevice.h>
+#include <linux/wireless.h>
+#include <osif_psoc_sync.h>
+#include <qdf_list.h>
+#include <qdf_mem.h>
+#include <qdf_status.h>
+#include <wlan_cfg80211.h>
 #include <wlan_hdd_gpio.h>
+#include <wlan_osif_priv.h>
+#include <wlan_utility.h>
 
 /**
  * __wlan_hdd_cfg80211_set_gpio_config() - Set the gpio configuration
@@ -43,11 +43,9 @@
  *
  * Return: 0 on success; errno on failure
  */
-static int
-__wlan_hdd_cfg80211_set_gpio_config(struct wiphy *wiphy,
-				    struct wireless_dev *wdev,
-				    const void *data,
-				    int data_len)
+static int __wlan_hdd_cfg80211_set_gpio_config(struct wiphy *wiphy,
+					       struct wireless_dev *wdev,
+					       const void *data, int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -69,9 +67,8 @@ __wlan_hdd_cfg80211_set_gpio_config(struct wiphy *wiphy,
 	if (wlan_hdd_validate_vdev_id(adapter->deflink->vdev_id))
 		return -EINVAL;
 
-	ret = wlan_cfg80211_start_gpio_config(wiphy,
-					      hdd_ctx->psoc,
-					      data, data_len);
+	ret = wlan_cfg80211_start_gpio_config(wiphy, hdd_ctx->psoc, data,
+					      data_len);
 	hdd_exit();
 
 	return ret;
@@ -97,9 +94,7 @@ int wlan_hdd_cfg80211_set_gpio_config(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_set_gpio_config(wiphy,
-						    wdev,
-						    data,
+	errno = __wlan_hdd_cfg80211_set_gpio_config(wiphy, wdev, data,
 						    data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);

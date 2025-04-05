@@ -4,21 +4,21 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/module.h>
-#include <linux/slab.h>
-#include <linux/mod_devicetable.h>
-#include <linux/of_device.h>
-#include <linux/timer.h>
-#include "cam_icp_v1_core.h"
-#include "cam_io_util.h"
+#include "cam_icp_v1_dev.h"
+#include "cam_cpas_api.h"
+#include "cam_debug_util.h"
 #include "cam_hw.h"
 #include "cam_hw_intf.h"
 #include "cam_icp_hw_mgr_intf.h"
-#include "cam_cpas_api.h"
-#include "cam_debug_util.h"
-#include "camera_main.h"
 #include "cam_icp_soc_common.h"
-#include "cam_icp_v1_dev.h"
+#include "cam_icp_v1_core.h"
+#include "cam_io_util.h"
+#include "camera_main.h"
+#include <linux/mod_devicetable.h>
+#include <linux/module.h>
+#include <linux/of_device.h>
+#include <linux/slab.h>
+#include <linux/timer.h>
 
 static int max_icp_v1_hw_idx = -1;
 
@@ -28,7 +28,7 @@ uint32_t cam_icp_v1_get_device_num(void)
 }
 
 static bool cam_icp_v1_cpas_cb(uint32_t client_handle, void *userdata,
-	struct cam_cpas_irq_data *irq_data)
+			       struct cam_cpas_irq_data *irq_data)
 {
 	bool error_handled = false;
 
@@ -37,8 +37,10 @@ static bool cam_icp_v1_cpas_cb(uint32_t client_handle, void *userdata,
 
 	switch (irq_data->irq_type) {
 	case CAM_CAMNOC_IRQ_IPE_BPS_UBWC_DECODE_ERROR:
-		CAM_ERR_RATE_LIMIT(CAM_ICP,
-			"IPE/BPS UBWC Decode error type=%d status=%x thr_err=%d, fcl_err=%d, len_md_err=%d, format_err=%d",
+		CAM_ERR_RATE_LIMIT(
+			CAM_ICP,
+			"IPE/BPS UBWC Decode error type=%d status=%x "
+			"thr_err=%d, fcl_err=%d, len_md_err=%d, format_err=%d",
 			irq_data->irq_type,
 			irq_data->u.dec_err.decerr_status.value,
 			irq_data->u.dec_err.decerr_status.thr_err,
@@ -48,8 +50,8 @@ static bool cam_icp_v1_cpas_cb(uint32_t client_handle, void *userdata,
 		error_handled = true;
 		break;
 	case CAM_CAMNOC_IRQ_IPE_BPS_UBWC_ENCODE_ERROR:
-		CAM_ERR_RATE_LIMIT(CAM_ICP,
-			"IPE/BPS UBWC Encode error type=%d status=%x",
+		CAM_ERR_RATE_LIMIT(
+			CAM_ICP, "IPE/BPS UBWC Encode error type=%d status=%x",
 			irq_data->irq_type,
 			irq_data->u.enc_err.encerr_status.value);
 		error_handled = true;
@@ -62,7 +64,8 @@ static bool cam_icp_v1_cpas_cb(uint32_t client_handle, void *userdata,
 }
 
 int cam_icp_v1_register_cpas(struct cam_hw_soc_info *soc_info,
-	struct cam_icp_v1_device_core_info *core_info, uint32_t hw_idx)
+			     struct cam_icp_v1_device_core_info *core_info,
+			     uint32_t hw_idx)
 {
 	struct cam_cpas_register_params cpas_register_params;
 	int rc;
@@ -89,7 +92,7 @@ static inline void cam_icp_v1_soc_info_deinit(struct cam_hw_soc_info *soc_info)
 }
 
 static int cam_icp_v1_soc_info_init(struct cam_hw_soc_info *soc_info,
-	struct platform_device *pdev)
+				    struct platform_device *pdev)
 {
 	struct cam_icp_soc_info *icp_soc_info = NULL;
 
@@ -108,7 +111,7 @@ static int cam_icp_v1_soc_info_init(struct cam_hw_soc_info *soc_info,
 }
 
 static int cam_icp_v1_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
 	int rc = 0;
 	struct cam_hw_info *icp_v1_dev = NULL;
@@ -121,8 +124,8 @@ static int cam_icp_v1_component_bind(struct device *dev,
 	if (!icp_v1_dev_intf)
 		return -ENOMEM;
 
-	of_property_read_u32(pdev->dev.of_node,
-		"cell-index", &icp_v1_dev_intf->hw_idx);
+	of_property_read_u32(pdev->dev.of_node, "cell-index",
+			     &icp_v1_dev_intf->hw_idx);
 
 	icp_v1_dev = kzalloc(sizeof(struct cam_hw_info), GFP_KERNEL);
 	if (!icp_v1_dev) {
@@ -136,22 +139,21 @@ static int cam_icp_v1_component_bind(struct device *dev,
 	icp_v1_dev_intf->hw_ops.process_cmd = cam_icp_v1_process_cmd;
 	icp_v1_dev_intf->hw_type = CAM_ICP_HW_ICP_V1;
 
-	CAM_DBG(CAM_ICP, "type %d index %d",
-		icp_v1_dev_intf->hw_type,
+	CAM_DBG(CAM_ICP, "type %d index %d", icp_v1_dev_intf->hw_type,
 		icp_v1_dev_intf->hw_idx);
 
 	platform_set_drvdata(pdev, icp_v1_dev_intf);
 
-	core_info = kzalloc(sizeof(struct cam_icp_v1_device_core_info),
-		GFP_KERNEL);
+	core_info =
+		kzalloc(sizeof(struct cam_icp_v1_device_core_info), GFP_KERNEL);
 	if (!core_info) {
 		rc = -ENOMEM;
 		goto core_info_alloc_failure;
 	}
 	icp_v1_dev->core_info = core_info;
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_ICP, "No icp_v1 hardware info");
 		rc = -EINVAL;
@@ -163,14 +165,14 @@ static int cam_icp_v1_component_bind(struct device *dev,
 		goto init_soc_failure;
 
 	rc = cam_icp_soc_resources_init(&icp_v1_dev->soc_info, cam_icp_v1_irq,
-		icp_v1_dev);
+					icp_v1_dev);
 	if (rc < 0) {
 		CAM_ERR(CAM_ICP, "failed to init_soc");
 		goto init_soc_failure;
 	}
 
-	rc = cam_icp_v1_register_cpas(&icp_v1_dev->soc_info,
-		core_info, icp_v1_dev_intf->hw_idx);
+	rc = cam_icp_v1_register_cpas(&icp_v1_dev->soc_info, core_info,
+				      icp_v1_dev_intf->hw_idx);
 	if (rc < 0) {
 		CAM_ERR(CAM_ICP, "icp_v1 cpas registration failed");
 		goto cpas_reg_failed;
@@ -204,7 +206,7 @@ icp_v1_dev_alloc_failure:
 }
 
 static void cam_icp_v1_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					struct device *master_dev, void *data)
 {
 	struct cam_hw_info *icp_v1_dev = NULL;
 	struct cam_hw_intf *icp_v1_dev_intf = NULL;
@@ -250,20 +252,23 @@ static int cam_icp_v1_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id cam_icp_v1_dt_match[] = {
-	{.compatible = "qcom,cam-icp_v1",},
+	{
+		.compatible = "qcom,cam-icp_v1",
+	},
 	{},
 };
 MODULE_DEVICE_TABLE(of, cam_icp_v1_dt_match);
 
 struct platform_driver cam_icp_v1_driver = {
-	.probe = cam_icp_v1_probe,
-	.remove = cam_icp_v1_remove,
-	.driver = {
-		.name = "cam-icp_v1",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_icp_v1_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_icp_v1_probe,
+    .remove = cam_icp_v1_remove,
+    .driver =
+        {
+            .name = "cam-icp_v1",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_icp_v1_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_icp_v1_init_module(void)

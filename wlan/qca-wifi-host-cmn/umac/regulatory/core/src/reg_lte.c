@@ -22,17 +22,17 @@
  * This file contains the LTE feature APIs.
  */
 
+#include "reg_lte.h"
+#include "reg_build_chan_list.h"
+#include "reg_callbacks.h"
+#include "reg_priv_objs.h"
+#include "reg_services_common.h"
+#include "reg_services_public_struct.h"
 #include <qdf_status.h>
 #include <qdf_types.h>
 #include <wlan_cmn.h>
-#include "reg_services_public_struct.h"
-#include <wlan_objmgr_psoc_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include "reg_priv_objs.h"
-#include "reg_services_common.h"
-#include "reg_build_chan_list.h"
-#include "reg_callbacks.h"
-#include "reg_lte.h"
+#include <wlan_objmgr_psoc_obj.h>
 
 #ifdef LTE_COEX
 /**
@@ -61,7 +61,7 @@ static QDF_STATUS reg_process_ch_avoid_freq(struct wlan_objmgr_psoc *psoc,
 	}
 
 	for (i = 0; i < psoc_priv_obj->avoid_freq_list.ch_avoid_range_cnt;
-		i++) {
+	     i++) {
 		if (psoc_priv_obj->unsafe_chan_list.chan_cnt >= NUM_CHANNELS) {
 			reg_warn("LTE Coex unsafe channel list full");
 			break;
@@ -78,20 +78,18 @@ static QDF_STATUS reg_process_ch_avoid_freq(struct wlan_objmgr_psoc *psoc,
 			  end_channel);
 
 		/* do not process frequency bands that are not mapped to
-		 * predefined channels
-		 */
+     * predefined channels
+     */
 		if (start_channel == 0 || end_channel == 0)
 			continue;
 
-		for (ch_loop = 0; ch_loop < NUM_CHANNELS;
-			ch_loop++) {
+		for (ch_loop = 0; ch_loop < NUM_CHANNELS; ch_loop++) {
 			if (REG_CH_TO_FREQ(ch_loop) >= range->start_freq) {
 				start_ch_idx = ch_loop;
 				break;
 			}
 		}
-		for (ch_loop = 0; ch_loop < NUM_CHANNELS;
-			ch_loop++) {
+		for (ch_loop = 0; ch_loop < NUM_CHANNELS; ch_loop++) {
 			if (REG_CH_TO_FREQ(ch_loop) >= range->end_freq) {
 				end_ch_idx = ch_loop;
 				if (REG_CH_TO_FREQ(ch_loop) > range->end_freq)
@@ -104,13 +102,12 @@ static QDF_STATUS reg_process_ch_avoid_freq(struct wlan_objmgr_psoc *psoc,
 		    reg_is_chan_enum_invalid(end_ch_idx))
 			continue;
 
-		for (ch_loop = start_ch_idx; ch_loop <= end_ch_idx;
-			ch_loop++) {
-			psoc_priv_obj->unsafe_chan_list.chan_freq_list[
-				psoc_priv_obj->unsafe_chan_list.chan_cnt++] =
+		for (ch_loop = start_ch_idx; ch_loop <= end_ch_idx; ch_loop++) {
+			psoc_priv_obj->unsafe_chan_list.chan_freq_list
+				[psoc_priv_obj->unsafe_chan_list.chan_cnt++] =
 				REG_CH_TO_FREQ(ch_loop);
 			if (psoc_priv_obj->unsafe_chan_list.chan_cnt >=
-				NUM_CHANNELS) {
+			    NUM_CHANNELS) {
 				reg_warn("LTECoex unsafe ch list full");
 				break;
 			}
@@ -121,11 +118,11 @@ static QDF_STATUS reg_process_ch_avoid_freq(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_SUCCESS;
 
 	for (ch_loop = 0; ch_loop < psoc_priv_obj->unsafe_chan_list.chan_cnt;
-		ch_loop++) {
+	     ch_loop++) {
 		if (ch_loop >= NUM_CHANNELS)
 			break;
-		reg_debug("Unsafe freq %d",
-			  psoc_priv_obj->unsafe_chan_list.chan_freq_list[ch_loop]);
+		reg_debug("Unsafe freq %d", psoc_priv_obj->unsafe_chan_list
+						    .chan_freq_list[ch_loop]);
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -139,8 +136,8 @@ static QDF_STATUS reg_process_ch_avoid_freq(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void reg_update_unsafe_ch(struct wlan_objmgr_psoc *psoc,
-				 void *object, void *arg)
+static void reg_update_unsafe_ch(struct wlan_objmgr_psoc *psoc, void *object,
+				 void *arg)
 {
 	struct wlan_objmgr_pdev *pdev = (struct wlan_objmgr_pdev *)object;
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
@@ -173,8 +170,9 @@ static void reg_update_unsafe_ch(struct wlan_objmgr_psoc *psoc,
 		reg_err("channel change msg schedule failed");
 }
 
-QDF_STATUS reg_process_ch_avoid_event(struct wlan_objmgr_psoc *psoc,
-				      struct ch_avoid_ind_type *ch_avoid_event)
+QDF_STATUS
+reg_process_ch_avoid_event(struct wlan_objmgr_psoc *psoc,
+			   struct ch_avoid_ind_type *ch_avoid_event)
 {
 	uint32_t i;
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
@@ -191,8 +189,7 @@ QDF_STATUS reg_process_ch_avoid_event(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (CH_AVOID_RULE_DO_NOT_RESTART ==
-	    psoc_priv_obj->restart_beaconing) {
+	if (CH_AVOID_RULE_DO_NOT_RESTART == psoc_priv_obj->restart_beaconing) {
 		reg_debug("skipping all LTE Coex unsafe channel range");
 		return QDF_STATUS_SUCCESS;
 	}
@@ -207,11 +204,11 @@ QDF_STATUS reg_process_ch_avoid_event(struct wlan_objmgr_psoc *psoc,
 
 	for (i = 0; i < ch_avoid_event->ch_avoid_range_cnt; i++) {
 		if ((CH_AVOID_RULE_RESTART_24G_ONLY ==
-				psoc_priv_obj->restart_beaconing) &&
-			REG_IS_5GHZ_FREQ(ch_avoid_event->
-				avoid_freq_range[i].start_freq)) {
+		     psoc_priv_obj->restart_beaconing) &&
+		    REG_IS_5GHZ_FREQ(
+			    ch_avoid_event->avoid_freq_range[i].start_freq)) {
 			reg_debug(
-				  "skipping 5Ghz LTE Coex unsafe channel range");
+				"skipping 5Ghz LTE Coex unsafe channel range");
 			continue;
 		}
 		psoc_priv_obj->avoid_freq_list.avoid_freq_range[i].start_freq =
@@ -231,9 +228,9 @@ QDF_STATUS reg_process_ch_avoid_event(struct wlan_objmgr_psoc *psoc,
 		return status;
 	}
 
-	status = wlan_objmgr_iterate_obj_list(
-			psoc, WLAN_PDEV_OP, reg_update_unsafe_ch, NULL, 1,
-			WLAN_REGULATORY_NB_ID);
+	status = wlan_objmgr_iterate_obj_list(psoc, WLAN_PDEV_OP,
+					      reg_update_unsafe_ch, NULL, 1,
+					      WLAN_REGULATORY_NB_ID);
 
 	wlan_objmgr_psoc_release_ref(psoc, WLAN_REGULATORY_NB_ID);
 

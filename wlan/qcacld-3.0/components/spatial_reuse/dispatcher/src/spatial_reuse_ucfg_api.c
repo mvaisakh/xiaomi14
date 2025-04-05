@@ -18,8 +18,8 @@
  * DOC: contains interface prototypes for OS_IF layer
  */
 #include <qdf_trace.h>
-#include <spatial_reuse_ucfg_api.h>
 #include <spatial_reuse_api.h>
+#include <spatial_reuse_ucfg_api.h>
 #include <wlan_policy_mgr_api.h>
 
 void ucfg_spatial_reuse_register_cb(struct wlan_objmgr_psoc *psoc,
@@ -74,7 +74,7 @@ void ucfg_spatial_reuse_send_sr_config(struct wlan_objmgr_vdev *vdev,
 	if (enable) {
 		sr_ctrl = wlan_vdev_mlme_get_sr_ctrl(vdev);
 		non_srg_max_pd_offset =
-				wlan_vdev_mlme_get_non_srg_pd_offset(vdev);
+			wlan_vdev_mlme_get_non_srg_pd_offset(vdev);
 		if (sr_ctrl && non_srg_max_pd_offset)
 			wlan_spatial_reuse_config_set(vdev, sr_ctrl,
 						      non_srg_max_pd_offset);
@@ -87,12 +87,12 @@ void ucfg_spatial_reuse_send_sr_config(struct wlan_objmgr_vdev *vdev,
 void ucfg_spatial_reuse_set_sr_enable(struct wlan_objmgr_vdev *vdev,
 				      bool enable)
 {
-	 wlan_vdev_mlme_set_he_spr_enabled(vdev, enable);
+	wlan_vdev_mlme_set_he_spr_enabled(vdev, enable);
 }
 
-QDF_STATUS ucfg_spatial_reuse_send_sr_prohibit(
-					struct wlan_objmgr_vdev *vdev,
-					bool enable_he_siga_val15_prohibit)
+QDF_STATUS
+ucfg_spatial_reuse_send_sr_prohibit(struct wlan_objmgr_vdev *vdev,
+				    bool enable_he_siga_val15_prohibit)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	bool sr_enabled = wlan_vdev_mlme_get_he_spr_enabled(vdev);
@@ -100,23 +100,21 @@ QDF_STATUS ucfg_spatial_reuse_send_sr_prohibit(
 	uint8_t sr_ctrl = wlan_vdev_mlme_get_sr_ctrl(vdev);
 
 	/* Enable PD prohibit only when it is allowed by the AP,
-	 * Check if it is not enabled already, then only enable it
-	 */
+   * Check if it is not enabled already, then only enable it
+   */
 	if (sr_enabled && (sr_ctrl & WLAN_HE_SIGA_SR_VAL15_ALLOWED) &&
 	    sr_prohibited != enable_he_siga_val15_prohibit) {
-		status = wlan_spatial_reuse_he_siga_val15_allowed_set
-					(vdev,
-					 enable_he_siga_val15_prohibit);
+		status = wlan_spatial_reuse_he_siga_val15_allowed_set(
+			vdev, enable_he_siga_val15_prohibit);
 
 		if (QDF_IS_STATUS_SUCCESS(status))
-			wlan_vdev_mlme_set_sr_prohibit_en
-					(vdev,
-					 enable_he_siga_val15_prohibit);
+			wlan_vdev_mlme_set_sr_prohibit_en(
+				vdev, enable_he_siga_val15_prohibit);
 	} else {
-		mlme_debug("Prohibit command can not be sent sr_enabled %d, sr_ctrl %d , sr_prohibited %d",
-			   sr_enabled,
-			   sr_ctrl,
-			   sr_prohibited);
+		mlme_debug(
+			"Prohibit command can not be sent sr_enabled %d, sr_ctrl %d , "
+			"sr_prohibited %d",
+			sr_enabled, sr_ctrl, sr_prohibited);
 
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -125,12 +123,12 @@ QDF_STATUS ucfg_spatial_reuse_send_sr_prohibit(
 
 QDF_STATUS
 ucfg_spatial_reuse_setup_req(struct wlan_objmgr_vdev *vdev,
-			     struct wlan_objmgr_pdev *pdev,
-			     bool is_sr_enable, int32_t srg_pd_threshold,
+			     struct wlan_objmgr_pdev *pdev, bool is_sr_enable,
+			     int32_t srg_pd_threshold,
 			     int32_t non_srg_pd_threshold)
 {
-	return wlan_sr_setup_req(vdev, pdev, is_sr_enable,
-				 srg_pd_threshold, non_srg_pd_threshold);
+	return wlan_sr_setup_req(vdev, pdev, is_sr_enable, srg_pd_threshold,
+				 non_srg_pd_threshold);
 }
 
 QDF_STATUS ucfg_spatial_reuse_operation_allowed(struct wlan_objmgr_psoc *psoc,
@@ -151,8 +149,8 @@ QDF_STATUS ucfg_spatial_reuse_operation_allowed(struct wlan_objmgr_psoc *psoc,
 	status = policy_mgr_get_mac_id_by_session_id(psoc, vdev_id, &mac_id);
 	if (QDF_IS_STATUS_ERROR(status))
 		return status;
-	conc_vdev_id = policy_mgr_get_conc_vdev_on_same_mac(psoc, vdev_id,
-							    mac_id);
+	conc_vdev_id =
+		policy_mgr_get_conc_vdev_on_same_mac(psoc, vdev_id, mac_id);
 	if (conc_vdev_id != WLAN_INVALID_VDEV_ID &&
 	    !policy_mgr_sr_same_mac_conc_enabled(psoc))
 		return QDF_STATUS_E_NOSUPPORT;

@@ -18,13 +18,13 @@
  */
 
 #if defined(CONFIG_ATH_PROCFS_DIAG_SUPPORT)
-#include <linux/module.h>       /* Specifically, a module */
-#include <linux/kernel.h>       /* We're doing kernel work */
-#include <linux/version.h>      /* We're doing kernel work */
-#include <linux/proc_fs.h>      /* Necessary because we use the proc fs */
-#include <linux/uaccess.h>        /* for copy_from_user */
 #include "hif.h"
 #include "hif_main.h"
+#include <linux/kernel.h> /* We're doing kernel work */
+#include <linux/module.h> /* Specifically, a module */
+#include <linux/proc_fs.h> /* Necessary because we use the proc fs */
+#include <linux/uaccess.h> /* for copy_from_user */
+#include <linux/version.h> /* We're doing kernel work */
 #if defined(HIF_USB)
 #include "if_usb.h"
 #endif
@@ -43,11 +43,11 @@
 #define pde_data(inode) PDE_DATA(inode)
 #endif
 
-#define PROCFS_NAME             "athdiagpfs"
+#define PROCFS_NAME "athdiagpfs"
 #ifdef MULTI_IF_NAME
-#define PROCFS_DIR              "cld" MULTI_IF_NAME
+#define PROCFS_DIR "cld" MULTI_IF_NAME
 #else
-#define PROCFS_DIR              "cld"
+#define PROCFS_DIR "cld"
 #endif
 
 /*
@@ -59,16 +59,16 @@
  * reserve1:    20 bits
  * offset:      32 bits
  */
-#define OP_TYPE_LEGACY                  0
-#define OP_TYPE_EXT_QMI                 1
-#define OP_TYPE_EXT_DIRECT              2
+#define OP_TYPE_LEGACY 0
+#define OP_TYPE_EXT_QMI 1
+#define OP_TYPE_EXT_DIRECT 2
 
-#define ATH_DIAG_EXT_OP_TYPE_BITS        4
-#define ATH_DIAG_EXT_OP_TYPE_INDEX       60
-#define ATH_DIAG_EXT_MEM_TYPE_BITS       8
-#define ATH_DIAG_EXT_MEM_TYPE_INDEX      52
-#define ATH_DIAG_EXT_OFFSET_BITS         32
-#define ATH_DIAG_EXT_OFFSET_INDEX        0
+#define ATH_DIAG_EXT_OP_TYPE_BITS 4
+#define ATH_DIAG_EXT_OP_TYPE_INDEX 60
+#define ATH_DIAG_EXT_MEM_TYPE_BITS 8
+#define ATH_DIAG_EXT_MEM_TYPE_INDEX 52
+#define ATH_DIAG_EXT_OFFSET_BITS 32
+#define ATH_DIAG_EXT_OFFSET_INDEX 0
 
 /*
  * This structure hold information about the /proc file
@@ -84,8 +84,7 @@ static void *get_hif_hdl_from_file(struct file *file)
 	return (void *)scn;
 }
 
-static ssize_t ath_procfs_diag_read_legacy(struct file *file,
-					   char __user *buf,
+static ssize_t ath_procfs_diag_read_legacy(struct file *file, char __user *buf,
 					   size_t count, loff_t *pos)
 {
 	hif_handle_t hif_hdl;
@@ -102,45 +101,44 @@ static ssize_t ath_procfs_diag_read_legacy(struct file *file,
 	if (!read_buffer)
 		return -ENOMEM;
 
-	hif_debug("rd buff 0x%pK cnt %zu offset 0x%x buf 0x%pK",
-		 read_buffer, count, (int)*pos, buf);
+	hif_debug("rd buff 0x%pK cnt %zu offset 0x%x buf 0x%pK", read_buffer,
+		  count, (int)*pos, buf);
 
 	tgt_info = hif_get_target_info_handle(GET_HIF_OPAQUE_HDL(hif_hdl));
 	if ((scn->bus_type == QDF_BUS_TYPE_SNOC) ||
-	    (scn->bus_type ==  QDF_BUS_TYPE_PCI &&
-	    ((tgt_info->target_type == TARGET_TYPE_QCA6290) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCA6390) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCA6490) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCA8074) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCA8074V2) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCA9574) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCN9000) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCN9224) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCN6122) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCN9160) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCN6432) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCA5018) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCA5332) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCA6018) ||
-	     (tgt_info->target_type == TARGET_TYPE_QCN7605) ||
-	     (tgt_info->target_type == TARGET_TYPE_KIWI) ||
-	     (tgt_info->target_type == TARGET_TYPE_MANGO) ||
-	     (tgt_info->target_type == TARGET_TYPE_PEACH))) ||
-	    (scn->bus_type ==  QDF_BUS_TYPE_IPCI &&
+	    (scn->bus_type == QDF_BUS_TYPE_PCI &&
+	     ((tgt_info->target_type == TARGET_TYPE_QCA6290) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCA6390) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCA6490) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCA8074) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCA8074V2) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCA9574) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCN9000) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCN9224) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCN6122) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCN9160) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCN6432) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCA5018) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCA5332) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCA6018) ||
+	      (tgt_info->target_type == TARGET_TYPE_QCN7605) ||
+	      (tgt_info->target_type == TARGET_TYPE_KIWI) ||
+	      (tgt_info->target_type == TARGET_TYPE_MANGO) ||
+	      (tgt_info->target_type == TARGET_TYPE_PEACH))) ||
+	    (scn->bus_type == QDF_BUS_TYPE_IPCI &&
 	     (tgt_info->target_type == TARGET_TYPE_QCA6750)) ||
-	    ((scn->bus_type ==  QDF_BUS_TYPE_USB) &&
+	    ((scn->bus_type == QDF_BUS_TYPE_USB) &&
 	     (tgt_info->target_type == TARGET_TYPE_QCN7605))) {
 		memtype = ((uint32_t)(*pos) & 0xff000000) >> 24;
 		offset = (uint32_t)(*pos) & 0xffffff;
-		hif_debug("offset 0x%x memtype 0x%x, datalen %zu",
-			 offset, memtype, count);
-		rv = pld_athdiag_read(scn->qdf_dev->dev,
-				      offset, memtype, count,
+		hif_debug("offset 0x%x memtype 0x%x, datalen %zu", offset,
+			  memtype, count);
+		rv = pld_athdiag_read(scn->qdf_dev->dev, offset, memtype, count,
 				      (uint8_t *)read_buffer);
 		goto out;
 	}
 
-	if ((count == 4) && ((((uint32_t) (*pos)) & 3) == 0)) {
+	if ((count == 4) && ((((uint32_t)(*pos)) & 3) == 0)) {
 		/* reading a word? */
 		rv = hif_diag_read_access(hif_hdl, (uint32_t)(*pos),
 					  (uint32_t *)read_buffer);
@@ -189,12 +187,12 @@ static ssize_t ath_procfs_diag_write_legacy(struct file *file,
 	}
 
 	hif_debug("wr buff 0x%pK buf 0x%pK cnt %zu offset 0x%x value 0x%x",
-		 write_buffer, buf, count,
-		 (int)*pos, *((uint32_t *) write_buffer));
+		  write_buffer, buf, count, (int)*pos,
+		  *((uint32_t *)write_buffer));
 
 	tgt_info = hif_get_target_info_handle(GET_HIF_OPAQUE_HDL(hif_hdl));
 	if ((scn->bus_type == QDF_BUS_TYPE_SNOC) ||
-	    ((scn->bus_type ==  QDF_BUS_TYPE_PCI) &&
+	    ((scn->bus_type == QDF_BUS_TYPE_PCI) &&
 	     ((tgt_info->target_type == TARGET_TYPE_QCA6290) ||
 	      (tgt_info->target_type == TARGET_TYPE_QCA6390) ||
 	      (tgt_info->target_type == TARGET_TYPE_QCA6490) ||
@@ -213,21 +211,20 @@ static ssize_t ath_procfs_diag_write_legacy(struct file *file,
 	      (tgt_info->target_type == TARGET_TYPE_KIWI) ||
 	      (tgt_info->target_type == TARGET_TYPE_MANGO) ||
 	      (tgt_info->target_type == TARGET_TYPE_PEACH))) ||
-	    (scn->bus_type ==  QDF_BUS_TYPE_IPCI &&
+	    (scn->bus_type == QDF_BUS_TYPE_IPCI &&
 	     (tgt_info->target_type == TARGET_TYPE_QCA6750)) ||
-	    ((scn->bus_type ==  QDF_BUS_TYPE_USB) &&
+	    ((scn->bus_type == QDF_BUS_TYPE_USB) &&
 	     (tgt_info->target_type == TARGET_TYPE_QCN7605))) {
 		memtype = ((uint32_t)(*pos) & 0xff000000) >> 24;
 		offset = (uint32_t)(*pos) & 0xffffff;
-		hif_debug("offset 0x%x memtype 0x%x, datalen %zu",
-			 offset, memtype, count);
-		rv = pld_athdiag_write(scn->qdf_dev->dev,
-				      offset, memtype, count,
-				      (uint8_t *)write_buffer);
+		hif_debug("offset 0x%x memtype 0x%x, datalen %zu", offset,
+			  memtype, count);
+		rv = pld_athdiag_write(scn->qdf_dev->dev, offset, memtype,
+				       count, (uint8_t *)write_buffer);
 		goto out;
 	}
 
-	if ((count == 4) && ((((uint32_t) (*pos)) & 3) == 0)) {
+	if ((count == 4) && ((((uint32_t)(*pos)) & 3) == 0)) {
 		/* reading a word? */
 		uint32_t value = *((uint32_t *)write_buffer);
 
@@ -260,15 +257,13 @@ static int ath_procfs_direct_read(struct hif_softc *scn, uint32_t offset,
 		return -EIO;
 
 	while (remaining >= 4) {
-		*p_val++ = scn->bus_ops.hif_reg_read32(scn,
-						       offset);
+		*p_val++ = scn->bus_ops.hif_reg_read32(scn, offset);
 		offset += 4;
 		remaining -= 4;
 	}
 
 	if (remaining) {
-		val = scn->bus_ops.hif_reg_read32(scn,
-						  offset);
+		val = scn->bus_ops.hif_reg_read32(scn, offset);
 		buf_d = (uint8_t *)p_val;
 		buf_s = (uint8_t *)&val;
 		while (remaining) {
@@ -293,25 +288,20 @@ static int ath_procfs_direct_write(struct hif_softc *scn, uint32_t offset,
 		return -EIO;
 
 	while (remaining >= 4) {
-		scn->bus_ops.hif_reg_write32(scn,
-					     offset,
-					     *p_val++);
+		scn->bus_ops.hif_reg_write32(scn, offset, *p_val++);
 		offset += 4;
 		remaining -= 4;
 	}
 
 	if (remaining) {
-		val = scn->bus_ops.hif_reg_read32(scn,
-						  offset);
+		val = scn->bus_ops.hif_reg_read32(scn, offset);
 		buf_s = (uint8_t *)p_val;
 		buf_d = (uint8_t *)&val;
 		while (remaining) {
 			*buf_d++ = *buf_s++;
 			remaining--;
 		}
-		scn->bus_ops.hif_reg_write32(scn,
-					     offset,
-					     val);
+		scn->bus_ops.hif_reg_write32(scn, offset, val);
 	}
 
 	return 0;
@@ -333,10 +323,8 @@ static int ath_procfs_direct_write(struct hif_softc *scn, uint32_t offset,
 #endif
 
 static ssize_t ath_procfs_diag_read_ext(struct file *file, char __user *buf,
-					size_t count,
-					uint32_t op_type,
-					uint32_t memtype,
-					uint32_t offset)
+					size_t count, uint32_t op_type,
+					uint32_t memtype, uint32_t offset)
 {
 	hif_handle_t hif_hdl = get_hif_hdl_from_file(file);
 	int rv = -EINVAL;
@@ -362,15 +350,11 @@ static ssize_t ath_procfs_diag_read_ext(struct file *file, char __user *buf,
 		case TARGET_TYPE_PEACH:
 		case TARGET_TYPE_MANGO:
 			if (op_type == OP_TYPE_EXT_DIRECT)
-				rv = ath_procfs_direct_read(scn,
-							    offset,
-							    read_buffer,
-							    count);
+				rv = ath_procfs_direct_read(scn, offset,
+							    read_buffer, count);
 			else
-				rv = pld_athdiag_read(scn->qdf_dev->dev,
-						      offset,
-						      memtype,
-						      count,
+				rv = pld_athdiag_read(scn->qdf_dev->dev, offset,
+						      memtype, count,
 						      read_buffer);
 			break;
 		default:
@@ -388,8 +372,7 @@ static ssize_t ath_procfs_diag_read_ext(struct file *file, char __user *buf,
 	} else {
 		rv = count;
 		if (copy_to_user(buf, read_buffer, count)) {
-			hif_err("copy_to_user error in /proc/%s",
-				PROCFS_NAME);
+			hif_err("copy_to_user error in /proc/%s", PROCFS_NAME);
 			rv = -EFAULT;
 		}
 	}
@@ -400,10 +383,8 @@ static ssize_t ath_procfs_diag_read_ext(struct file *file, char __user *buf,
 }
 
 static ssize_t ath_procfs_diag_write_ext(struct file *file,
-					 const char __user *buf,
-					 size_t count,
-					 uint32_t op_type,
-					 uint32_t memtype,
+					 const char __user *buf, size_t count,
+					 uint32_t op_type, uint32_t memtype,
 					 uint32_t offset)
 {
 	hif_handle_t hif_hdl = get_hif_hdl_from_file(file);
@@ -423,8 +404,7 @@ static ssize_t ath_procfs_diag_write_ext(struct file *file,
 
 	if (copy_from_user(write_buffer, buf, count)) {
 		qdf_mem_free(write_buffer);
-		hif_err("copy_to_user error in /proc/%s",
-			PROCFS_NAME);
+		hif_err("copy_to_user error in /proc/%s", PROCFS_NAME);
 		return -EFAULT;
 	}
 
@@ -439,15 +419,11 @@ static ssize_t ath_procfs_diag_write_ext(struct file *file,
 		case TARGET_TYPE_MANGO:
 		case TARGET_TYPE_PEACH:
 			if (op_type == OP_TYPE_EXT_DIRECT)
-				rv = ath_procfs_direct_write(scn,
-							     offset,
-							     write_buffer,
-							     count);
+				rv = ath_procfs_direct_write(
+					scn, offset, write_buffer, count);
 			else
 				rv = pld_athdiag_write(scn->qdf_dev->dev,
-						       offset,
-						       memtype,
-						       count,
+						       offset, memtype, count,
 						       write_buffer);
 			break;
 		default:
@@ -465,10 +441,8 @@ static ssize_t ath_procfs_diag_write_ext(struct file *file,
 	return (rv == 0) ? count : -EIO;
 }
 
-static void get_fields_from_pos(loff_t pos,
-				uint32_t *op_type,
-				uint32_t *memtype,
-				uint32_t *offset)
+static void get_fields_from_pos(loff_t pos, uint32_t *op_type,
+				uint32_t *memtype, uint32_t *offset)
 {
 	*op_type = QDF_GET_BITS64(pos, ATH_DIAG_EXT_OP_TYPE_INDEX,
 				  ATH_DIAG_EXT_OP_TYPE_BITS);
@@ -499,8 +473,8 @@ static ssize_t ath_procfs_diag_read(struct file *file, char __user *buf,
 	if (offset & 0x3)
 		return -EINVAL;
 
-	hif_info("rd cnt %zu offset 0x%x op_type %d type %d pos %llx",
-		 count, offset, op_type, memtype, *pos);
+	hif_info("rd cnt %zu offset 0x%x op_type %d type %d pos %llx", count,
+		 offset, op_type, memtype, *pos);
 
 	switch (op_type) {
 	case OP_TYPE_LEGACY:
@@ -519,8 +493,7 @@ static ssize_t ath_procfs_diag_read(struct file *file, char __user *buf,
 	return rv;
 }
 
-static ssize_t ath_procfs_diag_write(struct file *file,
-				     const char __user *buf,
+static ssize_t ath_procfs_diag_write(struct file *file, const char __user *buf,
 				     size_t count, loff_t *pos)
 {
 	hif_handle_t hif_hdl = get_hif_hdl_from_file(file);
@@ -541,8 +514,8 @@ static ssize_t ath_procfs_diag_write(struct file *file,
 	if (offset & 0x3)
 		return -EINVAL;
 
-	hif_info("wr cnt %zu offset 0x%x op_type %d mem_type %d",
-		 count, offset, op_type, memtype);
+	hif_info("wr cnt %zu offset 0x%x op_type %d mem_type %d", count, offset,
+		 op_type, memtype);
 
 	switch (op_type) {
 	case OP_TYPE_LEGACY:
@@ -587,8 +560,8 @@ int athdiag_procfs_init(void *scn)
 		return -ENOMEM;
 	}
 
-	proc_file = proc_create_data(PROCFS_NAME, 0600, proc_dir,
-				     &athdiag_fops, (void *)scn);
+	proc_file = proc_create_data(PROCFS_NAME, 0600, proc_dir, &athdiag_fops,
+				     (void *)scn);
 	if (!proc_file) {
 		remove_proc_entry(PROCFS_NAME, proc_dir);
 		hif_err("Could not initialize /proc/%s", PROCFS_NAME);
@@ -618,5 +591,7 @@ int athdiag_procfs_init(void *scn)
 {
 	return 0;
 }
-void athdiag_procfs_remove(void) {}
+void athdiag_procfs_remove(void)
+{
+}
 #endif

@@ -21,24 +21,22 @@
  * implementation for creating sysfs file dl_modes
  */
 
+#include "osif_vdev_sync.h"
+#include "wma_api.h"
+#include "wmi_unified_param.h"
 #include <wlan_hdd_includes.h>
 #include <wlan_hdd_main.h>
-#include "osif_vdev_sync.h"
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_dl_modes.h>
-#include "wmi_unified_param.h"
-#include "wma_api.h"
 
-static int hdd_sysfs_set_dbg(struct hdd_adapter *adapter,
-			     int id,
-			     const char *id_string,
-			     int value)
+static int hdd_sysfs_set_dbg(struct hdd_adapter *adapter, int id,
+			     const char *id_string, int value)
 {
 	int errno;
 
 	hdd_debug("%s %d", id_string, value);
-	errno = wma_cli_set_command(adapter->deflink->vdev_id,
-				    id, value, DBG_CMD);
+	errno = wma_cli_set_command(adapter->deflink->vdev_id, id, value,
+				    DBG_CMD);
 	if (errno)
 		hdd_err("Failed to set firmware, errno %d", errno);
 
@@ -46,11 +44,10 @@ static int hdd_sysfs_set_dbg(struct hdd_adapter *adapter,
 }
 
 #define hdd_sysfs_set_dbg(adapter, id, value) \
-			  hdd_sysfs_set_dbg(adapter, id, #id, value)
+	hdd_sysfs_set_dbg(adapter, id, #id, value)
 
-static ssize_t
-__hdd_sysfs_dl_loglevel_store(struct net_device *net_dev,
-			      char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dl_loglevel_store(struct net_device *net_dev,
+					     char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -70,8 +67,8 @@ __hdd_sysfs_dl_loglevel_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -79,8 +76,8 @@ __hdd_sysfs_dl_loglevel_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("dl_loglevel: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("dl_loglevel: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -99,10 +96,9 @@ __hdd_sysfs_dl_loglevel_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dl_loglevel_store(struct device *dev,
-			    struct device_attribute *attr,
-			    char const *buf, size_t count)
+static ssize_t hdd_sysfs_dl_loglevel_store(struct device *dev,
+					   struct device_attribute *attr,
+					   char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -119,9 +115,8 @@ hdd_sysfs_dl_loglevel_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dl_mod_loglevel_store(struct net_device *net_dev,
-				  char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dl_mod_loglevel_store(struct net_device *net_dev,
+						 char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -141,8 +136,8 @@ __hdd_sysfs_dl_mod_loglevel_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -170,10 +165,9 @@ __hdd_sysfs_dl_mod_loglevel_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dl_mod_loglevel_store(struct device *dev,
-				struct device_attribute *attr,
-				char const *buf, size_t count)
+static ssize_t hdd_sysfs_dl_mod_loglevel_store(struct device *dev,
+					       struct device_attribute *attr,
+					       char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -190,9 +184,8 @@ hdd_sysfs_dl_mod_loglevel_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dl_modoff_store(struct net_device *net_dev,
-			    char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dl_modoff_store(struct net_device *net_dev,
+					   char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -212,8 +205,8 @@ __hdd_sysfs_dl_modoff_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -221,8 +214,8 @@ __hdd_sysfs_dl_modoff_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("dl_modoff: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("dl_modoff: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -241,10 +234,9 @@ __hdd_sysfs_dl_modoff_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dl_modoff_store(struct device *dev,
-			  struct device_attribute *attr,
-			  char const *buf, size_t count)
+static ssize_t hdd_sysfs_dl_modoff_store(struct device *dev,
+					 struct device_attribute *attr,
+					 char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -261,9 +253,8 @@ hdd_sysfs_dl_modoff_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dl_modon_store(struct net_device *net_dev,
-			   char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dl_modon_store(struct net_device *net_dev,
+					  char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -283,8 +274,8 @@ __hdd_sysfs_dl_modon_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -292,8 +283,8 @@ __hdd_sysfs_dl_modon_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("dl_modon: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("dl_modon: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -312,10 +303,9 @@ __hdd_sysfs_dl_modon_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dl_modon_store(struct device *dev,
-			 struct device_attribute *attr,
-			 char const *buf, size_t count)
+static ssize_t hdd_sysfs_dl_modon_store(struct device *dev,
+					struct device_attribute *attr,
+					char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -332,9 +322,8 @@ hdd_sysfs_dl_modon_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dl_report_store(struct net_device *net_dev,
-			    char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dl_report_store(struct net_device *net_dev,
+					   char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -354,8 +343,8 @@ __hdd_sysfs_dl_report_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -363,8 +352,8 @@ __hdd_sysfs_dl_report_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("dl_report: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("dl_report: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -383,10 +372,9 @@ __hdd_sysfs_dl_report_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dl_report_store(struct device *dev,
-			  struct device_attribute *attr,
-			  char const *buf, size_t count)
+static ssize_t hdd_sysfs_dl_report_store(struct device *dev,
+					 struct device_attribute *attr,
+					 char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -403,9 +391,8 @@ hdd_sysfs_dl_report_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dl_type_store(struct net_device *net_dev,
-			  char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dl_type_store(struct net_device *net_dev,
+					 char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -425,8 +412,8 @@ __hdd_sysfs_dl_type_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -434,8 +421,8 @@ __hdd_sysfs_dl_type_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("dl_type: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("dl_type: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -454,10 +441,9 @@ __hdd_sysfs_dl_type_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dl_type_store(struct device *dev,
-			struct device_attribute *attr,
-			char const *buf, size_t count)
+static ssize_t hdd_sysfs_dl_type_store(struct device *dev,
+				       struct device_attribute *attr,
+				       char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -474,9 +460,8 @@ hdd_sysfs_dl_type_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dl_vapoff_store(struct net_device *net_dev,
-			    char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dl_vapoff_store(struct net_device *net_dev,
+					   char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -496,8 +481,8 @@ __hdd_sysfs_dl_vapoff_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -505,8 +490,8 @@ __hdd_sysfs_dl_vapoff_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("dl_vapoff: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("dl_vapoff: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -525,10 +510,9 @@ __hdd_sysfs_dl_vapoff_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dl_vapoff_store(struct device *dev,
-			  struct device_attribute *attr,
-			  char const *buf, size_t count)
+static ssize_t hdd_sysfs_dl_vapoff_store(struct device *dev,
+					 struct device_attribute *attr,
+					 char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -545,9 +529,8 @@ hdd_sysfs_dl_vapoff_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dl_vapon_store(struct net_device *net_dev,
-			   char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dl_vapon_store(struct net_device *net_dev,
+					  char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -567,8 +550,8 @@ __hdd_sysfs_dl_vapon_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -576,8 +559,8 @@ __hdd_sysfs_dl_vapon_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("dl_vapon: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("dl_vapon: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -596,10 +579,9 @@ __hdd_sysfs_dl_vapon_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dl_vapon_store(struct device *dev,
-			 struct device_attribute *attr,
-			 char const *buf, size_t count)
+static ssize_t hdd_sysfs_dl_vapon_store(struct device *dev,
+					struct device_attribute *attr,
+					char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -616,29 +598,22 @@ hdd_sysfs_dl_vapon_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(dl_loglevel, 0220,
-		   NULL, hdd_sysfs_dl_loglevel_store);
+static DEVICE_ATTR(dl_loglevel, 0220, NULL, hdd_sysfs_dl_loglevel_store);
 
-static DEVICE_ATTR(dl_mod_loglevel, 0220,
-		   NULL, hdd_sysfs_dl_mod_loglevel_store);
+static DEVICE_ATTR(dl_mod_loglevel, 0220, NULL,
+		   hdd_sysfs_dl_mod_loglevel_store);
 
-static DEVICE_ATTR(dl_modoff, 0220,
-		   NULL, hdd_sysfs_dl_modoff_store);
+static DEVICE_ATTR(dl_modoff, 0220, NULL, hdd_sysfs_dl_modoff_store);
 
-static DEVICE_ATTR(dl_modon, 0220,
-		   NULL, hdd_sysfs_dl_modon_store);
+static DEVICE_ATTR(dl_modon, 0220, NULL, hdd_sysfs_dl_modon_store);
 
-static DEVICE_ATTR(dl_report, 0220,
-		   NULL, hdd_sysfs_dl_report_store);
+static DEVICE_ATTR(dl_report, 0220, NULL, hdd_sysfs_dl_report_store);
 
-static DEVICE_ATTR(dl_type, 0220,
-		   NULL, hdd_sysfs_dl_type_store);
+static DEVICE_ATTR(dl_type, 0220, NULL, hdd_sysfs_dl_type_store);
 
-static DEVICE_ATTR(dl_vapoff, 0220,
-		   NULL, hdd_sysfs_dl_vapoff_store);
+static DEVICE_ATTR(dl_vapoff, 0220, NULL, hdd_sysfs_dl_vapoff_store);
 
-static DEVICE_ATTR(dl_vapon, 0220,
-		   NULL, hdd_sysfs_dl_vapon_store);
+static DEVICE_ATTR(dl_vapon, 0220, NULL, hdd_sysfs_dl_vapon_store);
 
 static int hdd_sysfs_dl_loglevel_create(struct hdd_adapter *adapter)
 {

@@ -3,43 +3,43 @@
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/platform_device.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
 #include <media/cam_req_mgr.h>
 
-#include "cam_subdev.h"
-#include "cam_lrme_hw_intf.h"
 #include "cam_lrme_hw_core.h"
-#include "cam_lrme_hw_soc.h"
-#include "cam_lrme_hw_reg.h"
-#include "cam_req_mgr_workq.h"
+#include "cam_lrme_hw_intf.h"
 #include "cam_lrme_hw_mgr.h"
+#include "cam_lrme_hw_reg.h"
+#include "cam_lrme_hw_soc.h"
 #include "cam_mem_mgr_api.h"
+#include "cam_req_mgr_workq.h"
 #include "cam_smmu_api.h"
+#include "cam_subdev.h"
 #include "camera_main.h"
 
 static int cam_lrme_hw_dev_util_cdm_acquire(struct cam_lrme_core *lrme_core,
-	struct cam_hw_info *lrme_hw)
+					    struct cam_hw_info *lrme_hw)
 {
 	int rc, i;
 	struct cam_cdm_bl_request *cdm_cmd;
 	struct cam_cdm_acquire_data cdm_acquire;
 	struct cam_lrme_cdm_info *hw_cdm_info;
 
-	hw_cdm_info = kzalloc(sizeof(struct cam_lrme_cdm_info),
-		GFP_KERNEL);
+	hw_cdm_info = kzalloc(sizeof(struct cam_lrme_cdm_info), GFP_KERNEL);
 	if (!hw_cdm_info) {
 		CAM_ERR(CAM_LRME, "No memory for hw_cdm_info");
 		return -ENOMEM;
 	}
 
 	cdm_cmd = kzalloc((sizeof(struct cam_cdm_bl_request) +
-		((CAM_LRME_MAX_HW_ENTRIES - 1) *
-		sizeof(struct cam_cdm_bl_cmd))), GFP_KERNEL);
+			   ((CAM_LRME_MAX_HW_ENTRIES - 1) *
+			    sizeof(struct cam_cdm_bl_cmd))),
+			  GFP_KERNEL);
 	if (!cdm_cmd) {
 		CAM_ERR(CAM_LRME, "No memory for cdm_cmd");
 		kfree(hw_cdm_info);
@@ -84,7 +84,7 @@ static void cam_req_mgr_process_workq_cam_lrme_hw_worker(struct work_struct *w)
 }
 
 static int cam_lrme_hw_dev_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+					  struct device *master_dev, void *data)
 {
 	struct cam_hw_info *lrme_hw;
 	struct cam_hw_intf lrme_hw_intf;
@@ -120,8 +120,8 @@ static int cam_lrme_hw_dev_component_bind(struct device *dev,
 	init_completion(&lrme_hw->hw_complete);
 	init_completion(&lrme_core->reset_complete);
 
-	rc = cam_req_mgr_workq_create("cam_lrme_hw_worker",
-		CAM_LRME_HW_WORKQ_NUM_TASK,
+	rc = cam_req_mgr_workq_create(
+		"cam_lrme_hw_worker", CAM_LRME_HW_WORKQ_NUM_TASK,
 		&lrme_core->work, CRM_WORKQ_USAGE_IRQ, 0,
 		cam_req_mgr_process_workq_cam_lrme_hw_worker);
 	if (rc) {
@@ -133,8 +133,8 @@ static int cam_lrme_hw_dev_component_bind(struct device *dev,
 		lrme_core->work->task.pool[i].payload =
 			&lrme_core->work_data[i];
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev || !match_dev->data) {
 		CAM_ERR(CAM_LRME, "No Of_match data, %pK", match_dev);
 		rc = -EINVAL;
@@ -143,8 +143,8 @@ static int cam_lrme_hw_dev_component_bind(struct device *dev,
 	hw_info = (struct cam_lrme_hw_info *)match_dev->data;
 	lrme_core->hw_info = hw_info;
 
-	rc = cam_lrme_soc_init_resources(&lrme_hw->soc_info,
-		cam_lrme_hw_irq, lrme_hw);
+	rc = cam_lrme_soc_init_resources(&lrme_hw->soc_info, cam_lrme_hw_irq,
+					 lrme_hw);
 	if (rc) {
 		CAM_ERR(CAM_LRME, "Failed to init soc, rc=%d", rc);
 		goto destroy_workqueue;
@@ -205,9 +205,8 @@ static int cam_lrme_hw_dev_component_bind(struct device *dev,
 		goto detach_smmu;
 	}
 
-	rc = cam_lrme_mgr_register_device(&lrme_hw_intf,
-		&lrme_core->device_iommu,
-		&lrme_core->cdm_iommu);
+	rc = cam_lrme_mgr_register_device(
+		&lrme_hw_intf, &lrme_core->device_iommu, &lrme_core->cdm_iommu);
 	if (rc) {
 		CAM_ERR(CAM_LRME, "Failed to register device");
 		goto detach_smmu;
@@ -240,7 +239,8 @@ free_memory:
 }
 
 static void cam_lrme_hw_dev_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					     struct device *master_dev,
+					     void *data)
 {
 	int rc = 0;
 	struct cam_hw_info *lrme_hw;
@@ -310,14 +310,15 @@ static const struct of_device_id cam_lrme_hw_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_lrme_hw_dt_match);
 
 struct platform_driver cam_lrme_hw_driver = {
-	.probe = cam_lrme_hw_dev_probe,
-	.remove = cam_lrme_hw_dev_remove,
-	.driver = {
-		.name = "cam_lrme_hw",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_lrme_hw_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_lrme_hw_dev_probe,
+    .remove = cam_lrme_hw_dev_remove,
+    .driver =
+        {
+            .name = "cam_lrme_hw",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_lrme_hw_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_lrme_hw_init_module(void)

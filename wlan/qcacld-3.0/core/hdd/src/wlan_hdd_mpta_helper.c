@@ -22,26 +22,24 @@
  * The implementation of mpta helper configuration
  */
 
-#include "wlan_hdd_main.h"
-#include "wmi_unified_param.h"
 #include "wlan_hdd_mpta_helper.h"
-#include "qca_vendor.h"
-#include "wlan_osif_request_manager.h"
 #include "osif_sync.h"
+#include "qca_vendor.h"
+#include "wlan_hdd_main.h"
+#include "wlan_osif_request_manager.h"
+#include "wmi_unified_param.h"
 
-const struct nla_policy
-qca_wlan_vendor_mpta_helper_attr[QCA_MPTA_HELPER_VENDOR_ATTR_MAX + 1] = {
-	[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_STATE] = {.type = NLA_U32 },
-	[QCA_MPTA_HELPER_VENDOR_ATTR_INT_WLAN_DURATION] = {.type = NLA_U32 },
-	[QCA_MPTA_HELPER_VENDOR_ATTR_INT_NON_WLAN_DURATION] = {
-							.type = NLA_U32 },
-	[QCA_MPTA_HELPER_VENDOR_ATTR_MON_WLAN_DURATION] = {.type = NLA_U32 },
-	[QCA_MPTA_HELPER_VENDOR_ATTR_MON_NON_WLAN_DURATION] = {
-							.type = NLA_U32 },
-	[QCA_MPTA_HELPER_VENDOR_ATTR_INT_OCS_DURATION] = {.type = NLA_U32 },
-	[QCA_MPTA_HELPER_VENDOR_ATTR_MON_OCS_DURATION] = {.type = NLA_U32 },
-	[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_CHAN] = {.type = NLA_U32 },
-	[QCA_MPTA_HELPER_VENDOR_ATTR_WLAN_MUTE_DURATION] = {.type = NLA_U32 },
+const struct nla_policy qca_wlan_vendor_mpta_helper_attr[QCA_MPTA_HELPER_VENDOR_ATTR_MAX +
+							 1] = {
+	[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_STATE] = { .type = NLA_U32 },
+	[QCA_MPTA_HELPER_VENDOR_ATTR_INT_WLAN_DURATION] = { .type = NLA_U32 },
+	[QCA_MPTA_HELPER_VENDOR_ATTR_INT_NON_WLAN_DURATION] = { .type = NLA_U32 },
+	[QCA_MPTA_HELPER_VENDOR_ATTR_MON_WLAN_DURATION] = { .type = NLA_U32 },
+	[QCA_MPTA_HELPER_VENDOR_ATTR_MON_NON_WLAN_DURATION] = { .type = NLA_U32 },
+	[QCA_MPTA_HELPER_VENDOR_ATTR_INT_OCS_DURATION] = { .type = NLA_U32 },
+	[QCA_MPTA_HELPER_VENDOR_ATTR_MON_OCS_DURATION] = { .type = NLA_U32 },
+	[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_CHAN] = { .type = NLA_U32 },
+	[QCA_MPTA_HELPER_VENDOR_ATTR_WLAN_MUTE_DURATION] = { .type = NLA_U32 },
 };
 
 /**
@@ -55,15 +53,14 @@ qca_wlan_vendor_mpta_helper_attr[QCA_MPTA_HELPER_VENDOR_ATTR_MAX + 1] = {
  * Return: 0 on success; error number otherwise.
  *
  */
-static int
-__wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
-				       struct wireless_dev *wdev,
-				       const void *data,
-				       int data_len)
+static int __wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
+						  struct wireless_dev *wdev,
+						  const void *data,
+						  int data_len)
 {
-	struct hdd_context *hdd_ctx  = wiphy_priv(wiphy);
+	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct nlattr *tb[QCA_MPTA_HELPER_VENDOR_ATTR_MAX + 1];
-	struct coex_config_params coex_cfg_params = {0};
+	struct coex_config_params coex_cfg_params = { 0 };
 	int errno;
 	QDF_STATUS status;
 
@@ -91,8 +88,8 @@ __wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
 	if (tb[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_STATE]) {
 		coex_cfg_params.config_type =
 			WMI_COEX_CONFIG_MPTA_HELPER_ZIGBEE_STATE;
-		coex_cfg_params.config_arg1 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_STATE]);
+		coex_cfg_params.config_arg1 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_STATE]);
 
 		status = sme_send_coex_config_cmd(&coex_cfg_params);
 
@@ -108,10 +105,10 @@ __wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
 	    (tb[QCA_MPTA_HELPER_VENDOR_ATTR_INT_NON_WLAN_DURATION])) {
 		coex_cfg_params.config_type =
 			WMI_COEX_CONFIG_MPTA_HELPER_INT_OCS_PARAMS;
-		coex_cfg_params.config_arg1 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_INT_WLAN_DURATION]);
-		coex_cfg_params.config_arg2 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_INT_NON_WLAN_DURATION]);
+		coex_cfg_params.config_arg1 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_INT_WLAN_DURATION]);
+		coex_cfg_params.config_arg2 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_INT_NON_WLAN_DURATION]);
 
 		status = sme_send_coex_config_cmd(&coex_cfg_params);
 
@@ -127,10 +124,10 @@ __wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
 	    (tb[QCA_MPTA_HELPER_VENDOR_ATTR_MON_NON_WLAN_DURATION])) {
 		coex_cfg_params.config_type =
 			WMI_COEX_CONFIG_MPTA_HELPER_MON_OCS_PARAMS;
-		coex_cfg_params.config_arg1 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_MON_WLAN_DURATION]);
-		coex_cfg_params.config_arg2 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_MON_NON_WLAN_DURATION]);
+		coex_cfg_params.config_arg1 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_MON_WLAN_DURATION]);
+		coex_cfg_params.config_arg2 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_MON_NON_WLAN_DURATION]);
 
 		status = sme_send_coex_config_cmd(&coex_cfg_params);
 
@@ -146,10 +143,10 @@ __wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
 	    (tb[QCA_MPTA_HELPER_VENDOR_ATTR_MON_OCS_DURATION])) {
 		coex_cfg_params.config_type =
 			WMI_COEX_CONFIG_MPTA_HELPER_INT_MON_DURATION;
-		coex_cfg_params.config_arg1 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_INT_OCS_DURATION]);
-		coex_cfg_params.config_arg2 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_MON_OCS_DURATION]);
+		coex_cfg_params.config_arg1 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_INT_OCS_DURATION]);
+		coex_cfg_params.config_arg2 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_MON_OCS_DURATION]);
 
 		status = sme_send_coex_config_cmd(&coex_cfg_params);
 
@@ -164,8 +161,8 @@ __wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
 	if (tb[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_CHAN]) {
 		coex_cfg_params.config_type =
 			WMI_COEX_CONFIG_MPTA_HELPER_ZIGBEE_CHANNEL;
-		coex_cfg_params.config_arg1 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_CHAN]);
+		coex_cfg_params.config_arg1 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_ZIGBEE_CHAN]);
 
 		status = sme_send_coex_config_cmd(&coex_cfg_params);
 
@@ -180,8 +177,8 @@ __wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
 	if (tb[QCA_MPTA_HELPER_VENDOR_ATTR_WLAN_MUTE_DURATION]) {
 		coex_cfg_params.config_type =
 			WMI_COEX_CONFIG_MPTA_HELPER_WLAN_MUTE_DURATION;
-		coex_cfg_params.config_arg1 = nla_get_u32
-			(tb[QCA_MPTA_HELPER_VENDOR_ATTR_WLAN_MUTE_DURATION]);
+		coex_cfg_params.config_arg1 = nla_get_u32(
+			tb[QCA_MPTA_HELPER_VENDOR_ATTR_WLAN_MUTE_DURATION]);
 
 		status = sme_send_coex_config_cmd(&coex_cfg_params);
 
@@ -207,11 +204,9 @@ __wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
  * Return: 0 on success; error number otherwise.
  *
  */
-int
-wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
-				     struct wireless_dev *wdev,
-				     const void *data,
-				     int data_len)
+int wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
+					 struct wireless_dev *wdev,
+					 const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -220,8 +215,8 @@ wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_mpta_helper_config(
-					wiphy, wdev, data, data_len);
+	errno = __wlan_hdd_cfg80211_mpta_helper_config(wiphy, wdev, data,
+						       data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -237,9 +232,8 @@ wlan_hdd_cfg80211_mpta_helper_config(struct wiphy *wiphy,
  * Return: 0 on success; error number otherwise.
  *
  */
-int
-wlan_hdd_mpta_helper_enable(struct coex_config_params *coex_cfg_params,
-			    struct wlan_fwol_coex_config *config)
+int wlan_hdd_mpta_helper_enable(struct coex_config_params *coex_cfg_params,
+				struct wlan_fwol_coex_config *config)
 {
 	QDF_STATUS status;
 
@@ -254,4 +248,3 @@ wlan_hdd_mpta_helper_enable(struct coex_config_params *coex_cfg_params,
 
 	return 0;
 }
-

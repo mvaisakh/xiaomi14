@@ -40,9 +40,9 @@
 #ifdef WLAN_IOT_SIM_SUPPORT
 #include <target_if_iot_sim.h>
 #endif
+#include <target_if_ftm.h>
 #include <target_if_reg.h>
 #include <target_if_scan.h>
-#include <target_if_ftm.h>
 #ifdef DFS_COMPONENT_ENABLE
 #include <target_if_dfs.h>
 #endif
@@ -220,8 +220,8 @@ QDF_STATUS target_if_deinit(void)
 
 qdf_export_symbol(target_if_deinit);
 
-QDF_STATUS target_if_store_pdev_target_if_ctx(
-		get_pdev_handle_callback pdev_hdl_cb)
+QDF_STATUS
+target_if_store_pdev_target_if_ctx(get_pdev_handle_callback pdev_hdl_cb)
 {
 	if (!g_target_if_ctx) {
 		QDF_ASSERT(0);
@@ -237,8 +237,8 @@ QDF_STATUS target_if_store_pdev_target_if_ctx(
 }
 
 #ifndef WLAN_OFFCHAN_TXRX_ENABLE
-static void target_if_offchan_txrx_ops_register(
-					struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_offchan_txrx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif /* WLAN_OFFCHAN_TXRX_ENABLE */
@@ -286,30 +286,28 @@ target_if_wifi_pos_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 #endif
 
 #if defined(QCA_SUPPORT_SON) || defined(WLAN_FEATURE_SON)
-static void target_if_son_tx_ops_register(
-			struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_son_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_son_register_tx_ops(tx_ops);
 	return;
 }
 #else
-static void target_if_son_tx_ops_register(
-			struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_son_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	return;
 }
 #endif
 
 #if defined WLAN_FEATURE_SR
-static void target_if_spatial_reuse_tx_ops_register(
-			struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_spatial_reuse_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_spatial_reuse_register_tx_ops(tx_ops);
 }
 
 #else
-static void target_if_spatial_reuse_tx_ops_register(
-			struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_spatial_reuse_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 
@@ -327,79 +325,74 @@ static void target_if_tdls_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 #endif /* FEATURE_WLAN_TDLS */
 
 #ifdef DFS_COMPONENT_ENABLE
-static void target_if_dfs_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_dfs_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_register_dfs_tx_ops(tx_ops);
 }
 #else
-static void target_if_dfs_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_dfs_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif /* DFS_COMPONENT_ENABLE */
 
 #ifdef WLAN_CONV_SPECTRAL_ENABLE
-static void target_if_sptrl_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_sptrl_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_sptrl_register_tx_ops(tx_ops);
 }
 #else
-static void target_if_sptrl_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_sptrl_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif /* WLAN_CONV_SPECTRAL_ENABLE */
 
 #ifdef WLAN_IOT_SIM_SUPPORT
-static void target_if_iot_sim_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_iot_sim_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_iot_sim_register_tx_ops(tx_ops);
 }
 #else
-static void target_if_iot_sim_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_iot_sim_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif
 
 #ifdef DIRECT_BUF_RX_ENABLE
-static void target_if_direct_buf_rx_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_direct_buf_rx_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_direct_buf_rx_register_tx_ops(tx_ops);
 }
 #else
-static void target_if_direct_buf_rx_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_direct_buf_rx_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif /* DIRECT_BUF_RX_ENABLE */
 
 #ifdef WLAN_SUPPORT_GREEN_AP
-static QDF_STATUS target_if_green_ap_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static QDF_STATUS
+target_if_green_ap_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	return target_if_register_green_ap_tx_ops(tx_ops);
 }
 #else
-static QDF_STATUS target_if_green_ap_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static QDF_STATUS
+target_if_green_ap_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	return QDF_STATUS_SUCCESS;
 }
 #endif /* WLAN_SUPPORT_GREEN_AP */
 #if defined(CRYPTO_SET_KEY_CONVERGED)
-static void target_if_crypto_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_crypto_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_crypto_register_tx_ops(tx_ops);
 }
 #else
-static inline void target_if_crypto_tx_ops_register(
-				struct wlan_lmac_if_tx_ops *tx_ops)
+static inline void
+target_if_crypto_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif
@@ -446,8 +439,7 @@ target_if_coap_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 }
 #endif
 
-static void target_if_target_tx_ops_register(
-		struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_target_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	struct wlan_lmac_if_target_tx_ops *target_tx_ops;
 
@@ -458,41 +450,29 @@ static void target_if_target_tx_ops_register(
 
 	target_tx_ops = &tx_ops->target_tx_ops;
 
-	target_tx_ops->tgt_is_tgt_type_ar900b =
-		target_is_tgt_type_ar900b;
+	target_tx_ops->tgt_is_tgt_type_ar900b = target_is_tgt_type_ar900b;
 
-	target_tx_ops->tgt_is_tgt_type_qca9984 =
-		target_is_tgt_type_qca9984;
+	target_tx_ops->tgt_is_tgt_type_qca9984 = target_is_tgt_type_qca9984;
 
-	target_tx_ops->tgt_is_tgt_type_qca9888 =
-		target_is_tgt_type_qca9888;
+	target_tx_ops->tgt_is_tgt_type_qca9888 = target_is_tgt_type_qca9888;
 
-	target_tx_ops->tgt_is_tgt_type_adrastea =
-		target_is_tgt_type_adrastea;
+	target_tx_ops->tgt_is_tgt_type_adrastea = target_is_tgt_type_adrastea;
 
-	target_tx_ops->tgt_is_tgt_type_qcn9000 =
-		target_is_tgt_type_qcn9000;
+	target_tx_ops->tgt_is_tgt_type_qcn9000 = target_is_tgt_type_qcn9000;
 
-	target_tx_ops->tgt_is_tgt_type_qcn6122 =
-		target_is_tgt_type_qcn6122;
+	target_tx_ops->tgt_is_tgt_type_qcn6122 = target_is_tgt_type_qcn6122;
 
-	target_tx_ops->tgt_is_tgt_type_qcn9160 =
-		target_is_tgt_type_qcn9160;
+	target_tx_ops->tgt_is_tgt_type_qcn9160 = target_is_tgt_type_qcn9160;
 
-	target_tx_ops->tgt_is_tgt_type_qcn6432 =
-		target_is_tgt_type_qcn6432;
+	target_tx_ops->tgt_is_tgt_type_qcn6432 = target_is_tgt_type_qcn6432;
 
-	target_tx_ops->tgt_is_tgt_type_qcn7605 =
-		target_is_tgt_type_qcn7605;
+	target_tx_ops->tgt_is_tgt_type_qcn7605 = target_is_tgt_type_qcn7605;
 
-	target_tx_ops->tgt_get_tgt_type =
-		lmac_get_tgt_type;
+	target_tx_ops->tgt_get_tgt_type = lmac_get_tgt_type;
 
-	target_tx_ops->tgt_get_tgt_version =
-		lmac_get_tgt_version;
+	target_tx_ops->tgt_get_tgt_version = lmac_get_tgt_version;
 
-	target_tx_ops->tgt_get_tgt_revision =
-		lmac_get_tgt_revision;
+	target_tx_ops->tgt_get_tgt_revision = lmac_get_tgt_revision;
 }
 
 static QDF_STATUS
@@ -522,40 +502,36 @@ target_if_vdev_mgr_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 }
 
 #ifdef QCA_WIFI_FTM
-static
-void target_if_ftm_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_ftm_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_ftm_register_tx_ops(tx_ops);
 }
 #else
-static
-void target_if_ftm_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_ftm_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif
 
 #ifdef WLAN_FEATURE_GPIO_CFG
-static
-void target_if_gpio_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_gpio_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_gpio_register_tx_ops(tx_ops);
 }
 #else
-static
-void target_if_gpio_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_gpio_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif
 
 #ifdef WLAN_MGMT_RX_REO_SUPPORT
-static
-void target_if_mgmt_txrx_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_mgmt_txrx_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_mgmt_txrx_tx_ops_register(tx_ops);
 }
 #else
-static
-void target_if_mgmt_txrx_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
+static void
+target_if_mgmt_txrx_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif /* WLAN_MGMT_RX_REO_SUPPORT */
@@ -581,24 +557,23 @@ static void target_if_ipa_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 }
 #else
 static void target_if_ipa_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
-{ }
+{
+}
 #endif
 
 #if defined(WLAN_SUPPORT_TWT) && defined(WLAN_TWT_CONV_SUPPORTED)
-static
-void target_if_twt_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_twt_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	target_if_twt_register_tx_ops(tx_ops);
 }
 #else
-static
-void target_if_twt_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
+static void target_if_twt_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 }
 #endif /* WLAN_SUPPORT_TWT && WLAN_TWT_CONV_SUPPORTED */
 
-static
-QDF_STATUS target_if_register_umac_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
+static QDF_STATUS
+target_if_register_umac_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	/* call regulatory callback to register tx ops */
 	target_if_register_regulatory_tx_ops(tx_ops);
@@ -765,8 +740,7 @@ QDF_STATUS target_if_alloc_psoc_tgt_info(struct wlan_objmgr_psoc *psoc)
 
 	wlan_psoc_set_tgt_if_handle(psoc, tgt_psoc_info);
 	target_psoc_set_preferred_hw_mode(tgt_psoc_info, WMI_HOST_HW_MODE_MAX);
-	wlan_minidump_log(tgt_psoc_info,
-			  sizeof(*tgt_psoc_info), psoc,
+	wlan_minidump_log(tgt_psoc_info, sizeof(*tgt_psoc_info), psoc,
 			  WLAN_MD_OBJMGR_PSOC_TGT_INFO, "target_psoc_info");
 
 	qdf_event_create(&tgt_psoc_info->info.event);
@@ -774,8 +748,8 @@ QDF_STATUS target_if_alloc_psoc_tgt_info(struct wlan_objmgr_psoc *psoc)
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS target_if_psoc_tgt_info_mem_free(
-		struct target_psoc_info *tgt_psoc_info)
+QDF_STATUS
+target_if_psoc_tgt_info_mem_free(struct target_psoc_info *tgt_psoc_info)
 {
 	struct wlan_psoc_host_service_ext_param *ext_param;
 
@@ -815,8 +789,7 @@ QDF_STATUS target_if_free_psoc_tgt_info(struct wlan_objmgr_psoc *psoc)
 
 	wlan_psoc_set_tgt_if_handle(psoc, NULL);
 
-	wlan_minidump_remove(tgt_psoc_info,
-			     sizeof(*tgt_psoc_info), psoc,
+	wlan_minidump_remove(tgt_psoc_info, sizeof(*tgt_psoc_info), psoc,
 			     WLAN_MD_OBJMGR_PSOC_TGT_INFO, "target_psoc_info");
 	qdf_mem_free(tgt_psoc_info);
 
@@ -1056,7 +1029,6 @@ target_is_scan_blanking_enabled(struct wlan_objmgr_pdev *pdev,
 	struct wlan_lmac_if_target_tx_ops *target_type_tx_ops;
 	struct wlan_lmac_if_tx_ops *tx_ops;
 
-
 	if (!blanking_en) {
 		target_if_err("input argument is null");
 		return QDF_STATUS_E_NULL_VALUE;
@@ -1147,7 +1119,7 @@ void target_if_set_reg_cc_ext_supp(struct target_psoc_info *tgt_hdl,
 }
 
 #if defined(WLAN_FEATURE_11BE_MLO) && defined(WLAN_MLO_MULTI_CHIP)
-uint16_t  target_if_pdev_get_hw_link_id(struct wlan_objmgr_pdev *pdev)
+uint16_t target_if_pdev_get_hw_link_id(struct wlan_objmgr_pdev *pdev)
 {
 	struct target_pdev_info *tgt_pdev_info;
 
@@ -1173,7 +1145,7 @@ void target_pdev_set_hw_link_id(struct wlan_objmgr_pdev *pdev,
 	if (!tgt_pdev_info)
 		return;
 
-	tgt_pdev_info->hw_link_id  = hw_link_id;
+	tgt_pdev_info->hw_link_id = hw_link_id;
 }
 
 static QDF_STATUS target_if_mlo_setup_send(struct wlan_objmgr_pdev *pdev,
@@ -1181,7 +1153,7 @@ static QDF_STATUS target_if_mlo_setup_send(struct wlan_objmgr_pdev *pdev,
 					   uint8_t num_links, uint8_t grp_id)
 {
 	wmi_unified_t wmi_handle;
-	struct wmi_mlo_setup_params params = {0};
+	struct wmi_mlo_setup_params params = { 0 };
 	uint8_t idx, num_valid_links = 0;
 
 	wmi_handle = lmac_get_pdev_wmi_handle(pdev);
@@ -1218,7 +1190,7 @@ QDF_STATUS target_if_mlo_setup_req(struct wlan_objmgr_pdev **pdev,
 static QDF_STATUS target_if_mlo_ready_send(struct wlan_objmgr_pdev *pdev)
 {
 	wmi_unified_t wmi_handle;
-	struct wmi_mlo_ready_params params = {0};
+	struct wmi_mlo_ready_params params = { 0 };
 
 	wmi_handle = lmac_get_pdev_wmi_handle(pdev);
 	if (!wmi_handle)
@@ -1242,11 +1214,10 @@ QDF_STATUS target_if_mlo_ready(struct wlan_objmgr_pdev **pdev,
 
 QDF_STATUS
 target_if_mlo_teardown_req(struct wlan_objmgr_pdev *pdev,
-			   enum wmi_mlo_teardown_reason reason,
-			   bool reset)
+			   enum wmi_mlo_teardown_reason reason, bool reset)
 {
 	wmi_unified_t wmi_handle;
-	struct wmi_mlo_teardown_params params = {0};
+	struct wmi_mlo_teardown_params params = { 0 };
 
 	wmi_handle = lmac_get_pdev_wmi_handle(pdev);
 	if (!wmi_handle)

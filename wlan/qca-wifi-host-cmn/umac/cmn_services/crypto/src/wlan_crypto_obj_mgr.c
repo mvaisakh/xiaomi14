@@ -25,14 +25,14 @@
 #include <wlan_objmgr_cmn.h>
 
 #include <wlan_objmgr_global_obj.h>
-#include <wlan_objmgr_psoc_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
 #include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 
-#include "wlan_crypto_global_def.h"
-#include "wlan_crypto_global_api.h"
 #include "wlan_crypto_def_i.h"
+#include "wlan_crypto_global_api.h"
+#include "wlan_crypto_global_def.h"
 #include "wlan_crypto_main_i.h"
 #include "wlan_crypto_obj_mgr_i.h"
 #ifdef WLAN_CRYPTO_SUPPORT_FILS
@@ -44,7 +44,7 @@
 qdf_mutex_t crypto_lock;
 
 extern const struct wlan_crypto_cipher
-				*wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_MAX];
+	*wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_MAX];
 
 static inline int crypto_log2_ceil(unsigned int value)
 {
@@ -74,9 +74,8 @@ static QDF_STATUS wlan_crypto_hash_init(struct crypto_psoc_priv_obj *psoc)
 
 	/* allocate an array of TAILQ mec object lists */
 	psoc->crypto_key_holder.bins = qdf_mem_malloc(
-					hash_elems *
-					sizeof(TAILQ_HEAD(anonymous_tail_q,
-							  crypto_hash_entry)));
+		hash_elems *
+		sizeof(TAILQ_HEAD(anonymous_tail_q, crypto_hash_entry)));
 
 	if (!psoc->crypto_key_holder.bins)
 		return QDF_STATUS_E_NOMEM;
@@ -96,9 +95,7 @@ static inline uint32_t crypto_hash_index(struct crypto_psoc_priv_obj *psoc,
 {
 	uint32_t index;
 
-	index =
-		mac_addr->align2.bytes_ab ^
-		mac_addr->align2.bytes_cd ^
+	index = mac_addr->align2.bytes_ab ^ mac_addr->align2.bytes_cd ^
 		mac_addr->align2.bytes_ef;
 	index ^= link_id;
 	index ^= index >> psoc->crypto_key_holder.idx_bits;
@@ -106,47 +103,45 @@ static inline uint32_t crypto_hash_index(struct crypto_psoc_priv_obj *psoc,
 	return index;
 }
 
-static inline int crypto_is_mac_addr_same(
-	union crypto_align_mac_addr *mac_addr1,
-	union crypto_align_mac_addr *mac_addr2)
+static inline int
+crypto_is_mac_addr_same(union crypto_align_mac_addr *mac_addr1,
+			union crypto_align_mac_addr *mac_addr2)
 {
 	/*
-	 * Intentionally use & rather than &&.
-	 * because the operands are binary rather than generic boolean,
-	 * the functionality is equivalent.
-	 * Using && has the advantage of short-circuited evaluation,
-	 * but using & has the advantage of no conditional branching,
-	 * which is a more significant benefit.
-	 */
-	return ((mac_addr1->align4.bytes_abcd == mac_addr2->align4.bytes_abcd)
-		& (mac_addr1->align4.bytes_ef == mac_addr2->align4.bytes_ef));
+   * Intentionally use & rather than &&.
+   * because the operands are binary rather than generic boolean,
+   * the functionality is equivalent.
+   * Using && has the advantage of short-circuited evaluation,
+   * but using & has the advantage of no conditional branching,
+   * which is a more significant benefit.
+   */
+	return ((mac_addr1->align4.bytes_abcd == mac_addr2->align4.bytes_abcd) &
+		(mac_addr1->align4.bytes_ef == mac_addr2->align4.bytes_ef));
 }
 
-struct
-wlan_crypto_key_entry *crypto_hash_find_by_linkid_and_macaddr(
-			struct crypto_psoc_priv_obj *psoc,
-			uint8_t link_id,
-			uint8_t *mac_addr)
+struct wlan_crypto_key_entry *
+crypto_hash_find_by_linkid_and_macaddr(struct crypto_psoc_priv_obj *psoc,
+				       uint8_t link_id, uint8_t *mac_addr)
 {
 	union crypto_align_mac_addr local_mac_addr_aligned, *local_mac_addr;
 	uint32_t index;
 	struct wlan_crypto_key_entry *hash_entry;
 
-	qdf_mem_copy(&local_mac_addr_aligned.raw[0],
-		     mac_addr, QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(&local_mac_addr_aligned.raw[0], mac_addr,
+		     QDF_MAC_ADDR_SIZE);
 	local_mac_addr = &local_mac_addr_aligned;
 
 	index = crypto_hash_index(psoc, local_mac_addr, link_id);
 	TAILQ_FOREACH(hash_entry, &psoc->crypto_key_holder.bins[index],
-		      hash_list_elem) {
+		      hash_list_elem)
+	{
 		if (link_id == hash_entry->link_id &&
-		    crypto_is_mac_addr_same(
-					      local_mac_addr,
-					      &hash_entry->mac_addr)) {
-			crypto_debug("crypto found entry link id %d mac addr"
-				     QDF_MAC_ADDR_FMT,
-				     hash_entry->link_id,
-				     QDF_MAC_ADDR_REF(mac_addr));
+		    crypto_is_mac_addr_same(local_mac_addr,
+					    &hash_entry->mac_addr)) {
+			crypto_debug(
+				"crypto found entry link id %d mac addr" QDF_MAC_ADDR_FMT,
+				hash_entry->link_id,
+				QDF_MAC_ADDR_REF(mac_addr));
 			return hash_entry;
 		}
 	}
@@ -175,19 +170,18 @@ QDF_STATUS wlan_crypto_add_key_entry(struct wlan_objmgr_psoc *psoc,
 	uint8_t link_id = new_entry->link_id;
 	struct wlan_crypto_key_entry *crypto_entry = NULL;
 
-	crypto_psoc_obj =
-		wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						      WLAN_UMAC_COMP_CRYPTO);
+	crypto_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(
+		psoc, WLAN_UMAC_COMP_CRYPTO);
 	if (!crypto_psoc_obj) {
 		crypto_err("crypto_psoc_obj NULL");
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	if (qdf_unlikely(qdf_atomic_read(&crypto_psoc_obj->crypto_key_cnt) >=
-					 CRYPTO_MAX_HASH_ENTRY)) {
-		crypto_err("max crypto hash entry limit reached mac_addr: "
-			   QDF_MAC_ADDR_FMT,
-			   QDF_MAC_ADDR_REF(new_entry->mac_addr.raw));
+			 CRYPTO_MAX_HASH_ENTRY)) {
+		crypto_err(
+			"max crypto hash entry limit reached mac_addr: " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(new_entry->mac_addr.raw));
 		return QDF_STATUS_E_NOMEM;
 	}
 
@@ -195,15 +189,14 @@ QDF_STATUS wlan_crypto_add_key_entry(struct wlan_objmgr_psoc *psoc,
 		     link_id, QDF_MAC_ADDR_REF(new_entry->mac_addr.raw));
 
 	qdf_mutex_acquire(&crypto_psoc_obj->crypto_key_lock);
-	crypto_entry =
-		crypto_hash_find_by_linkid_and_macaddr(crypto_psoc_obj, link_id,
-						       new_entry->mac_addr.raw);
+	crypto_entry = crypto_hash_find_by_linkid_and_macaddr(
+		crypto_psoc_obj, link_id, new_entry->mac_addr.raw);
 	qdf_mutex_release(&crypto_psoc_obj->crypto_key_lock);
 
 	if (qdf_unlikely(crypto_entry))
-		wlan_crypto_free_key_by_link_id(psoc,
-						(struct qdf_mac_addr *)new_entry->mac_addr.raw,
-						link_id);
+		wlan_crypto_free_key_by_link_id(
+			psoc, (struct qdf_mac_addr *)new_entry->mac_addr.raw,
+			link_id);
 
 	crypto_entry = qdf_mem_malloc(sizeof(*crypto_entry));
 	if (!crypto_entry)
@@ -219,8 +212,7 @@ QDF_STATUS wlan_crypto_add_key_entry(struct wlan_objmgr_psoc *psoc,
 }
 #endif
 
-QDF_STATUS crypto_add_entry(struct crypto_psoc_priv_obj *psoc,
-			    uint8_t link_id,
+QDF_STATUS crypto_add_entry(struct crypto_psoc_priv_obj *psoc, uint8_t link_id,
 			    uint8_t *mac_addr,
 			    struct wlan_crypto_key *crypto_key,
 			    uint8_t key_index)
@@ -231,26 +223,28 @@ QDF_STATUS crypto_add_entry(struct crypto_psoc_priv_obj *psoc,
 		     link_id, QDF_MAC_ADDR_REF(mac_addr));
 
 	if (qdf_unlikely(qdf_atomic_read(&psoc->crypto_key_cnt) >=
-					 CRYPTO_MAX_HASH_ENTRY)) {
-		crypto_err("max crypto hash entry limit reached mac_addr: "
-			   QDF_MAC_ADDR_FMT, QDF_MAC_ADDR_REF(mac_addr));
+			 CRYPTO_MAX_HASH_ENTRY)) {
+		crypto_err(
+			"max crypto hash entry limit reached mac_addr: " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(mac_addr));
 		return QDF_STATUS_E_NOMEM;
 	}
 
 	qdf_mutex_acquire(&psoc->crypto_key_lock);
-	crypto_entry = crypto_hash_find_by_linkid_and_macaddr(psoc, link_id,
-							      mac_addr);
+	crypto_entry =
+		crypto_hash_find_by_linkid_and_macaddr(psoc, link_id, mac_addr);
 	qdf_mutex_release(&psoc->crypto_key_lock);
 
 	if (qdf_likely(!crypto_entry)) {
-		crypto_entry = (struct wlan_crypto_key_entry *)
-			qdf_mem_malloc(sizeof(struct wlan_crypto_key_entry));
+		crypto_entry = (struct wlan_crypto_key_entry *)qdf_mem_malloc(
+			sizeof(struct wlan_crypto_key_entry));
 
 		if (qdf_unlikely(!crypto_entry))
 			return QDF_STATUS_E_NOMEM;
 
-		qdf_copy_macaddr((struct qdf_mac_addr *)&crypto_entry->mac_addr.raw[0],
-				 (struct qdf_mac_addr *)mac_addr);
+		qdf_copy_macaddr(
+			(struct qdf_mac_addr *)&crypto_entry->mac_addr.raw[0],
+			(struct qdf_mac_addr *)mac_addr);
 		crypto_entry->link_id = link_id;
 		crypto_hash_add(psoc, crypto_entry, link_id);
 		qdf_atomic_inc(&psoc->crypto_key_cnt);
@@ -261,16 +255,17 @@ QDF_STATUS crypto_add_entry(struct crypto_psoc_priv_obj *psoc,
 		crypto_entry->keys.key[key_index] = crypto_key;
 	} else if (is_igtk(key_index)) {
 		crypto_entry->keys.igtk_key[key_index - WLAN_CRYPTO_MAXKEYIDX] =
-		crypto_key;
+			crypto_key;
 		crypto_entry->keys.def_igtk_tx_keyid =
-				key_index - WLAN_CRYPTO_MAXKEYIDX;
+			key_index - WLAN_CRYPTO_MAXKEYIDX;
 		crypto_entry->keys.igtk_key_type = crypto_key->cipher_type;
 	} else {
-		crypto_entry->keys.bigtk_key[key_index - WLAN_CRYPTO_MAXKEYIDX
-				- WLAN_CRYPTO_MAXIGTKKEYIDX] = crypto_key;
+		crypto_entry->keys.bigtk_key[key_index - WLAN_CRYPTO_MAXKEYIDX -
+					     WLAN_CRYPTO_MAXIGTKKEYIDX] =
+			crypto_key;
 		crypto_entry->keys.def_bigtk_tx_keyid =
-				key_index - WLAN_CRYPTO_MAXKEYIDX
-				- WLAN_CRYPTO_MAXIGTKKEYIDX;
+			key_index - WLAN_CRYPTO_MAXKEYIDX -
+			WLAN_CRYPTO_MAXIGTKKEYIDX;
 	}
 	return QDF_STATUS_SUCCESS;
 }
@@ -284,10 +279,10 @@ static void crypto_remove_entry(struct crypto_psoc_priv_obj *psoc,
 
 	uint32_t index = crypto_hash_index(psoc, &crypto_entry->mac_addr,
 					   crypto_entry->link_id);
-	TAILQ_HEAD(, wlan_crypto_key_entry) * free_list = ptr;
+	TAILQ_HEAD(, wlan_crypto_key_entry) *free_list = ptr;
 
-	crypto_info("crypto remove entry key index %d link id %d",
-		    index, crypto_entry->link_id);
+	crypto_info("crypto remove entry key index %d link id %d", index,
+		    crypto_entry->link_id);
 
 	for (i = 0; i < WLAN_CRYPTO_MAX_VLANKEYIX; i++) {
 		if (crypto_entry->keys.key[i]) {
@@ -323,13 +318,15 @@ static void crypto_free_list(struct crypto_psoc_priv_obj *psoc, void *ptr)
 {
 	struct wlan_crypto_key_entry *crypto_entry, *hash_entry_next;
 
-	TAILQ_HEAD(, wlan_crypto_key_entry) * free_list = ptr;
+	TAILQ_HEAD(, wlan_crypto_key_entry) *free_list = ptr;
 
 	TAILQ_FOREACH_SAFE(crypto_entry, free_list, hash_list_elem,
-			   hash_entry_next) {
-		crypto_debug("crypto delete for link_id %d mac_addr "
-			     QDF_MAC_ADDR_FMT, crypto_entry->link_id,
-			     QDF_MAC_ADDR_REF(&crypto_entry->mac_addr.raw));
+			   hash_entry_next)
+	{
+		crypto_debug(
+			"crypto delete for link_id %d mac_addr " QDF_MAC_ADDR_FMT,
+			crypto_entry->link_id,
+			QDF_MAC_ADDR_REF(&crypto_entry->mac_addr.raw));
 		qdf_mem_free(crypto_entry);
 		if (!qdf_atomic_read(&psoc->crypto_key_cnt))
 			crypto_debug("Invalid crypto_key_cnt %d",
@@ -359,10 +356,10 @@ static void crypto_flush_entries(struct crypto_psoc_priv_obj *psoc)
 	qdf_mutex_acquire(&psoc->crypto_key_lock);
 	for (index = 0; index <= psoc->crypto_key_holder.mask; index++) {
 		if (!TAILQ_EMPTY(&psoc->crypto_key_holder.bins[index])) {
-			TAILQ_FOREACH_SAFE(
-				hash_entry,
-				&psoc->crypto_key_holder.bins[index],
-				hash_list_elem, hash_entry_next) {
+			TAILQ_FOREACH_SAFE(hash_entry,
+					   &psoc->crypto_key_holder.bins[index],
+					   hash_list_elem, hash_entry_next)
+			{
 				crypto_remove_entry(psoc, hash_entry,
 						    &free_list);
 			}
@@ -380,9 +377,8 @@ static void crypto_hash_deinit(struct crypto_psoc_priv_obj *psoc)
 	qdf_mutex_destroy(&psoc->crypto_key_lock);
 }
 
-static QDF_STATUS wlan_crypto_psoc_obj_create_handler(
-				struct wlan_objmgr_psoc *psoc,
-				void *arg)
+static QDF_STATUS
+wlan_crypto_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	QDF_STATUS status;
 	struct crypto_psoc_priv_obj *crypto_psoc_obj;
@@ -404,24 +400,21 @@ static QDF_STATUS wlan_crypto_psoc_obj_create_handler(
 	return status;
 }
 
-static QDF_STATUS wlan_crypto_psoc_obj_destroy_handler(
-				struct wlan_objmgr_psoc *psoc,
-				void *arg)
+static QDF_STATUS
+wlan_crypto_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	QDF_STATUS status;
 	struct crypto_psoc_priv_obj *crypto_psoc_obj;
 
 	crypto_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(
-						psoc,
-						WLAN_UMAC_COMP_CRYPTO);
+		psoc, WLAN_UMAC_COMP_CRYPTO);
 	if (!crypto_psoc_obj) {
 		crypto_err("failed to get crypto obj in psoc");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-						       WLAN_UMAC_COMP_CRYPTO,
-						       crypto_psoc_obj);
+	status = wlan_objmgr_psoc_component_obj_detach(
+		psoc, WLAN_UMAC_COMP_CRYPTO, crypto_psoc_obj);
 	if (QDF_IS_STATUS_ERROR(status))
 		crypto_err("failed to detach crypto psoc priv object");
 
@@ -430,8 +423,7 @@ static QDF_STATUS wlan_crypto_psoc_obj_destroy_handler(
 }
 
 static QDF_STATUS
-wlan_crypto_pdev_obj_create_handler(
-struct wlan_objmgr_pdev *pdev, void *arg)
+wlan_crypto_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 {
 	struct pdev_crypto *pdev_priv = NULL;
 	struct crypto_psoc_priv_obj *crypto_psoc_obj;
@@ -442,16 +434,15 @@ struct wlan_objmgr_pdev *pdev, void *arg)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pdev_priv = (struct pdev_crypto *)
-		 qdf_mem_malloc(sizeof(struct pdev_crypto));
+	pdev_priv = (struct pdev_crypto *)qdf_mem_malloc(
+		sizeof(struct pdev_crypto));
 	if (!pdev_priv) {
 		crypto_err("failed to allocate crypto pdev object");
 		return QDF_STATUS_E_NOMEM;
 	}
 	psoc = wlan_pdev_get_psoc(pdev);
 	crypto_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(
-					psoc,
-					WLAN_UMAC_COMP_CRYPTO);
+		psoc, WLAN_UMAC_COMP_CRYPTO);
 	wlan_crypto_hash_init(crypto_psoc_obj);
 
 	pdev_priv->pdev_obj = pdev;
@@ -463,8 +454,7 @@ struct wlan_objmgr_pdev *pdev, void *arg)
 }
 
 static QDF_STATUS
-wlan_crypto_pdev_obj_destroy_handler(
-struct wlan_objmgr_pdev *pdev, void *arg)
+wlan_crypto_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 {
 	struct pdev_crypto *pdev_priv = NULL;
 	struct crypto_psoc_priv_obj *crypto_psoc_obj;
@@ -476,15 +466,14 @@ struct wlan_objmgr_pdev *pdev, void *arg)
 	}
 	psoc = wlan_pdev_get_psoc(pdev);
 	crypto_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(
-					psoc,
-					WLAN_UMAC_COMP_CRYPTO);
+		psoc, WLAN_UMAC_COMP_CRYPTO);
 
 	crypto_hash_deinit(crypto_psoc_obj);
-	pdev_priv =
-	wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CRYPTO);
+	pdev_priv = wlan_objmgr_pdev_get_comp_private_obj(
+		pdev, WLAN_UMAC_COMP_CRYPTO);
 	if (pdev_priv) {
 		wlan_objmgr_pdev_component_obj_detach(
-		pdev, WLAN_UMAC_COMP_CRYPTO, (void *)pdev_priv);
+			pdev, WLAN_UMAC_COMP_CRYPTO, (void *)pdev_priv);
 		qdf_mem_free(pdev_priv);
 	}
 
@@ -492,43 +481,40 @@ struct wlan_objmgr_pdev *pdev, void *arg)
 }
 #endif
 
-static QDF_STATUS wlan_crypto_register_all_ciphers(
-					struct wlan_crypto_params *crypto_param)
+static QDF_STATUS
+wlan_crypto_register_all_ciphers(struct wlan_crypto_params *crypto_param)
 {
-
 	if (HAS_CIPHER_CAP(crypto_param, WLAN_CRYPTO_CAP_WEP)) {
-		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_WEP]
-							= wep_register();
+		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_WEP] = wep_register();
 	}
 	if (HAS_CIPHER_CAP(crypto_param, WLAN_CRYPTO_CAP_TKIP_MIC)) {
-		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_TKIP]
-							= tkip_register();
+		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_TKIP] =
+			tkip_register();
 	}
 	if (HAS_CIPHER_CAP(crypto_param, WLAN_CRYPTO_CAP_AES)) {
-		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_AES_CCM]
-							= ccmp_register();
-		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_AES_CCM_256]
-							= ccmp256_register();
-		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_AES_GCM]
-							= gcmp_register();
-		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_AES_GCM_256]
-							= gcmp256_register();
+		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_AES_CCM] =
+			ccmp_register();
+		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_AES_CCM_256] =
+			ccmp256_register();
+		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_AES_GCM] =
+			gcmp_register();
+		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_AES_GCM_256] =
+			gcmp256_register();
 	}
 	if (HAS_CIPHER_CAP(crypto_param, WLAN_CRYPTO_CAP_WAPI_SMS4)) {
-		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_WAPI_SMS4]
-							= wapi_register();
+		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_WAPI_SMS4] =
+			wapi_register();
 	}
 	if (HAS_CIPHER_CAP(crypto_param, WLAN_CRYPTO_CAP_FILS_AEAD)) {
-		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_FILS_AEAD]
-							= fils_register();
+		wlan_crypto_cipher_ops[WLAN_CRYPTO_CIPHER_FILS_AEAD] =
+			fils_register();
 	}
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS wlan_crypto_vdev_obj_create_handler(
-						struct wlan_objmgr_vdev *vdev,
-						void *arg)
+static QDF_STATUS
+wlan_crypto_vdev_obj_create_handler(struct wlan_objmgr_vdev *vdev, void *arg)
 {
 	struct wlan_crypto_comp_priv *crypto_priv;
 	struct wlan_objmgr_pdev *pdev;
@@ -574,18 +560,17 @@ static QDF_STATUS wlan_crypto_vdev_obj_create_handler(
 	wlan_crypto_register_all_ciphers(crypto_param);
 
 	status = wlan_objmgr_vdev_component_obj_attach(vdev,
-							WLAN_UMAC_COMP_CRYPTO,
-							(void *)crypto_priv,
-							QDF_STATUS_SUCCESS);
+						       WLAN_UMAC_COMP_CRYPTO,
+						       (void *)crypto_priv,
+						       QDF_STATUS_SUCCESS);
 	if (status != QDF_STATUS_SUCCESS)
 		qdf_mem_free(crypto_priv);
 
 	return status;
 }
 
-static QDF_STATUS wlan_crypto_peer_obj_create_handler(
-						struct wlan_objmgr_peer *peer,
-						void *arg)
+static QDF_STATUS
+wlan_crypto_peer_obj_create_handler(struct wlan_objmgr_peer *peer, void *arg)
 {
 	struct wlan_crypto_comp_priv *crypto_priv;
 	struct wlan_crypto_params *crypto_param;
@@ -599,8 +584,9 @@ static QDF_STATUS wlan_crypto_peer_obj_create_handler(
 		return QDF_STATUS_E_NOMEM;
 
 	status = wlan_objmgr_peer_component_obj_attach(peer,
-				WLAN_UMAC_COMP_CRYPTO, (void *)crypto_priv,
-				QDF_STATUS_SUCCESS);
+						       WLAN_UMAC_COMP_CRYPTO,
+						       (void *)crypto_priv,
+						       QDF_STATUS_SUCCESS);
 
 	if (status == QDF_STATUS_SUCCESS) {
 		crypto_param = &crypto_priv->crypto_params;
@@ -611,8 +597,8 @@ static QDF_STATUS wlan_crypto_peer_obj_create_handler(
 		RESET_KEY_MGMT(crypto_param);
 		RESET_CIPHER_CAP(crypto_param);
 		if (wlan_vdev_get_selfpeer(peer->peer_objmgr.vdev) != peer) {
-			wlan_crypto_set_peer_wep_keys(
-					wlan_peer_get_vdev(peer), peer);
+			wlan_crypto_set_peer_wep_keys(wlan_peer_get_vdev(peer),
+						      peer);
 		}
 	} else {
 		crypto_err("peer obj failed status %d", status);
@@ -685,8 +671,7 @@ void wlan_crypto_free_key_by_link_id(struct wlan_objmgr_psoc *psoc,
 	TAILQ_INIT(&free_list);
 
 	crypto_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(
-				psoc,
-				WLAN_UMAC_COMP_CRYPTO);
+		psoc, WLAN_UMAC_COMP_CRYPTO);
 	if (!crypto_psoc_obj) {
 		crypto_err("crypto_psoc_obj NULL");
 		return;
@@ -703,8 +688,7 @@ void wlan_crypto_free_key_by_link_id(struct wlan_objmgr_psoc *psoc,
 
 	qdf_mutex_acquire(&crypto_psoc_obj->crypto_key_lock);
 	hash_entry = crypto_hash_find_by_linkid_and_macaddr(
-					crypto_psoc_obj, link_id,
-					(uint8_t *)link_addr);
+		crypto_psoc_obj, link_id, (uint8_t *)link_addr);
 	if (hash_entry) {
 		crypto_remove_entry(crypto_psoc_obj, hash_entry, &free_list);
 		crypto_free_list(crypto_psoc_obj, &free_list);
@@ -714,9 +698,8 @@ void wlan_crypto_free_key_by_link_id(struct wlan_objmgr_psoc *psoc,
 }
 
 #endif
-static QDF_STATUS wlan_crypto_vdev_obj_destroy_handler(
-						struct wlan_objmgr_vdev *vdev,
-						void *arg)
+static QDF_STATUS
+wlan_crypto_vdev_obj_destroy_handler(struct wlan_objmgr_vdev *vdev, void *arg)
 {
 	struct wlan_crypto_comp_priv *crypto_priv;
 
@@ -725,17 +708,16 @@ static QDF_STATUS wlan_crypto_vdev_obj_destroy_handler(
 		return QDF_STATUS_E_INVAL;
 	}
 
-	crypto_priv = (struct wlan_crypto_comp_priv *)
-				wlan_get_vdev_crypto_obj(vdev);
+	crypto_priv =
+		(struct wlan_crypto_comp_priv *)wlan_get_vdev_crypto_obj(vdev);
 
 	if (!crypto_priv) {
 		crypto_err("crypto_priv NULL");
 		return QDF_STATUS_E_INVAL;
 	}
 
-	wlan_objmgr_vdev_component_obj_detach(vdev,
-						WLAN_UMAC_COMP_CRYPTO,
-						(void *)crypto_priv);
+	wlan_objmgr_vdev_component_obj_detach(vdev, WLAN_UMAC_COMP_CRYPTO,
+					      (void *)crypto_priv);
 
 	wlan_crypto_pmksa_flush(&crypto_priv->crypto_params);
 	wlan_crypto_free_key(&crypto_priv->crypto_key);
@@ -744,9 +726,8 @@ static QDF_STATUS wlan_crypto_vdev_obj_destroy_handler(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS wlan_crypto_peer_obj_destroy_handler(
-						struct wlan_objmgr_peer *peer,
-						void *arg)
+static QDF_STATUS
+wlan_crypto_peer_obj_destroy_handler(struct wlan_objmgr_peer *peer, void *arg)
 {
 	struct wlan_crypto_comp_priv *crypto_priv;
 
@@ -754,16 +735,15 @@ static QDF_STATUS wlan_crypto_peer_obj_destroy_handler(
 		crypto_err("Peer NULL");
 		return QDF_STATUS_E_INVAL;
 	}
-	crypto_priv = (struct wlan_crypto_comp_priv *)
-				wlan_get_peer_crypto_obj(peer);
+	crypto_priv =
+		(struct wlan_crypto_comp_priv *)wlan_get_peer_crypto_obj(peer);
 	if (!crypto_priv) {
 		crypto_err("crypto_priv NULL");
 		return QDF_STATUS_E_INVAL;
 	}
 
-	wlan_objmgr_peer_component_obj_detach(peer,
-						WLAN_UMAC_COMP_CRYPTO,
-						(void *)crypto_priv);
+	wlan_objmgr_peer_component_obj_detach(peer, WLAN_UMAC_COMP_CRYPTO,
+					      (void *)crypto_priv);
 	wlan_crypto_free_key(&crypto_priv->crypto_key);
 	qdf_mem_free(crypto_priv);
 
@@ -776,9 +756,8 @@ static int register_psoc_create_handler(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_register_psoc_create_handler(
-			WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_psoc_obj_create_handler,
-			NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_psoc_obj_create_handler,
+		NULL);
 	return status;
 }
 
@@ -787,9 +766,8 @@ static int register_psoc_destroy_handler(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_psoc_obj_destroy_handler,
-			NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_psoc_obj_destroy_handler,
+		NULL);
 	return status;
 }
 
@@ -798,9 +776,8 @@ static int unregister_psoc_create_handler(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-			WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_psoc_obj_create_handler,
-			NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_psoc_obj_create_handler,
+		NULL);
 	return status;
 }
 
@@ -809,9 +786,8 @@ static int unregister_psoc_destroy_handler(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-			WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_psoc_obj_destroy_handler,
-			NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_psoc_obj_destroy_handler,
+		NULL);
 	return status;
 }
 
@@ -820,8 +796,8 @@ static int register_pdev_create_handler(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_register_pdev_create_handler(
-			WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_pdev_obj_create_handler, NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_pdev_obj_create_handler,
+		NULL);
 	return status;
 }
 
@@ -830,8 +806,8 @@ static int register_pdev_destroy_handler(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_register_pdev_destroy_handler(
-			WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_pdev_obj_destroy_handler, NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_pdev_obj_destroy_handler,
+		NULL);
 	return status;
 }
 
@@ -840,9 +816,8 @@ static int unregister_pdev_create_handler(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_unregister_pdev_create_handler(
-			WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_pdev_obj_create_handler,
-			NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_pdev_obj_create_handler,
+		NULL);
 	return status;
 }
 
@@ -851,9 +826,8 @@ static int unregister_pdev_destroy_handler(void)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	status = wlan_objmgr_unregister_pdev_destroy_handler(
-			WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_pdev_obj_destroy_handler,
-			NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_pdev_obj_destroy_handler,
+		NULL);
 	return status;
 }
 #else
@@ -915,14 +889,14 @@ QDF_STATUS __wlan_crypto_init(void)
 	}
 
 	status = wlan_objmgr_register_vdev_create_handler(
-				WLAN_UMAC_COMP_CRYPTO,
-				wlan_crypto_vdev_obj_create_handler, NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_vdev_obj_create_handler,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		goto err_vdev_create;
 
 	status = wlan_objmgr_register_peer_create_handler(
-				WLAN_UMAC_COMP_CRYPTO,
-				wlan_crypto_peer_obj_create_handler, NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_peer_obj_create_handler,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		goto err_peer_create;
 
@@ -939,31 +913,34 @@ QDF_STATUS __wlan_crypto_init(void)
 	}
 
 	status = wlan_objmgr_register_vdev_destroy_handler(
-				WLAN_UMAC_COMP_CRYPTO,
-				wlan_crypto_vdev_obj_destroy_handler, NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_vdev_obj_destroy_handler,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		goto err_vdev_delete;
 
 	status = wlan_objmgr_register_peer_destroy_handler(
-				WLAN_UMAC_COMP_CRYPTO,
-				wlan_crypto_peer_obj_destroy_handler, NULL);
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_peer_obj_destroy_handler,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		goto err_peer_delete;
 
 	goto register_success;
 err_peer_delete:
-	wlan_objmgr_unregister_vdev_destroy_handler(WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_vdev_obj_destroy_handler, NULL);
+	wlan_objmgr_unregister_vdev_destroy_handler(
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_vdev_obj_destroy_handler,
+		NULL);
 err_vdev_delete:
 	unregister_pdev_destroy_handler();
 err_pdev_destroy:
 	unregister_psoc_destroy_handler();
 err_psoc_delete:
-	wlan_objmgr_unregister_peer_create_handler(WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_peer_obj_create_handler, NULL);
+	wlan_objmgr_unregister_peer_create_handler(
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_peer_obj_create_handler,
+		NULL);
 err_peer_create:
-	wlan_objmgr_unregister_vdev_create_handler(WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_vdev_obj_create_handler, NULL);
+	wlan_objmgr_unregister_vdev_create_handler(
+		WLAN_UMAC_COMP_CRYPTO, wlan_crypto_vdev_obj_create_handler,
+		NULL);
 err_vdev_create:
 	unregister_pdev_create_handler();
 err_pdev_create:
@@ -974,48 +951,43 @@ register_success:
 
 QDF_STATUS __wlan_crypto_deinit(void)
 {
-
-	if (unregister_psoc_create_handler()
-			!= QDF_STATUS_SUCCESS) {
+	if (unregister_psoc_create_handler() != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (unregister_pdev_create_handler()
-			!= QDF_STATUS_SUCCESS) {
+	if (unregister_pdev_create_handler() != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (wlan_objmgr_unregister_vdev_create_handler(WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_vdev_obj_create_handler, NULL)
-			!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_vdev_create_handler(
+		    WLAN_UMAC_COMP_CRYPTO, wlan_crypto_vdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (wlan_objmgr_unregister_peer_create_handler(WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_peer_obj_create_handler, NULL)
-			!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_peer_create_handler(
+		    WLAN_UMAC_COMP_CRYPTO, wlan_crypto_peer_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (wlan_objmgr_unregister_vdev_destroy_handler(WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_vdev_obj_destroy_handler, NULL)
-			!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_vdev_destroy_handler(
+		    WLAN_UMAC_COMP_CRYPTO, wlan_crypto_vdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (wlan_objmgr_unregister_peer_destroy_handler(WLAN_UMAC_COMP_CRYPTO,
-			wlan_crypto_peer_obj_destroy_handler, NULL)
-			!= QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_unregister_peer_destroy_handler(
+		    WLAN_UMAC_COMP_CRYPTO, wlan_crypto_peer_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (unregister_pdev_destroy_handler()
-			!= QDF_STATUS_SUCCESS) {
+	if (unregister_pdev_destroy_handler() != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (unregister_psoc_destroy_handler()
-			!= QDF_STATUS_SUCCESS) {
+	if (unregister_psoc_destroy_handler() != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	return QDF_STATUS_SUCCESS;

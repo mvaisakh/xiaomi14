@@ -16,14 +16,12 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_status.h"
-#include "hif_main.h"
 #include "hif_unit_test_suspend.h"
+#include "hif_main.h"
 #include "hif_unit_test_suspend_i.h"
+#include "qdf_status.h"
 
-enum hif_ut_suspend_state_bits {
-	UT_SUSPENDED_BIT = 0
-};
+enum hif_ut_suspend_state_bits { UT_SUSPENDED_BIT = 0 };
 
 /**
  * hif_ut_fw_resume_work() - Work handler for firmware-triggered resume

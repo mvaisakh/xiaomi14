@@ -21,20 +21,20 @@
  * DOC: This implementation of init/deint functions for FTM services.
  */
 
-#include <wlan_ftm_ucfg_api.h>
-#include <wlan_cfg80211_ftm.h>
 #include "../../core/src/wlan_ftm_svc_i.h"
-#include <wlan_cmn.h>
 #include <qdf_module.h>
+#include <wlan_cfg80211_ftm.h>
+#include <wlan_cmn.h>
+#include <wlan_ftm_ucfg_api.h>
 
 QDF_STATUS ucfg_wlan_ftm_testmode_cmd(struct wlan_objmgr_pdev *pdev,
-					uint8_t *data, uint32_t len)
+				      uint8_t *data, uint32_t len)
 {
 	struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj;
 	uint8_t pdev_id;
 
-	ftm_pdev_obj = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-							WLAN_UMAC_COMP_FTM);
+	ftm_pdev_obj =
+		wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_FTM);
 	if (!ftm_pdev_obj) {
 		ftm_err("Failed to get ftm pdev component");
 		return QDF_STATUS_E_FAILURE;
@@ -47,8 +47,8 @@ QDF_STATUS ucfg_wlan_ftm_testmode_cmd(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS
-wlan_ftm_process_utf_event(struct wlan_objmgr_pdev *pdev,
-			    uint8_t *event_buf, uint32_t len)
+wlan_ftm_process_utf_event(struct wlan_objmgr_pdev *pdev, uint8_t *event_buf,
+			   uint32_t len)
 {
 	struct wifi_ftm_pdev_priv_obj *ftm_pdev_obj;
 	uint32_t utf_datalen;
@@ -56,8 +56,8 @@ wlan_ftm_process_utf_event(struct wlan_objmgr_pdev *pdev,
 	struct ftm_seg_hdr_info seghdr_info;
 	u_int8_t total_segments, current_seq;
 
-	ftm_pdev_obj = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-			WLAN_UMAC_COMP_FTM);
+	ftm_pdev_obj =
+		wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_FTM);
 	if (!ftm_pdev_obj) {
 		ftm_err("Failed to get ftm pdev component");
 		return QDF_STATUS_E_FAILURE;
@@ -78,7 +78,7 @@ wlan_ftm_process_utf_event(struct wlan_objmgr_pdev *pdev,
 	} else {
 		if (ftm_pdev_obj->expected_seq != current_seq) {
 			ftm_debug("seq mismatch exp Seq %d got seq %d\n",
-				ftm_pdev_obj->expected_seq, current_seq);
+				  ftm_pdev_obj->expected_seq, current_seq);
 		}
 	}
 
@@ -88,7 +88,7 @@ wlan_ftm_process_utf_event(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 	}
 	qdf_mem_copy(&ftm_pdev_obj->data[ftm_pdev_obj->offset],
-			&utf_data[sizeof(seghdr_info)], utf_datalen);
+		     &utf_data[sizeof(seghdr_info)], utf_datalen);
 
 	ftm_pdev_obj->offset = ftm_pdev_obj->offset + utf_datalen;
 	ftm_pdev_obj->expected_seq++;
@@ -96,18 +96,19 @@ wlan_ftm_process_utf_event(struct wlan_objmgr_pdev *pdev,
 	if (ftm_pdev_obj->expected_seq == total_segments) {
 		if (ftm_pdev_obj->offset != seghdr_info.len) {
 			ftm_debug("len mismatch len %zu total len %d\n",
-				ftm_pdev_obj->offset, seghdr_info.len);
+				  ftm_pdev_obj->offset, seghdr_info.len);
 		}
 
 		ftm_pdev_obj->length = ftm_pdev_obj->offset;
 
 		/**
-		 * If the response is for a command from FTM daemon,
-		 * send this response data to cfg80211
-		 */
+     * If the response is for a command from FTM daemon,
+     * send this response data to cfg80211
+     */
 		if (ftm_pdev_obj->cmd_type == WIFI_FTM_CMD_NL80211) {
 			if (wlan_cfg80211_ftm_rx_event(pdev, ftm_pdev_obj->data,
-				ftm_pdev_obj->length) != QDF_STATUS_SUCCESS) {
+						       ftm_pdev_obj->length) !=
+			    QDF_STATUS_SUCCESS) {
 				return QDF_STATUS_E_FAILURE;
 			}
 			ftm_pdev_obj->cmd_type = WIFI_FTM_CMD_UNKNOWN;
@@ -125,8 +126,7 @@ QDF_STATUS ucfg_wlan_ftm_testmode_rsp(struct wlan_objmgr_pdev *pdev,
 	uint32_t *len;
 
 	ftm_pdev_obj =
-		wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						      WLAN_UMAC_COMP_FTM);
+		wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_FTM);
 	if (!ftm_pdev_obj) {
 		ftm_err("Failed to get ftm pdev component");
 		return QDF_STATUS_E_FAILURE;

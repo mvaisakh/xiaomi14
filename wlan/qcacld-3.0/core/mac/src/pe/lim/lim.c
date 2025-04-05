@@ -16,8 +16,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "lim_aid_mgmt.c"
 #include "lim_admit_control.c"
+#include "lim_aid_mgmt.c"
 #include "lim_api.c"
 #include "lim_assoc_utils.c"
 #include "lim_ft.c"

@@ -6,8 +6,8 @@
 
 #define pr_fmt(fmt) "mi_sde_crtc:[%s:%d] " fmt, __func__, __LINE__
 
-#include <drm/drm_crtc.h>
 #include "mi_sde_connector.h"
+#include <drm/drm_crtc.h>
 
 void mi_sde_crtc_check_layer_flags(struct drm_crtc *crtc)
 {
@@ -16,12 +16,10 @@ void mi_sde_crtc_check_layer_flags(struct drm_crtc *crtc)
 
 	drm_connector_list_iter_begin(crtc->dev, &conn_iter);
 	drm_for_each_connector_iter(conn, &conn_iter) {
-		if (conn->state && (conn->state->crtc == crtc)
-				&& (conn->connector_type == DRM_MODE_CONNECTOR_DSI)) {
+		if (conn->state && (conn->state->crtc == crtc) &&
+		    (conn->connector_type == DRM_MODE_CONNECTOR_DSI)) {
 			mi_sde_connector_check_layer_flags(conn);
 		}
 	}
 	drm_connector_list_iter_end(&conn_iter);
 }
-
-

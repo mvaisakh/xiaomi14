@@ -23,26 +23,23 @@
  * This file provide definition for APIs to enable Tx Ops and Rx Ops registered
  * through LMAC
  */
-#include <wlan_vdev_mgr_utils_api.h>
-#include <wlan_vdev_mgr_tgt_if_tx_api.h>
 #include <cdp_txrx_cmn_struct.h>
-#include <wlan_mlme_dbg.h>
 #include <qdf_module.h>
-#include <wlan_vdev_mgr_tgt_if_tx_api.h>
 #include <wlan_dfs_mlme_api.h>
+#include <wlan_mlme_dbg.h>
+#include <wlan_vdev_mgr_tgt_if_tx_api.h>
+#include <wlan_vdev_mgr_utils_api.h>
 #ifndef MOBILE_DFS_SUPPORT
 #include <wlan_dfs_utils_api.h>
 #endif /* MOBILE_DFS_SUPPORT */
 #ifdef WLAN_FEATURE_11BE_MLO
-#include <wlan_utility.h>
 #include <wlan_mlo_mgr_sta.h>
+#include <wlan_utility.h>
 #endif
 
 static QDF_STATUS vdev_mgr_config_ratemask_update(
-				uint8_t vdev_id,
-				struct vdev_ratemask_params *rate_params,
-				struct config_ratemask_params *param,
-				uint8_t index)
+	uint8_t vdev_id, struct vdev_ratemask_params *rate_params,
+	struct config_ratemask_params *param, uint8_t index)
 {
 	param->vdev_id = vdev_id;
 	param->type = index;
@@ -130,7 +127,7 @@ QDF_STATUS
 wlan_util_vdev_mlme_set_ratemask_config(struct vdev_mlme_obj *vdev_mlme,
 					uint8_t index)
 {
-	struct config_ratemask_params rm_param = {0};
+	struct config_ratemask_params rm_param = { 0 };
 	uint8_t vdev_id;
 	struct vdev_mlme_rate_info *rate_info;
 	struct vdev_ratemask_params *rate_params;
@@ -143,12 +140,9 @@ wlan_util_vdev_mlme_set_ratemask_config(struct vdev_mlme_obj *vdev_mlme,
 	vdev_id = wlan_vdev_get_id(vdev_mlme->vdev);
 	rate_info = &vdev_mlme->mgmt.rate_info;
 	rate_params = &rate_info->ratemask_params[index];
-	vdev_mgr_config_ratemask_update(vdev_id,
-					rate_params,
-					&rm_param, index);
+	vdev_mgr_config_ratemask_update(vdev_id, rate_params, &rm_param, index);
 
-	return tgt_vdev_mgr_config_ratemask_cmd_send(vdev_mlme,
-						    &rm_param);
+	return tgt_vdev_mgr_config_ratemask_cmd_send(vdev_mlme, &rm_param);
 }
 
 qdf_export_symbol(wlan_util_vdev_mlme_set_ratemask_config);
@@ -163,13 +157,14 @@ tgt_vdev_mgr_vdev_set_param_wrapper(struct vdev_mlme_obj *vdev_mlme,
 	unsigned long vdev_bmap = 0;
 	struct wlan_objmgr_pdev *pdev;
 	struct vdev_mlme_mbss_11ax *mbss;
-	struct vdev_set_params param1 = {0};
-	struct multiple_vdev_set_param param2 = {0};
+	struct vdev_set_params param1 = { 0 };
+	struct multiple_vdev_set_param param2 = { 0 };
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
 	mbss = &vdev_mlme->mgmt.mbss_11ax;
-	is_mbss_enabled = (mbss->mbssid_flags
-				& WLAN_VDEV_MLME_FLAGS_NON_MBSSID_AP) ? 0 : 1;
+	is_mbss_enabled =
+		(mbss->mbssid_flags & WLAN_VDEV_MLME_FLAGS_NON_MBSSID_AP) ? 0 :
+									    1;
 
 	if (is_mbss_enabled) {
 		vdev_bmap = mbss->vdev_bmap;
@@ -177,11 +172,11 @@ tgt_vdev_mgr_vdev_set_param_wrapper(struct vdev_mlme_obj *vdev_mlme,
 	}
 
 	/* 1. if non tx vap and cmn param, dont send any WMI
-	 * 2. if tx vap and cmn param, send multi vdev set WMI
-	 * 3. if non tx vap and non cmn param, send vdev set WMI
-	 * 4. if tx vap and non cmn param, send vdev set WMI
-	 * 5. if non mbss vap, send vdev set WMI
-	 */
+   * 2. if tx vap and cmn param, send multi vdev set WMI
+   * 3. if non tx vap and non cmn param, send vdev set WMI
+   * 4. if tx vap and non cmn param, send vdev set WMI
+   * 5. if non mbss vap, send vdev set WMI
+   */
 	if (!is_mbss_enabled || !is_cmn_param) {
 		param1.param_id = param_id;
 		param1.vdev_id = wlan_vdev_get_id(vdev_mlme->vdev);
@@ -353,17 +348,17 @@ wlan_util_vdev_mlme_set_param(struct vdev_mlme_obj *vdev_mlme,
 		break;
 	case WLAN_MLME_CFG_MIN_IDLE_INACTIVE_TIME:
 		inactivity_params->keepalive_min_idle_inactive_time_secs =
-							mlme_cfg.value;
+			mlme_cfg.value;
 		is_wmi_cmd = true;
 		break;
 	case WLAN_MLME_CFG_MAX_IDLE_INACTIVE_TIME:
 		inactivity_params->keepalive_max_idle_inactive_time_secs =
-							mlme_cfg.value;
+			mlme_cfg.value;
 		is_wmi_cmd = true;
 		break;
 	case WLAN_MLME_CFG_MAX_UNRESPONSIVE_INACTIVE_TIME:
 		inactivity_params->keepalive_max_unresponsive_time_secs =
-							mlme_cfg.value;
+			mlme_cfg.value;
 		is_wmi_cmd = true;
 		break;
 	case WLAN_MLME_CFG_RATE_FLAGS:
@@ -420,8 +415,7 @@ wlan_util_vdev_mlme_set_param(struct vdev_mlme_obj *vdev_mlme,
 			qdf_mem_copy(mlme_mgmt->generic.ssid,
 				     mlme_cfg.ssid_cfg.ssid,
 				     mlme_cfg.ssid_cfg.length);
-			mlme_mgmt->generic.ssid_len =
-						mlme_cfg.ssid_cfg.length;
+			mlme_mgmt->generic.ssid_len = mlme_cfg.ssid_cfg.length;
 		} else {
 			mlme_mgmt->generic.ssid_len = 0;
 		}
@@ -443,34 +437,32 @@ wlan_util_vdev_mlme_set_param(struct vdev_mlme_obj *vdev_mlme,
 	case WLAN_MLME_CFG_TX_ENCAP_TYPE:
 		is_wmi_cmd = true;
 		mlme_mgmt->generic.tx_encap_type = mlme_cfg.value;
-		tgt_vdev_mgr_set_tx_rx_decap_type(vdev_mlme,
-						  WLAN_MLME_CFG_TX_ENCAP_TYPE,
-						  mlme_cfg.value);
+		tgt_vdev_mgr_set_tx_rx_decap_type(
+			vdev_mlme, WLAN_MLME_CFG_TX_ENCAP_TYPE, mlme_cfg.value);
 		break;
 	case WLAN_MLME_CFG_RX_DECAP_TYPE:
 		is_wmi_cmd = true;
 		mlme_mgmt->generic.rx_decap_type = mlme_cfg.value;
-		tgt_vdev_mgr_set_tx_rx_decap_type(vdev_mlme,
-						  WLAN_MLME_CFG_RX_DECAP_TYPE,
-						  mlme_cfg.value);
+		tgt_vdev_mgr_set_tx_rx_decap_type(
+			vdev_mlme, WLAN_MLME_CFG_RX_DECAP_TYPE, mlme_cfg.value);
 		break;
 	case WLAN_MLME_CFG_RATEMASK_LOWER32:
 		if (mlme_cfg.ratemask.index < WLAN_VDEV_RATEMASK_TYPE_MAX)
-			mlme_mgmt->rate_info.ratemask_params[
-					mlme_cfg.ratemask.index].lower32 =
-							mlme_cfg.ratemask.value;
+			mlme_mgmt->rate_info
+				.ratemask_params[mlme_cfg.ratemask.index]
+				.lower32 = mlme_cfg.ratemask.value;
 		break;
 	case WLAN_MLME_CFG_RATEMASK_HIGHER32:
 		if (mlme_cfg.ratemask.index < WLAN_VDEV_RATEMASK_TYPE_MAX)
-			mlme_mgmt->rate_info.ratemask_params[
-					mlme_cfg.ratemask.index].higher32 =
-							mlme_cfg.ratemask.value;
+			mlme_mgmt->rate_info
+				.ratemask_params[mlme_cfg.ratemask.index]
+				.higher32 = mlme_cfg.ratemask.value;
 		break;
 	case WLAN_MLME_CFG_RATEMASK_LOWER32_2:
 		if (mlme_cfg.ratemask.index < WLAN_VDEV_RATEMASK_TYPE_MAX)
-			mlme_mgmt->rate_info.ratemask_params[
-					mlme_cfg.ratemask.index].lower32_2 =
-							mlme_cfg.ratemask.value;
+			mlme_mgmt->rate_info
+				.ratemask_params[mlme_cfg.ratemask.index]
+				.lower32_2 = mlme_cfg.ratemask.value;
 		break;
 	case WLAN_MLME_CFG_BCN_TX_RATE:
 		mlme_mgmt->rate_info.bcn_tx_rate = mlme_cfg.value;
@@ -623,15 +615,15 @@ void wlan_util_vdev_mlme_get_param(struct vdev_mlme_obj *vdev_mlme,
 		break;
 	case WLAN_MLME_CFG_MIN_IDLE_INACTIVE_TIME:
 		*value =
-		      inactivity_params->keepalive_min_idle_inactive_time_secs;
+			inactivity_params->keepalive_min_idle_inactive_time_secs;
 		break;
 	case WLAN_MLME_CFG_MAX_IDLE_INACTIVE_TIME:
 		*value =
-		      inactivity_params->keepalive_max_idle_inactive_time_secs;
+			inactivity_params->keepalive_max_idle_inactive_time_secs;
 		break;
 	case WLAN_MLME_CFG_MAX_UNRESPONSIVE_INACTIVE_TIME:
 		*value =
-		      inactivity_params->keepalive_max_unresponsive_time_secs;
+			inactivity_params->keepalive_max_unresponsive_time_secs;
 		break;
 	case WLAN_MLME_CFG_RATE_FLAGS:
 		*value = mlme_mgmt->rate_info.rate_flags;
@@ -698,8 +690,7 @@ void wlan_util_vdev_mlme_get_param(struct vdev_mlme_obj *vdev_mlme,
 qdf_export_symbol(wlan_util_vdev_mlme_get_param);
 
 void wlan_util_vdev_get_param(struct wlan_objmgr_vdev *vdev,
-			      enum wlan_mlme_cfg_id param_id,
-			      uint32_t *value)
+			      enum wlan_mlme_cfg_id param_id, uint32_t *value)
 {
 	ucfg_wlan_vdev_mgr_get_param(vdev, param_id, value);
 }
@@ -727,8 +718,8 @@ int wlan_util_vdev_mgr_get_cac_timeout_for_vdev(struct wlan_objmgr_vdev *vdev)
 		return 0;
 
 	dfs_cac_timeout = dfs_mlme_get_cac_timeout_for_freq(
-				wlan_vdev_get_pdev(vdev), des_chan->ch_freq,
-				des_chan->ch_cfreq2, des_chan->ch_flags);
+		wlan_vdev_get_pdev(vdev), des_chan->ch_freq,
+		des_chan->ch_cfreq2, des_chan->ch_flags);
 	/* Seconds to milliseconds */
 	return SECONDS_TO_MS(dfs_cac_timeout);
 }
@@ -788,9 +779,9 @@ bool wlan_util_vdev_mgr_get_acs_mode_for_vdev(struct wlan_objmgr_vdev *vdev)
 	return vdev_mlme->mgmt.ap.is_acs_mode;
 }
 
-QDF_STATUS wlan_util_vdev_mgr_get_csa_channel_switch_time(
-		struct wlan_objmgr_vdev *vdev,
-		uint32_t *chan_switch_time)
+QDF_STATUS
+wlan_util_vdev_mgr_get_csa_channel_switch_time(struct wlan_objmgr_vdev *vdev,
+					       uint32_t *chan_switch_time)
 {
 	struct vdev_mlme_obj *vdev_mlme = NULL;
 
@@ -809,20 +800,20 @@ QDF_STATUS wlan_util_vdev_mgr_get_csa_channel_switch_time(
 	*chan_switch_time += SECONDS_TO_MS(VDEV_RESTART_TIME);
 
 	/* Add one beacon interval time required to send beacon on the
-	 * new channel after switching to the new channel.
-	 */
+   * new channel after switching to the new channel.
+   */
 	*chan_switch_time += vdev_mlme->proto.generic.beacon_interval;
 
 	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS wlan_util_vdev_mgr_compute_max_channel_switch_time(
-		struct wlan_objmgr_vdev *vdev, uint32_t *max_chan_switch_time)
+	struct wlan_objmgr_vdev *vdev, uint32_t *max_chan_switch_time)
 {
 	QDF_STATUS status;
 
 	status = wlan_util_vdev_mgr_get_csa_channel_switch_time(
-			vdev, max_chan_switch_time);
+		vdev, max_chan_switch_time);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("Failed to get the CSA channel switch time");
 		return status;
@@ -830,7 +821,7 @@ QDF_STATUS wlan_util_vdev_mgr_compute_max_channel_switch_time(
 
 	/* Plus the CAC time */
 	*max_chan_switch_time +=
-			wlan_util_vdev_mgr_get_cac_timeout_for_vdev(vdev);
+		wlan_util_vdev_mgr_get_cac_timeout_for_vdev(vdev);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -849,22 +840,22 @@ wlan_utils_get_vdev_remaining_channel_switch_time(struct wlan_objmgr_vdev *vdev)
 		return 0;
 
 	/* Remaining channel switch time is equal to the time when last beacon
-	 * sent on the CSA triggered vap plus max channel switch time minus
-	 * current time.
-	 */
+   * sent on the CSA triggered vap plus max channel switch time minus
+   * current time.
+   */
 	remaining_chan_switch_time =
-	    ((vdev_mlme->mgmt.ap.last_bcn_ts_ms +
-	      vdev_mlme->mgmt.ap.max_chan_switch_time) -
-	     qdf_mc_timer_get_system_time());
+		((vdev_mlme->mgmt.ap.last_bcn_ts_ms +
+		  vdev_mlme->mgmt.ap.max_chan_switch_time) -
+		 qdf_mc_timer_get_system_time());
 
-	return (remaining_chan_switch_time > 0) ?
-		remaining_chan_switch_time : 0;
+	return (remaining_chan_switch_time > 0) ? remaining_chan_switch_time :
+						  0;
 }
 
 #ifdef WLAN_FEATURE_11BE_MLO
-QDF_STATUS wlan_util_vdev_mgr_quiet_offload(
-				struct wlan_objmgr_psoc *psoc,
-				struct vdev_sta_quiet_event *quiet_event)
+QDF_STATUS
+wlan_util_vdev_mgr_quiet_offload(struct wlan_objmgr_psoc *psoc,
+				 struct vdev_sta_quiet_event *quiet_event)
 {
 	uint8_t vdev_id;
 	bool connected;
@@ -878,14 +869,14 @@ QDF_STATUS wlan_util_vdev_mgr_quiet_offload(
 
 	if (!qdf_is_macaddr_zero(&quiet_event->mld_mac)) {
 		connected = wlan_get_connected_vdev_by_mld_addr(
-				psoc, quiet_event->mld_mac.bytes, &vdev_id);
+			psoc, quiet_event->mld_mac.bytes, &vdev_id);
 		if (!connected) {
 			mlme_err("Can't find vdev with mld " QDF_MAC_ADDR_FMT,
 				 QDF_MAC_ADDR_REF(quiet_event->mld_mac.bytes));
 			return QDF_STATUS_E_INVAL;
 		}
 		vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
-				psoc, vdev_id, WLAN_MLME_OBJMGR_ID);
+			psoc, vdev_id, WLAN_MLME_OBJMGR_ID);
 		if (!vdev) {
 			mlme_err("Null vdev");
 			return QDF_STATUS_E_INVAL;
@@ -897,14 +888,14 @@ QDF_STATUS wlan_util_vdev_mgr_quiet_offload(
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_OBJMGR_ID);
 	} else if (!qdf_is_macaddr_zero(&quiet_event->link_mac)) {
 		connected = wlan_get_connected_vdev_from_psoc_by_bssid(
-				psoc, quiet_event->link_mac.bytes, &vdev_id);
+			psoc, quiet_event->link_mac.bytes, &vdev_id);
 		if (!connected) {
 			mlme_err("Can't find vdev with BSSID" QDF_MAC_ADDR_FMT,
 				 QDF_MAC_ADDR_REF(quiet_event->link_mac.bytes));
 			return QDF_STATUS_E_INVAL;
 		}
 		vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
-				psoc, vdev_id, WLAN_MLME_OBJMGR_ID);
+			psoc, vdev_id, WLAN_MLME_OBJMGR_ID);
 		if (!vdev) {
 			mlme_err("Null vdev");
 			return QDF_STATUS_E_INVAL;
@@ -925,8 +916,8 @@ QDF_STATUS wlan_util_vdev_peer_set_param_send(struct wlan_objmgr_vdev *vdev,
 					      uint32_t param_id,
 					      uint32_t param_value)
 {
-	return tgt_vdev_peer_set_param_send(vdev, peer_mac_addr,
-					    param_id, param_value);
+	return tgt_vdev_peer_set_param_send(vdev, peer_mac_addr, param_id,
+					    param_value);
 }
 
 qdf_export_symbol(wlan_util_vdev_peer_set_param_send);

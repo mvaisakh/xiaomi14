@@ -4,8 +4,8 @@
  */
 
 #include "ipa.h"
-#include "ipa_pm.h"
 #include "ipa_i.h"
+#include "ipa_pm.h"
 #include "ipa_ut_framework.h"
 #include <linux/delay.h>
 
@@ -60,7 +60,7 @@ static void ipa_pm_call_back(void *user_data, enum ipa_pm_cb_event evt)
 {
 	struct callback_param *param;
 
-	param = (struct callback_param *) user_data;
+	param = (struct callback_param *)user_data;
 	param->evt = evt;
 
 	if (evt == IPA_PM_CLIENT_ACTIVATED) {
@@ -111,7 +111,6 @@ static int clean_up(int n, ...)
 	return 0;
 }
 
-
 /* test 1 */
 static int ipa_pm_ut_single_registration(void *priv)
 {
@@ -120,8 +119,7 @@ static int ipa_pm_ut_single_registration(void *priv)
 	struct callback_param user_data;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params register_params = {
@@ -157,7 +155,7 @@ static int ipa_pm_ut_single_registration(void *priv)
 	}
 
 	if (!wait_for_completion_timeout(&user_data.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for activate_callback\n");
 		IPA_UT_TEST_FAIL_REPORT("activate callback not called");
 		return -ETIME;
@@ -185,8 +183,8 @@ static int ipa_pm_ut_single_registration(void *priv)
 
 	rc = ipa_pm_deferred_deactivate(hdl);
 	if (rc) {
-		IPA_UT_ERR("fail to deferred deactivate client - rc = %d\n"
-			, rc);
+		IPA_UT_ERR("fail to deferred deactivate client - rc = %d\n",
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("fail to deferred deactivate client");
 		return -EFAULT;
 	}
@@ -238,8 +236,7 @@ static int ipa_pm_ut_double_register_activate(void *priv)
 	struct callback_param user_data;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params register_params = {
@@ -290,7 +287,7 @@ static int ipa_pm_ut_double_register_activate(void *priv)
 	}
 
 	if (!wait_for_completion_timeout(&user_data.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for activate_callback\n");
 		IPA_UT_TEST_FAIL_REPORT("activate callback not called");
 		return -ETIME;
@@ -344,8 +341,7 @@ static int ipa_pm_ut_deferred_deactivate(void *priv)
 	struct callback_param user_data;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params register_params = {
@@ -381,7 +377,7 @@ static int ipa_pm_ut_deferred_deactivate(void *priv)
 	}
 
 	if (!wait_for_completion_timeout(&user_data.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for activate_callback\n");
 		IPA_UT_TEST_FAIL_REPORT("activate callback not called");
 		return -ETIME;
@@ -403,7 +399,7 @@ static int ipa_pm_ut_deferred_deactivate(void *priv)
 	rc = ipa_pm_deferred_deactivate(hdl);
 	if (rc) {
 		IPA_UT_ERR("fail to deferred deactivate client - rc = %d\n",
-		rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("deferred deactivate fail");
 		return -EFAULT;
 	}
@@ -442,21 +438,19 @@ static int ipa_pm_ut_deferred_deactivate(void *priv)
 	return rc;
 }
 
-
 /* test 4 */
 static int ipa_pm_ut_two_clients_activate(void *priv)
 {
 	int rc = 0;
 	int hdl_USB, hdl_WLAN, vote;
-	u32 pipes[IPA_EP_ARR_SIZE] = {0, 0};
+	u32 pipes[IPA_EP_ARR_SIZE] = { 0, 0 };
 	struct callback_param user_data_USB;
 	struct callback_param user_data_WLAN;
 	bool wait_for_completion;
 	int ep, i;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params USB_params = {
@@ -509,7 +503,7 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	}
 
 	rc = ipa_pm_associate_ipa_cons_to_client(hdl_WLAN,
-		IPA_CLIENT_WLAN1_CONS);
+						 IPA_CLIENT_WLAN1_CONS);
 	if (rc) {
 		IPA_UT_ERR("fail to map client 2 rc = %d\n", rc);
 		IPA_UT_TEST_FAIL_REPORT("fail to map client");
@@ -517,10 +511,10 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	}
 
 	rc = ipa_pm_associate_ipa_cons_to_client(hdl_WLAN,
-		IPA_CLIENT_USB_DPL_CONS);
+						 IPA_CLIENT_USB_DPL_CONS);
 	if (rc) {
 		IPA_UT_ERR("fail to map client 2 to multiplt pipes rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("fail to map client");
 		return -EFAULT;
 	}
@@ -533,8 +527,8 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	}
 
 	/* It could be that USB enabled clocks so WLAN will be activated
-	 * without delay.
-	 */
+   * without delay.
+   */
 	rc = ipa_pm_activate(hdl_WLAN);
 	if (rc != -EINPROGRESS && rc != 0) {
 		IPA_UT_ERR("failed to activate WLAN - rc = %d\n", rc);
@@ -544,7 +538,7 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	wait_for_completion = !rc ? false : true;
 
 	if (!wait_for_completion_timeout(&user_data_USB.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for activate_callback 1\n");
 		IPA_UT_TEST_FAIL_REPORT("activate callback not called");
 		return -ETIME;
@@ -557,8 +551,8 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	}
 
 	if (wait_for_completion &&
-		!wait_for_completion_timeout(&user_data_WLAN.complete,
-		msecs_to_jiffies(2000))) {
+	    !wait_for_completion_timeout(&user_data_WLAN.complete,
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for activate_callback 2\n");
 		IPA_UT_TEST_FAIL_REPORT("activate callback not called");
 		return -ETIME;
@@ -566,7 +560,7 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 
 	/* In case WLAN activated immediately, there will be no event */
 	if (wait_for_completion &&
-		user_data_WLAN.evt != IPA_PM_CLIENT_ACTIVATED) {
+	    user_data_WLAN.evt != IPA_PM_CLIENT_ACTIVATED) {
 		IPA_UT_ERR("Callback = %d\n", user_data_WLAN.evt);
 		IPA_UT_TEST_FAIL_REPORT("wrong callback called");
 		return -EFAULT;
@@ -585,7 +579,7 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	rc = ipa_pm_deferred_deactivate(hdl_USB);
 	if (rc) {
 		IPA_UT_ERR("fail to deferred deactivate client 1 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("deferred deactivate fail");
 		return -EFAULT;
 	}
@@ -618,7 +612,7 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	}
 
 	if (!wait_for_completion_timeout(&user_data_USB.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for wakeup_callback 1\n");
 		IPA_UT_TEST_FAIL_REPORT("wakeup callback not called");
 		return -ETIME;
@@ -631,7 +625,7 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	}
 
 	if (!wait_for_completion_timeout(&user_data_WLAN.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for wakeup_callback 2\n");
 		IPA_UT_TEST_FAIL_REPORT("wakeup callback not called");
 		return -ETIME;
@@ -673,7 +667,7 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 	}
 
 	if (!wait_for_completion_timeout(&user_data_USB.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for wakeup_callback 1\n");
 		IPA_UT_TEST_FAIL_REPORT("wakeup callback not called");
 		return -ETIME;
@@ -692,14 +686,12 @@ static int ipa_pm_ut_two_clients_activate(void *priv)
 /* test 5 */
 static int ipa_pm_ut_deactivate_all_deferred(void *priv)
 {
-
 	int rc = 0;
 	int hdl_USB, hdl_WLAN, hdl_MODEM, vote;
 	struct callback_param user_data;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params USB_params = {
@@ -763,7 +755,7 @@ static int ipa_pm_ut_deactivate_all_deferred(void *priv)
 	}
 
 	if (!wait_for_completion_timeout(&user_data.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for activate_callback 1\n");
 		IPA_UT_TEST_FAIL_REPORT("activate callback not called");
 		return -ETIME;
@@ -806,7 +798,7 @@ static int ipa_pm_ut_deactivate_all_deferred(void *priv)
 	rc = ipa_pm_deferred_deactivate(hdl_USB);
 	if (rc) {
 		IPA_UT_ERR("fail to deferred deactivate client 1 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("deferred deactivate fail");
 		return -EFAULT;
 	}
@@ -814,7 +806,7 @@ static int ipa_pm_ut_deactivate_all_deferred(void *priv)
 	rc = ipa_pm_deferred_deactivate(hdl_WLAN);
 	if (rc) {
 		IPA_UT_ERR("fail to deferred deactivate client 2 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("deferred deactivate fail");
 		return -EFAULT;
 	}
@@ -842,14 +834,12 @@ static int ipa_pm_ut_deactivate_all_deferred(void *priv)
 /* test 5 */
 static int ipa_pm_ut_deactivate_after_activate(void *priv)
 {
-
 	int rc = 0;
 	int hdl, vote;
 	struct callback_param user_data;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params USB_params = {
@@ -886,7 +876,7 @@ static int ipa_pm_ut_deactivate_after_activate(void *priv)
 	rc = ipa_pm_deferred_deactivate(hdl);
 	if (rc) {
 		IPA_UT_ERR("fail to deferred deactivate client - rc = %d\n",
-		rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("deferred deactivate fail");
 		return -EFAULT;
 	}
@@ -898,7 +888,6 @@ static int ipa_pm_ut_deactivate_after_activate(void *priv)
 		IPA_UT_TEST_FAIL_REPORT("wrong clock vote");
 		return -EINVAL;
 	}
-
 
 	rc = ipa_pm_activate(hdl);
 	if (rc != -EINPROGRESS) {
@@ -936,8 +925,7 @@ static int ipa_pm_ut_atomic_activate(void *priv)
 	unsigned long flags;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params register_params = {
@@ -948,7 +936,6 @@ static int ipa_pm_ut_atomic_activate(void *priv)
 		.user_data = &user_data
 	};
 	user_data.evt = IPA_PM_CB_EVENT_MAX;
-
 
 	spin_lock_init(&lock);
 
@@ -979,7 +966,7 @@ static int ipa_pm_ut_atomic_activate(void *priv)
 	spin_unlock_irqrestore(&lock, flags);
 
 	if (!wait_for_completion_timeout(&user_data.complete,
-		msecs_to_jiffies(2000))) {
+					 msecs_to_jiffies(2000))) {
 		IPA_UT_ERR("timeout waiting for activate_callback\n");
 		IPA_UT_TEST_FAIL_REPORT("activate callback not called");
 		return -ETIME;
@@ -1009,8 +996,7 @@ static int ipa_pm_ut_deactivate_loop(void *priv)
 	int i, hdl_USB, hdl_WLAN, vote;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params USB_params = {
@@ -1079,7 +1065,7 @@ static int ipa_pm_ut_deactivate_loop(void *priv)
 	rc = ipa_pm_activate(hdl_WLAN);
 	if (rc) {
 		IPA_UT_ERR("fail to activate no block for client 2 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("activate no block failed");
 		return -EFAULT;
 	}
@@ -1095,7 +1081,7 @@ static int ipa_pm_ut_deactivate_loop(void *priv)
 	rc = ipa_pm_deferred_deactivate(hdl_WLAN);
 	if (rc) {
 		IPA_UT_ERR("fail to deferred deactivate client 2 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("deferred deactivate fail");
 		return -EFAULT;
 	}
@@ -1136,9 +1122,7 @@ static int ipa_pm_ut_deactivate_loop(void *priv)
 	}
 	rc = clean_up(2, hdl_USB, hdl_WLAN);
 	return rc;
-
 }
-
 
 /*test 8*/
 static int ipa_pm_ut_set_perf_profile(void *priv)
@@ -1147,8 +1131,7 @@ static int ipa_pm_ut_set_perf_profile(void *priv)
 	int hdl_USB, hdl_WLAN, vote, idx;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params USB_params = {
@@ -1217,7 +1200,7 @@ static int ipa_pm_ut_set_perf_profile(void *priv)
 	rc = ipa_pm_activate(hdl_WLAN);
 	if (rc) {
 		IPA_UT_ERR("fail to activate no block for client 2 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("activate no block failed");
 		return -EFAULT;
 	}
@@ -1262,8 +1245,7 @@ static int ipa_pm_ut_group_tput(void *priv)
 	int hdl_USB, hdl_WLAN, hdl_MODEM, vote, idx;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params USB_params = {
@@ -1339,7 +1321,7 @@ static int ipa_pm_ut_group_tput(void *priv)
 	rc = ipa_pm_activate(hdl_WLAN);
 	if (rc) {
 		IPA_UT_ERR("fail to activate no block for client 2 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("activate no block failed");
 		return -EFAULT;
 	}
@@ -1376,7 +1358,7 @@ static int ipa_pm_ut_group_tput(void *priv)
 	rc = ipa_pm_activate(hdl_MODEM);
 	if (rc) {
 		IPA_UT_ERR("fail to activate no block for client 3 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("activate no block failed");
 		return -EFAULT;
 	}
@@ -1419,7 +1401,6 @@ static int ipa_pm_ut_group_tput(void *priv)
 
 	rc = clean_up(3, hdl_USB, hdl_WLAN, hdl_MODEM);
 	return rc;
-
 }
 
 /*test 10*/
@@ -1429,8 +1410,7 @@ static int ipa_pm_ut_skip_clk_vote_tput(void *priv)
 	int hdl_USB, hdl_WLAN, hdl_MODEM, vote, idx;
 
 	struct ipa_pm_init_params init_params = {
-		.threshold_size = 2,
-		.default_threshold = {600, 1000}
+		.threshold_size = 2, .default_threshold = { 600, 1000 }
 	};
 
 	struct ipa_pm_register_params USB_params = {
@@ -1506,7 +1486,7 @@ static int ipa_pm_ut_skip_clk_vote_tput(void *priv)
 	rc = ipa_pm_activate(hdl_WLAN);
 	if (rc) {
 		IPA_UT_ERR("fail to activate no block for client 2 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("activate no block failed");
 		return -EFAULT;
 	}
@@ -1543,7 +1523,7 @@ static int ipa_pm_ut_skip_clk_vote_tput(void *priv)
 	rc = ipa_pm_activate(hdl_MODEM);
 	if (rc) {
 		IPA_UT_ERR("fail to activate no block for client 3 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("activate no block failed");
 		return -EFAULT;
 	}
@@ -1562,7 +1542,6 @@ static int ipa_pm_ut_skip_clk_vote_tput(void *priv)
 		IPA_UT_TEST_FAIL_REPORT("wrong clock plan");
 		return -EINVAL;
 	}
-
 
 	rc = ipa_pm_deactivate_sync(hdl_USB);
 	if (rc) {
@@ -1590,12 +1569,12 @@ static int ipa_pm_ut_simple_exception(void *priv)
 
 	struct ipa_pm_exception exceptions = {
 		.usecase = "USB",
-		.threshold = {1000, 1800},
+		.threshold = { 1000, 1800 },
 	};
 
 	struct ipa_pm_init_params init_params = {
 		.threshold_size = 2,
-		.default_threshold = {600, 1000},
+		.default_threshold = { 600, 1000 },
 		.exception_size = 1,
 		.exceptions[0] = exceptions,
 	};
@@ -1673,7 +1652,7 @@ static int ipa_pm_ut_simple_exception(void *priv)
 	rc = ipa_pm_activate(hdl_WLAN);
 	if (rc) {
 		IPA_UT_ERR("fail to activate no block for client 2 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("activate no block failed");
 		return -EFAULT;
 	}
@@ -1710,7 +1689,7 @@ static int ipa_pm_ut_simple_exception(void *priv)
 	rc = ipa_pm_activate(hdl_MODEM);
 	if (rc) {
 		IPA_UT_ERR("fail to activate no block for client 3 - rc = %d\n",
-			rc);
+			   rc);
 		IPA_UT_TEST_FAIL_REPORT("activate no block failed");
 		return -EFAULT;
 	}
@@ -1744,7 +1723,7 @@ static int ipa_pm_ut_simple_exception(void *priv)
 		return -EINVAL;
 	}
 
-	 idx = ipa3_ctx->ipa3_active_clients.bus_vote_idx;
+	idx = ipa3_ctx->ipa3_active_clients.bus_vote_idx;
 	if (idx != 2) {
 		IPA_UT_ERR("clock plan is at %d\n", idx);
 		IPA_UT_TEST_FAIL_REPORT("wrong clock plan");
@@ -1756,55 +1735,43 @@ static int ipa_pm_ut_simple_exception(void *priv)
 }
 
 /* Suite definition block */
-IPA_UT_DEFINE_SUITE_START(pm, "PM for IPA",
-	ipa_pm_ut_setup, ipa_pm_ut_teardown)
-{
+IPA_UT_DEFINE_SUITE_START(pm, "PM for IPA", ipa_pm_ut_setup,
+			  ipa_pm_ut_teardown){
 	IPA_UT_ADD_TEST(single_registration,
-		"Single Registration/Basic Functions",
-		ipa_pm_ut_single_registration,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(double_register_activate,
-		"double register/activate",
-		ipa_pm_ut_double_register_activate,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(deferred_deactivate,
-		"Deferred_deactivate",
-		ipa_pm_ut_deferred_deactivate,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(two_clients_activate,
-		"Activate two clients",
-		ipa_pm_ut_two_clients_activate,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(deactivate_all_deferred,
-		"Deactivate all deferred",
-		ipa_pm_ut_deactivate_all_deferred,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(deactivate_after_activate,
-		"Deactivate after activate",
-		ipa_pm_ut_deactivate_after_activate,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(atomic_activate,
-		"Atomic activate",
-		ipa_pm_ut_atomic_activate,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(deactivate_loop,
-		"Deactivate Loop",
-		ipa_pm_ut_deactivate_loop,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(set_perf_profile,
-		"Set perf profile",
-		ipa_pm_ut_set_perf_profile,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(group_tput,
-		"Group throughputs",
-		ipa_pm_ut_group_tput,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(skip_clk_vote_tput,
-		"Skip clock vote and tput",
-		ipa_pm_ut_skip_clk_vote_tput,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
+			"Single Registration/Basic Functions",
+			ipa_pm_ut_single_registration, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(double_register_activate, "double register/activate",
+			ipa_pm_ut_double_register_activate, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(deferred_deactivate, "Deferred_deactivate",
+			ipa_pm_ut_deferred_deactivate, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(two_clients_activate, "Activate two clients",
+			ipa_pm_ut_two_clients_activate, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(deactivate_all_deferred, "Deactivate all deferred",
+			ipa_pm_ut_deactivate_all_deferred, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(deactivate_after_activate, "Deactivate after activate",
+			ipa_pm_ut_deactivate_after_activate, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(atomic_activate, "Atomic activate",
+			ipa_pm_ut_atomic_activate, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(deactivate_loop, "Deactivate Loop",
+			ipa_pm_ut_deactivate_loop, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(set_perf_profile, "Set perf profile",
+			ipa_pm_ut_set_perf_profile, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(group_tput, "Group throughputs", ipa_pm_ut_group_tput,
+			true, IPA_HW_v4_0, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(skip_clk_vote_tput, "Skip clock vote and tput",
+			ipa_pm_ut_skip_clk_vote_tput, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(simple_exception,
-		"throughput while passing simple exception",
-		ipa_pm_ut_simple_exception,
-		true, IPA_HW_v4_0, IPA_HW_MAX),
+			"throughput while passing simple exception",
+			ipa_pm_ut_simple_exception, true, IPA_HW_v4_0,
+			IPA_HW_MAX),
 } IPA_UT_DEFINE_SUITE_END(pm);

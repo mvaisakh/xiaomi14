@@ -26,39 +26,51 @@
 #include <wlan_objmgr_cmn.h>
 
 #include <wlan_objmgr_global_obj.h>
-#include <wlan_objmgr_psoc_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
 #include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 
-#include "wlan_crypto_global_def.h"
-#include "wlan_crypto_global_api.h"
 #include "wlan_crypto_def_i.h"
+#include "wlan_crypto_global_api.h"
+#include "wlan_crypto_global_def.h"
 #include "wlan_crypto_param_handling_i.h"
 
-static uint32_t
-cipher2cap(int cipher)
+static uint32_t cipher2cap(int cipher)
 {
-	switch (cipher)	{
-	case WLAN_CRYPTO_CIPHER_WEP:  return WLAN_CRYPTO_CAP_WEP;
-	case WLAN_CRYPTO_CIPHER_WEP_40:  return WLAN_CRYPTO_CAP_WEP;
-	case WLAN_CRYPTO_CIPHER_WEP_104:  return WLAN_CRYPTO_CAP_WEP;
-	case WLAN_CRYPTO_CIPHER_AES_OCB:  return WLAN_CRYPTO_CAP_AES;
-	case WLAN_CRYPTO_CIPHER_AES_CCM:  return WLAN_CRYPTO_CAP_AES;
-	case WLAN_CRYPTO_CIPHER_AES_CCM_256:  return WLAN_CRYPTO_CAP_AES;
-	case WLAN_CRYPTO_CIPHER_AES_GCM:  return WLAN_CRYPTO_CAP_AES;
-	case WLAN_CRYPTO_CIPHER_AES_GCM_256:  return WLAN_CRYPTO_CAP_AES;
-	case WLAN_CRYPTO_CIPHER_CKIP: return WLAN_CRYPTO_CAP_CKIP;
-	case WLAN_CRYPTO_CIPHER_TKIP: return WLAN_CRYPTO_CAP_TKIP_MIC;
-	case WLAN_CRYPTO_CIPHER_WAPI_SMS4: return WLAN_CRYPTO_CAP_WAPI_SMS4;
-	case WLAN_CRYPTO_CIPHER_WAPI_GCM4: return WLAN_CRYPTO_CAP_WAPI_GCM4;
-	case WLAN_CRYPTO_CIPHER_FILS_AEAD: return WLAN_CRYPTO_CAP_FILS_AEAD;
+	switch (cipher) {
+	case WLAN_CRYPTO_CIPHER_WEP:
+		return WLAN_CRYPTO_CAP_WEP;
+	case WLAN_CRYPTO_CIPHER_WEP_40:
+		return WLAN_CRYPTO_CAP_WEP;
+	case WLAN_CRYPTO_CIPHER_WEP_104:
+		return WLAN_CRYPTO_CAP_WEP;
+	case WLAN_CRYPTO_CIPHER_AES_OCB:
+		return WLAN_CRYPTO_CAP_AES;
+	case WLAN_CRYPTO_CIPHER_AES_CCM:
+		return WLAN_CRYPTO_CAP_AES;
+	case WLAN_CRYPTO_CIPHER_AES_CCM_256:
+		return WLAN_CRYPTO_CAP_AES;
+	case WLAN_CRYPTO_CIPHER_AES_GCM:
+		return WLAN_CRYPTO_CAP_AES;
+	case WLAN_CRYPTO_CIPHER_AES_GCM_256:
+		return WLAN_CRYPTO_CAP_AES;
+	case WLAN_CRYPTO_CIPHER_CKIP:
+		return WLAN_CRYPTO_CAP_CKIP;
+	case WLAN_CRYPTO_CIPHER_TKIP:
+		return WLAN_CRYPTO_CAP_TKIP_MIC;
+	case WLAN_CRYPTO_CIPHER_WAPI_SMS4:
+		return WLAN_CRYPTO_CAP_WAPI_SMS4;
+	case WLAN_CRYPTO_CIPHER_WAPI_GCM4:
+		return WLAN_CRYPTO_CAP_WAPI_GCM4;
+	case WLAN_CRYPTO_CIPHER_FILS_AEAD:
+		return WLAN_CRYPTO_CAP_FILS_AEAD;
 	}
 	return 0;
 }
 
 QDF_STATUS wlan_crypto_set_authmode(struct wlan_crypto_params *crypto_params,
-					uint32_t authmode)
+				    uint32_t authmode)
 {
 	crypto_params->authmodeset = authmode;
 	return QDF_STATUS_SUCCESS;
@@ -70,7 +82,7 @@ int32_t wlan_crypto_get_authmode(struct wlan_crypto_params *crypto_params)
 }
 
 QDF_STATUS wlan_crypto_set_mcastcipher(struct wlan_crypto_params *crypto_params,
-					wlan_crypto_cipher_type cipher)
+				       wlan_crypto_cipher_type cipher)
 {
 	uint16_t i;
 	uint32_t cap;
@@ -96,9 +108,9 @@ int32_t wlan_crypto_get_mcastcipher(struct wlan_crypto_params *crypto_params)
 	return crypto_params->mcastcipherset;
 }
 
-QDF_STATUS wlan_crypto_set_ucastciphers(
-				struct wlan_crypto_params *crypto_params,
-				uint32_t cipher)
+QDF_STATUS
+wlan_crypto_set_ucastciphers(struct wlan_crypto_params *crypto_params,
+			     uint32_t cipher)
 {
 	uint16_t i;
 	uint32_t cap;
@@ -106,7 +118,7 @@ QDF_STATUS wlan_crypto_set_ucastciphers(
 
 	RESET_UCAST_CIPHERS(crypto_params);
 
-	for (i = 0; i < WLAN_CRYPTO_CIPHER_MAX ; i++) {
+	for (i = 0; i < WLAN_CRYPTO_CIPHER_MAX; i++) {
 		if (HAS_PARAM(cipher, i)) {
 			cap = cipher2cap(i);
 			if (cap && HAS_CIPHER_CAP(crypto_params, cap)) {
@@ -125,15 +137,14 @@ int32_t wlan_crypto_get_ucastciphers(struct wlan_crypto_params *crypto_params)
 	return crypto_params->ucastcipherset;
 }
 
-QDF_STATUS wlan_crypto_set_mgmtcipher(
-				struct wlan_crypto_params *crypto_params,
-				uint32_t ciphers)
+QDF_STATUS wlan_crypto_set_mgmtcipher(struct wlan_crypto_params *crypto_params,
+				      uint32_t ciphers)
 {
 	uint16_t i;
 
 	RESET_MGMT_CIPHERS(crypto_params);
 
-	for (i = 0; i < WLAN_CRYPTO_CIPHER_MAX ; i++) {
+	for (i = 0; i < WLAN_CRYPTO_CIPHER_MAX; i++) {
 		if (HAS_PARAM(ciphers, i) && IS_MGMT_CIPHER(i))
 			SET_MGMT_CIPHER(crypto_params, i);
 	}
@@ -146,9 +157,8 @@ int32_t wlan_crypto_get_mgmtciphers(struct wlan_crypto_params *crypto_params)
 	return crypto_params->mgmtcipherset;
 }
 
-QDF_STATUS wlan_crypto_set_cipher_cap(
-				struct wlan_crypto_params *crypto_params,
-				uint32_t value)
+QDF_STATUS wlan_crypto_set_cipher_cap(struct wlan_crypto_params *crypto_params,
+				      uint32_t value)
 {
 	crypto_params->cipher_caps = value;
 
@@ -160,18 +170,16 @@ int32_t wlan_crypto_get_cipher_cap(struct wlan_crypto_params *crypto_params)
 	return crypto_params->cipher_caps;
 }
 
-QDF_STATUS wlan_crypto_set_rsn_cap(
-				struct wlan_crypto_params *crypto_params,
-				uint32_t value)
+QDF_STATUS wlan_crypto_set_rsn_cap(struct wlan_crypto_params *crypto_params,
+				   uint32_t value)
 {
 	crypto_params->rsn_caps = value;
 
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS wlan_crypto_set_rsnx_cap(
-				struct wlan_crypto_params *crypto_params,
-				uint32_t value)
+QDF_STATUS wlan_crypto_set_rsnx_cap(struct wlan_crypto_params *crypto_params,
+				    uint32_t value)
 {
 	crypto_params->rsnx_caps = value;
 
@@ -183,9 +191,8 @@ int32_t wlan_crypto_get_rsn_cap(struct wlan_crypto_params *crypto_params)
 	return crypto_params->rsn_caps;
 }
 
-QDF_STATUS wlan_crypto_set_key_mgmt(
-				struct wlan_crypto_params *crypto_params,
-				uint32_t value)
+QDF_STATUS wlan_crypto_set_key_mgmt(struct wlan_crypto_params *crypto_params,
+				    uint32_t value)
 {
 	crypto_params->key_mgmt = value;
 

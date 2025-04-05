@@ -21,18 +21,17 @@
  * DOC: contains nud event tracking main function definitions
  */
 
-#include "osif_sync.h"
-#include "wlan_hdd_main.h"
-#include "wlan_dp_ucfg_api.h"
-#include "wlan_dlm_ucfg_api.h"
-#include "hdd_dp_cfg.h"
-#include <cdp_txrx_misc.h>
-#include "wlan_cm_roam_ucfg_api.h"
 #include "wlan_hdd_nud_tracking.h"
+#include "hdd_dp_cfg.h"
+#include "osif_sync.h"
+#include "wlan_cm_roam_ucfg_api.h"
+#include "wlan_dlm_ucfg_api.h"
+#include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_main.h"
+#include <cdp_txrx_misc.h>
 
-static void
-hdd_handle_nud_fail_sta(struct hdd_context *hdd_ctx,
-			struct hdd_adapter *adapter)
+static void hdd_handle_nud_fail_sta(struct hdd_context *hdd_ctx,
+				    struct hdd_adapter *adapter)
 {
 	struct reject_ap_info ap_info;
 	struct hdd_station_ctx *sta_ctx;
@@ -58,17 +57,15 @@ hdd_handle_nud_fail_sta(struct hdd_context *hdd_ctx,
 	if (roaming_offload_enabled(hdd_ctx)) {
 		qdf_zero_macaddr(&bssid);
 		ucfg_wlan_cm_roam_invoke(hdd_ctx->pdev,
-					 adapter->deflink->vdev_id,
-					 &bssid, 0, CM_ROAMING_NUD_FAILURE);
+					 adapter->deflink->vdev_id, &bssid, 0,
+					 CM_ROAMING_NUD_FAILURE);
 	}
 }
 
-static void
-hdd_handle_nud_fail_non_sta(struct wlan_hdd_link_info *link_info)
+static void hdd_handle_nud_fail_non_sta(struct wlan_hdd_link_info *link_info)
 {
-	wlan_hdd_cm_issue_disconnect(link_info,
-				     REASON_GATEWAY_REACHABILITY_FAILURE,
-				     false);
+	wlan_hdd_cm_issue_disconnect(
+		link_info, REASON_GATEWAY_REACHABILITY_FAILURE, false);
 }
 
 /**
@@ -77,8 +74,7 @@ hdd_handle_nud_fail_non_sta(struct wlan_hdd_link_info *link_info)
  *
  * Return: None
  */
-static void
-__hdd_nud_failure_work(struct hdd_adapter *adapter)
+static void __hdd_nud_failure_work(struct hdd_adapter *adapter)
 {
 	struct hdd_context *hdd_ctx;
 	int status;
@@ -107,12 +103,11 @@ __hdd_nud_failure_work(struct hdd_adapter *adapter)
 
 	if (soc && ucfg_dp_nud_fail_data_stall_evt_enabled()) {
 		hdd_dp_err("Data stall due to NUD failure");
-		cdp_post_data_stall_event
-			(soc,
-			 DATA_STALL_LOG_INDICATOR_HOST_DRIVER,
-			 DATA_STALL_LOG_NUD_FAILURE,
-			 OL_TXRX_PDEV_ID, 0XFF,
-			 DATA_STALL_LOG_RECOVERY_TRIGGER_PDR);
+		cdp_post_data_stall_event(soc,
+					  DATA_STALL_LOG_INDICATOR_HOST_DRIVER,
+					  DATA_STALL_LOG_NUD_FAILURE,
+					  OL_TXRX_PDEV_ID, 0XFF,
+					  DATA_STALL_LOG_RECOVERY_TRIGGER_PDR);
 	}
 
 	if (adapter->device_mode == QDF_STA_MODE &&

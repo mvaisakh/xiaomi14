@@ -21,13 +21,14 @@
  * to interact with target/WMI.
  */
 
-#include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_lphb_public_struct.h"
-#include "wlan_pmo_obj_mgmt_public_struct.h"
 #include "wlan_pmo_main.h"
+#include "wlan_pmo_obj_mgmt_public_struct.h"
+#include "wlan_pmo_tgt_api.h"
 
-QDF_STATUS pmo_tgt_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
-		struct pmo_lphb_enable_req *ts_lphb_enable)
+QDF_STATUS
+pmo_tgt_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
+			 struct pmo_lphb_enable_req *ts_lphb_enable)
 {
 	QDF_STATUS status;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
@@ -48,8 +49,9 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_send_lphb_tcp_params(struct wlan_objmgr_psoc *psoc,
-		struct pmo_lphb_tcp_params *ts_lphb_tcp_param)
+QDF_STATUS
+pmo_tgt_send_lphb_tcp_params(struct wlan_objmgr_psoc *psoc,
+			     struct pmo_lphb_tcp_params *ts_lphb_tcp_param)
 {
 	QDF_STATUS status;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
@@ -70,8 +72,9 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_send_lphb_tcp_pkt_filter(struct wlan_objmgr_psoc *psoc,
-		struct pmo_lphb_tcp_filter_req *ts_lphb_tcp_filter)
+QDF_STATUS pmo_tgt_send_lphb_tcp_pkt_filter(
+	struct wlan_objmgr_psoc *psoc,
+	struct pmo_lphb_tcp_filter_req *ts_lphb_tcp_filter)
 {
 	QDF_STATUS status;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
@@ -92,8 +95,9 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_send_lphb_udp_params(struct wlan_objmgr_psoc *psoc,
-		struct pmo_lphb_udp_params *ts_lphb_udp_param)
+QDF_STATUS
+pmo_tgt_send_lphb_udp_params(struct wlan_objmgr_psoc *psoc,
+			     struct pmo_lphb_udp_params *ts_lphb_udp_param)
 {
 	QDF_STATUS status;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
@@ -114,8 +118,9 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_send_lphb_udp_pkt_filter(struct wlan_objmgr_psoc *psoc,
-		struct pmo_lphb_udp_filter_req *ts_lphb_udp_filter)
+QDF_STATUS pmo_tgt_send_lphb_udp_pkt_filter(
+	struct wlan_objmgr_psoc *psoc,
+	struct pmo_lphb_udp_filter_req *ts_lphb_udp_filter)
 {
 	QDF_STATUS status;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
@@ -137,7 +142,7 @@ out:
 }
 
 QDF_STATUS pmo_tgt_lphb_rsp_evt(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_rsp *rsp_param)
+				struct pmo_lphb_rsp *rsp_param)
 {
 	struct pmo_psoc_priv_obj *psoc_ctx;
 
@@ -145,10 +150,8 @@ QDF_STATUS pmo_tgt_lphb_rsp_evt(struct wlan_objmgr_psoc *psoc,
 	if (psoc_ctx->wow.lphb_cb && psoc_ctx->wow.lphb_cb_ctx) {
 		psoc_ctx->wow.lphb_cb(psoc_ctx->wow.lphb_cb_ctx, rsp_param);
 	} else {
-		pmo_err("lphb rsp callback/context is null for psoc %pK",
-			psoc);
+		pmo_err("lphb rsp callback/context is null for psoc %pK", psoc);
 	}
 
 	return QDF_STATUS_SUCCESS;
 }
-

@@ -14,8 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_psoc_sync.h"
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_roam_trigger_bitmap.h>
 
@@ -44,8 +44,8 @@ static ssize_t hdd_sysfs_roam_trigger_bitmap_show(struct kobject *kobj,
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	ssize_t errno_size;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
@@ -59,8 +59,7 @@ static ssize_t hdd_sysfs_roam_trigger_bitmap_show(struct kobject *kobj,
 static ssize_t
 __hdd_sysfs_roam_trigger_bitmap_store(struct hdd_context *hdd_ctx,
 				      struct kobj_attribute *attr,
-				      const char *buf,
-				      size_t count)
+				      const char *buf, size_t count)
 {
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
 	char *sptr, *token;
@@ -72,8 +71,8 @@ __hdd_sysfs_roam_trigger_bitmap_store(struct hdd_context *hdd_ctx,
 		return ret;
 	}
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -94,22 +93,22 @@ __hdd_sysfs_roam_trigger_bitmap_store(struct hdd_context *hdd_ctx,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_roam_trigger_bitmap_store(struct kobject *kobj,
-				    struct kobj_attribute *attr,
-				    char const *buf, size_t count)
+static ssize_t hdd_sysfs_roam_trigger_bitmap_store(struct kobject *kobj,
+						   struct kobj_attribute *attr,
+						   char const *buf,
+						   size_t count)
 {
 	struct osif_psoc_sync *psoc_sync;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	ssize_t errno_size;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_roam_trigger_bitmap_store(hdd_ctx, attr,
-							   buf, count);
+	errno_size = __hdd_sysfs_roam_trigger_bitmap_store(hdd_ctx, attr, buf,
+							   count);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -137,8 +136,7 @@ int hdd_sysfs_roam_trigger_bitmap_create(struct kobject *driver_kobject)
 	return error;
 }
 
-void
-hdd_sysfs_roam_trigger_bitmap_destroy(struct kobject *driver_kobject)
+void hdd_sysfs_roam_trigger_bitmap_destroy(struct kobject *driver_kobject)
 {
 	if (!driver_kobject) {
 		hdd_err("could not get driver kobject!");

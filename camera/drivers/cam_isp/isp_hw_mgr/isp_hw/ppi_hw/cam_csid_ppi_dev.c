@@ -3,30 +3,31 @@
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/slab.h>
+#include <linux/component.h>
 #include <linux/mod_devicetable.h>
 #include <linux/of_device.h>
-#include <linux/component.h>
+#include <linux/slab.h>
 
-#include "cam_isp_hw.h"
-#include "cam_hw_intf.h"
 #include "cam_csid_ppi_core.h"
 #include "cam_csid_ppi_dev.h"
 #include "cam_debug_util.h"
+#include "cam_hw_intf.h"
+#include "cam_isp_hw.h"
 
 static struct cam_hw_intf *cam_csid_ppi_hw_list[CAM_CSID_PPI_HW_MAX] = {
-	NULL, NULL, NULL, NULL};
+	NULL, NULL, NULL, NULL
+};
 
-static int cam_ppi_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+static int cam_ppi_component_bind(struct device *dev, struct device *master_dev,
+				  void *data)
 {
-	struct cam_hw_intf            *ppi_hw_intf;
-	struct cam_hw_info            *ppi_hw_info;
-	struct cam_csid_ppi_hw        *ppi_dev = NULL;
-	const struct of_device_id     *match_dev = NULL;
-	struct cam_csid_ppi_hw_info   *ppi_hw_data = NULL;
-	uint32_t                       ppi_dev_idx;
-	int                            rc = 0;
+	struct cam_hw_intf *ppi_hw_intf;
+	struct cam_hw_info *ppi_hw_info;
+	struct cam_csid_ppi_hw *ppi_dev = NULL;
+	const struct of_device_id *match_dev = NULL;
+	struct cam_csid_ppi_hw_info *ppi_hw_data = NULL;
+	uint32_t ppi_dev_idx;
+	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	CAM_DBG(CAM_ISP, "PPI probe called");
@@ -51,15 +52,15 @@ static int cam_ppi_component_bind(struct device *dev,
 
 	of_property_read_u32(pdev->dev.of_node, "cell-index", &ppi_dev_idx);
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_ISP, "No matching table for the CSID PPI HW!");
 		rc = -EINVAL;
 		goto free_dev;
 	}
 
-	ppi_hw_intf->hw_idx  = ppi_dev_idx;
+	ppi_hw_intf->hw_idx = ppi_dev_idx;
 	ppi_hw_intf->hw_priv = ppi_hw_info;
 
 	if (ppi_hw_intf->hw_idx < CAM_CSID_PPI_HW_MAX)
@@ -69,13 +70,13 @@ static int cam_ppi_component_bind(struct device *dev,
 		goto free_dev;
 	}
 
-	ppi_hw_info->core_info         = ppi_dev;
-	ppi_hw_info->soc_info.pdev     = pdev;
-	ppi_hw_info->soc_info.dev      = &pdev->dev;
+	ppi_hw_info->core_info = ppi_dev;
+	ppi_hw_info->soc_info.pdev = pdev;
+	ppi_hw_info->soc_info.dev = &pdev->dev;
 	ppi_hw_info->soc_info.dev_name = pdev->name;
-	ppi_hw_info->soc_info.index    = ppi_dev_idx;
+	ppi_hw_info->soc_info.index = ppi_dev_idx;
 
-	ppi_hw_data = (struct cam_csid_ppi_hw_info  *)match_dev->data;
+	ppi_hw_data = (struct cam_csid_ppi_hw_info *)match_dev->data;
 	ppi_dev->ppi_info = ppi_hw_data;
 
 	rc = cam_csid_ppi_hw_probe_init(ppi_hw_intf, ppi_dev_idx);
@@ -85,8 +86,7 @@ static int cam_ppi_component_bind(struct device *dev,
 	}
 
 	platform_set_drvdata(pdev, ppi_dev);
-	CAM_DBG(CAM_ISP, "PPI:%d probe successful",
-		ppi_hw_intf->hw_idx);
+	CAM_DBG(CAM_ISP, "PPI:%d probe successful", ppi_hw_intf->hw_idx);
 
 	return 0;
 free_dev:
@@ -100,11 +100,11 @@ err:
 }
 
 static void cam_ppi_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
-	struct cam_csid_ppi_hw         *ppi_dev = NULL;
-	struct cam_hw_intf             *ppi_hw_intf;
-	struct cam_hw_info             *ppi_hw_info;
+	struct cam_csid_ppi_hw *ppi_dev = NULL;
+	struct cam_hw_intf *ppi_hw_intf;
+	struct cam_hw_info *ppi_hw_info;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	ppi_dev = (struct cam_csid_ppi_hw *)platform_get_drvdata(pdev);
@@ -120,8 +120,7 @@ static void cam_ppi_component_unbind(struct device *dev,
 	kfree(ppi_hw_intf);
 }
 
-int cam_csid_ppi_hw_init(struct cam_hw_intf **csid_ppi_hw,
-	uint32_t hw_idx)
+int cam_csid_ppi_hw_init(struct cam_hw_intf **csid_ppi_hw, uint32_t hw_idx)
 {
 	int rc = 0;
 

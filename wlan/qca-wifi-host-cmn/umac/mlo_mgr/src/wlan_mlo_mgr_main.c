@@ -18,21 +18,21 @@
 /*
  * DOC: contains MLO manager init/deinit api's
  */
-#include "wlan_cmn.h"
-#include <wlan_objmgr_cmn.h>
-#include <wlan_objmgr_global_obj.h>
-#include "wlan_mlo_mgr_cmn.h"
 #include "wlan_mlo_mgr_main.h"
-#include <wlan_mlo_mgr_ap.h>
-#include <wlan_mlo_mgr_peer.h>
-#include <wlan_mlo_mgr_setup.h>
-#include <wlan_cm_public_struct.h>
+#include "cdp_txrx_cmn.h"
+#include "wlan_cmn.h"
+#include "wlan_mlo_mgr_cmn.h"
 #include "wlan_mlo_mgr_msgq.h"
 #include <target_if_mlo_mgr.h>
-#include <wlan_mlo_t2lm.h>
 #include <wlan_cm_api.h>
+#include <wlan_cm_public_struct.h>
+#include <wlan_mlo_mgr_ap.h>
+#include <wlan_mlo_mgr_peer.h>
 #include <wlan_mlo_mgr_public_api.h>
-#include "cdp_txrx_cmn.h"
+#include <wlan_mlo_mgr_setup.h>
+#include <wlan_mlo_t2lm.h>
+#include <wlan_objmgr_cmn.h>
+#include <wlan_objmgr_global_obj.h>
 
 static void mlo_global_ctx_deinit(void)
 {
@@ -66,8 +66,8 @@ static void mlo_global_ctx_init(void)
 	}
 
 	/* Allocation of memory for Global object */
-	mlo_mgr_ctx = (struct mlo_mgr_context *)
-			qdf_mem_malloc(sizeof(*mlo_mgr_ctx));
+	mlo_mgr_ctx =
+		(struct mlo_mgr_context *)qdf_mem_malloc(sizeof(*mlo_mgr_ctx));
 	if (!mlo_mgr_ctx)
 		return;
 
@@ -232,26 +232,29 @@ QDF_STATUS wlan_mlo_mgr_init(void)
 	mlo_global_ctx_init();
 
 	status = wlan_objmgr_register_vdev_create_handler(
-		WLAN_UMAC_COMP_MLO_MGR,
-		wlan_mlo_mgr_vdev_created_notification, NULL);
+		WLAN_UMAC_COMP_MLO_MGR, wlan_mlo_mgr_vdev_created_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlo_err("Failed to register vdev create handler");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_register_vdev_destroy_handler(WLAN_UMAC_COMP_MLO_MGR,
+	status = wlan_objmgr_register_vdev_destroy_handler(
+		WLAN_UMAC_COMP_MLO_MGR,
 		wlan_mlo_mgr_vdev_destroyed_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlo_debug("Failed to register VDEV destroy handler");
-		wlan_objmgr_unregister_vdev_create_handler(WLAN_UMAC_COMP_MLO_MGR,
-					wlan_mlo_mgr_vdev_created_notification, NULL);
+		wlan_objmgr_unregister_vdev_create_handler(
+			WLAN_UMAC_COMP_MLO_MGR,
+			wlan_mlo_mgr_vdev_created_notification, NULL);
 		return status;
 	}
 
 	status = mlo_mgr_init_link_switch_notifier();
 	if (QDF_IS_STATUS_SUCCESS(status)) {
-		status = mlo_mgr_register_link_switch_notifier(WLAN_UMAC_COMP_MLO_MGR,
-							       mlo_mgr_link_switch_notification);
+		status = mlo_mgr_register_link_switch_notifier(
+			WLAN_UMAC_COMP_MLO_MGR,
+			mlo_mgr_link_switch_notification);
 		return status;
 	}
 	if (status == QDF_STATUS_E_NOSUPPORT)
@@ -273,14 +276,14 @@ QDF_STATUS wlan_mlo_mgr_deinit(void)
 	mlo_global_ctx_deinit();
 
 	status = wlan_objmgr_unregister_vdev_create_handler(
-		WLAN_UMAC_COMP_MLO_MGR,
-		wlan_mlo_mgr_vdev_created_notification, NULL);
+		WLAN_UMAC_COMP_MLO_MGR, wlan_mlo_mgr_vdev_created_notification,
+		NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		mlo_err("Failed to unregister vdev create handler");
 
 	status = wlan_objmgr_unregister_vdev_destroy_handler(
-			WLAN_UMAC_COMP_MLO_MGR,
-			wlan_mlo_mgr_vdev_destroyed_notification, NULL);
+		WLAN_UMAC_COMP_MLO_MGR,
+		wlan_mlo_mgr_vdev_destroyed_notification, NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		mlo_err("Failed to unregister vdev delete handler");
 
@@ -288,8 +291,7 @@ QDF_STATUS wlan_mlo_mgr_deinit(void)
 	return status;
 }
 
-struct wlan_mlo_dev_context *wlan_mlo_list_peek_head(
-					qdf_list_t *ml_list)
+struct wlan_mlo_dev_context *wlan_mlo_list_peek_head(qdf_list_t *ml_list)
 {
 	struct wlan_mlo_dev_context *mld_ctx;
 	qdf_list_node_t *ml_node = NULL;
@@ -298,14 +300,14 @@ struct wlan_mlo_dev_context *wlan_mlo_list_peek_head(
 	if (qdf_list_peek_front(ml_list, &ml_node) != QDF_STATUS_SUCCESS)
 		return NULL;
 
-	mld_ctx = qdf_container_of(ml_node, struct wlan_mlo_dev_context,
-				   node);
+	mld_ctx = qdf_container_of(ml_node, struct wlan_mlo_dev_context, node);
 
 	return mld_ctx;
 }
 
-struct wlan_mlo_dev_context *wlan_mlo_get_next_mld_ctx(qdf_list_t *ml_list,
-					struct wlan_mlo_dev_context *mld_cur)
+struct wlan_mlo_dev_context *
+wlan_mlo_get_next_mld_ctx(qdf_list_t *ml_list,
+			  struct wlan_mlo_dev_context *mld_cur)
 {
 	struct wlan_mlo_dev_context *mld_next;
 	qdf_list_node_t *node = &mld_cur->node;
@@ -315,12 +317,11 @@ struct wlan_mlo_dev_context *wlan_mlo_get_next_mld_ctx(qdf_list_t *ml_list,
 	if (!node)
 		return NULL;
 
-	if (qdf_list_peek_next(ml_list, node, &next_node) !=
-						QDF_STATUS_SUCCESS)
+	if (qdf_list_peek_next(ml_list, node, &next_node) != QDF_STATUS_SUCCESS)
 		return NULL;
 
-	mld_next = qdf_container_of(next_node, struct wlan_mlo_dev_context,
-				    node);
+	mld_next =
+		qdf_container_of(next_node, struct wlan_mlo_dev_context, node);
 	return mld_next;
 }
 
@@ -352,8 +353,8 @@ uint8_t wlan_mlo_get_sta_mld_ctx_count(void)
 	return count;
 }
 
-struct wlan_mlo_dev_context
-*wlan_mlo_get_mld_ctx_by_mldaddr(struct qdf_mac_addr *mldaddr)
+struct wlan_mlo_dev_context *
+wlan_mlo_get_mld_ctx_by_mldaddr(struct qdf_mac_addr *mldaddr)
 {
 	struct wlan_mlo_dev_context *mld_cur;
 	struct wlan_mlo_dev_context *mld_next;
@@ -368,12 +369,12 @@ struct wlan_mlo_dev_context
 	/* Get first mld context */
 	mld_cur = wlan_mlo_list_peek_head(ml_list);
 	/**
-	 * Iterate through ml list, till ml mldaddr matches with
-	 * entry of list
-	 */
+   * Iterate through ml list, till ml mldaddr matches with
+   * entry of list
+   */
 	while (mld_cur) {
-		if (QDF_IS_STATUS_SUCCESS(WLAN_ADDR_EQ(&mld_cur->mld_addr,
-					  mldaddr))) {
+		if (QDF_IS_STATUS_SUCCESS(
+			    WLAN_ADDR_EQ(&mld_cur->mld_addr, mldaddr))) {
 			ml_link_lock_release(mlo_mgr_ctx);
 			return mld_cur;
 		}
@@ -424,10 +425,10 @@ bool mlo_mgr_ml_peer_exist_on_diff_ml_ctx(uint8_t *peer_addr,
 		if (qdf_is_macaddr_equal(&mld_cur->mld_addr,
 					 (struct qdf_mac_addr *)peer_addr)) {
 			/* For self peer, the address passed will match the
-			 * MLD address of its own ML dev context, so allow
-			 * peer creation in this scenario as both are in
-			 * same ML dev context.
-			 */
+       * MLD address of its own ML dev context, so allow
+       * peer creation in this scenario as both are in
+       * same ML dev context.
+       */
 			if (peer_vdev_id) {
 				count = QDF_ARRAY_SIZE(mld_cur->wlan_vdev_list);
 				for (idx = 0; idx < count; idx++) {
@@ -453,8 +454,8 @@ bool mlo_mgr_ml_peer_exist_on_diff_ml_ctx(uint8_t *peer_addr,
 		ml_peerlist_lock_acquire(mlo_peer_list);
 		if (mlo_get_mlpeer(mld_cur, (struct qdf_mac_addr *)peer_addr)) {
 			/* If peer_vdev_id is NULL, then API will treat any
-			 * match as happening on another dev context
-			 */
+       * match as happening on another dev context
+       */
 			if (peer_vdev_id) {
 				count = QDF_ARRAY_SIZE(mld_cur->wlan_vdev_list);
 				for (idx = 0; idx < count; idx++) {
@@ -495,9 +496,9 @@ g_ml_ref:
 #define WLAN_HDD_MGMT_FRAME_SA_OFFSET (WLAN_HDD_MGMT_FRAME_DA_OFFSET + 6)
 #define WLAN_HDD_MGMT_FRAME_BSSID_OFFSET (WLAN_HDD_MGMT_FRAME_SA_OFFSET + 6)
 #define WLAN_HDD_MGMT_FRAME_ACTION_CATEGORY_OFFSET \
-				(WLAN_HDD_MGMT_FRAME_BSSID_OFFSET + 6 + 2)
+	(WLAN_HDD_MGMT_FRAME_BSSID_OFFSET + 6 + 2)
 #define WLAN_HDD_MGMT_FRAME_ACTION_TYPE_OFFSET \
-				(WLAN_HDD_MGMT_FRAME_ACTION_CATEGORY_OFFSET + 1)
+	(WLAN_HDD_MGMT_FRAME_ACTION_CATEGORY_OFFSET + 1)
 #define WLAN_HDD_ACTION_FRAME_CATEGORY_PUBLIC 0x04
 
 /*
@@ -508,8 +509,7 @@ g_ml_ref:
  *    2    2     6       6       6     2    1    1   Variable Len    4
  */
 void wlan_mlo_update_action_frame_from_user(struct wlan_objmgr_vdev *vdev,
-					    uint8_t *frame,
-					    uint32_t frame_len)
+					    uint8_t *frame, uint32_t frame_len)
 {
 	struct wlan_objmgr_peer *peer;
 	uint8_t *da, *sa, *bssid;
@@ -524,12 +524,12 @@ void wlan_mlo_update_action_frame_from_user(struct wlan_objmgr_vdev *vdev,
 	}
 
 	/* Translate address only for action frames
-	 * which are not of public category.
-	 * Reference: 802.11-2012, Subclause: 8.5
-	 */
+   * which are not of public category.
+   * Reference: 802.11-2012, Subclause: 8.5
+   */
 
 	if (frame[WLAN_HDD_MGMT_FRAME_ACTION_CATEGORY_OFFSET] ==
-				WLAN_HDD_ACTION_FRAME_CATEGORY_PUBLIC)
+	    WLAN_HDD_ACTION_FRAME_CATEGORY_PUBLIC)
 		return;
 
 	da = frame + WLAN_HDD_MGMT_FRAME_DA_OFFSET;
@@ -544,9 +544,9 @@ void wlan_mlo_update_action_frame_from_user(struct wlan_objmgr_vdev *vdev,
 
 	mlo_debug("Change MLD addr to link addr for non-Public action frame");
 	/* DA = VDEV's BSS peer's link address.
-	 * SA = VDEV's link address.
-	 * BSSID = VDEV's BSS peer's link address.
-	 */
+   * SA = VDEV's link address.
+   * BSSID = VDEV's BSS peer's link address.
+   */
 
 	qdf_ether_addr_copy(da, wlan_peer_get_macaddr(peer));
 	qdf_ether_addr_copy(sa, wlan_vdev_mlme_get_macaddr(vdev));
@@ -556,8 +556,7 @@ void wlan_mlo_update_action_frame_from_user(struct wlan_objmgr_vdev *vdev,
 }
 
 void wlan_mlo_update_action_frame_to_user(struct wlan_objmgr_vdev *vdev,
-					  uint8_t *frame,
-					  uint32_t frame_len)
+					  uint8_t *frame, uint32_t frame_len)
 {
 	struct wlan_objmgr_peer *peer;
 	uint8_t *da, *sa, *bssid;
@@ -572,12 +571,12 @@ void wlan_mlo_update_action_frame_to_user(struct wlan_objmgr_vdev *vdev,
 	}
 
 	/* Translate address only for action frames
-	 * which are not of public category.
-	 * Reference: 802.11-2012, Subclause: 8.5
-	 */
+   * which are not of public category.
+   * Reference: 802.11-2012, Subclause: 8.5
+   */
 
 	if (frame[WLAN_HDD_MGMT_FRAME_ACTION_CATEGORY_OFFSET] ==
-				WLAN_HDD_ACTION_FRAME_CATEGORY_PUBLIC)
+	    WLAN_HDD_ACTION_FRAME_CATEGORY_PUBLIC)
 		return;
 
 	da = frame + WLAN_HDD_MGMT_FRAME_DA_OFFSET;
@@ -592,9 +591,9 @@ void wlan_mlo_update_action_frame_to_user(struct wlan_objmgr_vdev *vdev,
 
 	mlo_debug("Change link addr to MLD addr for non-Public action frame");
 	/* DA = VDEV's MLD address.
-	 * SA = VDEV's BSS peer's MLD address.
-	 * BSSID = VDEV's BSS peer's MLD address.
-	 */
+   * SA = VDEV's BSS peer's MLD address.
+   * BSSID = VDEV's BSS peer's MLD address.
+   */
 
 	qdf_ether_addr_copy(da, wlan_vdev_mlme_get_mldaddr(vdev));
 	qdf_ether_addr_copy(sa, wlan_peer_mlme_get_mldaddr(peer));
@@ -635,9 +634,8 @@ static QDF_STATUS mlo_ap_ctx_init(struct wlan_mlo_dev_context *ml_dev)
 }
 
 #ifdef CONFIG_AP_PLATFORM
-static inline
-QDF_STATUS wlan_mlo_check_grp_id(uint8_t ref_id,
-				 struct wlan_objmgr_vdev *vdev)
+static inline QDF_STATUS wlan_mlo_check_grp_id(uint8_t ref_id,
+					       struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_objmgr_psoc *psoc;
 	uint8_t grp_id = 0;
@@ -656,9 +654,8 @@ QDF_STATUS wlan_mlo_check_grp_id(uint8_t ref_id,
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline
-QDF_STATUS wlan_mlo_pdev_check(struct wlan_objmgr_pdev *ref_pdev,
-			       struct wlan_objmgr_vdev *vdev)
+static inline QDF_STATUS wlan_mlo_pdev_check(struct wlan_objmgr_pdev *ref_pdev,
+					     struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_objmgr_pdev *pdev;
 	struct wlan_objmgr_psoc *psoc;
@@ -688,17 +685,17 @@ QDF_STATUS wlan_mlo_pdev_check(struct wlan_objmgr_pdev *ref_pdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline
-QDF_STATUS mlo_dev_config_check(struct wlan_mlo_dev_context *ml_dev,
-				struct wlan_objmgr_vdev *vdev)
+static inline QDF_STATUS
+mlo_dev_config_check(struct wlan_mlo_dev_context *ml_dev,
+		     struct wlan_objmgr_vdev *vdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
 #else
-static inline
-QDF_STATUS mlo_dev_config_check(struct wlan_mlo_dev_context *ml_dev,
-				struct wlan_objmgr_vdev *vdev)
+static inline QDF_STATUS
+mlo_dev_config_check(struct wlan_mlo_dev_context *ml_dev,
+		     struct wlan_objmgr_vdev *vdev)
 {
 	enum QDF_OPMODE opmode = wlan_vdev_mlme_get_opmode(vdev);
 
@@ -709,9 +706,8 @@ QDF_STATUS mlo_dev_config_check(struct wlan_mlo_dev_context *ml_dev,
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline
-QDF_STATUS wlan_mlo_pdev_check(struct wlan_objmgr_pdev *ref_pdev,
-			       struct wlan_objmgr_vdev *vdev)
+static inline QDF_STATUS wlan_mlo_pdev_check(struct wlan_objmgr_pdev *ref_pdev,
+					     struct wlan_objmgr_vdev *vdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -809,12 +805,12 @@ static inline void mlo_ptqm_migration_init(struct wlan_mlo_dev_context *ml_dev)
 }
 #else
 static inline void mlo_ptqm_migration_init(struct wlan_mlo_dev_context *ml_dev)
-{ }
+{
+}
 #endif
 
 #if defined(WLAN_FEATURE_11BE_MLO) && defined(WLAN_MLO_MULTI_CHIP)
-static QDF_STATUS
-mlo_add_to_bridge_vdev_list(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS mlo_add_to_bridge_vdev_list(struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_mlo_dev_context *ml_dev;
 	struct qdf_mac_addr *mld_addr;
@@ -879,8 +875,7 @@ mld_delete_from_bridge_vdev_list(struct wlan_objmgr_vdev *vdev)
 	return QDF_STATUS_E_FAILURE;
 }
 #else
-static QDF_STATUS
-mlo_add_to_bridge_vdev_list(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS mlo_add_to_bridge_vdev_list(struct wlan_objmgr_vdev *vdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -965,7 +960,8 @@ static QDF_STATUS mlo_dev_ctx_init(struct wlan_objmgr_vdev *vdev)
 		}
 		copied_conn_req_lock_create(ml_dev->sta_ctx);
 #if defined(WLAN_FEATURE_11BE_MLO) && defined(WLAN_MLO_MULTI_CHIP)
-		ml_dev->bridge_sta_ctx = qdf_mem_malloc(sizeof(struct wlan_mlo_bridge_sta));
+		ml_dev->bridge_sta_ctx =
+			qdf_mem_malloc(sizeof(struct wlan_mlo_bridge_sta));
 		if (!ml_dev->bridge_sta_ctx) {
 			tsf_recalculation_lock_destroy(ml_dev);
 			mlo_dev_lock_destroy(ml_dev);
@@ -987,7 +983,7 @@ static QDF_STATUS mlo_dev_ctx_init(struct wlan_objmgr_vdev *vdev)
 	/* Create DP MLO Device Context */
 	if (cdp_mlo_dev_ctxt_create(wlan_psoc_get_dp_handle(psoc),
 				    (uint8_t *)mld_addr) !=
-				    QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		tsf_recalculation_lock_destroy(ml_dev);
 		if (wlan_vdev_mlme_get_opmode(vdev) == QDF_STA_MODE) {
 			qdf_mem_free(ml_dev->sta_ctx);
@@ -1025,15 +1021,16 @@ static QDF_STATUS mlo_dev_ctx_init(struct wlan_objmgr_vdev *vdev)
  *
  * Return: None
  */
-static inline void mlo_ptqm_migration_deinit(
-			struct wlan_mlo_dev_context *ml_dev)
+static inline void
+mlo_ptqm_migration_deinit(struct wlan_mlo_dev_context *ml_dev)
 {
 	qdf_timer_free(&ml_dev->ptqm_migrate_timer);
 }
 #else
-static inline void mlo_ptqm_migration_deinit(
-			struct wlan_mlo_dev_context *ml_dev)
-{ }
+static inline void
+mlo_ptqm_migration_deinit(struct wlan_mlo_dev_context *ml_dev)
+{
+}
 #endif
 
 /**
@@ -1092,7 +1089,7 @@ static QDF_STATUS mlo_dev_ctx_deinit(struct wlan_objmgr_vdev *vdev)
 	}
 
 	if (!ml_dev) {
-		mlo_err("Failed to get MLD dev context by mld addr "QDF_MAC_ADDR_FMT,
+		mlo_err("Failed to get MLD dev context by mld addr " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(mld_addr->bytes));
 		if (!vdev->mlo_dev_ctx) {
 			mlo_err("Failed to get MLD dev context from vdev");
@@ -1101,7 +1098,7 @@ static QDF_STATUS mlo_dev_ctx_deinit(struct wlan_objmgr_vdev *vdev)
 		ml_dev = vdev->mlo_dev_ctx;
 	}
 
-	mlo_debug("deleting vdev from MLD device ctx "QDF_MAC_ADDR_FMT,
+	mlo_debug("deleting vdev from MLD device ctx " QDF_MAC_ADDR_FMT,
 		  QDF_MAC_ADDR_REF(mld_addr->bytes));
 
 	if (wlan_vdev_mlme_is_mlo_bridge_vdev(vdev)) {
@@ -1114,10 +1111,8 @@ static QDF_STATUS mlo_dev_ctx_deinit(struct wlan_objmgr_vdev *vdev)
 	mlo_dev_lock_acquire(ml_dev);
 	while (id < WLAN_UMAC_MLO_MAX_VDEVS) {
 		if (ml_dev->wlan_vdev_list[id] == vdev) {
-			if (wlan_vdev_mlme_get_opmode(vdev) ==
-							QDF_SAP_MODE)
-				wlan_mlo_vdev_free_aid_mgr(ml_dev,
-							   vdev);
+			if (wlan_vdev_mlme_get_opmode(vdev) == QDF_SAP_MODE)
+				wlan_mlo_vdev_free_aid_mgr(ml_dev, vdev);
 			ml_dev->wlan_vdev_list[id] = NULL;
 			ml_dev->wlan_vdev_count--;
 			vdev->mlo_dev_ctx = NULL;
@@ -1133,8 +1128,7 @@ static QDF_STATUS mlo_dev_ctx_deinit(struct wlan_objmgr_vdev *vdev)
 			mlo_ap_ctx_deinit(ml_dev);
 
 		mlo_dev_mlpeer_list_deinit(ml_dev);
-		qdf_list_remove_node(&g_mlo_ctx->ml_dev_list,
-				     &ml_dev->node);
+		qdf_list_remove_node(&g_mlo_ctx->ml_dev_list, &ml_dev->node);
 		if (wlan_vdev_mlme_get_opmode(vdev) == QDF_STA_MODE) {
 			connect_req = ml_dev->sta_ctx->connect_req;
 			wlan_cm_free_connect_req(connect_req);
@@ -1153,8 +1147,7 @@ static QDF_STATUS mlo_dev_ctx_deinit(struct wlan_objmgr_vdev *vdev)
 #if defined(WLAN_FEATURE_11BE_MLO) && defined(WLAN_MLO_MULTI_CHIP)
 			qdf_mem_free(ml_dev->bridge_sta_ctx);
 #endif
-		}
-		else if (wlan_vdev_mlme_get_opmode(vdev) == QDF_SAP_MODE)
+		} else if (wlan_vdev_mlme_get_opmode(vdev) == QDF_SAP_MODE)
 			qdf_mem_free(ml_dev->ap_ctx);
 
 		mlo_ptqm_migration_deinit(ml_dev);
@@ -1165,7 +1158,7 @@ static QDF_STATUS mlo_dev_ctx_deinit(struct wlan_objmgr_vdev *vdev)
 		/* Destroy DP MLO Device Context */
 		if (cdp_mlo_dev_ctxt_destroy(wlan_psoc_get_dp_handle(psoc),
 					     (uint8_t *)mld_addr) !=
-					     QDF_STATUS_SUCCESS) {
+		    QDF_STATUS_SUCCESS) {
 			mlo_err("Failed to destroy DP MLO Dev ctxt");
 			QDF_BUG(0);
 		}
@@ -1198,8 +1191,9 @@ QDF_STATUS wlan_mlo_mgr_vdev_created_notification(struct wlan_objmgr_vdev *vdev,
 	return status;
 }
 
-QDF_STATUS wlan_mlo_mgr_vdev_destroyed_notification(struct wlan_objmgr_vdev *vdev,
-						    void *arg_list)
+QDF_STATUS
+wlan_mlo_mgr_vdev_destroyed_notification(struct wlan_objmgr_vdev *vdev,
+					 void *arg_list)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct qdf_mac_addr *mld_addr;
@@ -1256,9 +1250,9 @@ QDF_STATUS wlan_mlo_mgr_mld_vdev_detach(struct wlan_objmgr_vdev *vdev)
 
 	ml_dev = vdev->mlo_dev_ctx;
 	/*
-	 * Atleast one VAP should be part of MLD for dynamic link vap
-	 * addition and deletion, so rejecting VDEV detach
-	 */
+   * Atleast one VAP should be part of MLD for dynamic link vap
+   * addition and deletion, so rejecting VDEV detach
+   */
 	if (ml_dev->wlan_vdev_count <= 1)
 		return QDF_STATUS_E_FAILURE;
 

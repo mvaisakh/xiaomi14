@@ -2,24 +2,24 @@
 /* Copyright (c) 2018, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/irq.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
+#include <linux/irq.h>
+#include <linux/irqdomain.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
-#include <linux/slab.h>
-#include <linux/ratelimit.h>
-#include <linux/irqdomain.h>
-#include <linux/regmap.h>
 #include <linux/pm_runtime.h>
+#include <linux/ratelimit.h>
+#include <linux/regmap.h>
+#include <linux/slab.h>
 
-#include "pdata.h"
 #include "aqt1000.h"
+#include "pdata.h"
 
-#include "aqt1000-registers.h"
 #include "aqt1000-irq.h"
+#include "aqt1000-registers.h"
 
 static const struct regmap_irq aqt1000_irqs[AQT1000_NUM_IRQS] = {
 	REGMAP_IRQ_REG(AQT1000_IRQ_MBHC_BUTTON_RELEASE_DET, 0, 0x01),
@@ -63,15 +63,15 @@ static int aqt_map_irq(struct aqt1000 *aqt, int irq)
  * Returns 0 on success or error on failure
  */
 int aqt_request_irq(struct aqt1000 *aqt, int irq, const char *name,
-			irq_handler_t handler, void *data)
+		    irq_handler_t handler, void *data)
 {
 	irq = aqt_map_irq(aqt, irq);
 	if (irq < 0)
 		return irq;
 
 	return request_threaded_irq(irq, NULL, handler,
-				    IRQF_ONESHOT | IRQF_TRIGGER_RISING,
-				    name, data);
+				    IRQF_ONESHOT | IRQF_TRIGGER_RISING, name,
+				    data);
 }
 EXPORT_SYMBOL(aqt_request_irq);
 
@@ -126,8 +126,8 @@ static irqreturn_t aqt_irq_thread(int irq, void *data)
 	pdata = dev_get_platdata(aqt->dev);
 
 	memset(sts, 0, sizeof(sts));
-	ret = regmap_bulk_read(aqt->regmap, AQT1000_INTR_CTRL_INT_STATUS_2,
-				sts, num_irq_regs);
+	ret = regmap_bulk_read(aqt->regmap, AQT1000_INTR_CTRL_INT_STATUS_2, sts,
+			       num_irq_regs);
 	if (ret < 0) {
 		dev_err(aqt->dev, "%s: Failed to read intr status: %d\n",
 			__func__, ret);
@@ -157,7 +157,7 @@ static struct lock_class_key aqt_irq_lock_class;
 static struct lock_class_key aqt_irq_lock_requested_class;
 
 static int aqt_irq_map(struct irq_domain *irqd, unsigned int virq,
-			irq_hw_number_t hw)
+		       irq_hw_number_t hw)
 {
 	struct aqt1000 *data = irqd->host_data;
 
@@ -207,8 +207,8 @@ int aqt_irq_init(struct aqt1000 *aqt)
 
 	if (pdata->irq_gpio) {
 		aqt->irq = gpio_to_irq(pdata->irq_gpio);
-		ret = devm_gpio_request_one(aqt->dev, pdata->irq_gpio,
-					    GPIOF_IN, "AQT IRQ");
+		ret = devm_gpio_request_one(aqt->dev, pdata->irq_gpio, GPIOF_IN,
+					    "AQT IRQ");
 		if (ret) {
 			dev_err(aqt->dev, "%s: Failed to request gpio %d\n",
 				__func__, ret);
@@ -219,15 +219,14 @@ int aqt_irq_init(struct aqt1000 *aqt)
 
 	irq_data = irq_get_irq_data(aqt->irq);
 	if (!irq_data) {
-		dev_err(aqt->dev, "%s: Invalid IRQ: %d\n",
-			__func__, aqt->irq);
+		dev_err(aqt->dev, "%s: Invalid IRQ: %d\n", __func__, aqt->irq);
 		return -EINVAL;
 	}
 
 	aqt->num_irq_regs = aqt_regmap_irq_chip.num_regs;
 	for (i = 0; i < aqt->num_irq_regs; i++) {
-		regmap_write(aqt->regmap,
-			     (AQT1000_INTR_CTRL_INT_TYPE_2 + i), 0);
+		regmap_write(aqt->regmap, (AQT1000_INTR_CTRL_INT_TYPE_2 + i),
+			     0);
 	}
 
 	aqt->virq = irq_domain_add_linear(NULL, 1, &aqt_domain_ops, aqt);
@@ -236,21 +235,20 @@ int aqt_irq_init(struct aqt1000 *aqt)
 		ret = -EINVAL;
 		goto err;
 	}
-	ret = regmap_add_irq_chip(aqt->regmap,
-				  irq_create_mapping(aqt->virq, 0),
+	ret = regmap_add_irq_chip(aqt->regmap, irq_create_mapping(aqt->virq, 0),
 				  IRQF_ONESHOT, 0, &aqt_regmap_irq_chip,
 				  &aqt->irq_chip);
 	if (ret) {
-		dev_err(aqt->dev, "%s: Failed to add IRQs: %d\n",
-			__func__, ret);
+		dev_err(aqt->dev, "%s: Failed to add IRQs: %d\n", __func__,
+			ret);
 		goto err;
 	}
 
-	ret = request_threaded_irq(aqt->irq, NULL, aqt_irq_thread, flags,
-				   "aqt", aqt);
+	ret = request_threaded_irq(aqt->irq, NULL, aqt_irq_thread, flags, "aqt",
+				   aqt);
 	if (ret) {
-		dev_err(aqt->dev, "%s: failed to register irq: %d\n",
-			__func__, ret);
+		dev_err(aqt->dev, "%s: failed to register irq: %d\n", __func__,
+			ret);
 		goto err_irq;
 	}
 

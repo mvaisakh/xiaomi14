@@ -22,28 +22,27 @@
  *
  * Implementation for the FW based roaming events api interfaces.
  */
-#include "qdf_status.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_pdev_obj.h"
-#include "wlan_objmgr_vdev_obj.h"
-#include "wlan_cm_roam_i.h"
-#include <wlan_cm_public_struct.h>
-#include "wlan_scan_public_structs.h"
-#include "wlan_cm_roam_public_struct.h"
-#include "wlan_serialization_api.h"
-#include "wlan_cm_roam_api.h"
-#include <wlan_cfg80211_scan.h>
+#include "connection_mgr/core/src/wlan_cm_main_api.h"
 #include "connection_mgr/core/src/wlan_cm_roam.h"
 #include "connection_mgr/core/src/wlan_cm_sm.h"
-#include "connection_mgr/core/src/wlan_cm_main_api.h"
-#include "wlan_roam_debug.h"
+#include "qdf_status.h"
+#include "wlan_cm_roam_api.h"
+#include "wlan_cm_roam_i.h"
+#include "wlan_cm_roam_public_struct.h"
 #include "wlan_mlo_mgr_roam.h"
+#include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_objmgr_vdev_obj.h"
+#include "wlan_roam_debug.h"
+#include "wlan_scan_public_structs.h"
+#include "wlan_serialization_api.h"
+#include <wlan_cfg80211_scan.h>
+#include <wlan_cm_public_struct.h>
 
 #define FW_ROAM_SYNC_TIMEOUT 7000
 
-static QDF_STATUS
-cm_fw_roam_ser_cb(struct wlan_serialization_command *cmd,
-		  enum wlan_serialization_cb_reason reason)
+static QDF_STATUS cm_fw_roam_ser_cb(struct wlan_serialization_command *cmd,
+				    enum wlan_serialization_cb_reason reason)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct wlan_objmgr_vdev *vdev;
@@ -87,8 +86,7 @@ cm_fw_roam_ser_cb(struct wlan_serialization_command *cmd,
 	return status;
 }
 
-QDF_STATUS cm_abort_fw_roam(struct cnx_mgr *cm_ctx,
-			    wlan_cm_id cm_id)
+QDF_STATUS cm_abort_fw_roam(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 {
 	QDF_STATUS status;
 	enum wlan_cm_source source = CM_SOURCE_INVALID;
@@ -102,8 +100,7 @@ QDF_STATUS cm_abort_fw_roam(struct cnx_mgr *cm_ctx,
 	}
 
 	mlme_cm_osif_roam_abort_ind(cm_ctx->vdev);
-	status = cm_sm_deliver_event(cm_ctx->vdev,
-				     WLAN_CM_SM_EV_ROAM_ABORT,
+	status = cm_sm_deliver_event(cm_ctx->vdev, WLAN_CM_SM_EV_ROAM_ABORT,
 				     sizeof(wlan_cm_id), &cm_id);
 	if (QDF_IS_STATUS_ERROR(status))
 		cm_remove_cmd(cm_ctx, &cm_id);
@@ -113,10 +110,11 @@ QDF_STATUS cm_abort_fw_roam(struct cnx_mgr *cm_ctx,
 
 QDF_STATUS
 cm_add_fw_roam_dummy_ser_cb(struct wlan_objmgr_pdev *pdev,
-			    struct cnx_mgr *cm_ctx,
-			    struct cm_req *cm_req)
+			    struct cnx_mgr *cm_ctx, struct cm_req *cm_req)
 {
-	struct wlan_serialization_command cmd = {0, };
+	struct wlan_serialization_command cmd = {
+		0,
+	};
 	enum wlan_serialization_status ser_cmd_status;
 	QDF_STATUS status;
 	uint8_t vdev_id = wlan_vdev_get_id(cm_ctx->vdev);
@@ -155,8 +153,7 @@ cm_add_fw_roam_dummy_ser_cb(struct wlan_objmgr_pdev *pdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS cm_prepare_roam_cmd(struct cnx_mgr *cm_ctx,
-			       struct cm_req **roam_req,
+QDF_STATUS cm_prepare_roam_cmd(struct cnx_mgr *cm_ctx, struct cm_req **roam_req,
 			       enum wlan_cm_source source)
 {
 	struct cm_req *req;
@@ -194,9 +191,9 @@ QDF_STATUS cm_add_fw_roam_cmd_to_list_n_ser(struct cnx_mgr *cm_ctx,
 	}
 
 	/**
-	 * Skip adding dummy SER command for MLO link vdev. It's expected to add
-	 * only for MLO sta in case of MLO connection
-	 */
+   * Skip adding dummy SER command for MLO link vdev. It's expected to add
+   * only for MLO sta in case of MLO connection
+   */
 	if (wlan_vdev_mlme_is_mlo_link_vdev(cm_ctx->vdev))
 		return status;
 
@@ -222,8 +219,7 @@ QDF_STATUS cm_fw_roam_start_req(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	status = cm_sm_deliver_event(vdev, WLAN_CM_SM_EV_ROAM_START,
-				     0, NULL);
+	status = cm_sm_deliver_event(vdev, WLAN_CM_SM_EV_ROAM_START, 0, NULL);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_err("EV ROAM START not handled");
@@ -255,22 +251,19 @@ QDF_STATUS cm_fw_roam_start(struct cnx_mgr *cm_ctx)
 	pdev = wlan_vdev_get_pdev(cm_ctx->vdev);
 	if (!pdev) {
 		mlme_err(CM_PREFIX_FMT "Failed to find pdev",
-			 CM_PREFIX_REF(roam_req->req.vdev_id,
-				       roam_req->cm_id));
+			 CM_PREFIX_REF(roam_req->req.vdev_id, roam_req->cm_id));
 		status = QDF_STATUS_E_FAILURE;
 		goto error;
 	}
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (!psoc) {
 		mlme_err(CM_PREFIX_FMT "Failed to find psoc",
-			 CM_PREFIX_REF(roam_req->req.vdev_id,
-				       roam_req->cm_id));
+			 CM_PREFIX_REF(roam_req->req.vdev_id, roam_req->cm_id));
 		status = QDF_STATUS_E_FAILURE;
 		goto error;
 	}
 
-	status = wlan_cm_roam_state_change(pdev,
-					   roam_req->req.vdev_id,
+	status = wlan_cm_roam_state_change(pdev, roam_req->req.vdev_id,
 					   WLAN_ROAMING_IN_PROG,
 					   REASON_ROAM_CANDIDATE_FOUND);
 
@@ -279,30 +272,28 @@ QDF_STATUS cm_fw_roam_start(struct cnx_mgr *cm_ctx)
 
 	mlme_cm_osif_roam_start_ind(cm_ctx->vdev);
 	/*
-	 * For emergency deauth roaming, firmware sends ROAM start
-	 * instead of ROAM scan start notification as data path queues
-	 * will be stopped only during roam start notification.
-	 * This is because, for deauth/disassoc triggered roam, the
-	 * AP has sent deauth, and packets shouldn't be sent to AP
-	 * after that. Since firmware is sending roam start directly
-	 * host sends scan abort during roam scan, but in other
-	 * triggers, the host receives roam start after candidate
-	 * selection and roam scan is complete. So when host sends
-	 * roam abort for emergency deauth roam trigger, the firmware
-	 * roam scan is also aborted. This results in roaming failure.
-	 * So send scan_id as CANCEL_HOST_SCAN_ID to scan module to
-	 * abort only host triggered scans.
-	 */
-	abort_host_scan_cap =
-		wlan_mlme_get_host_scan_abort_support(psoc);
+   * For emergency deauth roaming, firmware sends ROAM start
+   * instead of ROAM scan start notification as data path queues
+   * will be stopped only during roam start notification.
+   * This is because, for deauth/disassoc triggered roam, the
+   * AP has sent deauth, and packets shouldn't be sent to AP
+   * after that. Since firmware is sending roam start directly
+   * host sends scan abort during roam scan, but in other
+   * triggers, the host receives roam start after candidate
+   * selection and roam scan is complete. So when host sends
+   * roam abort for emergency deauth roam trigger, the firmware
+   * roam scan is also aborted. This results in roaming failure.
+   * So send scan_id as CANCEL_HOST_SCAN_ID to scan module to
+   * abort only host triggered scans.
+   */
+	abort_host_scan_cap = wlan_mlme_get_host_scan_abort_support(psoc);
 	if (abort_host_scan_cap)
 		scan_id = CANCEL_HOST_SCAN_ID;
 	else
 		scan_id = INVAL_SCAN_ID;
 
-	wlan_abort_scan(pdev, INVAL_PDEV_ID,
-			roam_req->req.vdev_id,
-			scan_id, false);
+	wlan_abort_scan(pdev, INVAL_PDEV_ID, roam_req->req.vdev_id, scan_id,
+			false);
 error:
 	if (QDF_IS_STATUS_ERROR(status))
 		cm_abort_fw_roam(cm_ctx, cm_id);
@@ -328,8 +319,7 @@ QDF_STATUS cm_fw_roam_abort_req(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 
 	pdev = wlan_vdev_get_pdev(vdev);
 	if (!pdev) {
-		mlme_err("Failed to find pdev for vdev id %d",
-			 vdev_id);
+		mlme_err("Failed to find pdev for vdev id %d", vdev_id);
 		goto rel_ref;
 	}
 
@@ -344,21 +334,20 @@ QDF_STATUS cm_fw_roam_abort_req(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
 	/* continue even if no roam command is found */
 
 	/*
-	 * Switch to RSO enabled state only if the current state is
-	 * WLAN_ROAMING_IN_PROG or WLAN_ROAM_SYNCH_IN_PROG.
-	 * This API can be called in internal roam aborts also when
-	 * RSO state is deinit and cause RSO start to be sent in
-	 * disconnected state.
-	 */
+   * Switch to RSO enabled state only if the current state is
+   * WLAN_ROAMING_IN_PROG or WLAN_ROAM_SYNCH_IN_PROG.
+   * This API can be called in internal roam aborts also when
+   * RSO state is deinit and cause RSO start to be sent in
+   * disconnected state.
+   */
 	if (MLME_IS_ROAMING_IN_PROG(psoc, vdev_id) ||
 	    MLME_IS_ROAM_SYNCH_IN_PROGRESS(psoc, vdev_id))
 		status = wlan_cm_roam_state_change(pdev, vdev_id,
 						   WLAN_ROAM_RSO_ENABLED,
 						   REASON_ROAM_ABORT);
 	else if (MLME_IS_MLO_ROAM_SYNCH_IN_PROGRESS(psoc, vdev_id))
-		status = wlan_cm_roam_state_change(pdev, vdev_id,
-						   WLAN_ROAM_DEINIT,
-						   REASON_ROAM_ABORT);
+		status = wlan_cm_roam_state_change(
+			pdev, vdev_id, WLAN_ROAM_DEINIT, REASON_ROAM_ABORT);
 
 	cm_abort_fw_roam(cm_ctx, cm_id);
 rel_ref:
@@ -368,8 +357,7 @@ rel_ref:
 }
 
 QDF_STATUS
-cm_roam_sync_event_handler(struct wlan_objmgr_psoc *psoc,
-			   uint8_t *event,
+cm_roam_sync_event_handler(struct wlan_objmgr_psoc *psoc, uint8_t *event,
 			   uint32_t len,
 			   struct roam_offload_synch_ind *sync_ind)
 {
@@ -381,8 +369,8 @@ cm_roam_sync_event_handler(struct wlan_objmgr_psoc *psoc,
 		cm_handle_roam_sync_update_hw_mode(
 			&sync_ind->hw_mode_trans_ind);
 
-	return mlo_fw_roam_sync_req(psoc, sync_ind->roamed_vdev_id,
-				    sync_ind, sizeof(sync_ind));
+	return mlo_fw_roam_sync_req(psoc, sync_ind->roamed_vdev_id, sync_ind,
+				    sizeof(sync_ind));
 }
 
 QDF_STATUS
@@ -426,8 +414,7 @@ cm_roam_sync_frame_event_handler(struct wlan_objmgr_psoc *psoc,
 	if (sync_frame_ind->bcn_probe_rsp_len) {
 		roam_synch_frame_ind->bcn_probe_rsp_len =
 			sync_frame_ind->bcn_probe_rsp_len;
-		roam_synch_frame_ind->is_beacon =
-			sync_frame_ind->is_beacon;
+		roam_synch_frame_ind->is_beacon = sync_frame_ind->is_beacon;
 		if (roam_synch_frame_ind->bcn_probe_rsp)
 			qdf_mem_free(roam_synch_frame_ind->bcn_probe_rsp);
 		roam_synch_frame_ind->bcn_probe_rsp =
@@ -447,20 +434,18 @@ cm_roam_sync_frame_event_handler(struct wlan_objmgr_psoc *psoc,
 
 	if (sync_frame_ind->reassoc_req_len) {
 		roam_synch_frame_ind->reassoc_req_len =
-				sync_frame_ind->reassoc_req_len;
+			sync_frame_ind->reassoc_req_len;
 		if (roam_synch_frame_ind->reassoc_req)
 			qdf_mem_free(roam_synch_frame_ind->reassoc_req);
-		roam_synch_frame_ind->reassoc_req =
-			sync_frame_ind->reassoc_req;
+		roam_synch_frame_ind->reassoc_req = sync_frame_ind->reassoc_req;
 	}
 
 	if (sync_frame_ind->reassoc_rsp_len) {
 		roam_synch_frame_ind->reassoc_rsp_len =
-				sync_frame_ind->reassoc_rsp_len;
+			sync_frame_ind->reassoc_rsp_len;
 		if (roam_synch_frame_ind->reassoc_rsp)
 			qdf_mem_free(roam_synch_frame_ind->reassoc_rsp);
-		roam_synch_frame_ind->reassoc_rsp =
-			sync_frame_ind->reassoc_rsp;
+		roam_synch_frame_ind->reassoc_rsp = sync_frame_ind->reassoc_rsp;
 	}
 
 err:
@@ -488,8 +473,7 @@ QDF_STATUS cm_roam_sync_key_event_handler(struct wlan_objmgr_psoc *psoc,
 #endif
 
 QDF_STATUS cm_roam_sync_event_handler_cb(struct wlan_objmgr_vdev *vdev,
-					 uint8_t *event,
-					 uint32_t len)
+					 uint8_t *event, uint32_t len)
 {
 	struct roam_offload_synch_ind *sync_ind = NULL;
 	struct wlan_objmgr_psoc *psoc = NULL;
@@ -523,13 +507,11 @@ QDF_STATUS cm_roam_sync_event_handler_cb(struct wlan_objmgr_vdev *vdev,
 
 	wlan_roam_debug_log(sync_ind->roamed_vdev_id, DEBUG_ROAM_SYNCH_IND,
 			    DEBUG_INVALID_PEER_ID, sync_ind->bssid.bytes, NULL,
-			    0,
-			    0);
-	DPTRACE(qdf_dp_trace_record_event(QDF_DP_TRACE_EVENT_RECORD,
-					  sync_ind->roamed_vdev_id,
-					  QDF_TRACE_DEFAULT_PDEV_ID,
-					  QDF_PROTO_TYPE_EVENT,
-					  QDF_ROAM_SYNCH));
+			    0, 0);
+	DPTRACE(qdf_dp_trace_record_event(
+		QDF_DP_TRACE_EVENT_RECORD, sync_ind->roamed_vdev_id,
+		QDF_TRACE_DEFAULT_PDEV_ID, QDF_PROTO_TYPE_EVENT,
+		QDF_ROAM_SYNCH));
 
 	if (MLME_IS_ROAM_SYNCH_IN_PROGRESS(psoc, sync_ind->roamed_vdev_id) &&
 	    !is_multi_link_roam(sync_ind)) {
@@ -538,8 +520,7 @@ QDF_STATUS cm_roam_sync_event_handler_cb(struct wlan_objmgr_vdev *vdev,
 		goto err;
 	}
 
-	if (!QDF_IS_STATUS_SUCCESS(cm_fw_roam_sync_start_ind(vdev,
-							     sync_ind))) {
+	if (!QDF_IS_STATUS_SUCCESS(cm_fw_roam_sync_start_ind(vdev, sync_ind))) {
 		mlme_err("LFR3: CSR Roam synch cb failed");
 		wlan_cm_free_roam_synch_frame_ind(rso_cfg);
 		goto err;
@@ -551,42 +532,43 @@ QDF_STATUS cm_roam_sync_event_handler_cb(struct wlan_objmgr_vdev *vdev,
 		if (sync_ind->link_beacon_probe_resp_length >
 		    (QDF_IEEE80211_3ADDR_HDR_LEN + MAC_B_PR_SSID_OFFSET)) {
 			ie_len = sync_ind->link_beacon_probe_resp_length -
-					(QDF_IEEE80211_3ADDR_HDR_LEN +
-					 MAC_B_PR_SSID_OFFSET);
+				 (QDF_IEEE80211_3ADDR_HDR_LEN +
+				  MAC_B_PR_SSID_OFFSET);
 		} else {
 			mlme_err("LFR3: MLO: Invalid link Beacon Length");
 			goto err;
 		}
 	} else if (sync_ind->beacon_probe_resp_length >
-			(QDF_IEEE80211_3ADDR_HDR_LEN + MAC_B_PR_SSID_OFFSET)) {
+		   (QDF_IEEE80211_3ADDR_HDR_LEN + MAC_B_PR_SSID_OFFSET)) {
 		/*
-		 * When STA roams to an MLO AP, non-assoc link might be superior
-		 * in features compared to  assoc link and the per-STA profile
-		 * info may carry corresponding IEs. These IEs are extracted
-		 * and added to IE list of link probe response while generating
-		 * it. So, the link probe response generated from assoc link
-		 * probe response might be of more size than assoc link probe
-		 * rsp. Allocate buffer for the bss descriptor to accommodate
-		 * all of the IEs got generated as part of link probe rsp
-		 * generation. Allocate MAX_MGMT_MPDU_LEN bytes for IEs as the
-		 * max frame size that can be received from AP is
-		 * MAX_MGMT_MPDU_LEN bytes.
-		 */
+     * When STA roams to an MLO AP, non-assoc link might be superior
+     * in features compared to  assoc link and the per-STA profile
+     * info may carry corresponding IEs. These IEs are extracted
+     * and added to IE list of link probe response while generating
+     * it. So, the link probe response generated from assoc link
+     * probe response might be of more size than assoc link probe
+     * rsp. Allocate buffer for the bss descriptor to accommodate
+     * all of the IEs got generated as part of link probe rsp
+     * generation. Allocate MAX_MGMT_MPDU_LEN bytes for IEs as the
+     * max frame size that can be received from AP is
+     * MAX_MGMT_MPDU_LEN bytes.
+     */
 		if (is_multi_link_roam(sync_ind))
 			ie_len = MAX_MGMT_MPDU_LEN -
-			(QDF_IEEE80211_3ADDR_HDR_LEN + MAC_B_PR_SSID_OFFSET);
+				 (QDF_IEEE80211_3ADDR_HDR_LEN +
+				  MAC_B_PR_SSID_OFFSET);
 		else
 			ie_len = sync_ind->beacon_probe_resp_length -
-			(QDF_IEEE80211_3ADDR_HDR_LEN + MAC_B_PR_SSID_OFFSET);
+				 (QDF_IEEE80211_3ADDR_HDR_LEN +
+				  MAC_B_PR_SSID_OFFSET);
 
 	} else {
 		mlme_err("LFR3: Invalid Beacon Length");
 		goto err;
 	}
 
-	if (QDF_IS_STATUS_ERROR(cm_roam_pe_sync_callback(sync_ind,
-							 vdev_id,
-							 ie_len))) {
+	if (QDF_IS_STATUS_ERROR(
+		    cm_roam_pe_sync_callback(sync_ind, vdev_id, ie_len))) {
 		mlme_err("LFR3: PE roam synch cb failed");
 		status = QDF_STATUS_E_BUSY;
 		goto err;
@@ -594,18 +576,15 @@ QDF_STATUS cm_roam_sync_event_handler_cb(struct wlan_objmgr_vdev *vdev,
 
 	cm_roam_update_vdev(sync_ind, vdev_id);
 	/*
-	 * update phy_mode in wma to avoid mismatch in phymode between host and
-	 * firmware. The phymode stored in peer->peer_mlme.phymode is
-	 * sent to firmware as part of opmode update during either - vht opmode
-	 * action frame received or during opmode change detected while
-	 * processing beacon. Any mismatch of this value with firmware phymode
-	 * results in firmware assert.
-	 */
-	cm_update_phymode_on_roam(vdev_id,
-				  sync_ind);
-	status = cm_fw_roam_sync_propagation(psoc,
-					     vdev_id,
-					     sync_ind);
+   * update phy_mode in wma to avoid mismatch in phymode between host and
+   * firmware. The phymode stored in peer->peer_mlme.phymode is
+   * sent to firmware as part of opmode update during either - vht opmode
+   * action frame received or during opmode change detected while
+   * processing beacon. Any mismatch of this value with firmware phymode
+   * results in firmware assert.
+   */
+	cm_update_phymode_on_roam(vdev_id, sync_ind);
+	status = cm_fw_roam_sync_propagation(psoc, vdev_id, sync_ind);
 
 err:
 	return status;

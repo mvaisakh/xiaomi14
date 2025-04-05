@@ -24,7 +24,6 @@ bool wmi_get_action_oui_id(enum action_oui_id action_id,
 			   wmi_vendor_oui_action_id *id)
 {
 	switch (action_id) {
-
 	case ACTION_OUI_CONNECT_1X1:
 		*id = WMI_VENDOR_OUI_ACTION_CONNECTION_1X1;
 		return true;
@@ -103,8 +102,7 @@ uint32_t wmi_get_action_oui_info_mask(uint32_t info_mask)
 }
 
 void wmi_fill_oui_extensions(struct action_oui_extension *extension,
-			     uint32_t no_oui_extns,
-			     wmi_vendor_oui_ext *cmd_ext)
+			     uint32_t no_oui_extns, wmi_vendor_oui_ext *cmd_ext)
 {
 	uint32_t i;
 	uint32_t buffer_length;
@@ -119,11 +117,9 @@ void wmi_fill_oui_extensions(struct action_oui_extension *extension,
 		cmd_ext->oui_header_length = extension->oui_length;
 		cmd_ext->oui_data_length = extension->data_length;
 		cmd_ext->mac_address_length = extension->mac_addr_length;
-		cmd_ext->capability_data_length =
-					extension->capability_length;
+		cmd_ext->capability_data_length = extension->capability_length;
 
-		buffer_length = extension->oui_length +
-				extension->data_length +
+		buffer_length = extension->oui_length + extension->data_length +
 				extension->data_mask_length +
 				extension->mac_addr_length +
 				extension->mac_mask_length +
@@ -134,7 +130,6 @@ void wmi_fill_oui_extensions(struct action_oui_extension *extension,
 		cmd_ext++;
 		extension++;
 	}
-
 }
 
 QDF_STATUS
@@ -229,8 +224,9 @@ send_action_oui_cmd_tlv(wmi_unified_t wmi_handle,
 	len += WMI_TLV_HDR_SIZE; /* Array of wmi_vendor_oui_ext structures */
 
 	if (no_oui_extns > WMI_MAX_VENDOR_OUI_ACTION_SUPPORTED_PER_ACTION ||
-	    (total_no_oui_extns > WMI_VENDOR_OUI_ACTION_MAX_ACTION_ID *
-	     WMI_MAX_VENDOR_OUI_ACTION_SUPPORTED_PER_ACTION)) {
+	    (total_no_oui_extns >
+	     WMI_VENDOR_OUI_ACTION_MAX_ACTION_ID *
+		     WMI_MAX_VENDOR_OUI_ACTION_SUPPORTED_PER_ACTION)) {
 		wmi_err("Invalid number of action oui extensions");
 		return QDF_STATUS_E_INVAL;
 	}
@@ -248,12 +244,11 @@ send_action_oui_cmd_tlv(wmi_unified_t wmi_handle,
 
 	extension = req->extension;
 	for (i = 0; i < no_oui_extns; i++) {
-		var_buf_len += extension->oui_length +
-		       extension->data_length +
-		       extension->data_mask_length +
-		       extension->mac_addr_length +
-		       extension->mac_mask_length +
-		       extension->capability_length;
+		var_buf_len += extension->oui_length + extension->data_length +
+			       extension->data_mask_length +
+			       extension->mac_addr_length +
+			       extension->mac_mask_length +
+			       extension->capability_length;
 		extension++;
 	}
 
@@ -271,7 +266,8 @@ send_action_oui_cmd_tlv(wmi_unified_t wmi_handle,
 	buf_ptr = (uint8_t *)wmi_buf_data(wmi_buf);
 	cmd = (wmi_pdev_config_vendor_oui_action_fixed_param *)buf_ptr;
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_wmi_pdev_config_vendor_oui_action_fixed_param,
 		WMITLV_GET_STRUCT_TLVLEN(
 			wmi_pdev_config_vendor_oui_action_fixed_param));
@@ -290,9 +286,9 @@ send_action_oui_cmd_tlv(wmi_unified_t wmi_handle,
 	buf_ptr += no_oui_extns * sizeof(*cmd_ext);
 	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_BYTE, var_buf_len);
 	buf_ptr += WMI_TLV_HDR_SIZE;
-	status = wmi_fill_oui_extensions_buffer(req->extension,
-						cmd_ext, no_oui_extns,
-						rem_var_buf_len, buf_ptr);
+	status = wmi_fill_oui_extensions_buffer(req->extension, cmd_ext,
+						no_oui_extns, rem_var_buf_len,
+						buf_ptr);
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		wmi_buf_free(wmi_buf);
 		wmi_buf = NULL;

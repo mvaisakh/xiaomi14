@@ -21,16 +21,16 @@
  * Implements general roam pre-auth functionality for connection manager
  */
 
-#include "wlan_cm_vdev_api.h"
-#include "wni_api.h"
-#include <wlan_cm_api.h>
-#include "wlan_cm_roam_api.h"
-#include "wlan_cm_roam_public_struct.h"
-#include "wlan_cm_public_struct.h"
-#include "wlan_mlme_vdev_mgr_interface.h"
+#include "connection_mgr/core/src/wlan_cm_main_api.h"
 #include "connection_mgr/core/src/wlan_cm_roam.h"
 #include "connection_mgr/core/src/wlan_cm_sm.h"
-#include "connection_mgr/core/src/wlan_cm_main_api.h"
+#include "wlan_cm_public_struct.h"
+#include "wlan_cm_roam_api.h"
+#include "wlan_cm_roam_public_struct.h"
+#include "wlan_cm_vdev_api.h"
+#include "wlan_mlme_vdev_mgr_interface.h"
+#include "wni_api.h"
+#include <wlan_cm_api.h>
 
 #define MAX_NUM_PREAUTH_RETRIES 3
 #define CM_PREAUTH_TIMEOUT 10000
@@ -68,14 +68,14 @@ static QDF_STATUS cm_get_valid_preauth_candidate(struct cm_roam_req *cm_req)
 			return QDF_STATUS_E_FAILURE;
 		}
 		cm_req->num_preauth_retry = 0;
-		cm_req->cur_candidate = qdf_container_of(cur_node,
-							 struct scan_cache_node,
-							 node);
+		cm_req->cur_candidate = qdf_container_of(
+			cur_node, struct scan_cache_node, node);
 	}
 
 	cm_req->num_preauth_retry++;
 
-	mlme_debug(CM_PREFIX_FMT "Try preauth attempt no. %d for " QDF_MAC_ADDR_FMT,
+	mlme_debug(CM_PREFIX_FMT
+		   "Try preauth attempt no. %d for " QDF_MAC_ADDR_FMT,
 		   CM_PREFIX_REF(vdev_id, cm_req->cm_id),
 		   cm_req->num_preauth_retry,
 		   QDF_MAC_ADDR_REF(cm_req->cur_candidate->entry->bssid.bytes));
@@ -92,9 +92,9 @@ void cm_preauth_fail(struct cnx_mgr *cm_ctx,
 	cm_id = preauth_fail_rsp->cm_id;
 	cm_req = cm_get_req_by_cm_id(cm_ctx, cm_id);
 	/*
-	 * If the entry is not present in the list, it must have been cleared
-	 * already.
-	 */
+   * If the entry is not present in the list, it must have been cleared
+   * already.
+   */
 	if (!cm_req)
 		return;
 
@@ -113,8 +113,8 @@ void cm_preauth_fail(struct cnx_mgr *cm_ctx,
 	cm_remove_cmd(cm_ctx, &cm_id);
 }
 
-static void
-cm_preauth_handle_event_post_fail(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
+static void cm_preauth_handle_event_post_fail(struct cnx_mgr *cm_ctx,
+					      wlan_cm_id cm_id)
 {
 	struct wlan_cm_preauth_fail preauth_fail_rsp;
 
@@ -124,8 +124,8 @@ cm_preauth_handle_event_post_fail(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 	cm_preauth_fail(cm_ctx, &preauth_fail_rsp);
 }
 
-static QDF_STATUS
-cm_preauth_cmd_timeout(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
+static QDF_STATUS cm_preauth_cmd_timeout(struct cnx_mgr *cm_ctx,
+					 wlan_cm_id cm_id)
 {
 	QDF_STATUS status;
 	struct wlan_cm_preauth_fail preauth_fail_rsp;
@@ -133,18 +133,17 @@ cm_preauth_cmd_timeout(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 	preauth_fail_rsp.cm_id = cm_id;
 	preauth_fail_rsp.reason = CM_SER_TIMEOUT;
 
-	status = cm_sm_deliver_event(
-			cm_ctx->vdev, WLAN_CM_SM_EV_PREAUTH_FAIL,
-			sizeof(struct wlan_cm_preauth_fail), &preauth_fail_rsp);
+	status = cm_sm_deliver_event(cm_ctx->vdev, WLAN_CM_SM_EV_PREAUTH_FAIL,
+				     sizeof(struct wlan_cm_preauth_fail),
+				     &preauth_fail_rsp);
 	if (QDF_IS_STATUS_ERROR(status))
 		cm_preauth_handle_event_post_fail(cm_ctx, cm_id);
 
 	return status;
 }
 
-static QDF_STATUS
-cm_ser_preauth_cb(struct wlan_serialization_command *cmd,
-		  enum wlan_serialization_cb_reason reason)
+static QDF_STATUS cm_ser_preauth_cb(struct wlan_serialization_command *cmd,
+				    enum wlan_serialization_cb_reason reason)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct wlan_objmgr_vdev *vdev;
@@ -165,21 +164,21 @@ cm_ser_preauth_cb(struct wlan_serialization_command *cmd,
 	case WLAN_SER_CB_ACTIVATE_CMD:
 		if (cmd->activation_reason == SER_PENDING_TO_ACTIVE)
 			status = cm_sm_deliver_event(
-					vdev, WLAN_CM_SM_EV_PREAUTH_ACTIVE,
-					sizeof(wlan_cm_id), &cmd->cmd_id);
+				vdev, WLAN_CM_SM_EV_PREAUTH_ACTIVE,
+				sizeof(wlan_cm_id), &cmd->cmd_id);
 		else
 			status = cm_sm_deliver_event_sync(
-					cm_ctx, WLAN_CM_SM_EV_PREAUTH_ACTIVE,
-					sizeof(wlan_cm_id), &cmd->cmd_id);
+				cm_ctx, WLAN_CM_SM_EV_PREAUTH_ACTIVE,
+				sizeof(wlan_cm_id), &cmd->cmd_id);
 		if (QDF_IS_STATUS_SUCCESS(status))
 			break;
 		/*
-		 * Handle failure if posting fails, i.e. the SM state has
-		 * changed or head cm_id doesn't match the active cm_id.
-		 * connect active should be handled only in JOIN_PENDING. If
-		 * new command has been received connect activation should be
-		 * aborted from here with connect req cleanup.
-		 */
+     * Handle failure if posting fails, i.e. the SM state has
+     * changed or head cm_id doesn't match the active cm_id.
+     * connect active should be handled only in JOIN_PENDING. If
+     * new command has been received connect activation should be
+     * aborted from here with connect req cleanup.
+     */
 		cm_preauth_handle_event_post_fail(cm_ctx, cmd->cmd_id);
 		break;
 	case WLAN_SER_CB_CANCEL_CMD:
@@ -208,7 +207,9 @@ cm_ser_preauth_cb(struct wlan_serialization_command *cmd,
 static QDF_STATUS cm_ser_preauth_req(struct cnx_mgr *cm_ctx,
 				     struct cm_req *cm_req)
 {
-	struct wlan_serialization_command cmd = {0, };
+	struct wlan_serialization_command cmd = {
+		0,
+	};
 	enum wlan_serialization_status ser_cmd_status;
 	QDF_STATUS status;
 	uint8_t vdev_id = wlan_vdev_get_id(cm_ctx->vdev);
@@ -249,8 +250,7 @@ static QDF_STATUS cm_ser_preauth_req(struct cnx_mgr *cm_ctx,
 }
 
 QDF_STATUS
-cm_send_preauth_start_fail(struct cnx_mgr *cm_ctx,
-			   wlan_cm_id cm_id,
+cm_send_preauth_start_fail(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id,
 			   enum wlan_cm_connect_fail_reason reason)
 {
 	QDF_STATUS status;
@@ -259,9 +259,9 @@ cm_send_preauth_start_fail(struct cnx_mgr *cm_ctx,
 	preauth_fail_rsp.cm_id = cm_id;
 	preauth_fail_rsp.reason = reason;
 
-	status = cm_sm_deliver_event_sync(
-			cm_ctx, WLAN_CM_SM_EV_PREAUTH_FAIL,
-			sizeof(struct wlan_cm_preauth_fail), &preauth_fail_rsp);
+	status = cm_sm_deliver_event_sync(cm_ctx, WLAN_CM_SM_EV_PREAUTH_FAIL,
+					  sizeof(struct wlan_cm_preauth_fail),
+					  &preauth_fail_rsp);
 	if (QDF_IS_STATUS_ERROR(status))
 		cm_preauth_handle_event_post_fail(cm_ctx, cm_id);
 
@@ -282,9 +282,9 @@ static void cm_flush_invalid_preauth_ap(struct cnx_mgr *cm_ctx,
 	qdf_freq_t conc_freq, bss_freq;
 
 	/*
-	 * Only When entering first time (ie cur_candidate is NULL),
-	 * flush invalid APs from the list and if list is not NULL.
-	 */
+   * Only When entering first time (ie cur_candidate is NULL),
+   * flush invalid APs from the list and if list is not NULL.
+   */
 	if (roam_req->cur_candidate || !roam_req->candidate_list)
 		return;
 
@@ -308,24 +308,29 @@ static void cm_flush_invalid_preauth_ap(struct cnx_mgr *cm_ctx,
 		bss_freq = scan_node->entry->channel.chan_freq;
 		if (qdf_is_macaddr_equal(&connected_bssid,
 					 &scan_node->entry->bssid)) {
-			mlme_debug(CM_PREFIX_FMT "Remove connected AP " QDF_MAC_ADDR_FMT " from list",
+			mlme_debug(CM_PREFIX_FMT
+				   "Remove connected AP " QDF_MAC_ADDR_FMT
+				   " from list",
 				   CM_PREFIX_REF(vdev_id, roam_req->cm_id),
 				   QDF_MAC_ADDR_REF(connected_bssid.bytes));
 			is_valid = false;
 		}
 
 		/*
-		 * Continue if MCC is disabled in INI and if AP
-		 * will create MCC
-		 */
+     * Continue if MCC is disabled in INI and if AP
+     * will create MCC
+     */
 		if (policy_mgr_concurrent_open_sessions_running(psoc) &&
 		    !enable_mcc_mode) {
 			conc_freq = wlan_get_conc_freq();
 			if (conc_freq && (conc_freq != bss_freq)) {
-				mlme_info(CM_PREFIX_FMT "Remove AP " QDF_MAC_ADDR_FMT ", MCC not supported. freq %d conc_freq %d",
-					  CM_PREFIX_REF(vdev_id, roam_req->cm_id),
-					  QDF_MAC_ADDR_REF(connected_bssid.bytes),
-					  bss_freq, conc_freq);
+				mlme_info(
+					CM_PREFIX_FMT
+					"Remove AP " QDF_MAC_ADDR_FMT
+					", MCC not supported. freq %d conc_freq %d",
+					CM_PREFIX_REF(vdev_id, roam_req->cm_id),
+					QDF_MAC_ADDR_REF(connected_bssid.bytes),
+					bss_freq, conc_freq);
 				is_valid = false;
 			}
 		}
@@ -380,8 +385,8 @@ static QDF_STATUS cm_flush_preauth_req(struct scheduler_msg *msg)
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-cm_issue_preauth_req(struct cnx_mgr *cm_ctx, struct cm_roam_req *roam_req)
+static QDF_STATUS cm_issue_preauth_req(struct cnx_mgr *cm_ctx,
+				       struct cm_roam_req *roam_req)
 {
 	struct wlan_preauth_req *preauth_req;
 	struct scheduler_msg msg;
@@ -405,8 +410,7 @@ cm_issue_preauth_req(struct cnx_mgr *cm_ctx, struct cm_roam_req *roam_req)
 	msg.type = CM_PREAUTH_REQ;
 	msg.flush_callback = cm_flush_preauth_req;
 
-	status = scheduler_post_message(QDF_MODULE_ID_MLME,
-					QDF_MODULE_ID_PE,
+	status = scheduler_post_message(QDF_MODULE_ID_MLME, QDF_MODULE_ID_PE,
 					QDF_MODULE_ID_PE, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err(CM_PREFIX_FMT "msg post fail",
@@ -482,13 +486,13 @@ static void cm_roam_read_tsf(struct cnx_mgr *cm_ctx,
 	/* Convert msec to micro sec timer */
 	timer_diff = do_div(timer_diff, SYSTEM_TIME_NSEC_TO_USEC);
 	/*  Update the TSF with the difference in system time */
-	cm_update_cckmtsf(&rsp->timestamp[0], &rsp->timestamp[1],
-			  &timer_diff);
+	cm_update_cckmtsf(&rsp->timestamp[0], &rsp->timestamp[1], &timer_diff);
 }
 #else
 static inline void cm_roam_read_tsf(struct cnx_mgr *cm_ctx,
 				    struct wlan_preauth_rsp *rsp)
-{}
+{
+}
 #endif
 
 #define MD_IE_ID 54
@@ -564,8 +568,7 @@ void cm_preauth_success(struct cnx_mgr *cm_ctx, struct wlan_preauth_rsp *rsp)
 
 	cm_csr_preauth_done(vdev);
 
-	qdf_mem_copy(rsp->ric_ies,
-		     mlme_priv->connect_info.ft_info.ric_ies,
+	qdf_mem_copy(rsp->ric_ies, mlme_priv->connect_info.ft_info.ric_ies,
 		     mlme_priv->connect_info.ft_info.ric_ies_length);
 	rsp->ric_ies_length = mlme_priv->connect_info.ft_info.ric_ies_length;
 
@@ -619,7 +622,7 @@ void cm_preauth_success(struct cnx_mgr *cm_ctx, struct wlan_preauth_rsp *rsp)
 		     mlme_priv->connect_info.ft_info.ric_ies,
 		     mlme_priv->connect_info.ft_info.ric_ies_length);
 	mlme_priv->connect_info.ft_info.reassoc_ie_len =
-			mlme_priv->connect_info.ft_info.ric_ies_length;
+		mlme_priv->connect_info.ft_info.ric_ies_length;
 	mlme_priv->connect_info.ft_info.add_mdie = true;
 	return;
 
@@ -631,8 +634,8 @@ err:
 		cm_preauth_handle_event_post_fail(cm_ctx, cm_id);
 }
 
-static QDF_STATUS
-cm_hanlde_preauth_failure(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
+static QDF_STATUS cm_hanlde_preauth_failure(struct cnx_mgr *cm_ctx,
+					    wlan_cm_id cm_id)
 {
 	QDF_STATUS status;
 	struct wlan_cm_preauth_fail preauth_fail_rsp;
@@ -640,9 +643,9 @@ cm_hanlde_preauth_failure(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 	preauth_fail_rsp.cm_id = cm_id;
 	preauth_fail_rsp.reason = CM_GENERIC_FAILURE;
 
-	status = cm_sm_deliver_event_sync(
-			cm_ctx, WLAN_CM_SM_EV_PREAUTH_FAIL,
-			sizeof(struct wlan_cm_preauth_fail), &preauth_fail_rsp);
+	status = cm_sm_deliver_event_sync(cm_ctx, WLAN_CM_SM_EV_PREAUTH_FAIL,
+					  sizeof(struct wlan_cm_preauth_fail),
+					  &preauth_fail_rsp);
 	if (QDF_IS_STATUS_ERROR(status))
 		cm_preauth_handle_event_post_fail(cm_ctx, cm_id);
 
@@ -659,7 +662,8 @@ void cm_preauth_done_resp(struct cnx_mgr *cm_ctx, struct wlan_preauth_rsp *rsp)
 		cm_req = cm_get_req_by_cm_id(cm_ctx, cm_id);
 		if (!cm_req)
 			return;
-		mlme_info(CM_PREFIX_FMT "Preauth attempt no. %d failed for " QDF_MAC_ADDR_FMT,
+		mlme_info(CM_PREFIX_FMT
+			  "Preauth attempt no. %d failed for " QDF_MAC_ADDR_FMT,
 			  CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev), cm_id),
 			  cm_req->roam_req.num_preauth_retry,
 			  QDF_MAC_ADDR_REF(rsp->pre_auth_bssid.bytes));
@@ -669,9 +673,8 @@ void cm_preauth_done_resp(struct cnx_mgr *cm_ctx, struct wlan_preauth_rsp *rsp)
 		if (QDF_IS_STATUS_ERROR(status))
 			cm_hanlde_preauth_failure(cm_ctx, cm_id);
 	} else {
-		status = cm_sm_deliver_event_sync(cm_ctx,
-						  WLAN_CM_SM_EV_PREAUTH_DONE,
-						  sizeof(*rsp), rsp);
+		status = cm_sm_deliver_event_sync(
+			cm_ctx, WLAN_CM_SM_EV_PREAUTH_DONE, sizeof(*rsp), rsp);
 		if (QDF_IS_STATUS_ERROR(status))
 			cm_preauth_handle_event_post_fail(cm_ctx, cm_id);
 	}
@@ -726,8 +729,8 @@ static QDF_STATUS cm_preauth_rsp(struct wlan_objmgr_vdev *vdev,
 	rsp->cm_id = cm_id;
 
 	mlme_debug(CM_PREFIX_FMT "preauth resp status %d for " QDF_MAC_ADDR_FMT,
-		   CM_PREFIX_REF(wlan_vdev_get_id(vdev), cm_id),
-		   rsp->status, QDF_MAC_ADDR_REF(rsp->pre_auth_bssid.bytes));
+		   CM_PREFIX_REF(wlan_vdev_get_id(vdev), cm_id), rsp->status,
+		   QDF_MAC_ADDR_REF(rsp->pre_auth_bssid.bytes));
 
 	cm_remove_preauth_cmd_from_serialization(cm_ctx, cm_id);
 

@@ -20,17 +20,16 @@
  * implementation for creating sysfs file valid_freq
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs.h>
 #include "wlan_hdd_sysfs_get_freq_for_pwr.h"
 #include "osif_psoc_sync.h"
+#include "osif_vdev_sync.h"
 #include "reg_services_public_struct.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
 #include <wma_api.h>
 
-static ssize_t
-__hdd_sysfs_power_level_store(struct hdd_context *hdd_ctx,
-			      char const *buf, size_t count)
+static ssize_t __hdd_sysfs_power_level_store(struct hdd_context *hdd_ctx,
+					     char const *buf, size_t count)
 {
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
 	char *sptr, *token;
@@ -43,8 +42,8 @@ __hdd_sysfs_power_level_store(struct hdd_context *hdd_ctx,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -63,16 +62,14 @@ __hdd_sysfs_power_level_store(struct hdd_context *hdd_ctx,
 	else
 		hdd_ctx->power_type = REG_MAX_SUPP_AP_TYPE;
 
-	hdd_debug("power level %s(%d)", token,
-		  hdd_ctx->power_type);
+	hdd_debug("power level %s(%d)", token, hdd_ctx->power_type);
 
 	return count;
 }
 
-static ssize_t
-wlan_hdd_sysfs_power_store(struct kobject *kobj,
-			   struct kobj_attribute *attr,
-			   char const *buf, size_t count)
+static ssize_t wlan_hdd_sysfs_power_store(struct kobject *kobj,
+					  struct kobj_attribute *attr,
+					  char const *buf, size_t count)
 {
 	struct osif_psoc_sync *psoc_sync;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
@@ -81,8 +78,8 @@ wlan_hdd_sysfs_power_store(struct kobject *kobj,
 	if (wlan_hdd_validate_context(hdd_ctx))
 		return 0;
 
-	err_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					   &psoc_sync);
+	err_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (err_size)
 		return err_size;
 
@@ -92,14 +89,13 @@ wlan_hdd_sysfs_power_store(struct kobject *kobj,
 	return err_size;
 }
 
-static ssize_t
-__wlan_hdd_sysfs_freq_show(struct hdd_context *hdd_ctx,
-			   struct kobj_attribute *attr, char *buf)
+static ssize_t __wlan_hdd_sysfs_freq_show(struct hdd_context *hdd_ctx,
+					  struct kobj_attribute *attr,
+					  char *buf)
 {
 	int ret = 0;
 	struct regulatory_channel *chan_list;
-	uint32_t len_6g =
-			NUM_6GHZ_CHANNELS * sizeof(struct regulatory_channel);
+	uint32_t len_6g = NUM_6GHZ_CHANNELS * sizeof(struct regulatory_channel);
 	QDF_STATUS status;
 	uint32_t i;
 
@@ -121,17 +117,15 @@ __wlan_hdd_sysfs_freq_show(struct hdd_context *hdd_ctx,
 		return -ENOMEM;
 
 	status = wlan_reg_get_6g_ap_master_chan_list(
-						hdd_ctx->pdev,
-						hdd_ctx->power_type,
-						chan_list);
+		hdd_ctx->pdev, hdd_ctx->power_type, chan_list);
 
 	for (i = 0; i < NUM_6GHZ_CHANNELS; i++) {
 		if ((chan_list[i].state != CHANNEL_STATE_DISABLE) &&
 		    !(chan_list[i].chan_flags & REGULATORY_CHAN_DISABLED)) {
 			if ((PAGE_SIZE - ret) <= 0)
 				goto err;
-			ret += scnprintf(buf + ret, PAGE_SIZE - ret,
-					"%d  ", chan_list[i].center_freq);
+			ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%d  ",
+					 chan_list[i].center_freq);
 		}
 	}
 
@@ -141,8 +135,7 @@ err:
 }
 
 static ssize_t wlan_hdd_sysfs_freq_show(struct kobject *kobj,
-					struct kobj_attribute *attr,
-					char *buf)
+					struct kobj_attribute *attr, char *buf)
 {
 	struct osif_psoc_sync *psoc_sync;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
@@ -153,8 +146,8 @@ static ssize_t wlan_hdd_sysfs_freq_show(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	err_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					   &psoc_sync);
+	err_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (err_size)
 		return err_size;
 
@@ -165,8 +158,8 @@ static ssize_t wlan_hdd_sysfs_freq_show(struct kobject *kobj,
 	return err_size;
 }
 
-static struct kobj_attribute valid_freq_attribute =
-__ATTR(valid_freq, 0664, wlan_hdd_sysfs_freq_show, wlan_hdd_sysfs_power_store);
+static struct kobj_attribute valid_freq_attribute = __ATTR(
+	valid_freq, 0664, wlan_hdd_sysfs_freq_show, wlan_hdd_sysfs_power_store);
 
 int hdd_sysfs_get_valid_freq_for_power_create(struct kobject *driver_kobject)
 {
@@ -179,8 +172,7 @@ int hdd_sysfs_get_valid_freq_for_power_create(struct kobject *driver_kobject)
 	return error;
 }
 
-void
-hdd_sysfs_get_valid_freq_for_power_destroy(struct kobject *driver_kobject)
+void hdd_sysfs_get_valid_freq_for_power_destroy(struct kobject *driver_kobject)
 {
 	if (!driver_kobject) {
 		hdd_err("could not get driver kobject!");

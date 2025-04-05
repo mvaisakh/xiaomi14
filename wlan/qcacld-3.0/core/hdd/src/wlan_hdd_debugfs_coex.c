@@ -32,16 +32,15 @@
  * sm6150:/ # cat /sys/kernel/debug/wlan/mws_coex_state
  */
 
-#include <wlan_hdd_includes.h>
-#include <wlan_osif_request_manager.h>
-#include <wlan_hdd_debugfs_coex.h>
+#include "osif_sync.h"
 #include "wmi_unified.h"
 #include "wmi_unified_param.h"
-#include "osif_sync.h"
+#include <wlan_hdd_debugfs_coex.h>
+#include <wlan_hdd_includes.h>
+#include <wlan_osif_request_manager.h>
 
-#define MWS_DEBUGFS_PERMS	(QDF_FILE_USR_READ |	\
-				 QDF_FILE_GRP_READ |	\
-				 QDF_FILE_OTH_READ)
+#define MWS_DEBUGFS_PERMS \
+	(QDF_FILE_USR_READ | QDF_FILE_GRP_READ | QDF_FILE_OTH_READ)
 
 /* wait time for mws coex info in milliseconds */
 #define WLAN_WAIT_TIME_MWS_COEX_INFO 800
@@ -168,7 +167,8 @@ static QDF_STATUS __hdd_debugfs_mws_coex_state_read(struct hdd_context *hdd_ctx,
 
 	rc = osif_request_wait_for_response(request);
 	if (rc) {
-		qdf_debugfs_printf(file, "Timedout while retrieving MWS coex state");
+		qdf_debugfs_printf(file,
+				   "Timedout while retrieving MWS coex state");
 		rc = -ETIMEDOUT;
 		goto exit;
 	}
@@ -176,16 +176,16 @@ static QDF_STATUS __hdd_debugfs_mws_coex_state_read(struct hdd_context *hdd_ctx,
 	priv = osif_request_priv(request);
 	coex_state = &priv->coex_state;
 
-	qdf_debugfs_printf(file, "vdev_id = %u\n"
-				 "coex_scheme_bitmap = %u\n"
-				 "active_conflict_count = %u\n"
-				 "potential_conflict_count = %u\n"
-				 "chavd_group0_bitmap = %u\n"
-				 "chavd_group1_bitmap = %u\n"
-				 "chavd_group2_bitmap = %u\n"
-				 "chavd_group3_bitmap = %u\n",
-			   coex_state->vdev_id,
-			   coex_state->coex_scheme_bitmap,
+	qdf_debugfs_printf(file,
+			   "vdev_id = %u\n"
+			   "coex_scheme_bitmap = %u\n"
+			   "active_conflict_count = %u\n"
+			   "potential_conflict_count = %u\n"
+			   "chavd_group0_bitmap = %u\n"
+			   "chavd_group1_bitmap = %u\n"
+			   "chavd_group2_bitmap = %u\n"
+			   "chavd_group3_bitmap = %u\n",
+			   coex_state->vdev_id, coex_state->coex_scheme_bitmap,
 			   coex_state->active_conflict_count,
 			   coex_state->potential_conflict_count,
 			   coex_state->chavd_group0_bitmap,
@@ -196,7 +196,7 @@ static QDF_STATUS __hdd_debugfs_mws_coex_state_read(struct hdd_context *hdd_ctx,
 exit:
 	osif_request_put(request);
 	return qdf_status_from_os_return(rc);
- }
+}
 
 static QDF_STATUS hdd_debugfs_mws_coex_state_read(qdf_debugfs_file_t file,
 						  void *arg)
@@ -218,7 +218,7 @@ static QDF_STATUS hdd_debugfs_mws_coex_state_read(qdf_debugfs_file_t file,
 
 static QDF_STATUS __hdd_debugfs_mws_coex_dpwb_read(struct hdd_context *hdd_ctx,
 						   qdf_debugfs_file_t file)
- {
+{
 	struct hdd_adapter *adapter;
 	QDF_STATUS status;
 	int rc;
@@ -265,33 +265,30 @@ static QDF_STATUS __hdd_debugfs_mws_coex_dpwb_read(struct hdd_context *hdd_ctx,
 
 	rc = osif_request_wait_for_response(request);
 	if (rc) {
-		qdf_debugfs_printf(file, "Timedout while retrieving MWS coex dpwb state");
+		qdf_debugfs_printf(
+			file, "Timedout while retrieving MWS coex dpwb state");
 		rc = -ETIMEDOUT;
 		goto exit;
 	}
 
 	dpwb_priv = osif_request_priv(request);
 	dpwb_state = &dpwb_priv->dpwb_state;
-	qdf_debugfs_printf(file, "vdev_id = %u\n"
-				 "current_dpwb_state = %d\n"
-				 "pnp1_value = %d\n"
-				 "lte_dutycycle = %d\n"
-				 "sinr_wlan_on = %d\n"
-				 "bler_count = %u\n"
-				 "block_count = %u\n"
-				 "wlan_rssi_level = %u\n"
-				 "wlan_rssi = %d\n"
-				 "is_tdm_running = %u\n",
-			   dpwb_state->vdev_id,
-			   dpwb_state->current_dpwb_state,
-			   dpwb_state->pnp1_value,
-			   dpwb_state->lte_dutycycle,
-			   dpwb_state->sinr_wlan_on,
-			   dpwb_state->sinr_wlan_off,
-			   dpwb_state->bler_count,
-			   dpwb_state->block_count,
-			   dpwb_state->wlan_rssi_level,
-			   dpwb_state->wlan_rssi,
+	qdf_debugfs_printf(file,
+			   "vdev_id = %u\n"
+			   "current_dpwb_state = %d\n"
+			   "pnp1_value = %d\n"
+			   "lte_dutycycle = %d\n"
+			   "sinr_wlan_on = %d\n"
+			   "bler_count = %u\n"
+			   "block_count = %u\n"
+			   "wlan_rssi_level = %u\n"
+			   "wlan_rssi = %d\n"
+			   "is_tdm_running = %u\n",
+			   dpwb_state->vdev_id, dpwb_state->current_dpwb_state,
+			   dpwb_state->pnp1_value, dpwb_state->lte_dutycycle,
+			   dpwb_state->sinr_wlan_on, dpwb_state->sinr_wlan_off,
+			   dpwb_state->bler_count, dpwb_state->block_count,
+			   dpwb_state->wlan_rssi_level, dpwb_state->wlan_rssi,
 			   dpwb_state->is_tdm_running);
 
 exit:
@@ -366,7 +363,8 @@ static QDF_STATUS __hdd_debugfs_mws_tdm_state_read(struct hdd_context *hdd_ctx,
 
 	rc = osif_request_wait_for_response(request);
 	if (rc) {
-		qdf_debugfs_printf(file, "Timedout while retrieving MWS coex tdm state");
+		qdf_debugfs_printf(
+			file, "Timedout while retrieving MWS coex tdm state");
 		rc = -ETIMEDOUT;
 		goto exit;
 	}
@@ -374,11 +372,11 @@ static QDF_STATUS __hdd_debugfs_mws_tdm_state_read(struct hdd_context *hdd_ctx,
 	tdm_priv = osif_request_priv(request);
 	tdm_state = &tdm_priv->tdm_state;
 
-	qdf_debugfs_printf(file, "vdev_id = %u\n"
-				 "tdm_policy_bitmap = %u\n"
-				 "tdm_sf_bitmap = %u\n",
-			   tdm_state->vdev_id,
-			   tdm_state->tdm_policy_bitmap,
+	qdf_debugfs_printf(file,
+			   "vdev_id = %u\n"
+			   "tdm_policy_bitmap = %u\n"
+			   "tdm_sf_bitmap = %u\n",
+			   tdm_state->vdev_id, tdm_state->tdm_policy_bitmap,
 			   tdm_state->tdm_sf_bitmap);
 
 exit:
@@ -453,32 +451,31 @@ static QDF_STATUS __hdd_debugfs_mws_coex_idrx_read(struct hdd_context *hdd_ctx,
 
 	rc = osif_request_wait_for_response(request);
 	if (rc) {
-		qdf_debugfs_printf(file, "Timedout while retrieving MWS coex idrx state");
+		qdf_debugfs_printf(
+			file, "Timedout while retrieving MWS coex idrx state");
 		rc = -ETIMEDOUT;
 		goto exit;
 	}
 
 	idrx_priv = osif_request_priv(request);
 	idrx_state = &idrx_priv->idrx_state;
-	qdf_debugfs_printf(file, "vdev_id = %u\n"
-				 "sub0_techid = %u\n"
-				 "sub0_policy = %u\n"
-				 "sub0_is_link_critical = %u\n"
-				 "sub0_static_power = %u\n"
-				 "sub0_rssi = %d\n"
-				 "sub1_techid = %d\n"
-				 "sub1_policy = %d\n"
-				 "sub1_is_link_critical = %d\n"
-				 "sub1_static_power = %u\n"
-				 "sub1_rssi = %d\n",
-			   idrx_state->vdev_id,
-			   idrx_state->sub0_techid,
+	qdf_debugfs_printf(file,
+			   "vdev_id = %u\n"
+			   "sub0_techid = %u\n"
+			   "sub0_policy = %u\n"
+			   "sub0_is_link_critical = %u\n"
+			   "sub0_static_power = %u\n"
+			   "sub0_rssi = %d\n"
+			   "sub1_techid = %d\n"
+			   "sub1_policy = %d\n"
+			   "sub1_is_link_critical = %d\n"
+			   "sub1_static_power = %u\n"
+			   "sub1_rssi = %d\n",
+			   idrx_state->vdev_id, idrx_state->sub0_techid,
 			   idrx_state->sub0_policy,
 			   idrx_state->sub0_is_link_critical,
-			   idrx_state->sub0_static_power,
-			   idrx_state->sub0_rssi,
-			   idrx_state->sub1_techid,
-			   idrx_state->sub1_policy,
+			   idrx_state->sub0_static_power, idrx_state->sub0_rssi,
+			   idrx_state->sub1_techid, idrx_state->sub1_policy,
 			   idrx_state->sub1_is_link_critical,
 			   idrx_state->sub1_static_power,
 			   idrx_state->sub1_rssi);
@@ -506,10 +503,9 @@ static QDF_STATUS hdd_debugfs_mws_coex_idrx_read(qdf_debugfs_file_t file,
 	return qdf_status_from_os_return(ret);
 }
 
-static QDF_STATUS __hdd_debugfs_mws_antenna_sharing_read(struct hdd_context
-							 *hdd_ctx,
-							 qdf_debugfs_file_t
-							 file)
+static QDF_STATUS
+__hdd_debugfs_mws_antenna_sharing_read(struct hdd_context *hdd_ctx,
+				       qdf_debugfs_file_t file)
 {
 	struct hdd_adapter *adapter;
 	QDF_STATUS status;
@@ -557,41 +553,39 @@ static QDF_STATUS __hdd_debugfs_mws_antenna_sharing_read(struct hdd_context
 
 	rc = osif_request_wait_for_response(request);
 	if (rc) {
-		qdf_debugfs_printf(file, "Timedout while retrieving MWS coex antenna sharing state");
+		qdf_debugfs_printf(
+			file,
+			"Timedout while retrieving MWS coex antenna sharing state");
 		rc = -ETIMEDOUT;
 		goto exit;
 	}
 
 	antenna_priv = osif_request_priv(request);
 	antenna_sharing = &antenna_priv->antenna_sharing;
-	qdf_debugfs_printf(file, "vdev_id = %u\n"
-				 "coex_flags = %u\n"
-				 "coex_config = %u\n"
-				 "tx_chain_mask = %u\n"
-				 "rx_chain_mask = %u\n"
-				 "rx_nss = %u\n"
-				 "force_mrc = %u\n"
-				 "rssi_type = %u\n"
-				 "chain0_rssi = %d\n"
-				 "chain1_rssi = %d\n"
-				 "combined_rssi = %d\n"
-				 "imbalance = %u\n"
-				 "mrc_threshold = %d\n"
-				 "grant_duration = %u\n",
-			   antenna_sharing->vdev_id,
-			   antenna_sharing->coex_flags,
-			   antenna_sharing->coex_config,
-			   antenna_sharing->tx_chain_mask,
-			   antenna_sharing->rx_chain_mask,
-			   antenna_sharing->rx_nss,
-			   antenna_sharing->force_mrc,
-			   antenna_sharing->rssi_type,
-			   antenna_sharing->chain0_rssi,
-			   antenna_sharing->chain1_rssi,
-			   antenna_sharing->combined_rssi,
-			   antenna_sharing->imbalance,
-			   antenna_sharing->mrc_threshold,
-			   antenna_sharing->grant_duration);
+	qdf_debugfs_printf(
+		file,
+		"vdev_id = %u\n"
+		"coex_flags = %u\n"
+		"coex_config = %u\n"
+		"tx_chain_mask = %u\n"
+		"rx_chain_mask = %u\n"
+		"rx_nss = %u\n"
+		"force_mrc = %u\n"
+		"rssi_type = %u\n"
+		"chain0_rssi = %d\n"
+		"chain1_rssi = %d\n"
+		"combined_rssi = %d\n"
+		"imbalance = %u\n"
+		"mrc_threshold = %d\n"
+		"grant_duration = %u\n",
+		antenna_sharing->vdev_id, antenna_sharing->coex_flags,
+		antenna_sharing->coex_config, antenna_sharing->tx_chain_mask,
+		antenna_sharing->rx_chain_mask, antenna_sharing->rx_nss,
+		antenna_sharing->force_mrc, antenna_sharing->rssi_type,
+		antenna_sharing->chain0_rssi, antenna_sharing->chain1_rssi,
+		antenna_sharing->combined_rssi, antenna_sharing->imbalance,
+		antenna_sharing->mrc_threshold,
+		antenna_sharing->grant_duration);
 
 exit:
 	osif_request_put(request);
@@ -617,23 +611,23 @@ static QDF_STATUS hdd_debugfs_mws_antenna_sharing_read(qdf_debugfs_file_t file,
 }
 
 static struct qdf_debugfs_fops hdd_mws_debugfs_coex_state_fops = {
-	.show  = hdd_debugfs_mws_coex_state_read,
+	.show = hdd_debugfs_mws_coex_state_read,
 };
 
 static struct qdf_debugfs_fops hdd_mws_debugfs_fops_coex_dpwb_fops = {
-	.show  = hdd_debugfs_mws_coex_dpwb_read,
+	.show = hdd_debugfs_mws_coex_dpwb_read,
 };
 
 static struct qdf_debugfs_fops hdd_mws_debugfs_tdm_state_fpos = {
-	.show  = hdd_debugfs_mws_tdm_state_read,
+	.show = hdd_debugfs_mws_tdm_state_read,
 };
 
 static struct qdf_debugfs_fops hdd_mws_debugfs_idrx_state_fpos = {
-	.show  = hdd_debugfs_mws_coex_idrx_read,
+	.show = hdd_debugfs_mws_coex_idrx_read,
 };
 
 static struct qdf_debugfs_fops hdd_mws_debugfs_antenna_sharing_fpos = {
-	.show  = hdd_debugfs_mws_antenna_sharing_read,
+	.show = hdd_debugfs_mws_antenna_sharing_read,
 };
 
 void hdd_debugfs_mws_coex_info_init(struct hdd_context *hdd_ctx)
@@ -643,8 +637,8 @@ void hdd_debugfs_mws_coex_info_init(struct hdd_context *hdd_ctx)
 	hdd_mws_debugfs_tdm_state_fpos.priv = hdd_ctx;
 	hdd_mws_debugfs_idrx_state_fpos.priv = hdd_ctx;
 	hdd_mws_debugfs_antenna_sharing_fpos.priv = hdd_ctx;
-	if (!qdf_debugfs_create_file("mws_coex_state", MWS_DEBUGFS_PERMS,
-				     NULL, &hdd_mws_debugfs_coex_state_fops))
+	if (!qdf_debugfs_create_file("mws_coex_state", MWS_DEBUGFS_PERMS, NULL,
+				     &hdd_mws_debugfs_coex_state_fops))
 		hdd_err("Failed to create the mws coex state file");
 	if (!qdf_debugfs_create_file("mws_coex_dpwb_state", MWS_DEBUGFS_PERMS,
 				     NULL,
@@ -653,12 +647,11 @@ void hdd_debugfs_mws_coex_info_init(struct hdd_context *hdd_ctx)
 	if (!qdf_debugfs_create_file("mws_coex_tdm_state", MWS_DEBUGFS_PERMS,
 				     NULL, &hdd_mws_debugfs_tdm_state_fpos))
 		hdd_err("Failed to create the mws coex tdm file");
-	if (!qdf_debugfs_create_file("mws_coex_idrx", MWS_DEBUGFS_PERMS,
-				     NULL, &hdd_mws_debugfs_idrx_state_fpos))
+	if (!qdf_debugfs_create_file("mws_coex_idrx", MWS_DEBUGFS_PERMS, NULL,
+				     &hdd_mws_debugfs_idrx_state_fpos))
 		hdd_err("Failed to create the mws coex idrx file");
 	if (!qdf_debugfs_create_file("mws_coex_antenna_sharing",
-				     MWS_DEBUGFS_PERMS,
-				     NULL,
+				     MWS_DEBUGFS_PERMS, NULL,
 				     &hdd_mws_debugfs_antenna_sharing_fpos))
 		hdd_err("Failed to create the mws coex antenna sharing file");
 }
@@ -666,6 +659,6 @@ void hdd_debugfs_mws_coex_info_init(struct hdd_context *hdd_ctx)
 void hdd_debugfs_mws_coex_info_deinit(struct hdd_context *hdd_ctx)
 {
 	/**
-	 * Coex info doesn't have a directory it is removed as part of qdf remove
-	 */
+   * Coex info doesn't have a directory it is removed as part of qdf remove
+   */
 }

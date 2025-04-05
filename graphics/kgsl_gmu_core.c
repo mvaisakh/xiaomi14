@@ -6,7 +6,6 @@
 
 #include <linux/iopoll.h>
 #include <linux/of.h>
-#include <linux/iopoll.h>
 
 #include "adreno.h"
 #include "kgsl_device.h"
@@ -25,12 +24,11 @@ void __init gmu_core_register(void)
 	const struct of_device_id *match;
 	struct device_node *node;
 
-	node = of_find_matching_node_and_match(NULL, gmu_match_table,
-		&match);
+	node = of_find_matching_node_and_match(NULL, gmu_match_table, &match);
 	if (!node)
 		return;
 
-	platform_driver_register((struct platform_driver *) match->data);
+	platform_driver_register((struct platform_driver *)match->data);
 	of_node_put(node);
 }
 
@@ -39,12 +37,11 @@ void gmu_core_unregister(void)
 	const struct of_device_id *match;
 	struct device_node *node;
 
-	node = of_find_matching_node_and_match(NULL, gmu_match_table,
-		&match);
+	node = of_find_matching_node_and_match(NULL, gmu_match_table, &match);
 	if (!node)
 		return;
 
-	platform_driver_unregister((struct platform_driver *) match->data);
+	platform_driver_unregister((struct platform_driver *)match->data);
 	of_node_put(node);
 }
 
@@ -79,28 +76,26 @@ int gmu_core_dev_acd_set(struct kgsl_device *device, bool val)
 }
 
 void gmu_core_regread(struct kgsl_device *device, unsigned int offsetwords,
-		unsigned int *value)
+		      unsigned int *value)
 {
 	u32 val = kgsl_regmap_read(&device->regmap, offsetwords);
-	*value  = val;
+	*value = val;
 }
 
 void gmu_core_regwrite(struct kgsl_device *device, unsigned int offsetwords,
-		unsigned int value)
+		       unsigned int value)
 {
 	kgsl_regmap_write(&device->regmap, value, offsetwords);
 }
 
 void gmu_core_blkwrite(struct kgsl_device *device, unsigned int offsetwords,
-		const void *buffer, size_t size)
+		       const void *buffer, size_t size)
 {
-	kgsl_regmap_bulk_write(&device->regmap, offsetwords,
-		buffer, size >> 2);
+	kgsl_regmap_bulk_write(&device->regmap, offsetwords, buffer, size >> 2);
 }
 
-void gmu_core_regrmw(struct kgsl_device *device,
-		unsigned int offsetwords,
-		unsigned int mask, unsigned int bits)
+void gmu_core_regrmw(struct kgsl_device *device, unsigned int offsetwords,
+		     unsigned int mask, unsigned int bits)
 {
 	kgsl_regmap_rmw(&device->regmap, offsetwords, mask, bits);
 }
@@ -125,7 +120,6 @@ void gmu_core_dev_oob_clear(struct kgsl_device *device, enum oob_request req)
 
 void gmu_core_dev_cooperative_reset(struct kgsl_device *device)
 {
-
 	const struct gmu_dev_ops *ops = GMU_DEVICE_OPS(device);
 
 	if (ops && ops->cooperative_reset)
@@ -166,42 +160,46 @@ void gmu_core_fault_snapshot(struct kgsl_device *device)
 {
 	const struct gmu_dev_ops *ops = GMU_DEVICE_OPS(device);
 
-	/* Send NMI first to halt GMU and capture the state close to the point of failure */
+	/* Send NMI first to halt GMU and capture the state close to the point of
+   * failure */
 	if (ops && ops->send_nmi)
 		ops->send_nmi(device, false);
 
 	kgsl_device_snapshot(device, NULL, NULL, true);
 }
 
-int gmu_core_timed_poll_check(struct kgsl_device *device,
-		unsigned int offset, unsigned int expected_ret,
-		unsigned int timeout_ms, unsigned int mask)
+int gmu_core_timed_poll_check(struct kgsl_device *device, unsigned int offset,
+			      unsigned int expected_ret,
+			      unsigned int timeout_ms, unsigned int mask)
 {
 	u32 val;
 
-	return kgsl_regmap_read_poll_timeout(&device->regmap, offset,
-		val, (val & mask) == expected_ret, 100, timeout_ms * 1000);
+	return kgsl_regmap_read_poll_timeout(&device->regmap, offset, val,
+					     (val & mask) == expected_ret, 100,
+					     timeout_ms * 1000);
 }
 
-int gmu_core_map_memdesc(struct iommu_domain *domain, struct kgsl_memdesc *memdesc,
-		u64 gmuaddr, int attrs)
+int gmu_core_map_memdesc(struct iommu_domain *domain,
+			 struct kgsl_memdesc *memdesc, u64 gmuaddr, int attrs)
 {
 	size_t mapped;
 
 	if (!memdesc->pages) {
 		mapped = iommu_map_sg(domain, gmuaddr, memdesc->sgt->sgl,
-			memdesc->sgt->nents, attrs);
+				      memdesc->sgt->nents, attrs);
 	} else {
 		struct sg_table sgt = { 0 };
 		int ret;
 
 		ret = sg_alloc_table_from_pages(&sgt, memdesc->pages,
-			memdesc->page_count, 0, memdesc->size, GFP_KERNEL);
+						memdesc->page_count, 0,
+						memdesc->size, GFP_KERNEL);
 
 		if (ret)
 			return ret;
 
-		mapped = iommu_map_sg(domain, gmuaddr, sgt.sgl, sgt.nents, attrs);
+		mapped = iommu_map_sg(domain, gmuaddr, sgt.sgl, sgt.nents,
+				      attrs);
 		sg_free_table(&sgt);
 	}
 

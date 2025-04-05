@@ -21,19 +21,19 @@
  * DOC: contains core ocb function definitions
  */
 
-#include <qdf_status.h>
+#include "wlan_ocb_main.h"
 #include "scheduler_api.h"
+#include "target_if_ocb.h"
 #include "wlan_objmgr_cmn.h"
 #include "wlan_objmgr_global_obj.h"
-#include "wlan_objmgr_psoc_obj.h"
 #include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
 #include "wlan_objmgr_vdev_obj.h"
-#include <cdp_txrx_handle.h>
-#include <cdp_txrx_cmn.h>
-#include <cdp_txrx_ocb.h>
-#include "wlan_ocb_main.h"
 #include "wlan_ocb_tgt_api.h"
-#include "target_if_ocb.h"
+#include <cdp_txrx_cmn.h>
+#include <cdp_txrx_handle.h>
+#include <cdp_txrx_ocb.h>
+#include <qdf_status.h>
 
 /**
  * ocb_get_evt_type_str() - parse event to string
@@ -70,10 +70,8 @@ static const char *ocb_get_evt_type_str(enum ocb_southbound_event evt_type)
  *
  * Return: QDF_STATUS_SUCCESS on success
  */
-static QDF_STATUS ocb_set_chan_info(void *dp_soc,
-				    void *dp_pdev,
-				    uint32_t vdev_id,
-				    struct ocb_config *config)
+static QDF_STATUS ocb_set_chan_info(void *dp_soc, void *dp_pdev,
+				    uint32_t vdev_id, struct ocb_config *config)
 {
 	struct ol_txrx_ocb_set_chan ocb_set_chan;
 	struct ol_txrx_ocb_chan_info *ocb_channel_info;
@@ -103,7 +101,7 @@ static QDF_STATUS ocb_set_chan_info(void *dp_soc,
 			ocb_channel_info[i].chan_freq =
 				config->channels[i].chan_freq;
 			if (config->channels[i].flags &
-				OCB_CHANNEL_FLAG_DISABLE_RX_STATS_HDR)
+			    OCB_CHANNEL_FLAG_DISABLE_RX_STATS_HDR)
 				ocb_channel_info[i].disable_rx_stats_hdr = 1;
 		}
 	} else {
@@ -159,10 +157,8 @@ static QDF_STATUS ocb_channel_config_status(struct ocb_rx_event *evt)
 
 		/* Sync channel status to data path */
 		if (config_rsp.status == OCB_CHANNEL_CONFIG_SUCCESS)
-			ocb_set_chan_info(ocb_obj->dp_soc,
-					  ocb_obj->pdev,
-					  vdev_id,
-					  ocb_obj->channel_config);
+			ocb_set_chan_info(ocb_obj->dp_soc, ocb_obj->pdev,
+					  vdev_id, ocb_obj->channel_config);
 		qdf_mem_free(ocb_obj->channel_config);
 		ocb_obj->channel_config = NULL;
 	} else {
@@ -208,8 +204,8 @@ static QDF_STATUS ocb_tsf_timer(struct ocb_rx_event *evt)
 	pdev = wlan_vdev_get_pdev(vdev);
 	cbs = wlan_ocb_get_callbacks(pdev);
 	tsf_timer = &event->rsp.tsf_timer;
-	ocb_debug("TSF timer low=%d, high=%d",
-		  tsf_timer->timer_low, tsf_timer->timer_high);
+	ocb_debug("TSF timer low=%d, high=%d", tsf_timer->timer_low,
+		  tsf_timer->timer_high);
 	if (cbs && cbs->ocb_get_tsf_timer_callback) {
 		ocb_debug("send TSF timer");
 		cbs->ocb_get_tsf_timer_callback(cbs->ocb_get_tsf_timer_context,
@@ -288,7 +284,7 @@ static QDF_STATUS ocb_ndl_response(struct ocb_rx_event *evt)
 	if (cbs && cbs->ocb_dcc_update_ndl_callback) {
 		ocb_debug("NDL update response");
 		cbs->ocb_dcc_update_ndl_callback(
-				cbs->ocb_dcc_update_ndl_context, ndl);
+			cbs->ocb_dcc_update_ndl_context, ndl);
 		status = QDF_STATUS_SUCCESS;
 	} else {
 		ocb_err("dcc_update_ndl is NULL");
@@ -326,7 +322,7 @@ static QDF_STATUS ocb_dcc_indication(struct ocb_rx_event *evt)
 	if (cbs && cbs->ocb_dcc_stats_event_callback) {
 		ocb_debug("DCC stats indication");
 		cbs->ocb_dcc_stats_event_callback(
-				cbs->ocb_dcc_stats_event_context, dcc_stats);
+			cbs->ocb_dcc_stats_event_context, dcc_stats);
 		status = QDF_STATUS_SUCCESS;
 	} else {
 		ocb_err("dcc_get_stats_cb is NULL");
@@ -393,9 +389,8 @@ static QDF_STATUS ocb_process_start_vdev_msg(struct scheduler_msg *msg)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(ocb_obj->pdev,
-						    config->vdev_id,
-						    WLAN_OCB_SB_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(
+		ocb_obj->pdev, config->vdev_id, WLAN_OCB_SB_ID);
 	if (!vdev) {
 		ocb_err("Cannot get vdev");
 		return QDF_STATUS_E_FAILURE;
@@ -415,13 +410,12 @@ static QDF_STATUS ocb_process_start_vdev_msg(struct scheduler_msg *msg)
 QDF_STATUS ocb_vdev_start(struct ocb_pdev_obj *ocb_obj)
 {
 	QDF_STATUS status;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 
 	msg.bodyptr = ocb_obj;
 	msg.callback = ocb_process_start_vdev_msg;
 	msg.flush_callback = ocb_flush_start_msg;
-	status = scheduler_post_message(QDF_MODULE_ID_OCB,
-					QDF_MODULE_ID_OCB,
+	status = scheduler_post_message(QDF_MODULE_ID_OCB, QDF_MODULE_ID_OCB,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 
 	return status;
@@ -473,11 +467,10 @@ struct ocb_config *ocb_copy_config(struct ocb_config *src)
 	uint32_t length;
 	uint8_t *cursor;
 
-	length = sizeof(*src) +
-		src->channel_count * sizeof(*src->channels) +
-		src->schedule_size * sizeof(*src->schedule) +
-		src->dcc_ndl_chan_list_len +
-		src->dcc_ndl_active_state_list_len;
+	length = sizeof(*src) + src->channel_count * sizeof(*src->channels) +
+		 src->schedule_size * sizeof(*src->schedule) +
+		 src->dcc_ndl_chan_list_len +
+		 src->dcc_ndl_active_state_list_len;
 
 	dst = qdf_mem_malloc(length);
 	if (!dst)
@@ -519,10 +512,8 @@ QDF_STATUS ocb_pdev_obj_create_notification(struct wlan_objmgr_pdev *pdev,
 	if (!ocb_obj)
 		return QDF_STATUS_E_FAILURE;
 
-	status = wlan_objmgr_pdev_component_obj_attach(pdev,
-						       WLAN_UMAC_COMP_OCB,
-						       (void *)ocb_obj,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_pdev_component_obj_attach(
+		pdev, WLAN_UMAC_COMP_OCB, (void *)ocb_obj, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ocb_err("Failed to attach pdev ocb component");
 		qdf_mem_free(ocb_obj);
@@ -544,15 +535,14 @@ QDF_STATUS ocb_pdev_obj_destroy_notification(struct wlan_objmgr_pdev *pdev,
 	QDF_STATUS status;
 	struct ocb_pdev_obj *ocb_obj;
 
-	ocb_obj = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-							WLAN_UMAC_COMP_OCB);
+	ocb_obj =
+		wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_OCB);
 	if (!ocb_obj) {
 		ocb_err("Failed to get ocb pdev object");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_pdev_component_obj_detach(pdev,
-						       WLAN_UMAC_COMP_OCB,
+	status = wlan_objmgr_pdev_component_obj_detach(pdev, WLAN_UMAC_COMP_OCB,
 						       ocb_obj);
 	if (QDF_IS_STATUS_ERROR(status))
 		ocb_err("Failed to detach ocb pdev object");

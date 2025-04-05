@@ -23,9 +23,9 @@
  * The implementation for getting firmware state
  */
 
+#include "wlan_hdd_fw_state.h"
 #include "osif_sync.h"
 #include "qca_vendor.h"
-#include "wlan_hdd_fw_state.h"
 #include "wlan_hdd_main.h"
 #include "wlan_osif_request_manager.h"
 #include "wmi_unified_param.h"
@@ -71,16 +71,13 @@ static void hdd_get_fw_state_cb(void *context)
  *
  * Return: 0 for success, non-zero for failure
  */
-static int hdd_post_get_fw_state_rsp(struct hdd_context *hdd_ctx,
-				     bool state)
+static int hdd_post_get_fw_state_rsp(struct hdd_context *hdd_ctx, bool state)
 {
 	struct sk_buff *skb;
 	enum qca_wlan_vendor_attr_fw_state fw_state;
 
-	skb = wlan_cfg80211_vendor_cmd_alloc_reply_skb(hdd_ctx->wiphy,
-						       sizeof(uint8_t) +
-						       NLA_HDRLEN +
-						       NLMSG_HDRLEN);
+	skb = wlan_cfg80211_vendor_cmd_alloc_reply_skb(
+		hdd_ctx->wiphy, sizeof(uint8_t) + NLA_HDRLEN + NLMSG_HDRLEN);
 	if (!skb) {
 		hdd_err("wlan_cfg80211_vendor_event_alloc failed");
 		return -ENOMEM;
@@ -91,8 +88,7 @@ static int hdd_post_get_fw_state_rsp(struct hdd_context *hdd_ctx,
 	else
 		fw_state = QCA_WLAN_VENDOR_ATTR_FW_STATE_ERROR;
 
-	if (nla_put_u8(skb, QCA_WLAN_VENDOR_ATTR_FW_STATE,
-		       (uint8_t)fw_state)) {
+	if (nla_put_u8(skb, QCA_WLAN_VENDOR_ATTR_FW_STATE, (uint8_t)fw_state)) {
 		hdd_err("put fail");
 		goto nla_put_failure;
 	}
@@ -120,8 +116,7 @@ nla_put_failure:
  **/
 static int __wlan_hdd_cfg80211_get_fw_state(struct wiphy *wiphy,
 					    struct wireless_dev *wdev,
-					    const void *data,
-					    int data_len)
+					    const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	mac_handle_t mac_handle;
@@ -155,9 +150,7 @@ static int __wlan_hdd_cfg80211_get_fw_state(struct wiphy *wiphy,
 	cookie = osif_request_cookie(request);
 
 	mac_handle = hdd_ctx->mac_handle;
-	status = sme_get_fw_state(mac_handle,
-				  hdd_get_fw_state_cb,
-				  cookie);
+	status = sme_get_fw_state(mac_handle, hdd_get_fw_state_cb, cookie);
 	if (QDF_STATUS_SUCCESS != status) {
 		hdd_err("Unable to get fw state");
 		retval = qdf_status_to_os_return(status);
@@ -191,8 +184,7 @@ static int __wlan_hdd_cfg80211_get_fw_state(struct wiphy *wiphy,
  * Return: 0 on success; error number otherwise.
  */
 int wlan_hdd_cfg80211_get_fw_state(struct wiphy *wiphy,
-				   struct wireless_dev *wdev,
-				   const void *data,
+				   struct wireless_dev *wdev, const void *data,
 				   int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;

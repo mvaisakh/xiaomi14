@@ -23,12 +23,12 @@
  * WLAN Host Device Driver FIPS Certification Feature
  */
 
-#include "osif_sync.h"
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_fips.h"
-#include "wlan_osif_request_manager.h"
+#include "osif_sync.h"
 #include "qdf_mem.h"
 #include "sme_api.h"
+#include "wlan_hdd_main.h"
+#include "wlan_osif_request_manager.h"
 
 #define WLAN_WAIT_TIME_FIPS 5000
 
@@ -58,7 +58,7 @@ static int hdd_fips_event_dup(struct wmi_host_fips_event_param *dest,
 			      const struct wmi_host_fips_event_param *src)
 {
 	*dest = *src;
-	if  (dest->data_len) {
+	if (dest->data_len) {
 		dest->data = qdf_mem_malloc(dest->data_len);
 		if (!dest->data)
 			return -ENOMEM;
@@ -98,10 +98,8 @@ static void hdd_fips_cb(void *cookie,
 		return;
 	}
 
-	hdd_debug("pdev_id %u, status %u, data_len %u",
-		  response->pdev_id,
-		  response->error_status,
-		  response->data_len);
+	hdd_debug("pdev_id %u, status %u, data_len %u", response->pdev_id,
+		  response->error_status, response->data_len);
 	qdf_trace_hex_dump(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_DEBUG,
 			   response->data, response->data_len);
 
@@ -109,8 +107,8 @@ static void hdd_fips_cb(void *cookie,
 	if (response->error_status) {
 		context->status = -ETIMEDOUT;
 	} else {
-		context->status = hdd_fips_event_dup(&context->response,
-						     response);
+		context->status =
+			hdd_fips_event_dup(&context->response, response);
 	}
 
 	osif_request_complete(request);
@@ -124,7 +122,6 @@ static void hdd_fips_context_dealloc(void *priv)
 
 	qdf_mem_free(context->response.data);
 }
-
 
 static int hdd_fips_validate_request(struct iw_fips_test_request *user_request,
 				     uint32_t request_len)
@@ -164,9 +161,8 @@ static int hdd_fips_validate_request(struct iw_fips_test_request *user_request,
 	return 0;
 }
 
-static int __hdd_fips_test(struct net_device *dev,
-			  struct iw_request_info *info,
-			  union iwreq_data *wrqu, char *extra)
+static int __hdd_fips_test(struct net_device *dev, struct iw_request_info *info,
+			   union iwreq_data *wrqu, char *extra)
 {
 	struct hdd_adapter *adapter;
 	struct hdd_context *hdd_ctx;
@@ -255,16 +251,16 @@ static int __hdd_fips_test(struct net_device *dev,
 	}
 
 	/*
-	 * By default wireless extensions private ioctls have either
-	 * SET semantics (even numbered ioctls) or GET semantics (odd
-	 * numbered ioctls). This is an even numbered ioctl so the SET
-	 * semantics apply. This means the core kernel ioctl code took
-	 * care of copying the request parameters from userspace to
-	 * kernel space. However this ioctl also needs to return the
-	 * response. Since the core kernel ioctl code doesn't support
-	 * SET ioctls returning anything other than status, we have to
-	 * explicitly copy the result to userspace.
-	 */
+   * By default wireless extensions private ioctls have either
+   * SET semantics (even numbered ioctls) or GET semantics (odd
+   * numbered ioctls). This is an even numbered ioctl so the SET
+   * semantics apply. This means the core kernel ioctl code took
+   * care of copying the request parameters from userspace to
+   * kernel space. However this ioctl also needs to return the
+   * response. Since the core kernel ioctl code doesn't support
+   * SET ioctls returning anything other than status, we have to
+   * explicitly copy the result to userspace.
+   */
 	wrqu->data.length = sizeof(*user_response) + user_response->data_len;
 	if (copy_to_user(wrqu->data.pointer, user_response, wrqu->data.length))
 		ret = -EFAULT;
@@ -276,8 +272,7 @@ cleanup:
 	return ret;
 }
 
-int hdd_fips_test(struct net_device *dev,
-		  struct iw_request_info *info,
+int hdd_fips_test(struct net_device *dev, struct iw_request_info *info,
 		  union iwreq_data *wrqu, char *extra)
 {
 	int errno;

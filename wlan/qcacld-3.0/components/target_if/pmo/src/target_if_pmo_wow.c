@@ -22,13 +22,12 @@
  * send wow related cmd and process event.
  */
 
-
 #include "target_if.h"
 #include "target_if_pmo.h"
 #include "wmi_unified_api.h"
 
 QDF_STATUS target_if_pmo_enable_wow_wakeup_event(struct wlan_objmgr_vdev *vdev,
-		uint32_t *bitmap)
+						 uint32_t *bitmap)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -62,7 +61,7 @@ QDF_STATUS target_if_pmo_enable_wow_wakeup_event(struct wlan_objmgr_vdev *vdev,
 }
 
 QDF_STATUS target_if_pmo_disable_wow_wakeup_event(struct wlan_objmgr_vdev *vdev,
-		uint32_t *bitmap)
+						  uint32_t *bitmap)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -95,11 +94,10 @@ QDF_STATUS target_if_pmo_disable_wow_wakeup_event(struct wlan_objmgr_vdev *vdev,
 	return status;
 }
 
-QDF_STATUS target_if_pmo_send_wow_patterns_to_fw(struct wlan_objmgr_vdev *vdev,
-		uint8_t ptrn_id,
-		const uint8_t *ptrn, uint8_t ptrn_len,
-		uint8_t ptrn_offset, const uint8_t *mask,
-		uint8_t mask_len, bool user)
+QDF_STATUS target_if_pmo_send_wow_patterns_to_fw(
+	struct wlan_objmgr_vdev *vdev, uint8_t ptrn_id, const uint8_t *ptrn,
+	uint8_t ptrn_len, uint8_t ptrn_offset, const uint8_t *mask,
+	uint8_t mask_len, bool user)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -124,16 +122,16 @@ QDF_STATUS target_if_pmo_send_wow_patterns_to_fw(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	status = wmi_unified_wow_patterns_to_fw_cmd(wmi_handle,
-						    vdev_id, ptrn_id, ptrn,
-						    ptrn_len, ptrn_offset,
-						    mask, mask_len, user, 0);
+	status = wmi_unified_wow_patterns_to_fw_cmd(wmi_handle, vdev_id,
+						    ptrn_id, ptrn, ptrn_len,
+						    ptrn_offset, mask, mask_len,
+						    user, 0);
 
 	return status;
 }
 
 QDF_STATUS target_if_pmo_del_wow_patterns_to_fw(struct wlan_objmgr_vdev *vdev,
-		uint8_t ptrn_id)
+						uint8_t ptrn_id)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
@@ -163,4 +161,3 @@ QDF_STATUS target_if_pmo_del_wow_patterns_to_fw(struct wlan_objmgr_vdev *vdev,
 
 	return status;
 }
-

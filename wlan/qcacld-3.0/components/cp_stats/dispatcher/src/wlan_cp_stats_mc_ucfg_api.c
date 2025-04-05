@@ -23,13 +23,13 @@
  * This file provide API definitions required for northbound interaction
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include "wlan_cp_stats_mc_defs.h"
-#include <wlan_cp_stats_mc_ucfg_api.h>
-#include <wlan_cp_stats_mc_tgt_api.h>
-#include <wlan_cp_stats_utils_api.h>
-#include "../../core/src/wlan_cp_stats_defs.h"
 #include "../../core/src/wlan_cp_stats_cmn_api_i.h"
+#include "../../core/src/wlan_cp_stats_defs.h"
+#include "wlan_cp_stats_mc_defs.h"
+#include <wlan_cp_stats_mc_tgt_api.h>
+#include <wlan_cp_stats_mc_ucfg_api.h>
+#include <wlan_cp_stats_utils_api.h>
+#include <wlan_objmgr_psoc_obj.h>
 #ifdef WLAN_POWER_MANAGEMENT_OFFLOAD
 #include <wlan_pmo_obj_mgmt_api.h>
 #endif
@@ -53,11 +53,10 @@
  * Return: Success if stats are copied for a peer with given dialog,
  * else failure
  */
-static QDF_STATUS
-ucfg_twt_get_peer_session_param_by_dlg_id(struct peer_mc_cp_stats *mc_stats,
-					  uint32_t input_dialog_id,
-					  struct wmi_host_twt_session_stats_info
-					  *dest_param, int *num_twt_session)
+static QDF_STATUS ucfg_twt_get_peer_session_param_by_dlg_id(
+	struct peer_mc_cp_stats *mc_stats, uint32_t input_dialog_id,
+	struct wmi_host_twt_session_stats_info *dest_param,
+	int *num_twt_session)
 {
 	struct wmi_host_twt_session_stats_info *src_param;
 	uint32_t event_type;
@@ -100,11 +99,9 @@ ucfg_twt_get_peer_session_param_by_dlg_id(struct peer_mc_cp_stats *mc_stats,
  *
  * Return: total number of valid twt session
  */
-static int
-ucfg_twt_get_single_peer_session_params(struct wlan_objmgr_psoc *psoc_obj,
-					uint8_t *mac_addr, uint32_t dialog_id,
-					struct wmi_host_twt_session_stats_info
-					*params)
+static int ucfg_twt_get_single_peer_session_params(
+	struct wlan_objmgr_psoc *psoc_obj, uint8_t *mac_addr,
+	uint32_t dialog_id, struct wmi_host_twt_session_stats_info *params)
 {
 	struct wlan_objmgr_peer *peer;
 	struct peer_cp_stats *peer_cp_stats_priv;
@@ -130,10 +127,7 @@ ucfg_twt_get_single_peer_session_params(struct wlan_objmgr_psoc *psoc_obj,
 	peer_mc_stats = peer_cp_stats_priv->peer_stats;
 
 	qdf_status = ucfg_twt_get_peer_session_param_by_dlg_id(
-							peer_mc_stats,
-							dialog_id,
-							params,
-							&num_twt_session);
+		peer_mc_stats, dialog_id, params, &num_twt_session);
 	if (QDF_IS_STATUS_ERROR(qdf_status)) {
 		qdf_err("No TWT session for " QDF_MAC_ADDR_FMT " dialog_id %d",
 			QDF_MAC_ADDR_REF(mac_addr), dialog_id);
@@ -193,11 +187,9 @@ ucfg_twt_get_peer_session_param(struct peer_mc_cp_stats *mc_cp_stats,
  *
  * Return: total number of valid twt sessions
  */
-static int
-ucfg_twt_get_all_peer_session_params(struct wlan_objmgr_psoc *psoc_obj,
-				     uint8_t vdev_id,
-				     struct wmi_host_twt_session_stats_info
-				     *params)
+static int ucfg_twt_get_all_peer_session_params(
+	struct wlan_objmgr_psoc *psoc_obj, uint8_t vdev_id,
+	struct wmi_host_twt_session_stats_info *params)
 {
 	qdf_list_t *peer_list;
 	struct wlan_objmgr_peer *peer, *peer_next;
@@ -236,19 +228,17 @@ ucfg_twt_get_all_peer_session_params(struct wlan_objmgr_psoc *psoc_obj,
 
 	while (peer) {
 		cp_stats_peer_obj = wlan_objmgr_peer_get_comp_private_obj(
-						peer, WLAN_UMAC_COMP_CP_STATS);
+			peer, WLAN_UMAC_COMP_CP_STATS);
 
 		mc_cp_stats = NULL;
 		if (cp_stats_peer_obj)
 			mc_cp_stats = cp_stats_peer_obj->peer_stats;
 
-		peer_cp_stat_prv =
-			wlan_cp_stats_get_peer_stats_obj(peer);
+		peer_cp_stat_prv = wlan_cp_stats_get_peer_stats_obj(peer);
 
 		if (peer_cp_stat_prv && mc_cp_stats) {
 			wlan_cp_stats_peer_obj_lock(peer_cp_stat_prv);
-			ucfg_twt_get_peer_session_param(mc_cp_stats,
-							params,
+			ucfg_twt_get_peer_session_param(mc_cp_stats, params,
 							&num_twt_session);
 			wlan_cp_stats_peer_obj_unlock(peer_cp_stat_prv);
 		}
@@ -266,23 +256,23 @@ ucfg_twt_get_all_peer_session_params(struct wlan_objmgr_psoc *psoc_obj,
 		}
 
 		peer_next = wlan_peer_get_next_active_peer_of_vdev(
-							vdev, peer_list, peer,
-							WLAN_CP_STATS_ID);
+			vdev, peer_list, peer, WLAN_CP_STATS_ID);
 		wlan_objmgr_peer_release_ref(peer, WLAN_CP_STATS_ID);
 		peer = peer_next;
 	}
 
 done:
 	if (!num_twt_session)
-		cp_stats_err("Unable to find a peer with twt session established");
+		cp_stats_err(
+			"Unable to find a peer with twt session established");
 
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_CP_STATS_ID);
 	return num_twt_session;
 }
 
-int
-ucfg_twt_get_peer_session_params(struct wlan_objmgr_psoc *psoc_obj,
-				 struct wmi_host_twt_session_stats_info *params)
+int ucfg_twt_get_peer_session_params(
+	struct wlan_objmgr_psoc *psoc_obj,
+	struct wmi_host_twt_session_stats_info *params)
 {
 	uint8_t *mac_addr;
 	uint32_t dialog_id;
@@ -297,24 +287,19 @@ ucfg_twt_get_peer_session_params(struct wlan_objmgr_psoc *psoc_obj,
 	vdev_id = params[0].vdev_id;
 
 	/*
-	 * Currently for STA case, twt_get_params nl is sending only dialog_id
-	 * and mac_addr is being filled by driver in STA peer case.
-	 * For SAP case, twt_get_params nl is sending dialog_id and
-	 * peer mac_addr. When twt_get_params add mac_addr and dialog_id of
-	 * STA/SAP, we need handle unicast/multicast macaddr in
-	 * ucfg_twt_get_peer_session_params.
-	 */
+   * Currently for STA case, twt_get_params nl is sending only dialog_id
+   * and mac_addr is being filled by driver in STA peer case.
+   * For SAP case, twt_get_params nl is sending dialog_id and
+   * peer mac_addr. When twt_get_params add mac_addr and dialog_id of
+   * STA/SAP, we need handle unicast/multicast macaddr in
+   * ucfg_twt_get_peer_session_params.
+   */
 	if (!QDF_IS_ADDR_BROADCAST(mac_addr))
 		num_twt_session = ucfg_twt_get_single_peer_session_params(
-								psoc_obj,
-								mac_addr,
-								dialog_id,
-								params);
+			psoc_obj, mac_addr, dialog_id, params);
 	else
 		num_twt_session = ucfg_twt_get_all_peer_session_params(
-								psoc_obj,
-								vdev_id,
-								params);
+			psoc_obj, vdev_id, params);
 
 	return num_twt_session;
 }
@@ -377,7 +362,7 @@ QDF_STATUS wlan_cp_stats_peer_cs_init(struct peer_cp_stats *peer_cs)
 		return QDF_STATUS_E_NOMEM;
 
 	peer_mc_stats->adv_stats =
-			qdf_mem_malloc(sizeof(struct peer_adv_mc_cp_stats));
+		qdf_mem_malloc(sizeof(struct peer_adv_mc_cp_stats));
 
 	if (!peer_mc_stats->adv_stats) {
 		qdf_mem_free(peer_mc_stats);
@@ -386,7 +371,7 @@ QDF_STATUS wlan_cp_stats_peer_cs_init(struct peer_cp_stats *peer_cs)
 	}
 
 	peer_mc_stats->extd_stats =
-			qdf_mem_malloc(sizeof(struct peer_extd_stats));
+		qdf_mem_malloc(sizeof(struct peer_extd_stats));
 
 	if (!peer_mc_stats->extd_stats) {
 		qdf_mem_free(peer_mc_stats->adv_stats);
@@ -415,9 +400,8 @@ QDF_STATUS wlan_cp_stats_peer_cs_deinit(struct peer_cp_stats *peer_cs)
 }
 
 QDF_STATUS ucfg_mc_cp_stats_inc_wake_lock_stats_by_protocol(
-					struct wlan_objmgr_psoc *psoc,
-					uint8_t vdev_id,
-					enum qdf_proto_subtype protocol)
+	struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
+	enum qdf_proto_subtype protocol)
 {
 	struct wake_lock_stats *stats;
 	struct psoc_cp_stats *psoc_cp_stats_priv;
@@ -469,8 +453,7 @@ QDF_STATUS ucfg_mc_cp_stats_inc_wake_lock_stats_by_protocol(
 }
 
 QDF_STATUS ucfg_mc_cp_stats_inc_wake_lock_stats_by_dst_addr(
-					struct wlan_objmgr_psoc *psoc,
-					uint8_t vdev_id, uint8_t *dest_mac)
+	struct wlan_objmgr_psoc *psoc, uint8_t vdev_id, uint8_t *dest_mac)
 {
 	struct psoc_cp_stats *psoc_cp_stats_priv;
 	struct psoc_mc_cp_stats *psoc_mc_stats;
@@ -537,8 +520,9 @@ QDF_STATUS ucfg_mc_cp_stats_inc_wake_lock_stats(struct wlan_objmgr_psoc *psoc,
 
 	stats = &psoc_mc_stats->wow_stats;
 
-	status = tgt_mc_cp_stats_inc_wake_lock_stats(psoc, reason, stats,
-				&psoc_mc_stats->wow_unspecified_wake_up_count);
+	status = tgt_mc_cp_stats_inc_wake_lock_stats(
+		psoc, reason, stats,
+		&psoc_mc_stats->wow_unspecified_wake_up_count);
 	wlan_cp_stats_psoc_obj_unlock(psoc_cp_stats_priv);
 
 	return status;
@@ -583,24 +567,24 @@ static void vdev_iterator(struct wlan_objmgr_psoc *psoc, void *vdev, void *arg)
 	stats->icmpv4_count += vdev_stats->icmpv4_count;
 	stats->icmpv6_count += vdev_stats->icmpv6_count;
 	stats->rssi_breach_wake_up_count +=
-			vdev_stats->rssi_breach_wake_up_count;
+		vdev_stats->rssi_breach_wake_up_count;
 	stats->low_rssi_wake_up_count += vdev_stats->low_rssi_wake_up_count;
 	stats->gscan_wake_up_count += vdev_stats->gscan_wake_up_count;
 	stats->pno_complete_wake_up_count +=
-			vdev_stats->pno_complete_wake_up_count;
+		vdev_stats->pno_complete_wake_up_count;
 	stats->pno_match_wake_up_count += vdev_stats->pno_match_wake_up_count;
 	stats->oem_response_wake_up_count +=
-			vdev_stats->oem_response_wake_up_count;
+		vdev_stats->oem_response_wake_up_count;
 	stats->uc_drop_wake_up_count += vdev_stats->uc_drop_wake_up_count;
 	stats->fatal_event_wake_up_count +=
-			vdev_stats->fatal_event_wake_up_count;
+		vdev_stats->fatal_event_wake_up_count;
 	stats->pwr_save_fail_detected += vdev_stats->pwr_save_fail_detected;
 	stats->scan_11d += vdev_stats->scan_11d;
 }
 
-QDF_STATUS ucfg_mc_cp_stats_get_psoc_wake_lock_stats(
-						struct wlan_objmgr_psoc *psoc,
-						struct wake_lock_stats *stats)
+QDF_STATUS
+ucfg_mc_cp_stats_get_psoc_wake_lock_stats(struct wlan_objmgr_psoc *psoc,
+					  struct wake_lock_stats *stats)
 {
 	struct psoc_cp_stats *psoc_cp_stats_priv;
 	struct psoc_mc_cp_stats *psoc_mc_stats;
@@ -614,16 +598,16 @@ QDF_STATUS ucfg_mc_cp_stats_get_psoc_wake_lock_stats(
 	wlan_cp_stats_psoc_obj_lock(psoc_cp_stats_priv);
 	psoc_mc_stats = psoc_cp_stats_priv->obj_stats;
 	/* iterate through all vdevs, and get wow stats from vdev_cs object */
-	wlan_objmgr_iterate_obj_list(psoc, WLAN_VDEV_OP, vdev_iterator,
-				     stats, true, WLAN_CP_STATS_ID);
+	wlan_objmgr_iterate_obj_list(psoc, WLAN_VDEV_OP, vdev_iterator, stats,
+				     true, WLAN_CP_STATS_ID);
 	wlan_cp_stats_psoc_obj_unlock(psoc_cp_stats_priv);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS ucfg_mc_cp_stats_get_vdev_wake_lock_stats(
-						struct wlan_objmgr_vdev *vdev,
-						struct wake_lock_stats *stats)
+QDF_STATUS
+ucfg_mc_cp_stats_get_vdev_wake_lock_stats(struct wlan_objmgr_vdev *vdev,
+					  struct wake_lock_stats *stats)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct psoc_cp_stats *psoc_cp_stats_priv;
@@ -659,13 +643,13 @@ QDF_STATUS ucfg_mc_cp_stats_get_vdev_wake_lock_stats(
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS ucfg_mc_cp_stats_write_wow_stats(
-				struct wlan_objmgr_psoc *psoc,
-				char *buffer, uint16_t max_len, int *ret)
+QDF_STATUS ucfg_mc_cp_stats_write_wow_stats(struct wlan_objmgr_psoc *psoc,
+					    char *buffer, uint16_t max_len,
+					    int *ret)
 {
 	QDF_STATUS status;
 	uint32_t unspecified_wake_count;
-	struct wake_lock_stats wow_stats = {0};
+	struct wake_lock_stats wow_stats = { 0 };
 	struct psoc_mc_cp_stats *psoc_mc_stats;
 	struct psoc_cp_stats *psoc_cp_stats_priv;
 
@@ -687,48 +671,43 @@ QDF_STATUS ucfg_mc_cp_stats_write_wow_stats(
 	unspecified_wake_count = psoc_mc_stats->wow_unspecified_wake_up_count;
 	wlan_cp_stats_psoc_obj_unlock(psoc_cp_stats_priv);
 
-	*ret = qdf_scnprintf(buffer, max_len,
-			     "WoW Wake Reasons\n"
-			     "\tunspecified wake count: %u\n"
-			     "\tunicast: %u\n"
-			     "\tbroadcast: %u\n"
-			     "\tIPv4 multicast: %u\n"
-			     "\tIPv6 multicast: %u\n"
-			     "\tIPv6 multicast RA: %u\n"
-			     "\tIPv6 multicast NS: %u\n"
-			     "\tIPv6 multicast NA: %u\n"
-			     "\tICMPv4: %u\n"
-			     "\tICMPv6: %u\n"
-			     "\tRSSI Breach: %u\n"
-			     "\tLow RSSI: %u\n"
-			     "\tG-Scan: %u\n"
-			     "\tPNO Complete: %u\n"
-			     "\tPNO Match: %u\n"
-			     "\tUC Drop wake_count: %u\n"
-			     "\twake count due to fatal event: %u\n"
-			     "\tOEM rsp wake_count: %u\n"
-			     "\twake count due to pwr_save_fail_detected: %u\n"
-			     "\twake count due to 11d scan: %u\n",
-			     unspecified_wake_count,
-			     wow_stats.ucast_wake_up_count,
-			     wow_stats.bcast_wake_up_count,
-			     wow_stats.ipv4_mcast_wake_up_count,
-			     wow_stats.ipv6_mcast_wake_up_count,
-			     wow_stats.ipv6_mcast_ra_stats,
-			     wow_stats.ipv6_mcast_ns_stats,
-			     wow_stats.ipv6_mcast_na_stats,
-			     wow_stats.icmpv4_count,
-			     wow_stats.icmpv6_count,
-			     wow_stats.rssi_breach_wake_up_count,
-			     wow_stats.low_rssi_wake_up_count,
-			     wow_stats.gscan_wake_up_count,
-			     wow_stats.pno_complete_wake_up_count,
-			     wow_stats.pno_match_wake_up_count,
-			     wow_stats.uc_drop_wake_up_count,
-			     wow_stats.fatal_event_wake_up_count,
-			     wow_stats.oem_response_wake_up_count,
-			     wow_stats.pwr_save_fail_detected,
-			     wow_stats.scan_11d);
+	*ret = qdf_scnprintf(
+		buffer, max_len,
+		"WoW Wake Reasons\n"
+		"\tunspecified wake count: %u\n"
+		"\tunicast: %u\n"
+		"\tbroadcast: %u\n"
+		"\tIPv4 multicast: %u\n"
+		"\tIPv6 multicast: %u\n"
+		"\tIPv6 multicast RA: %u\n"
+		"\tIPv6 multicast NS: %u\n"
+		"\tIPv6 multicast NA: %u\n"
+		"\tICMPv4: %u\n"
+		"\tICMPv6: %u\n"
+		"\tRSSI Breach: %u\n"
+		"\tLow RSSI: %u\n"
+		"\tG-Scan: %u\n"
+		"\tPNO Complete: %u\n"
+		"\tPNO Match: %u\n"
+		"\tUC Drop wake_count: %u\n"
+		"\twake count due to fatal event: %u\n"
+		"\tOEM rsp wake_count: %u\n"
+		"\twake count due to pwr_save_fail_detected: %u\n"
+		"\twake count due to 11d scan: %u\n",
+		unspecified_wake_count, wow_stats.ucast_wake_up_count,
+		wow_stats.bcast_wake_up_count,
+		wow_stats.ipv4_mcast_wake_up_count,
+		wow_stats.ipv6_mcast_wake_up_count,
+		wow_stats.ipv6_mcast_ra_stats, wow_stats.ipv6_mcast_ns_stats,
+		wow_stats.ipv6_mcast_na_stats, wow_stats.icmpv4_count,
+		wow_stats.icmpv6_count, wow_stats.rssi_breach_wake_up_count,
+		wow_stats.low_rssi_wake_up_count, wow_stats.gscan_wake_up_count,
+		wow_stats.pno_complete_wake_up_count,
+		wow_stats.pno_match_wake_up_count,
+		wow_stats.uc_drop_wake_up_count,
+		wow_stats.fatal_event_wake_up_count,
+		wow_stats.oem_response_wake_up_count,
+		wow_stats.pwr_save_fail_detected, wow_stats.scan_11d);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -964,7 +943,7 @@ QDF_STATUS ucfg_mc_cp_stats_get_pending_req(struct wlan_objmgr_psoc *psoc,
 static void ucfg_mc_cp_stats_free_peer_stats_info_ext(struct stats_event *ev)
 {
 	struct peer_stats_info_ext_event *peer_stats_info =
-							ev->peer_stats_info_ext;
+		ev->peer_stats_info_ext;
 	uint16_t i;
 
 	for (i = 0; i < ev->num_peer_stats_info_ext; i++) {
@@ -1034,8 +1013,8 @@ QDF_STATUS ucfg_mc_cp_stats_set_rate_flags(struct wlan_objmgr_vdev *vdev,
 }
 
 void ucfg_mc_cp_stats_register_lost_link_info_cb(
-			struct wlan_objmgr_psoc *psoc,
-			void (*lost_link_cp_stats_info_cb)(void *stats_ev))
+	struct wlan_objmgr_psoc *psoc,
+	void (*lost_link_cp_stats_info_cb)(void *stats_ev))
 {
 	struct psoc_cp_stats *psoc_cp_stats_priv;
 
@@ -1089,16 +1068,14 @@ ucfg_mc_cp_stats_resume_req_handler(struct wlan_objmgr_psoc *psoc)
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-ucfg_mc_cp_stats_resume_handler(struct wlan_objmgr_psoc *psoc,
-				void *arg)
+static QDF_STATUS ucfg_mc_cp_stats_resume_handler(struct wlan_objmgr_psoc *psoc,
+						  void *arg)
 {
 	return ucfg_mc_cp_stats_resume_req_handler(psoc);
 }
 
 static QDF_STATUS
-ucfg_mc_cp_stats_suspend_handler(struct wlan_objmgr_psoc *psoc,
-				 void *arg)
+ucfg_mc_cp_stats_suspend_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	return ucfg_mc_cp_stats_suspend_req_handler(psoc);
 }
@@ -1147,21 +1124,21 @@ void wlan_cp_stats_update_chan_info(struct wlan_objmgr_psoc *psoc,
 	for (i = 0; i < total_channel; i++) {
 		if (channel_status_list[i].channel_id ==
 		    channel_stat->channel_id) {
-			if (channel_stat->cmd_flags ==
-			    WMI_CHAN_InFO_END_RESP &&
+			if (channel_stat->cmd_flags == WMI_CHAN_InFO_END_RESP &&
 			    channel_status_list[i].cmd_flags ==
-			    WMI_CHAN_InFO_START_RESP) {
+				    WMI_CHAN_InFO_START_RESP) {
 				/* adjust to delta value for counts */
 				channel_stat->rx_clear_count -=
-				    channel_status_list[i].rx_clear_count;
+					channel_status_list[i].rx_clear_count;
 				channel_stat->cycle_count -=
-				    channel_status_list[i].cycle_count;
+					channel_status_list[i].cycle_count;
 				channel_stat->rx_frame_count -=
-				    channel_status_list[i].rx_frame_count;
+					channel_status_list[i].rx_frame_count;
 				channel_stat->tx_frame_count -=
-				    channel_status_list[i].tx_frame_count;
+					channel_status_list[i].tx_frame_count;
 				channel_stat->bss_rx_cycle_count -=
-				    channel_status_list[i].bss_rx_cycle_count;
+					channel_status_list[i]
+						.bss_rx_cycle_count;
 			}
 			qdf_mem_copy(&channel_status_list[i], channel_stat,
 				     sizeof(*channel_status_list));

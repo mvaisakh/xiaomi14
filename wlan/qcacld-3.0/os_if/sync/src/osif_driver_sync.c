@@ -16,8 +16,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "__osif_driver_sync.h"
 #include "osif_driver_sync.h"
+#include "__osif_driver_sync.h"
 #include "qdf_lock.h"
 #include "qdf_status.h"
 #include "qdf_types.h"
@@ -101,9 +101,8 @@ sync_put:
 	return qdf_status_to_os_return(status);
 }
 
-int
-__osif_driver_sync_create_and_trans(struct osif_driver_sync **out_driver_sync,
-				    const char *desc)
+int __osif_driver_sync_create_and_trans(
+	struct osif_driver_sync **out_driver_sync, const char *desc)
 {
 	struct osif_driver_sync *driver_sync;
 	QDF_STATUS status;
@@ -189,11 +188,9 @@ __osif_driver_sync_start_callback(struct osif_driver_sync **out_driver_sync,
 	return 0;
 }
 
-static int
-__osif_driver_sync_start_wait_callback(
-				struct osif_driver_sync **out_driver_sync,
-				const char *desc,
-				driver_start_func driver_start_cb)
+static int __osif_driver_sync_start_wait_callback(
+	struct osif_driver_sync **out_driver_sync, const char *desc,
+	driver_start_func driver_start_cb)
 {
 	QDF_STATUS status;
 	struct osif_driver_sync *driver_sync;
@@ -227,15 +224,14 @@ int __osif_driver_sync_trans_start(struct osif_driver_sync **out_driver_sync,
 	return errno;
 }
 
-int
-__osif_driver_sync_trans_start_wait(struct osif_driver_sync **out_driver_sync,
-				    const char *desc)
+int __osif_driver_sync_trans_start_wait(
+	struct osif_driver_sync **out_driver_sync, const char *desc)
 {
 	int errno;
 
 	/* since dsc_driver_trans_start_wait may sleep do not take lock here */
-	errno = __osif_driver_sync_start_wait_callback(out_driver_sync, desc,
-			dsc_driver_trans_start_wait);
+	errno = __osif_driver_sync_start_wait_callback(
+		out_driver_sync, desc, dsc_driver_trans_start_wait);
 
 	return errno;
 }
@@ -315,4 +311,3 @@ QDF_STATUS osif_driver_sync_dsc_psoc_create(struct dsc_psoc **out_dsc_psoc)
 
 	return status;
 }
-

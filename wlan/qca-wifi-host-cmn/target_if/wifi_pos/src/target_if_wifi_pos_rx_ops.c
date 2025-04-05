@@ -22,16 +22,16 @@
  * This file defines the functions pertinent to wifi positioning component's
  * target if layer.
  */
-#include "wifi_pos_utils_pub.h"
 #include "wifi_pos_api.h"
 #include "wifi_pos_pasn_api.h"
+#include "wifi_pos_utils_pub.h"
 
-#include "wmi_unified_api.h"
-#include "wlan_lmac_if_def.h"
+#include "target_if.h"
 #include "target_if_wifi_pos.h"
 #include "target_if_wifi_pos_rx_ops.h"
 #include "wifi_pos_utils_i.h"
-#include "target_if.h"
+#include "wlan_lmac_if_def.h"
+#include "wmi_unified_api.h"
 
 static struct wlan_lmac_if_wifi_pos_rx_ops *
 target_if_wifi_pos_get_rxops(struct wlan_objmgr_psoc *psoc)
@@ -52,8 +52,7 @@ target_if_wifi_pos_get_rxops(struct wlan_objmgr_psoc *psoc)
 	return &rx_ops->wifi_pos_rx_ops;
 }
 
-int target_if_wifi_pos_oem_rsp_ev_handler(ol_scn_t scn,
-					  uint8_t *data_buf,
+int target_if_wifi_pos_oem_rsp_ev_handler(ol_scn_t scn, uint8_t *data_buf,
 					  uint32_t data_len)
 {
 	int ret;
@@ -61,11 +60,11 @@ int target_if_wifi_pos_oem_rsp_ev_handler(ol_scn_t scn,
 	QDF_STATUS status;
 	uint32_t cookie = 0;
 	struct wmi_host_oem_indirect_data *indirect;
-	struct oem_data_rsp oem_rsp = {0};
+	struct oem_data_rsp oem_rsp = { 0 };
 	struct wifi_pos_psoc_priv_obj *priv_obj;
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_wifi_pos_rx_ops *wifi_pos_rx_ops;
-	struct wmi_oem_response_param oem_resp_param = {0};
+	struct wmi_oem_response_param oem_resp_param = { 0 };
 	wmi_unified_t wmi_handle;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -97,16 +96,15 @@ int target_if_wifi_pos_oem_rsp_ev_handler(ol_scn_t scn,
 		return QDF_STATUS_NOT_INITIALIZED;
 	}
 
-	ret = wmi_extract_oem_response_param(wmi_handle,
-					     data_buf,
+	ret = wmi_extract_oem_response_param(wmi_handle, data_buf,
 					     &oem_resp_param);
 
 	oem_rsp.rsp_len_1 = oem_resp_param.num_data1;
-	oem_rsp.data_1    = oem_resp_param.data_1;
+	oem_rsp.data_1 = oem_resp_param.data_1;
 
 	if (oem_resp_param.num_data2) {
 		oem_rsp.rsp_len_2 = oem_resp_param.num_data2;
-		oem_rsp.data_2    = oem_resp_param.data_2;
+		oem_rsp.data_2 = oem_resp_param.data_2;
 	}
 
 	indirect = &oem_resp_param.indirect_data;
@@ -139,15 +137,13 @@ int wifi_pos_oem_cap_ev_handler(ol_scn_t scn, uint8_t *buf, uint32_t len)
 	return 0;
 }
 
-int wifi_pos_oem_meas_rpt_ev_handler(ol_scn_t scn, uint8_t *buf,
-				     uint32_t len)
+int wifi_pos_oem_meas_rpt_ev_handler(ol_scn_t scn, uint8_t *buf, uint32_t len)
 {
 	/* TBD */
 	return 0;
 }
 
-int wifi_pos_oem_err_rpt_ev_handler(ol_scn_t scn, uint8_t *buf,
-				    uint32_t len)
+int wifi_pos_oem_err_rpt_ev_handler(ol_scn_t scn, uint8_t *buf, uint32_t len)
 {
 	/* TBD */
 	return 0;
@@ -168,8 +164,7 @@ target_if_wifi_pos_get_rx_ops(struct wlan_objmgr_psoc *psoc)
 	return &rx_ops->wifi_pos_rx_ops;
 }
 
-int target_if_wifi_pos_pasn_peer_create_ev_handler(ol_scn_t scn,
-						   uint8_t *buf,
+int target_if_wifi_pos_pasn_peer_create_ev_handler(ol_scn_t scn, uint8_t *buf,
 						   uint32_t len)
 {
 	wmi_unified_t wmi_handle;
@@ -217,16 +212,14 @@ int target_if_wifi_pos_pasn_peer_create_ev_handler(ol_scn_t scn,
 
 	rx_ops = target_if_wifi_pos_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->wifi_pos_ranging_peer_create_cb) {
-		wifi_pos_err("%s is null",
-			     !rx_ops ? "rx_ops" : "rx_ops_cb");
+		wifi_pos_err("%s is null", !rx_ops ? "rx_ops" : "rx_ops_cb");
 		wlan_objmgr_psoc_release_ref(psoc, WLAN_WIFI_POS_TGT_IF_ID);
 		qdf_mem_free(data);
 		return -EINVAL;
 	}
 
 	rx_ops->wifi_pos_ranging_peer_create_cb(psoc, data->peer_info,
-						data->vdev_id,
-						data->num_peers);
+						data->vdev_id, data->num_peers);
 
 	wlan_objmgr_psoc_release_ref(psoc, WLAN_WIFI_POS_TGT_IF_ID);
 	qdf_mem_free(data);
@@ -234,8 +227,7 @@ int target_if_wifi_pos_pasn_peer_create_ev_handler(ol_scn_t scn,
 	return 0;
 }
 
-int target_if_wifi_pos_pasn_peer_delete_ev_handler(ol_scn_t scn,
-						   uint8_t *buf,
+int target_if_wifi_pos_pasn_peer_delete_ev_handler(ol_scn_t scn, uint8_t *buf,
 						   uint32_t len)
 {
 	wmi_unified_t wmi_handle;
@@ -275,16 +267,14 @@ int target_if_wifi_pos_pasn_peer_delete_ev_handler(ol_scn_t scn,
 
 	rx_ops = target_if_wifi_pos_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->wifi_pos_ranging_peer_delete_cb) {
-		wifi_pos_err("%s is null",
-			     !rx_ops ? "rx_ops" : "rx_ops_cb");
+		wifi_pos_err("%s is null", !rx_ops ? "rx_ops" : "rx_ops_cb");
 		wlan_objmgr_psoc_release_ref(psoc, WLAN_WIFI_POS_TGT_IF_ID);
 		qdf_mem_free(data);
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
 	rx_ops->wifi_pos_ranging_peer_delete_cb(psoc, data->peer_info,
-						data->vdev_id,
-						data->num_peers);
+						data->vdev_id, data->num_peers);
 
 	wlan_objmgr_psoc_release_ref(psoc, WLAN_WIFI_POS_TGT_IF_ID);
 	qdf_mem_free(data);
@@ -292,4 +282,3 @@ int target_if_wifi_pos_pasn_peer_delete_ev_handler(ol_scn_t scn,
 	return 0;
 }
 #endif
-

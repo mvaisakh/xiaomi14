@@ -15,11 +15,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "osif_sync.h"
 #include <wlan_hdd_main.h>
+#include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_ipa.h>
 #include <wlan_ipa_ucfg_api.h>
-#include <wlan_hdd_sysfs.h>
-#include "osif_sync.h"
 
 #ifdef IPA_OFFLOAD
 #define MAX_USER_COMMAND_SIZE_IPAUCSTAT 4
@@ -30,7 +30,7 @@ static ssize_t __hdd_sysfs_ipaucstate_store(struct net_device *net_dev,
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(net_dev);
 	struct hdd_context *hdd_ctx;
-	uint8_t cmd[MAX_USER_COMMAND_SIZE_IPAUCSTAT] = {0};
+	uint8_t cmd[MAX_USER_COMMAND_SIZE_IPAUCSTAT] = { 0 };
 	int ret;
 	char *sptr, *token;
 	uint8_t set_value = 0;
@@ -54,8 +54,7 @@ static ssize_t __hdd_sysfs_ipaucstate_store(struct net_device *net_dev,
 	if (adapter->device_mode != QDF_SAP_MODE)
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(cmd, sizeof(cmd),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(cmd, sizeof(cmd), buf, count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -85,8 +84,8 @@ static ssize_t __hdd_sysfs_ipaucstate_store(struct net_device *net_dev,
 		break;
 	default:
 		/* place holder for stats clean up
-		 * Stats clean not implemented yet on FW and IPA
-		 */
+     * Stats clean not implemented yet on FW and IPA
+     */
 		break;
 	}
 	hdd_exit();
@@ -111,8 +110,7 @@ static ssize_t hdd_sysfs_ipaucstate_store(struct device *dev,
 	return err_size;
 }
 
-static DEVICE_ATTR(ipaucstat, 0220,
-		   NULL, hdd_sysfs_ipaucstate_store);
+static DEVICE_ATTR(ipaucstat, 0220, NULL, hdd_sysfs_ipaucstate_store);
 
 void hdd_sysfs_ipa_create(struct hdd_adapter *adapter)
 {

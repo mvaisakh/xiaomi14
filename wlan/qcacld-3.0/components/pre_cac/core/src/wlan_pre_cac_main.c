@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,10 +22,10 @@
  */
 
 #include "wlan_pre_cac_main.h"
+#include "wlan_mlme_api.h"
 #include "wlan_objmgr_global_obj.h"
 #include "wlan_policy_mgr_api.h"
 #include "wlan_reg_services_api.h"
-#include "wlan_mlme_api.h"
 
 struct pre_cac_ops *glbl_pre_cac_ops;
 
@@ -39,8 +40,7 @@ void pre_cac_stop(struct wlan_objmgr_psoc *psoc)
 		qdf_flush_work(&psoc_priv->pre_cac_work);
 }
 
-void pre_cac_set_freq(struct wlan_objmgr_vdev *vdev,
-		      qdf_freq_t freq)
+void pre_cac_set_freq(struct wlan_objmgr_vdev *vdev, qdf_freq_t freq)
 {
 	struct pre_cac_vdev_priv *vdev_priv;
 
@@ -85,8 +85,7 @@ qdf_freq_t pre_cac_get_freq_before_pre_cac(struct wlan_objmgr_vdev *vdev)
 	return vdev_priv->freq_before_pre_cac;
 }
 
-void pre_cac_adapter_set(struct wlan_objmgr_vdev *vdev,
-			 bool status)
+void pre_cac_adapter_set(struct wlan_objmgr_vdev *vdev, bool status)
 {
 	struct pre_cac_vdev_priv *vdev_priv;
 
@@ -118,8 +117,7 @@ bool pre_cac_adapter_is_active(struct wlan_objmgr_vdev *vdev)
 	return vdev_priv->is_pre_cac_adapter;
 }
 
-void pre_cac_complete_set(struct wlan_objmgr_vdev *vdev,
-			  bool status)
+void pre_cac_complete_set(struct wlan_objmgr_vdev *vdev, bool status)
 {
 	struct pre_cac_vdev_priv *vdev_priv;
 
@@ -146,12 +144,10 @@ bool pre_cac_complete_get(struct wlan_objmgr_vdev *vdev)
 	return vdev_priv->pre_cac_complete;
 }
 
-static void pre_cac_complete(struct wlan_objmgr_psoc *psoc,
-			     uint8_t vdev_id,
+static void pre_cac_complete(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 			     QDF_STATUS status)
 {
-	if (glbl_pre_cac_ops &&
-	    glbl_pre_cac_ops->pre_cac_complete_cb)
+	if (glbl_pre_cac_ops && glbl_pre_cac_ops->pre_cac_complete_cb)
 		glbl_pre_cac_ops->pre_cac_complete_cb(psoc, vdev_id, status);
 }
 
@@ -174,8 +170,8 @@ static void pre_cac_conditional_csa_ind(struct wlan_objmgr_psoc *psoc,
 {
 	if (glbl_pre_cac_ops &&
 	    glbl_pre_cac_ops->pre_cac_conditional_csa_ind_cb)
-		glbl_pre_cac_ops->pre_cac_conditional_csa_ind_cb(psoc,
-							vdev_id, status);
+		glbl_pre_cac_ops->pre_cac_conditional_csa_ind_cb(psoc, vdev_id,
+								 status);
 }
 
 static void pre_cac_handle_failure(void *data)
@@ -213,8 +209,7 @@ void pre_cac_clean_up(struct wlan_objmgr_psoc *psoc)
 	pre_cac_get_vdev_id(psoc, &vdev_id);
 	pre_cac_debug("schedue pre_cac_work vdev %d", vdev_id);
 	psoc_priv->pre_cac_vdev_id = vdev_id;
-	qdf_create_work(0, &psoc_priv->pre_cac_work,
-			pre_cac_handle_failure,
+	qdf_create_work(0, &psoc_priv->pre_cac_work, pre_cac_handle_failure,
 			psoc);
 	qdf_sched_work(0, &psoc_priv->pre_cac_work);
 }
@@ -228,8 +223,7 @@ void pre_cac_handle_radar_ind(struct wlan_objmgr_vdev *vdev)
 
 	pre_cac_debug("schedue pre_cac_work vdev %d", wlan_vdev_get_id(vdev));
 	psoc_priv->pre_cac_vdev_id = wlan_vdev_get_id(vdev);
-	qdf_create_work(0, &psoc_priv->pre_cac_work,
-			pre_cac_handle_failure,
+	qdf_create_work(0, &psoc_priv->pre_cac_work, pre_cac_handle_failure,
 			psoc);
 	qdf_sched_work(0, &psoc_priv->pre_cac_work);
 }
@@ -243,8 +237,7 @@ void pre_cac_handle_cac_end(struct wlan_objmgr_vdev *vdev)
 
 	pre_cac_debug("schedue pre_cac_work vdev %d", wlan_vdev_get_id(vdev));
 	psoc_priv->pre_cac_vdev_id = wlan_vdev_get_id(vdev);
-	qdf_create_work(0, &psoc_priv->pre_cac_work,
-			pre_cac_handle_success,
+	qdf_create_work(0, &psoc_priv->pre_cac_work, pre_cac_handle_success,
 			psoc);
 	qdf_sched_work(0, &psoc_priv->pre_cac_work);
 }
@@ -264,12 +257,11 @@ static void pre_cac_get_vdev_id_handler(struct wlan_objmgr_psoc *psoc,
 		*vdev_id = vdev->vdev_objmgr.vdev_id;
 }
 
-void pre_cac_get_vdev_id(struct wlan_objmgr_psoc *psoc,
-			 uint8_t *vdev_id)
+void pre_cac_get_vdev_id(struct wlan_objmgr_psoc *psoc, uint8_t *vdev_id)
 {
 	wlan_objmgr_iterate_obj_list(psoc, WLAN_VDEV_OP,
-				     pre_cac_get_vdev_id_handler,
-				     vdev_id, true, WLAN_PRE_CAC_ID);
+				     pre_cac_get_vdev_id_handler, vdev_id, true,
+				     WLAN_PRE_CAC_ID);
 }
 
 int pre_cac_validate_and_get_freq(struct wlan_objmgr_pdev *pdev,
@@ -278,8 +270,8 @@ int pre_cac_validate_and_get_freq(struct wlan_objmgr_pdev *pdev,
 {
 	struct wlan_objmgr_psoc *psoc = wlan_pdev_get_psoc(pdev);
 	uint32_t len = CFG_VALID_CHANNEL_LIST_LEN;
-	uint8_t pcl_weights[NUM_CHANNELS] = {0};
-	uint32_t freq_list[NUM_CHANNELS] = {0};
+	uint8_t pcl_weights[NUM_CHANNELS] = { 0 };
+	uint32_t freq_list[NUM_CHANNELS] = { 0 };
 	uint32_t weight_len = 0;
 	QDF_STATUS status;
 	uint32_t i;
@@ -293,26 +285,22 @@ int pre_cac_validate_and_get_freq(struct wlan_objmgr_pdev *pdev,
 
 	if (!chan_freq) {
 		/* Channel is not obtained from PCL because PCL may not have
-		 * the entire channel list. For example: if SAP is up on
-		 * channel 6 and PCL is queried for the next SAP interface,
-		 * if SCC is preferred, the PCL will contain only the channel
-		 * 6. But, we are in need of a DFS channel. So, going with the
-		 * first channel from the valid channel list.
-		 */
-		status = policy_mgr_get_valid_chans(psoc,
-						    freq_list, &len);
+     * the entire channel list. For example: if SAP is up on
+     * channel 6 and PCL is queried for the next SAP interface,
+     * if SCC is preferred, the PCL will contain only the channel
+     * 6. But, we are in need of a DFS channel. So, going with the
+     * first channel from the valid channel list.
+     */
+		status = policy_mgr_get_valid_chans(psoc, freq_list, &len);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			pre_cac_err("Failed to get channel list");
 			return -EINVAL;
 		}
 
-		policy_mgr_update_with_safe_channel_list(psoc,
-							 freq_list, &len,
-							 pcl_weights,
-							 weight_len);
+		policy_mgr_update_with_safe_channel_list(
+			psoc, freq_list, &len, pcl_weights, weight_len);
 		for (i = 0; i < len; i++) {
-			if (wlan_reg_is_dfs_for_freq(pdev,
-						     freq_list[i])) {
+			if (wlan_reg_is_dfs_for_freq(pdev, freq_list[i])) {
 				*pre_cac_chan_freq = freq_list[i];
 				break;
 			}
@@ -324,9 +312,9 @@ int pre_cac_validate_and_get_freq(struct wlan_objmgr_pdev *pdev,
 		}
 	} else {
 		/* Only when driver selects a channel, check is done for
-		 * unnsafe and NOL channels. When user provides a fixed channel
-		 * the user is expected to take care of this.
-		 */
+     * unnsafe and NOL channels. When user provides a fixed channel
+     * the user is expected to take care of this.
+     */
 		if (!wlan_mlme_is_channel_valid(psoc, chan_freq) ||
 		    !wlan_reg_is_dfs_for_freq(pdev, chan_freq)) {
 			pre_cac_err("Invalid channel for pre cac:%d",
@@ -391,29 +379,29 @@ void pre_cac_clear_work(struct wlan_objmgr_psoc *psoc)
 }
 
 struct pre_cac_vdev_priv *
-pre_cac_vdev_get_priv_fl(struct wlan_objmgr_vdev *vdev,
-			 const char *func, uint32_t line)
+pre_cac_vdev_get_priv_fl(struct wlan_objmgr_vdev *vdev, const char *func,
+			 uint32_t line)
 {
 	struct pre_cac_vdev_priv *vdev_priv;
 
-	vdev_priv = wlan_objmgr_vdev_get_comp_private_obj(vdev,
-							WLAN_UMAC_COMP_PRE_CAC);
+	vdev_priv = wlan_objmgr_vdev_get_comp_private_obj(
+		vdev, WLAN_UMAC_COMP_PRE_CAC);
 	if (!vdev_priv) {
-		pre_cac_nofl_err("%s:%u: vdev id: %d, vdev_priv is NULL",
-				 func, line, wlan_vdev_get_id(vdev));
+		pre_cac_nofl_err("%s:%u: vdev id: %d, vdev_priv is NULL", func,
+				 line, wlan_vdev_get_id(vdev));
 	}
 
 	return vdev_priv;
 }
 
 struct pre_cac_psoc_priv *
-pre_cac_psoc_get_priv_fl(struct wlan_objmgr_psoc *psoc,
-			 const char *func, uint32_t line)
+pre_cac_psoc_get_priv_fl(struct wlan_objmgr_psoc *psoc, const char *func,
+			 uint32_t line)
 {
 	struct pre_cac_psoc_priv *psoc_priv;
 
-	psoc_priv = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-					WLAN_UMAC_COMP_PRE_CAC);
+	psoc_priv = wlan_objmgr_psoc_get_comp_private_obj(
+		psoc, WLAN_UMAC_COMP_PRE_CAC);
 	if (!psoc_priv)
 		pre_cac_nofl_err("%s:%u: psoc_priv is NULL", func, line);
 
@@ -437,9 +425,10 @@ pre_cac_vdev_create_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 		goto exit;
 	}
 
-	status = wlan_objmgr_vdev_component_obj_attach(
-				vdev, WLAN_UMAC_COMP_PRE_CAC,
-				(void *)vdev_priv, QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_vdev_component_obj_attach(vdev,
+						       WLAN_UMAC_COMP_PRE_CAC,
+						       (void *)vdev_priv,
+						       QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pre_cac_err("Failed to attach priv with vdev");
 		goto free_vdev_priv;
@@ -467,8 +456,7 @@ pre_cac_vdev_destroy_notification(struct wlan_objmgr_vdev *vdev, void *arg)
 	}
 
 	status = wlan_objmgr_vdev_component_obj_detach(
-					vdev, WLAN_UMAC_COMP_PRE_CAC,
-					(void *)vdev_priv);
+		vdev, WLAN_UMAC_COMP_PRE_CAC, (void *)vdev_priv);
 	if (QDF_IS_STATUS_ERROR(status))
 		pre_cac_err("Failed to detach priv with vdev");
 
@@ -489,9 +477,8 @@ pre_cac_psoc_create_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 	if (!psoc_priv)
 		return QDF_STATUS_E_NOMEM;
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-				WLAN_UMAC_COMP_PRE_CAC,
-				psoc_priv, QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_PRE_CAC, psoc_priv, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pre_cac_err("Failed to attach psoc component obj");
 		goto free_psoc_priv;
@@ -516,9 +503,8 @@ pre_cac_psoc_destroy_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-					WLAN_UMAC_COMP_PRE_CAC,
-					psoc_priv);
+	status = wlan_objmgr_psoc_component_obj_detach(
+		psoc, WLAN_UMAC_COMP_PRE_CAC, psoc_priv);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pre_cac_err("Failed to detach psoc component obj");
 		return status;
@@ -533,34 +519,30 @@ QDF_STATUS pre_cac_init(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_register_psoc_create_handler(
-				WLAN_UMAC_COMP_PRE_CAC,
-				pre_cac_psoc_create_notification,
-				NULL);
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_psoc_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pre_cac_err("Failed to register psoc create handler");
 		return status;
 	}
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-				WLAN_UMAC_COMP_PRE_CAC,
-				pre_cac_psoc_destroy_notification,
-				NULL);
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_psoc_destroy_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pre_cac_err("Failed to register psoc delete handler");
 		goto fail_destroy_psoc;
 	}
 
 	status = wlan_objmgr_register_vdev_create_handler(
-				WLAN_UMAC_COMP_PRE_CAC,
-				pre_cac_vdev_create_notification, NULL);
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_vdev_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pre_cac_err("Failed to register vdev create handler");
 		goto fail_create_vdev;
 	}
 
 	status = wlan_objmgr_register_vdev_destroy_handler(
-				WLAN_UMAC_COMP_PRE_CAC,
-				pre_cac_vdev_destroy_notification, NULL);
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_vdev_destroy_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pre_cac_err("Failed to register vdev destroy handler");
 		goto fail_destroy_vdev;
@@ -568,16 +550,17 @@ QDF_STATUS pre_cac_init(void)
 	return status;
 
 fail_destroy_vdev:
-	wlan_objmgr_unregister_vdev_create_handler(WLAN_UMAC_COMP_PRE_CAC,
-		pre_cac_vdev_create_notification, NULL);
+	wlan_objmgr_unregister_vdev_create_handler(
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_vdev_create_notification, NULL);
 
 fail_create_vdev:
-	wlan_objmgr_unregister_psoc_destroy_handler(WLAN_UMAC_COMP_PRE_CAC,
-		pre_cac_psoc_destroy_notification, NULL);
+	wlan_objmgr_unregister_psoc_destroy_handler(
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_psoc_destroy_notification,
+		NULL);
 
 fail_destroy_psoc:
-	wlan_objmgr_unregister_psoc_create_handler(WLAN_UMAC_COMP_PRE_CAC,
-		pre_cac_psoc_create_notification, NULL);
+	wlan_objmgr_unregister_psoc_create_handler(
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_psoc_create_notification, NULL);
 
 	return status;
 }
@@ -587,29 +570,24 @@ void pre_cac_deinit(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_unregister_vdev_destroy_handler(
-				WLAN_UMAC_COMP_PRE_CAC,
-				pre_cac_vdev_destroy_notification,
-				NULL);
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_vdev_destroy_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		pre_cac_err("Failed to unregister vdev destroy handler");
 
 	status = wlan_objmgr_unregister_vdev_create_handler(
-				WLAN_UMAC_COMP_PRE_CAC,
-				pre_cac_vdev_create_notification, NULL);
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_vdev_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		pre_cac_err("Failed to unregister vdev create handler");
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-				WLAN_UMAC_COMP_PRE_CAC,
-				pre_cac_psoc_destroy_notification,
-				NULL);
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_psoc_destroy_notification,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		pre_cac_err("Failed to unregister psoc destroy handler");
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_UMAC_COMP_PRE_CAC,
-				pre_cac_psoc_create_notification,
-				NULL);
+		WLAN_UMAC_COMP_PRE_CAC, pre_cac_psoc_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		pre_cac_err("Failed to unregister psoc create handler");
 }

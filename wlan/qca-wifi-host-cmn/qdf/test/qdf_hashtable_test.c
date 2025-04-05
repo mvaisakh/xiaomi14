@@ -16,8 +16,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_hashtable.h"
 #include "qdf_hashtable_test.h"
+#include "qdf_hashtable.h"
 #include "qdf_trace.h"
 
 /* 16 buckets */
@@ -45,21 +45,24 @@ static uint32_t qdf_ht_test_single(void)
 	QDF_BUG(cursor->key == item.key);
 
 	count = 0;
-	qdf_ht_for_each(ht, i, cursor, entry) {
+	qdf_ht_for_each(ht, i, cursor, entry)
+	{
 		QDF_BUG(cursor->key == item.key);
 		count++;
 	}
 	QDF_BUG(count == 1);
 
 	count = 0;
-	qdf_ht_for_each_in_bucket(ht, cursor, entry, item.key) {
+	qdf_ht_for_each_in_bucket(ht, cursor, entry, item.key)
+	{
 		QDF_BUG(cursor->key == item.key);
 		count++;
 	}
 	QDF_BUG(count == 1);
 
 	count = 0;
-	qdf_ht_for_each_match(ht, cursor, entry, item.key, key) {
+	qdf_ht_for_each_match(ht, cursor, entry, item.key, key)
+	{
 		QDF_BUG(cursor->key == item.key);
 		count++;
 	}
@@ -82,4 +85,3 @@ uint32_t qdf_ht_unit_test(void)
 
 	return errors;
 }
-

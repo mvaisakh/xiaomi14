@@ -22,12 +22,12 @@
  */
 
 #include <qdf_status.h>
-#include <target_if_ftm.h>
-#include <wmi_unified_priv.h>
-#include <wlan_objmgr_psoc_obj.h>
 #include <target_if.h>
-#include <wlan_lmac_if_def.h>
+#include <target_if_ftm.h>
 #include <wlan_ftm_ucfg_api.h>
+#include <wlan_lmac_if_def.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wmi_unified_priv.h>
 
 static inline struct wlan_lmac_if_ftm_rx_ops *
 target_if_ftm_get_rx_ops(struct wlan_objmgr_psoc *psoc)
@@ -43,8 +43,8 @@ target_if_ftm_get_rx_ops(struct wlan_objmgr_psoc *psoc)
 	return &rx_ops->ftm_rx_ops;
 }
 
-static int
-target_if_ftm_process_utf_event(ol_scn_t sc, uint8_t *event_buf, uint32_t len)
+static int target_if_ftm_process_utf_event(ol_scn_t sc, uint8_t *event_buf,
+					   uint32_t len)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_pdev *pdev;
@@ -75,8 +75,8 @@ target_if_ftm_process_utf_event(ol_scn_t sc, uint8_t *event_buf, uint32_t len)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if (wmi_extract_pdev_utf_event(wmi_handle, event_buf, &event)
-	    != QDF_STATUS_SUCCESS) {
+	if (wmi_extract_pdev_utf_event(wmi_handle, event_buf, &event) !=
+	    QDF_STATUS_SUCCESS) {
 		ftm_err("Extracting utf event failed");
 		wlan_objmgr_psoc_release_ref(psoc, WLAN_FTM_ID);
 		return QDF_STATUS_E_INVAL;
@@ -102,8 +102,8 @@ target_if_ftm_process_utf_event(ol_scn_t sc, uint8_t *event_buf, uint32_t len)
 		return QDF_STATUS_E_INVAL;
 	}
 	if (ftm_rx_ops->ftm_ev_handler) {
-		status = ftm_rx_ops->ftm_ev_handler(pdev,
-				event.data, event.datalen);
+		status = ftm_rx_ops->ftm_ev_handler(pdev, event.data,
+						    event.datalen);
 		if (QDF_IS_STATUS_ERROR(status))
 			status = QDF_STATUS_E_INVAL;
 	} else {
@@ -116,9 +116,8 @@ target_if_ftm_process_utf_event(ol_scn_t sc, uint8_t *event_buf, uint32_t len)
 	return status;
 }
 
-QDF_STATUS target_if_ftm_cmd_send(struct wlan_objmgr_pdev *pdev,
-				  uint8_t *buf, uint32_t len,
-				  uint8_t pdev_id)
+QDF_STATUS target_if_ftm_cmd_send(struct wlan_objmgr_pdev *pdev, uint8_t *buf,
+				  uint32_t len, uint8_t pdev_id)
 {
 	QDF_STATUS ret;
 	wmi_unified_t handle;
@@ -159,10 +158,9 @@ QDF_STATUS target_if_ftm_attach(struct wlan_objmgr_psoc *psoc)
 		target_if_err("null handle");
 		return QDF_STATUS_E_FAILURE;
 	}
-	ret = wmi_unified_register_event_handler(handle,
-			wmi_pdev_utf_event_id,
-			target_if_ftm_process_utf_event,
-			WMI_RX_UMAC_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_pdev_utf_event_id, target_if_ftm_process_utf_event,
+		WMI_RX_UMAC_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		ftm_err("wmi event registration failed, ret: %d", ret);
 		return QDF_STATUS_E_FAILURE;

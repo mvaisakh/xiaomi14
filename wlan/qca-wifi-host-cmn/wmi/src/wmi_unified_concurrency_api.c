@@ -20,42 +20,41 @@
  * DOC: Implement API's specific to concurrency component.
  */
 
-#include <wmi_unified_priv.h>
 #include <wmi_unified_concurrency_api.h>
+#include <wmi_unified_priv.h>
 
 QDF_STATUS wmi_unified_set_enable_disable_mcc_adaptive_scheduler_cmd(
-		wmi_unified_t wmi_handle, uint32_t mcc_adaptive_scheduler,
-		uint32_t pdev_id)
+	wmi_unified_t wmi_handle, uint32_t mcc_adaptive_scheduler,
+	uint32_t pdev_id)
 {
 	if (wmi_handle->ops->send_set_enable_disable_mcc_adaptive_scheduler_cmd)
-		return wmi_handle->ops->send_set_enable_disable_mcc_adaptive_scheduler_cmd(wmi_handle,
-					mcc_adaptive_scheduler, pdev_id);
+		return wmi_handle->ops
+			->send_set_enable_disable_mcc_adaptive_scheduler_cmd(
+				wmi_handle, mcc_adaptive_scheduler, pdev_id);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_set_mcc_channel_time_latency_cmd(
-	wmi_unified_t wmi_handle,
-	uint32_t mcc_channel_freq, uint32_t mcc_channel_time_latency)
+QDF_STATUS
+wmi_unified_set_mcc_channel_time_latency_cmd(wmi_unified_t wmi_handle,
+					     uint32_t mcc_channel_freq,
+					     uint32_t mcc_channel_time_latency)
 {
 	if (wmi_handle->ops->send_set_mcc_channel_time_latency_cmd)
-		return wmi_handle->ops->send_set_mcc_channel_time_latency_cmd(wmi_handle,
-					mcc_channel_freq,
-					mcc_channel_time_latency);
+		return wmi_handle->ops->send_set_mcc_channel_time_latency_cmd(
+			wmi_handle, mcc_channel_freq, mcc_channel_time_latency);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS wmi_unified_set_mcc_channel_time_quota_cmd(
-		wmi_unified_t wmi_handle,
-		uint32_t adapter_1_chan_freq,
-		uint32_t adapter_1_quota, uint32_t adapter_2_chan_freq)
+	wmi_unified_t wmi_handle, uint32_t adapter_1_chan_freq,
+	uint32_t adapter_1_quota, uint32_t adapter_2_chan_freq)
 {
 	if (wmi_handle->ops->send_set_mcc_channel_time_quota_cmd)
-		return wmi_handle->ops->send_set_mcc_channel_time_quota_cmd(wmi_handle,
-						adapter_1_chan_freq,
-						adapter_1_quota,
-						adapter_2_chan_freq);
+		return wmi_handle->ops->send_set_mcc_channel_time_quota_cmd(
+			wmi_handle, adapter_1_chan_freq, adapter_1_quota,
+			adapter_2_chan_freq);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -72,7 +71,7 @@ QDF_STATUS wmi_extract_mcc_quota_ev_param(wmi_unified_t wmi_handle,
 
 	if (wmi_handle->ops->extract_mcc_quota_ev_param)
 		return wmi_handle->ops->extract_mcc_quota_ev_param(
-				wmi_handle, evt_buf, param);
+			wmi_handle, evt_buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }

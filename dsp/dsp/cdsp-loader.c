@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2012-2014, 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2012-2014, 2017-2021, The Linux Foundation. All rights
+ * reserved. Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
+#include <linux/delay.h>
+#include <linux/err.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/err.h>
-#include <linux/delay.h>
-#include <linux/platform_device.h>
 #include <linux/of_device.h>
-#include <linux/sysfs.h>
+#include <linux/platform_device.h>
 #include <linux/remoteproc.h>
+#include <linux/sysfs.h>
 
 #define BOOT_CMD 1
 #define IMAGE_UNLOAD_CMD 0
@@ -21,8 +22,8 @@
 #define CDSP_SUBSYS_LOADED 1
 
 static ssize_t cdsp_boot_store(struct kobject *kobj,
-	struct kobj_attribute *attr,
-	const char *buf, size_t count);
+			       struct kobj_attribute *attr, const char *buf,
+			       size_t count);
 
 struct cdsp_loader_private {
 	void *pil_h;
@@ -55,14 +56,13 @@ static int cdsp_loader_do(struct platform_device *pdev)
 	}
 
 	if (!pdev->dev.of_node) {
-		dev_err(&pdev->dev,
-			"%s: Device tree information missing\n", __func__);
+		dev_err(&pdev->dev, "%s: Device tree information missing\n",
+			__func__);
 		goto fail;
 	}
 
-	rc = of_property_read_string(pdev->dev.of_node,
-					"qcom,proc-img-to-load",
-					&img_name);
+	rc = of_property_read_string(pdev->dev.of_node, "qcom,proc-img-to-load",
+				     &img_name);
 	if (rc)
 		goto fail;
 
@@ -72,16 +72,19 @@ static int cdsp_loader_do(struct platform_device *pdev)
 			priv = platform_get_drvdata(pdev);
 			if (!priv) {
 				dev_err(&pdev->dev,
-					"%s: Private data get failed\n", __func__);
+					"%s: Private data get failed\n",
+					__func__);
 				goto fail;
 			}
 
-			sz = of_property_read_u32(pdev->dev.of_node, "qcom,rproc-handle",
-					&rproc_phandle);
+			sz = of_property_read_u32(pdev->dev.of_node,
+						  "qcom,rproc-handle",
+						  &rproc_phandle);
 			if (sz) {
 				pr_err("%s: of_property_read failed, returned value %d\n",
-						__func__, sz);
-				dev_err(&pdev->dev, "error reading rproc phandle\n");
+				       __func__, sz);
+				dev_err(&pdev->dev,
+					"error reading rproc phandle\n");
 				goto fail;
 			}
 
@@ -92,10 +95,11 @@ static int cdsp_loader_do(struct platform_device *pdev)
 			}
 
 			dev_dbg(&pdev->dev, "%s: calling rproc_boot on %s\n",
-					__func__, img_name);
+				__func__, img_name);
 			rc = rproc_boot(priv->pil_h);
 			if (rc) {
-				dev_err(&pdev->dev, "%s: rproc_boot failed with error %d\n",
+				dev_err(&pdev->dev,
+					"%s: rproc_boot failed with error %d\n",
 					__func__, rc);
 				goto fail;
 			}
@@ -103,8 +107,8 @@ static int cdsp_loader_do(struct platform_device *pdev)
 			/* Set the state of the CDSP.*/
 			cdsp_state = CDSP_SUBSYS_LOADED;
 		} else if (cdsp_state == CDSP_SUBSYS_LOADED) {
-			dev_dbg(&pdev->dev,
-			"%s: CDSP state = 0x%x\n", __func__, cdsp_state);
+			dev_dbg(&pdev->dev, "%s: CDSP state = 0x%x\n", __func__,
+				cdsp_state);
 		}
 
 		dev_dbg(&pdev->dev, "%s: CDSP image is loaded\n", __func__);
@@ -113,16 +117,14 @@ static int cdsp_loader_do(struct platform_device *pdev)
 
 fail:
 	if (pdev)
-		dev_err(&pdev->dev,
-			"%s: CDSP image loading failed\n", __func__);
+		dev_err(&pdev->dev, "%s: CDSP image loading failed\n",
+			__func__);
 	return rc;
 }
 
-
 static ssize_t cdsp_boot_store(struct kobject *kobj,
-	struct kobj_attribute *attr,
-	const char *buf,
-	size_t count)
+			       struct kobj_attribute *attr, const char *buf,
+			       size_t count)
 {
 	int ret = 0;
 	uint32_t boot = 0;
@@ -177,9 +179,8 @@ static int cdsp_loader_init_sysfs(struct platform_device *pdev)
 
 	priv->pil_h = NULL;
 	priv->boot_cdsp_obj = NULL;
-	priv->attr_group = devm_kzalloc(&pdev->dev,
-				sizeof(*(priv->attr_group)),
-				GFP_KERNEL);
+	priv->attr_group = devm_kzalloc(&pdev->dev, sizeof(*(priv->attr_group)),
+					GFP_KERNEL);
 	if (!priv->attr_group) {
 		ret = -ENOMEM;
 		goto error_return;
@@ -190,7 +191,7 @@ static int cdsp_loader_init_sysfs(struct platform_device *pdev)
 	priv->boot_cdsp_obj = kobject_create_and_add("boot_cdsp", kernel_kobj);
 	if (!priv->boot_cdsp_obj) {
 		dev_err(&pdev->dev, "%s: sysfs create and add failed\n",
-						__func__);
+			__func__);
 		ret = -ENOMEM;
 		goto error_return;
 	}
@@ -198,7 +199,7 @@ static int cdsp_loader_init_sysfs(struct platform_device *pdev)
 	ret = sysfs_create_group(priv->boot_cdsp_obj, priv->attr_group);
 	if (ret) {
 		dev_err(&pdev->dev, "%s: sysfs create group failed %d\n",
-							__func__, ret);
+			__func__, ret);
 		goto error_return;
 	}
 
@@ -213,8 +214,7 @@ error_return:
 		priv->boot_cdsp_obj = NULL;
 	}
 	if (ret)
-		dev_err(&pdev->dev, "%s failed with ret %d\n",
-						__func__, ret);
+		dev_err(&pdev->dev, "%s failed with ret %d\n", __func__, ret);
 	return ret;
 }
 
@@ -252,7 +252,8 @@ static int cdsp_loader_probe(struct platform_device *pdev)
 
 	prop = of_find_property(pdev->dev.of_node, "qcom,rproc-handle", &size);
 	if (!prop) {
-		dev_err(&pdev->dev, "%s: error reading rproc phandle\n", __func__);
+		dev_err(&pdev->dev, "%s: error reading rproc phandle\n",
+			__func__);
 		return -ENOPARAM;
 	}
 
@@ -275,17 +276,18 @@ static int cdsp_loader_probe(struct platform_device *pdev)
 
 static const struct of_device_id cdsp_loader_dt_match[] = {
 	{ .compatible = "qcom,cdsp-loader" },
-	{ }
+	{}
 };
 MODULE_DEVICE_TABLE(of, cdsp_loader_dt_match);
 
 static struct platform_driver cdsp_loader_driver = {
-	.driver = {
-		.name = "cdsp-loader",
-		.of_match_table = cdsp_loader_dt_match,
-	},
-	.probe = cdsp_loader_probe,
-	.remove = cdsp_loader_remove,
+    .driver =
+        {
+            .name = "cdsp-loader",
+            .of_match_table = cdsp_loader_dt_match,
+        },
+    .probe = cdsp_loader_probe,
+    .remove = cdsp_loader_remove,
 };
 
 static int __init cdsp_loader_init(void)

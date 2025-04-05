@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
 #include <linux/debugfs.h>
-#include <linux/videodev2.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
-#include <media/cam_sync.h>
+#include <linux/videodev2.h>
 #include <media/cam_defs.h>
+#include <media/cam_sync.h>
 
 #include "cam_context.h"
 #include "cam_context_utils.h"
+#include "cam_cpas_api.h"
+#include "cam_debug_util.h"
 #include "cam_mem_mgr.h"
 #include "cam_node.h"
-#include "cam_req_mgr_util.h"
+#include "cam_packet_util.h"
 #include "cam_req_mgr_dev.h"
+#include "cam_req_mgr_util.h"
 #include "cam_sync_api.h"
 #include "cam_trace.h"
-#include "cam_debug_util.h"
-#include "cam_cpas_api.h"
-#include "cam_packet_util.h"
 
 static uint cam_debug_ctx_req_list;
 module_param(cam_debug_ctx_req_list, uint, 0644);
@@ -37,7 +38,7 @@ static inline int cam_context_validate_thread(void)
 
 static void cam_context_free_mem_hw_entries(struct cam_context *ctx)
 {
-	int  i;
+	int i;
 
 	if (ctx->out_map_entries) {
 		for (i = 0; i < ctx->req_size; i++) {
@@ -74,20 +75,17 @@ static int cam_context_allocate_mem_hw_entries(struct cam_context *ctx)
 {
 	int rc = 0;
 	unsigned int i;
-	struct cam_ctx_request          *req;
-	struct cam_ctx_request          *temp_req;
+	struct cam_ctx_request *req;
+	struct cam_ctx_request *temp_req;
 
-	CAM_DBG(CAM_CTXT,
-		"%s[%d] num: max_hw %u in_map %u out_map %u req %u",
-		ctx->dev_name,
-		ctx->ctx_id,
-		ctx->max_hw_update_entries,
-		ctx->max_in_map_entries,
-		ctx->max_out_map_entries,
+	CAM_DBG(CAM_CTXT, "%s[%d] num: max_hw %u in_map %u out_map %u req %u",
+		ctx->dev_name, ctx->ctx_id, ctx->max_hw_update_entries,
+		ctx->max_in_map_entries, ctx->max_out_map_entries,
 		ctx->req_size);
 
 	ctx->hw_update_entry = kcalloc(ctx->req_size,
-		sizeof(struct cam_hw_update_entry *), GFP_KERNEL);
+				       sizeof(struct cam_hw_update_entry *),
+				       GFP_KERNEL);
 
 	if (!ctx->hw_update_entry) {
 		CAM_ERR(CAM_CTXT, "%s[%d] no memory for hw_update_entry",
@@ -96,19 +94,22 @@ static int cam_context_allocate_mem_hw_entries(struct cam_context *ctx)
 	}
 
 	for (i = 0; i < ctx->req_size; i++) {
-		ctx->hw_update_entry[i] = kcalloc(ctx->max_hw_update_entries,
-			sizeof(struct cam_hw_update_entry), GFP_KERNEL);
+		ctx->hw_update_entry[i] =
+			kcalloc(ctx->max_hw_update_entries,
+				sizeof(struct cam_hw_update_entry), GFP_KERNEL);
 
 		if (!ctx->hw_update_entry[i]) {
-			CAM_ERR(CAM_CTXT, "%s[%d] no memory for hw_update_entry: %u",
+			CAM_ERR(CAM_CTXT,
+				"%s[%d] no memory for hw_update_entry: %u",
 				ctx->dev_name, ctx->ctx_id, i);
 			rc = -ENOMEM;
 			goto free_mem;
 		}
 	}
 
-	ctx->in_map_entries = kcalloc(ctx->req_size, sizeof(struct cam_hw_fence_map_entry *),
-		GFP_KERNEL);
+	ctx->in_map_entries = kcalloc(ctx->req_size,
+				      sizeof(struct cam_hw_fence_map_entry *),
+				      GFP_KERNEL);
 
 	if (!ctx->in_map_entries) {
 		CAM_ERR(CAM_CTXT, "%s[%d] no memory for in_map_entries",
@@ -118,19 +119,22 @@ static int cam_context_allocate_mem_hw_entries(struct cam_context *ctx)
 	}
 
 	for (i = 0; i < ctx->req_size; i++) {
-		ctx->in_map_entries[i] = kcalloc(ctx->max_in_map_entries,
+		ctx->in_map_entries[i] = kcalloc(
+			ctx->max_in_map_entries,
 			sizeof(struct cam_hw_fence_map_entry), GFP_KERNEL);
 
 		if (!ctx->in_map_entries[i]) {
-			CAM_ERR(CAM_CTXT, "%s[%d] no memory for in_map_entries: %u",
+			CAM_ERR(CAM_CTXT,
+				"%s[%d] no memory for in_map_entries: %u",
 				ctx->dev_name, ctx->ctx_id, i);
 			rc = -ENOMEM;
 			goto free_mem;
 		}
 	}
 
-	ctx->out_map_entries = kcalloc(ctx->req_size, sizeof(struct cam_hw_fence_map_entry *),
-		GFP_KERNEL);
+	ctx->out_map_entries = kcalloc(ctx->req_size,
+				       sizeof(struct cam_hw_fence_map_entry *),
+				       GFP_KERNEL);
 
 	if (!ctx->out_map_entries) {
 		CAM_ERR(CAM_CTXT, "%s[%d] no memory for out_map_entries",
@@ -140,11 +144,13 @@ static int cam_context_allocate_mem_hw_entries(struct cam_context *ctx)
 	}
 
 	for (i = 0; i < ctx->req_size; i++) {
-		ctx->out_map_entries[i] = kcalloc(ctx->max_out_map_entries,
+		ctx->out_map_entries[i] = kcalloc(
+			ctx->max_out_map_entries,
 			sizeof(struct cam_hw_fence_map_entry), GFP_KERNEL);
 
 		if (!ctx->out_map_entries[i]) {
-			CAM_ERR(CAM_CTXT, "%s[%d] no memory for out_map_entries: %u",
+			CAM_ERR(CAM_CTXT,
+				"%s[%d] no memory for out_map_entries: %u",
 				ctx->dev_name, ctx->ctx_id, i);
 			rc = -ENOMEM;
 			goto free_mem;
@@ -164,8 +170,8 @@ free_mem:
 	return rc;
 }
 
-int cam_context_buf_done_from_hw(struct cam_context *ctx,
-	void *done_event_data, uint32_t evt_id)
+int cam_context_buf_done_from_hw(struct cam_context *ctx, void *done_event_data,
+				 uint32_t evt_id)
 {
 	int j, result, rc;
 	struct cam_ctx_request *req;
@@ -184,21 +190,21 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 
 	spin_lock(&ctx->lock);
 	if (list_empty(&ctx->active_req_list)) {
-		CAM_ERR(CAM_CTXT, "[%s][%d] no active request",
-			ctx->dev_name, ctx->ctx_id);
+		CAM_ERR(CAM_CTXT, "[%s][%d] no active request", ctx->dev_name,
+			ctx->ctx_id);
 		spin_unlock(&ctx->lock);
 		return -EIO;
 	}
-	req = list_first_entry(&ctx->active_req_list,
-		struct cam_ctx_request, list);
+	req = list_first_entry(&ctx->active_req_list, struct cam_ctx_request,
+			       list);
 
 	trace_cam_buf_done("UTILS", ctx, req);
 
 	if (done->request_id != req->request_id) {
 		CAM_ERR(CAM_CTXT,
 			"[%s][%d] mismatch: done req[%lld], active req[%lld]",
-			ctx->dev_name, ctx->ctx_id,
-			done->request_id, req->request_id);
+			ctx->dev_name, ctx->ctx_id, done->request_id,
+			req->request_id);
 		spin_unlock(&ctx->lock);
 		return -EIO;
 	}
@@ -215,9 +221,9 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 	}
 
 	/*
-	 * since another thread may be adding/removing from active
-	 * list, so hold the lock
-	 */
+   * since another thread may be adding/removing from active
+   * list, so hold the lock
+   */
 	list_del_init(&req->list);
 	spin_unlock(&ctx->lock);
 
@@ -225,21 +231,22 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 
 	if (evt_id == CAM_CTX_EVT_ID_SUCCESS)
 		result = CAM_SYNC_STATE_SIGNALED_SUCCESS;
-	else  if (evt_id == CAM_CTX_EVT_ID_CANCEL)
+	else if (evt_id == CAM_CTX_EVT_ID_CANCEL)
 		result = CAM_SYNC_STATE_SIGNALED_CANCEL;
 	else
 		result = CAM_SYNC_STATE_SIGNALED_ERROR;
 
-	CAM_DBG(CAM_REQ,
-		"[%s][ctx_id %d] : req[%llu] : Signaling %d",
+	CAM_DBG(CAM_REQ, "[%s][ctx_id %d] : req[%llu] : Signaling %d",
 		ctx->dev_name, ctx->ctx_id, req->request_id, result);
 
 	if (cam_presil_mode_enabled()) {
-		rc = cam_packet_util_get_packet_addr(&packet, req->pf_data.packet_handle,
+		rc = cam_packet_util_get_packet_addr(
+			&packet, req->pf_data.packet_handle,
 			req->pf_data.packet_offset);
 		if (rc) {
 			CAM_ERR(CAM_CTXT,
-				"[%s][%d] : req[%llu] failed to get packet address for handle: 0x%llx",
+				"[%s][%d] : req[%llu] failed to get packet address for handle: "
+				"0x%llx",
 				ctx->dev_name, ctx->ctx_id, req->request_id,
 				req->pf_data.packet_handle);
 			return rc;
@@ -249,10 +256,13 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 	for (j = 0; j < req->num_out_map_entries; j++) {
 		/* Get buf handles from packet and retrieve them from presil framework */
 		if (cam_presil_mode_enabled()) {
-			rc = cam_presil_retrieve_buffers_from_packet(packet,
-				ctx->img_iommu_hdl, req->out_map_entries[j].resource_handle);
+			rc = cam_presil_retrieve_buffers_from_packet(
+				packet, ctx->img_iommu_hdl,
+				req->out_map_entries[j].resource_handle);
 			if (rc) {
-				CAM_ERR(CAM_CTXT, "Failed to retrieve image buffers rc:%d", rc);
+				CAM_ERR(CAM_CTXT,
+					"Failed to retrieve image buffers rc:%d",
+					rc);
 				return rc;
 			}
 		}
@@ -260,7 +270,7 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 		CAM_DBG(CAM_REQ, "fence %d signal with %d",
 			req->out_map_entries[j].sync_id, result);
 		cam_sync_signal(req->out_map_entries[j].sync_id, result,
-			done->evt_param);
+				done->evt_param);
 		req->out_map_entries[j].sync_id = -1;
 	}
 
@@ -268,16 +278,17 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 		cam_packet_util_put_packet_addr(req->pf_data.packet_handle);
 
 	if (cam_debug_ctx_req_list & ctx->dev_id)
-		CAM_INFO(CAM_CTXT,
+		CAM_INFO(
+			CAM_CTXT,
 			"[%s][%d] : Moving req[%llu] from active_list to free_list",
 			ctx->dev_name, ctx->ctx_id, req->request_id);
 
 	cam_cpas_notify_event(ctx->ctx_id_string, req->request_id);
 
 	/*
-	 * another thread may be adding/removing from free list,
-	 * so hold the lock
-	 */
+   * another thread may be adding/removing from free list,
+   * so hold the lock
+   */
 	spin_lock(&ctx->lock);
 	list_add_tail(&req->list, &ctx->free_req_list);
 	req->ctx = NULL;
@@ -287,7 +298,7 @@ int cam_context_buf_done_from_hw(struct cam_context *ctx,
 }
 
 static int cam_context_apply_req_to_hw(struct cam_ctx_request *req,
-	struct cam_req_mgr_apply_request *apply)
+				       struct cam_req_mgr_apply_request *apply)
 {
 	int rc = 0;
 	struct cam_context *ctx = req->ctx;
@@ -306,7 +317,8 @@ static int cam_context_apply_req_to_hw(struct cam_ctx_request *req,
 	spin_unlock(&ctx->lock);
 
 	if (cam_debug_ctx_req_list & ctx->dev_id)
-		CAM_INFO(CAM_CTXT,
+		CAM_INFO(
+			CAM_CTXT,
 			"[%s][%d] : Moving req[%llu] from pending_list to active_list",
 			ctx->dev_name, ctx->ctx_id, req->request_id);
 
@@ -327,7 +339,8 @@ static int cam_context_apply_req_to_hw(struct cam_ctx_request *req,
 		spin_unlock(&ctx->lock);
 
 		if (cam_debug_ctx_req_list & ctx->dev_id)
-			CAM_INFO(CAM_CTXT,
+			CAM_INFO(
+				CAM_CTXT,
 				"[%s][%d] : Moving req[%llu] from active_list to free_list",
 				ctx->dev_name, ctx->ctx_id, req->request_id);
 	}
@@ -362,17 +375,17 @@ static void cam_context_sync_callback(int32_t sync_obj, int status, void *data)
 	if (atomic_inc_return(&req->num_in_acked) == req->num_in_map_entries) {
 		apply.request_id = req->request_id;
 		/*
-		 * take mutex to ensure that another thread does
-		 * not flush the request while this
-		 * thread is submitting it to h/w. The submit to
-		 * h/w and adding to the active list should happen
-		 * in a critical section which is provided by this
-		 * mutex.
-		 */
+     * take mutex to ensure that another thread does
+     * not flush the request while this
+     * thread is submitting it to h/w. The submit to
+     * h/w and adding to the active list should happen
+     * in a critical section which is provided by this
+     * mutex.
+     */
 		if ((status == CAM_SYNC_STATE_SIGNALED_ERROR) ||
-			(status == CAM_SYNC_STATE_SIGNALED_CANCEL)) {
-			CAM_DBG(CAM_CTXT, "fence error: %d on obj %d",
-				status, sync_obj);
+		    (status == CAM_SYNC_STATE_SIGNALED_CANCEL)) {
+			CAM_DBG(CAM_CTXT, "fence error: %d on obj %d", status,
+				sync_obj);
 			flush_cmd.req_id = req->request_id;
 			flush_args.cmd = &flush_cmd;
 			flush_args.flush_active_req = false;
@@ -393,7 +406,8 @@ static void cam_context_sync_callback(int32_t sync_obj, int status, void *data)
 			spin_unlock(&ctx->lock);
 
 			if (cam_debug_ctx_req_list & ctx->dev_id)
-				CAM_INFO(CAM_CTXT,
+				CAM_INFO(
+					CAM_CTXT,
 					"[%s][%d] : Moving req[%llu] from pending_list to free_list",
 					ctx->dev_name, ctx->ctx_id,
 					req->request_id);
@@ -403,7 +417,7 @@ static void cam_context_sync_callback(int32_t sync_obj, int status, void *data)
 }
 
 int32_t cam_context_release_dev_to_hw(struct cam_context *ctx,
-	struct cam_release_dev_cmd *cmd)
+				      struct cam_release_dev_cmd *cmd)
 {
 	struct cam_hw_release_args arg;
 
@@ -432,8 +446,8 @@ int32_t cam_context_release_dev_to_hw(struct cam_context *ctx,
 	return 0;
 }
 
-int32_t cam_context_config_dev_to_hw(
-	struct cam_context *ctx, struct cam_config_dev_cmd *cmd)
+int32_t cam_context_config_dev_to_hw(struct cam_context *ctx,
+				     struct cam_config_dev_cmd *cmd)
 {
 	int rc = 0;
 	size_t len;
@@ -455,13 +469,12 @@ int32_t cam_context_config_dev_to_hw(
 
 	rc = cam_context_validate_thread();
 	if (rc) {
-		CAM_ERR(CAM_CTXT,
-			"Not executing in the right context");
+		CAM_ERR(CAM_CTXT, "Not executing in the right context");
 		return rc;
 	}
 
-	rc = cam_mem_get_cpu_buf((int32_t) cmd->packet_handle,
-		&packet_addr, &len);
+	rc = cam_mem_get_cpu_buf((int32_t)cmd->packet_handle, &packet_addr,
+				 &len);
 	if (rc) {
 		CAM_ERR(CAM_CTXT, "[%s][%d] Can not get packet address",
 			ctx->dev_name, ctx->ctx_id);
@@ -469,8 +482,8 @@ int32_t cam_context_config_dev_to_hw(
 		return rc;
 	}
 
-	packet = (struct cam_packet *) ((uint8_t *)packet_addr +
-		(uint32_t)cmd->offset);
+	packet = (struct cam_packet *)((uint8_t *)packet_addr +
+				       (uint32_t)cmd->offset);
 
 	cfg.packet = packet;
 	cfg.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
@@ -480,18 +493,17 @@ int32_t cam_context_config_dev_to_hw(
 	rc = ctx->hw_mgr_intf->hw_config_stream_settings(
 		ctx->hw_mgr_intf->hw_mgr_priv, &cfg);
 	if (rc) {
-		CAM_ERR(CAM_CTXT,
-			"[%s][%d] Config failed stream settings",
+		CAM_ERR(CAM_CTXT, "[%s][%d] Config failed stream settings",
 			ctx->dev_name, ctx->ctx_id);
 		rc = -EFAULT;
 	}
 
-	cam_mem_put_cpu_buf((int32_t) cmd->packet_handle);
+	cam_mem_put_cpu_buf((int32_t)cmd->packet_handle);
 	return rc;
 }
 
 int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
-	struct cam_config_dev_cmd *cmd)
+				      struct cam_config_dev_cmd *cmd)
 {
 	int rc = 0;
 	struct cam_ctx_request *req = NULL;
@@ -517,7 +529,7 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 	spin_lock(&ctx->lock);
 	if (!list_empty(&ctx->free_req_list)) {
 		req = list_first_entry(&ctx->free_req_list,
-			struct cam_ctx_request, list);
+				       struct cam_ctx_request, list);
 		list_del_init(&req->list);
 	}
 	spin_unlock(&ctx->lock);
@@ -531,11 +543,11 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 	INIT_LIST_HEAD(&req->buf_tracker);
 	INIT_LIST_HEAD(&req->list);
 	req->ctx = ctx;
-	req->num_hw_update_entries  = 0;
-	req->num_in_map_entries     = 0;
-	req->num_out_map_entries    = 0;
-	req->num_out_acked          = 0;
-	req->flushed                = 0;
+	req->num_hw_update_entries = 0;
+	req->num_in_map_entries = 0;
+	req->num_out_map_entries = 0;
+	req->num_out_acked = 0;
+	req->flushed = 0;
 	atomic_set(&req->num_in_acked, 0);
 
 	remain_len = cam_context_parse_config_cmd(ctx, cmd, &packet);
@@ -546,8 +558,8 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 
 	if (packet->header.request_id <= ctx->last_flush_req) {
 		CAM_INFO(CAM_CORE,
-			"request %lld has been flushed, reject packet",
-			packet->header.request_id);
+			 "request %lld has been flushed, reject packet",
+			 packet->header.request_id);
 		rc = -EBADR;
 		goto free_req;
 	}
@@ -571,11 +583,12 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 	cfg.num_in_map_entries = 0;
 	cfg.num_out_map_entries = 0;
 	cfg.buf_tracker = &req->buf_tracker;
-	memset(req->out_map_entries, 0, sizeof(struct cam_hw_fence_map_entry)
-		* ctx->max_out_map_entries);
+	memset(req->out_map_entries, 0,
+	       sizeof(struct cam_hw_fence_map_entry) *
+		       ctx->max_out_map_entries);
 
-	rc = ctx->hw_mgr_intf->hw_prepare_update(
-		ctx->hw_mgr_intf->hw_mgr_priv, &cfg);
+	rc = ctx->hw_mgr_intf->hw_prepare_update(ctx->hw_mgr_intf->hw_mgr_priv,
+						 &cfg);
 	if (rc != 0) {
 		CAM_ERR(CAM_CTXT,
 			"[%s][%d] Prepare config packet failed in HW layer",
@@ -608,7 +621,8 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 	list_add_tail(&req->list, &ctx->pending_req_list);
 	spin_unlock(&ctx->lock);
 	if (cam_debug_ctx_req_list & ctx->dev_id)
-		CAM_INFO(CAM_CTXT,
+		CAM_INFO(
+			CAM_CTXT,
 			"[%s][%d] : Moving req[%llu] from free_list to pending_list",
 			ctx->dev_name, ctx->ctx_id, req->request_id);
 
@@ -630,9 +644,8 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 		for (j = 0; j < req->num_in_map_entries; j++) {
 			cam_context_getref(ctx);
 			rc = cam_sync_register_callback(
-					cam_context_sync_callback,
-					(void *)req,
-					req->in_map_entries[j].sync_id);
+				cam_context_sync_callback, (void *)req,
+				req->in_map_entries[j].sync_id);
 			if (rc) {
 				CAM_ERR(CAM_CTXT,
 					"[%s][%d] Failed register fence cb: %d ret = %d",
@@ -643,7 +656,8 @@ int32_t cam_context_prepare_dev_to_hw(struct cam_context *ctx,
 				spin_unlock(&ctx->lock);
 
 				if (cam_debug_ctx_req_list & ctx->dev_id)
-					CAM_INFO(CAM_CTXT,
+					CAM_INFO(
+						CAM_CTXT,
 						"[%s][%d] : Moving req[%llu] from pending_list to free_list",
 						ctx->dev_name, ctx->ctx_id,
 						req->request_id);
@@ -686,7 +700,7 @@ free_req:
 }
 
 int32_t cam_context_acquire_dev_to_hw(struct cam_context *ctx,
-	struct cam_acquire_dev_cmd *cmd)
+				      struct cam_acquire_dev_cmd *cmd)
 {
 	int rc;
 	struct cam_hw_acquire_args param;
@@ -718,7 +732,7 @@ int32_t cam_context_acquire_dev_to_hw(struct cam_context *ctx,
 	}
 
 	/* for now we only support user pointer */
-	if (cmd->handle_type != 1)  {
+	if (cmd->handle_type != 1) {
 		CAM_ERR(CAM_CTXT, "[%s][%d] Only user pointer is supported",
 			ctx->dev_name, ctx->ctx_id);
 		rc = -EINVAL;
@@ -744,11 +758,12 @@ int32_t cam_context_acquire_dev_to_hw(struct cam_context *ctx,
 
 	/* call HW manager to reserve the resource */
 	rc = ctx->hw_mgr_intf->hw_acquire(ctx->hw_mgr_intf->hw_mgr_priv,
-		&param);
+					  &param);
 	if (rc != 0) {
 		CAM_ERR(CAM_CTXT,
 			"[%s][%d] Acquire device failed session hdl: 0x%x dev hdl: 0x%x",
-			ctx->dev_name, ctx->ctx_id, ctx->session_hdl, ctx->dev_hdl);
+			ctx->dev_name, ctx->ctx_id, ctx->session_hdl,
+			ctx->dev_hdl);
 		goto end;
 	}
 
@@ -756,10 +771,8 @@ int32_t cam_context_acquire_dev_to_hw(struct cam_context *ctx,
 	ctx->hw_mgr_ctx_id = param.hw_mgr_ctx_id;
 
 	snprintf(ctx->ctx_id_string, sizeof(ctx->ctx_id_string),
-		"%s_ctx[%d]_hwmgrctx[%d]_Done",
-		ctx->dev_name,
-		ctx->ctx_id,
-		ctx->hw_mgr_ctx_id);
+		 "%s_ctx[%d]_hwmgrctx[%d]_Done", ctx->dev_name, ctx->ctx_id,
+		 ctx->hw_mgr_ctx_id);
 
 	/* if hw resource acquire successful, acquire dev handle */
 	req_hdl_param.session_hdl = cmd->session_handle;
@@ -782,7 +795,7 @@ int32_t cam_context_acquire_dev_to_hw(struct cam_context *ctx,
 	ctx->session_hdl = cmd->session_handle;
 
 	CAM_TRACE(CAM_CTXT, "Ctx[%s]: session_hdl 0x%x, dev_hdl 0x%x",
-		ctx->ctx_id_string, ctx->session_hdl, ctx->dev_hdl);
+		  ctx->ctx_id_string, ctx->session_hdl, ctx->dev_hdl);
 
 	return rc;
 
@@ -797,7 +810,7 @@ end:
 
 int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 {
-	struct cam_hw_flush_args flush_args = {0};
+	struct cam_hw_flush_args flush_args = { 0 };
 	struct list_head temp_list;
 	struct list_head *list;
 	struct cam_ctx_request *req;
@@ -808,10 +821,10 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 	CAM_DBG(CAM_CTXT, "[%s] E: NRT flush ctx", ctx->dev_name);
 
 	/*
-	 * flush pending requests, take the sync lock to synchronize with the
-	 * sync callback thread so that the sync cb thread does not try to
-	 * submit request to h/w while the request is being flushed
-	 */
+   * flush pending requests, take the sync lock to synchronize with the
+   * sync callback thread so that the sync cb thread does not try to
+   * submit request to h/w while the request is being flushed
+   */
 	mutex_lock(&ctx->sync_mutex);
 	INIT_LIST_HEAD(&temp_list);
 	spin_lock(&ctx->lock);
@@ -819,7 +832,8 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 	spin_unlock(&ctx->lock);
 
 	if (cam_debug_ctx_req_list & ctx->dev_id)
-		CAM_INFO(CAM_CTXT,
+		CAM_INFO(
+			CAM_CTXT,
 			"[%s][%d] : Moving all pending requests from pending_list to temp_list",
 			ctx->dev_name, ctx->ctx_id);
 
@@ -831,7 +845,8 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 		flush_args.flush_req_pending =
 			kcalloc(num_entries, sizeof(void *), GFP_KERNEL);
 		if (!flush_args.flush_req_pending) {
-			CAM_ERR(CAM_CTXT, "[%s][%d] : Flush array memory alloc fail",
+			CAM_ERR(CAM_CTXT,
+				"[%s][%d] : Flush array memory alloc fail",
 				ctx->dev_name, ctx->ctx_id);
 			mutex_unlock(&ctx->sync_mutex);
 			rc = -ENOMEM;
@@ -840,12 +855,11 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 	}
 
 	while (num_entries) {
-
 		if (list_empty(&temp_list))
 			break;
 
-		req = list_first_entry(&temp_list,
-				struct cam_ctx_request, list);
+		req = list_first_entry(&temp_list, struct cam_ctx_request,
+				       list);
 
 		list_del_init(&req->list);
 		req->flushed = 1;
@@ -857,13 +871,12 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 		free_req = false;
 		for (i = 0; i < req->num_in_map_entries; i++) {
 			rc = cam_sync_deregister_callback(
-				cam_context_sync_callback,
-				(void *)req,
+				cam_context_sync_callback, (void *)req,
 				req->in_map_entries[i].sync_id);
 			if (!rc) {
 				cam_context_putref(ctx);
 				if (atomic_inc_return(&req->num_in_acked) ==
-					req->num_in_map_entries)
+				    req->num_in_map_entries)
 					free_req = true;
 			}
 		}
@@ -876,18 +889,18 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 					CAM_SYNC_COMMON_EVENT_FLUSH);
 				if (rc == -EALREADY) {
 					CAM_ERR(CAM_CTXT,
-					"Req: %llu already signalled, sync_id:%d",
-					req->request_id,
-					req->out_map_entries[i].sync_id);
+						"Req: %llu already signalled, sync_id:%d",
+						req->request_id,
+						req->out_map_entries[i].sync_id);
 					break;
 				}
 			}
 		}
 
 		/*
-		 * If we have deregistered the last sync callback, req will
-		 * not be put on the free list. So put it on the free list here
-		 */
+     * If we have deregistered the last sync callback, req will
+     * not be put on the free list. So put it on the free list here
+     */
 		if (free_req) {
 			req->ctx = NULL;
 			spin_lock(&ctx->lock);
@@ -897,8 +910,8 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 
 		if (cam_debug_ctx_req_list & ctx->dev_id)
 			CAM_INFO(CAM_CTXT,
-				"[%s][%d] : Deleting req[%llu] from temp_list",
-				ctx->dev_name, ctx->ctx_id, req->request_id);
+				 "[%s][%d] : Deleting req[%llu] from temp_list",
+				 ctx->dev_name, ctx->ctx_id, req->request_id);
 	}
 	mutex_unlock(&ctx->sync_mutex);
 
@@ -906,30 +919,32 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 		num_entries = 0;
 
 		/*
-		 * Hold the ctx lock till the active requests are populated for
-		 * flush, allocate memory in atomic context. We want to ensure the
-		 * allocated memory is sufficient for the requests in the active list.
-		 * The active list should not be reinitialized since it is possible that
-		 * any buf done's from HW is serviced before the flush
-		 * makes it to the HW layer
-		 */
+     * Hold the ctx lock till the active requests are populated for
+     * flush, allocate memory in atomic context. We want to ensure the
+     * allocated memory is sufficient for the requests in the active list.
+     * The active list should not be reinitialized since it is possible that
+     * any buf done's from HW is serviced before the flush
+     * makes it to the HW layer
+     */
 		spin_lock(&ctx->lock);
 		list_for_each(list, &ctx->active_req_list)
 			num_entries++;
 
 		if (num_entries) {
-			flush_args.flush_req_active =
-				kcalloc(num_entries, sizeof(void *), GFP_ATOMIC);
+			flush_args.flush_req_active = kcalloc(
+				num_entries, sizeof(void *), GFP_ATOMIC);
 			if (!flush_args.flush_req_active) {
 				spin_unlock(&ctx->lock);
-				CAM_ERR(CAM_CTXT, "[%s][%d] : Flush array memory alloc fail",
+				CAM_ERR(CAM_CTXT,
+					"[%s][%d] : Flush array memory alloc fail",
 					ctx->dev_name, ctx->ctx_id);
 				rc = -ENOMEM;
 				goto end;
 			}
 
 			list_for_each_entry(req, &ctx->active_req_list, list) {
-				flush_args.flush_req_active[flush_args.num_req_active++] =
+				flush_args.flush_req_active
+					[flush_args.num_req_active++] =
 					req->req_priv;
 			}
 		}
@@ -949,17 +964,17 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 	spin_unlock(&ctx->lock);
 
 	if (cam_debug_ctx_req_list & ctx->dev_id)
-		CAM_INFO(CAM_CTXT,
+		CAM_INFO(
+			CAM_CTXT,
 			"[%s][%d] : Moving all requests from active_list to temp_list",
 			ctx->dev_name, ctx->ctx_id);
 
 	while (num_entries) {
-
 		if (list_empty(&temp_list))
 			break;
 
-		req = list_first_entry(&temp_list,
-			struct cam_ctx_request, list);
+		req = list_first_entry(&temp_list, struct cam_ctx_request,
+				       list);
 		list_del_init(&req->list);
 
 		cam_smmu_buffer_tracker_putref(&req->buf_tracker);
@@ -971,7 +986,8 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 					CAM_SYNC_COMMON_EVENT_FLUSH);
 				if (rc == -EALREADY) {
 					CAM_ERR(CAM_CTXT,
-						"Req: %llu already signalled ctx: %pK dev_name: %s dev_handle: %d ctx_state: %d",
+						"Req: %llu already signalled ctx: %pK dev_name: %s "
+						"dev_handle: %d ctx_state: %d",
 						req->request_id, req->ctx,
 						req->ctx->dev_name,
 						req->ctx->dev_hdl,
@@ -987,7 +1003,8 @@ int32_t cam_context_flush_ctx_to_hw(struct cam_context *ctx)
 		spin_unlock(&ctx->lock);
 
 		if (cam_debug_ctx_req_list & ctx->dev_id)
-			CAM_INFO(CAM_CTXT,
+			CAM_INFO(
+				CAM_CTXT,
 				"[%s][%d] : Moving req[%llu] from temp_list to free_list",
 				ctx->dev_name, ctx->ctx_id, req->request_id);
 	}
@@ -1002,10 +1019,10 @@ end:
 }
 
 int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
-	struct cam_context_utils_flush_args *args)
+				    struct cam_context_utils_flush_args *args)
 {
 	struct cam_ctx_request *req = NULL;
-	struct cam_hw_flush_args flush_args = {0};
+	struct cam_hw_flush_args flush_args = { 0 };
 	struct cam_flush_dev_cmd *cmd = args->cmd;
 	uint32_t i = 0;
 	int32_t sync_id = 0;
@@ -1028,7 +1045,8 @@ int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
 			continue;
 
 		if (cam_debug_ctx_req_list & ctx->dev_id)
-			CAM_INFO(CAM_CTXT,
+			CAM_INFO(
+				CAM_CTXT,
 				"[%s][%d] : Deleting req[%llu] from pending_list",
 				ctx->dev_name, ctx->ctx_id, req->request_id);
 
@@ -1044,9 +1062,11 @@ int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
 
 	if (ctx->hw_mgr_intf->hw_flush) {
 		if (!flush_args.num_req_pending) {
-			flush_args.flush_req_active = kzalloc(sizeof(void *), GFP_KERNEL);
+			flush_args.flush_req_active =
+				kzalloc(sizeof(void *), GFP_KERNEL);
 			if (!flush_args.flush_req_active) {
-				CAM_ERR(CAM_CTXT, "[%s][%d] : Flush array memory alloc fail",
+				CAM_ERR(CAM_CTXT,
+					"[%s][%d] : Flush array memory alloc fail",
 					ctx->dev_name, ctx->ctx_id);
 				rc = -ENOMEM;
 				goto end;
@@ -1060,15 +1080,16 @@ int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
 				if (!args->flush_active_req) {
 					CAM_ERR(CAM_CTXT,
 						"[%s][%d] : Flushing active request id: %llu is not supported",
-						ctx->dev_name, ctx->ctx_id, req->request_id);
+						ctx->dev_name, ctx->ctx_id,
+						req->request_id);
 					rc = -EPERM;
 					spin_unlock(&ctx->lock);
 					goto end;
 				}
 
 				list_del_init(&req->list);
-				flush_args.flush_req_active[
-					flush_args.num_req_active++] =
+				flush_args.flush_req_active
+					[flush_args.num_req_active++] =
 					req->req_priv;
 				break;
 			}
@@ -1087,15 +1108,14 @@ int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
 		if (flush_args.num_req_pending) {
 			for (i = 0; i < req->num_in_map_entries; i++) {
 				rc = cam_sync_deregister_callback(
-					cam_context_sync_callback,
-					(void *)req,
+					cam_context_sync_callback, (void *)req,
 					req->in_map_entries[i].sync_id);
 				if (rc)
 					continue;
 
 				cam_context_putref(ctx);
 				if (atomic_inc_return(&req->num_in_acked) ==
-					req->num_in_map_entries)
+				    req->num_in_map_entries)
 					free_req = true;
 			}
 		}
@@ -1104,16 +1124,17 @@ int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
 			cam_smmu_buffer_tracker_putref(&req->buf_tracker);
 
 			for (i = 0; i < req->num_out_map_entries; i++) {
-				sync_id =
-					req->out_map_entries[i].sync_id;
+				sync_id = req->out_map_entries[i].sync_id;
 				if (sync_id != -1) {
-					rc = cam_sync_signal(sync_id,
+					rc = cam_sync_signal(
+						sync_id,
 						CAM_SYNC_STATE_SIGNALED_CANCEL,
 						CAM_SYNC_COMMON_EVENT_FLUSH);
 					if (rc == -EALREADY) {
 						CAM_ERR(CAM_CTXT,
-						"Req: %llu already signalled, sync_id:%d",
-						req->request_id, sync_id);
+							"Req: %llu already signalled, sync_id:%d",
+							req->request_id,
+							sync_id);
 						break;
 					}
 				}
@@ -1125,7 +1146,8 @@ int32_t cam_context_flush_req_to_hw(struct cam_context *ctx,
 				spin_unlock(&ctx->lock);
 
 				if (cam_debug_ctx_req_list & ctx->dev_id)
-					CAM_INFO(CAM_CTXT,
+					CAM_INFO(
+						CAM_CTXT,
 						"[%s][%d] : Moving req[%llu] from %s to free_list",
 						ctx->dev_name, ctx->ctx_id,
 						req->request_id,
@@ -1151,13 +1173,15 @@ end:
 	return rc;
 }
 
-int32_t cam_context_flush_dev_to_hw(struct cam_context *ctx,
-	struct cam_context_utils_flush_args *flush_args)
+int32_t
+cam_context_flush_dev_to_hw(struct cam_context *ctx,
+			    struct cam_context_utils_flush_args *flush_args)
 {
 	int rc = 0;
 
 	if (!ctx || !flush_args) {
-		CAM_ERR(CAM_CTXT, "Invalid input params %pK %pK", ctx, flush_args);
+		CAM_ERR(CAM_CTXT, "Invalid input params %pK %pK", ctx,
+			flush_args);
 		rc = -EINVAL;
 		goto end;
 	}
@@ -1177,7 +1201,8 @@ int32_t cam_context_flush_dev_to_hw(struct cam_context *ctx,
 	else {
 		rc = -EINVAL;
 		CAM_ERR(CAM_CORE, "[%s][%d] Invalid flush type %d",
-			ctx->dev_name, ctx->ctx_id, flush_args->cmd->flush_type);
+			ctx->dev_name, ctx->ctx_id,
+			flush_args->cmd->flush_type);
 	}
 
 end:
@@ -1185,7 +1210,7 @@ end:
 }
 
 int32_t cam_context_start_dev_to_hw(struct cam_context *ctx,
-	struct cam_start_stop_dev_cmd *cmd)
+				    struct cam_start_stop_dev_cmd *cmd)
 {
 	int rc = 0;
 	struct cam_hw_start_args arg;
@@ -1204,11 +1229,11 @@ int32_t cam_context_start_dev_to_hw(struct cam_context *ctx,
 	}
 
 	if ((cmd->session_handle != ctx->session_hdl) ||
-		(cmd->dev_handle != ctx->dev_hdl)) {
+	    (cmd->dev_handle != ctx->dev_hdl)) {
 		CAM_ERR(CAM_CTXT,
 			"[%s][%d] Invalid session hdl[%d], dev_handle[%d]",
-			ctx->dev_name, ctx->ctx_id,
-			cmd->session_handle, cmd->dev_handle);
+			ctx->dev_name, ctx->ctx_id, cmd->session_handle,
+			cmd->dev_handle);
 		rc = -EPERM;
 		goto end;
 	}
@@ -1216,7 +1241,7 @@ int32_t cam_context_start_dev_to_hw(struct cam_context *ctx,
 	if (ctx->hw_mgr_intf->hw_start) {
 		arg.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
 		rc = ctx->hw_mgr_intf->hw_start(ctx->hw_mgr_intf->hw_mgr_priv,
-				&arg);
+						&arg);
 		if (rc) {
 			/* HW failure. user need to clean up the resource */
 			CAM_ERR(CAM_CTXT, "[%s][%d] Start HW failed",
@@ -1258,16 +1283,16 @@ int32_t cam_context_stop_dev_to_hw(struct cam_context *ctx)
 	/* stop hw first */
 	if (ctx->hw_mgr_intf->hw_stop) {
 		stop.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
-		ctx->hw_mgr_intf->hw_stop(ctx->hw_mgr_intf->hw_mgr_priv,
-			&stop);
+		ctx->hw_mgr_intf->hw_stop(ctx->hw_mgr_intf->hw_mgr_priv, &stop);
 	}
 
 end:
 	return rc;
 }
 
-static void cam_context_util_translate_pf_info_to_string(struct cam_req_mgr_pf_err_msg *pf_msg,
-	char **pf_evt_str, char **pf_type_str, char **pf_stage_str)
+static void cam_context_util_translate_pf_info_to_string(
+	struct cam_req_mgr_pf_err_msg *pf_msg, char **pf_evt_str,
+	char **pf_type_str, char **pf_stage_str)
 {
 	switch (pf_msg->pf_evt) {
 	case CAM_REQ_MGR_PF_EVT_BUF_NOT_FOUND:
@@ -1319,8 +1344,10 @@ static void cam_context_util_translate_pf_info_to_string(struct cam_req_mgr_pf_e
 }
 
 static void cam_context_get_pf_evt(struct cam_context *ctx,
-	struct cam_context_pf_info  *pf_context_info, struct cam_req_mgr_pf_err_msg *pf_msg,
-	char *log_info, size_t *len, uint32_t buf_size)
+				   struct cam_context_pf_info *pf_context_info,
+				   struct cam_req_mgr_pf_err_msg *pf_msg,
+				   char *log_info, size_t *len,
+				   uint32_t buf_size)
 {
 	if (pf_context_info->mem_type != CAM_FAULT_BUF_NOT_FOUND) {
 		pf_msg->buf_hdl = pf_context_info->buf_hdl;
@@ -1328,38 +1355,43 @@ static void cam_context_get_pf_evt(struct cam_context *ctx,
 		pf_msg->far_delta = pf_context_info->delta;
 		pf_msg->req_id = pf_context_info->req_id;
 
-		CAM_ERR_BUF(CAM_CTXT, log_info, buf_size, len,
+		CAM_ERR_BUF(
+			CAM_CTXT, log_info, buf_size, len,
 			"buf_hdl: 0x%x, offset: 0x%x, req_id: %llu, delta: 0x%llx",
 			pf_msg->buf_hdl, pf_msg->offset, pf_msg->req_id,
 			pf_msg->far_delta);
 
 		if (pf_context_info->mem_type == CAM_FAULT_PATCH_BUF) {
 			pf_msg->patch_id = pf_context_info->patch_idx;
-			if (pf_context_info->mem_flag & CAM_MEM_FLAG_CMD_BUF_TYPE)
-				pf_msg->pf_evt = CAM_REQ_MGR_PF_EVT_BUF_FOUND_CDM;
-			else if (pf_context_info->mem_flag & CAM_MEM_FLAG_HW_SHARED_ACCESS)
-				pf_msg->pf_evt = CAM_REQ_MGR_PF_EVT_BUF_FOUND_SHARED;
+			if (pf_context_info->mem_flag &
+			    CAM_MEM_FLAG_CMD_BUF_TYPE)
+				pf_msg->pf_evt =
+					CAM_REQ_MGR_PF_EVT_BUF_FOUND_CDM;
+			else if (pf_context_info->mem_flag &
+				 CAM_MEM_FLAG_HW_SHARED_ACCESS)
+				pf_msg->pf_evt =
+					CAM_REQ_MGR_PF_EVT_BUF_FOUND_SHARED;
 			else
-				pf_msg->pf_evt = CAM_REQ_MGR_PF_EVT_BUF_FOUND_REF_BUF;
+				pf_msg->pf_evt =
+					CAM_REQ_MGR_PF_EVT_BUF_FOUND_REF_BUF;
 
 			CAM_ERR_BUF(CAM_CTXT, log_info, buf_size, len,
-				"Faulted patch found in patch index: %u",
-				pf_msg->patch_id);
+				    "Faulted patch found in patch index: %u",
+				    pf_msg->patch_id);
 		} else
 			pf_msg->pf_evt = CAM_REQ_MGR_PF_EVT_BUF_FOUND_IO_CFG;
 
 	} else
 		pf_msg->pf_evt = CAM_REQ_MGR_PF_EVT_BUF_NOT_FOUND;
-
 }
 
 int32_t cam_context_send_pf_evt(struct cam_context *ctx,
-	struct cam_hw_dump_pf_args *pf_args)
+				struct cam_hw_dump_pf_args *pf_args)
 {
-	struct cam_req_mgr_message           req_msg = {0};
-	struct cam_req_mgr_pf_err_msg       *pf_msg = &req_msg.u.pf_err_msg;
-	struct cam_context_pf_info          *pf_context_info;
-	struct cam_smmu_pf_info             *pf_smmu_info;
+	struct cam_req_mgr_message req_msg = { 0 };
+	struct cam_req_mgr_pf_err_msg *pf_msg = &req_msg.u.pf_err_msg;
+	struct cam_context_pf_info *pf_context_info;
+	struct cam_smmu_pf_info *pf_smmu_info;
 	char log_info[512];
 	int rc = 0;
 	size_t buf_size = 0, len = 0;
@@ -1381,14 +1413,18 @@ int32_t cam_context_send_pf_evt(struct cam_context *ctx,
 		pf_msg->link_hdl = ctx->link_hdl;
 		pf_msg->port_id = pf_context_info->resource_type;
 
-		CAM_ERR_BUF(CAM_CTXT, log_info, buf_size, &len,
-			"Faulted ctx: [%s][%d] session_hdl: 0x%x, device_hdl: 0x%x, link_hdl: 0x%x, port_id: 0x%x",
-			ctx->dev_name, ctx->ctx_id, req_msg.session_hdl, pf_msg->device_hdl,
-			pf_msg->link_hdl, pf_msg->port_id);
+		CAM_ERR_BUF(
+			CAM_CTXT, log_info, buf_size, &len,
+			"Faulted ctx: [%s][%d] session_hdl: 0x%x, device_hdl: 0x%x, "
+			"link_hdl: 0x%x, port_id: 0x%x",
+			ctx->dev_name, ctx->ctx_id, req_msg.session_hdl,
+			pf_msg->device_hdl, pf_msg->link_hdl, pf_msg->port_id);
 
-		cam_context_get_pf_evt(ctx, pf_context_info, pf_msg, log_info, &len, buf_size);
+		cam_context_get_pf_evt(ctx, pf_context_info, pf_msg, log_info,
+				       &len, buf_size);
 	} else
-		CAM_ERR_BUF(CAM_CTXT, log_info, buf_size, &len, "Faulted ctx NOT found");
+		CAM_ERR_BUF(CAM_CTXT, log_info, buf_size, &len,
+			    "Faulted ctx NOT found");
 
 	if (pf_smmu_info->iova == 0)
 		pf_msg->pf_type = CAM_REQ_MGR_PF_TYPE_NULL;
@@ -1402,29 +1438,29 @@ int32_t cam_context_send_pf_evt(struct cam_context *ctx,
 	pf_msg->pid = pf_smmu_info->pid;
 	pf_msg->mid = pf_smmu_info->mid;
 
-	cam_context_util_translate_pf_info_to_string(pf_msg, &pf_evt_str,
-		&pf_type_str, &pf_stage_str);
+	cam_context_util_translate_pf_info_to_string(
+		pf_msg, &pf_evt_str, &pf_type_str, &pf_stage_str);
+
+	CAM_ERR_BUF(CAM_CTXT, log_info, buf_size, &len, "%s, %s, %s",
+		    pf_evt_str, pf_type_str, pf_stage_str);
 
 	CAM_ERR_BUF(CAM_CTXT, log_info, buf_size, &len,
-		"%s, %s, %s",
-		pf_evt_str, pf_type_str, pf_stage_str);
-
-	CAM_ERR_BUF(CAM_CTXT, log_info, buf_size, &len,
-		"bid: %u, pid: %u, mid: %u",
-		pf_msg->bid, pf_msg->pid, pf_msg->mid);
+		    "bid: %u, pid: %u, mid: %u", pf_msg->bid, pf_msg->pid,
+		    pf_msg->mid);
 
 	CAM_ERR(CAM_CTXT, "PF INFO: %s", log_info);
 
 	rc = cam_req_mgr_notify_message(&req_msg,
-		V4L_EVENT_CAM_REQ_MGR_PF_ERROR,
-		V4L_EVENT_CAM_REQ_MGR_EVENT);
+					V4L_EVENT_CAM_REQ_MGR_PF_ERROR,
+					V4L_EVENT_CAM_REQ_MGR_EVENT);
 
 	return rc;
 }
 
-int32_t cam_context_dump_pf_info_to_hw(struct cam_context *ctx,
-	struct cam_hw_dump_pf_args *pf_args,
-	struct cam_hw_mgr_pf_request_info *pf_req_info)
+int32_t
+cam_context_dump_pf_info_to_hw(struct cam_context *ctx,
+			       struct cam_hw_dump_pf_args *pf_args,
+			       struct cam_hw_mgr_pf_request_info *pf_req_info)
 {
 	int rc = 0;
 	struct cam_hw_cmd_args cmd_args;
@@ -1450,7 +1486,7 @@ int32_t cam_context_dump_pf_info_to_hw(struct cam_context *ctx,
 		cmd_args.cmd_type = CAM_HW_MGR_CMD_DUMP_PF_INFO;
 		cmd_args.u.pf_cmd_args = &pf_cmd_args;
 		ctx->hw_mgr_intf->hw_cmd(ctx->hw_mgr_intf->hw_mgr_priv,
-			&cmd_args);
+					 &cmd_args);
 	}
 
 end:
@@ -1479,7 +1515,7 @@ int32_t cam_context_dump_hw_acq_info(struct cam_context *ctx)
 		cmd_args.ctxt_to_hw_map = ctx->ctxt_to_hw_map;
 		cmd_args.cmd_type = CAM_HW_MGR_CMD_DUMP_ACQ_INFO;
 		ctx->hw_mgr_intf->hw_cmd(ctx->hw_mgr_intf->hw_mgr_priv,
-			&cmd_args);
+					 &cmd_args);
 	}
 
 end:
@@ -1487,35 +1523,33 @@ end:
 }
 
 static int cam_context_user_dump(struct cam_context *ctx,
-	struct cam_hw_dump_args *dump_args)
+				 struct cam_hw_dump_args *dump_args)
 {
-	int                              rc, i;
-	struct cam_ctx_request          *req = NULL, *req_temp;
-	struct cam_context_dump_header  *hdr;
-	uint8_t                         *dst;
-	uint64_t                        *addr, *start;
-	uint32_t                         min_len;
-	size_t                           buf_len, remain_len;
-	uintptr_t                        cpu_addr;
+	int rc, i;
+	struct cam_ctx_request *req = NULL, *req_temp;
+	struct cam_context_dump_header *hdr;
+	uint8_t *dst;
+	uint64_t *addr, *start;
+	uint32_t min_len;
+	size_t buf_len, remain_len;
+	uintptr_t cpu_addr;
 
 	if (!ctx || !dump_args) {
-		CAM_ERR(CAM_CORE, "Invalid parameters %pK %pK",
-			ctx, dump_args);
+		CAM_ERR(CAM_CORE, "Invalid parameters %pK %pK", ctx, dump_args);
 		return -EINVAL;
 	}
 
-	rc = cam_mem_get_cpu_buf(dump_args->buf_handle,
-		&cpu_addr, &buf_len);
+	rc = cam_mem_get_cpu_buf(dump_args->buf_handle, &cpu_addr, &buf_len);
 
 	if (rc) {
-		CAM_ERR(CAM_CTXT, "Invalid hdl %u rc %d",
-			dump_args->buf_handle, rc);
+		CAM_ERR(CAM_CTXT, "Invalid hdl %u rc %d", dump_args->buf_handle,
+			rc);
 		return rc;
 	}
 
 	if (dump_args->offset >= buf_len) {
 		CAM_WARN(CAM_CTXT, "dump buffer overshoot offset %zu len %zu",
-			dump_args->offset, buf_len);
+			 dump_args->offset, buf_len);
 		cam_mem_put_cpu_buf(dump_args->buf_handle);
 		return -ENOSPC;
 	}
@@ -1523,16 +1557,16 @@ static int cam_context_user_dump(struct cam_context *ctx,
 	spin_lock_bh(&ctx->lock);
 	if (!list_empty(&ctx->active_req_list)) {
 		req = list_first_entry(&ctx->active_req_list,
-			struct cam_ctx_request, list);
+				       struct cam_ctx_request, list);
 	} else if (!list_empty(&ctx->wait_req_list)) {
 		req = list_first_entry(&ctx->wait_req_list,
-			struct cam_ctx_request, list);
+				       struct cam_ctx_request, list);
 	} else if (!list_empty(&ctx->pending_req_list)) {
 		req = list_first_entry(&ctx->pending_req_list,
-			struct cam_ctx_request, list);
+				       struct cam_ctx_request, list);
 	} else {
-		CAM_ERR(CAM_CTXT, "[%s][%d] no request to dump",
-			ctx->dev_name, ctx->ctx_id);
+		CAM_ERR(CAM_CTXT, "[%s][%d] no request to dump", ctx->dev_name,
+			ctx->ctx_id);
 	}
 	spin_unlock_bh(&ctx->lock);
 
@@ -1540,12 +1574,14 @@ static int cam_context_user_dump(struct cam_context *ctx,
 	if (req != NULL) {
 		remain_len = buf_len - dump_args->offset;
 		min_len = sizeof(struct cam_context_dump_header) +
-			(CAM_CTXT_DUMP_NUM_WORDS + req->num_in_map_entries +
-			(req->num_out_map_entries * 2)) * sizeof(uint64_t);
+			  (CAM_CTXT_DUMP_NUM_WORDS + req->num_in_map_entries +
+			   (req->num_out_map_entries * 2)) *
+				  sizeof(uint64_t);
 
 		if (remain_len < min_len) {
-			CAM_WARN(CAM_CTXT, "dump buffer exhaust remain %zu min %u",
-				remain_len, min_len);
+			CAM_WARN(CAM_CTXT,
+				 "dump buffer exhaust remain %zu min %u",
+				 remain_len, min_len);
 			cam_mem_put_cpu_buf(dump_args->buf_handle);
 			return -ENOSPC;
 		}
@@ -1555,7 +1591,7 @@ static int cam_context_user_dump(struct cam_context *ctx,
 	dst = (uint8_t *)cpu_addr + dump_args->offset;
 	hdr = (struct cam_context_dump_header *)dst;
 	scnprintf(hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
-		"%s_CTX_INFO:", ctx->dev_name);
+		  "%s_CTX_INFO:", ctx->dev_name);
 	hdr->word_size = sizeof(uint64_t);
 	addr = (uint64_t *)(dst + sizeof(struct cam_context_dump_header));
 	start = addr;
@@ -1568,81 +1604,86 @@ static int cam_context_user_dump(struct cam_context *ctx,
 	*addr++ = ctx->last_flush_req;
 	*addr++ = ctx->state;
 	hdr->size = hdr->word_size * (addr - start);
-	dump_args->offset += hdr->size +
-		sizeof(struct cam_context_dump_header);
+	dump_args->offset += hdr->size + sizeof(struct cam_context_dump_header);
 
 	/* Dump pending request IDs */
 	dst = (uint8_t *)cpu_addr + dump_args->offset;
 	hdr = (struct cam_context_dump_header *)dst;
 	scnprintf(hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
-		"%s_OUT_FENCE_PENDING_REQUESTS:", ctx->dev_name);
+		  "%s_OUT_FENCE_PENDING_REQUESTS:", ctx->dev_name);
 	hdr->word_size = sizeof(uint64_t);
 	addr = (uint64_t *)(dst + sizeof(struct cam_context_dump_header));
 	start = addr;
 	if (!list_empty(&ctx->pending_req_list)) {
-		list_for_each_entry_safe(req, req_temp, &ctx->pending_req_list, list) {
+		list_for_each_entry_safe(req, req_temp, &ctx->pending_req_list,
+					 list) {
 			*addr++ = req->request_id;
 		}
 	}
 
 	hdr->size = hdr->word_size * (addr - start);
-	dump_args->offset += hdr->size +
-		sizeof(struct cam_context_dump_header);
+	dump_args->offset += hdr->size + sizeof(struct cam_context_dump_header);
 
 	/* Dump wait request IDs */
 	dst = (uint8_t *)cpu_addr + dump_args->offset;
 	hdr = (struct cam_context_dump_header *)dst;
 	scnprintf(hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
-		"%s_OUT_FENCE_APPLIED_REQUESTS:", ctx->dev_name);
+		  "%s_OUT_FENCE_APPLIED_REQUESTS:", ctx->dev_name);
 	hdr->word_size = sizeof(uint64_t);
 	addr = (uint64_t *)(dst + sizeof(struct cam_context_dump_header));
 	start = addr;
 	if (!list_empty(&ctx->wait_req_list)) {
-		list_for_each_entry_safe(req, req_temp, &ctx->wait_req_list, list) {
+		list_for_each_entry_safe(req, req_temp, &ctx->wait_req_list,
+					 list) {
 			*addr++ = req->request_id;
 		}
 	}
 
 	hdr->size = hdr->word_size * (addr - start);
-	dump_args->offset += hdr->size +
-		sizeof(struct cam_context_dump_header);
+	dump_args->offset += hdr->size + sizeof(struct cam_context_dump_header);
 
 	/* Dump active request IDs */
 	dst = (uint8_t *)cpu_addr + dump_args->offset;
 	hdr = (struct cam_context_dump_header *)dst;
 	scnprintf(hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
-		"%s_OUT_FENCE_ACTIVE_REQUESTS:", ctx->dev_name);
+		  "%s_OUT_FENCE_ACTIVE_REQUESTS:", ctx->dev_name);
 	hdr->word_size = sizeof(uint64_t);
 	addr = (uint64_t *)(dst + sizeof(struct cam_context_dump_header));
 	start = addr;
 	if (!list_empty(&ctx->active_req_list)) {
-		list_for_each_entry_safe(req, req_temp, &ctx->active_req_list, list) {
+		list_for_each_entry_safe(req, req_temp, &ctx->active_req_list,
+					 list) {
 			*addr++ = req->request_id;
 		}
 	}
 
 	hdr->size = hdr->word_size * (addr - start);
-	dump_args->offset += hdr->size +
-		sizeof(struct cam_context_dump_header);
+	dump_args->offset += hdr->size + sizeof(struct cam_context_dump_header);
 
 	/* Dump waiting requests */
 	if (!list_empty(&ctx->wait_req_list)) {
-		list_for_each_entry_safe(req, req_temp, &ctx->wait_req_list, list) {
+		list_for_each_entry_safe(req, req_temp, &ctx->wait_req_list,
+					 list) {
 			for (i = 0; i < req->num_out_map_entries; i++) {
 				dst = (uint8_t *)cpu_addr + dump_args->offset;
 				hdr = (struct cam_context_dump_header *)dst;
-				scnprintf(hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
+				scnprintf(
+					hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
 					"%s_OUT_FENCE_REQUEST_APPLIED.%d.%d.%d:",
 					ctx->dev_name,
 					req->out_map_entries[i].resource_handle,
-					&(req->out_map_entries[i].image_buf_addr),
+					&(req->out_map_entries[i]
+						  .image_buf_addr),
 					req->out_map_entries[i].sync_id);
 				hdr->word_size = sizeof(uint64_t);
-				addr = (uint64_t *)(dst + sizeof(struct cam_context_dump_header));
+				addr = (uint64_t
+						*)(dst +
+						   sizeof(struct cam_context_dump_header));
 				start = addr;
 				*addr++ = req->request_id;
 				hdr->size = hdr->word_size * (addr - start);
-				dump_args->offset += hdr->size +
+				dump_args->offset +=
+					hdr->size +
 					sizeof(struct cam_context_dump_header);
 			}
 		}
@@ -1650,22 +1691,28 @@ static int cam_context_user_dump(struct cam_context *ctx,
 
 	/* Dump pending requests */
 	if (!list_empty(&ctx->pending_req_list)) {
-		list_for_each_entry_safe(req, req_temp, &ctx->pending_req_list, list) {
+		list_for_each_entry_safe(req, req_temp, &ctx->pending_req_list,
+					 list) {
 			for (i = 0; i < req->num_out_map_entries; i++) {
 				dst = (uint8_t *)cpu_addr + dump_args->offset;
 				hdr = (struct cam_context_dump_header *)dst;
-				scnprintf(hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
+				scnprintf(
+					hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
 					"%s_OUT_FENCE_REQUEST_PENDING.%d.%d.%d:",
 					ctx->dev_name,
 					req->out_map_entries[i].resource_handle,
-					&(req->out_map_entries[i].image_buf_addr),
+					&(req->out_map_entries[i]
+						  .image_buf_addr),
 					req->out_map_entries[i].sync_id);
 				hdr->word_size = sizeof(uint64_t);
-				addr = (uint64_t *)(dst + sizeof(struct cam_context_dump_header));
+				addr = (uint64_t
+						*)(dst +
+						   sizeof(struct cam_context_dump_header));
 				start = addr;
 				*addr++ = req->request_id;
 				hdr->size = hdr->word_size * (addr - start);
-				dump_args->offset += hdr->size +
+				dump_args->offset +=
+					hdr->size +
 					sizeof(struct cam_context_dump_header);
 			}
 		}
@@ -1673,22 +1720,28 @@ static int cam_context_user_dump(struct cam_context *ctx,
 
 	/* Dump active requests */
 	if (!list_empty(&ctx->active_req_list)) {
-		list_for_each_entry_safe(req, req_temp, &ctx->active_req_list, list) {
+		list_for_each_entry_safe(req, req_temp, &ctx->active_req_list,
+					 list) {
 			for (i = 0; i < req->num_out_map_entries; i++) {
 				dst = (uint8_t *)cpu_addr + dump_args->offset;
 				hdr = (struct cam_context_dump_header *)dst;
-				scnprintf(hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
+				scnprintf(
+					hdr->tag, CAM_CTXT_DUMP_TAG_MAX_LEN,
 					"%s_OUT_FENCE_REQUEST_ACTIVE.%d.%d.%d:",
 					ctx->dev_name,
 					req->out_map_entries[i].resource_handle,
-					&(req->out_map_entries[i].image_buf_addr),
+					&(req->out_map_entries[i]
+						  .image_buf_addr),
 					req->out_map_entries[i].sync_id);
 				hdr->word_size = sizeof(uint64_t);
-				addr = (uint64_t *)(dst + sizeof(struct cam_context_dump_header));
+				addr = (uint64_t
+						*)(dst +
+						   sizeof(struct cam_context_dump_header));
 				start = addr;
 				*addr++ = req->request_id;
 				hdr->size = hdr->word_size * (addr - start);
-				dump_args->offset += hdr->size +
+				dump_args->offset +=
+					hdr->size +
 					sizeof(struct cam_context_dump_header);
 			}
 		}
@@ -1699,9 +1752,9 @@ static int cam_context_user_dump(struct cam_context *ctx,
 }
 
 int32_t cam_context_dump_dev_to_hw(struct cam_context *ctx,
-	struct cam_dump_req_cmd *cmd)
+				   struct cam_dump_req_cmd *cmd)
 {
-	int                     rc = 0;
+	int rc = 0;
 	struct cam_hw_dump_args dump_args;
 
 	if (!ctx || !cmd) {
@@ -1724,22 +1777,22 @@ int32_t cam_context_dump_dev_to_hw(struct cam_context *ctx,
 		rc = cam_context_user_dump(ctx, &dump_args);
 		if (rc) {
 			CAM_ERR(CAM_CTXT, "[%s][%d] handle[%u] failed",
-				ctx->dev_name, ctx->ctx_id, dump_args.buf_handle);
+				ctx->dev_name, ctx->ctx_id,
+				dump_args.buf_handle);
 			return rc;
 		}
 
-		rc  = ctx->hw_mgr_intf->hw_dump(
-			ctx->hw_mgr_intf->hw_mgr_priv,
-			&dump_args);
+		rc = ctx->hw_mgr_intf->hw_dump(ctx->hw_mgr_intf->hw_mgr_priv,
+					       &dump_args);
 		if (rc) {
 			CAM_ERR(CAM_CTXT, "[%s][%d] handle[%u] failed",
-			    ctx->dev_name, ctx->ctx_id, dump_args.buf_handle);
+				ctx->dev_name, ctx->ctx_id,
+				dump_args.buf_handle);
 			return rc;
 		}
 
-
 		if (dump_args.offset > cmd->offset) {
-			cmd->offset  = dump_args.offset;
+			cmd->offset = dump_args.offset;
 		}
 	} else {
 		CAM_DBG(CAM_CTXT, "%s hw dump not registered", ctx->dev_name);
@@ -1747,8 +1800,9 @@ int32_t cam_context_dump_dev_to_hw(struct cam_context *ctx,
 	return rc;
 }
 
-size_t cam_context_parse_config_cmd(struct cam_context *ctx, struct cam_config_dev_cmd *cmd,
-	struct cam_packet **packet)
+size_t cam_context_parse_config_cmd(struct cam_context *ctx,
+				    struct cam_config_dev_cmd *cmd,
+				    struct cam_packet **packet)
 {
 	size_t len;
 	uintptr_t packet_addr;
@@ -1762,35 +1816,40 @@ size_t cam_context_parse_config_cmd(struct cam_context *ctx, struct cam_config_d
 
 	/* for config dev, only memory handle is supported */
 	/* map packet from the memhandle */
-	rc = cam_mem_get_cpu_buf((int32_t) cmd->packet_handle, &packet_addr, &len);
+	rc = cam_mem_get_cpu_buf((int32_t)cmd->packet_handle, &packet_addr,
+				 &len);
 	if (rc != 0) {
-		CAM_ERR(CAM_CTXT, "[%s][%d] Can not get packet address for handle:%llx",
+		CAM_ERR(CAM_CTXT,
+			"[%s][%d] Can not get packet address for handle:%llx",
 			ctx->dev_name, ctx->ctx_id, cmd->packet_handle);
 		rc = -EINVAL;
 		goto err;
 	}
 
 	if ((len < sizeof(struct cam_packet)) ||
-		((size_t)cmd->offset >= len - sizeof(struct cam_packet))) {
-		CAM_ERR(CAM_CTXT, "invalid buff length: %zu or offset: %zu", len,
-			(size_t)cmd->offset);
+	    ((size_t)cmd->offset >= len - sizeof(struct cam_packet))) {
+		CAM_ERR(CAM_CTXT, "invalid buff length: %zu or offset: %zu",
+			len, (size_t)cmd->offset);
 		rc = -EINVAL;
 		goto put_cpu_buf;
 	}
 
-	*packet = (struct cam_packet *) ((uint8_t *)packet_addr + (uint32_t)cmd->offset);
+	*packet = (struct cam_packet *)((uint8_t *)packet_addr +
+					(uint32_t)cmd->offset);
 
 	CAM_DBG(CAM_CTXT,
-		"handle:%llx, addr:0x%zx, offset:%0xllx, len:%zu, req:%llu, size:%u, opcode:0x%x",
-		cmd->packet_handle, packet_addr, cmd->offset, len, (*packet)->header.request_id,
-		(*packet)->header.size, (*packet)->header.op_code);
+		"handle:%llx, addr:0x%zx, offset:%0xllx, len:%zu, req:%llu, size:%u, "
+		"opcode:0x%x",
+		cmd->packet_handle, packet_addr, cmd->offset, len,
+		(*packet)->header.request_id, (*packet)->header.size,
+		(*packet)->header.op_code);
 
-	cam_mem_put_cpu_buf((int32_t) cmd->packet_handle);
+	cam_mem_put_cpu_buf((int32_t)cmd->packet_handle);
 	return (len - (size_t)cmd->offset);
 
 put_cpu_buf:
 	if (cmd)
-		cam_mem_put_cpu_buf((int32_t) cmd->packet_handle);
+		cam_mem_put_cpu_buf((int32_t)cmd->packet_handle);
 err:
 	if (packet)
 		*packet = ERR_PTR(rc);
@@ -1798,14 +1857,14 @@ err:
 }
 
 static void __cam_context_req_mini_dump(struct cam_ctx_request *req,
-	uint8_t *start_addr, uint8_t *end_addr,
-	unsigned long *bytes_updated)
+					uint8_t *start_addr, uint8_t *end_addr,
+					unsigned long *bytes_updated)
 {
-	struct cam_hw_req_mini_dump      *req_md;
-	struct cam_buf_io_cfg            *io_cfg;
-	struct cam_packet                *packet = NULL;
-	unsigned long                     bytes_written = 0;
-	unsigned long                     bytes_required = 0;
+	struct cam_hw_req_mini_dump *req_md;
+	struct cam_buf_io_cfg *io_cfg;
+	struct cam_packet *packet = NULL;
+	unsigned long bytes_written = 0;
+	unsigned long bytes_required = 0;
 	int rc;
 
 	bytes_required = sizeof(*req_md);
@@ -1823,43 +1882,52 @@ static void __cam_context_req_mini_dump(struct cam_ctx_request *req,
 
 	if (req->num_out_map_entries) {
 		bytes_required = sizeof(struct cam_hw_fence_map_entry) *
-					req->num_out_map_entries;
+				 req->num_out_map_entries;
 		if (start_addr + bytes_written + bytes_required > end_addr)
 			goto end;
 
-		req_md->fence_map_out = (struct cam_hw_fence_map_entry *)
-				(start_addr + bytes_written);
-		memcpy(req_md->fence_map_out, req->out_map_entries, bytes_required);
+		req_md->fence_map_out =
+			(struct cam_hw_fence_map_entry *)(start_addr +
+							  bytes_written);
+		memcpy(req_md->fence_map_out, req->out_map_entries,
+		       bytes_required);
 		req_md->num_fence_map_out = req->num_out_map_entries;
 		bytes_written += bytes_required;
 	}
 
 	if (req->num_in_map_entries) {
 		bytes_required = sizeof(struct cam_hw_fence_map_entry) *
-				    req->num_in_map_entries;
+				 req->num_in_map_entries;
 		if (start_addr + bytes_written + bytes_required > end_addr)
 			goto end;
 
-		req_md->fence_map_in = (struct cam_hw_fence_map_entry *)
-				(start_addr + bytes_written);
-		memcpy(req_md->fence_map_in, req->in_map_entries, bytes_required);
+		req_md->fence_map_in =
+			(struct cam_hw_fence_map_entry *)(start_addr +
+							  bytes_written);
+		memcpy(req_md->fence_map_in, req->in_map_entries,
+		       bytes_required);
 		req_md->num_fence_map_in = req->num_in_map_entries;
 		bytes_written += bytes_required;
 	}
 
-	rc = cam_packet_util_get_packet_addr(&packet, req->pf_data.packet_handle,
-		req->pf_data.packet_offset);
+	rc = cam_packet_util_get_packet_addr(&packet,
+					     req->pf_data.packet_handle,
+					     req->pf_data.packet_offset);
 	if (rc)
 		return;
 
 	if (packet && packet->num_io_configs) {
-		bytes_required = packet->num_io_configs * sizeof(struct cam_buf_io_cfg);
+		bytes_required =
+			packet->num_io_configs * sizeof(struct cam_buf_io_cfg);
 		if (start_addr + bytes_written + bytes_required > end_addr)
 			goto end;
 
-		io_cfg = (struct cam_buf_io_cfg *)((uint32_t *)&packet->payload +
-			packet->io_configs_offset / 4);
-		req_md->io_cfg = (struct cam_buf_io_cfg *)(start_addr + bytes_written);
+		io_cfg =
+			(struct cam_buf_io_cfg *)((uint32_t *)&packet->payload +
+						  packet->io_configs_offset /
+							  4);
+		req_md->io_cfg =
+			(struct cam_buf_io_cfg *)(start_addr + bytes_written);
 		memcpy(req_md->io_cfg, io_cfg, bytes_required);
 		bytes_written += bytes_required;
 		req_md->num_io_cfg = packet->num_io_configs;
@@ -1870,95 +1938,104 @@ end:
 	*bytes_updated = bytes_written;
 }
 
-static int cam_context_apply_buf_done_err_injection(struct cam_context *ctx,
-	struct cam_common_evt_inject_data *inject_evt)
+static int cam_context_apply_buf_done_err_injection(
+	struct cam_context *ctx, struct cam_common_evt_inject_data *inject_evt)
 {
-	struct cam_hw_done_event_data *buf_done_data = inject_evt->buf_done_data;
+	struct cam_hw_done_event_data *buf_done_data =
+		inject_evt->buf_done_data;
 	int rc;
 
-	buf_done_data->evt_param = inject_evt->evt_params->u.buf_err_evt.sync_error;
+	buf_done_data->evt_param =
+		inject_evt->evt_params->u.buf_err_evt.sync_error;
 	rc = cam_context_buf_done_from_hw(ctx, buf_done_data,
-		CAM_CTX_EVT_ID_ERROR);
+					  CAM_CTX_EVT_ID_ERROR);
 	if (rc)
 		CAM_ERR(CAM_CTXT,
-			"Fail to apply buf done error injection with req id: %llu ctx id: %u rc: %d",
+			"Fail to apply buf done error injection with req id: %llu ctx id: "
+			"%u rc: %d",
 			buf_done_data->request_id, ctx->ctx_id, rc);
 
 	return rc;
 }
 
-static int cam_context_apply_pf_evt_injection(struct cam_context *ctx,
-	struct cam_hw_inject_evt_param *evt_params)
+static int
+cam_context_apply_pf_evt_injection(struct cam_context *ctx,
+				   struct cam_hw_inject_evt_param *evt_params)
 {
-	struct cam_hw_dump_pf_args pf_args         = {0};
-	struct cam_smmu_pf_info pf_info            = {0};
+	struct cam_hw_dump_pf_args pf_args = { 0 };
+	struct cam_smmu_pf_info pf_info = { 0 };
 	int rc;
 
 	pf_args.pf_context_info.req_id = evt_params->req_id;
-	pf_args.pf_context_info.ctx_found = evt_params->u.evt_notify.u.pf_evt_params.ctx_found;
+	pf_args.pf_context_info.ctx_found =
+		evt_params->u.evt_notify.u.pf_evt_params.ctx_found;
 	pf_args.pf_smmu_info = &pf_info;
 
 	rc = cam_context_send_pf_evt(ctx, &pf_args);
 	if (rc)
 		CAM_ERR(CAM_CTXT,
-			"Fail to apply Page Fault event injection with req id: %llu ctx id: %u rc: %d",
+			"Fail to apply Page Fault event injection with req id: %llu ctx "
+			"id: %u rc: %d",
 			evt_params->req_id, ctx->ctx_id, rc);
 
 	return rc;
 }
 
-static int cam_context_apply_node_event_injection(struct cam_context *ctx,
-	struct cam_hw_inject_evt_param *evt_params)
+static int cam_context_apply_node_event_injection(
+	struct cam_context *ctx, struct cam_hw_inject_evt_param *evt_params)
 {
 	struct cam_hw_inject_node_evt_param *node_evt_params =
 		&evt_params->u.evt_notify.u.node_evt_params;
-	struct cam_req_mgr_message req_msg                   = {0};
+	struct cam_req_mgr_message req_msg = { 0 };
 	int rc;
 
-	req_msg.u.node_msg.request_id  = evt_params->req_id;
-	req_msg.u.node_msg.link_hdl    = ctx->link_hdl;
-	req_msg.u.node_msg.device_hdl  = ctx->dev_hdl;
-	req_msg.u.node_msg.event_type  = node_evt_params->event_type;
+	req_msg.u.node_msg.request_id = evt_params->req_id;
+	req_msg.u.node_msg.link_hdl = ctx->link_hdl;
+	req_msg.u.node_msg.device_hdl = ctx->dev_hdl;
+	req_msg.u.node_msg.event_type = node_evt_params->event_type;
 	req_msg.u.node_msg.event_cause = node_evt_params->event_cause;
-	req_msg.session_hdl            = ctx->session_hdl;
+	req_msg.session_hdl = ctx->session_hdl;
 
-	rc = cam_req_mgr_notify_message(&req_msg,
-		V4L_EVENT_CAM_REQ_MGR_ERROR, V4L_EVENT_CAM_REQ_MGR_EVENT);
+	rc = cam_req_mgr_notify_message(&req_msg, V4L_EVENT_CAM_REQ_MGR_ERROR,
+					V4L_EVENT_CAM_REQ_MGR_EVENT);
 	if (rc)
 		CAM_ERR(CAM_CTXT,
-			"Fail to apply error event injection with req id: %llu ctx id: %u rc: %d",
+			"Fail to apply error event injection with req id: %llu ctx id: %u "
+			"rc: %d",
 			evt_params->req_id, ctx->ctx_id, rc);
 
 	return rc;
 }
 
-static int cam_context_apply_error_event_injection(struct cam_context *ctx,
-	struct cam_hw_inject_evt_param *evt_params)
+static int cam_context_apply_error_event_injection(
+	struct cam_context *ctx, struct cam_hw_inject_evt_param *evt_params)
 {
 	struct cam_hw_inject_err_evt_param *err_evt_params =
 		&evt_params->u.evt_notify.u.err_evt_params;
-	struct cam_req_mgr_message req_msg                 = {0};
+	struct cam_req_mgr_message req_msg = { 0 };
 	int rc;
 
-	req_msg.u.err_msg.device_hdl    = ctx->dev_hdl;
-	req_msg.u.err_msg.error_type    = err_evt_params->err_type;
-	req_msg.u.err_msg.link_hdl      = ctx->link_hdl;
-	req_msg.u.err_msg.request_id    = evt_params->req_id;
+	req_msg.u.err_msg.device_hdl = ctx->dev_hdl;
+	req_msg.u.err_msg.error_type = err_evt_params->err_type;
+	req_msg.u.err_msg.link_hdl = ctx->link_hdl;
+	req_msg.u.err_msg.request_id = evt_params->req_id;
 	req_msg.u.err_msg.resource_size = 0x0;
-	req_msg.u.err_msg.error_code    = err_evt_params->err_code;
-	req_msg.session_hdl             = ctx->session_hdl;
+	req_msg.u.err_msg.error_code = err_evt_params->err_code;
+	req_msg.session_hdl = ctx->session_hdl;
 
-	rc = cam_req_mgr_notify_message(&req_msg,
-		V4L_EVENT_CAM_REQ_MGR_ERROR, V4L_EVENT_CAM_REQ_MGR_EVENT);
+	rc = cam_req_mgr_notify_message(&req_msg, V4L_EVENT_CAM_REQ_MGR_ERROR,
+					V4L_EVENT_CAM_REQ_MGR_EVENT);
 	if (rc)
 		CAM_ERR(CAM_CTXT,
-			"Fail to apply V4L2 Node event injection with req id: %llu ctx id: %u rc: %d",
+			"Fail to apply V4L2 Node event injection with req id: %llu ctx id: "
+			"%u rc: %d",
 			evt_params->req_id, ctx->ctx_id, rc);
 
 	return rc;
 }
 
-int cam_context_apply_evt_injection(struct cam_context *ctx, void *inject_evt_arg)
+int cam_context_apply_evt_injection(struct cam_context *ctx,
+				    void *inject_evt_arg)
 {
 	struct cam_common_evt_inject_data *inject_evt;
 	struct cam_hw_inject_evt_param *evt_params;
@@ -1966,8 +2043,10 @@ int cam_context_apply_evt_injection(struct cam_context *ctx, void *inject_evt_ar
 	int rc = -EINVAL;
 
 	if (!ctx || !inject_evt_arg) {
-		CAM_ERR(CAM_CTXT, "Invalid parameters ctx %s inject evt args %s",
-			CAM_IS_NULL_TO_STR(ctx), CAM_IS_NULL_TO_STR(inject_evt_arg));
+		CAM_ERR(CAM_CTXT,
+			"Invalid parameters ctx %s inject evt args %s",
+			CAM_IS_NULL_TO_STR(ctx),
+			CAM_IS_NULL_TO_STR(inject_evt_arg));
 		return -EINVAL;
 	}
 
@@ -1982,20 +2061,25 @@ int cam_context_apply_evt_injection(struct cam_context *ctx, void *inject_evt_ar
 		evt_notify_type = evt_params->u.evt_notify.evt_notify_type;
 		switch (evt_notify_type) {
 		case V4L_EVENT_CAM_REQ_MGR_ERROR:
-			rc = cam_context_apply_error_event_injection(ctx, evt_params);
+			rc = cam_context_apply_error_event_injection(
+				ctx, evt_params);
 			break;
 		case V4L_EVENT_CAM_REQ_MGR_PF_ERROR:
-			rc = cam_context_apply_pf_evt_injection(ctx, evt_params);
+			rc = cam_context_apply_pf_evt_injection(ctx,
+								evt_params);
 			break;
 		case V4L_EVENT_CAM_REQ_MGR_NODE_EVENT:
-			rc = cam_context_apply_node_event_injection(ctx, evt_params);
+			rc = cam_context_apply_node_event_injection(ctx,
+								    evt_params);
 			break;
 		default:
-			CAM_ERR(CAM_CTXT, "Invalid notify type %u", evt_notify_type);
+			CAM_ERR(CAM_CTXT, "Invalid notify type %u",
+				evt_notify_type);
 		}
 		break;
 	default:
-		CAM_ERR(CAM_CTXT, "Invalid inject id %u", evt_params->inject_id);
+		CAM_ERR(CAM_CTXT, "Invalid inject id %u",
+			evt_params->inject_id);
 	}
 
 	return rc;
@@ -2006,10 +2090,10 @@ int cam_context_mini_dump(struct cam_context *ctx, void *args)
 	struct cam_hw_mini_dump_info *md;
 	struct cam_ctx_request *req, *req_temp;
 	struct cam_hw_mini_dump_args *md_args;
-	uint8_t                      *start_addr;
-	uint8_t                      *end_addr;
-	unsigned long                 bytes_written = 0;
-	unsigned long                 bytes_updated = 0;
+	uint8_t *start_addr;
+	uint8_t *end_addr;
+	unsigned long bytes_written = 0;
+	unsigned long bytes_updated = 0;
 
 	if (!ctx || !args) {
 		CAM_ERR(CAM_CTXT, "invalid params");
@@ -2019,13 +2103,13 @@ int cam_context_mini_dump(struct cam_context *ctx, void *args)
 	md_args = (struct cam_hw_mini_dump_args *)args;
 	if (md_args->len < sizeof(*md)) {
 		md_args->bytes_written = 0;
-		CAM_ERR(CAM_CTXT, "Insufficient len %lu, bytes_written %lu", md_args->len,
-			md_args->bytes_written);
+		CAM_ERR(CAM_CTXT, "Insufficient len %lu, bytes_written %lu",
+			md_args->len, md_args->bytes_written);
 		return 0;
 	}
 
 	start_addr = (uint8_t *)md_args->start_addr;
-	end_addr  = start_addr + md_args->len;
+	end_addr = start_addr + md_args->len;
 	md = (struct cam_hw_mini_dump_info *)md_args->start_addr;
 	md->ctx_id = ctx->ctx_id;
 	md->last_flush_req = ctx->last_flush_req;
@@ -2039,48 +2123,59 @@ int cam_context_mini_dump(struct cam_context *ctx, void *args)
 	bytes_written += sizeof(*md);
 
 	if (!list_empty(&ctx->active_req_list)) {
-		md->active_list = (struct cam_hw_req_mini_dump *)
-			    (start_addr + bytes_written);
-		list_for_each_entry_safe(req, req_temp, &ctx->active_req_list, list) {
+		md->active_list =
+			(struct cam_hw_req_mini_dump *)(start_addr +
+							bytes_written);
+		list_for_each_entry_safe(req, req_temp, &ctx->active_req_list,
+					 list) {
 			bytes_updated = 0;
-			__cam_context_req_mini_dump(req,
+			__cam_context_req_mini_dump(
+				req,
 				(uint8_t *)&md->active_list[md->active_cnt++],
 				end_addr, &bytes_updated);
-			if ((start_addr + bytes_written + bytes_updated >= end_addr))
+			if ((start_addr + bytes_written + bytes_updated >=
+			     end_addr))
 				goto end;
 			bytes_written += bytes_updated;
 		}
 	}
 
 	if (!list_empty(&ctx->wait_req_list)) {
-		md->wait_list = (struct cam_hw_req_mini_dump *)
-			    (start_addr + bytes_written);
-		list_for_each_entry_safe(req, req_temp, &ctx->wait_req_list, list) {
+		md->wait_list = (struct cam_hw_req_mini_dump *)(start_addr +
+								bytes_written);
+		list_for_each_entry_safe(req, req_temp, &ctx->wait_req_list,
+					 list) {
 			bytes_updated = 0;
-			__cam_context_req_mini_dump(req,
-				(uint8_t *)&md->wait_list[md->wait_cnt++],
+			__cam_context_req_mini_dump(
+				req, (uint8_t *)&md->wait_list[md->wait_cnt++],
 				end_addr, &bytes_updated);
-			if ((start_addr + bytes_written + bytes_updated >= end_addr))
+			if ((start_addr + bytes_written + bytes_updated >=
+			     end_addr))
 				goto end;
 			bytes_written += bytes_updated;
 		}
 	}
 
 	if (!list_empty(&ctx->pending_req_list)) {
-		md->pending_list = (struct cam_hw_req_mini_dump *)
-			    (start_addr + bytes_written);
-		list_for_each_entry_safe(req, req_temp, &ctx->pending_req_list, list) {
+		md->pending_list =
+			(struct cam_hw_req_mini_dump *)(start_addr +
+							bytes_written);
+		list_for_each_entry_safe(req, req_temp, &ctx->pending_req_list,
+					 list) {
 			bytes_updated = 0;
-			__cam_context_req_mini_dump(req,
+			__cam_context_req_mini_dump(
+				req,
 				(uint8_t *)&md->pending_list[md->pending_cnt++],
 				end_addr, &bytes_updated);
-			if ((start_addr + bytes_written + bytes_updated >= end_addr))
+			if ((start_addr + bytes_written + bytes_updated >=
+			     end_addr))
 				goto end;
 			bytes_written += bytes_updated;
 		}
 	}
 end:
 	md_args->bytes_written = bytes_written;
-	CAM_INFO(CAM_CTXT, "Ctx %s bytes_written %lu", ctx->dev_name, md_args->bytes_written);
+	CAM_INFO(CAM_CTXT, "Ctx %s bytes_written %lu", ctx->dev_name,
+		 md_args->bytes_written);
 	return 0;
 }

@@ -16,24 +16,24 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wifi_radar_defs_i.h>
-#include <qdf_types.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_objmgr_peer_obj.h>
 #include <qdf_streamfs.h>
+#include <qdf_types.h>
 #include <target_if.h>
 #include <target_if_direct_buf_rx_api.h>
+#include <wifi_radar_defs_i.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 #include <wlan_osif_priv.h>
 
 QDF_STATUS
-wlan_wifi_radar_psoc_obj_create_handler(
-struct wlan_objmgr_psoc *psoc, void *arg)
+wlan_wifi_radar_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc,
+					void *arg)
 {
 	struct psoc_wifi_radar *wifi_radar_sc = NULL;
 
-	wifi_radar_sc =
-	(struct psoc_wifi_radar *)qdf_mem_malloc(sizeof(*wifi_radar_sc));
+	wifi_radar_sc = (struct psoc_wifi_radar *)qdf_mem_malloc(
+		sizeof(*wifi_radar_sc));
 	if (!wifi_radar_sc) {
 		wifi_radar_err("Failed to allocate wifi_radar_ctx object\n");
 		return QDF_STATUS_E_NOMEM;
@@ -49,16 +49,16 @@ struct wlan_objmgr_psoc *psoc, void *arg)
 }
 
 QDF_STATUS
-wlan_wifi_radar_psoc_obj_destroy_handler(
-struct wlan_objmgr_psoc *psoc, void *arg)
+wlan_wifi_radar_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc,
+					 void *arg)
 {
 	struct psoc_wifi_radar *wifi_radar_sc = NULL;
 
 	wifi_radar_sc = wlan_objmgr_psoc_get_comp_private_obj(
-				    psoc, WLAN_UMAC_COMP_WIFI_RADAR);
+		psoc, WLAN_UMAC_COMP_WIFI_RADAR);
 	if (wifi_radar_sc) {
 		wlan_objmgr_psoc_component_obj_detach(
-		psoc, WLAN_UMAC_COMP_WIFI_RADAR, (void *)wifi_radar_sc);
+			psoc, WLAN_UMAC_COMP_WIFI_RADAR, (void *)wifi_radar_sc);
 		qdf_mem_free(wifi_radar_sc);
 	}
 
@@ -66,8 +66,8 @@ struct wlan_objmgr_psoc *psoc, void *arg)
 }
 
 QDF_STATUS
-wlan_wifi_radar_pdev_obj_create_handler(
-struct wlan_objmgr_pdev *pdev, void *arg)
+wlan_wifi_radar_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev,
+					void *arg)
 {
 	struct pdev_wifi_radar *pa = NULL;
 
@@ -78,8 +78,8 @@ struct wlan_objmgr_pdev *pdev, void *arg)
 
 	wlan_pdev_nif_feat_ext_cap_set(pdev, WLAN_PDEV_FEXT_WIFI_RADAR_ENABLE);
 
-	pa = (struct pdev_wifi_radar *)
-		 qdf_mem_malloc(sizeof(struct pdev_wifi_radar));
+	pa = (struct pdev_wifi_radar *)qdf_mem_malloc(
+		sizeof(struct pdev_wifi_radar));
 	if (!pa) {
 		wifi_radar_err("Failed to allocate pdev object\n");
 		return QDF_STATUS_E_NOMEM;
@@ -92,8 +92,8 @@ struct wlan_objmgr_pdev *pdev, void *arg)
 }
 
 QDF_STATUS
-wlan_wifi_radar_pdev_obj_destroy_handler(
-struct wlan_objmgr_pdev *pdev, void *arg)
+wlan_wifi_radar_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev,
+					 void *arg)
 {
 	struct pdev_wifi_radar *pa = NULL;
 	uint32_t idx;
@@ -103,11 +103,11 @@ struct wlan_objmgr_pdev *pdev, void *arg)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pa =
-	wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_WIFI_RADAR);
+	pa = wlan_objmgr_pdev_get_comp_private_obj(pdev,
+						   WLAN_UMAC_COMP_WIFI_RADAR);
 	if (pa) {
 		wlan_objmgr_pdev_component_obj_detach(
-		pdev, WLAN_UMAC_COMP_WIFI_RADAR, (void *)pa);
+			pdev, WLAN_UMAC_COMP_WIFI_RADAR, (void *)pa);
 		qdf_mem_free(pa);
 	}
 
@@ -115,8 +115,8 @@ struct wlan_objmgr_pdev *pdev, void *arg)
 }
 
 QDF_STATUS
-wlan_wifi_radar_peer_obj_create_handler(
-struct wlan_objmgr_peer *peer, void *arg)
+wlan_wifi_radar_peer_obj_create_handler(struct wlan_objmgr_peer *peer,
+					void *arg)
 {
 	struct peer_wifi_radar *pe = NULL;
 	struct wlan_objmgr_vdev *vdev;
@@ -141,8 +141,8 @@ struct wlan_objmgr_peer *peer, void *arg)
 		return QDF_STATUS_E_NOSUPPORT;
 	}
 
-	pe = (struct peer_wifi_radar *)
-	qdf_mem_malloc(sizeof(struct peer_wifi_radar));
+	pe = (struct peer_wifi_radar *)qdf_mem_malloc(
+		sizeof(struct peer_wifi_radar));
 	if (!pe) {
 		wifi_radar_err("Failed to allocate peer_wifi_radar object\n");
 		return QDF_STATUS_E_FAILURE;
@@ -156,8 +156,8 @@ struct wlan_objmgr_peer *peer, void *arg)
 }
 
 QDF_STATUS
-wlan_wifi_radar_peer_obj_destroy_handler(
-struct wlan_objmgr_peer *peer, void *arg)
+wlan_wifi_radar_peer_obj_destroy_handler(struct wlan_objmgr_peer *peer,
+					 void *arg)
 {
 	struct peer_wifi_radar *pe = NULL;
 	struct wlan_objmgr_vdev *vdev;
@@ -177,11 +177,11 @@ struct wlan_objmgr_peer *peer, void *arg)
 		return QDF_STATUS_E_NOSUPPORT;
 	}
 
-	pe =
-	wlan_objmgr_peer_get_comp_private_obj(peer, WLAN_UMAC_COMP_WIFI_RADAR);
+	pe = wlan_objmgr_peer_get_comp_private_obj(peer,
+						   WLAN_UMAC_COMP_WIFI_RADAR);
 	if (pe) {
 		wlan_objmgr_peer_component_obj_detach(
-		peer, WLAN_UMAC_COMP_WIFI_RADAR, (void *)pe);
+			peer, WLAN_UMAC_COMP_WIFI_RADAR, (void *)pe);
 		qdf_mem_free(pe);
 	}
 
@@ -211,7 +211,7 @@ static char *wifi_radar_get_dev_name(struct wlan_objmgr_pdev *pdev)
 		return NULL;
 	}
 
-	return  qdf_net_if_get_devname(nif);
+	return qdf_net_if_get_devname(nif);
 }
 
 QDF_STATUS wifi_radar_streamfs_init(struct wlan_objmgr_pdev *pdev)
@@ -230,8 +230,8 @@ QDF_STATUS wifi_radar_streamfs_init(struct wlan_objmgr_pdev *pdev)
 		return QDF_STATUS_COMP_DISABLED;
 	}
 
-	pa = wlan_objmgr_pdev_get_comp_private_obj(
-		pdev, WLAN_UMAC_COMP_WIFI_RADAR);
+	pa = wlan_objmgr_pdev_get_comp_private_obj(pdev,
+						   WLAN_UMAC_COMP_WIFI_RADAR);
 
 	if (!pa) {
 		wifi_radar_err("pdev_wifi_radar is NULL");
@@ -259,8 +259,8 @@ QDF_STATUS wifi_radar_streamfs_init(struct wlan_objmgr_pdev *pdev)
 	}
 
 	pa->chan_ptr = qdf_streamfs_open("wifi_radar_dump", pa->dir_ptr,
-					 pa->subbuf_size,
-					 pa->num_subbufs, NULL);
+					 pa->subbuf_size, pa->num_subbufs,
+					 NULL);
 
 	if (!pa->chan_ptr) {
 		wifi_radar_err("Chan create failed");
@@ -281,8 +281,8 @@ QDF_STATUS wifi_radar_streamfs_remove(struct wlan_objmgr_pdev *pdev)
 		return QDF_STATUS_COMP_DISABLED;
 	}
 
-	pa = wlan_objmgr_pdev_get_comp_private_obj(
-		 pdev, WLAN_UMAC_COMP_WIFI_RADAR);
+	pa = wlan_objmgr_pdev_get_comp_private_obj(pdev,
+						   WLAN_UMAC_COMP_WIFI_RADAR);
 	if (pa) {
 		if (pa->chan_ptr) {
 			qdf_streamfs_close(pa->chan_ptr);
@@ -300,12 +300,11 @@ QDF_STATUS wifi_radar_streamfs_remove(struct wlan_objmgr_pdev *pdev)
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS wifi_radar_streamfs_write(
-struct pdev_wifi_radar *pa, const void *write_data,
-size_t write_len)
+QDF_STATUS wifi_radar_streamfs_write(struct pdev_wifi_radar *pa,
+				     const void *write_data, size_t write_len)
 {
 	if (pa->chan_ptr) {
-	/* write to channel buffer */
+		/* write to channel buffer */
 		qdf_streamfs_write(pa->chan_ptr, (const void *)write_data,
 				   write_len);
 	} else {
@@ -317,7 +316,7 @@ size_t write_len)
 QDF_STATUS wifi_radar_streamfs_flush(struct pdev_wifi_radar *pa)
 {
 	if (pa->chan_ptr) {
-	/* Flush the data write to channel buffer */
+		/* Flush the data write to channel buffer */
 		qdf_streamfs_flush(pa->chan_ptr);
 	} else {
 		return QDF_STATUS_E_FAILURE;

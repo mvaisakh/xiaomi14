@@ -18,14 +18,14 @@
 
 /*=== header file includes ===*/
 /* generic utilities */
-#include <qdf_nbuf.h>           /* qdf_nbuf_t, etc. */
-#include <qdf_timer.h>
+#include <qdf_nbuf.h> /* qdf_nbuf_t, etc. */
 #include <qdf_time.h>
+#include <qdf_timer.h>
 
 /* datapath internal interfaces */
-#include <ol_txrx_internal.h>   /* TXRX_ASSERT, etc. */
-#include <ol_rx_reorder.h>      /* ol_rx_reorder_flush, etc. */
+#include <ol_rx_reorder.h> /* ol_rx_reorder_flush, etc. */
 #include <ol_rx_reorder_timeout.h>
+#include <ol_txrx_internal.h> /* TXRX_ASSERT, etc. */
 
 #ifdef QCA_SUPPORT_OL_RX_REORDER_TIMEOUT
 
@@ -49,9 +49,9 @@ void ol_rx_reorder_timeout_remove(struct ol_txrx_peer_t *peer, unsigned int tid)
 		     reorder_timeout_list_elem);
 }
 
-static void
-ol_rx_reorder_timeout_start(struct ol_tx_reorder_cat_timeout_t
-			    *rx_reorder_timeout_ac, uint32_t time_now_ms)
+static void ol_rx_reorder_timeout_start(
+	struct ol_tx_reorder_cat_timeout_t *rx_reorder_timeout_ac,
+	uint32_t time_now_ms)
 {
 	uint32_t duration_ms;
 	struct ol_rx_reorder_timeout_list_elem_t *list_elem;
@@ -62,8 +62,8 @@ ol_rx_reorder_timeout_start(struct ol_tx_reorder_cat_timeout_t
 	qdf_timer_start(&rx_reorder_timeout_ac->timer, duration_ms);
 }
 
-static inline void
-ol_rx_reorder_timeout_add(struct ol_txrx_peer_t *peer, uint8_t tid)
+static inline void ol_rx_reorder_timeout_add(struct ol_txrx_peer_t *peer,
+					     uint8_t tid)
 {
 	uint32_t time_now_ms;
 	struct ol_txrx_pdev_t *pdev;
@@ -88,8 +88,8 @@ ol_rx_reorder_timeout_add(struct ol_txrx_peer_t *peer, uint8_t tid)
 
 	/* add to the queue */
 	start = TAILQ_EMPTY(&rx_reorder_timeout_ac->virtual_timer_list);
-	TAILQ_INSERT_TAIL(&rx_reorder_timeout_ac->virtual_timer_list,
-			  list_elem, reorder_timeout_list_elem);
+	TAILQ_INSERT_TAIL(&rx_reorder_timeout_ac->virtual_timer_list, list_elem,
+			  reorder_timeout_list_elem);
 	if (start)
 		ol_rx_reorder_timeout_start(rx_reorder_timeout_ac, time_now_ms);
 }
@@ -100,16 +100,16 @@ void ol_rx_reorder_timeout_update(struct ol_txrx_peer_t *peer, uint8_t tid)
 		return;
 
 	/*
-	 * If there are no holes, i.e. no queued frames,
-	 * then timeout doesn't apply.
-	 */
+   * If there are no holes, i.e. no queued frames,
+   * then timeout doesn't apply.
+   */
 	if (peer->tids_rx_reorder[tid].num_mpdus == 0)
 		return;
 
 	/*
-	 * If the virtual timer for this peer-TID is already running,
-	 * then leave it.
-	 */
+   * If the virtual timer for this peer-TID is already running,
+   * then leave it.
+   */
 	if (peer->tids_rx_reorder[tid].timeout.active)
 		return;
 
@@ -128,15 +128,16 @@ static void ol_rx_reorder_timeout(void *arg)
 
 	pdev = rx_reorder_timeout_ac->pdev;
 	qdf_spin_lock(&pdev->rx.mutex);
-/* TODO: conditionally take mutex lock during regular rx */
+	/* TODO: conditionally take mutex lock during regular rx */
 	TAILQ_FOREACH_SAFE(list_elem,
 			   &rx_reorder_timeout_ac->virtual_timer_list,
-			   reorder_timeout_list_elem, tmp) {
+			   reorder_timeout_list_elem, tmp)
+	{
 		unsigned int idx_start, idx_end;
 		struct ol_txrx_peer_t *peer;
 
 		if (list_elem->timestamp_ms > time_now_ms)
-			break;  /* time has not expired yet for this element */
+			break; /* time has not expired yet for this element */
 
 		list_elem->active = 0;
 		/* remove the expired element from the list */
@@ -145,12 +146,10 @@ static void ol_rx_reorder_timeout(void *arg)
 
 		peer = list_elem->peer;
 
-		idx_start = 0xffff;     /* start from next_rel_idx */
+		idx_start = 0xffff; /* start from next_rel_idx */
 		ol_rx_reorder_first_hole(peer, list_elem->tid, &idx_end);
-		ol_rx_reorder_flush(peer->vdev,
-				    peer,
-				    list_elem->tid,
-				    idx_start, idx_end, htt_rx_flush_release);
+		ol_rx_reorder_flush(peer->vdev, peer, list_elem->tid, idx_start,
+				    idx_end, htt_rx_flush_release);
 	}
 	/* restart the timer if unexpired elements are left in the list */
 	if (!TAILQ_EMPTY(&rx_reorder_timeout_ac->virtual_timer_list))
@@ -164,17 +163,15 @@ void ol_rx_reorder_timeout_init(struct ol_txrx_pdev_t *pdev)
 	int i;
 
 	for (i = 0; i < QDF_ARRAY_SIZE(pdev->rx.reorder_timeout.access_cats);
-		i++) {
+	     i++) {
 		struct ol_tx_reorder_cat_timeout_t *rx_reorder_timeout_ac;
 
 		rx_reorder_timeout_ac =
 			&pdev->rx.reorder_timeout.access_cats[i];
 		/* init the per-AC timers */
-		qdf_timer_init(pdev->osdev,
-				       &rx_reorder_timeout_ac->timer,
-				       ol_rx_reorder_timeout,
-				       rx_reorder_timeout_ac,
-				       QDF_TIMER_TYPE_SW);
+		qdf_timer_init(pdev->osdev, &rx_reorder_timeout_ac->timer,
+			       ol_rx_reorder_timeout, rx_reorder_timeout_ac,
+			       QDF_TIMER_TYPE_SW);
 		/* init the virtual timer list */
 		TAILQ_INIT(&rx_reorder_timeout_ac->virtual_timer_list);
 		rx_reorder_timeout_ac->pdev = pdev;
@@ -200,7 +197,7 @@ void ol_rx_reorder_timeout_cleanup(struct ol_txrx_pdev_t *pdev)
 	int i;
 
 	for (i = 0; i < QDF_ARRAY_SIZE(pdev->rx.reorder_timeout.access_cats);
-		i++) {
+	     i++) {
 		struct ol_tx_reorder_cat_timeout_t *rx_reorder_timeout_ac;
 
 		rx_reorder_timeout_ac =

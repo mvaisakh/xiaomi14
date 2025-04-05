@@ -21,33 +21,33 @@
 #define EXPORT_SYMTAB
 #endif
 
-#include <osdep.h>
-#include <linux/slab.h>
-#include <linux/interrupt.h>
+#include "if_sdio.h"
+#include "epping_main.h"
+#include "regtable_sdio.h"
+#include "sdio_api.h"
+#include "targaddrs.h"
+#include "target_type.h"
+#include <cds_api.h>
+#include <hif_debug.h>
+#include <hif_sdio_dev.h>
 #include <linux/if_arp.h>
+#include <linux/interrupt.h>
 #include <linux/mmc/card.h>
-#include <linux/mmc/mmc.h>
 #include <linux/mmc/host.h>
+#include <linux/mmc/mmc.h>
+#include <linux/mmc/sd.h>
+#include <linux/mmc/sdio.h>
 #include <linux/mmc/sdio_func.h>
 #include <linux/mmc/sdio_ids.h>
-#include <linux/mmc/sdio.h>
-#include <linux/mmc/sd.h>
+#include <linux/slab.h>
 #include <linux/wait.h>
+#include <osdep.h>
 #include <qdf_mem.h>
-#include "if_sdio.h"
 #include <qdf_trace.h>
-#include <cds_api.h>
-#include "regtable_sdio.h"
-#include <hif_debug.h>
-#include "target_type.h"
-#include "epping_main.h"
-#include "targaddrs.h"
-#include "sdio_api.h"
-#include <hif_sdio_dev.h>
 #ifndef REMOVE_PKT_LOG
 #include "ol_txrx_types.h"
-#include "pktlog_ac_api.h"
 #include "pktlog_ac.h"
+#include "pktlog_ac_api.h"
 #endif
 #ifndef ATH_BUS_PM
 #ifdef CONFIG_PM
@@ -77,7 +77,6 @@ int hif_sdio_bus_suspend(struct hif_softc *hif_ctx)
 
 	return hif_device_suspend(hif_ctx, dev);
 }
-
 
 /**
  * hif_sdio_bus_resume() - hif resume API
@@ -125,8 +124,7 @@ void hif_sdio_close(struct hif_softc *hif_sc)
  *
  * Return: QDF status
  */
-QDF_STATUS hif_sdio_open(struct hif_softc *hif_sc,
-				   enum qdf_bus_type bus_type)
+QDF_STATUS hif_sdio_open(struct hif_softc *hif_sc, enum qdf_bus_type bus_type)
 {
 	hif_sc->bus_type = bus_type;
 
@@ -140,8 +138,8 @@ void hif_get_target_revision(struct hif_softc *ol_sc)
 	uint32_t chip_id = 0;
 	QDF_STATUS rv;
 
-	rv = hif_diag_read_access(hif_hdl,
-			(CHIP_ID_ADDRESS | RTC_SOC_BASE_ADDRESS), &chip_id);
+	rv = hif_diag_read_access(
+		hif_hdl, (CHIP_ID_ADDRESS | RTC_SOC_BASE_ADDRESS), &chip_id);
 	if (rv != QDF_STATUS_SUCCESS) {
 		hif_err("get chip id fail");
 	} else {
@@ -174,7 +172,6 @@ QDF_STATUS hif_sdio_enable_bus(struct hif_softc *ol_sc, struct device *dev,
 	return QDF_STATUS_SUCCESS;
 }
 
-
 /**
  * hif_sdio_disable_bus() - sdio disable bus
  * @hif_sc: hif softc pointer
@@ -197,14 +194,14 @@ void hif_sdio_disable_bus(struct hif_softc *hif_sc)
  *
  * Return: QDF_STATUS_SUCCESS for success
  */
-QDF_STATUS hif_sdio_get_config_item(struct hif_softc *hif_sc,
-		     int opcode, void *config, uint32_t config_len)
+QDF_STATUS hif_sdio_get_config_item(struct hif_softc *hif_sc, int opcode,
+				    void *config, uint32_t config_len)
 {
 	struct hif_sdio_softc *sc = HIF_GET_SDIO_SOFTC(hif_sc);
 	struct hif_sdio_dev *hif_device = sc->hif_handle;
 
-	return hif_configure_device(hif_sc, hif_device, opcode,
-				    config, config_len);
+	return hif_configure_device(hif_sc, hif_device, opcode, config,
+				    config_len);
 }
 
 /**
@@ -278,8 +275,8 @@ int hif_check_fw_reg(struct hif_opaque_softc *hif_ctx)
 		hif_err("Get fw indication failed");
 		return 1;
 	}
-	hif_info("fw indication is 0x%x def 0x%x",
-		fw_indication, FW_IND_HELPER);
+	hif_info("fw indication is 0x%x def 0x%x", fw_indication,
+		 FW_IND_HELPER);
 	if (fw_indication & FW_IND_HELPER)
 		ret = 0;
 

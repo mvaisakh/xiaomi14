@@ -4,43 +4,45 @@
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/of_device.h>
-#include <linux/err.h>
-#include <linux/regulator/consumer.h>
 #include <linux/clk.h>
+#include <linux/err.h>
+#include <linux/of_device.h>
 #include <linux/of_irq.h>
+#include <linux/regulator/consumer.h>
 #include <video/mipi_display.h>
 
+#include "dsi_catalog.h"
+#include "dsi_clk.h"
+#include "dsi_ctrl.h"
+#include "dsi_ctrl_hw.h"
+#include "dsi_panel.h"
+#include "dsi_pwr.h"
 #include "msm_drv.h"
 #include "msm_kms.h"
 #include "msm_mmu.h"
-#include "dsi_ctrl.h"
-#include "dsi_ctrl_hw.h"
-#include "dsi_clk.h"
-#include "dsi_pwr.h"
-#include "dsi_catalog.h"
-#include "dsi_panel.h"
 
 #include "sde_dbg.h"
 
 #define DSI_CTRL_DEFAULT_LABEL "MDSS DSI CTRL"
 
-#define DSI_CTRL_TX_TO_MS     1200
+#define DSI_CTRL_TX_TO_MS 1200
 
 #define TO_ON_OFF(x) ((x) ? "ON" : "OFF")
 
-#define CEIL(x, y)              (((x) + ((y)-1)) / (y))
+#define CEIL(x, y) (((x) + ((y) - 1)) / (y))
 
-#define TICKS_IN_MICRO_SECOND    1000000
+#define TICKS_IN_MICRO_SECOND 1000000
 
-#define DSI_CTRL_DEBUG(c, fmt, ...)	DRM_DEV_DEBUG(NULL, "[msm-dsi-debug]: %s: "\
-		fmt, c ? c->name : "inv", ##__VA_ARGS__)
-#define DSI_CTRL_ERR(c, fmt, ...)	DRM_DEV_ERROR(NULL, "[msm-dsi-error]: %s: "\
-		fmt, c ? c->name : "inv", ##__VA_ARGS__)
-#define DSI_CTRL_INFO(c, fmt, ...)	DRM_DEV_INFO(NULL, "[msm-dsi-info]: %s: "\
-		fmt, c->name, ##__VA_ARGS__)
-#define DSI_CTRL_WARN(c, fmt, ...)	DRM_WARN("[msm-dsi-warn]: %s: " fmt,\
-		c ? c->name : "inv", ##__VA_ARGS__)
+#define DSI_CTRL_DEBUG(c, fmt, ...)                                           \
+	DRM_DEV_DEBUG(NULL, "[msm-dsi-debug]: %s: " fmt, c ? c->name : "inv", \
+		      ##__VA_ARGS__)
+#define DSI_CTRL_ERR(c, fmt, ...)                                             \
+	DRM_DEV_ERROR(NULL, "[msm-dsi-error]: %s: " fmt, c ? c->name : "inv", \
+		      ##__VA_ARGS__)
+#define DSI_CTRL_INFO(c, fmt, ...) \
+	DRM_DEV_INFO(NULL, "[msm-dsi-info]: %s: " fmt, c->name, ##__VA_ARGS__)
+#define DSI_CTRL_WARN(c, fmt, ...) \
+	DRM_WARN("[msm-dsi-warn]: %s: " fmt, c ? c->name : "inv", ##__VA_ARGS__)
 
 struct dsi_ctrl_list_item {
 	struct dsi_ctrl *ctrl;
@@ -91,10 +93,8 @@ static const struct of_device_id msm_dsi_of_match[] = {
 };
 
 #if IS_ENABLED(CONFIG_DEBUG_FS)
-static ssize_t debugfs_state_info_read(struct file *file,
-				       char __user *buff,
-				       size_t count,
-				       loff_t *ppos)
+static ssize_t debugfs_state_info_read(struct file *file, char __user *buff,
+				       size_t count, loff_t *ppos)
 {
 	struct dsi_ctrl *dsi_ctrl = file->private_data;
 	char *buf;
@@ -112,8 +112,7 @@ static ssize_t debugfs_state_info_read(struct file *file,
 
 	/* Dump current state */
 	len += snprintf((buf + len), (SZ_4K - len), "Current State:\n");
-	len += snprintf((buf + len), (SZ_4K - len),
-			"\tCTRL_ENGINE = %s\n",
+	len += snprintf((buf + len), (SZ_4K - len), "\tCTRL_ENGINE = %s\n",
 			TO_ON_OFF(dsi_ctrl->current_state.controller_state));
 	len += snprintf((buf + len), (SZ_4K - len),
 			"\tVIDEO_ENGINE = %s\n\tCOMMAND_ENGINE = %s\n",
@@ -142,10 +141,8 @@ static ssize_t debugfs_state_info_read(struct file *file,
 	return len;
 }
 
-static ssize_t debugfs_reg_dump_read(struct file *file,
-				     char __user *buff,
-				     size_t count,
-				     loff_t *ppos)
+static ssize_t debugfs_reg_dump_read(struct file *file, char __user *buff,
+				     size_t count, loff_t *ppos)
 {
 	struct dsi_ctrl *dsi_ctrl = file->private_data;
 	char *buf;
@@ -175,8 +172,8 @@ static ssize_t debugfs_reg_dump_read(struct file *file,
 	}
 
 	if (dsi_ctrl->hw.ops.reg_dump_to_buffer)
-		len = dsi_ctrl->hw.ops.reg_dump_to_buffer(&dsi_ctrl->hw,
-				buf, SZ_4K);
+		len = dsi_ctrl->hw.ops.reg_dump_to_buffer(&dsi_ctrl->hw, buf,
+							  SZ_4K);
 
 	clk_info.clk_state = DSI_CLK_OFF;
 	rc = dsi_ctrl->clk_cb.dsi_clk_cb(dsi_ctrl->clk_cb.priv, clk_info);
@@ -200,10 +197,8 @@ static ssize_t debugfs_reg_dump_read(struct file *file,
 	return len;
 }
 
-static ssize_t debugfs_line_count_read(struct file *file,
-				 char __user *user_buf,
-				 size_t user_len,
-				 loff_t *ppos)
+static ssize_t debugfs_line_count_read(struct file *file, char __user *user_buf,
+				       size_t user_len, loff_t *ppos)
 {
 	struct dsi_ctrl *dsi_ctrl = file->private_data;
 	char *buf;
@@ -224,16 +219,16 @@ static ssize_t debugfs_line_count_read(struct file *file,
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
 	len += scnprintf(buf, max_len, "Command triggered at line: %04x\n",
-			dsi_ctrl->cmd_trigger_line);
+			 dsi_ctrl->cmd_trigger_line);
 	len += scnprintf((buf + len), max_len - len,
-			"Command triggered at frame: %04x\n",
-			dsi_ctrl->cmd_trigger_frame);
+			 "Command triggered at frame: %04x\n",
+			 dsi_ctrl->cmd_trigger_frame);
 	len += scnprintf((buf + len), max_len - len,
-			"Command successful at line: %04x\n",
-			dsi_ctrl->cmd_success_line);
+			 "Command successful at line: %04x\n",
+			 dsi_ctrl->cmd_success_line);
 	len += scnprintf((buf + len), max_len - len,
-			"Command successful at frame: %04x\n",
-			dsi_ctrl->cmd_success_frame);
+			 "Command successful at frame: %04x\n",
+			 dsi_ctrl->cmd_success_frame);
 
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
 
@@ -282,14 +277,11 @@ static int dsi_ctrl_debugfs_init(struct dsi_ctrl *dsi_ctrl,
 	if (IS_ERR_OR_NULL(dir)) {
 		rc = PTR_ERR(dir);
 		DSI_CTRL_ERR(dsi_ctrl, "debugfs create dir failed, rc=%d\n",
-				rc);
+			     rc);
 		goto error;
 	}
 
-	state_file = debugfs_create_file("state_info",
-					 0444,
-					 dir,
-					 dsi_ctrl,
+	state_file = debugfs_create_file("state_info", 0444, dir, dsi_ctrl,
 					 &state_info_fops);
 	if (IS_ERR_OR_NULL(state_file)) {
 		rc = PTR_ERR(state_file);
@@ -297,10 +289,7 @@ static int dsi_ctrl_debugfs_init(struct dsi_ctrl *dsi_ctrl,
 		goto error_remove_dir;
 	}
 
-	reg_dump = debugfs_create_file("reg_dump",
-				       0444,
-				       dir,
-				       dsi_ctrl,
+	reg_dump = debugfs_create_file("reg_dump", 0444, dir, dsi_ctrl,
 				       &reg_dump_fops);
 	if (IS_ERR_OR_NULL(reg_dump)) {
 		rc = PTR_ERR(reg_dump);
@@ -308,17 +297,14 @@ static int dsi_ctrl_debugfs_init(struct dsi_ctrl *dsi_ctrl,
 		goto error_remove_dir;
 	}
 
-	debugfs_create_bool("enable_cmd_dma_stats", 0600, dir, &dsi_ctrl->enable_cmd_dma_stats);
+	debugfs_create_bool("enable_cmd_dma_stats", 0600, dir,
+			    &dsi_ctrl->enable_cmd_dma_stats);
 
-	cmd_dma_logs = debugfs_create_file("cmd_dma_stats",
-				       0444,
-				       dir,
-				       dsi_ctrl,
-				       &cmd_dma_stats_fops);
+	cmd_dma_logs = debugfs_create_file("cmd_dma_stats", 0444, dir, dsi_ctrl,
+					   &cmd_dma_stats_fops);
 	if (IS_ERR_OR_NULL(cmd_dma_logs)) {
 		rc = PTR_ERR(cmd_dma_logs);
-		DSI_CTRL_ERR(dsi_ctrl, "Line count file failed, rc=%d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl, "Line count file failed, rc=%d\n", rc);
 		goto error_remove_dir;
 	}
 
@@ -341,15 +327,15 @@ static int dsi_ctrl_debugfs_deinit(struct dsi_ctrl *dsi_ctrl)
 	return 0;
 }
 #else
-static int dsi_ctrl_debugfs_init(struct dsi_ctrl *dsi_ctrl, struct dentry *parent)
+static int dsi_ctrl_debugfs_init(struct dsi_ctrl *dsi_ctrl,
+				 struct dentry *parent)
 {
 	char dbg_name[DSI_DEBUG_NAME_LEN];
 
 	snprintf(dbg_name, DSI_DEBUG_NAME_LEN, "dsi%d_ctrl",
-						dsi_ctrl->cell_index);
-	sde_dbg_reg_register_base(dbg_name,
-				dsi_ctrl->hw.base,
-				msm_iomap_size(dsi_ctrl->pdev, "dsi_ctrl"));
+		 dsi_ctrl->cell_index);
+	sde_dbg_reg_register_base(dbg_name, dsi_ctrl->hw.base,
+				  msm_iomap_size(dsi_ctrl->pdev, "dsi_ctrl"));
 	return 0;
 }
 static int dsi_ctrl_debugfs_deinit(struct dsi_ctrl *dsi_ctrl)
@@ -358,9 +344,8 @@ static int dsi_ctrl_debugfs_deinit(struct dsi_ctrl *dsi_ctrl)
 }
 #endif /* CONFIG_DEBUG_FS */
 
-static inline struct msm_gem_address_space*
-dsi_ctrl_get_aspace(struct dsi_ctrl *dsi_ctrl,
-		int domain)
+static inline struct msm_gem_address_space *
+dsi_ctrl_get_aspace(struct dsi_ctrl *dsi_ctrl, int domain)
 {
 	if (!dsi_ctrl || !dsi_ctrl->drm_dev)
 		return NULL;
@@ -378,28 +363,25 @@ static void dsi_ctrl_dma_cmd_wait_for_done(struct dsi_ctrl *dsi_ctrl)
 	dsi_hw_ops = dsi_ctrl->hw.ops;
 	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY);
 
-	ret = wait_for_completion_timeout(
-			&dsi_ctrl->irq_info.cmd_dma_done,
-			msecs_to_jiffies(DSI_CTRL_TX_TO_MS));
+	ret = wait_for_completion_timeout(&dsi_ctrl->irq_info.cmd_dma_done,
+					  msecs_to_jiffies(DSI_CTRL_TX_TO_MS));
 	if (ret == 0 && !atomic_read(&dsi_ctrl->dma_irq_trig)) {
 		status = dsi_hw_ops.get_interrupt_status(&dsi_ctrl->hw);
 		if (status & mask) {
 			status |= (DSI_CMD_MODE_DMA_DONE | DSI_BTA_DONE);
 			dsi_hw_ops.clear_interrupt_status(&dsi_ctrl->hw,
-					status);
+							  status);
 			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1);
 			DSI_CTRL_WARN(dsi_ctrl,
-					"dma_tx done but irq not triggered\n");
+				      "dma_tx done but irq not triggered\n");
 		} else {
 			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_ERROR);
-			DSI_CTRL_ERR(dsi_ctrl,
-					"Command transfer failed\n");
+			DSI_CTRL_ERR(dsi_ctrl, "Command transfer failed\n");
 		}
 		dsi_ctrl_disable_status_interrupt(dsi_ctrl,
-					DSI_SINT_CMD_MODE_DMA_DONE);
+						  DSI_SINT_CMD_MODE_DMA_DONE);
 	}
 	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_EXIT);
-
 }
 
 /**
@@ -415,7 +397,6 @@ static void dsi_ctrl_clear_dma_status(struct dsi_ctrl *dsi_ctrl)
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid params\n");
 		return;
 	}
-
 
 	dsi_hw_ops = dsi_ctrl->hw.ops;
 
@@ -434,11 +415,12 @@ static void dsi_ctrl_post_cmd_transfer(struct dsi_ctrl *dsi_ctrl)
 {
 	struct dsi_ctrl_hw_ops dsi_hw_ops = dsi_ctrl->hw.ops;
 
-	SDE_EVT32(SDE_EVTLOG_FUNC_ENTRY, dsi_ctrl->cell_index, dsi_ctrl->pending_cmd_flags);
+	SDE_EVT32(SDE_EVTLOG_FUNC_ENTRY, dsi_ctrl->cell_index,
+		  dsi_ctrl->pending_cmd_flags);
 
 	/* In case of broadcast messages, we poll on the slave controller. */
 	if ((dsi_ctrl->pending_cmd_flags & DSI_CTRL_CMD_BROADCAST) &&
-			!(dsi_ctrl->pending_cmd_flags & DSI_CTRL_CMD_BROADCAST_MASTER)) {
+	    !(dsi_ctrl->pending_cmd_flags & DSI_CTRL_CMD_BROADCAST_MASTER)) {
 		dsi_ctrl_clear_dma_status(dsi_ctrl);
 	} else if (!(dsi_ctrl->pending_cmd_flags & DSI_CTRL_CMD_READ)) {
 		/* Wait for read command transfer to complete is done in dsi_message_rx. */
@@ -448,8 +430,8 @@ static void dsi_ctrl_post_cmd_transfer(struct dsi_ctrl *dsi_ctrl)
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
 	if (dsi_ctrl->hw.reset_trig_ctrl)
-		dsi_hw_ops.reset_trig_ctrl(&dsi_ctrl->hw,
-				&dsi_ctrl->host_config.common_config);
+		dsi_hw_ops.reset_trig_ctrl(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.common_config);
 
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
 
@@ -469,17 +451,17 @@ static void dsi_ctrl_post_cmd_transfer_work(struct work_struct *work)
 static void dsi_ctrl_flush_cmd_dma_queue(struct dsi_ctrl *dsi_ctrl)
 {
 	/*
-	 * If a command is triggered right after another command,
-	 * check if the previous command transfer is completed. If
-	 * transfer is done, cancel any work that has been
-	 * queued. Otherwise wait till the work is scheduled and
-	 * completed before triggering the next command by
-	 * flushing the workqueue.
-	 *
-	 * cancel_work_sync returns true if the work has not yet been scheduled, in that case as
-	 * we are cancelling the work we need to explicitly call the post_cmd_transfer API to
-	 * clean up the states.
-	 */
+   * If a command is triggered right after another command,
+   * check if the previous command transfer is completed. If
+   * transfer is done, cancel any work that has been
+   * queued. Otherwise wait till the work is scheduled and
+   * completed before triggering the next command by
+   * flushing the workqueue.
+   *
+   * cancel_work_sync returns true if the work has not yet been scheduled, in
+   * that case as we are cancelling the work we need to explicitly call the
+   * post_cmd_transfer API to clean up the states.
+   */
 	SDE_EVT32(SDE_EVTLOG_FUNC_ENTRY);
 
 	if (atomic_read(&dsi_ctrl->dma_irq_trig)) {
@@ -494,8 +476,7 @@ static void dsi_ctrl_flush_cmd_dma_queue(struct dsi_ctrl *dsi_ctrl)
 }
 
 static int dsi_ctrl_check_state(struct dsi_ctrl *dsi_ctrl,
-				enum dsi_ctrl_driver_ops op,
-				u32 op_state)
+				enum dsi_ctrl_driver_ops op, u32 op_state)
 {
 	int rc = 0;
 	struct dsi_ctrl_state_info *state = &dsi_ctrl->current_state;
@@ -505,63 +486,65 @@ static int dsi_ctrl_check_state(struct dsi_ctrl *dsi_ctrl,
 	switch (op) {
 	case DSI_CTRL_OP_POWER_STATE_CHANGE:
 		if (state->power_state == op_state) {
-			DSI_CTRL_ERR(dsi_ctrl, "No change in state, pwr_state=%d\n",
-					op_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "No change in state, pwr_state=%d\n",
+				     op_state);
 			rc = -EINVAL;
 		} else if (state->power_state == DSI_CTRL_POWER_VREG_ON) {
 			if (state->vid_engine_state == DSI_CTRL_ENGINE_ON) {
-				DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d\n",
-				       op_state,
-				       state->vid_engine_state);
+				DSI_CTRL_ERR(dsi_ctrl,
+					     "State error: op=%d: %d\n",
+					     op_state, state->vid_engine_state);
 				rc = -EINVAL;
 			}
 		}
 		break;
 	case DSI_CTRL_OP_CMD_ENGINE:
 		if (state->cmd_engine_state == op_state) {
-			DSI_CTRL_ERR(dsi_ctrl, "No change in state, cmd_state=%d\n",
-			       op_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "No change in state, cmd_state=%d\n",
+				     op_state);
 			rc = -EINVAL;
 		} else if ((state->power_state != DSI_CTRL_POWER_VREG_ON) ||
 			   (state->controller_state != DSI_CTRL_ENGINE_ON)) {
 			DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d, %d\n",
-			       op,
-			       state->power_state,
-			       state->controller_state);
+				     op, state->power_state,
+				     state->controller_state);
 			rc = -EINVAL;
 		}
 		break;
 	case DSI_CTRL_OP_VID_ENGINE:
 		if (state->vid_engine_state == op_state) {
-			DSI_CTRL_ERR(dsi_ctrl, "No change in state, cmd_state=%d\n",
-			       op_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "No change in state, cmd_state=%d\n",
+				     op_state);
 			rc = -EINVAL;
 		} else if ((state->power_state != DSI_CTRL_POWER_VREG_ON) ||
 			   (state->controller_state != DSI_CTRL_ENGINE_ON)) {
 			DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d, %d\n",
-			       op,
-			       state->power_state,
-			       state->controller_state);
+				     op, state->power_state,
+				     state->controller_state);
 			rc = -EINVAL;
 		}
 		break;
 	case DSI_CTRL_OP_HOST_ENGINE:
 		if (state->controller_state == op_state) {
-			DSI_CTRL_ERR(dsi_ctrl, "No change in state, ctrl_state=%d\n",
-			       op_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "No change in state, ctrl_state=%d\n",
+				     op_state);
 			rc = -EINVAL;
 		} else if (state->power_state != DSI_CTRL_POWER_VREG_ON) {
-			DSI_CTRL_ERR(dsi_ctrl, "State error (link is off): op=%d:, %d\n",
-			       op_state,
-			       state->power_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "State error (link is off): op=%d:, %d\n",
+				     op_state, state->power_state);
 			rc = -EINVAL;
 		} else if ((op_state == DSI_CTRL_ENGINE_OFF) &&
 			   ((state->cmd_engine_state != DSI_CTRL_ENGINE_OFF) ||
 			    (state->vid_engine_state != DSI_CTRL_ENGINE_OFF))) {
-			DSI_CTRL_ERR(dsi_ctrl, "State error (eng on): op=%d: %d, %d\n",
-				  op_state,
-				  state->cmd_engine_state,
-				  state->vid_engine_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "State error (eng on): op=%d: %d, %d\n",
+				     op_state, state->cmd_engine_state,
+				     state->vid_engine_state);
 			rc = -EINVAL;
 		}
 		break;
@@ -569,50 +552,52 @@ static int dsi_ctrl_check_state(struct dsi_ctrl *dsi_ctrl,
 		if ((state->power_state != DSI_CTRL_POWER_VREG_ON) ||
 		    (!state->host_initialized) ||
 		    (state->cmd_engine_state != DSI_CTRL_ENGINE_ON)) {
-			DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d, %d, %d\n",
-			       op,
-			       state->power_state,
-			       state->host_initialized,
-			       state->cmd_engine_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "State error: op=%d: %d, %d, %d\n", op,
+				     state->power_state,
+				     state->host_initialized,
+				     state->cmd_engine_state);
 			rc = -EINVAL;
 		}
 		break;
 	case DSI_CTRL_OP_HOST_INIT:
 		if (state->host_initialized == op_state) {
-			DSI_CTRL_ERR(dsi_ctrl, "No change in state, host_init=%d\n",
-			       op_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "No change in state, host_init=%d\n",
+				     op_state);
 			rc = -EINVAL;
 		} else if (state->power_state != DSI_CTRL_POWER_VREG_ON) {
-			DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d\n",
-			       op, state->power_state);
+			DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d\n", op,
+				     state->power_state);
 			rc = -EINVAL;
 		}
 		break;
 	case DSI_CTRL_OP_TPG:
 		if (state->tpg_enabled == op_state) {
-			DSI_CTRL_ERR(dsi_ctrl, "No change in state, tpg_enabled=%d\n",
-			       op_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "No change in state, tpg_enabled=%d\n",
+				     op_state);
 			rc = -EINVAL;
 		} else if ((state->power_state != DSI_CTRL_POWER_VREG_ON) ||
 			   (state->controller_state != DSI_CTRL_ENGINE_ON)) {
 			DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d, %d\n",
-			       op,
-			       state->power_state,
-			       state->controller_state);
+				     op, state->power_state,
+				     state->controller_state);
 			rc = -EINVAL;
 		}
 		break;
 	case DSI_CTRL_OP_PHY_SW_RESET:
 		if (state->power_state != DSI_CTRL_POWER_VREG_ON) {
-			DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d\n",
-			       op, state->power_state);
+			DSI_CTRL_ERR(dsi_ctrl, "State error: op=%d: %d\n", op,
+				     state->power_state);
 			rc = -EINVAL;
 		}
 		break;
 	case DSI_CTRL_OP_ASYNC_TIMING:
 		if (state->vid_engine_state != op_state) {
-			DSI_CTRL_ERR(dsi_ctrl, "Unexpected engine state vid_state=%d\n",
-			       op_state);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "Unexpected engine state vid_state=%d\n",
+				     op_state);
 			rc = -EINVAL;
 		}
 		break;
@@ -629,7 +614,8 @@ bool dsi_ctrl_validate_host_state(struct dsi_ctrl *dsi_ctrl)
 	struct dsi_ctrl_state_info *state = &dsi_ctrl->current_state;
 
 	if (!state) {
-		DSI_CTRL_ERR(dsi_ctrl, "Invalid host state for DSI controller\n");
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Invalid host state for DSI controller\n");
 		return -EINVAL;
 	}
 
@@ -640,8 +626,7 @@ bool dsi_ctrl_validate_host_state(struct dsi_ctrl *dsi_ctrl)
 }
 
 static void dsi_ctrl_update_state(struct dsi_ctrl *dsi_ctrl,
-				  enum dsi_ctrl_driver_ops op,
-				  u32 op_state)
+				  enum dsi_ctrl_driver_ops op, u32 op_state)
 {
 	struct dsi_ctrl_state_info *state = &dsi_ctrl->current_state;
 
@@ -696,7 +681,8 @@ static int dsi_ctrl_init_regmap(struct platform_device *pdev,
 	case DSI_CTRL_VERSION_2_8:
 		ptr = msm_ioremap(pdev, "disp_cc_base", ctrl->name);
 		if (IS_ERR(ptr)) {
-			DSI_CTRL_ERR(ctrl, "disp_cc base address not found for\n");
+			DSI_CTRL_ERR(ctrl,
+				     "disp_cc base address not found for\n");
 			rc = PTR_ERR(ptr);
 			return rc;
 		}
@@ -782,7 +768,7 @@ static int dsi_ctrl_clocks_init(struct platform_device *pdev,
 	if (IS_ERR(core->core_mmss_clk)) {
 		core->core_mmss_clk = NULL;
 		DSI_CTRL_DEBUG(ctrl, "failed to get core_mmss_clk, rc=%d\n",
-				rc);
+			       rc);
 	}
 
 	core->bus_clk = devm_clk_get(&pdev->dev, "bus_clk");
@@ -862,7 +848,7 @@ static int dsi_ctrl_supplies_deinit(struct dsi_ctrl *ctrl)
 	for (i = 0; i < regs->count; i++) {
 		if (!regs->vregs[i].vreg)
 			DSI_CTRL_ERR(ctrl,
-				"vreg is NULL, should not reach here\n");
+				     "vreg is NULL, should not reach here\n");
 		else
 			devm_regulator_put(regs->vregs[i].vreg);
 	}
@@ -871,7 +857,7 @@ static int dsi_ctrl_supplies_deinit(struct dsi_ctrl *ctrl)
 	for (i = 0; i < regs->count; i++) {
 		if (!regs->vregs[i].vreg)
 			DSI_CTRL_ERR(ctrl,
-				"vreg is NULL, should not reach here\n");
+				     "vreg is NULL, should not reach here\n");
 		else
 			devm_regulator_put(regs->vregs[i].vreg);
 	}
@@ -899,19 +885,18 @@ static int dsi_ctrl_supplies_init(struct platform_device *pdev,
 	struct dsi_regulator_info *regs;
 	struct regulator *vreg = NULL;
 
-	rc = dsi_pwr_get_dt_vreg_data(&pdev->dev,
-					  &ctrl->pwr_info.digital,
-					  "qcom,core-supply-entries");
+	rc = dsi_pwr_get_dt_vreg_data(&pdev->dev, &ctrl->pwr_info.digital,
+				      "qcom,core-supply-entries");
 	if (rc)
-		DSI_CTRL_DEBUG(ctrl,
-				"failed to get digital supply, rc = %d\n", rc);
+		DSI_CTRL_DEBUG(ctrl, "failed to get digital supply, rc = %d\n",
+			       rc);
 
-	rc = dsi_pwr_get_dt_vreg_data(&pdev->dev,
-					  &ctrl->pwr_info.host_pwr,
-					  "qcom,ctrl-supply-entries");
+	rc = dsi_pwr_get_dt_vreg_data(&pdev->dev, &ctrl->pwr_info.host_pwr,
+				      "qcom,ctrl-supply-entries");
 	if (rc) {
 		DSI_CTRL_ERR(ctrl,
-			"failed to get host power supplies, rc = %d\n", rc);
+			     "failed to get host power supplies, rc = %d\n",
+			     rc);
 		goto error_digital;
 	}
 
@@ -920,7 +905,7 @@ static int dsi_ctrl_supplies_init(struct platform_device *pdev,
 		vreg = devm_regulator_get(&pdev->dev, regs->vregs[i].vreg_name);
 		if (IS_ERR(vreg)) {
 			DSI_CTRL_ERR(ctrl, "failed to get %s regulator\n",
-			       regs->vregs[i].vreg_name);
+				     regs->vregs[i].vreg_name);
 			rc = PTR_ERR(vreg);
 			goto error_host_pwr;
 		}
@@ -932,7 +917,7 @@ static int dsi_ctrl_supplies_init(struct platform_device *pdev,
 		vreg = devm_regulator_get(&pdev->dev, regs->vregs[i].vreg_name);
 		if (IS_ERR(vreg)) {
 			DSI_CTRL_ERR(ctrl, "failed to get %s regulator\n",
-			       regs->vregs[i].vreg_name);
+				     regs->vregs[i].vreg_name);
 			for (--i; i >= 0; i--)
 				devm_regulator_put(regs->vregs[i].vreg);
 			rc = PTR_ERR(vreg);
@@ -967,7 +952,7 @@ static int dsi_ctrl_validate_panel_info(struct dsi_ctrl *dsi_ctrl,
 
 	if (config->panel_mode >= DSI_OP_MODE_MAX) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid dsi operation mode (%d)\n",
-				config->panel_mode);
+			     config->panel_mode);
 		rc = -EINVAL;
 		goto err;
 	}
@@ -1017,15 +1002,16 @@ int dsi_ctrl_pixel_format_to_bpp(enum dsi_pixel_format dst_format)
 }
 
 static int dsi_ctrl_update_link_freqs(struct dsi_ctrl *dsi_ctrl,
-	struct dsi_host_config *config, void *clk_handle,
-	struct dsi_display_mode *mode)
+				      struct dsi_host_config *config,
+				      void *clk_handle,
+				      struct dsi_display_mode *mode)
 {
 	int rc = 0;
 	u32 num_of_lanes = 0;
 	u32 bits_per_symbol = 16, num_of_symbols = 7; /* For Cphy */
 	u32 bpp, frame_time_us, byte_intf_clk_div;
 	u64 h_period, v_period, bit_rate, pclk_rate, bit_rate_per_lane,
-	    byte_clk_rate, byte_intf_clk_rate;
+		byte_clk_rate, byte_intf_clk_rate;
 	struct dsi_host_common_cfg *host_cfg = &config->common_config;
 	struct dsi_split_link_config *split_link = &host_cfg->split_link;
 	struct dsi_mode_info *timing = &config->video_timing;
@@ -1072,7 +1058,6 @@ static int dsi_ctrl_update_link_freqs(struct dsi_ctrl *dsi_ctrl,
 		bit_rate = h_period * v_period * timing->refresh_rate * bpp;
 	}
 
-
 	pclk_rate = bit_rate;
 	do_div(pclk_rate, bpp);
 	if (host_cfg->phy_type == DSI_PHY_TYPE_DPHY) {
@@ -1080,10 +1065,10 @@ static int dsi_ctrl_update_link_freqs(struct dsi_ctrl *dsi_ctrl,
 		do_div(bit_rate_per_lane, num_of_lanes);
 		byte_clk_rate = bit_rate_per_lane;
 		/**
-		 * Ensure that the byte clock rate is even to avoid failures
-		 * during set rate for byte intf clock. Round up to the nearest
-		 * even number for byte clk.
-		 */
+     * Ensure that the byte clock rate is even to avoid failures
+     * during set rate for byte intf clock. Round up to the nearest
+     * even number for byte clk.
+     */
 		byte_clk_rate = DIV_ROUND_CLOSEST(byte_clk_rate, 8);
 		byte_clk_rate = ((byte_clk_rate + 1) & ~BIT(0));
 		byte_intf_clk_rate = byte_clk_rate;
@@ -1101,10 +1086,11 @@ static int dsi_ctrl_update_link_freqs(struct dsi_ctrl *dsi_ctrl,
 		byte_intf_clk_rate = byte_clk_rate;
 		config->bit_clk_rate_hz = byte_clk_rate * 7;
 	}
-	DSI_CTRL_DEBUG(dsi_ctrl, "bit_clk_rate = %llu, bit_clk_rate_per_lane = %llu\n",
-		 bit_rate, bit_rate_per_lane);
+	DSI_CTRL_DEBUG(dsi_ctrl,
+		       "bit_clk_rate = %llu, bit_clk_rate_per_lane = %llu\n",
+		       bit_rate, bit_rate_per_lane);
 	DSI_CTRL_DEBUG(dsi_ctrl, "byte_clk_rate = %llu, byte_intf_clk = %llu\n",
-		  byte_clk_rate, byte_intf_clk_rate);
+		       byte_clk_rate, byte_intf_clk_rate);
 	DSI_CTRL_DEBUG(dsi_ctrl, "pclk_rate = %llu\n", pclk_rate);
 	SDE_EVT32(dsi_ctrl->cell_index, bit_rate, byte_clk_rate, pclk_rate);
 
@@ -1114,7 +1100,7 @@ static int dsi_ctrl_update_link_freqs(struct dsi_ctrl *dsi_ctrl,
 	dsi_ctrl->clk_freq.esc_clk_rate = config->esc_clk_rate_hz;
 
 	rc = dsi_clk_set_link_frequencies(clk_handle, dsi_ctrl->clk_freq,
-					dsi_ctrl->cell_index);
+					  dsi_ctrl->cell_index);
 	if (rc)
 		DSI_CTRL_ERR(dsi_ctrl, "Failed to update link frequencies\n");
 
@@ -1128,7 +1114,9 @@ static int dsi_ctrl_enable_supplies(struct dsi_ctrl *dsi_ctrl, bool enable)
 	if (enable) {
 		rc = pm_runtime_resume_and_get(dsi_ctrl->drm_dev->dev);
 		if (rc < 0) {
-			DSI_CTRL_ERR(dsi_ctrl, "failed to enable power resource %d\n", rc);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "failed to enable power resource %d\n",
+				     rc);
 			SDE_EVT32(rc, SDE_EVTLOG_ERROR);
 			goto error;
 		}
@@ -1137,7 +1125,9 @@ static int dsi_ctrl_enable_supplies(struct dsi_ctrl *dsi_ctrl, bool enable)
 			rc = dsi_pwr_enable_regulator(
 				&dsi_ctrl->pwr_info.host_pwr, true);
 			if (rc) {
-				DSI_CTRL_ERR(dsi_ctrl, "failed to enable host power regs\n");
+				DSI_CTRL_ERR(
+					dsi_ctrl,
+					"failed to enable host power regs\n");
 				goto error_get_sync;
 			}
 		}
@@ -1146,11 +1136,9 @@ static int dsi_ctrl_enable_supplies(struct dsi_ctrl *dsi_ctrl, bool enable)
 					      true);
 		if (rc) {
 			DSI_CTRL_ERR(dsi_ctrl, "failed to enable gdsc, rc=%d\n",
-					rc);
+				     rc);
 			(void)dsi_pwr_enable_regulator(
-						&dsi_ctrl->pwr_info.host_pwr,
-						false
-						);
+				&dsi_ctrl->pwr_info.host_pwr, false);
 			goto error_get_sync;
 		}
 		return rc;
@@ -1158,8 +1146,8 @@ static int dsi_ctrl_enable_supplies(struct dsi_ctrl *dsi_ctrl, bool enable)
 		rc = dsi_pwr_enable_regulator(&dsi_ctrl->pwr_info.digital,
 					      false);
 		if (rc) {
-			DSI_CTRL_ERR(dsi_ctrl, "failed to disable gdsc, rc=%d\n",
-					rc);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "failed to disable gdsc, rc=%d\n", rc);
 			goto error;
 		}
 
@@ -1167,7 +1155,9 @@ static int dsi_ctrl_enable_supplies(struct dsi_ctrl *dsi_ctrl, bool enable)
 			rc = dsi_pwr_enable_regulator(
 				&dsi_ctrl->pwr_info.host_pwr, false);
 			if (rc) {
-				DSI_CTRL_ERR(dsi_ctrl, "failed to disable host power regs\n");
+				DSI_CTRL_ERR(
+					dsi_ctrl,
+					"failed to disable host power regs\n");
 				goto error;
 			}
 		}
@@ -1182,8 +1172,7 @@ error:
 
 static int dsi_ctrl_copy_and_pad_cmd(struct dsi_ctrl *dsi_ctrl,
 				     const struct mipi_dsi_packet *packet,
-				     u8 **buffer,
-				     u32 *size)
+				     u8 **buffer, u32 *size)
 {
 	int rc = 0;
 	u8 *buf = NULL;
@@ -1191,7 +1180,8 @@ static int dsi_ctrl_copy_and_pad_cmd(struct dsi_ctrl *dsi_ctrl,
 	u8 cmd_type = 0;
 
 	len = packet->size;
-	len += 0x3; len &= ~0x03; /* Align to 32 bits */
+	len += 0x3;
+	len &= ~0x03; /* Align to 32 bits */
 
 	buf = devm_kzalloc(&dsi_ctrl->pdev->dev, len * sizeof(u8), GFP_KERNEL);
 	if (!buf)
@@ -1217,9 +1207,9 @@ static int dsi_ctrl_copy_and_pad_cmd(struct dsi_ctrl *dsi_ctrl,
 	/* send embedded BTA for read commands */
 	cmd_type = buf[2] & 0x3f;
 	if ((cmd_type == MIPI_DSI_DCS_READ) ||
-			(cmd_type == MIPI_DSI_GENERIC_READ_REQUEST_0_PARAM) ||
-			(cmd_type == MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM) ||
-			(cmd_type == MIPI_DSI_GENERIC_READ_REQUEST_2_PARAM))
+	    (cmd_type == MIPI_DSI_GENERIC_READ_REQUEST_0_PARAM) ||
+	    (cmd_type == MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM) ||
+	    (cmd_type == MIPI_DSI_GENERIC_READ_REQUEST_2_PARAM))
 		buf[3] |= BIT(5);
 
 	*buffer = buf;
@@ -1249,42 +1239,52 @@ int dsi_ctrl_wait_for_cmd_mode_mdp_idle(struct dsi_ctrl *dsi_ctrl)
 	return rc;
 }
 
-int dsi_message_validate_tx_mode(struct dsi_ctrl *dsi_ctrl,
-		u32 cmd_len,
-		u32 *flags)
+int dsi_message_validate_tx_mode(struct dsi_ctrl *dsi_ctrl, u32 cmd_len,
+				 u32 *flags)
 {
 	int rc = 0;
 
 	if (*flags & DSI_CTRL_CMD_FIFO_STORE) {
 		/* if command size plus header is greater than fifo size */
 		if ((cmd_len + 4) > DSI_CTRL_MAX_CMD_FIFO_STORE_SIZE) {
-			DSI_CTRL_ERR(dsi_ctrl, "Cannot transfer Cmd in FIFO config\n");
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "Cannot transfer Cmd in FIFO config\n");
 			return -ENOTSUPP;
 		}
 		if (!dsi_ctrl->hw.ops.kickoff_fifo_command) {
-			DSI_CTRL_ERR(dsi_ctrl, "Cannot transfer command,ops not defined\n");
+			DSI_CTRL_ERR(
+				dsi_ctrl,
+				"Cannot transfer command,ops not defined\n");
 			return -ENOTSUPP;
 		}
 	}
 
 	if (*flags & DSI_CTRL_CMD_NON_EMBEDDED_MODE) {
 		if (*flags & DSI_CTRL_CMD_BROADCAST) {
-			DSI_CTRL_ERR(dsi_ctrl, "Non embedded not supported with broadcast\n");
+			DSI_CTRL_ERR(
+				dsi_ctrl,
+				"Non embedded not supported with broadcast\n");
 			return -ENOTSUPP;
 		}
 		if (!dsi_ctrl->hw.ops.kickoff_command_non_embedded_mode) {
-			DSI_CTRL_ERR(dsi_ctrl, " Cannot transfer command,ops not defined\n");
+			DSI_CTRL_ERR(
+				dsi_ctrl,
+				" Cannot transfer command,ops not defined\n");
 			return -ENOTSUPP;
 		}
 		if ((cmd_len + 4) > SZ_4K) {
-			DSI_CTRL_ERR(dsi_ctrl, "Cannot transfer,size is greater than 4096\n");
+			DSI_CTRL_ERR(
+				dsi_ctrl,
+				"Cannot transfer,size is greater than 4096\n");
 			return -ENOTSUPP;
 		}
 	}
 
 	if (*flags & DSI_CTRL_CMD_FETCH_MEMORY) {
 		if ((dsi_ctrl->cmd_len + cmd_len + 4) > SZ_4K) {
-			DSI_CTRL_ERR(dsi_ctrl, "Cannot transfer,size is greater than 4096\n");
+			DSI_CTRL_ERR(
+				dsi_ctrl,
+				"Cannot transfer,size is greater than 4096\n");
 			return -ENOTSUPP;
 		}
 	}
@@ -1292,8 +1292,9 @@ int dsi_message_validate_tx_mode(struct dsi_ctrl *dsi_ctrl,
 	return rc;
 }
 
-static void dsi_configure_command_scheduling(struct dsi_ctrl *dsi_ctrl,
-		struct dsi_ctrl_cmd_dma_info *cmd_mem)
+static void
+dsi_configure_command_scheduling(struct dsi_ctrl *dsi_ctrl,
+				 struct dsi_ctrl_cmd_dma_info *cmd_mem)
 {
 	u32 line_no = 0, window = 0, sched_line_no = 0;
 	struct dsi_ctrl_hw_ops dsi_hw_ops = dsi_ctrl->hw.ops;
@@ -1304,45 +1305,44 @@ static void dsi_configure_command_scheduling(struct dsi_ctrl *dsi_ctrl,
 
 	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, line_no, window);
 	/*
-	 * In case of command scheduling in video mode, the line at which
-	 * the command is scheduled can revert to the default value i.e. 1
-	 * for the following cases:
-	 *	1) No schedule line defined by the panel.
-	 *	2) schedule line defined is greater than VFP.
-	 */
+   * In case of command scheduling in video mode, the line at which
+   * the command is scheduled can revert to the default value i.e. 1
+   * for the following cases:
+   *	1) No schedule line defined by the panel.
+   *	2) schedule line defined is greater than VFP.
+   */
 	if ((dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE) &&
-		dsi_hw_ops.schedule_dma_cmd &&
-		(dsi_ctrl->current_state.vid_engine_state ==
-					DSI_CTRL_ENGINE_ON)) {
+	    dsi_hw_ops.schedule_dma_cmd &&
+	    (dsi_ctrl->current_state.vid_engine_state == DSI_CTRL_ENGINE_ON)) {
 		sched_line_no = (line_no == 0) ? 1 : line_no;
 
 		if (timing) {
 			if (sched_line_no >= timing->v_front_porch)
 				sched_line_no = 1;
 			sched_line_no += timing->v_back_porch +
-				timing->v_sync_width + timing->v_active;
+					 timing->v_sync_width +
+					 timing->v_active;
 		}
 		dsi_hw_ops.schedule_dma_cmd(&dsi_ctrl->hw, sched_line_no);
 	}
 
 	/*
-	 * In case of command scheduling in command mode, set the maximum
-	 * possible size of the DMA start window in case no schedule line and
-	 * window size properties are defined by the panel.
-	 */
+   * In case of command scheduling in command mode, set the maximum
+   * possible size of the DMA start window in case no schedule line and
+   * window size properties are defined by the panel.
+   */
 	if ((dsi_ctrl->host_config.panel_mode == DSI_OP_CMD_MODE) &&
-			dsi_hw_ops.configure_cmddma_window) {
-
+	    dsi_hw_ops.configure_cmddma_window) {
 		sched_line_no = (line_no == 0) ? TEARCHECK_WINDOW_SIZE :
-					line_no;
+						 line_no;
 		window = (window == 0) ? timing->v_active : window;
 		sched_line_no += timing->v_active;
 
 		dsi_hw_ops.configure_cmddma_window(&dsi_ctrl->hw, cmd_mem,
-				sched_line_no, window);
+						   sched_line_no, window);
 	}
-	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_EXIT,
-			sched_line_no, window);
+	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_EXIT, sched_line_no,
+		  window);
 }
 
 static u32 calculate_schedule_line(struct dsi_ctrl *dsi_ctrl, u32 flags)
@@ -1352,23 +1352,22 @@ static u32 calculate_schedule_line(struct dsi_ctrl *dsi_ctrl, u32 flags)
 
 	/* check if custom dma scheduling line needed */
 	if ((dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE) &&
-		(flags & DSI_CTRL_CMD_CUSTOM_DMA_SCHED))
+	    (flags & DSI_CTRL_CMD_CUSTOM_DMA_SCHED))
 		line_no = dsi_ctrl->host_config.common_config.dma_sched_line;
 
 	timing = &(dsi_ctrl->host_config.video_timing);
 
 	if (timing)
 		line_no += timing->v_back_porch + timing->v_sync_width +
-			timing->v_active;
+			   timing->v_active;
 
 	return line_no;
 }
 
 static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
-				const struct mipi_dsi_msg *msg,
-				struct dsi_ctrl_cmd_dma_fifo_info *cmd,
-				struct dsi_ctrl_cmd_dma_info *cmd_mem,
-				u32 flags)
+			       const struct mipi_dsi_msg *msg,
+			       struct dsi_ctrl_cmd_dma_fifo_info *cmd,
+			       struct dsi_ctrl_cmd_dma_info *cmd_mem, u32 flags)
 {
 	u32 hw_flags = 0;
 	struct dsi_ctrl_hw_ops dsi_hw_ops = dsi_ctrl->hw.ops;
@@ -1377,37 +1376,39 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 	split_link = &(dsi_ctrl->host_config.common_config.split_link);
 
 	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, flags,
-		msg->flags);
+		  msg->flags);
 
 	if (dsi_hw_ops.splitlink_cmd_setup && split_link->enabled)
-		dsi_hw_ops.splitlink_cmd_setup(&dsi_ctrl->hw,
-				&dsi_ctrl->host_config.common_config, flags);
+		dsi_hw_ops.splitlink_cmd_setup(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.common_config,
+			flags);
 
 	if (dsi_hw_ops.init_cmddma_trig_ctrl)
-		dsi_hw_ops.init_cmddma_trig_ctrl(&dsi_ctrl->hw,
-				&dsi_ctrl->host_config.common_config);
+		dsi_hw_ops.init_cmddma_trig_ctrl(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.common_config);
 
 	/*
-	 * Always enable DMA scheduling for video mode panel.
-	 *
-	 * In video mode panel, if the DMA is triggered very close to
-	 * the beginning of the active window and the DMA transfer
-	 * happens in the last line of VBP, then the HW state will
-	 * stay in ‘wait’ and return to ‘idle’ in the first line of VFP.
-	 * But somewhere in the middle of the active window, if SW
-	 * disables DSI command mode engine while the HW is still
-	 * waiting and re-enable after timing engine is OFF. So the
-	 * HW never ‘sees’ another vblank line and hence it gets
-	 * stuck in the ‘wait’ state.
-	 */
+   * Always enable DMA scheduling for video mode panel.
+   *
+   * In video mode panel, if the DMA is triggered very close to
+   * the beginning of the active window and the DMA transfer
+   * happens in the last line of VBP, then the HW state will
+   * stay in ‘wait’ and return to ‘idle’ in the first line of VFP.
+   * But somewhere in the middle of the active window, if SW
+   * disables DSI command mode engine while the HW is still
+   * waiting and re-enable after timing engine is OFF. So the
+   * HW never ‘sees’ another vblank line and hence it gets
+   * stuck in the ‘wait’ state.
+   */
 	if ((flags & DSI_CTRL_CMD_CUSTOM_DMA_SCHED) ||
-		(dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE))
+	    (dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE))
 		dsi_configure_command_scheduling(dsi_ctrl, cmd_mem);
 
-	dsi_ctrl->cmd_mode = (dsi_ctrl->host_config.panel_mode ==
-			DSI_OP_CMD_MODE);
+	dsi_ctrl->cmd_mode =
+		(dsi_ctrl->host_config.panel_mode == DSI_OP_CMD_MODE);
 	hw_flags |= (flags & DSI_CTRL_CMD_DEFER_TRIGGER) ?
-			DSI_CTRL_HW_CMD_WAIT_FOR_TRIGGER : 0;
+			    DSI_CTRL_HW_CMD_WAIT_FOR_TRIGGER :
+			    0;
 
 	if (flags & DSI_CTRL_CMD_LAST_COMMAND)
 		hw_flags |= DSI_CTRL_CMD_LAST_COMMAND;
@@ -1416,64 +1417,53 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 		if (flags & DSI_CTRL_CMD_FETCH_MEMORY) {
 			if (flags & DSI_CTRL_CMD_NON_EMBEDDED_MODE) {
 				dsi_hw_ops.kickoff_command_non_embedded_mode(
-							&dsi_ctrl->hw,
-							cmd_mem,
-							hw_flags);
+					&dsi_ctrl->hw, cmd_mem, hw_flags);
 			} else {
-				dsi_hw_ops.kickoff_command(
-						&dsi_ctrl->hw,
-						cmd_mem,
-						hw_flags);
+				dsi_hw_ops.kickoff_command(&dsi_ctrl->hw,
+							   cmd_mem, hw_flags);
 			}
 		} else if (flags & DSI_CTRL_CMD_FIFO_STORE) {
-			dsi_hw_ops.kickoff_fifo_command(&dsi_ctrl->hw,
-							      cmd,
-							      hw_flags);
+			dsi_hw_ops.kickoff_fifo_command(&dsi_ctrl->hw, cmd,
+							hw_flags);
 		}
 	}
 
 	if (!(flags & DSI_CTRL_CMD_DEFER_TRIGGER)) {
 		atomic_set(&dsi_ctrl->dma_irq_trig, 0);
-		dsi_ctrl_enable_status_interrupt(dsi_ctrl,
-					DSI_SINT_CMD_MODE_DMA_DONE, NULL);
+		dsi_ctrl_enable_status_interrupt(
+			dsi_ctrl, DSI_SINT_CMD_MODE_DMA_DONE, NULL);
 		reinit_completion(&dsi_ctrl->irq_info.cmd_dma_done);
 
 		if (flags & DSI_CTRL_CMD_FETCH_MEMORY) {
 			if (flags & DSI_CTRL_CMD_NON_EMBEDDED_MODE) {
 				dsi_hw_ops.kickoff_command_non_embedded_mode(
-							&dsi_ctrl->hw,
-							cmd_mem,
-							hw_flags);
+					&dsi_ctrl->hw, cmd_mem, hw_flags);
 			} else {
-				dsi_hw_ops.kickoff_command(
-						&dsi_ctrl->hw,
-						cmd_mem,
-						hw_flags);
+				dsi_hw_ops.kickoff_command(&dsi_ctrl->hw,
+							   cmd_mem, hw_flags);
 			}
 		} else if (flags & DSI_CTRL_CMD_FIFO_STORE) {
-			dsi_hw_ops.kickoff_fifo_command(&dsi_ctrl->hw,
-							      cmd,
-							      hw_flags);
+			dsi_hw_ops.kickoff_fifo_command(&dsi_ctrl->hw, cmd,
+							hw_flags);
 		}
 
 		if (dsi_ctrl->enable_cmd_dma_stats) {
 			u32 reg = dsi_hw_ops.log_line_count(&dsi_ctrl->hw,
-					dsi_ctrl->cmd_mode);
+							    dsi_ctrl->cmd_mode);
 			dsi_ctrl->cmd_trigger_line = (reg & 0xFFFF);
 			dsi_ctrl->cmd_trigger_frame = ((reg >> 16) & 0xFFFF);
 			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
-					dsi_ctrl->cmd_trigger_line,
-					dsi_ctrl->cmd_trigger_frame);
+				  dsi_ctrl->cmd_trigger_line,
+				  dsi_ctrl->cmd_trigger_frame);
 		}
-
 
 		dsi_hw_ops.reset_cmd_fifo(&dsi_ctrl->hw);
 
 		/*
-		 * DSI 2.2 needs a soft reset whenever we send non-embedded
-		 * mode command followed by embedded mode. Otherwise it will
-		 * result in smmu write faults with DSI as client.
-		 */
+     * DSI 2.2 needs a soft reset whenever we send non-embedded
+     * mode command followed by embedded mode. Otherwise it will
+     * result in smmu write faults with DSI as client.
+     */
 		if (flags & DSI_CTRL_CMD_NON_EMBEDDED_MODE) {
 			if (dsi_ctrl->version < DSI_CTRL_VERSION_2_4)
 				dsi_hw_ops.soft_reset(&dsi_ctrl->hw);
@@ -1482,7 +1472,8 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 	}
 }
 
-static int dsi_message_tx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_desc)
+static int dsi_message_tx(struct dsi_ctrl *dsi_ctrl,
+			  struct dsi_cmd_desc *cmd_desc)
 {
 	int rc = 0;
 	struct mipi_dsi_packet packet;
@@ -1502,73 +1493,74 @@ static int dsi_message_tx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_de
 	rc = dsi_message_validate_tx_mode(dsi_ctrl, msg->tx_len, flags);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl,
-			"Cmd tx validation failed, cannot transfer cmd\n");
+			     "Cmd tx validation failed, cannot transfer cmd\n");
 		rc = -ENOTSUPP;
 		goto error;
 	}
 
-	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, *flags, dsi_ctrl->cmd_len);
+	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, *flags,
+		  dsi_ctrl->cmd_len);
 
 	if (*flags & DSI_CTRL_CMD_NON_EMBEDDED_MODE) {
 		cmd_mem.offset = dsi_ctrl->cmd_buffer_iova;
-		cmd_mem.en_broadcast = (*flags & DSI_CTRL_CMD_BROADCAST) ?
-			true : false;
-		cmd_mem.is_master = (*flags & DSI_CTRL_CMD_BROADCAST_MASTER) ?
-			true : false;
-		cmd_mem.use_lpm = (msg->flags & MIPI_DSI_MSG_USE_LPM) ?
-			true : false;
+		cmd_mem.en_broadcast =
+			(*flags & DSI_CTRL_CMD_BROADCAST) ? true : false;
+		cmd_mem.is_master =
+			(*flags & DSI_CTRL_CMD_BROADCAST_MASTER) ? true : false;
+		cmd_mem.use_lpm = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? true :
+									false;
 		cmd_mem.datatype = msg->type;
 		cmd_mem.length = msg->tx_len;
 
 		dsi_ctrl->cmd_len = msg->tx_len;
 		memcpy(dsi_ctrl->vaddr, msg->tx_buf, msg->tx_len);
 		DSI_CTRL_DEBUG(dsi_ctrl,
-				"non-embedded mode , size of command =%zd\n",
-					msg->tx_len);
+			       "non-embedded mode , size of command =%zd\n",
+			       msg->tx_len);
 
 		goto kickoff;
 	}
 
 	rc = mipi_dsi_create_packet(&packet, msg);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "Failed to create message packet, rc=%d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Failed to create message packet, rc=%d\n", rc);
 		goto error;
 	}
 
-	rc = dsi_ctrl_copy_and_pad_cmd(dsi_ctrl,
-			&packet,
-			&buffer,
-			&length);
+	rc = dsi_ctrl_copy_and_pad_cmd(dsi_ctrl, &packet, &buffer, &length);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "failed to copy message, rc=%d\n", rc);
 		goto error;
 	}
 
 	/*
-	 * In case of broadcast CMD length cannot be greater than 512 bytes
-	 * as specified by HW limitations. Need to overwrite the flags to
-	 * set the LAST_COMMAND flag to ensure no command transfer failures.
-	 */
-	if ((*flags & DSI_CTRL_CMD_FETCH_MEMORY) && (*flags & DSI_CTRL_CMD_BROADCAST)) {
-		if (((dsi_ctrl->cmd_len + length) > 240) && !(*flags & DSI_CTRL_CMD_LAST_COMMAND)) {
+   * In case of broadcast CMD length cannot be greater than 512 bytes
+   * as specified by HW limitations. Need to overwrite the flags to
+   * set the LAST_COMMAND flag to ensure no command transfer failures.
+   */
+	if ((*flags & DSI_CTRL_CMD_FETCH_MEMORY) &&
+	    (*flags & DSI_CTRL_CMD_BROADCAST)) {
+		if (((dsi_ctrl->cmd_len + length) > 240) &&
+		    !(*flags & DSI_CTRL_CMD_LAST_COMMAND)) {
 			*flags |= DSI_CTRL_CMD_LAST_COMMAND;
-			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1, *flags);
+			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
+				  *flags);
 		}
 	}
 
 	if (*flags & DSI_CTRL_CMD_LAST_COMMAND)
-		buffer[3] |= BIT(7);//set the last cmd bit in header.
+		buffer[3] |= BIT(7); // set the last cmd bit in header.
 
 	if (*flags & DSI_CTRL_CMD_FETCH_MEMORY) {
 		/* Embedded mode config is selected */
 		cmd_mem.offset = dsi_ctrl->cmd_buffer_iova;
-		cmd_mem.en_broadcast = (*flags & DSI_CTRL_CMD_BROADCAST) ?
-			true : false;
-		cmd_mem.is_master = (*flags & DSI_CTRL_CMD_BROADCAST_MASTER) ?
-			true : false;
-		cmd_mem.use_lpm = (msg->flags & MIPI_DSI_MSG_USE_LPM) ?
-			true : false;
+		cmd_mem.en_broadcast =
+			(*flags & DSI_CTRL_CMD_BROADCAST) ? true : false;
+		cmd_mem.is_master =
+			(*flags & DSI_CTRL_CMD_BROADCAST_MASTER) ? true : false;
+		cmd_mem.use_lpm = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? true :
+									false;
 
 		cmdbuf = (u8 *)(dsi_ctrl->vaddr);
 
@@ -1586,14 +1578,14 @@ static int dsi_message_tx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_de
 		}
 
 	} else if (*flags & DSI_CTRL_CMD_FIFO_STORE) {
-		cmd.command =  (u32 *)buffer;
+		cmd.command = (u32 *)buffer;
 		cmd.size = length;
-		cmd.en_broadcast = (*flags & DSI_CTRL_CMD_BROADCAST) ?
-				     true : false;
-		cmd.is_master = (*flags & DSI_CTRL_CMD_BROADCAST_MASTER) ?
-				  true : false;
-		cmd.use_lpm = (msg->flags & MIPI_DSI_MSG_USE_LPM) ?
-				  true : false;
+		cmd.en_broadcast = (*flags & DSI_CTRL_CMD_BROADCAST) ? true :
+								       false;
+		cmd.is_master =
+			(*flags & DSI_CTRL_CMD_BROADCAST_MASTER) ? true : false;
+		cmd.use_lpm = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? true :
+								    false;
 	}
 
 kickoff:
@@ -1604,14 +1596,15 @@ error:
 	return rc;
 }
 
-static int dsi_set_max_return_size(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *rx_cmd, u32 size)
+static int dsi_set_max_return_size(struct dsi_ctrl *dsi_ctrl,
+				   struct dsi_cmd_desc *rx_cmd, u32 size)
 {
 	int rc = 0;
 	const struct mipi_dsi_msg *rx_msg = &rx_cmd->msg;
 	u8 tx[2] = { (u8)(size & 0xFF), (u8)(size >> 8) };
 	u16 dflags = rx_msg->flags;
 
-	struct dsi_cmd_desc cmd= {
+	struct dsi_cmd_desc cmd = {
 		.msg.channel = rx_msg->channel,
 		.msg.type = MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE,
 		.msg.tx_len = 2,
@@ -1625,15 +1618,16 @@ static int dsi_set_max_return_size(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_des
 	cmd.ctrl_flags = DSI_CTRL_CMD_FETCH_MEMORY;
 	rc = dsi_message_tx(dsi_ctrl, &cmd);
 	if (rc)
-		DSI_CTRL_ERR(dsi_ctrl, "failed to send max return size packet, rc=%d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "failed to send max return size packet, rc=%d\n",
+			     rc);
 
 	return rc;
 }
 
 /* Helper functions to support DCS read operation */
 static int dsi_parse_short_read1_resp(const struct mipi_dsi_msg *msg,
-		unsigned char *buff)
+				      unsigned char *buff)
 {
 	u8 *data = msg->rx_buf;
 	int read_len = 1;
@@ -1651,7 +1645,7 @@ static int dsi_parse_short_read1_resp(const struct mipi_dsi_msg *msg,
 }
 
 static int dsi_parse_short_read2_resp(const struct mipi_dsi_msg *msg,
-		unsigned char *buff)
+				      unsigned char *buff)
 {
 	u8 *data = msg->rx_buf;
 	int read_len = 2;
@@ -1671,7 +1665,7 @@ static int dsi_parse_short_read2_resp(const struct mipi_dsi_msg *msg,
 }
 
 static int dsi_parse_long_read_resp(const struct mipi_dsi_msg *msg,
-		unsigned char *buff)
+				    unsigned char *buff)
 {
 	if (!msg->rx_buf)
 		return 0;
@@ -1683,7 +1677,8 @@ static int dsi_parse_long_read_resp(const struct mipi_dsi_msg *msg,
 	return msg->rx_len;
 }
 
-static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_desc)
+static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl,
+			  struct dsi_cmd_desc *cmd_desc)
 {
 	int rc = 0;
 	u32 rd_pkt_size, total_read_len, hw_read_cnt;
@@ -1710,9 +1705,9 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_de
 		rd_pkt_size = msg->rx_len;
 		total_read_len = 4;
 		/*
-		 * buffer size: header + data
-		 * No 32 bits alignment issue, thus offset is 0
-		 */
+     * buffer size: header + data
+     * No 32 bits alignment issue, thus offset is 0
+     */
 		buffer_sz = 4;
 	} else {
 		short_resp = false;
@@ -1724,9 +1719,9 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_de
 
 		total_read_len = current_read_len + 6;
 		/*
-		 * buffer size: header + data + footer, rounded up to 4 bytes.
-		 * Out of bound can occur if rx_len is not aligned to size 4.
-		 */
+     * buffer size: header + data + footer, rounded up to 4 bytes.
+     * Out of bound can occur if rx_len is not aligned to size 4.
+     */
 		buffer_sz = 4 + msg->rx_len + 2;
 		buffer_sz = ALIGN(buffer_sz, 4);
 		if (buffer_sz < 16)
@@ -1743,8 +1738,10 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_de
 	while (!read_done) {
 		rc = dsi_set_max_return_size(dsi_ctrl, cmd_desc, rd_pkt_size);
 		if (rc) {
-			DSI_CTRL_ERR(dsi_ctrl, "Failed to set max return packet size, rc=%d\n",
-			       rc);
+			DSI_CTRL_ERR(
+				dsi_ctrl,
+				"Failed to set max return packet size, rc=%d\n",
+				rc);
 			goto error;
 		}
 
@@ -1753,8 +1750,9 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_de
 
 		rc = dsi_message_tx(dsi_ctrl, cmd_desc);
 		if (rc) {
-			DSI_CTRL_ERR(dsi_ctrl, "Message transmission failed, rc=%d\n",
-					rc);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "Message transmission failed, rc=%d\n",
+				     rc);
 			goto error;
 		}
 
@@ -1762,17 +1760,16 @@ static int dsi_message_rx(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd_de
 		dsi_ctrl_dma_cmd_wait_for_done(dsi_ctrl);
 
 		/*
-		 * wait before reading rdbk_data register, if any delay is
-		 * required after sending the read command.
-		 */
+     * wait before reading rdbk_data register, if any delay is
+     * required after sending the read command.
+     */
 		if (cmd_desc->post_wait_ms)
 			usleep_range(cmd_desc->post_wait_ms * 1000,
-					((cmd_desc->post_wait_ms * 1000) + 10));
+				     ((cmd_desc->post_wait_ms * 1000) + 10));
 
-		dlen = dsi_ctrl->hw.ops.get_cmd_read_data(&dsi_ctrl->hw,
-					buff, total_bytes_read,
-					total_read_len, rd_pkt_size,
-					&hw_read_cnt);
+		dlen = dsi_ctrl->hw.ops.get_cmd_read_data(
+			&dsi_ctrl->hw, buff, total_bytes_read, total_read_len,
+			rd_pkt_size, &hw_read_cnt);
 		if (!dlen)
 			goto error;
 
@@ -1851,8 +1848,9 @@ static int dsi_enable_ulps(struct dsi_ctrl *dsi_ctrl)
 	}
 
 	if (!dsi_ctrl->hw.ops.ulps_ops.ulps_request ||
-			!dsi_ctrl->hw.ops.ulps_ops.ulps_exit) {
-		DSI_CTRL_DEBUG(dsi_ctrl, "DSI controller ULPS ops not present\n");
+	    !dsi_ctrl->hw.ops.ulps_ops.ulps_exit) {
+		DSI_CTRL_DEBUG(dsi_ctrl,
+			       "DSI controller ULPS ops not present\n");
 		return 0;
 	}
 
@@ -1863,8 +1861,10 @@ static int dsi_enable_ulps(struct dsi_ctrl *dsi_ctrl)
 	ulps_lanes = dsi_ctrl->hw.ops.ulps_ops.get_lanes_in_ulps(&dsi_ctrl->hw);
 
 	if ((lanes & ulps_lanes) != lanes) {
-		DSI_CTRL_ERR(dsi_ctrl, "Failed to enter ULPS, request=0x%x, actual=0x%x\n",
-		       lanes, ulps_lanes);
+		DSI_CTRL_ERR(
+			dsi_ctrl,
+			"Failed to enter ULPS, request=0x%x, actual=0x%x\n",
+			lanes, ulps_lanes);
 		rc = -EIO;
 	}
 
@@ -1879,8 +1879,9 @@ static int dsi_disable_ulps(struct dsi_ctrl *dsi_ctrl)
 	dsi_ctrl->hw.ops.clear_phy0_ln_err(&dsi_ctrl->hw);
 
 	if (!dsi_ctrl->hw.ops.ulps_ops.ulps_request ||
-			!dsi_ctrl->hw.ops.ulps_ops.ulps_exit) {
-		DSI_CTRL_DEBUG(dsi_ctrl, "DSI controller ULPS ops not present\n");
+	    !dsi_ctrl->hw.ops.ulps_ops.ulps_exit) {
+		DSI_CTRL_DEBUG(dsi_ctrl,
+			       "DSI controller ULPS ops not present\n");
 		return 0;
 	}
 
@@ -1900,24 +1901,27 @@ static int dsi_disable_ulps(struct dsi_ctrl *dsi_ctrl)
 	ulps_lanes = dsi_ctrl->hw.ops.ulps_ops.get_lanes_in_ulps(&dsi_ctrl->hw);
 	if (ulps_lanes & lanes) {
 		DSI_CTRL_ERR(dsi_ctrl, "Lanes (0x%x) stuck in ULPS\n",
-				ulps_lanes);
+			     ulps_lanes);
 		rc = -EIO;
 	}
 
 	return rc;
 }
 
-void dsi_ctrl_toggle_error_interrupt_status(struct dsi_ctrl *dsi_ctrl, bool enable)
+void dsi_ctrl_toggle_error_interrupt_status(struct dsi_ctrl *dsi_ctrl,
+					    bool enable)
 {
 	if (!enable) {
 		dsi_ctrl->hw.ops.enable_error_interrupts(&dsi_ctrl->hw, 0);
 	} else {
 		if (dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE &&
-				!dsi_ctrl->host_config.u.video_engine.bllp_lp11_en &&
-				!dsi_ctrl->host_config.u.video_engine.eof_bllp_lp11_en)
-			dsi_ctrl->hw.ops.enable_error_interrupts(&dsi_ctrl->hw,	0xFF00A0);
+		    !dsi_ctrl->host_config.u.video_engine.bllp_lp11_en &&
+		    !dsi_ctrl->host_config.u.video_engine.eof_bllp_lp11_en)
+			dsi_ctrl->hw.ops.enable_error_interrupts(&dsi_ctrl->hw,
+								 0xFF00A0);
 		else
-			dsi_ctrl->hw.ops.enable_error_interrupts(&dsi_ctrl->hw, 0xFF00E0);
+			dsi_ctrl->hw.ops.enable_error_interrupts(&dsi_ctrl->hw,
+								 0xFF00E0);
 	}
 }
 
@@ -1941,8 +1945,8 @@ static int dsi_ctrl_buffer_deinit(struct dsi_ctrl *dsi_ctrl)
 	struct msm_gem_address_space *aspace = NULL;
 
 	if (dsi_ctrl->tx_cmd_buf) {
-		aspace = dsi_ctrl_get_aspace(dsi_ctrl,
-				MSM_SMMU_DOMAIN_UNSECURE);
+		aspace =
+			dsi_ctrl_get_aspace(dsi_ctrl, MSM_SMMU_DOMAIN_UNSECURE);
 		if (!aspace) {
 			DSI_CTRL_ERR(dsi_ctrl, "failed to get address space\n");
 			return -ENOMEM;
@@ -1971,9 +1975,8 @@ int dsi_ctrl_buffer_init(struct dsi_ctrl *dsi_ctrl)
 		return -ENOMEM;
 	}
 
-	dsi_ctrl->tx_cmd_buf = msm_gem_new(dsi_ctrl->drm_dev,
-					   SZ_4K,
-					   MSM_BO_UNCACHED);
+	dsi_ctrl->tx_cmd_buf =
+		msm_gem_new(dsi_ctrl->drm_dev, SZ_4K, MSM_BO_UNCACHED);
 
 	if (IS_ERR(dsi_ctrl->tx_cmd_buf)) {
 		rc = PTR_ERR(dsi_ctrl->tx_cmd_buf);
@@ -1992,7 +1995,8 @@ int dsi_ctrl_buffer_init(struct dsi_ctrl *dsi_ctrl)
 	}
 
 	if (iova & 0x07) {
-		DSI_CTRL_ERR(dsi_ctrl, "Tx command buffer is not 8 byte aligned\n");
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Tx command buffer is not 8 byte aligned\n");
 		rc = -ENOTSUPP;
 		(void)dsi_ctrl_buffer_deinit(dsi_ctrl);
 		goto error;
@@ -2001,8 +2005,8 @@ error:
 	return rc;
 }
 
-static int dsi_enable_io_clamp(struct dsi_ctrl *dsi_ctrl,
-		bool enable, bool ulps_enabled)
+static int dsi_enable_io_clamp(struct dsi_ctrl *dsi_ctrl, bool enable,
+			       bool ulps_enabled)
 {
 	u32 lanes = 0;
 
@@ -2012,24 +2016,24 @@ static int dsi_enable_io_clamp(struct dsi_ctrl *dsi_ctrl,
 	lanes |= DSI_CLOCK_LANE;
 
 	if (enable)
-		dsi_ctrl->hw.ops.clamp_enable(&dsi_ctrl->hw,
-			lanes, ulps_enabled);
+		dsi_ctrl->hw.ops.clamp_enable(&dsi_ctrl->hw, lanes,
+					      ulps_enabled);
 	else
-		dsi_ctrl->hw.ops.clamp_disable(&dsi_ctrl->hw,
-			lanes, ulps_enabled);
+		dsi_ctrl->hw.ops.clamp_disable(&dsi_ctrl->hw, lanes,
+					       ulps_enabled);
 
 	return 0;
 }
 
 static int dsi_ctrl_dts_parse(struct dsi_ctrl *dsi_ctrl,
-				  struct device_node *of_node)
+			      struct device_node *of_node)
 {
 	u32 index = 0, frame_threshold_time_us = 0;
 	int rc = 0;
 
 	if (!dsi_ctrl || !of_node) {
 		DSI_CTRL_ERR(dsi_ctrl, "invalid dsi_ctrl:%d or of_node:%d\n",
-					dsi_ctrl != NULL, of_node != NULL);
+			     dsi_ctrl != NULL, of_node != NULL);
 		return -EINVAL;
 	}
 
@@ -2044,26 +2048,28 @@ static int dsi_ctrl_dts_parse(struct dsi_ctrl *dsi_ctrl,
 	if (!dsi_ctrl->name)
 		dsi_ctrl->name = DSI_CTRL_DEFAULT_LABEL;
 
-	dsi_ctrl->null_insertion_enabled = of_property_read_bool(of_node,
-					"qcom,null-insertion-enabled");
+	dsi_ctrl->null_insertion_enabled =
+		of_property_read_bool(of_node, "qcom,null-insertion-enabled");
 
-	dsi_ctrl->split_link_supported = of_property_read_bool(of_node,
-					"qcom,split-link-supported");
+	dsi_ctrl->split_link_supported =
+		of_property_read_bool(of_node, "qcom,split-link-supported");
 
-	dsi_ctrl->phy_pll_bypass = of_property_read_bool(of_node,
-					"qcom,dsi-phy-pll-bypass");
+	dsi_ctrl->phy_pll_bypass =
+		of_property_read_bool(of_node, "qcom,dsi-phy-pll-bypass");
 
 	rc = of_property_read_u32(of_node, "frame-threshold-time-us",
-			&frame_threshold_time_us);
+				  &frame_threshold_time_us);
 	if (rc) {
-		DSI_CTRL_DEBUG(dsi_ctrl,
-				"frame-threshold-time not specified, defaulting\n");
+		DSI_CTRL_DEBUG(
+			dsi_ctrl,
+			"frame-threshold-time not specified, defaulting\n");
 		frame_threshold_time_us = 2666;
 	}
 
 	dsi_ctrl->frame_threshold_time_us = frame_threshold_time_us;
 
-	dsi_ctrl->dsi_ctrl_shared = of_property_read_bool(of_node, "qcom,dsi-ctrl-shared");
+	dsi_ctrl->dsi_ctrl_shared =
+		of_property_read_bool(of_node, "qcom,dsi-ctrl-shared");
 
 	return 0;
 }
@@ -2107,31 +2113,35 @@ static int dsi_ctrl_dev_probe(struct platform_device *pdev)
 
 	rc = dsi_ctrl_init_regmap(pdev, dsi_ctrl);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "Failed to parse register information, rc = %d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Failed to parse register information, rc = %d\n",
+			     rc);
 		goto fail;
 	}
 
 	rc = dsi_ctrl_supplies_init(pdev, dsi_ctrl);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "Failed to parse voltage supplies, rc = %d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Failed to parse voltage supplies, rc = %d\n", rc);
 		goto fail;
 	}
 
 	rc = dsi_ctrl_clocks_init(pdev, dsi_ctrl);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "Failed to parse clock information, rc = %d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Failed to parse clock information, rc = %d\n",
+			     rc);
 		goto fail_supplies;
 	}
 
 	rc = dsi_catalog_ctrl_setup(&dsi_ctrl->hw, dsi_ctrl->version,
-		dsi_ctrl->cell_index, dsi_ctrl->phy_pll_bypass,
-		dsi_ctrl->null_insertion_enabled);
+				    dsi_ctrl->cell_index,
+				    dsi_ctrl->phy_pll_bypass,
+				    dsi_ctrl->null_insertion_enabled);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "Catalog does not support version (%d)\n",
-		       dsi_ctrl->version);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Catalog does not support version (%d)\n",
+			     dsi_ctrl->version);
 		goto fail_clks;
 	}
 
@@ -2169,9 +2179,8 @@ static int dsi_ctrl_dev_remove(struct platform_device *pdev)
 
 	mutex_lock(&dsi_ctrl_list_lock);
 	list_for_each_safe(pos, tmp, &dsi_ctrl_list) {
-		struct dsi_ctrl_list_item *n = list_entry(pos,
-						  struct dsi_ctrl_list_item,
-						  list);
+		struct dsi_ctrl_list_item *n =
+			list_entry(pos, struct dsi_ctrl_list_item, list);
 		if (n->ctrl == dsi_ctrl) {
 			list_del(&n->list);
 			break;
@@ -2186,13 +2195,13 @@ static int dsi_ctrl_dev_remove(struct platform_device *pdev)
 	rc = dsi_ctrl_supplies_deinit(dsi_ctrl);
 	if (rc)
 		DSI_CTRL_ERR(dsi_ctrl,
-				"failed to deinitialize voltage supplies, rc=%d\n",
-				rc);
+			     "failed to deinitialize voltage supplies, rc=%d\n",
+			     rc);
 
 	rc = dsi_ctrl_clocks_deinit(dsi_ctrl);
 	if (rc)
-		DSI_CTRL_ERR(dsi_ctrl,
-				"failed to deinitialize clocks, rc=%d\n", rc);
+		DSI_CTRL_ERR(dsi_ctrl, "failed to deinitialize clocks, rc=%d\n",
+			     rc);
 
 	atomic_set(&dsi_ctrl->dma_irq_trig, 0);
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
@@ -2205,13 +2214,14 @@ static int dsi_ctrl_dev_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver dsi_ctrl_driver = {
-	.probe = dsi_ctrl_dev_probe,
-	.remove = dsi_ctrl_dev_remove,
-	.driver = {
-		.name = "drm_dsi_ctrl",
-		.of_match_table = msm_dsi_of_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = dsi_ctrl_dev_probe,
+    .remove = dsi_ctrl_dev_remove,
+    .driver =
+        {
+            .name = "drm_dsi_ctrl",
+            .of_match_table = msm_dsi_of_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int dsi_ctrl_get_io_resources(struct msm_io_res *io_res)
@@ -2225,7 +2235,7 @@ int dsi_ctrl_get_io_resources(struct msm_io_res *io_res)
 		rc = msm_dss_get_io_mem(dsi_ctrl->ctrl->pdev, &io_res->mem);
 		if (rc) {
 			DSI_CTRL_ERR(dsi_ctrl->ctrl,
-					"failed to get io mem, rc = %d\n", rc);
+				     "failed to get io mem, rc = %d\n", rc);
 			return rc;
 		}
 	}
@@ -2295,14 +2305,14 @@ struct dsi_ctrl *dsi_ctrl_get(struct device_node *of_node)
 
 	if (!ctrl) {
 		DSI_CTRL_ERR(ctrl, "Device with of node not found rc=%d\n",
-				-EPROBE_DEFER);
+			     -EPROBE_DEFER);
 		ctrl = ERR_PTR(-EPROBE_DEFER);
 		return ctrl;
 	}
 
 	mutex_lock(&ctrl->ctrl_lock);
 	if ((ctrl->dsi_ctrl_shared && ctrl->refcount == 2) ||
-		(!ctrl->dsi_ctrl_shared && ctrl->refcount == 1)) {
+	    (!ctrl->dsi_ctrl_shared && ctrl->refcount == 1)) {
 		DSI_CTRL_ERR(ctrl, "Device in use\n");
 		mutex_unlock(&ctrl->ctrl_lock);
 		ctrl = ERR_PTR(-EBUSY);
@@ -2356,8 +2366,8 @@ int dsi_ctrl_drv_init(struct dsi_ctrl *dsi_ctrl, struct dentry *parent)
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 	rc = dsi_ctrl_drv_state_init(dsi_ctrl);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "Failed to initialize driver state, rc=%d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Failed to initialize driver state, rc=%d\n", rc);
 		goto error;
 	}
 
@@ -2367,10 +2377,12 @@ int dsi_ctrl_drv_init(struct dsi_ctrl *dsi_ctrl, struct dentry *parent)
 		goto error;
 	}
 
-	snprintf(dbg_name, DSI_DEBUG_NAME_LEN, "dsi%d_ctrl", dsi_ctrl->cell_index);
+	snprintf(dbg_name, DSI_DEBUG_NAME_LEN, "dsi%d_ctrl",
+		 dsi_ctrl->cell_index);
 	sde_dbg_reg_register_base(dbg_name, dsi_ctrl->hw.base,
-			msm_iomap_size(dsi_ctrl->pdev, "dsi_ctrl"),
-			msm_get_phys_addr(dsi_ctrl->pdev, "dsi_ctrl"), SDE_DBG_DSI);
+				  msm_iomap_size(dsi_ctrl->pdev, "dsi_ctrl"),
+				  msm_get_phys_addr(dsi_ctrl->pdev, "dsi_ctrl"),
+				  SDE_DBG_DSI);
 
 error:
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
@@ -2398,20 +2410,20 @@ int dsi_ctrl_drv_deinit(struct dsi_ctrl *dsi_ctrl)
 
 	rc = dsi_ctrl_debugfs_deinit(dsi_ctrl);
 	if (rc)
-		DSI_CTRL_ERR(dsi_ctrl, "failed to release debugfs root, rc=%d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "failed to release debugfs root, rc=%d\n", rc);
 
 	rc = dsi_ctrl_buffer_deinit(dsi_ctrl);
 	if (rc)
 		DSI_CTRL_ERR(dsi_ctrl, "Failed to free cmd buffers, rc=%d\n",
-				rc);
+			     rc);
 
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
 	return rc;
 }
 
 int dsi_ctrl_clk_cb_register(struct dsi_ctrl *dsi_ctrl,
-	struct clk_ctrl_cb *clk_cb)
+			     struct clk_ctrl_cb *clk_cb)
 {
 	if (!dsi_ctrl || !clk_cb) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid params\n");
@@ -2448,7 +2460,7 @@ int dsi_ctrl_phy_sw_reset(struct dsi_ctrl *dsi_ctrl)
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_PHY_SW_RESET, 0x0);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto error;
 	}
 
@@ -2472,7 +2484,7 @@ error:
  * Return: error code.
  */
 int dsi_ctrl_async_timing_update(struct dsi_ctrl *dsi_ctrl,
-		struct dsi_mode_info *timing)
+				 struct dsi_mode_info *timing)
 {
 	struct dsi_mode_info *host_mode;
 	int rc = 0;
@@ -2485,10 +2497,10 @@ int dsi_ctrl_async_timing_update(struct dsi_ctrl *dsi_ctrl,
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_ASYNC_TIMING,
-			DSI_CTRL_ENGINE_ON);
+				  DSI_CTRL_ENGINE_ON);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto exit;
 	}
 
@@ -2512,8 +2524,8 @@ exit:
  *
  * Return: error code.
  */
-int dsi_ctrl_timing_db_update(struct dsi_ctrl *dsi_ctrl,
-		bool enable, u32 pf_time_in_us)
+int dsi_ctrl_timing_db_update(struct dsi_ctrl *dsi_ctrl, bool enable,
+			      u32 pf_time_in_us)
 {
 	int rc = 0;
 
@@ -2525,25 +2537,27 @@ int dsi_ctrl_timing_db_update(struct dsi_ctrl *dsi_ctrl,
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_ASYNC_TIMING,
-			DSI_CTRL_ENGINE_ON);
+				  DSI_CTRL_ENGINE_ON);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto exit;
 	}
 
 	/*
-	 * Add HW recommended delay for dfps feature.
-	 * When prefetch is enabled, MDSS HW works on 2 vsync
-	 * boundaries i.e. mdp_vsync and panel_vsync.
-	 * In the current implementation we are only waiting
-	 * for mdp_vsync. We need to make sure that interface
-	 * flush is after panel_vsync. So, added the recommended
-	 * delays after dfps update.
-	 */
+   * Add HW recommended delay for dfps feature.
+   * When prefetch is enabled, MDSS HW works on 2 vsync
+   * boundaries i.e. mdp_vsync and panel_vsync.
+   * In the current implementation we are only waiting
+   * for mdp_vsync. We need to make sure that interface
+   * flush is after panel_vsync. So, added the recommended
+   * delays after dfps update.
+   */
 	if (pf_time_in_us > 2000) {
-		DSI_CTRL_ERR(dsi_ctrl, "Programmable fetch time check failed, pf_time_in_us=%u\n",
-				pf_time_in_us);
+		DSI_CTRL_ERR(
+			dsi_ctrl,
+			"Programmable fetch time check failed, pf_time_in_us=%u\n",
+			pf_time_in_us);
 		pf_time_in_us = 2000;
 	}
 
@@ -2567,22 +2581,21 @@ int dsi_ctrl_timing_setup(struct dsi_ctrl *dsi_ctrl)
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
 	if (dsi_ctrl->host_config.panel_mode == DSI_OP_CMD_MODE) {
-		dsi_ctrl->hw.ops.cmd_engine_setup(&dsi_ctrl->hw,
-					&dsi_ctrl->host_config.common_config,
-					&dsi_ctrl->host_config.u.cmd_engine);
+		dsi_ctrl->hw.ops.cmd_engine_setup(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.common_config,
+			&dsi_ctrl->host_config.u.cmd_engine);
 
-		dsi_ctrl->hw.ops.setup_cmd_stream(&dsi_ctrl->hw,
-				&dsi_ctrl->host_config.video_timing,
-				&dsi_ctrl->host_config.common_config,
-				0x0,
-				&dsi_ctrl->roi);
+		dsi_ctrl->hw.ops.setup_cmd_stream(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.video_timing,
+			&dsi_ctrl->host_config.common_config, 0x0,
+			&dsi_ctrl->roi);
 		dsi_ctrl->hw.ops.cmd_engine_en(&dsi_ctrl->hw, true);
 	} else {
-		dsi_ctrl->hw.ops.video_engine_setup(&dsi_ctrl->hw,
-					&dsi_ctrl->host_config.common_config,
-					&dsi_ctrl->host_config.u.video_engine);
-		dsi_ctrl->hw.ops.set_video_timing(&dsi_ctrl->hw,
-					  &dsi_ctrl->host_config.video_timing);
+		dsi_ctrl->hw.ops.video_engine_setup(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.common_config,
+			&dsi_ctrl->host_config.u.video_engine);
+		dsi_ctrl->hw.ops.set_video_timing(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.video_timing);
 		dsi_ctrl->hw.ops.video_engine_en(&dsi_ctrl->hw, true);
 	}
 
@@ -2616,7 +2629,7 @@ int dsi_ctrl_setup(struct dsi_ctrl *dsi_ctrl)
 }
 
 int dsi_ctrl_set_roi(struct dsi_ctrl *dsi_ctrl, struct dsi_rect *roi,
-		bool *changed)
+		     bool *changed)
 {
 	int rc = 0;
 
@@ -2627,7 +2640,7 @@ int dsi_ctrl_set_roi(struct dsi_ctrl *dsi_ctrl, struct dsi_rect *roi,
 
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 	if ((!dsi_rect_is_equal(&dsi_ctrl->roi, roi)) ||
-			dsi_ctrl->modeupdated) {
+	    dsi_ctrl->modeupdated) {
 		*changed = true;
 		memcpy(&dsi_ctrl->roi, roi, sizeof(dsi_ctrl->roi));
 		dsi_ctrl->modeupdated = false;
@@ -2647,7 +2660,7 @@ int dsi_ctrl_set_roi(struct dsi_ctrl *dsi_ctrl, struct dsi_rect *roi,
  * Return: error code.
  */
 int dsi_ctrl_config_clk_gating(struct dsi_ctrl *dsi_ctrl, bool enable,
-			enum dsi_clk_gate_type clk_selection)
+			       enum dsi_clk_gate_type clk_selection)
 {
 	if (!dsi_ctrl) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid params\n");
@@ -2656,7 +2669,7 @@ int dsi_ctrl_config_clk_gating(struct dsi_ctrl *dsi_ctrl, bool enable,
 
 	if (dsi_ctrl->hw.ops.config_clk_gating)
 		dsi_ctrl->hw.ops.config_clk_gating(&dsi_ctrl->hw, enable,
-				clk_selection);
+						   clk_selection);
 
 	return 0;
 }
@@ -2682,8 +2695,8 @@ int dsi_ctrl_phy_reset_config(struct dsi_ctrl *dsi_ctrl, bool enable)
 	return 0;
 }
 
-static bool dsi_ctrl_check_for_spurious_error_interrupts(
-					struct dsi_ctrl *dsi_ctrl)
+static bool
+dsi_ctrl_check_for_spurious_error_interrupts(struct dsi_ctrl *dsi_ctrl)
 {
 	const unsigned long intr_check_interval = msecs_to_jiffies(1000);
 	const unsigned int interrupt_threshold = 15;
@@ -2714,7 +2727,7 @@ static bool dsi_ctrl_check_for_spurious_error_interrupts(
 }
 
 static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
-				unsigned long error)
+					 unsigned long error)
 {
 	struct dsi_event_cb_info cb_info;
 
@@ -2726,18 +2739,17 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 
 	/* clear error interrupts first */
 	if (dsi_ctrl->hw.ops.clear_error_status)
-		dsi_ctrl->hw.ops.clear_error_status(&dsi_ctrl->hw,
-					error);
+		dsi_ctrl->hw.ops.clear_error_status(&dsi_ctrl->hw, error);
 
 	/* DTLN PHY error */
 	if (error & 0x3000E00)
 		pr_err_ratelimited("[%s] dsi PHY contention error: 0x%lx\n",
-				dsi_ctrl->name, error);
+				   dsi_ctrl->name, error);
 
 	/* ignore TX timeout if blpp_lp11 is disabled */
 	if (dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE &&
-			!dsi_ctrl->host_config.u.video_engine.bllp_lp11_en &&
-			!dsi_ctrl->host_config.u.video_engine.eof_bllp_lp11_en)
+	    !dsi_ctrl->host_config.u.video_engine.bllp_lp11_en &&
+	    !dsi_ctrl->host_config.u.video_engine.eof_bllp_lp11_en)
 		error &= ~DSI_HS_TX_TIMEOUT;
 
 	/* TX timeout error */
@@ -2746,9 +2758,9 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 			if (cb_info.event_cb) {
 				cb_info.event_idx = DSI_LP_Rx_TIMEOUT;
 				(void)cb_info.event_cb(cb_info.event_usr_ptr,
-							cb_info.event_idx,
-							dsi_ctrl->cell_index,
-							0, 0, 0, 0);
+						       cb_info.event_idx,
+						       dsi_ctrl->cell_index, 0,
+						       0, 0, 0);
 			}
 		}
 	}
@@ -2763,9 +2775,9 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 		if (cb_info.event_cb && !(mask & 0xf0000)) {
 			cb_info.event_idx = DSI_FIFO_OVERFLOW;
 			(void)cb_info.event_cb(cb_info.event_usr_ptr,
-						cb_info.event_idx,
-						dsi_ctrl->cell_index,
-						0, 0, 0, 0);
+					       cb_info.event_idx,
+					       dsi_ctrl->cell_index, 0, 0, 0,
+					       0);
 		}
 	}
 
@@ -2774,9 +2786,9 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 		if (cb_info.event_cb) {
 			cb_info.event_idx = DSI_FIFO_UNDERFLOW;
 			(void)cb_info.event_cb(cb_info.event_usr_ptr,
-						cb_info.event_idx,
-						dsi_ctrl->cell_index,
-						0, 0, 0, 0);
+					       cb_info.event_idx,
+					       dsi_ctrl->cell_index, 0, 0, 0,
+					       0);
 		}
 	}
 
@@ -2789,14 +2801,14 @@ static void dsi_ctrl_handle_error_status(struct dsi_ctrl *dsi_ctrl,
 		DSI_CTRL_ERR(dsi_ctrl, "ack error: 0x%lx\n", error);
 
 	/*
-	 * DSI Phy can go into bad state during ESD influence. This can
-	 * manifest as various types of spurious error interrupts on
-	 * DSI controller. This check will allow us to handle afore mentioned
-	 * case and prevent us from re enabling interrupts until a full ESD
-	 * recovery is completed.
-	 */
+   * DSI Phy can go into bad state during ESD influence. This can
+   * manifest as various types of spurious error interrupts on
+   * DSI controller. This check will allow us to handle afore mentioned
+   * case and prevent us from re enabling interrupts until a full ESD
+   * recovery is completed.
+   */
 	if (dsi_ctrl_check_for_spurious_error_interrupts(dsi_ctrl) &&
-				dsi_ctrl->esd_check_underway) {
+	    dsi_ctrl->esd_check_underway) {
 		dsi_ctrl->hw.ops.soft_reset(&dsi_ctrl->hw);
 		return;
 	}
@@ -2844,59 +2856,57 @@ static irqreturn_t dsi_ctrl_isr(int irq, void *ptr)
 
 	if (status & DSI_CMD_MODE_DMA_DONE) {
 		if (dsi_ctrl->enable_cmd_dma_stats) {
-			u32 reg = dsi_ctrl->hw.ops.log_line_count(&dsi_ctrl->hw,
-						dsi_ctrl->cmd_mode);
+			u32 reg = dsi_ctrl->hw.ops.log_line_count(
+				&dsi_ctrl->hw, dsi_ctrl->cmd_mode);
 			dsi_ctrl->cmd_success_line = (reg & 0xFFFF);
 			dsi_ctrl->cmd_success_frame = ((reg >> 16) & 0xFFFF);
-			SDE_EVT32(dsi_ctrl->cell_index,	SDE_EVTLOG_FUNC_CASE1,
-					dsi_ctrl->cmd_success_line,
-					dsi_ctrl->cmd_success_frame);
+			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
+				  dsi_ctrl->cmd_success_line,
+				  dsi_ctrl->cmd_success_frame);
 		}
 
-		dsi_ctrl->cmd_success_ts =  ktime_get();
+		dsi_ctrl->cmd_success_ts = ktime_get();
 		atomic_set(&dsi_ctrl->dma_irq_trig, 1);
 		dsi_ctrl_disable_status_interrupt(dsi_ctrl,
-					DSI_SINT_CMD_MODE_DMA_DONE);
+						  DSI_SINT_CMD_MODE_DMA_DONE);
 		complete_all(&dsi_ctrl->irq_info.cmd_dma_done);
 	}
 
 	if (status & DSI_CMD_FRAME_DONE) {
 		dsi_ctrl_disable_status_interrupt(dsi_ctrl,
-					DSI_SINT_CMD_FRAME_DONE);
+						  DSI_SINT_CMD_FRAME_DONE);
 		complete_all(&dsi_ctrl->irq_info.cmd_frame_done);
 	}
 
 	if (status & DSI_VIDEO_MODE_FRAME_DONE) {
-		dsi_ctrl_disable_status_interrupt(dsi_ctrl,
-					DSI_SINT_VIDEO_MODE_FRAME_DONE);
+		dsi_ctrl_disable_status_interrupt(
+			dsi_ctrl, DSI_SINT_VIDEO_MODE_FRAME_DONE);
 		complete_all(&dsi_ctrl->irq_info.vid_frame_done);
 	}
 
 	if (status & DSI_BTA_DONE) {
-		u32 fifo_overflow_mask = (DSI_DLN0_HS_FIFO_OVERFLOW |
-					DSI_DLN1_HS_FIFO_OVERFLOW |
-					DSI_DLN2_HS_FIFO_OVERFLOW |
-					DSI_DLN3_HS_FIFO_OVERFLOW);
-		dsi_ctrl_disable_status_interrupt(dsi_ctrl,
-					DSI_SINT_BTA_DONE);
+		u32 fifo_overflow_mask =
+			(DSI_DLN0_HS_FIFO_OVERFLOW | DSI_DLN1_HS_FIFO_OVERFLOW |
+			 DSI_DLN2_HS_FIFO_OVERFLOW | DSI_DLN3_HS_FIFO_OVERFLOW);
+		dsi_ctrl_disable_status_interrupt(dsi_ctrl, DSI_SINT_BTA_DONE);
 		complete_all(&dsi_ctrl->irq_info.bta_done);
 		if (dsi_ctrl->hw.ops.clear_error_status)
 			dsi_ctrl->hw.ops.clear_error_status(&dsi_ctrl->hw,
-					fifo_overflow_mask);
+							    fifo_overflow_mask);
 	}
 
 	for (i = 0; status && i < DSI_STATUS_INTERRUPT_COUNT; ++i) {
 		if (status & 0x1) {
 			spin_lock_irqsave(&dsi_ctrl->irq_info.irq_lock, flags);
 			cb_info = dsi_ctrl->irq_info.irq_stat_cb[i];
-			spin_unlock_irqrestore(
-					&dsi_ctrl->irq_info.irq_lock, flags);
+			spin_unlock_irqrestore(&dsi_ctrl->irq_info.irq_lock,
+					       flags);
 
 			if (cb_info.event_cb)
 				(void)cb_info.event_cb(cb_info.event_usr_ptr,
-						cb_info.event_idx,
-						dsi_ctrl->cell_index,
-						irq, 0, 0, 0);
+						       cb_info.event_idx,
+						       dsi_ctrl->cell_index,
+						       irq, 0, 0, 0);
 		}
 		status >>= 1;
 	}
@@ -2926,14 +2936,15 @@ static int _dsi_ctrl_setup_isr(struct dsi_ctrl *dsi_ctrl)
 	irq_num = platform_get_irq(dsi_ctrl->pdev, 0);
 	if (irq_num < 0) {
 		DSI_CTRL_ERR(dsi_ctrl, "Failed to get IRQ number, %d\n",
-				irq_num);
+			     irq_num);
 		rc = irq_num;
 	} else {
 		rc = devm_request_threaded_irq(&dsi_ctrl->pdev->dev, irq_num,
-				dsi_ctrl_isr, NULL, 0, "dsi_ctrl", dsi_ctrl);
+					       dsi_ctrl_isr, NULL, 0,
+					       "dsi_ctrl", dsi_ctrl);
 		if (rc) {
 			DSI_CTRL_ERR(dsi_ctrl, "Failed to request IRQ, %d\n",
-					rc);
+				     rc);
 		} else {
 			dsi_ctrl->irq_info.irq_num = irq_num;
 			disable_irq_nosync(irq_num);
@@ -2954,24 +2965,25 @@ static void _dsi_ctrl_destroy_isr(struct dsi_ctrl *dsi_ctrl)
 		return;
 
 	if (dsi_ctrl->irq_info.irq_num != -1) {
-		devm_free_irq(&dsi_ctrl->pdev->dev,
-				dsi_ctrl->irq_info.irq_num, dsi_ctrl);
+		devm_free_irq(&dsi_ctrl->pdev->dev, dsi_ctrl->irq_info.irq_num,
+			      dsi_ctrl);
 		dsi_ctrl->irq_info.irq_num = -1;
 	}
 }
 
 void dsi_ctrl_enable_status_interrupt(struct dsi_ctrl *dsi_ctrl,
-		uint32_t intr_idx, struct dsi_event_cb_info *event_info)
+				      uint32_t intr_idx,
+				      struct dsi_event_cb_info *event_info)
 {
 	unsigned long flags;
 
 	if (!dsi_ctrl || dsi_ctrl->irq_info.irq_num == -1 ||
-			intr_idx >= DSI_STATUS_INTERRUPT_COUNT)
+	    intr_idx >= DSI_STATUS_INTERRUPT_COUNT)
 		return;
 
 	SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, intr_idx,
-		dsi_ctrl->irq_info.irq_num, dsi_ctrl->irq_info.irq_stat_mask,
-		dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]);
+		  dsi_ctrl->irq_info.irq_num, dsi_ctrl->irq_info.irq_stat_mask,
+		  dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]);
 
 	spin_lock_irqsave(&dsi_ctrl->irq_info.irq_lock, flags);
 
@@ -2982,13 +2994,13 @@ void dsi_ctrl_enable_status_interrupt(struct dsi_ctrl *dsi_ctrl,
 
 		/* update hardware mask */
 		dsi_ctrl->irq_info.irq_stat_mask |= BIT(intr_idx);
-		dsi_ctrl->hw.ops.enable_status_interrupts(&dsi_ctrl->hw,
-				dsi_ctrl->irq_info.irq_stat_mask);
+		dsi_ctrl->hw.ops.enable_status_interrupts(
+			&dsi_ctrl->hw, dsi_ctrl->irq_info.irq_stat_mask);
 	}
 
 	if (intr_idx == DSI_SINT_CMD_MODE_DMA_DONE)
-		dsi_ctrl->hw.ops.enable_status_interrupts(&dsi_ctrl->hw,
-				dsi_ctrl->irq_info.irq_stat_mask);
+		dsi_ctrl->hw.ops.enable_status_interrupts(
+			&dsi_ctrl->hw, dsi_ctrl->irq_info.irq_stat_mask);
 	++(dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]);
 
 	if (event_info)
@@ -2998,7 +3010,7 @@ void dsi_ctrl_enable_status_interrupt(struct dsi_ctrl *dsi_ctrl,
 }
 
 void dsi_ctrl_disable_status_interrupt(struct dsi_ctrl *dsi_ctrl,
-		uint32_t intr_idx)
+				       uint32_t intr_idx)
 {
 	unsigned long flags;
 
@@ -3006,20 +3018,22 @@ void dsi_ctrl_disable_status_interrupt(struct dsi_ctrl *dsi_ctrl,
 		return;
 
 	SDE_EVT32_IRQ(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_ENTRY, intr_idx,
-		dsi_ctrl->irq_info.irq_num, dsi_ctrl->irq_info.irq_stat_mask,
-		dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]);
+		      dsi_ctrl->irq_info.irq_num,
+		      dsi_ctrl->irq_info.irq_stat_mask,
+		      dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]);
 
 	spin_lock_irqsave(&dsi_ctrl->irq_info.irq_lock, flags);
 
 	if (dsi_ctrl->irq_info.irq_stat_refcount[intr_idx])
 		if (--(dsi_ctrl->irq_info.irq_stat_refcount[intr_idx]) == 0) {
 			dsi_ctrl->irq_info.irq_stat_mask &= ~BIT(intr_idx);
-			dsi_ctrl->hw.ops.enable_status_interrupts(&dsi_ctrl->hw,
-					dsi_ctrl->irq_info.irq_stat_mask);
+			dsi_ctrl->hw.ops.enable_status_interrupts(
+				&dsi_ctrl->hw,
+				dsi_ctrl->irq_info.irq_stat_mask);
 
 			/* don't need irq if no lines are enabled */
 			if (dsi_ctrl->irq_info.irq_stat_mask == 0 &&
-				dsi_ctrl->irq_info.irq_num != -1)
+			    dsi_ctrl->irq_info.irq_num != -1)
 				disable_irq_nosync(dsi_ctrl->irq_info.irq_num);
 		}
 
@@ -3036,22 +3050,25 @@ int dsi_ctrl_host_timing_update(struct dsi_ctrl *dsi_ctrl)
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
 	if (dsi_ctrl->hw.ops.host_setup)
-		dsi_ctrl->hw.ops.host_setup(&dsi_ctrl->hw,
-				&dsi_ctrl->host_config.common_config);
+		dsi_ctrl->hw.ops.host_setup(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.common_config);
 
 	if (dsi_ctrl->host_config.panel_mode == DSI_OP_CMD_MODE) {
 		if (dsi_ctrl->hw.ops.cmd_engine_setup)
-			dsi_ctrl->hw.ops.cmd_engine_setup(&dsi_ctrl->hw,
-					&dsi_ctrl->host_config.common_config,
-					&dsi_ctrl->host_config.u.cmd_engine);
+			dsi_ctrl->hw.ops.cmd_engine_setup(
+				&dsi_ctrl->hw,
+				&dsi_ctrl->host_config.common_config,
+				&dsi_ctrl->host_config.u.cmd_engine);
 
 		if (dsi_ctrl->hw.ops.setup_cmd_stream)
-			dsi_ctrl->hw.ops.setup_cmd_stream(&dsi_ctrl->hw,
+			dsi_ctrl->hw.ops.setup_cmd_stream(
+				&dsi_ctrl->hw,
 				&dsi_ctrl->host_config.video_timing,
-				&dsi_ctrl->host_config.common_config,
-				0x0, NULL);
+				&dsi_ctrl->host_config.common_config, 0x0,
+				NULL);
 	} else {
-		DSI_CTRL_ERR(dsi_ctrl, "invalid panel mode for resolution switch\n");
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "invalid panel mode for resolution switch\n");
 		mutex_unlock(&dsi_ctrl->ctrl_lock);
 		return -EINVAL;
 	}
@@ -3071,7 +3088,7 @@ int dsi_ctrl_host_timing_update(struct dsi_ctrl *dsi_ctrl)
  * Return: error code.
  */
 int dsi_ctrl_update_host_state(struct dsi_ctrl *dsi_ctrl,
-				enum dsi_ctrl_driver_ops op, bool enable)
+			       enum dsi_ctrl_driver_ops op, bool enable)
 {
 	int rc = 0;
 	u32 state = enable ? 0x1 : 0x0;
@@ -3082,7 +3099,7 @@ int dsi_ctrl_update_host_state(struct dsi_ctrl *dsi_ctrl,
 	rc = dsi_ctrl_check_state(dsi_ctrl, op, state);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		mutex_unlock(&dsi_ctrl->ctrl_lock);
 		return rc;
 	}
@@ -3118,37 +3135,40 @@ int dsi_ctrl_host_init(struct dsi_ctrl *dsi_ctrl, bool skip_op)
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_HOST_INIT, 0x1);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto error;
 	}
 
 	/*
-	 * For continuous splash/trusted vm usecases we omit hw operations
-	 * as bootloader/primary vm takes care of them respectively
-	 */
+   * For continuous splash/trusted vm usecases we omit hw operations
+   * as bootloader/primary vm takes care of them respectively
+   */
 	if (!skip_op) {
-		dsi_ctrl->hw.ops.setup_lane_map(&dsi_ctrl->hw,
-					&dsi_ctrl->host_config.lane_map);
+		dsi_ctrl->hw.ops.setup_lane_map(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.lane_map);
 
-		dsi_ctrl->hw.ops.host_setup(&dsi_ctrl->hw,
-				    &dsi_ctrl->host_config.common_config);
+		dsi_ctrl->hw.ops.host_setup(
+			&dsi_ctrl->hw, &dsi_ctrl->host_config.common_config);
 
 		if (dsi_ctrl->host_config.panel_mode == DSI_OP_CMD_MODE) {
-			dsi_ctrl->hw.ops.cmd_engine_setup(&dsi_ctrl->hw,
-					&dsi_ctrl->host_config.common_config,
-					&dsi_ctrl->host_config.u.cmd_engine);
-
-			dsi_ctrl->hw.ops.setup_cmd_stream(&dsi_ctrl->hw,
-				&dsi_ctrl->host_config.video_timing,
+			dsi_ctrl->hw.ops.cmd_engine_setup(
+				&dsi_ctrl->hw,
 				&dsi_ctrl->host_config.common_config,
-				0x0,
+				&dsi_ctrl->host_config.u.cmd_engine);
+
+			dsi_ctrl->hw.ops.setup_cmd_stream(
+				&dsi_ctrl->hw,
+				&dsi_ctrl->host_config.video_timing,
+				&dsi_ctrl->host_config.common_config, 0x0,
 				NULL);
 		} else {
-			dsi_ctrl->hw.ops.video_engine_setup(&dsi_ctrl->hw,
-					&dsi_ctrl->host_config.common_config,
-					&dsi_ctrl->host_config.u.video_engine);
-			dsi_ctrl->hw.ops.set_video_timing(&dsi_ctrl->hw,
-					  &dsi_ctrl->host_config.video_timing);
+			dsi_ctrl->hw.ops.video_engine_setup(
+				&dsi_ctrl->hw,
+				&dsi_ctrl->host_config.common_config,
+				&dsi_ctrl->host_config.u.video_engine);
+			dsi_ctrl->hw.ops.set_video_timing(
+				&dsi_ctrl->hw,
+				&dsi_ctrl->host_config.video_timing);
 		}
 	}
 
@@ -3156,7 +3176,7 @@ int dsi_ctrl_host_init(struct dsi_ctrl *dsi_ctrl, bool skip_op)
 	dsi_ctrl_toggle_error_interrupt_status(dsi_ctrl, true);
 
 	DSI_CTRL_DEBUG(dsi_ctrl, "Host initialization complete, skip op: %d\n",
-			skip_op);
+		       skip_op);
 	dsi_ctrl_update_state(dsi_ctrl, DSI_CTRL_OP_HOST_INIT, 0x1);
 error:
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
@@ -3294,9 +3314,9 @@ int dsi_ctrl_host_deinit(struct dsi_ctrl *dsi_ctrl)
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_HOST_INIT, 0x0);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		DSI_CTRL_ERR(dsi_ctrl, "driver state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto error;
 	}
 
@@ -3342,22 +3362,22 @@ int dsi_ctrl_update_host_config(struct dsi_ctrl *ctrl,
 	if (!(flags & (DSI_MODE_FLAG_SEAMLESS | DSI_MODE_FLAG_VRR |
 		       DSI_MODE_FLAG_DYN_CLK))) {
 		/*
-		 * for dynamic clk switch case link frequence would
-		 * be updated dsi_display_dynamic_clk_switch().
-		 */
-		rc = dsi_ctrl_update_link_freqs(ctrl, config, clk_handle,
-				mode);
+     * for dynamic clk switch case link frequence would
+     * be updated dsi_display_dynamic_clk_switch().
+     */
+		rc = dsi_ctrl_update_link_freqs(ctrl, config, clk_handle, mode);
 		if (rc) {
-			DSI_CTRL_ERR(ctrl, "failed to update link frequency, rc=%d\n",
-					rc);
+			DSI_CTRL_ERR(ctrl,
+				     "failed to update link frequency, rc=%d\n",
+				     rc);
 			goto error;
 		}
 	}
 
 	DSI_CTRL_DEBUG(ctrl, "Host config updated\n");
 	memcpy(&ctrl->host_config, config, sizeof(ctrl->host_config));
-	ctrl->mode_bounds.x = ctrl->host_config.video_timing.h_active *
-			ctrl->horiz_index;
+	ctrl->mode_bounds.x =
+		ctrl->host_config.video_timing.h_active * ctrl->horiz_index;
 	ctrl->mode_bounds.y = 0;
 	ctrl->mode_bounds.w = ctrl->host_config.video_timing.h_active;
 	ctrl->mode_bounds.h = ctrl->host_config.video_timing.v_active;
@@ -3419,7 +3439,8 @@ int dsi_ctrl_transfer_prepare(struct dsi_ctrl *dsi_ctrl, u32 flags)
 	/* Vote for clocks, gdsc, enable command engine, mask overflow */
 	rc = pm_runtime_resume_and_get(dsi_ctrl->drm_dev->dev);
 	if (rc < 0) {
-		DSI_CTRL_ERR(dsi_ctrl, "failed to enable power resource %d\n", rc);
+		DSI_CTRL_ERR(dsi_ctrl, "failed to enable power resource %d\n",
+			     rc);
 		SDE_EVT32(rc, SDE_EVTLOG_ERROR);
 		return rc;
 	}
@@ -3445,7 +3466,8 @@ int dsi_ctrl_transfer_prepare(struct dsi_ctrl *dsi_ctrl, u32 flags)
 
 	rc = dsi_ctrl_set_cmd_engine_state(dsi_ctrl, DSI_CTRL_ENGINE_ON, false);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "failed to enable command engine: %d\n", rc);
+		DSI_CTRL_ERR(dsi_ctrl, "failed to enable command engine: %d\n",
+			     rc);
 		mutex_unlock(&dsi_ctrl->ctrl_lock);
 		goto error_disable_clks;
 	}
@@ -3491,13 +3513,15 @@ int dsi_ctrl_cmd_transfer(struct dsi_ctrl *dsi_ctrl, struct dsi_cmd_desc *cmd)
 	if (cmd->ctrl_flags & DSI_CTRL_CMD_READ) {
 		rc = dsi_message_rx(dsi_ctrl, cmd);
 		if (rc <= 0)
-			DSI_CTRL_ERR(dsi_ctrl, "read message failed read length, rc=%d\n",
-					rc);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "read message failed read length, rc=%d\n",
+				     rc);
 	} else {
 		rc = dsi_message_tx(dsi_ctrl, cmd);
 		if (rc)
-			DSI_CTRL_ERR(dsi_ctrl, "command msg transfer failed, rc = %d\n",
-					rc);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "command msg transfer failed, rc = %d\n",
+				     rc);
 	}
 
 	cmd->ts = dsi_ctrl->cmd_success_ts;
@@ -3515,10 +3539,12 @@ void dsi_ctrl_transfer_cleanup(struct dsi_ctrl *dsi_ctrl)
 
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 
-	SDE_EVT32(SDE_EVTLOG_FUNC_ENTRY, dsi_ctrl->cell_index, dsi_ctrl->pending_cmd_flags);
+	SDE_EVT32(SDE_EVTLOG_FUNC_ENTRY, dsi_ctrl->cell_index,
+		  dsi_ctrl->pending_cmd_flags);
 
 	/* Command engine disable, unmask overflow, remove vote on clocks and gdsc */
-	rc = dsi_ctrl_set_cmd_engine_state(dsi_ctrl, DSI_CTRL_ENGINE_OFF, false);
+	rc = dsi_ctrl_set_cmd_engine_state(dsi_ctrl, DSI_CTRL_ENGINE_OFF,
+					   false);
 	if (rc)
 		DSI_CTRL_ERR(dsi_ctrl, "failed to disable command engine\n");
 
@@ -3563,7 +3589,8 @@ void dsi_ctrl_transfer_unprepare(struct dsi_ctrl *dsi_ctrl, u32 flags)
 
 	if (flags & DSI_CTRL_CMD_ASYNC_WAIT) {
 		dsi_ctrl->post_tx_queued = true;
-		queue_work(dsi_ctrl->post_cmd_tx_workq, &dsi_ctrl->post_cmd_tx_work);
+		queue_work(dsi_ctrl->post_cmd_tx_workq,
+			   &dsi_ctrl->post_cmd_tx_work);
 	} else {
 		dsi_ctrl->post_tx_queued = false;
 		dsi_ctrl_post_cmd_transfer(dsi_ctrl);
@@ -3602,10 +3629,9 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 
 	timing = &(dsi_ctrl->host_config.video_timing);
 
-	if (timing &&
-		(dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE)) {
+	if (timing && (dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE)) {
 		v_total = timing->v_sync_width + timing->v_back_porch +
-			timing->v_front_porch + timing->v_active;
+			  timing->v_front_porch + timing->v_active;
 		fps = timing->refresh_rate;
 		schedule_line = calculate_schedule_line(dsi_ctrl, flags);
 		line_time = (1000000 / fps) / v_total;
@@ -3616,42 +3642,41 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 		dsi_hw_ops.trigger_command_dma(&dsi_ctrl->hw);
 		if (dsi_ctrl->enable_cmd_dma_stats) {
 			u32 reg = dsi_hw_ops.log_line_count(&dsi_ctrl->hw,
-					dsi_ctrl->cmd_mode);
+							    dsi_ctrl->cmd_mode);
 			dsi_ctrl->cmd_trigger_line = (reg & 0xFFFF);
 			dsi_ctrl->cmd_trigger_frame = ((reg >> 16) & 0xFFFF);
 			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
-					dsi_ctrl->cmd_trigger_line,
-					dsi_ctrl->cmd_trigger_frame);
+				  dsi_ctrl->cmd_trigger_line,
+				  dsi_ctrl->cmd_trigger_frame);
 		}
 	}
 
 	if ((flags & DSI_CTRL_CMD_BROADCAST) &&
-		(flags & DSI_CTRL_CMD_BROADCAST_MASTER)) {
+	    (flags & DSI_CTRL_CMD_BROADCAST_MASTER)) {
 		atomic_set(&dsi_ctrl->dma_irq_trig, 0);
-		dsi_ctrl_enable_status_interrupt(dsi_ctrl,
-					DSI_SINT_CMD_MODE_DMA_DONE, NULL);
+		dsi_ctrl_enable_status_interrupt(
+			dsi_ctrl, DSI_SINT_CMD_MODE_DMA_DONE, NULL);
 		reinit_completion(&dsi_ctrl->irq_info.cmd_dma_done);
 
 		/* trigger command */
 		if ((dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE) &&
-			dsi_hw_ops.schedule_dma_cmd &&
-			(dsi_ctrl->current_state.vid_engine_state ==
-			DSI_CTRL_ENGINE_ON)) {
+		    dsi_hw_ops.schedule_dma_cmd &&
+		    (dsi_ctrl->current_state.vid_engine_state ==
+		     DSI_CTRL_ENGINE_ON)) {
 			/*
-			 * This change reads the video line count from
-			 * MDP_INTF_LINE_COUNT register and checks whether
-			 * DMA trigger happens close to the schedule line.
-			 * If it is not close to the schedule line, then DMA
-			 * command transfer is triggered.
-			 */
+       * This change reads the video line count from
+       * MDP_INTF_LINE_COUNT register and checks whether
+       * DMA trigger happens close to the schedule line.
+       * If it is not close to the schedule line, then DMA
+       * command transfer is triggered.
+       */
 			while (1) {
 				local_irq_save(flag);
-				cur_line =
-				dsi_hw_ops.log_line_count(&dsi_ctrl->hw,
-					dsi_ctrl->cmd_mode);
+				cur_line = dsi_hw_ops.log_line_count(
+					&dsi_ctrl->hw, dsi_ctrl->cmd_mode);
 				if (cur_line <
-					(schedule_line - latency_by_line) ||
-					cur_line > (schedule_line + 1)) {
+					    (schedule_line - latency_by_line) ||
+				    cur_line > (schedule_line + 1)) {
 					dsi_hw_ops.trigger_command_dma(
 						&dsi_ctrl->hw);
 					local_irq_restore(flag);
@@ -3665,12 +3690,12 @@ int dsi_ctrl_cmd_tx_trigger(struct dsi_ctrl *dsi_ctrl, u32 flags)
 
 		if (dsi_ctrl->enable_cmd_dma_stats) {
 			u32 reg = dsi_hw_ops.log_line_count(&dsi_ctrl->hw,
-					dsi_ctrl->cmd_mode);
+							    dsi_ctrl->cmd_mode);
 			dsi_ctrl->cmd_trigger_line = (reg & 0xFFFF);
 			dsi_ctrl->cmd_trigger_frame = ((reg >> 16) & 0xFFFF);
 			SDE_EVT32(dsi_ctrl->cell_index, SDE_EVTLOG_FUNC_CASE1,
-					dsi_ctrl->cmd_trigger_line,
-					dsi_ctrl->cmd_trigger_frame);
+				  dsi_ctrl->cmd_trigger_line,
+				  dsi_ctrl->cmd_trigger_frame);
 		}
 
 		if (flags & DSI_CTRL_CMD_NON_EMBEDDED_MODE) {
@@ -3696,7 +3721,7 @@ void dsi_ctrl_cache_misr(struct dsi_ctrl *dsi_ctrl)
 		return;
 
 	misr = dsi_ctrl->hw.ops.collect_misr(&dsi_ctrl->hw,
-				dsi_ctrl->host_config.panel_mode);
+					     dsi_ctrl->host_config.panel_mode);
 
 	if (misr)
 		dsi_ctrl->misr_cache = misr;
@@ -3711,8 +3736,7 @@ void dsi_ctrl_cache_misr(struct dsi_ctrl *dsi_ctrl)
  *
  * Return: error code.
  */
-int dsi_ctrl_get_host_engine_init_state(struct dsi_ctrl *dsi_ctrl,
-		bool *state)
+int dsi_ctrl_get_host_engine_init_state(struct dsi_ctrl *dsi_ctrl, bool *state)
 {
 	if (!dsi_ctrl || !state) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid Params\n");
@@ -3752,22 +3776,25 @@ int dsi_ctrl_set_power_state(struct dsi_ctrl *dsi_ctrl,
 				  state);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto error;
 	}
 
 	if (state == DSI_CTRL_POWER_VREG_ON) {
 		rc = dsi_ctrl_enable_supplies(dsi_ctrl, true);
 		if (rc) {
-			DSI_CTRL_ERR(dsi_ctrl, "failed to enable voltage supplies, rc=%d\n",
-			       rc);
+			DSI_CTRL_ERR(
+				dsi_ctrl,
+				"failed to enable voltage supplies, rc=%d\n",
+				rc);
 			goto error;
 		}
 	} else if (state == DSI_CTRL_POWER_VREG_OFF) {
 		rc = dsi_ctrl_enable_supplies(dsi_ctrl, false);
 		if (rc) {
-			DSI_CTRL_ERR(dsi_ctrl, "failed to disable vreg supplies, rc=%d\n",
-					rc);
+			DSI_CTRL_ERR(dsi_ctrl,
+				     "failed to disable vreg supplies, rc=%d\n",
+				     rc);
 			goto error;
 		}
 	}
@@ -3790,8 +3817,8 @@ error:
  * Return: error code.
  */
 int dsi_ctrl_set_tpg_state(struct dsi_ctrl *dsi_ctrl, bool on,
-			enum dsi_test_pattern type, u32 init_val,
-			enum dsi_ctrl_tpg_pattern pattern)
+			   enum dsi_test_pattern type, u32 init_val,
+			   enum dsi_ctrl_tpg_pattern pattern)
 {
 	int rc = 0;
 
@@ -3805,18 +3832,20 @@ int dsi_ctrl_set_tpg_state(struct dsi_ctrl *dsi_ctrl, bool on,
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_TPG, on);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto error;
 	}
 
 	if (on) {
 		if (dsi_ctrl->host_config.panel_mode == DSI_OP_VIDEO_MODE)
-			dsi_ctrl->hw.ops.video_test_pattern_setup(&dsi_ctrl->hw, type, init_val);
+			dsi_ctrl->hw.ops.video_test_pattern_setup(
+				&dsi_ctrl->hw, type, init_val);
 		else
-			dsi_ctrl->hw.ops.cmd_test_pattern_setup(&dsi_ctrl->hw, type, init_val, 0x0);
+			dsi_ctrl->hw.ops.cmd_test_pattern_setup(
+				&dsi_ctrl->hw, type, init_val, 0x0);
 	}
 	dsi_ctrl->hw.ops.test_pattern_enable(&dsi_ctrl->hw, on, pattern,
-			dsi_ctrl->host_config.panel_mode);
+					     dsi_ctrl->host_config.panel_mode);
 
 	DSI_CTRL_DEBUG(dsi_ctrl, "Set test pattern state=%d\n", on);
 	dsi_ctrl_update_state(dsi_ctrl, DSI_CTRL_OP_TPG, on);
@@ -3826,7 +3855,8 @@ error:
 }
 
 /**
- * dsi_ctrl_trigger_test_pattern() - trigger a command mode frame update with test pattern
+ * dsi_ctrl_trigger_test_pattern() - trigger a command mode frame update with
+ * test pattern
  * @dsi_ctrl:           DSI controller handle.
  *
  * Trigger a command mode frame update with chosen test pattern.
@@ -3876,7 +3906,7 @@ int dsi_ctrl_set_host_engine_state(struct dsi_ctrl *dsi_ctrl,
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_HOST_ENGINE, state);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto error;
 	}
 
@@ -3931,7 +3961,8 @@ int dsi_ctrl_set_cmd_engine_state(struct dsi_ctrl *dsi_ctrl,
 
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_CMD_ENGINE, state);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n", rc);
+		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
+			     rc);
 		goto error;
 	}
 
@@ -3951,8 +3982,10 @@ int dsi_ctrl_set_cmd_engine_state(struct dsi_ctrl *dsi_ctrl,
 
 	dsi_ctrl_update_state(dsi_ctrl, DSI_CTRL_OP_CMD_ENGINE, state);
 error:
-	DSI_CTRL_DEBUG(dsi_ctrl, "Set cmd engine state:%d, skip_op:%d, enable count: %d\n",
-			state, skip_op, dsi_ctrl->cmd_engine_refcount);
+	DSI_CTRL_DEBUG(
+		dsi_ctrl,
+		"Set cmd engine state:%d, skip_op:%d, enable count: %d\n",
+		state, skip_op, dsi_ctrl->cmd_engine_refcount);
 	return rc;
 }
 
@@ -3985,10 +4018,9 @@ int dsi_ctrl_set_vid_engine_state(struct dsi_ctrl *dsi_ctrl,
 	rc = dsi_ctrl_check_state(dsi_ctrl, DSI_CTRL_OP_VID_ENGINE, state);
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Controller state check failed, rc=%d\n",
-				rc);
+			     rc);
 		goto error;
 	}
-
 
 	if (!skip_op) {
 		on = (state == DSI_CTRL_ENGINE_ON) ? true : false;
@@ -3996,19 +4028,19 @@ int dsi_ctrl_set_vid_engine_state(struct dsi_ctrl *dsi_ctrl,
 		vid_eng_busy = dsi_ctrl->hw.ops.vid_engine_busy(&dsi_ctrl->hw);
 
 		/*
-		 * During ESD check failure, DSI video engine can get stuck
-		 * sending data from display engine. In use cases where GDSC
-		 * toggle does not happen like DP MST connected or secure video
-		 * playback, display does not recover back after ESD failure.
-		 * Perform a reset if video engine is stuck.
-		 */
+     * During ESD check failure, DSI video engine can get stuck
+     * sending data from display engine. In use cases where GDSC
+     * toggle does not happen like DP MST connected or secure video
+     * playback, display does not recover back after ESD failure.
+     * Perform a reset if video engine is stuck.
+     */
 		if (!on && vid_eng_busy)
 			dsi_ctrl->hw.ops.soft_reset(&dsi_ctrl->hw);
 	}
 
 	SDE_EVT32(dsi_ctrl->cell_index, state, skip_op);
 	DSI_CTRL_DEBUG(dsi_ctrl, "Set video engine state:%d, skip_op:%d\n",
-					state, skip_op);
+		       state, skip_op);
 	dsi_ctrl_update_state(dsi_ctrl, DSI_CTRL_OP_VID_ENGINE, state);
 error:
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
@@ -4042,7 +4074,7 @@ int dsi_ctrl_set_ulps(struct dsi_ctrl *dsi_ctrl, bool enable)
 
 	if (rc) {
 		DSI_CTRL_ERR(dsi_ctrl, "Ulps state change(%d) failed, rc=%d\n",
-				enable,	rc);
+			     enable, rc);
 		goto error;
 	}
 	DSI_CTRL_DEBUG(dsi_ctrl, "ULPS state = %d\n", enable);
@@ -4061,8 +4093,8 @@ error:
  *
  * Return: error code.
  */
-int dsi_ctrl_set_clamp_state(struct dsi_ctrl *dsi_ctrl,
-		bool enable, bool ulps_enabled)
+int dsi_ctrl_set_clamp_state(struct dsi_ctrl *dsi_ctrl, bool enable,
+			     bool ulps_enabled)
 {
 	int rc = 0;
 
@@ -4071,9 +4103,9 @@ int dsi_ctrl_set_clamp_state(struct dsi_ctrl *dsi_ctrl,
 		return -EINVAL;
 	}
 
-	if (!dsi_ctrl->hw.ops.clamp_enable ||
-			!dsi_ctrl->hw.ops.clamp_disable) {
-		DSI_CTRL_DEBUG(dsi_ctrl, "No clamp control for DSI controller\n");
+	if (!dsi_ctrl->hw.ops.clamp_enable || !dsi_ctrl->hw.ops.clamp_disable) {
+		DSI_CTRL_DEBUG(dsi_ctrl,
+			       "No clamp control for DSI controller\n");
 		return 0;
 	}
 
@@ -4114,8 +4146,8 @@ int dsi_ctrl_set_clock_source(struct dsi_ctrl *dsi_ctrl,
 
 	rc = dsi_clk_update_parent(source_clks, &dsi_ctrl->clk_info.rcg_clks);
 	if (rc) {
-		DSI_CTRL_ERR(dsi_ctrl, "Failed to update link clk parent, rc=%d\n",
-				rc);
+		DSI_CTRL_ERR(dsi_ctrl,
+			     "Failed to update link clk parent, rc=%d\n", rc);
 		(void)dsi_clk_update_parent(&dsi_ctrl->clk_info.pll_op_clks,
 					    &dsi_ctrl->clk_info.rcg_clks);
 		goto error;
@@ -4139,9 +4171,7 @@ error:
  *
  * Return: error code.
  */
-int dsi_ctrl_setup_misr(struct dsi_ctrl *dsi_ctrl,
-			bool enable,
-			u32 frame_count)
+int dsi_ctrl_setup_misr(struct dsi_ctrl *dsi_ctrl, bool enable, u32 frame_count)
 {
 	if (!dsi_ctrl) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid params\n");
@@ -4154,8 +4184,8 @@ int dsi_ctrl_setup_misr(struct dsi_ctrl *dsi_ctrl,
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 	dsi_ctrl->misr_enable = enable;
 	dsi_ctrl->hw.ops.setup_misr(&dsi_ctrl->hw,
-			dsi_ctrl->host_config.panel_mode,
-			enable, frame_count);
+				    dsi_ctrl->host_config.panel_mode, enable,
+				    frame_count);
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
 	return 0;
 }
@@ -4174,45 +4204,45 @@ u32 dsi_ctrl_collect_misr(struct dsi_ctrl *dsi_ctrl)
 		return 0;
 
 	misr = dsi_ctrl->hw.ops.collect_misr(&dsi_ctrl->hw,
-				dsi_ctrl->host_config.panel_mode);
+					     dsi_ctrl->host_config.panel_mode);
 	if (!misr)
 		misr = dsi_ctrl->misr_cache;
 
 	DSI_CTRL_DEBUG(dsi_ctrl, "cached misr = %x, final = %x\n",
-			dsi_ctrl->misr_cache, misr);
+		       dsi_ctrl->misr_cache, misr);
 
 	return misr;
 }
 
 void dsi_ctrl_mask_error_status_interrupts(struct dsi_ctrl *dsi_ctrl, u32 idx,
-		bool mask_enable)
+					   bool mask_enable)
 {
-	if (!dsi_ctrl || !dsi_ctrl->hw.ops.error_intr_ctrl
-			|| !dsi_ctrl->hw.ops.clear_error_status) {
+	if (!dsi_ctrl || !dsi_ctrl->hw.ops.error_intr_ctrl ||
+	    !dsi_ctrl->hw.ops.clear_error_status) {
 		DSI_CTRL_ERR(dsi_ctrl, "Invalid params\n");
 		return;
 	}
 
 	/*
-	 * Mask DSI error status interrupts and clear error status
-	 * register
-	 */
+   * Mask DSI error status interrupts and clear error status
+   * register
+   */
 	if (idx & BIT(DSI_ERR_INTR_ALL)) {
 		/*
-		 * The behavior of mask_enable is different in ctrl register
-		 * and mask register and hence mask_enable is manipulated for
-		 * selective error interrupt masking vs total error interrupt
-		 * masking.
-		 */
+     * The behavior of mask_enable is different in ctrl register
+     * and mask register and hence mask_enable is manipulated for
+     * selective error interrupt masking vs total error interrupt
+     * masking.
+     */
 
 		dsi_ctrl->hw.ops.error_intr_ctrl(&dsi_ctrl->hw, !mask_enable);
 		dsi_ctrl->hw.ops.clear_error_status(&dsi_ctrl->hw,
-					DSI_ERROR_INTERRUPT_COUNT);
+						    DSI_ERROR_INTERRUPT_COUNT);
 	} else {
 		dsi_ctrl->hw.ops.mask_error_intr(&dsi_ctrl->hw, idx,
-								mask_enable);
+						 mask_enable);
 		dsi_ctrl->hw.ops.clear_error_status(&dsi_ctrl->hw,
-					DSI_ERROR_INTERRUPT_COUNT);
+						    DSI_ERROR_INTERRUPT_COUNT);
 	}
 }
 
@@ -4229,11 +4259,10 @@ void dsi_ctrl_irq_update(struct dsi_ctrl *dsi_ctrl, bool enable)
 
 	mutex_lock(&dsi_ctrl->ctrl_lock);
 	if (enable)
-		dsi_ctrl_enable_status_interrupt(dsi_ctrl,
-					DSI_SINT_ERROR, NULL);
+		dsi_ctrl_enable_status_interrupt(dsi_ctrl, DSI_SINT_ERROR,
+						 NULL);
 	else
-		dsi_ctrl_disable_status_interrupt(dsi_ctrl,
-					DSI_SINT_ERROR);
+		dsi_ctrl_disable_status_interrupt(dsi_ctrl, DSI_SINT_ERROR);
 
 	mutex_unlock(&dsi_ctrl->ctrl_lock);
 }

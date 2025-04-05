@@ -2,13 +2,14 @@
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
-/* Copyright (c) 2022-2023. Qualcomm Innovation Center, Inc. All rights reserved. */
+/* Copyright (c) 2022-2023. Qualcomm Innovation Center, Inc. All rights
+ * reserved. */
 
-#include "msm_vidc_internal.h"
-#include "msm_vidc_driver.h"
 #include "msm_venc.h"
-#include "msm_vidc_platform.h"
 #include "msm_vidc_debug.h"
+#include "msm_vidc_driver.h"
+#include "msm_vidc_internal.h"
+#include "msm_vidc_platform.h"
 
 extern struct msm_vidc_core *g_core;
 
@@ -20,20 +21,22 @@ static bool is_priv_ctrl(u32 id)
 		return true;
 
 	/*
-	 * Treat below standard controls as private because
-	 * we have added custom values to the controls
-	 */
+   * Treat below standard controls as private because
+   * we have added custom values to the controls
+   */
 	switch (id) {
 	/*
-	 * TODO: V4L2_CID_MPEG_VIDEO_HEVC_PROFILE is std ctrl. But
-	 * V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE support is not
-	 * available yet. Hence, make this as private ctrl for time being
-	 */
+   * TODO: V4L2_CID_MPEG_VIDEO_HEVC_PROFILE is std ctrl. But
+   * V4L2_MPEG_VIDEO_HEVC_PROFILE_MAIN_10_STILL_PICTURE support is not
+   * available yet. Hence, make this as private ctrl for time being
+   */
 	case V4L2_CID_MPEG_VIDEO_HEVC_PROFILE:
-		private = true;
+		private
+		= true;
 		break;
 	default:
-		private = false;
+		private
+		= false;
 		break;
 	}
 
@@ -48,49 +51,23 @@ static const char *const mpeg_video_blur_types[] = {
 };
 
 static const char *const mpeg_video_hevc_profile[] = {
-	"Main",
-	"Main Still Picture",
-	"Main 10",
-	"Main 10 Still Picture",
-	NULL,
+	"Main", "Main Still Picture", "Main 10", "Main 10 Still Picture", NULL,
 };
 
-static const char * const av1_profile[] = {
+static const char *const av1_profile[] = {
 	"Main",
 	"High",
 	"Professional",
 	NULL,
 };
 
-static const char * const av1_level[] = {
-	"2.0",
-	"2.1",
-	"2.2",
-	"2.3",
-	"3.0",
-	"3.1",
-	"3.2",
-	"3.3",
-	"4.0",
-	"4.1",
-	"4.2",
-	"4.3",
-	"5.0",
-	"5.1",
-	"5.2",
-	"5.3",
-	"6.0",
-	"6.1",
-	"6.2",
-	"6.3",
-	"7.0",
-	"7.1",
-	"7.2",
-	"7.3",
-	NULL,
+static const char *const av1_level[] = {
+	"2.0", "2.1", "2.2", "2.3", "3.0", "3.1", "3.2", "3.3", "4.0",
+	"4.1", "4.2", "4.3", "5.0", "5.1", "5.2", "5.3", "6.0", "6.1",
+	"6.2", "6.3", "7.0", "7.1", "7.2", "7.3", NULL,
 };
 
-static const char * const av1_tier[] = {
+static const char *const av1_tier[] = {
 	"Main",
 	"High",
 	NULL,
@@ -102,19 +79,21 @@ static const char *const mpeg_video_vidc_ir_type[] = {
 	NULL,
 };
 
-static const char * const *msm_vidc_get_qmenu_type(
-		struct msm_vidc_inst *inst, u32 cap_id)
+static const char *const *msm_vidc_get_qmenu_type(struct msm_vidc_inst *inst,
+						  u32 cap_id)
 {
 	switch (cap_id) {
 	case BLUR_TYPES:
 		return mpeg_video_blur_types;
 	case PROFILE:
-		if (inst->codec == MSM_VIDC_HEVC || inst->codec == MSM_VIDC_HEIC) {
+		if (inst->codec == MSM_VIDC_HEVC ||
+		    inst->codec == MSM_VIDC_HEIC) {
 			return mpeg_video_hevc_profile;
 		} else if (inst->codec == MSM_VIDC_AV1) {
 			return av1_profile;
 		} else {
-			i_vpr_e(inst, "%s: invalid codec type %d for cap id %d\n",
+			i_vpr_e(inst,
+				"%s: invalid codec type %d for cap id %d\n",
 				__func__, inst->codec, cap_id);
 			return NULL;
 		}
@@ -122,7 +101,8 @@ static const char * const *msm_vidc_get_qmenu_type(
 		if (inst->codec == MSM_VIDC_AV1) {
 			return av1_level;
 		} else {
-			i_vpr_e(inst, "%s: invalid codec type %d for cap id %d\n",
+			i_vpr_e(inst,
+				"%s: invalid codec type %d for cap id %d\n",
 				__func__, inst->codec, cap_id);
 			return NULL;
 		}
@@ -153,7 +133,7 @@ bool is_valid_cap_id(enum msm_vidc_inst_capability_type cap_id)
 }
 
 bool is_valid_cap(struct msm_vidc_inst *inst,
-		enum msm_vidc_inst_capability_type cap_id)
+		  enum msm_vidc_inst_capability_type cap_id)
 {
 	if (cap_id <= INST_CAP_NONE || cap_id >= INST_CAP_MAX)
 		return false;
@@ -161,8 +141,9 @@ bool is_valid_cap(struct msm_vidc_inst *inst,
 	return !!inst->capabilities[cap_id].cap_id;
 }
 
-static inline bool is_all_childrens_visited(
-	struct msm_vidc_inst_cap *cap, bool lookup[INST_CAP_MAX]) {
+static inline bool is_all_childrens_visited(struct msm_vidc_inst_cap *cap,
+					    bool lookup[INST_CAP_MAX])
+{
 	bool found = true;
 	int i;
 
@@ -178,13 +159,14 @@ static inline bool is_all_childrens_visited(
 	return found;
 }
 
-static int add_node_list(struct list_head *list, enum msm_vidc_inst_capability_type cap_id)
+static int add_node_list(struct list_head *list,
+			 enum msm_vidc_inst_capability_type cap_id)
 {
 	int rc = 0;
 	struct msm_vidc_inst_cap_entry *entry = NULL;
 
 	rc = msm_vidc_vmem_alloc(sizeof(struct msm_vidc_inst_cap_entry),
-			(void **)&entry, __func__);
+				 (void **)&entry, __func__);
 	if (rc)
 		return rc;
 
@@ -195,8 +177,8 @@ static int add_node_list(struct list_head *list, enum msm_vidc_inst_capability_t
 	return rc;
 }
 
-static int add_node(
-	struct list_head *list, struct msm_vidc_inst_cap *lcap, bool lookup[INST_CAP_MAX])
+static int add_node(struct list_head *list, struct msm_vidc_inst_cap *lcap,
+		    bool lookup[INST_CAP_MAX])
 {
 	int rc = 0;
 
@@ -211,10 +193,9 @@ static int add_node(
 	return 0;
 }
 
-
-
-static int msm_vidc_add_capid_to_fw_list(struct msm_vidc_inst *inst,
-	enum msm_vidc_inst_capability_type cap_id)
+static int
+msm_vidc_add_capid_to_fw_list(struct msm_vidc_inst *inst,
+			      enum msm_vidc_inst_capability_type cap_id)
 {
 	struct msm_vidc_inst_cap_entry *entry = NULL;
 	int rc = 0;
@@ -237,7 +218,7 @@ static int msm_vidc_add_capid_to_fw_list(struct msm_vidc_inst *inst,
 }
 
 static int msm_vidc_add_children(struct msm_vidc_inst *inst,
-	enum msm_vidc_inst_capability_type cap_id)
+				 enum msm_vidc_inst_capability_type cap_id)
 {
 	struct msm_vidc_inst_cap *cap;
 	int i, rc = 0;
@@ -260,8 +241,8 @@ static int msm_vidc_add_children(struct msm_vidc_inst *inst,
 }
 
 static int msm_vidc_adjust_cap(struct msm_vidc_inst *inst,
-	enum msm_vidc_inst_capability_type cap_id,
-	struct v4l2_ctrl *ctrl, const char *func)
+			       enum msm_vidc_inst_capability_type cap_id,
+			       struct v4l2_ctrl *ctrl, const char *func)
 {
 	struct msm_vidc_inst_cap *cap;
 	int rc = 0;
@@ -278,14 +259,16 @@ static int msm_vidc_adjust_cap(struct msm_vidc_inst *inst,
 	/* check if adjust supported */
 	if (!cap->adjust) {
 		if (ctrl)
-			msm_vidc_update_cap_value(inst, cap_id, ctrl->val, func);
+			msm_vidc_update_cap_value(inst, cap_id, ctrl->val,
+						  func);
 		return 0;
 	}
 
 	/* call adjust */
 	rc = cap->adjust(inst, ctrl);
 	if (rc) {
-		i_vpr_e(inst, "%s: adjust cap failed for %s\n", func, cap_name(cap_id));
+		i_vpr_e(inst, "%s: adjust cap failed for %s\n", func,
+			cap_name(cap_id));
 		return rc;
 	}
 
@@ -293,8 +276,8 @@ static int msm_vidc_adjust_cap(struct msm_vidc_inst *inst,
 }
 
 static int msm_vidc_set_cap(struct msm_vidc_inst *inst,
-	enum msm_vidc_inst_capability_type cap_id,
-	const char *func)
+			    enum msm_vidc_inst_capability_type cap_id,
+			    const char *func)
 {
 	struct msm_vidc_inst_cap *cap;
 	int rc = 0;
@@ -315,15 +298,18 @@ static int msm_vidc_set_cap(struct msm_vidc_inst *inst,
 	/* call set */
 	rc = cap->set(inst, cap_id);
 	if (rc) {
-		i_vpr_e(inst, "%s: set cap failed for %s\n", func, cap_name(cap_id));
+		i_vpr_e(inst, "%s: set cap failed for %s\n", func,
+			cap_name(cap_id));
 		return rc;
 	}
 
 	return rc;
 }
 
-static int msm_vidc_adjust_dynamic_property(struct msm_vidc_inst *inst,
-	enum msm_vidc_inst_capability_type cap_id, struct v4l2_ctrl *ctrl)
+static int
+msm_vidc_adjust_dynamic_property(struct msm_vidc_inst *inst,
+				 enum msm_vidc_inst_capability_type cap_id,
+				 struct v4l2_ctrl *ctrl)
 {
 	struct msm_vidc_inst_cap_entry *entry = NULL, *temp = NULL;
 	struct msm_vidc_inst_cap *cap;
@@ -353,9 +339,9 @@ static int msm_vidc_adjust_dynamic_property(struct msm_vidc_inst *inst,
 
 	if (cap[cap_id].value == prev_value && cap_id == GOP_SIZE) {
 		/*
-		 * Ignore setting same GOP size value to firmware to avoid
-		 * unnecessary generation of IDR frame.
-		 */
+     * Ignore setting same GOP size value to firmware to avoid
+     * unnecessary generation of IDR frame.
+     */
 		return 0;
 	}
 
@@ -379,7 +365,8 @@ static int msm_vidc_adjust_dynamic_property(struct msm_vidc_inst *inst,
 		}
 
 		if (!cap[entry->cap_id].adjust) {
-			i_vpr_e(inst, "%s: child cap must have ajdust function %s\n",
+			i_vpr_e(inst,
+				"%s: child cap must have ajdust function %s\n",
 				__func__, cap_name(entry->cap_id));
 			rc = -EINVAL;
 			goto error;
@@ -416,12 +403,14 @@ static int msm_vidc_adjust_dynamic_property(struct msm_vidc_inst *inst,
 	return 0;
 error:
 	list_for_each_entry_safe(entry, temp, &inst->children_list, list) {
-		i_vpr_e(inst, "%s: child list: %s\n", __func__, cap_name(entry->cap_id));
+		i_vpr_e(inst, "%s: child list: %s\n", __func__,
+			cap_name(entry->cap_id));
 		list_del_init(&entry->list);
 		msm_vidc_vmem_free((void **)&entry);
 	}
 	list_for_each_entry_safe(entry, temp, &inst->firmware_list, list) {
-		i_vpr_e(inst, "%s: fw list: %s\n", __func__, cap_name(entry->cap_id));
+		i_vpr_e(inst, "%s: fw list: %s\n", __func__,
+			cap_name(entry->cap_id));
 		list_del_init(&entry->list);
 		msm_vidc_vmem_free((void **)&entry);
 	}
@@ -448,7 +437,8 @@ static int msm_vidc_set_dynamic_property(struct msm_vidc_inst *inst)
 	return 0;
 error:
 	list_for_each_entry_safe(entry, temp, &inst->firmware_list, list) {
-		i_vpr_e(inst, "%s: fw list: %s\n", __func__, cap_name(entry->cap_id));
+		i_vpr_e(inst, "%s: fw list: %s\n", __func__,
+			cap_name(entry->cap_id));
 		list_del_init(&entry->list);
 		msm_vidc_vmem_free((void **)&entry);
 	}
@@ -471,7 +461,7 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 	struct msm_vidc_inst_cap *cap;
 	struct msm_vidc_core *core;
 	int idx = 0;
-	struct v4l2_ctrl_config ctrl_cfg = {0};
+	struct v4l2_ctrl_config ctrl_cfg = { 0 };
 	int num_ctrls = 0, ctrl_idx = 0;
 	u64 codecs_count, step_or_mask;
 
@@ -495,13 +485,13 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 
 	if (init) {
 		codecs_count = is_encode_session(inst) ?
-			core->enc_codecs_count :
-			core->dec_codecs_count;
+				       core->enc_codecs_count :
+				       core->dec_codecs_count;
 		rc = v4l2_ctrl_handler_init(&inst->ctrl_handler,
-			INST_CAP_MAX * codecs_count);
+					    INST_CAP_MAX * codecs_count);
 		if (rc) {
 			i_vpr_e(inst, "control handler init failed, %d\n",
-					inst->ctrl_handler.error);
+				inst->ctrl_handler.error);
 			goto error;
 		}
 	}
@@ -513,46 +503,43 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 			continue;
 
 		if (ctrl_idx >= num_ctrls) {
-			i_vpr_e(inst,
-				"%s: invalid ctrl %#x, max allowed %d\n",
-				__func__, cap[idx].v4l2_id,
-				num_ctrls);
+			i_vpr_e(inst, "%s: invalid ctrl %#x, max allowed %d\n",
+				__func__, cap[idx].v4l2_id, num_ctrls);
 			rc = -EINVAL;
 			goto error;
 		}
 		i_vpr_l(inst,
-			"%s: cap[%d] %24s, value %d min %d max %d step_or_mask %#x flags %#x v4l2_id %#x hfi_id %#x\n",
-			__func__, idx, cap_name(idx),
-			cap[idx].value,
-			cap[idx].min,
-			cap[idx].max,
-			cap[idx].step_or_mask,
-			cap[idx].flags,
-			cap[idx].v4l2_id,
-			cap[idx].hfi_id);
+			"%s: cap[%d] %24s, value %d min %d max %d step_or_mask %#x flags "
+			"%#x v4l2_id %#x hfi_id %#x\n",
+			__func__, idx, cap_name(idx), cap[idx].value,
+			cap[idx].min, cap[idx].max, cap[idx].step_or_mask,
+			cap[idx].flags, cap[idx].v4l2_id, cap[idx].hfi_id);
 
 		memset(&ctrl_cfg, 0, sizeof(struct v4l2_ctrl_config));
 
 		/*
-		 * few controls might have been already initialized in instance initialization,
-		 * so modify the range values for them instead of initializing them again
-		 */
+     * few controls might have been already initialized in instance
+     * initialization, so modify the range values for them instead of
+     * initializing them again
+     */
 		if (!init) {
 			struct msm_vidc_ctrl_data ctrl_priv_data;
 
-			ctrl = v4l2_ctrl_find(&inst->ctrl_handler, cap[idx].v4l2_id);
+			ctrl = v4l2_ctrl_find(&inst->ctrl_handler,
+					      cap[idx].v4l2_id);
 			if (ctrl) {
-				step_or_mask = (cap[idx].flags & CAP_FLAG_MENU) ?
-					~(cap[idx].step_or_mask) :
-					cap[idx].step_or_mask;
-				memset(&ctrl_priv_data, 0, sizeof(struct msm_vidc_ctrl_data));
+				step_or_mask =
+					(cap[idx].flags & CAP_FLAG_MENU) ?
+						~(cap[idx].step_or_mask) :
+						cap[idx].step_or_mask;
+				memset(&ctrl_priv_data, 0,
+				       sizeof(struct msm_vidc_ctrl_data));
 				ctrl_priv_data.skip_s_ctrl = true;
 				ctrl->priv = &ctrl_priv_data;
-				v4l2_ctrl_modify_range(ctrl,
-					cap[idx].min,
-					cap[idx].max,
-					step_or_mask,
-					cap[idx].value);
+				v4l2_ctrl_modify_range(ctrl, cap[idx].min,
+						       cap[idx].max,
+						       step_or_mask,
+						       cap[idx].value);
 				/* reset private data to null to ensure s_ctrl not skipped */
 				ctrl->priv = NULL;
 				continue;
@@ -586,11 +573,10 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 			if (ctrl_cfg.type == V4L2_CTRL_TYPE_MENU) {
 				ctrl_cfg.menu_skip_mask =
 					~(cap[idx].step_or_mask);
-				ctrl_cfg.qmenu = msm_vidc_get_qmenu_type(inst,
-					cap[idx].cap_id);
+				ctrl_cfg.qmenu = msm_vidc_get_qmenu_type(
+					inst, cap[idx].cap_id);
 			} else {
-				ctrl_cfg.step =
-					cap[idx].step_or_mask;
+				ctrl_cfg.step = cap[idx].step_or_mask;
 			}
 			ctrl_cfg.name = cap_name(cap[idx].cap_id);
 			if (!ctrl_cfg.name) {
@@ -600,29 +586,25 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 				goto error;
 			}
 			ctrl = v4l2_ctrl_new_custom(&inst->ctrl_handler,
-					&ctrl_cfg, NULL);
+						    &ctrl_cfg, NULL);
 		} else {
 			if (cap[idx].flags & CAP_FLAG_MENU) {
 				ctrl = v4l2_ctrl_new_std_menu(
 					&inst->ctrl_handler,
-					core->v4l2_ctrl_ops,
-					cap[idx].v4l2_id,
-					cap[idx].max,
-					~(cap[idx].step_or_mask),
+					core->v4l2_ctrl_ops, cap[idx].v4l2_id,
+					cap[idx].max, ~(cap[idx].step_or_mask),
 					cap[idx].value);
 			} else {
-				ctrl = v4l2_ctrl_new_std(&inst->ctrl_handler,
-					core->v4l2_ctrl_ops,
-					cap[idx].v4l2_id,
-					cap[idx].min,
-					cap[idx].max,
-					cap[idx].step_or_mask,
-					cap[idx].value);
+				ctrl = v4l2_ctrl_new_std(
+					&inst->ctrl_handler,
+					core->v4l2_ctrl_ops, cap[idx].v4l2_id,
+					cap[idx].min, cap[idx].max,
+					cap[idx].step_or_mask, cap[idx].value);
 			}
 		}
 		if (!ctrl) {
-			i_vpr_e(inst, "%s: invalid ctrl %#x cap %24s\n", __func__,
-				cap[idx].v4l2_id, cap_name(idx));
+			i_vpr_e(inst, "%s: invalid ctrl %#x cap %24s\n",
+				__func__, cap[idx].v4l2_id, cap_name(idx));
 			rc = -EINVAL;
 			goto error;
 		}
@@ -631,8 +613,7 @@ int msm_vidc_ctrl_handler_init(struct msm_vidc_inst *inst, bool init)
 		if (rc) {
 			i_vpr_e(inst,
 				"error adding ctrl (%#x) to ctrl handle, %d\n",
-				cap[idx].v4l2_id,
-				inst->ctrl_handler.error);
+				cap[idx].v4l2_id, inst->ctrl_handler.error);
 			goto error;
 		}
 
@@ -652,8 +633,8 @@ error:
 	return rc;
 }
 
-static int msm_vidc_update_buffer_count_if_needed(struct msm_vidc_inst *inst,
-	enum msm_vidc_inst_capability_type cap_id)
+static int msm_vidc_update_buffer_count_if_needed(
+	struct msm_vidc_inst *inst, enum msm_vidc_inst_capability_type cap_id)
 {
 	int rc = 0;
 	bool update_input_port = false, update_output_port = false;
@@ -726,8 +707,7 @@ int msm_v4l2_op_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 		return -EINVAL;
 	}
 
-	inst = container_of(ctrl->handler,
-			    struct msm_vidc_inst, ctrl_handler);
+	inst = container_of(ctrl->handler, struct msm_vidc_inst, ctrl_handler);
 	inst = get_inst_ref(g_core, inst);
 	if (!inst) {
 		d_vpr_e("%s: could not find inst for ctrl %s id %#x\n",
@@ -739,12 +719,12 @@ int msm_v4l2_op_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 
 	rc = msm_vidc_get_control(inst, ctrl);
 	if (rc) {
-		i_vpr_e(inst, "%s: failed for ctrl %s id %#x\n",
-			__func__, ctrl->name, ctrl->id);
+		i_vpr_e(inst, "%s: failed for ctrl %s id %#x\n", __func__,
+			ctrl->name, ctrl->id);
 		goto unlock;
 	} else {
-		i_vpr_h(inst, "%s: ctrl %s id %#x, value %d\n",
-			__func__, ctrl->name, ctrl->id, ctrl->val);
+		i_vpr_h(inst, "%s: ctrl %s id %#x, value %d\n", __func__,
+			ctrl->name, ctrl->id, ctrl->val);
 	}
 
 unlock:
@@ -754,8 +734,10 @@ unlock:
 	return rc;
 }
 
-static int msm_vidc_update_static_property(struct msm_vidc_inst *inst,
-	enum msm_vidc_inst_capability_type cap_id, struct v4l2_ctrl *ctrl)
+static int
+msm_vidc_update_static_property(struct msm_vidc_inst *inst,
+				enum msm_vidc_inst_capability_type cap_id,
+				struct v4l2_ctrl *ctrl)
 {
 	int rc = 0;
 
@@ -849,12 +831,13 @@ int msm_vidc_s_ctrl(struct msm_vidc_inst *inst, struct v4l2_ctrl *ctrl)
 
 	cap = &inst->capabilities[0];
 
-	i_vpr_h(inst, FMT_STRING_SET_CTRL,
-		__func__, state_name(inst->state), ctrl->name, ctrl->id, ctrl->val);
+	i_vpr_h(inst, FMT_STRING_SET_CTRL, __func__, state_name(inst->state),
+		ctrl->name, ctrl->id, ctrl->val);
 
 	cap_id = msm_vidc_get_cap_id(inst, ctrl->id);
 	if (!is_valid_cap_id(cap_id)) {
-		i_vpr_e(inst, "%s: invalid cap_id for ctrl %s\n", __func__, ctrl->name);
+		i_vpr_e(inst, "%s: invalid cap_id for ctrl %s\n", __func__,
+			ctrl->name);
 		return -EINVAL;
 	}
 
@@ -893,10 +876,10 @@ int msm_v4l2_op_s_ctrl(struct v4l2_ctrl *ctrl)
 	}
 
 	/*
-	 * v4l2_ctrl_modify_range may internally call s_ctrl
-	 * which will again try to acquire lock leading to deadlock,
-	 * Add check to avoid such scenario.
-	 */
+   * v4l2_ctrl_modify_range may internally call s_ctrl
+   * which will again try to acquire lock leading to deadlock,
+   * Add check to avoid such scenario.
+   */
 	priv_ctrl_data = ctrl->priv ? ctrl->priv : NULL;
 	if (priv_ctrl_data && priv_ctrl_data->skip_s_ctrl) {
 		d_vpr_l("%s: skip s_ctrl (%s)\n", __func__, ctrl->name);
@@ -936,7 +919,8 @@ int msm_vidc_prepare_dependency_list(struct msm_vidc_inst *inst)
 	cap = &inst->capabilities[0];
 
 	if (!list_empty(&inst->caps_list)) {
-		i_vpr_h(inst, "%s: dependency list already prepared\n", __func__);
+		i_vpr_h(inst, "%s: dependency list already prepared\n",
+			__func__);
 		return 0;
 	}
 
@@ -954,7 +938,8 @@ int msm_vidc_prepare_dependency_list(struct msm_vidc_inst *inst)
 
 		/* sanitize cap value */
 		if (i != lcap->cap_id) {
-			i_vpr_e(inst, "%s: cap id mismatch. expected %s, actual %s\n",
+			i_vpr_e(inst,
+				"%s: cap id mismatch. expected %s, actual %s\n",
 				__func__, cap_name(i), cap_name(lcap->cap_id));
 			rc = -EINVAL;
 			goto error;
@@ -989,9 +974,9 @@ int msm_vidc_prepare_dependency_list(struct msm_vidc_inst *inst)
 		temp_cap = &cap[entry->cap_id];
 
 		/**
-		 * if all child are visited then add this entry to
-		 * leaf list else add it to the end of optional list.
-		 */
+     * if all child are visited then add this entry to
+     * leaf list else add it to the end of optional list.
+     */
 		if (is_all_childrens_visited(temp_cap, leaf_visited)) {
 			list_add(&entry->list, &leaf_list);
 			leaf_visited[entry->cap_id] = true;
@@ -1004,7 +989,8 @@ int msm_vidc_prepare_dependency_list(struct msm_vidc_inst *inst)
 		/* detect loop */
 		if (!tmp_count) {
 			if (num_nodes == tmp_count_total) {
-				i_vpr_e(inst, "%s: loop detected in subgraph %d\n",
+				i_vpr_e(inst,
+					"%s: loop detected in subgraph %d\n",
 					__func__, num_nodes);
 				rc = -EINVAL;
 				goto error;
@@ -1027,12 +1013,14 @@ int msm_vidc_prepare_dependency_list(struct msm_vidc_inst *inst)
 	return 0;
 error:
 	list_for_each_entry_safe(entry, temp, &opt_list, list) {
-		i_vpr_e(inst, "%s: opt_list: %s\n", __func__, cap_name(entry->cap_id));
+		i_vpr_e(inst, "%s: opt_list: %s\n", __func__,
+			cap_name(entry->cap_id));
 		list_del_init(&entry->list);
 		msm_vidc_vmem_free((void **)&entry);
 	}
 	list_for_each_entry_safe(entry, temp, &leaf_list, list) {
-		i_vpr_e(inst, "%s: leaf_list: %s\n", __func__, cap_name(entry->cap_id));
+		i_vpr_e(inst, "%s: leaf_list: %s\n", __func__,
+			cap_name(entry->cap_id));
 		list_del_init(&entry->list);
 		msm_vidc_vmem_free((void **)&entry);
 	}

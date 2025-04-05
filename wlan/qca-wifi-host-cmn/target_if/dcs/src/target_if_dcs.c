@@ -20,12 +20,12 @@
  * This file provide definition for APIs registered through lmac Tx Ops
  */
 
-#include <wmi_unified_api.h>
-#include <wmi_unified_priv.h>
-#include <wmi_unified_dcs_api.h>
-#include <init_deinit_lmac.h>
-#include "wlan_dcs_tgt_api.h"
 #include "target_if_dcs.h"
+#include "wlan_dcs_tgt_api.h"
+#include <init_deinit_lmac.h>
+#include <wmi_unified_api.h>
+#include <wmi_unified_dcs_api.h>
+#include <wmi_unified_priv.h>
 
 /**
  * target_if_dcs_interference_event_handler() - function to handle dcs event
@@ -36,8 +36,7 @@
  *
  * Return: status of operation.
  */
-static int target_if_dcs_interference_event_handler(ol_scn_t scn,
-						    uint8_t *data,
+static int target_if_dcs_interference_event_handler(ol_scn_t scn, uint8_t *data,
 						    uint32_t datalen)
 {
 	QDF_STATUS status;
@@ -68,23 +67,22 @@ static int target_if_dcs_interference_event_handler(ol_scn_t scn,
 		return -EINVAL;
 	}
 
-	if (wmi_extract_dcs_interference_type(wmi_handle, data,
-					      &ev.dcs_param) !=
-	    QDF_STATUS_SUCCESS) {
+	if (wmi_extract_dcs_interference_type(
+		    wmi_handle, data, &ev.dcs_param) != QDF_STATUS_SUCCESS) {
 		target_if_err("Unable to extract dcs interference type");
 		return -EINVAL;
 	}
 
 	if (ev.dcs_param.interference_type == WLAN_HOST_DCS_WLANIM &&
 	    wmi_extract_dcs_im_tgt_stats(wmi_handle, data, &ev.wlan_stat) !=
-	    QDF_STATUS_SUCCESS) {
+		    QDF_STATUS_SUCCESS) {
 		target_if_err("Unable to extract WLAN IM stats");
 		return -EINVAL;
 	}
 
 	if (ev.dcs_param.interference_type == WLAN_HOST_DCS_AWGNIM &&
 	    wmi_extract_dcs_awgn_info(wmi_handle, data, &ev.awgn_info) !=
-	    QDF_STATUS_SUCCESS) {
+		    QDF_STATUS_SUCCESS) {
 		target_if_err("Unable to extract AWGN info");
 		return -EINVAL;
 	}
@@ -112,10 +110,8 @@ target_if_dcs_register_event_handler(struct wlan_objmgr_psoc *psoc)
 	}
 
 	ret_val = wmi_unified_register_event_handler(
-			wmi_handle,
-			wmi_dcs_interference_event_id,
-			target_if_dcs_interference_event_handler,
-			WMI_RX_WORK_CTX);
+		wmi_handle, wmi_dcs_interference_event_id,
+		target_if_dcs_interference_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(ret_val))
 		target_if_err("Failed to register dcs interference event cb");
 
@@ -152,9 +148,9 @@ target_if_dcs_unregister_event_handler(struct wlan_objmgr_psoc *psoc)
  *
  * Return: QDF_STATUS_SUCCESS on success, QDF_STATUS_E_** on error
  */
-static QDF_STATUS
-target_if_dcs_cmd_send(struct wlan_objmgr_psoc *psoc, uint32_t pdev_id,
-		       bool is_host_pdev_id, uint32_t dcs_enable)
+static QDF_STATUS target_if_dcs_cmd_send(struct wlan_objmgr_psoc *psoc,
+					 uint32_t pdev_id, bool is_host_pdev_id,
+					 uint32_t dcs_enable)
 {
 	QDF_STATUS ret;
 	struct wmi_unified *wmi_handle;
@@ -170,8 +166,8 @@ target_if_dcs_cmd_send(struct wlan_objmgr_psoc *psoc, uint32_t pdev_id,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_send_dcs_pdev_param(wmi_handle, pdev_id,
-				      is_host_pdev_id, dcs_enable);
+	ret = wmi_send_dcs_pdev_param(wmi_handle, pdev_id, is_host_pdev_id,
+				      dcs_enable);
 	if (QDF_IS_STATUS_ERROR(ret))
 		target_if_err("wmi dcs cmd send failed, ret: %d", ret);
 
@@ -194,12 +190,9 @@ target_if_dcs_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	dcs_tx_ops->dcs_attach =
-		target_if_dcs_register_event_handler;
-	dcs_tx_ops->dcs_detach =
-		target_if_dcs_unregister_event_handler;
+	dcs_tx_ops->dcs_attach = target_if_dcs_register_event_handler;
+	dcs_tx_ops->dcs_detach = target_if_dcs_unregister_event_handler;
 	dcs_tx_ops->dcs_cmd_send = target_if_dcs_cmd_send;
 
 	return QDF_STATUS_SUCCESS;
 }
-

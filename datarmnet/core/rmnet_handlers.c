@@ -14,26 +14,25 @@
  *
  */
 
-#include <linux/netdevice.h>
-#include <linux/netdev_features.h>
-#include <linux/if_arp.h>
-#include <linux/ip.h>
-#include <linux/ipv6.h>
-#include <linux/inet.h>
-#include <net/sock.h>
-#include <linux/tracepoint.h>
-#include "rmnet_private.h"
-#include "rmnet_config.h"
-#include "rmnet_vnd.h"
-#include "rmnet_map.h"
 #include "rmnet_handlers.h"
+#include "rmnet_config.h"
 #include "rmnet_descriptor.h"
 #include "rmnet_ll.h"
+#include "rmnet_map.h"
 #include "rmnet_module.h"
+#include "rmnet_private.h"
+#include "rmnet_vnd.h"
+#include <linux/if_arp.h>
+#include <linux/inet.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
+#include <linux/netdev_features.h>
+#include <linux/netdevice.h>
+#include <linux/tracepoint.h>
+#include <net/sock.h>
 
-
-#include "rmnet_qmi.h"
 #include "qmi_rmnet.h"
+#include "rmnet_qmi.h"
 
 #define RMNET_IP_VERSION_4 0x40
 #define RMNET_IP_VERSION_6 0x60
@@ -56,8 +55,6 @@ EXPORT_TRACEPOINT_SYMBOL(rmnet_freq_update);
 EXPORT_TRACEPOINT_SYMBOL(rmnet_freq_reset);
 EXPORT_TRACEPOINT_SYMBOL(rmnet_freq_boost);
 EXPORT_TRACEPOINT_SYMBOL(print_icmp_rx);
-
-
 
 /* Helper Functions */
 
@@ -98,9 +95,8 @@ int (*rmnet_shs_skb_entry)(struct sk_buff *skb,
 EXPORT_SYMBOL(rmnet_shs_skb_entry);
 
 int (*rmnet_shs_switch)(struct sk_buff *skb,
-			   struct rmnet_shs_clnt_s *cfg) __rcu __read_mostly;
+			struct rmnet_shs_clnt_s *cfg) __rcu __read_mostly;
 EXPORT_SYMBOL(rmnet_shs_switch);
-
 
 /* Shs hook handler for work queue*/
 int (*rmnet_shs_skb_entry_wq)(struct sk_buff *skb,
@@ -109,14 +105,13 @@ EXPORT_SYMBOL(rmnet_shs_skb_entry_wq);
 
 /* Generic handler */
 
-void
-rmnet_deliver_skb(struct sk_buff *skb, struct rmnet_port *port)
+void rmnet_deliver_skb(struct sk_buff *skb, struct rmnet_port *port)
 {
 	int (*rmnet_shs_stamp)(struct sk_buff *skb,
 			       struct rmnet_shs_clnt_s *cfg);
 
-	trace_rmnet_low(RMNET_MODULE, RMNET_DLVR_SKB, 0xDEF, 0xDEF,
-			0xDEF, 0xDEF, (void *)skb, NULL);
+	trace_rmnet_low(RMNET_MODULE, RMNET_DLVR_SKB, 0xDEF, 0xDEF, 0xDEF,
+			0xDEF, (void *)skb, NULL);
 	skb_reset_network_header(skb);
 	rmnet_vnd_rx_fixup(skb->dev, skb->len);
 
@@ -145,16 +140,15 @@ skip_shs:
 EXPORT_SYMBOL(rmnet_deliver_skb);
 
 /* Important to note, port cannot be used here if it has gone stale */
-void
-rmnet_deliver_skb_wq(struct sk_buff *skb, struct rmnet_port *port,
-		     enum rmnet_packet_context ctx)
+void rmnet_deliver_skb_wq(struct sk_buff *skb, struct rmnet_port *port,
+			  enum rmnet_packet_context ctx)
 {
 	int (*rmnet_shs_stamp)(struct sk_buff *skb,
 			       struct rmnet_shs_clnt_s *cfg);
 	struct rmnet_priv *priv = netdev_priv(skb->dev);
 
-	trace_rmnet_low(RMNET_MODULE, RMNET_DLVR_SKB, 0xDEF, 0xDEF,
-			0xDEF, 0xDEF, (void *)skb, NULL);
+	trace_rmnet_low(RMNET_MODULE, RMNET_DLVR_SKB, 0xDEF, 0xDEF, 0xDEF,
+			0xDEF, (void *)skb, NULL);
 	skb_reset_transport_header(skb);
 	skb_reset_network_header(skb);
 	rmnet_vnd_rx_fixup(skb->dev, skb->len);
@@ -163,8 +157,8 @@ rmnet_deliver_skb_wq(struct sk_buff *skb, struct rmnet_port *port,
 	skb_set_mac_header(skb, 0);
 
 	/* packets coming from work queue context due to packet flush timer
-	 * must go through the special workqueue path in SHS driver
-	 */
+   * must go through the special workqueue path in SHS driver
+   */
 	rcu_read_lock();
 	rmnet_shs_stamp = (!ctx) ? rcu_dereference(rmnet_shs_skb_entry) :
 				   rcu_dereference(rmnet_shs_skb_entry_wq);
@@ -196,9 +190,8 @@ static void rmnet_deliver_skb_list(struct sk_buff_head *head,
 
 /* MAP handler */
 
-static void
-__rmnet_map_ingress_handler(struct sk_buff *skb,
-			    struct rmnet_port *port)
+static void __rmnet_map_ingress_handler(struct sk_buff *skb,
+					struct rmnet_port *port)
 {
 	struct rmnet_map_header *qmap;
 	struct rmnet_endpoint *ep;
@@ -273,9 +266,8 @@ int (*rmnet_perf_deag_entry)(struct sk_buff *skb,
 			     struct rmnet_port *port) __rcu __read_mostly;
 EXPORT_SYMBOL(rmnet_perf_deag_entry);
 
-static void
-rmnet_map_ingress_handler(struct sk_buff *skb,
-			  struct rmnet_port *port)
+static void rmnet_map_ingress_handler(struct sk_buff *skb,
+				      struct rmnet_port *port)
 {
 	struct sk_buff *skbn;
 	int (*rmnet_perf_core_deaggregate)(struct sk_buff *skb,
@@ -319,8 +311,8 @@ rmnet_map_ingress_handler(struct sk_buff *skb,
 
 no_perf:
 	/* Deaggregation and freeing of HW originating
-	 * buffers is done within here
-	 */
+   * buffers is done within here
+   */
 	while (skb) {
 		struct sk_buff *skb_frag = skb_shinfo(skb)->frag_list;
 
@@ -371,11 +363,12 @@ static int rmnet_map_egress_handler(struct sk_buff *skb,
 		qmi_rmnet_work_maybe_restart(port, NULL, NULL);
 
 	state = &port->agg_state[(low_latency) ? RMNET_LL_AGG_STATE :
-				 RMNET_DEFAULT_AGG_STATE];
+						 RMNET_DEFAULT_AGG_STATE];
 
 	if (csum_type &&
-	    (skb_shinfo(skb)->gso_type & (SKB_GSO_UDP_L4 | SKB_GSO_TCPV4 | SKB_GSO_TCPV6)) &&
-	     skb_shinfo(skb)->gso_size) {
+	    (skb_shinfo(skb)->gso_type &
+	     (SKB_GSO_UDP_L4 | SKB_GSO_TCPV4 | SKB_GSO_TCPV6)) &&
+	    skb_shinfo(skb)->gso_size) {
 		spin_lock_bh(&state->agg_lock);
 		rmnet_map_send_agg_skb(state);
 
@@ -389,8 +382,8 @@ static int rmnet_map_egress_handler(struct sk_buff *skb,
 		rmnet_map_checksum_uplink_packet(skb, port, orig_dev,
 						 csum_type);
 
-	map_header = rmnet_map_add_map_header(skb, additional_header_len, 0,
-					      port);
+	map_header =
+		rmnet_map_add_map_header(skb, additional_header_len, 0, port);
 	if (!map_header)
 		return -ENOMEM;
 
@@ -410,8 +403,8 @@ done:
 	return 0;
 }
 
-static void
-rmnet_bridge_handler(struct sk_buff *skb, struct net_device *bridge_dev)
+static void rmnet_bridge_handler(struct sk_buff *skb,
+				 struct net_device *bridge_dev)
 {
 	if (bridge_dev) {
 		skb->dev = bridge_dev;
@@ -440,8 +433,8 @@ rx_handler_result_t rmnet_rx_handler(struct sk_buff **pskb)
 	if (skb->pkt_type == PACKET_LOOPBACK)
 		return RX_HANDLER_PASS;
 
-	trace_rmnet_low(RMNET_MODULE, RMNET_RCV_FROM_PND, 0xDEF,
-			0xDEF, 0xDEF, 0xDEF, NULL, NULL);
+	trace_rmnet_low(RMNET_MODULE, RMNET_RCV_FROM_PND, 0xDEF, 0xDEF, 0xDEF,
+			0xDEF, NULL, NULL);
 	dev = skb->dev;
 	port = rmnet_get_port(dev);
 	if (unlikely(!port)) {

@@ -3,87 +3,87 @@
  * Copyright (c) 2016-2019, 2021, The Linux Foundation. All rights reserved.
  */
 
-#include <drm/msm_drm_pp.h>
 #include "sde_hw_color_processing_v1_7.h"
 #include "sde_hw_ctl.h"
+#include <drm/msm_drm_pp.h>
 
 #define REG_MASK_SHIFT(n, shift) ((REG_MASK(n)) << (shift))
 
-#define PA_HUE_VIG_OFF		0x110
-#define PA_SAT_VIG_OFF		0x114
-#define PA_VAL_VIG_OFF		0x118
-#define PA_CONT_VIG_OFF		0x11C
+#define PA_HUE_VIG_OFF 0x110
+#define PA_SAT_VIG_OFF 0x114
+#define PA_VAL_VIG_OFF 0x118
+#define PA_CONT_VIG_OFF 0x11C
 
-#define PA_HUE_DSPP_OFF		0x1c
-#define PA_SAT_DSPP_OFF		0x20
-#define PA_VAL_DSPP_OFF		0x24
-#define PA_CONT_DSPP_OFF	0x28
+#define PA_HUE_DSPP_OFF 0x1c
+#define PA_SAT_DSPP_OFF 0x20
+#define PA_VAL_DSPP_OFF 0x24
+#define PA_CONT_DSPP_OFF 0x28
 
-#define PA_HIST_CTRL_DSPP_OFF	0x4
-#define PA_HIST_DATA_DSPP_OFF	0x400
+#define PA_HIST_CTRL_DSPP_OFF 0x4
+#define PA_HIST_DATA_DSPP_OFF 0x400
 
-#define PA_LUTV_DSPP_OFF	0x1400
-#define PA_LUT_SWAP_OFF		0x234
+#define PA_LUTV_DSPP_OFF 0x1400
+#define PA_LUT_SWAP_OFF 0x234
 
-#define PA_LUTV_DSPP_CTRL_OFF	0x4c
-#define PA_LUTV_DSPP_SWAP_OFF	0x18
+#define PA_LUTV_DSPP_CTRL_OFF 0x4c
+#define PA_LUTV_DSPP_SWAP_OFF 0x18
 
-#define PA_DITH_DSPP_MATRIX_OFF	0x4
+#define PA_DITH_DSPP_MATRIX_OFF 0x4
 
-#define PA_HUE_MASK		0xFFF
-#define PA_SAT_MASK		0xFFFF
-#define PA_VAL_MASK		0xFF
-#define PA_CONT_MASK		0xFF
+#define PA_HUE_MASK 0xFFF
+#define PA_SAT_MASK 0xFFFF
+#define PA_VAL_MASK 0xFF
+#define PA_CONT_MASK 0xFF
 
-#define MEMCOL_PWL0_OFF		0x88
-#define MEMCOL_PWL0_MASK	0xFFFF07FF
-#define MEMCOL_PWL1_OFF		0x8C
-#define MEMCOL_PWL1_MASK	0xFFFFFFFF
-#define MEMCOL_HUE_REGION_OFF	0x90
-#define MEMCOL_HUE_REGION_MASK	0x7FF07FF
-#define MEMCOL_SAT_REGION_OFF	0x94
-#define MEMCOL_SAT_REGION_MASK	0xFFFFFF
-#define MEMCOL_VAL_REGION_OFF	0x98
-#define MEMCOL_VAL_REGION_MASK	0xFFFFFF
-#define MEMCOL_P0_LEN		0x14
-#define MEMCOL_P1_LEN		0x8
-#define MEMCOL_PWL2_OFF		0x218
-#define MEMCOL_PWL2_MASK	0xFFFFFFFF
-#define MEMCOL_BLEND_GAIN_OFF	0x21C
-#define MEMCOL_PWL_HOLD_OFF	0x214
+#define MEMCOL_PWL0_OFF 0x88
+#define MEMCOL_PWL0_MASK 0xFFFF07FF
+#define MEMCOL_PWL1_OFF 0x8C
+#define MEMCOL_PWL1_MASK 0xFFFFFFFF
+#define MEMCOL_HUE_REGION_OFF 0x90
+#define MEMCOL_HUE_REGION_MASK 0x7FF07FF
+#define MEMCOL_SAT_REGION_OFF 0x94
+#define MEMCOL_SAT_REGION_MASK 0xFFFFFF
+#define MEMCOL_VAL_REGION_OFF 0x98
+#define MEMCOL_VAL_REGION_MASK 0xFFFFFF
+#define MEMCOL_P0_LEN 0x14
+#define MEMCOL_P1_LEN 0x8
+#define MEMCOL_PWL2_OFF 0x218
+#define MEMCOL_PWL2_MASK 0xFFFFFFFF
+#define MEMCOL_BLEND_GAIN_OFF 0x21C
+#define MEMCOL_PWL_HOLD_OFF 0x214
 
-#define VIG_OP_PA_EN		BIT(4)
-#define VIG_OP_PA_SKIN_EN	BIT(5)
-#define VIG_OP_PA_FOL_EN	BIT(6)
-#define VIG_OP_PA_SKY_EN	BIT(7)
-#define VIG_OP_PA_HUE_EN	BIT(25)
-#define VIG_OP_PA_SAT_EN	BIT(26)
-#define VIG_OP_PA_VAL_EN	BIT(27)
-#define VIG_OP_PA_CONT_EN	BIT(28)
+#define VIG_OP_PA_EN BIT(4)
+#define VIG_OP_PA_SKIN_EN BIT(5)
+#define VIG_OP_PA_FOL_EN BIT(6)
+#define VIG_OP_PA_SKY_EN BIT(7)
+#define VIG_OP_PA_HUE_EN BIT(25)
+#define VIG_OP_PA_SAT_EN BIT(26)
+#define VIG_OP_PA_VAL_EN BIT(27)
+#define VIG_OP_PA_CONT_EN BIT(28)
 
-#define DSPP_OP_SZ_VAL_EN	BIT(31)
-#define DSPP_OP_SZ_SAT_EN	BIT(30)
-#define DSPP_OP_SZ_HUE_EN	BIT(29)
-#define DSPP_OP_PA_HUE_EN	BIT(25)
-#define DSPP_OP_PA_SAT_EN	BIT(26)
-#define DSPP_OP_PA_VAL_EN	BIT(27)
-#define DSPP_OP_PA_CONT_EN	BIT(28)
-#define DSPP_OP_PA_EN		BIT(20)
-#define DSPP_OP_PA_LUTV_EN	BIT(19)
-#define DSPP_OP_PA_HIST_EN	BIT(16)
-#define DSPP_OP_PA_SKIN_EN	BIT(5)
-#define DSPP_OP_PA_FOL_EN	BIT(6)
-#define DSPP_OP_PA_SKY_EN	BIT(7)
+#define DSPP_OP_SZ_VAL_EN BIT(31)
+#define DSPP_OP_SZ_SAT_EN BIT(30)
+#define DSPP_OP_SZ_HUE_EN BIT(29)
+#define DSPP_OP_PA_HUE_EN BIT(25)
+#define DSPP_OP_PA_SAT_EN BIT(26)
+#define DSPP_OP_PA_VAL_EN BIT(27)
+#define DSPP_OP_PA_CONT_EN BIT(28)
+#define DSPP_OP_PA_EN BIT(20)
+#define DSPP_OP_PA_LUTV_EN BIT(19)
+#define DSPP_OP_PA_HIST_EN BIT(16)
+#define DSPP_OP_PA_SKIN_EN BIT(5)
+#define DSPP_OP_PA_FOL_EN BIT(6)
+#define DSPP_OP_PA_SKY_EN BIT(7)
 
-#define DSPP_SZ_ADJ_CURVE_P1_OFF	0x4
-#define DSPP_SZ_THRESHOLDS_OFF	0x8
-#define DSPP_PA_PWL_HOLD_OFF	0x40
+#define DSPP_SZ_ADJ_CURVE_P1_OFF 0x4
+#define DSPP_SZ_THRESHOLDS_OFF 0x8
+#define DSPP_PA_PWL_HOLD_OFF 0x40
 
-#define DSPP_MEMCOL_SIZE0	0x14
-#define DSPP_MEMCOL_SIZE1	0x8
-#define DSPP_MEMCOL_PWL0_OFF	0x0
-#define DSPP_MEMCOL_PWL2_OFF	0x3C
-#define DSPP_MEMCOL_HOLD_SIZE	0x4
+#define DSPP_MEMCOL_SIZE0 0x14
+#define DSPP_MEMCOL_SIZE1 0x8
+#define DSPP_MEMCOL_PWL0_OFF 0x0
+#define DSPP_MEMCOL_PWL2_OFF 0x3C
+#define DSPP_MEMCOL_HOLD_SIZE 0x4
 
 #define DSPP_MEMCOL_PROT_VAL_EN BIT(24)
 #define DSPP_MEMCOL_PROT_SAT_EN BIT(23)
@@ -95,40 +95,37 @@
 #define DSPP_MEMCOL_MASK \
 	(DSPP_OP_PA_SKIN_EN | DSPP_OP_PA_SKY_EN | DSPP_OP_PA_FOL_EN)
 
-#define DSPP_MEMCOL_PROT_MASK \
-	(DSPP_MEMCOL_PROT_HUE_EN | DSPP_MEMCOL_PROT_SAT_EN | \
-	DSPP_MEMCOL_PROT_VAL_EN | DSPP_MEMCOL_PROT_CONT_EN | \
-	DSPP_MEMCOL_PROT_SIXZONE_EN | DSPP_MEMCOL_PROT_BLEND_EN)
+#define DSPP_MEMCOL_PROT_MASK                                 \
+	(DSPP_MEMCOL_PROT_HUE_EN | DSPP_MEMCOL_PROT_SAT_EN |  \
+	 DSPP_MEMCOL_PROT_VAL_EN | DSPP_MEMCOL_PROT_CONT_EN | \
+	 DSPP_MEMCOL_PROT_SIXZONE_EN | DSPP_MEMCOL_PROT_BLEND_EN)
 
-#define PA_VIG_DISABLE_REQUIRED(x) \
-			!((x) & (VIG_OP_PA_SKIN_EN | VIG_OP_PA_SKY_EN | \
-			VIG_OP_PA_FOL_EN | VIG_OP_PA_HUE_EN | \
-			VIG_OP_PA_SAT_EN | VIG_OP_PA_VAL_EN | \
-			VIG_OP_PA_CONT_EN))
+#define PA_VIG_DISABLE_REQUIRED(x)                                         \
+	!((x) & (VIG_OP_PA_SKIN_EN | VIG_OP_PA_SKY_EN | VIG_OP_PA_FOL_EN | \
+		 VIG_OP_PA_HUE_EN | VIG_OP_PA_SAT_EN | VIG_OP_PA_VAL_EN |  \
+		 VIG_OP_PA_CONT_EN))
 
-#define PA_DSPP_DISABLE_REQUIRED(x) \
-			!((x) & (DSPP_OP_PA_SKIN_EN | DSPP_OP_PA_SKY_EN | \
-			DSPP_OP_PA_FOL_EN | DSPP_OP_PA_HUE_EN | \
-			DSPP_OP_PA_SAT_EN | DSPP_OP_PA_VAL_EN | \
-			DSPP_OP_PA_CONT_EN | DSPP_OP_PA_HIST_EN | \
-			DSPP_OP_SZ_HUE_EN | DSPP_OP_SZ_SAT_EN | \
-			DSPP_OP_SZ_VAL_EN))
+#define PA_DSPP_DISABLE_REQUIRED(x)                                            \
+	!((x) & (DSPP_OP_PA_SKIN_EN | DSPP_OP_PA_SKY_EN | DSPP_OP_PA_FOL_EN |  \
+		 DSPP_OP_PA_HUE_EN | DSPP_OP_PA_SAT_EN | DSPP_OP_PA_VAL_EN |   \
+		 DSPP_OP_PA_CONT_EN | DSPP_OP_PA_HIST_EN | DSPP_OP_SZ_HUE_EN | \
+		 DSPP_OP_SZ_SAT_EN | DSPP_OP_SZ_VAL_EN))
 
-#define DSPP_OP_PCC_ENABLE	BIT(0)
-#define PCC_OP_MODE_OFF		0
-#define PCC_CONST_COEFF_OFF	4
-#define PCC_R_COEFF_OFF		0x10
-#define PCC_G_COEFF_OFF		0x1C
-#define PCC_B_COEFF_OFF		0x28
-#define PCC_RG_COEFF_OFF	0x34
-#define PCC_RB_COEFF_OFF	0x40
-#define PCC_GB_COEFF_OFF	0x4C
-#define PCC_RGB_COEFF_OFF	0x58
-#define PCC_CONST_COEFF_MASK	0xFFFF
-#define PCC_COEFF_MASK		0x3FFFF
+#define DSPP_OP_PCC_ENABLE BIT(0)
+#define PCC_OP_MODE_OFF 0
+#define PCC_CONST_COEFF_OFF 4
+#define PCC_R_COEFF_OFF 0x10
+#define PCC_G_COEFF_OFF 0x1C
+#define PCC_B_COEFF_OFF 0x28
+#define PCC_RG_COEFF_OFF 0x34
+#define PCC_RB_COEFF_OFF 0x40
+#define PCC_GB_COEFF_OFF 0x4C
+#define PCC_RGB_COEFF_OFF 0x58
+#define PCC_CONST_COEFF_MASK 0xFFFF
+#define PCC_COEFF_MASK 0x3FFFF
 
-#define SSPP	0
-#define DSPP	1
+#define SSPP 0
+#define DSPP 1
 
 #define PGC_C0_OFF 0x4
 #define PGC_C0_INDEX_OFF 0x8
@@ -137,9 +134,8 @@
 #define PGC_TBL_NUM 3
 #define PGC_LUT_SWAP_OFF 0x1c
 
-
 static void __setup_pa_hue(struct sde_hw_blk_reg_map *hw,
-		const struct sde_pp_blk *blk, u32 hue, int loc)
+			   const struct sde_pp_blk *blk, u32 hue, int loc)
 {
 	u32 base = blk->base;
 	u32 offset = (loc == DSPP) ? PA_HUE_DSPP_OFF : PA_HUE_VIG_OFF;
@@ -153,9 +149,8 @@ static void __setup_pa_hue(struct sde_hw_blk_reg_map *hw,
 
 	if (!hue) {
 		opmode &= ~op_hue_en;
-		disable_req = (loc == DSPP) ?
-			PA_DSPP_DISABLE_REQUIRED(opmode) :
-			PA_VIG_DISABLE_REQUIRED(opmode);
+		disable_req = (loc == DSPP) ? PA_DSPP_DISABLE_REQUIRED(opmode) :
+					      PA_VIG_DISABLE_REQUIRED(opmode);
 		if (disable_req)
 			opmode &= ~op_pa_en;
 	} else {
@@ -173,7 +168,7 @@ void sde_setup_pipe_pa_hue_v1_7(struct sde_hw_pipe *ctx, void *cfg)
 }
 
 static void __setup_pa_sat(struct sde_hw_blk_reg_map *hw,
-		const struct sde_pp_blk *blk, u32 sat, int loc)
+			   const struct sde_pp_blk *blk, u32 sat, int loc)
 {
 	u32 base = blk->base;
 	u32 offset = (loc == DSPP) ? PA_SAT_DSPP_OFF : PA_SAT_VIG_OFF;
@@ -187,9 +182,8 @@ static void __setup_pa_sat(struct sde_hw_blk_reg_map *hw,
 
 	if (!sat) {
 		opmode &= ~op_sat_en;
-		disable_req = (loc == DSPP) ?
-			PA_DSPP_DISABLE_REQUIRED(opmode) :
-			PA_VIG_DISABLE_REQUIRED(opmode);
+		disable_req = (loc == DSPP) ? PA_DSPP_DISABLE_REQUIRED(opmode) :
+					      PA_VIG_DISABLE_REQUIRED(opmode);
 		if (disable_req)
 			opmode &= ~op_pa_en;
 	} else {
@@ -207,7 +201,7 @@ void sde_setup_pipe_pa_sat_v1_7(struct sde_hw_pipe *ctx, void *cfg)
 }
 
 static void __setup_pa_val(struct sde_hw_blk_reg_map *hw,
-		const struct sde_pp_blk *blk, u32 value, int loc)
+			   const struct sde_pp_blk *blk, u32 value, int loc)
 {
 	u32 base = blk->base;
 	u32 offset = (loc == DSPP) ? PA_VAL_DSPP_OFF : PA_VAL_VIG_OFF;
@@ -221,9 +215,8 @@ static void __setup_pa_val(struct sde_hw_blk_reg_map *hw,
 
 	if (!value) {
 		opmode &= ~op_val_en;
-		disable_req = (loc == DSPP) ?
-			PA_DSPP_DISABLE_REQUIRED(opmode) :
-			PA_VIG_DISABLE_REQUIRED(opmode);
+		disable_req = (loc == DSPP) ? PA_DSPP_DISABLE_REQUIRED(opmode) :
+					      PA_VIG_DISABLE_REQUIRED(opmode);
 		if (disable_req)
 			opmode &= ~op_pa_en;
 	} else {
@@ -241,12 +234,11 @@ void sde_setup_pipe_pa_val_v1_7(struct sde_hw_pipe *ctx, void *cfg)
 }
 
 static void __setup_pa_cont(struct sde_hw_blk_reg_map *hw,
-		const struct sde_pp_blk *blk, u32 contrast, int loc)
+			    const struct sde_pp_blk *blk, u32 contrast, int loc)
 {
 	u32 base = blk->base;
 	u32 offset = (loc == DSPP) ? PA_CONT_DSPP_OFF : PA_CONT_VIG_OFF;
-	u32 op_cont_en = (loc == DSPP) ?
-		DSPP_OP_PA_CONT_EN : VIG_OP_PA_CONT_EN;
+	u32 op_cont_en = (loc == DSPP) ? DSPP_OP_PA_CONT_EN : VIG_OP_PA_CONT_EN;
 	u32 op_pa_en = (loc == DSPP) ? DSPP_OP_PA_EN : VIG_OP_PA_EN;
 	u32 disable_req;
 	u32 opmode;
@@ -256,9 +248,8 @@ static void __setup_pa_cont(struct sde_hw_blk_reg_map *hw,
 
 	if (!contrast) {
 		opmode &= ~op_cont_en;
-		disable_req = (loc == DSPP) ?
-			PA_DSPP_DISABLE_REQUIRED(opmode) :
-			PA_VIG_DISABLE_REQUIRED(opmode);
+		disable_req = (loc == DSPP) ? PA_DSPP_DISABLE_REQUIRED(opmode) :
+					      PA_VIG_DISABLE_REQUIRED(opmode);
 		if (disable_req)
 			opmode &= ~op_pa_en;
 	} else {
@@ -290,9 +281,9 @@ void sde_setup_dspp_pa_hsic_v17(struct sde_hw_dspp *ctx, void *cfg)
 	}
 
 	if (hw_cfg->payload &&
-		(hw_cfg->len != sizeof(struct drm_msm_pa_hsic))) {
+	    (hw_cfg->len != sizeof(struct drm_msm_pa_hsic))) {
 		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-			hw_cfg->len, sizeof(struct drm_msm_pa_hsic));
+			  hw_cfg->len, sizeof(struct drm_msm_pa_hsic));
 		return;
 	}
 
@@ -335,7 +326,7 @@ void sde_setup_dspp_sixzone_v17(struct sde_hw_dspp *ctx, void *cfg)
 	if (!hw_cfg->payload) {
 		DRM_DEBUG_DRIVER("disable sixzone feature\n");
 		opcode &= ~(DSPP_OP_SZ_HUE_EN | DSPP_OP_SZ_SAT_EN |
-			DSPP_OP_SZ_VAL_EN);
+			    DSPP_OP_SZ_VAL_EN);
 		if (PA_DSPP_DISABLE_REQUIRED(opcode))
 			opcode &= ~DSPP_OP_PA_EN;
 		SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->hsic.base, opcode);
@@ -344,7 +335,7 @@ void sde_setup_dspp_sixzone_v17(struct sde_hw_dspp *ctx, void *cfg)
 
 	if (hw_cfg->len != sizeof(struct drm_msm_sixzone)) {
 		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-			hw_cfg->len, sizeof(struct drm_msm_sixzone));
+			  hw_cfg->len, sizeof(struct drm_msm_sixzone));
 		return;
 	}
 
@@ -365,14 +356,13 @@ void sde_setup_dspp_sixzone_v17(struct sde_hw_dspp *ctx, void *cfg)
 	SDE_REG_WRITE(&ctx->hw, (addr + 8), sixzone->adjust_p1);
 
 	hold = SDE_REG_READ(&ctx->hw,
-		(ctx->cap->sblk->hsic.base + DSPP_PA_PWL_HOLD_OFF));
+			    (ctx->cap->sblk->hsic.base + DSPP_PA_PWL_HOLD_OFF));
 	local_hold = ((sixzone->sat_hold & REG_MASK(2)) << 12);
 	local_hold |= ((sixzone->val_hold & REG_MASK(2)) << 14);
 	hold &= ~REG_MASK_SHIFT(4, 12);
 	hold |= local_hold;
 	SDE_REG_WRITE(&ctx->hw,
-		(ctx->cap->sblk->hsic.base + DSPP_PA_PWL_HOLD_OFF),
-		hold);
+		      (ctx->cap->sblk->hsic.base + DSPP_PA_PWL_HOLD_OFF), hold);
 
 	if (sixzone->flags & SIXZONE_HUE_ENABLE)
 		local_opcode |= DSPP_OP_SZ_HUE_EN;
@@ -390,8 +380,7 @@ void sde_setup_dspp_sixzone_v17(struct sde_hw_dspp *ctx, void *cfg)
 }
 
 void sde_setup_pipe_pa_memcol_v1_7(struct sde_hw_pipe *ctx,
-				   enum sde_memcolor_type type,
-				   void *cfg)
+				   enum sde_memcolor_type type, void *cfg)
 {
 	struct drm_msm_memcol *mc = cfg;
 	u32 base = ctx->cap->sblk->memcolor_blk.base;
@@ -453,8 +442,8 @@ void sde_setup_pipe_pa_memcol_v1_7(struct sde_hw_pipe *ctx,
 }
 
 static void __setup_dspp_memcol(struct sde_hw_dspp *ctx,
-		enum sde_memcolor_type type,
-		struct drm_msm_memcol *memcolor)
+				enum sde_memcolor_type type,
+				struct drm_msm_memcol *memcolor)
 {
 	u32 addr = 0, offset = 0, idx = 0;
 	u32 hold = 0, local_hold = 0, hold_shift = 0;
@@ -498,8 +487,7 @@ static void __setup_dspp_memcol(struct sde_hw_dspp *ctx,
 	addr = ctx->cap->sblk->hsic.base + DSPP_PA_PWL_HOLD_OFF;
 	hold = SDE_REG_READ(&ctx->hw, addr);
 	local_hold = ((memcolor->sat_hold & REG_MASK(2)) << hold_shift);
-	local_hold |=
-		((memcolor->val_hold & REG_MASK(2)) << (hold_shift + 2));
+	local_hold |= ((memcolor->val_hold & REG_MASK(2)) << (hold_shift + 2));
 	hold &= ~REG_MASK_SHIFT(4, hold_shift);
 	hold |= local_hold;
 	SDE_REG_WRITE(&ctx->hw, addr, hold);
@@ -529,7 +517,7 @@ void sde_setup_dspp_memcol_skin_v17(struct sde_hw_dspp *ctx, void *cfg)
 
 	if (hw_cfg->len != sizeof(struct drm_msm_memcol)) {
 		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-			hw_cfg->len, sizeof(struct drm_msm_memcol));
+			  hw_cfg->len, sizeof(struct drm_msm_memcol));
 		return;
 	}
 
@@ -565,7 +553,7 @@ void sde_setup_dspp_memcol_sky_v17(struct sde_hw_dspp *ctx, void *cfg)
 
 	if (hw_cfg->len != sizeof(struct drm_msm_memcol)) {
 		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-			hw_cfg->len, sizeof(struct drm_msm_memcol));
+			  hw_cfg->len, sizeof(struct drm_msm_memcol));
 		return;
 	}
 
@@ -601,7 +589,7 @@ void sde_setup_dspp_memcol_foliage_v17(struct sde_hw_dspp *ctx, void *cfg)
 
 	if (hw_cfg->len != sizeof(struct drm_msm_memcol)) {
 		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-			hw_cfg->len, sizeof(struct drm_msm_memcol));
+			  hw_cfg->len, sizeof(struct drm_msm_memcol));
 		return;
 	}
 
@@ -637,7 +625,7 @@ void sde_setup_dspp_memcol_prot_v17(struct sde_hw_dspp *ctx, void *cfg)
 
 	if (hw_cfg->len != sizeof(struct drm_msm_memcol)) {
 		DRM_ERROR("invalid size of payload len %d exp %zd\n",
-			hw_cfg->len, sizeof(struct drm_msm_memcol));
+			  hw_cfg->len, sizeof(struct drm_msm_memcol));
 		return;
 	}
 
@@ -670,13 +658,13 @@ void sde_setup_dspp_pcc_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 {
 	struct sde_hw_cp_cfg *hw_cfg = cfg;
 	struct drm_msm_pcc *pcc;
-	void  __iomem *base;
+	void __iomem *base;
 
-	if (!hw_cfg  || (hw_cfg->len != sizeof(*pcc)  && hw_cfg->payload)) {
+	if (!hw_cfg || (hw_cfg->len != sizeof(*pcc) && hw_cfg->payload)) {
 		DRM_ERROR(
 			"invalid params hw %pK payload %pK payloadsize %d exp size %zd\n",
-			   hw_cfg, ((hw_cfg) ? hw_cfg->payload : NULL),
-			   ((hw_cfg) ? hw_cfg->len : 0), sizeof(*pcc));
+			hw_cfg, ((hw_cfg) ? hw_cfg->payload : NULL),
+			((hw_cfg) ? hw_cfg->len : 0), sizeof(*pcc));
 		return;
 	}
 	base = ctx->hw.base_off + ctx->cap->base;
@@ -691,7 +679,7 @@ void sde_setup_dspp_pcc_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 	pcc = hw_cfg->payload;
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_CONST_COEFF_OFF,
-				  pcc->r.c & PCC_CONST_COEFF_MASK);
+		      pcc->r.c & PCC_CONST_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw,
 		      ctx->cap->sblk->pcc.base + PCC_CONST_COEFF_OFF + 4,
 		      pcc->g.c & PCC_CONST_COEFF_MASK);
@@ -700,51 +688,49 @@ void sde_setup_dspp_pcc_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 		      pcc->b.c & PCC_CONST_COEFF_MASK);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_R_COEFF_OFF,
-				  pcc->r.r & PCC_COEFF_MASK);
+		      pcc->r.r & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_R_COEFF_OFF + 4,
-				  pcc->g.r & PCC_COEFF_MASK);
+		      pcc->g.r & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_R_COEFF_OFF + 8,
-				  pcc->b.r & PCC_COEFF_MASK);
+		      pcc->b.r & PCC_COEFF_MASK);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_G_COEFF_OFF,
-				  pcc->r.g & PCC_COEFF_MASK);
+		      pcc->r.g & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_G_COEFF_OFF + 4,
-				  pcc->g.g & PCC_COEFF_MASK);
+		      pcc->g.g & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_G_COEFF_OFF + 8,
-				  pcc->b.g & PCC_COEFF_MASK);
+		      pcc->b.g & PCC_COEFF_MASK);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_B_COEFF_OFF,
-				  pcc->r.b & PCC_COEFF_MASK);
+		      pcc->r.b & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_B_COEFF_OFF + 4,
-				  pcc->g.b & PCC_COEFF_MASK);
+		      pcc->g.b & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_B_COEFF_OFF + 8,
-				  pcc->b.b & PCC_COEFF_MASK);
-
+		      pcc->b.b & PCC_COEFF_MASK);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_RG_COEFF_OFF,
-				  pcc->r.rg & PCC_COEFF_MASK);
+		      pcc->r.rg & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_RG_COEFF_OFF + 4,
-				  pcc->g.rg & PCC_COEFF_MASK);
+		      pcc->g.rg & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_RG_COEFF_OFF + 8,
-				  pcc->b.rg & PCC_COEFF_MASK);
+		      pcc->b.rg & PCC_COEFF_MASK);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_RB_COEFF_OFF,
-				  pcc->r.rb & PCC_COEFF_MASK);
+		      pcc->r.rb & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_RB_COEFF_OFF + 4,
-				  pcc->g.rb & PCC_COEFF_MASK);
+		      pcc->g.rb & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_RB_COEFF_OFF + 8,
-				  pcc->b.rb & PCC_COEFF_MASK);
-
+		      pcc->b.rb & PCC_COEFF_MASK);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_GB_COEFF_OFF,
-				  pcc->r.gb & PCC_COEFF_MASK);
+		      pcc->r.gb & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_GB_COEFF_OFF + 4,
-				  pcc->g.gb & PCC_COEFF_MASK);
+		      pcc->g.gb & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_GB_COEFF_OFF + 8,
-				  pcc->b.gb & PCC_COEFF_MASK);
+		      pcc->b.gb & PCC_COEFF_MASK);
 
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base + PCC_RGB_COEFF_OFF,
-				  pcc->r.rgb & PCC_COEFF_MASK);
+		      pcc->r.rgb & PCC_COEFF_MASK);
 	SDE_REG_WRITE(&ctx->hw,
 		      ctx->cap->sblk->pcc.base + PCC_RGB_COEFF_OFF + 4,
 		      pcc->g.rgb & PCC_COEFF_MASK);
@@ -763,8 +749,8 @@ void sde_setup_dspp_pa_vlut_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 	u32 op_mode, tmp;
 	int i = 0, j = 0;
 
-	if (!hw_cfg || (hw_cfg->payload && hw_cfg->len !=
-			sizeof(struct drm_msm_pa_vlut))) {
+	if (!hw_cfg || (hw_cfg->payload &&
+			hw_cfg->len != sizeof(struct drm_msm_pa_vlut))) {
 		DRM_ERROR("hw %pK payload %pK payloadsize %d exp size %zd\n",
 			  hw_cfg, ((hw_cfg) ? hw_cfg->payload : NULL),
 			  ((hw_cfg) ? hw_cfg->len : 0),
@@ -775,11 +761,11 @@ void sde_setup_dspp_pa_vlut_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 	if (!hw_cfg->payload) {
 		DRM_DEBUG_DRIVER("Disable vlut feature\n");
 		/**
-		 * In the PA_VLUT disable case, remove PA_VLUT enable bit(19)
-		 * first, then check whether any other PA sub-features are
-		 * enabled or not. If none of the sub-features are enabled,
-		 * remove the PA global enable bit(20).
-		 */
+     * In the PA_VLUT disable case, remove PA_VLUT enable bit(19)
+     * first, then check whether any other PA sub-features are
+     * enabled or not. If none of the sub-features are enabled,
+     * remove the PA global enable bit(20).
+     */
 		op_mode &= ~((u32)DSPP_OP_PA_LUTV_EN);
 		if (PA_DSPP_DISABLE_REQUIRED(op_mode))
 			op_mode &= ~((u32)DSPP_OP_PA_EN);
@@ -790,9 +776,8 @@ void sde_setup_dspp_pa_vlut_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 	DRM_DEBUG_DRIVER("Enable vlut feature flags %llx\n", payload->flags);
 	for (i = 0, j = 0; i < ARRAY_SIZE(payload->val); i += 2, j += 4) {
 		tmp = (payload->val[i] & REG_MASK(10)) |
-			((payload->val[i + 1] & REG_MASK(10)) << 16);
-		SDE_REG_WRITE(&ctx->hw, (offset + j),
-			     tmp);
+		      ((payload->val[i + 1] & REG_MASK(10)) << 16);
+		SDE_REG_WRITE(&ctx->hw, (offset + j), tmp);
 	}
 	SDE_REG_WRITE(&ctx->hw, (base + PA_LUT_SWAP_OFF), 1);
 	op_mode |= DSPP_OP_PA_EN | DSPP_OP_PA_LUTV_EN;
@@ -814,8 +799,8 @@ void sde_setup_dspp_pa_vlut_v1_8(struct sde_hw_dspp *ctx, void *cfg)
 		return;
 	}
 
-	if (!hw_cfg || (hw_cfg->payload && hw_cfg->len !=
-			sizeof(struct drm_msm_pa_vlut))) {
+	if (!hw_cfg || (hw_cfg->payload &&
+			hw_cfg->len != sizeof(struct drm_msm_pa_vlut))) {
 		DRM_ERROR("hw %pK payload %pK payloadsize %d exp size %zd\n",
 			  hw_cfg, ((hw_cfg) ? hw_cfg->payload : NULL),
 			  ((hw_cfg) ? hw_cfg->len : 0),
@@ -839,7 +824,7 @@ void sde_setup_dspp_pa_vlut_v1_8(struct sde_hw_dspp *ctx, void *cfg)
 	DRM_DEBUG_DRIVER("Enable vlut feature flags %llx\n", payload->flags);
 	for (i = 0, j = 0; i < ARRAY_SIZE(payload->val); i += 2, j += 4) {
 		tmp = (payload->val[i] & REG_MASK(10)) |
-			((payload->val[i + 1] & REG_MASK(10)) << 16);
+		      ((payload->val[i + 1] & REG_MASK(10)) << 16);
 		SDE_REG_WRITE(&ctx->hw, (vlut_base + j), tmp);
 	}
 	SDE_REG_WRITE(&ctx->hw, ctrl_off, 1);
@@ -857,8 +842,8 @@ void sde_setup_dspp_gc_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 	struct sde_hw_cp_cfg *hw_cfg = cfg;
 	u32 c0_off, c1_off, c2_off, i;
 
-	if (!hw_cfg || (hw_cfg->payload && hw_cfg->len !=
-			sizeof(struct drm_msm_pgc_lut))) {
+	if (!hw_cfg || (hw_cfg->payload &&
+			hw_cfg->len != sizeof(struct drm_msm_pgc_lut))) {
 		DRM_ERROR("hw %pK payload %pK payloadsize %d exp size %zd\n",
 			  hw_cfg, ((hw_cfg) ? hw_cfg->payload : NULL),
 			  ((hw_cfg) ? hw_cfg->len : 0),
@@ -892,7 +877,7 @@ void sde_setup_dspp_gc_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 		SDE_REG_WRITE(&ctx->hw, c2_off, payload->c2[i]);
 	}
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->gc.base + PGC_LUT_SWAP_OFF,
-			BIT(0));
+		      BIT(0));
 	i = BIT(0) | ((payload->flags & PGC_8B_ROUND) ? BIT(1) : 0);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->gc.base, i);
 }
@@ -943,7 +928,7 @@ void sde_read_dspp_hist_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 	/* collect hist data for given DSPPs */
 	for (i = 0; i < HIST_V_SIZE; i++)
 		hist_data->data[i] += SDE_REG_READ(&ctx->hw, offset + i * 4) &
-					REG_MASK(24);
+				      REG_MASK(24);
 
 	/* unlock hist buffer */
 	SDE_REG_WRITE(&ctx->hw, offset_ctl, 0);
@@ -974,9 +959,9 @@ void sde_setup_dspp_dither_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 	if (!hw_cfg || (hw_cfg->len != sizeof(struct drm_msm_pa_dither) &&
 			hw_cfg->payload)) {
 		DRM_ERROR("hw %pK payload %pK size %d expected sz %zd\n",
-			hw_cfg, ((hw_cfg) ? hw_cfg->payload : NULL),
-			((hw_cfg) ? hw_cfg->len : 0),
-			sizeof(struct drm_msm_pa_dither));
+			  hw_cfg, ((hw_cfg) ? hw_cfg->payload : NULL),
+			  ((hw_cfg) ? hw_cfg->len : 0),
+			  sizeof(struct drm_msm_pa_dither));
 		return;
 	}
 
@@ -994,9 +979,9 @@ void sde_setup_dspp_dither_v1_7(struct sde_hw_dspp *ctx, void *cfg)
 
 	for (i = 0; i < DITHER_MATRIX_SZ; i += 4) {
 		data = (dither->matrix[i] & REG_MASK(4)) |
-			((dither->matrix[i + 1] & REG_MASK(4)) << 4) |
-			((dither->matrix[i + 2] & REG_MASK(4)) << 8) |
-			((dither->matrix[i + 3] & REG_MASK(4)) << 12);
+		       ((dither->matrix[i + 1] & REG_MASK(4)) << 4) |
+		       ((dither->matrix[i + 2] & REG_MASK(4)) << 8) |
+		       ((dither->matrix[i + 3] & REG_MASK(4)) << 12);
 		SDE_REG_WRITE(&ctx->hw, matrix_off + i, data);
 	}
 

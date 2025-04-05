@@ -28,32 +28,33 @@
  *
  */
 
-#include "ani_global.h"
 #include "utils_parser.h"
+#include "ani_global.h"
 #include "lim_ser_des_utils.h"
 
-void convert_ssid(struct mac_context *mac, tSirMacSSid *pOld, tDot11fIESSID *pNew)
+void convert_ssid(struct mac_context *mac, tSirMacSSid *pOld,
+		  tDot11fIESSID *pNew)
 {
 	pOld->length = pNew->num_ssid;
 	qdf_mem_copy(pOld->ssId, pNew->ssid, pNew->num_ssid);
 }
 
-void convert_supp_rates(struct mac_context *mac,
-			tSirMacRateSet *pOld, tDot11fIESuppRates *pNew)
+void convert_supp_rates(struct mac_context *mac, tSirMacRateSet *pOld,
+			tDot11fIESuppRates *pNew)
 {
 	pOld->numRates = pNew->num_rates;
 	qdf_mem_copy(pOld->rate, pNew->rates, pNew->num_rates);
 }
 
-void convert_ext_supp_rates(struct mac_context *mac,
-			    tSirMacRateSet *pOld, tDot11fIEExtSuppRates *pNew)
+void convert_ext_supp_rates(struct mac_context *mac, tSirMacRateSet *pOld,
+			    tDot11fIEExtSuppRates *pNew)
 {
 	pOld->numRates = pNew->num_rates;
 	qdf_mem_copy(pOld->rate, pNew->rates, pNew->num_rates);
 }
 
-void convert_qos_caps(struct mac_context *mac,
-		      tSirMacQosCapabilityIE *pOld, tDot11fIEQOSCapsAp *pNew)
+void convert_qos_caps(struct mac_context *mac, tSirMacQosCapabilityIE *pOld,
+		      tDot11fIEQOSCapsAp *pNew)
 {
 	pOld->type = 46;
 	pOld->length = 1;
@@ -77,8 +78,8 @@ void convert_qos_caps_station(struct mac_context *mac,
 	pOld->qosInfo.acvo_uapsd = pNew->acvo_uapsd;
 }
 
-QDF_STATUS convert_wpa(struct mac_context *mac,
-		       tSirMacWpaInfo *pOld, tDot11fIEWPA *pNew)
+QDF_STATUS convert_wpa(struct mac_context *mac, tSirMacWpaInfo *pOld,
+		       tDot11fIEWPA *pNew)
 {
 	/* This is awful, I know, but the old code just rammed the IE into an */
 	/* array... */
@@ -91,14 +92,14 @@ QDF_STATUS convert_wpa(struct mac_context *mac,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pOld->length = (uint8_t) written - 2;
+	pOld->length = (uint8_t)written - 2;
 	qdf_mem_copy(pOld->info, buffer + 2, pOld->length);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS convert_wpa_opaque(struct mac_context *mac,
-			      tSirMacWpaInfo *pOld, tDot11fIEWPAOpaque *pNew)
+QDF_STATUS convert_wpa_opaque(struct mac_context *mac, tSirMacWpaInfo *pOld,
+			      tDot11fIEWPAOpaque *pNew)
 {
 	/* This is awful, I know, but the old code just rammed the IE into */
 	/* an opaque array.  Note that we need to explicitly add the OUI! */
@@ -113,8 +114,7 @@ QDF_STATUS convert_wpa_opaque(struct mac_context *mac,
 }
 
 #ifdef FEATURE_WLAN_WAPI
-QDF_STATUS convert_wapi_opaque(struct mac_context *mac,
-			       tSirMacWapiInfo *pOld,
+QDF_STATUS convert_wapi_opaque(struct mac_context *mac, tSirMacWapiInfo *pOld,
 			       tDot11fIEWAPIOpaque *pNew)
 {
 	/* This is awful, I know, but the old code just rammed the IE into */
@@ -126,11 +126,12 @@ QDF_STATUS convert_wapi_opaque(struct mac_context *mac,
 }
 #endif
 
-QDF_STATUS convert_wsc_opaque(struct mac_context *mac,
-			      tSirAddie *pOld, tDot11fIEWscIEOpaque *pNew)
+QDF_STATUS convert_wsc_opaque(struct mac_context *mac, tSirAddie *pOld,
+			      tDot11fIEWscIEOpaque *pNew)
 {
 	/* This is awful, I know, but the old code just rammed the IE into */
-	/* an opaque array.  Note that we need to explicitly add the vendorIE and OUI ! */
+	/* an opaque array.  Note that we need to explicitly add the vendorIE and OUI
+   * ! */
 	uint16_t curAddIELen = pOld->length;
 
 	pOld->length = curAddIELen + pNew->num_data + 6;
@@ -145,11 +146,12 @@ QDF_STATUS convert_wsc_opaque(struct mac_context *mac,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS convert_p2p_opaque(struct mac_context *mac,
-			      tSirAddie *pOld, tDot11fIEP2PIEOpaque *pNew)
+QDF_STATUS convert_p2p_opaque(struct mac_context *mac, tSirAddie *pOld,
+			      tDot11fIEP2PIEOpaque *pNew)
 {
 	/* This is awful, I know, but the old code just rammed the IE into */
-	/* an opaque array.  Note that we need to explicitly add the vendorIE and OUI ! */
+	/* an opaque array.  Note that we need to explicitly add the vendorIE and OUI
+   * ! */
 	uint16_t curAddIELen = pOld->length;
 
 	pOld->length = curAddIELen + pNew->num_data + 6;
@@ -165,11 +167,12 @@ QDF_STATUS convert_p2p_opaque(struct mac_context *mac,
 }
 
 #ifdef WLAN_FEATURE_WFD
-QDF_STATUS convert_wfd_opaque(struct mac_context *mac,
-			      tSirAddie *pOld, tDot11fIEWFDIEOpaque *pNew)
+QDF_STATUS convert_wfd_opaque(struct mac_context *mac, tSirAddie *pOld,
+			      tDot11fIEWFDIEOpaque *pNew)
 {
 	/* This is awful, I know, but the old code just rammed the IE into */
-	/* an opaque array.  Note that we need to explicitly add the vendorIE and OUI ! */
+	/* an opaque array.  Note that we need to explicitly add the vendorIE and OUI
+   * ! */
 	uint16_t curAddIELen = pOld->length;
 
 	pOld->length = curAddIELen + pNew->num_data + 6;
@@ -185,8 +188,8 @@ QDF_STATUS convert_wfd_opaque(struct mac_context *mac,
 }
 #endif
 
-QDF_STATUS convert_rsn(struct mac_context *mac,
-		       tSirMacRsnInfo *pOld, tDot11fIERSN *pNew)
+QDF_STATUS convert_rsn(struct mac_context *mac, tSirMacRsnInfo *pOld,
+		       tDot11fIERSN *pNew)
 {
 	uint8_t buffer[257];
 	uint32_t status, written = 0, nbuffer = 257;
@@ -197,14 +200,14 @@ QDF_STATUS convert_rsn(struct mac_context *mac,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pOld->length = (uint8_t) written - 2;
+	pOld->length = (uint8_t)written - 2;
 	qdf_mem_copy(pOld->info, buffer + 2, pOld->length);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS convert_rsn_opaque(struct mac_context *mac,
-			      tSirMacRsnInfo *pOld, tDot11fIERSNOpaque *pNew)
+QDF_STATUS convert_rsn_opaque(struct mac_context *mac, tSirMacRsnInfo *pOld,
+			      tDot11fIERSNOpaque *pNew)
 {
 	/* This is awful, I know, but the old code just rammed the IE into */
 	/* an opaque array. */
@@ -214,8 +217,7 @@ QDF_STATUS convert_rsn_opaque(struct mac_context *mac,
 	return QDF_STATUS_SUCCESS;
 }
 
-void convert_power_caps(struct mac_context *mac,
-			tSirMacPowerCapabilityIE *pOld,
+void convert_power_caps(struct mac_context *mac, tSirMacPowerCapabilityIE *pOld,
 			tDot11fIEPowerCaps *pNew)
 {
 	pOld->type = 33;
@@ -230,12 +232,12 @@ void convert_supp_channels(struct mac_context *mac,
 {
 	pOld->type = 36;
 	pOld->length = (pNew->num_bands * 2);
-	qdf_mem_copy((uint8_t *) pOld->supportedChannels,
-		     (uint8_t *) pNew->bands, pOld->length);
+	qdf_mem_copy((uint8_t *)pOld->supportedChannels, (uint8_t *)pNew->bands,
+		     pOld->length);
 }
 
-void convert_cf_params(struct mac_context *mac,
-		       tSirMacCfParamSet *pOld, tDot11fIECFParams *pNew)
+void convert_cf_params(struct mac_context *mac, tSirMacCfParamSet *pOld,
+		       tDot11fIECFParams *pNew)
 {
 	pOld->cfpCount = pNew->cfp_count;
 	pOld->cfpPeriod = pNew->cfp_period;
@@ -243,8 +245,8 @@ void convert_cf_params(struct mac_context *mac,
 	pOld->cfpDurRemaining = pNew->cfp_durremaining;
 }
 
-void convert_fh_params(struct mac_context *mac,
-		       tSirMacFHParamSet *pOld, tDot11fIEFHParamSet *pNew)
+void convert_fh_params(struct mac_context *mac, tSirMacFHParamSet *pOld,
+		       tDot11fIEFHParamSet *pNew)
 {
 	pOld->dwellTime = pNew->dwell_time;
 	pOld->hopSet = pNew->hop_set;
@@ -262,8 +264,8 @@ void convert_tim(struct mac_context *mac, tSirMacTim *pOld, tDot11fIETIM *pNew)
 	qdf_mem_copy(pOld->bitmap, pNew->vbmp, pNew->num_vbmp);
 }
 
-void convert_country(struct mac_context *mac,
-		     tSirCountryInformation *pOld, tDot11fIECountry *pNew)
+void convert_country(struct mac_context *mac, tSirCountryInformation *pOld,
+		     tDot11fIECountry *pNew)
 {
 	uint8_t i = 0;
 
@@ -276,23 +278,22 @@ void convert_country(struct mac_context *mac,
 	pOld->channelTransmitPower[i].maxTransmitPower = pNew->first_triplet[2];
 
 	for (i = 0; i < pNew->num_more_triplets; i++) {
-		pOld->channelTransmitPower[i+1].channelNumber =
-				pNew->more_triplets[i][0];
-		pOld->channelTransmitPower[i+1].numChannel =
-				pNew->more_triplets[i][1];
-		pOld->channelTransmitPower[i+1].maxTransmitPower =
-				pNew->more_triplets[i][2];
+		pOld->channelTransmitPower[i + 1].channelNumber =
+			pNew->more_triplets[i][0];
+		pOld->channelTransmitPower[i + 1].numChannel =
+			pNew->more_triplets[i][1];
+		pOld->channelTransmitPower[i + 1].maxTransmitPower =
+			pNew->more_triplets[i][2];
 	}
 }
 
-void convert_wmm_params(struct mac_context *mac,
-			tSirMacEdcaParamSetIE *pOld, tDot11fIEWMMParams *pNew)
+void convert_wmm_params(struct mac_context *mac, tSirMacEdcaParamSetIE *pOld,
+			tDot11fIEWMMParams *pNew)
 {
 	pOld->type = 221;
 	pOld->length = 24;
 
-	qdf_mem_copy((uint8_t *) &pOld->qosInfo, (uint8_t *) &pNew->qosInfo,
-		     1);
+	qdf_mem_copy((uint8_t *)&pOld->qosInfo, (uint8_t *)&pNew->qosInfo, 1);
 
 	pOld->acbe.aci.aifsn = pNew->acbe_aifsn;
 	pOld->acbe.aci.acm = pNew->acbe_acm;
@@ -323,22 +324,21 @@ void convert_wmm_params(struct mac_context *mac,
 	pOld->acvo.txoplimit = pNew->acvo_txoplimit;
 }
 
-void convert_erp_info(struct mac_context *mac,
-		      tSirMacErpInfo *pOld, tDot11fIEERPInfo *pNew)
+void convert_erp_info(struct mac_context *mac, tSirMacErpInfo *pOld,
+		      tDot11fIEERPInfo *pNew)
 {
 	pOld->nonErpPresent = pNew->non_erp_present;
 	pOld->useProtection = pNew->use_prot;
 	pOld->barkerPreambleMode = pNew->barker_preamble;
 }
 
-void convert_edca_param(struct mac_context *mac,
-			tSirMacEdcaParamSetIE *pOld,
+void convert_edca_param(struct mac_context *mac, tSirMacEdcaParamSetIE *pOld,
 			tDot11fIEEDCAParamSet *pNew)
 {
 	pOld->type = 12;
 	pOld->length = 20;
 
-	qdf_mem_copy((uint8_t *) &pOld->qosInfo, (uint8_t *) &pNew->qos, 1);
+	qdf_mem_copy((uint8_t *)&pOld->qosInfo, (uint8_t *)&pNew->qos, 1);
 
 	pOld->acbe.aci.aifsn = pNew->acbe_aifsn;
 	pOld->acbe.aci.acm = pNew->acbe_acm;
@@ -367,14 +367,13 @@ void convert_edca_param(struct mac_context *mac,
 	pOld->acvo.cw.min = pNew->acvo_acwmin;
 	pOld->acvo.cw.max = pNew->acvo_acwmax;
 	pOld->acvo.txoplimit = pNew->acvo_txoplimit;
-
 }
 
 void convert_mu_edca_param(struct mac_context *mac_ctx,
-			tSirMacEdcaParamSetIE *mu_edca,
-			tDot11fIEmu_edca_param_set *ie)
+			   tSirMacEdcaParamSetIE *mu_edca,
+			   tDot11fIEmu_edca_param_set *ie)
 {
-	qdf_mem_copy((uint8_t *) &mu_edca->qosInfo, (uint8_t *) &ie->qos, 1);
+	qdf_mem_copy((uint8_t *)&mu_edca->qosInfo, (uint8_t *)&ie->qos, 1);
 
 	mu_edca->acbe.aci.aifsn = ie->acbe_aifsn;
 	mu_edca->acbe.aci.acm = ie->acbe_acm;
@@ -403,22 +402,21 @@ void convert_mu_edca_param(struct mac_context *mac_ctx,
 	mu_edca->acvo.cw.min = ie->acvo_acwmin;
 	mu_edca->acvo.cw.max = ie->acvo_acwmax;
 	mu_edca->acvo.mu_edca_timer = ie->acvo_muedca_timer;
-
 }
 
-void convert_tspec(struct mac_context *mac,
-		   struct mac_tspec_ie *pOld, tDot11fIETSPEC *pNew)
+void convert_tspec(struct mac_context *mac, struct mac_tspec_ie *pOld,
+		   tDot11fIETSPEC *pNew)
 {
-	pOld->tsinfo.traffic.trafficType = (uint16_t) pNew->traffic_type;
-	pOld->tsinfo.traffic.tsid = (uint16_t) pNew->tsid;
-	pOld->tsinfo.traffic.direction = (uint16_t) pNew->direction;
-	pOld->tsinfo.traffic.accessPolicy = (uint16_t) pNew->access_policy;
-	pOld->tsinfo.traffic.aggregation = (uint16_t) pNew->aggregation;
-	pOld->tsinfo.traffic.psb = (uint16_t) pNew->psb;
-	pOld->tsinfo.traffic.userPrio = (uint16_t) pNew->user_priority;
-	pOld->tsinfo.traffic.ackPolicy = (uint16_t) pNew->tsinfo_ack_pol;
+	pOld->tsinfo.traffic.trafficType = (uint16_t)pNew->traffic_type;
+	pOld->tsinfo.traffic.tsid = (uint16_t)pNew->tsid;
+	pOld->tsinfo.traffic.direction = (uint16_t)pNew->direction;
+	pOld->tsinfo.traffic.accessPolicy = (uint16_t)pNew->access_policy;
+	pOld->tsinfo.traffic.aggregation = (uint16_t)pNew->aggregation;
+	pOld->tsinfo.traffic.psb = (uint16_t)pNew->psb;
+	pOld->tsinfo.traffic.userPrio = (uint16_t)pNew->user_priority;
+	pOld->tsinfo.traffic.ackPolicy = (uint16_t)pNew->tsinfo_ack_pol;
 
-	pOld->tsinfo.schedule.schedule = (uint8_t) pNew->schedule;
+	pOld->tsinfo.schedule.schedule = (uint8_t)pNew->schedule;
 
 	pOld->nomMsduSz = pNew->size;
 	pOld->maxMsduSz = pNew->max_msdu_size;
@@ -437,8 +435,8 @@ void convert_tspec(struct mac_context *mac,
 	pOld->mediumTime = pNew->medium_time;
 }
 
-QDF_STATUS convert_tclas(struct mac_context *mac,
-			 tSirTclasInfo *pOld, tDot11fIETCLAS *pNew)
+QDF_STATUS convert_tclas(struct mac_context *mac, tSirTclasInfo *pOld,
+			 tDot11fIETCLAS *pNew)
 {
 	uint32_t length = 0;
 
@@ -447,7 +445,7 @@ QDF_STATUS convert_tclas(struct mac_context *mac,
 	}
 
 	pOld->tclas.type = DOT11F_EID_TCLAS;
-	pOld->tclas.length = (uint8_t) length;
+	pOld->tclas.length = (uint8_t)length;
 	pOld->tclas.userPrio = pNew->user_priority;
 	pOld->tclas.classifierType = pNew->classifier_type;
 	pOld->tclas.classifierMask = pNew->classifier_mask;
@@ -464,9 +462,10 @@ QDF_STATUS convert_tclas(struct mac_context *mac,
 		pOld->version = pNew->info.IpParams.version;
 		if (4 == pNew->info.IpParams.version) {
 			pOld->tclasParams.ipv4.version = 4;
-			qdf_mem_copy(pOld->tclasParams.ipv4.srcIpAddr,
-				     pNew->info.IpParams.params.IpV4Params.
-				     source, 4);
+			qdf_mem_copy(
+				pOld->tclasParams.ipv4.srcIpAddr,
+				pNew->info.IpParams.params.IpV4Params.source,
+				4);
 			qdf_mem_copy(pOld->tclasParams.ipv4.dstIpAddr,
 				     pNew->info.IpParams.params.IpV4Params.dest,
 				     4);
@@ -482,22 +481,25 @@ QDF_STATUS convert_tclas(struct mac_context *mac,
 				pNew->info.IpParams.params.IpV4Params.reserved;
 		} else if (6 == pNew->info.IpParams.version) {
 			pOld->tclasParams.ipv6.version = 6;
-			qdf_mem_copy((uint8_t *) pOld->tclasParams.ipv6.
-				     srcIpAddr,
-				     (uint8_t *) pNew->info.IpParams.params.
-				     IpV6Params.source, 16);
-			qdf_mem_copy((uint8_t *) pOld->tclasParams.ipv6.
-				     dstIpAddr,
-				     (uint8_t *) pNew->info.IpParams.params.
-				     IpV6Params.dest, 16);
+			qdf_mem_copy(
+				(uint8_t *)pOld->tclasParams.ipv6.srcIpAddr,
+				(uint8_t *)pNew->info.IpParams.params.IpV6Params
+					.source,
+				16);
+			qdf_mem_copy(
+				(uint8_t *)pOld->tclasParams.ipv6.dstIpAddr,
+				(uint8_t *)pNew->info.IpParams.params.IpV6Params
+					.dest,
+				16);
 			pOld->tclasParams.ipv6.srcPort =
 				pNew->info.IpParams.params.IpV6Params.src_port;
 			pOld->tclasParams.ipv6.dstPort =
 				pNew->info.IpParams.params.IpV6Params.dest_port;
-			qdf_mem_copy((uint8_t *) pOld->tclasParams.ipv6.
-				     flowLabel,
-				     (uint8_t *) pNew->info.IpParams.params.
-				     IpV6Params.flow_label, 3);
+			qdf_mem_copy(
+				(uint8_t *)pOld->tclasParams.ipv6.flowLabel,
+				(uint8_t *)pNew->info.IpParams.params.IpV6Params
+					.flow_label,
+				3);
 		} else {
 			return QDF_STATUS_E_FAILURE;
 		}
@@ -513,17 +515,17 @@ QDF_STATUS convert_tclas(struct mac_context *mac,
 	return QDF_STATUS_SUCCESS;
 }
 
-void convert_wmmtspec(struct mac_context *mac,
-		      struct mac_tspec_ie *pOld, tDot11fIEWMMTSPEC *pNew)
+void convert_wmmtspec(struct mac_context *mac, struct mac_tspec_ie *pOld,
+		      tDot11fIEWMMTSPEC *pNew)
 {
-	pOld->tsinfo.traffic.trafficType = (uint16_t) pNew->traffic_type;
-	pOld->tsinfo.traffic.tsid = (uint16_t) pNew->tsid;
-	pOld->tsinfo.traffic.direction = (uint16_t) pNew->direction;
-	pOld->tsinfo.traffic.accessPolicy = (uint16_t) pNew->access_policy;
-	pOld->tsinfo.traffic.aggregation = (uint16_t) pNew->aggregation;
-	pOld->tsinfo.traffic.psb = (uint16_t) pNew->psb;
-	pOld->tsinfo.traffic.userPrio = (uint16_t) pNew->user_priority;
-	pOld->tsinfo.traffic.ackPolicy = (uint16_t) pNew->tsinfo_ack_pol;
+	pOld->tsinfo.traffic.trafficType = (uint16_t)pNew->traffic_type;
+	pOld->tsinfo.traffic.tsid = (uint16_t)pNew->tsid;
+	pOld->tsinfo.traffic.direction = (uint16_t)pNew->direction;
+	pOld->tsinfo.traffic.accessPolicy = (uint16_t)pNew->access_policy;
+	pOld->tsinfo.traffic.aggregation = (uint16_t)pNew->aggregation;
+	pOld->tsinfo.traffic.psb = (uint16_t)pNew->psb;
+	pOld->tsinfo.traffic.userPrio = (uint16_t)pNew->user_priority;
+	pOld->tsinfo.traffic.ackPolicy = (uint16_t)pNew->tsinfo_ack_pol;
 	pOld->nomMsduSz = (pNew->fixed << 15) | pNew->size;
 	pOld->maxMsduSz = pNew->max_msdu_size;
 	pOld->minSvcInterval = pNew->min_service_int;
@@ -541,8 +543,8 @@ void convert_wmmtspec(struct mac_context *mac,
 	pOld->mediumTime = pNew->medium_time;
 }
 
-QDF_STATUS convert_wmmtclas(struct mac_context *mac,
-			    tSirTclasInfo *pOld, tDot11fIEWMMTCLAS *pNew)
+QDF_STATUS convert_wmmtclas(struct mac_context *mac, tSirTclasInfo *pOld,
+			    tDot11fIEWMMTCLAS *pNew)
 {
 	uint32_t length = 0;
 
@@ -551,7 +553,7 @@ QDF_STATUS convert_wmmtclas(struct mac_context *mac,
 	}
 
 	pOld->tclas.type = DOT11F_EID_WMMTCLAS;
-	pOld->tclas.length = (uint8_t) length;
+	pOld->tclas.length = (uint8_t)length;
 	pOld->tclas.userPrio = pNew->user_priority;
 	pOld->tclas.classifierType = pNew->classifier_type;
 	pOld->tclas.classifierMask = pNew->classifier_mask;
@@ -568,9 +570,10 @@ QDF_STATUS convert_wmmtclas(struct mac_context *mac,
 		pOld->version = pNew->info.IpParams.version;
 		if (4 == pNew->info.IpParams.version) {
 			pOld->tclasParams.ipv4.version = 4;
-			qdf_mem_copy(pOld->tclasParams.ipv4.srcIpAddr,
-				     pNew->info.IpParams.params.IpV4Params.
-				     source, 4);
+			qdf_mem_copy(
+				pOld->tclasParams.ipv4.srcIpAddr,
+				pNew->info.IpParams.params.IpV4Params.source,
+				4);
 			qdf_mem_copy(pOld->tclasParams.ipv4.dstIpAddr,
 				     pNew->info.IpParams.params.IpV4Params.dest,
 				     4);
@@ -586,22 +589,25 @@ QDF_STATUS convert_wmmtclas(struct mac_context *mac,
 				pNew->info.IpParams.params.IpV4Params.reserved;
 		} else if (6 == pNew->info.IpParams.version) {
 			pOld->tclasParams.ipv6.version = 6;
-			qdf_mem_copy((uint8_t *) pOld->tclasParams.ipv6.
-				     srcIpAddr,
-				     (uint8_t *) pNew->info.IpParams.params.
-				     IpV6Params.source, 16);
-			qdf_mem_copy((uint8_t *) pOld->tclasParams.ipv6.
-				     dstIpAddr,
-				     (uint8_t *) pNew->info.IpParams.params.
-				     IpV6Params.dest, 16);
+			qdf_mem_copy(
+				(uint8_t *)pOld->tclasParams.ipv6.srcIpAddr,
+				(uint8_t *)pNew->info.IpParams.params.IpV6Params
+					.source,
+				16);
+			qdf_mem_copy(
+				(uint8_t *)pOld->tclasParams.ipv6.dstIpAddr,
+				(uint8_t *)pNew->info.IpParams.params.IpV6Params
+					.dest,
+				16);
 			pOld->tclasParams.ipv6.srcPort =
 				pNew->info.IpParams.params.IpV6Params.src_port;
 			pOld->tclasParams.ipv6.dstPort =
 				pNew->info.IpParams.params.IpV6Params.dest_port;
-			qdf_mem_copy((uint8_t *) pOld->tclasParams.ipv6.
-				     flowLabel,
-				     (uint8_t *) pNew->info.IpParams.params.
-				     IpV6Params.flow_label, 3);
+			qdf_mem_copy(
+				(uint8_t *)pOld->tclasParams.ipv6.flowLabel,
+				(uint8_t *)pNew->info.IpParams.params.IpV6Params
+					.flow_label,
+				3);
 		} else {
 			return QDF_STATUS_E_FAILURE;
 		}
@@ -617,16 +623,16 @@ QDF_STATUS convert_wmmtclas(struct mac_context *mac,
 	return QDF_STATUS_SUCCESS;
 }
 
-void convert_ts_delay(struct mac_context *mac,
-		      tSirMacTsDelayIE *pOld, tDot11fIETSDelay *pNew)
+void convert_ts_delay(struct mac_context *mac, tSirMacTsDelayIE *pOld,
+		      tDot11fIETSDelay *pNew)
 {
 	pOld->type = DOT11F_EID_TSDELAY;
 	pOld->length = 4U;
 	pOld->delay = pNew->delay;
 }
 
-void convert_schedule(struct mac_context *mac,
-		      tSirMacScheduleIE *pOld, tDot11fIESchedule *pNew)
+void convert_schedule(struct mac_context *mac, tSirMacScheduleIE *pOld,
+		      tDot11fIESchedule *pNew)
 {
 	pOld->type = DOT11F_EID_SCHEDULE;
 	pOld->length = DOT11F_IE_SCHEDULE_MIN_LEN;
@@ -640,8 +646,8 @@ void convert_schedule(struct mac_context *mac,
 	pOld->specInterval = pNew->spec_interval;
 }
 
-void convert_wmm_schedule(struct mac_context *mac,
-			  tSirMacScheduleIE *pOld, tDot11fIEWMMSchedule *pNew)
+void convert_wmm_schedule(struct mac_context *mac, tSirMacScheduleIE *pOld,
+			  tDot11fIEWMMSchedule *pNew)
 {
 	pOld->type = DOT11F_EID_WMMSCHEDULE;
 	pOld->length = DOT11F_IE_WMMSCHEDULE_MIN_LEN;
@@ -668,20 +674,22 @@ void convert_qos_mapset_frame(struct mac_context *mac, struct qos_map_set *qos,
 		return;
 	}
 
-	dot11_dscp_exception_sz = dot11f_ie->num_dscp_exceptions -
-				  DOT11F_IE_QOSMAPSET_MIN_LEN;
+	dot11_dscp_exception_sz =
+		dot11f_ie->num_dscp_exceptions - DOT11F_IE_QOSMAPSET_MIN_LEN;
 	qos->num_dscp_exceptions = dot11_dscp_exception_sz / 2;
 	if (qos->num_dscp_exceptions > QOS_MAP_MAX_EX)
 		qos->num_dscp_exceptions = QOS_MAP_MAX_EX;
 
-	for (i = 0; i < qos->num_dscp_exceptions &&
-	     j < dot11_dscp_exception_sz - 1; i++) {
+	for (i = 0;
+	     i < qos->num_dscp_exceptions && j < dot11_dscp_exception_sz - 1;
+	     i++) {
 		qos->dscp_exceptions[i][0] = dot11f_ie->dscp_exceptions[j++];
 		qos->dscp_exceptions[i][1] = dot11f_ie->dscp_exceptions[j++];
 	}
 
-	for (i = 0; i < QOS_MAP_RANGE_NUM &&
-	     j < dot11f_ie->num_dscp_exceptions - 1; i++) {
+	for (i = 0;
+	     i < QOS_MAP_RANGE_NUM && j < dot11f_ie->num_dscp_exceptions - 1;
+	     i++) {
 		qos->dscp_range[i][0] = dot11f_ie->dscp_exceptions[j++];
 		qos->dscp_range[i][1] = dot11f_ie->dscp_exceptions[j++];
 	}

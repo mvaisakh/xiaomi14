@@ -6,29 +6,29 @@
 
 #define DEBUG
 
-#include <linux/gpio.h>
-#include <linux/of_gpio.h>
-#include <linux/platform_device.h>
-#include <linux/slab.h>
-#include <linux/of_device.h>
-#include <sound/control.h>
-#include <sound/core.h>
-#include <sound/soc.h>
-#include <sound/pcm_params.h>
 #include <asoc/msm-cdc-pinctrl.h>
-#include <dsp/spf-core.h>
-#include <dsp/msm_audio_ion.h>
-#include <sound/info.h>
 #include <dsp/audio_prm.h>
 #include <dsp/digital-cdc-rsc-mgr.h>
+#include <dsp/msm_audio_ion.h>
+#include <dsp/spf-core.h>
+#include <linux/gpio.h>
+#include <linux/of_device.h>
+#include <linux/of_gpio.h>
+#include <linux/platform_device.h>
 #include <linux/sched/walt.h>
+#include <linux/slab.h>
+#include <sound/control.h>
+#include <sound/core.h>
+#include <sound/info.h>
+#include <sound/pcm_params.h>
+#include <sound/soc.h>
 
 #include "msm_common.h"
 
 struct snd_card_pdata {
 	struct kobject snd_card_kobj;
 	int card_status;
-}*snd_card_pdata;
+} *snd_card_pdata;
 
 #define to_asoc_mach_common_pdata(kobj) \
 	container_of((kobj), struct msm_common_pdata, aud_dev_kobj)
@@ -45,10 +45,10 @@ struct snd_card_pdata {
 #define TDM_MAX_SLOTS 8
 #define MI2S_NUM_CHANNELS 2
 
-#define SAMPLING_RATE_44P1KHZ   44100
-#define SAMPLING_RATE_88P2KHZ   88200
-#define SAMPLING_RATE_176P4KHZ  176400
-#define SAMPLING_RATE_352P8KHZ  352800
+#define SAMPLING_RATE_44P1KHZ 44100
+#define SAMPLING_RATE_88P2KHZ 88200
+#define SAMPLING_RATE_176P4KHZ 176400
+#define SAMPLING_RATE_352P8KHZ 352800
 
 struct mutex vote_against_sleep_lock;
 
@@ -78,13 +78,12 @@ struct chmap_pdata {
 
 static const struct snd_pcm_hardware dummy_dma_hardware = {
 	/* Random values to keep userspace happy when checking constraints */
-	.info               = SNDRV_PCM_INFO_INTERLEAVED |
-					SNDRV_PCM_INFO_BLOCK_TRANSFER,
-	.buffer_bytes_max   = 128*1024,
-	.period_bytes_min   = PAGE_SIZE,
-	.period_bytes_max   = PAGE_SIZE*2,
-	.periods_min        = 2,
-	.periods_max        = 128,
+	.info = SNDRV_PCM_INFO_INTERLEAVED | SNDRV_PCM_INFO_BLOCK_TRANSFER,
+	.buffer_bytes_max = 128 * 1024,
+	.period_bytes_min = PAGE_SIZE,
+	.period_bytes_max = PAGE_SIZE * 2,
+	.periods_min = 2,
+	.periods_max = 128,
 };
 
 #define MAX_USR_INPUT 10
@@ -102,11 +101,12 @@ static uint32_t audio_core_num = MAX_AUDIO_CPU_CORE_NUM;
 static cpumask_t audio_cpu_map = CPU_MASK_NONE;
 static struct dev_pm_qos_request *msm_audio_req = NULL;
 static bool kregister_pm_qos_latency_controls = false;
-#define MSM_LL_QOS_VALUE	300 /* time in us to ensure LPM doesn't go in C3/C4 */
+#define MSM_LL_QOS_VALUE \
+	300 /* time in us to ensure LPM doesn't go in C3/C4   \
+                              */
 
-static ssize_t aud_dev_sysfs_store(struct kobject *kobj,
-		struct attribute *attr,
-		const char *buf, size_t count)
+static ssize_t aud_dev_sysfs_store(struct kobject *kobj, struct attribute *attr,
+				   const char *buf, size_t count)
 {
 	ssize_t ret = -EINVAL;
 	struct msm_common_pdata *pdata = to_asoc_mach_common_pdata(kobj);
@@ -151,17 +151,17 @@ static int aud_dev_sysfs_init(struct msm_common_pdata *pdata)
 	char dir[10] = "aud_dev";
 
 	ret = kobject_init_and_add(&pdata->aud_dev_kobj, &aud_dev_ktype,
-		      kernel_kobj, dir);
+				   kernel_kobj, dir);
 	if (ret < 0) {
-		 pr_err("%s: Failed to add kobject %s, err = %d\n",
-			  __func__, dir, ret);
-		 goto done;
+		pr_err("%s: Failed to add kobject %s, err = %d\n", __func__,
+		       dir, ret);
+		goto done;
 	}
 
 	ret = sysfs_create_file(&pdata->aud_dev_kobj, &device_state_attr);
 	if (ret < 0) {
 		pr_err("%s: Failed to add wdsp_boot sysfs entry to %s\n",
-			__func__, dir);
+		       __func__, dir);
 		goto fail_create_file;
 	}
 
@@ -180,8 +180,9 @@ int snd_card_notify_user(snd_card_status_t card_status)
 	if (card_status == 0) {
 		mutex_lock(&vote_against_sleep_lock);
 		vote_against_sleep_cnt = 0;
-		pr_debug("%s: SSR/PDR triggered reset vote_against_sleep_cnt = %d\n",
-					__func__, vote_against_sleep_cnt);
+		pr_debug(
+			"%s: SSR/PDR triggered reset vote_against_sleep_cnt = %d\n",
+			__func__, vote_against_sleep_cnt);
 		mutex_unlock(&vote_against_sleep_lock);
 	}
 	return 0;
@@ -193,14 +194,15 @@ int snd_card_set_card_status(snd_card_status_t card_status)
 	return 0;
 }
 
-static ssize_t snd_card_sysfs_show(struct kobject *kobj,
-		struct attribute *attr, char *buf)
+static ssize_t snd_card_sysfs_show(struct kobject *kobj, struct attribute *attr,
+				   char *buf)
 {
 	return snprintf(buf, BUF_SZ, "%d", snd_card_pdata->card_status);
 }
 
 static ssize_t snd_card_sysfs_store(struct kobject *kobj,
-		struct attribute *attr, const char *buf, size_t count)
+				    struct attribute *attr, const char *buf,
+				    size_t count)
 {
 	sscanf(buf, "%d", &snd_card_pdata->card_status);
 	sysfs_notify(&snd_card_pdata->snd_card_kobj, NULL, "card_state");
@@ -222,18 +224,19 @@ int snd_card_sysfs_init(void)
 	char dir[DIR_SZ] = "snd_card";
 
 	snd_card_pdata = kcalloc(1, sizeof(struct snd_card_pdata), GFP_KERNEL);
-	ret = kobject_init_and_add(&snd_card_pdata->snd_card_kobj, &snd_card_ktype,
-		kernel_kobj, dir);
+	ret = kobject_init_and_add(&snd_card_pdata->snd_card_kobj,
+				   &snd_card_ktype, kernel_kobj, dir);
 	if (ret < 0) {
-		pr_err("%s: Failed to add kobject %s, err = %d\n",
-			__func__, dir, ret);
+		pr_err("%s: Failed to add kobject %s, err = %d\n", __func__,
+		       dir, ret);
 		goto done;
 	}
 
-	ret = sysfs_create_file(&snd_card_pdata->snd_card_kobj, &card_state_attr);
+	ret = sysfs_create_file(&snd_card_pdata->snd_card_kobj,
+				&card_state_attr);
 	if (ret < 0) {
 		pr_err("%s: Failed to add snd_card sysfs entry to %s\n",
-			__func__, dir);
+		       __func__, dir);
 		goto fail_create_file;
 	}
 
@@ -247,7 +250,6 @@ done:
 
 static int get_mi2s_tdm_auxpcm_intf_index(const char *stream_name)
 {
-
 	if (!strnstr(stream_name, "TDM", strlen(stream_name)) &&
 	    !strnstr(stream_name, "MI2S", strlen(stream_name)) &&
 	    !strnstr(stream_name, "AUXPCM", strlen(stream_name)))
@@ -259,13 +261,12 @@ static int get_mi2s_tdm_auxpcm_intf_index(const char *stream_name)
 		return SEN_MI2S_TDM_AUXPCM;
 	else if (strnstr(stream_name, "LPAIF_VA", strlen(stream_name)))
 		return QUIN_MI2S_TDM_AUXPCM;
-	else if (strnstr(stream_name, "LPAIF_AUD", strlen(stream_name))){
+	else if (strnstr(stream_name, "LPAIF_AUD", strlen(stream_name))) {
 		if (strnstr(stream_name, "PRIMARY", strlen(stream_name)))
 			return SEP_MI2S_TDM_AUXPCM;
 		else if (strnstr(stream_name, "SECONDARY", strlen(stream_name)))
 			return TER_MI2S_TDM_AUXPCM;
-	}
-	else if (strnstr(stream_name, "LPAIF", strlen(stream_name))) {
+	} else if (strnstr(stream_name, "LPAIF", strlen(stream_name))) {
 		if (strnstr(stream_name, "PRIMARY", strlen(stream_name)))
 			return PRI_MI2S_TDM_AUXPCM;
 		else if (strnstr(stream_name, "SECONDARY", strlen(stream_name)))
@@ -293,7 +294,7 @@ static int get_mi2s_clk_id(int index)
 {
 	int clk_id = -EINVAL;
 
-	switch(index) {
+	switch (index) {
 	case PRI_MI2S_TDM_AUXPCM:
 		clk_id = CLOCK_ID_PRI_MI2S_IBIT;
 		break;
@@ -326,7 +327,7 @@ static int get_tdm_clk_id(int index)
 {
 	int clk_id = -EINVAL;
 
-	switch(index) {
+	switch (index) {
 	case PRI_MI2S_TDM_AUXPCM:
 		clk_id = CLOCK_ID_PRI_TDM_IBIT;
 		break;
@@ -364,23 +365,26 @@ int mi2s_tdm_hw_vote_req(struct msm_common_pdata *pdata, int enable)
 		return -EINVAL;
 	}
 
-	pr_debug("%s: lpass audio hw vote for fractional sample rate enable: %d\n",
-				__func__, enable);
+	pr_debug(
+		"%s: lpass audio hw vote for fractional sample rate enable: %d\n",
+		__func__, enable);
 
 	if (enable) {
 		if (atomic_read(&pdata->lpass_audio_hw_vote_ref_cnt) == 0) {
-			ret = digital_cdc_rsc_mgr_hw_vote_enable(pdata->lpass_audio_hw_vote, NULL);
+			ret = digital_cdc_rsc_mgr_hw_vote_enable(
+				pdata->lpass_audio_hw_vote, NULL);
 			if (ret < 0) {
 				pr_err("%s lpass audio hw vote enable failed %d\n",
-					__func__, ret);
-					return ret;
-				}
+				       __func__, ret);
+				return ret;
 			}
+		}
 		atomic_inc(&pdata->lpass_audio_hw_vote_ref_cnt);
 	} else {
 		atomic_dec(&pdata->lpass_audio_hw_vote_ref_cnt);
 		if (atomic_read(&pdata->lpass_audio_hw_vote_ref_cnt) == 0)
-			digital_cdc_rsc_mgr_hw_vote_disable(pdata->lpass_audio_hw_vote, NULL);
+			digital_cdc_rsc_mgr_hw_vote_disable(
+				pdata->lpass_audio_hw_vote, NULL);
 		else if (atomic_read(&pdata->lpass_audio_hw_vote_ref_cnt) < 0)
 			atomic_set(&pdata->lpass_audio_hw_vote_ref_cnt, 0);
 	}
@@ -388,7 +392,7 @@ int mi2s_tdm_hw_vote_req(struct msm_common_pdata *pdata, int enable)
 }
 
 int msm_common_snd_hw_params(struct snd_pcm_substream *substream,
-				struct snd_pcm_hw_params *params)
+			     struct snd_pcm_hw_params *params)
 {
 	int ret = 0;
 	int slot_width = TDM_SLOT_WIDTH_BITS;
@@ -402,9 +406,8 @@ int msm_common_snd_hw_params(struct snd_pcm_substream *substream,
 	int index = get_mi2s_tdm_auxpcm_intf_index(stream_name);
 	struct clk_cfg intf_clk_cfg;
 
-	dev_dbg(rtd->card->dev,
-		"%s: substream = %s  stream = %d\n",
-		__func__, substream->name, substream->stream);
+	dev_dbg(rtd->card->dev, "%s: substream = %s  stream = %d\n", __func__,
+		substream->name, substream->stream);
 
 	if (!pdata) {
 		dev_err(rtd->card->dev, "%s: pdata is NULL\n", __func__);
@@ -414,44 +417,49 @@ int msm_common_snd_hw_params(struct snd_pcm_substream *substream,
 	if (index >= 0) {
 		mutex_lock(&pdata->lock[index]);
 		if (atomic_read(&pdata->lpass_intf_clk_ref_cnt[index]) == 0) {
-			if ((strnstr(stream_name, "TDM", strlen(stream_name)))) {
+			if ((strnstr(stream_name, "TDM",
+				     strlen(stream_name)))) {
 				slots = pdata->tdm_max_slots;
 				rate = params_rate(params);
 
 				ret = get_tdm_clk_id(index);
-				if ( ret < 0)
-					goto done;
-
-				intf_clk_cfg.clk_id = ret;
-				intf_clk_cfg.clk_freq_in_hz = rate * slot_width * slots;
-				intf_clk_cfg.clk_attri = pdata->tdm_clk_attribute[index];
-				intf_clk_cfg.clk_root = 0;
-
-				if (pdata->is_audio_hw_vote_required[index]  &&
-					(is_fractional_sample_rate(rate) ||
-					(index == QUIN_MI2S_TDM_AUXPCM))) {
-					ret = mi2s_tdm_hw_vote_req(pdata, 1);
-					if (ret < 0) {
-						pr_err("%s lpass audio hw vote enable failed %d\n",
-							__func__, ret);
-						goto done;
-					}
-				}
-				pr_debug("%s: clk_id :%d clk freq %d\n", __func__,
-					intf_clk_cfg.clk_id, intf_clk_cfg.clk_freq_in_hz);
-				ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg, 1);
-				if (ret < 0) {
-					pr_err("%s: prm lpass tdm clk cfg set failed ret %d\n",
-						__func__, ret);
-					goto done;
-				}
-			} else if ((strnstr(stream_name, "MI2S", strlen(stream_name)))) {
-
-				ret =  get_mi2s_clk_id(index);
 				if (ret < 0)
 					goto done;
 
-				intf_clk_cfg.clk_id =  ret;
+				intf_clk_cfg.clk_id = ret;
+				intf_clk_cfg.clk_freq_in_hz =
+					rate * slot_width * slots;
+				intf_clk_cfg.clk_attri =
+					pdata->tdm_clk_attribute[index];
+				intf_clk_cfg.clk_root = 0;
+
+				if (pdata->is_audio_hw_vote_required[index] &&
+				    (is_fractional_sample_rate(rate) ||
+				     (index == QUIN_MI2S_TDM_AUXPCM))) {
+					ret = mi2s_tdm_hw_vote_req(pdata, 1);
+					if (ret < 0) {
+						pr_err("%s lpass audio hw vote enable failed %d\n",
+						       __func__, ret);
+						goto done;
+					}
+				}
+				pr_debug("%s: clk_id :%d clk freq %d\n",
+					 __func__, intf_clk_cfg.clk_id,
+					 intf_clk_cfg.clk_freq_in_hz);
+				ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg,
+								  1);
+				if (ret < 0) {
+					pr_err("%s: prm lpass tdm clk cfg set failed ret %d\n",
+					       __func__, ret);
+					goto done;
+				}
+			} else if ((strnstr(stream_name, "MI2S",
+					    strlen(stream_name)))) {
+				ret = get_mi2s_clk_id(index);
+				if (ret < 0)
+					goto done;
+
+				intf_clk_cfg.clk_id = ret;
 				rate = params_rate(params);
 				switch (params_format(params)) {
 				case SNDRV_PCM_FORMAT_S24_LE:
@@ -462,36 +470,40 @@ int msm_common_snd_hw_params(struct snd_pcm_substream *substream,
 				case SNDRV_PCM_FORMAT_S16_LE:
 				default:
 					sample_width = 16;
-					pr_debug("%s: bitwidth set to default : %d\n",
-							__func__, sample_width);
+					pr_debug(
+						"%s: bitwidth set to default : %d\n",
+						__func__, sample_width);
 				}
 
-				intf_clk_cfg.clk_freq_in_hz = rate *
-					MI2S_NUM_CHANNELS * sample_width;
-				intf_clk_cfg.clk_attri = pdata->mi2s_clk_attribute[index];
+				intf_clk_cfg.clk_freq_in_hz =
+					rate * MI2S_NUM_CHANNELS * sample_width;
+				intf_clk_cfg.clk_attri =
+					pdata->mi2s_clk_attribute[index];
 				intf_clk_cfg.clk_root = CLOCK_ROOT_DEFAULT;
 
-				if (pdata->is_audio_hw_vote_required[index]  &&
-					(is_fractional_sample_rate(rate) ||
-					(index == QUIN_MI2S_TDM_AUXPCM))) {
+				if (pdata->is_audio_hw_vote_required[index] &&
+				    (is_fractional_sample_rate(rate) ||
+				     (index == QUIN_MI2S_TDM_AUXPCM))) {
 					ret = mi2s_tdm_hw_vote_req(pdata, 1);
 					if (ret < 0) {
 						pr_err("%s lpass audio hw vote enable failed %d\n",
-						__func__, ret);
+						       __func__, ret);
 						goto done;
 					}
 				}
-				pr_debug("%s: mi2s clk_id :%d clk freq %d\n", __func__,
-					intf_clk_cfg.clk_id, intf_clk_cfg.clk_freq_in_hz);
-				ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg, 1);
+				pr_debug("%s: mi2s clk_id :%d clk freq %d\n",
+					 __func__, intf_clk_cfg.clk_id,
+					 intf_clk_cfg.clk_freq_in_hz);
+				ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg,
+								  1);
 				if (ret < 0) {
 					pr_err("%s: prm lpass mi2s clk cfg set failed ret %d\n",
-						__func__, ret);
+					       __func__, ret);
 					goto done;
 				}
 			} else {
 				pr_err("%s: unsupported stream name: %s\n",
-					__func__, stream_name);
+				       __func__, stream_name);
 				goto done;
 			}
 		}
@@ -511,9 +523,8 @@ int msm_common_snd_startup(struct snd_pcm_substream *substream)
 	const char *stream_name = rtd->dai_link->stream_name;
 	int index = get_mi2s_tdm_auxpcm_intf_index(stream_name);
 
-	dev_dbg(rtd->card->dev,
-		"%s: substream = %s  stream = %d\n",
-		__func__, substream->name, substream->stream);
+	dev_dbg(rtd->card->dev, "%s: substream = %s  stream = %d\n", __func__,
+		substream->name, substream->stream);
 
 	if (!pdata) {
 		dev_err(rtd->card->dev, "%s: pdata is NULL\n", __func__);
@@ -526,12 +537,13 @@ int msm_common_snd_startup(struct snd_pcm_substream *substream)
 	if (index >= 0) {
 		mutex_lock(&pdata->lock[index]);
 		if (pdata->mi2s_gpio_p[index]) {
-			if (atomic_read(&(pdata->mi2s_gpio_ref_cnt[index])) == 0) {
+			if (atomic_read(&(pdata->mi2s_gpio_ref_cnt[index])) ==
+			    0) {
 				ret = msm_cdc_pinctrl_select_active_state(
-						pdata->mi2s_gpio_p[index]);
+					pdata->mi2s_gpio_p[index]);
 				if (ret) {
-				  pr_err("%s:pinctrl set actve fail with %d\n",
-							__func__, ret);
+					pr_err("%s:pinctrl set actve fail with %d\n",
+					       __func__, ret);
 					goto done;
 				}
 			}
@@ -557,7 +569,7 @@ void msm_common_snd_shutdown(struct snd_pcm_substream *substream)
 
 	memset(&intf_clk_cfg, 0, sizeof(struct clk_cfg));
 	pr_debug("%s(): substream = %s  stream = %d\n", __func__,
-			substream->name, substream->stream);
+		 substream->name, substream->stream);
 
 	if (!pdata) {
 		dev_err(card->dev, "%s: pdata is NULL\n", __func__);
@@ -568,48 +580,56 @@ void msm_common_snd_shutdown(struct snd_pcm_substream *substream)
 		mutex_lock(&pdata->lock[index]);
 		atomic_dec(&pdata->lpass_intf_clk_ref_cnt[index]);
 		if (atomic_read(&pdata->lpass_intf_clk_ref_cnt[index]) == 0) {
-			if ((strnstr(stream_name, "TDM", strlen(stream_name)))) {
+			if ((strnstr(stream_name, "TDM",
+				     strlen(stream_name)))) {
 				ret = get_tdm_clk_id(index);
 				if (ret > 0) {
 					intf_clk_cfg.clk_id = ret;
-					ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg, 0);
+					ret = audio_prm_set_lpass_clk_cfg(
+						&intf_clk_cfg, 0);
 					if (ret < 0)
 						pr_err("%s: prm tdm clk cfg set failed ret %d\n",
-						__func__, ret);
+						       __func__, ret);
 				}
-			} else if((strnstr(stream_name, "MI2S", strlen(stream_name)))) {
+			} else if ((strnstr(stream_name, "MI2S",
+					    strlen(stream_name)))) {
 				ret = get_mi2s_clk_id(index);
 				if (ret > 0) {
 					intf_clk_cfg.clk_id = ret;
-					ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg, 0);
+					ret = audio_prm_set_lpass_clk_cfg(
+						&intf_clk_cfg, 0);
 					if (ret < 0)
 						pr_err("%s: prm mi2s clk cfg disable failed ret %d\n",
-							__func__, ret);
+						       __func__, ret);
 				}
 			} else {
 				pr_err("%s: unsupported stream name: %s\n",
-					__func__, stream_name);
+				       __func__, stream_name);
 			}
 
-			if (pdata->is_audio_hw_vote_required[index]  &&
-				(is_fractional_sample_rate(rate) ||
-				(index == QUIN_MI2S_TDM_AUXPCM))) {
+			if (pdata->is_audio_hw_vote_required[index] &&
+			    (is_fractional_sample_rate(rate) ||
+			     (index == QUIN_MI2S_TDM_AUXPCM))) {
 				ret = mi2s_tdm_hw_vote_req(pdata, 0);
 			}
-		} else if (atomic_read(&pdata->lpass_intf_clk_ref_cnt[index]) < 0) {
+		} else if (atomic_read(&pdata->lpass_intf_clk_ref_cnt[index]) <
+			   0) {
 			atomic_set(&pdata->lpass_intf_clk_ref_cnt[index], 0);
 		}
 
 		if (pdata->mi2s_gpio_p[index]) {
 			atomic_dec(&pdata->mi2s_gpio_ref_cnt[index]);
-			if (atomic_read(&pdata->mi2s_gpio_ref_cnt[index]) == 0)  {
+			if (atomic_read(&pdata->mi2s_gpio_ref_cnt[index]) ==
+			    0) {
 				ret = msm_cdc_pinctrl_select_sleep_state(
 					pdata->mi2s_gpio_p[index]);
 				if (ret)
 					dev_err(card->dev,
-					"%s: pinctrl set actv fail %d\n",
-					__func__, ret);
-			} else if (atomic_read(&pdata->mi2s_gpio_ref_cnt[index]) < 0) {
+						"%s: pinctrl set actv fail %d\n",
+						__func__, ret);
+			} else if (atomic_read(
+					   &pdata->mi2s_gpio_ref_cnt[index]) <
+				   0) {
 				atomic_set(&pdata->mi2s_gpio_ref_cnt[index], 0);
 			}
 		}
@@ -624,26 +644,26 @@ static void msm_audio_add_qos_request(void)
 	int ret = 0;
 
 	msm_audio_req = kcalloc(num_possible_cpus(),
-			sizeof(struct dev_pm_qos_request), GFP_KERNEL);
+				sizeof(struct dev_pm_qos_request), GFP_KERNEL);
 	if (!msm_audio_req)
 		return;
 
 	for (i = 0; i < audio_core_num; i++) {
 		if (audio_core_list[i] >= num_possible_cpus())
-			pr_err("%s incorrect cpu id: %d specified.\n",
-                                    __func__, audio_core_list[i]);
+			pr_err("%s incorrect cpu id: %d specified.\n", __func__,
+			       audio_core_list[i]);
 		else
 			cpumask_set_cpu(audio_core_list[i], &audio_cpu_map);
 	}
 
 	for_each_cpu(cpu, &audio_cpu_map) {
 		ret = dev_pm_qos_add_request(get_cpu_device(cpu),
-			    &msm_audio_req[cpu],
-			    DEV_PM_QOS_RESUME_LATENCY,
-			    PM_QOS_CPU_LATENCY_DEFAULT_VALUE);
+					     &msm_audio_req[cpu],
+					     DEV_PM_QOS_RESUME_LATENCY,
+					     PM_QOS_CPU_LATENCY_DEFAULT_VALUE);
 		if (ret < 0)
 			pr_err("%s error (%d) adding resume latency to cpu %d.\n",
-                                                __func__, ret, cpu);
+			       __func__, ret, cpu);
 		pr_debug("%s set cpu affinity to core %d.\n", __func__, cpu);
 	}
 }
@@ -655,12 +675,12 @@ static void msm_audio_remove_qos_request(void)
 
 	if (msm_audio_req) {
 		for_each_cpu(cpu, &audio_cpu_map) {
-			ret = dev_pm_qos_remove_request(
-				    &msm_audio_req[cpu]);
+			ret = dev_pm_qos_remove_request(&msm_audio_req[cpu]);
 			if (ret < 0)
 				pr_err("%s error (%d) removing request from cpu %d.\n",
-                                                __func__, ret, cpu);
-			pr_debug("%s remove cpu affinity of core %d.\n", __func__, cpu);
+				       __func__, ret, cpu);
+			pr_debug("%s remove cpu affinity of core %d.\n",
+				 __func__, cpu);
 		}
 		kfree(msm_audio_req);
 	}
@@ -670,7 +690,7 @@ int msm_common_snd_init(struct platform_device *pdev, struct snd_soc_card *card)
 {
 	struct msm_common_pdata *common_pdata = NULL;
 	int count, ret = 0;
-	uint32_t val_array[MI2S_TDM_AUXPCM_MAX] = {0};
+	uint32_t val_array[MI2S_TDM_AUXPCM_MAX] = { 0 };
 	struct clk *lpass_audio_hw_vote = NULL;
 	uint32_t *core_val_array = NULL;
 	common_pdata = kcalloc(1, sizeof(struct msm_common_pdata), GFP_KERNEL);
@@ -683,47 +703,51 @@ int msm_common_snd_init(struct platform_device *pdev, struct snd_soc_card *card)
 	}
 
 	ret = of_property_read_u32(pdev->dev.of_node, "qcom,tdm-max-slots",
-				&common_pdata->tdm_max_slots);
+				   &common_pdata->tdm_max_slots);
 	if (ret) {
 		dev_info(&pdev->dev, "%s: No DT match for tdm max slots\n",
-			__func__);
+			 __func__);
 	}
-	if ((common_pdata->tdm_max_slots <= 0) || (common_pdata->tdm_max_slots >
-			TDM_MAX_SLOTS)) {
+	if ((common_pdata->tdm_max_slots <= 0) ||
+	    (common_pdata->tdm_max_slots > TDM_MAX_SLOTS)) {
 		common_pdata->tdm_max_slots = TDM_MAX_SLOTS;
 		dev_info(&pdev->dev, "%s: Using default tdm max slot: %d\n",
-			__func__, common_pdata->tdm_max_slots);
+			 __func__, common_pdata->tdm_max_slots);
 	}
 
 	/* Register LPASS audio hw vote */
 	lpass_audio_hw_vote = devm_clk_get(&pdev->dev, "lpass_audio_hw_vote");
 	if (IS_ERR(lpass_audio_hw_vote)) {
 		ret = PTR_ERR(lpass_audio_hw_vote);
-		dev_dbg(&pdev->dev, "%s: clk get %s failed %d\n",
-			__func__, "lpass_audio_hw_vote", ret);
+		dev_dbg(&pdev->dev, "%s: clk get %s failed %d\n", __func__,
+			"lpass_audio_hw_vote", ret);
 		lpass_audio_hw_vote = NULL;
 		ret = 0;
 	}
 	common_pdata->lpass_audio_hw_vote = lpass_audio_hw_vote;
 
 	ret = of_property_read_u32_array(pdev->dev.of_node,
-				"qcom,mi2s-tdm-is-hw-vote-needed",
-				val_array, MI2S_TDM_AUXPCM_MAX);
+					 "qcom,mi2s-tdm-is-hw-vote-needed",
+					 val_array, MI2S_TDM_AUXPCM_MAX);
 	if (ret) {
-		dev_dbg(&pdev->dev, "%s:no qcom,mi2s-tdm-is-hw-vote-needed in DT node\n",
+		dev_dbg(&pdev->dev,
+			"%s:no qcom,mi2s-tdm-is-hw-vote-needed in DT node\n",
 			__func__);
 	} else {
 		for (count = 0; count < MI2S_TDM_AUXPCM_MAX; count++) {
 			common_pdata->is_audio_hw_vote_required[count] =
-					val_array[count];
+				val_array[count];
 		}
 	}
 
-	ret = of_property_read_u32_array(pdev->dev.of_node, "qcom,tdm-clk-attribute",
-			val_array, MI2S_TDM_AUXPCM_MAX);
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+					 "qcom,tdm-clk-attribute", val_array,
+					 MI2S_TDM_AUXPCM_MAX);
 	if (ret) {
-		dev_info(&pdev->dev,
-			"%s: No DT match for tdm clk attribute, set to default\n", __func__);
+		dev_info(
+			&pdev->dev,
+			"%s: No DT match for tdm clk attribute, set to default\n",
+			__func__);
 		for (count = 0; count < MI2S_TDM_AUXPCM_MAX; count++) {
 			common_pdata->tdm_clk_attribute[count] =
 				CLOCK_ATTRIBUTE_COUPLE_NO;
@@ -731,15 +755,18 @@ int msm_common_snd_init(struct platform_device *pdev, struct snd_soc_card *card)
 	} else {
 		for (count = 0; count < MI2S_TDM_AUXPCM_MAX; count++) {
 			common_pdata->tdm_clk_attribute[count] =
-					val_array[count];
+				val_array[count];
 		}
 	}
 
-	ret = of_property_read_u32_array(pdev->dev.of_node, "qcom,mi2s-clk-attribute",
-			val_array, MI2S_TDM_AUXPCM_MAX);
+	ret = of_property_read_u32_array(pdev->dev.of_node,
+					 "qcom,mi2s-clk-attribute", val_array,
+					 MI2S_TDM_AUXPCM_MAX);
 	if (ret) {
-		dev_info(&pdev->dev,
-			"%s: No DT match for mi2s clk attribute, set to default\n", __func__);
+		dev_info(
+			&pdev->dev,
+			"%s: No DT match for mi2s clk attribute, set to default\n",
+			__func__);
 		for (count = 0; count < MI2S_TDM_AUXPCM_MAX; count++) {
 			common_pdata->mi2s_clk_attribute[count] =
 				CLOCK_ATTRIBUTE_COUPLE_NO;
@@ -751,22 +778,22 @@ int msm_common_snd_init(struct platform_device *pdev, struct snd_soc_card *card)
 		}
 	}
 
-	common_pdata->mi2s_gpio_p[PRI_MI2S_TDM_AUXPCM] = of_parse_phandle(pdev->dev.of_node,
-			"qcom,pri-mi2s-gpios", 0);
-	common_pdata->mi2s_gpio_p[SEC_MI2S_TDM_AUXPCM] = of_parse_phandle(pdev->dev.of_node,
-			"qcom,sec-mi2s-gpios", 0);
-	common_pdata->mi2s_gpio_p[TER_MI2S_TDM_AUXPCM] = of_parse_phandle(pdev->dev.of_node,
-			"qcom,tert-mi2s-gpios", 0);
-	common_pdata->mi2s_gpio_p[QUAT_MI2S_TDM_AUXPCM] = of_parse_phandle(pdev->dev.of_node,
-			"qcom,quat-mi2s-gpios", 0);
-	common_pdata->mi2s_gpio_p[QUIN_MI2S_TDM_AUXPCM] = of_parse_phandle(pdev->dev.of_node,
-			"qcom,quin-mi2s-gpios", 0);
-	common_pdata->mi2s_gpio_p[SEN_MI2S_TDM_AUXPCM] = of_parse_phandle(pdev->dev.of_node,
-			"qcom,sen-mi2s-gpios", 0);
-	common_pdata->mi2s_gpio_p[SEP_MI2S_TDM_AUXPCM] = of_parse_phandle(pdev->dev.of_node,
-			"qcom,sep-mi2s-gpios", 0);
+	common_pdata->mi2s_gpio_p[PRI_MI2S_TDM_AUXPCM] =
+		of_parse_phandle(pdev->dev.of_node, "qcom,pri-mi2s-gpios", 0);
+	common_pdata->mi2s_gpio_p[SEC_MI2S_TDM_AUXPCM] =
+		of_parse_phandle(pdev->dev.of_node, "qcom,sec-mi2s-gpios", 0);
+	common_pdata->mi2s_gpio_p[TER_MI2S_TDM_AUXPCM] =
+		of_parse_phandle(pdev->dev.of_node, "qcom,tert-mi2s-gpios", 0);
+	common_pdata->mi2s_gpio_p[QUAT_MI2S_TDM_AUXPCM] =
+		of_parse_phandle(pdev->dev.of_node, "qcom,quat-mi2s-gpios", 0);
+	common_pdata->mi2s_gpio_p[QUIN_MI2S_TDM_AUXPCM] =
+		of_parse_phandle(pdev->dev.of_node, "qcom,quin-mi2s-gpios", 0);
+	common_pdata->mi2s_gpio_p[SEN_MI2S_TDM_AUXPCM] =
+		of_parse_phandle(pdev->dev.of_node, "qcom,sen-mi2s-gpios", 0);
+	common_pdata->mi2s_gpio_p[SEP_MI2S_TDM_AUXPCM] =
+		of_parse_phandle(pdev->dev.of_node, "qcom,sep-mi2s-gpios", 0);
 	common_pdata->aud_dev_state = devm_kcalloc(&pdev->dev, card->num_links,
-						sizeof(uint8_t), GFP_KERNEL);
+						   sizeof(uint8_t), GFP_KERNEL);
 	dev_info(&pdev->dev, "num_links %d \n", card->num_links);
 	common_pdata->num_aud_devs = card->num_links;
 	mutex_init(&common_pdata->aud_dev_lock);
@@ -776,32 +803,44 @@ int msm_common_snd_init(struct platform_device *pdev, struct snd_soc_card *card)
 	msm_common_set_pdata(card, common_pdata);
 
 	/* Add QoS request for audio tasks */
-	core_val_array = devm_kcalloc(&pdev->dev, num_possible_cpus(), sizeof(uint32_t), GFP_KERNEL);
+	core_val_array = devm_kcalloc(&pdev->dev, num_possible_cpus(),
+				      sizeof(uint32_t), GFP_KERNEL);
 	if (!core_val_array) {
-		dev_info(&pdev->dev, "%s: core val array is nullptr\n", __func__);
+		dev_info(&pdev->dev, "%s: core val array is nullptr\n",
+			 __func__);
 		goto exit;
 	}
-	ret = of_property_read_variable_u32_array(pdev->dev.of_node, "qcom,audio-core-list",
-                      core_val_array, 0, num_possible_cpus());
-	dev_info(&pdev->dev, "%s: getting the core list size:%d, num_possible_cpus:%d \n",
-				__func__,  ret, num_possible_cpus());
+	ret = of_property_read_variable_u32_array(pdev->dev.of_node,
+						  "qcom,audio-core-list",
+						  core_val_array, 0,
+						  num_possible_cpus());
+	dev_info(&pdev->dev,
+		 "%s: getting the core list size:%d, num_possible_cpus:%d \n",
+		 __func__, ret, num_possible_cpus());
 	if (ret > 0 && (ret <= num_possible_cpus())) {
 		audio_core_num = ret;
-		audio_core_list = devm_kcalloc(&pdev->dev, audio_core_num, sizeof(uint32_t), GFP_KERNEL);
+		audio_core_list = devm_kcalloc(&pdev->dev, audio_core_num,
+					       sizeof(uint32_t), GFP_KERNEL);
 		if (!audio_core_list) {
-			dev_info(&pdev->dev, "%s: calloc failed for audio core list\n", __func__);
+			dev_info(&pdev->dev,
+				 "%s: calloc failed for audio core list\n",
+				 __func__);
 			goto exit;
 		}
 		for (count = 0; count < audio_core_num; count++) {
 			audio_core_list[count] = core_val_array[count];
-			dev_info(&pdev->dev, "%s: update core %d\n", __func__, core_val_array[count]);
+			dev_info(&pdev->dev, "%s: update core %d\n", __func__,
+				 core_val_array[count]);
 		}
 	} else {
 		dev_info(&pdev->dev, "%s: keep default core\n", __func__);
-		audio_core_list = devm_kcalloc(&pdev->dev, audio_core_num, sizeof(uint32_t), GFP_KERNEL);
+		audio_core_list = devm_kcalloc(&pdev->dev, audio_core_num,
+					       sizeof(uint32_t), GFP_KERNEL);
 		/* set audio task affinity to core 1 & 2 as default*/
 		if (!audio_core_list) {
-			dev_info(&pdev->dev, "%s: calloc failed for audio core list\n", __func__);
+			dev_info(&pdev->dev,
+				 "%s: calloc failed for audio core list\n",
+				 __func__);
 			goto exit;
 		}
 		audio_core_list[0] = 1;
@@ -840,7 +879,7 @@ void msm_common_snd_deinit(struct msm_common_pdata *common_pdata)
 }
 
 int msm_channel_map_info(struct snd_kcontrol *kcontrol,
-			struct snd_ctl_elem_info *uinfo)
+			 struct snd_ctl_elem_info *uinfo)
 {
 	uinfo->type = SNDRV_CTL_ELEM_TYPE_BYTES;
 	uinfo->count = sizeof(uint32_t) * MAX_PORT;
@@ -852,10 +891,10 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	struct chmap_pdata *kctl_pdata =
-			(struct chmap_pdata *)kcontrol->private_data;
+		(struct chmap_pdata *)kcontrol->private_data;
 	struct snd_soc_dai *codec_dai = NULL;
 	int backend_id = 0;
-	uint32_t rx_ch[MAX_PORT] = {0}, tx_ch[MAX_PORT] = {0};
+	uint32_t rx_ch[MAX_PORT] = { 0 }, tx_ch[MAX_PORT] = { 0 };
 	uint32_t rx_ch_cnt = 0, tx_ch_cnt = 0;
 	uint32_t *chmap_data = NULL;
 	int ret = 0, len = 0, i = 0;
@@ -873,11 +912,12 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 		uint32_t *chmap;
 		uint32_t ch_cnt;
 
-		ret = snd_soc_dai_get_channel_map(codec_dai,
-				&tx_ch_cnt, tx_ch, &rx_ch_cnt, rx_ch);
+		ret = snd_soc_dai_get_channel_map(codec_dai, &tx_ch_cnt, tx_ch,
+						  &rx_ch_cnt, rx_ch);
 		if (ret || (tx_ch_cnt == 0 && rx_ch_cnt == 0)) {
-			pr_debug("%s: got incorrect channel map for backend_id:%d\n",
-				 __func__, backend_id);
+			pr_debug(
+				"%s: got incorrect channel map for backend_id:%d\n",
+				__func__, backend_id);
 			return ret;
 		}
 
@@ -889,7 +929,8 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 			ch_cnt = tx_ch_cnt;
 		}
 		if (ch_cnt > 2) {
-			pr_err("%s: Incorrect channel count: %d\n", __func__, ch_cnt);
+			pr_err("%s: Incorrect channel count: %d\n", __func__,
+			       ch_cnt);
 			return -EINVAL;
 		}
 		len = sizeof(uint32_t) * (ch_cnt + 1);
@@ -899,7 +940,7 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 
 		chmap_data[0] = ch_cnt;
 		for (i = 0; i < ch_cnt; i++)
-			chmap_data[i+1] = chmap[i];
+			chmap_data[i + 1] = chmap[i];
 
 		memcpy(ucontrol->value.bytes.data, chmap_data, len);
 		break;
@@ -910,22 +951,22 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 
 		for (i = 0; i < kctl_pdata->num_codec_dai; ++i) {
 			codec_dai = kctl_pdata->dai[i];
-			if(!codec_dai) {
+			if (!codec_dai) {
 				continue;
 			}
 			cur_rx_ch_cnt = 0;
 			cur_tx_ch_cnt = 0;
 			cur_tx_ch = 0;
 			cur_rx_ch = 0;
-			ret = snd_soc_dai_get_channel_map(codec_dai,
-					&cur_tx_ch_cnt, &cur_tx_ch,
-					&cur_rx_ch_cnt, &cur_rx_ch);
+			ret = snd_soc_dai_get_channel_map(
+				codec_dai, &cur_tx_ch_cnt, &cur_tx_ch,
+				&cur_rx_ch_cnt, &cur_rx_ch);
 
 			/* DAIs that not supports get_channel_map should pass */
 			if (ret && (ret != -ENOTSUPP)) {
 				pr_err("%s: get channel map failed for backend_id:%d,"
-					 " ret:%d\n",
-					 __func__, backend_id, ret);
+				       " ret:%d\n",
+				       __func__, backend_id, ret);
 				return ret;
 			}
 
@@ -938,7 +979,9 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 		/* reset return value from the loop above */
 		ret = 0;
 		if (rx_ch_cnt == 0 && tx_ch_cnt == 0) {
-			pr_debug("%s: incorrect ch map for backend_id:%d, RX Channel Cnt:%d, TX Channel Cnt:%d\n",
+			pr_debug(
+				"%s: incorrect ch map for backend_id:%d, RX Channel Cnt:%d, TX "
+				"Channel Cnt:%d\n",
 				__func__, backend_id, rx_ch_cnt, tx_ch_cnt);
 			return ret;
 		}
@@ -955,7 +998,7 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 			chmap_data[1] = tx_ch[0];
 		}
 		memcpy(ucontrol->value.bytes.data, chmap_data,
-					sizeof(uint32_t) * 2);
+		       sizeof(uint32_t) * 2);
 		break;
 	}
 	default:
@@ -970,8 +1013,8 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 
 void msm_common_get_backend_name(const char *stream_name, char **backend_name)
 {
-	char arg[ARRAY_SZ] = {0};
-	char value[61] = {0};
+	char arg[ARRAY_SZ] = { 0 };
+	char value[61] = { 0 };
 
 	sscanf(stream_name, "%20[^-]-%60s", arg, value);
 	*backend_name = kzalloc(ARRAY_SZ, GFP_KERNEL);
@@ -988,23 +1031,26 @@ static void msm_audio_update_qos_request(u32 latency)
 
 	if (msm_audio_req) {
 		for_each_cpu(cpu, &audio_cpu_map) {
-			ret = dev_pm_qos_update_request(
-					&msm_audio_req[cpu], latency);
-			if (1 == ret ) {
-				pr_debug("%s: updated latency of core %d to %u.\n",
-								__func__, cpu, latency);
+			ret = dev_pm_qos_update_request(&msm_audio_req[cpu],
+							latency);
+			if (1 == ret) {
+				pr_debug(
+					"%s: updated latency of core %d to %u.\n",
+					__func__, cpu, latency);
 			} else if (0 == ret) {
-				pr_debug("%s: latency of core %d not changed. latency %u.\n",
-								__func__, cpu, latency);
+				pr_debug(
+					"%s: latency of core %d not changed. latency %u.\n",
+					__func__, cpu, latency);
 			} else {
 				pr_err("%s: failed to update latency of core %d, error %d \n",
-								__func__, cpu, ret);
+				       __func__, cpu, ret);
 			}
 		}
 	}
 }
 
-static int msm_get_and_print_cpu_map_taken(cpumask_t* expected_cpu_map) {
+static int msm_get_and_print_cpu_map_taken(cpumask_t *expected_cpu_map)
+{
 	int ret = 0;
 	int cpu = 0;
 	cpumask_t current_cpu_map = walt_get_cpus_taken();
@@ -1013,7 +1059,8 @@ static int msm_get_and_print_cpu_map_taken(cpumask_t* expected_cpu_map) {
 		pr_debug("%s: current cpu map is none.\n", __func__);
 	} else {
 		for_each_cpu(cpu, &current_cpu_map) {
-			pr_debug("%s: current cpu core taken %d.\n", __func__, cpu);
+			pr_debug("%s: current cpu core taken %d.\n", __func__,
+				 cpu);
 		}
 	}
 	if (memcmp(&current_cpu_map, expected_cpu_map, sizeof(cpumask_t)) == 0)
@@ -1023,13 +1070,13 @@ static int msm_get_and_print_cpu_map_taken(cpumask_t* expected_cpu_map) {
 }
 
 static int msm_qos_ctl_put(struct snd_kcontrol *kcontrol,
-		struct snd_ctl_elem_value *ucontrol)
+			   struct snd_ctl_elem_value *ucontrol)
 {
 	cpumask_t expected_cpu_map = CPU_MASK_NONE;
 	qos_vote_status = ucontrol->value.enumerated.item[0];
 
 	pr_debug("%s: qos_vote_status = %d, qos_client_active_cnt = %d.\n",
-				__func__, qos_vote_status, qos_client_active_cnt);
+		 __func__, qos_vote_status, qos_client_active_cnt);
 	if (qos_vote_status) {
 		if (dev_pm_qos_request_active(&latency_pm_qos_req))
 			dev_pm_qos_remove_request(&latency_pm_qos_req);
@@ -1039,18 +1086,23 @@ static int msm_qos_ctl_put(struct snd_kcontrol *kcontrol,
 			msm_audio_update_qos_request(MSM_LL_QOS_VALUE);
 
 			expected_cpu_map = audio_cpu_map;
-			if (msm_get_and_print_cpu_map_taken(&expected_cpu_map)) {
-				pr_debug("%s: already expected, don't need to set it.\n",
-							__func__);
+			if (msm_get_and_print_cpu_map_taken(
+				    &expected_cpu_map)) {
+				pr_debug(
+					"%s: already expected, don't need to set it.\n",
+					__func__);
 				return 0;
 			}
 
 			walt_set_cpus_taken(&audio_cpu_map);
-			pr_debug("%s: set cpus taken to walt for audio RT tasks.\n",
-						__func__);
+			pr_debug(
+				"%s: set cpus taken to walt for audio RT tasks.\n",
+				__func__);
 
-			if (msm_get_and_print_cpu_map_taken(&expected_cpu_map)) {
-				pr_debug("%s: set cpus taken as expected successfully.\n",
+			if (msm_get_and_print_cpu_map_taken(
+				    &expected_cpu_map)) {
+				pr_debug(
+					"%s: set cpus taken as expected successfully.\n",
 					__func__);
 			}
 		}
@@ -1058,21 +1110,27 @@ static int msm_qos_ctl_put(struct snd_kcontrol *kcontrol,
 		if (qos_client_active_cnt > 0)
 			qos_client_active_cnt--;
 		if (qos_client_active_cnt == 0) {
-			msm_audio_update_qos_request(PM_QOS_CPU_LATENCY_DEFAULT_VALUE);
+			msm_audio_update_qos_request(
+				PM_QOS_CPU_LATENCY_DEFAULT_VALUE);
 
-			if (msm_get_and_print_cpu_map_taken(&expected_cpu_map)) {
-				pr_debug("%s: already expected, don't need to unset it.\n",
-							__func__);
+			if (msm_get_and_print_cpu_map_taken(
+				    &expected_cpu_map)) {
+				pr_debug(
+					"%s: already expected, don't need to unset it.\n",
+					__func__);
 				return 0;
 			}
 
 			walt_unset_cpus_taken(&audio_cpu_map);
-			pr_debug("%s: unset cpus taken to walt for audio RT tasks.\n",
-						__func__);
+			pr_debug(
+				"%s: unset cpus taken to walt for audio RT tasks.\n",
+				__func__);
 
-			if (msm_get_and_print_cpu_map_taken(&expected_cpu_map)) {
-				pr_debug("%s: unset cpus taken as expected successfully.\n",
-							__func__);
+			if (msm_get_and_print_cpu_map_taken(
+				    &expected_cpu_map)) {
+				pr_debug(
+					"%s: unset cpus taken as expected successfully.\n",
+					__func__);
 			}
 		}
 	}
@@ -1080,18 +1138,18 @@ static int msm_qos_ctl_put(struct snd_kcontrol *kcontrol,
 }
 
 static int msm_qos_ctl_get(struct snd_kcontrol *kcontrol,
-		struct snd_ctl_elem_value *ucontrol)
+			   struct snd_ctl_elem_value *ucontrol)
 {
 	ucontrol->value.enumerated.item[0] = qos_vote_status;
 	return 0;
 }
 
 static int msm_lpi_logging_enable_put(struct snd_kcontrol *kcontrol,
-		struct snd_ctl_elem_value *ucontrol)
+				      struct snd_ctl_elem_value *ucontrol)
 {
 	lpi_pcm_logging_enable = ucontrol->value.integer.value[0];
 	pr_debug("%s: lpi pcm logging enable: %d", __func__,
-			lpi_pcm_logging_enable);
+		 lpi_pcm_logging_enable);
 
 	audio_prm_set_lpi_logging_status((int)lpi_pcm_logging_enable);
 
@@ -1099,30 +1157,31 @@ static int msm_lpi_logging_enable_put(struct snd_kcontrol *kcontrol,
 }
 
 static int msm_lpi_logging_enable_get(struct snd_kcontrol *kcontrol,
-		struct snd_ctl_elem_value *ucontrol)
+				      struct snd_ctl_elem_value *ucontrol)
 {
 	ucontrol->value.integer.value[0] = lpi_pcm_logging_enable;
 	return 0;
 }
 
 static int msm_vote_against_sleep_ctl_put(struct snd_kcontrol *kcontrol,
-		struct snd_ctl_elem_value *ucontrol)
+					  struct snd_ctl_elem_value *ucontrol)
 {
 	int ret = 0;
 
 	mutex_lock(&vote_against_sleep_lock);
 	vote_against_sleep_enable = ucontrol->value.integer.value[0];
 	pr_debug("%s: vote against sleep enable: %d sleep cnt: %d", __func__,
-			vote_against_sleep_enable, vote_against_sleep_cnt);
+		 vote_against_sleep_enable, vote_against_sleep_cnt);
 
 	if (vote_against_sleep_enable) {
 		vote_against_sleep_cnt++;
-		if (vote_against_sleep_cnt ==  1) {
+		if (vote_against_sleep_cnt == 1) {
 			ret = audio_prm_set_vote_against_sleep(1);
 			if (ret < 0) {
 				if (vote_against_sleep_cnt > 0)
 					--vote_against_sleep_cnt;
-				pr_err("%s: failed to vote against sleep ret: %d\n", __func__, ret);
+				pr_err("%s: failed to vote against sleep ret: %d\n",
+				       __func__, ret);
 			}
 		}
 	} else {
@@ -1138,27 +1197,27 @@ static int msm_vote_against_sleep_ctl_put(struct snd_kcontrol *kcontrol,
 }
 
 static int msm_vote_against_sleep_ctl_get(struct snd_kcontrol *kcontrol,
-		struct snd_ctl_elem_value *ucontrol)
+					  struct snd_ctl_elem_value *ucontrol)
 {
 	ucontrol->value.integer.value[0] = vote_against_sleep_enable;
 	pr_debug("%s: vote against sleep enable: %d", __func__,
-			vote_against_sleep_enable);
+		 vote_against_sleep_enable);
 	return 0;
 }
 
-static const char *const qos_text[] = {"Disable", "Enable"};
-static const char *const against_sleep_text[] = {"Disable", "Enable"};
+static const char *const qos_text[] = { "Disable", "Enable" };
+static const char *const against_sleep_text[] = { "Disable", "Enable" };
 
 static SOC_ENUM_SINGLE_EXT_DECL(qos_vote, qos_text);
 static SOC_ENUM_SINGLE_EXT_DECL(sleep_against, against_sleep_text);
 
 static const struct snd_kcontrol_new card_mixer_controls[] = {
-	SOC_ENUM_EXT("PM_QOS Vote", qos_vote,
-			msm_qos_ctl_get, msm_qos_ctl_put),
+	SOC_ENUM_EXT("PM_QOS Vote", qos_vote, msm_qos_ctl_get, msm_qos_ctl_put),
 	SOC_SINGLE_EXT("LPI PCM Logging Enable", 0, 0, 1, 0,
-			msm_lpi_logging_enable_get, msm_lpi_logging_enable_put),
+		       msm_lpi_logging_enable_get, msm_lpi_logging_enable_put),
 	SOC_ENUM_EXT("VOTE Against Sleep", sleep_against,
-			msm_vote_against_sleep_ctl_get, msm_vote_against_sleep_ctl_put),
+		     msm_vote_against_sleep_ctl_get,
+		     msm_vote_against_sleep_ctl_put),
 };
 
 static int msm_register_pm_qos_latency_controls(struct snd_soc_pcm_runtime *rtd)
@@ -1169,15 +1228,16 @@ static int msm_register_pm_qos_latency_controls(struct snd_soc_pcm_runtime *rtd)
 	lpass_cdc_component = snd_soc_rtdcom_lookup(rtd, "lpass-cdc");
 	if (!lpass_cdc_component) {
 		pr_err("%s: could not find component for lpass-cdc\n",
-				__func__);
+		       __func__);
 		return -EINVAL;
 	}
 
 	ret = snd_soc_add_component_controls(lpass_cdc_component,
-			card_mixer_controls, ARRAY_SIZE(card_mixer_controls));
+					     card_mixer_controls,
+					     ARRAY_SIZE(card_mixer_controls));
 	if (ret < 0) {
-		pr_err("%s: add common snd controls failed: %d\n",
-				__func__, ret);
+		pr_err("%s: add common snd controls failed: %d\n", __func__,
+		       ret);
 		return -EINVAL;
 	}
 	return 0;
@@ -1198,16 +1258,14 @@ int msm_common_dai_link_init(struct snd_soc_pcm_runtime *rtd)
 	uint32_t ctl_len = 0;
 	struct chmap_pdata *pdata;
 	struct snd_kcontrol *kctl;
-	struct snd_kcontrol_new msm_common_channel_map[1] = {
-		{
-			.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
-			.name = "?",
-			.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
-			.info = msm_channel_map_info,
-			.get = msm_channel_map_get,
-			.private_value = 0,
-		}
-	};
+	struct snd_kcontrol_new msm_common_channel_map[1] = { {
+		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+		.name = "?",
+		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+		.info = msm_channel_map_info,
+		.get = msm_channel_map_get,
+		.private_value = 0,
+	} };
 
 	if (!codec_dai) {
 		pr_err("%s: failed to get codec dai", __func__);
@@ -1228,9 +1286,9 @@ int msm_common_dai_link_init(struct snd_soc_pcm_runtime *rtd)
 	}
 
 	if ((!strncmp(backend_name, "SLIM", strlen("SLIM"))) ||
-		(!strncmp(backend_name, "CODEC_DMA", strlen("CODEC_DMA")))) {
+	    (!strncmp(backend_name, "CODEC_DMA", strlen("CODEC_DMA")))) {
 		ctl_len = strlen(dai_link->stream_name) + 1 +
-				strlen(mixer_ctl_name) + 1;
+			  strlen(mixer_ctl_name) + 1;
 		mixer_str = kzalloc(ctl_len, GFP_KERNEL);
 		if (!mixer_str) {
 			ret = -ENOMEM;
@@ -1238,13 +1296,13 @@ int msm_common_dai_link_init(struct snd_soc_pcm_runtime *rtd)
 		}
 
 		snprintf(mixer_str, ctl_len, "%s %s", dai_link->stream_name,
-				mixer_ctl_name);
+			 mixer_ctl_name);
 		msm_common_channel_map[0].name = mixer_str;
 		msm_common_channel_map[0].private_value = 0;
 		pr_debug("Registering new mixer ctl %s\n", mixer_str);
-		ret = snd_soc_add_component_controls(component,
-				msm_common_channel_map,
-				ARRAY_SIZE(msm_common_channel_map));
+		ret = snd_soc_add_component_controls(
+			component, msm_common_channel_map,
+			ARRAY_SIZE(msm_common_channel_map));
 		kctl = snd_soc_card_get_kcontrol(rtd->card, mixer_str);
 		if (!kctl) {
 			pr_err("failed to get kctl %s\n", mixer_str);
@@ -1259,7 +1317,8 @@ int msm_common_dai_link_init(struct snd_soc_pcm_runtime *rtd)
 		} else {
 			pdata->id = CODEC_DMA;
 			if (rtd->dai_link->num_codecs <= MAX_CODEC_DAI) {
-				pdata->num_codec_dai = rtd->dai_link->num_codecs;
+				pdata->num_codec_dai =
+					rtd->dai_link->num_codecs;
 				for_each_rtd_codec_dais(rtd, index, codec_dai) {
 					pdata->dai[index] = codec_dai;
 				}

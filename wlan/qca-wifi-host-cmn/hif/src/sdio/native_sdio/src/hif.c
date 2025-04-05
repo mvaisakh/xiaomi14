@@ -17,25 +17,25 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/mmc/card.h>
-#include <linux/mmc/mmc.h>
-#include <linux/mmc/host.h>
-#include <linux/mmc/sdio_func.h>
-#include <linux/mmc/sdio_ids.h>
-#include <linux/mmc/sdio.h>
-#include <linux/mmc/sd.h>
-#include <linux/version.h>
-#include <linux/module.h>
-#include <qdf_atomic.h>
-#include <cds_utils.h>
-#include <qdf_timer.h>
-#include <cds_api.h>
-#include <qdf_time.h>
+#include "hif_internal.h"
 #include "hif_sdio_dev.h"
 #include "if_sdio.h"
 #include "regtable_sdio.h"
 #include "wma_api.h"
-#include "hif_internal.h"
+#include <cds_api.h>
+#include <cds_utils.h>
+#include <linux/mmc/card.h>
+#include <linux/mmc/host.h>
+#include <linux/mmc/mmc.h>
+#include <linux/mmc/sd.h>
+#include <linux/mmc/sdio.h>
+#include <linux/mmc/sdio_func.h>
+#include <linux/mmc/sdio_ids.h>
+#include <linux/module.h>
+#include <linux/version.h>
+#include <qdf_atomic.h>
+#include <qdf_time.h>
+#include <qdf_timer.h>
 #include <transfer/transfer.h>
 
 #define HIF_USE_DMA_BOUNCE_BUFFER 1
@@ -44,17 +44,16 @@
 
 #define MAX_HIF_DEVICES 2
 #ifdef HIF_MBOX_SLEEP_WAR
-#define HIF_MIN_SLEEP_INACTIVITY_TIME_MS     50
+#define HIF_MIN_SLEEP_INACTIVITY_TIME_MS 50
 #define HIF_SLEEP_DISABLE_UPDATE_DELAY 1
 #define HIF_IS_WRITE_REQUEST_MBOX1_TO_3(request) \
-				((request->request & HIF_SDIO_WRITE) && \
-				(request->address >= 0x1000 && \
-				request->address < 0x1FFFF))
+	((request->request & HIF_SDIO_WRITE) &&  \
+	 (request->address >= 0x1000 && request->address < 0x1FFFF))
 #endif
 unsigned int forcesleepmode;
 module_param(forcesleepmode, uint, 0644);
-MODULE_PARM_DESC(forcesleepmode,
-		"Set sleep mode: 0-host capbility, 1-force WOW, 2-force DeepSleep, 3-force CutPower");
+MODULE_PARM_DESC(forcesleepmode, "Set sleep mode: 0-host capbility, 1-force "
+				 "WOW, 2-force DeepSleep, 3-force CutPower");
 
 unsigned int forcecard;
 module_param(forcecard, uint, 0644);
@@ -65,8 +64,8 @@ unsigned int debugcccr = 1;
 module_param(debugcccr, uint, 0644);
 MODULE_PARM_DESC(debugcccr, "Output this cccr values");
 
-#define dev_to_sdio_func(d)		container_of(d, struct sdio_func, dev)
-#define to_sdio_driver(d)		container_of(d, struct sdio_driver, drv)
+#define dev_to_sdio_func(d) container_of(d, struct sdio_func, dev)
+#define to_sdio_driver(d) container_of(d, struct sdio_driver, drv)
 static struct hif_sdio_dev *add_hif_device(struct hif_softc *hif_ctx,
 					   struct sdio_func *func);
 static void del_hif_device(struct hif_sdio_dev *device);
@@ -79,68 +78,100 @@ uint32_t nohifscattersupport = 1;
 /* ------ Static Variables ------ */
 static const struct sdio_device_id ar6k_id_table[] = {
 #ifdef AR6002_HEADERS_DEF
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6002_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6002_BASE | 0x1))},
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6002_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6002_BASE | 0x1)) },
 #endif
 #ifdef AR6003_HEADERS_DEF
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6003_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6003_BASE | 0x1))},
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6003_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6003_BASE | 0x1)) },
 #endif
 #ifdef AR6004_HEADERS_DEF
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6004_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6004_BASE | 0x1))},
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6004_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6004_BASE | 0x1)) },
 #endif
 #ifdef AR6320_HEADERS_DEF
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x1))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x2))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x3))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x4))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x5))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x6))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x7))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x8))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x9))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xA))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xB))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xC))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xD))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xE))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xF))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x1))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x2))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x3))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x4))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x5))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x6))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x7))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x8))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x9))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xA))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xB))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xC))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xD))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xE))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xF))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x1))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x2))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x3))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x4))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x5))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x6))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x7))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x8))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x9))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xA))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xB))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xC))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xD))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xE))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xF))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (0 | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (0 | 0x1))},
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x1)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x2)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x3)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x4)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x5)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x6)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x7)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x8)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x9)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xA)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xB)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xC)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xD)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xE)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xF)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x1)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x2)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x3)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x4)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x5)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x6)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x7)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x8)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x9)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xA)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xB)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xC)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xD)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xE)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xF)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x1)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x2)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x3)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x4)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x5)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x6)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x7)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x8)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x9)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xA)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xB)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xC)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xD)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xE)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xF)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (0 | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (0 | 0x1)) },
 #endif
 	{ /* null */ },
 };
@@ -150,8 +181,7 @@ struct hif_sdio_softc *scn;
 static struct hif_sdio_dev *hif_devices[MAX_HIF_DEVICES];
 
 #if defined(WLAN_DEBUG) || defined(DEBUG)
-ATH_DEBUG_INSTANTIATE_MODULE_VAR(hif,
-				 "hif",
+ATH_DEBUG_INSTANTIATE_MODULE_VAR(hif, "hif",
 				 "(Linux MMC) Host Interconnect Framework",
 				 ATH_DEBUG_MASK_DEFAULTS, 0, NULL);
 #endif
@@ -164,7 +194,7 @@ ATH_DEBUG_INSTANTIATE_MODULE_VAR(hif,
  * Return: None.
  */
 void add_to_async_list(struct hif_sdio_dev *device,
-		      struct bus_request *busrequest)
+		       struct bus_request *busrequest)
 {
 	struct bus_request *async;
 	struct bus_request *active;
@@ -175,8 +205,8 @@ void add_to_async_list(struct hif_sdio_dev *device,
 		device->asyncreq = busrequest;
 		device->asyncreq->inusenext = NULL;
 	} else {
-		for (async = device->asyncreq;
-		     async; async = async->inusenext) {
+		for (async = device->asyncreq; async;
+		     async = async->inusenext) {
 			active = async;
 		}
 		active->inusenext = busrequest;
@@ -209,34 +239,32 @@ static int sdio_enable4bits(struct hif_sdio_dev *device, int enable)
 	sdio_claim_host(func);
 	do {
 		int setAsyncIRQ = 0;
-		__u16 manufacturer_id =
-			device->id->device & MANUFACTURER_ID_AR6K_BASE_MASK;
+		__u16 manufacturer_id = device->id->device &
+					MANUFACTURER_ID_AR6K_BASE_MASK;
 
 		/* Re-enable 4-bit ASYNC interrupt on AR6003x
-		 * after system resume for some host controller
-		 */
+     * after system resume for some host controller
+     */
 		if (manufacturer_id == MANUFACTURER_ID_AR6003_BASE) {
 			setAsyncIRQ = 1;
-			ret =
-				func0_cmd52_write_byte(func->card,
-					    CCCR_SDIO_IRQ_MODE_REG_AR6003,
-					    enable ?
-					    SDIO_IRQ_MODE_ASYNC_4BIT_IRQ_AR6003
-					    : 0);
+			ret = func0_cmd52_write_byte(
+				func->card, CCCR_SDIO_IRQ_MODE_REG_AR6003,
+				enable ? SDIO_IRQ_MODE_ASYNC_4BIT_IRQ_AR6003 :
+					 0);
 		} else if (manufacturer_id == MANUFACTURER_ID_AR6320_BASE ||
-			     manufacturer_id == MANUFACTURER_ID_QCA9377_BASE ||
-			     manufacturer_id == MANUFACTURER_ID_QCA9379_BASE) {
+			   manufacturer_id == MANUFACTURER_ID_QCA9377_BASE ||
+			   manufacturer_id == MANUFACTURER_ID_QCA9379_BASE) {
 			unsigned char data = 0;
 
 			setAsyncIRQ = 1;
-			ret =
-				func0_cmd52_read_byte(func->card,
-					      CCCR_SDIO_IRQ_MODE_REG_AR6320,
-						   &data);
+			ret = func0_cmd52_read_byte(
+				func->card, CCCR_SDIO_IRQ_MODE_REG_AR6320,
+				&data);
 			if (ret) {
-				AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
+				AR_DEBUG_PRINTF(
+					ATH_DEBUG_ERR,
 					("%s: failed to read interrupt extension register %d\n",
-						 __func__, ret));
+					 __func__, ret));
 				sdio_release_host(func);
 				return ret;
 			}
@@ -244,18 +272,19 @@ static int sdio_enable4bits(struct hif_sdio_dev *device, int enable)
 				data |= SDIO_IRQ_MODE_ASYNC_4BIT_IRQ_AR6320;
 			else
 				data &= ~SDIO_IRQ_MODE_ASYNC_4BIT_IRQ_AR6320;
-			ret =
-				func0_cmd52_write_byte(func->card,
-					       CCCR_SDIO_IRQ_MODE_REG_AR6320,
-					       data);
+			ret = func0_cmd52_write_byte(
+				func->card, CCCR_SDIO_IRQ_MODE_REG_AR6320,
+				data);
 		}
 		if (setAsyncIRQ) {
 			if (ret) {
-				AR_DEBUG_PRINTF(ATH_DEBUG_ERR,
+				AR_DEBUG_PRINTF(
+					ATH_DEBUG_ERR,
 					("%s: failed to setup 4-bit ASYNC IRQ mode into %d err %d\n",
 					 __func__, enable, ret));
 			} else {
-				AR_DEBUG_PRINTF(ATH_DEBUG_INFO,
+				AR_DEBUG_PRINTF(
+					ATH_DEBUG_INFO,
 					("%s: Setup 4-bit ASYNC IRQ mode into %d successfully\n",
 					 __func__, enable));
 			}
@@ -280,8 +309,7 @@ static int sdio_enable4bits(struct hif_sdio_dev *device, int enable)
  *
  * Return: QDF_STATUS
  */
-QDF_STATUS hif_sdio_probe(struct hif_softc *ol_sc,
-			  struct sdio_func *func,
+QDF_STATUS hif_sdio_probe(struct hif_softc *ol_sc, struct sdio_func *func,
 			  struct hif_sdio_dev *device)
 {
 	int ret = 0;
@@ -295,20 +323,20 @@ QDF_STATUS hif_sdio_probe(struct hif_softc *ol_sc,
 	scn->hif_handle = device;
 	spin_lock_init(&scn->target_lock);
 	/*
-	 * Attach Target register table. This is needed early on
-	 * even before BMI since PCI and HIF initialization
-	 * directly access Target registers.
-	 *
-	 * TBDXXX: targetdef should not be global -- should be stored
-	 * in per-device struct so that we can support multiple
-	 * different Target types with a single Host driver.
-	 * The whole notion of an "hif type" -- (not as in the hif
-	 * module, but generic "Host Interface Type") is bizarre.
-	 * At first, one one expect it to be things like SDIO, USB, PCI.
-	 * But instead, it's an actual platform type. Inexplicably, the
-	 * values used for HIF platform types are *different* from the
-	 * values used for Target Types.
-	 */
+   * Attach Target register table. This is needed early on
+   * even before BMI since PCI and HIF initialization
+   * directly access Target registers.
+   *
+   * TBDXXX: targetdef should not be global -- should be stored
+   * in per-device struct so that we can support multiple
+   * different Target types with a single Host driver.
+   * The whole notion of an "hif type" -- (not as in the hif
+   * module, but generic "Host Interface Type") is bizarre.
+   * At first, one one expect it to be things like SDIO, USB, PCI.
+   * But instead, it's an actual platform type. Inexplicably, the
+   * values used for HIF platform types are *different* from the
+   * values used for Target Types.
+   */
 
 #if defined(CONFIG_AR9888_SUPPORT)
 	hif_register_tbl_attach(ol_sc, HIF_TYPE_AR9888);
@@ -317,13 +345,13 @@ QDF_STATUS hif_sdio_probe(struct hif_softc *ol_sc,
 #elif defined(CONFIG_AR6320_SUPPORT)
 	id = device->id;
 	if (((id->device & MANUFACTURER_ID_AR6K_BASE_MASK) ==
-				MANUFACTURER_ID_QCA9377_BASE) ||
-			((id->device & MANUFACTURER_ID_AR6K_BASE_MASK) ==
-			 MANUFACTURER_ID_QCA9379_BASE)) {
+	     MANUFACTURER_ID_QCA9377_BASE) ||
+	    ((id->device & MANUFACTURER_ID_AR6K_BASE_MASK) ==
+	     MANUFACTURER_ID_QCA9379_BASE)) {
 		hif_register_tbl_attach(ol_sc, HIF_TYPE_AR6320V2);
 		target_register_tbl_attach(ol_sc, TARGET_TYPE_AR6320V2);
 	} else if ((id->device & MANUFACTURER_ID_AR6K_BASE_MASK) ==
-			MANUFACTURER_ID_AR6320_BASE) {
+		   MANUFACTURER_ID_AR6320_BASE) {
 		int ar6kid = id->device & MANUFACTURER_ID_AR6K_REV_MASK;
 
 		if (ar6kid >= 1) {
@@ -345,16 +373,14 @@ QDF_STATUS hif_sdio_probe(struct hif_softc *ol_sc,
 	ol_sc->bus_type = QDF_BUS_TYPE_SDIO;
 	ol_sc->target_info.target_type = target_type;
 
-	scn->ramdump_base =
-		pld_hif_sdio_get_virt_ramdump_mem(&func->dev,
-						  &scn->ramdump_size);
+	scn->ramdump_base = pld_hif_sdio_get_virt_ramdump_mem(
+		&func->dev, &scn->ramdump_size);
 	if (!scn->ramdump_base || !scn->ramdump_size) {
 		hf_err("Failed ramdump res alloc - base:%s, len:%lu",
-			scn->ramdump_base ? "ok" : "null",
-			scn->ramdump_size);
+		       scn->ramdump_base ? "ok" : "null", scn->ramdump_size);
 	} else {
-		hif_info("ramdump base %pK size %lu",
-			 scn->ramdump_base, scn->ramdump_size);
+		hif_info("ramdump base %pK size %lu", scn->ramdump_base,
+			 scn->ramdump_size);
 	}
 
 	if (athdiag_procfs_init(scn) != 0) {
@@ -382,21 +408,19 @@ err_attach1:
  * Return: 0 on success, error number otherwise.
  */
 static QDF_STATUS
-power_state_change_notify(struct hif_softc *ol_sc,
-			  struct hif_sdio_dev *device,
+power_state_change_notify(struct hif_softc *ol_sc, struct hif_sdio_dev *device,
 			  enum HIF_DEVICE_POWER_CHANGE_TYPE config)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct sdio_func *func = device->func;
 
 	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE,
-			("%s: config type %d\n",
-			__func__, config));
+			("%s: config type %d\n", __func__, config));
 	switch (config) {
 	case HIF_DEVICE_POWER_DOWN:
 		/* Disable 4bits to allow SDIO bus to detect
-		 * DAT1 as interrupt source
-		 */
+     * DAT1 as interrupt source
+     */
 		sdio_enable4bits(device, 0);
 		break;
 	case HIF_DEVICE_POWER_CUT:
@@ -411,9 +435,9 @@ power_state_change_notify(struct hif_softc *ol_sc,
 			if (device->is_suspend) {
 				status = reinit_sdio(device);
 				/* set power_config before EnableFunc to
-				 * passthrough sdio r/w action when resuming
-				 * from cut power
-				 */
+         * passthrough sdio r/w action when resuming
+         * from cut power
+         */
 				device->power_config = config;
 				if (status == QDF_STATUS_SUCCESS)
 					status = hif_enable_func(ol_sc, device,
@@ -427,18 +451,16 @@ power_state_change_notify(struct hif_softc *ol_sc,
 			int ret = sdio_enable4bits(device, 1);
 
 			status = (ret == 0) ? QDF_STATUS_SUCCESS :
-						QDF_STATUS_E_FAILURE;
+					      QDF_STATUS_E_FAILURE;
 		}
 		break;
 	}
 	device->power_config = config;
 
-	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE,
-			("%s:\n", __func__));
+	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE, ("%s:\n", __func__));
 
 	return status;
 }
-
 
 /**
  * hif_configure_device() - configure sdio device
@@ -452,8 +474,8 @@ power_state_change_notify(struct hif_softc *ol_sc,
  */
 QDF_STATUS
 hif_configure_device(struct hif_softc *ol_sc, struct hif_sdio_dev *device,
-		     enum hif_device_config_opcode opcode,
-		     void *config, uint32_t config_len)
+		     enum hif_device_config_opcode opcode, void *config,
+		     uint32_t config_len)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
@@ -471,7 +493,7 @@ hif_configure_device(struct hif_softc *ol_sc, struct hif_sdio_dev *device,
 		status = QDF_STATUS_E_FAILURE;
 		break;
 	case HIF_DEVICE_GET_IRQ_PROC_MODE:
-		*((enum hif_device_irq_mode *) config) =
+		*((enum hif_device_irq_mode *)config) =
 			HIF_DEVICE_IRQ_SYNC_ONLY;
 		break;
 	case HIF_DEVICE_GET_RECV_EVENT_MASK_UNMASK_FUNC:
@@ -481,23 +503,21 @@ hif_configure_device(struct hif_softc *ol_sc, struct hif_sdio_dev *device,
 	case HIF_CONFIGURE_QUERY_SCATTER_REQUEST_SUPPORT:
 		if (!device->scatter_enabled)
 			return QDF_STATUS_E_NOSUPPORT;
-		status =
-			setup_hif_scatter_support(device,
-				  (struct HIF_DEVICE_SCATTER_SUPPORT_INFO *)
-				   config);
+		status = setup_hif_scatter_support(
+			device,
+			(struct HIF_DEVICE_SCATTER_SUPPORT_INFO *)config);
 		if (QDF_IS_STATUS_ERROR(status))
 			device->scatter_enabled = false;
 		break;
 	case HIF_DEVICE_GET_OS_DEVICE:
 		/* pass back a pointer to the SDIO function's "dev" struct */
-		((struct HIF_DEVICE_OS_DEVICE_INFO *) config)->os_dev =
+		((struct HIF_DEVICE_OS_DEVICE_INFO *)config)->os_dev =
 			&device->func->dev;
 		break;
 	case HIF_DEVICE_POWER_STATE_CHANGE:
-		status =
-		power_state_change_notify(ol_sc, device,
-					  *(enum HIF_DEVICE_POWER_CHANGE_TYPE *)
-					   config);
+		status = power_state_change_notify(
+			ol_sc, device,
+			*(enum HIF_DEVICE_POWER_CHANGE_TYPE *)config);
 		break;
 	case HIF_DEVICE_GET_IRQ_YIELD_PARAMS:
 		hif_warn("opcode %d", opcode);
@@ -535,32 +555,32 @@ void hif_sdio_shutdown(struct hif_softc *hif_ctx)
 	struct hif_sdio_softc *scn = HIF_GET_SDIO_SOFTC(hif_ctx);
 	struct hif_sdio_dev *hif_device = scn->hif_handle;
 
-	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE,
-			("%s: Enter\n", __func__));
+	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE, ("%s: Enter\n", __func__));
 	if (hif_device) {
-		AR_DEBUG_ASSERT(hif_device->power_config == HIF_DEVICE_POWER_CUT
-				|| hif_device->func);
+		AR_DEBUG_ASSERT(hif_device->power_config ==
+					HIF_DEVICE_POWER_CUT ||
+				hif_device->func);
 	} else {
 		int i;
 		/* since we are unloading the driver anyways,
-		 * reset all cards in case the SDIO card is
-		 * externally powered and we are unloading the SDIO
-		 * stack. This avoids the problem when the SDIO stack
-		 * is reloaded and attempts are made to re-enumerate
-		 * a card that is already enumerated
-		 */
+     * reset all cards in case the SDIO card is
+     * externally powered and we are unloading the SDIO
+     * stack. This avoids the problem when the SDIO stack
+     * is reloaded and attempts are made to re-enumerate
+     * a card that is already enumerated
+     */
 		for (i = 0; i < MAX_HIF_DEVICES; ++i) {
 			if (hif_devices[i] && !hif_devices[i]->func) {
-				AR_DEBUG_PRINTF(ATH_DEBUG_TRACE,
-				("%s: Remove pending hif_device %pK\n",
+				AR_DEBUG_PRINTF(
+					ATH_DEBUG_TRACE,
+					("%s: Remove pending hif_device %pK\n",
 					 __func__, hif_devices[i]));
 				del_hif_device(hif_devices[i]);
 				hif_devices[i] = NULL;
 			}
 		}
 	}
-	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE,
-			("%s: Exit\n", __func__));
+	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE, ("%s: Exit\n", __func__));
 }
 
 /**
@@ -580,8 +600,8 @@ static QDF_STATUS hif_device_inserted(struct hif_softc *ol_sc,
 	struct hif_sdio_dev *device = NULL;
 
 	hif_info("F%X, VID: 0x%X, DevID: 0x%X, block size: 0x%X/0x%X",
-		 func->num, func->vendor, id->device,
-		 func->max_blksize, func->cur_blksize);
+		 func->num, func->vendor, id->device, func->max_blksize,
+		 func->cur_blksize);
 
 	/* dma_mask should be populated here. Use the parent device's setting */
 	func->dev.dma_mask = mmc_dev(func->card->host)->dma_mask;
@@ -627,8 +647,8 @@ static QDF_STATUS hif_device_inserted(struct hif_softc *ol_sc,
 		device->host = func->card->host;
 		device->is_disabled = true;
 		/* TODO: MMC SDIO3.0 Setting should also be modified in ReInit()
-		 * function when Power Manage work.
-		 */
+     * function when Power Manage work.
+     */
 		sdio_claim_host(func);
 
 		hif_sdio_quirk_force_drive_strength(ol_sc, func);
@@ -652,8 +672,8 @@ static QDF_STATUS hif_device_inserted(struct hif_softc *ol_sc,
 
 	if (!nohifscattersupport) {
 		/* try to allow scatter operation on all instances,
-		 * unless globally overridden
-		 */
+     * unless globally overridden
+     */
 		device->scatter_enabled = true;
 	} else
 		device->scatter_enabled = false;
@@ -680,8 +700,8 @@ del_hif_dev:
 	}
 	if (i == MAX_HIF_DEVICES) {
 		AR_DEBUG_PRINTF(ATH_DEBUG_ERROR,
-			("%s: No hif_devices[] slot for %pK",
-			__func__, device));
+				("%s: No hif_devices[] slot for %pK", __func__,
+				 device));
 	}
 	return ret;
 }
@@ -737,8 +757,8 @@ struct bus_request *hif_allocate_bus_request(struct hif_sdio_dev *device)
 	/* Release lock */
 	qdf_spin_unlock_irqrestore(&device->lock);
 	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE,
-			("%s: hif_allocate_bus_request: 0x%pK\n",
-			__func__, busrequest));
+			("%s: hif_allocate_bus_request: 0x%pK\n", __func__,
+			 busrequest));
 
 	return busrequest;
 }
@@ -779,33 +799,31 @@ int hif_device_suspend(struct hif_softc *ol_sc, struct device *dev)
 	device->is_suspend = true;
 
 	switch (forcesleepmode) {
-		case 0: /* depend on sdio host pm capbility */
-			pm_flag = sdio_get_host_pm_caps(func);
-			break;
-		case 1: /* force WOW */
-			pm_flag |= MMC_PM_KEEP_POWER | MMC_PM_WAKE_SDIO_IRQ;
-			break;
-		case 2: /* force DeepSleep */
-			pm_flag &= ~MMC_PM_WAKE_SDIO_IRQ;
-			pm_flag |= MMC_PM_KEEP_POWER;
-			break;
-		case 3: /* force CutPower */
-			pm_flag &=
-				~(MMC_PM_WAKE_SDIO_IRQ | MMC_PM_WAKE_SDIO_IRQ);
-			break;
+	case 0: /* depend on sdio host pm capbility */
+		pm_flag = sdio_get_host_pm_caps(func);
+		break;
+	case 1: /* force WOW */
+		pm_flag |= MMC_PM_KEEP_POWER | MMC_PM_WAKE_SDIO_IRQ;
+		break;
+	case 2: /* force DeepSleep */
+		pm_flag &= ~MMC_PM_WAKE_SDIO_IRQ;
+		pm_flag |= MMC_PM_KEEP_POWER;
+		break;
+	case 3: /* force CutPower */
+		pm_flag &= ~(MMC_PM_WAKE_SDIO_IRQ | MMC_PM_WAKE_SDIO_IRQ);
+		break;
 	}
 
 	if (!(pm_flag & MMC_PM_KEEP_POWER)) {
 		/* setting power_config before hif_configure_device to
-		 * skip sdio r/w when suspending with cut power
-		 */
+     * skip sdio r/w when suspending with cut power
+     */
 		hif_info("Power cut");
 		config = HIF_DEVICE_POWER_CUT;
 		device->power_config = config;
 
 		hif_configure_device(ol_sc, device,
-				     HIF_DEVICE_POWER_STATE_CHANGE,
-				     &config,
+				     HIF_DEVICE_POWER_STATE_CHANGE, &config,
 				     sizeof(config));
 		hif_mask_interrupt(device);
 		device->device_state = HIF_DEVICE_STATE_CUTPOWER;
@@ -821,8 +839,7 @@ int hif_device_suspend(struct hif_softc *ol_sc, struct device *dev)
 		hif_info("WOW mode");
 		config = HIF_DEVICE_POWER_DOWN;
 		hif_configure_device(ol_sc, device,
-				     HIF_DEVICE_POWER_STATE_CHANGE,
-				     &config,
+				     HIF_DEVICE_POWER_STATE_CHANGE, &config,
 				     sizeof(config));
 
 		if (sdio_set_host_pm_flags(func, MMC_PM_WAKE_SDIO_IRQ)) {
@@ -859,8 +876,7 @@ int hif_device_resume(struct hif_softc *ol_sc, struct device *dev)
 	if (device->device_state == HIF_DEVICE_STATE_CUTPOWER) {
 		config = HIF_DEVICE_POWER_UP;
 		hif_configure_device(ol_sc, device,
-				     HIF_DEVICE_POWER_STATE_CHANGE,
-				     &config,
+				     HIF_DEVICE_POWER_STATE_CHANGE, &config,
 				     sizeof(config));
 		hif_enable_func(ol_sc, device, func, true);
 	} else if (device->device_state == HIF_DEVICE_STATE_DEEPSLEEP) {
@@ -915,8 +931,8 @@ static void hif_device_removed(struct hif_softc *ol_sc, struct sdio_func *func)
 	device = get_hif_device(ol_sc, func);
 
 	if (device->power_config == HIF_DEVICE_POWER_CUT) {
-		device->func = NULL;    /* func will be free by mmc stack */
-		return;         /* Just return for cut-off mode */
+		device->func = NULL; /* func will be free by mmc stack */
+		return; /* Just return for cut-off mode */
 	}
 	for (i = 0; i < MAX_HIF_DEVICES; ++i) {
 		if (hif_devices[i] == device)
@@ -933,12 +949,11 @@ static void hif_device_removed(struct hif_softc *ol_sc, struct sdio_func *func)
 		status = hif_disable_func(device, func,
 					  reset_sdio_on_unload ? true : false);
 
-
 	del_hif_device(device);
 	if (status != QDF_STATUS_SUCCESS)
 		AR_DEBUG_PRINTF(ATH_DEBUG_WARN,
-		  ("%s: Unable to disable sdio func\n",
-		   __func__));
+				("%s: Unable to disable sdio func\n",
+				 __func__));
 
 	HIF_EXIT();
 }
@@ -951,8 +966,8 @@ static struct hif_sdio_dev *add_hif_device(struct hif_softc *ol_sc,
 
 	HIF_ENTER();
 	AR_DEBUG_ASSERT(func);
-	hifdevice = (struct hif_sdio_dev *) qdf_mem_malloc(sizeof(
-							struct hif_sdio_dev));
+	hifdevice = (struct hif_sdio_dev *)qdf_mem_malloc(
+		sizeof(struct hif_sdio_dev));
 	AR_DEBUG_ASSERT(hifdevice);
 	if (!hifdevice)
 		return NULL;
@@ -978,8 +993,7 @@ static void del_hif_device(struct hif_sdio_dev *device)
 {
 	AR_DEBUG_ASSERT(device);
 	AR_DEBUG_PRINTF(ATH_DEBUG_TRACE,
-			("%s: deleting hif device 0x%pK\n",
-				__func__, device));
+			("%s: deleting hif device 0x%pK\n", __func__, device));
 	if (device->dma_buffer)
 		qdf_mem_free(device->dma_buffer);
 
@@ -987,7 +1001,7 @@ static void del_hif_device(struct hif_sdio_dev *device)
 }
 
 QDF_STATUS hif_attach_htc(struct hif_sdio_dev *device,
-				struct htc_callbacks *callbacks)
+			  struct htc_callbacks *callbacks)
 {
 	if (device->htc_callbacks.context)
 		/* already in use! */
@@ -1003,11 +1017,10 @@ void hif_detach_htc(struct hif_opaque_softc *hif_ctx)
 	struct hif_sdio_dev *hif_device = scn->hif_handle;
 
 	qdf_mem_zero(&hif_device->htc_callbacks,
-			  sizeof(hif_device->htc_callbacks));
+		     sizeof(hif_device->htc_callbacks));
 }
 
-int func0_cmd52_write_byte(struct mmc_card *card,
-			   unsigned int address,
+int func0_cmd52_write_byte(struct mmc_card *card, unsigned int address,
 			   unsigned char byte)
 {
 	struct mmc_command io_cmd;
@@ -1027,8 +1040,7 @@ int func0_cmd52_write_byte(struct mmc_card *card,
 	return status;
 }
 
-int func0_cmd52_read_byte(struct mmc_card *card,
-			  unsigned int address,
+int func0_cmd52_read_byte(struct mmc_card *card, unsigned int address,
 			  unsigned char *byte)
 {
 	struct mmc_command io_cmd;
@@ -1058,25 +1070,23 @@ void hif_dump_cccr(struct hif_sdio_dev *hif_device)
 	uint8_t cccr_val;
 	uint32_t err;
 
-	if (!hif_device || !hif_device->func ||
-				!hif_device->func->card) {
+	if (!hif_device || !hif_device->func || !hif_device->func->card) {
 		hif_err("Incorrect input");
 		return;
 	}
 
 	for (i = 0; i <= 0x16; i++) {
-		err = func0_cmd52_read_byte(hif_device->func->card,
-						i, &cccr_val);
+		err = func0_cmd52_read_byte(hif_device->func->card, i,
+					    &cccr_val);
 		if (err)
-			hif_err("Reading CCCR 0x%02X failed: %d",
-				i, (unsigned int)err);
+			hif_err("Reading CCCR 0x%02X failed: %d", i,
+				(unsigned int)err);
 		else
 			hif_err("%X(%X) ", i, (unsigned int)cccr_val);
 	}
 }
 
-QDF_STATUS hif_sdio_device_inserted(struct hif_softc *ol_sc,
-				    struct device *dev,
+QDF_STATUS hif_sdio_device_inserted(struct hif_softc *ol_sc, struct device *dev,
 				    const struct sdio_device_id *id)
 {
 	struct sdio_func *func = dev_to_sdio_func(dev);

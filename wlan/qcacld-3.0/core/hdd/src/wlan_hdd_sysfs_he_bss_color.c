@@ -21,15 +21,14 @@
  * implementation for creating sysfs file he_bss_color
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs.h>
 #include "wlan_hdd_sysfs_he_bss_color.h"
+#include "osif_vdev_sync.h"
 #include <sme_api.h>
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
 
-static ssize_t
-__hdd_sysfs_he_bss_color_store(struct net_device *net_dev,
-			       char const *buf, size_t count)
+static ssize_t __hdd_sysfs_he_bss_color_store(struct net_device *net_dev,
+					      char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -49,8 +48,8 @@ __hdd_sysfs_he_bss_color_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -65,8 +64,7 @@ __hdd_sysfs_he_bss_color_store(struct net_device *net_dev,
 		return -EINVAL;
 
 	status = sme_set_he_bss_color(hdd_ctx->mac_handle,
-				      adapter->deflink->vdev_id,
-				      value);
+				      adapter->deflink->vdev_id, value);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err_rl("Failed to set HE BSS color, status %d", status);
 		return -EINVAL;
@@ -75,10 +73,9 @@ __hdd_sysfs_he_bss_color_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_he_bss_color_store(struct device *dev,
-			     struct device_attribute *attr,
-			     char const *buf, size_t count)
+static ssize_t hdd_sysfs_he_bss_color_store(struct device *dev,
+					    struct device_attribute *attr,
+					    char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -95,8 +92,7 @@ hdd_sysfs_he_bss_color_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(he_bss_color, 0220,
-		   NULL, hdd_sysfs_he_bss_color_store);
+static DEVICE_ATTR(he_bss_color, 0220, NULL, hdd_sysfs_he_bss_color_store);
 
 int hdd_sysfs_he_bss_color_create(struct hdd_adapter *adapter)
 {

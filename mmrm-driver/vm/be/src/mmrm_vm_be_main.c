@@ -4,18 +4,18 @@
  */
 
 #include <linux/module.h>
-#include <linux/platform_device.h>
 #include <linux/of.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
 
-#include "mmrm_vm_be.h"
-#include "mmrm_vm_msgq.h"
-#include "mmrm_vm_interface.h"
 #include "mmrm_debug.h"
+#include "mmrm_vm_be.h"
+#include "mmrm_vm_interface.h"
+#include "mmrm_vm_msgq.h"
 
 #define MMRM_CLK_CLIENTS_NUM_MAX 35
 
-struct mmrm_vm_driver_data *drv_vm_be = (void *) -EPROBE_DEFER;
+struct mmrm_vm_driver_data *drv_vm_be = (void *)-EPROBE_DEFER;
 
 int msm_mmrm_debug = MMRM_ERR | MMRM_WARN | MMRM_PRINTK;
 
@@ -24,7 +24,7 @@ int mmrm_client_get_clk_count(void);
 static int mmrm_vm_be_driver_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	int   sz, clk_count, rc;
+	int sz, clk_count, rc;
 
 	drv_vm_be = devm_kzalloc(dev, sizeof(*drv_vm_be), GFP_KERNEL);
 	if (!drv_vm_be)
@@ -72,7 +72,7 @@ static int mmrm_vm_be_driver_remove(struct platform_device *pdev)
 	msm_mmrm_debugfs_deinit(drv_vm_be->debugfs_root);
 
 	dev_set_drvdata(&pdev->dev, NULL);
-	drv_vm_be = (void *) -EPROBE_DEFER;
+	drv_vm_be = (void *)-EPROBE_DEFER;
 	return 0;
 }
 
@@ -83,12 +83,13 @@ static const struct of_device_id mmrm_vm_be_match[] = {
 MODULE_DEVICE_TABLE(of, mmrm_vm_be_match);
 
 static struct platform_driver mmrm_vm_be_driver = {
-	.probe = mmrm_vm_be_driver_probe,
-	.driver = {
-		.name = "mmrm-vm-be",
-		.of_match_table = mmrm_vm_be_match,
-	},
-	.remove = mmrm_vm_be_driver_remove,
+    .probe = mmrm_vm_be_driver_probe,
+    .driver =
+        {
+            .name = "mmrm-vm-be",
+            .of_match_table = mmrm_vm_be_match,
+        },
+    .remove = mmrm_vm_be_driver_remove,
 };
 
 static int __init mmrm_vm_be_module_init(void)

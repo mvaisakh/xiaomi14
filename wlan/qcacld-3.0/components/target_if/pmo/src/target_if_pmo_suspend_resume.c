@@ -23,24 +23,23 @@
  * send suspend / resume related cmd and process event.
  */
 
-#include "wma.h"
+#include "pld_common.h"
+#include "qdf_types.h"
 #include "target_if.h"
 #include "target_if_pmo.h"
+#include "wma.h"
 #include "wmi_unified_api.h"
-#include "qdf_types.h"
-#include "pld_common.h"
-#include <cds_api.h>
 #include <cdp_txrx_cmn.h>
+#include <cds_api.h>
 
 #define TGT_WILDCARD_PDEV_ID 0x0
 
 QDF_STATUS target_if_pmo_send_vdev_update_param_req(
-		struct wlan_objmgr_vdev *vdev,
-		uint32_t param_id, uint32_t param_value)
+	struct wlan_objmgr_vdev *vdev, uint32_t param_id, uint32_t param_value)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
-	struct vdev_set_params param = {0};
+	struct vdev_set_params param = { 0 };
 	wmi_unified_t wmi_handle;
 
 	if (!vdev) {
@@ -56,10 +55,10 @@ QDF_STATUS target_if_pmo_send_vdev_update_param_req(
 	}
 
 	/* Any new param_id added here please also add it to
-	 * wmi_tag_vdev_set_cmd to be tagged for runtime PM feature
-	 * so that it will not invoke runtime PM "get" which will
-	 * result resume right after suspend (WOW_ENABLE).
-	 */
+   * wmi_tag_vdev_set_cmd to be tagged for runtime PM feature
+   * so that it will not invoke runtime PM "get" which will
+   * result resume right after suspend (WOW_ENABLE).
+   */
 
 	switch (param_id) {
 	case pmo_vdev_param_listen_interval:
@@ -94,9 +93,9 @@ QDF_STATUS target_if_pmo_send_vdev_update_param_req(
 }
 
 #ifdef WLAN_FEATURE_IGMP_OFFLOAD
-QDF_STATUS target_if_pmo_send_igmp_offload_req(
-			struct wlan_objmgr_vdev *vdev,
-			struct pmo_igmp_offload_req *pmo_igmp_req)
+QDF_STATUS
+target_if_pmo_send_igmp_offload_req(struct wlan_objmgr_vdev *vdev,
+				    struct pmo_igmp_offload_req *pmo_igmp_req)
 {
 	struct wlan_objmgr_psoc *psoc;
 	wmi_unified_t wmi_handle;
@@ -118,20 +117,18 @@ QDF_STATUS target_if_pmo_send_igmp_offload_req(
 		return QDF_STATUS_E_INVAL;
 	}
 
-	return wmi_unified_send_igmp_offload_cmd(wmi_handle,
-						 pmo_igmp_req);
+	return wmi_unified_send_igmp_offload_cmd(wmi_handle, pmo_igmp_req);
 }
 #endif
 
-QDF_STATUS target_if_pmo_send_vdev_ps_param_req(
-		struct wlan_objmgr_vdev *vdev,
-		uint32_t param_id,
-		uint32_t param_value)
+QDF_STATUS target_if_pmo_send_vdev_ps_param_req(struct wlan_objmgr_vdev *vdev,
+						uint32_t param_id,
+						uint32_t param_value)
 {
 	uint8_t vdev_id;
 	struct wlan_objmgr_psoc *psoc;
 	QDF_STATUS status;
-	struct sta_ps_params sta_ps_param = {0};
+	struct sta_ps_params sta_ps_param = { 0 };
 	wmi_unified_t wmi_handle;
 
 	if (!vdev) {
@@ -147,11 +144,11 @@ QDF_STATUS target_if_pmo_send_vdev_ps_param_req(
 	}
 
 	/*
-	 * Any new param_id added here must be added to
-	 * wmi_tag_sta_powersave_cmd() to be tagged for runtime PM feature
-	 * so that it will not invoke runtime PM "get" which will
-	 * result resume right after suspend (WOW_ENABLE).
-	 */
+   * Any new param_id added here must be added to
+   * wmi_tag_sta_powersave_cmd() to be tagged for runtime PM feature
+   * so that it will not invoke runtime PM "get" which will
+   * result resume right after suspend (WOW_ENABLE).
+   */
 	switch (param_id) {
 	case pmo_sta_ps_enable_advanced_power:
 		param_id = WMI_STA_PS_ENABLE_OPM;
@@ -190,7 +187,7 @@ QDF_STATUS target_if_pmo_send_vdev_ps_param_req(
 }
 
 void target_if_pmo_psoc_update_bus_suspend(struct wlan_objmgr_psoc *psoc,
-		uint8_t value)
+					   uint8_t value)
 {
 	wmi_unified_t wmi_handle;
 
@@ -230,7 +227,7 @@ int target_if_pmo_psoc_get_pending_cmnds(struct wlan_objmgr_psoc *psoc)
 }
 
 void target_if_pmo_update_target_suspend_flag(struct wlan_objmgr_psoc *psoc,
-		uint8_t value)
+					      uint8_t value)
 {
 	wmi_unified_t wmi_handle;
 
@@ -244,8 +241,7 @@ void target_if_pmo_update_target_suspend_flag(struct wlan_objmgr_psoc *psoc,
 }
 
 void target_if_pmo_update_target_suspend_acked_flag(
-					struct wlan_objmgr_psoc *psoc,
-					uint8_t value)
+	struct wlan_objmgr_psoc *psoc, uint8_t value)
 {
 	wmi_unified_t wmi_handle;
 
@@ -271,9 +267,9 @@ bool target_if_pmo_is_target_suspended(struct wlan_objmgr_psoc *psoc)
 	return wmi_is_target_suspended(wmi_handle);
 }
 
-QDF_STATUS target_if_pmo_psoc_send_wow_enable_req(
-		struct wlan_objmgr_psoc *psoc,
-		struct pmo_wow_cmd_params *param)
+QDF_STATUS
+target_if_pmo_psoc_send_wow_enable_req(struct wlan_objmgr_psoc *psoc,
+				       struct pmo_wow_cmd_params *param)
 {
 	wmi_unified_t wmi_handle;
 
@@ -289,9 +285,9 @@ QDF_STATUS target_if_pmo_psoc_send_wow_enable_req(
 					   TGT_WILDCARD_PDEV_ID);
 }
 
-QDF_STATUS target_if_pmo_psoc_send_suspend_req(
-		struct wlan_objmgr_psoc *psoc,
-		struct pmo_suspend_params *param)
+QDF_STATUS
+target_if_pmo_psoc_send_suspend_req(struct wlan_objmgr_psoc *psoc,
+				    struct pmo_suspend_params *param)
 {
 	wmi_unified_t wmi_handle;
 
@@ -302,7 +298,7 @@ QDF_STATUS target_if_pmo_psoc_send_suspend_req(
 	}
 
 	return wmi_unified_suspend_send(wmi_handle,
-					(struct suspend_params *) param,
+					(struct suspend_params *)param,
 					TGT_WILDCARD_PDEV_ID);
 }
 
@@ -320,8 +316,7 @@ void target_if_pmo_set_runtime_pm_in_progress(struct wlan_objmgr_psoc *psoc,
 	return wmi_set_runtime_pm_inprogress(wmi_handle, value);
 }
 
-bool target_if_pmo_get_runtime_pm_in_progress(
-		struct wlan_objmgr_psoc *psoc)
+bool target_if_pmo_get_runtime_pm_in_progress(struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_handle;
 
@@ -335,8 +330,8 @@ bool target_if_pmo_get_runtime_pm_in_progress(
 }
 
 #ifdef HOST_WAKEUP_OVER_QMI
-QDF_STATUS target_if_pmo_psoc_send_host_wakeup_ind(
-		struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+target_if_pmo_psoc_send_host_wakeup_ind(struct wlan_objmgr_psoc *psoc)
 {
 	qdf_device_t qdf_dev;
 	int ret;
@@ -354,8 +349,8 @@ QDF_STATUS target_if_pmo_psoc_send_host_wakeup_ind(
 	return QDF_STATUS_SUCCESS;
 }
 #else
-QDF_STATUS target_if_pmo_psoc_send_host_wakeup_ind(
-		struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+target_if_pmo_psoc_send_host_wakeup_ind(struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_handle;
 	bool tx_pending_ind = false;
@@ -374,8 +369,8 @@ QDF_STATUS target_if_pmo_psoc_send_host_wakeup_ind(
 }
 #endif
 
-QDF_STATUS target_if_pmo_psoc_send_target_resume_req(
-		struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+target_if_pmo_psoc_send_target_resume_req(struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_handle;
 
@@ -404,8 +399,8 @@ target_if_pmo_psoc_send_idle_monitor_cmd(struct wlan_objmgr_psoc *psoc,
 }
 
 #ifdef FEATURE_WLAN_D0WOW
-QDF_STATUS target_if_pmo_psoc_send_d0wow_enable_req(
-		struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+target_if_pmo_psoc_send_d0wow_enable_req(struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_handle;
 
@@ -418,8 +413,8 @@ QDF_STATUS target_if_pmo_psoc_send_d0wow_enable_req(
 	return wmi_unified_d0wow_enable_send(wmi_handle, TGT_WILDCARD_PDEV_ID);
 }
 
-QDF_STATUS target_if_pmo_psoc_send_d0wow_disable_req(
-		struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+target_if_pmo_psoc_send_d0wow_disable_req(struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_handle;
 
@@ -432,14 +427,14 @@ QDF_STATUS target_if_pmo_psoc_send_d0wow_disable_req(
 	return wmi_unified_d0wow_disable_send(wmi_handle, TGT_WILDCARD_PDEV_ID);
 }
 #else
-QDF_STATUS target_if_pmo_psoc_send_d0wow_enable_req(
-		struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+target_if_pmo_psoc_send_d0wow_enable_req(struct wlan_objmgr_psoc *psoc)
 {
 	return QDF_STATUS_E_INVAL;
 }
 
-QDF_STATUS target_if_pmo_psoc_send_d0wow_disable_req(
-		struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+target_if_pmo_psoc_send_d0wow_disable_req(struct wlan_objmgr_psoc *psoc)
 {
 	return QDF_STATUS_E_INVAL;
 }
@@ -457,4 +452,3 @@ void target_if_pmo_set_wow_enable_ack_failed(struct wlan_objmgr_psoc *psoc)
 
 	return wmi_set_wow_enable_ack_failed(wmi_handle);
 }
-

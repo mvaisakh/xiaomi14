@@ -16,9 +16,9 @@
 
 #include "os_if_qmi.h"
 #include "os_if_qmi_wifi_driver_service_v01.h"
-#include <qdf_util.h>
-#include "wlan_qmi_public_struct.h"
 #include "wlan_dp_ucfg_api.h"
+#include "wlan_qmi_public_struct.h"
+#include <qdf_util.h>
 
 static struct qmi_handle qmi_wfds;
 
@@ -98,12 +98,12 @@ os_if_qmi_wfds_send_config_msg(struct wlan_qmi_wfds_config_req_msg *src_info)
 	req->ce_info_len = src_info->ce_info_len;
 	for (i = 0; i < req->ce_info_len; i++) {
 		req->ce_info[i].ce_id = src_info->ce_info[i].ce_id;
-		req->ce_info[i].ce_dir =
-		     os_if_ce_dir_qmi_to_wfds_type(src_info->ce_info[i].ce_dir);
+		req->ce_info[i].ce_dir = os_if_ce_dir_qmi_to_wfds_type(
+			src_info->ce_info[i].ce_dir);
 		req->ce_info[i].srng_info.ring_id =
 			src_info->ce_info[i].srng_info.ring_id;
-		req->ce_info[i].srng_info.dir =
-			os_if_srng_dir_qmi_to_wfds_type(src_info->ce_info[i].srng_info.dir);
+		req->ce_info[i].srng_info.dir = os_if_srng_dir_qmi_to_wfds_type(
+			src_info->ce_info[i].srng_info.dir);
 		req->ce_info[i].srng_info.num_entries =
 			src_info->ce_info[i].srng_info.num_entries;
 		req->ce_info[i].srng_info.entry_size =
@@ -122,7 +122,7 @@ os_if_qmi_wfds_send_config_msg(struct wlan_qmi_wfds_config_req_msg *src_info)
 	req->rx_refill_ring.num_entries = src_info->rx_refill_ring.num_entries;
 	req->rx_refill_ring.entry_size = src_info->rx_refill_ring.entry_size;
 	req->rx_refill_ring.ring_base_paddr =
-				src_info->rx_refill_ring.ring_base_paddr;
+		src_info->rx_refill_ring.ring_base_paddr;
 	req->rx_refill_ring.hp_paddr = src_info->rx_refill_ring.hp_paddr;
 	req->rx_refill_ring.tp_paddr = src_info->rx_refill_ring.tp_paddr;
 
@@ -217,7 +217,8 @@ os_if_qmi_wfds_send_req_mem_msg(struct wlan_qmi_wfds_mem_req_msg *src_info)
 		for (j = 0; j < req->mem_arena_page_info[i].page_dma_addr_len;
 		     j++)
 			req->mem_arena_page_info[i].page_dma_addr[j] =
-			      src_info->mem_arena_page_info[i].page_dma_addr[j];
+				src_info->mem_arena_page_info[i]
+					.page_dma_addr[j];
 	}
 
 	status = os_if_qmi_txn_init(&qmi_wfds, &txn, wfds_gen_resp_msg_v01_ei,
@@ -260,8 +261,7 @@ out:
  *
  * Return: QDF status
  */
-static QDF_STATUS
-os_if_qmi_wfds_send_misc_req_msg(bool is_ssr)
+static QDF_STATUS os_if_qmi_wfds_send_misc_req_msg(bool is_ssr)
 {
 	struct wfds_misc_req_msg_v01 *req;
 	struct wfds_gen_resp_msg_v01 *resp;
@@ -279,13 +279,12 @@ os_if_qmi_wfds_send_misc_req_msg(bool is_ssr)
 	}
 
 	req->event = (is_ssr) ? WFDS_EVENT_WLAN_SSR_V01 :
-			WFDS_EVENT_WLAN_HOST_RMMOD_V01;
+				WFDS_EVENT_WLAN_HOST_RMMOD_V01;
 
 	status = os_if_qmi_txn_init(&qmi_wfds, &txn, wfds_gen_resp_msg_v01_ei,
 				    resp);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		osif_info("QMI txn for WFDS misc request failed %d",
-			  status);
+		osif_info("QMI txn for WFDS misc request failed %d", status);
 		goto out;
 	}
 
@@ -321,8 +320,7 @@ out:
  *
  * Return: status in QMI type
  */
-static uint8_t
-os_if_status_qmi_to_wfds_type(enum wlan_qmi_wfds_status status)
+static uint8_t os_if_status_qmi_to_wfds_type(enum wlan_qmi_wfds_status status)
 {
 	switch (status) {
 	case QMI_WFDS_STATUS_SUCCESS:
@@ -340,8 +338,8 @@ os_if_status_qmi_to_wfds_type(enum wlan_qmi_wfds_status status)
  *
  * Return: QDF status
  */
-static QDF_STATUS
-os_if_qmi_wfds_ipcc_map_n_cfg_msg(struct wlan_qmi_wfds_ipcc_map_n_cfg_req_msg *src_info)
+static QDF_STATUS os_if_qmi_wfds_ipcc_map_n_cfg_msg(
+	struct wlan_qmi_wfds_ipcc_map_n_cfg_req_msg *src_info)
 {
 	struct wfds_ipcc_map_n_cfg_req_msg_v01 *req;
 	struct wfds_gen_resp_msg_v01 *resp;
@@ -363,15 +361,16 @@ os_if_qmi_wfds_ipcc_map_n_cfg_msg(struct wlan_qmi_wfds_ipcc_map_n_cfg_req_msg *s
 	status = os_if_qmi_txn_init(&qmi_wfds, &txn, wfds_gen_resp_msg_v01_ei,
 				    resp);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		osif_info("QMI txn init failed for WFDS ipcc cfg req message %d",
-			  status);
+		osif_info(
+			"QMI txn init failed for WFDS ipcc cfg req message %d",
+			status);
 		goto out;
 	}
 
-	status = os_if_qmi_send_request(&qmi_wfds, NULL, &txn,
-				    QMI_WFDS_IPCC_MAP_N_CFG_REQ_V01,
-				    WFDS_IPCC_MAP_N_CFG_REQ_MSG_V01_MAX_MSG_LEN,
-				    wfds_ipcc_map_n_cfg_req_msg_v01_ei, req);
+	status = os_if_qmi_send_request(
+		&qmi_wfds, NULL, &txn, QMI_WFDS_IPCC_MAP_N_CFG_REQ_V01,
+		WFDS_IPCC_MAP_N_CFG_REQ_MSG_V01_MAX_MSG_LEN,
+		wfds_ipcc_map_n_cfg_req_msg_v01_ei, req);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		osif_info("QMI WFDS IPCC cfg request send failed %d", status);
 		os_if_qmi_txn_cancel(&txn);
@@ -410,25 +409,26 @@ static void os_if_qmi_wfds_request_mem_ind_cb(struct qmi_handle *qmi_hdl,
 					      const void *data)
 {
 	struct wfds_mem_ind_msg_v01 *src_info =
-				(struct wfds_mem_ind_msg_v01 *)data;
-	struct wlan_qmi_wfds_mem_ind_msg mem_ind_msg = {0};
+		(struct wfds_mem_ind_msg_v01 *)data;
+	struct wlan_qmi_wfds_mem_ind_msg mem_ind_msg = { 0 };
 	uint8_t i;
 
 	if (!qmi_hdl || !qmi_txn)
 		return;
 
 	if (src_info->mem_arena_info_len > QMI_WFDS_MEM_ARENA_MAX) {
-		osif_info("Memory arena information array size %d exceeds max length",
-			  src_info->mem_arena_info_len);
+		osif_info(
+			"Memory arena information array size %d exceeds max length",
+			src_info->mem_arena_info_len);
 		return;
 	}
 
 	mem_ind_msg.mem_arena_info_len = src_info->mem_arena_info_len;
 	for (i = 0; i < src_info->mem_arena_info_len; i++) {
 		mem_ind_msg.mem_arena_info[i].entry_size =
-				src_info->mem_arena_info[i].entry_size;
+			src_info->mem_arena_info[i].entry_size;
 		mem_ind_msg.mem_arena_info[i].num_entries =
-				src_info->mem_arena_info[i].num_entries;
+			src_info->mem_arena_info[i].num_entries;
 	}
 
 	ucfg_dp_wfds_handle_request_mem_ind(&mem_ind_msg);
@@ -451,26 +451,27 @@ static void os_if_wfds_ipcc_map_n_cfg_ind_cb(struct qmi_handle *qmi_hdl,
 {
 	struct wfds_ipcc_map_n_cfg_ind_msg_v01 *src_info =
 		(struct wfds_ipcc_map_n_cfg_ind_msg_v01 *)data;
-	struct wlan_qmi_wfds_ipcc_map_n_cfg_ind_msg ipcc_ind_msg = {0};
+	struct wlan_qmi_wfds_ipcc_map_n_cfg_ind_msg ipcc_ind_msg = { 0 };
 	uint8_t i;
 
 	if (!qmi_hdl || !qmi_txn)
 		return;
 
 	if (src_info->ipcc_ce_info_len > QMI_WFDS_CE_MAX_SRNG) {
-		osif_info("IPCC CE information array size %d exceeds max length",
-			  src_info->ipcc_ce_info_len);
+		osif_info(
+			"IPCC CE information array size %d exceeds max length",
+			src_info->ipcc_ce_info_len);
 		return;
 	}
 
 	ipcc_ind_msg.ipcc_ce_info_len = src_info->ipcc_ce_info_len;
 	for (i = 0; i < src_info->ipcc_ce_info_len; i++) {
 		ipcc_ind_msg.ipcc_ce_info[i].ce_id =
-				src_info->ipcc_ce_info[i].ce_id;
+			src_info->ipcc_ce_info[i].ce_id;
 		ipcc_ind_msg.ipcc_ce_info[i].ipcc_trig_addr =
-				src_info->ipcc_ce_info[i].ipcc_trig_addr;
+			src_info->ipcc_ce_info[i].ipcc_trig_addr;
 		ipcc_ind_msg.ipcc_ce_info[i].ipcc_trig_data =
-				src_info->ipcc_ce_info[i].ipcc_trig_data;
+			src_info->ipcc_ce_info[i].ipcc_trig_data;
 	}
 
 	ucfg_dp_wfds_handle_ipcc_map_n_cfg_ind(&ipcc_ind_msg);
@@ -515,8 +516,8 @@ os_if_qmi_wfds_send_ut_cmd_req_msg(struct os_if_qmi_wfds_ut_cmd_info *cmd_info)
 		req->dest_port = cmd_info->dest_port;
 	}
 
-	osif_debug("cmd: %u for duration: %u s, flush period: %u ms",
-		  req->cmd, req->duration, req->flush_period);
+	osif_debug("cmd: %u for duration: %u s, flush period: %u ms", req->cmd,
+		   req->duration, req->flush_period);
 
 	status = os_if_qmi_txn_init(&qmi_wfds, &txn, wfds_gen_resp_msg_v01_ei,
 				    resp);
@@ -531,8 +532,7 @@ os_if_qmi_wfds_send_ut_cmd_req_msg(struct os_if_qmi_wfds_ut_cmd_info *cmd_info)
 					WFDS_UT_CMD_REQ_MSG_V01_MAX_MSG_LEN,
 					wfds_ut_cmd_req_msg_v01_ei, req);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		osif_info("QMI WFDS UT command request send failed %d",
-			  status);
+		osif_info("QMI WFDS UT command request send failed %d", status);
 		os_if_qmi_txn_cancel(&txn);
 		goto out;
 	}
@@ -561,9 +561,8 @@ out:
  *
  * Returns: 0 on success else OS failure code
  */
-static int
-os_if_qmi_wfds_new_server(struct qmi_handle *qmi_hdl,
-			  struct qmi_service *qmi_svc)
+static int os_if_qmi_wfds_new_server(struct qmi_handle *qmi_hdl,
+				     struct qmi_service *qmi_svc)
 {
 	QDF_STATUS status;
 
@@ -586,28 +585,23 @@ os_if_qmi_wfds_new_server(struct qmi_handle *qmi_hdl,
  *
  * Returns: None
  */
-static void
-os_if_qmi_wfds_del_server(struct qmi_handle *qmi_hdl,
-			  struct qmi_service *qmi_svc)
+static void os_if_qmi_wfds_del_server(struct qmi_handle *qmi_hdl,
+				      struct qmi_service *qmi_svc)
 {
 	ucfg_dp_wfds_del_server();
 }
 
 static struct qmi_msg_handler qmi_wfds_msg_handler[] = {
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WFDS_MEM_IND_V01,
-		.ei = wfds_mem_ind_msg_v01_ei,
-		.decoded_size = sizeof(struct wfds_mem_ind_msg_v01),
-		.fn = os_if_qmi_wfds_request_mem_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WFDS_IPCC_MAP_N_CFG_IND_V01,
-		.ei = wfds_ipcc_map_n_cfg_ind_msg_v01_ei,
-		.decoded_size = sizeof(struct wfds_ipcc_map_n_cfg_ind_msg_v01),
-		.fn = os_if_wfds_ipcc_map_n_cfg_ind_cb
-	},
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WFDS_MEM_IND_V01,
+	  .ei = wfds_mem_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wfds_mem_ind_msg_v01),
+	  .fn = os_if_qmi_wfds_request_mem_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WFDS_IPCC_MAP_N_CFG_IND_V01,
+	  .ei = wfds_ipcc_map_n_cfg_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wfds_ipcc_map_n_cfg_ind_msg_v01),
+	  .fn = os_if_wfds_ipcc_map_n_cfg_ind_cb },
 };
 
 static struct qmi_ops qmi_wfds_ops = {
@@ -660,7 +654,6 @@ void os_if_qmi_wfds_register_callbacks(struct wlan_qmi_psoc_callbacks *cb_obj)
 	cb_obj->qmi_wfds_send_config_msg = os_if_qmi_wfds_send_config_msg;
 	cb_obj->qmi_wfds_send_req_mem_msg = os_if_qmi_wfds_send_req_mem_msg;
 	cb_obj->qmi_wfds_send_ipcc_map_n_cfg_msg =
-					os_if_qmi_wfds_ipcc_map_n_cfg_msg;
-	cb_obj->qmi_wfds_send_misc_req_msg =
-					os_if_qmi_wfds_send_misc_req_msg;
+		os_if_qmi_wfds_ipcc_map_n_cfg_msg;
+	cb_obj->qmi_wfds_send_misc_req_msg = os_if_qmi_wfds_send_misc_req_msg;
 }

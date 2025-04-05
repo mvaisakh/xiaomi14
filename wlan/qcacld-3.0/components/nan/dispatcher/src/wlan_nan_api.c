@@ -18,14 +18,14 @@
  * DOC: contains definitions for NAN component
  */
 
-#include "nan_public_structs.h"
 #include "wlan_nan_api.h"
 #include "../../core/src/nan_main_i.h"
-#include "wlan_objmgr_vdev_obj.h"
+#include "nan_public_structs.h"
 #include "wlan_nan_api_i.h"
+#include "wlan_objmgr_vdev_obj.h"
 
-inline enum nan_datapath_state wlan_nan_get_ndi_state(
-					struct wlan_objmgr_vdev *vdev)
+inline enum nan_datapath_state
+wlan_nan_get_ndi_state(struct wlan_objmgr_vdev *vdev)
 {
 	enum nan_datapath_state val;
 	struct nan_vdev_priv_obj *priv_obj = nan_get_vdev_priv_obj(vdev);

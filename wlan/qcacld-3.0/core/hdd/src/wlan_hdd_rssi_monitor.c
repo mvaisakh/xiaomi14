@@ -25,12 +25,12 @@
  */
 
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
 #include <wlan_hdd_ext_scan.h>
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_rssi_monitor.h>
 
 /*
@@ -43,8 +43,8 @@
 #define PARAM_MIN_RSSI QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MIN_RSSI
 #define PARAM_MAX_RSSI QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX_RSSI
 
-const struct nla_policy moitor_rssi_policy[
-			QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX + 1] = {
+const struct nla_policy moitor_rssi_policy[QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MAX +
+					   1] = {
 	[QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_REQUEST_ID] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_CONTROL] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_MIN_RSSI] = { .type = NLA_S8 },
@@ -60,11 +60,9 @@ const struct nla_policy moitor_rssi_policy[
  *
  * Return: 0 on success, negative errno on failure
  */
-static int
-__wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
-				 struct wireless_dev *wdev,
-				 const void *data,
-				 int data_len)
+static int __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
+					    struct wireless_dev *wdev,
+					    const void *data, int data_len)
 {
 	struct net_device *dev = wdev->netdev;
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
@@ -135,8 +133,8 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
 				 req.min_rssi, req.max_rssi);
 			return -EINVAL;
 		}
-		hdd_debug("Min_rssi: %d Max_rssi: %d",
-			  req.min_rssi, req.max_rssi);
+		hdd_debug("Min_rssi: %d Max_rssi: %d", req.min_rssi,
+			  req.max_rssi);
 
 	} else if (control == QCA_WLAN_RSSI_MONITORING_STOP) {
 		req.control = false;
@@ -144,8 +142,8 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
 		hdd_err("Invalid control cmd: %d", control);
 		return -EINVAL;
 	}
-	hdd_debug("Request Id: %u vdev id: %d Control: %d",
-		  req.request_id, req.vdev_id, req.control);
+	hdd_debug("Request Id: %u vdev id: %d Control: %d", req.request_id,
+		  req.vdev_id, req.control);
 
 	mac_handle = hdd_ctx->mac_handle;
 	status = sme_set_rssi_monitoring(mac_handle, &req);
@@ -167,9 +165,9 @@ __wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
 #undef PARAM_MAX_RSSI
 #undef PARAM_MIN_RSSI
 
-int
-wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy, struct wireless_dev *wdev,
-			       const void *data, int data_len)
+int wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy,
+				   struct wireless_dev *wdev, const void *data,
+				   int data_len)
 {
 	struct osif_vdev_sync *vdev_sync;
 	int errno;
@@ -188,7 +186,7 @@ wlan_hdd_cfg80211_monitor_rssi(struct wiphy *wiphy, struct wireless_dev *wdev,
 void hdd_rssi_threshold_breached(hdd_handle_t hdd_handle,
 				 struct rssi_breach_event *data)
 {
-	struct hdd_context *hdd_ctx  = hdd_handle_to_context(hdd_handle);
+	struct hdd_context *hdd_ctx = hdd_handle_to_context(hdd_handle);
 	struct sk_buff *skb;
 	enum qca_nl80211_vendor_subcmds_index index =
 		QCA_NL80211_VENDOR_SUBCMD_MONITOR_RSSI_INDEX;
@@ -202,19 +200,18 @@ void hdd_rssi_threshold_breached(hdd_handle_t hdd_handle,
 		return;
 	}
 
-	skb = wlan_cfg80211_vendor_event_alloc(hdd_ctx->wiphy, NULL,
-					       EXTSCAN_EVENT_BUF_SIZE +
-					       NLMSG_HDRLEN,
-					       index, GFP_KERNEL);
+	skb = wlan_cfg80211_vendor_event_alloc(
+		hdd_ctx->wiphy, NULL, EXTSCAN_EVENT_BUF_SIZE + NLMSG_HDRLEN,
+		index, GFP_KERNEL);
 
 	if (!skb) {
 		hdd_err("mem alloc failed");
 		return;
 	}
 
-	hdd_debug("Req Id: %u Current rssi: %d",
-		  data->request_id, data->curr_rssi);
-	hdd_debug("Current BSSID: "QDF_MAC_ADDR_FMT,
+	hdd_debug("Req Id: %u Current rssi: %d", data->request_id,
+		  data->curr_rssi);
+	hdd_debug("Current BSSID: " QDF_MAC_ADDR_FMT,
 		  QDF_MAC_ADDR_REF(data->curr_bssid.bytes));
 
 	if (nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_RSSI_MONITORING_REQUEST_ID,
@@ -233,4 +230,3 @@ void hdd_rssi_threshold_breached(hdd_handle_t hdd_handle,
 fail:
 	wlan_cfg80211_vendor_free_skb(skb);
 }
-

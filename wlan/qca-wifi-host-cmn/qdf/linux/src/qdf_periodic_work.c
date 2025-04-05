@@ -65,7 +65,8 @@ static inline QDF_STATUS qdf_pwork_dbg_track(struct qdf_periodic_work *pwork,
 
 static inline void qdf_pwork_dbg_untrack(struct qdf_periodic_work *pwork,
 					 const char *func, uint32_t line)
-{ }
+{
+}
 #endif /* WLAN_PERIODIC_WORK_DEBUG */
 
 static void __qdf_periodic_work_handler(struct work_struct *work)
@@ -84,8 +85,8 @@ static void __qdf_periodic_work_handler(struct work_struct *work)
 
 QDF_STATUS __qdf_periodic_work_create(struct qdf_periodic_work *pwork,
 				      qdf_periodic_work_cb callback,
-				      void *context,
-				      const char *func, uint32_t line)
+				      void *context, const char *func,
+				      uint32_t line)
 {
 	QDF_STATUS status;
 
@@ -139,13 +140,12 @@ bool qdf_periodic_work_stop_sync(struct qdf_periodic_work *pwork)
 	bool pending = pwork->msec != 0;
 
 	/* To avoid using a lock, signal that the work shouldn't be restarted,
-	 * and cancel_sync in a loop. There is a very small race window, and
-	 * thus the work may occasionally need to be cancelled more than once.
-	 */
+   * and cancel_sync in a loop. There is a very small race window, and
+   * thus the work may occasionally need to be cancelled more than once.
+   */
 	pwork->msec = 0;
 	while (cancel_delayed_work_sync(&pwork->dwork))
 		; /* no-op*/
 
 	return pending;
 }
-

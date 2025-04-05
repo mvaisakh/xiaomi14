@@ -17,11 +17,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/platform_device.h>
+#include "osif_psoc_sync.h"
 #include <linux/err.h>
 #include <linux/list.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
-#include "osif_psoc_sync.h"
 
 #include "pld_pcie_fw_sim.h"
 
@@ -63,8 +63,8 @@ static int pld_pcie_fw_sim_probe(struct pci_dev *pdev,
 	if (ret)
 		goto out;
 
-	return pld_context->ops->probe(&pdev->dev,
-		       PLD_BUS_TYPE_IPCI_FW_SIM, NULL, NULL);
+	return pld_context->ops->probe(&pdev->dev, PLD_BUS_TYPE_IPCI_FW_SIM,
+				       NULL, NULL);
 
 out:
 	return ret;
@@ -141,8 +141,8 @@ static int pld_pcie_fw_sim_idle_shutdown_cb(struct pci_dev *pdev)
 
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->shutdown)
-		return pld_context->ops->idle_shutdown(&pdev->dev,
-						PLD_BUS_TYPE_IPCI_FW_SIM);
+		return pld_context->ops->idle_shutdown(
+			&pdev->dev, PLD_BUS_TYPE_IPCI_FW_SIM);
 
 	return -ENODEV;
 }
@@ -164,8 +164,8 @@ static int pld_pcie_fw_sim_reinit(struct pci_dev *pdev,
 
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->reinit)
-		return pld_context->ops->reinit(&pdev->dev,
-				PLD_BUS_TYPE_IPCI_FW_SIM, NULL, NULL);
+		return pld_context->ops->reinit(
+			&pdev->dev, PLD_BUS_TYPE_IPCI_FW_SIM, NULL, NULL);
 
 	return -ENODEV;
 }
@@ -185,7 +185,7 @@ static void pld_pcie_fw_sim_shutdown(struct pci_dev *pdev)
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->shutdown)
 		pld_context->ops->shutdown(&pdev->dev,
-						PLD_BUS_TYPE_IPCI_FW_SIM);
+					   PLD_BUS_TYPE_IPCI_FW_SIM);
 }
 
 /**
@@ -204,7 +204,7 @@ static void pld_pcie_fw_sim_crash_shutdown(struct pci_dev *pdev)
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->crash_shutdown)
 		pld_context->ops->crash_shutdown(&pdev->dev,
-						PLD_BUS_TYPE_IPCI_FW_SIM);
+						 PLD_BUS_TYPE_IPCI_FW_SIM);
 }
 
 /**
@@ -239,7 +239,7 @@ static void pld_pcie_fw_sim_notify_handler(struct pci_dev *pdev, int state)
 static void pld_pcie_fw_sim_uevent(struct pci_dev *pdev, uint32_t status)
 {
 	struct pld_context *pld_context;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 
 	pld_context = pld_get_global_context();
 	if (!pld_context)
@@ -286,9 +286,8 @@ static int pld_pcie_fw_sim_set_thermal_state(struct device *dev,
 		return -EINVAL;
 
 	if (pld_context->ops->set_curr_therm_cdev_state)
-		return pld_context->ops->set_curr_therm_cdev_state(dev,
-							      thermal_state,
-							      mon_id);
+		return pld_context->ops->set_curr_therm_cdev_state(
+			dev, thermal_state, mon_id);
 
 	return -ENOTSUPP;
 }
@@ -338,8 +337,8 @@ static int pld_pcie_fw_sim_probe(struct pci_dev *pdev,
 	if (ret)
 		goto out;
 
-	return pld_context->ops->probe(&pdev->dev,
-		       PLD_BUS_TYPE_PCIE_FW_SIM, pdev, (void *)id);
+	return pld_context->ops->probe(&pdev->dev, PLD_BUS_TYPE_PCIE_FW_SIM,
+				       pdev, (void *)id);
 
 out:
 	return ret;
@@ -416,8 +415,8 @@ static int pld_pcie_fw_sim_idle_shutdown_cb(struct pci_dev *pdev)
 
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->shutdown)
-		return pld_context->ops->idle_shutdown(&pdev->dev,
-						PLD_BUS_TYPE_PCIE_FW_SIM);
+		return pld_context->ops->idle_shutdown(
+			&pdev->dev, PLD_BUS_TYPE_PCIE_FW_SIM);
 
 	return -ENODEV;
 }
@@ -439,8 +438,8 @@ static int pld_pcie_fw_sim_reinit(struct pci_dev *pdev,
 
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->reinit)
-		return pld_context->ops->reinit(&pdev->dev,
-				PLD_BUS_TYPE_PCIE_FW_SIM, pdev, (void *)id);
+		return pld_context->ops->reinit(
+			&pdev->dev, PLD_BUS_TYPE_PCIE_FW_SIM, pdev, (void *)id);
 
 	return -ENODEV;
 }
@@ -460,7 +459,7 @@ static void pld_pcie_fw_sim_shutdown(struct pci_dev *pdev)
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->shutdown)
 		pld_context->ops->shutdown(&pdev->dev,
-						PLD_BUS_TYPE_PCIE_FW_SIM);
+					   PLD_BUS_TYPE_PCIE_FW_SIM);
 }
 
 /**
@@ -479,7 +478,7 @@ static void pld_pcie_fw_sim_crash_shutdown(struct pci_dev *pdev)
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->crash_shutdown)
 		pld_context->ops->crash_shutdown(&pdev->dev,
-						PLD_BUS_TYPE_PCIE_FW_SIM);
+						 PLD_BUS_TYPE_PCIE_FW_SIM);
 }
 
 /**
@@ -514,7 +513,7 @@ static void pld_pcie_fw_sim_notify_handler(struct pci_dev *pdev, int state)
 static void pld_pcie_fw_sim_uevent(struct pci_dev *pdev, uint32_t status)
 {
 	struct pld_context *pld_context;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 
 	pld_context = pld_get_global_context();
 	if (!pld_context)
@@ -561,9 +560,8 @@ static int pld_pcie_fw_sim_set_thermal_state(struct device *dev,
 		return -EINVAL;
 
 	if (pld_context->ops->set_curr_therm_cdev_state)
-		return pld_context->ops->set_curr_therm_cdev_state(dev,
-							      thermal_state,
-							      mon_id);
+		return pld_context->ops->set_curr_therm_cdev_state(
+			dev, thermal_state, mon_id);
 
 	return -ENOTSUPP;
 }
@@ -587,17 +585,17 @@ static struct pci_device_id pld_pcie_fw_sim_id_table[] = {
 
 #if defined(CONFIG_PLD_PCIE_FW_SIM) || defined(CONFIG_PLD_IPCIE_FW_SIM)
 struct cnss_wlan_driver pld_pcie_fw_sim_ops = {
-	.name       = PLD_PCIE_FW_SIM_OPS_NAME,
-	.id_table   = pld_pcie_fw_sim_id_table,
-	.probe      = pld_pcie_fw_sim_probe,
-	.remove     = pld_pcie_fw_sim_remove,
-	.idle_restart  = pld_pcie_fw_sim_idle_restart_cb,
+	.name = PLD_PCIE_FW_SIM_OPS_NAME,
+	.id_table = pld_pcie_fw_sim_id_table,
+	.probe = pld_pcie_fw_sim_probe,
+	.remove = pld_pcie_fw_sim_remove,
+	.idle_restart = pld_pcie_fw_sim_idle_restart_cb,
 	.idle_shutdown = pld_pcie_fw_sim_idle_shutdown_cb,
-	.reinit     = pld_pcie_fw_sim_reinit,
-	.shutdown   = pld_pcie_fw_sim_shutdown,
+	.reinit = pld_pcie_fw_sim_reinit,
+	.shutdown = pld_pcie_fw_sim_shutdown,
 	.crash_shutdown = pld_pcie_fw_sim_crash_shutdown,
-	.modem_status   = pld_pcie_fw_sim_notify_handler,
-	.update_status  = pld_pcie_fw_sim_uevent,
+	.modem_status = pld_pcie_fw_sim_notify_handler,
+	.update_status = pld_pcie_fw_sim_uevent,
 	.set_therm_cdev_state = pld_pcie_fw_sim_set_thermal_state,
 };
 
@@ -628,8 +626,8 @@ pld_pcie_fw_sim_populate_shadow_v3_cfg(struct cnss_wlan_enable_cfg *cfg,
 				       struct pld_wlan_enable_cfg *config)
 {
 	cfg->num_shadow_reg_v3_cfg = config->num_shadow_reg_v3_cfg;
-	cfg->shadow_reg_v3_cfg = (struct cnss_shadow_reg_v3_cfg *)
-				 config->shadow_reg_v3_cfg;
+	cfg->shadow_reg_v3_cfg =
+		(struct cnss_shadow_reg_v3_cfg *)config->shadow_reg_v3_cfg;
 }
 #else
 static inline void
@@ -661,23 +659,21 @@ int pld_pcie_fw_sim_wlan_enable(struct device *dev,
 	enum cnss_driver_mode cnss_mode;
 
 	cfg.num_ce_tgt_cfg = config->num_ce_tgt_cfg;
-	cfg.ce_tgt_cfg = (struct cnss_ce_tgt_pipe_cfg *)
-		config->ce_tgt_cfg;
+	cfg.ce_tgt_cfg = (struct cnss_ce_tgt_pipe_cfg *)config->ce_tgt_cfg;
 	cfg.num_ce_svc_pipe_cfg = config->num_ce_svc_pipe_cfg;
-	cfg.ce_svc_cfg = (struct cnss_ce_svc_pipe_cfg *)
-		config->ce_svc_cfg;
+	cfg.ce_svc_cfg = (struct cnss_ce_svc_pipe_cfg *)config->ce_svc_cfg;
 	cfg.num_shadow_reg_cfg = config->num_shadow_reg_cfg;
-	cfg.shadow_reg_cfg = (struct cnss_shadow_reg_cfg *)
-		config->shadow_reg_cfg;
+	cfg.shadow_reg_cfg =
+		(struct cnss_shadow_reg_cfg *)config->shadow_reg_cfg;
 	cfg.num_shadow_reg_v2_cfg = config->num_shadow_reg_v2_cfg;
-	cfg.shadow_reg_v2_cfg = (struct cnss_shadow_reg_v2_cfg *)
-		config->shadow_reg_v2_cfg;
+	cfg.shadow_reg_v2_cfg =
+		(struct cnss_shadow_reg_v2_cfg *)config->shadow_reg_v2_cfg;
 	cfg.rri_over_ddr_cfg_valid = config->rri_over_ddr_cfg_valid;
 	if (config->rri_over_ddr_cfg_valid) {
 		cfg.rri_over_ddr_cfg.base_addr_low =
-			 config->rri_over_ddr_cfg.base_addr_low;
+			config->rri_over_ddr_cfg.base_addr_low;
 		cfg.rri_over_ddr_cfg.base_addr_high =
-			 config->rri_over_ddr_cfg.base_addr_high;
+			config->rri_over_ddr_cfg.base_addr_high;
 	}
 
 	pld_pcie_fw_sim_populate_shadow_v3_cfg(&cfg, config);
@@ -724,7 +720,7 @@ int pld_pcie_fw_sim_wlan_disable(struct device *dev, enum pld_driver_mode mode)
 int pld_pcie_fw_sim_get_soc_info(struct device *dev, struct pld_soc_info *info)
 {
 	int ret = 0, i;
-	struct cnss_soc_info cnss_info = {0};
+	struct cnss_soc_info cnss_info = { 0 };
 
 	if (!info)
 		return -ENODEV;
@@ -803,10 +799,8 @@ int pld_pcie_fw_sim_get_irq(struct device *dev, int ce_id)
 	uint32_t msi_data;
 	int ret;
 
-	ret = cnss_fw_sim_get_user_msi_assignment(dev, "CE",
-						  &msi_data_count,
-						  &msi_data_start,
-						  &msi_irq_start);
+	ret = cnss_fw_sim_get_user_msi_assignment(
+		dev, "CE", &msi_data_count, &msi_data_start, &msi_irq_start);
 	if (ret)
 		return ret;
 

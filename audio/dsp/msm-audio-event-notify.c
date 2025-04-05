@@ -45,7 +45,7 @@ EXPORT_SYMBOL_GPL(msm_aud_evt_notifier_call_chain);
 int msm_aud_evt_blocking_register_client(struct notifier_block *nb)
 {
 	return blocking_notifier_chain_register(
-			&msm_aud_evt_blocking_notifier_list, nb);
+		&msm_aud_evt_blocking_notifier_list, nb);
 }
 EXPORT_SYMBOL(msm_aud_evt_blocking_register_client);
 
@@ -56,7 +56,7 @@ EXPORT_SYMBOL(msm_aud_evt_blocking_register_client);
 int msm_aud_evt_blocking_unregister_client(struct notifier_block *nb)
 {
 	return blocking_notifier_chain_unregister(
-			&msm_aud_evt_blocking_notifier_list, nb);
+		&msm_aud_evt_blocking_notifier_list, nb);
 }
 EXPORT_SYMBOL(msm_aud_evt_blocking_unregister_client);
 
@@ -68,7 +68,7 @@ EXPORT_SYMBOL(msm_aud_evt_blocking_unregister_client);
  */
 int msm_aud_evt_blocking_notifier_call_chain(unsigned long val, void *v)
 {
-	return blocking_notifier_call_chain(
-			&msm_aud_evt_blocking_notifier_list, val, v);
+	return blocking_notifier_call_chain(&msm_aud_evt_blocking_notifier_list,
+					    val, v);
 }
 EXPORT_SYMBOL_GPL(msm_aud_evt_blocking_notifier_call_chain);

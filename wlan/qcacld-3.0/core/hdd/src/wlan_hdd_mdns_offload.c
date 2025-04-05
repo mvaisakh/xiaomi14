@@ -23,34 +23,31 @@
 
 /* Include Files */
 
-#include <osif_vdev_sync.h>
-#include "os_if_fwol.h"
 #include "wlan_hdd_mdns_offload.h"
+#include "os_if_fwol.h"
 #include "wlan_hdd_main.h"
+#include <osif_vdev_sync.h>
 
-#define MDNS_ENABLE \
-	QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_ENABLE
-#define MDNS_TABLE \
-	QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_TABLE
-#define MDNS_ENTRY \
-	QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_ENTRY
-#define MDNS_FQDN \
-	QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_FQDN
+#define MDNS_ENABLE QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_ENABLE
+#define MDNS_TABLE QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_TABLE
+#define MDNS_ENTRY QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_ENTRY
+#define MDNS_FQDN QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_FQDN
 #define MDNS_RESOURCE_RECORDS_COUNT \
 	QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_ANSWER_RESOURCE_RECORDS_COUNT
-#define MDNS_ANSWER_PAYLOAD \
-	QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_ANSWER_PAYLOAD
+#define MDNS_ANSWER_PAYLOAD QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_ANSWER_PAYLOAD
 
-const struct nla_policy wlan_hdd_set_mdns_offload_policy[
-			QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_MAX + 1] = {
-	[MDNS_ENABLE] = {.type = NLA_FLAG},
-	[MDNS_TABLE] = {.type = NLA_NESTED},
-	[MDNS_ENTRY] = {.type = NLA_NESTED},
-	[MDNS_FQDN] = {.type = NLA_STRING, .len = MAX_FQDN_LEN - 1 },
-	[MDNS_RESOURCE_RECORDS_COUNT] = {.type = NLA_U16},
-	[MDNS_ANSWER_PAYLOAD] = {.type = NLA_BINARY, .len = MAX_MDNS_RESP_LEN },
+const struct nla_policy
+	wlan_hdd_set_mdns_offload_policy[QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_MAX +
+					 1] = {
+		[MDNS_ENABLE] = { .type = NLA_FLAG },
+		[MDNS_TABLE] = { .type = NLA_NESTED },
+		[MDNS_ENTRY] = { .type = NLA_NESTED },
+		[MDNS_FQDN] = { .type = NLA_STRING, .len = MAX_FQDN_LEN - 1 },
+		[MDNS_RESOURCE_RECORDS_COUNT] = { .type = NLA_U16 },
+		[MDNS_ANSWER_PAYLOAD] = { .type = NLA_BINARY,
+					  .len = MAX_MDNS_RESP_LEN },
 
-};
+	};
 
 static int hdd_extract_mdns_attr(struct nlattr *tb[],
 				 struct mdns_config_info *mdns_info)
@@ -105,14 +102,12 @@ static int hdd_extract_mdns_attr(struct nlattr *tb[],
  *
  * Return: Error code.
  */
-static int
-__wlan_hdd_cfg80211_set_mdns_offload(struct wiphy *wiphy,
-				     struct wireless_dev *wdev,
-				     const void *data,
-				     int data_len)
+static int __wlan_hdd_cfg80211_set_mdns_offload(struct wiphy *wiphy,
+						struct wireless_dev *wdev,
+						const void *data, int data_len)
 {
 	struct net_device *dev = wdev->netdev;
-	struct hdd_context *hdd_ctx  = wiphy_priv(wiphy);
+	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 	struct nlattr *curr_attr;
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_MAX + 1];
@@ -165,11 +160,10 @@ __wlan_hdd_cfg80211_set_mdns_offload(struct wiphy *wiphy,
 	mdns_info->vdev_id = adapter->deflink->vdev_id;
 
 	nla_for_each_nested(curr_attr, tb[MDNS_TABLE], rem) {
-		if (wlan_cfg80211_nla_parse(tb2,
-					QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_MAX,
-					nla_data(curr_attr),
-					nla_len(curr_attr),
-					wlan_hdd_set_mdns_offload_policy)) {
+		if (wlan_cfg80211_nla_parse(
+			    tb2, QCA_WLAN_VENDOR_ATTR_MDNS_OFFLOAD_MAX,
+			    nla_data(curr_attr), nla_len(curr_attr),
+			    wlan_hdd_set_mdns_offload_policy)) {
 			hdd_err_rl("Failed to parse mDNS table of records");
 			errno = -EINVAL;
 			goto out;
@@ -213,8 +207,8 @@ int wlan_hdd_cfg80211_set_mdns_offload(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_set_mdns_offload(wiphy, wdev,
-						     data, data_len);
+	errno = __wlan_hdd_cfg80211_set_mdns_offload(wiphy, wdev, data,
+						     data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 

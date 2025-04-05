@@ -8,14 +8,12 @@
 
 #include "sigma_dut.h"
 
-
 static enum sigma_cmd_result cmd_power_switch_ctrl(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
 						   struct sigma_cmd *cmd)
 {
 	return SUCCESS_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result cmd_power_switch_reset(struct sigma_dut *dut,
 						    struct sigma_conn *conn,
@@ -25,7 +23,7 @@ static enum sigma_cmd_result cmd_power_switch_reset(struct sigma_dut *dut,
 		int i;
 
 		/* Wait some time to allow hostapd to complete cleanup before
-		 * starting a new process */
+     * starting a new process */
 		for (i = 0; i < 10; i++) {
 			usleep(500000);
 			if (system("pidof hostapd") != 0)
@@ -35,14 +33,12 @@ static enum sigma_cmd_result cmd_power_switch_reset(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static enum sigma_cmd_result cmd_powerswitch(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
 					     struct sigma_cmd *cmd)
 {
 	return SUCCESS_SEND_STATUS;
 }
-
 
 void powerswitch_register_cmds(void)
 {

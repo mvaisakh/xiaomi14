@@ -4,7 +4,7 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/module.h>
+#include "cam_tfe980.h"
 #include "cam_vfe170.h"
 #include "cam_vfe170_150.h"
 #include "cam_vfe175.h"
@@ -16,17 +16,17 @@
 #include "cam_vfe680_110.h"
 #include "cam_vfe780.h"
 #include "cam_vfe880.h"
-#include "cam_tfe980.h"
+#include "cam_vfe_core.h"
+#include "cam_vfe_dev.h"
+#include "cam_vfe_hw_intf.h"
 #include "cam_vfe_lite17x.h"
 #include "cam_vfe_lite48x.h"
 #include "cam_vfe_lite68x.h"
 #include "cam_vfe_lite78x.h"
 #include "cam_vfe_lite88x.h"
 #include "cam_vfe_lite98x.h"
-#include "cam_vfe_hw_intf.h"
-#include "cam_vfe_core.h"
-#include "cam_vfe_dev.h"
 #include "camera_main.h"
+#include <linux/module.h>
 
 static const struct of_device_id cam_vfe_dt_match[] = {
 	{
@@ -75,7 +75,7 @@ static const struct of_device_id cam_vfe_dt_match[] = {
 	},
 	{
 		.compatible = "qcom,tfe980",
-		.data  = &cam_tfe980_hw_info,
+		.data = &cam_tfe980_hw_info,
 	},
 	{
 		.compatible = "qcom,vfe-lite170",
@@ -122,21 +122,21 @@ static const struct of_device_id cam_vfe_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_vfe_dt_match);
 
 struct platform_driver cam_vfe_driver = {
-	.probe = cam_vfe_probe,
-	.remove = cam_vfe_remove,
-	.driver = {
-		.name = "cam_vfe",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_vfe_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_vfe_probe,
+    .remove = cam_vfe_remove,
+    .driver =
+        {
+            .name = "cam_vfe",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_vfe_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_vfe_init_module(void)
 {
 	return platform_driver_register(&cam_vfe_driver);
 }
-
 
 void cam_vfe_exit_module(void)
 {

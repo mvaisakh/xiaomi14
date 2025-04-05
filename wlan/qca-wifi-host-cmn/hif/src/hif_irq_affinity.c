@@ -27,17 +27,17 @@
 #include <linux/string.h> /* memset */
 
 /* Linux headers */
-#include <linux/cpumask.h>
-#include <linux/cpufreq.h>
+#include "qdf_irq.h"
+#include <hif_exec.h>
+#include <hif_irq_affinity.h>
+#include <hif_main.h>
+#include <hif_napi.h>
 #include <linux/cpu.h>
-#include <linux/topology.h>
+#include <linux/cpufreq.h>
+#include <linux/cpumask.h>
 #include <linux/interrupt.h>
 #include <linux/pm.h>
-#include <hif_napi.h>
-#include <hif_irq_affinity.h>
-#include <hif_exec.h>
-#include <hif_main.h>
-#include "qdf_irq.h"
+#include <linux/topology.h>
 
 #if defined(FEATURE_NAPI_DEBUG) && defined(HIF_IRQ_AFFINITY)
 /*
@@ -100,7 +100,7 @@ static void hnc_dump_cpus(struct qca_napi_data *napid) { /* no-op */ };
 int hif_exec_event(struct hif_opaque_softc *hif_ctx, enum qca_napi_event event,
 		   void *data)
 {
-	int      rc = 0;
+	int rc = 0;
 	uint32_t prev_state;
 	struct hif_softc *hif = HIF_GET_SOFTC(hif_ctx);
 	struct qca_napi_data *napid = &(hif->napi_data);
@@ -109,7 +109,7 @@ int hif_exec_event(struct hif_opaque_softc *hif_ctx, enum qca_napi_event event,
 		DENYLIST_NOT_PENDING,
 		DENYLIST_ON_PENDING,
 		DENYLIST_OFF_PENDING
-	     } denylist_pending = DENYLIST_NOT_PENDING;
+	} denylist_pending = DENYLIST_NOT_PENDING;
 
 	NAPI_DEBUG("%s: -->(event=%d, aux=%pK)", __func__, event, data);
 
@@ -126,8 +126,8 @@ int hif_exec_event(struct hif_opaque_softc *hif_ctx, enum qca_napi_event event,
 		int cpu = ((unsigned long int)data >> 16);
 		int val = ((unsigned long int)data & 0x0ff);
 
-		NAPI_DEBUG("%s: evt=CPU_STATE on CPU %d value=%d",
-			   __func__, cpu, val);
+		NAPI_DEBUG("%s: evt=CPU_STATE on CPU %d value=%d", __func__,
+			   cpu, val);
 
 		/* state has already been set by hnc_cpu_notify_cb */
 		if ((val == QCA_NAPI_CPU_DOWN) &&
@@ -135,9 +135,7 @@ int hif_exec_event(struct hif_opaque_softc *hif_ctx, enum qca_napi_event event,
 		    (napid->napi_cpu[cpu].napis != 0)) {
 			NAPI_DEBUG("%s: Migrating NAPIs out of cpu %d",
 				   __func__, cpu);
-			rc = hif_exec_cpu_migrate(napid,
-						  cpu,
-						  HNC_ACT_RELOCATE);
+			rc = hif_exec_cpu_migrate(napid, cpu, HNC_ACT_RELOCATE);
 			napid->napi_cpu[cpu].napis = 0;
 		}
 		/* in QCA_NAPI_TPUT_LO case, napis MUST == 0 */
@@ -152,20 +150,19 @@ int hif_exec_event(struct hif_opaque_softc *hif_ctx, enum qca_napi_event event,
 				   __func__);
 			denylist_pending = DENYLIST_OFF_PENDING;
 			/*
-			 * Ideally we should "collapse" interrupts here, since
-			 * we are "dispersing" interrupts in the "else" case.
-			 * This allows the possibility that our interrupts may
-			 * still be on the perf cluster the next time we enter
-			 * high tput mode. However, the irq_balancer is free
-			 * to move our interrupts to power cluster once
-			 * denylisting has been turned off in the "else" case.
-			 */
+       * Ideally we should "collapse" interrupts here, since
+       * we are "dispersing" interrupts in the "else" case.
+       * This allows the possibility that our interrupts may
+       * still be on the perf cluster the next time we enter
+       * high tput mode. However, the irq_balancer is free
+       * to move our interrupts to power cluster once
+       * denylisting has been turned off in the "else" case.
+       */
 		} else {
 			/* from TPUT_LO -> TPUT->HI */
 			NAPI_DEBUG("%s: Moving to napi_tput_HI state",
 				   __func__);
-			rc = hif_exec_cpu_migrate(napid,
-						  HNC_ANY_CPU,
+			rc = hif_exec_cpu_migrate(napid, HNC_ANY_CPU,
 						  HNC_ACT_DISPERSE);
 
 			denylist_pending = DENYLIST_ON_PENDING;
@@ -177,12 +174,10 @@ int hif_exec_event(struct hif_opaque_softc *hif_ctx, enum qca_napi_event event,
 	case NAPI_EVT_USR_SERIAL: {
 		unsigned long users = (unsigned long)data;
 
-		NAPI_DEBUG("%s: User forced SERIALIZATION; users=%ld",
-			   __func__, users);
+		NAPI_DEBUG("%s: User forced SERIALIZATION; users=%ld", __func__,
+			   users);
 
-		rc = hif_exec_cpu_migrate(napid,
-					  HNC_ANY_CPU,
-					  HNC_ACT_COLLAPSE);
+		rc = hif_exec_cpu_migrate(napid, HNC_ANY_CPU, HNC_ACT_COLLAPSE);
 		if ((users == 0) && (rc == 0))
 			denylist_pending = DENYLIST_ON_PENDING;
 		break;
@@ -192,20 +187,19 @@ int hif_exec_event(struct hif_opaque_softc *hif_ctx, enum qca_napi_event event,
 		if (!napid->user_cpu_affin_mask)
 			denylist_pending = DENYLIST_OFF_PENDING;
 		/*
-		 * Deserialization timeout is handled at hdd layer;
-		 * just mark current mode to uninitialized to ensure
-		 * it will be set when the delay is over
-		 */
+     * Deserialization timeout is handled at hdd layer;
+     * just mark current mode to uninitialized to ensure
+     * it will be set when the delay is over
+     */
 		napid->napi_mode = QCA_NAPI_TPUT_UNINITIALIZED;
 		break;
 	}
 	default: {
-		hif_err("Unknown event: %d (data=0x%0lx)",
-			event, (unsigned long) data);
+		hif_err("Unknown event: %d (data=0x%0lx)", event,
+			(unsigned long)data);
 		break;
 	} /* default */
 	}; /* switch */
-
 
 	switch (denylist_pending) {
 	case DENYLIST_ON_PENDING:
@@ -321,7 +315,7 @@ retry_collapse:
 		}
 		if ((destidx < 0) && (head == napid->lilcl_head)) {
 			NAPI_DEBUG("%s: COLLAPSE: no lilcl dest, try bigcl",
-				__func__);
+				   __func__);
 			head = i = napid->bigcl_head;
 			goto retry_collapse;
 		}
@@ -342,7 +336,7 @@ retry_disperse:
 		destidx = smallidx;
 		if ((destidx < 0) && (head == napid->bigcl_head)) {
 			NAPI_DEBUG("%s: DISPERSE: no bigcl dest, try lilcl",
-				__func__);
+				   __func__);
 			head = i = napid->lilcl_head;
 			goto retry_disperse;
 		}
@@ -370,14 +364,12 @@ retry_disperse:
  */
 int hif_exec_cpu_migrate(struct qca_napi_data *napid, int cpu, int action)
 {
-	int      rc = 0;
+	int rc = 0;
 	struct qca_napi_cpu *cpup;
-	int      i, dind;
+	int i, dind;
 	uint32_t napis;
 
-
-	NAPI_DEBUG("-->%s(.., cpu=%d, act=%d)",
-		   __func__, cpu, action);
+	NAPI_DEBUG("-->%s(.., cpu=%d, act=%d)", __func__, cpu, action);
 
 	if (napid->exec_map == 0) {
 		NAPI_DEBUG("%s: datapath contexts to disperse", __func__);
@@ -424,7 +416,6 @@ hncm_return:
 	hnc_dump_cpus(napid);
 	return rc;
 }
-
 
 /**
  * hif_exec_dl_irq() - calls irq_modify_status to enable/disable denylisting
@@ -481,8 +472,7 @@ static inline void hif_exec_dl_irq(struct qca_napi_data *napid, bool dl_flag)
  *         for DENYLIST_ON op    - return value from core_ctl_set_boost API
  *         for DENYLIST_OFF op   - return value from core_ctl_set_boost API
  */
-int hif_exec_cpu_denylist(struct qca_napi_data *napid,
-			  enum qca_denylist_op op)
+int hif_exec_cpu_denylist(struct qca_napi_data *napid, enum qca_denylist_op op)
 {
 	int rc = 0;
 	static int ref_count; /* = 0 by the compiler */
@@ -506,8 +496,8 @@ int hif_exec_cpu_denylist(struct qca_napi_data *napid,
 		rc = 0;
 		if (ref_count == 1) {
 			rc = hif_napi_core_ctl_set_boost(true);
-			NAPI_DEBUG("boost_on() returns %d - refcnt=%d",
-				rc, ref_count);
+			NAPI_DEBUG("boost_on() returns %d - refcnt=%d", rc,
+				   ref_count);
 			hif_exec_dl_irq(napid, true);
 		}
 		break;
@@ -517,8 +507,8 @@ int hif_exec_cpu_denylist(struct qca_napi_data *napid,
 		rc = 0;
 		if (ref_count == 0) {
 			rc = hif_napi_core_ctl_set_boost(false);
-			NAPI_DEBUG("boost_off() returns %d - refcnt=%d",
-				   rc, ref_count);
+			NAPI_DEBUG("boost_off() returns %d - refcnt=%d", rc,
+				   ref_count);
 			hif_exec_dl_irq(napid, false);
 		}
 		break;
@@ -530,4 +520,3 @@ out:
 	NAPI_DEBUG("<--%s[%d]", __func__, rc);
 	return rc;
 }
-

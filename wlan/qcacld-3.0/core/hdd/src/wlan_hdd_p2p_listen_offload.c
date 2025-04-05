@@ -25,14 +25,14 @@
  */
 
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_p2p.h>
-#include <wlan_p2p_ucfg_api.h>
 #include <wlan_hdd_p2p_listen_offload.h>
+#include <wlan_p2p_ucfg_api.h>
 
 /* P2P listen offload device types parameters length in bytes */
 #define P2P_LO_MAX_REQ_DEV_TYPE_COUNT (10)
@@ -40,24 +40,19 @@
 #define P2P_LO_DEV_TYPE_MAX_LEN \
 	(P2P_LO_MAX_REQ_DEV_TYPE_COUNT * P2P_LO_WPS_DEV_TYPE_LEN)
 
-const struct nla_policy
-p2p_listen_offload_policy[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_MAX + 1] = {
+const struct nla_policy p2p_listen_offload_policy[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_MAX +
+						  1] = {
 	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CHANNEL] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_PERIOD] = { .type = NLA_U32 },
-	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_INTERVAL] = {
-							.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_INTERVAL] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_COUNT] = { .type = NLA_U32 },
-	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_DEVICE_TYPES] = {
-					.type = NLA_BINARY,
-					.len = P2P_LO_DEV_TYPE_MAX_LEN },
-	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_VENDOR_IE] = {
-					.type = NLA_BINARY,
-					.len = MAX_GENIE_LEN },
-	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CTRL_FLAG] = {
-					.type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_DEVICE_TYPES] = { .type = NLA_BINARY,
+								   .len = P2P_LO_DEV_TYPE_MAX_LEN },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_VENDOR_IE] = { .type = NLA_BINARY,
+								.len = MAX_GENIE_LEN },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CTRL_FLAG] = { .type = NLA_U32 },
 	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CHANNEL] = { .type = NLA_U32 },
-	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_STOP_REASON] = {
-						.type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_STOP_REASON] = { .type = NLA_U8 },
 };
 
 /**
@@ -78,8 +73,7 @@ static int wlan_hdd_listen_offload_start(struct hdd_adapter *adapter,
 	QDF_STATUS status;
 
 	if (!adapter || !params) {
-		hdd_err("null param, adapter:%pK, params:%pK",
-			adapter, params);
+		hdd_err("null param, adapter:%pK, params:%pK", adapter, params);
 		return -EINVAL;
 	}
 
@@ -122,8 +116,7 @@ static int wlan_hdd_listen_offload_start(struct hdd_adapter *adapter,
  */
 static int __wlan_hdd_cfg80211_p2p_lo_start(struct wiphy *wiphy,
 					    struct wireless_dev *wdev,
-					    const void *data,
-					    int data_len)
+					    const void *data, int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -151,10 +144,9 @@ static int __wlan_hdd_cfg80211_p2p_lo_start(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	if (wlan_cfg80211_nla_parse(tb,
-				    QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_MAX,
-				    data, data_len,
-				    p2p_listen_offload_policy)) {
+	if (wlan_cfg80211_nla_parse(
+		    tb, QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_MAX, data,
+		    data_len, p2p_listen_offload_policy)) {
 		hdd_err("Invalid ATTR");
 		return -EINVAL;
 	}
@@ -162,10 +154,10 @@ static int __wlan_hdd_cfg80211_p2p_lo_start(struct wiphy *wiphy,
 	memset(&params, 0, sizeof(params));
 
 	if (!tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CTRL_FLAG])
-		params.ctl_flags = 1;  /* set to default value */
+		params.ctl_flags = 1; /* set to default value */
 	else
-		params.ctl_flags = nla_get_u32(tb
-			[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CTRL_FLAG]);
+		params.ctl_flags = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CTRL_FLAG]);
 
 	if (!tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CHANNEL] ||
 	    !tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_PERIOD] ||
@@ -178,63 +170,63 @@ static int __wlan_hdd_cfg80211_p2p_lo_start(struct wiphy *wiphy,
 	}
 
 	params.vdev_id = adapter->deflink->vdev_id;
-	params.freq = nla_get_u32(tb
-		[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CHANNEL]);
+	params.freq = nla_get_u32(
+		tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_CHANNEL]);
 	if ((params.freq != 2412) && (params.freq != 2437) &&
 	    (params.freq != 2462)) {
 		hdd_err("Invalid listening channel: %d", params.freq);
 		return -EINVAL;
 	}
 
-	params.period = nla_get_u32(tb
-		[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_PERIOD]);
+	params.period =
+		nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_PERIOD]);
 	if (!((params.period > 0) && (params.period < UINT_MAX))) {
 		hdd_err("Invalid period: %d", params.period);
 		return -EINVAL;
 	}
 
-	params.interval = nla_get_u32(tb
-		[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_INTERVAL]);
+	params.interval = nla_get_u32(
+		tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_INTERVAL]);
 	if (!((params.interval > 0) && (params.interval < UINT_MAX))) {
 		hdd_err("Invalid interval: %d", params.interval);
 		return -EINVAL;
 	}
 
-	params.count = nla_get_u32(tb
-		[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_COUNT]);
+	params.count =
+		nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_COUNT]);
 	if (!((params.count >= 0) && (params.count < UINT_MAX))) {
 		hdd_err("Invalid count: %d", params.count);
 		return -EINVAL;
 	}
 
-	params.device_types = nla_data(tb
-		[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_DEVICE_TYPES]);
+	params.device_types = nla_data(
+		tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_DEVICE_TYPES]);
 	if (!params.device_types) {
 		hdd_err("Invalid device types");
 		return -EINVAL;
 	}
 
-	params.dev_types_len = nla_len(tb
-		[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_DEVICE_TYPES]);
+	params.dev_types_len = nla_len(
+		tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_DEVICE_TYPES]);
 	/* device type length has to be multiple of P2P_LO_WPS_DEV_TYPE_LEN */
 	if (0 != (params.dev_types_len % P2P_LO_WPS_DEV_TYPE_LEN)) {
 		hdd_err("Invalid device type length: %d", params.dev_types_len);
 		return -EINVAL;
 	}
 
-	params.probe_resp_tmplt = nla_data(tb
-		[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_VENDOR_IE]);
+	params.probe_resp_tmplt =
+		nla_data(tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_VENDOR_IE]);
 	if (!params.probe_resp_tmplt) {
 		hdd_err("Invalid probe response template");
 		return -EINVAL;
 	}
 
 	/*
-	 * IEs minimum length should be 2 bytes: 1 byte for element id
-	 * and 1 byte for element id length.
-	 */
-	params.probe_resp_len = nla_len(tb
-		[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_VENDOR_IE]);
+   * IEs minimum length should be 2 bytes: 1 byte for element id
+   * and 1 byte for element id length.
+   */
+	params.probe_resp_len =
+		nla_len(tb[QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_VENDOR_IE]);
 	if (params.probe_resp_len < MIN_GENIE_LEN) {
 		hdd_err("Invalid probe resp template length: %d",
 			params.probe_resp_len);
@@ -248,8 +240,7 @@ static int __wlan_hdd_cfg80211_p2p_lo_start(struct wiphy *wiphy,
 }
 
 int wlan_hdd_cfg80211_p2p_lo_start(struct wiphy *wiphy,
-				   struct wireless_dev *wdev,
-				   const void *data,
+				   struct wireless_dev *wdev, const void *data,
 				   int data_len)
 {
 	struct osif_vdev_sync *vdev_sync;
@@ -259,8 +250,7 @@ int wlan_hdd_cfg80211_p2p_lo_start(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_p2p_lo_start(wiphy, wdev,
-						 data, data_len);
+	errno = __wlan_hdd_cfg80211_p2p_lo_start(wiphy, wdev, data, data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -315,8 +305,7 @@ static int wlan_hdd_listen_offload_stop(struct hdd_adapter *adapter)
  */
 static int __wlan_hdd_cfg80211_p2p_lo_stop(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
-					   const void *data,
-					   int data_len)
+					   const void *data, int data_len)
 {
 	struct hdd_adapter *adapter;
 	struct net_device *dev = wdev->netdev;
@@ -338,8 +327,7 @@ static int __wlan_hdd_cfg80211_p2p_lo_stop(struct wiphy *wiphy,
 }
 
 int wlan_hdd_cfg80211_p2p_lo_stop(struct wiphy *wiphy,
-				  struct wireless_dev *wdev,
-				  const void *data,
+				  struct wireless_dev *wdev, const void *data,
 				  int data_len)
 {
 	struct osif_vdev_sync *vdev_sync;
@@ -349,11 +337,9 @@ int wlan_hdd_cfg80211_p2p_lo_stop(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_p2p_lo_stop(wiphy, wdev,
-						data, data_len);
+	errno = __wlan_hdd_cfg80211_p2p_lo_stop(wiphy, wdev, data, data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
 	return errno;
 }
-

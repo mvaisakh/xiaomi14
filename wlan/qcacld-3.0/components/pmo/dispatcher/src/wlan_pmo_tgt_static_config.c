@@ -21,14 +21,14 @@
  * DOC: Implements public API for pmo to interact with target/WMI
  */
 
+#include "wlan_pmo_main.h"
+#include "wlan_pmo_obj_mgmt_public_struct.h"
 #include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_wow.h"
-#include "wlan_pmo_obj_mgmt_public_struct.h"
-#include "wlan_pmo_main.h"
 
-QDF_STATUS pmo_tgt_send_enhance_multicast_offload_req(
-	struct wlan_objmgr_vdev *vdev,
-	uint8_t action)
+QDF_STATUS
+pmo_tgt_send_enhance_multicast_offload_req(struct wlan_objmgr_vdev *vdev,
+					   uint8_t action)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -53,7 +53,6 @@ out:
 
 QDF_STATUS pmo_tgt_send_ra_filter_req(struct wlan_objmgr_vdev *vdev)
 {
-
 	QDF_STATUS status;
 	uint8_t default_pattern;
 	uint16_t ra_interval;
@@ -73,8 +72,8 @@ QDF_STATUS pmo_tgt_send_ra_filter_req(struct wlan_objmgr_vdev *vdev)
 	ra_interval = vdev_ctx->pmo_psoc_ctx->psoc_cfg.ra_ratelimit_interval;
 	qdf_spin_unlock_bh(&vdev_ctx->pmo_vdev_lock);
 
-	pmo_debug("send RA rate limit [%d] to fw vdev = %d",
-		 ra_interval, vdev_id);
+	pmo_debug("send RA rate limit [%d] to fw vdev = %d", ra_interval,
+		  vdev_id);
 
 	default_pattern = pmo_get_and_increment_wow_default_ptrn(vdev_ctx);
 	pmo_tx_ops = GET_PMO_TX_OPS_FROM_PSOC(psoc);
@@ -84,8 +83,8 @@ QDF_STATUS pmo_tgt_send_ra_filter_req(struct wlan_objmgr_vdev *vdev)
 		goto out;
 	}
 
-	status = pmo_tx_ops.send_ra_filter_req(
-			vdev, default_pattern, ra_interval);
+	status = pmo_tx_ops.send_ra_filter_req(vdev, default_pattern,
+					       ra_interval);
 	if (status != QDF_STATUS_SUCCESS) {
 		pmo_err("Failed to send RA rate limit to fw");
 		pmo_decrement_wow_default_ptrn(vdev_ctx);
@@ -96,9 +95,9 @@ out:
 	return status;
 }
 
-QDF_STATUS pmo_tgt_send_action_frame_pattern_req(
-		struct wlan_objmgr_vdev *vdev,
-		struct pmo_action_wakeup_set_params *cmd)
+QDF_STATUS
+pmo_tgt_send_action_frame_pattern_req(struct wlan_objmgr_vdev *vdev,
+				      struct pmo_action_wakeup_set_params *cmd)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -119,4 +118,3 @@ QDF_STATUS pmo_tgt_send_action_frame_pattern_req(
 out:
 	return status;
 }
-

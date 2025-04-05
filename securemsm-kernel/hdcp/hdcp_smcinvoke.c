@@ -3,20 +3,20 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <include/linux/smcinvoke.h>
-#include <include/linux/IClientEnv.h>
-#include <include/linux/smcinvoke_object.h>
-#include <include/smci/uid/CAppClient.h>
-#include <include/smci/uid/CAppLoader.h>
-#include <include/smci/interface/IAppClient.h>
-#include <include/smci/interface/IAppController.h>
-#include <include/smci/interface/IAppLoader.h>
-#include <include/smci/interface/IOpener.h>
-#include "hdcp_main.h"
 #include "hdcp_smcinvoke.h"
 #include "hdcp1.h"
 #include "hdcp1_ops.h"
 #include "hdcp2p2.h"
+#include "hdcp_main.h"
+#include <include/linux/IClientEnv.h>
+#include <include/linux/smcinvoke.h>
+#include <include/linux/smcinvoke_object.h>
+#include <include/smci/interface/IAppClient.h>
+#include <include/smci/interface/IAppController.h>
+#include <include/smci/interface/IAppLoader.h>
+#include <include/smci/interface/IOpener.h>
+#include <include/smci/uid/CAppClient.h>
+#include <include/smci/uid/CAppLoader.h>
 
 static int hdcp1_verify_key(struct hdcp1_smcinvoke_handle *handle)
 {
@@ -40,7 +40,7 @@ static int hdcp1_verify_key(struct hdcp1_smcinvoke_handle *handle)
 }
 
 static int hdcp1_key_set(struct hdcp1_smcinvoke_handle *handle,
-		 uint32_t *aksv_msb, uint32_t *aksv_lsb)
+			 uint32_t *aksv_msb, uint32_t *aksv_lsb)
 {
 	int ret = 0;
 	uint8_t *ksvRes = NULL;
@@ -66,15 +66,17 @@ static int hdcp1_key_set(struct hdcp1_smcinvoke_handle *handle,
 	}
 
 	ret = hdcp1_set_key(handle->hdcp1_app_obj, ksvRes, HDCP1_AKSV_SIZE,
-				 &ksvResLen);
+			    &ksvResLen);
 	if (ret) {
 		pr_err("hdcp1_set_key failed ret=%d\n", ret);
 		return -ENOKEY;
 	}
 
 	/* copy bytes into msb and lsb */
-	*aksv_msb = ksvRes[0] << 24 | ksvRes[1] << 16 | ksvRes[2] << 8 | ksvRes[3];
-	*aksv_lsb = ksvRes[4] << 24 | ksvRes[5] << 16 | ksvRes[6] << 8 | ksvRes[7];
+	*aksv_msb = ksvRes[0] << 24 | ksvRes[1] << 16 | ksvRes[2] << 8 |
+		    ksvRes[3];
+	*aksv_lsb = ksvRes[4] << 24 | ksvRes[5] << 16 | ksvRes[6] << 8 |
+		    ksvRes[7];
 
 	ret = hdcp1_validate_aksv(*aksv_msb, *aksv_lsb);
 	if (ret)
@@ -84,14 +86,14 @@ static int hdcp1_key_set(struct hdcp1_smcinvoke_handle *handle,
 }
 
 int load_app(char *app_name, struct Object *app_obj,
-			 struct Object *app_controller_obj)
+	     struct Object *app_controller_obj)
 {
 	int ret = 0;
 	uint8_t *buffer = NULL;
-	struct qtee_shm shm = {0};
+	struct qtee_shm shm = { 0 };
 	size_t size = 0;
-	struct Object client_env = {NULL, NULL};
-	struct Object app_loader = {NULL, NULL};
+	struct Object client_env = { NULL, NULL };
+	struct Object app_loader = { NULL, NULL };
 
 	ret = get_client_env_object(&client_env);
 	if (ret) {
@@ -117,7 +119,7 @@ int load_app(char *app_name, struct Object *app_obj,
 	}
 
 	ret = IAppLoader_loadFromBuffer(app_loader, (const void *)buffer, size,
-			app_controller_obj);
+					app_controller_obj);
 	if (ret) {
 		pr_err("IAppLoader_loadFromBuffer failed :%d\n", ret);
 		app_controller_obj->invoke = NULL;
@@ -152,7 +154,7 @@ static int hdcp1_app_load(struct hdcp1_smcinvoke_handle *handle)
 		goto error;
 
 	ret = load_app(HDCP1_APP_NAME, &(handle->hdcp1_app_obj),
-		   &(handle->hdcp1_appcontroller_obj));
+		       &(handle->hdcp1_appcontroller_obj));
 	if (ret) {
 		pr_err("hdcp1 TA load failed :%d\n", ret);
 		goto error;
@@ -165,7 +167,7 @@ static int hdcp1_app_load(struct hdcp1_smcinvoke_handle *handle)
 	}
 
 	ret = load_app(HDCP1OPS_APP_NAME, &(handle->hdcp1ops_app_obj),
-		   &(handle->hdcp1ops_appcontroller_obj));
+		       &(handle->hdcp1ops_appcontroller_obj));
 	if (ret) {
 		pr_err("hdcp1ops TA load failed :%d\n", ret);
 		goto error;
@@ -294,7 +296,8 @@ int hdcp1_ops_notify_smcinvoke(void *data, void *topo, bool is_authenticated)
 
 	ret = hdcp1_ops_notify_topology_change(handle->hdcp1ops_app_obj);
 	if (ret)
-		pr_err("hdcp1_ops_notify_topology_change failed, ret=%d\n", ret);
+		pr_err("hdcp1_ops_notify_topology_change failed, ret=%d\n",
+		       ret);
 
 	return ret;
 }
@@ -403,8 +406,8 @@ int hdcp_get_version(struct hdcp2_smcinvoke_handle *handle)
 	}
 	app_major_version = HCDP_TXMTR_GET_MAJOR_VERSION(appversion);
 
-	pr_debug("hdp2p2 app major version %d, app version %d\n", app_major_version,
-			 appversion);
+	pr_debug("hdp2p2 app major version %d, app version %d\n",
+		 app_major_version, appversion);
 error:
 	return ret;
 }
@@ -422,8 +425,8 @@ int hdcp2_app_init(struct hdcp2_smcinvoke_handle *handle)
 	}
 
 	clientversion = HDCP_CLIENT_MAKE_VERSION(HDCP_CLIENT_MAJOR_VERSION,
-					HDCP_CLIENT_MINOR_VERSION,
-					HDCP_CLIENT_PATCH_VERSION);
+						 HDCP_CLIENT_MINOR_VERSION,
+						 HDCP_CLIENT_PATCH_VERSION);
 
 	ret = hdcp2p2_init(handle->hdcp2_app_obj, clientversion, &appversion);
 	if (ret) {
@@ -434,19 +437,19 @@ int hdcp2_app_init(struct hdcp2_smcinvoke_handle *handle)
 	app_minor_version = HCDP_TXMTR_GET_MINOR_VERSION(appversion);
 	if (app_minor_version != HDCP_CLIENT_MINOR_VERSION) {
 		pr_err("client-app minor version mismatch app(%d), client(%d)\n",
-			   app_minor_version, HDCP_CLIENT_MINOR_VERSION);
+		       app_minor_version, HDCP_CLIENT_MINOR_VERSION);
 		ret = -1;
 		goto error;
 	}
 
 	pr_err("client version major(%d), minor(%d), patch(%d)\n",
-		   HDCP_CLIENT_MAJOR_VERSION, HDCP_CLIENT_MINOR_VERSION,
-		   HDCP_CLIENT_PATCH_VERSION);
+	       HDCP_CLIENT_MAJOR_VERSION, HDCP_CLIENT_MINOR_VERSION,
+	       HDCP_CLIENT_PATCH_VERSION);
 
 	pr_err("app version major(%d), minor(%d), patch(%d)\n",
-		   HCDP_TXMTR_GET_MAJOR_VERSION(appversion),
-		   HCDP_TXMTR_GET_MINOR_VERSION(appversion),
-		   HCDP_TXMTR_GET_PATCH_VERSION(appversion));
+	       HCDP_TXMTR_GET_MAJOR_VERSION(appversion),
+	       HCDP_TXMTR_GET_MINOR_VERSION(appversion),
+	       HCDP_TXMTR_GET_PATCH_VERSION(appversion));
 error:
 	return ret;
 }
@@ -467,7 +470,8 @@ int hdcp2_app_tx_init(struct hdcp2_smcinvoke_handle *handle)
 		goto error;
 	}
 
-	ret = hdcp2p2_tx_init(handle->hdcp2_app_obj, handle->session_id, &ctxhandle);
+	ret = hdcp2p2_tx_init(handle->hdcp2_app_obj, handle->session_id,
+			      &ctxhandle);
 	if (ret) {
 		pr_err("hdcp2p2_tx_init failed :%d\n", ret);
 		goto error;
@@ -523,7 +527,7 @@ static int hdcp2_app_load(struct hdcp2_smcinvoke_handle *handle)
 	}
 
 	ret = load_app(HDCP2P2_APP_NAME, &(handle->hdcp2_app_obj),
-				   &(handle->hdcp2_appcontroller_obj));
+		       &(handle->hdcp2_appcontroller_obj));
 	if (ret) {
 		pr_err("hdcp2p2 TA load_app failed :%d\n", ret);
 		goto error;
@@ -536,7 +540,7 @@ static int hdcp2_app_load(struct hdcp2_smcinvoke_handle *handle)
 	}
 
 	ret = load_app(HDCPSRM_APP_NAME, &(handle->hdcpsrm_app_obj),
-		   &(handle->hdcpsrm_appcontroller_obj));
+		       &(handle->hdcpsrm_appcontroller_obj));
 	if (ret) {
 		pr_err("hdcpsrm TA load failed :%d\n", ret);
 		goto error;
@@ -629,7 +633,7 @@ static int hdcp2_app_session_init(struct hdcp2_smcinvoke_handle *handle)
 	}
 
 	ret = hdcp2p2_session_init(handle->hdcp2_app_obj, handle->device_type,
-			&sessionId);
+				   &sessionId);
 	if (ret) {
 		pr_err("hdcp2p2_session_init failed ret:%d\n", ret);
 		goto error;
@@ -681,13 +685,15 @@ int hdcp2_app_start_smcinvoke(void *ctx, uint32_t req_len)
 		goto error;
 	}
 
-	handle->app_data.request.data = kmalloc(MAX_RX_MESSAGE_SIZE, GFP_KERNEL);
+	handle->app_data.request.data =
+		kmalloc(MAX_RX_MESSAGE_SIZE, GFP_KERNEL);
 	if (!handle->app_data.request.data) {
 		ret = -EINVAL;
 		goto error;
 	}
 
-	handle->app_data.response.data = kmalloc(MAX_TX_MESSAGE_SIZE, GFP_KERNEL);
+	handle->app_data.response.data =
+		kmalloc(MAX_TX_MESSAGE_SIZE, GFP_KERNEL);
 	if (!handle->app_data.response.data) {
 		ret = -EINVAL;
 		goto error;
@@ -718,7 +724,7 @@ int hdcp2_app_start_auth_smcinvoke(void *ctx, uint32_t req_len)
 	uint32_t flag = 0;
 	uint32_t ctxhandle = 0;
 
-	uint8_t resMsg[MAX_TX_MESSAGE_SIZE] = {0};
+	uint8_t resMsg[MAX_TX_MESSAGE_SIZE] = { 0 };
 
 	handle = ctx;
 
@@ -743,8 +749,8 @@ int hdcp2_app_start_auth_smcinvoke(void *ctx, uint32_t req_len)
 	}
 
 	ret = hdcp2p2_start_auth(handle->hdcp2_app_obj, handle->tz_ctxhandle,
-	  resMsg, MAX_TX_MESSAGE_SIZE, &resMsgOut, &timeout,
-	  &flag, &ctxhandle);
+				 resMsg, MAX_TX_MESSAGE_SIZE, &resMsgOut,
+				 &timeout, &flag, &ctxhandle);
 	if (ret) {
 		pr_err("hdcp2p2_start_auth failed :%d\n", ret);
 		goto error;
@@ -771,7 +777,7 @@ int hdcp2_app_process_msg_smcinvoke(void *ctx, uint32_t req_len)
 	uint32_t flag = 0;
 	uint32_t state = 0;
 
-	uint8_t resMsg[MAX_TX_MESSAGE_SIZE] = {0};
+	uint8_t resMsg[MAX_TX_MESSAGE_SIZE] = { 0 };
 
 	handle = ctx;
 
@@ -818,7 +824,7 @@ int hdcp2_app_timeout_smcinvoke(void *ctx, uint32_t req_len)
 	uint32_t timeout = 0;
 	size_t resMsgLenOut = 0;
 
-	uint8_t resMsg[MAX_TX_MESSAGE_SIZE] = {0};
+	uint8_t resMsg[MAX_TX_MESSAGE_SIZE] = { 0 };
 
 	handle = ctx;
 
@@ -831,8 +837,8 @@ int hdcp2_app_timeout_smcinvoke(void *ctx, uint32_t req_len)
 	handle->app_data.request.length = req_len;
 
 	ret = hdcp2p2_send_timeout(handle->hdcp2_app_obj, handle->tz_ctxhandle,
-		resMsg, MAX_TX_MESSAGE_SIZE, &resMsgLenOut,
-		&timeout);
+				   resMsg, MAX_TX_MESSAGE_SIZE, &resMsgLenOut,
+				   &timeout);
 	if (ret) {
 		pr_err("hdcp2p2_send_timeout failed :%d\n", ret);
 		goto error;
@@ -863,9 +869,9 @@ int hdcp2_app_enable_encryption_smcinvoke(void *ctx, uint32_t req_len)
 	handle->app_data.request.length = req_len;
 
 	/*
-	 * wait at least 200ms before enabling encryption
-	 * as per hdcp2p2 specifications.
-	 */
+   * wait at least 200ms before enabling encryption
+   * as per hdcp2p2 specifications.
+   */
 	msleep(SLEEP_SET_HW_KEY_MS);
 
 	ret = hdcp2p2_set_hw_key(handle->hdcp2_app_obj, handle->tz_ctxhandle);
@@ -887,7 +893,7 @@ int hdcp2_app_query_stream_smcinvoke(void *ctx, uint32_t req_len)
 	uint32_t timeout = 0;
 	size_t resMsgLenOut = 0;
 
-	uint8_t resMsg[MAX_TX_MESSAGE_SIZE] = {0};
+	uint8_t resMsg[MAX_TX_MESSAGE_SIZE] = { 0 };
 
 	handle = ctx;
 
@@ -899,9 +905,10 @@ int hdcp2_app_query_stream_smcinvoke(void *ctx, uint32_t req_len)
 
 	handle->app_data.request.length = req_len;
 
-	ret = hdcp2p2_query_stream_type(
-		handle->hdcp2_app_obj, handle->tz_ctxhandle, resMsg,
-		MAX_TX_MESSAGE_SIZE, &resMsgLenOut, &timeout);
+	ret = hdcp2p2_query_stream_type(handle->hdcp2_app_obj,
+					handle->tz_ctxhandle, resMsg,
+					MAX_TX_MESSAGE_SIZE, &resMsgLenOut,
+					&timeout);
 	if (ret) {
 		pr_err("hdcp2p2_query_stream_type failed :%d\n", ret);
 		goto error;
@@ -993,8 +1000,8 @@ int hdcp2_force_encryption_smcinvoke(void *ctx, uint32_t enable)
 	if (handle->hdcp_state == HDCP_STATE_AUTHENTICATED)
 		msleep(SLEEP_FORCE_ENCRYPTION_MS);
 
-	ret = hdcp2p2_force_encryption(handle->hdcp2_app_obj, handle->tz_ctxhandle,
-		enable);
+	ret = hdcp2p2_force_encryption(handle->hdcp2_app_obj,
+				       handle->tz_ctxhandle, enable);
 	if (ret) {
 		pr_err("hdcp2p2_force_encryption failed :%d\n", ret);
 		goto error;
@@ -1005,7 +1012,7 @@ error:
 }
 
 int hdcp2_open_stream_smcinvoke(void *ctx, uint8_t vc_payload_id,
-		uint8_t stream_number, uint32_t *stream_id)
+				uint8_t stream_number, uint32_t *stream_id)
 {
 	struct hdcp2_smcinvoke_handle *handle = NULL;
 	int ret = 0;
@@ -1032,8 +1039,8 @@ int hdcp2_open_stream_smcinvoke(void *ctx, uint8_t vc_payload_id,
 	}
 
 	ret = hdcp2p2_session_open_stream(handle->hdcp2_app_obj,
-		   handle->session_id, vc_payload_id,
-		   stream_number, 0, &streamid);
+					  handle->session_id, vc_payload_id,
+					  stream_number, 0, &streamid);
 	if (ret) {
 		pr_err("hdcp2p2_session_open_stream failed :%d\n", ret);
 		goto error;
@@ -1071,7 +1078,7 @@ int hdcp2_close_stream_smcinvoke(void *ctx, uint32_t stream_id)
 	}
 
 	ret = hdcp2p2_session_close_stream(handle->hdcp2_app_obj,
-		handle->session_id, stream_id);
+					   handle->session_id, stream_id);
 	if (ret) {
 		pr_err("hdcp2p2_session_close_stream failed :%d\n", ret);
 		goto error;

@@ -18,9 +18,8 @@
 
 #include "wlan_serialization_rules_i.h"
 
-bool
-wlan_serialization_apply_scan_rules(
-		union wlan_serialization_rules_info *info, uint8_t comp_id)
+bool wlan_serialization_apply_scan_rules(
+	union wlan_serialization_rules_info *info, uint8_t comp_id)
 {
 	switch (comp_id) {
 	default:

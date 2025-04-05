@@ -24,10 +24,10 @@
  * - dcs algorithm handling
  */
 
-#include <target_if_dcs.h>
 #include "wlan_dcs.h"
-#include <wlan_objmgr_psoc_obj_i.h>
 #include "wlan_utility.h"
+#include <target_if_dcs.h>
+#include <wlan_objmgr_psoc_obj_i.h>
 #ifdef WLAN_POLICY_MGR_ENABLE
 #include "wlan_policy_mgr_api.h"
 #endif
@@ -44,9 +44,8 @@ wlan_dcs_get_pdev_private_obj(struct wlan_objmgr_psoc *psoc, uint32_t pdev_id)
 		goto end;
 	}
 
-	dcs_psoc_obj = wlan_objmgr_psoc_get_comp_private_obj(
-							psoc,
-							WLAN_UMAC_COMP_DCS);
+	dcs_psoc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_DCS);
 	if (!dcs_psoc_obj) {
 		dcs_err("dcs psoc object is null");
 		goto end;
@@ -109,8 +108,7 @@ QDF_STATUS wlan_dcs_detach(struct wlan_objmgr_psoc *psoc)
 	return dcs_tx_ops->dcs_detach(psoc);
 }
 
-QDF_STATUS wlan_dcs_cmd_send(struct wlan_objmgr_psoc *psoc,
-			     uint32_t pdev_id,
+QDF_STATUS wlan_dcs_cmd_send(struct wlan_objmgr_psoc *psoc, uint32_t pdev_id,
 			     bool is_host_pdev_id)
 {
 	struct wlan_target_if_dcs_tx_ops *dcs_tx_ops;
@@ -129,14 +127,12 @@ QDF_STATUS wlan_dcs_cmd_send(struct wlan_objmgr_psoc *psoc,
 	}
 
 	dcs_enable = dcs_pdev_priv->dcs_host_params.dcs_enable &
-			dcs_pdev_priv->dcs_host_params.dcs_enable_cfg;
+		     dcs_pdev_priv->dcs_host_params.dcs_enable_cfg;
 	dcs_tx_ops = target_if_dcs_get_tx_ops(psoc);
 
 	if (dcs_tx_ops && dcs_tx_ops->dcs_cmd_send) {
 		dcs_debug("dcs_enable: %u, pdev_id: %u", dcs_enable, pdev_id);
-		return dcs_tx_ops->dcs_cmd_send(psoc,
-						pdev_id,
-						is_host_pdev_id,
+		return dcs_tx_ops->dcs_cmd_send(psoc, pdev_id, is_host_pdev_id,
 						dcs_enable);
 	}
 
@@ -160,9 +156,9 @@ wlan_dcs_im_copy_stats(struct wlan_host_dcs_im_tgt_stats *prev_stats,
 	}
 
 	/*
-	 * Right now no other actions are required beyond memcopy,
-	 * if required the rest of the code would follow.
-	 */
+   * Right now no other actions are required beyond memcopy,
+   * if required the rest of the code would follow.
+   */
 	qdf_mem_copy(prev_stats, curr_stats,
 		     sizeof(struct wlan_host_dcs_im_tgt_stats));
 }
@@ -240,8 +236,8 @@ wlan_dcs_im_print_stats(struct wlan_host_dcs_im_tgt_stats *prev_stats,
  */
 static void wlan_dcs_update_chan_util(struct pdev_dcs_im_stats *p_dcs_im_stats,
 				      uint32_t rx_cu, uint32_t tx_cu,
-				      uint32_t obss_rx_cu,
-				      uint32_t total_cu, uint32_t chan_nf)
+				      uint32_t obss_rx_cu, uint32_t total_cu,
+				      uint32_t chan_nf)
 {
 	if (p_dcs_im_stats) {
 		p_dcs_im_stats->dcs_ch_util_im_stats.rx_cu = rx_cu;
@@ -259,10 +255,9 @@ static void wlan_dcs_update_chan_util(struct pdev_dcs_im_stats *p_dcs_im_stats,
  *
  * Return: true or false means start dcs callback handler or not
  */
-static bool
-wlan_dcs_wlan_interference_process(
-				struct wlan_host_dcs_im_tgt_stats *curr_stats,
-				struct dcs_pdev_priv_obj *dcs_pdev_priv)
+static bool wlan_dcs_wlan_interference_process(
+	struct wlan_host_dcs_im_tgt_stats *curr_stats,
+	struct dcs_pdev_priv_obj *dcs_pdev_priv)
 {
 	struct wlan_host_dcs_im_tgt_stats *prev_stats;
 	struct pdev_dcs_params dcs_host_params;
@@ -308,15 +303,15 @@ wlan_dcs_wlan_interference_process(
 
 	dcs_host_params = dcs_pdev_priv->dcs_host_params;
 	p_dcs_im_stats = &dcs_pdev_priv->dcs_im_stats;
-	prev_stats =  &dcs_pdev_priv->dcs_im_stats.prev_dcs_im_stats;
+	prev_stats = &dcs_pdev_priv->dcs_im_stats.prev_dcs_im_stats;
 
 	if (unlikely(dcs_host_params.dcs_debug >= DCS_DEBUG_VERBOSE))
 		wlan_dcs_im_print_stats(prev_stats, curr_stats);
 
 	/*
-	 * Counters would have wrapped. Ideally we should be able to figure this
-	 * out, but we never know how many times counters wrapped, just ignore.
-	 */
+   * Counters would have wrapped. Ideally we should be able to figure this
+   * out, but we never know how many times counters wrapped, just ignore.
+   */
 	if ((curr_stats->mib_stats.listen_time <= 0) ||
 	    (curr_stats->reg_tsf32 <= prev_stats->reg_tsf32)) {
 		if (unlikely(dcs_host_params.dcs_debug >= DCS_DEBUG_VERBOSE))
@@ -327,42 +322,44 @@ wlan_dcs_wlan_interference_process(
 	reg_tsf_delta = curr_stats->reg_tsf32 - prev_stats->reg_tsf32;
 
 	/*
-	 * Do nothing if current stats are not seeming good, probably
-	 * a reset happened on chip, force cleared
-	 */
+   * Do nothing if current stats are not seeming good, probably
+   * a reset happened on chip, force cleared
+   */
 	if (prev_stats->mib_stats.reg_rxclr_cnt >
-		curr_stats->mib_stats.reg_rxclr_cnt) {
+	    curr_stats->mib_stats.reg_rxclr_cnt) {
 		if (unlikely(dcs_host_params.dcs_debug >= DCS_DEBUG_VERBOSE))
 			dcs_debug("ignoring due to negative rxclr count");
 		goto copy_stats;
 	}
 
 	rxclr_delta = curr_stats->mib_stats.reg_rxclr_cnt -
-			prev_stats->mib_stats.reg_rxclr_cnt;
+		      prev_stats->mib_stats.reg_rxclr_cnt;
 	rxclr_ext_delta = curr_stats->mib_stats.reg_rxclr_ext_cnt -
-				prev_stats->mib_stats.reg_rxclr_ext_cnt;
+			  prev_stats->mib_stats.reg_rxclr_ext_cnt;
 	tx_frame_delta = curr_stats->mib_stats.reg_tx_frame_cnt -
-				prev_stats->mib_stats.reg_tx_frame_cnt;
+			 prev_stats->mib_stats.reg_tx_frame_cnt;
 
 	rx_frame_delta = curr_stats->mib_stats.reg_rx_frame_cnt -
-				prev_stats->mib_stats.reg_rx_frame_cnt;
+			 prev_stats->mib_stats.reg_rx_frame_cnt;
 
 	cycle_count_delta = curr_stats->mib_stats.reg_cycle_cnt -
-				prev_stats->mib_stats.reg_cycle_cnt;
+			    prev_stats->mib_stats.reg_cycle_cnt;
 
 	my_bss_rx_delta = curr_stats->my_bss_rx_cycle_count -
-				prev_stats->my_bss_rx_cycle_count;
+			  prev_stats->my_bss_rx_cycle_count;
 
 	if (unlikely(dcs_host_params.dcs_debug >= DCS_DEBUG_VERBOSE))
-		dcs_debug("rxclr_delta: %u, rxclr_ext_delta: %u, tx_frame_delta: %u, rx_frame_delta: %u, cycle_count_delta: %u, my_bss_rx_delta: %u",
-			  rxclr_delta, rxclr_ext_delta, tx_frame_delta,
-			  rx_frame_delta, cycle_count_delta, my_bss_rx_delta);
+		dcs_debug(
+			"rxclr_delta: %u, rxclr_ext_delta: %u, tx_frame_delta: %u, "
+			"rx_frame_delta: %u, cycle_count_delta: %u, my_bss_rx_delta: %u",
+			rxclr_delta, rxclr_ext_delta, tx_frame_delta,
+			rx_frame_delta, cycle_count_delta, my_bss_rx_delta);
 
 	/* Update user stats */
 	wlan_dcs_pdev_obj_lock(dcs_pdev_priv);
 	if (dcs_pdev_priv->dcs_host_params.user_request_count) {
 		struct wlan_host_dcs_im_user_stats *p_user_stats =
-					     &p_dcs_im_stats->user_dcs_im_stats;
+			&p_dcs_im_stats->user_dcs_im_stats;
 
 		p_user_stats->cycle_count += cycle_count_delta;
 		p_user_stats->rxclr_count += rxclr_delta;
@@ -375,10 +372,10 @@ wlan_dcs_wlan_interference_process(
 		} else {
 			if (curr_stats->last_ack_rssi > p_user_stats->max_rssi)
 				p_user_stats->max_rssi =
-						      curr_stats->last_ack_rssi;
+					curr_stats->last_ack_rssi;
 			if (curr_stats->last_ack_rssi < p_user_stats->min_rssi)
 				p_user_stats->min_rssi =
-						      curr_stats->last_ack_rssi;
+					curr_stats->last_ack_rssi;
 		}
 		dcs_pdev_priv->dcs_host_params.user_request_count--;
 		if (0 == dcs_pdev_priv->dcs_host_params.user_request_count)
@@ -387,18 +384,18 @@ wlan_dcs_wlan_interference_process(
 	wlan_dcs_pdev_obj_unlock(dcs_pdev_priv);
 
 	/*
-	 * Total channel utiliztaion is the amount of time RXCLR is
-	 * counted. RXCLR is counted, when 'RX is NOT clear', please
-	 * refer to mac documentation. It means either TX or RX is ON
-	 *
-	 * Why shift by 8 ? after multiplication it could overflow. At one
-	 * second rate, normally neither cycle_count_delta nor the tsf_delta
-	 * would be zero after shift by 8 bits. In corner case, host resets
-	 * dcs stats, and at the same time tsf counters is wrapped.
-	 * Then all the variable in prev_stats are 0, and the variable in
-	 * curr_stats may be a small value, so add check for cycle_count_delta
-	 * and the tsf_delta after shift by 8 bits.
-	 */
+   * Total channel utiliztaion is the amount of time RXCLR is
+   * counted. RXCLR is counted, when 'RX is NOT clear', please
+   * refer to mac documentation. It means either TX or RX is ON
+   *
+   * Why shift by 8 ? after multiplication it could overflow. At one
+   * second rate, normally neither cycle_count_delta nor the tsf_delta
+   * would be zero after shift by 8 bits. In corner case, host resets
+   * dcs stats, and at the same time tsf counters is wrapped.
+   * Then all the variable in prev_stats are 0, and the variable in
+   * curr_stats may be a small value, so add check for cycle_count_delta
+   * and the tsf_delta after shift by 8 bits.
+   */
 	scaled_cycle_count_delta = cycle_count_delta >> 8;
 	scaled_reg_tsf_delta = reg_tsf_delta >> 8;
 	if (!scaled_cycle_count_delta || !scaled_reg_tsf_delta) {
@@ -417,110 +414,116 @@ wlan_dcs_wlan_interference_process(
 				  curr_stats->chan_nf);
 
 	/*
-	 * Amount of the time AP received cannot go higher than the receive
-	 * cycle count delta. If at all it is, there should have been a
-	 * computation error, ceil it to receive_cycle_count_diff
-	 */
+   * Amount of the time AP received cannot go higher than the receive
+   * cycle count delta. If at all it is, there should have been a
+   * computation error, ceil it to receive_cycle_count_diff
+   */
 	if (rx_time_cu > reg_rx_cu)
 		rx_time_cu = reg_rx_cu;
 
 	if (unlikely(dcs_host_params.dcs_debug >= DCS_DEBUG_VERBOSE))
-		dcs_debug("reg_total_cu: %u, reg_tx_cu: %u, reg_rx_cu: %u, rx_time_cu: %u, obss_rx_cu: %u dcs_algorithm: %d",
-			  reg_total_cu, reg_tx_cu, reg_rx_cu,
-			  rx_time_cu, obss_rx_cu,
-			  dcs_host_params.dcs_algorithm_process);
+		dcs_debug(
+			"reg_total_cu: %u, reg_tx_cu: %u, reg_rx_cu: %u, rx_time_cu: %u, "
+			"obss_rx_cu: %u dcs_algorithm: %d",
+			reg_total_cu, reg_tx_cu, reg_rx_cu, rx_time_cu,
+			obss_rx_cu, dcs_host_params.dcs_algorithm_process);
 
 	/*
-	 * For below scenario, will ignore dcs event data and won't do
-	 * interference detection algorithm calculation:
-	 * 1: Current SAP channel isn't on 5G band
-	 * 2: In the process of ACS
-	 * 3: In the process of dcs disabling dcs_restart_delay time duration
-	 */
+   * For below scenario, will ignore dcs event data and won't do
+   * interference detection algorithm calculation:
+   * 1: Current SAP channel isn't on 5G band
+   * 2: In the process of ACS
+   * 3: In the process of dcs disabling dcs_restart_delay time duration
+   */
 	if (!dcs_host_params.dcs_algorithm_process)
 		goto copy_stats;
 
 	/*
-	 * Unusable channel utilization is amount of time that we
-	 * spent in backoff or waiting for other transmit/receive to
-	 * complete. If there is interference it is more likely that
-	 * we overshoot the limit. In case of multiple stations, we
-	 * still see increased channel utilization.  This assumption may
-	 * not be true for the VOW scenario where either multicast or
-	 * unicast-UDP is used ( mixed traffic would still cause high
-	 * channel utilization).
-	 */
-	wasted_tx_cu = ((curr_stats->tx_waste_time >> 8) * 100) /
-							scaled_reg_tsf_delta;
+   * Unusable channel utilization is amount of time that we
+   * spent in backoff or waiting for other transmit/receive to
+   * complete. If there is interference it is more likely that
+   * we overshoot the limit. In case of multiple stations, we
+   * still see increased channel utilization.  This assumption may
+   * not be true for the VOW scenario where either multicast or
+   * unicast-UDP is used ( mixed traffic would still cause high
+   * channel utilization).
+   */
+	wasted_tx_cu =
+		((curr_stats->tx_waste_time >> 8) * 100) / scaled_reg_tsf_delta;
 
 	/*
-	 * Transmit channel utilization cannot go higher than the amount of time
-	 * wasted, if so cap the wastage to transmit channel utillzation. This
-	 * could happen to compution error.
-	 */
+   * Transmit channel utilization cannot go higher than the amount of time
+   * wasted, if so cap the wastage to transmit channel utillzation. This
+   * could happen to compution error.
+   */
 	if (reg_tx_cu < wasted_tx_cu)
 		wasted_tx_cu = reg_tx_cu;
 
 	tx_err = (reg_tx_cu && wasted_tx_cu) ?
-			(wasted_tx_cu * 100) / reg_tx_cu : 0;
+			 (wasted_tx_cu * 100) / reg_tx_cu :
+			 0;
 
 	/*
-	 * The below actually gives amount of time we are not using, or the
-	 * interferer is active.
-	 * rx_time_cu is what computed receive time *NOT* rx_cycle_count
-	 * rx_cycle_count is our receive+interferer's transmit
-	 * un-used is really total_cycle_counts -
-	 *      (our_rx_time(rx_time_cu) + our_receive_time)
-	 */
+   * The below actually gives amount of time we are not using, or the
+   * interferer is active.
+   * rx_time_cu is what computed receive time *NOT* rx_cycle_count
+   * rx_cycle_count is our receive+interferer's transmit
+   * un-used is really total_cycle_counts -
+   *      (our_rx_time(rx_time_cu) + our_receive_time)
+   */
 	reg_unused_cu = (reg_total_cu >= (reg_tx_cu + rx_time_cu)) ?
-				(reg_total_cu - (reg_tx_cu + rx_time_cu)) : 0;
+				(reg_total_cu - (reg_tx_cu + rx_time_cu)) :
+				0;
 
 	/* If any retransmissions are there, count them as wastage */
 	total_wasted_cu = reg_unused_cu + wasted_tx_cu;
 
 	/* Check ofdm and cck errors */
 	if (unlikely(curr_stats->mib_stats.reg_ofdm_phyerr_cnt <
-			prev_stats->mib_stats.reg_ofdm_phyerr_cnt))
+		     prev_stats->mib_stats.reg_ofdm_phyerr_cnt))
 		reg_ofdm_phyerr_delta =
 			curr_stats->mib_stats.reg_ofdm_phyerr_cnt;
 	else
 		reg_ofdm_phyerr_delta =
 			curr_stats->mib_stats.reg_ofdm_phyerr_cnt -
-				prev_stats->mib_stats.reg_ofdm_phyerr_cnt;
+			prev_stats->mib_stats.reg_ofdm_phyerr_cnt;
 
 	if (unlikely(curr_stats->mib_stats.reg_cck_phyerr_cnt <
-			prev_stats->mib_stats.reg_cck_phyerr_cnt))
+		     prev_stats->mib_stats.reg_cck_phyerr_cnt))
 		reg_cck_phyerr_delta = curr_stats->mib_stats.reg_cck_phyerr_cnt;
 	else
 		reg_cck_phyerr_delta =
 			curr_stats->mib_stats.reg_cck_phyerr_cnt -
-				prev_stats->mib_stats.reg_cck_phyerr_cnt;
+			prev_stats->mib_stats.reg_cck_phyerr_cnt;
 
 	/*
-	 * Add the influence of ofdm phy errors to the wasted channel
-	 * utillization, this computed through time wasted in errors
-	 */
-	reg_ofdm_phyerr_cu = reg_ofdm_phyerr_delta *
-				dcs_host_params.phy_err_penalty;
-	total_wasted_cu +=
-		(reg_ofdm_phyerr_cu > 0) ?
-		(((reg_ofdm_phyerr_cu >> 8) * 100) / scaled_reg_tsf_delta) : 0;
+   * Add the influence of ofdm phy errors to the wasted channel
+   * utillization, this computed through time wasted in errors
+   */
+	reg_ofdm_phyerr_cu =
+		reg_ofdm_phyerr_delta * dcs_host_params.phy_err_penalty;
+	total_wasted_cu += (reg_ofdm_phyerr_cu > 0) ?
+				   (((reg_ofdm_phyerr_cu >> 8) * 100) /
+				    scaled_reg_tsf_delta) :
+				   0;
 
 	ofdm_phy_err_rate = (curr_stats->mib_stats.reg_ofdm_phyerr_cnt * 1000) /
-				curr_stats->mib_stats.listen_time;
+			    curr_stats->mib_stats.listen_time;
 	cck_phy_err_rate = (curr_stats->mib_stats.reg_cck_phyerr_cnt * 1000) /
-				curr_stats->mib_stats.listen_time;
+			   curr_stats->mib_stats.listen_time;
 
 	if (unlikely(dcs_host_params.dcs_debug >= DCS_DEBUG_VERBOSE)) {
-		dcs_debug("reg_unused_cu: %u, reg_ofdm_phyerr_delta: %u, reg_cck_phyerr_delta: %u, reg_ofdm_phyerr_cu: %u",
+		dcs_debug("reg_unused_cu: %u, reg_ofdm_phyerr_delta: %u, "
+			  "reg_cck_phyerr_delta: %u, reg_ofdm_phyerr_cu: %u",
 			  reg_unused_cu, reg_ofdm_phyerr_delta,
 			  reg_cck_phyerr_delta, reg_ofdm_phyerr_cu);
-		dcs_debug("total_wasted_cu: %u, ofdm_phy_err_rate: %u, cck_phy_err_rate: %u",
-			  total_wasted_cu, ofdm_phy_err_rate, cck_phy_err_rate);
+		dcs_debug(
+			"total_wasted_cu: %u, ofdm_phy_err_rate: %u, cck_phy_err_rate: %u",
+			total_wasted_cu, ofdm_phy_err_rate, cck_phy_err_rate);
 		dcs_debug("new_unused_cu: %u, reg_ofdm_phy_error_cu: %u",
 			  reg_unused_cu,
-			 (curr_stats->mib_stats.reg_ofdm_phyerr_cnt * 100) /
-					curr_stats->mib_stats.listen_time);
+			  (curr_stats->mib_stats.reg_ofdm_phyerr_cnt * 100) /
+				  curr_stats->mib_stats.listen_time);
 	}
 
 	/* Check if the error rates are higher than the thresholds */
@@ -535,17 +538,19 @@ wlan_dcs_wlan_interference_process(
 
 	if (((max_phy_err_rate >= dcs_host_params.phy_err_threshold) &&
 	     (max_phy_err_count > dcs_host_params.phy_err_threshold)) ||
-		(curr_stats->phyerr_cnt > dcs_host_params.radar_err_threshold))
+	    (curr_stats->phyerr_cnt > dcs_host_params.radar_err_threshold))
 		too_many_phy_errors = 1;
 
 	if (unlikely(dcs_host_params.dcs_debug >= DCS_DEBUG_CRITICAL)) {
-		dcs_debug("total_cu: %u, tx_cu: %u, rx_cu: %u, rx_time_cu: %u, unused cu: %u",
-			  reg_total_cu, reg_tx_cu,
-			  reg_rx_cu, rx_time_cu, reg_unused_cu);
-		dcs_debug("phyerr: %u, total_wasted_cu: %u, phyerror_cu: %u, wasted_cu: %u, reg_tx_cu: %u, reg_rx_cu: %u",
-			  too_many_phy_errors, total_wasted_cu,
-			  reg_ofdm_phyerr_cu, wasted_tx_cu,
-			  reg_tx_cu, reg_rx_cu);
+		dcs_debug(
+			"total_cu: %u, tx_cu: %u, rx_cu: %u, rx_time_cu: %u, unused cu: %u",
+			reg_total_cu, reg_tx_cu, reg_rx_cu, rx_time_cu,
+			reg_unused_cu);
+		dcs_debug(
+			"phyerr: %u, total_wasted_cu: %u, phyerror_cu: %u, wasted_cu: "
+			"%u, reg_tx_cu: %u, reg_rx_cu: %u",
+			too_many_phy_errors, total_wasted_cu,
+			reg_ofdm_phyerr_cu, wasted_tx_cu, reg_tx_cu, reg_rx_cu);
 		dcs_debug("tx_err: %u", tx_err);
 	}
 
@@ -554,33 +559,35 @@ wlan_dcs_wlan_interference_process(
 		p_dcs_im_stats->im_intfr_cnt += 2;
 	else if (too_many_phy_errors &&
 		 (((total_wasted_cu >
-			(dcs_host_params.coch_intfr_threshold + 10)) &&
-		((reg_tx_cu + reg_rx_cu) > dcs_host_params.user_max_cu)) ||
-		((reg_tx_cu > DCS_TX_MAX_CU) &&
-			(tx_err >= dcs_host_params.tx_err_threshold))))
+		    (dcs_host_params.coch_intfr_threshold + 10)) &&
+		   ((reg_tx_cu + reg_rx_cu) > dcs_host_params.user_max_cu)) ||
+		  ((reg_tx_cu > DCS_TX_MAX_CU) &&
+		   (tx_err >= dcs_host_params.tx_err_threshold))))
 		p_dcs_im_stats->im_intfr_cnt++;
 
 	if (p_dcs_im_stats->im_intfr_cnt >=
-		dcs_host_params.intfr_detection_threshold) {
+	    dcs_host_params.intfr_detection_threshold) {
 		if (unlikely(dcs_host_params.dcs_debug >= DCS_DEBUG_CRITICAL)) {
 			dcs_debug("interference threshold exceeded");
-			dcs_debug("unused_cu: %u, too_any_phy_errors: %u, total_wasted_cu: %u, reg_tx_cu: %u, reg_rx_cu: %u",
-				  reg_unused_cu, too_many_phy_errors,
-				  total_wasted_cu, reg_tx_cu, reg_rx_cu);
+			dcs_debug(
+				"unused_cu: %u, too_any_phy_errors: %u, total_wasted_cu: %u, "
+				"reg_tx_cu: %u, reg_rx_cu: %u",
+				reg_unused_cu, too_many_phy_errors,
+				total_wasted_cu, reg_tx_cu, reg_rx_cu);
 		}
 
 		p_dcs_im_stats->im_intfr_cnt = 0;
 		p_dcs_im_stats->im_samp_cnt = 0;
 		/*
-		 * Once the interference is detected, change the channel, as on
-		 * today this is common routine for wirelesslan and
-		 * non-wirelesslan interference. Name as such kept the same
-		 * because of the DA code, which is using the same function.
-		 */
+     * Once the interference is detected, change the channel, as on
+     * today this is common routine for wirelesslan and
+     * non-wirelesslan interference. Name as such kept the same
+     * because of the DA code, which is using the same function.
+     */
 		start_dcs_cbk_handler = true;
 	} else if (0 == p_dcs_im_stats->im_intfr_cnt ||
-			p_dcs_im_stats->im_samp_cnt >=
-				dcs_host_params.intfr_detection_window) {
+		   p_dcs_im_stats->im_samp_cnt >=
+			   dcs_host_params.intfr_detection_window) {
 		p_dcs_im_stats->im_intfr_cnt = 0;
 		p_dcs_im_stats->im_samp_cnt = 0;
 	}
@@ -593,7 +600,7 @@ wlan_dcs_wlan_interference_process(
 			  p_dcs_im_stats->im_intfr_cnt,
 			  p_dcs_im_stats->im_samp_cnt);
 copy_stats:
-	 /* Copy the stats for next cycle */
+	/* Copy the stats for next cycle */
 	wlan_dcs_im_copy_stats(prev_stats, curr_stats);
 end:
 	return start_dcs_cbk_handler;
@@ -663,45 +670,44 @@ static void wlan_dcs_frequency_control(struct wlan_objmgr_psoc *psoc,
 
 	current_time = qdf_get_system_timestamp();
 	if (dcs_freq_ctrl_params->dcs_happened_count >=
-		dcs_freq_ctrl_params->disable_threshold_per_5mins) {
-		delta_pos =
-			dcs_freq_ctrl_params->dcs_happened_count -
-			dcs_freq_ctrl_params->disable_threshold_per_5mins;
+	    dcs_freq_ctrl_params->disable_threshold_per_5mins) {
+		delta_pos = dcs_freq_ctrl_params->dcs_happened_count -
+			    dcs_freq_ctrl_params->disable_threshold_per_5mins;
 		delta_pos = delta_pos % MAX_DCS_TIME_RECORD;
 
 		delta_time = current_time -
-				dcs_freq_ctrl_params->timestamp[delta_pos];
+			     dcs_freq_ctrl_params->timestamp[delta_pos];
 		if (delta_time < DCS_FREQ_CONTROL_TIME)
 			disable_dcs_sometime = true;
 	}
 
 	if (!disable_dcs_sometime) {
 		timestamp_pos = dcs_freq_ctrl_params->dcs_happened_count %
-							MAX_DCS_TIME_RECORD;
+				MAX_DCS_TIME_RECORD;
 		dcs_freq_ctrl_params->timestamp[timestamp_pos] = current_time;
 		dcs_freq_ctrl_params->dcs_happened_count++;
 	}
 
 	/*
-	 * Before start dcs callback handler or disable dcs for some time,
-	 * need to ignore dcs event data and won't do interference detection
-	 * algorithm calculation for disabling dcs detection firstly.
-	 */
+   * Before start dcs callback handler or disable dcs for some time,
+   * need to ignore dcs event data and won't do interference detection
+   * algorithm calculation for disabling dcs detection firstly.
+   */
 	wlan_dcs_set_algorithm_process(psoc, event->dcs_param.pdev_id, false);
 
 	if (disable_dcs_sometime) {
 		dcs_freq_ctrl_params->disable_delay_process = true;
 		dcs_pdev_priv->dcs_timer_args.psoc = psoc;
 		dcs_pdev_priv->dcs_timer_args.pdev_id =
-						event->dcs_param.pdev_id;
-		qdf_timer_start(&dcs_pdev_priv->dcs_disable_timer,
-				dcs_pdev_priv->dcs_freq_ctrl_params.
-				restart_delay * 60 * 1000);
+			event->dcs_param.pdev_id;
+		qdf_timer_start(
+			&dcs_pdev_priv->dcs_disable_timer,
+			dcs_pdev_priv->dcs_freq_ctrl_params.restart_delay * 60 *
+				1000);
 		dcs_info("start dcs disable timer");
 	} else {
 		dcs_psoc_priv = wlan_objmgr_psoc_get_comp_private_obj(
-							psoc,
-							WLAN_UMAC_COMP_DCS);
+			psoc, WLAN_UMAC_COMP_DCS);
 		if (!dcs_psoc_priv) {
 			dcs_err("dcs private psoc object is null");
 			return;
@@ -726,8 +732,8 @@ wlan_dcs_switch_chan(struct wlan_objmgr_vdev *vdev, qdf_freq_t tgt_freq,
 	if (!psoc)
 		return QDF_STATUS_E_INVAL;
 
-	dcs_psoc_priv = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-					WLAN_UMAC_COMP_DCS);
+	dcs_psoc_priv =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_DCS);
 	if (!dcs_psoc_priv)
 		return QDF_STATUS_E_INVAL;
 
@@ -771,12 +777,10 @@ static uint32_t wlan_dcs_get_pcl_for_sap(struct wlan_objmgr_vdev *vdev,
 	if (!pcl)
 		return 0;
 
-	status = policy_mgr_get_pcl_for_vdev_id(psoc,
-						PM_SAP_MODE,
-						pcl->pcl_list, &pcl->pcl_len,
-						pcl->weight_list,
-						QDF_ARRAY_SIZE(pcl->weight_list),
-						wlan_vdev_get_id(vdev));
+	status = policy_mgr_get_pcl_for_vdev_id(
+		psoc, PM_SAP_MODE, pcl->pcl_list, &pcl->pcl_len,
+		pcl->weight_list, QDF_ARRAY_SIZE(pcl->weight_list),
+		wlan_vdev_get_id(vdev));
 	if (QDF_IS_STATUS_ERROR(status) || !pcl->pcl_len) {
 		qdf_mem_free(pcl);
 		return 0;
@@ -785,9 +789,7 @@ static uint32_t wlan_dcs_get_pcl_for_sap(struct wlan_objmgr_vdev *vdev,
 	for (i = 0, j = 0; i < pcl->pcl_len && i < freq_list_sz; i++) {
 		freq = (qdf_freq_t)pcl->pcl_list[i];
 		state = wlan_reg_get_channel_state_for_pwrmode(
-							pdev,
-							freq,
-							REG_CURRENT_PWR_MODE);
+			pdev, freq, REG_CURRENT_PWR_MODE);
 		if (state != CHANNEL_STATE_ENABLE)
 			continue;
 
@@ -813,12 +815,12 @@ static uint32_t wlan_dcs_get_pcl_for_sap(struct wlan_objmgr_vdev *vdev,
 		return 0;
 
 	cur_chan_list = qdf_mem_malloc(NUM_CHANNELS *
-			sizeof(struct regulatory_channel));
+				       sizeof(struct regulatory_channel));
 	if (!cur_chan_list)
 		return 0;
 
 	if (wlan_reg_get_current_chan_list(pdev, cur_chan_list) !=
-					   QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		qdf_mem_free(cur_chan_list);
 		return 0;
 	}
@@ -826,9 +828,7 @@ static uint32_t wlan_dcs_get_pcl_for_sap(struct wlan_objmgr_vdev *vdev,
 	for (i = 0, j = 0; i < NUM_CHANNELS && i < freq_list_sz; i++) {
 		freq = cur_chan_list[i].center_freq;
 		state = wlan_reg_get_channel_state_for_pwrmode(
-						       pdev,
-						       freq,
-						       REG_CURRENT_PWR_MODE);
+			pdev, freq, REG_CURRENT_PWR_MODE);
 		if (state != CHANNEL_STATE_ENABLE)
 			continue;
 
@@ -1017,29 +1017,27 @@ wlan_dcs_get_available_chan_for_bw(struct wlan_objmgr_pdev *pdev,
 			continue;
 
 		/*
-		 * DFS channel may need CAC during restart, which costs time
-		 * and may cause failure.
-		 */
+     * DFS channel may need CAC during restart, which costs time
+     * and may cause failure.
+     */
 		if (wlan_reg_is_dfs_for_freq(pdev, freq)) {
 			dcs_debug("skip dfs freq %u", freq);
 			continue;
 		}
 
-		if (bonded_chan_ptr &&
-		    freq >= bonded_chan_ptr->start_freq &&
+		if (bonded_chan_ptr && freq >= bonded_chan_ptr->start_freq &&
 		    freq <= bonded_chan_ptr->end_freq) {
 			if (is_safe) {
-				dcs_debug("add freq directly [%d] = %u",
-					  j, freq);
+				dcs_debug("add freq directly [%d] = %u", j,
+					  freq);
 				freq_list[j++] = freq;
 			}
 			continue;
 		}
 
 		state = wlan_reg_get_5g_bonded_channel_and_state_for_pwrmode(
-				pdev, freq, bw, &bonded_chan_ptr,
-				REG_CURRENT_PWR_MODE,
-				NO_SCHANS_PUNC);
+			pdev, freq, bw, &bonded_chan_ptr, REG_CURRENT_PWR_MODE,
+			NO_SCHANS_PUNC);
 		if (state != CHANNEL_STATE_ENABLE)
 			continue;
 
@@ -1058,7 +1056,7 @@ wlan_dcs_get_available_chan_for_bw(struct wlan_objmgr_pdev *pdev,
 		}
 
 		is_safe = true;
-		chan_cfreq =  bonded_chan_ptr->start_freq;
+		chan_cfreq = bonded_chan_ptr->start_freq;
 		while (chan_cfreq <= bonded_chan_ptr->end_freq) {
 			if (WLAN_DCS_IS_FREQ_IN_WIDTH(awgn_info->center_freq,
 						      awgn_info->center_freq0,
@@ -1080,8 +1078,8 @@ wlan_dcs_get_available_chan_for_bw(struct wlan_objmgr_pdev *pdev,
 		qdf_get_random_bytes(&random_chan_idx, sizeof(random_chan_idx));
 		random_chan_idx = random_chan_idx % j;
 		selected_freq = freq_list[random_chan_idx];
-		dcs_debug("get freq[%d] = %u for bw %u",
-			  random_chan_idx, selected_freq, bw);
+		dcs_debug("get freq[%d] = %u for bw %u", random_chan_idx,
+			  selected_freq, bw);
 	}
 
 	return selected_freq;
@@ -1100,11 +1098,10 @@ wlan_dcs_get_available_chan_for_bw(struct wlan_objmgr_pdev *pdev,
  *
  * Return: true if available channel is found, false otherwise.
  */
-static bool
-wlan_dcs_sap_select_chan(struct wlan_objmgr_vdev *vdev,
-			 struct wlan_host_dcs_awgn_info *awgn_info,
-			 qdf_freq_t *tgt_freq, enum phy_ch_width *tgt_width,
-			 bool random)
+static bool wlan_dcs_sap_select_chan(struct wlan_objmgr_vdev *vdev,
+				     struct wlan_host_dcs_awgn_info *awgn_info,
+				     qdf_freq_t *tgt_freq,
+				     enum phy_ch_width *tgt_width, bool random)
 {
 	int32_t tmp_width;
 	qdf_freq_t tmp_freq = 0;
@@ -1133,8 +1130,7 @@ wlan_dcs_sap_select_chan(struct wlan_objmgr_vdev *vdev,
 		tmp_freq = wlan_dcs_get_available_chan_for_bw(pdev, awgn_info,
 							      tmp_width,
 							      freq_list,
-							      freq_num,
-							      random);
+							      freq_num, random);
 		if (tmp_freq)
 			break;
 		tmp_width--;
@@ -1162,8 +1158,8 @@ wlan_dcs_sap_select_chan(struct wlan_objmgr_vdev *vdev,
 static inline bool
 wlan_dcs_is_awgnim_valid(struct wlan_host_dcs_awgn_info *awgn_info)
 {
-	return (awgn_info &&
-		awgn_info->center_freq && awgn_info->chan_bw_intf_bitmap &&
+	return (awgn_info && awgn_info->center_freq &&
+		awgn_info->chan_bw_intf_bitmap &&
 		awgn_info->channel_width != CH_WIDTH_INVALID &&
 		WLAN_REG_IS_6GHZ_CHAN_FREQ(awgn_info->center_freq));
 }
@@ -1178,10 +1174,11 @@ wlan_dcs_is_awgnim_valid(struct wlan_host_dcs_awgn_info *awgn_info)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-wlan_dcs_vdev_get_op_chan_info(struct wlan_objmgr_vdev *vdev,
-			       qdf_freq_t *cfreq, qdf_freq_t *cfreq0,
-			       qdf_freq_t *cfreq1, enum phy_ch_width *ch_width)
+static QDF_STATUS wlan_dcs_vdev_get_op_chan_info(struct wlan_objmgr_vdev *vdev,
+						 qdf_freq_t *cfreq,
+						 qdf_freq_t *cfreq0,
+						 qdf_freq_t *cfreq1,
+						 enum phy_ch_width *ch_width)
 {
 	struct wlan_channel *chan;
 
@@ -1257,8 +1254,8 @@ static void wlan_dcs_process_awgn_sta(struct wlan_objmgr_pdev *pdev,
 	}
 
 	/* If no width is found, means to disconnect */
-	dcs_debug("STA-%d: target freq %u width %u",
-		  vdev_id, tgt_freq, tgt_width);
+	dcs_debug("STA-%d: target freq %u width %u", vdev_id, tgt_freq,
+		  tgt_width);
 	wlan_dcs_switch_chan(vdev, tgt_freq, tgt_width);
 }
 
@@ -1290,13 +1287,14 @@ static void wlan_dcs_process_awgn_sap(struct wlan_objmgr_pdev *pdev,
 		return;
 
 	vdev_id = wlan_vdev_get_id(vdev);
-	status = wlan_dcs_vdev_get_op_chan_info(vdev, &op_freq, &cfreq0, &cfreq1, &ch_width);
+	status = wlan_dcs_vdev_get_op_chan_info(vdev, &op_freq, &cfreq0,
+						&cfreq1, &ch_width);
 	if (QDF_IS_STATUS_ERROR(status))
 		return;
 
 	if (awgn_info->center_freq != op_freq) {
-		dcs_debug("SAP-%d: freq not match rpt:%u - op:%u",
-			  vdev_id, awgn_info->center_freq, op_freq);
+		dcs_debug("SAP-%d: freq not match rpt:%u - op:%u", vdev_id,
+			  awgn_info->center_freq, op_freq);
 		return;
 	}
 
@@ -1310,13 +1308,13 @@ static void wlan_dcs_process_awgn_sap(struct wlan_objmgr_pdev *pdev,
 
 		tgt_freq = op_freq;
 	} else {
-		wlan_dcs_sap_select_chan(vdev, awgn_info, &tgt_freq,
-					 &tgt_width, true);
+		wlan_dcs_sap_select_chan(vdev, awgn_info, &tgt_freq, &tgt_width,
+					 true);
 	}
 
 	/* If no chan is selected, means to stop sap */
-	dcs_debug("SAP-%d: target freq %u width %u",
-		  vdev_id, tgt_freq, tgt_width);
+	dcs_debug("SAP-%d: target freq %u width %u", vdev_id, tgt_freq,
+		  tgt_width);
 	wlan_dcs_switch_chan(vdev, tgt_freq, tgt_width);
 }
 
@@ -1331,9 +1329,9 @@ static void wlan_dcs_process_awgn_sap(struct wlan_objmgr_pdev *pdev,
  *
  * Return: None.
  */
-static void
-wlan_dcs_awgn_process(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id,
-		      struct wlan_host_dcs_awgn_info *awgn_info)
+static void wlan_dcs_awgn_process(struct wlan_objmgr_psoc *psoc,
+				  uint8_t pdev_id,
+				  struct wlan_host_dcs_awgn_info *awgn_info)
 {
 	struct wlan_objmgr_pdev *pdev;
 
@@ -1354,12 +1352,12 @@ wlan_dcs_awgn_process(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id,
 		  awgn_info->chan_bw_intf_bitmap);
 
 	wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
-					  wlan_dcs_process_awgn_sta,
-					  awgn_info, 0, WLAN_DCS_ID);
+					  wlan_dcs_process_awgn_sta, awgn_info,
+					  0, WLAN_DCS_ID);
 
 	wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
-					  wlan_dcs_process_awgn_sap,
-					  awgn_info, 0, WLAN_DCS_ID);
+					  wlan_dcs_process_awgn_sap, awgn_info,
+					  0, WLAN_DCS_ID);
 
 	wlan_objmgr_pdev_release_ref(pdev, WLAN_DCS_ID);
 }
@@ -1377,8 +1375,7 @@ wlan_dcs_awgn_process(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id,
  * Return: target channel frequency to switch to
  */
 static qdf_freq_t wlan_dcs_afc_sel_chan(struct wlan_objmgr_psoc *psoc,
-					uint32_t vdev_id,
-					qdf_freq_t cur_freq,
+					uint32_t vdev_id, qdf_freq_t cur_freq,
 					enum phy_ch_width cur_bw,
 					enum phy_ch_width *pref_bw)
 {
@@ -1388,9 +1385,8 @@ static qdf_freq_t wlan_dcs_afc_sel_chan(struct wlan_objmgr_psoc *psoc,
 	if (!psoc)
 		return 0;
 
-	dcs_psoc_priv = wlan_objmgr_psoc_get_comp_private_obj(
-			psoc,
-			WLAN_UMAC_COMP_DCS);
+	dcs_psoc_priv =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_DCS);
 	if (!dcs_psoc_priv)
 		return 0;
 
@@ -1398,8 +1394,8 @@ static qdf_freq_t wlan_dcs_afc_sel_chan(struct wlan_objmgr_psoc *psoc,
 	if (!afc_sel_chan_cb)
 		return 0;
 
-	return afc_sel_chan_cb(dcs_psoc_priv->afc_sel_chan_cbk.arg,
-			       vdev_id, cur_freq, cur_bw, pref_bw);
+	return afc_sel_chan_cb(dcs_psoc_priv->afc_sel_chan_cbk.arg, vdev_id,
+			       cur_freq, cur_bw, pref_bw);
 }
 
 /**
@@ -1411,9 +1407,8 @@ static qdf_freq_t wlan_dcs_afc_sel_chan(struct wlan_objmgr_psoc *psoc,
  *
  * Return: void
  */
-static void
-wlan_dcs_afc_get_conn_info(struct wlan_objmgr_pdev *pdev,
-			   void *object, void *arg)
+static void wlan_dcs_afc_get_conn_info(struct wlan_objmgr_pdev *pdev,
+				       void *object, void *arg)
 {
 	struct wlan_objmgr_vdev *vdev = object;
 	struct wlan_dcs_conn_info *conn_info = arg;
@@ -1507,8 +1502,8 @@ static enum phy_ch_width wlan_dcs_afc_reduce_bw(struct wlan_objmgr_pdev *pdev,
 
 	while (input_bw > CH_WIDTH_20MHZ) {
 		state = wlan_reg_get_5g_bonded_channel_and_state_for_pwrmode(
-				pdev, freq, input_bw, &bonded_chan_ptr,
-				REG_CURRENT_PWR_MODE, NO_SCHANS_PUNC);
+			pdev, freq, input_bw, &bonded_chan_ptr,
+			REG_CURRENT_PWR_MODE, NO_SCHANS_PUNC);
 		if (state != CHANNEL_STATE_ENABLE) {
 			input_bw = wlan_reg_get_next_lower_bandwidth(input_bw);
 			continue;
@@ -1517,7 +1512,7 @@ static enum phy_ch_width wlan_dcs_afc_reduce_bw(struct wlan_objmgr_pdev *pdev,
 		start_freq = bonded_chan_ptr->start_freq;
 		while (start_freq <= bonded_chan_ptr->end_freq) {
 			if (wlan_reg_is_disable_in_secondary_list_for_freq(
-					pdev, start_freq)) {
+				    pdev, start_freq)) {
 				find = true;
 				break;
 			}
@@ -1541,9 +1536,9 @@ static enum phy_ch_width wlan_dcs_afc_reduce_bw(struct wlan_objmgr_pdev *pdev,
  *
  * Return: void
  */
-static void
-wlan_sap_update_tpc_on_channel(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id,
-			       qdf_freq_t freq, enum phy_ch_width bw)
+static void wlan_sap_update_tpc_on_channel(struct wlan_objmgr_pdev *pdev,
+					   uint8_t vdev_id, qdf_freq_t freq,
+					   enum phy_ch_width bw)
 {
 	struct wlan_objmgr_psoc *psoc = wlan_pdev_get_psoc(pdev);
 	struct wlan_lmac_if_reg_tx_ops *tx_ops;
@@ -1560,9 +1555,8 @@ wlan_sap_update_tpc_on_channel(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id,
 		return;
 
 	if (wlan_reg_decide_6ghz_power_within_bw_for_freq(
-		pdev, freq, bw, &is_psd, &tx_power, &psd_eirp, &power_type,
-		REG_CURRENT_PWR_MODE, NO_SCHANS_PUNC) !=
-	    QDF_STATUS_SUCCESS)
+		    pdev, freq, bw, &is_psd, &tx_power, &psd_eirp, &power_type,
+		    REG_CURRENT_PWR_MODE, NO_SCHANS_PUNC) != QDF_STATUS_SUCCESS)
 		return;
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id, WLAN_DCS_ID);
@@ -1610,9 +1604,8 @@ release_vdev:
  *
  * Return: void
  */
-static void
-wlan_dcs_afc_sap_dcs_with_sta(struct wlan_objmgr_pdev *pdev,
-			      struct wlan_dcs_conn_info *conn_info)
+static void wlan_dcs_afc_sap_dcs_with_sta(struct wlan_objmgr_pdev *pdev,
+					  struct wlan_dcs_conn_info *conn_info)
 {
 	uint32_t i;
 	qdf_freq_t target_freq = conn_info->sta[0].freq;
@@ -1623,38 +1616,33 @@ wlan_dcs_afc_sap_dcs_with_sta(struct wlan_objmgr_pdev *pdev,
 		return;
 
 	for (i = 0; i < conn_info->sap_6ghz_cnt; i++) {
-		if (conn_info->sap_6ghz[i].freq ==
-		    conn_info->sta[0].freq) {
+		if (conn_info->sap_6ghz[i].freq == conn_info->sta[0].freq) {
 			/*
-			 * sta operate under control of ap, if stop sap,
-			 * cannot start by itself, so just update tpc as sta,
-			 * if tx power is minimum of SCC tpc commands, no
-			 * need to update sap tpc command.
-			 * assume sta will move to safe channel by ap and
-			 * sap can move channel accordingly.
-			 */
+       * sta operate under control of ap, if stop sap,
+       * cannot start by itself, so just update tpc as sta,
+       * if tx power is minimum of SCC tpc commands, no
+       * need to update sap tpc command.
+       * assume sta will move to safe channel by ap and
+       * sap can move channel accordingly.
+       */
 			if (wlan_reg_is_disable_in_secondary_list_for_freq(
-					pdev, conn_info->sta[0].freq))
+				    pdev, conn_info->sta[0].freq))
 				continue;
 
 			target_bw = wlan_dcs_afc_reduce_bw(
-					pdev,
-					conn_info->sap_6ghz[i].freq,
-					conn_info->sap_6ghz[i].bw);
+				pdev, conn_info->sap_6ghz[i].freq,
+				conn_info->sap_6ghz[i].bw);
 
 			if (target_bw == conn_info->sap_6ghz[i].bw) {
 				wlan_sap_update_tpc_on_channel(
-					pdev,
-					conn_info->sap_6ghz[i].vdev_id,
-					conn_info->sap_6ghz[i].freq,
-					target_bw);
+					pdev, conn_info->sap_6ghz[i].vdev_id,
+					conn_info->sap_6ghz[i].freq, target_bw);
 				continue;
 			}
 
 			vdev = wlan_objmgr_get_vdev_by_id_from_pdev(
-					pdev,
-					conn_info->sap_6ghz[i].vdev_id,
-					WLAN_DCS_ID);
+				pdev, conn_info->sap_6ghz[i].vdev_id,
+				WLAN_DCS_ID);
 			if (!vdev)
 				continue;
 
@@ -1674,14 +1662,14 @@ wlan_dcs_afc_sap_dcs_with_sta(struct wlan_objmgr_pdev *pdev,
  *
  * Return: Return true if SAP is able to operate on 6 GHz
  */
-static inline bool
-wlan_dcs_afc_6ghz_capable(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
+static inline bool wlan_dcs_afc_6ghz_capable(struct wlan_objmgr_psoc *psoc,
+					     uint8_t vdev_id)
 {
 	return policy_mgr_get_ap_6ghz_capable(psoc, vdev_id, NULL);
 }
 #else
-static inline bool
-wlan_dcs_afc_6ghz_capable(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
+static inline bool wlan_dcs_afc_6ghz_capable(struct wlan_objmgr_psoc *psoc,
+					     uint8_t vdev_id)
 {
 	return false;
 }
@@ -1698,9 +1686,8 @@ wlan_dcs_afc_6ghz_capable(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
  *
  * Return: void
  */
-static void
-wlan_dcs_afc_5ghz6ghz_sap_dcs(struct wlan_objmgr_pdev *pdev,
-			      struct wlan_dcs_conn_info *conn_info)
+static void wlan_dcs_afc_5ghz6ghz_sap_dcs(struct wlan_objmgr_pdev *pdev,
+					  struct wlan_dcs_conn_info *conn_info)
 {
 	uint32_t i;
 	struct wlan_objmgr_vdev *vdev;
@@ -1736,19 +1723,18 @@ wlan_dcs_afc_5ghz6ghz_sap_dcs(struct wlan_objmgr_pdev *pdev,
 	}
 
 	/*
-	 * After several AFC event update, if maximum bandwidth shrink to
-	 * 20 MHz, set prefer bandwidth to pre-defined value like 80 MHz,
-	 * so it can expand bandwidth and gain better performance.
-	 */
+   * After several AFC event update, if maximum bandwidth shrink to
+   * 20 MHz, set prefer bandwidth to pre-defined value like 80 MHz,
+   * so it can expand bandwidth and gain better performance.
+   */
 	if (max_bw == CH_WIDTH_20MHZ)
 		pref_bw = WLAN_DCS_AFC_PREFER_BW;
 	else
 		pref_bw = max_bw;
 
-	target_freq = wlan_dcs_afc_sel_chan(
-			wlan_pdev_get_psoc(pdev),
-			max_bw_vdev_id,
-			max_bw_freq, max_bw, &pref_bw);
+	target_freq = wlan_dcs_afc_sel_chan(wlan_pdev_get_psoc(pdev),
+					    max_bw_vdev_id, max_bw_freq, max_bw,
+					    &pref_bw);
 
 	if (!target_freq)
 		return;
@@ -1757,8 +1743,8 @@ wlan_dcs_afc_5ghz6ghz_sap_dcs(struct wlan_objmgr_pdev *pdev,
 	    conn_info->sap_5ghz_cnt) {
 		for (i = 0; i < conn_info->sap_5ghz_cnt; i++) {
 			if (!wlan_dcs_afc_6ghz_capable(
-			    wlan_pdev_get_psoc(pdev),
-			    conn_info->sap_5ghz[i].vdev_id)) {
+				    wlan_pdev_get_psoc(pdev),
+				    conn_info->sap_5ghz[i].vdev_id)) {
 				dcs_debug("vdev %d has no 6 GHz capability",
 					  conn_info->sap_5ghz[i].vdev_id);
 				return;
@@ -1772,9 +1758,8 @@ wlan_dcs_afc_5ghz6ghz_sap_dcs(struct wlan_objmgr_pdev *pdev,
 			    pref_bw == conn_info->sap_5ghz[i].bw)
 				continue;
 			vdev = wlan_objmgr_get_vdev_by_id_from_pdev(
-					pdev,
-					conn_info->sap_5ghz[i].vdev_id,
-					WLAN_DCS_ID);
+				pdev, conn_info->sap_5ghz[i].vdev_id,
+				WLAN_DCS_ID);
 			if (!vdev)
 				continue;
 
@@ -1787,9 +1772,8 @@ wlan_dcs_afc_5ghz6ghz_sap_dcs(struct wlan_objmgr_pdev *pdev,
 			    pref_bw == conn_info->sap_6ghz[i].bw)
 				continue;
 			vdev = wlan_objmgr_get_vdev_by_id_from_pdev(
-					pdev,
-					conn_info->sap_6ghz[i].vdev_id,
-					WLAN_DCS_ID);
+				pdev, conn_info->sap_6ghz[i].vdev_id,
+				WLAN_DCS_ID);
 			if (!vdev)
 				continue;
 
@@ -1806,11 +1790,10 @@ wlan_dcs_afc_5ghz6ghz_sap_dcs(struct wlan_objmgr_pdev *pdev,
  *
  * Return: void
  */
-static void
-wlan_dcs_afc_process(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id)
+static void wlan_dcs_afc_process(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id)
 {
 	struct wlan_objmgr_pdev *pdev;
-	struct wlan_dcs_conn_info conn_info = {0};
+	struct wlan_dcs_conn_info conn_info = { 0 };
 
 	pdev = wlan_objmgr_get_pdev_by_id(psoc, pdev_id, WLAN_DCS_ID);
 	if (!pdev) {
@@ -1841,8 +1824,10 @@ pdev_release:
 	wlan_objmgr_pdev_release_ref(pdev, WLAN_DCS_ID);
 }
 #else
-static inline void
-wlan_dcs_afc_process(struct wlan_objmgr_psoc *psoc, uint8_t pdev_id) {}
+static inline void wlan_dcs_afc_process(struct wlan_objmgr_psoc *psoc,
+					uint8_t pdev_id)
+{
+}
 #endif
 
 QDF_STATUS
@@ -1857,15 +1842,15 @@ wlan_dcs_process(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	dcs_pdev_priv = wlan_dcs_get_pdev_private_obj(psoc,
-						      event->dcs_param.pdev_id);
+	dcs_pdev_priv =
+		wlan_dcs_get_pdev_private_obj(psoc, event->dcs_param.pdev_id);
 	if (!dcs_pdev_priv) {
 		dcs_err("dcs pdev private object is null");
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if (unlikely(dcs_pdev_priv->dcs_host_params.dcs_debug
-			>= DCS_DEBUG_VERBOSE))
+	if (unlikely(dcs_pdev_priv->dcs_host_params.dcs_debug >=
+		     DCS_DEBUG_VERBOSE))
 		dcs_debug("dcs_enable: %u, interference_type: %u, pdev_id: %u",
 			  dcs_pdev_priv->dcs_host_params.dcs_enable,
 			  event->dcs_param.interference_type,
@@ -1882,19 +1867,17 @@ wlan_dcs_process(struct wlan_objmgr_psoc *psoc,
 		    WLAN_HOST_DCS_WLANIM)
 			start_dcs_cbk_handler =
 				wlan_dcs_wlan_interference_process(
-							&event->wlan_stat,
-							dcs_pdev_priv);
+					&event->wlan_stat, dcs_pdev_priv);
 		if (dcs_pdev_priv->user_cb &&
 		    dcs_pdev_priv->dcs_host_params.notify_user) {
 			dcs_pdev_priv->dcs_host_params.notify_user = 0;
-			dcs_pdev_priv->user_cb(dcs_pdev_priv->requestor_vdev_id,
-				 &dcs_pdev_priv->dcs_im_stats.user_dcs_im_stats,
-				 0);
+			dcs_pdev_priv->user_cb(
+				dcs_pdev_priv->requestor_vdev_id,
+				&dcs_pdev_priv->dcs_im_stats.user_dcs_im_stats,
+				0);
 		}
 		if (start_dcs_cbk_handler)
-			wlan_dcs_frequency_control(psoc,
-						   dcs_pdev_priv,
-						   event);
+			wlan_dcs_frequency_control(psoc, dcs_pdev_priv, event);
 		break;
 	case WLAN_HOST_DCS_AWGNIM:
 		/* Skip frequency control for AWGNIM */
@@ -1956,5 +1939,5 @@ void wlan_dcs_set_algorithm_process(struct wlan_objmgr_psoc *psoc,
 	}
 
 	dcs_pdev_priv->dcs_host_params.dcs_algorithm_process =
-							dcs_algorithm_process;
+		dcs_algorithm_process;
 }

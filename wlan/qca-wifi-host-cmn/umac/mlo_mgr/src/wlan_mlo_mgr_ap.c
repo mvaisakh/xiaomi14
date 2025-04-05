@@ -18,8 +18,8 @@
 /*
  * DOC: contains MLO manager ap related functionality
  */
-#include "wlan_objmgr_vdev_obj.h"
 #include "wlan_mlo_mgr_ap.h"
+#include "wlan_objmgr_vdev_obj.h"
 #include <wlan_mlo_mgr_cmn.h>
 #include <wlan_mlo_mgr_main.h>
 #include <wlan_utility.h>
@@ -29,8 +29,7 @@
 #include "wlan_mlo_mgr_peer.h"
 
 #ifdef WLAN_MLO_MULTI_CHIP
-bool mlo_ap_vdev_attach(struct wlan_objmgr_vdev *vdev,
-			uint8_t link_id,
+bool mlo_ap_vdev_attach(struct wlan_objmgr_vdev *vdev, uint8_t link_id,
 			uint16_t vdev_count)
 {
 	struct wlan_mlo_dev_context *dev_ctx;
@@ -54,23 +53,25 @@ bool mlo_ap_vdev_attach(struct wlan_objmgr_vdev *vdev,
 		wlan_vdev_mlme_set_mlo_vdev(vdev);
 
 	/*
-	 * every link will trigger mlo_ap_vdev_attach,
-	 * and they should provide the same vdev_count.
-	 */
+   * every link will trigger mlo_ap_vdev_attach,
+   * and they should provide the same vdev_count.
+   */
 	mlo_dev_lock_acquire(dev_ctx);
 	dev_ctx->ap_ctx->num_ml_vdevs = vdev_count;
 	mlo_dev_lock_release(dev_ctx);
 
 	for (i = 0; i < WLAN_UMAC_MLO_MAX_VDEVS; i++) {
 		if (dev_ctx->wlan_vdev_list[i])
-			pr_vdev_ids[i] = wlan_vdev_get_id(dev_ctx->wlan_vdev_list[i]);
+			pr_vdev_ids[i] =
+				wlan_vdev_get_id(dev_ctx->wlan_vdev_list[i]);
 	}
 
-	if (cdp_update_mlo_ptnr_list(wlan_psoc_get_dp_handle(psoc),
-				pr_vdev_ids, WLAN_UMAC_MLO_MAX_VDEVS,
-				wlan_vdev_get_id(vdev)) != QDF_STATUS_SUCCESS) {
+	if (cdp_update_mlo_ptnr_list(wlan_psoc_get_dp_handle(psoc), pr_vdev_ids,
+				     WLAN_UMAC_MLO_MAX_VDEVS,
+				     wlan_vdev_get_id(vdev)) !=
+	    QDF_STATUS_SUCCESS) {
 		mlo_debug("Failed to add vdev to partner vdev list, vdev id:%d",
-			 wlan_vdev_get_id(vdev));
+			  wlan_vdev_get_id(vdev));
 	}
 
 	/* reset the vdev id list */
@@ -81,21 +82,20 @@ bool mlo_ap_vdev_attach(struct wlan_objmgr_vdev *vdev,
 	for (i = 0; i < WLAN_UMAC_MLO_MAX_BRIDGE_VDEVS; i++) {
 		if (dev_ctx->wlan_bridge_vdev_list[i])
 			pr_vdev_ids[i] = wlan_vdev_get_id(
-					dev_ctx->wlan_bridge_vdev_list[i]);
+				dev_ctx->wlan_bridge_vdev_list[i]);
 	}
 
-	if (cdp_update_mlo_ptnr_list(
-				wlan_psoc_get_dp_handle(psoc),
-				pr_vdev_ids, WLAN_UMAC_MLO_MAX_VDEVS,
-				wlan_vdev_get_id(vdev)) != QDF_STATUS_SUCCESS) {
+	if (cdp_update_mlo_ptnr_list(wlan_psoc_get_dp_handle(psoc), pr_vdev_ids,
+				     WLAN_UMAC_MLO_MAX_VDEVS,
+				     wlan_vdev_get_id(vdev)) !=
+	    QDF_STATUS_SUCCESS) {
 		mlo_debug("Failed to add vdev to partner vdev list, vdev id:%d",
 			  wlan_vdev_get_id(vdev));
 	}
 	return true;
 }
 #else
-bool mlo_ap_vdev_attach(struct wlan_objmgr_vdev *vdev,
-			uint8_t link_id,
+bool mlo_ap_vdev_attach(struct wlan_objmgr_vdev *vdev, uint8_t link_id,
 			uint16_t vdev_count)
 {
 	struct wlan_mlo_dev_context *dev_ctx;
@@ -110,9 +110,9 @@ bool mlo_ap_vdev_attach(struct wlan_objmgr_vdev *vdev,
 	wlan_vdev_mlme_set_mlo_vdev(vdev);
 
 	/*
-	 * every link will trigger mlo_ap_vdev_attach,
-	 * and they should provide the same vdev_count.
-	 */
+   * every link will trigger mlo_ap_vdev_attach,
+   * and they should provide the same vdev_count.
+   */
 	mlo_dev_lock_acquire(dev_ctx);
 	dev_ctx->ap_ctx->num_ml_vdevs = vdev_count;
 	mlo_dev_lock_release(dev_ctx);
@@ -144,8 +144,8 @@ void mlo_ap_get_bridge_vdev_list(struct wlan_objmgr_vdev *vdev,
 	for (i = 0; i < QDF_ARRAY_SIZE(dev_ctx->wlan_bridge_vdev_list); i++) {
 		if (dev_ctx->wlan_bridge_vdev_list[i]) {
 			status = wlan_objmgr_vdev_try_get_ref(
-						dev_ctx->wlan_bridge_vdev_list[i],
-						WLAN_MLO_MGR_ID);
+				dev_ctx->wlan_bridge_vdev_list[i],
+				WLAN_MLO_MGR_ID);
 			if (QDF_IS_STATUS_ERROR(status))
 				break;
 			wlan_bridge_vdev_list[*vdev_count] =
@@ -201,8 +201,7 @@ void mlo_ap_get_vdev_list_no_flag(struct wlan_objmgr_vdev *vdev,
 	for (i = 0; i < QDF_ARRAY_SIZE(dev_ctx->wlan_vdev_list); i++) {
 		if (dev_ctx->wlan_vdev_list[i]) {
 			status = wlan_objmgr_vdev_try_get_ref(
-					dev_ctx->wlan_vdev_list[i],
-					WLAN_MLO_MGR_ID);
+				dev_ctx->wlan_vdev_list[i], WLAN_MLO_MGR_ID);
 			if (QDF_IS_STATUS_ERROR(status))
 				break;
 			wlan_vdev_list[*vdev_count] =
@@ -214,8 +213,7 @@ void mlo_ap_get_vdev_list_no_flag(struct wlan_objmgr_vdev *vdev,
 }
 #endif
 
-void mlo_peer_get_vdev_list(struct wlan_objmgr_peer *peer,
-			    uint16_t *vdev_count,
+void mlo_peer_get_vdev_list(struct wlan_objmgr_peer *peer, uint16_t *vdev_count,
 			    struct wlan_objmgr_vdev **wlan_vdev_list)
 {
 	struct wlan_mlo_link_peer_entry *peer_entry;
@@ -239,21 +237,18 @@ void mlo_peer_get_vdev_list(struct wlan_objmgr_peer *peer,
 			continue;
 
 		status = wlan_objmgr_vdev_try_get_ref(
-				wlan_peer_get_vdev(link_peer),
-				WLAN_MLO_MGR_ID);
+			wlan_peer_get_vdev(link_peer), WLAN_MLO_MGR_ID);
 		if (QDF_IS_STATUS_ERROR(status))
 			break;
 
-		wlan_vdev_list[*vdev_count] =
-				wlan_peer_get_vdev(link_peer);
+		wlan_vdev_list[*vdev_count] = wlan_peer_get_vdev(link_peer);
 		(*vdev_count) += 1;
 	}
 
 	mlo_peer_lock_release(peer->mlo_peer_ctx);
 }
 
-void mlo_ap_get_vdev_list(struct wlan_objmgr_vdev *vdev,
-			  uint16_t *vdev_count,
+void mlo_ap_get_vdev_list(struct wlan_objmgr_vdev *vdev, uint16_t *vdev_count,
 			  struct wlan_objmgr_vdev **wlan_vdev_list)
 {
 	struct wlan_mlo_dev_context *dev_ctx;
@@ -275,8 +270,7 @@ void mlo_ap_get_vdev_list(struct wlan_objmgr_vdev *vdev,
 		if (dev_ctx->wlan_vdev_list[i] &&
 		    wlan_vdev_mlme_is_mlo_ap(dev_ctx->wlan_vdev_list[i])) {
 			status = wlan_objmgr_vdev_try_get_ref(
-						dev_ctx->wlan_vdev_list[i],
-						WLAN_MLO_MGR_ID);
+				dev_ctx->wlan_vdev_list[i], WLAN_MLO_MGR_ID);
 			if (QDF_IS_STATUS_ERROR(status))
 				break;
 			wlan_vdev_list[*vdev_count] =
@@ -309,10 +303,9 @@ void mlo_ap_get_active_vdev_list(struct wlan_objmgr_vdev *vdev,
 	*vdev_count = 0;
 	for (i = 0; i < QDF_ARRAY_SIZE(dev_ctx->wlan_vdev_list); i++) {
 		partner_vdev = dev_ctx->wlan_vdev_list[i];
-		if (partner_vdev &&
-		    wlan_vdev_mlme_is_mlo_ap(partner_vdev)) {
+		if (partner_vdev && wlan_vdev_mlme_is_mlo_ap(partner_vdev)) {
 			if (wlan_vdev_chan_config_valid(partner_vdev) !=
-						 QDF_STATUS_SUCCESS)
+			    QDF_STATUS_SUCCESS)
 				continue;
 
 			status = wlan_objmgr_vdev_try_get_ref(partner_vdev,
@@ -327,9 +320,8 @@ void mlo_ap_get_active_vdev_list(struct wlan_objmgr_vdev *vdev,
 }
 
 void mlo_ap_get_partner_vdev_list_from_mld(
-		struct wlan_objmgr_vdev *vdev,
-		uint16_t *vdev_count,
-		struct wlan_objmgr_vdev **wlan_vdev_list)
+	struct wlan_objmgr_vdev *vdev, uint16_t *vdev_count,
+	struct wlan_objmgr_vdev **wlan_vdev_list)
 {
 	struct wlan_mlo_dev_context *dev_ctx;
 	int i;
@@ -351,8 +343,7 @@ void mlo_ap_get_partner_vdev_list_from_mld(
 		    (QDF_SAP_MODE ==
 		     wlan_vdev_mlme_get_opmode(dev_ctx->wlan_vdev_list[i]))) {
 			status = wlan_objmgr_vdev_try_get_ref(
-						dev_ctx->wlan_vdev_list[i],
-						WLAN_MLO_MGR_ID);
+				dev_ctx->wlan_vdev_list[i], WLAN_MLO_MGR_ID);
 			if (QDF_IS_STATUS_ERROR(status))
 				break;
 			wlan_vdev_list[*vdev_count] =
@@ -382,8 +373,7 @@ static QDF_STATUS mlo_ap_vdev_is_start_resp_rcvd(struct wlan_objmgr_vdev *vdev)
 		return QDF_STATUS_E_FAILURE;
 
 	state = wlan_vdev_mlme_get_state(vdev);
-	if ((state == WLAN_VDEV_S_UP) ||
-	    (state == WLAN_VDEV_S_DFS_CAC_WAIT) ||
+	if ((state == WLAN_VDEV_S_UP) || (state == WLAN_VDEV_S_DFS_CAC_WAIT) ||
 	    (state == WLAN_VDEV_S_SUSPEND))
 		return QDF_STATUS_SUCCESS;
 
@@ -405,8 +395,9 @@ uint16_t wlan_mlo_ap_get_active_links(struct wlan_objmgr_vdev *vdev)
 
 	mlo_dev_lock_acquire(dev_ctx);
 	for (i = 0; i < QDF_ARRAY_SIZE(dev_ctx->wlan_vdev_list); i++) {
-		if (dev_ctx->wlan_vdev_list[i] && QDF_IS_STATUS_SUCCESS(
-		    mlo_ap_vdev_is_start_resp_rcvd(dev_ctx->wlan_vdev_list[i])))
+		if (dev_ctx->wlan_vdev_list[i] &&
+		    QDF_IS_STATUS_SUCCESS(mlo_ap_vdev_is_start_resp_rcvd(
+			    dev_ctx->wlan_vdev_list[i])))
 			vdev_count++;
 	}
 
@@ -455,8 +446,7 @@ static bool mlo_pre_link_up(struct wlan_objmgr_vdev *vdev)
 	}
 
 	if ((wlan_vdev_mlme_get_state(vdev) == WLAN_VDEV_S_UP) &&
-	    (wlan_vdev_mlme_get_substate(vdev) ==
-	     WLAN_VDEV_SS_MLO_SYNC_WAIT))
+	    (wlan_vdev_mlme_get_substate(vdev) == WLAN_VDEV_SS_MLO_SYNC_WAIT))
 		return true;
 
 	return false;
@@ -477,14 +467,13 @@ static bool mlo_pre_link_up(struct wlan_objmgr_vdev *vdev)
  */
 static bool mlo_handle_link_ready(struct wlan_objmgr_vdev *vdev)
 {
-	struct wlan_objmgr_vdev *vdev_list[WLAN_UMAC_MLO_MAX_VDEVS] = {NULL};
+	struct wlan_objmgr_vdev *vdev_list[WLAN_UMAC_MLO_MAX_VDEVS] = { NULL };
 	struct wlan_mlo_dev_context *mld_ctx = NULL;
 	uint16_t num_links = 0;
 	uint8_t i;
 	uint8_t idx;
 	enum wlan_vdev_state state;
 	enum wlan_vdev_state substate;
-
 
 	if (!vdev || !vdev->mlo_dev_ctx) {
 		mlo_err("Invalid input");
@@ -496,12 +485,12 @@ static bool mlo_handle_link_ready(struct wlan_objmgr_vdev *vdev)
 
 	mld_ctx = vdev->mlo_dev_ctx;
 	/*
-	 * The last vdev in MLD to receive start response is responsible for
-	 * dispatching MLO_SYNC_COMPLETE event all the partner vdevs and then to
-	 * self.
-	 *
-	 * If vdev_up_bmap is set, then return.
-	 */
+   * The last vdev in MLD to receive start response is responsible for
+   * dispatching MLO_SYNC_COMPLETE event all the partner vdevs and then to
+   * self.
+   *
+   * If vdev_up_bmap is set, then return.
+   */
 	idx = mlo_get_link_vdev_ix(mld_ctx, vdev);
 	if (idx == MLO_INVALID_LINK_IDX)
 		return false;
@@ -554,12 +543,12 @@ static bool mlo_handle_link_ready(struct wlan_objmgr_vdev *vdev)
 			}
 
 			if (wlan_util_map_index_is_set(
-				vdev->mlo_dev_ctx->ap_ctx->mlo_vdev_up_bmap,
-				idx))
+				    vdev->mlo_dev_ctx->ap_ctx->mlo_vdev_up_bmap,
+				    idx))
 				wlan_vdev_mlme_sm_deliver_evt(
 					vdev_list[i],
-					WLAN_VDEV_SM_EV_MLO_SYNC_COMPLETE,
-					0, NULL);
+					WLAN_VDEV_SM_EV_MLO_SYNC_COMPLETE, 0,
+					NULL);
 		}
 		/* Release ref taken as part of mlo_ap_get_vdev_list */
 		mlo_release_vdev_ref(vdev_list[i]);
@@ -683,8 +672,8 @@ void mlo_ap_vdev_quiet_set(struct wlan_objmgr_vdev *vdev)
 		  wlan_psoc_get_id(wlan_vdev_get_psoc(vdev)),
 		  wlan_vdev_get_id(vdev));
 
-	wlan_util_change_map_index(mld_ctx->ap_ctx->mlo_vdev_quiet_bmap,
-				   idx, 1);
+	wlan_util_change_map_index(mld_ctx->ap_ctx->mlo_vdev_quiet_bmap, idx,
+				   1);
 }
 
 void mlo_ap_vdev_quiet_clear(struct wlan_objmgr_vdev *vdev)
@@ -703,8 +692,8 @@ void mlo_ap_vdev_quiet_clear(struct wlan_objmgr_vdev *vdev)
 		  wlan_psoc_get_id(wlan_vdev_get_psoc(vdev)),
 		  wlan_vdev_get_id(vdev));
 
-	wlan_util_change_map_index(mld_ctx->ap_ctx->mlo_vdev_quiet_bmap,
-				   idx, 0);
+	wlan_util_change_map_index(mld_ctx->ap_ctx->mlo_vdev_quiet_bmap, idx,
+				   0);
 }
 
 bool mlo_ap_vdev_quiet_is_any_idx_set(struct wlan_objmgr_vdev *vdev)
@@ -715,18 +704,16 @@ bool mlo_ap_vdev_quiet_is_any_idx_set(struct wlan_objmgr_vdev *vdev)
 		return false;
 
 	return wlan_util_map_is_any_index_set(
-			mld_ctx->ap_ctx->mlo_vdev_quiet_bmap,
-			sizeof(mld_ctx->ap_ctx->mlo_vdev_quiet_bmap));
+		mld_ctx->ap_ctx->mlo_vdev_quiet_bmap,
+		sizeof(mld_ctx->ap_ctx->mlo_vdev_quiet_bmap));
 }
 
 QDF_STATUS
-mlo_peer_create_get_frm_buf(
-		struct wlan_mlo_peer_context *ml_peer,
-		struct peer_create_notif_s *peer_create,
-		qdf_nbuf_t frm_buf)
+mlo_peer_create_get_frm_buf(struct wlan_mlo_peer_context *ml_peer,
+			    struct peer_create_notif_s *peer_create,
+			    qdf_nbuf_t frm_buf)
 {
-	if (wlan_mlo_peer_is_nawds(ml_peer) ||
-	    wlan_mlo_peer_is_mesh(ml_peer)) {
+	if (wlan_mlo_peer_is_nawds(ml_peer) || wlan_mlo_peer_is_mesh(ml_peer)) {
 		peer_create->frm_buf = NULL;
 		return QDF_STATUS_SUCCESS;
 	}
@@ -742,13 +729,12 @@ mlo_peer_create_get_frm_buf(
 }
 
 #ifdef UMAC_SUPPORT_MLNAWDS
-void mlo_peer_populate_nawds_params(
-		struct wlan_mlo_peer_context *ml_peer,
-		struct mlo_partner_info *ml_info)
+void mlo_peer_populate_nawds_params(struct wlan_mlo_peer_context *ml_peer,
+				    struct mlo_partner_info *ml_info)
 {
 	uint8_t i;
-	uint8_t null_mac[QDF_MAC_ADDR_SIZE] = {0x00, 0x00, 0x00,
-					       0x00, 0x00, 0x00};
+	uint8_t null_mac[QDF_MAC_ADDR_SIZE] = { 0x00, 0x00, 0x00,
+						0x00, 0x00, 0x00 };
 	struct mlnawds_config nawds_config;
 
 	mlo_peer_lock_acquire(ml_peer);
@@ -756,13 +742,12 @@ void mlo_peer_populate_nawds_params(
 	for (i = 0; i < ml_info->num_partner_links; i++) {
 		nawds_config = ml_info->partner_link_info[i].nawds_config;
 		/*
-		 * if ml_info->partner_link_info[i].nawds_config has valid
-		 * config(check for non-null mac or non-0 caps), then mark
-		 * ml_peer's is_nawds_ml_peer true & copy the config
-		 */
+     * if ml_info->partner_link_info[i].nawds_config has valid
+     * config(check for non-null mac or non-0 caps), then mark
+     * ml_peer's is_nawds_ml_peer true & copy the config
+     */
 		if ((nawds_config.caps) ||
-		    (qdf_mem_cmp(null_mac,
-				 nawds_config.mac,
+		    (qdf_mem_cmp(null_mac, nawds_config.mac,
 				 sizeof(null_mac)))) {
 			ml_peer->is_nawds_ml_peer = true;
 			ml_peer->nawds_config[i] = nawds_config;
@@ -773,12 +758,11 @@ void mlo_peer_populate_nawds_params(
 #endif
 
 #ifdef MESH_MODE_SUPPORT
-void mlo_peer_populate_mesh_params(
-		struct wlan_mlo_peer_context *ml_peer,
-		struct mlo_partner_info *ml_info)
+void mlo_peer_populate_mesh_params(struct wlan_mlo_peer_context *ml_peer,
+				   struct mlo_partner_info *ml_info)
 {
 	uint8_t i;
-	uint8_t null_mac[QDF_MAC_ADDR_SIZE] = {0};
+	uint8_t null_mac[QDF_MAC_ADDR_SIZE] = { 0 };
 	struct mlnawds_config mesh_config;
 
 	mlo_peer_lock_acquire(ml_peer);
@@ -786,13 +770,12 @@ void mlo_peer_populate_mesh_params(
 	for (i = 0; i < ml_info->num_partner_links; i++) {
 		mesh_config = ml_info->partner_link_info[i].mesh_config;
 		/*
-		 * if ml_info->partner_link_info[i].mesh_config has valid
-		 * config(check for non-null mac or non-0 caps), then mark
-		 * ml_peer's is_mesh_ml_peer true & copy the config
-		 */
+     * if ml_info->partner_link_info[i].mesh_config has valid
+     * config(check for non-null mac or non-0 caps), then mark
+     * ml_peer's is_mesh_ml_peer true & copy the config
+     */
 		if ((mesh_config.caps) ||
-		    (qdf_mem_cmp(null_mac,
-				 mesh_config.mac,
+		    (qdf_mem_cmp(null_mac, mesh_config.mac,
 				 sizeof(null_mac)))) {
 			ml_peer->is_mesh_ml_peer = true;
 			ml_peer->mesh_config[i] = mesh_config;

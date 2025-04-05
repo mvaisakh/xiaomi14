@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2012-2015, 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2012-2015, 2020-2021, The Linux Foundation. All rights
+ * reserved. Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,8 +22,8 @@
  * This file maintains definitaions public ucfg apis.
  */
 
-#include <wlan_cm_ucfg_api.h>
 #include "connection_mgr/core/src/wlan_cm_main_api.h"
+#include <wlan_cm_ucfg_api.h>
 #include <wlan_reg_services_api.h>
 
 QDF_STATUS ucfg_cm_start_connect(struct wlan_objmgr_vdev *vdev,
@@ -124,6 +125,6 @@ enum band_info ucfg_cm_get_connected_band(struct wlan_objmgr_vdev *vdev)
 		 wlan_reg_is_6ghz_chan_freq(sta_freq))
 		/* BAND_5G covers 6 GHz frequencies as well */
 		return BAND_5G;
-	else	/* If station is not connected return as BAND_ALL */
+	else /* If station is not connected return as BAND_ALL */
 		return BAND_ALL;
 }

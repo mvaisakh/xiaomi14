@@ -13,25 +13,25 @@
  *
  */
 
+#include <linux/delay.h>
+#include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
+#include <linux/i2c.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
-#include <linux/version.h>
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/delay.h>
-#include <linux/i2c.h>
-#include <linux/slab.h>
-#include <linux/workqueue.h>
-#include <linux/platform_device.h>
-#include <linux/regulator/consumer.h>
-#include <linux/gpio/consumer.h>
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
+#include <linux/platform_device.h>
 #include <linux/regmap.h>
-#include <linux/gpio.h>
+#include <linux/regulator/consumer.h>
+#include <linux/slab.h>
+#include <linux/version.h>
+#include <linux/workqueue.h>
 
-#include "wm_adsp.h"
 #include "cs35l43.h"
+#include "wm_adsp.h"
 #include <sound/cs35l43.h>
 
 static struct regmap_config cs35l43_regmap_i2c = {
@@ -49,15 +49,12 @@ static struct regmap_config cs35l43_regmap_i2c = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
-static const struct i2c_device_id cs35l43_id_i2c[] = {
-	{"cs35l43", 0},
-	{}
-};
+static const struct i2c_device_id cs35l43_id_i2c[] = { { "cs35l43", 0 }, {} };
 
 MODULE_DEVICE_TABLE(i2c, cs35l43_id_i2c);
 
 static int cs35l43_i2c_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+			     const struct i2c_device_id *id)
 {
 	struct cs35l43_private *cs35l43;
 	struct device *dev = &client->dev;
@@ -79,9 +76,9 @@ static int cs35l43_i2c_probe(struct i2c_client *client,
 		ret = PTR_ERR(cs35l43->regmap);
 		dev_err(cs35l43->dev, "Failed to allocate register map: %d\n",
 			ret);
-	#if IS_ENABLED(CONFIG_MIEV)
-		mievent_report(906001353,"PA i2c exception",cs35l43->dev);
-	#endif
+#if IS_ENABLED(CONFIG_MIEV)
+		mievent_report(906001353, "PA i2c exception", cs35l43->dev);
+#endif
 		return ret;
 	}
 
@@ -96,20 +93,21 @@ static void cs35l43_i2c_remove(struct i2c_client *client)
 }
 
 static const struct of_device_id cs35l43_of_match[] = {
-	{.compatible = "cirrus,cs35l43"},
+	{ .compatible = "cirrus,cs35l43" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, cs35l43_of_match);
 
 static struct i2c_driver cs35l43_i2c_driver = {
-	.driver = {
-		.name		= "cs35l43",
-		.of_match_table = cs35l43_of_match,
-		.pm = &cs35l43_pm_ops,
-	},
-	.id_table	= cs35l43_id_i2c,
-	.probe		= cs35l43_i2c_probe,
-	.remove		= cs35l43_i2c_remove,
+    .driver =
+        {
+            .name = "cs35l43",
+            .of_match_table = cs35l43_of_match,
+            .pm = &cs35l43_pm_ops,
+        },
+    .id_table = cs35l43_id_i2c,
+    .probe = cs35l43_i2c_probe,
+    .remove = cs35l43_i2c_remove,
 };
 
 module_i2c_driver(cs35l43_i2c_driver);

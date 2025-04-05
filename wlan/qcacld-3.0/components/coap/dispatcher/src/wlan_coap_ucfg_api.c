@@ -60,8 +60,9 @@ ucfg_coap_offload_reply_disable(struct wlan_objmgr_vdev *vdev, uint32_t req_id,
  * Return: status of operation
  */
 QDF_STATUS
-ucfg_coap_offload_periodic_tx_enable(struct wlan_objmgr_vdev *vdev,
-			struct coap_offload_periodic_tx_param *param)
+ucfg_coap_offload_periodic_tx_enable(
+	struct wlan_objmgr_vdev *vdev,
+	struct coap_offload_periodic_tx_param *param)
 {
 	return wlan_coap_offload_periodic_tx_enable(vdev, param);
 }

@@ -21,14 +21,14 @@
  * serialization module
  */
 
-#include <qdf_types.h>
-#include <qdf_status.h>
+#include <include/wlan_mlme_cmn.h>
 #include <qdf_mem.h>
-#include <wlan_serialization_api.h>
-#include <wlan_objmgr_vdev_obj.h>
+#include <qdf_status.h>
+#include <qdf_types.h>
 #include <wlan_cmn.h>
 #include <wlan_mlme_dbg.h>
-#include <include/wlan_mlme_cmn.h>
+#include <wlan_objmgr_vdev_obj.h>
+#include <wlan_serialization_api.h>
 #include <wlan_vdev_mlme_api.h>
 #include <wlan_vdev_mlme_ser_if.h>
 
@@ -45,18 +45,17 @@ wlan_vdev_mlme_ser_start_bss(struct wlan_serialization_command *cmd)
 	if (!wlan_ser_is_vdev_queue_enabled(cmd->vdev))
 		return WLAN_SER_CMD_QUEUE_DISABLED;
 	/*
-	 * Serialization command filtering logic
-	 * a. Cancel any existing start bss cmd in the pending queue
-	 * b. If there is an start bss cmd in active queue and
-	 * there is no stop bss cmd in pending queue,
-	 * then explicitly enqueue a stop bss cmd to avoid back to
-	 * back execution of UP cmd.
-	 * c. Enqueue the new start bss cmd with serialization
-	 */
+   * Serialization command filtering logic
+   * a. Cancel any existing start bss cmd in the pending queue
+   * b. If there is an start bss cmd in active queue and
+   * there is no stop bss cmd in pending queue,
+   * then explicitly enqueue a stop bss cmd to avoid back to
+   * back execution of UP cmd.
+   * c. Enqueue the new start bss cmd with serialization
+   */
 	wlan_vdev_mlme_ser_cancel_request(
-			cmd->vdev,
-			WLAN_SER_CMD_VDEV_START_BSS,
-			WLAN_SER_CANCEL_VDEV_NON_SCAN_CMD_TYPE);
+		cmd->vdev, WLAN_SER_CMD_VDEV_START_BSS,
+		WLAN_SER_CANCEL_VDEV_NON_SCAN_CMD_TYPE);
 
 	if (wlan_serialization_is_cmd_present_in_active_queue(NULL, cmd)) {
 		vdev_mlme = wlan_vdev_mlme_get_cmpt_obj(cmd->vdev);
@@ -84,18 +83,17 @@ wlan_vdev_mlme_ser_stop_bss(struct wlan_serialization_command *cmd)
 	if (!wlan_ser_is_vdev_queue_enabled(cmd->vdev))
 		return WLAN_SER_CMD_QUEUE_DISABLED;
 	/*
-	 * Serialization command filtering logic
-	 * a. Cancel any existing start/stop/restart command in the pending
-	 *  queue.
-	 * b. If there is a stop cmd in active queue then return
-	 * c. Else enqueue the cmd
-	 * d. If stop cmd already existed in pending queue then return with
-	 *  already exists else return the enqueued return value.
-	 */
+   * Serialization command filtering logic
+   * a. Cancel any existing start/stop/restart command in the pending
+   *  queue.
+   * b. If there is a stop cmd in active queue then return
+   * c. Else enqueue the cmd
+   * d. If stop cmd already existed in pending queue then return with
+   *  already exists else return the enqueued return value.
+   */
 	stop_cmd_pending =
 		wlan_serialization_is_cmd_present_in_pending_queue(NULL, cmd);
-	wlan_vdev_mlme_ser_cancel_request(cmd->vdev,
-					  WLAN_SER_CMD_NONSCAN,
+	wlan_vdev_mlme_ser_cancel_request(cmd->vdev, WLAN_SER_CMD_NONSCAN,
 					  WLAN_SER_CANCEL_VDEV_NON_SCAN_NB_CMD);
 
 	if (wlan_serialization_is_cmd_present_in_active_queue(NULL, cmd)) {
@@ -122,11 +120,11 @@ wlan_vdev_mlme_ser_vdev_restart(struct wlan_serialization_command *cmd)
 	if (!wlan_ser_is_vdev_queue_enabled(cmd->vdev))
 		return WLAN_SER_CMD_QUEUE_DISABLED;
 	/*
-	 * Serialization command filtering logic
-	 * a. If there exists START or PDEV/VDEV restart command in the pending
-	 * queue then ignore this new vdev restart request.
-	 * b. Else enqueue the new VDEV RESTART cmd
-	 */
+   * Serialization command filtering logic
+   * a. If there exists START or PDEV/VDEV restart command in the pending
+   * queue then ignore this new vdev restart request.
+   * b. Else enqueue the new VDEV RESTART cmd
+   */
 	cmd->cmd_type = WLAN_SER_CMD_VDEV_START_BSS;
 	if (wlan_serialization_is_cmd_present_in_pending_queue(NULL, cmd)) {
 		mlme_debug("Start cmd already in the pending queue");
@@ -153,22 +151,21 @@ static void wlan_mlme_restart_pdev_iter_cb(struct wlan_objmgr_pdev *pdev,
 {
 	struct wlan_objmgr_vdev *vdev = (struct wlan_objmgr_vdev *)object;
 	uint8_t *pdev_restart_pending = (uint8_t *)arg;
-	struct wlan_serialization_command cmd = {0};
+	struct wlan_serialization_command cmd = { 0 };
 	uint8_t vdev_id = wlan_vdev_get_id(vdev);
 
 	cmd.vdev = vdev;
 	cmd.cmd_id = vdev_id;
 	cmd.cmd_type = WLAN_SER_CMD_PDEV_RESTART;
 	/*
-	 * Serialization command filtering logic
-	 * a. Cancel any existing VDEV restart cmd in the pending queue
-	 * b. If Pdev restart already exist in pending queue then return else
-	 * enqueue the new PDEV RESTART cmd
-	 */
+   * Serialization command filtering logic
+   * a. Cancel any existing VDEV restart cmd in the pending queue
+   * b. If Pdev restart already exist in pending queue then return else
+   * enqueue the new PDEV RESTART cmd
+   */
 	wlan_vdev_mlme_ser_cancel_request(
-			vdev,
-			WLAN_SER_CMD_VDEV_RESTART,
-			WLAN_SER_CANCEL_VDEV_NON_SCAN_CMD_TYPE);
+		vdev, WLAN_SER_CMD_VDEV_RESTART,
+		WLAN_SER_CANCEL_VDEV_NON_SCAN_CMD_TYPE);
 
 	if (wlan_serialization_is_cmd_present_in_pending_queue(NULL, &cmd)) {
 		mlme_debug("Cmd already exist in the pending queue vdev:%u",
@@ -203,13 +200,12 @@ wlan_vdev_mlme_ser_pdev_restart(struct wlan_serialization_command *cmd)
 	return wlan_serialization_request(cmd);
 }
 
-static void
-wlan_mlme_cancel_pending_csa_restart(struct wlan_objmgr_pdev *pdev,
-				     void *object, void *arg)
+static void wlan_mlme_cancel_pending_csa_restart(struct wlan_objmgr_pdev *pdev,
+						 void *object, void *arg)
 {
 	struct wlan_objmgr_vdev *vdev = object;
 	bool *csa_restart_pending = arg;
-	struct wlan_serialization_command cmd = {0};
+	struct wlan_serialization_command cmd = { 0 };
 	uint8_t vdev_id = wlan_vdev_get_id(vdev);
 
 	cmd.vdev = vdev;
@@ -222,18 +218,16 @@ wlan_mlme_cancel_pending_csa_restart(struct wlan_objmgr_pdev *pdev,
 	}
 
 	wlan_vdev_mlme_ser_cancel_request(
-			vdev,
-			WLAN_SER_CMD_PDEV_CSA_RESTART,
-			WLAN_SER_CANCEL_VDEV_NON_SCAN_CMD_TYPE);
+		vdev, WLAN_SER_CMD_PDEV_CSA_RESTART,
+		WLAN_SER_CANCEL_VDEV_NON_SCAN_CMD_TYPE);
 }
 
-static void
-wlan_mlme_check_pdev_restart(struct wlan_objmgr_pdev *pdev,
-			     void *object, void *arg)
+static void wlan_mlme_check_pdev_restart(struct wlan_objmgr_pdev *pdev,
+					 void *object, void *arg)
 {
 	struct wlan_objmgr_vdev *vdev = object;
-	bool *pdev_restart_pending  = arg;
-	struct wlan_serialization_command cmd = {0};
+	bool *pdev_restart_pending = arg;
+	struct wlan_serialization_command cmd = { 0 };
 	uint8_t vdev_id = wlan_vdev_get_id(vdev);
 
 	cmd.vdev = vdev;
@@ -263,14 +257,14 @@ wlan_vdev_mlme_ser_pdev_csa_restart(struct wlan_serialization_command *cmd)
 		return WLAN_SER_CMD_QUEUE_DISABLED;
 
 	/*
-	 * Serialization command filtering logic
-	 * a. Cancel any existing PDEV CSA restart cmd in the pending queue
-	 * b. If there exists PDEV RESTART command in the active queue
-	 *    then deny this request
-	 * c. If PDEV CSA RESTART cmd already existed in pending queue
-	 *    then enqueue and return already exists
-	 * d. Else enqueue this PDEV CSA RESTART cmd
-	 */
+   * Serialization command filtering logic
+   * a. Cancel any existing PDEV CSA restart cmd in the pending queue
+   * b. If there exists PDEV RESTART command in the active queue
+   *    then deny this request
+   * c. If PDEV CSA RESTART cmd already existed in pending queue
+   *    then enqueue and return already exists
+   * d. Else enqueue this PDEV CSA RESTART cmd
+   */
 	pdev = wlan_vdev_get_pdev(cmd->vdev);
 	wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
 					  wlan_mlme_cancel_pending_csa_restart,
@@ -293,12 +287,11 @@ wlan_vdev_mlme_ser_pdev_csa_restart(struct wlan_serialization_command *cmd)
 	return ret;
 }
 
-void
-wlan_vdev_mlme_ser_remove_request(struct wlan_objmgr_vdev *vdev,
-				  uint32_t cmd_id,
-				  enum wlan_serialization_cmd_type cmd_type)
+void wlan_vdev_mlme_ser_remove_request(struct wlan_objmgr_vdev *vdev,
+				       uint32_t cmd_id,
+				       enum wlan_serialization_cmd_type cmd_type)
 {
-	struct wlan_serialization_queued_cmd_info cmd = {0};
+	struct wlan_serialization_queued_cmd_info cmd = { 0 };
 
 	mlme_debug("Vdev:%d remove cmd:%d", wlan_vdev_get_id(vdev), cmd_type);
 
@@ -313,12 +306,12 @@ wlan_vdev_mlme_ser_remove_request(struct wlan_objmgr_vdev *vdev,
 	wlan_serialization_remove_cmd(&cmd);
 }
 
-void
-wlan_vdev_mlme_ser_cancel_request(struct wlan_objmgr_vdev *vdev,
-				  enum wlan_serialization_cmd_type cmd_type,
-				  enum wlan_serialization_cancel_type req_type)
+void wlan_vdev_mlme_ser_cancel_request(
+	struct wlan_objmgr_vdev *vdev,
+	enum wlan_serialization_cmd_type cmd_type,
+	enum wlan_serialization_cancel_type req_type)
 {
-	struct wlan_serialization_queued_cmd_info cmd = {0};
+	struct wlan_serialization_queued_cmd_info cmd = { 0 };
 
 	cmd.vdev = vdev;
 	cmd.cmd_type = cmd_type;
@@ -329,8 +322,7 @@ wlan_vdev_mlme_ser_cancel_request(struct wlan_objmgr_vdev *vdev,
 	wlan_serialization_cancel_request(&cmd);
 }
 
-void
-mlme_ser_inc_act_cmd_timeout(struct wlan_serialization_command *cmd)
+void mlme_ser_inc_act_cmd_timeout(struct wlan_serialization_command *cmd)
 {
 	mlme_debug("Increase timeout of cmd type:%d", cmd->cmd_type);
 	wlan_serialization_update_timer(cmd);

@@ -18,15 +18,15 @@
  * DOC: This file contains definitions for target_if wfa send test cmd.
  */
 
-#include "qdf_types.h"
 #include "target_if_wfa_testcmd.h"
+#include "qdf_types.h"
 #include "target_if.h"
-#include "wlan_mlme_dbg.h"
 #include "wlan_mlme_api.h"
+#include "wlan_mlme_dbg.h"
 #include "wlan_mlme_main.h"
 
-static struct wmi_unified
-*target_if_wfa_get_wmi_handle_from_vdev(struct wlan_objmgr_vdev *vdev)
+static struct wmi_unified *
+target_if_wfa_get_wmi_handle_from_vdev(struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_objmgr_pdev *pdev;
 	struct wmi_unified *wmi_handle;
@@ -53,9 +53,8 @@ static struct wmi_unified
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-target_if_wfa_send_cmd(struct wlan_objmgr_vdev *vdev,
-		       struct set_wfatest_params *wfa_test)
+static QDF_STATUS target_if_wfa_send_cmd(struct wlan_objmgr_vdev *vdev,
+					 struct set_wfatest_params *wfa_test)
 {
 	wmi_unified_t wmi_handle;
 

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
-
-#include <linux/clk.h>
 #include <linux/clk-provider.h>
+#include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/firmware.h>
@@ -44,7 +44,7 @@ bool kgsl_regulator_disable_wait(struct regulator *reg, u32 timeout)
 }
 
 struct clk *kgsl_of_clk_by_name(struct clk_bulk_data *clks, int count,
-		const char *id)
+				const char *id)
 {
 	int i;
 
@@ -55,8 +55,8 @@ struct clk *kgsl_of_clk_by_name(struct clk_bulk_data *clks, int count,
 	return NULL;
 }
 
-int kgsl_regulator_set_voltage(struct device *dev,
-		struct regulator *reg, u32 voltage)
+int kgsl_regulator_set_voltage(struct device *dev, struct regulator *reg,
+			       u32 voltage)
 {
 	int ret;
 
@@ -65,13 +65,14 @@ int kgsl_regulator_set_voltage(struct device *dev,
 
 	ret = regulator_set_voltage(reg, voltage, INT_MAX);
 	if (ret)
-		dev_err(dev, "Regulator set voltage:%d failed:%d\n", voltage, ret);
+		dev_err(dev, "Regulator set voltage:%d failed:%d\n", voltage,
+			ret);
 
 	return ret;
 }
 
-int kgsl_clk_set_rate(struct clk_bulk_data *clks, int num_clks,
-		const char *id, unsigned long rate)
+int kgsl_clk_set_rate(struct clk_bulk_data *clks, int num_clks, const char *id,
+		      unsigned long rate)
 {
 	struct clk *clk;
 
@@ -92,8 +93,9 @@ int kgsl_scm_gpu_init_regs(struct device *dev, u32 gpu_req)
 
 	ret = qcom_scm_kgsl_init_regs(gpu_req);
 	if (ret)
-		dev_err(dev, "Scm call for requests:0x%x failed with ret:: %d\n",
-									gpu_req, ret);
+		dev_err(dev,
+			"Scm call for requests:0x%x failed with ret:: %d\n",
+			gpu_req, ret);
 
 	return ret;
 }
@@ -117,14 +119,16 @@ int kgsl_zap_shader_load(struct device *dev, const char *name)
 
 	np = of_get_child_by_name(dev->of_node, "zap-shader");
 	if (!np) {
-		dev_err(dev, "zap-shader node not found. Please update the device tree\n");
+		dev_err(dev,
+			"zap-shader node not found. Please update the device tree\n");
 		return -ENODEV;
 	}
 
 	mem_np = of_parse_phandle(np, "memory-region", 0);
 	of_node_put(np);
 	if (!mem_np) {
-		dev_err(dev, "Couldn't parse the mem-region from the zap-shader node\n");
+		dev_err(dev,
+			"Couldn't parse the mem-region from the zap-shader node\n");
 		return -EINVAL;
 	}
 
@@ -158,8 +162,8 @@ int kgsl_zap_shader_load(struct device *dev, const char *name)
 		goto out;
 	}
 
-	ret = qcom_mdt_load(dev, fw, name, GPU_PASID, mem_region,
-		mem_phys, mem_size, NULL);
+	ret = qcom_mdt_load(dev, fw, name, GPU_PASID, mem_region, mem_phys,
+			    mem_size, NULL);
 	if (ret) {
 		dev_err(dev, "Error %d while loading the MDT\n", ret);
 		goto out;
@@ -203,10 +207,10 @@ int kgsl_hwlock(struct cpu_gpu_lock *lock)
 	mb();
 
 	/*
-	 * Spin here while GPU ucode holds the lock, lock->gpu_req will
-	 * be set to 0 after GPU ucode releases the lock. Maximum wait time
-	 * is 1 second and this should be enough for GPU to release the lock.
-	 */
+   * Spin here while GPU ucode holds the lock, lock->gpu_req will
+   * be set to 0 after GPU ucode releases the lock. Maximum wait time
+   * is 1 second and this should be enough for GPU to release the lock.
+   */
 	while (lock->gpu_req && lock->turn == 0) {
 		cpu_relax();
 		/* Get the latest updates from GPU */
@@ -232,7 +236,7 @@ void kgsl_hwunlock(struct cpu_gpu_lock *lock)
 #if IS_ENABLED(CONFIG_QCOM_VA_MINIDUMP)
 void kgsl_add_to_minidump(char *name, u64 virt_addr, u64 phy_addr, size_t size)
 {
-	struct md_region md_entry = {0};
+	struct md_region md_entry = { 0 };
 	int ret;
 
 	if (!msm_minidump_enabled())
@@ -244,13 +248,14 @@ void kgsl_add_to_minidump(char *name, u64 virt_addr, u64 phy_addr, size_t size)
 	md_entry.size = size;
 	ret = msm_minidump_add_region(&md_entry);
 	if (ret < 0 && ret != -EEXIST)
-		pr_err("kgsl: Failed to register %s with minidump:%d\n", name, ret);
-
+		pr_err("kgsl: Failed to register %s with minidump:%d\n", name,
+		       ret);
 }
 
-void kgsl_remove_from_minidump(char *name, u64 virt_addr, u64 phy_addr, size_t size)
+void kgsl_remove_from_minidump(char *name, u64 virt_addr, u64 phy_addr,
+			       size_t size)
 {
-	struct md_region md_entry = {0};
+	struct md_region md_entry = { 0 };
 	int ret;
 
 	if (!msm_minidump_enabled())
@@ -266,9 +271,9 @@ void kgsl_remove_from_minidump(char *name, u64 virt_addr, u64 phy_addr, size_t s
 }
 
 int kgsl_add_va_to_minidump(struct device *dev, const char *name, void *ptr,
-		size_t size)
+			    size_t size)
 {
-	struct va_md_entry entry = {0};
+	struct va_md_entry entry = { 0 };
 	int ret;
 
 	scnprintf(entry.owner, sizeof(entry.owner), name);
@@ -276,8 +281,8 @@ int kgsl_add_va_to_minidump(struct device *dev, const char *name, void *ptr,
 	entry.size = size;
 	ret = qcom_va_md_add_region(&entry);
 	if (ret < 0)
-		dev_err(dev, "Failed to register %s with va_minidump: %d\n", name,
-				ret);
+		dev_err(dev, "Failed to register %s with va_minidump: %d\n",
+			name, ret);
 
 	return ret;
 }
@@ -292,28 +297,32 @@ static int kgsl_add_driver_data_to_va_minidump(struct kgsl_device *device)
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 
 	ret = kgsl_add_va_to_minidump(device->dev, KGSL_DRIVER,
-			(void *)(&kgsl_driver), sizeof(struct kgsl_driver));
+				      (void *)(&kgsl_driver),
+				      sizeof(struct kgsl_driver));
 	if (ret)
 		return ret;
 
 	/* hwsched path may not have scratch entry */
 	if (device->scratch) {
 		ret = kgsl_add_va_to_minidump(device->dev, KGSL_SCRATCH_ENTRY,
-				device->scratch->hostptr, device->scratch->size);
+					      device->scratch->hostptr,
+					      device->scratch->size);
 		if (ret)
 			return ret;
 	}
 
 	ret = kgsl_add_va_to_minidump(device->dev, KGSL_MEMSTORE_ENTRY,
-			device->memstore->hostptr, device->memstore->size);
+				      device->memstore->hostptr,
+				      device->memstore->size);
 	if (ret)
 		return ret;
 
 	spin_lock(&adreno_dev->active_list_lock);
 	list_for_each_entry(ctxt, &adreno_dev->active_list, active_node) {
-		snprintf(name, sizeof(name), KGSL_ADRENO_CTX_ENTRY"_%d", ctxt->base.id);
-		ret = kgsl_add_va_to_minidump(device->dev, name,
-				(void *)(ctxt), sizeof(struct adreno_context));
+		snprintf(name, sizeof(name), KGSL_ADRENO_CTX_ENTRY "_%d",
+			 ctxt->base.id);
+		ret = kgsl_add_va_to_minidump(device->dev, name, (void *)(ctxt),
+					      sizeof(struct adreno_context));
 		if (ret)
 			break;
 	}
@@ -321,9 +330,11 @@ static int kgsl_add_driver_data_to_va_minidump(struct kgsl_device *device)
 
 	read_lock(&kgsl_driver.proclist_lock);
 	list_for_each_entry(p, &kgsl_driver.process_list, list) {
-		snprintf(name, sizeof(name), KGSL_PROC_PRIV_ENTRY "_%d", pid_nr(p->pid));
-		ret = kgsl_add_va_to_minidump(device->dev, name,
-				(void *)(p), sizeof(struct kgsl_process_private));
+		snprintf(name, sizeof(name), KGSL_PROC_PRIV_ENTRY "_%d",
+			 pid_nr(p->pid));
+		ret = kgsl_add_va_to_minidump(
+			device->dev, name, (void *)(p),
+			sizeof(struct kgsl_process_private));
 		if (ret)
 			break;
 	}
@@ -331,9 +342,10 @@ static int kgsl_add_driver_data_to_va_minidump(struct kgsl_device *device)
 
 	spin_lock(&kgsl_driver.ptlock);
 	list_for_each_entry(pt, &kgsl_driver.pagetable_list, list) {
-		snprintf(name, sizeof(name), KGSL_PGTABLE_ENTRY"_%d", pt->name);
-		ret = kgsl_add_va_to_minidump(device->dev, name,
-				(void *)(pt), sizeof(struct kgsl_pagetable));
+		snprintf(name, sizeof(name), KGSL_PGTABLE_ENTRY "_%d",
+			 pt->name);
+		ret = kgsl_add_va_to_minidump(device->dev, name, (void *)(pt),
+					      sizeof(struct kgsl_pagetable));
 		if (ret)
 			break;
 	}
@@ -343,7 +355,7 @@ static int kgsl_add_driver_data_to_va_minidump(struct kgsl_device *device)
 }
 
 static int kgsl_va_minidump_callback(struct notifier_block *nb,
-		unsigned long action, void *unused)
+				     unsigned long action, void *unused)
 {
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(kgsl_driver.devp[0]);
 	const struct adreno_gpudev *gpudev = ADRENO_GPU_DEVICE(adreno_dev);
@@ -371,7 +383,9 @@ void kgsl_qcom_va_md_register(struct kgsl_device *device)
 
 	ret = qcom_va_md_register("KGSL", &kgsl_va_minidump_nb);
 	if (ret)
-		dev_err(device->dev, "Failed to register notifier with va_minidump: %d\n", ret);
+		dev_err(device->dev,
+			"Failed to register notifier with va_minidump: %d\n",
+			ret);
 }
 
 void kgsl_qcom_va_md_unregister(struct kgsl_device *device)
@@ -383,6 +397,8 @@ void kgsl_qcom_va_md_unregister(struct kgsl_device *device)
 
 	ret = qcom_va_md_unregister("KGSL", &kgsl_va_minidump_nb);
 	if (ret)
-		dev_err(device->dev, "Failed to unregister notifier with va_minidump: %d\n", ret);
+		dev_err(device->dev,
+			"Failed to unregister notifier with va_minidump: %d\n",
+			ret);
 }
 #endif

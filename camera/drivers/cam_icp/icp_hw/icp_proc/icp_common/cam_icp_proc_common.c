@@ -9,8 +9,7 @@
 #include "cam_icp_hw_intf.h"
 #include "hfi_intf.h"
 
-int32_t cam_icp_validate_fw(const uint8_t *elf,
-	uint32_t machine_id)
+int32_t cam_icp_validate_fw(const uint8_t *elf, uint32_t machine_id)
 {
 	struct elf32_hdr *elf_hdr;
 
@@ -41,8 +40,7 @@ int32_t cam_icp_validate_fw(const uint8_t *elf,
 	return 0;
 }
 
-int32_t cam_icp_get_fw_size(
-	const uint8_t *elf, uint32_t *fw_size)
+int32_t cam_icp_get_fw_size(const uint8_t *elf, uint32_t *fw_size)
 {
 	int32_t rc = 0;
 	int32_t i = 0;
@@ -75,14 +73,13 @@ int32_t cam_icp_get_fw_size(
 			continue;
 
 		seg_mem_size = (prg_hdr->p_memsz + prg_hdr->p_align - 1) &
-			~(prg_hdr->p_align - 1);
+			       ~(prg_hdr->p_align - 1);
 		seg_mem_size += prg_hdr->p_paddr;
 		CAM_DBG(CAM_ICP, "memsz:%x align:%x addr:%x seg_mem_size:%x",
 			(int)prg_hdr->p_memsz, (int)prg_hdr->p_align,
 			(int)prg_hdr->p_paddr, (int)seg_mem_size);
 		if (*fw_size < seg_mem_size)
 			*fw_size = seg_mem_size;
-
 	}
 
 	if (*fw_size == 0) {
@@ -93,8 +90,7 @@ int32_t cam_icp_get_fw_size(
 	return rc;
 }
 
-int32_t cam_icp_program_fw(const uint8_t *elf,
-	uintptr_t fw_kva_addr)
+int32_t cam_icp_program_fw(const uint8_t *elf, uintptr_t fw_kva_addr)
 {
 	int32_t rc = 0;
 	uint32_t num_prg_hdrs;
@@ -123,8 +119,7 @@ int32_t cam_icp_program_fw(const uint8_t *elf,
 			prg_hdr->p_filesz, prg_hdr->p_paddr);
 		if (prg_hdr->p_filesz != 0) {
 			src = (u8 *)((u8 *)elf + prg_hdr->p_offset);
-			dest = (u8 *)(((u8 *)fw_kva_addr) +
-				prg_hdr->p_paddr);
+			dest = (u8 *)(((u8 *)fw_kva_addr) + prg_hdr->p_paddr);
 
 			memcpy_toio(dest, src, prg_hdr->p_filesz);
 		}
@@ -133,8 +128,7 @@ int32_t cam_icp_program_fw(const uint8_t *elf,
 	return rc;
 }
 
-int cam_icp_proc_cpas_vote(uint32_t cpas_handle,
-	struct cam_icp_cpas_vote *vote)
+int cam_icp_proc_cpas_vote(uint32_t cpas_handle, struct cam_icp_cpas_vote *vote)
 {
 	int rc;
 
@@ -161,10 +155,10 @@ int cam_icp_proc_cpas_vote(uint32_t cpas_handle,
 }
 
 int cam_icp_proc_mini_dump(struct cam_icp_hw_dump_args *args,
-	uintptr_t fw_kva_addr, uint64_t fw_buf_len)
+			   uintptr_t fw_kva_addr, uint64_t fw_buf_len)
 {
-	u8                          *dest;
-	u8                          *src;
+	u8 *dest;
+	u8 *src;
 	struct cam_icp_hw_dump_args *dump_args = args;
 
 	if (!dump_args) {
@@ -173,14 +167,14 @@ int cam_icp_proc_mini_dump(struct cam_icp_hw_dump_args *args,
 	}
 
 	if (!fw_kva_addr || !dump_args->cpu_addr) {
-		CAM_ERR(CAM_ICP, "invalid params %pK, 0x%zx",
-			fw_kva_addr, dump_args->cpu_addr);
+		CAM_ERR(CAM_ICP, "invalid params %pK, 0x%zx", fw_kva_addr,
+			dump_args->cpu_addr);
 		return -EINVAL;
 	}
 
 	if (dump_args->buf_len < fw_buf_len) {
 		CAM_WARN(CAM_ICP, "Insufficient Len %lu fw_len %llu",
-			dump_args->buf_len, fw_buf_len);
+			 dump_args->buf_len, fw_buf_len);
 		return -ENOSPC;
 	}
 
@@ -193,24 +187,24 @@ int cam_icp_proc_mini_dump(struct cam_icp_hw_dump_args *args,
 }
 
 static int cam_icp_proc_validate_ubwc_cfg(struct cam_icp_ubwc_cfg *ubwc_cfg,
-	uint32_t ubwc_cfg_dev_mask)
+					  uint32_t ubwc_cfg_dev_mask)
 {
 	uint32_t found_ubwc_cfg_mask = ubwc_cfg->found_ubwc_cfg_mask;
 
 	if ((ubwc_cfg_dev_mask & BIT(CAM_ICP_DEV_IPE)) &&
-		!(found_ubwc_cfg_mask & BIT(CAM_ICP_DEV_IPE))) {
+	    !(found_ubwc_cfg_mask & BIT(CAM_ICP_DEV_IPE))) {
 		CAM_ERR(CAM_ICP, "IPE does not have UBWC cfg value");
 		return -ENODATA;
 	}
 
 	if ((ubwc_cfg_dev_mask & BIT(CAM_ICP_DEV_BPS)) &&
-		!(found_ubwc_cfg_mask & BIT(CAM_ICP_DEV_BPS))) {
+	    !(found_ubwc_cfg_mask & BIT(CAM_ICP_DEV_BPS))) {
 		CAM_ERR(CAM_ICP, "BPS does not have UBWC cfg value");
 		return -ENODATA;
 	}
 
 	if ((ubwc_cfg_dev_mask & BIT(CAM_ICP_DEV_OFE)) &&
-		!(found_ubwc_cfg_mask & BIT(CAM_ICP_DEV_OFE))) {
+	    !(found_ubwc_cfg_mask & BIT(CAM_ICP_DEV_OFE))) {
 		CAM_ERR(CAM_ICP, "OFE does not have UBWC cfg value");
 		return -ENODATA;
 	}
@@ -219,13 +213,13 @@ static int cam_icp_proc_validate_ubwc_cfg(struct cam_icp_ubwc_cfg *ubwc_cfg,
 }
 
 int cam_icp_proc_ubwc_configure(struct cam_icp_proc_ubwc_cfg_cmd *ubwc_cfg_cmd,
-	bool force_disable_ubwc, int hfi_handle)
+				bool force_disable_ubwc, int hfi_handle)
 {
 	struct cam_icp_ubwc_cfg *ubwc_cfg;
 	int i = 0, ddr_type, rc;
-	uint32_t ipe_ubwc_cfg[ICP_UBWC_CFG_MAX] = {0};
-	uint32_t bps_ubwc_cfg[ICP_UBWC_CFG_MAX] = {0};
-	uint32_t ofe_ubwc_cfg[ICP_UBWC_CFG_MAX] = {0};
+	uint32_t ipe_ubwc_cfg[ICP_UBWC_CFG_MAX] = { 0 };
+	uint32_t bps_ubwc_cfg[ICP_UBWC_CFG_MAX] = { 0 };
+	uint32_t ofe_ubwc_cfg[ICP_UBWC_CFG_MAX] = { 0 };
 
 	if (!ubwc_cfg_cmd) {
 		CAM_ERR(CAM_ICP, "ubwc config command is NULL");
@@ -233,7 +227,8 @@ int cam_icp_proc_ubwc_configure(struct cam_icp_proc_ubwc_cfg_cmd *ubwc_cfg_cmd,
 	}
 
 	ubwc_cfg = ubwc_cfg_cmd->ubwc_cfg;
-	rc = cam_icp_proc_validate_ubwc_cfg(ubwc_cfg, ubwc_cfg_cmd->ubwc_cfg_dev_mask);
+	rc = cam_icp_proc_validate_ubwc_cfg(ubwc_cfg,
+					    ubwc_cfg_cmd->ubwc_cfg_dev_mask);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "UBWC config failed validation rc:%d", rc);
 		return rc;
@@ -258,11 +253,13 @@ int cam_icp_proc_ubwc_configure(struct cam_icp_proc_ubwc_cfg_cmd *ubwc_cfg_cmd,
 		bps_ubwc_cfg[1] &= ~CAM_ICP_UBWC_COMP_EN;
 		ofe_ubwc_cfg[1] &= ~CAM_ICP_UBWC_COMP_EN;
 		CAM_DBG(CAM_ICP,
-			"Force disable UBWC compression, ipe_ubwc_cfg: 0x%x, bps_ubwc_cfg: 0x%x ofe_ubwc_cfg: 0x%x",
+			"Force disable UBWC compression, ipe_ubwc_cfg: 0x%x, bps_ubwc_cfg: "
+			"0x%x ofe_ubwc_cfg: 0x%x",
 			ipe_ubwc_cfg[1], bps_ubwc_cfg[1], ofe_ubwc_cfg[1]);
 	}
 
-	rc = hfi_cmd_ubwc_config_ext(hfi_handle, ipe_ubwc_cfg, bps_ubwc_cfg, ofe_ubwc_cfg);
+	rc = hfi_cmd_ubwc_config_ext(hfi_handle, ipe_ubwc_cfg, bps_ubwc_cfg,
+				     ofe_ubwc_cfg);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "Failed to write UBWC configure rc=%d", rc);
 		return rc;

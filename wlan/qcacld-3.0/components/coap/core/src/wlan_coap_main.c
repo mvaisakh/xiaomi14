@@ -18,8 +18,8 @@
  * DOC: contains definitions for CoAP core functions
  */
 
-#include <wlan_coap_tgt_api.h>
 #include <wlan_coap_main.h>
+#include <wlan_coap_tgt_api.h>
 #include <wlan_objmgr_global_obj.h>
 
 QDF_STATUS wlan_coap_enable(struct wlan_objmgr_psoc *psoc)
@@ -81,27 +81,27 @@ QDF_STATUS wlan_coap_init(void)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
-	status = wlan_objmgr_register_vdev_create_handler(WLAN_UMAC_COMP_COAP,
-				wlan_coap_vdev_obj_create_handler, NULL);
+	status = wlan_objmgr_register_vdev_create_handler(
+		WLAN_UMAC_COMP_COAP, wlan_coap_vdev_obj_create_handler, NULL);
 	if (status != QDF_STATUS_SUCCESS)
 		return status;
 
-	status = wlan_objmgr_register_vdev_destroy_handler(WLAN_UMAC_COMP_COAP,
-				wlan_coap_vdev_obj_destroy_handler, NULL);
+	status = wlan_objmgr_register_vdev_destroy_handler(
+		WLAN_UMAC_COMP_COAP, wlan_coap_vdev_obj_destroy_handler, NULL);
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return status;
 
-	wlan_objmgr_unregister_vdev_create_handler(WLAN_UMAC_COMP_COAP,
-				wlan_coap_vdev_obj_create_handler, NULL);
+	wlan_objmgr_unregister_vdev_create_handler(
+		WLAN_UMAC_COMP_COAP, wlan_coap_vdev_obj_create_handler, NULL);
 	return status;
 }
 
 QDF_STATUS wlan_coap_deinit(void)
 {
-	wlan_objmgr_unregister_vdev_create_handler(WLAN_UMAC_COMP_COAP,
-				wlan_coap_vdev_obj_create_handler, NULL);
-	wlan_objmgr_unregister_vdev_destroy_handler(WLAN_UMAC_COMP_COAP,
-				wlan_coap_vdev_obj_destroy_handler, NULL);
+	wlan_objmgr_unregister_vdev_create_handler(
+		WLAN_UMAC_COMP_COAP, wlan_coap_vdev_obj_create_handler, NULL);
+	wlan_objmgr_unregister_vdev_destroy_handler(
+		WLAN_UMAC_COMP_COAP, wlan_coap_vdev_obj_destroy_handler, NULL);
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -131,8 +131,9 @@ wlan_coap_offload_reply_disable(struct wlan_objmgr_vdev *vdev, uint32_t req_id,
 }
 
 QDF_STATUS
-wlan_coap_offload_periodic_tx_enable(struct wlan_objmgr_vdev *vdev,
-			struct coap_offload_periodic_tx_param *params)
+wlan_coap_offload_periodic_tx_enable(
+	struct wlan_objmgr_vdev *vdev,
+	struct coap_offload_periodic_tx_param *params)
 {
 	return tgt_send_coap_offload_periodic_tx_enable(vdev, params);
 }

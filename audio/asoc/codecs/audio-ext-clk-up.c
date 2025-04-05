@@ -5,17 +5,17 @@
 
 #define DEBUG
 
-#include <linux/kernel.h>
+#include <bindings/qcom,audio-ext-clk.h>
+#include <linux/clk-provider.h>
+#include <linux/clk.h>
+#include <linux/err.h>
 #include <linux/init.h>
 #include <linux/io.h>
-#include <linux/err.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
-#include <linux/clk.h>
-#include <linux/clk-provider.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
-#include <bindings/qcom,audio-ext-clk.h>
 #include <linux/ratelimit.h>
 #ifdef CONFIG_AUDIO_PRM
 #include <dsp/audio_prm.h>
@@ -83,19 +83,23 @@ static int audio_ext_clk_prepare(struct clk_hw *hw)
 	static DEFINE_RATELIMIT_STATE(rtl, 1 * HZ, 1);
 
 	if ((clk_priv->clk_src >= AUDIO_EXT_CLK_LPASS) &&
-		(clk_priv->clk_src < AUDIO_EXT_CLK_LPASS_MAX) && !clk_priv->enable)  {
+	    (clk_priv->clk_src < AUDIO_EXT_CLK_LPASS_MAX) &&
+	    !clk_priv->enable) {
 #ifdef CONFIG_AUDIO_PRM
-	    pr_debug("%s: clk_id %x ", __func__, clk_priv->prm_clk_cfg.clk_id);
-	    trace_printk("%s: clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
-		ret = audio_prm_set_lpass_clk_cfg(&clk_priv->prm_clk_cfg,1);
+		pr_debug("%s: clk_id %x ", __func__,
+			 clk_priv->prm_clk_cfg.clk_id);
+		trace_printk("%s: clk_id %x \n", __func__,
+			     clk_priv->prm_clk_cfg.clk_id);
+		ret = audio_prm_set_lpass_clk_cfg(&clk_priv->prm_clk_cfg, 1);
 #else
 		pr_debug("%s: audio prm not enabled", __func__);
 		ret = -EPERM;
 #endif
 		if (ret < 0) {
 			if (__ratelimit(&rtl))
-				pr_err_ratelimited("%s prm set lpass clk failed\n",
-				__func__);
+				pr_err_ratelimited(
+					"%s prm set lpass clk failed\n",
+					__func__);
 			return ret;
 		}
 		clk_priv->enable = 1;
@@ -103,10 +107,10 @@ static int audio_ext_clk_prepare(struct clk_hw *hw)
 
 	if (pnctrl_info->pinctrl) {
 		ret = pinctrl_select_state(pnctrl_info->pinctrl,
-				pnctrl_info->active);
+					   pnctrl_info->active);
 		if (ret) {
 			pr_err("%s: active state select failed with %d\n",
-				__func__, ret);
+			       __func__, ret);
 			return -EIO;
 		}
 	}
@@ -128,27 +132,29 @@ static void audio_ext_clk_unprepare(struct clk_hw *hw)
 					   pnctrl_info->sleep);
 		if (ret) {
 			pr_err("%s: active state select failed with %d\n",
-				__func__, ret);
+			       __func__, ret);
 			return;
 		}
 	}
 
 	if ((clk_priv->clk_src >= AUDIO_EXT_CLK_LPASS) &&
-		(clk_priv->clk_src < AUDIO_EXT_CLK_LPASS_MAX))  {
+	    (clk_priv->clk_src < AUDIO_EXT_CLK_LPASS_MAX)) {
 		clk_priv->enable = 0;
 #ifdef CONFIG_AUDIO_PRM
 		pr_debug("%s: clk_id %x", __func__,
-				clk_priv->prm_clk_cfg.clk_id);
+			 clk_priv->prm_clk_cfg.clk_id);
 		ret = audio_prm_set_lpass_clk_cfg(&clk_priv->prm_clk_cfg, 0);
-		 trace_printk("%s: clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+		trace_printk("%s: clk_id %x \n", __func__,
+			     clk_priv->prm_clk_cfg.clk_id);
 #else
 		pr_debug("%s: audio prm not enabled", __func__);
 		ret = -EPERM;
 #endif
 		if (ret < 0) {
 			if (__ratelimit(&rtl))
-				pr_err_ratelimited("%s: unset lpass clk cfg failed, ret = %d\n",
-				__func__, ret);
+				pr_err_ratelimited(
+					"%s: unset lpass clk cfg failed, ret = %d\n",
+					__func__, ret);
 		}
 	}
 
@@ -160,7 +166,7 @@ static u8 audio_ext_clk_get_parent(struct clk_hw *hw)
 {
 	struct audio_ext_clk_priv *clk_priv = to_audio_clk(hw);
 	int num_parents = clk_hw_get_num_parents(hw);
-	const char * const *parent_names = hw->init->parent_names;
+	const char *const *parent_names = hw->init->parent_names;
 	u8 i = 0, ret = hw->init->num_parents + 1;
 
 	if ((clk_priv->clk_src == AUDIO_EXT_CLK_PMI) && clk_priv->clk_name) {
@@ -180,12 +186,14 @@ static int lpass_hw_vote_prepare(struct clk_hw *hw)
 	int ret;
 	static DEFINE_RATELIMIT_STATE(rtl, 1 * HZ, 1);
 
-	if (clk_priv->clk_src == AUDIO_EXT_CLK_LPASS_CORE_HW_VOTE)  {
+	if (clk_priv->clk_src == AUDIO_EXT_CLK_LPASS_CORE_HW_VOTE) {
 #ifdef CONFIG_AUDIO_PRM
-		pr_debug("%s: core vote clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+		pr_debug("%s: core vote clk_id %x \n", __func__,
+			 clk_priv->prm_clk_cfg.clk_id);
 		ret = audio_prm_set_lpass_hw_core_req(&clk_priv->prm_clk_cfg,
-			HW_CORE_ID_LPASS, 1);
-		 trace_printk("%s: core vote clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+						      HW_CORE_ID_LPASS, 1);
+		trace_printk("%s: core vote clk_id %x \n", __func__,
+			     clk_priv->prm_clk_cfg.clk_id);
 #else
 		pr_debug("%s: audio prm not enabled", __func__);
 		ret = -EPERM;
@@ -193,17 +201,19 @@ static int lpass_hw_vote_prepare(struct clk_hw *hw)
 		if (ret < 0) {
 			if (__ratelimit(&rtl))
 				pr_err("%s lpass core hw vote failed %d\n",
-					__func__, ret);
+				       __func__, ret);
 			return ret;
 		}
 	}
 
-	if (clk_priv->clk_src == AUDIO_EXT_CLK_LPASS_AUDIO_HW_VOTE)  {
+	if (clk_priv->clk_src == AUDIO_EXT_CLK_LPASS_AUDIO_HW_VOTE) {
 #ifdef CONFIG_AUDIO_PRM
-		pr_debug("%s: audio vote clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+		pr_debug("%s: audio vote clk_id %x \n", __func__,
+			 clk_priv->prm_clk_cfg.clk_id);
 		ret = audio_prm_set_lpass_hw_core_req(&clk_priv->prm_clk_cfg,
-			HW_CORE_ID_DCODEC, 1);
-		trace_printk("%s: audio vote clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+						      HW_CORE_ID_DCODEC, 1);
+		trace_printk("%s: audio vote clk_id %x \n", __func__,
+			     clk_priv->prm_clk_cfg.clk_id);
 #else
 		pr_debug("%s: audio prm not enabled", __func__);
 		ret = -EPERM;
@@ -211,7 +221,7 @@ static int lpass_hw_vote_prepare(struct clk_hw *hw)
 		if (ret < 0) {
 			if (__ratelimit(&rtl))
 				pr_err("%s lpass audio hw vote failed %d\n",
-				__func__, ret);
+				       __func__, ret);
 			return ret;
 		}
 	}
@@ -226,34 +236,37 @@ static void lpass_hw_vote_unprepare(struct clk_hw *hw)
 
 	if (clk_priv->clk_src == AUDIO_EXT_CLK_LPASS_CORE_HW_VOTE) {
 #ifdef CONFIG_AUDIO_PRM
-		pr_debug("%s: core vote clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+		pr_debug("%s: core vote clk_id %x \n", __func__,
+			 clk_priv->prm_clk_cfg.clk_id);
 		ret = audio_prm_set_lpass_hw_core_req(&clk_priv->prm_clk_cfg,
-				HW_CORE_ID_LPASS, 0);
-		 trace_printk("%s: core vote clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+						      HW_CORE_ID_LPASS, 0);
+		trace_printk("%s: core vote clk_id %x \n", __func__,
+			     clk_priv->prm_clk_cfg.clk_id);
 #else
 		pr_debug("%s: audio prm not enabled", __func__);
 		ret = -EPERM;
 #endif
 		if (ret < 0) {
-			pr_err("%s lpass core hw vote failed %d\n",
-				__func__, ret);
+			pr_err("%s lpass core hw vote failed %d\n", __func__,
+			       ret);
 		}
 	}
 
 	if (clk_priv->clk_src == AUDIO_EXT_CLK_LPASS_AUDIO_HW_VOTE) {
-
 #ifdef CONFIG_AUDIO_PRM
-		pr_debug("%s: audio vote clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+		pr_debug("%s: audio vote clk_id %x \n", __func__,
+			 clk_priv->prm_clk_cfg.clk_id);
 		ret = audio_prm_set_lpass_hw_core_req(&clk_priv->prm_clk_cfg,
-				HW_CORE_ID_DCODEC, 0);
-		trace_printk("%s: audio vote clk_id %x \n", __func__, clk_priv->prm_clk_cfg.clk_id);
+						      HW_CORE_ID_DCODEC, 0);
+		trace_printk("%s: audio vote clk_id %x \n", __func__,
+			     clk_priv->prm_clk_cfg.clk_id);
 #else
 		pr_debug("%s: audio prm not enabled", __func__);
 		ret = -EPERM;
 #endif
 		if (ret < 0) {
-			pr_err("%s lpass audio hw unvote failed %d\n",
-				__func__, ret);
+			pr_err("%s lpass audio hw unvote failed %d\n", __func__,
+			       ret);
 		}
 	}
 }
@@ -269,7 +282,7 @@ static const struct clk_ops lpass_hw_vote_ops = {
 	.unprepare = lpass_hw_vote_unprepare,
 };
 
-static const char * const audio_ext_pmi_div_clk[] = {
+static const char *const audio_ext_pmi_div_clk[] = {
 	"qpnp_clkdiv_1",
 	"pms405_div_clk1",
 	"pm6150_div_clk1",
@@ -283,7 +296,6 @@ static int audio_ext_clk_dummy_prepare(struct clk_hw *hw)
 
 static void audio_ext_clk_dummy_unprepare(struct clk_hw *hw)
 {
-
 }
 
 static const struct clk_ops audio_ext_clk_dummy_ops = {
@@ -291,212 +303,247 @@ static const struct clk_ops audio_ext_clk_dummy_ops = {
 	.unprepare = audio_ext_clk_dummy_unprepare,
 };
 
-static struct audio_ext_clk audio_clk_array[] = {
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_ext_pmi_clk",
-				.parent_names = audio_ext_pmi_div_clk,
-				.num_parents =
-					 ARRAY_SIZE(audio_ext_pmi_div_clk),
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_ext_pmi_lnbb_clk",
-				.parent_names = (const char *[])
-							{ "ln_bb_clk2" },
-				.num_parents = 1,
-				.ops = &audio_ext_clk_dummy_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk2",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk3",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk4",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk5",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk6",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk7",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.hw.init = &(struct clk_init_data){
-				.name = "lpass_hw_vote_clk",
-				.ops = &lpass_hw_vote_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk8",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.hw.init = &(struct clk_init_data){
-				.name = "lpass_audio_hw_vote_clk",
-				.ops = &lpass_hw_vote_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk9",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk10",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk11",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk12",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_lpass_mclk13",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
-	{
-		.pnctrl_info = {NULL},
-		.fact = {
-			.mult = 1,
-			.div = 1,
-			.hw.init = &(struct clk_init_data){
-				.name = "audio_external_pll_clk",
-				.ops = &audio_ext_clk_ops,
-			},
-		},
-	},
+static struct audio_ext_clk audio_clk_array[] =
+    {
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_ext_pmi_clk",
+                            .parent_names = audio_ext_pmi_div_clk,
+                            .num_parents = ARRAY_SIZE(audio_ext_pmi_div_clk),
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_ext_pmi_lnbb_clk",
+                            .parent_names = (const char *[]){"ln_bb_clk2"},
+                            .num_parents = 1,
+                            .ops = &audio_ext_clk_dummy_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk2",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk3",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk4",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk5",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk6",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk7",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "lpass_hw_vote_clk",
+                            .ops = &lpass_hw_vote_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk8",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "lpass_audio_hw_vote_clk",
+                            .ops = &lpass_hw_vote_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk9",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk10",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk11",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk12",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_lpass_mclk13",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
+        {
+            .pnctrl_info = {NULL},
+            .fact =
+                {
+                    .mult = 1,
+                    .div = 1,
+                    .hw.init =
+                        &(struct clk_init_data){
+                            .name = "audio_external_pll_clk",
+                            .ops = &audio_ext_clk_ops,
+                        },
+                },
+        },
 };
 
 static int audio_get_pinctrl(struct platform_device *pdev)
 {
-	struct device *dev =  &pdev->dev;
+	struct device *dev = &pdev->dev;
 	struct audio_ext_clk_priv *clk_priv = platform_get_drvdata(pdev);
 	struct pinctrl_info *pnctrl_info;
 	struct pinctrl *pinctrl;
@@ -505,37 +552,32 @@ static int audio_get_pinctrl(struct platform_device *pdev)
 
 	pnctrl_info = &clk_priv->audio_clk.pnctrl_info;
 	if (pnctrl_info->pinctrl) {
-		dev_err(dev, "%s: already requested before\n",
-			__func__);
+		dev_err(dev, "%s: already requested before\n", __func__);
 		return -EINVAL;
 	}
 
 	pinctrl = devm_pinctrl_get(dev);
 	if (IS_ERR_OR_NULL(pinctrl)) {
-		dev_err(dev, "%s: Unable to get pinctrl handle\n",
-			__func__);
+		dev_err(dev, "%s: Unable to get pinctrl handle\n", __func__);
 		return -EINVAL;
 	}
 	pnctrl_info->pinctrl = pinctrl;
 	/* get all state handles from Device Tree */
 	pnctrl_info->sleep = pinctrl_lookup_state(pinctrl, "sleep");
 	if (IS_ERR(pnctrl_info->sleep)) {
-		dev_err(dev, "%s: could not get sleep pinstate\n",
-			__func__);
+		dev_err(dev, "%s: could not get sleep pinstate\n", __func__);
 		goto err;
 	}
 	pnctrl_info->active = pinctrl_lookup_state(pinctrl, "active");
 	if (IS_ERR(pnctrl_info->active)) {
-		dev_err(dev, "%s: could not get active pinstate\n",
-			__func__);
+		dev_err(dev, "%s: could not get active pinstate\n", __func__);
 		goto err;
 	}
 	/* Reset the TLMM pins to a default state */
-	ret = pinctrl_select_state(pnctrl_info->pinctrl,
-				   pnctrl_info->sleep);
+	ret = pinctrl_select_state(pnctrl_info->pinctrl, pnctrl_info->sleep);
 	if (ret) {
-		dev_err(dev, "%s: Disable TLMM pins failed with %d\n",
-			__func__, ret);
+		dev_err(dev, "%s: Disable TLMM pins failed with %d\n", __func__,
+			ret);
 		goto err;
 	}
 
@@ -544,7 +586,7 @@ static int audio_get_pinctrl(struct platform_device *pdev)
 		dev_dbg(dev, "%s: miss mclk reg\n", __func__);
 	} else {
 		pnctrl_info->base = ioremap(reg, sizeof(u32));
-		if (pnctrl_info->base ==  NULL) {
+		if (pnctrl_info->base == NULL) {
 			dev_err(dev, "%s ioremap failed\n", __func__);
 			goto err;
 		}
@@ -584,9 +626,8 @@ static int audio_get_clk_data(struct platform_device *pdev)
 		return -ENOMEM;
 
 	clk_data->clk_num = 1;
-	clk_data->clks = devm_kzalloc(&pdev->dev,
-				sizeof(struct clk *),
-				GFP_KERNEL);
+	clk_data->clks =
+		devm_kzalloc(&pdev->dev, sizeof(struct clk *), GFP_KERNEL);
 	if (!clk_data->clks)
 		return -ENOMEM;
 
@@ -601,8 +642,8 @@ static int audio_get_clk_data(struct platform_device *pdev)
 	}
 	clk_data->clks[0] = audio_clk;
 
-	ret = of_clk_add_provider(pdev->dev.of_node,
-			 of_clk_src_onecell_get, clk_data);
+	ret = of_clk_add_provider(pdev->dev.of_node, of_clk_src_onecell_get,
+				  clk_data);
 	if (ret)
 		dev_err(&pdev->dev, "%s: clock add failed for clk_src = %d\n",
 			__func__, clk_priv->clk_src);
@@ -620,24 +661,23 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 	if (!clk_priv)
 		return -ENOMEM;
 
-	ret = of_property_read_u32(pdev->dev.of_node,
-			"qcom,codec-ext-clk-src",
-			&clk_src);
+	ret = of_property_read_u32(pdev->dev.of_node, "qcom,codec-ext-clk-src",
+				   &clk_src);
 	if (ret) {
 		dev_err(&pdev->dev, "%s: could not get clk source, ret = %d\n",
-				__func__, ret);
+			__func__, ret);
 		return ret;
 	}
 
 	if (clk_src >= AUDIO_EXT_CLK_MAX) {
-		dev_err(&pdev->dev, "%s: Invalid clk source = %d\n",
-				__func__, clk_src);
+		dev_err(&pdev->dev, "%s: Invalid clk source = %d\n", __func__,
+			clk_src);
 		return -EINVAL;
 	}
 	clk_priv->clk_name = NULL;
 	clk_priv->clk_src = clk_src;
 	memcpy(&clk_priv->audio_clk, &audio_clk_array[clk_src],
-		   sizeof(struct audio_ext_clk));
+	       sizeof(struct audio_ext_clk));
 
 #ifdef CONFIG_AUDIO_PRM
 	/* Init prm clk cfg default values */
@@ -648,29 +688,29 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 #endif
 
 	ret = of_property_read_u32(pdev->dev.of_node,
-			"qcom,codec-lpass-ext-clk-freq",
-			&clk_freq);
+				   "qcom,codec-lpass-ext-clk-freq", &clk_freq);
 	if (!ret) {
 #ifdef CONFIG_AUDIO_PRM
 		clk_priv->prm_clk_cfg.clk_freq_in_hz = clk_freq;
 #endif
 	}
 
-	ret = of_property_read_u32(pdev->dev.of_node,
-			"qcom,codec-lpass-clk-id",
-			&clk_id);
+	ret = of_property_read_u32(pdev->dev.of_node, "qcom,codec-lpass-clk-id",
+				   &clk_id);
 	if (!ret) {
 #ifdef CONFIG_AUDIO_PRM
 		clk_priv->prm_clk_cfg.clk_id = clk_id;
-		dev_dbg(&pdev->dev, "%s: PRM ext-clk freq: %d, lpass clk_id: %d, clk_src: %d\n",
+		dev_dbg(&pdev->dev,
+			"%s: PRM ext-clk freq: %d, lpass clk_id: %d, clk_src: %d\n",
 			__func__, clk_priv->prm_clk_cfg.clk_freq_in_hz,
 			clk_priv->prm_clk_cfg.clk_id, clk_priv->clk_src);
 #endif
 	}
 
-        dev_dbg(&pdev->dev, "%s: PRM2 ext-clk freq: %d, lpass clk_id: %d, clk_src: %d\n",
-                        __func__, clk_priv->prm_clk_cfg.clk_freq_in_hz,
-                        clk_priv->prm_clk_cfg.clk_id, clk_priv->clk_src);
+	dev_dbg(&pdev->dev,
+		"%s: PRM2 ext-clk freq: %d, lpass clk_id: %d, clk_src: %d\n",
+		__func__, clk_priv->prm_clk_cfg.clk_freq_in_hz,
+		clk_priv->prm_clk_cfg.clk_id, clk_priv->clk_src);
 
 	platform_set_drvdata(pdev, clk_priv);
 
@@ -680,13 +720,12 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 		dev_dbg(&pdev->dev, "%s: could not find pmic clock names\n",
 			__func__);
 	/*
-	 * property qcom,use-pinctrl to be defined in DTSI to val 1
-	 * for clock nodes using pinctrl
-	 */
+   * property qcom,use-pinctrl to be defined in DTSI to val 1
+   * for clock nodes using pinctrl
+   */
 	of_property_read_u32(pdev->dev.of_node, "qcom,use-pinctrl",
 			     &use_pinctrl);
-	dev_dbg(&pdev->dev, "%s: use-pinctrl : %d\n",
-		__func__, use_pinctrl);
+	dev_dbg(&pdev->dev, "%s: use-pinctrl : %d\n", __func__, use_pinctrl);
 
 	if (use_pinctrl) {
 		ret = audio_get_pinctrl(pdev);
@@ -699,8 +738,7 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 
 	ret = audio_get_clk_data(pdev);
 	if (ret) {
-		dev_err(&pdev->dev, "%s: clk_init is failed\n",
-			__func__);
+		dev_err(&pdev->dev, "%s: clk_init is failed\n", __func__);
 		audio_put_pinctrl(pdev);
 		return ret;
 	}
@@ -715,20 +753,21 @@ static int audio_ref_clk_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id audio_ref_clk_match[] = {
-	{.compatible = "qcom,audio-ref-clk"},
+	{ .compatible = "qcom,audio-ref-clk" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, audio_ref_clk_match);
 
 static struct platform_driver audio_ref_clk_driver = {
-	.driver = {
-		.name = "audio-ref-clk",
-		.owner = THIS_MODULE,
-		.of_match_table = audio_ref_clk_match,
-		.suppress_bind_attrs = true,
-	},
-	.probe = audio_ref_clk_probe,
-	.remove = audio_ref_clk_remove,
+    .driver =
+        {
+            .name = "audio-ref-clk",
+            .owner = THIS_MODULE,
+            .of_match_table = audio_ref_clk_match,
+            .suppress_bind_attrs = true,
+        },
+    .probe = audio_ref_clk_probe,
+    .remove = audio_ref_clk_remove,
 };
 
 int audio_ref_clk_platform_init(void)

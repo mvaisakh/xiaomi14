@@ -4,44 +4,49 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/slab.h>
+#include "cam_ife_csid_dev.h"
+#include "cam_cpas_api.h"
+#include "cam_debug_util.h"
+#include "cam_ife_csid_common.h"
+#include "cam_ife_csid_hw_intf.h"
+#include "camera_main.h"
+#include <dt-bindings/msm-camera.h>
 #include <linux/mod_devicetable.h>
 #include <linux/of_device.h>
-#include "cam_ife_csid_common.h"
-#include "cam_ife_csid_dev.h"
-#include "cam_ife_csid_hw_intf.h"
-#include "cam_debug_util.h"
-#include "camera_main.h"
-#include "cam_cpas_api.h"
-#include <dt-bindings/msm-camera.h>
+#include <linux/slab.h>
 
 static struct cam_hw_intf *cam_ife_csid_hw_list[CAM_IFE_CSID_HW_NUM_MAX] = {
-	0, 0, 0, 0};
+	0, 0, 0, 0
+};
 
 static int cam_ife_csid_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				       struct device *master_dev, void *data)
 {
-	struct cam_hw_intf             *hw_intf;
-	struct cam_hw_info             *hw_info;
-	const struct of_device_id      *match_dev = NULL;
-	struct cam_ife_csid_core_info  *csid_core_info = NULL;
-	uint32_t                        csid_dev_idx;
-	int                             rc = 0;
+	struct cam_hw_intf *hw_intf;
+	struct cam_hw_info *hw_info;
+	const struct of_device_id *match_dev = NULL;
+	struct cam_ife_csid_core_info *csid_core_info = NULL;
+	uint32_t csid_dev_idx;
+	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	CAM_DBG(CAM_ISP, "Binding IFE CSID component");
 
 	/* get ife csid hw index */
-	rc = of_property_read_u32(pdev->dev.of_node, "cell-index", &csid_dev_idx);
+	rc = of_property_read_u32(pdev->dev.of_node, "cell-index",
+				  &csid_dev_idx);
 	if (rc) {
-		CAM_ERR(CAM_ISP, "Failed to read cell-index of IFE CSID HW, rc: %d", rc);
+		CAM_ERR(CAM_ISP,
+			"Failed to read cell-index of IFE CSID HW, rc: %d", rc);
 		goto err;
 	}
 
-	if (!cam_cpas_is_feature_supported(CAM_CPAS_ISP_FUSE, BIT(csid_dev_idx), NULL) ||
-		!cam_cpas_is_feature_supported(CAM_CPAS_ISP_LITE_FUSE,
-		BIT(csid_dev_idx), NULL)) {
-		CAM_DBG(CAM_ISP, "CSID[%d] not supported based on fuse", csid_dev_idx);
+	if (!cam_cpas_is_feature_supported(CAM_CPAS_ISP_FUSE, BIT(csid_dev_idx),
+					   NULL) ||
+	    !cam_cpas_is_feature_supported(CAM_CPAS_ISP_LITE_FUSE,
+					   BIT(csid_dev_idx), NULL)) {
+		CAM_DBG(CAM_ISP, "CSID[%d] not supported based on fuse",
+			csid_dev_idx);
 		goto err;
 	}
 
@@ -58,8 +63,8 @@ static int cam_ife_csid_component_bind(struct device *dev,
 	}
 
 	/* get ife csid hw information */
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_ISP, "No matching table for the IFE CSID HW!");
 		rc = -EINVAL;
@@ -75,21 +80,19 @@ static int cam_ife_csid_component_bind(struct device *dev,
 	hw_info->soc_info.dev_name = pdev->name;
 	hw_info->soc_info.index = csid_dev_idx;
 
-	csid_core_info = (struct cam_ife_csid_core_info  *)match_dev->data;
+	csid_core_info = (struct cam_ife_csid_core_info *)match_dev->data;
 
 	/* call the driver init and fill csid_hw_info->core_info */
 	rc = cam_ife_csid_hw_probe_init(hw_intf, csid_core_info, false);
 
 	if (rc) {
-		CAM_ERR(CAM_ISP, "CSID[%d] probe init failed",
-		    csid_dev_idx);
+		CAM_ERR(CAM_ISP, "CSID[%d] probe init failed", csid_dev_idx);
 		goto free_hw_info;
 	}
 
 	platform_set_drvdata(pdev, hw_intf);
 	CAM_DBG(CAM_ISP, "CSID:%d component bound successfully",
 		hw_intf->hw_idx);
-
 
 	if (hw_intf->hw_idx < CAM_IFE_CSID_HW_NUM_MAX)
 		cam_ife_csid_hw_list[hw_intf->hw_idx] = hw_intf;
@@ -107,21 +110,20 @@ err:
 }
 
 static void cam_ife_csid_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					  struct device *master_dev, void *data)
 {
-	struct cam_hw_intf             *hw_intf;
-	struct cam_hw_info             *hw_info;
-	struct cam_ife_csid_core_info  *core_info = NULL;
+	struct cam_hw_intf *hw_intf;
+	struct cam_hw_info *hw_info;
+	struct cam_ife_csid_core_info *core_info = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
-	const struct of_device_id      *match_dev = NULL;
+	const struct of_device_id *match_dev = NULL;
 
 	hw_intf = (struct cam_hw_intf *)platform_get_drvdata(pdev);
 	hw_info = hw_intf->hw_priv;
 
-	CAM_DBG(CAM_ISP, "CSID:%d component unbind",
-		hw_intf->hw_idx);
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	CAM_DBG(CAM_ISP, "CSID:%d component unbind", hw_intf->hw_idx);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 
 	if (!match_dev) {
 		CAM_ERR(CAM_ISP, "No matching table for the IFE CSID HW!");
@@ -161,8 +163,7 @@ int cam_ife_csid_remove(struct platform_device *pdev)
 	return 0;
 }
 
-int cam_ife_csid_hw_init(struct cam_hw_intf **ife_csid_hw,
-	uint32_t hw_idx)
+int cam_ife_csid_hw_init(struct cam_hw_intf **ife_csid_hw, uint32_t hw_idx)
 {
 	int rc = 0;
 

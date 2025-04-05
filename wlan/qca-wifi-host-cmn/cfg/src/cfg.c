@@ -101,8 +101,7 @@ struct cfg_meta {
 	((void *)&(store)->values + (meta)->field_offset)
 
 static __attribute__((unused)) void
-cfg_int_item_handler(struct cfg_value_store *store,
-		     const struct cfg_meta *meta,
+cfg_int_item_handler(struct cfg_value_store *store, const struct cfg_meta *meta,
 		     const char *str_value)
 {
 	QDF_STATUS status;
@@ -140,14 +139,13 @@ cfg_int_item_handler(struct cfg_value_store *store,
 		break;
 	}
 
-	cfg_err("%s=%d - Out of range [%d, %d]; Using %d",
-		meta->name, value, meta->min, meta->max, *store_value);
+	cfg_err("%s=%d - Out of range [%d, %d]; Using %d", meta->name, value,
+		meta->min, meta->max, *store_value);
 }
 
 static __attribute__((unused)) void
 cfg_uint_item_handler(struct cfg_value_store *store,
-		      const struct cfg_meta *meta,
-		      const char *str_value)
+		      const struct cfg_meta *meta, const char *str_value)
 {
 	QDF_STATUS status;
 	uint32_t *store_value = cfg_value_ptr(store, meta);
@@ -156,10 +154,10 @@ cfg_uint_item_handler(struct cfg_value_store *store,
 	uint32_t max;
 
 	/**
-	 * Since meta min and max are of type int32_t
-	 * We need explicit type casting to avoid
-	 * implicit wrap around for uint32_t type cfg data.
-	*/
+   * Since meta min and max are of type int32_t
+   * We need explicit type casting to avoid
+   * implicit wrap around for uint32_t type cfg data.
+   */
 	min = (uint32_t)meta->min;
 	max = (uint32_t)meta->max;
 
@@ -194,14 +192,13 @@ cfg_uint_item_handler(struct cfg_value_store *store,
 		break;
 	}
 
-	cfg_err("%s=%u - Out of range [%d, %d]; Using %u",
-		meta->name, value, min, max, *store_value);
+	cfg_err("%s=%u - Out of range [%d, %d]; Using %u", meta->name, value,
+		min, max, *store_value);
 }
 
 static __attribute__((unused)) void
 cfg_bool_item_handler(struct cfg_value_store *store,
-		      const struct cfg_meta *meta,
-		      const char *str_value)
+		      const struct cfg_meta *meta, const char *str_value)
 {
 	QDF_STATUS status;
 	bool *store_value = cfg_value_ptr(store, meta);
@@ -216,8 +213,7 @@ cfg_bool_item_handler(struct cfg_value_store *store,
 
 static __attribute__((unused)) void
 cfg_string_item_handler(struct cfg_value_store *store,
-			const struct cfg_meta *meta,
-			const char *str_value)
+			const struct cfg_meta *meta, const char *str_value)
 {
 	char *store_value = cfg_value_ptr(store, meta);
 	qdf_size_t len;
@@ -232,16 +228,16 @@ cfg_string_item_handler(struct cfg_value_store *store,
 	/* ensure min length */
 	len = qdf_str_nlen(str_value, meta->min);
 	if (len < meta->min) {
-		cfg_err("%s=%s - Too short; Using default '%s'",
-			meta->name, str_value, store_value);
+		cfg_err("%s=%s - Too short; Using default '%s'", meta->name,
+			str_value, store_value);
 		return;
 	}
 
 	/* check max length */
 	len += qdf_str_nlen(str_value + meta->min, meta->max - meta->min + 1);
 	if (len > meta->max) {
-		cfg_err("%s=%s - Too long; Using default '%s'",
-			meta->name, str_value, store_value);
+		cfg_err("%s=%s - Too long; Using default '%s'", meta->name,
+			str_value, store_value);
 		return;
 	}
 
@@ -249,8 +245,7 @@ cfg_string_item_handler(struct cfg_value_store *store,
 }
 
 static __attribute__((unused)) void
-cfg_mac_item_handler(struct cfg_value_store *store,
-		     const struct cfg_meta *meta,
+cfg_mac_item_handler(struct cfg_value_store *store, const struct cfg_meta *meta,
 		     const char *str_value)
 {
 	QDF_STATUS status;
@@ -260,15 +255,14 @@ cfg_mac_item_handler(struct cfg_value_store *store,
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return;
 
-	cfg_err("%s=%s - Invalid format (status %d); Using default "
-		QDF_MAC_ADDR_FMT, meta->name, str_value, status,
+	cfg_err("%s=%s - Invalid format (status %d); Using default " QDF_MAC_ADDR_FMT,
+		meta->name, str_value, status,
 		QDF_MAC_ADDR_REF(store_value->bytes));
 }
 
 static __attribute__((unused)) void
 cfg_ipv4_item_handler(struct cfg_value_store *store,
-		      const struct cfg_meta *meta,
-		      const char *str_value)
+		      const struct cfg_meta *meta, const char *str_value)
 {
 	QDF_STATUS status;
 	struct qdf_ipv4_addr *store_value = cfg_value_ptr(store, meta);
@@ -277,15 +271,14 @@ cfg_ipv4_item_handler(struct cfg_value_store *store,
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return;
 
-	cfg_err("%s=%s - Invalid format (status %d); Using default "
-		QDF_IPV4_ADDR_STR, meta->name, str_value, status,
+	cfg_err("%s=%s - Invalid format (status %d); Using default " QDF_IPV4_ADDR_STR,
+		meta->name, str_value, status,
 		QDF_IPV4_ADDR_ARRAY(store_value->bytes));
 }
 
 static __attribute__((unused)) void
 cfg_ipv6_item_handler(struct cfg_value_store *store,
-		      const struct cfg_meta *meta,
-		      const char *str_value)
+		      const struct cfg_meta *meta, const char *str_value)
 {
 	QDF_STATUS status;
 	struct qdf_ipv6_addr *store_value = cfg_value_ptr(store, meta);
@@ -294,23 +287,24 @@ cfg_ipv6_item_handler(struct cfg_value_store *store,
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return;
 
-	cfg_err("%s=%s - Invalid format (status %d); Using default "
-		QDF_IPV6_ADDR_STR, meta->name, str_value, status,
+	cfg_err("%s=%s - Invalid format (status %d); Using default " QDF_IPV6_ADDR_STR,
+		meta->name, str_value, status,
 		QDF_IPV6_ADDR_ARRAY(store_value->bytes));
 }
 
 /* populate metadata lookup table */
 #undef __CFG_INI
 #define __CFG_INI(_id, _mtype, _ctype, _name, _min, _max, _fallback, ...) \
-{ \
-	.name = _name, \
-	.field_offset = qdf_offsetof(struct cfg_values, _id##_internal), \
-	.cfg_type = CFG_ ##_mtype ## _ITEM, \
-	.item_handler = cfg_ ## _mtype ## _item_handler, \
-	.min = _min, \
-	.max = _max, \
-	.fallback = _fallback, \
-},
+	{                                                                 \
+		.name = _name,                                            \
+		.field_offset =                                           \
+			qdf_offsetof(struct cfg_values, _id##_internal),  \
+		.cfg_type = CFG_##_mtype##_ITEM,                          \
+		.item_handler = cfg_##_mtype##_item_handler,              \
+		.min = _min,                                              \
+		.max = _max,                                              \
+		.fallback = _fallback,                                    \
+	},
 
 #define cfg_INT_item_handler cfg_int_item_handler
 #define cfg_UINT_item_handler cfg_uint_item_handler
@@ -320,9 +314,7 @@ cfg_ipv6_item_handler(struct cfg_value_store *store,
 #define cfg_IPV4_item_handler cfg_ipv4_item_handler
 #define cfg_IPV6_item_handler cfg_ipv6_item_handler
 
-static const struct cfg_meta cfg_meta_lookup_table[] = {
-	CFG_ALL
-};
+static const struct cfg_meta cfg_meta_lookup_table[] = { CFG_ALL };
 
 /* default store initializer */
 
@@ -393,8 +385,8 @@ static const struct cfg_meta *cfg_lookup_meta(const char *name)
 	return NULL;
 }
 
-static QDF_STATUS
-cfg_ini_item_handler(void *context, const char *key, const char *value)
+static QDF_STATUS cfg_ini_item_handler(void *context, const char *key,
+				       const char *value)
 {
 	struct cfg_value_store *store = context;
 	const struct cfg_meta *meta;
@@ -422,11 +414,11 @@ static QDF_STATUS cfg_ini_section_handler(void *context, const char *name)
 	return QDF_STATUS_SUCCESS;
 }
 
-#define cfg_assert_success(expr) \
-do { \
-	QDF_STATUS __assert_status = (expr); \
-	QDF_BUG(QDF_IS_STATUS_SUCCESS(__assert_status)); \
-} while (0)
+#define cfg_assert_success(expr)                                 \
+	do {                                                     \
+		QDF_STATUS __assert_status = (expr);             \
+		QDF_BUG(QDF_IS_STATUS_SUCCESS(__assert_status)); \
+	} while (0)
 
 static bool __cfg_is_init;
 static struct cfg_value_store *__cfg_global_store;
@@ -437,8 +429,8 @@ struct cfg_psoc_ctx {
 	struct cfg_value_store *store;
 };
 
-static QDF_STATUS
-cfg_store_alloc(const char *path, struct cfg_value_store **out_store)
+static QDF_STATUS cfg_store_alloc(const char *path,
+				  struct cfg_value_store **out_store)
 {
 	QDF_STATUS status;
 	struct cfg_value_store *store;
@@ -494,8 +486,8 @@ static void cfg_store_free(struct cfg_value_store *store)
 	qdf_mem_common_free(store);
 }
 
-static QDF_STATUS
-cfg_store_get(const char *path, struct cfg_value_store **out_store)
+static QDF_STATUS cfg_store_get(const char *path,
+				struct cfg_value_store **out_store)
 {
 	QDF_STATUS status;
 	qdf_list_node_t *node;
@@ -543,31 +535,31 @@ struct cfg_values *cfg_psoc_get_values(struct wlan_objmgr_psoc *psoc)
 }
 qdf_export_symbol(cfg_psoc_get_values);
 
-static QDF_STATUS
-cfg_ini_parse_to_store(const char *path, struct cfg_value_store *store)
+static QDF_STATUS cfg_ini_parse_to_store(const char *path,
+					 struct cfg_value_store *store)
 {
 	QDF_STATUS status;
 
 	status = qdf_ini_parse(path, store, cfg_ini_item_handler,
 			       cfg_ini_section_handler);
 	if (QDF_IS_STATUS_ERROR(status))
-		cfg_err("Failed to parse *.ini file @ %s; status:%d",
-			path, status);
+		cfg_err("Failed to parse *.ini file @ %s; status:%d", path,
+			status);
 
 	return status;
 }
 
-static QDF_STATUS
-cfg_ini_section_parse_to_store(const char *path, const char *section_name,
-			       struct cfg_value_store *store)
+static QDF_STATUS cfg_ini_section_parse_to_store(const char *path,
+						 const char *section_name,
+						 struct cfg_value_store *store)
 {
 	QDF_STATUS status;
 
 	status = qdf_ini_section_parse(path, store, cfg_ini_item_handler,
 				       section_name);
 	if (QDF_IS_STATUS_ERROR(status))
-		cfg_err("Failed to parse *.ini file @ %s; status:%d",
-			path, status);
+		cfg_err("Failed to parse *.ini file @ %s; status:%d", path,
+			status);
 
 	return status;
 }
@@ -585,7 +577,7 @@ QDF_STATUS cfg_section_parse_to_psoc_store(struct wlan_objmgr_psoc *psoc,
 					   const char *section_name)
 {
 	return cfg_ini_section_parse_to_store(path, section_name,
-			cfg_psoc_get_ctx(psoc)->store);
+					      cfg_psoc_get_ctx(psoc)->store);
 }
 
 qdf_export_symbol(cfg_section_parse_to_psoc_store);
@@ -602,8 +594,7 @@ QDF_STATUS cfg_parse_to_global_store(const char *path)
 
 qdf_export_symbol(cfg_parse_to_global_store);
 
-static QDF_STATUS
-cfg_store_print(struct wlan_objmgr_psoc *psoc)
+static QDF_STATUS cfg_store_print(struct wlan_objmgr_psoc *psoc)
 {
 	struct cfg_value_store *store;
 	struct cfg_psoc_ctx *psoc_ctx;
@@ -643,18 +634,16 @@ cfg_store_print(struct wlan_objmgr_psoc *psoc)
 				       (char *)offset);
 			break;
 		case CFG_MAC_ITEM:
-			cfg_nofl_debug("%pK %s " QDF_MAC_ADDR_FMT,
-				       offset, meta->name,
+			cfg_nofl_debug("%pK %s " QDF_MAC_ADDR_FMT, offset,
+				       meta->name,
 				       QDF_MAC_ADDR_REF((uint8_t *)offset));
 			break;
 		case CFG_IPV4_ITEM:
-			cfg_nofl_debug("%pK %s %pI4",
-				       offset, meta->name,
+			cfg_nofl_debug("%pK %s %pI4", offset, meta->name,
 				       offset);
 			break;
 		case CFG_IPV6_ITEM:
-			cfg_nofl_debug("%pK %s %pI6c",
-				       offset, meta->name,
+			cfg_nofl_debug("%pK %s %pI6c", offset, meta->name,
 				       offset);
 			break;
 		default:
@@ -666,9 +655,9 @@ cfg_store_print(struct wlan_objmgr_psoc *psoc)
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-cfg_ini_config_print(struct wlan_objmgr_psoc *psoc, uint8_t *buf,
-		     ssize_t *plen, ssize_t buflen)
+static QDF_STATUS cfg_ini_config_print(struct wlan_objmgr_psoc *psoc,
+				       uint8_t *buf, ssize_t *plen,
+				       ssize_t buflen)
 {
 	struct cfg_value_store *store;
 	struct cfg_psoc_ctx *psoc_ctx;
@@ -717,25 +706,22 @@ cfg_ini_config_print(struct wlan_objmgr_psoc *psoc, uint8_t *buf,
 			buflen -= len;
 			break;
 		case CFG_MAC_ITEM:
-			len = qdf_scnprintf(buf, buflen,
-					    "%s " QDF_MAC_ADDR_FMT "\n",
-					    meta->name,
-					    QDF_MAC_ADDR_REF(
-						(uint8_t *)offset));
+			len = qdf_scnprintf(
+				buf, buflen, "%s " QDF_MAC_ADDR_FMT "\n",
+				meta->name,
+				QDF_MAC_ADDR_REF((uint8_t *)offset));
 			buf += len;
 			buflen -= len;
 			break;
 		case CFG_IPV4_ITEM:
 			len = qdf_scnprintf(buf, buflen, "%s %pI4\n",
-					    meta->name,
-					    offset);
+					    meta->name, offset);
 			buf += len;
 			buflen -= len;
 			break;
 		case CFG_IPV6_ITEM:
 			len = qdf_scnprintf(buf, buflen, "%s %pI6c\n",
-					    meta->name,
-					    offset);
+					    meta->name, offset);
 			buf += len;
 			buflen -= len;
 			break;
@@ -764,8 +750,8 @@ QDF_STATUS ucfg_cfg_ini_config_print(struct wlan_objmgr_psoc *psoc,
 	return cfg_ini_config_print(psoc, buf, plen, buflen);
 }
 
-static QDF_STATUS
-cfg_on_psoc_create(struct wlan_objmgr_psoc *psoc, void *context)
+static QDF_STATUS cfg_on_psoc_create(struct wlan_objmgr_psoc *psoc,
+				     void *context)
 {
 	QDF_STATUS status;
 	struct cfg_psoc_ctx *psoc_ctx;
@@ -796,8 +782,8 @@ put_store:
 	return status;
 }
 
-static QDF_STATUS
-cfg_on_psoc_destroy(struct wlan_objmgr_psoc *psoc, void *context)
+static QDF_STATUS cfg_on_psoc_destroy(struct wlan_objmgr_psoc *psoc,
+				      void *context)
 {
 	QDF_STATUS status;
 	struct cfg_psoc_ctx *psoc_ctx;

@@ -4,11 +4,11 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/clk.h>
-#include <linux/clk-provider.h>
-#include <linux/ratelimit.h>
 #include <dsp/digital-cdc-rsc-mgr.h>
+#include <linux/clk-provider.h>
+#include <linux/clk.h>
 #include <linux/dev_printk.h>
+#include <linux/ratelimit.h>
 
 struct mutex hw_vote_lock;
 static bool is_init_done;
@@ -21,7 +21,8 @@ static bool is_init_done;
  *
  * Returns 0 on success or -EINVAL/error code on failure
  */
-int digital_cdc_rsc_mgr_hw_vote_enable(struct clk *vote_handle, struct device *dev)
+int digital_cdc_rsc_mgr_hw_vote_enable(struct clk *vote_handle,
+				       struct device *dev)
 {
 	int ret = 0;
 
@@ -48,7 +49,8 @@ EXPORT_SYMBOL(digital_cdc_rsc_mgr_hw_vote_enable);
  * @dev: indicate which device unvotes
  *
  */
-void digital_cdc_rsc_mgr_hw_vote_disable(struct clk *vote_handle, struct device *dev)
+void digital_cdc_rsc_mgr_hw_vote_disable(struct clk *vote_handle,
+					 struct device *dev)
 {
 	if (!is_init_done || vote_handle == NULL) {
 		pr_err_ratelimited("%s: init failed or vote handle NULL\n",
@@ -68,7 +70,7 @@ EXPORT_SYMBOL(digital_cdc_rsc_mgr_hw_vote_disable);
  * digital_cdc_rsc_mgr_hw_vote_reset - Resets hw vote count
  *
  */
-void digital_cdc_rsc_mgr_hw_vote_reset(struct clk* vote_handle)
+void digital_cdc_rsc_mgr_hw_vote_reset(struct clk *vote_handle)
 {
 	int count = 0;
 

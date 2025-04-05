@@ -17,30 +17,29 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "targcfg.h"
+#include "hif_io32.h"
 #include "qdf_lock.h"
 #include "qdf_status.h"
-#include "qdf_status.h"
-#include <qdf_atomic.h>         /* qdf_atomic_read */
-#include <targaddrs.h>
-#include "hif_io32.h"
-#include <hif.h>
-#include <target_type.h>
 #include "regtable.h"
+#include "targcfg.h"
+#include <hif.h>
+#include <qdf_atomic.h> /* qdf_atomic_read */
+#include <targaddrs.h>
+#include <target_type.h>
 #define ATH_MODULE_NAME hif
-#include <a_debug.h>
-#include "hif_main.h"
 #include "hif_hw_version.h"
+#include "hif_main.h"
+#include <a_debug.h>
 #if (defined(HIF_PCI) || defined(HIF_SNOC) || defined(HIF_AHB) || \
      defined(HIF_IPCI))
-#include "ce_tasklet.h"
 #include "ce_api.h"
+#include "ce_tasklet.h"
 #endif
-#include "qdf_trace.h"
-#include "qdf_status.h"
 #include "hif_debug.h"
 #include "mp_dev.h"
-#if defined(QCA_WIFI_QCA8074) || defined(QCA_WIFI_QCA6018) || \
+#include "qdf_status.h"
+#include "qdf_trace.h"
+#if defined(QCA_WIFI_QCA8074) || defined(QCA_WIFI_QCA6018) ||     \
 	defined(QCA_WIFI_QCA5018) || defined(QCA_WIFI_QCA9574) || \
 	defined(QCA_WIFI_QCA5332)
 #include "hal_api.h"
@@ -49,13 +48,13 @@
 #include "hif_unit_test_suspend_i.h"
 #include "qdf_module.h"
 #ifdef HIF_CE_LOG_INFO
-#include <qdf_notifier.h>
 #include <qdf_hang_event_notifier.h>
+#include <qdf_notifier.h>
 #endif
 #include <linux/cpumask.h>
 
-#include <pld_common.h>
 #include "ce_internal.h"
+#include <pld_common.h>
 #include <qdf_tracepoint.h>
 
 void hif_dump(struct hif_opaque_softc *hif_ctx, uint8_t cmd_id, bool start)
@@ -93,8 +92,7 @@ void *hif_get_targetdef(struct hif_opaque_softc *hif_ctx)
 
 #ifdef FORCE_WAKE
 #ifndef QCA_WIFI_WCN6450
-void hif_srng_init_phase(struct hif_opaque_softc *hif_ctx,
-			 bool init_phase)
+void hif_srng_init_phase(struct hif_opaque_softc *hif_ctx, bool init_phase)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
@@ -102,8 +100,7 @@ void hif_srng_init_phase(struct hif_opaque_softc *hif_ctx,
 		hal_set_init_phase(scn->hal_soc, init_phase);
 }
 #else
-void hif_srng_init_phase(struct hif_opaque_softc *hif_ctx,
-			 bool init_phase)
+void hif_srng_init_phase(struct hif_opaque_softc *hif_ctx, bool init_phase)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
@@ -274,7 +271,7 @@ qdf_size_t init_buffer_count(qdf_size_t maxSize)
  * Return: void
  */
 void hif_save_htc_htt_config_endpoint(struct hif_opaque_softc *hif_ctx,
-							int htc_htt_tx_endpoint)
+				      int htc_htt_tx_endpoint)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
@@ -482,8 +479,7 @@ static const char *hif_get_hw_name(struct hif_target_info *info)
 	int i;
 
 	hif_debug("target version = %d, target revision = %d",
-		  info->target_version,
-		  info->target_revision);
+		  info->target_version, info->target_revision);
 
 	if (info->hw_name)
 		return info->hw_name;
@@ -517,7 +513,7 @@ static const char *hif_get_hw_name(struct hif_target_info *info)
  * Return: n/a
  */
 void hif_get_hw_info(struct hif_opaque_softc *scn, u32 *version, u32 *revision,
-			const char **target_name)
+		     const char **target_name)
 {
 	struct hif_target_info *info = hif_get_target_info_handle(scn);
 	struct hif_softc *sc = HIF_GET_SOFTC(scn);
@@ -608,25 +604,21 @@ void hif_runtime_prevent_linkdown(struct hif_softc *scn, bool is_get)
 		qdf_runtime_pm_allow_suspend(&scn->prevent_linkdown_lock);
 }
 
-static inline
-void hif_rtpm_lock_init(struct hif_softc *scn)
+static inline void hif_rtpm_lock_init(struct hif_softc *scn)
 {
 	qdf_runtime_lock_init(&scn->prevent_linkdown_lock);
 }
 
-static inline
-void hif_rtpm_lock_deinit(struct hif_softc *scn)
+static inline void hif_rtpm_lock_deinit(struct hif_softc *scn)
 {
 	qdf_runtime_lock_deinit(&scn->prevent_linkdown_lock);
 }
 #else
-static inline
-void hif_rtpm_lock_init(struct hif_softc *scn)
+static inline void hif_rtpm_lock_init(struct hif_softc *scn)
 {
 }
 
-static inline
-void hif_rtpm_lock_deinit(struct hif_softc *scn)
+static inline void hif_rtpm_lock_deinit(struct hif_softc *scn)
 {
 }
 #endif
@@ -639,23 +631,21 @@ void hif_rtpm_lock_deinit(struct hif_softc *scn)
  *
  * Return: None
  */
-static inline
-void hif_get_interrupt_threshold_cfg_from_psoc(struct hif_softc *scn,
-					       struct wlan_objmgr_psoc *psoc)
+static inline void
+hif_get_interrupt_threshold_cfg_from_psoc(struct hif_softc *scn,
+					  struct wlan_objmgr_psoc *psoc)
 {
 	if (psoc) {
 		scn->ini_cfg.ce_status_ring_timer_threshold =
-			cfg_get(psoc,
-				CFG_CE_STATUS_RING_TIMER_THRESHOLD);
+			cfg_get(psoc, CFG_CE_STATUS_RING_TIMER_THRESHOLD);
 		scn->ini_cfg.ce_status_ring_batch_count_threshold =
-			cfg_get(psoc,
-				CFG_CE_STATUS_RING_BATCH_COUNT_THRESHOLD);
+			cfg_get(psoc, CFG_CE_STATUS_RING_BATCH_COUNT_THRESHOLD);
 	}
 }
 #else
-static inline
-void hif_get_interrupt_threshold_cfg_from_psoc(struct hif_softc *scn,
-					       struct wlan_objmgr_psoc *psoc)
+static inline void
+hif_get_interrupt_threshold_cfg_from_psoc(struct hif_softc *scn,
+					  struct wlan_objmgr_psoc *psoc)
 {
 }
 #endif /* WLAN_CE_INTERRUPT_THRESHOLD_CONFIG */
@@ -667,21 +657,20 @@ void hif_get_interrupt_threshold_cfg_from_psoc(struct hif_softc *scn,
  *
  * Return: None
  */
-static inline
-void hif_get_cfg_from_psoc(struct hif_softc *scn,
-			   struct wlan_objmgr_psoc *psoc)
+static inline void hif_get_cfg_from_psoc(struct hif_softc *scn,
+					 struct wlan_objmgr_psoc *psoc)
 {
 	if (psoc) {
 		scn->ini_cfg.disable_wake_irq =
 			cfg_get(psoc, CFG_DISABLE_WAKE_IRQ);
 		/**
-		 * Wake IRQ can't share the same IRQ with the copy engines
-		 * In one MSI mode, we don't know whether wake IRQ is triggered
-		 * or not in wake IRQ handler. known issue CR 2055359
-		 * If you want to support Wake IRQ. Please allocate at least
-		 * 2 MSI vector. The first is for wake IRQ while the others
-		 * share the second vector
-		 */
+     * Wake IRQ can't share the same IRQ with the copy engines
+     * In one MSI mode, we don't know whether wake IRQ is triggered
+     * or not in wake IRQ handler. known issue CR 2055359
+     * If you want to support Wake IRQ. Please allocate at least
+     * 2 MSI vector. The first is for wake IRQ while the others
+     * share the second vector
+     */
 		if (pld_is_one_msi(scn->qdf_dev->dev)) {
 			hif_debug("Disable wake IRQ once it is one MSI mode");
 			scn->ini_cfg.disable_wake_irq = true;
@@ -700,9 +689,8 @@ void hif_get_cfg_from_psoc(struct hif_softc *scn,
  *
  * Return: status
  */
-static
-int hif_recovery_notifier_cb(struct notifier_block *block, unsigned long state,
-			     void *data)
+static int hif_recovery_notifier_cb(struct notifier_block *block,
+				    unsigned long state, void *data)
 {
 	struct qdf_notifer_data *notif_data = data;
 	qdf_notif_block *notif_block;
@@ -723,8 +711,7 @@ int hif_recovery_notifier_cb(struct notifier_block *block, unsigned long state,
 	if (bus_id_invalid)
 		return NOTIFY_STOP_MASK;
 
-	hif_log_ce_info(hif_handle, notif_data->hang_data,
-			&notif_data->offset);
+	hif_log_ce_info(hif_handle, notif_data->hang_data, &notif_data->offset);
 
 	return 0;
 }
@@ -735,8 +722,7 @@ int hif_recovery_notifier_cb(struct notifier_block *block, unsigned long state,
  *
  * Return: status
  */
-static
-QDF_STATUS hif_register_recovery_notifier(struct hif_softc *hif_handle)
+static QDF_STATUS hif_register_recovery_notifier(struct hif_softc *hif_handle)
 {
 	qdf_notif_block *hif_notifier;
 
@@ -756,22 +742,21 @@ QDF_STATUS hif_register_recovery_notifier(struct hif_softc *hif_handle)
  *
  * Return: status
  */
-static
-QDF_STATUS hif_unregister_recovery_notifier(struct hif_softc *hif_handle)
+static QDF_STATUS hif_unregister_recovery_notifier(struct hif_softc *hif_handle)
 {
 	qdf_notif_block *hif_notifier = &hif_handle->hif_recovery_notifier;
 
 	return qdf_hang_event_unregister_notifier(hif_notifier);
 }
 #else
-static inline
-QDF_STATUS hif_register_recovery_notifier(struct hif_softc *hif_handle)
+static inline QDF_STATUS
+hif_register_recovery_notifier(struct hif_softc *hif_handle)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline
-QDF_STATUS hif_unregister_recovery_notifier(struct hif_softc *hif_handle)
+static inline QDF_STATUS
+hif_unregister_recovery_notifier(struct hif_softc *hif_handle)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -786,8 +771,7 @@ QDF_STATUS hif_unregister_recovery_notifier(struct hif_softc *hif_handle)
  *
  * Return: None
  */
-static void __hif_cpu_hotplug_notify(void *context,
-				     uint32_t cpu, bool cpu_up)
+static void __hif_cpu_hotplug_notify(void *context, uint32_t cpu, bool cpu_up)
 {
 	struct hif_softc *scn = context;
 
@@ -841,9 +825,7 @@ static void hif_cpuhp_register(struct hif_softc *scn)
 		hif_info_high("cannot register hotplug notifiers");
 		return;
 	}
-	qdf_cpuhp_register(&scn->cpuhp_event_handle,
-			   scn,
-			   hif_cpu_online_cb,
+	qdf_cpuhp_register(&scn->cpuhp_event_handle, scn, hif_cpu_online_cb,
 			   hif_cpu_before_offline_cb);
 }
 
@@ -875,31 +857,30 @@ static void hif_cpuhp_unregister(struct hif_softc *scn)
 #define DETECTION_LATENCY_TASKLET_MASK (BIT(2) | BIT(7))
 #endif
 
-static inline int
-__hif_tasklet_latency(struct hif_softc *scn, bool from_timer, int idx)
+static inline int __hif_tasklet_latency(struct hif_softc *scn, bool from_timer,
+					int idx)
 {
 	qdf_time_t sched_time =
 		scn->latency_detect.tasklet_info[idx].sched_time;
-	qdf_time_t exec_time =
-		scn->latency_detect.tasklet_info[idx].exec_time;
+	qdf_time_t exec_time = scn->latency_detect.tasklet_info[idx].exec_time;
 	qdf_time_t curr_time = qdf_system_ticks();
 	uint32_t threshold = scn->latency_detect.threshold;
 	qdf_time_t expect_exec_time =
 		sched_time + qdf_system_msecs_to_ticks(threshold);
 
 	/* 2 kinds of check here.
-	 * from_timer==true:  check if tasklet stall
-	 * from_timer==false: check tasklet execute comes late
-	 */
-	if (from_timer ?
-	    (qdf_system_time_after(sched_time, exec_time) &&
-	     qdf_system_time_after(curr_time, expect_exec_time)) :
-	    qdf_system_time_after(exec_time, expect_exec_time)) {
-		hif_err("tasklet[%d] latency detected: from_timer %d, curr_time %lu, sched_time %lu, exec_time %lu, threshold %ums, timeout %ums, cpu_id %d, called: %ps",
-			idx, from_timer, curr_time, sched_time,
-			exec_time, threshold,
-			scn->latency_detect.timeout,
-			qdf_get_cpu(), (void *)_RET_IP_);
+   * from_timer==true:  check if tasklet stall
+   * from_timer==false: check tasklet execute comes late
+   */
+	if (from_timer ? (qdf_system_time_after(sched_time, exec_time) &&
+			  qdf_system_time_after(curr_time, expect_exec_time)) :
+			 qdf_system_time_after(exec_time, expect_exec_time)) {
+		hif_err("tasklet[%d] latency detected: from_timer %d, curr_time %lu, "
+			"sched_time %lu, exec_time %lu, threshold %ums, timeout %ums, "
+			"cpu_id %d, called: %ps",
+			idx, from_timer, curr_time, sched_time, exec_time,
+			threshold, scn->latency_detect.timeout, qdf_get_cpu(),
+			(void *)_RET_IP_);
 		qdf_trigger_self_recovery(NULL,
 					  QDF_TASKLET_CREDIT_LATENCY_DETECT);
 		return -ETIMEDOUT;
@@ -917,8 +898,8 @@ __hif_tasklet_latency(struct hif_softc *scn, bool from_timer, int idx)
  * Return: true if latency detect is enabled for the specified tasklet,
  * false otherwise.
  */
-static inline bool
-hif_tasklet_latency_detect_enabled(struct hif_softc *scn, int idx)
+static inline bool hif_tasklet_latency_detect_enabled(struct hif_softc *scn,
+						      int idx)
 {
 	if (QDF_GLOBAL_MISSION_MODE != hif_get_conparam(scn))
 		return false;
@@ -939,14 +920,14 @@ void hif_tasklet_latency_record_exec(struct hif_softc *scn, int idx)
 		return;
 
 	/*
-	 * hif_set_enable_detection(true) might come between
-	 * hif_tasklet_latency_record_sched() and
-	 * hif_tasklet_latency_record_exec() during wlan startup, then the
-	 * sched_time is 0 but exec_time is not, and hit the timeout case in
-	 * __hif_tasklet_latency().
-	 * To avoid such issue, skip exec_time recording if sched_time has not
-	 * been recorded.
-	 */
+   * hif_set_enable_detection(true) might come between
+   * hif_tasklet_latency_record_sched() and
+   * hif_tasklet_latency_record_exec() during wlan startup, then the
+   * sched_time is 0 but exec_time is not, and hit the timeout case in
+   * __hif_tasklet_latency().
+   * To avoid such issue, skip exec_time recording if sched_time has not
+   * been recorded.
+   */
 	if (!scn->latency_detect.tasklet_info[idx].sched_time)
 		return;
 
@@ -973,21 +954,24 @@ static inline void hif_credit_latency(struct hif_softc *scn, bool from_timer)
 	int cpu_id = qdf_get_cpu();
 
 	/* 2 kinds of check here.
-	 * from_timer==true:  check if credit report stall
-	 * from_timer==false: check credit report comes late
-	 */
+   * from_timer==true:  check if credit report stall
+   * from_timer==false: check credit report comes late
+   */
 
-	if ((from_timer ?
-	     qdf_system_time_after(credit_request_time, credit_report_time) :
-	     qdf_system_time_after(credit_report_time, credit_request_time)) &&
-	    qdf_system_time_after(curr_jiffies,
-				  credit_request_time +
-				  qdf_system_msecs_to_ticks(threshold))) {
-		hif_err("credit report latency: from timer %d, curr_jiffies %lu, credit_request_time %lu, credit_report_time %lu, threshold %ums, timeout %ums, cpu_id %d, called: %ps",
+	if ((from_timer ? qdf_system_time_after(credit_request_time,
+						credit_report_time) :
+			  qdf_system_time_after(credit_report_time,
+						credit_request_time)) &&
+	    qdf_system_time_after(
+		    curr_jiffies,
+		    credit_request_time +
+			    qdf_system_msecs_to_ticks(threshold))) {
+		hif_err("credit report latency: from timer %d, curr_jiffies %lu, "
+			"credit_request_time %lu, credit_report_time %lu, threshold %ums, "
+			"timeout %ums, cpu_id %d, called: %ps",
 			from_timer, curr_jiffies, credit_request_time,
 			credit_report_time, threshold,
-			scn->latency_detect.timeout,
-			cpu_id, (void *)_RET_IP_);
+			scn->latency_detect.timeout, cpu_id, (void *)_RET_IP_);
 		goto latency;
 	}
 	return;
@@ -1019,8 +1003,7 @@ static inline void hif_tasklet_latency(struct hif_softc *scn, bool from_timer)
  *
  * Return: none
  */
-void hif_check_detection_latency(struct hif_softc *scn,
-				 bool from_timer,
+void hif_check_detection_latency(struct hif_softc *scn, bool from_timer,
 				 uint32_t bitmap_type)
 {
 	if (QDF_GLOBAL_MISSION_MODE != hif_get_conparam(scn))
@@ -1040,22 +1023,21 @@ static void hif_latency_detect_timeout_handler(void *arg)
 {
 	struct hif_softc *scn = (struct hif_softc *)arg;
 	int next_cpu, i;
-	qdf_cpu_mask cpu_mask = {0};
+	qdf_cpu_mask cpu_mask = { 0 };
 	struct hif_latency_detect *detect = &scn->latency_detect;
 
-	hif_check_detection_latency(scn, true,
-				    BIT(HIF_DETECT_TASKLET) |
-				    BIT(HIF_DETECT_CREDIT));
+	hif_check_detection_latency(
+		scn, true, BIT(HIF_DETECT_TASKLET) | BIT(HIF_DETECT_CREDIT));
 
 	/* it need to make sure timer start on a different cpu,
-	 * so it can detect the tasklet schedule stall, but there
-	 * is still chance that, after timer has been started, then
-	 * irq/tasklet happens on the same cpu, then tasklet will
-	 * execute before softirq timer, if this tasklet stall, the
-	 * timer can't detect it, we can accept this as a limitation,
-	 * if tasklet stall, anyway other place will detect it, just
-	 * a little later.
-	 */
+   * so it can detect the tasklet schedule stall, but there
+   * is still chance that, after timer has been started, then
+   * irq/tasklet happens on the same cpu, then tasklet will
+   * execute before softirq timer, if this tasklet stall, the
+   * timer can't detect it, we can accept this as a limitation,
+   * if tasklet stall, anyway other place will detect it, just
+   * a little later.
+   */
 	qdf_cpumask_copy(&cpu_mask, (const qdf_cpu_mask *)cpu_active_mask);
 	for (i = 0; i < HIF_TASKLET_IN_MONITOR; i++) {
 		if (!qdf_test_bit(i, detect->tasklet_bmap))
@@ -1077,21 +1059,16 @@ static void hif_latency_detect_timeout_handler(void *arg)
 
 static void hif_latency_detect_timer_init(struct hif_softc *scn)
 {
-	scn->latency_detect.timeout =
-		DETECTION_TIMER_TIMEOUT;
-	scn->latency_detect.threshold =
-		DETECTION_LATENCY_THRESHOLD;
+	scn->latency_detect.timeout = DETECTION_TIMER_TIMEOUT;
+	scn->latency_detect.threshold = DETECTION_LATENCY_THRESHOLD;
 
 	hif_info("timer timeout %u, latency threshold %u",
-		 scn->latency_detect.timeout,
-		 scn->latency_detect.threshold);
+		 scn->latency_detect.timeout, scn->latency_detect.threshold);
 
 	scn->latency_detect.is_timer_started = false;
 
-	qdf_timer_init(NULL,
-		       &scn->latency_detect.timer,
-		       &hif_latency_detect_timeout_handler,
-		       scn,
+	qdf_timer_init(NULL, &scn->latency_detect.timer,
+		       &hif_latency_detect_timeout_handler, scn,
 		       QDF_TIMER_TYPE_SW_SPIN);
 }
 
@@ -1162,9 +1139,8 @@ void hif_latency_detect_timer_stop(struct hif_opaque_softc *hif_ctx)
 	scn->latency_detect.is_timer_started = false;
 }
 
-void hif_latency_detect_credit_record_time(
-	enum hif_credit_exchange_type type,
-	struct hif_opaque_softc *hif_ctx)
+void hif_latency_detect_credit_record_time(enum hif_credit_exchange_type type,
+					   struct hif_opaque_softc *hif_ctx)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
@@ -1200,23 +1176,25 @@ void hif_set_enable_detection(struct hif_opaque_softc *hif_ctx, bool value)
 }
 #else
 static inline void hif_latency_detect_init(struct hif_softc *scn)
-{}
+{
+}
 
 static inline void hif_latency_detect_deinit(struct hif_softc *scn)
-{}
+{
+}
 #endif
 
 #ifdef WLAN_FEATURE_AFFINITY_MGR
 #define AFFINITY_THRESHOLD 5000000
-static inline void
-hif_affinity_mgr_init(struct hif_softc *scn, struct wlan_objmgr_psoc *psoc)
+static inline void hif_affinity_mgr_init(struct hif_softc *scn,
+					 struct wlan_objmgr_psoc *psoc)
 {
 	unsigned int cpus;
-	qdf_cpu_mask allowed_mask = {0};
+	qdf_cpu_mask allowed_mask = { 0 };
 
 	scn->affinity_mgr_supported =
 		(cfg_get(psoc, CFG_IRQ_AFFINE_AUDIO_USE_CASE) &&
-		qdf_walt_get_cpus_taken_supported());
+		 qdf_walt_get_cpus_taken_supported());
 
 	hif_info("Affinity Manager supported: %d", scn->affinity_mgr_supported);
 
@@ -1224,15 +1202,15 @@ hif_affinity_mgr_init(struct hif_softc *scn, struct wlan_objmgr_psoc *psoc)
 		return;
 
 	scn->time_threshold = AFFINITY_THRESHOLD;
-	qdf_for_each_possible_cpu(cpus)
-		if (qdf_topology_physical_package_id(cpus) ==
-			CPU_CLUSTER_TYPE_LITTLE)
-			qdf_cpumask_set_cpu(cpus, &allowed_mask);
+	qdf_for_each_possible_cpu(
+		cpus) if (qdf_topology_physical_package_id(cpus) ==
+			  CPU_CLUSTER_TYPE_LITTLE)
+		qdf_cpumask_set_cpu(cpus, &allowed_mask);
 	qdf_cpumask_copy(&scn->allowed_mask, &allowed_mask);
 }
 #else
-static inline void
-hif_affinity_mgr_init(struct hif_softc *scn, struct wlan_objmgr_psoc *psoc)
+static inline void hif_affinity_mgr_init(struct hif_softc *scn,
+					 struct wlan_objmgr_psoc *psoc)
 {
 }
 #endif
@@ -1245,20 +1223,17 @@ hif_affinity_mgr_init(struct hif_softc *scn, struct wlan_objmgr_psoc *psoc)
  *
  * Return: None
  */
-static inline
-void hif_init_direct_link_rcv_pipe_num(struct hif_softc *scn)
+static inline void hif_init_direct_link_rcv_pipe_num(struct hif_softc *scn)
 {
 	scn->dl_recv_pipe_num = INVALID_PIPE_NO;
 }
 #else
-static inline
-void hif_init_direct_link_rcv_pipe_num(struct hif_softc *scn)
+static inline void hif_init_direct_link_rcv_pipe_num(struct hif_softc *scn)
 {
 }
 #endif
 
-struct hif_opaque_softc *hif_open(qdf_device_t qdf_ctx,
-				  uint32_t mode,
+struct hif_opaque_softc *hif_open(qdf_device_t qdf_ctx, uint32_t mode,
 				  enum qdf_bus_type bus_type,
 				  struct hif_driver_state_callbacks *cbk,
 				  struct wlan_objmgr_psoc *psoc)
@@ -1286,7 +1261,7 @@ struct hif_opaque_softc *hif_open(qdf_device_t qdf_ctx,
 	hif_system_pm_set_state_on(GET_HIF_OPAQUE_HDL(scn));
 	qdf_mem_copy(&scn->callbacks, cbk,
 		     sizeof(struct hif_driver_state_callbacks));
-	scn->bus_type  = bus_type;
+	scn->bus_type = bus_type;
 
 	hif_allow_ep_vote_access(GET_HIF_OPAQUE_HDL(scn));
 	hif_get_cfg_from_psoc(scn, psoc);
@@ -1294,8 +1269,8 @@ struct hif_opaque_softc *hif_open(qdf_device_t qdf_ctx,
 	hif_set_event_hist_mask(GET_HIF_OPAQUE_HDL(scn));
 	status = hif_bus_open(scn, bus_type);
 	if (status != QDF_STATUS_SUCCESS) {
-		hif_err("hif_bus_open error = %d, bus_type = %d",
-			status, bus_type);
+		hif_err("hif_bus_open error = %d, bus_type = %d", status,
+			bus_type);
 		qdf_mem_free(scn);
 		scn = NULL;
 		goto out;
@@ -1385,13 +1360,13 @@ static inline int hif_get_num_active_grp_tasklets(struct hif_softc *scn)
 	return qdf_atomic_read(&scn->active_grp_tasklet_cnt);
 }
 
-#if (defined(QCA_WIFI_QCA8074) || defined(QCA_WIFI_QCA6018) || \
-	defined(QCA_WIFI_QCA6290) || defined(QCA_WIFI_QCA6390) || \
-	defined(QCA_WIFI_QCN9000) || defined(QCA_WIFI_QCA6490) || \
-	defined(QCA_WIFI_QCA6750) || defined(QCA_WIFI_QCA5018) || \
-	defined(QCA_WIFI_KIWI) || defined(QCA_WIFI_QCN9224) || \
-	defined(QCA_WIFI_QCN6432) || \
-	defined(QCA_WIFI_QCA9574)) || defined(QCA_WIFI_QCA5332)
+#if (defined(QCA_WIFI_QCA8074) || defined(QCA_WIFI_QCA6018) ||  \
+     defined(QCA_WIFI_QCA6290) || defined(QCA_WIFI_QCA6390) ||  \
+     defined(QCA_WIFI_QCN9000) || defined(QCA_WIFI_QCA6490) ||  \
+     defined(QCA_WIFI_QCA6750) || defined(QCA_WIFI_QCA5018) ||  \
+     defined(QCA_WIFI_KIWI) || defined(QCA_WIFI_QCN9224) ||     \
+     defined(QCA_WIFI_QCN6432) || defined(QCA_WIFI_QCA9574)) || \
+	defined(QCA_WIFI_QCA5332)
 /**
  * hif_get_num_pending_work() - get the number of entries in
  *		the workqueue pending to be completed.
@@ -1427,9 +1402,11 @@ QDF_STATUS hif_try_complete_tasks(struct hif_softc *scn)
 		if (++task_drain_wait_cnt > HIF_TASK_DRAIN_WAIT_CNT) {
 			hif_err("pending tasklets %d grp tasklets %d work %d",
 				tasklet, grp_tasklet, work);
-			QDF_DEBUG_PANIC("Complete tasks takes more than %u ms: tasklets %d grp tasklets %d work %d",
-					HIF_TASK_DRAIN_WAIT_CNT * 10,
-					tasklet, grp_tasklet, work);
+			QDF_DEBUG_PANIC(
+				"Complete tasks takes more than %u ms: tasklets %d grp "
+				"tasklets %d work %d",
+				HIF_TASK_DRAIN_WAIT_CNT * 10, tasklet,
+				grp_tasklet, work);
 			return QDF_STATUS_E_FAULT;
 		}
 		hif_info("waiting for tasklets %d grp tasklets %d work %d",
@@ -1461,10 +1438,8 @@ QDF_STATUS hif_try_prevent_ep_vote_access(struct hif_opaque_softc *hif_ctx)
 	uint32_t wait_cnt = 0;
 	int work = 0;
 
-	qdf_atomic_set(&scn->dp_ep_vote_access,
-		       HIF_EP_VOTE_ACCESS_DISABLE);
-	qdf_atomic_set(&scn->ep_vote_access,
-		       HIF_EP_VOTE_ACCESS_DISABLE);
+	qdf_atomic_set(&scn->dp_ep_vote_access, HIF_EP_VOTE_ACCESS_DISABLE);
+	qdf_atomic_set(&scn->ep_vote_access, HIF_EP_VOTE_ACCESS_DISABLE);
 
 	while ((work = hif_get_num_pending_work(scn))) {
 		if (++work_drain_wait_cnt > HIF_WORK_DRAIN_WAIT_CNT) {
@@ -1479,7 +1454,7 @@ QDF_STATUS hif_try_prevent_ep_vote_access(struct hif_opaque_softc *hif_ctx)
 	}
 
 	if (pld_is_pci_ep_awake(scn->qdf_dev->dev) == -ENOTSUPP)
-	return QDF_STATUS_SUCCESS;
+		return QDF_STATUS_SUCCESS;
 
 	while (pld_is_pci_ep_awake(scn->qdf_dev->dev)) {
 		if (++wait_cnt > HIF_EP_WAKE_RESET_WAIT_CNT) {
@@ -1506,22 +1481,19 @@ void hif_set_ep_intermediate_vote_access(struct hif_opaque_softc *hif_ctx)
 	if (QDF_IS_STATUS_ERROR(hif_try_prevent_ep_vote_access(hif_ctx)))
 		QDF_BUG(0);
 
-	qdf_atomic_set(&scn->ep_vote_access,
-		       HIF_EP_VOTE_INTERMEDIATE_ACCESS);
+	qdf_atomic_set(&scn->ep_vote_access, HIF_EP_VOTE_INTERMEDIATE_ACCESS);
 }
 
 void hif_allow_ep_vote_access(struct hif_opaque_softc *hif_ctx)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
-	qdf_atomic_set(&scn->dp_ep_vote_access,
-		       HIF_EP_VOTE_ACCESS_ENABLE);
-	qdf_atomic_set(&scn->ep_vote_access,
-		       HIF_EP_VOTE_ACCESS_ENABLE);
+	qdf_atomic_set(&scn->dp_ep_vote_access, HIF_EP_VOTE_ACCESS_ENABLE);
+	qdf_atomic_set(&scn->ep_vote_access, HIF_EP_VOTE_ACCESS_ENABLE);
 }
 
-void hif_set_ep_vote_access(struct hif_opaque_softc *hif_ctx,
-			    uint8_t type, uint8_t access)
+void hif_set_ep_vote_access(struct hif_opaque_softc *hif_ctx, uint8_t type,
+			    uint8_t access)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
@@ -1531,8 +1503,7 @@ void hif_set_ep_vote_access(struct hif_opaque_softc *hif_ctx,
 		qdf_atomic_set(&scn->ep_vote_access, access);
 }
 
-uint8_t hif_get_ep_vote_access(struct hif_opaque_softc *hif_ctx,
-			       uint8_t type)
+uint8_t hif_get_ep_vote_access(struct hif_opaque_softc *hif_ctx, uint8_t type)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
@@ -1564,9 +1535,9 @@ void hif_print_reg_write_stats(struct hif_opaque_softc *hif_ctx)
 	int i;
 
 	hist = scn->wstats.sched_delay;
-	hif_debug("wstats: enq %u deq %u coal %u direct %u q_depth %u max_q %u sched-delay hist %u %u %u %u",
-		  qdf_atomic_read(&scn->wstats.enqueues),
-		  scn->wstats.dequeues,
+	hif_debug("wstats: enq %u deq %u coal %u direct %u q_depth %u max_q %u "
+		  "sched-delay hist %u %u %u %u",
+		  qdf_atomic_read(&scn->wstats.enqueues), scn->wstats.dequeues,
 		  qdf_atomic_read(&scn->wstats.coalesces),
 		  qdf_atomic_read(&scn->wstats.direct),
 		  qdf_atomic_read(&scn->wstats.q_depth),
@@ -1581,11 +1552,9 @@ void hif_print_reg_write_stats(struct hif_opaque_softc *hif_ctx)
 		if (!ce_state)
 			continue;
 
-		hif_debug("ce%d: enq %u deq %u coal %u direct %u",
-			  i, ce_state->wstats.enqueues,
-			  ce_state->wstats.dequeues,
-			  ce_state->wstats.coalesces,
-			  ce_state->wstats.direct);
+		hif_debug("ce%d: enq %u deq %u coal %u direct %u", i,
+			  ce_state->wstats.enqueues, ce_state->wstats.dequeues,
+			  ce_state->wstats.coalesces, ce_state->wstats.direct);
 	}
 }
 
@@ -1633,9 +1602,8 @@ static inline void hif_reg_write_fill_sched_delay_hist(struct hif_softc *scn,
  *
  * Return: The value which was written to the address
  */
-static int32_t
-hif_process_reg_write_q_elem(struct hif_softc *scn,
-			     struct hif_reg_write_q_elem *q_elem)
+static int32_t hif_process_reg_write_q_elem(struct hif_softc *scn,
+					    struct hif_reg_write_q_elem *q_elem)
 {
 	struct CE_state *ce_state = q_elem->ce_state;
 	uint32_t write_val = -1;
@@ -1695,7 +1663,7 @@ static void hif_reg_write_work(void *arg)
 
 	q_depth = qdf_atomic_read(&scn->wstats.q_depth);
 	if (q_depth > scn->wstats.max_q_depth)
-		scn->wstats.max_q_depth =  q_depth;
+		scn->wstats.max_q_depth = q_depth;
 
 	if (hif_prevent_link_low_power_states(GET_HIF_OPAQUE_HDL(scn))) {
 		scn->wstats.prevent_l1_fails++;
@@ -1728,22 +1696,22 @@ static void hif_reg_write_work(void *arg)
 					   q_elem->dequeue_time);
 		num_processed++;
 		scn->read_idx = (scn->read_idx + 1) &
-					(HIF_REG_WRITE_QUEUE_LEN - 1);
+				(HIF_REG_WRITE_QUEUE_LEN - 1);
 		q_elem = &scn->reg_write_queue[scn->read_idx];
 	}
 
 	hif_allow_link_low_power_states(GET_HIF_OPAQUE_HDL(scn));
 
 	/*
-	 * Decrement active_work_cnt by the number of elements dequeued after
-	 * hif_allow_link_low_power_states.
-	 * This makes sure that hif_try_complete_tasks will wait till we make
-	 * the bus access in hif_allow_link_low_power_states. This will avoid
-	 * race condition between delayed register worker and bus suspend
-	 * (system suspend or runtime suspend).
-	 *
-	 * The following decrement should be done at the end!
-	 */
+   * Decrement active_work_cnt by the number of elements dequeued after
+   * hif_allow_link_low_power_states.
+   * This makes sure that hif_try_complete_tasks will wait till we make
+   * the bus access in hif_allow_link_low_power_states. This will avoid
+   * race condition between delayed register worker and bus suspend
+   * (system suspend or runtime suspend).
+   *
+   * The following decrement should be done at the end!
+   */
 	qdf_atomic_sub(num_processed, &scn->active_work_cnt);
 }
 
@@ -1795,8 +1763,7 @@ static QDF_STATUS hif_delayed_reg_write_init(struct hif_softc *scn)
 }
 
 static void hif_reg_write_enqueue(struct hif_softc *scn,
-				  struct CE_state *ce_state,
-				  uint32_t value)
+				  struct CE_state *ce_state, uint32_t value)
 {
 	struct hif_reg_write_q_elem *q_elem;
 	uint32_t write_idx;
@@ -1830,33 +1797,32 @@ static void hif_reg_write_enqueue(struct hif_softc *scn,
 	q_elem->enqueue_time = qdf_get_log_timestamp();
 
 	/*
-	 * Before the valid flag is set to true, all the other
-	 * fields in the q_elem needs to be updated in memory.
-	 * Else there is a chance that the dequeuing worker thread
-	 * might read stale entries and process incorrect srng.
-	 */
+   * Before the valid flag is set to true, all the other
+   * fields in the q_elem needs to be updated in memory.
+   * Else there is a chance that the dequeuing worker thread
+   * might read stale entries and process incorrect srng.
+   */
 	qdf_wmb();
 	q_elem->valid = true;
 
 	/*
-	 * After all other fields in the q_elem has been updated
-	 * in memory successfully, the valid flag needs to be updated
-	 * in memory in time too.
-	 * Else there is a chance that the dequeuing worker thread
-	 * might read stale valid flag and the work will be bypassed
-	 * for this round. And if there is no other work scheduled
-	 * later, this hal register writing won't be updated any more.
-	 */
+   * After all other fields in the q_elem has been updated
+   * in memory successfully, the valid flag needs to be updated
+   * in memory in time too.
+   * Else there is a chance that the dequeuing worker thread
+   * might read stale valid flag and the work will be bypassed
+   * for this round. And if there is no other work scheduled
+   * later, this hal register writing won't be updated any more.
+   */
 	qdf_wmb();
 
-	ce_state->reg_write_in_progress  = true;
+	ce_state->reg_write_in_progress = true;
 	qdf_atomic_inc(&scn->active_work_cnt);
 
-	hif_debug("write_idx %u ce_id %d offset 0x%x value %u",
-		  write_idx, ce_state->id, ce_state->ce_wrt_idx_offset, value);
+	hif_debug("write_idx %u ce_id %d offset 0x%x value %u", write_idx,
+		  ce_state->id, ce_state->ce_wrt_idx_offset, value);
 
-	qdf_queue_work(scn->qdf_dev, scn->reg_write_wq,
-		       &scn->reg_write_work);
+	qdf_queue_work(scn->qdf_dev, scn->reg_write_wq, &scn->reg_write_work);
 }
 
 void hif_delayed_reg_write(struct hif_softc *scn, uint32_t ctrl_addr,
@@ -1887,7 +1853,7 @@ static inline QDF_STATUS hif_delayed_reg_write_init(struct hif_softc *scn)
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline void  hif_delayed_reg_write_deinit(struct hif_softc *scn)
+static inline void hif_delayed_reg_write_deinit(struct hif_softc *scn)
 {
 }
 #endif
@@ -1895,8 +1861,8 @@ static inline void  hif_delayed_reg_write_deinit(struct hif_softc *scn)
 #if defined(QCA_WIFI_WCN6450)
 static QDF_STATUS hif_hal_attach(struct hif_softc *scn)
 {
-	scn->hal_soc = hal_attach(hif_softc_to_hif_opaque_softc(scn),
-				  scn->qdf_dev);
+	scn->hal_soc =
+		hal_attach(hif_softc_to_hif_opaque_softc(scn), scn->qdf_dev);
 	if (!scn->hal_soc)
 		return QDF_STATUS_E_FAILURE;
 
@@ -1911,17 +1877,17 @@ static QDF_STATUS hif_hal_detach(struct hif_softc *scn)
 	return QDF_STATUS_SUCCESS;
 }
 #elif (defined(QCA_WIFI_QCA8074) || defined(QCA_WIFI_QCA6018) || \
-	defined(QCA_WIFI_QCA6290) || defined(QCA_WIFI_QCA6390) || \
-	defined(QCA_WIFI_QCN9000) || defined(QCA_WIFI_QCA6490) || \
-	defined(QCA_WIFI_QCA6750) || defined(QCA_WIFI_QCA5018) || \
-	defined(QCA_WIFI_KIWI) || defined(QCA_WIFI_QCN9224) || \
-	defined(QCA_WIFI_QCA9574)) || defined(QCA_WIFI_QCA5332)
+       defined(QCA_WIFI_QCA6290) || defined(QCA_WIFI_QCA6390) || \
+       defined(QCA_WIFI_QCN9000) || defined(QCA_WIFI_QCA6490) || \
+       defined(QCA_WIFI_QCA6750) || defined(QCA_WIFI_QCA5018) || \
+       defined(QCA_WIFI_KIWI) || defined(QCA_WIFI_QCN9224) ||    \
+       defined(QCA_WIFI_QCA9574)) ||                             \
+	defined(QCA_WIFI_QCA5332)
 static QDF_STATUS hif_hal_attach(struct hif_softc *scn)
 {
 	if (ce_srng_based(scn)) {
-		scn->hal_soc = hal_attach(
-					hif_softc_to_hif_opaque_softc(scn),
-					scn->qdf_dev);
+		scn->hal_soc = hal_attach(hif_softc_to_hif_opaque_softc(scn),
+					  scn->qdf_dev);
 		if (!scn->hal_soc)
 			return QDF_STATUS_E_FAILURE;
 	}
@@ -1956,8 +1922,7 @@ int hif_init_dma_mask(struct device *dev, enum qdf_bus_type bus_type)
 
 	switch (bus_type) {
 	case QDF_BUS_TYPE_IPCI:
-		ret = qdf_set_dma_coherent_mask(dev,
-						DMA_COHERENT_MASK_DEFAULT);
+		ret = qdf_set_dma_coherent_mask(dev, DMA_COHERENT_MASK_DEFAULT);
 		if (ret) {
 			hif_err("Failed to set dma mask error = %d", ret);
 			return ret;
@@ -1984,10 +1949,8 @@ int hif_init_dma_mask(struct device *dev, enum qdf_bus_type bus_type)
  * Return: QDF_STATUS
  */
 QDF_STATUS hif_enable(struct hif_opaque_softc *hif_ctx, struct device *dev,
-					  void *bdev,
-					  const struct hif_bus_id *bid,
-					  enum qdf_bus_type bus_type,
-					  enum hif_enable_type type)
+		      void *bdev, const struct hif_bus_id *bid,
+		      enum qdf_bus_type bus_type, enum hif_enable_type type)
 {
 	QDF_STATUS status;
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
@@ -2025,12 +1988,12 @@ QDF_STATUS hif_enable(struct hif_opaque_softc *hif_ctx, struct device *dev,
 	hif_latency_detect_timer_start(hif_ctx);
 
 	/*
-	 * Flag to avoid potential unallocated memory access from MSI
-	 * interrupt handler which could get scheduled as soon as MSI
-	 * is enabled, i.e to take care of the race due to the order
-	 * in where MSI is enabled before the memory, that will be
-	 * in interrupt handlers, is allocated.
-	 */
+   * Flag to avoid potential unallocated memory access from MSI
+   * interrupt handler which could get scheduled as soon as MSI
+   * is enabled, i.e to take care of the race due to the order
+   * in where MSI is enabled before the memory, that will be
+   * in interrupt handlers, is allocated.
+   */
 
 	scn->hif_init_done = true;
 
@@ -2202,8 +2165,7 @@ qdf_export_symbol(hif_read_phy_mem_base);
  *
  * Return: int
  */
-int hif_get_device_type(uint32_t device_id,
-			uint32_t revision_id,
+int hif_get_device_type(uint32_t device_id, uint32_t revision_id,
 			uint32_t *hif_type, uint32_t *target_type)
 {
 	int ret = 0;
@@ -2236,8 +2198,8 @@ int hif_get_device_type(uint32_t device_id,
 			break;
 
 		default:
-			hif_err("dev_id = 0x%x, rev_id = 0x%x",
-				device_id, revision_id);
+			hif_err("dev_id = 0x%x, rev_id = 0x%x", device_id,
+				revision_id);
 			ret = -ENODEV;
 			goto end;
 		}
@@ -2455,19 +2417,18 @@ struct hif_config_info *hif_get_ini_handle(struct hif_opaque_softc *hif_ctx)
  *
  * Return: Pointer to hif_target_info
  */
-struct hif_target_info *hif_get_target_info_handle(
-					struct hif_opaque_softc *hif_ctx)
+struct hif_target_info *
+hif_get_target_info_handle(struct hif_opaque_softc *hif_ctx)
 {
 	struct hif_softc *sc = HIF_GET_SOFTC(hif_ctx);
 
 	return &sc->target_info;
-
 }
 qdf_export_symbol(hif_get_target_info_handle);
 
 #ifdef RECEIVE_OFFLOAD
 void hif_offld_flush_cb_register(struct hif_opaque_softc *scn,
-				 void (offld_flush_handler)(void *))
+				 void(offld_flush_handler)(void *))
 {
 	if (hif_napi_enabled(scn, -1))
 		hif_napi_rx_offld_flush_cb_register(scn, offld_flush_handler);
@@ -2543,8 +2504,8 @@ qdf_export_symbol(hif_get_target_status);
  *
  * Return: void
  */
-void hif_set_target_status(struct hif_opaque_softc *hif_ctx, enum
-			   hif_target_status status)
+void hif_set_target_status(struct hif_opaque_softc *hif_ctx,
+			   enum hif_target_status status)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
@@ -2586,8 +2547,8 @@ uint32_t hif_get_conparam(struct hif_softc *scn)
  *
  * Return: pointer to HIF Callbacks
  */
-struct hif_driver_state_callbacks *hif_get_callbacks_handle(
-							struct hif_softc *scn)
+struct hif_driver_state_callbacks *
+hif_get_callbacks_handle(struct hif_softc *scn)
 {
 	return &scn->callbacks;
 }
@@ -2643,7 +2604,7 @@ bool hif_is_recovery_in_progress(struct hif_softc *scn)
 }
 
 #if defined(HIF_PCI) || defined(HIF_SNOC) || defined(HIF_AHB) || \
-    defined(HIF_IPCI)
+	defined(HIF_IPCI)
 
 /**
  * hif_update_pipe_callback() - API to register pipe specific callbacks
@@ -2654,9 +2615,8 @@ bool hif_is_recovery_in_progress(struct hif_softc *scn)
  * Return: void
  */
 
-void hif_update_pipe_callback(struct hif_opaque_softc *osc,
-					u_int8_t pipeid,
-					struct hif_msg_callbacks *callbacks)
+void hif_update_pipe_callback(struct hif_opaque_softc *osc, u_int8_t pipeid,
+			      struct hif_msg_callbacks *callbacks)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(osc);
 	struct HIF_CE_state *hif_state = HIF_GET_CE_STATE(scn);
@@ -2668,8 +2628,8 @@ void hif_update_pipe_callback(struct hif_opaque_softc *osc,
 
 	pipe_info = &hif_state->pipe_info[pipeid];
 
-	qdf_mem_copy(&pipe_info->pipe_callbacks,
-			callbacks, sizeof(pipe_info->pipe_callbacks));
+	qdf_mem_copy(&pipe_info->pipe_callbacks, callbacks,
+		     sizeof(pipe_info->pipe_callbacks));
 }
 qdf_export_symbol(hif_update_pipe_callback);
 
@@ -2687,10 +2647,10 @@ bool hif_is_target_ready(struct hif_softc *scn)
 	if (cbk && cbk->is_target_ready)
 		return cbk->is_target_ready(cbk->context);
 	/*
-	 * if callback is not registered then there is no way to determine
-	 * if target is ready. In-such case return true to indicate that
-	 * target is ready.
-	 */
+   * if callback is not registered then there is no way to determine
+   * if target is ready. In-such case return true to indicate that
+   * target is ready.
+   */
 	return true;
 }
 qdf_export_symbol(hif_is_target_ready);
@@ -2709,20 +2669,17 @@ int hif_get_bandwidth_level(struct hif_opaque_softc *hif_handle)
 qdf_export_symbol(hif_get_bandwidth_level);
 
 #ifdef DP_MEM_PRE_ALLOC
-void *hif_mem_alloc_consistent_unaligned(struct hif_softc *scn,
-					 qdf_size_t size,
+void *hif_mem_alloc_consistent_unaligned(struct hif_softc *scn, qdf_size_t size,
 					 qdf_dma_addr_t *paddr,
 					 uint32_t ring_type,
 					 uint8_t *is_mem_prealloc)
 {
 	void *vaddr = NULL;
-	struct hif_driver_state_callbacks *cbk =
-				hif_get_callbacks_handle(scn);
+	struct hif_driver_state_callbacks *cbk = hif_get_callbacks_handle(scn);
 
 	*is_mem_prealloc = false;
 	if (cbk && cbk->prealloc_get_consistent_mem_unaligned) {
-		vaddr = cbk->prealloc_get_consistent_mem_unaligned(size,
-								   paddr,
+		vaddr = cbk->prealloc_get_consistent_mem_unaligned(size, paddr,
 								   ring_type);
 		if (vaddr) {
 			*is_mem_prealloc = true;
@@ -2730,9 +2687,7 @@ void *hif_mem_alloc_consistent_unaligned(struct hif_softc *scn,
 		}
 	}
 
-	vaddr = qdf_mem_alloc_consistent(scn->qdf_dev,
-					 scn->qdf_dev->dev,
-					 size,
+	vaddr = qdf_mem_alloc_consistent(scn->qdf_dev, scn->qdf_dev->dev, size,
 					 paddr);
 end:
 	dp_info("%s va_unaligned %pK pa_unaligned %pK size %d ring_type %d",
@@ -2742,15 +2697,12 @@ end:
 	return vaddr;
 }
 
-void hif_mem_free_consistent_unaligned(struct hif_softc *scn,
-				       qdf_size_t size,
-				       void *vaddr,
-				       qdf_dma_addr_t paddr,
+void hif_mem_free_consistent_unaligned(struct hif_softc *scn, qdf_size_t size,
+				       void *vaddr, qdf_dma_addr_t paddr,
 				       qdf_dma_context_t memctx,
 				       uint8_t is_mem_prealloc)
 {
-	struct hif_driver_state_callbacks *cbk =
-				hif_get_callbacks_handle(scn);
+	struct hif_driver_state_callbacks *cbk = hif_get_callbacks_handle(scn);
 
 	if (is_mem_prealloc) {
 		if (cbk && cbk->prealloc_put_consistent_mem_unaligned) {
@@ -2760,8 +2712,8 @@ void hif_mem_free_consistent_unaligned(struct hif_softc *scn,
 			QDF_BUG(0);
 		}
 	} else {
-		qdf_mem_free_consistent(scn->qdf_dev, scn->qdf_dev->dev,
-					size, vaddr, paddr, memctx);
+		qdf_mem_free_consistent(scn->qdf_dev, scn->qdf_dev->dev, size,
+					vaddr, paddr, memctx);
 	}
 }
 
@@ -2770,32 +2722,28 @@ void hif_prealloc_get_multi_pages(struct hif_softc *scn, uint32_t desc_type,
 				  struct qdf_mem_multi_page_t *pages,
 				  bool cacheable)
 {
-	struct hif_driver_state_callbacks *cbk =
-			hif_get_callbacks_handle(scn);
+	struct hif_driver_state_callbacks *cbk = hif_get_callbacks_handle(scn);
 
 	if (cbk && cbk->prealloc_get_multi_pages)
 		cbk->prealloc_get_multi_pages(desc_type, elem_size, elem_num,
 					      pages, cacheable);
 
 	if (!pages->num_pages)
-		qdf_mem_multi_pages_alloc(scn->qdf_dev, pages,
-					  elem_size, elem_num, 0, cacheable);
+		qdf_mem_multi_pages_alloc(scn->qdf_dev, pages, elem_size,
+					  elem_num, 0, cacheable);
 }
 
 void hif_prealloc_put_multi_pages(struct hif_softc *scn, uint32_t desc_type,
 				  struct qdf_mem_multi_page_t *pages,
 				  bool cacheable)
 {
-	struct hif_driver_state_callbacks *cbk =
-			hif_get_callbacks_handle(scn);
+	struct hif_driver_state_callbacks *cbk = hif_get_callbacks_handle(scn);
 
-	if (cbk && cbk->prealloc_put_multi_pages &&
-	    pages->is_mem_prealloc)
+	if (cbk && cbk->prealloc_put_multi_pages && pages->is_mem_prealloc)
 		cbk->prealloc_put_multi_pages(desc_type, pages);
 
 	if (!pages->is_mem_prealloc)
-		qdf_mem_multi_pages_free(scn->qdf_dev, pages, 0,
-					 cacheable);
+		qdf_mem_multi_pages_free(scn->qdf_dev, pages, 0, cacheable);
 }
 #endif
 
@@ -2811,7 +2759,8 @@ void hif_prealloc_put_multi_pages(struct hif_softc *scn, uint32_t desc_type,
  * Return: list of msds not sent
  */
 qdf_nbuf_t hif_batch_send(struct hif_opaque_softc *osc, qdf_nbuf_t msdu,
-		uint32_t transfer_id, u_int32_t len, uint32_t sendhead)
+			  uint32_t transfer_id, u_int32_t len,
+			  uint32_t sendhead)
 {
 	void *ce_tx_hdl = hif_get_ce_handle(osc, CE_HTT_TX_CE);
 
@@ -2819,7 +2768,7 @@ qdf_nbuf_t hif_batch_send(struct hif_opaque_softc *osc, qdf_nbuf_t msdu,
 		return NULL;
 
 	return ce_batch_send((struct CE_handle *)ce_tx_hdl, msdu, transfer_id,
-			len, sendhead);
+			     len, sendhead);
 }
 qdf_export_symbol(hif_batch_send);
 
@@ -2838,7 +2787,6 @@ void hif_update_tx_ring(struct hif_opaque_softc *osc, u_int32_t num_htt_cmpls)
 	ce_update_tx_ring(ce_tx_hdl, num_htt_cmpls);
 }
 qdf_export_symbol(hif_update_tx_ring);
-
 
 /**
  * hif_send_single() - API to access hif specific function
@@ -2859,7 +2807,7 @@ QDF_STATUS hif_send_single(struct hif_opaque_softc *osc, qdf_nbuf_t msdu,
 		return QDF_STATUS_E_NULL_VALUE;
 
 	return ce_send_single((struct CE_handle *)ce_tx_hdl, msdu, transfer_id,
-			len);
+			      len);
 }
 qdf_export_symbol(hif_send_single);
 #endif
@@ -2874,12 +2822,11 @@ qdf_export_symbol(hif_send_single);
  * Return: None
  */
 void hif_reg_write(struct hif_opaque_softc *hif_ctx, uint32_t offset,
-		uint32_t value)
+		   uint32_t value)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
 	hif_write32_mb(scn, scn->mem + offset, value);
-
 }
 qdf_export_symbol(hif_reg_write);
 
@@ -2893,7 +2840,6 @@ qdf_export_symbol(hif_reg_write);
  */
 uint32_t hif_reg_read(struct hif_opaque_softc *hif_ctx, uint32_t offset)
 {
-
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
 	return hif_read32_mb(scn, scn->mem + offset);
@@ -2940,8 +2886,7 @@ irqreturn_t hif_wake_interrupt_handler(int irq, void *context)
 }
 
 void hif_set_initial_wakeup_cb(struct hif_opaque_softc *hif_ctx,
-			       void (*callback)(void *),
-			       void *priv)
+			       void (*callback)(void *), void *priv)
 {
 	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
 
@@ -2954,8 +2899,7 @@ void hif_set_ce_service_max_yield_time(struct hif_opaque_softc *hif,
 {
 	struct hif_softc *hif_ctx = HIF_GET_SOFTC(hif);
 
-	hif_ctx->ce_service_max_yield_time =
-		ce_service_max_yield_time * 1000;
+	hif_ctx->ce_service_max_yield_time = ce_service_max_yield_time * 1000;
 }
 
 unsigned long long
@@ -2967,7 +2911,7 @@ hif_get_ce_service_max_yield_time(struct hif_opaque_softc *hif)
 }
 
 void hif_set_ce_service_max_rx_ind_flush(struct hif_opaque_softc *hif,
-				       uint8_t ce_service_max_rx_ind_flush)
+					 uint8_t ce_service_max_rx_ind_flush)
 {
 	struct hif_softc *hif_ctx = HIF_GET_SOFTC(hif);
 
@@ -2976,7 +2920,7 @@ void hif_set_ce_service_max_rx_ind_flush(struct hif_opaque_softc *hif,
 		hif_ctx->ce_service_max_rx_ind_flush = MSG_FLUSH_NUM;
 	else
 		hif_ctx->ce_service_max_rx_ind_flush =
-						ce_service_max_rx_ind_flush;
+			ce_service_max_rx_ind_flush;
 }
 
 #ifdef SYSTEM_PM_CHECK
@@ -3033,16 +2977,14 @@ int hif_system_pm_state_check(struct hif_opaque_softc *hif)
  *
  * Return: bool: true if it is allowed to affine away audio taken cpus.
  */
-static inline bool
-hif_audio_cpu_affinity_allowed(struct hif_softc *scn,
-			       struct hif_cpu_affinity *cfg,
-			       qdf_cpu_mask audio_taken_cpu,
-			       uint64_t current_time)
+static inline bool hif_audio_cpu_affinity_allowed(struct hif_softc *scn,
+						  struct hif_cpu_affinity *cfg,
+						  qdf_cpu_mask audio_taken_cpu,
+						  uint64_t current_time)
 {
 	if (!qdf_cpumask_equal(&audio_taken_cpu, &cfg->walt_taken_mask) &&
-	    (qdf_log_timestamp_to_usecs(current_time -
-			 cfg->last_affined_away)
-		< scn->time_threshold))
+	    (qdf_log_timestamp_to_usecs(current_time - cfg->last_affined_away) <
+	     scn->time_threshold))
 		return false;
 	return true;
 }
@@ -3061,53 +3003,51 @@ hif_audio_cpu_affinity_allowed(struct hif_softc *scn,
  *
  * Return: QDF_STATUS
  */
-static inline QDF_STATUS
-hif_affinity_mgr_check_update_mask(struct hif_softc *scn,
-				   struct hif_cpu_affinity *cfg,
-				   qdf_cpu_mask audio_taken_cpu,
-				   qdf_cpu_mask *cpu_mask,
-				   uint64_t current_time)
+static inline QDF_STATUS hif_affinity_mgr_check_update_mask(
+	struct hif_softc *scn, struct hif_cpu_affinity *cfg,
+	qdf_cpu_mask audio_taken_cpu, qdf_cpu_mask *cpu_mask,
+	uint64_t current_time)
 {
 	qdf_cpu_mask allowed_mask;
 
 	/*
-	 * Case 1: audio_taken_mask is empty
-	 *   Check if passed cpu_mask and wlan_requested_mask is same or not.
-	 *      If both mask are different copy wlan_requested_mask(IRQ affinity
-	 *      mask requested by WLAN) to cpu_mask.
-	 *
-	 * Case 2: audio_taken_mask is not empty
-	 *   1. Only allow update if last time when IRQ was affined away due to
-	 *      audio taken CPUs is more than 5 seconds or update is requested
-	 *      by WLAN
-	 *   2. Only allow silver cores to be affined away.
-	 *   3. Check if any allowed CPUs for audio use case is set in cpu_mask.
-	 *       i. If any CPU mask is set, mask out that CPU from the cpu_mask
-	 *       ii. If after masking out audio taken cpu(Silver cores) cpu_mask
-	 *           is empty, set mask to all cpu except cpus taken by audio.
-	 * Example:
-	 *| Audio mask | mask allowed | cpu_mask | WLAN req mask | new cpu_mask|
-	 *|  0x00      |       0x00   |   0x0C   |       0x0C    |      0x0C   |
-	 *|  0x00      |       0x00   |   0x03   |       0x03    |      0x03   |
-	 *|  0x00      |       0x00   |   0xFC   |       0x03    |      0x03   |
-	 *|  0x00      |       0x00   |   0x03   |       0x0C    |      0x0C   |
-	 *|  0x0F      |       0x03   |   0x0C   |       0x0C    |      0x0C   |
-	 *|  0x0F      |       0x03   |   0x03   |       0x03    |      0xFC   |
-	 *|  0x03      |       0x03   |   0x0C   |       0x0C    |      0x0C   |
-	 *|  0x03      |       0x03   |   0x03   |       0x03    |      0xFC   |
-	 *|  0x03      |       0x03   |   0xFC   |       0x03    |      0xFC   |
-	 *|  0xF0      |       0x00   |   0x0C   |       0x0C    |      0x0C   |
-	 *|  0xF0      |       0x00   |   0x03   |       0x03    |      0x03   |
-	 */
+   * Case 1: audio_taken_mask is empty
+   *   Check if passed cpu_mask and wlan_requested_mask is same or not.
+   *      If both mask are different copy wlan_requested_mask(IRQ affinity
+   *      mask requested by WLAN) to cpu_mask.
+   *
+   * Case 2: audio_taken_mask is not empty
+   *   1. Only allow update if last time when IRQ was affined away due to
+   *      audio taken CPUs is more than 5 seconds or update is requested
+   *      by WLAN
+   *   2. Only allow silver cores to be affined away.
+   *   3. Check if any allowed CPUs for audio use case is set in cpu_mask.
+   *       i. If any CPU mask is set, mask out that CPU from the cpu_mask
+   *       ii. If after masking out audio taken cpu(Silver cores) cpu_mask
+   *           is empty, set mask to all cpu except cpus taken by audio.
+   * Example:
+   *| Audio mask | mask allowed | cpu_mask | WLAN req mask | new cpu_mask|
+   *|  0x00      |       0x00   |   0x0C   |       0x0C    |      0x0C   |
+   *|  0x00      |       0x00   |   0x03   |       0x03    |      0x03   |
+   *|  0x00      |       0x00   |   0xFC   |       0x03    |      0x03   |
+   *|  0x00      |       0x00   |   0x03   |       0x0C    |      0x0C   |
+   *|  0x0F      |       0x03   |   0x0C   |       0x0C    |      0x0C   |
+   *|  0x0F      |       0x03   |   0x03   |       0x03    |      0xFC   |
+   *|  0x03      |       0x03   |   0x0C   |       0x0C    |      0x0C   |
+   *|  0x03      |       0x03   |   0x03   |       0x03    |      0xFC   |
+   *|  0x03      |       0x03   |   0xFC   |       0x03    |      0xFC   |
+   *|  0xF0      |       0x00   |   0x0C   |       0x0C    |      0x0C   |
+   *|  0xF0      |       0x00   |   0x03   |       0x03    |      0x03   |
+   */
 
 	/* Check if audio taken mask is empty*/
 	if (qdf_likely(qdf_cpumask_empty(&audio_taken_cpu))) {
 		/* If CPU mask requested by WLAN for the IRQ and
-		 * cpu_mask passed CPU mask set for IRQ is different
-		 * Copy requested mask into cpu_mask and return
-		 */
-		if (qdf_unlikely(!qdf_cpumask_equal(cpu_mask,
-						    &cfg->wlan_requested_mask))) {
+     * cpu_mask passed CPU mask set for IRQ is different
+     * Copy requested mask into cpu_mask and return
+     */
+		if (qdf_unlikely(!qdf_cpumask_equal(
+			    cpu_mask, &cfg->wlan_requested_mask))) {
 			qdf_cpumask_copy(cpu_mask, &cfg->wlan_requested_mask);
 			return QDF_STATUS_SUCCESS;
 		}
@@ -3123,13 +3063,13 @@ hif_affinity_mgr_check_update_mask(struct hif_softc *scn,
 	qdf_cpumask_and(&allowed_mask, &scn->allowed_mask, &audio_taken_cpu);
 	if (qdf_cpumask_intersects(cpu_mask, &allowed_mask)) {
 		/* If any of taken CPU(Silver cores) mask is set in cpu_mask,
-		 *  mask out the audio taken CPUs from the cpu_mask.
-		 */
+     *  mask out the audio taken CPUs from the cpu_mask.
+     */
 		qdf_cpumask_andnot(cpu_mask, &cfg->wlan_requested_mask,
 				   &allowed_mask);
 		/* If cpu_mask is empty set it to all CPUs
-		 * except taken by audio(Silver cores)
-		 */
+     * except taken by audio(Silver cores)
+     */
 		if (qdf_unlikely(qdf_cpumask_empty(cpu_mask)))
 			qdf_cpumask_complement(cpu_mask, &allowed_mask);
 		return QDF_STATUS_SUCCESS;
@@ -3138,37 +3078,33 @@ hif_affinity_mgr_check_update_mask(struct hif_softc *scn,
 	return QDF_STATUS_E_ALREADY;
 }
 
-static inline QDF_STATUS
-hif_check_and_affine_irq(struct hif_softc *scn, struct hif_cpu_affinity *cfg,
-			 qdf_cpu_mask audio_taken_cpu, qdf_cpu_mask cpu_mask,
-			 uint64_t current_time)
+static inline QDF_STATUS hif_check_and_affine_irq(struct hif_softc *scn,
+						  struct hif_cpu_affinity *cfg,
+						  qdf_cpu_mask audio_taken_cpu,
+						  qdf_cpu_mask cpu_mask,
+						  uint64_t current_time)
 {
 	QDF_STATUS status;
 
-	status = hif_affinity_mgr_check_update_mask(scn, cfg,
-						    audio_taken_cpu,
-						    &cpu_mask,
-						    current_time);
+	status = hif_affinity_mgr_check_update_mask(scn, cfg, audio_taken_cpu,
+						    &cpu_mask, current_time);
 	/* Set IRQ affinity if CPU mask was updated */
 	if (QDF_IS_STATUS_SUCCESS(status)) {
-		status = hif_irq_set_affinity_hint(cfg->irq,
-						   &cpu_mask);
+		status = hif_irq_set_affinity_hint(cfg->irq, &cpu_mask);
 		if (QDF_IS_STATUS_SUCCESS(status)) {
 			/* Store audio taken CPU mask */
 			qdf_cpumask_copy(&cfg->walt_taken_mask,
 					 &audio_taken_cpu);
 			/* Store CPU mask which was set for IRQ*/
-			qdf_cpumask_copy(&cfg->current_irq_mask,
-					 &cpu_mask);
+			qdf_cpumask_copy(&cfg->current_irq_mask, &cpu_mask);
 			/* Set time when IRQ affinity was updated */
 			cfg->last_updated = current_time;
-			if (hif_audio_cpu_affinity_allowed(scn, cfg,
-							   audio_taken_cpu,
-							   current_time))
+			if (hif_audio_cpu_affinity_allowed(
+				    scn, cfg, audio_taken_cpu, current_time))
 				/* If CPU mask was updated due to CPU
-				 * taken by audio, update
-				 * last_affined_away time
-				 */
+         * taken by audio, update
+         * last_affined_away time
+         */
 				cfg->last_affined_away = current_time;
 		}
 	}
@@ -3204,9 +3140,8 @@ void hif_affinity_mgr_affine_irq(struct hif_softc *scn)
 			continue;
 		cfg = &scn->ce_irq_cpu_mask[ce_id];
 		qdf_cpumask_copy(&cpu_mask, &cfg->current_irq_mask);
-		status =
-			hif_check_and_affine_irq(scn, cfg, audio_taken_cpu,
-						 cpu_mask, current_time);
+		status = hif_check_and_affine_irq(scn, cfg, audio_taken_cpu,
+						  cpu_mask, current_time);
 		if (QDF_IS_STATUS_SUCCESS(status))
 			audio_affinity_allowed = true;
 	}
@@ -3217,11 +3152,14 @@ void hif_affinity_mgr_affine_irq(struct hif_softc *scn)
 		for (j = 0; j < hif_ext_group->numirq; j++) {
 			cfg = &scn->irq_cpu_mask[hif_ext_group->grp_id][j];
 			qdf_cpumask_copy(&cpu_mask, &cfg->current_irq_mask);
-			status =
-				hif_check_and_affine_irq(scn, cfg, audio_taken_cpu,
-							 cpu_mask, current_time);
+			status = hif_check_and_affine_irq(scn, cfg,
+							  audio_taken_cpu,
+							  cpu_mask,
+							  current_time);
 			if (QDF_IS_STATUS_SUCCESS(status)) {
-				qdf_atomic_set(&hif_ext_group->force_napi_complete, -1);
+				qdf_atomic_set(
+					&hif_ext_group->force_napi_complete,
+					-1);
 				audio_affinity_allowed = true;
 			}
 		}
@@ -3246,23 +3184,19 @@ hif_affinity_mgr_set_irq_affinity(struct hif_softc *scn, uint32_t irq,
 	current_time = hif_get_log_timestamp();
 	qdf_cpumask_copy(&cfg->wlan_requested_mask, cpu_mask);
 	cfg->update_requested = true;
-	mask_updated = hif_affinity_mgr_check_update_mask(scn, cfg,
-							  audio_taken_cpu,
-							  cpu_mask,
-							  current_time);
+	mask_updated = hif_affinity_mgr_check_update_mask(
+		scn, cfg, audio_taken_cpu, cpu_mask, current_time);
 	status = hif_irq_set_affinity_hint(irq, cpu_mask);
 	if (QDF_IS_STATUS_SUCCESS(status)) {
 		qdf_cpumask_copy(&cfg->walt_taken_mask, &audio_taken_cpu);
 		qdf_cpumask_copy(&cfg->current_irq_mask, cpu_mask);
 		if (QDF_IS_STATUS_SUCCESS(mask_updated)) {
 			cfg->last_updated = current_time;
-			if (hif_audio_cpu_affinity_allowed(scn, cfg,
-							   audio_taken_cpu,
-							   current_time)) {
+			if (hif_audio_cpu_affinity_allowed(
+				    scn, cfg, audio_taken_cpu, current_time)) {
 				cfg->last_affined_away = current_time;
-				qdf_thread_cpumap_print_to_pagebuf(false,
-								   cpu_str,
-								   &audio_taken_cpu);
+				qdf_thread_cpumap_print_to_pagebuf(
+					false, cpu_str, &audio_taken_cpu);
 				hif_info_rl("Audio taken CPU mask: %s",
 					    cpu_str);
 			}
@@ -3299,21 +3233,20 @@ hif_affinity_mgr_set_ce_irq_affinity(struct hif_softc *scn, uint32_t irq,
 	return hif_affinity_mgr_set_irq_affinity(scn, irq, cfg, cpu_mask);
 }
 
-void
-hif_affinity_mgr_init_ce_irq(struct hif_softc *scn, int id, int irq)
+void hif_affinity_mgr_init_ce_irq(struct hif_softc *scn, int id, int irq)
 {
 	unsigned int cpus;
-	qdf_cpu_mask cpu_mask = {0};
+	qdf_cpu_mask cpu_mask = { 0 };
 	struct hif_cpu_affinity *cfg = NULL;
 
 	if (!scn->affinity_mgr_supported)
 		return;
 
 	/* Set CPU Mask to Silver core */
-	qdf_for_each_possible_cpu(cpus)
-		if (qdf_topology_physical_package_id(cpus) ==
-		    CPU_CLUSTER_TYPE_LITTLE)
-			qdf_cpumask_set_cpu(cpus, &cpu_mask);
+	qdf_for_each_possible_cpu(
+		cpus) if (qdf_topology_physical_package_id(cpus) ==
+			  CPU_CLUSTER_TYPE_LITTLE)
+		qdf_cpumask_set_cpu(cpus, &cpu_mask);
 
 	cfg = &scn->ce_irq_cpu_mask[id];
 	qdf_cpumask_copy(&cfg->current_irq_mask, &cpu_mask);
@@ -3324,22 +3257,21 @@ hif_affinity_mgr_init_ce_irq(struct hif_softc *scn, int id, int irq)
 	cfg->update_requested = false;
 }
 
-void
-hif_affinity_mgr_init_grp_irq(struct hif_softc *scn, int grp_id,
-			      int irq_num, int irq)
+void hif_affinity_mgr_init_grp_irq(struct hif_softc *scn, int grp_id,
+				   int irq_num, int irq)
 {
 	unsigned int cpus;
-	qdf_cpu_mask cpu_mask = {0};
+	qdf_cpu_mask cpu_mask = { 0 };
 	struct hif_cpu_affinity *cfg = NULL;
 
 	if (!scn->affinity_mgr_supported)
 		return;
 
 	/* Set CPU Mask to Silver core */
-	qdf_for_each_possible_cpu(cpus)
-		if (qdf_topology_physical_package_id(cpus) ==
-		    CPU_CLUSTER_TYPE_LITTLE)
-			qdf_cpumask_set_cpu(cpus, &cpu_mask);
+	qdf_for_each_possible_cpu(
+		cpus) if (qdf_topology_physical_package_id(cpus) ==
+			  CPU_CLUSTER_TYPE_LITTLE)
+		qdf_cpumask_set_cpu(cpus, &cpu_mask);
 
 	cfg = &scn->irq_cpu_mask[grp_id][irq_num];
 	qdf_cpumask_copy(&cfg->current_irq_mask, &cpu_mask);

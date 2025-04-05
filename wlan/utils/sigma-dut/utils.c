@@ -8,10 +8,10 @@
  */
 
 #include "sigma_dut.h"
+#include "wpa_helpers.h"
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <signal.h>
-#include "wpa_helpers.h"
 
 enum driver_type wifi_chip_type = DRIVER_NOT_SET;
 enum openwrt_driver_type openwrt_chip_type = OPENWRT_DRIVER_NOT_SET;
@@ -27,7 +27,6 @@ int file_exists(const char *fname)
 	struct stat s;
 	return stat(fname, &s) == 0;
 }
-
 
 int set_wifi_chip(const char *chip_type)
 {
@@ -50,7 +49,6 @@ int set_wifi_chip(const char *chip_type)
 
 	return 0;
 }
-
 
 enum driver_type get_driver_type(struct sigma_dut *dut)
 {
@@ -78,7 +76,6 @@ enum driver_type get_driver_type(struct sigma_dut *dut)
 	return wifi_chip_type;
 }
 
-
 void sigma_dut_get_device_driver_name(const char *ifname, char *name,
 				      size_t size)
 {
@@ -93,15 +90,15 @@ void sigma_dut_get_device_driver_name(const char *ifname, char *name,
 	if (stat(path, &s) != 0)
 		return;
 
-	res = snprintf(fname, sizeof(fname),
-		       "/sys/class/net/%s/device/driver", ifname);
+	res = snprintf(fname, sizeof(fname), "/sys/class/net/%s/device/driver",
+		       ifname);
 	if (res < 0 || res >= sizeof(fname))
 		return;
 	res = readlink(fname, path, sizeof(path));
 	if (res < 0)
 		return;
 
-	if (res >= (int) sizeof(path))
+	if (res >= (int)sizeof(path))
 		res = sizeof(path) - 1;
 	path[res] = '\0';
 	pos = strrchr(path, '/');
@@ -111,7 +108,6 @@ void sigma_dut_get_device_driver_name(const char *ifname, char *name,
 		pos++;
 	snprintf(name, size, "%s", pos);
 }
-
 
 enum openwrt_driver_type get_openwrt_driver_type(void)
 {
@@ -125,7 +121,6 @@ enum openwrt_driver_type get_openwrt_driver_type(void)
 
 	return openwrt_chip_type;
 }
-
 
 enum dev_mode dev_mode_to_enum(const char *mode)
 {
@@ -142,7 +137,6 @@ enum dev_mode dev_mode_to_enum(const char *mode)
 	return MODE_UNKNOWN;
 }
 
-
 enum sigma_program sigma_program_to_enum(const char *prog)
 {
 	if (prog == NULL)
@@ -152,8 +146,7 @@ enum sigma_program sigma_program_to_enum(const char *prog)
 		return PROGRAM_TDLS;
 	if (strcasecmp(prog, "HS2") == 0)
 		return PROGRAM_HS2;
-	if (strcasecmp(prog, "HS2_R2") == 0 ||
-	    strcasecmp(prog, "HS2-R2") == 0)
+	if (strcasecmp(prog, "HS2_R2") == 0 || strcasecmp(prog, "HS2-R2") == 0)
 		return PROGRAM_HS2_R2;
 	if (strcasecmp(prog, "HS2-R3") == 0)
 		return PROGRAM_HS2_R3;
@@ -201,22 +194,16 @@ enum sigma_program sigma_program_to_enum(const char *prog)
 	return PROGRAM_UNKNOWN;
 }
 
-
 bool is_passpoint_r2_or_newer(enum sigma_program prog)
 {
-	return prog == PROGRAM_HS2_R2 ||
-		prog == PROGRAM_HS2_R3 ||
-		prog == PROGRAM_HS2_2022 ||
-		prog == PROGRAM_HS2_R4;
+	return prog == PROGRAM_HS2_R2 || prog == PROGRAM_HS2_R3 ||
+	       prog == PROGRAM_HS2_2022 || prog == PROGRAM_HS2_R4;
 }
-
 
 bool is_passpoint(enum sigma_program prog)
 {
-	return prog == PROGRAM_HS2 ||
-		is_passpoint_r2_or_newer(prog);
+	return prog == PROGRAM_HS2 || is_passpoint_r2_or_newer(prog);
 }
-
 
 static int parse_hex(char c)
 {
@@ -228,7 +215,6 @@ static int parse_hex(char c)
 		return c - 'A' + 10;
 	return -1;
 }
-
 
 int hex_byte(const char *str)
 {
@@ -242,7 +228,6 @@ int hex_byte(const char *str)
 		return -1;
 	return (res1 << 4) | res2;
 }
-
 
 int parse_hexstr(const char *hex, unsigned char *buf, size_t buflen)
 {
@@ -263,7 +248,6 @@ int parse_hexstr(const char *hex, unsigned char *buf, size_t buflen)
 
 	return i;
 }
-
 
 int parse_mac_address(struct sigma_dut *dut, const char *arg,
 		      unsigned char *addr)
@@ -292,20 +276,19 @@ int parse_mac_address(struct sigma_dut *dut, const char *arg,
 	return 0;
 
 fail:
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Invalid MAC address %s (expected format xx:xx:xx:xx:xx:xx)",
-			arg);
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Invalid MAC address %s (expected format xx:xx:xx:xx:xx:xx)",
+		arg);
 	return -1;
 }
-
 
 int is_60g_sigma_dut(struct sigma_dut *dut)
 {
 	return dut->program == PROGRAM_60GHZ ||
-		(dut->program == PROGRAM_WPS &&
-		 (get_driver_type(dut) == DRIVER_WIL6210));
+	       (dut->program == PROGRAM_WPS &&
+		(get_driver_type(dut) == DRIVER_WIL6210));
 }
-
 
 unsigned int channel_to_freq(struct sigma_dut *dut, unsigned int channel)
 {
@@ -326,7 +309,6 @@ unsigned int channel_to_freq(struct sigma_dut *dut, unsigned int channel)
 	return 0;
 }
 
-
 unsigned int freq_to_channel(unsigned int freq)
 {
 	if (freq >= 2412 && freq <= 2472)
@@ -340,7 +322,6 @@ unsigned int freq_to_channel(unsigned int freq)
 	return 0;
 }
 
-
 int is_ipv6_addr(const char *str)
 {
 	struct sockaddr_in6 addr;
@@ -348,17 +329,15 @@ int is_ipv6_addr(const char *str)
 	return inet_pton(AF_INET6, str, &(addr.sin6_addr));
 }
 
-
 void convert_mac_addr_to_ipv6_lladdr(u8 *mac_addr, char *ipv6_buf,
 				     size_t buf_len)
 {
 	u8 temp = mac_addr[0] ^ 0x02;
 
 	snprintf(ipv6_buf, buf_len, "fe80::%02x%02x:%02xff:fe%02x:%02x%02x",
-		 temp, mac_addr[1], mac_addr[2],
-		 mac_addr[3], mac_addr[4], mac_addr[5]);
+		 temp, mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4],
+		 mac_addr[5]);
 }
-
 
 size_t convert_mac_addr_to_ipv6_linklocal(const u8 *mac_addr, u8 *ipv6)
 {
@@ -379,7 +358,6 @@ size_t convert_mac_addr_to_ipv6_linklocal(const u8 *mac_addr, u8 *ipv6)
 
 	return 16;
 }
-
 
 #ifndef ANDROID
 
@@ -407,7 +385,6 @@ size_t strlcpy(char *dest, const char *src, size_t siz)
 	return s - src - 1;
 }
 
-
 size_t strlcat(char *dst, const char *str, size_t size)
 {
 	char *pos;
@@ -432,7 +409,6 @@ size_t strlcat(char *dst, const char *str, size_t size)
 
 #endif /* ANDROID */
 
-
 void hex_dump(struct sigma_dut *dut, u8 *data, size_t len)
 {
 	char buf[1024];
@@ -444,31 +420,28 @@ void hex_dump(struct sigma_dut *dut, u8 *data, size_t len)
 	ptr = data;
 	pos = 0;
 	for (index = 0; index < len; index++) {
-		pos += snprintf(&(buf[pos]), sizeof(buf) - pos,
-				"%02x ", *ptr++);
+		pos += snprintf(&(buf[pos]), sizeof(buf) - pos, "%02x ",
+				*ptr++);
 		if (pos > 1020)
 			break;
 	}
-	sigma_dut_print(dut, DUT_MSG_INFO, "HEXDUMP len=[%d]", (int) len);
+	sigma_dut_print(dut, DUT_MSG_INFO, "HEXDUMP len=[%d]", (int)len);
 	sigma_dut_print(dut, DUT_MSG_INFO, "buf:%s", buf);
 }
 
-
 #ifdef NL80211_SUPPORT
 
-void * nl80211_cmd(struct sigma_dut *dut, struct nl80211_ctx *ctx,
-		   struct nl_msg *msg, int flags, uint8_t cmd)
+void *nl80211_cmd(struct sigma_dut *dut, struct nl80211_ctx *ctx,
+		  struct nl_msg *msg, int flags, uint8_t cmd)
 {
 	if (!ctx)
 		return NULL;
-	return genlmsg_put(msg, 0, 0, ctx->netlink_familyid,
-			   0, flags, cmd, 0);
+	return genlmsg_put(msg, 0, 0, ctx->netlink_familyid, 0, flags, cmd, 0);
 }
 
-
-static struct nl_msg *
-nl80211_ifindex_msg(struct sigma_dut *dut, struct nl80211_ctx *ctx, int ifindex,
-		    int flags, uint8_t cmd)
+static struct nl_msg *nl80211_ifindex_msg(struct sigma_dut *dut,
+					  struct nl80211_ctx *ctx, int ifindex,
+					  int flags, uint8_t cmd)
 {
 	struct nl_msg *msg;
 
@@ -488,19 +461,16 @@ nl80211_ifindex_msg(struct sigma_dut *dut, struct nl80211_ctx *ctx, int ifindex,
 	return msg;
 }
 
-
-struct nl_msg * nl80211_drv_msg(struct sigma_dut *dut, struct nl80211_ctx *ctx,
-				int ifindex, int flags, uint8_t cmd)
+struct nl_msg *nl80211_drv_msg(struct sigma_dut *dut, struct nl80211_ctx *ctx,
+			       int ifindex, int flags, uint8_t cmd)
 {
 	return nl80211_ifindex_msg(dut, ctx, ifindex, flags, cmd);
 }
-
 
 static int no_seq_check(struct nl_msg *msg, void *arg)
 {
 	return NL_OK;
 }
-
 
 static int ack_handler(struct nl_msg *msg, void *arg)
 {
@@ -509,14 +479,12 @@ static int ack_handler(struct nl_msg *msg, void *arg)
 	return NL_STOP;
 }
 
-
 static int finish_handler(struct nl_msg *msg, void *arg)
 {
 	int *ret = arg;
 	*ret = 0;
 	return NL_SKIP;
 }
-
 
 static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
 			 void *arg)
@@ -525,7 +493,6 @@ static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
 	*ret = err->error;
 	return NL_SKIP;
 }
-
 
 int send_and_recv_msgs(struct sigma_dut *dut, struct nl80211_ctx *ctx,
 		       struct nl_msg *nlmsg,
@@ -556,21 +523,22 @@ int send_and_recv_msgs(struct sigma_dut *dut, struct nl80211_ctx *ctx,
 	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &err);
 
 	if (valid_handler)
-		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM,
-			  valid_handler, valid_data);
+		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, valid_handler,
+			  valid_data);
 
 	while (err > 0) {
 		int res = nl_recvmsgs(ctx->sock, cb);
 
 		if (res < 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"nl80211: %s->nl_recvmsgs failed: res=%d, err=%d",
-					__func__, res, err);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"nl80211: %s->nl_recvmsgs failed: res=%d, err=%d",
+				__func__, res, err);
 		}
 	}
- out:
+out:
 	nl_cb_put(cb);
-	if (!valid_handler && valid_data == (void *) -1) {
+	if (!valid_handler && valid_data == (void *)-1) {
 		if (nlmsg) {
 			struct nlmsghdr *hdr = nlmsg_hdr(nlmsg);
 			void *data = nlmsg_data(hdr);
@@ -583,7 +551,6 @@ int send_and_recv_msgs(struct sigma_dut *dut, struct nl80211_ctx *ctx,
 	nlmsg_free(nlmsg);
 	return err;
 }
-
 
 struct family_data {
 	struct sigma_dut *dut;
@@ -616,8 +583,7 @@ static int family_handler(struct nl_msg *msg, void *arg)
 			  nla_len(mcgrp), NULL);
 		if (!tb2[CTRL_ATTR_MCAST_GRP_NAME] ||
 		    !tb2[CTRL_ATTR_MCAST_GRP_ID] ||
-		    strncmp(nla_data(tb2[CTRL_ATTR_MCAST_GRP_NAME]),
-			    res->group,
+		    strncmp(nla_data(tb2[CTRL_ATTR_MCAST_GRP_NAME]), res->group,
 			    nla_len(tb2[CTRL_ATTR_MCAST_GRP_NAME])) != 0)
 			continue;
 		res->id = nla_get_u32(tb2[CTRL_ATTR_MCAST_GRP_ID]);
@@ -626,7 +592,6 @@ static int family_handler(struct nl_msg *msg, void *arg)
 
 	return NL_SKIP;
 }
-
 
 static int nl_get_multicast_id(struct sigma_dut *dut, struct nl80211_ctx *ctx,
 			       const char *family, const char *group)
@@ -640,8 +605,8 @@ static int nl_get_multicast_id(struct sigma_dut *dut, struct nl80211_ctx *ctx,
 	msg = nlmsg_alloc();
 	if (!msg)
 		return -ENOMEM;
-	if (!genlmsg_put(msg, 0, 0, genl_ctrl_resolve(ctx->sock, "nlctrl"),
-			 0, 0, CTRL_CMD_GETFAMILY, 0) ||
+	if (!genlmsg_put(msg, 0, 0, genl_ctrl_resolve(ctx->sock, "nlctrl"), 0,
+			 0, CTRL_CMD_GETFAMILY, 0) ||
 	    nla_put_string(msg, CTRL_ATTR_FAMILY_NAME, family)) {
 		nlmsg_free(msg);
 		return -1;
@@ -653,8 +618,7 @@ static int nl_get_multicast_id(struct sigma_dut *dut, struct nl80211_ctx *ctx,
 	return ret;
 }
 
-
-struct nl80211_ctx * nl80211_init(struct sigma_dut *dut)
+struct nl80211_ctx *nl80211_init(struct sigma_dut *dut)
 {
 	struct nl80211_ctx *ctx;
 
@@ -681,9 +645,10 @@ struct nl80211_ctx * nl80211_init(struct sigma_dut *dut)
 	}
 
 	if (nl_socket_set_buffer_size(ctx->sock, SOCK_BUF_SIZE, 0) < 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Could not set nl_socket RX buffer size for sock: %s",
-				strerror(errno));
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Could not set nl_socket RX buffer size for sock: %s",
+			strerror(errno));
 	}
 
 	ctx->netlink_familyid = genl_ctrl_resolve(ctx->sock, "nl80211");
@@ -695,9 +660,10 @@ struct nl80211_ctx * nl80211_init(struct sigma_dut *dut)
 
 	ctx->nlctrl_familyid = genl_ctrl_resolve(ctx->sock, "nlctrl");
 	if (ctx->nlctrl_familyid < 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"net link family nlctrl is not present: %d err:%s",
-				ctx->nlctrl_familyid, strerror(errno));
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"net link family nlctrl is not present: %d err:%s",
+			ctx->nlctrl_familyid, strerror(errno));
 		goto cleanup;
 	}
 
@@ -710,7 +676,6 @@ cleanup:
 	free(ctx);
 	return NULL;
 }
-
 
 int nl80211_open_event_sock(struct sigma_dut *dut)
 {
@@ -740,15 +705,17 @@ int nl80211_open_event_sock(struct sigma_dut *dut)
 	}
 
 	if (nl_socket_set_buffer_size(ctx->event_sock, SOCK_BUF_SIZE, 0) < 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Fail to set nl_socket RX buff size for event sock: %s",
-				strerror(errno));
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Fail to set nl_socket RX buff size for event sock: %s",
+			strerror(errno));
 	}
 
 	cb = nl_socket_get_cb(ctx->event_sock);
 	if (!cb) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Failed to get NL control block for event socket port");
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Failed to get NL control block for event socket port");
 		return -1;
 	}
 
@@ -759,7 +726,7 @@ int nl80211_open_event_sock(struct sigma_dut *dut)
 		sigma_dut_print(dut, DUT_MSG_INFO,
 				"nl80211: Could not add multicast "
 				"membership for vendor events: %d (%s)",
-			   ret, nl_geterror(ret));
+				ret, nl_geterror(ret));
 		/* Continue without vendor events */
 	}
 	nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &ret);
@@ -770,7 +737,6 @@ int nl80211_open_event_sock(struct sigma_dut *dut)
 
 	return 0;
 }
-
 
 void nl80211_deinit(struct sigma_dut *dut, struct nl80211_ctx *ctx)
 {
@@ -786,7 +752,6 @@ void nl80211_deinit(struct sigma_dut *dut, struct nl80211_ctx *ctx)
 	free(ctx);
 }
 
-
 void nl80211_close_event_sock(struct sigma_dut *dut)
 {
 	struct nl80211_ctx *ctx = dut->nl_ctx;
@@ -797,9 +762,8 @@ void nl80211_close_event_sock(struct sigma_dut *dut)
 	}
 }
 
-
-static struct nl_msg *
-wcn_create_wifi_test_config_msg(struct sigma_dut *dut, const char *intf)
+static struct nl_msg *wcn_create_wifi_test_config_msg(struct sigma_dut *dut,
+						      const char *intf)
 {
 	int ifindex;
 	struct nl_msg *msg;
@@ -807,8 +771,8 @@ wcn_create_wifi_test_config_msg(struct sigma_dut *dut, const char *intf)
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return NULL;
 	}
 
@@ -824,7 +788,6 @@ wcn_create_wifi_test_config_msg(struct sigma_dut *dut, const char *intf)
 
 	return msg;
 }
-
 
 static int wcn_send_wifi_test_config_msg(struct sigma_dut *dut,
 					 struct nl_msg *msg,
@@ -843,7 +806,6 @@ static int wcn_send_wifi_test_config_msg(struct sigma_dut *dut,
 
 	return ret;
 }
-
 
 int wcn_wifi_test_config_set_flag(struct sigma_dut *dut, const char *intf,
 				  int attr_id)
@@ -864,7 +826,6 @@ int wcn_wifi_test_config_set_flag(struct sigma_dut *dut, const char *intf,
 	return wcn_send_wifi_test_config_msg(dut, msg, params, attr_id);
 }
 
-
 int wcn_wifi_test_config_set_u8(struct sigma_dut *dut, const char *intf,
 				int attr_id, uint8_t val)
 {
@@ -883,7 +844,6 @@ int wcn_wifi_test_config_set_u8(struct sigma_dut *dut, const char *intf,
 
 	return wcn_send_wifi_test_config_msg(dut, msg, params, attr_id);
 }
-
 
 int wcn_wifi_test_config_set_u16(struct sigma_dut *dut, const char *intf,
 				 int attr_id, uint16_t val)
@@ -906,7 +866,6 @@ int wcn_wifi_test_config_set_u16(struct sigma_dut *dut, const char *intf,
 
 #endif /* NL80211_SUPPORT */
 
-
 static int get_wps_pin_checksum(int pin)
 {
 	int a = 0;
@@ -921,9 +880,8 @@ static int get_wps_pin_checksum(int pin)
 	return (10 - (a % 10)) % 10;
 }
 
-
-int get_wps_pin_from_mac(struct sigma_dut *dut, const char *macaddr,
-			 char *pin, size_t len)
+int get_wps_pin_from_mac(struct sigma_dut *dut, const char *macaddr, char *pin,
+			 size_t len)
 {
 	unsigned char mac[ETH_ALEN];
 	int tmp, checksum;
@@ -934,9 +892,9 @@ int get_wps_pin_from_mac(struct sigma_dut *dut, const char *macaddr,
 		return -1;
 
 	/*
-	 * get 7 digit PIN from the last 24 bits of MAC
-	 * range 1000000 - 9999999
-	 */
+   * get 7 digit PIN from the last 24 bits of MAC
+   * range 1000000 - 9999999
+   */
 	tmp = (mac[5] & 0xFF) | ((mac[4] & 0xFF) << 8) |
 	      ((mac[3] & 0xFF) << 16);
 	tmp = (tmp % 9000000) + 1000000;
@@ -944,7 +902,6 @@ int get_wps_pin_from_mac(struct sigma_dut *dut, const char *macaddr,
 	snprintf(pin, len, "%07d%01d", tmp, checksum);
 	return 0;
 }
-
 
 int get_wps_forced_version(struct sigma_dut *dut, const char *str)
 {
@@ -954,16 +911,15 @@ int get_wps_forced_version(struct sigma_dut *dut, const char *str)
 	if (count == 2) {
 		result = major * 16 + minor;
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Force WPS version to 0x%02x (%s)",
-				result, str);
+				"Force WPS version to 0x%02x (%s)", result,
+				str);
 	} else {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Invalid WPS version %s", str);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "Invalid WPS version %s",
+				str);
 	}
 
 	return result;
 }
-
 
 void str_remove_chars(char *str, char ch)
 {
@@ -977,10 +933,8 @@ void str_remove_chars(char *str, char ch)
 	*pw = '\0';
 }
 
-
 static const char base64_table[65] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
 
 int base64_encode(const char *src, size_t len, char *out, size_t out_len)
 {
@@ -998,10 +952,10 @@ int base64_encode(const char *src, size_t len, char *out, size_t out_len)
 	pos = (unsigned char *)out;
 	while (end - in >= 3) {
 		*pos++ = base64_table[(in[0] >> 2) & 0x3f];
-		*pos++ = base64_table[(((in[0] & 0x03) << 4) |
-				       (in[1] >> 4)) & 0x3f];
-		*pos++ = base64_table[(((in[1] & 0x0f) << 2) |
-				       (in[2] >> 6)) & 0x3f];
+		*pos++ = base64_table[(((in[0] & 0x03) << 4) | (in[1] >> 4)) &
+				      0x3f];
+		*pos++ = base64_table[(((in[1] & 0x0f) << 2) | (in[2] >> 6)) &
+				      0x3f];
 		*pos++ = base64_table[in[2] & 0x3f];
 		in += 3;
 	}
@@ -1013,7 +967,8 @@ int base64_encode(const char *src, size_t len, char *out, size_t out_len)
 			*pos++ = '=';
 		} else {
 			*pos++ = base64_table[(((in[0] & 0x03) << 4) |
-					       (in[1] >> 4)) & 0x3f];
+					       (in[1] >> 4)) &
+					      0x3f];
 			*pos++ = base64_table[((in[1] & 0x0f) << 2) & 0x3f];
 		}
 		*pos++ = '=';
@@ -1023,8 +978,7 @@ int base64_encode(const char *src, size_t len, char *out, size_t out_len)
 	return 0;
 }
 
-
-unsigned char * base64_decode(const char *src, size_t len, size_t *out_len)
+unsigned char *base64_decode(const char *src, size_t len, size_t *out_len)
 {
 	unsigned char dtable[256], *out, *pos, block[4], tmp;
 	size_t i, count, olen;
@@ -1033,12 +987,12 @@ unsigned char * base64_decode(const char *src, size_t len, size_t *out_len)
 
 	memset(dtable, 0x80, 256);
 	for (i = 0; i < sizeof(base64_table) - 1; i++)
-		dtable[(unsigned char) base64_table[i]] = (unsigned char) i;
+		dtable[(unsigned char)base64_table[i]] = (unsigned char)i;
 	dtable['='] = 0;
 
 	count = 0;
 	for (i = 0; i < len; i++) {
-		if (dtable[(unsigned char) src[i]] != 0x80)
+		if (dtable[(unsigned char)src[i]] != 0x80)
 			count++;
 	}
 
@@ -1091,7 +1045,6 @@ unsigned char * base64_decode(const char *src, size_t len, size_t *out_len)
 	return out;
 }
 
-
 int random_get_bytes(char *buf, size_t len)
 {
 	FILE *f;
@@ -1107,17 +1060,13 @@ int random_get_bytes(char *buf, size_t len)
 	return rc != len ? -1 : 0;
 }
 
-
 int get_enable_disable(const char *val)
 {
-	if (strcasecmp(val, "enable") == 0 ||
-	    strcasecmp(val, "enabled") == 0 ||
-	    strcasecmp(val, "on") == 0 ||
-	    strcasecmp(val, "yes") == 0)
+	if (strcasecmp(val, "enable") == 0 || strcasecmp(val, "enabled") == 0 ||
+	    strcasecmp(val, "on") == 0 || strcasecmp(val, "yes") == 0)
 		return 1;
 	return atoi(val);
 }
-
 
 int wcn_driver_cmd(const char *ifname, char *buf)
 {
@@ -1139,12 +1088,11 @@ int wcn_driver_cmd(const char *ifname, char *buf)
 	priv_cmd.buf = buf;
 	priv_cmd.used_len = buf_len;
 	priv_cmd.total_len = buf_len;
-	ifr.ifr_data = (void *) &priv_cmd;
+	ifr.ifr_data = (void *)&priv_cmd;
 	res = ioctl(s, SIOCDEVPRIVATE + 1, &ifr);
 	close(s);
 	return res;
 }
-
 
 int set_ipv6_addr(struct sigma_dut *dut, const char *ip, const char *mask,
 		  const char *ifname)
@@ -1156,9 +1104,9 @@ int set_ipv6_addr(struct sigma_dut *dut, const char *ip, const char *mask,
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 	if (system(buf) != 0) {
 		/*
-		 * This command may fail if the address being deleted does not
-		 * exist. Inaction here is intentional.
-		 */
+     * This command may fail if the address being deleted does not
+     * exist. Inaction here is intentional.
+     */
 	}
 
 	snprintf(buf, sizeof(buf), "ip -6 addr add %s/%s dev %s", ip, mask,
@@ -1170,12 +1118,10 @@ int set_ipv6_addr(struct sigma_dut *dut, const char *ip, const char *mask,
 	return 0;
 }
 
-
 int snprintf_error(size_t size, int res)
 {
-	return res < 0 || (unsigned int) res >= size;
+	return res < 0 || (unsigned int)res >= size;
 }
-
 
 void kill_pid(struct sigma_dut *dut, const char *pid_file)
 {
@@ -1187,8 +1133,8 @@ void kill_pid(struct sigma_dut *dut, const char *pid_file)
 		return; /* process is not running */
 
 	if (fscanf(f, "%d", &pid) != 1 || pid <= 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"No PID for process in %s", pid_file);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "No PID for process in %s",
+				pid_file);
 		fclose(f);
 		unlink(pid_file);
 		return;
@@ -1204,7 +1150,6 @@ void kill_pid(struct sigma_dut *dut, const char *pid_file)
 	unlink(pid_file);
 	sleep(1);
 }
-
 
 bool is_6ghz_freq(int freq)
 {

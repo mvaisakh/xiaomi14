@@ -5,11 +5,11 @@
  *
  */
 
-#include <linux/module.h>
-#include <linux/skbuff.h>
-#include <linux/ipa.h>
 #include "rmnet_ctl.h"
 #include "rmnet_ctl_client.h"
+#include <linux/ipa.h>
+#include <linux/module.h>
+#include <linux/skbuff.h>
 
 struct rmnet_ctl_ipa_dev {
 	struct rmnet_ctl_dev dev;
@@ -22,8 +22,8 @@ static bool rmnet_ctl_ipa_registered;
 
 static int rmnet_ctl_send_ipa(struct rmnet_ctl_dev *dev, struct sk_buff *skb)
 {
-	struct rmnet_ctl_ipa_dev *ctl_dev = container_of(
-				dev, struct rmnet_ctl_ipa_dev, dev);
+	struct rmnet_ctl_ipa_dev *ctl_dev =
+		container_of(dev, struct rmnet_ctl_ipa_dev, dev);
 	int rc;
 
 	spin_lock_bh(&ctl_dev->tx_lock);
@@ -71,13 +71,9 @@ static void rmnet_ctl_ipa_ready(void *user_data)
 {
 	int rc;
 
-	rc = ipa_register_rmnet_ctl_cb(
-			rmnet_ctl_probe,
-			&ctl_ipa_dev,
-			rmnet_ctl_remove,
-			&ctl_ipa_dev,
-			rmnet_ctl_dl_callback,
-			&ctl_ipa_dev);
+	rc = ipa_register_rmnet_ctl_cb(rmnet_ctl_probe, &ctl_ipa_dev,
+				       rmnet_ctl_remove, &ctl_ipa_dev,
+				       rmnet_ctl_dl_callback, &ctl_ipa_dev);
 
 	if (rc)
 		pr_err("%s: %d\n", __func__, rc);
@@ -106,8 +102,7 @@ static void __exit rmnet_ctl_exit(void)
 	}
 }
 
-module_init(rmnet_ctl_init)
-module_exit(rmnet_ctl_exit)
+module_init(rmnet_ctl_init) module_exit(rmnet_ctl_exit)
 
-MODULE_DESCRIPTION("RmNet control IPA Driver");
+	MODULE_DESCRIPTION("RmNet control IPA Driver");
 MODULE_LICENSE("GPL v2");

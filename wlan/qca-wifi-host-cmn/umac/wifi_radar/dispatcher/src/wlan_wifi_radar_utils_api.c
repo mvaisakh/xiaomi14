@@ -14,37 +14,37 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_wifi_radar_utils_api.h>
-#include <wlan_wifi_radar_tgt_api.h>
 #include <qdf_module.h>
 #include <wifi_radar_defs_i.h>
 #include <wlan_objmgr_global_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
+#include <wlan_wifi_radar_tgt_api.h>
+#include <wlan_wifi_radar_utils_api.h>
 
 QDF_STATUS wlan_wifi_radar_init(void)
 {
 	if (wlan_objmgr_register_psoc_create_handler(
-	    WLAN_UMAC_COMP_WIFI_RADAR,
-	    wlan_wifi_radar_psoc_obj_create_handler, NULL)
-		!= QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_WIFI_RADAR,
+		    wlan_wifi_radar_psoc_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_register_psoc_destroy_handler(
-	    WLAN_UMAC_COMP_WIFI_RADAR,
-		wlan_wifi_radar_psoc_obj_destroy_handler, NULL)
-		!= QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_WIFI_RADAR,
+		    wlan_wifi_radar_psoc_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_register_pdev_create_handler(
-		WLAN_UMAC_COMP_WIFI_RADAR,
-		wlan_wifi_radar_pdev_obj_create_handler, NULL)
-		!= QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_WIFI_RADAR,
+		    wlan_wifi_radar_pdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_register_pdev_destroy_handler(
-		WLAN_UMAC_COMP_WIFI_RADAR,
-		wlan_wifi_radar_pdev_obj_destroy_handler, NULL)
-		!= QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_WIFI_RADAR,
+		    wlan_wifi_radar_pdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	return QDF_STATUS_SUCCESS;
@@ -55,30 +55,30 @@ QDF_STATUS wlan_wifi_radar_deinit(void)
 	QDF_STATUS ret_status = QDF_STATUS_SUCCESS;
 
 	if (wlan_objmgr_unregister_psoc_create_handler(
-		WLAN_UMAC_COMP_WIFI_RADAR,
-		wlan_wifi_radar_psoc_obj_create_handler, NULL)
-		!= QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_WIFI_RADAR,
+		    wlan_wifi_radar_psoc_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		wifi_radar_err("failed to unregister psoc create handler");
 		ret_status = QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_unregister_psoc_destroy_handler(
-		WLAN_UMAC_COMP_WIFI_RADAR,
-		wlan_wifi_radar_psoc_obj_destroy_handler, NULL)
-		!= QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_WIFI_RADAR,
+		    wlan_wifi_radar_psoc_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		wifi_radar_err("failed to unregister psoc destroy handler");
 		ret_status = QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_unregister_pdev_create_handler(
-		WLAN_UMAC_COMP_WIFI_RADAR,
-		wlan_wifi_radar_pdev_obj_create_handler, NULL)
-		!= QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_WIFI_RADAR,
+		    wlan_wifi_radar_pdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		wifi_radar_err("failed to unregister pdev create handler");
 		ret_status = QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_unregister_pdev_destroy_handler(
-		WLAN_UMAC_COMP_WIFI_RADAR,
-		wlan_wifi_radar_pdev_obj_destroy_handler, NULL)
-		!= QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_WIFI_RADAR,
+		    wlan_wifi_radar_pdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		wifi_radar_err("failed to unregister pdev destroy handler");
 		ret_status = QDF_STATUS_E_FAILURE;
 	}
@@ -97,9 +97,8 @@ QDF_STATUS wlan_wifi_radar_pdev_open(struct wlan_objmgr_pdev *pdev)
 	/* RealyFS init */
 	status = wifi_radar_streamfs_init(pdev);
 	if (status != QDF_STATUS_SUCCESS) {
-		wifi_radar_err(
-		"wifi_radar_streamfs_init failed with %d",
-		status);
+		wifi_radar_err("wifi_radar_streamfs_init failed with %d",
+			       status);
 		return QDF_STATUS_SUCCESS;
 	}
 
@@ -156,5 +155,7 @@ bool wlan_wifi_radar_is_feature_disabled(struct wlan_objmgr_pdev *pdev)
 	}
 
 	return (wlan_pdev_nif_feat_ext_cap_get(
-			pdev, WLAN_PDEV_FEXT_WIFI_RADAR_ENABLE) ? false : true);
+			pdev, WLAN_PDEV_FEXT_WIFI_RADAR_ENABLE) ?
+			false :
+			true);
 }

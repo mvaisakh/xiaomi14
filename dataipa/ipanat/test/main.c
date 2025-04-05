@@ -26,67 +26,60 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <libgen.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
+#include <unistd.h>
 
-#include "ipa_nat_test.h"
 #include "ipa_nat_map.h"
+#include "ipa_nat_test.h"
 
 #undef strcasesame
-#define strcasesame(x, y) \
-	(! strcasecmp((x), (y)))
+#define strcasesame(x, y) (!strcasecmp((x), (y)))
 
-static inline const char* legal_mem_type(
-	const char* mt )
+static inline const char *legal_mem_type(const char *mt)
 {
-	if ( strcasesame(mt, "DDR") )    return "DDR";
-	if ( strcasesame(mt, "SRAM") )   return "SRAM";
-	if ( strcasesame(mt, "HYBRID") ) return "HYBRID";
+	if (strcasesame(mt, "DDR"))
+		return "DDR";
+	if (strcasesame(mt, "SRAM"))
+		return "SRAM";
+	if (strcasesame(mt, "HYBRID"))
+		return "HYBRID";
 	return NULL;
 }
 
-static int nat_rule_loop_check(
-	ipa_table*      table_ptr,
-	uint32_t        rule_hdl,
-	void*           record_ptr,
-	uint16_t        record_index,
-	void*           meta_record_ptr,
-	uint16_t        meta_record_index,
-	void*           arb_data_ptr )
+static int nat_rule_loop_check(ipa_table *table_ptr, uint32_t rule_hdl,
+			       void *record_ptr, uint16_t record_index,
+			       void *meta_record_ptr,
+			       uint16_t meta_record_index, void *arb_data_ptr)
 {
 	enum ipa3_nat_mem_in nmi;
-	uint8_t              is_expn_tbl;
-	uint16_t             rule_index;
-	uint32_t             tbl_hdl = (uint32_t) arb_data_ptr;
+	uint8_t is_expn_tbl;
+	uint16_t rule_index;
+	uint32_t tbl_hdl = (uint32_t)arb_data_ptr;
 
-	struct ipa_nat_rule* rule_ptr =
-		(struct ipa_nat_rule*) record_ptr;
+	struct ipa_nat_rule *rule_ptr = (struct ipa_nat_rule *)record_ptr;
 
 	BREAK_RULE_HDL(table_ptr, rule_hdl, nmi, is_expn_tbl, rule_index);
 
 	/*
-	 * By virtue of this function being called back by the walk, this
-	 * record_index is valid.  Denote it as such in the map...
-	 */
-	if ( ipa_nat_map_add(MAP_NUM_99, record_index, 1) )
-	{
+   * By virtue of this function being called back by the walk, this
+   * record_index is valid.  Denote it as such in the map...
+   */
+	if (ipa_nat_map_add(MAP_NUM_99, record_index, 1)) {
 		IPAERR("ipa_nat_map_add(index(%u)) failed\n", record_index);
 		return -EINVAL;
 	}
 
-	if ( rule_ptr->next_index == record_index )
-	{
+	if (rule_ptr->next_index == record_index) {
 		IPAERR("Infinite loop detected in IPv4 %s table, entry %u\n",
-			   (is_expn_tbl) ? "expansion" : "base",
-			   record_index);
+		       (is_expn_tbl) ? "expansion" : "base", record_index);
 
 		ipa_nat_dump_ipv4_table(tbl_hdl);
 
@@ -96,47 +89,36 @@ static int nat_rule_loop_check(
 	return 0;
 }
 
-static int nat_rule_validity_check(
-	ipa_table*      table_ptr,
-	uint32_t        rule_hdl,
-	void*           record_ptr,
-	uint16_t        record_index,
-	void*           meta_record_ptr,
-	uint16_t        meta_record_index,
-	void*           arb_data_ptr )
+static int nat_rule_validity_check(ipa_table *table_ptr, uint32_t rule_hdl,
+				   void *record_ptr, uint16_t record_index,
+				   void *meta_record_ptr,
+				   uint16_t meta_record_index,
+				   void *arb_data_ptr)
 {
 	enum ipa3_nat_mem_in nmi;
-	uint8_t              is_expn_tbl;
-	uint16_t             rule_index;
-	uint16_t             index;
+	uint8_t is_expn_tbl;
+	uint16_t rule_index;
+	uint16_t index;
 
-	struct ipa_nat_rule* rule_ptr =
-		(struct ipa_nat_rule*) record_ptr;
+	struct ipa_nat_rule *rule_ptr = (struct ipa_nat_rule *)record_ptr;
 
 	BREAK_RULE_HDL(table_ptr, rule_hdl, nmi, is_expn_tbl, rule_index);
 
 	index = rule_ptr->next_index;
 
-	if ( index && ipa_nat_map_find(MAP_NUM_99, index, NULL) )
-	{
+	if (index && ipa_nat_map_find(MAP_NUM_99, index, NULL)) {
 		IPAERR("Invalid next index %u found in IPv4 %s table entry %u\n",
-			   index,
-			   (is_expn_tbl) ? "expansion" : "base",
-			   rule_index);
+		       index, (is_expn_tbl) ? "expansion" : "base", rule_index);
 
 		return -EINVAL;
 	}
 
-	if ( is_expn_tbl )
-	{
+	if (is_expn_tbl) {
 		index = rule_ptr->prev_index;
 
-		if ( index && ipa_nat_map_find(MAP_NUM_99, index, NULL) )
-		{
+		if (index && ipa_nat_map_find(MAP_NUM_99, index, NULL)) {
 			IPAERR("Invalid previous index %u found in IPv4 %s table entry %u\n",
-				   index,
-				   "expansion",
-				   rule_index);
+			       index, "expansion", rule_index);
 
 			return -EINVAL;
 		}
@@ -145,40 +127,33 @@ static int nat_rule_validity_check(
 	return 0;
 }
 
-static int index_loop_check(
-	ipa_table*      table_ptr,
-	uint32_t        rule_hdl,
-	void*           record_ptr,
-	uint16_t        record_index,
-	void*           meta_record_ptr,
-	uint16_t        meta_record_index,
-	void*           arb_data_ptr )
+static int index_loop_check(ipa_table *table_ptr, uint32_t rule_hdl,
+			    void *record_ptr, uint16_t record_index,
+			    void *meta_record_ptr, uint16_t meta_record_index,
+			    void *arb_data_ptr)
 {
 	enum ipa3_nat_mem_in nmi;
-	uint8_t              is_expn_tbl;
-	uint16_t             rule_index;
-	uint32_t             tbl_hdl = (uint32_t) arb_data_ptr;
+	uint8_t is_expn_tbl;
+	uint16_t rule_index;
+	uint32_t tbl_hdl = (uint32_t)arb_data_ptr;
 
-	struct ipa_nat_indx_tbl_rule* itr_ptr =
-		(struct ipa_nat_indx_tbl_rule*) record_ptr;
+	struct ipa_nat_indx_tbl_rule *itr_ptr =
+		(struct ipa_nat_indx_tbl_rule *)record_ptr;
 
 	BREAK_RULE_HDL(table_ptr, rule_hdl, nmi, is_expn_tbl, rule_index);
 
 	/*
-	 * By virtue of this function being called back by the walk, this
-	 * record_index is valid.  Denote it as such in the map...
-	 */
-	if ( ipa_nat_map_add(MAP_NUM_99, record_index, 1) )
-	{
+   * By virtue of this function being called back by the walk, this
+   * record_index is valid.  Denote it as such in the map...
+   */
+	if (ipa_nat_map_add(MAP_NUM_99, record_index, 1)) {
 		IPAERR("ipa_nat_map_add(index(%u)) failed\n", record_index);
 		return -EINVAL;
 	}
 
-	if ( itr_ptr->next_index == record_index )
-	{
+	if (itr_ptr->next_index == record_index) {
 		IPAERR("Infinite loop detected in IPv4 index %s table, entry %u\n",
-			   (is_expn_tbl) ? "expansion" : "base",
-			   record_index);
+		       (is_expn_tbl) ? "expansion" : "base", record_index);
 
 		ipa_nat_dump_ipv4_table(tbl_hdl);
 
@@ -188,58 +163,45 @@ static int index_loop_check(
 	return 0;
 }
 
-static int index_validity_check(
-	ipa_table*      table_ptr,
-	uint32_t        rule_hdl,
-	void*           record_ptr,
-	uint16_t        record_index,
-	void*           meta_record_ptr,
-	uint16_t        meta_record_index,
-	void*           arb_data_ptr )
+static int index_validity_check(ipa_table *table_ptr, uint32_t rule_hdl,
+				void *record_ptr, uint16_t record_index,
+				void *meta_record_ptr,
+				uint16_t meta_record_index, void *arb_data_ptr)
 {
 	enum ipa3_nat_mem_in nmi;
-	uint8_t              is_expn_tbl;
-	uint16_t             rule_index;
-	uint16_t             index;
+	uint8_t is_expn_tbl;
+	uint16_t rule_index;
+	uint16_t index;
 
-	struct ipa_nat_indx_tbl_rule* itr_ptr =
-		(struct ipa_nat_indx_tbl_rule*) record_ptr;
+	struct ipa_nat_indx_tbl_rule *itr_ptr =
+		(struct ipa_nat_indx_tbl_rule *)record_ptr;
 
 	BREAK_RULE_HDL(table_ptr, rule_hdl, nmi, is_expn_tbl, rule_index);
 
 	index = itr_ptr->next_index;
 
-	if ( index && ipa_nat_map_find(MAP_NUM_99, index, NULL) )
-	{
+	if (index && ipa_nat_map_find(MAP_NUM_99, index, NULL)) {
 		IPAERR("Invalid next index %u found in IPv4 index %s table entry %u\n",
-			   index,
-			   (is_expn_tbl) ? "expansion" : "base",
-			   rule_index);
+		       index, (is_expn_tbl) ? "expansion" : "base", rule_index);
 
 		return -EINVAL;
 	}
 
-	if ( is_expn_tbl )
-	{
-		struct ipa_nat_indx_tbl_meta_info* mi_ptr = meta_record_ptr;
+	if (is_expn_tbl) {
+		struct ipa_nat_indx_tbl_meta_info *mi_ptr = meta_record_ptr;
 
-		if ( ! mi_ptr )
-		{
+		if (!mi_ptr) {
 			IPAERR("Missing meta pointer for IPv4 index %s table entry %u\n",
-				   "expansion",
-				   rule_index);
+			       "expansion", rule_index);
 
 			return -EINVAL;
 		}
 
 		index = mi_ptr->prev_index;
 
-		if ( index && ipa_nat_map_find(MAP_NUM_99, index, NULL) )
-		{
+		if (index && ipa_nat_map_find(MAP_NUM_99, index, NULL)) {
 			IPAERR("Invalid previous index %u found in IPv4 index %s table entry %u\n",
-				   index,
-				   "expansion",
-				   rule_index);
+			       index, "expansion", rule_index);
 
 			return -EINVAL;
 		}
@@ -248,78 +210,77 @@ static int index_validity_check(
 	return 0;
 }
 
-int ipa_nat_validate_ipv4_table(
-	u32 tbl_hdl )
+int ipa_nat_validate_ipv4_table(u32 tbl_hdl)
 {
 	int ret;
 
 	/*
-	 * Map MAP_NUM_99 will be used to keep, and to check for,
-	 * record validity.
-	 *
-	 * The first walk will fill it. The second walk will use it...
-	 */
+   * Map MAP_NUM_99 will be used to keep, and to check for,
+   * record validity.
+   *
+   * The first walk will fill it. The second walk will use it...
+   */
 	ipa_nat_map_clear(MAP_NUM_99);
 
 	IPADBG("Checking IPv4 active rules:\n");
 
-	ret = ipa_nati_walk_ipv4_tbl(tbl_hdl, USE_NAT_TABLE, nat_rule_loop_check, tbl_hdl);
+	ret = ipa_nati_walk_ipv4_tbl(tbl_hdl, USE_NAT_TABLE,
+				     nat_rule_loop_check, tbl_hdl);
 
-	if ( ret != 0 )
-	{
+	if (ret != 0) {
 		return ret;
 	}
 
-	ret = ipa_nati_walk_ipv4_tbl(tbl_hdl, USE_NAT_TABLE, nat_rule_validity_check, 0);
+	ret = ipa_nati_walk_ipv4_tbl(tbl_hdl, USE_NAT_TABLE,
+				     nat_rule_validity_check, 0);
 
-	if ( ret != 0 )
-	{
+	if (ret != 0) {
 		return ret;
 	}
 
 	/*
-	 * Map MAP_NUM_99 will be used to keep, and to check for,
-	 * record validity.
-	 *
-	 * The first walk will fill it. The second walk will use it...
-	 */
+   * Map MAP_NUM_99 will be used to keep, and to check for,
+   * record validity.
+   *
+   * The first walk will fill it. The second walk will use it...
+   */
 	ipa_nat_map_clear(MAP_NUM_99);
 
 	IPADBG("Checking IPv4 index active rules:\n");
 
-	ret = ipa_nati_walk_ipv4_tbl(tbl_hdl, USE_INDEX_TABLE, index_loop_check, tbl_hdl);
+	ret = ipa_nati_walk_ipv4_tbl(tbl_hdl, USE_INDEX_TABLE, index_loop_check,
+				     tbl_hdl);
 
-	if ( ret != 0 )
-	{
+	if (ret != 0) {
 		return ret;
 	}
 
-	ret = ipa_nati_walk_ipv4_tbl(tbl_hdl, USE_INDEX_TABLE, index_validity_check, 0);
+	ret = ipa_nati_walk_ipv4_tbl(tbl_hdl, USE_INDEX_TABLE,
+				     index_validity_check, 0);
 
-	if ( ret != 0 )
-	{
+	if (ret != 0) {
 		return ret;
 	}
 
 	return 0;
 }
 
-static void
-_dispUsage(
-	const char* progNamePtr )
+static void _dispUsage(const char *progNamePtr)
 {
-	printf(
-		"Usage: %s [-d -r N -i N -e N -m mt]\n"
-		"Where:\n"
-		"  -d     Each test is discrete (create table, add rules, destroy table)\n"
-		"         If not specified, only one table create and destroy for all tests\n"
-		"  -r N   Where N is the number of times to run the inotify regression test\n"
-		"  -i N   Where N is the number of times (iterations) to run test\n"
-		"  -e N   Where N is the number of entries in the NAT\n"
-		"  -m mt  Where mt is the type of memory to use for the NAT\n"
-		"         Legal mt's: DDR, SRAM, or HYBRID (ie. use SRAM and DDR)\n"
-		"  -g M-N Run tests M through N only\n",
-		progNamePtr);
+	printf("Usage: %s [-d -r N -i N -e N -m mt]\n"
+	       "Where:\n"
+	       "  -d     Each test is discrete (create table, add rules, destroy "
+	       "table)\n"
+	       "         If not specified, only one table create and destroy for all "
+	       "tests\n"
+	       "  -r N   Where N is the number of times to run the inotify "
+	       "regression test\n"
+	       "  -i N   Where N is the number of times (iterations) to run test\n"
+	       "  -e N   Where N is the number of entries in the NAT\n"
+	       "  -m mt  Where mt is the type of memory to use for the NAT\n"
+	       "         Legal mt's: DDR, SRAM, or HYBRID (ie. use SRAM and DDR)\n"
+	       "  -g M-N Run tests M through N only\n",
+	       progNamePtr);
 
 	fflush(stdout);
 }
@@ -352,44 +313,40 @@ static NatTests nt_array[] = {
 	NAT_TEST_ENTRY(ipa_nat_test024, IPA_NAT_TEST_PRE_COND_TE, 0),
 	NAT_TEST_ENTRY(ipa_nat_test025, IPA_NAT_TEST_PRE_COND_TE, 0),
 	/*
-	 * Add new tests just above this comment. Keep the following two
-	 * at the end...
-	 */
+     * Add new tests just above this comment. Keep the following two
+     * at the end...
+     */
 	NAT_TEST_ENTRY(ipa_nat_test999, 1, 0),
 	NAT_TEST_ENTRY(ipa_nat_testREG, 1, 0),
 };
 
-int main(
-	int   argc,
-	char* argv[] )
+int main(int argc, char *argv[])
 {
-	int      sep        = 0;
-	int      ireg       = 0;
-	uint32_t nt         = 1;
-	int      total_ents = 100;
-	uint32_t ht         = 0;
+	int sep = 0;
+	int ireg = 0;
+	uint32_t nt = 1;
+	int total_ents = 100;
+	uint32_t ht = 0;
 	uint32_t start = 0, end = 0;
 
-	char* nat_mem_type = "DDR";
+	char *nat_mem_type = "DDR";
 
-	uint32_t tbl_hdl    = 0;
+	uint32_t tbl_hdl = 0;
 
 	uint32_t pub_ip_addr;
 
 	uint32_t i, ub, cnt, exec, pass;
 
-	void*    adp;
+	void *adp;
 
-	time_t   t;
+	time_t t;
 
-	int      c, ret;
+	int c, ret;
 
 	IPADBG("Testing user space nat driver\n");
 
-	while ( (c = getopt(argc, argv, "dr:i:e:m:h:g:?")) != -1 )
-	{
-		switch (c)
-		{
+	while ((c = getopt(argc, argv, "dr:i:e:m:h:g:?")) != -1) {
+		switch (c) {
 		case 'd':
 			sep = 1;
 			break;
@@ -403,8 +360,7 @@ int main(
 			total_ents = atoi(optarg);
 			break;
 		case 'm':
-			if ( ! (nat_mem_type = legal_mem_type(optarg)) )
-			{
+			if (!(nat_mem_type = legal_mem_type(optarg))) {
 				fprintf(stderr, "Illegal: -m %s\n", optarg);
 				_dispUsage(basename(argv[0]));
 				exit(0);
@@ -414,10 +370,8 @@ int main(
 			ht = atoi(optarg);
 			break;
 		case 'g':
-			if ( sscanf(optarg, "%u-%u", &start, &end) != 2
-				 ||
-				 ( start >= end || end >= array_sz(nt_array) - 1 ) )
-			{
+			if (sscanf(optarg, "%u-%u", &start, &end) != 2 ||
+			    (start >= end || end >= array_sz(nt_array) - 1)) {
 				fprintf(stderr, "Illegal: -f %s\n", optarg);
 				_dispUsage(basename(argv[0]));
 				exit(0);
@@ -437,71 +391,66 @@ int main(
 
 	exec = pass = 0;
 
-	for ( cnt = ret = 0; cnt < nt && ret == 0; cnt++ )
-	{
+	for (cnt = ret = 0; cnt < nt && ret == 0; cnt++) {
 		IPADBG("ITERATION [%u] OF TESING\n", cnt + 1);
 
-		if ( ireg )
-		{
+		if (ireg) {
 			adp = &ireg;
-			i   = array_sz(nt_array) - 1;
-			ub  = array_sz(nt_array);
-		}
-		else
-		{
+			i = array_sz(nt_array) - 1;
+			ub = array_sz(nt_array);
+		} else {
 			adp = &tbl_hdl;
-			i   = ( end ) ? start : 0;
-			ub  = ( end ) ? end   : array_sz(nt_array) - 1;
+			i = (end) ? start : 0;
+			ub = (end) ? end : array_sz(nt_array) - 1;
 
-			if ( i != 0 && ! sep )
-			{
-				ipa_nat_test000(
-					nat_mem_type, pub_ip_addr, total_ents, tbl_hdl, 0, adp);
+			if (i != 0 && !sep) {
+				ipa_nat_test000(nat_mem_type, pub_ip_addr,
+						total_ents, tbl_hdl, 0, adp);
 			}
 		}
 
-		for ( ; i < ub && ret == 0; i++ )
-		{
-			if ( total_ents >= nt_array[i].num_ents_trigger )
-			{
+		for (; i < ub && ret == 0; i++) {
+			if (total_ents >= nt_array[i].num_ents_trigger) {
 				IPADBG("+------------------------------------------------+\n");
-				IPADBG("|        Executing test: %s         |\n", nt_array[i].func_name);
+				IPADBG("|        Executing test: %s         |\n",
+				       nt_array[i].func_name);
 				IPADBG("+------------------------------------------------+\n");
 
-				ret = nt_array[i].func(
-					nat_mem_type, pub_ip_addr, total_ents, tbl_hdl, sep, adp);
+				ret = nt_array[i].func(nat_mem_type,
+						       pub_ip_addr, total_ents,
+						       tbl_hdl, sep, adp);
 
 				exec++;
 
-				if ( ret == 0 )
-				{
-					IPADBG("<<<<< Test %s SUCCEEDED >>>>>\n", nt_array[i].func_name);
+				if (ret == 0) {
+					IPADBG("<<<<< Test %s SUCCEEDED >>>>>\n",
+					       nt_array[i].func_name);
 
 					pass++;
 
-					if ( ht || nt_array[i].test_hold_time_in_secs )
-					{
-						ht = (ht) ? ht : nt_array[i].test_hold_time_in_secs;
+					if (ht ||
+					    nt_array[i].test_hold_time_in_secs) {
+						ht = (ht) ? ht :
+							    nt_array[i]
+								     .test_hold_time_in_secs;
 
 						sleep(ht);
 					}
-				}
-				else
-				{
-					IPAERR("<<<<< Test %s FAILED >>>>>\n", nt_array[i].func_name);
+				} else {
+					IPAERR("<<<<< Test %s FAILED >>>>>\n",
+					       nt_array[i].func_name);
 				}
 			}
 		}
 	}
 
-	if ( ret && tbl_hdl )
-	{
-		ipa_nat_test999(
-			nat_mem_type, pub_ip_addr, total_ents, tbl_hdl, 0, &tbl_hdl);
+	if (ret && tbl_hdl) {
+		ipa_nat_test999(nat_mem_type, pub_ip_addr, total_ents, tbl_hdl,
+				0, &tbl_hdl);
 	}
 
-	IPADBG("Total NAT Tests Run:%u, Pass:%u, Fail:%u\n",
-		   exec, pass, exec - pass);
+	IPADBG("Total NAT Tests Run:%u, Pass:%u, Fail:%u\n", exec, pass,
+	       exec - pass);
 
 	return 0;
 }

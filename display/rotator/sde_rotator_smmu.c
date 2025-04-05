@@ -4,59 +4,58 @@
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"%s: " fmt, __func__
+#define pr_fmt(fmt) "%s: " fmt, __func__
 
 #include <linux/clk.h>
 #include <linux/debugfs.h>
+#include <linux/dma-buf.h>
+#include <linux/dma-mapping.h>
+#include <linux/iommu.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/iommu.h>
+#include <linux/msm_dma_iommu_mapping.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
-#include <linux/dma-mapping.h>
-#include <linux/dma-buf.h>
 #include <linux/of_platform.h>
-#include <linux/msm_dma_iommu_mapping.h>
 
-#include "soc/qcom/secure_buffer.h"
 #include "sde_rotator_base.h"
-#include "sde_rotator_util.h"
+#include "sde_rotator_debug.h"
 #include "sde_rotator_io_util.h"
 #include "sde_rotator_smmu.h"
-#include "sde_rotator_debug.h"
+#include "sde_rotator_util.h"
+#include "soc/qcom/secure_buffer.h"
 
-#define SMMU_SDE_ROT_SEC	"qcom,smmu_sde_rot_sec"
-#define SMMU_SDE_ROT_UNSEC	"qcom,smmu_sde_rot_unsec"
+#define SMMU_SDE_ROT_SEC "qcom,smmu_sde_rot_sec"
+#define SMMU_SDE_ROT_UNSEC "qcom,smmu_sde_rot_unsec"
 
 struct sde_smmu_domain {
 	char *ctx_name;
 	int domain;
 };
 
-static inline bool sde_smmu_is_valid_domain_type(
-		struct sde_rot_data_type *mdata, int domain_type)
+static inline bool
+sde_smmu_is_valid_domain_type(struct sde_rot_data_type *mdata, int domain_type)
 {
 	return true;
 }
 
-static inline bool sde_smmu_is_valid_domain_condition(
-		struct sde_rot_data_type *mdata,
-		int domain_type,
-		bool is_attach)
+static inline bool
+sde_smmu_is_valid_domain_condition(struct sde_rot_data_type *mdata,
+				   int domain_type, bool is_attach)
 {
 	if (is_attach) {
 		if (test_bit(SDE_CAPS_SEC_ATTACH_DETACH_SMMU,
-			mdata->sde_caps_map) &&
-			(mdata->sec_cam_en &&
-			 domain_type == SDE_IOMMU_DOMAIN_ROT_SECURE))
+			     mdata->sde_caps_map) &&
+		    (mdata->sec_cam_en &&
+		     domain_type == SDE_IOMMU_DOMAIN_ROT_SECURE))
 			return false;
 		else
 			return true;
 	} else {
 		if (test_bit(SDE_CAPS_SEC_ATTACH_DETACH_SMMU,
-			mdata->sde_caps_map) &&
-			(mdata->sec_cam_en &&
-			 domain_type == SDE_IOMMU_DOMAIN_ROT_SECURE))
+			     mdata->sde_caps_map) &&
+		    (mdata->sec_cam_en &&
+		     domain_type == SDE_IOMMU_DOMAIN_ROT_SECURE))
 			return true;
 		else
 			return false;
@@ -71,27 +70,26 @@ struct sde_smmu_client *sde_smmu_get_cb(u32 domain)
 		return NULL;
 
 	return (domain >= SDE_IOMMU_MAX_DOMAIN) ? NULL :
-			&mdata->sde_smmu[domain];
+						  &mdata->sde_smmu[domain];
 }
 
 static int sde_smmu_util_parse_dt_clock(struct platform_device *pdev,
-		struct sde_module_power *mp)
+					struct sde_module_power *mp)
 {
 	u32 i = 0, rc = 0;
 	const char *clock_name;
 	u32 clock_rate;
 	int num_clk;
 
-	num_clk = of_property_count_strings(pdev->dev.of_node,
-			"clock-names");
+	num_clk = of_property_count_strings(pdev->dev.of_node, "clock-names");
 	if (num_clk < 0) {
 		SDEROT_DBG("clocks are not defined\n");
 		num_clk = 0;
 	}
 
 	mp->num_clk = num_clk;
-	mp->clk_config = devm_kzalloc(&pdev->dev,
-			sizeof(struct sde_clk) * mp->num_clk, GFP_KERNEL);
+	mp->clk_config = devm_kzalloc(
+		&pdev->dev, sizeof(struct sde_clk) * mp->num_clk, GFP_KERNEL);
 	if (num_clk && !mp->clk_config) {
 		rc = -ENOMEM;
 		mp->num_clk = 0;
@@ -100,12 +98,12 @@ static int sde_smmu_util_parse_dt_clock(struct platform_device *pdev,
 
 	for (i = 0; i < mp->num_clk; i++) {
 		of_property_read_string_index(pdev->dev.of_node, "clock-names",
-							i, &clock_name);
+					      i, &clock_name);
 		strlcpy(mp->clk_config[i].clk_name, clock_name,
-				sizeof(mp->clk_config[i].clk_name));
+			sizeof(mp->clk_config[i].clk_name));
 
-		of_property_read_u32_index(pdev->dev.of_node, "clock-rate",
-							i, &clock_rate);
+		of_property_read_u32_index(pdev->dev.of_node, "clock-rate", i,
+					   &clock_rate);
 		mp->clk_config[i].rate = clock_rate;
 
 		if (!clock_rate)
@@ -119,7 +117,7 @@ clk_err:
 }
 
 static int sde_smmu_clk_register(struct platform_device *pdev,
-		struct sde_module_power *mp)
+				 struct sde_module_power *mp)
 {
 	int i, ret;
 	struct clk *clk;
@@ -131,11 +129,10 @@ static int sde_smmu_clk_register(struct platform_device *pdev,
 	}
 
 	for (i = 0; i < mp->num_clk; i++) {
-		clk = devm_clk_get(&pdev->dev,
-				mp->clk_config[i].clk_name);
+		clk = devm_clk_get(&pdev->dev, mp->clk_config[i].clk_name);
 		if (IS_ERR(clk)) {
 			SDEROT_ERR("unable to get clk: %s\n",
-					mp->clk_config[i].clk_name);
+				   mp->clk_config[i].clk_name);
 			return PTR_ERR(clk);
 		}
 		mp->clk_config[i].clk = clk;
@@ -143,8 +140,7 @@ static int sde_smmu_clk_register(struct platform_device *pdev,
 	return 0;
 }
 
-static int sde_smmu_enable_power(struct sde_smmu_client *sde_smmu,
-	bool enable)
+static int sde_smmu_enable_power(struct sde_smmu_client *sde_smmu, bool enable)
 {
 	int rc = 0;
 	struct sde_module_power *mp;
@@ -164,20 +160,20 @@ static int sde_smmu_enable_power(struct sde_smmu_client *sde_smmu,
 			goto end;
 		}
 		sde_update_reg_bus_vote(sde_smmu->reg_bus_clt,
-			VOTE_INDEX_76_MHZ);
+					VOTE_INDEX_76_MHZ);
 		rc = sde_rot_enable_clk(mp->clk_config, mp->num_clk, true);
 		if (rc) {
 			SDEROT_ERR("clock enable failed - rc:%d\n", rc);
 			sde_update_reg_bus_vote(sde_smmu->reg_bus_clt,
-				VOTE_INDEX_DISABLE);
+						VOTE_INDEX_DISABLE);
 			sde_rot_enable_vreg(mp->vreg_config, mp->num_vreg,
-				false);
+					    false);
 			goto end;
 		}
 	} else {
 		sde_rot_enable_clk(mp->clk_config, mp->num_clk, false);
 		sde_update_reg_bus_vote(sde_smmu->reg_bus_clt,
-			VOTE_INDEX_DISABLE);
+					VOTE_INDEX_DISABLE);
 		sde_rot_enable_vreg(mp->vreg_config, mp->num_vreg, false);
 	}
 end:
@@ -212,26 +208,23 @@ int sde_smmu_attach(struct sde_rot_data_type *mdata)
 			}
 
 			if (!sde_smmu->domain_attached &&
-				sde_smmu_is_valid_domain_condition(mdata,
-						i,
-						true)) {
-				rc = iommu_attach_device(
-					sde_smmu->rot_domain, sde_smmu->dev);
+			    sde_smmu_is_valid_domain_condition(mdata, i,
+							       true)) {
+				rc = iommu_attach_device(sde_smmu->rot_domain,
+							 sde_smmu->dev);
 				if (rc) {
 					SDEROT_ERR(
 						"iommu attach device failed for domain[%d] with err:%d\n",
 						i, rc);
-					sde_smmu_enable_power(sde_smmu,
-						false);
+					sde_smmu_enable_power(sde_smmu, false);
 					goto err;
 				}
 				sde_smmu->domain_attached = true;
 				SDEROT_DBG("iommu v2 domain[%i] attached\n", i);
 			}
 		} else {
-			SDEROT_DBG(
-				"iommu device not attached for domain[%d]\n",
-				i);
+			SDEROT_DBG("iommu device not attached for domain[%d]\n",
+				   i);
 		}
 	}
 	return 0;
@@ -241,7 +234,7 @@ err:
 		sde_smmu = sde_smmu_get_cb(i);
 		if (sde_smmu && sde_smmu->dev) {
 			iommu_detach_device(sde_smmu->rot_domain,
-							sde_smmu->dev);
+					    sde_smmu->dev);
 			sde_smmu_enable_power(sde_smmu, false);
 			sde_smmu->domain_attached = false;
 		}
@@ -267,14 +260,13 @@ int sde_smmu_detach(struct sde_rot_data_type *mdata)
 		sde_smmu = sde_smmu_get_cb(i);
 		if (sde_smmu && sde_smmu->dev) {
 			if (sde_smmu->domain_attached &&
-				sde_smmu_is_valid_domain_condition(mdata,
-					i, false)) {
+			    sde_smmu_is_valid_domain_condition(mdata, i,
+							       false)) {
 				iommu_detach_device(sde_smmu->rot_domain,
-							sde_smmu->dev);
+						    sde_smmu->dev);
 				SDEROT_DBG("iommu domain[%i] detached\n", i);
 				sde_smmu->domain_attached = false;
-				}
-			else {
+			} else {
 				sde_smmu_enable_power(sde_smmu, false);
 			}
 		}
@@ -293,8 +285,8 @@ int sde_smmu_get_domain_id(u32 type)
  * Same as sde_smmu_dma_buf_attach except that the device is got from
  * the configured smmu v2 context banks.
  */
-struct dma_buf_attachment *sde_smmu_dma_buf_attach(
-		struct dma_buf *dma_buf, struct device *dev, int domain)
+struct dma_buf_attachment *
+sde_smmu_dma_buf_attach(struct dma_buf *dma_buf, struct device *dev, int domain)
 {
 	struct sde_smmu_client *sde_smmu = sde_smmu_get_cb(domain);
 
@@ -313,9 +305,9 @@ struct dma_buf_attachment *sde_smmu_dma_buf_attach(
  * From which we can take the virtual address and size allocated.
  * msm_map_dma_buf is depricated with smmu v2 and it uses dma_map_sg instead
  */
-int sde_smmu_map_dma_buf(struct dma_buf *dma_buf,
-		struct sg_table *table, int domain, dma_addr_t *iova,
-		unsigned long *size, int dir)
+int sde_smmu_map_dma_buf(struct dma_buf *dma_buf, struct sg_table *table,
+			 int domain, dma_addr_t *iova, unsigned long *size,
+			 int dir)
 {
 	int rc;
 	struct sde_smmu_client *sde_smmu = sde_smmu_get_cb(domain);
@@ -327,7 +319,7 @@ int sde_smmu_map_dma_buf(struct dma_buf *dma_buf,
 	}
 
 	rc = dma_map_sg_attrs(sde_smmu->dev, table->sgl, table->nents, dir,
-			attrs);
+			      attrs);
 	if (!rc) {
 		SDEROT_ERR("dma map sg failed\n");
 		return -ENOMEM;
@@ -338,8 +330,8 @@ int sde_smmu_map_dma_buf(struct dma_buf *dma_buf,
 	return 0;
 }
 
-void sde_smmu_unmap_dma_buf(struct sg_table *table, int domain,
-		int dir, struct dma_buf *dma_buf)
+void sde_smmu_unmap_dma_buf(struct sg_table *table, int domain, int dir,
+			    struct dma_buf *dma_buf)
 {
 	struct sde_smmu_client *sde_smmu = sde_smmu_get_cb(domain);
 
@@ -360,10 +352,10 @@ int sde_smmu_ctrl(int enable)
 
 	mutex_lock(&sde_smmu_ref_cnt_lock);
 	SDEROT_EVTLOG(__builtin_return_address(0), enable, mdata->iommu_ref_cnt,
-		mdata->iommu_attached);
+		      mdata->iommu_attached);
 	SDEROT_DBG("%pS: enable:%d ref_cnt:%d attach:%d\n",
-		__builtin_return_address(0), enable, mdata->iommu_ref_cnt,
-		mdata->iommu_attached);
+		   __builtin_return_address(0), enable, mdata->iommu_ref_cnt,
+		   mdata->iommu_attached);
 
 	if (enable) {
 		if (!mdata->iommu_attached) {
@@ -400,9 +392,9 @@ int sde_smmu_secure_ctrl(int enable)
 
 	mutex_lock(&sde_smmu_ref_cnt_lock);
 	/*
-	 * Attach/detach secure context irrespective of ref count,
-	 * We come here only when secure camera is disabled
-	 */
+   * Attach/detach secure context irrespective of ref count,
+   * We come here only when secure camera is disabled
+   */
 	if (enable) {
 		rc = sde_smmu_attach(mdata);
 		if (!rc)
@@ -410,10 +402,10 @@ int sde_smmu_secure_ctrl(int enable)
 	} else {
 		rc = sde_smmu_detach(mdata);
 		/*
-		 * keep iommu_attached equal to true,
-		 * so that driver does not attemp to attach
-		 * while in secure state
-		 */
+     * keep iommu_attached equal to true,
+     * so that driver does not attemp to attach
+     * while in secure state
+     */
 	}
 
 	mutex_unlock(&sde_smmu_ref_cnt_lock);
@@ -438,12 +430,12 @@ void sde_smmu_device_create(struct device *dev)
 	for_each_child_of_node(parent, child) {
 		if (of_device_is_compatible(child, SMMU_SDE_ROT_SEC)) {
 			of_platform_device_create(child, NULL, dev);
-			mdata->sde_smmu
-			[SDE_IOMMU_DOMAIN_ROT_SECURE].domain_attached = true;
+			mdata->sde_smmu[SDE_IOMMU_DOMAIN_ROT_SECURE]
+				.domain_attached = true;
 		} else if (of_device_is_compatible(child, SMMU_SDE_ROT_UNSEC)) {
 			of_platform_device_create(child, NULL, dev);
-			mdata->sde_smmu
-			[SDE_IOMMU_DOMAIN_ROT_UNSECURE].domain_attached = true;
+			mdata->sde_smmu[SDE_IOMMU_DOMAIN_ROT_UNSECURE]
+				.domain_attached = true;
 		}
 	}
 }
@@ -456,8 +448,8 @@ int sde_smmu_init(struct device *dev)
 }
 
 static int sde_smmu_fault_handler(struct iommu_domain *domain,
-		struct device *dev, unsigned long iova,
-		int flags, void *token)
+				  struct device *dev, unsigned long iova,
+				  int flags, void *token)
 {
 	struct sde_smmu_client *sde_smmu;
 	int rc = -EINVAL;
@@ -470,28 +462,28 @@ static int sde_smmu_fault_handler(struct iommu_domain *domain,
 	sde_smmu = (struct sde_smmu_client *)token;
 
 	/* trigger rotator dump */
-	SDEROT_ERR("trigger rotator dump, iova=0x%08lx, flags=0x%x\n",
-			iova, flags);
+	SDEROT_ERR("trigger rotator dump, iova=0x%08lx, flags=0x%x\n", iova,
+		   flags);
 	SDEROT_ERR("SMMU device:%s", sde_smmu->dev->kobj.name);
 
 	/* generate dump, but no panic */
 	SDEROT_EVTLOG_TOUT_HANDLER("rot", "rot_dbg_bus", "vbif_dbg_bus");
 
 	/*
-	 * return -ENOSYS to allow smmu driver to dump out useful
-	 * debug info.
-	 */
+   * return -ENOSYS to allow smmu driver to dump out useful
+   * debug info.
+   */
 	return rc;
 }
 
-static struct sde_smmu_domain sde_rot_unsec = {
-	"rot_0", SDE_IOMMU_DOMAIN_ROT_UNSECURE};
-static struct sde_smmu_domain sde_rot_sec = {
-	"rot_1", SDE_IOMMU_DOMAIN_ROT_SECURE};
+static struct sde_smmu_domain sde_rot_unsec = { "rot_0",
+						SDE_IOMMU_DOMAIN_ROT_UNSECURE };
+static struct sde_smmu_domain sde_rot_sec = { "rot_1",
+					      SDE_IOMMU_DOMAIN_ROT_SECURE };
 
 static const struct of_device_id sde_smmu_dt_match[] = {
-	{ .compatible = SMMU_SDE_ROT_UNSEC, .data = &sde_rot_unsec},
-	{ .compatible = SMMU_SDE_ROT_SEC, .data = &sde_rot_sec},
+	{ .compatible = SMMU_SDE_ROT_UNSEC, .data = &sde_rot_unsec },
+	{ .compatible = SMMU_SDE_ROT_SEC, .data = &sde_rot_sec },
 	{}
 };
 
@@ -528,7 +520,7 @@ int sde_smmu_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	smmu_domain = *(struct sde_smmu_domain *) (match->data);
+	smmu_domain = *(struct sde_smmu_domain *)(match->data);
 	if (smmu_domain.domain >= SDE_IOMMU_MAX_DOMAIN) {
 		SDEROT_ERR("no matching device found\n");
 		return -EINVAL;
@@ -536,14 +528,14 @@ int sde_smmu_probe(struct platform_device *pdev)
 
 	if (of_find_property(pdev->dev.of_node, "iommus", NULL)) {
 		dev = &pdev->dev;
-		rc = of_property_read_u32_index(pdev->dev.of_node, "iommus",
-			1, &sid);
+		rc = of_property_read_u32_index(pdev->dev.of_node, "iommus", 1,
+						&sid);
 		if (rc)
 			SDEROT_DBG("SID not defined for domain:%d",
-					smmu_domain.domain);
+				   smmu_domain.domain);
 	} else {
 		SDEROT_ERR("Invalid SMMU ctx for domain:%d\n",
-				smmu_domain.domain);
+			   smmu_domain.domain);
 		return -EINVAL;
 	}
 
@@ -553,22 +545,20 @@ int sde_smmu_probe(struct platform_device *pdev)
 	mp = &sde_smmu->mp;
 	memset(mp, 0, sizeof(struct sde_module_power));
 
-	if (of_find_property(pdev->dev.of_node,
-		"gdsc-mdss-supply", NULL)) {
-
-		mp->vreg_config = devm_kzalloc(&pdev->dev,
-			sizeof(struct sde_vreg), GFP_KERNEL);
+	if (of_find_property(pdev->dev.of_node, "gdsc-mdss-supply", NULL)) {
+		mp->vreg_config = devm_kzalloc(
+			&pdev->dev, sizeof(struct sde_vreg), GFP_KERNEL);
 		if (!mp->vreg_config)
 			return -ENOMEM;
 
 		strlcpy(mp->vreg_config->vreg_name, "gdsc-mdss",
-				sizeof(mp->vreg_config->vreg_name));
+			sizeof(mp->vreg_config->vreg_name));
 		mp->num_vreg = 1;
 	}
 
 	if (mp->vreg_config) {
 		rc = sde_rot_config_vreg(&pdev->dev, mp->vreg_config,
-			mp->num_vreg, true);
+					 mp->num_vreg, true);
 		if (rc) {
 			SDEROT_ERR("vreg config failed rc=%d\n", rc);
 			goto release_vreg;
@@ -595,7 +585,7 @@ int sde_smmu_probe(struct platform_device *pdev)
 	rc = sde_smmu_enable_power(sde_smmu, true);
 	if (rc) {
 		SDEROT_ERR("power enable failed - domain:[%d] rc:%d\n",
-			smmu_domain.domain, rc);
+			   smmu_domain.domain, rc);
 		goto bus_client_destroy;
 	}
 
@@ -607,20 +597,20 @@ int sde_smmu_probe(struct platform_device *pdev)
 	}
 
 	if (!dev->dma_parms)
-		dev->dma_parms = devm_kzalloc(dev,
-				sizeof(*dev->dma_parms), GFP_KERNEL);
+		dev->dma_parms =
+			devm_kzalloc(dev, sizeof(*dev->dma_parms), GFP_KERNEL);
 
 	dma_set_max_seg_size(dev, DMA_BIT_MASK(32));
 	dma_set_seg_boundary(dev, (unsigned long)DMA_BIT_MASK(64));
 
-	iommu_set_fault_handler(sde_smmu->rot_domain,
-			sde_smmu_fault_handler, (void *)sde_smmu);
+	iommu_set_fault_handler(sde_smmu->rot_domain, sde_smmu_fault_handler,
+				(void *)sde_smmu);
 
 	sde_smmu_enable_power(sde_smmu, false);
 
 	SDEROT_INFO(
 		"iommu v2 domain[%d] mapping and clk register successful!\n",
-			smmu_domain.domain);
+		smmu_domain.domain);
 	return 0;
 
 bus_client_destroy:
@@ -629,7 +619,7 @@ bus_client_destroy:
 unregister_clk:
 disable_vreg:
 	sde_rot_config_vreg(&pdev->dev, sde_smmu->mp.vreg_config,
-			sde_smmu->mp.num_vreg, false);
+			    sde_smmu->mp.num_vreg, false);
 release_vreg:
 	devm_kfree(&pdev->dev, sde_smmu->mp.vreg_config);
 	sde_smmu->mp.vreg_config = NULL;
@@ -645,7 +635,7 @@ int sde_smmu_remove(struct platform_device *pdev)
 	for (i = 0; i < SDE_IOMMU_MAX_DOMAIN; i++) {
 		sde_smmu = sde_smmu_get_cb(i);
 		if (!sde_smmu || !sde_smmu->dev ||
-			(sde_smmu->dev != &pdev->dev))
+		    (sde_smmu->dev != &pdev->dev))
 			continue;
 
 		sde_smmu->dev = NULL;
@@ -654,7 +644,7 @@ int sde_smmu_remove(struct platform_device *pdev)
 		sde_reg_bus_vote_client_destroy(sde_smmu->reg_bus_clt);
 		sde_smmu->reg_bus_clt = NULL;
 		sde_rot_config_vreg(&pdev->dev, sde_smmu->mp.vreg_config,
-				sde_smmu->mp.num_vreg, false);
+				    sde_smmu->mp.num_vreg, false);
 		devm_kfree(&pdev->dev, sde_smmu->mp.vreg_config);
 		sde_smmu->mp.vreg_config = NULL;
 		sde_smmu->mp.num_vreg = 0;
@@ -663,13 +653,14 @@ int sde_smmu_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver sde_smmu_driver = {
-	.probe = sde_smmu_probe,
-	.remove = sde_smmu_remove,
-	.shutdown = NULL,
-	.driver = {
-		.name = "sde_smmu",
-		.of_match_table = sde_smmu_dt_match,
-	},
+    .probe = sde_smmu_probe,
+    .remove = sde_smmu_remove,
+    .shutdown = NULL,
+    .driver =
+        {
+            .name = "sde_smmu",
+            .of_match_table = sde_smmu_dt_match,
+        },
 };
 
 void sde_rotator_smmu_driver_register(void)

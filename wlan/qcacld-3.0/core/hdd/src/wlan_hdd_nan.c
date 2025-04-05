@@ -23,22 +23,22 @@
  * WLAN Host Device Driver NAN API implementation
  */
 
-#include <linux/version.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <net/cfg80211.h>
-#include <ani_global.h>
-#include "sme_api.h"
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_nan.h"
-#include "osif_sync.h"
-#include <qca_vendor.h>
+#include "../../core/src/nan_main_i.h"
 #include "cfg_nan_api.h"
 #include "os_if_nan.h"
-#include "../../core/src/nan_main_i.h"
+#include "osif_sync.h"
+#include "sme_api.h"
 #include "spatial_reuse_api.h"
-#include "wlan_nan_api.h"
 #include "spatial_reuse_ucfg_api.h"
+#include "wlan_hdd_main.h"
+#include "wlan_nan_api.h"
+#include <ani_global.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/version.h>
+#include <net/cfg80211.h>
+#include <qca_vendor.h>
 
 /**
  * wlan_hdd_nan_is_supported() - HDD NAN support query function
@@ -52,7 +52,7 @@
 bool wlan_hdd_nan_is_supported(struct hdd_context *hdd_ctx)
 {
 	return cfg_nan_get_enable(hdd_ctx->psoc) &&
-		sme_is_feature_supported_by_fw(NAN);
+	       sme_is_feature_supported_by_fw(NAN);
 }
 
 /**
@@ -69,8 +69,7 @@ bool wlan_hdd_nan_is_supported(struct hdd_context *hdd_ctx)
  */
 static int __wlan_hdd_cfg80211_nan_ext_request(struct wiphy *wiphy,
 					       struct wireless_dev *wdev,
-					       const void *data,
-					       int data_len)
+					       const void *data, int data_len)
 {
 	int ret_val;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -104,8 +103,7 @@ static int __wlan_hdd_cfg80211_nan_ext_request(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_nan_ext_request(struct wiphy *wiphy,
 				      struct wireless_dev *wdev,
-				      const void *data,
-				      int data_len)
+				      const void *data, int data_len)
 
 {
 	struct osif_psoc_sync *psoc_sync;
@@ -115,8 +113,8 @@ int wlan_hdd_cfg80211_nan_ext_request(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_nan_ext_request(wiphy, wdev,
-						    data, data_len);
+	errno = __wlan_hdd_cfg80211_nan_ext_request(wiphy, wdev, data,
+						    data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -150,10 +148,11 @@ void hdd_nan_sr_concurrency_update(struct nan_event_params *nan_evt)
 	uint32_t conn_count;
 	uint8_t non_srg_max_pd_offset = 0;
 	uint8_t vdev_id_list[MAX_NUMBER_OF_CONC_CONNECTIONS] = {
-							WLAN_INVALID_VDEV_ID};
+		WLAN_INVALID_VDEV_ID
+	};
 	struct nan_psoc_priv_obj *psoc_obj =
-				nan_get_psoc_priv_obj(nan_evt->psoc);
-	struct connection_info info[MAX_NUMBER_OF_CONC_CONNECTIONS] = {0};
+		nan_get_psoc_priv_obj(nan_evt->psoc);
+	struct connection_info info[MAX_NUMBER_OF_CONC_CONNECTIONS] = { 0 };
 	uint8_t mac_id;
 	QDF_STATUS status;
 
@@ -164,27 +163,24 @@ void hdd_nan_sr_concurrency_update(struct nan_event_params *nan_evt)
 	conn_count = policy_mgr_get_connection_info(nan_evt->psoc, info);
 	if (!conn_count)
 		return;
-	sta_cnt = policy_mgr_get_mode_specific_conn_info(nan_evt->psoc, NULL,
-							 vdev_id_list,
-							 PM_STA_MODE);
+	sta_cnt = policy_mgr_get_mode_specific_conn_info(
+		nan_evt->psoc, NULL, vdev_id_list, PM_STA_MODE);
 	/*
-	 * Get all active sta vdevs. STA + STA SR concurrency is not supported
-	 * so break whenever a first sta with SR enabled is found.
-	 */
+   * Get all active sta vdevs. STA + STA SR concurrency is not supported
+   * so break whenever a first sta with SR enabled is found.
+   */
 	for (i = 0; i < sta_cnt; i++) {
 		if (vdev_id_list[i] != WLAN_INVALID_VDEV_ID) {
 			sta_vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
-						    nan_evt->psoc,
-						    vdev_id_list[i],
-						    WLAN_OSIF_ID);
+				nan_evt->psoc, vdev_id_list[i], WLAN_OSIF_ID);
 			if (!sta_vdev) {
 				nan_err("sta vdev invalid for vdev id %d",
 					vdev_id_list[i]);
 				continue;
 			}
-			ucfg_spatial_reuse_get_sr_config(
-					sta_vdev, &sr_ctrl,
-					&non_srg_max_pd_offset, &is_sr_enabled);
+			ucfg_spatial_reuse_get_sr_config(sta_vdev, &sr_ctrl,
+							 &non_srg_max_pd_offset,
+							 &is_sr_enabled);
 			if (is_sr_enabled) {
 				sta_vdev_id = vdev_id_list[i];
 				break;
@@ -194,45 +190,42 @@ void hdd_nan_sr_concurrency_update(struct nan_event_params *nan_evt)
 	}
 	if (sta_cnt && sta_vdev &&
 	    (!(sr_ctrl & NON_SRG_PD_SR_DISALLOWED) ||
-	    (sr_ctrl & SRG_INFO_PRESENT)) &&
-	     is_sr_enabled) {
+	     (sr_ctrl & SRG_INFO_PRESENT)) &&
+	    is_sr_enabled) {
 		if (nan_evt->evt_type == nan_event_id_enable_rsp) {
-			wlan_vdev_mlme_set_sr_disable_due_conc(
-					sta_vdev, true);
+			wlan_vdev_mlme_set_sr_disable_due_conc(sta_vdev, true);
 			wlan_spatial_reuse_osif_event(
-						sta_vdev, SR_OPERATION_SUSPEND,
-						SR_REASON_CODE_CONCURRENCY);
+				sta_vdev, SR_OPERATION_SUSPEND,
+				SR_REASON_CODE_CONCURRENCY);
 		}
 		if (nan_evt->evt_type == nan_event_id_disable_ind) {
 			if (conn_count > 2) {
-				status =
-				policy_mgr_get_mac_id_by_session_id(
-					nan_evt->psoc, sta_vdev_id,
-					&mac_id);
+				status = policy_mgr_get_mac_id_by_session_id(
+					nan_evt->psoc, sta_vdev_id, &mac_id);
 				if (QDF_IS_STATUS_ERROR(status)) {
 					hdd_err("get mac id failed");
 					goto exit;
 				}
 				conc_vdev_id =
-				policy_mgr_get_conc_vdev_on_same_mac(
-					nan_evt->psoc, sta_vdev_id,
-					mac_id);
+					policy_mgr_get_conc_vdev_on_same_mac(
+						nan_evt->psoc, sta_vdev_id,
+						mac_id);
 				/*
-				 * Don't enable SR, if concurrent vdev is not
-				 * NAN and SR concurrency on same mac is not
-				 * allowed.
-				 */
+         * Don't enable SR, if concurrent vdev is not
+         * NAN and SR concurrency on same mac is not
+         * allowed.
+         */
 				if (conc_vdev_id != WLAN_INVALID_VDEV_ID &&
 				    !policy_mgr_sr_same_mac_conc_enabled(
-				    nan_evt->psoc)) {
+					    nan_evt->psoc)) {
 					hdd_debug("don't enable SR in SCC/MCC");
 					goto exit;
 				}
 			}
 			wlan_vdev_mlme_set_sr_disable_due_conc(sta_vdev, false);
 			wlan_spatial_reuse_osif_event(
-						sta_vdev, SR_OPERATION_RESUME,
-						SR_REASON_CODE_CONCURRENCY);
+				sta_vdev, SR_OPERATION_RESUME,
+				SR_REASON_CODE_CONCURRENCY);
 		}
 	}
 exit:

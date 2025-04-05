@@ -23,14 +23,13 @@
  *
  * Author Kiran Kumar Reddy CH L V
  */
-#include "ani_global.h"          /* for struct mac_context **/
-#include "mac_trace.h"
 #include "sme_trace.h"
+#include "ani_global.h" /* for struct mac_context **/
+#include "mac_trace.h"
 #include "sme_internal.h"
 #ifndef SME_TRACE_RECORD
 void sme_trace_init(struct mac_context *mac)
 {
-
 }
 #endif
 #ifdef SME_TRACE_RECORD
@@ -44,25 +43,25 @@ static uint8_t *sme_trace_get_rx_msg_string(uint32_t code)
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_MSG_SET_11DINFO);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_MSG_GET_SOFTAP_DOMAIN);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_MSG_SET_REGINFO);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_MSG_UPDATE_CHANNEL_CONFIG);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_MSG_UPDATE_CHANNEL_CONFIG);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_MSG_UPDATE_CONFIG);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_MSG_HDDREADYIND);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_MSG_SCAN_FLUSH_RESULTS);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_MSG_SCAN_FLUSH_P2PRESULTS);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_MSG_SCAN_RESULT_GETFIRST);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_MSG_SCAN_RESULT_GETNEXT);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_MSG_SCAN_FLUSH_RESULTS);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_MSG_SCAN_FLUSH_P2PRESULTS);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_MSG_SCAN_RESULT_GETFIRST);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_MSG_SCAN_RESULT_GETNEXT);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_MSG_SCAN_RESULT_PURGE);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_ROAM_REASSOC);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_ROAM_DISCONNECT);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_ROAM_GET_CONNECTPROFILE);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_ROAM_FREE_CONNECTPROFILE);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_ROAM_GET_CONNECTPROFILE);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_ROAM_FREE_CONNECTPROFILE);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_ROAM_SET_PMKIDCACHE);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_ROAM_DEL_PMKIDCACHE);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_ROAM_GET_PMKIDCACHE);
@@ -129,17 +128,17 @@ static uint8_t *sme_trace_get_rx_msg_string(uint32_t code)
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_UPDATE_WESMODE);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_SET_SCANCTRL);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_UPDATE_P2P_IE);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_UPDATE_ROAM_SCAN_N_PROBES);
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_UPDATE_ROAM_SCAN_HOME_AWAY_TIME);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_UPDATE_ROAM_SCAN_N_PROBES);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_UPDATE_ROAM_SCAN_HOME_AWAY_TIME);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_STORE_JOIN_REQ);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_CLEAR_JOIN_REQ);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_ISSUE_JOIN_REQ);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_MSG_DEAUTH_STA);
 #ifdef FEATURE_WLAN_TDLS
-		CASE_RETURN_STRING
-			(TRACE_CODE_SME_RX_HDD_TDLS_LINK_ESTABLISH_PARAM);
+		CASE_RETURN_STRING(
+			TRACE_CODE_SME_RX_HDD_TDLS_LINK_ESTABLISH_PARAM);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_TDLS_CHAN_SWITCH_REQ);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_TDLS_SEND_MGMT_FRAME);
 		CASE_RETURN_STRING(TRACE_CODE_SME_RX_HDD_TDLS_CHANGE_PEER_STA);
@@ -179,27 +178,29 @@ static void sme_trace_dump(void *mac_ctx, tp_qdf_trace_record record,
 		sme_nofl_debug("%04d %012llu %s S%d %-14s %-30s(0x%x)",
 			       rec_index, record->qtime, record->time,
 			       record->session, "SME COMMAND:",
-				sme_trace_get_command_string(record->data),
-				record->data);
+			       sme_trace_get_command_string(record->data),
+			       record->data);
 		break;
 	case TRACE_CODE_SME_TX_WMA_MSG:
-		sme_nofl_debug("%04d %012llu %s S%d %-14s %-30s(0x%x)",
-			       rec_index, record->qtime, record->time,
-			       record->session, "TX WMA Msg:",
-			       mac_trace_get_wma_msg_string((uint16_t)record->data),
-			       record->data);
+		sme_nofl_debug(
+			"%04d %012llu %s S%d %-14s %-30s(0x%x)", rec_index,
+			record->qtime, record->time, record->session,
+			"TX WMA Msg:",
+			mac_trace_get_wma_msg_string((uint16_t)record->data),
+			record->data);
 		break;
 	case TRACE_CODE_SME_RX_WMA_MSG:
-		sme_nofl_debug("%04d %012llu %s S%d %-14s %-30s(0x%x)",
-			       rec_index, record->qtime, record->time, record->session,
-			       "RX WMA Msg:",
-			       mac_trace_get_sme_msg_string((uint16_t)record->data),
-			       record->data);
+		sme_nofl_debug(
+			"%04d %012llu %s S%d %-14s %-30s(0x%x)", rec_index,
+			record->qtime, record->time, record->session,
+			"RX WMA Msg:",
+			mac_trace_get_sme_msg_string((uint16_t)record->data),
+			record->data);
 		break;
 	default:
 		sme_nofl_debug("%04d %012llu %s S%d %-14s %-30s(0x%x)",
-			       rec_index, record->qtime, record->time, record->session,
-			       "RX HDD MSG:",
+			       rec_index, record->qtime, record->time,
+			       record->session, "RX HDD MSG:",
 			       sme_trace_get_rx_msg_string(record->code),
 			       record->data);
 		break;

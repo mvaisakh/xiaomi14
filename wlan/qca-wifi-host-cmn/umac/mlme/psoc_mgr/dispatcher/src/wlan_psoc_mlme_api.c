@@ -19,14 +19,14 @@
  * DOC: Implements PSOC MLME public APIs
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_mlme_dbg.h>
-#include <include/wlan_psoc_mlme.h>
-#include <wlan_psoc_mlme_api.h>
-#include <qdf_module.h>
 #include "cfg_ucfg_api.h"
 #include "wlan_vdev_mgr_tgt_if_rx_api.h"
+#include <include/wlan_psoc_mlme.h>
+#include <qdf_module.h>
 #include <qdf_platform.h>
+#include <wlan_mlme_dbg.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_psoc_mlme_api.h>
 
 QDF_STATUS
 wlan_psoc_mlme_get_11be_capab(struct wlan_objmgr_psoc *psoc, bool *val)

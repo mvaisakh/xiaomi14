@@ -20,24 +20,25 @@
 #include "pld_usb.h"
 #include "pld_internal.h"
 
+#include "osif_psoc_sync.h"
 #include <linux/atomic.h>
-#include <linux/usb.h>
-#include <linux/slab.h>
-#include <linux/platform_device.h>
 #include <linux/err.h>
 #include <linux/list.h>
-#include "osif_psoc_sync.h"
+#include <linux/platform_device.h>
+#include <linux/slab.h>
+#include <linux/usb.h>
 
 #ifdef CONFIG_PLD_USB_CNSS
 #include <net/cnss2.h>
 #endif
 
-
-#define VENDOR_ATHR             0x0CF3
+#define VENDOR_ATHR 0x0CF3
 static struct usb_device_id pld_usb_id_table[] = {
-	{USB_DEVICE_AND_INTERFACE_INFO(VENDOR_ATHR, 0x9378, 0xFF, 0xFF, 0xFF)},
-	{USB_DEVICE_AND_INTERFACE_INFO(VENDOR_ATHR, 0x9379, 0xFF, 0xFF, 0xFF)},
-	{}			/* Terminating entry */
+	{ USB_DEVICE_AND_INTERFACE_INFO(VENDOR_ATHR, 0x9378, 0xFF, 0xFF,
+					0xFF) },
+	{ USB_DEVICE_AND_INTERFACE_INFO(VENDOR_ATHR, 0x9379, 0xFF, 0xFF,
+					0xFF) },
+	{} /* Terminating entry */
 };
 
 atomic_t pld_usb_reg_done;
@@ -50,7 +51,7 @@ atomic_t pld_usb_reg_done;
  * Return: int 0 on success and errno on failure.
  */
 static int pld_usb_probe(struct usb_interface *interface,
-					const struct usb_device_id *id)
+			 const struct usb_device_id *id)
 {
 	struct usb_device *pdev = interface_to_usbdev(interface);
 	struct pld_context *pld_context;
@@ -67,8 +68,8 @@ static int pld_usb_probe(struct usb_interface *interface,
 	if (ret)
 		goto out;
 
-	ret = pld_context->ops->probe(&pdev->dev,
-				      PLD_BUS_TYPE_USB, interface, (void *)id);
+	ret = pld_context->ops->probe(&pdev->dev, PLD_BUS_TYPE_USB, interface,
+				      (void *)id);
 	if (ret != 0) {
 		pr_err("%s, probe returned %d", __func__, ret);
 		atomic_set(&pld_usb_reg_done, false);
@@ -132,8 +133,7 @@ out:
  *
  * Return: void
  */
-static int pld_usb_suspend(struct usb_interface *interface,
-						pm_message_t state)
+static int pld_usb_suspend(struct usb_interface *interface, pm_message_t state)
 {
 	struct usb_device *pdev = interface_to_usbdev(interface);
 	struct pld_context *pld_context;
@@ -226,7 +226,7 @@ static void pld_usb_shutdown(struct usb_interface *interface)
 static void pld_usb_uevent(struct usb_interface *interface, uint32_t status)
 {
 	struct pld_context *pld_context;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 	struct usb_device *pdev = interface_to_usbdev(interface);
 
 	pld_context = pld_get_global_context();
@@ -257,7 +257,7 @@ struct cnss_usb_wlan_driver pld_usb_ops = {
 	.remove = pld_usb_remove,
 	.shutdown = pld_usb_shutdown,
 	.reinit = pld_usb_reinit,
-	.update_status  = pld_usb_uevent,
+	.update_status = pld_usb_uevent,
 #ifdef CONFIG_PM
 	.suspend = pld_usb_suspend,
 	.resume = pld_usb_resume,
@@ -302,16 +302,14 @@ int pld_usb_is_fw_down(struct device *dev)
 	return cnss_usb_is_device_down(dev);
 }
 
-int pld_usb_athdiag_read(struct device *dev, uint32_t offset,
-			 uint32_t memtype, uint32_t datalen,
-			 uint8_t *output)
+int pld_usb_athdiag_read(struct device *dev, uint32_t offset, uint32_t memtype,
+			 uint32_t datalen, uint8_t *output)
 {
 	return cnss_athdiag_read(dev, offset, memtype, datalen, output);
 }
 
-int pld_usb_athdiag_write(struct device *dev, uint32_t offset,
-			  uint32_t memtype, uint32_t datalen,
-			  uint8_t *input)
+int pld_usb_athdiag_write(struct device *dev, uint32_t offset, uint32_t memtype,
+			  uint32_t datalen, uint8_t *input)
 {
 	return cnss_athdiag_write(dev, offset, memtype, datalen, input);
 }
@@ -376,16 +374,14 @@ int pld_usb_is_fw_down(struct device *dev)
 	return 0;
 }
 
-int pld_usb_athdiag_read(struct device *dev, uint32_t offset,
-			 uint32_t memtype, uint32_t datalen,
-			 uint8_t *output)
+int pld_usb_athdiag_read(struct device *dev, uint32_t offset, uint32_t memtype,
+			 uint32_t datalen, uint8_t *output)
 {
 	return 0;
 }
 
-int pld_usb_athdiag_write(struct device *dev, uint32_t offset,
-			  uint32_t memtype, uint32_t datalen,
-			  uint8_t *input)
+int pld_usb_athdiag_write(struct device *dev, uint32_t offset, uint32_t memtype,
+			  uint32_t datalen, uint8_t *input)
 {
 	return 0;
 }

@@ -4,18 +4,18 @@
  * Copyright (c) 2020 XiaoMi, Inc. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"mi-disp-procfs:[%s:%d] " fmt, __func__, __LINE__
-#include <linux/slab.h>
-#include <linux/uaccess.h>
+#define pr_fmt(fmt) "mi-disp-procfs:[%s:%d] " fmt, __func__, __LINE__
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/slab.h>
+#include <linux/uaccess.h>
 
-#include <drm/mi_disp.h>
 #include "mi_disp_config.h"
-#include "mi_disp_print.h"
 #include "mi_disp_core.h"
 #include "mi_disp_feature.h"
+#include "mi_disp_print.h"
 #include "mi_dsi_display.h"
+#include <drm/mi_disp.h>
 
 #if MI_DISP_PROCFS_ENABLE
 
@@ -55,8 +55,8 @@ struct disp_procfs {
 static struct disp_procfs disp_procfs;
 
 static ssize_t mi_disp_procfs_tx_cmd_set_write(struct file *filp,
-				const char __user *buf,
-				size_t count, loff_t *ppos)
+					       const char __user *buf,
+					       size_t count, loff_t *ppos)
 {
 	struct disp_display *dd_ptr = pde_data(file_inode(filp));
 	char *input = NULL;
@@ -65,7 +65,7 @@ static ssize_t mi_disp_procfs_tx_cmd_set_write(struct file *filp,
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
 		DISP_ERROR("unsupported display(%s intf)\n",
-			get_disp_intf_type_name(dd_ptr->intf_type));
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -78,7 +78,7 @@ static ssize_t mi_disp_procfs_tx_cmd_set_write(struct file *filp,
 		ret = -EFAULT;
 		goto exit;
 	}
-	input[count-1] = '\0';
+	input[count - 1] = '\0';
 	DISP_DEBUG("copy_from_user input: %s\n", input);
 
 	/* removes leading and trailing whitespace from input_copy */
@@ -108,13 +108,14 @@ static int mi_disp_procfs_tx_cmd_set_show(struct seq_file *m, void *v)
 		return -ENOMEM;
 	}
 
-	ret =  mi_dsi_display_show_dsi_cmd_set_type(dd_ptr->display, buf, PAGE_SIZE);
+	ret = mi_dsi_display_show_dsi_cmd_set_type(dd_ptr->display, buf,
+						   PAGE_SIZE);
 	if (ret > 0) {
 		seq_printf(m, "%s", buf);
-		seq_printf(m,"\n");
+		seq_printf(m, "\n");
 		ret = 0;
 	} else {
-		seq_printf(m,"read failed!\n");
+		seq_printf(m, "read failed!\n");
 		ret = -EAGAIN;
 	}
 
@@ -122,22 +123,24 @@ static int mi_disp_procfs_tx_cmd_set_show(struct seq_file *m, void *v)
 	return ret;
 }
 
-static int mi_disp_procfs_tx_cmd_set_open(struct inode *inode, struct file *file)
+static int mi_disp_procfs_tx_cmd_set_open(struct inode *inode,
+					  struct file *file)
 {
-	return single_open(file, mi_disp_procfs_tx_cmd_set_show, pde_data(inode));
+	return single_open(file, mi_disp_procfs_tx_cmd_set_show,
+			   pde_data(inode));
 }
 
 static const struct proc_ops tx_cmd_set_proc_fops = {
-	.proc_open    = mi_disp_procfs_tx_cmd_set_open,
-	.proc_write   = mi_disp_procfs_tx_cmd_set_write,
-	.proc_read    = seq_read,
-	.proc_lseek  = seq_lseek,
+	.proc_open = mi_disp_procfs_tx_cmd_set_open,
+	.proc_write = mi_disp_procfs_tx_cmd_set_write,
+	.proc_read = seq_read,
+	.proc_lseek = seq_lseek,
 	.proc_release = single_release,
 };
 
 static ssize_t mi_disp_procfs_mipi_rw_write(struct file *filp,
-				const char __user *buf,
-				size_t count, loff_t *ppos)
+					    const char __user *buf,
+					    size_t count, loff_t *ppos)
 {
 	struct disp_display *dd_ptr = pde_data(file_inode(filp));
 	char *input = NULL;
@@ -145,7 +148,7 @@ static ssize_t mi_disp_procfs_mipi_rw_write(struct file *filp,
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
 		DISP_ERROR("unsupported display(%s intf)\n",
-			get_disp_intf_type_name(dd_ptr->intf_type));
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -158,7 +161,7 @@ static ssize_t mi_disp_procfs_mipi_rw_write(struct file *filp,
 		ret = -EFAULT;
 		goto exit;
 	}
-	input[count-1] = '\0';
+	input[count - 1] = '\0';
 	DISP_DEBUG("copy_from_user input: %s\n", input);
 
 	ret = mi_dsi_display_set_mipi_rw(dd_ptr->display, input);
@@ -183,10 +186,10 @@ static int mi_disp_procfs_mipi_rw_show(struct seq_file *m, void *v)
 	if (ret > 0) {
 		seq_printf(m, "return value: ");
 		seq_printf(m, "%s", rbuf);
-		seq_printf(m,"\n");
+		seq_printf(m, "\n");
 		ret = 0;
 	} else {
-		seq_printf(m,"read failed!\n");
+		seq_printf(m, "read failed!\n");
 		ret = -EAGAIN;
 	}
 
@@ -200,16 +203,16 @@ static int mi_disp_procfs_mipi_rw_open(struct inode *inode, struct file *file)
 }
 
 static const struct proc_ops mipi_rw_proc_fops = {
-	.proc_open    = mi_disp_procfs_mipi_rw_open,
-	.proc_write   = mi_disp_procfs_mipi_rw_write,
-	.proc_read    = seq_read,
-	.proc_lseek  = seq_lseek,
+	.proc_open = mi_disp_procfs_mipi_rw_open,
+	.proc_write = mi_disp_procfs_mipi_rw_write,
+	.proc_read = seq_read,
+	.proc_lseek = seq_lseek,
 	.proc_release = single_release,
 };
 
 static ssize_t mi_disp_procfs_dsi_phy_rw_write(struct file *filp,
-				const char __user *buf,
-				size_t count, loff_t *ppos)
+					       const char __user *buf,
+					       size_t count, loff_t *ppos)
 {
 	struct disp_display *dd_ptr = pde_data(file_inode(filp));
 	char cmd_buffer[512];
@@ -217,7 +220,7 @@ static ssize_t mi_disp_procfs_dsi_phy_rw_write(struct file *filp,
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
 		DISP_ERROR("unsupported display(%s intf)\n",
-			get_disp_intf_type_name(dd_ptr->intf_type));
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -226,7 +229,7 @@ static ssize_t mi_disp_procfs_dsi_phy_rw_write(struct file *filp,
 		ret = -EFAULT;
 		goto exit;
 	}
-	cmd_buffer[count-1] = '\0';
+	cmd_buffer[count - 1] = '\0';
 
 	DISP_DEBUG("copy_from_user input: %s\n", cmd_buffer);
 	mi_dsi_display_set_dsi_phy_rw(dd_ptr, cmd_buffer);
@@ -239,40 +242,42 @@ exit:
 static int mi_disp_procfs_dsi_phy_rw_show(struct seq_file *m, void *v)
 {
 	struct disp_display *dd_ptr = (struct disp_display *)m->private;
-	char rbuf[256] = {0};
+	char rbuf[256] = { 0 };
 	int ret = 0;
 
-	ret = mi_dsi_display_show_dsi_phy_rw(dd_ptr->display, rbuf, sizeof(rbuf));
+	ret = mi_dsi_display_show_dsi_phy_rw(dd_ptr->display, rbuf,
+					     sizeof(rbuf));
 	if (ret > 0) {
 		seq_printf(m, "return value: ");
 		seq_printf(m, "%s", rbuf);
-		seq_printf(m,"\n");
+		seq_printf(m, "\n");
 		ret = 0;
 	} else {
-		seq_printf(m,"read failed!\n");
+		seq_printf(m, "read failed!\n");
 		ret = -EAGAIN;
 	}
 
 	return ret;
 }
 
-static int mi_disp_procfs_dsi_phy_rw_open(struct inode *inode, struct file *file)
+static int mi_disp_procfs_dsi_phy_rw_open(struct inode *inode,
+					  struct file *file)
 {
-	return single_open(file, mi_disp_procfs_dsi_phy_rw_show, pde_data(inode));
+	return single_open(file, mi_disp_procfs_dsi_phy_rw_show,
+			   pde_data(inode));
 }
 
-
 const struct proc_ops dsi_phy_rw_proc_fops = {
-	.proc_open    = mi_disp_procfs_dsi_phy_rw_open,
-	.proc_write   = mi_disp_procfs_dsi_phy_rw_write,
-	.proc_read    = seq_read,
-	.proc_lseek  = seq_lseek,
+	.proc_open = mi_disp_procfs_dsi_phy_rw_open,
+	.proc_write = mi_disp_procfs_dsi_phy_rw_write,
+	.proc_read = seq_read,
+	.proc_lseek = seq_lseek,
 	.proc_release = single_release,
 };
 
 static ssize_t mi_disp_procfs_dsi_porch_rw_write(struct file *filp,
-				const char __user *buf,
-				size_t count, loff_t *ppos)
+						 const char __user *buf,
+						 size_t count, loff_t *ppos)
 {
 	struct disp_display *dd_ptr = pde_data(file_inode(filp));
 	char cmd_buffer[512];
@@ -280,7 +285,7 @@ static ssize_t mi_disp_procfs_dsi_porch_rw_write(struct file *filp,
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
 		DISP_ERROR("unsupported display(%s intf)\n",
-			get_disp_intf_type_name(dd_ptr->intf_type));
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -289,7 +294,7 @@ static ssize_t mi_disp_procfs_dsi_porch_rw_write(struct file *filp,
 		ret = -EFAULT;
 		goto exit;
 	}
-	cmd_buffer[count-1] = '\0';
+	cmd_buffer[count - 1] = '\0';
 
 	DISP_DEBUG("copy_from_user input: %s\n", cmd_buffer);
 	mi_dsi_display_set_dsi_porch_rw(dd_ptr, cmd_buffer);
@@ -302,39 +307,42 @@ exit:
 static int mi_disp_procfs_dsi_porch_rw_show(struct seq_file *m, void *v)
 {
 	struct disp_display *dd_ptr = (struct disp_display *)m->private;
-	char rbuf[256] = {0};
+	char rbuf[256] = { 0 };
 	int ret = 0;
 
-	ret = mi_dsi_display_show_dsi_porch_rw(dd_ptr->display, rbuf, sizeof(rbuf));
+	ret = mi_dsi_display_show_dsi_porch_rw(dd_ptr->display, rbuf,
+					       sizeof(rbuf));
 	if (ret > 0) {
 		seq_printf(m, "return value: ");
 		seq_printf(m, "%s", rbuf);
-		seq_printf(m,"\n");
+		seq_printf(m, "\n");
 		ret = 0;
 	} else {
-		seq_printf(m,"read failed!\n");
+		seq_printf(m, "read failed!\n");
 		ret = -EAGAIN;
 	}
 
 	return ret;
 }
 
-static int mi_disp_procfs_dsi_porch_rw_open(struct inode *inode, struct file *file)
+static int mi_disp_procfs_dsi_porch_rw_open(struct inode *inode,
+					    struct file *file)
 {
-	return single_open(file, mi_disp_procfs_dsi_porch_rw_show, pde_data(inode));
+	return single_open(file, mi_disp_procfs_dsi_porch_rw_show,
+			   pde_data(inode));
 }
 
 const struct proc_ops dsi_porch_rw_proc_fops = {
-	.proc_open    = mi_disp_procfs_dsi_porch_rw_open,
-	.proc_write   = mi_disp_procfs_dsi_porch_rw_write,
-	.proc_read    = seq_read,
-	.proc_lseek  = seq_lseek,
+	.proc_open = mi_disp_procfs_dsi_porch_rw_open,
+	.proc_write = mi_disp_procfs_dsi_porch_rw_write,
+	.proc_read = seq_read,
+	.proc_lseek = seq_lseek,
 	.proc_release = single_release,
 };
 
 static ssize_t mi_disp_procfs_pps_rw_write(struct file *filp,
-				const char __user *buf,
-				size_t count, loff_t *ppos)
+					   const char __user *buf, size_t count,
+					   loff_t *ppos)
 {
 	struct disp_display *dd_ptr = pde_data(file_inode(filp));
 	char cmd_buffer[512];
@@ -342,7 +350,7 @@ static ssize_t mi_disp_procfs_pps_rw_write(struct file *filp,
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
 		DISP_ERROR("unsupported display(%s intf)\n",
-			get_disp_intf_type_name(dd_ptr->intf_type));
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -351,10 +359,10 @@ static ssize_t mi_disp_procfs_pps_rw_write(struct file *filp,
 		ret = -EFAULT;
 		goto exit;
 	}
-	cmd_buffer[count-1] = '\0';
+	cmd_buffer[count - 1] = '\0';
 
 	DISP_DEBUG("copy_from_user input: %s\n", cmd_buffer);
-	//mi_dsi_display_set_pps_rw(dd_ptr, cmd_buffer);
+	// mi_dsi_display_set_pps_rw(dd_ptr, cmd_buffer);
 
 exit:
 
@@ -364,17 +372,17 @@ exit:
 static int mi_disp_procfs_pps_rw_show(struct seq_file *m, void *v)
 {
 	struct disp_display *dd_ptr = (struct disp_display *)m->private;
-	char rbuf[900] = {0};
+	char rbuf[900] = { 0 };
 	int ret = 0;
 
 	ret = mi_dsi_display_show_pps_rw(dd_ptr->display, rbuf, sizeof(rbuf));
 	if (ret > 0) {
 		seq_printf(m, "return value: ");
 		seq_printf(m, "%s", rbuf);
-		seq_printf(m,"\n");
+		seq_printf(m, "\n");
 		ret = 0;
 	} else {
-		seq_printf(m,"read failed!\n");
+		seq_printf(m, "read failed!\n");
 		ret = -EAGAIN;
 	}
 
@@ -387,10 +395,10 @@ static int mi_disp_procfs_pps_rw_open(struct inode *inode, struct file *file)
 }
 
 const struct proc_ops pps_rw_proc_fops = {
-	.proc_open    = mi_disp_procfs_pps_rw_open,
-	.proc_write   = mi_disp_procfs_pps_rw_write,
-	.proc_read    = seq_read,
-	.proc_lseek  = seq_lseek,
+	.proc_open = mi_disp_procfs_pps_rw_open,
+	.proc_write = mi_disp_procfs_pps_rw_write,
+	.proc_read = seq_read,
+	.proc_lseek = seq_lseek,
 	.proc_release = single_release,
 };
 
@@ -406,31 +414,37 @@ static int mi_disp_procfs_mipi_rw_init(void *d_display, int disp_id)
 	}
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
-		DISP_ERROR("unsupported %s display(%s intf)\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(dd_ptr->intf_type));
+		DISP_ERROR("unsupported %s display(%s intf)\n",
+			   get_disp_id_name(disp_id),
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
 	if (is_support_disp_id(disp_id)) {
-		disp_procfs.mipi_rw_proc[disp_id] = proc_create_data(mipi_rw_str[disp_id],
-			S_IRUGO | S_IWUSR, disp_core->procfs_dir,
-			&mipi_rw_proc_fops, d_display);
+		disp_procfs.mipi_rw_proc[disp_id] = proc_create_data(
+			mipi_rw_str[disp_id], S_IRUGO | S_IWUSR,
+			disp_core->procfs_dir, &mipi_rw_proc_fops, d_display);
 		if (!disp_procfs.mipi_rw_proc[disp_id]) {
-			DISP_ERROR("create procfs entry failed for %s\n", mipi_rw_str[disp_id]);
+			DISP_ERROR("create procfs entry failed for %s\n",
+				   mipi_rw_str[disp_id]);
 			ret = -ENODEV;
 		} else {
-			DISP_INFO("create procfs %s success!\n", mipi_rw_str[disp_id]);
+			DISP_INFO("create procfs %s success!\n",
+				  mipi_rw_str[disp_id]);
 			ret = 0;
 		}
 
-		disp_procfs.tx_cmd_set[disp_id] = proc_create_data(tx_cmd_set_str[disp_id],
-			S_IRUGO | S_IWUSR, disp_core->procfs_dir,
-			&tx_cmd_set_proc_fops, d_display);
+		disp_procfs.tx_cmd_set[disp_id] = proc_create_data(
+			tx_cmd_set_str[disp_id], S_IRUGO | S_IWUSR,
+			disp_core->procfs_dir, &tx_cmd_set_proc_fops,
+			d_display);
 		if (!disp_procfs.tx_cmd_set[disp_id]) {
-			DISP_ERROR("create procfs entry failed for %s\n", tx_cmd_set_str[disp_id]);
+			DISP_ERROR("create procfs entry failed for %s\n",
+				   tx_cmd_set_str[disp_id]);
 			ret = -ENODEV;
 		} else {
-			DISP_INFO("create procfs %s success!\n", tx_cmd_set_str[disp_id]);
+			DISP_INFO("create procfs %s success!\n",
+				  tx_cmd_set_str[disp_id]);
 			ret = 0;
 		}
 	} else {
@@ -452,8 +466,9 @@ static int mi_disp_procfs_mipi_rw_deinit(void *d_display, int disp_id)
 	}
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
-		DISP_ERROR("unsupported %s display(%s intf)\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(dd_ptr->intf_type));
+		DISP_ERROR("unsupported %s display(%s intf)\n",
+			   get_disp_id_name(disp_id),
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -488,20 +503,24 @@ static int mi_disp_procfs_dsi_phy_rw_init(void *d_display, int disp_id)
 	}
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
-		DISP_ERROR("unsupported %s display(%s intf)\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(dd_ptr->intf_type));
+		DISP_ERROR("unsupported %s display(%s intf)\n",
+			   get_disp_id_name(disp_id),
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
 	if (is_support_disp_id(disp_id)) {
-		disp_procfs.dsi_phy_rw_proc[disp_id] = proc_create_data(dsi_phy_rw_str[disp_id],
-			S_IRUGO | S_IWUSR, disp_core->procfs_dir,
-			&dsi_phy_rw_proc_fops, d_display);
+		disp_procfs.dsi_phy_rw_proc[disp_id] = proc_create_data(
+			dsi_phy_rw_str[disp_id], S_IRUGO | S_IWUSR,
+			disp_core->procfs_dir, &dsi_phy_rw_proc_fops,
+			d_display);
 		if (!disp_procfs.dsi_phy_rw_proc[disp_id]) {
-			DISP_ERROR("create procfs entry failed for %s\n", dsi_phy_rw_str[disp_id]);
+			DISP_ERROR("create procfs entry failed for %s\n",
+				   dsi_phy_rw_str[disp_id]);
 			ret = -ENODEV;
 		} else {
-			DISP_INFO("create procfs %s success!\n", dsi_phy_rw_str[disp_id]);
+			DISP_INFO("create procfs %s success!\n",
+				  dsi_phy_rw_str[disp_id]);
 			ret = 0;
 		}
 	} else {
@@ -523,8 +542,9 @@ static int mi_disp_procfs_dsi_phy_rw_deinit(void *d_display, int disp_id)
 	}
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
-		DISP_ERROR("unsupported %s display(%s intf)\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(dd_ptr->intf_type));
+		DISP_ERROR("unsupported %s display(%s intf)\n",
+			   get_disp_id_name(disp_id),
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -554,20 +574,24 @@ static int mi_disp_procfs_dsi_porch_rw_init(void *d_display, int disp_id)
 	}
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
-		DISP_ERROR("unsupported %s display(%s intf)\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(dd_ptr->intf_type));
+		DISP_ERROR("unsupported %s display(%s intf)\n",
+			   get_disp_id_name(disp_id),
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
 	if (is_support_disp_id(disp_id)) {
-		disp_procfs.dsi_porch_rw_proc[disp_id] = proc_create_data(dsi_porch_rw_str[disp_id],
-			S_IRUGO | S_IWUSR, disp_core->procfs_dir,
-			&dsi_porch_rw_proc_fops, d_display);
+		disp_procfs.dsi_porch_rw_proc[disp_id] = proc_create_data(
+			dsi_porch_rw_str[disp_id], S_IRUGO | S_IWUSR,
+			disp_core->procfs_dir, &dsi_porch_rw_proc_fops,
+			d_display);
 		if (!disp_procfs.dsi_porch_rw_proc[disp_id]) {
-			DISP_ERROR("create procfs entry failed for %s\n", dsi_porch_rw_str[disp_id]);
+			DISP_ERROR("create procfs entry failed for %s\n",
+				   dsi_porch_rw_str[disp_id]);
 			ret = -ENODEV;
 		} else {
-			DISP_INFO("create procfs %s success!\n", dsi_porch_rw_str[disp_id]);
+			DISP_INFO("create procfs %s success!\n",
+				  dsi_porch_rw_str[disp_id]);
 			ret = 0;
 		}
 	} else {
@@ -589,8 +613,9 @@ static int mi_disp_procfs_dsi_porch_rw_deinit(void *d_display, int disp_id)
 	}
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
-		DISP_ERROR("unsupported %s display(%s intf)\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(dd_ptr->intf_type));
+		DISP_ERROR("unsupported %s display(%s intf)\n",
+			   get_disp_id_name(disp_id),
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -620,20 +645,23 @@ static int mi_disp_procfs_pps_rw_init(void *d_display, int disp_id)
 	}
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
-		DISP_ERROR("unsupported %s display(%s intf)\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(dd_ptr->intf_type));
+		DISP_ERROR("unsupported %s display(%s intf)\n",
+			   get_disp_id_name(disp_id),
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
 	if (is_support_disp_id(disp_id)) {
-		disp_procfs.pps_rw_proc[disp_id] = proc_create_data(pps_rw_str[disp_id],
-			S_IRUGO | S_IWUSR, disp_core->procfs_dir,
-			&pps_rw_proc_fops, d_display);
+		disp_procfs.pps_rw_proc[disp_id] = proc_create_data(
+			pps_rw_str[disp_id], S_IRUGO | S_IWUSR,
+			disp_core->procfs_dir, &pps_rw_proc_fops, d_display);
 		if (!disp_procfs.pps_rw_proc[disp_id]) {
-			DISP_ERROR("create procfs entry failed for %s\n", pps_rw_str[disp_id]);
+			DISP_ERROR("create procfs entry failed for %s\n",
+				   pps_rw_str[disp_id]);
 			ret = -ENODEV;
 		} else {
-			DISP_INFO("create procfs %s success!\n", pps_rw_str[disp_id]);
+			DISP_INFO("create procfs %s success!\n",
+				  pps_rw_str[disp_id]);
 			ret = 0;
 		}
 	} else {
@@ -655,8 +683,9 @@ static int mi_disp_procfs_pps_rw_deinit(void *d_display, int disp_id)
 	}
 
 	if (dd_ptr->intf_type != MI_INTF_DSI) {
-		DISP_ERROR("unsupported %s display(%s intf)\n", get_disp_id_name(disp_id),
-			get_disp_intf_type_name(dd_ptr->intf_type));
+		DISP_ERROR("unsupported %s display(%s intf)\n",
+			   get_disp_id_name(disp_id),
+			   get_disp_intf_type_name(dd_ptr->intf_type));
 		return -EINVAL;
 	}
 
@@ -691,9 +720,9 @@ int mi_disp_procfs_deinit(void *d_display, int disp_id)
 	int ret = 0;
 
 	ret = mi_disp_procfs_mipi_rw_deinit(d_display, disp_id);
-	ret |=mi_disp_procfs_dsi_phy_rw_deinit(d_display, disp_id);
-	ret |=mi_disp_procfs_dsi_porch_rw_deinit(d_display, disp_id);
-	ret |=mi_disp_procfs_pps_rw_deinit(d_display, disp_id);
+	ret |= mi_disp_procfs_dsi_phy_rw_deinit(d_display, disp_id);
+	ret |= mi_disp_procfs_dsi_porch_rw_deinit(d_display, disp_id);
+	ret |= mi_disp_procfs_pps_rw_deinit(d_display, disp_id);
 
 	return ret;
 }

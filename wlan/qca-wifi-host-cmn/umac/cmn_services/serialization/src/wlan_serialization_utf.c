@@ -20,20 +20,19 @@
  * DOC: Implements the unit test framework for serialization module
  */
 
+#include "wlan_serialization_main_i.h"
+#include "wlan_serialization_utf_i.h"
 #include <qdf_status.h>
 #include <qdf_timer.h>
 #include <wlan_objmgr_cmn.h>
 #include <wlan_objmgr_vdev_obj.h>
 #include <wlan_serialization_api.h>
-#include "wlan_serialization_main_i.h"
-#include "wlan_serialization_utf_i.h"
 
 struct wlan_ser_utf_vdev_info ser_utf_vdev[WLAN_SER_UTF_MAX_VDEVS];
 
 struct wlan_ser_utf_data *
 wlan_ser_utf_data_alloc(struct wlan_ser_utf_data **ser_data,
-			struct wlan_objmgr_vdev *vdev,
-			uint8_t cmd_id)
+			struct wlan_objmgr_vdev *vdev, uint8_t cmd_id)
 {
 	struct wlan_ser_utf_data *data;
 
@@ -62,17 +61,16 @@ wlan_ser_utf_add_cmd(struct wlan_serialization_command *cmd)
 	cmd->cmd_cb = wlan_ser_utf_cb;
 
 	status = wlan_serialization_request(cmd);
-	ser_debug("ADD : cmd_type:%d %9s %s status: %s",
-		  cmd->cmd_type, SER_UTF_BLOCK_STR(cmd->is_blocking), data->str,
+	ser_debug("ADD : cmd_type:%d %9s %s status: %s", cmd->cmd_type,
+		  SER_UTF_BLOCK_STR(cmd->is_blocking), data->str,
 		  wlan_serialization_status_strings[status]);
 
 	return status;
 }
 
 enum wlan_serialization_status
-wlan_ser_utf_add_scan_cmd(struct wlan_objmgr_vdev *vdev,
-			  uint32_t cmd_id, void *umac_cmd,
-			  bool is_high_priority)
+wlan_ser_utf_add_scan_cmd(struct wlan_objmgr_vdev *vdev, uint32_t cmd_id,
+			  void *umac_cmd, bool is_high_priority)
 {
 	struct wlan_serialization_command cmd;
 
@@ -87,9 +85,9 @@ wlan_ser_utf_add_scan_cmd(struct wlan_objmgr_vdev *vdev,
 }
 
 enum wlan_serialization_status
-wlan_ser_utf_add_nonscan_cmd(struct wlan_objmgr_vdev *vdev,
-			     uint32_t cmd_id, void *umac_cmd,
-			     bool is_high_priority, bool is_blocking)
+wlan_ser_utf_add_nonscan_cmd(struct wlan_objmgr_vdev *vdev, uint32_t cmd_id,
+			     void *umac_cmd, bool is_high_priority,
+			     bool is_blocking)
 {
 	struct wlan_serialization_command cmd;
 
@@ -130,8 +128,8 @@ void wlan_ser_utf_remove_nonscan_cmd(struct wlan_objmgr_vdev *vdev,
 }
 
 enum wlan_serialization_cmd_status
-wlan_ser_utf_cancel_scan_cmd(struct wlan_objmgr_vdev *vdev,
-			     uint32_t cmd_id, uint8_t queue_type,
+wlan_ser_utf_cancel_scan_cmd(struct wlan_objmgr_vdev *vdev, uint32_t cmd_id,
+			     uint8_t queue_type,
 			     enum wlan_serialization_cancel_type req_type)
 {
 	struct wlan_serialization_queued_cmd_info cmd;
@@ -147,8 +145,8 @@ wlan_ser_utf_cancel_scan_cmd(struct wlan_objmgr_vdev *vdev,
 }
 
 enum wlan_serialization_cmd_status
-wlan_ser_utf_cancel_nonscan_cmd(struct wlan_objmgr_vdev *vdev,
-				uint32_t cmd_id, uint8_t queue_type,
+wlan_ser_utf_cancel_nonscan_cmd(struct wlan_objmgr_vdev *vdev, uint32_t cmd_id,
+				uint8_t queue_type,
 				enum wlan_serialization_cancel_type req_type)
 {
 	struct wlan_serialization_queued_cmd_info cmd;
@@ -207,8 +205,8 @@ wlan_ser_utf_cancel_start_bss_cmd(struct wlan_objmgr_vdev *vdev,
 }
 
 enum wlan_serialization_cmd_status
-wlan_ser_utf_cancel_stop_bss_cmd(struct wlan_objmgr_vdev *vdev,
-				 uint32_t cmd_id, uint8_t queue_type,
+wlan_ser_utf_cancel_stop_bss_cmd(struct wlan_objmgr_vdev *vdev, uint32_t cmd_id,
+				 uint8_t queue_type,
 				 enum wlan_serialization_cancel_type req_type)
 {
 	struct wlan_serialization_queued_cmd_info cmd;
@@ -242,11 +240,9 @@ wlan_ser_utf_add_vdev_stop_bss_cmd(struct wlan_objmgr_vdev *vdev,
 	/* Command filtering logic */
 	req_type = WLAN_SER_CANCEL_NON_SCAN_CMD;
 	queue_type = WLAN_SERIALIZATION_PENDING_QUEUE;
-	wlan_ser_utf_cancel_start_bss_cmd(vdev, cmd_id,
-					  queue_type, req_type);
+	wlan_ser_utf_cancel_start_bss_cmd(vdev, cmd_id, queue_type, req_type);
 
-	wlan_ser_utf_cancel_stop_bss_cmd(vdev, cmd_id,
-					 queue_type, req_type);
+	wlan_ser_utf_cancel_stop_bss_cmd(vdev, cmd_id, queue_type, req_type);
 
 	if (wlan_serialization_is_cmd_present_in_active_queue(NULL, &cmd))
 		return WLAN_SER_CMD_ACTIVE;
@@ -274,18 +270,18 @@ wlan_ser_utf_add_vdev_start_bss_cmd(struct wlan_objmgr_vdev *vdev,
 	/* Command filtering logic */
 	req_type = WLAN_SER_CANCEL_NON_SCAN_CMD;
 	queue_type = WLAN_SERIALIZATION_PENDING_QUEUE;
-	wlan_ser_utf_cancel_start_bss_cmd(vdev, cmd_id,
-					  queue_type, req_type);
+	wlan_ser_utf_cancel_start_bss_cmd(vdev, cmd_id, queue_type, req_type);
 
 	if (wlan_serialization_is_cmd_present_in_active_queue(NULL, &cmd)) {
 		cmd.cmd_type = WLAN_SER_CMD_VDEV_STOP_BSS;
-		if (!wlan_serialization_is_cmd_present_in_pending_queue(
-					NULL, &cmd)) {
-		if (!wlan_ser_utf_data_alloc(&data, vdev, cmd_id))
-			return WLAN_SER_CMD_DENIED_UNSPECIFIED;
-			wlan_ser_utf_add_vdev_stop_bss_cmd(
-					vdev, cmd_id, (void *)data,
-					is_high_priority, is_blocking);
+		if (!wlan_serialization_is_cmd_present_in_pending_queue(NULL,
+									&cmd)) {
+			if (!wlan_ser_utf_data_alloc(&data, vdev, cmd_id))
+				return WLAN_SER_CMD_DENIED_UNSPECIFIED;
+			wlan_ser_utf_add_vdev_stop_bss_cmd(vdev, cmd_id,
+							   (void *)data,
+							   is_high_priority,
+							   is_blocking);
 		}
 	}
 
@@ -365,8 +361,7 @@ static void wlan_ser_utf_nonscan_timer_cb(void *arg)
 }
 
 void wlan_ser_utf_run(struct wlan_objmgr_vdev *vdev, uint8_t scan_cmd,
-		      uint8_t max_cmds,
-		      bool is_high_priority, bool is_blocking)
+		      uint8_t max_cmds, bool is_high_priority, bool is_blocking)
 {
 	struct wlan_ser_utf_data *data;
 	uint8_t id;
@@ -385,26 +380,23 @@ void wlan_ser_utf_run(struct wlan_objmgr_vdev *vdev, uint8_t scan_cmd,
 			ret = wlan_ser_utf_add_scan_cmd(vdev, id, data,
 							is_high_priority);
 		else
-			ret = wlan_ser_utf_add_nonscan_cmd(vdev, id,
-							   data,
-							   is_high_priority,
-							   is_blocking);
+			ret = wlan_ser_utf_add_nonscan_cmd(
+				vdev, id, data, is_high_priority, is_blocking);
 	}
 
 	for (id = 0; id < max_cmds; id++) {
 		if (scan_cmd)
-			qdf_timer_mod(
-			&ser_utf_vdev[vdev_id].utf_scan_timer[id],
-			WLAN_SER_UTF_TIMER_TIMEOUT_MS);
+			qdf_timer_mod(&ser_utf_vdev[vdev_id].utf_scan_timer[id],
+				      WLAN_SER_UTF_TIMER_TIMEOUT_MS);
 		else
 			qdf_timer_mod(
-			&ser_utf_vdev[vdev_id].utf_nonscan_timer[id],
-			WLAN_SER_UTF_TIMER_TIMEOUT_MS);
+				&ser_utf_vdev[vdev_id].utf_nonscan_timer[id],
+				WLAN_SER_UTF_TIMER_TIMEOUT_MS);
 	}
 }
 
-static void wlan_ser_utf_init_iter_op(struct wlan_objmgr_pdev *pdev,
-				      void *obj, void *args)
+static void wlan_ser_utf_init_iter_op(struct wlan_objmgr_pdev *pdev, void *obj,
+				      void *args)
 {
 	struct wlan_objmgr_vdev *vdev = (struct wlan_objmgr_vdev *)obj;
 	uint8_t vdev_id = wlan_vdev_get_id(vdev);
@@ -412,14 +404,13 @@ static void wlan_ser_utf_init_iter_op(struct wlan_objmgr_pdev *pdev,
 
 	ser_utf_vdev[vdev_id].vdev = vdev;
 	for (id = 0; id < WLAN_SER_UTF_SCAN_CMD_TESTS; id++) {
-		qdf_timer_init(NULL,
-			       &ser_utf_vdev[vdev_id].utf_scan_timer[id],
-			       wlan_ser_utf_scan_timer_cb,
-			       (void *)vdev, QDF_TIMER_TYPE_WAKE_APPS);
+		qdf_timer_init(NULL, &ser_utf_vdev[vdev_id].utf_scan_timer[id],
+			       wlan_ser_utf_scan_timer_cb, (void *)vdev,
+			       QDF_TIMER_TYPE_WAKE_APPS);
 		qdf_timer_init(NULL,
 			       &ser_utf_vdev[vdev_id].utf_nonscan_timer[id],
-			       wlan_ser_utf_nonscan_timer_cb,
-			       (void *)vdev, QDF_TIMER_TYPE_WAKE_APPS);
+			       wlan_ser_utf_nonscan_timer_cb, (void *)vdev,
+			       QDF_TIMER_TYPE_WAKE_APPS);
 	}
 }
 
@@ -431,15 +422,13 @@ static void wlan_ser_utf_deinit_iter_op(struct wlan_objmgr_pdev *pdev,
 	uint8_t id;
 
 	for (id = 0; id < WLAN_SER_UTF_SCAN_CMD_TESTS; id++) {
-		qdf_timer_free(
-			&ser_utf_vdev[vdev_id].utf_nonscan_timer[id]);
-		qdf_timer_free(
-			&ser_utf_vdev[vdev_id].utf_scan_timer[id]);
+		qdf_timer_free(&ser_utf_vdev[vdev_id].utf_nonscan_timer[id]);
+		qdf_timer_free(&ser_utf_vdev[vdev_id].utf_scan_timer[id]);
 	}
 }
 
-static void wlan_ser_utf_vdev_iter_op(struct wlan_objmgr_pdev *pdev,
-				      void *obj, void *args)
+static void wlan_ser_utf_vdev_iter_op(struct wlan_objmgr_pdev *pdev, void *obj,
+				      void *args)
 {
 	struct wlan_objmgr_vdev *vdev = (struct wlan_objmgr_vdev *)obj;
 	uint8_t is_blocking = *(uint8_t *)args;
@@ -483,11 +472,10 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 	switch (val) {
 	case SER_UTF_TC_DEINIT:
 		if (wlan_objmgr_pdev_try_get_ref(pdev, WLAN_SERIALIZATION_ID) ==
-				QDF_STATUS_SUCCESS) {
+		    QDF_STATUS_SUCCESS) {
 			wlan_objmgr_pdev_iterate_obj_list(
-					pdev, WLAN_VDEV_OP,
-					wlan_ser_utf_deinit_iter_op,
-					NULL, 0, WLAN_SERIALIZATION_ID);
+				pdev, WLAN_VDEV_OP, wlan_ser_utf_deinit_iter_op,
+				NULL, 0, WLAN_SERIALIZATION_ID);
 			wlan_objmgr_pdev_release_ref(pdev,
 						     WLAN_SERIALIZATION_ID);
 			ser_err("Serialization Timer Deinit Done");
@@ -495,11 +483,10 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		break;
 	case SER_UTF_TC_INIT:
 		if (wlan_objmgr_pdev_try_get_ref(pdev, WLAN_SERIALIZATION_ID) ==
-				QDF_STATUS_SUCCESS) {
+		    QDF_STATUS_SUCCESS) {
 			wlan_objmgr_pdev_iterate_obj_list(
-					pdev, WLAN_VDEV_OP,
-					wlan_ser_utf_init_iter_op,
-					NULL, 0, WLAN_SERIALIZATION_ID);
+				pdev, WLAN_VDEV_OP, wlan_ser_utf_init_iter_op,
+				NULL, 0, WLAN_SERIALIZATION_ID);
 			wlan_objmgr_pdev_release_ref(pdev,
 						     WLAN_SERIALIZATION_ID);
 			wlan_ser_utf_init = 1;
@@ -514,8 +501,8 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		if (scan_cmd)
 			wlan_ser_utf_add_scan_cmd(vdev, cmd_id, data, false);
 		else
-			wlan_ser_utf_add_nonscan_cmd(vdev, cmd_id, data,
-						     false, false);
+			wlan_ser_utf_add_nonscan_cmd(vdev, cmd_id, data, false,
+						     false);
 		break;
 	case SER_UTF_TC_REMOVE:
 		ser_err("Remove:%s, id:%d", scan_cmd ? "SCAN" : "NONSCAN",
@@ -564,11 +551,10 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 	case SER_UTF_TC_MULTI_VDEV_NONSCAN:
 		is_blocking = false;
 		if (wlan_objmgr_pdev_try_get_ref(pdev, WLAN_SERIALIZATION_ID) ==
-				QDF_STATUS_SUCCESS) {
+		    QDF_STATUS_SUCCESS) {
 			wlan_objmgr_pdev_iterate_obj_list(
-					pdev, WLAN_VDEV_OP,
-					wlan_ser_utf_vdev_iter_op,
-					&is_blocking, 0, WLAN_SERIALIZATION_ID);
+				pdev, WLAN_VDEV_OP, wlan_ser_utf_vdev_iter_op,
+				&is_blocking, 0, WLAN_SERIALIZATION_ID);
 			wlan_objmgr_pdev_release_ref(pdev,
 						     WLAN_SERIALIZATION_ID);
 		}
@@ -580,8 +566,7 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		wlan_ser_utf_add_scan_cmd(vdev, id, data, false);
 		req_type = WLAN_SER_CANCEL_SINGLE_SCAN;
 		queue_type = WLAN_SERIALIZATION_ACTIVE_QUEUE;
-		wlan_ser_utf_cancel_scan_cmd(vdev, id, queue_type,
-					     req_type);
+		wlan_ser_utf_cancel_scan_cmd(vdev, id, queue_type, req_type);
 		break;
 	case SER_UTF_TC_CANCEL_SCAN_AC_PDEV:
 		wlan_ser_utf_run(vdev, true, 15, false, false);
@@ -658,13 +643,13 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		id = 1;
 		if (!wlan_ser_utf_data_alloc(&data, vdev, id))
 			break;
-		wlan_ser_utf_add_vdev_start_bss_cmd(vdev, id, data,
-						    false, false);
+		wlan_ser_utf_add_vdev_start_bss_cmd(vdev, id, data, false,
+						    false);
 
 		if (!wlan_ser_utf_data_alloc(&data, vdev, id))
 			break;
-		wlan_ser_utf_add_vdev_start_bss_cmd(vdev, id, data,
-						    false, false);
+		wlan_ser_utf_add_vdev_start_bss_cmd(vdev, id, data, false,
+						    false);
 
 		wlan_ser_utf_remove_start_bss_cmd(vdev, id);
 		wlan_ser_utf_remove_stop_bss_cmd(vdev, id);
@@ -674,18 +659,18 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		id = 1;
 		if (!wlan_ser_utf_data_alloc(&data, vdev, id))
 			break;
-		wlan_ser_utf_add_vdev_start_bss_cmd(vdev, id, data,
-						    false, false);
+		wlan_ser_utf_add_vdev_start_bss_cmd(vdev, id, data, false,
+						    false);
 
 		if (!wlan_ser_utf_data_alloc(&data, vdev, id))
 			break;
-		wlan_ser_utf_add_vdev_start_bss_cmd(vdev, id, data,
-						    false, false);
+		wlan_ser_utf_add_vdev_start_bss_cmd(vdev, id, data, false,
+						    false);
 
 		if (!wlan_ser_utf_data_alloc(&data, vdev, id))
 			break;
-		wlan_ser_utf_add_vdev_stop_bss_cmd(vdev, id, data,
-						   false, false);
+		wlan_ser_utf_add_vdev_stop_bss_cmd(vdev, id, data, false,
+						   false);
 
 		wlan_ser_utf_remove_start_bss_cmd(vdev, id);
 		wlan_ser_utf_remove_stop_bss_cmd(vdev, id);
@@ -791,11 +776,10 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		}
 		is_blocking = true;
 		if (wlan_objmgr_pdev_try_get_ref(pdev, WLAN_SERIALIZATION_ID) ==
-				QDF_STATUS_SUCCESS) {
+		    QDF_STATUS_SUCCESS) {
 			wlan_objmgr_pdev_iterate_obj_list(
-					pdev, WLAN_VDEV_OP,
-					wlan_ser_utf_vdev_iter_op,
-					&is_blocking, 0, WLAN_SERIALIZATION_ID);
+				pdev, WLAN_VDEV_OP, wlan_ser_utf_vdev_iter_op,
+				&is_blocking, 0, WLAN_SERIALIZATION_ID);
 			wlan_objmgr_pdev_release_ref(pdev,
 						     WLAN_SERIALIZATION_ID);
 		}
@@ -808,20 +792,20 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		}
 		id = 1;
 		wlan_ser_utf_data_alloc(&data, ser_utf_vdev[0].vdev, id);
-		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[0].vdev, id,
-					     data, false, false);
+		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[0].vdev, id, data,
+					     false, false);
 
 		wlan_ser_utf_data_alloc(&data, ser_utf_vdev[1].vdev, id);
-		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[1].vdev, id,
-					     data, false, false);
+		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[1].vdev, id, data,
+					     false, false);
 
 		wlan_ser_utf_data_alloc(&data, ser_utf_vdev[2].vdev, id);
-		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[2].vdev, id,
-					     data, false, false);
+		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[2].vdev, id, data,
+					     false, false);
 
 		wlan_ser_utf_data_alloc(&data, ser_utf_vdev[2].vdev, id);
-		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[2].vdev, id,
-					     data, false, true);
+		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[2].vdev, id, data,
+					     false, true);
 
 		wlan_ser_utf_remove_nonscan_cmd(ser_utf_vdev[0].vdev, id);
 		wlan_ser_utf_remove_nonscan_cmd(ser_utf_vdev[1].vdev, id);
@@ -836,20 +820,20 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		}
 		id = 1;
 		wlan_ser_utf_data_alloc(&data, ser_utf_vdev[0].vdev, id);
-		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[0].vdev, id,
-					     data, false, true);
+		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[0].vdev, id, data,
+					     false, true);
 
 		wlan_ser_utf_data_alloc(&data, ser_utf_vdev[0].vdev, id);
-		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[0].vdev, id,
-					     data, false, false);
+		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[0].vdev, id, data,
+					     false, false);
 
 		wlan_ser_utf_data_alloc(&data, ser_utf_vdev[1].vdev, id);
-		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[1].vdev, id,
-					     data, false, false);
+		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[1].vdev, id, data,
+					     false, false);
 
 		wlan_ser_utf_data_alloc(&data, ser_utf_vdev[2].vdev, id);
-		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[2].vdev, id,
-					     data, false, false);
+		wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[2].vdev, id, data,
+					     false, false);
 
 		wlan_ser_utf_remove_nonscan_cmd(ser_utf_vdev[0].vdev, id);
 		wlan_ser_utf_remove_nonscan_cmd(ser_utf_vdev[0].vdev, id);
@@ -864,30 +848,28 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 		}
 		for (id = 1; id <= 2; id++) {
 			for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS;
-					vdev_id++) {
+			     vdev_id++) {
 				wlan_ser_utf_data_alloc(
-						&data,
-						ser_utf_vdev[vdev_id].vdev, id);
+					&data, ser_utf_vdev[vdev_id].vdev, id);
 				wlan_ser_utf_add_nonscan_cmd(
-						ser_utf_vdev[vdev_id].vdev,
-						id, data, false, false);
+					ser_utf_vdev[vdev_id].vdev, id, data,
+					false, false);
 			}
 		}
 
 		id = 3;
 		for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS; vdev_id++) {
-			wlan_ser_utf_data_alloc(
-					&data, ser_utf_vdev[vdev_id].vdev, id);
-			wlan_ser_utf_add_nonscan_cmd(
-					ser_utf_vdev[vdev_id].vdev, id,
-					data, false, true);
+			wlan_ser_utf_data_alloc(&data,
+						ser_utf_vdev[vdev_id].vdev, id);
+			wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[vdev_id].vdev,
+						     id, data, false, true);
 		}
 
 		for (id = 1; id <= 3; id++) {
 			for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS;
-					vdev_id++)
+			     vdev_id++)
 				wlan_ser_utf_remove_nonscan_cmd(
-						ser_utf_vdev[vdev_id].vdev, id);
+					ser_utf_vdev[vdev_id].vdev, id);
 		}
 		break;
 	case SER_UTF_TC_MULTI_VDEV_BL_NONSCAN_5:
@@ -897,41 +879,32 @@ int wlan_ser_utf_main(struct wlan_objmgr_vdev *vdev, uint8_t val,
 			break;
 		}
 		id = 1;
-		for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS;
-					vdev_id++) {
-			wlan_ser_utf_data_alloc(
-					&data,
-					ser_utf_vdev[vdev_id].vdev, id);
-			wlan_ser_utf_add_nonscan_cmd(
-					ser_utf_vdev[vdev_id].vdev,
-					id, data, false, false);
+		for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS; vdev_id++) {
+			wlan_ser_utf_data_alloc(&data,
+						ser_utf_vdev[vdev_id].vdev, id);
+			wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[vdev_id].vdev,
+						     id, data, false, false);
 		}
 		id = 2;
-		for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS;
-					vdev_id++) {
-			wlan_ser_utf_data_alloc(
-					&data,
-					ser_utf_vdev[vdev_id].vdev, id);
-			wlan_ser_utf_add_nonscan_cmd(
-					ser_utf_vdev[vdev_id].vdev,
-					id, data, false, true);
+		for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS; vdev_id++) {
+			wlan_ser_utf_data_alloc(&data,
+						ser_utf_vdev[vdev_id].vdev, id);
+			wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[vdev_id].vdev,
+						     id, data, false, true);
 		}
 		id = 3;
-		for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS;
-					vdev_id++) {
-			wlan_ser_utf_data_alloc(
-					&data,
-					ser_utf_vdev[vdev_id].vdev, id);
-			wlan_ser_utf_add_nonscan_cmd(
-					ser_utf_vdev[vdev_id].vdev,
-					id, data, false, false);
+		for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS; vdev_id++) {
+			wlan_ser_utf_data_alloc(&data,
+						ser_utf_vdev[vdev_id].vdev, id);
+			wlan_ser_utf_add_nonscan_cmd(ser_utf_vdev[vdev_id].vdev,
+						     id, data, false, false);
 		}
 
 		for (id = 1; id <= 3; id++) {
 			for (vdev_id = 0; vdev_id < WLAN_SER_UTF_MAX_VDEVS;
-					vdev_id++)
+			     vdev_id++)
 				wlan_ser_utf_remove_nonscan_cmd(
-						ser_utf_vdev[vdev_id].vdev, id);
+					ser_utf_vdev[vdev_id].vdev, id);
 		}
 		break;
 	case SER_UTF_TC_HIGH_PRIO_NONSCAN_WO_BL:

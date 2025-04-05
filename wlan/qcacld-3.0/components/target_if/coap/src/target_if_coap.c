@@ -17,8 +17,8 @@
 /**
  * DOC: contains CoAP target if functions
  */
-#include <wlan_coap_main.h>
 #include <target_if_coap.h>
+#include <wlan_coap_main.h>
 #include <wmi_unified_coap_api.h>
 
 /**
@@ -30,16 +30,16 @@
  *
  * Return: status of operation.
  */
-static int
-target_if_wow_coap_buf_info_event_handler(ol_scn_t scn, uint8_t *data,
-					  uint32_t datalen)
+static int target_if_wow_coap_buf_info_event_handler(ol_scn_t scn,
+						     uint8_t *data,
+						     uint32_t datalen)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_vdev *vdev = NULL;
 	struct wlan_coap_comp_priv *coap_priv;
-	struct coap_buf_info info = {0};
+	struct coap_buf_info info = { 0 };
 	struct coap_buf_node *cur, *next;
 
 	if (!scn || !data) {
@@ -60,8 +60,7 @@ target_if_wow_coap_buf_info_event_handler(ol_scn_t scn, uint8_t *data,
 	}
 
 	qdf_list_create(&info.info_list, 0);
-	status = wmi_unified_coap_extract_buf_info(wmi_handle, data,
-						   &info);
+	status = wmi_unified_coap_extract_buf_info(wmi_handle, data, &info);
 	if (QDF_IS_STATUS_ERROR(status))
 		goto out;
 
@@ -83,7 +82,8 @@ target_if_wow_coap_buf_info_event_handler(ol_scn_t scn, uint8_t *data,
 
 	coap_priv->cache_get_cbk(coap_priv->cache_get_context, &info);
 out:
-	qdf_list_for_each_del(&info.info_list, cur, next, node) {
+	qdf_list_for_each_del(&info.info_list, cur, next, node)
+	{
 		qdf_list_remove_node(&info.info_list, &cur->node);
 		qdf_mem_free(cur->payload);
 		qdf_mem_free(cur);
@@ -119,10 +119,9 @@ target_if_coap_register_event_handler(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	ret_val = wmi_unified_register_event_handler(wmi_handle,
-			wmi_wow_coap_buf_info_eventid,
-			target_if_wow_coap_buf_info_event_handler,
-			WMI_RX_WORK_CTX);
+	ret_val = wmi_unified_register_event_handler(
+		wmi_handle, wmi_wow_coap_buf_info_eventid,
+		target_if_wow_coap_buf_info_event_handler, WMI_RX_WORK_CTX);
 	if (QDF_IS_STATUS_ERROR(ret_val))
 		coap_err("Failed to register coap buf info event cb");
 
@@ -205,8 +204,7 @@ target_if_coap_offload_reply_disable(struct wlan_objmgr_vdev *vdev,
 	}
 
 	return wmi_unified_coap_del_pattern_cmd(wmi_handle,
-						wlan_vdev_get_id(vdev),
-						req_id);
+						wlan_vdev_get_id(vdev), req_id);
 }
 
 /**
@@ -217,9 +215,9 @@ target_if_coap_offload_reply_disable(struct wlan_objmgr_vdev *vdev,
  *
  * Return: status of operation
  */
-static QDF_STATUS
-target_if_coap_offload_periodic_tx_enable(struct wlan_objmgr_vdev *vdev,
-			struct coap_offload_periodic_tx_param *param)
+static QDF_STATUS target_if_coap_offload_periodic_tx_enable(
+	struct wlan_objmgr_vdev *vdev,
+	struct coap_offload_periodic_tx_param *param)
 {
 	wmi_unified_t wmi_handle;
 	struct wlan_objmgr_pdev *pdev;
@@ -258,8 +256,8 @@ target_if_coap_offload_periodic_tx_disable(struct wlan_objmgr_vdev *vdev,
 	}
 
 	vdev_id = wlan_vdev_get_id(vdev);
-	return wmi_unified_coap_del_keepalive_pattern_cmd(wmi_handle,
-							  vdev_id, req_id);
+	return wmi_unified_coap_del_keepalive_pattern_cmd(wmi_handle, vdev_id,
+							  req_id);
 }
 
 /**
@@ -270,8 +268,7 @@ target_if_coap_offload_periodic_tx_disable(struct wlan_objmgr_vdev *vdev,
  * Return: status of operation
  */
 static QDF_STATUS
-target_if_coap_offload_cache_get(struct wlan_objmgr_vdev *vdev,
-				 uint32_t req_id)
+target_if_coap_offload_cache_get(struct wlan_objmgr_vdev *vdev, uint32_t req_id)
 {
 	wmi_unified_t wmi_handle;
 	struct wlan_objmgr_pdev *pdev;
@@ -300,10 +297,8 @@ target_if_coap_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 	coap_ops = &tx_ops->coap_ops;
 	coap_ops->attach = target_if_coap_register_event_handler;
 	coap_ops->detach = target_if_coap_unregister_event_handler;
-	coap_ops->offload_reply_enable =
-		target_if_coap_offload_reply_enable;
-	coap_ops->offload_reply_disable =
-		target_if_coap_offload_reply_disable;
+	coap_ops->offload_reply_enable = target_if_coap_offload_reply_enable;
+	coap_ops->offload_reply_disable = target_if_coap_offload_reply_disable;
 	coap_ops->offload_periodic_tx_enable =
 		target_if_coap_offload_periodic_tx_enable;
 	coap_ops->offload_periodic_tx_disable =

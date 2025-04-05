@@ -18,32 +18,31 @@
 /*
  * DOC: contains interface manager roam public api
  */
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_pdev_obj.h"
-#include "wlan_objmgr_vdev_obj.h"
-#include "wlan_policy_mgr_api.h"
-#include "wlan_policy_mgr_i.h"
 #include "wlan_if_mgr_roam.h"
-#include "wlan_if_mgr_public_struct.h"
-#include "wlan_cm_roam_api.h"
-#include "wlan_if_mgr_main.h"
-#include "wlan_p2p_ucfg_api.h"
 #include "cds_api.h"
 #include "sme_api.h"
-#include "wlan_vdev_mgr_utils_api.h"
-#include "wni_api.h"
-#include "wlan_mlme_vdev_mgr_interface.h"
 #include "wlan_cm_api.h"
-#include "wlan_scan_api.h"
+#include "wlan_cm_roam_api.h"
+#include "wlan_if_mgr_main.h"
+#include "wlan_if_mgr_public_struct.h"
+#include "wlan_mlme_vdev_mgr_interface.h"
+#include "wlan_mlo_mgr_link_switch.h"
 #include "wlan_mlo_mgr_roam.h"
 #include "wlan_mlo_mgr_sta.h"
-#include "wlan_mlo_mgr_link_switch.h"
+#include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_objmgr_vdev_obj.h"
+#include "wlan_p2p_ucfg_api.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_policy_mgr_i.h"
+#include "wlan_scan_api.h"
+#include "wlan_vdev_mgr_utils_api.h"
+#include "wni_api.h"
 
 #ifdef WLAN_FEATURE_11BE_MLO
-static inline bool
-if_mgr_is_assoc_link_of_vdev(struct wlan_objmgr_pdev *pdev,
-			     struct wlan_objmgr_vdev *vdev,
-			     uint8_t cur_vdev_id)
+static inline bool if_mgr_is_assoc_link_of_vdev(struct wlan_objmgr_pdev *pdev,
+						struct wlan_objmgr_vdev *vdev,
+						uint8_t cur_vdev_id)
 {
 	struct wlan_objmgr_vdev *cur_vdev, *assoc_vdev;
 
@@ -61,10 +60,9 @@ if_mgr_is_assoc_link_of_vdev(struct wlan_objmgr_pdev *pdev,
 	return false;
 }
 #else
-static inline bool
-if_mgr_is_assoc_link_of_vdev(struct wlan_objmgr_pdev *pdev,
-			     struct wlan_objmgr_vdev *vdev,
-			     uint8_t cur_vdev_id)
+static inline bool if_mgr_is_assoc_link_of_vdev(struct wlan_objmgr_pdev *pdev,
+						struct wlan_objmgr_vdev *vdev,
+						uint8_t cur_vdev_id)
 {
 	return true;
 }
@@ -90,8 +88,7 @@ static void if_mgr_enable_roaming_on_vdev(struct wlan_objmgr_pdev *pdev,
 	if (curr_vdev_id != vdev_id &&
 	    vdev->vdev_mlme.mlme_state == WLAN_VDEV_S_UP) {
 		ifmgr_debug("Enable roaming for vdev_id %d", vdev_id);
-		wlan_cm_enable_rso(pdev, vdev_id,
-				   roam_arg->requestor,
+		wlan_cm_enable_rso(pdev, vdev_id, roam_arg->requestor,
 				   REASON_DRIVER_ENABLED);
 	}
 }
@@ -109,10 +106,9 @@ QDF_STATUS if_mgr_enable_roaming(struct wlan_objmgr_pdev *pdev,
 	roam_arg.requestor = requestor;
 	roam_arg.curr_vdev_id = vdev_id;
 
-	status = wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
-						if_mgr_enable_roaming_on_vdev,
-						&roam_arg, 0,
-						WLAN_IF_MGR_ID);
+	status = wlan_objmgr_pdev_iterate_obj_list(
+		pdev, WLAN_VDEV_OP, if_mgr_enable_roaming_on_vdev, &roam_arg, 0,
+		WLAN_IF_MGR_ID);
 
 	return status;
 }
@@ -134,17 +130,18 @@ static void if_mgr_disable_roaming_on_vdev(struct wlan_objmgr_pdev *pdev,
 		return;
 
 	/*
-	 * Disable roaming only for the STA vdev which is not is roam sync state
-	 * and VDEV is in UP state.
-	 */
+   * Disable roaming only for the STA vdev which is not is roam sync state
+   * and VDEV is in UP state.
+   */
 	ifmgr_debug("Roaming disabled on vdev_id %d", vdev_id);
 	wlan_cm_disable_rso(pdev, vdev_id, roam_arg->requestor,
 			    REASON_DRIVER_DISABLED);
 }
 
-QDF_STATUS if_mgr_disable_roaming(struct wlan_objmgr_pdev *pdev,
-				  struct wlan_objmgr_vdev *vdev,
-				  enum wlan_cm_rso_control_requestor requestor)
+QDF_STATUS
+if_mgr_disable_roaming(struct wlan_objmgr_pdev *pdev,
+		       struct wlan_objmgr_vdev *vdev,
+		       enum wlan_cm_rso_control_requestor requestor)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct change_roam_state_arg roam_arg;
@@ -155,10 +152,9 @@ QDF_STATUS if_mgr_disable_roaming(struct wlan_objmgr_pdev *pdev,
 	roam_arg.requestor = requestor;
 	roam_arg.curr_vdev_id = vdev_id;
 
-	status = wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
-						if_mgr_disable_roaming_on_vdev,
-						&roam_arg, 0,
-						WLAN_IF_MGR_ID);
+	status = wlan_objmgr_pdev_iterate_obj_list(
+		pdev, WLAN_VDEV_OP, if_mgr_disable_roaming_on_vdev, &roam_arg,
+		0, WLAN_IF_MGR_ID);
 
 	return status;
 }
@@ -171,10 +167,10 @@ if_mgr_enable_roaming_on_connected_sta(struct wlan_objmgr_pdev *pdev,
 	uint8_t vdev_id;
 
 	/*
-	 * When link switch is in progress, don't send RSO Enable before vdev
-	 * is up. RSO Enable will be sent as part of install keys once
-	 * link switch connect sequence is complete.
-	 */
+   * When link switch is in progress, don't send RSO Enable before vdev
+   * is up. RSO Enable will be sent as part of install keys once
+   * link switch connect sequence is complete.
+   */
 	if (mlo_mgr_is_link_switch_in_progress(vdev))
 		return QDF_STATUS_SUCCESS;
 
@@ -186,7 +182,8 @@ if_mgr_enable_roaming_on_connected_sta(struct wlan_objmgr_pdev *pdev,
 	    wlan_vdev_mlme_get_opmode(vdev) == QDF_STA_MODE &&
 	    mlo_is_enable_roaming_on_connected_sta_allowed(vdev)) {
 		vdev_id = wlan_vdev_get_id(vdev);
-		ifmgr_debug("Enable roaming on connected sta for vdev_id %d", vdev_id);
+		ifmgr_debug("Enable roaming on connected sta for vdev_id %d",
+			    vdev_id);
 		wlan_cm_enable_roaming_on_connected_sta(pdev, vdev_id);
 		policy_mgr_set_pcl_for_connected_vdev(psoc, vdev_id, true);
 	}
@@ -195,9 +192,8 @@ if_mgr_enable_roaming_on_connected_sta(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS if_mgr_enable_roaming_after_p2p_disconnect(
-				struct wlan_objmgr_pdev *pdev,
-				struct wlan_objmgr_vdev *vdev,
-				enum wlan_cm_rso_control_requestor requestor)
+	struct wlan_objmgr_pdev *pdev, struct wlan_objmgr_vdev *vdev,
+	enum wlan_cm_rso_control_requestor requestor)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct wlan_objmgr_psoc *psoc;
@@ -214,19 +210,18 @@ QDF_STATUS if_mgr_enable_roaming_after_p2p_disconnect(
 	roam_arg.curr_vdev_id = vdev_id;
 
 	/*
-	 * Due to audio share glitch with P2P clients due
-	 * to roam scan on concurrent interface, disable
-	 * roaming if "p2p_disable_roam" ini is enabled.
-	 * Re-enable roaming again once the p2p client
-	 * gets disconnected.
-	 */
+   * Due to audio share glitch with P2P clients due
+   * to roam scan on concurrent interface, disable
+   * roaming if "p2p_disable_roam" ini is enabled.
+   * Re-enable roaming again once the p2p client
+   * gets disconnected.
+   */
 	if (ucfg_p2p_is_roam_config_disabled(psoc) &&
 	    wlan_vdev_mlme_get_opmode(vdev) == QDF_P2P_CLIENT_MODE) {
 		ifmgr_debug("P2P client disconnected, enable roam");
-		status = wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
-					      if_mgr_enable_roaming_on_vdev,
-					      &roam_arg, 0,
-					      WLAN_IF_MGR_ID);
+		status = wlan_objmgr_pdev_iterate_obj_list(
+			pdev, WLAN_VDEV_OP, if_mgr_enable_roaming_on_vdev,
+			&roam_arg, 0, WLAN_IF_MGR_ID);
 	}
 
 	return status;
@@ -258,8 +253,8 @@ static uint16_t if_mgr_calculate_mcc_beacon_interval(uint16_t sta_bi,
 
 	if (sta_bi == 0) {
 		/* There is possibility to receive zero as value.
-		 * Which will cause divide by zero. Hence initialise with 100
-		 */
+     * Which will cause divide by zero. Hence initialise with 100
+     */
 		sta_bi = 100;
 		ifmgr_warn("sta_bi 2nd parameter is zero, initialize to %d",
 			   sta_bi);
@@ -271,25 +266,25 @@ static uint16_t if_mgr_calculate_mcc_beacon_interval(uint16_t sta_bi,
 		is_multiple = !(go_calculated_bi % sta_bi);
 
 	/* if it is multiple, then accept GO's beacon interval
-	 * range [100,199] as it is
-	 */
+   * range [100,199] as it is
+   */
 	if (is_multiple)
 		return go_calculated_bi;
 
 	/* else , if it is not multiple, then then check for number of beacons
-	 * to be inserted based on sta BI
-	 */
+   * to be inserted based on sta BI
+   */
 	num_beacons = sta_bi / 100;
 	if (num_beacons) {
 		/* GO's final beacon interval will be aligned to sta beacon
-		 * interval, but in the range of [100, 199].
-		 */
+     * interval, but in the range of [100, 199].
+     */
 		sta_calculated_bi = sta_bi / num_beacons;
 		go_final_bi = sta_calculated_bi;
 	} else {
 		/* if STA beacon interval is less than 100, use GO's change
-		 * beacon interval instead of updating to STA's beacon interval.
-		 */
+     * beacon interval instead of updating to STA's beacon interval.
+     */
 		go_final_bi = go_calculated_bi;
 	}
 
@@ -300,7 +295,7 @@ static QDF_STATUS
 if_mgr_send_chng_mcc_beacon_interval(struct wlan_objmgr_vdev *vdev,
 				     struct beacon_interval_arg *bss_arg)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct wlan_change_bi *p_msg;
 	uint16_t len = 0;
 	QDF_STATUS status;
@@ -324,15 +319,14 @@ if_mgr_send_chng_mcc_beacon_interval(struct wlan_objmgr_vdev *vdev,
 	ifmgr_debug(QDF_MAC_ADDR_FMT, QDF_MAC_ADDR_REF(mac_addr));
 	p_msg->session_id = wlan_vdev_get_id(vdev);
 	ifmgr_debug("session %d BeaconInterval %d", p_msg->session_id,
-			bss_arg->bss_beacon_interval);
+		    bss_arg->bss_beacon_interval);
 	p_msg->beacon_interval = bss_arg->bss_beacon_interval;
 
 	msg.type = eWNI_SME_CHNG_MCC_BEACON_INTERVAL;
 	msg.bodyval = 0;
 	msg.bodyptr = p_msg;
 
-	status = scheduler_post_message(QDF_MODULE_ID_PE,
-					QDF_MODULE_ID_PE,
+	status = scheduler_post_message(QDF_MODULE_ID_PE, QDF_MODULE_ID_PE,
 					QDF_MODULE_ID_PE, &msg);
 
 	if (status != QDF_STATUS_SUCCESS)
@@ -367,18 +361,18 @@ static void if_mgr_update_beacon_interval(struct wlan_objmgr_pdev *pdev,
 	wlan_objmgr_peer_release_ref(peer, WLAN_IF_MGR_ID);
 
 	/*
-	 * If GO in MCC support different beacon interval,
-	 * change the BI of the P2P-GO
-	 */
+   * If GO in MCC support different beacon interval,
+   * change the BI of the P2P-GO
+   */
 	if (bss_persona == WLAN_PEER_P2P_GO)
 		return;
 	/*
-	 * Handle different BI scenario based on the
-	 * configuration set. If Config is not set to 0x04 then
-	 * Disconnect all the P2P clients associated. If config
-	 * is set to 0x04 then update the BI without
-	 * disconnecting all the clients
-	 */
+   * Handle different BI scenario based on the
+   * configuration set. If Config is not set to 0x04 then
+   * Disconnect all the P2P clients associated. If config
+   * is set to 0x04 then update the BI without
+   * disconnecting all the clients
+   */
 	if (allow_mcc_go_diff_bi == ALLOW_MCC_GO_DIFF_BI_NO_DISCONNECT &&
 	    bss_arg->update_beacon_interval) {
 		bss_arg->status =
@@ -386,9 +380,9 @@ static void if_mgr_update_beacon_interval(struct wlan_objmgr_pdev *pdev,
 		return;
 	} else if (bss_arg->update_beacon_interval) {
 		/*
-		 * If the configuration of fAllowMCCGODiffBI is set to
-		 * other than 0x04
-		 */
+     * If the configuration of fAllowMCCGODiffBI is set to
+     * other than 0x04
+     */
 		bss_arg->status = wlan_sap_disconnect_all_p2p_client(vdev_id);
 		return;
 	}
@@ -460,9 +454,8 @@ static bool if_mgr_validate_sta_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
 		return false;
 	}
 
-	vdev_mlme =
-		wlan_objmgr_vdev_get_comp_private_obj(vdev,
-						      WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
 		return false;
@@ -509,14 +502,14 @@ static bool if_mgr_validate_sta_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
 
 			/* Update the beacon interval */
 			if (new_bcn_interval != beacon_interval) {
-				ifmgr_err("Beacon Interval got changed config used: %d",
-					  allow_mcc_go_diff_bi);
+				ifmgr_err(
+					"Beacon Interval got changed config used: %d",
+					allow_mcc_go_diff_bi);
 				bss_arg->bss_beacon_interval = new_bcn_interval;
 				bss_arg->update_beacon_interval = true;
 				bss_arg->status =
 					if_mgr_update_mcc_p2p_beacon_interval(
-								vdev,
-								bss_arg);
+						vdev, bss_arg);
 				return true;
 			}
 			bss_arg->status = QDF_STATUS_SUCCESS;
@@ -526,7 +519,8 @@ static bool if_mgr_validate_sta_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
 			bss_arg->status = wlan_sap_stop_bss(vdev_id);
 			return true;
 		default:
-			ifmgr_err("BcnIntrvl is diff can't connect to preferred AP");
+			ifmgr_err(
+				"BcnIntrvl is diff can't connect to preferred AP");
 			bss_arg->status = QDF_STATUS_E_FAILURE;
 			return true;
 		}
@@ -534,8 +528,9 @@ static bool if_mgr_validate_sta_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
 	return false;
 }
 
-static bool if_mgr_validate_p2pcli_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
-				       struct beacon_interval_arg *bss_arg)
+static bool
+if_mgr_validate_p2pcli_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
+				  struct beacon_interval_arg *bss_arg)
 {
 	enum QDF_OPMODE curr_persona;
 	enum wlan_peer_type bss_persona;
@@ -560,9 +555,8 @@ static bool if_mgr_validate_p2pcli_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
 		return false;
 	}
 
-	vdev_mlme =
-		wlan_objmgr_vdev_get_comp_private_obj(vdev,
-						      WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
 		return false;
@@ -577,7 +571,8 @@ static bool if_mgr_validate_p2pcli_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
 		if ((chan->ch_cfreq1 != bss_arg->ch_freq ||
 		     chan->ch_cfreq2 != bss_arg->ch_freq) &&
 		    beacon_interval != bss_arg->bss_beacon_interval) {
-			ifmgr_err("BcnIntrvl is diff can't connect to P2P_GO network");
+			ifmgr_err(
+				"BcnIntrvl is diff can't connect to P2P_GO network");
 			bss_arg->status = QDF_STATUS_E_FAILURE;
 			return true;
 		}
@@ -606,9 +601,8 @@ if_mgr_validate_p2pgo_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
 		return false;
 	}
 
-	vdev_mlme =
-		wlan_objmgr_vdev_get_comp_private_obj(vdev,
-						      WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 	if (!vdev_mlme) {
 		QDF_ASSERT(0);
 		return false;
@@ -633,10 +627,10 @@ if_mgr_validate_p2pgo_bcn_intrvl(struct wlan_objmgr_vdev *vdev,
 		     chan->ch_cfreq2 != bss_arg->ch_freq) &&
 		    beacon_interval != bss_arg->bss_beacon_interval) {
 			/*
-			 * Updated beaconInterval should be used only when
-			 * we are starting a new BSS not incase of
-			 * client or STA case
-			 */
+       * Updated beaconInterval should be used only when
+       * we are starting a new BSS not incase of
+       * client or STA case
+       */
 			policy_mgr_get_conc_rule1(psoc, &conc_rule1);
 			policy_mgr_get_conc_rule2(psoc, &conc_rule2);
 
@@ -729,8 +723,7 @@ bool if_mgr_is_beacon_interval_valid(struct wlan_objmgr_pdev *pdev,
 
 	wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
 					  if_mgr_validate_beacon_interval,
-					  &bss_arg, 0,
-					  WLAN_IF_MGR_ID);
+					  &bss_arg, 0, WLAN_IF_MGR_ID);
 
 	if (!bss_arg.is_done)
 		return true;
@@ -753,8 +746,8 @@ static void if_mgr_get_vdev_id_from_bssid(struct wlan_objmgr_pdev *pdev,
 		return;
 
 	/* Need to check the connection manager state when that becomes
-	 * available
-	 */
+   * available
+   */
 	if (wlan_vdev_mlme_get_state(vdev) != WLAN_VDEV_S_UP)
 		return;
 
@@ -784,9 +777,9 @@ if_mgr_get_conc_ext_flags(struct wlan_objmgr_vdev *vdev,
 	struct qdf_mac_addr *mld_addr;
 
 	/* If connection is happening on non-ML VDEV
-	 * force the ML AP candidate as non-MLO to
-	 * downgrade connection to 11ax.
-	 */
+   * force the ML AP candidate as non-MLO to
+   * downgrade connection to 11ax.
+   */
 	mld_addr = (struct qdf_mac_addr *)wlan_vdev_mlme_get_mldaddr(vdev);
 	if (qdf_is_macaddr_zero(mld_addr))
 		return policy_mgr_get_conc_ext_flags(vdev, false);
@@ -856,32 +849,32 @@ QDF_STATUS if_mgr_validate_candidate(struct wlan_objmgr_vdev *vdev,
 
 	if_mgr_update_candidate(psoc, vdev, candidate_info);
 	/*
-	 * Do not allow STA to connect on 6Ghz or indoor channel for non dbs
-	 * hardware if SAP and skip_6g_and_indoor_freq_scan ini are present
-	 */
+   * Do not allow STA to connect on 6Ghz or indoor channel for non dbs
+   * hardware if SAP and skip_6g_and_indoor_freq_scan ini are present
+   */
 	if (op_mode == QDF_STA_MODE &&
 	    !policy_mgr_is_sta_chan_valid_for_connect_and_roam(pdev,
 							       chan_freq)) {
-		ifmgr_debug("STA connection not allowed on bssid: "QDF_MAC_ADDR_FMT" with freq: %d (6Ghz or indoor(%d)), as not valid for connection",
-			    QDF_MAC_ADDR_REF(candidate_info->peer_addr.bytes),
-			    chan_freq,
-			    wlan_reg_is_freq_indoor(pdev, chan_freq));
+		ifmgr_debug(
+			"STA connection not allowed on bssid: " QDF_MAC_ADDR_FMT
+			" with freq: %d (6Ghz or indoor(%d)), as not valid for connection",
+			QDF_MAC_ADDR_REF(candidate_info->peer_addr.bytes),
+			chan_freq, wlan_reg_is_freq_indoor(pdev, chan_freq));
 		return QDF_STATUS_E_INVAL;
 	}
 
 	/*
-	 * Ignore the BSS if any other vdev is already connected to it.
-	 */
-	qdf_copy_macaddr(&bssid_arg.peer_addr,
-			 &candidate_info->peer_addr);
+   * Ignore the BSS if any other vdev is already connected to it.
+   */
+	qdf_copy_macaddr(&bssid_arg.peer_addr, &candidate_info->peer_addr);
 	bssid_arg.vdev_id = WLAN_INVALID_VDEV_ID;
 	wlan_objmgr_pdev_iterate_obj_list(pdev, WLAN_VDEV_OP,
 					  if_mgr_get_vdev_id_from_bssid,
-					  &bssid_arg, 0,
-					  WLAN_IF_MGR_ID);
+					  &bssid_arg, 0, WLAN_IF_MGR_ID);
 
 	if (bssid_arg.vdev_id != WLAN_INVALID_VDEV_ID) {
-		ifmgr_info("vdev_id %d already connected to "QDF_MAC_ADDR_FMT". select next bss for vdev_id %d",
+		ifmgr_info("vdev_id %d already connected to " QDF_MAC_ADDR_FMT
+			   ". select next bss for vdev_id %d",
 			   bssid_arg.vdev_id,
 			   QDF_MAC_ADDR_REF(bssid_arg.peer_addr.bytes),
 			   wlan_vdev_get_id(vdev));
@@ -889,37 +882,38 @@ QDF_STATUS if_mgr_validate_candidate(struct wlan_objmgr_vdev *vdev,
 	}
 
 	/*
-	 * If concurrency enabled take the concurrent connected channel first.
-	 * Valid multichannel concurrent sessions exempted
-	 */
+   * If concurrency enabled take the concurrent connected channel first.
+   * Valid multichannel concurrent sessions exempted
+   */
 	mode = policy_mgr_qdf_opmode_to_pm_con_mode(psoc, op_mode,
 						    wlan_vdev_get_id(vdev));
 
 	/* If concurrency is not allowed select next bss */
 	conc_ext_flags = if_mgr_get_conc_ext_flags(vdev, candidate_info);
 	/*
-	 * Apply concurrency check only for non ML and ML assoc links only
-	 * For non-assoc ML link if concurrency check fails its will be forced
-	 * disabled in peer assoc.
-	 */
+   * Apply concurrency check only for non ML and ML assoc links only
+   * For non-assoc ML link if concurrency check fails its will be forced
+   * disabled in peer assoc.
+   */
 	if (!wlan_vdev_mlme_is_mlo_link_vdev(vdev) &&
 	    !policy_mgr_is_concurrency_allowed(psoc, mode, chan_freq,
 					       HW_MODE_20_MHZ, conc_ext_flags,
 					       NULL)) {
-		ifmgr_info("Concurrency not allowed for this channel freq %d bssid "QDF_MAC_ADDR_FMT", selecting next",
+		ifmgr_info("Concurrency not allowed for this channel freq %d "
+			   "bssid " QDF_MAC_ADDR_FMT ", selecting next",
 			   chan_freq,
 			   QDF_MAC_ADDR_REF(bssid_arg.peer_addr.bytes));
 		return QDF_STATUS_E_INVAL;
 	}
 
 	/*
-	 * check if channel is allowed for current hw mode, if not fetch
-	 * next BSS.
-	 */
+   * check if channel is allowed for current hw mode, if not fetch
+   * next BSS.
+   */
 	if (!policy_mgr_is_hwmode_set_for_given_chnl(psoc, chan_freq)) {
-		ifmgr_info("HW mode isn't properly set, freq %d BSSID "QDF_MAC_ADDR_FMT,
-			   chan_freq,
-			   QDF_MAC_ADDR_REF(bssid_arg.peer_addr.bytes));
+		ifmgr_info(
+			"HW mode isn't properly set, freq %d BSSID " QDF_MAC_ADDR_FMT,
+			chan_freq, QDF_MAC_ADDR_REF(bssid_arg.peer_addr.bytes));
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -928,22 +922,21 @@ QDF_STATUS if_mgr_validate_candidate(struct wlan_objmgr_vdev *vdev,
 	    !if_mgr_is_beacon_interval_valid(pdev, wlan_vdev_get_id(vdev),
 					     candidate_info)) {
 		conc_freq = wlan_get_conc_freq();
-		ifmgr_debug("csr Conc Channel freq: %d",
-			    conc_freq);
+		ifmgr_debug("csr Conc Channel freq: %d", conc_freq);
 
 		if (conc_freq) {
 			if ((conc_freq == chan_freq) ||
 			    (policy_mgr_is_hw_sbs_capable(psoc) &&
 			     policy_mgr_are_sbs_chan(psoc, conc_freq,
-			     chan_freq)) ||
+						     chan_freq)) ||
 			    (policy_mgr_is_hw_dbs_capable(psoc) &&
-			    !wlan_reg_is_same_band_freqs(conc_freq,
-							 chan_freq))) {
+			     !wlan_reg_is_same_band_freqs(conc_freq,
+							  chan_freq))) {
 				/*
-				 * make this 0 because we do not want the below
-				 * check to pass as we don't want to connect on
-				 * other channel
-				 */
+         * make this 0 because we do not want the below
+         * check to pass as we don't want to connect on
+         * other channel
+         */
 				ifmgr_debug("Conc chnl freq match: %d",
 					    conc_freq);
 				conc_freq = 0;
@@ -956,9 +949,11 @@ QDF_STATUS if_mgr_validate_candidate(struct wlan_objmgr_vdev *vdev,
 
 	/* Check low latency SAP and STA/GC concurrency are valid or not */
 	if (!policy_mgr_is_ll_sap_concurrency_valid(psoc, chan_freq, mode)) {
-		ifmgr_debug("STA connection not allowed on bssid: "QDF_MAC_ADDR_FMT" with freq: %d due to LL SAP present",
-			    QDF_MAC_ADDR_REF(candidate_info->peer_addr.bytes),
-			    chan_freq);
+		ifmgr_debug(
+			"STA connection not allowed on bssid: " QDF_MAC_ADDR_FMT
+			" with freq: %d due to LL SAP present",
+			QDF_MAC_ADDR_REF(candidate_info->peer_addr.bytes),
+			chan_freq);
 		return QDF_STATUS_E_INVAL;
 	}
 

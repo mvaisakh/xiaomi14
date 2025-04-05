@@ -3,10 +3,10 @@
  * Copyright (c) 2015, 2017 The Linux Foundation. All rights reserved.
  */
 
-#include <linux/types.h>
 #include "wcd9335_registers.h"
+#include <linux/types.h>
 
-#define WCD9335_REG(reg)  ((reg) & 0xFF)
+#define WCD9335_REG(reg) ((reg) & 0xFF)
 
 const u8 wcd9335_page0_reg_readable[WCD9335_PAGE_SIZE] = {
 	[WCD9335_REG(WCD9335_PAGE0_PAGE_REGISTER)] = 1,

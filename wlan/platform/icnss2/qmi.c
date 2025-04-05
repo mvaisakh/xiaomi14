@@ -6,64 +6,66 @@
 
 #define pr_fmt(fmt) "icnss2_qmi: " fmt
 
-#include <linux/export.h>
+#include <linux/delay.h>
 #include <linux/err.h>
-#include <linux/of.h>
+#include <linux/etherdevice.h>
+#include <linux/export.h>
+#include <linux/firmware.h>
 #include <linux/init.h>
 #include <linux/io.h>
-#include <linux/module.h>
+#include <linux/ipc_logging.h>
 #include <linux/kernel.h>
-#include <linux/etherdevice.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
 #include <linux/seq_file.h>
 #include <linux/slab.h>
-#include <linux/delay.h>
-#include <linux/ipc_logging.h>
-#include <linux/thread_info.h>
-#include <linux/firmware.h>
 #include <linux/soc/qcom/qmi.h>
-#include <linux/platform_device.h>
+#include <linux/thread_info.h>
 #ifdef CONFIG_CNSS_OUT_OF_TREE
 #include "icnss2.h"
 #else
 #include <soc/qcom/icnss2.h>
 #endif
-#include <soc/qcom/of_common.h>
-#include "wlan_firmware_service_v01.h"
-#include "main.h"
-#include "qmi.h"
 #include "debug.h"
 #include "genl.h"
+#include "main.h"
+#include "qmi.h"
+#include "wlan_firmware_service_v01.h"
+#include <soc/qcom/of_common.h>
 
-#define WLFW_SERVICE_WCN_INS_ID_V01	3
-#define WLFW_SERVICE_INS_ID_V01		0
-#define WLFW_CLIENT_ID			0x4b4e454c
-#define QMI_ERR_PLAT_CCPM_CLK_INIT_FAILED	0x77
+#define WLFW_SERVICE_WCN_INS_ID_V01 3
+#define WLFW_SERVICE_INS_ID_V01 0
+#define WLFW_CLIENT_ID 0x4b4e454c
+#define QMI_ERR_PLAT_CCPM_CLK_INIT_FAILED 0x77
 
-#define BDF_FILE_NAME_PREFIX		"bdwlan"
-#define ELF_BDF_FILE_NAME		"bdwlan.elf"
-#define ELF_BDF_FILE_NAME_PREFIX	"bdwlan.e"
-#define BIN_BDF_FILE_NAME		"bdwlan.bin"
-#define BIN_BDF_FILE_NAME_PREFIX	"bdwlan."
-#define REGDB_FILE_NAME			"regdb.bin"
+#define BDF_FILE_NAME_PREFIX "bdwlan"
+#define ELF_BDF_FILE_NAME "bdwlan.elf"
+#define ELF_BDF_FILE_NAME_PREFIX "bdwlan.e"
+#define BIN_BDF_FILE_NAME "bdwlan.bin"
+#define BIN_BDF_FILE_NAME_PREFIX "bdwlan."
+#define REGDB_FILE_NAME "regdb.bin"
 
 #define QDSS_TRACE_CONFIG_FILE "qdss_trace_config.cfg"
 
-#define WLAN_BOARD_ID_INDEX		0x100
-#define DEVICE_BAR_SIZE			0x200000
-#define M3_SEGMENT_ADDR_MASK		0xFFFFFFFF
-#define DMS_QMI_MAX_MSG_LEN		SZ_256
-#define DMS_MAC_NOT_PROVISIONED		16
-#define BDWLAN_SIZE			6
-#define UMC_CHIP_ID                    0x4320
-#define MAX_SHADOW_REG_RESERVED		2
-#define MAX_NUM_SHADOW_REG_V3		(QMI_WLFW_MAX_NUM_SHADOW_REG_V3_USAGE_V01 - \
-					MAX_SHADOW_REG_RESERVED)
+#define WLAN_BOARD_ID_INDEX 0x100
+#define DEVICE_BAR_SIZE 0x200000
+#define M3_SEGMENT_ADDR_MASK 0xFFFFFFFF
+#define DMS_QMI_MAX_MSG_LEN SZ_256
+#define DMS_MAC_NOT_PROVISIONED 16
+#define BDWLAN_SIZE 6
+#define UMC_CHIP_ID 0x4320
+#define MAX_SHADOW_REG_RESERVED 2
+#define MAX_NUM_SHADOW_REG_V3 \
+	(QMI_WLFW_MAX_NUM_SHADOW_REG_V3_USAGE_V01 - MAX_SHADOW_REG_RESERVED)
 
 #ifdef CONFIG_ICNSS2_DEBUG
 bool ignore_fw_timeout;
 #define ICNSS_QMI_ASSERT() ICNSS_ASSERT(ignore_fw_timeout)
 #else
-#define ICNSS_QMI_ASSERT() do { } while (0)
+#define ICNSS_QMI_ASSERT() \
+	do {               \
+	} while (0)
 #endif
 
 #ifdef CONFIG_ICNSS2_DEBUG
@@ -72,12 +74,15 @@ void icnss_ignore_fw_timeout(bool ignore)
 	ignore_fw_timeout = ignore;
 }
 #else
-void icnss_ignore_fw_timeout(bool ignore) { }
+void icnss_ignore_fw_timeout(bool ignore)
+{
+}
 #endif
 
-#define icnss_qmi_fatal_err(_fmt, ...) do {		\
-	icnss_pr_err("fatal: "_fmt, ##__VA_ARGS__);	\
-	ICNSS_QMI_ASSERT();				\
+#define icnss_qmi_fatal_err(_fmt, ...)                       \
+	do {                                                 \
+		icnss_pr_err("fatal: " _fmt, ##__VA_ARGS__); \
+		ICNSS_QMI_ASSERT();                          \
 	} while (0)
 
 int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
@@ -109,12 +114,11 @@ int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
 
 	priv->stats.msa_info_req++;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_msa_info_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_msa_info_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-				"Fail to init txn for MSA Mem info resp %d\n",
-			     ret);
+			"Fail to init txn for MSA Mem info resp %d\n", ret);
 		goto out;
 	}
 
@@ -135,7 +139,7 @@ int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
 		icnss_qmi_fatal_err(
-		"QMI MSA Mem info request rejected, result:%d error:%d\n",
+			"QMI MSA Mem info request rejected, result:%d error:%d\n",
 			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
@@ -147,7 +151,7 @@ int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
 	if (resp->mem_region_info_len > QMI_WLFW_MAX_NUM_MEMORY_REGIONS_V01) {
 		icnss_qmi_fatal_err(
 			"Invalid memory region length received: %d\n",
-			 resp->mem_region_info_len);
+			resp->mem_region_info_len);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -156,29 +160,30 @@ int wlfw_msa_mem_info_send_sync_msg(struct icnss_priv *priv)
 	priv->stats.msa_info_resp++;
 	priv->nr_mem_region = resp->mem_region_info_len;
 	for (i = 0; i < resp->mem_region_info_len; i++) {
-
 		if (resp->mem_region_info[i].size > priv->msa_mem_size ||
 		    resp->mem_region_info[i].region_addr >= max_mapped_addr ||
 		    resp->mem_region_info[i].region_addr < priv->msa_pa ||
 		    resp->mem_region_info[i].size +
-		    resp->mem_region_info[i].region_addr > max_mapped_addr) {
-			icnss_pr_dbg("Received out of range Addr: 0x%llx Size: 0x%x\n",
-					resp->mem_region_info[i].region_addr,
-					resp->mem_region_info[i].size);
+				    resp->mem_region_info[i].region_addr >
+			    max_mapped_addr) {
+			icnss_pr_dbg(
+				"Received out of range Addr: 0x%llx Size: 0x%x\n",
+				resp->mem_region_info[i].region_addr,
+				resp->mem_region_info[i].size);
 			ret = -EINVAL;
 			goto fail_unwind;
 		}
 
 		priv->mem_region[i].reg_addr =
 			resp->mem_region_info[i].region_addr;
-		priv->mem_region[i].size =
-			resp->mem_region_info[i].size;
+		priv->mem_region[i].size = resp->mem_region_info[i].size;
 		priv->mem_region[i].secure_flag =
 			resp->mem_region_info[i].secure_flag;
-		icnss_pr_dbg("Memory Region: %d Addr: 0x%llx Size: 0x%x Flag: 0x%08x\n",
-			     i, priv->mem_region[i].reg_addr,
-			     priv->mem_region[i].size,
-			     priv->mem_region[i].secure_flag);
+		icnss_pr_dbg(
+			"Memory Region: %d Addr: 0x%llx Size: 0x%x Flag: 0x%08x\n",
+			i, priv->mem_region[i].reg_addr,
+			priv->mem_region[i].size,
+			priv->mem_region[i].secure_flag);
 	}
 
 	kfree(resp);
@@ -219,12 +224,11 @@ int wlfw_msa_ready_send_sync_msg(struct icnss_priv *priv)
 
 	priv->stats.msa_ready_req++;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_msa_ready_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_msa_ready_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-				"Fail to init txn for MSA Mem Ready resp %d\n",
-				ret);
+			"Fail to init txn for MSA Mem Ready resp %d\n", ret);
 		goto out;
 	}
 
@@ -241,13 +245,12 @@ int wlfw_msa_ready_send_sync_msg(struct icnss_priv *priv)
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-				"MSA Mem Ready resp wait failed with ret %d\n",
-				ret);
+			"MSA Mem Ready resp wait failed with ret %d\n", ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
 		icnss_qmi_fatal_err(
-		   "QMI MSA Mem Ready request rejected, result:%d error:%d\n",
-		   resp->resp.result, resp->resp.error);
+			"QMI MSA Mem Ready request rejected, result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -290,12 +293,11 @@ int wlfw_device_info_send_msg(struct icnss_priv *priv)
 
 	priv->stats.device_info_req++;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_device_info_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_device_info_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-				"Fail to init txn for Device Info resp %d\n",
-				ret);
+			"Fail to init txn for Device Info resp %d\n", ret);
 		goto out;
 	}
 
@@ -312,13 +314,12 @@ int wlfw_device_info_send_msg(struct icnss_priv *priv)
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-				"Device Info resp wait failed with ret %d\n",
-				ret);
+			"Device Info resp wait failed with ret %d\n", ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
 		icnss_qmi_fatal_err(
-		   "QMI Device info request rejected, result:%d error:%d\n",
-		   resp->resp.result, resp->resp.error);
+			"QMI Device info request rejected, result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -337,7 +338,7 @@ int wlfw_device_info_send_msg(struct icnss_priv *priv)
 		goto out;
 	}
 
-	if (priv->mem_base_size <  DEVICE_BAR_SIZE) {
+	if (priv->mem_base_size < DEVICE_BAR_SIZE) {
 		ret = -EINVAL;
 		icnss_qmi_fatal_err("Bar size is not proper 0x%x\n",
 				    priv->mem_base_size);
@@ -381,8 +382,8 @@ int wlfw_power_save_send_msg(struct icnss_priv *priv,
 	    !test_bit(ICNSS_MODE_ON, &priv->state))
 		return 0;
 
-	icnss_pr_dbg("Sending power save mode: %d, state: 0x%lx\n",
-		     mode, priv->state);
+	icnss_pr_dbg("Sending power save mode: %d, state: 0x%lx\n", mode,
+		     priv->state);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -396,8 +397,7 @@ int wlfw_power_save_send_msg(struct icnss_priv *priv,
 	else
 		priv->stats.enter_power_save_req++;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   NULL, NULL);
+	ret = qmi_txn_init(&priv->qmi, &txn, NULL, NULL);
 	if (ret < 0) {
 		icnss_qmi_fatal_err("Fail to init txn for exit power save%d\n",
 				    ret);
@@ -449,8 +449,7 @@ int wlfw_send_soc_wake_msg(struct icnss_priv *priv,
 	if (test_bit(ICNSS_FW_DOWN, &priv->state))
 		return -EINVAL;
 
-	icnss_pr_soc_wake("Sending soc wake msg, type: 0x%x\n",
-		     type);
+	icnss_pr_soc_wake("Sending soc wake msg, type: 0x%x\n", type);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -466,12 +465,11 @@ int wlfw_send_soc_wake_msg(struct icnss_priv *priv,
 
 	priv->stats.soc_wake_req++;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_soc_wake_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_soc_wake_resp_msg_v01_ei,
+			   resp);
 
 	if (ret < 0) {
-		icnss_pr_err("Fail to init txn for wake msg resp %d\n",
-			     ret);
+		icnss_pr_err("Fail to init txn for wake msg resp %d\n", ret);
 		goto out;
 	}
 
@@ -487,8 +485,7 @@ int wlfw_send_soc_wake_msg(struct icnss_priv *priv,
 
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_qmi_fatal_err("SOC wake timed out with ret %d\n",
-				    ret);
+		icnss_qmi_fatal_err("SOC wake timed out with ret %d\n", ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
 		icnss_qmi_fatal_err(
@@ -544,8 +541,7 @@ int wlfw_ind_register_send_sync_msg(struct icnss_priv *priv)
 	if (priv->device_id == ADRASTEA_DEVICE_ID) {
 		req->msa_ready_enable_valid = 1;
 		req->msa_ready_enable = 1;
-		if (test_bit(FW_REJUVENATE_ENABLE,
-			 &priv->ctrl_params.quirks)) {
+		if (test_bit(FW_REJUVENATE_ENABLE, &priv->ctrl_params.quirks)) {
 			req->rejuvenate_enable_valid = 1;
 			req->rejuvenate_enable = 1;
 		}
@@ -569,12 +565,11 @@ int wlfw_ind_register_send_sync_msg(struct icnss_priv *priv)
 
 	priv->stats.ind_register_req++;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_ind_register_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_ind_register_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-				"Fail to init txn for Ind Register resp %d\n",
-			     ret);
+			"Fail to init txn for Ind Register resp %d\n", ret);
 		goto out;
 	}
 
@@ -591,13 +586,12 @@ int wlfw_ind_register_send_sync_msg(struct icnss_priv *priv)
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-			"Ind Register resp wait failed with ret %d\n",
-			 ret);
+			"Ind Register resp wait failed with ret %d\n", ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
 		icnss_qmi_fatal_err(
-		    "QMI Ind Register request rejected, result:%d error:%d\n",
-		     resp->resp.result, resp->resp.error);
+			"QMI Ind Register request rejected, result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -605,7 +599,7 @@ int wlfw_ind_register_send_sync_msg(struct icnss_priv *priv)
 	priv->stats.ind_register_resp++;
 
 	if (resp->fw_status_valid &&
-	   (resp->fw_status & QMI_WLFW_ALREADY_REGISTERED_V01)) {
+	    (resp->fw_status & QMI_WLFW_ALREADY_REGISTERED_V01)) {
 		ret = -EALREADY;
 		icnss_pr_dbg("WLFW already registered\n");
 		goto qmi_registered;
@@ -651,8 +645,8 @@ int wlfw_cal_report_req(struct icnss_priv *priv)
 	}
 	req->meta_data_len = 0;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_cal_report_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_cal_report_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_qmi_fatal_err("Fail to init txn for cal report req %d\n",
 				    ret);
@@ -669,16 +663,16 @@ int wlfw_cal_report_req(struct icnss_priv *priv)
 		goto out;
 	}
 
-	ret = qmi_txn_wait(&txn,
-			   priv->ctrl_params.qmi_timeout);
+	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 
 	if (ret < 0) {
 		icnss_qmi_fatal_err("Cal report wait failed with ret %d\n",
 				    ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_qmi_fatal_err("QMI cal report request rejected, result:%d error:%d\n",
-				    resp->resp.result, resp->resp.error);
+		icnss_qmi_fatal_err(
+			"QMI cal report request rejected, result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -724,8 +718,7 @@ int wlfw_cap_send_sync_msg(struct icnss_priv *priv)
 		goto out;
 	}
 
-	ret = qmi_send_request(&priv->qmi, NULL, &txn,
-			       QMI_WLFW_CAP_REQ_V01,
+	ret = qmi_send_request(&priv->qmi, NULL, &txn, QMI_WLFW_CAP_REQ_V01,
 			       WLFW_CAP_REQ_MSG_V01_MAX_MSG_LEN,
 			       wlfw_cap_req_msg_v01_ei, req);
 	if (ret < 0) {
@@ -736,7 +729,7 @@ int wlfw_cap_send_sync_msg(struct icnss_priv *priv)
 
 	ret = qmi_txn_wait(&txn,
 			   priv->ctrl_params.qmi_timeout +
-			   msecs_to_jiffies(priv->wlan_en_delay_ms));
+				   msecs_to_jiffies(priv->wlan_en_delay_ms));
 	if (ret < 0) {
 		icnss_qmi_fatal_err("Capability resp wait failed with ret %d\n",
 				    ret);
@@ -769,14 +762,13 @@ int wlfw_cap_send_sync_msg(struct icnss_priv *priv)
 		priv->fw_version_info.fw_version =
 			resp->fw_version_info.fw_version;
 		strlcpy(priv->fw_version_info.fw_build_timestamp,
-				resp->fw_version_info.fw_build_timestamp,
-				WLFW_MAX_TIMESTAMP_LEN + 1);
+			resp->fw_version_info.fw_build_timestamp,
+			WLFW_MAX_TIMESTAMP_LEN + 1);
 	}
 
 	if (resp->voltage_mv_valid) {
 		priv->cpr_info.voltage = resp->voltage_mv;
-		icnss_pr_dbg("Voltage for CPR: %dmV\n",
-			    priv->cpr_info.voltage);
+		icnss_pr_dbg("Voltage for CPR: %dmV\n", priv->cpr_info.voltage);
 		icnss_update_cpr_info(priv);
 	}
 
@@ -785,35 +777,41 @@ int wlfw_cap_send_sync_msg(struct icnss_priv *priv)
 			QMI_WLFW_MAX_BUILD_ID_LEN_V01 + 1);
 
 	if (resp->rd_card_chain_cap_valid) {
-		priv->rd_card_chain_cap = (enum icnss_rd_card_chain_cap)resp->rd_card_chain_cap;
+		priv->rd_card_chain_cap =
+			(enum icnss_rd_card_chain_cap)resp->rd_card_chain_cap;
 		if (resp->rd_card_chain_cap == WLFW_RD_CARD_CHAIN_CAP_1x1_V01)
 			priv->is_chain1_supported = false;
 	}
 
 	if (resp->foundry_name_valid)
 		priv->foundry_name = resp->foundry_name[0];
-	else if (resp->chip_info_valid && priv->chip_info.chip_id == UMC_CHIP_ID)
+	else if (resp->chip_info_valid &&
+		 priv->chip_info.chip_id == UMC_CHIP_ID)
 		priv->foundry_name = 'u';
 
 	if (resp->he_channel_width_cap_valid)
 		priv->phy_he_channel_width_cap =
-			(enum icnss_phy_he_channel_width_cap)resp->he_channel_width_cap;
+			(enum icnss_phy_he_channel_width_cap)
+				resp->he_channel_width_cap;
 
 	if (resp->phy_qam_cap_valid)
 		priv->phy_qam_cap = (enum icnss_phy_qam_cap)resp->phy_qam_cap;
 
-	icnss_pr_dbg("Capability, chip_id: 0x%x, chip_family: 0x%x, board_id: 0x%x, soc_id: 0x%x",
-		     priv->chip_info.chip_id, priv->chip_info.chip_family,
-		     priv->board_id, priv->soc_id);
+	icnss_pr_dbg(
+		"Capability, chip_id: 0x%x, chip_family: 0x%x, board_id: 0x%x, "
+		"soc_id: 0x%x",
+		priv->chip_info.chip_id, priv->chip_info.chip_family,
+		priv->board_id, priv->soc_id);
 
-	icnss_pr_dbg("fw_version: 0x%x, fw_build_timestamp: %s, fw_build_id: %s",
-		     priv->fw_version_info.fw_version,
-		     priv->fw_version_info.fw_build_timestamp,
-		     priv->fw_build_id);
+	icnss_pr_dbg(
+		"fw_version: 0x%x, fw_build_timestamp: %s, fw_build_id: %s",
+		priv->fw_version_info.fw_version,
+		priv->fw_version_info.fw_build_timestamp, priv->fw_build_id);
 
-	icnss_pr_dbg("RD card chain cap: %d, PHY HE channel width cap: %d, PHY QAM cap: %d",
-		     priv->rd_card_chain_cap, priv->phy_he_channel_width_cap,
-		     priv->phy_qam_cap);
+	icnss_pr_dbg(
+		"RD card chain cap: %d, PHY HE channel width cap: %d, PHY QAM cap: %d",
+		priv->rd_card_chain_cap, priv->phy_he_channel_width_cap,
+		priv->phy_qam_cap);
 
 	kfree(resp);
 	kfree(req);
@@ -833,7 +831,7 @@ int icnss_qmi_get_dms_mac(struct icnss_priv *priv)
 	struct qmi_txn txn;
 	int ret = 0;
 
-	if  (!test_bit(ICNSS_QMI_DMS_CONNECTED, &priv->state)) {
+	if (!test_bit(ICNSS_QMI_DMS_CONNECTED, &priv->state)) {
 		icnss_pr_err("DMS QMI connection not established\n");
 		return -EAGAIN;
 	}
@@ -854,14 +852,16 @@ int icnss_qmi_get_dms_mac(struct icnss_priv *priv)
 			       dms_get_mac_address_req_msg_v01_ei, &req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		icnss_pr_err("Failed to send QMI_DMS_GET_MAC_ADDRESS_REQ_V01, err: %d\n",
-			     ret);
+		icnss_pr_err(
+			"Failed to send QMI_DMS_GET_MAC_ADDRESS_REQ_V01, err: %d\n",
+			ret);
 		goto out;
 	}
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_pr_err("Failed to wait for QMI_DMS_GET_MAC_ADDRESS_RESP_V01, err: %d\n",
-			     ret);
+		icnss_pr_err(
+			"Failed to wait for QMI_DMS_GET_MAC_ADDRESS_RESP_V01, err: %d\n",
+			ret);
 		goto out;
 	}
 
@@ -870,8 +870,9 @@ int icnss_qmi_get_dms_mac(struct icnss_priv *priv)
 			icnss_pr_err("NV MAC address is not provisioned");
 			priv->dms.nv_mac_not_prov = 1;
 		} else {
-			icnss_pr_err("QMI_DMS_GET_MAC_ADDRESS_REQ_V01 failed, result: %d, err: %d\n",
-				     resp.resp.result, resp.resp.error);
+			icnss_pr_err(
+				"QMI_DMS_GET_MAC_ADDRESS_REQ_V01 failed, result: %d, err: %d\n",
+				resp.resp.result, resp.resp.error);
 		}
 		ret = -resp.resp.result;
 		goto out;
@@ -889,19 +890,19 @@ out:
 	return ret;
 }
 
-int icnss_wlfw_wlan_mac_req_send_sync(struct icnss_priv *priv,
-				      u8 *mac, u32 mac_len)
+int icnss_wlfw_wlan_mac_req_send_sync(struct icnss_priv *priv, u8 *mac,
+				      u32 mac_len)
 {
 	struct wlfw_mac_addr_req_msg_v01 req;
-	struct wlfw_mac_addr_resp_msg_v01 resp = {0};
+	struct wlfw_mac_addr_resp_msg_v01 resp = { 0 };
 	struct qmi_txn txn;
 	int ret;
 
 	if (!priv || !mac || mac_len != QMI_WLFW_MAC_ADDR_SIZE_V01)
 		return -EINVAL;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_mac_addr_resp_msg_v01_ei, &resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_mac_addr_resp_msg_v01_ei,
+			   &resp);
 	if (ret < 0) {
 		icnss_pr_err("Failed to initialize txn for mac req, err: %d\n",
 			     ret);
@@ -909,8 +910,8 @@ int icnss_wlfw_wlan_mac_req_send_sync(struct icnss_priv *priv,
 		goto out;
 	}
 
-	icnss_pr_dbg("Sending WLAN mac req [%pM], state: 0x%lx\n",
-			     mac, priv->state);
+	icnss_pr_dbg("Sending WLAN mac req [%pM], state: 0x%lx\n", mac,
+		     priv->state);
 	memcpy(req.mac_addr, mac, mac_len);
 	req.mac_addr_valid = 1;
 
@@ -943,27 +944,27 @@ out:
 }
 
 static int icnss_dms_connect_to_server(struct icnss_priv *priv,
-				      unsigned int node, unsigned int port)
+				       unsigned int node, unsigned int port)
 {
 	struct qmi_handle *qmi_dms = &priv->qmi_dms;
-	struct sockaddr_qrtr sq = {0};
+	struct sockaddr_qrtr sq = { 0 };
 	int ret = 0;
 
 	sq.sq_family = AF_QIPCRTR;
 	sq.sq_node = node;
 	sq.sq_port = port;
 
-	ret = kernel_connect(qmi_dms->sock, (struct sockaddr *)&sq,
-			     sizeof(sq), 0);
+	ret = kernel_connect(qmi_dms->sock, (struct sockaddr *)&sq, sizeof(sq),
+			     0);
 	if (ret < 0) {
-		icnss_pr_err("Failed to connect to QMI DMS remote service Node: %d Port: %d\n",
-			     node, port);
+		icnss_pr_err(
+			"Failed to connect to QMI DMS remote service Node: %d Port: %d\n",
+			node, port);
 		goto out;
 	}
 
 	set_bit(ICNSS_QMI_DMS_CONNECTED, &priv->state);
-	icnss_pr_info("QMI DMS service connected, state: 0x%lx\n",
-		      priv->state);
+	icnss_pr_info("QMI DMS service connected, state: 0x%lx\n", priv->state);
 out:
 	return ret;
 }
@@ -977,8 +978,7 @@ static int dms_new_server(struct qmi_handle *qmi_dms,
 	if (!service)
 		return -EINVAL;
 
-	return icnss_dms_connect_to_server(priv, service->node,
-					   service->port);
+	return icnss_dms_connect_to_server(priv, service->node, service->port);
 }
 
 static void dms_del_server(struct qmi_handle *qmi_dms,
@@ -1001,8 +1001,8 @@ int icnss_dms_init(struct icnss_priv *priv)
 {
 	int ret = 0;
 
-	ret = qmi_handle_init(&priv->qmi_dms, DMS_QMI_MAX_MSG_LEN,
-			      &qmi_dms_ops, NULL);
+	ret = qmi_handle_init(&priv->qmi_dms, DMS_QMI_MAX_MSG_LEN, &qmi_dms_ops,
+			      NULL);
 	if (ret < 0) {
 		icnss_pr_err("Failed to initialize DMS handle, err: %d\n", ret);
 		goto out;
@@ -1021,9 +1021,8 @@ void icnss_dms_deinit(struct icnss_priv *priv)
 	qmi_handle_release(&priv->qmi_dms);
 }
 
-static int icnss_get_bdf_file_name(struct icnss_priv *priv,
-				   u32 bdf_type, char *filename,
-				   u32 filename_len)
+static int icnss_get_bdf_file_name(struct icnss_priv *priv, u32 bdf_type,
+				   char *filename, u32 filename_len)
 {
 	char filename_tmp[ICNSS_MAX_FILE_NAME];
 	char foundry_specific_filename[ICNSS_MAX_FILE_NAME];
@@ -1055,13 +1054,17 @@ static int icnss_get_bdf_file_name(struct icnss_priv *priv,
 				 BIN_BDF_FILE_NAME_PREFIX "b%02x",
 				 priv->board_id);
 		if (priv->foundry_name) {
-			strlcpy(foundry_specific_filename, filename_tmp, ICNSS_MAX_FILE_NAME);
+			strlcpy(foundry_specific_filename, filename_tmp,
+				ICNSS_MAX_FILE_NAME);
 			memmove(foundry_specific_filename + BDWLAN_SIZE + 1,
 				foundry_specific_filename + BDWLAN_SIZE,
 				BDWLAN_SIZE - 1);
-			foundry_specific_filename[BDWLAN_SIZE] = priv->foundry_name;
-			foundry_specific_filename[ICNSS_MAX_FILE_NAME - 1] = '\0';
-			strlcpy(filename_tmp, foundry_specific_filename, ICNSS_MAX_FILE_NAME);
+			foundry_specific_filename[BDWLAN_SIZE] =
+				priv->foundry_name;
+			foundry_specific_filename[ICNSS_MAX_FILE_NAME - 1] =
+				'\0';
+			strlcpy(filename_tmp, foundry_specific_filename,
+				ICNSS_MAX_FILE_NAME);
 		}
 		break;
 	case ICNSS_BDF_REGDB:
@@ -1118,8 +1121,8 @@ int icnss_wlfw_bdf_dnld_send_sync(struct icnss_priv *priv, u32 bdf_type)
 		return -ENOMEM;
 	}
 
-	ret = icnss_get_bdf_file_name(priv, bdf_type,
-				      filename, sizeof(filename));
+	ret = icnss_get_bdf_file_name(priv, bdf_type, filename,
+				      sizeof(filename));
 	if (ret)
 		goto err_req_fw;
 
@@ -1160,34 +1163,37 @@ int icnss_wlfw_bdf_dnld_send_sync(struct icnss_priv *priv, u32 bdf_type)
 		ret = qmi_txn_init(&priv->qmi, &txn,
 				   wlfw_bdf_download_resp_msg_v01_ei, resp);
 		if (ret < 0) {
-			icnss_pr_err("Failed to initialize txn for %s download request, err: %d\n",
-				     icnss_bdf_type_to_str(bdf_type), ret);
+			icnss_pr_err(
+				"Failed to initialize txn for %s download request, err: %d\n",
+				icnss_bdf_type_to_str(bdf_type), ret);
 			goto err_send;
 		}
 
-		ret = qmi_send_request
-			(&priv->qmi, NULL, &txn,
-			 QMI_WLFW_BDF_DOWNLOAD_REQ_V01,
-			 WLFW_BDF_DOWNLOAD_REQ_MSG_V01_MAX_MSG_LEN,
-			 wlfw_bdf_download_req_msg_v01_ei, req);
+		ret = qmi_send_request(
+			&priv->qmi, NULL, &txn, QMI_WLFW_BDF_DOWNLOAD_REQ_V01,
+			WLFW_BDF_DOWNLOAD_REQ_MSG_V01_MAX_MSG_LEN,
+			wlfw_bdf_download_req_msg_v01_ei, req);
 		if (ret < 0) {
 			qmi_txn_cancel(&txn);
-			icnss_pr_err("Failed to send respond %s download request, err: %d\n",
-				     icnss_bdf_type_to_str(bdf_type), ret);
+			icnss_pr_err(
+				"Failed to send respond %s download request, err: %d\n",
+				icnss_bdf_type_to_str(bdf_type), ret);
 			goto err_send;
 		}
 
 		ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 		if (ret < 0) {
-			icnss_pr_err("Failed to wait for response of %s download request, err: %d\n",
-				     icnss_bdf_type_to_str(bdf_type), ret);
+			icnss_pr_err(
+				"Failed to wait for response of %s download request, err: %d\n",
+				icnss_bdf_type_to_str(bdf_type), ret);
 			goto err_send;
 		}
 
 		if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-			icnss_pr_err("%s download request failed, result: %d, err: %d\n",
-				     icnss_bdf_type_to_str(bdf_type), resp->resp.result,
-				     resp->resp.error);
+			icnss_pr_err(
+				"%s download request failed, result: %d, err: %d\n",
+				icnss_bdf_type_to_str(bdf_type),
+				resp->resp.result, resp->resp.error);
 			ret = -resp->resp.result;
 			goto err_send;
 		}
@@ -1248,16 +1254,17 @@ int icnss_wlfw_qdss_data_send_sync(struct icnss_priv *priv, char *file_name,
 				   wlfw_qdss_trace_data_resp_msg_v01_ei, resp);
 
 		if (ret < 0) {
-			icnss_pr_err("Fail to init txn for QDSS trace resp %d\n",
-				     ret);
+			icnss_pr_err(
+				"Fail to init txn for QDSS trace resp %d\n",
+				ret);
 			goto fail;
 		}
 
-		ret = qmi_send_request
-			(&priv->qmi, NULL, &txn,
-			 QMI_WLFW_QDSS_TRACE_DATA_REQ_V01,
-			 WLFW_QDSS_TRACE_DATA_REQ_MSG_V01_MAX_MSG_LEN,
-			 wlfw_qdss_trace_data_req_msg_v01_ei, req);
+		ret = qmi_send_request(
+			&priv->qmi, NULL, &txn,
+			QMI_WLFW_QDSS_TRACE_DATA_REQ_V01,
+			WLFW_QDSS_TRACE_DATA_REQ_MSG_V01_MAX_MSG_LEN,
+			wlfw_qdss_trace_data_req_msg_v01_ei, req);
 
 		if (ret < 0) {
 			qmi_txn_cancel(&txn);
@@ -1273,9 +1280,10 @@ int icnss_wlfw_qdss_data_send_sync(struct icnss_priv *priv, char *file_name,
 				     ret);
 			goto fail;
 		} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-			icnss_pr_err("QMI QDSS trace request rejected, result:%d error:%d\n",
-				     resp->resp.result, resp->resp.error);
-				     ret = -resp->resp.result;
+			icnss_pr_err(
+				"QMI QDSS trace request rejected, result:%d error:%d\n",
+				resp->resp.result, resp->resp.error);
+			ret = -resp->resp.result;
 			goto fail;
 		} else {
 			ret = 0;
@@ -1290,18 +1298,17 @@ int icnss_wlfw_qdss_data_send_sync(struct icnss_priv *priv, char *file_name,
 		    (resp->data_valid == 1 &&
 		     resp->data_len <= QMI_WLFW_MAX_DATA_SIZE_V01) &&
 		    resp->data_len <= remaining) {
-			memcpy(p_qdss_trace_data_temp,
-			       resp->data, resp->data_len);
+			memcpy(p_qdss_trace_data_temp, resp->data,
+			       resp->data_len);
 		} else {
-			icnss_pr_err("%s: Unmatched qdss trace data, Expect total_size %u, seg_id %u, Recv total_size_valid %u, total_size %u, seg_id_valid %u, seg_id %u, data_len_valid %u, data_len %u",
-				     __func__,
-				     total_size, req->seg_id,
-				     resp->total_size_valid,
-				     resp->total_size,
-				     resp->seg_id_valid,
-				     resp->seg_id,
-				     resp->data_valid,
-				     resp->data_len);
+			icnss_pr_err(
+				"%s: Unmatched qdss trace data, Expect total_size %u, "
+				"seg_id %u, Recv total_size_valid %u, total_size %u, "
+				"seg_id_valid %u, seg_id %u, data_len_valid %u, data_len %u",
+				__func__, total_size, req->seg_id,
+				resp->total_size_valid, resp->total_size,
+				resp->seg_id_valid, resp->seg_id,
+				resp->data_valid, resp->data_len);
 			ret = -EINVAL;
 			goto fail;
 		}
@@ -1316,14 +1323,13 @@ int icnss_wlfw_qdss_data_send_sync(struct icnss_priv *priv, char *file_name,
 					  ICNSS_GENL_MSG_TYPE_QDSS, file_name,
 					  total_size);
 		if (ret < 0) {
-			icnss_pr_err("Fail to save QDSS trace data: %d\n",
-				     ret);
-		ret = -EINVAL;
+			icnss_pr_err("Fail to save QDSS trace data: %d\n", ret);
+			ret = -EINVAL;
 		}
 	} else {
-		icnss_pr_err("%s: QDSS trace file corrupted: remaining %u, end_valid %u, end %u",
-			     __func__,
-			     remaining, resp->end_valid, resp->end);
+		icnss_pr_err(
+			"%s: QDSS trace file corrupted: remaining %u, end_valid %u, end %u",
+			__func__, remaining, resp->end_valid, resp->end);
 		ret = -EINVAL;
 	}
 
@@ -1361,19 +1367,16 @@ int icnss_wlfw_qdss_dnld_send_sync(struct icnss_priv *priv)
 	}
 
 	icnss_add_fw_prefix_name(priv, filename, QDSS_TRACE_CONFIG_FILE);
-	ret = request_firmware(&fw_entry, filename,
-			       &priv->pdev->dev);
+	ret = request_firmware(&fw_entry, filename, &priv->pdev->dev);
 	if (ret) {
-		icnss_pr_err("Failed to load QDSS: %s ret:%d\n",
-			     filename, ret);
+		icnss_pr_err("Failed to load QDSS: %s ret:%d\n", filename, ret);
 		goto err_req_fw;
 	}
 
 	temp = fw_entry->data;
 	remaining = fw_entry->size;
 
-	icnss_pr_dbg("Downloading QDSS: %s, size: %u\n",
-		     filename, remaining);
+	icnss_pr_dbg("Downloading QDSS: %s, size: %u\n", filename, remaining);
 
 	while (remaining) {
 		req->total_size_valid = 1;
@@ -1391,38 +1394,41 @@ int icnss_wlfw_qdss_dnld_send_sync(struct icnss_priv *priv)
 
 		memcpy(req->data, temp, req->data_len);
 
-		ret = qmi_txn_init
-			(&priv->qmi, &txn,
-			 wlfw_qdss_trace_config_download_resp_msg_v01_ei,
-			 resp);
+		ret = qmi_txn_init(
+			&priv->qmi, &txn,
+			wlfw_qdss_trace_config_download_resp_msg_v01_ei, resp);
 		if (ret < 0) {
-			icnss_pr_err("Failed to initialize txn for QDSS download request, err: %d\n",
-				     ret);
+			icnss_pr_err(
+				"Failed to initialize txn for QDSS download request, err: %d\n",
+				ret);
 			goto err_send;
 		}
 
-		ret = qmi_send_request
-		      (&priv->qmi, NULL, &txn,
-		       QMI_WLFW_QDSS_TRACE_CONFIG_DOWNLOAD_REQ_V01,
-		       WLFW_QDSS_TRACE_CONFIG_DOWNLOAD_REQ_MSG_V01_MAX_MSG_LEN,
-		       wlfw_qdss_trace_config_download_req_msg_v01_ei, req);
+		ret = qmi_send_request(
+			&priv->qmi, NULL, &txn,
+			QMI_WLFW_QDSS_TRACE_CONFIG_DOWNLOAD_REQ_V01,
+			WLFW_QDSS_TRACE_CONFIG_DOWNLOAD_REQ_MSG_V01_MAX_MSG_LEN,
+			wlfw_qdss_trace_config_download_req_msg_v01_ei, req);
 		if (ret < 0) {
 			qmi_txn_cancel(&txn);
-			icnss_pr_err("Failed to send respond QDSS download request, err: %d\n",
-				     ret);
+			icnss_pr_err(
+				"Failed to send respond QDSS download request, err: %d\n",
+				ret);
 			goto err_send;
 		}
 
 		ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 		if (ret < 0) {
-			icnss_pr_err("Failed to wait for response of QDSS download request, err: %d\n",
-				     ret);
+			icnss_pr_err(
+				"Failed to wait for response of QDSS download request, err: %d\n",
+				ret);
 			goto err_send;
 		}
 
 		if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-			icnss_pr_err("QDSS download request failed, result: %d, err: %d\n",
-				     resp->resp.result, resp->resp.error);
+			icnss_pr_err(
+				"QDSS download request failed, result: %d, err: %d\n",
+				resp->resp.result, resp->resp.error);
 			ret = -resp->resp.result;
 			goto err_send;
 		}
@@ -1447,7 +1453,7 @@ err_req_fw:
 }
 
 int wlfw_wlan_mode_send_sync_msg(struct icnss_priv *priv,
-		enum wlfw_driver_mode_enum_v01 mode)
+				 enum wlfw_driver_mode_enum_v01 mode)
 {
 	int ret;
 	struct wlfw_wlan_mode_req_msg_v01 *req;
@@ -1458,14 +1464,13 @@ int wlfw_wlan_mode_send_sync_msg(struct icnss_priv *priv,
 		return -ENODEV;
 
 	/* During recovery do not send mode request for WLAN OFF as
-	 * FW not able to process it.
-	 */
+   * FW not able to process it.
+   */
 	if (test_bit(ICNSS_PD_RESTART, &priv->state) &&
 	    mode == QMI_WLFW_OFF_V01)
 		return 0;
 
-	if (!test_bit(ICNSS_MODE_ON, &priv->state) &&
-	    mode == QMI_WLFW_OFF_V01)
+	if (!test_bit(ICNSS_MODE_ON, &priv->state) && mode == QMI_WLFW_OFF_V01)
 		return 0;
 
 	icnss_pr_dbg("Sending Mode request, state: 0x%lx, mode: %d\n",
@@ -1494,8 +1499,8 @@ int wlfw_wlan_mode_send_sync_msg(struct icnss_priv *priv,
 
 	priv->stats.mode_req++;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_wlan_mode_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_wlan_mode_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_qmi_fatal_err("Fail to init txn for Mode resp %d\n", ret);
 		goto out;
@@ -1513,7 +1518,7 @@ int wlfw_wlan_mode_send_sync_msg(struct icnss_priv *priv,
 
 	ret = qmi_txn_wait(&txn,
 			   priv->ctrl_params.qmi_timeout +
-			   msecs_to_jiffies(priv->wlan_en_delay_ms));
+				   msecs_to_jiffies(priv->wlan_en_delay_ms));
 	if (ret < 0) {
 		icnss_qmi_fatal_err("Mode resp wait failed with ret %d\n", ret);
 		goto out;
@@ -1528,12 +1533,12 @@ int wlfw_wlan_mode_send_sync_msg(struct icnss_priv *priv,
 	priv->stats.mode_resp++;
 
 	if (mode == QMI_WLFW_OFF_V01) {
-		icnss_pr_dbg("Clear mode on 0x%lx, mode: %d\n",
-			     priv->state, mode);
+		icnss_pr_dbg("Clear mode on 0x%lx, mode: %d\n", priv->state,
+			     mode);
 		clear_bit(ICNSS_MODE_ON, &priv->state);
 	} else {
-		icnss_pr_dbg("Set mode on 0x%lx, mode: %d\n",
-			     priv->state, mode);
+		icnss_pr_dbg("Set mode on 0x%lx, mode: %d\n", priv->state,
+			     mode);
 		set_bit(ICNSS_MODE_ON, &priv->state);
 	}
 
@@ -1548,10 +1553,10 @@ out:
 	return ret;
 }
 
-static int wlfw_send_qdss_trace_mode_req
-		(struct icnss_priv *priv,
-		 enum wlfw_qdss_trace_mode_enum_v01 mode,
-		 unsigned long long option)
+static int
+wlfw_send_qdss_trace_mode_req(struct icnss_priv *priv,
+			      enum wlfw_qdss_trace_mode_enum_v01 mode,
+			      unsigned long long option)
 {
 	int rc = 0;
 	int tmp = 0;
@@ -1581,8 +1586,9 @@ static int wlfw_send_qdss_trace_mode_req
 
 	req->hw_trc_disable_override_valid = 1;
 	req->hw_trc_disable_override =
-	(tmp > QMI_PARAM_DISABLE_V01 ? QMI_PARAM_DISABLE_V01 :
-		 (tmp < 0 ? QMI_PARAM_INVALID_V01 : tmp));
+		(tmp > QMI_PARAM_DISABLE_V01 ?
+			 QMI_PARAM_DISABLE_V01 :
+			 (tmp < 0 ? QMI_PARAM_INVALID_V01 : tmp));
 
 	icnss_pr_dbg("%s: mode %u, option %llu, hw_trc_disable_override: %u",
 		     __func__, mode, option, req->hw_trc_disable_override);
@@ -1626,8 +1632,8 @@ out:
 
 int wlfw_qdss_trace_start(struct icnss_priv *priv)
 {
-	return wlfw_send_qdss_trace_mode_req(priv,
-					     QMI_WLFW_QDSS_TRACE_ON_V01, 0);
+	return wlfw_send_qdss_trace_mode_req(priv, QMI_WLFW_QDSS_TRACE_ON_V01,
+					     0);
 }
 
 int wlfw_qdss_trace_stop(struct icnss_priv *priv, unsigned long long option)
@@ -1663,8 +1669,8 @@ int wlfw_wlan_cfg_send_sync_msg(struct icnss_priv *priv,
 
 	priv->stats.cfg_req++;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_wlan_cfg_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_wlan_cfg_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_qmi_fatal_err("Fail to init txn for Config resp %d\n",
 				    ret);
@@ -1736,12 +1742,11 @@ int wlfw_send_modem_shutdown_msg(struct icnss_priv *priv)
 	req->shutdown_valid = 1;
 	req->shutdown = 1;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_shutdown_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_shutdown_resp_msg_v01_ei,
+			   resp);
 
 	if (ret < 0) {
-		icnss_pr_err("Fail to init txn for shutdown resp %d\n",
-			     ret);
+		icnss_pr_err("Fail to init txn for shutdown resp %d\n", ret);
 		goto out;
 	}
 
@@ -1757,12 +1762,12 @@ int wlfw_send_modem_shutdown_msg(struct icnss_priv *priv)
 
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_pr_err("Shutdown resp wait failed with ret %d\n",
-			     ret);
+		icnss_pr_err("Shutdown resp wait failed with ret %d\n", ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("QMI modem shutdown request rejected result:%d error:%d\n",
-			     resp->resp.result, resp->resp.error);
+		icnss_pr_err(
+			"QMI modem shutdown request rejected result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -1783,8 +1788,9 @@ int wlfw_ini_send_sync_msg(struct icnss_priv *priv, uint8_t fw_log_mode)
 	if (!priv)
 		return -ENODEV;
 
-	icnss_pr_dbg("Sending ini sync request, state: 0x%lx, fw_log_mode: %d\n",
-		     priv->state, fw_log_mode);
+	icnss_pr_dbg(
+		"Sending ini sync request, state: 0x%lx, fw_log_mode: %d\n",
+		priv->state, fw_log_mode);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -1807,8 +1813,7 @@ int wlfw_ini_send_sync_msg(struct icnss_priv *priv, uint8_t fw_log_mode)
 		goto out;
 	}
 
-	ret = qmi_send_request(&priv->qmi, NULL, &txn,
-			       QMI_WLFW_INI_REQ_V01,
+	ret = qmi_send_request(&priv->qmi, NULL, &txn, QMI_WLFW_INI_REQ_V01,
 			       WLFW_INI_REQ_MSG_V01_MAX_MSG_LEN,
 			       wlfw_ini_req_msg_v01_ei, req);
 	if (ret < 0) {
@@ -1842,9 +1847,9 @@ out:
 	return ret;
 }
 
-int wlfw_athdiag_read_send_sync_msg(struct icnss_priv *priv,
-					   uint32_t offset, uint32_t mem_type,
-					   uint32_t data_len, uint8_t *data)
+int wlfw_athdiag_read_send_sync_msg(struct icnss_priv *priv, uint32_t offset,
+				    uint32_t mem_type, uint32_t data_len,
+				    uint8_t *data)
 {
 	int ret;
 	struct wlfw_athdiag_read_req_msg_v01 *req;
@@ -1854,8 +1859,9 @@ int wlfw_athdiag_read_send_sync_msg(struct icnss_priv *priv,
 	if (!priv)
 		return -ENODEV;
 
-	icnss_pr_dbg("Diag read: state 0x%lx, offset %x, mem_type %x, data_len %u\n",
-		     priv->state, offset, mem_type, data_len);
+	icnss_pr_dbg(
+		"Diag read: state 0x%lx, offset %x, mem_type %x, data_len %u\n",
+		priv->state, offset, mem_type, data_len);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -1864,15 +1870,15 @@ int wlfw_athdiag_read_send_sync_msg(struct icnss_priv *priv,
 	resp = kzalloc(sizeof(*resp), GFP_KERNEL);
 	if (!resp) {
 		kfree(req);
-		return  -ENOMEM;
+		return -ENOMEM;
 	}
 
 	req->offset = offset;
 	req->mem_type = mem_type;
 	req->data_len = data_len;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_athdiag_read_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_athdiag_read_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_pr_err("Fail to init txn for Athdiag Read resp %d\n",
 			     ret);
@@ -1895,7 +1901,8 @@ int wlfw_athdiag_read_send_sync_msg(struct icnss_priv *priv,
 			     ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("QMI Athdiag Read request rejected, result:%d error:%d\n",
+		icnss_pr_err(
+			"QMI Athdiag Read request rejected, result:%d error:%d\n",
 			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
@@ -1904,8 +1911,9 @@ int wlfw_athdiag_read_send_sync_msg(struct icnss_priv *priv,
 	}
 
 	if (!resp->data_valid || resp->data_len < data_len) {
-		icnss_pr_err("Athdiag read data is invalid, data_valid = %u, data_len = %u\n",
-			     resp->data_valid, resp->data_len);
+		icnss_pr_err(
+			"Athdiag read data is invalid, data_valid = %u, data_len = %u\n",
+			resp->data_valid, resp->data_len);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1918,9 +1926,9 @@ out:
 	return ret;
 }
 
-int wlfw_athdiag_write_send_sync_msg(struct icnss_priv *priv,
-					    uint32_t offset, uint32_t mem_type,
-					    uint32_t data_len, uint8_t *data)
+int wlfw_athdiag_write_send_sync_msg(struct icnss_priv *priv, uint32_t offset,
+				     uint32_t mem_type, uint32_t data_len,
+				     uint8_t *data)
 {
 	int ret;
 	struct wlfw_athdiag_write_req_msg_v01 *req;
@@ -1930,8 +1938,10 @@ int wlfw_athdiag_write_send_sync_msg(struct icnss_priv *priv,
 	if (!priv)
 		return -ENODEV;
 
-	icnss_pr_dbg("Diag write: state 0x%lx, offset %x, mem_type %x, data_len %u, data %pK\n",
-		     priv->state, offset, mem_type, data_len, data);
+	icnss_pr_dbg(
+		"Diag write: state 0x%lx, offset %x, mem_type %x, data_len %u, "
+		"data %pK\n",
+		priv->state, offset, mem_type, data_len, data);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -1948,8 +1958,8 @@ int wlfw_athdiag_write_send_sync_msg(struct icnss_priv *priv,
 	req->data_len = data_len;
 	memcpy(req->data, data, data_len);
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_athdiag_write_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_athdiag_write_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
 		icnss_pr_err("Fail to init txn for Athdiag Write resp %d\n",
 			     ret);
@@ -1972,7 +1982,8 @@ int wlfw_athdiag_write_send_sync_msg(struct icnss_priv *priv,
 			     ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("QMI Athdiag Write request rejected, result:%d error:%d\n",
+		icnss_pr_err(
+			"QMI Athdiag Write request rejected, result:%d error:%d\n",
 			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
@@ -2015,8 +2026,7 @@ int wlfw_rejuvenate_ack_send_sync_msg(struct icnss_priv *priv)
 			   wlfw_rejuvenate_ack_resp_msg_v01_ei, resp);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-			"Fail to init txn for Rejuvenate Ack resp %d\n",
-			 ret);
+			"Fail to init txn for Rejuvenate Ack resp %d\n", ret);
 		goto out;
 	}
 
@@ -2034,13 +2044,12 @@ int wlfw_rejuvenate_ack_send_sync_msg(struct icnss_priv *priv)
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
 		icnss_qmi_fatal_err(
-			     "Rejuvenate Ack resp wait failed with ret %d\n",
-			     ret);
+			"Rejuvenate Ack resp wait failed with ret %d\n", ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
 		icnss_qmi_fatal_err(
-		   "QMI Rejuvenate Ack request rejected, result:%d error:%d\n",
-		    resp->resp.result, resp->resp.error);
+			"QMI Rejuvenate Ack request rejected, result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -2059,7 +2068,7 @@ out:
 }
 
 int wlfw_dynamic_feature_mask_send_sync_msg(struct icnss_priv *priv,
-					   uint64_t dynamic_feature_mask)
+					    uint64_t dynamic_feature_mask)
 {
 	int ret;
 	struct wlfw_dynamic_feature_mask_req_msg_v01 *req;
@@ -2080,8 +2089,9 @@ int wlfw_dynamic_feature_mask_send_sync_msg(struct icnss_priv *priv,
 		return 0;
 	}
 
-	icnss_pr_dbg("Sending dynamic feature mask request, val 0x%llx, state: 0x%lx\n",
-		     dynamic_feature_mask, priv->state);
+	icnss_pr_dbg(
+		"Sending dynamic feature mask request, val 0x%llx, state: 0x%lx\n",
+		dynamic_feature_mask, priv->state);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -2099,15 +2109,16 @@ int wlfw_dynamic_feature_mask_send_sync_msg(struct icnss_priv *priv,
 	ret = qmi_txn_init(&priv->qmi, &txn,
 			   wlfw_dynamic_feature_mask_resp_msg_v01_ei, resp);
 	if (ret < 0) {
-		icnss_pr_err("Fail to init txn for Dynamic Feature Mask resp %d\n",
-			     ret);
+		icnss_pr_err(
+			"Fail to init txn for Dynamic Feature Mask resp %d\n",
+			ret);
 		goto out;
 	}
 
-	ret = qmi_send_request(&priv->qmi, NULL, &txn,
-		       QMI_WLFW_DYNAMIC_FEATURE_MASK_REQ_V01,
-		       WLFW_DYNAMIC_FEATURE_MASK_REQ_MSG_V01_MAX_MSG_LEN,
-		       wlfw_dynamic_feature_mask_req_msg_v01_ei, req);
+	ret = qmi_send_request(
+		&priv->qmi, NULL, &txn, QMI_WLFW_DYNAMIC_FEATURE_MASK_REQ_V01,
+		WLFW_DYNAMIC_FEATURE_MASK_REQ_MSG_V01_MAX_MSG_LEN,
+		wlfw_dynamic_feature_mask_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
 		icnss_pr_err("Fail to send Dynamic Feature Mask req %d\n", ret);
@@ -2116,19 +2127,23 @@ int wlfw_dynamic_feature_mask_send_sync_msg(struct icnss_priv *priv,
 
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_pr_err("Dynamic Feature Mask resp wait failed with ret %d\n",
-			     ret);
+		icnss_pr_err(
+			"Dynamic Feature Mask resp wait failed with ret %d\n",
+			ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("QMI Dynamic Feature Mask request rejected, result:%d error:%d\n",
+		icnss_pr_err(
+			"QMI Dynamic Feature Mask request rejected, result:%d error:%d\n",
 			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
 
-	icnss_pr_dbg("prev_mask_valid %u, prev_mask 0x%llx, curr_maks_valid %u, curr_mask 0x%llx\n",
-		     resp->prev_mask_valid, resp->prev_mask,
-		     resp->curr_mask_valid, resp->curr_mask);
+	icnss_pr_dbg(
+		"prev_mask_valid %u, prev_mask 0x%llx, curr_maks_valid %u, "
+		"curr_mask 0x%llx\n",
+		resp->prev_mask_valid, resp->prev_mask, resp->curr_mask_valid,
+		resp->curr_mask);
 
 out:
 	kfree(resp);
@@ -2139,7 +2154,7 @@ out:
 void icnss_handle_rejuvenate(struct icnss_priv *priv)
 {
 	struct icnss_event_pd_service_down_data *event_data;
-	struct icnss_uevent_fw_down_data fw_down_data = {0};
+	struct icnss_uevent_fw_down_data fw_down_data = { 0 };
 
 	event_data = kzalloc(sizeof(*event_data), GFP_KERNEL);
 	if (event_data == NULL)
@@ -2150,10 +2165,9 @@ void icnss_handle_rejuvenate(struct icnss_priv *priv)
 	fw_down_data.crashed = true;
 	set_bit(ICNSS_REJUVENATE, &priv->state);
 
-	icnss_call_driver_uevent(priv, ICNSS_UEVENT_FW_DOWN,
-				 &fw_down_data);
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_PD_SERVICE_DOWN,
-				0, event_data);
+	icnss_call_driver_uevent(priv, ICNSS_UEVENT_FW_DOWN, &fw_down_data);
+	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_PD_SERVICE_DOWN, 0,
+				event_data);
 }
 
 int wlfw_qdss_trace_mem_info_send_sync(struct icnss_priv *priv)
@@ -2183,17 +2197,17 @@ int wlfw_qdss_trace_mem_info_send_sync(struct icnss_priv *priv)
 
 	req->mem_seg_len = priv->qdss_mem_seg_len;
 
-	if (priv->qdss_mem_seg_len >  QMI_WLFW_MAX_NUM_MEM_SEG_V01) {
-		icnss_pr_err("Invalid seg len %u\n",
-			     priv->qdss_mem_seg_len);
+	if (priv->qdss_mem_seg_len > QMI_WLFW_MAX_NUM_MEM_SEG_V01) {
+		icnss_pr_err("Invalid seg len %u\n", priv->qdss_mem_seg_len);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	for (i = 0; i < req->mem_seg_len; i++) {
-		icnss_pr_dbg("Memory for FW, va: 0x%pK, pa: %pa, size: 0x%zx, type: %u\n",
-			     qdss_mem[i].va, &qdss_mem[i].pa,
-			     qdss_mem[i].size, qdss_mem[i].type);
+		icnss_pr_dbg(
+			"Memory for FW, va: 0x%pK, pa: %pa, size: 0x%zx, type: %u\n",
+			qdss_mem[i].va, &qdss_mem[i].pa, qdss_mem[i].size,
+			qdss_mem[i].type);
 
 		req->mem_seg[i].addr = qdss_mem[i].pa;
 		req->mem_seg[i].size = qdss_mem[i].size;
@@ -2203,8 +2217,9 @@ int wlfw_qdss_trace_mem_info_send_sync(struct icnss_priv *priv)
 	ret = qmi_txn_init(&priv->qmi, &txn,
 			   wlfw_qdss_trace_mem_info_resp_msg_v01_ei, resp);
 	if (ret < 0) {
-		icnss_pr_err("Fail to initialize txn for QDSS trace mem request: err %d\n",
-			     ret);
+		icnss_pr_err(
+			"Fail to initialize txn for QDSS trace mem request: err %d\n",
+			ret);
 		goto out;
 	}
 
@@ -2214,21 +2229,24 @@ int wlfw_qdss_trace_mem_info_send_sync(struct icnss_priv *priv)
 			       wlfw_qdss_trace_mem_info_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		icnss_pr_err("Fail to send QDSS trace mem info request: err %d\n",
-			     ret);
+		icnss_pr_err(
+			"Fail to send QDSS trace mem info request: err %d\n",
+			ret);
 		goto out;
 	}
 
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_pr_err("Fail to wait for response of QDSS trace mem info request, err %d\n",
-			     ret);
+		icnss_pr_err(
+			"Fail to wait for response of QDSS trace mem info request, err %d\n",
+			ret);
 		goto out;
 	}
 
 	if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("QDSS trace mem info request failed, result: %d, err: %d\n",
-			     resp->resp.result, resp->resp.error);
+		icnss_pr_err(
+			"QDSS trace mem info request failed, result: %d, err: %d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -2270,8 +2288,9 @@ int icnss_wlfw_m3_dump_upload_done_send_sync(struct icnss_priv *priv,
 	ret = qmi_txn_init(&priv->qmi, &txn,
 			   wlfw_m3_dump_upload_done_resp_msg_v01_ei, resp);
 	if (ret < 0) {
-		icnss_pr_err("Fail to initialize txn for M3 dump upload done req: err %d\n",
-			     ret);
+		icnss_pr_err(
+			"Fail to initialize txn for M3 dump upload done req: err %d\n",
+			ret);
 		goto out;
 	}
 
@@ -2281,19 +2300,22 @@ int icnss_wlfw_m3_dump_upload_done_send_sync(struct icnss_priv *priv,
 			       wlfw_m3_dump_upload_done_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		icnss_pr_err("Fail to send M3 dump upload done request: err %d\n",
-			     ret);
+		icnss_pr_err(
+			"Fail to send M3 dump upload done request: err %d\n",
+			ret);
 		goto out;
 	}
 
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_pr_err("Fail to wait for response of M3 dump upload done request, err %d\n",
-			     ret);
+		icnss_pr_err(
+			"Fail to wait for response of M3 dump upload done request, err %d\n",
+			ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("M3 Dump Upload Done Req failed, result: %d, err: 0x%X\n",
-			     resp->resp.result, resp->resp.error);
+		icnss_pr_err(
+			"M3 Dump Upload Done Req failed, result: %d, err: 0x%X\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -2307,8 +2329,7 @@ out:
 static void fw_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 			    struct qmi_txn *txn, const void *data)
 {
-	struct icnss_priv *priv =
-		container_of(qmi, struct icnss_priv, qmi);
+	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 
 	icnss_pr_dbg("Received FW Ready Indication\n");
 
@@ -2317,8 +2338,7 @@ static void fw_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 		return;
 	}
 
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_FW_READY_IND,
-				0, NULL);
+	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_FW_READY_IND, 0, NULL);
 }
 
 static void msa_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
@@ -2340,26 +2360,25 @@ static void msa_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 	priv->stats.msa_ready_ind++;
 
 	/* Check if the length is valid &
-	 * the length should not be 0 and
-	 * should be <=  WLFW_MAX_HANG_EVENT_DATA_SIZE(400)
-	 */
+   * the length should not be 0 and
+   * should be <=  WLFW_MAX_HANG_EVENT_DATA_SIZE(400)
+   */
 
-	if (ind_msg->hang_data_length_valid &&
-	    ind_msg->hang_data_length &&
+	if (ind_msg->hang_data_length_valid && ind_msg->hang_data_length &&
 	    ind_msg->hang_data_length <= WLFW_MAX_HANG_EVENT_DATA_SIZE)
 		priv->hang_event_data_len = ind_msg->hang_data_length;
 	else
 		goto out;
 
 	/* Check if the offset is valid &
-	 * the offset should be in range of 0 to msa_mem_size-hang_data_length
-	 */
+   * the offset should be in range of 0 to msa_mem_size-hang_data_length
+   */
 
 	if (ind_msg->hang_data_addr_offset_valid &&
-	    (ind_msg->hang_data_addr_offset <= (priv->msa_mem_size -
-						 ind_msg->hang_data_length)))
-		hang_data_phy_addr = msa_base_addr +
-						ind_msg->hang_data_addr_offset;
+	    (ind_msg->hang_data_addr_offset <=
+	     (priv->msa_mem_size - ind_msg->hang_data_length)))
+		hang_data_phy_addr =
+			msa_base_addr + ind_msg->hang_data_addr_offset;
 	else
 		goto out;
 
@@ -2376,17 +2395,16 @@ static void msa_ready_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 		goto fail;
 	}
 exit:
-	icnss_pr_dbg("Hang Event Data details,Offset:0x%x, Length:0x%x,va_addr: 0x%pK\n",
-		     ind_msg->hang_data_addr_offset,
-		     ind_msg->hang_data_length,
-		     priv->hang_event_data_va);
+	icnss_pr_dbg(
+		"Hang Event Data details,Offset:0x%x, Length:0x%x,va_addr: 0x%pK\n",
+		ind_msg->hang_data_addr_offset, ind_msg->hang_data_length,
+		priv->hang_event_data_va);
 
 	return;
 
 out:
 	icnss_pr_err("Invalid Hang Data details, Offset:0x%x, Length:0x%x",
-		     ind_msg->hang_data_addr_offset,
-		     ind_msg->hang_data_length);
+		     ind_msg->hang_data_addr_offset, ind_msg->hang_data_length);
 fail:
 	priv->hang_event_data_va = NULL;
 	priv->hang_event_data_pa = 0;
@@ -2414,9 +2432,10 @@ static void pin_connect_result_ind_cb(struct qmi_handle *qmi,
 	if (ind_msg->rf_pin_result_valid)
 		priv->rf_pin_result = ind_msg->rf_pin_result;
 
-	icnss_pr_dbg("Pin connect Result: pwr_pin: 0x%x phy_io_pin: 0x%x rf_io_pin: 0x%x\n",
-		     ind_msg->pwr_pin_result, ind_msg->phy_io_pin_result,
-		     ind_msg->rf_pin_result);
+	icnss_pr_dbg(
+		"Pin connect Result: pwr_pin: 0x%x phy_io_pin: 0x%x rf_io_pin: 0x%x\n",
+		ind_msg->pwr_pin_result, ind_msg->phy_io_pin_result,
+		ind_msg->rf_pin_result);
 	priv->stats.pin_connect_result++;
 }
 
@@ -2454,11 +2473,11 @@ static void rejuvenate_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 		memset(priv->function_name, 0,
 		       QMI_WLFW_FUNCTION_NAME_LEN_V01 + 1);
 
-	icnss_pr_info("Cause for rejuvenation: 0x%x, requesting sub-system: 0x%x, line number: %u, function name: %s\n",
-		      priv->cause_for_rejuvenation,
-		      priv->requesting_sub_system,
-		      priv->line_number,
-		      priv->function_name);
+	icnss_pr_info(
+		"Cause for rejuvenation: 0x%x, requesting sub-system: 0x%x, "
+		"line number: %u, function name: %s\n",
+		priv->cause_for_rejuvenation, priv->requesting_sub_system,
+		priv->line_number, priv->function_name);
 
 	priv->stats.rejuvenate_ind++;
 
@@ -2482,8 +2501,8 @@ static void cal_done_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 }
 
 static void fw_init_done_ind_cb(struct qmi_handle *qmi,
-				struct sockaddr_qrtr *sq,
-				struct qmi_txn *txn, const void *data)
+				struct sockaddr_qrtr *sq, struct qmi_txn *txn,
+				const void *data)
 {
 	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 	struct device *dev = &priv->pdev->dev;
@@ -2499,26 +2518,25 @@ static void fw_init_done_ind_cb(struct qmi_handle *qmi,
 	}
 
 	/* Check if the length is valid &
-	 * the length should not be 0 and
-	 * should be <=  WLFW_MAX_HANG_EVENT_DATA_SIZE(400)
-	 */
+   * the length should not be 0 and
+   * should be <=  WLFW_MAX_HANG_EVENT_DATA_SIZE(400)
+   */
 
-	if (ind_msg->hang_data_length_valid &&
-	ind_msg->hang_data_length &&
-	ind_msg->hang_data_length <= WLFW_MAX_HANG_EVENT_DATA_SIZE)
+	if (ind_msg->hang_data_length_valid && ind_msg->hang_data_length &&
+	    ind_msg->hang_data_length <= WLFW_MAX_HANG_EVENT_DATA_SIZE)
 		priv->hang_event_data_len = ind_msg->hang_data_length;
 	else
 		goto out;
 
 	/* Check if the offset is valid &
-	 * the offset should be in range of 0 to msa_mem_size-hang_data_length
-	 */
+   * the offset should be in range of 0 to msa_mem_size-hang_data_length
+   */
 
 	if (ind_msg->hang_data_addr_offset_valid &&
-	    (ind_msg->hang_data_addr_offset <= (priv->msa_mem_size -
-					ind_msg->hang_data_length)))
-		hang_data_phy_addr = msa_base_addr +
-					ind_msg->hang_data_addr_offset;
+	    (ind_msg->hang_data_addr_offset <=
+	     (priv->msa_mem_size - ind_msg->hang_data_length)))
+		hang_data_phy_addr =
+			msa_base_addr + ind_msg->hang_data_addr_offset;
 	else
 		goto out;
 
@@ -2527,34 +2545,32 @@ static void fw_init_done_ind_cb(struct qmi_handle *qmi,
 
 	priv->hang_event_data_pa = hang_data_phy_addr;
 	priv->hang_event_data_va = devm_ioremap(dev, priv->hang_event_data_pa,
-					ind_msg->hang_data_length);
+						ind_msg->hang_data_length);
 
 	if (!priv->hang_event_data_va) {
 		icnss_pr_err("Hang Data ioremap failed: phy addr: %pa\n",
-		&priv->hang_event_data_pa);
+			     &priv->hang_event_data_pa);
 		goto fail;
 	}
 
 exit:
-	icnss_pr_dbg("Hang Event Data details,Offset:0x%x, Length:0x%x,va_addr: 0x%pK\n",
-		     ind_msg->hang_data_addr_offset,
-		     ind_msg->hang_data_length,
-		     priv->hang_event_data_va);
+	icnss_pr_dbg(
+		"Hang Event Data details,Offset:0x%x, Length:0x%x,va_addr: 0x%pK\n",
+		ind_msg->hang_data_addr_offset, ind_msg->hang_data_length,
+		priv->hang_event_data_va);
 
 	goto post;
 
 out:
 	icnss_pr_err("Invalid Hang Data details, Offset:0x%x, Length:0x%x",
-		     ind_msg->hang_data_addr_offset,
-		     ind_msg->hang_data_length);
+		     ind_msg->hang_data_addr_offset, ind_msg->hang_data_length);
 fail:
 	priv->hang_event_data_va = NULL;
 	priv->hang_event_data_pa = 0;
 	priv->hang_event_data_len = 0;
 post:
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_FW_INIT_DONE_IND,
-				0, NULL);
-
+	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_FW_INIT_DONE_IND, 0,
+				NULL);
 }
 
 static void wlfw_qdss_trace_req_mem_ind_cb(struct qmi_handle *qmi,
@@ -2562,8 +2578,7 @@ static void wlfw_qdss_trace_req_mem_ind_cb(struct qmi_handle *qmi,
 					   struct qmi_txn *txn,
 					   const void *data)
 {
-	struct icnss_priv *priv =
-		container_of(qmi, struct icnss_priv, qmi);
+	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 	const struct wlfw_qdss_trace_req_mem_ind_msg_v01 *ind_msg = data;
 	int i;
 
@@ -2575,16 +2590,16 @@ static void wlfw_qdss_trace_req_mem_ind_cb(struct qmi_handle *qmi,
 	}
 
 	if (priv->qdss_mem_seg_len) {
-		icnss_pr_err("Ignore double allocation for QDSS trace, current len %u\n",
-			     priv->qdss_mem_seg_len);
+		icnss_pr_err(
+			"Ignore double allocation for QDSS trace, current len %u\n",
+			priv->qdss_mem_seg_len);
 		return;
 	}
 
 	priv->qdss_mem_seg_len = ind_msg->mem_seg_len;
 
 	if (priv->qdss_mem_seg_len > QMI_WLFW_MAX_NUM_MEM_SEG_V01) {
-		icnss_pr_err("Invalid seg len %u\n",
-			     priv->qdss_mem_seg_len);
+		icnss_pr_err("Invalid seg len %u\n", priv->qdss_mem_seg_len);
 		return;
 	}
 
@@ -2596,17 +2611,15 @@ static void wlfw_qdss_trace_req_mem_ind_cb(struct qmi_handle *qmi,
 		priv->qdss_mem[i].size = ind_msg->mem_seg[i].size;
 	}
 
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_QDSS_TRACE_REQ_MEM,
-				0, NULL);
+	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_QDSS_TRACE_REQ_MEM, 0,
+				NULL);
 }
 
 static void wlfw_qdss_trace_save_ind_cb(struct qmi_handle *qmi,
 					struct sockaddr_qrtr *sq,
-					struct qmi_txn *txn,
-					const void *data)
+					struct qmi_txn *txn, const void *data)
 {
-	struct icnss_priv *priv =
-		container_of(qmi, struct icnss_priv, qmi);
+	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 	const struct wlfw_qdss_trace_save_ind_msg_v01 *ind_msg = data;
 	struct icnss_qmi_event_qdss_trace_save_data *event_data;
 	int i = 0;
@@ -2618,7 +2631,8 @@ static void wlfw_qdss_trace_save_ind_cb(struct qmi_handle *qmi,
 		return;
 	}
 
-	icnss_pr_dbg("QDSS_trace_save info: source %u, total_size %u, file_name_valid %u, file_name %s\n",
+	icnss_pr_dbg("QDSS_trace_save info: source %u, total_size %u, "
+		     "file_name_valid %u, file_name %s\n",
 		     ind_msg->source, ind_msg->total_size,
 		     ind_msg->file_name_valid, ind_msg->file_name);
 
@@ -2638,8 +2652,8 @@ static void wlfw_qdss_trace_save_ind_cb(struct qmi_handle *qmi,
 		for (i = 0; i < ind_msg->mem_seg_len; i++) {
 			event_data->mem_seg[i].addr = ind_msg->mem_seg[i].addr;
 			event_data->mem_seg[i].size = ind_msg->mem_seg[i].size;
-			icnss_pr_dbg("seg-%d: addr 0x%llx size 0x%x\n",
-				     i, ind_msg->mem_seg[i].addr,
+			icnss_pr_dbg("seg-%d: addr 0x%llx size 0x%x\n", i,
+				     ind_msg->mem_seg[i].addr,
 				     ind_msg->mem_seg[i].size);
 		}
 	}
@@ -2654,14 +2668,16 @@ static void wlfw_qdss_trace_save_ind_cb(struct qmi_handle *qmi,
 		if (!ind_msg->file_name_valid)
 			strlcpy(event_data->file_name, "qdss_trace_wcss_etb",
 				QDSS_TRACE_FILE_NAME_MAX + 1);
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_QDSS_TRACE_REQ_DATA,
-				0, event_data);
+		icnss_driver_event_post(priv,
+					ICNSS_DRIVER_EVENT_QDSS_TRACE_REQ_DATA,
+					0, event_data);
 	} else {
 		if (!ind_msg->file_name_valid)
 			strlcpy(event_data->file_name, "qdss_trace_ddr",
 				QDSS_TRACE_FILE_NAME_MAX + 1);
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_QDSS_TRACE_SAVE,
-				0, event_data);
+		icnss_driver_event_post(priv,
+					ICNSS_DRIVER_EVENT_QDSS_TRACE_SAVE, 0,
+					event_data);
 	}
 
 	return;
@@ -2672,20 +2688,18 @@ free_event_data:
 
 static void wlfw_qdss_trace_free_ind_cb(struct qmi_handle *qmi,
 					struct sockaddr_qrtr *sq,
-					struct qmi_txn *txn,
-					const void *data)
+					struct qmi_txn *txn, const void *data)
 {
-	struct icnss_priv *priv =
-		container_of(qmi, struct icnss_priv, qmi);
+	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_QDSS_TRACE_FREE,
-				0, NULL);
+	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_QDSS_TRACE_FREE, 0,
+				NULL);
 }
 
 static void icnss_wlfw_respond_get_info_ind_cb(struct qmi_handle *qmi,
-					      struct sockaddr_qrtr *sq,
-					      struct qmi_txn *txn,
-					      const void *data)
+					       struct sockaddr_qrtr *sq,
+					       struct qmi_txn *txn,
+					       const void *data)
 {
 	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 	const struct wlfw_respond_get_info_ind_msg_v01 *ind_msg = data;
@@ -2695,14 +2709,15 @@ static void icnss_wlfw_respond_get_info_ind_cb(struct qmi_handle *qmi,
 		return;
 	}
 
-	icnss_pr_vdbg("Extract message with event length: %d, type: %d, is last: %d, seq no: %d\n",
-		     ind_msg->data_len, ind_msg->type,
-		     ind_msg->is_last, ind_msg->seq_no);
+	icnss_pr_vdbg(
+		"Extract message with event length: %d, type: %d, is last: %d, "
+		"seq no: %d\n",
+		ind_msg->data_len, ind_msg->type, ind_msg->is_last,
+		ind_msg->seq_no);
 
 	if (priv->get_info_cb_ctx && priv->get_info_cb)
-		priv->get_info_cb(priv->get_info_cb_ctx,
-				       (void *)ind_msg->data,
-				       ind_msg->data_len);
+		priv->get_info_cb(priv->get_info_cb_ctx, (void *)ind_msg->data,
+				  ind_msg->data_len);
 }
 
 static void icnss_wlfw_m3_dump_upload_segs_req_ind_cb(struct qmi_handle *qmi,
@@ -2740,18 +2755,20 @@ static void icnss_wlfw_m3_dump_upload_segs_req_ind_cb(struct qmi_handle *qmi,
 
 	for (i = 0; i < ind_msg->no_of_valid_segments; i++) {
 		segment_addr = ind_msg->m3_segment[i].addr &
-				M3_SEGMENT_ADDR_MASK;
+			       M3_SEGMENT_ADDR_MASK;
 
 		if (ind_msg->m3_segment[i].size > priv->msa_mem_size ||
 		    segment_addr >= max_mapped_addr ||
 		    segment_addr < priv->msa_pa ||
-		    ind_msg->m3_segment[i].size +
-		    segment_addr > max_mapped_addr) {
-			icnss_pr_dbg("Received out of range Segment %d Addr: 0x%llx Size: 0x%x, Name: %s, type: %d\n",
-				     (i + 1), segment_addr,
-				     ind_msg->m3_segment[i].size,
-				     ind_msg->m3_segment[i].name,
-				     ind_msg->m3_segment[i].type);
+		    ind_msg->m3_segment[i].size + segment_addr >
+			    max_mapped_addr) {
+			icnss_pr_dbg(
+				"Received out of range Segment %d Addr: 0x%llx Size: 0x%x, "
+				"Name: %s, type: %d\n",
+				(i + 1), segment_addr,
+				ind_msg->m3_segment[i].size,
+				ind_msg->m3_segment[i].name,
+				ind_msg->m3_segment[i].type);
 			goto out;
 		}
 
@@ -2759,18 +2776,17 @@ static void icnss_wlfw_m3_dump_upload_segs_req_ind_cb(struct qmi_handle *qmi,
 		event_data->m3_segment[i].size = ind_msg->m3_segment[i].size;
 		event_data->m3_segment[i].type = ind_msg->m3_segment[i].type;
 		strlcpy(event_data->m3_segment[i].name,
-			ind_msg->m3_segment[i].name,
-			WLFW_MAX_STR_LEN + 1);
+			ind_msg->m3_segment[i].name, WLFW_MAX_STR_LEN + 1);
 
-		icnss_pr_dbg("Received Segment %d Addr: 0x%llx Size: 0x%x, Name: %s, type: %d\n",
-			     (i + 1), segment_addr,
-			     ind_msg->m3_segment[i].size,
-			     ind_msg->m3_segment[i].name,
-			     ind_msg->m3_segment[i].type);
+		icnss_pr_dbg(
+			"Received Segment %d Addr: 0x%llx Size: 0x%x, Name: %s, type: %d\n",
+			(i + 1), segment_addr, ind_msg->m3_segment[i].size,
+			ind_msg->m3_segment[i].name,
+			ind_msg->m3_segment[i].type);
 	}
 
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_M3_DUMP_UPLOAD_REQ,
-				0, event_data);
+	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_M3_DUMP_UPLOAD_REQ, 0,
+				event_data);
 
 	return;
 out:
@@ -2778,89 +2794,62 @@ out:
 }
 
 static struct qmi_msg_handler wlfw_msg_handlers[] = {
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_FW_READY_IND_V01,
-		.ei = wlfw_fw_ready_ind_msg_v01_ei,
-		.decoded_size = sizeof(struct wlfw_fw_ready_ind_msg_v01),
-		.fn = fw_ready_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_MSA_READY_IND_V01,
-		.ei = wlfw_msa_ready_ind_msg_v01_ei,
-		.decoded_size = sizeof(struct wlfw_msa_ready_ind_msg_v01),
-		.fn = msa_ready_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_PIN_CONNECT_RESULT_IND_V01,
-		.ei = wlfw_pin_connect_result_ind_msg_v01_ei,
-		.decoded_size =
-		sizeof(struct wlfw_pin_connect_result_ind_msg_v01),
-		.fn = pin_connect_result_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_REJUVENATE_IND_V01,
-		.ei = wlfw_rejuvenate_ind_msg_v01_ei,
-		.decoded_size = sizeof(struct wlfw_rejuvenate_ind_msg_v01),
-		.fn = rejuvenate_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_CAL_DONE_IND_V01,
-		.ei = wlfw_cal_done_ind_msg_v01_ei,
-		.decoded_size = sizeof(struct wlfw_cal_done_ind_msg_v01),
-		.fn = cal_done_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_FW_INIT_DONE_IND_V01,
-		.ei = wlfw_fw_init_done_ind_msg_v01_ei,
-		.decoded_size = sizeof(struct wlfw_fw_init_done_ind_msg_v01),
-		.fn = fw_init_done_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_QDSS_TRACE_REQ_MEM_IND_V01,
-		.ei = wlfw_qdss_trace_req_mem_ind_msg_v01_ei,
-		.decoded_size =
-		sizeof(struct wlfw_qdss_trace_req_mem_ind_msg_v01),
-		.fn = wlfw_qdss_trace_req_mem_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_QDSS_TRACE_SAVE_IND_V01,
-		.ei = wlfw_qdss_trace_save_ind_msg_v01_ei,
-		.decoded_size =
-		sizeof(struct wlfw_qdss_trace_save_ind_msg_v01),
-		.fn = wlfw_qdss_trace_save_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_QDSS_TRACE_FREE_IND_V01,
-		.ei = wlfw_qdss_trace_free_ind_msg_v01_ei,
-		.decoded_size =
-		sizeof(struct wlfw_qdss_trace_free_ind_msg_v01),
-		.fn = wlfw_qdss_trace_free_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_RESPOND_GET_INFO_IND_V01,
-		.ei = wlfw_respond_get_info_ind_msg_v01_ei,
-		.decoded_size =
-		sizeof(struct wlfw_respond_get_info_ind_msg_v01),
-		.fn = icnss_wlfw_respond_get_info_ind_cb
-	},
-	{
-		.type = QMI_INDICATION,
-		.msg_id = QMI_WLFW_M3_DUMP_UPLOAD_SEGMENTS_REQ_IND_V01,
-		.ei = wlfw_m3_dump_upload_segments_req_ind_msg_v01_ei,
-		.decoded_size =
-		sizeof(struct wlfw_m3_dump_upload_segments_req_ind_msg_v01),
-		.fn = icnss_wlfw_m3_dump_upload_segs_req_ind_cb
-	},
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_FW_READY_IND_V01,
+	  .ei = wlfw_fw_ready_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_fw_ready_ind_msg_v01),
+	  .fn = fw_ready_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_MSA_READY_IND_V01,
+	  .ei = wlfw_msa_ready_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_msa_ready_ind_msg_v01),
+	  .fn = msa_ready_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_PIN_CONNECT_RESULT_IND_V01,
+	  .ei = wlfw_pin_connect_result_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_pin_connect_result_ind_msg_v01),
+	  .fn = pin_connect_result_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_REJUVENATE_IND_V01,
+	  .ei = wlfw_rejuvenate_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_rejuvenate_ind_msg_v01),
+	  .fn = rejuvenate_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_CAL_DONE_IND_V01,
+	  .ei = wlfw_cal_done_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_cal_done_ind_msg_v01),
+	  .fn = cal_done_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_FW_INIT_DONE_IND_V01,
+	  .ei = wlfw_fw_init_done_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_fw_init_done_ind_msg_v01),
+	  .fn = fw_init_done_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_QDSS_TRACE_REQ_MEM_IND_V01,
+	  .ei = wlfw_qdss_trace_req_mem_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_qdss_trace_req_mem_ind_msg_v01),
+	  .fn = wlfw_qdss_trace_req_mem_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_QDSS_TRACE_SAVE_IND_V01,
+	  .ei = wlfw_qdss_trace_save_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_qdss_trace_save_ind_msg_v01),
+	  .fn = wlfw_qdss_trace_save_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_QDSS_TRACE_FREE_IND_V01,
+	  .ei = wlfw_qdss_trace_free_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_qdss_trace_free_ind_msg_v01),
+	  .fn = wlfw_qdss_trace_free_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_RESPOND_GET_INFO_IND_V01,
+	  .ei = wlfw_respond_get_info_ind_msg_v01_ei,
+	  .decoded_size = sizeof(struct wlfw_respond_get_info_ind_msg_v01),
+	  .fn = icnss_wlfw_respond_get_info_ind_cb },
+	{ .type = QMI_INDICATION,
+	  .msg_id = QMI_WLFW_M3_DUMP_UPLOAD_SEGMENTS_REQ_IND_V01,
+	  .ei = wlfw_m3_dump_upload_segments_req_ind_msg_v01_ei,
+	  .decoded_size =
+		  sizeof(struct wlfw_m3_dump_upload_segments_req_ind_msg_v01),
+	  .fn = icnss_wlfw_m3_dump_upload_segs_req_ind_cb },
 	{}
 };
 
@@ -2910,7 +2899,7 @@ int icnss_clear_server(struct icnss_priv *priv)
 
 	clear_bit(ICNSS_DEL_SERVER, &priv->state);
 
-	ret =  icnss_register_fw_service(priv);
+	ret = icnss_register_fw_service(priv);
 	if (ret < 0) {
 		icnss_pr_err("WLFW server registration failed\n");
 		ICNSS_ASSERT(0);
@@ -2919,21 +2908,20 @@ int icnss_clear_server(struct icnss_priv *priv)
 	return 0;
 }
 
-static int wlfw_new_server(struct qmi_handle *qmi,
-			   struct qmi_service *service)
+static int wlfw_new_server(struct qmi_handle *qmi, struct qmi_service *service)
 {
-	struct icnss_priv *priv =
-		container_of(qmi, struct icnss_priv, qmi);
+	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 	struct icnss_event_server_arrive_data *event_data;
 
 	if (priv && test_bit(ICNSS_DEL_SERVER, &priv->state)) {
-		icnss_pr_info("WLFW server delete in progress, Ignore server arrive: 0x%lx\n",
-			      priv->state);
+		icnss_pr_info(
+			"WLFW server delete in progress, Ignore server arrive: 0x%lx\n",
+			priv->state);
 		return 0;
 	}
 
-	icnss_pr_dbg("WLFW server arrive: node %u port %u\n",
-		     service->node, service->port);
+	icnss_pr_dbg("WLFW server arrive: node %u port %u\n", service->node,
+		     service->port);
 
 	event_data = kzalloc(sizeof(*event_data), GFP_KERNEL);
 	if (event_data == NULL)
@@ -2942,20 +2930,21 @@ static int wlfw_new_server(struct qmi_handle *qmi,
 	event_data->node = service->node;
 	event_data->port = service->port;
 
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_SERVER_ARRIVE,
-				0, event_data);
+	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_SERVER_ARRIVE, 0,
+				event_data);
 
 	return 0;
 }
 
-static void wlfw_del_server(struct qmi_handle *qmi,
-			    struct qmi_service *service)
+static void wlfw_del_server(struct qmi_handle *qmi, struct qmi_service *service)
 {
 	struct icnss_priv *priv = container_of(qmi, struct icnss_priv, qmi);
 
 	if (priv && test_bit(ICNSS_DEL_SERVER, &priv->state)) {
-		icnss_pr_info("WLFW server delete / icnss remove in progress, Ignore server delete:  0x%lx\n",
-			      priv->state);
+		icnss_pr_info(
+			"WLFW server delete / icnss remove in progress, Ignore "
+			"server delete:  0x%lx\n",
+			priv->state);
 		return;
 	}
 
@@ -2967,8 +2956,7 @@ static void wlfw_del_server(struct qmi_handle *qmi,
 		icnss_ignore_fw_timeout(true);
 	}
 
-	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_SERVER_EXIT,
-				0, NULL);
+	icnss_driver_event_post(priv, ICNSS_DRIVER_EVENT_SERVER_EXIT, 0, NULL);
 }
 
 static struct qmi_ops wlfw_qmi_ops = {
@@ -3005,16 +2993,16 @@ void icnss_unregister_fw_service(struct icnss_priv *priv)
 }
 
 int icnss_send_wlan_enable_to_fw(struct icnss_priv *priv,
-			struct icnss_wlan_enable_cfg *config,
-			enum icnss_driver_mode mode,
-			const char *host_version)
+				 struct icnss_wlan_enable_cfg *config,
+				 enum icnss_driver_mode mode,
+				 const char *host_version)
 {
 	struct wlfw_wlan_cfg_req_msg_v01 req;
 	u32 i;
 	int ret;
 
-	icnss_pr_dbg("Mode: %d, config: %pK, host_version: %s\n",
-		     mode, config, host_version);
+	icnss_pr_dbg("Mode: %d, config: %pK, host_version: %s\n", mode, config,
+		     host_version);
 
 	memset(&req, 0, sizeof(req));
 
@@ -3022,15 +3010,15 @@ int icnss_send_wlan_enable_to_fw(struct icnss_priv *priv,
 		goto skip;
 
 	if (!config || !host_version) {
-		icnss_pr_err("Invalid cfg pointer, config: %pK, host_version: %pK\n",
-			     config, host_version);
+		icnss_pr_err(
+			"Invalid cfg pointer, config: %pK, host_version: %pK\n",
+			config, host_version);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	req.host_version_valid = 1;
-	strlcpy(req.host_version, host_version,
-		WLFW_MAX_STR_LEN + 1);
+	strlcpy(req.host_version, host_version, WLFW_MAX_STR_LEN + 1);
 
 	req.tgt_cfg_valid = 1;
 	if (config->num_ce_tgt_cfg > WLFW_MAX_NUM_CE)
@@ -3059,19 +3047,19 @@ int icnss_send_wlan_enable_to_fw(struct icnss_priv *priv,
 	if (priv->device_id == WCN6750_DEVICE_ID) {
 		req.shadow_reg_v2_valid = 1;
 		if (config->num_shadow_reg_v2_cfg >
-			QMI_WLFW_MAX_NUM_SHADOW_REG_V2_V01)
+		    QMI_WLFW_MAX_NUM_SHADOW_REG_V2_V01)
 			req.shadow_reg_v2_len =
 				QMI_WLFW_MAX_NUM_SHADOW_REG_V2_V01;
 		else
 			req.shadow_reg_v2_len = config->num_shadow_reg_v2_cfg;
 
 		memcpy(req.shadow_reg_v2, config->shadow_reg_v2_cfg,
-			 sizeof(struct wlfw_shadow_reg_v2_cfg_s_v01) *
-			 req.shadow_reg_v2_len);
+		       sizeof(struct wlfw_shadow_reg_v2_cfg_s_v01) *
+			       req.shadow_reg_v2_len);
 	} else if (priv->device_id == ADRASTEA_DEVICE_ID) {
 		req.shadow_reg_valid = 1;
 		if (config->num_shadow_reg_cfg >
-			QMI_WLFW_MAX_NUM_SHADOW_REG_V01)
+		    QMI_WLFW_MAX_NUM_SHADOW_REG_V01)
 			req.shadow_reg_len = QMI_WLFW_MAX_NUM_SHADOW_REG_V01;
 		else
 			req.shadow_reg_len = config->num_shadow_reg_cfg;
@@ -3080,23 +3068,22 @@ int icnss_send_wlan_enable_to_fw(struct icnss_priv *priv,
 		       sizeof(struct wlfw_msi_cfg_s_v01) * req.shadow_reg_len);
 	} else if (priv->device_id == WCN6450_DEVICE_ID) {
 		req.shadow_reg_v3_valid = 1;
-		if (config->num_shadow_reg_v3_cfg >
-			MAX_NUM_SHADOW_REG_V3)
+		if (config->num_shadow_reg_v3_cfg > MAX_NUM_SHADOW_REG_V3)
 			req.shadow_reg_v3_len = MAX_NUM_SHADOW_REG_V3;
 		else
 			req.shadow_reg_v3_len = config->num_shadow_reg_v3_cfg;
 
 		memcpy(req.shadow_reg_v3, config->shadow_reg_v3_cfg,
-		       sizeof(struct wlfw_shadow_reg_v3_cfg_s_v01)
-		       * req.shadow_reg_v3_len);
+		       sizeof(struct wlfw_shadow_reg_v3_cfg_s_v01) *
+			       req.shadow_reg_v3_len);
 	}
 
 	ret = wlfw_wlan_cfg_send_sync_msg(priv, &req);
 	if (ret)
 		goto out;
 skip:
-	ret = wlfw_wlan_mode_send_sync_msg(priv,
-			   (enum wlfw_driver_mode_enum_v01)mode);
+	ret = wlfw_wlan_mode_send_sync_msg(
+		priv, (enum wlfw_driver_mode_enum_v01)mode);
 out:
 	if (test_bit(SKIP_QMI, &priv->ctrl_params.quirks))
 		ret = 0;
@@ -3131,11 +3118,11 @@ int wlfw_host_cap_send_sync(struct icnss_priv *priv)
 	int ddr_type;
 	u32 gpio;
 	int ret = 0;
-	u64 iova_start = 0, iova_size = 0,
-	    iova_ipa_start = 0, iova_ipa_size = 0;
+	u64 iova_start = 0, iova_size = 0, iova_ipa_start = 0,
+	    iova_ipa_size = 0;
 
 	icnss_pr_dbg("Sending host capability message, state: 0x%lx\n",
-		    priv->state);
+		     priv->state);
 
 	req = kzalloc(sizeof(*req), GFP_KERNEL);
 	if (!req)
@@ -3159,17 +3146,16 @@ int wlfw_host_cap_send_sync(struct icnss_priv *priv)
 
 	if (priv->smmu_s1_enable &&
 	    !icnss_get_iova(priv, &iova_start, &iova_size) &&
-	    !icnss_get_iova_ipa(priv, &iova_ipa_start,
-				&iova_ipa_size)) {
+	    !icnss_get_iova_ipa(priv, &iova_ipa_start, &iova_ipa_size)) {
 		req->ddr_range_valid = 1;
 		req->ddr_range[0].start = iova_start;
 		req->ddr_range[0].size = iova_size + iova_ipa_size;
 		req->ddr_range[1].start = priv->msa_pa;
 		req->ddr_range[1].size = priv->msa_mem_size;
 		icnss_pr_dbg("Sending iova starting 0x%llx with size 0x%llx\n",
-			    req->ddr_range[0].start, req->ddr_range[0].size);
+			     req->ddr_range[0].start, req->ddr_range[0].size);
 		icnss_pr_dbg("Sending msa starting 0x%llx with size 0x%llx\n",
-			    req->ddr_range[1].start, req->ddr_range[1].size);
+			     req->ddr_range[1].start, req->ddr_range[1].size);
 	}
 
 	req->host_build_type_valid = 1;
@@ -3232,11 +3218,12 @@ int wlfw_host_cap_send_sync(struct icnss_priv *priv)
 
 	req->gpio_info_len = GPIO_TYPE_MAX_V01;
 
-	ret = qmi_txn_init(&priv->qmi, &txn,
-			   wlfw_host_cap_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&priv->qmi, &txn, wlfw_host_cap_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
-		icnss_pr_err("Failed to initialize txn for host capability request, err: %d\n",
-			    ret);
+		icnss_pr_err(
+			"Failed to initialize txn for host capability request, err: %d\n",
+			ret);
 		goto out;
 	}
 
@@ -3246,21 +3233,24 @@ int wlfw_host_cap_send_sync(struct icnss_priv *priv)
 			       wlfw_host_cap_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		icnss_pr_err("Failed to send host capability request, err: %d\n",
-			    ret);
+		icnss_pr_err(
+			"Failed to send host capability request, err: %d\n",
+			ret);
 		goto out;
 	}
 
 	ret = qmi_txn_wait(&txn, priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_pr_err("Failed to wait for response of host capability request, err: %d\n",
-			    ret);
+		icnss_pr_err(
+			"Failed to wait for response of host capability request, err: %d\n",
+			ret);
 		goto out;
 	}
 
 	if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("Host capability request failed, result: %d, err: %d\n",
-			    resp->resp.result, resp->resp.error);
+		icnss_pr_err(
+			"Host capability request failed, result: %d, err: %d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -3277,7 +3267,7 @@ out:
 }
 
 int icnss_wlfw_get_info_send_sync(struct icnss_priv *plat_priv, int type,
-				 void *cmd, int cmd_len)
+				  void *cmd, int cmd_len)
 {
 	struct wlfw_get_info_req_msg_v01 *req;
 	struct wlfw_get_info_resp_msg_v01 *resp;
@@ -3304,11 +3294,12 @@ int icnss_wlfw_get_info_send_sync(struct icnss_priv *plat_priv, int type,
 	req->data_len = cmd_len;
 	memcpy(req->data, cmd, req->data_len);
 
-	ret = qmi_txn_init(&plat_priv->qmi, &txn,
-			   wlfw_get_info_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(&plat_priv->qmi, &txn, wlfw_get_info_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
-		icnss_pr_err("Failed to initialize txn for get info request, err: %d\n",
-			    ret);
+		icnss_pr_err(
+			"Failed to initialize txn for get info request, err: %d\n",
+			ret);
 		goto out;
 	}
 
@@ -3318,21 +3309,21 @@ int icnss_wlfw_get_info_send_sync(struct icnss_priv *plat_priv, int type,
 			       wlfw_get_info_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		icnss_pr_err("Failed to send get info request, err: %d\n",
-			    ret);
+		icnss_pr_err("Failed to send get info request, err: %d\n", ret);
 		goto out;
 	}
 
 	ret = qmi_txn_wait(&txn, plat_priv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_pr_err("Failed to wait for response of get info request, err: %d\n",
-			    ret);
+		icnss_pr_err(
+			"Failed to wait for response of get info request, err: %d\n",
+			ret);
 		goto out;
 	}
 
 	if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
 		icnss_pr_err("Get info request failed, result: %d, err: %d\n",
-			    resp->resp.result, resp->resp.error);
+			     resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -3347,7 +3338,8 @@ out:
 	return ret;
 }
 
-int wlfw_subsys_restart_level_msg(struct icnss_priv *penv, uint8_t restart_level)
+int wlfw_subsys_restart_level_msg(struct icnss_priv *penv,
+				  uint8_t restart_level)
 {
 	int ret;
 	struct wlfw_subsys_restart_level_req_msg_v01 *req;
@@ -3380,19 +3372,19 @@ int wlfw_subsys_restart_level_msg(struct icnss_priv *penv, uint8_t restart_level
 	ret = qmi_txn_init(&penv->qmi, &txn,
 			   wlfw_subsys_restart_level_resp_msg_v01_ei, resp);
 	if (ret < 0) {
-		icnss_pr_err("Fail to init txn for subsystem restart level, resp %d\n",
-			     ret);
+		icnss_pr_err(
+			"Fail to init txn for subsystem restart level, resp %d\n",
+			ret);
 		goto out;
 	}
 
-	ret = qmi_send_request(&penv->qmi, NULL, &txn,
-			       QMI_WLFW_SUBSYS_RESTART_LEVEL_REQ_V01,
-			       WLFW_SUBSYS_RESTART_LEVEL_REQ_MSG_V01_MAX_MSG_LEN,
-			       wlfw_subsys_restart_level_req_msg_v01_ei, req);
+	ret = qmi_send_request(
+		&penv->qmi, NULL, &txn, QMI_WLFW_SUBSYS_RESTART_LEVEL_REQ_V01,
+		WLFW_SUBSYS_RESTART_LEVEL_REQ_MSG_V01_MAX_MSG_LEN,
+		wlfw_subsys_restart_level_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		icnss_pr_err("Fail to send subsystem restart level %d\n",
-			     ret);
+		icnss_pr_err("Fail to send subsystem restart level %d\n", ret);
 		goto out;
 	}
 
@@ -3402,8 +3394,9 @@ int wlfw_subsys_restart_level_msg(struct icnss_priv *penv, uint8_t restart_level
 			     ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("Subsystem restart level request rejected,result:%d error:%d\n",
-			     resp->resp.result, resp->resp.error);
+		icnss_pr_err(
+			"Subsystem restart level request rejected,result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -3455,8 +3448,7 @@ int icnss_send_vbatt_update(struct icnss_priv *priv, uint64_t voltage_uv)
 		goto out;
 	}
 
-	ret = qmi_send_request(&priv->qmi, NULL, &txn,
-			       QMI_WLFW_VBATT_REQ_V01,
+	ret = qmi_send_request(&priv->qmi, NULL, &txn, QMI_WLFW_VBATT_REQ_V01,
 			       WLFW_VBATT_REQ_MSG_V01_MAX_MSG_LEN,
 			       wlfw_vbatt_req_msg_v01_ei, req);
 	if (ret < 0) {
@@ -3471,8 +3463,9 @@ int icnss_send_vbatt_update(struct icnss_priv *priv, uint64_t voltage_uv)
 			     ret);
 		goto out;
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("QMI Vbatt message request rejected, result:%d error:%d\n",
-			     resp->resp.result, resp->resp.error);
+		icnss_pr_err(
+			"QMI Vbatt message request rejected, result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}
@@ -3533,13 +3526,13 @@ int wlfw_wlan_hw_init_cfg_msg(struct icnss_priv *penv,
 
 	ret = qmi_txn_wait(&txn, penv->ctrl_params.qmi_timeout);
 	if (ret < 0) {
-		icnss_pr_err("HW init cfg timed out with ret %d\n",
-			     ret);
+		icnss_pr_err("HW init cfg timed out with ret %d\n", ret);
 		goto out;
 
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		icnss_pr_err("HW init cfg request rejected,result:%d error:%d\n",
-			     resp->resp.result, resp->resp.error);
+		icnss_pr_err(
+			"HW init cfg request rejected,result:%d error:%d\n",
+			resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 		goto out;
 	}

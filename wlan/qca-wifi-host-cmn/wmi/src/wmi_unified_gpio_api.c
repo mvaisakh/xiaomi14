@@ -17,8 +17,8 @@
  * DOC: Implement API's specific to gpio component.
  */
 
-#include <wmi_unified_priv.h>
 #include <wmi_unified_gpio_api.h>
+#include <wmi_unified_priv.h>
 
 QDF_STATUS wmi_unified_gpio_config_cmd_send(wmi_unified_t wmi_handle,
 					    struct gpio_config_params *param)
@@ -37,4 +37,3 @@ QDF_STATUS wmi_unified_gpio_output_cmd_send(wmi_unified_t wmi_handle,
 
 	return QDF_STATUS_E_FAILURE;
 }
-

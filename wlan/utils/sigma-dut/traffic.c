@@ -8,13 +8,13 @@
  */
 
 #include "sigma_dut.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <signal.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <ifaddrs.h>
 #include <netdb.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "wpa_helpers.h"
 
@@ -23,7 +23,6 @@
 #else /* ANDROID */
 #define SHELL "/bin/sh"
 #endif /* ANDROID */
-
 
 static enum sigma_cmd_result cmd_traffic_send_ping(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
@@ -81,8 +80,9 @@ static enum sigma_cmd_result cmd_traffic_send_ping(struct sigma_dut *dut,
 	size = atoi(val);
 	if (type != 2 && strcmp(dst, BROADCAST_ADDR) == 0) {
 		if (size > 1472) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Unsupported broadcast ping frame size");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Unsupported broadcast ping frame size");
 			return STATUS_SENT;
 		}
 		broadcast = true;
@@ -107,7 +107,7 @@ static enum sigma_cmd_result cmd_traffic_send_ping(struct sigma_dut *dut,
 		dur = 3600;
 
 	pkts = dur * rate;
-	interval = (float) 1 / rate;
+	interval = (float)1 / rate;
 	if (interval > 100000)
 		return INVALID_SEND_STATUS;
 
@@ -123,26 +123,27 @@ static enum sigma_cmd_result cmd_traffic_send_ping(struct sigma_dut *dut,
 	}
 
 	id = dut->next_streamid++;
-	snprintf(buf, sizeof(buf), "%s/sigma_dut-ping.%d",
-		 dut->sigma_tmpdir, id);
+	snprintf(buf, sizeof(buf), "%s/sigma_dut-ping.%d", dut->sigma_tmpdir,
+		 id);
 	unlink(buf);
 	snprintf(buf, sizeof(buf), "%s/sigma_dut-ping-pid.%d",
 		 dut->sigma_tmpdir, id);
 	unlink(buf);
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG, "Send ping: pkts=%d interval=%f "
+	sigma_dut_print(dut, DUT_MSG_DEBUG,
+			"Send ping: pkts=%d interval=%f "
 			"streamid=%d",
 			pkts, interval, id);
 
 	f = fopen(concat_sigma_tmpdir(dut, "/sigma_dut-ping.sh", ping,
-				      sizeof(ping)), "w");
+				      sizeof(ping)),
+		  "w");
 	if (f == NULL)
 		return ERROR_SEND_STATUS;
 
 	extra[0] = '\0';
 	if (use_dscp) {
-		snprintf(extra, sizeof(extra), " -Q 0x%02x",
-			 dscp << 2);
+		snprintf(extra, sizeof(extra), " -Q 0x%02x", dscp << 2);
 	}
 
 	int_arg[0] = '\0';
@@ -153,13 +154,14 @@ static enum sigma_cmd_result cmd_traffic_send_ping(struct sigma_dut *dut,
 			 get_station_ifname(dut));
 	else
 		intf_arg[0] = '\0';
-	fprintf(f, "#!" SHELL "\n"
+	fprintf(f,
+		"#!" SHELL "\n"
 		"ping%s%s -c %d%s -s %d%s -q%s %s > %s"
 		"/sigma_dut-ping.%d &\n"
 		"echo $! > %s/sigma_dut-ping-pid.%d\n",
-		type == 2 ? "6" : "", broadcast ? " -b" : "",
-		pkts, int_arg, size, extra,
-		intf_arg, dst, dut->sigma_tmpdir, id, dut->sigma_tmpdir, id);
+		type == 2 ? "6" : "", broadcast ? " -b" : "", pkts, int_arg,
+		size, extra, intf_arg, dst, dut->sigma_tmpdir, id,
+		dut->sigma_tmpdir, id);
 
 	fclose(f);
 	if (chmod(concat_sigma_tmpdir(dut, "/sigma_dut-ping.sh", ping,
@@ -181,7 +183,6 @@ static enum sigma_cmd_result cmd_traffic_send_ping(struct sigma_dut *dut,
 	return STATUS_SENT;
 }
 
-
 static enum sigma_cmd_result cmd_traffic_stop_ping(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
 						   struct sigma_cmd *cmd)
@@ -201,8 +202,7 @@ static enum sigma_cmd_result cmd_traffic_stop_ping(struct sigma_dut *dut,
 		 dut->sigma_tmpdir, id);
 	f = fopen(buf, "r");
 	if (f == NULL) {
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "ErrorCode,Unknown streamID");
+		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unknown streamID");
 		return STATUS_SENT;
 	}
 	if (fscanf(f, "%d", &pid) != 1 || pid <= 0) {
@@ -222,8 +222,8 @@ static enum sigma_cmd_result cmd_traffic_stop_ping(struct sigma_dut *dut,
 	}
 	usleep(250000);
 
-	snprintf(buf, sizeof(buf), "%s/sigma_dut-ping.%d",
-		 dut->sigma_tmpdir, id);
+	snprintf(buf, sizeof(buf), "%s/sigma_dut-ping.%d", dut->sigma_tmpdir,
+		 id);
 	f = fopen(buf, "r");
 	if (f == NULL) {
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
@@ -256,13 +256,12 @@ static enum sigma_cmd_result cmd_traffic_stop_ping(struct sigma_dut *dut,
 		}
 	}
 	fclose(f);
-	snprintf(buf, sizeof(buf), "%s/sigma_dut-ping.%d",
-		 dut->sigma_tmpdir, id);
+	snprintf(buf, sizeof(buf), "%s/sigma_dut-ping.%d", dut->sigma_tmpdir,
+		 id);
 	unlink(buf);
 
 	if (!res_found) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"No ping results found");
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "No ping results found");
 		send_resp(dut, conn, SIGMA_COMPLETE, "sent,0,replies,0");
 		return STATUS_SENT;
 	}
@@ -271,7 +270,6 @@ static enum sigma_cmd_result cmd_traffic_stop_ping(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, buf);
 	return STATUS_SENT;
 }
-
 
 int get_ip_addr(const char *ifname, int ipv6, char *buf, size_t len)
 {
@@ -289,7 +287,7 @@ int get_ip_addr(const char *ifname, int ipv6, char *buf, size_t len)
 		if (!ipv6 && ifa_tmp->ifa_addr->sa_family == AF_INET) {
 			struct sockaddr_in *in;
 
-			in = (struct sockaddr_in *) ifa_tmp->ifa_addr;
+			in = (struct sockaddr_in *)ifa_tmp->ifa_addr;
 			if (!inet_ntop(AF_INET, &in->sin_addr, buf, len))
 				return -1;
 			return 0;
@@ -298,7 +296,7 @@ int get_ip_addr(const char *ifname, int ipv6, char *buf, size_t len)
 		if (ipv6 && ifa_tmp->ifa_addr->sa_family == AF_INET6) {
 			struct sockaddr_in6 *in6;
 
-			in6 = (struct sockaddr_in6 *) ifa_tmp->ifa_addr;
+			in6 = (struct sockaddr_in6 *)ifa_tmp->ifa_addr;
 
 			/* get link local address if available */
 			if (IN6_IS_ADDR_LINKLOCAL(&in6->sin6_addr)) {
@@ -317,7 +315,6 @@ int get_ip_addr(const char *ifname, int ipv6, char *buf, size_t len)
 	return non_ll_addr_found ? 0 : -1;
 }
 
-
 static int get_dscp_from_policy_table(struct sigma_dut *dut, int ip_version,
 				      const char *domain_name,
 				      const char *src_ip, int dst_port,
@@ -332,16 +329,17 @@ static int get_dscp_from_policy_table(struct sigma_dut *dut, int ip_version,
 		if (strlen(policy->domain_name) == 0)
 			continue;
 
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Found policy with domain name %s, ipver %d start_port %d, end_port %d, dst_port %d src_port %d, src_ip %s, dscp %d",
-				policy->domain_name, policy->ip_version,
-				policy->start_port, policy->end_port,
-				policy->dst_port, policy->src_port,
-				policy->src_ip, policy->dscp);
+		sigma_dut_print(
+			dut, DUT_MSG_DEBUG,
+			"Found policy with domain name %s, ipver %d start_port %d, "
+			"end_port %d, dst_port %d src_port %d, src_ip %s, dscp %d",
+			policy->domain_name, policy->ip_version,
+			policy->start_port, policy->end_port, policy->dst_port,
+			policy->src_port, policy->src_ip, policy->dscp);
 		/*
-		 * Discard if suffix is not found or suffix is not in the end of
-		 * the complete domain name.
-		 */
+     * Discard if suffix is not found or suffix is not in the end of
+     * the complete domain name.
+     */
 		suffix = strstr(domain_name, policy->domain_name);
 		if (!suffix)
 			continue;
@@ -400,15 +398,14 @@ static int get_dscp_from_policy_table(struct sigma_dut *dut, int ip_version,
 	}
 
 	if (dscp == -1)
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Policy not found for %s", domain_name);
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "Policy not found for %s",
+				domain_name);
 	else
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"DSCP for %s is %d", domain_name, dscp);
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "DSCP for %s is %d",
+				domain_name, dscp);
 
 	return dscp;
 }
-
 
 static enum sigma_cmd_result cmd_traffic_start_iperf(struct sigma_dut *dut,
 						     struct sigma_conn *conn,
@@ -524,7 +521,7 @@ static enum sigma_cmd_result cmd_traffic_start_iperf(struct sigma_dut *dut,
 		src_port = atoi(val);
 		if (get_ip_addr(ifname, ipv6, src_ip, sizeof(src_ip))) {
 			send_resp(dut, conn, SIGMA_ERROR,
-				"errorCode,Cannot get own IP address");
+				  "errorCode,Cannot get own IP address");
 			return STATUS_SENT;
 		}
 
@@ -568,7 +565,8 @@ static enum sigma_cmd_result cmd_traffic_start_iperf(struct sigma_dut *dut,
 				   sizeof(iperf)));
 
 	f = fopen(concat_sigma_tmpdir(dut, "/sigma_dut-iperf.sh", iperf,
-				      sizeof(iperf)), "w");
+				      sizeof(iperf)),
+		  "w");
 	if (!f) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "errorCode,Can not write sigma_dut-iperf.sh");
@@ -590,7 +588,8 @@ static enum sigma_cmd_result cmd_traffic_start_iperf(struct sigma_dut *dut,
 			buf[0] = '\0';
 		}
 
-		fprintf(f, "#!" SHELL "\n"
+		fprintf(f,
+			"#!" SHELL "\n"
 			"%s -s %s %s %s > %s"
 			"/sigma_dut-iperf &\n"
 			"echo $! > %s/sigma_dut-iperf-pid\n",
@@ -610,7 +609,8 @@ static enum sigma_cmd_result cmd_traffic_start_iperf(struct sigma_dut *dut,
 			binary = "iperf";
 		}
 
-		fprintf(f, "#!" SHELL "\n"
+		fprintf(f,
+			"#!" SHELL "\n"
 			"%s -c %s -t %d %s %s%s %s%s%s%s > %s"
 			"/sigma_dut-iperf &\n"
 			"echo $! > %s/sigma_dut-iperf-pid\n",
@@ -643,7 +643,6 @@ static enum sigma_cmd_result cmd_traffic_start_iperf(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static enum sigma_cmd_result cmd_traffic_stop_iperf(struct sigma_dut *dut,
 						    struct sigma_conn *conn,
 						    struct sigma_cmd *cmd)
@@ -656,7 +655,8 @@ static enum sigma_cmd_result cmd_traffic_stop_iperf(struct sigma_dut *dut,
 	long l_bandwidth, l_totalbytes;
 
 	f = fopen(concat_sigma_tmpdir(dut, "/sigma_dut-iperf-pid", iperf,
-				      sizeof(iperf)), "r");
+				      sizeof(iperf)),
+		  "r");
 	if (!f) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "errorCode,PID file does not exist");
@@ -683,7 +683,8 @@ static enum sigma_cmd_result cmd_traffic_stop_iperf(struct sigma_dut *dut,
 	/* parse iperf output which is stored in sigma_dut-iperf */
 	summary_buf[0] = '\0';
 	f = fopen(concat_sigma_tmpdir(dut, "/sigma_dut-iperf", iperf,
-				      sizeof(iperf)), "r");
+				      sizeof(iperf)),
+		  "r");
 	if (!f) {
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
 				"No iperf result file found");
@@ -763,12 +764,11 @@ static enum sigma_cmd_result cmd_traffic_stop_iperf(struct sigma_dut *dut,
 		bandwidth = 0;
 	l_bandwidth = bandwidth * factor;
 
-	snprintf(buf, sizeof(buf), "bandwidth,%lu,totalbytes,%lu",
-		 l_bandwidth, l_totalbytes);
+	snprintf(buf, sizeof(buf), "bandwidth,%lu,totalbytes,%lu", l_bandwidth,
+		 l_totalbytes);
 	send_resp(dut, conn, SIGMA_COMPLETE, buf);
 	return STATUS_SENT;
 }
-
 
 void traffic_register_cmds(void)
 {

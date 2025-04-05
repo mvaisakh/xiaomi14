@@ -19,9 +19,9 @@
  * DOC: Implement API's specific to fw offload component.
  */
 
-#include "wmi_unified_priv.h"
-#include "wlan_fwol_public_structs.h"
 #include "wmi_unified_fwol_api.h"
+#include "wlan_fwol_public_structs.h"
+#include "wmi_unified_priv.h"
 
 #ifdef WLAN_FEATURE_ELNA
 QDF_STATUS
@@ -51,9 +51,8 @@ wmi_extract_get_elna_bypass_resp(struct wmi_unified *wmi_handle, void *resp_buf,
 				 struct get_elna_bypass_response *resp)
 {
 	if (wmi_handle->ops->extract_get_elna_bypass_resp)
-		return wmi_handle->ops->extract_get_elna_bypass_resp(wmi_handle,
-								     resp_buf,
-								     resp);
+		return wmi_handle->ops->extract_get_elna_bypass_resp(
+			wmi_handle, resp_buf, resp);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -92,9 +91,8 @@ wmi_unified_send_get_thermal_stats_cmd(struct wmi_unified *wmi_handle,
 				       uint8_t temp_offset)
 {
 	if (wmi_handle->ops->send_get_thermal_stats_cmd)
-		return wmi_handle->ops->send_get_thermal_stats_cmd(wmi_handle,
-								   req_type,
-								   temp_offset);
+		return wmi_handle->ops->send_get_thermal_stats_cmd(
+			wmi_handle, req_type, temp_offset);
 
 	return QDF_STATUS_E_FAILURE;
 }

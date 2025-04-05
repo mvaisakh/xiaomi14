@@ -17,16 +17,17 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "dp_internal.h"
 #include "dp_types.h"
 #include "hal_reo.h"
-#include "dp_internal.h"
 #include <qdf_time.h>
 
 #define dp_reo_alert(params...) QDF_TRACE_FATAL(QDF_MODULE_ID_DP_REO, params)
 #define dp_reo_err(params...) QDF_TRACE_ERROR(QDF_MODULE_ID_DP_REO, params)
 #define dp_reo_warn(params...) QDF_TRACE_WARN(QDF_MODULE_ID_DP_REO, params)
-#define dp_reo_info(params...) \
-	__QDF_TRACE_FL(QDF_TRACE_LEVEL_INFO_HIGH, QDF_MODULE_ID_DP_REO, ## params)
+#define dp_reo_info(params...)                                          \
+	__QDF_TRACE_FL(QDF_TRACE_LEVEL_INFO_HIGH, QDF_MODULE_ID_DP_REO, \
+		       ##params)
 #define dp_reo_debug(params...) QDF_TRACE_DEBUG(QDF_MODULE_ID_DP_REO, params)
 
 #ifdef WLAN_FEATURE_DP_EVENT_HISTORY
@@ -39,28 +40,26 @@
  *
  * Return: None
  */
-static
-void dp_reo_cmd_srng_event_record(struct dp_soc *soc,
-				  enum hal_reo_cmd_type type,
-				  int post_status)
+static void dp_reo_cmd_srng_event_record(struct dp_soc *soc,
+					 enum hal_reo_cmd_type type,
+					 int post_status)
 {
 	struct reo_cmd_event_history *cmd_event_history =
-					&soc->stats.cmd_event_history;
+		&soc->stats.cmd_event_history;
 	struct reo_cmd_event_record *record = cmd_event_history->cmd_record;
 	int record_index;
 
 	record_index = (qdf_atomic_inc_return(&cmd_event_history->index)) &
-				(REO_CMD_EVENT_HIST_MAX - 1);
+		       (REO_CMD_EVENT_HIST_MAX - 1);
 
 	record[record_index].cmd_type = type;
 	record[record_index].cmd_return_status = post_status;
-	record[record_index].timestamp  = qdf_get_log_timestamp();
+	record[record_index].timestamp = qdf_get_log_timestamp();
 }
 #else
-static inline
-void dp_reo_cmd_srng_event_record(struct dp_soc *soc,
-				  enum hal_reo_cmd_type type,
-				  int post_status)
+static inline void dp_reo_cmd_srng_event_record(struct dp_soc *soc,
+						enum hal_reo_cmd_type type,
+						int post_status)
 {
 }
 #endif /*WLAN_FEATURE_DP_EVENT_HISTORY */
@@ -76,17 +75,16 @@ void dp_resume_reo_send_cmd(struct dp_soc *soc)
 	hal_register_reo_send_cmd(soc->hal_soc);
 }
 
-void
-dp_reset_rx_reo_tid_queue(struct dp_soc *soc, void *hw_qdesc_vaddr,
-			  uint32_t size)
+void dp_reset_rx_reo_tid_queue(struct dp_soc *soc, void *hw_qdesc_vaddr,
+			       uint32_t size)
 {
 	hal_reset_rx_reo_tid_queue(soc->hal_soc, hw_qdesc_vaddr, size);
 }
 #endif
 
 QDF_STATUS dp_reo_send_cmd(struct dp_soc *soc, enum hal_reo_cmd_type type,
-		     struct hal_reo_cmd_params *params,
-		     void (*callback_fn), void *data)
+			   struct hal_reo_cmd_params *params,
+			   void(*callback_fn), void *data)
 {
 	struct dp_reo_cmd_info *reo_cmd;
 	int num;
@@ -105,8 +103,7 @@ QDF_STATUS dp_reo_send_cmd(struct dp_soc *soc, enum hal_reo_cmd_type type,
 	if (callback_fn) {
 		reo_cmd = qdf_mem_malloc(sizeof(*reo_cmd));
 		if (!reo_cmd) {
-			dp_err_log("alloc failed for REO cmd:%d!!",
-				   type);
+			dp_err_log("alloc failed for REO cmd:%d!!", type);
 			return QDF_STATUS_E_NOMEM;
 		}
 
@@ -135,7 +132,7 @@ uint32_t dp_reo_status_ring_handler(struct dp_intr *int_ctx, struct dp_soc *soc)
 		return processed_count;
 	}
 	reo_desc = hal_srng_dst_get_next(soc->hal_soc,
-					soc->reo_status_ring.hal_srng);
+					 soc->reo_status_ring.hal_srng);
 
 	while (reo_desc) {
 		uint16_t tlv = HAL_GET_TLV(reo_desc);
@@ -143,32 +140,30 @@ uint32_t dp_reo_status_ring_handler(struct dp_intr *int_ctx, struct dp_soc *soc)
 
 		processed_count++;
 
-		status = hal_reo_status_update(soc->hal_soc,
-					       reo_desc,
+		status = hal_reo_status_update(soc->hal_soc, reo_desc,
 					       &reo_status, tlv, &num);
 		if (status != QDF_STATUS_SUCCESS)
 			goto next;
 
 		qdf_spin_lock_bh(&soc->rx.reo_cmd_lock);
-		TAILQ_FOREACH(reo_cmd, &soc->rx.reo_cmd_list,
-			reo_cmd_list_elem) {
+		TAILQ_FOREACH(reo_cmd, &soc->rx.reo_cmd_list, reo_cmd_list_elem)
+		{
 			if (reo_cmd->cmd == num) {
 				TAILQ_REMOVE(&soc->rx.reo_cmd_list, reo_cmd,
-				reo_cmd_list_elem);
+					     reo_cmd_list_elem);
 				break;
 			}
 		}
 		qdf_spin_unlock_bh(&soc->rx.reo_cmd_lock);
 
 		if (reo_cmd) {
-			reo_cmd->handler(soc, reo_cmd->data,
-					&reo_status);
+			reo_cmd->handler(soc, reo_cmd->data, &reo_status);
 			qdf_mem_free(reo_cmd);
 		}
 
 next:
 		reo_desc = hal_srng_dst_get_next(soc,
-						soc->reo_status_ring.hal_srng);
+						 soc->reo_status_ring.hal_srng);
 	} /* while */
 
 	dp_srng_access_end(int_ctx, soc, soc->reo_status_ring.hal_srng);
@@ -181,14 +176,13 @@ void dp_reo_cmdlist_destroy(struct dp_soc *soc)
 	struct dp_reo_cmd_info *tmp_cmd = NULL;
 	union hal_reo_status reo_status;
 
-	reo_status.queue_status.header.status =
-		HAL_REO_CMD_DRAIN;
+	reo_status.queue_status.header.status = HAL_REO_CMD_DRAIN;
 
 	qdf_spin_lock_bh(&soc->rx.reo_cmd_lock);
-	TAILQ_FOREACH_SAFE(reo_cmd, &soc->rx.reo_cmd_list,
-			reo_cmd_list_elem, tmp_cmd) {
-		TAILQ_REMOVE(&soc->rx.reo_cmd_list, reo_cmd,
-			reo_cmd_list_elem);
+	TAILQ_FOREACH_SAFE(reo_cmd, &soc->rx.reo_cmd_list, reo_cmd_list_elem,
+			   tmp_cmd)
+	{
+		TAILQ_REMOVE(&soc->rx.reo_cmd_list, reo_cmd, reo_cmd_list_elem);
 		reo_cmd->handler(soc, reo_cmd->data, &reo_status);
 		qdf_mem_free(reo_cmd);
 	}

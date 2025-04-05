@@ -4,13 +4,13 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include "kgsl_device.h"
 #include "kgsl_compat.h"
+#include "kgsl_device.h"
 #include "kgsl_sync.h"
 
 static long
 kgsl_ioctl_device_getproperty_compat(struct kgsl_device_private *dev_priv,
-				unsigned int cmd, void *data)
+				     unsigned int cmd, void *data)
 {
 	struct kgsl_device_getproperty_compat *param32 = data;
 	struct kgsl_device_getproperty param;
@@ -24,7 +24,7 @@ kgsl_ioctl_device_getproperty_compat(struct kgsl_device_private *dev_priv,
 
 static long
 kgsl_ioctl_device_setproperty_compat(struct kgsl_device_private *dev_priv,
-				unsigned int cmd, void *data)
+				     unsigned int cmd, void *data)
 {
 	struct kgsl_device_getproperty_compat *param32 = data;
 	struct kgsl_device_getproperty param;
@@ -38,7 +38,7 @@ kgsl_ioctl_device_setproperty_compat(struct kgsl_device_private *dev_priv,
 
 static long
 kgsl_ioctl_submit_commands_compat(struct kgsl_device_private *dev_priv,
-				      unsigned int cmd, void *data)
+				  unsigned int cmd, void *data)
 {
 	int result;
 	struct kgsl_submit_commands_compat *param32 = data;
@@ -61,7 +61,7 @@ kgsl_ioctl_submit_commands_compat(struct kgsl_device_private *dev_priv,
 
 static long
 kgsl_ioctl_rb_issueibcmds_compat(struct kgsl_device_private *dev_priv,
-				      unsigned int cmd, void *data)
+				 unsigned int cmd, void *data)
 {
 	int result;
 	struct kgsl_ringbuffer_issueibcmds_compat *param32 = data;
@@ -81,9 +81,7 @@ kgsl_ioctl_rb_issueibcmds_compat(struct kgsl_device_private *dev_priv,
 }
 
 static long kgsl_ioctl_cmdstream_freememontimestamp_ctxtid_compat(
-						struct kgsl_device_private
-						*dev_priv, unsigned int cmd,
-						void *data)
+	struct kgsl_device_private *dev_priv, unsigned int cmd, void *data)
 {
 	struct kgsl_cmdstream_freememontimestamp_ctxtid_compat *param32 = data;
 	struct kgsl_cmdstream_freememontimestamp_ctxtid param;
@@ -94,12 +92,12 @@ static long kgsl_ioctl_cmdstream_freememontimestamp_ctxtid_compat(
 	param.timestamp = param32->timestamp;
 
 	return kgsl_ioctl_cmdstream_freememontimestamp_ctxtid(dev_priv, cmd,
-								&param);
+							      &param);
 }
 
-static long kgsl_ioctl_sharedmem_free_compat(struct kgsl_device_private
-					*dev_priv, unsigned int cmd,
-					void *data)
+static long
+kgsl_ioctl_sharedmem_free_compat(struct kgsl_device_private *dev_priv,
+				 unsigned int cmd, void *data)
 {
 	struct kgsl_sharedmem_free_compat *param32 = data;
 	struct kgsl_sharedmem_free param;
@@ -109,9 +107,8 @@ static long kgsl_ioctl_sharedmem_free_compat(struct kgsl_device_private
 	return kgsl_ioctl_sharedmem_free(dev_priv, cmd, &param);
 }
 
-static long kgsl_ioctl_map_user_mem_compat(struct kgsl_device_private
-					*dev_priv, unsigned int cmd,
-					void *data)
+static long kgsl_ioctl_map_user_mem_compat(struct kgsl_device_private *dev_priv,
+					   unsigned int cmd, void *data)
 {
 	int result = 0;
 	struct kgsl_map_user_mem_compat *param32 = data;
@@ -134,7 +131,7 @@ static long kgsl_ioctl_map_user_mem_compat(struct kgsl_device_private
 
 static long
 kgsl_ioctl_gpumem_sync_cache_compat(struct kgsl_device_private *dev_priv,
-				unsigned int cmd, void *data)
+				    unsigned int cmd, void *data)
 {
 	struct kgsl_gpumem_sync_cache_compat *param32 = data;
 	struct kgsl_gpumem_sync_cache param;
@@ -150,7 +147,7 @@ kgsl_ioctl_gpumem_sync_cache_compat(struct kgsl_device_private *dev_priv,
 
 static long
 kgsl_ioctl_gpumem_sync_cache_bulk_compat(struct kgsl_device_private *dev_priv,
-					unsigned int cmd, void *data)
+					 unsigned int cmd, void *data)
 {
 	struct kgsl_gpumem_sync_cache_bulk_compat *param32 = data;
 	struct kgsl_gpumem_sync_cache_bulk param;
@@ -164,7 +161,7 @@ kgsl_ioctl_gpumem_sync_cache_bulk_compat(struct kgsl_device_private *dev_priv,
 
 static long
 kgsl_ioctl_sharedmem_flush_cache_compat(struct kgsl_device_private *dev_priv,
-				 unsigned int cmd, void *data)
+					unsigned int cmd, void *data)
 {
 	struct kgsl_sharedmem_free_compat *param32 = data;
 	struct kgsl_sharedmem_free param;
@@ -174,9 +171,8 @@ kgsl_ioctl_sharedmem_flush_cache_compat(struct kgsl_device_private *dev_priv,
 	return kgsl_ioctl_sharedmem_flush_cache(dev_priv, cmd, &param);
 }
 
-static long
-kgsl_ioctl_gpumem_alloc_compat(struct kgsl_device_private *dev_priv,
-			unsigned int cmd, void *data)
+static long kgsl_ioctl_gpumem_alloc_compat(struct kgsl_device_private *dev_priv,
+					   unsigned int cmd, void *data)
 {
 	int result = 0;
 	struct kgsl_gpumem_alloc_compat *param32 = data;
@@ -187,9 +183,9 @@ kgsl_ioctl_gpumem_alloc_compat(struct kgsl_device_private *dev_priv,
 	param.flags = param32->flags;
 
 	/*
-	 * Since this is a 32 bit application the page aligned size is expected
-	 * to fit inside of 32 bits - check for overflow and return error if so
-	 */
+   * Since this is a 32 bit application the page aligned size is expected
+   * to fit inside of 32 bits - check for overflow and return error if so
+   */
 	if (PAGE_ALIGN(param.size) >= UINT_MAX)
 		return -EINVAL;
 
@@ -204,7 +200,7 @@ kgsl_ioctl_gpumem_alloc_compat(struct kgsl_device_private *dev_priv,
 
 static long
 kgsl_ioctl_gpumem_alloc_id_compat(struct kgsl_device_private *dev_priv,
-			unsigned int cmd, void *data)
+				  unsigned int cmd, void *data)
 {
 	int result = 0;
 	struct kgsl_gpumem_alloc_id_compat *param32 = data;
@@ -217,9 +213,9 @@ kgsl_ioctl_gpumem_alloc_id_compat(struct kgsl_device_private *dev_priv,
 	param.gpuaddr = (unsigned long)param32->gpuaddr;
 
 	/*
-	 * Since this is a 32 bit application the page aligned size is expected
-	 * to fit inside of 32 bits - check for overflow and return error if so
-	 */
+   * Since this is a 32 bit application the page aligned size is expected
+   * to fit inside of 32 bits - check for overflow and return error if so
+   */
 	if (PAGE_ALIGN(param.size) >= UINT_MAX)
 		return -EINVAL;
 
@@ -236,7 +232,7 @@ kgsl_ioctl_gpumem_alloc_id_compat(struct kgsl_device_private *dev_priv,
 
 static long
 kgsl_ioctl_gpumem_get_info_compat(struct kgsl_device_private *dev_priv,
-				unsigned int cmd, void *data)
+				  unsigned int cmd, void *data)
 {
 	int result = 0;
 	struct kgsl_gpumem_get_info_compat *param32 = data;
@@ -261,8 +257,9 @@ kgsl_ioctl_gpumem_get_info_compat(struct kgsl_device_private *dev_priv,
 	return result;
 }
 
-static long kgsl_ioctl_timestamp_event_compat(struct kgsl_device_private
-				*dev_priv, unsigned int cmd, void *data)
+static long
+kgsl_ioctl_timestamp_event_compat(struct kgsl_device_private *dev_priv,
+				  unsigned int cmd, void *data)
 {
 	struct kgsl_timestamp_event_compat *param32 = data;
 	struct kgsl_timestamp_event param;
@@ -275,7 +272,6 @@ static long kgsl_ioctl_timestamp_event_compat(struct kgsl_device_private
 
 	return kgsl_ioctl_timestamp_event(dev_priv, cmd, &param);
 }
-
 
 static const struct kgsl_ioctl kgsl_compat_ioctl_funcs[] = {
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_DEVICE_GETPROPERTY_COMPAT,
@@ -293,8 +289,7 @@ static const struct kgsl_ioctl kgsl_compat_ioctl_funcs[] = {
 	/* IOCTL_KGSL_CMDSTREAM_FREEMEMONTIMESTAMP is no longer supported */
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_CMDSTREAM_FREEMEMONTIMESTAMP_CTXTID_COMPAT,
 			kgsl_ioctl_cmdstream_freememontimestamp_ctxtid_compat),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_DRAWCTXT_CREATE,
-			kgsl_ioctl_drawctxt_create),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_DRAWCTXT_CREATE, kgsl_ioctl_drawctxt_create),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_DRAWCTXT_DESTROY,
 			kgsl_ioctl_drawctxt_destroy),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_MAP_USER_MEM_COMPAT,
@@ -311,8 +306,7 @@ static const struct kgsl_ioctl kgsl_compat_ioctl_funcs[] = {
 			kgsl_ioctl_device_setproperty_compat),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUMEM_ALLOC_ID_COMPAT,
 			kgsl_ioctl_gpumem_alloc_id_compat),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUMEM_FREE_ID,
-			kgsl_ioctl_gpumem_free_id),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUMEM_FREE_ID, kgsl_ioctl_gpumem_free_id),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUMEM_GET_INFO_COMPAT,
 			kgsl_ioctl_gpumem_get_info_compat),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUMEM_SYNC_CACHE_COMPAT,
@@ -327,46 +321,28 @@ static const struct kgsl_ioctl kgsl_compat_ioctl_funcs[] = {
 			kgsl_ioctl_syncsource_create_fence),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_SYNCSOURCE_SIGNAL_FENCE,
 			kgsl_ioctl_syncsource_signal_fence),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_ALLOC,
-			kgsl_ioctl_gpuobj_alloc),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_FREE,
-			kgsl_ioctl_gpuobj_free),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_INFO,
-			kgsl_ioctl_gpuobj_info),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_IMPORT,
-			kgsl_ioctl_gpuobj_import),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_SYNC,
-			kgsl_ioctl_gpuobj_sync),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPU_COMMAND,
-			kgsl_ioctl_gpu_command),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_SET_INFO,
-			NULL),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_PHYS_ALLOC,
-			NULL),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_PHYS_FREE,
-			NULL),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_VIRT_ALLOC,
-			NULL),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_VIRT_FREE,
-			NULL),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_BIND,
-			NULL),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPU_SPARSE_COMMAND,
-			NULL),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_ALLOC, kgsl_ioctl_gpuobj_alloc),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_FREE, kgsl_ioctl_gpuobj_free),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_INFO, kgsl_ioctl_gpuobj_info),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_IMPORT, kgsl_ioctl_gpuobj_import),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_SYNC, kgsl_ioctl_gpuobj_sync),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPU_COMMAND, kgsl_ioctl_gpu_command),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUOBJ_SET_INFO, NULL),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_PHYS_ALLOC, NULL),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_PHYS_FREE, NULL),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_VIRT_ALLOC, NULL),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_VIRT_FREE, NULL),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_SPARSE_BIND, NULL),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPU_SPARSE_COMMAND, NULL),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPUMEM_BIND_RANGES,
 			kgsl_ioctl_gpumem_bind_ranges),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPU_AUX_COMMAND,
-			kgsl_ioctl_gpu_aux_command),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_CREATE,
-			kgsl_ioctl_timeline_create),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_WAIT,
-			kgsl_ioctl_timeline_wait),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_GPU_AUX_COMMAND, kgsl_ioctl_gpu_aux_command),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_CREATE, kgsl_ioctl_timeline_create),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_WAIT, kgsl_ioctl_timeline_wait),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_FENCE_GET,
 			kgsl_ioctl_timeline_fence_get),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_QUERY,
-			kgsl_ioctl_timeline_query),
-	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_SIGNAL,
-			kgsl_ioctl_timeline_signal),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_QUERY, kgsl_ioctl_timeline_query),
+	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_SIGNAL, kgsl_ioctl_timeline_signal),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_TIMELINE_DESTROY,
 			kgsl_ioctl_timeline_destroy),
 	KGSL_IOCTL_FUNC(IOCTL_KGSL_GET_FAULT_REPORT,
@@ -381,12 +357,12 @@ long kgsl_compat_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	struct kgsl_device *device = dev_priv->device;
 
 	long ret = kgsl_ioctl_helper(filep, cmd, arg, kgsl_compat_ioctl_funcs,
-		ARRAY_SIZE(kgsl_compat_ioctl_funcs));
+				     ARRAY_SIZE(kgsl_compat_ioctl_funcs));
 
 	/*
-	 * If the command was unrecognized in the generic core, try the device
-	 * specific function
-	 */
+   * If the command was unrecognized in the generic core, try the device
+   * specific function
+   */
 
 	if (ret == -ENOIOCTLCMD) {
 		if (device->ftbl->compat_ioctl != NULL)

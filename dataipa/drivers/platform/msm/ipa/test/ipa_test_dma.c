@@ -7,24 +7,24 @@
 #include "ipa_i.h"
 #include "ipa_ut_framework.h"
 
-#define IPA_TEST_DMA_WQ_NAME_BUFF_SZ		64
-#define IPA_TEST_DMA_MT_TEST_NUM_WQ		200
-#define IPA_TEST_DMA_MEMCPY_BUFF_SIZE		16384
-#define IPA_TEST_DMA_MAX_PKT_SIZE		0xFF00
-#define IPA_DMA_TEST_LOOP_NUM			1000
-#define IPA_DMA_TEST_INT_LOOP_NUM		50
-#define IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM	128
-#define IPA_DMA_RUN_TEST_UNIT_IN_LOOP(test_unit, iters, rc, args...)	\
-	do {								\
-		int __i;						\
-		for (__i = 0; __i < iters; __i++) {	\
-			IPA_UT_LOG(#test_unit " START iter %d\n", __i);	\
-			rc = test_unit(args);				\
-			if (!rc)					\
-				continue;				\
-			IPA_UT_LOG(#test_unit " failed %d\n", rc);	\
-			break;						\
-		}							\
+#define IPA_TEST_DMA_WQ_NAME_BUFF_SZ 64
+#define IPA_TEST_DMA_MT_TEST_NUM_WQ 200
+#define IPA_TEST_DMA_MEMCPY_BUFF_SIZE 16384
+#define IPA_TEST_DMA_MAX_PKT_SIZE 0xFF00
+#define IPA_DMA_TEST_LOOP_NUM 1000
+#define IPA_DMA_TEST_INT_LOOP_NUM 50
+#define IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM 128
+#define IPA_DMA_RUN_TEST_UNIT_IN_LOOP(test_unit, iters, rc, args...)    \
+	do {                                                            \
+		int __i;                                                \
+		for (__i = 0; __i < iters; __i++) {                     \
+			IPA_UT_LOG(#test_unit " START iter %d\n", __i); \
+			rc = test_unit(args);                           \
+			if (!rc)                                        \
+				continue;                               \
+			IPA_UT_LOG(#test_unit " failed %d\n", rc);      \
+			break;                                          \
+		}                                                       \
 	} while (0)
 
 /**
@@ -77,8 +77,7 @@ static int ipa_test_dma_teardown(void *priv)
 }
 
 static int ipa_test_dma_alloc_buffs(struct ipa_mem_buffer *src,
-				struct ipa_mem_buffer *dest,
-				int size)
+				    struct ipa_mem_buffer *dest, int size)
 {
 	int i;
 	static int val = 1;
@@ -118,20 +117,18 @@ static int ipa_test_dma_alloc_buffs(struct ipa_mem_buffer *src,
 
 fail_buf_cmp:
 	dma_free_coherent(ipa3_ctx->pdev, dest->size, dest->base,
-		dest->phys_base);
+			  dest->phys_base);
 fail_alloc_dest:
-	dma_free_coherent(ipa3_ctx->pdev, src->size, src->base,
-		src->phys_base);
+	dma_free_coherent(ipa3_ctx->pdev, src->size, src->base, src->phys_base);
 	return rc;
 }
 
 static void ipa_test_dma_destroy_buffs(struct ipa_mem_buffer *src,
-				struct ipa_mem_buffer *dest)
+				       struct ipa_mem_buffer *dest)
 {
-	dma_free_coherent(ipa3_ctx->pdev, src->size, src->base,
-		src->phys_base);
+	dma_free_coherent(ipa3_ctx->pdev, src->size, src->base, src->phys_base);
 	dma_free_coherent(ipa3_ctx->pdev, dest->size, dest->base,
-		dest->phys_base);
+			  dest->phys_base);
 }
 
 /**
@@ -184,10 +181,10 @@ static int ipa_test_dma_memcpy_sync(int size, bool expect_fail)
 				"BAD memcpy - buffs are not equals");
 			src = src_mem.base;
 			dest = dest_mem.base;
-			for (i = 0; i < size; i++)  {
+			for (i = 0; i < size; i++) {
 				if (*(src + i) != *(dest + i)) {
-					IPA_UT_LOG("byte: %d 0x%x != 0x%x\n",
-						i, *(src + i), *(dest + i));
+					IPA_UT_LOG("byte: %d 0x%x != 0x%x\n", i,
+						   *(src + i), *(dest + i));
 				}
 			}
 		}
@@ -228,15 +225,14 @@ static void ipa_test_dma_async_memcpy_cb_user_data(void *user_param)
 	}
 
 	rc = memcmp(udata->dest_mem.base, udata->src_mem.base,
-		udata->src_mem.size);
+		    udata->src_mem.size);
 	if (rc) {
 		IPA_UT_LOG("BAD memcpy - buffs are not equal sn=%d\n",
-			udata->call_serial_number);
-		IPA_UT_TEST_FAIL_REPORT(
-			"BAD memcpy - buffs are not equal");
+			   udata->call_serial_number);
+		IPA_UT_TEST_FAIL_REPORT("BAD memcpy - buffs are not equal");
 		src = udata->src_mem.base;
 		dest = udata->dest_mem.base;
-		for (i = 0; i < udata->src_mem.size; i++)  {
+		for (i = 0; i < udata->src_mem.size; i++) {
 			if (*(src + i) != *(dest + i)) {
 				IPA_UT_ERR("byte: %d 0x%x != 0x%x\n", i,
 					   *(src + i), *(dest + i));
@@ -246,7 +242,7 @@ static void ipa_test_dma_async_memcpy_cb_user_data(void *user_param)
 	}
 
 	IPA_UT_LOG("Notify on async memcopy sn=%d\n",
-		udata->call_serial_number);
+		   udata->call_serial_number);
 	complete(&(udata->copy_done));
 }
 
@@ -280,10 +276,9 @@ static int ipa_test_dma_memcpy_async(int size, bool expect_fail)
 
 	init_completion(&xfer_done);
 	rc = ipa_dma_async_memcpy(dest_mem.phys_base, src_mem.phys_base, size,
-		ipa_test_dma_async_memcpy_cb, &xfer_done);
+				  ipa_test_dma_async_memcpy_cb, &xfer_done);
 	if (!expect_fail && rc) {
-		IPA_UT_LOG("fail to initiate async memcpy - rc=%d\n",
-			rc);
+		IPA_UT_LOG("fail to initiate async memcpy - rc=%d\n", rc);
 		IPA_UT_TEST_FAIL_REPORT("async memcpy initiate failed");
 		goto free_buffs;
 	}
@@ -305,10 +300,10 @@ static int ipa_test_dma_memcpy_async(int size, bool expect_fail)
 				"BAD memcpy - buffs are not equals");
 			src = src_mem.base;
 			dest = dest_mem.base;
-			for (i = 0; i < size; i++)  {
+			for (i = 0; i < size; i++) {
 				if (*(src + i) != *(dest + i)) {
-					IPA_UT_LOG("byte: %d 0x%x != 0x%x\n",
-						i, *(src + i), *(dest + i));
+					IPA_UT_LOG("byte: %d 0x%x != 0x%x\n", i,
+						   *(src + i), *(dest + i));
 				}
 			}
 		}
@@ -337,7 +332,8 @@ static int ipa_test_dma_sync_async_memcpy(int size)
 	int rc;
 
 	IPA_DMA_RUN_TEST_UNIT_IN_LOOP(ipa_test_dma_memcpy_sync,
-		IPA_DMA_TEST_INT_LOOP_NUM, rc, size, false);
+				      IPA_DMA_TEST_INT_LOOP_NUM, rc, size,
+				      false);
 	if (rc) {
 		IPA_UT_LOG("sync memcopy fail rc=%d\n", rc);
 		IPA_UT_TEST_FAIL_REPORT("sync memcopy fail");
@@ -345,7 +341,8 @@ static int ipa_test_dma_sync_async_memcpy(int size)
 	}
 
 	IPA_DMA_RUN_TEST_UNIT_IN_LOOP(ipa_test_dma_memcpy_async,
-		IPA_DMA_TEST_INT_LOOP_NUM, rc, size, false);
+				      IPA_DMA_TEST_INT_LOOP_NUM, rc, size,
+				      false);
 	if (rc) {
 		IPA_UT_LOG("async memcopy fail rc=%d\n", rc);
 		IPA_UT_TEST_FAIL_REPORT("async memcopy fail");
@@ -689,8 +686,8 @@ static int ipa_test_dma_sync_memcpy_in_loop(void *priv)
 	}
 
 	IPA_DMA_RUN_TEST_UNIT_IN_LOOP(ipa_test_dma_memcpy_sync,
-		IPA_DMA_TEST_LOOP_NUM, rc,
-		IPA_TEST_DMA_MEMCPY_BUFF_SIZE, false);
+				      IPA_DMA_TEST_LOOP_NUM, rc,
+				      IPA_TEST_DMA_MEMCPY_BUFF_SIZE, false);
 	if (rc) {
 		IPA_UT_LOG("Iterations of sync memcpy failed rc=%d\n", rc);
 		IPA_UT_TEST_FAIL_REPORT("Iterations of sync memcpy failed");
@@ -730,8 +727,8 @@ static int ipa_test_dma_async_memcpy_in_loop(void *priv)
 	}
 
 	IPA_DMA_RUN_TEST_UNIT_IN_LOOP(ipa_test_dma_memcpy_async,
-		IPA_DMA_TEST_LOOP_NUM, rc,
-		IPA_TEST_DMA_MEMCPY_BUFF_SIZE, false);
+				      IPA_DMA_TEST_LOOP_NUM, rc,
+				      IPA_TEST_DMA_MEMCPY_BUFF_SIZE, false);
 	if (rc) {
 		IPA_UT_LOG("Iterations of async memcpy failed rc=%d\n", rc);
 		IPA_UT_TEST_FAIL_REPORT("Iterations of async memcpy failed");
@@ -770,12 +767,12 @@ static int ipa_test_dma_interleaved_sync_async_memcpy_in_loop(void *priv)
 	}
 
 	IPA_DMA_RUN_TEST_UNIT_IN_LOOP(ipa_test_dma_sync_async_memcpy,
-		IPA_DMA_TEST_INT_LOOP_NUM, rc,
-		IPA_TEST_DMA_MEMCPY_BUFF_SIZE);
+				      IPA_DMA_TEST_INT_LOOP_NUM, rc,
+				      IPA_TEST_DMA_MEMCPY_BUFF_SIZE);
 	if (rc) {
 		IPA_UT_LOG(
-			"Iterations of interleaved sync async memcpy failed rc=%d\n"
-			, rc);
+			"Iterations of interleaved sync async memcpy failed rc=%d\n",
+			rc);
 		IPA_UT_TEST_FAIL_REPORT(
 			"Iterations of interleaved sync async memcpy failed");
 		(void)ipa_dma_disable();
@@ -892,7 +889,7 @@ static int ipa_test_dma_mt_sync_async(void *priv)
 		INIT_WORK(&sync[i].work_s, ipa_test_dma_wrapper_test_one_sync);
 		queue_work(wq_sync[i], &sync[i].work_s);
 		INIT_WORK(&async[i].work_s,
-			ipa_test_dma_wrapper_test_one_async);
+			  ipa_test_dma_wrapper_test_one_async);
 		queue_work(wq_async[i], &async[i].work_s);
 	}
 
@@ -911,10 +908,10 @@ static int ipa_test_dma_mt_sync_async(void *priv)
 	}
 
 	if ((2 * IPA_TEST_DMA_MT_TEST_NUM_WQ) !=
-		atomic_read(&ipa_test_dma_mt_test_pass)) {
+	    atomic_read(&ipa_test_dma_mt_test_pass)) {
 		IPA_UT_LOG(
-			"Multi-threaded sync/async memcopy failed passed=%d\n"
-			, atomic_read(&ipa_test_dma_mt_test_pass));
+			"Multi-threaded sync/async memcopy failed passed=%d\n",
+			atomic_read(&ipa_test_dma_mt_test_pass));
 		IPA_UT_TEST_FAIL_REPORT(
 			"Multi-threaded sync/async memcopy failed");
 		return -EFAULT;
@@ -962,7 +959,8 @@ static int ipa_test_dma_parallel_async_memcpy_in_loop(void *priv)
 	}
 
 	udata = kzalloc(IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM *
-		sizeof(struct ipa_test_dma_async_user_data), GFP_KERNEL);
+				sizeof(struct ipa_test_dma_async_user_data),
+			GFP_KERNEL);
 	if (!udata) {
 		IPA_UT_ERR("fail allocate user_data array\n");
 		(void)ipa_dma_disable();
@@ -970,7 +968,7 @@ static int ipa_test_dma_parallel_async_memcpy_in_loop(void *priv)
 	}
 
 	rc = ipa_test_dma_alloc_buffs(&all_src_mem, &all_dest_mem,
-		IPA_TEST_DMA_MEMCPY_BUFF_SIZE);
+				      IPA_TEST_DMA_MEMCPY_BUFF_SIZE);
 	if (rc) {
 		IPA_UT_LOG("fail to alloc buffers\n");
 		IPA_UT_TEST_FAIL_REPORT("fail to alloc buffers");
@@ -979,42 +977,44 @@ static int ipa_test_dma_parallel_async_memcpy_in_loop(void *priv)
 		return rc;
 	}
 
-	for (i = 0 ; i < IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM ; i++) {
-		udata[i].src_mem.size =
-			IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
-			IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM;
-		udata[i].src_mem.base = all_src_mem.base + i *
-			(IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
-			IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
-		udata[i].src_mem.phys_base = all_src_mem.phys_base + i *
-			(IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
-			IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
+	for (i = 0; i < IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM; i++) {
+		udata[i].src_mem.size = IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
+					IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM;
+		udata[i].src_mem.base =
+			all_src_mem.base +
+			i * (IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
+			     IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
+		udata[i].src_mem.phys_base =
+			all_src_mem.phys_base +
+			i * (IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
+			     IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
 
-		udata[i].dest_mem.size =
-			(IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
-			IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
-		udata[i].dest_mem.base = all_dest_mem.base + i *
-			(IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
-			IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
-		udata[i].dest_mem.phys_base = all_dest_mem.phys_base + i *
-			(IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
-			IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
+		udata[i].dest_mem.size = (IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
+					  IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
+		udata[i].dest_mem.base =
+			all_dest_mem.base +
+			i * (IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
+			     IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
+		udata[i].dest_mem.phys_base =
+			all_dest_mem.phys_base +
+			i * (IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
+			     IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM);
 
 		udata[i].call_serial_number = i + 1;
 		init_completion(&(udata[i].copy_done));
-		rc = ipa_dma_async_memcpy(udata[i].dest_mem.phys_base,
-			udata[i].src_mem.phys_base,
+		rc = ipa_dma_async_memcpy(
+			udata[i].dest_mem.phys_base, udata[i].src_mem.phys_base,
 			(IPA_TEST_DMA_MEMCPY_BUFF_SIZE /
-			IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM),
+			 IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM),
 			ipa_test_dma_async_memcpy_cb_user_data, &udata[i]);
 		if (rc) {
 			IPA_UT_LOG("async memcpy initiation fail i=%d rc=%d\n",
-				i, rc);
+				   i, rc);
 			is_fail = true;
 		}
 	}
 
-	for (i = 0; i < IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM ; i++)
+	for (i = 0; i < IPA_DMA_TEST_ASYNC_PARALLEL_LOOP_NUM; i++)
 		wait_for_completion(&udata[i].copy_done);
 
 	ipa_test_dma_destroy_buffs(&all_src_mem, &all_dest_mem);
@@ -1074,63 +1074,59 @@ static int ipa_test_dma_sync_memcpy_max_pkt_size(void *priv)
 }
 
 /* Suite definition block */
-IPA_UT_DEFINE_SUITE_START(dma, "DMA for GSI",
-	ipa_test_dma_setup, ipa_test_dma_teardown)
-{
+IPA_UT_DEFINE_SUITE_START(dma, "DMA for GSI", ipa_test_dma_setup,
+			  ipa_test_dma_teardown){
 	IPA_UT_ADD_TEST(init_enable_disable_destroy,
-		"Init->Enable->Disable->Destroy",
-		ipa_test_dma_enable_disable,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"Init->Enable->Disable->Destroy",
+			ipa_test_dma_enable_disable, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(initx2_enable_disable_destroyx2,
-		"Initx2->Enable->Disable->Destroyx2",
-		ipa_test_dma_init_enbl_disable_destroy,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"Initx2->Enable->Disable->Destroyx2",
+			ipa_test_dma_init_enbl_disable_destroy, true,
+			IPA_HW_v3_0, IPA_HW_MAX),
 	IPA_UT_ADD_TEST(init_enablex2_disablex2_destroy,
-		"Init->Enablex2->Disablex2->Destroy",
-		ipa_test_dma_enblx2_disablex2,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"Init->Enablex2->Disablex2->Destroy",
+			ipa_test_dma_enblx2_disablex2, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(memcpy_before_enable,
-		"Call memcpy before dma enable and expect it to fail",
-		ipa_test_dma_memcpy_before_enable,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(sync_memcpy,
-		"Sync memory copy",
-		ipa_test_dma_sync_memcpy,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(sync_memcpy_small,
-		"Small Sync memory copy",
-		ipa_test_dma_sync_memcpy_small,
-		true, IPA_HW_v3_5, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(async_memcpy,
-		"Async memory copy",
-		ipa_test_dma_async_memcpy,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(async_memcpy_small,
-		"Small async memory copy",
-		ipa_test_dma_async_memcpy_small,
-		true, IPA_HW_v3_5, IPA_HW_MAX),
+			"Call memcpy before dma enable and expect it to fail",
+			ipa_test_dma_memcpy_before_enable, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(sync_memcpy, "Sync memory copy",
+			ipa_test_dma_sync_memcpy, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(sync_memcpy_small, "Small Sync memory copy",
+			ipa_test_dma_sync_memcpy_small, true, IPA_HW_v3_5,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(async_memcpy, "Async memory copy",
+			ipa_test_dma_async_memcpy, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(async_memcpy_small, "Small async memory copy",
+			ipa_test_dma_async_memcpy_small, true, IPA_HW_v3_5,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(sync_memcpy_in_loop,
-		"Several sync memory copy iterations",
-		ipa_test_dma_sync_memcpy_in_loop,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"Several sync memory copy iterations",
+			ipa_test_dma_sync_memcpy_in_loop, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
 	IPA_UT_ADD_TEST(async_memcpy_in_loop,
-		"Several async memory copy iterations",
-		ipa_test_dma_async_memcpy_in_loop,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(interleaved_sync_async_memcpy_in_loop,
+			"Several async memory copy iterations",
+			ipa_test_dma_async_memcpy_in_loop, true, IPA_HW_v3_0,
+			IPA_HW_MAX),
+	IPA_UT_ADD_TEST(
+		interleaved_sync_async_memcpy_in_loop,
 		"Several interleaved sync and async memory copy iterations",
-		ipa_test_dma_interleaved_sync_async_memcpy_in_loop,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
-	IPA_UT_ADD_TEST(multi_threaded_multiple_sync_async_memcpy,
+		ipa_test_dma_interleaved_sync_async_memcpy_in_loop, true,
+		IPA_HW_v3_0, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(
+		multi_threaded_multiple_sync_async_memcpy,
 		"Several multi-threaded sync and async memory copy iterations",
-		ipa_test_dma_mt_sync_async,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+		ipa_test_dma_mt_sync_async, true, IPA_HW_v3_0, IPA_HW_MAX),
 	IPA_UT_ADD_TEST(parallel_async_memcpy_in_loop,
-		"Several parallel async memory copy iterations",
-		ipa_test_dma_parallel_async_memcpy_in_loop,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"Several parallel async memory copy iterations",
+			ipa_test_dma_parallel_async_memcpy_in_loop, true,
+			IPA_HW_v3_0, IPA_HW_MAX),
 	IPA_UT_ADD_TEST(sync_memcpy_max_pkt_size,
-		"Sync memory copy with max packet size",
-		ipa_test_dma_sync_memcpy_max_pkt_size,
-		true, IPA_HW_v3_0, IPA_HW_MAX),
+			"Sync memory copy with max packet size",
+			ipa_test_dma_sync_memcpy_max_pkt_size, true,
+			IPA_HW_v3_0, IPA_HW_MAX),
 } IPA_UT_DEFINE_SUITE_END(dma);

@@ -28,27 +28,27 @@
 /*--------------------------------------------------------------------------
    Include Files
    ------------------------------------------------------------------------*/
+#include "epping_internal.h"
+#include "epping_main.h"
+#include "epping_test.h"
 #include <cds_api.h>
 #include <cds_sched.h>
+#include <linux/ctype.h>
 #include <linux/etherdevice.h>
 #include <linux/firmware.h>
-#include <wni_api.h>
-#include <wlan_ptt_sock_svc.h>
-#include <linux/wireless.h>
-#include <net/cfg80211.h>
 #include <linux/rtnetlink.h>
 #include <linux/semaphore.h>
-#include <linux/ctype.h>
-#include "epping_main.h"
-#include "epping_internal.h"
-#include "epping_test.h"
+#include <linux/wireless.h>
+#include <net/cfg80211.h>
+#include <wlan_ptt_sock_svc.h>
+#include <wni_api.h>
 
 #define TX_RETRY_TIMEOUT_IN_MS 1
 
 static bool enb_tx_dump;
 
-void epping_tx_dup_pkt(epping_adapter_t *adapter,
-		       HTC_ENDPOINT_ID eid, qdf_nbuf_t skb)
+void epping_tx_dup_pkt(epping_adapter_t *adapter, HTC_ENDPOINT_ID eid,
+		       qdf_nbuf_t skb)
 {
 	struct epping_cookie *cookie = NULL;
 	int skb_len, ret;
@@ -68,8 +68,7 @@ void epping_tx_dup_pkt(epping_adapter_t *adapter,
 		epping_free_cookie(adapter->pEpping_ctx, cookie);
 		return;
 	}
-	SET_HTC_PACKET_INFO_TX(&cookie->HtcPkt,
-			       cookie, qdf_nbuf_data(skb),
+	SET_HTC_PACKET_INFO_TX(&cookie->HtcPkt, cookie, qdf_nbuf_data(skb),
 			       qdf_nbuf_len(new_skb), eid, 0);
 	SET_HTC_PACKET_NET_BUF_CONTEXT(&cookie->HtcPkt, new_skb);
 	skb_len = (int)qdf_nbuf_len(new_skb);
@@ -77,15 +76,16 @@ void epping_tx_dup_pkt(epping_adapter_t *adapter,
 	ret = htc_send_pkt(adapter->pEpping_ctx->HTCHandle, &cookie->HtcPkt);
 	if (ret != QDF_STATUS_SUCCESS) {
 		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: htc_send_pkt failed, ret = %d\n", __func__, ret);
+			   "%s: htc_send_pkt failed, ret = %d\n", __func__,
+			   ret);
 		epping_free_cookie(adapter->pEpping_ctx, cookie);
 		qdf_nbuf_free(new_skb);
 		return;
 	}
 	adapter->stats.tx_bytes += skb_len;
 	++adapter->stats.tx_packets;
-	if (((adapter->stats.tx_packets +
-	      adapter->stats.tx_dropped) % EPPING_STATS_LOG_COUNT) == 0 &&
+	if (((adapter->stats.tx_packets + adapter->stats.tx_dropped) %
+	     EPPING_STATS_LOG_COUNT) == 0 &&
 	    (adapter->stats.tx_packets || adapter->stats.tx_dropped)) {
 		epping_log_stats(adapter, __func__);
 	}
@@ -93,7 +93,7 @@ void epping_tx_dup_pkt(epping_adapter_t *adapter,
 
 static int epping_tx_send_int(qdf_nbuf_t skb, epping_adapter_t *adapter)
 {
-	EPPING_HEADER *eppingHdr = (EPPING_HEADER *) qdf_nbuf_data(skb);
+	EPPING_HEADER *eppingHdr = (EPPING_HEADER *)qdf_nbuf_data(skb);
 	HTC_ENDPOINT_ID eid = ENDPOINT_UNUSED;
 	struct epping_cookie *cookie = NULL;
 	uint8_t ac = 0;
@@ -114,10 +114,10 @@ static int epping_tx_send_int(qdf_nbuf_t skb, epping_adapter_t *adapter)
 	if (enb_tx_dump)
 		epping_hex_dump((void *)eppingHdr, skb->len, __func__);
 	/*
-	 * a quirk of linux, the payload of the frame is 32-bit aligned and thus
-	 * the addition of the HTC header will mis-align the start of the HTC
-	 * frame, so we add some padding which will be stripped off in the target
-	 */
+   * a quirk of linux, the payload of the frame is 32-bit aligned and thus
+   * the addition of the HTC header will mis-align the start of the HTC
+   * frame, so we add some padding which will be stripped off in the target
+   */
 	if (EPPING_ALIGNMENT_PAD > 0) {
 		A_NETBUF_PUSH(skb, EPPING_ALIGNMENT_PAD);
 	}
@@ -134,9 +134,8 @@ static int epping_tx_send_int(qdf_nbuf_t skb, epping_adapter_t *adapter)
 	    tmpHdr.Cmd_h == EPPING_CMD_CONT_RX_START) {
 		epping_set_kperf_flag(adapter, eid, tmpHdr.CmdBuffer_t[0]);
 	}
-	SET_HTC_PACKET_INFO_TX(&cookie->HtcPkt,
-			       cookie, qdf_nbuf_data(skb), qdf_nbuf_len(skb),
-			       eid, 0);
+	SET_HTC_PACKET_INFO_TX(&cookie->HtcPkt, cookie, qdf_nbuf_data(skb),
+			       qdf_nbuf_len(skb), eid, 0);
 	SET_HTC_PACKET_NET_BUF_CONTEXT(&cookie->HtcPkt, skb);
 	skb_len = skb->len;
 	/* send the packet */
@@ -151,8 +150,8 @@ static int epping_tx_send_int(qdf_nbuf_t skb, epping_adapter_t *adapter)
 	}
 	adapter->stats.tx_bytes += skb_len;
 	++adapter->stats.tx_packets;
-	if (((adapter->stats.tx_packets +
-	      adapter->stats.tx_dropped) % EPPING_STATS_LOG_COUNT) == 0 &&
+	if (((adapter->stats.tx_packets + adapter->stats.tx_dropped) %
+	     EPPING_STATS_LOG_COUNT) == 0 &&
 	    (adapter->stats.tx_packets || adapter->stats.tx_dropped)) {
 		epping_log_stats(adapter, __func__);
 	}
@@ -185,7 +184,8 @@ void epping_tx_timer_expire(epping_adapter_t *adapter)
 						   nodrop_skb);
 			break;
 		} else {
-			htc_set_nodrop_pkt(adapter->pEpping_ctx->HTCHandle, false);
+			htc_set_nodrop_pkt(adapter->pEpping_ctx->HTCHandle,
+					   false);
 			EPPING_LOG(QDF_TRACE_LEVEL_INFO,
 				   "%s: nodrop: %pK xmit ok in timer\n",
 				   __func__, nodrop_skb);
@@ -199,7 +199,7 @@ void epping_tx_timer_expire(epping_adapter_t *adapter)
 		if (adapter->epping_timer_state != EPPING_TX_TIMER_RUNNING) {
 			adapter->epping_timer_state = EPPING_TX_TIMER_RUNNING;
 			qdf_timer_mod(&adapter->epping_timer,
-					      TX_RETRY_TIMEOUT_IN_MS);
+				      TX_RETRY_TIMEOUT_IN_MS);
 		}
 		qdf_spin_unlock_bh(&adapter->data_lock);
 	} else {
@@ -213,11 +213,12 @@ int epping_tx_send(qdf_nbuf_t skb, epping_adapter_t *adapter)
 	EPPING_HEADER *eppingHdr;
 	uint8_t ac = 0;
 
-	eppingHdr = (EPPING_HEADER *) qdf_nbuf_data(skb);
+	eppingHdr = (EPPING_HEADER *)qdf_nbuf_data(skb);
 
 	if (!IS_EPPING_PACKET(eppingHdr)) {
 		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: Received non endpoint ping packets\n", __func__);
+			   "%s: Received non endpoint ping packets\n",
+			   __func__);
 		/* no packet to send, cleanup */
 		qdf_nbuf_free(skb);
 		return -ENOMEM;
@@ -235,15 +236,15 @@ int epping_tx_send(qdf_nbuf_t skb, epping_adapter_t *adapter)
 	}
 
 	/*
-	 * some EPPING packets cannot be dropped no matter what access class
-	 * it was sent on. A special care has been taken:
-	 * 1. when there is no TX resource, queue the control packets to
-	 *    a special queue
-	 * 2. when there is TX resource, send the queued control packets first
-	 *    and then other packets
-	 * 3. a timer launches to check if there is queued control packets and
-	 *    flush them
-	 */
+   * some EPPING packets cannot be dropped no matter what access class
+   * it was sent on. A special care has been taken:
+   * 1. when there is no TX resource, queue the control packets to
+   *    a special queue
+   * 2. when there is TX resource, send the queued control packets first
+   *    and then other packets
+   * 3. a timer launches to check if there is queued control packets and
+   *    flush them
+   */
 
 	/* check the nodrop queue first */
 	while ((nodrop_skb = qdf_nbuf_queue_remove(&adapter->nodrop_queue))) {
@@ -258,7 +259,8 @@ int epping_tx_send(qdf_nbuf_t skb, epping_adapter_t *adapter)
 			/* no cookie so free the current skb */
 			goto tx_fail;
 		} else {
-			htc_set_nodrop_pkt(adapter->pEpping_ctx->HTCHandle, false);
+			htc_set_nodrop_pkt(adapter->pEpping_ctx->HTCHandle,
+					   false);
 			EPPING_LOG(QDF_TRACE_LEVEL_INFO,
 				   "%s: nodrop: %pK xmit ok\n", __func__,
 				   nodrop_skb);
@@ -281,14 +283,14 @@ tx_fail:
 			   __func__, skb, adapter->stats.tx_dropped);
 		return -ENOMEM;
 	} else {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: nodrop: %pK queued\n", __func__, skb);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "%s: nodrop: %pK queued\n",
+			   __func__, skb);
 		qdf_nbuf_queue_add(&adapter->nodrop_queue, skb);
 		qdf_spin_lock_bh(&adapter->data_lock);
 		if (adapter->epping_timer_state != EPPING_TX_TIMER_RUNNING) {
 			adapter->epping_timer_state = EPPING_TX_TIMER_RUNNING;
 			qdf_timer_mod(&adapter->epping_timer,
-					      TX_RETRY_TIMEOUT_IN_MS);
+				      TX_RETRY_TIMEOUT_IN_MS);
 		}
 		qdf_spin_unlock_bh(&adapter->data_lock);
 	}
@@ -298,18 +300,18 @@ tx_fail:
 
 #ifdef HIF_SDIO
 enum htc_send_full_action epping_tx_queue_full(void *Context,
-						HTC_PACKET *pPacket)
+					       HTC_PACKET *pPacket)
 {
 	/*
-	 * Call netif_stop_queue frequently will impact the mboxping tx t-put.
-	 * Return HTC_SEND_FULL_KEEP directly in epping_tx_queue_full to avoid.
-	 */
+   * Call netif_stop_queue frequently will impact the mboxping tx t-put.
+   * Return HTC_SEND_FULL_KEEP directly in epping_tx_queue_full to avoid.
+   */
 	return HTC_SEND_FULL_KEEP;
 }
 #endif /* HIF_SDIO */
 void epping_tx_complete(void *ctx, HTC_PACKET *htc_pkt)
 {
-	epping_context_t *pEpping_ctx = (epping_context_t *) ctx;
+	epping_context_t *pEpping_ctx = (epping_context_t *)ctx;
 	epping_adapter_t *adapter = pEpping_ctx->epping_adapter;
 	struct net_device *dev = adapter->dev;
 	QDF_STATUS status;
@@ -332,8 +334,8 @@ void epping_tx_complete(void *ctx, HTC_PACKET *htc_pkt)
 	cookie = htc_pkt->pPktContext;
 
 	if (!pktSkb) {
-		EPPING_LOG(QDF_TRACE_LEVEL_ERROR,
-			   "%s: NULL skb from hc packet", __func__);
+		EPPING_LOG(QDF_TRACE_LEVEL_ERROR, "%s: NULL skb from hc packet",
+			   __func__);
 		QDF_BUG(0);
 	} else {
 		if (htc_pkt->pBuffer != qdf_nbuf_data(pktSkb)) {
@@ -346,20 +348,19 @@ void epping_tx_complete(void *ctx, HTC_PACKET *htc_pkt)
 		qdf_nbuf_queue_add(&skb_queue, pktSkb);
 
 		if (QDF_IS_STATUS_SUCCESS(status)) {
-			if (htc_pkt->ActualLength !=
-				qdf_nbuf_len(pktSkb)) {
-				EPPING_LOG(QDF_TRACE_LEVEL_ERROR,
-					   "%s: htc_pkt length not equal to skb->len",
-					   __func__);
+			if (htc_pkt->ActualLength != qdf_nbuf_len(pktSkb)) {
+				EPPING_LOG(
+					QDF_TRACE_LEVEL_ERROR,
+					"%s: htc_pkt length not equal to skb->len",
+					__func__);
 				QDF_BUG(0);
 			}
 		}
 	}
 
-	EPPING_LOG(QDF_TRACE_LEVEL_INFO,
-		   "%s skb=%pK data=%pK len=0x%x eid=%d ",
-		   __func__, pktSkb, htc_pkt->pBuffer,
-		   htc_pkt->ActualLength, eid);
+	EPPING_LOG(QDF_TRACE_LEVEL_INFO, "%s skb=%pK data=%pK len=0x%x eid=%d ",
+		   __func__, pktSkb, htc_pkt->pBuffer, htc_pkt->ActualLength,
+		   eid);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		if (status == QDF_STATUS_E_CANCELED) {
@@ -368,8 +369,8 @@ void epping_tx_complete(void *ctx, HTC_PACKET *htc_pkt)
 		}
 		if (status != QDF_STATUS_E_RESOURCES) {
 			EPPING_LOG(QDF_TRACE_LEVEL_ERROR,
-				   "%s() -TX ERROR, status: 0x%x",
-				   __func__, status);
+				   "%s() -TX ERROR, status: 0x%x", __func__,
+				   status);
 		}
 	} else {
 		EPPING_LOG(QDF_TRACE_LEVEL_INFO, "%s: OK\n", __func__);

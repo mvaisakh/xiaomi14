@@ -27,8 +27,8 @@ static ssize_t hdd_ftm_time_sync_show(struct device *dev,
 	struct wlan_objmgr_vdev *vdev;
 	ssize_t size = 0;
 
-	struct net_device *net_dev = qdf_container_of(dev, struct net_device,
-						      dev);
+	struct net_device *net_dev =
+		qdf_container_of(dev, struct net_device, dev);
 
 	adapter = (struct hdd_adapter *)(netdev_priv(net_dev));
 	if (adapter->magic != WLAN_HDD_ADAPTER_MAGIC)
@@ -48,9 +48,8 @@ static ssize_t hdd_ftm_time_sync_show(struct device *dev,
 
 static DEVICE_ATTR(ftm_time_sync, 0400, hdd_ftm_time_sync_show, NULL);
 
-void
-hdd_ftm_time_sync_sta_state_notify(struct hdd_adapter *adapter,
-				   enum ftm_time_sync_sta_state state)
+void hdd_ftm_time_sync_sta_state_notify(struct hdd_adapter *adapter,
+					enum ftm_time_sync_sta_state state)
 {
 	struct hdd_station_ctx *hdd_sta_ctx;
 	struct wlan_objmgr_psoc *psoc;
@@ -81,8 +80,7 @@ hdd_ftm_time_sync_sta_state_notify(struct hdd_adapter *adapter,
 
 	hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter->deflink);
 	ucfg_ftm_time_sync_update_sta_connect_state(
-						vdev, state,
-						hdd_sta_ctx->conn_info.bssid);
+		vdev, state, hdd_sta_ctx->conn_info.bssid);
 out:
 	hdd_objmgr_put_vdev_by_user(vdev, FTM_TIME_SYNC_ID);
 }

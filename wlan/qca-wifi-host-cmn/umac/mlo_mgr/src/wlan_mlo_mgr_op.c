@@ -17,13 +17,13 @@
 /*
  * DOC: contains MLO manager operation functionality
  */
-#include <wlan_cmn.h>
-#include <wlan_cm_public_struct.h>
+#include "wlan_mlo_mgr_op.h"
 #include "wlan_mlo_mgr_cmn.h"
 #include "wlan_mlo_mgr_main.h"
 #include "wlan_mlo_mgr_public_structs.h"
-#include "wlan_mlo_mgr_op.h"
 #include "wlan_mlo_mgr_sta.h"
+#include <wlan_cm_public_struct.h>
+#include <wlan_cmn.h>
 
 #ifdef WLAN_FEATURE_11BE_MLO
 QDF_STATUS wlan_mlo_set_cu_bpcc(struct wlan_objmgr_vdev *vdev, uint8_t bpcc)

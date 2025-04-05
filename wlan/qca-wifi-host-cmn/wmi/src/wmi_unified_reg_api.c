@@ -21,22 +21,19 @@
  * DOC: Implement API's specific to Regulatory component.
  */
 
-#include <qdf_status.h>
 #include <qdf_module.h>
+#include <qdf_status.h>
 #include <wmi_unified_api.h>
 #include <wmi_unified_priv.h>
 #include <wmi_unified_reg_api.h>
 
 QDF_STATUS wmi_extract_reg_chan_list_update_event(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct cur_regulatory_info *reg_info,
-		uint32_t len)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct cur_regulatory_info *reg_info, uint32_t len)
 {
 	if (wmi_handle && wmi_handle->ops->extract_reg_chan_list_update_event)
-		return wmi_handle->ops->extract_reg_chan_list_update_event
-			(wmi_handle,
-			 evt_buf, reg_info, len);
+		return wmi_handle->ops->extract_reg_chan_list_update_event(
+			wmi_handle, evt_buf, reg_info, len);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -44,15 +41,13 @@ qdf_export_symbol(wmi_extract_reg_chan_list_update_event);
 
 #ifdef CONFIG_BAND_6GHZ
 QDF_STATUS wmi_extract_reg_chan_list_ext_update_event(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct cur_regulatory_info *reg_info,
-		uint32_t len)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct cur_regulatory_info *reg_info, uint32_t len)
 {
 	if (wmi_handle &&
 	    wmi_handle->ops->extract_reg_chan_list_ext_update_event)
-		return wmi_handle->ops->extract_reg_chan_list_ext_update_event
-					(wmi_handle, evt_buf, reg_info, len);
+		return wmi_handle->ops->extract_reg_chan_list_ext_update_event(
+			wmi_handle, evt_buf, reg_info, len);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -60,13 +55,11 @@ QDF_STATUS wmi_extract_reg_chan_list_ext_update_event(
 qdf_export_symbol(wmi_extract_reg_chan_list_ext_update_event);
 
 #ifdef CONFIG_AFC_SUPPORT
-QDF_STATUS wmi_extract_afc_event(wmi_unified_t wmi_handle,
-				 uint8_t *evt_buf,
+QDF_STATUS wmi_extract_afc_event(wmi_unified_t wmi_handle, uint8_t *evt_buf,
 				 struct afc_regulatory_info *afc_info,
 				 uint32_t len)
 {
-	if (wmi_handle &&
-	    wmi_handle->ops->extract_afc_event)
+	if (wmi_handle && wmi_handle->ops->extract_afc_event)
 		return wmi_handle->ops->extract_afc_event(wmi_handle, evt_buf,
 							  afc_info, len);
 
@@ -84,12 +77,12 @@ qdf_export_symbol(wmi_extract_afc_event);
  *
  * Return: QDF_STATUS_SUCCESS on success, QDF_STATUS_E_** on error
  */
-QDF_STATUS wmi_unified_send_start_11d_scan_cmd(wmi_unified_t wmi_handle,
-		struct reg_start_11d_scan_req *start_11d_scan)
+QDF_STATUS wmi_unified_send_start_11d_scan_cmd(
+	wmi_unified_t wmi_handle, struct reg_start_11d_scan_req *start_11d_scan)
 {
 	if (wmi_handle->ops->send_start_11d_scan_cmd)
 		return wmi_handle->ops->send_start_11d_scan_cmd(wmi_handle,
-				start_11d_scan);
+								start_11d_scan);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -102,67 +95,63 @@ qdf_export_symbol(wmi_unified_send_start_11d_scan_cmd);
  *
  * Return: QDF_STATUS_SUCCESS on success, QDF_STATUS_E_** on error
  */
-QDF_STATUS wmi_unified_send_stop_11d_scan_cmd(wmi_unified_t wmi_handle,
-		struct reg_stop_11d_scan_req *stop_11d_scan)
+QDF_STATUS
+wmi_unified_send_stop_11d_scan_cmd(wmi_unified_t wmi_handle,
+				   struct reg_stop_11d_scan_req *stop_11d_scan)
 {
 	if (wmi_handle->ops->send_stop_11d_scan_cmd)
 		return wmi_handle->ops->send_stop_11d_scan_cmd(wmi_handle,
-				stop_11d_scan);
+							       stop_11d_scan);
 
 	return QDF_STATUS_E_FAILURE;
 }
 qdf_export_symbol(wmi_unified_send_stop_11d_scan_cmd);
 
-QDF_STATUS wmi_extract_reg_11d_new_cc_event(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct reg_11d_new_country *reg_11d_new_cc,
-		uint32_t len)
+QDF_STATUS
+wmi_extract_reg_11d_new_cc_event(wmi_unified_t wmi_handle, uint8_t *evt_buf,
+				 struct reg_11d_new_country *reg_11d_new_cc,
+				 uint32_t len)
 {
 	if (wmi_handle && wmi_handle->ops->extract_reg_11d_new_country_event)
 		return wmi_handle->ops->extract_reg_11d_new_country_event(
-				wmi_handle, evt_buf, reg_11d_new_cc, len);
+			wmi_handle, evt_buf, reg_11d_new_cc, len);
 
 	return QDF_STATUS_E_FAILURE;
 }
 qdf_export_symbol(wmi_extract_reg_11d_new_cc_event);
 
-QDF_STATUS wmi_unified_set_user_country_code_cmd_send(
-		wmi_unified_t wmi_handle,
-		uint8_t pdev_id, struct cc_regdmn_s *rd)
+QDF_STATUS wmi_unified_set_user_country_code_cmd_send(wmi_unified_t wmi_handle,
+						      uint8_t pdev_id,
+						      struct cc_regdmn_s *rd)
 {
 	if (wmi_handle->ops->send_user_country_code_cmd)
-		return wmi_handle->ops->send_user_country_code_cmd(
-				wmi_handle, pdev_id, rd);
+		return wmi_handle->ops->send_user_country_code_cmd(wmi_handle,
+								   pdev_id, rd);
 
 	return QDF_STATUS_E_FAILURE;
 }
 qdf_export_symbol(wmi_unified_set_user_country_code_cmd_send);
 
-QDF_STATUS wmi_extract_reg_ch_avoid_event(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct ch_avoid_ind_type *ch_avoid_ind,
-		uint32_t len)
+QDF_STATUS
+wmi_extract_reg_ch_avoid_event(wmi_unified_t wmi_handle, uint8_t *evt_buf,
+			       struct ch_avoid_ind_type *ch_avoid_ind,
+			       uint32_t len)
 {
 	if (wmi_handle && wmi_handle->ops->extract_reg_ch_avoid_event)
 		return wmi_handle->ops->extract_reg_ch_avoid_event(
-				wmi_handle, evt_buf, ch_avoid_ind, len);
+			wmi_handle, evt_buf, ch_avoid_ind, len);
 
 	return QDF_STATUS_E_FAILURE;
 }
 qdf_export_symbol(wmi_extract_reg_ch_avoid_event);
 
 QDF_STATUS wmi_extract_tgtr2p_table_event(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct r2p_table_update_status_obj *update_status,
-		uint32_t len)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct r2p_table_update_status_obj *update_status, uint32_t len)
 {
-	if (wmi_handle &&
-	    wmi_handle->ops->extract_tgtr2p_table_event)
+	if (wmi_handle && wmi_handle->ops->extract_tgtr2p_table_event)
 		return wmi_handle->ops->extract_tgtr2p_table_event(
-				wmi_handle, evt_buf, update_status, len);
+			wmi_handle, evt_buf, update_status, len);
 
 	return QDF_STATUS_E_FAILURE;
 }

@@ -1,29 +1,29 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
-#include <linux/of.h>
 #include <linux/debugfs.h>
-#include <linux/videodev2.h>
-#include <linux/uaccess.h>
-#include <linux/platform_device.h>
 #include <linux/delay.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
 #include <linux/timer.h>
+#include <linux/uaccess.h>
+#include <linux/videodev2.h>
 
-#include "cam_io_util.h"
+#include "cam_common_util.h"
+#include "cam_cpas_api.h"
+#include "cam_debug_util.h"
 #include "cam_hw.h"
 #include "cam_hw_intf.h"
-#include "jpeg_dma_core.h"
-#include "jpeg_dma_soc.h"
-#include "cam_soc_util.h"
 #include "cam_io_util.h"
 #include "cam_jpeg_hw_intf.h"
 #include "cam_jpeg_hw_mgr_intf.h"
-#include "cam_cpas_api.h"
-#include "cam_debug_util.h"
-#include "cam_common_util.h"
+#include "cam_soc_util.h"
+#include "jpeg_dma_core.h"
+#include "jpeg_dma_soc.h"
 
 #define CAM_JPEG_HW_IRQ_IS_FRAME_DONE(jpeg_irq_status, hi) \
 	((jpeg_irq_status) & (hi)->int_status.framedone)
@@ -34,14 +34,14 @@
 
 #define CAM_JPEG_DMA_RESET_TIMEOUT msecs_to_jiffies(500)
 
-int cam_jpeg_dma_init_hw(void *device_priv,
-	void *init_hw_args, uint32_t arg_size)
+int cam_jpeg_dma_init_hw(void *device_priv, void *init_hw_args,
+			 uint32_t arg_size)
 {
 	struct cam_hw_info *jpeg_dma_dev = device_priv;
 	struct cam_hw_soc_info *soc_info = NULL;
 	struct cam_jpeg_dma_device_core_info *core_info = NULL;
 	struct cam_ahb_vote ahb_vote;
-	struct cam_axi_vote axi_vote = {0};
+	struct cam_axi_vote axi_vote = { 0 };
 	int rc;
 
 	if (!device_priv) {
@@ -50,12 +50,12 @@ int cam_jpeg_dma_init_hw(void *device_priv,
 	}
 
 	soc_info = &jpeg_dma_dev->soc_info;
-	core_info = (struct cam_jpeg_dma_device_core_info *)
-		jpeg_dma_dev->core_info;
+	core_info =
+		(struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
 
 	if (!soc_info || !core_info) {
-		CAM_ERR(CAM_JPEG, "soc_info = %pK core_info = %pK",
-			soc_info, core_info);
+		CAM_ERR(CAM_JPEG, "soc_info = %pK core_info = %pK", soc_info,
+			core_info);
 		return -EINVAL;
 	}
 
@@ -79,9 +79,7 @@ int cam_jpeg_dma_init_hw(void *device_priv,
 	axi_vote.axi_path[1].mnoc_ab_bw = JPEG_VOTE;
 	axi_vote.axi_path[1].mnoc_ib_bw = JPEG_VOTE;
 
-
-	rc = cam_cpas_start(core_info->cpas_handle,
-		&ahb_vote, &axi_vote);
+	rc = cam_cpas_start(core_info->cpas_handle, &ahb_vote, &axi_vote);
 	if (rc) {
 		CAM_ERR(CAM_JPEG, "cpass start failed: %d", rc);
 		goto cpas_failed;
@@ -106,8 +104,8 @@ cpas_failed:
 	return rc;
 }
 
-int cam_jpeg_dma_deinit_hw(void *device_priv,
-	void *init_hw_args, uint32_t arg_size)
+int cam_jpeg_dma_deinit_hw(void *device_priv, void *init_hw_args,
+			   uint32_t arg_size)
 {
 	struct cam_hw_info *jpeg_dma_dev = device_priv;
 	struct cam_hw_soc_info *soc_info = NULL;
@@ -120,11 +118,11 @@ int cam_jpeg_dma_deinit_hw(void *device_priv,
 	}
 
 	soc_info = &jpeg_dma_dev->soc_info;
-	core_info = (struct cam_jpeg_dma_device_core_info *)
-		jpeg_dma_dev->core_info;
+	core_info =
+		(struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
 	if (!soc_info || !core_info) {
-		CAM_ERR(CAM_JPEG, "soc_info = %pK core_info = %pK",
-			soc_info, core_info);
+		CAM_ERR(CAM_JPEG, "soc_info = %pK core_info = %pK", soc_info,
+			core_info);
 		return -EINVAL;
 	}
 
@@ -168,16 +166,16 @@ irqreturn_t cam_jpeg_dma_irq(int irq_num, void *data)
 		return IRQ_HANDLED;
 	}
 	soc_info = &jpeg_dma_dev->soc_info;
-	core_info = (struct cam_jpeg_dma_device_core_info *)
-		jpeg_dma_dev->core_info;
+	core_info =
+		(struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
 	hw_info = core_info->jpeg_dma_hw_info;
 	mem_base = soc_info->reg_map[0].mem_base;
 
-	irq_status = cam_io_r_mb(mem_base +
-		core_info->jpeg_dma_hw_info->reg_offset.int_status);
+	irq_status = cam_io_r_mb(
+		mem_base + core_info->jpeg_dma_hw_info->reg_offset.int_status);
 	cam_io_w_mb(irq_status,
-		soc_info->reg_map[0].mem_base +
-		core_info->jpeg_dma_hw_info->reg_offset.int_clr);
+		    soc_info->reg_map[0].mem_base +
+			    core_info->jpeg_dma_hw_info->reg_offset.int_clr);
 	CAM_DBG(CAM_JPEG, "irq_num: %d  irq_status: 0x%x , core_state: %d",
 		irq_num, irq_status, core_info->core_state);
 	if (CAM_JPEG_HW_IRQ_IS_FRAME_DONE(irq_status, hw_info)) {
@@ -185,9 +183,10 @@ irqreturn_t cam_jpeg_dma_irq(int irq_num, void *data)
 		if (core_info->core_state == CAM_JPEG_DMA_CORE_READY) {
 			CAM_TRACE(CAM_JPEG, "DMA FrameDone IRQ");
 			CAM_DBG(CAM_JPEG, "frane_done");
-			core_info->core_state = CAM_JPEG_DMA_CORE_RESETTING_ON_DONE;
+			core_info->core_state =
+				CAM_JPEG_DMA_CORE_RESETTING_ON_DONE;
 			cam_io_w_mb(hw_info->reg_val.reset_cmd,
-				mem_base + hw_info->reg_offset.reset_cmd);
+				    mem_base + hw_info->reg_offset.reset_cmd);
 		} else {
 			CAM_WARN(CAM_JPEG, "unexpected frame done ");
 			core_info->core_state = CAM_JPEG_DMA_CORE_NOT_READY;
@@ -202,9 +201,11 @@ irqreturn_t cam_jpeg_dma_irq(int irq_num, void *data)
 			complete(&jpeg_dma_dev->hw_complete);
 			CAM_DBG(CAM_JPEG, "JPEG DMA %s reset done",
 				jpeg_dma_dev->soc_info.dev_name);
-		} else if (core_info->core_state == CAM_JPEG_DMA_CORE_RESETTING_ON_DONE) {
+		} else if (core_info->core_state ==
+			   CAM_JPEG_DMA_CORE_RESETTING_ON_DONE) {
 			if (core_info->irq_cb.jpeg_hw_mgr_cb) {
-				core_info->irq_cb.jpeg_hw_mgr_cb(irq_status, 1,
+				core_info->irq_cb.jpeg_hw_mgr_cb(
+					irq_status, 1,
 					(void *)&core_info->irq_cb.irq_cb_data);
 			} else {
 				CAM_WARN(CAM_JPEG, "unexpected frame done");
@@ -222,7 +223,8 @@ irqreturn_t cam_jpeg_dma_irq(int irq_num, void *data)
 			core_info->core_state = CAM_JPEG_DMA_CORE_NOT_READY;
 			complete(&jpeg_dma_dev->hw_complete);
 			if (core_info->irq_cb.jpeg_hw_mgr_cb) {
-				core_info->irq_cb.jpeg_hw_mgr_cb(irq_status, 0,
+				core_info->irq_cb.jpeg_hw_mgr_cb(
+					irq_status, 0,
 					(void *)&core_info->irq_cb.irq_cb_data);
 			}
 		} else {
@@ -234,8 +236,7 @@ irqreturn_t cam_jpeg_dma_irq(int irq_num, void *data)
 	return IRQ_HANDLED;
 }
 
-int cam_jpeg_dma_reset_hw(void *data,
-	void *start_args, uint32_t arg_size)
+int cam_jpeg_dma_reset_hw(void *data, void *start_args, uint32_t arg_size)
 {
 	struct cam_hw_info *jpeg_dma_dev = data;
 	struct cam_jpeg_dma_device_core_info *core_info = NULL;
@@ -251,8 +252,8 @@ int cam_jpeg_dma_reset_hw(void *data,
 	}
 	/* maskdisable.clrirq.maskenable.resetcmd */
 	soc_info = &jpeg_dma_dev->soc_info;
-	core_info = (struct cam_jpeg_dma_device_core_info *)
-		jpeg_dma_dev->core_info;
+	core_info =
+		(struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
 	hw_info = core_info->jpeg_dma_hw_info;
 	mem_base = soc_info->reg_map[0].mem_base;
 
@@ -271,17 +272,16 @@ int cam_jpeg_dma_reset_hw(void *data,
 	spin_unlock(&jpeg_dma_dev->hw_lock);
 
 	cam_io_w_mb(hw_info->reg_val.int_mask_disable_all,
-		mem_base + hw_info->reg_offset.int_mask);
+		    mem_base + hw_info->reg_offset.int_mask);
 	cam_io_w_mb(hw_info->reg_val.int_clr_clearall,
-		mem_base + hw_info->reg_offset.int_clr);
+		    mem_base + hw_info->reg_offset.int_clr);
 	cam_io_w_mb(hw_info->reg_val.int_mask_enable_all,
-		mem_base + hw_info->reg_offset.int_mask);
+		    mem_base + hw_info->reg_offset.int_mask);
 	cam_io_w_mb(hw_info->reg_val.reset_cmd,
-		mem_base + hw_info->reg_offset.reset_cmd);
+		    mem_base + hw_info->reg_offset.reset_cmd);
 
 	rem_jiffies = cam_common_wait_for_completion_timeout(
-			&jpeg_dma_dev->hw_complete,
-			CAM_JPEG_DMA_RESET_TIMEOUT);
+		&jpeg_dma_dev->hw_complete, CAM_JPEG_DMA_RESET_TIMEOUT);
 	if (!rem_jiffies) {
 		CAM_ERR(CAM_JPEG, "dma error Reset Timeout");
 		core_info->core_state = CAM_JPEG_DMA_CORE_NOT_READY;
@@ -313,7 +313,7 @@ int cam_jpeg_dma_test_irq_line(void *data)
 		CAM_ERR(CAM_JPEG, "failed to trigger reset irq (rc=%d)", rc);
 	else
 		CAM_INFO(CAM_JPEG, "verified JPEG DMA (%s) IRQ line",
-			jpeg_dma_dev->soc_info.dev_name);
+			 jpeg_dma_dev->soc_info.dev_name);
 
 	rc = cam_jpeg_dma_deinit_hw(data, NULL, 0);
 	if (rc)
@@ -322,8 +322,7 @@ int cam_jpeg_dma_test_irq_line(void *data)
 	return 0;
 }
 
-int cam_jpeg_dma_start_hw(void *data,
-	void *start_args, uint32_t arg_size)
+int cam_jpeg_dma_start_hw(void *data, void *start_args, uint32_t arg_size)
 {
 	struct cam_hw_info *jpeg_dma_dev = data;
 	struct cam_jpeg_dma_device_core_info *core_info = NULL;
@@ -337,8 +336,8 @@ int cam_jpeg_dma_start_hw(void *data,
 	}
 
 	soc_info = &jpeg_dma_dev->soc_info;
-	core_info = (struct cam_jpeg_dma_device_core_info *)
-		jpeg_dma_dev->core_info;
+	core_info =
+		(struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
 	hw_info = core_info->jpeg_dma_hw_info;
 	mem_base = soc_info->reg_map[0].mem_base;
 
@@ -348,16 +347,14 @@ int cam_jpeg_dma_start_hw(void *data,
 	}
 
 	CAM_DBG(CAM_JPEG, "Starting DMA");
-	cam_io_w_mb(0x00000601,
-		mem_base + hw_info->reg_offset.int_mask);
+	cam_io_w_mb(0x00000601, mem_base + hw_info->reg_offset.int_mask);
 	cam_io_w_mb(hw_info->reg_val.hw_cmd_start,
-		mem_base + hw_info->reg_offset.hw_cmd);
+		    mem_base + hw_info->reg_offset.hw_cmd);
 
 	return 0;
 }
 
-int cam_jpeg_dma_stop_hw(void *data,
-	void *stop_args, uint32_t arg_size)
+int cam_jpeg_dma_stop_hw(void *data, void *stop_args, uint32_t arg_size)
 {
 	struct cam_hw_info *jpeg_dma_dev = data;
 	struct cam_jpeg_dma_device_core_info *core_info = NULL;
@@ -371,8 +368,8 @@ int cam_jpeg_dma_stop_hw(void *data,
 		return -EINVAL;
 	}
 	soc_info = &jpeg_dma_dev->soc_info;
-	core_info = (struct cam_jpeg_dma_device_core_info *)
-		jpeg_dma_dev->core_info;
+	core_info =
+		(struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
 	hw_info = core_info->jpeg_dma_hw_info;
 	mem_base = soc_info->reg_map[0].mem_base;
 
@@ -390,11 +387,10 @@ int cam_jpeg_dma_stop_hw(void *data,
 	spin_unlock(&jpeg_dma_dev->hw_lock);
 
 	cam_io_w_mb(hw_info->reg_val.hw_cmd_stop,
-		mem_base + hw_info->reg_offset.hw_cmd);
+		    mem_base + hw_info->reg_offset.hw_cmd);
 
 	rem_jiffies = cam_common_wait_for_completion_timeout(
-			&jpeg_dma_dev->hw_complete,
-			CAM_JPEG_DMA_RESET_TIMEOUT);
+		&jpeg_dma_dev->hw_complete, CAM_JPEG_DMA_RESET_TIMEOUT);
 	if (!rem_jiffies) {
 		CAM_ERR(CAM_JPEG, "error Reset Timeout");
 		core_info->core_state = CAM_JPEG_DMA_CORE_NOT_READY;
@@ -404,10 +400,10 @@ int cam_jpeg_dma_stop_hw(void *data,
 	return 0;
 }
 
-static int  cam_jpeg_dma_mini_dump(struct cam_hw_info *dev, void *args) {
-
+static int cam_jpeg_dma_mini_dump(struct cam_hw_info *dev, void *args)
+{
 	struct cam_jpeg_mini_dump_core_info *md;
-	struct cam_jpeg_dma_device_hw_info   *hw_info;
+	struct cam_jpeg_dma_device_hw_info *hw_info;
 	struct cam_jpeg_dma_device_core_info *core_info;
 
 	if (!dev || !args) {
@@ -430,14 +426,15 @@ static int  cam_jpeg_dma_mini_dump(struct cam_hw_info *dev, void *args) {
 	return 0;
 }
 
-int cam_jpeg_dma_dump_camnoc_misr_val(struct cam_jpeg_dma_device_hw_info *hw_info,
+int cam_jpeg_dma_dump_camnoc_misr_val(
+	struct cam_jpeg_dma_device_hw_info *hw_info,
 	struct cam_hw_soc_info *soc_info, void *cmd_args)
 {
-	void __iomem                         *dma_mem_base = NULL;
-	void __iomem                         *camnoc_mem_base = NULL;
-	struct cam_jpeg_misr_dump_args       *pmisr_args;
-	int32_t camnoc_misr_val[CAM_JPEG_CAMNOC_MISR_VAL_ROW][
-		CAM_JPEG_CAMNOC_MISR_VAL_COL] = {{0}};
+	void __iomem *dma_mem_base = NULL;
+	void __iomem *camnoc_mem_base = NULL;
+	struct cam_jpeg_misr_dump_args *pmisr_args;
+	int32_t camnoc_misr_val[CAM_JPEG_CAMNOC_MISR_VAL_ROW]
+			       [CAM_JPEG_CAMNOC_MISR_VAL_COL] = { { 0 } };
 	int i, rc = 0;
 	int32_t val;
 	uint32_t index = 0;
@@ -456,19 +453,20 @@ int cam_jpeg_dma_dump_camnoc_misr_val(struct cam_jpeg_dma_device_hw_info *hw_inf
 	CAM_DBG(CAM_JPEG, "index %d", index);
 
 	for (i = 0; i < hw_info->camnoc_misr_sigdata; i++) {
-		camnoc_misr_val[index][i] = cam_io_r_mb(camnoc_mem_base +
+		camnoc_misr_val[index][i] = cam_io_r_mb(
+			camnoc_mem_base +
 			hw_info->camnoc_misr_reg_offset.sigdata0 + (i * 8));
 		if (hw_info->prev_camnoc_misr_val[index][i] !=
-			camnoc_misr_val[index][i])
+		    camnoc_misr_val[index][i])
 			mismatch = true;
 	}
 	if (mismatch && (pmisr_args->req_id != 1)) {
 		CAM_ERR(CAM_JPEG,
 			"CAMNOC DMA_MISR MISMATCH [req:%d][i:%d][index:%d]\n"
 			"curr:0x%x %x %x %x prev:0x%x %x %x %x isbug:%d",
-			pmisr_args->req_id, i, index,
-			camnoc_misr_val[index][3], camnoc_misr_val[index][2],
-			camnoc_misr_val[index][1], camnoc_misr_val[index][0],
+			pmisr_args->req_id, i, index, camnoc_misr_val[index][3],
+			camnoc_misr_val[index][2], camnoc_misr_val[index][1],
+			camnoc_misr_val[index][0],
 			hw_info->prev_camnoc_misr_val[index][3],
 			hw_info->prev_camnoc_misr_val[index][2],
 			hw_info->prev_camnoc_misr_val[index][1],
@@ -477,30 +475,30 @@ int cam_jpeg_dma_dump_camnoc_misr_val(struct cam_jpeg_dma_device_hw_info *hw_inf
 		if (pmisr_args->enable_bug)
 			BUG_ON(1);
 	}
-	CAM_DBG(CAM_JPEG,
-		"CAMNOC DMA_MISR req:%d SigData:0x %x %x %x %x",
-		pmisr_args->req_id,
-		camnoc_misr_val[index][3], camnoc_misr_val[index][2],
-		camnoc_misr_val[index][1], camnoc_misr_val[index][0]);
+	CAM_DBG(CAM_JPEG, "CAMNOC DMA_MISR req:%d SigData:0x %x %x %x %x",
+		pmisr_args->req_id, camnoc_misr_val[index][3],
+		camnoc_misr_val[index][2], camnoc_misr_val[index][1],
+		camnoc_misr_val[index][0]);
 	for (i = 0; i < hw_info->camnoc_misr_sigdata; i++)
 		hw_info->prev_camnoc_misr_val[index][i] =
 			camnoc_misr_val[index][i];
 	/* stop misr : cam_noc_cam_noc_0_req_link_misrprb_MiscCtl_Low */
 	cam_io_w_mb(hw_info->camnoc_misr_reg_val.misc_ctl_stop,
-		camnoc_mem_base + hw_info->camnoc_misr_reg_offset.misc_ctl);
+		    camnoc_mem_base + hw_info->camnoc_misr_reg_offset.misc_ctl);
 
 	return rc;
 }
 
 int cam_jpeg_dma_dump_hw_misr_val(struct cam_jpeg_dma_device_hw_info *hw_info,
-	struct cam_hw_soc_info *soc_info, void *cmd_args)
+				  struct cam_hw_soc_info *soc_info,
+				  void *cmd_args)
 {
-	void __iomem                         *dma_mem_base = NULL;
-	struct cam_jpeg_misr_dump_args       *pmisr_args;
-	int32_t dma_wr_misr_val[CAM_JPEG_CAMNOC_MISR_VAL_ROW][
-		CAM_JPEG_CAMNOC_MISR_VAL_COL] = {{0}};
-	int32_t dma_rd_misr_val[CAM_JPEG_CAMNOC_MISR_VAL_ROW][
-		CAM_JPEG_CAMNOC_MISR_VAL_COL] = {{0}};
+	void __iomem *dma_mem_base = NULL;
+	struct cam_jpeg_misr_dump_args *pmisr_args;
+	int32_t dma_wr_misr_val[CAM_JPEG_CAMNOC_MISR_VAL_ROW]
+			       [CAM_JPEG_CAMNOC_MISR_VAL_COL] = { { 0 } };
+	int32_t dma_rd_misr_val[CAM_JPEG_CAMNOC_MISR_VAL_ROW]
+			       [CAM_JPEG_CAMNOC_MISR_VAL_COL] = { { 0 } };
 	int offset, i, rc = 0;
 	int32_t val;
 	uint32_t index = 0;
@@ -518,24 +516,25 @@ int cam_jpeg_dma_dump_hw_misr_val(struct cam_jpeg_dma_device_hw_info *hw_info,
 	CAM_DBG(CAM_JPEG, "index %d", index);
 
 	/* After the session is complete, read back the MISR values.
-	 * fetch engine MISR values
-	 */
+   * fetch engine MISR values
+   */
 	offset = hw_info->reg_offset.misr_cfg1;
 	for (i = 0; i < hw_info->max_misr_rd; i++) {
 		val = i << hw_info->misr_rd_word_sel;
 		cam_io_w_mb(val, dma_mem_base + offset);
-		dma_rd_misr_val[index][i] = cam_io_r_mb(dma_mem_base +
-			offset + 0x4);
-		if (hw_info->prev_dma_rd_misr_val[index][i] != dma_rd_misr_val[index][i])
+		dma_rd_misr_val[index][i] =
+			cam_io_r_mb(dma_mem_base + offset + 0x4);
+		if (hw_info->prev_dma_rd_misr_val[index][i] !=
+		    dma_rd_misr_val[index][i])
 			mismatch = true;
 	}
 	if (mismatch && (pmisr_args->req_id != 1)) {
 		CAM_ERR(CAM_JPEG,
 			"CAMNOC DMA_RD_MISR MISMATCH [req:%d][index:%d][i:%d]\n"
 			"curr:0x%x %x %x %x prev:0x%x %x %x %x isbug:%d",
-			pmisr_args->req_id, index, i,
-			dma_rd_misr_val[index][3], dma_rd_misr_val[index][2],
-			dma_rd_misr_val[index][1], dma_rd_misr_val[index][0],
+			pmisr_args->req_id, index, i, dma_rd_misr_val[index][3],
+			dma_rd_misr_val[index][2], dma_rd_misr_val[index][1],
+			dma_rd_misr_val[index][0],
 			hw_info->prev_dma_rd_misr_val[index][3],
 			hw_info->prev_dma_rd_misr_val[index][2],
 			hw_info->prev_dma_rd_misr_val[index][1],
@@ -545,8 +544,7 @@ int cam_jpeg_dma_dump_hw_misr_val(struct cam_jpeg_dma_device_hw_info *hw_info,
 			BUG_ON(1);
 	}
 
-	CAM_DBG(CAM_JPEG,
-		"CORE JPEG DMA RD MISR: 0x%x %x %x %x",
+	CAM_DBG(CAM_JPEG, "CORE JPEG DMA RD MISR: 0x%x %x %x %x",
 		dma_rd_misr_val[index][3], dma_rd_misr_val[index][2],
 		dma_rd_misr_val[index][1], dma_rd_misr_val[index][0]);
 
@@ -560,19 +558,19 @@ int cam_jpeg_dma_dump_hw_misr_val(struct cam_jpeg_dma_device_hw_info *hw_info,
 	for (i = 0; i < hw_info->max_misr_wr; i++) {
 		val = hw_info->master_we_sel | (i << hw_info->misr_rd_word_sel);
 		cam_io_w_mb(val, dma_mem_base + offset);
-		dma_wr_misr_val[index][i] = cam_io_r_mb(dma_mem_base +
-			offset + 0x4);
+		dma_wr_misr_val[index][i] =
+			cam_io_r_mb(dma_mem_base + offset + 0x4);
 		if (hw_info->prev_dma_wr_misr_val[index][i] !=
-			dma_wr_misr_val[index][i])
+		    dma_wr_misr_val[index][i])
 			mismatch = true;
 	}
 	if (mismatch && (pmisr_args->req_id != 1)) {
 		CAM_ERR(CAM_JPEG,
 			"CAMNOC DMA_WR_MISR MISMATCH [req:%d][index:%d][i:%d]\n"
 			"curr:0x%x %x %x %x prev:0x%x %x %x %x isbug:%d",
-			pmisr_args->req_id, index, i,
-			dma_wr_misr_val[index][3], dma_wr_misr_val[index][2],
-			dma_wr_misr_val[index][1], dma_wr_misr_val[index][0],
+			pmisr_args->req_id, index, i, dma_wr_misr_val[index][3],
+			dma_wr_misr_val[index][2], dma_wr_misr_val[index][1],
+			dma_wr_misr_val[index][0],
 			hw_info->prev_dma_wr_misr_val[index][3],
 			hw_info->prev_dma_wr_misr_val[index][2],
 			hw_info->prev_dma_wr_misr_val[index][1],
@@ -581,8 +579,7 @@ int cam_jpeg_dma_dump_hw_misr_val(struct cam_jpeg_dma_device_hw_info *hw_info,
 		if (pmisr_args->enable_bug)
 			BUG_ON(1);
 	}
-	CAM_DBG(CAM_JPEG,
-		"CORE JPEG DMA WR MISR: 0x%x %x %x %x",
+	CAM_DBG(CAM_JPEG, "CORE JPEG DMA WR MISR: 0x%x %x %x %x",
 		dma_wr_misr_val[index][3], dma_wr_misr_val[index][2],
 		dma_wr_misr_val[index][1], dma_wr_misr_val[index][0]);
 
@@ -594,12 +591,13 @@ int cam_jpeg_dma_dump_hw_misr_val(struct cam_jpeg_dma_device_hw_info *hw_info,
 	return rc;
 }
 
-int cam_jpeg_dma_config_cmanoc_hw_misr(struct cam_jpeg_dma_device_hw_info *hw_info,
+int cam_jpeg_dma_config_cmanoc_hw_misr(
+	struct cam_jpeg_dma_device_hw_info *hw_info,
 	struct cam_hw_soc_info *soc_info, void *cmd_args)
 {
-	void __iomem                         *dma_mem_base = NULL;
-	void __iomem                         *camnoc_mem_base = NULL;
-	uint32_t                             *camnoc_misr_test = NULL;
+	void __iomem *dma_mem_base = NULL;
+	void __iomem *camnoc_mem_base = NULL;
+	uint32_t *camnoc_misr_test = NULL;
 	int val = 0;
 
 	dma_mem_base = soc_info->reg_map[0].mem_base;
@@ -614,17 +612,18 @@ int cam_jpeg_dma_config_cmanoc_hw_misr(struct cam_jpeg_dma_device_hw_info *hw_in
 		return -EINVAL;
 	}
 	/* enable FE and WE with sample data mode */
-	cam_io_w_mb(hw_info->reg_val.misr_cfg0, dma_mem_base +
-		hw_info->reg_offset.misr_cfg0);
+	cam_io_w_mb(hw_info->reg_val.misr_cfg0,
+		    dma_mem_base + hw_info->reg_offset.misr_cfg0);
 
 	/* cam_noc_cam_noc_0_req_link_misrprb_MainCtl_Low
-	 * enable CRC generation on both RD, WR and transaction payload
-	 */
-	cam_io_w_mb(hw_info->camnoc_misr_reg_val.main_ctl, camnoc_mem_base +
-		hw_info->camnoc_misr_reg_offset.main_ctl);
+   * enable CRC generation on both RD, WR and transaction payload
+   */
+	cam_io_w_mb(hw_info->camnoc_misr_reg_val.main_ctl,
+		    camnoc_mem_base + hw_info->camnoc_misr_reg_offset.main_ctl);
 	/* cam_noc_cam_noc_0_req_link_misrprb_IdMask_Low */
-	cam_io_w_mb(hw_info->camnoc_misr_reg_val.main_ctl, camnoc_mem_base +
-		hw_info->camnoc_misr_reg_offset.id_mask_low);
+	cam_io_w_mb(hw_info->camnoc_misr_reg_val.main_ctl,
+		    camnoc_mem_base +
+			    hw_info->camnoc_misr_reg_offset.id_mask_low);
 	/* cam_noc_cam_noc_0_req_link_misrprb_IdValue_Low */
 	switch (*camnoc_misr_test) {
 	case CAM_JPEG_MISR_ID_LOW_RD:
@@ -638,10 +637,10 @@ int cam_jpeg_dma_config_cmanoc_hw_misr(struct cam_jpeg_dma_device_hw_info *hw_in
 		break;
 	}
 	cam_io_w_mb(val, camnoc_mem_base +
-		hw_info->camnoc_misr_reg_offset.id_value_low);
+				 hw_info->camnoc_misr_reg_offset.id_value_low);
 	/* start/reset misr : cam_noc_cam_noc_0_req_link_misrprb_MiscCtl_Low */
 	cam_io_w_mb(hw_info->camnoc_misr_reg_val.misc_ctl_start,
-		camnoc_mem_base + hw_info->camnoc_misr_reg_offset.misc_ctl);
+		    camnoc_mem_base + hw_info->camnoc_misr_reg_offset.misc_ctl);
 	CAM_DBG(CAM_JPEG, "DMA CAMNOC and HW MISR configured");
 
 	return 0;
@@ -653,30 +652,36 @@ int cam_jpeg_dma_dump_debug_regs(struct cam_hw_info *jpeg_dma_dev)
 	struct cam_jpeg_dma_device_core_info *core_info = NULL;
 
 	soc_info = &jpeg_dma_dev->soc_info;
-	core_info = (struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
+	core_info =
+		(struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
 
 	CAM_INFO(CAM_JPEG, "************ JPEG DMA REGISTER DUMP ************");
 
-	/* JPEG DMA TOP, Interrupt, core config, command registers & Fetch Engine Registers */
-	cam_soc_util_reg_dump(soc_info, CAM_JPEG_MEM_BASE_INDEX,
+	/* JPEG DMA TOP, Interrupt, core config, command registers & Fetch Engine
+   * Registers */
+	cam_soc_util_reg_dump(
+		soc_info, CAM_JPEG_MEM_BASE_INDEX,
 		core_info->jpeg_dma_hw_info->debug_reg_offset.top_offset,
 		core_info->jpeg_dma_hw_info->debug_reg_offset.top_range);
 
 	/* Write Engine */
-	cam_soc_util_reg_dump(soc_info, CAM_JPEG_MEM_BASE_INDEX,
+	cam_soc_util_reg_dump(
+		soc_info, CAM_JPEG_MEM_BASE_INDEX,
 		core_info->jpeg_dma_hw_info->debug_reg_offset.we_offset,
 		core_info->jpeg_dma_hw_info->debug_reg_offset.we_range);
 
 	/*
-	 * WE qos cfg, test bus and debug regs, spare regs, bus misr, scale reg, core status regs
-	 *	 & MMU prefetch regs
-	 */
-	cam_soc_util_reg_dump(soc_info, CAM_JPEG_MEM_BASE_INDEX,
+   * WE qos cfg, test bus and debug regs, spare regs, bus misr, scale reg, core
+   *status regs & MMU prefetch regs
+   */
+	cam_soc_util_reg_dump(
+		soc_info, CAM_JPEG_MEM_BASE_INDEX,
 		core_info->jpeg_dma_hw_info->debug_reg_offset.we_qos_offset,
 		core_info->jpeg_dma_hw_info->debug_reg_offset.we_qos_range);
 
 	/* Perf Registers */
-	cam_soc_util_reg_dump(soc_info, CAM_JPEG_MEM_BASE_INDEX,
+	cam_soc_util_reg_dump(
+		soc_info, CAM_JPEG_MEM_BASE_INDEX,
 		core_info->jpeg_dma_hw_info->debug_reg_offset.perf_offset,
 		core_info->jpeg_dma_hw_info->debug_reg_offset.perf_range);
 
@@ -684,14 +689,14 @@ int cam_jpeg_dma_dump_debug_regs(struct cam_hw_info *jpeg_dma_dev)
 }
 
 int cam_jpeg_dma_process_cmd(void *device_priv, uint32_t cmd_type,
-	void *cmd_args, uint32_t arg_size)
+			     void *cmd_args, uint32_t arg_size)
 {
 	struct cam_hw_info *jpeg_dma_dev = device_priv;
 	struct cam_jpeg_dma_device_core_info *core_info = NULL;
-	struct cam_jpeg_dma_device_hw_info   *hw_info = NULL;
-	struct cam_jpeg_match_pid_args       *match_pid_mid = NULL;
-	uint32_t                             *num_pid = NULL;
-	struct cam_hw_soc_info               *soc_info = NULL;
+	struct cam_jpeg_dma_device_hw_info *hw_info = NULL;
+	struct cam_jpeg_match_pid_args *match_pid_mid = NULL;
+	uint32_t *num_pid = NULL;
+	struct cam_hw_soc_info *soc_info = NULL;
 	int i, rc = 0;
 
 	if (!device_priv) {
@@ -704,16 +709,14 @@ int cam_jpeg_dma_process_cmd(void *device_priv, uint32_t cmd_type,
 		return -EINVAL;
 	}
 
-	core_info = (struct cam_jpeg_dma_device_core_info *)
-		jpeg_dma_dev->core_info;
+	core_info =
+		(struct cam_jpeg_dma_device_core_info *)jpeg_dma_dev->core_info;
 
 	hw_info = core_info->jpeg_dma_hw_info;
 	soc_info = &jpeg_dma_dev->soc_info;
 
-
 	switch (cmd_type) {
-	case CAM_JPEG_CMD_SET_IRQ_CB:
-	{
+	case CAM_JPEG_CMD_SET_IRQ_CB: {
 		struct cam_jpeg_set_irq_cb *irq_cb = cmd_args;
 		struct cam_jpeg_irq_cb_data *irq_cb_data;
 
@@ -727,8 +730,10 @@ int cam_jpeg_dma_process_cmd(void *device_priv, uint32_t cmd_type,
 		if (irq_cb->b_set_cb) {
 			core_info->irq_cb.jpeg_hw_mgr_cb =
 				irq_cb->jpeg_hw_mgr_cb;
-			core_info->irq_cb.irq_cb_data.jpeg_req = irq_cb_data->jpeg_req;
-			core_info->irq_cb.irq_cb_data.private_data = irq_cb_data->private_data;
+			core_info->irq_cb.irq_cb_data.jpeg_req =
+				irq_cb_data->jpeg_req;
+			core_info->irq_cb.irq_cb_data.private_data =
+				irq_cb_data->private_data;
 		} else {
 			core_info->irq_cb.jpeg_hw_mgr_cb = NULL;
 			core_info->irq_cb.irq_cb_data.jpeg_req = NULL;
@@ -744,7 +749,7 @@ int cam_jpeg_dma_process_cmd(void *device_priv, uint32_t cmd_type,
 			return -EINVAL;
 		}
 
-		num_pid = (uint32_t    *)cmd_args;
+		num_pid = (uint32_t *)cmd_args;
 		*num_pid = core_info->num_pid;
 
 		break;
@@ -771,7 +776,7 @@ int cam_jpeg_dma_process_cmd(void *device_priv, uint32_t cmd_type,
 				match_pid_mid->match_res =
 					CAM_JPEG_DMA_INPUT_IMAGE;
 			} else if (match_pid_mid->fault_mid ==
-				core_info->wr_mid) {
+				   core_info->wr_mid) {
 				match_pid_mid->match_res =
 					CAM_JPEG_DMA_OUTPUT_IMAGE;
 			} else
@@ -782,21 +787,22 @@ int cam_jpeg_dma_process_cmd(void *device_priv, uint32_t cmd_type,
 	case CAM_JPEG_CMD_MINI_DUMP:
 		rc = cam_jpeg_dma_mini_dump(jpeg_dma_dev, cmd_args);
 		break;
-	case CAM_JPEG_CMD_CONFIG_HW_MISR:
-	{
+	case CAM_JPEG_CMD_CONFIG_HW_MISR: {
 		if (hw_info->camnoc_misr_support)
-			rc = cam_jpeg_dma_config_cmanoc_hw_misr(hw_info, soc_info, cmd_args);
+			rc = cam_jpeg_dma_config_cmanoc_hw_misr(
+				hw_info, soc_info, cmd_args);
 		else
 			CAM_DBG(CAM_JPEG, "camnoc misr is not supported");
 		break;
 	}
-	case CAM_JPEG_CMD_DUMP_HW_MISR_VAL:
-	{
+	case CAM_JPEG_CMD_DUMP_HW_MISR_VAL: {
 		if (hw_info->camnoc_misr_support) {
-			rc = cam_jpeg_dma_dump_hw_misr_val(hw_info, soc_info, cmd_args);
+			rc = cam_jpeg_dma_dump_hw_misr_val(hw_info, soc_info,
+							   cmd_args);
 			if (rc)
 				break;
-			rc = cam_jpeg_dma_dump_camnoc_misr_val(hw_info, soc_info, cmd_args);
+			rc = cam_jpeg_dma_dump_camnoc_misr_val(
+				hw_info, soc_info, cmd_args);
 		} else {
 			CAM_DBG(CAM_JPEG, "camnoc misr is not supported");
 		}

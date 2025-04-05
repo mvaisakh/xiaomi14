@@ -3,35 +3,37 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/types.h>
 #include <linux/kthread.h>
+#include <linux/types.h>
 
 #include <linux/module.h>
 #include <linux/of.h>
 
-#include "mmrm_vm_fe.h"
-#include "mmrm_vm_msgq.h"
-#include "mmrm_vm_interface.h"
 #include "mmrm_vm_debug.h"
+#include "mmrm_vm_fe.h"
+#include "mmrm_vm_interface.h"
+#include "mmrm_vm_msgq.h"
 
-struct mmrm_vm_driver_data *drv_vm_fe = (void *) -EPROBE_DEFER;
+struct mmrm_vm_driver_data *drv_vm_fe = (void *)-EPROBE_DEFER;
 
 static ssize_t dump_clk_info_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+				  struct device_attribute *attr, char *buf)
 {
 	int rc;
 
 	struct mmrm_vm_fe_priv *fe_data = drv_vm_fe->vm_pvt_data;
 
-	rc = mmrm_vm_fe_clk_print_info(&fe_data->clk_src_set, buf, MMRM_SYSFS_ENTRY_MAX_LEN);
+	rc = mmrm_vm_fe_clk_print_info(&fe_data->clk_src_set, buf,
+				       MMRM_SYSFS_ENTRY_MAX_LEN);
 	if (rc == 0)
 		d_mpr_e("%s: failed to dump clk info\n", __func__);
 
 	return rc;
 }
 
-ssize_t msgq_send_trigger_store(struct device *dev, struct device_attribute *attr,
-	const char *buf, size_t count)
+ssize_t msgq_send_trigger_store(struct device *dev,
+				struct device_attribute *attr, const char *buf,
+				size_t count)
 {
 	struct mmrm_vm_driver_data *priv = dev->driver_data;
 	char send_buf[64] = "test msg";
@@ -56,7 +58,7 @@ ssize_t msgq_send_trigger_store(struct device *dev, struct device_attribute *att
 extern int mmrm_client_msgq_roundtrip_measure(u32 val);
 
 ssize_t msgq_rt_test_store(struct device *dev, struct device_attribute *attr,
-	const char *buf, size_t count)
+			   const char *buf, size_t count)
 {
 	int ret;
 	long sz, n;
@@ -88,7 +90,8 @@ ssize_t msgq_rt_test_store(struct device *dev, struct device_attribute *attr,
 			};
 		}
 		if (n <= 0)
-			d_mpr_w("%s: aver: %d\n", __func__, trip_time->looptest_total_us / sz);
+			d_mpr_w("%s: aver: %d\n", __func__,
+				trip_time->looptest_total_us / sz);
 	}
 	return ret ? ret : count;
 }
@@ -151,21 +154,18 @@ static int mmrm_vm_fe_driver_probe(struct platform_device *pdev)
 	mmrm_vm_fe_load_clk_rsrc(drv_vm_fe);
 	rc = mmrm_vm_msgq_init(drv_vm_fe);
 	if (rc != 0) {
-		d_mpr_e("%s: failed to msgq init\n",
-			__func__);
+		d_mpr_e("%s: failed to msgq init\n", __func__);
 		goto err_msgq_init;
 	}
 
 	rc = mmrm_vm_fe_init_lookup_table(drv_vm_fe);
 	if (rc == -1) {
-		d_mpr_e("%s: failed to lookup table init\n",
-			__func__);
+		d_mpr_e("%s: failed to lookup table init\n", __func__);
 		goto err_lookup_table;
 	}
 
 	if (sysfs_create_group(&pdev->dev.kobj, &mmrm_vm_fe_fs_attrs_group)) {
-		d_mpr_e("%s: failed to create sysfs\n",
-			__func__);
+		d_mpr_e("%s: failed to create sysfs\n", __func__);
 	}
 
 	d_mpr_w("msgq probe success");
@@ -197,12 +197,13 @@ static const struct of_device_id mmrm_vm_fe_match[] = {
 MODULE_DEVICE_TABLE(of, mmrm_vm_fe_match);
 
 static struct platform_driver mmrm_vm_fe_driver = {
-	.probe = mmrm_vm_fe_driver_probe,
-	.driver = {
-		.name = "mmrm-vm-fe",
-		.of_match_table = mmrm_vm_fe_match,
-	},
-	.remove = mmrm_vm_fe_driver_remove,
+    .probe = mmrm_vm_fe_driver_probe,
+    .driver =
+        {
+            .name = "mmrm-vm-fe",
+            .of_match_table = mmrm_vm_fe_match,
+        },
+    .remove = mmrm_vm_fe_driver_remove,
 };
 
 static int __init mmrm_vm_fe_module_init(void)

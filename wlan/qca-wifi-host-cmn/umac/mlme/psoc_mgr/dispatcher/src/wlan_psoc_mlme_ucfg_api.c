@@ -18,8 +18,8 @@
  *  DOC: wlan_psoc_mlme_ucfg_api.c
  *  This file contains psoc mlme ucfg APIs
  */
-#include <wlan_psoc_mlme_ucfg_api.h>
 #include <wlan_psoc_mlme_api.h>
+#include <wlan_psoc_mlme_ucfg_api.h>
 
 QDF_STATUS
 ucfg_psoc_mlme_get_11be_capab(struct wlan_objmgr_psoc *psoc, bool *val)

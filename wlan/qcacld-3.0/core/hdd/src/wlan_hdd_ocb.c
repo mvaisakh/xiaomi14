@@ -23,34 +23,31 @@
  * WLAN Host Device Driver 802.11p OCB implementation
  */
 
-#include "cds_sched.h"
-#include "wlan_hdd_assoc.h"
-#include "osif_sync.h"
-#include "wlan_hdd_main.h"
 #include "wlan_hdd_ocb.h"
-#include "wlan_hdd_trace.h"
-#include "wlan_osif_request_manager.h"
-#include "wlan_tgt_def_config.h"
+#include "cds_sched.h"
+#include "ol_txrx.h"
+#include "osif_sync.h"
 #include "sch_api.h"
-#include "wma_api.h"
-#include <cdp_txrx_cmn.h>
-#include <cdp_txrx_peer_ops.h>
-#include <cdp_txrx_handle.h>
+#include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_assoc.h"
+#include "wlan_hdd_main.h"
+#include "wlan_hdd_object_manager.h"
+#include "wlan_hdd_trace.h"
 #include "wlan_ocb_public_structs.h"
 #include "wlan_ocb_ucfg_api.h"
+#include "wlan_osif_request_manager.h"
+#include "wlan_tgt_def_config.h"
+#include "wma_api.h"
 #include <cdp_txrx_cmn.h>
-#include <cdp_txrx_peer_ops.h>
 #include <cdp_txrx_handle.h>
 #include <cdp_txrx_ocb.h>
-#include "ol_txrx.h"
-#include "wlan_hdd_object_manager.h"
-#include "wlan_dp_ucfg_api.h"
+#include <cdp_txrx_peer_ops.h>
 
 /* Structure definitions for WLAN_SET_DOT11P_CHANNEL_SCHED */
-#define AIFSN_MIN		(2)
-#define AIFSN_MAX		(15)
-#define CW_MIN			(1)
-#define CW_MAX			(10)
+#define AIFSN_MIN (2)
+#define AIFSN_MAX (15)
+#define CW_MIN (1)
+#define CW_MAX (10)
 
 /* Maximum time(ms) to wait for OCB operations */
 #define WLAN_WAIT_TIME_OCB_CMD 1500
@@ -66,29 +63,29 @@ static int dot11p_validate_qos_params(struct ocb_wmm_param qos_params[])
 	int i;
 
 	for (i = 0; i < QCA_WLAN_AC_ALL; i++) {
-		if ((!qos_params[i].aifsn) && (!qos_params[i].cwmin)
-				&& (!qos_params[i].cwmax))
+		if ((!qos_params[i].aifsn) && (!qos_params[i].cwmin) &&
+		    (!qos_params[i].cwmax))
 			continue;
 
 		/* Validate AIFSN */
-		if ((qos_params[i].aifsn < AIFSN_MIN)
-				|| (qos_params[i].aifsn > AIFSN_MAX)) {
+		if ((qos_params[i].aifsn < AIFSN_MIN) ||
+		    (qos_params[i].aifsn > AIFSN_MAX)) {
 			hdd_err("Invalid QoS parameter aifsn %d",
 				qos_params[i].aifsn);
 			return -EINVAL;
 		}
 
 		/* Validate CWMin */
-		if ((qos_params[i].cwmin < CW_MIN)
-				|| (qos_params[i].cwmin > CW_MAX)) {
+		if ((qos_params[i].cwmin < CW_MIN) ||
+		    (qos_params[i].cwmin > CW_MAX)) {
 			hdd_err("Invalid QoS parameter cwmin %d",
 				qos_params[i].cwmin);
 			return -EINVAL;
 		}
 
 		/* Validate CWMax */
-		if ((qos_params[i].cwmax < CW_MIN)
-				|| (qos_params[i].cwmax > CW_MAX)) {
+		if ((qos_params[i].cwmax < CW_MIN) ||
+		    (qos_params[i].cwmax > CW_MAX)) {
 			hdd_err("Invalid QoS parameter cwmax %d",
 				qos_params[i].cwmax);
 			return -EINVAL;
@@ -109,10 +106,9 @@ static int dot11p_validate_qos_params(struct ocb_wmm_param qos_params[])
  *
  * Return: 0 if the channel is valid, error code otherwise.
  */
-static int dot11p_validate_channel(struct wiphy *wiphy,
-				   uint32_t channel_freq, uint32_t bandwidth,
-				   uint32_t tx_power, uint8_t *reg_power,
-				   uint8_t *antenna_max)
+static int dot11p_validate_channel(struct wiphy *wiphy, uint32_t channel_freq,
+				   uint32_t bandwidth, uint32_t tx_power,
+				   uint8_t *reg_power, uint8_t *antenna_max)
 {
 	int band_idx, channel_idx;
 	struct ieee80211_supported_band *current_band;
@@ -124,7 +120,7 @@ static int dot11p_validate_channel(struct wiphy *wiphy,
 			continue;
 
 		for (channel_idx = 0; channel_idx < current_band->n_channels;
-		      channel_idx++) {
+		     channel_idx++) {
 			current_channel = &current_band->channels[channel_idx];
 
 			if (channel_freq == current_channel->center_freq) {
@@ -137,8 +133,8 @@ static int dot11p_validate_channel(struct wiphy *wiphy,
 						current_channel->max_reg_power;
 				if (antenna_max)
 					*antenna_max =
-						current_channel->
-						max_antenna_gain;
+						current_channel
+							->max_antenna_gain;
 
 				switch (bandwidth) {
 				case 0:
@@ -221,13 +217,12 @@ static int hdd_ocb_validate_config(struct hdd_adapter *adapter,
 static int hdd_ocb_register_sta(struct hdd_adapter *adapter)
 {
 	QDF_STATUS qdf_status = QDF_STATUS_E_FAILURE;
-	struct ol_txrx_desc_type sta_desc = {0};
+	struct ol_txrx_desc_type sta_desc = { 0 };
 	struct hdd_station_ctx *sta_ctx;
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 	struct wlan_objmgr_vdev *vdev;
 
-	qdf_status = cdp_peer_register_ocb_peer(soc,
-				adapter->mac_addr.bytes);
+	qdf_status = cdp_peer_register_ocb_peer(soc, adapter->mac_addr.bytes);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		hdd_err("Error registering OCB Self Peer!");
 		return -EINVAL;
@@ -249,8 +244,8 @@ static int hdd_ocb_register_sta(struct hdd_adapter *adapter)
 
 	qdf_status = cdp_peer_register(soc, OL_TXRX_PDEV_ID, &sta_desc);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
-		hdd_err("Failed to register. Status= %d [0x%08X]",
-		       qdf_status, qdf_status);
+		hdd_err("Failed to register. Status= %d [0x%08X]", qdf_status,
+			qdf_status);
 		return -EINVAL;
 	}
 
@@ -270,25 +265,22 @@ static int hdd_ocb_register_sta(struct hdd_adapter *adapter)
  *
  * Return: A pointer to the OCB configuration struct, NULL on failure.
  */
-static
-struct ocb_config *hdd_ocb_config_new(uint32_t num_channels,
-				      uint32_t num_schedule,
-				      uint32_t ndl_chan_list_len,
-				      uint32_t ndl_active_state_list_len)
+static struct ocb_config *hdd_ocb_config_new(uint32_t num_channels,
+					     uint32_t num_schedule,
+					     uint32_t ndl_chan_list_len,
+					     uint32_t ndl_active_state_list_len)
 {
 	struct ocb_config *ret = 0;
 	uint32_t len;
 	void *cursor;
 
 	if (num_channels > CFG_TGT_NUM_OCB_CHANNELS ||
-			num_schedule > CFG_TGT_NUM_OCB_SCHEDULES)
+	    num_schedule > CFG_TGT_NUM_OCB_SCHEDULES)
 		return NULL;
 
-	len = sizeof(*ret) +
-		num_channels * sizeof(struct ocb_config_chan) +
-		num_schedule * sizeof(struct ocb_config_schdl) +
-		ndl_chan_list_len +
-		ndl_active_state_list_len;
+	len = sizeof(*ret) + num_channels * sizeof(struct ocb_config_chan) +
+	      num_schedule * sizeof(struct ocb_config_schdl) +
+	      ndl_chan_list_len + ndl_active_state_list_len;
 
 	cursor = qdf_mem_malloc(len);
 	if (!cursor)
@@ -321,7 +313,6 @@ fail:
 struct hdd_ocb_set_config_priv {
 	int status;
 };
-
 
 /**
  * hdd_ocb_set_config_callback() - OCB set config callback function
@@ -400,9 +391,8 @@ static int hdd_ocb_set_config_req(struct hdd_adapter *adapter,
 				     WLAN_STOP_ALL_NETIF_QUEUE_N_CARRIER,
 				     WLAN_CONTROL_PATH);
 
-	status = ucfg_ocb_set_channel_config(vdev, config,
-					     hdd_ocb_set_config_callback,
-					     cookie);
+	status = ucfg_ocb_set_channel_config(
+		vdev, config, hdd_ocb_set_config_callback, cookie);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_OCB_ID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Failed to set channel config.");
@@ -425,13 +415,13 @@ static int hdd_ocb_set_config_req(struct hdd_adapter *adapter,
 	}
 
 	/*
-	 * OCB set config command successful.
-	 * Open the TX data path
-	 */
+   * OCB set config command successful.
+   * Open the TX data path
+   */
 	if (!hdd_ocb_register_sta(adapter))
-		wlan_hdd_netif_queue_control(adapter,
-					WLAN_START_ALL_NETIF_QUEUE_N_CARRIER,
-					WLAN_CONTROL_PATH);
+		wlan_hdd_netif_queue_control(
+			adapter, WLAN_START_ALL_NETIF_QUEUE_N_CARRIER,
+			WLAN_CONTROL_PATH);
 
 end:
 	osif_request_put(request);
@@ -482,8 +472,8 @@ static int __iw_set_dot11p_channel_sched(struct net_device *dev,
 	sched = (struct dot11p_channel_sched *)extra;
 
 	/* Scheduled slots same as num channels for compatibility */
-	config = hdd_ocb_config_new(sched->num_channels, sched->num_channels,
-				    0, 0);
+	config = hdd_ocb_config_new(sched->num_channels, sched->num_channels, 0,
+				    0);
 	if (!config) {
 		hdd_err("Failed to allocate memory!");
 		return -ENOMEM;
@@ -508,10 +498,10 @@ static int __iw_set_dot11p_channel_sched(struct net_device *dev,
 
 		curr_chan->chan_freq = sched->channels[i].channel_freq;
 		/*
-		 * tx_power is divided by 2 because ocb_channel.tx_power is
-		 * in half dB increments and ocb_config_channel.max_pwr
-		 * is in 1 dB increments.
-		 */
+     * tx_power is divided by 2 because ocb_channel.tx_power is
+     * in half dB increments and ocb_config_channel.max_pwr
+     * is in 1 dB increments.
+     */
 		curr_chan->max_pwr = sched->channels[i].tx_power / 2;
 		curr_chan->bandwidth = sched->channels[i].channel_bandwidth;
 		/* assume 10 as default if not provided */
@@ -519,12 +509,12 @@ static int __iw_set_dot11p_channel_sched(struct net_device *dev,
 			curr_chan->bandwidth = 10;
 
 		/*
-		 * Setup locally administered mac addresses for each channel.
-		 * First channel uses the adapter's address.
-		 */
+     * Setup locally administered mac addresses for each channel.
+     * First channel uses the adapter's address.
+     */
 		if (i == 0) {
 			qdf_copy_macaddr(&curr_chan->mac_address,
-				     &adapter->mac_addr);
+					 &adapter->mac_addr);
 		} else {
 			mac_addr = wlan_hdd_get_intf_addr(hdd_ctx,
 							  adapter->device_mode);
@@ -533,12 +523,13 @@ static int __iw_set_dot11p_channel_sched(struct net_device *dev,
 				rc = -EINVAL;
 				goto fail;
 			}
-			qdf_mem_copy(config->channels[
-				     config->channel_count].mac_address.bytes,
+			qdf_mem_copy(config->channels[config->channel_count]
+					     .mac_address.bytes,
 				     mac_addr, sizeof(tSirMacAddr));
 			/* Save the mac address to release later */
-			qdf_mem_copy(adapter->ocb_mac_address[
-				     adapter->ocb_mac_addr_count].bytes,
+			qdf_mem_copy(adapter->ocb_mac_address
+					     [adapter->ocb_mac_addr_count]
+						     .bytes,
 				     mac_addr, QDF_MAC_ADDR_SIZE);
 			adapter->ocb_mac_addr_count++;
 		}
@@ -556,9 +547,9 @@ static int __iw_set_dot11p_channel_sched(struct net_device *dev,
 	}
 
 	/*
-	 * Scheduled slots same as num channels for compatibility with
-	 * legacy use.
-	 */
+   * Scheduled slots same as num channels for compatibility with
+   * legacy use.
+   */
 	for (i = 0; i < sched->num_channels; i++) {
 		config->schedule[i].chan_freq = sched->channels[i].channel_freq;
 		config->schedule[i].guard_interval =
@@ -608,102 +599,60 @@ int iw_set_dot11p_channel_sched(struct net_device *dev,
 }
 #endif /* WLAN_WEXT_SUPPORT_ENABLE */
 
-const struct nla_policy qca_wlan_vendor_ocb_set_config_policy[
-		QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_CHANNEL_COUNT] = {
-		.type = NLA_U32
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_SCHEDULE_SIZE] = {
-		.type = NLA_U32
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_CHANNEL_ARRAY] = {
-		.type = NLA_BINARY
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_SCHEDULE_ARRAY] = {
-		.type = NLA_BINARY
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_NDL_CHANNEL_ARRAY] = {
-		.type = NLA_BINARY
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_NDL_ACTIVE_STATE_ARRAY] = {
-		.type = NLA_BINARY
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_FLAGS] = {
-		.type = NLA_U32
-	},
+const struct nla_policy qca_wlan_vendor_ocb_set_config_policy[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_MAX +
+							      1] = {
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_CHANNEL_COUNT] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_SCHEDULE_SIZE] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_CHANNEL_ARRAY] = { .type = NLA_BINARY },
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_SCHEDULE_ARRAY] = { .type = NLA_BINARY },
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_NDL_CHANNEL_ARRAY] = { .type = NLA_BINARY },
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_NDL_ACTIVE_STATE_ARRAY] = { .type = NLA_BINARY },
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_FLAGS] = { .type = NLA_U32 },
 };
 
-const struct nla_policy qca_wlan_vendor_ocb_set_utc_time_policy[
-		QCA_WLAN_VENDOR_ATTR_OCB_SET_UTC_TIME_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_UTC_TIME_VALUE] = {
-		.type = NLA_BINARY, .len = SIZE_UTC_TIME
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_SET_UTC_TIME_ERROR] = {
-		.type = NLA_BINARY, .len = SIZE_UTC_TIME_ERROR
-	},
+const struct nla_policy qca_wlan_vendor_ocb_set_utc_time_policy[QCA_WLAN_VENDOR_ATTR_OCB_SET_UTC_TIME_MAX +
+								1] = {
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_UTC_TIME_VALUE] = { .type = NLA_BINARY,
+							  .len = SIZE_UTC_TIME },
+	[QCA_WLAN_VENDOR_ATTR_OCB_SET_UTC_TIME_ERROR] = { .type = NLA_BINARY,
+							  .len = SIZE_UTC_TIME_ERROR },
 };
 
-const struct nla_policy qca_wlan_vendor_ocb_start_timing_advert_policy[
-		QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_CHANNEL_FREQ] = {
-		.type = NLA_U32
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_REPEAT_RATE] = {
-		.type = NLA_U32
-	},
-};
+const struct nla_policy qca_wlan_vendor_ocb_start_timing_advert_policy
+	[QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_MAX + 1] = {
+		[QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_CHANNEL_FREQ] = { .type = NLA_U32 },
+		[QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_REPEAT_RATE] = { .type = NLA_U32 },
+	};
 
-const struct nla_policy  qca_wlan_vendor_ocb_stop_timing_advert_policy[
-		QCA_WLAN_VENDOR_ATTR_OCB_STOP_TIMING_ADVERT_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_OCB_STOP_TIMING_ADVERT_CHANNEL_FREQ] = {
-		.type = NLA_U32
-	},
-};
+const struct nla_policy qca_wlan_vendor_ocb_stop_timing_advert_policy
+	[QCA_WLAN_VENDOR_ATTR_OCB_STOP_TIMING_ADVERT_MAX + 1] = {
+		[QCA_WLAN_VENDOR_ATTR_OCB_STOP_TIMING_ADVERT_CHANNEL_FREQ] = { .type = NLA_U32 },
+	};
 
 static const struct nla_policy qca_wlan_vendor_ocb_get_tsf_timer_resp[] = {
-	[QCA_WLAN_VENDOR_ATTR_OCB_GET_TSF_RESP_TIMER_HIGH] = {
-		.type = NLA_U32
-	},
-	[QCA_WLAN_VENDOR_ATTR_OCB_GET_TSF_RESP_TIMER_LOW] = {
-		.type = NLA_U32
-	},
+	[QCA_WLAN_VENDOR_ATTR_OCB_GET_TSF_RESP_TIMER_HIGH] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_OCB_GET_TSF_RESP_TIMER_LOW] = { .type = NLA_U32 },
 };
 
 const struct nla_policy qca_wlan_vendor_dcc_get_stats[] = {
-	[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_CHANNEL_COUNT] = {
-		.type = NLA_U32
-	},
-	[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_REQUEST_ARRAY] = {
-		.type = NLA_BINARY
-	},
+	[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_CHANNEL_COUNT] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_REQUEST_ARRAY] = { .type = NLA_BINARY },
 };
 
 static const struct nla_policy qca_wlan_vendor_dcc_get_stats_resp[] = {
-	[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_RESP_CHANNEL_COUNT] = {
-		.type = NLA_U32
-	},
-	[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_RESP_STATS_ARRAY] = {
-		.type = NLA_BINARY
-	},
+	[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_RESP_CHANNEL_COUNT] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_RESP_STATS_ARRAY] = { .type = NLA_BINARY },
 };
 
 const struct nla_policy qca_wlan_vendor_dcc_clear_stats[] = {
-	[QCA_WLAN_VENDOR_ATTR_DCC_CLEAR_STATS_BITMAP] = {
-		.type = NLA_U32
-	},
+	[QCA_WLAN_VENDOR_ATTR_DCC_CLEAR_STATS_BITMAP] = { .type = NLA_U32 },
 };
 
-const struct nla_policy qca_wlan_vendor_dcc_update_ndl[
-		QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_COUNT] = {
-		.type = NLA_U32
-	},
-	[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_ARRAY] = {
-		.type = NLA_BINARY
-	},
-	[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_ACTIVE_STATE_ARRAY] = {
-		.type = NLA_BINARY
-	},
+const struct nla_policy qca_wlan_vendor_dcc_update_ndl[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_MAX +
+						       1] = {
+	[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_COUNT] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_ARRAY] = { .type = NLA_BINARY },
+	[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_ACTIVE_STATE_ARRAY] = { .type = NLA_BINARY },
 };
 
 /**
@@ -727,8 +676,7 @@ struct wlan_hdd_ocb_config_channel {
 };
 
 static void wlan_hdd_ocb_config_channel_to_ocb_config_channel(
-	struct ocb_config_chan *dest,
-	struct wlan_hdd_ocb_config_channel *src,
+	struct ocb_config_chan *dest, struct wlan_hdd_ocb_config_channel *src,
 	uint32_t channel_count)
 {
 	uint32_t i;
@@ -741,12 +689,12 @@ static void wlan_hdd_ocb_config_channel_to_ocb_config_channel(
 		qdf_mem_copy(dest[i].qos_params, src[i].qos_params,
 			     sizeof(dest[i].qos_params));
 		/*
-		 *  max_pwr and min_pwr are divided by 2 because
-		 *  ocb_channel_param.max_pwr and min_pwr
-		 *  are in 1/2 dB increments and
-		 *  ocb_config_channel.max_pwr and min_pwr are in
-		 *  1 dB increments.
-		 */
+     *  max_pwr and min_pwr are divided by 2 because
+     *  ocb_channel_param.max_pwr and min_pwr
+     *  are in 1/2 dB increments and
+     *  ocb_config_channel.max_pwr and min_pwr are in
+     *  1 dB increments.
+     */
 		dest[i].max_pwr = src[i].max_pwr / 2;
 		dest[i].min_pwr = (src[i].min_pwr + 1) / 2;
 		dest[i].flags = src[i].flags;
@@ -764,8 +712,7 @@ static void wlan_hdd_ocb_config_channel_to_ocb_config_channel(
  */
 static int __wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
 					      struct wireless_dev *wdev,
-					      const void *data,
-					      int data_len)
+					      const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -830,13 +777,13 @@ static int __wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
 
 	ndl_active_state_list =
 		tb[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_NDL_ACTIVE_STATE_ARRAY];
-	ndl_active_state_list_len = (ndl_active_state_list ?
-				    nla_len(ndl_active_state_list) : 0);
+	ndl_active_state_list_len =
+		(ndl_active_state_list ? nla_len(ndl_active_state_list) : 0);
 
 	/* Get the flags */
 	if (tb[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_FLAGS])
-		flags = nla_get_u32(tb[
-				QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_FLAGS]);
+		flags = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_OCB_SET_CONFIG_FLAGS]);
 
 	config = hdd_ocb_config_new(channel_count, schedule_size,
 				    ndl_chan_list_len,
@@ -856,13 +803,13 @@ static int __wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
 		hdd_err("No channel present");
 		goto fail;
 	}
-	if (nla_len(channel_array) != channel_count *
-	    sizeof(struct wlan_hdd_ocb_config_channel)) {
+	if (nla_len(channel_array) !=
+	    channel_count * sizeof(struct wlan_hdd_ocb_config_channel)) {
 		hdd_err("CHANNEL_ARRAY is not the correct size");
 		goto fail;
 	}
 	wlan_hdd_ocb_config_channel_to_ocb_config_channel(
-	    config->channels, nla_data(channel_array), channel_count);
+		config->channels, nla_data(channel_array), channel_count);
 
 	/* Identify the vdev interface */
 	config->vdev_id = adapter->deflink->vdev_id;
@@ -875,13 +822,13 @@ static int __wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
 	adapter->ocb_mac_addr_count = 0;
 
 	/*
-	 * Setup locally administered mac addresses for each channel.
-	 * First channel uses the adapter's address.
-	 */
+   * Setup locally administered mac addresses for each channel.
+   * First channel uses the adapter's address.
+   */
 	for (i = 0; i < config->channel_count; i++) {
 		if (i == 0) {
 			qdf_copy_macaddr(&config->channels[i].mac_address,
-				&adapter->mac_addr);
+					 &adapter->mac_addr);
 		} else {
 			mac_addr = wlan_hdd_get_intf_addr(hdd_ctx,
 							  adapter->device_mode);
@@ -890,11 +837,11 @@ static int __wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
 				goto fail;
 			}
 			qdf_mem_copy(config->channels[i].mac_address.bytes,
-				mac_addr, QDF_MAC_ADDR_SIZE);
+				     mac_addr, QDF_MAC_ADDR_SIZE);
 			/* Save the mac address to release later */
-			qdf_copy_macaddr(&adapter->ocb_mac_address[
-				     adapter->ocb_mac_addr_count],
-				     &config->channels[i].mac_address);
+			qdf_copy_macaddr(&adapter->ocb_mac_address
+						  [adapter->ocb_mac_addr_count],
+					 &config->channels[i].mac_address);
 			adapter->ocb_mac_addr_count++;
 		}
 	}
@@ -910,13 +857,13 @@ static int __wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
 		goto fail;
 	}
 	qdf_mem_copy(config->schedule, nla_data(sched_array),
-		nla_len(sched_array));
+		     nla_len(sched_array));
 
 	/* Copy the NDL chan array */
 	if (ndl_chan_list_len) {
 		config->dcc_ndl_chan_list_len = ndl_chan_list_len;
 		qdf_mem_copy(config->dcc_ndl_chan_list, nla_data(ndl_chan_list),
-			nla_len(ndl_chan_list));
+			     nla_len(ndl_chan_list));
 	}
 
 	/* Copy the NDL active state array */
@@ -924,8 +871,8 @@ static int __wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
 		config->dcc_ndl_active_state_list_len =
 			ndl_active_state_list_len;
 		qdf_mem_copy(config->dcc_ndl_active_state_list,
-			nla_data(ndl_active_state_list),
-			nla_len(ndl_active_state_list));
+			     nla_data(ndl_active_state_list),
+			     nla_len(ndl_active_state_list));
 	}
 
 	rc = hdd_ocb_set_config_req(adapter, config);
@@ -948,8 +895,7 @@ fail:
  */
 int wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
 				     struct wireless_dev *wdev,
-				     const void *data,
-				     int data_len)
+				     const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -976,8 +922,7 @@ int wlan_hdd_cfg80211_ocb_set_config(struct wiphy *wiphy,
  */
 static int __wlan_hdd_cfg80211_ocb_set_utc_time(struct wiphy *wiphy,
 						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+						const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -1010,10 +955,9 @@ static int __wlan_hdd_cfg80211_ocb_set_utc_time(struct wiphy *wiphy,
 	}
 
 	/* Parse the netlink message */
-	if (wlan_cfg80211_nla_parse(tb,
-				    QCA_WLAN_VENDOR_ATTR_OCB_SET_UTC_TIME_MAX,
-				    data, data_len,
-				    qca_wlan_vendor_ocb_set_utc_time_policy)) {
+	if (wlan_cfg80211_nla_parse(
+		    tb, QCA_WLAN_VENDOR_ATTR_OCB_SET_UTC_TIME_MAX, data,
+		    data_len, qca_wlan_vendor_ocb_set_utc_time_policy)) {
 		hdd_err("Invalid ATTR");
 		return -EINVAL;
 	}
@@ -1047,7 +991,7 @@ static int __wlan_hdd_cfg80211_ocb_set_utc_time(struct wiphy *wiphy,
 	utc->vdev_id = adapter->deflink->vdev_id;
 	qdf_mem_copy(utc->utc_time, nla_data(utc_attr), SIZE_UTC_TIME);
 	qdf_mem_copy(utc->time_error, nla_data(time_error_attr),
-		SIZE_UTC_TIME_ERROR);
+		     SIZE_UTC_TIME_ERROR);
 
 	vdev = hdd_objmgr_get_vdev_by_user(adapter->deflink, WLAN_OSIF_OCB_ID);
 	if (!vdev) {
@@ -1055,8 +999,7 @@ static int __wlan_hdd_cfg80211_ocb_set_utc_time(struct wiphy *wiphy,
 		goto out;
 	}
 
-	if (ucfg_ocb_set_utc_time(vdev, utc) !=
-			QDF_STATUS_SUCCESS) {
+	if (ucfg_ocb_set_utc_time(vdev, utc) != QDF_STATUS_SUCCESS) {
 		hdd_err("Error while setting UTC time");
 		rc = -EINVAL;
 	} else {
@@ -1079,8 +1022,7 @@ out:
  */
 int wlan_hdd_cfg80211_ocb_set_utc_time(struct wiphy *wiphy,
 				       struct wireless_dev *wdev,
-				       const void *data,
-				       int data_len)
+				       const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -1089,8 +1031,8 @@ int wlan_hdd_cfg80211_ocb_set_utc_time(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_ocb_set_utc_time(wiphy, wdev,
-						     data, data_len);
+	errno = __wlan_hdd_cfg80211_ocb_set_utc_time(wiphy, wdev, data,
+						     data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -1109,8 +1051,7 @@ int wlan_hdd_cfg80211_ocb_set_utc_time(struct wiphy *wiphy,
 static int
 __wlan_hdd_cfg80211_ocb_start_timing_advert(struct wiphy *wiphy,
 					    struct wireless_dev *wdev,
-					    const void *data,
-					    int data_len)
+					    const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -1147,10 +1088,9 @@ __wlan_hdd_cfg80211_ocb_start_timing_advert(struct wiphy *wiphy,
 	timing_advert->vdev_id = adapter->deflink->vdev_id;
 
 	/* Parse the netlink message */
-	if (wlan_cfg80211_nla_parse(tb,
-			      QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_MAX,
-			      data, data_len,
-			      qca_wlan_vendor_ocb_start_timing_advert_policy)) {
+	if (wlan_cfg80211_nla_parse(
+		    tb, QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_MAX, data,
+		    data_len, qca_wlan_vendor_ocb_start_timing_advert_policy)) {
 		hdd_err("Invalid ATTR");
 		goto fail;
 	}
@@ -1169,12 +1109,11 @@ __wlan_hdd_cfg80211_ocb_start_timing_advert(struct wiphy *wiphy,
 	timing_advert->repeat_rate = nla_get_u32(
 		tb[QCA_WLAN_VENDOR_ATTR_OCB_START_TIMING_ADVERT_REPEAT_RATE]);
 
-	timing_advert->template_length =
-		sme_ocb_gen_timing_advert_frame(hdd_ctx->mac_handle,
-			*(tSirMacAddr *)&adapter->mac_addr.bytes,
-			&timing_advert->template_value,
-			&timing_advert->timestamp_offset,
-			&timing_advert->time_value_offset);
+	timing_advert->template_length = sme_ocb_gen_timing_advert_frame(
+		hdd_ctx->mac_handle, *(tSirMacAddr *)&adapter->mac_addr.bytes,
+		&timing_advert->template_value,
+		&timing_advert->timestamp_offset,
+		&timing_advert->time_value_offset);
 	if (timing_advert->template_length <= 0) {
 		hdd_err("Error while generating the TA frame");
 		goto fail;
@@ -1187,7 +1126,7 @@ __wlan_hdd_cfg80211_ocb_start_timing_advert(struct wiphy *wiphy,
 	}
 
 	if (ucfg_ocb_start_timing_advert(vdev, timing_advert) !=
-			QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		hdd_err("Error while starting timing advert");
 		rc = -EINVAL;
 	} else {
@@ -1213,8 +1152,7 @@ fail:
  */
 int wlan_hdd_cfg80211_ocb_start_timing_advert(struct wiphy *wiphy,
 					      struct wireless_dev *wdev,
-					      const void *data,
-					      int data_len)
+					      const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -1223,8 +1161,8 @@ int wlan_hdd_cfg80211_ocb_start_timing_advert(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_ocb_start_timing_advert(wiphy, wdev,
-							    data, data_len);
+	errno = __wlan_hdd_cfg80211_ocb_start_timing_advert(wiphy, wdev, data,
+							    data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -1240,11 +1178,10 @@ int wlan_hdd_cfg80211_ocb_start_timing_advert(struct wiphy *wiphy,
  *
  * Return: 0 on success.
  */
-static int
-__wlan_hdd_cfg80211_ocb_stop_timing_advert(struct wiphy *wiphy,
-					   struct wireless_dev *wdev,
-					   const void *data,
-					   int data_len)
+static int __wlan_hdd_cfg80211_ocb_stop_timing_advert(struct wiphy *wiphy,
+						      struct wireless_dev *wdev,
+						      const void *data,
+						      int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -1281,10 +1218,9 @@ __wlan_hdd_cfg80211_ocb_stop_timing_advert(struct wiphy *wiphy,
 	timing_advert->vdev_id = adapter->deflink->vdev_id;
 
 	/* Parse the netlink message */
-	if (wlan_cfg80211_nla_parse(tb,
-			       QCA_WLAN_VENDOR_ATTR_OCB_STOP_TIMING_ADVERT_MAX,
-			       data, data_len,
-			       qca_wlan_vendor_ocb_stop_timing_advert_policy)) {
+	if (wlan_cfg80211_nla_parse(
+		    tb, QCA_WLAN_VENDOR_ATTR_OCB_STOP_TIMING_ADVERT_MAX, data,
+		    data_len, qca_wlan_vendor_ocb_stop_timing_advert_policy)) {
 		hdd_err("Invalid ATTR");
 		goto fail;
 	}
@@ -1303,7 +1239,7 @@ __wlan_hdd_cfg80211_ocb_stop_timing_advert(struct wiphy *wiphy,
 	}
 
 	if (ucfg_ocb_stop_timing_advert(vdev, timing_advert) !=
-			QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		hdd_err("Error while stopping timing advert");
 		rc = -EINVAL;
 	} else {
@@ -1327,8 +1263,7 @@ fail:
  */
 int wlan_hdd_cfg80211_ocb_stop_timing_advert(struct wiphy *wiphy,
 					     struct wireless_dev *wdev,
-					     const void *data,
-					     int data_len)
+					     const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -1337,8 +1272,8 @@ int wlan_hdd_cfg80211_ocb_stop_timing_advert(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_ocb_stop_timing_advert(wiphy, wdev,
-							   data, data_len);
+	errno = __wlan_hdd_cfg80211_ocb_stop_timing_advert(wiphy, wdev, data,
+							   data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -1429,17 +1364,15 @@ end:
  *
  * Return: 0 on success.
  */
-static int
-__wlan_hdd_cfg80211_ocb_get_tsf_timer(struct wiphy *wiphy,
-				      struct wireless_dev *wdev,
-				      const void *data,
-				      int data_len)
+static int __wlan_hdd_cfg80211_ocb_get_tsf_timer(struct wiphy *wiphy,
+						 struct wireless_dev *wdev,
+						 const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 	int rc;
-	struct ocb_get_tsf_timer_param tsf_request = {0};
+	struct ocb_get_tsf_timer_param tsf_request = { 0 };
 	QDF_STATUS status;
 	void *cookie;
 	struct osif_request *request;
@@ -1486,8 +1419,7 @@ __wlan_hdd_cfg80211_ocb_get_tsf_timer(struct wiphy *wiphy,
 
 	tsf_request.vdev_id = adapter->deflink->vdev_id;
 	status = ucfg_ocb_get_tsf_timer(vdev, &tsf_request,
-					hdd_ocb_get_tsf_timer_callback,
-					cookie);
+					hdd_ocb_get_tsf_timer_callback, cookie);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_OCB_ID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Failed to get tsf timer.");
@@ -1509,8 +1441,7 @@ __wlan_hdd_cfg80211_ocb_get_tsf_timer(struct wiphy *wiphy,
 	}
 
 	hdd_debug("Got TSF timer response, high=%d, low=%d",
-		priv->response.timer_high,
-		priv->response.timer_low);
+		  priv->response.timer_high, priv->response.timer_low);
 
 	/* Send the response. */
 	rc = hdd_ocb_get_tsf_timer_reply(wiphy, &priv->response);
@@ -1536,8 +1467,7 @@ end:
  */
 int wlan_hdd_cfg80211_ocb_get_tsf_timer(struct wiphy *wiphy,
 					struct wireless_dev *wdev,
-					const void *data,
-					int data_len)
+					const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -1546,8 +1476,8 @@ int wlan_hdd_cfg80211_ocb_get_tsf_timer(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_ocb_get_tsf_timer(wiphy, wdev,
-						      data, data_len);
+	errno = __wlan_hdd_cfg80211_ocb_get_tsf_timer(wiphy, wdev, data,
+						      data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -1665,8 +1595,7 @@ end:
  */
 static int __wlan_hdd_cfg80211_dcc_get_stats(struct wiphy *wiphy,
 					     struct wireless_dev *wdev,
-					     const void *data,
-					     int data_len)
+					     const void *data, int data_len)
 {
 	uint32_t channel_count = 0;
 	uint32_t request_array_len = 0;
@@ -1676,7 +1605,7 @@ static int __wlan_hdd_cfg80211_dcc_get_stats(struct wiphy *wiphy,
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_MAX + 1];
 	int rc;
-	struct ocb_dcc_get_stats_param dcc_request = {0};
+	struct ocb_dcc_get_stats_param dcc_request = { 0 };
 	QDF_STATUS status;
 	void *cookie;
 	struct osif_request *request;
@@ -1726,10 +1655,10 @@ static int __wlan_hdd_cfg80211_dcc_get_stats(struct wiphy *wiphy,
 
 	channel_count = nla_get_u32(
 		tb[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_CHANNEL_COUNT]);
-	request_array_len = nla_len(
-		tb[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_REQUEST_ARRAY]);
-	request_array = nla_data(
-		tb[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_REQUEST_ARRAY]);
+	request_array_len =
+		nla_len(tb[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_REQUEST_ARRAY]);
+	request_array =
+		nla_data(tb[QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_REQUEST_ARRAY]);
 
 	/* Check channel count. Per 11p spec, max 2 channels allowed */
 	if (!channel_count || channel_count > CFG_TGT_NUM_OCB_CHANNELS) {
@@ -1756,8 +1685,7 @@ static int __wlan_hdd_cfg80211_dcc_get_stats(struct wiphy *wiphy,
 	}
 
 	status = ucfg_ocb_dcc_get_stats(vdev, &dcc_request,
-					hdd_dcc_get_stats_callback,
-					cookie);
+					hdd_dcc_get_stats_callback, cookie);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_OCB_ID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Failed to get DCC stats.");
@@ -1802,8 +1730,7 @@ end:
  * Return: 0 on success.
  */
 int wlan_hdd_cfg80211_dcc_get_stats(struct wiphy *wiphy,
-				    struct wireless_dev *wdev,
-				    const void *data,
+				    struct wireless_dev *wdev, const void *data,
 				    int data_len)
 {
 	int errno;
@@ -1831,8 +1758,7 @@ int wlan_hdd_cfg80211_dcc_get_stats(struct wiphy *wiphy,
  */
 static int __wlan_hdd_cfg80211_dcc_clear_stats(struct wiphy *wiphy,
 					       struct wireless_dev *wdev,
-					       const void *data,
-					       int data_len)
+					       const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -1861,10 +1787,9 @@ static int __wlan_hdd_cfg80211_dcc_clear_stats(struct wiphy *wiphy,
 	}
 
 	/* Parse the netlink message */
-	if (wlan_cfg80211_nla_parse(tb,
-				    QCA_WLAN_VENDOR_ATTR_DCC_CLEAR_STATS_MAX,
-				    data, data_len,
-				    qca_wlan_vendor_dcc_clear_stats)) {
+	if (wlan_cfg80211_nla_parse(
+		    tb, QCA_WLAN_VENDOR_ATTR_DCC_CLEAR_STATS_MAX, data,
+		    data_len, qca_wlan_vendor_dcc_clear_stats)) {
 		hdd_err("Invalid ATTR");
 		return -EINVAL;
 	}
@@ -1880,10 +1805,10 @@ static int __wlan_hdd_cfg80211_dcc_clear_stats(struct wiphy *wiphy,
 		return -EINVAL;
 
 	if (ucfg_ocb_dcc_clear_stats(
-		vdev, adapter->deflink->vdev_id,
-		nla_get_u32(
-			tb[QCA_WLAN_VENDOR_ATTR_DCC_CLEAR_STATS_BITMAP])) !=
-			QDF_STATUS_SUCCESS) {
+		    vdev, adapter->deflink->vdev_id,
+		    nla_get_u32(
+			    tb[QCA_WLAN_VENDOR_ATTR_DCC_CLEAR_STATS_BITMAP])) !=
+	    QDF_STATUS_SUCCESS) {
 		hdd_err("Failed to clear DCC stats.");
 		hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_OCB_ID);
 		return -EINVAL;
@@ -1904,8 +1829,7 @@ static int __wlan_hdd_cfg80211_dcc_clear_stats(struct wiphy *wiphy,
  */
 int wlan_hdd_cfg80211_dcc_clear_stats(struct wiphy *wiphy,
 				      struct wireless_dev *wdev,
-				      const void *data,
-				      int data_len)
+				      const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -1914,8 +1838,8 @@ int wlan_hdd_cfg80211_dcc_clear_stats(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_dcc_clear_stats(wiphy, wdev,
-						    data, data_len);
+	errno = __wlan_hdd_cfg80211_dcc_clear_stats(wiphy, wdev, data,
+						    data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -1964,8 +1888,7 @@ static void hdd_dcc_update_ndl_callback(void *context_ptr, void *response_ptr)
  */
 static int __wlan_hdd_cfg80211_dcc_update_ndl(struct wiphy *wiphy,
 					      struct wireless_dev *wdev,
-					      const void *data,
-					      int data_len)
+					      const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct net_device *dev = wdev->netdev;
@@ -2027,10 +1950,10 @@ static int __wlan_hdd_cfg80211_dcc_update_ndl(struct wiphy *wiphy,
 
 	channel_count = nla_get_u32(
 		tb[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_COUNT]);
-	ndl_channel_array_len = nla_len(
-		tb[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_ARRAY]);
-	ndl_channel_array = nla_data(
-		tb[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_ARRAY]);
+	ndl_channel_array_len =
+		nla_len(tb[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_ARRAY]);
+	ndl_channel_array =
+		nla_data(tb[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_CHANNEL_ARRAY]);
 	ndl_active_state_array_len = nla_len(
 		tb[QCA_WLAN_VENDOR_ATTR_DCC_UPDATE_NDL_ACTIVE_STATE_ARRAY]);
 	ndl_active_state_array = nla_data(
@@ -2064,8 +1987,7 @@ static int __wlan_hdd_cfg80211_dcc_update_ndl(struct wiphy *wiphy,
 	}
 
 	status = ucfg_ocb_dcc_update_ndl(vdev, &dcc_request,
-					 hdd_dcc_update_ndl_callback,
-					 cookie);
+					 hdd_dcc_update_ndl_callback, cookie);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_OCB_ID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Failed to update NDL.");
@@ -2104,8 +2026,7 @@ end:
  */
 int wlan_hdd_cfg80211_dcc_update_ndl(struct wiphy *wiphy,
 				     struct wireless_dev *wdev,
-				     const void *data,
-				     int data_len)
+				     const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -2137,12 +2058,10 @@ static void wlan_hdd_dcc_stats_event_callback(void *context_ptr,
 
 	hdd_enter();
 
-	vendor_event =
-		wlan_cfg80211_vendor_event_alloc(hdd_ctx->wiphy, NULL,
-						 sizeof(uint32_t) +
-						 resp->channel_stats_array_len +
-						 NLMSG_HDRLEN,
-						 index, GFP_KERNEL);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		hdd_ctx->wiphy, NULL,
+		sizeof(uint32_t) + resp->channel_stats_array_len + NLMSG_HDRLEN,
+		index, GFP_KERNEL);
 
 	if (!vendor_event) {
 		hdd_err("wlan_cfg80211_vendor_event_alloc failed");
@@ -2152,10 +2071,9 @@ static void wlan_hdd_dcc_stats_event_callback(void *context_ptr,
 	if (nla_put_u32(vendor_event,
 			QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_RESP_CHANNEL_COUNT,
 			resp->num_channels) ||
-		nla_put(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_RESP_STATS_ARRAY,
-			resp->channel_stats_array_len,
-			resp->channel_stats_array)) {
+	    nla_put(vendor_event,
+		    QCA_WLAN_VENDOR_ATTR_DCC_GET_STATS_RESP_STATS_ARRAY,
+		    resp->channel_stats_array_len, resp->channel_stats_array)) {
 		hdd_err("nla put failed");
 		wlan_cfg80211_vendor_free_skb(vendor_event);
 		return;
@@ -2172,8 +2090,8 @@ void wlan_hdd_dcc_register_for_dcc_stats_event(struct hdd_context *hdd_ctx)
 {
 	int rc;
 
-	rc = ucfg_ocb_register_for_dcc_stats_event(hdd_ctx->pdev, hdd_ctx,
-				      wlan_hdd_dcc_stats_event_callback);
+	rc = ucfg_ocb_register_for_dcc_stats_event(
+		hdd_ctx->pdev, hdd_ctx, wlan_hdd_dcc_stats_event_callback);
 	if (rc)
 		hdd_err("Register DCC stats callback failed: %d", rc);
 }

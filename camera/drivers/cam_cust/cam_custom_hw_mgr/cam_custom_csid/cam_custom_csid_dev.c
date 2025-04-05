@@ -3,38 +3,39 @@
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/slab.h>
+#include "cam_custom_csid_dev.h"
+#include "cam_custom_csid480.h"
+#include "cam_debug_util.h"
+#include "cam_hw.h"
+#include "cam_hw_intf.h"
+#include "cam_ife_csid_common.h"
+#include "camera_main.h"
+#include "linux/module.h"
 #include <linux/mod_devicetable.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
-#include "linux/module.h"
-#include "cam_custom_csid_dev.h"
-#include "cam_ife_csid_common.h"
-#include "cam_hw.h"
-#include "cam_hw_intf.h"
-#include "cam_custom_csid480.h"
-#include "cam_debug_util.h"
-#include "camera_main.h"
+#include <linux/slab.h>
 
-#define CAM_CUSTOM_CSID_DRV_NAME  "custom_csid"
+#define CAM_CUSTOM_CSID_DRV_NAME "custom_csid"
 
 static struct cam_hw_intf *cam_custom_csid_hw_list[CAM_IFE_CSID_HW_NUM_MAX] = {
-	0, 0, 0, 0};
+	0, 0, 0, 0
+};
 
 static struct cam_ife_csid_core_info cam_custom_csid480_hw_info = {
 	.csid_reg = &cam_custom_csid_480_reg_offset,
-	.sw_version  = CAM_IFE_CSID_VER_1_0,
+	.sw_version = CAM_IFE_CSID_VER_1_0,
 };
 
 static int cam_custom_csid_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+					  struct device *master_dev, void *data)
 {
-	struct cam_hw_intf	       *csid_hw_intf;
-	struct cam_hw_info	       *csid_hw_info;
-	const struct of_device_id      *match_dev = NULL;
-	struct cam_ife_csid_core_info  *csid_core_info = NULL;
-	uint32_t			csid_dev_idx;
-	int				rc = 0;
+	struct cam_hw_intf *csid_hw_intf;
+	struct cam_hw_info *csid_hw_info;
+	const struct of_device_id *match_dev = NULL;
+	struct cam_ife_csid_core_info *csid_core_info = NULL;
+	uint32_t csid_dev_idx;
+	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	csid_hw_intf = kzalloc(sizeof(*csid_hw_intf), GFP_KERNEL);
@@ -53,8 +54,8 @@ static int cam_custom_csid_component_bind(struct device *dev,
 	/* get custom csid hw index */
 	of_property_read_u32(pdev->dev.of_node, "cell-index", &csid_dev_idx);
 	/* get custom csid hw information */
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_CUSTOM,
 			"No matching table for the CUSTOM CSID HW!");
@@ -71,14 +72,13 @@ static int cam_custom_csid_component_bind(struct device *dev,
 	csid_hw_info->soc_info.dev_name = pdev->name;
 	csid_hw_info->soc_info.index = csid_dev_idx;
 
-	csid_core_info = (struct cam_ife_csid_core_info  *)match_dev->data;
+	csid_core_info = (struct cam_ife_csid_core_info *)match_dev->data;
 
 	/* call the driver init and fill csid_hw_info->core_info */
 	rc = cam_ife_csid_hw_probe_init(csid_hw_intf, csid_core_info, true);
 
 	if (rc) {
-		CAM_ERR(CAM_ISP, "CSID[%d] probe init failed",
-		    csid_dev_idx);
+		CAM_ERR(CAM_ISP, "CSID[%d] probe init failed", csid_dev_idx);
 		goto free_hw_info;
 	}
 
@@ -105,23 +105,23 @@ err:
 }
 
 static void cam_custom_csid_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					     struct device *master_dev,
+					     void *data)
 {
-	struct cam_hw_intf             *csid_hw_intf;
-	struct cam_hw_info             *csid_hw_info;
-	struct cam_ife_csid_core_info  *core_info = NULL;
+	struct cam_hw_intf *csid_hw_intf;
+	struct cam_hw_info *csid_hw_info;
+	struct cam_ife_csid_core_info *core_info = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
-	const struct of_device_id      *match_dev = NULL;
+	const struct of_device_id *match_dev = NULL;
 
 	csid_hw_intf = (struct cam_hw_intf *)platform_get_drvdata(pdev);
 	csid_hw_info = csid_hw_intf->hw_priv;
 	core_info = csid_hw_info->core_info;
 
-	CAM_DBG(CAM_CUSTOM, "CSID:%d component unbind",
-		csid_hw_intf->hw_idx);
+	CAM_DBG(CAM_CUSTOM, "CSID:%d component unbind", csid_hw_intf->hw_idx);
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 
 	if (!match_dev) {
 		CAM_ERR(CAM_ISP, "No matching table for the IFE CSID HW!");
@@ -160,27 +160,24 @@ static int cam_custom_csid_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id cam_custom_csid_dt_match[] = {
-	{
-		.compatible = "qcom,csid-custom480",
-		.data = &cam_custom_csid480_hw_info
-	},
-	{
-		.compatible = "qcom,csid-custom580",
-		.data = &cam_custom_csid480_hw_info
-	},
+	{ .compatible = "qcom,csid-custom480",
+	  .data = &cam_custom_csid480_hw_info },
+	{ .compatible = "qcom,csid-custom580",
+	  .data = &cam_custom_csid480_hw_info },
 	{},
 };
 
 MODULE_DEVICE_TABLE(of, cam_custom_csid_dt_match);
 
 struct platform_driver cam_custom_csid_driver = {
-	.probe = cam_custom_csid_probe,
-	.driver = {
-		.name = "qcom,custom-csid",
-		.of_match_table = cam_custom_csid_dt_match,
-		.suppress_bind_attrs = true,
-	},
-	.remove = cam_custom_csid_remove,
+    .probe = cam_custom_csid_probe,
+    .driver =
+        {
+            .name = "qcom,custom-csid",
+            .of_match_table = cam_custom_csid_dt_match,
+            .suppress_bind_attrs = true,
+        },
+    .remove = cam_custom_csid_remove,
 };
 
 int cam_custom_csid_driver_init(void)
@@ -196,7 +193,7 @@ int cam_custom_csid_driver_init(void)
 }
 
 int cam_custom_csid_hw_init(struct cam_hw_intf **custom_csid_hw,
-	uint32_t hw_idx)
+			    uint32_t hw_idx)
 {
 	int rc = 0;
 

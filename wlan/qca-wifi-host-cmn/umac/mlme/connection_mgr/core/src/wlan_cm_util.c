@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2012-2015, 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2012-2015, 2020-2021, The Linux Foundation. All rights
+ * reserved. Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -19,11 +20,11 @@
  * DOC: Implements general util apis of connection manager
  */
 
-#include "wlan_cm_main_api.h"
-#include "wlan_scan_api.h"
-#include "wlan_cm_public_struct.h"
-#include "wlan_serialization_api.h"
 #include "wlan_cm_bss_score_param.h"
+#include "wlan_cm_main_api.h"
+#include "wlan_cm_public_struct.h"
+#include "wlan_scan_api.h"
+#include "wlan_serialization_api.h"
 #ifdef WLAN_POLICY_MGR_ENABLE
 #include <wlan_policy_mgr_api.h>
 #endif
@@ -31,7 +32,8 @@
 #include <qdf_platform.h>
 #include <wlan_mlo_mgr_link_switch.h>
 
-static uint32_t cm_get_prefix_for_cm_id(enum wlan_cm_source source) {
+static uint32_t cm_get_prefix_for_cm_id(enum wlan_cm_source source)
+{
 	switch (source) {
 	case CM_OSIF_CONNECT:
 	case CM_OSIF_CFG_CONNECT:
@@ -84,8 +86,8 @@ struct cnx_mgr *cm_get_cm_ctx_fl(struct wlan_objmgr_vdev *vdev,
 	return cm_ctx;
 }
 
-cm_ext_t *cm_get_ext_hdl_fl(struct wlan_objmgr_vdev *vdev,
-			    const char *func, uint32_t line)
+cm_ext_t *cm_get_ext_hdl_fl(struct wlan_objmgr_vdev *vdev, const char *func,
+			    uint32_t line)
 {
 	struct cnx_mgr *cm_ctx;
 	cm_ext_t *ext_ctx = NULL;
@@ -112,7 +114,6 @@ void cm_reset_active_cm_id(struct wlan_objmgr_vdev *vdev, wlan_cm_id cm_id)
 	if (cm_ctx->active_cm_id == cm_id)
 		cm_ctx->active_cm_id = CM_ID_INVALID;
 }
-
 
 #ifdef WLAN_CM_USE_SPINLOCK
 /**
@@ -167,8 +168,8 @@ inline void cm_req_lock_release(struct cnx_mgr *cm_ctx)
 #endif /* WLAN_CM_USE_SPINLOCK */
 
 #ifdef CRYPTO_SET_KEY_CONVERGED
-QDF_STATUS cm_set_key(struct cnx_mgr *cm_ctx, bool unicast,
-		      uint8_t key_idx, struct qdf_mac_addr *bssid)
+QDF_STATUS cm_set_key(struct cnx_mgr *cm_ctx, bool unicast, uint8_t key_idx,
+		      struct qdf_mac_addr *bssid)
 {
 	enum wlan_crypto_cipher_type cipher;
 	struct wlan_crypto_key *crypto_key;
@@ -176,8 +177,8 @@ QDF_STATUS cm_set_key(struct cnx_mgr *cm_ctx, bool unicast,
 
 	cipher = wlan_crypto_get_cipher(cm_ctx->vdev, unicast, key_idx);
 	if (IS_WEP_CIPHER(cipher)) {
-		wep_key_idx = wlan_crypto_get_default_key_idx(cm_ctx->vdev,
-							      false);
+		wep_key_idx =
+			wlan_crypto_get_default_key_idx(cm_ctx->vdev, false);
 		crypto_key = wlan_crypto_get_key(cm_ctx->vdev, wep_key_idx);
 		qdf_mem_copy(crypto_key->macaddr, bssid->bytes,
 			     QDF_MAC_ADDR_SIZE);
@@ -185,9 +186,9 @@ QDF_STATUS cm_set_key(struct cnx_mgr *cm_ctx, bool unicast,
 		crypto_key = wlan_crypto_get_key(cm_ctx->vdev, key_idx);
 	}
 
-	return wlan_crypto_set_key_req(cm_ctx->vdev, crypto_key, (unicast ?
-				       WLAN_CRYPTO_KEY_TYPE_UNICAST :
-				       WLAN_CRYPTO_KEY_TYPE_GROUP));
+	return wlan_crypto_set_key_req(cm_ctx->vdev, crypto_key,
+				       (unicast ? WLAN_CRYPTO_KEY_TYPE_UNICAST :
+						  WLAN_CRYPTO_KEY_TYPE_GROUP));
 }
 #endif
 
@@ -211,8 +212,7 @@ void cm_store_wep_key(struct cnx_mgr *cm_ctx,
 		cipher_type = WLAN_CRYPTO_CIPHER_WEP_104;
 
 	wep_keys = &crypto->wep_keys;
-	status = wlan_crypto_validate_key_params(cipher_type,
-						 wep_keys->key_idx,
+	status = wlan_crypto_validate_key_params(cipher_type, wep_keys->key_idx,
 						 wep_keys->key_len,
 						 wep_keys->seq_len);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -269,9 +269,8 @@ void cm_trigger_panic_on_cmd_timeout(struct wlan_objmgr_vdev *vdev)
 	struct vdev_mlme_obj *vdev_mlme = NULL;
 	struct wlan_sm *vdev_sm = NULL;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-			vdev,
-			WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 	if (!vdev_mlme) {
 		mlme_err("VDEV MLME is null");
 		goto error;
@@ -291,10 +290,9 @@ error:
 #endif
 
 #ifdef WLAN_FEATURE_FILS_SK
-void cm_store_fils_key(struct cnx_mgr *cm_ctx, bool unicast,
-		       uint8_t key_id, uint16_t key_length,
-		       uint8_t *key, struct qdf_mac_addr *bssid,
-		       wlan_cm_id cm_id)
+void cm_store_fils_key(struct cnx_mgr *cm_ctx, bool unicast, uint8_t key_id,
+		       uint16_t key_length, uint8_t *key,
+		       struct qdf_mac_addr *bssid, wlan_cm_id cm_id)
 {
 	struct wlan_crypto_key *crypto_key = NULL;
 	QDF_STATUS status;
@@ -335,7 +333,8 @@ void cm_store_fils_key(struct cnx_mgr *cm_ctx, bool unicast,
 	crypto_key->keyix = key_id;
 	qdf_mem_copy(&crypto_key->keyval[0], key, key_length);
 	qdf_mem_copy(crypto_key->macaddr, bssid->bytes, QDF_MAC_ADDR_SIZE);
-	mlme_debug(CM_PREFIX_FMT "cipher_type %d key_len %d, key_id %d mac:" QDF_MAC_ADDR_FMT,
+	mlme_debug(CM_PREFIX_FMT
+		   "cipher_type %d key_len %d, key_id %d mac:" QDF_MAC_ADDR_FMT,
 		   CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev), cm_id),
 		   crypto_key->cipher_type, crypto_key->keylen,
 		   crypto_key->keyix, QDF_MAC_ADDR_REF(crypto_key->macaddr));
@@ -346,10 +345,11 @@ static void cm_set_fils_connection_from_req(struct wlan_cm_connect_req *req,
 	resp->is_fils_connection = req->fils_info.is_fils_connection;
 }
 #else
-static inline
-void cm_set_fils_connection_from_req(struct wlan_cm_connect_req *req,
-				     struct wlan_cm_connect_resp *resp)
-{}
+static inline void
+cm_set_fils_connection_from_req(struct wlan_cm_connect_req *req,
+				struct wlan_cm_connect_resp *resp)
+{
+}
 #endif
 
 bool cm_check_cmid_match_list_head(struct cnx_mgr *cm_ctx, wlan_cm_id *cm_id)
@@ -410,8 +410,9 @@ bool cm_check_scanid_match_list_head(struct cnx_mgr *cm_ctx,
 exit:
 	cm_req_lock_release(cm_ctx);
 	if (!match)
-		mlme_info("head_scan_id 0x%x didn't match the given scan_id 0x%x prefix 0x%x",
-			  head_scan_id, *scan_id, prefix);
+		mlme_info(
+			"head_scan_id 0x%x didn't match the given scan_id 0x%x prefix 0x%x",
+			head_scan_id, *scan_id, prefix);
 
 	return match;
 }
@@ -420,7 +421,7 @@ struct cm_req *cm_get_req_by_cm_id_fl(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id,
 				      const char *func, uint32_t line)
 {
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
-	struct cm_req * cm_req;
+	struct cm_req *cm_req;
 
 	cm_req_lock_acquire(cm_ctx);
 	qdf_list_peek_front(&cm_ctx->req_list, &cur_node);
@@ -438,17 +439,16 @@ struct cm_req *cm_get_req_by_cm_id_fl(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id,
 	}
 	cm_req_lock_release(cm_ctx);
 
-	mlme_nofl_info("%s:%u: cm req not found for cm id 0x%x", func,
-		       line, cm_id);
+	mlme_nofl_info("%s:%u: cm req not found for cm id 0x%x", func, line,
+		       cm_id);
 
 	return NULL;
 }
 
 #ifdef WLAN_FEATURE_11BE_MLO
-void
-cm_connect_resp_fill_mld_addr_from_candidate(struct wlan_objmgr_vdev *vdev,
-					     struct scan_cache_entry *entry,
-					     struct wlan_cm_connect_resp *resp)
+void cm_connect_resp_fill_mld_addr_from_candidate(
+	struct wlan_objmgr_vdev *vdev, struct scan_cache_entry *entry,
+	struct wlan_cm_connect_resp *resp)
 {
 	struct qdf_mac_addr *mld_addr;
 
@@ -462,10 +462,9 @@ cm_connect_resp_fill_mld_addr_from_candidate(struct wlan_objmgr_vdev *vdev,
 	qdf_copy_macaddr(&resp->mld_addr, mld_addr);
 }
 
-void
-cm_connect_resp_fill_mld_addr_from_cm_id(struct wlan_objmgr_vdev *vdev,
-					 wlan_cm_id cm_id,
-					 struct wlan_cm_connect_resp *rsp)
+void cm_connect_resp_fill_mld_addr_from_cm_id(struct wlan_objmgr_vdev *vdev,
+					      wlan_cm_id cm_id,
+					      struct wlan_cm_connect_resp *rsp)
 {
 	struct cm_req *cm_req;
 	struct cnx_mgr *cm_ctx;
@@ -532,10 +531,9 @@ cm_connect_resp_fill_mld_addr_from_scan_db(struct wlan_objmgr_vdev *vdev,
  *
  * Return: void
  */
-static void
-cm_fill_connect_resp_from_req(struct wlan_objmgr_vdev *vdev,
-			      struct wlan_cm_connect_resp *resp,
-			      struct cm_req *cm_req)
+static void cm_fill_connect_resp_from_req(struct wlan_objmgr_vdev *vdev,
+					  struct wlan_cm_connect_resp *resp,
+					  struct cm_req *cm_req)
 {
 	struct scan_cache_node *candidate;
 	struct wlan_cm_connect_req *req;
@@ -544,9 +542,8 @@ cm_fill_connect_resp_from_req(struct wlan_objmgr_vdev *vdev,
 	candidate = cm_req->connect_req.cur_candidate;
 	if (candidate) {
 		qdf_copy_macaddr(&resp->bssid, &candidate->entry->bssid);
-		cm_connect_resp_fill_mld_addr_from_candidate(vdev,
-							     candidate->entry,
-							     resp);
+		cm_connect_resp_fill_mld_addr_from_candidate(
+			vdev, candidate->entry, resp);
 	} else if (!qdf_is_macaddr_zero(&req->bssid)) {
 		qdf_copy_macaddr(&resp->bssid, &req->bssid);
 		cm_connect_resp_fill_mld_addr_from_scan_db(vdev, &req->bssid,
@@ -578,8 +575,8 @@ cm_fill_connect_resp_from_req(struct wlan_objmgr_vdev *vdev,
  *
  * Return: void
  */
-static void
-cm_handle_connect_flush(struct cnx_mgr *cm_ctx, struct cm_req *cm_req)
+static void cm_handle_connect_flush(struct cnx_mgr *cm_ctx,
+				    struct cm_req *cm_req)
 {
 	struct wlan_cm_connect_resp *resp;
 
@@ -620,8 +617,8 @@ cm_handle_connect_flush(struct cnx_mgr *cm_ctx, struct cm_req *cm_req)
  *
  * Return: void
  */
-static void
-cm_handle_disconnect_flush(struct cnx_mgr *cm_ctx, struct cm_req *cm_req)
+static void cm_handle_disconnect_flush(struct cnx_mgr *cm_ctx,
+				       struct cm_req *cm_req)
 {
 	struct wlan_cm_discon_rsp resp;
 
@@ -629,12 +626,12 @@ cm_handle_disconnect_flush(struct cnx_mgr *cm_ctx, struct cm_req *cm_req)
 	resp.req.cm_id = cm_req->cm_id;
 	resp.req.req = cm_req->discon_req.req;
 	/*
-	 * Indicate to OSIF to inform kernel if not already done and this is
-	 * the latest disconnect req received. If this is not the latest, it
-	 * will be dropped in OSIF as src and cm_id will not match. A flushed
-	 * disconnect can be last of this was received when previous disconnect
-	 * was already in serialization active queue and thus wasn't flushed.
-	 */
+   * Indicate to OSIF to inform kernel if not already done and this is
+   * the latest disconnect req received. If this is not the latest, it
+   * will be dropped in OSIF as src and cm_id will not match. A flushed
+   * disconnect can be last of this was received when previous disconnect
+   * was already in serialization active queue and thus wasn't flushed.
+   */
 	mlme_cm_osif_disconnect_complete(cm_ctx->vdev, &resp);
 
 	if (resp.req.cm_id & CM_ID_LSWITCH_BIT) {
@@ -657,9 +654,9 @@ void cm_remove_cmd_from_serialization(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 		cmd_info.cmd_type = WLAN_SER_CMD_VDEV_CONNECT;
 	} else if (prefix == ROAM_REQ_PREFIX) {
 		/*
-		 * Try removing PREAUTH command when in preauth state else
-		 * try remove ROAM command
-		 */
+     * Try removing PREAUTH command when in preauth state else
+     * try remove ROAM command
+     */
 		if (cm_ctx->preauth_in_progress)
 			cmd_info.cmd_type = WLAN_SER_CMD_PERFORM_PRE_AUTH;
 		else
@@ -682,17 +679,17 @@ void cm_remove_cmd_from_serialization(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 			   cmd_info.cmd_type);
 		cmd_info.queue_type = WLAN_SERIALIZATION_ACTIVE_QUEUE;
 		/*
-		 * Active command id is reset during memory release, but a new
-		 * command will become active before memory release of
-		 * serialization command, and if it try to check the active
-		 * cm_id(using cm_get_active_req_type) it will be valid (), so
-		 * reset the cm id for active command before calling release
-		 * active command.
-		 * One example: For ML vdevs, disconnect on Assoc vdev can get
-		 * activated before release memory of link vdev command which
-		 * reset active CM id, and thus during RSO stop can lead to
-		 * assumption that link vdev disconnect is active when it is not.
-		 */
+     * Active command id is reset during memory release, but a new
+     * command will become active before memory release of
+     * serialization command, and if it try to check the active
+     * cm_id(using cm_get_active_req_type) it will be valid (), so
+     * reset the cm id for active command before calling release
+     * active command.
+     * One example: For ML vdevs, disconnect on Assoc vdev can get
+     * activated before release memory of link vdev command which
+     * reset active CM id, and thus during RSO stop can lead to
+     * assumption that link vdev disconnect is active when it is not.
+     */
 		cm_reset_active_cm_id(cm_ctx->vdev, cm_id);
 		wlan_serialization_remove_cmd(&cmd_info);
 	} else {
@@ -704,9 +701,8 @@ void cm_remove_cmd_from_serialization(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 	}
 }
 
-void
-cm_flush_pending_request(struct cnx_mgr *cm_ctx, uint32_t prefix,
-			 bool only_failed_req)
+void cm_flush_pending_request(struct cnx_mgr *cm_ctx, uint32_t prefix,
+			      bool only_failed_req)
 {
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
 	struct cm_req *cm_req;
@@ -714,7 +710,7 @@ cm_flush_pending_request(struct cnx_mgr *cm_ctx, uint32_t prefix,
 	bool roam_offload = false;
 
 	if (cm_roam_offload_enabled(wlan_vdev_get_psoc(cm_ctx->vdev)) &&
-	     prefix == ROAM_REQ_PREFIX)
+	    prefix == ROAM_REQ_PREFIX)
 		roam_offload = true;
 
 	cm_req_lock_acquire(cm_ctx);
@@ -726,11 +722,11 @@ cm_flush_pending_request(struct cnx_mgr *cm_ctx, uint32_t prefix,
 		req_prefix = CM_ID_GET_PREFIX(cm_req->cm_id);
 
 		/*
-		 * Only remove requests matching the flush prefix and
-		 * the pending req for non roam offload(LFR3) commands
-		 * (roam command is dummy in FW roam/LFR3 so active
-		 * command can be removed)
-		 */
+     * Only remove requests matching the flush prefix and
+     * the pending req for non roam offload(LFR3) commands
+     * (roam command is dummy in FW roam/LFR3 so active
+     * command can be removed)
+     */
 		if (req_prefix != prefix ||
 		    (!roam_offload && cm_req->cm_id == cm_ctx->active_cm_id))
 			goto next;
@@ -751,7 +747,8 @@ cm_flush_pending_request(struct cnx_mgr *cm_ctx, uint32_t prefix,
 		} else {
 			mlme_err(CM_PREFIX_FMT "Invalid prefix %x",
 				 CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev),
-					       cm_req->cm_id), prefix);
+					       cm_req->cm_id),
+				 prefix);
 		}
 
 		cm_req_history_del(cm_ctx, cm_req, CM_REQ_DEL_FLUSH);
@@ -788,8 +785,8 @@ cm_fill_bss_info_in_connect_rsp_by_cm_id(struct cnx_mgr *cm_ctx,
 		cm_req = qdf_container_of(cur_node, struct cm_req, node);
 
 		if (cm_req->cm_id == cm_id) {
-			cm_fill_connect_resp_from_req(cm_ctx->vdev,
-						      resp, cm_req);
+			cm_fill_connect_resp_from_req(cm_ctx->vdev, resp,
+						      cm_req);
 			cm_req_lock_release(cm_ctx);
 			return QDF_STATUS_SUCCESS;
 		}
@@ -817,8 +814,7 @@ bool cm_is_cm_id_current_candidate_single_pmk(struct cnx_mgr *cm_ctx,
 	psoc = wlan_vdev_get_psoc(cm_ctx->vdev);
 	if (!psoc) {
 		mlme_err(CM_PREFIX_FMT "Failed to find psoc",
-			 CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev),
-				       cm_id));
+			 CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev), cm_id));
 		return is_single_pmk;
 	}
 
@@ -876,9 +872,8 @@ QDF_STATUS cm_add_req_to_list_and_indicate_osif(struct cnx_mgr *cm_ctx,
 
 	cm_req_history_add(cm_ctx, cm_req);
 	cm_req_lock_release(cm_ctx);
-	mlme_debug(CM_PREFIX_FMT,
-		   CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev),
-				 cm_req->cm_id));
+	mlme_debug(CM_PREFIX_FMT, CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev),
+						cm_req->cm_id));
 
 	mlme_cm_osif_update_id_and_src(cm_ctx->vdev, source, cm_req->cm_id);
 
@@ -903,15 +898,14 @@ static void cm_zero_and_free_memory(uint8_t *ptr, uint32_t len)
  *
  * Return: void
  */
-static
-void cm_free_roaming_info(struct wlan_cm_connect_resp *connect_rsp)
+static void cm_free_roaming_info(struct wlan_cm_connect_resp *connect_rsp)
 {
 	cm_zero_and_free_memory((uint8_t *)connect_rsp->roaming_info,
 				sizeof(*connect_rsp->roaming_info));
 }
 #else
-static inline
-void cm_free_roaming_info(struct wlan_cm_connect_resp *connect_rsp)
+static inline void
+cm_free_roaming_info(struct wlan_cm_connect_resp *connect_rsp)
 {
 }
 #endif
@@ -925,8 +919,7 @@ void cm_free_roaming_info(struct wlan_cm_connect_resp *connect_rsp)
  *
  * Return: void
  */
-static
-void cm_free_fils_ie(struct wlan_connect_rsp_ies *connect_ie)
+static void cm_free_fils_ie(struct wlan_connect_rsp_ies *connect_ie)
 {
 	if (!connect_ie->fils_ie)
 		return;
@@ -939,8 +932,7 @@ void cm_free_fils_ie(struct wlan_connect_rsp_ies *connect_ie)
 				sizeof(*connect_ie->fils_ie));
 }
 #else
-static inline
-void cm_free_fils_ie(struct wlan_connect_rsp_ies *connect_ie)
+static inline void cm_free_fils_ie(struct wlan_connect_rsp_ies *connect_ie)
 {
 }
 #endif
@@ -953,8 +945,7 @@ void cm_free_fils_ie(struct wlan_connect_rsp_ies *connect_ie)
  *
  * Return: void
  */
-static
-void cm_free_connect_ies(struct wlan_connect_rsp_ies *connect_ie)
+static void cm_free_connect_ies(struct wlan_connect_rsp_ies *connect_ie)
 {
 	cm_zero_and_free_memory(connect_ie->assoc_req.ptr,
 				connect_ie->assoc_req.len);
@@ -1025,8 +1016,7 @@ void cm_free_connect_rsp(struct wlan_cm_connect_resp *connect_rsp)
  *
  * Return: void
  */
-static
-void cm_free_first_connect_rsp(struct cm_connect_req *req)
+static void cm_free_first_connect_rsp(struct cm_connect_req *req)
 {
 	struct wlan_cm_connect_resp *connect_rsp = req->first_candidate_rsp;
 
@@ -1036,8 +1026,7 @@ void cm_free_first_connect_rsp(struct cm_connect_req *req)
 	cm_free_connect_rsp(connect_rsp);
 }
 #else
-static inline
-void cm_free_first_connect_rsp(struct cm_connect_req *req)
+static inline void cm_free_first_connect_rsp(struct cm_connect_req *req)
 {
 }
 #endif /* CONN_MGR_ADV_FEATURE */
@@ -1097,7 +1086,8 @@ cm_delete_req_from_list(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 	} else {
 		mlme_err(CM_PREFIX_FMT "Invalid prefix %x",
 			 CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev),
-				       cm_req->cm_id), prefix);
+				       cm_req->cm_id),
+			 prefix);
 	}
 
 	if (cm_id == cm_ctx->active_cm_id)
@@ -1105,9 +1095,8 @@ cm_delete_req_from_list(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 	else
 		cm_req_history_del(cm_ctx, cm_req, CM_REQ_DEL_PENDING);
 
-	mlme_debug(CM_PREFIX_FMT,
-		   CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev),
-				 cm_req->cm_id));
+	mlme_debug(CM_PREFIX_FMT, CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev),
+						cm_req->cm_id));
 
 	qdf_mem_free(cm_req);
 	cm_req_lock_release(cm_ctx);
@@ -1127,9 +1116,9 @@ void cm_remove_cmd(struct cnx_mgr *cm_ctx, wlan_cm_id *cm_id_to_remove)
 	}
 
 	/*
-	 * store local value as cm_delete_req_from_list may free the
-	 * cm_id_to_remove pointer
-	 */
+   * store local value as cm_delete_req_from_list may free the
+   * cm_id_to_remove pointer
+   */
 	cm_id = *cm_id_to_remove;
 	/* return if zero or invalid cm_id */
 	if (!cm_id || cm_id == CM_ID_INVALID) {
@@ -1151,7 +1140,8 @@ void cm_remove_cmd(struct cnx_mgr *cm_ctx, wlan_cm_id *cm_id_to_remove)
 		return;
 
 	if (cm_id & CM_ID_LSWITCH_BIT) {
-		mlme_debug("Skip cmd remove for link switch connect/disconnect");
+		mlme_debug(
+			"Skip cmd remove for link switch connect/disconnect");
 		return;
 	}
 
@@ -1193,8 +1183,8 @@ void cm_set_max_connect_attempts(struct wlan_objmgr_vdev *vdev,
 	cm_ctx->max_connect_attempts =
 		QDF_MIN(max_connect_attempts, CM_MAX_CONNECT_ATTEMPTS);
 	mlme_debug("vdev %d max connect attempts set to %d, requested %d",
-		   wlan_vdev_get_id(vdev),
-		   cm_ctx->max_connect_attempts, max_connect_attempts);
+		   wlan_vdev_get_id(vdev), cm_ctx->max_connect_attempts,
+		   max_connect_attempts);
 }
 
 void cm_set_max_connect_timeout(struct wlan_objmgr_vdev *vdev,
@@ -1248,7 +1238,7 @@ void cm_inform_bcn_probe(struct cnx_mgr *cm_ctx, uint8_t *bcn_probe,
 	qdf_nbuf_t buf;
 	struct wlan_objmgr_pdev *pdev;
 	uint8_t *data, i, vdev_id;
-	struct mgmt_rx_event_params rx_param = {0};
+	struct mgmt_rx_event_params rx_param = { 0 };
 	struct wlan_frame_hdr *hdr;
 	enum mgmt_frame_type frm_type = MGMT_BEACON;
 
@@ -1498,9 +1488,9 @@ cm_get_active_req_type(struct wlan_objmgr_vdev *vdev)
 }
 
 #ifdef WLAN_FEATURE_11BE_MLO
-static inline
-void cm_fill_ml_partner_info(struct wlan_cm_connect_req *req,
-			       struct wlan_cm_vdev_connect_req *connect_req)
+static inline void
+cm_fill_ml_partner_info(struct wlan_cm_connect_req *req,
+			struct wlan_cm_vdev_connect_req *connect_req)
 {
 	if (req->ml_parnter_info.num_partner_links)
 		qdf_mem_copy(&connect_req->ml_parnter_info,
@@ -1508,9 +1498,9 @@ void cm_fill_ml_partner_info(struct wlan_cm_connect_req *req,
 			     sizeof(struct mlo_partner_info));
 }
 #else
-static inline
-void cm_fill_ml_partner_info(struct wlan_cm_connect_req *req,
-			     struct wlan_cm_vdev_connect_req *connect_req)
+static inline void
+cm_fill_ml_partner_info(struct wlan_cm_connect_req *req,
+			struct wlan_cm_vdev_connect_req *connect_req)
 {
 }
 #endif
@@ -1523,12 +1513,11 @@ bool cm_find_bss_from_candidate_list(qdf_list_t *candidate_list,
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
 	struct qdf_mac_addr *bssid2;
 
-	if (qdf_is_macaddr_zero(bssid) ||
-	    qdf_is_macaddr_broadcast(bssid))
+	if (qdf_is_macaddr_zero(bssid) || qdf_is_macaddr_broadcast(bssid))
 		return false;
 
 	if (qdf_list_peek_front(candidate_list, &cur_node) !=
-					QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		mlme_err("failed to peer front of candidate_list");
 		return false;
 	}
@@ -1591,12 +1580,13 @@ bool cm_get_active_connect_req(struct wlan_objmgr_vdev *vdev,
 		    cm_id_prefix == CONNECT_REQ_PREFIX) {
 			req->vdev_id = wlan_vdev_get_id(vdev);
 			req->cm_id = cm_req->connect_req.cm_id;
-			req->bss =  cm_req->connect_req.cur_candidate;
+			req->bss = cm_req->connect_req.cur_candidate;
 			req->is_wps_connection =
 				cm_req->connect_req.req.is_wps_connection;
 			req->is_osen_connection =
 				cm_req->connect_req.req.is_osen_connection;
-			req->is_non_assoc_link = cm_req->connect_req.req.is_non_assoc_link;
+			req->is_non_assoc_link =
+				cm_req->connect_req.req.is_non_assoc_link;
 			cm_fill_ml_partner_info(&cm_req->connect_req.req, req);
 			status = true;
 			cm_req_lock_release(cm_ctx);
@@ -1638,7 +1628,7 @@ bool cm_get_active_disconnect_req(struct wlan_objmgr_vdev *vdev,
 			req->req.vdev_id = wlan_vdev_get_id(vdev);
 			req->req.source = cm_req->discon_req.req.source;
 			req->req.reason_code =
-					cm_req->discon_req.req.reason_code;
+				cm_req->discon_req.req.reason_code;
 			req->req.bssid = cm_req->discon_req.req.bssid;
 			req->req.is_no_disassoc_disconnect =
 				cm_req->discon_req.req.is_no_disassoc_disconnect;
@@ -1680,8 +1670,7 @@ struct cm_req *cm_get_req_by_scan_id(struct cnx_mgr *cm_ctx,
 	return NULL;
 }
 
-wlan_cm_id cm_get_cm_id_by_scan_id(struct cnx_mgr *cm_ctx,
-				   wlan_scan_id scan_id)
+wlan_cm_id cm_get_cm_id_by_scan_id(struct cnx_mgr *cm_ctx, wlan_scan_id scan_id)
 {
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
 	struct cm_req *cm_req;
@@ -1731,7 +1720,8 @@ QDF_STATUS cm_get_rnr(struct wlan_objmgr_vdev *vdev, wlan_cm_id cm_id,
 			    !cm_req->connect_req.cur_candidate->entry)
 				break;
 
-			qdf_mem_copy(rnr,
+			qdf_mem_copy(
+				rnr,
 				&cm_req->connect_req.cur_candidate->entry->rnr,
 				sizeof(*rnr));
 			cm_req_lock_release(cm_ctx);
@@ -1775,8 +1765,7 @@ cm_get_pcl_chan_weigtage_for_sta(struct wlan_objmgr_pdev *pdev,
 	}
 }
 
-void cm_calculate_scores(struct cnx_mgr *cm_ctx,
-			 struct wlan_objmgr_pdev *pdev,
+void cm_calculate_scores(struct cnx_mgr *cm_ctx, struct wlan_objmgr_pdev *pdev,
 			 struct scan_filter *filter, qdf_list_t *list)
 {
 	struct pcl_freq_weight_list *pcl_lst = NULL;
@@ -1789,24 +1778,24 @@ void cm_calculate_scores(struct cnx_mgr *cm_ctx,
 			pcl_lst = NULL;
 		}
 	}
-	wlan_cm_calculate_bss_score(pdev, pcl_lst, list, &filter->bssid_hint,
-				    (struct qdf_mac_addr *)
-				    wlan_vdev_mlme_get_macaddr(cm_ctx->vdev));
+	wlan_cm_calculate_bss_score(
+		pdev, pcl_lst, list, &filter->bssid_hint,
+		(struct qdf_mac_addr *)wlan_vdev_mlme_get_macaddr(
+			cm_ctx->vdev));
 	if (pcl_lst)
 		qdf_mem_free(pcl_lst);
 }
 #else
-inline
-void cm_calculate_scores(struct cnx_mgr *cm_ctx,
-			 struct wlan_objmgr_pdev *pdev,
-			 struct scan_filter *filter, qdf_list_t *list)
+inline void cm_calculate_scores(struct cnx_mgr *cm_ctx,
+				struct wlan_objmgr_pdev *pdev,
+				struct scan_filter *filter, qdf_list_t *list)
 {
 	wlan_cm_calculate_bss_score(pdev, NULL, list, &filter->bssid_hint,
 				    NULL);
 
 	/*
-	 * Custom sorting if enabled
-	 */
+   * Custom sorting if enabled
+   */
 	if (cm_ctx && cm_ctx->cm_candidate_list_custom_sort)
 		cm_ctx->cm_candidate_list_custom_sort(cm_ctx->vdev, list);
 }
@@ -1829,8 +1818,7 @@ static const char *cm_id_to_string(wlan_cm_id cm_id)
 	}
 }
 
-void cm_req_history_add(struct cnx_mgr *cm_ctx,
-			struct cm_req *cm_req)
+void cm_req_history_add(struct cnx_mgr *cm_ctx, struct cm_req *cm_req)
 {
 	struct cm_req_history *history = &cm_ctx->req_history;
 	struct cm_req_history_info *data;
@@ -1847,8 +1835,7 @@ void cm_req_history_add(struct cnx_mgr *cm_ctx,
 	qdf_spin_unlock_bh(&history->cm_req_hist_lock);
 }
 
-void cm_req_history_del(struct cnx_mgr *cm_ctx,
-			struct cm_req *cm_req,
+void cm_req_history_del(struct cnx_mgr *cm_ctx, struct cm_req *cm_req,
 			enum cm_req_del_type del_type)
 {
 	uint8_t i, idx;
@@ -1893,12 +1880,12 @@ static inline void cm_req_history_print_entry(uint16_t idx,
 	if (!data->cm_id)
 		return;
 
-	mlme_nofl_err("    |%6u | 0x%016llx | 0x%016llx |%12s | 0x%08x |%15s |%15s |%8u",
-		      idx, data->add_time, data->del_time,
-		      cm_id_to_string(data->cm_id), data->cm_id,
-		      cm_sm_info[data->add_cm_state].name,
-		      cm_sm_info[data->del_cm_state].name,
-		      data->del_type);
+	mlme_nofl_err(
+		"    |%6u | 0x%016llx | 0x%016llx |%12s | 0x%08x |%15s |%15s |%8u",
+		idx, data->add_time, data->del_time,
+		cm_id_to_string(data->cm_id), data->cm_id,
+		cm_sm_info[data->add_cm_state].name,
+		cm_sm_info[data->del_cm_state].name, data->del_type);
 }
 
 void cm_req_history_print(struct cnx_mgr *cm_ctx)
@@ -1907,9 +1894,9 @@ void cm_req_history_print(struct cnx_mgr *cm_ctx)
 	uint8_t i, idx;
 
 	mlme_nofl_err("CM Request history is as below");
-	mlme_nofl_err("|%6s |%19s |%19s |%12s |%11s |%15s |%15s |%8s",
-		      "Index", "Add Time", "Del Time", "Req type",
-		      "Cm Id", "Add State", "Del State", "Del Type");
+	mlme_nofl_err("|%6s |%19s |%19s |%12s |%11s |%15s |%15s |%8s", "Index",
+		      "Add Time", "Del Time", "Req type", "Cm Id", "Add State",
+		      "Del State", "Del Type");
 
 	qdf_spin_lock_bh(&history->cm_req_hist_lock);
 	for (i = 0; i < CM_REQ_HISTORY_SIZE; i++) {
@@ -1922,9 +1909,9 @@ void cm_req_history_print(struct cnx_mgr *cm_ctx)
 
 #ifndef CONN_MGR_ADV_FEATURE
 void cm_set_candidate_advance_filter_cb(
-		struct wlan_objmgr_vdev *vdev,
-		void (*filter_fun)(struct wlan_objmgr_vdev *vdev,
-				   struct scan_filter *filter))
+	struct wlan_objmgr_vdev *vdev,
+	void (*filter_fun)(struct wlan_objmgr_vdev *vdev,
+			   struct scan_filter *filter))
 {
 	struct cnx_mgr *cm_ctx;
 
@@ -1936,9 +1923,8 @@ void cm_set_candidate_advance_filter_cb(
 }
 
 void cm_set_candidate_custom_sort_cb(
-		struct wlan_objmgr_vdev *vdev,
-		void (*sort_fun)(struct wlan_objmgr_vdev *vdev,
-				 qdf_list_t *list))
+	struct wlan_objmgr_vdev *vdev,
+	void (*sort_fun)(struct wlan_objmgr_vdev *vdev, qdf_list_t *list))
 {
 	struct cnx_mgr *cm_ctx;
 
@@ -1963,9 +1949,9 @@ void cm_set_candidate_custom_sort_cb(
  *
  * Return: void
  */
-static
-void cm_fill_connect_ies_from_rsp(struct wlan_cm_connect_resp *first_cand_rsp,
-				  struct wlan_cm_connect_resp *rsp)
+static void
+cm_fill_connect_ies_from_rsp(struct wlan_cm_connect_resp *first_cand_rsp,
+			     struct wlan_cm_connect_resp *rsp)
 {
 	struct wlan_connect_rsp_ies *connect_ies;
 
@@ -2003,10 +1989,9 @@ void cm_fill_connect_ies_from_rsp(struct wlan_cm_connect_resp *first_cand_rsp,
 	}
 
 	/* Assoc Req IE data */
-	if (rsp->connect_ies.assoc_req.ptr &&
-	    rsp->connect_ies.assoc_req.len) {
+	if (rsp->connect_ies.assoc_req.ptr && rsp->connect_ies.assoc_req.len) {
 		connect_ies->assoc_req.ptr =
-				qdf_mem_malloc(rsp->connect_ies.assoc_req.len);
+			qdf_mem_malloc(rsp->connect_ies.assoc_req.len);
 		if (connect_ies->assoc_req.ptr)
 			qdf_mem_copy(connect_ies->assoc_req.ptr,
 				     rsp->connect_ies.assoc_req.ptr,
@@ -2016,10 +2001,9 @@ void cm_fill_connect_ies_from_rsp(struct wlan_cm_connect_resp *first_cand_rsp,
 	}
 
 	/* Assoc Rsp IE data */
-	if (rsp->connect_ies.assoc_rsp.ptr &&
-	    rsp->connect_ies.assoc_rsp.len) {
+	if (rsp->connect_ies.assoc_rsp.ptr && rsp->connect_ies.assoc_rsp.len) {
 		connect_ies->assoc_rsp.ptr =
-				qdf_mem_malloc(rsp->connect_ies.assoc_rsp.len);
+			qdf_mem_malloc(rsp->connect_ies.assoc_rsp.len);
 		if (connect_ies->assoc_rsp.ptr)
 			qdf_mem_copy(connect_ies->assoc_rsp.ptr,
 				     rsp->connect_ies.assoc_rsp.ptr,
@@ -2038,9 +2022,8 @@ void cm_fill_connect_ies_from_rsp(struct wlan_cm_connect_resp *first_cand_rsp,
  *
  * Return: void
  */
-static
-void cm_copy_rsp_from_rsp(struct wlan_cm_connect_resp *destination_rsp,
-			  struct wlan_cm_connect_resp *source_rsp)
+static void cm_copy_rsp_from_rsp(struct wlan_cm_connect_resp *destination_rsp,
+				 struct wlan_cm_connect_resp *source_rsp)
 {
 	*destination_rsp = *source_rsp;
 	cm_fill_connect_ies_from_rsp(destination_rsp, source_rsp);
@@ -2066,30 +2049,31 @@ void cm_store_first_candidate_rsp(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id,
 
 		if (cm_req->cm_id == cm_id) {
 			/*
-			 * Do not cache response if first candidate response is
-			 * already stored. "first_candidate_rsp" pointer is
-			 * freed once connect request is completed and freed.
-			 */
+       * Do not cache response if first candidate response is
+       * already stored. "first_candidate_rsp" pointer is
+       * freed once connect request is completed and freed.
+       */
 			if (cm_req->connect_req.first_candidate_rsp)
 				break;
 
 			/* only cached for more than one candidate */
 			num_candidates = qdf_list_size(
-					cm_req->connect_req.candidate_list);
+				cm_req->connect_req.candidate_list);
 			if (num_candidates <= CM_MIN_CANDIDATE_NUM)
 				break;
 
-			first_candid_rsp = qdf_mem_malloc(
-						sizeof(*first_candid_rsp));
+			first_candid_rsp =
+				qdf_mem_malloc(sizeof(*first_candid_rsp));
 			if (!first_candid_rsp)
 				break;
 
 			cm_copy_rsp_from_rsp(first_candid_rsp, resp);
 			cm_req->connect_req.first_candidate_rsp =
-							first_candid_rsp;
-			mlme_debug(CM_PREFIX_FMT " " QDF_MAC_ADDR_FMT " with reason %d",
-				   CM_PREFIX_REF(first_candid_rsp->vdev_id,
-						 cm_id),
+				first_candid_rsp;
+			mlme_debug(
+				CM_PREFIX_FMT " " QDF_MAC_ADDR_FMT
+					      " with reason %d",
+				CM_PREFIX_REF(first_candid_rsp->vdev_id, cm_id),
 				QDF_MAC_ADDR_REF(first_candid_rsp->bssid.bytes),
 				first_candid_rsp->reason);
 			break;
@@ -2123,12 +2107,14 @@ cm_get_first_candidate_rsp(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id,
 			if (!cm_req->connect_req.first_candidate_rsp)
 				break;
 
-			cm_copy_rsp_from_rsp(first_candid_rsp,
+			cm_copy_rsp_from_rsp(
+				first_candid_rsp,
 				cm_req->connect_req.first_candidate_rsp);
 
-			mlme_debug(CM_PREFIX_FMT " " QDF_MAC_ADDR_FMT "with reason %d",
-				   CM_PREFIX_REF(first_candid_rsp->vdev_id,
-						 cm_id),
+			mlme_debug(
+				CM_PREFIX_FMT " " QDF_MAC_ADDR_FMT
+					      "with reason %d",
+				CM_PREFIX_REF(first_candid_rsp->vdev_id, cm_id),
 				QDF_MAC_ADDR_REF(first_candid_rsp->bssid.bytes),
 				first_candid_rsp->reason);
 
@@ -2146,7 +2132,7 @@ cm_get_first_candidate_rsp(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id,
 
 void cm_store_n_send_failed_candidate(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
 {
-	struct wlan_cm_connect_resp resp = {0};
+	struct wlan_cm_connect_resp resp = { 0 };
 
 	cm_fill_failure_resp_from_cm_id(cm_ctx, &resp, cm_id,
 					CM_VALID_CANDIDATE_CHECK_FAIL);

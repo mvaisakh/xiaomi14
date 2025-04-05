@@ -21,16 +21,15 @@
  * implementation for creating sysfs file modify_acl
  */
 
-#include <wlan_hdd_includes.h>
+#include "wlan_hdd_sysfs_modify_acl.h"
 #include "osif_vdev_sync.h"
 #include "wlan_hdd_sysfs.h"
-#include "wlan_hdd_sysfs_modify_acl.h"
+#include <wlan_hdd_includes.h>
 
 #define MAX_USER_COMMAND_SIZE_MODIFY_ACL 64
 
-static ssize_t __hdd_sysfs_modify_acl_store(
-		struct net_device *net_dev,
-		const char *buf, size_t count)
+static ssize_t __hdd_sysfs_modify_acl_store(struct net_device *net_dev,
+					    const char *buf, size_t count)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -58,15 +57,15 @@ static ssize_t __hdd_sysfs_modify_acl_store(
 		return -EINVAL;
 	}
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
 	}
 
-	hdd_debug("modify_acl: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("modify_acl: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	sptr = buf_local;
 	for (i = 0; i < QDF_MAC_ADDR_SIZE; i++) {
@@ -94,9 +93,9 @@ static ssize_t __hdd_sysfs_modify_acl_store(
 	hdd_debug("Modify ACL mac:" QDF_MAC_ADDR_FMT " type: %d cmd: %d",
 		  QDF_MAC_ADDR_REF(peer_mac), list_type, cmd_type);
 
-	qdf_status = wlansap_modify_acl(
-		WLAN_HDD_GET_SAP_CTX_PTR(adapter->deflink),
-		peer_mac, list_type, cmd_type);
+	qdf_status =
+		wlansap_modify_acl(WLAN_HDD_GET_SAP_CTX_PTR(adapter->deflink),
+				   peer_mac, list_type, cmd_type);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		hdd_err("Modify ACL failed");
 		return -EIO;
@@ -117,8 +116,7 @@ static ssize_t hdd_sysfs_modify_acl_store(struct device *dev,
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_modify_acl_store(
-				net_dev, buf, count);
+	errno_size = __hdd_sysfs_modify_acl_store(net_dev, buf, count);
 	if (errno_size < 0)
 		hdd_err_rl("errno_size %zd", errno_size);
 
@@ -127,8 +125,7 @@ static ssize_t hdd_sysfs_modify_acl_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(modify_acl, 0220,
-		   NULL, hdd_sysfs_modify_acl_store);
+static DEVICE_ATTR(modify_acl, 0220, NULL, hdd_sysfs_modify_acl_store);
 
 int hdd_sysfs_modify_acl_create(struct hdd_adapter *adapter)
 {

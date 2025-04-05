@@ -19,11 +19,9 @@
 
 /*
  *
- * lim_send_messages.c: Provides functions to send messages or Indications to HAL.
- * Author:    Sunit Bhatia
- * Date:       09/21/2006
- * History:-
- * Date        Modified by            Modification Information
+ * lim_send_messages.c: Provides functions to send messages or Indications to
+ * HAL. Author:    Sunit Bhatia Date:       09/21/2006 History:- Date Modified
+ * by            Modification Information
  *
  * --------------------------------------------------------------------------
  *
@@ -31,15 +29,15 @@
 #include "lim_send_messages.h"
 #include "lim_trace.h"
 #include "wlan_reg_services_api.h"
-#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM    /* FEATURE_WLAN_DIAG_SUPPORT */
+#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM /* FEATURE_WLAN_DIAG_SUPPORT */
 #include "host_diag_core_log.h"
 #endif /* FEATURE_WLAN_DIAG_SUPPORT */
+#include "../../core/src/vdev_mgr_ops.h"
 #include "lim_utils.h"
 #include "wma.h"
-#include "../../core/src/vdev_mgr_ops.h"
 
 /* Max debug string size in bytes  */
-#define LIM_DEBUG_STRING_SIZE    512
+#define LIM_DEBUG_STRING_SIZE 512
 
 /**
  * lim_send_beacon_params() - updates bcn params to WMA
@@ -54,39 +52,37 @@
  * @return success if message send is ok, else false.
  */
 QDF_STATUS lim_send_beacon_params(struct mac_context *mac,
-				     tpUpdateBeaconParams pUpdatedBcnParams,
-				     struct pe_session *pe_session)
+				  tpUpdateBeaconParams pUpdatedBcnParams,
+				  struct pe_session *pe_session)
 {
 	tpUpdateBeaconParams pBcnParams = NULL;
 	QDF_STATUS retCode = QDF_STATUS_SUCCESS;
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 
 	pBcnParams = qdf_mem_malloc(sizeof(*pBcnParams));
 	if (!pBcnParams)
 		return QDF_STATUS_E_NOMEM;
-	qdf_mem_copy((uint8_t *) pBcnParams, pUpdatedBcnParams,
+	qdf_mem_copy((uint8_t *)pBcnParams, pUpdatedBcnParams,
 		     sizeof(*pBcnParams));
 	msgQ.type = WMA_UPDATE_BEACON_IND;
 	msgQ.reserved = 0;
 	msgQ.bodyptr = pBcnParams;
 	msgQ.bodyval = 0;
 	pe_debug("Sending WMA_UPDATE_BEACON_IND, paramChangeBitmap in hex: %x",
-	       pUpdatedBcnParams->paramChangeBitmap);
+		 pUpdatedBcnParams->paramChangeBitmap);
 	if (!pe_session) {
 		qdf_mem_free(pBcnParams);
 		MTRACE(mac_trace_msg_tx(mac, NO_SESSION, msgQ.type));
 		return QDF_STATUS_E_FAILURE;
 	} else {
-		MTRACE(mac_trace_msg_tx(mac,
-					pe_session->peSessionId,
+		MTRACE(mac_trace_msg_tx(mac, pe_session->peSessionId,
 					msgQ.type));
 	}
 	pBcnParams->vdev_id = pe_session->vdev_id;
 	retCode = wma_post_ctrl_msg(mac, &msgQ);
 	if (QDF_STATUS_SUCCESS != retCode) {
 		qdf_mem_free(pBcnParams);
-		pe_err("Posting WMA_UPDATE_BEACON_IND, reason=%X",
-			retCode);
+		pe_err("Posting WMA_UPDATE_BEACON_IND, reason=%X", retCode);
 	}
 	lim_send_beacon_ind(mac, pe_session, REASON_DEFAULT);
 	return retCode;
@@ -97,7 +93,7 @@ QDF_STATUS lim_send_switch_chnl_params(struct mac_context *mac,
 {
 	struct vdev_mlme_obj *mlme_obj;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
-	struct vdev_start_response rsp = {0};
+	struct vdev_start_response rsp = { 0 };
 	tp_wma_handle wma = cds_get_context(QDF_MODULE_ID_WMA);
 
 	if (!wma)
@@ -123,8 +119,8 @@ QDF_STATUS lim_send_switch_chnl_params(struct mac_context *mac,
 	session->ch_switch_in_progress = true;
 
 	/* we need to defer the message until we
-	 * get the response back from WMA
-	 */
+   * get the response back from WMA
+   */
 	SET_LIM_PROCESS_DEFD_MESGS(mac, false);
 
 	status = wma_pre_chan_switch_setup(session->vdev_id);
@@ -132,8 +128,8 @@ QDF_STATUS lim_send_switch_chnl_params(struct mac_context *mac,
 		pe_err("failed status = %d", status);
 		goto send_resp;
 	}
-	status = vdev_mgr_start_send(mlme_obj,
-				mlme_is_chan_switch_in_progress(session->vdev));
+	status = vdev_mgr_start_send(
+		mlme_obj, mlme_is_chan_switch_in_progress(session->vdev));
 	if (status != QDF_STATUS_SUCCESS) {
 		pe_err("failed status = %d", status);
 		goto send_resp;
@@ -156,7 +152,7 @@ QDF_STATUS lim_send_edca_params(struct mac_context *mac,
 {
 	tEdcaParams *pEdcaParams = NULL;
 	QDF_STATUS retCode = QDF_STATUS_SUCCESS;
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 
 	pEdcaParams = qdf_mem_malloc(sizeof(tEdcaParams));
 	if (!pEdcaParams)
@@ -177,7 +173,7 @@ QDF_STATUS lim_send_edca_params(struct mac_context *mac,
 	if (QDF_STATUS_SUCCESS != retCode) {
 		qdf_mem_free(pEdcaParams);
 		pe_err("Posting WMA_UPDATE_EDCA_PROFILE_IND failed, reason=%X",
-			retCode);
+		       retCode);
 	}
 	return retCode;
 }
@@ -188,39 +184,43 @@ void lim_set_active_edca_params(struct mac_context *mac_ctx,
 {
 	uint8_t ac, new_ac, i;
 	uint8_t ac_admitted;
-#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM    /* FEATURE_WLAN_DIAG_SUPPORT */
+#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM /* FEATURE_WLAN_DIAG_SUPPORT */
 	host_log_qos_edca_pkt_type *log_ptr = NULL;
 #endif /* FEATURE_WLAN_DIAG_SUPPORT */
 	uint8_t *debug_str;
 	uint32_t len = 0;
 
 	/* Initialize gLimEdcaParamsActive[] to be same as localEdcaParams */
-	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_BE] = edca_params[QCA_WLAN_AC_BE];
-	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_BK] = edca_params[QCA_WLAN_AC_BK];
-	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_VI] = edca_params[QCA_WLAN_AC_VI];
-	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_VO] = edca_params[QCA_WLAN_AC_VO];
+	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_BE] =
+		edca_params[QCA_WLAN_AC_BE];
+	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_BK] =
+		edca_params[QCA_WLAN_AC_BK];
+	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_VI] =
+		edca_params[QCA_WLAN_AC_VI];
+	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_VO] =
+		edca_params[QCA_WLAN_AC_VO];
 
 	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_BE].no_ack =
-					mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_BE];
+		mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_BE];
 	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_BK].no_ack =
-					mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_BK];
+		mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_BK];
 	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_VI].no_ack =
-					mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_VI];
+		mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_VI];
 	pe_session->gLimEdcaParamsActive[QCA_WLAN_AC_VO].no_ack =
-					mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_VO];
+		mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_VO];
 	/* An AC requires downgrade if the ACM bit is set, and the AC has not
-	 * yet been admitted in uplink or bi-directions.
-	 * If an AC requires downgrade, it will downgrade to the next beset AC
-	 * for which ACM is not enabled.
-	 *
-	 * - There's no need to downgrade AC_BE since it IS the lowest AC. Hence
-	 *   start the for loop with AC_BK.
-	 * - If ACM bit is set for an AC, initially downgrade it to AC_BE. Then
-	 *   traverse thru the AC list. If we do find the next best AC which is
-	 *   better than AC_BE, then use that one. For example, if ACM bits are set
-	 *   such that: BE_ACM=1, BK_ACM=1, VI_ACM=1, VO_ACM=0
-	 *   then all AC will be downgraded to AC_BE.
-	 */
+   * yet been admitted in uplink or bi-directions.
+   * If an AC requires downgrade, it will downgrade to the next beset AC
+   * for which ACM is not enabled.
+   *
+   * - There's no need to downgrade AC_BE since it IS the lowest AC. Hence
+   *   start the for loop with AC_BK.
+   * - If ACM bit is set for an AC, initially downgrade it to AC_BE. Then
+   *   traverse thru the AC list. If we do find the next best AC which is
+   *   better than AC_BE, then use that one. For example, if ACM bits are set
+   *   such that: BE_ACM=1, BK_ACM=1, VI_ACM=1, VO_ACM=0
+   *   then all AC will be downgraded to AC_BE.
+   */
 
 	debug_str = qdf_mem_malloc(LIM_DEBUG_STRING_SIZE);
 	if (!debug_str)
@@ -229,7 +229,8 @@ void lim_set_active_edca_params(struct mac_context *mac_ctx,
 	for (ac = QCA_WLAN_AC_BK; ac <= QCA_WLAN_AC_VO; ac++) {
 		ac_admitted =
 			((pe_session->gAcAdmitMask[SIR_MAC_DIRECTION_UPLINK] &
-			 (1 << ac)) >> ac);
+			  (1 << ac)) >>
+			 ac);
 
 		len += qdf_scnprintf(debug_str + len,
 				     LIM_DEBUG_STRING_SIZE - len,
@@ -237,12 +238,11 @@ void lim_set_active_edca_params(struct mac_context *mac_ctx,
 				     edca_params[ac].aci.acm, ac_admitted);
 		if ((edca_params[ac].aci.acm == 1) && (ac_admitted == 0)) {
 			/* Loop backwards through AC values until it finds
-			 * acm == 0 or reaches QCA_WLAN_AC_BE.
-			 * Note that for block has no executable statements.
-			 */
-			for (i = ac - 1;
-			    (i > QCA_WLAN_AC_BE &&
-				(edca_params[i].aci.acm != 0));
+       * acm == 0 or reaches QCA_WLAN_AC_BE.
+       * Note that for block has no executable statements.
+       */
+			for (i = ac - 1; (i > QCA_WLAN_AC_BE &&
+					  (edca_params[i].aci.acm != 0));
 			     i--)
 				;
 			new_ac = i;
@@ -259,7 +259,7 @@ void lim_set_active_edca_params(struct mac_context *mac_ctx,
 		 pe_session->gAcAdmitMask[SIR_MAC_DIRECTION_DNLINK], debug_str);
 	qdf_mem_free(debug_str);
 /* log: LOG_WLAN_QOS_EDCA_C */
-#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM    /* FEATURE_WLAN_DIAG_SUPPORT */
+#ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM /* FEATURE_WLAN_DIAG_SUPPORT */
 	WLAN_HOST_DIAG_LOG_ALLOC(log_ptr, host_log_qos_edca_pkt_type,
 				 LOG_WLAN_QOS_EDCA_C);
 	if (log_ptr) {
@@ -292,52 +292,49 @@ void lim_set_active_edca_params(struct mac_context *mac_ctx,
 }
 
 QDF_STATUS lim_send_mode_update(struct mac_context *mac,
-				   tUpdateVHTOpMode *pTempParam,
-				   struct pe_session *pe_session)
+				tUpdateVHTOpMode *pTempParam,
+				struct pe_session *pe_session)
 {
 	tUpdateVHTOpMode *pVhtOpMode = NULL;
 	QDF_STATUS retCode = QDF_STATUS_SUCCESS;
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 
 	pVhtOpMode = qdf_mem_malloc(sizeof(tUpdateVHTOpMode));
 	if (!pVhtOpMode)
 		return QDF_STATUS_E_NOMEM;
-	qdf_mem_copy((uint8_t *) pVhtOpMode, pTempParam,
+	qdf_mem_copy((uint8_t *)pVhtOpMode, pTempParam,
 		     sizeof(tUpdateVHTOpMode));
 	msgQ.type = WMA_UPDATE_OP_MODE;
 	msgQ.reserved = 0;
 	msgQ.bodyptr = pVhtOpMode;
 	msgQ.bodyval = 0;
-	pe_debug("Sending WMA_UPDATE_OP_MODE, op_mode %d",
-			pVhtOpMode->opMode);
+	pe_debug("Sending WMA_UPDATE_OP_MODE, op_mode %d", pVhtOpMode->opMode);
 	if (!pe_session)
 		MTRACE(mac_trace_msg_tx(mac, NO_SESSION, msgQ.type));
 	else
-		MTRACE(mac_trace_msg_tx(mac,
-					pe_session->peSessionId,
+		MTRACE(mac_trace_msg_tx(mac, pe_session->peSessionId,
 					msgQ.type));
 	retCode = wma_post_ctrl_msg(mac, &msgQ);
 	if (QDF_STATUS_SUCCESS != retCode) {
 		qdf_mem_free(pVhtOpMode);
-		pe_err("Posting WMA_UPDATE_OP_MODE failed, reason=%X",
-			retCode);
+		pe_err("Posting WMA_UPDATE_OP_MODE failed, reason=%X", retCode);
 	}
 
 	return retCode;
 }
 
 QDF_STATUS lim_send_rx_nss_update(struct mac_context *mac,
-				     tUpdateRxNss *pTempParam,
-				     struct pe_session *pe_session)
+				  tUpdateRxNss *pTempParam,
+				  struct pe_session *pe_session)
 {
 	tUpdateRxNss *pRxNss = NULL;
 	QDF_STATUS retCode = QDF_STATUS_SUCCESS;
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 
 	pRxNss = qdf_mem_malloc(sizeof(tUpdateRxNss));
 	if (!pRxNss)
 		return QDF_STATUS_E_NOMEM;
-	qdf_mem_copy((uint8_t *) pRxNss, pTempParam, sizeof(tUpdateRxNss));
+	qdf_mem_copy((uint8_t *)pRxNss, pTempParam, sizeof(tUpdateRxNss));
 	msgQ.type = WMA_UPDATE_RX_NSS;
 	msgQ.reserved = 0;
 	msgQ.bodyptr = pRxNss;
@@ -346,31 +343,29 @@ QDF_STATUS lim_send_rx_nss_update(struct mac_context *mac,
 	if (!pe_session)
 		MTRACE(mac_trace_msg_tx(mac, NO_SESSION, msgQ.type));
 	else
-		MTRACE(mac_trace_msg_tx(mac,
-					pe_session->peSessionId,
+		MTRACE(mac_trace_msg_tx(mac, pe_session->peSessionId,
 					msgQ.type));
 	retCode = wma_post_ctrl_msg(mac, &msgQ);
 	if (QDF_STATUS_SUCCESS != retCode) {
 		qdf_mem_free(pRxNss);
-		pe_err("Posting WMA_UPDATE_RX_NSS failed, reason=%X",
-			retCode);
+		pe_err("Posting WMA_UPDATE_RX_NSS failed, reason=%X", retCode);
 	}
 
 	return retCode;
 }
 
 QDF_STATUS lim_set_membership(struct mac_context *mac,
-				 tUpdateMembership *pTempParam,
-				 struct pe_session *pe_session)
+			      tUpdateMembership *pTempParam,
+			      struct pe_session *pe_session)
 {
 	tUpdateMembership *pMembership = NULL;
 	QDF_STATUS retCode = QDF_STATUS_SUCCESS;
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 
 	pMembership = qdf_mem_malloc(sizeof(tUpdateMembership));
 	if (!pMembership)
 		return QDF_STATUS_E_NOMEM;
-	qdf_mem_copy((uint8_t *) pMembership, pTempParam,
+	qdf_mem_copy((uint8_t *)pMembership, pTempParam,
 		     sizeof(tUpdateMembership));
 
 	msgQ.type = WMA_UPDATE_MEMBERSHIP;
@@ -381,31 +376,29 @@ QDF_STATUS lim_set_membership(struct mac_context *mac,
 	if (!pe_session)
 		MTRACE(mac_trace_msg_tx(mac, NO_SESSION, msgQ.type));
 	else
-		MTRACE(mac_trace_msg_tx(mac,
-					pe_session->peSessionId,
+		MTRACE(mac_trace_msg_tx(mac, pe_session->peSessionId,
 					msgQ.type));
 	retCode = wma_post_ctrl_msg(mac, &msgQ);
 	if (QDF_STATUS_SUCCESS != retCode) {
 		qdf_mem_free(pMembership);
 		pe_err("Posting WMA_UPDATE_MEMBERSHIP failed, reason=%X",
-			retCode);
+		       retCode);
 	}
 
 	return retCode;
 }
 
-QDF_STATUS lim_set_user_pos(struct mac_context *mac,
-			       tUpdateUserPos *pTempParam,
-			       struct pe_session *pe_session)
+QDF_STATUS lim_set_user_pos(struct mac_context *mac, tUpdateUserPos *pTempParam,
+			    struct pe_session *pe_session)
 {
 	tUpdateUserPos *pUserPos = NULL;
 	QDF_STATUS retCode = QDF_STATUS_SUCCESS;
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 
 	pUserPos = qdf_mem_malloc(sizeof(tUpdateUserPos));
 	if (!pUserPos)
 		return QDF_STATUS_E_NOMEM;
-	qdf_mem_copy((uint8_t *) pUserPos, pTempParam, sizeof(tUpdateUserPos));
+	qdf_mem_copy((uint8_t *)pUserPos, pTempParam, sizeof(tUpdateUserPos));
 
 	msgQ.type = WMA_UPDATE_USERPOS;
 	msgQ.reserved = 0;
@@ -415,14 +408,12 @@ QDF_STATUS lim_set_user_pos(struct mac_context *mac,
 	if (!pe_session)
 		MTRACE(mac_trace_msg_tx(mac, NO_SESSION, msgQ.type));
 	else
-		MTRACE(mac_trace_msg_tx(mac,
-					pe_session->peSessionId,
+		MTRACE(mac_trace_msg_tx(mac, pe_session->peSessionId,
 					msgQ.type));
 	retCode = wma_post_ctrl_msg(mac, &msgQ);
 	if (QDF_STATUS_SUCCESS != retCode) {
 		qdf_mem_free(pUserPos);
-		pe_err("Posting WMA_UPDATE_USERPOS failed, reason=%X",
-			retCode);
+		pe_err("Posting WMA_UPDATE_USERPOS failed, reason=%X", retCode);
 	}
 
 	return retCode;
@@ -440,11 +431,11 @@ QDF_STATUS lim_set_user_pos(struct mac_context *mac,
  * Return: status of operation
  */
 QDF_STATUS lim_send_exclude_unencrypt_ind(struct mac_context *mac,
-					     bool excludeUnenc,
-					     struct pe_session *pe_session)
+					  bool excludeUnenc,
+					  struct pe_session *pe_session)
 {
 	QDF_STATUS retCode = QDF_STATUS_SUCCESS;
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 	tSirWlanExcludeUnencryptParam *pExcludeUnencryptParam;
 
 	pExcludeUnencryptParam =
@@ -454,7 +445,7 @@ QDF_STATUS lim_send_exclude_unencrypt_ind(struct mac_context *mac,
 
 	pExcludeUnencryptParam->excludeUnencrypt = excludeUnenc;
 	qdf_mem_copy(pExcludeUnencryptParam->bssid.bytes, pe_session->bssId,
-			QDF_MAC_ADDR_SIZE);
+		     QDF_MAC_ADDR_SIZE);
 
 	msgQ.type = WMA_EXCLUDE_UNENCRYPTED_IND;
 	msgQ.reserved = 0;
@@ -466,7 +457,7 @@ QDF_STATUS lim_send_exclude_unencrypt_ind(struct mac_context *mac,
 	if (QDF_STATUS_SUCCESS != retCode) {
 		qdf_mem_free(pExcludeUnencryptParam);
 		pe_err("Posting WMA_EXCLUDE_UNENCRYPTED_IND failed, reason=%X",
-			retCode);
+		       retCode);
 	}
 
 	return retCode;
@@ -482,12 +473,12 @@ QDF_STATUS lim_send_exclude_unencrypt_ind(struct mac_context *mac,
  * Return: status of operation
  */
 QDF_STATUS lim_send_ht40_obss_scanind(struct mac_context *mac_ctx,
-						struct pe_session *session)
+				      struct pe_session *session)
 {
 	QDF_STATUS ret = QDF_STATUS_SUCCESS;
 	struct obss_ht40_scanind *ht40_obss_scanind;
 	uint32_t channelnum, chan_freq;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	uint8_t channel24gnum, count;
 	uint8_t reg_cc[REG_ALPHA2_LEN + 1];
 
@@ -515,15 +506,16 @@ QDF_STATUS lim_send_ht40_obss_scanind(struct mac_context *mac_ctx,
 	ht40_obss_scanind->current_operatingclass =
 		wlan_reg_dmn_get_opclass_from_channel(
 			reg_cc,
-			wlan_reg_freq_to_chan(
-			mac_ctx->pdev, session->curr_op_freq),
+			wlan_reg_freq_to_chan(mac_ctx->pdev,
+					      session->curr_op_freq),
 			session->ch_width);
 	channelnum = mac_ctx->mlme_cfg->reg.valid_channel_list_num;
 
 	/* Extract 24G channel list */
 	channel24gnum = 0;
-	for (count = 0; count < channelnum &&
-		(channel24gnum < CFG_VALID_CHANNEL_LIST_LEN); count++) {
+	for (count = 0;
+	     count < channelnum && (channel24gnum < CFG_VALID_CHANNEL_LIST_LEN);
+	     count++) {
 		chan_freq =
 			mac_ctx->mlme_cfg->reg.valid_channel_freq_list[count];
 		if (wlan_reg_is_24ghz_ch_freq(chan_freq)) {
@@ -541,14 +533,14 @@ QDF_STATUS lim_send_ht40_obss_scanind(struct mac_context *mac_ctx,
 	msg.reserved = 0;
 	msg.bodyptr = (void *)ht40_obss_scanind;
 	msg.bodyval = 0;
-	pe_debug("Obss Scan trigger width: %d, delay factor: %d bssid " QDF_MAC_ADDR_FMT,
-		 ht40_obss_scanind->obss_width_trigger_interval,
-		 ht40_obss_scanind->bsswidth_ch_trans_delay,
-		 QDF_MAC_ADDR_REF(session->bssId));
+	pe_debug(
+		"Obss Scan trigger width: %d, delay factor: %d bssid " QDF_MAC_ADDR_FMT,
+		ht40_obss_scanind->obss_width_trigger_interval,
+		ht40_obss_scanind->bsswidth_ch_trans_delay,
+		QDF_MAC_ADDR_REF(session->bssId));
 	ret = wma_post_ctrl_msg(mac_ctx, &msg);
 	if (QDF_STATUS_SUCCESS != ret) {
-		pe_err("WDA_HT40_OBSS_SCAN_IND msg failed, reason=%X",
-			ret);
+		pe_err("WDA_HT40_OBSS_SCAN_IND msg failed, reason=%X", ret);
 		qdf_mem_free(ht40_obss_scanind);
 	}
 	return ret;
@@ -556,12 +548,11 @@ QDF_STATUS lim_send_ht40_obss_scanind(struct mac_context *mac_ctx,
 
 QDF_STATUS
 lim_send_edca_pifs_param(struct mac_context *mac,
-			 struct wlan_edca_pifs_param_ie *param,
-			 uint8_t vdev_id)
+			 struct wlan_edca_pifs_param_ie *param, uint8_t vdev_id)
 {
 	struct edca_pifs_vparam *edca_pifs = NULL;
 	QDF_STATUS ret = QDF_STATUS_SUCCESS;
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 
 	edca_pifs = qdf_mem_malloc(sizeof(*edca_pifs));
 	if (!edca_pifs)

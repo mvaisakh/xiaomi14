@@ -7,17 +7,17 @@
  * Licensed under the Clear BSD license. See README for more details.
  */
 
+#include "nan_cert.h"
 #include "sigma_dut.h"
-#include <sys/stat.h>
 #include "wpa_ctrl.h"
 #include "wpa_helpers.h"
-#include "nan_cert.h"
+#include <sys/stat.h>
 
 #if NAN_CERT_VERSION >= 2
 
-#if ((NAN_MAJOR_VERSION > 2) ||					 \
-     (NAN_MAJOR_VERSION == 2 &&					 \
-      (NAN_MINOR_VERSION >= 1 || NAN_MICRO_VERSION >= 1))) &&	 \
+#if ((NAN_MAJOR_VERSION > 2) ||                               \
+     (NAN_MAJOR_VERSION == 2 &&                               \
+      (NAN_MINOR_VERSION >= 1 || NAN_MICRO_VERSION >= 1))) && \
 	NAN_CERT_VERSION >= 5
 #define NAN_NEW_CERT_VERSION
 #endif
@@ -49,7 +49,7 @@ uint32_t global_match_handle = 0;
 static const u8 nan_wfa_oui[] = { 0x50, 0x6f, 0x9a };
 /* TLV header length = tag (1 byte) + length (2 bytes) */
 #define WLAN_NAN_TLV_HEADER_SIZE (1 + 2)
-#define NAN_INTF_ID_LEN   8
+#define NAN_INTF_ID_LEN 8
 
 struct sigma_dut *global_dut = NULL;
 static u8 global_nan_mac_addr[ETH_ALEN];
@@ -94,11 +94,10 @@ enum wlan_nan_generic_service_proto_sub_attr {
 	NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_BLOB = 0x06,
 	NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_RSVD1_START = 0x07,
 	NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_RSVD1_END = 0xDC,
-	NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_VENDOR_SPEC_INFO= 0xDD,
+	NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_VENDOR_SPEC_INFO = 0xDD,
 	NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_RSVD2_START = 0xDE,
 	NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_RSVD2_END = 0xFF
 };
-
 
 void nan_hex_dump(struct sigma_dut *dut, uint8_t *data, size_t len)
 {
@@ -111,15 +110,14 @@ void nan_hex_dump(struct sigma_dut *dut, uint8_t *data, size_t len)
 	ptr = data;
 	pos = 0;
 	for (index = 0; index < len; index++) {
-		pos += snprintf(&(buf[pos]), sizeof(buf) - pos,
-				"%02x ", *ptr++);
+		pos += snprintf(&(buf[pos]), sizeof(buf) - pos, "%02x ",
+				*ptr++);
 		if (pos > 508)
 			break;
 	}
-	sigma_dut_print(dut, DUT_MSG_INFO, "HEXDUMP len=[%d]", (int) len);
+	sigma_dut_print(dut, DUT_MSG_INFO, "HEXDUMP len=[%d]", (int)len);
 	sigma_dut_print(dut, DUT_MSG_INFO, "buf:%s", buf);
 }
-
 
 int nan_parse_hex(unsigned char c)
 {
@@ -132,27 +130,25 @@ int nan_parse_hex(unsigned char c)
 	return 0;
 }
 
-
 int nan_parse_token(const char *tokenIn, u8 *tokenOut, int *filterLen)
 {
 	int total_len = 0, len = 0;
 	char *saveptr = NULL;
 
-	tokenIn = strtok_r((char *) tokenIn, ":", &saveptr);
+	tokenIn = strtok_r((char *)tokenIn, ":", &saveptr);
 	while (tokenIn != NULL) {
 		len = strlen(tokenIn);
 		if (len == 1 && *tokenIn == '*')
 			len = 0;
-		tokenOut[total_len++] = (u8) len;
+		tokenOut[total_len++] = (u8)len;
 		if (len != 0)
-			memcpy((u8 *) tokenOut + total_len, tokenIn, len);
+			memcpy((u8 *)tokenOut + total_len, tokenIn, len);
 		total_len += len;
 		tokenIn = strtok_r(NULL, ":", &saveptr);
 	}
 	*filterLen = total_len;
 	return 0;
 }
-
 
 int nan_parse_mac_address(struct sigma_dut *dut, const char *arg, u8 *addr)
 {
@@ -174,21 +170,20 @@ int nan_parse_mac_address(struct sigma_dut *dut, const char *arg, u8 *addr)
 	return 0;
 }
 
-
 int nan_parse_mac_address_list(struct sigma_dut *dut, const char *input,
 			       u8 *output, u16 max_addr_allowed)
 {
 	/*
-	 * Reads a list of mac address separated by space. Each MAC address
-	 * should have the format of aa:bb:cc:dd:ee:ff.
-	 */
+   * Reads a list of mac address separated by space. Each MAC address
+   * should have the format of aa:bb:cc:dd:ee:ff.
+   */
 	char *saveptr;
 	char *token;
 	int i = 0;
 
 	for (i = 0; i < max_addr_allowed; i++) {
-		token = strtok_r((i == 0) ? (char *) input : NULL,
-				 " ", &saveptr);
+		token = strtok_r((i == 0) ? (char *)input : NULL, " ",
+				 &saveptr);
 		if (token) {
 			nan_parse_mac_address(dut, token, output);
 			output += NAN_MAC_ADDR_LEN;
@@ -201,16 +196,15 @@ int nan_parse_mac_address_list(struct sigma_dut *dut, const char *input,
 	return i;
 }
 
-
-int nan_parse_hex_string(struct sigma_dut *dut, const char *input,
-			 u8 *output, int *outputlen)
+int nan_parse_hex_string(struct sigma_dut *dut, const char *input, u8 *output,
+			 int *outputlen)
 {
 	int i = 0;
 	int j = 0;
 
-	for (i = 0; i < (int) strlen(input) && j < *outputlen; i += 2) {
+	for (i = 0; i < (int)strlen(input) && j < *outputlen; i += 2) {
 		output[j] = nan_parse_hex(input[i]);
-		if (i + 1 < (int) strlen(input)) {
+		if (i + 1 < (int)strlen(input)) {
 			output[j] = ((output[j] << 4) |
 				     nan_parse_hex(input[i + 1]));
 		}
@@ -218,10 +212,9 @@ int nan_parse_hex_string(struct sigma_dut *dut, const char *input,
 	}
 	*outputlen = j;
 	sigma_dut_print(dut, DUT_MSG_INFO, "Input:%s inputlen:%d outputlen:%d",
-			input, (int) strlen(input), (int) *outputlen);
+			input, (int)strlen(input), (int)*outputlen);
 	return 0;
 }
-
 
 static size_t nan_build_ipv6_link_local_tlv(u8 *p_frame,
 					    const u8 *p_ipv6_intf_addr)
@@ -239,13 +232,12 @@ static size_t nan_build_ipv6_link_local_tlv(u8 *p_frame,
 	return NAN_INTF_ID_LEN + WLAN_NAN_TLV_HEADER_SIZE;
 }
 
-
 static size_t nan_build_service_info_tlv_sub_attr(
 	u8 *p_frame, const u8 *sub_attr, const u16 sub_attr_len,
 	enum wlan_nan_generic_service_proto_sub_attr sub_attr_id)
 {
 	/* Fill Service Subattibute ID */
-	*p_frame++ = (u8) sub_attr_id;
+	*p_frame++ = (u8)sub_attr_id;
 
 	/* Fill the length */
 	*p_frame++ = sub_attr_len & 0xFF;
@@ -256,7 +248,6 @@ static size_t nan_build_service_info_tlv_sub_attr(
 
 	return sub_attr_len + WLAN_NAN_TLV_HEADER_SIZE;
 }
-
 
 static size_t nan_build_service_info_tlv(u8 *p_frame,
 					 const NdpIpTransParams *p_ndp_attr)
@@ -283,7 +274,7 @@ static size_t nan_build_service_info_tlv(u8 *p_frame,
 		if (p_ndp_attr->trans_port_present) {
 			len = nan_build_service_info_tlv_sub_attr(
 				p_frame,
-				(const u8 *) &p_ndp_attr->transport_port,
+				(const u8 *)&p_ndp_attr->transport_port,
 				sizeof(p_ndp_attr->transport_port),
 				NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_TRANS_PORT);
 			p_frame += len;
@@ -293,7 +284,7 @@ static size_t nan_build_service_info_tlv(u8 *p_frame,
 		if (p_ndp_attr->trans_proto_present) {
 			len = nan_build_service_info_tlv_sub_attr(
 				p_frame,
-				(const u8 *) &p_ndp_attr->transport_protocol,
+				(const u8 *)&p_ndp_attr->transport_protocol,
 				sizeof(p_ndp_attr->transport_protocol),
 				NAN_GENERIC_SERVICE_PROTO_SUB_ATTR_ID_TRANS_PROTO);
 			p_frame += len;
@@ -301,7 +292,7 @@ static size_t nan_build_service_info_tlv(u8 *p_frame,
 		}
 
 		/* Fill the length */
-		*p_offset_len++ = tlv_len  & 0xFF;
+		*p_offset_len++ = tlv_len & 0xFF;
 		*p_offset_len = tlv_len >> 8;
 
 		tlv_len += WLAN_NAN_TLV_HEADER_SIZE;
@@ -309,7 +300,6 @@ static size_t nan_build_service_info_tlv(u8 *p_frame,
 
 	return tlv_len;
 }
-
 
 int wait(struct timespec abstime)
 {
@@ -324,12 +314,11 @@ int wait(struct timespec abstime)
 		abstime.tv_nsec += now.tv_usec * 1000;
 		abstime.tv_nsec -= 1000 * 1000 * 1000;
 	} else {
-		abstime.tv_nsec  += now.tv_usec * 1000;
+		abstime.tv_nsec += now.tv_usec * 1000;
 	}
 
 	return pthread_cond_timedwait(&gCondition, &gMutex, &abstime);
 }
-
 
 int nan_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 				      struct sigma_conn *conn,
@@ -359,8 +348,8 @@ int nan_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 		pmk_len = NAN_PMK_INFO_LEN;
 		nan_parse_hex_string(dut, &pmk[2], &dut->nan_pmk[0], &pmk_len);
 		dut->nan_pmk_len = pmk_len;
-		sigma_dut_print(dut, DUT_MSG_INFO, "%s: pmk len = %d",
-				__func__, dut->nan_pmk_len);
+		sigma_dut_print(dut, DUT_MSG_INFO, "%s: pmk len = %d", __func__,
+				dut->nan_pmk_len);
 		sigma_dut_print(dut, DUT_MSG_INFO, "%s:hex pmk", __func__);
 		nan_hex_dump(dut, &dut->nan_pmk[0], dut->nan_pmk_len);
 	}
@@ -370,8 +359,8 @@ int nan_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 		NanConfigRequest req;
 		wifi_error ret;
 
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "%s: NDPE: %s",
-				__func__, ndpe);
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "%s: NDPE: %s", __func__,
+				ndpe);
 		memset(&req, 0, sizeof(NanConfigRequest));
 		dut->ndpe = strcasecmp(ndpe, "Enable") == 0;
 		req.config_ndpe_attr = 1;
@@ -429,9 +418,7 @@ int nan_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 	return 0;
 }
 
-
-void nan_print_further_availability_chan(struct sigma_dut *dut,
-					 u8 num_chans,
+void nan_print_further_availability_chan(struct sigma_dut *dut, u8 num_chans,
 					 NanFurtherAvailabilityChannel *fachan)
 {
 	int idx;
@@ -440,19 +427,18 @@ void nan_print_further_availability_chan(struct sigma_dut *dut,
 			"********Printing FurtherAvailabilityChan Info******");
 	sigma_dut_print(dut, DUT_MSG_INFO, "Numchans:%d", num_chans);
 	for (idx = 0; idx < num_chans; idx++) {
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"[%d]: NanAvailDuration:%d class_val:%02x channel:%d",
+			idx, fachan->entry_control, fachan->class_val,
+			fachan->channel);
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"[%d]: NanAvailDuration:%d class_val:%02x channel:%d",
-				idx, fachan->entry_control,
-				fachan->class_val, fachan->channel);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"[%d]: mapid:%d Availability bitmap:%08x",
-				idx, fachan->mapid,
-				fachan->avail_interval_bitmap);
+				"[%d]: mapid:%d Availability bitmap:%08x", idx,
+				fachan->mapid, fachan->avail_interval_bitmap);
 	}
 	sigma_dut_print(dut, DUT_MSG_INFO,
 			"*********************Done**********************");
 }
-
 
 int sigma_nan_enable(struct sigma_dut *dut, struct sigma_conn *conn,
 		     struct sigma_cmd *cmd)
@@ -518,14 +504,13 @@ int sigma_nan_enable(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	if (country_code) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s - set country %s",
+		sigma_dut_print(dut, DUT_MSG_ERROR, "%s - set country %s",
 				__func__, country_code);
 		wifi_set_country_code(dut->wifi_hal_iface_handle, country_code);
 		/*
-		 * Intended sleep to trigger NAN enable after setting the
-		 * country code.
-		 */
+     * Intended sleep to trigger NAN enable after setting the
+     * country code.
+     */
 		usleep(200000);
 	}
 #endif /* WFA_CERT_NANR4 */
@@ -634,14 +619,13 @@ int sigma_nan_enable(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	/* To ensure sta_get_events to get the events
-	 * only after joining the NAN cluster. */
+   * only after joining the NAN cluster. */
 	abstime.tv_sec = 30;
 	abstime.tv_nsec = 0;
 	wait(abstime);
 
 	return 0;
 }
-
 
 int sigma_nan_disable(struct sigma_dut *dut, struct sigma_conn *conn,
 		      struct sigma_cmd *cmd)
@@ -656,7 +640,6 @@ int sigma_nan_disable(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return 0;
 }
-
 
 int sigma_nan_config_enable(struct sigma_dut *dut, struct sigma_conn *conn,
 			    struct sigma_cmd *cmd)
@@ -704,7 +687,6 @@ int sigma_nan_config_enable(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 static int sigma_nan_subscribe_request(struct sigma_dut *dut,
 				       struct sigma_conn *conn,
 				       struct sigma_cmd *cmd)
@@ -751,15 +733,15 @@ static int sigma_nan_subscribe_request(struct sigma_dut *dut,
 	req.subscribe_match_indicator = NAN_MATCH_ALG_MATCH_CONTINUOUS;
 	req.subscribe_count = 0;
 
-	if (global_subscribe_service_name_len &&
-	    service_name &&
-	    strcasecmp((char *) global_subscribe_service_name,
-		       service_name) == 0 &&
+	if (global_subscribe_service_name_len && service_name &&
+	    strcasecmp((char *)global_subscribe_service_name, service_name) ==
+		    0 &&
 	    global_subscribe_id) {
 		req.subscribe_id = global_subscribe_id;
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: updating subscribe_id = %d in subscribe request",
-				__func__, req.subscribe_id);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s: updating subscribe_id = %d in subscribe request",
+			__func__, req.subscribe_id);
 	}
 
 	if (subscribe_type) {
@@ -774,8 +756,9 @@ static int sigma_nan_subscribe_request(struct sigma_dut *dut,
 			ret = nan_subscribe_cancel_request(
 				0, dut->wifi_hal_iface_handle, &req);
 			if (ret != WIFI_SUCCESS) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "NAN subscribe cancel request failed");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"NAN subscribe cancel request failed");
 			}
 			return 0;
 		}
@@ -797,8 +780,8 @@ static int sigma_nan_subscribe_request(struct sigma_dut *dut,
 			req.cipher_type = atoi(cipher_suite);
 		} else {
 			char *saveptr = NULL;
-			char *ptr = strtok_r((char *) cipher_suite, ":",
-					     &saveptr);
+			char *ptr =
+				strtok_r((char *)cipher_suite, ":", &saveptr);
 
 			while (ptr) {
 				req.cipher_type |= BIT(atoi(ptr) - 1);
@@ -861,13 +844,13 @@ static int sigma_nan_subscribe_request(struct sigma_dut *dut,
 	}
 
 	if (service_name) {
-		strlcpy((char *) req.service_name, service_name,
+		strlcpy((char *)req.service_name, service_name,
 			strlen(service_name) + 1);
 		req.service_name_len = strlen(service_name);
-		strlcpy((char *) global_subscribe_service_name, service_name,
+		strlcpy((char *)global_subscribe_service_name, service_name,
 			sizeof(global_subscribe_service_name));
 		global_subscribe_service_name_len =
-			strlen((char *) global_subscribe_service_name);
+			strlen((char *)global_subscribe_service_name);
 	}
 
 #if NAN_CERT_VERSION >= 3
@@ -876,25 +859,27 @@ static int sigma_nan_subscribe_request(struct sigma_dut *dut,
 		int awake_dw_int = 0;
 
 		if (input_dw_interval_val > NAN_MAX_ALLOWED_DW_AWAKE_INTERVAL) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"%s: input active dw interval = %d overwritting dw interval to Max allowed dw interval 16",
-					__func__, input_dw_interval_val);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"%s: input active dw interval = %d overwritting dw "
+				"interval to Max allowed dw interval 16",
+				__func__, input_dw_interval_val);
 			input_dw_interval_val =
 				NAN_MAX_ALLOWED_DW_AWAKE_INTERVAL;
 		}
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: input active DW interval = %d",
-				__func__, input_dw_interval_val);
+				"%s: input active DW interval = %d", __func__,
+				input_dw_interval_val);
 		/*
-		 * Indicates the interval for Sync beacons and SDF's in 2.4 GHz
-		 * or 5 GHz band. Valid values of DW Interval are: 1, 2, 3, 4,
-		 * and 5; 0 is reserved. The SDF includes in OTA when enabled.
-		 * The publish/subscribe period values don't override the device
-		 * level configurations.
-		 * input_dw_interval_val is provided by the user are in the
-		 * format 2^n-1 = 1/2/4/8/16. Internal implementation expects n
-		 * to be passed to indicate the awake_dw_interval.
-		 */
+     * Indicates the interval for Sync beacons and SDF's in 2.4 GHz
+     * or 5 GHz band. Valid values of DW Interval are: 1, 2, 3, 4,
+     * and 5; 0 is reserved. The SDF includes in OTA when enabled.
+     * The publish/subscribe period values don't override the device
+     * level configurations.
+     * input_dw_interval_val is provided by the user are in the
+     * format 2^n-1 = 1/2/4/8/16. Internal implementation expects n
+     * to be passed to indicate the awake_dw_interval.
+     */
 		if (input_dw_interval_val == 1 ||
 		    input_dw_interval_val % 2 == 0) {
 			while (input_dw_interval_val > 0) {
@@ -930,8 +915,8 @@ static int sigma_nan_subscribe_request(struct sigma_dut *dut,
 	if (pairing_setup) {
 		req.nan_pairing_config.enable_pairing_setup =
 			atoi(pairing_setup);
-		dut->dev_info.pairing_setup =
-			atoi(pairing_setup) ? true : false;
+		dut->dev_info.pairing_setup = atoi(pairing_setup) ? true :
+								    false;
 		if (npk_nik_cache) {
 			req.nan_pairing_config.enable_pairing_cache =
 				atoi(npk_nik_cache);
@@ -969,7 +954,6 @@ static int sigma_nan_subscribe_request(struct sigma_dut *dut,
 	return 0;
 }
 
-
 static int sigma_ndp_configure_band(struct sigma_dut *dut,
 				    struct sigma_conn *conn,
 				    struct sigma_cmd *cmd,
@@ -992,7 +976,6 @@ static int sigma_ndp_configure_band(struct sigma_dut *dut,
 
 	return 0;
 }
-
 
 static int sigma_nan_data_request(struct sigma_dut *dut,
 				  struct sigma_conn *conn,
@@ -1038,7 +1021,7 @@ static int sigma_nan_data_request(struct sigma_dut *dut,
 		       sizeof(int));
 		size = sizeof(u32) + sizeof(int);
 		nan_debug_command_config(0, dut->wifi_hal_iface_handle,
-		cfg_debug, size);
+					 cfg_debug, size);
 	}
 
 	if (avoid_channel) {
@@ -1060,13 +1043,13 @@ static int sigma_nan_data_request(struct sigma_dut *dut,
 		memset(&cfg_debug, 0, sizeof(NanDebugParams));
 		invalid_nan_schedule_type = atoi(invalid_nan_schedule);
 		cfg_debug.cmd = NAN_TEST_MODE_CMD_NAN_SCHED_TYPE;
-		memcpy(cfg_debug.debug_cmd_data,
-		       &invalid_nan_schedule_type, sizeof(int));
+		memcpy(cfg_debug.debug_cmd_data, &invalid_nan_schedule_type,
+		       sizeof(int));
 		size = sizeof(u32) + sizeof(int);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: invalid schedule type: cmd type = %d and command data = %d",
-				__func__, cfg_debug.cmd,
-				invalid_nan_schedule_type);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s: invalid schedule type: cmd type = %d and command data = %d",
+			__func__, cfg_debug.cmd, invalid_nan_schedule_type);
 		nan_debug_command_config(0, dut->wifi_hal_iface_handle,
 					 cfg_debug, size);
 	}
@@ -1079,10 +1062,10 @@ static int sigma_nan_data_request(struct sigma_dut *dut,
 		map_order_val = atoi(map_order);
 		memcpy(cfg_debug.debug_cmd_data, &map_order_val, sizeof(int));
 		size = sizeof(u32) + sizeof(int);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: map order: cmd type = %d and command data = %d",
-				__func__,
-				cfg_debug.cmd, map_order_val);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s: map order: cmd type = %d and command data = %d",
+			__func__, cfg_debug.cmd, map_order_val);
 		nan_debug_command_config(0, dut->wifi_hal_iface_handle,
 					 cfg_debug, size);
 	}
@@ -1096,17 +1079,17 @@ static int sigma_nan_data_request(struct sigma_dut *dut,
 		qos_config_val = atoi(qos_config);
 		memcpy(cfg_debug.debug_cmd_data, &qos_config_val, sizeof(u32));
 		size = sizeof(u32) + sizeof(u32);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: qos config: cmd type = %d and command data = %d",
-				__func__, cfg_debug.cmd, qos_config_val);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s: qos config: cmd type = %d and command data = %d",
+			__func__, cfg_debug.cmd, qos_config_val);
 		nan_debug_command_config(0, dut->wifi_hal_iface_handle,
 					 cfg_debug, size);
 	}
 #endif
 
 #ifdef NAN_NEW_CERT_VERSION
-	if (ndpe_enable &&
-	    strcasecmp(ndpe_enable, "Enable") == 0)
+	if (ndpe_enable && strcasecmp(ndpe_enable, "Enable") == 0)
 		dut->ndpe = 1;
 
 	if (dut->ndpe && ndp_attr) {
@@ -1153,27 +1136,26 @@ static int sigma_nan_data_request(struct sigma_dut *dut,
 #endif
 
 	/*
-	 * Setting this flag, so that interface for ping6 command
-	 * is set appropriately in traffic_send_ping().
-	 */
+   * Setting this flag, so that interface for ping6 command
+   * is set appropriately in traffic_send_ping().
+   */
 	dut->ndp_enable = 1;
 
 	/*
-	 * Intended sleep after NAN data interface create
-	 * before the NAN data request
-	 */
+   * Intended sleep after NAN data interface create
+   * before the NAN data request
+   */
 	sleep(4);
 
 	init_req.requestor_instance_id = global_match_handle;
-	strlcpy((char *) init_req.ndp_iface, "nan0",
-		sizeof(init_req.ndp_iface));
+	strlcpy((char *)init_req.ndp_iface, "nan0", sizeof(init_req.ndp_iface));
 
 	if (ndp_resp_mac) {
 		nan_parse_mac_address(dut, ndp_resp_mac,
 				      init_req.peer_disc_mac_addr);
-		sigma_dut_print(
-			dut, DUT_MSG_INFO, "PEER MAC ADDR: " MAC_ADDR_STR,
-			MAC_ADDR_ARRAY(init_req.peer_disc_mac_addr));
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"PEER MAC ADDR: " MAC_ADDR_STR,
+				MAC_ADDR_ARRAY(init_req.peer_disc_mac_addr));
 	} else {
 		memcpy(init_req.peer_disc_mac_addr, global_peer_mac_addr,
 		       sizeof(init_req.peer_disc_mac_addr));
@@ -1192,18 +1174,17 @@ static int sigma_nan_data_request(struct sigma_dut *dut,
 		init_req.channel_request_type = NAN_DP_FORCE_CHANNEL_SETUP;
 		init_req.channel = channel_to_freq(dut, dut->sta_channel);
 	}
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"%s: Initiator Request: Channel = %d  Channel Request Type = %d",
-			__func__, init_req.channel,
-			init_req.channel_request_type);
+	sigma_dut_print(
+		dut, DUT_MSG_INFO,
+		"%s: Initiator Request: Channel = %d  Channel Request Type = %d",
+		__func__, init_req.channel, init_req.channel_request_type);
 
 	if (dut->nan_pmk_len == NAN_PMK_INFO_LEN) {
 		init_req.key_info.key_type = NAN_SECURITY_KEY_INPUT_PMK;
 		memcpy(&init_req.key_info.body.pmk_info.pmk[0],
 		       &dut->nan_pmk[0], NAN_PMK_INFO_LEN);
 		init_req.key_info.body.pmk_info.pmk_len = NAN_PMK_INFO_LEN;
-		sigma_dut_print(dut, DUT_MSG_INFO, "%s: pmk len = %d",
-				__func__,
+		sigma_dut_print(dut, DUT_MSG_INFO, "%s: pmk len = %d", __func__,
 				init_req.key_info.body.pmk_info.pmk_len);
 	}
 
@@ -1232,9 +1213,9 @@ static int sigma_nan_data_request(struct sigma_dut *dut,
 				nan_build_ipv6_link_local_tlv(
 					init_req.app_info.ndp_app_info,
 					&nan_ipv6_intf_addr[0]);
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"%s: Initiator Request: IPv6:",
-					__func__);
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"%s: Initiator Request: IPv6:", __func__);
 			nan_hex_dump(dut, &nan_ipv6_intf_addr[0],
 				     IPV6_ADDR_LEN);
 		}
@@ -1251,7 +1232,6 @@ static int sigma_nan_data_request(struct sigma_dut *dut,
 
 	return 0;
 }
-
 
 static int sigma_nan_data_response(struct sigma_dut *dut,
 				   struct sigma_conn *conn,
@@ -1271,8 +1251,8 @@ static int sigma_nan_data_response(struct sigma_dut *dut,
 		int auto_responder_mode_val = 0;
 
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: ndl_response = (%s) is passed",
-				__func__, ndl_response);
+				"%s: ndl_response = (%s) is passed", __func__,
+				ndl_response);
 		memset(&cfg_debug, 0, sizeof(NanDebugParams));
 		cfg_debug.cmd = NAN_TEST_MODE_CMD_AUTO_RESPONDER_MODE;
 		if (strcasecmp(ndl_response, "Auto") == 0) {
@@ -1288,8 +1268,7 @@ static int sigma_nan_data_response(struct sigma_dut *dut,
 				NAN_DATA_RESPONDER_MODE_COUNTER;
 		} else {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"%s: Invalid ndl_response",
-					__func__);
+					"%s: Invalid ndl_response", __func__);
 			return 0;
 		}
 		memcpy(cfg_debug.debug_cmd_data, &auto_responder_mode_val,
@@ -1375,7 +1354,6 @@ static int sigma_nan_data_response(struct sigma_dut *dut,
 	return 0;
 }
 
-
 static int sigma_nan_data_end(struct sigma_dut *dut, struct sigma_cmd *cmd)
 {
 	const char *nmf_security_config = get_param(cmd, "Security");
@@ -1383,12 +1361,13 @@ static int sigma_nan_data_end(struct sigma_dut *dut, struct sigma_cmd *cmd)
 	NanDebugParams cfg_debug;
 	int size;
 
-	req = (NanDataPathEndRequest *)
-		malloc(sizeof(NanDataPathEndRequest) + sizeof(NanDataPathId));
+	req = (NanDataPathEndRequest *)malloc(sizeof(NanDataPathEndRequest) +
+					      sizeof(NanDataPathId));
 	if (!req) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Failure in allocation of NanDataPathEndRequest",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: Failure in allocation of NanDataPathEndRequest",
+			__func__);
 		return -1;
 	}
 	memset(req, 0, sizeof(NanDataPathEndRequest) + sizeof(NanDataPathId));
@@ -1401,13 +1380,13 @@ static int sigma_nan_data_end(struct sigma_dut *dut, struct sigma_cmd *cmd)
 			nmf_security_config_val = NAN_NMF_CLEAR_ENABLE;
 		else if (strcasecmp(nmf_security_config, "secure") == 0)
 			nmf_security_config_val = NAN_NMF_CLEAR_DISABLE;
-		memcpy(cfg_debug.debug_cmd_data,
-			&nmf_security_config_val, sizeof(int));
+		memcpy(cfg_debug.debug_cmd_data, &nmf_security_config_val,
+		       sizeof(int));
 		size = sizeof(u32) + sizeof(int);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: nmf_security_config_val -- cmd type = %d and command data = %d",
-				__func__, cfg_debug.cmd,
-				nmf_security_config_val);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s: nmf_security_config_val -- cmd type = %d and command data = %d",
+			__func__, cfg_debug.cmd, nmf_security_config_val);
 		nan_debug_command_config(0, dut->wifi_hal_iface_handle,
 					 cfg_debug, size);
 	}
@@ -1420,9 +1399,7 @@ static int sigma_nan_data_end(struct sigma_dut *dut, struct sigma_cmd *cmd)
 	return 0;
 }
 
-
-static int sigma_nan_range_request(struct sigma_dut *dut,
-				   struct sigma_cmd *cmd)
+static int sigma_nan_range_request(struct sigma_dut *dut, struct sigma_cmd *cmd)
 {
 	const char *dest_mac = get_param(cmd, "destmac");
 	NanSubscribeRequest req;
@@ -1435,9 +1412,9 @@ static int sigma_nan_range_request(struct sigma_dut *dut,
 	req.ssiRequiredForMatchIndication = NAN_SSI_NOT_REQUIRED_IN_MATCH_IND;
 	req.subscribe_match_indicator = NAN_MATCH_ALG_MATCH_CONTINUOUS;
 	req.subscribe_count = 0;
-	strlcpy((char *) req.service_name, DEFAULT_SVC,
+	strlcpy((char *)req.service_name, DEFAULT_SVC,
 		NAN_MAX_SERVICE_NAME_LEN);
-	req.service_name_len = strlen((char *) req.service_name);
+	req.service_name_len = strlen((char *)req.service_name);
 
 	req.subscribe_id = global_subscribe_id;
 	req.sdea_params.ranging_state = 1;
@@ -1458,9 +1435,7 @@ static int sigma_nan_range_request(struct sigma_dut *dut,
 	return 0;
 }
 
-
-static int sigma_nan_cancel_range(struct sigma_dut *dut,
-				  struct sigma_cmd *cmd)
+static int sigma_nan_cancel_range(struct sigma_dut *dut, struct sigma_cmd *cmd)
 {
 	const char *dest_mac = get_param(cmd, "destmac");
 	NanPublishRequest req;
@@ -1472,9 +1447,9 @@ static int sigma_nan_cancel_range(struct sigma_dut *dut,
 	req.publish_type = NAN_PUBLISH_TYPE_UNSOLICITED;
 	req.tx_type = NAN_TX_TYPE_BROADCAST;
 	req.publish_count = 0;
-	strlcpy((char *) req.service_name, DEFAULT_SVC,
+	strlcpy((char *)req.service_name, DEFAULT_SVC,
 		NAN_MAX_SERVICE_NAME_LEN);
-	req.service_name_len = strlen((char *) req.service_name);
+	req.service_name_len = strlen((char *)req.service_name);
 	req.publish_id = global_publish_id;
 	req.range_response_cfg.ranging_response = NAN_RANGE_REQUEST_CANCEL;
 	if (dest_mac) {
@@ -1489,20 +1464,19 @@ static int sigma_nan_cancel_range(struct sigma_dut *dut,
 	return 0;
 }
 
-
 static int sigma_nan_schedule_update(struct sigma_dut *dut,
 				     struct sigma_cmd *cmd)
 {
 	const char *schedule_update_type = get_param(cmd, "type");
-	const char *channel_availability = get_param(cmd,
-						     "ChannelAvailability");
+	const char *channel_availability =
+		get_param(cmd, "ChannelAvailability");
 	const char *responder_nmi_mac = get_param(cmd, "ResponderNMI");
 #ifdef WFA_CERT_NANR4
 	const char *s3_entry_control = get_param(cmd, "S3EntryControl");
 	const char *s3_time_bitmap_control =
 		get_param(cmd, "S3TimeBitmapControl");
 	const char *s3_time_bitmap = get_param(cmd, "S3TimeBitmap");
- #endif /* WFA_CERT_NANR4 */
+#endif /* WFA_CERT_NANR4 */
 	NanDebugParams cfg_debug;
 	int size = 0;
 
@@ -1524,10 +1498,10 @@ static int sigma_nan_schedule_update(struct sigma_dut *dut,
 			size += sizeof(int);
 			memcpy(cfg_debug.debug_cmd_data,
 			       &channel_availability_val, sizeof(int));
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"%s: Schedule Update cmd data = %d size = %d",
-					__func__, channel_availability_val,
-					size);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"%s: Schedule Update cmd data = %d size = %d",
+				__func__, channel_availability_val, size);
 		}
 	} else if (strcasecmp(schedule_update_type, "NDLnegotiate") == 0) {
 		cfg_debug.cmd =
@@ -1545,7 +1519,7 @@ static int sigma_nan_schedule_update(struct sigma_dut *dut,
 			memcpy(cfg_debug.debug_cmd_data, responder_nmi_mac_addr,
 			       NAN_MAC_ADDR_LEN);
 			sigma_dut_print(dut, DUT_MSG_INFO,
-					"%s: RESPONDER NMI MAC: "MAC_ADDR_STR,
+					"%s: RESPONDER NMI MAC: " MAC_ADDR_STR,
 					__func__,
 					MAC_ADDR_ARRAY(responder_nmi_mac_addr));
 			sigma_dut_print(dut, DUT_MSG_INFO,
@@ -1574,17 +1548,19 @@ static int sigma_nan_schedule_update(struct sigma_dut *dut,
 				strtoul(s3_entry_control, NULL, 0);
 			s3_params.time_bitmap_control =
 				strtoul(s3_time_bitmap_control, NULL, 0);
-			s3_params.time_bitmap = strtoul(s3_time_bitmap,
-							NULL, 0);
+			s3_params.time_bitmap =
+				strtoul(s3_time_bitmap, NULL, 0);
 		}
 		memcpy(cfg_debug.debug_cmd_data, &s3_params,
 		       sizeof(NanS3Params));
 		size += sizeof(NanS3Params);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: Schedule Update cmd data with s3_entry_control= %s, s3_time_bitmap_control = %s, s3_time_bitmap %s, size = %d",
-				__func__, s3_entry_control,
-				s3_time_bitmap_control, s3_time_bitmap, size);
- #endif /* WFA_CERT_NANR4 */
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s: Schedule Update cmd data with s3_entry_control= %s, "
+			"s3_time_bitmap_control = %s, s3_time_bitmap %s, size = %d",
+			__func__, s3_entry_control, s3_time_bitmap_control,
+			s3_time_bitmap, size);
+#endif /* WFA_CERT_NANR4 */
 	}
 
 	nan_debug_command_config(0, dut->wifi_hal_iface_handle, cfg_debug,
@@ -1592,7 +1568,6 @@ static int sigma_nan_schedule_update(struct sigma_dut *dut,
 
 	return 0;
 }
-
 
 int config_post_disc_attr(struct sigma_dut *dut)
 {
@@ -1612,13 +1587,13 @@ int config_post_disc_attr(struct sigma_dut *dut)
 
 	ret = nan_config_request(0, dut->wifi_hal_iface_handle, &configReq);
 	if (ret != WIFI_SUCCESS) {
-		sigma_dut_print(global_dut, DUT_MSG_INFO,
-				"NAN config request failed while configuring post discovery attribute");
+		sigma_dut_print(
+			global_dut, DUT_MSG_INFO,
+			"NAN config request failed while configuring post discovery attribute");
 	}
 
 	return 0;
 }
-
 
 #ifdef WFA_CERT_NANR4
 
@@ -1656,8 +1631,8 @@ int sigma_nan_pairing_setup(struct sigma_dut *dut, struct sigma_conn *conn,
 		} else {
 			u32 requestor_id_val = atoi(requestor_id);
 
-			requestor_id_val =
-				(requestor_id_val << 24) | 0x0000FFFF;
+			requestor_id_val = (requestor_id_val << 24) |
+					   0x0000FFFF;
 			req.requestor_instance_id = requestor_id_val;
 		}
 	}
@@ -1690,8 +1665,9 @@ int sigma_nan_pairing_setup(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	if (dut->peer_info.selected_bootstrap_method &
 	    NAN_PAIRING_BOOTSTRAPPING_OPPORTUNISTIC_MASK) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Pairing setup with Opportunistic Bootstrapping");
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Pairing setup with Opportunistic Bootstrapping");
 		req.is_opportunistic = true;
 		dut->peer_info.akm = NAN_AKM_PASN;
 		req.akm = PASN;
@@ -1704,8 +1680,9 @@ int sigma_nan_pairing_setup(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	sigma_dut_print(dut, DUT_MSG_INFO,
-			"Pairing Request params: req type = %d, auth = %d, npk_nik_cache = %d, peer MAC:"
-			MAC_ADDR_STR " passphrase %s",
+			"Pairing Request params: req type = %d, auth = %d, "
+			"npk_nik_cache = %d, peer MAC:" MAC_ADDR_STR
+			" passphrase %s",
 			req.nan_pairing_request_type, req.is_opportunistic,
 			req.enable_pairing_cache,
 			MAC_ADDR_ARRAY(req.peer_disc_mac_addr),
@@ -1726,33 +1703,32 @@ int sigma_nan_pairing_setup(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 void nan_event_pairing_request_indication(NanPairingRequestInd *event)
 {
 	NanPairingIndicationResponse msg;
 
-	sigma_dut_print(global_dut, DUT_MSG_INFO,
-			"Pairing Request indication : pub_sub_id %d, requestor instance id = %d, pairing id = %d, peer MAC:"
-			MAC_ADDR_STR " req type = %d, npk_nik_cache = %d",
-			event->publish_subscribe_id,
-			event->requestor_instance_id,
-			event->pairing_instance_id,
-			MAC_ADDR_ARRAY(event->peer_disc_mac_addr),
-			event->nan_pairing_request_type,
-			event->enable_pairing_cache);
+	sigma_dut_print(
+		global_dut, DUT_MSG_INFO,
+		"Pairing Request indication : pub_sub_id %d, requestor "
+		"instance id = %d, pairing id = %d, peer MAC:" MAC_ADDR_STR
+		" req type = %d, npk_nik_cache = %d",
+		event->publish_subscribe_id, event->requestor_instance_id,
+		event->pairing_instance_id,
+		MAC_ADDR_ARRAY(event->peer_disc_mac_addr),
+		event->nan_pairing_request_type, event->enable_pairing_cache);
 
 	if (global_dut->dev_info.role == SECURE_NAN_PAIRING_RESPONDER &&
 	    memcmp(global_dut->peer_info.peer_mac_addr,
-		   event->peer_disc_mac_addr,
-		   NAN_MAC_ADDR_LEN)) {
+		   event->peer_disc_mac_addr, NAN_MAC_ADDR_LEN)) {
 		sigma_dut_print(global_dut, DUT_MSG_INFO,
 				"Pairing request Indication of unmatched peer");
 		return;
 	}
 
 	if (global_dut->peer_info.is_paired)
-		sigma_dut_print(global_dut, DUT_MSG_INFO,
-				"Pairing request Indication of already paired peer");
+		sigma_dut_print(
+			global_dut, DUT_MSG_INFO,
+			"Pairing request Indication of already paired peer");
 
 	memset(&msg, 0, sizeof(NanPairingIndicationResponse));
 	msg.pairing_instance_id = event->pairing_instance_id;
@@ -1796,15 +1772,15 @@ void nan_event_pairing_request_indication(NanPairingRequestInd *event)
 			"NAN Pairing Indication Rsp sent");
 }
 
-
 void nan_event_pairing_confirm(NanPairingConfirmInd *event)
 {
 	sigma_dut_print(global_dut, DUT_MSG_INFO,
-			"Pairing Confirm params: pairing id = %d, type = %d, npk_nik_cache = %d, rsp_code %d, reason_code %d",
+			"Pairing Confirm params: pairing id = %d, type = %d, "
+			"npk_nik_cache = %d, rsp_code %d, reason_code %d",
 			event->pairing_instance_id,
 			event->nan_pairing_request_type,
-			event->enable_pairing_cache,
-			event->rsp_code, event->reason_code);
+			event->enable_pairing_cache, event->rsp_code,
+			event->reason_code);
 
 	if (event->rsp_code == NAN_PAIRING_REQUEST_ACCEPT) {
 		sigma_dut_print(global_dut, DUT_MSG_INFO,
@@ -1823,7 +1799,6 @@ void nan_event_pairing_confirm(NanPairingConfirmInd *event)
 	}
 }
 
-
 int sigma_nan_pairing_verification(struct sigma_dut *dut,
 				   struct sigma_conn *conn,
 				   struct sigma_cmd *cmd)
@@ -1833,7 +1808,7 @@ int sigma_nan_pairing_verification(struct sigma_dut *dut,
 	const char *mac = get_param(cmd, "mac");
 	const char *requestor_id = get_param(cmd, "RemoteInstanceId");
 	const char *pairingverification_pasn =
-				get_param(cmd, "PairingVerification_PASN");
+		get_param(cmd, "PairingVerification_PASN");
 
 	if (!mac) {
 		sigma_dut_print(dut, DUT_MSG_ERROR, "Invalid MAC Address");
@@ -1860,8 +1835,8 @@ int sigma_nan_pairing_verification(struct sigma_dut *dut,
 		} else {
 			u32 requestor_id_val = atoi(requestor_id);
 
-			requestor_id_val =
-				(requestor_id_val << 24) | 0x0000FFFF;
+			requestor_id_val = (requestor_id_val << 24) |
+					   0x0000FFFF;
 			req.requestor_instance_id = requestor_id_val;
 		}
 	}
@@ -1886,17 +1861,19 @@ int sigma_nan_pairing_verification(struct sigma_dut *dut,
 	if (dut->dev_info.npk_nik_caching || dut->peer_info.npk_nik_caching)
 		req.enable_pairing_cache = true;
 
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"Pairing Verification Request params: npk_nik_cache %d, peer MAC: "
-			MAC_ADDR_STR,
-			req.enable_pairing_cache,
-			MAC_ADDR_ARRAY(req.peer_disc_mac_addr));
+	sigma_dut_print(
+		dut, DUT_MSG_INFO,
+		"Pairing Verification Request params: npk_nik_cache %d, peer "
+		"MAC: " MAC_ADDR_STR,
+		req.enable_pairing_cache,
+		MAC_ADDR_ARRAY(req.peer_disc_mac_addr));
 
 	ret = nan_pairing_request(0, dut->wifi_hal_iface_handle, &req);
 	if (ret != WIFI_SUCCESS) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Unable to send Pairing Verification: retval = %d",
-				ret);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Unable to send Pairing Verification: retval = %d",
+			ret);
 		return -1;
 	}
 	dut->dev_info.role = SECURE_NAN_PAIRING_INITIATOR;
@@ -1907,7 +1884,6 @@ int sigma_nan_pairing_verification(struct sigma_dut *dut,
 }
 
 #endif /* WFA_CERT_NANR4 */
-
 
 int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 			      struct sigma_cmd *cmd)
@@ -1963,25 +1939,25 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 	req.publish_count = 0;
 	req.service_responder_policy = NAN_SERVICE_ACCEPT_POLICY_ALL;
 
-	if (global_publish_service_name_len &&
-	    service_name &&
-	    strcasecmp((char *) global_publish_service_name,
-		       service_name) == 0 &&
+	if (global_publish_service_name_len && service_name &&
+	    strcasecmp((char *)global_publish_service_name, service_name) ==
+		    0 &&
 	    global_publish_id) {
 		req.publish_id = global_publish_id;
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: updating publish_id = %d in publish request",
-				__func__, req.publish_id);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s: updating publish_id = %d in publish request",
+			__func__, req.publish_id);
 	}
 
 	if (service_name) {
-		strlcpy((char *) req.service_name, service_name,
+		strlcpy((char *)req.service_name, service_name,
 			sizeof(req.service_name));
-		req.service_name_len = strlen((char *) req.service_name);
-		strlcpy((char *) global_publish_service_name, service_name,
+		req.service_name_len = strlen((char *)req.service_name);
+		strlcpy((char *)global_publish_service_name, service_name,
 			sizeof(global_publish_service_name));
 		global_publish_service_name_len =
-			strlen((char *) global_publish_service_name);
+			strlen((char *)global_publish_service_name);
 	}
 
 	if (publish_type) {
@@ -1990,8 +1966,8 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 			req.tx_type = NAN_TX_TYPE_UNICAST;
 		} else if (strcasecmp(publish_type, "Unsolicited") == 0) {
 			req.publish_type = NAN_PUBLISH_TYPE_UNSOLICITED;
-		} else if (strcasecmp(publish_type,
-				      "solicited_unsolicited") == 0) {
+		} else if (strcasecmp(publish_type, "solicited_unsolicited") ==
+			   0) {
 			req.publish_type =
 				NAN_PUBLISH_TYPE_UNSOLICITED_SOLICITED;
 			req.tx_type = NAN_TX_TYPE_UNICAST;
@@ -2002,8 +1978,9 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 			ret = nan_publish_cancel_request(
 				0, dut->wifi_hal_iface_handle, &req);
 			if (ret != WIFI_SUCCESS) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "Unable to cancel nan publish request");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"Unable to cancel nan publish request");
 			}
 			return 0;
 		}
@@ -2024,8 +2001,8 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 			req.cipher_type = atoi(cipher_suite);
 		} else {
 			char *saveptr = NULL;
-			char *ptr = strtok_r((char *) cipher_suite, ":",
-					     &saveptr);
+			char *ptr =
+				strtok_r((char *)cipher_suite, ":", &saveptr);
 
 			while (ptr) {
 				req.cipher_type |= BIT(atoi(ptr) - 1);
@@ -2052,17 +2029,17 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 	if (is_fam == 1) {
 		config_post_disc_attr(dut);
 		/*
-		 * 8-bit bitmap which allows the Host to associate this publish
-		 * with a particular Post-NAN Connectivity attribute which has
-		 * been sent down in a NanConfigureRequest/NanEnableRequest
-		 * message. If the DE fails to find a configured Post-NAN
-		 * connectivity attributes referenced by the bitmap, the DE will
-		 * return an error code to the Host. If the Publish is
-		 * configured to use a Post-NAN Connectivity attribute and the
-		 * Host does not refresh the Post-NAN Connectivity attribute the
-		 * Publish will be canceled and the Host will be sent a
-		 * PublishTerminatedIndication message.
-		 */
+     * 8-bit bitmap which allows the Host to associate this publish
+     * with a particular Post-NAN Connectivity attribute which has
+     * been sent down in a NanConfigureRequest/NanEnableRequest
+     * message. If the DE fails to find a configured Post-NAN
+     * connectivity attributes referenced by the bitmap, the DE will
+     * return an error code to the Host. If the Publish is
+     * configured to use a Post-NAN Connectivity attribute and the
+     * Host does not refresh the Post-NAN Connectivity attribute the
+     * Publish will be canceled and the Host will be sent a
+     * PublishTerminatedIndication message.
+     */
 		req.connmap = 0x10;
 	}
 
@@ -2079,7 +2056,7 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	if (service_name) {
-		strlcpy((char *) req.service_name, service_name,
+		strlcpy((char *)req.service_name, service_name,
 			strlen(service_name) + 1);
 		req.service_name_len = strlen(service_name);
 	}
@@ -2118,10 +2095,11 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 		if (dut->nan_pmk_len == NAN_PMK_INFO_LEN) {
 			req.key_info.key_type = NAN_SECURITY_KEY_INPUT_PMK;
 			memcpy(&req.key_info.body.pmk_info.pmk[0],
-				&dut->nan_pmk[0], NAN_PMK_INFO_LEN);
+			       &dut->nan_pmk[0], NAN_PMK_INFO_LEN);
 			req.key_info.body.pmk_info.pmk_len = NAN_PMK_INFO_LEN;
 			sigma_dut_print(dut, DUT_MSG_INFO, "%s: pmk len = %d",
-			__func__, req.key_info.body.pmk_info.pmk_len);
+					__func__,
+					req.key_info.body.pmk_info.pmk_len);
 		}
 	}
 	if (range_required && strcasecmp(range_required, "enable") == 0) {
@@ -2135,25 +2113,27 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 		int awake_dw_int = 0;
 
 		if (input_dw_interval_val > NAN_MAX_ALLOWED_DW_AWAKE_INTERVAL) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"%s: input active dw interval = %d overwritting dw interval to Max allowed dw interval 16",
-					__func__, input_dw_interval_val);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"%s: input active dw interval = %d overwritting dw "
+				"interval to Max allowed dw interval 16",
+				__func__, input_dw_interval_val);
 			input_dw_interval_val =
 				NAN_MAX_ALLOWED_DW_AWAKE_INTERVAL;
 		}
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: input active DW interval = %d",
-				__func__, input_dw_interval_val);
+				"%s: input active DW interval = %d", __func__,
+				input_dw_interval_val);
 		/*
-		 * Indicates the interval for Sync beacons and SDF's in 2.4 GHz
-		 * or 5 GHz band. Valid values of DW Interval are: 1, 2, 3, 4,
-		 * and 5; 0 is reserved. The SDF includes in OTA when enabled.
-		 * The publish/subscribe period. values don't override the
-		 * device level configurations.
-		 * input_dw_interval_val is provided by the user are in the
-		 * format 2^n-1 = 1/2/4/8/16. Internal implementation expects n
-		 * to be passed to indicate the awake_dw_interval.
-		 */
+     * Indicates the interval for Sync beacons and SDF's in 2.4 GHz
+     * or 5 GHz band. Valid values of DW Interval are: 1, 2, 3, 4,
+     * and 5; 0 is reserved. The SDF includes in OTA when enabled.
+     * The publish/subscribe period. values don't override the
+     * device level configurations.
+     * input_dw_interval_val is provided by the user are in the
+     * format 2^n-1 = 1/2/4/8/16. Internal implementation expects n
+     * to be passed to indicate the awake_dw_interval.
+     */
 		if (input_dw_interval_val == 1 ||
 		    input_dw_interval_val % 2 == 0) {
 			while (input_dw_interval_val > 0) {
@@ -2179,11 +2159,10 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	if (qos_config)
-		req.sdea_params.qos_cfg = (NanQosCfgStatus) atoi(qos_config);
+		req.sdea_params.qos_cfg = (NanQosCfgStatus)atoi(qos_config);
 #endif
 
-	if (ndpe &&
-	    strcasecmp(ndpe, "Enable") == 0)
+	if (ndpe && strcasecmp(ndpe, "Enable") == 0)
 		dut->ndpe = 1;
 
 	if (trans_proto) {
@@ -2193,8 +2172,8 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 			dut->trans_proto = TRANSPORT_PROTO_TYPE_UDP;
 		} else {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"%s: Invalid protocol %s",
-					__func__, trans_proto);
+					"%s: Invalid protocol %s", __func__,
+					trans_proto);
 			return -1;
 		}
 	}
@@ -2269,8 +2248,8 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 	if (pairing_setup) {
 		req.nan_pairing_config.enable_pairing_setup =
 			atoi(pairing_setup);
-		dut->dev_info.pairing_setup =
-			atoi(pairing_setup) ? true : false;
+		dut->dev_info.pairing_setup = atoi(pairing_setup) ? true :
+								    false;
 		if (npk_nik_cache) {
 			req.nan_pairing_config.enable_pairing_cache =
 				atoi(npk_nik_cache);
@@ -2295,8 +2274,8 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	if (s3_capabilities) {
 		req.s3_capabilities = atoi(s3_capabilities);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"S3 Capabilities: %d", req.s3_capabilities);
+		sigma_dut_print(dut, DUT_MSG_INFO, "S3 Capabilities: %d",
+				req.s3_capabilities);
 	}
 #endif /* WFA_CERT_NANR4 */
 
@@ -2309,7 +2288,6 @@ int sigma_nan_publish_request(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return 0;
 }
-
 
 static int nan_further_availability_rx(struct sigma_dut *dut,
 				       struct sigma_conn *conn,
@@ -2357,7 +2335,6 @@ static int nan_further_availability_rx(struct sigma_dut *dut,
 
 	return 0;
 }
-
 
 static int nan_further_availability_tx(struct sigma_dut *dut,
 				       struct sigma_conn *conn,
@@ -2418,9 +2395,7 @@ static int nan_further_availability_tx(struct sigma_dut *dut,
 	return 0;
 }
 
-
-int sigma_nan_transmit_followup(struct sigma_dut *dut,
-				struct sigma_conn *conn,
+int sigma_nan_transmit_followup(struct sigma_dut *dut, struct sigma_conn *conn,
 				struct sigma_cmd *cmd)
 {
 	const char *mac = get_param(cmd, "mac");
@@ -2464,11 +2439,11 @@ int sigma_nan_transmit_followup(struct sigma_dut *dut,
 		    NAN_MAX_SDEA_SERVICE_SPECIFIC_INFO_LEN) {
 			req.sdea_service_specific_info_len =
 				NAN_MAX_SDEA_SERVICE_SPECIFIC_INFO_LEN;
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"SDEA Service len is greater than max len");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"SDEA Service len is greater than max len");
 		}
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Service Info Len %d",
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "Service Info Len %d",
 				req.sdea_service_specific_info_len);
 	}
 #endif /* WFA_CERT_NANR4 */
@@ -2479,8 +2454,8 @@ int sigma_nan_transmit_followup(struct sigma_dut *dut,
 			req.requestor_instance_id = global_match_handle;
 		} else {
 			u32 requestor_id_val = atoi(requestor_id);
-			requestor_id_val =
-					(requestor_id_val << 24) | 0x0000FFFF;
+			requestor_id_val = (requestor_id_val << 24) |
+					   0x0000FFFF;
 			req.requestor_instance_id = requestor_id_val;
 		}
 	}
@@ -2514,7 +2489,6 @@ int sigma_nan_transmit_followup(struct sigma_dut *dut,
 	return 0;
 }
 
-
 #ifdef WFA_CERT_NANR4
 
 int sigma_nan_bootstrapping_request(struct sigma_dut *dut,
@@ -2535,11 +2509,11 @@ int sigma_nan_bootstrapping_request(struct sigma_dut *dut,
 
 	if (nan_bootstrapping_status &&
 	    atoi(nan_bootstrapping_status) ==
-	    NAN_BOOTSTRAPPING_REQUEST_COMEBACK)
+		    NAN_BOOTSTRAPPING_REQUEST_COMEBACK)
 		cookie_length = dut->peer_info.cookie_len;
 
-	req = (NanBootstrappingRequest *)
-		malloc(sizeof(NanBootstrappingRequest) + cookie_length);
+	req = (NanBootstrappingRequest *)malloc(
+		sizeof(NanBootstrappingRequest) + cookie_length);
 	if (!req) {
 		sigma_dut_print(dut, DUT_MSG_ERROR, "Memory Allocation Failed");
 		return -1;
@@ -2556,8 +2530,8 @@ int sigma_nan_bootstrapping_request(struct sigma_dut *dut,
 		} else {
 			u32 requestor_id_val = atoi(requestor_id);
 
-			requestor_id_val =
-				(requestor_id_val << 24) | 0x0000FFFF;
+			requestor_id_val = (requestor_id_val << 24) |
+					   0x0000FFFF;
 			req->requestor_instance_id = requestor_id_val;
 		}
 	}
@@ -2573,7 +2547,7 @@ int sigma_nan_bootstrapping_request(struct sigma_dut *dut,
 
 	if (pairing_bootstrapmethod)
 		req->request_bootstrapping_method =
-			(int) strtol(pairing_bootstrapmethod, NULL, 0);
+			(int)strtol(pairing_bootstrapmethod, NULL, 0);
 
 	if (cookie_length) {
 		req->cookie_length = cookie_length;
@@ -2596,7 +2570,6 @@ int sigma_nan_bootstrapping_request(struct sigma_dut *dut,
 	free(req);
 	return 0;
 }
-
 
 int sigma_nan_bootstrapping_indication_response(struct sigma_dut *dut,
 						struct sigma_conn *conn,
@@ -2630,8 +2603,8 @@ int sigma_nan_bootstrapping_indication_response(struct sigma_dut *dut,
 		} else {
 			u32 requestor_id_val = atoi(requestor_id);
 
-			requestor_id_val =
-				(requestor_id_val << 24) | 0x0000FFFF;
+			requestor_id_val = (requestor_id_val << 24) |
+					   0x0000FFFF;
 			msg.service_instance_id = requestor_id_val;
 		}
 	}
@@ -2644,10 +2617,10 @@ int sigma_nan_bootstrapping_indication_response(struct sigma_dut *dut,
 
 	if (memcmp(dut->peer_info.peer_mac_addr, msg.peer_disc_mac_addr,
 		   NAN_MAC_ADDR_LEN) != 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Bootstrap request Ind received from other peer: "
-				MAC_ADDR_STR,
-				MAC_ADDR_ARRAY(dut->peer_info.peer_mac_addr));
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Bootstrap request Ind received from other peer: " MAC_ADDR_STR,
+			MAC_ADDR_ARRAY(dut->peer_info.peer_mac_addr));
 	}
 
 	if (service_name)
@@ -2655,17 +2628,18 @@ int sigma_nan_bootstrapping_indication_response(struct sigma_dut *dut,
 
 	if (pairing_bootstrapmethod) {
 		int bootstrapping_method =
-			(int) strtol(pairing_bootstrapmethod, NULL, 0);
+			(int)strtol(pairing_bootstrapmethod, NULL, 0);
 
 		if (bootstrapping_method &
 		    dut->peer_info.supported_bootstrap_methods) {
 			dut->peer_info.selected_bootstrap_method =
 				bootstrapping_method;
 		} else {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Bootstrap method mismatch. DUT method %d, Peer method %d",
-					bootstrapping_method,
-					dut->peer_info.supported_bootstrap_methods);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Bootstrap method mismatch. DUT method %d, Peer method %d",
+				bootstrapping_method,
+				dut->peer_info.supported_bootstrap_methods);
 		}
 	}
 
@@ -2674,9 +2648,8 @@ int sigma_nan_bootstrapping_indication_response(struct sigma_dut *dut,
 	if (comeback_after)
 		msg.come_back_delay = atoi(comeback_after);
 
-	ret = nan_bootstrapping_indication_response(0,
-						    dut->wifi_hal_iface_handle,
-						    &msg);
+	ret = nan_bootstrapping_indication_response(
+		0, dut->wifi_hal_iface_handle, &msg);
 	if (ret != WIFI_SUCCESS) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "Unable to complete Bootstrapping Indication Rsp");
@@ -2695,7 +2668,6 @@ int sigma_nan_bootstrapping_indication_response(struct sigma_dut *dut,
 }
 
 #endif /* WFA_CERT_NANR4 */
-
 
 int sigma_nan_handle_followup_method(struct sigma_dut *dut,
 				     struct sigma_conn *conn,
@@ -2720,57 +2692,53 @@ int sigma_nan_handle_followup_method(struct sigma_dut *dut,
 	return sigma_nan_transmit_followup(dut, conn, cmd);
 }
 
-
 /* NotifyResponse invoked to notify the status of the Request */
 void nan_notify_response(transaction_id id, NanResponseMsg *rsp_data)
 {
 	sigma_dut_print(global_dut, DUT_MSG_INFO,
-			"%s: status %d response_type %d",
-			__func__, rsp_data->status, rsp_data->response_type);
+			"%s: status %d response_type %d", __func__,
+			rsp_data->status, rsp_data->response_type);
 	if (rsp_data->response_type == NAN_RESPONSE_STATS &&
 	    rsp_data->body.stats_response.stats_type ==
-	    NAN_STATS_ID_DE_TIMING_SYNC) {
+		    NAN_STATS_ID_DE_TIMING_SYNC) {
 		NanSyncStats *pSyncStats;
 
-		sigma_dut_print(global_dut, DUT_MSG_INFO,
-				"%s: stats_type %d", __func__,
+		sigma_dut_print(global_dut, DUT_MSG_INFO, "%s: stats_type %d",
+				__func__,
 				rsp_data->body.stats_response.stats_type);
 		pSyncStats = &rsp_data->body.stats_response.data.sync_stats;
 		memcpy(&global_nan_sync_stats, pSyncStats,
 		       sizeof(NanSyncStats));
 		pthread_cond_signal(&gCondition);
 	} else if (rsp_data->response_type == NAN_RESPONSE_PUBLISH) {
-		sigma_dut_print(global_dut, DUT_MSG_INFO,
-				"%s: publish_id %d\n",
+		sigma_dut_print(global_dut, DUT_MSG_INFO, "%s: publish_id %d\n",
 				__func__,
 				rsp_data->body.publish_response.publish_id);
 		global_publish_id = rsp_data->body.publish_response.publish_id;
 	} else if (rsp_data->response_type == NAN_RESPONSE_SUBSCRIBE) {
 		sigma_dut_print(global_dut, DUT_MSG_INFO,
-				"%s: subscribe_id %d\n",
-				__func__,
+				"%s: subscribe_id %d\n", __func__,
 				rsp_data->body.subscribe_response.subscribe_id);
 		global_subscribe_id =
 			rsp_data->body.subscribe_response.subscribe_id;
 	}
 }
 
-
 /* Events Callback */
 void nan_event_publish_replied(NanPublishRepliedInd *event)
 {
 	sigma_dut_print(global_dut, DUT_MSG_INFO,
-			"%s: handle %d " MAC_ADDR_STR " rssi:%d",
-			__func__, event->requestor_instance_id,
+			"%s: handle %d " MAC_ADDR_STR " rssi:%d", __func__,
+			event->requestor_instance_id,
 			MAC_ADDR_ARRAY(event->addr), event->rssi_value);
 	event_anyresponse = 1;
 	snprintf(global_event_resp_buf, sizeof(global_event_resp_buf),
-		 "EventName,Replied,RemoteInstanceID,%d,LocalInstanceID,%d,mac," MAC_ADDR_STR" ",
+		 "EventName,Replied,RemoteInstanceID,%d,LocalInstanceID,%d,"
+		 "mac," MAC_ADDR_STR " ",
 		 (event->requestor_instance_id >> 24),
 		 (event->requestor_instance_id & 0xFFFF),
 		 MAC_ADDR_ARRAY(event->addr));
 }
-
 
 /* Events Callback */
 void nan_event_publish_terminated(NanPublishTerminatedInd *event)
@@ -2779,19 +2747,16 @@ void nan_event_publish_terminated(NanPublishTerminatedInd *event)
 			__func__, event->publish_id, event->reason);
 }
 
-
 /* Events Callback */
 void nan_event_match(NanMatchInd *event)
 {
-	sigma_dut_print(global_dut, DUT_MSG_INFO,
-			"%s: Pub/Sub Id %d remote_requestor_id %08x "
-			MAC_ADDR_STR
-			" rssi:%d",
-			__func__,
-			event->publish_subscribe_id,
-			event->requestor_instance_id,
-			MAC_ADDR_ARRAY(event->addr),
-			event->rssi_value);
+	sigma_dut_print(
+		global_dut, DUT_MSG_INFO,
+		"%s: Pub/Sub Id %d remote_requestor_id %08x " MAC_ADDR_STR
+		" rssi:%d",
+		__func__, event->publish_subscribe_id,
+		event->requestor_instance_id, MAC_ADDR_ARRAY(event->addr),
+		event->rssi_value);
 	event_anyresponse = 1;
 	global_header_handle = event->publish_subscribe_id;
 	global_match_handle = event->requestor_instance_id;
@@ -2806,11 +2771,13 @@ void nan_event_match(NanMatchInd *event)
 	/* Print the SSI */
 	sigma_dut_print(global_dut, DUT_MSG_INFO, "Printing SSI:");
 	nan_hex_dump(global_dut, event->service_specific_info,
-		event->service_specific_info_len);
-	snprintf(global_event_resp_buf, sizeof(global_event_resp_buf),
-		 "EventName,DiscoveryResult,RemoteInstanceID,%d,LocalInstanceID,%d,mac,"
-		 MAC_ADDR_STR " ", (event->requestor_instance_id >> 24),
-		 event->publish_subscribe_id, MAC_ADDR_ARRAY(event->addr));
+		     event->service_specific_info_len);
+	snprintf(
+		global_event_resp_buf, sizeof(global_event_resp_buf),
+		"EventName,DiscoveryResult,RemoteInstanceID,%d,LocalInstanceID,%d,"
+		"mac," MAC_ADDR_STR " ",
+		(event->requestor_instance_id >> 24),
+		event->publish_subscribe_id, MAC_ADDR_ARRAY(event->addr));
 
 	/* Print the match filter */
 	sigma_dut_print(global_dut, DUT_MSG_INFO, "Printing sdf match filter:");
@@ -2821,21 +2788,25 @@ void nan_event_match(NanMatchInd *event)
 	sigma_dut_print(global_dut, DUT_MSG_INFO,
 			"Printing PostConnectivity Capability");
 	if (event->is_conn_capability_valid) {
-		sigma_dut_print(global_dut, DUT_MSG_INFO, "Wfd supported:%s",
-				event->conn_capability.is_wfd_supported ?
-				"yes" : "no");
+		sigma_dut_print(
+			global_dut, DUT_MSG_INFO, "Wfd supported:%s",
+			event->conn_capability.is_wfd_supported ? "yes" : "no");
 		sigma_dut_print(global_dut, DUT_MSG_INFO, "Wfds supported:%s",
 				(event->conn_capability.is_wfds_supported ?
-				 "yes" : "no"));
+					 "yes" :
+					 "no"));
 		sigma_dut_print(global_dut, DUT_MSG_INFO, "TDLS supported:%s",
 				(event->conn_capability.is_tdls_supported ?
-				 "yes" : "no"));
+					 "yes" :
+					 "no"));
 		sigma_dut_print(global_dut, DUT_MSG_INFO, "IBSS supported:%s",
 				(event->conn_capability.is_ibss_supported ?
-				 "yes" : "no"));
+					 "yes" :
+					 "no"));
 		sigma_dut_print(global_dut, DUT_MSG_INFO, "Mesh supported:%s",
 				(event->conn_capability.is_mesh_supported ?
-				 "yes" : "no"));
+					 "yes" :
+					 "no"));
 		sigma_dut_print(global_dut, DUT_MSG_INFO, "Infra Field:%d",
 				event->conn_capability.wlan_infra_field);
 	} else {
@@ -2852,18 +2823,20 @@ void nan_event_match(NanMatchInd *event)
 		for (idx = 0; idx < event->num_rx_discovery_attr; idx++) {
 			sigma_dut_print(global_dut, DUT_MSG_INFO,
 					"PostDiscovery Attribute - %d", idx);
-			sigma_dut_print(global_dut, DUT_MSG_INFO,
-					"Conn Type:%d Device Role:%d"
-					MAC_ADDR_STR,
-					event->discovery_attr[idx].type,
-					event->discovery_attr[idx].role,
-					MAC_ADDR_ARRAY(event->discovery_attr[idx].addr));
+			sigma_dut_print(
+				global_dut, DUT_MSG_INFO,
+				"Conn Type:%d Device Role:%d" MAC_ADDR_STR,
+				event->discovery_attr[idx].type,
+				event->discovery_attr[idx].role,
+				MAC_ADDR_ARRAY(
+					event->discovery_attr[idx].addr));
 			sigma_dut_print(global_dut, DUT_MSG_INFO,
 					"Duration:%d MapId:%d "
 					"avail_interval_bitmap:%04x",
 					event->discovery_attr[idx].duration,
 					event->discovery_attr[idx].mapid,
-					event->discovery_attr[idx].avail_interval_bitmap);
+					event->discovery_attr[idx]
+						.avail_interval_bitmap);
 			sigma_dut_print(global_dut, DUT_MSG_INFO,
 					"Printing Mesh Id:");
 			nan_hex_dump(global_dut,
@@ -2872,8 +2845,10 @@ void nan_event_match(NanMatchInd *event)
 			sigma_dut_print(global_dut, DUT_MSG_INFO,
 					"Printing Infrastructure Ssid:");
 			nan_hex_dump(global_dut,
-				     event->discovery_attr[idx].infrastructure_ssid_val,
-				     event->discovery_attr[idx].infrastructure_ssid_len);
+				     event->discovery_attr[idx]
+					     .infrastructure_ssid_val,
+				     event->discovery_attr[idx]
+					     .infrastructure_ssid_len);
 		}
 	} else {
 		sigma_dut_print(global_dut, DUT_MSG_INFO,
@@ -2882,9 +2857,8 @@ void nan_event_match(NanMatchInd *event)
 
 	/* Print the fam */
 	if (event->num_chans) {
-		nan_print_further_availability_chan(global_dut,
-						    event->num_chans,
-						    &event->famchan[0]);
+		nan_print_further_availability_chan(
+			global_dut, event->num_chans, &event->famchan[0]);
 	} else {
 		sigma_dut_print(global_dut, DUT_MSG_INFO,
 				"Further Availability Map not present");
@@ -2900,7 +2874,6 @@ void nan_event_match(NanMatchInd *event)
 	}
 }
 
-
 /* Events Callback */
 void nan_event_match_expired(NanMatchExpiredInd *event)
 {
@@ -2910,24 +2883,24 @@ void nan_event_match_expired(NanMatchExpiredInd *event)
 			event->requestor_instance_id);
 }
 
-
 /* Events Callback */
 void nan_event_subscribe_terminated(NanSubscribeTerminatedInd *event)
 {
 	sigma_dut_print(global_dut, DUT_MSG_INFO,
-			"%s: Subscribe Id %d reason %d",
-			__func__, event->subscribe_id, event->reason);
+			"%s: Subscribe Id %d reason %d", __func__,
+			event->subscribe_id, event->reason);
 }
-
 
 /* Events Callback */
 void nan_event_followup(NanFollowupInd *event)
 {
-	sigma_dut_print(global_dut, DUT_MSG_INFO,
-			"%s: Publish/Subscribe Id %d match_handle 0x%08x dw_or_faw %d "
-			MAC_ADDR_STR, __func__, event->publish_subscribe_id,
-			event->requestor_instance_id, event->dw_or_faw,
-			MAC_ADDR_ARRAY(event->addr));
+	sigma_dut_print(
+		global_dut, DUT_MSG_INFO,
+		"%s: Publish/Subscribe Id %d match_handle 0x%08x dw_or_faw "
+		"%d " MAC_ADDR_STR,
+		__func__, event->publish_subscribe_id,
+		event->requestor_instance_id, event->dw_or_faw,
+		MAC_ADDR_ARRAY(event->addr));
 
 	global_match_handle = event->requestor_instance_id;
 	global_header_handle = event->publish_subscribe_id;
@@ -2936,37 +2909,34 @@ void nan_event_followup(NanFollowupInd *event)
 		     event->service_specific_info_len);
 	event_anyresponse = 1;
 	snprintf(global_event_resp_buf, sizeof(global_event_resp_buf),
-		 "EventName,FollowUp,RemoteInstanceID,%d,LocalInstanceID,%d,mac,"
-		 MAC_ADDR_STR " ", event->requestor_instance_id >> 24,
+		 "EventName,FollowUp,RemoteInstanceID,%d,LocalInstanceID,%d,"
+		 "mac," MAC_ADDR_STR " ",
+		 event->requestor_instance_id >> 24,
 		 event->publish_subscribe_id, MAC_ADDR_ARRAY(event->addr));
 }
-
 
 /* Events Callback */
 void nan_event_disceng_event(NanDiscEngEventInd *event)
 {
-	sigma_dut_print(global_dut, DUT_MSG_INFO, "%s: event_type %d",
-			__func__, event->event_type);
+	sigma_dut_print(global_dut, DUT_MSG_INFO, "%s: event_type %d", __func__,
+			event->event_type);
 
 	if (event->event_type == NAN_EVENT_ID_JOINED_CLUSTER) {
-		sigma_dut_print(global_dut, DUT_MSG_INFO, "%s: Joined cluster "
-				MAC_ADDR_STR,
-				__func__,
+		sigma_dut_print(global_dut, DUT_MSG_INFO,
+				"%s: Joined cluster " MAC_ADDR_STR, __func__,
 				MAC_ADDR_ARRAY(event->data.cluster.addr));
 		/* To ensure sta_get_events to get the events
-		 * only after joining the NAN cluster. */
+     * only after joining the NAN cluster. */
 		pthread_cond_signal(&gCondition);
 	}
 	if (event->event_type == NAN_EVENT_ID_STARTED_CLUSTER) {
 		sigma_dut_print(global_dut, DUT_MSG_INFO,
-				"%s: Started cluster " MAC_ADDR_STR,
-				__func__,
+				"%s: Started cluster " MAC_ADDR_STR, __func__,
 				MAC_ADDR_ARRAY(event->data.cluster.addr));
 	}
 	if (event->event_type == NAN_EVENT_ID_DISC_MAC_ADDR) {
 		sigma_dut_print(global_dut, DUT_MSG_INFO,
-				"%s: Discovery Mac Address "
-				MAC_ADDR_STR,
+				"%s: Discovery Mac Address " MAC_ADDR_STR,
 				__func__,
 				MAC_ADDR_ARRAY(event->data.mac_addr.addr));
 		memcpy(global_nan_mac_addr, event->data.mac_addr.addr,
@@ -2974,38 +2944,33 @@ void nan_event_disceng_event(NanDiscEngEventInd *event)
 	}
 }
 
-
 /* Events Callback */
 void nan_event_disabled(NanDisabledInd *event)
 {
-	sigma_dut_print(global_dut, DUT_MSG_INFO, "%s: reason %d",
-			__func__, event->reason);
+	sigma_dut_print(global_dut, DUT_MSG_INFO, "%s: reason %d", __func__,
+			event->reason);
 	/* pthread_cond_signal(&gCondition); */
 	if (if_nametoindex(NAN_AWARE_IFACE))
 		run_system_wrapper(global_dut, "ifconfig %s down",
 				   NAN_AWARE_IFACE);
 }
 
-
 /* Events callback */
 static void ndp_event_data_indication(NanDataPathRequestInd *event)
 {
 	u8 *p_frame;
 	u16 ipv6_addr_len = 0;
-	static const u8 ipv6_intf_addr_msb[] = {
-		0xFE, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-	};
+	static const u8 ipv6_intf_addr_msb[] = { 0xFE, 0x80, 0x00, 0x00,
+						 0x00, 0x00, 0x00, 0x00 };
 
-	sigma_dut_print(global_dut, DUT_MSG_INFO,
-			"%s: Service Instance Id: %d  Peer Discovery MAC ADDR "
-			MAC_ADDR_STR
-			" NDP Instance Id: %d App Info  len %d App Info %s",
-			__func__,
-			event->service_instance_id,
-			MAC_ADDR_ARRAY(event->peer_disc_mac_addr),
-			event->ndp_instance_id,
-			event->app_info.ndp_app_info_len,
-			event->app_info.ndp_app_info);
+	sigma_dut_print(
+		global_dut, DUT_MSG_INFO,
+		"%s: Service Instance Id: %d  Peer Discovery MAC ADDR " MAC_ADDR_STR
+		" NDP Instance Id: %d App Info  len %d App Info %s",
+		__func__, event->service_instance_id,
+		MAC_ADDR_ARRAY(event->peer_disc_mac_addr),
+		event->ndp_instance_id, event->app_info.ndp_app_info_len,
+		event->app_info.ndp_app_info);
 
 	global_ndp_instance_id = event->ndp_instance_id;
 	memset(global_dut->nan_ipv6_addr, 0, sizeof(global_dut->nan_ipv6_addr));
@@ -3023,14 +2988,13 @@ static void ndp_event_data_indication(NanDataPathRequestInd *event)
 			if (ipv6_addr_len > 0 &&
 			    ipv6_addr_len <= NAN_INTF_ID_LEN) {
 				memcpy(global_dut->nan_ipv6_addr +
-				       NAN_INTF_ID_LEN,
+					       NAN_INTF_ID_LEN,
 				       p_frame, ipv6_addr_len);
 				global_dut->nan_ipv6_len += ipv6_addr_len;
 			}
 		}
 	}
 }
-
 
 /* Events callback */
 static void ndp_event_data_confirm(NanDataPathConfirmInd *event)
@@ -3054,8 +3018,9 @@ static void ndp_event_data_confirm(NanDataPathConfirmInd *event)
 		}
 		if (system("ip -6 route replace fe80::/64 dev nan0 table local") !=
 		    0) {
-			sigma_dut_print(global_dut, DUT_MSG_ERROR,
-					"Failed to run:ip -6 route replace fe80::/64 dev nan0 table local");
+			sigma_dut_print(
+				global_dut, DUT_MSG_ERROR,
+				"Failed to run:ip -6 route replace fe80::/64 dev nan0 table local");
 		}
 
 		if (global_dut->nan_ipv6_len > 0 &&
@@ -3070,35 +3035,39 @@ static void ndp_event_data_confirm(NanDataPathConfirmInd *event)
 				 global_dut->nan_ipv6_addr[15]);
 		else
 			convert_mac_addr_to_ipv6_lladdr(
-				event->peer_ndi_mac_addr,
-				ipv6_buf, sizeof(ipv6_buf));
+				event->peer_ndi_mac_addr, ipv6_buf,
+				sizeof(ipv6_buf));
 
-		snprintf(cmd, sizeof(cmd),
-			 "ip -6 neighbor replace %s lladdr %02x:%02x:%02x:%02x:%02x:%02x nud permanent dev nan0",
-			 ipv6_buf, event->peer_ndi_mac_addr[0],
-			 event->peer_ndi_mac_addr[1],
-			 event->peer_ndi_mac_addr[2],
-			 event->peer_ndi_mac_addr[3],
-			 event->peer_ndi_mac_addr[4],
-			 event->peer_ndi_mac_addr[5]);
+		snprintf(
+			cmd, sizeof(cmd),
+			"ip -6 neighbor replace %s lladdr %02x:%02x:%02x:%02x:%02x:%02x "
+			"nud permanent dev nan0",
+			ipv6_buf, event->peer_ndi_mac_addr[0],
+			event->peer_ndi_mac_addr[1],
+			event->peer_ndi_mac_addr[2],
+			event->peer_ndi_mac_addr[3],
+			event->peer_ndi_mac_addr[4],
+			event->peer_ndi_mac_addr[5]);
 		sigma_dut_print(global_dut, DUT_MSG_INFO,
 				"neighbor replace cmd = %s", cmd);
 		if (system(cmd) != 0) {
-			sigma_dut_print(global_dut, DUT_MSG_ERROR,
-					"Failed to run: ip -6 neighbor replace");
+			sigma_dut_print(
+				global_dut, DUT_MSG_ERROR,
+				"Failed to run: ip -6 neighbor replace");
 			return;
 		}
 
 #ifdef WFA_CERT_NANR4
-		if (system("ip route add multicast ff1e::/16 dev nan0 table local metric 100") !=
-		    0) {
-			sigma_dut_print(global_dut, DUT_MSG_ERROR,
-					"Failed to run ip route add multicast ff1e::/16 dev nan0 table local metric 100");
+		if (system("ip route add multicast ff1e::/16 dev nan0 table local metric "
+			   "100") != 0) {
+			sigma_dut_print(
+				global_dut, DUT_MSG_ERROR,
+				"Failed to run ip route add multicast ff1e::/16 dev nan0 "
+				"table local metric 100");
 		}
- #endif /* WFA_CERT_NANR4 */
+#endif /* WFA_CERT_NANR4 */
 	}
 }
-
 
 #ifdef WFA_CERT_NANR4
 
@@ -3116,7 +3085,6 @@ void nan_event_bootstrapping_request_ind(NanBootstrappingRequestInd *event)
 	global_dut->peer_info.supported_bootstrap_methods =
 		event->request_bootstrapping_method;
 }
-
 
 /* Events callback */
 void nan_event_bootstrapping_confirm_ind(NanBootstrappingConfirmInd *event)
@@ -3147,7 +3115,6 @@ void nan_event_bootstrapping_confirm_ind(NanBootstrappingConfirmInd *event)
 
 #endif /* WFA_CERT_NANR4 */
 
-
 static NanCallbackHandler callbackHandler = {
 	.NotifyResponse = nan_notify_response,
 	.EventPublishReplied = nan_event_publish_replied,
@@ -3176,7 +3143,6 @@ static NanCallbackHandler callbackHandler = {
 #endif /* WFA_CERT_NANR4 */
 };
 
-
 void nan_init(struct sigma_dut *dut)
 {
 	if (wifi_hal_initialize(dut)) {
@@ -3191,7 +3157,6 @@ void nan_init(struct sigma_dut *dut)
 		nan_register_handler(dut->wifi_hal_iface_handle,
 				     callbackHandler);
 }
-
 
 void nan_cmd_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 			       struct sigma_cmd *cmd)
@@ -3247,7 +3212,7 @@ void nan_cmd_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	sigma_nan_data_end(dut, cmd);
 	nan_data_interface_delete(0, dut->wifi_hal_iface_handle,
-				  (char *) "nan0");
+				  (char *)"nan0");
 	sigma_nan_disable(dut, conn, cmd);
 	global_header_handle = 0;
 	global_match_handle = 0;
@@ -3256,7 +3221,6 @@ void nan_cmd_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 	memset(&dut->peer_info, 0, sizeof(struct peer_pairing_info));
 #endif /* WFA_CERT_NANR4 */
 }
-
 
 int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 			    struct sigma_cmd *cmd)
@@ -3277,8 +3241,7 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		get_param(cmd, "pincode_bstrapmethod");
 	const char *passphrase_bstrapmethod =
 		get_param(cmd, "passphrase_bstrapmethod");
-	const char *pairing_setup_pasn =
-		get_param(cmd, "PairingSetup_PASN");
+	const char *pairing_setup_pasn = get_param(cmd, "PairingSetup_PASN");
 	const char *pairing_verification_pasn =
 		get_param(cmd, "PairingVerification_PASN");
 	const char *s3_entry_control = get_param(cmd, "S3EntryControl");
@@ -3315,30 +3278,32 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		size = sizeof(u32) + sizeof(u32);
 
 		if (if_nametoindex(NAN_AWARE_IFACE))
-		    run_system_wrapper(dut, "ifconfig %s up", NAN_AWARE_IFACE);
+			run_system_wrapper(dut, "ifconfig %s up",
+					   NAN_AWARE_IFACE);
 
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: Device Type: cmd type = %d and command data = %u",
-				__func__, cfg_debug.cmd, device_type_val);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s: Device Type: cmd type = %d and command data = %u",
+			__func__, cfg_debug.cmd, device_type_val);
 		nan_debug_command_config(0, dut->wifi_hal_iface_handle,
 					 cfg_debug, size);
 #endif
 		/*
-		 * NANOp has been specified.
-		 * We will build a nan_enable or nan_disable command.
-		*/
+     * NANOp has been specified.
+     * We will build a nan_enable or nan_disable command.
+     */
 		if (strcasecmp(nan_op, "On") == 0) {
 			if (sigma_nan_enable(dut, conn, cmd) == 0) {
 				ret = nan_data_interface_create(
 					0, dut->wifi_hal_iface_handle,
-					(char *) "nan0");
+					(char *)"nan0");
 				if (ret != WIFI_SUCCESS) {
 					sigma_dut_print(
 						global_dut, DUT_MSG_ERROR,
 						"Unable to create NAN data interface");
 				}
-				snprintf(resp_buf, sizeof(resp_buf), "mac,"
-					 MAC_ADDR_STR,
+				snprintf(resp_buf, sizeof(resp_buf),
+					 "mac," MAC_ADDR_STR,
 					 MAC_ADDR_ARRAY(global_nan_mac_addr));
 				send_resp(dut, conn, SIGMA_COMPLETE, resp_buf);
 			} else {
@@ -3371,8 +3336,8 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 			if (data_ch_freq)
 				dut->data_ch_freq = atoi(data_ch_freq);
 		} else if (strcasecmp(nan_op, "Off") == 0) {
-			nan_data_interface_delete(0,
-				dut->wifi_hal_iface_handle, (char *) "nan0");
+			nan_data_interface_delete(0, dut->wifi_hal_iface_handle,
+						  (char *)"nan0");
 			sigma_nan_disable(dut, conn, cmd);
 			memset(global_publish_service_name, 0,
 			       sizeof(global_publish_service_name));
@@ -3404,9 +3369,10 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 				send_resp(dut, conn, SIGMA_COMPLETE, "NULL");
 			}
 			if (strcasecmp(method_type, "DataResponse") == 0) {
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s: method_type is DataResponse",
-						__func__);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s: method_type is DataResponse",
+					__func__);
 				sigma_nan_data_response(dut, conn, cmd);
 				send_resp(dut, conn, SIGMA_COMPLETE, "NULL");
 			}
@@ -3415,36 +3381,39 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 				send_resp(dut, conn, SIGMA_COMPLETE, "NULL");
 			}
 			if (strcasecmp(method_type, "rangerequest") == 0) {
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s: method_type is rangerequest",
-						__func__);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s: method_type is rangerequest",
+					__func__);
 				sigma_nan_range_request(dut, cmd);
 				send_resp(dut, conn, SIGMA_COMPLETE, "NULL");
 			}
 			if (strcasecmp(method_type, "cancelrange") == 0) {
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s: method_type is cancelrange",
-						__func__);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s: method_type is cancelrange",
+					__func__);
 				sigma_nan_cancel_range(dut, cmd);
 				send_resp(dut, conn, SIGMA_COMPLETE, "NULL");
 			}
 			if (strcasecmp(method_type, "SchedUpdate") == 0) {
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s: method_type is SchedUpdate",
-						__func__);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s: method_type is SchedUpdate",
+					__func__);
 				sigma_nan_schedule_update(dut, cmd);
 				send_resp(dut, conn, SIGMA_COMPLETE, "NULL");
 			}
 		} else if (disc_mac_addr &&
 			   strcasecmp(disc_mac_addr, "GET") == 0) {
-			snprintf(resp_buf, sizeof(resp_buf), "mac,"
-				 MAC_ADDR_STR,
+			snprintf(resp_buf, sizeof(resp_buf),
+				 "mac," MAC_ADDR_STR,
 				 MAC_ADDR_ARRAY(global_nan_mac_addr));
 			send_resp(dut, conn, SIGMA_COMPLETE, resp_buf);
 		} else {
 			sigma_nan_config_enable(dut, conn, cmd);
-			snprintf(resp_buf, sizeof(resp_buf), "mac,"
-				 MAC_ADDR_STR,
+			snprintf(resp_buf, sizeof(resp_buf),
+				 "mac," MAC_ADDR_STR,
 				 MAC_ADDR_ARRAY(global_nan_mac_addr));
 			send_resp(dut, conn, SIGMA_COMPLETE, resp_buf);
 		}
@@ -3452,11 +3421,11 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 
 #ifdef WFA_CERT_NANR4
 	if (pairing_setup)
-		dut->dev_info.pairing_setup =
-			atoi(pairing_setup) ? true : false;
+		dut->dev_info.pairing_setup = atoi(pairing_setup) ? true :
+								    false;
 	if (npk_nik_cache)
-		dut->dev_info.npk_nik_caching =
-			atoi(npk_nik_cache) ? true : false;
+		dut->dev_info.npk_nik_caching = atoi(npk_nik_cache) ? true :
+								      false;
 	if (bootstrap_method)
 		dut->dev_info.bootstrapping_methods =
 			strtoul(bootstrap_method, NULL, 0);
@@ -3466,7 +3435,8 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	if (pairing_setup || npk_nik_cache || bootstrap_method || nira) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s: pairing_setup: %d, enable NIK cache: %d, Bootstrapping Method: %d, NIRA: %d",
+				"%s: pairing_setup: %d, enable NIK cache: %d, "
+				"Bootstrapping Method: %d, NIRA: %d",
 				__func__, dut->dev_info.pairing_setup,
 				dut->dev_info.npk_nik_caching,
 				dut->dev_info.bootstrapping_methods,
@@ -3495,10 +3465,12 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		NanS3Params s3_params;
 		int ret, size;
 
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"S3 Interface Attr: Entry Control %s, Time Bitmap Control %s, Time bitmap %s",
-				s3_entry_control, s3_time_bitmap_control,
-				s3_time_bitmap);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"S3 Interface Attr: Entry Control %s, Time Bitmap Control "
+			"%s, Time bitmap %s",
+			s3_entry_control, s3_time_bitmap_control,
+			s3_time_bitmap);
 
 		memset(&s3_params, 0, sizeof(NanS3Params));
 		cfg_debug.cmd = NAN_TEST_MODE_CMD_S3_ATTR_PARAMS;
@@ -3507,11 +3479,12 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		s3_params.time_bitmap_control =
 			strtoul(s3_time_bitmap_control, NULL, 0);
 		s3_params.time_bitmap = strtoul(s3_time_bitmap, NULL, 0);
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"S3 Interface Attr: Entry Control %d, Time Bitmap Control %d, Time bitmap %d",
-				s3_params.entry_control,
-				s3_params.time_bitmap_control,
-				s3_params.time_bitmap);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"S3 Interface Attr: Entry Control %d, Time Bitmap Control "
+			"%d, Time bitmap %d",
+			s3_params.entry_control, s3_params.time_bitmap_control,
+			s3_params.time_bitmap);
 		memcpy(cfg_debug.debug_cmd_data, &s3_params,
 		       sizeof(NanS3Params));
 		size = sizeof(u32) + sizeof(NanS3Params);
@@ -3528,11 +3501,9 @@ int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 			      struct sigma_cmd *cmd)
 {
-
 	const char *program = get_param(cmd, "Program");
 	const char *parameter = get_param(cmd, "Parameter");
 	const char *peer_mac = get_param(cmd, "peermac");
@@ -3572,12 +3543,12 @@ int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	memset(&req, 0, sizeof(NanStatsRequest));
 	memset(resp_buf, 0, sizeof(resp_buf));
-	req.stats_type = (NanStatsType) NAN_STATS_ID_DE_TIMING_SYNC;
+	req.stats_type = (NanStatsType)NAN_STATS_ID_DE_TIMING_SYNC;
 	nan_stats_request(0, dut->wifi_hal_iface_handle, &req);
 	/*
-	 * To ensure sta_get_events to get the events
-	 * only after joining the NAN cluster
-	 */
+   * To ensure sta_get_events to get the events
+   * only after joining the NAN cluster
+   */
 	abstime.tv_sec = 4;
 	abstime.tv_nsec = 0;
 	wait(abstime);
@@ -3585,7 +3556,7 @@ int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 	master_rank = global_nan_sync_stats.myRank;
 	master_pref = (global_nan_sync_stats.myRank & 0xFF00000000000000) >> 56;
 	random_factor = (global_nan_sync_stats.myRank & 0x00FF000000000000) >>
-		48;
+			48;
 	hop_count = global_nan_sync_stats.currAmHopCount;
 	beacon_transmit_time = global_nan_sync_stats.currAmBTT;
 	ndp_channel_freq = global_nan_sync_stats.ndpChannelFreq;
@@ -3594,18 +3565,22 @@ int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 	sched_update_channel_freq =
 		global_nan_sync_stats.schedUpdateChannelFreq;
 
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"%s: NanStatsRequest Master_pref:%02x, Random_factor:%02x, hop_count:%02x beacon_transmit_time:%d ndp_channel_freq:%d ndp_channel_freq2:%d sched_update_channel_freq:%d",
-			__func__, master_pref, random_factor,
-			hop_count, beacon_transmit_time,
-			ndp_channel_freq, ndp_channel_freq2,
-			sched_update_channel_freq);
+	sigma_dut_print(
+		dut, DUT_MSG_INFO,
+		"%s: NanStatsRequest Master_pref:%02x, Random_factor:%02x, "
+		"hop_count:%02x beacon_transmit_time:%d ndp_channel_freq:%d "
+		"ndp_channel_freq2:%d sched_update_channel_freq:%d",
+		__func__, master_pref, random_factor, hop_count,
+		beacon_transmit_time, ndp_channel_freq, ndp_channel_freq2,
+		sched_update_channel_freq);
 #else /* #if NAN_CERT_VERSION >= 3 */
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"%s: NanStatsRequest Master_pref:%02x, Random_factor:%02x, hop_count:%02x beacon_transmit_time:%d ndp_channel_freq:%d ndp_channel_freq2:%d",
-			__func__, master_pref, random_factor,
-			hop_count, beacon_transmit_time,
-			ndp_channel_freq, ndp_channel_freq2);
+	sigma_dut_print(
+		dut, DUT_MSG_INFO,
+		"%s: NanStatsRequest Master_pref:%02x, Random_factor:%02x, "
+		"hop_count:%02x beacon_transmit_time:%d ndp_channel_freq:%d "
+		"ndp_channel_freq2:%d",
+		__func__, master_pref, random_factor, hop_count,
+		beacon_transmit_time, ndp_channel_freq, ndp_channel_freq2);
 #endif /* #if NAN_CERT_VERSION >= 3 */
 
 	if (strcasecmp(parameter, "MasterPref") == 0) {
@@ -3642,7 +3617,8 @@ int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 				 freq_to_channel(ndp_channel_freq2));
 		} else {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: No Negotiated NDP Channels", __func__);
+					"%s: No Negotiated NDP Channels",
+					__func__);
 		}
 #if NAN_CERT_VERSION >= 3
 	} else if (strcasecmp(parameter, "SchedUpdateChannel") == 0) {
@@ -3668,7 +3644,7 @@ int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 		pos = 0;
 		for (i = 0; i < msg.tk_len; i++) {
 			ret = snprintf(&(string[pos]), sizeof(string) - pos,
-					"%02x", msg.tk[i]);
+				       "%02x", msg.tk[i]);
 			if (ret < 0 || ret >= (sizeof(string) - pos))
 				break;
 			pos += ret;
@@ -3694,7 +3670,7 @@ int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 		pos = 0;
 		for (i = 0; i < msg.pmkid_len; i++) {
 			ret = snprintf(&(string[pos]), sizeof(string) - pos,
-					"%02x", msg.pmkid[i]);
+				       "%02x", msg.pmkid[i]);
 			if (ret < 0 || ret >= (sizeof(string) - pos))
 				break;
 			pos += ret;
@@ -3710,7 +3686,6 @@ int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 	send_resp(dut, conn, SIGMA_COMPLETE, resp_buf);
 	return 0;
 }
-
 
 int nan_cmd_sta_get_events(struct sigma_dut *dut, struct sigma_conn *conn,
 			   struct sigma_cmd *cmd)
@@ -3748,14 +3723,11 @@ int nan_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 	return 1;
 }
 
-
 int nan_cmd_sta_get_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 			      struct sigma_cmd *cmd)
 {
 	return 0;
-
 }
-
 
 void nan_cmd_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 			       struct sigma_cmd *cmd)
@@ -3763,13 +3735,11 @@ void nan_cmd_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 	return;
 }
 
-
 int nan_cmd_sta_get_events(struct sigma_dut *dut, struct sigma_conn *conn,
 			   struct sigma_cmd *cmd)
 {
 	return 0;
 }
-
 
 int nan_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 			    struct sigma_cmd *cmd)

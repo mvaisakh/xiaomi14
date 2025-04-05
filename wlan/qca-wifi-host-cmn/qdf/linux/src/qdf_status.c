@@ -17,9 +17,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "qdf_status.h"
 #include "linux/errno.h"
 #include "qdf_module.h"
-#include "qdf_status.h"
 
 int qdf_status_to_os_return(QDF_STATUS status)
 {
@@ -130,4 +130,3 @@ QDF_STATUS qdf_status_from_os_return(int rc)
 	}
 }
 qdf_export_symbol(qdf_status_from_os_return);
-

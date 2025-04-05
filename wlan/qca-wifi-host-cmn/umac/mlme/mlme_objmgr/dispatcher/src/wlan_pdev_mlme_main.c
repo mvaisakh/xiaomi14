@@ -18,14 +18,14 @@
  * DOC: Implements PDEV MLME APIs
  */
 
+#include "wlan_pdev_mlme_main.h"
+#include "include/wlan_mlme_cmn.h"
+#include "include/wlan_pdev_mlme.h"
+#include "wlan_pdev_mlme_api.h"
+#include <wlan_mlme_dbg.h>
 #include <wlan_objmgr_cmn.h>
 #include <wlan_objmgr_global_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include <wlan_mlme_dbg.h>
-#include "include/wlan_mlme_cmn.h"
-#include "include/wlan_pdev_mlme.h"
-#include "wlan_pdev_mlme_main.h"
-#include "wlan_pdev_mlme_api.h"
 #include <wlan_utility.h>
 
 static QDF_STATUS mlme_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev,
@@ -88,8 +88,8 @@ static QDF_STATUS mlme_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev,
 					      (void *)pdev_mlme);
 
 	wlan_minidump_remove(pdev_mlme, sizeof(*pdev_mlme),
-			     wlan_pdev_get_psoc(pdev),
-			     WLAN_MD_OBJMGR_PDEV_MLME, "pdev_mlme");
+			     wlan_pdev_get_psoc(pdev), WLAN_MD_OBJMGR_PDEV_MLME,
+			     "pdev_mlme");
 
 	qdf_mem_free(pdev_mlme);
 
@@ -98,20 +98,17 @@ static QDF_STATUS mlme_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev,
 
 QDF_STATUS wlan_pdev_mlme_init(void)
 {
-	if (wlan_objmgr_register_pdev_create_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_pdev_obj_create_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_register_pdev_create_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_pdev_obj_create_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
-	if (wlan_objmgr_register_pdev_destroy_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_pdev_obj_destroy_handler, NULL)
-						!= QDF_STATUS_SUCCESS) {
-		if (wlan_objmgr_unregister_pdev_create_handler
-					(WLAN_UMAC_COMP_MLME,
-					 mlme_pdev_obj_create_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_register_pdev_destroy_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_pdev_obj_destroy_handler, NULL) !=
+	    QDF_STATUS_SUCCESS) {
+		if (wlan_objmgr_unregister_pdev_create_handler(
+			    WLAN_UMAC_COMP_MLME, mlme_pdev_obj_create_handler,
+			    NULL) != QDF_STATUS_SUCCESS)
 			return QDF_STATUS_E_FAILURE;
 
 		return QDF_STATUS_E_FAILURE;
@@ -122,16 +119,14 @@ QDF_STATUS wlan_pdev_mlme_init(void)
 
 QDF_STATUS wlan_pdev_mlme_deinit(void)
 {
-	if (wlan_objmgr_unregister_pdev_create_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_pdev_obj_create_handler, NULL)
-					!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_unregister_pdev_create_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_pdev_obj_create_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
-	if (wlan_objmgr_unregister_pdev_destroy_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_pdev_obj_destroy_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_unregister_pdev_destroy_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_pdev_obj_destroy_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
 	return QDF_STATUS_SUCCESS;

@@ -13,12 +13,12 @@
  * RmNet Low Latency channel handlers
  */
 
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
-#include <linux/list.h>
-#include <linux/version.h>
 #include "rmnet_ll.h"
 #include "rmnet_ll_core.h"
+#include <linux/list.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
+#include <linux/version.h>
 
 #define RMNET_LL_MAX_RECYCLE_ITER 16
 

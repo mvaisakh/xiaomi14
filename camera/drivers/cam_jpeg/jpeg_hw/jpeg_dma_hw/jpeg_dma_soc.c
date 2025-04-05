@@ -10,21 +10,22 @@
 #include <media/cam_defs.h>
 #include <media/cam_jpeg.h>
 
-#include "jpeg_dma_soc.h"
-#include "cam_soc_util.h"
 #include "cam_debug_util.h"
+#include "cam_soc_util.h"
+#include "jpeg_dma_soc.h"
 
 int cam_jpeg_dma_init_soc_resources(struct cam_hw_soc_info *soc_info,
-	irq_handler_t jpeg_dma_irq_handler, void *data)
+				    irq_handler_t jpeg_dma_irq_handler,
+				    void *data)
 {
-	struct cam_jpeg_dma_soc_private  *soc_private;
+	struct cam_jpeg_dma_soc_private *soc_private;
 	struct platform_device *pdev = NULL;
 	int num_pid = 0, i = 0;
 	int rc;
-	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = {0};
+	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = { 0 };
 
-	soc_private = kzalloc(sizeof(struct cam_jpeg_dma_soc_private),
-		GFP_KERNEL);
+	soc_private =
+		kzalloc(sizeof(struct cam_jpeg_dma_soc_private), GFP_KERNEL);
 	if (!soc_private) {
 		CAM_DBG(CAM_JPEG, "Error! soc_private Alloc Failed");
 		return -ENOMEM;
@@ -39,8 +40,8 @@ int cam_jpeg_dma_init_soc_resources(struct cam_hw_soc_info *soc_info,
 	for (i = 0; i < soc_info->irq_count; i++)
 		irq_data[i] = data;
 
-	rc = cam_soc_util_request_platform_resource(soc_info,
-		jpeg_dma_irq_handler, &(irq_data[0]));
+	rc = cam_soc_util_request_platform_resource(
+		soc_info, jpeg_dma_irq_handler, &(irq_data[0]));
 	if (rc)
 		CAM_ERR(CAM_JPEG, "init soc failed %d", rc);
 
@@ -51,19 +52,19 @@ int cam_jpeg_dma_init_soc_resources(struct cam_hw_soc_info *soc_info,
 	num_pid = of_property_count_u32_elems(pdev->dev.of_node, "cam_hw_pid");
 	CAM_DBG(CAM_JPEG, "jpeg:%d pid count %d", soc_info->index, num_pid);
 
-	if (num_pid <= 0  || num_pid > CAM_JPEG_HW_MAX_NUM_PID)
+	if (num_pid <= 0 || num_pid > CAM_JPEG_HW_MAX_NUM_PID)
 		goto end;
 
-	soc_private->num_pid  = num_pid;
+	soc_private->num_pid = num_pid;
 	for (i = 0; i < num_pid; i++)
 		of_property_read_u32_index(pdev->dev.of_node, "cam_hw_pid", i,
-		&soc_private->pid[i]);
+					   &soc_private->pid[i]);
 
-	of_property_read_u32(pdev->dev.of_node,
-		"cam_hw_rd_mid", &soc_private->rd_mid);
+	of_property_read_u32(pdev->dev.of_node, "cam_hw_rd_mid",
+			     &soc_private->rd_mid);
 
-	of_property_read_u32(pdev->dev.of_node,
-		"cam_hw_wr_mid", &soc_private->wr_mid);
+	of_property_read_u32(pdev->dev.of_node, "cam_hw_wr_mid",
+			     &soc_private->wr_mid);
 
 end:
 	return rc;
@@ -73,8 +74,8 @@ int cam_jpeg_dma_enable_soc_resources(struct cam_hw_soc_info *soc_info)
 {
 	int rc;
 
-	rc = cam_soc_util_enable_platform_resource(soc_info, CAM_CLK_SW_CLIENT_IDX, true,
-		CAM_SVS_VOTE, true);
+	rc = cam_soc_util_enable_platform_resource(
+		soc_info, CAM_CLK_SW_CLIENT_IDX, true, CAM_SVS_VOTE, true);
 	if (rc)
 		CAM_ERR(CAM_JPEG, "enable platform failed %d", rc);
 
@@ -85,7 +86,8 @@ int cam_jpeg_dma_disable_soc_resources(struct cam_hw_soc_info *soc_info)
 {
 	int rc;
 
-	rc = cam_soc_util_disable_platform_resource(soc_info, CAM_CLK_SW_CLIENT_IDX, true, true);
+	rc = cam_soc_util_disable_platform_resource(
+		soc_info, CAM_CLK_SW_CLIENT_IDX, true, true);
 	if (rc)
 		CAM_ERR(CAM_JPEG, "disable platform failed %d", rc);
 

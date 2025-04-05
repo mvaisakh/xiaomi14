@@ -20,14 +20,13 @@
  * Implementation for creating sysfs file dfsnol
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_vdev_sync.h"
 #include "wlan_dfs_utils_api.h"
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_dfsnol.h>
 
-static ssize_t
-__hdd_sysfs_dfsnol_show(struct net_device *net_dev, char *buf)
+static ssize_t __hdd_sysfs_dfsnol_show(struct net_device *net_dev, char *buf)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -55,9 +54,8 @@ __hdd_sysfs_dfsnol_show(struct net_device *net_dev, char *buf)
 	return scnprintf(buf, PAGE_SIZE, "DFS NOL Info written to dmesg log\n");
 }
 
-static ssize_t
-hdd_sysfs_dfsnol_show(struct device *dev,
-		      struct device_attribute *attr, char *buf)
+static ssize_t hdd_sysfs_dfsnol_show(struct device *dev,
+				     struct device_attribute *attr, char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -74,9 +72,8 @@ hdd_sysfs_dfsnol_show(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dfsnol_store(struct net_device *net_dev,
-			 char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dfsnol_store(struct net_device *net_dev,
+					char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -104,8 +101,8 @@ __hdd_sysfs_dfsnol_store(struct net_device *net_dev,
 		return -EINVAL;
 	}
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -131,9 +128,9 @@ __hdd_sysfs_dfsnol_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_dfsnol_store(struct device *dev, struct device_attribute *attr,
-		       char const *buf, size_t count)
+static ssize_t hdd_sysfs_dfsnol_store(struct device *dev,
+				      struct device_attribute *attr,
+				      char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -150,8 +147,7 @@ hdd_sysfs_dfsnol_store(struct device *dev, struct device_attribute *attr,
 	return errno_size;
 }
 
-static DEVICE_ATTR(dfsnol, 0660, hdd_sysfs_dfsnol_show,
-		   hdd_sysfs_dfsnol_store);
+static DEVICE_ATTR(dfsnol, 0660, hdd_sysfs_dfsnol_show, hdd_sysfs_dfsnol_store);
 
 int hdd_sysfs_dfsnol_create(struct hdd_adapter *adapter)
 {

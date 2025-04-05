@@ -16,13 +16,13 @@
 #include <linux/netdevice.h>
 #include <linux/skbuff.h>
 #if !defined(__arch_um__)
-	#include <linux/ipa.h>
+#include <linux/ipa.h>
 #endif /* !defined(__arch_um__) */
+#include "rmnet_ll.h"
+#include "rmnet_ll_core.h"
 #include <linux/if_ether.h>
 #include <linux/interrupt.h>
 #include <linux/version.h>
-#include "rmnet_ll.h"
-#include "rmnet_ll_core.h"
 
 #define IPA_RMNET_LL_RECEIVE 1
 #define IPA_RMNET_LL_FLOW_EVT 2
@@ -132,15 +132,14 @@ static void rmnet_ll_ipa_remove(void *arg)
 	spin_unlock_bh(&rmnet_ll_tx_lock);
 }
 
-static void rmnet_ll_ipa_ready(void * __unused)
+static void rmnet_ll_ipa_ready(void *__unused)
 {
 	int rc;
 
 	rc = ipa_register_rmnet_ll_cb(rmnet_ll_ipa_probe,
 				      (void *)&rmnet_ll_ipa_ep,
 				      rmnet_ll_ipa_remove,
-				      (void *)&rmnet_ll_ipa_ep,
-				      rmnet_ll_ipa_rx,
+				      (void *)&rmnet_ll_ipa_ep, rmnet_ll_ipa_rx,
 				      (void *)&rmnet_ll_ipa_ep);
 	if (rc)
 		pr_err("%s(): Registering IPA LL callback failed with rc %d\n",
@@ -209,9 +208,18 @@ static int rmnet_ll_ipa_exit(void)
 	return 0;
 }
 #else
-static int rmnet_ll_ipa_tx(struct sk_buff *skb){return 0;};
-static int rmnet_ll_ipa_init(void){return 0;}
-static int rmnet_ll_ipa_exit(void){return 0;};
+static int rmnet_ll_ipa_tx(struct sk_buff *skb)
+{
+	return 0;
+};
+static int rmnet_ll_ipa_init(void)
+{
+	return 0;
+}
+static int rmnet_ll_ipa_exit(void)
+{
+	return 0;
+};
 #endif /* !defined(__arch_um__) */
 
 /* Export operations struct to the main framework */

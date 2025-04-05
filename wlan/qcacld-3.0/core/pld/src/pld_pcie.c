@@ -17,10 +17,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/platform_device.h>
 #include <linux/err.h>
-#include <linux/pci.h>
 #include <linux/list.h>
+#include <linux/pci.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
 
 #ifdef CONFIG_PLD_PCIE_CNSS
@@ -31,9 +31,9 @@
 #endif
 #endif
 
+#include "osif_psoc_sync.h"
 #include "pld_internal.h"
 #include "pld_pcie.h"
-#include "osif_psoc_sync.h"
 
 #ifdef CONFIG_PCI
 
@@ -60,8 +60,7 @@
  *
  * Return: int
  */
-static int pld_pcie_probe(struct pci_dev *pdev,
-			  const struct pci_device_id *id)
+static int pld_pcie_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	struct pld_context *pld_context;
 	int ret = 0;
@@ -76,13 +75,12 @@ static int pld_pcie_probe(struct pci_dev *pdev,
 	if (ret)
 		goto out;
 
-	return pld_context->ops->probe(&pdev->dev,
-		       PLD_BUS_TYPE_PCIE, pdev, (void *)id);
+	return pld_context->ops->probe(&pdev->dev, PLD_BUS_TYPE_PCIE, pdev,
+				       (void *)id);
 
 out:
 	return ret;
 }
-
 
 /**
  * pld_pcie_remove() - Remove function for PCIE device
@@ -133,8 +131,7 @@ out:
  * Non zero failure code for errors
  */
 static int pld_pcie_set_thermal_state(struct pci_dev *pdev,
-				      unsigned long thermal_state,
-				      int mon_id)
+				      unsigned long thermal_state, int mon_id)
 {
 	struct pld_context *pld_context;
 
@@ -143,9 +140,8 @@ static int pld_pcie_set_thermal_state(struct pci_dev *pdev,
 		return -EINVAL;
 
 	if (pld_context->ops->set_curr_therm_cdev_state)
-		return pld_context->ops->set_curr_therm_cdev_state(&pdev->dev,
-								thermal_state,
-								mon_id);
+		return pld_context->ops->set_curr_therm_cdev_state(
+			&pdev->dev, thermal_state, mon_id);
 
 	return -ENOTSUPP;
 }
@@ -203,15 +199,14 @@ static int pld_pcie_idle_shutdown_cb(struct pci_dev *pdev)
  *
  * Return: int
  */
-static int pld_pcie_reinit(struct pci_dev *pdev,
-			    const struct pci_device_id *id)
+static int pld_pcie_reinit(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	struct pld_context *pld_context;
 
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->reinit)
-		return pld_context->ops->reinit(&pdev->dev,
-				PLD_BUS_TYPE_PCIE, pdev, (void *)id);
+		return pld_context->ops->reinit(&pdev->dev, PLD_BUS_TYPE_PCIE,
+						pdev, (void *)id);
 
 	return -ENODEV;
 }
@@ -266,8 +261,8 @@ static void pld_pcie_notify_handler(struct pci_dev *pdev, int state)
 
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->modem_status)
-		pld_context->ops->modem_status(&pdev->dev,
-					       PLD_BUS_TYPE_PCIE, state);
+		pld_context->ops->modem_status(&pdev->dev, PLD_BUS_TYPE_PCIE,
+					       state);
 }
 
 /**
@@ -283,7 +278,7 @@ static void pld_pcie_notify_handler(struct pci_dev *pdev, int state)
 static void pld_pcie_uevent(struct pci_dev *pdev, uint32_t status)
 {
 	struct pld_context *pld_context;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 
 	pld_context = pld_get_global_context();
 	if (!pld_context)
@@ -323,10 +318,8 @@ pld_pcie_collect_driver_dump(struct pci_dev *pdev,
 	pld_context = pld_get_global_context();
 	ops = pld_context->ops;
 	if (ops->collect_driver_dump) {
-		ret =  ops->collect_driver_dump(&pdev->dev,
-						PLD_BUS_TYPE_PCIE,
-						input_array,
-						num_entries);
+		ret = ops->collect_driver_dump(&pdev->dev, PLD_BUS_TYPE_PCIE,
+					       input_array, num_entries);
 	}
 	return ret;
 }
@@ -343,8 +336,8 @@ pld_pcie_collect_driver_dump(struct pci_dev *pdev,
  *
  * Return: enum pld_bus_event
  */
-static inline
-enum pld_bus_event pld_bus_event_type_convert(enum cnss_bus_event_type etype)
+static inline enum pld_bus_event
+pld_bus_event_type_convert(enum cnss_bus_event_type etype)
 {
 	enum pld_bus_event pld_etype = PLD_BUS_EVENT_INVALID;
 
@@ -373,7 +366,7 @@ static int pld_pcie_update_event(struct pci_dev *pdev,
 				 struct cnss_uevent_data *uevent_data)
 {
 	struct pld_context *pld_context;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 	struct cnss_hang_event *hang_event;
 
 	pld_context = pld_get_global_context();
@@ -389,10 +382,9 @@ static int pld_pcie_update_event(struct pci_dev *pdev,
 		data.uevent = PLD_FW_HANG_EVENT;
 		data.hang_data.hang_event_data = hang_event->hang_event_data;
 		data.hang_data.hang_event_data_len =
-					hang_event->hang_event_data_len;
+			hang_event->hang_event_data_len;
 		break;
-	case CNSS_BUS_EVENT:
-	{
+	case CNSS_BUS_EVENT: {
 		struct cnss_bus_event *bus_evt = uevent_data->data;
 
 		if (!bus_evt)
@@ -467,10 +459,9 @@ static int pld_pcie_runtime_resume(struct pci_dev *pdev)
  *
  * Return: mission mode or ftm mode
  */
-static
-enum cnss_driver_mode pld_pcie_get_mode(void)
+static enum cnss_driver_mode pld_pcie_get_mode(void)
 {
-	struct pld_context *pld_ctx =  pld_get_global_context();
+	struct pld_context *pld_ctx = pld_get_global_context();
 	enum cnss_driver_mode cnss_mode = CNSS_MISSION;
 
 	if (!pld_ctx)
@@ -521,8 +512,7 @@ static int pld_pcie_suspend(struct pci_dev *pdev, pm_message_t state)
 	struct pld_context *pld_context;
 
 	pld_context = pld_get_global_context();
-	return pld_context->ops->suspend(&pdev->dev,
-					 PLD_BUS_TYPE_PCIE, state);
+	return pld_context->ops->suspend(&pdev->dev, PLD_BUS_TYPE_PCIE, state);
 }
 
 /**
@@ -563,8 +553,8 @@ static int pld_pcie_suspend_noirq(struct pci_dev *pdev)
 		return -EINVAL;
 
 	if (pld_context->ops->suspend_noirq)
-		return pld_context->ops->
-			suspend_noirq(&pdev->dev, PLD_BUS_TYPE_PCIE);
+		return pld_context->ops->suspend_noirq(&pdev->dev,
+						       PLD_BUS_TYPE_PCIE);
 	return 0;
 }
 
@@ -589,8 +579,8 @@ static int pld_pcie_resume_noirq(struct pci_dev *pdev)
 		return -EINVAL;
 
 	if (pld_context->ops->resume_noirq)
-		return pld_context->ops->
-			resume_noirq(&pdev->dev, PLD_BUS_TYPE_PCIE);
+		return pld_context->ops->resume_noirq(&pdev->dev,
+						      PLD_BUS_TYPE_PCIE);
 	return 0;
 }
 #else
@@ -678,8 +668,7 @@ static int pld_pcie_pm_resume_noirq(struct device *dev)
 		return -EINVAL;
 
 	if (pld_context->ops->resume_noirq)
-		return pld_context->ops->
-			resume_noirq(dev, PLD_BUS_TYPE_PCIE);
+		return pld_context->ops->resume_noirq(dev, PLD_BUS_TYPE_PCIE);
 	return 0;
 }
 #endif
@@ -728,17 +717,17 @@ struct cnss_wlan_runtime_ops runtime_pm_ops = {
 #endif
 
 struct cnss_wlan_driver pld_pcie_ops = {
-	.name       = PLD_PCIE_OPS_NAME,
-	.id_table   = pld_pcie_id_table,
-	.probe      = pld_pcie_probe,
-	.remove     = pld_pcie_remove,
-	.idle_restart  = pld_pcie_idle_restart_cb,
+	.name = PLD_PCIE_OPS_NAME,
+	.id_table = pld_pcie_id_table,
+	.probe = pld_pcie_probe,
+	.remove = pld_pcie_remove,
+	.idle_restart = pld_pcie_idle_restart_cb,
 	.idle_shutdown = pld_pcie_idle_shutdown_cb,
-	.reinit     = pld_pcie_reinit,
-	.shutdown   = pld_pcie_shutdown,
+	.reinit = pld_pcie_reinit,
+	.shutdown = pld_pcie_shutdown,
 	.crash_shutdown = pld_pcie_crash_shutdown,
-	.modem_status   = pld_pcie_notify_handler,
-	.update_status  = pld_pcie_uevent,
+	.modem_status = pld_pcie_notify_handler,
+	.update_status = pld_pcie_uevent,
 #ifdef WLAN_FEATURE_SSR_DRIVER_DUMP
 	.collect_driver_dump = pld_pcie_collect_driver_dump,
 #endif
@@ -746,16 +735,16 @@ struct cnss_wlan_driver pld_pcie_ops = {
 	.update_event = pld_pcie_update_event,
 #endif
 #ifdef CONFIG_PM
-	.suspend    = pld_pcie_suspend,
-	.resume     = pld_pcie_resume,
+	.suspend = pld_pcie_suspend,
+	.resume = pld_pcie_resume,
 	.suspend_noirq = pld_pcie_suspend_noirq,
-	.resume_noirq  = pld_pcie_resume_noirq,
+	.resume_noirq = pld_pcie_resume_noirq,
 #endif
 #ifdef FEATURE_RUNTIME_PM
 	.runtime_ops = &runtime_pm_ops,
 #endif
 #ifdef FEATURE_GET_DRIVER_MODE
-	.get_driver_mode  = pld_pcie_get_mode,
+	.get_driver_mode = pld_pcie_get_mode,
 #endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 	.chip_version = CHIP_VERSION,
@@ -776,21 +765,22 @@ void pld_pcie_unregister_driver(void)
 #ifdef CONFIG_PM
 static const struct dev_pm_ops pld_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(pld_pcie_pm_suspend, pld_pcie_pm_resume)
-	.suspend_noirq = pld_pcie_pm_suspend_noirq,
+		.suspend_noirq = pld_pcie_pm_suspend_noirq,
 	.resume_noirq = pld_pcie_pm_resume_noirq,
 };
 #endif
 
 struct pci_driver pld_pcie_ops = {
-	.name       = PLD_PCIE_OPS_NAME,
-	.id_table   = pld_pcie_id_table,
-	.probe      = pld_pcie_probe,
-	.remove     = pld_pcie_remove,
-	.driver     = {
+    .name = PLD_PCIE_OPS_NAME,
+    .id_table = pld_pcie_id_table,
+    .probe = pld_pcie_probe,
+    .remove = pld_pcie_remove,
+    .driver =
+        {
 #ifdef CONFIG_PM
-		.pm = &pld_pm_ops,
+            .pm = &pld_pm_ops,
 #endif
-	},
+        },
 };
 
 int pld_pcie_register_driver(void)
@@ -821,8 +811,8 @@ pld_pcie_populate_shadow_v3_cfg(struct cnss_wlan_enable_cfg *cfg,
 				struct pld_wlan_enable_cfg *config)
 {
 	cfg->num_shadow_reg_v3_cfg = config->num_shadow_reg_v3_cfg;
-	cfg->shadow_reg_v3_cfg = (struct cnss_shadow_reg_v3_cfg *)
-				 config->shadow_reg_v3_cfg;
+	cfg->shadow_reg_v3_cfg =
+		(struct cnss_shadow_reg_v3_cfg *)config->shadow_reg_v3_cfg;
 }
 #else
 static inline void
@@ -838,23 +828,21 @@ int pld_pcie_wlan_enable(struct device *dev, struct pld_wlan_enable_cfg *config,
 	enum cnss_driver_mode cnss_mode;
 
 	cfg.num_ce_tgt_cfg = config->num_ce_tgt_cfg;
-	cfg.ce_tgt_cfg = (struct cnss_ce_tgt_pipe_cfg *)
-		config->ce_tgt_cfg;
+	cfg.ce_tgt_cfg = (struct cnss_ce_tgt_pipe_cfg *)config->ce_tgt_cfg;
 	cfg.num_ce_svc_pipe_cfg = config->num_ce_svc_pipe_cfg;
-	cfg.ce_svc_cfg = (struct cnss_ce_svc_pipe_cfg *)
-		config->ce_svc_cfg;
+	cfg.ce_svc_cfg = (struct cnss_ce_svc_pipe_cfg *)config->ce_svc_cfg;
 	cfg.num_shadow_reg_cfg = config->num_shadow_reg_cfg;
-	cfg.shadow_reg_cfg = (struct cnss_shadow_reg_cfg *)
-		config->shadow_reg_cfg;
+	cfg.shadow_reg_cfg =
+		(struct cnss_shadow_reg_cfg *)config->shadow_reg_cfg;
 	cfg.num_shadow_reg_v2_cfg = config->num_shadow_reg_v2_cfg;
-	cfg.shadow_reg_v2_cfg = (struct cnss_shadow_reg_v2_cfg *)
-		config->shadow_reg_v2_cfg;
+	cfg.shadow_reg_v2_cfg =
+		(struct cnss_shadow_reg_v2_cfg *)config->shadow_reg_v2_cfg;
 	cfg.rri_over_ddr_cfg_valid = config->rri_over_ddr_cfg_valid;
 	if (config->rri_over_ddr_cfg_valid) {
 		cfg.rri_over_ddr_cfg.base_addr_low =
-			 config->rri_over_ddr_cfg.base_addr_low;
+			config->rri_over_ddr_cfg.base_addr_low;
 		cfg.rri_over_ddr_cfg.base_addr_high =
-			 config->rri_over_ddr_cfg.base_addr_high;
+			config->rri_over_ddr_cfg.base_addr_high;
 	}
 
 	pld_pcie_populate_shadow_v3_cfg(&cfg, config);
@@ -890,8 +878,8 @@ int pld_pcie_get_fw_files_for_target(struct device *dev,
 
 	memset(pfw_files, 0, sizeof(*pfw_files));
 
-	ret = cnss_get_fw_files_for_target(dev, &cnss_fw_files,
-					   target_type, target_version);
+	ret = cnss_get_fw_files_for_target(dev, &cnss_fw_files, target_type,
+					   target_version);
 	if (ret)
 		return ret;
 
@@ -932,7 +920,7 @@ int pld_pcie_get_platform_cap(struct device *dev, struct pld_platform_cap *cap)
 int pld_pcie_get_soc_info(struct device *dev, struct pld_soc_info *info)
 {
 	int ret = 0, i;
-	struct cnss_soc_info cnss_info = {0};
+	struct cnss_soc_info cnss_info = { 0 };
 
 	if (!info)
 		return -ENODEV;
@@ -1001,8 +989,7 @@ void pld_pcie_device_self_recovery(struct device *dev,
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
-int pld_pcie_set_wfc_mode(struct device *dev,
-			  enum pld_wfc_mode wfc_mode)
+int pld_pcie_set_wfc_mode(struct device *dev, enum pld_wfc_mode wfc_mode)
 {
 	struct cnss_wfc_cfg cfg;
 	int ret;

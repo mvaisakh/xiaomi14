@@ -2,20 +2,20 @@
 /* Copyright (c) 2015, 2017-2019 The Linux Foundation. All rights reserved.
  */
 
+#include "wsa881x-temp-sensor.h"
 #include <linux/bitops.h>
+#include <linux/delay.h>
+#include <linux/errno.h>
 #include <linux/kernel.h>
 #include <linux/suspend.h>
-#include <linux/errno.h>
-#include <linux/delay.h>
 #include <linux/thermal.h>
 #include <sound/soc.h>
-#include "wsa881x-temp-sensor.h"
 
 #define T1_TEMP -10
 #define T2_TEMP 150
 #define LOW_TEMP_THRESHOLD 5
 #define HIGH_TEMP_THRESHOLD 45
-#define TEMP_INVALID	0xFFFF
+#define TEMP_INVALID 0xFFFF
 #define WSA881X_TEMP_RETRY 3
 /*
  * wsa881x_get_temp - get wsa temperature
@@ -26,8 +26,7 @@
  *
  * Return: 0 on success or negative error code on failure.
  */
-int wsa881x_get_temp(struct thermal_zone_device *thermal,
-		     int *temp)
+int wsa881x_get_temp(struct thermal_zone_device *thermal, int *temp)
 {
 	struct wsa881x_tz_priv *pdata;
 	struct snd_soc_component *component;
@@ -56,11 +55,11 @@ int wsa881x_get_temp(struct thermal_zone_device *thermal,
 	}
 	if (atomic_cmpxchg(&pdata->is_suspend_spk, 1, 0)) {
 		/*
-		 * get_temp query happens as part of POST_PM_SUSPEND
-		 * from thermal core. To avoid calls to slimbus
-		 * as part of this thermal query, return default temp
-		 * and reset the suspend flag.
-		 */
+     * get_temp query happens as part of POST_PM_SUSPEND
+     * from thermal core. To avoid calls to slimbus
+     * as part of this thermal query, return default temp
+     * and reset the suspend flag.
+     */
 		if (!pdata->t0_init) {
 			if (temp)
 				*temp = pdata->curr_temp;
@@ -73,7 +72,7 @@ temp_retry:
 		ret = pdata->wsa_temp_reg_read(component, &reg);
 		if (ret) {
 			pr_err("%s: temp read failed: %d, current temp: %d\n",
-				__func__, ret, pdata->curr_temp);
+			       __func__, ret, pdata->curr_temp);
 			if (temp)
 				*temp = pdata->curr_temp;
 			return 0;
@@ -83,20 +82,21 @@ temp_retry:
 		return -EINVAL;
 	}
 	/*
-	 * Temperature register values are expected to be in the
-	 * following range.
-	 * d1_msb  = 68 - 92 and d1_lsb  = 0, 64, 128, 192
-	 * d2_msb  = 185 -218 and  d2_lsb  = 0, 64, 128, 192
-	 */
+   * Temperature register values are expected to be in the
+   * following range.
+   * d1_msb  = 68 - 92 and d1_lsb  = 0, 64, 128, 192
+   * d2_msb  = 185 -218 and  d2_lsb  = 0, 64, 128, 192
+   */
 	if ((reg.d1_msb < 68 || reg.d1_msb > 92) ||
 	    (!(reg.d1_lsb == 0 || reg.d1_lsb == 64 || reg.d1_lsb == 128 ||
-		reg.d1_lsb == 192)) ||
+	       reg.d1_lsb == 192)) ||
 	    (reg.d2_msb < 185 || reg.d2_msb > 218) ||
 	    (!(reg.d2_lsb == 0 || reg.d2_lsb == 64 || reg.d2_lsb == 128 ||
-		reg.d2_lsb == 192))) {
-		printk_ratelimited("%s: Temperature registers[%d %d %d %d] are out of range\n",
-				   __func__, reg.d1_msb, reg.d1_lsb, reg.d2_msb,
-				   reg.d2_lsb);
+	       reg.d2_lsb == 192))) {
+		printk_ratelimited(
+			"%s: Temperature registers[%d %d %d %d] are out of range\n",
+			__func__, reg.d1_msb, reg.d1_lsb, reg.d2_msb,
+			reg.d2_lsb);
 	}
 	dmeas = ((reg.dmeas_msb << 0x8) | reg.dmeas_lsb) >> 0x6;
 	d1 = ((reg.d1_msb << 0x8) | reg.d1_lsb) >> 0x6;
@@ -105,10 +105,9 @@ temp_retry:
 	if (d1 == d2)
 		temp_val = TEMP_INVALID;
 	else
-		temp_val = t1 + (((dmeas - d1) * (t2 - t1))/(d2 - d1));
+		temp_val = t1 + (((dmeas - d1) * (t2 - t1)) / (d2 - d1));
 
-	if (temp_val <= LOW_TEMP_THRESHOLD ||
-		temp_val >= HIGH_TEMP_THRESHOLD) {
+	if (temp_val <= LOW_TEMP_THRESHOLD || temp_val >= HIGH_TEMP_THRESHOLD) {
 		pr_debug("%s: T0: %d is out of range[%d, %d]\n", __func__,
 			 temp_val, LOW_TEMP_THRESHOLD, HIGH_TEMP_THRESHOLD);
 		if (retry--) {
@@ -120,8 +119,8 @@ temp_retry:
 
 	if (temp)
 		*temp = temp_val;
-	pr_debug("%s: t0 measured: %d dmeas = %d, d1 = %d, d2 = %d\n",
-		  __func__, temp_val, dmeas, d1, d2);
+	pr_debug("%s: t0 measured: %d dmeas = %d, d1 = %d, d2 = %d\n", __func__,
+		 temp_val, dmeas, d1, d2);
 	return ret;
 }
 EXPORT_SYMBOL(wsa881x_get_temp);
@@ -130,12 +129,11 @@ static struct thermal_zone_device_ops wsa881x_thermal_ops = {
 	.get_temp = wsa881x_get_temp,
 };
 
-
-static int wsa881x_pm_notify(struct notifier_block *nb,
-				unsigned long mode, void *_unused)
+static int wsa881x_pm_notify(struct notifier_block *nb, unsigned long mode,
+			     void *_unused)
 {
 	struct wsa881x_tz_priv *pdata =
-			container_of(nb, struct wsa881x_tz_priv, pm_nb);
+		container_of(nb, struct wsa881x_tz_priv, pm_nb);
 
 	switch (mode) {
 	case PM_SUSPEND_PREPARE:
@@ -156,9 +154,8 @@ int wsa881x_init_thermal(struct wsa881x_tz_priv *tz_pdata)
 		return -EINVAL;
 	}
 	/* Register with the thermal zone */
-	tz_dev = thermal_zone_device_register(tz_pdata->name,
-				0, 0, tz_pdata,
-				&wsa881x_thermal_ops, NULL, 0, 0);
+	tz_dev = thermal_zone_device_register(tz_pdata->name, 0, 0, tz_pdata,
+					      &wsa881x_thermal_ops, NULL, 0, 0);
 	if (IS_ERR(tz_dev)) {
 		pr_err("%s: thermal device register failed.\n", __func__);
 		return -EINVAL;

@@ -12,12 +12,12 @@
  * GNU General Public License for more details.
  */
 
-#include "dfc.h"
-#include "rmnet_qmi.h"
-#include "rmnet_ctl.h"
 #include "rmnet_qmap.h"
-#include "rmnet_module.h"
+#include "dfc.h"
+#include "rmnet_ctl.h"
 #include "rmnet_hook.h"
+#include "rmnet_module.h"
+#include "rmnet_qmi.h"
 
 static atomic_t qmap_txid;
 static void *rmnet_ctl_handle;

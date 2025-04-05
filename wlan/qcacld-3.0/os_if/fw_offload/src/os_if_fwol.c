@@ -21,10 +21,10 @@
  * DOC: defines driver functions interfacing with linux kernel
  */
 
-#include "wlan_cfg80211.h"
-#include "wlan_osif_request_manager.h"
-#include "wlan_fwol_ucfg_api.h"
 #include "os_if_fwol.h"
+#include "wlan_cfg80211.h"
+#include "wlan_fwol_ucfg_api.h"
+#include "wlan_osif_request_manager.h"
 
 #ifdef WLAN_FEATURE_ELNA
 #define WLAN_WAIT_TIME_GET_ELNA_BYPASS 1500
@@ -81,8 +81,7 @@ os_if_fwol_get_elna_bypass_callback(void *context,
 }
 
 int os_if_fwol_get_elna_bypass(struct wlan_objmgr_vdev *vdev,
-			       struct sk_buff *skb,
-			       const struct nlattr *attr)
+			       struct sk_buff *skb, const struct nlattr *attr)
 {
 	struct get_elna_bypass_request req;
 	void *cookie;
@@ -104,9 +103,8 @@ int os_if_fwol_get_elna_bypass(struct wlan_objmgr_vdev *vdev,
 	}
 	cookie = osif_request_cookie(request);
 
-	status = ucfg_fwol_get_elna_bypass(vdev, &req,
-					   os_if_fwol_get_elna_bypass_callback,
-					   cookie);
+	status = ucfg_fwol_get_elna_bypass(
+		vdev, &req, os_if_fwol_get_elna_bypass_callback, cookie);
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		osif_err("Failed to get ELNA BYPASS, %d", status);
 		ret = qdf_status_to_os_return(status);
@@ -134,7 +132,7 @@ end:
 
 #ifdef WLAN_SEND_DSCP_UP_MAP_TO_FW
 int os_if_fwol_send_dscp_up_map_to_fw(struct wlan_objmgr_vdev *vdev,
-				     uint32_t *dscp_to_up_map)
+				      uint32_t *dscp_to_up_map)
 {
 	QDF_STATUS status;
 
@@ -201,14 +199,12 @@ out:
 #endif /* WLAN_FEATURE_MDNS_OFFLOAD */
 
 #ifdef THERMAL_STATS_SUPPORT
-int os_if_fwol_get_thermal_stats_req(struct wlan_objmgr_psoc *psoc,
-				     enum thermal_stats_request_type req,
-				     void (*callback)(void *context,
-				     struct thermal_throttle_info *response),
-				     void *context)
+int os_if_fwol_get_thermal_stats_req(
+	struct wlan_objmgr_psoc *psoc, enum thermal_stats_request_type req,
+	void (*callback)(void *context, struct thermal_throttle_info *response),
+	void *context)
 {
 	QDF_STATUS status;
-
 
 	status = ucfg_fwol_send_get_thermal_stats_cmd(psoc, req, callback,
 						      context);

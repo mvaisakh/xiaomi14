@@ -75,18 +75,18 @@ static int ipa_test_example_test4(void *priv)
 
 /* Suite definition block */
 IPA_UT_DEFINE_SUITE_START(example, "Example suite",
-	ipa_test_example_suite_setup, ipa_test_example_teardown)
-{
-	IPA_UT_ADD_TEST(test1, "This is test number 1",
-		ipa_test_example_test1, false, IPA_HW_v1_0, IPA_HW_MAX),
+			  ipa_test_example_suite_setup,
+			  ipa_test_example_teardown){
+	IPA_UT_ADD_TEST(test1, "This is test number 1", ipa_test_example_test1,
+			false, IPA_HW_v1_0, IPA_HW_MAX),
 
-	IPA_UT_ADD_TEST(test2, "This is test number 2",
-		ipa_test_example_test2, false, IPA_HW_v1_0, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(test2, "This is test number 2", ipa_test_example_test2,
+			false, IPA_HW_v1_0, IPA_HW_MAX),
 
-	IPA_UT_ADD_TEST(test3, "This is test number 3",
-		ipa_test_example_test3, false, IPA_HW_v1_1, IPA_HW_v2_6),
+	IPA_UT_ADD_TEST(test3, "This is test number 3", ipa_test_example_test3,
+			false, IPA_HW_v1_1, IPA_HW_v2_6),
 
-	IPA_UT_ADD_TEST(test4, "This is test number 4",
-		ipa_test_example_test4, false, IPA_HW_v1_1, IPA_HW_MAX),
+	IPA_UT_ADD_TEST(test4, "This is test number 4", ipa_test_example_test4,
+			false, IPA_HW_v1_1, IPA_HW_MAX),
 
 } IPA_UT_DEFINE_SUITE_END(example);

@@ -23,8 +23,8 @@
 
 #include "qdf_dev.h"
 #include "qdf_mem.h"
-#include "qdf_util.h"
 #include "qdf_module.h"
+#include "qdf_util.h"
 #include <linux/irq.h>
 
 QDF_STATUS

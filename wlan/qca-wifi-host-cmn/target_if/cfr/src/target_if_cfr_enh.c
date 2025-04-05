@@ -17,21 +17,21 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <target_if_cfr.h>
-#include <wlan_tgt_def_config.h>
-#include <target_type.h>
+#include "cdp_txrx_ctrl.h"
 #include <hif_hw_version.h>
+#include <init_deinit_lmac.h>
 #include <target_if.h>
+#include <target_if_cfr.h>
+#include <target_if_cfr_enh.h>
+#include <target_if_direct_buf_rx_api.h>
+#include <target_type.h>
+#include <wlan_cfr_utils_api.h>
 #include <wlan_lmac_if_def.h>
 #include <wlan_osif_priv.h>
-#include <init_deinit_lmac.h>
-#include <wlan_cfr_utils_api.h>
-#include <target_if_direct_buf_rx_api.h>
-#include <target_if_cfr_enh.h>
-#include "cdp_txrx_ctrl.h"
 #include <wlan_reg_services_api.h>
+#include <wlan_tgt_def_config.h>
 
-#define CMN_NOISE_FLOOR       (-96)
+#define CMN_NOISE_FLOOR (-96)
 #define NUM_CHAINS_FW_TO_HOST(n) ((1 << ((n) + 1)) - 1)
 
 #define CFR_INVALID_SNR 0x80
@@ -46,20 +46,17 @@ static u_int32_t end_magic = 0xBEAFDEAD;
  * Return: signal strength in dBm
  */
 #if defined(QCA_WIFI_QCA6490) || defined(QCA_WIFI_KIWI)
-static inline
-u_int32_t snr_to_signal_strength(uint8_t snr)
+static inline u_int32_t snr_to_signal_strength(uint8_t snr)
 {
 	/* target onverts snr to dBm */
 	return snr;
 }
 #else
-static inline
-u_int32_t snr_to_signal_strength(uint8_t snr)
+static inline u_int32_t snr_to_signal_strength(uint8_t snr)
 {
 	/* SNR value 0x80 indicates -128dB which is not a valid value */
-	return (snr != CFR_INVALID_SNR) ?
-		(((int8_t)snr) + CMN_NOISE_FLOOR) :
-		((int8_t)snr);
+	return (snr != CFR_INVALID_SNR) ? (((int8_t)snr) + CMN_NOISE_FLOOR) :
+					  ((int8_t)snr);
 }
 #endif
 
@@ -72,10 +69,10 @@ u_int32_t snr_to_signal_strength(uint8_t snr)
  *
  * Return: none
  */
-static inline
-void target_if_snr_to_signal_strength(uint32_t target_type,
-				      struct enh_cfr_metadata *meta,
-				      struct cdp_rx_indication_ppdu *ppdu)
+static inline void
+target_if_snr_to_signal_strength(uint32_t target_type,
+				 struct enh_cfr_metadata *meta,
+				 struct cdp_rx_indication_ppdu *ppdu)
 {
 	uint8_t i;
 
@@ -99,12 +96,10 @@ void target_if_snr_to_signal_strength(uint32_t target_type,
  *
  * Return: look up table entry
  */
-static struct look_up_table *get_lut_entry(struct pdev_cfr *pcfr,
-					   int offset)
+static struct look_up_table *get_lut_entry(struct pdev_cfr *pcfr, int offset)
 {
 	if (offset >= pcfr->lut_num) {
-		cfr_err("Invalid offset %d, lut_num %d",
-			offset, pcfr->lut_num);
+		cfr_err("Invalid offset %d, lut_num %d", offset, pcfr->lut_num);
 		return NULL;
 	}
 
@@ -157,8 +152,7 @@ void target_if_cfr_dump_lut_enh(struct wlan_objmgr_pdev *pdev)
 		return;
 	}
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!pcfr) {
 		cfr_err("pdev object for CFR is null");
 		wlan_objmgr_pdev_release_ref(pdev, WLAN_CFR_ID);
@@ -173,8 +167,8 @@ void target_if_cfr_dump_lut_enh(struct wlan_objmgr_pdev *pdev)
 			continue;
 		if (lut->dbr_recv ^ lut->tx_recv) {
 			diff = (lut->dbr_tstamp > lut->txrx_tstamp) ?
-				(lut->dbr_tstamp - lut->txrx_tstamp) :
-				(lut->txrx_tstamp - lut->dbr_tstamp);
+				       (lut->dbr_tstamp - lut->txrx_tstamp) :
+				       (lut->txrx_tstamp - lut->dbr_tstamp);
 		}
 	}
 
@@ -203,8 +197,7 @@ static void cfr_free_pending_dbr_events(struct wlan_objmgr_pdev *pdev)
 		return;
 	}
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!pcfr) {
 		cfr_err("pdev object for CFR is null");
 		wlan_objmgr_pdev_release_ref(pdev, WLAN_CFR_ID);
@@ -219,8 +212,7 @@ static void cfr_free_pending_dbr_events(struct wlan_objmgr_pdev *pdev)
 		if (lut->dbr_recv && !lut->tx_recv &&
 		    (lut->dbr_tstamp < pcfr->last_success_tstamp)) {
 			target_if_dbr_buf_release(pdev, DBR_MODULE_CFR,
-						  lut->dbr_address,
-						  i, 0);
+						  lut->dbr_address, i, 0);
 			pcfr->flush_dbr_cnt++;
 			release_lut_entry_enh(pdev, lut);
 		}
@@ -250,26 +242,16 @@ static void dump_freeze_tlv(void *freeze_tlv, uint32_t cookie)
 		  "tsf_timestamp_47_32: 0x%04x tsf_timestamp_31_16: 0x%04x\n"
 		  "tsf_timestamp_15_0: 0x%04x user_index_or_user_mask_5_0: %d\n"
 		  "directed: %d\n",
-		  cookie,
-		  freeze->freeze,
-		  freeze->capture_reason,
-		  freeze->packet_type,
-		  freeze->packet_sub_type,
-		  freeze->sw_peer_id_valid,
-		  freeze->sw_peer_id,
-		  freeze->phy_ppdu_id,
-		  freeze->packet_ta_upper_16,
-		  freeze->packet_ta_mid_16,
-		  freeze->packet_ta_lower_16,
-		  freeze->packet_ra_upper_16,
-		  freeze->packet_ra_mid_16,
-		  freeze->packet_ra_lower_16,
-		  freeze->tsf_timestamp_63_48,
-		  freeze->tsf_timestamp_47_32,
-		  freeze->tsf_timestamp_31_16,
+		  cookie, freeze->freeze, freeze->capture_reason,
+		  freeze->packet_type, freeze->packet_sub_type,
+		  freeze->sw_peer_id_valid, freeze->sw_peer_id,
+		  freeze->phy_ppdu_id, freeze->packet_ta_upper_16,
+		  freeze->packet_ta_mid_16, freeze->packet_ta_lower_16,
+		  freeze->packet_ra_upper_16, freeze->packet_ra_mid_16,
+		  freeze->packet_ra_lower_16, freeze->tsf_timestamp_63_48,
+		  freeze->tsf_timestamp_47_32, freeze->tsf_timestamp_31_16,
 		  freeze->tsf_timestamp_15_0,
-		  freeze->user_index_or_user_mask_5_0,
-		  freeze->directed);
+		  freeze->user_index_or_user_mask_5_0, freeze->directed);
 }
 
 /**
@@ -298,26 +280,17 @@ static void dump_freeze_tlv_v3(void *freeze_tlv, uint32_t cookie)
 		  "user_index_or_user_mask_15_0: 0x%04x\n"
 		  "user_mask_31_16: 0x%04x\n"
 		  "directed: %d\n",
-		  cookie,
-		  freeze->freeze,
-		  freeze->capture_reason,
-		  freeze->packet_type,
-		  freeze->packet_sub_type,
-		  freeze->sw_peer_id_valid,
-		  freeze->sw_peer_id,
-		  freeze->phy_ppdu_id,
-		  freeze->packet_ta_upper_16,
-		  freeze->packet_ta_mid_16,
-		  freeze->packet_ta_lower_16,
-		  freeze->packet_ra_upper_16,
-		  freeze->packet_ra_mid_16,
+		  cookie, freeze->freeze, freeze->capture_reason,
+		  freeze->packet_type, freeze->packet_sub_type,
+		  freeze->sw_peer_id_valid, freeze->sw_peer_id,
+		  freeze->phy_ppdu_id, freeze->packet_ta_upper_16,
+		  freeze->packet_ta_mid_16, freeze->packet_ta_lower_16,
+		  freeze->packet_ra_upper_16, freeze->packet_ra_mid_16,
 		  freeze->packet_ra_lower_16,
 		  freeze->tsf_63_48_or_user_mask_36_32,
-		  freeze->tsf_timestamp_47_32,
-		  freeze->tsf_timestamp_31_16,
+		  freeze->tsf_timestamp_47_32, freeze->tsf_timestamp_31_16,
 		  freeze->tsf_timestamp_15_0,
-		  freeze->user_index_or_user_mask_15_0,
-		  freeze->user_mask_31_16,
+		  freeze->user_index_or_user_mask_15_0, freeze->user_mask_31_16,
 		  freeze->directed);
 }
 
@@ -348,28 +321,17 @@ static void dump_freeze_tlv_v5(void *freeze_tlv, uint32_t cookie)
 		  "directed: %d\n"
 		  "user_mask_21_6: 0x%04x\n"
 		  "user_mask_36_22: 0x%04x\n",
-		  cookie,
-		  freeze->freeze,
-		  freeze->capture_reason,
-		  freeze->packet_type,
-		  freeze->packet_sub_type,
-		  freeze->sw_peer_id_valid,
-		  freeze->sw_peer_id,
-		  freeze->phy_ppdu_id,
-		  freeze->packet_ta_lower_16,
-		  freeze->packet_ta_mid_16,
-		  freeze->packet_ta_upper_16,
-		  freeze->packet_ra_lower_16,
-		  freeze->packet_ra_mid_16,
-		  freeze->packet_ra_upper_16,
-		  freeze->tsf_timestamp_15_0,
-		  freeze->tsf_timestamp_31_16,
-		  freeze->tsf_timestamp_47_32,
+		  cookie, freeze->freeze, freeze->capture_reason,
+		  freeze->packet_type, freeze->packet_sub_type,
+		  freeze->sw_peer_id_valid, freeze->sw_peer_id,
+		  freeze->phy_ppdu_id, freeze->packet_ta_lower_16,
+		  freeze->packet_ta_mid_16, freeze->packet_ta_upper_16,
+		  freeze->packet_ra_lower_16, freeze->packet_ra_mid_16,
+		  freeze->packet_ra_upper_16, freeze->tsf_timestamp_15_0,
+		  freeze->tsf_timestamp_31_16, freeze->tsf_timestamp_47_32,
 		  freeze->tsf_timestamp_63_48,
-		  freeze->user_index_or_user_mask_5_0,
-		  freeze->directed,
-		  freeze->user_mask_21_6,
-		  freeze->user_mask_36_22);
+		  freeze->user_index_or_user_mask_5_0, freeze->directed,
+		  freeze->user_mask_21_6, freeze->user_mask_36_22);
 }
 
 /**
@@ -380,15 +342,14 @@ static void dump_freeze_tlv_v5(void *freeze_tlv, uint32_t cookie)
  *
  * Return: none
  */
-static void dump_mu_rx_info(void *mu_rx_user_info,
-			    uint8_t mu_rx_num_users,
+static void dump_mu_rx_info(void *mu_rx_user_info, uint8_t mu_rx_num_users,
 			    uint32_t cookie)
 {
 	uint8_t i;
 	struct uplink_user_setup_info *ul_mu_user_info =
 		(struct uplink_user_setup_info *)mu_rx_user_info;
 
-	for (i = 0 ; i < mu_rx_num_users; i++) {
+	for (i = 0; i < mu_rx_num_users; i++) {
 		cfr_debug("<DBRCOMP><MU><%u>\n"
 			  "<user_id:%d>\n"
 			  "bw_info_valid = %d\n"
@@ -400,16 +361,12 @@ static void dump_mu_rx_info(void *mu_rx_user_info,
 			  "sta_dcm = %d\n"
 			  "sta_coding = %d\n"
 			  "ru_start_index = %d\n",
-			  cookie,
-			  i,
-			  ul_mu_user_info->bw_info_valid,
+			  cookie, i, ul_mu_user_info->bw_info_valid,
 			  ul_mu_user_info->uplink_receive_type,
 			  ul_mu_user_info->uplink_11ax_mcs,
-			  ul_mu_user_info->ru_width,
-			  ul_mu_user_info->nss,
+			  ul_mu_user_info->ru_width, ul_mu_user_info->nss,
 			  ul_mu_user_info->stream_offset,
-			  ul_mu_user_info->sta_dcm,
-			  ul_mu_user_info->sta_coding,
+			  ul_mu_user_info->sta_dcm, ul_mu_user_info->sta_coding,
 			  ul_mu_user_info->ru_start_index);
 		ul_mu_user_info += sizeof(struct uplink_user_setup_info);
 	}
@@ -423,15 +380,14 @@ static void dump_mu_rx_info(void *mu_rx_user_info,
  *
  * Return: none
  */
-static void dump_mu_rx_info_v2(void *mu_rx_user_info,
-			       uint8_t mu_rx_num_users,
+static void dump_mu_rx_info_v2(void *mu_rx_user_info, uint8_t mu_rx_num_users,
 			       uint32_t cookie)
 {
 	uint8_t i;
 	struct uplink_user_setup_info_v2 *ul_mu_user_info =
 		(struct uplink_user_setup_info_v2 *)mu_rx_user_info;
 
-	for (i = 0 ; i < mu_rx_num_users; i++) {
+	for (i = 0; i < mu_rx_num_users; i++) {
 		cfr_debug("<DBRCOMP><MU><%u>\n"
 			  "<user_id:%d>\n"
 			  "bw_info_valid = %d\n"
@@ -449,15 +405,11 @@ static void dump_mu_rx_info_v2(void *mu_rx_user_info,
 			  "ru_start_index_80_1 = %d\n"
 			  "ru_start_index_80_2 = %d\n"
 			  "ru_start_index_80_3 = %d\n",
-			  cookie,
-			  i,
-			  ul_mu_user_info->bw_info_valid,
+			  cookie, i, ul_mu_user_info->bw_info_valid,
 			  ul_mu_user_info->uplink_receive_type,
 			  ul_mu_user_info->uplink_11ax_mcs,
-			  ul_mu_user_info->nss,
-			  ul_mu_user_info->stream_offset,
-			  ul_mu_user_info->sta_dcm,
-			  ul_mu_user_info->sta_coding,
+			  ul_mu_user_info->nss, ul_mu_user_info->stream_offset,
+			  ul_mu_user_info->sta_dcm, ul_mu_user_info->sta_coding,
 			  ul_mu_user_info->ru_type_80_0,
 			  ul_mu_user_info->ru_type_80_1,
 			  ul_mu_user_info->ru_type_80_2,
@@ -499,35 +451,21 @@ static void dump_metadata(struct csi_cfr_header *header, uint32_t cookie)
 		  "length = %d\n"
 		  "is_mu_ppdu = %d\n"
 		  "num_users = %d\n",
-		cookie,
-		header->cmn.start_magic_num,
-		header->cmn.vendorid,
-		header->cmn.cfr_metadata_version,
-		header->cmn.cfr_data_version,
-		header->cmn.cfr_metadata_len,
-		header->cmn.chip_type,
-		header->cmn.pltform_type,
-		meta->status,
-		meta->capture_bw,
-		meta->channel_bw,
-		meta->phy_mode,
-		meta->prim20_chan,
-		meta->center_freq1,
-		meta->center_freq2,
-		meta->capture_mode,
-		meta->capture_type,
-		meta->sts_count,
-		meta->num_rx_chain,
-		meta->timestamp,
-		meta->length,
-		meta->is_mu_ppdu,
-		meta->num_mu_users);
+		  cookie, header->cmn.start_magic_num, header->cmn.vendorid,
+		  header->cmn.cfr_metadata_version,
+		  header->cmn.cfr_data_version, header->cmn.cfr_metadata_len,
+		  header->cmn.chip_type, header->cmn.pltform_type, meta->status,
+		  meta->capture_bw, meta->channel_bw, meta->phy_mode,
+		  meta->prim20_chan, meta->center_freq1, meta->center_freq2,
+		  meta->capture_mode, meta->capture_type, meta->sts_count,
+		  meta->num_rx_chain, meta->timestamp, meta->length,
+		  meta->is_mu_ppdu, meta->num_mu_users);
 
 	if (meta->is_mu_ppdu) {
 		for (user_id = 0; user_id < meta->num_mu_users; user_id++) {
 			usermac = meta->peer_addr.mu_peer_addr[user_id];
-			cfr_debug("peermac[%d]: " QDF_MAC_ADDR_FMT,
-				  user_id, QDF_MAC_ADDR_REF(usermac));
+			cfr_debug("peermac[%d]: " QDF_MAC_ADDR_FMT, user_id,
+				  QDF_MAC_ADDR_REF(usermac));
 		}
 	} else {
 		cfr_debug("peermac: " QDF_MAC_ADDR_FMT,
@@ -535,14 +473,12 @@ static void dump_metadata(struct csi_cfr_header *header, uint32_t cookie)
 	}
 
 	for (chain_id = 0; chain_id < HOST_MAX_CHAINS; chain_id++) {
-		cfr_debug("chain_rssi[%d] = %d\n",
-			  chain_id,
+		cfr_debug("chain_rssi[%d] = %d\n", chain_id,
 			  meta->chain_rssi[chain_id]);
 	}
 
 	for (chain_id = 0; chain_id < HOST_MAX_CHAINS; chain_id++) {
-		cfr_debug("chain_phase[%d] = %d\n",
-			  chain_id,
+		cfr_debug("chain_phase[%d] = %d\n", chain_id,
 			  meta->chain_phase[chain_id]);
 	}
 
@@ -552,11 +488,9 @@ static void dump_metadata(struct csi_cfr_header *header, uint32_t cookie)
 		cfr_debug("rx_start_ts = %u\n", meta->rx_start_ts);
 
 		for (chain_id = 0; chain_id < HOST_MAX_CHAINS; chain_id++) {
-			cfr_debug("agc_gain[%d] = %d\n",
-				  chain_id,
+			cfr_debug("agc_gain[%d] = %d\n", chain_id,
 				  meta->agc_gain[chain_id]);
-			cfr_debug("agc_gain_tbl_idx[%d] = %d\n",
-				  chain_id,
+			cfr_debug("agc_gain_tbl_idx[%d] = %d\n", chain_id,
 				  meta->agc_gain_tbl_index[chain_id]);
 		}
 
@@ -594,28 +528,19 @@ static void dump_enh_dma_hdr(struct whal_cfir_enhanced_hdr *dma_hdr,
 				  "mu_rx_num_users: %d decimation_factor: %d\n"
 				  "freeze_tlv_version: %d\n"
 				  "he_ltf_type: %u ext_preamble_type = %u\n",
-				  cookie,
-				  dma_hdr->tag,
-				  dma_hdr->length,
-				  dma_hdr->upload_done,
-				  dma_hdr->capture_type,
-				  dma_hdr->preamble_type,
-				  dma_hdr->nss,
-				  dma_hdr->num_chains,
-				  dma_hdr->upload_pkt_bw,
+				  cookie, dma_hdr->tag, dma_hdr->length,
+				  dma_hdr->upload_done, dma_hdr->capture_type,
+				  dma_hdr->preamble_type, dma_hdr->nss,
+				  dma_hdr->num_chains, dma_hdr->upload_pkt_bw,
 				  dma_hdr->sw_peer_id_valid,
-				  dma_hdr->sw_peer_id,
-				  dma_hdr->phy_ppdu_id,
-				  dma_hdr->total_bytes,
-				  dma_hdr->header_version,
-				  dma_hdr->target_id,
-				  dma_hdr->cfr_fmt,
+				  dma_hdr->sw_peer_id, dma_hdr->phy_ppdu_id,
+				  dma_hdr->total_bytes, dma_hdr->header_version,
+				  dma_hdr->target_id, dma_hdr->cfr_fmt,
 				  dma_hdr->mu_rx_data_incl,
 				  dma_hdr->freeze_data_incl,
 				  dma_hdr->mu_rx_num_users,
 				  dma_hdr->decimation_factor,
-				  dma_hdr->freeze_tlv_version,
-				  dma_hdr->rsvd3,
+				  dma_hdr->freeze_tlv_version, dma_hdr->rsvd3,
 				  dma_hdr->rsvd4);
 
 		} else {
@@ -629,22 +554,14 @@ static void dump_enh_dma_hdr(struct whal_cfir_enhanced_hdr *dma_hdr,
 				  "mu_rx_data_incl: %d freeze_data_incl: %d\n"
 				  "mu_rx_num_users: %d decimation_factor: %d\n"
 				  "freeze_tlv_version: %d\n",
-				  cookie,
-				  dma_hdr->tag,
-				  dma_hdr->length,
-				  dma_hdr->upload_done,
-				  dma_hdr->capture_type,
-				  dma_hdr->preamble_type,
-				  dma_hdr->nss,
-				  dma_hdr->num_chains,
-				  dma_hdr->upload_pkt_bw,
+				  cookie, dma_hdr->tag, dma_hdr->length,
+				  dma_hdr->upload_done, dma_hdr->capture_type,
+				  dma_hdr->preamble_type, dma_hdr->nss,
+				  dma_hdr->num_chains, dma_hdr->upload_pkt_bw,
 				  dma_hdr->sw_peer_id_valid,
-				  dma_hdr->sw_peer_id,
-				  dma_hdr->phy_ppdu_id,
-				  dma_hdr->total_bytes,
-				  dma_hdr->header_version,
-				  dma_hdr->target_id,
-				  dma_hdr->cfr_fmt,
+				  dma_hdr->sw_peer_id, dma_hdr->phy_ppdu_id,
+				  dma_hdr->total_bytes, dma_hdr->header_version,
+				  dma_hdr->target_id, dma_hdr->cfr_fmt,
 				  dma_hdr->mu_rx_data_incl,
 				  dma_hdr->freeze_data_incl,
 				  dma_hdr->mu_rx_num_users,
@@ -654,10 +571,10 @@ static void dump_enh_dma_hdr(struct whal_cfir_enhanced_hdr *dma_hdr,
 
 		if (dma_hdr->freeze_data_incl) {
 			if (dma_hdr->freeze_tlv_version ==
-					MACRX_FREEZE_TLV_VERSION_3)
+			    MACRX_FREEZE_TLV_VERSION_3)
 				dump_freeze_tlv_v3(freeze_tlv, cookie);
 			else if (dma_hdr->freeze_tlv_version ==
-					MACRX_FREEZE_TLV_VERSION_5)
+				 MACRX_FREEZE_TLV_VERSION_5)
 				dump_freeze_tlv_v5(freeze_tlv, cookie);
 			else
 				dump_freeze_tlv(freeze_tlv, cookie);
@@ -667,12 +584,10 @@ static void dump_enh_dma_hdr(struct whal_cfir_enhanced_hdr *dma_hdr,
 		    (dma_hdr->freeze_tlv_version ==
 		     MACRX_FREEZE_TLV_VERSION_5)) {
 			dump_mu_rx_info_v2(mu_rx_user_info,
-					   dma_hdr->mu_rx_num_users,
-					   cookie);
+					   dma_hdr->mu_rx_num_users, cookie);
 		} else if (dma_hdr->mu_rx_data_incl) {
 			dump_mu_rx_info(mu_rx_user_info,
-					dma_hdr->mu_rx_num_users,
-					cookie);
+					dma_hdr->mu_rx_num_users, cookie);
 		}
 	} else {
 		cfr_err("<DBRCOMP><%u>\n"
@@ -684,25 +599,15 @@ static void dump_enh_dma_hdr(struct whal_cfir_enhanced_hdr *dma_hdr,
 			"mu_rx_data_incl: %d freeze_data_incl: %d\n"
 			"mu_rx_num_users: %d decimation_factor: %d\n"
 			"freeze_tlv_version: %d\n",
-			cookie,
-			dma_hdr->tag,
-			dma_hdr->length,
-			dma_hdr->upload_done,
-			dma_hdr->capture_type,
-			dma_hdr->preamble_type,
-			dma_hdr->nss,
-			dma_hdr->num_chains,
-			dma_hdr->upload_pkt_bw,
-			dma_hdr->sw_peer_id_valid,
-			dma_hdr->sw_peer_id,
-			dma_hdr->phy_ppdu_id,
-			dma_hdr->total_bytes,
-			dma_hdr->header_version,
-			dma_hdr->target_id,
-			dma_hdr->cfr_fmt,
-			dma_hdr->mu_rx_data_incl,
-			dma_hdr->freeze_data_incl,
-			dma_hdr->mu_rx_num_users,
+			cookie, dma_hdr->tag, dma_hdr->length,
+			dma_hdr->upload_done, dma_hdr->capture_type,
+			dma_hdr->preamble_type, dma_hdr->nss,
+			dma_hdr->num_chains, dma_hdr->upload_pkt_bw,
+			dma_hdr->sw_peer_id_valid, dma_hdr->sw_peer_id,
+			dma_hdr->phy_ppdu_id, dma_hdr->total_bytes,
+			dma_hdr->header_version, dma_hdr->target_id,
+			dma_hdr->cfr_fmt, dma_hdr->mu_rx_data_incl,
+			dma_hdr->freeze_data_incl, dma_hdr->mu_rx_num_users,
 			dma_hdr->decimation_factor,
 			dma_hdr->freeze_tlv_version);
 	}
@@ -715,13 +620,12 @@ static void dump_enh_dma_hdr(struct whal_cfir_enhanced_hdr *dma_hdr,
  *
  * Return: none
  */
-static void
-extract_peer_mac_from_freeze_tlv(void *freeze_tlv, uint8_t *peermac)
+static void extract_peer_mac_from_freeze_tlv(void *freeze_tlv, uint8_t *peermac)
 {
 	/*
-	 * Packet_ta fields position is common between freeze tlv v1
-	 * and v2, hence typecasting to v1 is also fine
-	 */
+   * Packet_ta fields position is common between freeze tlv v1
+   * and v2, hence typecasting to v1 is also fine
+   */
 	struct macrx_freeze_capture_channel *freeze =
 		(struct macrx_freeze_capture_channel *)freeze_tlv;
 
@@ -799,8 +703,7 @@ static QDF_STATUS check_dma_length(struct look_up_table *lut,
  *	- STATUS_STREAM_AND_RELEASE
  */
 static int correlate_and_relay_enh(struct wlan_objmgr_pdev *pdev,
-				   uint32_t cookie,
-				   struct look_up_table *lut,
+				   uint32_t cookie, struct look_up_table *lut,
 				   uint8_t module_id)
 {
 	struct pdev_cfr *pcfr;
@@ -816,8 +719,7 @@ static int correlate_and_relay_enh(struct wlan_objmgr_pdev *pdev,
 		goto done;
 	}
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (qdf_unlikely(!psoc)) {
@@ -844,27 +746,29 @@ static int correlate_and_relay_enh(struct wlan_objmgr_pdev *pdev,
 				diff = lut->dbr_tstamp - lut->txrx_tstamp;
 				cfr_debug("<CORRELATE><%u>: "
 					  "TXRX evt -> DBR evt"
-					  "(delay = %llu ms)\n", cookie, diff);
+					  "(delay = %llu ms)\n",
+					  cookie, diff);
 			} else if (lut->txrx_tstamp > lut->dbr_tstamp) {
 				diff = lut->txrx_tstamp - lut->dbr_tstamp;
 				cfr_debug("<CORRELATE><%u>: "
 					  "DBR evt -> TXRX evt"
-					  "(delay = %llu ms)\n", cookie, diff);
+					  "(delay = %llu ms)\n",
+					  cookie, diff);
 			}
 
 			/*
-			 * Flush pending dbr events, if newer PPDU TLV is
-			 * received
-			 */
+       * Flush pending dbr events, if newer PPDU TLV is
+       * received
+       */
 			cfr_free_pending_dbr_events(pdev);
 
 			if (check_dma_length(lut, target_type) ==
-					QDF_STATUS_SUCCESS) {
+			    QDF_STATUS_SUCCESS) {
 				pcfr->release_cnt++;
 				cfr_debug("<CORRELATE><%u>:Stream and release "
 					  "CFR data for "
-					  "ppdu_id:0x%04x\n", cookie,
-					  lut->tx_ppdu_id);
+					  "ppdu_id:0x%04x\n",
+					  cookie, lut->tx_ppdu_id);
 				status = STATUS_STREAM_AND_RELEASE;
 				goto done;
 			} else {
@@ -874,24 +778,22 @@ static int correlate_and_relay_enh(struct wlan_objmgr_pdev *pdev,
 					"header_length_words = %d "
 					"cfr_payload_length_bytes = %d "
 					"ppdu_id:0x%04x\n",
-					cookie,
-					lut->header_length,
-					lut->payload_length,
-					lut->tx_ppdu_id);
+					cookie, lut->header_length,
+					lut->payload_length, lut->tx_ppdu_id);
 				/*
-				 * Assert here as length exceeding the allowed
-				 * limit would anyway manifest as random crash
-				 */
+         * Assert here as length exceeding the allowed
+         * limit would anyway manifest as random crash
+         */
 				QDF_ASSERT(0);
 				status = STATUS_ERROR;
 				goto done;
 			}
 		} else {
 			/*
-			 * When there is a ppdu id mismatch, discard the TXRX
-			 * event since multiple PPDUs are likely to have same
-			 * dma addr, due to ucode aborts
-			 */
+       * When there is a ppdu id mismatch, discard the TXRX
+       * event since multiple PPDUs are likely to have same
+       * dma addr, due to ucode aborts
+       */
 			cfr_debug("Received new dbr event for same "
 				  "cookie %u",
 				  cookie);
@@ -917,9 +819,9 @@ done:
  * Return: true if 11be supported, false otherwise
  */
 #ifdef WLAN_FEATURE_11BE
-static inline
-bool target_if_cfr_get_11be_support_flag(uint8_t pdev_id,
-					 struct target_psoc_info *tgt_hdl)
+static inline bool
+target_if_cfr_get_11be_support_flag(uint8_t pdev_id,
+				    struct target_psoc_info *tgt_hdl)
 {
 	struct wlan_psoc_host_mac_phy_caps *mac_phy_cap_arr, *mac_phy_cap;
 
@@ -935,17 +837,17 @@ bool target_if_cfr_get_11be_support_flag(uint8_t pdev_id,
 	return false;
 }
 #else
-static inline
-bool target_if_cfr_get_11be_support_flag(uint8_t pdev_id,
-					 struct target_psoc_info *tgt_hdl)
+static inline bool
+target_if_cfr_get_11be_support_flag(uint8_t pdev_id,
+				    struct target_psoc_info *tgt_hdl)
 {
 	return false;
 }
 #endif
 
 #ifdef WLAN_RCC_ENHANCED_AOA_SUPPORT
-static inline
-bool is_valid_gain_table_idx(uint16_t tbl_idx, struct pdev_cfr *pcfr)
+static inline bool is_valid_gain_table_idx(uint16_t tbl_idx,
+					   struct pdev_cfr *pcfr)
 {
 	/* if default gain table return true */
 	if (!tbl_idx)
@@ -961,10 +863,9 @@ bool is_valid_gain_table_idx(uint16_t tbl_idx, struct pdev_cfr *pcfr)
 	return false;
 }
 
-static inline
-uint16_t get_max_agc_gain(struct wlan_objmgr_vdev *vdev,
-			  uint16_t tbl_idx, struct pdev_cfr *pcfr,
-			  bool supports_11be)
+static inline uint16_t get_max_agc_gain(struct wlan_objmgr_vdev *vdev,
+					uint16_t tbl_idx, struct pdev_cfr *pcfr,
+					bool supports_11be)
 {
 	uint16_t *max_agc_gain_per_tbl = NULL;
 	struct wlan_channel *bss_chan;
@@ -989,11 +890,10 @@ uint16_t get_max_agc_gain(struct wlan_objmgr_vdev *vdev,
 		return INVALID_AGC_GAIN;
 }
 
-static
-void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
-			      struct pdev_cfr *pcfr,
-			      struct enh_cfr_metadata *meta,
-			      bool invalid_gain_table_idx)
+static void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
+				     struct pdev_cfr *pcfr,
+				     struct enh_cfr_metadata *meta,
+				     bool invalid_gain_table_idx)
 {
 	uint16_t *phase_array, *gain_array;
 	uint16_t phase_delta;
@@ -1002,11 +902,11 @@ void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
 
 	if (invalid_gain_table_idx || !pcfr->is_enh_aoa_data) {
 		/**
-		 * When AoA is enabled but invalid gain table index is reported
-		 * by HW, it indicates the AoA result is not reliable. Hence,
-		 * set the chain_phase to 0xFFFF indicating an error.
-		 * Set invalid phase when enhanced aoa capability is not set.
-		 */
+     * When AoA is enabled but invalid gain table index is reported
+     * by HW, it indicates the AoA result is not reliable. Hence,
+     * set the chain_phase to 0xFFFF indicating an error.
+     * Set invalid phase when enhanced aoa capability is not set.
+     */
 		for (chain = 0; chain < pcfr->max_aoa_chains; chain++)
 			meta->chain_phase[chain] = INVALID_PHASE_DELTA;
 
@@ -1015,8 +915,8 @@ void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
 
 	for (chain = 0; chain < pcfr->max_aoa_chains; chain++) {
 		rf_chain = (pcfr->xbar_config) ?
-			    ((pcfr->xbar_config >> (3 * chain)) & 0x07) :
-			    chain;
+				   ((pcfr->xbar_config >> (3 * chain)) & 0x07) :
+				   chain;
 		data_idx = (rf_chain * pcfr->max_entries_all_table);
 
 		phase_array = &pcfr->enh_phase_delta_array[data_idx];
@@ -1026,21 +926,21 @@ void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
 		stop_ent = start_ent + pcfr->max_bdf_entries_per_tbl[tbl_idx];
 
 		/**
-		 * if default gain table exceeds max_agc_gain, chain_phase needs
-		 * to be considered as 0. Remaining gain tables would have a
-		 * phase delta assigned with max agc gain as well
-		 */
+     * if default gain table exceeds max_agc_gain, chain_phase needs
+     * to be considered as 0. Remaining gain tables would have a
+     * phase delta assigned with max agc gain as well
+     */
 		if (!tbl_idx && (meta->agc_gain[chain] ==
-				get_max_agc_gain(vdev, tbl_idx, pcfr, true))) {
+				 get_max_agc_gain(vdev, tbl_idx, pcfr, true))) {
 			phase_delta = 0;
 			meta->chain_phase[chain] =
-				(pcfr->ibf_cal_val[rf_chain] +
-				 phase_delta) & 0x3FF;
+				(pcfr->ibf_cal_val[rf_chain] + phase_delta) &
+				0x3FF;
 			continue;
 		}
 
-		for (grp_stp_idx = start_ent, found = 0;
-		     grp_stp_idx < stop_ent; grp_stp_idx++) {
+		for (grp_stp_idx = start_ent, found = 0; grp_stp_idx < stop_ent;
+		     grp_stp_idx++) {
 			if (meta->agc_gain[chain] <= gain_array[grp_stp_idx]) {
 				phase_delta = phase_array[grp_stp_idx];
 				found = 1;
@@ -1051,13 +951,13 @@ void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
 		if ((!found) && (grp_stp_idx >= stop_ent))
 			phase_delta = 0;
 
-		meta->chain_phase[chain] = (pcfr->ibf_cal_val[rf_chain] +
-					    phase_delta) & 0x3FF;
+		meta->chain_phase[chain] =
+			(pcfr->ibf_cal_val[rf_chain] + phase_delta) & 0x3FF;
 	}
 }
 #else
-static inline
-bool is_valid_gain_table_idx(uint16_t tbl_idx, struct pdev_cfr *pcfr)
+static inline bool is_valid_gain_table_idx(uint16_t tbl_idx,
+					   struct pdev_cfr *pcfr)
 {
 	/* if default gain table return true */
 	if (!tbl_idx)
@@ -1066,10 +966,9 @@ bool is_valid_gain_table_idx(uint16_t tbl_idx, struct pdev_cfr *pcfr)
 	return false;
 }
 
-static inline
-uint16_t get_max_agc_gain(struct wlan_objmgr_vdev *vdev,
-			  uint16_t tbl_idx, struct pdev_cfr *pcfr,
-			  bool supports_11be)
+static inline uint16_t get_max_agc_gain(struct wlan_objmgr_vdev *vdev,
+					uint16_t tbl_idx, struct pdev_cfr *pcfr,
+					bool supports_11be)
 {
 	if (!supports_11be)
 		return MAX_AGC_GAIN;
@@ -1077,11 +976,10 @@ uint16_t get_max_agc_gain(struct wlan_objmgr_vdev *vdev,
 	return INVALID_AGC_GAIN;
 }
 
-static
-void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
-			      struct pdev_cfr *pcfr,
-			      struct enh_cfr_metadata *meta,
-			      bool invalid_gain_table_idx)
+static void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
+				     struct pdev_cfr *pcfr,
+				     struct enh_cfr_metadata *meta,
+				     bool invalid_gain_table_idx)
 {
 	uint8_t chain;
 
@@ -1091,21 +989,20 @@ void populate_enh_chain_phase(struct wlan_objmgr_vdev *vdev,
 }
 #endif /* WLAN_RCC_ENHANCED_AOA_SUPPORT */
 
-static
-void populate_chain_phase(struct wlan_objmgr_vdev *vdev,
-			  struct pdev_cfr *pcfr,
-			  struct enh_cfr_metadata *meta,
-			  bool invalid_gain_table_idx)
+static void populate_chain_phase(struct wlan_objmgr_vdev *vdev,
+				 struct pdev_cfr *pcfr,
+				 struct enh_cfr_metadata *meta,
+				 bool invalid_gain_table_idx)
 {
 	uint8_t i;
 	uint16_t gain, pdelta;
 
 	if (invalid_gain_table_idx) {
 		/**
-		 * When AoA is enabled but invalid gain table index is reported
-		 * by HW, it indicates the AoA result is not reliable. Hence,
-		 * set the chain_phase to 0xFFFF indicating an error.
-		 */
+     * When AoA is enabled but invalid gain table index is reported
+     * by HW, it indicates the AoA result is not reliable. Hence,
+     * set the chain_phase to 0xFFFF indicating an error.
+     */
 		for (i = 0; i < pcfr->max_aoa_chains; i++) {
 			if (wlan_vdev_mlme_is_special_vdev(vdev) &&
 			    i == CHAIN_SHIFT_INDEX_PINE_SCAN) {
@@ -1119,31 +1016,28 @@ void populate_chain_phase(struct wlan_objmgr_vdev *vdev,
 
 	for (i = 0; i < pcfr->max_aoa_chains; i++) {
 		/**
-		 * phase delta stored in reverse order by FW.
-		 * Hence, index accordingly
-		 */
+     * phase delta stored in reverse order by FW.
+     * Hence, index accordingly
+     */
 		gain = meta->agc_gain[i];
 		if (gain < MAX_AGC_GAIN) {
-			pdelta = pcfr->phase_delta[i][MAX_AGC_GAIN -
-				1 -
-				gain];
+			pdelta = pcfr->phase_delta[i][MAX_AGC_GAIN - 1 - gain];
 		} else {
 			/* populate 0 for last gain index */
 			pdelta = 0;
 		}
 		/**
-		 * FW sets 0xFFFF as invalid phase delta in
-		 * invalid cases. Retain same in HOST as well.
-		 * In case of valid phase, add the ibf cal value
-		 * to the delta & ensure the derived phase value
-		 * is in the range of 0 - 1024 indicating 0 - 360
-		 * degrees
-		 */
+     * FW sets 0xFFFF as invalid phase delta in
+     * invalid cases. Retain same in HOST as well.
+     * In case of valid phase, add the ibf cal value
+     * to the delta & ensure the derived phase value
+     * is in the range of 0 - 1024 indicating 0 - 360
+     * degrees
+     */
 		if (pdelta == INVALID_PHASE_DELTA) {
 			if (wlan_vdev_mlme_is_special_vdev(vdev) &&
 			    i == CHAIN_SHIFT_INDEX_PINE_SCAN) {
-				meta->chain_phase[i - 1] =
-					INVALID_PHASE_DELTA;
+				meta->chain_phase[i - 1] = INVALID_PHASE_DELTA;
 				break;
 			}
 			meta->chain_phase[i] = INVALID_PHASE_DELTA;
@@ -1151,12 +1045,12 @@ void populate_chain_phase(struct wlan_objmgr_vdev *vdev,
 			if (wlan_vdev_mlme_is_special_vdev(vdev) &&
 			    i == CHAIN_SHIFT_INDEX_PINE_SCAN) {
 				meta->chain_phase[i - 1] =
-					((pcfr->ibf_cal_val[i] +
-					  pdelta) & 0x3FF);
+					((pcfr->ibf_cal_val[i] + pdelta) &
+					 0x3FF);
 				break;
 			}
-			meta->chain_phase[i] = ((pcfr->ibf_cal_val[i] +
-						pdelta) & 0x3FF);
+			meta->chain_phase[i] =
+				((pcfr->ibf_cal_val[i] + pdelta) & 0x3FF);
 		}
 	}
 }
@@ -1213,8 +1107,7 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 		return;
 	}
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (qdf_unlikely(!pcfr)) {
 		cfr_err("pdev object for CFR is NULL");
 		goto relref;
@@ -1255,8 +1148,8 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 		    ((uint64_t)buf_addr_extn << 32));
 
 	srng_id = pcfr->rcc_param.srng_id;
-	if (target_if_dbr_cookie_lookup(pdev, DBR_MODULE_CFR, buf_addr,
-					&cookie, srng_id)) {
+	if (target_if_dbr_cookie_lookup(pdev, DBR_MODULE_CFR, buf_addr, &cookie,
+					srng_id)) {
 		cfr_debug("Cookie lookup failure for addr: 0x%pK",
 			  (void *)((uintptr_t)buf_addr));
 		goto relref;
@@ -1269,9 +1162,7 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 		  "<WIFIPHYRX_PKT_END_E> RTT_CHE_BUFFER_POINTER_LOW32 = %x\n"
 		  "<WIFIPHYRX_PKT_END_E> RTT_CHE_BUFFER_POINTER_HIGH8 = %x\n"
 		  "<WIFIPHYRX_PKT_END_E> CHAN_CAPTURE_STATUS = %d\n",
-		  cookie,
-		  (void *)((uintptr_t)buf_addr),
-		  cdp_rx_ppdu->ppdu_id,
+		  cookie, (void *)((uintptr_t)buf_addr), cdp_rx_ppdu->ppdu_id,
 		  cfr_info->bb_captured_channel,
 		  cfr_info->rx_location_info_valid,
 		  cfr_info->rtt_che_buffer_pointer_low32,
@@ -1290,7 +1181,7 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 		vdev = wlan_objmgr_pdev_get_first_vdev(pdev, WLAN_CFR_ID);
 	else
 		vdev = wlan_objmgr_get_vdev_by_id_from_pdev(
-				pdev, pcfr->rcc_param.vdev_id, WLAN_CFR_ID);
+			pdev, pcfr->rcc_param.vdev_id, WLAN_CFR_ID);
 	if (qdf_unlikely(!vdev)) {
 		cfr_debug("vdev is null\n");
 		goto unlock;
@@ -1313,9 +1204,9 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 
 	target_if_cfr_fill_header(header, false, target_type, true);
 
-	meta->status       = 1;
+	meta->status = 1;
 	meta->phy_mode = ch_phymode;
-	meta->prim20_chan  = ch_freq;
+	meta->prim20_chan = ch_freq;
 	meta->center_freq1 = ch_cfreq1;
 	meta->center_freq2 = ch_cfreq2;
 	meta->capture_mode = 0;
@@ -1339,10 +1230,8 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 	for (i = 0; i < HOST_MAX_CHAINS; i++) {
 		meta->agc_gain[i] = get_gain_db(gain_info[i]);
 		meta->agc_gain_tbl_index[i] = get_gain_table_idx(gain_info[i]);
-		max_agc_gain = get_max_agc_gain(vdev,
-						meta->agc_gain_tbl_index[i],
-						pcfr,
-						supports_11be);
+		max_agc_gain = get_max_agc_gain(
+			vdev, meta->agc_gain_tbl_index[i], pcfr, supports_11be);
 		if (!is_valid_gain_table_idx(meta->agc_gain_tbl_index[i],
 					     pcfr)) {
 			cfr_debug("Invalid gain table index reported");
@@ -1359,16 +1248,16 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 	}
 
 	/**
-	 * Do not derive the chain phase when capability is not set Or
-	 * when an invalid gain table index is reported by Hardware.
-	 */
+   * Do not derive the chain phase when capability is not set Or
+   * when an invalid gain table index is reported by Hardware.
+   */
 	if (pcfr->is_aoa_for_rcc_support) {
 		if (supports_11be) {
-			populate_enh_chain_phase(vdev, pcfr,
-						 meta, invalid_gain_table_idx);
+			populate_enh_chain_phase(vdev, pcfr, meta,
+						 invalid_gain_table_idx);
 		} else {
-			populate_chain_phase(vdev, pcfr,
-					     meta, invalid_gain_table_idx);
+			populate_chain_phase(vdev, pcfr, meta,
+					     invalid_gain_table_idx);
 		}
 	}
 
@@ -1387,7 +1276,7 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 	target_if_snr_to_signal_strength(target_type, meta, cdp_rx_ppdu);
 
 	if (cdp_rx_ppdu->u.ppdu_type != CDP_RX_TYPE_SU) {
-		for (i = 0 ; i < meta->num_mu_users; i++) {
+		for (i = 0; i < meta->num_mu_users; i++) {
 			rx_stats_peruser = &cdp_rx_ppdu->user[i];
 			qdf_mem_copy(meta->peer_addr.mu_peer_addr[i],
 				     rx_stats_peruser->mac_addr,
@@ -1398,13 +1287,10 @@ void target_if_cfr_rx_tlv_process(struct wlan_objmgr_pdev *pdev, void *nbuf)
 					 CORRELATE_TX_EV_MODULE_ID);
 	if (status == STATUS_STREAM_AND_RELEASE) {
 		if (cfr_rx_ops->cfr_info_send)
-			status = cfr_rx_ops->cfr_info_send(pdev,
-							   &lut->header,
-							   sizeof(struct
-							   csi_cfr_header),
-							   lut->data,
-							   lut->data_len,
-							   &end_magic, 4);
+			status = cfr_rx_ops->cfr_info_send(
+				pdev, &lut->header,
+				sizeof(struct csi_cfr_header), lut->data,
+				lut->data_len, &end_magic, 4);
 		dump_metadata(header, cookie);
 		release_lut_entry_enh(pdev, lut);
 		target_if_dbr_buf_release(pdev, DBR_MODULE_CFR, buf_addr,
@@ -1428,9 +1314,9 @@ relref:
 static uint8_t freeze_reason_to_capture_type(void *freeze_tlv)
 {
 	/*
-	 * Capture_reason field position is common between freeze_tlv v1
-	 * and v2, hence typecasting to any one is fine
-	 */
+   * Capture_reason field position is common between freeze_tlv v1
+   * and v2, hence typecasting to any one is fine
+   */
 	struct macrx_freeze_capture_channel *freeze =
 		(struct macrx_freeze_capture_channel *)freeze_tlv;
 
@@ -1466,8 +1352,8 @@ static bool enh_cfr_dbr_event_handler(struct wlan_objmgr_pdev *pdev,
 {
 	uint8_t *data = NULL;
 	uint32_t cookie = 0;
-	struct whal_cfir_enhanced_hdr dma_hdr = {0};
-	int  length, status = 0;
+	struct whal_cfir_enhanced_hdr dma_hdr = { 0 };
+	int length, status = 0;
 	struct wlan_objmgr_psoc *psoc;
 	struct pdev_cfr *pcfr;
 	struct look_up_table *lut = NULL;
@@ -1497,8 +1383,7 @@ static bool enh_cfr_dbr_event_handler(struct wlan_objmgr_pdev *pdev,
 	}
 	cfr_rx_ops = &rx_ops->cfr_rx_ops;
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!pcfr) {
 		cfr_err("pdev object for CFR is null");
 		return true;
@@ -1510,8 +1395,7 @@ static bool enh_cfr_dbr_event_handler(struct wlan_objmgr_pdev *pdev,
 	cfr_debug("<DBRCOMP><%u>:bufferaddr: 0x%pK cookie: %u\n", cookie,
 		  (void *)((uintptr_t)payload->paddr), cookie);
 
-	qdf_mem_copy(&dma_hdr, &data[0],
-		     sizeof(struct whal_cfir_enhanced_hdr));
+	qdf_mem_copy(&dma_hdr, &data[0], sizeof(struct whal_cfir_enhanced_hdr));
 
 	if (dma_hdr.freeze_data_incl) {
 		freeze_tlv = data + sizeof(struct whal_cfir_enhanced_hdr);
@@ -1525,19 +1409,19 @@ static bool enh_cfr_dbr_event_handler(struct wlan_objmgr_pdev *pdev,
 			freeze_tlv_len =
 				sizeof(struct macrx_freeze_capture_channel_v3);
 		} else if (dma_hdr.freeze_tlv_version ==
-				MACRX_FREEZE_TLV_VERSION_5) {
+			   MACRX_FREEZE_TLV_VERSION_5) {
 			freeze_tlv_len =
 				sizeof(struct macrx_freeze_capture_channel_v5);
 		} else {
 			freeze_tlv_len =
 				sizeof(struct macrx_freeze_capture_channel);
 		}
-		mu_rx_user_info = data +
-			sizeof(struct whal_cfir_enhanced_hdr) +
+		mu_rx_user_info =
+			data + sizeof(struct whal_cfir_enhanced_hdr) +
 			(dma_hdr.freeze_data_incl ? freeze_tlv_len : 0);
 	}
 
-	length  = dma_hdr.length * 4;
+	length = dma_hdr.length * 4;
 	length += dma_hdr.total_bytes; /* size of cfr data */
 
 	qdf_spin_lock_bh(&pcfr->lut_lock);
@@ -1556,8 +1440,7 @@ static bool enh_cfr_dbr_event_handler(struct wlan_objmgr_pdev *pdev,
 	lut->dbr_tstamp = qdf_ktime_to_ms(qdf_ktime_get());
 	lut->header_length = dma_hdr.length;
 	lut->payload_length = dma_hdr.total_bytes;
-	qdf_mem_copy(&lut->dma_hdr, &dma_hdr,
-		     sizeof(struct whal_cfir_dma_hdr));
+	qdf_mem_copy(&lut->dma_hdr, &dma_hdr, sizeof(struct whal_cfir_dma_hdr));
 
 	header = &lut->header;
 	header->cmn.chip_type = pcfr->chip_type;
@@ -1580,25 +1463,22 @@ static bool enh_cfr_dbr_event_handler(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (dma_hdr.freeze_data_incl) {
-		dump_enh_dma_hdr(&dma_hdr, freeze_tlv, mu_rx_user_info,
-				 header, 0, cookie);
+		dump_enh_dma_hdr(&dma_hdr, freeze_tlv, mu_rx_user_info, header,
+				 0, cookie);
 	}
 
 	status = correlate_and_relay_enh(pdev, cookie, lut,
 					 CORRELATE_DBR_MODULE_ID);
 	if (status == STATUS_STREAM_AND_RELEASE) {
 		/*
-		 * Message format
-		 *  Meta data Header + actual payload + trailer
-		 */
+     * Message format
+     *  Meta data Header + actual payload + trailer
+     */
 		if (cfr_rx_ops->cfr_info_send)
-			status = cfr_rx_ops->cfr_info_send(pdev,
-							   &lut->header,
-							   sizeof(struct
-							   csi_cfr_header),
-							   lut->data,
-							   lut->data_len,
-							   &end_magic, 4);
+			status = cfr_rx_ops->cfr_info_send(
+				pdev, &lut->header,
+				sizeof(struct csi_cfr_header), lut->data,
+				lut->data_len, &end_magic, 4);
 		dump_metadata(header, cookie);
 		release_lut_entry_enh(pdev, lut);
 		status = true;
@@ -1619,8 +1499,7 @@ static bool enh_cfr_dbr_event_handler(struct wlan_objmgr_pdev *pdev,
  *
  * Return: status
  */
-static QDF_STATUS
-target_if_register_to_dbr_enh(struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS target_if_register_to_dbr_enh(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_direct_buf_rx_tx_ops *dbr_tx_ops = NULL;
@@ -1637,9 +1516,9 @@ target_if_register_to_dbr_enh(struct wlan_objmgr_pdev *pdev)
 	dbr_config.num_resp_per_event = DBR_NUM_RESP_PER_EVENT_CFR;
 	dbr_config.event_timeout_in_ms = DBR_EVENT_TIMEOUT_IN_MS_CFR;
 	if (dbr_tx_ops->direct_buf_rx_module_register) {
-		return dbr_tx_ops->direct_buf_rx_module_register
-			(pdev, DBR_MODULE_CFR, &dbr_config,
-			 enh_cfr_dbr_event_handler);
+		return dbr_tx_ops->direct_buf_rx_module_register(
+			pdev, DBR_MODULE_CFR, &dbr_config,
+			enh_cfr_dbr_event_handler);
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -1651,8 +1530,7 @@ target_if_register_to_dbr_enh(struct wlan_objmgr_pdev *pdev)
  *
  * Return: status
  */
-static QDF_STATUS
-target_if_unregister_to_dbr_enh(struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS target_if_unregister_to_dbr_enh(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_direct_buf_rx_tx_ops *dbr_tx_ops = NULL;
@@ -1666,8 +1544,8 @@ target_if_unregister_to_dbr_enh(struct wlan_objmgr_pdev *pdev)
 	}
 	dbr_tx_ops = &tx_ops->dbr_tx_ops;
 	if (dbr_tx_ops->direct_buf_rx_module_unregister) {
-		return dbr_tx_ops->direct_buf_rx_module_unregister
-			(pdev, DBR_MODULE_CFR);
+		return dbr_tx_ops->direct_buf_rx_module_unregister(
+			pdev, DBR_MODULE_CFR);
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -1685,32 +1563,29 @@ target_if_unregister_to_dbr_enh(struct wlan_objmgr_pdev *pdev)
 static void dump_cfr_peer_tx_event_enh(wmi_cfr_peer_tx_event_param *event,
 				       uint32_t cookie)
 {
-	cfr_debug("<TXCOMP><%u>CFR capture method: %d vdev_id: %d mac: "
-		  QDF_MAC_ADDR_FMT, cookie,
-		  event->capture_method, event->vdev_id,
-		  QDF_MAC_ADDR_REF(event->peer_mac_addr.bytes));
+	cfr_debug(
+		"<TXCOMP><%u>CFR capture method: %d vdev_id: %d mac: " QDF_MAC_ADDR_FMT,
+		cookie, event->capture_method, event->vdev_id,
+		QDF_MAC_ADDR_REF(event->peer_mac_addr.bytes));
 
-	cfr_debug("<TXCOMP><%u>Chan: %d bw: %d phymode: %d cfreq1: %d cfrq2: %d "
-		  "nss: %d\n",
-		  cookie,
-		  event->primary_20mhz_chan, event->bandwidth,
-		  event->phy_mode, event->band_center_freq1,
-		  event->band_center_freq2, event->spatial_streams);
+	cfr_debug(
+		"<TXCOMP><%u>Chan: %d bw: %d phymode: %d cfreq1: %d cfrq2: %d "
+		"nss: %d\n",
+		cookie, event->primary_20mhz_chan, event->bandwidth,
+		event->phy_mode, event->band_center_freq1,
+		event->band_center_freq2, event->spatial_streams);
 
 	cfr_debug("<TXCOMP><%u>Correlation_info1: 0x%08x "
 		  "Correlation_info2: 0x%08x\n",
-		  cookie,
-		  event->correlation_info_1, event->correlation_info_2);
+		  cookie, event->correlation_info_1, event->correlation_info_2);
 
 	cfr_debug("<TXCOMP><%u>status: 0x%x ts: %d counter: %d rssi0: 0x%08x\n",
-		  cookie,
-		  event->status, event->timestamp_us, event->counter,
+		  cookie, event->status, event->timestamp_us, event->counter,
 		  event->chain_rssi[0]);
 }
 
-static void
-populate_phase_delta(struct pdev_cfr *pcfr,
-		     struct wmi_cfr_phase_delta_param param)
+static void populate_phase_delta(struct pdev_cfr *pcfr,
+				 struct wmi_cfr_phase_delta_param param)
 {
 	int c, g, pc, pg;
 	uint32_t c_mask = param.chain_phase_mask;
@@ -1724,10 +1599,11 @@ populate_phase_delta(struct pdev_cfr *pcfr,
 			pcfr->ibf_cal_val[c] = param.ibf_cal_val[pc];
 			for (g = 0; g < MAX_AGC_GAIN; g = g + 2) {
 				if (pg < WMI_MAX_AOA_PHASE_DELTA) {
-					pcfr->phase_delta[c][g] = get_u16_lsb
-						(param.phase_delta[pc][pg]);
-					pcfr->phase_delta[c][g + 1] = get_u16_msb
-						(param.phase_delta[pc][pg]);
+					pcfr->phase_delta[c][g] = get_u16_lsb(
+						param.phase_delta[pc][pg]);
+					pcfr->phase_delta[c]
+							 [g + 1] = get_u16_msb(
+						param.phase_delta[pc][pg]);
 					pg++;
 				}
 			}
@@ -1736,17 +1612,16 @@ populate_phase_delta(struct pdev_cfr *pcfr,
 	}
 }
 
-static int
-target_if_pdev_aoa_phasedaelta_event_handler(ol_scn_t sc,
-					     uint8_t *data,
-					     uint32_t datalen)
+static int target_if_pdev_aoa_phasedaelta_event_handler(ol_scn_t sc,
+							uint8_t *data,
+							uint32_t datalen)
 {
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_pdev *pdev;
 	struct pdev_cfr *pcfr;
 	QDF_STATUS retval = 0;
-	struct wmi_cfr_phase_delta_param param = {0};
+	struct wmi_cfr_phase_delta_param param = { 0 };
 
 	if (!sc || !data) {
 		cfr_err("sc or data is null");
@@ -1772,8 +1647,8 @@ target_if_pdev_aoa_phasedaelta_event_handler(ol_scn_t sc,
 		return -EINVAL;
 	}
 
-	retval = wmi_extract_cfr_pdev_phase_delta_event
-			(wmi_handle, data, &param);
+	retval = wmi_extract_cfr_pdev_phase_delta_event(wmi_handle, data,
+							&param);
 
 	if (QDF_IS_STATUS_ERROR(retval)) {
 		cfr_err("Failed to extract phase params");
@@ -1802,7 +1677,8 @@ target_if_pdev_aoa_phasedaelta_event_handler(ol_scn_t sc,
 
 	pcfr->freq = param.freq;
 	pcfr->max_aoa_chains = (param.max_chains <= HOST_MAX_CHAINS) ?
-				param.max_chains : HOST_MAX_CHAINS;
+				       param.max_chains :
+				       HOST_MAX_CHAINS;
 
 	populate_phase_delta(pcfr, param);
 
@@ -1814,8 +1690,7 @@ target_if_pdev_aoa_phasedaelta_event_handler(ol_scn_t sc,
 
 #ifdef WLAN_RCC_ENHANCED_AOA_SUPPORT
 static int
-target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc,
-						     uint8_t *data,
+target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc, uint8_t *data,
 						     uint32_t datalen)
 {
 	struct wmi_unified *wmi_handle;
@@ -1823,7 +1698,7 @@ target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc,
 	struct wlan_objmgr_pdev *pdev;
 	struct pdev_cfr *pcfr;
 	QDF_STATUS retval = 0;
-	struct wmi_cfr_enh_phase_delta_param param = {0};
+	struct wmi_cfr_enh_phase_delta_param param = { 0 };
 	uint32_t dst_idx, src_idx, max_src_ent, max_dst_ent;
 	uint32_t num_data_chains;
 	uint32_t offset;
@@ -1854,8 +1729,8 @@ target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc,
 		return -EINVAL;
 	}
 
-	retval = wmi_extract_cfr_pdev_enhanced_aoa_phasedelta_event_fixed_param
-			(wmi_handle, data, &param);
+	retval = wmi_extract_cfr_pdev_enhanced_aoa_phasedelta_event_fixed_param(
+		wmi_handle, data, &param);
 
 	if (QDF_IS_STATUS_ERROR(retval)) {
 		cfr_err("Failed to extract phase delta fixed param tlv");
@@ -1881,7 +1756,8 @@ target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc,
 
 	pcfr->freq = param.freq;
 	pcfr->max_aoa_chains = (param.max_chains <= HOST_MAX_CHAINS) ?
-				param.max_chains : HOST_MAX_CHAINS;
+				       param.max_chains :
+				       HOST_MAX_CHAINS;
 
 	num_data_chains = qdf_get_hweight32(param.data_for_chainmask);
 
@@ -1897,8 +1773,8 @@ target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc,
 	qdf_mem_copy(pcfr->ibf_cal_val, param.ibf_cal_val,
 		     sizeof(uint32_t) * HOST_MAX_CHAINS);
 
-	param.array_size = (pcfr->max_aoa_chains *
-			    pcfr->max_entries_all_table * sizeof(uint16_t));
+	param.array_size = (pcfr->max_aoa_chains * pcfr->max_entries_all_table *
+			    sizeof(uint16_t));
 
 	param.gain_stop_index_array = qdf_mem_malloc(param.array_size);
 	if (!param.gain_stop_index_array) {
@@ -1920,8 +1796,8 @@ target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc,
 	qdf_mem_zero(param.gain_stop_index_array, param.array_size);
 	qdf_mem_zero(param.enh_phase_delta_array, param.array_size);
 
-	retval = wmi_extract_cfr_pdev_enhanced_aoa_phasedelta_event_data
-			(wmi_handle, data, &param);
+	retval = wmi_extract_cfr_pdev_enhanced_aoa_phasedelta_event_data(
+		wmi_handle, data, &param);
 
 	if (QDF_IS_STATUS_ERROR(retval)) {
 		cfr_err("Failed to extract phase data tlv");
@@ -1939,8 +1815,8 @@ target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc,
 	max_dst_ent = pcfr->max_entries_all_table * pcfr->max_aoa_chains;
 
 	offset = pcfr->max_entries_all_table *
-			qdf_find_first_bit(data_chain_bmap,
-					   sizeof(uint32_t) * QDF_CHAR_BIT);
+		 qdf_find_first_bit(data_chain_bmap,
+				    sizeof(uint32_t) * QDF_CHAR_BIT);
 	for (dst_idx = (0 + offset), src_idx = 0;
 	     ((dst_idx < max_dst_ent) && (src_idx < max_src_ent));
 	     dst_idx += 2, src_idx++) {
@@ -1973,14 +1849,14 @@ target_if_pdev_enhanced_aoa_phasedelta_event_handler(ol_scn_t sc,
  *
  * Return: none
  */
-static void enh_prepare_cfr_header_txstatus(wmi_cfr_peer_tx_event_param
-					    *tx_evt_param,
-					    struct csi_cfr_header *header,
-					    uint32_t target_type)
+static void
+enh_prepare_cfr_header_txstatus(wmi_cfr_peer_tx_event_param *tx_evt_param,
+				struct csi_cfr_header *header,
+				uint32_t target_type)
 {
 	target_if_cfr_fill_header(header, false, target_type, false);
-	header->u.meta_enh.status       = 0; /* failure */
-	header->u.meta_enh.length       = 0;
+	header->u.meta_enh.status = 0; /* failure */
+	header->u.meta_enh.length = 0;
 	header->u.meta_enh.rtt_cfo_measurement = tx_evt_param->cfo_measurement;
 	header->u.meta_enh.rx_start_ts = tx_evt_param->rx_start_ts;
 
@@ -1997,8 +1873,8 @@ static void enh_prepare_cfr_header_txstatus(wmi_cfr_peer_tx_event_param
  *
  * Return: status
  */
-static int
-target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
+static int target_if_peer_capture_event(ol_scn_t sc, uint8_t *data,
+					uint32_t datalen)
 {
 	QDF_STATUS retval = 0;
 	struct wmi_unified *wmi_handle;
@@ -2009,8 +1885,8 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
 	struct pdev_cfr *pcfr;
 	struct look_up_table *lut = NULL;
 	struct csi_cfr_header *header = NULL;
-	struct csi_cfr_header header_error = {{0} };
-	wmi_cfr_peer_tx_event_param tx_evt_param = {0};
+	struct csi_cfr_header header_error = { { 0 } };
+	wmi_cfr_peer_tx_event_param tx_evt_param = { 0 };
 	qdf_dma_addr_t buf_addr = 0, buf_addr_temp = 0;
 	int status;
 	struct wlan_channel *bss_chan;
@@ -2082,8 +1958,7 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
 		return -EINVAL;
 	}
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!pcfr) {
 		cfr_err("pdev object for CFR is NULL");
 		retval = -EINVAL;
@@ -2093,18 +1968,14 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
 	target_type = target_if_cfr_get_target_type(psoc);
 
 	if (tx_evt_param.status & PEER_CFR_CAPTURE_EVT_PS_STATUS_MASK) {
-		cfr_err("CFR capture failed as peer is in powersave: "
-			QDF_MAC_ADDR_FMT,
+		cfr_err("CFR capture failed as peer is in powersave: " QDF_MAC_ADDR_FMT,
 			QDF_MAC_ADDR_REF(tx_evt_param.peer_mac_addr.bytes));
 
-		enh_prepare_cfr_header_txstatus(&tx_evt_param,
-						&header_error,
+		enh_prepare_cfr_header_txstatus(&tx_evt_param, &header_error,
 						target_type);
 		if (cfr_rx_ops->cfr_info_send)
-			cfr_rx_ops->cfr_info_send(pdev,
-						  &header_error,
-						  sizeof(struct
-							 csi_cfr_header),
+			cfr_rx_ops->cfr_info_send(pdev, &header_error,
+						  sizeof(struct csi_cfr_header),
 						  NULL, 0, &end_magic, 4);
 
 		retval = -EINVAL;
@@ -2120,10 +1991,10 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
 	}
 
 	if (tx_evt_param.status & CFR_TX_EVT_STATUS_MASK) {
-		cfr_debug("TX packet returned status %d for peer: "
-			  QDF_MAC_ADDR_FMT,
-			  tx_evt_param.status & CFR_TX_EVT_STATUS_MASK,
-			  QDF_MAC_ADDR_REF(tx_evt_param.peer_mac_addr.bytes));
+		cfr_debug(
+			"TX packet returned status %d for peer: " QDF_MAC_ADDR_FMT,
+			tx_evt_param.status & CFR_TX_EVT_STATUS_MASK,
+			QDF_MAC_ADDR_REF(tx_evt_param.peer_mac_addr.bytes));
 		pcfr->tx_evt_status_cfr_fail++;
 		retval = -EINVAL;
 		goto relref;
@@ -2133,8 +2004,8 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
 	buf_addr = (tx_evt_param.correlation_info_1 |
 		    ((uint64_t)buf_addr_temp << 32));
 
-	if (target_if_dbr_cookie_lookup(pdev, DBR_MODULE_CFR, buf_addr,
-					&cookie, 0)) {
+	if (target_if_dbr_cookie_lookup(pdev, DBR_MODULE_CFR, buf_addr, &cookie,
+					0)) {
 		cfr_debug("Cookie lookup failure for addr: 0x%pK status: 0x%x",
 			  (void *)((uintptr_t)buf_addr), tx_evt_param.status);
 		pcfr->tx_dbr_cookie_lookup_fail++;
@@ -2166,27 +2037,27 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
 
 	header = &lut->header;
 	target_if_cfr_fill_header(header, false, target_type, false);
-	header->u.meta_enh.status       = (tx_evt_param.status &
-					   PEER_CFR_CAPTURE_EVT_STATUS_MASK) ?
-					   1 : 0;
-	header->u.meta_enh.capture_bw   = tx_evt_param.bandwidth;
+	header->u.meta_enh.status =
+		(tx_evt_param.status & PEER_CFR_CAPTURE_EVT_STATUS_MASK) ? 1 :
+									   0;
+	header->u.meta_enh.capture_bw = tx_evt_param.bandwidth;
 
 	bss_chan = wlan_vdev_mlme_get_bss_chan(vdev);
-	header->u.meta_enh.phy_mode     = bss_chan->ch_phymode;
+	header->u.meta_enh.phy_mode = bss_chan->ch_phymode;
 
-	header->u.meta_enh.prim20_chan  = tx_evt_param.primary_20mhz_chan;
+	header->u.meta_enh.prim20_chan = tx_evt_param.primary_20mhz_chan;
 	header->u.meta_enh.center_freq1 = tx_evt_param.band_center_freq1;
 	header->u.meta_enh.center_freq2 = tx_evt_param.band_center_freq2;
 
 	/* Currently CFR data is captured on ACK of a Qos NULL frame.
-	 * For 20 MHz, ACK is Legacy and for 40/80/160, ACK is DUP Legacy.
-	 */
-	header->u.meta_enh.capture_mode = tx_evt_param.bandwidth ?
-		CFR_DUP_LEGACY_ACK : CFR_LEGACY_ACK;
+   * For 20 MHz, ACK is Legacy and for 40/80/160, ACK is DUP Legacy.
+   */
+	header->u.meta_enh.capture_mode =
+		tx_evt_param.bandwidth ? CFR_DUP_LEGACY_ACK : CFR_LEGACY_ACK;
 	header->u.meta_enh.capture_type = tx_evt_param.capture_method;
 	header->u.meta_enh.num_rx_chain = wlan_vdev_mlme_get_rxchainmask(vdev);
-	header->u.meta_enh.sts_count    = tx_evt_param.spatial_streams;
-	header->u.meta_enh.timestamp    = tx_evt_param.timestamp_us;
+	header->u.meta_enh.sts_count = tx_evt_param.spatial_streams;
+	header->u.meta_enh.timestamp = tx_evt_param.timestamp_us;
 
 	qdf_mem_copy(&header->u.meta_enh.peer_addr.su_peer_addr[0],
 		     &tx_evt_param.peer_mac_addr.bytes[0], QDF_MAC_ADDR_SIZE);
@@ -2196,31 +2067,26 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
 	qdf_mem_copy(&header->u.meta_enh.chain_phase[0],
 		     &tx_evt_param.chain_phase[0],
 		     HOST_MAX_CHAINS * sizeof(tx_evt_param.chain_phase[0]));
-	qdf_mem_copy(&header->u.meta_enh.agc_gain[0],
-		     &tx_evt_param.agc_gain[0],
+	qdf_mem_copy(&header->u.meta_enh.agc_gain[0], &tx_evt_param.agc_gain[0],
 		     HOST_MAX_CHAINS * sizeof(tx_evt_param.agc_gain[0]));
-	qdf_mem_copy(&header->u.meta_enh.agc_gain_tbl_index[0],
-		     &tx_evt_param.agc_gain_tbl_index[0],
-		     (HOST_MAX_CHAINS *
-		      sizeof(tx_evt_param.agc_gain_tbl_index[0])));
+	qdf_mem_copy(
+		&header->u.meta_enh.agc_gain_tbl_index[0],
+		&tx_evt_param.agc_gain_tbl_index[0],
+		(HOST_MAX_CHAINS * sizeof(tx_evt_param.agc_gain_tbl_index[0])));
 
 	header->u.meta_enh.rtt_cfo_measurement = tx_evt_param.cfo_measurement;
 	header->u.meta_enh.rx_start_ts = tx_evt_param.rx_start_ts;
-	header->u.meta_enh.mcs_rate    = tx_evt_param.mcs_rate;
-	header->u.meta_enh.gi_type     = tx_evt_param.gi_type;
+	header->u.meta_enh.mcs_rate = tx_evt_param.mcs_rate;
+	header->u.meta_enh.gi_type = tx_evt_param.gi_type;
 
 	status = correlate_and_relay_enh(pdev, cookie, lut,
 					 CORRELATE_TX_EV_MODULE_ID);
 	if (status == STATUS_STREAM_AND_RELEASE) {
 		if (cfr_rx_ops->cfr_info_send)
-			status = cfr_rx_ops->cfr_info_send(pdev,
-							   &lut->header,
-							   sizeof(
-							   struct
-							   csi_cfr_header),
-							   lut->data,
-							   lut->data_len,
-							   &end_magic, 4);
+			status = cfr_rx_ops->cfr_info_send(
+				pdev, &lut->header,
+				sizeof(struct csi_cfr_header), lut->data,
+				lut->data_len, &end_magic, 4);
 		dump_metadata(header, cookie);
 		release_lut_entry_enh(pdev, lut);
 		target_if_dbr_buf_release(pdev, DBR_MODULE_CFR, buf_addr,
@@ -2240,8 +2106,8 @@ relref:
 	return retval;
 }
 #else
-static int
-target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
+static int target_if_peer_capture_event(ol_scn_t sc, uint8_t *data,
+					uint32_t datalen)
 {
 	return 0;
 }
@@ -2254,9 +2120,8 @@ target_if_peer_capture_event(ol_scn_t sc, uint8_t *data, uint32_t datalen)
  *
  * Return: Success/Failure status
  */
-static QDF_STATUS
-target_if_register_phase_delta_for_rcc_event_handler(struct wlan_objmgr_psoc
-						     *psoc)
+static QDF_STATUS target_if_register_phase_delta_for_rcc_event_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_hdl;
 	QDF_STATUS ret = QDF_STATUS_SUCCESS;
@@ -2267,15 +2132,14 @@ target_if_register_phase_delta_for_rcc_event_handler(struct wlan_objmgr_psoc
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	ret = wmi_unified_register_event_handler
-		(wmi_hdl, wmi_pdev_aoa_phasedelta_event_id,
-		 target_if_pdev_aoa_phasedaelta_event_handler,
-		 WMI_RX_UMAC_CTX);
+	ret = wmi_unified_register_event_handler(
+		wmi_hdl, wmi_pdev_aoa_phasedelta_event_id,
+		target_if_pdev_aoa_phasedaelta_event_handler, WMI_RX_UMAC_CTX);
 
 	/*
-	 * Event registration is called per pdev
-	 * Ignore error if event is already registered.
-	 */
+   * Event registration is called per pdev
+   * Ignore error if event is already registered.
+   */
 	if (ret == QDF_STATUS_E_FAILURE)
 		ret = QDF_STATUS_SUCCESS;
 
@@ -2289,9 +2153,8 @@ target_if_register_phase_delta_for_rcc_event_handler(struct wlan_objmgr_psoc
  *
  * Return Success/Failure status
  */
-static QDF_STATUS
-target_if_unregister_phase_delta_for_rcc_event_handler(struct wlan_objmgr_psoc
-						       *psoc)
+static QDF_STATUS target_if_unregister_phase_delta_for_rcc_event_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_hdl;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -2302,16 +2165,15 @@ target_if_unregister_phase_delta_for_rcc_event_handler(struct wlan_objmgr_psoc
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	status = wmi_unified_unregister_event
-		(wmi_hdl, wmi_pdev_aoa_phasedelta_event_id);
+	status = wmi_unified_unregister_event(wmi_hdl,
+					      wmi_pdev_aoa_phasedelta_event_id);
 
 	return status;
 }
 
 #ifdef WLAN_RCC_ENHANCED_AOA_SUPPORT
-static QDF_STATUS
-target_if_register_enh_phase_for_rcc_event_handler(struct wlan_objmgr_psoc
-						   *psoc)
+static QDF_STATUS target_if_register_enh_phase_for_rcc_event_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_hdl;
 	QDF_STATUS ret = QDF_STATUS_SUCCESS;
@@ -2322,24 +2184,23 @@ target_if_register_enh_phase_for_rcc_event_handler(struct wlan_objmgr_psoc
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	ret = wmi_unified_register_event_handler
-		(wmi_hdl, wmi_pdev_enhanced_aoa_phasedelta_eventid,
-		 target_if_pdev_enhanced_aoa_phasedelta_event_handler,
-		 WMI_RX_UMAC_CTX);
+	ret = wmi_unified_register_event_handler(
+		wmi_hdl, wmi_pdev_enhanced_aoa_phasedelta_eventid,
+		target_if_pdev_enhanced_aoa_phasedelta_event_handler,
+		WMI_RX_UMAC_CTX);
 
 	/*
-	 * Event registration is called per pdev
-	 * Ignore error if event is already registered.
-	 */
+   * Event registration is called per pdev
+   * Ignore error if event is already registered.
+   */
 	if (ret == QDF_STATUS_E_FAILURE)
 		ret = QDF_STATUS_SUCCESS;
 
 	return ret;
 }
 
-static QDF_STATUS
-target_if_unregister_enh_phase_for_rcc_event_handler(struct wlan_objmgr_psoc
-						     *psoc)
+static QDF_STATUS target_if_unregister_enh_phase_for_rcc_event_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_hdl;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -2350,22 +2211,20 @@ target_if_unregister_enh_phase_for_rcc_event_handler(struct wlan_objmgr_psoc
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	status = wmi_unified_unregister_event
-			(wmi_hdl, wmi_pdev_enhanced_aoa_phasedelta_eventid);
+	status = wmi_unified_unregister_event(
+		wmi_hdl, wmi_pdev_enhanced_aoa_phasedelta_eventid);
 
 	return status;
 }
 #else
-static QDF_STATUS
-target_if_register_enh_phase_for_rcc_event_handler(struct wlan_objmgr_psoc
-						   *psoc)
+static QDF_STATUS target_if_register_enh_phase_for_rcc_event_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-target_if_unregister_enh_phase_for_rcc_event_handler(struct wlan_objmgr_psoc
-						     *psoc)
+static QDF_STATUS target_if_unregister_enh_phase_for_rcc_event_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -2378,9 +2237,8 @@ target_if_unregister_enh_phase_for_rcc_event_handler(struct wlan_objmgr_psoc
  *
  * Return: Success/Failure status
  */
-static QDF_STATUS
-target_if_register_tx_completion_enh_event_handler(struct wlan_objmgr_psoc
-						   *psoc)
+static QDF_STATUS target_if_register_tx_completion_enh_event_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	/* Register completion handler here */
 	wmi_unified_t wmi_hdl;
@@ -2397,9 +2255,9 @@ target_if_register_tx_completion_enh_event_handler(struct wlan_objmgr_psoc
 						 target_if_peer_capture_event,
 						 WMI_RX_UMAC_CTX);
 	/*
-	 * Event registration is called per pdev
-	 * Ignore error if event is already registered.
-	 */
+   * Event registration is called per pdev
+   * Ignore error if event is already registered.
+   */
 	if (ret == QDF_STATUS_E_FAILURE)
 		ret = QDF_STATUS_SUCCESS;
 
@@ -2413,9 +2271,8 @@ target_if_register_tx_completion_enh_event_handler(struct wlan_objmgr_psoc
  *
  * Return: Success/Failure status
  */
-static QDF_STATUS
-target_if_unregister_tx_completion_enh_event_handler(struct wlan_objmgr_psoc
-						     *psoc)
+static QDF_STATUS target_if_unregister_tx_completion_enh_event_handler(
+	struct wlan_objmgr_psoc *psoc)
 {
 	/* Unregister completion handler here */
 	wmi_unified_t wmi_hdl;
@@ -2448,7 +2305,7 @@ static os_timer_func(lut_ageout_timer_task)
 	uint64_t diff, cur_tstamp;
 	uint8_t srng_id = 0;
 
-	OS_GET_TIMER_ARG(pcfr, struct pdev_cfr*);
+	OS_GET_TIMER_ARG(pcfr, struct pdev_cfr *);
 
 	if (!pcfr) {
 		cfr_err("pdev object for CFR is null");
@@ -2462,8 +2319,8 @@ static os_timer_func(lut_ageout_timer_task)
 	}
 
 	srng_id = pcfr->rcc_param.srng_id;
-	if (wlan_objmgr_pdev_try_get_ref(pdev, WLAN_CFR_ID)
-	    != QDF_STATUS_SUCCESS) {
+	if (wlan_objmgr_pdev_try_get_ref(pdev, WLAN_CFR_ID) !=
+	    QDF_STATUS_SUCCESS) {
 		cfr_err("failed to get pdev reference");
 		return;
 	}
@@ -2481,8 +2338,8 @@ static os_timer_func(lut_ageout_timer_task)
 			diff = cur_tstamp - lut->dbr_tstamp;
 			if (diff > LUT_AGE_THRESHOLD) {
 				target_if_dbr_buf_release(pdev, DBR_MODULE_CFR,
-							  lut->dbr_address,
-							  i, srng_id);
+							  lut->dbr_address, i,
+							  srng_id);
 				pcfr->flush_timeout_dbr_cnt++;
 				release_lut_entry_enh(pdev, lut);
 			}
@@ -2507,8 +2364,7 @@ void target_if_cfr_start_lut_age_timer(struct wlan_objmgr_pdev *pdev)
 {
 	struct pdev_cfr *pcfr;
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (pcfr->lut_timer_init)
 		qdf_timer_mod(&pcfr->lut_age_timer, LUT_AGE_TIMER);
 }
@@ -2524,8 +2380,7 @@ void target_if_cfr_stop_lut_age_timer(struct wlan_objmgr_pdev *pdev)
 {
 	struct pdev_cfr *pcfr;
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (pcfr->lut_timer_init)
 		qdf_timer_stop(&pcfr->lut_age_timer);
 }
@@ -2544,8 +2399,7 @@ void target_if_cfr_update_global_cfg(struct wlan_objmgr_pdev *pdev)
 	struct ta_ra_cfr_cfg *curr_cfg = NULL;
 	struct ta_ra_cfr_cfg *glbl_cfg = NULL;
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 
 	for (grp_id = 0; grp_id < MAX_TA_RA_ENTRIES; grp_id++) {
 		if (qdf_test_bit(grp_id,
@@ -2620,15 +2474,14 @@ QDF_STATUS cfr_enh_init_pdev(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!pcfr) {
 		cfr_err("pcfr is NULL!");
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 
-	cfr_sc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						       WLAN_UMAC_COMP_CFR);
+	cfr_sc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CFR);
 
 	if (!cfr_sc) {
 		cfr_err("cfr_sc is NULL");
@@ -2670,22 +2523,21 @@ QDF_STATUS cfr_enh_init_pdev(struct wlan_objmgr_psoc *psoc,
 	pcfr->rcc_param.vdev_id = CFR_INVALID_VDEV_ID;
 	pcfr->rcc_param.srng_id = DEFAULT_SRNGID_CFR;
 	pcfr->is_cap_interval_mode_sel_support =
-				cfr_sc->is_cap_interval_mode_sel_support;
+		cfr_sc->is_cap_interval_mode_sel_support;
 	pcfr->is_mo_marking_support = cfr_sc->is_mo_marking_support;
 	pcfr->is_aoa_for_rcc_support = cfr_sc->is_aoa_for_rcc_support;
 
 	if (pcfr->is_aoa_for_rcc_support) {
 		qdf_mem_set(pcfr->ibf_cal_val,
-			    sizeof(uint32_t) * HOST_MAX_CHAINS,
-			    0);
+			    sizeof(uint32_t) * HOST_MAX_CHAINS, 0);
 		qdf_mem_set(pcfr->phase_delta,
 			    sizeof(uint16_t) * HOST_MAX_CHAINS * MAX_AGC_GAIN,
 			    0);
 		pcfr->max_aoa_chains = 0;
 	}
 
-	target_if_cfr_default_ta_ra_config(&pcfr->rcc_param,
-					   true, MAX_RESET_CFG_ENTRY);
+	target_if_cfr_default_ta_ra_config(&pcfr->rcc_param, true,
+					   MAX_RESET_CFG_ENTRY);
 
 	status = target_if_cfr_config_rcc(pdev, &pcfr->rcc_param);
 	if (status == QDF_STATUS_SUCCESS) {
@@ -2715,7 +2567,8 @@ QDF_STATUS cfr_enh_init_pdev(struct wlan_objmgr_psoc *psoc,
 		pcfr->subbuf_size = STREAMFS_MAX_SUBBUF_SPRUCE;
 		pcfr->num_subbufs = STREAMFS_NUM_SUBBUF_SPRUCE;
 		pcfr->chip_type = (target_type == TARGET_TYPE_QCN6122) ?
-			CFR_CAPTURE_RADIO_SPRUCE : CFR_CAPTURE_RADIO_YORK;
+					  CFR_CAPTURE_RADIO_SPRUCE :
+					  CFR_CAPTURE_RADIO_YORK;
 		pcfr->max_mu_users = SPRUCE_CFR_MU_USERS;
 	} else if (target_type == TARGET_TYPE_QCN9224) {
 		pcfr->subbuf_size = STREAMFS_MAX_SUBBUF_WAIKIKI;
@@ -2740,8 +2593,7 @@ QDF_STATUS cfr_enh_init_pdev(struct wlan_objmgr_psoc *psoc,
 	}
 
 	if (!pcfr->lut_timer_init) {
-		qdf_timer_init(NULL,
-			       &(pcfr->lut_age_timer),
+		qdf_timer_init(NULL, &(pcfr->lut_age_timer),
 			       lut_ageout_timer_task, (void *)pcfr,
 			       QDF_TIMER_TYPE_WAKE_APPS);
 		pcfr->lut_timer_init = 1;
@@ -2766,8 +2618,7 @@ QDF_STATUS cfr_enh_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 	QDF_STATUS status;
 	struct pdev_cfr *pcfr;
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-						     WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!pcfr) {
 		cfr_err("pcfr is NULL");
 		return QDF_STATUS_E_NULL_VALUE;
@@ -2793,8 +2644,8 @@ QDF_STATUS cfr_enh_deinit_pdev(struct wlan_objmgr_psoc *psoc,
 	pcfr->tx_evt_status_cfr_fail = 0;
 	pcfr->tx_dbr_cookie_lookup_fail = 0;
 	qdf_mem_zero(&pcfr->rcc_param, sizeof(struct cfr_rcc_param));
-	qdf_mem_zero(&pcfr->global, (sizeof(struct ta_ra_cfr_cfg) *
-				     MAX_TA_RA_ENTRIES));
+	qdf_mem_zero(&pcfr->global,
+		     (sizeof(struct ta_ra_cfr_cfg) * MAX_TA_RA_ENTRIES));
 	pcfr->cfr_timer_enable = 0;
 
 #ifdef DIRECT_BUF_RX_ENABLE

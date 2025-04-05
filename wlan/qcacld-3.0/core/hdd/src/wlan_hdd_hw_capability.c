@@ -24,12 +24,12 @@
  *
  */
 
-#include "wlan_hdd_main.h"
-#include "wmi_unified_param.h"
 #include "wlan_hdd_hw_capability.h"
-#include "qca_vendor.h"
-#include "wlan_osif_request_manager.h"
 #include "osif_sync.h"
+#include "qca_vendor.h"
+#include "wlan_hdd_main.h"
+#include "wlan_osif_request_manager.h"
+#include "wmi_unified_param.h"
 
 /**
  * hdd_get_isolation_cb - Callback function to get isolation information
@@ -82,7 +82,7 @@ static int hdd_post_isolation(struct hdd_context *hdd_ctx,
 	uint32_t skb_len = NLMSG_HDRLEN;
 
 	skb_len += (sizeof(u8) + NLA_HDRLEN) + (sizeof(u8) + NLA_HDRLEN) +
-		(sizeof(u8) + NLA_HDRLEN) + (sizeof(u8) + NLA_HDRLEN);
+		   (sizeof(u8) + NLA_HDRLEN) + (sizeof(u8) + NLA_HDRLEN);
 	skb = wlan_cfg80211_vendor_cmd_alloc_reply_skb(hdd_ctx->wiphy, skb_len);
 	if (!skb) {
 		hdd_err("wlan_cfg80211_vendor_event_alloc failed");
@@ -133,8 +133,7 @@ nla_put_failure:
  */
 static int __wlan_hdd_cfg80211_get_hw_capability(struct wiphy *wiphy,
 						 struct wireless_dev *wdev,
-						 const void *data,
-						 int data_len)
+						 const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct osif_request *request;
@@ -167,9 +166,7 @@ static int __wlan_hdd_cfg80211_get_hw_capability(struct wiphy *wiphy,
 	cookie = osif_request_cookie(request);
 
 	mac_handle = hdd_ctx->mac_handle;
-	status = sme_get_isolation(mac_handle,
-				   cookie,
-				   hdd_get_isolation_cb);
+	status = sme_get_isolation(mac_handle, cookie, hdd_get_isolation_cb);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("Unable to retrieve isolation");
 		ret = -EFAULT;
@@ -191,8 +188,7 @@ static int __wlan_hdd_cfg80211_get_hw_capability(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_get_hw_capability(struct wiphy *wiphy,
 					struct wireless_dev *wdev,
-					const void *data,
-					int data_len)
+					const void *data, int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -201,8 +197,8 @@ int wlan_hdd_cfg80211_get_hw_capability(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_get_hw_capability(wiphy, wdev,
-						      data, data_len);
+	errno = __wlan_hdd_cfg80211_get_hw_capability(wiphy, wdev, data,
+						      data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 

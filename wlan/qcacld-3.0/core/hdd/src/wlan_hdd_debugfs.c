@@ -27,15 +27,14 @@
  */
 
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <wlan_hdd_debugfs.h>
-#include <wlan_osif_request_manager.h>
-#include <wlan_hdd_wowl.h>
+#include "wlan_hdd_debugfs_unit_test.h"
 #include <cds_sched.h>
+#include <wlan_hdd_debugfs.h>
 #include <wlan_hdd_debugfs_llstat.h>
 #include <wlan_hdd_debugfs_mibstat.h>
-#include "wlan_hdd_debugfs_unit_test.h"
-
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_wowl.h>
+#include <wlan_osif_request_manager.h>
 
 #define MAX_USER_COMMAND_SIZE_WOWL_ENABLE 8
 #define MAX_USER_COMMAND_SIZE_WOWL_PATTERN 512
@@ -194,8 +193,7 @@ static ssize_t __wcnss_wowpattern_write(struct net_device *net_dev,
  *
  * Return: 0 on success, error number otherwise
  */
-static ssize_t wcnss_wowpattern_write(struct file *file,
-				      const char __user *buf,
+static ssize_t wcnss_wowpattern_write(struct file *file, const char __user *buf,
 				      size_t count, loff_t *ppos)
 {
 	struct net_device *net_dev = file_inode(file)->i_private;
@@ -342,10 +340,10 @@ static ssize_t __wcnss_patterngen_write(struct net_device *net_dev,
 	}
 
 	/*
-	 * In SAP mode allow configuration without any connection check
-	 * In STA mode check if it's in connected state before adding
-	 * patterns
-	 */
+   * In SAP mode allow configuration without any connection check
+   * In STA mode check if it's in connected state before adding
+   * patterns
+   */
 	hdd_debug("device mode %d", adapter->device_mode);
 	if ((QDF_STA_MODE == adapter->device_mode) &&
 	    (!hdd_cm_is_vdev_associated(adapter->deflink))) {
@@ -431,8 +429,7 @@ failure:
  *
  * Return: 0 on success, error number otherwise
  */
-static ssize_t wcnss_patterngen_write(struct file *file,
-				      const char __user *buf,
+static ssize_t wcnss_patterngen_write(struct file *file, const char __user *buf,
 				      size_t count, loff_t *ppos)
 {
 	struct net_device *net_dev = file_inode(file)->i_private;
@@ -539,13 +536,13 @@ QDF_STATUS hdd_debugfs_init(struct hdd_adapter *adapter)
 	}
 
 	if (!debugfs_create_file("wow_pattern", 00400 | 00200,
-					adapter->debugfs_phy, net_dev,
-					&fops_wowpattern))
+				 adapter->debugfs_phy, net_dev,
+				 &fops_wowpattern))
 		return QDF_STATUS_E_FAILURE;
 
 	if (!debugfs_create_file("pattern_gen", 00400 | 00200,
-					adapter->debugfs_phy, net_dev,
-					&fops_patterngen))
+				 adapter->debugfs_phy, net_dev,
+				 &fops_patterngen))
 		return QDF_STATUS_E_FAILURE;
 
 	if (wlan_hdd_create_mib_stats_file(adapter))

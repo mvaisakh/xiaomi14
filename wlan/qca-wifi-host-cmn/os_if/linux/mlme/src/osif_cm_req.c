@@ -22,18 +22,18 @@
  * request apis.
  */
 
-#include "wlan_osif_priv.h"
 #include "osif_cm_req.h"
+#include "osif_cm_util.h"
 #include "wlan_cm_ucfg_api.h"
 #include "wlan_nl_to_crypto_params.h"
+#include "wlan_osif_priv.h"
 #include <wlan_cfg80211.h>
-#include "osif_cm_util.h"
 #ifdef WLAN_FEATURE_FILS_SK
 #include <wlan_mlme_ucfg_api.h>
 #endif
-#include <wlan_mlo_mgr_sta.h>
 #include <utils_mlo.h>
 #include <wlan_mgmt_txrx_rx_reo_utils_api.h>
+#include <wlan_mlo_mgr_sta.h>
 #if defined(WLAN_FEATURE_11BE_MLO) && defined(WLAN_MLO_MULTI_CHIP)
 #include <wlan_mlo_mgr_setup.h>
 #endif
@@ -45,7 +45,7 @@ osif_cm_update_wep_seq_info(struct wlan_cm_connect_req *connect_req,
 {
 	if (req->crypto.wep_keys->seq_len) {
 		connect_req->crypto.wep_keys.seq_len =
-						req->crypto.wep_keys->seq_len;
+			req->crypto.wep_keys->seq_len;
 		connect_req->crypto.wep_keys.seq =
 			qdf_mem_malloc(connect_req->crypto.wep_keys.seq_len);
 		if (!connect_req->crypto.wep_keys.seq) {
@@ -78,7 +78,7 @@ osif_cm_set_wep_key_params(struct wlan_cm_connect_req *connect_req,
 	connect_req->crypto.wep_keys.key_idx = req->key_idx;
 
 	connect_req->crypto.wep_keys.key =
-			qdf_mem_malloc(connect_req->crypto.wep_keys.key_len);
+		qdf_mem_malloc(connect_req->crypto.wep_keys.key_len);
 	if (!connect_req->crypto.wep_keys.key)
 		return QDF_STATUS_E_NOMEM;
 
@@ -92,7 +92,7 @@ static void osif_cm_set_auth_type(struct wlan_cm_connect_req *connect_req,
 				  const struct cfg80211_connect_params *req)
 {
 	wlan_crypto_auth_mode crypto_auth_type =
-			osif_nl_to_crypto_auth_type(req->auth_type);
+		osif_nl_to_crypto_auth_type(req->auth_type);
 
 	/* For auto check wpa version to decide WPA or RSNA */
 	if (crypto_auth_type == WLAN_CRYPTO_AUTH_AUTO &&
@@ -108,13 +108,12 @@ static void osif_cm_set_auth_type(struct wlan_cm_connect_req *connect_req,
 	QDF_SET_PARAM(connect_req->crypto.auth_type, crypto_auth_type);
 }
 
-static int
-osif_cm_get_num_akm_suites(const struct cfg80211_connect_params *req)
+static int osif_cm_get_num_akm_suites(const struct cfg80211_connect_params *req)
 {
 	return req->crypto.n_akm_suites;
 }
 
-static uint32_t*
+static uint32_t *
 osif_cm_get_akm_suites(const struct cfg80211_connect_params *req)
 {
 	return (uint32_t *)req->crypto.akm_suites;
@@ -125,19 +124,18 @@ osif_cm_get_akm_suites(const struct cfg80211_connect_params *req)
 #else
 #define MAX_AKM_SUITES NL80211_MAX_NR_AKM_SUITES
 #endif
-static void
-osif_cm_set_akm_params(struct wlan_cm_connect_req *connect_req,
-		       const struct cfg80211_connect_params *req)
+static void osif_cm_set_akm_params(struct wlan_cm_connect_req *connect_req,
+				   const struct cfg80211_connect_params *req)
 {
 	uint32_t i;
 	wlan_crypto_key_mgmt akm;
 
 	/* Fill AKM suites */
 	if (req->crypto.n_akm_suites) {
-		for (i = 0; i < req->crypto.n_akm_suites &&
-		     i < MAX_AKM_SUITES; i++) {
+		for (i = 0; i < req->crypto.n_akm_suites && i < MAX_AKM_SUITES;
+		     i++) {
 			akm = osif_nl_to_crypto_akm_type(
-					req->crypto.akm_suites[i]);
+				req->crypto.akm_suites[i]);
 			QDF_SET_PARAM(connect_req->crypto.akm_suites, akm);
 		}
 	} else {
@@ -146,9 +144,9 @@ osif_cm_set_akm_params(struct wlan_cm_connect_req *connect_req,
 	}
 }
 
-static
-QDF_STATUS osif_cm_set_crypto_params(struct wlan_cm_connect_req *connect_req,
-				     const struct cfg80211_connect_params *req)
+static QDF_STATUS
+osif_cm_set_crypto_params(struct wlan_cm_connect_req *connect_req,
+			  const struct cfg80211_connect_params *req)
 {
 	uint32_t i;
 	QDF_STATUS status;
@@ -167,9 +165,10 @@ QDF_STATUS osif_cm_set_crypto_params(struct wlan_cm_connect_req *connect_req,
 	/* Fill Pairwise ciphers */
 	if (req->crypto.n_ciphers_pairwise) {
 		for (i = 0; i < req->crypto.n_ciphers_pairwise &&
-		     i < NL80211_MAX_NR_CIPHER_SUITES; i++) {
+			    i < NL80211_MAX_NR_CIPHER_SUITES;
+		     i++) {
 			cipher = osif_nl_to_crypto_cipher_type(
-					req->crypto.ciphers_pairwise[i]);
+				req->crypto.ciphers_pairwise[i]);
 			QDF_SET_PARAM(connect_req->crypto.ciphers_pairwise,
 				      cipher);
 		}
@@ -218,8 +217,8 @@ static bool osif_cm_is_conn_type_fils(struct wlan_cm_connect_req *connect_req,
 		return false;
 
 	/*
-	 * Auth type will be either be OPEN or FILS type for a FILS connection
-	 */
+   * Auth type will be either be OPEN or FILS type for a FILS connection
+   */
 	if (connect_req->fils_info.auth_type == FILS_PK_MAX &&
 	    req->auth_type != NL80211_AUTHTYPE_OPEN_SYSTEM)
 		return false;
@@ -230,12 +229,10 @@ static bool osif_cm_is_conn_type_fils(struct wlan_cm_connect_req *connect_req,
 		return true;
 	}
 
-
 	return false;
 }
 
-enum wlan_fils_auth_type
-osif_cm_get_fils_auth_type(enum nl80211_auth_type auth)
+enum wlan_fils_auth_type osif_cm_get_fils_auth_type(enum nl80211_auth_type auth)
 {
 	switch (auth) {
 	case NL80211_AUTHTYPE_FILS_SK:
@@ -266,26 +263,24 @@ osif_cm_set_fils_info(struct wlan_objmgr_vdev *vdev,
 	connect_req->fils_info.auth_type =
 		osif_cm_get_fils_auth_type(req->auth_type);
 	connect_req->fils_info.is_fils_connection =
-					osif_cm_is_conn_type_fils(connect_req,
-								  req);
-	osif_debug("auth type %d is fils %d",
-		   connect_req->fils_info.auth_type,
+		osif_cm_is_conn_type_fils(connect_req, req);
+	osif_debug("auth type %d is fils %d", connect_req->fils_info.auth_type,
 		   connect_req->fils_info.is_fils_connection);
 	if (!connect_req->fils_info.is_fils_connection)
 		return QDF_STATUS_SUCCESS;
 
 	status = ucfg_mlme_get_fils_enabled_info(psoc, &value);
 	if (QDF_IS_STATUS_ERROR(status) || !value) {
-		osif_err("get_fils_enabled status: %d fils_enabled: %d",
-			 status, value);
+		osif_err("get_fils_enabled status: %d fils_enabled: %d", status,
+			 value);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	/*
-	 * The initial connection for FILS may happen with an OPEN
-	 * auth type. Hence we need to allow the connection to go
-	 * through in that case as well.
-	 */
+   * The initial connection for FILS may happen with an OPEN
+   * auth type. Hence we need to allow the connection to go
+   * through in that case as well.
+   */
 	if (req->auth_type != NL80211_AUTHTYPE_FILS_SK) {
 		osif_debug("set is fils false for initial connection");
 		connect_req->fils_info.is_fils_connection = false;
@@ -317,14 +312,15 @@ osif_cm_set_fils_info(struct wlan_objmgr_vdev *vdev,
 		     connect_req->fils_info.rrk_len);
 
 	connect_req->fils_info.username_len = req->fils_erp_username_len +
-					sizeof(char) + req->fils_erp_realm_len;
+					      sizeof(char) +
+					      req->fils_erp_realm_len;
 	osif_debug("usrname len %d = usrname recv len %zu + realm len %d + %zu",
 		   connect_req->fils_info.username_len,
-		   req->fils_erp_username_len,
-		   connect_req->fils_info.realm_len, sizeof(char));
+		   req->fils_erp_username_len, connect_req->fils_info.realm_len,
+		   sizeof(char));
 
 	if (connect_req->fils_info.username_len >
-					WLAN_CM_FILS_MAX_KEYNAME_NAI_LENGTH) {
+	    WLAN_CM_FILS_MAX_KEYNAME_NAI_LENGTH) {
 		osif_err("Invalid fils username len %d",
 			 connect_req->fils_info.username_len);
 		return QDF_STATUS_E_INVAL;
@@ -344,10 +340,10 @@ osif_cm_set_fils_info(struct wlan_objmgr_vdev *vdev,
 	return QDF_STATUS_SUCCESS;
 }
 #else
-static inline
-QDF_STATUS osif_cm_set_fils_info(struct wlan_objmgr_vdev *vdev,
-				 struct wlan_cm_connect_req *connect_req,
-				 const struct cfg80211_connect_params *req)
+static inline QDF_STATUS
+osif_cm_set_fils_info(struct wlan_objmgr_vdev *vdev,
+		      struct wlan_cm_connect_req *connect_req,
+		      const struct cfg80211_connect_params *req)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -363,11 +359,11 @@ osif_cm_set_prev_bssid(struct wlan_cm_connect_req *connect_req,
 			     QDF_MAC_ADDR_SIZE);
 }
 
-static inline
-void osif_cm_dump_prev_bssid(const struct cfg80211_connect_params *req)
+static inline void
+osif_cm_dump_prev_bssid(const struct cfg80211_connect_params *req)
 {
 	if (req->prev_bssid)
-		osif_nofl_debug("prev BSSID "QDF_MAC_ADDR_FMT,
+		osif_nofl_debug("prev BSSID " QDF_MAC_ADDR_FMT,
 				QDF_MAC_ADDR_REF(req->prev_bssid));
 }
 
@@ -378,8 +374,8 @@ osif_cm_set_prev_bssid(struct wlan_cm_connect_req *connect_req,
 {
 }
 
-static inline
-void osif_cm_dump_prev_bssid(const struct cfg80211_connect_params *req)
+static inline void
+osif_cm_dump_prev_bssid(const struct cfg80211_connect_params *req)
 {
 }
 
@@ -396,20 +392,22 @@ osif_cm_dump_connect_req(struct net_device *dev, uint8_t vdev_id,
 	num_akm_suites = osif_cm_get_num_akm_suites(req);
 	akm_suites = osif_cm_get_akm_suites(req);
 
-	osif_nofl_debug("connect req for %s(vdevid-%d) freq %d SSID " QDF_SSID_FMT " auth type %d WPA ver %d n_akm %d n_cipher %d grp_cipher %x mfp %d freq hint %d",
-			dev->name, vdev_id,
-			req->channel ? req->channel->center_freq : 0,
-			QDF_SSID_REF((int)req->ssid_len, req->ssid),
-			req->auth_type, req->crypto.wpa_versions,
-			num_akm_suites,
-			req->crypto.n_ciphers_pairwise,
-			req->crypto.cipher_group, req->mfp,
-			req->channel_hint ? req->channel_hint->center_freq : 0);
+	osif_nofl_debug(
+		"connect req for %s(vdevid-%d) freq %d SSID " QDF_SSID_FMT
+		" auth type %d WPA ver %d n_akm %d n_cipher %d grp_cipher %x mfp %d freq "
+		"hint %d",
+		dev->name, vdev_id,
+		req->channel ? req->channel->center_freq : 0,
+		QDF_SSID_REF((int)req->ssid_len, req->ssid), req->auth_type,
+		req->crypto.wpa_versions, num_akm_suites,
+		req->crypto.n_ciphers_pairwise, req->crypto.cipher_group,
+		req->mfp,
+		req->channel_hint ? req->channel_hint->center_freq : 0);
 	if (req->bssid)
-		osif_nofl_debug("BSSID "QDF_MAC_ADDR_FMT,
+		osif_nofl_debug("BSSID " QDF_MAC_ADDR_FMT,
 				QDF_MAC_ADDR_REF(req->bssid));
 	if (req->bssid_hint)
-		osif_nofl_debug("BSSID hint "QDF_MAC_ADDR_FMT,
+		osif_nofl_debug("BSSID hint " QDF_MAC_ADDR_FMT,
 				QDF_MAC_ADDR_REF(req->bssid_hint));
 	osif_cm_dump_prev_bssid(req);
 
@@ -447,18 +445,17 @@ osif_cm_fill_connect_params(struct wlan_cm_connect_req *req,
 
 #ifdef WLAN_FEATURE_11BE_MLO
 #ifdef WLAN_FEATURE_11BE_MLO_ADV_FEATURE
-static inline
-QDF_STATUS osif_update_mlo_partner_info(
-			struct wlan_objmgr_vdev *vdev,
-			struct wlan_cm_connect_req *connect_req,
-			const struct cfg80211_connect_params *req)
+static inline QDF_STATUS
+osif_update_mlo_partner_info(struct wlan_objmgr_vdev *vdev,
+			     struct wlan_cm_connect_req *connect_req,
+			     const struct cfg80211_connect_params *req)
 {
 	return QDF_STATUS_SUCCESS;
 }
 #else
-static inline
-void osif_update_partner_vdev_info(struct wlan_objmgr_vdev *vdev,
-				   struct mlo_partner_info partner_info)
+static inline void
+osif_update_partner_vdev_info(struct wlan_objmgr_vdev *vdev,
+			      struct mlo_partner_info partner_info)
 {
 	struct wlan_objmgr_vdev *tmp_vdev;
 	struct wlan_mlo_dev_context *ml_dev = NULL;
@@ -474,37 +471,37 @@ void osif_update_partner_vdev_info(struct wlan_objmgr_vdev *vdev,
 
 	for (i = 0; i < partner_info.num_partner_links; i++) {
 		tmp_vdev = mlo_get_ml_vdev_by_mac(
-				vdev,
-				&partner_info.partner_link_info[i].link_addr);
+			vdev, &partner_info.partner_link_info[i].link_addr);
 		if (tmp_vdev) {
 			mlo_update_connect_req_links(tmp_vdev, 1);
 			wlan_vdev_mlme_set_mlo_vdev(tmp_vdev);
 			wlan_vdev_mlme_set_mlo_link_vdev(tmp_vdev);
 			/* Set link id for bridge sta vap */
 			if (mlo_is_sta_bridge_vdev(tmp_vdev)) {
-				link_id = ml_dev->bridge_sta_ctx->bridge_link_id;
+				link_id =
+					ml_dev->bridge_sta_ctx->bridge_link_id;
 				wlan_vdev_set_link_id(tmp_vdev, link_id);
 			} else
 				wlan_vdev_set_link_id(
 					tmp_vdev,
-					partner_info.partner_link_info[i].link_id);
+					partner_info.partner_link_info[i]
+						.link_id);
 			osif_debug("link id %d",
 				   tmp_vdev->vdev_mlme.mlo_link_id);
 		}
 	}
 }
 
-static inline
-QDF_STATUS osif_update_mlo_partner_info(
-			struct wlan_objmgr_vdev *vdev,
-			struct wlan_cm_connect_req *connect_req,
-			const struct cfg80211_connect_params *req)
+static inline QDF_STATUS
+osif_update_mlo_partner_info(struct wlan_objmgr_vdev *vdev,
+			     struct wlan_cm_connect_req *connect_req,
+			     const struct cfg80211_connect_params *req)
 {
 	/* Update ml partner info from connect req*/
 	uint8_t *ptr = NULL;
 	uint8_t *ml_ie = NULL;
 	qdf_size_t ml_ie_len = 0;
-	struct mlo_partner_info partner_info = {0};
+	struct mlo_partner_info partner_info = { 0 };
 	bool ml_ie_found = false, linkidfound = false;
 	uint8_t linkid = 0;
 	uint8_t aplinks = 0;
@@ -545,8 +542,8 @@ QDF_STATUS osif_update_mlo_partner_info(
 		if (QDF_IS_STATUS_ERROR(status) || !ml_ie) {
 			osif_debug("ML IE not found");
 			/* Return success since ML is not mandatory for a
-			 * connect request
-			 */
+       * connect request
+       */
 			return QDF_STATUS_SUCCESS;
 		}
 
@@ -583,9 +580,10 @@ QDF_STATUS osif_update_mlo_partner_info(
 		}
 
 		if (partner_info.num_partner_links + 1 >
-			WLAN_UMAC_MLO_ASSOC_MAX_SUPPORTED_LINKS) {
-			osif_err("Rejecting connect for more than %d Assoc links",
-				 WLAN_UMAC_MLO_ASSOC_MAX_SUPPORTED_LINKS);
+		    WLAN_UMAC_MLO_ASSOC_MAX_SUPPORTED_LINKS) {
+			osif_err(
+				"Rejecting connect for more than %d Assoc links",
+				WLAN_UMAC_MLO_ASSOC_MAX_SUPPORTED_LINKS);
 			return QDF_STATUS_E_FAILURE;
 		}
 
@@ -593,14 +591,15 @@ QDF_STATUS osif_update_mlo_partner_info(
 		wlan_vdev_mlme_set_mlo_vdev(vdev);
 	}
 
-	qdf_mem_copy(&connect_req->ml_parnter_info,
-		     &partner_info, sizeof(struct mlo_partner_info));
+	qdf_mem_copy(&connect_req->ml_parnter_info, &partner_info,
+		     sizeof(struct mlo_partner_info));
 	/* Get total number of links in association */
 	aplinks = partner_info.num_partner_links + 1;
 	if (ml_ie_found) {
 		mlo_clear_connect_req_links_bmap(vdev);
 		/* Handle 4 LINK RDP Case*/
-		if (mlo_check_topology(pdev, vdev, aplinks) != QDF_STATUS_SUCCESS) {
+		if (mlo_check_topology(pdev, vdev, aplinks) !=
+		    QDF_STATUS_SUCCESS) {
 			osif_err("Topology check failed prevent association\n");
 			return QDF_STATUS_E_FAILURE;
 		}
@@ -617,11 +616,10 @@ QDF_STATUS osif_update_mlo_partner_info(
 }
 #endif /* WLAN_FEATURE_11BE_MLO_ADV_FEATURE */
 #else
-static inline
-QDF_STATUS osif_update_mlo_partner_info(
-			struct wlan_objmgr_vdev *vdev,
-			struct wlan_cm_connect_req *connect_req,
-			const struct cfg80211_connect_params *req)
+static inline QDF_STATUS
+osif_update_mlo_partner_info(struct wlan_objmgr_vdev *vdev,
+			     struct wlan_cm_connect_req *connect_req,
+			     const struct cfg80211_connect_params *req)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -639,21 +637,18 @@ int osif_cm_connect(struct net_device *dev, struct wlan_objmgr_vdev *vdev,
 	struct wlan_objmgr_vdev *temp_vdev;
 
 	if (req->bssid)
-		qdf_mem_copy(bssid.bytes, req->bssid,
-			     QDF_MAC_ADDR_SIZE);
+		qdf_mem_copy(bssid.bytes, req->bssid, QDF_MAC_ADDR_SIZE);
 	else if (bssid_hint)
-		qdf_mem_copy(bssid.bytes, req->bssid_hint,
-			     QDF_MAC_ADDR_SIZE);
+		qdf_mem_copy(bssid.bytes, req->bssid_hint, QDF_MAC_ADDR_SIZE);
 
 	temp_vdev = wlan_objmgr_get_vdev_by_macaddr_from_pdev(
-						wlan_vdev_get_pdev(vdev),
-						bssid.bytes,
-						WLAN_OSIF_CM_ID);
+		wlan_vdev_get_pdev(vdev), bssid.bytes, WLAN_OSIF_CM_ID);
 
 	if (temp_vdev) {
-		osif_err("vdev %d already exist with same mac address"
-			 QDF_MAC_ADDR_FMT, wlan_vdev_get_id(temp_vdev),
-			 QDF_MAC_ADDR_REF(bssid.bytes));
+		osif_err(
+			"vdev %d already exist with same mac address" QDF_MAC_ADDR_FMT,
+			wlan_vdev_get_id(temp_vdev),
+			QDF_MAC_ADDR_REF(bssid.bytes));
 		wlan_objmgr_vdev_release_ref(temp_vdev, WLAN_OSIF_CM_ID);
 		return -EINVAL;
 	}
@@ -710,7 +705,7 @@ int osif_cm_connect(struct net_device *dev, struct wlan_objmgr_vdev *vdev,
 		if (!connect_req->assoc_ie.ptr) {
 			connect_req->assoc_ie.len = 0;
 			status = QDF_STATUS_E_NOMEM;
-				goto connect_start_fail;
+			goto connect_start_fail;
 		}
 		qdf_mem_copy(connect_req->assoc_ie.ptr, req->ie,
 			     connect_req->assoc_ie.len);
@@ -742,9 +737,8 @@ int osif_cm_disconnect(struct net_device *dev, struct wlan_objmgr_vdev *vdev,
 	uint8_t vdev_id = wlan_vdev_get_id(vdev);
 	QDF_STATUS status;
 
-	osif_info("%s(vdevid-%d): Received Disconnect reason:%d %s",
-		  dev->name, vdev_id, reason,
-		  ucfg_cm_reason_code_to_str(reason));
+	osif_info("%s(vdevid-%d): Received Disconnect reason:%d %s", dev->name,
+		  vdev_id, reason, ucfg_cm_reason_code_to_str(reason));
 
 	status = mlo_disconnect(vdev, CM_OSIF_DISCONNECT, reason, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
@@ -758,8 +752,8 @@ int osif_cm_disconnect_sync(struct wlan_objmgr_vdev *vdev, uint16_t reason)
 	uint8_t vdev_id = wlan_vdev_get_id(vdev);
 	QDF_STATUS status;
 
-	osif_info("vdevid-%d: Received Disconnect reason:%d %s",
-		  vdev_id, reason, ucfg_cm_reason_code_to_str(reason));
+	osif_info("vdevid-%d: Received Disconnect reason:%d %s", vdev_id,
+		  reason, ucfg_cm_reason_code_to_str(reason));
 
 	status = mlo_sync_disconnect(vdev, CM_OSIF_DISCONNECT, reason, NULL);
 

@@ -57,5 +57,5 @@ const char *qdf_debug_domain_name(enum qdf_debug_domain domain)
 bool qdf_debug_domain_valid(enum qdf_debug_domain domain)
 {
 	return domain >= QDF_DEBUG_DOMAIN_INIT &&
-		domain < QDF_DEBUG_DOMAIN_COUNT;
+	       domain < QDF_DEBUG_DOMAIN_COUNT;
 }

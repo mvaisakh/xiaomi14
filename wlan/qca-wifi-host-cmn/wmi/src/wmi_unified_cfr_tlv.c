@@ -15,11 +15,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <osdep.h>
 #include "wmi.h"
-#include "wmi_unified_priv.h"
-#include "wmi_unified_cfr_param.h"
 #include "wmi_unified_cfr_api.h"
+#include "wmi_unified_cfr_param.h"
+#include "wmi_unified_priv.h"
+#include <osdep.h>
 
 #ifdef WLAN_CFR_ENABLE
 static QDF_STATUS
@@ -47,8 +47,7 @@ extract_cfr_peer_tx_event_param_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 	peer_tx_event->vdev_id = peer_tx_event_ev->vdev_id;
 	WMI_MAC_ADDR_TO_CHAR_ARRAY(&peer_tx_event_ev->mac_addr,
 				   &peer_tx_event->peer_mac_addr.bytes[0]);
-	peer_tx_event->primary_20mhz_chan =
-		peer_tx_event_ev->chan_mhz;
+	peer_tx_event->primary_20mhz_chan = peer_tx_event_ev->chan_mhz;
 	peer_tx_event->bandwidth = peer_tx_event_ev->bandwidth;
 	peer_tx_event->phy_mode = peer_tx_event_ev->phy_mode;
 	peer_tx_event->band_center_freq1 = peer_tx_event_ev->band_center_freq1;
@@ -80,11 +79,11 @@ extract_cfr_peer_tx_event_param_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 	if (chain_phase_ev) {
 		for (idx = 0; idx < WMI_HOST_MAX_CHAINS; idx++) {
 			/* Due to FW's alignment rules, phase information being
-			 * passed is 32-bit, out of which only 16 bits is valid.
-			 * Remaining bits are all zeroed. So direct mem copy
-			 * will not work as it will copy extra zeroes into host
-			 * structures.
-			 */
+       * passed is 32-bit, out of which only 16 bits is valid.
+       * Remaining bits are all zeroed. So direct mem copy
+       * will not work as it will copy extra zeroes into host
+       * structures.
+       */
 			peer_tx_event->chain_phase[idx] =
 				(0xffff & chain_phase_ev->chain_phase[idx]);
 			peer_tx_event->agc_gain[idx] =
@@ -106,9 +105,8 @@ static void populate_wmi_cfr_param(uint8_t grp_id, struct cfr_rcc_param *rcc,
 
 	WMITLV_SET_HDR(&param->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_cfr_filter_group_config,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_cfr_filter_group_config));
-	tgt_cfg  = &rcc->curr[grp_id];
+		       WMITLV_GET_STRUCT_TLVLEN(wmi_cfr_filter_group_config));
+	tgt_cfg = &rcc->curr[grp_id];
 
 	param->filter_group_id = grp_id;
 	WMI_CFR_GROUP_TA_ADDR_VALID_SET(param->filter_set_valid_mask,
@@ -129,18 +127,12 @@ static void populate_wmi_cfr_param(uint8_t grp_id, struct cfr_rcc_param *rcc,
 					     tgt_cfg->valid_ctrl_subtype);
 	WMI_CFR_GROUP_DATA_SUBTYPE_VALID_SET(param->filter_set_valid_mask,
 					     tgt_cfg->valid_data_subtype);
-	WMI_CHAR_ARRAY_TO_MAC_ADDR(tgt_cfg->tx_addr,
-				   &param->ta_addr);
-	WMI_CHAR_ARRAY_TO_MAC_ADDR(tgt_cfg->tx_addr_mask,
-				   &param->ta_addr_mask);
-	WMI_CHAR_ARRAY_TO_MAC_ADDR(tgt_cfg->rx_addr,
-				   &param->ra_addr);
-	WMI_CHAR_ARRAY_TO_MAC_ADDR(tgt_cfg->rx_addr_mask,
-				   &param->ra_addr_mask);
-	WMI_CFR_GROUP_BW_SET(param->bw_nss_filter,
-			     tgt_cfg->bw);
-	WMI_CFR_GROUP_NSS_SET(param->bw_nss_filter,
-			      tgt_cfg->nss);
+	WMI_CHAR_ARRAY_TO_MAC_ADDR(tgt_cfg->tx_addr, &param->ta_addr);
+	WMI_CHAR_ARRAY_TO_MAC_ADDR(tgt_cfg->tx_addr_mask, &param->ta_addr_mask);
+	WMI_CHAR_ARRAY_TO_MAC_ADDR(tgt_cfg->rx_addr, &param->ra_addr);
+	WMI_CHAR_ARRAY_TO_MAC_ADDR(tgt_cfg->rx_addr_mask, &param->ra_addr_mask);
+	WMI_CFR_GROUP_BW_SET(param->bw_nss_filter, tgt_cfg->bw);
+	WMI_CFR_GROUP_NSS_SET(param->bw_nss_filter, tgt_cfg->nss);
 	param->mgmt_subtype_filter = tgt_cfg->mgmt_subtype_filter;
 	param->ctrl_subtype_filter = tgt_cfg->ctrl_subtype_filter;
 	param->data_subtype_filter = tgt_cfg->data_subtype_filter;
@@ -171,10 +163,10 @@ static QDF_STATUS send_cfr_rcc_cmd_tlv(wmi_unified_t wmi_handle,
 
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_cfr_capture_filter_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_cfr_capture_filter_cmd_fixed_param));
-	cmd->pdev_id = ops->convert_host_pdev_id_to_target(wmi_handle,
-							   rcc->pdev_id);
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_cfr_capture_filter_cmd_fixed_param));
+	cmd->pdev_id =
+		ops->convert_host_pdev_id_to_target(wmi_handle, rcc->pdev_id);
 	WMI_CFR_CAPTURE_INTERVAL_SET(cmd->capture_interval,
 				     rcc->capture_interval);
 	WMI_CFR_CAPTURE_DURATION_SET(cmd->capture_duration,
@@ -191,20 +183,15 @@ static QDF_STATUS send_cfr_rcc_cmd_tlv(wmi_unified_t wmi_handle,
 					rcc->freeze_tlv_delay_cnt_en);
 	WMI_CFR_FREEZE_DELAY_CNT_THR_SET(cmd->freeze_tlv_delay_cnt,
 					 rcc->freeze_tlv_delay_cnt_thr);
-	WMI_CFR_DIRECTED_FTM_ACK_EN_SET(cmd->filter_type,
-					rcc->m_directed_ftm);
-	WMI_CFR_ALL_FTM_ACK_EN_SET(cmd->filter_type,
-				   rcc->m_all_ftm_ack);
+	WMI_CFR_DIRECTED_FTM_ACK_EN_SET(cmd->filter_type, rcc->m_directed_ftm);
+	WMI_CFR_ALL_FTM_ACK_EN_SET(cmd->filter_type, rcc->m_all_ftm_ack);
 	WMI_CFR_NDPA_NDP_DIRECTED_EN_SET(cmd->filter_type,
 					 rcc->m_ndpa_ndp_directed);
-	WMI_CFR_NDPA_NDP_ALL_EN_SET(cmd->filter_type,
-				    rcc->m_ndpa_ndp_all);
-	WMI_CFR_TA_RA_TYPE_FILTER_EN_SET(cmd->filter_type,
-					 rcc->m_ta_ra_filter);
+	WMI_CFR_NDPA_NDP_ALL_EN_SET(cmd->filter_type, rcc->m_ndpa_ndp_all);
+	WMI_CFR_TA_RA_TYPE_FILTER_EN_SET(cmd->filter_type, rcc->m_ta_ra_filter);
 	WMI_CFR_FILTER_IN_AS_FP_TA_RA_TYPE_SET(cmd->filter_type,
 					       rcc->en_ta_ra_filter_in_as_fp);
-	WMI_CFR_ALL_PACKET_EN_SET(cmd->filter_type,
-				  rcc->m_all_packet);
+	WMI_CFR_ALL_PACKET_EN_SET(cmd->filter_type, rcc->m_all_packet);
 
 	/* TLV indicating array of structures to follow */
 	buf_ptr += sizeof(wmi_cfr_capture_filter_cmd_fixed_param);
@@ -233,8 +220,7 @@ static QDF_STATUS send_cfr_rcc_cmd_tlv(wmi_unified_t wmi_handle,
 }
 
 static QDF_STATUS
-extract_cfr_phase_param_tlv(wmi_unified_t wmi_handle,
-			    void *evt_buf,
+extract_cfr_phase_param_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 			    struct wmi_cfr_phase_delta_param *param)
 {
 	WMI_PDEV_AOA_PHASEDELTA_EVENTID_param_tlvs *param_buf;
@@ -253,8 +239,8 @@ extract_cfr_phase_param_tlv(wmi_unified_t wmi_handle,
 	}
 
 	param->freq = phase_event->freq;
-	param->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host
-				(wmi_handle, phase_event->pdev_id);
+	param->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host(
+		wmi_handle, phase_event->pdev_id);
 
 	param->max_chains = phase_event->chainInfo & 0xFFFF;
 
@@ -266,29 +252,24 @@ extract_cfr_phase_param_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_RANGE;
 	}
 
-	if ((sizeof(param->phase_delta)) <
-	    (sizeof(phase_event->phasedelta))) {
+	if ((sizeof(param->phase_delta)) < (sizeof(phase_event->phasedelta))) {
 		wmi_err("phase_delta can not hold all values from event data");
 		return QDF_STATUS_E_RANGE;
 	}
 
-	qdf_mem_copy(param->ibf_cal_val,
-		     phase_event->perChainIbfCalVal,
+	qdf_mem_copy(param->ibf_cal_val, phase_event->perChainIbfCalVal,
 		     sizeof(param->ibf_cal_val));
 
-	qdf_mem_copy(param->phase_delta,
-		     phase_event->phasedelta,
+	qdf_mem_copy(param->phase_delta, phase_event->phasedelta,
 		     sizeof(param->phase_delta));
 
 	return QDF_STATUS_SUCCESS;
 }
 
 #ifdef WLAN_RCC_ENHANCED_AOA_SUPPORT
-static QDF_STATUS
-extract_cfr_enh_phase_fixed_param_tlv
-		(wmi_unified_t wmi_handle,
-		 void *evt_buf,
-		 struct wmi_cfr_enh_phase_delta_param *param)
+static QDF_STATUS extract_cfr_enh_phase_fixed_param_tlv(
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct wmi_cfr_enh_phase_delta_param *param)
 {
 	WMI_PDEV_ENHANCED_AOA_PHASEDELTA_EVENTID_param_tlvs *ev_buf;
 	wmi_pdev_enhanced_aoa_phasedelta_evt_fixed_param *fixed_param;
@@ -306,8 +287,8 @@ extract_cfr_enh_phase_fixed_param_tlv
 	}
 
 	param->freq = fixed_param->freq;
-	param->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host
-				(wmi_handle, fixed_param->pdev_id);
+	param->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host(
+		wmi_handle, fixed_param->pdev_id);
 
 	param->max_chains =
 		WMI_AOA_MAX_SUPPORTED_CHAINS_GET(fixed_param->chain_info);
@@ -316,7 +297,7 @@ extract_cfr_enh_phase_fixed_param_tlv
 	param->xbar_config = fixed_param->xbar_config;
 
 	if (sizeof(param->ibf_cal_val) <
-			sizeof(fixed_param->per_chain_ibf_cal_val)) {
+	    sizeof(fixed_param->per_chain_ibf_cal_val)) {
 		wmi_err("ibf_cal_val can not hold all values from event data");
 		return QDF_STATUS_E_RANGE;
 	}
@@ -333,8 +314,8 @@ populate_enhanced_aoa_data(uint32_t *dst_array, uint32_t *src_array,
 			   wmi_enhanced_aoa_gain_phase_data_hdr *data_hdr,
 			   uint32_t offset, uint32_t dst_size)
 {
-	uint32_t src_size = WMI_AOA_NUM_ENTIRES_GET(data_hdr->data_info) *
-				sizeof(uint32_t);
+	uint32_t src_size =
+		WMI_AOA_NUM_ENTIRES_GET(data_hdr->data_info) * sizeof(uint32_t);
 
 	if (src_size > dst_size) {
 		wmi_err("the amount of data can not fit in the host array");
@@ -347,8 +328,7 @@ populate_enhanced_aoa_data(uint32_t *dst_array, uint32_t *src_array,
 }
 
 static QDF_STATUS
-extract_cfr_enh_phase_data_tlv(wmi_unified_t wmi_handle,
-			       void *evt_buf,
+extract_cfr_enh_phase_data_tlv(wmi_unified_t wmi_handle, void *evt_buf,
 			       struct wmi_cfr_enh_phase_delta_param *param)
 {
 	WMI_PDEV_ENHANCED_AOA_PHASEDELTA_EVENTID_param_tlvs *ev_buf;
@@ -388,9 +368,10 @@ extract_cfr_enh_phase_data_tlv(wmi_unified_t wmi_handle,
 			return QDF_STATUS_E_INVAL;
 		}
 
-		status = populate_enhanced_aoa_data
-				(dst_array, ev_buf->aoa_data_buf,
-				 data_hdr, offset, param->array_size);
+		status = populate_enhanced_aoa_data(dst_array,
+						    ev_buf->aoa_data_buf,
+						    data_hdr, offset,
+						    param->array_size);
 		if (status) {
 			wmi_err("error in populating aoa data");
 			return status;
@@ -419,10 +400,10 @@ static QDF_STATUS send_peer_cfr_capture_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_peer_cfr_capture_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_peer_cfr_capture_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_peer_cfr_capture_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_peer_cfr_capture_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_peer_cfr_capture_cmd_fixed_param));
 
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(param->macaddr, &cmd->mac_addr);
 	cmd->request = param->request;

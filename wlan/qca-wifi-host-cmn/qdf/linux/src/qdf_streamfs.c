@@ -22,9 +22,9 @@
  */
 
 #include <i_qdf_streamfs.h>
-#include <qdf_trace.h>
-#include <qdf_streamfs.h>
 #include <qdf_module.h>
+#include <qdf_streamfs.h>
+#include <qdf_trace.h>
 
 /**
  * qdf_create_buf_file_handler() - Create streamfs buffer file
@@ -36,10 +36,11 @@
  *
  *  Returns dentry if successful, NULL otherwise.
  */
-static qdf_dentry_t
-qdf_create_buf_file_handler(const char *filename, qdf_dentry_t parent,
-			    uint16_t mode, qdf_streamfs_chan_buf_t buf,
-			    int32_t *is_global)
+static qdf_dentry_t qdf_create_buf_file_handler(const char *filename,
+						qdf_dentry_t parent,
+						uint16_t mode,
+						qdf_streamfs_chan_buf_t buf,
+						int32_t *is_global)
 {
 	qdf_dentry_t buf_file;
 	*is_global = 1;
@@ -67,36 +68,31 @@ static struct rchan_callbacks g_qdf_streamfs_cb = {
 	.remove_buf_file = qdf_remove_buf_file_handler,
 };
 
-qdf_dentry_t
-qdf_streamfs_create_file(const char *name, uint16_t mode,
-			 qdf_dentry_t parent,
-			 qdf_streamfs_chan_buf_t buf)
+qdf_dentry_t qdf_streamfs_create_file(const char *name, uint16_t mode,
+				      qdf_dentry_t parent,
+				      qdf_streamfs_chan_buf_t buf)
 {
 	qdf_dentry_t file = NULL;
 
 	if (!name)
 		return NULL;
 
-	file = debugfs_create_file(name, mode,
-				   (struct dentry *)parent,
-				   buf, &relay_file_operations);
+	file = debugfs_create_file(name, mode, (struct dentry *)parent, buf,
+				   &relay_file_operations);
 
 	return file;
 }
 
 qdf_export_symbol(qdf_streamfs_create_file);
 
-qdf_streamfs_chan_t
-qdf_streamfs_open(const char *base_filename, qdf_dentry_t parent,
-		  size_t subbuf_size, size_t n_subbufs,
-		  void *private_data)
+qdf_streamfs_chan_t qdf_streamfs_open(const char *base_filename,
+				      qdf_dentry_t parent, size_t subbuf_size,
+				      size_t n_subbufs, void *private_data)
 {
 	qdf_streamfs_chan_t channel_ptr = NULL;
 
-	channel_ptr = relay_open(base_filename,
-				 (struct dentry *)parent,
-				 subbuf_size, n_subbufs,
-				 &g_qdf_streamfs_cb,
+	channel_ptr = relay_open(base_filename, (struct dentry *)parent,
+				 subbuf_size, n_subbufs, &g_qdf_streamfs_cb,
 				 private_data);
 
 	return channel_ptr;
@@ -128,8 +124,7 @@ void qdf_streamfs_reset(qdf_streamfs_chan_t chan)
 
 qdf_export_symbol(qdf_streamfs_reset);
 
-void qdf_streamfs_subbufs_consumed(qdf_streamfs_chan_t chan,
-				   unsigned int cpu,
+void qdf_streamfs_subbufs_consumed(qdf_streamfs_chan_t chan, unsigned int cpu,
 				   size_t consumed)
 {
 	if (chan)
@@ -138,8 +133,7 @@ void qdf_streamfs_subbufs_consumed(qdf_streamfs_chan_t chan,
 
 qdf_export_symbol(qdf_streamfs_subbufs_consumed);
 
-void qdf_streamfs_write(qdf_streamfs_chan_t chan,
-			const void *data,
+void qdf_streamfs_write(qdf_streamfs_chan_t chan, const void *data,
 			size_t length)
 {
 	if (chan)

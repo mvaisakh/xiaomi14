@@ -5,16 +5,16 @@
  */
 
 #include <linux/device.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
 
-#include "cam_subdev.h"
-#include "cam_node.h"
 #include "cam_lrme_context.h"
 #include "cam_lrme_hw_mgr.h"
 #include "cam_lrme_hw_mgr_intf.h"
+#include "cam_node.h"
+#include "cam_subdev.h"
 #include "camera_main.h"
 
 #define CAM_LRME_DEV_NAME "cam-lrme"
@@ -29,17 +29,17 @@
  * @open_cnt : Open count of LRME subdev
  */
 struct cam_lrme_dev {
-	struct cam_subdev        sd;
-	struct cam_context       ctx[CAM_CTX_MAX];
-	struct cam_lrme_context  lrme_ctx[CAM_CTX_MAX];
-	struct mutex             lock;
-	uint32_t                 open_cnt;
+	struct cam_subdev sd;
+	struct cam_context ctx[CAM_CTX_MAX];
+	struct cam_lrme_context lrme_ctx[CAM_CTX_MAX];
+	struct mutex lock;
+	uint32_t open_cnt;
 };
 
 static struct cam_lrme_dev *g_lrme_dev;
 
 static int cam_lrme_dev_buf_done_cb(void *ctxt_to_hw_map, uint32_t evt_id,
-	void *evt_data)
+				    void *evt_data)
 {
 	uint64_t index;
 	struct cam_context *ctx;
@@ -55,16 +55,15 @@ static int cam_lrme_dev_buf_done_cb(void *ctxt_to_hw_map, uint32_t evt_id,
 	return rc;
 }
 
-static int cam_lrme_dev_open(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static int cam_lrme_dev_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct cam_lrme_dev *lrme_dev = g_lrme_dev;
 
 	cam_req_mgr_rwsem_read_op(CAM_SUBDEV_LOCK);
 
 	if (!lrme_dev) {
-		CAM_ERR(CAM_LRME,
-			"LRME Dev not initialized, dev=%pK", lrme_dev);
+		CAM_ERR(CAM_LRME, "LRME Dev not initialized, dev=%pK",
+			lrme_dev);
 		cam_req_mgr_rwsem_read_op(CAM_SUBDEV_UNLOCK);
 		return -ENODEV;
 	}
@@ -79,7 +78,7 @@ static int cam_lrme_dev_open(struct v4l2_subdev *sd,
 }
 
 static int cam_lrme_dev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				       struct v4l2_subdev_fh *fh)
 {
 	int rc = 0;
 	struct cam_lrme_dev *lrme_dev = g_lrme_dev;
@@ -112,8 +111,7 @@ end:
 	return rc;
 }
 
-static int cam_lrme_dev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static int cam_lrme_dev_close(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -130,7 +128,7 @@ static const struct v4l2_subdev_internal_ops cam_lrme_subdev_internal_ops = {
 };
 
 static int cam_lrme_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				   struct device *master_dev, void *data)
 {
 	int rc;
 	int i;
@@ -149,7 +147,7 @@ static int cam_lrme_component_bind(struct device *dev,
 	mutex_init(&g_lrme_dev->lock);
 
 	rc = cam_subdev_probe(&g_lrme_dev->sd, pdev, CAM_LRME_DEV_NAME,
-		CAM_LRME_DEVICE_TYPE);
+			      CAM_LRME_DEVICE_TYPE);
 	if (rc) {
 		CAM_ERR(CAM_LRME, "LRME cam_subdev_probe failed");
 		goto free_mem;
@@ -164,8 +162,8 @@ static int cam_lrme_component_bind(struct device *dev,
 
 	for (i = 0; i < CAM_CTX_MAX; i++) {
 		rc = cam_lrme_context_init(&g_lrme_dev->lrme_ctx[i],
-				&g_lrme_dev->ctx[i],
-				&node->hw_mgr_intf, i, -1);
+					   &g_lrme_dev->ctx[i],
+					   &node->hw_mgr_intf, i, -1);
 		if (rc) {
 			CAM_ERR(CAM_LRME, "LRME context init failed");
 			goto deinit_ctx;
@@ -173,7 +171,7 @@ static int cam_lrme_component_bind(struct device *dev,
 	}
 
 	rc = cam_node_init(node, &hw_mgr_intf, g_lrme_dev->ctx, CAM_CTX_MAX,
-		CAM_LRME_DEV_NAME);
+			   CAM_LRME_DEV_NAME);
 	if (rc) {
 		CAM_ERR(CAM_LRME, "LRME node init failed");
 		goto deinit_ctx;
@@ -199,7 +197,7 @@ free_mem:
 }
 
 static void cam_lrme_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				      struct device *master_dev, void *data)
 {
 	int i;
 	int rc = 0;
@@ -247,21 +245,20 @@ static int cam_lrme_dev_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id cam_lrme_dt_match[] = {
-	{
-		.compatible = "qcom,cam-lrme"
-	},
+	{ .compatible = "qcom,cam-lrme" },
 	{}
 };
 
 struct platform_driver cam_lrme_driver = {
-	.probe = cam_lrme_dev_probe,
-	.remove = cam_lrme_dev_remove,
-	.driver = {
-		.name = "cam_lrme",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_lrme_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_lrme_dev_probe,
+    .remove = cam_lrme_dev_remove,
+    .driver =
+        {
+            .name = "cam_lrme",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_lrme_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_lrme_dev_init_module(void)

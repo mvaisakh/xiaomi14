@@ -15,9 +15,9 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-#include <wlan_twt_cfg_ext_api.h>
 #include "twt/core/src/wlan_twt_cfg.h"
 #include "wlan_mlme_api.h"
+#include <wlan_twt_cfg_ext_api.h>
 
 QDF_STATUS
 wlan_twt_cfg_get_req_flag(struct wlan_objmgr_psoc *psoc, bool *val)
@@ -80,11 +80,9 @@ void wlan_twt_get_feature_info(struct wlan_objmgr_psoc *psoc,
 	twt_feature_set->enable_twt = wlan_twt_cfg_is_twt_enabled(psoc);
 	if (twt_feature_set->enable_twt) {
 		wlan_twt_cfg_get_bcast_requestor(
-					psoc,
-					&twt_feature_set->enable_twt_broadcast);
+			psoc, &twt_feature_set->enable_twt_broadcast);
 		wlan_twt_cfg_get_requestor(
-					psoc,
-					&twt_feature_set->enable_twt_requester);
+			psoc, &twt_feature_set->enable_twt_requester);
 	}
 }
 #endif

@@ -24,23 +24,22 @@
  *
  */
 
-#include <cdp_txrx_ctrl.h>
-#include "target_if_cfr.h"
-#include <qdf_nbuf.h>
-#include "wlan_cfr_utils_api.h"
 #include "target_if_cfr_6490.h"
-#include "target_if_cfr_enh.h"
-#include "init_deinit_lmac.h"
 #include "cfg_ucfg_api.h"
 #include "cfr_cfg.h"
+#include "init_deinit_lmac.h"
+#include "target_if_cfr.h"
+#include "target_if_cfr_enh.h"
+#include "wlan_cfr_utils_api.h"
+#include <cdp_txrx_ctrl.h>
+#include <qdf_nbuf.h>
 
 #ifdef WLAN_ENH_CFR_ENABLE
 #ifdef CFR_USE_FIXED_FOLDER
 static wdi_event_subscribe g_cfr_subscribe;
 
 static void target_cfr_callback(void *pdev_obj, enum WDI_EVENT event,
-				void *data, u_int16_t peer_id,
-				uint32_t status)
+				void *data, u_int16_t peer_id, uint32_t status)
 {
 	struct wlan_objmgr_pdev *pdev;
 	qdf_nbuf_t nbuf = (qdf_nbuf_t)data;
@@ -48,8 +47,8 @@ static void target_cfr_callback(void *pdev_obj, enum WDI_EVENT event,
 
 	pdev = (struct wlan_objmgr_pdev *)pdev_obj;
 	if (qdf_unlikely((!pdev || !data))) {
-		cfr_err("Invalid pdev %pK or data %pK for event %d",
-			pdev, data, event);
+		cfr_err("Invalid pdev %pK or data %pK for event %d", pdev, data,
+			event);
 		qdf_nbuf_free(nbuf);
 		return;
 	}
@@ -80,8 +79,7 @@ target_if_cfr_subscribe_ppdu_desc(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	pcfr = wlan_objmgr_pdev_get_comp_private_obj(
-				pdev, WLAN_UMAC_COMP_CFR);
+	pcfr = wlan_objmgr_pdev_get_comp_private_obj(pdev, WLAN_UMAC_COMP_CFR);
 	if (!pcfr) {
 		cfr_err("pcfr is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -121,5 +119,3 @@ target_if_cfr_subscribe_ppdu_desc(struct wlan_objmgr_pdev *pdev,
 }
 #endif
 #endif
-
-

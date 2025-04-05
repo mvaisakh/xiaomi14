@@ -19,16 +19,17 @@
  * DOC: Implement API's specific to interop issues ap component.
  */
 
-#include <wmi_unified_priv.h>
 #include <wmi_unified_interop_issues_ap_api.h>
+#include <wmi_unified_priv.h>
 
 QDF_STATUS
-wmi_extract_interop_issues_ap_ev_param(wmi_unified_t wmi_handle, void *evt_buf,
-				    struct wlan_interop_issues_ap_event *param)
+wmi_extract_interop_issues_ap_ev_param(
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct wlan_interop_issues_ap_event *param)
 {
 	if (wmi_handle->ops->extract_interop_issues_ap_ev_param)
 		return wmi_handle->ops->extract_interop_issues_ap_ev_param(
-						wmi_handle, evt_buf, param);
+			wmi_handle, evt_buf, param);
 	return QDF_STATUS_E_FAILURE;
 }
 

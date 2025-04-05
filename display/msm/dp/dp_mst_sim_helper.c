@@ -35,19 +35,19 @@
  * OF THIS SOFTWARE.
  */
 
-#include <linux/types.h>
+#include <drm/drm_edid.h>
+#include <drm/drm_fixed.h>
 #include <linux/completion.h>
 #include <linux/delay.h>
+#include <linux/types.h>
 #include <linux/version.h>
-#include <drm/drm_fixed.h>
-#include <drm/drm_edid.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0))
 #include <drm/display/drm_dp_mst_helper.h>
 #else
 #include <drm/drm_dp_mst_helper.h>
 #endif
-#include "dp_mst_sim_helper.h"
 #include "dp_debug.h"
+#include "dp_mst_sim_helper.h"
 
 #define DP_MST_DEBUG(fmt, ...) DP_DEBUG(fmt, ##__VA_ARGS__)
 #define DP_MST_INFO(fmt, ...) DP_INFO(fmt, ##__VA_ARGS__)
@@ -59,8 +59,8 @@
 struct dp_mst_sim_context {
 	void *host_dev;
 	void (*host_hpd_irq)(void *host_dev);
-	void (*host_req)(void *host_dev, const u8 *in, int in_size,
-			u8 *out, int *out_size);
+	void (*host_req)(void *host_dev, const u8 *in, int in_size, u8 *out,
+			 int *out_size);
 
 	struct dp_mst_sim_port *ports;
 	u32 port_num;
@@ -93,30 +93,30 @@ struct dp_mst_notify_work {
 };
 
 #if IS_ENABLED(CONFIG_DYNAMIC_DEBUG)
-static void dp_sideband_hex_dump(const char *name,
-		u32 address, u8 *buffer, size_t size)
+static void dp_sideband_hex_dump(const char *name, u32 address, u8 *buffer,
+				 size_t size)
 {
 	char prefix[64];
 	int i, linelen, remaining = size;
 	const int rowsize = 16;
 	u8 linebuf[64];
 
-	snprintf(prefix, sizeof(prefix), "%s(%d) %4xh(%2zu): ",
-		name, current->pid, address, size);
+	snprintf(prefix, sizeof(prefix), "%s(%d) %4xh(%2zu): ", name,
+		 current->pid, address, size);
 
 	for (i = 0; i < size; i += rowsize) {
 		linelen = min(remaining, rowsize);
 		remaining -= rowsize;
 
-		hex_dump_to_buffer(buffer + i, linelen, rowsize, 1,
-			linebuf, sizeof(linebuf), false);
+		hex_dump_to_buffer(buffer + i, linelen, rowsize, 1, linebuf,
+				   sizeof(linebuf), false);
 
 		DP_MST_DEBUG_V("%s%s\n", prefix, linebuf);
 	}
 }
 #else
-static void dp_sideband_hex_dump(const char *name,
-		u32 address, u8 *buffer, size_t size)
+static void dp_sideband_hex_dump(const char *name, u32 address, u8 *buffer,
+				 size_t size)
 {
 }
 #endif /* CONFIG_DYNAMIC_DEBUG */
@@ -189,8 +189,9 @@ static u8 dp_mst_sim_msg_data_crc4(const uint8_t *data, u8 number_of_bytes)
 	return remainder & 0xff;
 }
 
-static bool dp_mst_sim_decode_sideband_msg_hdr(struct drm_dp_sideband_msg_hdr *hdr,
-					   u8 *buf, int buflen, u8 *hdrlen)
+static bool
+dp_mst_sim_decode_sideband_msg_hdr(struct drm_dp_sideband_msg_hdr *hdr, u8 *buf,
+				   int buflen, u8 *hdrlen)
 {
 	u8 crc4;
 	u8 len;
@@ -228,7 +229,8 @@ static bool dp_mst_sim_decode_sideband_msg_hdr(struct drm_dp_sideband_msg_hdr *h
 }
 
 static bool dp_mst_sim_sideband_msg_build(struct drm_dp_sideband_msg_rx *msg,
-				      u8 *replybuf, u8 replybuflen, bool hdr)
+					  u8 *replybuf, u8 replybuflen,
+					  bool hdr)
 {
 	int ret;
 	u8 crc4;
@@ -237,15 +239,15 @@ static bool dp_mst_sim_sideband_msg_build(struct drm_dp_sideband_msg_rx *msg,
 		u8 hdrlen;
 		struct drm_dp_sideband_msg_hdr recv_hdr;
 
-		ret = dp_mst_sim_decode_sideband_msg_hdr(&recv_hdr,
-			replybuf, replybuflen, &hdrlen);
+		ret = dp_mst_sim_decode_sideband_msg_hdr(&recv_hdr, replybuf,
+							 replybuflen, &hdrlen);
 		if (ret == false)
 			return false;
 
 		/*
-		 * ignore out-of-order messages or messages that are part of a
-		 * failed transaction
-		 */
+     * ignore out-of-order messages or messages that are part of a
+     * failed transaction
+     */
 		if (!recv_hdr.somt && !msg->have_somt)
 			return false;
 
@@ -259,15 +261,15 @@ static bool dp_mst_sim_sideband_msg_build(struct drm_dp_sideband_msg_rx *msg,
 
 		if (recv_hdr.somt) {
 			memcpy(&msg->initial_hdr, &recv_hdr,
-				sizeof(struct drm_dp_sideband_msg_hdr));
+			       sizeof(struct drm_dp_sideband_msg_hdr));
 			msg->have_somt = true;
 		}
 		if (recv_hdr.eomt)
 			msg->have_eomt = true;
 
 		/* copy the bytes for the remainder of this header chunk */
-		msg->curchunk_idx = min(msg->curchunk_len,
-			(u8)(replybuflen - hdrlen));
+		msg->curchunk_idx =
+			min(msg->curchunk_len, (u8)(replybuflen - hdrlen));
 		memcpy(&msg->chunk[0], replybuf + hdrlen, msg->curchunk_idx);
 	} else {
 		memcpy(&msg->chunk[msg->curchunk_idx], replybuf, replybuflen);
@@ -276,17 +278,19 @@ static bool dp_mst_sim_sideband_msg_build(struct drm_dp_sideband_msg_rx *msg,
 
 	if (msg->curchunk_idx >= msg->curchunk_len) {
 		/* do CRC */
-		crc4 = dp_mst_sim_msg_data_crc4(msg->chunk, msg->curchunk_len - 1);
+		crc4 = dp_mst_sim_msg_data_crc4(msg->chunk,
+						msg->curchunk_len - 1);
 		/* copy chunk into bigger msg */
 		memcpy(&msg->msg[msg->curlen], msg->chunk,
-			msg->curchunk_len - 1);
+		       msg->curchunk_len - 1);
 		msg->curlen += msg->curchunk_len - 1;
 	}
 	return true;
 }
 
-static void dp_mst_sim_encode_sideband_msg_hdr(struct drm_dp_sideband_msg_hdr *hdr,
-					   u8 *buf, int *len)
+static void
+dp_mst_sim_encode_sideband_msg_hdr(struct drm_dp_sideband_msg_hdr *hdr, u8 *buf,
+				   int *len)
 {
 	int idx = 0;
 	int i;
@@ -296,7 +300,7 @@ static void dp_mst_sim_encode_sideband_msg_hdr(struct drm_dp_sideband_msg_hdr *h
 	for (i = 0; i < (hdr->lct / 2); i++)
 		buf[idx++] = hdr->rad[i];
 	buf[idx++] = (hdr->broadcast << 7) | (hdr->path_msg << 6) |
-		(hdr->msg_len & 0x3f);
+		     (hdr->msg_len & 0x3f);
 	buf[idx++] = (hdr->somt << 7) | (hdr->eomt << 6) | (hdr->seqno << 4);
 
 	crc4 = dp_mst_sim_msg_header_crc4(buf, (idx * 2) - 1);
@@ -306,20 +310,20 @@ static void dp_mst_sim_encode_sideband_msg_hdr(struct drm_dp_sideband_msg_hdr *h
 }
 
 static bool dp_get_one_sb_msg(struct drm_dp_sideband_msg_rx *msg,
-		struct drm_dp_aux_msg *aux_msg)
+			      struct drm_dp_aux_msg *aux_msg)
 {
 	int ret;
 
 	if (!msg->have_somt) {
-		ret = dp_mst_sim_sideband_msg_build(msg,
-			aux_msg->buffer, aux_msg->size, true);
+		ret = dp_mst_sim_sideband_msg_build(msg, aux_msg->buffer,
+						    aux_msg->size, true);
 		if (!ret) {
 			DP_ERR("sideband hdr build failed\n");
 			return false;
 		}
 	} else {
-		ret = dp_mst_sim_sideband_msg_build(msg,
-			aux_msg->buffer, aux_msg->size, false);
+		ret = dp_mst_sim_sideband_msg_build(msg, aux_msg->buffer,
+						    aux_msg->size, false);
 		if (!ret) {
 			DP_ERR("sideband msg build failed\n");
 			return false;
@@ -329,8 +333,7 @@ static bool dp_get_one_sb_msg(struct drm_dp_sideband_msg_rx *msg,
 	return true;
 }
 
-static int dp_sideband_build_nak_rep(
-		struct dp_mst_sim_context *ctx)
+static int dp_sideband_build_nak_rep(struct dp_mst_sim_context *ctx)
 {
 	struct drm_dp_sideband_msg_rx *msg = &ctx->down_req;
 	u8 *buf = ctx->down_rep.msg;
@@ -351,9 +354,7 @@ static int dp_sideband_build_nak_rep(
 	return idx;
 }
 
-
-static int dp_sideband_build_link_address_rep(
-		struct dp_mst_sim_context *ctx)
+static int dp_sideband_build_link_address_rep(struct dp_mst_sim_context *ctx)
 {
 	struct dp_mst_sim_port *port;
 	u8 *buf = ctx->down_rep.msg;
@@ -404,15 +405,14 @@ static int dp_sideband_build_link_address_rep(
 		idx += 16;
 
 		buf[idx] = (port->num_sdp_streams << 4) |
-			(port->num_sdp_stream_sinks);
+			   (port->num_sdp_stream_sinks);
 		idx++;
 	}
 
 	return idx;
 }
 
-static int dp_sideband_build_remote_i2c_read_rep(
-		struct dp_mst_sim_context *ctx)
+static int dp_sideband_build_remote_i2c_read_rep(struct dp_mst_sim_context *ctx)
 {
 	struct dp_mst_sim_port *port;
 	struct drm_dp_remote_i2c_read i2c_read;
@@ -504,8 +504,8 @@ err:
 	return dp_sideband_build_nak_rep(ctx);
 }
 
-static int dp_sideband_build_enum_path_resources_rep(
-		struct dp_mst_sim_context *ctx)
+static int
+dp_sideband_build_enum_path_resources_rep(struct dp_mst_sim_context *ctx)
 {
 	struct dp_mst_sim_port *port;
 	u8 port_num;
@@ -548,8 +548,8 @@ err:
 	return dp_sideband_build_nak_rep(ctx);
 }
 
-static int dp_sideband_build_allocate_payload_rep(
-		struct dp_mst_sim_context *ctx)
+static int
+dp_sideband_build_allocate_payload_rep(struct dp_mst_sim_context *ctx)
 {
 	struct drm_dp_allocate_payload allocate_payload;
 	u8 *buf;
@@ -566,16 +566,16 @@ static int dp_sideband_build_allocate_payload_rep(
 	allocate_payload.vcpi = buf[idx];
 	idx++;
 
-	allocate_payload.pbn = (buf[idx] << 8) | buf[idx+1];
+	allocate_payload.pbn = (buf[idx] << 8) | buf[idx + 1];
 	idx += 2;
 
-	for (i = 0; i <  allocate_payload.number_sdp_streams / 2; i++) {
+	for (i = 0; i < allocate_payload.number_sdp_streams / 2; i++) {
 		allocate_payload.sdp_stream_sink[i * 2] = buf[idx] >> 4;
 		allocate_payload.sdp_stream_sink[i * 2 + 1] = buf[idx] & 0xf;
 		idx++;
 	}
 	if (allocate_payload.number_sdp_streams & 1) {
-		i =  allocate_payload.number_sdp_streams - 1;
+		i = allocate_payload.number_sdp_streams - 1;
 		allocate_payload.sdp_stream_sink[i] = buf[idx] >> 4;
 		idx++;
 	}
@@ -608,8 +608,8 @@ err:
 	return dp_sideband_build_nak_rep(ctx);
 }
 
-static int dp_sideband_build_power_updown_phy_rep(
-		struct dp_mst_sim_context *ctx)
+static int
+dp_sideband_build_power_updown_phy_rep(struct dp_mst_sim_context *ctx)
 {
 	u8 port_num;
 	u8 *buf;
@@ -637,8 +637,8 @@ err:
 	return dp_sideband_build_nak_rep(ctx);
 }
 
-static int dp_sideband_build_clear_payload_id_table_rep(
-		struct dp_mst_sim_context *ctx)
+static int
+dp_sideband_build_clear_payload_id_table_rep(struct dp_mst_sim_context *ctx)
 {
 	u8 *buf = ctx->down_rep.msg;
 	int idx = 0;
@@ -649,8 +649,9 @@ static int dp_sideband_build_clear_payload_id_table_rep(
 	return idx;
 }
 
-static int dp_sideband_build_connection_notify_req(
-		struct dp_mst_sim_context *ctx, int port_idx)
+static int
+dp_sideband_build_connection_notify_req(struct dp_mst_sim_context *ctx,
+					int port_idx)
 {
 	struct dp_mst_sim_port *port = &ctx->ports[port_idx];
 	u8 *buf = ctx->down_rep.msg;
@@ -665,18 +666,14 @@ static int dp_sideband_build_connection_notify_req(
 	memcpy(&buf[idx], &port->peer_guid, 16);
 	idx += 16;
 
-	buf[idx] = (port->ldps << 6) |
-			(port->ddps << 5) |
-			(port->mcs << 4) |
-			(port->input << 3) |
-			(port->pdt & 0x7);
+	buf[idx] = (port->ldps << 6) | (port->ddps << 5) | (port->mcs << 4) |
+		   (port->input << 3) | (port->pdt & 0x7);
 	idx++;
 
 	return idx;
 }
 
-static inline int dp_sideband_update_esi(
-		struct dp_mst_sim_context *ctx, u8 val)
+static inline int dp_sideband_update_esi(struct dp_mst_sim_context *ctx, u8 val)
 {
 	ctx->esi[0] = ctx->port_num;
 	ctx->esi[1] = val;
@@ -685,14 +682,14 @@ static inline int dp_sideband_update_esi(
 	return 0;
 }
 
-static inline bool dp_sideband_pending_esi(
-		struct dp_mst_sim_context *ctx, u8 val)
+static inline bool dp_sideband_pending_esi(struct dp_mst_sim_context *ctx,
+					   u8 val)
 {
 	return !!(ctx->esi[1] & val);
 }
 
 static int dp_mst_sim_clear_esi(struct dp_mst_sim_context *ctx,
-		struct drm_dp_aux_msg *msg)
+				struct drm_dp_aux_msg *msg)
 {
 	size_t i;
 	u8 old_esi = ctx->esi[1];
@@ -718,7 +715,7 @@ static int dp_mst_sim_clear_esi(struct dp_mst_sim_context *ctx,
 }
 
 static int dp_mst_sim_read_esi(struct dp_mst_sim_context *ctx,
-		struct drm_dp_aux_msg *msg)
+			       struct drm_dp_aux_msg *msg)
 {
 	u32 addr = msg->address - DP_SINK_COUNT_ESI;
 
@@ -734,7 +731,7 @@ static int dp_mst_sim_read_esi(struct dp_mst_sim_context *ctx,
 }
 
 static int dp_mst_sim_down_req_internal(struct dp_mst_sim_context *ctx,
-		struct drm_dp_aux_msg *aux_msg)
+					struct drm_dp_aux_msg *aux_msg)
 {
 	struct drm_dp_sideband_msg_rx *msg = &ctx->down_req;
 	struct drm_dp_sideband_msg_hdr hdr;
@@ -776,9 +773,8 @@ static int dp_mst_sim_down_req_internal(struct dp_mst_sim_context *ctx,
 	}
 
 	if (ctx->host_req)
-		ctx->host_req(ctx->host_dev,
-			ctx->down_req.msg, ctx->down_req.curlen,
-			ctx->down_rep.msg, &size);
+		ctx->host_req(ctx->host_dev, ctx->down_req.msg,
+			      ctx->down_req.curlen, ctx->down_rep.msg, &size);
 
 	memset(msg, 0, sizeof(*msg));
 	msg = &ctx->down_rep;
@@ -808,7 +804,8 @@ static int dp_mst_sim_down_req_internal(struct dp_mst_sim_context *ctx,
 		dp_mst_sim_encode_sideband_msg_hdr(&hdr, ctx->dpcd, &hdr_len);
 
 		/* build crc */
-		ctx->dpcd[len + 3] = dp_mst_sim_msg_data_crc4(&ctx->dpcd[3], len);
+		ctx->dpcd[len + 3] =
+			dp_mst_sim_msg_data_crc4(&ctx->dpcd[3], len);
 
 		/* update esi */
 		dp_sideband_update_esi(ctx, DP_DOWN_REP_MSG_RDY);
@@ -849,7 +846,7 @@ static void dp_mst_sim_down_req_work(struct work_struct *work)
 }
 
 static int dp_mst_sim_down_req(struct dp_mst_sim_context *ctx,
-		struct drm_dp_aux_msg *aux_msg)
+			       struct drm_dp_aux_msg *aux_msg)
 {
 	struct dp_mst_sim_work *work;
 
@@ -858,8 +855,8 @@ static int dp_mst_sim_down_req(struct dp_mst_sim_context *ctx,
 		return 0;
 	}
 
-	dp_sideband_hex_dump("request",
-		aux_msg->address, aux_msg->buffer, aux_msg->size);
+	dp_sideband_hex_dump("request", aux_msg->address, aux_msg->buffer,
+			     aux_msg->size);
 
 	work = kzalloc(sizeof(*work), GFP_KERNEL);
 	if (!work) {
@@ -880,29 +877,27 @@ static int dp_mst_sim_down_req(struct dp_mst_sim_context *ctx,
 }
 
 static int dp_mst_sim_down_rep(struct dp_mst_sim_context *ctx,
-		struct drm_dp_aux_msg *msg)
+			       struct drm_dp_aux_msg *msg)
 {
 	u32 addr = msg->address - DP_SIDEBAND_MSG_DOWN_REP_BASE;
 
 	memcpy(msg->buffer, &ctx->dpcd[addr], msg->size);
 	msg->reply = DP_AUX_NATIVE_REPLY_ACK;
 
-	dp_sideband_hex_dump("reply",
-		addr, msg->buffer, msg->size);
+	dp_sideband_hex_dump("reply", addr, msg->buffer, msg->size);
 
 	return 0;
 }
 
 static int dp_mst_sim_up_req(struct dp_mst_sim_context *ctx,
-		struct drm_dp_aux_msg *msg)
+			     struct drm_dp_aux_msg *msg)
 {
 	u32 addr = msg->address - DP_SIDEBAND_MSG_UP_REQ_BASE;
 
 	memcpy(msg->buffer, &ctx->dpcd[addr], msg->size);
 	msg->reply = DP_AUX_NATIVE_REPLY_ACK;
 
-	dp_sideband_hex_dump("up_req",
-		addr, msg->buffer, msg->size);
+	dp_sideband_hex_dump("up_req", addr, msg->buffer, msg->size);
 
 	return 0;
 }
@@ -920,7 +915,7 @@ static void dp_mst_sim_reset_work(struct work_struct *work)
 }
 
 static int dp_mst_sim_reset(struct dp_mst_sim_context *ctx,
-		struct drm_dp_aux_msg *msg)
+			    struct drm_dp_aux_msg *msg)
 {
 	struct dp_mst_notify_work *work;
 
@@ -1019,7 +1014,8 @@ static void dp_mst_sim_up_req_work(struct work_struct *work)
 		dp_mst_sim_encode_sideband_msg_hdr(&hdr, ctx->dpcd, &hdr_len);
 
 		/* build crc */
-		ctx->dpcd[len + 3] = dp_mst_sim_msg_data_crc4(&ctx->dpcd[3], len);
+		ctx->dpcd[len + 3] =
+			dp_mst_sim_msg_data_crc4(&ctx->dpcd[3], len);
 
 		/* update esi */
 		dp_sideband_update_esi(ctx, DP_UP_REQ_MSG_RDY);
@@ -1044,8 +1040,7 @@ static void dp_mst_sim_up_req_work(struct work_struct *work)
 	kfree(notify_work);
 }
 
-static void dp_mst_sim_notify(struct dp_mst_sim_context *ctx,
-		u32 port_mask)
+static void dp_mst_sim_notify(struct dp_mst_sim_context *ctx, u32 port_mask)
 {
 	struct dp_mst_notify_work *work;
 
@@ -1073,7 +1068,7 @@ static void dp_mst_sim_free_ports(struct dp_mst_sim_context *ctx)
 }
 
 int dp_mst_sim_update(void *mst_sim_context, u32 port_num,
-		struct dp_mst_sim_port *ports)
+		      struct dp_mst_sim_port *ports)
 {
 	struct dp_mst_sim_context *ctx = mst_sim_context;
 	u8 *edid;
@@ -1118,8 +1113,7 @@ int dp_mst_sim_update(void *mst_sim_context, u32 port_num,
 				goto fail;
 			}
 
-			edid = kzalloc(ports[i].edid_size,
-					GFP_KERNEL);
+			edid = kzalloc(ports[i].edid_size, GFP_KERNEL);
 			if (!edid) {
 				rc = -ENOMEM;
 				goto fail;
@@ -1143,8 +1137,7 @@ end:
 	return rc;
 }
 
-int dp_mst_sim_create(const struct dp_mst_sim_cfg *cfg,
-		void **mst_sim_context)
+int dp_mst_sim_create(const struct dp_mst_sim_cfg *cfg, void **mst_sim_context)
 {
 	struct dp_mst_sim_context *ctx;
 
@@ -1190,4 +1183,3 @@ int dp_mst_sim_destroy(void *mst_sim_context)
 
 	return 0;
 }
-

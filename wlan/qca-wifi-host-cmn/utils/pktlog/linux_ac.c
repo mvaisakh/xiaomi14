@@ -27,16 +27,16 @@
 /*
  * Linux specific implementation of Pktlogs for 802.11ac
  */
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/vmalloc.h>
-#include <linux/proc_fs.h>
-#include <pktlog_ac_i.h>
-#include <pktlog_ac_fmt.h>
-#include "i_host_diag_core_log.h"
-#include "host_diag_core_log.h"
 #include "ani_global.h"
+#include "host_diag_core_log.h"
+#include "i_host_diag_core_log.h"
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/proc_fs.h>
+#include <linux/vmalloc.h>
+#include <pktlog_ac_fmt.h>
+#include <pktlog_ac_i.h>
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0))
 /*
@@ -46,30 +46,32 @@
 #define pde_data(inode) PDE_DATA(inode)
 #endif
 
-#define PKTLOG_DEVNAME_SIZE     32
-#define MAX_WLANDEV             1
+#define PKTLOG_DEVNAME_SIZE 32
+#define MAX_WLANDEV 1
 
 #ifdef MULTI_IF_NAME
-#define PKTLOG_PROC_DIR         "ath_pktlog" MULTI_IF_NAME
+#define PKTLOG_PROC_DIR "ath_pktlog" MULTI_IF_NAME
 #else
-#define PKTLOG_PROC_DIR         "ath_pktlog"
+#define PKTLOG_PROC_DIR "ath_pktlog"
 #endif
 
 /* Permissions for creating proc entries */
-#define PKTLOG_PROC_PERM        0444
+#define PKTLOG_PROC_PERM 0444
 #define PKTLOG_PROCSYS_DIR_PERM 0555
-#define PKTLOG_PROCSYS_PERM     0644
+#define PKTLOG_PROCSYS_PERM 0644
 
 #ifndef __MOD_INC_USE_COUNT
-#define PKTLOG_MOD_INC_USE_COUNT	do {			\
-	if (!try_module_get(THIS_MODULE)) {			\
-		qdf_nofl_info("try_module_get failed");	\
-	} } while (0)
+#define PKTLOG_MOD_INC_USE_COUNT                                \
+	do {                                                    \
+		if (!try_module_get(THIS_MODULE)) {             \
+			qdf_nofl_info("try_module_get failed"); \
+		}                                               \
+	} while (0)
 
-#define PKTLOG_MOD_DEC_USE_COUNT        module_put(THIS_MODULE)
+#define PKTLOG_MOD_DEC_USE_COUNT module_put(THIS_MODULE)
 #else
-#define PKTLOG_MOD_INC_USE_COUNT        MOD_INC_USE_COUNT
-#define PKTLOG_MOD_DEC_USE_COUNT        MOD_DEC_USE_COUNT
+#define PKTLOG_MOD_INC_USE_COUNT MOD_INC_USE_COUNT
+#define PKTLOG_MOD_DEC_USE_COUNT MOD_DEC_USE_COUNT
 #endif
 
 static struct ath_pktlog_info *g_pktlog_info;
@@ -94,9 +96,9 @@ static const struct proc_ops pktlog_fops = {
 };
 #else
 static struct file_operations pktlog_fops = {
-	open:  pktlog_open,
-	release:pktlog_release,
-	read : pktlog_read,
+	open: pktlog_open,
+	release: pktlog_release,
+	read: pktlog_read,
 };
 #endif
 
@@ -140,9 +142,9 @@ int pktlog_alloc_buf(struct hif_opaque_softc *scn)
 		return -ENOMEM;
 	}
 
-	buffer = (struct ath_pktlog_buf *)
-		       (((unsigned long)(buffer) + PAGE_SIZE - 1)
-			& PAGE_MASK);
+	buffer = (struct ath_pktlog_buf *)(((unsigned long)(buffer) +
+					    PAGE_SIZE - 1) &
+					   PAGE_MASK);
 
 	for (vaddr = (unsigned long)(buffer);
 	     vaddr < ((unsigned long)(buffer) + (page_cnt * PAGE_SIZE));
@@ -155,7 +157,7 @@ int pktlog_alloc_buf(struct hif_opaque_softc *scn)
 	if (pl_info->buf)
 		pktlog_release_buf(scn);
 
-	pl_info->buf =  buffer;
+	pl_info->buf = buffer;
 	qdf_spin_unlock_bh(&pl_info->log_lock);
 	return 0;
 }
@@ -182,8 +184,8 @@ void pktlog_release_buf(struct hif_opaque_softc *scn)
 
 	pl_info = pl_dev->pl_info;
 
-	page_cnt = ((sizeof(*(pl_info->buf)) + pl_info->buf_size) /
-		    PAGE_SIZE) + 1;
+	page_cnt =
+		((sizeof(*(pl_info->buf)) + pl_info->buf_size) / PAGE_SIZE) + 1;
 
 	for (vaddr = (unsigned long)(pl_info->buf);
 	     vaddr < (unsigned long)(pl_info->buf) + (page_cnt * PAGE_SIZE);
@@ -204,15 +206,15 @@ static void pktlog_cleanup(struct ath_pktlog_info *pl_info)
 }
 
 /* sysctl procfs handler to enable pktlog */
-static int
-qdf_sysctl_decl(ath_sysctl_pktlog_enable, ctl, write, filp, buffer, lenp, ppos)
+static int qdf_sysctl_decl(ath_sysctl_pktlog_enable, ctl, write, filp, buffer,
+			   lenp, ppos)
 {
 	int ret, enable;
 	ol_ath_generic_softc_handle scn;
 	struct pktlog_dev_t *pl_dev;
 
 	mutex_lock(&proc_mutex);
-	scn = (ol_ath_generic_softc_handle) ctl->extra1;
+	scn = (ol_ath_generic_softc_handle)ctl->extra1;
 
 	if (!scn) {
 		mutex_unlock(&proc_mutex);
@@ -234,24 +236,23 @@ qdf_sysctl_decl(ath_sysctl_pktlog_enable, ctl, write, filp, buffer, lenp, ppos)
 	ctl->maxlen = sizeof(enable);
 
 	if (write) {
-		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer,
-					       lenp, ppos);
+		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp,
+					       ppos);
 		if (ret == 0) {
 			ret = pl_dev->pl_funcs->pktlog_enable(
-					(struct hif_opaque_softc *)scn, enable,
-					cds_is_packet_log_enabled(), 0, 1);
-		}
-		else
+				(struct hif_opaque_softc *)scn, enable,
+				cds_is_packet_log_enabled(), 0, 1);
+		} else
 			QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_DEBUG,
 				  "Line:%d %s:proc_dointvec failed reason %d",
-				   __LINE__, __func__, ret);
+				  __LINE__, __func__, ret);
 	} else {
-		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer,
-					       lenp, ppos);
+		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp,
+					       ppos);
 		if (ret)
 			QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_DEBUG,
 				  "Line:%d %s:proc_dointvec failed reason %d",
-				   __LINE__, __func__, ret);
+				  __LINE__, __func__, ret);
 	}
 
 	ctl->data = NULL;
@@ -267,15 +268,15 @@ static int get_pktlog_bufsize(struct pktlog_dev_t *pl_dev)
 }
 
 /* sysctl procfs handler to set/get pktlog size */
-static int
-qdf_sysctl_decl(ath_sysctl_pktlog_size, ctl, write, filp, buffer, lenp, ppos)
+static int qdf_sysctl_decl(ath_sysctl_pktlog_size, ctl, write, filp, buffer,
+			   lenp, ppos)
 {
 	int ret, size;
 	ol_ath_generic_softc_handle scn;
 	struct pktlog_dev_t *pl_dev;
 
 	mutex_lock(&proc_mutex);
-	scn = (ol_ath_generic_softc_handle) ctl->extra1;
+	scn = (ol_ath_generic_softc_handle)ctl->extra1;
 
 	if (!scn) {
 		mutex_unlock(&proc_mutex);
@@ -297,15 +298,15 @@ qdf_sysctl_decl(ath_sysctl_pktlog_size, ctl, write, filp, buffer, lenp, ppos)
 	ctl->maxlen = sizeof(size);
 
 	if (write) {
-		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer,
-					       lenp, ppos);
+		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp,
+					       ppos);
 		if (ret == 0)
 			ret = pl_dev->pl_funcs->pktlog_setsize(
-					(struct hif_opaque_softc *)scn, size);
+				(struct hif_opaque_softc *)scn, size);
 	} else {
 		size = get_pktlog_bufsize(pl_dev);
-		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer,
-					       lenp, ppos);
+		ret = QDF_SYSCTL_PROC_DOINTVEC(ctl, write, filp, buffer, lenp,
+					       ppos);
 	}
 
 	ctl->data = NULL;
@@ -331,11 +332,11 @@ static int pktlog_sysctl_register(struct hif_opaque_softc *scn)
 	}
 
 	/*
-	 * Setup the sysctl table for creating the following sysctl entries:
-	 * /proc/sys/PKTLOG_PROC_DIR/<adapter>/enable for enabling/disabling
-	 * pktlog
-	 * /proc/sys/PKTLOG_PROC_DIR/<adapter>/size for changing the buffer size
-	 */
+   * Setup the sysctl table for creating the following sysctl entries:
+   * /proc/sys/PKTLOG_PROC_DIR/<adapter>/enable for enabling/disabling
+   * pktlog
+   * /proc/sys/PKTLOG_PROC_DIR/<adapter>/size for changing the buffer size
+   */
 	memset(pl_info_lnx->sysctls, 0, sizeof(pl_info_lnx->sysctls));
 	pl_info_lnx->sysctls[0].procname = PKTLOG_PROC_DIR;
 	pl_info_lnx->sysctls[0].mode = PKTLOG_PROCSYS_DIR_PERM;
@@ -435,8 +436,8 @@ static int pktlog_attach(struct hif_opaque_softc *scn)
 		pl_info_lnx = kmalloc(sizeof(*pl_info_lnx), GFP_KERNEL);
 		if (!pl_info_lnx) {
 			QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-				 "%s: Allocation failed for pl_info",
-				 __func__);
+				  "%s: Allocation failed for pl_info",
+				  __func__);
 			goto attach_fail1;
 		}
 
@@ -448,8 +449,8 @@ static int pktlog_attach(struct hif_opaque_softc *scn)
 			pl_dev->pl_funcs = &ol_pl_funcs;
 
 		/*
-		 * Valid for both direct attach and offload architecture
-		 */
+     * Valid for both direct attach and offload architecture
+     */
 		pl_dev->pl_funcs->pktlog_init(scn);
 	} else {
 		qdf_err("pl_dev is NULL");
@@ -457,19 +458,19 @@ static int pktlog_attach(struct hif_opaque_softc *scn)
 	}
 
 	/*
-	 * initialize log info
-	 * might be good to move to pktlog_init
-	 */
+   * initialize log info
+   * might be good to move to pktlog_init
+   */
 	/* pl_dev->tgt_pktlog_alloced = false; */
 	pl_info_lnx->proc_entry = NULL;
 	pl_info_lnx->sysctl_header = NULL;
 
-	proc_entry = proc_create_data(proc_name, PKTLOG_PROC_PERM,
-			g_pktlog_pde, &pktlog_fops,
-			&pl_info_lnx->info);
+	proc_entry = proc_create_data(proc_name, PKTLOG_PROC_PERM, g_pktlog_pde,
+				      &pktlog_fops, &pl_info_lnx->info);
 
 	if (!proc_entry) {
-		qdf_info(PKTLOG_TAG "create_proc_entry failed for %s", proc_name);
+		qdf_info(PKTLOG_TAG "create_proc_entry failed for %s",
+			 proc_name);
 		goto attach_fail1;
 	}
 
@@ -504,7 +505,7 @@ static void pktlog_sysctl_unregister(struct pktlog_dev_t *pl_dev)
 	}
 
 	pl_info_lnx = (pl_dev) ? PL_INFO_LNX(pl_dev->pl_info) :
-		      PL_INFO_LNX(g_pktlog_info);
+				 PL_INFO_LNX(g_pktlog_info);
 
 	if (pl_info_lnx->sysctl_header) {
 		unregister_sysctl_table(pl_info_lnx->sysctl_header);
@@ -583,7 +584,7 @@ static int __pktlog_open(struct inode *i, struct file *f)
 
 	mutex_lock(&pl_info->pktlog_mutex);
 	pl_info_lnx = (pl_dev) ? PL_INFO_LNX(pl_dev->pl_info) :
-		PL_INFO_LNX(g_pktlog_info);
+				 PL_INFO_LNX(g_pktlog_info);
 
 	if (!pl_info_lnx->sysctl_header) {
 		mutex_unlock(&pl_info->pktlog_mutex);
@@ -604,8 +605,8 @@ static int __pktlog_open(struct inode *i, struct file *f)
 	pl_info->init_saved_state = pl_info->log_state;
 	if (!pl_info->log_state) {
 		/* Pktlog is already disabled.
-		 * Proceed to read directly.
-		 */
+     * Proceed to read directly.
+     */
 		pl_info->curr_pkt_state =
 			PKTLOG_OPR_IN_PROGRESS_READ_START_PKTLOG_DISABLED;
 		mutex_unlock(&pl_info->pktlog_mutex);
@@ -615,7 +616,7 @@ static int __pktlog_open(struct inode *i, struct file *f)
 	ret = pl_dev->pl_funcs->pktlog_disable(scn);
 	pl_info->log_state = 0;
 	pl_info->curr_pkt_state =
-			PKTLOG_OPR_IN_PROGRESS_READ_START_PKTLOG_DISABLED;
+		PKTLOG_OPR_IN_PROGRESS_READ_START_PKTLOG_DISABLED;
 	mutex_unlock(&pl_info->pktlog_mutex);
 	return ret;
 }
@@ -670,7 +671,7 @@ static int __pktlog_release(struct inode *i, struct file *f)
 
 	mutex_lock(&pl_info->pktlog_mutex);
 	pl_info_lnx = (pl_dev) ? PL_INFO_LNX(pl_dev->pl_info) :
-		PL_INFO_LNX(g_pktlog_info);
+				 PL_INFO_LNX(g_pktlog_info);
 
 	if (!pl_info_lnx->sysctl_header) {
 		pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
@@ -686,9 +687,9 @@ static int __pktlog_release(struct inode *i, struct file *f)
 	pl_info->init_saved_state = 0;
 
 	/*Enable pktlog again*/
-	ret = __pktlog_enable(
-			(struct hif_opaque_softc *)scn, pl_info->log_state,
-			cds_is_packet_log_enabled(), 0, 1);
+	ret = __pktlog_enable((struct hif_opaque_softc *)scn,
+			      pl_info->log_state, cds_is_packet_log_enabled(),
+			      0, 1);
 
 	pl_info->curr_pkt_state = PKTLOG_OPR_NOT_IN_PROGRESS;
 	mutex_unlock(&pl_info->pktlog_mutex);
@@ -734,9 +735,9 @@ static int pktlog_release(struct inode *i, struct file *f)
  * Return: Number of bytes read from the buffer
  *
  */
-	ssize_t
-pktlog_read_proc_entry(char *buf, size_t nbytes, loff_t *ppos,
-		struct ath_pktlog_info *pl_info, bool *read_complete)
+ssize_t pktlog_read_proc_entry(char *buf, size_t nbytes, loff_t *ppos,
+			       struct ath_pktlog_info *pl_info,
+			       bool *read_complete)
 {
 	size_t bufhdr_size;
 	size_t count = 0, ret_val = 0;
@@ -769,8 +770,7 @@ pktlog_read_proc_entry(char *buf, size_t nbytes, loff_t *ppos,
 
 	if (*ppos < bufhdr_size) {
 		count = MIN((bufhdr_size - *ppos), rem_len);
-		qdf_mem_copy(buf, ((char *)&log_buf->bufhdr) + *ppos,
-				count);
+		qdf_mem_copy(buf, ((char *)&log_buf->bufhdr) + *ppos, count);
 		rem_len -= count;
 		ret_val += count;
 	}
@@ -789,20 +789,19 @@ pktlog_read_proc_entry(char *buf, size_t nbytes, loff_t *ppos,
 		struct ath_pktlog_hdr *log_hdr;
 		int log_data_offset;
 
-		log_hdr = (struct ath_pktlog_hdr *) (log_buf->log_data +
-				cur_rd_offset);
+		log_hdr = (struct ath_pktlog_hdr *)(log_buf->log_data +
+						    cur_rd_offset);
 
 		log_data_offset = cur_rd_offset + sizeof(struct ath_pktlog_hdr);
 
-		if ((fold_offset == -1)
-				&& ((pl_info->buf_size - log_data_offset)
-					<= log_hdr->size))
+		if ((fold_offset == -1) &&
+		    ((pl_info->buf_size - log_data_offset) <= log_hdr->size))
 			fold_offset = log_data_offset - 1;
 
 		PKTLOG_MOV_RD_IDX(cur_rd_offset, log_buf, pl_info->buf_size);
 
-		if ((fold_offset == -1) && (cur_rd_offset == 0)
-				&& (cur_rd_offset != cur_wr_offset))
+		if ((fold_offset == -1) && (cur_rd_offset == 0) &&
+		    (cur_rd_offset != cur_wr_offset))
 			fold_offset = log_data_offset + log_hdr->size - 1;
 
 		end_offset = log_data_offset + log_hdr->size - 1;
@@ -815,17 +814,15 @@ pktlog_read_proc_entry(char *buf, size_t nbytes, loff_t *ppos,
 			goto rd_done;
 
 		count = MIN(rem_len, (end_offset - ppos_data + 1));
-		qdf_mem_copy(buf + ret_val,
-				log_buf->log_data + ppos_data,
-				count);
+		qdf_mem_copy(buf + ret_val, log_buf->log_data + ppos_data,
+			     count);
 		ret_val += count;
 		rem_len -= count;
 	} else {
 		if (ppos_data <= fold_offset) {
 			count = MIN(rem_len, (fold_offset - ppos_data + 1));
 			qdf_mem_copy(buf + ret_val,
-					log_buf->log_data + ppos_data,
-					count);
+				     log_buf->log_data + ppos_data, count);
 			ret_val += count;
 			rem_len -= count;
 		}
@@ -833,15 +830,13 @@ pktlog_read_proc_entry(char *buf, size_t nbytes, loff_t *ppos,
 		if (rem_len == 0)
 			goto rd_done;
 
-		ppos_data =
-			*ppos + ret_val - (bufhdr_size +
-					(fold_offset - start_offset + 1));
+		ppos_data = *ppos + ret_val -
+			    (bufhdr_size + (fold_offset - start_offset + 1));
 
 		if (ppos_data <= end_offset) {
 			count = MIN(rem_len, (end_offset - ppos_data + 1));
 			qdf_mem_copy(buf + ret_val,
-					log_buf->log_data + ppos_data,
-					count);
+				     log_buf->log_data + ppos_data, count);
 			ret_val += count;
 			rem_len -= count;
 		}
@@ -856,9 +851,9 @@ rd_done:
 
 	if (ret_val == 0) {
 		/* Write pointer might have been updated during the read.
-		 * So, if some data is written into, lets not reset the pointers
-		 * We can continue to read from the offset position
-		 */
+     * So, if some data is written into, lets not reset the pointers
+     * We can continue to read from the offset position
+     */
 		if (cur_wr_offset != log_buf->wr_offset) {
 			*read_complete = false;
 		} else {
@@ -873,8 +868,8 @@ rd_done:
 	return ret_val;
 }
 
-static ssize_t
-__pktlog_read(struct file *file, char *buf, size_t nbytes, loff_t *ppos)
+static ssize_t __pktlog_read(struct file *file, char *buf, size_t nbytes,
+			     loff_t *ppos)
 {
 	size_t bufhdr_size;
 	size_t count = 0, ret_val = 0;
@@ -898,9 +893,9 @@ __pktlog_read(struct file *file, char *buf, size_t nbytes, loff_t *ppos)
 
 	if (pl_info->log_state) {
 		/* Read is not allowed when write is going on
-		 * When issuing cat command, ensure to send
-		 * pktlog disable command first.
-		 */
+     * When issuing cat command, ensure to send
+     * pktlog disable command first.
+     */
 		qdf_spin_unlock_bh(&pl_info->log_lock);
 		return -EINVAL;
 	}
@@ -947,15 +942,14 @@ __pktlog_read(struct file *file, char *buf, size_t nbytes, loff_t *ppos)
 
 		log_data_offset = cur_rd_offset + sizeof(struct ath_pktlog_hdr);
 
-		if ((fold_offset == -1)
-		    && ((pl_info->buf_size - log_data_offset)
-			<= log_hdr->size))
+		if ((fold_offset == -1) &&
+		    ((pl_info->buf_size - log_data_offset) <= log_hdr->size))
 			fold_offset = log_data_offset - 1;
 
 		PKTLOG_MOV_RD_IDX(cur_rd_offset, log_buf, pl_info->buf_size);
 
-		if ((fold_offset == -1) && (cur_rd_offset == 0)
-		    && (cur_rd_offset != log_buf->wr_offset))
+		if ((fold_offset == -1) && (cur_rd_offset == 0) &&
+		    (cur_rd_offset != log_buf->wr_offset))
 			fold_offset = log_data_offset + log_hdr->size - 1;
 
 		end_offset = log_data_offset + log_hdr->size - 1;
@@ -970,8 +964,8 @@ __pktlog_read(struct file *file, char *buf, size_t nbytes, loff_t *ppos)
 		count = QDF_MIN(rem_len, (end_offset - ppos_data + 1));
 		qdf_spin_unlock_bh(&pl_info->log_lock);
 
-		if (copy_to_user(buf + ret_val,
-				 log_buf->log_data + ppos_data, count)) {
+		if (copy_to_user(buf + ret_val, log_buf->log_data + ppos_data,
+				 count)) {
 			return -EFAULT;
 		}
 
@@ -995,9 +989,8 @@ __pktlog_read(struct file *file, char *buf, size_t nbytes, loff_t *ppos)
 		if (rem_len == 0)
 			goto rd_done;
 
-		ppos_data =
-			*ppos + ret_val - (bufhdr_size +
-					   (fold_offset - start_offset + 1));
+		ppos_data = *ppos + ret_val -
+			    (bufhdr_size + (fold_offset - start_offset + 1));
 
 		if (ppos_data <= end_offset) {
 			count = QDF_MIN(rem_len, (end_offset - ppos_data + 1));
@@ -1024,8 +1017,8 @@ rd_done:
 	return ret_val;
 }
 
-static ssize_t
-pktlog_read(struct file *file, char *buf, size_t nbytes, loff_t *ppos)
+static ssize_t pktlog_read(struct file *file, char *buf, size_t nbytes,
+			   loff_t *ppos)
 {
 	struct ath_pktlog_info *info = pde_data(file->f_path.dentry->d_inode);
 	struct qdf_op_sync *op_sync;
@@ -1089,8 +1082,8 @@ void pktlogmod_exit(void *context)
 	pktlog_detach((struct hif_opaque_softc *)context);
 
 	/*
-	 *  pdev kill needs to be implemented
-	 */
+   *  pdev kill needs to be implemented
+   */
 	remove_proc_entry(PKTLOG_PROC_DIR, NULL);
 	g_pktlog_pde = NULL;
 }

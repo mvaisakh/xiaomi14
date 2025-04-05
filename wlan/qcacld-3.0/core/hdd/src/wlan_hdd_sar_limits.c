@@ -25,13 +25,13 @@
  */
 
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
-#include <wlan_osif_request_manager.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sar_limits.h>
+#include <wlan_osif_request_manager.h>
 
 #define WLAN_WAIT_TIME_SAR 5000
 /**
@@ -94,8 +94,7 @@ static u32 hdd_sar_wmi_to_nl_modulation(uint32_t wmi_value)
  *
  * Return: none
  */
-static void hdd_sar_cb(void *cookie,
-		       struct sar_limit_event *event)
+static void hdd_sar_cb(void *cookie, struct sar_limit_event *event)
 {
 	struct osif_request *request;
 	struct hdd_sar_context *context;
@@ -178,8 +177,7 @@ static int hdd_sar_fill_response(struct sk_buff *skb,
 		return -EINVAL;
 
 	for (row = 0, event_row = event->sar_limit_row;
-	     row < event->num_limit_rows;
-	     row++, event_row++) {
+	     row < event->num_limit_rows; row++, event_row++) {
 		nla_row_attr = nla_nest_start(skb, attr);
 		if (!nla_row_attr)
 			return -EINVAL;
@@ -403,8 +401,7 @@ static int hdd_sar_send_capability_response(struct wiphy *wiphy,
 
 static int __wlan_hdd_get_sar_capability(struct wiphy *wiphy,
 					 struct wireless_dev *wdev,
-					 const void *data,
-					 int data_len)
+					 const void *data, int data_len)
 {
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	int ret;
@@ -438,16 +435,15 @@ static int __wlan_hdd_get_sar_capability(struct wiphy *wiphy,
 	QCA_WLAN_VENDOR_ATTR_SAR_LIMITS_SPEC_POWER_LIMIT_INDEX
 #define SAR_LIMITS_MAX QCA_WLAN_VENDOR_ATTR_SAR_LIMITS_MAX
 
-const struct nla_policy
-wlan_hdd_sar_limits_policy[SAR_LIMITS_MAX + 1] = {
-	[SAR_LIMITS_SAR_ENABLE] = {.type = NLA_U32},
-	[SAR_LIMITS_NUM_SPECS] = {.type = NLA_U32},
-	[SAR_LIMITS_SPEC] = {.type = NLA_NESTED},
-	[SAR_LIMITS_SPEC_BAND] = {.type = NLA_U32},
-	[SAR_LIMITS_SPEC_CHAIN] = {.type = NLA_U32},
-	[SAR_LIMITS_SPEC_MODULATION] = {.type = NLA_U32},
-	[SAR_LIMITS_SPEC_POWER_LIMIT] = {.type = NLA_U32},
-	[SAR_LIMITS_SPEC_POWER_LIMIT_INDEX] = {.type = NLA_U32},
+const struct nla_policy wlan_hdd_sar_limits_policy[SAR_LIMITS_MAX + 1] = {
+	[SAR_LIMITS_SAR_ENABLE] = { .type = NLA_U32 },
+	[SAR_LIMITS_NUM_SPECS] = { .type = NLA_U32 },
+	[SAR_LIMITS_SPEC] = { .type = NLA_NESTED },
+	[SAR_LIMITS_SPEC_BAND] = { .type = NLA_U32 },
+	[SAR_LIMITS_SPEC_CHAIN] = { .type = NLA_U32 },
+	[SAR_LIMITS_SPEC_MODULATION] = { .type = NLA_U32 },
+	[SAR_LIMITS_SPEC_POWER_LIMIT] = { .type = NLA_U32 },
+	[SAR_LIMITS_SPEC_POWER_LIMIT_INDEX] = { .type = NLA_U32 },
 };
 
 void hdd_store_sar_config(struct hdd_context *hdd_ctx,
@@ -539,8 +535,7 @@ static int wlan_hdd_cfg80211_sar_convert_limit_set(u32 nl80211_value,
  */
 
 static bool
-hdd_convert_sarv1_to_sarv2(struct hdd_context *hdd_ctx,
-			   struct nlattr *tb[],
+hdd_convert_sarv1_to_sarv2(struct hdd_context *hdd_ctx, struct nlattr *tb[],
 			   struct sar_limit_cmd_params *sar_limit_cmd)
 {
 	struct nlattr *attr;
@@ -570,15 +565,15 @@ hdd_convert_sarv1_to_sarv2(struct hdd_context *hdd_ctx,
 	}
 
 	/* Need two rows to hold the per-chain V2 power index
-	 * To disable SARv2 limit, send chain, num_limits_row and
-	 * power limit set to 0 (except power index 0xff)
-	 */
+   * To disable SARv2 limit, send chain, num_limits_row and
+   * power limit set to 0 (except power index 0xff)
+   */
 	row = qdf_mem_malloc(2 * sizeof(*row));
 	if (!row)
 		return false;
 
 	if (wlan_hdd_cfg80211_sar_convert_limit_set(
-		set, &sar_limit_cmd->sar_enable)) {
+		    set, &sar_limit_cmd->sar_enable)) {
 		hdd_err("Failed to convert SAR limit to WMI value");
 		return false;
 	}
@@ -599,8 +594,7 @@ hdd_convert_sarv1_to_sarv2(struct hdd_context *hdd_ctx,
 
 #else /* WLAN_FEATURE_SARV1_TO_SARV2 */
 static bool
-hdd_convert_sarv1_to_sarv2(struct hdd_context *hdd_ctx,
-			   struct nlattr *tb[],
+hdd_convert_sarv1_to_sarv2(struct hdd_context *hdd_ctx, struct nlattr *tb[],
 			   struct sar_limit_cmd_params *sar_limit_cmd)
 {
 	return false;
@@ -769,16 +763,16 @@ static int __wlan_hdd_set_sar_power_limits(struct wiphy *wiphy,
 		sar_enable = nla_get_u32(tb[SAR_LIMITS_SAR_ENABLE]);
 
 		if ((sar_enable >=
-			QCA_WLAN_VENDOR_ATTR_SAR_LIMITS_SELECT_BDF0 &&
+			     QCA_WLAN_VENDOR_ATTR_SAR_LIMITS_SELECT_BDF0 &&
 		     sar_enable <=
-			QCA_WLAN_VENDOR_ATTR_SAR_LIMITS_SELECT_BDF4) &&
-		     hdd_ctx->sar_version != SAR_VERSION_1 &&
-		     !hdd_ctx->config->enable_sar_conversion) {
+			     QCA_WLAN_VENDOR_ATTR_SAR_LIMITS_SELECT_BDF4) &&
+		    hdd_ctx->sar_version != SAR_VERSION_1 &&
+		    !hdd_ctx->config->enable_sar_conversion) {
 			hdd_err("SARV1 to SARV2 is disabled from ini");
 			return -EINVAL;
 		} else if (sar_enable ==
-				QCA_WLAN_VENDOR_ATTR_SAR_LIMITS_SELECT_V2_0 &&
-				hdd_ctx->sar_version == SAR_VERSION_1) {
+				   QCA_WLAN_VENDOR_ATTR_SAR_LIMITS_SELECT_V2_0 &&
+			   hdd_ctx->sar_version == SAR_VERSION_1) {
 			hdd_err("FW expects SARV1 given command is SARV2");
 			return -EINVAL;
 		}
@@ -843,11 +837,9 @@ static int __wlan_hdd_set_sar_power_limits(struct wiphy *wiphy,
 			break;
 		}
 
-		if (wlan_cfg80211_nla_parse(spec,
-					    SAR_LIMITS_MAX,
-					    nla_data(spec_list),
-					    nla_len(spec_list),
-					    wlan_hdd_sar_limits_policy)) {
+		if (wlan_cfg80211_nla_parse(
+			    spec, SAR_LIMITS_MAX, nla_data(spec_list),
+			    nla_len(spec_list), wlan_hdd_sar_limits_policy)) {
 			hdd_err("nla_parse failed for SAR Spec list");
 			goto fail;
 		}
@@ -858,9 +850,11 @@ static int __wlan_hdd_set_sar_power_limits(struct wiphy *wiphy,
 			goto fail;
 		}
 
-		hdd_debug("Spec_ID: %d, Band: %d Chain: %d Mod: %d POW_Limit: %d Validity_Bitmap: %d",
-			  i, row->band_id, row->chain_id, row->mod_id,
-			  row->limit_value, row->validity_bitmap);
+		hdd_debug(
+			"Spec_ID: %d, Band: %d Chain: %d Mod: %d POW_Limit: %d "
+			"Validity_Bitmap: %d",
+			i, row->band_id, row->chain_id, row->mod_id,
+			row->limit_value, row->validity_bitmap);
 
 		i++;
 		row++;
@@ -879,10 +873,10 @@ send_sar_limits:
 	}
 
 	/* After SSR, the SAR configuration is lost. As SSR is hidden from
-	 * userland, this command will not come from userspace after a SSR. To
-	 * restore this configuration, save this in hdd context and restore
-	 * after re-init.
-	 */
+   * userland, this command will not come from userspace after a SSR. To
+   * restore this configuration, save this in hdd context and restore
+   * after re-init.
+   */
 	hdd_store_sar_config(hdd_ctx, sar_limit_cmd);
 	return 0;
 
@@ -907,8 +901,7 @@ fail:
 
 int wlan_hdd_cfg80211_set_sar_power_limits(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
-					   const void *data,
-					   int data_len)
+					   const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -926,8 +919,7 @@ int wlan_hdd_cfg80211_set_sar_power_limits(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_get_sar_power_limits(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
-					   const void *data,
-					   int data_len)
+					   const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -957,8 +949,7 @@ int wlan_hdd_cfg80211_get_sar_power_limits(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_get_sar_capability(struct wiphy *wiphy,
 					 struct wireless_dev *wdev,
-					 const void *data,
-					 int data_len)
+					 const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -991,8 +982,8 @@ void hdd_disable_sar(struct hdd_context *hdd_ctx)
 		return;
 
 	/*
-	 * Need two rows to hold the per-chain V2 power index
-	 */
+   * Need two rows to hold the per-chain V2 power index
+   */
 	row = qdf_mem_malloc(2 * sizeof(*row));
 	if (!row)
 		goto config_sar_failed;
@@ -1017,10 +1008,10 @@ void hdd_disable_sar(struct hdd_context *hdd_ctx)
 	}
 
 	/* After SSR, the SAR configuration is lost. As SSR is hidden from
-	 * userland, this command will not come from userspace after a SSR. To
-	 * restore this configuration, save this in hdd context and restore
-	 * after re-init.
-	 */
+   * userland, this command will not come from userspace after a SSR. To
+   * restore this configuration, save this in hdd context and restore
+   * after re-init.
+   */
 	hdd_store_sar_config(hdd_ctx, sar_limit_cmd);
 	return;
 
@@ -1048,8 +1039,8 @@ void hdd_configure_sar_index(struct hdd_context *hdd_ctx, uint32_t sar_index)
 		return;
 
 	/*
-	 * Need two rows to hold the per-chain V2 power index
-	 */
+   * Need two rows to hold the per-chain V2 power index
+   */
 	row = qdf_mem_malloc(2 * sizeof(*row));
 	if (!row)
 		goto config_sar_failed;
@@ -1075,11 +1066,11 @@ void hdd_configure_sar_index(struct hdd_context *hdd_ctx, uint32_t sar_index)
 	}
 
 	/*
-	 * After SSR, the SAR configuration is lost. As SSR is hidden from
-	 * userland, this command will not come from userspace after a SSR. To
-	 * restore this configuration, save this in hdd context and restore
-	 * after re-init.
-	 */
+   * After SSR, the SAR configuration is lost. As SSR is hidden from
+   * userland, this command will not come from userspace after a SSR. To
+   * restore this configuration, save this in hdd context and restore
+   * after re-init.
+   */
 	hdd_store_sar_config(hdd_ctx, sar_limit_cmd);
 	return;
 
@@ -1100,8 +1091,7 @@ void hdd_configure_sar_sleep_index(struct hdd_context *hdd_ctx)
 		hdd_nofl_debug("Configure SAR sleep index %d",
 			       hdd_ctx->config->sar_safety_sleep_index);
 		hdd_configure_sar_index(
-				hdd_ctx,
-				hdd_ctx->config->sar_safety_sleep_index);
+			hdd_ctx, hdd_ctx->config->sar_safety_sleep_index);
 	} else {
 		hdd_nofl_debug("Disable SAR");
 		hdd_disable_sar(hdd_ctx);
@@ -1115,8 +1105,7 @@ void hdd_configure_sar_resume_index(struct hdd_context *hdd_ctx)
 
 	hdd_nofl_debug("Configure SAR safety index %d on wlan resume",
 		       hdd_ctx->config->sar_safety_index);
-	hdd_configure_sar_index(hdd_ctx,
-				hdd_ctx->config->sar_safety_index);
+	hdd_configure_sar_index(hdd_ctx, hdd_ctx->config->sar_safety_index);
 }
 
 static void hdd_send_sar_unsolicited_event(struct hdd_context *hdd_ctx)
@@ -1130,11 +1119,9 @@ static void hdd_send_sar_unsolicited_event(struct hdd_context *hdd_ctx)
 	}
 
 	len = NLMSG_HDRLEN;
-	vendor_event =
-		wlan_cfg80211_vendor_event_alloc(
-			hdd_ctx->wiphy, NULL, len,
-			QCA_NL80211_VENDOR_SUBCMD_REQUEST_SAR_LIMITS_INDEX,
-			GFP_KERNEL);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		hdd_ctx->wiphy, NULL, len,
+		QCA_NL80211_VENDOR_SUBCMD_REQUEST_SAR_LIMITS_INDEX, GFP_KERNEL);
 
 	if (!vendor_event) {
 		hdd_err("wlan_cfg80211_vendor_event_alloc failed");
@@ -1158,9 +1145,9 @@ static void hdd_sar_unsolicited_work_cb(void *user_data)
 
 	if (errno == -EAGAIN) {
 		hdd_nofl_debug("rescheduling sar unsolicited work");
-		status = qdf_delayed_work_create(&hdd_ctx->sar_safety_unsolicited_work,
-						 hdd_sar_unsolicited_work_cb,
-						 hdd_ctx);
+		status = qdf_delayed_work_create(
+			&hdd_ctx->sar_safety_unsolicited_work,
+			hdd_sar_unsolicited_work_cb, hdd_ctx);
 		if (QDF_IS_STATUS_ERROR(status))
 			hdd_err("failed to create sar safety unsolicited work");
 		return;
@@ -1175,8 +1162,8 @@ static void hdd_sar_unsolicited_work_cb(void *user_data)
 		qdf_event_reset(&hdd_ctx->sar_safety_req_resp_event);
 		hdd_send_sar_unsolicited_event(hdd_ctx);
 		status = qdf_wait_for_event_completion(
-				&hdd_ctx->sar_safety_req_resp_event,
-				hdd_ctx->config->sar_safety_req_resp_timeout);
+			&hdd_ctx->sar_safety_req_resp_event,
+			hdd_ctx->config->sar_safety_req_resp_timeout);
 		if (QDF_IS_STATUS_SUCCESS(status))
 			break;
 	}
@@ -1202,8 +1189,8 @@ void wlan_hdd_sar_unsolicited_timer_start(struct hdd_context *hdd_ctx)
 	if (!hdd_ctx->config->enable_sar_safety)
 		return;
 
-	if (qdf_atomic_read(
-			&hdd_ctx->sar_safety_req_resp_event_in_progress) > 0)
+	if (qdf_atomic_read(&hdd_ctx->sar_safety_req_resp_event_in_progress) >
+	    0)
 		return;
 
 	qdf_delayed_work_start(&hdd_ctx->sar_safety_unsolicited_work,
@@ -1223,7 +1210,7 @@ void wlan_hdd_sar_timers_reset(struct hdd_context *hdd_ctx)
 		return;
 
 	if (QDF_TIMER_STATE_RUNNING ==
-		qdf_mc_timer_get_current_state(&hdd_ctx->sar_safety_timer)) {
+	    qdf_mc_timer_get_current_state(&hdd_ctx->sar_safety_timer)) {
 		status = qdf_mc_timer_stop(&hdd_ctx->sar_safety_timer);
 		if (QDF_IS_STATUS_SUCCESS(status))
 			hdd_nofl_debug("sar safety timer stopped");
@@ -1238,7 +1225,6 @@ void wlan_hdd_sar_timers_reset(struct hdd_context *hdd_ctx)
 
 	qdf_delayed_work_stop_sync(&hdd_ctx->sar_safety_unsolicited_work);
 	hdd_nofl_debug("sar safety unsolicited work stopped");
-
 }
 
 void wlan_hdd_sar_timers_init(struct hdd_context *hdd_ctx)
@@ -1254,8 +1240,7 @@ void wlan_hdd_sar_timers_init(struct hdd_context *hdd_ctx)
 			  hdd_sar_safety_timer_cb, hdd_ctx);
 
 	status = qdf_delayed_work_create(&hdd_ctx->sar_safety_unsolicited_work,
-					 hdd_sar_unsolicited_work_cb,
-					 hdd_ctx);
+					 hdd_sar_unsolicited_work_cb, hdd_ctx);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("failed to create sar safety unsolicited work");
@@ -1277,7 +1262,7 @@ void wlan_hdd_sar_timers_deinit(struct hdd_context *hdd_ctx)
 	hdd_enter();
 
 	if (QDF_TIMER_STATE_RUNNING ==
-		qdf_mc_timer_get_current_state(&hdd_ctx->sar_safety_timer))
+	    qdf_mc_timer_get_current_state(&hdd_ctx->sar_safety_timer))
 		qdf_mc_timer_stop(&hdd_ctx->sar_safety_timer);
 
 	qdf_mc_timer_destroy(&hdd_ctx->sar_safety_timer);
@@ -1289,4 +1274,3 @@ void wlan_hdd_sar_timers_deinit(struct hdd_context *hdd_ctx)
 	hdd_exit();
 }
 #endif
-

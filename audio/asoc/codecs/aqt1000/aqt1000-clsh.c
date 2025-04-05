@@ -2,13 +2,13 @@
 /* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
  */
 
+#include "aqt1000-clsh.h"
+#include "aqt1000-registers.h"
+#include <linux/delay.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>
-#include <linux/kernel.h>
-#include <linux/delay.h>
 #include <sound/soc.h>
-#include "aqt1000-registers.h"
-#include "aqt1000-clsh.h"
 
 #define AQT_USLEEP_RANGE 50
 #define MAX_IMPED_PARAMS 6
@@ -50,90 +50,82 @@ enum aqt_curr_bias_err_amp {
 
 static const struct aqt_reg_mask_val imped_table_aqt[][MAX_IMPED_PARAMS] = {
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xf2},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xf2},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xf2},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xf2},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xf2 },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xf2 },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xf2 },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xf2 },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00 },
 	},
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xf4},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xf4},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xf4},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xf4},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xf4 },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xf4 },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xf4 },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xf4 },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00 },
 	},
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xf7},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xf7},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x01},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xf7},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xf7},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x01},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xf7 },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xf7 },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x01 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xf7 },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xf7 },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x01 },
 	},
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xf9},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xf9},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xf9},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xf9},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xf9 },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xf9 },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xf9 },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xf9 },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00 },
 	},
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfa},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfa},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfa},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfa},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfa },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfa },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfa },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfa },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00 },
 	},
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfb},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfb},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfb},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfb},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfb },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfb },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfb },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfb },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00 },
 	},
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfc},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfc},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfc},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfc},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfc },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfc },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfc },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfc },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00 },
 	},
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfd},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfd},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfd},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfd},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfd },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfd },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x00 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfd },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfd },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x00 },
 	},
 	{
-		{AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfd},
-		{AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfd},
-		{AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x01},
-		{AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfd},
-		{AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfd},
-		{AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x01},
+		{ AQT1000_CDC_RX1_RX_VOL_CTL, 0xff, 0xfd },
+		{ AQT1000_CDC_RX1_RX_VOL_MIX_CTL, 0xff, 0xfd },
+		{ AQT1000_CDC_RX1_RX_PATH_SEC1, 0x01, 0x01 },
+		{ AQT1000_CDC_RX2_RX_VOL_CTL, 0xff, 0xfd },
+		{ AQT1000_CDC_RX2_RX_VOL_MIX_CTL, 0xff, 0xfd },
+		{ AQT1000_CDC_RX2_RX_PATH_SEC1, 0x01, 0x01 },
 	},
 };
 
 static const struct aqt_imped_val imped_index[] = {
-	{4, 0},
-	{5, 1},
-	{6, 2},
-	{7, 3},
-	{8, 4},
-	{9, 5},
-	{10, 6},
-	{11, 7},
-	{12, 8},
-	{13, 9},
+	{ 4, 0 }, { 5, 1 },  { 6, 2 },	{ 7, 3 },  { 8, 4 },
+	{ 9, 5 }, { 10, 6 }, { 11, 7 }, { 12, 8 }, { 13, 9 },
 };
 
 static void (*clsh_state_fp[NUM_CLSH_STATES])(struct snd_soc_component *,
@@ -146,24 +138,24 @@ static int get_impedance_index(int imped)
 
 	if (imped < imped_index[i].imped_val) {
 		pr_debug("%s, detected impedance is less than 4 Ohm\n",
-				__func__);
+			 __func__);
 		i = 0;
 		goto ret;
 	}
 	if (imped >= imped_index[ARRAY_SIZE(imped_index) - 1].imped_val) {
 		pr_debug("%s, detected impedance is greater than 12 Ohm\n",
-				__func__);
+			 __func__);
 		i = ARRAY_SIZE(imped_index) - 1;
 		goto ret;
 	}
 	for (i = 0; i < ARRAY_SIZE(imped_index) - 1; i++) {
 		if (imped >= imped_index[i].imped_val &&
-			imped < imped_index[i + 1].imped_val)
+		    imped < imped_index[i + 1].imped_val)
 			break;
 	}
 ret:
-	pr_debug("%s: selected impedance index = %d\n",
-			__func__, imped_index[i].index);
+	pr_debug("%s: selected impedance index = %d\n", __func__,
+		 imped_index[i].index);
 	return imped_index[i].index;
 }
 
@@ -174,15 +166,15 @@ ret:
  * This function updates HPHL and HPHR gain settings
  * according to the impedance value.
  */
-void aqt_clsh_imped_config(struct snd_soc_component *component,
-			   int imped, bool reset)
+void aqt_clsh_imped_config(struct snd_soc_component *component, int imped,
+			   bool reset)
 {
 	int i;
 	int index = 0;
 	int table_size;
 
-	static const struct aqt_reg_mask_val
-				(*imped_table_ptr)[MAX_IMPED_PARAMS];
+	static const struct aqt_reg_mask_val(
+		*imped_table_ptr)[MAX_IMPED_PARAMS];
 
 	table_size = ARRAY_SIZE(imped_table_aqt);
 	imped_table_ptr = imped_table_aqt;
@@ -190,8 +182,8 @@ void aqt_clsh_imped_config(struct snd_soc_component *component,
 	/* reset = 1, which means request is to reset the register values */
 	if (reset) {
 		for (i = 0; i < MAX_IMPED_PARAMS; i++)
-			snd_soc_component_update_bits(component,
-				imped_table_ptr[index][i].reg,
+			snd_soc_component_update_bits(
+				component, imped_table_ptr[index][i].reg,
 				imped_table_ptr[index][i].mask, 0);
 		return;
 	}
@@ -202,14 +194,14 @@ void aqt_clsh_imped_config(struct snd_soc_component *component,
 	}
 	if (index >= table_size) {
 		pr_debug("%s, impedance index not in range = %d\n", __func__,
-			index);
+			 index);
 		return;
 	}
 	for (i = 0; i < MAX_IMPED_PARAMS; i++)
 		snd_soc_component_update_bits(component,
-				imped_table_ptr[index][i].reg,
-				imped_table_ptr[index][i].mask,
-				imped_table_ptr[index][i].val);
+					      imped_table_ptr[index][i].reg,
+					      imped_table_ptr[index][i].mask,
+					      imped_table_ptr[index][i].val);
 }
 EXPORT_SYMBOL(aqt_clsh_imped_config);
 
@@ -242,14 +234,14 @@ static const char *const state_to_str[] = {
 	[AQT_CLSH_STATE_HPH_ST] = "STATE_HPH_ST",
 };
 
-static inline void
-aqt_enable_clsh_block(struct snd_soc_component *component,
-		      struct aqt_clsh_cdc_data *clsh_d, bool enable)
+static inline void aqt_enable_clsh_block(struct snd_soc_component *component,
+					 struct aqt_clsh_cdc_data *clsh_d,
+					 bool enable)
 {
 	if ((enable && ++clsh_d->clsh_users == 1) ||
 	    (!enable && --clsh_d->clsh_users == 0))
 		snd_soc_component_update_bits(component, AQT1000_CDC_CLSH_CRC,
-				0x01, (u8) enable);
+					      0x01, (u8)enable);
 	if (clsh_d->clsh_users < 0)
 		clsh_d->clsh_users = 0;
 	dev_dbg(component->dev, "%s: clsh_users %d, enable %d", __func__,
@@ -258,8 +250,7 @@ aqt_enable_clsh_block(struct snd_soc_component *component,
 
 static inline bool aqt_clsh_enable_status(struct snd_soc_component *component)
 {
-	return snd_soc_component_read32(
-			component, AQT1000_CDC_CLSH_CRC) & 0x01;
+	return snd_soc_component_read32(component, AQT1000_CDC_CLSH_CRC) & 0x01;
 }
 
 static inline int aqt_clsh_get_int_mode(struct aqt_clsh_cdc_data *clsh_d,
@@ -277,7 +268,7 @@ static inline int aqt_clsh_get_int_mode(struct aqt_clsh_cdc_data *clsh_d,
 }
 
 static inline void aqt_clsh_set_int_mode(struct aqt_clsh_cdc_data *clsh_d,
-					int clsh_state, int mode)
+					 int clsh_state, int mode)
 {
 	if ((clsh_state != AQT_CLSH_STATE_HPHL) &&
 	    (clsh_state != AQT_CLSH_STATE_HPHR))
@@ -289,58 +280,54 @@ static inline void aqt_clsh_set_int_mode(struct aqt_clsh_cdc_data *clsh_d,
 static inline void aqt_clsh_set_buck_mode(struct snd_soc_component *component,
 					  int mode)
 {
-	if (mode == CLS_H_HIFI || mode == CLS_H_LOHIFI ||
-	    mode == CLS_AB_HIFI || mode == CLS_AB)
+	if (mode == CLS_H_HIFI || mode == CLS_H_LOHIFI || mode == CLS_AB_HIFI ||
+	    mode == CLS_AB)
 		snd_soc_component_update_bits(component,
-				AQT1000_ANA_RX_SUPPLIES,
-				0x08, 0x08); /* set to HIFI */
+					      AQT1000_ANA_RX_SUPPLIES, 0x08,
+					      0x08); /* set to HIFI */
 	else
 		snd_soc_component_update_bits(component,
-				AQT1000_ANA_RX_SUPPLIES,
-				0x08, 0x00); /* set to default */
+					      AQT1000_ANA_RX_SUPPLIES, 0x08,
+					      0x00); /* set to default */
 }
 
-static inline void aqt_clsh_set_flyback_mode(
-			struct snd_soc_component *component, int mode)
+static inline void
+aqt_clsh_set_flyback_mode(struct snd_soc_component *component, int mode)
 {
-	if (mode == CLS_H_HIFI || mode == CLS_H_LOHIFI ||
-	    mode == CLS_AB_HIFI || mode == CLS_AB)
+	if (mode == CLS_H_HIFI || mode == CLS_H_LOHIFI || mode == CLS_AB_HIFI ||
+	    mode == CLS_AB)
 		snd_soc_component_update_bits(component,
-				AQT1000_ANA_RX_SUPPLIES,
-				0x04, 0x04); /* set to HIFI */
+					      AQT1000_ANA_RX_SUPPLIES, 0x04,
+					      0x04); /* set to HIFI */
 	else
 		snd_soc_component_update_bits(component,
-				AQT1000_ANA_RX_SUPPLIES,
-				0x04, 0x00); /* set to Default */
+					      AQT1000_ANA_RX_SUPPLIES, 0x04,
+					      0x00); /* set to Default */
 }
 
-static inline void aqt_clsh_gm3_boost_disable(
-			struct snd_soc_component *component, int mode)
+static inline void
+aqt_clsh_gm3_boost_disable(struct snd_soc_component *component, int mode)
 {
-	if (mode == CLS_H_HIFI || mode == CLS_H_LOHIFI ||
-	    mode == CLS_AB_HIFI || mode == CLS_AB) {
-		snd_soc_component_update_bits(component,
-				AQT1000_HPH_CNP_WG_CTL,
-				0x80, 0x0); /* disable GM3 Boost */
-		snd_soc_component_update_bits(component,
-				AQT1000_FLYBACK_VNEG_CTRL_4,
-				0xF0, 0x80);
+	if (mode == CLS_H_HIFI || mode == CLS_H_LOHIFI || mode == CLS_AB_HIFI ||
+	    mode == CLS_AB) {
+		snd_soc_component_update_bits(component, AQT1000_HPH_CNP_WG_CTL,
+					      0x80,
+					      0x0); /* disable GM3 Boost */
+		snd_soc_component_update_bits(
+			component, AQT1000_FLYBACK_VNEG_CTRL_4, 0xF0, 0x80);
 	} else {
-		snd_soc_component_update_bits(component,
-				AQT1000_HPH_CNP_WG_CTL,
-				0x80, 0x80); /* set to Default */
-		snd_soc_component_update_bits(component,
-				AQT1000_FLYBACK_VNEG_CTRL_4,
-				0xF0, 0x70);
+		snd_soc_component_update_bits(component, AQT1000_HPH_CNP_WG_CTL,
+					      0x80, 0x80); /* set to Default */
+		snd_soc_component_update_bits(
+			component, AQT1000_FLYBACK_VNEG_CTRL_4, 0xF0, 0x70);
 	}
 }
 
-static inline void aqt_clsh_flyback_dac_ctl(
-			struct snd_soc_component *component, int vref)
+static inline void aqt_clsh_flyback_dac_ctl(struct snd_soc_component *component,
+					    int vref)
 {
-	snd_soc_component_update_bits(component,
-			AQT1000_FLYBACK_VNEGDAC_CTRL_2,
-			0xE0, (vref << 5));
+	snd_soc_component_update_bits(component, AQT1000_FLYBACK_VNEGDAC_CTRL_2,
+				      0xE0, (vref << 5));
 }
 
 static inline void aqt_clsh_mode_vref_ctl(struct snd_soc_component *component,
@@ -359,29 +346,25 @@ static inline void aqt_clsh_mode_vref_ctl(struct snd_soc_component *component,
 	}
 }
 
-static inline void aqt_clsh_buck_current_bias_ctl(
-			struct snd_soc_component *component, bool enable)
+static inline void
+aqt_clsh_buck_current_bias_ctl(struct snd_soc_component *component, bool enable)
 {
 	if (enable) {
 		snd_soc_component_update_bits(component,
-				AQT1000_BUCK_5V_IBIAS_CTL_4,
-				0x70, (I_2UA << 4));
-		snd_soc_component_update_bits(component,
-				AQT1000_BUCK_5V_IBIAS_CTL_4,
-				0x07, I_0P25UA);
-		snd_soc_component_update_bits(component,
-				AQT1000_BUCK_5V_CTRL_CCL_2,
-				0x3F, 0x3F);
+					      AQT1000_BUCK_5V_IBIAS_CTL_4, 0x70,
+					      (I_2UA << 4));
+		snd_soc_component_update_bits(
+			component, AQT1000_BUCK_5V_IBIAS_CTL_4, 0x07, I_0P25UA);
+		snd_soc_component_update_bits(
+			component, AQT1000_BUCK_5V_CTRL_CCL_2, 0x3F, 0x3F);
 	} else {
 		snd_soc_component_update_bits(component,
-				AQT1000_BUCK_5V_IBIAS_CTL_4,
-				0x70, (I_1UA << 4));
-		snd_soc_component_update_bits(component,
-				AQT1000_BUCK_5V_IBIAS_CTL_4,
-				0x07, I_1UA);
-		snd_soc_component_update_bits(component,
-				AQT1000_BUCK_5V_CTRL_CCL_2,
-				0x3F, 0x20);
+					      AQT1000_BUCK_5V_IBIAS_CTL_4, 0x70,
+					      (I_1UA << 4));
+		snd_soc_component_update_bits(
+			component, AQT1000_BUCK_5V_IBIAS_CTL_4, 0x07, I_1UA);
+		snd_soc_component_update_bits(
+			component, AQT1000_BUCK_5V_CTRL_CCL_2, 0x3F, 0x20);
 	}
 }
 
@@ -395,85 +378,75 @@ static inline void aqt_clsh_rdac_hd2_ctl(struct snd_soc_component *component,
 	else if (state == AQT_CLSH_STATE_HPHR)
 		reg = AQT1000_HPH_NEW_INT_RDAC_HD2_CTL_R;
 	else
-		dev_err(component->dev, "%s: Invalid state: %d\n",
-			__func__, state);
+		dev_err(component->dev, "%s: Invalid state: %d\n", __func__,
+			state);
 	if (!reg)
-		snd_soc_component_update_bits(component, reg,
-					      0x0F, hd2_div_ctl);
+		snd_soc_component_update_bits(component, reg, 0x0F,
+					      hd2_div_ctl);
 }
 
 static inline void aqt_clsh_force_iq_ctl(struct snd_soc_component *component,
 					 int mode)
 {
 	if (mode == CLS_H_LOHIFI || mode == CLS_AB) {
-		snd_soc_component_update_bits(component,
-				AQT1000_HPH_NEW_INT_PA_MISC2,
-				0x20, 0x20);
-		snd_soc_component_update_bits(component,
-				AQT1000_RX_BIAS_HPH_LOWPOWER,
-				0xF0, 0xC0);
-		snd_soc_component_update_bits(component,
-				AQT1000_HPH_PA_CTL1,
-				0x0E, 0x02);
+		snd_soc_component_update_bits(
+			component, AQT1000_HPH_NEW_INT_PA_MISC2, 0x20, 0x20);
+		snd_soc_component_update_bits(
+			component, AQT1000_RX_BIAS_HPH_LOWPOWER, 0xF0, 0xC0);
+		snd_soc_component_update_bits(component, AQT1000_HPH_PA_CTL1,
+					      0x0E, 0x02);
 	} else {
-
-		snd_soc_component_update_bits(component,
-				AQT1000_HPH_NEW_INT_PA_MISC2,
-				0x20, 0x0);
-		snd_soc_component_update_bits(component,
-				AQT1000_RX_BIAS_HPH_LOWPOWER,
-				0xF0, 0x80);
-		snd_soc_component_update_bits(component,
-				AQT1000_HPH_PA_CTL1,
-				0x0E, 0x06);
+		snd_soc_component_update_bits(
+			component, AQT1000_HPH_NEW_INT_PA_MISC2, 0x20, 0x0);
+		snd_soc_component_update_bits(
+			component, AQT1000_RX_BIAS_HPH_LOWPOWER, 0xF0, 0x80);
+		snd_soc_component_update_bits(component, AQT1000_HPH_PA_CTL1,
+					      0x0E, 0x06);
 	}
 }
 
 static void aqt_clsh_buck_ctrl(struct snd_soc_component *component,
-			       struct aqt_clsh_cdc_data *clsh_d,
-			       int mode,
+			       struct aqt_clsh_cdc_data *clsh_d, int mode,
 			       bool enable)
 {
 	/* enable/disable buck */
 	if ((enable && (++clsh_d->buck_users == 1)) ||
-	   (!enable && (--clsh_d->buck_users == 0)))
+	    (!enable && (--clsh_d->buck_users == 0)))
 		snd_soc_component_update_bits(component,
-				AQT1000_ANA_RX_SUPPLIES,
-				(1 << 7), (enable << 7));
+					      AQT1000_ANA_RX_SUPPLIES, (1 << 7),
+					      (enable << 7));
 	dev_dbg(component->dev, "%s: buck_users %d, enable %d, mode: %s",
 		__func__, clsh_d->buck_users, enable, mode_to_str(mode));
 	/*
-	 * 500us sleep is required after buck enable/disable
-	 * as per HW requirement
-	 */
+   * 500us sleep is required after buck enable/disable
+   * as per HW requirement
+   */
 	usleep_range(500, 500 + AQT_USLEEP_RANGE);
 }
 
 static void aqt_clsh_flyback_ctrl(struct snd_soc_component *component,
-				  struct aqt_clsh_cdc_data *clsh_d,
-				  int mode,
+				  struct aqt_clsh_cdc_data *clsh_d, int mode,
 				  bool enable)
 {
 	/* enable/disable flyback */
 	if ((enable && (++clsh_d->flyback_users == 1)) ||
-	   (!enable && (--clsh_d->flyback_users == 0))) {
+	    (!enable && (--clsh_d->flyback_users == 0))) {
 		snd_soc_component_update_bits(component,
-				AQT1000_ANA_RX_SUPPLIES,
-				(1 << 6), (enable << 6));
+					      AQT1000_ANA_RX_SUPPLIES, (1 << 6),
+					      (enable << 6));
 		/* 100usec delay is needed as per HW requirement */
 		usleep_range(100, 110);
 	}
 	dev_dbg(component->dev, "%s: flyback_users %d, enable %d, mode: %s",
 		__func__, clsh_d->flyback_users, enable, mode_to_str(mode));
 	/*
-	 * 500us sleep is required after flyback enable/disable
-	 * as per HW requirement
-	 */
+   * 500us sleep is required after flyback enable/disable
+   * as per HW requirement
+   */
 	usleep_range(500, 500 + AQT_USLEEP_RANGE);
 }
 
-static void aqt_clsh_set_hph_mode(struct snd_soc_component *component,
-				  int mode)
+static void aqt_clsh_set_hph_mode(struct snd_soc_component *component, int mode)
 {
 	u8 val = 0;
 	u8 gain = 0;
@@ -520,11 +493,11 @@ static void aqt_clsh_set_hph_mode(struct snd_soc_component *component,
 	snd_soc_component_update_bits(component, AQT1000_ANA_HPH, 0x0C, val);
 }
 
-static void aqt_clsh_set_buck_regulator_mode(
-			struct snd_soc_component *component, int mode)
+static void
+aqt_clsh_set_buck_regulator_mode(struct snd_soc_component *component, int mode)
 {
-	snd_soc_component_update_bits(component, AQT1000_ANA_RX_SUPPLIES,
-			    0x02, 0x00);
+	snd_soc_component_update_bits(component, AQT1000_ANA_RX_SUPPLIES, 0x02,
+				      0x00);
 }
 
 static void aqt_clsh_state_hph_st(struct snd_soc_component *component,
@@ -532,44 +505,42 @@ static void aqt_clsh_state_hph_st(struct snd_soc_component *component,
 				  u8 req_state, bool is_enable, int mode)
 {
 	dev_dbg(component->dev, "%s: mode: %s, %s\n", __func__,
-		mode_to_str(mode),
-		is_enable ? "enable" : "disable");
+		mode_to_str(mode), is_enable ? "enable" : "disable");
 
 	if (mode == CLS_AB || mode == CLS_AB_HIFI)
 		return;
 
 	if (is_enable) {
 		if (req_state == AQT_CLSH_STATE_HPHL)
-			snd_soc_component_update_bits(component,
-					    AQT1000_CDC_RX1_RX_PATH_CFG0,
-					    0x40, 0x40);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_RX1_RX_PATH_CFG0, 0x40,
+				0x40);
 		if (req_state == AQT_CLSH_STATE_HPHR)
-			snd_soc_component_update_bits(component,
-					    AQT1000_CDC_RX2_RX_PATH_CFG0,
-					    0x40, 0x40);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_RX2_RX_PATH_CFG0, 0x40,
+				0x40);
 	} else {
 		if (req_state == AQT_CLSH_STATE_HPHL)
-			snd_soc_component_update_bits(component,
-					    AQT1000_CDC_RX1_RX_PATH_CFG0,
-					    0x40, 0x00);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_RX1_RX_PATH_CFG0, 0x40,
+				0x00);
 		if (req_state == AQT_CLSH_STATE_HPHR)
-			snd_soc_component_update_bits(component,
-					    AQT1000_CDC_RX2_RX_PATH_CFG0,
-					    0x40, 0x00);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_RX2_RX_PATH_CFG0, 0x40,
+				0x00);
 	}
 }
 
 static void aqt_clsh_state_hph_r(struct snd_soc_component *component,
-				 struct aqt_clsh_cdc_data *clsh_d,
-				 u8 req_state, bool is_enable, int mode)
+				 struct aqt_clsh_cdc_data *clsh_d, u8 req_state,
+				 bool is_enable, int mode)
 {
 	dev_dbg(component->dev, "%s: mode: %s, %s\n", __func__,
-		mode_to_str(mode),
-		is_enable ? "enable" : "disable");
+		mode_to_str(mode), is_enable ? "enable" : "disable");
 
 	if (mode == CLS_H_NORMAL) {
-		dev_err(component->dev, "%s: Normal mode not applicable for hph_r\n",
-			__func__);
+		dev_err(component->dev,
+			"%s: Normal mode not applicable for hph_r\n", __func__);
 		return;
 	}
 
@@ -577,18 +548,16 @@ static void aqt_clsh_state_hph_r(struct snd_soc_component *component,
 		if (mode != CLS_AB && mode != CLS_AB_HIFI) {
 			aqt_enable_clsh_block(component, clsh_d, true);
 			/*
-			 * These K1 values depend on the Headphone Impedance
-			 * For now it is assumed to be 16 ohm
-			 */
-			snd_soc_component_update_bits(component,
-					AQT1000_CDC_CLSH_K1_MSB,
-					0x0F, 0x00);
-			snd_soc_component_update_bits(component,
-					AQT1000_CDC_CLSH_K1_LSB,
-					0xFF, 0xC0);
-			snd_soc_component_update_bits(component,
-					    AQT1000_CDC_RX2_RX_PATH_CFG0,
-					    0x40, 0x40);
+       * These K1 values depend on the Headphone Impedance
+       * For now it is assumed to be 16 ohm
+       */
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_CLSH_K1_MSB, 0x0F, 0x00);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_CLSH_K1_LSB, 0xFF, 0xC0);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_RX2_RX_PATH_CFG0, 0x40,
+				0x40);
 		}
 		aqt_clsh_set_buck_regulator_mode(component, mode);
 		aqt_clsh_set_flyback_mode(component, mode);
@@ -609,9 +578,9 @@ static void aqt_clsh_state_hph_r(struct snd_soc_component *component,
 		aqt_clsh_buck_current_bias_ctl(component, false);
 
 		if (mode != CLS_AB && mode != CLS_AB_HIFI) {
-			snd_soc_component_update_bits(component,
-					    AQT1000_CDC_RX2_RX_PATH_CFG0,
-					    0x40, 0x00);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_RX2_RX_PATH_CFG0, 0x40,
+				0x00);
 			aqt_enable_clsh_block(component, clsh_d, false);
 		}
 		/* buck and flyback set to default mode and disable */
@@ -627,15 +596,15 @@ static void aqt_clsh_state_hph_r(struct snd_soc_component *component,
 }
 
 static void aqt_clsh_state_hph_l(struct snd_soc_component *component,
-				 struct aqt_clsh_cdc_data *clsh_d,
-				 u8 req_state, bool is_enable, int mode)
+				 struct aqt_clsh_cdc_data *clsh_d, u8 req_state,
+				 bool is_enable, int mode)
 {
 	dev_dbg(component->dev, "%s: mode: %s, %s\n", __func__,
 		mode_to_str(mode), is_enable ? "enable" : "disable");
 
 	if (mode == CLS_H_NORMAL) {
-		dev_err(component->dev, "%s: Normal mode not applicable for hph_l\n",
-			__func__);
+		dev_err(component->dev,
+			"%s: Normal mode not applicable for hph_l\n", __func__);
 		return;
 	}
 
@@ -643,18 +612,16 @@ static void aqt_clsh_state_hph_l(struct snd_soc_component *component,
 		if (mode != CLS_AB && mode != CLS_AB_HIFI) {
 			aqt_enable_clsh_block(component, clsh_d, true);
 			/*
-			 * These K1 values depend on the Headphone Impedance
-			 * For now it is assumed to be 16 ohm
-			 */
-			snd_soc_component_update_bits(component,
-					AQT1000_CDC_CLSH_K1_MSB,
-					0x0F, 0x00);
-			snd_soc_component_update_bits(component,
-					AQT1000_CDC_CLSH_K1_LSB,
-					0xFF, 0xC0);
-			snd_soc_component_update_bits(component,
-					AQT1000_CDC_RX1_RX_PATH_CFG0,
-					0x40, 0x40);
+       * These K1 values depend on the Headphone Impedance
+       * For now it is assumed to be 16 ohm
+       */
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_CLSH_K1_MSB, 0x0F, 0x00);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_CLSH_K1_LSB, 0xFF, 0xC0);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_RX1_RX_PATH_CFG0, 0x40,
+				0x40);
 		}
 		aqt_clsh_set_buck_regulator_mode(component, mode);
 		aqt_clsh_set_flyback_mode(component, mode);
@@ -675,9 +642,9 @@ static void aqt_clsh_state_hph_l(struct snd_soc_component *component,
 		aqt_clsh_buck_current_bias_ctl(component, false);
 
 		if (mode != CLS_AB && mode != CLS_AB_HIFI) {
-			snd_soc_component_update_bits(component,
-					    AQT1000_CDC_RX1_RX_PATH_CFG0,
-					    0x40, 0x00);
+			snd_soc_component_update_bits(
+				component, AQT1000_CDC_RX1_RX_PATH_CFG0, 0x40,
+				0x00);
 			aqt_enable_clsh_block(component, clsh_d, false);
 		}
 		/* set buck and flyback to Default Mode */
@@ -693,8 +660,8 @@ static void aqt_clsh_state_hph_l(struct snd_soc_component *component,
 }
 
 static void aqt_clsh_state_err(struct snd_soc_component *component,
-		struct aqt_clsh_cdc_data *clsh_d,
-		u8 req_state, bool is_enable, int mode)
+			       struct aqt_clsh_cdc_data *clsh_d, u8 req_state,
+			       bool is_enable, int mode)
 {
 	dev_err(component->dev,
 		"%s Wrong request for class H state machine requested to %s %s",
@@ -731,9 +698,8 @@ static bool aqt_clsh_is_state_valid(u8 state)
  * class h state information
  */
 void aqt_clsh_fsm(struct snd_soc_component *component,
-		struct aqt_clsh_cdc_data *cdc_clsh_d,
-		u8 clsh_event, u8 req_state,
-		int int_mode)
+		  struct aqt_clsh_cdc_data *cdc_clsh_d, u8 clsh_event,
+		  u8 req_state, int int_mode)
 {
 	u8 old_state, new_state;
 
@@ -756,11 +722,11 @@ void aqt_clsh_fsm(struct snd_soc_component *component,
 		}
 		cdc_clsh_d->state = new_state;
 		aqt_clsh_set_int_mode(cdc_clsh_d, req_state, int_mode);
-		(*clsh_state_fp[new_state]) (component, cdc_clsh_d, req_state,
-					     CLSH_REQ_ENABLE, int_mode);
+		(*clsh_state_fp[new_state])(component, cdc_clsh_d, req_state,
+					    CLSH_REQ_ENABLE, int_mode);
 		dev_dbg(component->dev,
-			"%s: ClassH state transition from %s to %s\n",
-			__func__, state_to_str[old_state],
+			"%s: ClassH state transition from %s to %s\n", __func__,
+			state_to_str[old_state],
 			state_to_str[cdc_clsh_d->state]);
 		break;
 	case AQT_CLSH_EVENT_POST_PA:
@@ -769,22 +735,23 @@ void aqt_clsh_fsm(struct snd_soc_component *component,
 		if (new_state < NUM_CLSH_STATES) {
 			if (!aqt_clsh_is_state_valid(old_state)) {
 				dev_err(component->dev,
-					"%s:Invalid old state:%s\n",
-					__func__, state_to_str[old_state]);
+					"%s:Invalid old state:%s\n", __func__,
+					state_to_str[old_state]);
 				return;
 			}
 			if (new_state == old_state) {
 				dev_err(component->dev,
 					"%s: Class-H already in requested state: %s\n",
-					__func__,state_to_str[new_state]);
+					__func__, state_to_str[new_state]);
 				return;
 			}
-			(*clsh_state_fp[old_state]) (component, cdc_clsh_d,
-					req_state, CLSH_REQ_DISABLE,
-					int_mode);
+			(*clsh_state_fp[old_state])(component, cdc_clsh_d,
+						    req_state, CLSH_REQ_DISABLE,
+						    int_mode);
 			cdc_clsh_d->state = new_state;
 			aqt_clsh_set_int_mode(cdc_clsh_d, req_state, CLS_NONE);
-			dev_dbg(component->dev, "%s: ClassH state transition from %s to %s\n",
+			dev_dbg(component->dev,
+				"%s: ClassH state transition from %s to %s\n",
 				__func__, state_to_str[old_state],
 				state_to_str[cdc_clsh_d->state]);
 		}

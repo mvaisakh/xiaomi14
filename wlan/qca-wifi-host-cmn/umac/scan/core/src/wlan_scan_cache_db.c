@@ -41,21 +41,20 @@
  * - While reading the node the ref_cnt should be incremented. Once reading
  *   operation is done ref_cnt is decremented.
  */
+#include "wlan_cm_bss_score_param.h"
+#include "wlan_crypto_global_api.h"
+#include "wlan_crypto_global_def.h"
+#include "wlan_reg_services_api.h"
+#include "wlan_reg_ucfg_api.h"
+#include "wlan_scan_cache_db_i.h"
+#include "wlan_scan_main.h"
 #include <qdf_status.h>
-#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_dfs_utils_api.h>
 #include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
 #include <wlan_objmgr_vdev_obj.h>
 #include <wlan_scan_public_structs.h>
 #include <wlan_scan_utils_api.h>
-#include "wlan_scan_main.h"
-#include "wlan_scan_cache_db_i.h"
-#include "wlan_reg_services_api.h"
-#include "wlan_reg_ucfg_api.h"
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_dfs_utils_api.h>
-#include "wlan_crypto_global_def.h"
-#include "wlan_crypto_global_api.h"
-#include "wlan_cm_bss_score_param.h"
 
 #ifdef FEATURE_6G_SCAN_CHAN_SORT_ALGO
 
@@ -92,8 +91,7 @@ struct meta_rnr_channel *scm_get_chan_meta(struct wlan_objmgr_psoc *psoc,
 }
 
 static bool scm_is_rnr_present(struct meta_rnr_channel *chan,
-			       struct qdf_mac_addr *bssid,
-			       uint32_t short_ssid)
+			       struct qdf_mac_addr *bssid, uint32_t short_ssid)
 {
 	qdf_list_node_t *cur_node = NULL, *next_node = NULL;
 	struct scan_rnr_node *rnr_node;
@@ -104,9 +102,8 @@ static bool scm_is_rnr_present(struct meta_rnr_channel *chan,
 
 	qdf_list_peek_front(&chan->rnr_list, &cur_node);
 	while (cur_node) {
-		rnr_node = qdf_container_of(cur_node,
-					    struct scan_rnr_node,
-					    node);
+		rnr_node =
+			qdf_container_of(cur_node, struct scan_rnr_node, node);
 		if (qdf_is_macaddr_equal(&rnr_node->entry.bssid, bssid) &&
 		    rnr_node->entry.short_ssid == short_ssid)
 			return true;
@@ -138,7 +135,7 @@ static void scm_add_rnr_channel_db(struct wlan_objmgr_psoc *psoc,
 	if (!(is_6g_bss || entry->ie_list.rnrie))
 		return;
 
-	scm_debug("BSS freq %d BSSID: "QDF_MAC_ADDR_FMT, chan_freq,
+	scm_debug("BSS freq %d BSSID: " QDF_MAC_ADDR_FMT, chan_freq,
 		  QDF_MAC_ADDR_REF(entry->bssid.bytes));
 	if (is_6g_bss) {
 		channel = scm_get_chan_meta(psoc, chan_freq);
@@ -151,9 +148,9 @@ static void scm_add_rnr_channel_db(struct wlan_objmgr_psoc *psoc,
 	}
 
 	/*
-	 * If scan entry got RNR IE then loop through all
-	 * entries and increase the BSS count in respective channels
-	 */
+   * If scan entry got RNR IE then loop through all
+   * entries and increase the BSS count in respective channels
+   */
 	if (!entry->ie_list.rnrie)
 		return;
 
@@ -162,9 +159,9 @@ static void scm_add_rnr_channel_db(struct wlan_objmgr_psoc *psoc,
 		/* Skip if entry is not valid */
 		if (!rnr_bss->channel_number)
 			continue;
-		chan_freq = wlan_reg_chan_opclass_to_freq(rnr_bss->channel_number,
-							  rnr_bss->operating_class,
-							  true);
+		chan_freq = wlan_reg_chan_opclass_to_freq(
+			rnr_bss->channel_number, rnr_bss->operating_class,
+			true);
 		channel = scm_get_chan_meta(psoc, chan_freq);
 		if (!channel) {
 			scm_debug("Failed to get chan Meta freq %d", chan_freq);
@@ -178,7 +175,8 @@ static void scm_add_rnr_channel_db(struct wlan_objmgr_psoc *psoc,
 		}
 		if (scm_is_rnr_present(channel, &rnr_bss->bssid,
 				       rnr_bss->short_ssid)) {
-			scm_debug("skip dup freq %d: "QDF_MAC_ADDR_FMT" short ssid %x",
+			scm_debug("skip dup freq %d: " QDF_MAC_ADDR_FMT
+				  " short ssid %x",
 				  chan_freq,
 				  QDF_MAC_ADDR_REF(rnr_bss->bssid.bytes),
 				  rnr_bss->short_ssid);
@@ -189,23 +187,20 @@ static void scm_add_rnr_channel_db(struct wlan_objmgr_psoc *psoc,
 			return;
 		rnr_node->entry.timestamp = entry->scan_entry_time;
 		if (!qdf_is_macaddr_zero(&rnr_bss->bssid))
-			qdf_mem_copy(&rnr_node->entry.bssid,
-				     &rnr_bss->bssid,
+			qdf_mem_copy(&rnr_node->entry.bssid, &rnr_bss->bssid,
 				     QDF_MAC_ADDR_SIZE);
 		if (rnr_bss->short_ssid)
 			rnr_node->entry.short_ssid = rnr_bss->short_ssid;
 		if (rnr_bss->bss_params)
 			rnr_node->entry.bss_params = rnr_bss->bss_params;
-		scm_debug("Add freq %d: "QDF_MAC_ADDR_FMT" short ssid %x", chan_freq,
-			  QDF_MAC_ADDR_REF(rnr_bss->bssid.bytes),
+		scm_debug("Add freq %d: " QDF_MAC_ADDR_FMT " short ssid %x",
+			  chan_freq, QDF_MAC_ADDR_REF(rnr_bss->bssid.bytes),
 			  rnr_bss->short_ssid);
-		qdf_list_insert_back(&channel->rnr_list,
-				     &rnr_node->node);
+		qdf_list_insert_back(&channel->rnr_list, &rnr_node->node);
 	}
 }
 
-void scm_filter_rnr_flag_pno(struct wlan_objmgr_vdev *vdev,
-			     uint32_t short_ssid,
+void scm_filter_rnr_flag_pno(struct wlan_objmgr_vdev *vdev, uint32_t short_ssid,
 			     struct chan_list *pno_chan_list)
 {
 	uint8_t i;
@@ -228,8 +223,8 @@ void scm_filter_rnr_flag_pno(struct wlan_objmgr_vdev *vdev,
 
 	scan_mode = scan_obj->scan_def.scan_mode_6g;
 	/* No Filteration required for below scan modes since
-	 * no RNR flag marked.
-	 */
+   * no RNR flag marked.
+   */
 	if (scan_mode == SCAN_MODE_6G_NO_CHANNEL ||
 	    scan_mode == SCAN_MODE_6G_ALL_CHANNEL ||
 	    scan_mode == SCAN_MODE_6G_ALL_DUTY_CYCLE)
@@ -242,12 +237,13 @@ void scm_filter_rnr_flag_pno(struct wlan_objmgr_vdev *vdev,
 		if (!chan || qdf_list_empty(&chan->rnr_list))
 			continue;
 
-		qdf_list_for_each(&chan->rnr_list, rnr_node, node) {
+		qdf_list_for_each(&chan->rnr_list, rnr_node, node)
+		{
 			if (rnr_node->entry.short_ssid) {
 				if (rnr_node->entry.short_ssid == short_ssid) {
-			/* If short ssid entry present in RNR db cache, remove
-			 * FLAG_SCAN_ONLY_IF_RNR_FOUND flag from the channel.
-			 */
+					/* If short ssid entry present in RNR db cache, remove
+           * FLAG_SCAN_ONLY_IF_RNR_FOUND flag from the channel.
+           */
 					pno_chan_list->chan[i].flags &=
 						~FLAG_SCAN_ONLY_IF_RNR_FOUND;
 					break;
@@ -268,7 +264,7 @@ void scm_filter_rnr_flag_pno(struct wlan_objmgr_vdev *vdev,
  * Return: void
  */
 static void scm_del_scan_node(qdf_list_t *list,
-	struct scan_cache_node *scan_node)
+			      struct scan_cache_node *scan_node)
 {
 	QDF_STATUS status;
 
@@ -290,7 +286,7 @@ static void scm_del_scan_node(qdf_list_t *list,
  * Return: QDF status.
  */
 static QDF_STATUS scm_del_scan_node_from_db(struct scan_dbs *scan_db,
-	struct scan_cache_node *scan_node)
+					    struct scan_cache_node *scan_node)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	uint8_t hash_idx;
@@ -331,9 +327,9 @@ static void scm_scan_entry_get_ref(struct scan_cache_node *scan_node)
  * Return: void
  */
 static void scm_scan_entry_put_ref(struct scan_dbs *scan_db,
-	struct scan_cache_node *scan_node, bool lock_needed)
+				   struct scan_cache_node *scan_node,
+				   bool lock_needed)
 {
-
 	if (!scan_node) {
 		scm_err("scan_node is NULL");
 		QDF_ASSERT(0);
@@ -403,13 +399,12 @@ static void scm_scan_entry_del(struct scan_dbs *scan_db,
  * Return: void
  */
 static void scm_add_scan_node(struct scan_dbs *scan_db,
-	struct scan_cache_node *scan_node,
-	struct scan_cache_node *dup_node)
+			      struct scan_cache_node *scan_node,
+			      struct scan_cache_node *dup_node)
 {
 	uint8_t hash_idx;
 
-	hash_idx =
-		SCAN_GET_HASH(scan_node->entry->bssid.bytes);
+	hash_idx = SCAN_GET_HASH(scan_node->entry->bssid.bytes);
 
 	qdf_atomic_init(&scan_node->ref_cnt);
 	scan_node->cookie = SCAN_NODE_ACTIVE_COOKIE;
@@ -424,7 +419,6 @@ static void scm_add_scan_node(struct scan_dbs *scan_db,
 	scan_db->num_entries++;
 }
 
-
 /**
  * scm_get_next_valid_node() - API get the next valid scan node from
  * the list
@@ -437,9 +431,8 @@ static void scm_add_scan_node(struct scan_dbs *scan_db,
  *
  * Return: next scan node
  */
-static qdf_list_node_t *
-scm_get_next_valid_node(qdf_list_t *list,
-	qdf_list_node_t *cur_node)
+static qdf_list_node_t *scm_get_next_valid_node(qdf_list_t *list,
+						qdf_list_node_t *cur_node)
 {
 	qdf_list_node_t *next_node = NULL;
 	qdf_list_node_t *temp_node = NULL;
@@ -451,14 +444,14 @@ scm_get_next_valid_node(qdf_list_t *list,
 		qdf_list_peek_front(list, &next_node);
 
 	while (next_node) {
-		scan_node = qdf_container_of(next_node,
-			struct scan_cache_node, node);
+		scan_node = qdf_container_of(next_node, struct scan_cache_node,
+					     node);
 		if (scan_node->cookie == SCAN_NODE_ACTIVE_COOKIE)
 			return next_node;
 		/*
-		 * If node is not valid check for next entry
-		 * to get next valid node.
-		 */
+     * If node is not valid check for next entry
+     * to get next valid node.
+     */
 		qdf_list_peek_next(list, next_node, &temp_node);
 		next_node = temp_node;
 		temp_node = NULL;
@@ -480,8 +473,8 @@ scm_get_next_valid_node(qdf_list_t *list,
  * Return: next scan cache node
  */
 static struct scan_cache_node *
-scm_get_next_node(struct scan_dbs *scan_db,
-	qdf_list_t *list, struct scan_cache_node *cur_node)
+scm_get_next_node(struct scan_dbs *scan_db, qdf_list_t *list,
+		  struct scan_cache_node *cur_node)
 {
 	struct scan_cache_node *next_node = NULL;
 	qdf_list_node_t *next_list = NULL;
@@ -490,15 +483,14 @@ scm_get_next_node(struct scan_dbs *scan_db,
 	if (cur_node) {
 		next_list = scm_get_next_valid_node(list, &cur_node->node);
 		/* Decrement the ref count of the previous node */
-		scm_scan_entry_put_ref(scan_db,
-			cur_node, false);
+		scm_scan_entry_put_ref(scan_db, cur_node, false);
 	} else {
 		next_list = scm_get_next_valid_node(list, NULL);
 	}
 	/* Increase the ref count of the obtained node */
 	if (next_list) {
-		next_node = qdf_container_of(next_list,
-			struct scan_cache_node, node);
+		next_node = qdf_container_of(next_list, struct scan_cache_node,
+					     node);
 		scm_scan_entry_get_ref(next_node);
 	}
 	qdf_spin_unlock_bh(&scan_db->scan_db_lock);
@@ -515,12 +507,12 @@ scm_get_next_node(struct scan_dbs *scan_db,
  * Return: void
  */
 static void scm_check_and_age_out(struct scan_dbs *scan_db,
-	struct scan_cache_node *node,
-	qdf_time_t scan_aging_time)
+				  struct scan_cache_node *node,
+				  qdf_time_t scan_aging_time)
 {
-	if (util_scan_entry_age(node->entry) >=
-	   scan_aging_time) {
-		scm_debug("Aging out BSSID: "QDF_MAC_ADDR_FMT" with age %lu ms",
+	if (util_scan_entry_age(node->entry) >= scan_aging_time) {
+		scm_debug("Aging out BSSID: " QDF_MAC_ADDR_FMT
+			  " with age %lu ms",
 			  QDF_MAC_ADDR_REF(node->entry->bssid.bytes),
 			  util_scan_entry_age(node->entry));
 		qdf_spin_lock_bh(&scan_db->scan_db_lock);
@@ -542,21 +534,20 @@ static bool scm_bss_is_connected(struct scan_cache_entry *entry)
  *
  * Return: scan cache entry node of connected BSS if exists, NULL otherwise
  */
-static
-struct scan_cache_node *scm_get_conn_node(struct scan_dbs *scan_db)
+static struct scan_cache_node *scm_get_conn_node(struct scan_dbs *scan_db)
 {
 	int i;
 	struct scan_cache_node *cur_node = NULL;
 	struct scan_cache_node *next_node = NULL;
 
-	for (i = 0 ; i < SCAN_HASH_SIZE; i++) {
+	for (i = 0; i < SCAN_HASH_SIZE; i++) {
 		cur_node = scm_get_next_node(scan_db,
-			&scan_db->scan_hash_tbl[i], NULL);
+					     &scan_db->scan_hash_tbl[i], NULL);
 		while (cur_node) {
 			if (scm_bss_is_connected(cur_node->entry))
 				return cur_node;
-			next_node = scm_get_next_node(scan_db,
-				&scan_db->scan_hash_tbl[i], cur_node);
+			next_node = scm_get_next_node(
+				scan_db, &scan_db->scan_hash_tbl[i], cur_node);
 			cur_node = next_node;
 			next_node = NULL;
 		}
@@ -565,9 +556,8 @@ struct scan_cache_node *scm_get_conn_node(struct scan_dbs *scan_db)
 	return NULL;
 }
 
-static bool
-scm_bss_is_nontx_of_conn_bss(struct scan_cache_node *conn_node,
-			     struct scan_cache_node *cur_node)
+static bool scm_bss_is_nontx_of_conn_bss(struct scan_cache_node *conn_node,
+					 struct scan_cache_node *cur_node)
 {
 	if (cur_node->entry->mbssid_info.profile_num &&
 	    !memcmp(conn_node->entry->mbssid_info.trans_bssid,
@@ -579,7 +569,7 @@ scm_bss_is_nontx_of_conn_bss(struct scan_cache_node *conn_node,
 }
 
 void scm_age_out_entries(struct wlan_objmgr_psoc *psoc,
-	struct scan_dbs *scan_db)
+			 struct scan_dbs *scan_db)
 {
 	int i;
 	struct scan_cache_node *cur_node = NULL;
@@ -594,22 +584,23 @@ void scm_age_out_entries(struct wlan_objmgr_psoc *psoc,
 	}
 
 	conn_node = scm_get_conn_node(scan_db);
-	for (i = 0 ; i < SCAN_HASH_SIZE; i++) {
+	for (i = 0; i < SCAN_HASH_SIZE; i++) {
 		cur_node = scm_get_next_node(scan_db,
-			&scan_db->scan_hash_tbl[i], NULL);
+					     &scan_db->scan_hash_tbl[i], NULL);
 		while (cur_node) {
 			if (!conn_node /* if there is no connected node */ ||
 			    /* OR cur_node is not part of the MBSSID of the
-			     * connected node
-			     */
+           * connected node
+           */
 			    (!scm_bss_is_connected(cur_node->entry) &&
 			     !scm_bss_is_nontx_of_conn_bss(conn_node,
-							  cur_node))) {
-				scm_check_and_age_out(scan_db, cur_node,
+							   cur_node))) {
+				scm_check_and_age_out(
+					scan_db, cur_node,
 					def_param->scan_cache_aging_time);
 			}
-			next_node = scm_get_next_node(scan_db,
-				&scan_db->scan_hash_tbl[i], cur_node);
+			next_node = scm_get_next_node(
+				scan_db, &scan_db->scan_hash_tbl[i], cur_node);
 			cur_node = next_node;
 			next_node = NULL;
 		}
@@ -632,37 +623,35 @@ static QDF_STATUS scm_flush_oldest_entry(struct scan_dbs *scan_db)
 	struct scan_cache_node *oldest_node = NULL;
 	struct scan_cache_node *cur_node;
 
-	for (i = 0 ; i < SCAN_HASH_SIZE; i++) {
+	for (i = 0; i < SCAN_HASH_SIZE; i++) {
 		/* Get the first valid node for the hash */
 		cur_node = scm_get_next_node(scan_db,
-					     &scan_db->scan_hash_tbl[i],
-					     NULL);
-		 /* Iterate scan db and flush out oldest node
-		  * take ref_cnt for oldest_node
-		  */
+					     &scan_db->scan_hash_tbl[i], NULL);
+		/* Iterate scan db and flush out oldest node
+     * take ref_cnt for oldest_node
+     */
 
 		while (cur_node) {
 			if (!oldest_node ||
-			   (util_scan_entry_age(oldest_node->entry) <
-			    util_scan_entry_age(cur_node->entry))) {
+			    (util_scan_entry_age(oldest_node->entry) <
+			     util_scan_entry_age(cur_node->entry))) {
 				if (oldest_node)
-					scm_scan_entry_put_ref(scan_db,
-							       oldest_node,
-							       true);
+					scm_scan_entry_put_ref(
+						scan_db, oldest_node, true);
 				qdf_spin_lock_bh(&scan_db->scan_db_lock);
 				oldest_node = cur_node;
 				scm_scan_entry_get_ref(oldest_node);
 				qdf_spin_unlock_bh(&scan_db->scan_db_lock);
 			}
 
-			cur_node = scm_get_next_node(scan_db,
-					&scan_db->scan_hash_tbl[i],
-					cur_node);
+			cur_node = scm_get_next_node(
+				scan_db, &scan_db->scan_hash_tbl[i], cur_node);
 		};
 	}
 
 	if (oldest_node) {
-		scm_debug("Flush oldest BSSID: "QDF_MAC_ADDR_FMT" with age %lu ms",
+		scm_debug("Flush oldest BSSID: " QDF_MAC_ADDR_FMT
+			  " with age %lu ms",
 			  QDF_MAC_ADDR_REF(oldest_node->entry->bssid.bytes),
 			  util_scan_entry_age(oldest_node->entry));
 		/* Release ref_cnt taken for oldest_node and delete it */
@@ -683,7 +672,7 @@ static QDF_STATUS scm_flush_oldest_entry(struct scan_dbs *scan_db)
  * Return: void
  */
 static void scm_update_alt_wcn_ie(struct scan_cache_entry *from,
-	struct scan_cache_entry *dst)
+				  struct scan_cache_entry *dst)
 {
 	uint32_t alt_wcn_ie_len;
 
@@ -712,8 +701,7 @@ static void scm_update_alt_wcn_ie(struct scan_cache_entry *from,
 			return;
 		}
 	}
-	qdf_mem_copy(dst->alt_wcn_ie.ptr,
-		from->ie_list.wcn, alt_wcn_ie_len);
+	qdf_mem_copy(dst->alt_wcn_ie.ptr, from->ie_list.wcn, alt_wcn_ie_len);
 	dst->alt_wcn_ie.len = alt_wcn_ie_len;
 }
 
@@ -724,12 +712,11 @@ static void scm_update_alt_wcn_ie(struct scan_cache_entry *from,
  *
  * Return: void
  */
-static inline void
-scm_update_mlme_info(struct scan_cache_entry *src,
-	struct scan_cache_entry *dest)
+static inline void scm_update_mlme_info(struct scan_cache_entry *src,
+					struct scan_cache_entry *dest)
 {
 	qdf_mem_copy(&dest->mlme_info, &src->mlme_info,
-		sizeof(struct mlme_info));
+		     sizeof(struct mlme_info));
 }
 
 /**
@@ -745,12 +732,11 @@ scm_update_mlme_info(struct scan_cache_entry *src,
  *
  * Return: void
  */
-static void
-scm_copy_info_from_dup_entry(struct wlan_objmgr_pdev *pdev,
-			     struct wlan_scan_obj *scan_obj,
-			     struct scan_dbs *scan_db,
-			     struct scan_cache_entry *scan_params,
-			     struct scan_cache_node *scan_node)
+static void scm_copy_info_from_dup_entry(struct wlan_objmgr_pdev *pdev,
+					 struct wlan_scan_obj *scan_obj,
+					 struct scan_dbs *scan_db,
+					 struct scan_cache_entry *scan_params,
+					 struct scan_cache_node *scan_node)
 {
 	struct scan_cache_entry *scan_entry;
 	uint64_t time_gap;
@@ -763,18 +749,20 @@ scm_copy_info_from_dup_entry(struct wlan_objmgr_pdev *pdev,
 		scan_params->is_hidden_ssid = true;
 
 	/*
-	 * If AP changed its beacon from not having an SSID to showing it the
-	 * kernel will drop the entry asumming that something is wrong with AP.
-	 * This can result in connection failure while updating the bss during
-	 * connection. So flush the hidden entry from kernel before indicating
-	 * the new entry.
-	 */
+   * If AP changed its beacon from not having an SSID to showing it the
+   * kernel will drop the entry asumming that something is wrong with AP.
+   * This can result in connection failure while updating the bss during
+   * connection. So flush the hidden entry from kernel before indicating
+   * the new entry.
+   */
 	if (scan_entry->is_hidden_ssid &&
 	    scan_params->frm_subtype == MGMT_SUBTYPE_BEACON &&
 	    !util_scan_is_null_ssid(&scan_params->ssid)) {
 		if (scan_obj->cb.unlink_bss) {
-			scm_debug("Hidden AP "QDF_MAC_ADDR_FMT" switch to non-hidden SSID, So unlink the entry",
-				  QDF_MAC_ADDR_REF(scan_entry->bssid.bytes));
+			scm_debug(
+				"Hidden AP " QDF_MAC_ADDR_FMT
+				" switch to non-hidden SSID, So unlink the entry",
+				QDF_MAC_ADDR_REF(scan_entry->bssid.bytes));
 			scan_obj->cb.unlink_bss(pdev, scan_entry);
 		}
 	}
@@ -783,43 +771,39 @@ scm_copy_info_from_dup_entry(struct wlan_objmgr_pdev *pdev,
 	if (util_scan_is_null_ssid(&scan_params->ssid) &&
 	    scan_entry->ssid.length) {
 		/*
-		 * New entry has a hidden SSID and old one has the SSID.
-		 * Add the entry by using the ssid of the old entry
-		 * only if diff of saved SSID time and current time is
-		 * less than HIDDEN_SSID_TIME time.
-		 * This will avoid issues in case AP changes its SSID
-		 * while remain hidden.
-		 */
-		time_gap =
-			qdf_mc_timer_get_system_time() -
-			scan_entry->hidden_ssid_timestamp;
+     * New entry has a hidden SSID and old one has the SSID.
+     * Add the entry by using the ssid of the old entry
+     * only if diff of saved SSID time and current time is
+     * less than HIDDEN_SSID_TIME time.
+     * This will avoid issues in case AP changes its SSID
+     * while remain hidden.
+     */
+		time_gap = qdf_mc_timer_get_system_time() -
+			   scan_entry->hidden_ssid_timestamp;
 		if (time_gap <= HIDDEN_SSID_TIME) {
 			scan_params->hidden_ssid_timestamp =
 				scan_entry->hidden_ssid_timestamp;
-			scan_params->ssid.length =
-				scan_entry->ssid.length;
+			scan_params->ssid.length = scan_entry->ssid.length;
 			qdf_mem_copy(scan_params->ssid.ssid,
-				scan_entry->ssid.ssid,
-				scan_entry->ssid.length);
+				     scan_entry->ssid.ssid,
+				     scan_entry->ssid.length);
 		}
 	}
 
 	/*
-	 * Due to Rx sensitivity issue, sometime beacons are seen on adjacent
-	 * channel so workaround in software is needed. If DS params or HT info
-	 * are present driver can get proper channel info from these IEs and set
-	 * channel_mismatch so that the older RSSI values are used in new entry.
-	 *
-	 * For the cases where DS params and HT info is not present, driver
-	 * needs to check below conditions to get proper channel and set
-	 * channel_mismatch so that the older RSSI values are used in new entry:
-	 *   -- The old entry channel and new entry channel are not same
-	 *   -- RSSI is less than -80, this indicate that the signal has leaked
-	 *       in adjacent channel.
-	 */
-	time_gap =
-		scan_params->scan_entry_time -
-		scan_entry->rssi_timestamp;
+   * Due to Rx sensitivity issue, sometime beacons are seen on adjacent
+   * channel so workaround in software is needed. If DS params or HT info
+   * are present driver can get proper channel info from these IEs and set
+   * channel_mismatch so that the older RSSI values are used in new entry.
+   *
+   * For the cases where DS params and HT info is not present, driver
+   * needs to check below conditions to get proper channel and set
+   * channel_mismatch so that the older RSSI values are used in new entry:
+   *   -- The old entry channel and new entry channel are not same
+   *   -- RSSI is less than -80, this indicate that the signal has leaked
+   *       in adjacent channel.
+   */
+	time_gap = scan_params->scan_entry_time - scan_entry->rssi_timestamp;
 
 	if ((scan_params->frm_subtype == MGMT_SUBTYPE_BEACON ||
 	     scan_params->frm_subtype == MGMT_SUBTYPE_PROBE_RESP) &&
@@ -828,10 +812,10 @@ scm_copy_info_from_dup_entry(struct wlan_objmgr_pdev *pdev,
 	    !util_scan_entry_vhtop(scan_params) &&
 	    !util_scan_entry_heop(scan_params) &&
 	    (scan_params->channel.chan_freq != scan_entry->channel.chan_freq) &&
-	    (scan_params->rssi_raw  < ADJACENT_CHANNEL_RSSI_THRESHOLD ||
+	    (scan_params->rssi_raw < ADJACENT_CHANNEL_RSSI_THRESHOLD ||
 	     (time_gap < WLAN_RSSI_AVERAGING_TIME &&
 	      (scan_params->rssi_raw + ADJACENT_CHANNEL_RSSI_DIFF_THRESHOLD) <
-	      scan_entry->rssi_raw))) {
+		      scan_entry->rssi_raw))) {
 		scan_params->channel.chan_freq = scan_entry->channel.chan_freq;
 		scan_params->channel_mismatch = true;
 	}
@@ -842,30 +826,26 @@ scm_copy_info_from_dup_entry(struct wlan_objmgr_pdev *pdev,
 		scan_params->avg_snr = scan_entry->avg_snr;
 		scan_params->rssi_raw = scan_entry->rssi_raw;
 		scan_params->avg_rssi = scan_entry->avg_rssi;
-		scan_params->rssi_timestamp =
-			scan_entry->rssi_timestamp;
+		scan_params->rssi_timestamp = scan_entry->rssi_timestamp;
 	} else {
 		/* If elapsed time since last rssi and snr update for this
-		 * entry is smaller than a threshold, calculate a
-		 * running average of the RSSI and SNR values.
-		 * Otherwise new frames RSSI and SNR are more representative
-		 * of the signal strength.
-		 */
+     * entry is smaller than a threshold, calculate a
+     * running average of the RSSI and SNR values.
+     * Otherwise new frames RSSI and SNR are more representative
+     * of the signal strength.
+     */
 		if (time_gap > WLAN_RSSI_AVERAGING_TIME) {
 			scan_params->avg_rssi =
 				WLAN_RSSI_IN(scan_params->rssi_raw);
-			scan_params->avg_snr =
-				WLAN_SNR_IN(scan_params->snr);
-		}
-		else {
+			scan_params->avg_snr = WLAN_SNR_IN(scan_params->snr);
+		} else {
 			/* Copy previous average rssi and snr to new entry */
 			scan_params->avg_snr = scan_entry->avg_snr;
 			scan_params->avg_rssi = scan_entry->avg_rssi;
 			/* Average with previous samples */
 			WLAN_RSSI_LPF(scan_params->avg_rssi,
 				      scan_params->rssi_raw);
-			WLAN_SNR_LPF(scan_params->avg_snr,
-				     scan_params->snr);
+			WLAN_SNR_LPF(scan_params->avg_snr, scan_params->snr);
 		}
 
 		scan_params->rssi_timestamp = scan_params->scan_entry_time;
@@ -893,12 +873,11 @@ scm_copy_info_from_dup_entry(struct wlan_objmgr_pdev *pdev,
  *
  * Return: bool
  */
-static bool
-scm_find_duplicate(struct wlan_objmgr_pdev *pdev,
-		   struct wlan_scan_obj *scan_obj,
-		   struct scan_dbs *scan_db,
-		   struct scan_cache_entry *entry,
-		   struct scan_cache_node **dup_node)
+static bool scm_find_duplicate(struct wlan_objmgr_pdev *pdev,
+			       struct wlan_scan_obj *scan_obj,
+			       struct scan_dbs *scan_db,
+			       struct scan_cache_entry *entry,
+			       struct scan_cache_node **dup_node)
 {
 	uint8_t hash_idx;
 	struct scan_cache_node *cur_node;
@@ -906,20 +885,18 @@ scm_find_duplicate(struct wlan_objmgr_pdev *pdev,
 
 	hash_idx = SCAN_GET_HASH(entry->bssid.bytes);
 
-	cur_node = scm_get_next_node(scan_db,
-				     &scan_db->scan_hash_tbl[hash_idx],
+	cur_node = scm_get_next_node(scan_db, &scan_db->scan_hash_tbl[hash_idx],
 				     NULL);
 
 	while (cur_node) {
-		if (util_is_scan_entry_match(entry,
-		   cur_node->entry)) {
+		if (util_is_scan_entry_match(entry, cur_node->entry)) {
 			scm_copy_info_from_dup_entry(pdev, scan_obj, scan_db,
 						     entry, cur_node);
 			*dup_node = cur_node;
 			return true;
 		}
-		next_node = scm_get_next_node(scan_db,
-			 &scan_db->scan_hash_tbl[hash_idx], cur_node);
+		next_node = scm_get_next_node(
+			scan_db, &scan_db->scan_hash_tbl[hash_idx], cur_node);
 		cur_node = next_node;
 		next_node = NULL;
 	}
@@ -949,13 +926,14 @@ static uint32_t scm_dump_ml_scan_info(struct scan_cache_entry *scan_params,
 				      uint32_t len)
 {
 	/* Scenario: When both STA and AP support ML then
-	 * Driver will fill ml_info structure and print the MLD address and no.
-	 * of links.
-	 */
+   * Driver will fill ml_info structure and print the MLD address and no.
+   * of links.
+   */
 	if (qdf_is_macaddr_zero(&scan_params->ml_info.mld_mac_addr))
 		return 0;
 
-	return qdf_scnprintf(log_str + len, str_len - len,
+	return qdf_scnprintf(
+		log_str + len, str_len - len,
 		", MLD " QDF_MAC_ADDR_FMT " links %d",
 		QDF_MAC_ADDR_REF(scan_params->ml_info.mld_mac_addr.bytes),
 		scan_params->ml_info.num_links);
@@ -973,29 +951,25 @@ static void scm_dump_scan_entry(struct wlan_objmgr_pdev *pdev,
 				struct scan_cache_entry *scan_params)
 {
 	uint8_t security_type;
-	char log_str[SCAN_DUMP_MAX_LEN] = {0};
+	char log_str[SCAN_DUMP_MAX_LEN] = { 0 };
 	uint32_t str_len = SCAN_DUMP_MAX_LEN;
 	uint8_t pdev_id = wlan_objmgr_pdev_get_pdev_id(pdev);
 	uint32_t len = 0;
 
 	/* Add pdev_id if its non zero */
 	if (pdev_id)
-		len += qdf_scnprintf(log_str + len, str_len - len,
-				     "pdev %d ", pdev_id);
+		len += qdf_scnprintf(log_str + len, str_len - len, "pdev %d ",
+				     pdev_id);
 
 	/* Add WPA/RSN/WAPI/WEP info if its non zero */
 	security_type = scan_params->security_type;
 	if (security_type)
-		len += qdf_scnprintf(log_str + len, str_len - len,
-				     "%s%s%s%s",
-				     security_type & SCAN_SECURITY_TYPE_WPA ?
-				     "[WPA]" : "",
-				     security_type & SCAN_SECURITY_TYPE_RSN ?
-				     "[RSN]" : "",
-				     security_type & SCAN_SECURITY_TYPE_WAPI ?
-				     "[WAPI]" : "",
-				     security_type & SCAN_SECURITY_TYPE_WEP ?
-				     "[WEP]" : "");
+		len += qdf_scnprintf(
+			log_str + len, str_len - len, "%s%s%s%s",
+			security_type & SCAN_SECURITY_TYPE_WPA ? "[WPA]" : "",
+			security_type & SCAN_SECURITY_TYPE_RSN ? "[RSN]" : "",
+			security_type & SCAN_SECURITY_TYPE_WAPI ? "[WAPI]" : "",
+			security_type & SCAN_SECURITY_TYPE_WEP ? "[WEP]" : "");
 
 	/* Add hidden info if present */
 	if (scan_params->is_hidden_ssid)
@@ -1007,17 +981,19 @@ static void scm_dump_scan_entry(struct wlan_objmgr_pdev *pdev,
 				     "[Chan mismatch]");
 
 	/* Add CSA IE info if present */
-	if (scan_params->ie_list.csa ||
-	    scan_params->ie_list.xcsa ||
+	if (scan_params->ie_list.csa || scan_params->ie_list.xcsa ||
 	    scan_params->ie_list.cswrp)
 		len += qdf_scnprintf(log_str + len, str_len - len, "[CSA IE]");
 
 	/* Add ML info */
 	len += scm_dump_ml_scan_info(scan_params, log_str, str_len, len);
 
-	scm_nofl_debug("Rcvd %s(%d): " QDF_MAC_ADDR_FMT " \"" QDF_SSID_FMT "\" freq %d rssi %d tsf %u seq %d snr %d phy %d %s",
+	scm_nofl_debug("Rcvd %s(%d): " QDF_MAC_ADDR_FMT " \"" QDF_SSID_FMT
+		       "\" freq %d rssi %d tsf %u seq %d snr %d phy %d %s",
 		       (scan_params->frm_subtype == MGMT_SUBTYPE_PROBE_RESP) ?
-		       "prb rsp" : "bcn", scan_params->raw_frame.len,
+			       "prb rsp" :
+			       "bcn",
+		       scan_params->raw_frame.len,
 		       QDF_MAC_ADDR_REF(scan_params->bssid.bytes),
 		       QDF_SSID_REF(scan_params->ssid.length,
 				    scan_params->ssid.ssid),
@@ -1035,7 +1011,8 @@ static void scm_dump_scan_entry(struct wlan_objmgr_pdev *pdev,
  * Return: QDF_STATUS
  */
 static QDF_STATUS scm_add_update_entry(struct wlan_objmgr_psoc *psoc,
-	struct wlan_objmgr_pdev *pdev, struct scan_cache_entry *scan_params)
+				       struct wlan_objmgr_pdev *pdev,
+				       struct scan_cache_entry *scan_params)
 {
 	struct scan_cache_node *dup_node = NULL;
 	struct scan_cache_node *scan_node = NULL;
@@ -1056,9 +1033,8 @@ static QDF_STATUS scm_add_update_entry(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if (scan_params->frm_subtype ==
-	   MGMT_SUBTYPE_PROBE_RESP &&
-	   !scan_params->ie_list.ssid)
+	if (scan_params->frm_subtype == MGMT_SUBTYPE_PROBE_RESP &&
+	    !scan_params->ie_list.ssid)
 		scm_debug("Probe resp doesn't contain SSID");
 
 	is_dup_found = scm_find_duplicate(pdev, scan_obj, scan_db, scan_params,
@@ -1150,8 +1126,7 @@ static bool scm_is_p2p_wildcard_ssid(struct scan_cache_entry *scan_entry)
 
 	if (!scan_entry->is_p2p)
 		return false;
-	if (!qdf_mem_cmp(scan_entry->ssid.ssid,
-			 wildcard_ssid, len) &&
+	if (!qdf_mem_cmp(scan_entry->ssid.ssid, wildcard_ssid, len) &&
 	    (scan_entry->ssid.length == len))
 		return true;
 
@@ -1189,8 +1164,8 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 
 	hdr = (struct wlan_frame_hdr *)qdf_nbuf_data(bcn->buf);
 	psoc = bcn->psoc;
-	pdev = wlan_objmgr_get_pdev_by_id(psoc,
-			   bcn->rx_data->pdev_id, WLAN_SCAN_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, bcn->rx_data->pdev_id,
+					  WLAN_SCAN_ID);
 	if (!pdev) {
 		scm_err("pdev is NULL for pdev %d", bcn->rx_data->pdev_id);
 		status = QDF_STATUS_E_INVAL;
@@ -1202,9 +1177,8 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 		goto free_nbuf;
 	}
 
-	if (qdf_nbuf_len(bcn->buf) <=
-	   (sizeof(struct wlan_frame_hdr) +
-	   offsetof(struct wlan_bcn_frame, ie))) {
+	if (qdf_nbuf_len(bcn->buf) <= (sizeof(struct wlan_frame_hdr) +
+				       offsetof(struct wlan_bcn_frame, ie))) {
 		scm_debug("invalid beacon/probe length");
 		status = QDF_STATUS_E_INVAL;
 		goto free_nbuf;
@@ -1215,10 +1189,9 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 		util_scan_add_hidden_ssid(pdev, bcn->buf);
 	}
 
-	scan_list =
-		 util_scan_unpack_beacon_frame(pdev, qdf_nbuf_data(bcn->buf),
-			qdf_nbuf_len(bcn->buf), bcn->frm_type,
-			bcn->rx_data);
+	scan_list = util_scan_unpack_beacon_frame(pdev, qdf_nbuf_data(bcn->buf),
+						  qdf_nbuf_len(bcn->buf),
+						  bcn->frm_type, bcn->rx_data);
 	if (!scan_list || qdf_list_empty(scan_list)) {
 		scm_debug(QDF_MAC_ADDR_FMT ": failed to unpack %d frame",
 			  QDF_MAC_ADDR_REF(hdr->i_addr3), bcn->frm_type);
@@ -1230,28 +1203,29 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 	for (i = 0; i < list_count; i++) {
 		status = qdf_list_remove_front(scan_list, &next_node);
 		if (QDF_IS_STATUS_ERROR(status) || !next_node) {
-			scm_debug(QDF_MAC_ADDR_FMT ": list remove failure i %d, lsize %d",
+			scm_debug(QDF_MAC_ADDR_FMT
+				  ": list remove failure i %d, lsize %d",
 				  QDF_MAC_ADDR_REF(hdr->i_addr3), i,
 				  list_count);
 			status = QDF_STATUS_E_INVAL;
 			goto free_nbuf;
 		}
 
-		scan_node = qdf_container_of(next_node,
-			struct scan_cache_node, node);
+		scan_node = qdf_container_of(next_node, struct scan_cache_node,
+					     node);
 
 		scan_entry = scan_node->entry;
 
 		if (scan_obj->drop_bcn_on_chan_mismatch &&
 		    scan_entry->channel_mismatch) {
-			scm_nofl_debug(QDF_MAC_ADDR_FMT ": Drop frame(%d) for chan mismatch, seq %d frame freq %d rx data freq %d RSSI %d",
-				       QDF_MAC_ADDR_REF(
-				       scan_entry->bssid.bytes),
-				       bcn->frm_type,
-				       scan_entry->seq_num,
-				       scan_entry->channel.chan_freq,
-				       bcn->rx_data->chan_freq,
-				       scan_entry->rssi_raw);
+			scm_nofl_debug(
+				QDF_MAC_ADDR_FMT
+				": Drop frame(%d) for chan mismatch, seq %d frame freq %d "
+				"rx data freq %d RSSI %d",
+				QDF_MAC_ADDR_REF(scan_entry->bssid.bytes),
+				bcn->frm_type, scan_entry->seq_num,
+				scan_entry->channel.chan_freq,
+				bcn->rx_data->chan_freq, scan_entry->rssi_raw);
 			util_scan_free_cache_entry(scan_entry);
 			qdf_mem_free(scan_node);
 			continue;
@@ -1261,29 +1235,28 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 		    !wlan_reg_is_freq_enabled(pdev,
 					      scan_entry->channel.chan_freq,
 					      REG_BEST_PWR_MODE)) {
-			scm_nofl_debug(QDF_MAC_ADDR_FMT ": Drop frame(%d) for invalid freq %d seq %d RSSI %d",
-				       QDF_MAC_ADDR_REF(
-				       scan_entry->bssid.bytes),
-				       bcn->frm_type,
-				       scan_entry->channel.chan_freq,
-				       scan_entry->seq_num,
-				       scan_entry->rssi_raw);
+			scm_nofl_debug(
+				QDF_MAC_ADDR_FMT
+				": Drop frame(%d) for invalid freq %d seq %d RSSI %d",
+				QDF_MAC_ADDR_REF(scan_entry->bssid.bytes),
+				bcn->frm_type, scan_entry->channel.chan_freq,
+				scan_entry->seq_num, scan_entry->rssi_raw);
 			util_scan_free_cache_entry(scan_entry);
 			qdf_mem_free(scan_node);
 			continue;
 		}
 		if (util_scan_entry_rsn(scan_entry)) {
 			status = wlan_crypto_rsnie_check(
-					&sec_params,
-					util_scan_entry_rsn(scan_entry));
+				&sec_params, util_scan_entry_rsn(scan_entry));
 			if (QDF_IS_STATUS_ERROR(status) &&
 			    !scm_is_p2p_wildcard_ssid(scan_entry)) {
-				scm_nofl_debug(QDF_MAC_ADDR_FMT ": Drop frame(%d) with invalid RSN IE freq %d, parse status %d",
-					       QDF_MAC_ADDR_REF(
-					       scan_entry->bssid.bytes),
-					       bcn->frm_type,
-					       scan_entry->channel.chan_freq,
-					       status);
+				scm_nofl_debug(
+					QDF_MAC_ADDR_FMT
+					": Drop frame(%d) with invalid RSN IE freq %d, parse status %d",
+					QDF_MAC_ADDR_REF(
+						scan_entry->bssid.bytes),
+					bcn->frm_type,
+					scan_entry->channel.chan_freq, status);
 				util_scan_free_cache_entry(scan_entry);
 				qdf_mem_free(scan_node);
 				continue;
@@ -1292,24 +1265,27 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 		if (wlan_cm_get_check_6ghz_security(psoc) &&
 		    wlan_reg_is_6ghz_chan_freq(scan_entry->channel.chan_freq)) {
 			if (!util_scan_entry_rsn(scan_entry)) {
-				scm_info_rl(QDF_MAC_ADDR_FMT ": Drop frame(%d) with No RSN IE in 6GHz(%d)",
-					    QDF_MAC_ADDR_REF(
-					    scan_entry->bssid.bytes),
-					    bcn->frm_type,
-					    scan_entry->channel.chan_freq);
+				scm_info_rl(
+					QDF_MAC_ADDR_FMT
+					": Drop frame(%d) with No RSN IE in 6GHz(%d)",
+					QDF_MAC_ADDR_REF(
+						scan_entry->bssid.bytes),
+					bcn->frm_type,
+					scan_entry->channel.chan_freq);
 				util_scan_free_cache_entry(scan_entry);
 				qdf_mem_free(scan_node);
 				continue;
 			}
-			status = wlan_crypto_rsnie_check(&sec_params,
-					util_scan_entry_rsn(scan_entry));
+			status = wlan_crypto_rsnie_check(
+				&sec_params, util_scan_entry_rsn(scan_entry));
 			if (QDF_IS_STATUS_ERROR(status)) {
-				scm_info_rl(QDF_MAC_ADDR_FMT ": Drop frame(%d) with invalid RSN IE in 6GHz(%d), parse status %d",
-					    QDF_MAC_ADDR_REF(
-					    scan_entry->bssid.bytes),
-					    bcn->frm_type,
-					    scan_entry->channel.chan_freq,
-					    status);
+				scm_info_rl(
+					QDF_MAC_ADDR_FMT
+					": Drop frame(%d) with invalid RSN IE in 6GHz(%d), parse status %d",
+					QDF_MAC_ADDR_REF(
+						scan_entry->bssid.bytes),
+					bcn->frm_type,
+					scan_entry->channel.chan_freq, status);
 				util_scan_free_cache_entry(scan_entry);
 				qdf_mem_free(scan_node);
 				continue;
@@ -1322,27 +1298,30 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 					   WLAN_CRYPTO_CIPHER_WEP_40)) ||
 			    (QDF_HAS_PARAM(sec_params.ucastcipherset,
 					   WLAN_CRYPTO_CIPHER_WEP_104))) {
-				scm_info_rl(QDF_MAC_ADDR_FMT ": Drop frame(%d) with Invalid sec type %0X for 6GHz(%d)",
-					    QDF_MAC_ADDR_REF(
-					    scan_entry->bssid.bytes),
-					    bcn->frm_type,
-					    sec_params.ucastcipherset,
-					    scan_entry->channel.chan_freq);
+				scm_info_rl(
+					QDF_MAC_ADDR_FMT
+					": Drop frame(%d) with Invalid sec type %0X for 6GHz(%d)",
+					QDF_MAC_ADDR_REF(
+						scan_entry->bssid.bytes),
+					bcn->frm_type,
+					sec_params.ucastcipherset,
+					scan_entry->channel.chan_freq);
 				util_scan_free_cache_entry(scan_entry);
 				qdf_mem_free(scan_node);
 				continue;
 			}
-			if (!wlan_cm_6ghz_allowed_for_akm(psoc,
-					sec_params.key_mgmt,
-					sec_params.rsn_caps,
-					util_scan_entry_rsnxe(scan_entry),
-					0, false)) {
-				scm_info_rl(QDF_MAC_ADDR_FMT ": Drop frame(%d) with Invalid AKM suite %0X for 6GHz(%d)",
-					    QDF_MAC_ADDR_REF(
-					    scan_entry->bssid.bytes),
-					    bcn->frm_type,
-					    sec_params.key_mgmt,
-					    scan_entry->channel.chan_freq);
+			if (!wlan_cm_6ghz_allowed_for_akm(
+				    psoc, sec_params.key_mgmt,
+				    sec_params.rsn_caps,
+				    util_scan_entry_rsnxe(scan_entry), 0,
+				    false)) {
+				scm_info_rl(
+					QDF_MAC_ADDR_FMT
+					": Drop frame(%d) with Invalid AKM suite %0X for 6GHz(%d)",
+					QDF_MAC_ADDR_REF(
+						scan_entry->bssid.bytes),
+					bcn->frm_type, sec_params.key_mgmt,
+					scan_entry->channel.chan_freq);
 				util_scan_free_cache_entry(scan_entry);
 				qdf_mem_free(scan_node);
 				continue;
@@ -1355,14 +1334,16 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 			scan_obj->cb.update_beacon(pdev, scan_entry);
 
 		/**
-		 * Do not drop the frame if Wi-Fi safe mode or RF test mode is
-		 * enabled. wlan_cm_get_check_6ghz_security API returns true if
-		 * neither Safe mode nor RF test mode are enabled.
-		 */
+     * Do not drop the frame if Wi-Fi safe mode or RF test mode is
+     * enabled. wlan_cm_get_check_6ghz_security API returns true if
+     * neither Safe mode nor RF test mode are enabled.
+     */
 		if (!wlan_cm_get_standard_6ghz_conn_policy(psoc) &&
 		    !scm_is_bss_allowed_for_country(psoc, scan_entry) &&
 		    wlan_cm_get_check_6ghz_security(psoc)) {
-			scm_info_rl(QDF_MAC_ADDR_FMT ": Drop frame(%d) freq %d, as country not present OR VLP mode not supported for US",
+			scm_info_rl(QDF_MAC_ADDR_FMT
+				    ": Drop frame(%d) freq %d, as country not "
+				    "present OR VLP mode not supported for US",
 				    QDF_MAC_ADDR_REF(scan_entry->bssid.bytes),
 				    bcn->frm_type,
 				    scan_entry->channel.chan_freq);
@@ -1373,11 +1354,12 @@ QDF_STATUS __scm_handle_bcn_probe(struct scan_bcn_probe_event *bcn)
 
 		status = scm_add_update_entry(psoc, pdev, scan_entry);
 		if (QDF_IS_STATUS_ERROR(status)) {
-			scm_debug(QDF_MAC_ADDR_FMT ": Failed to add entry for frame(%d) seq %d freq %d",
-				  QDF_MAC_ADDR_REF(scan_entry->bssid.bytes),
-				  bcn->frm_type,
-				  scan_entry->seq_num,
-				  scan_entry->channel.chan_freq);
+			scm_debug(
+				QDF_MAC_ADDR_FMT
+				": Failed to add entry for frame(%d) seq %d freq %d",
+				QDF_MAC_ADDR_REF(scan_entry->bssid.bytes),
+				bcn->frm_type, scan_entry->seq_num,
+				scan_entry->channel.chan_freq);
 			util_scan_free_cache_entry(scan_entry);
 			qdf_mem_free(scan_node);
 			continue;
@@ -1422,21 +1404,18 @@ QDF_STATUS scm_handle_bcn_probe(struct scheduler_msg *msg)
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-scm_scan_apply_filter_get_entry(struct wlan_objmgr_psoc *psoc,
-	struct scan_cache_entry *db_entry,
-	struct scan_filter *filter,
-	qdf_list_t *scan_list)
+static QDF_STATUS scm_scan_apply_filter_get_entry(
+	struct wlan_objmgr_psoc *psoc, struct scan_cache_entry *db_entry,
+	struct scan_filter *filter, qdf_list_t *scan_list)
 {
 	struct scan_cache_node *scan_node = NULL;
-	struct security_info security = {0};
+	struct security_info security = { 0 };
 	bool match;
 
 	if (!filter)
 		match = true;
 	else
-		match = scm_filter_match(psoc, db_entry,
-					filter, &security);
+		match = scm_filter_match(psoc, db_entry, filter, &security);
 
 	if (!match)
 		return QDF_STATUS_SUCCESS;
@@ -1445,16 +1424,15 @@ scm_scan_apply_filter_get_entry(struct wlan_objmgr_psoc *psoc,
 	if (!scan_node)
 		return QDF_STATUS_E_NOMEM;
 
-	scan_node->entry =
-		util_scan_copy_cache_entry(db_entry);
+	scan_node->entry = util_scan_copy_cache_entry(db_entry);
 
 	if (!scan_node->entry) {
 		qdf_mem_free(scan_node);
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	qdf_mem_copy(&scan_node->entry->neg_sec_info,
-		&security, sizeof(scan_node->entry->neg_sec_info));
+	qdf_mem_copy(&scan_node->entry->neg_sec_info, &security,
+		     sizeof(scan_node->entry->neg_sec_info));
 
 	qdf_list_insert_front(scan_list, &scan_node->node);
 
@@ -1471,24 +1449,24 @@ scm_scan_apply_filter_get_entry(struct wlan_objmgr_psoc *psoc,
  * Return: void
  */
 static void scm_get_results(struct wlan_objmgr_psoc *psoc,
-	struct scan_dbs *scan_db, struct scan_filter *filter,
-	qdf_list_t *scan_list)
+			    struct scan_dbs *scan_db,
+			    struct scan_filter *filter, qdf_list_t *scan_list)
 {
 	int i, count;
 	struct scan_cache_node *cur_node;
 	struct scan_cache_node *next_node = NULL;
 
-	for (i = 0 ; i < SCAN_HASH_SIZE; i++) {
+	for (i = 0; i < SCAN_HASH_SIZE; i++) {
 		cur_node = scm_get_next_node(scan_db,
-			   &scan_db->scan_hash_tbl[i], NULL);
+					     &scan_db->scan_hash_tbl[i], NULL);
 		count = qdf_list_size(&scan_db->scan_hash_tbl[i]);
 		if (!count)
 			continue;
 		while (cur_node) {
-			scm_scan_apply_filter_get_entry(psoc,
-				cur_node->entry, filter, scan_list);
-			next_node = scm_get_next_node(scan_db,
-				&scan_db->scan_hash_tbl[i], cur_node);
+			scm_scan_apply_filter_get_entry(psoc, cur_node->entry,
+							filter, scan_list);
+			next_node = scm_get_next_node(
+				scan_db, &scan_db->scan_hash_tbl[i], cur_node);
 			cur_node = next_node;
 		}
 	}
@@ -1508,12 +1486,10 @@ QDF_STATUS scm_purge_scan_results(qdf_list_t *scan_list)
 	status = qdf_list_peek_front(scan_list, &cur_lst);
 
 	while (cur_lst) {
-		qdf_list_peek_next(
-			scan_list, cur_lst, &next_lst);
-		cur_node = qdf_container_of(cur_lst,
-			struct scan_cache_node, node);
-		status = qdf_list_remove_node(scan_list,
-					cur_lst);
+		qdf_list_peek_next(scan_list, cur_lst, &next_lst);
+		cur_node =
+			qdf_container_of(cur_lst, struct scan_cache_node, node);
+		status = qdf_list_remove_node(scan_list, cur_lst);
 		if (QDF_IS_STATUS_SUCCESS(status)) {
 			util_scan_free_cache_entry(cur_node->entry);
 			qdf_mem_free(cur_node);
@@ -1529,7 +1505,7 @@ QDF_STATUS scm_purge_scan_results(qdf_list_t *scan_list)
 }
 
 qdf_list_t *scm_get_scan_result(struct wlan_objmgr_pdev *pdev,
-	struct scan_filter *filter)
+				struct scan_filter *filter)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct scan_dbs *scan_db;
@@ -1557,8 +1533,7 @@ qdf_list_t *scm_get_scan_result(struct wlan_objmgr_pdev *pdev,
 		scm_err("failed tp allocate scan_result");
 		return NULL;
 	}
-	qdf_list_create(tmp_list,
-			MAX_SCAN_CACHE_SIZE);
+	qdf_list_create(tmp_list, MAX_SCAN_CACHE_SIZE);
 	scm_age_out_entries(psoc, scan_db);
 	scm_get_results(psoc, scan_db, filter, tmp_list);
 
@@ -1573,9 +1548,9 @@ qdf_list_t *scm_get_scan_result(struct wlan_objmgr_pdev *pdev,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-scm_iterate_db_and_call_func(struct scan_dbs *scan_db,
-	scan_iterator_func func, void *arg)
+static QDF_STATUS scm_iterate_db_and_call_func(struct scan_dbs *scan_db,
+					       scan_iterator_func func,
+					       void *arg)
 {
 	int i;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
@@ -1585,18 +1560,17 @@ scm_iterate_db_and_call_func(struct scan_dbs *scan_db,
 	if (!func)
 		return QDF_STATUS_E_INVAL;
 
-	for (i = 0 ; i < SCAN_HASH_SIZE; i++) {
+	for (i = 0; i < SCAN_HASH_SIZE; i++) {
 		cur_node = scm_get_next_node(scan_db,
-			&scan_db->scan_hash_tbl[i], NULL);
+					     &scan_db->scan_hash_tbl[i], NULL);
 		while (cur_node) {
 			status = func(arg, cur_node->entry);
 			if (QDF_IS_STATUS_ERROR(status)) {
-				scm_scan_entry_put_ref(scan_db,
-					cur_node, true);
+				scm_scan_entry_put_ref(scan_db, cur_node, true);
 				return status;
 			}
-			next_node = scm_get_next_node(scan_db,
-				&scan_db->scan_hash_tbl[i], cur_node);
+			next_node = scm_get_next_node(
+				scan_db, &scan_db->scan_hash_tbl[i], cur_node);
 			cur_node = next_node;
 		}
 	}
@@ -1605,8 +1579,8 @@ scm_iterate_db_and_call_func(struct scan_dbs *scan_db,
 }
 
 QDF_STATUS
-scm_iterate_scan_db(struct wlan_objmgr_pdev *pdev,
-	scan_iterator_func func, void *arg)
+scm_iterate_scan_db(struct wlan_objmgr_pdev *pdev, scan_iterator_func func,
+		    void *arg)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct scan_dbs *scan_db;
@@ -1649,20 +1623,18 @@ scm_iterate_scan_db(struct wlan_objmgr_pdev *pdev,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-scm_scan_apply_filter_flush_entry(struct wlan_objmgr_psoc *psoc,
-	struct scan_dbs *scan_db,
-	struct scan_cache_node *db_node,
-	struct scan_filter *filter)
+static QDF_STATUS scm_scan_apply_filter_flush_entry(
+	struct wlan_objmgr_psoc *psoc, struct scan_dbs *scan_db,
+	struct scan_cache_node *db_node, struct scan_filter *filter)
 {
-	struct security_info security = {0};
+	struct security_info security = { 0 };
 	bool match;
 
 	if (!filter)
 		match = true;
 	else
-		match = scm_filter_match(psoc, db_node->entry,
-					filter, &security);
+		match = scm_filter_match(psoc, db_node->entry, filter,
+					 &security);
 
 	if (!match)
 		return QDF_STATUS_SUCCESS;
@@ -1683,28 +1655,28 @@ scm_scan_apply_filter_flush_entry(struct wlan_objmgr_psoc *psoc,
  * Return: void
  */
 static void scm_flush_scan_entries(struct wlan_objmgr_psoc *psoc,
-	struct scan_dbs *scan_db,
-	struct scan_filter *filter)
+				   struct scan_dbs *scan_db,
+				   struct scan_filter *filter)
 {
 	int i;
 	struct scan_cache_node *cur_node;
 	struct scan_cache_node *next_node = NULL;
 
-	for (i = 0 ; i < SCAN_HASH_SIZE; i++) {
+	for (i = 0; i < SCAN_HASH_SIZE; i++) {
 		cur_node = scm_get_next_node(scan_db,
-			   &scan_db->scan_hash_tbl[i], NULL);
+					     &scan_db->scan_hash_tbl[i], NULL);
 		while (cur_node) {
 			scm_scan_apply_filter_flush_entry(psoc, scan_db,
-				cur_node, filter);
-			next_node = scm_get_next_node(scan_db,
-				&scan_db->scan_hash_tbl[i], cur_node);
+							  cur_node, filter);
+			next_node = scm_get_next_node(
+				scan_db, &scan_db->scan_hash_tbl[i], cur_node);
 			cur_node = next_node;
 		}
 	}
 }
 
 QDF_STATUS scm_flush_results(struct wlan_objmgr_pdev *pdev,
-	struct scan_filter *filter)
+			     struct scan_filter *filter)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct scan_dbs *scan_db;
@@ -1751,8 +1723,8 @@ static void scm_filter_channels(struct wlan_objmgr_pdev *pdev,
 	bool match = false;
 
 	for (i = 0; i < num_chan; i++) {
-		if (chan_freq_list[i] == util_scan_entry_channel_frequency(
-							db_node->entry)) {
+		if (chan_freq_list[i] ==
+		    util_scan_entry_channel_frequency(db_node->entry)) {
 			match = true;
 			break;
 		}
@@ -1766,7 +1738,7 @@ static void scm_filter_channels(struct wlan_objmgr_pdev *pdev,
 }
 
 void scm_filter_valid_channel(struct wlan_objmgr_pdev *pdev,
-	uint32_t *chan_freq_list, uint32_t num_chan)
+			      uint32_t *chan_freq_list, uint32_t num_chan)
 {
 	int i;
 	struct wlan_objmgr_psoc *psoc;
@@ -1793,14 +1765,14 @@ void scm_filter_valid_channel(struct wlan_objmgr_pdev *pdev,
 		return;
 	}
 
-	for (i = 0 ; i < SCAN_HASH_SIZE; i++) {
+	for (i = 0; i < SCAN_HASH_SIZE; i++) {
 		cur_node = scm_get_next_node(scan_db,
-			   &scan_db->scan_hash_tbl[i], NULL);
+					     &scan_db->scan_hash_tbl[i], NULL);
 		while (cur_node) {
-			scm_filter_channels(pdev, scan_db,
-					    cur_node, chan_freq_list, num_chan);
-			next_node = scm_get_next_node(scan_db,
-				&scan_db->scan_hash_tbl[i], cur_node);
+			scm_filter_channels(pdev, scan_db, cur_node,
+					    chan_freq_list, num_chan);
+			next_node = scm_get_next_node(
+				scan_db, &scan_db->scan_hash_tbl[i], cur_node);
 			cur_node = next_node;
 		}
 	}
@@ -1823,7 +1795,7 @@ QDF_STATUS scm_scan_register_mbssid_cb(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS scm_scan_register_bcn_cb(struct wlan_objmgr_psoc *psoc,
-	update_beacon_cb cb, enum scan_cb_type type)
+				    update_beacon_cb cb, enum scan_cb_type type)
 {
 	struct wlan_scan_obj *scan_obj;
 
@@ -1870,7 +1842,7 @@ QDF_STATUS scm_db_init(struct wlan_objmgr_psoc *psoc)
 		qdf_spinlock_create(&scan_db->scan_db_lock);
 		for (j = 0; j < SCAN_HASH_SIZE; j++)
 			qdf_list_create(&scan_db->scan_hash_tbl[j],
-				MAX_SCAN_CACHE_SIZE);
+					MAX_SCAN_CACHE_SIZE);
 	}
 	return QDF_STATUS_SUCCESS;
 }
@@ -1954,8 +1926,7 @@ QDF_STATUS scm_channel_list_db_deinit(struct wlan_objmgr_psoc *psoc)
 			qdf_list_peek_next(&channel->rnr_list, cur_node,
 					   &next_node);
 			rnr_node = qdf_container_of(cur_node,
-						    struct scan_rnr_node,
-						    node);
+						    struct scan_rnr_node, node);
 			qdf_list_remove_node(&channel->rnr_list,
 					     &rnr_node->node);
 			qdf_mem_free(rnr_node);
@@ -1989,8 +1960,7 @@ QDF_STATUS scm_rnr_db_flush(struct wlan_objmgr_psoc *psoc)
 			qdf_list_peek_next(&channel->rnr_list, cur_node,
 					   &next_node);
 			rnr_node = qdf_container_of(cur_node,
-						    struct scan_rnr_node,
-						    node);
+						    struct scan_rnr_node, node);
 			qdf_list_remove_node(&channel->rnr_list,
 					     &rnr_node->node);
 			qdf_mem_free(rnr_node);
@@ -2025,16 +1995,14 @@ void scm_update_rnr_from_scan_cache(struct wlan_objmgr_pdev *pdev)
 		return;
 	}
 
-	for (i = 0 ; i < SCAN_HASH_SIZE; i++) {
+	for (i = 0; i < SCAN_HASH_SIZE; i++) {
 		cur_node = scm_get_next_node(scan_db,
 					     &scan_db->scan_hash_tbl[i], NULL);
 		while (cur_node) {
 			entry = cur_node->entry;
 			scm_add_rnr_channel_db(psoc, entry);
-			next_node =
-				scm_get_next_node(scan_db,
-						  &scan_db->scan_hash_tbl[i],
-						  cur_node);
+			next_node = scm_get_next_node(
+				scan_db, &scan_db->scan_hash_tbl[i], cur_node);
 			cur_node = next_node;
 			next_node = NULL;
 		}
@@ -2043,7 +2011,7 @@ void scm_update_rnr_from_scan_cache(struct wlan_objmgr_pdev *pdev)
 #endif
 
 QDF_STATUS scm_update_scan_mlme_info(struct wlan_objmgr_pdev *pdev,
-	struct scan_cache_entry *entry)
+				     struct scan_cache_entry *entry)
 {
 	uint8_t hash_idx;
 	struct scan_dbs *scan_db;
@@ -2064,22 +2032,20 @@ QDF_STATUS scm_update_scan_mlme_info(struct wlan_objmgr_pdev *pdev,
 
 	hash_idx = SCAN_GET_HASH(entry->bssid.bytes);
 
-	cur_node = scm_get_next_node(scan_db,
-			&scan_db->scan_hash_tbl[hash_idx], NULL);
+	cur_node = scm_get_next_node(scan_db, &scan_db->scan_hash_tbl[hash_idx],
+				     NULL);
 
 	while (cur_node) {
-		if (util_is_scan_entry_match(entry,
-					cur_node->entry)) {
+		if (util_is_scan_entry_match(entry, cur_node->entry)) {
 			/* Acquire db lock to prevent simultaneous update */
 			qdf_spin_lock_bh(&scan_db->scan_db_lock);
 			scm_update_mlme_info(entry, cur_node->entry);
 			qdf_spin_unlock_bh(&scan_db->scan_db_lock);
-			scm_scan_entry_put_ref(scan_db,
-					cur_node, true);
+			scm_scan_entry_put_ref(scan_db, cur_node, true);
 			return QDF_STATUS_SUCCESS;
 		}
-		next_node = scm_get_next_node(scan_db,
-				&scan_db->scan_hash_tbl[hash_idx], cur_node);
+		next_node = scm_get_next_node(
+			scan_db, &scan_db->scan_hash_tbl[hash_idx], cur_node);
 		cur_node = next_node;
 	}
 
@@ -2087,7 +2053,8 @@ QDF_STATUS scm_update_scan_mlme_info(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS scm_scan_update_mlme_by_bssinfo(struct wlan_objmgr_pdev *pdev,
-		struct bss_info *bss_info, struct mlme_info *mlme)
+					   struct bss_info *bss_info,
+					   struct mlme_info *mlme)
 {
 	uint8_t hash_idx;
 	struct scan_dbs *scan_db;
@@ -2108,28 +2075,28 @@ QDF_STATUS scm_scan_update_mlme_by_bssinfo(struct wlan_objmgr_pdev *pdev,
 	}
 
 	hash_idx = SCAN_GET_HASH(bss_info->bssid.bytes);
-	cur_node = scm_get_next_node(scan_db,
-			&scan_db->scan_hash_tbl[hash_idx], NULL);
+	cur_node = scm_get_next_node(scan_db, &scan_db->scan_hash_tbl[hash_idx],
+				     NULL);
 	while (cur_node) {
 		entry = cur_node->entry;
 		if (qdf_is_macaddr_equal(&bss_info->bssid, &entry->bssid) &&
-			(util_is_ssid_match(&bss_info->ssid, &entry->ssid)) &&
-			(bss_info->freq == entry->channel.chan_freq)) {
+		    (util_is_ssid_match(&bss_info->ssid, &entry->ssid)) &&
+		    (bss_info->freq == entry->channel.chan_freq)) {
 			/* Acquire db lock to prevent simultaneous update */
 			qdf_spin_lock_bh(&scan_db->scan_db_lock);
 			qdf_mem_copy(&entry->mlme_info, mlme,
-					sizeof(struct mlme_info));
-			scm_debug("BSSID: "QDF_MAC_ADDR_FMT" set assoc_state to %d with age %lu ms",
+				     sizeof(struct mlme_info));
+			scm_debug("BSSID: " QDF_MAC_ADDR_FMT
+				  " set assoc_state to %d with age %lu ms",
 				  QDF_MAC_ADDR_REF(entry->bssid.bytes),
 				  mlme->assoc_state,
 				  util_scan_entry_age(entry));
-			scm_scan_entry_put_ref(scan_db,
-					cur_node, false);
+			scm_scan_entry_put_ref(scan_db, cur_node, false);
 			qdf_spin_unlock_bh(&scan_db->scan_db_lock);
 			return QDF_STATUS_SUCCESS;
 		}
-		next_node = scm_get_next_node(scan_db,
-				&scan_db->scan_hash_tbl[hash_idx], cur_node);
+		next_node = scm_get_next_node(
+			scan_db, &scan_db->scan_hash_tbl[hash_idx], cur_node);
 		cur_node = next_node;
 	}
 
@@ -2151,7 +2118,7 @@ uint32_t scm_get_last_scan_time_per_channel(struct wlan_objmgr_vdev *vdev,
 	pdev_id = wlan_scan_vdev_get_pdev_id(vdev);
 	chan_info = &scan->pdev_info[pdev_id].chan_scan_info;
 
-	for (i = 0; i < chan_info->num_chan ; i++) {
+	for (i = 0; i < chan_info->num_chan; i++) {
 		if (chan_info->ch_scan_info[i].freq == freq)
 			return chan_info->ch_scan_info[i].last_scan_time;
 	}
@@ -2161,10 +2128,8 @@ uint32_t scm_get_last_scan_time_per_channel(struct wlan_objmgr_vdev *vdev,
 
 QDF_STATUS
 scm_scan_get_scan_entry_by_mac_freq(struct wlan_objmgr_pdev *pdev,
-				    struct qdf_mac_addr *bssid,
-				    uint16_t freq,
-				    struct scan_cache_entry
-				    *cache_entry)
+				    struct qdf_mac_addr *bssid, uint16_t freq,
+				    struct scan_cache_entry *cache_entry)
 {
 	struct scan_filter *scan_filter;
 	qdf_list_t *list = NULL;
@@ -2187,20 +2152,17 @@ scm_scan_get_scan_entry_by_mac_freq(struct wlan_objmgr_pdev *pdev,
 		goto done;
 	}
 	/*
-	 * There might be multiple scan results in the scan db with given mac
-	 * address(e.g. SSID/some capabilities of the AP have just changed and
-	 * old entry is not aged out yet). scm_get_scan_result() inserts the
-	 * latest scan result at the front of the given list. So, it's ok to
-	 * pick scan result from the front node alone.
-	 */
+   * There might be multiple scan results in the scan db with given mac
+   * address(e.g. SSID/some capabilities of the AP have just changed and
+   * old entry is not aged out yet). scm_get_scan_result() inserts the
+   * latest scan result at the front of the given list. So, it's ok to
+   * pick scan result from the front node alone.
+   */
 	qdf_list_peek_front(list, &cur_node);
-	first_node = qdf_container_of(cur_node,
-				      struct scan_cache_node,
-				      node);
+	first_node = qdf_container_of(cur_node, struct scan_cache_node, node);
 
 	if (first_node && first_node->entry) {
-		qdf_mem_copy(cache_entry,
-			     first_node->entry,
+		qdf_mem_copy(cache_entry, first_node->entry,
 			     sizeof(struct scan_cache_entry));
 		status = QDF_STATUS_SUCCESS;
 	}
@@ -2235,16 +2197,14 @@ scm_scan_get_entry_by_mac_addr(struct wlan_objmgr_pdev *pdev,
 		goto done;
 	}
 	/*
-	 * There might be multiple scan results in the scan db with given mac
-	 * address(e.g. SSID/some capabilities of the AP have just changed and
-	 * old entry is not aged out yet). scm_get_scan_result() inserts the
-	 * latest scan result at the front of the given list. So, it's ok to
-	 * pick scan result from the front node alone.
-	 */
+   * There might be multiple scan results in the scan db with given mac
+   * address(e.g. SSID/some capabilities of the AP have just changed and
+   * old entry is not aged out yet). scm_get_scan_result() inserts the
+   * latest scan result at the front of the given list. So, it's ok to
+   * pick scan result from the front node alone.
+   */
 	qdf_list_peek_front(list, &cur_node);
-	first_node = qdf_container_of(cur_node,
-				      struct scan_cache_node,
-				      node);
+	first_node = qdf_container_of(cur_node, struct scan_cache_node, node);
 	if (first_node && first_node->entry) {
 		frame->len = first_node->entry->raw_frame.len;
 		frame->ptr = qdf_mem_malloc(frame->len);
@@ -2252,8 +2212,7 @@ scm_scan_get_entry_by_mac_addr(struct wlan_objmgr_pdev *pdev,
 			status = QDF_STATUS_E_NOMEM;
 			goto done;
 		}
-		qdf_mem_copy(frame->ptr,
-			     first_node->entry->raw_frame.ptr,
+		qdf_mem_copy(frame->ptr, first_node->entry->raw_frame.ptr,
 			     frame->len);
 	}
 
@@ -2310,20 +2269,20 @@ scm_scan_get_entry_by_bssid(struct wlan_objmgr_pdev *pdev,
 		return NULL;
 
 	scan_filter->num_of_bssid = 1;
-	qdf_mem_copy(scan_filter->bssid_list[0].bytes,
-		     bssid, sizeof(struct qdf_mac_addr));
+	qdf_mem_copy(scan_filter->bssid_list[0].bytes, bssid,
+		     sizeof(struct qdf_mac_addr));
 	list = scm_get_scan_result(pdev, scan_filter);
 	qdf_mem_free(scan_filter);
 
 	if (!list || (!qdf_list_size(list))) {
-		scm_debug("Scan entry for bssid: "QDF_MAC_ADDR_FMT" not found",
+		scm_debug("Scan entry for bssid: " QDF_MAC_ADDR_FMT
+			  " not found",
 			  QDF_MAC_ADDR_REF(bssid->bytes));
 		goto exit;
 	}
 
 	qdf_list_peek_front(list, &cur_node);
-	first_node = qdf_container_of(cur_node, struct scan_cache_node,
-				      node);
+	first_node = qdf_container_of(cur_node, struct scan_cache_node, node);
 	if (first_node && first_node->entry) {
 		entry = first_node->entry;
 		scan_entry = util_scan_copy_cache_entry(entry);

@@ -2,24 +2,24 @@
 /*
  * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  */
+#include "wcd-dsp-utils.h"
+#include <linux/component.h>
+#include <linux/debugfs.h>
+#include <linux/dma-mapping.h>
 #include <linux/module.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/stringify.h>
-#include <linux/of.h>
-#include <linux/debugfs.h>
-#include <linux/component.h>
-#include <linux/dma-mapping.h>
 #include <soc/qcom/ramdump.h>
 #include <sound/wcd-dsp-mgr.h>
-#include "wcd-dsp-utils.h"
 
 /* Forward declarations */
 static char *wdsp_get_cmpnt_type_string(enum wdsp_cmpnt_type);
 
 /* Component related macros */
-#define WDSP_GET_COMPONENT(wdsp, x) ((x >= WDSP_CMPNT_TYPE_MAX || x < 0) ? \
-					NULL : (&(wdsp->cmpnts[x])))
+#define WDSP_GET_COMPONENT(wdsp, x) \
+	((x >= WDSP_CMPNT_TYPE_MAX || x < 0) ? NULL : (&(wdsp->cmpnts[x])))
 #define WDSP_GET_CMPNT_TYPE_STR(x) wdsp_get_cmpnt_type_string(x)
 
 /*
@@ -28,55 +28,53 @@ static char *wdsp_get_cmpnt_type_string(enum wdsp_cmpnt_type);
  * the status as done, else if bit is not set, it indicates
  * the status is either failed or not done.
  */
-#define WDSP_STATUS_INITIALIZED   BIT(0)
-#define WDSP_STATUS_CODE_DLOADED  BIT(1)
-#define WDSP_STATUS_DATA_DLOADED  BIT(2)
-#define WDSP_STATUS_BOOTED        BIT(3)
+#define WDSP_STATUS_INITIALIZED BIT(0)
+#define WDSP_STATUS_CODE_DLOADED BIT(1)
+#define WDSP_STATUS_DATA_DLOADED BIT(2)
+#define WDSP_STATUS_BOOTED BIT(3)
 
 /* Helper macros for printing wdsp messages */
-#define WDSP_ERR(wdsp, fmt, ...)		\
+#define WDSP_ERR(wdsp, fmt, ...) \
 	dev_err(wdsp->mdev, "%s: " fmt "\n", __func__, ##__VA_ARGS__)
-#define WDSP_DBG(wdsp, fmt, ...)	\
+#define WDSP_DBG(wdsp, fmt, ...) \
 	dev_dbg(wdsp->mdev, "%s: " fmt "\n", __func__, ##__VA_ARGS__)
 
 /* Helper macros for locking */
-#define WDSP_MGR_MUTEX_LOCK(wdsp, lock)         \
-{                                               \
-	WDSP_DBG(wdsp, "mutex_lock(%s)",        \
-		 __stringify_1(lock));          \
-	mutex_lock(&lock);                      \
-}
+#define WDSP_MGR_MUTEX_LOCK(wdsp, lock)                                \
+	{                                                              \
+		WDSP_DBG(wdsp, "mutex_lock(%s)", __stringify_1(lock)); \
+		mutex_lock(&lock);                                     \
+	}
 
-#define WDSP_MGR_MUTEX_UNLOCK(wdsp, lock)       \
-{                                               \
-	WDSP_DBG(wdsp, "mutex_unlock(%s)",      \
-		 __stringify_1(lock));          \
-	mutex_unlock(&lock);                    \
-}
+#define WDSP_MGR_MUTEX_UNLOCK(wdsp, lock)                                \
+	{                                                                \
+		WDSP_DBG(wdsp, "mutex_unlock(%s)", __stringify_1(lock)); \
+		mutex_unlock(&lock);                                     \
+	}
 
 /* Helper macros for using status mask */
-#define WDSP_SET_STATUS(wdsp, state)                  \
-{                                                     \
-	wdsp->status |= state;                        \
-	WDSP_DBG(wdsp, "set 0x%lx, new_state = 0x%x", \
-		 state, wdsp->status);                \
-}
+#define WDSP_SET_STATUS(wdsp, state)                                 \
+	{                                                            \
+		wdsp->status |= state;                               \
+		WDSP_DBG(wdsp, "set 0x%lx, new_state = 0x%x", state, \
+			 wdsp->status);                              \
+	}
 
-#define WDSP_CLEAR_STATUS(wdsp, state)                  \
-{                                                       \
-	wdsp->status &= (~state);                       \
-	WDSP_DBG(wdsp, "clear 0x%lx, new_state = 0x%x", \
-		 state, wdsp->status);                  \
-}
+#define WDSP_CLEAR_STATUS(wdsp, state)                                 \
+	{                                                              \
+		wdsp->status &= (~state);                              \
+		WDSP_DBG(wdsp, "clear 0x%lx, new_state = 0x%x", state, \
+			 wdsp->status);                                \
+	}
 
 #define WDSP_STATUS_IS_SET(wdsp, state) (wdsp->status & state)
 
 /* SSR relate status macros */
-#define WDSP_SSR_STATUS_WDSP_READY    BIT(0)
-#define WDSP_SSR_STATUS_CDC_READY     BIT(1)
-#define WDSP_SSR_STATUS_READY         \
+#define WDSP_SSR_STATUS_WDSP_READY BIT(0)
+#define WDSP_SSR_STATUS_CDC_READY BIT(1)
+#define WDSP_SSR_STATUS_READY \
 	(WDSP_SSR_STATUS_WDSP_READY | WDSP_SSR_STATUS_CDC_READY)
-#define WDSP_SSR_READY_WAIT_TIMEOUT   (10 * HZ)
+#define WDSP_SSR_READY_WAIT_TIMEOUT (10 * HZ)
 
 enum wdsp_ssr_type {
 
@@ -84,10 +82,10 @@ enum wdsp_ssr_type {
 	WDSP_SSR_TYPE_NO_SSR = 0,
 
 	/*
-	 * Indicates WDSP crashed. The manager driver internally
-	 * decides when to perform WDSP restart based on the
-	 * users of wdsp. Hence there is no explicit WDSP_UP.
-	 */
+   * Indicates WDSP crashed. The manager driver internally
+   * decides when to perform WDSP restart based on the
+   * users of wdsp. Hence there is no explicit WDSP_UP.
+   */
 	WDSP_SSR_TYPE_WDSP_DOWN,
 
 	/* Indicates codec hardware is down */
@@ -98,14 +96,13 @@ enum wdsp_ssr_type {
 };
 
 struct wdsp_cmpnt {
-
 	/* OF node of the phandle */
 	struct device_node *np;
 
 	/*
-	 * Child component's dev_name, should be set in DT for the child's
-	 * phandle if child's dev->of_node does not match the phandle->of_node
-	 */
+   * Child component's dev_name, should be set in DT for the child's
+   * phandle if child's dev->of_node does not match the phandle->of_node
+   */
 	const char *cdev_name;
 
 	/* Child component's device node */
@@ -119,7 +116,6 @@ struct wdsp_cmpnt {
 };
 
 struct wdsp_ramdump_data {
-
 	/* Ramdump device */
 	void *rd_dev;
 
@@ -134,7 +130,6 @@ struct wdsp_ramdump_data {
 };
 
 struct wdsp_mgr_priv {
-
 	/* Manager driver's struct device pointer */
 	struct device *mdev;
 
@@ -194,8 +189,7 @@ static char *wdsp_get_ssr_type_string(enum wdsp_ssr_type type)
 	case WDSP_SSR_TYPE_CDC_UP:
 		return "CDC_UP";
 	default:
-		pr_err("%s: Invalid ssr_type %d\n",
-			__func__, type);
+		pr_err("%s: Invalid ssr_type %d\n", __func__, type);
 		return "Invalid";
 	}
 }
@@ -210,35 +204,31 @@ static char *wdsp_get_cmpnt_type_string(enum wdsp_cmpnt_type type)
 	case WDSP_CMPNT_TRANSPORT:
 		return "transport";
 	default:
-		pr_err("%s: Invalid component type %d\n",
-			__func__, type);
+		pr_err("%s: Invalid component type %d\n", __func__, type);
 		return "Invalid";
 	}
 }
 
-static void __wdsp_clr_ready_locked(struct wdsp_mgr_priv *wdsp,
-				    u16 value)
+static void __wdsp_clr_ready_locked(struct wdsp_mgr_priv *wdsp, u16 value)
 {
 	wdsp->ready_status &= ~(value);
 	WDSP_DBG(wdsp, "ready_status = 0x%x", wdsp->ready_status);
 }
 
-static void __wdsp_set_ready_locked(struct wdsp_mgr_priv *wdsp,
-				    u16 value, bool mark_complete)
+static void __wdsp_set_ready_locked(struct wdsp_mgr_priv *wdsp, u16 value,
+				    bool mark_complete)
 {
 	wdsp->ready_status |= value;
 	WDSP_DBG(wdsp, "ready_status = 0x%x", wdsp->ready_status);
 
-	if (mark_complete &&
-	    wdsp->ready_status == WDSP_SSR_STATUS_READY) {
+	if (mark_complete && wdsp->ready_status == WDSP_SSR_STATUS_READY) {
 		WDSP_DBG(wdsp, "marking ready completion");
 		complete(&wdsp->ready_compl);
 	}
 }
 
 static void wdsp_broadcast_event_upseq(struct wdsp_mgr_priv *wdsp,
-				       enum wdsp_event_type event,
-				       void *data)
+				       enum wdsp_event_type event, void *data)
 {
 	struct wdsp_cmpnt *cmpnt;
 	int i;
@@ -252,8 +242,7 @@ static void wdsp_broadcast_event_upseq(struct wdsp_mgr_priv *wdsp,
 }
 
 static void wdsp_broadcast_event_downseq(struct wdsp_mgr_priv *wdsp,
-					 enum wdsp_event_type event,
-					 void *data)
+					 enum wdsp_event_type event, void *data)
 {
 	struct wdsp_cmpnt *cmpnt;
 	int i;
@@ -268,8 +257,7 @@ static void wdsp_broadcast_event_downseq(struct wdsp_mgr_priv *wdsp,
 
 static int wdsp_unicast_event(struct wdsp_mgr_priv *wdsp,
 			      enum wdsp_cmpnt_type type,
-			      enum wdsp_event_type event,
-			      void *data)
+			      enum wdsp_event_type event, void *data)
 {
 	struct wdsp_cmpnt *cmpnt;
 	int ret;
@@ -306,7 +294,6 @@ static int wdsp_init_components(struct wdsp_mgr_priv *wdsp)
 	int i, ret = 0;
 
 	for (i = 0; i < WDSP_CMPNT_TYPE_MAX; i++) {
-
 		cmpnt = WDSP_GET_COMPONENT(wdsp, i);
 
 		/* Init is allowed to be NULL */
@@ -314,10 +301,10 @@ static int wdsp_init_components(struct wdsp_mgr_priv *wdsp)
 			continue;
 		ret = cmpnt->ops->init(cmpnt->cdev, cmpnt->priv_data);
 		if (ret) {
-			WDSP_ERR(wdsp, "Init failed (%d) for component %s",
-				 ret, WDSP_GET_CMPNT_TYPE_STR(i));
-				fail_idx = i;
-				break;
+			WDSP_ERR(wdsp, "Init failed (%d) for component %s", ret,
+				 WDSP_GET_CMPNT_TYPE_STR(i));
+			fail_idx = i;
+			break;
 		}
 	}
 
@@ -358,18 +345,18 @@ static int wdsp_load_each_segment(struct wdsp_mgr_priv *wdsp,
 	img_section.data = seg->data;
 
 	ret = wdsp_unicast_event(wdsp, WDSP_CMPNT_TRANSPORT,
-				 WDSP_EVENT_DLOAD_SECTION,
-				 &img_section);
+				 WDSP_EVENT_DLOAD_SECTION, &img_section);
 	if (ret < 0)
-		WDSP_ERR(wdsp,
-			 "Failed, err = %d for base_addr = 0x%x split_fname = %s, load_addr = 0x%x, size = 0x%zx",
-			 ret, wdsp->base_addr, seg->split_fname,
-			 seg->load_addr, seg->size);
+		WDSP_ERR(
+			wdsp,
+			"Failed, err = %d for base_addr = 0x%x split_fname = %s, "
+			"load_addr = 0x%x, size = 0x%zx",
+			ret, wdsp->base_addr, seg->split_fname, seg->load_addr,
+			seg->size);
 	return ret;
 }
 
-static int wdsp_download_segments(struct wdsp_mgr_priv *wdsp,
-				  unsigned int type)
+static int wdsp_download_segments(struct wdsp_mgr_priv *wdsp, unsigned int type)
 {
 	struct wdsp_cmpnt *ctl;
 	struct wdsp_img_segment *seg = NULL;
@@ -392,10 +379,9 @@ static int wdsp_download_segments(struct wdsp_mgr_priv *wdsp,
 		return -EINVAL;
 	}
 
-	ret = wdsp_get_segment_list(ctl->cdev, wdsp->img_fname,
-				    type, wdsp->seg_list, &wdsp->base_addr);
-	if (ret < 0 ||
-	    list_empty(wdsp->seg_list)) {
+	ret = wdsp_get_segment_list(ctl->cdev, wdsp->img_fname, type,
+				    wdsp->seg_list, &wdsp->base_addr);
+	if (ret < 0 || list_empty(wdsp->seg_list)) {
 		WDSP_ERR(wdsp, "Error %d to get image segments for type %d",
 			 ret, type);
 		wdsp_broadcast_event_downseq(wdsp, WDSP_EVENT_DLOAD_FAILED,
@@ -483,9 +469,9 @@ static int wdsp_enable_dsp(struct wdsp_mgr_priv *wdsp)
 	}
 
 	/*
-	 * Acquire SSR mutex lock to make sure enablement of DSP
-	 * does not race with SSR handling.
-	 */
+   * Acquire SSR mutex lock to make sure enablement of DSP
+   * does not race with SSR handling.
+   */
 	WDSP_MGR_MUTEX_LOCK(wdsp, wdsp->ssr_mutex);
 	/* Download the read-write sections of image */
 	ret = wdsp_download_segments(wdsp, WDSP_ELF_FLAG_WRITE);
@@ -496,8 +482,8 @@ static int wdsp_enable_dsp(struct wdsp_mgr_priv *wdsp)
 
 	wdsp_broadcast_event_upseq(wdsp, WDSP_EVENT_PRE_BOOTUP, NULL);
 
-	ret = wdsp_unicast_event(wdsp, WDSP_CMPNT_CONTROL,
-				 WDSP_EVENT_DO_BOOT, NULL);
+	ret = wdsp_unicast_event(wdsp, WDSP_CMPNT_CONTROL, WDSP_EVENT_DO_BOOT,
+				 NULL);
 	if (ret < 0) {
 		WDSP_ERR(wdsp, "Failed to boot dsp, err = %d", ret);
 		WDSP_CLEAR_STATUS(wdsp, WDSP_STATUS_DATA_DLOADED);
@@ -518,10 +504,10 @@ static int wdsp_disable_dsp(struct wdsp_mgr_priv *wdsp)
 	WDSP_MGR_MUTEX_LOCK(wdsp, wdsp->ssr_mutex);
 
 	/*
-	 * If Disable happened while SSR is in progress, then set the SSR
-	 * ready status indicating WDSP is now ready. Ignore the disable
-	 * event here and let the SSR handler go through shutdown.
-	 */
+   * If Disable happened while SSR is in progress, then set the SSR
+   * ready status indicating WDSP is now ready. Ignore the disable
+   * event here and let the SSR handler go through shutdown.
+   */
 	if (wdsp->ssr_type != WDSP_SSR_TYPE_NO_SSR) {
 		__wdsp_set_ready_locked(wdsp, WDSP_SSR_STATUS_WDSP_READY, true);
 		WDSP_MGR_MUTEX_UNLOCK(wdsp, wdsp->ssr_mutex);
@@ -554,10 +540,8 @@ done:
 	return ret;
 }
 
-static int wdsp_register_cmpnt_ops(struct device *wdsp_dev,
-				   struct device *cdev,
-				   void *priv_data,
-				   struct wdsp_cmpnt_ops *ops)
+static int wdsp_register_cmpnt_ops(struct device *wdsp_dev, struct device *cdev,
+				   void *priv_data, struct wdsp_cmpnt_ops *ops)
 {
 	struct wdsp_mgr_priv *wdsp;
 	struct wdsp_cmpnt *cmpnt;
@@ -610,8 +594,7 @@ static struct device *wdsp_get_dev_for_cmpnt(struct device *wdsp_dev,
 }
 
 static int wdsp_get_devops_for_cmpnt(struct device *wdsp_dev,
-				     enum wdsp_cmpnt_type type,
-				     void *data)
+				     enum wdsp_cmpnt_type type, void *data)
 {
 	struct wdsp_mgr_priv *wdsp;
 	int ret = 0;
@@ -620,11 +603,9 @@ static int wdsp_get_devops_for_cmpnt(struct device *wdsp_dev,
 		return -EINVAL;
 
 	wdsp = dev_get_drvdata(wdsp_dev);
-	ret = wdsp_unicast_event(wdsp, type,
-				 WDSP_EVENT_GET_DEVOPS, data);
+	ret = wdsp_unicast_event(wdsp, type, WDSP_EVENT_GET_DEVOPS, data);
 	if (ret)
-		WDSP_ERR(wdsp, "get_dev_ops failed for cmpnt type %d",
-			 type);
+		WDSP_ERR(wdsp, "get_dev_ops failed for cmpnt type %d", type);
 	return ret;
 }
 
@@ -643,8 +624,7 @@ static void wdsp_collect_ramdumps(struct wdsp_mgr_priv *wdsp)
 		goto done;
 	}
 
-	if (data->dump_size == 0 ||
-	    data->remote_start_addr < wdsp->base_addr) {
+	if (data->dump_size == 0 || data->remote_start_addr < wdsp->base_addr) {
 		WDSP_ERR(wdsp, "Invalid start addr 0x%x or dump_size 0x%zx",
 			 data->remote_start_addr, data->dump_size);
 		goto done;
@@ -659,10 +639,9 @@ static void wdsp_collect_ramdumps(struct wdsp_mgr_priv *wdsp)
 		 wdsp->base_addr, data->remote_start_addr, data->dump_size);
 
 	/* Allocate memory for dumps */
-	wdsp->dump_data.rd_v_addr = dma_alloc_coherent(wdsp->mdev,
-						       data->dump_size,
-						       &wdsp->dump_data.rd_addr,
-						       GFP_KERNEL);
+	wdsp->dump_data.rd_v_addr =
+		dma_alloc_coherent(wdsp->mdev, data->dump_size,
+				   &wdsp->dump_data.rd_addr, GFP_KERNEL);
 	if (!wdsp->dump_data.rd_v_addr)
 		goto done;
 
@@ -671,8 +650,7 @@ static void wdsp_collect_ramdumps(struct wdsp_mgr_priv *wdsp)
 	img_section.data = wdsp->dump_data.rd_v_addr;
 
 	ret = wdsp_unicast_event(wdsp, WDSP_CMPNT_TRANSPORT,
-				 WDSP_EVENT_READ_SECTION,
-				 &img_section);
+				 WDSP_EVENT_READ_SECTION, &img_section);
 	if (ret < 0) {
 		WDSP_ERR(wdsp, "Failed to read dumps, size 0x%zx at addr 0x%x",
 			 img_section.size, img_section.addr);
@@ -680,12 +658,12 @@ static void wdsp_collect_ramdumps(struct wdsp_mgr_priv *wdsp)
 	}
 
 	/*
-	 * If panic_on_error flag is explicitly set through the debugfs,
-	 * then cause a BUG here to aid debugging.
-	 */
+   * If panic_on_error flag is explicitly set through the debugfs,
+   * then cause a BUG here to aid debugging.
+   */
 	BUG_ON(wdsp->panic_on_error);
 
-	rd_seg.address = (unsigned long) wdsp->dump_data.rd_v_addr;
+	rd_seg.address = (unsigned long)wdsp->dump_data.rd_v_addr;
 	rd_seg.size = img_section.size;
 	rd_seg.v_address = wdsp->dump_data.rd_v_addr;
 
@@ -740,10 +718,10 @@ static void wdsp_ssr_work_fn(struct work_struct *work)
 	WDSP_CLEAR_STATUS(wdsp, WDSP_STATUS_DATA_DLOADED);
 
 	/*
-	 * Even though code section could possible be retained on DSP
-	 * crash, go ahead and still re-download just to avoid any
-	 * memory corruption from previous crash.
-	 */
+   * Even though code section could possible be retained on DSP
+   * crash, go ahead and still re-download just to avoid any
+   * memory corruption from previous crash.
+   */
 	WDSP_CLEAR_STATUS(wdsp, WDSP_STATUS_CODE_DLOADED);
 
 	/* If codec restarted, then all components must be re-initialized */
@@ -754,8 +732,7 @@ static void wdsp_ssr_work_fn(struct work_struct *work)
 
 	ret = wdsp_init_and_dload_code_sections(wdsp);
 	if (ret < 0) {
-		WDSP_ERR(wdsp, "Failed to dload code sections err = %d",
-			 ret);
+		WDSP_ERR(wdsp, "Failed to dload code sections err = %d", ret);
 		goto done;
 	}
 
@@ -780,16 +757,14 @@ static int wdsp_ssr_handler(struct wdsp_mgr_priv *wdsp, void *arg,
 	wdsp->ssr_type = ssr_type;
 
 	if (arg) {
-		err_data = (struct wdsp_err_signal_arg *) arg;
-		memcpy(&wdsp->dump_data.err_data, err_data,
-		       sizeof(*err_data));
+		err_data = (struct wdsp_err_signal_arg *)arg;
+		memcpy(&wdsp->dump_data.err_data, err_data, sizeof(*err_data));
 	} else {
 		memset(&wdsp->dump_data.err_data, 0,
 		       sizeof(wdsp->dump_data.err_data));
 	}
 
 	switch (ssr_type) {
-
 	case WDSP_SSR_TYPE_WDSP_DOWN:
 		__wdsp_clr_ready_locked(wdsp, WDSP_SSR_STATUS_WDSP_READY);
 		wdsp_broadcast_event_downseq(wdsp, WDSP_EVENT_PRE_SHUTDOWN,
@@ -801,15 +776,14 @@ static int wdsp_ssr_handler(struct wdsp_mgr_priv *wdsp, void *arg,
 	case WDSP_SSR_TYPE_CDC_DOWN:
 		__wdsp_clr_ready_locked(wdsp, WDSP_SSR_STATUS_CDC_READY);
 		/*
-		 * If DSP is booted when CDC_DOWN is received, it needs
-		 * to be shutdown.
-		 */
+     * If DSP is booted when CDC_DOWN is received, it needs
+     * to be shutdown.
+     */
 		if (WDSP_STATUS_IS_SET(wdsp, WDSP_STATUS_BOOTED)) {
 			__wdsp_clr_ready_locked(wdsp,
 						WDSP_SSR_STATUS_WDSP_READY);
-			wdsp_broadcast_event_downseq(wdsp,
-						     WDSP_EVENT_PRE_SHUTDOWN,
-						     NULL);
+			wdsp_broadcast_event_downseq(
+				wdsp, WDSP_EVENT_PRE_SHUTDOWN, NULL);
 		}
 		reinit_completion(&wdsp->ready_compl);
 		schedule_work(&wdsp->ssr_work);
@@ -847,9 +821,8 @@ static int __wdsp_dbg_dump_locked(struct wdsp_mgr_priv *wdsp, void *arg)
 	}
 
 	if (arg) {
-		err_data = (struct wdsp_err_signal_arg *) arg;
-		memcpy(&wdsp->dump_data.err_data, err_data,
-		       sizeof(*err_data));
+		err_data = (struct wdsp_err_signal_arg *)arg;
+		memcpy(&wdsp->dump_data.err_data, err_data, sizeof(*err_data));
 	} else {
 		WDSP_DBG(wdsp, "Invalid input, arg is NULL");
 		ret = -EINVAL;
@@ -882,8 +855,8 @@ static int wdsp_debug_dump_handler(struct wdsp_mgr_priv *wdsp, void *arg)
 }
 #endif
 
-static int wdsp_signal_handler(struct device *wdsp_dev,
-			       enum wdsp_signal signal, void *arg)
+static int wdsp_signal_handler(struct device *wdsp_dev, enum wdsp_signal signal,
+			       void *arg)
 {
 	struct wdsp_mgr_priv *wdsp;
 	int ret;
@@ -941,8 +914,7 @@ static int wdsp_signal_handler(struct device *wdsp_dev,
 	return ret;
 }
 
-static int wdsp_vote_for_dsp(struct device *wdsp_dev,
-			     bool vote)
+static int wdsp_vote_for_dsp(struct device *wdsp_dev, bool vote)
 {
 	struct wdsp_mgr_priv *wdsp;
 	int ret = 0;
@@ -990,11 +962,11 @@ static int wdsp_suspend(struct device *wdsp_dev)
 
 	wdsp = dev_get_drvdata(wdsp_dev);
 
-	for (i =  WDSP_CMPNT_TYPE_MAX - 1; i >= 0; i--) {
+	for (i = WDSP_CMPNT_TYPE_MAX - 1; i >= 0; i--) {
 		rc = wdsp_unicast_event(wdsp, i, WDSP_EVENT_SUSPEND, NULL);
 		if (rc < 0) {
 			WDSP_ERR(wdsp, "component %s failed to suspend\n",
-				WDSP_GET_CMPNT_TYPE_STR(i));
+				 WDSP_GET_CMPNT_TYPE_STR(i));
 			break;
 		}
 	}
@@ -1014,11 +986,11 @@ static int wdsp_resume(struct device *wdsp_dev)
 
 	wdsp = dev_get_drvdata(wdsp_dev);
 
-	for (i =  0; i < WDSP_CMPNT_TYPE_MAX; i++) {
+	for (i = 0; i < WDSP_CMPNT_TYPE_MAX; i++) {
 		rc = wdsp_unicast_event(wdsp, i, WDSP_EVENT_RESUME, NULL);
 		if (rc < 0) {
 			WDSP_ERR(wdsp, "component %s failed to resume\n",
-				WDSP_GET_CMPNT_TYPE_STR(i));
+				 WDSP_GET_CMPNT_TYPE_STR(i));
 			break;
 		}
 	}
@@ -1041,12 +1013,11 @@ static int wdsp_mgr_compare_of(struct device *dev, void *data)
 	struct wdsp_cmpnt *cmpnt = data;
 
 	/*
-	 * First try to match based on of_node, if of_node is not
-	 * present, try to match on the dev_name
-	 */
+   * First try to match based on of_node, if of_node is not
+   * present, try to match on the dev_name
+   */
 	return ((dev->of_node && dev->of_node == cmpnt->np) ||
-		(cmpnt->cdev_name &&
-		 !strcmp(dev_name(dev), cmpnt->cdev_name)));
+		(cmpnt->cdev_name && !strcmp(dev_name(dev), cmpnt->cdev_name)));
 }
 
 static void wdsp_mgr_debugfs_init(struct wdsp_mgr_priv *wdsp)
@@ -1055,8 +1026,8 @@ static void wdsp_mgr_debugfs_init(struct wdsp_mgr_priv *wdsp)
 	if (IS_ERR_OR_NULL(wdsp->entry))
 		return;
 
-	debugfs_create_bool("panic_on_error", 0644,
-			    wdsp->entry, &wdsp->panic_on_error);
+	debugfs_create_bool("panic_on_error", 0644, wdsp->entry,
+			    &wdsp->panic_on_error);
 }
 
 static void wdsp_mgr_debugfs_remove(struct wdsp_mgr_priv *wdsp)
@@ -1139,8 +1110,7 @@ static const struct component_master_ops wdsp_master_ops = {
 	.unbind = wdsp_mgr_unbind,
 };
 
-static void *wdsp_mgr_parse_phandle(struct wdsp_mgr_priv *wdsp,
-				    int index)
+static void *wdsp_mgr_parse_phandle(struct wdsp_mgr_priv *wdsp, int index)
 {
 	struct device *mdev = wdsp->mdev;
 	struct device_node *np;
@@ -1149,12 +1119,11 @@ static void *wdsp_mgr_parse_phandle(struct wdsp_mgr_priv *wdsp,
 	u32 value;
 	int ret;
 
-	ret = of_parse_phandle_with_fixed_args(mdev->of_node,
-					      "qcom,wdsp-components", 1,
-					      index, &pargs);
+	ret = of_parse_phandle_with_fixed_args(
+		mdev->of_node, "qcom,wdsp-components", 1, index, &pargs);
 	if (ret) {
-		WDSP_ERR(wdsp, "parse_phandle at index %d failed %d",
-			 index, ret);
+		WDSP_ERR(wdsp, "parse_phandle at index %d failed %d", index,
+			 ret);
 		return NULL;
 	}
 
@@ -1195,8 +1164,7 @@ static int wdsp_mgr_parse_dt_entries(struct wdsp_mgr_priv *wdsp)
 		return ret;
 	}
 
-	ret = of_count_phandle_with_args(dev->of_node,
-					 "qcom,wdsp-components",
+	ret = of_count_phandle_with_args(dev->of_node, "qcom,wdsp-components",
 					 NULL);
 	if (ret == -ENOENT) {
 		WDSP_ERR(wdsp, "Property %s not defined in DT",
@@ -1212,7 +1180,6 @@ static int wdsp_mgr_parse_dt_entries(struct wdsp_mgr_priv *wdsp)
 	ret = 0;
 
 	for (ph_idx = 0; ph_idx < WDSP_CMPNT_TYPE_MAX; ph_idx++) {
-
 		match_data = wdsp_mgr_parse_phandle(wdsp, ph_idx);
 		if (!match_data) {
 			WDSP_ERR(wdsp, "component not found at idx %d", ph_idx);
@@ -1220,8 +1187,8 @@ static int wdsp_mgr_parse_dt_entries(struct wdsp_mgr_priv *wdsp)
 			goto done;
 		}
 
-		component_match_add(dev, &wdsp->match,
-				    wdsp_mgr_compare_of, match_data);
+		component_match_add(dev, &wdsp->match, wdsp_mgr_compare_of,
+				    match_data);
 	}
 
 done:
@@ -1238,8 +1205,8 @@ static int wdsp_mgr_probe(struct platform_device *pdev)
 	if (!wdsp)
 		return -ENOMEM;
 	wdsp->mdev = mdev;
-	wdsp->seg_list = devm_kzalloc(mdev, sizeof(struct list_head),
-				      GFP_KERNEL);
+	wdsp->seg_list =
+		devm_kzalloc(mdev, sizeof(struct list_head), GFP_KERNEL);
 	if (!wdsp->seg_list) {
 		devm_kfree(mdev, wdsp);
 		return -ENOMEM;
@@ -1297,19 +1264,20 @@ static int wdsp_mgr_remove(struct platform_device *pdev)
 };
 
 static const struct of_device_id wdsp_mgr_dt_match[] = {
-	{.compatible = "qcom,wcd-dsp-mgr" },
-	{ }
+	{ .compatible = "qcom,wcd-dsp-mgr" },
+	{}
 };
 
 static struct platform_driver wdsp_mgr_driver = {
-	.driver = {
-		.name = "wcd-dsp-mgr",
-		.owner = THIS_MODULE,
-		.of_match_table = of_match_ptr(wdsp_mgr_dt_match),
-		.suppress_bind_attrs = true,
-	},
-	.probe = wdsp_mgr_probe,
-	.remove = wdsp_mgr_remove,
+    .driver =
+        {
+            .name = "wcd-dsp-mgr",
+            .owner = THIS_MODULE,
+            .of_match_table = of_match_ptr(wdsp_mgr_dt_match),
+            .suppress_bind_attrs = true,
+        },
+    .probe = wdsp_mgr_probe,
+    .remove = wdsp_mgr_remove,
 };
 
 int wcd_dsp_mgr_init(void)

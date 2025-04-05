@@ -23,7 +23,6 @@
 
 #include "wlan_pkt_capture_mon_thread.h"
 #include "cds_ieee80211_common.h"
-#include "wlan_mgmt_txrx_utils_api.h"
 #include "cfg_ucfg_api.h"
 #include "wlan_mgmt_txrx_utils_api.h"
 
@@ -51,8 +50,8 @@ void pkt_capture_free_mon_pkt_freeq(struct pkt_capture_mon_context *mon_ctx)
 
 	spin_lock_bh(&mon_ctx->mon_pkt_freeq_lock);
 	while (!list_empty(&mon_ctx->mon_pkt_freeq)) {
-		pkt = list_entry((&mon_ctx->mon_pkt_freeq)->next,
-				 typeof(*pkt), list);
+		pkt = list_entry((&mon_ctx->mon_pkt_freeq)->next, typeof(*pkt),
+				 list);
 		list_del(&pkt->list);
 		spin_unlock_bh(&mon_ctx->mon_pkt_freeq_lock);
 		qdf_mem_free(pkt);
@@ -82,17 +81,14 @@ pkt_capture_alloc_mon_pkt_freeq(struct pkt_capture_mon_context *mon_ctx)
 			goto free;
 
 		spin_lock_bh(&mon_ctx->mon_pkt_freeq_lock);
-		list_add_tail(&pkt->list,
-			      &mon_ctx->mon_pkt_freeq);
+		list_add_tail(&pkt->list, &mon_ctx->mon_pkt_freeq);
 		spin_unlock_bh(&mon_ctx->mon_pkt_freeq_lock);
 	}
 
 	return QDF_STATUS_SUCCESS;
 free:
 	spin_lock_bh(&mon_ctx->mon_pkt_freeq_lock);
-	list_for_each_entry_safe(pkt, tmp,
-				 &mon_ctx->mon_pkt_freeq,
-				 list) {
+	list_for_each_entry_safe(pkt, tmp, &mon_ctx->mon_pkt_freeq, list) {
 		list_del(&pkt->list);
 		spin_unlock_bh(&mon_ctx->mon_pkt_freeq_lock);
 		qdf_mem_free(pkt);
@@ -112,9 +108,8 @@ free:
  *
  * Return: None
  */
-static void
-pkt_capture_free_mon_pkt(struct pkt_capture_mon_context *mon_ctx,
-			 struct pkt_capture_mon_pkt *pkt)
+static void pkt_capture_free_mon_pkt(struct pkt_capture_mon_context *mon_ctx,
+				     struct pkt_capture_mon_pkt *pkt)
 {
 	memset(pkt, 0, sizeof(*pkt));
 	spin_lock_bh(&mon_ctx->mon_pkt_freeq_lock);
@@ -270,14 +265,14 @@ static int pkt_capture_mon_thread(void *arg)
 #endif
 
 	/**
-	 * Find the available cpu core other than cpu 0 and
-	 * bind the thread
-	 */
+   * Find the available cpu core other than cpu 0 and
+   * bind the thread
+   */
 	for_each_online_cpu(i) {
 		if (i == 0)
 			continue;
 		pref_cpu = i;
-			break;
+		break;
 	}
 
 	set_cpus_allowed_ptr(current, cpumask_of(pref_cpu));
@@ -285,25 +280,23 @@ static int pkt_capture_mon_thread(void *arg)
 	complete(&mon_ctx->mon_start_event);
 
 	while (!shutdown) {
-		status =
-		wait_event_interruptible(mon_ctx->mon_wait_queue,
-					 test_bit(PKT_CAPTURE_RX_POST_EVENT,
-						  &mon_ctx->mon_event_flag) ||
-					 test_bit(PKT_CAPTURE_RX_SUSPEND_EVENT,
-						  &mon_ctx->mon_event_flag));
+		status = wait_event_interruptible(
+			mon_ctx->mon_wait_queue,
+			test_bit(PKT_CAPTURE_RX_POST_EVENT,
+				 &mon_ctx->mon_event_flag) ||
+				test_bit(PKT_CAPTURE_RX_SUSPEND_EVENT,
+					 &mon_ctx->mon_event_flag));
 		if (status == -ERESTARTSYS)
 			break;
 
-		clear_bit(PKT_CAPTURE_RX_POST_EVENT,
-			  &mon_ctx->mon_event_flag);
+		clear_bit(PKT_CAPTURE_RX_POST_EVENT, &mon_ctx->mon_event_flag);
 		while (true) {
 			if (test_bit(PKT_CAPTURE_RX_SHUTDOWN_EVENT,
 				     &mon_ctx->mon_event_flag)) {
 				clear_bit(PKT_CAPTURE_RX_SHUTDOWN_EVENT,
 					  &mon_ctx->mon_event_flag);
-				if (test_bit(
-					PKT_CAPTURE_RX_SUSPEND_EVENT,
-					&mon_ctx->mon_event_flag)) {
+				if (test_bit(PKT_CAPTURE_RX_SUSPEND_EVENT,
+					     &mon_ctx->mon_event_flag)) {
 					clear_bit(PKT_CAPTURE_RX_SUSPEND_EVENT,
 						  &mon_ctx->mon_event_flag);
 					complete(&mon_ctx->suspend_mon_event);
@@ -314,10 +307,10 @@ static int pkt_capture_mon_thread(void *arg)
 			}
 
 			/*
-			 * if packet capture deregistratin happens stop
-			 * processing packets in queue because mon cb will
-			 * be set to NULL.
-			 */
+       * if packet capture deregistratin happens stop
+       * processing packets in queue because mon cb will
+       * be set to NULL.
+       */
 			if (test_bit(PKT_CAPTURE_REGISTER_EVENT,
 				     &mon_ctx->mon_event_flag))
 				pkt_capture_process_from_queue(mon_ctx);
@@ -332,8 +325,8 @@ static int pkt_capture_mon_thread(void *arg)
 				INIT_COMPLETION(mon_ctx->resume_mon_event);
 				complete(&mon_ctx->suspend_mon_event);
 				spin_unlock(&mon_ctx->mon_thread_lock);
-				wait_for_completion_interruptible
-					(&mon_ctx->resume_mon_event);
+				wait_for_completion_interruptible(
+					&mon_ctx->resume_mon_event);
 			}
 			break;
 		}
@@ -350,10 +343,8 @@ void pkt_capture_close_mon_thread(struct pkt_capture_mon_context *mon_ctx)
 		return;
 
 	/* Shut down mon thread */
-	set_bit(PKT_CAPTURE_RX_SHUTDOWN_EVENT,
-		&mon_ctx->mon_event_flag);
-	set_bit(PKT_CAPTURE_RX_POST_EVENT,
-		&mon_ctx->mon_event_flag);
+	set_bit(PKT_CAPTURE_RX_SHUTDOWN_EVENT, &mon_ctx->mon_event_flag);
+	set_bit(PKT_CAPTURE_RX_POST_EVENT, &mon_ctx->mon_event_flag);
 	wake_up_interruptible(&mon_ctx->mon_wait_queue);
 	wait_for_completion(&mon_ctx->mon_shutdown);
 	mon_ctx->mon_thread = NULL;
@@ -364,8 +355,7 @@ void pkt_capture_close_mon_thread(struct pkt_capture_mon_context *mon_ctx)
 QDF_STATUS
 pkt_capture_open_mon_thread(struct pkt_capture_mon_context *mon_ctx)
 {
-	mon_ctx->mon_thread = kthread_create(pkt_capture_mon_thread,
-					     mon_ctx,
+	mon_ctx->mon_thread = kthread_create(pkt_capture_mon_thread, mon_ctx,
 					     "pkt_capture_mon_thread");
 
 	if (IS_ERR(mon_ctx->mon_thread)) {
@@ -393,9 +383,7 @@ void pkt_capture_drop_monpkt(struct pkt_capture_mon_context *mon_ctx)
 		spin_unlock_bh(&mon_ctx->mon_queue_lock);
 		return;
 	}
-	list_for_each_entry_safe(pkt, tmp,
-				 &mon_ctx->mon_thread_queue,
-				 list)
+	list_for_each_entry_safe(pkt, tmp, &mon_ctx->mon_thread_queue, list)
 		list_move_tail(&pkt->list, &local_list);
 
 	spin_unlock_bh(&mon_ctx->mon_queue_lock);
@@ -434,12 +422,11 @@ int pkt_capture_suspend_mon_thread(struct wlan_objmgr_vdev *vdev)
 		return -EINVAL;
 	}
 
-	set_bit(PKT_CAPTURE_RX_SUSPEND_EVENT,
-		&mon_ctx->mon_event_flag);
+	set_bit(PKT_CAPTURE_RX_SUSPEND_EVENT, &mon_ctx->mon_event_flag);
 	wake_up_interruptible(&mon_ctx->mon_wait_queue);
 	rc = wait_for_completion_timeout(
-			&mon_ctx->suspend_mon_event,
-			msecs_to_jiffies(PKT_CAPTURE_SUSPEND_TIMEOUT));
+		&mon_ctx->suspend_mon_event,
+		msecs_to_jiffies(PKT_CAPTURE_SUSPEND_TIMEOUT));
 	if (!rc) {
 		clear_bit(PKT_CAPTURE_RX_SUSPEND_EVENT,
 			  &mon_ctx->mon_event_flag);

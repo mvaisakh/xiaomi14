@@ -26,7 +26,7 @@
 
 /*===========================================================================
 
-			EDIT HISTORY FOR FILE
+                        EDIT HISTORY FOR FILE
 
    This section contains comments describing changes made to the module.
    Notice that changes are listed in reverse chronological order.
@@ -36,18 +36,18 @@
    when        who    what, where, why
    --------    ---    --------------------------------------------------------
    03/31/09    sho    Remove the use of qdf_timerIsActive flag as it is not
-			thread-safe
+                        thread-safe
    02/17/08    sho    Fix the timer callback function to work when it is called
-			after the timer has stopped due to a race condition.
+                        after the timer has stopped due to a race condition.
    02/10/08    sho    Refactor the TX timer to use VOS timer directly instead
-			of using VOS utility timer
+                        of using VOS utility timer
    12/15/08    sho    Resolved errors and warnings from the AMSS compiler when
-			this is ported from WM
+                        this is ported from WM
    11/20/08    sho    Renamed this to VosWrapper.c; remove all dependencies on
-			WM platform and allow this to work on all VOSS enabled
-			platform
+                        WM platform and allow this to work on all VOSS enabled
+                        platform
    06/24/08    tbh    Modified the file to remove the dependency on HDD files as
-			part of Gen6 bring up process.
+                        part of Gen6 bring up process.
    10/29/02 Neelay Das Created file.
 
    ===========================================================================*/
@@ -83,13 +83,15 @@ uint32_t tx_timer_activate(TX_TIMER *timer_ptr)
 {
 	QDF_STATUS status;
 
-	/* Uncomment the asserts, if the intention is to debug the occurrence of the */
+	/* Uncomment the asserts, if the intention is to debug the occurrence of the
+   */
 	/* following anomalous cnditions. */
 
 	/* Assert that the timer structure pointer passed, is not NULL */
 	/* dbgAssert(timer_ptr); */
 
-	/* If the NIC is halting just spoof a successful timer activation, so that all */
+	/* If the NIC is halting just spoof a successful timer activation, so that all
+   */
 	/* the timers can be cleaned up. */
 
 	if (!timer_ptr)
@@ -100,7 +102,6 @@ uint32_t tx_timer_activate(TX_TIMER *timer_ptr)
 		QDF_ASSERT(timer_ptr->tmrSignature == 0);
 
 		return TX_TIMER_ERROR;
-
 	}
 	/* Check for an uninitialized timer */
 	QDF_ASSERT(0 != strlen(TIMER_NAME));
@@ -138,8 +139,7 @@ uint32_t tx_timer_activate(TX_TIMER *timer_ptr)
  * @return TX_SUCCESS.
  *
  */
-uint32_t tx_timer_change(TX_TIMER *timer_ptr,
-			 uint64_t initScheduleTimeInTicks,
+uint32_t tx_timer_change(TX_TIMER *timer_ptr, uint64_t initScheduleTimeInTicks,
 			 uint64_t rescheduleTimeInTicks)
 {
 	/* Put a check for the free builds */
@@ -176,10 +176,8 @@ uint32_t tx_timer_change(TX_TIMER *timer_ptr,
  * @return TX_SUCCESS.
  *
  */
-uint32_t tx_timer_change_context(TX_TIMER *timer_ptr,
-				 uint32_t expiration_input)
+uint32_t tx_timer_change_context(TX_TIMER *timer_ptr, uint32_t expiration_input)
 {
-
 	/* Put a check for the free builds */
 	if (TX_AIRGO_TMR_SIGNATURE != timer_ptr->tmrSignature) {
 		QDF_ASSERT(timer_ptr->tmrSignature == 0);
@@ -214,7 +212,7 @@ uint32_t tx_timer_change_context(TX_TIMER *timer_ptr,
  */
 static void tx_main_timer_func(void *functionContext)
 {
-	TX_TIMER *timer_ptr = (TX_TIMER *) functionContext;
+	TX_TIMER *timer_ptr = (TX_TIMER *)functionContext;
 
 	if (!timer_ptr) {
 		QDF_ASSERT(0);
@@ -247,15 +245,12 @@ static void tx_main_timer_func(void *functionContext)
 } /*** tx_timer_change() ***/
 
 #ifdef TIMER_MANAGER
-uint32_t tx_timer_create_intern_debug(void *pMacGlobal,
-				      TX_TIMER *timer_ptr, char *name_ptr,
-				      void (*expiration_function)(void *,
-								  uint32_t),
-				      uint32_t expiration_input,
-				      uint64_t initScheduleTimeInTicks,
-				      uint64_t rescheduleTimeInTicks,
-				      uint64_t auto_activate, char *fileName,
-				      uint32_t lineNum)
+uint32_t tx_timer_create_intern_debug(
+	void *pMacGlobal, TX_TIMER *timer_ptr, char *name_ptr,
+	void (*expiration_function)(void *, uint32_t),
+	uint32_t expiration_input, uint64_t initScheduleTimeInTicks,
+	uint64_t rescheduleTimeInTicks, uint64_t auto_activate, char *fileName,
+	uint32_t lineNum)
 {
 	QDF_STATUS status;
 
@@ -267,7 +262,6 @@ uint32_t tx_timer_create_intern_debug(void *pMacGlobal,
 	}
 
 	if (!name_ptr) {
-
 		QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_ERROR,
 			  "NULL name pointer for timer");
 		QDF_ASSERT(0);
@@ -296,10 +290,9 @@ uint32_t tx_timer_create_intern_debug(void *pMacGlobal,
 	strlcpy(timer_ptr->timerName, name_ptr, sizeof(timer_ptr->timerName));
 #endif /* Store the timer name, for Debug build only */
 
-	status =
-		qdf_mc_timer_init_debug(&timer_ptr->qdf_timer, QDF_TIMER_TYPE_SW,
-					tx_main_timer_func, (void *) timer_ptr,
-					fileName, lineNum);
+	status = qdf_mc_timer_init_debug(&timer_ptr->qdf_timer,
+					 QDF_TIMER_TYPE_SW, tx_main_timer_func,
+					 (void *)timer_ptr, fileName, lineNum);
 	if (QDF_STATUS_SUCCESS != status) {
 		QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_ERROR,
 			  "Cannot create timer for %s\n", TIMER_NAME);
@@ -321,8 +314,7 @@ uint32_t tx_timer_create_intern_debug(void *pMacGlobal,
 #else
 uint32_t tx_timer_create_intern(void *pMacGlobal, TX_TIMER *timer_ptr,
 				char *name_ptr,
-				void (*expiration_function)(void *,
-							    uint32_t),
+				void (*expiration_function)(void *, uint32_t),
 				uint32_t expiration_input,
 				uint64_t initScheduleTimeInTicks,
 				uint64_t rescheduleTimeInTicks,
@@ -357,7 +349,7 @@ uint32_t tx_timer_create_intern(void *pMacGlobal, TX_TIMER *timer_ptr,
 #endif /* Store the timer name, for Debug build only */
 
 	status = qdf_mc_timer_init(&timer_ptr->qdf_timer, QDF_TIMER_TYPE_SW,
-				   tx_main_timer_func, (void *) timer_ptr);
+				   tx_main_timer_func, (void *)timer_ptr);
 	if (QDF_STATUS_SUCCESS != status) {
 		QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_ERROR,
 			  "Cannot create timer for %s\n", TIMER_NAME);
@@ -406,8 +398,8 @@ uint32_t tx_timer_deactivate(TX_TIMER *timer_ptr)
 	vStatus = qdf_mc_timer_stop(&timer_ptr->qdf_timer);
 	if (QDF_STATUS_SUCCESS != vStatus) {
 		QDF_TRACE(QDF_MODULE_ID_SYS, QDF_TRACE_LEVEL_INFO_HIGH,
-			  "Unable to stop timer %s; status =%d\n",
-			  TIMER_NAME, vStatus);
+			  "Unable to stop timer %s; status =%d\n", TIMER_NAME,
+			  vStatus);
 	}
 
 	return TX_SUCCESS;

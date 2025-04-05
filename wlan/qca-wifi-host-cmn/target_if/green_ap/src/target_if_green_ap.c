@@ -21,10 +21,10 @@
  * DOC: offload lmac interface APIs definitions for Green ap
  */
 
-#include <target_if_green_ap.h>
-#include <wlan_green_ap_api.h>
 #include <../../core/src/wlan_green_ap_main_i.h>
 #include <target_if.h>
+#include <target_if_green_ap.h>
+#include <wlan_green_ap_api.h>
 #include <wmi_unified_api.h>
 
 #ifdef WLAN_SUPPORT_GAP_LL_PS_MODE
@@ -58,20 +58,20 @@ target_if_green_ap_ll_ps_cmd(struct wlan_objmgr_vdev *vdev,
 	return wmi_unified_green_ap_ll_ps_send(wmi_hdl, ll_ps_params);
 }
 
-static inline void target_if_register_ll_ps_tx_ops(
-		struct wlan_lmac_if_green_ap_tx_ops *tx_ops)
+static inline void
+target_if_register_ll_ps_tx_ops(struct wlan_lmac_if_green_ap_tx_ops *tx_ops)
 {
 	tx_ops->ll_ps = target_if_green_ap_ll_ps_cmd;
 }
 #else
-static inline void target_if_register_ll_ps_tx_ops(
-		struct wlan_lmac_if_green_ap_tx_ops *tx_ops)
+static inline void
+target_if_register_ll_ps_tx_ops(struct wlan_lmac_if_green_ap_tx_ops *tx_ops)
 {
 }
 #endif
 
-QDF_STATUS target_if_register_green_ap_tx_ops(
-		struct wlan_lmac_if_tx_ops *tx_ops)
+QDF_STATUS
+target_if_register_green_ap_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 {
 	struct wlan_lmac_if_green_ap_tx_ops *green_ap_tx_ops;
 
@@ -128,7 +128,7 @@ static int target_if_green_ap_ll_ps_event(ol_scn_t scn, uint8_t *evt_buf,
 	}
 
 	green_ap_ctx = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev, WLAN_UMAC_COMP_GREEN_AP);
+		pdev, WLAN_UMAC_COMP_GREEN_AP);
 	if (!green_ap_ctx) {
 		green_ap_err("green_ap_ctx not found");
 		return -ENOMEM;
@@ -149,8 +149,7 @@ static int target_if_green_ap_ll_ps_event(ol_scn_t scn, uint8_t *evt_buf,
 		goto free_event_param;
 	}
 
-	if (wmi_unified_extract_green_ap_ll_ps_param(wmi_hdl,
-						     evt_buf,
+	if (wmi_unified_extract_green_ap_ll_ps_param(wmi_hdl, evt_buf,
 						     ll_ps_param)) {
 		green_ap_err("unable to extract green ap ll ps event params");
 		err = -EINVAL;
@@ -163,12 +162,10 @@ static int target_if_green_ap_ll_ps_event(ol_scn_t scn, uint8_t *evt_buf,
 		ll_ps_param->bcn_mult = 1;
 
 	green_ap_debug("Next TSF: %llu Dialog Token: %llu bcn_mult: %u",
-		       ll_ps_param->next_tsf,
-		       ll_ps_param->dialog_token,
+		       ll_ps_param->next_tsf, ll_ps_param->dialog_token,
 		       ll_ps_param->bcn_mult);
 
-	status = wlan_green_ap_send_ll_ps_event_params(pdev,
-						       ll_ps_param);
+	status = wlan_green_ap_send_ll_ps_event_params(pdev, ll_ps_param);
 	if (status != QDF_STATUS_SUCCESS) {
 		wmi_err("wlan_green_ap_send_ll_ps_event failed");
 		err = -EINVAL;
@@ -180,8 +177,8 @@ free_event_param:
 	return err;
 }
 
-QDF_STATUS target_if_green_ap_register_ll_ps_event_handler(
-				struct wlan_objmgr_pdev *pdev)
+QDF_STATUS
+target_if_green_ap_register_ll_ps_event_handler(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_pdev_green_ap_ctx *green_ap_ctx;
 	QDF_STATUS ret;
@@ -190,7 +187,7 @@ QDF_STATUS target_if_green_ap_register_ll_ps_event_handler(
 	if (!pdev) {
 		green_ap_err("pdev is null");
 		return QDF_STATUS_E_INVAL;
-		}
+	}
 
 	wmi_hdl = GET_WMI_HDL_FROM_PDEV(pdev);
 	if (!wmi_hdl) {
@@ -199,17 +196,15 @@ QDF_STATUS target_if_green_ap_register_ll_ps_event_handler(
 	}
 
 	green_ap_ctx = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev, WLAN_UMAC_COMP_GREEN_AP);
+		pdev, WLAN_UMAC_COMP_GREEN_AP);
 	if (!green_ap_ctx) {
 		green_ap_err("green ap context obtained is NULL");
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	ret = wmi_unified_register_event_handler(
-			wmi_hdl,
-			wmi_xgap_enable_complete_eventid,
-			target_if_green_ap_ll_ps_event,
-			WMI_RX_UMAC_CTX);
+		wmi_hdl, wmi_xgap_enable_complete_eventid,
+		target_if_green_ap_ll_ps_event, WMI_RX_UMAC_CTX);
 
 	if (QDF_IS_STATUS_ERROR(ret))
 		green_ap_err("Failed to register Enhance Green AP event");
@@ -228,8 +223,9 @@ QDF_STATUS target_if_green_ap_register_ll_ps_event_handler(
  *
  * Return: 0 for success, otherwise appropriate error code
  */
-static int target_if_green_ap_egap_status_info_event(
-		ol_scn_t scn, uint8_t *evt_buf, uint32_t data_len)
+static int target_if_green_ap_egap_status_info_event(ol_scn_t scn,
+						     uint8_t *evt_buf,
+						     uint32_t data_len)
 {
 	struct wlan_objmgr_pdev *pdev;
 	struct wlan_green_ap_egap_status_info egap_status_info_params;
@@ -247,10 +243,9 @@ static int target_if_green_ap_egap_status_info_event(
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (wmi_extract_green_ap_egap_status_info(wmi_hdl,
-						  evt_buf,
+	if (wmi_extract_green_ap_egap_status_info(wmi_hdl, evt_buf,
 						  &egap_status_info_params) !=
-						  QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		green_ap_err("unable to extract green ap egap status info");
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -264,8 +259,8 @@ static int target_if_green_ap_egap_status_info_event(
 	return 0;
 }
 
-QDF_STATUS target_if_green_ap_register_egap_event_handler(
-			struct wlan_objmgr_pdev *pdev)
+QDF_STATUS
+target_if_green_ap_register_egap_event_handler(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_pdev_green_ap_ctx *green_ap_ctx;
 	struct wlan_green_ap_egap_params *egap_params;
@@ -284,7 +279,7 @@ QDF_STATUS target_if_green_ap_register_egap_event_handler(
 	}
 
 	green_ap_ctx = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev, WLAN_UMAC_COMP_GREEN_AP);
+		pdev, WLAN_UMAC_COMP_GREEN_AP);
 	if (!green_ap_ctx) {
 		green_ap_err("green ap context obtained is NULL");
 		return QDF_STATUS_E_FAILURE;
@@ -292,10 +287,8 @@ QDF_STATUS target_if_green_ap_register_egap_event_handler(
 	egap_params = &green_ap_ctx->egap_params;
 
 	ret = wmi_unified_register_event_handler(
-			wmi_hdl,
-			wmi_ap_ps_egap_info_event_id,
-			target_if_green_ap_egap_status_info_event,
-			WMI_RX_UMAC_CTX);
+		wmi_hdl, wmi_ap_ps_egap_info_event_id,
+		target_if_green_ap_egap_status_info_event, WMI_RX_UMAC_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		green_ap_err("Failed to register Enhance Green AP event");
 		egap_params->fw_egap_support = false;
@@ -307,9 +300,9 @@ QDF_STATUS target_if_green_ap_register_egap_event_handler(
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS target_if_green_ap_enable_egap(
-		struct wlan_objmgr_pdev *pdev,
-		struct wlan_green_ap_egap_params *egap_params)
+QDF_STATUS
+target_if_green_ap_enable_egap(struct wlan_objmgr_pdev *pdev,
+			       struct wlan_green_ap_egap_params *egap_params)
 {
 	struct wlan_pdev_green_ap_ctx *green_ap_ctx;
 	wmi_unified_t wmi_hdl;
@@ -326,7 +319,7 @@ QDF_STATUS target_if_green_ap_enable_egap(
 	}
 
 	green_ap_ctx = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev, WLAN_UMAC_COMP_GREEN_AP);
+		pdev, WLAN_UMAC_COMP_GREEN_AP);
 	if (!green_ap_ctx) {
 		green_ap_err("green ap context obtained is NULL");
 		return QDF_STATUS_E_FAILURE;
@@ -340,8 +333,7 @@ QDF_STATUS target_if_green_ap_enable_egap(
 	}
 	qdf_spin_unlock_bh(&green_ap_ctx->lock);
 
-	return wmi_unified_egap_conf_params_cmd(wmi_hdl,
-							egap_params);
+	return wmi_unified_egap_conf_params_cmd(wmi_hdl, egap_params);
 }
 
 QDF_STATUS target_if_green_ap_set_ps_on_off(struct wlan_objmgr_pdev *pdev,
@@ -360,6 +352,5 @@ QDF_STATUS target_if_green_ap_set_ps_on_off(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	return wmi_unified_green_ap_ps_send(wmi_hdl,
-					    value, pdev_id);
+	return wmi_unified_green_ap_ps_send(wmi_hdl, value, pdev_id);
 }

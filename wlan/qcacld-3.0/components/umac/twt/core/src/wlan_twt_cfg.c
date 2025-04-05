@@ -15,12 +15,12 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-#include <wlan_twt_ext_type.h>
-#include <wlan_twt_api.h>
-#include <cfg_ucfg_api.h>
-#include <cfg_twt.h>
 #include "wlan_twt_cfg.h"
 #include "twt/core/src/wlan_twt_priv.h"
+#include <cfg_twt.h>
+#include <cfg_ucfg_api.h>
+#include <wlan_twt_api.h>
+#include <wlan_twt_ext_type.h>
 
 QDF_STATUS wlan_twt_cfg_init(struct wlan_objmgr_psoc *psoc)
 {
@@ -34,8 +34,8 @@ QDF_STATUS wlan_twt_cfg_init(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	twt_psoc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-							 WLAN_UMAC_COMP_TWT);
+	twt_psoc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_TWT);
 	if (!twt_psoc) {
 		twt_err("null twt psoc priv obj");
 		return QDF_STATUS_E_FAILURE;
@@ -45,12 +45,11 @@ QDF_STATUS wlan_twt_cfg_init(struct wlan_objmgr_psoc *psoc)
 	bcast_conf = cfg_get(psoc, CFG_BCAST_TWT_REQ_RESP);
 	rtwt_conf = cfg_get(psoc, CFG_RTWT_REQ_RESP);
 
-
 	twt_cfg->enable_twt = cfg_get(psoc, CFG_ENABLE_TWT);
 	twt_cfg->twt_requestor = cfg_get(psoc, CFG_TWT_REQUESTOR);
 	twt_cfg->twt_responder = cfg_get(psoc, CFG_TWT_RESPONDER);
 	twt_cfg->twt_congestion_timeout =
-				cfg_get(psoc, CFG_TWT_CONGESTION_TIMEOUT);
+		cfg_get(psoc, CFG_TWT_CONGESTION_TIMEOUT);
 	twt_cfg->bcast_requestor_enabled = CFG_TWT_GET_BCAST_REQ(bcast_conf);
 	twt_cfg->bcast_responder_enabled = CFG_TWT_GET_BCAST_RES(bcast_conf);
 	twt_cfg->enable_twt_24ghz = cfg_get(psoc, CFG_ENABLE_TWT_24GHZ);
@@ -76,8 +75,8 @@ QDF_STATUS wlan_twt_cfg_deinit(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	twt_psoc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-							 WLAN_UMAC_COMP_TWT);
+	twt_psoc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_TWT);
 	if (!twt_psoc) {
 		twt_err("null twt psoc priv obj");
 		return QDF_STATUS_E_FAILURE;
@@ -100,8 +99,8 @@ QDF_STATUS wlan_twt_cfg_update(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	twt_psoc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-							 WLAN_UMAC_COMP_TWT);
+	twt_psoc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_TWT);
 	if (!twt_psoc) {
 		twt_err("null twt psoc priv obj");
 		return QDF_STATUS_E_FAILURE;
@@ -111,20 +110,20 @@ QDF_STATUS wlan_twt_cfg_update(struct wlan_objmgr_psoc *psoc)
 	tgt_caps = &twt_psoc->twt_caps;
 	enable_twt = twt_cfg->enable_twt;
 
-	twt_cfg->twt_requestor = QDF_MIN(tgt_caps->twt_requestor,
-					(enable_twt && twt_cfg->twt_requestor));
-	twt_cfg->twt_responder = QDF_MIN(tgt_caps->twt_responder,
-					(enable_twt && twt_cfg->twt_responder));
+	twt_cfg->twt_requestor =
+		QDF_MIN(tgt_caps->twt_requestor,
+			(enable_twt && twt_cfg->twt_requestor));
+	twt_cfg->twt_responder =
+		QDF_MIN(tgt_caps->twt_responder,
+			(enable_twt && twt_cfg->twt_responder));
 	twt_cfg->bcast_requestor_enabled =
-			QDF_MIN((tgt_caps->twt_bcast_req_support ||
-				tgt_caps->legacy_bcast_twt_support),
-				(enable_twt &&
-					twt_cfg->bcast_requestor_enabled));
+		QDF_MIN((tgt_caps->twt_bcast_req_support ||
+			 tgt_caps->legacy_bcast_twt_support),
+			(enable_twt && twt_cfg->bcast_requestor_enabled));
 	twt_cfg->bcast_responder_enabled =
-			QDF_MIN((tgt_caps->twt_bcast_res_support ||
-				tgt_caps->legacy_bcast_twt_support),
-				(enable_twt &&
-					twt_cfg->bcast_responder_enabled));
+		QDF_MIN((tgt_caps->twt_bcast_res_support ||
+			 tgt_caps->legacy_bcast_twt_support),
+			(enable_twt && twt_cfg->bcast_responder_enabled));
 	twt_debug("req: %d resp: %d bcast_req: %d bcast_resp: %d",
 		  twt_cfg->twt_requestor, twt_cfg->twt_responder,
 		  twt_cfg->bcast_requestor_enabled,
@@ -387,8 +386,7 @@ wlan_twt_cfg_get_rtwt_responder(struct wlan_objmgr_psoc *psoc, bool *val)
 }
 
 QDF_STATUS
-wlan_twt_cfg_get_support_in_11n_mode(struct wlan_objmgr_psoc *psoc,
-				     bool *val)
+wlan_twt_cfg_get_support_in_11n_mode(struct wlan_objmgr_psoc *psoc, bool *val)
 {
 	struct twt_psoc_priv_obj *twt_psoc_obj;
 	psoc_twt_ext_cfg_params_t *twt_cfg;
@@ -431,16 +429,14 @@ wlan_twt_get_restricted_support(struct wlan_objmgr_psoc *psoc, bool *val)
 	enable_twt = twt_cfg->enable_twt;
 
 	*val = QDF_MIN(tgt_caps->twt_bcast_req_support &&
-		       tgt_caps->restricted_twt_support,
+			       tgt_caps->restricted_twt_support,
 		       twt_cfg->bcast_requestor_enabled &&
-		       twt_cfg->rtwt_requestor_enabled &&
-		       enable_twt);
+			       twt_cfg->rtwt_requestor_enabled && enable_twt);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-bool
-wlan_twt_get_pmo_allowed(struct wlan_objmgr_psoc *psoc)
+bool wlan_twt_get_pmo_allowed(struct wlan_objmgr_psoc *psoc)
 {
 	struct twt_psoc_priv_obj *twt_psoc_obj;
 

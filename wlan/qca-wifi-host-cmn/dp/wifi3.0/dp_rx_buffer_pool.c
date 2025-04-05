@@ -49,8 +49,9 @@ bool dp_rx_buffer_pool_refill(struct dp_soc *soc, qdf_nbuf_t nbuf, u8 mac_id)
 	while (nbuf) {
 		next_nbuf = qdf_nbuf_next(nbuf);
 
-		if (qdf_likely(qdf_nbuf_queue_head_qlen(&bufpool->emerg_nbuf_q) >=
-		    DP_RX_BUFFER_POOL_SIZE))
+		if (qdf_likely(
+			    qdf_nbuf_queue_head_qlen(&bufpool->emerg_nbuf_q) >=
+			    DP_RX_BUFFER_POOL_SIZE))
 			break;
 
 		refill_nbuf = qdf_nbuf_alloc(soc->osdev, rx_desc_pool->buf_size,
@@ -59,18 +60,16 @@ bool dp_rx_buffer_pool_refill(struct dp_soc *soc, qdf_nbuf_t nbuf, u8 mac_id)
 					     FALSE);
 
 		/* Failed to allocate new nbuf, reset and place it back
-		 * in to the pool.
-		 */
+     * in to the pool.
+     */
 		if (!refill_nbuf) {
-			DP_STATS_INC(pdev,
-				     rx_buffer_pool.num_bufs_consumed, 1);
+			DP_STATS_INC(pdev, rx_buffer_pool.num_bufs_consumed, 1);
 			consumed = true;
 			break;
 		}
 
 		/* Successful allocation!! */
-		DP_STATS_INC(pdev,
-			     rx_buffer_pool.num_bufs_alloc_success, 1);
+		DP_STATS_INC(pdev, rx_buffer_pool.num_bufs_alloc_success, 1);
 		qdf_nbuf_queue_head_enqueue_tail(&bufpool->emerg_nbuf_q,
 						 refill_nbuf);
 		nbuf = next_nbuf;
@@ -138,8 +137,7 @@ void dp_rx_refill_buff_pool_enqueue(struct dp_soc *soc)
 	if (tail > head)
 		total_num_refill = (tail - head - 1);
 	else
-		total_num_refill = (buff_pool->max_bufq_len - head +
-				    tail - 1);
+		total_num_refill = (buff_pool->max_bufq_len - head + tail - 1);
 
 	while (total_num_refill) {
 		if (total_num_refill > DP_RX_REFILL_BUFF_POOL_BURST)
@@ -156,17 +154,17 @@ void dp_rx_refill_buff_pool_enqueue(struct dp_soc *soc)
 			if (qdf_unlikely(!nbuf))
 				continue;
 
-			ret = qdf_nbuf_map_nbytes_single(dev, nbuf,
-							 QDF_DMA_FROM_DEVICE,
-							 rx_desc_pool->buf_size);
+			ret = qdf_nbuf_map_nbytes_single(
+				dev, nbuf, QDF_DMA_FROM_DEVICE,
+				rx_desc_pool->buf_size);
 			if (qdf_unlikely(QDF_IS_STATUS_ERROR(ret))) {
 				qdf_nbuf_free(nbuf);
 				continue;
 			}
 
 			dp_audio_smmu_map(dev,
-					  qdf_mem_paddr_from_dmaaddr(dev,
-								     QDF_NBUF_CB_PADDR(nbuf)),
+					  qdf_mem_paddr_from_dmaaddr(
+						  dev, QDF_NBUF_CB_PADDR(nbuf)),
 					  QDF_NBUF_CB_PADDR(nbuf),
 					  rx_desc_pool->buf_size);
 
@@ -182,8 +180,7 @@ void dp_rx_refill_buff_pool_enqueue(struct dp_soc *soc)
 		}
 	}
 
-	DP_STATS_INC(buff_pool->dp_pdev,
-		     rx_refill_buff_pool.num_bufs_refilled,
+	DP_STATS_INC(buff_pool->dp_pdev, rx_refill_buff_pool.num_bufs_refilled,
 		     total_count);
 }
 
@@ -206,10 +203,9 @@ static inline qdf_nbuf_t dp_rx_refill_buff_pool_dequeue_nbuf(struct dp_soc *soc)
 	return nbuf;
 }
 
-qdf_nbuf_t
-dp_rx_buffer_pool_nbuf_alloc(struct dp_soc *soc, uint32_t mac_id,
-			     struct rx_desc_pool *rx_desc_pool,
-			     uint32_t num_available_buffers)
+qdf_nbuf_t dp_rx_buffer_pool_nbuf_alloc(struct dp_soc *soc, uint32_t mac_id,
+					struct rx_desc_pool *rx_desc_pool,
+					uint32_t num_available_buffers)
 {
 	struct dp_pdev *dp_pdev = dp_get_pdev_for_lmac_id(soc, mac_id);
 	struct rx_buff_pool *buff_pool;
@@ -218,8 +214,8 @@ dp_rx_buffer_pool_nbuf_alloc(struct dp_soc *soc, uint32_t mac_id,
 
 	nbuf = dp_rx_refill_buff_pool_dequeue_nbuf(soc);
 	if (qdf_likely(nbuf)) {
-		DP_STATS_INC(dp_pdev,
-			     rx_refill_buff_pool.num_bufs_allocated, 1);
+		DP_STATS_INC(dp_pdev, rx_refill_buff_pool.num_bufs_allocated,
+			     1);
 		return nbuf;
 	}
 
@@ -231,8 +227,7 @@ dp_rx_buffer_pool_nbuf_alloc(struct dp_soc *soc, uint32_t mac_id,
 
 	nbuf = qdf_nbuf_alloc(soc->osdev, rx_desc_pool->buf_size,
 			      RX_BUFFER_RESERVATION,
-			      rx_desc_pool->buf_alignment,
-			      FALSE);
+			      rx_desc_pool->buf_alignment, FALSE);
 
 	if (!buff_pool->is_initialized)
 		return nbuf;
@@ -264,18 +259,21 @@ dp_rx_buffer_pool_nbuf_map(struct dp_soc *soc,
 	QDF_STATUS ret = QDF_STATUS_SUCCESS;
 
 	if (!QDF_NBUF_CB_PADDR((nbuf_frag_info_t->virt_addr).nbuf)) {
-		ret = qdf_nbuf_map_nbytes_single(soc->osdev,
-						 (nbuf_frag_info_t->virt_addr).nbuf,
-						 QDF_DMA_FROM_DEVICE,
-						 rx_desc_pool->buf_size);
+		ret = qdf_nbuf_map_nbytes_single(
+			soc->osdev, (nbuf_frag_info_t->virt_addr).nbuf,
+			QDF_DMA_FROM_DEVICE, rx_desc_pool->buf_size);
 		if (QDF_IS_STATUS_SUCCESS(ret))
-			dp_audio_smmu_map(soc->osdev,
-					  qdf_mem_paddr_from_dmaaddr(soc->osdev,
-								     QDF_NBUF_CB_PADDR((nbuf_frag_info_t->virt_addr).nbuf)),
-					  QDF_NBUF_CB_PADDR((nbuf_frag_info_t->virt_addr).nbuf),
-					  rx_desc_pool->buf_size);
+			dp_audio_smmu_map(
+				soc->osdev,
+				qdf_mem_paddr_from_dmaaddr(
+					soc->osdev,
+					QDF_NBUF_CB_PADDR(
+						(nbuf_frag_info_t->virt_addr)
+							.nbuf)),
+				QDF_NBUF_CB_PADDR(
+					(nbuf_frag_info_t->virt_addr).nbuf),
+				rx_desc_pool->buf_size);
 	}
-
 
 	return ret;
 }
@@ -316,8 +314,8 @@ static void dp_rx_refill_buff_pool_init(struct dp_soc *soc, u8 mac_id)
 		}
 
 		dp_audio_smmu_map(soc->osdev,
-				  qdf_mem_paddr_from_dmaaddr(soc->osdev,
-							     QDF_NBUF_CB_PADDR(nbuf)),
+				  qdf_mem_paddr_from_dmaaddr(
+					  soc->osdev, QDF_NBUF_CB_PADDR(nbuf)),
 				  QDF_NBUF_CB_PADDR(nbuf),
 				  rx_desc_pool->buf_size);
 
@@ -325,11 +323,10 @@ static void dp_rx_refill_buff_pool_init(struct dp_soc *soc, u8 mac_id)
 		head++;
 	}
 
-	buff_pool->head =  head;
+	buff_pool->head = head;
 
 	dp_info("RX refill buffer pool required allocation: %u actual allocation: %u",
-		buff_pool->max_bufq_len,
-		buff_pool->head);
+		buff_pool->max_bufq_len, buff_pool->head);
 
 	buff_pool->is_initialized = true;
 }
@@ -382,8 +379,7 @@ static void dp_rx_refill_buff_pool_deinit(struct dp_soc *soc, u8 mac_id)
 		return;
 
 	while ((nbuf = dp_rx_refill_buff_pool_dequeue_nbuf(soc))) {
-		dp_audio_smmu_unmap(soc->osdev,
-				    QDF_NBUF_CB_PADDR(nbuf),
+		dp_audio_smmu_unmap(soc->osdev, QDF_NBUF_CB_PADDR(nbuf),
 				    rx_desc_pool->buf_size);
 		qdf_nbuf_unmap_nbytes_single(soc->osdev, nbuf,
 					     QDF_DMA_BIDIRECTIONAL,
@@ -418,4 +414,3 @@ void dp_rx_buffer_pool_deinit(struct dp_soc *soc, u8 mac_id)
 }
 
 #endif /* WLAN_FEATURE_RX_PREALLOC_BUFFER_POOL */
-

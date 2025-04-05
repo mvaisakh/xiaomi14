@@ -3,15 +3,15 @@
  * Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"%s: " fmt, __func__
+#define pr_fmt(fmt) "%s: " fmt, __func__
 
 #include <linux/delay.h>
 #include <linux/interrupt.h>
 
-#include "sde_rotator_r1_hwio.h"
-#include "sde_rotator_util.h"
-#include "sde_rotator_r1_internal.h"
 #include "sde_rotator_core.h"
+#include "sde_rotator_r1_hwio.h"
+#include "sde_rotator_r1_internal.h"
+#include "sde_rotator_util.h"
 
 /* wait for at most 2 vsync for lowest refresh rate (24hz) */
 #define KOFF_TIMEOUT msecs_to_jiffies(84)
@@ -20,8 +20,8 @@
  * if BWC enabled and format is H1V2 or 420, do not use site C or I.
  * Hence, set the bits 29:26 in format register, as zero.
  */
-#define BWC_FMT_MASK	0xC3FFFFFF
-#define MDSS_DEFAULT_OT_SETTING    0x10
+#define BWC_FMT_MASK 0xC3FFFFFF
+#define MDSS_DEFAULT_OT_SETTING 0x10
 
 enum sde_mdp_writeback_type {
 	SDE_MDP_WRITEBACK_TYPE_ROTATOR,
@@ -84,15 +84,15 @@ static struct sde_mdp_writeback_ctx wb_ctx_list[SDE_MDP_MAX_WRITEBACK] = {
 	},
 };
 
-static inline void sde_wb_write(struct sde_mdp_writeback_ctx *ctx,
-				u32 reg, u32 val)
+static inline void sde_wb_write(struct sde_mdp_writeback_ctx *ctx, u32 reg,
+				u32 val)
 {
 	SDEROT_DBG("wb%d:%6.6x:%8.8x\n", ctx->wb_num, ctx->offset + reg, val);
 	writel_relaxed(val, ctx->base + reg);
 }
 
 static int sde_mdp_writeback_addr_setup(struct sde_mdp_writeback_ctx *ctx,
-					 const struct sde_mdp_data *in_data)
+					const struct sde_mdp_data *in_data)
 {
 	int ret;
 	struct sde_mdp_data data;
@@ -108,10 +108,10 @@ static int sde_mdp_writeback_addr_setup(struct sde_mdp_writeback_ctx *ctx,
 		return ret;
 
 	sde_rot_data_calc_offset(&data, ctx->dst_rect.x, ctx->dst_rect.y,
-			&ctx->dst_planes, ctx->dst_fmt);
+				 &ctx->dst_planes, ctx->dst_fmt);
 
 	if ((ctx->dst_fmt->fetch_planes == SDE_MDP_PLANE_PLANAR) &&
-			(ctx->dst_fmt->element[0] == C1_B_Cb))
+	    (ctx->dst_fmt->element[0] == C1_B_Cb))
 		swap(data.p[1].addr, data.p[2].addr);
 
 	sde_wb_write(ctx, SDE_MDP_REG_WB_DST0_ADDR, data.p[0].addr);
@@ -123,7 +123,7 @@ static int sde_mdp_writeback_addr_setup(struct sde_mdp_writeback_ctx *ctx,
 }
 
 static int sde_mdp_writeback_format_setup(struct sde_mdp_writeback_ctx *ctx,
-		u32 format, struct sde_mdp_ctl *ctl)
+					  u32 format, struct sde_mdp_ctl *ctl)
 {
 	struct sde_mdp_format_params *fmt;
 	u32 dst_format, pattern, ystride0, ystride1, outsize, chroma_samp;
@@ -144,19 +144,16 @@ static int sde_mdp_writeback_format_setup(struct sde_mdp_writeback_ctx *ctx,
 	}
 
 	sde_mdp_get_plane_sizes(fmt, ctx->img_width, ctx->img_height,
-				 &ctx->dst_planes,
-				 ctx->opmode & SDE_MDP_OP_BWC_EN, rotation);
+				&ctx->dst_planes,
+				ctx->opmode & SDE_MDP_OP_BWC_EN, rotation);
 
 	ctx->dst_fmt = fmt;
 
 	chroma_samp = fmt->chroma_sample;
 
-	dst_format = (chroma_samp << 23) |
-		     (fmt->fetch_planes << 19) |
-		     (fmt->bits[C3_ALPHA] << 6) |
-		     (fmt->bits[C2_R_Cr] << 4) |
-		     (fmt->bits[C1_B_Cb] << 2) |
-		     (fmt->bits[C0_G_Y] << 0);
+	dst_format = (chroma_samp << 23) | (fmt->fetch_planes << 19) |
+		     (fmt->bits[C3_ALPHA] << 6) | (fmt->bits[C2_R_Cr] << 4) |
+		     (fmt->bits[C1_B_Cb] << 2) | (fmt->bits[C0_G_Y] << 0);
 
 	dst_format &= BWC_FMT_MASK;
 
@@ -169,15 +166,12 @@ static int sde_mdp_writeback_format_setup(struct sde_mdp_writeback_ctx *ctx,
 	if (fmt->is_yuv)
 		dst_format |= BIT(15);
 
-	pattern = (fmt->element[3] << 24) |
-			  (fmt->element[2] << 16) |
-			  (fmt->element[1] << 8)  |
-			  (fmt->element[0] << 0);
+	pattern = (fmt->element[3] << 24) | (fmt->element[2] << 16) |
+		  (fmt->element[1] << 8) | (fmt->element[0] << 0);
 
 	dst_format |= (fmt->unpack_align_msb << 18) |
 		      (fmt->unpack_tight << 17) |
-		      ((fmt->unpack_count - 1) << 12) |
-		      ((fmt->bpp - 1) << 9);
+		      ((fmt->unpack_count - 1) << 12) | ((fmt->bpp - 1) << 9);
 
 	ystride0 = (ctx->dst_planes.ystride[0]) |
 		   (ctx->dst_planes.ystride[1] << 16);
@@ -199,7 +193,7 @@ static int sde_mdp_writeback_format_setup(struct sde_mdp_writeback_ctx *ctx,
 	if (ctx->type == SDE_MDP_WRITEBACK_TYPE_ROTATOR) {
 		dnsc_factor = (ctx->dnsc_factor_h) | (ctx->dnsc_factor_w << 16);
 		sde_wb_write(ctx, SDE_MDP_REG_WB_ROTATOR_PIPE_DOWNSCALER,
-								dnsc_factor);
+			     dnsc_factor);
 	}
 	sde_wb_write(ctx, SDE_MDP_REG_WB_ALPHA_X_VALUE, 0xFF);
 	sde_wb_write(ctx, SDE_MDP_REG_WB_DST_FORMAT, dst_format);
@@ -221,14 +215,14 @@ static int sde_mdp_writeback_prepare_rot(struct sde_mdp_ctl *ctl, void *arg)
 	struct sde_rot_data_type *mdata;
 	u32 format;
 
-	ctx = (struct sde_mdp_writeback_ctx *) ctl->priv_data;
+	ctx = (struct sde_mdp_writeback_ctx *)ctl->priv_data;
 	if (!ctx)
 		return -ENODEV;
-	wb_args = (struct sde_mdp_writeback_arg *) arg;
+	wb_args = (struct sde_mdp_writeback_arg *)arg;
 	if (!wb_args)
 		return -ENOENT;
 
-	entry = (struct sde_rot_entry *) wb_args->priv_data;
+	entry = (struct sde_rot_entry *)wb_args->priv_data;
 	if (!entry) {
 		SDEROT_ERR("unable to retrieve rot session ctl=%d\n", ctl->num);
 		return -ENODEV;
@@ -268,16 +262,16 @@ static int sde_mdp_writeback_prepare_rot(struct sde_mdp_ctl *ctl, void *arg)
 }
 
 static int sde_mdp_writeback_stop(struct sde_mdp_ctl *ctl,
-	int panel_power_state)
+				  int panel_power_state)
 {
 	struct sde_mdp_writeback_ctx *ctx;
 
 	SDEROT_DBG("stop ctl=%d\n", ctl->num);
 
-	ctx = (struct sde_mdp_writeback_ctx *) ctl->priv_data;
+	ctx = (struct sde_mdp_writeback_ctx *)ctl->priv_data;
 	if (ctx) {
-		sde_mdp_set_intr_callback(ctx->intr_type, ctx->intf_num,
-				NULL, NULL);
+		sde_mdp_set_intr_callback(ctx->intr_type, ctx->intf_num, NULL,
+					  NULL);
 
 		complete_all(&ctx->wb_comp);
 
@@ -311,7 +305,7 @@ static int sde_mdp_wb_wait4comp(struct sde_mdp_ctl *ctl, void *arg)
 	u64 rot_time = 0;
 	u32 status, mask, isr = 0;
 
-	ctx = (struct sde_mdp_writeback_ctx *) ctl->priv_data;
+	ctx = (struct sde_mdp_writeback_ctx *)ctl->priv_data;
 	if (!ctx) {
 		SDEROT_ERR("invalid ctx\n");
 		return -ENODEV;
@@ -321,33 +315,32 @@ static int sde_mdp_wb_wait4comp(struct sde_mdp_ctl *ctl, void *arg)
 		return rc;
 
 	if (ctl->irq_num >= 0) {
-		rc = wait_for_completion_timeout(&ctx->wb_comp,
-				KOFF_TIMEOUT);
-		sde_mdp_set_intr_callback(ctx->intr_type, ctx->intf_num,
-			NULL, NULL);
+		rc = wait_for_completion_timeout(&ctx->wb_comp, KOFF_TIMEOUT);
+		sde_mdp_set_intr_callback(ctx->intr_type, ctx->intf_num, NULL,
+					  NULL);
 
 		if (rc == 0) {
 			mask = BIT(ctx->intr_type + ctx->intf_num);
 
 			isr = readl_relaxed(ctl->mdata->mdp_base +
-						SDE_MDP_REG_INTR_STATUS);
+					    SDE_MDP_REG_INTR_STATUS);
 			status = mask & isr;
 
 			SDEROT_INFO_ONCE(
-					"mask: 0x%x, isr: 0x%x, status: 0x%x\n",
-					mask, isr, status);
+				"mask: 0x%x, isr: 0x%x, status: 0x%x\n", mask,
+				isr, status);
 
 			if (status) {
 				SDEROT_WARN("wb done but irq not triggered\n");
 				writel_relaxed(BIT(ctl->wb->num),
-						ctl->mdata->mdp_base +
-						SDE_MDP_REG_INTR_CLEAR);
+					       ctl->mdata->mdp_base +
+						       SDE_MDP_REG_INTR_CLEAR);
 				sde_mdp_writeback_intr_done(ctl);
 				rc = 0;
 			} else {
 				rc = -ENODEV;
-				WARN(1, "wb timeout (%d) ctl=%d\n",
-								rc, ctl->num);
+				WARN(1, "wb timeout (%d) ctl=%d\n", rc,
+				     ctl->num);
 				if (ctl->irq_num >= 0)
 					disable_irq_nosync(ctl->irq_num);
 			}
@@ -362,12 +355,12 @@ static int sde_mdp_wb_wait4comp(struct sde_mdp_ctl *ctl, void *arg)
 		do {
 			udelay(500);
 			isr = readl_relaxed(ctl->mdata->mdp_base +
-					SDE_MDP_REG_INTR_STATUS);
+					    SDE_MDP_REG_INTR_STATUS);
 			status = mask & isr;
 			cnt--;
 		} while (cnt > 0 && !status);
-		writel_relaxed(mask, ctl->mdata->mdp_base +
-				SDE_MDP_REG_INTR_CLEAR);
+		writel_relaxed(mask,
+			       ctl->mdata->mdp_base + SDE_MDP_REG_INTR_CLEAR);
 
 		rc = (status) ? 0 : -ENODEV;
 	}
@@ -380,21 +373,23 @@ static int sde_mdp_wb_wait4comp(struct sde_mdp_ctl *ctl, void *arg)
 
 	if (!rc) {
 		rot_time = (u64)ktime_to_us(ctx->end_time) -
-				(u64)ktime_to_us(ctx->start_time);
+			   (u64)ktime_to_us(ctx->start_time);
 		SDEROT_DBG(
 			"ctx%d type:%d xin_id:%d intf_num:%d took %llu microsecs\n",
-			ctx->wb_num, ctx->type, ctx->xin_id,
-				ctx->intf_num, rot_time);
+			ctx->wb_num, ctx->type, ctx->xin_id, ctx->intf_num,
+			rot_time);
 	}
 
-	SDEROT_DBG("s:%8.8x %s t:%llu c:%d\n", isr,
-			(rc)?"Timeout":"Done", rot_time, ctx->comp_cnt);
+	SDEROT_DBG("s:%8.8x %s t:%llu c:%d\n", isr, (rc) ? "Timeout" : "Done",
+		   rot_time, ctx->comp_cnt);
 	return rc;
 }
 
 static void sde_mdp_set_ot_limit_wb(struct sde_mdp_writeback_ctx *ctx)
 {
-	struct sde_mdp_set_ot_params ot_params = {0,};
+	struct sde_mdp_set_ot_params ot_params = {
+		0,
+	};
 
 	ot_params.xin_id = ctx->xin_id;
 	ot_params.num = ctx->wb_num;
@@ -419,21 +414,20 @@ static int sde_mdp_writeback_display(struct sde_mdp_ctl *ctl, void *arg)
 	if (!ctl || !ctl->mdata)
 		return -ENODEV;
 
-	ctx = (struct sde_mdp_writeback_ctx *) ctl->priv_data;
+	ctx = (struct sde_mdp_writeback_ctx *)ctl->priv_data;
 	if (!ctx)
 		return -ENODEV;
 
 	if (ctx->comp_cnt) {
 		SDEROT_ERR("previous kickoff not completed yet, ctl=%d\n",
-					ctl->num);
+			   ctl->num);
 		return -EPERM;
 	}
 
-	if (ctl->mdata->default_ot_wr_limit ||
-			ctl->mdata->default_ot_rd_limit)
+	if (ctl->mdata->default_ot_wr_limit || ctl->mdata->default_ot_rd_limit)
 		sde_mdp_set_ot_limit_wb(ctx);
 
-	wb_args = (struct sde_mdp_writeback_arg *) arg;
+	wb_args = (struct sde_mdp_writeback_arg *)arg;
 	if (!wb_args)
 		return -ENOENT;
 
@@ -444,7 +438,7 @@ static int sde_mdp_writeback_display(struct sde_mdp_ctl *ctl, void *arg)
 	}
 
 	sde_mdp_set_intr_callback(ctx->intr_type, ctx->intf_num,
-		   sde_mdp_writeback_intr_done, ctl);
+				  sde_mdp_writeback_intr_done, ctl);
 
 	flush_bits |= ctl->flush_reg_data;
 	flush_bits |= BIT(16); /* WB */
@@ -465,8 +459,8 @@ static int sde_mdp_writeback_display(struct sde_mdp_ctl *ctl, void *arg)
 	/* ensure that start command is issued after the barrier */
 	wmb();
 
-	SDEROT_DBG("ctx%d type:%d xin_id:%d intf_num:%d start\n",
-		ctx->wb_num, ctx->type, ctx->xin_id, ctx->intf_num);
+	SDEROT_DBG("ctx%d type:%d xin_id:%d intf_num:%d start\n", ctx->wb_num,
+		   ctx->type, ctx->xin_id, ctx->intf_num);
 
 	ctx->comp_cnt++;
 

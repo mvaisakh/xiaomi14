@@ -21,161 +21,102 @@
  * DOC: defines nan component os interface APIs
  */
 
+#include "os_if_nan.h"
+#include "nan_ucfg_api.h"
 #include "osif_sync.h"
 #include "qdf_str.h"
 #include "qdf_trace.h"
 #include "qdf_types.h"
-#include "os_if_nan.h"
-#include "wlan_nan_api.h"
-#include "nan_ucfg_api.h"
-#include "wlan_osif_priv.h"
-#include <net/cfg80211.h>
 #include "wlan_cfg80211.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_pdev_obj.h"
-#include "wlan_objmgr_vdev_obj.h"
-#include "wlan_utility.h"
-#include "wlan_osif_request_manager.h"
 #include "wlan_mlme_ucfg_api.h"
+#include "wlan_nan_api.h"
+#include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
+#include "wlan_objmgr_vdev_obj.h"
+#include "wlan_osif_priv.h"
+#include "wlan_osif_request_manager.h"
 #include "wlan_tdls_ucfg_api.h"
+#include "wlan_utility.h"
+#include <net/cfg80211.h>
 
 #define NAN_CMD_MAX_SIZE 2048
 
 /* NLA policy */
-const struct nla_policy nan_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NAN_PARAMS_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_NAN_CMD_DATA] = {
-						.type = NLA_BINARY,
-						.len = NAN_CMD_MAX_SIZE
-	},
-	[QCA_WLAN_VENDOR_ATTR_NAN_SUBCMD_TYPE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NAN_DISC_24GHZ_BAND_FREQ] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NAN_DISC_5GHZ_BAND_FREQ] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
+const struct nla_policy nan_attr_policy[QCA_WLAN_VENDOR_ATTR_NAN_PARAMS_MAX +
+					1] = {
+	[QCA_WLAN_VENDOR_ATTR_NAN_CMD_DATA] = { .type = NLA_BINARY,
+						.len = NAN_CMD_MAX_SIZE },
+	[QCA_WLAN_VENDOR_ATTR_NAN_SUBCMD_TYPE] = { .type = NLA_U32,
+						   .len = sizeof(uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_NAN_DISC_24GHZ_BAND_FREQ] = { .type = NLA_U32,
+							    .len = sizeof(
+								    uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_NAN_DISC_5GHZ_BAND_FREQ] = { .type = NLA_U32,
+							   .len = sizeof(
+								   uint32_t) },
 };
 
 /* NLA policy */
-const struct nla_policy vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID] = {
-						.type = NLA_U16,
-						.len = sizeof(uint16_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR] = {
-						.type = NLA_NUL_STRING,
-						.len = IFNAMSIZ - 1
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_INSTANCE_ID] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_CHANNEL] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR] =
-						VENDOR_NLA_POLICY_MAC_ADDR,
-	[QCA_WLAN_VENDOR_ATTR_NDP_CONFIG_SECURITY] = {
-						.type = NLA_U16,
-						.len = sizeof(uint16_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_APP_INFO] = {
-						.type = NLA_BINARY,
-						.len = NDP_APP_INFO_LEN
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR] = {
-						.type = NLA_BINARY,
-						.len = QDF_MAC_ADDR_SIZE
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY] = {
-						.type = NLA_BINARY,
-						.len = NDP_NUM_INSTANCE_ID
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_CHANNEL_CONFIG] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_CSID] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_PMK] = {
-						.type = NLA_BINARY,
-						.len = NDP_PMK_LEN
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_SCID] = {
-						.type = NLA_BINARY,
-						.len = NDP_SCID_BUF_LEN
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_PASSPHRASE] = {
-						.type = NLA_BINARY,
-						.len = NAN_PASSPHRASE_MAX_LEN
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_NAME] = {
-						.type = NLA_BINARY,
-						.len = NAN_MAX_SERVICE_NAME_LEN
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_CHANNEL_INFO] = {
-						.type = NLA_BINARY,
-						.len = NAN_CH_INFO_MAX_LEN
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_NSS] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR] =
-				VENDOR_NLA_POLICY_IPV6_ADDR,
-	[QCA_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PORT] = {
-						.type = NLA_U16,
-						.len = sizeof(uint16_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PROTOCOL] = {
-						.type = NLA_U8,
-						.len = sizeof(uint8_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_ID] = {
-						.type = NLA_U8,
-						.len = NDP_SERVICE_ID_LEN
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_CSIA_CAPABILITIES] = {
-						.type = NLA_U8,
-						.len = sizeof(uint8_t)
-	},
-	[QCA_WLAN_VENDOR_ATTR_NDP_GTK_REQUIRED] = {
-						.type = NLA_FLAG,
-	},
+const struct nla_policy vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX +
+                                           1] = {
+    [QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD] = {.type = NLA_U32,
+                                         .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID] = {.type = NLA_U16,
+                                                 .len = sizeof(uint16_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR] = {.type = NLA_NUL_STRING,
+                                            .len = IFNAMSIZ - 1},
+    [QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_INSTANCE_ID] = {.type = NLA_U32,
+                                                      .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_CHANNEL] = {.type = NLA_U32,
+                                          .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR] =
+        VENDOR_NLA_POLICY_MAC_ADDR,
+    [QCA_WLAN_VENDOR_ATTR_NDP_CONFIG_SECURITY] = {.type = NLA_U16,
+                                                  .len = sizeof(uint16_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS] = {.type = NLA_U32,
+                                             .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_APP_INFO] = {.type = NLA_BINARY,
+                                           .len = NDP_APP_INFO_LEN},
+    [QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID] = {.type = NLA_U32,
+                                              .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE] = {.type = NLA_U32,
+                                                .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR] = {.type = NLA_BINARY,
+                                               .len = QDF_MAC_ADDR_SIZE},
+    [QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY] = {.type = NLA_BINARY,
+                                                    .len = NDP_NUM_INSTANCE_ID},
+    [QCA_WLAN_VENDOR_ATTR_NDP_CHANNEL_CONFIG] = {.type = NLA_U32,
+                                                 .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_CSID] = {.type = NLA_U32,
+                                       .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_PMK] = {.type = NLA_BINARY, .len = NDP_PMK_LEN},
+    [QCA_WLAN_VENDOR_ATTR_NDP_SCID] = {.type = NLA_BINARY,
+                                       .len = NDP_SCID_BUF_LEN},
+    [QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE] = {.type = NLA_U32,
+                                                           .len = sizeof(
+                                                               uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE] = {.type = NLA_U32,
+                                                   .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_PASSPHRASE] = {.type = NLA_BINARY,
+                                             .len = NAN_PASSPHRASE_MAX_LEN},
+    [QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_NAME] = {.type = NLA_BINARY,
+                                               .len = NAN_MAX_SERVICE_NAME_LEN},
+    [QCA_WLAN_VENDOR_ATTR_NDP_CHANNEL_INFO] = {.type = NLA_BINARY,
+                                               .len = NAN_CH_INFO_MAX_LEN},
+    [QCA_WLAN_VENDOR_ATTR_NDP_NSS] = {.type = NLA_U32, .len = sizeof(uint32_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR] = VENDOR_NLA_POLICY_IPV6_ADDR,
+    [QCA_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PORT] = {.type = NLA_U16,
+                                                 .len = sizeof(uint16_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PROTOCOL] = {.type = NLA_U8,
+                                                     .len = sizeof(uint8_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_ID] = {.type = NLA_U8,
+                                             .len = NDP_SERVICE_ID_LEN},
+    [QCA_WLAN_VENDOR_ATTR_NDP_CSIA_CAPABILITIES] = {.type = NLA_U8,
+                                                    .len = sizeof(uint8_t)},
+    [QCA_WLAN_VENDOR_ATTR_NDP_GTK_REQUIRED] =
+        {
+            .type = NLA_FLAG,
+        },
 };
 
 /**
@@ -231,12 +172,12 @@ static struct wlan_objmgr_vdev *
 os_if_get_ndi_vdev_by_ifname(struct wlan_objmgr_psoc *psoc, const char *ifname)
 {
 	QDF_STATUS status;
-	struct ndi_find_vdev_filter filter = {0};
+	struct ndi_find_vdev_filter filter = { 0 };
 
 	filter.ifname = ifname;
 	wlan_objmgr_iterate_obj_list(psoc, WLAN_VDEV_OP,
-				     os_if_get_ndi_vdev_by_ifname_cb,
-				     &filter, 0, WLAN_NAN_ID);
+				     os_if_get_ndi_vdev_by_ifname_cb, &filter,
+				     0, WLAN_NAN_ID);
 
 	if (!filter.found_vdev)
 		return NULL;
@@ -351,8 +292,8 @@ static int __os_if_nan_process_ndi_create(struct wlan_objmgr_psoc *psoc,
 	return cb_obj.ndi_start(iface_name, transaction_id);
 }
 
-static int
-osif_nla_str(struct nlattr **tb, size_t attr_id, const char **out_str)
+static int osif_nla_str(struct nlattr **tb, size_t attr_id,
+			const char **out_str)
 {
 	if (!tb || !tb[attr_id])
 		return -EINVAL;
@@ -436,8 +377,8 @@ err:
 }
 #else
 
-static int
-osif_device_from_psoc(struct wlan_objmgr_psoc *psoc, struct device **out_dev)
+static int osif_device_from_psoc(struct wlan_objmgr_psoc *psoc,
+				 struct device **out_dev)
 {
 	qdf_device_t qdf_dev;
 
@@ -525,15 +466,16 @@ static int __os_if_nan_process_ndi_delete(struct wlan_objmgr_psoc *psoc,
 	vdev_id = wlan_vdev_get_id(nan_vdev);
 	num_peers = ucfg_nan_get_active_peers(nan_vdev);
 	/*
-	 * os_if_get_ndi_vdev_by_ifname increments ref count
-	 * decrement here since vdev returned by that api is not used any more
-	 */
+   * os_if_get_ndi_vdev_by_ifname increments ref count
+   * decrement here since vdev returned by that api is not used any more
+   */
 	wlan_objmgr_vdev_release_ref(nan_vdev, WLAN_NAN_ID);
 
 	/* check if there are active peers on the adapter */
 	if (num_peers)
-		osif_err("NDP peers active: %d, active NDPs may not be terminated",
-			 num_peers);
+		osif_err(
+			"NDP peers active: %d, active NDPs may not be terminated",
+			num_peers);
 
 	status = ucfg_nan_get_callbacks(psoc, &cb_obj);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -635,11 +577,12 @@ reregister:
  *
  * Return:  0 on success or error code on failure
  */
-static int os_if_nan_parse_security_params(struct nlattr **tb,
-			uint32_t *ncs_sk_type, struct nan_datapath_pmk *pmk,
-			struct ndp_passphrase *passphrase,
-			struct ndp_service_name *service_name,
-			struct ndp_additional_params *ndp_add_param)
+static int
+os_if_nan_parse_security_params(struct nlattr **tb, uint32_t *ncs_sk_type,
+				struct nan_datapath_pmk *pmk,
+				struct ndp_passphrase *passphrase,
+				struct ndp_service_name *service_name,
+				struct ndp_additional_params *ndp_add_param)
 {
 	struct nlattr *attr;
 
@@ -649,8 +592,7 @@ static int os_if_nan_parse_security_params(struct nlattr **tb,
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_NDP_CSID]) {
-		*ncs_sk_type =
-			nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_NDP_CSID]);
+		*ncs_sk_type = nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_NDP_CSID]);
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_NDP_PMK]) {
@@ -678,10 +620,10 @@ static int os_if_nan_parse_security_params(struct nlattr **tb,
 	if (tb[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_NAME]) {
 		service_name->service_name_len =
 			nla_len(tb[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_NAME]);
-		qdf_mem_copy(service_name->service_name,
-			     nla_data(
-				     tb[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_NAME]),
-			     service_name->service_name_len);
+		qdf_mem_copy(
+			service_name->service_name,
+			nla_data(tb[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_NAME]),
+			service_name->service_name_len);
 		osif_err("service_name len: %d",
 			 service_name->service_name_len);
 		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
@@ -694,7 +636,7 @@ static int os_if_nan_parse_security_params(struct nlattr **tb,
 		ndp_add_param->csid_cap = nla_get_u8(attr);
 
 	ndp_add_param->gtk =
-			nla_get_flag(tb[QCA_WLAN_VENDOR_ATTR_NDP_GTK_REQUIRED]);
+		nla_get_flag(tb[QCA_WLAN_VENDOR_ATTR_NDP_GTK_REQUIRED]);
 
 	return 0;
 }
@@ -729,7 +671,7 @@ static int __os_if_nan_process_ndp_initiator_req(struct wlan_objmgr_psoc *psoc,
 	QDF_STATUS status;
 	enum nan_datapath_state state;
 	struct wlan_objmgr_vdev *nan_vdev;
-	struct nan_datapath_initiator_req req = {0};
+	struct nan_datapath_initiator_req req = { 0 };
 
 	nan_vdev = os_if_get_ndi_vdev_by_ifname(psoc, iface_name);
 	if (!nan_vdev) {
@@ -796,10 +738,10 @@ static int __os_if_nan_process_ndp_initiator_req(struct wlan_objmgr_psoc *psoc,
 		ret = -EINVAL;
 		goto initiator_req_failed;
 	}
-	qdf_mem_copy(req.peer_discovery_mac_addr.bytes,
-		     nla_data(
-			  tb[QCA_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]),
-		     QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(
+		req.peer_discovery_mac_addr.bytes,
+		nla_data(tb[QCA_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]),
+		QDF_MAC_ADDR_SIZE);
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
 		req.ndp_info.ndp_app_info_len =
@@ -824,8 +766,7 @@ static int __os_if_nan_process_ndp_initiator_req(struct wlan_objmgr_psoc *psoc,
 	}
 
 	if (os_if_nan_parse_security_params(tb, &req.ncs_sk_type, &req.pmk,
-					    &req.passphrase,
-					    &req.service_name,
+					    &req.passphrase, &req.service_name,
 					    &req.ndp_add_params)) {
 		osif_err("inconsistent security params in request.");
 		ret = -EINVAL;
@@ -895,7 +836,7 @@ static int __os_if_nan_process_ndp_responder_req(struct wlan_objmgr_psoc *psoc,
 	QDF_STATUS status;
 	enum nan_datapath_state state;
 	struct wlan_objmgr_vdev *nan_vdev = NULL;
-	struct nan_datapath_responder_req req = {0};
+	struct nan_datapath_responder_req req = { 0 };
 	const char *iface_name;
 	int errno;
 
@@ -916,8 +857,7 @@ static int __os_if_nan_process_ndp_responder_req(struct wlan_objmgr_psoc *psoc,
 		/* Check for an existing NAN interface */
 		nan_vdev = os_if_get_ndi_vdev_by_ifname(psoc, iface_name);
 		if (!nan_vdev) {
-			osif_err("NAN data iface %s not available",
-				 iface_name);
+			osif_err("NAN data iface %s not available", iface_name);
 			return -ENODEV;
 		}
 
@@ -934,14 +874,14 @@ static int __os_if_nan_process_ndp_responder_req(struct wlan_objmgr_psoc *psoc,
 		}
 	} else {
 		/*
-		 * If the data indication is rejected, the userspace
-		 * may not send the iface name. Use the first NDI
-		 * in that case
-		 */
+     * If the data indication is rejected, the userspace
+     * may not send the iface name. Use the first NDI
+     * in that case
+     */
 		osif_debug("ndp rsp rejected, using first NDI");
 
 		nan_vdev = wlan_objmgr_get_vdev_by_opmode_from_psoc(
-				psoc, QDF_NDI_MODE, WLAN_NAN_ID);
+			psoc, QDF_NDI_MODE, WLAN_NAN_ID);
 		if (!nan_vdev) {
 			osif_err("NAN data iface is not available");
 			return -ENODEV;
@@ -1011,9 +951,8 @@ static int __os_if_nan_process_ndp_responder_req(struct wlan_objmgr_psoc *psoc,
 	}
 	osif_debug("ipv6 addr present: %d, addr: %pI6",
 		   req.is_ipv6_addr_present, req.ipv6_addr);
-	osif_debug("port %d,  present: %d protocol %d,  present: %d",
-		   req.port, req.is_port_present, req.protocol,
-		   req.is_protocol_present);
+	osif_debug("port %d,  present: %d protocol %d,  present: %d", req.port,
+		   req.is_port_present, req.protocol, req.is_protocol_present);
 
 	if (os_if_nan_parse_security_params(tb, &req.ncs_sk_type, &req.pmk,
 					    &req.passphrase, &req.service_name,
@@ -1023,10 +962,12 @@ static int __os_if_nan_process_ndp_responder_req(struct wlan_objmgr_psoc *psoc,
 		goto responder_req_failed;
 	}
 
-	osif_debug("vdev_id: %d, transaction_id: %d, ndp_rsp %d, ndp_instance_id: %d, ndp_app_info_len: %d, csid: %d",
-		   wlan_vdev_get_id(nan_vdev), req.transaction_id, req.ndp_rsp,
-		   req.ndp_instance_id, req.ndp_info.ndp_app_info_len,
-		   req.ncs_sk_type);
+	osif_debug(
+		"vdev_id: %d, transaction_id: %d, ndp_rsp %d, ndp_instance_id: "
+		"%d, ndp_app_info_len: %d, csid: %d",
+		wlan_vdev_get_id(nan_vdev), req.transaction_id, req.ndp_rsp,
+		req.ndp_instance_id, req.ndp_info.ndp_app_info_len,
+		req.ncs_sk_type);
 
 	req.vdev = nan_vdev;
 	status = ucfg_nan_req_processor(nan_vdev, &req, NDP_RESPONDER_REQ);
@@ -1037,7 +978,6 @@ responder_req_failed:
 		wlan_objmgr_vdev_release_ref(nan_vdev, WLAN_NAN_ID);
 
 	return ret;
-
 }
 
 static int os_if_nan_process_ndp_responder_req(struct wlan_objmgr_psoc *psoc,
@@ -1074,7 +1014,7 @@ static int __os_if_nan_process_ndp_end_req(struct wlan_objmgr_psoc *psoc,
 	int ret = 0;
 	QDF_STATUS status;
 	struct wlan_objmgr_vdev *nan_vdev;
-	struct nan_datapath_end_req req = {0};
+	struct nan_datapath_end_req req = { 0 };
 
 	if (!tb[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]) {
 		osif_err("Transaction ID is unavailable");
@@ -1090,7 +1030,7 @@ static int __os_if_nan_process_ndp_end_req(struct wlan_objmgr_psoc *psoc,
 
 	req.num_ndp_instances =
 		nla_len(tb[QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY]) /
-			sizeof(uint32_t);
+		sizeof(uint32_t);
 	if (0 >= req.num_ndp_instances) {
 		osif_err("Num NDP instances is 0");
 		return -EINVAL;
@@ -1149,9 +1089,8 @@ static int os_if_nan_process_ndp_end_req(struct wlan_objmgr_psoc *psoc,
 	return errno;
 }
 
-int os_if_nan_process_ndp_cmd(struct wlan_objmgr_psoc *psoc,
-			      const void *data, int data_len,
-			      bool is_ndp_allowed,
+int os_if_nan_process_ndp_cmd(struct wlan_objmgr_psoc *psoc, const void *data,
+			      int data_len, bool is_ndp_allowed,
 			      struct wireless_dev *wdev)
 {
 	uint32_t ndp_cmd_type;
@@ -1176,29 +1115,31 @@ int os_if_nan_process_ndp_cmd(struct wlan_objmgr_psoc *psoc,
 		osif_err("attr transaction id failed");
 		return -EINVAL;
 	}
-	transaction_id = nla_get_u16(
-			tb[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]);
+	transaction_id =
+		nla_get_u16(tb[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID]);
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR]) {
 		iface_name = nla_data(tb[QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR]);
 		osif_debug("Transaction Id: %u NDPCmd: %u iface_name: %s",
 			   transaction_id, ndp_cmd_type, iface_name);
 	} else {
-		osif_debug("Transaction Id: %u NDPCmd: %u iface_name: unspecified",
-			   transaction_id, ndp_cmd_type);
+		osif_debug(
+			"Transaction Id: %u NDPCmd: %u iface_name: unspecified",
+			transaction_id, ndp_cmd_type);
 	}
 
 	switch (ndp_cmd_type) {
 	case QCA_WLAN_VENDOR_ATTR_NDP_INTERFACE_CREATE:
 		/**
-		 * NDI creation is not allowed if NAN discovery is not running.
-		 * Allowing NDI creation when NAN discovery is not enabled may
-		 * lead to issues if NDI has to be started in a
-		 * 2GHz channel and if the target is not operating in DBS mode.
-		 */
+     * NDI creation is not allowed if NAN discovery is not running.
+     * Allowing NDI creation when NAN discovery is not enabled may
+     * lead to issues if NDI has to be started in a
+     * 2GHz channel and if the target is not operating in DBS mode.
+     */
 		if ((ucfg_is_nan_conc_control_supported(psoc)) &&
 		    (!ucfg_is_nan_disc_active(psoc))) {
-			osif_err("NDI creation is not allowed when NAN discovery is not running");
+			osif_err(
+				"NDI creation is not allowed when NAN discovery is not running");
 			return -EOPNOTSUPP;
 		}
 		return os_if_nan_process_ndi_create(psoc, tb, wdev);
@@ -1234,16 +1175,19 @@ static inline uint32_t osif_ndp_get_ndp_initiator_rsp_len(void)
 {
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy
+			[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE]
+				.len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE]
+			.len);
 
 	return data_len;
 }
@@ -1263,8 +1207,9 @@ static inline uint32_t osif_ndp_get_ndp_initiator_rsp_len(void)
  *
  * Return: none
  */
-static void os_if_ndp_initiator_rsp_handler(struct wlan_objmgr_vdev *vdev,
-					struct nan_datapath_initiator_rsp *rsp)
+static void
+os_if_ndp_initiator_rsp_handler(struct wlan_objmgr_vdev *vdev,
+				struct nan_datapath_initiator_rsp *rsp)
 {
 	uint32_t data_len;
 	struct sk_buff *vendor_event;
@@ -1279,9 +1224,8 @@ static void os_if_ndp_initiator_rsp_handler(struct wlan_objmgr_vdev *vdev,
 	}
 
 	data_len = osif_ndp_get_ndp_initiator_rsp_len();
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							data_len, index,
-							GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_ATOMIC);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		return;
@@ -1295,8 +1239,7 @@ static void os_if_ndp_initiator_rsp_handler(struct wlan_objmgr_vdev *vdev,
 			rsp->transaction_id))
 		goto ndp_initiator_rsp_nla_failed;
 
-	if (nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID,
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID,
 			rsp->ndp_instance_id))
 		goto ndp_initiator_rsp_nla_failed;
 
@@ -1309,9 +1252,10 @@ static void os_if_ndp_initiator_rsp_handler(struct wlan_objmgr_vdev *vdev,
 			rsp->reason))
 		goto ndp_initiator_rsp_nla_failed;
 
-	osif_debug("NDP Initiator rsp sent, tid:%d, instance id:%d, status:%d, reason: %d",
-		   rsp->transaction_id, rsp->ndp_instance_id, rsp->status,
-		   rsp->reason);
+	osif_debug(
+		"NDP Initiator rsp sent, tid:%d, instance id:%d, status:%d, reason: %d",
+		rsp->transaction_id, rsp->ndp_instance_id, rsp->status,
+		rsp->reason);
 	wlan_cfg80211_vendor_event(vendor_event, GFP_ATOMIC);
 	return;
 ndp_initiator_rsp_nla_failed:
@@ -1323,14 +1267,17 @@ static inline uint32_t osif_ndp_get_ndp_responder_rsp_len(void)
 {
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy
+			[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE]
+				.len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE]
+			.len);
 
 	return data_len;
 }
@@ -1349,8 +1296,9 @@ static inline uint32_t osif_ndp_get_ndp_responder_rsp_len(void)
  *
  * Return: none
  */
-static void os_if_ndp_responder_rsp_handler(struct wlan_objmgr_vdev *vdev,
-				      struct nan_datapath_responder_rsp *rsp)
+static void
+os_if_ndp_responder_rsp_handler(struct wlan_objmgr_vdev *vdev,
+				struct nan_datapath_responder_rsp *rsp)
 {
 	uint16_t data_len;
 	struct sk_buff *vendor_event;
@@ -1365,30 +1313,28 @@ static void os_if_ndp_responder_rsp_handler(struct wlan_objmgr_vdev *vdev,
 	}
 
 	data_len = osif_ndp_get_ndp_responder_rsp_len();
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							data_len, index,
-							GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_ATOMIC);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		return;
 	}
 
 	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD,
-	   QCA_WLAN_VENDOR_ATTR_NDP_RESPONDER_RESPONSE))
+			QCA_WLAN_VENDOR_ATTR_NDP_RESPONDER_RESPONSE))
 		goto ndp_responder_rsp_nla_failed;
 
 	if (nla_put_u16(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-	   rsp->transaction_id))
+			rsp->transaction_id))
 		goto ndp_responder_rsp_nla_failed;
 
 	if (nla_put_u32(vendor_event,
 			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE,
-	   rsp->status))
+			rsp->status))
 		goto ndp_responder_rsp_nla_failed;
 
-	if (nla_put_u32(vendor_event,
-	   QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
-	   rsp->reason))
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
+			rsp->reason))
 		goto ndp_responder_rsp_nla_failed;
 
 	wlan_cfg80211_vendor_event(vendor_event, GFP_ATOMIC);
@@ -1398,45 +1344,53 @@ ndp_responder_rsp_nla_failed:
 	wlan_cfg80211_vendor_free_skb(vendor_event);
 }
 
-static inline uint32_t osif_ndp_get_ndp_req_ind_len(
-				struct nan_datapath_indication_event *event)
+static inline uint32_t
+osif_ndp_get_ndp_req_ind_len(struct nan_datapath_indication_event *event)
 {
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_INSTANCE_ID].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_CSID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_INSTANCE_ID]
+			.len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_CSID].len);
 	/* allocate space including NULL terminator */
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR].len + 1);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR].len + 1);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR].len);
+	data_len += nla_total_size(
+		vendor_attr_policy
+			[QCA_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]
+				.len);
 	if (event->is_ipv6_addr_present)
-		data_len += nla_total_size(vendor_attr_policy[
-				QCA_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR].len);
+		data_len += nla_total_size(
+			vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]
+				.len);
 	if (event->scid.scid_len)
 		data_len += nla_total_size(event->scid.scid_len);
 	if (event->ndp_info.ndp_app_info_len)
 		data_len += nla_total_size(event->ndp_info.ndp_app_info_len);
 	if (event->is_service_id_present)
-		data_len += nla_total_size(vendor_attr_policy[
-				QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_ID].len);
+		data_len += nla_total_size(
+			vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SERVICE_ID]
+				.len);
 
 	if (event->ndp_add_params.csid_cap)
-		data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_CSIA_CAPABILITIES].len);
+		data_len += nla_total_size(
+			vendor_attr_policy
+				[QCA_WLAN_VENDOR_ATTR_NDP_CSIA_CAPABILITIES]
+					.len);
 	if (event->ndp_add_params.gtk)
-		data_len += nla_total_size(vendor_attr_policy[
-				QCA_WLAN_VENDOR_ATTR_NDP_GTK_REQUIRED].len);
+		data_len += nla_total_size(
+			vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_GTK_REQUIRED]
+				.len);
 
 	return data_len;
 }
@@ -1462,8 +1416,9 @@ static inline uint32_t osif_ndp_get_ndp_req_ind_len(
  *
  * Return: none
  */
-static void os_if_ndp_indication_handler(struct wlan_objmgr_vdev *vdev,
-				struct nan_datapath_indication_event *event)
+static void
+os_if_ndp_indication_handler(struct wlan_objmgr_vdev *vdev,
+			     struct nan_datapath_indication_event *event)
 {
 	const uint8_t *ifname;
 	uint16_t data_len;
@@ -1506,9 +1461,8 @@ static void os_if_ndp_indication_handler(struct wlan_objmgr_vdev *vdev,
 
 	data_len = osif_ndp_get_ndp_req_ind_len(event);
 	/* notify response to the upper layer */
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy,
-							NULL, data_len,
-							index, GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_ATOMIC);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		return;
@@ -1527,8 +1481,7 @@ static void os_if_ndp_indication_handler(struct wlan_objmgr_vdev *vdev,
 			event->service_instance_id))
 		goto ndp_indication_nla_failed;
 
-	if (nla_put(vendor_event,
-		    QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR,
+	if (nla_put(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR,
 		    QDF_MAC_ADDR_SIZE, event->peer_mac_addr.bytes))
 		goto ndp_indication_nla_failed;
 
@@ -1557,18 +1510,16 @@ static void os_if_ndp_indication_handler(struct wlan_objmgr_vdev *vdev,
 	}
 
 	if (event->scid.scid_len) {
-		if (nla_put_u32(vendor_event,
-				QCA_WLAN_VENDOR_ATTR_NDP_CSID,
+		if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_CSID,
 				event->ncs_sk_type))
 			goto ndp_indication_nla_failed;
 
 		if (nla_put(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_SCID,
-			    event->scid.scid_len,
-			    event->scid.scid))
+			    event->scid.scid_len, event->scid.scid))
 			goto ndp_indication_nla_failed;
 
-		osif_debug("csid: %d, scid_len: %d",
-			   event->ncs_sk_type, event->scid.scid_len);
+		osif_debug("csid: %d, scid_len: %d", event->ncs_sk_type,
+			   event->scid.scid_len);
 
 		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_DEBUG,
 				   event->scid.scid, event->scid.scid_len);
@@ -1606,38 +1557,43 @@ ndp_indication_nla_failed:
 	wlan_cfg80211_vendor_free_skb(vendor_event);
 }
 
-static inline uint32_t osif_ndp_get_ndp_confirm_ind_len(
-				struct nan_datapath_confirm_event *ndp_confirm)
+static inline uint32_t
+osif_ndp_get_ndp_confirm_ind_len(struct nan_datapath_confirm_event *ndp_confirm)
 {
 	uint32_t ch_info_len = 0;
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_NDI_MAC_ADDR].len);
 	/* allocate space including NULL terminator */
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR].len + 1);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_IFACE_STR].len + 1);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE]
+			.len);
 	if (ndp_confirm->ndp_info.ndp_app_info_len)
 		data_len +=
 			nla_total_size(ndp_confirm->ndp_info.ndp_app_info_len);
 
 	if (ndp_confirm->is_ipv6_addr_present)
-		data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR].len);
+		data_len += nla_total_size(
+			vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_IPV6_ADDR]
+				.len);
 	if (ndp_confirm->is_port_present)
-		data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PORT].len);
+		data_len += nla_total_size(
+			vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PORT]
+				.len);
 	if (ndp_confirm->is_protocol_present)
-		data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PROTOCOL].len);
+		data_len += nla_total_size(
+			vendor_attr_policy
+				[QCA_WLAN_VENDOR_ATTR_NDP_TRANSPORT_PROTOCOL]
+					.len);
 
 	/* ch_info is a nested array of following attributes */
 	ch_info_len += nla_total_size(
@@ -1648,14 +1604,15 @@ static inline uint32_t osif_ndp_get_ndp_confirm_ind_len(
 		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_NSS].len);
 
 	if (ndp_confirm->num_channels)
-		data_len += ndp_confirm->num_channels *
-				nla_total_size(ch_info_len);
+		data_len +=
+			ndp_confirm->num_channels * nla_total_size(ch_info_len);
 
 	return data_len;
 }
 
-static QDF_STATUS os_if_ndp_confirm_pack_ch_info(struct sk_buff *event,
-				struct nan_datapath_confirm_event *ndp_confirm)
+static QDF_STATUS
+os_if_ndp_confirm_pack_ch_info(struct sk_buff *event,
+			       struct nan_datapath_confirm_event *ndp_confirm)
 {
 	int idx = 0;
 	struct nlattr *ch_array, *ch_element;
@@ -1741,9 +1698,8 @@ os_if_ndp_confirm_ind_handler(struct wlan_objmgr_vdev *vdev,
 	}
 
 	data_len = osif_ndp_get_ndp_confirm_ind_len(ndp_confirm);
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							data_len, index,
-							GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_ATOMIC);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		return;
@@ -1766,19 +1722,16 @@ os_if_ndp_confirm_ind_handler(struct wlan_objmgr_vdev *vdev,
 		goto ndp_confirm_nla_failed;
 
 	if (ndp_confirm->ndp_info.ndp_app_info_len &&
-		nla_put(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_NDP_APP_INFO,
-			ndp_confirm->ndp_info.ndp_app_info_len,
-			ndp_confirm->ndp_info.ndp_app_info))
+	    nla_put(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_APP_INFO,
+		    ndp_confirm->ndp_info.ndp_app_info_len,
+		    ndp_confirm->ndp_info.ndp_app_info))
 		goto ndp_confirm_nla_failed;
 
-	if (nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE,
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_RESPONSE_CODE,
 			ndp_confirm->rsp_code))
 		goto ndp_confirm_nla_failed;
 
-	if (nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
 			ndp_confirm->reason_code))
 		goto ndp_confirm_nla_failed;
 
@@ -1807,10 +1760,12 @@ os_if_ndp_confirm_ind_handler(struct wlan_objmgr_vdev *vdev,
 			goto ndp_confirm_nla_failed;
 
 	wlan_cfg80211_vendor_event(vendor_event, GFP_ATOMIC);
-	osif_debug("NDP confim sent, ndp instance id: %d, peer addr: "QDF_MAC_ADDR_FMT" rsp_code: %d, reason_code: %d",
-		   ndp_confirm->ndp_instance_id,
-		   QDF_MAC_ADDR_REF(ndp_confirm->peer_ndi_mac_addr.bytes),
-		   ndp_confirm->rsp_code, ndp_confirm->reason_code);
+	osif_debug(
+		"NDP confim sent, ndp instance id: %d, peer addr: " QDF_MAC_ADDR_FMT
+		" rsp_code: %d, reason_code: %d",
+		ndp_confirm->ndp_instance_id,
+		QDF_MAC_ADDR_REF(ndp_confirm->peer_ndi_mac_addr.bytes),
+		ndp_confirm->rsp_code, ndp_confirm->reason_code);
 
 	return;
 ndp_confirm_nla_failed:
@@ -1822,14 +1777,17 @@ static inline uint32_t osif_ndp_get_ndp_end_rsp_len(void)
 {
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy
+			[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE]
+				.len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE]
+			.len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
 
 	return data_len;
 }
@@ -1849,7 +1807,7 @@ static inline uint32_t osif_ndp_get_ndp_end_rsp_len(void)
  * Return: none
  */
 static void os_if_ndp_end_rsp_handler(struct wlan_objmgr_vdev *vdev,
-				struct nan_datapath_end_rsp_event *rsp)
+				      struct nan_datapath_end_rsp_event *rsp)
 {
 	uint32_t data_len;
 	struct sk_buff *vendor_event;
@@ -1864,9 +1822,8 @@ static void os_if_ndp_end_rsp_handler(struct wlan_objmgr_vdev *vdev,
 	}
 
 	data_len = osif_ndp_get_ndp_end_rsp_len();
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							data_len, index,
-							GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_ATOMIC);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		return;
@@ -1889,8 +1846,9 @@ static void os_if_ndp_end_rsp_handler(struct wlan_objmgr_vdev *vdev,
 			rsp->transaction_id))
 		goto ndp_end_rsp_nla_failed;
 
-	osif_debug("NDP End rsp sent, transaction id: %u, status: %u, reason: %u",
-		   rsp->transaction_id, rsp->status, rsp->reason);
+	osif_debug(
+		"NDP End rsp sent, transaction id: %u, status: %u, reason: %u",
+		rsp->transaction_id, rsp->status, rsp->reason);
 	wlan_cfg80211_vendor_event(vendor_event, GFP_ATOMIC);
 	return;
 
@@ -1899,16 +1857,16 @@ ndp_end_rsp_nla_failed:
 	wlan_cfg80211_vendor_free_skb(vendor_event);
 }
 
-static inline uint32_t osif_ndp_get_ndp_end_ind_len(
-			struct nan_datapath_end_indication_event *end_ind)
+static inline uint32_t
+osif_ndp_get_ndp_end_ind_len(struct nan_datapath_end_indication_event *end_ind)
 {
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
 	if (end_ind->num_ndp_ids)
-		data_len += nla_total_size(end_ind->num_ndp_ids *
-							sizeof(uint32_t));
+		data_len +=
+			nla_total_size(end_ind->num_ndp_ids * sizeof(uint32_t));
 
 	return data_len;
 }
@@ -1925,8 +1883,9 @@ static inline uint32_t osif_ndp_get_ndp_end_ind_len(
  *
  * Return: none
  */
-static void os_if_ndp_end_ind_handler(struct wlan_objmgr_vdev *vdev,
-			struct nan_datapath_end_indication_event *end_ind)
+static void
+os_if_ndp_end_ind_handler(struct wlan_objmgr_vdev *vdev,
+			  struct nan_datapath_end_indication_event *end_ind)
 {
 	uint32_t data_len, i;
 	uint32_t *ndp_instance_array;
@@ -1942,7 +1901,7 @@ static void os_if_ndp_end_ind_handler(struct wlan_objmgr_vdev *vdev,
 	}
 
 	ndp_instance_array = qdf_mem_malloc(end_ind->num_ndp_ids *
-		sizeof(*ndp_instance_array));
+					    sizeof(*ndp_instance_array));
 	if (!ndp_instance_array)
 		return;
 
@@ -1950,9 +1909,8 @@ static void os_if_ndp_end_ind_handler(struct wlan_objmgr_vdev *vdev,
 		ndp_instance_array[i] = end_ind->ndp_map[i].ndp_instance_id;
 
 	data_len = osif_ndp_get_ndp_end_ind_len(end_ind);
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							data_len, index,
-							GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_ATOMIC);
 	if (!vendor_event) {
 		qdf_mem_free(ndp_instance_array);
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
@@ -1964,8 +1922,8 @@ static void os_if_ndp_end_ind_handler(struct wlan_objmgr_vdev *vdev,
 		goto ndp_end_ind_nla_failed;
 
 	if (nla_put(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_INSTANCE_ID_ARRAY,
-			end_ind->num_ndp_ids * sizeof(*ndp_instance_array),
-			ndp_instance_array))
+		    end_ind->num_ndp_ids * sizeof(*ndp_instance_array),
+		    ndp_instance_array))
 		goto ndp_end_ind_nla_failed;
 
 	wlan_cfg80211_vendor_event(vendor_event, GFP_ATOMIC);
@@ -1986,7 +1944,7 @@ ndp_end_ind_nla_failed:
  * Return: none
  */
 static void os_if_new_peer_ind_handler(struct wlan_objmgr_vdev *vdev,
-			struct nan_datapath_peer_ind *peer_ind)
+				       struct nan_datapath_peer_ind *peer_ind)
 {
 	int ret;
 	QDF_STATUS status;
@@ -2006,11 +1964,11 @@ static void os_if_new_peer_ind_handler(struct wlan_objmgr_vdev *vdev,
 		return;
 	}
 
-	osif_debug("vdev_id: %d, peer_mac: "QDF_MAC_ADDR_FMT,
-		   vdev_id, QDF_MAC_ADDR_REF(peer_ind->peer_mac_addr.bytes));
+	osif_debug("vdev_id: %d, peer_mac: " QDF_MAC_ADDR_FMT, vdev_id,
+		   QDF_MAC_ADDR_REF(peer_ind->peer_mac_addr.bytes));
 	ret = cb_obj.new_peer_ind(vdev_id, peer_ind->sta_id,
-				&peer_ind->peer_mac_addr,
-				(active_peers == 0 ? true : false));
+				  &peer_ind->peer_mac_addr,
+				  (active_peers == 0 ? true : false));
 	if (ret) {
 		osif_err("new peer handling at HDD failed %d", ret);
 		return;
@@ -2055,8 +2013,9 @@ static void os_if_ndp_end_all_handler(struct wlan_objmgr_vdev *vdev)
  *
  * Return: none
  */
-static void os_if_peer_departed_ind_handler(struct wlan_objmgr_vdev *vdev,
-			struct nan_datapath_peer_ind *peer_ind)
+static void
+os_if_peer_departed_ind_handler(struct wlan_objmgr_vdev *vdev,
+				struct nan_datapath_peer_ind *peer_ind)
 {
 	QDF_STATUS status;
 	struct nan_callbacks cb_obj;
@@ -2074,13 +2033,13 @@ static void os_if_peer_departed_ind_handler(struct wlan_objmgr_vdev *vdev,
 		osif_err("Invalid new NDP peer params");
 		return;
 	}
-	osif_debug("vdev_id: %d, peer_mac: "QDF_MAC_ADDR_FMT,
-		   vdev_id, QDF_MAC_ADDR_REF(peer_ind->peer_mac_addr.bytes));
+	osif_debug("vdev_id: %d, peer_mac: " QDF_MAC_ADDR_FMT, vdev_id,
+		   QDF_MAC_ADDR_REF(peer_ind->peer_mac_addr.bytes));
 	active_peers--;
 	ucfg_nan_set_active_peers(vdev, active_peers);
 	cb_obj.peer_departed_ind(vdev_id, peer_ind->sta_id,
-				&peer_ind->peer_mac_addr,
-				(active_peers == 0 ? true : false));
+				 &peer_ind->peer_mac_addr,
+				 (active_peers == 0 ? true : false));
 
 	/* if no peer left, stop wait timer for NDP_END_ALL` */
 	if (!active_peers)
@@ -2091,14 +2050,17 @@ static inline uint32_t osif_ndp_get_ndi_create_rsp_len(void)
 {
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy
+			[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE]
+				.len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE]
+			.len);
 
 	return data_len;
 }
@@ -2136,7 +2098,7 @@ static void os_if_ndp_iface_create_rsp_handler(struct wlan_objmgr_psoc *psoc,
 	uint32_t create_status = NAN_DATAPATH_RSP_STATUS_ERROR;
 	uint32_t create_reason = NAN_DATAPATH_NAN_DATA_IFACE_CREATE_FAILED;
 	struct nan_datapath_inf_create_rsp *ndi_rsp =
-			(struct nan_datapath_inf_create_rsp *)rsp_params;
+		(struct nan_datapath_inf_create_rsp *)rsp_params;
 	enum qca_nl80211_vendor_subcmds_index index =
 		QCA_NL80211_VENDOR_SUBCMD_NDP_INDEX;
 
@@ -2157,9 +2119,8 @@ static void os_if_ndp_iface_create_rsp_handler(struct wlan_objmgr_psoc *psoc,
 	create_transaction_id = ucfg_nan_get_ndp_create_transaction_id(vdev);
 	data_len = osif_ndp_get_ndi_create_rsp_len();
 	/* notify response to the upper layer */
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							data_len, index,
-							GFP_KERNEL);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_KERNEL);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		create_fail = true;
@@ -2168,29 +2129,28 @@ static void os_if_ndp_iface_create_rsp_handler(struct wlan_objmgr_psoc *psoc,
 
 	/* Sub vendor command */
 	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD,
-		QCA_WLAN_VENDOR_ATTR_NDP_INTERFACE_CREATE)) {
+			QCA_WLAN_VENDOR_ATTR_NDP_INTERFACE_CREATE)) {
 		osif_err("QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD put fail");
 		goto nla_put_failure;
 	}
 
 	/* Transaction id */
 	if (nla_put_u16(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-		create_transaction_id)) {
+			create_transaction_id)) {
 		osif_err("VENDOR_ATTR_NDP_TRANSACTION_ID put fail");
 		goto nla_put_failure;
 	}
 
 	/* Status code */
 	if (nla_put_u32(vendor_event,
-		QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE,
-		create_status)) {
+			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE,
+			create_status)) {
 		osif_err("VENDOR_ATTR_NDP_DRV_RETURN_TYPE put fail");
 		goto nla_put_failure;
 	}
 
 	/* Status return value */
-	if (nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
 			create_reason)) {
 		osif_err("VENDOR_ATTR_NDP_DRV_RETURN_VALUE put fail");
 		goto nla_put_failure;
@@ -2229,8 +2189,8 @@ close_ndi:
  * Return: none
  */
 static void os_if_ndp_iface_delete_rsp_handler(struct wlan_objmgr_psoc *psoc,
-					      struct wlan_objmgr_vdev *vdev,
-					      void *rsp_params)
+					       struct wlan_objmgr_vdev *vdev,
+					       void *rsp_params)
 {
 	QDF_STATUS status;
 	uint8_t vdev_id = wlan_vdev_get_id(vdev);
@@ -2260,22 +2220,25 @@ static void os_if_ndp_iface_delete_rsp_handler(struct wlan_objmgr_psoc *psoc,
 }
 
 static inline uint32_t osif_ndp_get_ndp_sch_update_ind_len(
-			struct nan_datapath_sch_update_event *sch_update)
+	struct nan_datapath_sch_update_event *sch_update)
 {
 	uint32_t ch_info_len = 0;
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy
+			[QCA_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]
+				.len);
 	if (sch_update->num_ndp_instances)
 		data_len += nla_total_size(sch_update->num_ndp_instances *
 					   sizeof(uint32_t));
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SCHEDULE_UPDATE_REASON].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_NUM_CHANNELS].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SCHEDULE_UPDATE_REASON]
+			.len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_NUM_CHANNELS].len);
 	/* ch_info is a nested array of following attributes */
 	ch_info_len += nla_total_size(
 		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_CHANNEL].len);
@@ -2286,13 +2249,13 @@ static inline uint32_t osif_ndp_get_ndp_sch_update_ind_len(
 
 	if (sch_update->num_ndp_instances)
 		data_len += sch_update->num_ndp_instances *
-						nla_total_size(ch_info_len);
+			    nla_total_size(ch_info_len);
 
 	return data_len;
 }
 
-static QDF_STATUS os_if_ndp_sch_update_pack_ch_info(struct sk_buff *event,
-			struct nan_datapath_sch_update_event *sch_update)
+static QDF_STATUS os_if_ndp_sch_update_pack_ch_info(
+	struct sk_buff *event, struct nan_datapath_sch_update_event *sch_update)
 {
 	int idx = 0;
 	struct nlattr *ch_array, *ch_element;
@@ -2306,8 +2269,8 @@ static QDF_STATUS os_if_ndp_sch_update_pack_ch_info(struct sk_buff *event,
 		return QDF_STATUS_E_FAULT;
 
 	for (idx = 0; idx < sch_update->num_channels; idx++) {
-		osif_debug("ch[%d]: freq: %d, width: %d, nss: %d",
-			   idx, sch_update->ch[idx].freq,
+		osif_debug("ch[%d]: freq: %d, width: %d, nss: %d", idx,
+			   sch_update->ch[idx].freq,
 			   sch_update->ch[idx].ch_width,
 			   sch_update->ch[idx].nss);
 		ch_element = nla_nest_start(event, idx);
@@ -2373,9 +2336,8 @@ static void os_if_ndp_sch_update_ind_handler(struct wlan_objmgr_vdev *vdev,
 	}
 
 	data_len = osif_ndp_get_ndp_sch_update_ind_len(sch_update);
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							data_len, index,
-							GFP_ATOMIC);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_ATOMIC);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		return;
@@ -2475,9 +2437,9 @@ int os_if_nan_register_lim_callbacks(struct wlan_objmgr_psoc *psoc,
 void os_if_nan_post_ndi_create_rsp(struct wlan_objmgr_psoc *psoc,
 				   uint8_t vdev_id, bool success)
 {
-	struct nan_datapath_inf_create_rsp rsp = {0};
+	struct nan_datapath_inf_create_rsp rsp = { 0 };
 	struct wlan_objmgr_vdev *vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
-						psoc, vdev_id, WLAN_NAN_ID);
+		psoc, vdev_id, WLAN_NAN_ID);
 
 	if (!vdev) {
 		osif_err("vdev is null");
@@ -2487,15 +2449,13 @@ void os_if_nan_post_ndi_create_rsp(struct wlan_objmgr_psoc *psoc,
 	if (success) {
 		rsp.status = NAN_DATAPATH_RSP_STATUS_SUCCESS;
 		rsp.reason = 0;
-		os_if_nan_datapath_event_handler(psoc, vdev,
-						 NAN_DATAPATH_INF_CREATE_RSP,
-						 &rsp);
+		os_if_nan_datapath_event_handler(
+			psoc, vdev, NAN_DATAPATH_INF_CREATE_RSP, &rsp);
 	} else {
 		rsp.status = NAN_DATAPATH_RSP_STATUS_ERROR;
 		rsp.reason = NAN_DATAPATH_NAN_DATA_IFACE_CREATE_FAILED;
-		os_if_nan_datapath_event_handler(psoc, vdev,
-						 NAN_DATAPATH_INF_CREATE_RSP,
-						 &rsp);
+		os_if_nan_datapath_event_handler(
+			psoc, vdev, NAN_DATAPATH_INF_CREATE_RSP, &rsp);
 	}
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_NAN_ID);
 }
@@ -2503,9 +2463,9 @@ void os_if_nan_post_ndi_create_rsp(struct wlan_objmgr_psoc *psoc,
 void os_if_nan_post_ndi_delete_rsp(struct wlan_objmgr_psoc *psoc,
 				   uint8_t vdev_id, bool success)
 {
-	struct nan_datapath_inf_delete_rsp rsp = {0};
+	struct nan_datapath_inf_delete_rsp rsp = { 0 };
 	struct wlan_objmgr_vdev *vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
-						psoc, vdev_id, WLAN_NAN_ID);
+		psoc, vdev_id, WLAN_NAN_ID);
 	if (!vdev) {
 		osif_err("vdev is null");
 		return;
@@ -2514,15 +2474,13 @@ void os_if_nan_post_ndi_delete_rsp(struct wlan_objmgr_psoc *psoc,
 	if (success) {
 		rsp.status = NAN_DATAPATH_RSP_STATUS_SUCCESS;
 		rsp.reason = 0;
-		os_if_nan_datapath_event_handler(psoc, vdev,
-						 NAN_DATAPATH_INF_DELETE_RSP,
-						 &rsp);
+		os_if_nan_datapath_event_handler(
+			psoc, vdev, NAN_DATAPATH_INF_DELETE_RSP, &rsp);
 	} else {
 		rsp.status = NAN_DATAPATH_RSP_STATUS_ERROR;
 		rsp.reason = NAN_DATAPATH_NAN_DATA_IFACE_DELETE_FAILED;
-		os_if_nan_datapath_event_handler(psoc, vdev,
-						 NAN_DATAPATH_INF_DELETE_RSP,
-						 &rsp);
+		os_if_nan_datapath_event_handler(
+			psoc, vdev, NAN_DATAPATH_INF_DELETE_RSP, &rsp);
 	}
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_NAN_ID);
 }
@@ -2531,14 +2489,17 @@ static inline uint32_t osif_ndp_get_ndi_delete_rsp_len(void)
 {
 	uint32_t data_len = NLMSG_HDRLEN;
 
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE].len);
-	data_len += nla_total_size(vendor_attr_policy[
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_SUBCMD].len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID].len);
+	data_len += nla_total_size(
+		vendor_attr_policy
+			[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RESPONSE_STATUS_TYPE]
+				.len);
+	data_len += nla_total_size(
+		vendor_attr_policy[QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE]
+			.len);
 
 	return data_len;
 }
@@ -2554,18 +2515,18 @@ void os_if_nan_ndi_session_end(struct wlan_objmgr_vdev *vdev)
 		QCA_NL80211_VENDOR_SUBCMD_NDP_INDEX;
 
 	/*
-	 * The virtual adapters are stopped and closed even during
-	 * driver unload or stop, the service layer is not required
-	 * to be informed in that case (response is not expected)
-	 */
+   * The virtual adapters are stopped and closed even during
+   * driver unload or stop, the service layer is not required
+   * to be informed in that case (response is not expected)
+   */
 	state = ucfg_nan_get_ndi_state(vdev);
 
 	/*
-	 * With NDP Delete Vendor command, hdd_ndi_delete function modifies NDI
-	 * state to delete "NAN_DATA_NDI_DELETING_STATE".
-	 * But when user issues DEL Virtual Intf cmd, hdd_ndi_delete does not
-	 * call and NDI state remains to created "NAN_DATA_NDI_CREATED_STATE".
-	 */
+   * With NDP Delete Vendor command, hdd_ndi_delete function modifies NDI
+   * state to delete "NAN_DATA_NDI_DELETING_STATE".
+   * But when user issues DEL Virtual Intf cmd, hdd_ndi_delete does not
+   * call and NDI state remains to created "NAN_DATA_NDI_CREATED_STATE".
+   */
 	if (state == NAN_DATA_NDI_CREATED_STATE) {
 		osif_debug("NDI interface is just created: %u", state);
 		return;
@@ -2577,9 +2538,8 @@ void os_if_nan_ndi_session_end(struct wlan_objmgr_vdev *vdev)
 
 	data_len = osif_ndp_get_ndi_delete_rsp_len();
 	/* notify response to the upper layer */
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							data_len, index,
-							GFP_KERNEL);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, data_len, index, GFP_KERNEL);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		return;
@@ -2608,8 +2568,7 @@ void os_if_nan_ndi_session_end(struct wlan_objmgr_vdev *vdev)
 	}
 
 	/* Status return value */
-	if (nla_put_u32(vendor_event,
-			QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
+	if (nla_put_u32(vendor_event, QCA_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
 			ucfg_nan_get_ndi_delete_rsp_reason(vdev))) {
 		osif_err("VENDOR_ATTR_NDP_DRV_RETURN_VALUE put fail");
 		goto failure;
@@ -2641,10 +2600,11 @@ failure:
  */
 #ifdef WLAN_FEATURE_SR
 static void
-os_if_nan_handle_sr_nan_concurrency(struct nan_event_params *nan_evt) {
+os_if_nan_handle_sr_nan_concurrency(struct nan_event_params *nan_evt)
+{
 	void (*nan_sr_conc_callback)(struct nan_event_params *nan_evt);
 	struct nan_psoc_priv_obj *psoc_obj =
-				nan_get_psoc_priv_obj(nan_evt->psoc);
+		nan_get_psoc_priv_obj(nan_evt->psoc);
 
 	if (!psoc_obj) {
 		nan_err("nan psoc priv object is NULL");
@@ -2658,7 +2618,8 @@ os_if_nan_handle_sr_nan_concurrency(struct nan_event_params *nan_evt) {
 #else
 static void
 os_if_nan_handle_sr_nan_concurrency(struct nan_event_params *nan_evt)
-{}
+{
+}
 #endif
 
 /**
@@ -2678,9 +2639,9 @@ static void os_if_nan_discovery_event_handler(struct nan_event_params *nan_evt)
 		QCA_NL80211_VENDOR_SUBCMD_NAN_INDEX;
 
 	/*
-	 * Since Partial Offload chipsets have only one pdev per psoc, the first
-	 * pdev from the pdev list is used.
-	 */
+   * Since Partial Offload chipsets have only one pdev per psoc, the first
+   * pdev from the pdev list is used.
+   */
 	pdev = wlan_objmgr_get_pdev_by_id(nan_evt->psoc, 0, WLAN_NAN_ID);
 	if (!pdev) {
 		osif_err("null pdev");
@@ -2690,10 +2651,9 @@ static void os_if_nan_discovery_event_handler(struct nan_event_params *nan_evt)
 
 	os_priv = wlan_pdev_get_ospriv(pdev);
 
-	vendor_event = wlan_cfg80211_vendor_event_alloc(os_priv->wiphy, NULL,
-							nan_evt->buf_len +
-							NLMSG_HDRLEN,
-							index, GFP_KERNEL);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		os_priv->wiphy, NULL, nan_evt->buf_len + NLMSG_HDRLEN, index,
+		GFP_KERNEL);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		goto fail;
@@ -2728,7 +2688,7 @@ static int os_if_nan_generic_req(struct wlan_objmgr_psoc *psoc,
 
 	buf_len = nla_len(tb[QCA_WLAN_VENDOR_ATTR_NAN_CMD_DATA]);
 
-	nan_req = qdf_mem_malloc(sizeof(*nan_req) +  buf_len);
+	nan_req = qdf_mem_malloc(sizeof(*nan_req) + buf_len);
 	if (!nan_req)
 		return -ENOMEM;
 	qdf_mem_zero(nan_req, sizeof(*nan_req) + buf_len);
@@ -2782,9 +2742,8 @@ static int os_if_process_nan_enable_req(struct wlan_objmgr_pdev *pdev,
 		nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_NAN_DISC_24GHZ_BAND_FREQ]);
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_NAN_DISC_5GHZ_BAND_FREQ])
-		chan_freq_5g =
-			nla_get_u32(tb[
-				QCA_WLAN_VENDOR_ATTR_NAN_DISC_5GHZ_BAND_FREQ]);
+		chan_freq_5g = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_NAN_DISC_5GHZ_BAND_FREQ]);
 
 	if (!ucfg_is_nan_enable_allowed(psoc, chan_freq_2g, vdev_id)) {
 		osif_err("NAN Enable not allowed at this moment for channel %d",
@@ -2844,20 +2803,20 @@ int os_if_process_nan_req(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id,
 	}
 
 	/*
-	 * If target does not support NAN DBS, stop the opportunistic timer.
-	 * Opportunistic timer gets triggered as soon as a DBS use case is
-	 * completed and hw_mode would be set to SMM when the timer(5 seconds)
-	 * expires.
-	 * This is to make sure that HW mode is not set to DBS by NAN Enable
-	 * request. NAN state machine will remain unaffected in this case.
-	 */
+   * If target does not support NAN DBS, stop the opportunistic timer.
+   * Opportunistic timer gets triggered as soon as a DBS use case is
+   * completed and hw_mode would be set to SMM when the timer(5 seconds)
+   * expires.
+   * This is to make sure that HW mode is not set to DBS by NAN Enable
+   * request. NAN state machine will remain unaffected in this case.
+   */
 	if (!NAN_CONCURRENCY_SUPPORTED(psoc))
 		policy_mgr_check_and_stop_opportunistic_timer(psoc, vdev_id);
 
 	/*
-	 * Send all requests other than Enable/Disable as type GENERIC.
-	 * These will be treated as passthrough by the driver.
-	 */
+   * Send all requests other than Enable/Disable as type GENERIC.
+   * These will be treated as passthrough by the driver.
+   */
 	if (!tb[QCA_WLAN_VENDOR_ATTR_NAN_SUBCMD_TYPE])
 		return os_if_nan_generic_req(psoc, tb);
 

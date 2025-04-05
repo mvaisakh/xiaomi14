@@ -3,9 +3,9 @@
  * Copyright (c) 2015, 2020-2021 The Linux Foundation. All rights reserved.
  */
 
-#include <linux/regmap.h>
-#include <linux/device.h>
 #include "wsa883x-registers.h"
+#include <linux/device.h>
+#include <linux/regmap.h>
 
 const u8 wsa883x_reg_access[WSA883X_NUM_REGISTERS] = {
 	[WSA883X_REG(WSA883X_REF_CTRL)] = RD_WR_REG,

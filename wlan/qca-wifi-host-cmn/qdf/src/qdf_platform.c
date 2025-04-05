@@ -17,26 +17,24 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "qdf_platform.h"
 #include "qdf_module.h"
 #include "qdf_trace.h"
-#include "qdf_platform.h"
 
 /*
  * The following callbacks should be defined static to make sure they are
  * initialized to NULL
  */
-static qdf_self_recovery_callback	self_recovery_cb;
-static qdf_is_fw_down_callback		is_fw_down_cb;
+static qdf_self_recovery_callback self_recovery_cb;
+static qdf_is_fw_down_callback is_fw_down_cb;
 static qdf_is_driver_unloading_callback is_driver_unloading_cb;
 static qdf_is_driver_state_module_stop_callback is_driver_state_module_stop_cb;
-static qdf_is_recovering_callback	is_recovering_cb;
-static qdf_is_drv_connected_callback    is_drv_connected_cb;
+static qdf_is_recovering_callback is_recovering_cb;
+static qdf_is_drv_connected_callback is_drv_connected_cb;
 static qdf_wmi_send_over_qmi_callback _wmi_send_recv_qmi_cb;
-static qdf_is_drv_supported_callback    is_drv_supported_cb;
-static qdf_recovery_reason_update_callback   update_recovery_reason_cb;
-static qdf_bus_reg_dump   get_bus_reg_dump;
-
-
+static qdf_is_drv_supported_callback is_drv_supported_cb;
+static qdf_recovery_reason_update_callback update_recovery_reason_cb;
+static qdf_bus_reg_dump get_bus_reg_dump;
 
 void qdf_register_fw_down_callback(qdf_is_fw_down_callback is_fw_down)
 {
@@ -49,16 +47,16 @@ bool qdf_is_fw_down(void)
 {
 	if (!is_fw_down_cb) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			"fw down callback is not registered");
-			return false;
+			  "fw down callback is not registered");
+		return false;
 	}
 
 	return is_fw_down_cb();
 }
 qdf_export_symbol(qdf_is_fw_down);
 
-void qdf_register_wmi_send_recv_qmi_callback(qdf_wmi_send_over_qmi_callback
-					     wmi_send_recv_qmi_cb)
+void qdf_register_wmi_send_recv_qmi_callback(
+	qdf_wmi_send_over_qmi_callback wmi_send_recv_qmi_cb)
 {
 	_wmi_send_recv_qmi_cb = wmi_send_recv_qmi_cb;
 }
@@ -71,7 +69,7 @@ QDF_STATUS qdf_wmi_send_recv_qmi(void *buf, uint32_t len, void *cb_ctx,
 	if (!_wmi_send_recv_qmi_cb) {
 		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
 			  "Platform callback for WMI over QMI not registered");
-			return QDF_STATUS_E_INVAL;
+		return QDF_STATUS_E_INVAL;
 	}
 
 	return _wmi_send_recv_qmi_cb(buf, len, cb_ctx, wmi_recv_qmi_cb);
@@ -80,7 +78,7 @@ QDF_STATUS qdf_wmi_send_recv_qmi(void *buf, uint32_t len, void *cb_ctx,
 qdf_export_symbol(qdf_wmi_send_recv_qmi);
 
 void qdf_register_is_driver_unloading_callback(
-				qdf_is_driver_unloading_callback callback)
+	qdf_is_driver_unloading_callback callback)
 {
 	is_driver_unloading_cb = callback;
 }
@@ -88,7 +86,7 @@ void qdf_register_is_driver_unloading_callback(
 qdf_export_symbol(qdf_register_is_driver_unloading_callback);
 
 void qdf_register_is_driver_state_module_stop_callback(
-			qdf_is_driver_state_module_stop_callback callback)
+	qdf_is_driver_state_module_stop_callback callback)
 {
 	is_driver_state_module_stop_cb = callback;
 }
@@ -114,7 +112,7 @@ void __qdf_trigger_self_recovery(void *psoc, enum qdf_hang_reason reason,
 qdf_export_symbol(__qdf_trigger_self_recovery);
 
 void qdf_register_recovering_state_query_callback(
-			qdf_is_recovering_callback is_recovering)
+	qdf_is_recovering_callback is_recovering)
 {
 	is_recovering_cb = is_recovering;
 }
@@ -173,8 +171,8 @@ void __qdf_op_unprotect(struct qdf_op_sync *sync, const char *func)
 }
 qdf_export_symbol(__qdf_op_unprotect);
 
-void qdf_register_drv_connected_callback(qdf_is_drv_connected_callback
-					 is_drv_connected)
+void qdf_register_drv_connected_callback(
+	qdf_is_drv_connected_callback is_drv_connected)
 {
 	is_drv_connected_cb = is_drv_connected;
 }
@@ -199,8 +197,8 @@ void qdf_check_state_before_panic(const char *func, const uint32_t line)
 
 qdf_export_symbol(qdf_check_state_before_panic);
 
-void qdf_register_drv_supported_callback(qdf_is_drv_supported_callback
-					 is_drv_supported)
+void qdf_register_drv_supported_callback(
+	qdf_is_drv_supported_callback is_drv_supported)
 {
 	is_drv_supported_cb = is_drv_supported;
 }
@@ -219,8 +217,8 @@ bool qdf_is_drv_supported(void)
 
 qdf_export_symbol(qdf_is_drv_supported);
 
-void qdf_register_recovery_reason_update(qdf_recovery_reason_update_callback
-					 callback)
+void qdf_register_recovery_reason_update(
+	qdf_recovery_reason_update_callback callback)
 {
 	update_recovery_reason_cb = callback;
 }

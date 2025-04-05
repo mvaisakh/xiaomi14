@@ -14,21 +14,19 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <qdf_types.h>
 #include "osif_pre_cac.h"
-#include "wlan_pre_cac_public_struct.h"
-#include "wlan_pre_cac_ucfg_api.h"
+#include "osif_vdev_sync.h"
 #include "wlan_cfg80211.h"
 #include "wlan_objmgr_vdev_obj.h"
 #include "wlan_osif_priv.h"
-#include "osif_vdev_sync.h"
+#include "wlan_pre_cac_public_struct.h"
+#include "wlan_pre_cac_ucfg_api.h"
+#include <qdf_types.h>
 
 static struct osif_pre_cac_legacy_ops *osif_pre_cac_legacy_ops;
 
-static void
-osif_pre_cac_complete_legacy_cb(struct wlan_objmgr_psoc *psoc,
-				uint8_t vdev_id,
-				QDF_STATUS status)
+static void osif_pre_cac_complete_legacy_cb(struct wlan_objmgr_psoc *psoc,
+					    uint8_t vdev_id, QDF_STATUS status)
 {
 	osif_pre_cac_complete_status_legacy_cb cb = NULL;
 
@@ -40,17 +38,15 @@ osif_pre_cac_complete_legacy_cb(struct wlan_objmgr_psoc *psoc,
 }
 
 static void osif_pre_cac_complete_cb(struct wlan_objmgr_psoc *psoc,
-				     uint8_t vdev_id,
-				     QDF_STATUS status)
+				     uint8_t vdev_id, QDF_STATUS status)
 {
 	struct vdev_osif_priv *osif_priv;
 	struct osif_vdev_sync *vdev_sync;
 	int errno;
 	struct wlan_objmgr_vdev *vdev;
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
-				psoc, vdev_id,
-				WLAN_PRE_CAC_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
+						    WLAN_PRE_CAC_ID);
 	if (!vdev) {
 		osif_err("Invalid vdev for %d", vdev_id);
 		return;
@@ -82,8 +78,7 @@ osif_pre_cac_conditional_csa_ind_legacy_cb(struct wlan_objmgr_vdev *vdev,
 
 static void
 osif_pre_cac_send_conditional_freq_switch_status(struct wlan_objmgr_psoc *psoc,
-						 uint8_t vdev_id,
-						 bool status)
+						 uint8_t vdev_id, bool status)
 {
 	struct vdev_osif_priv *osif_priv;
 	struct wlan_objmgr_vdev *vdev;
@@ -109,10 +104,10 @@ osif_pre_cac_send_conditional_freq_switch_status(struct wlan_objmgr_psoc *psoc,
 		goto fail;
 	}
 
-	event = wlan_cfg80211_vendor_event_alloc(wdev->wiphy,
-		  wdev, sizeof(uint32_t) + NLMSG_HDRLEN,
-		  QCA_NL80211_VENDOR_SUBCMD_SAP_CONDITIONAL_CHAN_SWITCH_INDEX,
-		  GFP_KERNEL);
+	event = wlan_cfg80211_vendor_event_alloc(
+		wdev->wiphy, wdev, sizeof(uint32_t) + NLMSG_HDRLEN,
+		QCA_NL80211_VENDOR_SUBCMD_SAP_CONDITIONAL_CHAN_SWITCH_INDEX,
+		GFP_KERNEL);
 	if (!event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		goto fail;

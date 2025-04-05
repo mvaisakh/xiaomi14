@@ -27,7 +27,7 @@
  * Calculation for timeout:
  * 8 sec(time to complete scan on all channels) + 2 sec(buffer)
  */
-#define SCAN_FOR_SSID_TIMEOUT       (PLATFORM_VALUE(10000, 50000))
+#define SCAN_FOR_SSID_TIMEOUT (PLATFORM_VALUE(10000, 50000))
 
 static QDF_STATUS cm_fill_scan_req(struct cnx_mgr *cm_ctx,
 				   struct cm_connect_req *cm_req,
@@ -74,8 +74,7 @@ static QDF_STATUS cm_fill_scan_req(struct cnx_mgr *cm_ctx,
 			return status;
 		}
 
-		qdf_mem_copy(req->scan_req.extraie.ptr,
-			     cm_req->req.scan_ie.ptr,
+		qdf_mem_copy(req->scan_req.extraie.ptr, cm_req->req.scan_ie.ptr,
 			     cm_req->req.scan_ie.len);
 		req->scan_req.extraie.len = cm_req->req.scan_ie.len;
 	}
@@ -89,9 +88,7 @@ static QDF_STATUS cm_fill_scan_req(struct cnx_mgr *cm_ctx,
 		ch_freq = cm_req->req.chan_freq_hint;
 	if (ch_freq) {
 		state = wlan_reg_get_channel_state_for_pwrmode(
-							pdev,
-							ch_freq,
-							REG_BEST_PWR_MODE);
+			pdev, ch_freq, REG_BEST_PWR_MODE);
 
 		if (state == CHANNEL_STATE_DISABLE ||
 		    state == CHANNEL_STATE_INVALID) {
@@ -113,8 +110,7 @@ static QDF_STATUS cm_fill_scan_req(struct cnx_mgr *cm_ctx,
 		return status;
 	}
 	req->scan_req.num_ssids = 1;
-	qdf_mem_copy(&req->scan_req.ssid[0].ssid,
-		     &cm_req->req.ssid.ssid,
+	qdf_mem_copy(&req->scan_req.ssid[0].ssid, &cm_req->req.ssid.ssid,
 		     cm_req->req.ssid.length);
 
 	req->scan_req.ssid[0].length = cm_req->req.ssid.length;
@@ -165,21 +161,23 @@ QDF_STATUS cm_connect_scan_start(struct cnx_mgr *cm_ctx,
 
 scan_err:
 	if (QDF_IS_STATUS_ERROR(status)) {
-		mlme_err(CM_PREFIX_FMT "Failed to initiate scan with status: %d",
+		mlme_err(CM_PREFIX_FMT
+			 "Failed to initiate scan with status: %d",
 			 CM_PREFIX_REF(wlan_vdev_get_id(cm_ctx->vdev),
-				       cm_req->cm_id), status);
+				       cm_req->cm_id),
+			 status);
 
 		status = cm_sm_deliver_event_sync(cm_ctx,
 						  WLAN_CM_SM_EV_SCAN_FAILURE,
 						  sizeof(cm_req->scan_id),
 						  &cm_req->scan_id);
 		/*
-		 * Handle failure if posting fails, i.e. the SM state has
-		 * changed or head cm_id doesn't match the active cm_id.
-		 * scan start failure should be handled only in SS_SCAN. If
-		 * new command has been received connect procedure should be
-		 * aborted from here with connect req cleanup.
-		 */
+     * Handle failure if posting fails, i.e. the SM state has
+     * changed or head cm_id doesn't match the active cm_id.
+     * scan start failure should be handled only in SS_SCAN. If
+     * new command has been received connect procedure should be
+     * aborted from here with connect req cleanup.
+     */
 		if (QDF_IS_STATUS_ERROR(status))
 			cm_connect_handle_event_post_fail(cm_ctx,
 							  cm_req->cm_id);
@@ -209,12 +207,11 @@ QDF_STATUS cm_connect_scan_resp(struct cnx_mgr *cm_ctx, wlan_scan_id *scan_id,
 
 	return QDF_STATUS_SUCCESS;
 scan_failure:
-	return cm_send_connect_start_fail(cm_ctx, &cm_req->connect_req,
-					  reason);
+	return cm_send_connect_start_fail(cm_ctx, &cm_req->connect_req, reason);
 }
 
-void wlan_cm_scan_cb(struct wlan_objmgr_vdev *vdev,
-		     struct scan_event *event, void *arg)
+void wlan_cm_scan_cb(struct wlan_objmgr_vdev *vdev, struct scan_event *event,
+		     void *arg)
 {
 	struct cnx_mgr *cm_ctx = (struct cnx_mgr *)arg;
 	wlan_cm_id cm_id = CM_ID_INVALID;
@@ -224,23 +221,18 @@ void wlan_cm_scan_cb(struct wlan_objmgr_vdev *vdev,
 	if (!util_is_scan_completed(event, &success))
 		return;
 
-	status = cm_sm_deliver_event(vdev,
-				     WLAN_CM_SM_EV_SCAN_SUCCESS,
-				     sizeof(event->scan_id),
-				     &event->scan_id);
+	status = cm_sm_deliver_event(vdev, WLAN_CM_SM_EV_SCAN_SUCCESS,
+				     sizeof(event->scan_id), &event->scan_id);
 	/*
-	 * Handle failure if posting fails, i.e. the SM state has
-	 * changed or head cm_id doesn't match the active cm_id.
-	 * scan cb should be handled only in SS_SCAN. If
-	 * new command has been received connect procedure should be
-	 * aborted from here with connect req cleanup.
-	 */
+   * Handle failure if posting fails, i.e. the SM state has
+   * changed or head cm_id doesn't match the active cm_id.
+   * scan cb should be handled only in SS_SCAN. If
+   * new command has been received connect procedure should be
+   * aborted from here with connect req cleanup.
+   */
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cm_id = cm_get_cm_id_by_scan_id(cm_ctx, event->scan_id);
 		if (cm_id != CM_ID_INVALID)
-			cm_connect_handle_event_post_fail(cm_ctx,
-							  cm_id);
+			cm_connect_handle_event_post_fail(cm_ctx, cm_id);
 	}
-
 }
-

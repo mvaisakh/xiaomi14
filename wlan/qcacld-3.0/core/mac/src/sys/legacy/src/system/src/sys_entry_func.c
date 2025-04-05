@@ -30,20 +30,20 @@
 /* Standard include files */
 
 /* Application Specific include files */
-#include "sir_common.h"
 #include "ani_global.h"
+#include "sir_common.h"
 
 #include "lim_api.h"
 #include "sch_api.h"
 #include "utils_api.h"
 
+#include "cds_packet.h"
+#include "lim_trace.h"
+#include "qdf_types.h"
 #include "sys_def.h"
 #include "sys_entry_func.h"
 #include "sys_startup.h"
-#include "lim_trace.h"
 #include "wma_types.h"
-#include "qdf_types.h"
-#include "cds_packet.h"
 
 /**
  * sys_init_globals
@@ -63,8 +63,7 @@
 
 QDF_STATUS sys_init_globals(struct mac_context *mac)
 {
-
-	qdf_mem_zero((uint8_t *) &mac->sys, sizeof(mac->sys));
+	qdf_mem_zero((uint8_t *)&mac->sys, sizeof(mac->sys));
 
 	mac->sys.gSysEnableLinkMonitorMode = 0;
 
@@ -79,7 +78,7 @@ QDF_STATUS sys_bbt_process_message_core(struct mac_context *mac_ctx,
 	QDF_STATUS ret;
 	void *bd_ptr;
 	tMgmtFrmDropReason dropreason;
-	cds_pkt_t *vos_pkt = (cds_pkt_t *) msg->bodyptr;
+	cds_pkt_t *vos_pkt = (cds_pkt_t *)msg->bodyptr;
 	QDF_STATUS qdf_status = wma_ds_peek_rx_packet_info(vos_pkt, &bd_ptr);
 
 	mac_ctx->sys.gSysBbtReceived++;
@@ -94,43 +93,52 @@ QDF_STATUS sys_bbt_process_message_core(struct mac_context *mac_ctx,
 		tpSirMacMgmtHdr mac_hdr;
 
 		/*
-		 * Drop beacon frames in deferred state to avoid VOSS run out of
-		 * message wrappers.
-		 */
+     * Drop beacon frames in deferred state to avoid VOSS run out of
+     * message wrappers.
+     */
 		if ((subtype == SIR_MAC_MGMT_BEACON) &&
-		     !GET_LIM_PROCESS_DEFD_MESGS(mac_ctx)) {
+		    !GET_LIM_PROCESS_DEFD_MESGS(mac_ctx)) {
 			pe_debug("dropping received beacon in deferred state");
 			goto fail;
 		}
 
-		dropreason = lim_is_pkt_candidate_for_drop(mac_ctx, bd_ptr,
-				subtype);
+		dropreason =
+			lim_is_pkt_candidate_for_drop(mac_ctx, bd_ptr, subtype);
 		if (eMGMT_DROP_NO_DROP != dropreason) {
 			pe_debug("Mgmt Frame %d being dropped, reason: %d\n",
-				subtype, dropreason);
-				MTRACE(mac_trace(mac_ctx,
-					TRACE_CODE_RX_MGMT_DROP, NO_SESSION,
-					dropreason));
+				 subtype, dropreason);
+			MTRACE(mac_trace(mac_ctx, TRACE_CODE_RX_MGMT_DROP,
+					 NO_SESSION, dropreason));
 			goto fail;
 		}
 
 		mac_hdr = WMA_GET_RX_MAC_HEADER(bd_ptr);
 		if (subtype == SIR_MAC_MGMT_ASSOC_REQ) {
-			pe_debug("ASSOC REQ frame allowed: da: " QDF_MAC_ADDR_FMT ", sa: " QDF_MAC_ADDR_FMT ", bssid: " QDF_MAC_ADDR_FMT ", Assoc Req count so far: %d",
-				 QDF_MAC_ADDR_REF(mac_hdr->da),
-				 QDF_MAC_ADDR_REF(mac_hdr->sa),
-				 QDF_MAC_ADDR_REF(mac_hdr->bssId),
-				 mac_ctx->sys.gSysFrameCount[type][subtype]);
+			pe_debug(
+				"ASSOC REQ frame allowed: da: " QDF_MAC_ADDR_FMT
+				", sa: " QDF_MAC_ADDR_FMT
+				", bssid: " QDF_MAC_ADDR_FMT
+				", Assoc Req count so far: %d",
+				QDF_MAC_ADDR_REF(mac_hdr->da),
+				QDF_MAC_ADDR_REF(mac_hdr->sa),
+				QDF_MAC_ADDR_REF(mac_hdr->bssId),
+				mac_ctx->sys.gSysFrameCount[type][subtype]);
 		}
 		if (subtype == SIR_MAC_MGMT_DEAUTH) {
-			pe_debug("DEAUTH frame allowed: da: " QDF_MAC_ADDR_FMT ", sa: " QDF_MAC_ADDR_FMT ", bssid: " QDF_MAC_ADDR_FMT ", DEAUTH count so far: %d",
+			pe_debug("DEAUTH frame allowed: da: " QDF_MAC_ADDR_FMT
+				 ", sa: " QDF_MAC_ADDR_FMT
+				 ", bssid: " QDF_MAC_ADDR_FMT
+				 ", DEAUTH count so far: %d",
 				 QDF_MAC_ADDR_REF(mac_hdr->da),
 				 QDF_MAC_ADDR_REF(mac_hdr->sa),
 				 QDF_MAC_ADDR_REF(mac_hdr->bssId),
 				 mac_ctx->sys.gSysFrameCount[type][subtype]);
 		}
 		if (subtype == SIR_MAC_MGMT_DISASSOC) {
-			pe_debug("DISASSOC frame allowed: da: " QDF_MAC_ADDR_FMT ", sa: " QDF_MAC_ADDR_FMT ", bssid: " QDF_MAC_ADDR_FMT ", DISASSOC count so far: %d",
+			pe_debug("DISASSOC frame allowed: da: " QDF_MAC_ADDR_FMT
+				 ", sa: " QDF_MAC_ADDR_FMT
+				 ", bssid: " QDF_MAC_ADDR_FMT
+				 ", DISASSOC count so far: %d",
 				 QDF_MAC_ADDR_REF(mac_hdr->da),
 				 QDF_MAC_ADDR_REF(mac_hdr->sa),
 				 QDF_MAC_ADDR_REF(mac_hdr->bssId),
@@ -157,8 +165,8 @@ QDF_STATUS sys_bbt_process_message_core(struct mac_context *mac_ctx,
 #endif
 	} else {
 		pe_debug("BBT received Invalid type: %d subtype: %d "
-			"LIM state %X", type, subtype,
-			lim_get_sme_state(mac_ctx));
+			 "LIM state %X",
+			 type, subtype, lim_get_sme_state(mac_ctx));
 		goto fail;
 	}
 	return QDF_STATUS_SUCCESS;
@@ -166,4 +174,3 @@ fail:
 	mac_ctx->sys.gSysBbtDropped++;
 	return QDF_STATUS_E_FAILURE;
 }
-

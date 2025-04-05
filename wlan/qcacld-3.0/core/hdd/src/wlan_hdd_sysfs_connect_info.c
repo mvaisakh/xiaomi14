@@ -22,10 +22,10 @@
  * information
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
 #include "wlan_hdd_sysfs_connect_info.h"
+#include "osif_vdev_sync.h"
 #include "qwlan_version.h"
+#include <wlan_hdd_includes.h>
 
 /**
  * wlan_hdd_version_info() - Populate driver, FW and HW version
@@ -35,15 +35,13 @@
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_version_info(struct hdd_context *hdd_ctx, uint8_t *buf,
-		      ssize_t buf_avail_len)
+static ssize_t wlan_hdd_version_info(struct hdd_context *hdd_ctx, uint8_t *buf,
+				     ssize_t buf_avail_len)
 {
 	ssize_t length = 0;
 	int ret_val;
 
-	ret_val = scnprintf(buf, buf_avail_len,
-			    "\nVERSION DETAILS\n");
+	ret_val = scnprintf(buf, buf_avail_len, "\nVERSION DETAILS\n");
 	if (ret_val <= 0)
 		return length;
 	length += ret_val;
@@ -53,18 +51,16 @@ wlan_hdd_version_info(struct hdd_context *hdd_ctx, uint8_t *buf,
 		return buf_avail_len;
 	}
 
-	ret_val = scnprintf(buf + length, buf_avail_len - length,
-			    "Host Driver Version: %s\n"
-			    "Firmware Version: %d.%d.%d.%d.%d.%d\n"
-			    "Hardware Version: %s\n",
-			    QWLAN_VERSIONSTR,
-			    hdd_ctx->fw_version_info.major_spid,
-			    hdd_ctx->fw_version_info.minor_spid,
-			    hdd_ctx->fw_version_info.siid,
-			    hdd_ctx->fw_version_info.rel_id,
-			    hdd_ctx->fw_version_info.crmid,
-			    hdd_ctx->fw_version_info.sub_id,
-			    hdd_ctx->target_hw_name);
+	ret_val = scnprintf(
+		buf + length, buf_avail_len - length,
+		"Host Driver Version: %s\n"
+		"Firmware Version: %d.%d.%d.%d.%d.%d\n"
+		"Hardware Version: %s\n",
+		QWLAN_VERSIONSTR, hdd_ctx->fw_version_info.major_spid,
+		hdd_ctx->fw_version_info.minor_spid,
+		hdd_ctx->fw_version_info.siid, hdd_ctx->fw_version_info.rel_id,
+		hdd_ctx->fw_version_info.crmid, hdd_ctx->fw_version_info.sub_id,
+		hdd_ctx->target_hw_name);
 	if (ret_val <= 0)
 		return length;
 
@@ -81,9 +77,8 @@ wlan_hdd_version_info(struct hdd_context *hdd_ctx, uint8_t *buf,
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_add_nss_info(struct hdd_connection_info *conn_info,
-		      uint8_t *buf, ssize_t buf_avail_len)
+static ssize_t wlan_hdd_add_nss_info(struct hdd_connection_info *conn_info,
+				     uint8_t *buf, ssize_t buf_avail_len)
 {
 	ssize_t length = 0;
 	int ret_val;
@@ -92,8 +87,7 @@ wlan_hdd_add_nss_info(struct hdd_connection_info *conn_info,
 	    !conn_info->conn_flag.vht_present)
 		return length;
 
-	ret_val = scnprintf(buf, buf_avail_len,
-			    "nss = %u\n",
+	ret_val = scnprintf(buf, buf_avail_len, "nss = %u\n",
 			    conn_info->txrate.nss);
 	if (ret_val <= 0)
 		return length;
@@ -110,9 +104,8 @@ wlan_hdd_add_nss_info(struct hdd_connection_info *conn_info,
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_add_ht_cap_info(struct hdd_connection_info *conn_info,
-			 uint8_t *buf, ssize_t buf_avail_len)
+static ssize_t wlan_hdd_add_ht_cap_info(struct hdd_connection_info *conn_info,
+					uint8_t *buf, ssize_t buf_avail_len)
 {
 	struct ieee80211_ht_cap *ht_caps;
 	ssize_t length = 0;
@@ -130,13 +123,10 @@ wlan_hdd_add_ht_cap_info(struct hdd_connection_info *conn_info,
 			"antenna_selection_info = %x\n"
 			"ht_rx_higest = %x\n"
 			"ht_tx_params = %x\n",
-			ht_caps->cap_info,
-			ht_caps->ampdu_params_info,
-			ht_caps->extended_ht_cap_info,
-			ht_caps->tx_BF_cap_info,
+			ht_caps->cap_info, ht_caps->ampdu_params_info,
+			ht_caps->extended_ht_cap_info, ht_caps->tx_BF_cap_info,
 			ht_caps->antenna_selection_info,
-			ht_caps->mcs.rx_highest,
-			ht_caps->mcs.tx_params);
+			ht_caps->mcs.rx_highest, ht_caps->mcs.tx_params);
 	if (ret <= 0)
 		return length;
 
@@ -152,9 +142,8 @@ wlan_hdd_add_ht_cap_info(struct hdd_connection_info *conn_info,
  *
  * Return: No.of bytes populated by this function in buffer
  */
-static ssize_t
-wlan_hdd_add_vht_cap_info(struct hdd_connection_info *conn_info,
-			  uint8_t *buf, ssize_t buf_avail_len)
+static ssize_t wlan_hdd_add_vht_cap_info(struct hdd_connection_info *conn_info,
+					 uint8_t *buf, ssize_t buf_avail_len)
 {
 	struct ieee80211_vht_cap *vht_caps;
 	ssize_t length = 0;
@@ -170,8 +159,7 @@ wlan_hdd_add_vht_cap_info(struct hdd_connection_info *conn_info,
 			"rx_highest = %x\n"
 			"tx_mcs_map = %x\n"
 			"tx_highest = %x\n",
-			vht_caps->vht_cap_info,
-			vht_caps->supp_mcs.rx_mcs_map,
+			vht_caps->vht_cap_info, vht_caps->supp_mcs.rx_mcs_map,
 			vht_caps->supp_mcs.rx_highest,
 			vht_caps->supp_mcs.tx_mcs_map,
 			vht_caps->supp_mcs.tx_highest);
@@ -188,8 +176,7 @@ wlan_hdd_add_vht_cap_info(struct hdd_connection_info *conn_info,
  *
  * Return: Meaningful string for enum csr auth type
  */
-static
-uint8_t *hdd_auth_type_str(uint32_t auth_type)
+static uint8_t *hdd_auth_type_str(uint32_t auth_type)
 {
 	switch (auth_type) {
 	case eCSR_AUTH_TYPE_OPEN_SYSTEM:
@@ -268,8 +255,7 @@ uint8_t *hdd_auth_type_str(uint32_t auth_type)
  *
  * Return: Meaningful string for enum csr dot11 mode
  */
-static
-uint8_t *hdd_dot11_mode_str(uint32_t dot11mode)
+static uint8_t *hdd_dot11_mode_str(uint32_t dot11mode)
 {
 	switch (dot11mode) {
 	case eCSR_CFG_DOT11_MODE_11A:
@@ -323,8 +309,7 @@ static ssize_t wlan_hdd_connect_info(struct hdd_adapter *adapter, uint8_t *buf,
 		return length;
 	}
 
-	ret_val = scnprintf(buf, buf_avail_len,
-			    "\nCONNECTION DETAILS\n");
+	ret_val = scnprintf(buf, buf_avail_len, "\nCONNECTION DETAILS\n");
 	if (ret_val <= 0)
 		return length;
 	length += ret_val;
@@ -364,13 +349,10 @@ static ssize_t wlan_hdd_connect_info(struct hdd_adapter *adapter, uint8_t *buf,
 			    "dot11mode = %s\n",
 			    conn_info->last_ssid.SSID.ssId,
 			    QDF_MAC_ADDR_REF(conn_info->bssid.bytes),
-			    conn_info->connect_time,
-			    conn_info->auth_time,
+			    conn_info->connect_time, conn_info->auth_time,
 			    conn_info->chan_freq,
 			    hdd_ch_width_str(conn_info->ch_width),
-			    conn_info->signal,
-			    tx_bit_rate,
-			    rx_bit_rate,
+			    conn_info->signal, tx_bit_rate, rx_bit_rate,
 			    hdd_auth_type_str(conn_info->last_auth_type),
 			    hdd_dot11_mode_str(conn_info->dot11mode));
 
@@ -402,8 +384,7 @@ static ssize_t wlan_hdd_connect_info(struct hdd_adapter *adapter, uint8_t *buf,
 	return length;
 }
 
-static ssize_t
-wlan_hdd_current_time_info(uint8_t *buf, ssize_t buf_avail_len)
+static ssize_t wlan_hdd_current_time_info(uint8_t *buf, ssize_t buf_avail_len)
 {
 	ssize_t length;
 	char time_buffer[HDD_TIME_STRING_LEN];
@@ -478,8 +459,7 @@ exit:
 }
 
 static ssize_t show_connect_info(struct device *dev,
-				 struct device_attribute *attr,
-				 char *buf)
+				 struct device_attribute *attr, char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -512,4 +492,3 @@ void hdd_sysfs_connect_info_interface_destroy(struct hdd_adapter *adapter)
 {
 	device_remove_file(&adapter->dev->dev, &dev_attr_connect_info);
 }
-

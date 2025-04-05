@@ -25,11 +25,11 @@
 
 /* Include Files */
 #include "qdf_crypto.h"
-#include <linux/export.h>
-#include <crypto/hash.h>
-#include <crypto/aes.h>
-#include <crypto/skcipher.h>
 #include <crypto/aead.h>
+#include <crypto/aes.h>
+#include <crypto/hash.h>
+#include <crypto/skcipher.h>
+#include <linux/export.h>
 #include <linux/ieee80211.h>
 #include <qdf_module.h>
 
@@ -42,26 +42,24 @@
  * @b: second variable
  * @len: length of variables
  */
-static void xor(uint8_t *a, const uint8_t *b, size_t len)
-{
-	unsigned int i;
+static void xor
+	(uint8_t *a, const uint8_t *b, size_t len) {
+		unsigned int i;
 
-	for (i = 0; i < len; i++)
-	a[i] ^= b[i];
+		for (i = 0; i < len; i++)
+			a[i] ^= b[i];
+	}
+
+	int qdf_get_hash(uint8_t *type, uint8_t element_cnt, uint8_t *addr[],
+			 uint32_t *addr_len, int8_t *hash)
+{
+	return qdf_get_hmac_hash(type, NULL, 0, element_cnt, addr, addr_len,
+				 hash);
 }
 
-int qdf_get_hash(uint8_t *type,
-		uint8_t element_cnt, uint8_t *addr[], uint32_t *addr_len,
-		int8_t *hash)
-{
-	return qdf_get_hmac_hash(type, NULL, 0, element_cnt,
-				 addr, addr_len, hash);
-}
-
-int qdf_get_hmac_hash(uint8_t *type, uint8_t *key,
-		uint32_t keylen,
-		uint8_t element_cnt, uint8_t *addr[], uint32_t *addr_len,
-		int8_t *hash)
+int qdf_get_hmac_hash(uint8_t *type, uint8_t *key, uint32_t keylen,
+		      uint8_t element_cnt, uint8_t *addr[], uint32_t *addr_len,
+		      int8_t *hash)
 {
 	int i;
 	size_t src_len[MAX_HMAC_ELEMENT_CNT];
@@ -76,7 +74,7 @@ int qdf_get_hmac_hash(uint8_t *type, uint8_t *key,
 		src_len[i] = addr_len[i];
 
 	return qdf_get_keyed_hash(type, key, keylen, (const uint8_t **)addr,
-				  src_len, element_cnt,  hash);
+				  src_len, element_cnt, hash);
 }
 
 QDF_STATUS
@@ -85,7 +83,7 @@ qdf_default_hmac_sha256_kdf(uint8_t *secret, uint32_t secret_len,
 			    uint32_t optional_data_len, uint8_t *key,
 			    uint32_t keylen)
 {
-	uint8_t tmp_hash[SHA256_DIGEST_SIZE] = {0};
+	uint8_t tmp_hash[SHA256_DIGEST_SIZE] = { 0 };
 	uint8_t count = 1;
 	uint8_t *addr[4];
 	uint32_t len[4];
@@ -174,28 +172,27 @@ static inline void leftshift_onebit(const uint8_t *input, uint8_t *output)
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-static void
-generate_subkey(struct crypto_aes_ctx *aes_ctx, uint8_t *k1, uint8_t *k2)
+static void generate_subkey(struct crypto_aes_ctx *aes_ctx, uint8_t *k1,
+			    uint8_t *k2)
 {
-	uint8_t l[AES_BLOCK_SIZE] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-	};
+	uint8_t l[AES_BLOCK_SIZE] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				      0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				      0x00, 0x00, 0x00, 0x00 };
 	uint8_t tmp[AES_BLOCK_SIZE];
-	const uint8_t const_rb[AES_BLOCK_SIZE] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x87
-	};
-	const uint8_t const_zero[AES_BLOCK_SIZE] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-	};
+	const uint8_t const_rb[AES_BLOCK_SIZE] = { 0x00, 0x00, 0x00, 0x00,
+						   0x00, 0x00, 0x00, 0x00,
+						   0x00, 0x00, 0x00, 0x00,
+						   0x00, 0x00, 0x00, 0x87 };
+	const uint8_t const_zero[AES_BLOCK_SIZE] = { 0x00, 0x00, 0x00, 0x00,
+						     0x00, 0x00, 0x00, 0x00,
+						     0x00, 0x00, 0x00, 0x00,
+						     0x00, 0x00, 0x00, 0x00 };
 
 	aes_encrypt(aes_ctx, l, const_zero);
 
-	if ((l[0] & 0x80) == 0) {       /* If MSB(l) = 0, then k1 = l << 1 */
+	if ((l[0] & 0x80) == 0) { /* If MSB(l) = 0, then k1 = l << 1 */
 		leftshift_onebit(l, k1);
-	} else {                /* Else k1 = ( l << 1 ) (+) Rb */
+	} else { /* Else k1 = ( l << 1 ) (+) Rb */
 		leftshift_onebit(l, tmp);
 		xor_128(tmp, const_rb, k1);
 	}
@@ -208,24 +205,23 @@ generate_subkey(struct crypto_aes_ctx *aes_ctx, uint8_t *k1, uint8_t *k2)
 	}
 }
 #else
-static void
-generate_subkey(struct crypto_cipher *tfm, uint8_t *k1, uint8_t *k2)
+static void generate_subkey(struct crypto_cipher *tfm, uint8_t *k1, uint8_t *k2)
 {
 	uint8_t l[AES_BLOCK_SIZE], tmp[AES_BLOCK_SIZE];
-	const uint8_t const_rb[AES_BLOCK_SIZE] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x87
-	};
-	const uint8_t const_zero[AES_BLOCK_SIZE] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-	};
+	const uint8_t const_rb[AES_BLOCK_SIZE] = { 0x00, 0x00, 0x00, 0x00,
+						   0x00, 0x00, 0x00, 0x00,
+						   0x00, 0x00, 0x00, 0x00,
+						   0x00, 0x00, 0x00, 0x87 };
+	const uint8_t const_zero[AES_BLOCK_SIZE] = { 0x00, 0x00, 0x00, 0x00,
+						     0x00, 0x00, 0x00, 0x00,
+						     0x00, 0x00, 0x00, 0x00,
+						     0x00, 0x00, 0x00, 0x00 };
 
 	crypto_cipher_encrypt_one(tfm, l, const_zero);
 
-	if ((l[0] & 0x80) == 0) {       /* If MSB(l) = 0, then k1 = l << 1 */
+	if ((l[0] & 0x80) == 0) { /* If MSB(l) = 0, then k1 = l << 1 */
 		leftshift_onebit(l, k1);
-	} else {                /* Else k1 = ( l << 1 ) (+) Rb */
+	} else { /* Else k1 = ( l << 1 ) (+) Rb */
 		leftshift_onebit(l, tmp);
 		xor_128(tmp, const_rb, k1);
 	}
@@ -267,8 +263,8 @@ int qdf_crypto_aes_128_cmac(const uint8_t *key, const uint8_t *data,
 	int ret;
 
 	/*
-	 * Calculate MIC and then copy
-	 */
+   * Calculate MIC and then copy
+   */
 	ret = aes_expandkey(&aes_ctx, key, AES_KEYSIZE_128);
 	if (ret) {
 		qdf_err("aes_expandkey failed (%d)", ret);
@@ -325,8 +321,8 @@ int qdf_crypto_aes_128_cmac(const uint8_t *key, const uint8_t *data,
 	int ret;
 
 	/*
-	 * Calculate MIC and then copy
-	 */
+   * Calculate MIC and then copy
+   */
 	tfm = crypto_alloc_cipher("aes", 0, CRYPTO_ALG_ASYNC);
 	if (IS_ERR(tfm)) {
 		ret = PTR_ERR(tfm);
@@ -403,8 +399,8 @@ static void set_desc_flags(struct shash_desc *desc, struct crypto_shash *tfm)
 #endif
 
 int qdf_get_keyed_hash(const char *alg, const uint8_t *key,
-			unsigned int key_len, const uint8_t *src[],
-			size_t *src_len, size_t num_elements, uint8_t *out)
+		       unsigned int key_len, const uint8_t *src[],
+		       size_t *src_len, size_t num_elements, uint8_t *out)
 {
 	struct crypto_shash *tfm;
 	int ret;
@@ -422,8 +418,8 @@ int qdf_get_keyed_hash(const char *alg, const uint8_t *key,
 		ret = crypto_shash_setkey(tfm, key, key_len);
 		if (ret) {
 			QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-				  FL("Set key failed for %s, ret:%d"),
-				  alg, -ret);
+				  FL("Set key failed for %s, ret:%d"), alg,
+				  -ret);
 			goto error;
 		}
 	}
@@ -436,18 +432,19 @@ int qdf_get_keyed_hash(const char *alg, const uint8_t *key,
 		ret = crypto_shash_init(desc);
 		if (ret) {
 			QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-				  FL("Failed to init hash for %s, ret:%d"),
-				  alg, -ret);
+				  FL("Failed to init hash for %s, ret:%d"), alg,
+				  -ret);
 			goto error;
 		}
 
 		for (i = 0; i < num_elements; i++) {
 			ret = crypto_shash_update(desc, src[i], src_len[i]);
 			if (ret) {
-				QDF_TRACE(QDF_MODULE_ID_QDF,
-					  QDF_TRACE_LEVEL_ERROR,
-					  FL("Failed to update hash for %s, ret:%d"),
-					  alg, -ret);
+				QDF_TRACE(
+					QDF_MODULE_ID_QDF,
+					QDF_TRACE_LEVEL_ERROR,
+					FL("Failed to update hash for %s, ret:%d"),
+					alg, -ret);
 				goto error;
 			}
 		}
@@ -469,7 +466,7 @@ qdf_export_symbol(qdf_get_keyed_hash);
 /* AES String to Vector from RFC 5297, 'out' should be of length AES_BLOCK_SIZE
  */
 int qdf_aes_s2v(const uint8_t *key, unsigned int key_len, const uint8_t *s[],
-		   size_t s_len[], size_t num_s, uint8_t *out)
+		size_t s_len[], size_t num_s, uint8_t *out)
 {
 	const char *alg = "cmac(aes)";
 	uint8_t d[AES_BLOCK_SIZE];
@@ -665,9 +662,9 @@ int qdf_aes_ctr(const uint8_t *key, unsigned int key_len, uint8_t *siv,
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
-int qdf_crypto_aes_gmac(const uint8_t *key, uint16_t key_length,
-			uint8_t *iv, const uint8_t *aad,
-			const uint8_t *data, uint16_t data_len, uint8_t *mic)
+int qdf_crypto_aes_gmac(const uint8_t *key, uint16_t key_length, uint8_t *iv,
+			const uint8_t *aad, const uint8_t *data,
+			uint16_t data_len, uint8_t *mic)
 {
 	struct crypto_aead *tfm;
 	int ret = 0;
@@ -701,7 +698,7 @@ int qdf_crypto_aes_gmac(const uint8_t *key, uint16_t key_length,
 
 	/* Prepare aead request */
 	req_size = sizeof(*req) + crypto_aead_reqsize(tfm) +
-			IEEE80211_MMIE_GMAC_MICLEN + AAD_LEN;
+		   IEEE80211_MMIE_GMAC_MICLEN + AAD_LEN;
 	req = qdf_mem_malloc(req_size);
 	if (!req) {
 		ret = -ENOMEM;
@@ -735,9 +732,9 @@ err_tfm:
 	return ret;
 }
 #else
-int qdf_crypto_aes_gmac(uint8_t *key, uint16_t key_length,
-			uint8_t *iv, uint8_t *aad, uint8_t *data,
-			uint16_t data_len, uint8_t *mic)
+int qdf_crypto_aes_gmac(uint8_t *key, uint16_t key_length, uint8_t *iv,
+			uint8_t *aad, uint8_t *data, uint16_t data_len,
+			uint8_t *mic)
 {
 	return -EINVAL;
 }

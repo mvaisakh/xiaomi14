@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved. Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
  */
 
 #include "dp_panel.h"
-#include <linux/unistd.h>
-#include <drm/drm_fixed.h>
 #include "dp_debug.h"
+#include <drm/drm_fixed.h>
+#include <linux/unistd.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0))
 #include <drm/display/drm_dsc.h>
 #else
@@ -85,11 +85,11 @@ struct dp_panel_private {
 };
 
 /* OEM NAME */
-static const u8 vendor_name[8] = {81, 117, 97, 108, 99, 111, 109, 109};
+static const u8 vendor_name[8] = { 81, 117, 97, 108, 99, 111, 109, 109 };
 
 /* MODEL NAME */
-static const u8 product_desc[16] = {83, 110, 97, 112, 100, 114, 97, 103,
-	111, 110, 0, 0, 0, 0, 0, 0};
+static const u8 product_desc[16] = { 83,  110, 97, 112, 100, 114, 97, 103,
+				     111, 110, 0,  0,	0,   0,	  0,  0 };
 
 struct dp_dhdr_maxpkt_calc_input {
 	u32 mdp_clk;
@@ -203,23 +203,23 @@ struct tu_algo_data {
  * packets are used to change the colorimetry.
  */
 static void get_sdp_colorimetry_range(struct dp_panel_private *panel,
-	u32 colorspace, u32 *colorimetry, u32 *dynamic_range)
+				      u32 colorspace, u32 *colorimetry,
+				      u32 *dynamic_range)
 {
-
 	u32 cc;
 
 	/*
-	 * Some rules being used for assignment of dynamic
-	 * range for colorimetry using SDP:
-	 *
-	 * 1) If compliance test is ongoing return sRGB with
-	 *    CEA primaries
-	 * 2) For BT2020 cases, dynamic range shall be CEA
-	 * 3) For DCI-P3 cases, as per HW team dynamic range
-	 *    shall be VESA for RGB and CEA for YUV content
-	 *    Hence defaulting to RGB and picking VESA
-	 * 4) Default shall be sRGB with VESA
-	 */
+   * Some rules being used for assignment of dynamic
+   * range for colorimetry using SDP:
+   *
+   * 1) If compliance test is ongoing return sRGB with
+   *    CEA primaries
+   * 2) For BT2020 cases, dynamic range shall be CEA
+   * 3) For DCI-P3 cases, as per HW team dynamic range
+   *    shall be VESA for RGB and CEA for YUV content
+   *    Hence defaulting to RGB and picking VESA
+   * 4) Default shall be sRGB with VESA
+   */
 
 	cc = panel->link->get_colorimetry_config(panel->link);
 
@@ -252,16 +252,16 @@ static void get_sdp_colorimetry_range(struct dp_panel_private *panel,
  * added. This API will be extended to YUV once its supported on DP.
  */
 static u8 get_misc_colorimetry_val(struct dp_panel_private *panel,
-	u32 colorspace)
+				   u32 colorspace)
 {
 	u8 colorimetry;
 	u32 cc;
 
 	cc = panel->link->get_colorimetry_config(panel->link);
 	/*
-	 * If there is a non-zero value then compliance test-case
-	 * is going on, otherwise we can honor the colorspace setting
-	 */
+   * If there is a non-zero value then compliance test-case
+   * is going on, otherwise we can honor the colorspace setting
+   */
 	if (cc)
 		return cc;
 
@@ -342,11 +342,11 @@ static inline int fixp2int_ceil(s64 a)
 }
 
 static void dp_panel_update_tu_timings(struct dp_tu_calc_input *in,
-					struct tu_algo_data *tu)
+				       struct tu_algo_data *tu)
 {
 	int nlanes = in->nlanes;
 	int dsc_num_slices = in->num_of_dsc_slices;
-	int dsc_num_bytes  = 0;
+	int dsc_num_bytes = 0;
 	int numerator;
 	s64 pclk_dsc_fp;
 	s64 dwidth_dsc_fp;
@@ -354,37 +354,37 @@ static void dp_panel_update_tu_timings(struct dp_tu_calc_input *in,
 	s64 overhead_dsc;
 
 	int tot_num_eoc_symbols = 0;
-	int tot_num_hor_bytes   = 0;
+	int tot_num_hor_bytes = 0;
 	int tot_num_dummy_bytes = 0;
-	int dwidth_dsc_bytes    = 0;
-	int  eoc_bytes          = 0;
+	int dwidth_dsc_bytes = 0;
+	int eoc_bytes = 0;
 
 	s64 temp1_fp, temp2_fp, temp3_fp;
 
-	tu->lclk_fp              = drm_fixp_from_fraction(in->lclk, 1);
-	tu->orig_lclk_fp         = tu->lclk_fp;
-	tu->pclk_fp              = drm_fixp_from_fraction(in->pclk_khz, 1000);
-	tu->orig_pclk_fp         = tu->pclk_fp;
-	tu->lwidth               = in->hactive;
+	tu->lclk_fp = drm_fixp_from_fraction(in->lclk, 1);
+	tu->orig_lclk_fp = tu->lclk_fp;
+	tu->pclk_fp = drm_fixp_from_fraction(in->pclk_khz, 1000);
+	tu->orig_pclk_fp = tu->pclk_fp;
+	tu->lwidth = in->hactive;
 	tu->hbp_relative_to_pclk = in->hporch;
-	tu->nlanes               = in->nlanes;
-	tu->bpp                  = in->bpp;
-	tu->pixelEnc             = in->pixel_enc;
-	tu->dsc_en               = in->dsc_en;
-	tu->fec_en               = in->fec_en;
-	tu->async_en             = in->async_en;
-	tu->lwidth_fp            = drm_fixp_from_fraction(in->hactive, 1);
-	tu->orig_lwidth          = in->hactive;
+	tu->nlanes = in->nlanes;
+	tu->bpp = in->bpp;
+	tu->pixelEnc = in->pixel_enc;
+	tu->dsc_en = in->dsc_en;
+	tu->fec_en = in->fec_en;
+	tu->async_en = in->async_en;
+	tu->lwidth_fp = drm_fixp_from_fraction(in->hactive, 1);
+	tu->orig_lwidth = in->hactive;
 	tu->hbp_relative_to_pclk_fp = drm_fixp_from_fraction(in->hporch, 1);
-	tu->orig_hbp             = in->hporch;
-	tu->rb2                  = (in->hporch < 160) ? 1 : 0;
+	tu->orig_hbp = in->hporch;
+	tu->rb2 = (in->hporch < 160) ? 1 : 0;
 
 	if (tu->pixelEnc == 420) {
 		temp1_fp = drm_fixp_from_fraction(2, 1);
 		tu->pclk_fp = drm_fixp_div(tu->pclk_fp, temp1_fp);
 		tu->lwidth_fp = drm_fixp_div(tu->lwidth_fp, temp1_fp);
 		tu->hbp_relative_to_pclk_fp =
-				drm_fixp_div(tu->hbp_relative_to_pclk_fp, 2);
+			drm_fixp_div(tu->hbp_relative_to_pclk_fp, 2);
 	}
 
 	if (tu->pixelEnc == 422) {
@@ -403,7 +403,7 @@ static void dp_panel_update_tu_timings(struct dp_tu_calc_input *in,
 			break;
 		}
 	} else
-		tu->bpc = tu->bpp/3;
+		tu->bpc = tu->bpp / 3;
 
 	if (!in->dsc_en)
 		goto fec_check;
@@ -420,19 +420,18 @@ static void dp_panel_update_tu_timings(struct dp_tu_calc_input *in,
 
 	numerator = drm_fixp2int(temp3_fp);
 
-	dsc_num_bytes  = numerator / dsc_num_slices;
-	eoc_bytes           = dsc_num_bytes % nlanes;
+	dsc_num_bytes = numerator / dsc_num_slices;
+	eoc_bytes = dsc_num_bytes % nlanes;
 	tot_num_eoc_symbols = nlanes * dsc_num_slices;
-	tot_num_hor_bytes   = dsc_num_bytes * dsc_num_slices;
+	tot_num_hor_bytes = dsc_num_bytes * dsc_num_slices;
 	tot_num_dummy_bytes = (nlanes - eoc_bytes) * dsc_num_slices;
 
 	if (dsc_num_bytes == 0)
 		DP_WARN("incorrect no of bytes per slice=%d\n", dsc_num_bytes);
 
-	dwidth_dsc_bytes = (tot_num_hor_bytes +
-				tot_num_eoc_symbols +
-				(eoc_bytes == 0 ? 0 : tot_num_dummy_bytes));
-	overhead_dsc     = dwidth_dsc_bytes / tot_num_hor_bytes;
+	dwidth_dsc_bytes = (tot_num_hor_bytes + tot_num_eoc_symbols +
+			    (eoc_bytes == 0 ? 0 : tot_num_dummy_bytes));
+	overhead_dsc = dwidth_dsc_bytes / tot_num_hor_bytes;
 
 	dwidth_dsc_fp = drm_fixp_from_fraction(dwidth_dsc_bytes, 3);
 
@@ -466,13 +465,11 @@ static void _tu_valid_boundary_calc(struct tu_algo_data *tu)
 
 	tu->new_valid_boundary_link = fixp2int_ceil(temp2_fp);
 
-	temp = (tu->i_upper_boundary_count *
-				tu->new_valid_boundary_link +
-				tu->i_lower_boundary_count *
-				(tu->new_valid_boundary_link - 1));
-	tu->average_valid2_fp = drm_fixp_from_fraction(temp,
-					(tu->i_upper_boundary_count +
-					tu->i_lower_boundary_count));
+	temp = (tu->i_upper_boundary_count * tu->new_valid_boundary_link +
+		tu->i_lower_boundary_count * (tu->new_valid_boundary_link - 1));
+	tu->average_valid2_fp =
+		drm_fixp_from_fraction(temp, (tu->i_upper_boundary_count +
+					      tu->i_lower_boundary_count));
 
 	temp1_fp = drm_fixp_from_fraction(tu->bpp, 8);
 	temp2_fp = tu->lwidth_fp;
@@ -492,8 +489,7 @@ static void _tu_valid_boundary_calc(struct tu_algo_data *tu)
 
 	temp1_fp = drm_fixp_from_fraction(tu->tu_size, 1);
 	tu->last_partial_tu_fp =
-			drm_fixp_div(tu->n_remainder_symbols_per_lane_fp,
-					temp1_fp);
+		drm_fixp_div(tu->n_remainder_symbols_per_lane_fp, temp1_fp);
 
 	if (tu->n_remainder_symbols_per_lane_fp != 0)
 		tu->remainder_symbols_exist = 1;
@@ -503,36 +499,34 @@ static void _tu_valid_boundary_calc(struct tu_algo_data *tu)
 	temp1_fp = drm_fixp_from_fraction(tu->n_tus, tu->nlanes);
 	tu->n_tus_per_lane = drm_fixp2int(temp1_fp);
 
-	tu->paired_tus = (int)((tu->n_tus_per_lane) /
-					(tu->i_upper_boundary_count +
-					 tu->i_lower_boundary_count));
+	tu->paired_tus =
+		(int)((tu->n_tus_per_lane) / (tu->i_upper_boundary_count +
+					      tu->i_lower_boundary_count));
 
-	tu->remainder_tus = tu->n_tus_per_lane - tu->paired_tus *
-						(tu->i_upper_boundary_count +
-						tu->i_lower_boundary_count);
+	tu->remainder_tus = tu->n_tus_per_lane -
+			    tu->paired_tus * (tu->i_upper_boundary_count +
+					      tu->i_lower_boundary_count);
 
 	if ((tu->remainder_tus - tu->i_upper_boundary_count) > 0) {
 		tu->remainder_tus_upper = tu->i_upper_boundary_count;
-		tu->remainder_tus_lower = tu->remainder_tus -
-						tu->i_upper_boundary_count;
+		tu->remainder_tus_lower =
+			tu->remainder_tus - tu->i_upper_boundary_count;
 	} else {
 		tu->remainder_tus_upper = tu->remainder_tus;
 		tu->remainder_tus_lower = 0;
 	}
 
 	temp = tu->paired_tus * (tu->i_upper_boundary_count *
-				tu->new_valid_boundary_link +
-				tu->i_lower_boundary_count *
-				(tu->new_valid_boundary_link - 1)) +
-				(tu->remainder_tus_upper *
-				 tu->new_valid_boundary_link) +
-				(tu->remainder_tus_lower *
-				(tu->new_valid_boundary_link - 1));
+					 tu->new_valid_boundary_link +
+				 tu->i_lower_boundary_count *
+					 (tu->new_valid_boundary_link - 1)) +
+	       (tu->remainder_tus_upper * tu->new_valid_boundary_link) +
+	       (tu->remainder_tus_lower * (tu->new_valid_boundary_link - 1));
 	tu->total_valid_fp = drm_fixp_from_fraction(temp, 1);
 
 	if (tu->remainder_symbols_exist) {
 		temp1_fp = tu->total_valid_fp +
-				tu->n_remainder_symbols_per_lane_fp;
+			   tu->n_remainder_symbols_per_lane_fp;
 		temp2_fp = drm_fixp_from_fraction(tu->n_tus_per_lane, 1);
 		temp2_fp = temp2_fp + tu->last_partial_tu_fp;
 		temp1_fp = drm_fixp_div(temp1_fp, temp2_fp);
@@ -578,8 +572,7 @@ static void _tu_valid_boundary_calc(struct tu_algo_data *tu)
 	tu->extra_required_bytes_new_tmp = (int)(temp1 + temp2);
 
 	temp1_fp = drm_fixp_from_fraction(8, tu->bpp);
-	temp2_fp = drm_fixp_from_fraction(
-	tu->extra_required_bytes_new_tmp, 1);
+	temp2_fp = drm_fixp_from_fraction(tu->extra_required_bytes_new_tmp, 1);
 	temp1_fp = drm_fixp_mul(temp2_fp, temp1_fp);
 	tu->extra_pclk_cycles_tmp = fixp2int_ceil(temp1_fp);
 
@@ -593,61 +586,70 @@ static void _tu_valid_boundary_calc(struct tu_algo_data *tu)
 	tu->lower_filler_size_tmp = tu->filler_size_tmp + 1;
 
 	tu->delay_start_link_tmp = tu->extra_pclk_cycles_in_link_clk_tmp +
-					tu->lower_filler_size_tmp +
-					tu->extra_buffer_margin;
+				   tu->lower_filler_size_tmp +
+				   tu->extra_buffer_margin;
 
 	temp1_fp = drm_fixp_from_fraction(tu->delay_start_link_tmp, 1);
 	tu->delay_start_time_fp = drm_fixp_div(temp1_fp, tu->lclk_fp);
 
-	if (tu->rb2)
-	{
+	if (tu->rb2) {
 		temp1_fp = drm_fixp_mul(tu->delay_start_time_fp, tu->lclk_fp);
 		tu->delay_start_link_lclk = fixp2int_ceil(temp1_fp);
 
 		if (tu->remainder_tus > tu->i_upper_boundary_count) {
-			temp = (tu->remainder_tus - tu->i_upper_boundary_count) * (tu->new_valid_boundary_link - 1);
-			temp += (tu->i_upper_boundary_count * tu->new_valid_boundary_link);
+			temp = (tu->remainder_tus -
+				tu->i_upper_boundary_count) *
+			       (tu->new_valid_boundary_link - 1);
+			temp += (tu->i_upper_boundary_count *
+				 tu->new_valid_boundary_link);
 			temp *= tu->nlanes;
 		} else {
-			temp = tu->nlanes * tu->remainder_tus * tu->new_valid_boundary_link;
+			temp = tu->nlanes * tu->remainder_tus *
+			       tu->new_valid_boundary_link;
 		}
 
-		temp1 = tu->i_lower_boundary_count * (tu->new_valid_boundary_link - 1);
-		temp1 += tu->i_upper_boundary_count * tu->new_valid_boundary_link;
+		temp1 = tu->i_lower_boundary_count *
+			(tu->new_valid_boundary_link - 1);
+		temp1 += tu->i_upper_boundary_count *
+			 tu->new_valid_boundary_link;
 		temp1 *= tu->paired_tus * tu->nlanes;
-		temp1_fp = drm_fixp_from_fraction(tu->n_symbols - temp1 - temp, tu->nlanes);
+		temp1_fp = drm_fixp_from_fraction(tu->n_symbols - temp1 - temp,
+						  tu->nlanes);
 		tu->last_partial_lclk = fixp2int_ceil(temp1_fp);
 
-		tu->tu_active_cycles = (int)((tu->n_tus_per_lane * tu->tu_size) + tu->last_partial_lclk);
-		tu->post_tu_hw_pipe_delay = 4 /*BS_on_the_link*/ + 1 /*BE_next_ren*/;
-		temp = tu->pre_tu_hw_pipe_delay + tu->delay_start_link_lclk + tu->tu_active_cycles + tu->post_tu_hw_pipe_delay;
+		tu->tu_active_cycles =
+			(int)((tu->n_tus_per_lane * tu->tu_size) +
+			      tu->last_partial_lclk);
+		tu->post_tu_hw_pipe_delay =
+			4 /*BS_on_the_link*/ + 1 /*BE_next_ren*/;
+		temp = tu->pre_tu_hw_pipe_delay + tu->delay_start_link_lclk +
+		       tu->tu_active_cycles + tu->post_tu_hw_pipe_delay;
 
-		if (tu->fec_en == 1)
-		{
-			if (tu->nlanes == 1)
-			{
+		if (tu->fec_en == 1) {
+			if (tu->nlanes == 1) {
 				temp1_fp = drm_fixp_from_fraction(temp, 500);
-				tu->parity_symbols = fixp2int_ceil(temp1_fp) * 12 + 1;
-			}
-			else
-			{
+				tu->parity_symbols =
+					fixp2int_ceil(temp1_fp) * 12 + 1;
+			} else {
 				temp1_fp = drm_fixp_from_fraction(temp, 250);
-				tu->parity_symbols = fixp2int_ceil(temp1_fp) * 6 + 1;
+				tu->parity_symbols =
+					fixp2int_ceil(temp1_fp) * 6 + 1;
 			}
-		}
-		else  //no fec BW impact
+		} else // no fec BW impact
 		{
 			tu->parity_symbols = 0;
 		}
 
 		tu->link_config_hactive_time = temp + tu->parity_symbols;
 
-		if (tu->resolution_line_time >= tu->link_config_hactive_time + 1 /*margin*/)
+		if (tu->resolution_line_time >=
+		    tu->link_config_hactive_time + 1 /*margin*/)
 			tu->hbp_delayStartCheck = 1;
 		else
 			tu->hbp_delayStartCheck = 0;
 	} else {
-		compare_result_3 = _tu_param_compare(tu->hbp_time_fp, tu->delay_start_time_fp);
+		compare_result_3 = _tu_param_compare(tu->hbp_time_fp,
+						     tu->delay_start_time_fp);
 		if (compare_result_3 < 2)
 			tu->hbp_delayStartCheck = 1;
 		else
@@ -667,14 +669,13 @@ static void _tu_valid_boundary_calc(struct tu_algo_data *tu)
 		compare_result_2 = 0;
 
 	if (((tu->even_distribution == 1) ||
-			((tu->even_distribution_BF == 0) &&
-			(tu->even_distribution_legacy == 0))) &&
-			tu->n_err_fp >= 0 && tu->n_n_err_fp >= 0 &&
-			compare_result_2 &&
-			(compare_result_1 || (tu->min_hblank_violated == 1)) &&
-			(tu->new_valid_boundary_link - 1) > 0 &&
-			(tu->hbp_delayStartCheck == 1) &&
-			(tu->delay_start_link_tmp <= 1023)) {
+	     ((tu->even_distribution_BF == 0) &&
+	      (tu->even_distribution_legacy == 0))) &&
+	    tu->n_err_fp >= 0 && tu->n_n_err_fp >= 0 && compare_result_2 &&
+	    (compare_result_1 || (tu->min_hblank_violated == 1)) &&
+	    (tu->new_valid_boundary_link - 1) > 0 &&
+	    (tu->hbp_delayStartCheck == 1) &&
+	    (tu->delay_start_link_tmp <= 1023)) {
 		tu->upper_boundary_count = tu->i_upper_boundary_count;
 		tu->lower_boundary_count = tu->i_lower_boundary_count;
 		tu->err_fp = tu->n_n_err_fp;
@@ -685,8 +686,8 @@ static void _tu_valid_boundary_calc(struct tu_algo_data *tu)
 		tu->even_distribution_BF = 1;
 		tu->delay_start_link = tu->delay_start_link_tmp;
 	} else if (tu->boundary_mod_lower_err == 0) {
-		compare_result_1 = _tu_param_compare(tu->n_n_err_fp,
-							tu->diff_abs_fp);
+		compare_result_1 =
+			_tu_param_compare(tu->n_n_err_fp, tu->diff_abs_fp);
 		if (compare_result_1 == 2)
 			tu->boundary_mod_lower_err = 1;
 	}
@@ -701,7 +702,7 @@ static void _dp_calc_boundary(struct tu_algo_data *tu)
 
 		temp1_fp = drm_fixp_div(tu->lclk_fp, tu->pclk_fp);
 		temp2_fp = drm_fixp_from_fraction(
-				tu->delay_start_link_extra_pixclk, 1);
+			tu->delay_start_link_extra_pixclk, 1);
 		temp1_fp = drm_fixp_mul(temp2_fp, temp1_fp);
 		tu->extra_buffer_margin = fixp2int_ceil(temp1_fp);
 
@@ -711,20 +712,20 @@ static void _dp_calc_boundary(struct tu_algo_data *tu)
 
 		for (tu->tu_size = 32; tu->tu_size <= 64; tu->tu_size++) {
 			for (tu->i_upper_boundary_count = 1;
-				tu->i_upper_boundary_count <= 15;
-				tu->i_upper_boundary_count++) {
+			     tu->i_upper_boundary_count <= 15;
+			     tu->i_upper_boundary_count++) {
 				for (tu->i_lower_boundary_count = 1;
-					tu->i_lower_boundary_count <= 15;
-					tu->i_lower_boundary_count++) {
+				     tu->i_lower_boundary_count <= 15;
+				     tu->i_lower_boundary_count++) {
 					_tu_valid_boundary_calc(tu);
 				}
 			}
 		}
 		tu->delay_start_link_extra_pixclk--;
 	} while (!tu->boundary_moderation_en &&
-		tu->boundary_mod_lower_err == 1 &&
-		tu->delay_start_link_extra_pixclk != 0 &&
-		((tu->second_loop_set == 0 && tu->rb2 == 1) || tu->rb2 == 0));
+		 tu->boundary_mod_lower_err == 1 &&
+		 tu->delay_start_link_extra_pixclk != 0 &&
+		 ((tu->second_loop_set == 0 && tu->rb2 == 1) || tu->rb2 == 0));
 }
 
 static void _dp_calc_extra_bytes(struct tu_algo_data *tu)
@@ -757,7 +758,7 @@ static void _dp_calc_extra_bytes(struct tu_algo_data *tu)
 }
 
 static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
-				   struct dp_vc_tu_mapping_table *tu_table)
+			      struct dp_vc_tu_mapping_table *tu_table)
 {
 	struct tu_algo_data tu;
 	int compare_result_1, compare_result_2;
@@ -820,8 +821,9 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 	tu.n_n_err_fp = 0;
 
 	temp = drm_fixp2int(tu.lwidth_fp);
-	if ((((u32)temp % tu.nlanes) != 0) && (_tu_param_compare(tu.ratio_fp, DRM_FIXED_ONE) == 2)
-			&& (tu.dsc_en == 0)) {
+	if ((((u32)temp % tu.nlanes) != 0) &&
+	    (_tu_param_compare(tu.ratio_fp, DRM_FIXED_ONE) == 2) &&
+	    (tu.dsc_en == 0)) {
 		tu.ratio_fp = drm_fixp_mul(tu.ratio_fp, RATIO_SCALE_fp);
 		if (_tu_param_compare(tu.ratio_fp, DRM_FIXED_ONE) == 1)
 			tu.ratio_fp = DRM_FIXED_ONE;
@@ -832,8 +834,8 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 
 	if (HBLANK_MARGIN_EXTRA != 0) {
 		HBLANK_MARGIN += HBLANK_MARGIN_EXTRA;
-		DP_DEBUG("Info: increase HBLANK_MARGIN to %d. (PLUS%d)\n", HBLANK_MARGIN,
-			HBLANK_MARGIN_EXTRA);
+		DP_DEBUG("Info: increase HBLANK_MARGIN to %d. (PLUS%d)\n",
+			 HBLANK_MARGIN, HBLANK_MARGIN_EXTRA);
 	}
 
 	for (tu.tu_size = 32; tu.tu_size <= 64; tu.tu_size++) {
@@ -866,8 +868,8 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 		tu.n_tus += 1;
 
 	tu.even_distribution_legacy = tu.n_tus % tu.nlanes == 0 ? 1 : 0;
-	DP_DEBUG("Info: n_sym = %d, num_of_tus = %d\n",
-		tu.valid_boundary_link, tu.n_tus);
+	DP_DEBUG("Info: n_sym = %d, num_of_tus = %d\n", tu.valid_boundary_link,
+		 tu.n_tus);
 
 	_dp_calc_extra_bytes(&tu);
 
@@ -877,30 +879,31 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 	tu.ratio_by_tu_fp = drm_fixp_mul(tu.ratio_fp, temp1_fp);
 
 	tu.delay_start_link = tu.extra_pclk_cycles_in_link_clk +
-				tu.filler_size + tu.extra_buffer_margin;
+			      tu.filler_size + tu.extra_buffer_margin;
 
 	tu.resulting_valid_fp =
-			drm_fixp_from_fraction(tu.valid_boundary_link, 1);
+		drm_fixp_from_fraction(tu.valid_boundary_link, 1);
 
 	temp1_fp = drm_fixp_from_fraction(tu.tu_size_desired, 1);
 	temp2_fp = drm_fixp_div(tu.resulting_valid_fp, temp1_fp);
 	tu.TU_ratio_err_fp = temp2_fp - tu.original_ratio_fp;
 
-	temp1_fp = drm_fixp_from_fraction((tu.hbp_relative_to_pclk - HBLANK_MARGIN), 1);
+	temp1_fp = drm_fixp_from_fraction(
+		(tu.hbp_relative_to_pclk - HBLANK_MARGIN), 1);
 	tu.hbp_time_fp = drm_fixp_div(temp1_fp, tu.pclk_fp);
 
 	temp1_fp = drm_fixp_from_fraction(tu.delay_start_link, 1);
 	tu.delay_start_time_fp = drm_fixp_div(temp1_fp, tu.lclk_fp);
 
-	compare_result_1 = _tu_param_compare(tu.hbp_time_fp,
-					tu.delay_start_time_fp);
+	compare_result_1 =
+		_tu_param_compare(tu.hbp_time_fp, tu.delay_start_time_fp);
 	if (compare_result_1 == 2) /* hbp_time_fp < delay_start_time_fp */
 		tu.min_hblank_violated = 1;
 
 	tu.hactive_time_fp = drm_fixp_div(tu.lwidth_fp, tu.pclk_fp);
 
-	compare_result_2 = _tu_param_compare(tu.hactive_time_fp,
-						tu.delay_start_time_fp);
+	compare_result_2 =
+		_tu_param_compare(tu.hactive_time_fp, tu.delay_start_time_fp);
 	if (compare_result_2 == 2)
 		tu.min_hblank_violated = 1;
 
@@ -924,17 +927,17 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 	temp2_fp = drm_fixp_from_fraction(tu.orig_lwidth + tu.orig_hbp, 2);
 	temp_fp = drm_fixp_mul(temp1_fp, temp2_fp);
 	tu.resolution_line_time = drm_fixp2int(temp_fp);
-	tu.pre_tu_hw_pipe_delay = fixp2int_ceil(temp1_fp) + 2 /*cdc fifo write jitter+2*/
-				+ 3 /*pre-delay start cycles*/
-				+ 3 /*post-delay start cycles*/ + 1 /*BE on the link*/;
+	tu.pre_tu_hw_pipe_delay =
+		fixp2int_ceil(temp1_fp) + 2 /*cdc fifo write jitter+2*/
+		+ 3 /*pre-delay start cycles*/
+		+ 3 /*post-delay start cycles*/ + 1 /*BE on the link*/;
 	tu.post_tu_hw_pipe_delay = 4 /*BS_on_the_link*/ + 1 /*BE_next_ren*/;
 
 	temp1_fp = drm_fixp_from_fraction(tu.bpp, 8);
 	temp1_fp = drm_fixp_mul(tu.lwidth_fp, temp1_fp);
 	tu.n_symbols = fixp2int_ceil(temp1_fp);
 
-	if (tu.rb2)
-	{
+	if (tu.rb2) {
 		temp1_fp = drm_fixp_mul(tu.delay_start_time_fp, tu.lclk_fp);
 		tu.delay_start_link_lclk = fixp2int_ceil(temp1_fp);
 
@@ -943,8 +946,11 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 		tu.i_lower_boundary_count = 0;
 
 		temp1 = tu.i_upper_boundary_count * tu.new_valid_boundary_link;
-		temp1 += tu.i_lower_boundary_count * (tu.new_valid_boundary_link - 1);
-		tu.average_valid2_fp = drm_fixp_from_fraction(temp1, (tu.i_upper_boundary_count + tu.i_lower_boundary_count));
+		temp1 += tu.i_lower_boundary_count *
+			 (tu.new_valid_boundary_link - 1);
+		tu.average_valid2_fp = drm_fixp_from_fraction(
+			temp1, (tu.i_upper_boundary_count +
+				tu.i_lower_boundary_count));
 
 		temp1_fp = drm_fixp_from_fraction(tu.bpp, 8);
 		temp1_fp = drm_fixp_mul(tu.lwidth_fp, temp1_fp);
@@ -952,75 +958,85 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 		tu.n_tus = drm_fixp2int(temp2_fp);
 
 		tu.n_tus_per_lane = tu.n_tus / tu.nlanes;
-		tu.paired_tus = (int)((tu.n_tus_per_lane) / (tu.i_upper_boundary_count + tu.i_lower_boundary_count));
+		tu.paired_tus = (int)((tu.n_tus_per_lane) /
+				      (tu.i_upper_boundary_count +
+				       tu.i_lower_boundary_count));
 
-		tu.remainder_tus = tu.n_tus_per_lane - tu.paired_tus * (tu.i_upper_boundary_count + tu.i_lower_boundary_count);
+		tu.remainder_tus = tu.n_tus_per_lane -
+				   tu.paired_tus * (tu.i_upper_boundary_count +
+						    tu.i_lower_boundary_count);
 
 		if (tu.remainder_tus > tu.i_upper_boundary_count) {
-			temp = (tu.remainder_tus - tu.i_upper_boundary_count) * (tu.new_valid_boundary_link - 1);
-			temp += (tu.i_upper_boundary_count * tu.new_valid_boundary_link);
+			temp = (tu.remainder_tus - tu.i_upper_boundary_count) *
+			       (tu.new_valid_boundary_link - 1);
+			temp += (tu.i_upper_boundary_count *
+				 tu.new_valid_boundary_link);
 			temp *= tu.nlanes;
 		} else {
-			temp = tu.nlanes * tu.remainder_tus * tu.new_valid_boundary_link;
+			temp = tu.nlanes * tu.remainder_tus *
+			       tu.new_valid_boundary_link;
 		}
 
-		temp1 = tu.i_lower_boundary_count * (tu.new_valid_boundary_link - 1);
+		temp1 = tu.i_lower_boundary_count *
+			(tu.new_valid_boundary_link - 1);
 		temp1 += tu.i_upper_boundary_count * tu.new_valid_boundary_link;
 		temp1 *= tu.paired_tus * tu.nlanes;
-		temp1_fp = drm_fixp_from_fraction(tu.n_symbols - temp1 - temp, tu.nlanes);
+		temp1_fp = drm_fixp_from_fraction(tu.n_symbols - temp1 - temp,
+						  tu.nlanes);
 		tu.last_partial_lclk = fixp2int_ceil(temp1_fp);
 
-		tu.tu_active_cycles = (int)((tu.n_tus_per_lane * tu.tu_size) + tu.last_partial_lclk);
+		tu.tu_active_cycles = (int)((tu.n_tus_per_lane * tu.tu_size) +
+					    tu.last_partial_lclk);
 
-		temp = tu.pre_tu_hw_pipe_delay + tu.delay_start_link_lclk + tu.tu_active_cycles + tu.post_tu_hw_pipe_delay;
+		temp = tu.pre_tu_hw_pipe_delay + tu.delay_start_link_lclk +
+		       tu.tu_active_cycles + tu.post_tu_hw_pipe_delay;
 
-		if (tu.fec_en == 1)
-		{
-			if (tu.nlanes == 1)
-			{
+		if (tu.fec_en == 1) {
+			if (tu.nlanes == 1) {
 				temp1_fp = drm_fixp_from_fraction(temp, 500);
-				tu.parity_symbols = fixp2int_ceil(temp1_fp) * 12 + 1;
-			}
-			else
-			{
+				tu.parity_symbols =
+					fixp2int_ceil(temp1_fp) * 12 + 1;
+			} else {
 				temp1_fp = drm_fixp_from_fraction(temp, 250);
-				tu.parity_symbols = fixp2int_ceil(temp1_fp) * 6 + 1;
+				tu.parity_symbols =
+					fixp2int_ceil(temp1_fp) * 6 + 1;
 			}
-		}
-		else  //no fec BW impact
+		} else // no fec BW impact
 		{
 			tu.parity_symbols = 0;
 		}
 
 		tu.link_config_hactive_time = temp + tu.parity_symbols;
 
-		if (tu.link_config_hactive_time + 1 /*margin*/ >= tu.resolution_line_time)
+		if (tu.link_config_hactive_time + 1 /*margin*/ >=
+		    tu.resolution_line_time)
 			tu.min_hblank_violated = 1;
-    }
+	}
 
 	tu.delay_start_time_fp = 0;
 
 	if ((tu.diff_abs_fp != 0 &&
-			((tu.diff_abs_fp > BRUTE_FORCE_THRESHOLD_fp) ||
-			 (tu.even_distribution_legacy == 0) ||
-			 (DP_BRUTE_FORCE == 1))) ||
-			(tu.min_hblank_violated == 1)) {
+	     ((tu.diff_abs_fp > BRUTE_FORCE_THRESHOLD_fp) ||
+	      (tu.even_distribution_legacy == 0) || (DP_BRUTE_FORCE == 1))) ||
+	    (tu.min_hblank_violated == 1)) {
 		_dp_calc_boundary(&tu);
 
 		if (tu.boundary_moderation_en) {
 			temp1_fp = drm_fixp_from_fraction(
-					(tu.upper_boundary_count *
-					tu.valid_boundary_link +
-					tu.lower_boundary_count *
-					(tu.valid_boundary_link - 1)), 1);
+				(tu.upper_boundary_count *
+					 tu.valid_boundary_link +
+				 tu.lower_boundary_count *
+					 (tu.valid_boundary_link - 1)),
+				1);
 			temp2_fp = drm_fixp_from_fraction(
-					(tu.upper_boundary_count +
-					tu.lower_boundary_count), 1);
+				(tu.upper_boundary_count +
+				 tu.lower_boundary_count),
+				1);
 			tu.resulting_valid_fp =
-					drm_fixp_div(temp1_fp, temp2_fp);
+				drm_fixp_div(temp1_fp, temp2_fp);
 
-			temp1_fp = drm_fixp_from_fraction(
-					tu.tu_size_desired, 1);
+			temp1_fp =
+				drm_fixp_from_fraction(tu.tu_size_desired, 1);
 			tu.ratio_by_tu_fp =
 				drm_fixp_mul(tu.original_ratio_fp, temp1_fp);
 
@@ -1029,8 +1045,8 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 
 			temp1_fp = drm_fixp_from_fraction(tu.bpp, 8);
 			temp1_fp = drm_fixp_mul(tu.lwidth_fp, temp1_fp);
-			temp2_fp = drm_fixp_div(temp1_fp,
-						tu.resulting_valid_fp);
+			temp2_fp =
+				drm_fixp_div(temp1_fp, tu.resulting_valid_fp);
 			tu.n_tus = drm_fixp2int(temp2_fp);
 
 			tu.tu_size_minus1 = tu.tu_size_desired - 1;
@@ -1063,29 +1079,30 @@ static void _dp_panel_calc_tu(struct dp_tu_calc_input *in,
 	tu.delay_start_time_fp = drm_fixp_div(temp1_fp, tu.lclk_fp);
 
 	/* OUTPUTS */
-	tu_table->valid_boundary_link       = tu.valid_boundary_link;
-	tu_table->delay_start_link          = tu.delay_start_link;
-	tu_table->boundary_moderation_en    = tu.boundary_moderation_en;
+	tu_table->valid_boundary_link = tu.valid_boundary_link;
+	tu_table->delay_start_link = tu.delay_start_link;
+	tu_table->boundary_moderation_en = tu.boundary_moderation_en;
 	tu_table->valid_lower_boundary_link = tu.valid_lower_boundary_link;
-	tu_table->upper_boundary_count      = tu.upper_boundary_count;
-	tu_table->lower_boundary_count      = tu.lower_boundary_count;
-	tu_table->tu_size_minus1            = tu.tu_size_minus1;
+	tu_table->upper_boundary_count = tu.upper_boundary_count;
+	tu_table->lower_boundary_count = tu.lower_boundary_count;
+	tu_table->tu_size_minus1 = tu.tu_size_minus1;
 
-	DP_DEBUG("TU: valid_boundary_link: %d\n", tu_table->valid_boundary_link);
+	DP_DEBUG("TU: valid_boundary_link: %d\n",
+		 tu_table->valid_boundary_link);
 	DP_DEBUG("TU: delay_start_link: %d\n", tu_table->delay_start_link);
 	DP_DEBUG("TU: boundary_moderation_en: %d\n",
-			tu_table->boundary_moderation_en);
+		 tu_table->boundary_moderation_en);
 	DP_DEBUG("TU: valid_lower_boundary_link: %d\n",
-			tu_table->valid_lower_boundary_link);
+		 tu_table->valid_lower_boundary_link);
 	DP_DEBUG("TU: upper_boundary_count: %d\n",
-			tu_table->upper_boundary_count);
+		 tu_table->upper_boundary_count);
 	DP_DEBUG("TU: lower_boundary_count: %d\n",
-			tu_table->lower_boundary_count);
+		 tu_table->lower_boundary_count);
 	DP_DEBUG("TU: tu_size_minus1: %d\n", tu_table->tu_size_minus1);
 }
 
 static void dp_panel_calc_tu_parameters(struct dp_panel *dp_panel,
-		struct dp_vc_tu_mapping_table *tu_table)
+					struct dp_vc_tu_mapping_table *tu_table)
 {
 	struct dp_tu_calc_input in;
 	struct dp_panel_info *pinfo;
@@ -1100,7 +1117,7 @@ static void dp_panel_calc_tu_parameters(struct dp_panel *dp_panel,
 	in.pclk_khz = pinfo->pixel_clk_khz;
 	in.hactive = pinfo->h_active;
 	in.hporch = pinfo->h_back_porch + pinfo->h_front_porch +
-				pinfo->h_sync_width;
+		    pinfo->h_sync_width;
 	in.nlanes = panel->link->link_params.lane_count;
 	in.bpp = pinfo->bpp;
 	in.pixel_enc = 444;
@@ -1111,13 +1128,13 @@ static void dp_panel_calc_tu_parameters(struct dp_panel *dp_panel,
 
 	if (pinfo->comp_info.enabled)
 		in.compress_ratio = mult_frac(100, pinfo->comp_info.src_bpp,
-				pinfo->comp_info.tgt_bpp);
+					      pinfo->comp_info.tgt_bpp);
 
 	_dp_panel_calc_tu(&in, tu_table);
 }
 
 void dp_panel_calc_tu_test(struct dp_tu_calc_input *in,
-		struct dp_vc_tu_mapping_table *tu_table)
+			   struct dp_vc_tu_mapping_table *tu_table)
 {
 	_dp_panel_calc_tu(in, tu_table);
 }
@@ -1156,7 +1173,7 @@ static void dp_panel_config_tr_unit(struct dp_panel *dp_panel)
 		valid_boundary2 |= BIT(0);
 
 	DP_DEBUG("dp_tu=0x%x, valid_boundary=0x%x, valid_boundary2=0x%x\n",
-			dp_tu, valid_boundary, valid_boundary2);
+		 dp_tu, valid_boundary, valid_boundary2);
 
 	catalog->dp_tu = dp_tu;
 	catalog->valid_boundary = valid_boundary;
@@ -1165,7 +1182,8 @@ static void dp_panel_config_tr_unit(struct dp_panel *dp_panel)
 	catalog->update_transfer_unit(catalog);
 }
 
-static void dp_panel_get_dto_params(u32 src_bpp, u32 tgt_bpp, u32 *num, u32 *denom)
+static void dp_panel_get_dto_params(u32 src_bpp, u32 tgt_bpp, u32 *num,
+				    u32 *denom)
 {
 	if ((tgt_bpp == 12) && (src_bpp == 24)) {
 		*num = 1;
@@ -1209,33 +1227,32 @@ static void dp_panel_dsc_prepare_pps_packet(struct dp_panel *dp_panel)
 
 	for (i = 0; i < dsc->pps_word_len; i++) {
 		index_4 = i << 2;
-		pps_word[i] = pps[index_4 + 0] << 0 |
-				pps[index_4 + 1] << 8 |
-				pps[index_4 + 2] << 16 |
-				pps[index_4 + 3] << 24;
+		pps_word[i] = pps[index_4 + 0] << 0 | pps[index_4 + 1] << 8 |
+			      pps[index_4 + 2] << 16 | pps[index_4 + 3] << 24;
 
 		parity[i] = dp_header_get_parity(pps_word[i]);
 	}
 
 	for (i = 0; i < dsc->parity_word_len; i++) {
 		index_4 = i << 2;
-		parity_word[i] = parity[index_4 + 0] << 0 |
-				   parity[index_4 + 1] << 8 |
-				   parity[index_4 + 2] << 16 |
-				   parity[index_4 + 3] << 24;
+		parity_word[i] =
+			parity[index_4 + 0] << 0 | parity[index_4 + 1] << 8 |
+			parity[index_4 + 2] << 16 | parity[index_4 + 3] << 24;
 	}
 }
 
-static void _dp_panel_dsc_get_num_extra_pclk(struct msm_compression_info *comp_info)
+static void
+_dp_panel_dsc_get_num_extra_pclk(struct msm_compression_info *comp_info)
 {
 	unsigned int dto_n = 0, dto_d = 0, remainder;
 	int ack_required, last_few_ack_required, accum_ack;
 	int last_few_pclk, last_few_pclk_required;
 	struct msm_display_dsc_info *dsc = &comp_info->dsc_info;
-	int start, temp, line_width = dsc->config.pic_width/2;
+	int start, temp, line_width = dsc->config.pic_width / 2;
 	s64 temp1_fp, temp2_fp;
 
-	dp_panel_get_dto_params(comp_info->src_bpp, comp_info->tgt_bpp, &dto_n, &dto_d);
+	dp_panel_get_dto_params(comp_info->src_bpp, comp_info->tgt_bpp, &dto_n,
+				&dto_d);
 
 	ack_required = dsc->pclk_per_line;
 
@@ -1250,9 +1267,9 @@ static void _dp_panel_dsc_get_num_extra_pclk(struct msm_compression_info *comp_i
 	last_few_ack_required = ack_required - temp;
 
 	/*
-	 * check how many more pclk is needed to
-	 * accommodate the last few ack required
-	 */
+   * check how many more pclk is needed to
+   * accommodate the last few ack required
+   */
 	remainder = dto_n;
 	accum_ack = 0;
 	last_few_pclk_required = 0;
@@ -1279,8 +1296,9 @@ static void _dp_panel_dsc_get_num_extra_pclk(struct msm_compression_info *comp_i
 }
 
 static void _dp_panel_dsc_bw_overhead_calc(struct dp_panel *dp_panel,
-		struct msm_display_dsc_info *dsc,
-		struct dp_display_mode *dp_mode, u32 dsc_byte_cnt)
+					   struct msm_display_dsc_info *dsc,
+					   struct dp_display_mode *dp_mode,
+					   u32 dsc_byte_cnt)
 {
 	int num_slices, tot_num_eoc_symbols;
 	int tot_num_hor_bytes, tot_num_dummy_bytes;
@@ -1301,20 +1319,20 @@ static void _dp_panel_dsc_bw_overhead_calc(struct dp_panel *dp_panel,
 	if (!eoc_bytes)
 		tot_num_dummy_bytes = 0;
 
-	dwidth_dsc_bytes = tot_num_hor_bytes + tot_num_eoc_symbols +
-				tot_num_dummy_bytes;
+	dwidth_dsc_bytes =
+		tot_num_hor_bytes + tot_num_eoc_symbols + tot_num_dummy_bytes;
 
 	DP_DEBUG("dwidth_dsc_bytes:%d, tot_num_hor_bytes:%d\n",
-			dwidth_dsc_bytes, tot_num_hor_bytes);
+		 dwidth_dsc_bytes, tot_num_hor_bytes);
 
-	dp_mode->dsc_overhead_fp = drm_fixp_from_fraction(dwidth_dsc_bytes,
-			tot_num_hor_bytes);
+	dp_mode->dsc_overhead_fp =
+		drm_fixp_from_fraction(dwidth_dsc_bytes, tot_num_hor_bytes);
 	dp_mode->timing.dsc_overhead_fp = dp_mode->dsc_overhead_fp;
 }
 
 static void dp_panel_dsc_pclk_param_calc(struct dp_panel *dp_panel,
-		struct msm_compression_info *comp_info,
-		struct dp_display_mode *dp_mode)
+					 struct msm_compression_info *comp_info,
+					 struct dp_display_mode *dp_mode)
 {
 	int comp_ratio = 100, intf_width;
 	int slice_per_pkt, slice_per_intf;
@@ -1326,12 +1344,11 @@ static void dp_panel_dsc_pclk_param_calc(struct dp_panel *dp_panel,
 
 	intf_width = dp_mode->timing.h_active;
 	if (!dsc || !dsc->config.slice_width || !dsc->slice_per_pkt ||
-			 (intf_width < dsc->config.slice_width))
+	    (intf_width < dsc->config.slice_width))
 		return;
 
 	slice_per_pkt = dsc->slice_per_pkt;
-	slice_per_intf = DIV_ROUND_UP(intf_width,
-			dsc->config.slice_width);
+	slice_per_intf = DIV_ROUND_UP(intf_width, dsc->config.slice_width);
 
 	comp_ratio = mult_frac(100, comp_info->src_bpp, comp_info->tgt_bpp);
 
@@ -1339,7 +1356,7 @@ static void dp_panel_dsc_pclk_param_calc(struct dp_panel *dp_panel,
 	temp2_fp = drm_fixp_from_fraction(slice_per_pkt * 8, 1);
 	denominator_fp = drm_fixp_mul(temp1_fp, temp2_fp);
 	numerator_fp = drm_fixp_from_fraction(
-			intf_width * dsc->config.bits_per_component * 3, 1);
+		intf_width * dsc->config.bits_per_component * 3, 1);
 	dsc_byte_count_fp = drm_fixp_div(numerator_fp, denominator_fp);
 	dsc_byte_count = fixp2int_ceil(dsc_byte_count_fp);
 
@@ -1377,49 +1394,24 @@ struct dp_dsc_slice_caps_bit_map {
 };
 
 const struct dp_dsc_slices_per_line slice_per_line_tbl[] = {
-	{0,     340,    1   },
-	{340,   680,    2   },
-	{680,   1360,   4   },
-	{1360,  3200,   8   },
-	{3200,  4800,   12  },
-	{4800,  6400,   16  },
-	{6400,  8000,   20  },
-	{8000,  9600,   24  }
+	{ 0, 340, 1 },	    { 340, 680, 2 },	{ 680, 1360, 4 },
+	{ 1360, 3200, 8 },  { 3200, 4800, 12 }, { 4800, 6400, 16 },
+	{ 6400, 8000, 20 }, { 8000, 9600, 24 }
 };
 
 const struct dp_dsc_peak_throughput peak_throughput_mode_0_tbl[] = {
-	{0, 0},
-	{1, 340},
-	{2, 400},
-	{3, 450},
-	{4, 500},
-	{5, 550},
-	{6, 600},
-	{7, 650},
-	{8, 700},
-	{9, 750},
-	{10, 800},
-	{11, 850},
-	{12, 900},
-	{13, 950},
-	{14, 1000},
+	{ 0, 0 },    { 1, 340 },  { 2, 400 },  { 3, 450 },  { 4, 500 },
+	{ 5, 550 },  { 6, 600 },  { 7, 650 },  { 8, 700 },  { 9, 750 },
+	{ 10, 800 }, { 11, 850 }, { 12, 900 }, { 13, 950 }, { 14, 1000 },
 };
 
 const struct dp_dsc_slice_caps_bit_map slice_caps_bit_map_tbl[] = {
-	{1, 0},
-	{2, 1},
-	{4, 3},
-	{6, 4},
-	{8, 5},
-	{10, 6},
-	{12, 7},
-	{16, 0},
-	{20, 1},
-	{24, 2},
+	{ 1, 0 },  { 2, 1 },  { 4, 3 },	 { 6, 4 },  { 8, 5 },
+	{ 10, 6 }, { 12, 7 }, { 16, 0 }, { 20, 1 }, { 24, 2 },
 };
 
 static bool dp_panel_check_slice_support(u32 num_slices, u32 raw_data_1,
-		u32 raw_data_2)
+					 u32 raw_data_2)
 {
 	const struct dp_dsc_slice_caps_bit_map *bcap;
 	u32 raw_data;
@@ -1446,16 +1438,16 @@ static bool dp_panel_check_slice_support(u32 num_slices, u32 raw_data_1,
 	return false;
 }
 
-static int dp_panel_dsc_prepare_basic_params(
-		struct msm_compression_info *comp_info,
-		const struct dp_display_mode *dp_mode,
-		struct dp_panel *dp_panel)
+static int
+dp_panel_dsc_prepare_basic_params(struct msm_compression_info *comp_info,
+				  const struct dp_display_mode *dp_mode,
+				  struct dp_panel *dp_panel)
 {
 	int i;
 	const struct dp_dsc_slices_per_line *rec;
 	const struct dp_dsc_peak_throughput *tput;
 	u32 slice_width;
-	u32 ppr = dp_mode->timing.pixel_clk_khz/1000;
+	u32 ppr = dp_mode->timing.pixel_clk_khz / 1000;
 	u32 max_slice_width;
 	u32 ppr_max_index;
 	u32 peak_throughput;
@@ -1467,19 +1459,20 @@ static int dp_panel_dsc_prepare_basic_params(
 
 	dsc_version_major = dp_panel->sink_dsc_caps.version & 0xF;
 	dsc_version_minor = (dp_panel->sink_dsc_caps.version >> 4) & 0xF;
-	dsc_version_supported = (dsc_version_major == 0x1 &&
-			(dsc_version_minor == 0x1 || dsc_version_minor == 0x2))
-			? true : false;
+	dsc_version_supported =
+		(dsc_version_major == 0x1 &&
+		 (dsc_version_minor == 0x1 || dsc_version_minor == 0x2)) ?
+			true :
+			false;
 
-	DP_DEBUG("DSC version: %d.%d, dpcd value: %x\n",
-			dsc_version_major, dsc_version_minor,
-			dp_panel->sink_dsc_caps.version);
+	DP_DEBUG("DSC version: %d.%d, dpcd value: %x\n", dsc_version_major,
+		 dsc_version_minor, dp_panel->sink_dsc_caps.version);
 
 	if (!dsc_version_supported) {
 		dsc_version_major = 1;
 		dsc_version_minor = 1;
 		DP_ERR("invalid sink DSC version, fallback to %d.%d\n",
-				dsc_version_major, dsc_version_minor);
+		       dsc_version_major, dsc_version_minor);
 	}
 
 	comp_info->dsc_info.config.dsc_version_major = dsc_version_major;
@@ -1509,38 +1502,37 @@ static int dp_panel_dsc_prepare_basic_params(
 	peak_throughput = tput->peak_throughput;
 
 	max_slice_width = dp_panel->dsc_dpcd[12] * 320;
-	slice_width = (dp_mode->timing.h_active /
-				comp_info->dsc_info.slice_per_pkt);
+	slice_width =
+		(dp_mode->timing.h_active / comp_info->dsc_info.slice_per_pkt);
 
-	ppr_per_slice = ppr/comp_info->dsc_info.slice_per_pkt;
+	ppr_per_slice = ppr / comp_info->dsc_info.slice_per_pkt;
 
 	slice_caps_1 = dp_panel->dsc_dpcd[4];
 	slice_caps_2 = dp_panel->dsc_dpcd[13] & 0x7;
 
 	/*
-	 * There are 3 conditions to check for sink support:
-	 * 1. The slice width cannot exceed the maximum.
-	 * 2. The ppr per slice cannot exceed the maximum.
-	 * 3. The number of slices must be explicitly supported.
-	 */
+   * There are 3 conditions to check for sink support:
+   * 1. The slice width cannot exceed the maximum.
+   * 2. The ppr per slice cannot exceed the maximum.
+   * 3. The number of slices must be explicitly supported.
+   */
 	while (slice_width > max_slice_width ||
-			ppr_per_slice > peak_throughput ||
-			!dp_panel_check_slice_support(
-			comp_info->dsc_info.slice_per_pkt, slice_caps_1,
-			slice_caps_2)) {
+	       ppr_per_slice > peak_throughput ||
+	       !dp_panel_check_slice_support(comp_info->dsc_info.slice_per_pkt,
+					     slice_caps_1, slice_caps_2)) {
 		if (i == ARRAY_SIZE(slice_per_line_tbl))
 			return -EINVAL;
 
 		rec = &slice_per_line_tbl[i];
 		comp_info->dsc_info.slice_per_pkt = rec->num_slices;
 		slice_width = (dp_mode->timing.h_active /
-				comp_info->dsc_info.slice_per_pkt);
-		ppr_per_slice = ppr/comp_info->dsc_info.slice_per_pkt;
+			       comp_info->dsc_info.slice_per_pkt);
+		ppr_per_slice = ppr / comp_info->dsc_info.slice_per_pkt;
 		i++;
 	}
 
 	comp_info->dsc_info.config.block_pred_enable =
-			dp_panel->sink_dsc_caps.block_pred_en;
+		dp_panel->sink_dsc_caps.block_pred_en;
 
 	comp_info->dsc_info.config.pic_width = dp_mode->timing.h_active;
 	comp_info->dsc_info.config.pic_height = dp_mode->timing.v_active;
@@ -1564,7 +1556,8 @@ static int dp_panel_dsc_prepare_basic_params(
 	comp_info->comp_type = MSM_DISPLAY_COMPRESSION_DSC;
 	comp_info->tgt_bpp = DSC_TGT_BPP;
 	comp_info->src_bpp = dp_mode->timing.bpp;
-	comp_info->comp_ratio = mult_frac(100, dp_mode->timing.bpp, DSC_TGT_BPP);
+	comp_info->comp_ratio =
+		mult_frac(100, dp_mode->timing.bpp, DSC_TGT_BPP);
 	comp_info->enabled = true;
 
 	return 0;
@@ -1609,8 +1602,8 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 		offset = DPRX_EXTENDED_DPCD_FIELD;
 	}
 
-	rlen = drm_dp_dpcd_read(drm_aux, offset,
-		dp_panel->dpcd, (DP_RECEIVER_CAP_SIZE + 1));
+	rlen = drm_dp_dpcd_read(drm_aux, offset, dp_panel->dpcd,
+				(DP_RECEIVER_CAP_SIZE + 1));
 	if (rlen < (DP_RECEIVER_CAP_SIZE + 1)) {
 		DP_ERR("dpcd read failed, rlen=%d\n", rlen);
 		if (rlen == -ETIMEDOUT)
@@ -1621,41 +1614,43 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 		goto end;
 	}
 
-	print_hex_dump_debug("[drm-dp] SINK DPCD: ",
-		DUMP_PREFIX_NONE, 8, 1, dp_panel->dpcd, rlen, false);
+	print_hex_dump_debug("[drm-dp] SINK DPCD: ", DUMP_PREFIX_NONE, 8, 1,
+			     dp_panel->dpcd, rlen, false);
 
 	rlen = drm_dp_dpcd_read(panel->aux->drm_aux,
-		DPRX_FEATURE_ENUMERATION_LIST, &rx_feature, 1);
+				DPRX_FEATURE_ENUMERATION_LIST, &rx_feature, 1);
 	if (rlen != 1) {
 		DP_DEBUG("failed to read DPRX_FEATURE_ENUMERATION_LIST\n");
 		rx_feature = 0;
 	} else {
-		panel->vsc_supported = !!(rx_feature &
-				VSC_SDP_EXTENSION_FOR_COLORIMETRY_SUPPORTED);
-		panel->vscext_supported = !!(rx_feature &
-		 		VSC_EXT_VESA_SDP_SUPPORTED);
-		panel->vscext_chaining_supported = !!(rx_feature &
-				VSC_EXT_VESA_SDP_CHAINING_SUPPORTED);
+		panel->vsc_supported =
+			!!(rx_feature &
+			   VSC_SDP_EXTENSION_FOR_COLORIMETRY_SUPPORTED);
+		panel->vscext_supported =
+			!!(rx_feature & VSC_EXT_VESA_SDP_SUPPORTED);
+		panel->vscext_chaining_supported =
+			!!(rx_feature & VSC_EXT_VESA_SDP_CHAINING_SUPPORTED);
 
 		DP_DEBUG("vsc=%d, vscext=%d, vscext_chaining=%d\n",
-				panel->vsc_supported, panel->vscext_supported,
-				panel->vscext_chaining_supported);
+			 panel->vsc_supported, panel->vscext_supported,
+			 panel->vscext_chaining_supported);
 	}
 
 	link_info->revision = dpcd[DP_DPCD_REV];
 	panel->major = (link_info->revision >> 4) & 0x0f;
 	panel->minor = link_info->revision & 0x0f;
 	/* override link params updated in dp_panel_init_panel_info */
-	link_info->rate = min_t(unsigned long, panel->parser->max_lclk_khz,
-			drm_dp_bw_code_to_link_rate(dpcd[DP_MAX_LINK_RATE]));
+	link_info->rate =
+		min_t(unsigned long, panel->parser->max_lclk_khz,
+		      drm_dp_bw_code_to_link_rate(dpcd[DP_MAX_LINK_RATE]));
 
 	link_info->num_lanes = dpcd[DP_MAX_LANE_COUNT] & DP_MAX_LANE_COUNT_MASK;
 
 	if (is_link_rate_valid(panel->dp_panel.link_bw_code)) {
 		DP_DEBUG("debug link bandwidth code: 0x%x\n",
-				panel->dp_panel.link_bw_code);
+			 panel->dp_panel.link_bw_code);
 		link_info->rate = drm_dp_bw_code_to_link_rate(
-				panel->dp_panel.link_bw_code);
+			panel->dp_panel.link_bw_code);
 	}
 
 	if (is_lane_count_valid(panel->dp_panel.lane_count)) {
@@ -1664,27 +1659,28 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 	}
 
 	if (multi_func)
-		link_info->num_lanes = min_t(unsigned int,
-			link_info->num_lanes, 2);
+		link_info->num_lanes =
+			min_t(unsigned int, link_info->num_lanes, 2);
 
 	DP_DEBUG("version:%d.%d, rate:%d, lanes:%d\n", panel->major,
-		panel->minor, link_info->rate, link_info->num_lanes);
+		 panel->minor, link_info->rate, link_info->num_lanes);
 
 	if (drm_dp_enhanced_frame_cap(dpcd))
 		link_info->capabilities |= DP_LINK_CAP_ENHANCED_FRAMING;
 
-	rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_TEST_SINK_MISC, &temp, 1);
+	rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_TEST_SINK_MISC, &temp,
+				1);
 	if ((rlen == 1) && (temp & DP_TEST_CRC_SUPPORTED))
 		link_info->capabilities |= DP_LINK_CAP_CRC;
 
-	dfp_count = dpcd[DP_DOWN_STREAM_PORT_COUNT] &
-						DP_DOWN_STREAM_PORT_COUNT;
+	dfp_count = dpcd[DP_DOWN_STREAM_PORT_COUNT] & DP_DOWN_STREAM_PORT_COUNT;
 
-	if ((dpcd[DP_DOWNSTREAMPORT_PRESENT] & DP_DWN_STRM_PORT_PRESENT)
-		&& (dpcd[DP_DPCD_REV] > 0x10)) {
+	if ((dpcd[DP_DOWNSTREAMPORT_PRESENT] & DP_DWN_STRM_PORT_PRESENT) &&
+	    (dpcd[DP_DPCD_REV] > 0x10)) {
 		rlen = drm_dp_dpcd_read(panel->aux->drm_aux,
-			DP_DOWNSTREAM_PORT_0, dp_panel->ds_ports,
-			DP_MAX_DOWNSTREAM_PORTS);
+					DP_DOWNSTREAM_PORT_0,
+					dp_panel->ds_ports,
+					DP_MAX_DOWNSTREAM_PORTS);
 		if (rlen < DP_MAX_DOWNSTREAM_PORTS) {
 			DP_ERR("ds port status failed, rlen=%d\n", rlen);
 			rc = -EINVAL;
@@ -1694,7 +1690,7 @@ static int dp_panel_read_dpcd(struct dp_panel *dp_panel, bool multi_func)
 
 	if (dfp_count > DP_MAX_DS_PORT_COUNT)
 		DP_DEBUG("DS port count %d greater that max (%d) supported\n",
-			dfp_count, DP_MAX_DS_PORT_COUNT);
+			 dfp_count, DP_MAX_DS_PORT_COUNT);
 
 end:
 	return rc;
@@ -1713,14 +1709,14 @@ static int dp_panel_set_default_link_params(struct dp_panel *dp_panel)
 	link_info = &dp_panel->link_info;
 	link_info->rate = default_bw_code;
 	link_info->num_lanes = default_num_lanes;
-	DP_DEBUG("link_rate=%d num_lanes=%d\n",
-		link_info->rate, link_info->num_lanes);
+	DP_DEBUG("link_rate=%d num_lanes=%d\n", link_info->rate,
+		 link_info->num_lanes);
 
 	return 0;
 }
 
 static int dp_panel_read_edid(struct dp_panel *dp_panel,
-	struct drm_connector *connector)
+			      struct drm_connector *connector)
 {
 	int ret = 0;
 	struct dp_panel_private *panel;
@@ -1734,7 +1730,7 @@ static int dp_panel_read_edid(struct dp_panel *dp_panel,
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 
 	sde_get_edid(connector, &panel->aux->drm_aux->ddc,
-		(void **)&dp_panel->edid_ctrl);
+		     (void **)&dp_panel->edid_ctrl);
 	if (!dp_panel->edid_ctrl->edid) {
 		DP_ERR("EDID read failed\n");
 		ret = -EINVAL;
@@ -1753,9 +1749,8 @@ static void dp_panel_decode_dsc_dpcd(struct dp_panel *dp_panel)
 		dp_panel->sink_dsc_caps.dsc_capable = true;
 		dp_panel->sink_dsc_caps.version = dp_panel->dsc_dpcd[1];
 		dp_panel->sink_dsc_caps.block_pred_en =
-				dp_panel->dsc_dpcd[6] ? true : false;
-		dp_panel->sink_dsc_caps.color_depth =
-				dp_panel->dsc_dpcd[10];
+			dp_panel->dsc_dpcd[6] ? true : false;
+		dp_panel->sink_dsc_caps.color_depth = dp_panel->dsc_dpcd[10];
 
 		if (dp_panel->sink_dsc_caps.version >= 0x11)
 			dp_panel->dsc_en = true;
@@ -1781,15 +1776,16 @@ static void dp_panel_read_sink_dsc_caps(struct dp_panel *dp_panel)
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 	if (panel->parser->dsc_feature_enable && dpcd_rev >= 0x14) {
 		rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_DSC_SUPPORT,
-			dp_panel->dsc_dpcd, (DP_RECEIVER_DSC_CAP_SIZE + 1));
+					dp_panel->dsc_dpcd,
+					(DP_RECEIVER_DSC_CAP_SIZE + 1));
 		if (rlen < (DP_RECEIVER_DSC_CAP_SIZE + 1)) {
 			DP_DEBUG("dsc dpcd read failed, rlen=%d\n", rlen);
 			return;
 		}
 
-		print_hex_dump_debug("[drm-dp] SINK DSC DPCD: ",
-			DUMP_PREFIX_NONE, 8, 1, dp_panel->dsc_dpcd, rlen,
-			false);
+		print_hex_dump_debug(
+			"[drm-dp] SINK DSC DPCD: ", DUMP_PREFIX_NONE, 8, 1,
+			dp_panel->dsc_dpcd, rlen, false);
 
 		dp_panel_decode_dsc_dpcd(dp_panel);
 	}
@@ -1808,7 +1804,7 @@ static void dp_panel_read_sink_fec_caps(struct dp_panel *dp_panel)
 
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 	rlen = drm_dp_dpcd_readb(panel->aux->drm_aux, DP_FEC_CAPABILITY,
-			&dp_panel->fec_dpcd);
+				 &dp_panel->fec_dpcd);
 	if (rlen < 1) {
 		DP_ERR("fec capability read failed, rlen=%d\n", rlen);
 		return;
@@ -1824,7 +1820,8 @@ static void dp_panel_read_sink_fec_caps(struct dp_panel *dp_panel)
 }
 
 static int dp_panel_read_sink_caps(struct dp_panel *dp_panel,
-	struct drm_connector *connector, bool multi_func)
+				   struct drm_connector *connector,
+				   bool multi_func)
 {
 	int rc = 0, rlen, count, downstream_ports;
 	const int count_len = 1;
@@ -1839,11 +1836,12 @@ static int dp_panel_read_sink_caps(struct dp_panel *dp_panel,
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 
 	rc = dp_panel_read_dpcd(dp_panel, multi_func);
-	if (rc || !is_link_rate_valid(drm_dp_link_rate_to_bw_code(
-		dp_panel->link_info.rate)) || !is_lane_count_valid(
-		dp_panel->link_info.num_lanes) ||
-		((drm_dp_link_rate_to_bw_code(dp_panel->link_info.rate)) >
-		dp_panel->max_bw_code)) {
+	if (rc ||
+	    !is_link_rate_valid(
+		    drm_dp_link_rate_to_bw_code(dp_panel->link_info.rate)) ||
+	    !is_lane_count_valid(dp_panel->link_info.num_lanes) ||
+	    ((drm_dp_link_rate_to_bw_code(dp_panel->link_info.rate)) >
+	     dp_panel->max_bw_code)) {
 		if ((rc == -ETIMEDOUT) || (rc == -ENODEV)) {
 			DP_ERR("DPCD read failed, return early\n");
 			goto end;
@@ -1853,11 +1851,11 @@ static int dp_panel_read_sink_caps(struct dp_panel *dp_panel,
 	}
 
 	downstream_ports = dp_panel->dpcd[DP_DOWNSTREAMPORT_PRESENT] &
-				DP_DWN_STRM_PORT_PRESENT;
+			   DP_DWN_STRM_PORT_PRESENT;
 
 	if (downstream_ports) {
 		rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_SINK_COUNT,
-				&count, count_len);
+					&count, count_len);
 		if (rlen == count_len) {
 			count = DP_GET_SINK_COUNT(count);
 			if (!count) {
@@ -1888,7 +1886,7 @@ skip_edid:
 	dp_panel->dsc_en = false;
 
 	if (dp_panel->dpcd[DP_DPCD_REV] >= DP_DPCD_REV_14 &&
-			dp_panel->fec_feature_enable) {
+	    dp_panel->fec_feature_enable) {
 		dp_panel_read_sink_fec_caps(dp_panel);
 
 		if (dp_panel->dsc_feature_enable && dp_panel->fec_en)
@@ -1896,13 +1894,14 @@ skip_edid:
 	}
 
 	DP_INFO("fec_en=%d, dsc_en=%d, widebus_en=%d\n", dp_panel->fec_en,
-			dp_panel->dsc_en, dp_panel->widebus_en);
+		dp_panel->dsc_en, dp_panel->widebus_en);
 end:
 	return rc;
 }
 
 static u32 dp_panel_get_supported_bpp(struct dp_panel *dp_panel,
-		u32 mode_edid_bpp, u32 mode_pclk_khz, bool dsc_en)
+				      u32 mode_edid_bpp, u32 mode_pclk_khz,
+				      bool dsc_en)
 {
 	struct dp_link_params *link_params;
 	struct dp_panel_private *panel;
@@ -1923,8 +1922,9 @@ static u32 dp_panel_get_supported_bpp(struct dp_panel *dp_panel,
 
 	link_params = &panel->link->link_params;
 
-	rate_fp = drm_int2fixp(drm_dp_bw_code_to_link_rate(link_params->bw_code) *
-			link_params->lane_count *  8);
+	rate_fp =
+		drm_int2fixp(drm_dp_bw_code_to_link_rate(link_params->bw_code) *
+			     link_params->lane_count * 8);
 
 	if (dp_panel->fec_en)
 		rate_fp = drm_fixp_div(rate_fp, dp_panel->fec_overhead_fp);
@@ -1933,9 +1933,12 @@ static u32 dp_panel_get_supported_bpp(struct dp_panel *dp_panel,
 
 	for (; bpp > min_supported_bpp; bpp -= 6) {
 		if (dsc_en) {
-			if (bpp == 30 && !(dp_panel->sink_dsc_caps.color_depth & DP_DSC_10_BPC))
+			if (bpp == 30 && !(dp_panel->sink_dsc_caps.color_depth &
+					   DP_DSC_10_BPC))
 				continue;
-			else if (bpp == 24 && !(dp_panel->sink_dsc_caps.color_depth & DP_DSC_8_BPC))
+			else if (bpp == 24 &&
+				 !(dp_panel->sink_dsc_caps.color_depth &
+				   DP_DSC_8_BPC))
 				continue;
 
 			mode_bitrate = mode_pclk_khz * DSC_TGT_BPP;
@@ -1949,15 +1952,15 @@ static u32 dp_panel_get_supported_bpp(struct dp_panel *dp_panel,
 
 	if (bpp < min_supported_bpp)
 		DP_ERR("bpp %d is below minimum supported bpp %d\n", bpp,
-				min_supported_bpp);
+		       min_supported_bpp);
 	if (dsc_en && bpp != 24 && bpp != 30 && bpp != 36)
 		DP_ERR("bpp %d is not supported when dsc is enabled\n", bpp);
 
 	return bpp;
 }
 
-static u32 dp_panel_get_mode_bpp(struct dp_panel *dp_panel,
-		u32 mode_edid_bpp, u32 mode_pclk_khz, bool dsc_en)
+static u32 dp_panel_get_mode_bpp(struct dp_panel *dp_panel, u32 mode_edid_bpp,
+				 u32 mode_pclk_khz, bool dsc_en)
 {
 	struct dp_panel_private *panel;
 	u32 bpp = mode_edid_bpp;
@@ -1971,16 +1974,16 @@ static u32 dp_panel_get_mode_bpp(struct dp_panel *dp_panel,
 
 	if (dp_panel->video_test)
 		bpp = dp_link_bit_depth_to_bpp(
-				panel->link->test_video.test_bit_depth);
+			panel->link->test_video.test_bit_depth);
 	else
 		bpp = dp_panel_get_supported_bpp(dp_panel, mode_edid_bpp,
-				mode_pclk_khz, dsc_en);
+						 mode_pclk_khz, dsc_en);
 
 	return bpp;
 }
 
 static void dp_panel_set_test_mode(struct dp_panel_private *panel,
-		struct dp_display_mode *mode)
+				   struct dp_display_mode *mode)
 {
 	struct dp_panel_info *pinfo = NULL;
 	struct dp_link_test_video *test_info = NULL;
@@ -1995,16 +1998,18 @@ static void dp_panel_set_test_mode(struct dp_panel_private *panel,
 
 	pinfo->h_active = test_info->test_h_width;
 	pinfo->h_sync_width = test_info->test_hsync_width;
-	pinfo->h_back_porch = test_info->test_h_start -
-		test_info->test_hsync_width;
-	pinfo->h_front_porch = test_info->test_h_total -
+	pinfo->h_back_porch =
+		test_info->test_h_start - test_info->test_hsync_width;
+	pinfo->h_front_porch =
+		test_info->test_h_total -
 		(test_info->test_h_start + test_info->test_h_width);
 
 	pinfo->v_active = test_info->test_v_height;
 	pinfo->v_sync_width = test_info->test_vsync_width;
-	pinfo->v_back_porch = test_info->test_v_start -
-		test_info->test_vsync_width;
-	pinfo->v_front_porch = test_info->test_v_total -
+	pinfo->v_back_porch =
+		test_info->test_v_start - test_info->test_vsync_width;
+	pinfo->v_front_porch =
+		test_info->test_v_total -
 		(test_info->test_v_start + test_info->test_v_height);
 
 	pinfo->bpp = dp_link_bit_depth_to_bpp(test_info->test_bit_depth);
@@ -2013,7 +2018,7 @@ static void dp_panel_set_test_mode(struct dp_panel_private *panel,
 
 	pinfo->refresh_rate = test_info->test_rr_n;
 	pinfo->pixel_clk_khz = test_info->test_h_total *
-		test_info->test_v_total * pinfo->refresh_rate;
+			       test_info->test_v_total * pinfo->refresh_rate;
 
 	if (test_info->test_rr_d == 0)
 		pinfo->pixel_clk_khz /= 1000;
@@ -2025,7 +2030,8 @@ static void dp_panel_set_test_mode(struct dp_panel_private *panel,
 }
 
 static int dp_panel_get_modes(struct dp_panel *dp_panel,
-	struct drm_connector *connector, struct dp_display_mode *mode)
+			      struct drm_connector *connector,
+			      struct dp_display_mode *mode)
 {
 	struct dp_panel_private *panel;
 
@@ -2107,14 +2113,17 @@ static void dp_panel_tpg_config(struct dp_panel *dp_panel, u32 pattern)
 
 	/* TPG config */
 	catalog->hsync_period = pinfo->h_sync_width + pinfo->h_back_porch +
-			hactive + pinfo->h_front_porch;
+				hactive + pinfo->h_front_porch;
 	catalog->vsync_period = pinfo->v_sync_width + pinfo->v_back_porch +
-			pinfo->v_active + pinfo->v_front_porch;
+				pinfo->v_active + pinfo->v_front_porch;
 
-	catalog->display_v_start = ((pinfo->v_sync_width +
-			pinfo->v_back_porch) * catalog->hsync_period);
-	catalog->display_v_end = ((catalog->vsync_period -
-			pinfo->v_front_porch) * catalog->hsync_period) - 1;
+	catalog->display_v_start =
+		((pinfo->v_sync_width + pinfo->v_back_porch) *
+		 catalog->hsync_period);
+	catalog->display_v_end =
+		((catalog->vsync_period - pinfo->v_front_porch) *
+		 catalog->hsync_period) -
+		1;
 
 	catalog->display_v_start += pinfo->h_sync_width + pinfo->h_back_porch;
 	catalog->display_v_end -= pinfo->h_front_porch;
@@ -2125,7 +2134,7 @@ static void dp_panel_tpg_config(struct dp_panel *dp_panel, u32 pattern)
 	catalog->v_sync_width = pinfo->v_sync_width;
 
 	catalog->hsync_ctl = (catalog->hsync_period << 16) |
-			pinfo->h_sync_width;
+			     pinfo->h_sync_width;
 	catalog->display_hctl = (hsync_end_x << 16) | hsync_start_x;
 
 	panel->catalog->tpg_config(catalog, pattern);
@@ -2149,19 +2158,19 @@ static int dp_panel_config_timing(struct dp_panel *dp_panel)
 	catalog = panel->catalog;
 	pinfo = &panel->dp_panel.pinfo;
 
-	DP_DEBUG("width=%d hporch= %d %d %d\n",
-		pinfo->h_active, pinfo->h_back_porch,
-		pinfo->h_front_porch, pinfo->h_sync_width);
+	DP_DEBUG("width=%d hporch= %d %d %d\n", pinfo->h_active,
+		 pinfo->h_back_porch, pinfo->h_front_porch,
+		 pinfo->h_sync_width);
 
-	DP_DEBUG("height=%d vporch= %d %d %d\n",
-		pinfo->v_active, pinfo->v_back_porch,
-		pinfo->v_front_porch, pinfo->v_sync_width);
+	DP_DEBUG("height=%d vporch= %d %d %d\n", pinfo->v_active,
+		 pinfo->v_back_porch, pinfo->v_front_porch,
+		 pinfo->v_sync_width);
 
 	total_hor = pinfo->h_active + pinfo->h_back_porch +
-		pinfo->h_front_porch + pinfo->h_sync_width;
+		    pinfo->h_front_porch + pinfo->h_sync_width;
 
 	total_ver = pinfo->v_active + pinfo->v_back_porch +
-			pinfo->v_front_porch + pinfo->v_sync_width;
+		    pinfo->v_front_porch + pinfo->v_sync_width;
 
 	data = total_ver;
 	data <<= 16;
@@ -2208,7 +2217,8 @@ static u32 _dp_panel_calc_be_in_lane(struct dp_panel *dp_panel)
 	if (!dp_panel->mst_state)
 		return be_in_lane;
 
-	htotal = comp_info->dsc_info.bytes_per_pkt * comp_info->dsc_info.pkt_per_line;
+	htotal = comp_info->dsc_info.bytes_per_pkt *
+		 comp_info->dsc_info.pkt_per_line;
 
 	mod_result = htotal % 12;
 	if (mod_result == 0)
@@ -2244,8 +2254,8 @@ static void dp_panel_config_dsc(struct dp_panel *dp_panel, bool enable)
 	comp_info = &pinfo->comp_info;
 
 	if (comp_info->comp_type == MSM_DISPLAY_COMPRESSION_DSC && enable) {
-		rc = sde_dsc_create_pps_buf_cmd(&comp_info->dsc_info,
-				dsc->pps, 0, sizeof(dsc->pps));
+		rc = sde_dsc_create_pps_buf_cmd(&comp_info->dsc_info, dsc->pps,
+						0, sizeof(dsc->pps));
 		if (rc) {
 			DP_ERR("failed to create pps cmd %d\n", rc);
 			return;
@@ -2262,8 +2272,8 @@ static void dp_panel_config_dsc(struct dp_panel *dp_panel, bool enable)
 		dsc->dsc_en = true;
 		dsc->dto_en = true;
 		dsc->continuous_pps = dp_panel->dsc_continuous_pps;
-		dp_panel_get_dto_params(comp_info->src_bpp, comp_info->tgt_bpp, &dsc->dto_n,
-				&dsc->dto_d);
+		dp_panel_get_dto_params(comp_info->src_bpp, comp_info->tgt_bpp,
+					&dsc->dto_n, &dsc->dto_d);
 	} else {
 		dsc->dsc_en = false;
 		dsc->dto_en = false;
@@ -2298,8 +2308,9 @@ static void dp_panel_edid_deregister(struct dp_panel_private *panel)
 }
 
 static int dp_panel_set_stream_info(struct dp_panel *dp_panel,
-		enum dp_stream_id stream_id, u32 ch_start_slot,
-			u32 ch_tot_slots, u32 pbn, int vcpi)
+				    enum dp_stream_id stream_id,
+				    u32 ch_start_slot, u32 ch_tot_slots,
+				    u32 pbn, int vcpi)
 {
 	if (!dp_panel || stream_id > DP_STREAM_MAX) {
 		DP_ERR("invalid input. stream_id: %d\n", stream_id);
@@ -2336,10 +2347,10 @@ static int dp_panel_init_panel_info(struct dp_panel *dp_panel)
 	drm_dp_dpcd_writeb(panel->aux->drm_aux, DP_SET_POWER, DP_SET_POWER_D0);
 
 	/*
-	* According to the DP 1.1 specification, a "Sink Device must exit the
-	* power saving state within 1 ms" (Section 2.5.3.1, Table 5-52, "Sink
-	* Control Field" (register 0x600).
-	*/
+   * According to the DP 1.1 specification, a "Sink Device must exit the
+   * power saving state within 1 ms" (Section 2.5.3.1, Table 5-52, "Sink
+   * Control Field" (register 0x600).
+   */
 	usleep_range(1000, 2000);
 end:
 	return rc;
@@ -2380,7 +2391,7 @@ static int dp_panel_deinit_panel_info(struct dp_panel *dp_panel, u32 flags)
 	memset(dhdr_vsif_sdp, 0, sizeof(struct dp_sdp_header));
 	memset(shdr_if_sdp, 0, sizeof(struct dp_sdp_header));
 	memset(vsc_colorimetry, 0,
-		sizeof(struct dp_catalog_vsc_sdp_colorimetry));
+	       sizeof(struct dp_catalog_vsc_sdp_colorimetry));
 
 	panel->panel_on = false;
 
@@ -2419,11 +2430,11 @@ static bool dp_panel_hdr_supported(struct dp_panel *dp_panel)
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 
 	return panel->major >= 1 && panel->vsc_supported &&
-		(panel->minor >= 4 || panel->vscext_supported);
+	       (panel->minor >= 4 || panel->vscext_supported);
 }
 
 static u32 dp_panel_calc_dhdr_pkt_limit(struct dp_panel *dp_panel,
-		struct dp_dhdr_maxpkt_calc_input *input)
+					struct dp_dhdr_maxpkt_calc_input *input)
 {
 	s64 mdpclk_fp = drm_fixp_from_fraction(input->mdp_clk, 1000000);
 	s64 lclk_fp = drm_fixp_from_fraction(input->lclk, 1000);
@@ -2450,53 +2461,60 @@ static u32 dp_panel_calc_dhdr_pkt_limit(struct dp_panel *dp_panel,
 	if (input->mst_en)
 		mst_bw_fp = drm_fixp_div(target_sc, i64_fp);
 
-	f1 = fixp2int_ceil(drm_fixp_div(drm_fixp_mul(i10_fp, lclk_fp),
-			mdpclk_fp));
-	f2 = fixp2int_ceil(drm_fixp_div(drm_fixp_mul(i2_fp, lclk_fp),
-			mdpclk_fp)) + fixp2int_ceil(drm_fixp_div(
-			drm_fixp_mul(i1_fp, lclk_fp), mdpclk_fp));
+	f1 = fixp2int_ceil(
+		drm_fixp_div(drm_fixp_mul(i10_fp, lclk_fp), mdpclk_fp));
+	f2 = fixp2int_ceil(
+		     drm_fixp_div(drm_fixp_mul(i2_fp, lclk_fp), mdpclk_fp)) +
+	     fixp2int_ceil(
+		     drm_fixp_div(drm_fixp_mul(i1_fp, lclk_fp), mdpclk_fp));
 
 	mst_bw64_fp = drm_fixp_mul(mst_bw_fp, i64_fp);
 	if (drm_fixp2int(mst_bw64_fp) == 0)
-		f3_f5_slot_fp = drm_fixp_div(i1_fp, drm_int2fixp(
-				fixp2int_ceil(drm_fixp_div(
-				i1_fp, mst_bw64_fp))));
+		f3_f5_slot_fp = drm_fixp_div(
+			i1_fp, drm_int2fixp(fixp2int_ceil(
+				       drm_fixp_div(i1_fp, mst_bw64_fp))));
 	else
 		f3_f5_slot_fp = drm_int2fixp(drm_fixp2int(mst_bw_fp));
 
 	mst_bw64_ceil_fp = drm_int2fixp(fixp2int_ceil(mst_bw64_fp));
-	f3 = drm_fixp2int(drm_fixp_mul(drm_int2fixp(drm_fixp2int(
-				drm_fixp_div(i2_fp, f3_f5_slot_fp)) + 1),
-				(i64_fp - mst_bw64_ceil_fp))) + 2;
+	f3 = drm_fixp2int(drm_fixp_mul(
+		     drm_int2fixp(
+			     drm_fixp2int(drm_fixp_div(i2_fp, f3_f5_slot_fp)) +
+			     1),
+		     (i64_fp - mst_bw64_ceil_fp))) +
+	     2;
 
 	if (!input->mst_en) {
-		f4 = 1 + drm_fixp2int(drm_fixp_div(drm_int2fixp(50),
-				nlanes_fp)) + drm_fixp2int(drm_fixp_div(
-				nlanes_fp, i2_fp));
+		f4 = 1 +
+		     drm_fixp2int(drm_fixp_div(drm_int2fixp(50), nlanes_fp)) +
+		     drm_fixp2int(drm_fixp_div(nlanes_fp, i2_fp));
 		f5 = 0;
 	} else {
 		f4 = 0;
 		nlanes56_fp = drm_fixp_div(i56_fp, nlanes_fp);
-		f5 = drm_fixp2int(drm_fixp_mul(drm_int2fixp(drm_fixp2int(
-				drm_fixp_div(i1_fp + nlanes56_fp,
-				f3_f5_slot_fp)) + 1), (i64_fp -
-				mst_bw64_ceil_fp + i1_fp + nlanes56_fp)));
+		f5 = drm_fixp2int(drm_fixp_mul(
+			drm_int2fixp(
+				drm_fixp2int(drm_fixp_div(i1_fp + nlanes56_fp,
+							  f3_f5_slot_fp)) +
+				1),
+			(i64_fp - mst_bw64_ceil_fp + i1_fp + nlanes56_fp)));
 	}
 
 	deploy_period = f1 + f2 + f3 + f4 + f5 + 19;
-	target_period = drm_fixp2int(drm_fixp_mul(fec_factor_fp, drm_fixp_mul(
-			hactive_fp, drm_fixp_div(lclk_fp, pclk_fp))));
+	target_period = drm_fixp2int(drm_fixp_mul(
+		fec_factor_fp,
+		drm_fixp_mul(hactive_fp, drm_fixp_div(lclk_fp, pclk_fp))));
 
 	calc_pkt_limit = target_period / deploy_period;
 
-	DP_DEBUG("input: %d, %d, %d, %d, %d, 0x%llx, %d, %d\n",
-		input->mdp_clk, input->lclk, input->pclk, input->h_active,
-		input->nlanes, input->mst_target_sc, input->mst_en ? 1 : 0,
-		input->fec_en ? 1 : 0);
+	DP_DEBUG("input: %d, %d, %d, %d, %d, 0x%llx, %d, %d\n", input->mdp_clk,
+		 input->lclk, input->pclk, input->h_active, input->nlanes,
+		 input->mst_target_sc, input->mst_en ? 1 : 0,
+		 input->fec_en ? 1 : 0);
 	DP_DEBUG("factors: %d, %d, %d, %d, %d\n", f1, f2, f3, f4, f5);
 	DP_DEBUG("d_p: %d, t_p: %d, maxPkts: %d%s\n", deploy_period,
-		target_period, calc_pkt_limit, calc_pkt_limit > max_pkt_limit ?
-		" CAPPED" : "");
+		 target_period, calc_pkt_limit,
+		 calc_pkt_limit > max_pkt_limit ? " CAPPED" : "");
 
 	if (calc_pkt_limit > max_pkt_limit)
 		calc_pkt_limit = max_pkt_limit;
@@ -2506,7 +2524,7 @@ static u32 dp_panel_calc_dhdr_pkt_limit(struct dp_panel *dp_panel,
 }
 
 static void dp_panel_setup_colorimetry_sdp(struct dp_panel *dp_panel,
-	u32 cspace)
+					   u32 cspace)
 {
 	struct dp_panel_private *panel;
 	struct dp_catalog_vsc_sdp_colorimetry *hdr_colorimetry;
@@ -2522,8 +2540,7 @@ static void dp_panel_setup_colorimetry_sdp(struct dp_panel *dp_panel,
 	hdr_colorimetry->header.HB2 = 0x05;
 	hdr_colorimetry->header.HB3 = 0x13;
 
-	get_sdp_colorimetry_range(panel, cspace, &colorimetry,
-		&dynamic_range);
+	get_sdp_colorimetry_range(panel, cspace, &colorimetry, &dynamic_range);
 
 	/* VSC SDP Payload for DB16 */
 	hdr_colorimetry->data[16] = (RGB << 4) | colorimetry;
@@ -2574,7 +2591,7 @@ static void dp_panel_setup_dhdr_vsif(struct dp_panel_private *panel)
 }
 
 static void dp_panel_setup_misc_colorimetry(struct dp_panel *dp_panel,
-	u32 colorspace)
+					    u32 colorspace)
 {
 	struct dp_panel_private *panel;
 	struct dp_catalog_panel *catalog;
@@ -2584,12 +2601,10 @@ static void dp_panel_setup_misc_colorimetry(struct dp_panel *dp_panel,
 
 	catalog->misc_val &= ~0x1e;
 
-	catalog->misc_val |= (get_misc_colorimetry_val(panel,
-		colorspace) << 1);
+	catalog->misc_val |= (get_misc_colorimetry_val(panel, colorspace) << 1);
 }
 
-static int dp_panel_set_colorspace(struct dp_panel *dp_panel,
-	u32 colorspace)
+static int dp_panel_set_colorspace(struct dp_panel *dp_panel, u32 colorspace)
 {
 	int rc = 0;
 	struct dp_panel_private *panel;
@@ -2603,21 +2618,19 @@ static int dp_panel_set_colorspace(struct dp_panel *dp_panel,
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 
 	if (panel->vsc_supported)
-		dp_panel_setup_colorimetry_sdp(dp_panel,
-			colorspace);
+		dp_panel_setup_colorimetry_sdp(dp_panel, colorspace);
 	else
-		dp_panel_setup_misc_colorimetry(dp_panel,
-			colorspace);
+		dp_panel_setup_misc_colorimetry(dp_panel, colorspace);
 
 	/*
-	 * During the first frame update panel_on will be false and
-	 * the colorspace will be cached in the connector's state which
-	 * shall be used in the dp_panel_hw_cfg
-	 */
+   * During the first frame update panel_on will be false and
+   * the colorspace will be cached in the connector's state which
+   * shall be used in the dp_panel_hw_cfg
+   */
 	if (panel->panel_on) {
 		DP_DEBUG("panel is ON programming colorspace\n");
-		rc =  panel->catalog->set_colorspace(panel->catalog,
-			  panel->vsc_supported);
+		rc = panel->catalog->set_colorspace(panel->catalog,
+						    panel->vsc_supported);
 	}
 
 end:
@@ -2625,8 +2638,8 @@ end:
 }
 
 static int dp_panel_setup_hdr(struct dp_panel *dp_panel,
-		struct drm_msm_ext_hdr_metadata *hdr_meta,
-		bool dhdr_update, u64 core_clk_rate, bool flush)
+			      struct drm_msm_ext_hdr_metadata *hdr_meta,
+			      bool dhdr_update, u64 core_clk_rate, bool flush)
 {
 	int rc = 0, max_pkts = 0;
 	struct dp_panel_private *panel;
@@ -2657,10 +2670,10 @@ static int dp_panel_setup_hdr(struct dp_panel *dp_panel,
 
 	if (panel->hdr_state) {
 		memcpy(catalog_hdr_meta, hdr_meta,
-			   sizeof(struct drm_msm_ext_hdr_metadata));
+		       sizeof(struct drm_msm_ext_hdr_metadata));
 	} else {
 		memset(catalog_hdr_meta, 0,
-			sizeof(struct drm_msm_ext_hdr_metadata));
+		       sizeof(struct drm_msm_ext_hdr_metadata));
 	}
 cached:
 	if (dhdr_update) {
@@ -2668,7 +2681,7 @@ cached:
 
 		input.mdp_clk = core_clk_rate;
 		input.lclk = drm_dp_bw_code_to_link_rate(
-				panel->link->link_params.bw_code);
+			panel->link->link_params.bw_code);
 		input.nlanes = panel->link->link_params.lane_count;
 		input.pclk = dp_panel->pinfo.pixel_clk_khz;
 		input.h_active = dp_panel->pinfo.h_active;
@@ -2681,7 +2694,7 @@ cached:
 	if (panel->panel_on) {
 		panel->catalog->stream_id = dp_panel->stream_id;
 		panel->catalog->config_hdr(panel->catalog, panel->hdr_state,
-			max_pkts, flush);
+					   max_pkts, flush);
 		if (dhdr_update)
 			panel->catalog->dhdr_flush(panel->catalog);
 	}
@@ -2738,7 +2751,7 @@ static void dp_panel_config_ctrl(struct dp_panel *dp_panel)
 	config |= (0 << 11); /* RGB */
 
 	tbd = panel->link->get_test_bits_depth(panel->link,
-			dp_panel->pinfo.bpp);
+					       dp_panel->pinfo.bpp);
 
 	if (tbd == DP_TEST_BIT_DEPTH_UNKNOWN || comp_info->enabled)
 		tbd = (DP_TEST_BIT_DEPTH_8 >> DP_TEST_BIT_DEPTH_SHIFT);
@@ -2753,7 +2766,7 @@ static void dp_panel_config_ctrl(struct dp_panel *dp_panel)
 
 	config |= 0x04; /* progressive video */
 
-	config |= 0x03;	/* sycn clock & static Mvid */
+	config |= 0x03; /* sycn clock & static Mvid */
 
 	catalog->config_ctrl(catalog, config);
 }
@@ -2773,7 +2786,6 @@ static void dp_panel_config_misc(struct dp_panel *dp_panel)
 
 	tb = panel->link->get_test_bits_depth(panel->link, dp_panel->pinfo.bpp);
 	colorspace = connector->state->colorspace;
-
 
 	cc = (get_misc_colorimetry_val(panel, colorspace) << 1);
 
@@ -2812,22 +2824,20 @@ static void dp_panel_resolution_info(struct dp_panel_private *panel)
 	struct dp_panel_info *pinfo = &panel->dp_panel.pinfo;
 
 	/*
-	 * print resolution info as this is a result
-	 * of user initiated action of cable connection
-	 */
+   * print resolution info as this is a result
+   * of user initiated action of cable connection
+   */
 	DP_INFO("DP RESOLUTION: active(back|front|width|low)\n");
 	DP_INFO("%d(%d|%d|%d|%d)x%d(%d|%d|%d|%d)@%dfps %dbpp %dKhz %dLR %dLn\n",
 		pinfo->h_active, pinfo->h_back_porch, pinfo->h_front_porch,
-		pinfo->h_sync_width, pinfo->h_active_low,
-		pinfo->v_active, pinfo->v_back_porch, pinfo->v_front_porch,
-		pinfo->v_sync_width, pinfo->v_active_low,
-		pinfo->refresh_rate, pinfo->bpp, pinfo->pixel_clk_khz,
-		panel->link->link_params.bw_code,
+		pinfo->h_sync_width, pinfo->h_active_low, pinfo->v_active,
+		pinfo->v_back_porch, pinfo->v_front_porch, pinfo->v_sync_width,
+		pinfo->v_active_low, pinfo->refresh_rate, pinfo->bpp,
+		pinfo->pixel_clk_khz, panel->link->link_params.bw_code,
 		panel->link->link_params.lane_count);
 }
 
-static void dp_panel_config_sdp(struct dp_panel *dp_panel,
-	bool en)
+static void dp_panel_config_sdp(struct dp_panel *dp_panel, bool en)
 {
 	struct dp_panel_private *panel;
 
@@ -2861,8 +2871,8 @@ static int dp_panel_hw_cfg(struct dp_panel *dp_panel, bool enable)
 		dp_panel_config_misc(dp_panel);
 		dp_panel_config_msa(dp_panel);
 		if (panel->vsc_supported) {
-			dp_panel_setup_colorimetry_sdp(dp_panel,
-				connector->state->colorspace);
+			dp_panel_setup_colorimetry_sdp(
+				dp_panel, connector->state->colorspace);
 			dp_panel_config_sdp(dp_panel, true);
 		}
 		dp_panel_config_dsc(dp_panel, enable);
@@ -2891,8 +2901,8 @@ static int dp_panel_read_sink_sts(struct dp_panel *dp_panel, u8 *sts, u32 size)
 
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 
-	rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_SINK_COUNT_ESI,
-		sts, size);
+	rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_SINK_COUNT_ESI, sts,
+				size);
 	if (rlen != size) {
 		DP_ERR("dpcd sink sts fail rlen:%d size:%d\n", rlen, size);
 		rc = -EINVAL;
@@ -2929,8 +2939,7 @@ static bool dp_panel_read_mst_cap(struct dp_panel *dp_panel)
 
 	panel = container_of(dp_panel, struct dp_panel_private, dp_panel);
 
-	rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_MSTM_CAP,
-		&dpcd, 1);
+	rlen = drm_dp_dpcd_read(panel->aux->drm_aux, DP_MSTM_CAP, &dpcd, 1);
 	if (rlen < 1) {
 		DP_ERR("dpcd mstm_cap read failed, rlen=%d\n", rlen);
 		goto end;
@@ -2945,29 +2954,32 @@ end:
 }
 
 static void dp_panel_convert_to_dp_mode(struct dp_panel *dp_panel,
-		const struct drm_display_mode *drm_mode,
-		struct dp_display_mode *dp_mode)
+					const struct drm_display_mode *drm_mode,
+					struct dp_display_mode *dp_mode)
 {
 	const u32 num_components = 3, default_bpp = 24;
 	struct msm_compression_info *comp_info;
-	bool dsc_en = (dp_mode->capabilities & DP_PANEL_CAPS_DSC) ? true : false;
+	bool dsc_en = (dp_mode->capabilities & DP_PANEL_CAPS_DSC) ? true :
+								    false;
 	int rc;
 
 	dp_mode->timing.h_active = drm_mode->hdisplay;
 	dp_mode->timing.h_back_porch = drm_mode->htotal - drm_mode->hsync_end;
-	dp_mode->timing.h_sync_width = drm_mode->htotal -
-			(drm_mode->hsync_start + dp_mode->timing.h_back_porch);
-	dp_mode->timing.h_front_porch = drm_mode->hsync_start -
-					 drm_mode->hdisplay;
+	dp_mode->timing.h_sync_width =
+		drm_mode->htotal -
+		(drm_mode->hsync_start + dp_mode->timing.h_back_porch);
+	dp_mode->timing.h_front_porch =
+		drm_mode->hsync_start - drm_mode->hdisplay;
 	dp_mode->timing.h_skew = drm_mode->hskew;
 
 	dp_mode->timing.v_active = drm_mode->vdisplay;
 	dp_mode->timing.v_back_porch = drm_mode->vtotal - drm_mode->vsync_end;
-	dp_mode->timing.v_sync_width = drm_mode->vtotal -
+	dp_mode->timing.v_sync_width =
+		drm_mode->vtotal -
 		(drm_mode->vsync_start + dp_mode->timing.v_back_porch);
 
-	dp_mode->timing.v_front_porch = drm_mode->vsync_start -
-					 drm_mode->vdisplay;
+	dp_mode->timing.v_front_porch =
+		drm_mode->vsync_start - drm_mode->vdisplay;
 
 	dp_mode->timing.refresh_rate = drm_mode_vrefresh(drm_mode);
 	dp_mode->timing.pixel_clk_khz = drm_mode->clock;
@@ -2996,36 +3008,39 @@ static void dp_panel_convert_to_dp_mode(struct dp_panel *dp_panel,
 	/* As YUV was not supported now, so set the default format to RGB */
 	dp_mode->output_format = DP_OUTPUT_FORMAT_RGB;
 	/*
-	 * If a given videomode can be only supported in YCBCR420, set
-	 * the output format to YUV420. While now our driver did not
-	 * support YUV display over DP, so just place this flag here.
-	 * When we want to support YUV, we can use this flag to do
-	 * a lot of settings, like CDM, CSC and pixel_clock.
-	 */
+   * If a given videomode can be only supported in YCBCR420, set
+   * the output format to YUV420. While now our driver did not
+   * support YUV display over DP, so just place this flag here.
+   * When we want to support YUV, we can use this flag to do
+   * a lot of settings, like CDM, CSC and pixel_clock.
+   */
 	if (drm_mode_is_420_only(&dp_panel->connector->display_info,
-			drm_mode)) {
+				 drm_mode)) {
 		dp_mode->output_format = DP_OUTPUT_FORMAT_YCBCR420;
 		DP_DEBUG("YCBCR420 was not supported");
 	}
 
-	dp_mode->timing.bpp = dp_panel_get_mode_bpp(dp_panel,
-			dp_mode->timing.bpp, dp_mode->timing.pixel_clk_khz, dsc_en);
+	dp_mode->timing.bpp =
+		dp_panel_get_mode_bpp(dp_panel, dp_mode->timing.bpp,
+				      dp_mode->timing.pixel_clk_khz, dsc_en);
 
 	if (dsc_en) {
-		if (dp_panel_dsc_prepare_basic_params(comp_info,
-					dp_mode, dp_panel)) {
+		if (dp_panel_dsc_prepare_basic_params(comp_info, dp_mode,
+						      dp_panel)) {
 			DP_DEBUG("prepare DSC basic params failed\n");
 			return;
 		}
 
-		rc = sde_dsc_populate_dsc_config(&comp_info->dsc_info.config, 0, 0);
+		rc = sde_dsc_populate_dsc_config(&comp_info->dsc_info.config, 0,
+						 0);
 		if (rc) {
 			DP_DEBUG("failed populating dsc params \n");
 			return;
 		}
 
-		rc = sde_dsc_populate_dsc_private_params(&comp_info->dsc_info,
-				dp_mode->timing.h_active, dp_mode->timing.widebus_en);
+		rc = sde_dsc_populate_dsc_private_params(
+			&comp_info->dsc_info, dp_mode->timing.h_active,
+			dp_mode->timing.widebus_en);
 		if (rc) {
 			DP_DEBUG("failed populating other dsc params\n");
 			return;
@@ -3070,9 +3085,9 @@ int dp_panel_get_sink_crc(struct dp_panel *dp_panel, u16 *crc)
 	drm_aux = panel->aux->drm_aux;
 
 	/*
-	 * At DP_TEST_CRC_R_CR, there's 6 bytes containing CRC data, 2 bytes
-	 * per component (RGB or CrYCb).
-	 */
+   * At DP_TEST_CRC_R_CR, there's 6 bytes containing CRC data, 2 bytes
+   * per component (RGB or CrYCb).
+   */
 	rc = drm_dp_dpcd_read(drm_aux, DP_TEST_CRC_R_CR, crc_bytes, 6);
 	if (rc != 6) {
 		DP_ERR("failed to read sink CRC, ret:%d\n", rc);
@@ -3105,7 +3120,8 @@ int dp_panel_sink_crc_enable(struct dp_panel *dp_panel, bool enable)
 			return -EIO;
 		}
 
-		ret = drm_dp_dpcd_writeb(drm_aux, DP_TEST_SINK, buf | DP_TEST_SINK_START);
+		ret = drm_dp_dpcd_writeb(drm_aux, DP_TEST_SINK,
+					 buf | DP_TEST_SINK_START);
 		if (ret != 1) {
 			DP_ERR("failed to enable Sink CRC, ret:%d\n", ret);
 			return -EIO;
@@ -3133,8 +3149,8 @@ struct dp_panel *dp_panel_get(struct dp_panel_in *in)
 	struct dp_panel *dp_panel;
 	struct sde_connector *sde_conn;
 
-	if (!in->dev || !in->catalog || !in->aux ||
-			!in->link || !in->connector) {
+	if (!in->dev || !in->catalog || !in->aux || !in->link ||
+	    !in->connector) {
 		DP_ERR("invalid input\n");
 		rc = -EINVAL;
 		goto error;
@@ -3170,11 +3186,11 @@ struct dp_panel *dp_panel_get(struct dp_panel_in *in)
 	if (in->base_panel) {
 		panel->base = in->base_panel;
 		memcpy(dp_panel->dpcd, in->base_panel->dpcd,
-				DP_RECEIVER_CAP_SIZE + 1);
+		       DP_RECEIVER_CAP_SIZE + 1);
 		memcpy(dp_panel->dsc_dpcd, in->base_panel->dsc_dpcd,
-				DP_RECEIVER_DSC_CAP_SIZE + 1);
+		       DP_RECEIVER_DSC_CAP_SIZE + 1);
 		memcpy(&dp_panel->link_info, &in->base_panel->link_info,
-				sizeof(dp_panel->link_info));
+		       sizeof(dp_panel->link_info));
 		dp_panel->mst_state = in->base_panel->mst_state;
 		dp_panel->widebus_en = in->base_panel->widebus_en;
 		dp_panel->fec_en = in->base_panel->fec_en;

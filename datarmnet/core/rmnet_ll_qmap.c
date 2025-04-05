@@ -11,35 +11,35 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/netlink.h>
-#include <uapi/linux/rtnetlink.h>
+#include "dfc.h"
+#include "qmi_rmnet_i.h"
+#include "rmnet_qmap.h"
+#include "rmnet_qmi.h"
 #include <linux/net.h>
+#include <linux/netlink.h>
 #include <linux/workqueue.h>
 #include <net/sock.h>
-#include "dfc.h"
-#include "rmnet_qmi.h"
-#include "rmnet_qmap.h"
-#include "qmi_rmnet_i.h"
+#include <uapi/linux/rtnetlink.h>
 
-#define QMAP_LL_VER		1
-#define QMAP_LL_MAX_BEARER	15
+#define QMAP_LL_VER 1
+#define QMAP_LL_MAX_BEARER 15
 
-#define QMAP_SWITCH_TO_LL	1
-#define QMAP_SWITCH_TO_DEFAULT	2
-#define QMAP_SWITCH_QUERY	3
+#define QMAP_SWITCH_TO_LL 1
+#define QMAP_SWITCH_TO_DEFAULT 2
+#define QMAP_SWITCH_QUERY 3
 
 /* Switch status from modem */
-#define SWITCH_STATUS_ERROR	0
-#define SWITCH_STATUS_SUCCESS	1
-#define SWITCH_STATUS_DEFAULT	2
-#define SWITCH_STATUS_LL	3
-#define SWITCH_STATUS_FAIL_TEMP	4
-#define SWITCH_STATUS_FAIL_PERM	5
+#define SWITCH_STATUS_ERROR 0
+#define SWITCH_STATUS_SUCCESS 1
+#define SWITCH_STATUS_DEFAULT 2
+#define SWITCH_STATUS_LL 3
+#define SWITCH_STATUS_FAIL_TEMP 4
+#define SWITCH_STATUS_FAIL_PERM 5
 
 /* Internal switch status */
-#define SWITCH_STATUS_NONE	0xFF
-#define SWITCH_STATUS_TIMEOUT	0xFE
-#define SWITCH_STATUS_NO_EFFECT	0xFD
+#define SWITCH_STATUS_NONE 0xFF
+#define SWITCH_STATUS_TIMEOUT 0xFE
+#define SWITCH_STATUS_NO_EFFECT 0xFD
 
 #define LL_MASK_NL_ACK 1
 #define LL_MASK_AUTO_RETRY 2
@@ -49,34 +49,34 @@
 #define LL_MAX_RETRY (3)
 
 struct qmap_ll_bearer {
-	u8			bearer_id;
-	u8			status;
-	u8			reserved[2];
-}  __aligned(1);
+	u8 bearer_id;
+	u8 status;
+	u8 reserved[2];
+} __aligned(1);
 
 struct qmap_ll_switch {
-	struct qmap_cmd_hdr	hdr;
-	u8			cmd_ver;
-	u8			reserved;
-	u8			request_type;
-	u8			num_bearers;
-	struct qmap_ll_bearer	bearer[0];
+	struct qmap_cmd_hdr hdr;
+	u8 cmd_ver;
+	u8 reserved;
+	u8 request_type;
+	u8 num_bearers;
+	struct qmap_ll_bearer bearer[0];
 } __aligned(1);
 
 struct qmap_ll_switch_resp {
-	struct qmap_cmd_hdr	hdr;
-	u8			cmd_ver;
-	u8			reserved[2];
-	u8			num_bearers;
-	struct qmap_ll_bearer	bearer[0];
+	struct qmap_cmd_hdr hdr;
+	u8 cmd_ver;
+	u8 reserved[2];
+	u8 num_bearers;
+	struct qmap_ll_bearer bearer[0];
 } __aligned(1);
 
 struct qmap_ll_switch_status {
-	struct qmap_cmd_hdr	hdr;
-	u8			cmd_ver;
-	u8			reserved[2];
-	u8			num_bearers;
-	struct qmap_ll_bearer	bearer[0];
+	struct qmap_cmd_hdr hdr;
+	u8 cmd_ver;
+	u8 reserved[2];
+	u8 num_bearers;
+	struct qmap_ll_bearer bearer[0];
 } __aligned(1);
 
 /*
@@ -108,8 +108,7 @@ static void ll_ack_fn(struct work_struct *work)
 	if (!skb)
 		goto out;
 
-	nlh = __nlmsg_put(skb, ack_work->nl_pid,
-			  ack_work->nl_seq, NLMSG_ERROR,
+	nlh = __nlmsg_put(skb, ack_work->nl_pid, ack_work->nl_seq, NLMSG_ERROR,
 			  sizeof(*errmsg), flags);
 	errmsg = nlmsg_data(nlh);
 	errmsg->error = 0;
@@ -197,8 +196,7 @@ static void ll_switch_complete(struct rmnet_bearer_map *bearer, u8 status)
 {
 	bearer->ch_switch.status_code = status;
 
-	if (status == SWITCH_STATUS_FAIL_TEMP &&
-	    bearer->ch_switch.retry_left) {
+	if (status == SWITCH_STATUS_FAIL_TEMP && bearer->ch_switch.retry_left) {
 		/* Temp failure retry */
 		bearer->ch_switch.state = CH_SWITCH_FAILED_RETRY;
 		mod_timer(&bearer->ch_switch.guard_timer,
@@ -230,8 +228,8 @@ static int ll_qmap_handle_switch_resp(struct sk_buff *skb)
 	if (!cmd->num_bearers)
 		return QMAP_CMD_DONE;
 
-	if (skb->len < sizeof(*cmd) +
-		       cmd->num_bearers * sizeof(struct qmap_ll_bearer))
+	if (skb->len <
+	    sizeof(*cmd) + cmd->num_bearers * sizeof(struct qmap_ll_bearer))
 		return QMAP_CMD_DONE;
 
 	dev = rmnet_qmap_get_dev(cmd->hdr.mux_id);
@@ -247,8 +245,8 @@ static int ll_qmap_handle_switch_resp(struct sk_buff *skb)
 	spin_lock_bh(&qos->qos_lock);
 
 	for (i = 0; i < cmd->num_bearers; i++) {
-		bearer = qmi_rmnet_get_bearer_map(qos,
-						  cmd->bearer[i].bearer_id);
+		bearer =
+			qmi_rmnet_get_bearer_map(qos, cmd->bearer[i].bearer_id);
 		if (!bearer)
 			continue;
 
@@ -285,8 +283,8 @@ static int ll_qmap_handle_switch_status(struct sk_buff *skb)
 	if (!cmd->num_bearers)
 		return QMAP_CMD_ACK;
 
-	if (skb->len < sizeof(*cmd) +
-		       cmd->num_bearers * sizeof(struct qmap_ll_bearer))
+	if (skb->len <
+	    sizeof(*cmd) + cmd->num_bearers * sizeof(struct qmap_ll_bearer))
 		return QMAP_CMD_INVALID;
 
 	dev = rmnet_qmap_get_dev(cmd->hdr.mux_id);
@@ -302,8 +300,8 @@ static int ll_qmap_handle_switch_status(struct sk_buff *skb)
 	spin_lock_bh(&qos->qos_lock);
 
 	for (i = 0; i < cmd->num_bearers; i++) {
-		bearer = qmi_rmnet_get_bearer_map(qos,
-						  cmd->bearer[i].bearer_id);
+		bearer =
+			qmi_rmnet_get_bearer_map(qos, cmd->bearer[i].bearer_id);
 		if (!bearer)
 			continue;
 
@@ -360,8 +358,8 @@ static int ll_qmap_send_switch(u8 mux_id, u8 channel, u8 num_bearers,
 	if (!num_bearers || num_bearers > QMAP_LL_MAX_BEARER || !bearer_list)
 		return -EINVAL;
 
-	len  = sizeof(struct qmap_ll_switch) +
-			num_bearers * sizeof(struct qmap_ll_bearer);
+	len = sizeof(struct qmap_ll_switch) +
+	      num_bearers * sizeof(struct qmap_ll_bearer);
 
 	skb = alloc_skb(len, GFP_ATOMIC);
 	if (!skb)
@@ -418,13 +416,13 @@ int rmnet_ll_switch(struct net_device *dev, struct tcmsg *tcm, int attrlen)
 	if (!dev || !tcm)
 		return -EINVAL;
 	/*
-	 * tcm__pad1: switch type (ch #, 0xFF query)
-	 * tcm__pad2: num bearers
-	 * tcm_info: flags
-	 * tcm_ifindex: netlink fd
-	 * tcm_handle: pid
-	 * tcm_parent: seq
-	 */
+   * tcm__pad1: switch type (ch #, 0xFF query)
+   * tcm__pad2: num bearers
+   * tcm_info: flags
+   * tcm_ifindex: netlink fd
+   * tcm_handle: pid
+   * tcm_parent: seq
+   */
 
 	switch_to_ch = tcm->tcm__pad1;
 	num_bearers = tcm->tcm__pad2;
@@ -464,8 +462,8 @@ int rmnet_ll_switch(struct net_device *dev, struct tcmsg *tcm, int attrlen)
 	}
 
 	/* Send QMAP switch command */
-	rc = ll_qmap_send_switch(qos->mux_id, switch_to_ch,
-				 num_bearers, bearer_list, &txid);
+	rc = ll_qmap_send_switch(qos->mux_id, switch_to_ch, num_bearers,
+				 bearer_list, &txid);
 	if (rc)
 		goto out;
 
@@ -482,8 +480,7 @@ int rmnet_ll_switch(struct net_device *dev, struct tcmsg *tcm, int attrlen)
 			(flags & LL_MASK_AUTO_RETRY) ? LL_MAX_RETRY : 0;
 		bearer->ch_switch.flags = flags;
 		bearer->ch_switch.timer_quit = false;
-		mod_timer(&bearer->ch_switch.guard_timer,
-			  jiffies + LL_TIMEOUT);
+		mod_timer(&bearer->ch_switch.guard_timer, jiffies + LL_TIMEOUT);
 
 		bearer->ch_switch.nl_pid = tcm->tcm_handle;
 		bearer->ch_switch.nl_seq = tcm->tcm_parent;
@@ -518,10 +515,8 @@ void rmnet_ll_guard_fn(struct timer_list *t)
 		}
 
 		rc = ll_qmap_send_switch(bearer->qos->mux_id,
-					 bearer->ch_switch.switch_to_ch,
-					 1,
-					 &bearer->bearer_id,
-					 &txid);
+					 bearer->ch_switch.switch_to_ch, 1,
+					 &bearer->bearer_id, &txid);
 		if (!rc) {
 			bearer->ch_switch.switch_txid = txid;
 			bearer->ch_switch.state = CH_SWITCH_STARTED;

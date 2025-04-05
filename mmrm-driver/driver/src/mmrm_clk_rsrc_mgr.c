@@ -35,27 +35,26 @@ err_exit:
 	return rc;
 }
 
-struct mmrm_client *mmrm_clk_client_register(struct mmrm_clk_mgr *clk_mgr,
-	struct mmrm_client_desc *client_desc)
+struct mmrm_client *
+mmrm_clk_client_register(struct mmrm_clk_mgr *clk_mgr,
+			 struct mmrm_client_desc *client_desc)
 {
 	if (!clk_mgr || !clk_mgr->clk_client_ops ||
-		!clk_mgr->clk_client_ops->clk_client_reg) {
+	    !clk_mgr->clk_client_ops->clk_client_reg) {
 		d_mpr_e("%s: invalid clk mgr\n", __func__);
 		return NULL;
 	}
 
-	return clk_mgr->clk_client_ops->clk_client_reg(clk_mgr,
-			client_desc->client_info.desc,
-			client_desc->priority,
-			client_desc->pvt_data,
-			client_desc->notifier_callback_fn);
+	return clk_mgr->clk_client_ops->clk_client_reg(
+		clk_mgr, client_desc->client_info.desc, client_desc->priority,
+		client_desc->pvt_data, client_desc->notifier_callback_fn);
 }
 
 int mmrm_clk_client_deregister(struct mmrm_clk_mgr *clk_mgr,
-	struct mmrm_client *client)
+			       struct mmrm_client *client)
 {
 	if (!clk_mgr || !clk_mgr->clk_client_ops ||
-		!clk_mgr->clk_client_ops->clk_client_dereg) {
+	    !clk_mgr->clk_client_ops->clk_client_dereg) {
 		d_mpr_e("%s: invalid clk mgr\n", __func__);
 		return -EINVAL;
 	}
@@ -63,29 +62,28 @@ int mmrm_clk_client_deregister(struct mmrm_clk_mgr *clk_mgr,
 	return clk_mgr->clk_client_ops->clk_client_dereg(clk_mgr, client);
 }
 
-
 int mmrm_clk_client_setval(struct mmrm_clk_mgr *clk_mgr,
-	struct mmrm_client *client,
-	struct mmrm_client_data *client_data,
-	unsigned long val)
+			   struct mmrm_client *client,
+			   struct mmrm_client_data *client_data,
+			   unsigned long val)
 {
 	if (!clk_mgr || !clk_mgr->clk_client_ops ||
-		!clk_mgr->clk_client_ops->clk_client_setval) {
+	    !clk_mgr->clk_client_ops->clk_client_setval) {
 		d_mpr_e("%s: invalid clk mgr\n", __func__);
 		return -EINVAL;
 	}
 
-	return clk_mgr->clk_client_ops->clk_client_setval(
-		clk_mgr, client, client_data, val);
+	return clk_mgr->clk_client_ops->clk_client_setval(clk_mgr, client,
+							  client_data, val);
 }
 
 int mmrm_clk_client_setval_inrange(struct mmrm_clk_mgr *clk_mgr,
-	struct mmrm_client *client,
-	struct mmrm_client_data *client_data,
-	struct mmrm_client_res_value *val)
+				   struct mmrm_client *client,
+				   struct mmrm_client_data *client_data,
+				   struct mmrm_client_res_value *val)
 {
 	if (!clk_mgr || !clk_mgr->clk_client_ops ||
-		!clk_mgr->clk_client_ops->clk_client_setval_inrange) {
+	    !clk_mgr->clk_client_ops->clk_client_setval_inrange) {
 		d_mpr_e("%s: invalid clk mgr\n", __func__);
 		return -EINVAL;
 	}
@@ -95,29 +93,27 @@ int mmrm_clk_client_setval_inrange(struct mmrm_clk_mgr *clk_mgr,
 }
 
 int mmrm_clk_client_getval(struct mmrm_clk_mgr *clk_mgr,
-	struct mmrm_client *client,
-	struct mmrm_client_res_value *val)
+			   struct mmrm_client *client,
+			   struct mmrm_client_res_value *val)
 {
 	if (!clk_mgr || !clk_mgr->clk_client_ops ||
-		!clk_mgr->clk_client_ops->clk_client_getval) {
+	    !clk_mgr->clk_client_ops->clk_client_getval) {
 		d_mpr_e("%s: invalid clk mgr\n", __func__);
 		return -EINVAL;
 	}
 
-	return clk_mgr->clk_client_ops->clk_client_getval(
-		clk_mgr, client, val);
+	return clk_mgr->clk_client_ops->clk_client_getval(clk_mgr, client, val);
 }
 
-int mmrm_clk_print_enabled_client_info(struct mmrm_clk_mgr *clk_mgr,
-	char *buf, int sz)
+int mmrm_clk_print_enabled_client_info(struct mmrm_clk_mgr *clk_mgr, char *buf,
+				       int sz)
 {
 	if (!clk_mgr || !clk_mgr->clk_client_ops ||
-		!clk_mgr->clk_client_ops->clk_print_enabled_client_info) {
+	    !clk_mgr->clk_client_ops->clk_print_enabled_client_info) {
 		d_mpr_e("%s: invalid clk mgr\n", __func__);
 		return -EINVAL;
 	}
 
-	return clk_mgr->clk_client_ops->clk_print_enabled_client_info(
-		clk_mgr, buf, sz);
+	return clk_mgr->clk_client_ops->clk_print_enabled_client_info(clk_mgr,
+								      buf, sz);
 }
-

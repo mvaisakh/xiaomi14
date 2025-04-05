@@ -2,30 +2,29 @@
 /* Copyright (c) 2011-2018, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/of_device.h>
-#include <linux/of.h>
-#include <linux/of_irq.h>
-#include <linux/slab.h>
-#include <linux/ratelimit.h>
-#include <linux/mfd/core.h>
-#include <linux/delay.h>
-#include <linux/gpio.h>
-#include <linux/debugfs.h>
-#include <linux/i2c.h>
-#include <linux/regmap.h>
-#include <linux/gpio.h>
-#include <linux/of_gpio.h>
-#include <linux/pm_runtime.h>
-#include <sound/soc.h>
+#include "aqt1000-internal.h"
+#include "aqt1000-irq.h"
+#include "aqt1000-registers.h"
+#include "aqt1000-utils.h"
+#include "aqt1000.h"
 #include <asoc/msm-cdc-pinctrl.h>
 #include <asoc/msm-cdc-supply.h>
-#include "aqt1000-registers.h"
-#include "aqt1000-internal.h"
-#include "aqt1000.h"
-#include "aqt1000-utils.h"
-#include "aqt1000-irq.h"
+#include <linux/debugfs.h>
+#include <linux/delay.h>
+#include <linux/gpio.h>
+#include <linux/i2c.h>
+#include <linux/kernel.h>
+#include <linux/mfd/core.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/of_device.h>
+#include <linux/of_gpio.h>
+#include <linux/of_irq.h>
+#include <linux/pm_runtime.h>
+#include <linux/ratelimit.h>
+#include <linux/regmap.h>
+#include <linux/slab.h>
+#include <sound/soc.h>
 
 static int aqt1000_bringup(struct aqt1000 *aqt)
 {
@@ -39,8 +38,8 @@ static int aqt1000_bringup(struct aqt1000 *aqt)
 
 	/* Bringup register write sequence */
 	regmap_update_bits(aqt->regmap, AQT1000_BUCK_5V_CTRL_CCL_1, 0xF0, 0xF0);
-	regmap_update_bits(aqt->regmap, AQT1000_BIAS_CCOMP_FINE_ADJ,
-			   0xF0, 0x90);
+	regmap_update_bits(aqt->regmap, AQT1000_BIAS_CCOMP_FINE_ADJ, 0xF0,
+			   0x90);
 	regmap_update_bits(aqt->regmap, AQT1000_ANA_BIAS, 0x80, 0x80);
 	regmap_update_bits(aqt->regmap, AQT1000_ANA_BIAS, 0x40, 0x40);
 
@@ -54,14 +53,14 @@ static int aqt1000_bringup(struct aqt1000 *aqt)
 	if (pdata) {
 		if (pdata->mclk_rate == AQT1000_CLK_12P288MHZ)
 			mclk = 0;
-		clk_div = (((pdata->ext_clk_rate / pdata->mclk_rate) >> 1)
-				<< 2);
+		clk_div =
+			(((pdata->ext_clk_rate / pdata->mclk_rate) >> 1) << 2);
 	}
-	regmap_update_bits(aqt->regmap, AQT1000_CHIP_CFG0_CLK_CFG_MCLK,
-			   0x03, mclk);
+	regmap_update_bits(aqt->regmap, AQT1000_CHIP_CFG0_CLK_CFG_MCLK, 0x03,
+			   mclk);
 
-	regmap_update_bits(aqt->regmap, AQT1000_CLK_SYS_MCLK1_PRG,
-			   0x0C, clk_div);
+	regmap_update_bits(aqt->regmap, AQT1000_CLK_SYS_MCLK1_PRG, 0x0C,
+			   clk_div);
 
 	/* Source clock enable */
 	regmap_update_bits(aqt->regmap, AQT1000_CLK_SYS_MCLK1_PRG, 0x02, 0x02);
@@ -77,8 +76,8 @@ static int aqt1000_bringup(struct aqt1000 *aqt)
 	regmap_update_bits(aqt->regmap, AQT1000_CLK_SYS_PLL_PRESET, 0x0F, 0x02);
 
 	/* Enable clock PLL */
-	regmap_update_bits(aqt->regmap, AQT1000_CLK_SYS_PLL_ENABLES,
-			   0x01, 0x01);
+	regmap_update_bits(aqt->regmap, AQT1000_CLK_SYS_PLL_ENABLES, 0x01,
+			   0x01);
 
 	/* Add 100usec delay as per HW requirement */
 	usleep_range(100, 110);
@@ -90,8 +89,8 @@ static int aqt1000_bringup(struct aqt1000 *aqt)
 	regmap_update_bits(aqt->regmap, AQT1000_CLK_SYS_MCLK2_I2S_HS_CLK_PRG,
 			   0x01, 0x01);
 
-	regmap_update_bits(aqt->regmap, AQT1000_CHIP_CFG0_CLK_CFG_MCLK,
-			   0x04, 0x00);
+	regmap_update_bits(aqt->regmap, AQT1000_CHIP_CFG0_CLK_CFG_MCLK, 0x04,
+			   0x00);
 
 	/* Add 100usec delay as per HW requirement */
 	usleep_range(100, 110);
@@ -99,8 +98,8 @@ static int aqt1000_bringup(struct aqt1000 *aqt)
 			   0x01, 0x01);
 	regmap_update_bits(aqt->regmap, AQT1000_CDC_CLK_RST_CTRL_FS_CNT_CONTROL,
 			   0x01, 0x01);
-	regmap_update_bits(aqt->regmap, AQT1000_CHIP_CFG0_CLK_CTL_CDC_DIG,
-			   0x01, 0x01);
+	regmap_update_bits(aqt->regmap, AQT1000_CHIP_CFG0_CLK_CTL_CDC_DIG, 0x01,
+			   0x01);
 
 	/* Codec digital reset */
 	regmap_update_bits(aqt->regmap, AQT1000_CHIP_CFG0_RST_CTL, 0x01, 0x01);
@@ -161,12 +160,12 @@ static int aqt1000_i2c_write(struct aqt1000 *aqt1000, unsigned short reg,
 	data[0] = reg;
 	data[1] = *value;
 	msg->buf = data;
-	ret = i2c_transfer(aqt1000_i2c->client->adapter,
-			   aqt1000_i2c->xfer_msg, 1);
+	ret = i2c_transfer(aqt1000_i2c->client->adapter, aqt1000_i2c->xfer_msg,
+			   1);
 	/* Try again if the write fails */
 	if (ret != 1) {
 		ret = i2c_transfer(aqt1000_i2c->client->adapter,
-						aqt1000_i2c->xfer_msg, 1);
+				   aqt1000_i2c->xfer_msg, 1);
 		if (ret != 1) {
 			dev_err(aqt1000->dev,
 				"%s: I2C write failed, reg: 0x%x ret: %d\n",
@@ -180,7 +179,7 @@ static int aqt1000_i2c_write(struct aqt1000 *aqt1000, unsigned short reg,
 }
 
 static int aqt1000_i2c_read(struct aqt1000 *aqt1000, unsigned short reg,
-				  void *dst, int bytes)
+			    void *dst, int bytes)
 {
 	struct i2c_msg *msg;
 	int ret = 0;
@@ -208,7 +207,7 @@ static int aqt1000_i2c_read(struct aqt1000 *aqt1000, unsigned short reg,
 		msg->flags = I2C_M_RD;
 		msg->buf = dest++;
 		ret = i2c_transfer(aqt1000_i2c->client->adapter,
-				aqt1000_i2c->xfer_msg, 2);
+				   aqt1000_i2c->xfer_msg, 2);
 
 		/* Try again if read fails first time */
 		if (ret != 2) {
@@ -288,38 +287,33 @@ static void aqt1000_dt_parse_micbias_info(struct device *dev,
 	int rc;
 
 	if (of_find_property(dev->of_node, "qcom,cdc-micbias-ldoh-v", NULL)) {
-		rc = aqt1000_read_of_property_u32(dev,
-						  "qcom,cdc-micbias-ldoh-v",
-						  &prop_val);
+		rc = aqt1000_read_of_property_u32(
+			dev, "qcom,cdc-micbias-ldoh-v", &prop_val);
 		if (!rc)
-			mb->ldoh_v  =  (u8)prop_val;
+			mb->ldoh_v = (u8)prop_val;
 	}
 
 	/* MB1 */
 	if (of_find_property(dev->of_node, "qcom,cdc-micbias-cfilt1-mv",
 			     NULL)) {
-		rc = aqt1000_read_of_property_u32(dev,
-						  "qcom,cdc-micbias-cfilt1-mv",
-						   &prop_val);
+		rc = aqt1000_read_of_property_u32(
+			dev, "qcom,cdc-micbias-cfilt1-mv", &prop_val);
 		if (!rc)
 			mb->cfilt1_mv = prop_val;
 
-		rc = aqt1000_read_of_property_u32(dev,
-						"qcom,cdc-micbias1-cfilt-sel",
-						&prop_val);
+		rc = aqt1000_read_of_property_u32(
+			dev, "qcom,cdc-micbias1-cfilt-sel", &prop_val);
 		if (!rc)
 			mb->bias1_cfilt_sel = (u8)prop_val;
 
 	} else if (of_find_property(dev->of_node, "qcom,cdc-micbias1-mv",
 				    NULL)) {
-		rc = aqt1000_read_of_property_u32(dev,
-						  "qcom,cdc-micbias1-mv",
+		rc = aqt1000_read_of_property_u32(dev, "qcom,cdc-micbias1-mv",
 						  &prop_val);
 		if (!rc)
 			mb->micb1_mv = prop_val;
 	} else {
-		dev_info(dev, "%s: Micbias1 DT property not found\n",
-			__func__);
+		dev_info(dev, "%s: Micbias1 DT property not found\n", __func__);
 	}
 
 	/* Print micbias info */
@@ -335,8 +329,7 @@ static struct aqt1000_pdata *aqt1000_populate_dt_data(struct device *dev)
 	if (!dev || !dev->of_node)
 		return NULL;
 
-	pdata = devm_kzalloc(dev, sizeof(struct aqt1000_pdata),
-			     GFP_KERNEL);
+	pdata = devm_kzalloc(dev, sizeof(struct aqt1000_pdata), GFP_KERNEL);
 	if (!pdata)
 		return NULL;
 
@@ -352,8 +345,8 @@ static struct aqt1000_pdata *aqt1000_populate_dt_data(struct device *dev)
 	/* Parse micbias info */
 	aqt1000_dt_parse_micbias_info(dev, &pdata->micbias);
 
-	pdata->aqt_rst_np = of_parse_phandle(dev->of_node,
-					     "qcom,aqt-rst-gpio-node", 0);
+	pdata->aqt_rst_np =
+		of_parse_phandle(dev->of_node, "qcom,aqt-rst-gpio-node", 0);
 	if (!pdata->aqt_rst_np) {
 		dev_err(dev, "%s: Looking up %s property in node %s failed\n",
 			__func__, "qcom,aqt-rst-gpio-node",
@@ -389,8 +382,8 @@ static struct aqt1000_pdata *aqt1000_populate_dt_data(struct device *dev)
 		goto err_parse_dt_prop;
 	}
 
-	pdata->irq_gpio = of_get_named_gpio(dev->of_node,
-					    "qcom,gpio-connect", 0);
+	pdata->irq_gpio =
+		of_get_named_gpio(dev->of_node, "qcom,gpio-connect", 0);
 	if (!gpio_is_valid(pdata->irq_gpio)) {
 		dev_err(dev, "%s: TLMM connect gpio not found\n", __func__);
 		goto err_parse_dt_prop;
@@ -425,7 +418,7 @@ static void aqt1000_device_exit(struct aqt1000 *aqt)
 }
 
 static int aqt1000_i2c_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+			     const struct i2c_device_id *id)
 {
 	struct aqt1000 *aqt1000 = NULL;
 	struct aqt1000_pdata *pdata = NULL;
@@ -441,19 +434,18 @@ static int aqt1000_i2c_probe(struct i2c_client *client,
 	}
 	client->dev.platform_data = pdata;
 
-	aqt1000 = devm_kzalloc(&client->dev, sizeof(struct aqt1000),
-			       GFP_KERNEL);
+	aqt1000 =
+		devm_kzalloc(&client->dev, sizeof(struct aqt1000), GFP_KERNEL);
 	if (!aqt1000) {
 		ret = -ENOMEM;
 		goto fail;
 	}
 
-	aqt1000->regmap = aqt1000_regmap_init(&client->dev,
-			&aqt1000_regmap_config);
+	aqt1000->regmap =
+		aqt1000_regmap_init(&client->dev, &aqt1000_regmap_config);
 	if (IS_ERR(aqt1000->regmap)) {
 		ret = PTR_ERR(aqt1000->regmap);
-		dev_err(&client->dev,
-			"%s: Failed to init register map: %d\n",
+		dev_err(&client->dev, "%s: Failed to init register map: %d\n",
 			__func__, ret);
 		goto fail;
 	}
@@ -465,8 +457,7 @@ static int aqt1000_i2c_probe(struct i2c_client *client,
 		goto fail;
 	}
 
-	if (i2c_check_functionality(client->adapter,
-				    I2C_FUNC_I2C) == 0) {
+	if (i2c_check_functionality(client->adapter, I2C_FUNC_I2C) == 0) {
 		dev_dbg(&client->dev, "%s: can't talk I2C?\n", __func__);
 		ret = -EIO;
 		goto fail;
@@ -479,15 +470,13 @@ static int aqt1000_i2c_probe(struct i2c_client *client,
 
 	aqt1000->num_of_supplies = pdata->num_supplies;
 	ret = msm_cdc_init_supplies(aqt1000->dev, &aqt1000->supplies,
-				    pdata->regulator,
-				    pdata->num_supplies);
+				    pdata->regulator, pdata->num_supplies);
 	if (!aqt1000->supplies) {
 		dev_err(aqt1000->dev, "%s: Cannot init aqt supplies\n",
 			__func__);
 		goto err_codec;
 	}
-	ret = msm_cdc_enable_static_supplies(aqt1000->dev,
-					     aqt1000->supplies,
+	ret = msm_cdc_enable_static_supplies(aqt1000->dev, aqt1000->supplies,
 					     pdata->regulator,
 					     pdata->num_supplies);
 	if (ret) {
@@ -510,8 +499,8 @@ static int aqt1000_i2c_probe(struct i2c_client *client,
 
 	ret = aqt1000_device_init(aqt1000);
 	if (ret) {
-		pr_err("%s: error, initializing device failed (%d)\n",
-		       __func__, ret);
+		pr_err("%s: error, initializing device failed (%d)\n", __func__,
+		       ret);
 		goto err_supplies;
 	}
 
@@ -521,7 +510,7 @@ static int aqt1000_i2c_probe(struct i2c_client *client,
 	ret = aqt_register_codec(&client->dev);
 	if (ret) {
 		dev_err(aqt1000->dev, "%s: Codec registration failed\n",
-			 __func__);
+			__func__);
 		goto err_cdc_register;
 	}
 
@@ -532,8 +521,7 @@ err_cdc_register:
 	aqt1000_device_exit(aqt1000);
 err_supplies:
 	msm_cdc_release_supplies(aqt1000->dev, aqt1000->supplies,
-				 pdata->regulator,
-				 pdata->num_supplies);
+				 pdata->regulator, pdata->num_supplies);
 	pdata->regulator = NULL;
 	pdata->num_supplies = 0;
 err_codec:
@@ -551,8 +539,7 @@ static int aqt1000_i2c_remove(struct i2c_client *client)
 	aqt = dev_get_drvdata(&client->dev);
 
 	pm_runtime_disable(aqt->dev);
-	msm_cdc_release_supplies(aqt->dev, aqt->supplies,
-				 pdata->regulator,
+	msm_cdc_release_supplies(aqt->dev, aqt->supplies, pdata->regulator,
 				 pdata->num_supplies);
 	aqt1000_device_exit(aqt);
 	dev_set_drvdata(&client->dev, NULL);
@@ -589,37 +576,34 @@ static int aqt1000_i2c_suspend(struct device *dev)
 }
 #endif
 
-static struct i2c_device_id aqt1000_id_table[] = {
-	{"aqt1000-i2c", 0},
-	{}
-};
+static struct i2c_device_id aqt1000_id_table[] = { { "aqt1000-i2c", 0 }, {} };
 MODULE_DEVICE_TABLE(i2c, aqt1000_id_table);
 
 static const struct dev_pm_ops aqt1000_i2c_pm_ops = {
-	SET_RUNTIME_PM_OPS(aqt1000_runtime_suspend,
-			   aqt1000_runtime_resume, NULL)
-	SET_SYSTEM_SLEEP_PM_OPS(aqt1000_i2c_suspend,
-				aqt1000_i2c_resume)
+	SET_RUNTIME_PM_OPS(aqt1000_runtime_suspend, aqt1000_runtime_resume,
+			   NULL)
+		SET_SYSTEM_SLEEP_PM_OPS(aqt1000_i2c_suspend, aqt1000_i2c_resume)
 };
 
 static const struct of_device_id aqt_match_table[] = {
-	{.compatible = "qcom,aqt1000-i2c-codec"},
+	{ .compatible = "qcom,aqt1000-i2c-codec" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, aqt_match_table);
 
 static struct i2c_driver aqt1000_i2c_driver = {
-	.driver                 = {
-		.owner          =       THIS_MODULE,
-		.name           =       "aqt1000-i2c-codec",
+    .driver =
+        {
+            .owner = THIS_MODULE,
+            .name = "aqt1000-i2c-codec",
 #ifdef CONFIG_PM_SLEEP
-		.pm             =       &aqt1000_i2c_pm_ops,
+            .pm = &aqt1000_i2c_pm_ops,
 #endif
-		.of_match_table =       aqt_match_table,
-	},
-	.id_table               =       aqt1000_id_table,
-	.probe                  =       aqt1000_i2c_probe,
-	.remove                 =       aqt1000_i2c_remove,
+            .of_match_table = aqt_match_table,
+        },
+    .id_table = aqt1000_id_table,
+    .probe = aqt1000_i2c_probe,
+    .remove = aqt1000_i2c_remove,
 };
 
 static int __init aqt1000_init(void)

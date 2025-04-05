@@ -22,9 +22,9 @@
  */
 
 #include "include/wlan_vdev_mlme.h"
-#include <wlan_vdev_mlme_api.h>
 #include <qdf_module.h>
 #include <wlan_vdev_mgr_api.h>
+#include <wlan_vdev_mlme_api.h>
 
 void wlan_vdev_mgr_get_param_bssid(struct wlan_objmgr_vdev *vdev,
 				   uint8_t *bssid)
@@ -32,8 +32,8 @@ void wlan_vdev_mgr_get_param_bssid(struct wlan_objmgr_vdev *vdev,
 	struct vdev_mlme_mgmt *mlme_mgmt;
 	struct vdev_mlme_obj *vdev_mlme;
 
-	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(
-						vdev, WLAN_UMAC_COMP_MLME);
+	vdev_mlme = wlan_objmgr_vdev_get_comp_private_obj(vdev,
+							  WLAN_UMAC_COMP_MLME);
 
 	if (!vdev_mlme) {
 		mlme_err("VDEV_MLME is NULL");
@@ -42,8 +42,7 @@ void wlan_vdev_mgr_get_param_bssid(struct wlan_objmgr_vdev *vdev,
 
 	mlme_mgmt = &vdev_mlme->mgmt;
 
-	qdf_mem_copy(bssid, mlme_mgmt->generic.bssid,
-		     QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(bssid, mlme_mgmt->generic.bssid, QDF_MAC_ADDR_SIZE);
 }
 
 qdf_export_symbol(wlan_vdev_mgr_get_param_bssid);

@@ -4,38 +4,38 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/module.h>
-#include <linux/slab.h>
 #include <linux/mod_devicetable.h>
+#include <linux/module.h>
 #include <linux/of_device.h>
+#include <linux/slab.h>
 #include <linux/timer.h>
 
-#include "jpeg_enc_core.h"
-#include "jpeg_enc_soc.h"
+#include "cam_cpas_api.h"
+#include "cam_debug_util.h"
 #include "cam_hw.h"
 #include "cam_hw_intf.h"
 #include "cam_io_util.h"
-#include "cam_jpeg_hw_intf.h"
-#include "cam_jpeg_hw_mgr_intf.h"
-#include "cam_cpas_api.h"
-#include "cam_debug_util.h"
-#include "cam_jpeg_enc_hw_info_ver_4_2_0.h"
 #include "cam_jpeg_enc_165_hw_info_ver_4_2_0.h"
 #include "cam_jpeg_enc_580_hw_info_ver_4_2_0.h"
 #include "cam_jpeg_enc_680_hw_info_ver_4_2_0.h"
 #include "cam_jpeg_enc_780_hw_info_ver_4_2_0.h"
+#include "cam_jpeg_enc_hw_info_ver_4_2_0.h"
+#include "cam_jpeg_hw_intf.h"
+#include "cam_jpeg_hw_mgr_intf.h"
 #include "camera_main.h"
+#include "jpeg_enc_core.h"
+#include "jpeg_enc_soc.h"
 
-static int cam_jpeg_enc_register_cpas(struct cam_hw_soc_info *soc_info,
-	struct cam_jpeg_enc_device_core_info *core_info,
-	uint32_t hw_idx)
+static int
+cam_jpeg_enc_register_cpas(struct cam_hw_soc_info *soc_info,
+			   struct cam_jpeg_enc_device_core_info *core_info,
+			   uint32_t hw_idx)
 {
 	struct cam_cpas_register_params cpas_register_params;
 	int rc;
 
 	cpas_register_params.dev = soc_info->dev;
-	memcpy(cpas_register_params.identifier, "jpeg-enc",
-		sizeof("jpeg-enc"));
+	memcpy(cpas_register_params.identifier, "jpeg-enc", sizeof("jpeg-enc"));
 	cpas_register_params.cam_cpas_client_cb = NULL;
 	cpas_register_params.cell_index = hw_idx;
 	cpas_register_params.userdata = NULL;
@@ -50,8 +50,8 @@ static int cam_jpeg_enc_register_cpas(struct cam_hw_soc_info *soc_info,
 	return rc;
 }
 
-static int cam_jpeg_enc_unregister_cpas(
-	struct cam_jpeg_enc_device_core_info *core_info)
+static int
+cam_jpeg_enc_unregister_cpas(struct cam_jpeg_enc_device_core_info *core_info)
 {
 	int rc;
 
@@ -64,7 +64,7 @@ static int cam_jpeg_enc_unregister_cpas(
 }
 
 static int cam_jpeg_enc_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				       struct device *master_dev, void *data)
 {
 	struct cam_hw_info *jpeg_enc_dev = NULL;
 	struct cam_hw_intf *jpeg_enc_dev_intf = NULL;
@@ -72,7 +72,7 @@ static int cam_jpeg_enc_component_bind(struct device *dev,
 	struct cam_jpeg_enc_device_core_info *core_info = NULL;
 	struct cam_jpeg_enc_device_hw_info *hw_info = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
-	struct cam_jpeg_enc_soc_private  *soc_private;
+	struct cam_jpeg_enc_soc_private *soc_private;
 	int i;
 	int rc;
 
@@ -80,8 +80,8 @@ static int cam_jpeg_enc_component_bind(struct device *dev,
 	if (!jpeg_enc_dev_intf)
 		return -ENOMEM;
 
-	of_property_read_u32(pdev->dev.of_node,
-		"cell-index", &jpeg_enc_dev_intf->hw_idx);
+	of_property_read_u32(pdev->dev.of_node, "cell-index",
+			     &jpeg_enc_dev_intf->hw_idx);
 
 	jpeg_enc_dev = kzalloc(sizeof(struct cam_hw_info), GFP_KERNEL);
 	if (!jpeg_enc_dev) {
@@ -102,18 +102,17 @@ static int cam_jpeg_enc_component_bind(struct device *dev,
 	jpeg_enc_dev_intf->hw_type = CAM_JPEG_DEV_ENC;
 
 	platform_set_drvdata(pdev, jpeg_enc_dev_intf);
-	jpeg_enc_dev->core_info =
-		kzalloc(sizeof(struct cam_jpeg_enc_device_core_info),
-			GFP_KERNEL);
+	jpeg_enc_dev->core_info = kzalloc(
+		sizeof(struct cam_jpeg_enc_device_core_info), GFP_KERNEL);
 	if (!jpeg_enc_dev->core_info) {
 		rc = -ENOMEM;
 		goto error_alloc_core;
 	}
-	core_info = (struct cam_jpeg_enc_device_core_info *)
-		jpeg_enc_dev->core_info;
+	core_info =
+		(struct cam_jpeg_enc_device_core_info *)jpeg_enc_dev->core_info;
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_JPEG, " No jpeg_enc hardware info");
 		rc = -EINVAL;
@@ -125,15 +124,14 @@ static int cam_jpeg_enc_component_bind(struct device *dev,
 	mutex_init(&core_info->core_mutex);
 
 	rc = cam_jpeg_enc_init_soc_resources(&jpeg_enc_dev->soc_info,
-		cam_jpeg_enc_irq,
-		jpeg_enc_dev);
+					     cam_jpeg_enc_irq, jpeg_enc_dev);
 	if (rc) {
 		CAM_ERR(CAM_JPEG, " failed to init_soc %d", rc);
 		goto error_init_soc;
 	}
 
-	rc = cam_jpeg_enc_register_cpas(&jpeg_enc_dev->soc_info,
-		core_info, jpeg_enc_dev_intf->hw_idx);
+	rc = cam_jpeg_enc_register_cpas(&jpeg_enc_dev->soc_info, core_info,
+					jpeg_enc_dev_intf->hw_idx);
 	if (rc) {
 		CAM_ERR(CAM_JPEG, " failed to reg cpas %d", rc);
 		goto error_reg_cpas;
@@ -144,8 +142,8 @@ static int cam_jpeg_enc_component_bind(struct device *dev,
 	init_completion(&jpeg_enc_dev->hw_complete);
 	CAM_DBG(CAM_JPEG, "JPEG-Encoder component bound successfully");
 
-	soc_private = (struct cam_jpeg_enc_soc_private  *)
-		jpeg_enc_dev->soc_info.soc_private;
+	soc_private = (struct cam_jpeg_enc_soc_private *)
+			      jpeg_enc_dev->soc_info.soc_private;
 
 	core_info->num_pid = soc_private->num_pid;
 	for (i = 0; i < soc_private->num_pid; i++)
@@ -171,7 +169,7 @@ error_alloc_dev:
 }
 
 static void cam_jpeg_enc_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					  struct device *master_dev, void *data)
 {
 	struct cam_hw_info *jpeg_enc_dev = NULL;
 	struct cam_hw_intf *jpeg_enc_dev_intf = NULL;
@@ -191,8 +189,8 @@ static void cam_jpeg_enc_component_unbind(struct device *dev,
 		goto free_jpeg_hw_intf;
 	}
 
-	core_info = (struct cam_jpeg_enc_device_core_info *)
-		jpeg_enc_dev->core_info;
+	core_info =
+		(struct cam_jpeg_enc_device_core_info *)jpeg_enc_dev->core_info;
 	if (!core_info) {
 		CAM_ERR(CAM_JPEG, "error core data NULL");
 		goto deinit_soc;
@@ -266,14 +264,15 @@ static const struct of_device_id cam_jpeg_enc_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_jpeg_enc_dt_match);
 
 struct platform_driver cam_jpeg_enc_driver = {
-	.probe = cam_jpeg_enc_probe,
-	.remove = cam_jpeg_enc_remove,
-	.driver = {
-		.name = "cam-jpeg-enc",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_jpeg_enc_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_jpeg_enc_probe,
+    .remove = cam_jpeg_enc_remove,
+    .driver =
+        {
+            .name = "cam-jpeg-enc",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_jpeg_enc_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_jpeg_enc_init_module(void)

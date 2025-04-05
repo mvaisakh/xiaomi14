@@ -21,11 +21,11 @@
  * Implementation for roaming ucfg public functionality.
  */
 
-#include "wlan_mlme_ucfg_api.h"
 #include "wlan_cm_roam_ucfg_api.h"
 #include "../../core/src/wlan_cm_roam_offload.h"
-#include "wlan_reg_ucfg_api.h"
+#include "wlan_mlme_ucfg_api.h"
 #include "wlan_mlo_mgr_sta.h"
+#include "wlan_reg_ucfg_api.h"
 
 bool ucfg_is_rso_enabled(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
 {
@@ -43,27 +43,28 @@ ucfg_user_space_enable_disable_rso(struct wlan_objmgr_pdev *pdev,
 	bool lfr_enabled;
 	enum roam_offload_state state;
 	uint32_t set_val = 0;
-	enum roam_offload_state  cur_state;
+	enum roam_offload_state cur_state;
 
 	/*
-	 * If the ini "FastRoamEnabled" is disabled, don't allow the
-	 * userspace to enable roam offload
-	 */
+   * If the ini "FastRoamEnabled" is disabled, don't allow the
+   * userspace to enable roam offload
+   */
 	ucfg_mlme_is_lfr_enabled(psoc, &lfr_enabled);
 	if (!lfr_enabled) {
-		mlme_debug("ROAM_CONFIG: Fast roam ini is disabled. is_fast_roam_enabled %d",
-			   is_fast_roam_enabled);
+		mlme_debug(
+			"ROAM_CONFIG: Fast roam ini is disabled. is_fast_roam_enabled %d",
+			is_fast_roam_enabled);
 		if (!is_fast_roam_enabled)
 			return QDF_STATUS_SUCCESS;
 
-		return  QDF_STATUS_E_FAILURE;
+		return QDF_STATUS_E_FAILURE;
 	}
 
 	cur_state = mlme_get_roam_state(psoc, vdev_id);
 	if (cur_state == WLAN_ROAM_INIT) {
 		if (!is_fast_roam_enabled)
 			set_val =
-			WMI_VDEV_ROAM_11KV_CTRL_DISABLE_FW_TRIGGER_ROAMING;
+				WMI_VDEV_ROAM_11KV_CTRL_DISABLE_FW_TRIGGER_ROAMING;
 
 		status = cm_roam_send_disable_config(psoc, vdev_id, set_val);
 		if (!QDF_IS_STATUS_SUCCESS(status))
@@ -73,13 +74,13 @@ ucfg_user_space_enable_disable_rso(struct wlan_objmgr_pdev *pdev,
 	wlan_mlme_set_usr_disabled_roaming(psoc, !is_fast_roam_enabled);
 
 	/*
-	 * Supplicant_disabled_roaming flag is the global flag to control
-	 * roam offload from supplicant. Driver cannot enable roaming if
-	 * supplicant disabled roaming is set.
-	 * is_fast_roam_enabled: true - enable RSO if not disabled by driver
-	 *                       false - Disable RSO. Send RSO stop if false
-	 *                       is set.
-	 */
+   * Supplicant_disabled_roaming flag is the global flag to control
+   * roam offload from supplicant. Driver cannot enable roaming if
+   * supplicant disabled roaming is set.
+   * is_fast_roam_enabled: true - enable RSO if not disabled by driver
+   *                       false - Disable RSO. Send RSO stop if false
+   *                       is set.
+   */
 	supplicant_disabled_roaming =
 		mlme_get_supplicant_disabled_roaming(psoc, vdev_id);
 	if (!is_fast_roam_enabled && supplicant_disabled_roaming) {
@@ -91,20 +92,20 @@ ucfg_user_space_enable_disable_rso(struct wlan_objmgr_pdev *pdev,
 					     !is_fast_roam_enabled);
 
 	/* For mlo connection, before all links are up
-	 * supplicant can enable roaming, to handle this
-	 * drop the enable rso as host will enable roaming
-	 * once all links are up
-	 */
+   * supplicant can enable roaming, to handle this
+   * drop the enable rso as host will enable roaming
+   * once all links are up
+   */
 	if (mlo_is_ml_connection_in_progress(psoc, vdev_id)) {
 		mlme_debug("mlo connection in progress");
 		return QDF_STATUS_SUCCESS;
 	}
 
-	state = (is_fast_roam_enabled) ?
-		WLAN_ROAM_RSO_ENABLED : WLAN_ROAM_RSO_STOPPED;
+	state = (is_fast_roam_enabled) ? WLAN_ROAM_RSO_ENABLED :
+					 WLAN_ROAM_RSO_STOPPED;
 	status = cm_roam_state_change(pdev, vdev_id, state,
-				      REASON_SUPPLICANT_DISABLED_ROAMING,
-				      NULL, false);
+				      REASON_SUPPLICANT_DISABLED_ROAMING, NULL,
+				      false);
 
 	return status;
 }
@@ -182,9 +183,8 @@ QDF_STATUS ucfg_cm_set_ese_roam_scan_channel_list(struct wlan_objmgr_pdev *pdev,
 	cm_dump_freq_list(&rso_cfg->roam_scan_freq_lst);
 	ucfg_reg_get_band(pdev, &band_bitmap);
 	band = wlan_reg_band_bitmap_to_band_info(band_bitmap);
-	status = cm_create_roam_scan_channel_list(pdev, rso_cfg, num_chan,
-						  chan_freq_list, num_chan,
-						  band);
+	status = cm_create_roam_scan_channel_list(
+		pdev, rso_cfg, num_chan, chan_freq_list, num_chan, band);
 	if (QDF_IS_STATUS_SUCCESS(status)) {
 		mlme_debug("Chan list After");
 		cm_dump_freq_list(&rso_cfg->roam_scan_freq_lst);
@@ -193,7 +193,6 @@ QDF_STATUS ucfg_cm_set_ese_roam_scan_channel_list(struct wlan_objmgr_pdev *pdev,
 	if (mlme_obj->cfg.lfr.roam_scan_offload_enabled)
 		wlan_roam_update_cfg(psoc, vdev_id,
 				     REASON_CHANNEL_LIST_CHANGED);
-
 
 error:
 	cm_roam_release_lock(vdev);
@@ -233,8 +232,7 @@ QDF_STATUS ucfg_cm_set_cckm_ie(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 
 #ifdef WLAN_FEATURE_FILS_SK
 QDF_STATUS
-ucfg_cm_update_fils_config(struct wlan_objmgr_psoc *psoc,
-			   uint8_t vdev_id,
+ucfg_cm_update_fils_config(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 			   struct wlan_fils_con_info *fils_info)
 {
 	QDF_STATUS status;
@@ -311,7 +309,7 @@ void ucfg_cm_set_ft_ies(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id,
 		goto end;
 
 	mlme_debug("FT IEs Req is received in state %d",
-		  mlme_priv->connect_info.ft_info.ft_state);
+		   mlme_priv->connect_info.ft_info.ft_state);
 
 	/* Global Station FT State */
 	switch (mlme_priv->connect_info.ft_info.ft_state) {
@@ -320,26 +318,25 @@ void ucfg_cm_set_ft_ies(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id,
 		mlme_debug("ft_ies_length: %d", ft_ies_length);
 		ft_ies_length = QDF_MIN(ft_ies_length, MAX_FTIE_SIZE);
 		mlme_priv->connect_info.ft_info.auth_ie_len = ft_ies_length;
-		qdf_mem_copy(mlme_priv->connect_info.ft_info.auth_ft_ie,
-			     ft_ies, ft_ies_length);
+		qdf_mem_copy(mlme_priv->connect_info.ft_info.auth_ft_ie, ft_ies,
+			     ft_ies_length);
 		mlme_priv->connect_info.ft_info.ft_state = FT_AUTH_REQ_READY;
 		break;
 
 	case FT_REASSOC_REQ_WAIT:
 		/*
-		 * We are done with pre-auth, hence now waiting for
-		 * reassoc req. This is the new FT Roaming in place At
-		 * this juncture we'r ready to start sending Reassoc req
-		 */
+     * We are done with pre-auth, hence now waiting for
+     * reassoc req. This is the new FT Roaming in place At
+     * this juncture we'r ready to start sending Reassoc req
+     */
 
 		ft_ies_length = QDF_MIN(ft_ies_length, MAX_FTIE_SIZE);
 
-		mlme_debug("New Reassoc Req: %pK in state %d",
-			   ft_ies, mlme_priv->connect_info.ft_info.ft_state);
-		mlme_priv->connect_info.ft_info.reassoc_ie_len =
-							ft_ies_length;
+		mlme_debug("New Reassoc Req: %pK in state %d", ft_ies,
+			   mlme_priv->connect_info.ft_info.ft_state);
+		mlme_priv->connect_info.ft_info.reassoc_ie_len = ft_ies_length;
 		qdf_mem_copy(mlme_priv->connect_info.ft_info.reassoc_ft_ie,
-				ft_ies, ft_ies_length);
+			     ft_ies, ft_ies_length);
 
 		mlme_priv->connect_info.ft_info.ft_state = FT_SET_KEY_WAIT;
 		mlme_debug("ft_ies_length: %d state: %d", ft_ies_length,
@@ -383,7 +380,8 @@ QDF_STATUS ucfg_cm_check_ft_status(struct wlan_objmgr_pdev *pdev,
 	switch (mlme_priv->connect_info.ft_info.ft_state) {
 	case FT_SET_KEY_WAIT:
 		if (ucfg_cm_get_ft_pre_auth_state(vdev)) {
-			mlme_priv->connect_info.ft_info.ft_state = FT_START_READY;
+			mlme_priv->connect_info.ft_info.ft_state =
+				FT_START_READY;
 			mlme_debug("state changed to %d",
 				   mlme_priv->connect_info.ft_info.ft_state);
 			break;
@@ -437,8 +435,8 @@ void ucfg_cm_ft_reset(struct wlan_objmgr_vdev *vdev)
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
 #ifdef FEATURE_WLAN_ESE
-static void
-ucfg_cm_reset_esecckm_info(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
+static void ucfg_cm_reset_esecckm_info(struct wlan_objmgr_pdev *pdev,
+				       uint8_t vdev_id)
 {
 	struct wlan_objmgr_vdev *vdev;
 	struct rso_config *rso_cfg;
@@ -459,11 +457,10 @@ ucfg_cm_reset_esecckm_info(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
 	qdf_mem_zero(rso_cfg->btk, WMI_BTK_KEY_LEN);
 	rso_cfg->is_ese_assoc = false;
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_CM_ID);
-
 }
 #else
-static inline
-void ucfg_cm_reset_esecckm_info(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id)
+static inline void ucfg_cm_reset_esecckm_info(struct wlan_objmgr_pdev *pdev,
+					      uint8_t vdev_id)
 {
 }
 #endif
@@ -512,16 +509,14 @@ QDF_STATUS ucfg_cm_roam_full_scan_6ghz_on_disc(struct wlan_objmgr_pdev *pdev,
 #ifdef WLAN_VENDOR_HANDOFF_CONTROL
 QDF_STATUS
 ucfg_cm_roam_send_vendor_handoff_param_req(struct wlan_objmgr_psoc *psoc,
-					   uint8_t vdev_id,
-					   uint32_t param_id,
+					   uint8_t vdev_id, uint32_t param_id,
 					   void *vendor_handoff_context)
 {
 	return cm_roam_send_vendor_handoff_param_req(psoc, vdev_id, param_id,
 						     vendor_handoff_context);
 }
 
-bool
-ucfg_cm_roam_is_vendor_handoff_control_enable(struct wlan_objmgr_psoc *psoc)
+bool ucfg_cm_roam_is_vendor_handoff_control_enable(struct wlan_objmgr_psoc *psoc)
 {
 	return cm_roam_is_vendor_handoff_control_enable(psoc);
 }
@@ -564,8 +559,8 @@ ucfg_cm_get_neighbor_lookup_rssi_threshold(struct wlan_objmgr_psoc *psoc,
 {
 	struct cm_roam_values_copy temp;
 
-	wlan_cm_roam_cfg_get_value(psoc, vdev_id,
-				   NEIGHBOUR_LOOKUP_THRESHOLD, &temp);
+	wlan_cm_roam_cfg_get_value(psoc, vdev_id, NEIGHBOUR_LOOKUP_THRESHOLD,
+				   &temp);
 	*lookup_threshold = temp.uint_value;
 
 	return QDF_STATUS_SUCCESS;
@@ -578,21 +573,19 @@ ucfg_cm_get_empty_scan_refresh_period(struct wlan_objmgr_psoc *psoc,
 {
 	struct cm_roam_values_copy temp;
 
-	wlan_cm_roam_cfg_get_value(psoc, vdev_id,
-				   EMPTY_SCAN_REFRESH_PERIOD, &temp);
+	wlan_cm_roam_cfg_get_value(psoc, vdev_id, EMPTY_SCAN_REFRESH_PERIOD,
+				   &temp);
 	*refresh_threshold = temp.uint_value;
 
 	return QDF_STATUS_SUCCESS;
 }
 
-uint16_t
-ucfg_cm_get_neighbor_scan_min_chan_time(struct wlan_objmgr_psoc *psoc,
-					uint8_t vdev_id)
+uint16_t ucfg_cm_get_neighbor_scan_min_chan_time(struct wlan_objmgr_psoc *psoc,
+						 uint8_t vdev_id)
 {
 	struct cm_roam_values_copy temp;
 
-	wlan_cm_roam_cfg_get_value(psoc, vdev_id,
-				   SCAN_MIN_CHAN_TIME, &temp);
+	wlan_cm_roam_cfg_get_value(psoc, vdev_id, SCAN_MIN_CHAN_TIME, &temp);
 
 	return temp.uint_value;
 }
@@ -603,8 +596,7 @@ ucfg_cm_get_roam_rssi_diff(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
 {
 	struct cm_roam_values_copy temp;
 
-	wlan_cm_roam_cfg_get_value(psoc, vdev_id,
-				   ROAM_RSSI_DIFF, &temp);
+	wlan_cm_roam_cfg_get_value(psoc, vdev_id, ROAM_RSSI_DIFF, &temp);
 	*rssi_diff = temp.uint_value;
 
 	return QDF_STATUS_SUCCESS;
@@ -623,26 +615,22 @@ bool ucfg_cm_get_is_ese_feature_enabled(struct wlan_objmgr_psoc *psoc)
 }
 #endif
 
-uint16_t
-ucfg_cm_get_neighbor_scan_max_chan_time(struct wlan_objmgr_psoc *psoc,
-					uint8_t vdev_id)
+uint16_t ucfg_cm_get_neighbor_scan_max_chan_time(struct wlan_objmgr_psoc *psoc,
+						 uint8_t vdev_id)
 {
 	struct cm_roam_values_copy temp;
 
-	wlan_cm_roam_cfg_get_value(psoc, vdev_id,
-				   SCAN_MAX_CHAN_TIME, &temp);
+	wlan_cm_roam_cfg_get_value(psoc, vdev_id, SCAN_MAX_CHAN_TIME, &temp);
 
 	return temp.uint_value;
 }
 
-uint16_t
-ucfg_cm_get_neighbor_scan_period(struct wlan_objmgr_psoc *psoc,
-				 uint8_t vdev_id)
+uint16_t ucfg_cm_get_neighbor_scan_period(struct wlan_objmgr_psoc *psoc,
+					  uint8_t vdev_id)
 {
 	struct cm_roam_values_copy temp;
 
-	wlan_cm_roam_cfg_get_value(psoc, vdev_id,
-				   NEIGHBOR_SCAN_PERIOD, &temp);
+	wlan_cm_roam_cfg_get_value(psoc, vdev_id, NEIGHBOR_SCAN_PERIOD, &temp);
 	return temp.uint_value;
 }
 
@@ -695,8 +683,7 @@ ucfg_cm_get_roam_scan_home_away_time(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 ucfg_cm_get_roam_opportunistic_scan_threshold_diff(
-						struct wlan_objmgr_psoc *psoc,
-						int8_t *val)
+	struct wlan_objmgr_psoc *psoc, int8_t *val)
 {
 	struct wlan_mlme_psoc_ext_obj *mlme_obj;
 
@@ -734,8 +721,7 @@ ucfg_cm_get_empty_scan_refresh_period_global(struct wlan_objmgr_psoc *psoc,
 	if (!mlme_obj)
 		return QDF_STATUS_E_INVAL;
 
-	*roam_scan_period_global =
-			mlme_obj->cfg.lfr.empty_scan_refresh_period;
+	*roam_scan_period_global = mlme_obj->cfg.lfr.empty_scan_refresh_period;
 
 	return QDF_STATUS_SUCCESS;
 }

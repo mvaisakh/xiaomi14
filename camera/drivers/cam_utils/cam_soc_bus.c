@@ -4,8 +4,8 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/msm-bus.h>
 #include "cam_soc_bus.h"
+#include <linux/msm-bus.h>
 
 /**
  * struct cam_soc_bus_client_data : Bus client data
@@ -28,9 +28,9 @@ int cam_soc_bus_client_update_request(void *client, unsigned int idx)
 {
 	int rc = 0;
 	struct cam_soc_bus_client *bus_client =
-		(struct cam_soc_bus_client *) client;
+		(struct cam_soc_bus_client *)client;
 	struct cam_soc_bus_client_data *bus_client_data =
-		(struct cam_soc_bus_client_data *) bus_client->client_data;
+		(struct cam_soc_bus_client_data *)bus_client->client_data;
 
 	if (bus_client_data->dyn_vote) {
 		CAM_ERR(CAM_UTIL,
@@ -53,7 +53,7 @@ int cam_soc_bus_client_update_request(void *client, unsigned int idx)
 		bus_client_data->client_id, bus_client->common_data->name, idx);
 
 	rc = msm_bus_scale_client_update_request(bus_client_data->client_id,
-		idx);
+						 idx);
 	if (rc) {
 		CAM_ERR(CAM_UTIL,
 			"Update request failed, client[%d][%s], idx: %d",
@@ -67,27 +67,25 @@ end:
 }
 
 int cam_soc_bus_client_update_bw(void *client, uint64_t ab, uint64_t ib,
-	enum cam_soc_bus_path_data bus_path_data)
+				 enum cam_soc_bus_path_data bus_path_data)
 {
 	int idx = 0;
 	struct msm_bus_paths *path;
 	struct msm_bus_scale_pdata *pdata;
 	struct cam_soc_bus_client *bus_client =
-		(struct cam_soc_bus_client *) client;
+		(struct cam_soc_bus_client *)client;
 	struct cam_soc_bus_client_data *bus_client_data =
-		(struct cam_soc_bus_client_data *) bus_client->client_data;
+		(struct cam_soc_bus_client_data *)bus_client->client_data;
 	int rc = 0;
 
 	if ((bus_client->common_data->num_usecases != 2) ||
-		(bus_client_data->num_paths != 1) ||
-		(!bus_client_data->dyn_vote)) {
+	    (bus_client_data->num_paths != 1) || (!bus_client_data->dyn_vote)) {
 		CAM_ERR(CAM_UTIL,
 			"dynamic update not allowed Bus client=[%d][%s], %d %d %d",
 			bus_client_data->client_id,
 			bus_client->common_data->name,
 			bus_client->common_data->num_usecases,
-			bus_client_data->num_paths,
-			bus_client_data->dyn_vote);
+			bus_client_data->num_paths, bus_client_data->dyn_vote);
 		rc = -EINVAL;
 		goto end;
 	}
@@ -105,7 +103,7 @@ int cam_soc_bus_client_update_bw(void *client, uint64_t ab, uint64_t ib,
 		bus_client_data->client_id, bus_client->common_data->name, ab,
 		ib, idx);
 	rc = msm_bus_scale_client_update_request(bus_client_data->client_id,
-		idx);
+						 idx);
 	if (rc) {
 		CAM_ERR(CAM_UTIL,
 			"Update request failed, client[%d][%s], idx: %d",
@@ -118,9 +116,9 @@ end:
 	return rc;
 }
 
-int cam_soc_bus_client_register(struct platform_device *pdev,
-	struct device_node *dev_node, void **client,
-	struct cam_soc_bus_client_common_data *common_data)
+int cam_soc_bus_client_register(
+	struct platform_device *pdev, struct device_node *dev_node,
+	void **client, struct cam_soc_bus_client_common_data *common_data)
 {
 	struct msm_bus_scale_pdata *pdata = NULL;
 	struct cam_soc_bus_client *bus_client = NULL;
@@ -137,8 +135,8 @@ int cam_soc_bus_client_register(struct platform_device *pdev,
 
 	*client = bus_client;
 
-	bus_client_data = kzalloc(sizeof(struct cam_soc_bus_client_data),
-		GFP_KERNEL);
+	bus_client_data =
+		kzalloc(sizeof(struct cam_soc_bus_client_data), GFP_KERNEL);
 	if (!bus_client_data) {
 		kfree(bus_client);
 		*client = NULL;
@@ -147,16 +145,14 @@ int cam_soc_bus_client_register(struct platform_device *pdev,
 	}
 
 	bus_client->client_data = bus_client_data;
-	pdata = msm_bus_pdata_from_node(pdev,
-		dev_node);
+	pdata = msm_bus_pdata_from_node(pdev, dev_node);
 	if (!pdata) {
 		CAM_ERR(CAM_UTIL, "failed get_pdata");
 		rc = -EINVAL;
 		goto error;
 	}
 
-	if ((pdata->num_usecases == 0) ||
-		(pdata->usecase[0].num_paths == 0)) {
+	if ((pdata->num_usecases == 0) || (pdata->usecase[0].num_paths == 0)) {
 		CAM_ERR(CAM_UTIL, "usecase=%d", pdata->num_usecases);
 		rc = -EINVAL;
 		goto error;
@@ -171,8 +167,8 @@ int cam_soc_bus_client_register(struct platform_device *pdev,
 
 	bus_client->common_data = common_data;
 
-	bus_client_data->dyn_vote = of_property_read_bool(dev_node,
-		"qcom,msm-bus-vector-dyn-vote");
+	bus_client_data->dyn_vote =
+		of_property_read_bool(dev_node, "qcom,msm-bus-vector-dyn-vote");
 
 	if (bus_client_data->dyn_vote && (pdata->num_usecases != 2)) {
 		CAM_ERR(CAM_UTIL, "Excess or less vectors %d",
@@ -211,15 +207,14 @@ error:
 	*client = NULL;
 end:
 	return rc;
-
 }
 
 void cam_soc_bus_client_unregister(void **client)
 {
 	struct cam_soc_bus_client *bus_client =
-		(struct cam_soc_bus_client *) (*client);
+		(struct cam_soc_bus_client *)(*client);
 	struct cam_soc_bus_client_data *bus_client_data =
-		(struct cam_soc_bus_client_data *) bus_client->client_data;
+		(struct cam_soc_bus_client_data *)bus_client->client_data;
 
 	if (bus_client_data->dyn_vote)
 		cam_soc_bus_client_update_bw(bus_client, 0, 0);

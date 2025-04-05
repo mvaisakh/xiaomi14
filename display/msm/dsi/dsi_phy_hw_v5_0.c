@@ -4,116 +4,116 @@
  * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/math64.h>
+#include "dsi_catalog.h"
+#include "dsi_defs.h"
+#include "dsi_hw.h"
+#include "dsi_phy_hw.h"
 #include <linux/delay.h>
 #include <linux/iopoll.h>
-#include "dsi_hw.h"
-#include "dsi_defs.h"
-#include "dsi_phy_hw.h"
-#include "dsi_catalog.h"
+#include <linux/math64.h>
 
-#define DSIPHY_CMN_REVISION_ID0                                   0x000
-#define DSIPHY_CMN_REVISION_ID1                                   0x004
-#define DSIPHY_CMN_REVISION_ID2                                   0x008
-#define DSIPHY_CMN_REVISION_ID3                                   0x00C
-#define DSIPHY_CMN_CLK_CFG0                                       0x010
-#define DSIPHY_CMN_CLK_CFG1                                       0x014
-#define DSIPHY_CMN_GLBL_CTRL                                      0x018
-#define DSIPHY_CMN_RBUF_CTRL                                      0x01C
-#define DSIPHY_CMN_VREG_CTRL_0                                    0x020
-#define DSIPHY_CMN_CTRL_0                                         0x024
-#define DSIPHY_CMN_CTRL_1                                         0x028
-#define DSIPHY_CMN_CTRL_2                                         0x02C
-#define DSIPHY_CMN_CTRL_3                                         0x030
-#define DSIPHY_CMN_LANE_CFG0                                      0x034
-#define DSIPHY_CMN_LANE_CFG1                                      0x038
-#define DSIPHY_CMN_PLL_CNTRL                                      0x03C
-#define DSIPHY_CMN_DPHY_SOT                                       0x040
-#define DSIPHY_CMN_LANE_CTRL0                                     0x0A0
-#define DSIPHY_CMN_LANE_CTRL1                                     0x0A4
-#define DSIPHY_CMN_LANE_CTRL2                                     0x0A8
-#define DSIPHY_CMN_LANE_CTRL3                                     0x0AC
-#define DSIPHY_CMN_LANE_CTRL4                                     0x0B0
-#define DSIPHY_CMN_TIMING_CTRL_0                                  0x0B4
-#define DSIPHY_CMN_TIMING_CTRL_1                                  0x0B8
-#define DSIPHY_CMN_TIMING_CTRL_2                                  0x0Bc
-#define DSIPHY_CMN_TIMING_CTRL_3                                  0x0C0
-#define DSIPHY_CMN_TIMING_CTRL_4                                  0x0C4
-#define DSIPHY_CMN_TIMING_CTRL_5                                  0x0C8
-#define DSIPHY_CMN_TIMING_CTRL_6                                  0x0CC
-#define DSIPHY_CMN_TIMING_CTRL_7                                  0x0D0
-#define DSIPHY_CMN_TIMING_CTRL_8                                  0x0D4
-#define DSIPHY_CMN_TIMING_CTRL_9                                  0x0D8
-#define DSIPHY_CMN_TIMING_CTRL_10                                 0x0DC
-#define DSIPHY_CMN_TIMING_CTRL_11                                 0x0E0
-#define DSIPHY_CMN_TIMING_CTRL_12                                 0x0E4
-#define DSIPHY_CMN_TIMING_CTRL_13                                 0x0E8
-#define DSIPHY_CMN_GLBL_HSTX_STR_CTRL_0                           0x0EC
-#define DSIPHY_CMN_GLBL_HSTX_STR_CTRL_1                           0x0F0
-#define DSIPHY_CMN_GLBL_RESCODE_OFFSET_TOP_CTRL                   0x0F4
-#define DSIPHY_CMN_GLBL_RESCODE_OFFSET_BOT_CTRL                   0x0F8
-#define DSIPHY_CMN_GLBL_RESCODE_OFFSET_MID_CTRL                   0x0FC
-#define DSIPHY_CMN_GLBL_LPTX_STR_CTRL                             0x100
-#define DSIPHY_CMN_GLBL_PEMPH_CTRL_0                              0x104
-#define DSIPHY_CMN_GLBL_PEMPH_CTRL_1                              0x108
-#define DSIPHY_CMN_GLBL_STR_SWI_CAL_SEL_CTRL                      0x10C
-#define DSIPHY_CMN_VREG_CTRL_1                                    0x110
-#define DSIPHY_CMN_CTRL_4                                         0x114
-#define DSIPHY_CMN_PHY_STATUS                                     0x140
-#define DSIPHY_CMN_LANE_STATUS0                                   0x148
-#define DSIPHY_CMN_LANE_STATUS1                                   0x14C
-#define DSIPHY_CMN_GLBL_DIGTOP_SPARE10                            0x1AC
-#define DSIPHY_CMN_SL_DSI_LANE_CTRL1                              0x1B4
+#define DSIPHY_CMN_REVISION_ID0 0x000
+#define DSIPHY_CMN_REVISION_ID1 0x004
+#define DSIPHY_CMN_REVISION_ID2 0x008
+#define DSIPHY_CMN_REVISION_ID3 0x00C
+#define DSIPHY_CMN_CLK_CFG0 0x010
+#define DSIPHY_CMN_CLK_CFG1 0x014
+#define DSIPHY_CMN_GLBL_CTRL 0x018
+#define DSIPHY_CMN_RBUF_CTRL 0x01C
+#define DSIPHY_CMN_VREG_CTRL_0 0x020
+#define DSIPHY_CMN_CTRL_0 0x024
+#define DSIPHY_CMN_CTRL_1 0x028
+#define DSIPHY_CMN_CTRL_2 0x02C
+#define DSIPHY_CMN_CTRL_3 0x030
+#define DSIPHY_CMN_LANE_CFG0 0x034
+#define DSIPHY_CMN_LANE_CFG1 0x038
+#define DSIPHY_CMN_PLL_CNTRL 0x03C
+#define DSIPHY_CMN_DPHY_SOT 0x040
+#define DSIPHY_CMN_LANE_CTRL0 0x0A0
+#define DSIPHY_CMN_LANE_CTRL1 0x0A4
+#define DSIPHY_CMN_LANE_CTRL2 0x0A8
+#define DSIPHY_CMN_LANE_CTRL3 0x0AC
+#define DSIPHY_CMN_LANE_CTRL4 0x0B0
+#define DSIPHY_CMN_TIMING_CTRL_0 0x0B4
+#define DSIPHY_CMN_TIMING_CTRL_1 0x0B8
+#define DSIPHY_CMN_TIMING_CTRL_2 0x0Bc
+#define DSIPHY_CMN_TIMING_CTRL_3 0x0C0
+#define DSIPHY_CMN_TIMING_CTRL_4 0x0C4
+#define DSIPHY_CMN_TIMING_CTRL_5 0x0C8
+#define DSIPHY_CMN_TIMING_CTRL_6 0x0CC
+#define DSIPHY_CMN_TIMING_CTRL_7 0x0D0
+#define DSIPHY_CMN_TIMING_CTRL_8 0x0D4
+#define DSIPHY_CMN_TIMING_CTRL_9 0x0D8
+#define DSIPHY_CMN_TIMING_CTRL_10 0x0DC
+#define DSIPHY_CMN_TIMING_CTRL_11 0x0E0
+#define DSIPHY_CMN_TIMING_CTRL_12 0x0E4
+#define DSIPHY_CMN_TIMING_CTRL_13 0x0E8
+#define DSIPHY_CMN_GLBL_HSTX_STR_CTRL_0 0x0EC
+#define DSIPHY_CMN_GLBL_HSTX_STR_CTRL_1 0x0F0
+#define DSIPHY_CMN_GLBL_RESCODE_OFFSET_TOP_CTRL 0x0F4
+#define DSIPHY_CMN_GLBL_RESCODE_OFFSET_BOT_CTRL 0x0F8
+#define DSIPHY_CMN_GLBL_RESCODE_OFFSET_MID_CTRL 0x0FC
+#define DSIPHY_CMN_GLBL_LPTX_STR_CTRL 0x100
+#define DSIPHY_CMN_GLBL_PEMPH_CTRL_0 0x104
+#define DSIPHY_CMN_GLBL_PEMPH_CTRL_1 0x108
+#define DSIPHY_CMN_GLBL_STR_SWI_CAL_SEL_CTRL 0x10C
+#define DSIPHY_CMN_VREG_CTRL_1 0x110
+#define DSIPHY_CMN_CTRL_4 0x114
+#define DSIPHY_CMN_PHY_STATUS 0x140
+#define DSIPHY_CMN_LANE_STATUS0 0x148
+#define DSIPHY_CMN_LANE_STATUS1 0x14C
+#define DSIPHY_CMN_GLBL_DIGTOP_SPARE10 0x1AC
+#define DSIPHY_CMN_SL_DSI_LANE_CTRL1 0x1B4
 
 /* n = 0..3 for data lanes and n = 4 for clock lane */
-#define DSIPHY_LNX_CFG0(n)                         (0x200 + (0x80 * (n)))
-#define DSIPHY_LNX_CFG1(n)                         (0x204 + (0x80 * (n)))
-#define DSIPHY_LNX_CFG2(n)                         (0x208 + (0x80 * (n)))
-#define DSIPHY_LNX_TEST_DATAPATH(n)                (0x20C + (0x80 * (n)))
-#define DSIPHY_LNX_PIN_SWAP(n)                     (0x210 + (0x80 * (n)))
-#define DSIPHY_LNX_LPRX_CTRL(n)                    (0x214 + (0x80 * (n)))
-#define DSIPHY_LNX_TX_DCTRL(n)                     (0x218 + (0x80 * (n)))
+#define DSIPHY_LNX_CFG0(n) (0x200 + (0x80 * (n)))
+#define DSIPHY_LNX_CFG1(n) (0x204 + (0x80 * (n)))
+#define DSIPHY_LNX_CFG2(n) (0x208 + (0x80 * (n)))
+#define DSIPHY_LNX_TEST_DATAPATH(n) (0x20C + (0x80 * (n)))
+#define DSIPHY_LNX_PIN_SWAP(n) (0x210 + (0x80 * (n)))
+#define DSIPHY_LNX_LPRX_CTRL(n) (0x214 + (0x80 * (n)))
+#define DSIPHY_LNX_TX_DCTRL(n) (0x218 + (0x80 * (n)))
 
 /* dynamic refresh control registers */
-#define DSI_DYN_REFRESH_CTRL                   (0x000)
-#define DSI_DYN_REFRESH_PIPE_DELAY             (0x004)
-#define DSI_DYN_REFRESH_PIPE_DELAY2            (0x008)
-#define DSI_DYN_REFRESH_PLL_DELAY              (0x00C)
-#define DSI_DYN_REFRESH_STATUS                 (0x010)
-#define DSI_DYN_REFRESH_PLL_CTRL0              (0x014)
-#define DSI_DYN_REFRESH_PLL_CTRL1              (0x018)
-#define DSI_DYN_REFRESH_PLL_CTRL2              (0x01C)
-#define DSI_DYN_REFRESH_PLL_CTRL3              (0x020)
-#define DSI_DYN_REFRESH_PLL_CTRL4              (0x024)
-#define DSI_DYN_REFRESH_PLL_CTRL5              (0x028)
-#define DSI_DYN_REFRESH_PLL_CTRL6              (0x02C)
-#define DSI_DYN_REFRESH_PLL_CTRL7              (0x030)
-#define DSI_DYN_REFRESH_PLL_CTRL8              (0x034)
-#define DSI_DYN_REFRESH_PLL_CTRL9              (0x038)
-#define DSI_DYN_REFRESH_PLL_CTRL10             (0x03C)
-#define DSI_DYN_REFRESH_PLL_CTRL11             (0x040)
-#define DSI_DYN_REFRESH_PLL_CTRL12             (0x044)
-#define DSI_DYN_REFRESH_PLL_CTRL13             (0x048)
-#define DSI_DYN_REFRESH_PLL_CTRL14             (0x04C)
-#define DSI_DYN_REFRESH_PLL_CTRL15             (0x050)
-#define DSI_DYN_REFRESH_PLL_CTRL16             (0x054)
-#define DSI_DYN_REFRESH_PLL_CTRL17             (0x058)
-#define DSI_DYN_REFRESH_PLL_CTRL18             (0x05C)
-#define DSI_DYN_REFRESH_PLL_CTRL19             (0x060)
-#define DSI_DYN_REFRESH_PLL_CTRL20             (0x064)
-#define DSI_DYN_REFRESH_PLL_CTRL21             (0x068)
-#define DSI_DYN_REFRESH_PLL_CTRL22             (0x06C)
-#define DSI_DYN_REFRESH_PLL_CTRL23             (0x070)
-#define DSI_DYN_REFRESH_PLL_CTRL24             (0x074)
-#define DSI_DYN_REFRESH_PLL_CTRL25             (0x078)
-#define DSI_DYN_REFRESH_PLL_CTRL26             (0x07C)
-#define DSI_DYN_REFRESH_PLL_CTRL27             (0x080)
-#define DSI_DYN_REFRESH_PLL_CTRL28             (0x084)
-#define DSI_DYN_REFRESH_PLL_CTRL29             (0x088)
-#define DSI_DYN_REFRESH_PLL_CTRL30             (0x08C)
-#define DSI_DYN_REFRESH_PLL_CTRL31             (0x090)
-#define DSI_DYN_REFRESH_PLL_UPPER_ADDR         (0x094)
-#define DSI_DYN_REFRESH_PLL_UPPER_ADDR2        (0x098)
+#define DSI_DYN_REFRESH_CTRL (0x000)
+#define DSI_DYN_REFRESH_PIPE_DELAY (0x004)
+#define DSI_DYN_REFRESH_PIPE_DELAY2 (0x008)
+#define DSI_DYN_REFRESH_PLL_DELAY (0x00C)
+#define DSI_DYN_REFRESH_STATUS (0x010)
+#define DSI_DYN_REFRESH_PLL_CTRL0 (0x014)
+#define DSI_DYN_REFRESH_PLL_CTRL1 (0x018)
+#define DSI_DYN_REFRESH_PLL_CTRL2 (0x01C)
+#define DSI_DYN_REFRESH_PLL_CTRL3 (0x020)
+#define DSI_DYN_REFRESH_PLL_CTRL4 (0x024)
+#define DSI_DYN_REFRESH_PLL_CTRL5 (0x028)
+#define DSI_DYN_REFRESH_PLL_CTRL6 (0x02C)
+#define DSI_DYN_REFRESH_PLL_CTRL7 (0x030)
+#define DSI_DYN_REFRESH_PLL_CTRL8 (0x034)
+#define DSI_DYN_REFRESH_PLL_CTRL9 (0x038)
+#define DSI_DYN_REFRESH_PLL_CTRL10 (0x03C)
+#define DSI_DYN_REFRESH_PLL_CTRL11 (0x040)
+#define DSI_DYN_REFRESH_PLL_CTRL12 (0x044)
+#define DSI_DYN_REFRESH_PLL_CTRL13 (0x048)
+#define DSI_DYN_REFRESH_PLL_CTRL14 (0x04C)
+#define DSI_DYN_REFRESH_PLL_CTRL15 (0x050)
+#define DSI_DYN_REFRESH_PLL_CTRL16 (0x054)
+#define DSI_DYN_REFRESH_PLL_CTRL17 (0x058)
+#define DSI_DYN_REFRESH_PLL_CTRL18 (0x05C)
+#define DSI_DYN_REFRESH_PLL_CTRL19 (0x060)
+#define DSI_DYN_REFRESH_PLL_CTRL20 (0x064)
+#define DSI_DYN_REFRESH_PLL_CTRL21 (0x068)
+#define DSI_DYN_REFRESH_PLL_CTRL22 (0x06C)
+#define DSI_DYN_REFRESH_PLL_CTRL23 (0x070)
+#define DSI_DYN_REFRESH_PLL_CTRL24 (0x074)
+#define DSI_DYN_REFRESH_PLL_CTRL25 (0x078)
+#define DSI_DYN_REFRESH_PLL_CTRL26 (0x07C)
+#define DSI_DYN_REFRESH_PLL_CTRL27 (0x080)
+#define DSI_DYN_REFRESH_PLL_CTRL28 (0x084)
+#define DSI_DYN_REFRESH_PLL_CTRL29 (0x088)
+#define DSI_DYN_REFRESH_PLL_CTRL30 (0x08C)
+#define DSI_DYN_REFRESH_PLL_CTRL31 (0x090)
+#define DSI_DYN_REFRESH_PLL_UPPER_ADDR (0x094)
+#define DSI_DYN_REFRESH_PLL_UPPER_ADDR2 (0x098)
 
 static int dsi_phy_hw_v5_0_is_pll_on(struct dsi_phy_hw *phy)
 {
@@ -137,37 +137,39 @@ static bool dsi_phy_hw_v5_0_is_split_link_enabled(struct dsi_phy_hw *phy)
 }
 
 static void dsi_phy_hw_v5_0_config_lpcdrx(struct dsi_phy_hw *phy,
-	struct dsi_phy_cfg *cfg, bool enable)
+					  struct dsi_phy_cfg *cfg, bool enable)
 {
-	int phy_lane_0 = dsi_phy_conv_logical_to_phy_lane(&cfg->lane_map, DSI_LOGICAL_LANE_0);
+	int phy_lane_0 = dsi_phy_conv_logical_to_phy_lane(&cfg->lane_map,
+							  DSI_LOGICAL_LANE_0);
 
 	/*
-	 * LPRX and CDRX need to enabled only for physical data lane
-	 * corresponding to the logical data lane 0
-	 */
+   * LPRX and CDRX need to enabled only for physical data lane
+   * corresponding to the logical data lane 0
+   */
 
 	if (enable)
-		DSI_W32(phy, DSIPHY_LNX_LPRX_CTRL(phy_lane_0), cfg->strength.lane[phy_lane_0][1]);
+		DSI_W32(phy, DSIPHY_LNX_LPRX_CTRL(phy_lane_0),
+			cfg->strength.lane[phy_lane_0][1]);
 	else
 		DSI_W32(phy, DSIPHY_LNX_LPRX_CTRL(phy_lane_0), 0);
 }
 
 static void dsi_phy_hw_v5_0_lane_swap_config(struct dsi_phy_hw *phy,
-		struct dsi_lane_map *lane_map)
+					     struct dsi_lane_map *lane_map)
 {
 	DSI_W32(phy, DSIPHY_CMN_LANE_CFG0,
 		(lane_map->lane_map_v2[DSI_LOGICAL_LANE_0] |
-		(lane_map->lane_map_v2[DSI_LOGICAL_LANE_1] << 4)));
+		 (lane_map->lane_map_v2[DSI_LOGICAL_LANE_1] << 4)));
 	DSI_W32(phy, DSIPHY_CMN_LANE_CFG1,
 		(lane_map->lane_map_v2[DSI_LOGICAL_LANE_2] |
-		(lane_map->lane_map_v2[DSI_LOGICAL_LANE_3] << 4)));
+		 (lane_map->lane_map_v2[DSI_LOGICAL_LANE_3] << 4)));
 }
 
 static void dsi_phy_hw_v5_0_lane_settings(struct dsi_phy_hw *phy,
-			    struct dsi_phy_cfg *cfg)
+					  struct dsi_phy_cfg *cfg)
 {
 	int i;
-	u8 tx_dctrl[] = {0x40, 0x40, 0x40, 0x46, 0x41};
+	u8 tx_dctrl[] = { 0x40, 0x40, 0x40, 0x46, 0x41 };
 	bool split_link_enabled;
 	u32 lanes_per_sublink;
 
@@ -177,10 +179,10 @@ static void dsi_phy_hw_v5_0_lane_settings(struct dsi_phy_hw *phy,
 	/* Strength ctrl settings */
 	for (i = DSI_LOGICAL_LANE_0; i < DSI_LANE_MAX; i++) {
 		/*
-		 * Disable LPRX and CDRX for all lanes. And later on, it will
-		 * be only enabled for the physical data lane corresponding
-		 * to the logical data lane 0
-		 */
+     * Disable LPRX and CDRX for all lanes. And later on, it will
+     * be only enabled for the physical data lane corresponding
+     * to the logical data lane 0
+     */
 		DSI_W32(phy, DSIPHY_LNX_LPRX_CTRL(i), 0);
 		DSI_W32(phy, DSIPHY_LNX_PIN_SWAP(i), 0x0);
 	}
@@ -210,7 +212,7 @@ static void dsi_phy_hw_v5_0_lane_settings(struct dsi_phy_hw *phy,
 }
 
 void dsi_phy_hw_v5_0_commit_phy_timing(struct dsi_phy_hw *phy,
-		struct dsi_phy_per_lane_cfgs *timing)
+				       struct dsi_phy_per_lane_cfgs *timing)
 {
 	/* Commit DSI PHY timings */
 	DSI_W32(phy, DSIPHY_CMN_TIMING_CTRL_0, timing->lane_v4[0]);
@@ -235,7 +237,8 @@ void dsi_phy_hw_v5_0_commit_phy_timing(struct dsi_phy_hw *phy,
  * @cfg:      Per lane configurations for timing, strength and lane
  *	      configurations.
  */
-static void dsi_phy_hw_cphy_enable(struct dsi_phy_hw *phy, struct dsi_phy_cfg *cfg)
+static void dsi_phy_hw_cphy_enable(struct dsi_phy_hw *phy,
+				   struct dsi_phy_cfg *cfg)
 {
 	struct dsi_phy_per_lane_cfgs *timing = &cfg->timing;
 	u32 data;
@@ -264,7 +267,8 @@ static void dsi_phy_hw_cphy_enable(struct dsi_phy_hw *phy, struct dsi_phy_cfg *c
 	/* Enable LDO */
 	DSI_W32(phy, DSIPHY_CMN_VREG_CTRL_0, 0x45);
 	DSI_W32(phy, DSIPHY_CMN_VREG_CTRL_1, 0x41);
-	DSI_W32(phy, DSIPHY_CMN_GLBL_STR_SWI_CAL_SEL_CTRL, glbl_str_swi_cal_sel_ctrl);
+	DSI_W32(phy, DSIPHY_CMN_GLBL_STR_SWI_CAL_SEL_CTRL,
+		glbl_str_swi_cal_sel_ctrl);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_HSTX_STR_CTRL_0, glbl_hstx_str_ctrl_0);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_PEMPH_CTRL_0, 0x11);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_PEMPH_CTRL_1, 0x01);
@@ -313,7 +317,8 @@ static void dsi_phy_hw_cphy_enable(struct dsi_phy_hw *phy, struct dsi_phy_cfg *c
  * @cfg:      Per lane configurations for timing, strength and lane
  *	      configurations.
  */
-static void dsi_phy_hw_dphy_enable(struct dsi_phy_hw *phy, struct dsi_phy_cfg *cfg)
+static void dsi_phy_hw_dphy_enable(struct dsi_phy_hw *phy,
+				   struct dsi_phy_cfg *cfg)
 {
 	struct dsi_phy_per_lane_cfgs *timing = &cfg->timing;
 	u32 data;
@@ -374,13 +379,13 @@ static void dsi_phy_hw_dphy_enable(struct dsi_phy_hw *phy, struct dsi_phy_cfg *c
 	DSI_W32(phy, DSIPHY_CMN_VREG_CTRL_1, 0x19);
 	DSI_W32(phy, DSIPHY_CMN_CTRL_3, 0x00);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_STR_SWI_CAL_SEL_CTRL,
-					glbl_str_swi_cal_sel_ctrl);
+		glbl_str_swi_cal_sel_ctrl);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_HSTX_STR_CTRL_0, glbl_hstx_str_ctrl_0);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_PEMPH_CTRL_0, 0x00);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_RESCODE_OFFSET_TOP_CTRL,
-			glbl_rescode_top_ctrl);
+		glbl_rescode_top_ctrl);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_RESCODE_OFFSET_BOT_CTRL,
-			glbl_rescode_bot_ctrl);
+		glbl_rescode_bot_ctrl);
 	DSI_W32(phy, DSIPHY_CMN_GLBL_LPTX_STR_CTRL, 0x55);
 
 	if (split_link_enabled) {
@@ -432,8 +437,7 @@ static void dsi_phy_hw_dphy_enable(struct dsi_phy_hw *phy, struct dsi_phy_cfg *c
  * @cfg:      Per lane configurations for timing, strength and lane
  *	      configurations.
  */
-void dsi_phy_hw_v5_0_enable(struct dsi_phy_hw *phy,
-			    struct dsi_phy_cfg *cfg)
+void dsi_phy_hw_v5_0_enable(struct dsi_phy_hw *phy, struct dsi_phy_cfg *cfg)
 {
 	int rc = 0;
 	u32 status;
@@ -450,7 +454,8 @@ void dsi_phy_hw_v5_0_enable(struct dsi_phy_hw *phy,
 	if (!phy->phy_pll_bypass) {
 		/* wait for REFGEN READY */
 		rc = DSI_READ_POLL_TIMEOUT_ATOMIC(phy, DSIPHY_CMN_PHY_STATUS,
-			status, (status & BIT(0)), delay_us, timeout_us);
+						  status, (status & BIT(0)),
+						  delay_us, timeout_us);
 		if (rc) {
 			DSI_PHY_ERR(phy, "Ref gen not ready. Aborting\n");
 			return;
@@ -461,15 +466,13 @@ void dsi_phy_hw_v5_0_enable(struct dsi_phy_hw *phy,
 		dsi_phy_hw_cphy_enable(phy, cfg);
 	else /* Default PHY type is DPHY */
 		dsi_phy_hw_dphy_enable(phy, cfg);
-
 }
 
 /**
  * disable() - Disable PHY hardware
  * @phy:      Pointer to DSI PHY hardware object.
  */
-void dsi_phy_hw_v5_0_disable(struct dsi_phy_hw *phy,
-			    struct dsi_phy_cfg *cfg)
+void dsi_phy_hw_v5_0_disable(struct dsi_phy_hw *phy, struct dsi_phy_cfg *cfg)
 {
 	u32 data = 0;
 
@@ -525,8 +528,7 @@ void dsi_phy_hw_v5_0_reset_clk_en_sel(struct dsi_phy_hw *phy)
 	wmb();
 }
 
-int dsi_phy_hw_v5_0_wait_for_lane_idle(
-		struct dsi_phy_hw *phy, u32 lanes)
+int dsi_phy_hw_v5_0_wait_for_lane_idle(struct dsi_phy_hw *phy, u32 lanes)
 {
 	int rc = 0, val = 0;
 	u32 stop_state_mask = 0;
@@ -549,19 +551,23 @@ int dsi_phy_hw_v5_0_wait_for_lane_idle(
 	if (lanes & DSI_DATA_LANE_3)
 		stop_state_mask |= BIT(3);
 
-	DSI_PHY_DBG(phy, "polling for lanes to be in stop state, mask=0x%08x\n", stop_state_mask);
+	DSI_PHY_DBG(phy, "polling for lanes to be in stop state, mask=0x%08x\n",
+		    stop_state_mask);
 	rc = DSI_READ_POLL_TIMEOUT(phy, DSIPHY_CMN_LANE_STATUS1, val,
-				((val & stop_state_mask) == stop_state_mask),
-				sleep_us, timeout_us);
+				   ((val & stop_state_mask) == stop_state_mask),
+				   sleep_us, timeout_us);
 	if (rc) {
-		DSI_PHY_ERR(phy, "lanes not in stop state, LANE_STATUS=0x%08x\n", val);
+		DSI_PHY_ERR(phy,
+			    "lanes not in stop state, LANE_STATUS=0x%08x\n",
+			    val);
 		return rc;
 	}
 
 	return 0;
 }
 
-void dsi_phy_hw_v5_0_ulps_request(struct dsi_phy_hw *phy, struct dsi_phy_cfg *cfg, u32 lanes)
+void dsi_phy_hw_v5_0_ulps_request(struct dsi_phy_hw *phy,
+				  struct dsi_phy_cfg *cfg, u32 lanes)
 {
 	u32 reg = 0, sl_lane_ctrl1 = 0;
 
@@ -581,16 +587,18 @@ void dsi_phy_hw_v5_0_ulps_request(struct dsi_phy_hw *phy, struct dsi_phy_cfg *cf
 	if (cfg->force_clk_lane_hs) {
 		reg |= BIT(5) | BIT(6);
 		if (cfg->split_link.enabled) {
-			sl_lane_ctrl1 = DSI_R32(phy, DSIPHY_CMN_SL_DSI_LANE_CTRL1);
+			sl_lane_ctrl1 =
+				DSI_R32(phy, DSIPHY_CMN_SL_DSI_LANE_CTRL1);
 			sl_lane_ctrl1 |= BIT(2);
-			DSI_W32(phy, DSIPHY_CMN_SL_DSI_LANE_CTRL1, sl_lane_ctrl1);
+			DSI_W32(phy, DSIPHY_CMN_SL_DSI_LANE_CTRL1,
+				sl_lane_ctrl1);
 		}
 	}
 
 	/*
-	 * ULPS entry request. Wait for short time to make sure
-	 * that the lanes enter ULPS. Recommended as per HPG.
-	 */
+   * ULPS entry request. Wait for short time to make sure
+   * that the lanes enter ULPS. Recommended as per HPG.
+   */
 	DSI_W32(phy, DSIPHY_CMN_LANE_CTRL1, reg);
 	usleep_range(100, 110);
 
@@ -623,8 +631,8 @@ int dsi_phy_hw_v5_0_lane_reset(struct dsi_phy_hw *phy)
 	return ret;
 }
 
-void dsi_phy_hw_v5_0_ulps_exit(struct dsi_phy_hw *phy,
-			struct dsi_phy_cfg *cfg, u32 lanes)
+void dsi_phy_hw_v5_0_ulps_exit(struct dsi_phy_hw *phy, struct dsi_phy_cfg *cfg,
+			       u32 lanes)
 {
 	u32 reg = 0, sl_lane_ctrl1 = 0;
 
@@ -654,11 +662,11 @@ void dsi_phy_hw_v5_0_ulps_exit(struct dsi_phy_hw *phy,
 	DSI_W32(phy, DSIPHY_CMN_LANE_CTRL2, 0);
 
 	/*
-	 * Sometimes when exiting ULPS, it is possible that some DSI
-	 * lanes are not in the stop state which could lead to DSI
-	 * commands not going through. To avoid this, force the lanes
-	 * to be in stop state.
-	 */
+   * Sometimes when exiting ULPS, it is possible that some DSI
+   * lanes are not in the stop state which could lead to DSI
+   * commands not going through. To avoid this, force the lanes
+   * to be in stop state.
+   */
 	DSI_W32(phy, DSIPHY_CMN_LANE_CTRL3, reg);
 	DSI_W32(phy, DSIPHY_CMN_LANE_CTRL3, 0);
 	usleep_range(100, 110);
@@ -667,9 +675,11 @@ void dsi_phy_hw_v5_0_ulps_exit(struct dsi_phy_hw *phy,
 		reg = BIT(5) | BIT(6);
 		DSI_W32(phy, DSIPHY_CMN_LANE_CTRL1, reg);
 		if (cfg->split_link.enabled) {
-			sl_lane_ctrl1 = DSI_R32(phy, DSIPHY_CMN_SL_DSI_LANE_CTRL1);
+			sl_lane_ctrl1 =
+				DSI_R32(phy, DSIPHY_CMN_SL_DSI_LANE_CTRL1);
 			sl_lane_ctrl1 |= BIT(2);
-			DSI_W32(phy, DSIPHY_CMN_SL_DSI_LANE_CTRL1, sl_lane_ctrl1);
+			DSI_W32(phy, DSIPHY_CMN_SL_DSI_LANE_CTRL1,
+				sl_lane_ctrl1);
 		}
 	}
 }
@@ -692,7 +702,7 @@ bool dsi_phy_hw_v5_0_is_lanes_in_ulps(u32 lanes, u32 ulps_lanes)
 }
 
 int dsi_phy_hw_timing_val_v5_0(struct dsi_phy_per_lane_cfgs *timing_cfg,
-		u32 *timing_val, u32 size)
+			       u32 *timing_val, u32 size)
 {
 	int i = 0;
 
@@ -714,100 +724,137 @@ void dsi_phy_hw_v5_0_dyn_refresh_config(struct dsi_phy_hw *phy,
 
 	if (is_master) {
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL19,
-				DSIPHY_CMN_TIMING_CTRL_0, DSIPHY_CMN_TIMING_CTRL_1,
-				cfg->timing.lane_v4[0], cfg->timing.lane_v4[1]);
+				  DSIPHY_CMN_TIMING_CTRL_0,
+				  DSIPHY_CMN_TIMING_CTRL_1,
+				  cfg->timing.lane_v4[0],
+				  cfg->timing.lane_v4[1]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL20,
-				DSIPHY_CMN_TIMING_CTRL_2, DSIPHY_CMN_TIMING_CTRL_3,
-				cfg->timing.lane_v4[2], cfg->timing.lane_v4[3]);
+				  DSIPHY_CMN_TIMING_CTRL_2,
+				  DSIPHY_CMN_TIMING_CTRL_3,
+				  cfg->timing.lane_v4[2],
+				  cfg->timing.lane_v4[3]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL21,
-				DSIPHY_CMN_TIMING_CTRL_4, DSIPHY_CMN_TIMING_CTRL_5,
-				cfg->timing.lane_v4[4], cfg->timing.lane_v4[5]);
+				  DSIPHY_CMN_TIMING_CTRL_4,
+				  DSIPHY_CMN_TIMING_CTRL_5,
+				  cfg->timing.lane_v4[4],
+				  cfg->timing.lane_v4[5]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL22,
-				DSIPHY_CMN_TIMING_CTRL_6, DSIPHY_CMN_TIMING_CTRL_7,
-				cfg->timing.lane_v4[6], cfg->timing.lane_v4[7]);
+				  DSIPHY_CMN_TIMING_CTRL_6,
+				  DSIPHY_CMN_TIMING_CTRL_7,
+				  cfg->timing.lane_v4[6],
+				  cfg->timing.lane_v4[7]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL23,
-				DSIPHY_CMN_TIMING_CTRL_8, DSIPHY_CMN_TIMING_CTRL_9,
-				cfg->timing.lane_v4[8], cfg->timing.lane_v4[9]);
+				  DSIPHY_CMN_TIMING_CTRL_8,
+				  DSIPHY_CMN_TIMING_CTRL_9,
+				  cfg->timing.lane_v4[8],
+				  cfg->timing.lane_v4[9]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL24,
-				DSIPHY_CMN_TIMING_CTRL_10, DSIPHY_CMN_TIMING_CTRL_11,
-				cfg->timing.lane_v4[10], cfg->timing.lane_v4[11]);
+				  DSIPHY_CMN_TIMING_CTRL_10,
+				  DSIPHY_CMN_TIMING_CTRL_11,
+				  cfg->timing.lane_v4[10],
+				  cfg->timing.lane_v4[11]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL25,
-				DSIPHY_CMN_TIMING_CTRL_12, DSIPHY_CMN_TIMING_CTRL_13,
-				cfg->timing.lane_v4[12], cfg->timing.lane_v4[13]);
+				  DSIPHY_CMN_TIMING_CTRL_12,
+				  DSIPHY_CMN_TIMING_CTRL_13,
+				  cfg->timing.lane_v4[12],
+				  cfg->timing.lane_v4[13]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL26,
-				DSIPHY_CMN_CTRL_0, DSIPHY_CMN_LANE_CTRL0, 0x7f,
-				is_cphy ? 0x17 : 0x1f);
+				  DSIPHY_CMN_CTRL_0, DSIPHY_CMN_LANE_CTRL0,
+				  0x7f, is_cphy ? 0x17 : 0x1f);
 
 	} else {
 		reg = DSI_R32(phy, DSIPHY_CMN_CLK_CFG1);
 		reg &= ~BIT(5);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL0,
-				DSIPHY_CMN_CLK_CFG1, DSIPHY_CMN_PLL_CNTRL, reg, 0x0);
+				  DSIPHY_CMN_CLK_CFG1, DSIPHY_CMN_PLL_CNTRL,
+				  reg, 0x0);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL1,
-				DSIPHY_CMN_RBUF_CTRL, DSIPHY_CMN_TIMING_CTRL_0, 0x0,
-				cfg->timing.lane_v4[0]);
+				  DSIPHY_CMN_RBUF_CTRL,
+				  DSIPHY_CMN_TIMING_CTRL_0, 0x0,
+				  cfg->timing.lane_v4[0]);
 
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL2,
-				DSIPHY_CMN_TIMING_CTRL_1, DSIPHY_CMN_TIMING_CTRL_2,
-				cfg->timing.lane_v4[1], cfg->timing.lane_v4[2]);
+				  DSIPHY_CMN_TIMING_CTRL_1,
+				  DSIPHY_CMN_TIMING_CTRL_2,
+				  cfg->timing.lane_v4[1],
+				  cfg->timing.lane_v4[2]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL3,
-				DSIPHY_CMN_TIMING_CTRL_3, DSIPHY_CMN_TIMING_CTRL_4,
-				cfg->timing.lane_v4[3], cfg->timing.lane_v4[4]);
+				  DSIPHY_CMN_TIMING_CTRL_3,
+				  DSIPHY_CMN_TIMING_CTRL_4,
+				  cfg->timing.lane_v4[3],
+				  cfg->timing.lane_v4[4]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL4,
-				DSIPHY_CMN_TIMING_CTRL_5, DSIPHY_CMN_TIMING_CTRL_6,
-				cfg->timing.lane_v4[5], cfg->timing.lane_v4[6]);
+				  DSIPHY_CMN_TIMING_CTRL_5,
+				  DSIPHY_CMN_TIMING_CTRL_6,
+				  cfg->timing.lane_v4[5],
+				  cfg->timing.lane_v4[6]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL5,
-				DSIPHY_CMN_TIMING_CTRL_7, DSIPHY_CMN_TIMING_CTRL_8,
-				cfg->timing.lane_v4[7], cfg->timing.lane_v4[8]);
+				  DSIPHY_CMN_TIMING_CTRL_7,
+				  DSIPHY_CMN_TIMING_CTRL_8,
+				  cfg->timing.lane_v4[7],
+				  cfg->timing.lane_v4[8]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL6,
-				DSIPHY_CMN_TIMING_CTRL_9, DSIPHY_CMN_TIMING_CTRL_10,
-				cfg->timing.lane_v4[9], cfg->timing.lane_v4[10]);
+				  DSIPHY_CMN_TIMING_CTRL_9,
+				  DSIPHY_CMN_TIMING_CTRL_10,
+				  cfg->timing.lane_v4[9],
+				  cfg->timing.lane_v4[10]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL7,
-				DSIPHY_CMN_TIMING_CTRL_11, DSIPHY_CMN_TIMING_CTRL_12,
-				cfg->timing.lane_v4[11], cfg->timing.lane_v4[12]);
+				  DSIPHY_CMN_TIMING_CTRL_11,
+				  DSIPHY_CMN_TIMING_CTRL_12,
+				  cfg->timing.lane_v4[11],
+				  cfg->timing.lane_v4[12]);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL8,
-				DSIPHY_CMN_TIMING_CTRL_13, DSIPHY_CMN_CTRL_0,
-				cfg->timing.lane_v4[13], 0x7f);
+				  DSIPHY_CMN_TIMING_CTRL_13, DSIPHY_CMN_CTRL_0,
+				  cfg->timing.lane_v4[13], 0x7f);
 		DSI_DYN_REF_REG_W(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_CTRL9,
-				DSIPHY_CMN_LANE_CTRL0, DSIPHY_CMN_CTRL_2,
-				is_cphy ? 0x17 : 0x1f, 0x40);
+				  DSIPHY_CMN_LANE_CTRL0, DSIPHY_CMN_CTRL_2,
+				  is_cphy ? 0x17 : 0x1f, 0x40);
 		/*
-		 * fill with dummy register writes since controller will blindly
-		 * send these values to DSI PHY.
-		 */
+     * fill with dummy register writes since controller will blindly
+     * send these values to DSI PHY.
+     */
 		reg = DSI_DYN_REFRESH_PLL_CTRL11;
 		while (reg <= DSI_DYN_REFRESH_PLL_CTRL29) {
-			DSI_DYN_REF_REG_W(phy->dyn_pll_base, reg, DSIPHY_CMN_LANE_CTRL0,
-					DSIPHY_CMN_CTRL_0, is_cphy ? 0x17 : 0x1f, 0x7f);
+			DSI_DYN_REF_REG_W(phy->dyn_pll_base, reg,
+					  DSIPHY_CMN_LANE_CTRL0,
+					  DSIPHY_CMN_CTRL_0,
+					  is_cphy ? 0x17 : 0x1f, 0x7f);
 			reg += 0x4;
 		}
 
-		DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_UPPER_ADDR, 0);
-		DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_UPPER_ADDR2, 0);
+		DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_UPPER_ADDR,
+			    0);
+		DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_UPPER_ADDR2,
+			    0);
 	}
 
 	wmb(); /* make sure all registers are updated */
 }
 
-void dsi_phy_hw_v5_0_dyn_refresh_pipe_delay(struct dsi_phy_hw *phy, struct dsi_dyn_clk_delay *delay)
+void dsi_phy_hw_v5_0_dyn_refresh_pipe_delay(struct dsi_phy_hw *phy,
+					    struct dsi_dyn_clk_delay *delay)
 {
 	if (!delay)
 		return;
 
-	DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PIPE_DELAY, delay->pipe_delay);
-	DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PIPE_DELAY2, delay->pipe_delay2);
-	DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_DELAY, delay->pll_delay);
+	DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PIPE_DELAY,
+		    delay->pipe_delay);
+	DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PIPE_DELAY2,
+		    delay->pipe_delay2);
+	DSI_GEN_W32(phy->dyn_pll_base, DSI_DYN_REFRESH_PLL_DELAY,
+		    delay->pll_delay);
 }
 
-void dsi_phy_hw_v5_0_dyn_refresh_trigger_sel(struct dsi_phy_hw *phy, bool is_master)
+void dsi_phy_hw_v5_0_dyn_refresh_trigger_sel(struct dsi_phy_hw *phy,
+					     bool is_master)
 {
 	u32 reg;
 
 	/*
-	 * Dynamic refresh will take effect at next mdp flush event.
-	 * This makes sure that any update to frame timings together
-	 * with dfps will take effect in one vsync at next mdp flush.
-	 */
+   * Dynamic refresh will take effect at next mdp flush event.
+   * This makes sure that any update to frame timings together
+   * with dfps will take effect in one vsync at next mdp flush.
+   */
 	if (is_master) {
 		reg = DSI_GEN_R32(phy->dyn_pll_base, DSI_DYN_REFRESH_CTRL);
 		reg |= BIT(17);
@@ -820,10 +867,10 @@ void dsi_phy_hw_v5_0_dyn_refresh_helper(struct dsi_phy_hw *phy, u32 offset)
 	u32 reg;
 
 	/*
-	 * if no offset is mentioned then this means we want to clear
-	 * the dynamic refresh ctrl register which is the last step
-	 * of dynamic refresh sequence.
-	 */
+   * if no offset is mentioned then this means we want to clear
+   * the dynamic refresh ctrl register which is the last step
+   * of dynamic refresh sequence.
+   */
 	if (!offset) {
 		reg = DSI_GEN_R32(phy->dyn_pll_base, DSI_DYN_REFRESH_CTRL);
 		reg &= ~(BIT(0) | BIT(8) | BIT(13) | BIT(16) | BIT(17));
@@ -904,7 +951,7 @@ void dsi_phy_hw_v5_0_set_continuous_clk(struct dsi_phy_hw *phy, bool enable)
 }
 
 void dsi_phy_hw_v5_0_phy_idle_off(struct dsi_phy_hw *phy,
-					struct dsi_phy_cfg *cfg)
+				  struct dsi_phy_cfg *cfg)
 {
 	if (dsi_phy_hw_v5_0_is_pll_on(phy))
 		DSI_PHY_WARN(phy, "Turning OFF PHY while PLL is on\n");
@@ -925,8 +972,8 @@ void dsi_phy_hw_v5_0_phy_idle_off(struct dsi_phy_hw *phy,
 }
 
 #ifdef MI_DISPLAY_MODIFY
-void dsi_phy_hw_v5_0_get_phy_timing(struct dsi_phy_hw *phy,
-		u32 *phy_timming, u32 size)
+void dsi_phy_hw_v5_0_get_phy_timing(struct dsi_phy_hw *phy, u32 *phy_timming,
+				    u32 size)
 {
 	if (!phy_timming || !phy || !size)
 		return;

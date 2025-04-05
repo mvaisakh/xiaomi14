@@ -3,11 +3,11 @@
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/types.h>
 #include "rouleur-registers.h"
+#include <linux/types.h>
 
 const u8 rouleur_reg_access_analog[ROULEUR_REG(
-			ROULEUR_ANALOG_REGISTERS_MAX_SIZE)] = {
+	ROULEUR_ANALOG_REGISTERS_MAX_SIZE)] = {
 	[ROULEUR_REG(ROULEUR_ANA_MICBIAS_MICB_1_2_EN)] = RD_WR_REG,
 	[ROULEUR_REG(ROULEUR_ANA_MICBIAS_MICB_3_EN)] = RD_WR_REG,
 	[ROULEUR_REG(ROULEUR_ANA_MICBIAS_LDO_1_SETTING)] = RD_WR_REG,
@@ -54,7 +54,7 @@ const u8 rouleur_reg_access_analog[ROULEUR_REG(
 };
 
 const u8 rouleur_reg_access_digital[ROULEUR_REG(
-			ROULEUR_DIGITAL_REGISTERS_MAX_SIZE)] = {
+	ROULEUR_DIGITAL_REGISTERS_MAX_SIZE)] = {
 	[ROULEUR_REG(ROULEUR_DIG_SWR_CHIP_ID0)] = RD_REG,
 	[ROULEUR_REG(ROULEUR_DIG_SWR_CHIP_ID1)] = RD_REG,
 	[ROULEUR_REG(ROULEUR_DIG_SWR_CHIP_ID2)] = RD_REG,

@@ -17,10 +17,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_lock.h"
-#include "qdf_status.h"
-#include "qdf_module.h"
 #include "hif_main.h"
+#include "qdf_lock.h"
+#include "qdf_module.h"
+#include "qdf_status.h"
 
 #if defined(HIF_PCI) || defined(HIF_SNOC) || defined(HIF_AHB) || \
 	defined(HIF_IPCI)
@@ -43,8 +43,8 @@ int hif_send_fast(struct hif_opaque_softc *osc, qdf_nbuf_t nbuf,
 {
 	void *ce_tx_hdl = hif_get_ce_handle(osc, CE_HTT_TX_CE);
 
-	return ce_send_fast((struct CE_handle *)ce_tx_hdl, nbuf,
-			transfer_id, download_len);
+	return ce_send_fast((struct CE_handle *)ce_tx_hdl, nbuf, transfer_id,
+			    download_len);
 }
 
 qdf_export_symbol(hif_send_fast);

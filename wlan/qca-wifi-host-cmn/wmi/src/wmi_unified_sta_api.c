@@ -19,9 +19,9 @@
 /**
  * DOC: Implement API's specific to STA component.
  */
-#include <wmi.h>
-#include "wmi_unified_priv.h"
 #include "wmi_unified_sta_api.h"
+#include "wmi_unified_priv.h"
+#include <wmi.h>
 
 QDF_STATUS wmi_unified_set_sta_sa_query_param_cmd(wmi_unified_t wmi_handle,
 						  uint8_t vdev_id,
@@ -29,9 +29,8 @@ QDF_STATUS wmi_unified_set_sta_sa_query_param_cmd(wmi_unified_t wmi_handle,
 						  uint32_t retry_interval)
 {
 	if (wmi_handle->ops->send_set_sta_sa_query_param_cmd)
-		return wmi_handle->ops->send_set_sta_sa_query_param_cmd(wmi_handle,
-						vdev_id, max_retries,
-						retry_interval);
+		return wmi_handle->ops->send_set_sta_sa_query_param_cmd(
+			wmi_handle, vdev_id, max_retries, retry_interval);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -52,16 +51,15 @@ wmi_unified_vdev_set_gtx_cfg_cmd(wmi_unified_t wmi_handle, uint32_t if_id,
 				 struct wmi_gtx_config *gtx_info)
 {
 	if (wmi_handle->ops->send_vdev_set_gtx_cfg_cmd)
-		return wmi_handle->ops->send_vdev_set_gtx_cfg_cmd(wmi_handle,
-								  if_id,
-								  gtx_info);
+		return wmi_handle->ops->send_vdev_set_gtx_cfg_cmd(
+			wmi_handle, if_id, gtx_info);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_process_dhcp_ind(
-			wmi_unified_t wmi_handle,
-			wmi_peer_set_param_cmd_fixed_param *ta_dhcp_ind)
+QDF_STATUS
+wmi_unified_process_dhcp_ind(wmi_unified_t wmi_handle,
+			     wmi_peer_set_param_cmd_fixed_param *ta_dhcp_ind)
 {
 	if (wmi_handle->ops->send_process_dhcp_ind_cmd)
 		return wmi_handle->ops->send_process_dhcp_ind_cmd(wmi_handle,
@@ -81,15 +79,12 @@ QDF_STATUS wmi_unified_get_link_speed_cmd(wmi_unified_t wmi_handle,
 }
 
 QDF_STATUS wmi_unified_fw_profiling_data_cmd(wmi_unified_t wmi_handle,
-					     uint32_t cmd,
-					     uint32_t value1,
+					     uint32_t cmd, uint32_t value1,
 					     uint32_t value2)
 {
 	if (wmi_handle->ops->send_fw_profiling_cmd)
-		return wmi_handle->ops->send_fw_profiling_cmd(wmi_handle,
-							      cmd,
-							      value1,
-							      value2);
+		return wmi_handle->ops->send_fw_profiling_cmd(wmi_handle, cmd,
+							      value1, value2);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -131,41 +126,42 @@ QDF_STATUS wmi_unified_set_base_macaddr_indicate_cmd(wmi_unified_t wmi_handle,
 {
 	if (wmi_handle->ops->send_set_base_macaddr_indicate_cmd)
 		return wmi_handle->ops->send_set_base_macaddr_indicate_cmd(
-						wmi_handle, custom_addr);
+			wmi_handle, custom_addr);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 #ifdef FEATURE_WLAN_TDLS
 QDF_STATUS wmi_unified_set_tdls_offchan_mode_cmd(
-			wmi_unified_t wmi_handle,
-			struct tdls_channel_switch_params *chan_switch_params)
+	wmi_unified_t wmi_handle,
+	struct tdls_channel_switch_params *chan_switch_params)
 {
 	if (wmi_handle->ops->send_set_tdls_offchan_mode_cmd)
 		return wmi_handle->ops->send_set_tdls_offchan_mode_cmd(
-						wmi_handle, chan_switch_params);
+			wmi_handle, chan_switch_params);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_update_fw_tdls_state_cmd(wmi_unified_t wmi_handle,
-						struct tdls_info *tdls_param,
-						enum wmi_tdls_state tdls_state)
+QDF_STATUS
+wmi_unified_update_fw_tdls_state_cmd(wmi_unified_t wmi_handle,
+				     struct tdls_info *tdls_param,
+				     enum wmi_tdls_state tdls_state)
 {
 	if (wmi_handle->ops->send_update_fw_tdls_state_cmd)
 		return wmi_handle->ops->send_update_fw_tdls_state_cmd(
-				wmi_handle, tdls_param, tdls_state);
+			wmi_handle, tdls_param, tdls_state);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_update_tdls_peer_state_cmd(wmi_unified_t wmi_handle,
-				struct tdls_peer_update_state *peer_state,
-				uint32_t *ch_mhz)
+QDF_STATUS wmi_unified_update_tdls_peer_state_cmd(
+	wmi_unified_t wmi_handle, struct tdls_peer_update_state *peer_state,
+	uint32_t *ch_mhz)
 {
 	if (wmi_handle->ops->send_update_tdls_peer_state_cmd)
-		return wmi_handle->ops->send_update_tdls_peer_state_cmd(wmi_handle,
-			    peer_state, ch_mhz);
+		return wmi_handle->ops->send_update_tdls_peer_state_cmd(
+			wmi_handle, peer_state, ch_mhz);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -175,8 +171,8 @@ QDF_STATUS wmi_extract_vdev_tdls_ev_param(wmi_unified_t wmi_handle,
 					  struct tdls_event_info *param)
 {
 	if (wmi_handle->ops->extract_vdev_tdls_ev_param)
-		return wmi_handle->ops->extract_vdev_tdls_ev_param(wmi_handle,
-				evt_buf, param);
+		return wmi_handle->ops->extract_vdev_tdls_ev_param(
+			wmi_handle, evt_buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -199,9 +195,7 @@ QDF_STATUS wmi_unified_send_sar_limit_cmd(wmi_unified_t wmi_handle,
 					  struct sar_limit_cmd_params *params)
 {
 	if (wmi_handle->ops->send_sar_limit_cmd)
-		return wmi_handle->ops->send_sar_limit_cmd(
-						wmi_handle,
-						params);
+		return wmi_handle->ops->send_sar_limit_cmd(wmi_handle, params);
 	return QDF_STATUS_E_FAILURE;
 }
 
@@ -219,21 +213,19 @@ QDF_STATUS wmi_unified_extract_sar_limit_event(wmi_unified_t wmi_handle,
 {
 	if (wmi_handle->ops->extract_sar_limit_event)
 		return wmi_handle->ops->extract_sar_limit_event(wmi_handle,
-								evt_buf,
-								event);
+								evt_buf, event);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_extract_sar2_result_event(void *handle,
-						 uint8_t *event, uint32_t len)
+QDF_STATUS wmi_unified_extract_sar2_result_event(void *handle, uint8_t *event,
+						 uint32_t len)
 {
 	wmi_unified_t wmi_handle = handle;
 
 	if (wmi_handle->ops->extract_sar2_result_event)
 		return wmi_handle->ops->extract_sar2_result_event(wmi_handle,
-								  event,
-								  len);
+								  event, len);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -253,15 +245,15 @@ QDF_STATUS wmi_unified_del_ts_cmd(wmi_unified_t wmi_handle, uint8_t vdev_id,
 				  uint8_t ac)
 {
 	if (wmi_handle->ops->send_del_ts_cmd)
-		return wmi_handle->ops->send_del_ts_cmd(wmi_handle,
-							vdev_id, ac);
+		return wmi_handle->ops->send_del_ts_cmd(wmi_handle, vdev_id,
+							ac);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
-QDF_STATUS wmi_unified_aggr_qos_cmd(
-		wmi_unified_t wmi_handle,
-		struct aggr_add_ts_param *aggr_qos_rsp_msg)
+QDF_STATUS
+wmi_unified_aggr_qos_cmd(wmi_unified_t wmi_handle,
+			 struct aggr_add_ts_param *aggr_qos_rsp_msg)
 {
 	if (wmi_handle->ops->send_aggr_qos_cmd)
 		return wmi_handle->ops->send_aggr_qos_cmd(wmi_handle,
@@ -274,20 +266,18 @@ QDF_STATUS wmi_unified_add_ts_cmd(wmi_unified_t wmi_handle,
 				  struct add_ts_param *msg)
 {
 	if (wmi_handle->ops->send_add_ts_cmd)
-		return wmi_handle->ops->send_add_ts_cmd(wmi_handle,
-							msg);
+		return wmi_handle->ops->send_add_ts_cmd(wmi_handle, msg);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS wmi_unified_process_add_periodic_tx_ptrn_cmd(
-					wmi_unified_t wmi_handle,
-					struct periodic_tx_pattern *pattern,
-					uint8_t vdev_id)
+	wmi_unified_t wmi_handle, struct periodic_tx_pattern *pattern,
+	uint8_t vdev_id)
 {
 	if (wmi_handle->ops->send_process_add_periodic_tx_ptrn_cmd)
 		return wmi_handle->ops->send_process_add_periodic_tx_ptrn_cmd(
-						wmi_handle, pattern, vdev_id);
+			wmi_handle, pattern, vdev_id);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -299,9 +289,7 @@ wmi_unified_process_del_periodic_tx_ptrn_cmd(wmi_unified_t wmi_handle,
 {
 	if (wmi_handle->ops->send_process_del_periodic_tx_ptrn_cmd)
 		return wmi_handle->ops->send_process_del_periodic_tx_ptrn_cmd(
-				wmi_handle,
-				vdev_id,
-				pattern_id);
+			wmi_handle, vdev_id, pattern_id);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -311,8 +299,7 @@ QDF_STATUS wmi_unified_set_auto_shutdown_timer_cmd(wmi_unified_t wmi_handle,
 {
 	if (wmi_handle->ops->send_set_auto_shutdown_timer_cmd)
 		return wmi_handle->ops->send_set_auto_shutdown_timer_cmd(
-				wmi_handle,
-				timer_val);
+			wmi_handle, timer_val);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -332,7 +319,7 @@ QDF_STATUS wmi_unified_process_ch_avoid_update_cmd(wmi_unified_t wmi_handle)
 {
 	if (wmi_handle->ops->send_process_ch_avoid_update_cmd)
 		return wmi_handle->ops->send_process_ch_avoid_update_cmd(
-				wmi_handle);
+			wmi_handle);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -347,39 +334,36 @@ QDF_STATUS wmi_unified_pdev_set_pcl_cmd(wmi_unified_t wmi_handle,
 }
 
 #ifdef WLAN_POLICY_MGR_ENABLE
-QDF_STATUS wmi_unified_pdev_set_dual_mac_config_cmd(
-		wmi_unified_t wmi_handle,
-		struct policy_mgr_dual_mac_config *msg)
+QDF_STATUS
+wmi_unified_pdev_set_dual_mac_config_cmd(wmi_unified_t wmi_handle,
+					 struct policy_mgr_dual_mac_config *msg)
 {
 	if (wmi_handle->ops->send_pdev_set_dual_mac_config_cmd)
 		return wmi_handle->ops->send_pdev_set_dual_mac_config_cmd(
-				wmi_handle,
-				msg);
+			wmi_handle, msg);
 
 	return QDF_STATUS_E_FAILURE;
 }
 #endif /* WLAN_POLICY_MGR_ENABLE */
 
 QDF_STATUS wmi_unified_send_adapt_dwelltime_params_cmd(
-			wmi_unified_t wmi_handle,
-			struct wmi_adaptive_dwelltime_params *dwelltime_params)
+	wmi_unified_t wmi_handle,
+	struct wmi_adaptive_dwelltime_params *dwelltime_params)
 {
 	if (wmi_handle->ops->send_adapt_dwelltime_params_cmd)
-		return wmi_handle->ops->
-			send_adapt_dwelltime_params_cmd(wmi_handle,
-				  dwelltime_params);
+		return wmi_handle->ops->send_adapt_dwelltime_params_cmd(
+			wmi_handle, dwelltime_params);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS wmi_unified_send_dbs_scan_sel_params_cmd(
-			wmi_unified_t wmi_handle,
-			struct wmi_dbs_scan_sel_params *dbs_scan_params)
+	wmi_unified_t wmi_handle,
+	struct wmi_dbs_scan_sel_params *dbs_scan_params)
 {
 	if (wmi_handle->ops->send_dbs_scan_sel_params_cmd)
-		return wmi_handle->ops->
-			send_dbs_scan_sel_params_cmd(wmi_handle,
-						     dbs_scan_params);
+		return wmi_handle->ops->send_dbs_scan_sel_params_cmd(
+			wmi_handle, dbs_scan_params);
 
 	return QDF_STATUS_E_FAILURE;
 }
@@ -410,9 +394,8 @@ QDF_STATUS wmi_unified_peer_unmap_conf_send(wmi_unified_t wmi_handle,
 					    uint16_t *peer_id_list)
 {
 	if (wmi_handle->ops->send_peer_unmap_conf_cmd)
-		return wmi_handle->ops->send_peer_unmap_conf_cmd(wmi_handle,
-				  vdev_id, peer_id_cnt, peer_id_list);
+		return wmi_handle->ops->send_peer_unmap_conf_cmd(
+			wmi_handle, vdev_id, peer_id_cnt, peer_id_list);
 
 	return QDF_STATUS_E_FAILURE;
 }
-

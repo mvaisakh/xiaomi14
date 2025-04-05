@@ -21,20 +21,20 @@
  * DOC: defines driver functions interfacing with linux kernel
  */
 
+#include "wlan_cfg80211_p2p.h"
+#include "wlan_cfg80211.h"
+#include "wlan_mlo_mgr_sta.h"
 #include <qdf_util.h>
-#include <wlan_objmgr_psoc_obj.h>
 #include <wlan_objmgr_global_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
 #include <wlan_objmgr_peer_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
+#include <wlan_osif_priv.h>
 #include <wlan_p2p_public_struct.h>
 #include <wlan_p2p_ucfg_api.h>
 #include <wlan_policy_mgr_api.h>
 #include <wlan_utility.h>
-#include <wlan_osif_priv.h>
-#include "wlan_cfg80211.h"
-#include "wlan_cfg80211_p2p.h"
-#include "wlan_mlo_mgr_sta.h"
 
 #define MAX_NO_OF_2_4_CHANNELS 14
 #define MAX_OFFCHAN_TIME_FOR_DNBS 150
@@ -49,7 +49,7 @@
  * Return: None
  */
 static void wlan_p2p_rx_callback(void *user_data,
-	struct p2p_rx_mgmt_frame *rx_frame)
+				 struct p2p_rx_mgmt_frame *rx_frame)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_vdev *vdev, *assoc_vdev;
@@ -63,8 +63,8 @@ static void wlan_p2p_rx_callback(void *user_data,
 		return;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-		rx_frame->vdev_id, WLAN_P2P_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, rx_frame->vdev_id,
+						    WLAN_P2P_ID);
 	if (!vdev) {
 		osif_err("vdev is null");
 		return;
@@ -123,7 +123,7 @@ fail:
  * Return: None
  */
 static void wlan_p2p_action_tx_cnf_callback(void *user_data,
-	struct p2p_tx_cnf *tx_cnf)
+					    struct p2p_tx_cnf *tx_cnf)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_vdev *vdev;
@@ -137,8 +137,8 @@ static void wlan_p2p_action_tx_cnf_callback(void *user_data,
 		return;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-		tx_cnf->vdev_id, WLAN_P2P_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, tx_cnf->vdev_id,
+						    WLAN_P2P_ID);
 	if (!vdev) {
 		osif_err("vdev is null");
 		return;
@@ -157,11 +157,8 @@ static void wlan_p2p_action_tx_cnf_callback(void *user_data,
 	}
 
 	is_success = tx_cnf->status ? false : true;
-	cfg80211_mgmt_tx_status(
-		wdev,
-		tx_cnf->action_cookie,
-		tx_cnf->buf, tx_cnf->buf_len,
-		is_success, GFP_KERNEL);
+	cfg80211_mgmt_tx_status(wdev, tx_cnf->action_cookie, tx_cnf->buf,
+				tx_cnf->buf_len, is_success, GFP_KERNEL);
 fail:
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_P2P_ID);
 }
@@ -177,7 +174,7 @@ fail:
  * Return: None
  */
 static void wlan_p2p_lo_event_callback(void *user_data,
-	struct p2p_lo_event *p2p_lo_event)
+				       struct p2p_lo_event *p2p_lo_event)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_vdev *vdev;
@@ -187,9 +184,8 @@ static void wlan_p2p_lo_event_callback(void *user_data,
 	enum qca_nl80211_vendor_subcmds_index index =
 		QCA_NL80211_VENDOR_SUBCMD_P2P_LO_EVENT_INDEX;
 
-	osif_debug("user data:%pK, vdev id:%d, reason code:%d",
-		   user_data, p2p_lo_event->vdev_id,
-		   p2p_lo_event->reason_code);
+	osif_debug("user data:%pK, vdev id:%d, reason code:%d", user_data,
+		   p2p_lo_event->vdev_id, p2p_lo_event->reason_code);
 
 	psoc = user_data;
 	if (!psoc) {
@@ -197,8 +193,8 @@ static void wlan_p2p_lo_event_callback(void *user_data,
 		return;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-		p2p_lo_event->vdev_id, WLAN_P2P_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, p2p_lo_event->vdev_id,
+						    WLAN_P2P_ID);
 	if (!vdev) {
 		osif_err("vdev is null");
 		return;
@@ -216,18 +212,17 @@ static void wlan_p2p_lo_event_callback(void *user_data,
 		goto fail;
 	}
 
-	vendor_event = wlan_cfg80211_vendor_event_alloc(wdev->wiphy, NULL,
-							sizeof(uint32_t) +
-							NLMSG_HDRLEN,
-							index, GFP_KERNEL);
+	vendor_event = wlan_cfg80211_vendor_event_alloc(
+		wdev->wiphy, NULL, sizeof(uint32_t) + NLMSG_HDRLEN, index,
+		GFP_KERNEL);
 	if (!vendor_event) {
 		osif_err("wlan_cfg80211_vendor_event_alloc failed");
 		goto fail;
 	}
 
 	if (nla_put_u32(vendor_event,
-		QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_STOP_REASON,
-		p2p_lo_event->reason_code)) {
+			QCA_WLAN_VENDOR_ATTR_P2P_LISTEN_OFFLOAD_STOP_REASON,
+			p2p_lo_event->reason_code)) {
 		osif_err("nla put failed");
 		wlan_cfg80211_vendor_free_skb(vendor_event);
 		goto fail;
@@ -261,7 +256,7 @@ static inline void wlan_p2p_init_lo_event(struct p2p_start_param *start_param,
  * Return: None
  */
 static void wlan_p2p_event_callback(void *user_data,
-	struct p2p_event *p2p_event)
+				    struct p2p_event *p2p_event)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_vdev *vdev;
@@ -270,8 +265,8 @@ static void wlan_p2p_event_callback(void *user_data,
 	struct wireless_dev *wdev;
 	struct wlan_objmgr_pdev *pdev;
 
-	osif_debug("user data:%pK, vdev id:%d, event type:%d",
-		   user_data, p2p_event->vdev_id, p2p_event->roc_event);
+	osif_debug("user data:%pK, vdev id:%d, event type:%d", user_data,
+		   p2p_event->vdev_id, p2p_event->roc_event);
 
 	psoc = user_data;
 	if (!psoc) {
@@ -279,8 +274,8 @@ static void wlan_p2p_event_callback(void *user_data,
 		return;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-		p2p_event->vdev_id, WLAN_P2P_ID);
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, p2p_event->vdev_id,
+						    WLAN_P2P_ID);
 	if (!vdev) {
 		osif_err("vdev is null");
 		return;
@@ -306,12 +301,11 @@ static void wlan_p2p_event_callback(void *user_data,
 	}
 
 	if (p2p_event->roc_event == ROC_EVENT_READY_ON_CHAN) {
-		cfg80211_ready_on_channel(wdev,
-			p2p_event->cookie, chan,
-			p2p_event->duration, GFP_KERNEL);
+		cfg80211_ready_on_channel(wdev, p2p_event->cookie, chan,
+					  p2p_event->duration, GFP_KERNEL);
 	} else if (p2p_event->roc_event == ROC_EVENT_COMPLETED) {
-		cfg80211_remain_on_channel_expired(wdev,
-			p2p_event->cookie, chan, GFP_KERNEL);
+		cfg80211_remain_on_channel_expired(wdev, p2p_event->cookie,
+						   chan, GFP_KERNEL);
 	} else {
 		osif_err("Invalid p2p event");
 	}
@@ -351,10 +345,10 @@ QDF_STATUS p2p_psoc_disable(struct wlan_objmgr_psoc *psoc)
 }
 
 int wlan_cfg80211_roc(struct wlan_objmgr_vdev *vdev,
-	struct ieee80211_channel *chan, uint32_t duration,
-	uint64_t *cookie)
+		      struct ieee80211_channel *chan, uint32_t duration,
+		      uint64_t *cookie)
 {
-	struct p2p_roc_req roc_req = {0};
+	struct p2p_roc_req roc_req = { 0 };
 	struct wlan_objmgr_psoc *psoc;
 	uint8_t vdev_id;
 	bool ok;
@@ -386,8 +380,7 @@ int wlan_cfg80211_roc(struct wlan_objmgr_vdev *vdev,
 
 	ret = policy_mgr_is_chan_ok_for_dnbs(psoc, chan->center_freq, &ok);
 	if (QDF_IS_STATUS_ERROR(ret)) {
-		osif_err("policy_mgr_is_chan_ok_for_dnbs():ret:%d",
-			 ret);
+		osif_err("policy_mgr_is_chan_ok_for_dnbs():ret:%d", ret);
 		return -EINVAL;
 	}
 
@@ -400,8 +393,7 @@ int wlan_cfg80211_roc(struct wlan_objmgr_vdev *vdev,
 		ucfg_p2p_roc_req(psoc, &roc_req, cookie));
 }
 
-int wlan_cfg80211_cancel_roc(struct wlan_objmgr_vdev *vdev,
-		uint64_t cookie)
+int wlan_cfg80211_cancel_roc(struct wlan_objmgr_vdev *vdev, uint64_t cookie)
 {
 	struct wlan_objmgr_psoc *psoc;
 
@@ -416,17 +408,15 @@ int wlan_cfg80211_cancel_roc(struct wlan_objmgr_vdev *vdev,
 		return -EINVAL;
 	}
 
-	return qdf_status_to_os_return(
-		ucfg_p2p_roc_cancel_req(psoc, cookie));
+	return qdf_status_to_os_return(ucfg_p2p_roc_cancel_req(psoc, cookie));
 }
 
 int wlan_cfg80211_mgmt_tx(struct wlan_objmgr_vdev *vdev,
-		struct ieee80211_channel *chan, bool offchan,
-		unsigned int wait,
-		const uint8_t *buf, uint32_t len, bool no_cck,
-		bool dont_wait_for_ack, uint64_t *cookie)
+			  struct ieee80211_channel *chan, bool offchan,
+			  unsigned int wait, const uint8_t *buf, uint32_t len,
+			  bool no_cck, bool dont_wait_for_ack, uint64_t *cookie)
 {
-	struct p2p_mgmt_tx mgmt_tx = {0};
+	struct p2p_mgmt_tx mgmt_tx = { 0 };
 	struct wlan_objmgr_psoc *psoc;
 	uint8_t vdev_id;
 	qdf_freq_t chan_freq = 0;
@@ -450,9 +440,9 @@ int wlan_cfg80211_mgmt_tx(struct wlan_objmgr_vdev *vdev,
 	}
 
 	/**
-	 * When offchannel time is more than MAX_OFFCHAN_TIME_FOR_DNBS,
-	 * allow offchannel only if Do_Not_Switch_Channel is not set.
-	 */
+   * When offchannel time is more than MAX_OFFCHAN_TIME_FOR_DNBS,
+   * allow offchannel only if Do_Not_Switch_Channel is not set.
+   */
 	if (wait > MAX_OFFCHAN_TIME_FOR_DNBS) {
 		int ret;
 		bool ok;
@@ -464,8 +454,9 @@ int wlan_cfg80211_mgmt_tx(struct wlan_objmgr_vdev *vdev,
 			return -EINVAL;
 		}
 		if (!ok) {
-			osif_err("Rejecting mgmt_tx for channel:%d as DNSC is set",
-				 chan_freq);
+			osif_err(
+				"Rejecting mgmt_tx for channel:%d as DNSC is set",
+				chan_freq);
 			return -EINVAL;
 		}
 	}
@@ -483,8 +474,7 @@ int wlan_cfg80211_mgmt_tx(struct wlan_objmgr_vdev *vdev,
 		ucfg_p2p_mgmt_tx(psoc, &mgmt_tx, cookie, pdev));
 }
 
-int wlan_cfg80211_mgmt_tx_cancel(struct wlan_objmgr_vdev *vdev,
-	uint64_t cookie)
+int wlan_cfg80211_mgmt_tx_cancel(struct wlan_objmgr_vdev *vdev, uint64_t cookie)
 {
 	struct wlan_objmgr_psoc *psoc;
 

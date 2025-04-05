@@ -23,23 +23,23 @@
  * objects.
  */
 
-#include <wlan_cmn.h>
-#include <reg_services_public_struct.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <qdf_lock.h>
 #include "reg_priv_objs.h"
-#include "reg_utils.h"
-#include "reg_services_common.h"
 #include "reg_build_chan_list.h"
-#include "reg_host_11d.h"
 #include "reg_callbacks.h"
+#include "reg_host_11d.h"
+#include "reg_services_common.h"
+#include "reg_utils.h"
+#include <qdf_lock.h>
+#include <reg_services_public_struct.h>
+#include <wlan_cmn.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
 #ifdef CONFIG_AFC_SUPPORT
 #include <cfg_ucfg_api.h>
 #endif
 
-struct wlan_regulatory_psoc_priv_obj *reg_get_psoc_obj(
-		struct wlan_objmgr_psoc *psoc)
+struct wlan_regulatory_psoc_priv_obj *
+reg_get_psoc_obj(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 
@@ -48,13 +48,13 @@ struct wlan_regulatory_psoc_priv_obj *reg_get_psoc_obj(
 		return NULL;
 	}
 	psoc_priv_obj = wlan_objmgr_psoc_get_comp_private_obj(
-			psoc, WLAN_UMAC_COMP_REGULATORY);
+		psoc, WLAN_UMAC_COMP_REGULATORY);
 
 	return psoc_priv_obj;
 }
 
-struct wlan_regulatory_pdev_priv_obj *reg_get_pdev_obj(
-		struct wlan_objmgr_pdev *pdev)
+struct wlan_regulatory_pdev_priv_obj *
+reg_get_pdev_obj(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_reg;
 
@@ -64,7 +64,7 @@ struct wlan_regulatory_pdev_priv_obj *reg_get_pdev_obj(
 	}
 
 	pdev_reg = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev, WLAN_UMAC_COMP_REGULATORY);
+		pdev, WLAN_UMAC_COMP_REGULATORY);
 
 	return pdev_reg;
 }
@@ -78,23 +78,22 @@ struct wlan_regulatory_pdev_priv_obj *reg_get_pdev_obj(
  *
  */
 #ifdef CONFIG_REG_CLIENT
-static void
-reg_set_5dot9_ghz_chan_in_master_mode(struct wlan_regulatory_psoc_priv_obj
-				      *soc_reg_obj)
+static void reg_set_5dot9_ghz_chan_in_master_mode(
+	struct wlan_regulatory_psoc_priv_obj *soc_reg_obj)
 {
 	soc_reg_obj->enable_5dot9_ghz_chan_in_master_mode = false;
 }
 #else
-static void
-reg_set_5dot9_ghz_chan_in_master_mode(struct wlan_regulatory_psoc_priv_obj
-				      *soc_reg_obj)
+static void reg_set_5dot9_ghz_chan_in_master_mode(
+	struct wlan_regulatory_psoc_priv_obj *soc_reg_obj)
 {
 	soc_reg_obj->enable_5dot9_ghz_chan_in_master_mode = true;
 }
 #endif
 
-QDF_STATUS wlan_regulatory_psoc_obj_created_notification(
-		struct wlan_objmgr_psoc *psoc, void *arg_list)
+QDF_STATUS
+wlan_regulatory_psoc_obj_created_notification(struct wlan_objmgr_psoc *psoc,
+					      void *arg_list)
 {
 	struct wlan_regulatory_psoc_priv_obj *soc_reg_obj;
 	struct regulatory_channel *mas_chan_list;
@@ -110,8 +109,8 @@ QDF_STATUS wlan_regulatory_psoc_obj_created_notification(
 	soc_reg_obj->offload_enabled = false;
 	soc_reg_obj->psoc_ptr = psoc;
 	soc_reg_obj->dfs_enabled = true;
-	soc_reg_obj->band_capability = (BIT(REG_BAND_2G) | BIT(REG_BAND_5G) |
-					BIT(REG_BAND_6G));
+	soc_reg_obj->band_capability =
+		(BIT(REG_BAND_2G) | BIT(REG_BAND_5G) | BIT(REG_BAND_6G));
 	soc_reg_obj->enable_11d_supp = false;
 	soc_reg_obj->indoor_chan_enabled = true;
 	soc_reg_obj->force_ssc_disable_indoor_channel = false;
@@ -147,8 +146,8 @@ QDF_STATUS wlan_regulatory_psoc_obj_created_notification(
 	}
 
 	status = wlan_objmgr_psoc_component_obj_attach(
-			psoc, WLAN_UMAC_COMP_REGULATORY, soc_reg_obj,
-			QDF_STATUS_SUCCESS);
+		psoc, WLAN_UMAC_COMP_REGULATORY, soc_reg_obj,
+		QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_spinlock_destroy(&soc_reg_obj->cbk_list_lock);
 		qdf_mem_common_free(soc_reg_obj);
@@ -161,8 +160,9 @@ QDF_STATUS wlan_regulatory_psoc_obj_created_notification(
 	return status;
 }
 
-QDF_STATUS wlan_regulatory_psoc_obj_destroyed_notification(
-	struct wlan_objmgr_psoc *psoc, void *arg_list)
+QDF_STATUS
+wlan_regulatory_psoc_obj_destroyed_notification(struct wlan_objmgr_psoc *psoc,
+						void *arg_list)
 {
 	QDF_STATUS status;
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
@@ -177,7 +177,7 @@ QDF_STATUS wlan_regulatory_psoc_obj_destroyed_notification(
 	qdf_spinlock_destroy(&psoc_priv_obj->cbk_list_lock);
 
 	status = wlan_objmgr_psoc_component_obj_detach(
-			psoc, WLAN_UMAC_COMP_REGULATORY, psoc_priv_obj);
+		psoc, WLAN_UMAC_COMP_REGULATORY, psoc_priv_obj);
 
 	if (status != QDF_STATUS_SUCCESS)
 		reg_err_rl("psoc_priv_obj private obj detach failed");
@@ -202,8 +202,8 @@ reg_reset_unii_5g_bitmap(struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
 	pdev_priv_obj->unii_5g_bitmap = 0x0;
 }
 #else
-static void inline
-reg_reset_unii_5g_bitmap(struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
+static void inline reg_reset_unii_5g_bitmap(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
 {
 }
 #endif
@@ -271,7 +271,7 @@ reg_init_afc_vars(struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj,
 		  struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
 {
 	pdev_priv_obj->is_reg_noaction_on_afc_pwr_evt =
-			psoc_priv_obj->is_afc_reg_noaction;
+		psoc_priv_obj->is_afc_reg_noaction;
 }
 
 static inline void
@@ -305,8 +305,9 @@ reg_set_pdev_afc_dev_type(struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
 }
 #endif
 
-QDF_STATUS wlan_regulatory_pdev_obj_created_notification(
-	struct wlan_objmgr_pdev *pdev, void *arg_list)
+QDF_STATUS
+wlan_regulatory_pdev_obj_created_notification(struct wlan_objmgr_pdev *pdev,
+					      void *arg_list)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
@@ -346,8 +347,7 @@ QDF_STATUS wlan_regulatory_pdev_obj_created_notification(
 	pdev_priv_obj->dfs_enabled = psoc_priv_obj->dfs_enabled;
 	pdev_priv_obj->set_fcc_channel = psoc_priv_obj->set_fcc_channel;
 	pdev_priv_obj->band_capability = psoc_priv_obj->band_capability;
-	pdev_priv_obj->indoor_chan_enabled =
-		psoc_priv_obj->indoor_chan_enabled;
+	pdev_priv_obj->indoor_chan_enabled = psoc_priv_obj->indoor_chan_enabled;
 	reg_set_keep_6ghz_sta_cli_connection(pdev, false);
 
 	reg_set_pdev_afc_dev_type(pdev_priv_obj, psoc_priv_obj);
@@ -395,12 +395,11 @@ QDF_STATUS wlan_regulatory_pdev_obj_created_notification(
 	pdev_priv_obj->range_5g_high = range_5g_high;
 	pdev_priv_obj->wireless_modes = reg_cap_ptr->wireless_modes;
 	reg_init_6g_vars(pdev_priv_obj);
-	pdev_priv_obj->chan_list_recvd =
-		psoc_priv_obj->chan_list_recvd[phy_id];
+	pdev_priv_obj->chan_list_recvd = psoc_priv_obj->chan_list_recvd[phy_id];
 
 	status = wlan_objmgr_pdev_component_obj_attach(
-			pdev, WLAN_UMAC_COMP_REGULATORY, pdev_priv_obj,
-			QDF_STATUS_SUCCESS);
+		pdev, WLAN_UMAC_COMP_REGULATORY, pdev_priv_obj,
+		QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		reg_err("Obj attach failed");
 		qdf_mem_common_free(pdev_priv_obj);
@@ -449,8 +448,7 @@ static void reg_free_chan_obj(struct afc_chan_obj *afc_chan_info)
  *
  * Return: void
  */
-void
-reg_free_afc_pwr_info(struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
+void reg_free_afc_pwr_info(struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
 {
 	struct reg_fw_afc_power_event *power_info;
 	uint8_t i;
@@ -476,8 +474,9 @@ reg_free_afc_pwr_info(struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
 }
 #endif
 
-QDF_STATUS wlan_regulatory_pdev_obj_destroyed_notification(
-		struct wlan_objmgr_pdev *pdev, void *arg_list)
+QDF_STATUS
+wlan_regulatory_pdev_obj_destroyed_notification(struct wlan_objmgr_pdev *pdev,
+						void *arg_list)
 {
 	QDF_STATUS status;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -506,7 +505,7 @@ QDF_STATUS wlan_regulatory_pdev_obj_destroyed_notification(
 	pdev_priv_obj->pdev_ptr = NULL;
 
 	status = wlan_objmgr_pdev_component_obj_detach(
-			pdev, WLAN_UMAC_COMP_REGULATORY, pdev_priv_obj);
+		pdev, WLAN_UMAC_COMP_REGULATORY, pdev_priv_obj);
 
 	if (status != QDF_STATUS_SUCCESS)
 		reg_err("reg pdev private obj detach failed");

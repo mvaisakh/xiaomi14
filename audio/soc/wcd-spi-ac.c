@@ -2,55 +2,52 @@
 /* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
  */
 
+#include <audio/linux/wcd-spi-ac-params.h>
+#include <linux/cdev.h>
 #include <linux/init.h>
 #include <linux/module.h>
+#include <linux/notifier.h>
 #include <linux/of.h>
 #include <linux/platform_device.h>
-#include <linux/cdev.h>
-#include <linux/proc_fs.h>
 #include <linux/poll.h>
+#include <linux/proc_fs.h>
 #include <linux/slab.h>
-#include <linux/notifier.h>
-#include <audio/linux/wcd-spi-ac-params.h>
-#include <soc/wcd-spi-ac.h>
 #include <soc/qcom/msm_qmi_interface.h>
+#include <soc/wcd-spi-ac.h>
 
 #include "wcd_spi_ctl_v01.h"
 
-#define WCD_SPI_AC_PFS_ENTRY_MAX_LEN	16
-#define WCD_SPI_AC_WRITE_CMD_MIN_SIZE	\
-	(sizeof(struct wcd_spi_ac_write_cmd))
-#define WCD_SPI_AC_WRITE_CMD_MAX_SIZE		\
-	(WCD_SPI_AC_WRITE_CMD_MIN_SIZE +	\
-	 (WCD_SPI_AC_MAX_BUFFERS *		\
-	  sizeof(struct wcd_spi_ac_buf_data)))
+#define WCD_SPI_AC_PFS_ENTRY_MAX_LEN 16
+#define WCD_SPI_AC_WRITE_CMD_MIN_SIZE (sizeof(struct wcd_spi_ac_write_cmd))
+#define WCD_SPI_AC_WRITE_CMD_MAX_SIZE    \
+	(WCD_SPI_AC_WRITE_CMD_MIN_SIZE + \
+	 (WCD_SPI_AC_MAX_BUFFERS * sizeof(struct wcd_spi_ac_buf_data)))
 
-#define WCD_SPI_AC_MUTEX_LOCK(dev, lock)	\
-{						\
-	dev_dbg(dev, "%s: mutex_lock(%s)\n",	\
-		__func__, __stringify_1(lock));	\
-	mutex_lock(&lock);			\
-}
+#define WCD_SPI_AC_MUTEX_LOCK(dev, lock)                       \
+	{                                                      \
+		dev_dbg(dev, "%s: mutex_lock(%s)\n", __func__, \
+			__stringify_1(lock));                  \
+		mutex_lock(&lock);                             \
+	}
 
-#define WCD_SPI_AC_MUTEX_UNLOCK(dev, lock)	\
-{						\
-	dev_dbg(dev, "%s: mutex_unlock(%s)\n",	\
-		__func__, __stringify_1(lock));	\
-	mutex_unlock(&lock);			\
-}
+#define WCD_SPI_AC_MUTEX_UNLOCK(dev, lock)                       \
+	{                                                        \
+		dev_dbg(dev, "%s: mutex_unlock(%s)\n", __func__, \
+			__stringify_1(lock));                    \
+		mutex_unlock(&lock);                             \
+	}
 
 /*
  * All bits of status should be cleared for SPI access
  * to be released.
  */
-#define WCD_SPI_AC_STATUS_RELEASE_ACCESS	0x00
-#define WCD_SPI_AC_LOCAL_ACCESS	0x00
+#define WCD_SPI_AC_STATUS_RELEASE_ACCESS 0x00
+#define WCD_SPI_AC_LOCAL_ACCESS 0x00
 #define WCD_SPI_AC_REMOTE_ACCESS 0x01
 #define WCD_SPI_CTL_INS_ID 0
 #define WCD_SPI_AC_QMI_TIMEOUT_MS 100
 
 struct wcd_spi_ac_priv {
-
 	/* Pointer to device for this driver */
 	struct device *dev;
 
@@ -88,9 +85,7 @@ struct wcd_spi_ac_priv {
 	struct work_struct recv_msg_work;
 };
 
-
-static void wcd_spi_ac_status_change(struct wcd_spi_ac_priv *ac,
-				     u8 online)
+static void wcd_spi_ac_status_change(struct wcd_spi_ac_priv *ac, u8 online)
 {
 	WCD_SPI_AC_MUTEX_LOCK(ac->dev, ac->status_lock);
 	ac->svc_offline = !online;
@@ -98,15 +93,12 @@ static void wcd_spi_ac_status_change(struct wcd_spi_ac_priv *ac,
 	wmb();
 	xchg(&ac->svc_offline_change, 1);
 	wake_up_interruptible(&ac->svc_poll_wait);
-	dev_dbg(ac->dev,
-		"%s request %u offline %u off_change %u\n",
-		__func__, online, ac->svc_offline,
-		ac->svc_offline_change);
+	dev_dbg(ac->dev, "%s request %u offline %u off_change %u\n", __func__,
+		online, ac->svc_offline, ac->svc_offline_change);
 	WCD_SPI_AC_MUTEX_UNLOCK(ac->dev, ac->status_lock);
 }
 
-static int wcd_spi_ac_status_open(struct inode *inode,
-				    struct file *file)
+static int wcd_spi_ac_status_open(struct inode *inode, struct file *file)
 {
 	struct wcd_spi_ac_priv *ac = PDE_DATA(inode);
 
@@ -115,19 +107,17 @@ static int wcd_spi_ac_status_open(struct inode *inode,
 	return 0;
 }
 
-static ssize_t wcd_spi_ac_status_read(struct file *file,
-		char __user *buffer,
-		size_t count, loff_t *offset)
+static ssize_t wcd_spi_ac_status_read(struct file *file, char __user *buffer,
+				      size_t count, loff_t *offset)
 {
 	struct wcd_spi_ac_priv *ac;
 	char buf[WCD_SPI_AC_PFS_ENTRY_MAX_LEN];
 	int len, ret;
 	u8 offline;
 
-	ac = (struct wcd_spi_ac_priv *) file->private_data;
+	ac = (struct wcd_spi_ac_priv *)file->private_data;
 	if (!ac) {
-		pr_err("%s: Invalid private data for status\n",
-			__func__);
+		pr_err("%s: Invalid private data for status\n", __func__);
 		return -EINVAL;
 	}
 
@@ -135,8 +125,8 @@ static ssize_t wcd_spi_ac_status_read(struct file *file,
 	offline = ac->svc_offline;
 	/* Make sure the read is complete */
 	rmb();
-	dev_dbg(ac->dev, "%s: offline = %sline\n",
-		__func__, offline ? "off" : "on");
+	dev_dbg(ac->dev, "%s: offline = %sline\n", __func__,
+		offline ? "off" : "on");
 	len = snprintf(buf, sizeof(buf), "%s\n",
 		       offline ? "OFFLINE" : "ONLINE");
 	ret = simple_read_from_buffer(buffer, count, offset, buf, len);
@@ -145,30 +135,27 @@ static ssize_t wcd_spi_ac_status_read(struct file *file,
 	return ret;
 }
 
-static unsigned int wcd_spi_ac_status_poll(struct file *file,
-		poll_table *wait)
+static unsigned int wcd_spi_ac_status_poll(struct file *file, poll_table *wait)
 {
 	struct wcd_spi_ac_priv *ac;
 	unsigned int ret = 0;
 
-	ac = (struct wcd_spi_ac_priv *) file->private_data;
+	ac = (struct wcd_spi_ac_priv *)file->private_data;
 	if (!ac) {
-		pr_err("%s: Invalid private data for status\n",
-			__func__);
+		pr_err("%s: Invalid private data for status\n", __func__);
 		return -EINVAL;
 	}
 
-	dev_dbg(ac->dev, "%s: Poll wait, svc = %s\n",
-		__func__, ac->svc_offline ? "offline" : "online");
+	dev_dbg(ac->dev, "%s: Poll wait, svc = %s\n", __func__,
+		ac->svc_offline ? "offline" : "online");
 	poll_wait(file, &ac->svc_poll_wait, wait);
-	dev_dbg(ac->dev, "%s: Woken up Poll wait, svc = %s\n",
-		__func__, ac->svc_offline ? "offline" : "online");
+	dev_dbg(ac->dev, "%s: Woken up Poll wait, svc = %s\n", __func__,
+		ac->svc_offline ? "offline" : "online");
 
 	WCD_SPI_AC_MUTEX_LOCK(ac->dev, ac->status_lock);
 	if (xchg(&ac->svc_offline_change, 0))
 		ret = POLLIN | POLLPRI | POLLRDNORM;
-	dev_dbg(ac->dev, "%s: ret (%d) from poll_wait\n",
-		__func__, ret);
+	dev_dbg(ac->dev, "%s: ret (%d) from poll_wait\n", __func__, ret);
 	WCD_SPI_AC_MUTEX_UNLOCK(ac->dev, ac->status_lock);
 
 	return ret;
@@ -191,13 +178,11 @@ static int wcd_spi_ac_procfs_init(struct wcd_spi_ac_priv *ac)
 		return -EINVAL;
 	}
 
-	ac->pfs_status = proc_create_data(WCD_SPI_AC_PROCFS_STATE_NAME,
-					  0444, ac->pfs_root,
-					  &wcd_spi_ac_status_ops,
+	ac->pfs_status = proc_create_data(WCD_SPI_AC_PROCFS_STATE_NAME, 0444,
+					  ac->pfs_root, &wcd_spi_ac_status_ops,
 					  ac);
 	if (!ac->pfs_status) {
-		dev_err(ac->dev, "%s: proc_create_data failed\n",
-			__func__);
+		dev_err(ac->dev, "%s: proc_create_data failed\n", __func__);
 		ret = -EINVAL;
 		goto rmdir_root;
 	}
@@ -225,14 +210,14 @@ static int wcd_spi_ac_request_access(struct wcd_spi_ac_priv *ac,
 	struct msg_desc req_desc, rsp_desc;
 	int ret = 0;
 
-	dev_dbg(ac->dev, "%s: is_svc_locked = %s\n",
-		__func__, is_svc_locked ? "true" : "false");
+	dev_dbg(ac->dev, "%s: is_svc_locked = %s\n", __func__,
+		is_svc_locked ? "true" : "false");
 
 	memset(&req, 0, sizeof(req));
 	memset(&rsp, 0, sizeof(rsp));
 
 	req.reason_valid = 1;
-	req.reason = ac->state  & 0x03;
+	req.reason = ac->state & 0x03;
 
 	req_desc.max_msg_len = WCD_SPI_REQ_ACCESS_MSG_V01_MAX_MSG_LEN;
 	req_desc.msg_id = WCD_SPI_REQ_ACCESS_MSG_V01;
@@ -245,20 +230,18 @@ static int wcd_spi_ac_request_access(struct wcd_spi_ac_priv *ac,
 	if (!is_svc_locked)
 		WCD_SPI_AC_MUTEX_LOCK(ac->dev, ac->svc_lock);
 
-	ret = qmi_send_req_wait(ac->qmi_hdl,
-				&req_desc, &req, sizeof(req),
+	ret = qmi_send_req_wait(ac->qmi_hdl, &req_desc, &req, sizeof(req),
 				&rsp_desc, &rsp, sizeof(rsp),
 				WCD_SPI_AC_QMI_TIMEOUT_MS);
 	if (ret) {
-		dev_err(ac->dev, "%s: msg send failed %d\n",
-			__func__, ret);
+		dev_err(ac->dev, "%s: msg send failed %d\n", __func__, ret);
 		goto done;
 	}
 
 	if (rsp.resp.result != QMI_RESULT_SUCCESS_V01) {
 		ret = -EIO;
-		dev_err(ac->dev, "%s: qmi resp error %d\n",
-			__func__, rsp.resp.result);
+		dev_err(ac->dev, "%s: qmi resp error %d\n", __func__,
+			rsp.resp.result);
 	}
 done:
 	if (!is_svc_locked)
@@ -275,8 +258,8 @@ static int wcd_spi_ac_release_access(struct wcd_spi_ac_priv *ac,
 	struct msg_desc req_desc, rsp_desc;
 	int ret = 0;
 
-	dev_dbg(ac->dev, "%s: is_svc_locked = %s\n",
-		__func__, is_svc_locked ? "true" : "false");
+	dev_dbg(ac->dev, "%s: is_svc_locked = %s\n", __func__,
+		is_svc_locked ? "true" : "false");
 
 	memset(&req, 0, sizeof(req));
 	memset(&rsp, 0, sizeof(rsp));
@@ -292,20 +275,18 @@ static int wcd_spi_ac_release_access(struct wcd_spi_ac_priv *ac,
 	if (!is_svc_locked)
 		WCD_SPI_AC_MUTEX_LOCK(ac->dev, ac->svc_lock);
 
-	ret = qmi_send_req_wait(ac->qmi_hdl,
-				&req_desc, &req, sizeof(req),
+	ret = qmi_send_req_wait(ac->qmi_hdl, &req_desc, &req, sizeof(req),
 				&rsp_desc, &rsp, sizeof(rsp),
 				WCD_SPI_AC_QMI_TIMEOUT_MS);
 	if (ret) {
-		dev_err(ac->dev, "%s: msg send failed %d\n",
-			__func__, ret);
+		dev_err(ac->dev, "%s: msg send failed %d\n", __func__, ret);
 		goto done;
 	}
 
 	if (rsp.resp.result != QMI_RESULT_SUCCESS_V01) {
 		ret = -EIO;
-		dev_err(ac->dev, "%s: qmi resp error %d\n",
-			__func__, rsp.resp.result);
+		dev_err(ac->dev, "%s: qmi resp error %d\n", __func__,
+			rsp.resp.result);
 	}
 done:
 	if (!is_svc_locked)
@@ -313,9 +294,7 @@ done:
 	return ret;
 }
 
-static int wcd_spi_ac_buf_msg(
-		struct wcd_spi_ac_priv *ac,
-		u8 *data, int data_sz)
+static int wcd_spi_ac_buf_msg(struct wcd_spi_ac_priv *ac, u8 *data, int data_sz)
 {
 	struct wcd_spi_ac_buf_data *buf_data;
 	struct wcd_spi_buff_msg_v01 req;
@@ -326,15 +305,13 @@ static int wcd_spi_ac_buf_msg(
 	memset(&req, 0, sizeof(req));
 	memset(&rsp, 0, sizeof(rsp));
 
-	buf_data = (struct wcd_spi_ac_buf_data *) data;
-	memcpy(req.buff_addr_1, buf_data,
-	       sizeof(*buf_data));
+	buf_data = (struct wcd_spi_ac_buf_data *)data;
+	memcpy(req.buff_addr_1, buf_data, sizeof(*buf_data));
 
 	if (data_sz - sizeof(*buf_data) != 0) {
 		req.buff_addr_2_valid = 1;
 		buf_data++;
-		memcpy(req.buff_addr_2, buf_data,
-		       sizeof(*buf_data));
+		memcpy(req.buff_addr_2, buf_data, sizeof(*buf_data));
 	}
 
 	req_desc.max_msg_len = WCD_SPI_BUFF_MSG_V01_MAX_MSG_LEN;
@@ -346,26 +323,23 @@ static int wcd_spi_ac_buf_msg(
 	rsp_desc.ei_array = wcd_spi_buff_resp_v01_ei;
 
 	WCD_SPI_AC_MUTEX_LOCK(ac->dev, ac->svc_lock);
-	ret = qmi_send_req_wait(ac->qmi_hdl,
-				&req_desc, &req, sizeof(req),
+	ret = qmi_send_req_wait(ac->qmi_hdl, &req_desc, &req, sizeof(req),
 				&rsp_desc, &rsp, sizeof(rsp),
 				WCD_SPI_AC_QMI_TIMEOUT_MS);
 
 	if (ret) {
-		dev_err(ac->dev, "%s: msg send failed %d\n",
-			__func__, ret);
+		dev_err(ac->dev, "%s: msg send failed %d\n", __func__, ret);
 		goto done;
 	}
 
 	if (rsp.resp.result != QMI_RESULT_SUCCESS_V01) {
 		ret = -EIO;
-		dev_err(ac->dev, "%s: qmi resp error %d\n",
-			__func__, rsp.resp.result);
+		dev_err(ac->dev, "%s: qmi resp error %d\n", __func__,
+			rsp.resp.result);
 	}
 done:
 	WCD_SPI_AC_MUTEX_UNLOCK(ac->dev, ac->svc_lock);
 	return ret;
-
 }
 
 /*
@@ -376,8 +350,8 @@ done:
  * @value: value to be set in the status mask
  * @is_svc_locked: flag to indicate if svc_lock is acquired by caller
  */
-static int wcd_spi_ac_set_sync(struct wcd_spi_ac_priv *ac,
-			       u32 value, bool is_svc_locked)
+static int wcd_spi_ac_set_sync(struct wcd_spi_ac_priv *ac, u32 value,
+			       bool is_svc_locked)
 {
 	int ret = 0;
 
@@ -388,8 +362,7 @@ static int wcd_spi_ac_set_sync(struct wcd_spi_ac_priv *ac,
 	dev_dbg(ac->dev, "%s: current state = 0x%x, current access 0x%x\n",
 		__func__, ac->state, ac->current_access);
 	if (ac->current_access == WCD_SPI_AC_REMOTE_ACCESS) {
-		dev_dbg(ac->dev,
-			"%s: requesting access, state = 0x%x\n",
+		dev_dbg(ac->dev, "%s: requesting access, state = 0x%x\n",
 			__func__, ac->state);
 		ret = wcd_spi_ac_request_access(ac, is_svc_locked);
 		if (!ret)
@@ -407,8 +380,8 @@ static int wcd_spi_ac_set_sync(struct wcd_spi_ac_priv *ac,
  * @value: value to be cleared in the status mask
  * @is_svc_locked: flag to indicate if svc_lock is acquired by caller
  */
-static int wcd_spi_ac_clear_sync(struct wcd_spi_ac_priv *ac,
-				 u32 value, bool is_svc_locked)
+static int wcd_spi_ac_clear_sync(struct wcd_spi_ac_priv *ac, u32 value,
+				 bool is_svc_locked)
 {
 	int ret = 0;
 
@@ -419,10 +392,8 @@ static int wcd_spi_ac_clear_sync(struct wcd_spi_ac_priv *ac,
 	dev_dbg(ac->dev, "%s: current state = 0x%x, current access 0x%x\n",
 		__func__, ac->state, ac->current_access);
 	/* state should be zero to release SPI access */
-	if (!ac->state &&
-	    ac->current_access == WCD_SPI_AC_LOCAL_ACCESS) {
-		dev_dbg(ac->dev,
-			"%s: releasing access, state = 0x%x\n",
+	if (!ac->state && ac->current_access == WCD_SPI_AC_LOCAL_ACCESS) {
+		dev_dbg(ac->dev, "%s: releasing access, state = 0x%x\n",
 			__func__, ac->state);
 		ret = wcd_spi_ac_release_access(ac, is_svc_locked);
 		if (!ret)
@@ -431,7 +402,6 @@ static int wcd_spi_ac_clear_sync(struct wcd_spi_ac_priv *ac,
 	WCD_SPI_AC_MUTEX_UNLOCK(ac->dev, ac->state_lock);
 
 	return ret;
-
 }
 
 /*
@@ -444,9 +414,8 @@ static int wcd_spi_ac_clear_sync(struct wcd_spi_ac_priv *ac,
  * Returns success if the access handover was sucessful,
  * negative error code otherwise.
  */
-int wcd_spi_access_ctl(struct device *dev,
-		      enum wcd_spi_acc_req request,
-		      u32 reason)
+int wcd_spi_access_ctl(struct device *dev, enum wcd_spi_acc_req request,
+		       u32 reason)
 {
 	struct wcd_spi_ac_priv *ac;
 	int ret = 0;
@@ -459,26 +428,25 @@ int wcd_spi_access_ctl(struct device *dev,
 	/* only data_transfer and remote_down are valid reasons */
 	if (reason != WCD_SPI_AC_DATA_TRANSFER &&
 	    reason != WCD_SPI_AC_REMOTE_DOWN) {
-		pr_err("%s: Invalid reason 0x%x\n",
-			__func__, reason);
+		pr_err("%s: Invalid reason 0x%x\n", __func__, reason);
 		return -EINVAL;
 	}
 
-	ac = (struct wcd_spi_ac_priv *) dev_get_drvdata(dev);
+	ac = (struct wcd_spi_ac_priv *)dev_get_drvdata(dev);
 	if (!ac) {
 		dev_err(dev, "%s: invalid driver data\n", __func__);
 		return -EINVAL;
 	}
 
-	dev_dbg(dev, "%s: request = 0x%x, reason = 0x%x\n",
-		__func__, request, reason);
+	dev_dbg(dev, "%s: request = 0x%x, reason = 0x%x\n", __func__, request,
+		reason);
 
 	switch (request) {
 	case WCD_SPI_ACCESS_REQUEST:
 		ret = wcd_spi_ac_set_sync(ac, reason, false);
 		if (ret)
-			dev_err(dev, "%s: set_sync(0x%x) failed %d\n",
-				__func__, reason, ret);
+			dev_err(dev, "%s: set_sync(0x%x) failed %d\n", __func__,
+				reason, ret);
 		break;
 	case WCD_SPI_ACCESS_RELEASE:
 		ret = wcd_spi_ac_clear_sync(ac, reason, false);
@@ -487,8 +455,7 @@ int wcd_spi_access_ctl(struct device *dev,
 				__func__, reason, ret);
 		break;
 	default:
-		dev_err(dev, "%s: invalid request 0x%x\n",
-			__func__, request);
+		dev_err(dev, "%s: invalid request 0x%x\n", __func__, request);
 		break;
 	}
 
@@ -496,8 +463,7 @@ int wcd_spi_access_ctl(struct device *dev,
 }
 EXPORT_SYMBOL(wcd_spi_access_ctl);
 
-static int wcd_spi_ac_cdev_open(struct inode *inode,
-				struct file *file)
+static int wcd_spi_ac_cdev_open(struct inode *inode, struct file *file)
 {
 	struct wcd_spi_ac_priv *ac;
 	int ret = 0;
@@ -523,17 +489,15 @@ done:
 	return ret;
 }
 
-static ssize_t wcd_spi_ac_cdev_write(struct file *file,
-				     const char __user *buf,
-				     size_t count,
-				     loff_t *ppos)
+static ssize_t wcd_spi_ac_cdev_write(struct file *file, const char __user *buf,
+				     size_t count, loff_t *ppos)
 {
 	struct wcd_spi_ac_priv *ac;
 	struct wcd_spi_ac_write_cmd *cmd_buf;
 	int ret = 0;
 	int data_sz;
 
-	ac = (struct wcd_spi_ac_priv *) file->private_data;
+	ac = (struct wcd_spi_ac_priv *)file->private_data;
 	if (!ac) {
 		pr_err("%s: Invalid private data\n", __func__);
 		return -EINVAL;
@@ -541,8 +505,8 @@ static ssize_t wcd_spi_ac_cdev_write(struct file *file,
 
 	if (count < WCD_SPI_AC_WRITE_CMD_MIN_SIZE ||
 	    count > WCD_SPI_AC_WRITE_CMD_MAX_SIZE) {
-		dev_err(ac->dev, "%s: Invalid write count %zd\n",
-			__func__, count);
+		dev_err(ac->dev, "%s: Invalid write count %zd\n", __func__,
+			count);
 		return -EINVAL;
 	}
 
@@ -556,11 +520,10 @@ static ssize_t wcd_spi_ac_cdev_write(struct file *file,
 		goto free_cmd_buf;
 	}
 
-	dev_dbg(ac->dev, "%s: write cmd type 0x%x\n",
-		__func__, cmd_buf->cmd_type);
+	dev_dbg(ac->dev, "%s: write cmd type 0x%x\n", __func__,
+		cmd_buf->cmd_type);
 
 	switch (cmd_buf->cmd_type) {
-
 	case WCD_SPI_AC_CMD_CONC_BEGIN:
 		ret = wcd_spi_ac_set_sync(ac, WCD_SPI_AC_CONCURRENCY, false);
 		if (ret) {
@@ -596,14 +559,13 @@ static ssize_t wcd_spi_ac_cdev_write(struct file *file,
 
 		if (data_sz / sizeof(struct wcd_spi_ac_buf_data) >
 		    WCD_SPI_AC_MAX_BUFFERS) {
-			dev_err(ac->dev, "%s: invalid size %d\n",
-				__func__, data_sz);
+			dev_err(ac->dev, "%s: invalid size %d\n", __func__,
+				data_sz);
 			goto free_cmd_buf;
 		}
 
 		if (copy_from_user(cmd_buf->payload,
-				   buf + sizeof(cmd_buf->cmd_type),
-				   data_sz)) {
+				   buf + sizeof(cmd_buf->cmd_type), data_sz)) {
 			dev_err(ac->dev, "%s: copy_from_user failed\n",
 				__func__);
 			ret = -EFAULT;
@@ -612,8 +574,8 @@ static ssize_t wcd_spi_ac_cdev_write(struct file *file,
 
 		ret = wcd_spi_ac_buf_msg(ac, cmd_buf->payload, data_sz);
 		if (ret) {
-			dev_err(ac->dev, "%s: _buf_msg failed %d\n",
-				__func__, ret);
+			dev_err(ac->dev, "%s: _buf_msg failed %d\n", __func__,
+				ret);
 			goto free_cmd_buf;
 		}
 
@@ -626,8 +588,8 @@ static ssize_t wcd_spi_ac_cdev_write(struct file *file,
 		}
 		break;
 	default:
-		dev_err(ac->dev, "%s: Invalid cmd_type 0x%x\n",
-			__func__, cmd_buf->cmd_type);
+		dev_err(ac->dev, "%s: Invalid cmd_type 0x%x\n", __func__,
+			cmd_buf->cmd_type);
 		ret = -EINVAL;
 		goto free_cmd_buf;
 	}
@@ -641,13 +603,12 @@ free_cmd_buf:
 	return ret;
 }
 
-static int wcd_spi_ac_cdev_release(struct inode *inode,
-				   struct file *file)
+static int wcd_spi_ac_cdev_release(struct inode *inode, struct file *file)
 {
 	struct wcd_spi_ac_priv *ac;
 	int ret = 0;
 
-	ac = (struct wcd_spi_ac_priv *) file->private_data;
+	ac = (struct wcd_spi_ac_priv *)file->private_data;
 	if (!ac) {
 		pr_err("%s: Invalid private data\n", __func__);
 		return -EINVAL;
@@ -682,25 +643,23 @@ static int wcd_spi_ac_reg_chardev(struct wcd_spi_ac_priv *ac)
 	ac->cls = class_create(THIS_MODULE, WCD_SPI_AC_CLIENT_CDEV_NAME);
 	if (IS_ERR(ac->cls)) {
 		ret = PTR_ERR(ac->cls);
-		dev_err(ac->dev, "%s: class_create failed %d\n",
-			__func__, ret);
+		dev_err(ac->dev, "%s: class_create failed %d\n", __func__, ret);
 		goto unregister_chrdev;
 	}
 
-	ac->chardev = device_create(ac->cls, NULL, ac->cdev_num,
-				      NULL, WCD_SPI_AC_CLIENT_CDEV_NAME);
+	ac->chardev = device_create(ac->cls, NULL, ac->cdev_num, NULL,
+				    WCD_SPI_AC_CLIENT_CDEV_NAME);
 	if (IS_ERR(ac->chardev)) {
 		ret = PTR_ERR(ac->chardev);
-		dev_err(ac->dev, "%s: device_create failed %d\n",
-			__func__, ret);
+		dev_err(ac->dev, "%s: device_create failed %d\n", __func__,
+			ret);
 		goto destroy_class;
 	}
 
 	cdev_init(&ac->cdev, &wcd_spi_ac_cdev_fops);
 	ret = cdev_add(&ac->cdev, ac->cdev_num, 1);
 	if (ret) {
-		dev_err(ac->dev, "%s: cdev_add failed %d\n",
-			__func__, ret);
+		dev_err(ac->dev, "%s: cdev_add failed %d\n", __func__, ret);
 		goto destroy_device;
 	}
 
@@ -732,25 +691,22 @@ static void wcd_spi_ac_recv_msg(struct work_struct *work)
 	struct wcd_spi_ac_priv *ac;
 	int rc = 0;
 
-	ac = container_of(work, struct wcd_spi_ac_priv,
-			  recv_msg_work);
+	ac = container_of(work, struct wcd_spi_ac_priv, recv_msg_work);
 	if (!ac) {
 		pr_err("%s: Invalid private data\n", __func__);
 		return;
 	}
 
 	do {
-		dev_dbg(ac->dev, "%s: msg received, rc = %d\n",
-			__func__, rc);
+		dev_dbg(ac->dev, "%s: msg received, rc = %d\n", __func__, rc);
 	} while ((rc = qmi_recv_msg(ac->qmi_hdl)) == 0);
 
 	if (rc != -ENOMSG)
-		dev_err(ac->dev, "%s: qmi_recv_msg failed %d\n",
-			__func__, rc);
+		dev_err(ac->dev, "%s: qmi_recv_msg failed %d\n", __func__, rc);
 }
 
 static void wcd_spi_ac_clnt_notify(struct qmi_handle *hdl,
-		enum qmi_event_type event, void *priv_data)
+				   enum qmi_event_type event, void *priv_data)
 {
 	struct wcd_spi_ac_priv *ac;
 
@@ -759,7 +715,7 @@ static void wcd_spi_ac_clnt_notify(struct qmi_handle *hdl,
 		return;
 	}
 
-	ac = (struct wcd_spi_ac_priv *) priv_data;
+	ac = (struct wcd_spi_ac_priv *)priv_data;
 
 	switch (event) {
 	case QMI_RECV_MSG:
@@ -775,27 +731,22 @@ static void wcd_spi_ac_svc_arrive(struct work_struct *work)
 	struct wcd_spi_ac_priv *ac;
 	int ret;
 
-	ac = container_of(work, struct wcd_spi_ac_priv,
-			  svc_arr_work);
+	ac = container_of(work, struct wcd_spi_ac_priv, svc_arr_work);
 	if (!ac) {
-		pr_err("%s: Invalid private data\n",
-			__func__);
+		pr_err("%s: Invalid private data\n", __func__);
 		return;
 	}
 
 	WCD_SPI_AC_MUTEX_LOCK(ac->dev, ac->svc_lock);
-	ac->qmi_hdl = qmi_handle_create(wcd_spi_ac_clnt_notify,
-					ac);
+	ac->qmi_hdl = qmi_handle_create(wcd_spi_ac_clnt_notify, ac);
 	if (!ac->qmi_hdl) {
-		dev_err(ac->dev, "%s: qmi_handle_create failed\n",
-			__func__);
+		dev_err(ac->dev, "%s: qmi_handle_create failed\n", __func__);
 		goto done;
 	}
 
-	ret = qmi_connect_to_service(ac->qmi_hdl,
-			WCD_SPI_CTL_SERVICE_ID_V01,
-			WCD_SPI_CTL_SERVICE_VERS_V01,
-			WCD_SPI_CTL_INS_ID);
+	ret = qmi_connect_to_service(ac->qmi_hdl, WCD_SPI_CTL_SERVICE_ID_V01,
+				     WCD_SPI_CTL_SERVICE_VERS_V01,
+				     WCD_SPI_CTL_INS_ID);
 	if (ret) {
 		dev_err(ac->dev, "%s, cant connect to service, error %d\n",
 			__func__, ret);
@@ -808,16 +759,15 @@ static void wcd_spi_ac_svc_arrive(struct work_struct *work)
 	wcd_spi_ac_status_change(ac, 1);
 
 	/*
-	 * update the state and clear the WCD_SPI_AC_SVC_OFFLINE
-	 * bit to indicate that the service is now online.
-	 */
+   * update the state and clear the WCD_SPI_AC_SVC_OFFLINE
+   * bit to indicate that the service is now online.
+   */
 	ret = wcd_spi_ac_clear_sync(ac, WCD_SPI_AC_SVC_OFFLINE, true);
 	if (ret)
 		dev_err(ac->dev, "%s: clear_sync(SVC_OFFLINE) failed %d\n",
 			__func__, ret);
 done:
 	WCD_SPI_AC_MUTEX_UNLOCK(ac->dev, ac->svc_lock);
-
 }
 
 static void wcd_spi_ac_svc_exit(struct work_struct *work)
@@ -825,11 +775,9 @@ static void wcd_spi_ac_svc_exit(struct work_struct *work)
 	struct wcd_spi_ac_priv *ac;
 	int ret = 0;
 
-	ac = container_of(work, struct wcd_spi_ac_priv,
-			  svc_exit_work);
+	ac = container_of(work, struct wcd_spi_ac_priv, svc_exit_work);
 	if (!ac) {
-		pr_err("%s: Invalid private data\n",
-			__func__);
+		pr_err("%s: Invalid private data\n", __func__);
 		return;
 	}
 
@@ -845,8 +793,7 @@ static void wcd_spi_ac_svc_exit(struct work_struct *work)
 }
 
 static int wcd_spi_ac_svc_event(struct notifier_block *this,
-				unsigned long event,
-				void *data)
+				unsigned long event, void *data)
 {
 	struct wcd_spi_ac_priv *ac;
 
@@ -866,8 +813,7 @@ static int wcd_spi_ac_svc_event(struct notifier_block *this,
 		schedule_work(&ac->svc_exit_work);
 		break;
 	default:
-		dev_err(ac->dev, "%s unhandled event %ld\n",
-			__func__, event);
+		dev_err(ac->dev, "%s unhandled event %ld\n", __func__, event);
 		break;
 	}
 
@@ -880,8 +826,7 @@ static int wcd_spi_ac_probe(struct platform_device *pdev)
 	struct device *parent = pdev->dev.parent;
 	int ret = 0;
 
-	ac = devm_kzalloc(&pdev->dev, sizeof(*ac),
-			    GFP_KERNEL);
+	ac = devm_kzalloc(&pdev->dev, sizeof(*ac), GFP_KERNEL);
 	if (!ac)
 		return -ENOMEM;
 
@@ -901,8 +846,7 @@ static int wcd_spi_ac_probe(struct platform_device *pdev)
 	mutex_init(&ac->svc_lock);
 	init_waitqueue_head(&ac->svc_poll_wait);
 	ac->svc_offline = 1;
-	ac->state = (WCD_SPI_AC_SVC_OFFLINE |
-		     WCD_SPI_AC_UNINITIALIZED);
+	ac->state = (WCD_SPI_AC_SVC_OFFLINE | WCD_SPI_AC_UNINITIALIZED);
 	ac->current_access = WCD_SPI_AC_LOCAL_ACCESS;
 
 	ac->nb.notifier_call = wcd_spi_ac_svc_event;
@@ -913,18 +857,15 @@ static int wcd_spi_ac_probe(struct platform_device *pdev)
 	ac->qmi_wq = create_singlethread_workqueue("qmi_wq");
 	if (!ac->qmi_wq) {
 		dev_err(&pdev->dev,
-			"%s: create_singlethread_workqueue failed\n",
-			__func__);
+			"%s: create_singlethread_workqueue failed\n", __func__);
 		goto deinit_procfs;
 	}
 
 	dev_set_drvdata(&pdev->dev, ac);
 
-	ret = qmi_svc_event_notifier_register(
-			WCD_SPI_CTL_SERVICE_ID_V01,
-			WCD_SPI_CTL_SERVICE_VERS_V01,
-			WCD_SPI_CTL_INS_ID,
-			&ac->nb);
+	ret = qmi_svc_event_notifier_register(WCD_SPI_CTL_SERVICE_ID_V01,
+					      WCD_SPI_CTL_SERVICE_VERS_V01,
+					      WCD_SPI_CTL_INS_ID, &ac->nb);
 	if (ret) {
 		dev_err(&pdev->dev,
 			"%s: qmi_svc_event_notifier_register failed %d\n",
@@ -952,11 +893,9 @@ static int wcd_spi_ac_remove(struct platform_device *pdev)
 	struct wcd_spi_ac_priv *ac;
 
 	ac = dev_get_drvdata(&pdev->dev);
-	qmi_svc_event_notifier_unregister(
-			WCD_SPI_CTL_SERVICE_ID_V01,
-			WCD_SPI_CTL_SERVICE_VERS_V01,
-			WCD_SPI_CTL_INS_ID,
-			&ac->nb);
+	qmi_svc_event_notifier_unregister(WCD_SPI_CTL_SERVICE_ID_V01,
+					  WCD_SPI_CTL_SERVICE_VERS_V01,
+					  WCD_SPI_CTL_INS_ID, &ac->nb);
 	if (ac->qmi_wq)
 		destroy_workqueue(ac->qmi_wq);
 	wcd_spi_ac_unreg_chardev(ac);
@@ -970,19 +909,20 @@ static int wcd_spi_ac_remove(struct platform_device *pdev)
 
 static const struct of_device_id wcd_spi_ac_of_match[] = {
 	{ .compatible = "qcom,wcd-spi-ac" },
-	{ },
+	{},
 };
 
 MODULE_DEVICE_TABLE(of, wcd_spi_ac_of_match);
 
 static struct platform_driver wcd_spi_ac_driver = {
-	.driver = {
-		.name = "qcom,wcd-spi-ac",
-		.of_match_table = wcd_spi_ac_of_match,
-		.suppress_bind_attrs = true,
-	},
-	.probe = wcd_spi_ac_probe,
-	.remove = wcd_spi_ac_remove,
+    .driver =
+        {
+            .name = "qcom,wcd-spi-ac",
+            .of_match_table = wcd_spi_ac_of_match,
+            .suppress_bind_attrs = true,
+        },
+    .probe = wcd_spi_ac_probe,
+    .remove = wcd_spi_ac_remove,
 };
 
 module_platform_driver(wcd_spi_ac_driver);

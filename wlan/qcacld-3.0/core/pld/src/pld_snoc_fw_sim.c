@@ -17,9 +17,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/platform_device.h>
 #include <linux/err.h>
 #include <linux/list.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
 
 #include "pld_snoc_fw_sim.h"
@@ -49,8 +49,8 @@ static int pld_snoc_fw_sim_probe(struct device *dev)
 	if (ret)
 		goto out;
 
-	return pld_context->ops->probe(dev, PLD_BUS_TYPE_SNOC_FW_SIM,
-				       NULL, NULL);
+	return pld_context->ops->probe(dev, PLD_BUS_TYPE_SNOC_FW_SIM, NULL,
+				       NULL);
 
 out:
 	return ret;
@@ -193,8 +193,8 @@ static int pld_snoc_fw_sim_suspend_noirq(struct device *dev)
 		return -EINVAL;
 
 	if (pld_context->ops->suspend_noirq)
-		return pld_context->ops->suspend_noirq(dev,
-						      PLD_BUS_TYPE_SNOC_FW_SIM);
+		return pld_context->ops->suspend_noirq(
+			dev, PLD_BUS_TYPE_SNOC_FW_SIM);
 	return 0;
 }
 
@@ -230,7 +230,7 @@ static int pld_snoc_fw_sim_uevent(struct device *dev,
 {
 	struct pld_context *pld_context;
 	struct icnss_uevent_fw_down_data *uevent_data = NULL;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 
 	pld_context = pld_get_global_context();
 	if (!pld_context)
@@ -268,14 +268,14 @@ static int pld_snoc_fw_sim_uevent(struct device *dev,
 #endif
 
 struct icnss_driver_ops pld_snoc_fw_sim_ops = {
-	.name       = PLD_SNOC_FW_SIM_OPS_NAME,
-	.probe      = pld_snoc_fw_sim_probe,
-	.remove     = pld_snoc_fw_sim_remove,
-	.shutdown   = pld_snoc_fw_sim_shutdown,
-	.reinit     = pld_snoc_fw_sim_reinit,
+	.name = PLD_SNOC_FW_SIM_OPS_NAME,
+	.probe = pld_snoc_fw_sim_probe,
+	.remove = pld_snoc_fw_sim_remove,
+	.shutdown = pld_snoc_fw_sim_shutdown,
+	.reinit = pld_snoc_fw_sim_reinit,
 	.crash_shutdown = pld_snoc_fw_sim_crash_shutdown,
 	.pm_suspend = pld_snoc_fw_sim_pm_suspend,
-	.pm_resume  = pld_snoc_fw_sim_pm_resume,
+	.pm_resume = pld_snoc_fw_sim_pm_resume,
 	.suspend_noirq = pld_snoc_fw_sim_suspend_noirq,
 	.resume_noirq = pld_snoc_fw_sim_resume_noirq,
 	.uevent = pld_snoc_fw_sim_uevent,
@@ -328,14 +328,12 @@ int pld_snoc_fw_sim_wlan_enable(struct device *dev,
 		return -ENODEV;
 
 	cfg.num_ce_tgt_cfg = config->num_ce_tgt_cfg;
-	cfg.ce_tgt_cfg = (struct ce_tgt_pipe_cfg *)
-		config->ce_tgt_cfg;
+	cfg.ce_tgt_cfg = (struct ce_tgt_pipe_cfg *)config->ce_tgt_cfg;
 	cfg.num_ce_svc_pipe_cfg = config->num_ce_svc_pipe_cfg;
-	cfg.ce_svc_cfg = (struct ce_svc_pipe_cfg *)
-		config->ce_svc_cfg;
+	cfg.ce_svc_cfg = (struct ce_svc_pipe_cfg *)config->ce_svc_cfg;
 	cfg.num_shadow_reg_cfg = config->num_shadow_reg_cfg;
-	cfg.shadow_reg_cfg = (struct icnss_shadow_reg_cfg *)
-		config->shadow_reg_cfg;
+	cfg.shadow_reg_cfg =
+		(struct icnss_shadow_reg_cfg *)config->shadow_reg_cfg;
 
 	switch (mode) {
 	case PLD_FTM:

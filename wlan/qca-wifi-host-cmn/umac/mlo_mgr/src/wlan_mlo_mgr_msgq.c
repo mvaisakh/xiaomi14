@@ -14,17 +14,16 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include "wlan_mlo_mgr_main.h"
+#include "wlan_mlo_mgr_msgq.h"
 #include "qdf_types.h"
 #include "wlan_cmn.h"
 #include "wlan_mlo_mgr_cmn.h"
-#include "wlan_mlo_mgr_msgq.h"
+#include "wlan_mlo_mgr_main.h"
 #include "wlan_mlo_mgr_peer.h"
 
 #ifndef MLO_MSGQ_SUPPORT
 QDF_STATUS mlo_msgq_post(enum mlo_msg_type type,
-			 struct wlan_mlo_dev_context *ml_dev,
-			 void *payload)
+			 struct wlan_mlo_dev_context *ml_dev, void *payload)
 {
 	struct peer_create_notif_s *peer_create;
 	struct peer_assoc_notify_s *peer_assoc;
@@ -38,8 +37,8 @@ QDF_STATUS mlo_msgq_post(enum mlo_msg_type type,
 		peer_create = (struct peer_create_notif_s *)payload;
 
 		mlo_mlme_peer_create(peer_create->vdev_link,
-				     peer_create->ml_peer,
-				     &peer_create->addr, peer_create->frm_buf);
+				     peer_create->ml_peer, &peer_create->addr,
+				     peer_create->frm_buf);
 		qdf_nbuf_free(peer_create->frm_buf);
 		wlan_mlo_peer_release_ref(peer_create->ml_peer);
 		wlan_objmgr_vdev_release_ref(peer_create->vdev_link,
@@ -61,8 +60,7 @@ QDF_STATUS mlo_msgq_post(enum mlo_msg_type type,
 	case MLO_PEER_ASSOC:
 		peer_assoc = (struct peer_assoc_notify_s *)payload;
 		mlo_mlme_peer_assoc(peer_assoc->peer);
-		wlan_objmgr_peer_release_ref(peer_assoc->peer,
-					     WLAN_MLO_MGR_ID);
+		wlan_objmgr_peer_release_ref(peer_assoc->peer, WLAN_MLO_MGR_ID);
 		break;
 
 	case MLO_PEER_ASSOC_FAIL:
@@ -158,8 +156,7 @@ static void mlo_msgq_timer_stop(void)
 }
 
 QDF_STATUS mlo_msgq_post(enum mlo_msg_type type,
-			 struct wlan_mlo_dev_context *ml_dev,
-			 void *payload)
+			 struct wlan_mlo_dev_context *ml_dev, void *payload)
 {
 	struct mlo_ctxt_switch_msg_s *msg;
 	struct peer_create_notif_s *peer_create, *peer_create_l;
@@ -272,8 +269,8 @@ static void mlo_msgq_msg_process_hdlr(struct mlo_ctxt_switch_msg_s *msg)
 	case MLO_PEER_CREATE:
 		peer_create = &msg->m.peer_create;
 		mlo_mlme_peer_create(peer_create->vdev_link,
-				     peer_create->ml_peer,
-				     &peer_create->addr, peer_create->frm_buf);
+				     peer_create->ml_peer, &peer_create->addr,
+				     peer_create->frm_buf);
 		qdf_nbuf_free(peer_create->frm_buf);
 		wlan_mlo_peer_release_ref(peer_create->ml_peer);
 		wlan_objmgr_vdev_release_ref(peer_create->vdev_link,
@@ -294,8 +291,7 @@ static void mlo_msgq_msg_process_hdlr(struct mlo_ctxt_switch_msg_s *msg)
 	case MLO_PEER_ASSOC:
 		peer_assoc = &msg->m.peer_assoc;
 		mlo_mlme_peer_assoc(peer_assoc->peer);
-		wlan_objmgr_peer_release_ref(peer_assoc->peer,
-					     WLAN_MLO_MGR_ID);
+		wlan_objmgr_peer_release_ref(peer_assoc->peer, WLAN_MLO_MGR_ID);
 		break;
 
 	case MLO_PEER_ASSOC_FAIL:
@@ -369,8 +365,7 @@ static void mlo_msgq_msg_flush_hdlr(struct mlo_ctxt_switch_msg_s *msg)
 
 	case MLO_PEER_ASSOC:
 		peer_assoc = &msg->m.peer_assoc;
-		wlan_objmgr_peer_release_ref(peer_assoc->peer,
-					     WLAN_MLO_MGR_ID);
+		wlan_objmgr_peer_release_ref(peer_assoc->peer, WLAN_MLO_MGR_ID);
 		break;
 
 	case MLO_PEER_ASSOC_FAIL:
@@ -417,11 +412,10 @@ static void mlo_msgq_msg_flush(void)
 	do {
 		msg = NULL;
 		qdf_spin_lock_bh(&msgq_ctx->ctxt_lock);
-		status = qdf_list_peek_front(&msgq_ctx->msgq_list,
-					     &msgbuf_node);
+		status =
+			qdf_list_peek_front(&msgq_ctx->msgq_list, &msgbuf_node);
 		if (status != QDF_STATUS_E_EMPTY) {
-			qdf_list_remove_node(&msgq_ctx->msgq_list,
-					     msgbuf_node);
+			qdf_list_remove_node(&msgq_ctx->msgq_list, msgbuf_node);
 			msg = qdf_container_of(msgbuf_node,
 					       struct mlo_ctxt_switch_msg_s,
 					       node);
@@ -451,11 +445,10 @@ static void mlo_msgq_msg_handler(void *arg)
 	do {
 		msg = NULL;
 		qdf_spin_lock_bh(&msgq_ctx->ctxt_lock);
-		status = qdf_list_peek_front(&msgq_ctx->msgq_list,
-					     &msgbuf_node);
+		status =
+			qdf_list_peek_front(&msgq_ctx->msgq_list, &msgbuf_node);
 		if (status != QDF_STATUS_E_EMPTY) {
-			qdf_list_remove_node(&msgq_ctx->msgq_list,
-					     msgbuf_node);
+			qdf_list_remove_node(&msgq_ctx->msgq_list, msgbuf_node);
 			msg = qdf_container_of(msgbuf_node,
 					       struct mlo_ctxt_switch_msg_s,
 					       node);
@@ -485,8 +478,7 @@ void mlo_msgq_init(void)
 
 	qdf_spinlock_create(&msgq_ctx->ctxt_lock);
 	/* Initialize timer with timeout handler */
-	qdf_timer_init(NULL, &msgq_ctx->ctxt_mgr_timer,
-		       mlo_msgq_msg_handler,
+	qdf_timer_init(NULL, &msgq_ctx->ctxt_mgr_timer, mlo_msgq_msg_handler,
 		       NULL, QDF_TIMER_TYPE_WAKE_APPS);
 
 	msgq_ctx->timer_started = false;

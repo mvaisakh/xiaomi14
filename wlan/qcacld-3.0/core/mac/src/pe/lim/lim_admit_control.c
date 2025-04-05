@@ -28,32 +28,33 @@
  * --------------------------------------------------------------------
  *
  */
-#include "sys_def.h"
-#include "lim_api.h"
-#include "lim_trace.h"
-#include "lim_send_sme_rsp_messages.h"
-#include "lim_types.h"
 #include "lim_admit_control.h"
+#include "lim_api.h"
+#include "lim_send_sme_rsp_messages.h"
+#include "lim_trace.h"
+#include "lim_types.h"
+#include "sys_def.h"
 
 /* total available bandwidth in bps in each phy mode
  * these should be defined in hal or dph - replace these later
  */
-#define LIM_TOTAL_BW_11A   54000000
-#define LIM_MIN_BW_11A     6000000
-#define LIM_TOTAL_BW_11B   11000000
-#define LIM_MIN_BW_11B     1000000
-#define LIM_TOTAL_BW_11G   LIM_TOTAL_BW_11A
-#define LIM_MIN_BW_11G     LIM_MIN_BW_11B
+#define LIM_TOTAL_BW_11A 54000000
+#define LIM_MIN_BW_11A 6000000
+#define LIM_TOTAL_BW_11B 11000000
+#define LIM_MIN_BW_11B 1000000
+#define LIM_TOTAL_BW_11G LIM_TOTAL_BW_11A
+#define LIM_MIN_BW_11G LIM_MIN_BW_11B
 
 /* conversion factors */
 #define LIM_CONVERT_SIZE_BITS(numBytes) ((numBytes) * 8)
-#define LIM_CONVERT_RATE_MBPS(rate)     ((rate)/1000000)
+#define LIM_CONVERT_RATE_MBPS(rate) ((rate) / 1000000)
 
-/* ------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------
+ */
 /* local protos */
 
-static void lim_get_available_bw(struct mac_context *, uint32_t *, uint32_t *, uint32_t,
-				 uint32_t);
+static void lim_get_available_bw(struct mac_context *, uint32_t *, uint32_t *,
+				 uint32_t, uint32_t);
 
 /** -------------------------------------------------------------
    \fn lim_calculate_svc_int
@@ -64,24 +65,25 @@ static void lim_get_available_bw(struct mac_context *, uint32_t *, uint32_t *, u
    \return QDF_STATUS - status of the comparison
    -------------------------------------------------------------*/
 
-static QDF_STATUS
-lim_calculate_svc_int(struct mac_context *mac,
-		      struct mac_tspec_ie *pTspec, uint32_t *pSvcInt)
+static QDF_STATUS lim_calculate_svc_int(struct mac_context *mac,
+					struct mac_tspec_ie *pTspec,
+					uint32_t *pSvcInt)
 {
 	uint32_t msduSz, dataRate;
 	*pSvcInt = 0;
 
 	/* if a service interval is already specified, we are done */
 	if ((pTspec->minSvcInterval != 0) || (pTspec->maxSvcInterval != 0)) {
-		*pSvcInt = (pTspec->maxSvcInterval != 0)
-			   ? pTspec->maxSvcInterval : pTspec->minSvcInterval;
+		*pSvcInt = (pTspec->maxSvcInterval != 0) ?
+				   pTspec->maxSvcInterval :
+				   pTspec->minSvcInterval;
 		return QDF_STATUS_SUCCESS;
 	}
 
 	/* Masking off the fixed bits according to definition of MSDU size
-	 * in IEEE 802.11-2007 spec (section 7.3.2.30). Nominal MSDU size
-	 * is defined as:  Bit[0:14]=Size, Bit[15]=Fixed
-	 */
+   * in IEEE 802.11-2007 spec (section 7.3.2.30). Nominal MSDU size
+   * is defined as:  Bit[0:14]=Size, Bit[15]=Fixed
+   */
 	if (pTspec->nomMsduSz != 0)
 		msduSz = (pTspec->nomMsduSz & 0x7fff);
 	else if (pTspec->maxMsduSz != 0)
@@ -92,8 +94,8 @@ lim_calculate_svc_int(struct mac_context *mac,
 	}
 
 	/* need to calculate a reasonable service interval
-	 * this is simply the msduSz/meanDataRate
-	 */
+   * this is simply the msduSz/meanDataRate
+   */
 	if (pTspec->meanDataRate != 0)
 		dataRate = pTspec->meanDataRate;
 	else if (pTspec->peakDataRate != 0)
@@ -121,10 +123,9 @@ lim_calculate_svc_int(struct mac_context *mac,
  *
  * Return: Status
  **/
-static QDF_STATUS
-lim_validate_tspec_edca(struct mac_context *mac_ctx,
-			struct mac_tspec_ie *tspec,
-			struct pe_session *session_entry)
+static QDF_STATUS lim_validate_tspec_edca(struct mac_context *mac_ctx,
+					  struct mac_tspec_ie *tspec,
+					  struct pe_session *session_entry)
 {
 	uint32_t max_phy_rate, min_phy_rate;
 	uint32_t phy_mode;
@@ -135,14 +136,13 @@ lim_validate_tspec_edca(struct mac_context *mac_ctx,
 	lim_get_available_bw(mac_ctx, &max_phy_rate, &min_phy_rate, phy_mode,
 			     1 /* bandwidth mult factor */);
 	/* mandatory fields are derived from 11e Annex I (Table I.1) */
-	if ((tspec->nomMsduSz == 0) ||
-	    (tspec->meanDataRate == 0) ||
-	    (tspec->surplusBw == 0) ||
-	    (tspec->minPhyRate == 0) ||
+	if ((tspec->nomMsduSz == 0) || (tspec->meanDataRate == 0) ||
+	    (tspec->surplusBw == 0) || (tspec->minPhyRate == 0) ||
 	    (tspec->minPhyRate > max_phy_rate)) {
-		pe_warn("Invalid EDCA Tspec: NomMsdu: %d meanDataRate: %d surplusBw: %d min_phy_rate: %d",
-			tspec->nomMsduSz, tspec->meanDataRate,
-			tspec->surplusBw, tspec->minPhyRate);
+		pe_warn("Invalid EDCA Tspec: NomMsdu: %d meanDataRate: %d surplusBw: %d "
+			"min_phy_rate: %d",
+			tspec->nomMsduSz, tspec->meanDataRate, tspec->surplusBw,
+			tspec->minPhyRate);
 		retval = QDF_STATUS_E_FAILURE;
 	}
 
@@ -158,9 +158,9 @@ lim_validate_tspec_edca(struct mac_context *mac_ctx,
    \return QDF_STATUS - status
    -------------------------------------------------------------*/
 
-static QDF_STATUS
-lim_validate_tspec(struct mac_context *mac,
-		   struct mac_tspec_ie *pTspec, struct pe_session *pe_session)
+static QDF_STATUS lim_validate_tspec(struct mac_context *mac,
+				     struct mac_tspec_ie *pTspec,
+				     struct pe_session *pe_session)
 {
 	QDF_STATUS retval = QDF_STATUS_SUCCESS;
 
@@ -169,7 +169,7 @@ lim_validate_tspec(struct mac_context *mac,
 		retval = lim_validate_tspec_edca(mac, pTspec, pe_session);
 		if (retval != QDF_STATUS_SUCCESS)
 			pe_warn("EDCA tspec invalid");
-			break;
+		break;
 
 	case SIR_MAC_ACCESSPOLICY_HCCA:
 	case SIR_MAC_ACCESSPOLICY_BOTH:
@@ -183,7 +183,8 @@ lim_validate_tspec(struct mac_context *mac,
 	return retval;
 }
 
-/* ----------------------------------------------------------------------------- */
+/* -----------------------------------------------------------------------------
+ */
 /* Admit Control Policy */
 
 /** -------------------------------------------------------------
@@ -196,23 +197,22 @@ lim_validate_tspec(struct mac_context *mac,
    \return void
    -------------------------------------------------------------*/
 
-static void
-lim_compute_mean_bw_used(struct mac_context *mac,
-			 uint32_t *pBw,
-			 uint32_t phyMode,
-			 tpLimTspecInfo pTspecInfo, struct pe_session *pe_session)
+static void lim_compute_mean_bw_used(struct mac_context *mac, uint32_t *pBw,
+				     uint32_t phyMode,
+				     tpLimTspecInfo pTspecInfo,
+				     struct pe_session *pe_session)
 {
 	uint32_t ctspec;
 	*pBw = 0;
 	for (ctspec = 0; ctspec < LIM_NUM_TSPEC_MAX; ctspec++, pTspecInfo++) {
 		if (pTspecInfo->inuse) {
-			tpDphHashNode pSta =
-				dph_get_hash_entry(mac, pTspecInfo->assocId,
-						   &pe_session->dph.dphHashTable);
+			tpDphHashNode pSta = dph_get_hash_entry(
+				mac, pTspecInfo->assocId,
+				&pe_session->dph.dphHashTable);
 			if (!pSta) {
 				/* maybe we should delete the tspec?? */
 				pe_err("Tspec: %d assocId: %d dphNode not found",
-					ctspec, pTspecInfo->assocId);
+				       ctspec, pTspecInfo->assocId);
 				continue;
 			}
 			*pBw += pTspecInfo->tspec.meanDataRate;
@@ -222,8 +222,8 @@ lim_compute_mean_bw_used(struct mac_context *mac,
 
 /** -------------------------------------------------------------
    \fn lim_get_available_bw
-   \brief based on the phy mode and the bw_factor, determine the total bandwidth that
-       can be supported
+   \brief based on the phy mode and the bw_factor, determine the total bandwidth
+   that can be supported
    \param   struct mac_context *mac
    \param       uint32_t              *pMaxBw
    \param       uint32_t              *pMinBw
@@ -232,10 +232,9 @@ lim_compute_mean_bw_used(struct mac_context *mac,
    \return void
    -------------------------------------------------------------*/
 
-static void
-lim_get_available_bw(struct mac_context *mac,
-		     uint32_t *pMaxBw,
-		     uint32_t *pMinBw, uint32_t phyMode, uint32_t bw_factor)
+static void lim_get_available_bw(struct mac_context *mac, uint32_t *pMaxBw,
+				 uint32_t *pMinBw, uint32_t phyMode,
+				 uint32_t bw_factor)
 {
 	switch (phyMode) {
 	case WNI_CFG_PHY_MODE_11B:
@@ -273,12 +272,10 @@ lim_get_available_bw(struct mac_context *mac,
  *
  * Return: Status
  **/
-static QDF_STATUS
-lim_admit_policy_oversubscription(struct mac_context *mac_ctx,
-				  struct mac_tspec_ie *tspec,
-				  tpLimAdmitPolicyInfo admit_policy,
-				  tpLimTspecInfo tspec_info,
-				  struct pe_session *session_entry)
+static QDF_STATUS lim_admit_policy_oversubscription(
+	struct mac_context *mac_ctx, struct mac_tspec_ie *tspec,
+	tpLimAdmitPolicyInfo admit_policy, tpLimTspecInfo tspec_info,
+	struct pe_session *session_entry)
 {
 	uint32_t totalbw, minbw, usedbw;
 	uint32_t phy_mode;
@@ -286,14 +283,14 @@ lim_admit_policy_oversubscription(struct mac_context *mac_ctx,
 	/* determine total bandwidth used so far */
 	lim_get_phy_mode(mac_ctx, &phy_mode, session_entry);
 
-	lim_compute_mean_bw_used(mac_ctx, &usedbw, phy_mode,
-			tspec_info, session_entry);
+	lim_compute_mean_bw_used(mac_ctx, &usedbw, phy_mode, tspec_info,
+				 session_entry);
 
 	/* determine how much bw is available based on the current phy mode */
 	lim_get_available_bw(mac_ctx, &totalbw, &minbw, phy_mode,
 			     admit_policy->bw_factor);
 
-	if (usedbw > totalbw)   /* this can't possibly happen */
+	if (usedbw > totalbw) /* this can't possibly happen */
 		return QDF_STATUS_E_FAILURE;
 
 	if ((totalbw - usedbw) < tspec->meanDataRate) {
@@ -306,15 +303,16 @@ lim_admit_policy_oversubscription(struct mac_context *mac_ctx,
 
 /** -------------------------------------------------------------
    \fn lim_admit_policy
-   \brief determine the current admit control policy and apply it for the offered tspec
+   \brief determine the current admit control policy and apply it for the
+   offered tspec
    \param   struct mac_context *mac
    \param         struct mac_tspec_ie   *pTspec
    \return QDF_STATUS - status
    -------------------------------------------------------------*/
 
 static QDF_STATUS lim_admit_policy(struct mac_context *mac,
-				      struct mac_tspec_ie *pTspec,
-				      struct pe_session *pe_session)
+				   struct mac_tspec_ie *pTspec,
+				   struct pe_session *pe_session)
 {
 	QDF_STATUS retval = QDF_STATUS_E_FAILURE;
 	tpLimAdmitPolicyInfo pAdmitPolicy = &mac->lim.admitPolicyInfo;
@@ -325,14 +323,12 @@ static QDF_STATUS lim_admit_policy(struct mac_context *mac,
 		break;
 
 	case WNI_CFG_ADMIT_POLICY_BW_FACTOR:
-		retval = lim_admit_policy_oversubscription(mac, pTspec,
-							   &mac->lim.
-							   admitPolicyInfo,
-							   &mac->lim.tspecInfo[0],
-							   pe_session);
+		retval = lim_admit_policy_oversubscription(
+			mac, pTspec, &mac->lim.admitPolicyInfo,
+			&mac->lim.tspecInfo[0], pe_session);
 		if (retval != QDF_STATUS_SUCCESS)
 			pe_err("rejected by BWFactor policy");
-			break;
+		break;
 
 	case WNI_CFG_ADMIT_POLICY_REJECT_ALL:
 		retval = QDF_STATUS_E_FAILURE;
@@ -355,7 +351,8 @@ static QDF_STATUS lim_admit_policy(struct mac_context *mac,
    \return void
    -------------------------------------------------------------*/
 
-/* ----------------------------------------------------------------------------- */
+/* -----------------------------------------------------------------------------
+ */
 /* delete the specified tspec */
 static void lim_tspec_delete(struct mac_context *mac, tpLimTspecInfo pInfo)
 {
@@ -380,11 +377,11 @@ static void lim_tspec_delete(struct mac_context *mac, tpLimTspecInfo pInfo)
    -------------------------------------------------------------*/
 
 /* find the specified tspec in the list */
-static QDF_STATUS
-lim_tspec_find_by_sta_addr(struct mac_context *mac,
-			   uint8_t *pAddr,
-			   struct mac_tspec_ie *pTspecIE,
-			   tpLimTspecInfo pTspecList, tpLimTspecInfo *ppInfo)
+static QDF_STATUS lim_tspec_find_by_sta_addr(struct mac_context *mac,
+					     uint8_t *pAddr,
+					     struct mac_tspec_ie *pTspecIE,
+					     tpLimTspecInfo pTspecList,
+					     tpLimTspecInfo *ppInfo)
 {
 	int ctspec;
 
@@ -415,8 +412,7 @@ lim_tspec_find_by_sta_addr(struct mac_context *mac,
    -------------------------------------------------------------*/
 
 QDF_STATUS
-lim_tspec_find_by_assoc_id(struct mac_context *mac,
-			   uint16_t assocId,
+lim_tspec_find_by_assoc_id(struct mac_context *mac, uint16_t assocId,
 			   struct mac_tspec_ie *pTspecIE,
 			   tpLimTspecInfo pTspecList, tpLimTspecInfo *ppInfo)
 {
@@ -424,13 +420,13 @@ lim_tspec_find_by_assoc_id(struct mac_context *mac,
 
 	*ppInfo = NULL;
 
-	pe_debug("Trying to find tspec entry for assocId: %d pTsInfo->traffic.direction: %d pTsInfo->traffic.tsid: %d",
-		assocId, pTspecIE->tsinfo.traffic.direction,
-		pTspecIE->tsinfo.traffic.tsid);
+	pe_debug("Trying to find tspec entry for assocId: %d "
+		 "pTsInfo->traffic.direction: %d pTsInfo->traffic.tsid: %d",
+		 assocId, pTspecIE->tsinfo.traffic.direction,
+		 pTspecIE->tsinfo.traffic.tsid);
 
 	for (ctspec = 0; ctspec < LIM_NUM_TSPEC_MAX; ctspec++, pTspecList++) {
-		if ((pTspecList->inuse) &&
-		    (assocId == pTspecList->assocId) &&
+		if ((pTspecList->inuse) && (assocId == pTspecList->assocId) &&
 		    (!qdf_mem_cmp(pTspecIE, &pTspecList->tspec,
 				  sizeof(*pTspecIE)))) {
 			*ppInfo = pTspecList;
@@ -451,26 +447,25 @@ lim_tspec_find_by_assoc_id(struct mac_context *mac,
    \return QDF_STATUS - status of the comparison
    -------------------------------------------------------------*/
 
-static QDF_STATUS
-lim_find_tspec(struct mac_context *mac,
-	       uint16_t assocId,
-	       struct mac_ts_info *pTsInfo,
-	       tpLimTspecInfo pTspecList, tpLimTspecInfo *ppInfo)
+static QDF_STATUS lim_find_tspec(struct mac_context *mac, uint16_t assocId,
+				 struct mac_ts_info *pTsInfo,
+				 tpLimTspecInfo pTspecList,
+				 tpLimTspecInfo *ppInfo)
 {
 	int ctspec;
 
 	*ppInfo = NULL;
 
-	pe_debug("Trying to find tspec entry for assocId: %d pTsInfo->traffic.direction: %d pTsInfo->traffic.tsid: %d",
-		assocId, pTsInfo->traffic.direction, pTsInfo->traffic.tsid);
+	pe_debug("Trying to find tspec entry for assocId: %d "
+		 "pTsInfo->traffic.direction: %d pTsInfo->traffic.tsid: %d",
+		 assocId, pTsInfo->traffic.direction, pTsInfo->traffic.tsid);
 
 	for (ctspec = 0; ctspec < LIM_NUM_TSPEC_MAX; ctspec++, pTspecList++) {
-		if ((pTspecList->inuse)
-		    && (assocId == pTspecList->assocId)
-		    && (pTsInfo->traffic.direction ==
-			pTspecList->tspec.tsinfo.traffic.direction)
-		    && (pTsInfo->traffic.tsid ==
-			pTspecList->tspec.tsinfo.traffic.tsid)) {
+		if ((pTspecList->inuse) && (assocId == pTspecList->assocId) &&
+		    (pTsInfo->traffic.direction ==
+		     pTspecList->tspec.tsinfo.traffic.direction) &&
+		    (pTsInfo->traffic.tsid ==
+		     pTspecList->tspec.tsinfo.traffic.tsid)) {
 			*ppInfo = pTspecList;
 			return QDF_STATUS_SUCCESS;
 		}
@@ -491,11 +486,9 @@ lim_find_tspec(struct mac_context *mac,
    \return QDF_STATUS - status of the comparison
    -------------------------------------------------------------*/
 
-QDF_STATUS lim_tspec_add(struct mac_context *mac,
-			    uint8_t *pAddr,
-			    uint16_t assocId,
-			    struct mac_tspec_ie *pTspec,
-			    uint32_t interval, tpLimTspecInfo *ppInfo)
+QDF_STATUS lim_tspec_add(struct mac_context *mac, uint8_t *pAddr,
+			 uint16_t assocId, struct mac_tspec_ie *pTspec,
+			 uint32_t interval, tpLimTspecInfo *ppInfo)
 {
 	tpLimTspecInfo pTspecList = &mac->lim.tspecInfo[0];
 	*ppInfo = NULL;
@@ -509,23 +502,24 @@ QDF_STATUS lim_tspec_add(struct mac_context *mac,
 	{
 		*ppInfo = NULL;
 
-		if (QDF_STATUS_SUCCESS ==
-		    lim_find_tspec(mac, assocId, &pTspec->tsinfo, pTspecList,
-				   ppInfo)) {
+		if (QDF_STATUS_SUCCESS == lim_find_tspec(mac, assocId,
+							 &pTspec->tsinfo,
+							 pTspecList, ppInfo)) {
 			/* update this entry. */
 			pe_debug("updating TSPEC table entry: %d",
-				(*ppInfo)->idx);
+				 (*ppInfo)->idx);
 		} else {
 			/* We didn't find one to update. So find a free slot in the
-			 * LIM TSPEC list and add this new entry
-			 */
+       * LIM TSPEC list and add this new entry
+       */
 			uint8_t ctspec = 0;
 
 			for (ctspec = 0, pTspecList = &mac->lim.tspecInfo[0];
 			     ctspec < LIM_NUM_TSPEC_MAX;
 			     ctspec++, pTspecList++) {
 				if (!pTspecList->inuse) {
-					pe_debug("Found free slot in TSPEC list. Add to TSPEC table entry: %d",
+					pe_debug(
+						"Found free slot in TSPEC list. Add to TSPEC table entry: %d",
 						ctspec);
 					break;
 				}
@@ -553,14 +547,14 @@ QDF_STATUS lim_tspec_add(struct mac_context *mac,
 	}
 
 	/*
-	 * for hcca tspec's, must set the parameterized bit in the queues
-	 * the 'ts' bit in the queue data structure indicates that the queue is
-	 * parameterized (hcca). When the schedule is written this bit is used
-	 * in the tsid field (bit 3) and the other three bits (0-2) are simply
-	 * filled in as the user priority (or qid). This applies only to uplink
-	 * polls where the qos control field must contain the tsid specified in the
-	 * tspec.
-	 */
+   * for hcca tspec's, must set the parameterized bit in the queues
+   * the 'ts' bit in the queue data structure indicates that the queue is
+   * parameterized (hcca). When the schedule is written this bit is used
+   * in the tsid field (bit 3) and the other three bits (0-2) are simply
+   * filled in as the user priority (or qid). This applies only to uplink
+   * polls where the qos control field must contain the tsid specified in the
+   * tspec.
+   */
 	pTspecList->inuse = 1;
 	*ppInfo = pTspecList;
 	pe_debug("added entry for HCCA AccessPolicy");
@@ -576,10 +570,10 @@ QDF_STATUS lim_tspec_add(struct mac_context *mac,
    \return QDF_STATUS - status
    -------------------------------------------------------------*/
 
-static QDF_STATUS
-lim_validate_access_policy(struct mac_context *mac,
-			   uint8_t accessPolicy,
-			   uint16_t assocId, struct pe_session *pe_session)
+static QDF_STATUS lim_validate_access_policy(struct mac_context *mac,
+					     uint8_t accessPolicy,
+					     uint16_t assocId,
+					     struct pe_session *pe_session)
 {
 	QDF_STATUS retval = QDF_STATUS_E_FAILURE;
 	tpDphHashNode pSta =
@@ -599,16 +593,14 @@ lim_validate_access_policy(struct mac_context *mac,
 	case SIR_MAC_ACCESSPOLICY_HCCA:
 	case SIR_MAC_ACCESSPOLICY_BOTH:
 	default:
-		pe_err("Invalid accessPolicy: %d",
-			       accessPolicy);
+		pe_err("Invalid accessPolicy: %d", accessPolicy);
 		break;
 	}
 
 	if (retval != QDF_STATUS_SUCCESS)
-		pe_warn("accPol: %d lle: %d wme: %d wsm: %d sta mac "
-			QDF_MAC_ADDR_FMT, accessPolicy, pSta->lleEnabled,
-			pSta->wmeEnabled, pSta->wsmEnabled,
-			QDF_MAC_ADDR_REF(pSta->staAddr));
+		pe_warn("accPol: %d lle: %d wme: %d wsm: %d sta mac " QDF_MAC_ADDR_FMT,
+			accessPolicy, pSta->lleEnabled, pSta->wmeEnabled,
+			pSta->wsmEnabled, QDF_MAC_ADDR_REF(pSta->staAddr));
 
 	return retval;
 }
@@ -631,9 +623,11 @@ lim_validate_access_policy(struct mac_context *mac,
  * Return: status
  **/
 QDF_STATUS lim_admit_control_add_ts(struct mac_context *mac, uint8_t *pAddr,
-		tSirAddtsReqInfo *pAddts, tSirMacQosCapabilityStaIE *pQos,
-		uint16_t assocId, uint8_t alloc, tSirMacScheduleIE *pSch,
-		uint8_t *pTspecIdx, struct pe_session *pe_session)
+				    tSirAddtsReqInfo *pAddts,
+				    tSirMacQosCapabilityStaIE *pQos,
+				    uint16_t assocId, uint8_t alloc,
+				    tSirMacScheduleIE *pSch, uint8_t *pTspecIdx,
+				    struct pe_session *pe_session)
 {
 	tpLimTspecInfo pTspecInfo;
 	QDF_STATUS retval;
@@ -644,7 +638,8 @@ QDF_STATUS lim_admit_control_add_ts(struct mac_context *mac, uint8_t *pAddr,
 	/* EDCA: need to fill in the medium time and the minimum phy rate */
 	/* to be consistent with the desired traffic parameters. */
 
-	pe_debug("tsid: %d directn: %d start: %d intvl: %d accPolicy: %d up: %d",
+	pe_debug(
+		"tsid: %d directn: %d start: %d intvl: %d accPolicy: %d up: %d",
 		pAddts->tspec.tsinfo.traffic.tsid,
 		pAddts->tspec.tsinfo.traffic.direction,
 		pAddts->tspec.svcStartTime, pAddts->tspec.minSvcInterval,
@@ -652,11 +647,14 @@ QDF_STATUS lim_admit_control_add_ts(struct mac_context *mac, uint8_t *pAddr,
 		pAddts->tspec.tsinfo.traffic.userPrio);
 
 	/* check for duplicate tspec */
-	retval = (alloc)
-		 ? lim_tspec_find_by_assoc_id(mac, assocId, &pAddts->tspec,
-					      &mac->lim.tspecInfo[0], &pTspecInfo)
-		 : lim_tspec_find_by_sta_addr(mac, pAddr, &pAddts->tspec,
-					      &mac->lim.tspecInfo[0], &pTspecInfo);
+	retval = (alloc) ?
+			 lim_tspec_find_by_assoc_id(mac, assocId,
+						    &pAddts->tspec,
+						    &mac->lim.tspecInfo[0],
+						    &pTspecInfo) :
+			 lim_tspec_find_by_sta_addr(mac, pAddr, &pAddts->tspec,
+						    &mac->lim.tspecInfo[0],
+						    &pTspecInfo);
 
 	if (retval == QDF_STATUS_SUCCESS) {
 		pe_err("duplicate tspec index: %d", pTspecInfo->idx);
@@ -675,38 +673,40 @@ QDF_STATUS lim_admit_control_add_ts(struct mac_context *mac, uint8_t *pAddr,
 		return QDF_STATUS_E_FAILURE;
 	}
 	/* determine if the tspec can be admitted or not based on current policy */
-	if (lim_admit_policy(mac, &pAddts->tspec, pe_session) != QDF_STATUS_SUCCESS) {
+	if (lim_admit_policy(mac, &pAddts->tspec, pe_session) !=
+	    QDF_STATUS_SUCCESS) {
 		pe_warn("tspec rejected by admit control policy");
 		return QDF_STATUS_E_FAILURE;
 	}
 	/* fill in a schedule if requested */
 	if (pSch) {
-		qdf_mem_zero((uint8_t *) pSch, sizeof(*pSch));
+		qdf_mem_zero((uint8_t *)pSch, sizeof(*pSch));
 		pSch->svcStartTime = pAddts->tspec.svcStartTime;
 		pSch->svcInterval = svcInterval;
-		pSch->maxSvcDuration = (uint16_t) pSch->svcInterval;    /* use SP = SI */
-		pSch->specInterval = 0x1000;    /* fixed for now: TBD */
+		pSch->maxSvcDuration =
+			(uint16_t)pSch->svcInterval; /* use SP = SI */
+		pSch->specInterval = 0x1000; /* fixed for now: TBD */
 
 		pSch->info.direction = pAddts->tspec.tsinfo.traffic.direction;
 		pSch->info.tsid = pAddts->tspec.tsinfo.traffic.tsid;
-		pSch->info.aggregation = 0;     /* no support for aggregation for now: TBD */
+		pSch->info.aggregation =
+			0; /* no support for aggregation for now: TBD */
 	}
 	/* if no allocation is requested, done */
 	if (!alloc)
 		return QDF_STATUS_SUCCESS;
 
 	/* check that we are in the proper mode to deal with the tspec type */
-	if (lim_validate_access_policy
-		    (mac, (uint8_t) pAddts->tspec.tsinfo.traffic.accessPolicy, assocId,
-		    pe_session) != QDF_STATUS_SUCCESS) {
+	if (lim_validate_access_policy(
+		    mac, (uint8_t)pAddts->tspec.tsinfo.traffic.accessPolicy,
+		    assocId, pe_session) != QDF_STATUS_SUCCESS) {
 		pe_warn("AccessPolicy: %d is not valid in current mode",
 			pAddts->tspec.tsinfo.traffic.accessPolicy);
 		return QDF_STATUS_E_FAILURE;
 	}
 	/* add tspec to list */
-	if (lim_tspec_add
-		    (mac, pAddr, assocId, &pAddts->tspec, svcInterval, &pTspecInfo)
-	    != QDF_STATUS_SUCCESS) {
+	if (lim_tspec_add(mac, pAddr, assocId, &pAddts->tspec, svcInterval,
+			  &pTspecInfo) != QDF_STATUS_SUCCESS) {
 		pe_err("no space in tspec list");
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -728,19 +728,17 @@ QDF_STATUS lim_admit_control_add_ts(struct mac_context *mac, uint8_t *pAddr,
    -------------------------------------------------------------*/
 
 QDF_STATUS
-lim_admit_control_delete_ts(struct mac_context *mac,
-			    uint16_t assocId,
-			    struct mac_ts_info *pTsInfo,
-			    uint8_t *pTsStatus, uint8_t *ptspecIdx)
+lim_admit_control_delete_ts(struct mac_context *mac, uint16_t assocId,
+			    struct mac_ts_info *pTsInfo, uint8_t *pTsStatus,
+			    uint8_t *ptspecIdx)
 {
 	tpLimTspecInfo pTspecInfo = NULL;
 
 	if (pTsStatus)
 		*pTsStatus = 0;
 
-	if (lim_find_tspec
-		    (mac, assocId, pTsInfo, &mac->lim.tspecInfo[0],
-		    &pTspecInfo) == QDF_STATUS_SUCCESS) {
+	if (lim_find_tspec(mac, assocId, pTsInfo, &mac->lim.tspecInfo[0],
+			   &pTspecInfo) == QDF_STATUS_SUCCESS) {
 		if (pTspecInfo) {
 			pe_debug("Tspec entry: %d found", pTspecInfo->idx);
 
@@ -760,7 +758,8 @@ lim_admit_control_delete_ts(struct mac_context *mac,
    \return QDF_STATUS - status
    -------------------------------------------------------------*/
 
-QDF_STATUS lim_admit_control_delete_sta(struct mac_context *mac, uint16_t assocId)
+QDF_STATUS lim_admit_control_delete_sta(struct mac_context *mac,
+					uint16_t assocId)
 {
 	tpLimTspecInfo pTspecInfo = &mac->lim.tspecInfo[0];
 	int ctspec;
@@ -769,7 +768,7 @@ QDF_STATUS lim_admit_control_delete_sta(struct mac_context *mac, uint16_t assocI
 		if (assocId == pTspecInfo->assocId) {
 			lim_tspec_delete(mac, pTspecInfo);
 			pe_debug("Deleting TSPEC: %d for assocId: %d", ctspec,
-				assocId);
+				 assocId);
 		}
 	}
 	pe_debug("assocId: %d done", assocId);
@@ -786,7 +785,7 @@ QDF_STATUS lim_admit_control_delete_sta(struct mac_context *mac, uint16_t assocI
 QDF_STATUS lim_admit_control_init(struct mac_context *mac)
 {
 	qdf_mem_zero(mac->lim.tspecInfo,
-		    LIM_NUM_TSPEC_MAX * sizeof(tLimTspecInfo));
+		     LIM_NUM_TSPEC_MAX * sizeof(tLimTspecInfo));
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -803,26 +802,23 @@ QDF_STATUS lim_admit_control_init(struct mac_context *mac)
    -------------------------------------------------------------*/
 #ifdef FEATURE_WLAN_ESE
 QDF_STATUS
-lim_send_hal_msg_add_ts(struct mac_context *mac,
-			uint8_t tspecIdx,
-			struct mac_tspec_ie tspecIE,
-			uint8_t sessionId, uint16_t tsm_interval)
+lim_send_hal_msg_add_ts(struct mac_context *mac, uint8_t tspecIdx,
+			struct mac_tspec_ie tspecIE, uint8_t sessionId,
+			uint16_t tsm_interval)
 #else
 QDF_STATUS
-lim_send_hal_msg_add_ts(struct mac_context *mac,
-			uint8_t tspecIdx,
-			struct mac_tspec_ie tspecIE,
-			uint8_t sessionId)
+lim_send_hal_msg_add_ts(struct mac_context *mac, uint8_t tspecIdx,
+			struct mac_tspec_ie tspecIE, uint8_t sessionId)
 #endif
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct add_ts_param *pAddTsParam;
 
-	struct pe_session *pe_session = pe_find_session_by_session_id(mac, sessionId);
+	struct pe_session *pe_session =
+		pe_find_session_by_session_id(mac, sessionId);
 
 	if (!pe_session) {
-		pe_err("Unable to get Session for session Id: %d",
-			sessionId);
+		pe_err("Unable to get Session for session Id: %d", sessionId);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -850,8 +846,8 @@ lim_send_hal_msg_add_ts(struct mac_context *mac,
 	msg.bodyval = 0;
 
 	/* We need to defer any incoming messages until we get a
-	 * WMA_ADD_TS_RSP from HAL.
-	 */
+   * WMA_ADD_TS_RSP from HAL.
+   */
 	SET_LIM_PROCESS_DEFD_MESGS(mac, false);
 	MTRACE(mac_trace_msg_tx(mac, sessionId, msg.type));
 
@@ -874,12 +870,11 @@ lim_send_hal_msg_add_ts(struct mac_context *mac,
    -------------------------------------------------------------*/
 
 QDF_STATUS
-lim_send_hal_msg_del_ts(struct mac_context *mac,
-			uint8_t tspecIdx,
-			struct delts_req_info delts,
-			uint8_t sessionId, uint8_t *bssId)
+lim_send_hal_msg_del_ts(struct mac_context *mac, uint8_t tspecIdx,
+			struct delts_req_info delts, uint8_t sessionId,
+			uint8_t *bssId)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct del_ts_params *pDelTsParam;
 	struct pe_session *pe_session = NULL;
 
@@ -898,13 +893,13 @@ lim_send_hal_msg_del_ts(struct mac_context *mac,
 	pe_session = pe_find_session_by_session_id(mac, sessionId);
 	if (!pe_session) {
 		pe_err("Session does Not exist with given sessionId: %d",
-			       sessionId);
+		       sessionId);
 		goto err;
 	}
 	pDelTsParam->sessionId = pe_session->smeSessionId;
 	pDelTsParam->userPrio = delts.wmeTspecPresent ?
-			delts.tspec.tsinfo.traffic.userPrio :
-			delts.tsinfo.traffic.userPrio;
+					delts.tspec.tsinfo.traffic.userPrio :
+					delts.tsinfo.traffic.userPrio;
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
 	if (mac->mlme_cfg->lfr.lfr3_roaming_offload &&
@@ -948,8 +943,8 @@ void lim_process_hal_add_ts_rsp(struct mac_context *mac,
 	struct pe_session *pe_session = NULL;
 
 	/* Need to process all the deferred messages enqueued
-	 * since sending the WMA_ADD_TS_REQ.
-	 */
+   * since sending the WMA_ADD_TS_REQ.
+   */
 	SET_LIM_PROCESS_DEFD_MESGS(mac, true);
 
 	if (!limMsg->bodyptr) {
@@ -959,14 +954,15 @@ void lim_process_hal_add_ts_rsp(struct mac_context *mac,
 
 	pAddTsRspMsg = limMsg->bodyptr;
 
-	/* 090803: Use pe_find_session_by_session_id() to obtain the PE session context */
+	/* 090803: Use pe_find_session_by_session_id() to obtain the PE session
+   * context */
 	/* from the sessionId in the Rsp Msg from HAL */
-	pe_session = pe_find_session_by_session_id(mac,
-						   pAddTsRspMsg->pe_session_id);
+	pe_session =
+		pe_find_session_by_session_id(mac, pAddTsRspMsg->pe_session_id);
 
 	if (!pe_session) {
 		pe_err("Session does Not exist with given sessionId: %d",
-			       pAddTsRspMsg->pe_session_id);
+		       pAddTsRspMsg->pe_session_id);
 		lim_send_sme_addts_rsp(mac, rspReqd, eSIR_SME_ADDTS_RSP_FAILED,
 				       pe_session, pAddTsRspMsg->tspec,
 				       mac->lim.gLimAddtsReq.sessionId);
@@ -989,21 +985,21 @@ void lim_process_hal_add_ts_rsp(struct mac_context *mac,
 		/* 090803: Add the SME Session ID */
 		lim_send_delts_req_action_frame(mac, peerMacAddr, rspReqd,
 						&pAddTsRspMsg->tspec.tsinfo,
-						&pAddTsRspMsg->tspec, pe_session);
+						&pAddTsRspMsg->tspec,
+						pe_session);
 
 		/* Delete TSPEC */
 		/* 090803: Pull the hash table from the session */
 		pSta = dph_lookup_hash_entry(mac, peerMacAddr, &assocId,
 					     &pe_session->dph.dphHashTable);
 		if (pSta)
-			lim_admit_control_delete_ts(mac, assocId,
-						    &pAddTsRspMsg->tspec.tsinfo,
-						    NULL,
-						    (uint8_t *) &pAddTsRspMsg->
-						    tspec_idx);
+			lim_admit_control_delete_ts(
+				mac, assocId, &pAddTsRspMsg->tspec.tsinfo, NULL,
+				(uint8_t *)&pAddTsRspMsg->tspec_idx);
 
 		/* Send SME_ADDTS_RSP */
-		/* 090803: Use the smesessionId and smetransactionId from the PE session context */
+		/* 090803: Use the smesessionId and smetransactionId from the PE session
+     * context */
 		lim_send_sme_addts_rsp(mac, rspReqd, eSIR_SME_ADDTS_RSP_FAILED,
 				       pe_session, pAddTsRspMsg->tspec,
 				       pe_session->smeSessionId);

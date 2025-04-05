@@ -17,13 +17,13 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "ahb_api.h"
+#include "ce_main.h"
+#include "dummy.h"
 #include "hif.h"
 #include "hif_main.h"
-#include "multibus.h"
-#include "ce_main.h"
 #include "if_pci.h"
-#include "ahb_api.h"
-#include "dummy.h"
+#include "multibus.h"
 
 /**
  * hif_initialize_ahb_ops() - initialize the ahb ops
@@ -56,7 +56,7 @@ QDF_STATUS hif_initialize_ahb_ops(struct hif_bus_ops *bus_ops)
 	bus_ops->hif_shutdown_device = &hif_ce_stop;
 	bus_ops->hif_stop = &hif_ce_stop;
 	bus_ops->hif_cancel_deferred_target_sleep =
-				&hif_dummy_cancel_deferred_target_sleep;
+		&hif_dummy_cancel_deferred_target_sleep;
 	bus_ops->hif_irq_disable = &hif_ahb_irq_disable;
 	bus_ops->hif_irq_enable = &hif_ahb_irq_enable;
 	bus_ops->hif_dump_registers = &hif_ahb_dump_registers;
@@ -75,8 +75,7 @@ QDF_STATUS hif_initialize_ahb_ops(struct hif_bus_ops *bus_ops)
 	bus_ops->hif_needs_bmi = &hif_ahb_needs_bmi;
 	bus_ops->hif_display_stats = &hif_ahb_display_stats;
 	bus_ops->hif_clear_stats = &hif_ahb_clear_stats;
-	bus_ops->hif_config_irq_affinity =
-		&hif_dummy_config_irq_affinity;
+	bus_ops->hif_config_irq_affinity = &hif_dummy_config_irq_affinity;
 	bus_ops->hif_config_irq_by_ceid = &hif_ahb_configure_irq_by_ceid;
 	bus_ops->hif_log_bus_info = &hif_dummy_log_bus_info;
 

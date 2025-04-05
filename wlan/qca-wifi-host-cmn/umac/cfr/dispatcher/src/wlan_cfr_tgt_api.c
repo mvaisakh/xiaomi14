@@ -22,10 +22,10 @@
  * It contains wrapers for txops
  */
 
+#include <cfr_defs_i.h>
+#include <target_type.h>
 #include <wlan_cfr_tgt_api.h>
 #include <wlan_cfr_utils_api.h>
-#include <target_type.h>
-#include <cfr_defs_i.h>
 
 uint32_t tgt_cfr_info_send(struct wlan_objmgr_pdev *pdev, void *head,
 			   size_t hlen, void *data, size_t dlen, void *tail,
@@ -78,7 +78,6 @@ uint32_t tgt_cfr_info_send(struct wlan_objmgr_pdev *pdev, void *head,
 	if (tail)
 		status = cfr_streamfs_write(pa, (const void *)tail, tlen);
 
-
 	/* finalise the write */
 	status = cfr_streamfs_flush(pa);
 
@@ -92,8 +91,8 @@ void tgt_cfr_support_set(struct wlan_objmgr_psoc *psoc, uint32_t value)
 	if (psoc == NULL)
 		return;
 
-	cfr_sc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-					WLAN_UMAC_COMP_CFR);
+	cfr_sc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CFR);
 	if (cfr_sc == NULL)
 		return;
 
@@ -102,7 +101,7 @@ void tgt_cfr_support_set(struct wlan_objmgr_psoc *psoc, uint32_t value)
 }
 
 static inline struct wlan_lmac_if_cfr_tx_ops *
-	wlan_psoc_get_cfr_txops(struct wlan_objmgr_psoc *psoc)
+wlan_psoc_get_cfr_txops(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_lmac_if_tx_ops *tx_ops;
 
@@ -239,8 +238,7 @@ int tgt_cfr_stop_capture(struct wlan_objmgr_pdev *pdev,
 	return status;
 }
 
-int
-tgt_cfr_enable_cfr_timer(struct wlan_objmgr_pdev *pdev, uint32_t cfr_timer)
+int tgt_cfr_enable_cfr_timer(struct wlan_objmgr_pdev *pdev, uint32_t cfr_timer)
 {
 	int status = 0;
 	struct wlan_lmac_if_cfr_tx_ops *cfr_tx_ops = NULL;
@@ -310,8 +308,8 @@ void tgt_cfr_stop_lut_age_timer(struct wlan_objmgr_pdev *pdev)
 }
 
 void tgt_cfr_default_ta_ra_cfg(struct wlan_objmgr_pdev *pdev,
-			       struct cfr_rcc_param *rcc_param,
-			       bool allvalid, uint16_t reset_cfg)
+			       struct cfr_rcc_param *rcc_param, bool allvalid,
+			       uint16_t reset_cfg)
 {
 	struct wlan_lmac_if_cfr_tx_ops *cfr_tx_ops = NULL;
 	struct wlan_objmgr_psoc *psoc = wlan_pdev_get_psoc(pdev);
@@ -319,8 +317,8 @@ void tgt_cfr_default_ta_ra_cfg(struct wlan_objmgr_pdev *pdev,
 	cfr_tx_ops = wlan_psoc_get_cfr_txops(psoc);
 
 	if (cfr_tx_ops->cfr_default_ta_ra_cfg)
-		cfr_tx_ops->cfr_default_ta_ra_cfg(rcc_param,
-						 allvalid, reset_cfg);
+		cfr_tx_ops->cfr_default_ta_ra_cfg(rcc_param, allvalid,
+						  reset_cfg);
 }
 
 void tgt_cfr_dump_lut_enh(struct wlan_objmgr_pdev *pdev)
@@ -375,15 +373,13 @@ QDF_STATUS tgt_cfr_subscribe_ppdu_desc(struct wlan_objmgr_pdev *pdev,
 	cfr_tx_ops = wlan_psoc_get_cfr_txops(psoc);
 
 	if (cfr_tx_ops->cfr_subscribe_ppdu_desc)
-		return cfr_tx_ops->cfr_subscribe_ppdu_desc(pdev,
-							   is_subscribe);
+		return cfr_tx_ops->cfr_subscribe_ppdu_desc(pdev, is_subscribe);
 
 	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS
-tgt_cfr_capture_count_support_set(struct wlan_objmgr_psoc *psoc,
-				  uint32_t value)
+tgt_cfr_capture_count_support_set(struct wlan_objmgr_psoc *psoc, uint32_t value)
 {
 	struct psoc_cfr *cfr_sc;
 
@@ -392,8 +388,8 @@ tgt_cfr_capture_count_support_set(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	cfr_sc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						       WLAN_UMAC_COMP_CFR);
+	cfr_sc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CFR);
 
 	if (!cfr_sc) {
 		cfr_err("Failed to get CFR component priv obj!!");
@@ -402,9 +398,8 @@ tgt_cfr_capture_count_support_set(struct wlan_objmgr_psoc *psoc,
 
 	cfr_sc->is_cap_interval_mode_sel_support = !!value;
 	cfr_debug("CFR: cap_interval_mode_sel_support is %s\n",
-		  (cfr_sc->is_cap_interval_mode_sel_support) ?
-		  "enabled" :
-		  "disabled");
+		  (cfr_sc->is_cap_interval_mode_sel_support) ? "enabled" :
+							       "disabled");
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -419,8 +414,8 @@ tgt_cfr_mo_marking_support_set(struct wlan_objmgr_psoc *psoc, uint32_t value)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	cfr_sc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						       WLAN_UMAC_COMP_CFR);
+	cfr_sc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CFR);
 	if (!cfr_sc) {
 		cfr_err("Failed to get CFR component priv obj!!");
 		return QDF_STATUS_E_INVAL;
@@ -443,8 +438,8 @@ tgt_cfr_aoa_for_rcc_support_set(struct wlan_objmgr_psoc *psoc, uint32_t value)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	cfr_sc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						       WLAN_UMAC_COMP_CFR);
+	cfr_sc =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CFR);
 
 	if (!cfr_sc) {
 		cfr_err("Failed to get CFR component priv obj!!");
@@ -459,15 +454,13 @@ tgt_cfr_aoa_for_rcc_support_set(struct wlan_objmgr_psoc *psoc, uint32_t value)
 }
 #else
 QDF_STATUS
-tgt_cfr_capture_count_support_set(struct wlan_objmgr_psoc *psoc,
-				  uint32_t value)
+tgt_cfr_capture_count_support_set(struct wlan_objmgr_psoc *psoc, uint32_t value)
 {
 	return QDF_STATUS_E_NOSUPPORT;
 }
 
 QDF_STATUS
-tgt_cfr_mo_marking_support_set(struct wlan_objmgr_psoc *psoc,
-			       uint32_t value)
+tgt_cfr_mo_marking_support_set(struct wlan_objmgr_psoc *psoc, uint32_t value)
 {
 	return QDF_STATUS_E_NOSUPPORT;
 }

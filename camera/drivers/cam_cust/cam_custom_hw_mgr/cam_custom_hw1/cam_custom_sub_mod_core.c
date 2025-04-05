@@ -4,15 +4,15 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/delay.h>
-#include <linux/slab.h>
-#include <linux/list.h>
-#include <linux/timer.h>
-#include <linux/ratelimit.h>
 #include "cam_custom_sub_mod_core.h"
+#include <linux/delay.h>
+#include <linux/list.h>
+#include <linux/ratelimit.h>
+#include <linux/slab.h>
+#include <linux/timer.h>
 
-int cam_custom_hw_sub_mod_get_hw_caps(void *hw_priv,
-	void *get_hw_cap_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_get_hw_caps(void *hw_priv, void *get_hw_cap_args,
+				      uint32_t arg_size)
 {
 	int rc = 0;
 
@@ -24,12 +24,12 @@ int cam_custom_hw_sub_mod_get_hw_caps(void *hw_priv,
 	return rc;
 }
 
-int cam_custom_hw_sub_mod_init_hw(void *hw_priv,
-	void *init_hw_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_init_hw(void *hw_priv, void *init_hw_args,
+				  uint32_t arg_size)
 {
-	struct cam_hw_info                *custom_hw = hw_priv;
-	struct cam_hw_soc_info            *soc_info = NULL;
-	struct cam_custom_resource_node   *custom_res = NULL;
+	struct cam_hw_info *custom_hw = hw_priv;
+	struct cam_hw_soc_info *soc_info = NULL;
+	struct cam_custom_resource_node *custom_res = NULL;
 	int rc = 0;
 
 	if (!hw_priv) {
@@ -58,7 +58,7 @@ int cam_custom_hw_sub_mod_init_hw(void *hw_priv,
 		goto decrement_open_cnt;
 	}
 
-	custom_res   = (struct cam_custom_resource_node *)init_hw_args;
+	custom_res = (struct cam_custom_resource_node *)init_hw_args;
 	if (custom_res && custom_res->init) {
 		rc = custom_res->init(custom_res, NULL, 0);
 		if (rc) {
@@ -83,12 +83,12 @@ decrement_open_cnt:
 	return rc;
 }
 
-int cam_custom_hw_sub_mod_deinit_hw(void *hw_priv,
-	void *deinit_hw_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_deinit_hw(void *hw_priv, void *deinit_hw_args,
+				    uint32_t arg_size)
 {
-	struct cam_hw_info                *custom_hw = hw_priv;
-	struct cam_hw_soc_info            *soc_info = NULL;
-	struct cam_custom_resource_node   *custom_res = NULL;
+	struct cam_hw_info *custom_hw = hw_priv;
+	struct cam_hw_soc_info *soc_info = NULL;
+	struct cam_custom_resource_node *custom_res = NULL;
 	int rc = 0;
 
 	if (!hw_priv) {
@@ -105,15 +105,15 @@ int cam_custom_hw_sub_mod_deinit_hw(void *hw_priv,
 	custom_hw->open_count--;
 	if (custom_hw->open_count) {
 		mutex_unlock(&custom_hw->hw_mutex);
-		CAM_DBG(CAM_CUSTOM,
-			"open_cnt non-zero =%d", custom_hw->open_count);
+		CAM_DBG(CAM_CUSTOM, "open_cnt non-zero =%d",
+			custom_hw->open_count);
 		return 0;
 	}
 	mutex_unlock(&custom_hw->hw_mutex);
 
 	soc_info = &custom_hw->soc_info;
 
-	custom_res   = (struct cam_custom_resource_node *)deinit_hw_args;
+	custom_res = (struct cam_custom_resource_node *)deinit_hw_args;
 	if (custom_res && custom_res->deinit) {
 		rc = custom_res->deinit(custom_res, NULL, 0);
 		if (rc)
@@ -135,8 +135,8 @@ int cam_custom_hw_sub_mod_deinit_hw(void *hw_priv,
 	return rc;
 }
 
-int cam_custom_hw_sub_mod_reset(void *hw_priv,
-	void *reserve_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_reset(void *hw_priv, void *reserve_args,
+				uint32_t arg_size)
 {
 	int rc = 0;
 
@@ -149,8 +149,8 @@ int cam_custom_hw_sub_mod_reset(void *hw_priv,
 	return rc;
 }
 
-int cam_custom_hw_sub_mod_reserve(void *hw_priv,
-	void *reserve_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_reserve(void *hw_priv, void *reserve_args,
+				  uint32_t arg_size)
 {
 	int rc = 0;
 
@@ -163,11 +163,10 @@ int cam_custom_hw_sub_mod_reserve(void *hw_priv,
 	return rc;
 }
 
-
-int cam_custom_hw_sub_mod_release(void *hw_priv,
-	void *release_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_release(void *hw_priv, void *release_args,
+				  uint32_t arg_size)
 {
-	struct cam_hw_info                *custom_hw  = hw_priv;
+	struct cam_hw_info *custom_hw = hw_priv;
 	int rc = 0;
 
 	if (!hw_priv || !release_args) {
@@ -182,11 +181,10 @@ int cam_custom_hw_sub_mod_release(void *hw_priv,
 	return rc;
 }
 
-
-int cam_custom_hw_sub_mod_start(void *hw_priv,
-	void *start_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_start(void *hw_priv, void *start_args,
+				uint32_t arg_size)
 {
-	struct cam_hw_info                *custom_hw  = hw_priv;
+	struct cam_hw_info *custom_hw = hw_priv;
 	int rc = 0;
 
 	if (!hw_priv || !start_args) {
@@ -201,10 +199,10 @@ int cam_custom_hw_sub_mod_start(void *hw_priv,
 	return rc;
 }
 
-int cam_custom_hw_sub_mod_stop(void *hw_priv,
-	void *stop_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_stop(void *hw_priv, void *stop_args,
+			       uint32_t arg_size)
 {
-	struct cam_hw_info                *custom_hw  = hw_priv;
+	struct cam_hw_info *custom_hw = hw_priv;
 	int rc = 0;
 
 	if (!hw_priv || !stop_args) {
@@ -219,25 +217,25 @@ int cam_custom_hw_sub_mod_stop(void *hw_priv,
 	return rc;
 }
 
-int cam_custom_hw_sub_mod_read(void *hw_priv,
-	void *read_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_read(void *hw_priv, void *read_args,
+			       uint32_t arg_size)
 {
 	return -EPERM;
 }
 
-int cam_custom_hw_sub_mod_write(void *hw_priv,
-	void *write_args, uint32_t arg_size)
+int cam_custom_hw_sub_mod_write(void *hw_priv, void *write_args,
+				uint32_t arg_size)
 {
 	return -EPERM;
 }
 
 int cam_custom_hw_submit_req(void *hw_priv, void *hw_submit_args,
-	uint32_t arg_size)
+			     uint32_t arg_size)
 {
-	struct cam_hw_info			         *custom_dev = hw_priv;
+	struct cam_hw_info *custom_dev = hw_priv;
 	struct cam_custom_sub_mod_req_to_dev *submit_req =
 		(struct cam_custom_sub_mod_req_to_dev *)hw_submit_args;
-	struct cam_custom_sub_mod_core_info  *core_info = NULL;
+	struct cam_custom_sub_mod_core_info *core_info = NULL;
 
 	core_info =
 		(struct cam_custom_sub_mod_core_info *)custom_dev->core_info;
@@ -245,8 +243,8 @@ int cam_custom_hw_submit_req(void *hw_priv, void *hw_submit_args,
 	spin_lock(&custom_dev->hw_lock);
 	if (core_info->curr_req) {
 		CAM_WARN(CAM_CUSTOM, "Req %lld still processed by %s",
-			core_info->curr_req->req_id,
-			custom_dev->soc_info.dev_name);
+			 core_info->curr_req->req_id,
+			 custom_dev->soc_info.dev_name);
 		spin_unlock(&custom_dev->hw_lock);
 		return -EAGAIN;
 	}
@@ -276,26 +274,25 @@ irqreturn_t cam_custom_hw_sub_mod_irq(int irq_num, void *data)
 		(struct cam_custom_sub_mod_core_info *)custom_dev->core_info;
 
 	irq_status = cam_io_r_mb(soc_info->reg_map[0].mem_base +
-				core_info->device_hw_info->irq_status);
+				 core_info->device_hw_info->irq_status);
 
-	cam_io_w_mb(irq_status,
-			soc_info->reg_map[0].mem_base +
-			core_info->device_hw_info->irq_clear);
+	cam_io_w_mb(irq_status, soc_info->reg_map[0].mem_base +
+					core_info->device_hw_info->irq_clear);
 
 	spin_lock(&custom_dev->hw_lock);
 	core_info->curr_req = NULL;
 	if (core_info->irq_cb.custom_hw_mgr_cb)
-		core_info->irq_cb.custom_hw_mgr_cb(
-			core_info->irq_cb.data, &cb_args);
+		core_info->irq_cb.custom_hw_mgr_cb(core_info->irq_cb.data,
+						   &cb_args);
 	spin_unlock(&custom_dev->hw_lock);
 
 	return IRQ_HANDLED;
 }
 
 int cam_custom_hw_sub_mod_process_cmd(void *hw_priv, uint32_t cmd_type,
-	void *cmd_args, uint32_t arg_size)
+				      void *cmd_args, uint32_t arg_size)
 {
-	struct cam_hw_info                  *hw = hw_priv;
+	struct cam_hw_info *hw = hw_priv;
 	struct cam_custom_sub_mod_core_info *core_info = NULL;
 	unsigned long flag = 0;
 	int rc = 0;
@@ -329,5 +326,3 @@ int cam_custom_hw_sub_mod_process_cmd(void *hw_priv, uint32_t cmd_type,
 
 	return rc;
 }
-
-

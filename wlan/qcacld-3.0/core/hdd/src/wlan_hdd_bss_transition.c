@@ -25,12 +25,12 @@
  */
 
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
 #include <wlan_hdd_bss_transition.h>
+#include <wlan_hdd_includes.h>
 
 /**
  * wlan_hdd_is_bt_in_progress() - check if bt activity is in progress
@@ -55,8 +55,7 @@ static bool wlan_hdd_is_bt_in_progress(struct hdd_context *hdd_ctx)
  * Return : 0 on success and errno on failure
  */
 static int wlan_hdd_fill_btm_resp(struct sk_buff *reply_skb,
-				  struct bss_candidate_info *info,
-				  int index)
+				  struct bss_candidate_info *info, int index)
 {
 	struct nlattr *attr;
 
@@ -67,12 +66,11 @@ static int wlan_hdd_fill_btm_resp(struct sk_buff *reply_skb,
 		return -EINVAL;
 	}
 
-	if (nla_put(reply_skb,
-		  QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_BSSID,
-		  ETH_ALEN, info->bssid.bytes) ||
+	if (nla_put(reply_skb, QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_BSSID,
+		    ETH_ALEN, info->bssid.bytes) ||
 	    nla_put_u32(reply_skb,
-		 QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_STATUS,
-		 info->status)) {
+			QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_STATUS,
+			info->status)) {
 		hdd_err("nla_put failed");
 		wlan_cfg80211_vendor_free_skb(reply_skb);
 		return -EINVAL;
@@ -83,20 +81,16 @@ static int wlan_hdd_fill_btm_resp(struct sk_buff *reply_skb,
 	return 0;
 }
 
-const struct nla_policy
-btm_params_policy[QCA_WLAN_VENDOR_ATTR_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_BTM_MBO_TRANSITION_REASON] = {
-						.type = NLA_U8},
+const struct nla_policy btm_params_policy[QCA_WLAN_VENDOR_ATTR_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_BTM_MBO_TRANSITION_REASON] = { .type = NLA_U8 },
 	[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO] =
-			VENDOR_NLA_POLICY_NESTED(btm_cand_list_policy),
+		VENDOR_NLA_POLICY_NESTED(btm_cand_list_policy),
 };
 
-const struct nla_policy
-btm_cand_list_policy[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_MAX + 1]
-	= {[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_BSSID] = {
-					.len = QDF_MAC_ADDR_SIZE},
-	   [QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_STATUS] = {
-						.type = NLA_U32},
+const struct nla_policy btm_cand_list_policy[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_MAX +
+					     1] = {
+	[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_BSSID] = { .len = QDF_MAC_ADDR_SIZE },
+	[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_STATUS] = { .type = NLA_U32 },
 };
 
 /**
@@ -148,8 +142,10 @@ __wlan_hdd_cfg80211_fetch_bss_transition_status(struct wiphy *wiphy,
 	hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter->deflink);
 	if (adapter->device_mode != QDF_STA_MODE ||
 	    !hdd_cm_is_vdev_associated(adapter->deflink)) {
-		hdd_err("Command is either not invoked for STA mode (device mode: %d) or STA is not associated (Connection state: %d)",
-			adapter->device_mode, hdd_sta_ctx->conn_info.conn_state);
+		hdd_err("Command is either not invoked for STA mode (device mode: %d) or "
+			"STA is not associated (Connection state: %d)",
+			adapter->device_mode,
+			hdd_sta_ctx->conn_info.conn_state);
 		return -EINVAL;
 	}
 
@@ -166,15 +162,14 @@ __wlan_hdd_cfg80211_fetch_bss_transition_status(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	transition_reason = nla_get_u8(
-			    tb[QCA_WLAN_VENDOR_ATTR_BTM_MBO_TRANSITION_REASON]);
+	transition_reason =
+		nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_BTM_MBO_TRANSITION_REASON]);
 
-	nla_for_each_nested(attr,
-			    tb[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO],
+	nla_for_each_nested(attr, tb[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO],
 			    rem) {
-		ret = wlan_cfg80211_nla_parse_nested(tb_msg,
-				    QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_MAX,
-				    attr, btm_cand_list_policy);
+		ret = wlan_cfg80211_nla_parse_nested(
+			tb_msg, QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_MAX,
+			attr, btm_cand_list_policy);
 		if (ret) {
 			hdd_err("Attribute parse failed");
 			return -EINVAL;
@@ -185,19 +180,20 @@ __wlan_hdd_cfg80211_fetch_bss_transition_status(struct wiphy *wiphy,
 			return -EINVAL;
 		}
 
-		qdf_mem_copy((void *)candidate_info[i].bssid.bytes,
-			     nla_data(tb_msg[
-			     QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_BSSID]),
-			     QDF_MAC_ADDR_SIZE);
+		qdf_mem_copy(
+			(void *)candidate_info[i].bssid.bytes,
+			nla_data(
+				tb_msg[QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO_BSSID]),
+			QDF_MAC_ADDR_SIZE);
 		i++;
 		if (i == MAX_CANDIDATE_INFO)
 			break;
 	}
 
 	/*
-	 * Determine status for each candidate and fill in the status field.
-	 * Also arrange the candidates in the order of preference.
-	 */
+   * Determine status for each candidate and fill in the status field.
+   * Also arrange the candidates in the order of preference.
+   */
 	nof_candidates = i;
 
 	is_bt_in_progress = wlan_hdd_is_bt_in_progress(hdd_ctx);
@@ -205,25 +201,21 @@ __wlan_hdd_cfg80211_fetch_bss_transition_status(struct wiphy *wiphy,
 	mac_handle = hdd_ctx->mac_handle;
 	status = sme_get_bss_transition_status(mac_handle, transition_reason,
 					       &hdd_sta_ctx->conn_info.bssid,
-					       candidate_info,
-					       nof_candidates,
+					       candidate_info, nof_candidates,
 					       is_bt_in_progress);
 	if (QDF_IS_STATUS_ERROR(status))
 		return -EINVAL;
 
 	/* Prepare the reply and send it to userspace */
-	skb = wlan_cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
-						       (QDF_MAC_ADDR_SIZE +
-							sizeof(uint32_t)) *
-						       nof_candidates +
-						       NLMSG_HDRLEN);
+	skb = wlan_cfg80211_vendor_cmd_alloc_reply_skb(
+		wiphy, (QDF_MAC_ADDR_SIZE + sizeof(uint32_t)) * nof_candidates +
+			       NLMSG_HDRLEN);
 	if (!skb) {
 		hdd_err("reply buffer alloc failed");
 		return -ENOMEM;
 	}
 
-	attr = nla_nest_start(skb,
-			      QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO);
+	attr = nla_nest_start(skb, QCA_WLAN_VENDOR_ATTR_BTM_CANDIDATE_INFO);
 	if (!attr) {
 		hdd_err("nla_nest_start failed");
 		wlan_cfg80211_vendor_free_skb(skb);
@@ -231,14 +223,13 @@ __wlan_hdd_cfg80211_fetch_bss_transition_status(struct wiphy *wiphy,
 	}
 
 	/*
-	 * Order candidates as - accepted candidate list followed by rejected
-	 * candidate list
-	 */
+   * Order candidates as - accepted candidate list followed by rejected
+   * candidate list
+   */
 	for (i = 0, j = 0; i < nof_candidates; i++) {
 		/* copy accepted candidate list */
 		if (candidate_info[i].status == QCA_STATUS_ACCEPT) {
-			if (wlan_hdd_fill_btm_resp(skb,
-						   &candidate_info[i], j))
+			if (wlan_hdd_fill_btm_resp(skb, &candidate_info[i], j))
 				return -EINVAL;
 			j++;
 		}
@@ -246,8 +237,7 @@ __wlan_hdd_cfg80211_fetch_bss_transition_status(struct wiphy *wiphy,
 	for (i = 0; i < nof_candidates; i++) {
 		/* copy rejected candidate list */
 		if (candidate_info[i].status != QCA_STATUS_ACCEPT) {
-			if (wlan_hdd_fill_btm_resp(skb,
-						   &candidate_info[i], j))
+			if (wlan_hdd_fill_btm_resp(skb, &candidate_info[i], j))
 				return -EINVAL;
 			j++;
 		}
@@ -278,4 +268,3 @@ int wlan_hdd_cfg80211_fetch_bss_transition_status(struct wiphy *wiphy,
 
 	return errno;
 }
-

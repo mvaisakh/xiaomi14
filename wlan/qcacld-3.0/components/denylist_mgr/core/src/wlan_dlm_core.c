@@ -20,21 +20,21 @@
  * DOC: declare internal APIs related to the denylist component
  */
 
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_dlm_core.h>
+#include "wlan_dlm_tgt_api.h"
 #include <qdf_mc_timer.h>
+#include <wlan_cm_bss_score_param.h>
+#include <wlan_dlm_core.h>
+#include <wlan_objmgr_pdev_obj.h>
 #include <wlan_scan_public_structs.h>
 #include <wlan_scan_utils_api.h>
-#include "wlan_dlm_tgt_api.h"
-#include <wlan_cm_bss_score_param.h>
 
-#define SECONDS_TO_MS(params)       ((params) * 1000)
-#define MINUTES_TO_MS(params)       (SECONDS_TO_MS(params) * 60)
-#define RSSI_TIMEOUT_VALUE          60
+#define SECONDS_TO_MS(params) ((params) * 1000)
+#define MINUTES_TO_MS(params) (SECONDS_TO_MS(params) * 60)
+#define RSSI_TIMEOUT_VALUE 60
 
-static void
-dlm_update_ap_info(struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
-		   struct scan_cache_entry *scan_entry)
+static void dlm_update_ap_info(struct dlm_reject_ap *dlm_entry,
+			       struct dlm_config *cfg,
+			       struct scan_cache_entry *scan_entry)
 {
 	qdf_time_t cur_timestamp = qdf_mc_timer_get_system_time();
 	qdf_time_t entry_add_time = 0;
@@ -48,15 +48,16 @@ dlm_update_ap_info(struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
 			dlm_entry->ap_timestamp.userspace_avoid_timestamp;
 
 		if ((cur_timestamp - entry_add_time) >=
-		     MINUTES_TO_MS(cfg->avoid_list_exipry_time)) {
+		    MINUTES_TO_MS(cfg->avoid_list_exipry_time)) {
 			/* Move AP to monitor list as avoid list time is over */
 			dlm_entry->userspace_avoidlist = false;
 			dlm_entry->avoid_userspace = false;
 			dlm_entry->driver_monitorlist = true;
 
 			dlm_entry->ap_timestamp.driver_monitor_timestamp =
-								cur_timestamp;
-			dlm_debug("Userspace avoid list timer expired, moved to monitor list");
+				cur_timestamp;
+			dlm_debug(
+				"Userspace avoid list timer expired, moved to monitor list");
 			update_done = true;
 		}
 	}
@@ -65,7 +66,7 @@ dlm_update_ap_info(struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
 		entry_add_time = dlm_entry->ap_timestamp.driver_avoid_timestamp;
 
 		if ((cur_timestamp - entry_add_time) >=
-		     MINUTES_TO_MS(cfg->avoid_list_exipry_time)) {
+		    MINUTES_TO_MS(cfg->avoid_list_exipry_time)) {
 			/* Move AP to monitor list as avoid list time is over */
 			dlm_entry->driver_avoidlist = false;
 			dlm_entry->nud_fail = false;
@@ -74,8 +75,9 @@ dlm_update_ap_info(struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
 			dlm_entry->driver_monitorlist = true;
 
 			dlm_entry->ap_timestamp.driver_monitor_timestamp =
-								cur_timestamp;
-			dlm_debug("Driver avoid list timer expired, moved to monitor list");
+				cur_timestamp;
+			dlm_debug(
+				"Driver avoid list timer expired, moved to monitor list");
 			update_done = true;
 		}
 	}
@@ -85,7 +87,7 @@ dlm_update_ap_info(struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
 			dlm_entry->ap_timestamp.driver_denylist_timestamp;
 
 		if ((cur_timestamp - entry_add_time) >=
-		     MINUTES_TO_MS(cfg->deny_list_exipry_time)) {
+		    MINUTES_TO_MS(cfg->deny_list_exipry_time)) {
 			/* Move AP to monitor list as deny list time is over */
 			dlm_entry->driver_denylist = false;
 			dlm_entry->driver_monitorlist = true;
@@ -93,35 +95,38 @@ dlm_update_ap_info(struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
 			dlm_entry->sta_kickout = false;
 			dlm_entry->ho_fail = false;
 			dlm_entry->ap_timestamp.driver_monitor_timestamp =
-								cur_timestamp;
-			dlm_debug("Driver denylist timer expired, moved to monitor list");
+				cur_timestamp;
+			dlm_debug(
+				"Driver denylist timer expired, moved to monitor list");
 			update_done = true;
 		}
 	}
 
 	if (DLM_IS_AP_IN_RSSI_REJECT_LIST(dlm_entry)) {
-		qdf_time_t entry_age = cur_timestamp -
-			    dlm_entry->ap_timestamp.rssi_reject_timestamp;
+		qdf_time_t entry_age =
+			cur_timestamp -
+			dlm_entry->ap_timestamp.rssi_reject_timestamp;
 
 		if ((dlm_entry->rssi_reject_params.retry_delay &&
 		     entry_age >= dlm_entry->rssi_reject_params.retry_delay) ||
-		    (scan_entry && scan_entry->rssi_raw >=
-		      dlm_entry->rssi_reject_params.expected_rssi)) {
+		    (scan_entry &&
+		     scan_entry->rssi_raw >=
+			     dlm_entry->rssi_reject_params.expected_rssi)) {
 			/*
-			 * Remove from the rssi reject list as:-
-			 * 1. In case of OCE reject, both the time, and RSSI
-			 *    param are present, and one of them have improved
-			 *    now, so the STA can now connect to the AP.
-			 *
-			 * 2. In case of BTM message received from the FW,
-			 *    the STA just needs to wait for a certain time,
-			 *    hence RSSI is not a restriction (MIN RSSI needed
-			 *    in that case is filled as 0).
-			 *    Hence the above check will still pass, if BTM
-			 *    delay is over, and will fail is not. RSSI check
-			 *    for BTM message will fail (expected), as BTM does
-			 *    not care about the same.
-			 */
+       * Remove from the rssi reject list as:-
+       * 1. In case of OCE reject, both the time, and RSSI
+       *    param are present, and one of them have improved
+       *    now, so the STA can now connect to the AP.
+       *
+       * 2. In case of BTM message received from the FW,
+       *    the STA just needs to wait for a certain time,
+       *    hence RSSI is not a restriction (MIN RSSI needed
+       *    in that case is filled as 0).
+       *    Hence the above check will still pass, if BTM
+       *    delay is over, and will fail is not. RSSI check
+       *    for BTM message will fail (expected), as BTM does
+       *    not care about the same.
+       */
 			dlm_entry->poor_rssi = false;
 			dlm_entry->oce_assoc_reject = false;
 			dlm_entry->btm_bss_termination = false;
@@ -130,11 +135,13 @@ dlm_update_ap_info(struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
 			dlm_entry->no_more_stas = false;
 			dlm_entry->reassoc_rssi_reject = false;
 			dlm_entry->rssi_reject_list = false;
-			dlm_debug("Remove BSSID from rssi reject expected RSSI = %d, current RSSI = %d, retry delay required = %d ms, delay = %lu ms",
-				  dlm_entry->rssi_reject_params.expected_rssi,
-				  scan_entry ? scan_entry->rssi_raw : 0,
-				  dlm_entry->rssi_reject_params.retry_delay,
-				  entry_age);
+			dlm_debug(
+				"Remove BSSID from rssi reject expected RSSI = %d, current "
+				"RSSI = %d, retry delay required = %d ms, delay = %lu ms",
+				dlm_entry->rssi_reject_params.expected_rssi,
+				scan_entry ? scan_entry->rssi_raw : 0,
+				dlm_entry->rssi_reject_params.retry_delay,
+				entry_age);
 			update_done = true;
 		}
 	}
@@ -143,26 +150,23 @@ dlm_update_ap_info(struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
 		return;
 
 	dlm_debug(QDF_MAC_ADDR_FMT " Old %d Updated reject ap type = %x",
-		  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
-		  old_reject_ap_type,
+		  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes), old_reject_ap_type,
 		  dlm_entry->reject_ap_type);
 }
 
 #define MAX_BL_TIME 255000
 
-static enum cm_denylist_action
-dlm_prune_old_entries_and_get_action(struct dlm_reject_ap *dlm_entry,
-				     struct dlm_config *cfg,
-				     struct scan_cache_entry *entry,
-				     qdf_list_t *reject_ap_list)
+static enum cm_denylist_action dlm_prune_old_entries_and_get_action(
+	struct dlm_reject_ap *dlm_entry, struct dlm_config *cfg,
+	struct scan_cache_entry *entry, qdf_list_t *reject_ap_list)
 {
 	dlm_update_ap_info(dlm_entry, cfg, entry);
 
 	/*
-	 * If all entities have cleared the bits of reject ap type, then
-	 * the AP is not needed in the database,(reject_ap_type should be 0),
-	 * then remove the entry from the reject ap list.
-	 */
+   * If all entities have cleared the bits of reject ap type, then
+   * the AP is not needed in the database,(reject_ap_type should be 0),
+   * then remove the entry from the reject ap list.
+   */
 	if (!dlm_entry->reject_ap_type) {
 		dlm_debug(QDF_MAC_ADDR_FMT " cleared from list",
 			  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes));
@@ -174,17 +178,22 @@ dlm_prune_old_entries_and_get_action(struct dlm_reject_ap *dlm_entry,
 	if (DLM_IS_AP_IN_RSSI_REJECT_LIST(dlm_entry) &&
 	    !dlm_entry->userspace_denylist && !dlm_entry->driver_denylist &&
 	    dlm_entry->rssi_reject_params.original_timeout > MAX_BL_TIME) {
-		dlm_info("Allow BSSID " QDF_MAC_ADDR_FMT " as the retry delay is greater than %u ms, expected RSSI = %d, current RSSI = %d, retry delay = %u ms original timeout %u time added %lu source %d reason %d",
-			 QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes), MAX_BL_TIME,
-			 dlm_entry->rssi_reject_params.expected_rssi,
-			 entry ? entry->rssi_raw : 0,
-			 dlm_entry->rssi_reject_params.retry_delay,
-			 dlm_entry->rssi_reject_params.original_timeout,
-			 dlm_entry->rssi_reject_params.received_time,
-			 dlm_entry->source, dlm_entry->reject_ap_reason);
+		dlm_info(
+			"Allow BSSID " QDF_MAC_ADDR_FMT
+			" as the retry delay is greater than %u ms, expected RSSI = %d, "
+			"current RSSI = %d, retry delay = %u ms original timeout %u time "
+			"added %lu source %d reason %d",
+			QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes), MAX_BL_TIME,
+			dlm_entry->rssi_reject_params.expected_rssi,
+			entry ? entry->rssi_raw : 0,
+			dlm_entry->rssi_reject_params.retry_delay,
+			dlm_entry->rssi_reject_params.original_timeout,
+			dlm_entry->rssi_reject_params.received_time,
+			dlm_entry->source, dlm_entry->reject_ap_reason);
 
 		if (DLM_IS_AP_IN_AVOIDLIST(dlm_entry)) {
-			dlm_debug(QDF_MAC_ADDR_FMT " in avoid list, deprioritize it",
+			dlm_debug(QDF_MAC_ADDR_FMT
+				  " in avoid list, deprioritize it",
 				  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes));
 			return CM_DLM_AVOID;
 		}
@@ -192,9 +201,11 @@ dlm_prune_old_entries_and_get_action(struct dlm_reject_ap *dlm_entry,
 		return CM_DLM_NO_ACTION;
 	}
 	if (DLM_IS_AP_IN_DENYLIST(dlm_entry)) {
-		dlm_debug(QDF_MAC_ADDR_FMT " in denylist list, reject ap type %d removing from candidate list",
-			  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
-			  dlm_entry->reject_ap_type);
+		dlm_debug(
+			QDF_MAC_ADDR_FMT
+			" in denylist list, reject ap type %d removing from candidate list",
+			QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
+			dlm_entry->reject_ap_type);
 
 		if (DLM_IS_AP_DENYLISTED_BY_USERSPACE(dlm_entry) ||
 		    DLM_IS_AP_IN_RSSI_REJECT_LIST(dlm_entry))
@@ -245,12 +256,13 @@ dlm_action_on_bssid(struct wlan_objmgr_pdev *pdev,
 		qdf_list_peek_next(&dlm_ctx->reject_ap_list, cur_node,
 				   &next_node);
 
-		dlm_entry = qdf_container_of(cur_node, struct dlm_reject_ap,
-					     node);
+		dlm_entry =
+			qdf_container_of(cur_node, struct dlm_reject_ap, node);
 
 		if (qdf_is_macaddr_equal(&dlm_entry->bssid, &entry->bssid)) {
-			action = dlm_prune_old_entries_and_get_action(dlm_entry,
-					cfg, entry, &dlm_ctx->reject_ap_list);
+			action = dlm_prune_old_entries_and_get_action(
+				dlm_entry, cfg, entry,
+				&dlm_ctx->reject_ap_list);
 			qdf_mutex_release(&dlm_ctx->reject_ap_list_lock);
 			return action;
 		}
@@ -292,10 +304,9 @@ dlm_update_avoidlist_reject_reason(struct dlm_reject_ap *entry,
 	}
 }
 
-static void
-dlm_handle_avoid_list(struct dlm_reject_ap *entry,
-		      struct dlm_config *cfg,
-		      struct reject_ap_info *ap_info)
+static void dlm_handle_avoid_list(struct dlm_reject_ap *entry,
+				  struct dlm_config *cfg,
+				  struct reject_ap_info *ap_info)
 {
 	qdf_time_t cur_timestamp = qdf_mc_timer_get_system_time();
 
@@ -332,12 +343,15 @@ dlm_handle_avoid_list(struct dlm_reject_ap *entry,
 		entry->driver_denylist = true;
 		entry->ap_timestamp.driver_denylist_timestamp = cur_timestamp;
 
-		dlm_debug(QDF_MAC_ADDR_FMT " moved to deny list with counter %d",
+		dlm_debug(QDF_MAC_ADDR_FMT
+			  " moved to deny list with counter %d",
 			  QDF_MAC_ADDR_REF(entry->bssid.bytes),
 			  entry->bad_bssid_counter);
 		return;
 	}
-	dlm_debug("Added " QDF_MAC_ADDR_FMT " to avoid list type %d, counter %d reason %d updated reject reason %d source %d",
+	dlm_debug("Added " QDF_MAC_ADDR_FMT
+		  " to avoid list type %d, counter %d reason %d updated reject "
+		  "reason %d source %d",
 		  QDF_MAC_ADDR_REF(entry->bssid.bytes), ap_info->reject_ap_type,
 		  entry->bad_bssid_counter, ap_info->reject_reason,
 		  entry->reject_ap_reason, entry->source);
@@ -345,20 +359,19 @@ dlm_handle_avoid_list(struct dlm_reject_ap *entry,
 	entry->connect_timestamp = qdf_mc_timer_get_system_time();
 }
 
-static void
-dlm_handle_denylist(struct dlm_reject_ap *entry,
-		    struct reject_ap_info *ap_info)
+static void dlm_handle_denylist(struct dlm_reject_ap *entry,
+				struct reject_ap_info *ap_info)
 {
 	/*
-	 * No entity will denylist an AP internal to driver, so only
-	 * userspace denylist is the case to be taken care. Driver denylist
-	 * will only happen when the bad bssid counter has reached the max
-	 * threshold.
-	 */
+   * No entity will denylist an AP internal to driver, so only
+   * userspace denylist is the case to be taken care. Driver denylist
+   * will only happen when the bad bssid counter has reached the max
+   * threshold.
+   */
 	entry->bssid = ap_info->bssid;
 	entry->userspace_denylist = true;
 	entry->ap_timestamp.userspace_denylist_timestamp =
-						qdf_mc_timer_get_system_time();
+		qdf_mc_timer_get_system_time();
 
 	entry->source = ADDED_BY_DRIVER;
 	entry->denylist_userspace = true;
@@ -405,9 +418,8 @@ dlm_update_rssi_reject_reason(struct dlm_reject_ap *entry,
 	}
 }
 
-static void
-dlm_handle_rssi_reject_list(struct dlm_reject_ap *entry,
-			    struct reject_ap_info *ap_info)
+static void dlm_handle_rssi_reject_list(struct dlm_reject_ap *entry,
+					struct reject_ap_info *ap_info)
 {
 	bool bssid_newly_added;
 
@@ -421,10 +433,13 @@ dlm_handle_rssi_reject_list(struct dlm_reject_ap *entry,
 	}
 
 	entry->ap_timestamp.rssi_reject_timestamp =
-					qdf_mc_timer_get_system_time();
+		qdf_mc_timer_get_system_time();
 	entry->rssi_reject_params = ap_info->rssi_reject_params;
 	dlm_update_rssi_reject_reason(entry, ap_info->reject_reason);
-	dlm_info(QDF_MAC_ADDR_FMT " %s to rssi reject list, expected RSSI %d retry delay %u source %d original timeout %u received time %lu reject reason %d updated reason %d",
+	dlm_info(QDF_MAC_ADDR_FMT
+		 " %s to rssi reject list, expected RSSI %d retry "
+		 "delay %u source %d original timeout %u received "
+		 "time %lu reject reason %d updated reason %d",
 		 QDF_MAC_ADDR_REF(entry->bssid.bytes),
 		 bssid_newly_added ? "ADDED" : "UPDATED",
 		 entry->rssi_reject_params.expected_rssi,
@@ -435,9 +450,9 @@ dlm_handle_rssi_reject_list(struct dlm_reject_ap *entry,
 		 ap_info->reject_reason, entry->reject_ap_reason);
 }
 
-static void
-dlm_modify_entry(struct dlm_reject_ap *entry, struct dlm_config *cfg,
-		 struct reject_ap_info *ap_info)
+static void dlm_modify_entry(struct dlm_reject_ap *entry,
+			     struct dlm_config *cfg,
+			     struct reject_ap_info *ap_info)
 {
 	/* Modify the entry according to the ap_info */
 	switch (ap_info->reject_ap_type) {
@@ -480,9 +495,8 @@ dlm_is_bssid_present_only_in_list_type(enum dlm_reject_ap_type list_type,
 	}
 }
 
-static bool
-dlm_is_bssid_of_type(enum dlm_reject_ap_type reject_ap_type,
-		     struct dlm_reject_ap *dlm_entry)
+static bool dlm_is_bssid_of_type(enum dlm_reject_ap_type reject_ap_type,
+				 struct dlm_reject_ap *dlm_entry)
 {
 	switch (reject_ap_type) {
 	case USERSPACE_AVOID_TYPE:
@@ -503,76 +517,74 @@ dlm_is_bssid_of_type(enum dlm_reject_ap_type reject_ap_type,
 	}
 }
 
-static qdf_time_t
-dlm_get_delta_of_bssid(enum dlm_reject_ap_type list_type,
-		       struct dlm_reject_ap *dlm_entry,
-		       struct dlm_config *cfg)
+static qdf_time_t dlm_get_delta_of_bssid(enum dlm_reject_ap_type list_type,
+					 struct dlm_reject_ap *dlm_entry,
+					 struct dlm_config *cfg)
 {
 	qdf_time_t cur_timestamp = qdf_mc_timer_get_system_time();
 	int32_t disallowed_time;
 	/*
-	 * For all the list types, delta would be the entry age only. Hence the
-	 * oldest entry would be removed first in case of list is full, and the
-	 * driver needs to make space for newer entries.
-	 */
+   * For all the list types, delta would be the entry age only. Hence the
+   * oldest entry would be removed first in case of list is full, and the
+   * driver needs to make space for newer entries.
+   */
 
 	switch (list_type) {
 	case USERSPACE_AVOID_TYPE:
 		return MINUTES_TO_MS(cfg->avoid_list_exipry_time) -
-			(cur_timestamp -
-			 dlm_entry->ap_timestamp.userspace_avoid_timestamp);
+		       (cur_timestamp -
+			dlm_entry->ap_timestamp.userspace_avoid_timestamp);
 	case USERSPACE_DENYLIST_TYPE:
 		return cur_timestamp -
-			  dlm_entry->ap_timestamp.userspace_denylist_timestamp;
+		       dlm_entry->ap_timestamp.userspace_denylist_timestamp;
 	case DRIVER_AVOID_TYPE:
 		return MINUTES_TO_MS(cfg->avoid_list_exipry_time) -
-			(cur_timestamp -
-			 dlm_entry->ap_timestamp.driver_avoid_timestamp);
+		       (cur_timestamp -
+			dlm_entry->ap_timestamp.driver_avoid_timestamp);
 	case DRIVER_DENYLIST_TYPE:
 		return MINUTES_TO_MS(cfg->deny_list_exipry_time) -
-			(cur_timestamp -
-			 dlm_entry->ap_timestamp.driver_denylist_timestamp);
+		       (cur_timestamp -
+			dlm_entry->ap_timestamp.driver_denylist_timestamp);
 
 	/*
-	 * For RSSI reject lowest delta would be the BSSID whose retry delay
-	 * is about to expire, hence the delta would be remaining duration for
-	 * de-denylisting the AP from rssi reject list.
-	 */
+   * For RSSI reject lowest delta would be the BSSID whose retry delay
+   * is about to expire, hence the delta would be remaining duration for
+   * de-denylisting the AP from rssi reject list.
+   */
 	case DRIVER_RSSI_REJECT_TYPE:
 		if (dlm_entry->rssi_reject_params.retry_delay)
 			disallowed_time =
 				dlm_entry->rssi_reject_params.retry_delay -
 				(cur_timestamp -
-				dlm_entry->ap_timestamp.rssi_reject_timestamp);
+				 dlm_entry->ap_timestamp.rssi_reject_timestamp);
 		else
 			disallowed_time =
 				(int32_t)(MINUTES_TO_MS(RSSI_TIMEOUT_VALUE) -
-				(cur_timestamp -
-				 dlm_entry->ap_timestamp.rssi_reject_timestamp)
-				 );
+					  (cur_timestamp -
+					   dlm_entry->ap_timestamp
+						   .rssi_reject_timestamp));
 		return ((disallowed_time < 0) ? 0 : disallowed_time);
 	case DRIVER_MONITOR_TYPE:
 		return cur_timestamp -
-			       dlm_entry->ap_timestamp.driver_monitor_timestamp;
+		       dlm_entry->ap_timestamp.driver_monitor_timestamp;
 	default:
 		dlm_debug("Wrong list type %d passed", list_type);
 		return 0;
 	}
 }
 
-static bool
-dlm_is_oldest_entry(enum dlm_reject_ap_type list_type,
-		    qdf_time_t cur_node_delta,
-		    qdf_time_t oldest_node_delta)
+static bool dlm_is_oldest_entry(enum dlm_reject_ap_type list_type,
+				qdf_time_t cur_node_delta,
+				qdf_time_t oldest_node_delta)
 {
 	switch (list_type) {
 	/*
-	 * For RSSI reject, userspace avoid, driver avoid/denylist type the
-	 * lowest retry delay has to be found out hence if oldest_node_delta is
-	 * 0, mean this is the first entry and thus return true, If
-	 * oldest_node_delta is non zero, compare the delta and return true if
-	 * the cur entry has lower retry delta.
-	 */
+   * For RSSI reject, userspace avoid, driver avoid/denylist type the
+   * lowest retry delay has to be found out hence if oldest_node_delta is
+   * 0, mean this is the first entry and thus return true, If
+   * oldest_node_delta is non zero, compare the delta and return true if
+   * the cur entry has lower retry delta.
+   */
 	case DRIVER_RSSI_REJECT_TYPE:
 	case USERSPACE_AVOID_TYPE:
 	case DRIVER_AVOID_TYPE:
@@ -609,8 +621,8 @@ dlm_try_delete_bssid_in_list(qdf_list_t *reject_ap_list,
 	while (cur_node) {
 		qdf_list_peek_next(reject_ap_list, cur_node, &next_node);
 
-		dlm_entry = qdf_container_of(cur_node, struct dlm_reject_ap,
-					     node);
+		dlm_entry =
+			qdf_container_of(cur_node, struct dlm_reject_ap, node);
 
 		if (dlm_is_bssid_present_only_in_list_type(list_type,
 							   dlm_entry)) {
@@ -642,31 +654,30 @@ dlm_try_delete_bssid_in_list(qdf_list_t *reject_ap_list,
 	return QDF_STATUS_E_FAILURE;
 }
 
-static QDF_STATUS
-dlm_remove_lowest_delta_entry(qdf_list_t *reject_ap_list,
-			      struct dlm_config *cfg)
+static QDF_STATUS dlm_remove_lowest_delta_entry(qdf_list_t *reject_ap_list,
+						struct dlm_config *cfg)
 {
 	QDF_STATUS status;
 
 	/*
-	 * According to the Priority, the driver will try to remove the entries,
-	 * as the least priority list, that is monitor list would not penalize
-	 * the BSSIDs for connection. The priority order for the removal is:-
-	 * 1. Monitor list
-	 * 2. Driver avoid list
-	 * 3. Userspace avoid list.
-	 * 4. RSSI reject list.
-	 * 5. Driver Denylist.
-	 * 6. Userspace Denylist.
-	 */
+   * According to the Priority, the driver will try to remove the entries,
+   * as the least priority list, that is monitor list would not penalize
+   * the BSSIDs for connection. The priority order for the removal is:-
+   * 1. Monitor list
+   * 2. Driver avoid list
+   * 3. Userspace avoid list.
+   * 4. RSSI reject list.
+   * 5. Driver Denylist.
+   * 6. Userspace Denylist.
+   */
 
 	status = dlm_try_delete_bssid_in_list(reject_ap_list,
 					      DRIVER_MONITOR_TYPE, cfg);
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return QDF_STATUS_SUCCESS;
 
-	status = dlm_try_delete_bssid_in_list(reject_ap_list,
-					      DRIVER_AVOID_TYPE, cfg);
+	status = dlm_try_delete_bssid_in_list(reject_ap_list, DRIVER_AVOID_TYPE,
+					      cfg);
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return QDF_STATUS_SUCCESS;
 
@@ -726,16 +737,16 @@ dlm_fill_rssi_reject_params(struct dlm_reject_ap *dlm_entry,
 
 	dlm_reject_list->source = dlm_entry->rssi_reject_params.source;
 	dlm_reject_list->original_timeout =
-			dlm_entry->rssi_reject_params.original_timeout;
+		dlm_entry->rssi_reject_params.original_timeout;
 	dlm_reject_list->received_time =
-			dlm_entry->rssi_reject_params.received_time;
+		dlm_entry->rssi_reject_params.received_time;
 	dlm_reject_list->reject_reason = dlm_get_rssi_reject_reason(dlm_entry);
-	dlm_debug(QDF_MAC_ADDR_FMT " source %d original timeout %u received time %lu reject reason %d",
-		  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
-		  dlm_reject_list->source,
-		  dlm_reject_list->original_timeout,
-		  dlm_reject_list->received_time,
-		  dlm_reject_list->reject_reason);
+	dlm_debug(
+		QDF_MAC_ADDR_FMT
+		" source %d original timeout %u received time %lu reject reason %d",
+		QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
+		dlm_reject_list->source, dlm_reject_list->original_timeout,
+		dlm_reject_list->received_time, dlm_reject_list->reject_reason);
 }
 
 /**
@@ -752,12 +763,12 @@ static const char *
 dlm_find_reject_type_string(enum dlm_reject_ap_type reject_ap_type)
 {
 	switch (reject_ap_type) {
-	CASE_RETURN_STRING(USERSPACE_AVOID_TYPE);
-	CASE_RETURN_STRING(USERSPACE_DENYLIST_TYPE);
-	CASE_RETURN_STRING(DRIVER_AVOID_TYPE);
-	CASE_RETURN_STRING(DRIVER_DENYLIST_TYPE);
-	CASE_RETURN_STRING(DRIVER_RSSI_REJECT_TYPE);
-	CASE_RETURN_STRING(DRIVER_MONITOR_TYPE);
+		CASE_RETURN_STRING(USERSPACE_AVOID_TYPE);
+		CASE_RETURN_STRING(USERSPACE_DENYLIST_TYPE);
+		CASE_RETURN_STRING(DRIVER_AVOID_TYPE);
+		CASE_RETURN_STRING(DRIVER_DENYLIST_TYPE);
+		CASE_RETURN_STRING(DRIVER_RSSI_REJECT_TYPE);
+		CASE_RETURN_STRING(DRIVER_MONITOR_TYPE);
 	default:
 		return "REJECT_REASON_UNKNOWN";
 	}
@@ -845,8 +856,7 @@ bool dlm_is_bssid_in_reject_list(struct wlan_objmgr_pdev *pdev,
 					&dlm_ctx->reject_ap_list_lock);
 				return true;
 			}
-			qdf_mutex_release(
-				&dlm_ctx->reject_ap_list_lock);
+			qdf_mutex_release(&dlm_ctx->reject_ap_list_lock);
 			return false;
 		}
 		cur_node = next_node;
@@ -898,22 +908,24 @@ void dlm_dump_denylist_bssid(struct wlan_objmgr_pdev *pdev)
 	while (cur_node) {
 		qdf_list_peek_next(reject_db_list, cur_node, &next_node);
 
-		dlm_entry = qdf_container_of(cur_node, struct dlm_reject_ap,
-					     node);
+		dlm_entry =
+			qdf_container_of(cur_node, struct dlm_reject_ap, node);
 
 		reject_ap_type = dlm_get_reject_ap_type(dlm_entry);
 
-		reject_duration = dlm_get_delta_of_bssid(reject_ap_type,
-							 dlm_entry,
-							 &dlm_psoc_obj->dlm_cfg);
+		reject_duration = dlm_get_delta_of_bssid(
+			reject_ap_type, dlm_entry, &dlm_psoc_obj->dlm_cfg);
 
-		dlm_nofl_debug("DENYLIST BSSID " QDF_MAC_ADDR_FMT " type %s retry delay %dms expected RSSI %d reject reason %d rejection source %d",
-			       QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
-			       dlm_find_reject_type_string(reject_ap_type),
-			       reject_duration,
-			       dlm_entry->rssi_reject_params.expected_rssi,
-			       dlm_entry->reject_ap_reason,
-			       dlm_entry->rssi_reject_params.source);
+		dlm_nofl_debug(
+			"DENYLIST BSSID " QDF_MAC_ADDR_FMT
+			" type %s retry delay %dms expected RSSI %d reject reason "
+			"%d rejection source %d",
+			QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
+			dlm_find_reject_type_string(reject_ap_type),
+			reject_duration,
+			dlm_entry->rssi_reject_params.expected_rssi,
+			dlm_entry->reject_ap_reason,
+			dlm_entry->rssi_reject_params.source);
 		cur_node = next_node;
 		next_node = NULL;
 	}
@@ -940,8 +952,8 @@ static void dlm_fill_reject_list(qdf_list_t *reject_db_list,
 		}
 		qdf_list_peek_next(reject_db_list, cur_node, &next_node);
 
-		dlm_entry = qdf_container_of(cur_node, struct dlm_reject_ap,
-					     node);
+		dlm_entry =
+			qdf_container_of(cur_node, struct dlm_reject_ap, node);
 
 		dlm_update_ap_info(dlm_entry, cfg, NULL);
 		if (!dlm_entry->reject_ap_type) {
@@ -959,23 +971,27 @@ static void dlm_fill_reject_list(qdf_list_t *reject_db_list,
 
 			dlm_reject_list = &reject_list[*num_of_reject_bssid];
 			dlm_reject_list->expected_rssi =
-				    dlm_entry->rssi_reject_params.expected_rssi;
+				dlm_entry->rssi_reject_params.expected_rssi;
 			dlm_reject_list->reject_duration =
-			       dlm_get_delta_of_bssid(reject_ap_type, dlm_entry,
-						      cfg);
+				dlm_get_delta_of_bssid(reject_ap_type,
+						       dlm_entry, cfg);
 
 			dlm_fill_rssi_reject_params(dlm_entry, reject_ap_type,
 						    dlm_reject_list);
 			dlm_reject_list->reject_ap_type = reject_ap_type;
 			dlm_reject_list->bssid = dlm_entry->bssid;
 			(*num_of_reject_bssid)++;
-			dlm_debug("Adding BSSID " QDF_MAC_ADDR_FMT " of type %d retry delay %d expected RSSI %d, entries added = %d reject reason %d",
-				  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
-				  reject_ap_type,
-				  reject_list[*num_of_reject_bssid - 1].reject_duration,
-				  dlm_entry->rssi_reject_params.expected_rssi,
-				  *num_of_reject_bssid,
-				  dlm_entry->reject_ap_reason);
+			dlm_debug(
+				"Adding BSSID " QDF_MAC_ADDR_FMT
+				" of type %d retry delay %d expected RSSI %d, entries added = "
+				"%d reject reason %d",
+				QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
+				reject_ap_type,
+				reject_list[*num_of_reject_bssid - 1]
+					.reject_duration,
+				dlm_entry->rssi_reject_params.expected_rssi,
+				*num_of_reject_bssid,
+				dlm_entry->reject_ap_reason);
 		}
 		cur_node = next_node;
 		next_node = NULL;
@@ -1038,26 +1054,26 @@ static void dlm_store_pdevid_in_dlm_psocpriv(struct wlan_objmgr_pdev *pdev)
 	dlm_psoc_obj->pdev_id = pdev->pdev_objmgr.wlan_pdev_id;
 }
 
-void
-dlm_send_reject_ap_list_to_fw(struct wlan_objmgr_pdev *pdev,
-			      qdf_list_t *reject_db_list,
-			      struct dlm_config *cfg)
+void dlm_send_reject_ap_list_to_fw(struct wlan_objmgr_pdev *pdev,
+				   qdf_list_t *reject_db_list,
+				   struct dlm_config *cfg)
 {
 	QDF_STATUS status;
 	bool is_dlm_suspended;
-	struct reject_ap_params reject_params = {0};
+	struct reject_ap_params reject_params = { 0 };
 
 	ucfg_dlm_psoc_get_suspended(wlan_pdev_get_psoc(pdev),
 				    &is_dlm_suspended);
 	if (is_dlm_suspended) {
 		dlm_store_pdevid_in_dlm_psocpriv(pdev);
-		dlm_debug("Failed to send reject AP list to FW as DLM is suspended");
+		dlm_debug(
+			"Failed to send reject AP list to FW as DLM is suspended");
 		return;
 	}
 
 	reject_params.bssid_list =
-			qdf_mem_malloc(sizeof(*reject_params.bssid_list) *
-				       PDEV_MAX_NUM_BSSID_DISALLOW_LIST);
+		qdf_mem_malloc(sizeof(*reject_params.bssid_list) *
+			       PDEV_MAX_NUM_BSSID_DISALLOW_LIST);
 	if (!reject_params.bssid_list)
 		return;
 
@@ -1128,11 +1144,11 @@ dlm_add_bssid_to_reject_list(struct wlan_objmgr_pdev *pdev,
 	qdf_list_peek_front(&dlm_ctx->reject_ap_list, &cur_node);
 
 	while (cur_node) {
-		qdf_list_peek_next(&dlm_ctx->reject_ap_list,
-				   cur_node, &next_node);
+		qdf_list_peek_next(&dlm_ctx->reject_ap_list, cur_node,
+				   &next_node);
 
-		dlm_entry = qdf_container_of(cur_node, struct dlm_reject_ap,
-					     node);
+		dlm_entry =
+			qdf_container_of(cur_node, struct dlm_reject_ap, node);
 
 		/* Update the AP info to the latest list first */
 		dlm_update_ap_info(dlm_entry, cfg, NULL);
@@ -1158,9 +1174,8 @@ dlm_add_bssid_to_reject_list(struct wlan_objmgr_pdev *pdev,
 
 	if (qdf_list_size(&dlm_ctx->reject_ap_list) == MAX_BAD_AP_LIST_SIZE) {
 		/* List is FULL, need to delete entries */
-		status =
-			dlm_remove_lowest_delta_entry(&dlm_ctx->reject_ap_list,
-						      cfg);
+		status = dlm_remove_lowest_delta_entry(&dlm_ctx->reject_ap_list,
+						       cfg);
 
 		if (QDF_IS_STATUS_ERROR(status)) {
 			qdf_mutex_release(&dlm_ctx->reject_ap_list_lock);
@@ -1209,8 +1224,8 @@ dlm_clear_userspace_denylist_info(struct wlan_objmgr_pdev *pdev)
 	while (cur_node) {
 		qdf_list_peek_next(&dlm_ctx->reject_ap_list, cur_node,
 				   &next_node);
-		dlm_entry = qdf_container_of(cur_node, struct dlm_reject_ap,
-					     node);
+		dlm_entry =
+			qdf_container_of(cur_node, struct dlm_reject_ap, node);
 
 		if (IS_AP_IN_USERSPACE_DENYLIST_ONLY(dlm_entry)) {
 			dlm_debug("removing bssid: " QDF_MAC_ADDR_FMT,
@@ -1219,9 +1234,9 @@ dlm_clear_userspace_denylist_info(struct wlan_objmgr_pdev *pdev)
 					     &dlm_entry->node);
 			qdf_mem_free(dlm_entry);
 		} else if (DLM_IS_AP_DENYLISTED_BY_USERSPACE(dlm_entry)) {
-			dlm_debug("Clearing userspace denylist bit for "
-				   QDF_MAC_ADDR_FMT,
-				   QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes));
+			dlm_debug(
+				"Clearing userspace denylist bit for " QDF_MAC_ADDR_FMT,
+				QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes));
 			dlm_entry->userspace_denylist = false;
 			dlm_entry->denylist_userspace = false;
 		}
@@ -1287,8 +1302,7 @@ dlm_add_userspace_deny_list(struct wlan_objmgr_pdev *pdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-void
-dlm_flush_reject_ap_list(struct dlm_pdev_priv_obj *dlm_ctx)
+void dlm_flush_reject_ap_list(struct dlm_pdev_priv_obj *dlm_ctx)
 {
 	struct dlm_reject_ap *dlm_entry = NULL;
 	QDF_STATUS status;
@@ -1305,8 +1319,8 @@ dlm_flush_reject_ap_list(struct dlm_pdev_priv_obj *dlm_ctx)
 	while (cur_node) {
 		qdf_list_peek_next(&dlm_ctx->reject_ap_list, cur_node,
 				   &next_node);
-		dlm_entry = qdf_container_of(cur_node, struct dlm_reject_ap,
-					     node);
+		dlm_entry =
+			qdf_container_of(cur_node, struct dlm_reject_ap, node);
 		qdf_list_remove_node(&dlm_ctx->reject_ap_list,
 				     &dlm_entry->node);
 		qdf_mem_free(dlm_entry);
@@ -1318,11 +1332,10 @@ dlm_flush_reject_ap_list(struct dlm_pdev_priv_obj *dlm_ctx)
 	qdf_mutex_release(&dlm_ctx->reject_ap_list_lock);
 }
 
-uint8_t
-dlm_get_bssid_reject_list(struct wlan_objmgr_pdev *pdev,
-			  struct reject_ap_config_params *reject_list,
-			  uint8_t max_bssid_to_be_filled,
-			  enum dlm_reject_ap_type reject_ap_type)
+uint8_t dlm_get_bssid_reject_list(struct wlan_objmgr_pdev *pdev,
+				  struct reject_ap_config_params *reject_list,
+				  uint8_t max_bssid_to_be_filled,
+				  enum dlm_reject_ap_type reject_ap_type)
 {
 	struct dlm_pdev_priv_obj *dlm_ctx;
 	struct dlm_psoc_priv_obj *dlm_psoc_obj;
@@ -1352,10 +1365,9 @@ dlm_get_bssid_reject_list(struct wlan_objmgr_pdev *pdev,
 	return num_of_reject_bssid;
 }
 
-void
-dlm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
-				struct qdf_mac_addr bssid,
-				enum dlm_connection_state con_state)
+void dlm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
+				     struct qdf_mac_addr bssid,
+				     enum dlm_connection_state con_state)
 {
 	struct dlm_pdev_priv_obj *dlm_ctx;
 	struct dlm_psoc_priv_obj *dlm_psoc_obj;
@@ -1386,14 +1398,16 @@ dlm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
 	while (cur_node) {
 		qdf_list_peek_next(&dlm_ctx->reject_ap_list, cur_node,
 				   &next_node);
-		dlm_entry = qdf_container_of(cur_node, struct dlm_reject_ap,
-					     node);
+		dlm_entry =
+			qdf_container_of(cur_node, struct dlm_reject_ap, node);
 
 		if (!qdf_mem_cmp(dlm_entry->bssid.bytes, bssid.bytes,
 				 QDF_MAC_ADDR_SIZE)) {
-			dlm_debug(QDF_MAC_ADDR_FMT " present in DLM reject list, updating connect info con_state = %d",
-				  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
-				  con_state);
+			dlm_debug(
+				QDF_MAC_ADDR_FMT
+				" present in DLM reject list, updating connect info con_state = %d",
+				QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes),
+				con_state);
 			entry_found = true;
 			break;
 		}
@@ -1416,15 +1430,15 @@ dlm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
 
 		max_entry_time = dlm_entry->connect_timestamp;
 		if (dlm_entry->driver_denylist) {
-			max_entry_time =
-			   dlm_entry->ap_timestamp.driver_denylist_timestamp;
+			max_entry_time = dlm_entry->ap_timestamp
+						 .driver_denylist_timestamp;
 		} else if (dlm_entry->driver_avoidlist) {
-			max_entry_time =
-			 QDF_MAX(dlm_entry->ap_timestamp.driver_avoid_timestamp,
-				 dlm_entry->connect_timestamp);
+			max_entry_time = QDF_MAX(
+				dlm_entry->ap_timestamp.driver_avoid_timestamp,
+				dlm_entry->connect_timestamp);
 		}
-		connection_age = qdf_mc_timer_get_system_time() -
-							max_entry_time;
+		connection_age =
+			qdf_mc_timer_get_system_time() - max_entry_time;
 		bad_bssid_reset_time =
 			dlm_psoc_obj->dlm_cfg.bad_bssid_counter_reset_time;
 		if (connection_age > SECONDS_TO_MS(bad_bssid_reset_time)) {
@@ -1435,13 +1449,17 @@ dlm_update_bssid_connect_params(struct wlan_objmgr_pdev *pdev,
 			dlm_debug("updated reject ap type %d ",
 				  dlm_entry->reject_ap_type);
 			if (!dlm_entry->reject_ap_type) {
-				dlm_debug("Bad Bssid timer expired/AP cleared from all denylisting, removed " QDF_MAC_ADDR_FMT " from list",
-					  QDF_MAC_ADDR_REF(dlm_entry->bssid.bytes));
+				dlm_debug(
+					"Bad Bssid timer expired/AP cleared from all denylisting, "
+					"removed " QDF_MAC_ADDR_FMT
+					" from list",
+					QDF_MAC_ADDR_REF(
+						dlm_entry->bssid.bytes));
 				qdf_list_remove_node(&dlm_ctx->reject_ap_list,
 						     &dlm_entry->node);
 				qdf_mem_free(dlm_entry);
-				dlm_send_reject_ap_list_to_fw(pdev,
-					&dlm_ctx->reject_ap_list,
+				dlm_send_reject_ap_list_to_fw(
+					pdev, &dlm_ctx->reject_ap_list,
 					&dlm_psoc_obj->dlm_cfg);
 			}
 		}
@@ -1470,4 +1488,3 @@ int32_t dlm_get_rssi_denylist_threshold(struct wlan_objmgr_pdev *pdev)
 	cfg = &dlm_psoc_obj->dlm_cfg;
 	return cfg->delta_rssi;
 }
-

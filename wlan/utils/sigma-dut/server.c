@@ -21,7 +21,6 @@
 #define CERT_DIR ROOT_DIR "/certs"
 #endif /* CERT_DIR */
 
-
 static enum sigma_cmd_result cmd_server_ca_get_version(struct sigma_dut *dut,
 						       struct sigma_conn *conn,
 						       struct sigma_cmd *cmd)
@@ -29,7 +28,6 @@ static enum sigma_cmd_result cmd_server_ca_get_version(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, "version," SIGMA_DUT_VER);
 	return STATUS_SENT;
 }
-
 
 static enum sigma_cmd_result cmd_server_get_info(struct sigma_dut *dut,
 						 struct sigma_conn *conn,
@@ -43,7 +41,6 @@ static enum sigma_cmd_result cmd_server_get_info(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, resp);
 	return STATUS_SENT;
 }
-
 
 static int server_reset_user(struct sigma_dut *dut, const char *user)
 {
@@ -65,8 +62,7 @@ static int server_reset_user(struct sigma_dut *dut, const char *user)
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return -1;
 	}
 
@@ -137,10 +133,13 @@ static int server_reset_user(struct sigma_dut *dut, const char *user)
 		goto fail;
 	}
 
-	sql = sqlite3_mprintf("INSERT OR REPLACE INTO users(identity,realm,methods,password,phase2,machine_managed,remediation,fetch_pps,osu_user,osu_password,policy) VALUES (%Q,%Q,%Q,%Q,%d,%d,%Q,%d,%Q,%Q,%Q)",
-			      user, realm, methods, password,
-			      phase2, machine_managed, remediation, fetch_pps,
-			      osu_user, osu_password, policy);
+	sql = sqlite3_mprintf(
+		"INSERT OR REPLACE INTO "
+		"users(identity,realm,methods,password,phase2,machine_"
+		"managed,remediation,fetch_pps,osu_user,osu_password,"
+		"policy) VALUES (%Q,%Q,%Q,%Q,%d,%d,%Q,%d,%Q,%Q,%Q)",
+		user, realm, methods, password, phase2, machine_managed,
+		remediation, fetch_pps, osu_user, osu_password, policy);
 
 	if (!sql)
 		goto fail;
@@ -161,7 +160,6 @@ fail:
 
 	return res;
 }
-
 
 static int server_reset_serial(struct sigma_dut *dut, const char *serial)
 {
@@ -187,8 +185,7 @@ static int server_reset_serial(struct sigma_dut *dut, const char *serial)
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return -1;
 	}
 
@@ -205,10 +202,13 @@ static int server_reset_serial(struct sigma_dut *dut, const char *serial)
 		goto fail;
 	}
 
-	sql = sqlite3_mprintf("INSERT OR REPLACE INTO users(identity,realm,methods,phase2,machine_managed,remediation,fetch_pps,osu_user,osu_password,policy,cert,subrem) VALUES (%Q,%Q,%Q,%d,%d,%Q,%d,%Q,%Q,%Q,%Q,%Q)",
-			      user, realm, methods,
-			      phase2, machine_managed, remediation, fetch_pps,
-			      osu_user, osu_password, policy, cert, subrem);
+	sql = sqlite3_mprintf(
+		"INSERT OR REPLACE INTO "
+		"users(identity,realm,methods,phase2,machine_managed,remediation,fetch_"
+		"pps,osu_user,osu_password,policy,cert,subrem) VALUES "
+		"(%Q,%Q,%Q,%d,%d,%Q,%d,%Q,%Q,%Q,%Q,%Q)",
+		user, realm, methods, phase2, machine_managed, remediation,
+		fetch_pps, osu_user, osu_password, policy, cert, subrem);
 
 	if (!sql)
 		goto fail;
@@ -230,7 +230,6 @@ fail:
 	return res;
 }
 
-
 static int server_reset_cert_enroll(struct sigma_dut *dut, const char *addr)
 {
 	sqlite3 *db;
@@ -241,16 +240,15 @@ static int server_reset_cert_enroll(struct sigma_dut *dut, const char *addr)
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return -1;
 	}
 
 	if (strcasecmp(addr, "any") == 0)
 		sql = sqlite3_mprintf("DELETE FROM cert_enroll");
 	else
-		sql = sqlite3_mprintf("DELETE FROM cert_enroll WHERE mac_addr=%Q",
-				      addr);
+		sql = sqlite3_mprintf(
+			"DELETE FROM cert_enroll WHERE mac_addr=%Q", addr);
 	if (!sql) {
 		sqlite3_close(db);
 		return -1;
@@ -258,8 +256,7 @@ static int server_reset_cert_enroll(struct sigma_dut *dut, const char *addr)
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "SQL: %s", sql);
 
 	if (sqlite3_exec(db, sql, NULL, NULL, NULL) != SQLITE_OK) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"SQL operation failed: %s",
+		sigma_dut_print(dut, DUT_MSG_ERROR, "SQL operation failed: %s",
 				sqlite3_errmsg(db));
 		sqlite3_free(sql);
 		sqlite3_close(db);
@@ -271,7 +268,6 @@ static int server_reset_cert_enroll(struct sigma_dut *dut, const char *addr)
 
 	return 0;
 }
-
 
 static int server_reset_imsi(struct sigma_dut *dut, const char *imsi)
 {
@@ -283,8 +279,7 @@ static int server_reset_imsi(struct sigma_dut *dut, const char *imsi)
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return -1;
 	}
 	sql = sqlite3_mprintf("DELETE FROM users WHERE identity=%Q", imsi);
@@ -295,8 +290,7 @@ static int server_reset_imsi(struct sigma_dut *dut, const char *imsi)
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "SQL: %s", sql);
 
 	if (sqlite3_exec(db, sql, NULL, NULL, NULL) != SQLITE_OK) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"SQL operation failed: %s",
+		sigma_dut_print(dut, DUT_MSG_ERROR, "SQL operation failed: %s",
 				sqlite3_errmsg(db));
 		sqlite3_free(sql);
 		sqlite3_close(db);
@@ -308,7 +302,6 @@ static int server_reset_imsi(struct sigma_dut *dut, const char *imsi)
 
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_server_reset_default(struct sigma_dut *dut,
 						      struct sigma_conn *conn,
@@ -362,7 +355,6 @@ static enum sigma_cmd_result cmd_server_reset_default(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static int get_last_msk_cb(void *ctx, int argc, char *argv[], char *col[])
 {
 	char **last_msk = ctx;
@@ -376,9 +368,8 @@ static int get_last_msk_cb(void *ctx, int argc, char *argv[], char *col[])
 	return 0;
 }
 
-
-static char * get_last_msk(struct sigma_dut *dut, sqlite3 *db,
-			   const char *username)
+static char *get_last_msk(struct sigma_dut *dut, sqlite3 *db,
+			  const char *username)
 {
 	char *sql, *last_msk = NULL;
 
@@ -401,10 +392,10 @@ static char * get_last_msk(struct sigma_dut *dut, sqlite3 *db,
 	return last_msk;
 }
 
-
-static enum sigma_cmd_result
-aaa_auth_status(struct sigma_dut *dut, struct sigma_conn *conn,
-		struct sigma_cmd *cmd, const char *username, int timeout)
+static enum sigma_cmd_result aaa_auth_status(struct sigma_dut *dut,
+					     struct sigma_conn *conn,
+					     struct sigma_cmd *cmd,
+					     const char *username, int timeout)
 {
 	sqlite3 *db;
 	char *sql = NULL;
@@ -413,13 +404,12 @@ aaa_auth_status(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return INVALID_SEND_STATUS;
 	}
 
-	sql = sqlite3_mprintf("UPDATE users SET last_msk=NULL WHERE identity=%Q",
-			      username);
+	sql = sqlite3_mprintf(
+		"UPDATE users SET last_msk=NULL WHERE identity=%Q", username);
 	if (!sql) {
 		sqlite3_close(db);
 		return ERROR_SEND_STATUS;
@@ -437,8 +427,9 @@ aaa_auth_status(struct sigma_dut *dut, struct sigma_conn *conn,
 	sqlite3_free(sql);
 
 	if (sqlite3_changes(db) < 1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"No DB rows modified (specified user not found)");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"No DB rows modified (specified user not found)");
 		sqlite3_close(db);
 		return ERROR_SEND_STATUS;
 	}
@@ -469,7 +460,6 @@ aaa_auth_status(struct sigma_dut *dut, struct sigma_conn *conn,
 	return STATUS_SENT;
 }
 
-
 static int get_last_serial_cb(void *ctx, int argc, char *argv[], char *col[])
 {
 	char **last_serial = ctx;
@@ -483,17 +473,17 @@ static int get_last_serial_cb(void *ctx, int argc, char *argv[], char *col[])
 	return 0;
 }
 
-
-static char * get_last_serial(struct sigma_dut *dut, sqlite3 *db,
-			      const char *addr)
+static char *get_last_serial(struct sigma_dut *dut, sqlite3 *db,
+			     const char *addr)
 {
 	char *sql, *last_serial = NULL;
 
 	if (!addr || strcasecmp(addr, "any") == 0)
 		sql = sqlite3_mprintf("SELECT serialnum FROM cert_enroll");
 	else
-		sql = sqlite3_mprintf("SELECT serialnum FROM cert_enroll WHERE mac_addr=%Q",
-				      addr);
+		sql = sqlite3_mprintf(
+			"SELECT serialnum FROM cert_enroll WHERE mac_addr=%Q",
+			addr);
 	if (!sql)
 		return NULL;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "SQL: %s", sql);
@@ -512,7 +502,6 @@ static char * get_last_serial(struct sigma_dut *dut, sqlite3 *db,
 	return last_serial;
 }
 
-
 static enum sigma_cmd_result
 osu_cert_enroll_status(struct sigma_dut *dut, struct sigma_conn *conn,
 		       struct sigma_cmd *cmd, const char *addr, int timeout)
@@ -523,8 +512,7 @@ osu_cert_enroll_status(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return INVALID_SEND_STATUS;
 	}
 
@@ -536,8 +524,7 @@ osu_cert_enroll_status(struct sigma_dut *dut, struct sigma_conn *conn,
 		last_serial = get_last_serial(dut, db, addr);
 		if (last_serial) {
 			if (strcmp(last_serial, "FAIL") == 0) {
-				snprintf(resp, sizeof(resp),
-					 "OSUStatus,FAIL");
+				snprintf(resp, sizeof(resp), "OSUStatus,FAIL");
 			} else if (strlen(last_serial) > 0) {
 				snprintf(resp, sizeof(resp),
 					 "OSUStatus,SUCCESS,SerialNo,%s",
@@ -555,7 +542,6 @@ osu_cert_enroll_status(struct sigma_dut *dut, struct sigma_conn *conn,
 	return STATUS_SENT;
 }
 
-
 static int get_user_field_cb(void *ctx, int argc, char *argv[], char *col[])
 {
 	char **val = ctx;
@@ -569,15 +555,14 @@ static int get_user_field_cb(void *ctx, int argc, char *argv[], char *col[])
 	return 0;
 }
 
-
-static char * get_user_field_helper(struct sigma_dut *dut, sqlite3 *db,
-				    const char *id_field,
-				    const char *identity, const char *field)
+static char *get_user_field_helper(struct sigma_dut *dut, sqlite3 *db,
+				   const char *id_field, const char *identity,
+				   const char *field)
 {
 	char *sql, *val = NULL;
 
-	sql = sqlite3_mprintf("SELECT %s FROM users WHERE %s=%Q",
-			      field, id_field, identity);
+	sql = sqlite3_mprintf("SELECT %s FROM users WHERE %s=%Q", field,
+			      id_field, identity);
 	if (!sql)
 		return NULL;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "SQL: %s", sql);
@@ -595,20 +580,17 @@ static char * get_user_field_helper(struct sigma_dut *dut, sqlite3 *db,
 	return val;
 }
 
-
-static char * get_user_field(struct sigma_dut *dut, sqlite3 *db,
-			     const char *identity, const char *field)
+static char *get_user_field(struct sigma_dut *dut, sqlite3 *db,
+			    const char *identity, const char *field)
 {
 	return get_user_field_helper(dut, db, "identity", identity, field);
 }
 
-
-static char * get_user_dmacc_field(struct sigma_dut *dut, sqlite3 *db,
-				   const char *identity, const char *field)
+static char *get_user_dmacc_field(struct sigma_dut *dut, sqlite3 *db,
+				  const char *identity, const char *field)
 {
 	return get_user_field_helper(dut, db, "osu_user", identity, field);
 }
-
 
 static int get_eventlog_new_serialno_cb(void *ctx, int argc, char *argv[],
 					char *col[])
@@ -629,22 +611,23 @@ static int get_eventlog_new_serialno_cb(void *ctx, int argc, char *argv[],
 	return 0;
 }
 
-
-static char * get_eventlog_new_serialno(struct sigma_dut *dut, sqlite3 *db,
-					const char *username)
+static char *get_eventlog_new_serialno(struct sigma_dut *dut, sqlite3 *db,
+				       const char *username)
 {
 	char *sql, *serial = NULL;
 
-	sql = sqlite3_mprintf("SELECT notes FROM eventlog WHERE user=%Q AND notes LIKE %Q",
-			      username, "renamed user to:%");
+	sql = sqlite3_mprintf(
+		"SELECT notes FROM eventlog WHERE user=%Q AND notes LIKE %Q",
+		username, "renamed user to:%");
 	if (!sql)
 		return NULL;
 
 	if (sqlite3_exec(db, sql, get_eventlog_new_serialno_cb, &serial,
 			 NULL) != SQLITE_OK) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"SQL operation to fetch new serialno failed: %s",
-				sqlite3_errmsg(db));
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"SQL operation to fetch new serialno failed: %s",
+			sqlite3_errmsg(db));
 		sqlite3_free(sql);
 		return NULL;
 	}
@@ -653,7 +636,6 @@ static char * get_eventlog_new_serialno(struct sigma_dut *dut, sqlite3 *db,
 
 	return serial;
 }
-
 
 static enum sigma_cmd_result
 osu_remediation_status(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -675,15 +657,14 @@ osu_remediation_status(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return ERROR_SEND_STATUS;
 	}
 
 	remediation = get_user_field(dut, db, username, "remediation");
 	if (!remediation) {
-		remediation = get_user_dmacc_field(dut, db, username,
-						   "remediation");
+		remediation =
+			get_user_dmacc_field(dut, db, username, "remediation");
 		dmacc = 1;
 	}
 	if (!remediation) {
@@ -692,8 +673,9 @@ osu_remediation_status(struct sigma_dut *dut, struct sigma_conn *conn,
 		goto done;
 	}
 	if (remediation[0] == '\0') {
-		snprintf(resp, sizeof(resp),
-			 "RemediationStatus,User was not configured to need remediation");
+		snprintf(
+			resp, sizeof(resp),
+			"RemediationStatus,User was not configured to need remediation");
 		goto done;
 	}
 
@@ -712,17 +694,19 @@ osu_remediation_status(struct sigma_dut *dut, struct sigma_conn *conn,
 			char *new_serial;
 
 			/* Certificate reenrollment through subscription
-			 * remediation - fetch the new serial number */
-			new_serial = get_eventlog_new_serialno(dut, db,
-							       username);
+       * remediation - fetch the new serial number */
+			new_serial =
+				get_eventlog_new_serialno(dut, db, username);
 			if (!new_serial) {
 				/* New SerialNo not known?! */
-				snprintf(resp, sizeof(resp),
-					 "RemediationStatus,Remediation Complete,SerialNo,Unknown");
+				snprintf(
+					resp, sizeof(resp),
+					"RemediationStatus,Remediation Complete,SerialNo,Unknown");
 				break;
 			}
-			snprintf(resp, sizeof(resp),
-				 "RemediationStatus,Remediation Complete,SerialNo,%s",
+			snprintf(
+				resp, sizeof(resp),
+				"RemediationStatus,Remediation Complete,SerialNo,%s",
 				new_serial);
 			free(new_serial);
 			break;
@@ -740,7 +724,6 @@ done:
 	send_resp(dut, conn, SIGMA_COMPLETE, resp);
 	return STATUS_SENT;
 }
-
 
 static enum sigma_cmd_result
 osu_polupd_status(struct sigma_dut *dut, struct sigma_conn *conn, int timeout,
@@ -763,8 +746,7 @@ osu_polupd_status(struct sigma_dut *dut, struct sigma_conn *conn, int timeout,
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return ERROR_SEND_STATUS;
 	}
 
@@ -779,14 +761,14 @@ osu_polupd_status(struct sigma_dut *dut, struct sigma_conn *conn, int timeout,
 		goto done;
 	}
 	if (policy[0] == '\0') {
-		snprintf(resp, sizeof(resp),
-			 "PolicyUpdateStatus,User was not configured to need policy update");
+		snprintf(
+			resp, sizeof(resp),
+			"PolicyUpdateStatus,User was not configured to need policy update");
 		goto done;
 	}
 
 	sql = sqlite3_mprintf("UPDATE users SET polupd_done=0 WHERE %s=%Q",
-			      (dmacc ? "osu_user" : "identity"),
-			      username);
+			      (dmacc ? "osu_user" : "identity"), username);
 	if (!sql) {
 		snprintf(resp, sizeof(resp),
 			 "PolicyUpdateStatus,Internal error");
@@ -828,11 +810,10 @@ done:
 	return STATUS_SENT;
 }
 
-
 static enum sigma_cmd_result
 osu_sim_policy_provisioning_status(struct sigma_dut *dut,
-				   struct sigma_conn *conn,
-				   const char *imsi, int timeout)
+				   struct sigma_conn *conn, const char *imsi,
+				   int timeout)
 {
 	sqlite3 *db;
 	int i;
@@ -841,8 +822,7 @@ osu_sim_policy_provisioning_status(struct sigma_dut *dut,
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return INVALID_SEND_STATUS;
 	}
 
@@ -865,7 +845,6 @@ osu_sim_policy_provisioning_status(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, resp);
 	return STATUS_SENT;
 }
-
 
 static enum sigma_cmd_result cmd_server_request_status(struct sigma_dut *dut,
 						       struct sigma_conn *conn,
@@ -891,9 +870,8 @@ static enum sigma_cmd_result cmd_server_request_status(struct sigma_dut *dut,
 	}
 
 	var = get_param(cmd, "Device");
-	if (!var ||
-	    (strcasecmp(var, "AAAServer") != 0 &&
-	     strcasecmp(var, "OSUServer") != 0)) {
+	if (!var || (strcasecmp(var, "AAAServer") != 0 &&
+		     strcasecmp(var, "OSUServer") != 0)) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "errorCode,Unsupported device type");
 		return STATUS_SENT;
@@ -902,8 +880,7 @@ static enum sigma_cmd_result cmd_server_request_status(struct sigma_dut *dut,
 
 	var = get_param(cmd, "Timeout");
 	if (!var) {
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Missing timeout");
+		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Missing timeout");
 		return STATUS_SENT;
 	}
 	timeout = atoi(var);
@@ -954,7 +931,6 @@ static enum sigma_cmd_result cmd_server_request_status(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static int osu_set_cert_reenroll(struct sigma_dut *dut, const char *serial,
 				 int enable)
 {
@@ -965,14 +941,14 @@ static int osu_set_cert_reenroll(struct sigma_dut *dut, const char *serial,
 
 	if (sqlite3_open(SERVER_DB, &db)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open SQLite database %s",
-				SERVER_DB);
+				"Failed to open SQLite database %s", SERVER_DB);
 		return -1;
 	}
 
 	snprintf(id, sizeof(id), "cert-%s", serial);
-	sql = sqlite3_mprintf("UPDATE users SET remediation=%Q WHERE lower(identity)=lower(%Q)",
-			      enable ? "reenroll" : "", id);
+	sql = sqlite3_mprintf(
+		"UPDATE users SET remediation=%Q WHERE lower(identity)=lower(%Q)",
+		enable ? "reenroll" : "", id);
 	if (!sql)
 		goto fail;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "SQL: %s", sql);
@@ -983,7 +959,9 @@ static int osu_set_cert_reenroll(struct sigma_dut *dut, const char *serial,
 	}
 
 	if (sqlite3_changes(db) < 1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "No DB rows modified (specified serial number not found)");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"No DB rows modified (specified serial number not found)");
 		goto fail;
 	}
 
@@ -993,7 +971,6 @@ fail:
 
 	return ret;
 }
-
 
 static enum sigma_cmd_result cmd_server_set_parameter(struct sigma_dut *dut,
 						      struct sigma_conn *conn,
@@ -1019,9 +996,8 @@ static enum sigma_cmd_result cmd_server_set_parameter(struct sigma_dut *dut,
 	}
 
 	var = get_param(cmd, "Device");
-	if (!var ||
-	    (strcasecmp(var, "AAAServer") != 0 &&
-	     strcasecmp(var, "OSUServer") != 0)) {
+	if (!var || (strcasecmp(var, "AAAServer") != 0 &&
+		     strcasecmp(var, "OSUServer") != 0)) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "errorCode,Unsupported device type");
 		return STATUS_SENT;
@@ -1055,8 +1031,9 @@ static enum sigma_cmd_result cmd_server_set_parameter(struct sigma_dut *dut,
 		}
 
 		if (osu_set_cert_reenroll(dut, serial, enable) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Failed to update certificate reenrollment state");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Failed to update certificate reenrollment state");
 			return STATUS_SENT;
 		}
 	}
@@ -1103,56 +1080,66 @@ static enum sigma_cmd_result cmd_server_set_parameter(struct sigma_dut *dut,
 		if (strcasecmp(root_ca, "ID-T") == 0) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
 					"OSU trust root: NetworkFX");
-			if (system("cp " CERT_DIR "/IDT-cert-RootCA.pem "
-				   CERT_DIR "/cacert.pem") < 0)
+			if (system("cp " CERT_DIR
+				   "/IDT-cert-RootCA.pem " CERT_DIR
+				   "/cacert.pem") < 0)
 				return ERROR_SEND_STATUS;
 		} else if (strcasecmp(root_ca, "ID-Y") == 0) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
 					"OSU trust root: NetworkFX");
-			if (system("cp " CERT_DIR "/IDY-cert-RootCA.pem "
-				   CERT_DIR "/cacert.pem") < 0)
+			if (system("cp " CERT_DIR
+				   "/IDY-cert-RootCA.pem " CERT_DIR
+				   "/cacert.pem") < 0)
 				return ERROR_SEND_STATUS;
 		} else if (strcasecmp(root_ca, "ID-K.1") == 0) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
 					"OSU trust root: Not-trusted");
-			if (system("cp " CERT_DIR "/IDK1-ca.pem "
-				   CERT_DIR "/cacert.pem") < 0)
+			if (system("cp " CERT_DIR "/IDK1-ca.pem " CERT_DIR
+				   "/cacert.pem") < 0)
 				return ERROR_SEND_STATUS;
 		} else {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Unsupported TrustRootCACert value");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Unsupported TrustRootCACert value");
 			return STATUS_SENT;
 		}
 
 		if (strcasecmp(inter_ca, "ID-Z.2") == 0) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"OSU intermediate CA: NetworkFX (col2)");
-			if (system("cat " CERT_DIR "/IDZ2-cert-InterCA.pem >> "
-				   CERT_DIR "/cacert.pem") < 0)
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"OSU intermediate CA: NetworkFX (col2)");
+			if (system("cat " CERT_DIR
+				   "/IDZ2-cert-InterCA.pem >> " CERT_DIR
+				   "/cacert.pem") < 0)
 				return ERROR_SEND_STATUS;
 		} else if (strcasecmp(inter_ca, "ID-Z.4") == 0) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
 					"OSU intermediate CA: DigiCert (col2)");
-			if (system("cat " CERT_DIR "/IDZ4-cert-InterCA.pem >> "
-				   CERT_DIR "/cacert.pem") < 0)
+			if (system("cat " CERT_DIR
+				   "/IDZ4-cert-InterCA.pem >> " CERT_DIR
+				   "/cacert.pem") < 0)
 				return ERROR_SEND_STATUS;
 		} else if (strcasecmp(inter_ca, "ID-Z.6") == 0) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"OSU intermediate CA: NetworkFX (col4)");
-			if (system("cat " CERT_DIR "/IDZ6-cert-InterCA.pem >> "
-				   CERT_DIR "/cacert.pem") < 0)
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"OSU intermediate CA: NetworkFX (col4)");
+			if (system("cat " CERT_DIR
+				   "/IDZ6-cert-InterCA.pem >> " CERT_DIR
+				   "/cacert.pem") < 0)
 				return ERROR_SEND_STATUS;
 		} else if (strcasecmp(inter_ca, "ID-Z.8") == 0) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
 					"OSU intermediate CA: DigiCert (col4)");
-			if (system("cat " CERT_DIR "/IDZ8-cert-InterCA.pem >> "
-				   CERT_DIR "/cacert.pem") < 0)
+			if (system("cat " CERT_DIR
+				   "/IDZ8-cert-InterCA.pem >> " CERT_DIR
+				   "/cacert.pem") < 0)
 				return ERROR_SEND_STATUS;
 		} else if (strcasecmp(inter_ca, "ID-K.1") == 0) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
 					"OSU intermediate CA: Not-trusted");
-			if (system("cat " CERT_DIR "/IDK1-IntCA.pem >> "
-				   CERT_DIR "/cacert.pem") < 0)
+			if (system("cat " CERT_DIR
+				   "/IDK1-IntCA.pem >> " CERT_DIR
+				   "/cacert.pem") < 0)
 				return ERROR_SEND_STATUS;
 		} else {
 			send_resp(dut, conn, SIGMA_ERROR,
@@ -1165,55 +1152,62 @@ static enum sigma_cmd_result cmd_server_set_parameter(struct sigma_dut *dut,
 					"OSU server cert: NetworkFX col%d",
 					col);
 			snprintf(buf, sizeof(buf),
-				 "cp " CERT_DIR "/IDQ-cert-c%d-%s.pem "
-				 CERT_DIR "/server.pem",
+				 "cp " CERT_DIR "/IDQ-cert-c%d-%s.pem " CERT_DIR
+				 "/server.pem",
 				 col, srv);
 			snprintf(buf2, sizeof(buf2),
-				 "cp " CERT_DIR "/IDQ-key-%s.pem "
-				 CERT_DIR "/server.key", srv);
+				 "cp " CERT_DIR "/IDQ-key-%s.pem " CERT_DIR
+				 "/server.key",
+				 srv);
 		} else if (strcasecmp(osu_cert, "ID-W") == 0) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"OSU server cert: DigiCert col%d",
-					col);
+					"OSU server cert: DigiCert col%d", col);
 			snprintf(buf, sizeof(buf),
-				 "cp " CERT_DIR "/IDW-cert-c%d-%s.pem "
-				 CERT_DIR "/server.pem",
+				 "cp " CERT_DIR "/IDW-cert-c%d-%s.pem " CERT_DIR
+				 "/server.pem",
 				 col, srv);
 			snprintf(buf2, sizeof(buf2),
-				 "cp " CERT_DIR "/IDW-key-%s.pem "
-				 CERT_DIR "/server.key", srv);
+				 "cp " CERT_DIR "/IDW-key-%s.pem " CERT_DIR
+				 "/server.key",
+				 srv);
 		} else if (strcasecmp(osu_cert, "ID-K.1") == 0) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
 					"OSU server cert: Not-trusted");
 			snprintf(buf, sizeof(buf),
-				 "cp " CERT_DIR "/IDK1-cert-%s.pem "
-				 CERT_DIR "/server.pem",
+				 "cp " CERT_DIR "/IDK1-cert-%s.pem " CERT_DIR
+				 "/server.pem",
 				 srv);
 			snprintf(buf2, sizeof(buf2),
-				 "cp " CERT_DIR "/IDK1-key-%s.pem "
-				 CERT_DIR "/server.key", srv);
+				 "cp " CERT_DIR "/IDK1-key-%s.pem " CERT_DIR
+				 "/server.key",
+				 srv);
 		} else if (strcasecmp(osu_cert, "ID-R.2") == 0) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"OSU server cert: NetworkFX revoked col%d",
-					col);
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"OSU server cert: NetworkFX revoked col%d",
+				col);
 			snprintf(buf, sizeof(buf),
-				 "cp " CERT_DIR "/IDR2-cert-c%d-%s.pem "
-				 CERT_DIR "/server.pem",
+				 "cp " CERT_DIR
+				 "/IDR2-cert-c%d-%s.pem " CERT_DIR
+				 "/server.pem",
 				 col, srv);
 			snprintf(buf2, sizeof(buf2),
-				 "cp " CERT_DIR "/IDR2-key-%s.pem "
-				 CERT_DIR "/server.key", srv);
+				 "cp " CERT_DIR "/IDR2-key-%s.pem " CERT_DIR
+				 "/server.key",
+				 srv);
 		} else if (strcasecmp(osu_cert, "ID-R.4") == 0) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"OSU server cert: DigiCert revoked col%d",
-					col);
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"OSU server cert: DigiCert revoked col%d", col);
 			snprintf(buf, sizeof(buf),
-				 "cp " CERT_DIR "/IDR4-cert-c%d-%s.pem "
-				 CERT_DIR "/server.pem",
+				 "cp " CERT_DIR
+				 "/IDR4-cert-c%d-%s.pem " CERT_DIR
+				 "/server.pem",
 				 col, srv);
 			snprintf(buf2, sizeof(buf2),
-				 "cp " CERT_DIR "/IDR4-key-%s.pem "
-				 CERT_DIR "/server.key", srv);
+				 "cp " CERT_DIR "/IDR4-key-%s.pem " CERT_DIR
+				 "/server.key",
+				 srv);
 		} else {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Unsupported OSUServerCert value");
@@ -1234,13 +1228,11 @@ static enum sigma_cmd_result cmd_server_set_parameter(struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 void server_register_cmds(void)
 {
 	sigma_dut_reg_cmd("server_ca_get_version", NULL,
 			  cmd_server_ca_get_version);
-	sigma_dut_reg_cmd("server_get_info", NULL,
-			  cmd_server_get_info);
+	sigma_dut_reg_cmd("server_get_info", NULL, cmd_server_get_info);
 	sigma_dut_reg_cmd("server_reset_default", NULL,
 			  cmd_server_reset_default);
 	sigma_dut_reg_cmd("server_request_status", NULL,

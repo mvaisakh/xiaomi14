@@ -23,14 +23,14 @@
  * This file contains dfs target interface for full offload
  */
 
+#include <init_deinit_lmac.h>
 #include <target_if.h>
 #include <target_if_dfs.h>
-#include <wmi_unified_dfs_api.h>
-#include <init_deinit_lmac.h>
-#include <wlan_module_ids.h>
 #include <target_if_dfs_full_offload.h>
 #include <wlan_dfs_tgt_api.h>
+#include <wlan_module_ids.h>
 #include <wlan_objmgr_pdev_obj.h>
+#include <wmi_unified_dfs_api.h>
 
 #if defined(QCA_SUPPORT_AGILE_DFS)
 #include <wlan_mlme_dispatcher.h>
@@ -43,8 +43,8 @@
  *
  * Return: 0 on successful indication.
  */
-static int target_if_dfs_cac_complete_event_handler(
-		ol_scn_t scn, uint8_t *data, uint32_t datalen)
+static int target_if_dfs_cac_complete_event_handler(ol_scn_t scn, uint8_t *data,
+						    uint32_t datalen)
 {
 	struct wlan_lmac_if_dfs_rx_ops *dfs_rx_ops;
 	struct wlan_objmgr_psoc *psoc;
@@ -96,7 +96,7 @@ static int target_if_dfs_cac_complete_event_handler(
 	}
 
 	if (!ret && (QDF_STATUS_SUCCESS !=
-	    dfs_rx_ops->dfs_dfs_cac_complete_ind(pdev, vdev_id))) {
+		     dfs_rx_ops->dfs_dfs_cac_complete_ind(pdev, vdev_id))) {
 		target_if_err("dfs_dfs_cac_complete_ind failed");
 		ret = -EINVAL;
 	}
@@ -115,8 +115,9 @@ static int target_if_dfs_cac_complete_event_handler(
  *
  * Return: 0 on successful indication.
  */
-static int target_if_dfs_ocac_complete_event_handler(
-		ol_scn_t scn, uint8_t *data, uint32_t datalen)
+static int target_if_dfs_ocac_complete_event_handler(ol_scn_t scn,
+						     uint8_t *data,
+						     uint32_t datalen)
 {
 	struct wlan_lmac_if_dfs_rx_ops *dfs_rx_ops;
 	struct wlan_objmgr_psoc *psoc;
@@ -149,16 +150,14 @@ static int target_if_dfs_ocac_complete_event_handler(
 		return -EINVAL;
 	}
 
-	if (wmi_extract_dfs_ocac_complete_event(wmi_handle,
-						data,
-						&ocac_status)
-						!= QDF_STATUS_SUCCESS) {
-		target_if_err("failed to extract off channel cac complete event");
+	if (wmi_extract_dfs_ocac_complete_event(
+		    wmi_handle, data, &ocac_status) != QDF_STATUS_SUCCESS) {
+		target_if_err(
+			"failed to extract off channel cac complete event");
 		return -EFAULT;
 	}
 
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						    ocac_status.vdev_id,
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, ocac_status.vdev_id,
 						    WLAN_DFS_ID);
 	if (!vdev) {
 		target_if_err("null vdev");
@@ -172,8 +171,9 @@ static int target_if_dfs_ocac_complete_event_handler(
 		goto free_vdevref;
 	}
 
-	if (!ret && (QDF_STATUS_SUCCESS !=
-	    dfs_rx_ops->dfs_dfs_ocac_complete_ind(pdev, &ocac_status))) {
+	if (!ret &&
+	    (QDF_STATUS_SUCCESS !=
+	     dfs_rx_ops->dfs_dfs_ocac_complete_ind(pdev, &ocac_status))) {
 		target_if_err("dfs_dfs_ocac_complete_ind failed");
 		ret = -EINVAL;
 	}
@@ -195,9 +195,9 @@ free_vdevref:
  * Return: pdev pointer
  *         NULL on FAILURE
  */
-static struct wlan_objmgr_pdev *target_if_dfs_get_pdev(
-		struct wlan_objmgr_psoc *psoc, uint8_t id,
-		wlan_objmgr_ref_dbgid dbg_id)
+static struct wlan_objmgr_pdev *
+target_if_dfs_get_pdev(struct wlan_objmgr_psoc *psoc, uint8_t id,
+		       wlan_objmgr_ref_dbgid dbg_id)
 {
 	struct wlan_objmgr_pdev *pdev;
 
@@ -213,9 +213,9 @@ static struct wlan_objmgr_pdev *target_if_dfs_get_pdev(
 	return pdev;
 }
 #else
-static struct wlan_objmgr_pdev *target_if_dfs_get_pdev(
-		struct wlan_objmgr_psoc *psoc, uint8_t id,
-		wlan_objmgr_ref_dbgid dbg_id)
+static struct wlan_objmgr_pdev *
+target_if_dfs_get_pdev(struct wlan_objmgr_psoc *psoc, uint8_t id,
+		       wlan_objmgr_ref_dbgid dbg_id)
 {
 	return wlan_objmgr_get_pdev_by_id(psoc, id, dbg_id);
 }
@@ -230,8 +230,9 @@ static struct wlan_objmgr_pdev *target_if_dfs_get_pdev(
  *
  * Return: 0 on successful indication.
  */
-static int target_if_dfs_radar_detection_event_handler(
-		ol_scn_t scn, uint8_t *data, uint32_t datalen)
+static int target_if_dfs_radar_detection_event_handler(ol_scn_t scn,
+						       uint8_t *data,
+						       uint32_t datalen)
 {
 	struct radar_found_info radar;
 	struct wlan_objmgr_psoc *psoc = NULL;
@@ -263,9 +264,8 @@ static int target_if_dfs_radar_detection_event_handler(
 		return -EINVAL;
 	}
 
-	if (wmi_extract_dfs_radar_detection_event(wmi_handle, data, &radar,
-						  datalen)
-	    != QDF_STATUS_SUCCESS) {
+	if (wmi_extract_dfs_radar_detection_event(
+		    wmi_handle, data, &radar, datalen) != QDF_STATUS_SUCCESS) {
 		target_if_err("failed to extract cac complete event");
 		return -EFAULT;
 	}
@@ -276,8 +276,8 @@ static int target_if_dfs_radar_detection_event_handler(
 		return -EINVAL;
 	}
 
-	if (dfs_rx_ops->dfs_process_radar_ind(pdev,
-				&radar) != QDF_STATUS_SUCCESS) {
+	if (dfs_rx_ops->dfs_process_radar_ind(pdev, &radar) !=
+	    QDF_STATUS_SUCCESS) {
 		target_if_err("dfs_process_radar_ind failed pdev_id=%d",
 			      radar.pdev_id);
 		ret = -EINVAL;
@@ -299,9 +299,9 @@ static int target_if_dfs_radar_detection_event_handler(
 static QDF_STATUS target_if_dfs_reg_ocac_event(struct wlan_objmgr_psoc *psoc)
 {
 	return wmi_unified_register_event(
-			get_wmi_unified_hdl_from_psoc(psoc),
-			wmi_vdev_ocac_complete_event_id,
-			target_if_dfs_ocac_complete_event_handler);
+		get_wmi_unified_hdl_from_psoc(psoc),
+		wmi_vdev_ocac_complete_event_id,
+		target_if_dfs_ocac_complete_event_handler);
 }
 #else
 static QDF_STATUS target_if_dfs_reg_ocac_event(struct wlan_objmgr_psoc *psoc)
@@ -311,21 +311,19 @@ static QDF_STATUS target_if_dfs_reg_ocac_event(struct wlan_objmgr_psoc *psoc)
 #endif
 
 #if defined(WLAN_DFS_FULL_OFFLOAD)
-QDF_STATUS target_if_dfs_reg_offload_events(
-		struct wlan_objmgr_psoc *psoc)
+QDF_STATUS target_if_dfs_reg_offload_events(struct wlan_objmgr_psoc *psoc)
 {
 	QDF_STATUS ret1, ret2, ret3;
 
 	ret1 = wmi_unified_register_event(
-			get_wmi_unified_hdl_from_psoc(psoc),
-			wmi_dfs_radar_detection_event_id,
-			target_if_dfs_radar_detection_event_handler);
+		get_wmi_unified_hdl_from_psoc(psoc),
+		wmi_dfs_radar_detection_event_id,
+		target_if_dfs_radar_detection_event_handler);
 	target_if_debug("wmi_dfs_radar_detection_event_id ret=%d", ret1);
 
 	ret2 = wmi_unified_register_event(
-			get_wmi_unified_hdl_from_psoc(psoc),
-			wmi_dfs_cac_complete_id,
-			target_if_dfs_cac_complete_event_handler);
+		get_wmi_unified_hdl_from_psoc(psoc), wmi_dfs_cac_complete_id,
+		target_if_dfs_cac_complete_event_handler);
 	target_if_debug("wmi_dfs_cac_complete_id ret=%d", ret2);
 
 	ret3 = target_if_dfs_reg_ocac_event(psoc);
@@ -380,8 +378,9 @@ free_vdevref:
 	return status;
 }
 
-QDF_STATUS target_send_agile_ch_cfg_cmd(struct wlan_objmgr_pdev *pdev,
-					struct dfs_agile_cac_params *adfs_param)
+QDF_STATUS
+target_send_agile_ch_cfg_cmd(struct wlan_objmgr_pdev *pdev,
+			     struct dfs_agile_cac_params *adfs_param)
 {
 	wmi_unified_t wmi_handle;
 	struct vdev_adfs_ch_cfg_params param;
@@ -429,11 +428,11 @@ free_vdevref:
 #endif
 
 #if (defined(WLAN_DFS_FULL_OFFLOAD) || defined(QCA_WIFI_QCA8074) || \
-	defined(QCA_WIFI_QCA6018) || defined(QCA_WIFI_QCA5018) || \
-	defined(QCA_WIFI_QCA9574) || defined(QCA_WIFI_QCA5332))
+     defined(QCA_WIFI_QCA6018) || defined(QCA_WIFI_QCA5018) ||      \
+     defined(QCA_WIFI_QCA9574) || defined(QCA_WIFI_QCA5332))
 QDF_STATUS target_process_bang_radar_cmd(
-		struct wlan_objmgr_pdev *pdev,
-		struct dfs_emulate_bang_radar_test_cmd *dfs_unit_test)
+	struct wlan_objmgr_pdev *pdev,
+	struct dfs_emulate_bang_radar_test_cmd *dfs_unit_test)
 {
 	QDF_STATUS status;
 	struct wmi_unit_test_cmd wmi_utest;
@@ -459,12 +458,12 @@ QDF_STATUS target_process_bang_radar_cmd(
 	for (i = 0; i < dfs_unit_test->num_args; i++)
 		wmi_utest.args[i] = dfs_unit_test->args[i];
 	/*
-	 * Host to Target  conversion for pdev id required
-	 * before we send a wmi unit test command
-	 */
+   * Host to Target  conversion for pdev id required
+   * before we send a wmi unit test command
+   */
 	if (wmi_convert_pdev_id_host_to_target(
-				wmi_handle, pdev->pdev_objmgr.wlan_pdev_id,
-				&target_pdev_id) != QDF_STATUS_SUCCESS) {
+		    wmi_handle, pdev->pdev_objmgr.wlan_pdev_id,
+		    &target_pdev_id) != QDF_STATUS_SUCCESS) {
 		target_if_err("failed to convert host pdev id to target");
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -519,8 +518,8 @@ target_send_subchan_marking_pdev_param(struct wlan_objmgr_pdev *pdev,
 		target_if_err("null wmi_handle");
 		return QDF_STATUS_E_FAILURE;
 	}
-	status = wmi_send_subchan_marking_pdev_param(wmi_handle,
-						     subchanmark, pdev);
+	status = wmi_send_subchan_marking_pdev_param(wmi_handle, subchanmark,
+						     pdev);
 
 	if (QDF_IS_STATUS_ERROR(status))
 		target_if_err("dfs: subchan_marking_pdev_param send failed %d",

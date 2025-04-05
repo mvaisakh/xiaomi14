@@ -14,11 +14,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wmi_unified_api.h>
-#include <target_if_iot_sim.h>
 #include <init_deinit_lmac.h>
-#include <target_if.h>
 #include <qdf_module.h>
+#include <target_if.h>
+#include <target_if_iot_sim.h>
+#include <wmi_unified_api.h>
 
 QDF_STATUS
 target_if_iot_sim_send_cmd(struct wlan_objmgr_pdev *pdev,
@@ -35,9 +35,7 @@ target_if_iot_sim_send_cmd(struct wlan_objmgr_pdev *pdev,
 
 void target_if_iot_sim_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 {
-	tx_ops->iot_sim_tx_ops.iot_sim_send_cmd =
-						target_if_iot_sim_send_cmd;
+	tx_ops->iot_sim_tx_ops.iot_sim_send_cmd = target_if_iot_sim_send_cmd;
 }
 
 qdf_export_symbol(target_if_iot_sim_register_tx_ops);
-

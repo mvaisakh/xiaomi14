@@ -5,16 +5,16 @@
  */
 
 #include <linux/device.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
 
-#include "cam_subdev.h"
-#include "cam_node.h"
 #include "cam_fd_context.h"
 #include "cam_fd_hw_mgr.h"
 #include "cam_fd_hw_mgr_intf.h"
+#include "cam_node.h"
+#include "cam_subdev.h"
 #include "camera_main.h"
 
 #define CAM_FD_DEV_NAME "cam-fd"
@@ -30,18 +30,17 @@
  * @probe_done: Whether FD probe is completed
  */
 struct cam_fd_dev {
-	struct cam_subdev     sd;
-	struct cam_context    base_ctx[CAM_CTX_MAX];
+	struct cam_subdev sd;
+	struct cam_context base_ctx[CAM_CTX_MAX];
 	struct cam_fd_context fd_ctx[CAM_CTX_MAX];
-	struct mutex          lock;
-	uint32_t              open_cnt;
-	bool                  probe_done;
+	struct mutex lock;
+	uint32_t open_cnt;
+	bool probe_done;
 };
 
 static struct cam_fd_dev g_fd_dev;
 
-static int cam_fd_dev_open(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static int cam_fd_dev_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	struct cam_fd_dev *fd_dev = &g_fd_dev;
 
@@ -64,7 +63,7 @@ static int cam_fd_dev_open(struct v4l2_subdev *sd,
 }
 
 static int cam_fd_dev_close_internal(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				     struct v4l2_subdev_fh *fh)
 {
 	struct cam_fd_dev *fd_dev = &g_fd_dev;
 	struct cam_node *node = v4l2_get_subdevdata(sd);
@@ -94,8 +93,7 @@ static int cam_fd_dev_close_internal(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int cam_fd_dev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static int cam_fd_dev_close(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -113,7 +111,7 @@ static const struct v4l2_subdev_internal_ops cam_fd_subdev_internal_ops = {
 };
 
 static int cam_fd_dev_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
 	int rc;
 	int i;
@@ -126,12 +124,12 @@ static int cam_fd_dev_component_bind(struct device *dev,
 
 	/* Initialize the v4l2 subdevice first. (create cam_node) */
 	rc = cam_subdev_probe(&g_fd_dev.sd, pdev, CAM_FD_DEV_NAME,
-		CAM_FD_DEVICE_TYPE);
+			      CAM_FD_DEVICE_TYPE);
 	if (rc) {
 		CAM_ERR(CAM_FD, "FD cam_subdev_probe failed, rc=%d", rc);
 		return rc;
 	}
-	node = (struct cam_node *) g_fd_dev.sd.token;
+	node = (struct cam_node *)g_fd_dev.sd.token;
 
 	rc = cam_fd_hw_mgr_init(pdev->dev.of_node, &hw_mgr_intf);
 	if (rc) {
@@ -142,16 +140,17 @@ static int cam_fd_dev_component_bind(struct device *dev,
 
 	for (i = 0; i < CAM_CTX_MAX; i++) {
 		rc = cam_fd_context_init(&g_fd_dev.fd_ctx[i],
-			&g_fd_dev.base_ctx[i], &node->hw_mgr_intf, i, -1);
+					 &g_fd_dev.base_ctx[i],
+					 &node->hw_mgr_intf, i, -1);
 		if (rc) {
-			CAM_ERR(CAM_FD, "FD context init failed i=%d, rc=%d",
-				i, rc);
+			CAM_ERR(CAM_FD, "FD context init failed i=%d, rc=%d", i,
+				rc);
 			goto deinit_ctx;
 		}
 	}
 
 	rc = cam_node_init(node, &hw_mgr_intf, g_fd_dev.base_ctx, CAM_CTX_MAX,
-		CAM_FD_DEV_NAME);
+			   CAM_FD_DEV_NAME);
 	if (rc) {
 		CAM_ERR(CAM_FD, "FD node init failed, rc=%d", rc);
 		goto deinit_ctx;
@@ -177,7 +176,7 @@ unregister_subdev:
 }
 
 static void cam_fd_dev_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					struct device *master_dev, void *data)
 {
 	int i, rc;
 	struct platform_device *pdev = to_platform_device(dev);
@@ -185,8 +184,8 @@ static void cam_fd_dev_component_unbind(struct device *dev,
 	for (i = 0; i < CAM_CTX_MAX; i++) {
 		rc = cam_fd_context_deinit(&g_fd_dev.fd_ctx[i]);
 		if (rc)
-			CAM_ERR(CAM_FD, "FD context %d deinit failed, rc=%d",
-				i, rc);
+			CAM_ERR(CAM_FD, "FD context %d deinit failed, rc=%d", i,
+				rc);
 	}
 
 	rc = cam_fd_hw_mgr_deinit(pdev->dev.of_node);
@@ -225,21 +224,20 @@ static int cam_fd_dev_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id cam_fd_dt_match[] = {
-	{
-		.compatible = "qcom,cam-fd"
-	},
+	{ .compatible = "qcom,cam-fd" },
 	{}
 };
 
 struct platform_driver cam_fd_driver = {
-	.probe = cam_fd_dev_probe,
-	.remove = cam_fd_dev_remove,
-	.driver = {
-		.name = "cam_fd",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_fd_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_fd_dev_probe,
+    .remove = cam_fd_dev_remove,
+    .driver =
+        {
+            .name = "cam_fd",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_fd_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_fd_dev_init_module(void)

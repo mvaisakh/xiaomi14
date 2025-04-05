@@ -4,19 +4,19 @@
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 #include "sde_hw_ds.h"
-#include "sde_formats.h"
 #include "sde_dbg.h"
+#include "sde_formats.h"
 #include "sde_kms.h"
 
 /* Destination scaler TOP registers */
-#define DEST_SCALER_OP_MODE     0x00
-#define DEST_SCALER_HW_VERSION  0x10
-#define DEST_SCALER_MERGE_CTRL  0x0C
+#define DEST_SCALER_OP_MODE 0x00
+#define DEST_SCALER_HW_VERSION 0x10
+#define DEST_SCALER_MERGE_CTRL 0x0C
 
-#define DEST_SCALER_DUAL_PIPE   1
-#define DEST_SCALER_QUAD_PIPE   3
+#define DEST_SCALER_DUAL_PIPE 1
+#define DEST_SCALER_QUAD_PIPE 3
 
 static void sde_hw_ds_setup_opmode(struct sde_hw_ds *hw_ds, u32 op_mode)
 {
@@ -41,12 +41,13 @@ static void sde_hw_ds_setup_opmode_v1(struct sde_hw_ds *hw_ds, u32 op_mode)
 
 	if (op_mode & SDE_DS_OP_MODE_DUAL) {
 		op_mode = DEST_SCALER_DUAL_PIPE;
-		SDE_REG_WRITE(hw, DEST_SCALER_MERGE_CTRL + hw_ds->scl->base, op_mode);
+		SDE_REG_WRITE(hw, DEST_SCALER_MERGE_CTRL + hw_ds->scl->base,
+			      op_mode);
 	}
 }
 
-static void sde_hw_ds_setup_scaler3(struct sde_hw_ds *hw_ds,
-			void *scaler_cfg, void *scaler_lut_cfg)
+static void sde_hw_ds_setup_scaler3(struct sde_hw_ds *hw_ds, void *scaler_cfg,
+				    void *scaler_lut_cfg)
 {
 	struct sde_hw_scaler3_cfg *scl3_cfg = scaler_cfg;
 	struct sde_hw_scaler3_lut_cfg *scl3_lut_cfg = scaler_lut_cfg;
@@ -57,8 +58,8 @@ static void sde_hw_ds_setup_scaler3(struct sde_hw_ds *hw_ds,
 		return;
 
 	/*
-	 * copy LUT values to scaler structure
-	 */
+   * copy LUT values to scaler structure
+   */
 	if (scl3_lut_cfg->is_configured) {
 		scl3_cfg->dir_lut = scl3_lut_cfg->dir_lut;
 		scl3_cfg->dir_len = scl3_lut_cfg->dir_len;
@@ -68,31 +69,29 @@ static void sde_hw_ds_setup_scaler3(struct sde_hw_ds *hw_ds,
 		scl3_cfg->sep_len = scl3_lut_cfg->sep_len;
 	}
 
-
 	if (test_bit(SDE_DS_DE_LPF_BLEND, &hw_ds->scl->features))
 		de_lpf_en = true;
 	sde_hw_setup_scaler3(&hw_ds->hw, scl3_cfg, hw_ds->scl->version,
-			 hw_ds->scl->base,
-			 sde_get_sde_format(DRM_FORMAT_XBGR2101010), de_lpf_en);
+			     hw_ds->scl->base,
+			     sde_get_sde_format(DRM_FORMAT_XBGR2101010),
+			     de_lpf_en);
 }
 
 static void _setup_ds_ops(struct sde_hw_ds_ops *ops, unsigned long features)
 {
-
 	if (test_bit(SDE_DS_MERGE_CTRL, &features))
 		ops->setup_opmode = sde_hw_ds_setup_opmode_v1;
 	else
 		ops->setup_opmode = sde_hw_ds_setup_opmode;
 
 	if (test_bit(SDE_SSPP_SCALER_QSEED3, &features) ||
-			test_bit(SDE_SSPP_SCALER_QSEED3LITE, &features))
+	    test_bit(SDE_SSPP_SCALER_QSEED3LITE, &features))
 		ops->setup_scaler = sde_hw_ds_setup_scaler3;
 }
 
-static struct sde_ds_cfg *_ds_offset(enum sde_ds ds,
-		struct sde_mdss_cfg *m,
-		void __iomem *addr,
-		struct sde_hw_blk_reg_map *b)
+static struct sde_ds_cfg *_ds_offset(enum sde_ds ds, struct sde_mdss_cfg *m,
+				     void __iomem *addr,
+				     struct sde_hw_blk_reg_map *b)
 {
 	int i;
 
@@ -100,8 +99,7 @@ static struct sde_ds_cfg *_ds_offset(enum sde_ds ds,
 		return ERR_PTR(-EINVAL);
 
 	for (i = 0; i < m->ds_count; i++) {
-		if ((ds == m->ds[i].id) &&
-			 (m->ds[i].top)) {
+		if ((ds == m->ds[i].id) && (m->ds[i].top)) {
 			b->base_off = addr;
 			b->blk_off = m->ds[i].top->base;
 			b->length = m->ds[i].top->len;
@@ -114,9 +112,8 @@ static struct sde_ds_cfg *_ds_offset(enum sde_ds ds,
 	return ERR_PTR(-EINVAL);
 }
 
-struct sde_hw_blk_reg_map *sde_hw_ds_init(enum sde_ds idx,
-			void __iomem *addr,
-			struct sde_mdss_cfg *m)
+struct sde_hw_blk_reg_map *sde_hw_ds_init(enum sde_ds idx, void __iomem *addr,
+					  struct sde_mdss_cfg *m)
 {
 	struct sde_hw_ds *hw_ds;
 	struct sde_ds_cfg *cfg;
@@ -144,10 +141,10 @@ struct sde_hw_blk_reg_map *sde_hw_ds_init(enum sde_ds idx,
 		hw_ds->scl->version = m->qseed_hw_rev;
 
 	if (cfg->len) {
-		sde_dbg_reg_register_dump_range(SDE_DBG_NAME, cfg->name,
-				hw_ds->hw.blk_off + cfg->base,
-				hw_ds->hw.blk_off + cfg->base + cfg->len,
-				hw_ds->hw.xin_id);
+		sde_dbg_reg_register_dump_range(
+			SDE_DBG_NAME, cfg->name, hw_ds->hw.blk_off + cfg->base,
+			hw_ds->hw.blk_off + cfg->base + cfg->len,
+			hw_ds->hw.xin_id);
 	}
 
 	return &hw_ds->hw;

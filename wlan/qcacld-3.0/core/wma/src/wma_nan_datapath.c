@@ -23,16 +23,16 @@
  * WMA NAN Data path API implementation
  */
 
-#include "wma.h"
-#include "wma_api.h"
-#include "wmi_unified_api.h"
-#include "wmi_unified.h"
 #include "wma_nan_datapath.h"
-#include "wma_internal.h"
-#include "cds_utils.h"
+#include "cdp_txrx_misc.h"
 #include "cdp_txrx_peer_ops.h"
 #include "cdp_txrx_tx_delay.h"
-#include "cdp_txrx_misc.h"
+#include "cds_utils.h"
+#include "wma.h"
+#include "wma_api.h"
+#include "wma_internal.h"
+#include "wmi_unified.h"
+#include "wmi_unified_api.h"
 #include <cdp_txrx_handle.h>
 
 QDF_STATUS wma_add_sta_ndi_mode(tp_wma_handle wma, tpAddStaParams add_sta)
@@ -44,60 +44,60 @@ QDF_STATUS wma_add_sta_ndi_mode(tp_wma_handle wma, tpAddStaParams add_sta)
 	struct wma_txrx_node *iface;
 
 	iface = &wma->interfaces[add_sta->smesessionId];
-	wma_debug("vdev: %d, peer_mac_addr: "QDF_MAC_ADDR_FMT,
-		add_sta->smesessionId, QDF_MAC_ADDR_REF(add_sta->staMac));
+	wma_debug("vdev: %d, peer_mac_addr: " QDF_MAC_ADDR_FMT,
+		  add_sta->smesessionId, QDF_MAC_ADDR_REF(add_sta->staMac));
 
 	if (cdp_find_peer_exist_on_vdev(soc, add_sta->smesessionId,
 					add_sta->staMac)) {
-		wma_err("NDI peer already exists, peer_addr "QDF_MAC_ADDR_FMT,
-			 QDF_MAC_ADDR_REF(add_sta->staMac));
+		wma_err("NDI peer already exists, peer_addr " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(add_sta->staMac));
 		add_sta->status = QDF_STATUS_E_EXISTS;
 		goto send_rsp;
 	}
 
 	/*
-	 * The code above only checks the peer existence on its own vdev.
-	 * Need to check whether the peer exists on other vDevs because firmware
-	 * can't create the peer if the peer with same MAC address already
-	 * exists on the pDev. As this peer belongs to other vDevs, just return
-	 * here.
-	 */
+   * The code above only checks the peer existence on its own vdev.
+   * Need to check whether the peer exists on other vDevs because firmware
+   * can't create the peer if the peer with same MAC address already
+   * exists on the pDev. As this peer belongs to other vDevs, just return
+   * here.
+   */
 	if (cdp_find_peer_exist(soc, pdev_id, add_sta->staMac)) {
-		wma_err("peer exists on other vdev with peer_addr "QDF_MAC_ADDR_FMT,
-			 QDF_MAC_ADDR_REF(add_sta->staMac));
+		wma_err("peer exists on other vdev with peer_addr " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(add_sta->staMac));
 		add_sta->status = QDF_STATUS_E_EXISTS;
 		goto send_rsp;
 	}
 
-	status = wma_create_peer(wma, add_sta->staMac,
-				 WMI_PEER_TYPE_NAN_DATA, add_sta->smesessionId,
-				 NULL, false);
+	status = wma_create_peer(wma, add_sta->staMac, WMI_PEER_TYPE_NAN_DATA,
+				 add_sta->smesessionId, NULL, false);
 	if (status != QDF_STATUS_SUCCESS) {
-		wma_err("Failed to create peer for "QDF_MAC_ADDR_FMT,
-			 QDF_MAC_ADDR_REF(add_sta->staMac));
+		wma_err("Failed to create peer for " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(add_sta->staMac));
 		add_sta->status = status;
 		goto send_rsp;
 	}
 
 	if (!cdp_find_peer_exist_on_vdev(soc, add_sta->smesessionId,
 					 add_sta->staMac)) {
-		wma_err("Failed to find peer handle using peer mac "QDF_MAC_ADDR_FMT,
-			 QDF_MAC_ADDR_REF(add_sta->staMac));
+		wma_err("Failed to find peer handle using peer mac " QDF_MAC_ADDR_FMT,
+			QDF_MAC_ADDR_REF(add_sta->staMac));
 		add_sta->status = QDF_STATUS_E_FAILURE;
 		wma_remove_peer(wma, add_sta->staMac, add_sta->smesessionId,
 				false);
 		goto send_rsp;
 	}
 
-	wma_debug("Moving peer "QDF_MAC_ADDR_FMT" to state %d",
+	wma_debug("Moving peer " QDF_MAC_ADDR_FMT " to state %d",
 		  QDF_MAC_ADDR_REF(add_sta->staMac), state);
 	cdp_peer_state_update(soc, add_sta->staMac, state);
 
-	add_sta->nss    = iface->nss;
+	add_sta->nss = iface->nss;
 	add_sta->status = QDF_STATUS_SUCCESS;
 send_rsp:
 	status = add_sta->status;
-	wma_debug("Sending add sta rsp to umac (mac:"QDF_MAC_ADDR_FMT", status:%d)",
+	wma_debug("Sending add sta rsp to umac (mac:" QDF_MAC_ADDR_FMT
+		  ", status:%d)",
 		  QDF_MAC_ADDR_REF(add_sta->staMac), add_sta->status);
 
 	wma_send_msg_high_priority(wma, WMA_ADD_STA_RSP, (void *)add_sta, 0);
@@ -110,13 +110,13 @@ QDF_STATUS wma_delete_sta_req_ndi_mode(tp_wma_handle wma,
 {
 	QDF_STATUS status;
 
-	status = wma_remove_peer(wma, del_sta->staMac,
-				 del_sta->smesessionId, false);
+	status = wma_remove_peer(wma, del_sta->staMac, del_sta->smesessionId,
+				 false);
 	del_sta->status = QDF_STATUS_SUCCESS;
 
 	if (del_sta->respReqd) {
 		wma_debug("Sending del rsp to umac (status: %d)",
-				del_sta->status);
+			  del_sta->status);
 		wma_send_msg_high_priority(wma, WMA_DELETE_STA_RSP, del_sta, 0);
 	} else {
 		wma_debug("NDI Del Sta resp not needed");

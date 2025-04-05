@@ -21,25 +21,23 @@
  */
 
 #include "wlan_dp_ucfg_api.h"
-#include "wlan_ipa_ucfg_api.h"
-#include "wlan_dp_main.h"
-#include "wlan_dp_objmgr.h"
-#include "wlan_pmo_obj_mgmt_api.h"
 #include "cdp_txrx_cmn.h"
 #include "cfg_ucfg_api.h"
-#include "wlan_pmo_obj_mgmt_api.h"
-#include "wlan_dp_objmgr.h"
 #include "wlan_dp_bus_bandwidth.h"
-#include "wlan_dp_periodic_sta_stats.h"
+#include "wlan_dp_main.h"
 #include "wlan_dp_nud_tracking.h"
-#include "wlan_dp_txrx.h"
-#include "wlan_nlink_common.h"
-#include "wlan_pkt_capture_api.h"
-#include <cdp_txrx_ctrl.h>
-#include <qdf_net_stats.h>
+#include "wlan_dp_objmgr.h"
+#include "wlan_dp_periodic_sta_stats.h"
 #include "wlan_dp_prealloc.h"
 #include "wlan_dp_rx_thread.h"
+#include "wlan_dp_txrx.h"
+#include "wlan_ipa_ucfg_api.h"
+#include "wlan_nlink_common.h"
+#include "wlan_pkt_capture_api.h"
+#include "wlan_pmo_obj_mgmt_api.h"
+#include <cdp_txrx_ctrl.h>
 #include <cdp_txrx_host_stats.h>
+#include <qdf_net_stats.h>
 #ifdef WLAN_FEATURE_OSRTP
 #include <linux/filter.h>
 #endif
@@ -55,21 +53,22 @@
  *
  * Return: direct link configuration
  */
-static inline
-QDF_STATUS wlan_dp_set_vdev_direct_link_cfg(struct wlan_objmgr_psoc *psoc,
-					    struct wlan_dp_intf *dp_intf)
+static inline QDF_STATUS
+wlan_dp_set_vdev_direct_link_cfg(struct wlan_objmgr_psoc *psoc,
+				 struct wlan_dp_intf *dp_intf)
 {
 	struct wlan_dp_link *dp_link, *dp_link_next;
-	cdp_config_param_type vdev_param = {0};
+	cdp_config_param_type vdev_param = { 0 };
 	QDF_STATUS status;
 
 	if (dp_intf->device_mode != QDF_SAP_MODE ||
 	    !dp_intf->dp_ctx->dp_direct_link_ctx)
 		return QDF_STATUS_SUCCESS;
 
-	dp_for_each_link_held_safe(dp_intf, dp_link, dp_link_next) {
+	dp_for_each_link_held_safe(dp_intf, dp_link, dp_link_next)
+	{
 		vdev_param.cdp_vdev_tx_to_fw =
-					dp_intf->direct_link_config.config_set;
+			dp_intf->direct_link_config.config_set;
 		status = cdp_txrx_set_vdev_param(wlan_psoc_get_dp_handle(psoc),
 						 dp_link->link_id,
 						 CDP_VDEV_TX_TO_FW, vdev_param);
@@ -80,21 +79,21 @@ QDF_STATUS wlan_dp_set_vdev_direct_link_cfg(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 #else
-static inline
-QDF_STATUS wlan_dp_set_vdev_direct_link_cfg(struct wlan_objmgr_psoc *psoc,
-					    struct wlan_dp_intf *dp_intf)
+static inline QDF_STATUS
+wlan_dp_set_vdev_direct_link_cfg(struct wlan_objmgr_psoc *psoc,
+				 struct wlan_dp_intf *dp_intf)
 {
 	return QDF_STATUS_SUCCESS;
 }
 #endif
 
 #ifdef WLAN_FEATURE_11BE_MLO
-static inline
-QDF_STATUS wlan_dp_update_vdev_mac_addr(struct wlan_dp_psoc_context *dp_ctx,
-					struct wlan_dp_link *dp_link,
-					struct qdf_mac_addr *new_mac_addr)
+static inline QDF_STATUS
+wlan_dp_update_vdev_mac_addr(struct wlan_dp_psoc_context *dp_ctx,
+			     struct wlan_dp_link *dp_link,
+			     struct qdf_mac_addr *new_mac_addr)
 {
-	cdp_config_param_type vdev_param = {0};
+	cdp_config_param_type vdev_param = { 0 };
 
 	qdf_mem_copy(&vdev_param.mac_addr, new_mac_addr, QDF_MAC_ADDR_SIZE);
 
@@ -106,8 +105,7 @@ QDF_STATUS wlan_dp_update_vdev_mac_addr(struct wlan_dp_psoc_context *dp_ctx,
 static QDF_STATUS wlan_dp_register_link_switch_notifier(void)
 {
 	return wlan_mlo_mgr_register_link_switch_notifier(
-					WLAN_COMP_DP,
-					dp_link_switch_notification);
+		WLAN_COMP_DP, dp_link_switch_notification);
 }
 
 static QDF_STATUS wlan_dp_unregister_link_switch_notifier(void)
@@ -115,10 +113,10 @@ static QDF_STATUS wlan_dp_unregister_link_switch_notifier(void)
 	return wlan_mlo_mgr_unregister_link_switch_notifier(WLAN_COMP_DP);
 }
 #else
-static inline
-QDF_STATUS wlan_dp_update_vdev_mac_addr(struct wlan_dp_psoc_context *dp_ctx,
-					struct wlan_dp_link *dp_link,
-					struct qdf_mac_addr *new_mac_addr)
+static inline QDF_STATUS
+wlan_dp_update_vdev_mac_addr(struct wlan_dp_psoc_context *dp_ctx,
+			     struct wlan_dp_link *dp_link,
+			     struct qdf_mac_addr *new_mac_addr)
 {
 	/* Link switch should be done only for 802.11BE */
 	qdf_assert(0);
@@ -171,7 +169,7 @@ void ucfg_dp_update_intf_mac(struct wlan_objmgr_psoc *psoc,
 	struct wlan_dp_link *dp_link;
 	struct wlan_dp_psoc_context *dp_ctx;
 
-	dp_ctx =  dp_psoc_get_priv(psoc);
+	dp_ctx = dp_psoc_get_priv(psoc);
 
 	dp_intf = dp_get_intf_by_macaddr(dp_ctx, cur_mac);
 	if (!dp_intf) {
@@ -188,12 +186,12 @@ void ucfg_dp_update_intf_mac(struct wlan_objmgr_psoc *psoc,
 	qdf_copy_macaddr(&dp_intf->mac_addr, new_mac);
 
 	/*
-	 * update of dp_intf mac address happens only during dynamic mac
-	 * address update. This is a special case, where the connection
-	 * can change without vdevs getting deleted.
-	 * Hence its expected to reset the def_link in dp_intf to the
-	 * def_link used by UMAC, for the next connection.
-	 */
+   * update of dp_intf mac address happens only during dynamic mac
+   * address update. This is a special case, where the connection
+   * can change without vdevs getting deleted.
+   * Hence its expected to reset the def_link in dp_intf to the
+   * def_link used by UMAC, for the next connection.
+   */
 	dp_link = dp_get_vdev_priv_obj(vdev);
 	dp_info("Try def_link update for dp_intf %pK from %pK to %pK (intf %pK id %d)",
 		dp_intf, dp_intf->def_link, dp_link,
@@ -207,13 +205,12 @@ void ucfg_dp_update_intf_mac(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 ucfg_dp_create_intf(struct wlan_objmgr_psoc *psoc,
-		    struct qdf_mac_addr *intf_addr,
-		    qdf_netdev_t ndev)
+		    struct qdf_mac_addr *intf_addr, qdf_netdev_t ndev)
 {
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_psoc_context *dp_ctx;
 
-	dp_ctx =  dp_get_context();
+	dp_ctx = dp_get_context();
 
 	dp_info("DP interface create addr:" QDF_MAC_ADDR_FMT,
 		QDF_MAC_ADDR_REF(intf_addr->bytes));
@@ -254,7 +251,7 @@ ucfg_dp_destroy_intf(struct wlan_objmgr_psoc *psoc,
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_psoc_context *dp_ctx;
 
-	dp_ctx =  dp_get_context();
+	dp_ctx = dp_get_context();
 
 	dp_info("DP interface destroy addr:" QDF_MAC_ADDR_FMT,
 		QDF_MAC_ADDR_REF(intf_addr->bytes));
@@ -329,66 +326,56 @@ QDF_STATUS ucfg_dp_init(void)
 	}
 
 	status = wlan_objmgr_register_psoc_create_handler(
-			WLAN_COMP_DP,
-			dp_psoc_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_psoc_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to register psoc create handler for DP");
 		return status;
 	}
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-			WLAN_COMP_DP,
-			dp_psoc_obj_destroy_notification, NULL);
+		WLAN_COMP_DP, dp_psoc_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to register psoc destroy handler for DP");
 		goto fail_destroy_psoc;
 	}
 
 	status = wlan_objmgr_register_pdev_create_handler(
-			WLAN_COMP_DP,
-			dp_pdev_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_pdev_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to register pdev create handler for DP");
 		goto fail_create_pdev;
 	}
 
 	status = wlan_objmgr_register_pdev_destroy_handler(
-			WLAN_COMP_DP,
-			dp_pdev_obj_destroy_notification, NULL);
+		WLAN_COMP_DP, dp_pdev_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to register pdev destroy handler for DP");
 		goto fail_destroy_pdev;
 	}
 
 	status = wlan_objmgr_register_vdev_create_handler(
-			WLAN_COMP_DP,
-			dp_vdev_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_vdev_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to register vdev create handler");
 		goto fail_create_vdev;
 	}
 
 	status = wlan_objmgr_register_vdev_destroy_handler(
-			WLAN_COMP_DP,
-			dp_vdev_obj_destroy_notification, NULL);
+		WLAN_COMP_DP, dp_vdev_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("Failed to register vdev destroy handler");
 		goto fail_destroy_vdev;
 	}
 
 	status = wlan_objmgr_register_peer_create_handler(
-		WLAN_COMP_DP,
-		dp_peer_obj_create_notification,
-		NULL);
+		WLAN_COMP_DP, dp_peer_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("wlan_objmgr_register_peer_create_handler failed");
 		goto fail_create_peer;
 	}
 
 	status = wlan_objmgr_register_peer_destroy_handler(
-		WLAN_COMP_DP,
-		dp_peer_obj_destroy_notification,
-		NULL);
+		WLAN_COMP_DP, dp_peer_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("wlan_objmgr_register_peer_destroy_handler failed");
 		goto fail_destroy_peer;
@@ -404,42 +391,34 @@ QDF_STATUS ucfg_dp_init(void)
 
 fail_link_switch:
 	wlan_objmgr_unregister_peer_destroy_handler(
-			WLAN_COMP_DP, dp_peer_obj_destroy_notification,
-			NULL);
+		WLAN_COMP_DP, dp_peer_obj_destroy_notification, NULL);
 
 fail_destroy_peer:
-	wlan_objmgr_unregister_peer_create_handler(WLAN_COMP_DP,
-					dp_peer_obj_create_notification,
-					NULL);
+	wlan_objmgr_unregister_peer_create_handler(
+		WLAN_COMP_DP, dp_peer_obj_create_notification, NULL);
 
 fail_create_peer:
-	wlan_objmgr_unregister_vdev_destroy_handler(WLAN_COMP_DP,
-					dp_vdev_obj_destroy_notification,
-					NULL);
+	wlan_objmgr_unregister_vdev_destroy_handler(
+		WLAN_COMP_DP, dp_vdev_obj_destroy_notification, NULL);
 
 fail_destroy_vdev:
 	wlan_objmgr_unregister_vdev_create_handler(
-				WLAN_COMP_DP,
-				dp_vdev_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_vdev_obj_create_notification, NULL);
 
 fail_create_vdev:
 	wlan_objmgr_unregister_pdev_destroy_handler(
-				WLAN_COMP_DP,
-				dp_pdev_obj_destroy_notification, NULL);
+		WLAN_COMP_DP, dp_pdev_obj_destroy_notification, NULL);
 
 fail_destroy_pdev:
 	wlan_objmgr_unregister_pdev_create_handler(
-				WLAN_COMP_DP,
-				dp_pdev_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_pdev_obj_create_notification, NULL);
 
 fail_create_pdev:
 	wlan_objmgr_unregister_psoc_destroy_handler(
-				WLAN_COMP_DP,
-				dp_psoc_obj_destroy_notification, NULL);
+		WLAN_COMP_DP, dp_psoc_obj_destroy_notification, NULL);
 fail_destroy_psoc:
 	wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_COMP_DP,
-				dp_psoc_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_psoc_obj_create_notification, NULL);
 
 	dp_free_ctx();
 	return status;
@@ -456,52 +435,45 @@ QDF_STATUS ucfg_dp_deinit(void)
 
 	/* de-register peer delete handler functions. */
 	status = wlan_objmgr_unregister_peer_destroy_handler(
-				WLAN_COMP_DP,
-				dp_peer_obj_destroy_notification, NULL);
+		WLAN_COMP_DP, dp_peer_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
-		dp_err("Failed to unregister DP peer destroy handler: %d", status);
+		dp_err("Failed to unregister DP peer destroy handler: %d",
+		       status);
 
 	/* de-register peer create handler functions. */
 	status = wlan_objmgr_unregister_peer_create_handler(
-				WLAN_COMP_DP,
-				dp_peer_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_peer_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
-		dp_err("Failed to unregister DP peer create handler: %d", status);
+		dp_err("Failed to unregister DP peer create handler: %d",
+		       status);
 
 	status = wlan_objmgr_unregister_vdev_destroy_handler(
-				WLAN_COMP_DP,
-				dp_vdev_obj_destroy_notification,
-				NULL);
+		WLAN_COMP_DP, dp_vdev_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		dp_err("Failed to unregister vdev delete handler:%d", status);
 
 	status = wlan_objmgr_unregister_vdev_create_handler(
-				WLAN_COMP_DP,
-				dp_vdev_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_vdev_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		dp_err("Failed to unregister vdev create handler:%d", status);
 
 	status = wlan_objmgr_unregister_pdev_destroy_handler(
-				WLAN_COMP_DP,
-				dp_pdev_obj_destroy_notification, NULL);
+		WLAN_COMP_DP, dp_pdev_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		dp_err("Failed to unregister pdev destroy handler:%d", status);
 
 	status = wlan_objmgr_unregister_pdev_create_handler(
-				WLAN_COMP_DP,
-				dp_pdev_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_pdev_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		dp_err("Failed to unregister pdev create handler:%d", status);
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-				WLAN_COMP_DP,
-				dp_psoc_obj_destroy_notification, NULL);
+		WLAN_COMP_DP, dp_psoc_obj_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		dp_err("Failed to unregister DP psoc delete handle:%d", status);
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_COMP_DP,
-				dp_psoc_obj_create_notification, NULL);
+		WLAN_COMP_DP, dp_psoc_obj_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		dp_err("Failed to unregister DP psoc create handle:%d", status);
 
@@ -519,8 +491,8 @@ QDF_STATUS ucfg_dp_deinit(void)
  *
  * Return: QDF_STATUS status -in case of success else return error
  */
-static QDF_STATUS
-ucfg_dp_suspend_handler(struct wlan_objmgr_psoc *psoc, void *arg)
+static QDF_STATUS ucfg_dp_suspend_handler(struct wlan_objmgr_psoc *psoc,
+					  void *arg)
 {
 	struct wlan_dp_psoc_context *dp_ctx;
 	struct wlan_dp_intf *dp_intf, *dp_intf_next = NULL;
@@ -538,11 +510,12 @@ ucfg_dp_suspend_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 		if (status != QDF_STATUS_SUCCESS) {
 			dp_txrx_resume(cds_get_context(QDF_MODULE_ID_SOC));
 			return status;
-			}
+		}
 	}
 	dp_ctx->is_suspend = true;
 	cdp_set_tx_pause(soc, true);
-	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next) {
+	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next)
+	{
 		dp_intf->sap_tx_block_mask |= WLAN_DP_SUSPEND;
 	}
 	return QDF_STATUS_SUCCESS;
@@ -557,8 +530,8 @@ ucfg_dp_suspend_handler(struct wlan_objmgr_psoc *psoc, void *arg)
  *
  * Return: QDF_STATUS status -in case of success else return error
  */
-static QDF_STATUS
-ucfg_dp_resume_handler(struct wlan_objmgr_psoc *psoc, void *arg)
+static QDF_STATUS ucfg_dp_resume_handler(struct wlan_objmgr_psoc *psoc,
+					 void *arg)
 {
 	struct wlan_dp_psoc_context *dp_ctx;
 	struct wlan_dp_intf *dp_intf, *dp_intf_next = NULL;
@@ -572,7 +545,8 @@ ucfg_dp_resume_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 
 	dp_ctx->is_suspend = false;
 	cdp_set_tx_pause(soc, false);
-	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next) {
+	dp_for_each_intf_held_safe(dp_ctx, dp_intf, dp_intf_next)
+	{
 		dp_intf->sap_tx_block_mask &= ~WLAN_DP_SUSPEND;
 	}
 	if (dp_ctx->enable_dp_rx_threads)
@@ -588,11 +562,10 @@ ucfg_dp_resume_handler(struct wlan_objmgr_psoc *psoc, void *arg)
  */
 static inline void dp_register_pmo_handler(void)
 {
-	pmo_register_suspend_handler(WLAN_COMP_DP,
-				     ucfg_dp_suspend_handler, NULL);
+	pmo_register_suspend_handler(WLAN_COMP_DP, ucfg_dp_suspend_handler,
+				     NULL);
 
-	pmo_register_resume_handler(WLAN_COMP_DP,
-				    ucfg_dp_resume_handler, NULL);
+	pmo_register_resume_handler(WLAN_COMP_DP, ucfg_dp_resume_handler, NULL);
 }
 
 /**
@@ -614,8 +587,7 @@ static inline void dp_unregister_pmo_handler(void)
  *
  * Return: QDF_STATUS status -in case of success else return error
  */
-static inline QDF_STATUS
-ucfg_dp_store_qdf_dev(struct wlan_objmgr_psoc *psoc)
+static inline QDF_STATUS ucfg_dp_store_qdf_dev(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_dp_psoc_context *dp_ctx;
 
@@ -702,7 +674,7 @@ void ucfg_dp_wait_complete_tasks(void)
 {
 	struct wlan_dp_psoc_context *dp_ctx;
 
-	dp_ctx =  dp_get_context();
+	dp_ctx = dp_get_context();
 	dp_wait_complete_tasks(dp_ctx);
 }
 
@@ -720,8 +692,7 @@ void ucfg_dp_remove_conn_info(struct wlan_objmgr_vdev *vdev)
 		return;
 	}
 
-	qdf_mem_zero(&dp_link->conn_info,
-		     sizeof(struct wlan_dp_conn_info));
+	qdf_mem_zero(&dp_link->conn_info, sizeof(struct wlan_dp_conn_info));
 }
 
 void ucfg_dp_conn_info_set_bssid(struct wlan_objmgr_vdev *vdev,
@@ -812,8 +783,7 @@ void ucfg_dp_update_dhcp_state_on_disassoc(struct wlan_objmgr_vdev *vdev,
 
 	dp_intf = dp_link->dp_intf;
 	peer = wlan_objmgr_get_peer_by_mac(dp_intf->dp_ctx->psoc,
-					   mac_addr->bytes,
-					   WLAN_DP_ID);
+					   mac_addr->bytes, WLAN_DP_ID);
 	if (!peer) {
 		dp_err("Peer object not found mac:" QDF_MAC_ADDR_FMT,
 		       QDF_MAC_ADDR_REF(mac_addr->bytes));
@@ -829,9 +799,7 @@ void ucfg_dp_update_dhcp_state_on_disassoc(struct wlan_objmgr_vdev *vdev,
 	/* Send DHCP STOP indication to FW */
 	stainfo->dhcp_phase = DHCP_PHASE_ACK;
 	if (stainfo->dhcp_nego_status == DHCP_NEGO_IN_PROGRESS)
-		dp_post_dhcp_ind(dp_link,
-				 stainfo->sta_mac.bytes,
-				 0);
+		dp_post_dhcp_ind(dp_link, stainfo->sta_mac.bytes, 0);
 	stainfo->dhcp_nego_status = DHCP_NEGO_STOP;
 	wlan_objmgr_peer_release_ref(peer, WLAN_DP_ID);
 }
@@ -905,8 +873,7 @@ bool ucfg_dp_is_ol_enabled(struct wlan_objmgr_psoc *psoc)
 }
 
 #ifdef RECEIVE_OFFLOAD
-void ucfg_dp_rx_handle_concurrency(struct wlan_objmgr_psoc *psoc,
-				   bool disable)
+void ucfg_dp_rx_handle_concurrency(struct wlan_objmgr_psoc *psoc, bool disable)
 {
 	struct wlan_dp_psoc_context *dp_ctx;
 
@@ -922,8 +889,7 @@ void ucfg_dp_rx_handle_concurrency(struct wlan_objmgr_psoc *psoc,
 
 			dp_info("Enable TCP delack as LRO disabled in concurrency");
 			rx_tp_data.rx_tp_flags = TCP_DEL_ACK_IND;
-			rx_tp_data.level =
-				DP_BUS_BW_GET_RX_LVL(dp_ctx);
+			rx_tp_data.level = DP_BUS_BW_GET_RX_LVL(dp_ctx);
 			wlan_dp_update_tcp_rx_param(dp_ctx, &rx_tp_data);
 			dp_ctx->en_tcp_delack_no_lro = 1;
 		}
@@ -996,21 +962,19 @@ bool ucfg_dp_is_rx_threads_enabled(struct wlan_objmgr_psoc *psoc)
  *
  * Return: None
  */
-static
-void dp_get_config_rx_softirq_limits(struct wlan_objmgr_psoc *psoc,
-				     struct cdp_config_params *params)
+static void dp_get_config_rx_softirq_limits(struct wlan_objmgr_psoc *psoc,
+					    struct cdp_config_params *params)
 {
-	params->tx_comp_loop_pkt_limit = cfg_get(psoc,
-						 CFG_DP_TX_COMP_LOOP_PKT_LIMIT);
-	params->rx_reap_loop_pkt_limit = cfg_get(psoc,
-						 CFG_DP_RX_REAP_LOOP_PKT_LIMIT);
-	params->rx_hp_oos_update_limit = cfg_get(psoc,
-						 CFG_DP_RX_HP_OOS_UPDATE_LIMIT);
+	params->tx_comp_loop_pkt_limit =
+		cfg_get(psoc, CFG_DP_TX_COMP_LOOP_PKT_LIMIT);
+	params->rx_reap_loop_pkt_limit =
+		cfg_get(psoc, CFG_DP_RX_REAP_LOOP_PKT_LIMIT);
+	params->rx_hp_oos_update_limit =
+		cfg_get(psoc, CFG_DP_RX_HP_OOS_UPDATE_LIMIT);
 }
 #else
-static
-void dp_get_config_rx_softirq_limits(struct wlan_objmgr_psoc *psoc,
-				     struct cdp_config_params *params)
+static void dp_get_config_rx_softirq_limits(struct wlan_objmgr_psoc *psoc,
+					    struct cdp_config_params *params)
 {
 }
 #endif /* WLAN_FEATURE_RX_SOFTIRQ_TIME_LIMIT */
@@ -1024,14 +988,13 @@ void dp_get_config_rx_softirq_limits(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-dp_get_config_queue_threshold(struct wlan_objmgr_psoc *psoc,
-			      struct cdp_config_params *params)
+static void dp_get_config_queue_threshold(struct wlan_objmgr_psoc *psoc,
+					  struct cdp_config_params *params)
 {
 	params->tx_flow_stop_queue_threshold =
-			cfg_get(psoc, CFG_DP_TX_FLOW_STOP_QUEUE_TH);
+		cfg_get(psoc, CFG_DP_TX_FLOW_STOP_QUEUE_TH);
 	params->tx_flow_start_queue_offset =
-			cfg_get(psoc, CFG_DP_TX_FLOW_START_QUEUE_OFFSET);
+		cfg_get(psoc, CFG_DP_TX_FLOW_START_QUEUE_OFFSET);
 }
 #else
 static inline void
@@ -1045,12 +1008,12 @@ QDF_STATUS
 ucfg_dp_update_config(struct wlan_objmgr_psoc *psoc,
 		      struct wlan_dp_user_config *req)
 {
-	struct cdp_config_params params = {0};
+	struct cdp_config_params params = { 0 };
 	struct wlan_dp_psoc_context *dp_ctx;
 	QDF_STATUS status;
 	void *soc;
 
-	dp_ctx =  dp_psoc_get_priv(psoc);
+	dp_ctx = dp_psoc_get_priv(psoc);
 
 	dp_ctx->arp_connectivity_map = req->arp_connectivity_map;
 	soc = cds_get_context(QDF_MODULE_ID_SOC);
@@ -1071,12 +1034,12 @@ ucfg_dp_update_config(struct wlan_objmgr_psoc *psoc,
 	params.ipa_enable = req->ipa_enable;
 	dp_ctx->dp_cfg.gro_enable = cfg_get(psoc, CFG_DP_GRO);
 	params.gro_enable = dp_ctx->dp_cfg.gro_enable;
-	params.tx_comp_loop_pkt_limit = cfg_get(psoc,
-						CFG_DP_TX_COMP_LOOP_PKT_LIMIT);
-	params.rx_reap_loop_pkt_limit = cfg_get(psoc,
-						CFG_DP_RX_REAP_LOOP_PKT_LIMIT);
-	params.rx_hp_oos_update_limit = cfg_get(psoc,
-						CFG_DP_RX_HP_OOS_UPDATE_LIMIT);
+	params.tx_comp_loop_pkt_limit =
+		cfg_get(psoc, CFG_DP_TX_COMP_LOOP_PKT_LIMIT);
+	params.rx_reap_loop_pkt_limit =
+		cfg_get(psoc, CFG_DP_RX_REAP_LOOP_PKT_LIMIT);
+	params.rx_hp_oos_update_limit =
+		cfg_get(psoc, CFG_DP_RX_HP_OOS_UPDATE_LIMIT);
 	dp_get_config_rx_softirq_limits(psoc, &params);
 
 	status = cdp_update_config_parameters(soc, &params);
@@ -1088,8 +1051,7 @@ ucfg_dp_update_config(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
-uint64_t
-ucfg_dp_get_rx_softirq_yield_duration(struct wlan_objmgr_psoc *psoc)
+uint64_t ucfg_dp_get_rx_softirq_yield_duration(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_dp_psoc_context *dp_ctx = dp_psoc_get_priv(psoc);
 
@@ -1103,36 +1065,30 @@ ucfg_dp_get_rx_softirq_yield_duration(struct wlan_objmgr_psoc *psoc)
  *
  * Return: None
  */
-static inline void
-dp_rx_register_fisa_ops(struct ol_txrx_ops *txrx_ops)
+static inline void dp_rx_register_fisa_ops(struct ol_txrx_ops *txrx_ops)
 {
 	txrx_ops->rx.osif_fisa_rx = wlan_dp_rx_fisa_cbk;
 	txrx_ops->rx.osif_fisa_flush = wlan_dp_rx_fisa_flush_by_ctx_id;
 }
 #else
-static inline void
-dp_rx_register_fisa_ops(struct ol_txrx_ops *txrx_ops)
+static inline void dp_rx_register_fisa_ops(struct ol_txrx_ops *txrx_ops)
 {
 }
 #endif
 
 #ifdef CONFIG_DP_PKT_ADD_TIMESTAMP
-static QDF_STATUS wlan_dp_get_tsf_time(void *dp_link_ctx,
-				       uint64_t input_time,
+static QDF_STATUS wlan_dp_get_tsf_time(void *dp_link_ctx, uint64_t input_time,
 				       uint64_t *tsf_time)
 {
 	struct wlan_dp_link *dp_link = (struct wlan_dp_link *)dp_link_ctx;
 	struct wlan_dp_intf *dp_intf = dp_link->dp_intf;
 	struct wlan_dp_psoc_callbacks *dp_ops = &dp_intf->dp_ctx->dp_ops;
 
-	dp_ops->dp_get_tsf_time(dp_intf->dev,
-				input_time,
-				tsf_time);
+	dp_ops->dp_get_tsf_time(dp_intf->dev, input_time, tsf_time);
 	return QDF_STATUS_SUCCESS;
 }
 #else
-static QDF_STATUS wlan_dp_get_tsf_time(void *dp_link_ctx,
-				       uint64_t input_time,
+static QDF_STATUS wlan_dp_get_tsf_time(void *dp_link_ctx, uint64_t input_time,
 				       uint64_t *tsf_time)
 {
 	*tsf_time = 0;
@@ -1276,8 +1232,7 @@ QDF_STATUS ucfg_dp_ocb_register_txrx_ops(struct wlan_objmgr_vdev *vdev)
 
 	dp_intf->txrx_ops = txrx_ops;
 
-	qdf_copy_macaddr(&dp_link->conn_info.peer_macaddr,
-			 &dp_link->mac_addr);
+	qdf_copy_macaddr(&dp_link->conn_info.peer_macaddr, &dp_link->mac_addr);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1300,8 +1255,7 @@ QDF_STATUS ucfg_dp_mon_register_txrx_ops(struct wlan_objmgr_vdev *vdev)
 	qdf_mem_zero(&txrx_ops, sizeof(txrx_ops));
 	txrx_ops.rx.rx = dp_mon_rx_packet_cbk;
 	dp_monitor_set_rx_monitor_cb(&txrx_ops, dp_rx_monitor_callback);
-	cdp_vdev_register(soc, dp_link->link_id,
-			  (ol_osif_vdev_handle)dp_link,
+	cdp_vdev_register(soc, dp_link->link_id, (ol_osif_vdev_handle)dp_link,
 			  &txrx_ops);
 
 	dp_intf->txrx_ops = txrx_ops;
@@ -1340,9 +1294,7 @@ QDF_STATUS ucfg_dp_softap_register_txrx_ops(struct wlan_objmgr_vdev *vdev,
 	}
 
 	txrx_ops->get_tsf_time = wlan_dp_get_tsf_time;
-	cdp_vdev_register(soc,
-			  dp_link->link_id,
-			  (ol_osif_vdev_handle)dp_link,
+	cdp_vdev_register(soc, dp_link->link_id, (ol_osif_vdev_handle)dp_link,
 			  txrx_ops);
 	if (!txrx_ops->tx.tx) {
 		dp_err("vdev register fail");
@@ -1355,7 +1307,8 @@ QDF_STATUS ucfg_dp_softap_register_txrx_ops(struct wlan_objmgr_vdev *vdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS ucfg_dp_register_pkt_capture_callbacks(struct wlan_objmgr_vdev *vdev)
+QDF_STATUS
+ucfg_dp_register_pkt_capture_callbacks(struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_link *dp_link;
@@ -1367,8 +1320,7 @@ QDF_STATUS ucfg_dp_register_pkt_capture_callbacks(struct wlan_objmgr_vdev *vdev)
 	}
 
 	dp_intf = dp_link->dp_intf;
-	return wlan_pkt_capture_register_callbacks(vdev,
-						   dp_mon_rx_packet_cbk,
+	return wlan_pkt_capture_register_callbacks(vdev, dp_mon_rx_packet_cbk,
 						   dp_intf);
 }
 
@@ -1387,14 +1339,14 @@ QDF_STATUS ucfg_dp_start_xmit(qdf_nbuf_t nbuf, struct wlan_objmgr_vdev *vdev)
 	dp_intf = dp_link->dp_intf;
 
 	/*
-	 * UMAC may queue TX on any vdev of the interface, but it may not be
-	 * in sync with the def_link for DP, hence ignore the vdev from
-	 * UMAC and select the tx_dp_link in DP.
-	 *
-	 * Since one link is already present in the dp_intf and validated above,
-	 * the def_link is not expected to be NULL. Hence there is no need
-	 * to validate tx_dp_link again.
-	 */
+   * UMAC may queue TX on any vdev of the interface, but it may not be
+   * in sync with the def_link for DP, hence ignore the vdev from
+   * UMAC and select the tx_dp_link in DP.
+   *
+   * Since one link is already present in the dp_intf and validated above,
+   * the def_link is not expected to be NULL. Hence there is no need
+   * to validate tx_dp_link again.
+   */
 	tx_dp_link = dp_intf->def_link;
 	qdf_atomic_inc(&dp_intf->num_active_task);
 	status = dp_start_xmit(tx_dp_link, nbuf);
@@ -1404,7 +1356,8 @@ QDF_STATUS ucfg_dp_start_xmit(qdf_nbuf_t nbuf, struct wlan_objmgr_vdev *vdev)
 }
 
 #ifdef WLAN_FEATURE_OSRTP
-QDF_STATUS ucfg_dp_setup_osrtp_prog(struct wlan_objmgr_vdev *vdev, struct bpf_prog *bpf)
+QDF_STATUS ucfg_dp_setup_osrtp_prog(struct wlan_objmgr_vdev *vdev,
+				    struct bpf_prog *bpf)
 {
 	struct wlan_dp_intf *dp_intf = NULL;
 	struct bpf_prog *old_prog = NULL;
@@ -1497,7 +1450,7 @@ qdf_net_dev_stats *ucfg_dp_get_dev_stats(qdf_netdev_t dev)
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_psoc_context *dp_ctx;
 
-	dp_ctx =  dp_get_context();
+	dp_ctx = dp_get_context();
 
 	dp_intf = dp_get_intf_by_netdev(dp_ctx, dev);
 	if (!dp_intf) {
@@ -1510,8 +1463,7 @@ qdf_net_dev_stats *ucfg_dp_get_dev_stats(qdf_netdev_t dev)
 	return &dp_intf->stats;
 }
 
-void ucfg_dp_inc_rx_pkt_stats(struct wlan_objmgr_vdev *vdev,
-			      uint32_t pkt_len,
+void ucfg_dp_inc_rx_pkt_stats(struct wlan_objmgr_vdev *vdev, uint32_t pkt_len,
 			      bool delivered)
 {
 	struct wlan_dp_intf *dp_intf;
@@ -1545,8 +1497,7 @@ void ucfg_dp_register_rx_mic_error_ind_handler(void *soc)
 }
 
 #ifdef WLAN_NUD_TRACKING
-bool
-ucfg_dp_is_roam_after_nud_enabled(struct wlan_objmgr_psoc *psoc)
+bool ucfg_dp_is_roam_after_nud_enabled(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_dp_psoc_context *dp_ctx = dp_psoc_get_priv(psoc);
 	struct wlan_dp_psoc_cfg *dp_cfg = &dp_ctx->dp_cfg;
@@ -1558,8 +1509,7 @@ ucfg_dp_is_roam_after_nud_enabled(struct wlan_objmgr_psoc *psoc)
 	return false;
 }
 
-bool
-ucfg_dp_is_disconect_after_roam_fail(struct wlan_objmgr_psoc *psoc)
+bool ucfg_dp_is_disconect_after_roam_fail(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_dp_psoc_context *dp_ctx = dp_psoc_get_priv(psoc);
 	struct wlan_dp_psoc_cfg *dp_cfg = &dp_ctx->dp_cfg;
@@ -1634,17 +1584,14 @@ void ucfg_dp_reset_tcp_delack(struct wlan_objmgr_psoc *psoc)
 	dp_reset_tcp_delack(psoc);
 }
 
-void
-ucfg_dp_set_current_throughput_level(struct wlan_objmgr_psoc *psoc,
-				     enum pld_bus_width_type next_vote_level)
+void ucfg_dp_set_current_throughput_level(
+	struct wlan_objmgr_psoc *psoc, enum pld_bus_width_type next_vote_level)
 {
 	dp_set_current_throughput_level(psoc, next_vote_level);
 }
 
-void
-ucfg_dp_set_high_bus_bw_request(struct wlan_objmgr_psoc *psoc,
-				uint8_t vdev_id,
-				bool high_bus_bw)
+void ucfg_dp_set_high_bus_bw_request(struct wlan_objmgr_psoc *psoc,
+				     uint8_t vdev_id, bool high_bus_bw)
 {
 	dp_set_high_bus_bw_request(psoc, vdev_id, high_bus_bw);
 }
@@ -1684,8 +1631,7 @@ void ucfg_dp_bus_bw_compute_prev_txrx_stats(struct wlan_objmgr_vdev *vdev)
 	dp_bus_bw_compute_prev_txrx_stats(vdev);
 }
 
-void
-ucfg_dp_bus_bw_compute_reset_prev_txrx_stats(struct wlan_objmgr_vdev *vdev)
+void ucfg_dp_bus_bw_compute_reset_prev_txrx_stats(struct wlan_objmgr_vdev *vdev)
 {
 	dp_bus_bw_compute_reset_prev_txrx_stats(vdev);
 }
@@ -1697,8 +1643,7 @@ void ucfg_dp_nud_set_gateway_addr(struct wlan_objmgr_vdev *vdev,
 }
 
 void ucfg_dp_nud_event(struct qdf_mac_addr *netdev_mac_addr,
-		       struct qdf_mac_addr *gw_mac_addr,
-		       uint8_t nud_state)
+		       struct qdf_mac_addr *gw_mac_addr, uint8_t nud_state)
 {
 	dp_nud_netevent_cb(netdev_mac_addr, gw_mac_addr, nud_state);
 }
@@ -2238,7 +2183,7 @@ void ucfg_dp_register_hdd_callbacks(struct wlan_objmgr_psoc *psoc,
 	dp_ctx->dp_ops.dp_nbuf_push_pkt = cb_obj->dp_nbuf_push_pkt;
 	dp_ctx->dp_ops.dp_rx_napi_gro_flush = cb_obj->dp_rx_napi_gro_flush;
 	dp_ctx->dp_ops.dp_rx_thread_napi_gro_flush =
-	    cb_obj->dp_rx_thread_napi_gro_flush;
+		cb_obj->dp_rx_thread_napi_gro_flush;
 	dp_ctx->dp_ops.dp_rx_napi_gro_receive = cb_obj->dp_rx_napi_gro_receive;
 	dp_ctx->dp_ops.dp_lro_rx_cb = cb_obj->dp_lro_rx_cb;
 	dp_ctx->dp_ops.dp_register_rx_offld_flush_cb =
@@ -2255,7 +2200,7 @@ void ucfg_dp_register_hdd_callbacks(struct wlan_objmgr_psoc *psoc,
 	dp_ctx->dp_ops.osif_dp_process_mic_error =
 		cb_obj->osif_dp_process_mic_error;
 	dp_ctx->dp_ops.link_monitoring_cb = cb_obj->link_monitoring_cb;
-	}
+}
 
 void ucfg_dp_register_event_handler(struct wlan_objmgr_psoc *psoc,
 				    struct wlan_dp_psoc_nb_ops *cb_obj)
@@ -2298,13 +2243,20 @@ QDF_STATUS ucfg_dp_get_txrx_stats(struct wlan_objmgr_vdev *vdev,
 	dp_intf = dp_link->dp_intf;
 	txrx_stats = &dp_intf->dp_stats.tx_rx_stats;
 	for (i = 0; i < NUM_CPUS; i++) {
-		dp_stats->per_cpu[i].rx_packets = txrx_stats->per_cpu[i].rx_packets;
-		dp_stats->per_cpu[i].rx_dropped = txrx_stats->per_cpu[i].rx_dropped;
-		dp_stats->per_cpu[i].rx_delivered = txrx_stats->per_cpu[i].rx_delivered;
-		dp_stats->per_cpu[i].rx_refused = txrx_stats->per_cpu[i].rx_refused;
-		dp_stats->per_cpu[i].tx_called = txrx_stats->per_cpu[i].tx_called;
-		dp_stats->per_cpu[i].tx_dropped = txrx_stats->per_cpu[i].tx_dropped;
-		dp_stats->per_cpu[i].tx_orphaned = txrx_stats->per_cpu[i].tx_orphaned;
+		dp_stats->per_cpu[i].rx_packets =
+			txrx_stats->per_cpu[i].rx_packets;
+		dp_stats->per_cpu[i].rx_dropped =
+			txrx_stats->per_cpu[i].rx_dropped;
+		dp_stats->per_cpu[i].rx_delivered =
+			txrx_stats->per_cpu[i].rx_delivered;
+		dp_stats->per_cpu[i].rx_refused =
+			txrx_stats->per_cpu[i].rx_refused;
+		dp_stats->per_cpu[i].tx_called =
+			txrx_stats->per_cpu[i].tx_called;
+		dp_stats->per_cpu[i].tx_dropped =
+			txrx_stats->per_cpu[i].tx_dropped;
+		dp_stats->per_cpu[i].tx_orphaned =
+			txrx_stats->per_cpu[i].tx_orphaned;
 	}
 	rx_mcast_drp = qdf_atomic_read(&txrx_stats->rx_usolict_arp_n_mcast_drp);
 	qdf_atomic_set(&dp_stats->rx_usolict_arp_n_mcast_drp, rx_mcast_drp);
@@ -2342,7 +2294,7 @@ void ucfg_dp_clear_net_dev_stats(qdf_netdev_t dev)
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_psoc_context *dp_ctx;
 
-	dp_ctx =  dp_get_context();
+	dp_ctx = dp_get_context();
 	if (qdf_unlikely(!dp_ctx)) {
 		dp_err_rl("DP context not found");
 		return;
@@ -2482,7 +2434,8 @@ bool ucfg_dp_nud_fail_data_stall_evt_enabled(void)
 uint32_t ucfg_dp_fw_data_stall_evt_enabled(void)
 {
 	return cdp_cfg_get(cds_get_context(QDF_MODULE_ID_SOC),
-			   cfg_dp_enable_data_stall) & FW_DATA_STALL_EVT_MASK;
+			   cfg_dp_enable_data_stall) &
+	       FW_DATA_STALL_EVT_MASK;
 }
 
 void ucfg_dp_event_eapol_log(qdf_nbuf_t nbuf, enum qdf_proto_dir dir)
@@ -2504,10 +2457,9 @@ ucfg_dp_softap_inspect_dhcp_packet(struct wlan_objmgr_vdev *vdev,
 	return dp_softap_inspect_dhcp_packet(dp_link, nbuf, dir);
 }
 
-void
-dp_ucfg_enable_link_monitoring(struct wlan_objmgr_psoc *psoc,
-			       struct wlan_objmgr_vdev *vdev,
-			       uint32_t threshold)
+void dp_ucfg_enable_link_monitoring(struct wlan_objmgr_psoc *psoc,
+				    struct wlan_objmgr_vdev *vdev,
+				    uint32_t threshold)
 {
 	struct wlan_dp_link *dp_link;
 	struct wlan_dp_intf *dp_intf;
@@ -2523,9 +2475,8 @@ dp_ucfg_enable_link_monitoring(struct wlan_objmgr_psoc *psoc,
 	dp_intf->link_monitoring.enabled = true;
 }
 
-void
-dp_ucfg_disable_link_monitoring(struct wlan_objmgr_psoc *psoc,
-				struct wlan_objmgr_vdev *vdev)
+void dp_ucfg_disable_link_monitoring(struct wlan_objmgr_psoc *psoc,
+				     struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_dp_intf *dp_intf;
 	struct wlan_dp_link *dp_link;
@@ -2585,10 +2536,9 @@ ucfg_dp_traffic_end_indication_set(struct wlan_objmgr_vdev *vdev,
 		 dp_intf->traffic_end_ind.spl_dscp);
 
 	vdev_param.cdp_vdev_param_traffic_end_ind = info.enabled;
-	if (cdp_txrx_set_vdev_param(cds_get_context(QDF_MODULE_ID_SOC),
-				    dp_link->link_id,
-				    CDP_ENABLE_TRAFFIC_END_INDICATION,
-				    vdev_param))
+	if (cdp_txrx_set_vdev_param(
+		    cds_get_context(QDF_MODULE_ID_SOC), dp_link->link_id,
+		    CDP_ENABLE_TRAFFIC_END_INDICATION, vdev_param))
 		dp_err("Failed to set traffic end indication param on DP vdev");
 
 	return QDF_STATUS_SUCCESS;
@@ -2701,14 +2651,14 @@ void ucfg_dp_direct_link_deinit(struct wlan_objmgr_psoc *psoc, bool is_ssr)
 	dp_direct_link_deinit(dp_ctx, is_ssr);
 }
 
-void
-ucfg_dp_wfds_handle_request_mem_ind(struct wlan_qmi_wfds_mem_ind_msg *mem_msg)
+void ucfg_dp_wfds_handle_request_mem_ind(
+	struct wlan_qmi_wfds_mem_ind_msg *mem_msg)
 {
 	dp_wfds_handle_request_mem_ind(mem_msg);
 }
 
-void
-ucfg_dp_wfds_handle_ipcc_map_n_cfg_ind(struct wlan_qmi_wfds_ipcc_map_n_cfg_ind_msg *ipcc_msg)
+void ucfg_dp_wfds_handle_ipcc_map_n_cfg_ind(
+	struct wlan_qmi_wfds_ipcc_map_n_cfg_ind_msg *ipcc_msg)
 {
 	dp_wfds_handle_ipcc_map_n_cfg_ind(ipcc_msg);
 }
@@ -2723,8 +2673,7 @@ void ucfg_dp_wfds_del_server(void)
 	dp_wfds_del_server();
 }
 
-QDF_STATUS ucfg_dp_config_direct_link(qdf_netdev_t dev,
-				      bool config_direct_link,
+QDF_STATUS ucfg_dp_config_direct_link(qdf_netdev_t dev, bool config_direct_link,
 				      bool enable_low_latency)
 {
 	struct wlan_dp_psoc_context *dp_ctx;
@@ -2793,8 +2742,7 @@ QDF_STATUS ucfg_dp_txrx_deinit(ol_txrx_soc_handle soc)
 	return dp_txrx_deinit(soc);
 }
 
-QDF_STATUS ucfg_dp_txrx_ext_dump_stats(ol_txrx_soc_handle soc,
-				       uint8_t stats_id)
+QDF_STATUS ucfg_dp_txrx_ext_dump_stats(ol_txrx_soc_handle soc, uint8_t stats_id)
 {
 	return dp_txrx_ext_dump_stats(soc, stats_id);
 }
@@ -2809,12 +2757,10 @@ QDF_STATUS
 ucfg_dp_get_per_link_peer_stats(ol_txrx_soc_handle soc, uint8_t vdev_id,
 				uint8_t *peer_mac,
 				struct cdp_peer_stats *peer_stats,
-				enum cdp_peer_type peer_type,
-				uint8_t num_link)
+				enum cdp_peer_type peer_type, uint8_t num_link)
 {
-	return cdp_host_get_per_link_peer_stats(soc, vdev_id, peer_mac,
-						peer_stats, peer_type,
-						num_link);
+	return cdp_host_get_per_link_peer_stats(
+		soc, vdev_id, peer_mac, peer_stats, peer_type, num_link);
 }
 
 #ifdef WLAN_FEATURE_LOCAL_PKT_CAPTURE

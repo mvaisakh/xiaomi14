@@ -15,9 +15,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_module.h"
-#include "dp_types.h"
 #include "hal_rx_flow.h"
+#include "dp_types.h"
+#include "qdf_module.h"
 
 /**
  * hal_rx_flow_get_cmem_fse() - Get FSE from CMEM
@@ -28,22 +28,22 @@
  *
  * Return: If read is successful or not
  */
-static void
-hal_rx_flow_get_cmem_fse(hal_soc_handle_t hal_soc_hdl, uint32_t fse_offset,
-			 uint32_t *fse, qdf_size_t len)
+static void hal_rx_flow_get_cmem_fse(hal_soc_handle_t hal_soc_hdl,
+				     uint32_t fse_offset, uint32_t *fse,
+				     qdf_size_t len)
 {
 	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
 
 	if (hal_soc->ops->hal_rx_flow_get_cmem_fse) {
 		return hal_soc->ops->hal_rx_flow_get_cmem_fse(
-						hal_soc, fse_offset, fse, len);
+			hal_soc, fse_offset, fse, len);
 	}
 }
 
 #if defined(WLAN_SUPPORT_RX_FISA)
 static inline void hal_rx_dump_fse(struct rx_flow_search_entry *fse, int index)
 {
-		dp_info("index %d:"
+	dp_info("index %d:"
 		" src_ip_127_96 0x%x"
 		" src_ip_95_640 0x%x"
 		" src_ip_63_32 0x%x"
@@ -68,35 +68,20 @@ static inline void hal_rx_dump_fse(struct rx_flow_search_entry *fse, int index)
 		" cumulative_l4_checksum 0x%x"
 		" cumulative_ip_length 0x%x"
 		" tcp_sequence_number 0x%x",
-		index,
-		fse->src_ip_127_96,
-		fse->src_ip_95_64,
-		fse->src_ip_63_32,
-		fse->src_ip_31_0,
-		fse->dest_ip_127_96,
-		fse->dest_ip_95_64,
-		fse->dest_ip_63_32,
-		fse->dest_ip_31_0,
-		fse->src_port,
-		fse->dest_port,
-		fse->l4_protocol,
-		fse->valid,
-		fse->reo_destination_indication,
-		fse->msdu_drop,
-		fse->reo_destination_handler,
-		fse->metadata,
-		fse->aggregation_count,
-		fse->lro_eligible,
-		fse->msdu_count,
-		fse->msdu_byte_count,
-		fse->timestamp,
+		index, fse->src_ip_127_96, fse->src_ip_95_64, fse->src_ip_63_32,
+		fse->src_ip_31_0, fse->dest_ip_127_96, fse->dest_ip_95_64,
+		fse->dest_ip_63_32, fse->dest_ip_31_0, fse->src_port,
+		fse->dest_port, fse->l4_protocol, fse->valid,
+		fse->reo_destination_indication, fse->msdu_drop,
+		fse->reo_destination_handler, fse->metadata,
+		fse->aggregation_count, fse->lro_eligible, fse->msdu_count,
+		fse->msdu_byte_count, fse->timestamp,
 #ifdef QCA_WIFI_KIWI_V2
 		fse->cumulative_ip_length_pmac1,
 #else
 		fse->cumulative_l4_checksum,
 #endif
-		fse->cumulative_ip_length,
-		fse->tcp_sequence_number);
+		fse->cumulative_ip_length, fse->tcp_sequence_number);
 }
 
 void hal_rx_dump_fse_table(struct hal_rx_fst *fst)
@@ -115,7 +100,7 @@ void hal_rx_dump_fse_table(struct hal_rx_fst *fst)
 void hal_rx_dump_cmem_fse(hal_soc_handle_t hal_soc_hdl, uint32_t fse_offset,
 			  int index)
 {
-	struct rx_flow_search_entry fse = {0};
+	struct rx_flow_search_entry fse = { 0 };
 
 	if (!fse_offset)
 		return;
@@ -136,33 +121,30 @@ void hal_rx_dump_cmem_fse(hal_soc_handle_t hal_soc_hdl, uint32_t fse_offset,
 }
 #endif
 
-void *
-hal_rx_flow_setup_fse(hal_soc_handle_t hal_soc_hdl,
-		      struct hal_rx_fst *fst, uint32_t table_offset,
-		      struct hal_rx_flow *flow)
+void *hal_rx_flow_setup_fse(hal_soc_handle_t hal_soc_hdl,
+			    struct hal_rx_fst *fst, uint32_t table_offset,
+			    struct hal_rx_flow *flow)
 {
 	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
 
 	if (hal_soc->ops->hal_rx_flow_setup_fse) {
-		return hal_soc->ops->hal_rx_flow_setup_fse((uint8_t *)fst,
-							   table_offset,
-							   (uint8_t *)flow);
+		return hal_soc->ops->hal_rx_flow_setup_fse(
+			(uint8_t *)fst, table_offset, (uint8_t *)flow);
 	}
 
 	return NULL;
 }
 qdf_export_symbol(hal_rx_flow_setup_fse);
 
-uint32_t
-hal_rx_flow_setup_cmem_fse(hal_soc_handle_t hal_soc_hdl, uint32_t cmem_ba,
-			   uint32_t table_offset, struct hal_rx_flow *flow)
+uint32_t hal_rx_flow_setup_cmem_fse(hal_soc_handle_t hal_soc_hdl,
+				    uint32_t cmem_ba, uint32_t table_offset,
+				    struct hal_rx_flow *flow)
 {
 	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
 
 	if (hal_soc->ops->hal_rx_flow_setup_cmem_fse) {
 		return hal_soc->ops->hal_rx_flow_setup_cmem_fse(
-						hal_soc, cmem_ba,
-						table_offset, (uint8_t *)flow);
+			hal_soc, cmem_ba, table_offset, (uint8_t *)flow);
 	}
 
 	return 0;
@@ -184,14 +166,14 @@ uint32_t hal_rx_flow_get_cmem_fse_timestamp(hal_soc_handle_t hal_soc_hdl,
 qdf_export_symbol(hal_rx_flow_get_cmem_fse_timestamp);
 
 QDF_STATUS
-hal_rx_flow_delete_entry(hal_soc_handle_t hal_soc_hdl,
-			 struct hal_rx_fst *fst, void *hal_rx_fse)
+hal_rx_flow_delete_entry(hal_soc_handle_t hal_soc_hdl, struct hal_rx_fst *fst,
+			 void *hal_rx_fse)
 {
 	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
 
 	if (hal_soc->ops->hal_rx_flow_delete_entry) {
 		return hal_soc->ops->hal_rx_flow_delete_entry((uint8_t *)fst,
-							   hal_rx_fse);
+							      hal_rx_fse);
 	}
 
 	return QDF_STATUS_E_NOSUPPORT;
@@ -213,14 +195,14 @@ static void hal_rx_fst_key_configure(struct hal_rx_fst *fst)
 	qdf_mem_copy(key_bytes, fst->key, HAL_FST_HASH_KEY_SIZE_BYTES);
 
 	/*
-	 * The Toeplitz algorithm as per the Microsoft spec works in a
-	 * “big-endian” manner, using the MSBs of the key to hash the
-	 * initial bytes of the input going on to use up the lower order bits
-	 * of the key to hash further bytes of the input until the LSBs of the
-	 * key are used finally.
-	 *
-	 * So first, rightshift 320-bit input key 5 times to get 315 MS bits
-	 */
+   * The Toeplitz algorithm as per the Microsoft spec works in a
+   * “big-endian” manner, using the MSBs of the key to hash the
+   * initial bytes of the input going on to use up the lower order bits
+   * of the key to hash further bytes of the input until the LSBs of the
+   * key are used finally.
+   *
+   * So first, rightshift 320-bit input key 5 times to get 315 MS bits
+   */
 	key_bitwise_shift_left(key_bytes, HAL_FST_HASH_KEY_SIZE_BYTES, 5);
 	key_reverse(fst->shifted_key, key_bytes, HAL_FST_HASH_KEY_SIZE_BYTES);
 }
@@ -247,8 +229,7 @@ static inline void *hal_rx_fst_get_base(struct hal_rx_fst *fst)
  *
  * Return: size of each entry/flow in Rx FST
  */
-static inline uint32_t
-hal_rx_fst_get_fse_size(hal_soc_handle_t hal_soc_hdl)
+static inline uint32_t hal_rx_fst_get_fse_size(hal_soc_handle_t hal_soc_hdl)
 {
 	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
 
@@ -267,19 +248,15 @@ hal_rx_fst_get_fse_size(hal_soc_handle_t hal_soc_hdl)
  *
  * Return: Success/Failure
  */
-void *
-hal_rx_flow_get_tuple_info(hal_soc_handle_t hal_soc_hdl,
-			   struct hal_rx_fst *fst,
-			   uint32_t hal_hash,
-			   struct hal_flow_tuple_info *tuple_info)
+void *hal_rx_flow_get_tuple_info(hal_soc_handle_t hal_soc_hdl,
+				 struct hal_rx_fst *fst, uint32_t hal_hash,
+				 struct hal_flow_tuple_info *tuple_info)
 {
 	struct hal_soc *hal_soc = (struct hal_soc *)hal_soc_hdl;
 
 	if (hal_soc->ops->hal_rx_flow_get_tuple_info)
 		return hal_soc->ops->hal_rx_flow_get_tuple_info(
-						(uint8_t *)fst,
-						hal_hash,
-						(uint8_t *)tuple_info);
+			(uint8_t *)fst, hal_hash, (uint8_t *)tuple_info);
 
 	return NULL;
 }
@@ -300,11 +277,11 @@ static void hal_flow_toeplitz_create_cache(struct hal_rx_fst *fst)
 	uint8_t *key = fst->shifted_key;
 
 	/*
-	 * Initialise to first 32 bits of the key; shift in further key material
-	 * through the loop
-	 */
+   * Initialise to first 32 bits of the key; shift in further key material
+   * through the loop
+   */
 	uint32_t cur_key = (key[0] << 24) | (key[1] << 16) | (key[2] << 8) |
-		key[3];
+			   key[3];
 
 	for (i = 0; i < HAL_FST_HASH_KEY_SIZE_BYTES; i++) {
 		uint8_t new_key_byte;
@@ -319,12 +296,12 @@ static void hal_flow_toeplitz_create_cache(struct hal_rx_fst *fst)
 
 		for (bit = 1; bit < 8; bit++) {
 			/*
-			 * For each iteration, shift out one more bit of the
-			 * current key and shift in one more bit of the new key
-			 * material
-			 */
+       * For each iteration, shift out one more bit of the
+       * current key and shift in one more bit of the new key
+       * material
+       */
 			shifted_key[bit] = cur_key << bit |
-				new_key_byte >> (8 - bit);
+					   new_key_byte >> (8 - bit);
 		}
 
 		for (val = 0; val < (1 << 8); val++) {
@@ -332,9 +309,9 @@ static void hal_flow_toeplitz_create_cache(struct hal_rx_fst *fst)
 			int mask;
 
 			/*
-			 * For each bit set in the input, XOR in
-			 * the appropriately shifted key
-			 */
+       * For each bit set in the input, XOR in
+       * the appropriately shifted key
+       */
 			for (bit = 0, mask = 1 << 7; bit < 8; bit++, mask >>= 1)
 				if ((val & mask))
 					hash ^= shifted_key[bit];
@@ -351,12 +328,11 @@ static void hal_flow_toeplitz_create_cache(struct hal_rx_fst *fst)
 }
 #endif
 
-struct hal_rx_fst *
-hal_rx_fst_attach(hal_soc_handle_t hal_soc_hdl,
-		  qdf_device_t qdf_dev,
-		  uint64_t *hal_fst_base_paddr, uint16_t max_entries,
-		  uint16_t max_search, uint8_t *hash_key,
-		  uint64_t fst_cmem_base)
+struct hal_rx_fst *hal_rx_fst_attach(hal_soc_handle_t hal_soc_hdl,
+				     qdf_device_t qdf_dev,
+				     uint64_t *hal_fst_base_paddr,
+				     uint16_t max_entries, uint16_t max_search,
+				     uint8_t *hash_key, uint64_t fst_cmem_base)
 {
 	struct hal_rx_fst *fst = qdf_mem_malloc(sizeof(struct hal_rx_fst));
 	uint32_t fst_entry_size;
@@ -378,15 +354,14 @@ hal_rx_fst_attach(hal_soc_handle_t hal_soc_hdl,
 	fst->fst_entry_size = fst_entry_size;
 
 	QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_DEBUG,
-		  "HAL FST allocation %pK %d * %d\n", fst,
-		  fst->max_entries, fst_entry_size);
+		  "HAL FST allocation %pK %d * %d\n", fst, fst->max_entries,
+		  fst_entry_size);
 
 	if (fst_cmem_base == 0) {
 		/* FST is in DDR */
-		fst->base_vaddr = (uint8_t *)qdf_mem_alloc_consistent(qdf_dev,
-				    qdf_dev->dev,
-				    (fst->max_entries * fst_entry_size),
-				    &fst->base_paddr);
+		fst->base_vaddr = (uint8_t *)qdf_mem_alloc_consistent(
+			qdf_dev, qdf_dev->dev,
+			(fst->max_entries * fst_entry_size), &fst->base_paddr);
 
 		if (!fst->base_vaddr) {
 			QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
@@ -421,16 +396,14 @@ qdf_export_symbol(hal_rx_fst_attach);
 void hal_rx_fst_detach(hal_soc_handle_t hal_soc_hdl, struct hal_rx_fst *rx_fst,
 		       qdf_device_t qdf_dev, uint64_t fst_cmem_base)
 {
-
 	if (!rx_fst || !qdf_dev)
 		return;
 
 	if (fst_cmem_base == 0 && rx_fst->base_vaddr) {
-		qdf_mem_free_consistent(qdf_dev, qdf_dev->dev,
-					rx_fst->max_entries *
-					rx_fst->fst_entry_size,
-					rx_fst->base_vaddr, rx_fst->base_paddr,
-					0);
+		qdf_mem_free_consistent(
+			qdf_dev, qdf_dev->dev,
+			rx_fst->max_entries * rx_fst->fst_entry_size,
+			rx_fst->base_vaddr, rx_fst->base_paddr, 0);
 	}
 
 	qdf_mem_free(rx_fst);
@@ -438,8 +411,7 @@ void hal_rx_fst_detach(hal_soc_handle_t hal_soc_hdl, struct hal_rx_fst *rx_fst,
 qdf_export_symbol(hal_rx_fst_detach);
 
 #ifndef WLAN_SUPPORT_RX_FISA
-uint32_t
-hal_flow_toeplitz_hash(void *hal_fst, struct hal_rx_flow *flow)
+uint32_t hal_flow_toeplitz_hash(void *hal_fst, struct hal_rx_flow *flow)
 {
 	int i, j;
 	uint32_t hash = 0;
@@ -461,16 +433,16 @@ hal_flow_toeplitz_hash(void *hal_fst, struct hal_rx_flow *flow)
 	*(uint32_t *)&input[9] = flow->tuple_info.l4_protocol;
 
 	tuple = (uint8_t *)input;
-	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_DEBUG,
-			   tuple, sizeof(input));
+	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_DEBUG, tuple,
+			   sizeof(input));
 	for (i = 0, j = HAL_FST_HASH_DATA_SIZE - 1;
 	     i < HAL_FST_HASH_KEY_SIZE_BYTES && j >= 0; i++, j--) {
 		hash ^= fst->key_cache[i][tuple[j]];
 	}
 
 	QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_INFO_LOW,
-		  "Hash value %u %u truncated hash %u\n", hash,
-		  (hash >> 12), (hash >> 12) % (fst->max_entries));
+		  "Hash value %u %u truncated hash %u\n", hash, (hash >> 12),
+		  (hash >> 12) % (fst->max_entries));
 
 	hash >>= 12;
 	hash &= (fst->max_entries - 1);
@@ -478,8 +450,7 @@ hal_flow_toeplitz_hash(void *hal_fst, struct hal_rx_flow *flow)
 	return hash;
 }
 #else
-uint32_t
-hal_flow_toeplitz_hash(void *hal_fst, struct hal_rx_flow *flow)
+uint32_t hal_flow_toeplitz_hash(void *hal_fst, struct hal_rx_flow *flow)
 {
 	return 0;
 }
@@ -498,9 +469,9 @@ uint32_t hal_rx_get_hal_hash(struct hal_rx_fst *hal_fst, uint32_t flow_hash)
 qdf_export_symbol(hal_rx_get_hal_hash);
 
 QDF_STATUS
-hal_rx_insert_flow_entry(hal_soc_handle_t hal_soc,
-			 struct hal_rx_fst *fst, uint32_t flow_hash,
-			 void *flow_tuple_info, uint32_t *flow_idx)
+hal_rx_insert_flow_entry(hal_soc_handle_t hal_soc, struct hal_rx_fst *fst,
+			 uint32_t flow_hash, void *flow_tuple_info,
+			 uint32_t *flow_idx)
 {
 	int i;
 	void *hal_fse = NULL;
@@ -516,8 +487,7 @@ hal_rx_insert_flow_entry(hal_soc_handle_t hal_soc,
 			break;
 
 		/* Find the matching flow entry in HW FST */
-		if (!qdf_mem_cmp(&hal_tuple_info,
-				 flow_tuple_info,
+		if (!qdf_mem_cmp(&hal_tuple_info, flow_tuple_info,
 				 sizeof(struct hal_flow_tuple_info))) {
 			dp_err("Duplicate flow entry in FST %u at skid %u ",
 			       hal_hash, i);
@@ -555,8 +525,7 @@ hal_rx_find_flow_from_tuple(hal_soc_handle_t hal_soc_hdl,
 			continue;
 
 		/* Find the matching flow entry in HW FST */
-		if (!qdf_mem_cmp(&hal_tuple_info,
-				 flow_tuple_info,
+		if (!qdf_mem_cmp(&hal_tuple_info, flow_tuple_info,
 				 sizeof(struct hal_flow_tuple_info))) {
 			break;
 		}

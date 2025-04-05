@@ -17,8 +17,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_ptr_hash.h"
 #include "qdf_ptr_hash_test.h"
+#include "qdf_ptr_hash.h"
 #include "qdf_trace.h"
 
 #define qdf_ptr_hash_bits 4 /* 16 buckets */
@@ -117,7 +117,8 @@ static uint32_t __qdf_ptr_hash_test_for_each(struct qdf_ptr_hash *ht)
 
 	/* ... be able to iterate over each item */
 	count = 0;
-	qdf_ptr_hash_for_each(ht, bucket, item, entry) {
+	qdf_ptr_hash_for_each(ht, bucket, item, entry)
+	{
 		QDF_BUG(item->id == items[item->id].id);
 		count++;
 	}
@@ -126,7 +127,8 @@ static uint32_t __qdf_ptr_hash_test_for_each(struct qdf_ptr_hash *ht)
 	/* ... be able to iterate by hash value */
 	count = 0;
 	for (i = 0; i < qdf_ptr_hash_entry_count; i++) {
-		qdf_ptr_hash_for_each_by_hash(ht, i, item, entry) {
+		qdf_ptr_hash_for_each_by_hash(ht, i, item, entry)
+		{
 			QDF_BUG(item->id == items[item->id].id);
 			count++;
 		}
@@ -136,7 +138,8 @@ static uint32_t __qdf_ptr_hash_test_for_each(struct qdf_ptr_hash *ht)
 	/* ... be able to iterate by key value */
 	for (i = 0; i < qdf_ptr_hash_entry_count; i++) {
 		count = 0;
-		qdf_ptr_hash_for_each_by_key(ht, i, item, entry) {
+		qdf_ptr_hash_for_each_by_key(ht, i, item, entry)
+		{
 			QDF_BUG(item->id == items[i].id);
 			count++;
 		}
@@ -194,4 +197,3 @@ uint32_t qdf_ptr_hash_unit_test(void)
 
 	return errors;
 }
-

@@ -4,31 +4,25 @@
  * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/of_platform.h>
-#include <linux/module.h>
-#include <linux/io.h>
-#include <linux/init.h>
-#include <linux/platform_device.h>
-#include <linux/kernel.h>
-#include <linux/clk.h>
-#include <linux/clk-provider.h>
-#include <linux/ratelimit.h>
-#include "bolero-cdc.h"
 #include "bolero-clk-rsc.h"
+#include "bolero-cdc.h"
+#include <linux/clk-provider.h>
+#include <linux/clk.h>
+#include <linux/init.h>
+#include <linux/io.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/of_platform.h>
+#include <linux/platform_device.h>
+#include <linux/ratelimit.h>
 
 #define DRV_NAME "bolero-clk-rsc"
 #define BOLERO_CLK_NAME_LENGTH 30
 #define NPL_CLK_OFFSET (TX_NPL_CLK - TX_CORE_CLK)
 
 static char clk_src_name[MAX_CLK][BOLERO_CLK_NAME_LENGTH] = {
-	"tx_core_clk",
-	"rx_core_clk",
-	"wsa_core_clk",
-	"va_core_clk",
-	"tx_npl_clk",
-	"rx_npl_clk",
-	"wsa_npl_clk",
-	"va_npl_clk",
+	"tx_core_clk", "rx_core_clk", "wsa_core_clk", "va_core_clk",
+	"tx_npl_clk",  "rx_npl_clk",  "wsa_npl_clk",  "va_npl_clk",
 };
 
 struct bolero_clk_rsc {
@@ -55,15 +49,13 @@ static int bolero_clk_rsc_cb(struct device *dev, u16 event)
 	struct bolero_clk_rsc *priv;
 
 	if (!dev) {
-		pr_err("%s: Invalid device pointer\n",
-				__func__);
+		pr_err("%s: Invalid device pointer\n", __func__);
 		return -EINVAL;
 	}
 
 	priv = dev_get_drvdata(dev);
 	if (!priv) {
-		pr_err("%s: Invalid clk rsc priviate data\n",
-				__func__);
+		pr_err("%s: Invalid clk rsc priviate data\n", __func__);
 		return -EINVAL;
 	}
 
@@ -82,7 +74,7 @@ static int bolero_clk_rsc_cb(struct device *dev, u16 event)
 }
 
 static char __iomem *bolero_clk_rsc_get_clk_muxsel(struct bolero_clk_rsc *priv,
-						 int clk_id)
+						   int clk_id)
 {
 	switch (clk_id) {
 	case RX_CORE_CLK:
@@ -112,8 +104,7 @@ int bolero_rsc_clk_reset(struct device *dev, int clk_id)
 	}
 
 	if (clk_id < 0 || clk_id >= MAX_CLK - NPL_CLK_OFFSET) {
-		pr_err("%s: Invalid clk_id: %d\n",
-			__func__, clk_id);
+		pr_err("%s: Invalid clk_id: %d\n", __func__, clk_id);
 		return -EINVAL;
 	}
 
@@ -134,8 +125,8 @@ int bolero_rsc_clk_reset(struct device *dev, int clk_id)
 		clk_disable_unprepare(priv->clk[clk_id]);
 		count++;
 	}
-	dev_dbg(priv->dev,
-		"%s: clock reset after ssr, count %d\n", __func__, count);
+	dev_dbg(priv->dev, "%s: clock reset after ssr, count %d\n", __func__,
+		count);
 
 	trace_printk("%s: clock reset after ssr, count %d\n", __func__, count);
 	while (count--) {
@@ -191,8 +182,7 @@ void bolero_clk_rsc_enable_all_clocks(struct device *dev, bool enable)
 EXPORT_SYMBOL(bolero_clk_rsc_enable_all_clocks);
 
 static int bolero_clk_rsc_mux0_clk_request(struct bolero_clk_rsc *priv,
-					   int clk_id,
-					   bool enable)
+					   int clk_id, bool enable)
 {
 	int ret = 0;
 	static DEFINE_RATELIMIT_STATE(rtl, 1 * HZ, 1);
@@ -203,8 +193,10 @@ static int bolero_clk_rsc_mux0_clk_request(struct bolero_clk_rsc *priv,
 			ret = clk_prepare_enable(priv->clk[clk_id]);
 			if (ret < 0) {
 				if (__ratelimit(&rtl))
-					dev_err_ratelimited(priv->dev, "%s:clk_id %d enable failed\n",
-							__func__, clk_id);
+					dev_err_ratelimited(
+						priv->dev,
+						"%s:clk_id %d enable failed\n",
+						__func__, clk_id);
 				goto done;
 			}
 			if (priv->clk[clk_id + NPL_CLK_OFFSET]) {
@@ -212,9 +204,12 @@ static int bolero_clk_rsc_mux0_clk_request(struct bolero_clk_rsc *priv,
 					priv->clk[clk_id + NPL_CLK_OFFSET]);
 				if (ret < 0) {
 					if (__ratelimit(&rtl))
-						dev_err_ratelimited(priv->dev, "%s:clk_id %d enable failed\n",
-						__func__,
-						clk_id + NPL_CLK_OFFSET);
+						dev_err_ratelimited(
+							priv->dev,
+							"%s:clk_id %d enable failed\n",
+							__func__,
+							clk_id +
+								NPL_CLK_OFFSET);
 					goto err;
 				}
 			}
@@ -222,8 +217,10 @@ static int bolero_clk_rsc_mux0_clk_request(struct bolero_clk_rsc *priv,
 		priv->clk_cnt[clk_id]++;
 	} else {
 		if (priv->clk_cnt[clk_id] <= 0) {
-			dev_err_ratelimited(priv->dev, "%s: clk_id: %d is already disabled\n",
-					__func__, clk_id);
+			dev_err_ratelimited(
+				priv->dev,
+				"%s: clk_id: %d is already disabled\n",
+				__func__, clk_id);
 			priv->clk_cnt[clk_id] = 0;
 			goto done;
 		}
@@ -244,8 +241,7 @@ done:
 }
 
 static int bolero_clk_rsc_mux1_clk_request(struct bolero_clk_rsc *priv,
-					   int clk_id,
-					   bool enable)
+					   int clk_id, bool enable)
 {
 	char __iomem *clk_muxsel = NULL;
 	int ret = 0;
@@ -262,9 +258,8 @@ static int bolero_clk_rsc_mux1_clk_request(struct bolero_clk_rsc *priv,
 	if (enable) {
 		if (priv->clk_cnt[clk_id] == 0) {
 			if (clk_id != VA_CORE_CLK) {
-				ret = bolero_clk_rsc_mux0_clk_request(priv,
-								default_clk_id,
-								true);
+				ret = bolero_clk_rsc_mux0_clk_request(
+					priv, default_clk_id, true);
 				if (ret < 0)
 					goto done;
 			}
@@ -272,7 +267,9 @@ static int bolero_clk_rsc_mux1_clk_request(struct bolero_clk_rsc *priv,
 			ret = clk_prepare_enable(priv->clk[clk_id]);
 			if (ret < 0) {
 				if (__ratelimit(&rtl))
-					dev_err_ratelimited(priv->dev, "%s:clk_id %d enable failed\n",
+					dev_err_ratelimited(
+						priv->dev,
+						"%s:clk_id %d enable failed\n",
 						__func__, clk_id);
 				goto err_clk;
 			}
@@ -281,35 +278,40 @@ static int bolero_clk_rsc_mux1_clk_request(struct bolero_clk_rsc *priv,
 					priv->clk[clk_id + NPL_CLK_OFFSET]);
 				if (ret < 0) {
 					if (__ratelimit(&rtl))
-						dev_err_ratelimited(priv->dev, "%s:clk_id %d enable failed\n",
-						__func__,
-						clk_id + NPL_CLK_OFFSET);
+						dev_err_ratelimited(
+							priv->dev,
+							"%s:clk_id %d enable failed\n",
+							__func__,
+							clk_id +
+								NPL_CLK_OFFSET);
 					goto err_npl_clk;
 				}
 			}
 
 			/*
-			 * Temp SW workaround to address a glitch issue of
-			 * VA GFMux instance responsible for switching from
-			 * TX MCLK to VA MCLK. This configuration would be taken
-			 * care in DSP itself
-			 */
+       * Temp SW workaround to address a glitch issue of
+       * VA GFMux instance responsible for switching from
+       * TX MCLK to VA MCLK. This configuration would be taken
+       * care in DSP itself
+       */
 			if (clk_id != VA_CORE_CLK) {
 				if (priv->dev_up_gfmux) {
 					iowrite32(0x1, clk_muxsel);
 					muxsel = ioread32(clk_muxsel);
-					trace_printk("%s: muxsel value after enable: %d\n",
-							__func__, muxsel);
+					trace_printk(
+						"%s: muxsel value after enable: %d\n",
+						__func__, muxsel);
 				}
-				bolero_clk_rsc_mux0_clk_request(priv,
-							default_clk_id,
-							false);
+				bolero_clk_rsc_mux0_clk_request(
+					priv, default_clk_id, false);
 			}
 		}
 		priv->clk_cnt[clk_id]++;
 	} else {
 		if (priv->clk_cnt[clk_id] <= 0) {
-			dev_err_ratelimited(priv->dev, "%s: clk_id: %d is already disabled\n",
+			dev_err_ratelimited(
+				priv->dev,
+				"%s: clk_id: %d is already disabled\n",
 				__func__, clk_id);
 			priv->clk_cnt[clk_id] = 0;
 			goto done;
@@ -317,22 +319,23 @@ static int bolero_clk_rsc_mux1_clk_request(struct bolero_clk_rsc *priv,
 		priv->clk_cnt[clk_id]--;
 		if (priv->clk_cnt[clk_id] == 0) {
 			if (clk_id != VA_CORE_CLK) {
-				ret = bolero_clk_rsc_mux0_clk_request(priv,
-						default_clk_id, true);
+				ret = bolero_clk_rsc_mux0_clk_request(
+					priv, default_clk_id, true);
 
 				if (!ret) {
 					/*
-					 * Temp SW workaround to address a glitch issue
-					 * of VA GFMux instance responsible for
-					 * switching from TX MCLK to VA MCLK.
-					 * This configuration would be taken
-					 * care in DSP itself.
-					 */
+           * Temp SW workaround to address a glitch issue
+           * of VA GFMux instance responsible for
+           * switching from TX MCLK to VA MCLK.
+           * This configuration would be taken
+           * care in DSP itself.
+           */
 					if (priv->dev_up_gfmux) {
 						iowrite32(0x0, clk_muxsel);
 						muxsel = ioread32(clk_muxsel);
-						trace_printk("%s: muxsel value after disable: %d\n",
-								__func__, muxsel);
+						trace_printk(
+							"%s: muxsel value after disable: %d\n",
+							__func__, muxsel);
 					}
 				}
 			}
@@ -343,8 +346,8 @@ static int bolero_clk_rsc_mux1_clk_request(struct bolero_clk_rsc *priv,
 
 			if (clk_id != VA_CORE_CLK) {
 				if (!ret)
-					bolero_clk_rsc_mux0_clk_request(priv,
-						default_clk_id, false);
+					bolero_clk_rsc_mux0_clk_request(
+						priv, default_clk_id, false);
 			}
 		}
 	}
@@ -361,8 +364,7 @@ done:
 }
 
 static int bolero_clk_rsc_check_and_update_va_clk(struct bolero_clk_rsc *priv,
-						  bool mux_switch,
-						  int clk_id,
+						  bool mux_switch, int clk_id,
 						  bool enable)
 {
 	int ret = 0;
@@ -370,18 +372,18 @@ static int bolero_clk_rsc_check_and_update_va_clk(struct bolero_clk_rsc *priv,
 	if (enable) {
 		if (clk_id == VA_CORE_CLK && mux_switch) {
 			/*
-			 * Handle the following usecase scenarios during enable
-			 * 1. VA only, Active clk is VA_CORE_CLK
-			 * 2. record -> record + VA, Active clk is TX_CORE_CLK
-			 */
+       * Handle the following usecase scenarios during enable
+       * 1. VA only, Active clk is VA_CORE_CLK
+       * 2. record -> record + VA, Active clk is TX_CORE_CLK
+       */
 			if (priv->clk_cnt[TX_CORE_CLK] == 0) {
-				ret = bolero_clk_rsc_mux1_clk_request(priv,
-							 VA_CORE_CLK, enable);
+				ret = bolero_clk_rsc_mux1_clk_request(
+					priv, VA_CORE_CLK, enable);
 				if (ret < 0)
 					goto err;
 			} else {
-				ret = bolero_clk_rsc_mux0_clk_request(priv,
-							TX_CORE_CLK, enable);
+				ret = bolero_clk_rsc_mux0_clk_request(
+					priv, TX_CORE_CLK, enable);
 				if (ret < 0)
 					goto err;
 				priv->va_tx_clk_cnt++;
@@ -389,49 +391,49 @@ static int bolero_clk_rsc_check_and_update_va_clk(struct bolero_clk_rsc *priv,
 		} else if ((priv->clk_cnt[TX_CORE_CLK] > 0) &&
 			   (priv->clk_cnt[VA_CORE_CLK] > 0)) {
 			/*
-			 * Handle following concurrency scenario during enable
-			 * 1. VA-> Record+VA, Increment TX CLK and Disable VA
-			 * 2. VA-> Playback+VA, Increment TX CLK and Disable VA
-			 */
+       * Handle following concurrency scenario during enable
+       * 1. VA-> Record+VA, Increment TX CLK and Disable VA
+       * 2. VA-> Playback+VA, Increment TX CLK and Disable VA
+       */
 			while (priv->clk_cnt[VA_CORE_CLK] > 0) {
-				ret = bolero_clk_rsc_mux0_clk_request(priv,
-							TX_CORE_CLK, true);
+				ret = bolero_clk_rsc_mux0_clk_request(
+					priv, TX_CORE_CLK, true);
 				if (ret < 0)
 					goto err;
 
-				bolero_clk_rsc_mux1_clk_request(priv,
-							VA_CORE_CLK, false);
+				bolero_clk_rsc_mux1_clk_request(
+					priv, VA_CORE_CLK, false);
 				priv->va_tx_clk_cnt++;
 			}
 		}
 	} else {
 		if (clk_id == VA_CORE_CLK && mux_switch) {
 			/*
-			 * Handle the following usecase scenarios during disable
-			 * 1. VA only, disable VA_CORE_CLK
-			 * 2. Record + VA -> Record, decrement TX CLK count
-			 */
+       * Handle the following usecase scenarios during disable
+       * 1. VA only, disable VA_CORE_CLK
+       * 2. Record + VA -> Record, decrement TX CLK count
+       */
 			if (priv->clk_cnt[VA_CORE_CLK]) {
-				bolero_clk_rsc_mux1_clk_request(priv,
-							VA_CORE_CLK, enable);
+				bolero_clk_rsc_mux1_clk_request(
+					priv, VA_CORE_CLK, enable);
 			} else if (priv->va_tx_clk_cnt) {
-				bolero_clk_rsc_mux0_clk_request(priv,
-							TX_CORE_CLK, enable);
+				bolero_clk_rsc_mux0_clk_request(
+					priv, TX_CORE_CLK, enable);
 				priv->va_tx_clk_cnt--;
 			}
 		} else if (priv->va_tx_clk_cnt == priv->clk_cnt[TX_CORE_CLK]) {
 			/*
-			 * Handle the following usecase scenarios during disable
-			 * Record+VA-> VA: enable VA CLK, decrement TX CLK count
-			 */
+       * Handle the following usecase scenarios during disable
+       * Record+VA-> VA: enable VA CLK, decrement TX CLK count
+       */
 			while (priv->va_tx_clk_cnt) {
-				ret = bolero_clk_rsc_mux1_clk_request(priv,
-							VA_CORE_CLK, true);
+				ret = bolero_clk_rsc_mux1_clk_request(
+					priv, VA_CORE_CLK, true);
 				if (ret < 0)
 					goto err;
 
-				bolero_clk_rsc_mux0_clk_request(priv,
-							TX_CORE_CLK, false);
+				bolero_clk_rsc_mux0_clk_request(
+					priv, TX_CORE_CLK, false);
 				priv->va_tx_clk_cnt--;
 			}
 		}
@@ -478,19 +480,21 @@ void bolero_clk_rsc_fs_gen_request(struct device *dev, bool enable)
 	if (enable) {
 		if (priv->reg_seq_en_cnt++ == 0) {
 			for (i = 0; i < (priv->num_fs_reg * 3); i += 3) {
-				dev_dbg(priv->dev, "%s: Register: %d, mask: %d, value %d\n",
+				dev_dbg(priv->dev,
+					"%s: Register: %d, mask: %d, value %d\n",
 					__func__, priv->fs_gen_seq[i],
 					priv->fs_gen_seq[i + 1],
 					priv->fs_gen_seq[i + 2]);
-				regmap_update_bits(regmap,
-						   priv->fs_gen_seq[i],
+				regmap_update_bits(regmap, priv->fs_gen_seq[i],
 						   priv->fs_gen_seq[i + 1],
 						   priv->fs_gen_seq[i + 2]);
 			}
 		}
 	} else {
 		if (priv->reg_seq_en_cnt <= 0) {
-			dev_err_ratelimited(priv->dev, "%s: req_seq_cnt: %d is already disabled\n",
+			dev_err_ratelimited(
+				priv->dev,
+				"%s: req_seq_cnt: %d is already disabled\n",
 				__func__, priv->reg_seq_en_cnt);
 			priv->reg_seq_en_cnt = 0;
 			mutex_unlock(&priv->fs_gen_lock);
@@ -498,11 +502,13 @@ void bolero_clk_rsc_fs_gen_request(struct device *dev, bool enable)
 		}
 		if (--priv->reg_seq_en_cnt == 0) {
 			for (i = ((priv->num_fs_reg - 1) * 3); i >= 0; i -= 3) {
-				dev_dbg(priv->dev, "%s: Register: %d, mask: %d\n",
+				dev_dbg(priv->dev,
+					"%s: Register: %d, mask: %d\n",
 					__func__, priv->fs_gen_seq[i],
 					priv->fs_gen_seq[i + 1]);
 				regmap_update_bits(regmap, priv->fs_gen_seq[i],
-						priv->fs_gen_seq[i + 1], 0x0);
+						   priv->fs_gen_seq[i + 1],
+						   0x0);
 			}
 		}
 	}
@@ -521,10 +527,8 @@ EXPORT_SYMBOL(bolero_clk_rsc_fs_gen_request);
  *
  * Returns 0 on success or -EINVAL on error.
  */
-int bolero_clk_rsc_request_clock(struct device *dev,
-				int default_clk_id,
-				int clk_id_req,
-				bool enable)
+int bolero_clk_rsc_request_clock(struct device *dev, int default_clk_id,
+				 int clk_id_req, bool enable)
 {
 	int ret = 0;
 	struct device *clk_dev = NULL;
@@ -536,9 +540,9 @@ int bolero_clk_rsc_request_clock(struct device *dev,
 		return -EINVAL;
 	}
 	if ((clk_id_req < 0 || clk_id_req >= MAX_CLK) &&
-		(default_clk_id < 0 || default_clk_id >= MAX_CLK)) {
+	    (default_clk_id < 0 || default_clk_id >= MAX_CLK)) {
 		pr_err("%s: Invalid clk_id_req: %d or default_clk_id: %d\n",
-				__func__, clk_id_req, default_clk_id);
+		       __func__, clk_id_req, default_clk_id);
 		return -EINVAL;
 	}
 	clk_dev = bolero_get_rsc_clk_device_ptr(dev->parent);
@@ -555,7 +559,7 @@ int bolero_clk_rsc_request_clock(struct device *dev,
 	mutex_lock(&priv->rsc_clk_lock);
 	if (!priv->dev_up && enable) {
 		dev_err_ratelimited(priv->dev, "%s: SSR is in progress..\n",
-				__func__);
+				    __func__);
 		trace_printk("%s: SSR is in progress..\n", __func__);
 		ret = -EINVAL;
 		goto err;
@@ -567,7 +571,7 @@ int bolero_clk_rsc_request_clock(struct device *dev,
 	if (mux_switch) {
 		if (clk_id_req != VA_CORE_CLK) {
 			ret = bolero_clk_rsc_mux1_clk_request(priv, clk_id_req,
-							enable);
+							      enable);
 			if (ret < 0)
 				goto err;
 		}
@@ -578,17 +582,15 @@ int bolero_clk_rsc_request_clock(struct device *dev,
 	}
 
 	ret = bolero_clk_rsc_check_and_update_va_clk(priv, mux_switch,
-						 clk_id_req,
-						 enable);
+						     clk_id_req, enable);
 	if (ret < 0)
 		goto err;
 
-	dev_dbg(priv->dev, "%s: clk_cnt: %d for requested clk: %d, enable: %d\n",
-		__func__,  priv->clk_cnt[clk_id_req], clk_id_req,
-		enable);
+	dev_dbg(priv->dev,
+		"%s: clk_cnt: %d for requested clk: %d, enable: %d\n", __func__,
+		priv->clk_cnt[clk_id_req], clk_id_req, enable);
 	trace_printk("%s: clk_cnt: %d for requested clk: %d, enable: %d\n",
-		__func__,  priv->clk_cnt[clk_id_req], clk_id_req,
-		enable);
+		     __func__, priv->clk_cnt[clk_id_req], clk_id_req, enable);
 
 	mutex_unlock(&priv->rsc_clk_lock);
 
@@ -599,7 +601,6 @@ err:
 	return ret;
 }
 EXPORT_SYMBOL(bolero_clk_rsc_request_clock);
-
 
 static int bolero_clk_rsc_probe(struct platform_device *pdev)
 {
@@ -617,13 +618,14 @@ static int bolero_clk_rsc_probe(struct platform_device *pdev)
 
 	/* Get clk fs gen sequence from device tree */
 	if (!of_find_property(pdev->dev.of_node, "qcom,fs-gen-sequence",
-						  &fs_gen_size)) {
-		dev_err(&pdev->dev, "%s: unable to find qcom,fs-gen-sequence property\n",
+			      &fs_gen_size)) {
+		dev_err(&pdev->dev,
+			"%s: unable to find qcom,fs-gen-sequence property\n",
 			__func__);
 		ret = -EINVAL;
 		goto err;
 	}
-	priv->num_fs_reg = fs_gen_size/(3 * sizeof(u32));
+	priv->num_fs_reg = fs_gen_size / (3 * sizeof(u32));
 	priv->fs_gen_seq = devm_kzalloc(&pdev->dev, fs_gen_size, GFP_KERNEL);
 	if (!priv->fs_gen_seq) {
 		ret = -ENOMEM;
@@ -636,7 +638,8 @@ static int bolero_clk_rsc_probe(struct platform_device *pdev)
 					 priv->fs_gen_seq,
 					 priv->num_fs_reg * 3);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: unable to parse fs-gen-sequence, ret = %d\n",
+		dev_err(&pdev->dev,
+			"%s: unable to parse fs-gen-sequence, ret = %d\n",
 			__func__, ret);
 		goto err;
 	}
@@ -644,20 +647,20 @@ static int bolero_clk_rsc_probe(struct platform_device *pdev)
 	/* Get clk details from device tree */
 	clk_cnt = of_property_count_strings(pdev->dev.of_node, "clock-names");
 	if (clk_cnt <= 0 || clk_cnt > MAX_CLK) {
-		dev_err(&pdev->dev, "%s: Invalid number of clocks %d",
-				__func__, clk_cnt);
+		dev_err(&pdev->dev, "%s: Invalid number of clocks %d", __func__,
+			clk_cnt);
 		ret = -EINVAL;
 		goto err;
 	}
-	clk_name_array = devm_kzalloc(&pdev->dev, clk_cnt * sizeof(char *),
-					  GFP_KERNEL);
+	clk_name_array =
+		devm_kzalloc(&pdev->dev, clk_cnt * sizeof(char *), GFP_KERNEL);
 	if (!clk_name_array) {
 		ret = -ENOMEM;
 		goto err;
 	}
 
 	ret = of_property_read_string_array(pdev->dev.of_node, "clock-names",
-					clk_name_array, clk_cnt);
+					    clk_name_array, clk_cnt);
 
 	for (i = 0; i < MAX_CLK; i++) {
 		priv->clk[i] = NULL;
@@ -666,60 +669,66 @@ static int bolero_clk_rsc_probe(struct platform_device *pdev)
 				clk = devm_clk_get(&pdev->dev, clk_src_name[i]);
 				if (IS_ERR(clk)) {
 					ret = PTR_ERR(clk);
-					dev_err(&pdev->dev, "%s: clk get failed for %s with ret %d\n",
+					dev_err(&pdev->dev,
+						"%s: clk get failed for %s with ret %d\n",
 						__func__, clk_src_name[i], ret);
 					goto err;
 				}
 				priv->clk[i] = clk;
-				dev_dbg(&pdev->dev, "%s: clk get success for clk name %s\n",
-						__func__, clk_src_name[i]);
+				dev_dbg(&pdev->dev,
+					"%s: clk get success for clk name %s\n",
+					__func__, clk_src_name[i]);
 			}
 		}
 	}
 	ret = of_property_read_u32(pdev->dev.of_node,
-				 "qcom,rx_mclk_mode_muxsel", &muxsel);
+				   "qcom,rx_mclk_mode_muxsel", &muxsel);
 	if (ret) {
-		dev_dbg(&pdev->dev, "%s: could not find qcom,rx_mclk_mode_muxsel entry in dt\n",
+		dev_dbg(&pdev->dev,
+			"%s: could not find qcom,rx_mclk_mode_muxsel entry in dt\n",
 			__func__);
 	} else {
 		priv->rx_clk_muxsel = devm_ioremap(&pdev->dev, muxsel, 0x4);
 		if (!priv->rx_clk_muxsel) {
-			dev_err(&pdev->dev, "%s: ioremap failed for rx muxsel\n",
-				__func__);
+			dev_err(&pdev->dev,
+				"%s: ioremap failed for rx muxsel\n", __func__);
 			return -ENOMEM;
 		}
 	}
 	ret = of_property_read_u32(pdev->dev.of_node,
-				"qcom,wsa_mclk_mode_muxsel", &muxsel);
+				   "qcom,wsa_mclk_mode_muxsel", &muxsel);
 	if (ret) {
-		dev_dbg(&pdev->dev, "%s: could not find qcom,wsa_mclk_mode_muxsel entry in dt\n",
+		dev_dbg(&pdev->dev,
+			"%s: could not find qcom,wsa_mclk_mode_muxsel entry in dt\n",
 			__func__);
 	} else {
 		priv->wsa_clk_muxsel = devm_ioremap(&pdev->dev, muxsel, 0x4);
 		if (!priv->wsa_clk_muxsel) {
-			dev_err(&pdev->dev, "%s: ioremap failed for wsa muxsel\n",
+			dev_err(&pdev->dev,
+				"%s: ioremap failed for wsa muxsel\n",
 				__func__);
 			return -ENOMEM;
 		}
 	}
 	ret = of_property_read_u32(pdev->dev.of_node,
-				 "qcom,va_mclk_mode_muxsel", &muxsel);
+				   "qcom,va_mclk_mode_muxsel", &muxsel);
 	if (ret) {
-		dev_dbg(&pdev->dev, "%s: could not find qcom,va_mclk_mode_muxsel entry in dt\n",
+		dev_dbg(&pdev->dev,
+			"%s: could not find qcom,va_mclk_mode_muxsel entry in dt\n",
 			__func__);
 	} else {
 		priv->va_clk_muxsel = devm_ioremap(&pdev->dev, muxsel, 0x4);
 		if (!priv->va_clk_muxsel) {
-			dev_err(&pdev->dev, "%s: ioremap failed for va muxsel\n",
-				__func__);
+			dev_err(&pdev->dev,
+				"%s: ioremap failed for va muxsel\n", __func__);
 			return -ENOMEM;
 		}
 	}
 
 	ret = bolero_register_res_clk(&pdev->dev, bolero_clk_rsc_cb);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: Failed to register cb %d",
-				__func__, ret);
+		dev_err(&pdev->dev, "%s: Failed to register cb %d", __func__,
+			ret);
 		goto err;
 	}
 	priv->dev = &pdev->dev;
@@ -748,20 +757,21 @@ static int bolero_clk_rsc_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id bolero_clk_rsc_dt_match[] = {
-	{.compatible = "qcom,bolero-clk-rsc-mngr"},
+	{ .compatible = "qcom,bolero-clk-rsc-mngr" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, bolero_clk_rsc_dt_match);
 
 static struct platform_driver bolero_clk_rsc_mgr = {
-	.driver = {
-		.name = "bolero-clk-rsc-mngr",
-		.owner = THIS_MODULE,
-		.of_match_table = bolero_clk_rsc_dt_match,
-		.suppress_bind_attrs = true,
-	},
-	.probe = bolero_clk_rsc_probe,
-	.remove = bolero_clk_rsc_remove,
+    .driver =
+        {
+            .name = "bolero-clk-rsc-mngr",
+            .owner = THIS_MODULE,
+            .of_match_table = bolero_clk_rsc_dt_match,
+            .suppress_bind_attrs = true,
+        },
+    .probe = bolero_clk_rsc_probe,
+    .remove = bolero_clk_rsc_remove,
 };
 
 int bolero_clk_rsc_mgr_init(void)

@@ -61,10 +61,10 @@ struct wlan_disa_ctx *disa_get_context(void)
 	return gp_disa_ctx;
 }
 
-QDF_STATUS disa_core_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
-		struct disa_encrypt_decrypt_req_params *req,
-		encrypt_decrypt_resp_callback cb,
-		void *cookie)
+QDF_STATUS
+disa_core_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
+			      struct disa_encrypt_decrypt_req_params *req,
+			      encrypt_decrypt_resp_callback cb, void *cookie)
 {
 	struct wlan_disa_ctx *disa_ctx;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;

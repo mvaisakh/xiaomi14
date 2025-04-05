@@ -27,21 +27,20 @@
 /*--------------------------------------------------------------------------
    Include Files
    ------------------------------------------------------------------------*/
+#include "epping_internal.h"
+#include "epping_main.h"
 #include <cds_api.h>
 #include <cds_sched.h>
+#include <linux/ctype.h>
+#include <linux/delay.h>
 #include <linux/etherdevice.h>
 #include <linux/firmware.h>
-#include <linux/delay.h>
-#include <wni_api.h>
-#include <wlan_ptt_sock_svc.h>
-#include <linux/wireless.h>
-#include <net/cfg80211.h>
 #include <linux/rtnetlink.h>
 #include <linux/semaphore.h>
-#include <linux/delay.h>
-#include <linux/ctype.h>
-#include "epping_main.h"
-#include "epping_internal.h"
+#include <linux/wireless.h>
+#include <net/cfg80211.h>
+#include <wlan_ptt_sock_svc.h>
+#include <wni_api.h>
 
 int epping_cookie_init(epping_context_t *pEpping_ctx)
 {
@@ -50,9 +49,8 @@ int epping_cookie_init(epping_context_t *pEpping_ctx)
 	pEpping_ctx->cookie_list = NULL;
 	pEpping_ctx->cookie_count = 0;
 	for (i = 0; i < MAX_COOKIE_SLOTS_NUM; i++) {
-		pEpping_ctx->s_cookie_mem[i] =
-			qdf_mem_malloc(sizeof(struct epping_cookie) *
-				       MAX_COOKIE_SLOT_SIZE);
+		pEpping_ctx->s_cookie_mem[i] = qdf_mem_malloc(
+			sizeof(struct epping_cookie) * MAX_COOKIE_SLOT_SIZE);
 		if (!pEpping_ctx->s_cookie_mem[i])
 			goto error;
 	}
@@ -117,12 +115,12 @@ struct epping_cookie *epping_alloc_cookie(epping_context_t *pEpping_ctx)
 
 void epping_get_dummy_mac_addr(tSirMacAddr macAddr)
 {
-	macAddr[0] = 69;        /* E */
-	macAddr[1] = 80;        /* P */
-	macAddr[2] = 80;        /* P */
-	macAddr[3] = 73;        /* I */
-	macAddr[4] = 78;        /* N */
-	macAddr[5] = 71;        /* G */
+	macAddr[0] = 69; /* E */
+	macAddr[1] = 80; /* P */
+	macAddr[2] = 80; /* P */
+	macAddr[3] = 73; /* I */
+	macAddr[4] = 78; /* N */
+	macAddr[5] = 71; /* G */
 }
 
 void epping_hex_dump(void *data, int buf_len, const char *str)
@@ -142,8 +140,8 @@ void *epping_get_qdf_ctx(void)
 	return qdf_ctx;
 }
 
-void epping_log_packet(epping_adapter_t *adapter,
-		       EPPING_HEADER *eppingHdr, int ret, const char *str)
+void epping_log_packet(epping_adapter_t *adapter, EPPING_HEADER *eppingHdr,
+		       int ret, const char *str)
 {
 	if (eppingHdr->Cmd_h & EPPING_LOG_MASK) {
 		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
@@ -152,32 +150,26 @@ void epping_log_packet(epping_adapter_t *adapter,
 			   "rxCount = %lu, rxDrop = %lu, rxBytes = %lu\n",
 			   str, eppingHdr->Cmd_h, eppingHdr->SeqNo,
 			   eppingHdr->CmdFlags_h, ret,
-			   adapter->stats.tx_packets,
-			   adapter->stats.tx_dropped,
-			   adapter->stats.tx_bytes,
-			   adapter->stats.rx_packets,
-			   adapter->stats.rx_dropped,
-			   adapter->stats.rx_bytes);
+			   adapter->stats.tx_packets, adapter->stats.tx_dropped,
+			   adapter->stats.tx_bytes, adapter->stats.rx_packets,
+			   adapter->stats.rx_dropped, adapter->stats.rx_bytes);
 	}
 }
 
 void epping_log_stats(epping_adapter_t *adapter, const char *str)
 {
-	EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-		   "%s: txCount = %lu, txDrop = %lu, tx_bytes = %lu, "
-		   "rxCount = %lu, rxDrop = %lu, rx_bytes = %lu, tx_acks = %u\n",
-		   str,
-		   adapter->stats.tx_packets,
-		   adapter->stats.tx_dropped,
-		   adapter->stats.tx_bytes,
-		   adapter->stats.rx_packets,
-		   adapter->stats.rx_dropped,
-		   adapter->stats.rx_bytes,
-		   adapter->pEpping_ctx->total_tx_acks);
+	EPPING_LOG(
+		QDF_TRACE_LEVEL_FATAL,
+		"%s: txCount = %lu, txDrop = %lu, tx_bytes = %lu, "
+		"rxCount = %lu, rxDrop = %lu, rx_bytes = %lu, tx_acks = %u\n",
+		str, adapter->stats.tx_packets, adapter->stats.tx_dropped,
+		adapter->stats.tx_bytes, adapter->stats.rx_packets,
+		adapter->stats.rx_dropped, adapter->stats.rx_bytes,
+		adapter->pEpping_ctx->total_tx_acks);
 }
 
-void epping_set_kperf_flag(epping_adapter_t *adapter,
-			   HTC_ENDPOINT_ID eid, uint8_t kperf_flag)
+void epping_set_kperf_flag(epping_adapter_t *adapter, HTC_ENDPOINT_ID eid,
+			   uint8_t kperf_flag)
 {
 	adapter->pEpping_ctx->kperf_num_rx_recv[eid] = 0;
 	adapter->pEpping_ctx->kperf_num_tx_acks[eid] = 0;

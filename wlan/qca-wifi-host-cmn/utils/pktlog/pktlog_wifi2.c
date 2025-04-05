@@ -37,53 +37,26 @@ static void process_ieee_hdr(void *data)
 	dir = (wh->i_fc[1] & IEEE80211_FC1_DIR_MASK);
 
 	if (dir == IEEE80211_FC1_DIR_TODS) {
-		frm_hdr.bssid_tail =
-			(wh->i_addr1[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr1
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
-		frm_hdr.sa_tail =
-			(wh->i_addr2[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr2
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
-		frm_hdr.da_tail =
-			(wh->i_addr3[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr3
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
+		frm_hdr.bssid_tail = (wh->i_addr1[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				     (wh->i_addr1[QDF_MAC_ADDR_SIZE - 1]);
+		frm_hdr.sa_tail = (wh->i_addr2[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				  (wh->i_addr2[QDF_MAC_ADDR_SIZE - 1]);
+		frm_hdr.da_tail = (wh->i_addr3[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				  (wh->i_addr3[QDF_MAC_ADDR_SIZE - 1]);
 	} else if (dir == IEEE80211_FC1_DIR_FROMDS) {
-		frm_hdr.bssid_tail =
-			(wh->i_addr2[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr2
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
-		frm_hdr.sa_tail =
-			(wh->i_addr3[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr3
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
-		frm_hdr.da_tail =
-			(wh->i_addr1[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr1
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
+		frm_hdr.bssid_tail = (wh->i_addr2[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				     (wh->i_addr2[QDF_MAC_ADDR_SIZE - 1]);
+		frm_hdr.sa_tail = (wh->i_addr3[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				  (wh->i_addr3[QDF_MAC_ADDR_SIZE - 1]);
+		frm_hdr.da_tail = (wh->i_addr1[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				  (wh->i_addr1[QDF_MAC_ADDR_SIZE - 1]);
 	} else {
-		frm_hdr.bssid_tail =
-			(wh->i_addr3[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr3
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
-		frm_hdr.sa_tail =
-			(wh->i_addr2[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr2
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
-		frm_hdr.da_tail =
-			(wh->i_addr1[QDF_MAC_ADDR_SIZE - 2] << 8) | (wh->
-								      i_addr1
-								      [QDF_MAC_ADDR_SIZE
-								       - 1]);
+		frm_hdr.bssid_tail = (wh->i_addr3[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				     (wh->i_addr3[QDF_MAC_ADDR_SIZE - 1]);
+		frm_hdr.sa_tail = (wh->i_addr2[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				  (wh->i_addr2[QDF_MAC_ADDR_SIZE - 1]);
+		frm_hdr.da_tail = (wh->i_addr1[QDF_MAC_ADDR_SIZE - 2] << 8) |
+				  (wh->i_addr1[QDF_MAC_ADDR_SIZE - 1]);
 	}
 }
 
@@ -96,20 +69,18 @@ static void process_ieee_hdr(void *data)
  * Return: none
  */
 /* TODO: Platform specific function */
-static void
-fill_ieee80211_hdr_data(struct cdp_pdev *pdev,
-			struct ath_pktlog_msdu_info *pl_msdu_info,
-			void *data)
+static void fill_ieee80211_hdr_data(struct cdp_pdev *pdev,
+				    struct ath_pktlog_msdu_info *pl_msdu_info,
+				    void *data)
 {
 	uint32_t i;
 	uint32_t *htt_tx_desc;
 	struct ol_tx_desc_t *tx_desc;
 	uint8_t msdu_id_offset = MSDU_ID_INFO_ID_OFFSET;
 	uint16_t tx_desc_id;
-	uint32_t *msdu_id_info = (uint32_t *)
-				 ((void *)data + sizeof(struct ath_pktlog_hdr));
-	uint32_t *msdu_id = (uint32_t *)((char *)msdu_id_info +
-					  msdu_id_offset);
+	uint32_t *msdu_id_info =
+		(uint32_t *)((void *)data + sizeof(struct ath_pktlog_hdr));
+	uint32_t *msdu_id = (uint32_t *)((char *)msdu_id_info + msdu_id_offset);
 	uint8_t *addr, *vap_addr;
 	uint8_t vdev_id;
 	qdf_nbuf_t netbuf;
@@ -117,28 +88,27 @@ fill_ieee80211_hdr_data(struct cdp_pdev *pdev,
 	struct ol_txrx_pdev_t *txrx_pdev = (struct ol_txrx_pdev_t *)pdev;
 
 	pl_msdu_info->num_msdu = *msdu_id_info;
-	pl_msdu_info->priv_size = sizeof(uint32_t) *
-				 pl_msdu_info->num_msdu + sizeof(uint32_t);
+	pl_msdu_info->priv_size =
+		sizeof(uint32_t) * pl_msdu_info->num_msdu + sizeof(uint32_t);
 
 	if (pl_msdu_info->num_msdu > MAX_PKT_INFO_MSDU_ID) {
 		QDF_TRACE(QDF_MODULE_ID_TXRX, QDF_TRACE_LEVEL_ERROR,
-			  "%s: Invalid num_msdu count",
-			  __func__);
+			  "%s: Invalid num_msdu count", __func__);
 		qdf_assert(0);
 		return;
 	}
 	for (i = 0; i < pl_msdu_info->num_msdu; i++) {
 		/*
-		 * Handle big endianness
-		 * Increment msdu_id once after retrieving
-		 * lower 16 bits and uppper 16 bits
-		 */
+     * Handle big endianness
+     * Increment msdu_id once after retrieving
+     * lower 16 bits and uppper 16 bits
+     */
 		if (!(i % 2)) {
-			tx_desc_id = ((*msdu_id & TX_DESC_ID_LOW_MASK)
-				      >> TX_DESC_ID_LOW_SHIFT);
+			tx_desc_id = ((*msdu_id & TX_DESC_ID_LOW_MASK) >>
+				      TX_DESC_ID_LOW_SHIFT);
 		} else {
-			tx_desc_id = ((*msdu_id & TX_DESC_ID_HIGH_MASK)
-				      >> TX_DESC_ID_HIGH_SHIFT);
+			tx_desc_id = ((*msdu_id & TX_DESC_ID_HIGH_MASK) >>
+				      TX_DESC_ID_HIGH_SHIFT);
 			msdu_id += 1;
 		}
 		if (tx_desc_id >= txrx_pdev->tx_desc.pool_size) {
@@ -160,18 +130,16 @@ fill_ieee80211_hdr_data(struct cdp_pdev *pdev,
 			return;
 		}
 		/* Adding header information for the TX data frames */
-		vdev_id = (uint8_t)(*(htt_tx_desc +
-				       HTT_TX_VDEV_ID_WORD) >>
-				     HTT_TX_VDEV_ID_SHIFT) &
+		vdev_id = (uint8_t)(*(htt_tx_desc + HTT_TX_VDEV_ID_WORD) >>
+				    HTT_TX_VDEV_ID_SHIFT) &
 			  HTT_TX_VDEV_ID_MASK;
 
 		vap_addr = wma_get_vdev_address_by_vdev_id(vdev_id);
 
 		frm_hdr.da_tail = (addr[QDF_MAC_ADDR_SIZE - 2] << 8) |
 				  (addr[QDF_MAC_ADDR_SIZE - 1]);
-		frm_hdr.sa_tail =
-			(addr[2 * QDF_MAC_ADDR_SIZE - 2] << 8) |
-			(addr[2 * QDF_MAC_ADDR_SIZE - 1]);
+		frm_hdr.sa_tail = (addr[2 * QDF_MAC_ADDR_SIZE - 2] << 8) |
+				  (addr[2 * QDF_MAC_ADDR_SIZE - 1]);
 		if (vap_addr) {
 			frm_hdr.bssid_tail =
 				(vap_addr[QDF_MAC_ADDR_SIZE - 2] << 8) |
@@ -179,13 +147,13 @@ fill_ieee80211_hdr_data(struct cdp_pdev *pdev,
 		} else {
 			frm_hdr.bssid_tail = 0x0000;
 		}
-		pl_msdu_info->priv.msdu_len[i] = *(htt_tx_desc +
-						  HTT_TX_MSDU_LEN_DWORD)
-						& HTT_TX_MSDU_LEN_MASK;
+		pl_msdu_info->priv.msdu_len[i] =
+			*(htt_tx_desc + HTT_TX_MSDU_LEN_DWORD) &
+			HTT_TX_MSDU_LEN_MASK;
 		/*
-		 * Add more information per MSDU
-		 * e.g., protocol information
-		 */
+     * Add more information per MSDU
+     * e.g., protocol information
+     */
 	}
 }
 #endif /* HELIUMPLUS */
@@ -194,9 +162,9 @@ fill_ieee80211_hdr_data(struct cdp_pdev *pdev,
 A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 {
 	/*
-	 * Must include to process different types
-	 * TX_CTL, TX_STATUS, TX_MSDU_ID, TX_FRM_HDR
-	 */
+   * Must include to process different types
+   * TX_CTL, TX_STATUS, TX_MSDU_ID, TX_FRM_HDR
+   */
 	struct pktlog_dev_t *pl_dev = get_pktlog_handle();
 	struct ath_pktlog_hdr pl_hdr;
 	struct ath_pktlog_info *pl_info;
@@ -219,18 +187,13 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -238,9 +201,9 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 
 	pl_tgt_hdr = (uint32_t *)fw_data->data;
 	/*
-	 * Makes the short words (16 bits) portable b/w little endian
-	 * and big endian
-	 */
+   * Makes the short words (16 bits) portable b/w little endian
+   * and big endian
+   */
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
 			ATH_PKTLOG_HDR_FLAGS_MASK) >>
 		       ATH_PKTLOG_HDR_FLAGS_SHIFT;
@@ -249,13 +212,14 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 			     ATH_PKTLOG_HDR_MISSED_CNT_MASK) >>
 			    ATH_PKTLOG_HDR_MISSED_CNT_SHIFT;
 	pl_hdr.log_type = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_LOG_TYPE_OFFSET) &
-		   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
-		  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
+			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
+			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.macId = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_MAC_ID_OFFSET) &
-		   ATH_PKTLOG_HDR_MAC_ID_MASK) >>
-		  ATH_PKTLOG_HDR_MAC_ID_SHIFT;
+			ATH_PKTLOG_HDR_MAC_ID_MASK) >>
+		       ATH_PKTLOG_HDR_MAC_ID_SHIFT;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 	pl_hdr.type_specific_data =
 		*(pl_tgt_hdr + ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET);
@@ -268,35 +232,32 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 
 	if (pl_hdr.log_type == PKTLOG_TYPE_TX_CTRL) {
 		size_t log_size = sizeof(frm_hdr) + pl_hdr.size;
-		void *txdesc_hdr_ctl = (void *)
-				pktlog_getbuf(pl_dev, pl_info,
-					      log_size, &pl_hdr);
+		void *txdesc_hdr_ctl = (void *)pktlog_getbuf(pl_dev, pl_info,
+							     log_size, &pl_hdr);
 
 		qdf_assert(txdesc_hdr_ctl);
 		qdf_assert(pl_hdr.size < (370 * sizeof(u_int32_t)));
 
 		qdf_mem_copy(txdesc_hdr_ctl, &frm_hdr, sizeof(frm_hdr));
-		qdf_mem_copy((char *)txdesc_hdr_ctl + sizeof(frm_hdr),
-			     ((void *)fw_data->data +
-			     sizeof(struct ath_pktlog_hdr)),
-			     pl_hdr.size);
+		qdf_mem_copy(
+			(char *)txdesc_hdr_ctl + sizeof(frm_hdr),
+			((void *)fw_data->data + sizeof(struct ath_pktlog_hdr)),
+			pl_hdr.size);
 		pl_hdr.size = log_size;
-		cds_pkt_stats_to_logger_thread(&pl_hdr, NULL,
-					       txdesc_hdr_ctl);
+		cds_pkt_stats_to_logger_thread(&pl_hdr, NULL, txdesc_hdr_ctl);
 	}
 
 	if (pl_hdr.log_type == PKTLOG_TYPE_TX_STAT) {
 		struct ath_pktlog_tx_status txstat_log;
 		size_t log_size = pl_hdr.size;
 
-		txstat_log.ds_status = (void *)
-				       pktlog_getbuf(pl_dev, pl_info,
-						     log_size, &pl_hdr);
+		txstat_log.ds_status = (void *)pktlog_getbuf(pl_dev, pl_info,
+							     log_size, &pl_hdr);
 		qdf_assert(txstat_log.ds_status);
-		qdf_mem_copy(txstat_log.ds_status,
-			     ((void *)fw_data->data +
-			      sizeof(struct ath_pktlog_hdr)),
-			     pl_hdr.size);
+		qdf_mem_copy(
+			txstat_log.ds_status,
+			((void *)fw_data->data + sizeof(struct ath_pktlog_hdr)),
+			pl_hdr.size);
 		/* TODO: MCL specific API */
 		cds_pkt_stats_to_logger_thread(&pl_hdr, NULL,
 					       txstat_log.ds_status);
@@ -307,9 +268,9 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 {
 	/*
-	 * Must include to process different types
-	 * TX_CTL, TX_STATUS, TX_MSDU_ID, TX_FRM_HDR
-	 */
+   * Must include to process different types
+   * TX_CTL, TX_STATUS, TX_MSDU_ID, TX_FRM_HDR
+   */
 	struct pktlog_dev_t *pl_dev = get_pktlog_handle();
 	struct ath_pktlog_hdr pl_hdr;
 	struct ath_pktlog_info *pl_info;
@@ -332,16 +293,12 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -349,9 +306,9 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 
 	pl_tgt_hdr = (uint32_t *)fw_data->data;
 	/*
-	 * Makes the short words (16 bits) portable b/w little endian
-	 * and big endian
-	 */
+   * Makes the short words (16 bits) portable b/w little endian
+   * and big endian
+   */
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
 			ATH_PKTLOG_HDR_FLAGS_MASK) >>
 		       ATH_PKTLOG_HDR_FLAGS_SHIFT;
@@ -362,12 +319,13 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
 			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 
-	pktlog_hdr_set_specific_data(&pl_hdr,
-				     *(pl_tgt_hdr +
-				     ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET));
+	pktlog_hdr_set_specific_data(
+		&pl_hdr,
+		*(pl_tgt_hdr + ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET));
 
 	pl_info = pl_dev->pl_info;
 
@@ -377,14 +335,14 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 	}
 
 	if (pl_hdr.log_type == PKTLOG_TYPE_TX_VIRT_ADDR) {
-		uint32_t desc_id = (uint32_t)*((uint32_t *)(fw_data->data +
-						 sizeof(pl_hdr)));
+		uint32_t desc_id = (uint32_t)*(
+			(uint32_t *)(fw_data->data + sizeof(pl_hdr)));
 		uint32_t vdev_id = desc_id;
 
 		/* if the pkt log msg is for the bcn frame the vdev id
-		 * is piggybacked in desc_id and the MSB of the desc ID
-		 * would be set to FF
-		 */
+     * is piggybacked in desc_id and the MSB of the desc ID
+     * would be set to FF
+     */
 #define BCN_DESC_ID 0xFF
 		if ((desc_id >> 24) == BCN_DESC_ID) {
 			void *data;
@@ -401,9 +359,9 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 			}
 		} else {
 			/*
-			 * TODO: get the hdr content for mgmt frames from
-			 * Tx mgmt desc pool
-			 */
+       * TODO: get the hdr content for mgmt frames from
+       * Tx mgmt desc pool
+       */
 		}
 	}
 
@@ -411,36 +369,35 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 		struct ath_pktlog_txctl txctl_log;
 		size_t log_size = sizeof(txctl_log.priv);
 
-		txctl_log.txdesc_hdr_ctl = (void *)pktlog_getbuf(pl_dev,
-								 pl_info,
-								 log_size,
-								 &pl_hdr);
+		txctl_log.txdesc_hdr_ctl = (void *)pktlog_getbuf(
+			pl_dev, pl_info, log_size, &pl_hdr);
 
 		if (!txctl_log.txdesc_hdr_ctl) {
-			qdf_nofl_info
-				("failed to get txctl_log.txdesc_hdr_ctl buf");
+			qdf_nofl_info(
+				"failed to get txctl_log.txdesc_hdr_ctl buf");
 			return A_ERROR;
 		}
 
 		/*
-		 * frm hdr is currently Valid only for local frames
-		 * Add capability to include the fmr hdr for remote frames
-		 */
+     * frm hdr is currently Valid only for local frames
+     * Add capability to include the fmr hdr for remote frames
+     */
 		txctl_log.priv.frm_hdr = frm_hdr;
 		qdf_assert(txctl_log.priv.txdesc_ctl);
 		qdf_assert(pl_hdr.size < sizeof(txctl_log.priv.txdesc_ctl));
-		pl_hdr.size = (pl_hdr.size > sizeof(txctl_log.priv.txdesc_ctl))
-			       ? sizeof(txctl_log.priv.txdesc_ctl) :
-			       pl_hdr.size;
+		pl_hdr.size =
+			(pl_hdr.size > sizeof(txctl_log.priv.txdesc_ctl)) ?
+				sizeof(txctl_log.priv.txdesc_ctl) :
+				pl_hdr.size;
 
 		if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 			qdf_assert(0);
 			return A_ERROR;
 		}
-		qdf_mem_copy((void *)&txctl_log.priv.txdesc_ctl,
-			     ((void *)fw_data->data +
-			      sizeof(struct ath_pktlog_hdr)),
-			     pl_hdr.size);
+		qdf_mem_copy(
+			(void *)&txctl_log.priv.txdesc_ctl,
+			((void *)fw_data->data + sizeof(struct ath_pktlog_hdr)),
+			pl_hdr.size);
 		qdf_assert(txctl_log.txdesc_hdr_ctl);
 		qdf_mem_copy(txctl_log.txdesc_hdr_ctl, &txctl_log.priv,
 			     sizeof(txctl_log.priv));
@@ -454,14 +411,13 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 		struct ath_pktlog_tx_status txstat_log;
 		size_t log_size = pl_hdr.size;
 
-		txstat_log.ds_status = (void *)
-				       pktlog_getbuf(pl_dev, pl_info,
-						     log_size, &pl_hdr);
+		txstat_log.ds_status = (void *)pktlog_getbuf(pl_dev, pl_info,
+							     log_size, &pl_hdr);
 		qdf_assert(txstat_log.ds_status);
-		qdf_mem_copy(txstat_log.ds_status,
-			     ((void *)fw_data->data +
-			      sizeof(struct ath_pktlog_hdr)),
-			     pl_hdr.size);
+		qdf_mem_copy(
+			txstat_log.ds_status,
+			((void *)fw_data->data + sizeof(struct ath_pktlog_hdr)),
+			pl_hdr.size);
 
 		cds_pkt_stats_to_logger_thread(&pl_hdr, NULL,
 					       txstat_log.ds_status);
@@ -475,15 +431,15 @@ A_STATUS process_tx_info(struct cdp_pdev *txrx_pdev, void *data)
 		log_size = sizeof(pl_msdu_info.priv);
 
 		if (pl_dev->mt_pktlog_enabled == false)
-			fill_ieee80211_hdr_data(txrx_pdev,
-						&pl_msdu_info, fw_data->data);
+			fill_ieee80211_hdr_data(txrx_pdev, &pl_msdu_info,
+						fw_data->data);
 
-		pl_msdu_info.ath_msdu_info = pktlog_getbuf(pl_dev, pl_info,
-							   log_size, &pl_hdr);
-		qdf_mem_copy((void *)&pl_msdu_info.priv.msdu_id_info,
-			     ((void *)fw_data->data +
-			      sizeof(struct ath_pktlog_hdr)),
-			     sizeof(pl_msdu_info.priv.msdu_id_info));
+		pl_msdu_info.ath_msdu_info =
+			pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
+		qdf_mem_copy(
+			(void *)&pl_msdu_info.priv.msdu_id_info,
+			((void *)fw_data->data + sizeof(struct ath_pktlog_hdr)),
+			sizeof(pl_msdu_info.priv.msdu_id_info));
 		qdf_mem_copy(pl_msdu_info.ath_msdu_info, &pl_msdu_info.priv,
 			     sizeof(pl_msdu_info.priv));
 		cds_pkt_stats_to_logger_thread(&pl_hdr, NULL,
@@ -515,14 +471,14 @@ A_STATUS process_rx_info_remote(void *pdev, void *data)
 
 	while (msdu) {
 		rx_desc =
-		   (struct htt_host_rx_desc_base *)(qdf_nbuf_data(msdu)) - 1;
+			(struct htt_host_rx_desc_base *)(qdf_nbuf_data(msdu))-1;
 		log_size =
 			sizeof(*rx_desc) - sizeof(struct htt_host_fw_desc_base);
 
 		/*
-		 * Construct the pktlog header pl_hdr
-		 * Because desc is DMA'd to the host memory
-		 */
+     * Construct the pktlog header pl_hdr
+     * Because desc is DMA'd to the host memory
+     */
 		pl_hdr.flags = (1 << PKTLOG_FLG_FRM_TYPE_REMOTE_S);
 		pl_hdr.missed_cnt = 0;
 #if defined(HELIUMPLUS)
@@ -532,8 +488,8 @@ A_STATUS process_rx_info_remote(void *pdev, void *data)
 #else
 		pl_hdr.log_type = PKTLOG_TYPE_RX_STAT;
 #endif
-		pl_hdr.size = sizeof(*rx_desc) -
-			      sizeof(struct htt_host_fw_desc_base);
+		pl_hdr.size =
+			sizeof(*rx_desc) - sizeof(struct htt_host_fw_desc_base);
 #if defined(HELIUMPLUS)
 		pl_hdr.timestamp =
 			rx_desc->ppdu_end.rx_pkt_end.phy_timestamp_1_lower_32;
@@ -546,8 +502,10 @@ A_STATUS process_rx_info_remote(void *pdev, void *data)
 
 		rxstat_log.rx_desc = (void *)pktlog_getbuf(pl_dev, pl_info,
 							   log_size, &pl_hdr);
-		qdf_mem_copy(rxstat_log.rx_desc, (void *)rx_desc +
-			     sizeof(struct htt_host_fw_desc_base), pl_hdr.size);
+		qdf_mem_copy(rxstat_log.rx_desc,
+			     (void *)rx_desc +
+				     sizeof(struct htt_host_fw_desc_base),
+			     pl_hdr.size);
 		cds_pkt_stats_to_logger_thread(&pl_hdr, NULL,
 					       rxstat_log.rx_desc);
 		msdu = qdf_nbuf_next(msdu);
@@ -580,18 +538,13 @@ A_STATUS process_rx_info(void *pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -611,11 +564,12 @@ A_STATUS process_rx_info(void *pdev, void *data)
 			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
 			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.macId = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_MAC_ID_OFFSET) &
-			   ATH_PKTLOG_HDR_MAC_ID_MASK) >>
-			  ATH_PKTLOG_HDR_MAC_ID_SHIFT;
+			ATH_PKTLOG_HDR_MAC_ID_MASK) >>
+		       ATH_PKTLOG_HDR_MAC_ID_SHIFT;
 	pl_hdr.flags |= PKTLOG_HDR_SIZE_16;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 	if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 		qdf_assert(0);
@@ -623,8 +577,8 @@ A_STATUS process_rx_info(void *pdev, void *data)
 	}
 
 	log_size = pl_hdr.size;
-	rxstat_log.rx_desc = (void *)pktlog_getbuf(pl_dev, pl_info,
-						   log_size, &pl_hdr);
+	rxstat_log.rx_desc =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 	qdf_mem_copy(rxstat_log.rx_desc,
 		     (void *)fw_data->data + sizeof(struct ath_pktlog_hdr),
 		     pl_hdr.size);
@@ -657,16 +611,12 @@ A_STATUS process_rx_info(void *pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -682,10 +632,11 @@ A_STATUS process_rx_info(void *pdev, void *data)
 			     ATH_PKTLOG_HDR_MISSED_CNT_MASK) >>
 			    ATH_PKTLOG_HDR_MISSED_CNT_SHIFT;
 	pl_hdr.log_type = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_LOG_TYPE_OFFSET) &
-				   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
-				  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
+			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
+			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 	if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 		qdf_assert(0);
@@ -693,8 +644,8 @@ A_STATUS process_rx_info(void *pdev, void *data)
 	}
 
 	log_size = pl_hdr.size;
-	rxstat_log.rx_desc = (void *)pktlog_getbuf(pl_dev, pl_info,
-						   log_size, &pl_hdr);
+	rxstat_log.rx_desc =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 	qdf_mem_copy(rxstat_log.rx_desc,
 		     (void *)fw_data->data + sizeof(struct ath_pktlog_hdr),
 		     pl_hdr.size);
@@ -715,10 +666,10 @@ A_STATUS process_rate_find(void *pdev, void *data)
 	struct ol_fw_data *fw_data;
 
 	/*
-	 * Will be uncommented when the rate control find
-	 * for pktlog is implemented in the firmware.
-	 * Currently derived from the TX PPDU status
-	 */
+   * Will be uncommented when the rate control find
+   * for pktlog is implemented in the firmware.
+   * Currently derived from the TX PPDU status
+   */
 	struct ath_pktlog_rc_find rcf_log;
 	uint32_t *pl_tgt_hdr;
 
@@ -729,18 +680,13 @@ A_STATUS process_rate_find(void *pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -748,9 +694,9 @@ A_STATUS process_rate_find(void *pdev, void *data)
 
 	pl_tgt_hdr = (uint32_t *)fw_data->data;
 	/*
-	 * Makes the short words (16 bits) portable b/w little endian
-	 * and big endian
-	 */
+   * Makes the short words (16 bits) portable b/w little endian
+   * and big endian
+   */
 
 	qdf_mem_zero(&pl_hdr, sizeof(pl_hdr));
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
@@ -763,16 +709,17 @@ A_STATUS process_rate_find(void *pdev, void *data)
 			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
 			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.macId = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_MAC_ID_OFFSET) &
-			   ATH_PKTLOG_HDR_MAC_ID_MASK) >>
-			  ATH_PKTLOG_HDR_MAC_ID_SHIFT;
+			ATH_PKTLOG_HDR_MAC_ID_MASK) >>
+		       ATH_PKTLOG_HDR_MAC_ID_SHIFT;
 	pl_hdr.flags |= PKTLOG_HDR_SIZE_16;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 	pl_info = pl_dev->pl_info;
 	log_size = pl_hdr.size;
-	rcf_log.rcFind = (void *)pktlog_getbuf(pl_dev, pl_info,
-					       log_size, &pl_hdr);
+	rcf_log.rcFind =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 
 	if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 		qdf_assert(0);
@@ -797,10 +744,10 @@ A_STATUS process_rate_find(void *pdev, void *data)
 	struct ol_fw_data *fw_data;
 
 	/*
-	 * Will be uncommented when the rate control find
-	 * for pktlog is implemented in the firmware.
-	 * Currently derived from the TX PPDU status
-	 */
+   * Will be uncommented when the rate control find
+   * for pktlog is implemented in the firmware.
+   * Currently derived from the TX PPDU status
+   */
 	struct ath_pktlog_rc_find rcf_log;
 	uint32_t *pl_tgt_hdr;
 
@@ -811,16 +758,12 @@ A_STATUS process_rate_find(void *pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -828,9 +771,9 @@ A_STATUS process_rate_find(void *pdev, void *data)
 
 	pl_tgt_hdr = (uint32_t *)fw_data->data;
 	/*
-	 * Makes the short words (16 bits) portable b/w little endian
-	 * and big endian
-	 */
+   * Makes the short words (16 bits) portable b/w little endian
+   * and big endian
+   */
 
 	qdf_mem_zero(&pl_hdr, sizeof(pl_hdr));
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
@@ -843,12 +786,13 @@ A_STATUS process_rate_find(void *pdev, void *data)
 			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
 			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 	pl_info = pl_dev->pl_info;
 	log_size = pl_hdr.size;
-	rcf_log.rcFind = (void *)pktlog_getbuf(pl_dev, pl_info,
-					       log_size, &pl_hdr);
+	rcf_log.rcFind =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 
 	if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 		qdf_assert(0);
@@ -882,18 +826,13 @@ A_STATUS process_rate_update(void *pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -901,9 +840,9 @@ A_STATUS process_rate_update(void *pdev, void *data)
 
 	pl_tgt_hdr = (uint32_t *)fw_data->data;
 	/*
-	 * Makes the short words (16 bits) portable b/w little endian
-	 * and big endian
-	 */
+   * Makes the short words (16 bits) portable b/w little endian
+   * and big endian
+   */
 	qdf_mem_zero(&pl_hdr, sizeof(pl_hdr));
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
 			ATH_PKTLOG_HDR_FLAGS_MASK) >>
@@ -915,29 +854,29 @@ A_STATUS process_rate_update(void *pdev, void *data)
 			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
 			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.macId = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_MAC_ID_OFFSET) &
-			   ATH_PKTLOG_HDR_MAC_ID_MASK) >>
-			  ATH_PKTLOG_HDR_MAC_ID_SHIFT;
+			ATH_PKTLOG_HDR_MAC_ID_MASK) >>
+		       ATH_PKTLOG_HDR_MAC_ID_SHIFT;
 	pl_hdr.flags |= PKTLOG_HDR_SIZE_16;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 	log_size = pl_hdr.size;
 	pl_info = pl_dev->pl_info;
 
 	/*
-	 * Will be uncommented when the rate control update
-	 * for pktlog is implemented in the firmware.
-	 * Currently derived from the TX PPDU status
-	 */
-	rcu_log.txRateCtrl = (void *)pktlog_getbuf(pl_dev, pl_info,
-						   log_size, &pl_hdr);
+   * Will be uncommented when the rate control update
+   * for pktlog is implemented in the firmware.
+   * Currently derived from the TX PPDU status
+   */
+	rcu_log.txRateCtrl =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 	if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 		qdf_assert(0);
 		return A_ERROR;
 	}
 	qdf_mem_copy(rcu_log.txRateCtrl,
-		     ((char *)fw_data->data +
-		      sizeof(struct ath_pktlog_hdr)),
+		     ((char *)fw_data->data + sizeof(struct ath_pktlog_hdr)),
 		     pl_hdr.size);
 	cds_pkt_stats_to_logger_thread(&pl_hdr, NULL, rcu_log.txRateCtrl);
 	return A_OK;
@@ -961,16 +900,12 @@ A_STATUS process_rate_update(void *pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -978,9 +913,9 @@ A_STATUS process_rate_update(void *pdev, void *data)
 
 	pl_tgt_hdr = (uint32_t *)fw_data->data;
 	/*
-	 * Makes the short words (16 bits) portable b/w little endian
-	 * and big endian
-	 */
+   * Makes the short words (16 bits) portable b/w little endian
+   * and big endian
+   */
 	qdf_mem_zero(&pl_hdr, sizeof(pl_hdr));
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
 			ATH_PKTLOG_HDR_FLAGS_MASK) >>
@@ -989,28 +924,28 @@ A_STATUS process_rate_update(void *pdev, void *data)
 			     ATH_PKTLOG_HDR_MISSED_CNT_MASK) >>
 			    ATH_PKTLOG_HDR_MISSED_CNT_SHIFT;
 	pl_hdr.log_type = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_LOG_TYPE_OFFSET) &
-				   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
-				  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
+			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
+			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 	log_size = pl_hdr.size;
 	pl_info = pl_dev->pl_info;
 
 	/*
-	 * Will be uncommented when the rate control update
-	 * for pktlog is implemented in the firmware.
-	 * Currently derived from the TX PPDU status
-	 */
-	rcu_log.txRateCtrl = (void *)pktlog_getbuf(pl_dev, pl_info,
-						   log_size, &pl_hdr);
+   * Will be uncommented when the rate control update
+   * for pktlog is implemented in the firmware.
+   * Currently derived from the TX PPDU status
+   */
+	rcu_log.txRateCtrl =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 	if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 		qdf_assert(0);
 		return A_ERROR;
 	}
 	qdf_mem_copy(rcu_log.txRateCtrl,
-		     ((char *)fw_data->data +
-		      sizeof(struct ath_pktlog_hdr)),
+		     ((char *)fw_data->data + sizeof(struct ath_pktlog_hdr)),
 		     pl_hdr.size);
 	cds_pkt_stats_to_logger_thread(&pl_hdr, NULL, rcu_log.txRateCtrl);
 	return A_OK;
@@ -1028,10 +963,10 @@ A_STATUS process_sw_event(void *pdev, void *data)
 	struct ol_fw_data *fw_data;
 
 	/*
-	 * Will be uncommented when the rate control find
-	 * for pktlog is implemented in the firmware.
-	 * Currently derived from the TX PPDU status
-	 */
+   * Will be uncommented when the rate control find
+   * for pktlog is implemented in the firmware.
+   * Currently derived from the TX PPDU status
+   */
 	struct ath_pktlog_sw_event sw_event;
 	uint32_t *pl_tgt_hdr;
 
@@ -1050,18 +985,13 @@ A_STATUS process_sw_event(void *pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MAC_ID_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -1069,9 +999,9 @@ A_STATUS process_sw_event(void *pdev, void *data)
 
 	pl_tgt_hdr = (uint32_t *)fw_data->data;
 	/*
-	 * Makes the short words (16 bits) portable b/w little endian
-	 * and big endian
-	 */
+   * Makes the short words (16 bits) portable b/w little endian
+   * and big endian
+   */
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
 			ATH_PKTLOG_HDR_FLAGS_MASK) >>
 		       ATH_PKTLOG_HDR_FLAGS_SHIFT;
@@ -1082,18 +1012,19 @@ A_STATUS process_sw_event(void *pdev, void *data)
 			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
 			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.macId = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_MAC_ID_OFFSET) &
-			   ATH_PKTLOG_HDR_MAC_ID_MASK) >>
-			  ATH_PKTLOG_HDR_MAC_ID_SHIFT;
+			ATH_PKTLOG_HDR_MAC_ID_MASK) >>
+		       ATH_PKTLOG_HDR_MAC_ID_SHIFT;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 
 	pl_hdr.type_specific_data =
 		*(pl_tgt_hdr + ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET);
 	pl_info = pl_dev->pl_info;
 	log_size = pl_hdr.size;
-	sw_event.sw_event = (void *)pktlog_getbuf(pl_dev, pl_info,
-					       log_size, &pl_hdr);
+	sw_event.sw_event =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 	if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 		qdf_assert(0);
 		return A_ERROR;
@@ -1117,10 +1048,10 @@ A_STATUS process_sw_event(void *pdev, void *data)
 	struct ol_fw_data *fw_data;
 
 	/*
-	 * Will be uncommented when the rate control find
-	 * for pktlog is implemented in the firmware.
-	 * Currently derived from the TX PPDU status
-	 */
+   * Will be uncommented when the rate control find
+   * for pktlog is implemented in the firmware.
+   * Currently derived from the TX PPDU status
+   */
 	struct ath_pktlog_sw_event sw_event;
 	uint32_t *pl_tgt_hdr;
 
@@ -1139,16 +1070,12 @@ A_STATUS process_sw_event(void *pdev, void *data)
 
 	fw_data = (struct ol_fw_data *)data;
 	len = fw_data->len;
-	if (len < (sizeof(uint32_t) *
-		   (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
-		len < (sizeof(uint32_t) *
-		       (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
+	if (len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_FLAGS_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_MISSED_CNT_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_LOG_TYPE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) * (ATH_PKTLOG_HDR_SIZE_OFFSET + 1)) ||
+	    len < (sizeof(uint32_t) *
+		   (ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET + 1))) {
 		qdf_print("Invalid msdu len");
 		qdf_assert(0);
 		return A_ERROR;
@@ -1156,9 +1083,9 @@ A_STATUS process_sw_event(void *pdev, void *data)
 
 	pl_tgt_hdr = (uint32_t *)fw_data->data;
 	/*
-	 * Makes the short words (16 bits) portable b/w little endian
-	 * and big endian
-	 */
+   * Makes the short words (16 bits) portable b/w little endian
+   * and big endian
+   */
 	pl_hdr.flags = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_FLAGS_OFFSET) &
 			ATH_PKTLOG_HDR_FLAGS_MASK) >>
 		       ATH_PKTLOG_HDR_FLAGS_SHIFT;
@@ -1166,20 +1093,21 @@ A_STATUS process_sw_event(void *pdev, void *data)
 			     ATH_PKTLOG_HDR_MISSED_CNT_MASK) >>
 			    ATH_PKTLOG_HDR_MISSED_CNT_SHIFT;
 	pl_hdr.log_type = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_LOG_TYPE_OFFSET) &
-				   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
-				  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
+			   ATH_PKTLOG_HDR_LOG_TYPE_MASK) >>
+			  ATH_PKTLOG_HDR_LOG_TYPE_SHIFT;
 	pl_hdr.size = (*(pl_tgt_hdr + ATH_PKTLOG_HDR_SIZE_OFFSET) &
-		       ATH_PKTLOG_HDR_SIZE_MASK) >> ATH_PKTLOG_HDR_SIZE_SHIFT;
+		       ATH_PKTLOG_HDR_SIZE_MASK) >>
+		      ATH_PKTLOG_HDR_SIZE_SHIFT;
 	pl_hdr.timestamp = *(pl_tgt_hdr + ATH_PKTLOG_HDR_TIMESTAMP_OFFSET);
 
-	pktlog_hdr_set_specific_data(&pl_hdr,
-				     *(pl_tgt_hdr +
-				     ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET));
+	pktlog_hdr_set_specific_data(
+		&pl_hdr,
+		*(pl_tgt_hdr + ATH_PKTLOG_HDR_TYPE_SPECIFIC_DATA_OFFSET));
 
 	pl_info = pl_dev->pl_info;
 	log_size = pl_hdr.size;
-	sw_event.sw_event = (void *)pktlog_getbuf(pl_dev, pl_info,
-					       log_size, &pl_hdr);
+	sw_event.sw_event =
+		(void *)pktlog_getbuf(pl_dev, pl_info, log_size, &pl_hdr);
 	if (sizeof(struct ath_pktlog_hdr) + pl_hdr.size > len) {
 		qdf_assert(0);
 		return A_ERROR;

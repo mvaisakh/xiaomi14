@@ -12,36 +12,36 @@
  * GNU General Public License for more details.
  */
 
-#include <net/pkt_sched.h>
-#include "rmnet_qmi.h"
-#include "qmi_rmnet.h"
 #include "dfc_defs.h"
+#include "qmi_rmnet.h"
+#include "rmnet_qmi.h"
+#include <net/pkt_sched.h>
 
 #define CREATE_TRACE_POINTS
 #include "dfc.h"
 
 struct dfc_qmap_header {
-	u8  pad_len:6;
-	u8  reserved_bit:1;
-	u8  cd_bit:1;
-	u8  mux_id;
-	__be16   pkt_len;
+	u8 pad_len : 6;
+	u8 reserved_bit : 1;
+	u8 cd_bit : 1;
+	u8 mux_id;
+	__be16 pkt_len;
 } __aligned(1);
 
 struct dfc_ack_cmd {
 	struct dfc_qmap_header header;
-	u8  command_name;
-	u8  cmd_type:2;
-	u8  reserved:6;
+	u8 command_name;
+	u8 cmd_type : 2;
+	u8 reserved : 6;
 	u16 reserved2;
 	u32 transaction_id;
-	u8  ver:2;
-	u8  reserved3:6;
-	u8  type:2;
-	u8  reserved4:6;
+	u8 ver : 2;
+	u8 reserved3 : 6;
+	u8 type : 2;
+	u8 reserved4 : 6;
 	u16 dfc_seq;
-	u8  reserved5[3];
-	u8  bearer_id;
+	u8 reserved5[3];
+	u8 bearer_id;
 } __aligned(1);
 
 static void dfc_svc_init(struct work_struct *work);
@@ -54,7 +54,7 @@ extern int dfc_ps_ext;
 
 #define QMI_DFC_BIND_CLIENT_REQ_V01 0x0020
 #define QMI_DFC_BIND_CLIENT_RESP_V01 0x0020
-#define QMI_DFC_BIND_CLIENT_REQ_V01_MAX_MSG_LEN  11
+#define QMI_DFC_BIND_CLIENT_REQ_V01_MAX_MSG_LEN 11
 #define QMI_DFC_BIND_CLIENT_RESP_V01_MAX_MSG_LEN 7
 
 #define QMI_DFC_INDICATION_REGISTER_REQ_V01 0x0001
@@ -92,166 +92,151 @@ struct dfc_indication_register_resp_msg_v01 {
 
 static struct qmi_elem_info dfc_qos_id_type_v01_ei[] = {
 	{
-		.data_type	= QMI_UNSIGNED_4_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u32),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct dfc_qos_id_type_v01,
-					   qos_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_4_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u32),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_qos_id_type_v01, qos_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_SIGNED_4_BYTE_ENUM,
-		.elem_len	= 1,
-		.elem_size	= sizeof(enum dfc_ip_type_enum_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct dfc_qos_id_type_v01,
-					   ip_type),
-		.ei_array	= NULL,
+		.data_type = QMI_SIGNED_4_BYTE_ENUM,
+		.elem_len = 1,
+		.elem_size = sizeof(enum dfc_ip_type_enum_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_qos_id_type_v01, ip_type),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_flow_status_info_type_v01_ei[] = {
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_flow_status_info_type_v01,
-					   subs_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset =
+			offsetof(struct dfc_flow_status_info_type_v01, subs_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_flow_status_info_type_v01,
-					   mux_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset =
+			offsetof(struct dfc_flow_status_info_type_v01, mux_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_flow_status_info_type_v01,
-					   bearer_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_flow_status_info_type_v01,
+				   bearer_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_4_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u32),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_flow_status_info_type_v01,
-					   num_bytes),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_4_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u32),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_flow_status_info_type_v01,
+				   num_bytes),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_2_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u16),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_flow_status_info_type_v01,
-					   seq_num),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_2_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u16),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset =
+			offsetof(struct dfc_flow_status_info_type_v01, seq_num),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_DATA_LEN,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_flow_status_info_type_v01,
-					   qos_ids_len),
-		.ei_array	= NULL,
+		.data_type = QMI_DATA_LEN,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_flow_status_info_type_v01,
+				   qos_ids_len),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= DFC_MAX_QOS_ID_V01,
-		.elem_size	= sizeof(struct dfc_qos_id_type_v01),
-		.array_type	= VAR_LEN_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_flow_status_info_type_v01,
-					   qos_ids),
-		.ei_array	= dfc_qos_id_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = DFC_MAX_QOS_ID_V01,
+		.elem_size = sizeof(struct dfc_qos_id_type_v01),
+		.array_type = VAR_LEN_ARRAY,
+		.tlv_type = 0x10,
+		.offset =
+			offsetof(struct dfc_flow_status_info_type_v01, qos_ids),
+		.ei_array = dfc_qos_id_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_ancillary_info_type_v01_ei[] = {
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_ancillary_info_type_v01,
-					   subs_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_ancillary_info_type_v01, subs_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_ancillary_info_type_v01,
-					   mux_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_ancillary_info_type_v01, mux_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_ancillary_info_type_v01,
-					   bearer_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset =
+			offsetof(struct dfc_ancillary_info_type_v01, bearer_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_4_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u32),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_ancillary_info_type_v01,
-					   reserved),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_4_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u32),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset =
+			offsetof(struct dfc_ancillary_info_type_v01, reserved),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
@@ -279,421 +264,383 @@ struct dfc_svc_ind {
 
 static struct qmi_elem_info dfc_bind_client_req_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct dfc_bind_client_req_msg_v01,
-					   ep_id_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_bind_client_req_msg_v01,
+				   ep_id_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= 1,
-		.elem_size	= sizeof(struct data_ep_id_type_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct dfc_bind_client_req_msg_v01,
-					   ep_id),
-		.ei_array	= data_ep_id_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = 1,
+		.elem_size = sizeof(struct data_ep_id_type_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_bind_client_req_msg_v01, ep_id),
+		.ei_array = data_ep_id_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_bind_client_resp_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= 1,
-		.elem_size	= sizeof(struct qmi_response_type_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x02,
-		.offset		= offsetof(struct dfc_bind_client_resp_msg_v01,
-					   resp),
-		.ei_array	= qmi_response_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = 1,
+		.elem_size = sizeof(struct qmi_response_type_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x02,
+		.offset = offsetof(struct dfc_bind_client_resp_msg_v01, resp),
+		.ei_array = qmi_response_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_indication_register_req_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_indication_register_req_msg_v01,
-					   report_flow_status_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_indication_register_req_msg_v01,
+				   report_flow_status_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_indication_register_req_msg_v01,
-					   report_flow_status),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_indication_register_req_msg_v01,
+				   report_flow_status),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x11,
-		.offset		= offsetof(struct
-					   dfc_indication_register_req_msg_v01,
-					   report_tx_link_status_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x11,
+		.offset = offsetof(struct dfc_indication_register_req_msg_v01,
+				   report_tx_link_status_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x11,
-		.offset		= offsetof(struct
-					   dfc_indication_register_req_msg_v01,
-					   report_tx_link_status),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x11,
+		.offset = offsetof(struct dfc_indication_register_req_msg_v01,
+				   report_tx_link_status),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_indication_register_resp_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= 1,
-		.elem_size	= sizeof(struct qmi_response_type_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x02,
-		.offset		= offsetof(struct
-					   dfc_indication_register_resp_msg_v01,
-					   resp),
-		.ei_array	= qmi_response_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = 1,
+		.elem_size = sizeof(struct qmi_response_type_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x02,
+		.offset = offsetof(struct dfc_indication_register_resp_msg_v01,
+				   resp),
+		.ei_array = qmi_response_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_flow_status_ind_v01_ei[] = {
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_flow_status_ind_msg_v01,
-					   flow_status_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_flow_status_ind_msg_v01,
+				   flow_status_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_DATA_LEN,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_flow_status_ind_msg_v01,
-					   flow_status_len),
-		.ei_array	= NULL,
+		.data_type = QMI_DATA_LEN,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_flow_status_ind_msg_v01,
+				   flow_status_len),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= DFC_MAX_BEARERS_V01,
-		.elem_size	= sizeof(struct
-					 dfc_flow_status_info_type_v01),
-		.array_type	= VAR_LEN_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_flow_status_ind_msg_v01,
-					   flow_status),
-		.ei_array	= dfc_flow_status_info_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = DFC_MAX_BEARERS_V01,
+		.elem_size = sizeof(struct dfc_flow_status_info_type_v01),
+		.array_type = VAR_LEN_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_flow_status_ind_msg_v01,
+				   flow_status),
+		.ei_array = dfc_flow_status_info_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x11,
-		.offset		= offsetof(struct
-					   dfc_flow_status_ind_msg_v01,
-					   eod_ack_reqd_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x11,
+		.offset = offsetof(struct dfc_flow_status_ind_msg_v01,
+				   eod_ack_reqd_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x11,
-		.offset		= offsetof(struct
-					   dfc_flow_status_ind_msg_v01,
-					   eod_ack_reqd),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x11,
+		.offset = offsetof(struct dfc_flow_status_ind_msg_v01,
+				   eod_ack_reqd),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x12,
-		.offset		= offsetof(struct
-					   dfc_flow_status_ind_msg_v01,
-					   ancillary_info_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x12,
+		.offset = offsetof(struct dfc_flow_status_ind_msg_v01,
+				   ancillary_info_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_DATA_LEN,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x12,
-		.offset		= offsetof(struct
-					   dfc_flow_status_ind_msg_v01,
-					   ancillary_info_len),
-		.ei_array	= NULL,
+		.data_type = QMI_DATA_LEN,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x12,
+		.offset = offsetof(struct dfc_flow_status_ind_msg_v01,
+				   ancillary_info_len),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= DFC_MAX_BEARERS_V01,
-		.elem_size	= sizeof(struct
-					 dfc_ancillary_info_type_v01),
-		.array_type	= VAR_LEN_ARRAY,
-		.tlv_type	= 0x12,
-		.offset		= offsetof(struct
-					   dfc_flow_status_ind_msg_v01,
-					   ancillary_info),
-		.ei_array	= dfc_ancillary_info_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = DFC_MAX_BEARERS_V01,
+		.elem_size = sizeof(struct dfc_ancillary_info_type_v01),
+		.array_type = VAR_LEN_ARRAY,
+		.tlv_type = 0x12,
+		.offset = offsetof(struct dfc_flow_status_ind_msg_v01,
+				   ancillary_info),
+		.ei_array = dfc_ancillary_info_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_get_flow_status_req_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_get_flow_status_req_msg_v01,
-					   bearer_id_list_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_get_flow_status_req_msg_v01,
+				   bearer_id_list_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_DATA_LEN,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_get_flow_status_req_msg_v01,
-					   bearer_id_list_len),
-		.ei_array	= NULL,
+		.data_type = QMI_DATA_LEN,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_get_flow_status_req_msg_v01,
+				   bearer_id_list_len),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= DFC_MAX_BEARERS_V01,
-		.elem_size	= sizeof(u8),
-		.array_type	= VAR_LEN_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_get_flow_status_req_msg_v01,
-					   bearer_id_list),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = DFC_MAX_BEARERS_V01,
+		.elem_size = sizeof(u8),
+		.array_type = VAR_LEN_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_get_flow_status_req_msg_v01,
+				   bearer_id_list),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_get_flow_status_resp_msg_v01_ei[] = {
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= 1,
-		.elem_size	= sizeof(struct qmi_response_type_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x02,
-		.offset		= offsetof(struct
-					   dfc_get_flow_status_resp_msg_v01,
-					   resp),
-		.ei_array	= qmi_response_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = 1,
+		.elem_size = sizeof(struct qmi_response_type_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x02,
+		.offset =
+			offsetof(struct dfc_get_flow_status_resp_msg_v01, resp),
+		.ei_array = qmi_response_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_get_flow_status_resp_msg_v01,
-					   flow_status_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_get_flow_status_resp_msg_v01,
+				   flow_status_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_DATA_LEN,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_get_flow_status_resp_msg_v01,
-					   flow_status_len),
-		.ei_array	= NULL,
+		.data_type = QMI_DATA_LEN,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_get_flow_status_resp_msg_v01,
+				   flow_status_len),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= DFC_MAX_BEARERS_V01,
-		.elem_size	= sizeof(struct
-					 dfc_flow_status_info_type_v01),
-		.array_type	= VAR_LEN_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_get_flow_status_resp_msg_v01,
-					   flow_status),
-		.ei_array	= dfc_flow_status_info_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = DFC_MAX_BEARERS_V01,
+		.elem_size = sizeof(struct dfc_flow_status_info_type_v01),
+		.array_type = VAR_LEN_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_get_flow_status_resp_msg_v01,
+				   flow_status),
+		.ei_array = dfc_flow_status_info_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_bearer_info_type_v01_ei[] = {
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_bearer_info_type_v01,
-					   subs_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_bearer_info_type_v01, subs_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_bearer_info_type_v01,
-					   mux_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_bearer_info_type_v01, mux_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_bearer_info_type_v01,
-					   bearer_id),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_bearer_info_type_v01, bearer_id),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_SIGNED_4_BYTE_ENUM,
-		.elem_len	= 1,
-		.elem_size	= sizeof(enum dfc_ip_type_enum_v01),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
-		.offset		= offsetof(struct
-					   dfc_bearer_info_type_v01,
-					   ip_type),
-		.ei_array	= NULL,
+		.data_type = QMI_SIGNED_4_BYTE_ENUM,
+		.elem_len = 1,
+		.elem_size = sizeof(enum dfc_ip_type_enum_v01),
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
+		.offset = offsetof(struct dfc_bearer_info_type_v01, ip_type),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
 static struct qmi_elem_info dfc_tx_link_status_ind_v01_ei[] = {
 	{
-		.data_type	= QMI_UNSIGNED_1_BYTE,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x01,
-		.offset		= offsetof(struct
-					   dfc_tx_link_status_ind_msg_v01,
-					   tx_status),
-		.ei_array	= NULL,
+		.data_type = QMI_UNSIGNED_1_BYTE,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x01,
+		.offset = offsetof(struct dfc_tx_link_status_ind_msg_v01,
+				   tx_status),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_OPT_FLAG,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_tx_link_status_ind_msg_v01,
-					   bearer_info_valid),
-		.ei_array	= NULL,
+		.data_type = QMI_OPT_FLAG,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_tx_link_status_ind_msg_v01,
+				   bearer_info_valid),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_DATA_LEN,
-		.elem_len	= 1,
-		.elem_size	= sizeof(u8),
-		.array_type	= NO_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_tx_link_status_ind_msg_v01,
-					   bearer_info_len),
-		.ei_array	= NULL,
+		.data_type = QMI_DATA_LEN,
+		.elem_len = 1,
+		.elem_size = sizeof(u8),
+		.array_type = NO_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_tx_link_status_ind_msg_v01,
+				   bearer_info_len),
+		.ei_array = NULL,
 	},
 	{
-		.data_type	= QMI_STRUCT,
-		.elem_len	= DFC_MAX_BEARERS_V01,
-		.elem_size	= sizeof(struct
-					 dfc_bearer_info_type_v01),
-		.array_type	= VAR_LEN_ARRAY,
-		.tlv_type	= 0x10,
-		.offset		= offsetof(struct
-					   dfc_tx_link_status_ind_msg_v01,
-					   bearer_info),
-		.ei_array	= dfc_bearer_info_type_v01_ei,
+		.data_type = QMI_STRUCT,
+		.elem_len = DFC_MAX_BEARERS_V01,
+		.elem_size = sizeof(struct dfc_bearer_info_type_v01),
+		.array_type = VAR_LEN_ARRAY,
+		.tlv_type = 0x10,
+		.offset = offsetof(struct dfc_tx_link_status_ind_msg_v01,
+				   bearer_info),
+		.ei_array = dfc_bearer_info_type_v01_ei,
 	},
 	{
-		.data_type	= QMI_EOTI,
-		.array_type	= NO_ARRAY,
-		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.data_type = QMI_EOTI,
+		.array_type = NO_ARRAY,
+		.tlv_type = QMI_COMMON_TLV_TYPE,
 	},
 };
 
-static int
-dfc_bind_client_req(struct qmi_handle *dfc_handle,
-		    struct sockaddr_qrtr *ssctl, struct svc_info *svc)
+static int dfc_bind_client_req(struct qmi_handle *dfc_handle,
+			       struct sockaddr_qrtr *ssctl,
+			       struct svc_info *svc)
 {
 	struct dfc_bind_client_resp_msg_v01 *resp;
 	struct dfc_bind_client_req_msg_v01 *req;
@@ -710,11 +657,11 @@ dfc_bind_client_req(struct qmi_handle *dfc_handle,
 		return -ENOMEM;
 	}
 
-	ret = qmi_txn_init(dfc_handle, &txn,
-			   dfc_bind_client_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(dfc_handle, &txn, dfc_bind_client_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
-		pr_err("%s() Failed init for response, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed init for response, err: %d\n", __func__,
+		       ret);
 		goto out;
 	}
 
@@ -727,18 +674,17 @@ dfc_bind_client_req(struct qmi_handle *dfc_handle,
 			       dfc_bind_client_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		pr_err("%s() Failed sending request, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed sending request, err: %d\n", __func__, ret);
 		goto out;
 	}
 
 	ret = qmi_txn_wait(&txn, DFC_TIMEOUT_JF);
 	if (ret < 0) {
-		pr_err("%s() Response waiting failed, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Response waiting failed, err: %d\n", __func__,
+		       ret);
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		pr_err("%s() Request rejected, result: %d, err: %d\n",
-			__func__, resp->resp.result, resp->resp.error);
+		pr_err("%s() Request rejected, result: %d, err: %d\n", __func__,
+		       resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 	}
 
@@ -748,9 +694,8 @@ out:
 	return ret;
 }
 
-static int
-dfc_indication_register_req(struct qmi_handle *dfc_handle,
-			    struct sockaddr_qrtr *ssctl, u8 reg)
+static int dfc_indication_register_req(struct qmi_handle *dfc_handle,
+				       struct sockaddr_qrtr *ssctl, u8 reg)
 {
 	struct dfc_indication_register_resp_msg_v01 *resp;
 	struct dfc_indication_register_req_msg_v01 *req;
@@ -770,8 +715,8 @@ dfc_indication_register_req(struct qmi_handle *dfc_handle,
 	ret = qmi_txn_init(dfc_handle, &txn,
 			   dfc_indication_register_resp_msg_v01_ei, resp);
 	if (ret < 0) {
-		pr_err("%s() Failed init for response, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed init for response, err: %d\n", __func__,
+		       ret);
 		goto out;
 	}
 
@@ -789,18 +734,17 @@ dfc_indication_register_req(struct qmi_handle *dfc_handle,
 			       dfc_indication_register_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(&txn);
-		pr_err("%s() Failed sending request, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed sending request, err: %d\n", __func__, ret);
 		goto out;
 	}
 
 	ret = qmi_txn_wait(&txn, DFC_TIMEOUT_JF);
 	if (ret < 0) {
-		pr_err("%s() Response waiting failed, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Response waiting failed, err: %d\n", __func__,
+		       ret);
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		pr_err("%s() Request rejected, result: %d, err: %d\n",
-			__func__, resp->resp.result, resp->resp.error);
+		pr_err("%s() Request rejected, result: %d, err: %d\n", __func__,
+		       resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 	}
 
@@ -829,11 +773,11 @@ dfc_get_flow_status_req(struct qmi_handle *dfc_handle,
 		return -ENOMEM;
 	}
 
-	ret = qmi_txn_init(dfc_handle, txn,
-			   dfc_get_flow_status_resp_msg_v01_ei, resp);
+	ret = qmi_txn_init(dfc_handle, txn, dfc_get_flow_status_resp_msg_v01_ei,
+			   resp);
 	if (ret < 0) {
-		pr_err("%s() Failed init for response, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed init for response, err: %d\n", __func__,
+		       ret);
 		goto out;
 	}
 
@@ -843,18 +787,17 @@ dfc_get_flow_status_req(struct qmi_handle *dfc_handle,
 			       dfc_get_flow_status_req_msg_v01_ei, req);
 	if (ret < 0) {
 		qmi_txn_cancel(txn);
-		pr_err("%s() Failed sending request, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Failed sending request, err: %d\n", __func__, ret);
 		goto out;
 	}
 
 	ret = qmi_txn_wait(txn, DFC_TIMEOUT_JF);
 	if (ret < 0) {
-		pr_err("%s() Response waiting failed, err: %d\n",
-			__func__, ret);
+		pr_err("%s() Response waiting failed, err: %d\n", __func__,
+		       ret);
 	} else if (resp->resp.result != QMI_RESULT_SUCCESS_V01) {
-		pr_err("%s() Request rejected, result: %d, err: %d\n",
-			__func__, resp->resp.result, resp->resp.error);
+		pr_err("%s() Request rejected, result: %d, err: %d\n", __func__,
+		       resp->resp.result, resp->resp.error);
 		ret = -resp->resp.result;
 	}
 
@@ -875,8 +818,8 @@ static int dfc_init_service(struct dfc_qmi_data *data)
 	return dfc_indication_register_req(&data->handle, &data->ssctl, 1);
 }
 
-static void
-dfc_send_ack(struct net_device *dev, u8 bearer_id, u16 seq, u8 mux_id, u8 type)
+static void dfc_send_ack(struct net_device *dev, u8 bearer_id, u16 seq,
+			 u8 mux_id, u8 type)
 {
 	struct qos_info *qos = rmnet_get_qos_pt(dev);
 	struct sk_buff *skb;
@@ -920,8 +863,7 @@ dfc_send_ack(struct net_device *dev, u8 bearer_id, u16 seq, u8 mux_id, u8 type)
 	rmnet_map_tx_qmap_cmd(skb, RMNET_CH_DEFAULT, true);
 }
 
-int dfc_bearer_flow_ctl(struct net_device *dev,
-			struct rmnet_bearer_map *bearer,
+int dfc_bearer_flow_ctl(struct net_device *dev, struct rmnet_bearer_map *bearer,
 			struct qos_info *qos)
 {
 	bool enable;
@@ -929,12 +871,12 @@ int dfc_bearer_flow_ctl(struct net_device *dev,
 	enable = bearer->grant_size ? true : false;
 
 	/* Do not flow disable tcp ack q in tcp bidir
-	 * ACK queue opened first to drain ACKs faster
-	 * Although since tcp ancillary is true most of the time,
-	 * this shouldn't really make a difference
-	 * If there is non zero grant but tcp ancillary is false,
-	 * send out ACKs anyway
-	 */
+   * ACK queue opened first to drain ACKs faster
+   * Although since tcp ancillary is true most of the time,
+   * this shouldn't really make a difference
+   * If there is non zero grant but tcp ancillary is false,
+   * send out ACKs anyway
+   */
 	if (bearer->ack_mq_idx != INVALID_MQ)
 		qmi_rmnet_flow_control(dev, bearer->ack_mq_idx,
 				       enable || bearer->tcp_bidir);
@@ -942,23 +884,22 @@ int dfc_bearer_flow_ctl(struct net_device *dev,
 	qmi_rmnet_flow_control(dev, bearer->mq_idx, enable);
 
 	if (!enable && bearer->ack_req)
-		dfc_send_ack(dev, bearer->bearer_id,
-			     bearer->seq, qos->mux_id,
+		dfc_send_ack(dev, bearer->bearer_id, bearer->seq, qos->mux_id,
 			     DFC_ACK_TYPE_DISABLE);
 
 	return 0;
 }
 
-static int dfc_all_bearer_flow_ctl(struct net_device *dev,
-				struct qos_info *qos, u8 ack_req, u32 ancillary,
-				struct dfc_flow_status_info_type_v01 *fc_info)
+static int
+dfc_all_bearer_flow_ctl(struct net_device *dev, struct qos_info *qos,
+			u8 ack_req, u32 ancillary,
+			struct dfc_flow_status_info_type_v01 *fc_info)
 {
 	struct rmnet_bearer_map *bearer;
 
 	list_for_each_entry(bearer, &qos->bearer_head, list) {
 		bearer->grant_size = fc_info->num_bytes;
-		bearer->grant_thresh =
-			qmi_rmnet_grant_per(bearer->grant_size);
+		bearer->grant_thresh = qmi_rmnet_grant_per(bearer->grant_size);
 		bearer->seq = fc_info->seq_num;
 		bearer->ack_req = ack_req;
 		bearer->tcp_bidir = DFC_IS_TCP_BIDIR(ancillary);
@@ -1015,16 +956,15 @@ static int dfc_update_fc_map(struct net_device *dev, struct qos_info *qos,
 
 	if (itm) {
 		/* The RAT switch flag indicates the start and end of
-		 * the switch. Ignore indications in between.
-		 */
+     * the switch. Ignore indications in between.
+     */
 		if (DFC_IS_RAT_SWITCH(ancillary))
 			itm->rat_switch = !fc_info->num_bytes;
-		else
-			if (itm->rat_switch)
-				return 0;
+		else if (itm->rat_switch)
+			return 0;
 
 		/* If TX is OFF but we received grant, ignore it */
-		if (itm->tx_off  && fc_info->num_bytes > 0)
+		if (itm->tx_off && fc_info->num_bytes > 0)
 			return 0;
 
 		if (fc_info->ll_status &&
@@ -1044,8 +984,8 @@ static int dfc_update_fc_map(struct net_device *dev, struct qos_info *qos,
 		}
 
 		/* update queue state only if there is a change in grant
-		 * or change in ancillary tcp state
-		 */
+     * or change in ancillary tcp state
+     */
 		if ((itm->grant_size == 0 && adjusted_grant > 0) ||
 		    (itm->grant_size > 0 && adjusted_grant == 0) ||
 		    (itm->tcp_bidir ^ DFC_IS_TCP_BIDIR(ancillary)))
@@ -1053,15 +993,15 @@ static int dfc_update_fc_map(struct net_device *dev, struct qos_info *qos,
 
 		/* This is needed by qmap */
 		if (dfc_qmap && itm->ack_req && !ack_req && itm->grant_size)
-			dfc_qmap_send_ack(qos, itm->bearer_id,
-					  itm->seq, DFC_ACK_TYPE_DISABLE);
+			dfc_qmap_send_ack(qos, itm->bearer_id, itm->seq,
+					  DFC_ACK_TYPE_DISABLE);
 
 		itm->grant_size = adjusted_grant;
 
 		/* No further query if the adjusted grant is less
-		 * than 20% of the original grant. Add to watch to
-		 * recover if no indication is received.
-		 */
+     * than 20% of the original grant. Add to watch to
+     * recover if no indication is received.
+     */
 		if (dfc_qmap && is_query &&
 		    itm->grant_size < (fc_info->num_bytes / 5)) {
 			itm->grant_thresh = itm->grant_size;
@@ -1115,16 +1055,12 @@ void dfc_do_burst_flow_control(struct dfc_qmi_data *dfc,
 			}
 		}
 
-		trace_dfc_flow_ind(dfc->index,
-				   i, flow_status->mux_id,
+		trace_dfc_flow_ind(dfc->index, i, flow_status->mux_id,
 				   flow_status->bearer_id,
-				   flow_status->num_bytes,
-				   flow_status->seq_num,
-				   ack_req,
-				   ancillary);
+				   flow_status->num_bytes, flow_status->seq_num,
+				   ack_req, ancillary);
 
-		dev = rmnet_get_rmnet_dev(dfc->rmnet_port,
-					  flow_status->mux_id);
+		dev = rmnet_get_rmnet_dev(dfc->rmnet_port, flow_status->mux_id);
 		if (!dev)
 			goto clean_out;
 
@@ -1149,12 +1085,11 @@ void dfc_do_burst_flow_control(struct dfc_qmi_data *dfc,
 		}
 
 		if (unlikely(flow_status->bearer_id == 0xFF))
-			dfc_all_bearer_flow_ctl(
-				dev, qos, ack_req, ancillary, flow_status);
+			dfc_all_bearer_flow_ctl(dev, qos, ack_req, ancillary,
+						flow_status);
 		else
-			dfc_update_fc_map(
-				dev, qos, ack_req, ancillary, flow_status,
-				is_query);
+			dfc_update_fc_map(dev, qos, ack_req, ancillary,
+					  flow_status, is_query);
 
 		spin_unlock_bh(&qos->qos_lock);
 	}
@@ -1207,13 +1142,11 @@ void dfc_handle_tx_link_status_ind(struct dfc_qmi_data *dfc,
 	for (i = 0; i < ind->bearer_info_len; i++) {
 		bearer_info = &ind->bearer_info[i];
 
-		trace_dfc_tx_link_status_ind(dfc->index, i,
-					     ind->tx_status,
+		trace_dfc_tx_link_status_ind(dfc->index, i, ind->tx_status,
 					     bearer_info->mux_id,
 					     bearer_info->bearer_id);
 
-		dev = rmnet_get_rmnet_dev(dfc->rmnet_port,
-					  bearer_info->mux_id);
+		dev = rmnet_get_rmnet_dev(dfc->rmnet_port, bearer_info->mux_id);
 		if (!dev)
 			goto clean_out;
 
@@ -1223,8 +1156,8 @@ void dfc_handle_tx_link_status_ind(struct dfc_qmi_data *dfc,
 
 		spin_lock_bh(&qos->qos_lock);
 
-		dfc_update_tx_link_status(
-			dev, qos, ind->tx_status, bearer_info);
+		dfc_update_tx_link_status(dev, qos, ind->tx_status,
+					  bearer_info);
 
 		spin_unlock_bh(&qos->qos_lock);
 	}
@@ -1235,8 +1168,8 @@ clean_out:
 
 static void dfc_qmi_ind_work(struct work_struct *work)
 {
-	struct dfc_qmi_data *dfc = container_of(work, struct dfc_qmi_data,
-						qmi_ind_work);
+	struct dfc_qmi_data *dfc =
+		container_of(work, struct dfc_qmi_data, qmi_ind_work);
 	struct dfc_svc_ind *svc_ind;
 	unsigned long flags;
 
@@ -1259,12 +1192,11 @@ static void dfc_qmi_ind_work(struct work_struct *work)
 		if (!dfc->restart_state) {
 			if (svc_ind->msg_id == QMI_DFC_FLOW_STATUS_IND_V01)
 				dfc_do_burst_flow_control(
-						dfc, &svc_ind->d.dfc_info,
-						false);
+					dfc, &svc_ind->d.dfc_info, false);
 			else if (svc_ind->msg_id ==
-					QMI_DFC_TX_LINK_STATUS_IND_V01)
+				 QMI_DFC_TX_LINK_STATUS_IND_V01)
 				dfc_handle_tx_link_status_ind(
-						dfc, &svc_ind->d.tx_status);
+					dfc, &svc_ind->d.tx_status);
 		}
 		kfree(svc_ind);
 	} while (1);
@@ -1277,8 +1209,8 @@ static void dfc_qmi_ind_work(struct work_struct *work)
 static void dfc_clnt_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 			    struct qmi_txn *txn, const void *data)
 {
-	struct dfc_qmi_data *dfc = container_of(qmi, struct dfc_qmi_data,
-						handle);
+	struct dfc_qmi_data *dfc =
+		container_of(qmi, struct dfc_qmi_data, handle);
 	struct dfc_flow_status_ind_msg_v01 *ind_msg;
 	struct dfc_svc_ind *svc_ind;
 	unsigned long flags;
@@ -1289,8 +1221,8 @@ static void dfc_clnt_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 	ind_msg = (struct dfc_flow_status_ind_msg_v01 *)data;
 	if (ind_msg->flow_status_valid) {
 		if (ind_msg->flow_status_len > DFC_MAX_BEARERS_V01) {
-			pr_err("%s() Invalid fc info len: %d\n",
-			       __func__, ind_msg->flow_status_len);
+			pr_err("%s() Invalid fc info len: %d\n", __func__,
+			       ind_msg->flow_status_len);
 			return;
 		}
 
@@ -1313,8 +1245,8 @@ static void dfc_tx_link_status_ind_cb(struct qmi_handle *qmi,
 				      struct sockaddr_qrtr *sq,
 				      struct qmi_txn *txn, const void *data)
 {
-	struct dfc_qmi_data *dfc = container_of(qmi, struct dfc_qmi_data,
-						handle);
+	struct dfc_qmi_data *dfc =
+		container_of(qmi, struct dfc_qmi_data, handle);
 	struct dfc_tx_link_status_ind_msg_v01 *ind_msg;
 	struct dfc_svc_ind *svc_ind;
 	unsigned long flags;
@@ -1325,8 +1257,8 @@ static void dfc_tx_link_status_ind_cb(struct qmi_handle *qmi,
 	ind_msg = (struct dfc_tx_link_status_ind_msg_v01 *)data;
 	if (ind_msg->bearer_info_valid) {
 		if (ind_msg->bearer_info_len > DFC_MAX_BEARERS_V01) {
-			pr_err("%s() Invalid bearer info len: %d\n",
-			       __func__, ind_msg->bearer_info_len);
+			pr_err("%s() Invalid bearer info len: %d\n", __func__,
+			       ind_msg->bearer_info_len);
 			return;
 		}
 
@@ -1348,8 +1280,8 @@ static void dfc_tx_link_status_ind_cb(struct qmi_handle *qmi,
 static void dfc_svc_init(struct work_struct *work)
 {
 	int rc = 0;
-	struct dfc_qmi_data *data = container_of(work, struct dfc_qmi_data,
-						 svc_arrive);
+	struct dfc_qmi_data *data =
+		container_of(work, struct dfc_qmi_data, svc_arrive);
 	struct qmi_info *qmi;
 
 	if (data->restart_state == 1)
@@ -1377,10 +1309,8 @@ static void dfc_svc_init(struct work_struct *work)
 
 	qmi->dfc_pending[data->index] = NULL;
 	qmi->dfc_clients[data->index] = (void *)data;
-	trace_dfc_client_state_up(data->index,
-				  data->svc.instance,
-				  data->svc.ep_type,
-				  data->svc.iface_id);
+	trace_dfc_client_state_up(data->index, data->svc.instance,
+				  data->svc.ep_type, data->svc.iface_id);
 
 	rtnl_unlock();
 
@@ -1389,8 +1319,8 @@ static void dfc_svc_init(struct work_struct *work)
 
 static int dfc_svc_arrive(struct qmi_handle *qmi, struct qmi_service *svc)
 {
-	struct dfc_qmi_data *data = container_of(qmi, struct dfc_qmi_data,
-						 handle);
+	struct dfc_qmi_data *data =
+		container_of(qmi, struct dfc_qmi_data, handle);
 
 	data->ssctl.sq_family = AF_QIPCRTR;
 	data->ssctl.sq_node = svc->node;
@@ -1403,8 +1333,8 @@ static int dfc_svc_arrive(struct qmi_handle *qmi, struct qmi_service *svc)
 
 static void dfc_svc_exit(struct qmi_handle *qmi, struct qmi_service *svc)
 {
-	struct dfc_qmi_data *data = container_of(qmi, struct dfc_qmi_data,
-						 handle);
+	struct dfc_qmi_data *data =
+		container_of(qmi, struct dfc_qmi_data, handle);
 
 	if (!data)
 		pr_debug("%s() data is null\n", __func__);
@@ -1471,8 +1401,7 @@ int dfc_qmi_client_init(void *port, int index, struct svc_info *psvc,
 	}
 
 	rc = qmi_add_lookup(&data->handle, DFC_SERVICE_ID_V01,
-			    DFC_SERVICE_VERS_V01,
-			    psvc->instance);
+			    DFC_SERVICE_VERS_V01, psvc->instance);
 	if (rc < 0) {
 		pr_err("%s: failed qmi_add_lookup - rc[%d]\n", __func__, rc);
 		goto err2;
@@ -1526,8 +1455,8 @@ void dfc_qmi_burst_check(struct net_device *dev, struct qos_info *qos,
 	if (unlikely(!bearer))
 		goto out;
 
-	trace_dfc_flow_check(dev->name, bearer->bearer_id,
-			     len, mark, bearer->grant_size);
+	trace_dfc_flow_check(dev->name, bearer->bearer_id, len, mark,
+			     bearer->grant_size);
 
 	bearer->bytes_in_flight += len;
 
@@ -1542,8 +1471,7 @@ void dfc_qmi_burst_check(struct net_device *dev, struct qos_info *qos,
 
 	if (start_grant > bearer->grant_thresh &&
 	    bearer->grant_size <= bearer->grant_thresh) {
-		dfc_send_ack(dev, bearer->bearer_id,
-			     bearer->seq, qos->mux_id,
+		dfc_send_ack(dev, bearer->bearer_id, bearer->seq, qos->mux_id,
 			     DFC_ACK_TYPE_THRESHOLD);
 	}
 
@@ -1583,7 +1511,7 @@ void dfc_qmi_query_flow(void *dfc_data)
 	svc_ind->d.dfc_info.flow_status_valid = resp->flow_status_valid;
 	svc_ind->d.dfc_info.flow_status_len = resp->flow_status_len;
 	memcpy(&svc_ind->d.dfc_info.flow_status, resp->flow_status,
-		sizeof(resp->flow_status[0]) * resp->flow_status_len);
+	       sizeof(resp->flow_status[0]) * resp->flow_status_len);
 	dfc_do_burst_flow_control(data, &svc_ind->d.dfc_info, true);
 
 done:

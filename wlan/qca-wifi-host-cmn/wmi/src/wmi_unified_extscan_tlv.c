@@ -17,9 +17,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <osdep.h>
 #include "wmi.h"
 #include "wmi_unified_priv.h"
+#include <osdep.h>
 
 /**
  * send_reset_passpoint_network_list_cmd_tlv() - reset passpoint network list
@@ -31,9 +31,9 @@
  *
  * Return: QDF_STATUS enumeration
  */
-static QDF_STATUS send_reset_passpoint_network_list_cmd_tlv
-					(wmi_unified_t wmi_handle,
-					struct wifi_passpoint_req_param *req)
+static QDF_STATUS
+send_reset_passpoint_network_list_cmd_tlv(wmi_unified_t wmi_handle,
+					  struct wifi_passpoint_req_param *req)
 {
 	wmi_passpoint_config_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -47,12 +47,12 @@ static QDF_STATUS send_reset_passpoint_network_list_cmd_tlv
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	cmd = (wmi_passpoint_config_cmd_fixed_param *) wmi_buf_data(buf);
+	cmd = (wmi_passpoint_config_cmd_fixed_param *)wmi_buf_data(buf);
 
-	WMITLV_SET_HDR(&cmd->tlv_header,
-			WMITLV_TAG_STRUC_wmi_passpoint_config_cmd_fixed_param,
-			WMITLV_GET_STRUCT_TLVLEN(
-			wmi_passpoint_config_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_passpoint_config_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_passpoint_config_cmd_fixed_param));
 	cmd->id = WMI_PASSPOINT_NETWORK_ID_WILDCARD;
 
 	ret = wmi_unified_cmd_send(wmi_handle, buf, len,
@@ -76,8 +76,8 @@ static QDF_STATUS send_reset_passpoint_network_list_cmd_tlv
  *
  * Return: QDF_STATUS enumeration
  */
-static QDF_STATUS send_set_passpoint_network_list_cmd_tlv
-					(wmi_unified_t wmi_handle,
+static QDF_STATUS
+send_set_passpoint_network_list_cmd_tlv(wmi_unified_t wmi_handle,
 					struct wifi_passpoint_req_param *req)
 {
 	wmi_passpoint_config_cmd_fixed_param *cmd;
@@ -94,32 +94,35 @@ static QDF_STATUS send_set_passpoint_network_list_cmd_tlv
 			return QDF_STATUS_E_NOMEM;
 		}
 
-		cmd = (wmi_passpoint_config_cmd_fixed_param *)
-				wmi_buf_data(buf);
+		cmd = (wmi_passpoint_config_cmd_fixed_param *)wmi_buf_data(buf);
 
-		WMITLV_SET_HDR(&cmd->tlv_header,
+		WMITLV_SET_HDR(
+			&cmd->tlv_header,
 			WMITLV_TAG_STRUC_wmi_passpoint_config_cmd_fixed_param,
 			WMITLV_GET_STRUCT_TLVLEN(
-			wmi_passpoint_config_cmd_fixed_param));
+				wmi_passpoint_config_cmd_fixed_param));
 		cmd->id = req->networks[i].id;
 		wmi_debug("network id: %u", cmd->id);
 		qdf_mem_copy(cmd->realm, req->networks[i].realm,
-			strlen(req->networks[i].realm) + 1);
+			     strlen(req->networks[i].realm) + 1);
 		wmi_debug("realm: %s", cmd->realm);
 		for (j = 0; j < PASSPOINT_ROAMING_CONSORTIUM_ID_NUM; j++) {
-			bytes = (uint8_t *) &req->networks[i].roaming_consortium_ids[j];
-			wmi_debug("index: %d rcids: %02x %02x %02x %02x %02x %02x %02x %02x",
+			bytes = (uint8_t *)&req->networks[i]
+					.roaming_consortium_ids[j];
+			wmi_debug(
+				"index: %d rcids: %02x %02x %02x %02x %02x %02x %02x %02x",
 				j, bytes[0], bytes[1], bytes[2], bytes[3],
 				bytes[4], bytes[5], bytes[6], bytes[7]);
 
-			qdf_mem_copy(&cmd->roaming_consortium_ids[j],
+			qdf_mem_copy(
+				&cmd->roaming_consortium_ids[j],
 				&req->networks[i].roaming_consortium_ids[j],
 				PASSPOINT_ROAMING_CONSORTIUM_ID_LEN);
 		}
 		qdf_mem_copy(cmd->plmn, req->networks[i].plmn,
-				PASSPOINT_PLMN_ID_LEN);
-		wmi_debug("plmn: %02x:%02x:%02x",
-			 cmd->plmn[0], cmd->plmn[1], cmd->plmn[2]);
+			     PASSPOINT_PLMN_ID_LEN);
+		wmi_debug("plmn: %02x:%02x:%02x", cmd->plmn[0], cmd->plmn[1],
+			  cmd->plmn[2]);
 
 		ret = wmi_unified_cmd_send(wmi_handle, buf, len,
 					   WMI_PASSPOINT_LIST_CONFIG_CMDID);
@@ -142,8 +145,9 @@ static QDF_STATUS send_set_passpoint_network_list_cmd_tlv
  *
  * Returns: 0 on success, error number otherwise
  */
-static QDF_STATUS send_set_epno_network_list_cmd_tlv(wmi_unified_t wmi_handle,
-		struct wifi_enhanced_pno_params *req)
+static QDF_STATUS
+send_set_epno_network_list_cmd_tlv(wmi_unified_t wmi_handle,
+				   struct wifi_enhanced_pno_params *req)
 {
 	wmi_nlo_config_cmd_fixed_param *cmd;
 	nlo_configured_parameters *nlo_list;
@@ -157,11 +161,11 @@ static QDF_STATUS send_set_epno_network_list_cmd_tlv(wmi_unified_t wmi_handle,
 	len = sizeof(*cmd);
 	if (req->num_networks) {
 		/* TLV place holder for array of structures
-		 * then each nlo_configured_parameters(nlo_list) TLV.
-		 */
+     * then each nlo_configured_parameters(nlo_list) TLV.
+     */
 		len += WMI_TLV_HDR_SIZE;
-		len += (sizeof(nlo_configured_parameters)
-			    * QDF_MIN(req->num_networks, WMI_NLO_MAX_SSIDS));
+		len += (sizeof(nlo_configured_parameters) *
+			QDF_MIN(req->num_networks, WMI_NLO_MAX_SSIDS));
 		/* TLV for array of uint32 channel_list */
 		len += WMI_TLV_HDR_SIZE;
 		/* TLV for nlo_channel_prediction_cfg */
@@ -176,38 +180,38 @@ static QDF_STATUS send_set_epno_network_list_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	cmd = (wmi_nlo_config_cmd_fixed_param *) wmi_buf_data(buf);
+	cmd = (wmi_nlo_config_cmd_fixed_param *)wmi_buf_data(buf);
 
-	buf_ptr = (u_int8_t *) cmd;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_nlo_config_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN(
-			       wmi_nlo_config_cmd_fixed_param));
+	buf_ptr = (u_int8_t *)cmd;
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_nlo_config_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_nlo_config_cmd_fixed_param));
 	cmd->vdev_id = req->vdev_id;
 
 	/* set flag to reset if num of networks are 0 */
-	cmd->flags = (req->num_networks == 0 ?
-		WMI_NLO_CONFIG_ENLO_RESET : WMI_NLO_CONFIG_ENLO);
+	cmd->flags = (req->num_networks == 0 ? WMI_NLO_CONFIG_ENLO_RESET :
+					       WMI_NLO_CONFIG_ENLO);
 
 	buf_ptr += sizeof(wmi_nlo_config_cmd_fixed_param);
 
 	cmd->no_of_ssids = QDF_MIN(req->num_networks, WMI_NLO_MAX_SSIDS);
-	wmi_debug("SSID count: %d flags: %d",
-		 cmd->no_of_ssids, cmd->flags);
+	wmi_debug("SSID count: %d flags: %d", cmd->no_of_ssids, cmd->flags);
 
 	/* Fill nlo_config only when num_networks are non zero */
 	if (cmd->no_of_ssids) {
 		/* Fill networks */
 		WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
-			cmd->no_of_ssids * sizeof(nlo_configured_parameters));
+			       cmd->no_of_ssids *
+				       sizeof(nlo_configured_parameters));
 		buf_ptr += WMI_TLV_HDR_SIZE;
 
-		nlo_list = (nlo_configured_parameters *) buf_ptr;
+		nlo_list = (nlo_configured_parameters *)buf_ptr;
 		for (i = 0; i < cmd->no_of_ssids; i++) {
 			WMITLV_SET_HDR(&nlo_list[i].tlv_header,
-				WMITLV_TAG_ARRAY_BYTE,
-				WMITLV_GET_STRUCT_TLVLEN(
-				nlo_configured_parameters));
+				       WMITLV_TAG_ARRAY_BYTE,
+				       WMITLV_GET_STRUCT_TLVLEN(
+					       nlo_configured_parameters));
 			/* Copy ssid and it's length */
 			nlo_list[i].ssid.valid = true;
 			nlo_list[i].ssid.ssid.ssid_len =
@@ -223,16 +227,16 @@ static QDF_STATUS send_set_epno_network_list_cmd_tlv(wmi_unified_t wmi_handle,
 			/* Copy pno flags */
 			nlo_list[i].bcast_nw_type.valid = true;
 			nlo_list[i].bcast_nw_type.bcast_nw_type =
-					req->networks[i].flags;
+				req->networks[i].flags;
 			wmi_debug("PNO flags: %u",
-				 nlo_list[i].bcast_nw_type.bcast_nw_type);
+				  nlo_list[i].bcast_nw_type.bcast_nw_type);
 
 			/* Copy auth bit field */
 			nlo_list[i].auth_type.valid = true;
 			nlo_list[i].auth_type.auth_type =
-					req->networks[i].auth_bit_field;
+				req->networks[i].auth_bit_field;
 			wmi_debug("Auth bit field: %u",
-				 nlo_list[i].auth_type.auth_type);
+				  nlo_list[i].auth_type.auth_type);
 		}
 
 		buf_ptr += cmd->no_of_ssids * sizeof(nlo_configured_parameters);
@@ -245,29 +249,23 @@ static QDF_STATUS send_set_epno_network_list_cmd_tlv(wmi_unified_t wmi_handle,
 		buf_ptr += WMI_TLV_HDR_SIZE;
 
 		/* Fill epno candidate score params */
-		cand_score_params = (enlo_candidate_score_params *) buf_ptr;
-		WMITLV_SET_HDR(buf_ptr,
-			WMITLV_TAG_STRUC_enlo_candidate_score_param,
+		cand_score_params = (enlo_candidate_score_params *)buf_ptr;
+		WMITLV_SET_HDR(
+			buf_ptr, WMITLV_TAG_STRUC_enlo_candidate_score_param,
 			WMITLV_GET_STRUCT_TLVLEN(enlo_candidate_score_params));
-		cand_score_params->min5GHz_rssi =
-			req->min_5ghz_rssi;
-		cand_score_params->min24GHz_rssi =
-			req->min_24ghz_rssi;
-		cand_score_params->initial_score_max =
-			req->initial_score_max;
+		cand_score_params->min5GHz_rssi = req->min_5ghz_rssi;
+		cand_score_params->min24GHz_rssi = req->min_24ghz_rssi;
+		cand_score_params->initial_score_max = req->initial_score_max;
 		cand_score_params->current_connection_bonus =
 			req->current_connection_bonus;
-		cand_score_params->same_network_bonus =
-			req->same_network_bonus;
-		cand_score_params->secure_bonus =
-			req->secure_bonus;
-		cand_score_params->band5GHz_bonus =
-			req->band_5ghz_bonus;
+		cand_score_params->same_network_bonus = req->same_network_bonus;
+		cand_score_params->secure_bonus = req->secure_bonus;
+		cand_score_params->band5GHz_bonus = req->band_5ghz_bonus;
 		buf_ptr += sizeof(enlo_candidate_score_params);
 	}
 
 	ret = wmi_unified_cmd_send(wmi_handle, buf, len,
-			WMI_NETWORK_LIST_OFFLOAD_CONFIG_CMDID);
+				   WMI_NETWORK_LIST_OFFLOAD_CONFIG_CMDID);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		wmi_err("Failed to send nlo wmi cmd");
 		wmi_buf_free(buf);
@@ -275,7 +273,7 @@ static QDF_STATUS send_set_epno_network_list_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	wmi_debug("set ePNO list request sent successfully for vdev %d",
-		 req->vdev_id);
+		  req->vdev_id);
 
 	return ret;
 }
@@ -289,8 +287,8 @@ static QDF_STATUS send_set_epno_network_list_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: QDF status
  */
-static QDF_STATUS send_extscan_get_capabilities_cmd_tlv(wmi_unified_t wmi_handle,
-		    struct extscan_capabilities_params *pgetcapab)
+static QDF_STATUS send_extscan_get_capabilities_cmd_tlv(
+	wmi_unified_t wmi_handle, struct extscan_capabilities_params *pgetcapab)
 {
 	wmi_extscan_get_capabilities_cmd_fixed_param *cmd;
 	wmi_buf_t wmi_buf;
@@ -303,13 +301,14 @@ static QDF_STATUS send_extscan_get_capabilities_cmd_tlv(wmi_unified_t wmi_handle
 		wmi_err("wmi_buf_alloc failed");
 		return QDF_STATUS_E_NOMEM;
 	}
-	buf_ptr = (uint8_t *) wmi_buf_data(wmi_buf);
+	buf_ptr = (uint8_t *)wmi_buf_data(wmi_buf);
 
-	cmd = (wmi_extscan_get_capabilities_cmd_fixed_param *) buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-	       WMITLV_TAG_STRUC_wmi_extscan_get_capabilities_cmd_fixed_param,
-	       WMITLV_GET_STRUCT_TLVLEN
-	       (wmi_extscan_get_capabilities_cmd_fixed_param));
+	cmd = (wmi_extscan_get_capabilities_cmd_fixed_param *)buf_ptr;
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_extscan_get_capabilities_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_extscan_get_capabilities_cmd_fixed_param));
 
 	cmd->request_id = pgetcapab->request_id;
 
@@ -331,8 +330,9 @@ static QDF_STATUS send_extscan_get_capabilities_cmd_tlv(wmi_unified_t wmi_handle
  *
  * Return: QDF status
  */
-static QDF_STATUS send_extscan_get_cached_results_cmd_tlv(wmi_unified_t wmi_handle,
-		  struct extscan_cached_result_params *pcached_results)
+static QDF_STATUS send_extscan_get_cached_results_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct extscan_cached_result_params *pcached_results)
 {
 	wmi_extscan_get_cached_results_cmd_fixed_param *cmd;
 	wmi_buf_t wmi_buf;
@@ -345,13 +345,14 @@ static QDF_STATUS send_extscan_get_cached_results_cmd_tlv(wmi_unified_t wmi_hand
 		wmi_err("wmi_buf_alloc failed");
 		return QDF_STATUS_E_NOMEM;
 	}
-	buf_ptr = (uint8_t *) wmi_buf_data(wmi_buf);
+	buf_ptr = (uint8_t *)wmi_buf_data(wmi_buf);
 
-	cmd = (wmi_extscan_get_cached_results_cmd_fixed_param *) buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
+	cmd = (wmi_extscan_get_cached_results_cmd_fixed_param *)buf_ptr;
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
 		WMITLV_TAG_STRUC_wmi_extscan_get_cached_results_cmd_fixed_param,
-		WMITLV_GET_STRUCT_TLVLEN
-		(wmi_extscan_get_cached_results_cmd_fixed_param));
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_extscan_get_cached_results_cmd_fixed_param));
 
 	cmd->request_id = pcached_results->request_id;
 	cmd->vdev_id = pcached_results->vdev_id;
@@ -375,9 +376,9 @@ static QDF_STATUS send_extscan_get_cached_results_cmd_tlv(wmi_unified_t wmi_hand
  *
  * Return: QDF status
  */
-static QDF_STATUS send_extscan_stop_change_monitor_cmd_tlv
-			(wmi_unified_t wmi_handle,
-			struct extscan_capabilities_reset_params *reset_req)
+static QDF_STATUS send_extscan_stop_change_monitor_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct extscan_capabilities_reset_params *reset_req)
 {
 	wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param *cmd;
 	wmi_buf_t wmi_buf;
@@ -395,30 +396,30 @@ static QDF_STATUS send_extscan_stop_change_monitor_cmd_tlv
 		wmi_err("wmi_buf_alloc failed");
 		return QDF_STATUS_E_NOMEM;
 	}
-	buf_ptr = (uint8_t *) wmi_buf_data(wmi_buf);
+	buf_ptr = (uint8_t *)wmi_buf_data(wmi_buf);
 
 	cmd = (wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param *)
 		buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-	WMITLV_TAG_STRUC_wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param,
-		WMITLV_GET_STRUCT_TLVLEN
-		(wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param));
 
 	cmd->request_id = reset_req->request_id;
 	cmd->vdev_id = reset_req->vdev_id;
 	cmd->mode = 0;
 
 	buf_ptr += sizeof(*cmd);
-	WMITLV_SET_HDR(buf_ptr,
-		       WMITLV_TAG_ARRAY_STRUC,
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
 		       change_list *
-		       sizeof(wmi_extscan_wlan_change_bssid_param));
-	buf_ptr += WMI_TLV_HDR_SIZE + (change_list *
-				       sizeof
-				       (wmi_extscan_wlan_change_bssid_param));
+			       sizeof(wmi_extscan_wlan_change_bssid_param));
+	buf_ptr += WMI_TLV_HDR_SIZE +
+		   (change_list * sizeof(wmi_extscan_wlan_change_bssid_param));
 
-	if (wmi_unified_cmd_send(wmi_handle, wmi_buf, len,
-			 WMI_EXTSCAN_CONFIGURE_WLAN_CHANGE_MONITOR_CMDID)) {
+	if (wmi_unified_cmd_send(
+		    wmi_handle, wmi_buf, len,
+		    WMI_EXTSCAN_CONFIGURE_WLAN_CHANGE_MONITOR_CMDID)) {
 		wmi_err("Failed to send extscan change monitor cmd");
 		wmi_buf_free(wmi_buf);
 		return QDF_STATUS_E_FAILURE;
@@ -437,10 +438,10 @@ static QDF_STATUS send_extscan_stop_change_monitor_cmd_tlv
  *
  * Return: QDF status
  */
-static QDF_STATUS wmi_get_buf_extscan_change_monitor_cmd
-			(wmi_unified_t wmi_handle,
-			struct extscan_set_sig_changereq_params
-			*psigchange, wmi_buf_t *buf, int *buf_len)
+static QDF_STATUS wmi_get_buf_extscan_change_monitor_cmd(
+	wmi_unified_t wmi_handle,
+	struct extscan_set_sig_changereq_params *psigchange, wmi_buf_t *buf,
+	int *buf_len)
 {
 	wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param *cmd;
 	wmi_extscan_wlan_change_bssid_param *dest_chglist;
@@ -462,14 +463,14 @@ static QDF_STATUS wmi_get_buf_extscan_change_monitor_cmd
 		wmi_err("Failed to allocate memory for change monitor cmd");
 		return QDF_STATUS_E_FAILURE;
 	}
-	buf_ptr = (uint8_t *) wmi_buf_data(*buf);
-	cmd =
-		(wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param *)
+	buf_ptr = (uint8_t *)wmi_buf_data(*buf);
+	cmd = (wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param *)
 		buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-	WMITLV_TAG_STRUC_wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param,
-	       WMITLV_GET_STRUCT_TLVLEN
-	       (wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_extscan_configure_wlan_change_monitor_cmd_fixed_param));
 
 	cmd->request_id = psigchange->request_id;
 	cmd->vdev_id = psigchange->vdev_id;
@@ -482,17 +483,18 @@ static QDF_STATUS wmi_get_buf_extscan_change_monitor_cmd
 	cmd->max_out_of_range_count = psigchange->min_breaching;
 
 	buf_ptr += sizeof(*cmd);
-	WMITLV_SET_HDR(buf_ptr,
-		       WMITLV_TAG_ARRAY_STRUC,
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
 		       numap * sizeof(wmi_extscan_wlan_change_bssid_param));
-	dest_chglist = (wmi_extscan_wlan_change_bssid_param *)
-		       (buf_ptr + WMI_TLV_HDR_SIZE);
+	dest_chglist =
+		(wmi_extscan_wlan_change_bssid_param *)(buf_ptr +
+							WMI_TLV_HDR_SIZE);
 
 	for (j = 0; j < numap; j++) {
-		WMITLV_SET_HDR(dest_chglist,
-		       WMITLV_TAG_STRUC_wmi_extscan_bucket_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_extscan_wlan_change_bssid_param));
+		WMITLV_SET_HDR(
+			dest_chglist,
+			WMITLV_TAG_STRUC_wmi_extscan_bucket_cmd_fixed_param,
+			WMITLV_GET_STRUCT_TLVLEN(
+				wmi_extscan_wlan_change_bssid_param));
 
 		dest_chglist->lower_rssi_limit = src_ap->low;
 		dest_chglist->upper_rssi_limit = src_ap->high;
@@ -518,19 +520,16 @@ static QDF_STATUS wmi_get_buf_extscan_change_monitor_cmd
  *
  * Return: QDF status
  */
-static QDF_STATUS send_extscan_start_change_monitor_cmd_tlv
-			(wmi_unified_t wmi_handle,
-			struct extscan_set_sig_changereq_params *
-			psigchange)
+static QDF_STATUS send_extscan_start_change_monitor_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct extscan_set_sig_changereq_params *psigchange)
 {
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
 	wmi_buf_t buf;
 	int len;
 
-
-	qdf_status = wmi_get_buf_extscan_change_monitor_cmd(wmi_handle,
-			     psigchange, &buf,
-			     &len);
+	qdf_status = wmi_get_buf_extscan_change_monitor_cmd(
+		wmi_handle, psigchange, &buf, &len);
 	if (qdf_status != QDF_STATUS_SUCCESS) {
 		wmi_err("Failed to get buffer for change monitor cmd");
 		return QDF_STATUS_E_FAILURE;
@@ -539,8 +538,9 @@ static QDF_STATUS send_extscan_start_change_monitor_cmd_tlv
 		wmi_err("Failed to get buffer");
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wmi_unified_cmd_send(wmi_handle, buf, len,
-		 WMI_EXTSCAN_CONFIGURE_WLAN_CHANGE_MONITOR_CMDID)) {
+	if (wmi_unified_cmd_send(
+		    wmi_handle, buf, len,
+		    WMI_EXTSCAN_CONFIGURE_WLAN_CHANGE_MONITOR_CMDID)) {
 		wmi_err("Failed to send command");
 		wmi_buf_free(buf);
 		return QDF_STATUS_E_FAILURE;
@@ -557,9 +557,9 @@ static QDF_STATUS send_extscan_start_change_monitor_cmd_tlv
  *
  * Return: QDF status
  */
-static QDF_STATUS send_extscan_stop_hotlist_monitor_cmd_tlv
-		(wmi_unified_t wmi_handle,
-		struct extscan_bssid_hotlist_reset_params *photlist_reset)
+static QDF_STATUS send_extscan_stop_hotlist_monitor_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct extscan_bssid_hotlist_reset_params *photlist_reset)
 {
 	wmi_extscan_configure_hotlist_monitor_cmd_fixed_param *cmd;
 	wmi_buf_t wmi_buf;
@@ -579,27 +579,26 @@ static QDF_STATUS send_extscan_stop_hotlist_monitor_cmd_tlv
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	buf_ptr = (uint8_t *) wmi_buf_data(wmi_buf);
-	cmd = (wmi_extscan_configure_hotlist_monitor_cmd_fixed_param *)
-	      buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-	WMITLV_TAG_STRUC_wmi_extscan_configure_hotlist_monitor_cmd_fixed_param,
-	WMITLV_GET_STRUCT_TLVLEN
-	(wmi_extscan_configure_hotlist_monitor_cmd_fixed_param));
+	buf_ptr = (uint8_t *)wmi_buf_data(wmi_buf);
+	cmd = (wmi_extscan_configure_hotlist_monitor_cmd_fixed_param *)buf_ptr;
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_extscan_configure_hotlist_monitor_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_extscan_configure_hotlist_monitor_cmd_fixed_param));
 
 	cmd->request_id = photlist_reset->request_id;
 	cmd->vdev_id = photlist_reset->vdev_id;
 	cmd->mode = 0;
 
 	buf_ptr += sizeof(*cmd);
-	WMITLV_SET_HDR(buf_ptr,
-		       WMITLV_TAG_ARRAY_STRUC,
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
 		       hotlist_entries * sizeof(wmi_extscan_hotlist_entry));
 	buf_ptr += WMI_TLV_HDR_SIZE +
 		   (hotlist_entries * sizeof(wmi_extscan_hotlist_entry));
 
 	if (wmi_unified_cmd_send(wmi_handle, wmi_buf, len,
-				WMI_EXTSCAN_CONFIGURE_HOTLIST_MONITOR_CMDID)) {
+				 WMI_EXTSCAN_CONFIGURE_HOTLIST_MONITOR_CMDID)) {
 		wmi_err("Failed to send extscan cfg hotlist cmd");
 		wmi_buf_free(wmi_buf);
 		return QDF_STATUS_E_FAILURE;
@@ -616,7 +615,8 @@ static QDF_STATUS send_extscan_stop_hotlist_monitor_cmd_tlv
  *
  * Return: CDF Status.
  */
-static QDF_STATUS send_stop_extscan_cmd_tlv(wmi_unified_t wmi_handle,
+static QDF_STATUS
+send_stop_extscan_cmd_tlv(wmi_unified_t wmi_handle,
 			  struct extscan_stop_req_params *pstopcmd)
 {
 	wmi_extscan_stop_cmd_fixed_param *cmd;
@@ -630,12 +630,12 @@ static QDF_STATUS send_stop_extscan_cmd_tlv(wmi_unified_t wmi_handle,
 		wmi_err("wmi_buf_alloc failed");
 		return QDF_STATUS_E_NOMEM;
 	}
-	buf_ptr = (uint8_t *) wmi_buf_data(wmi_buf);
-	cmd = (wmi_extscan_stop_cmd_fixed_param *) buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_extscan_stop_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-			       (wmi_extscan_stop_cmd_fixed_param));
+	buf_ptr = (uint8_t *)wmi_buf_data(wmi_buf);
+	cmd = (wmi_extscan_stop_cmd_fixed_param *)buf_ptr;
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_extscan_stop_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_extscan_stop_cmd_fixed_param));
 
 	cmd->request_id = pstopcmd->request_id;
 	cmd->vdev_id = pstopcmd->vdev_id;
@@ -662,17 +662,18 @@ static QDF_STATUS send_stop_extscan_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: CDF Status.
  */
-static
-QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
-			 struct wifi_scan_cmd_req_params *pstart,
-			 wmi_buf_t *buf, int *buf_len)
+static QDF_STATUS
+wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
+			      struct wifi_scan_cmd_req_params *pstart,
+			      wmi_buf_t *buf, int *buf_len)
 {
 	wmi_extscan_start_cmd_fixed_param *cmd;
 	wmi_extscan_bucket *dest_blist;
 	wmi_extscan_bucket_channel *dest_clist;
 	struct wifi_scan_bucket_params *src_bucket = pstart->buckets;
 	struct wifi_scan_channelspec_params *src_channel = src_bucket->channels;
-	struct wifi_scan_channelspec_params save_channel[WMI_WLAN_EXTSCAN_MAX_CHANNELS];
+	struct wifi_scan_channelspec_params
+		save_channel[WMI_WLAN_EXTSCAN_MAX_CHANNELS];
 
 	uint8_t *buf_ptr;
 	int i, k, count = 0;
@@ -711,8 +712,8 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 		src_bucket++;
 	}
 
-	wmi_debug("Total buckets: %d total #of channels is %d",
-		 nbuckets, nchannels);
+	wmi_debug("Total buckets: %d total #of channels is %d", nbuckets,
+		  nchannels);
 	len += nchannels * sizeof(wmi_extscan_bucket_channel);
 	/* Allocate the memory */
 	*buf = wmi_buf_alloc(wmi_handle, len);
@@ -720,12 +721,12 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 		wmi_err("Failed to allocate memory for start extscan cmd");
 		return QDF_STATUS_E_NOMEM;
 	}
-	buf_ptr = (uint8_t *) wmi_buf_data(*buf);
-	cmd = (wmi_extscan_start_cmd_fixed_param *) buf_ptr;
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_extscan_start_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-			       (wmi_extscan_start_cmd_fixed_param));
+	buf_ptr = (uint8_t *)wmi_buf_data(*buf);
+	cmd = (wmi_extscan_start_cmd_fixed_param *)buf_ptr;
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_extscan_start_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_extscan_start_cmd_fixed_param));
 
 	cmd->request_id = pstart->request_id;
 	cmd->vdev_id = pstart->vdev_id;
@@ -743,8 +744,8 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 #endif
 
 	/* The max dwell time is retrieved from the first channel
-	 * of the first bucket and kept common for all channels.
-	 */
+   * of the first bucket and kept common for all channels.
+   */
 	cmd->min_dwell_time_active = pstart->min_dwell_time_active;
 	cmd->max_dwell_time_active = pstart->max_dwell_time_active;
 	cmd->min_dwell_time_passive = pstart->min_dwell_time_passive;
@@ -753,8 +754,8 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 	cmd->max_table_usage = pstart->report_threshold_percent;
 	cmd->report_threshold_num_scans = pstart->report_threshold_num_scans;
 
-	cmd->repeat_probe_time = cmd->max_dwell_time_active /
-					WMI_SCAN_NPROBES_DEFAULT;
+	cmd->repeat_probe_time =
+		cmd->max_dwell_time_active / WMI_SCAN_NPROBES_DEFAULT;
 	cmd->probe_delay = 0;
 	cmd->probe_spacing_time = 0;
 	cmd->idle_time = 0;
@@ -764,44 +765,42 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 			       WMI_SCAN_ADD_SPOOFED_MAC_IN_PROBE_REQ |
 			       WMI_SCAN_ADD_DS_IE_IN_PROBE_REQ;
 	WMI_SCAN_SET_DWELL_MODE(cmd->scan_ctrl_flags,
-			pstart->extscan_adaptive_dwell_mode);
+				pstart->extscan_adaptive_dwell_mode);
 	cmd->scan_priority = WMI_SCAN_PRIORITY_VERY_LOW;
 	cmd->num_ssids = 0;
 	cmd->num_bssid = 0;
 	cmd->ie_len = 0;
-	cmd->n_probes = (cmd->repeat_probe_time > 0) ?
-			cmd->max_dwell_time_active / cmd->repeat_probe_time : 0;
+	cmd->n_probes =
+		(cmd->repeat_probe_time > 0) ?
+			cmd->max_dwell_time_active / cmd->repeat_probe_time :
+			0;
 
 	buf_ptr += sizeof(*cmd);
-	WMITLV_SET_HDR(buf_ptr,
-		       WMITLV_TAG_ARRAY_FIXED_STRUC,
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_FIXED_STRUC,
 		       num_ssid * sizeof(wmi_ssid));
 	buf_ptr += WMI_TLV_HDR_SIZE + (num_ssid * sizeof(wmi_ssid));
 
-	WMITLV_SET_HDR(buf_ptr,
-		       WMITLV_TAG_ARRAY_FIXED_STRUC,
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_FIXED_STRUC,
 		       num_bssid * sizeof(wmi_mac_addr));
 	buf_ptr += WMI_TLV_HDR_SIZE + (num_bssid * sizeof(wmi_mac_addr));
 
 	ie_len_with_pad = 0;
-	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_BYTE,
-			  ie_len_with_pad);
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_BYTE, ie_len_with_pad);
 	buf_ptr += WMI_TLV_HDR_SIZE + ie_len_with_pad;
 
-	WMITLV_SET_HDR(buf_ptr,
-		       WMITLV_TAG_ARRAY_STRUC,
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
 		       nbuckets * sizeof(wmi_extscan_bucket));
-	dest_blist = (wmi_extscan_bucket *)
-		     (buf_ptr + WMI_TLV_HDR_SIZE);
+	dest_blist = (wmi_extscan_bucket *)(buf_ptr + WMI_TLV_HDR_SIZE);
 	src_bucket = pstart->buckets;
 
 	/* Retrieve scanning information from each bucket and
-	 * channels and send it to the target
-	 */
+   * channels and send it to the target
+   */
 	for (i = 0; i < nbuckets; i++) {
-		WMITLV_SET_HDR(dest_blist,
-		      WMITLV_TAG_STRUC_wmi_extscan_bucket_cmd_fixed_param,
-		      WMITLV_GET_STRUCT_TLVLEN(wmi_extscan_bucket));
+		WMITLV_SET_HDR(
+			dest_blist,
+			WMITLV_TAG_STRUC_wmi_extscan_bucket_cmd_fixed_param,
+			WMITLV_GET_STRUCT_TLVLEN(wmi_extscan_bucket));
 
 		dest_blist->bucket_id = src_bucket->bucket;
 		dest_blist->base_period_multiplier =
@@ -815,13 +814,13 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 		dest_blist->notify_extscan_events = 0;
 
 		if (src_bucket->report_events &
-					WMI_EXTSCAN_REPORT_EVENTS_EACH_SCAN)
+		    WMI_EXTSCAN_REPORT_EVENTS_EACH_SCAN)
 			dest_blist->notify_extscan_events =
-					WMI_EXTSCAN_CYCLE_COMPLETED_EVENT |
-					WMI_EXTSCAN_CYCLE_STARTED_EVENT;
+				WMI_EXTSCAN_CYCLE_COMPLETED_EVENT |
+				WMI_EXTSCAN_CYCLE_STARTED_EVENT;
 
 		if (src_bucket->report_events &
-				WMI_EXTSCAN_REPORT_EVENTS_FULL_RESULTS) {
+		    WMI_EXTSCAN_REPORT_EVENTS_FULL_RESULTS) {
 			dest_blist->forwarding_flags =
 				WMI_EXTSCAN_FORWARD_FRAME_TO_HOST;
 			dest_blist->notify_extscan_events |=
@@ -834,7 +833,7 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 		}
 
 		if (src_bucket->report_events &
-					WMI_EXTSCAN_REPORT_EVENTS_NO_BATCH)
+		    WMI_EXTSCAN_REPORT_EVENTS_NO_BATCH)
 			dest_blist->configuration_flags = 0;
 		else
 			dest_blist->configuration_flags =
@@ -846,18 +845,18 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 			  dest_blist->forwarding_flags);
 
 		dest_blist->min_dwell_time_active =
-				   src_bucket->min_dwell_time_active;
+			src_bucket->min_dwell_time_active;
 		dest_blist->max_dwell_time_active =
-				   src_bucket->max_dwell_time_active;
+			src_bucket->max_dwell_time_active;
 		dest_blist->min_dwell_time_passive =
-				   src_bucket->min_dwell_time_passive;
+			src_bucket->min_dwell_time_passive;
 		dest_blist->max_dwell_time_passive =
-				   src_bucket->max_dwell_time_passive;
+			src_bucket->max_dwell_time_passive;
 		src_channel = src_bucket->channels;
 
 		/* save the channel info to later populate
-		 * the  channel TLV
-		 */
+     * the  channel TLV
+     */
 		for (k = 0; k < src_bucket->num_channels; k++) {
 			save_channel[count++].channel = src_channel->channel;
 			src_channel++;
@@ -866,21 +865,19 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
 		src_bucket++;
 	}
 	buf_ptr += WMI_TLV_HDR_SIZE + (nbuckets * sizeof(wmi_extscan_bucket));
-	WMITLV_SET_HDR(buf_ptr,
-		       WMITLV_TAG_ARRAY_STRUC,
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
 		       nchannels * sizeof(wmi_extscan_bucket_channel));
-	dest_clist = (wmi_extscan_bucket_channel *)
-		     (buf_ptr + WMI_TLV_HDR_SIZE);
+	dest_clist = (wmi_extscan_bucket_channel *)(buf_ptr + WMI_TLV_HDR_SIZE);
 
 	/* Active or passive scan is based on the bucket dwell time
-	 * and channel specific active,passive scans are not
-	 * supported yet
-	 */
+   * and channel specific active,passive scans are not
+   * supported yet
+   */
 	for (i = 0; i < nchannels; i++) {
-		WMITLV_SET_HDR(dest_clist,
-		WMITLV_TAG_STRUC_wmi_extscan_bucket_channel_event_fixed_param,
-			   WMITLV_GET_STRUCT_TLVLEN
-			   (wmi_extscan_bucket_channel));
+		WMITLV_SET_HDR(
+			dest_clist,
+			WMITLV_TAG_STRUC_wmi_extscan_bucket_channel_event_fixed_param,
+			WMITLV_GET_STRUCT_TLVLEN(wmi_extscan_bucket_channel));
 		dest_clist->channel = save_channel[i].channel;
 		dest_clist++;
 	}
@@ -899,18 +896,19 @@ QDF_STATUS wmi_get_buf_extscan_start_cmd(wmi_unified_t wmi_handle,
  *
  * Return: CDF Status.
  */
-static QDF_STATUS send_start_extscan_cmd_tlv(wmi_unified_t wmi_handle,
-			  struct wifi_scan_cmd_req_params *pstart)
+static QDF_STATUS
+send_start_extscan_cmd_tlv(wmi_unified_t wmi_handle,
+			   struct wifi_scan_cmd_req_params *pstart)
 {
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
 	wmi_buf_t buf;
 	int len;
 
 	/* Fill individual elements of extscan request and
-	 * TLV for buckets, channel list.
-	 */
-	qdf_status = wmi_get_buf_extscan_start_cmd(wmi_handle,
-			     pstart, &buf, &len);
+   * TLV for buckets, channel list.
+   */
+	qdf_status =
+		wmi_get_buf_extscan_start_cmd(wmi_handle, pstart, &buf, &len);
 	if (qdf_status != QDF_STATUS_SUCCESS) {
 		wmi_err("Failed to get buffer for ext scan cmd");
 		return QDF_STATUS_E_FAILURE;
@@ -919,8 +917,8 @@ static QDF_STATUS send_start_extscan_cmd_tlv(wmi_unified_t wmi_handle,
 		wmi_err("Failed to get buffer for current extscan info");
 		return QDF_STATUS_E_FAILURE;
 	}
-	if (wmi_unified_cmd_send(wmi_handle, buf,
-				 len, WMI_EXTSCAN_START_CMDID)) {
+	if (wmi_unified_cmd_send(wmi_handle, buf, len,
+				 WMI_EXTSCAN_START_CMDID)) {
 		wmi_err("Failed to send extscan start cmd");
 		wmi_buf_free(buf);
 		return QDF_STATUS_E_FAILURE;
@@ -939,18 +937,17 @@ static QDF_STATUS send_start_extscan_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: number of entries
  */
-static inline int wmi_get_hotlist_entries_per_page
-				(wmi_unified_t wmi_handle,
-				size_t cmd_size,
-				size_t per_entry_size)
+static inline int wmi_get_hotlist_entries_per_page(wmi_unified_t wmi_handle,
+						   size_t cmd_size,
+						   size_t per_entry_size)
 {
 	uint32_t avail_space = 0;
 	int num_entries = 0;
 	uint16_t max_msg_len = wmi_get_max_msg_len(wmi_handle);
 
 	/* Calculate number of hotlist entries that can
-	 * be passed in wma message request.
-	 */
+   * be passed in wma message request.
+   */
 	avail_space = max_msg_len - cmd_size;
 	num_entries = avail_space / per_entry_size;
 	return num_entries;
@@ -965,9 +962,9 @@ static inline int wmi_get_hotlist_entries_per_page
  *
  * Return: QDF status
  */
-static QDF_STATUS send_extscan_start_hotlist_monitor_cmd_tlv
-			(wmi_unified_t wmi_handle,
-			struct extscan_bssid_hotlist_set_params *params)
+static QDF_STATUS send_extscan_start_hotlist_monitor_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct extscan_bssid_hotlist_set_params *params)
 {
 	wmi_extscan_configure_hotlist_monitor_cmd_fixed_param *cmd = NULL;
 	wmi_extscan_hotlist_entry *dest_hotlist;
@@ -985,20 +982,19 @@ static QDF_STATUS send_extscan_start_hotlist_monitor_cmd_tlv
 	len += WMI_TLV_HDR_SIZE;
 	cmd_len = len;
 
-	num_entries = wmi_get_hotlist_entries_per_page(wmi_handle,
-							cmd_len,
-							sizeof(*dest_hotlist));
+	num_entries = wmi_get_hotlist_entries_per_page(wmi_handle, cmd_len,
+						       sizeof(*dest_hotlist));
 	/* setbssid hotlist expects the bssid list
-	 * to be non zero value
-	 */
+   * to be non zero value
+   */
 	if (!numap || (numap > WMI_WLAN_EXTSCAN_MAX_HOTLIST_APS)) {
 		wmi_err("Invalid number of APs: %d", numap);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	/* Split the hot list entry pages and send multiple command
-	 * requests if the buffer reaches the maximum request size
-	 */
+   * requests if the buffer reaches the maximum request size
+   */
 	while (index < numap) {
 		min_entries = QDF_MIN(num_entries, numap);
 		len += min_entries * sizeof(wmi_extscan_hotlist_entry);
@@ -1007,17 +1003,18 @@ static QDF_STATUS send_extscan_start_hotlist_monitor_cmd_tlv
 			wmi_err("wmi_buf_alloc failed");
 			return QDF_STATUS_E_FAILURE;
 		}
-		buf_ptr = (uint8_t *) wmi_buf_data(buf);
+		buf_ptr = (uint8_t *)wmi_buf_data(buf);
 		cmd = (wmi_extscan_configure_hotlist_monitor_cmd_fixed_param *)
-		      buf_ptr;
-		WMITLV_SET_HDR(&cmd->tlv_header,
-			       WMITLV_TAG_STRUC_wmi_extscan_configure_hotlist_monitor_cmd_fixed_param,
-			       WMITLV_GET_STRUCT_TLVLEN
-				       (wmi_extscan_configure_hotlist_monitor_cmd_fixed_param));
+			buf_ptr;
+		WMITLV_SET_HDR(
+			&cmd->tlv_header,
+			WMITLV_TAG_STRUC_wmi_extscan_configure_hotlist_monitor_cmd_fixed_param,
+			WMITLV_GET_STRUCT_TLVLEN(
+				wmi_extscan_configure_hotlist_monitor_cmd_fixed_param));
 
 		/* Multiple requests are sent until the num_entries_in_page
-		 * matches the total_entries
-		 */
+     * matches the total_entries
+     */
 		cmd->request_id = params->request_id;
 		cmd->vdev_id = params->vdev_id;
 		cmd->total_entries = numap;
@@ -1026,35 +1023,36 @@ static QDF_STATUS send_extscan_start_hotlist_monitor_cmd_tlv
 		cmd->lost_ap_scan_count = params->lost_ap_sample_size;
 		cmd->first_entry_index = index;
 
-		wmi_debug("vdev id:%d total_entries: %d num_entries: %d lost_ap_sample_size: %d",
-			 cmd->vdev_id, cmd->total_entries,
-			 cmd->num_entries_in_page,
-			 cmd->lost_ap_scan_count);
+		wmi_debug(
+			"vdev id:%d total_entries: %d num_entries: %d lost_ap_sample_size: %d",
+			cmd->vdev_id, cmd->total_entries,
+			cmd->num_entries_in_page, cmd->lost_ap_scan_count);
 
 		buf_ptr += sizeof(*cmd);
-		WMITLV_SET_HDR(buf_ptr,
-			       WMITLV_TAG_ARRAY_STRUC,
+		WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
 			       min_entries * sizeof(wmi_extscan_hotlist_entry));
-		dest_hotlist = (wmi_extscan_hotlist_entry *)
-			       (buf_ptr + WMI_TLV_HDR_SIZE);
+		dest_hotlist = (wmi_extscan_hotlist_entry *)(buf_ptr +
+							     WMI_TLV_HDR_SIZE);
 
 		/* Populate bssid, channel info and rssi
-		 * for the bssid's that are sent as hotlists.
-		 */
+     * for the bssid's that are sent as hotlists.
+     */
 		for (j = 0; j < min_entries; j++) {
-			WMITLV_SET_HDR(dest_hotlist,
-				       WMITLV_TAG_STRUC_wmi_extscan_bucket_cmd_fixed_param,
-				       WMITLV_GET_STRUCT_TLVLEN
-					       (wmi_extscan_hotlist_entry));
+			WMITLV_SET_HDR(
+				dest_hotlist,
+				WMITLV_TAG_STRUC_wmi_extscan_bucket_cmd_fixed_param,
+				WMITLV_GET_STRUCT_TLVLEN(
+					wmi_extscan_hotlist_entry));
 
 			dest_hotlist->min_rssi = src_ap->low;
 			WMI_CHAR_ARRAY_TO_MAC_ADDR(src_ap->bssid.bytes,
 						   &dest_hotlist->bssid);
 
 			wmi_debug("channel:%d min_rssi %d",
-				 dest_hotlist->channel,
-				 dest_hotlist->min_rssi);
-			wmi_debug("bssid mac_addr31to0: 0x%x, mac_addr47to32: 0x%x",
+				  dest_hotlist->channel,
+				  dest_hotlist->min_rssi);
+			wmi_debug(
+				"bssid mac_addr31to0: 0x%x, mac_addr47to32: 0x%x",
 				dest_hotlist->bssid.mac_addr31to0,
 				dest_hotlist->bssid.mac_addr47to32);
 			dest_hotlist++;
@@ -1063,8 +1061,9 @@ static QDF_STATUS send_extscan_start_hotlist_monitor_cmd_tlv
 		buf_ptr += WMI_TLV_HDR_SIZE +
 			   (min_entries * sizeof(wmi_extscan_hotlist_entry));
 
-		if (wmi_unified_cmd_send(wmi_handle, buf, len,
-				WMI_EXTSCAN_CONFIGURE_HOTLIST_MONITOR_CMDID)) {
+		if (wmi_unified_cmd_send(
+			    wmi_handle, buf, len,
+			    WMI_EXTSCAN_CONFIGURE_HOTLIST_MONITOR_CMDID)) {
 			wmi_err("Failed to send extscan cfg hotlist monitor cmd");
 			wmi_buf_free(buf);
 			return QDF_STATUS_E_FAILURE;
@@ -1080,23 +1079,23 @@ void wmi_extscan_attach_tlv(wmi_unified_t wmi_handle)
 {
 	struct wmi_ops *ops = wmi_handle->ops;
 	ops->send_reset_passpoint_network_list_cmd =
-				send_reset_passpoint_network_list_cmd_tlv;
+		send_reset_passpoint_network_list_cmd_tlv;
 	ops->send_set_passpoint_network_list_cmd =
-				send_set_passpoint_network_list_cmd_tlv;
+		send_set_passpoint_network_list_cmd_tlv;
 	ops->send_set_epno_network_list_cmd =
-				send_set_epno_network_list_cmd_tlv;
+		send_set_epno_network_list_cmd_tlv;
 	ops->send_extscan_get_capabilities_cmd =
-				 send_extscan_get_capabilities_cmd_tlv;
+		send_extscan_get_capabilities_cmd_tlv;
 	ops->send_extscan_get_cached_results_cmd =
-				send_extscan_get_cached_results_cmd_tlv;
+		send_extscan_get_cached_results_cmd_tlv;
 	ops->send_extscan_stop_change_monitor_cmd =
-				send_extscan_stop_change_monitor_cmd_tlv;
+		send_extscan_stop_change_monitor_cmd_tlv;
 	ops->send_extscan_start_change_monitor_cmd =
-				send_extscan_start_change_monitor_cmd_tlv;
+		send_extscan_start_change_monitor_cmd_tlv;
 	ops->send_extscan_stop_hotlist_monitor_cmd =
-				send_extscan_stop_hotlist_monitor_cmd_tlv;
+		send_extscan_stop_hotlist_monitor_cmd_tlv;
 	ops->send_extscan_start_hotlist_monitor_cmd =
-				send_extscan_start_hotlist_monitor_cmd_tlv;
+		send_extscan_start_hotlist_monitor_cmd_tlv;
 	ops->send_stop_extscan_cmd = send_stop_extscan_cmd_tlv;
 	ops->send_start_extscan_cmd = send_start_extscan_cmd_tlv;
 }

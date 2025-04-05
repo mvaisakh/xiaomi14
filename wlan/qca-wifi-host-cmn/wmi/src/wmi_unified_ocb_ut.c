@@ -17,15 +17,15 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "wmi_unified_api.h"
-#include "wmi.h"
-#include "wmi_version.h"
-#include "wmi_unified_priv.h"
-#include <wlan_defs.h>
 #include "target_if.h"
-#include "wma.h"
-#include "wlan_ocb_ucfg_api.h"
 #include "wlan_ocb_main.h"
+#include "wlan_ocb_ucfg_api.h"
+#include "wma.h"
+#include "wmi.h"
+#include "wmi_unified_api.h"
+#include "wmi_unified_priv.h"
+#include "wmi_version.h"
+#include <wlan_defs.h>
 
 void wmi_ocb_ut_attach(struct wmi_unified *wmi_handle);
 
@@ -35,11 +35,9 @@ target_if_ocb_get_rx_ops(struct wlan_objmgr_psoc *psoc)
 	struct wlan_objmgr_pdev *pdev;
 	struct ocb_pdev_obj *pdev_obj;
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0,
-					  WLAN_OCB_SB_ID);
-	pdev_obj = (struct ocb_pdev_obj *)
-		wlan_objmgr_pdev_get_comp_private_obj(pdev,
-				WLAN_UMAC_COMP_OCB);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_OCB_SB_ID);
+	pdev_obj = (struct ocb_pdev_obj *)wlan_objmgr_pdev_get_comp_private_obj(
+		pdev, WLAN_UMAC_COMP_OCB);
 	return &pdev_obj->ocb_rxops;
 }
 
@@ -52,8 +50,8 @@ target_if_ocb_get_rx_ops(struct wlan_objmgr_psoc *psoc)
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS fake_vdev_create_cmd_tlv(wmi_unified_t wmi_handle,
-				 uint8_t macaddr[QDF_MAC_ADDR_SIZE],
-				 struct vdev_create_params *param)
+					   uint8_t macaddr[QDF_MAC_ADDR_SIZE],
+					   struct vdev_create_params *param)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -67,7 +65,7 @@ static QDF_STATUS fake_vdev_create_cmd_tlv(wmi_unified_t wmi_handle,
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS fake_vdev_delete_cmd_tlv(wmi_unified_t wmi_handle,
-					  uint8_t if_id)
+					   uint8_t if_id)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -81,7 +79,7 @@ static QDF_STATUS fake_vdev_delete_cmd_tlv(wmi_unified_t wmi_handle,
  * Return: 0 on success
  */
 static QDF_STATUS fake_ocb_set_utc_time_cmd_tlv(wmi_unified_t wmi_handle,
-				struct ocb_utc_param *utc)
+						struct ocb_utc_param *utc)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -95,13 +93,13 @@ static QDF_STATUS fake_ocb_set_utc_time_cmd_tlv(wmi_unified_t wmi_handle,
  * Return: 0 on success
  */
 static QDF_STATUS fake_ocb_get_tsf_timer_cmd_tlv(wmi_unified_t wmi_handle,
-			  uint8_t vdev_id)
+						 uint8_t vdev_id)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_ocb_rx_ops *ocb_rx_ops;
 	struct ocb_get_tsf_timer_response response;
-	ol_scn_t scn = (ol_scn_t) wmi_handle->scn_handle;
+	ol_scn_t scn = (ol_scn_t)wmi_handle->scn_handle;
 
 	wmi_debug("called");
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -136,27 +134,32 @@ static QDF_STATUS fake_ocb_get_tsf_timer_cmd_tlv(wmi_unified_t wmi_handle,
  * Return: 0 on success
  */
 static QDF_STATUS fake_dcc_clear_stats_cmd_tlv(wmi_unified_t wmi_handle,
-				uint32_t vdev_id, uint32_t dcc_stats_bitmap)
+					       uint32_t vdev_id,
+					       uint32_t dcc_stats_bitmap)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
 }
 
 wmi_dcc_ndl_stats_per_channel chan1_info[2] = {
-	[0] = {.chan_info = 5860,
-	.tx_power_datarate = 23 | (10 << 8),
-	.carrier_sense_est_comm_range = 107 | (198 << 13),
-	.dcc_stats = 78 | (56 << 8) | (345 << 16),
-	.packet_stats = 1278 | (789 << 14),
-	.channel_busy_time = 1389,
-	},
-	[1] = {.chan_info = 5880,
-	.tx_power_datarate = 53 | (17 << 8),
-	.carrier_sense_est_comm_range = 137 | (198 << 13),
-	.dcc_stats = 78 | (66 << 8) | (245 << 16),
-	.packet_stats = 1278 | (889 << 14),
-	.channel_busy_time = 2389,
-	},
+    [0] =
+        {
+            .chan_info = 5860,
+            .tx_power_datarate = 23 | (10 << 8),
+            .carrier_sense_est_comm_range = 107 | (198 << 13),
+            .dcc_stats = 78 | (56 << 8) | (345 << 16),
+            .packet_stats = 1278 | (789 << 14),
+            .channel_busy_time = 1389,
+        },
+    [1] =
+        {
+            .chan_info = 5880,
+            .tx_power_datarate = 53 | (17 << 8),
+            .carrier_sense_est_comm_range = 137 | (198 << 13),
+            .dcc_stats = 78 | (66 << 8) | (245 << 16),
+            .packet_stats = 1278 | (889 << 14),
+            .channel_busy_time = 2389,
+        },
 };
 
 /**
@@ -166,13 +169,14 @@ wmi_dcc_ndl_stats_per_channel chan1_info[2] = {
  *
  * Return: 0 on success
  */
-static QDF_STATUS fake_dcc_get_stats_cmd_tlv(wmi_unified_t wmi_handle,
-		     struct ocb_dcc_get_stats_param *get_stats_param)
+static QDF_STATUS
+fake_dcc_get_stats_cmd_tlv(wmi_unified_t wmi_handle,
+			   struct ocb_dcc_get_stats_param *get_stats_param)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_ocb_rx_ops *ocb_rx_ops;
-	ol_scn_t scn = (ol_scn_t) wmi_handle->scn_handle;
+	ol_scn_t scn = (ol_scn_t)wmi_handle->scn_handle;
 	struct ocb_dcc_get_stats_response *response;
 
 	wmi_debug("called");
@@ -181,22 +185,21 @@ static QDF_STATUS fake_dcc_get_stats_cmd_tlv(wmi_unified_t wmi_handle,
 		wmi_err("null psoc");
 		return -EINVAL;
 	}
-	response = qdf_mem_malloc(sizeof(*response) + 2 *
-			sizeof(wmi_dcc_ndl_stats_per_channel));
+	response = qdf_mem_malloc(sizeof(*response) +
+				  2 * sizeof(wmi_dcc_ndl_stats_per_channel));
 	response->num_channels = 2;
-	response->channel_stats_array_len = 2 *
-			sizeof(wmi_dcc_ndl_stats_per_channel);
+	response->channel_stats_array_len =
+		2 * sizeof(wmi_dcc_ndl_stats_per_channel);
 	response->vdev_id = get_stats_param->vdev_id;
 	response->channel_stats_array = (uint8_t *)response + sizeof(*response);
-	qdf_mem_copy(response->channel_stats_array,
-		     &chan1_info,
+	qdf_mem_copy(response->channel_stats_array, &chan1_info,
 		     2 * sizeof(wmi_dcc_ndl_stats_per_channel));
 	wmi_debug("channel1 freq %d, channel2 freq %d", chan1_info[0].chan_info,
-		 chan1_info[1].chan_info);
+		  chan1_info[1].chan_info);
 	ocb_rx_ops = target_if_ocb_get_rx_ops(psoc);
 	if (ocb_rx_ops->ocb_dcc_stats_indicate) {
-		status = ocb_rx_ops->ocb_dcc_stats_indicate(psoc,
-						response, true);
+		status = ocb_rx_ops->ocb_dcc_stats_indicate(psoc, response,
+							    true);
 		if (status != QDF_STATUS_SUCCESS) {
 			wmi_err("dcc_stats_indicate failed");
 			status = -EINVAL;
@@ -219,13 +222,14 @@ static QDF_STATUS fake_dcc_get_stats_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: 0 on success
  */
-static QDF_STATUS fake_dcc_update_ndl_cmd_tlv(wmi_unified_t wmi_handle,
-		       struct ocb_dcc_update_ndl_param *update_ndl_param)
+static QDF_STATUS
+fake_dcc_update_ndl_cmd_tlv(wmi_unified_t wmi_handle,
+			    struct ocb_dcc_update_ndl_param *update_ndl_param)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_ocb_rx_ops *ocb_rx_ops;
-	ol_scn_t scn = (ol_scn_t) wmi_handle->scn_handle;
+	ol_scn_t scn = (ol_scn_t)wmi_handle->scn_handle;
 	struct ocb_dcc_update_ndl_response *resp;
 
 	wmi_debug("called");
@@ -269,26 +273,27 @@ static QDF_STATUS fake_dcc_update_ndl_cmd_tlv(wmi_unified_t wmi_handle,
  * Return: 0 on success
  */
 static QDF_STATUS fake_ocb_set_config_cmd_tlv(wmi_unified_t wmi_handle,
-			struct ocb_config *config)
+					      struct ocb_config *config)
 {
 	u32 i;
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_ocb_rx_ops *ocb_rx_ops;
-	ol_scn_t scn = (ol_scn_t) wmi_handle->scn_handle;
+	ol_scn_t scn = (ol_scn_t)wmi_handle->scn_handle;
 
 	wmi_debug("vdev_id=%d, channel_count=%d, schedule_size=%d, flag=%x",
-		 config->vdev_id, config->channel_count,
-		 config->schedule_size, config->flags);
+		  config->vdev_id, config->channel_count, config->schedule_size,
+		  config->flags);
 
 	for (i = 0; i < config->channel_count; i++) {
-		wmi_debug("channel info for channel %d"
+		wmi_debug(
+			"channel info for channel %d"
 			" chan_freq=%d, bandwidth=%d, " QDF_MAC_ADDR_FMT
 			" max_pwr=%d, min_pwr=%d, reg_pwr=%d, antenna_max=%d, "
-			"flags=%d", i, config->channels[i].chan_freq,
+			"flags=%d",
+			i, config->channels[i].chan_freq,
 			config->channels[i].bandwidth,
-			QDF_MAC_ADDR_REF(
-				config->channels[i].mac_address.bytes),
+			QDF_MAC_ADDR_REF(config->channels[i].mac_address.bytes),
 			config->channels[i].max_pwr,
 			config->channels[i].min_pwr,
 			config->channels[i].reg_pwr,
@@ -298,10 +303,10 @@ static QDF_STATUS fake_ocb_set_config_cmd_tlv(wmi_unified_t wmi_handle,
 
 	for (i = 0; i < config->schedule_size; i++) {
 		wmi_debug("schedule info for channel %d: "
-			"chan_fre=%d, total_duration=%d, guard_intreval=%d",
-			i, config->schedule[i].chan_freq,
-			config->schedule[i].total_duration,
-			config->schedule[i].guard_interval);
+			  "chan_fre=%d, total_duration=%d, guard_intreval=%d",
+			  i, config->schedule[i].chan_freq,
+			  config->schedule[i].total_duration,
+			  config->schedule[i].guard_interval);
 	}
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
 	if (!psoc) {
@@ -331,8 +336,8 @@ static QDF_STATUS fake_ocb_set_config_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: 0 on success
  */
-static QDF_STATUS fake_ocb_stop_timing_advert_cmd_tlv(wmi_unified_t wmi_handle,
-	struct ocb_timing_advert_param *timing_advert)
+static QDF_STATUS fake_ocb_stop_timing_advert_cmd_tlv(
+	wmi_unified_t wmi_handle, struct ocb_timing_advert_param *timing_advert)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -346,9 +351,8 @@ static QDF_STATUS fake_ocb_stop_timing_advert_cmd_tlv(wmi_unified_t wmi_handle,
  *
  * Return: 0 on success
  */
-static QDF_STATUS
-fake_ocb_start_timing_advert_cmd_tlv(wmi_unified_t wmi_handle,
-		struct ocb_timing_advert_param *timing_advert)
+static QDF_STATUS fake_ocb_start_timing_advert_cmd_tlv(
+	wmi_unified_t wmi_handle, struct ocb_timing_advert_param *timing_advert)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -362,7 +366,7 @@ fake_ocb_start_timing_advert_cmd_tlv(wmi_unified_t wmi_handle,
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS fake_peer_create_cmd_tlv(wmi_unified_t wmi,
-					struct peer_create_params *param)
+					   struct peer_create_params *param)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -377,8 +381,8 @@ static QDF_STATUS fake_peer_create_cmd_tlv(wmi_unified_t wmi,
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS fake_peer_delete_cmd_tlv(wmi_unified_t wmi,
-				 uint8_t peer_addr[QDF_MAC_ADDR_SIZE],
-				 struct peer_delete_cmd_params *param)
+					   uint8_t peer_addr[QDF_MAC_ADDR_SIZE],
+					   struct peer_delete_cmd_params *param)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -392,22 +396,21 @@ static QDF_STATUS fake_peer_delete_cmd_tlv(wmi_unified_t wmi,
  * Return: QDF status
  */
 static QDF_STATUS fake_vdev_start_cmd_tlv(wmi_unified_t wmi_handle,
-			  struct vdev_start_params *req)
+					  struct vdev_start_params *req)
 {
-	tp_wma_handle wma = (tp_wma_handle) wmi_handle->scn_handle;
+	tp_wma_handle wma = (tp_wma_handle)wmi_handle->scn_handle;
 
-	wmi_debug("vdev_id %d freq %d chanmode %d ch_info is_dfs %d "
+	wmi_debug(
+		"vdev_id %d freq %d chanmode %d ch_info is_dfs %d "
 		"beacon interval %d dtim %d center_chan %d center_freq2 %d "
 		"max_txpow: 0x%x "
 		"Tx SS %d, Rx SS %d, ldpc_rx: %d, cac %d, regd %d, HE ops: %d",
-		(int)req->vdev_id, req->channel.mhz,
-		req->channel.phy_mode,
+		(int)req->vdev_id, req->channel.mhz, req->channel.phy_mode,
 		(int)req->channel.dfs_set, req->beacon_intval, req->dtim_period,
 		req->channel.cfreq1, req->channel.cfreq2,
-		req->channel.maxregpower,
-		req->preferred_tx_streams, req->preferred_rx_streams,
-		(int)req->ldpc_rx_enabled, req->cac_duration_ms,
-		req->regdomain, req->he_ops);
+		req->channel.maxregpower, req->preferred_tx_streams,
+		req->preferred_rx_streams, (int)req->ldpc_rx_enabled,
+		req->cac_duration_ms, req->regdomain, req->he_ops);
 	ucfg_ocb_config_channel(wma->pdev);
 	return QDF_STATUS_SUCCESS;
 }
@@ -433,7 +436,7 @@ static QDF_STATUS fake_vdev_down_cmd_tlv(wmi_unified_t wmi, uint8_t vdev_id)
  *  Return: 0  on success and -ve on failure.
  */
 static QDF_STATUS fake_vdev_set_param_cmd_tlv(wmi_unified_t wmi_handle,
-				struct vdev_set_params *param)
+					      struct vdev_set_params *param)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -451,8 +454,8 @@ static QDF_STATUS fake_vdev_set_param_cmd_tlv(wmi_unified_t wmi_handle,
  * Return: QDF_STATUS_SUCCESS for success or error code
  */
 static QDF_STATUS fake_set_enable_disable_mcc_adaptive_scheduler_cmd_tlv(
-		wmi_unified_t wmi_handle, uint32_t mcc_adaptive_scheduler,
-		uint32_t pdev_id)
+	wmi_unified_t wmi_handle, uint32_t mcc_adaptive_scheduler,
+	uint32_t pdev_id)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -468,8 +471,9 @@ static QDF_STATUS fake_set_enable_disable_mcc_adaptive_scheduler_cmd_tlv(
  * Return: QDF_STATUS_SUCCESS for success otherwise failure
  *
  */
-static QDF_STATUS fake_process_set_ie_info_cmd_tlv(wmi_unified_t wmi_handle,
-				   struct vdev_ie_info_param *ie_info)
+static QDF_STATUS
+fake_process_set_ie_info_cmd_tlv(wmi_unified_t wmi_handle,
+				 struct vdev_ie_info_param *ie_info)
 {
 	wmi_debug("called");
 	return QDF_STATUS_SUCCESS;
@@ -499,11 +503,11 @@ void wmi_ocb_ut_attach(struct wmi_unified *wmi_handle)
 	wmi_ops->send_dcc_update_ndl_cmd = fake_dcc_update_ndl_cmd_tlv;
 	wmi_ops->send_ocb_set_config_cmd = fake_ocb_set_config_cmd_tlv;
 	wmi_ops->send_ocb_stop_timing_advert_cmd =
-			fake_ocb_stop_timing_advert_cmd_tlv;
+		fake_ocb_stop_timing_advert_cmd_tlv;
 	wmi_ops->send_ocb_start_timing_advert_cmd =
-			fake_ocb_start_timing_advert_cmd_tlv;
+		fake_ocb_start_timing_advert_cmd_tlv;
 	wmi_ops->send_set_enable_disable_mcc_adaptive_scheduler_cmd =
-			fake_set_enable_disable_mcc_adaptive_scheduler_cmd_tlv;
+		fake_set_enable_disable_mcc_adaptive_scheduler_cmd_tlv;
 	wmi_ops->send_process_set_ie_info_cmd =
-			fake_process_set_ie_info_cmd_tlv;
+		fake_process_set_ie_info_cmd_tlv;
 }

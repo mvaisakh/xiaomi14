@@ -29,36 +29,31 @@
 
 /*=========================================================================*/
 /*!
-	@file
-	ipa_nat_test000.c
+        @file
+        ipa_nat_test000.c
 
-	@brief
-	Verify the following scenario:
-	1. Add ipv4 table
+        @brief
+        Verify the following scenario:
+        1. Add ipv4 table
 */
 /*===========================================================================*/
 
 #include "ipa_nat_test.h"
 
-int ipa_nat_test000(
-	const char* nat_mem_type,
-	u32  pub_ip_add,
-	int total_entries,
-	u32 tbl_hdl,
-	int sep,
-	void* arb_data_ptr)
+int ipa_nat_test000(const char *nat_mem_type, u32 pub_ip_add, int total_entries,
+		    u32 tbl_hdl, int sep, void *arb_data_ptr)
 {
-	int* tbl_hdl_ptr = (int*) arb_data_ptr;
+	int *tbl_hdl_ptr = (int *)arb_data_ptr;
 
-	int  ret;
+	int ret;
 
 	IPADBG("In\n");
 
-	if ( ! sep )
-	{
+	if (!sep) {
 		IPADBG("calling ipa_nat_add_ipv4_tbl()\n");
 
-		ret = ipa_nat_add_ipv4_tbl(pub_ip_add, nat_mem_type, total_entries, tbl_hdl_ptr);
+		ret = ipa_nat_add_ipv4_tbl(pub_ip_add, nat_mem_type,
+					   total_entries, tbl_hdl_ptr);
 		CHECK_ERR_TBL_STOP(ret, *tbl_hdl_ptr);
 
 		IPADBG("create nat ipv4 table successfully()\n");

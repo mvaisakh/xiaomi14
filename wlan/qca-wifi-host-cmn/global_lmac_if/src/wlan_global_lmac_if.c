@@ -19,17 +19,17 @@
 
 #include "qdf_mem.h"
 #include "qdf_module.h"
-#include "wlan_lmac_if_def.h"
-#include "wlan_lmac_if_api.h"
 #include "wlan_global_lmac_if_api.h"
+#include "wlan_lmac_if_api.h"
+#include "wlan_lmac_if_def.h"
 #ifdef WLAN_CONV_SPECTRAL_ENABLE
 #include <wlan_spectral_utils_api.h>
 #endif
 #include <target_if_psoc_wake_lock.h>
 
 /* Function pointer to call DA/OL specific tx_ops registration function */
-QDF_STATUS (*wlan_global_lmac_if_tx_ops_register[MAX_DEV_TYPE])
-				(struct wlan_lmac_if_tx_ops *tx_ops);
+QDF_STATUS(*wlan_global_lmac_if_tx_ops_register[MAX_DEV_TYPE])
+(struct wlan_lmac_if_tx_ops *tx_ops);
 
 /*
  * spectral scan is built as separate .ko for WIN where
@@ -42,8 +42,8 @@ QDF_STATUS (*wlan_global_lmac_if_tx_ops_register[MAX_DEV_TYPE])
 /* Function pointer for spectral rx_ops registration function */
 void (*wlan_lmac_if_sptrl_rx_ops)(struct wlan_lmac_if_rx_ops *rx_ops);
 
-QDF_STATUS wlan_lmac_if_sptrl_set_rx_ops_register_cb(void (*handler)
-				(struct wlan_lmac_if_rx_ops *))
+QDF_STATUS wlan_lmac_if_sptrl_set_rx_ops_register_cb(
+	void (*handler)(struct wlan_lmac_if_rx_ops *))
 {
 	wlan_lmac_if_sptrl_rx_ops = handler;
 
@@ -84,8 +84,8 @@ static void wlan_spectral_register_rx_ops(struct wlan_lmac_if_rx_ops *rx_ops)
 /* Function pointer for iot_sim rx_ops registration function */
 void (*wlan_lmac_if_iot_sim_rx_ops)(struct wlan_lmac_if_rx_ops *rx_ops);
 
-QDF_STATUS wlan_lmac_if_iot_sim_set_rx_ops_register_cb(void (*handler)
-				(struct wlan_lmac_if_rx_ops *))
+QDF_STATUS wlan_lmac_if_iot_sim_set_rx_ops_register_cb(
+	void (*handler)(struct wlan_lmac_if_rx_ops *))
 {
 	wlan_lmac_if_iot_sim_rx_ops = handler;
 
@@ -112,8 +112,8 @@ static void wlan_iot_sim_register_rx_ops(struct wlan_lmac_if_rx_ops *rx_ops)
 /* Function pointer for son rx_ops registration function */
 void (*wlan_lmac_if_son_rx_ops)(struct wlan_lmac_if_rx_ops *rx_ops);
 
-QDF_STATUS wlan_lmac_if_son_set_rx_ops_register_cb(void (*handler)
-				(struct wlan_lmac_if_rx_ops *))
+QDF_STATUS wlan_lmac_if_son_set_rx_ops_register_cb(
+	void (*handler)(struct wlan_lmac_if_rx_ops *))
 {
 	wlan_lmac_if_son_rx_ops = handler;
 
@@ -153,10 +153,10 @@ QDF_STATUS
 wlan_global_lmac_if_rx_ops_register(struct wlan_lmac_if_rx_ops *rx_ops)
 {
 	/*
-	 * Component specific public api's to be called to register
-	 * respective callbacks
-	 * Ex: rx_ops->fp = function;
-	 */
+   * Component specific public api's to be called to register
+   * respective callbacks
+   * Ex: rx_ops->fp = function;
+   */
 	if (!rx_ops) {
 		qdf_err("lmac if rx ops pointer is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -216,8 +216,7 @@ QDF_STATUS wlan_global_lmac_if_open(struct wlan_objmgr_psoc *psoc)
 	dev_type = psoc->soc_nif.phy_type;
 
 	if (dev_type == WLAN_DEV_OL) {
-		wlan_global_lmac_if_tx_ops_register[dev_type]
-					(tx_ops);
+		wlan_global_lmac_if_tx_ops_register[dev_type](tx_ops);
 	} else {
 		/* Control should ideally not reach here */
 		qdf_print("Invalid device type");
@@ -278,8 +277,9 @@ qdf_export_symbol(wlan_global_lmac_if_close);
  *
  * Return: QDF_STATUS_SUCCESS - in case of success
  */
-QDF_STATUS wlan_global_lmac_if_set_txops_registration_cb(WLAN_DEV_TYPE dev_type,
-			QDF_STATUS (*handler)(struct wlan_lmac_if_tx_ops *))
+QDF_STATUS wlan_global_lmac_if_set_txops_registration_cb(
+	WLAN_DEV_TYPE dev_type,
+	QDF_STATUS (*handler)(struct wlan_lmac_if_tx_ops *))
 {
 	wlan_global_lmac_if_tx_ops_register[dev_type] = handler;
 

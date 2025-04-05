@@ -19,10 +19,10 @@
  * This file provides implementation for UMAC AFC common APIs.
  */
 
-#include <wlan_afc_main.h>
 #include "wlan_afc_priv.h"
-#include "wlan_reg_ucfg_api.h"
 #include "wlan_cfg80211_afc.h"
+#include "wlan_reg_ucfg_api.h"
+#include <wlan_afc_main.h>
 
 /**
  * wlan_send_afc_request() - PDEV callback function to send AFC request
@@ -32,10 +32,9 @@
  *
  * Return: None
  */
-static void
-wlan_send_afc_request(struct wlan_objmgr_pdev *pdev,
-		      struct wlan_afc_host_request *afc_req,
-		      void *arg)
+static void wlan_send_afc_request(struct wlan_objmgr_pdev *pdev,
+				  struct wlan_afc_host_request *afc_req,
+				  void *arg)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_afc_psoc_priv *afc_priv;
@@ -63,8 +62,7 @@ wlan_send_afc_request(struct wlan_objmgr_pdev *pdev,
  */
 static void
 wlan_send_afc_power_event(struct wlan_objmgr_pdev *pdev,
-			  struct reg_fw_afc_power_event *afc_pwr_evt,
-			  void *arg)
+			  struct reg_fw_afc_power_event *afc_pwr_evt, void *arg)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_afc_psoc_priv *afc_priv;
@@ -83,8 +81,7 @@ wlan_send_afc_power_event(struct wlan_objmgr_pdev *pdev,
 
 int wlan_afc_data_send(struct wlan_objmgr_psoc *psoc,
 		       struct wlan_objmgr_pdev *pdev,
-		       struct wlan_afc_host_resp *data,
-		       uint32_t len)
+		       struct wlan_afc_host_resp *data, uint32_t len)
 {
 	struct wlan_afc_psoc_priv *afc_priv;
 
@@ -117,8 +114,7 @@ QDF_STATUS wlan_afc_register_data_send_cb(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-wlan_afc_psoc_created_notification(struct wlan_objmgr_psoc *psoc,
-				   void *arg)
+wlan_afc_psoc_created_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	QDF_STATUS status;
 	struct wlan_afc_psoc_priv *afc_priv;
@@ -127,10 +123,8 @@ wlan_afc_psoc_created_notification(struct wlan_objmgr_psoc *psoc,
 	if (!afc_priv)
 		return QDF_STATUS_E_NOMEM;
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						       WLAN_UMAC_COMP_AFC,
-						       afc_priv,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_AFC, afc_priv, QDF_STATUS_SUCCESS);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_mem_free(afc_priv);
@@ -146,8 +140,7 @@ wlan_afc_psoc_created_notification(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-wlan_afc_psoc_destroyed_notification(struct wlan_objmgr_psoc *psoc,
-				     void *arg)
+wlan_afc_psoc_destroyed_notification(struct wlan_objmgr_psoc *psoc, void *arg)
 {
 	QDF_STATUS status;
 	void *afc_priv;
@@ -158,8 +151,7 @@ wlan_afc_psoc_destroyed_notification(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_detach(psoc,
-						       WLAN_UMAC_COMP_AFC,
+	status = wlan_objmgr_psoc_component_obj_detach(psoc, WLAN_UMAC_COMP_AFC,
 						       afc_priv);
 	if (QDF_IS_STATUS_ERROR(status))
 		afc_err("Failed to detach AFC component");
@@ -170,22 +162,19 @@ wlan_afc_psoc_destroyed_notification(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-wlan_afc_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev,
-				 void *arg)
+wlan_afc_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 {
 	QDF_STATUS status;
 
-	status = ucfg_reg_register_afc_req_rx_callback(pdev,
-						       wlan_send_afc_request,
-						       NULL);
+	status = ucfg_reg_register_afc_req_rx_callback(
+		pdev, wlan_send_afc_request, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		afc_err("Failed to register AFC request callback");
 		return status;
 	}
 
-	status = ucfg_reg_register_afc_power_event_callback(pdev,
-							    wlan_send_afc_power_event,
-							    NULL);
+	status = ucfg_reg_register_afc_power_event_callback(
+		pdev, wlan_send_afc_power_event, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		afc_err("Failed to register AFC power callback");
 		ucfg_reg_unregister_afc_req_rx_callback(pdev,
@@ -199,8 +188,7 @@ wlan_afc_pdev_obj_create_handler(struct wlan_objmgr_pdev *pdev,
 QDF_STATUS
 wlan_afc_pdev_obj_destroy_handler(struct wlan_objmgr_pdev *pdev, void *arg)
 {
-	ucfg_reg_unregister_afc_req_rx_callback(pdev,
-						wlan_send_afc_request);
+	ucfg_reg_unregister_afc_req_rx_callback(pdev, wlan_send_afc_request);
 	ucfg_reg_unregister_afc_power_event_callback(pdev,
 						     wlan_send_afc_power_event);
 

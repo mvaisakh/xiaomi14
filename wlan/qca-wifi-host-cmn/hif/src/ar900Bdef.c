@@ -22,41 +22,40 @@
 #define AR900B 1
 
 #define WLAN_HEADERS 1
-#include "common_drv.h"
-#include "AR900B/soc_addrs.h"
 #include "AR900B/extra/hw/apb_map.h"
 #include "AR900B/hw/gpio_athr_wlan_reg.h"
+#include "AR900B/soc_addrs.h"
+#include "common_drv.h"
 #ifdef WLAN_HEADERS
 #include "AR900B/extra/hw/wifi_top_reg_map.h"
 #include "AR900B/hw/rtc_soc_reg.h"
 #endif
-#include "AR900B/hw/si_reg.h"
 #include "AR900B/extra/hw/pcie_local_reg.h"
 #include "AR900B/hw/ce_wrapper_reg_csr.h"
+#include "AR900B/hw/si_reg.h"
 /* TODO
  * #include "hw/soc_core_reg.h"
  * #include "hw/soc_pcie_reg.h"
  * #include "hw/ce_reg_csr.h"
  */
 
+#include "AR900B/extra/hw/ce_reg_csr.h"
 #include "AR900B/extra/hw/soc_core_reg.h"
 #include "AR900B/hw/soc_pcie_reg.h"
-#include "AR900B/extra/hw/ce_reg_csr.h"
-#include <AR900B/hw/interface/rx_location_info.h>
-#include <AR900B/hw/interface/rx_pkt_end.h>
-#include <AR900B/hw/interface/rx_phy_ppdu_end.h>
-#include <AR900B/hw/interface/rx_timing_offset.h>
-#include <AR900B/hw/interface/rx_location_info.h>
-#include <AR900B/hw/tlv/rx_ppdu_start.h>
-#include <AR900B/hw/tlv/rx_ppdu_end.h>
-#include <AR900B/hw/tlv/rx_mpdu_start.h>
-#include <AR900B/hw/tlv/rx_mpdu_end.h>
-#include <AR900B/hw/tlv/rx_msdu_start.h>
-#include <AR900B/hw/tlv/rx_msdu_end.h>
-#include <AR900B/hw/tlv/rx_attention.h>
-#include <AR900B/hw/tlv/rx_frag_info.h>
 #include <AR900B/hw/datastruct/msdu_link_ext.h>
 #include <AR900B/hw/emu_phy_reg.h>
+#include <AR900B/hw/interface/rx_location_info.h>
+#include <AR900B/hw/interface/rx_phy_ppdu_end.h>
+#include <AR900B/hw/interface/rx_pkt_end.h>
+#include <AR900B/hw/interface/rx_timing_offset.h>
+#include <AR900B/hw/tlv/rx_attention.h>
+#include <AR900B/hw/tlv/rx_frag_info.h>
+#include <AR900B/hw/tlv/rx_mpdu_end.h>
+#include <AR900B/hw/tlv/rx_mpdu_start.h>
+#include <AR900B/hw/tlv/rx_msdu_end.h>
+#include <AR900B/hw/tlv/rx_msdu_start.h>
+#include <AR900B/hw/tlv/rx_ppdu_end.h>
+#include <AR900B/hw/tlv/rx_ppdu_start.h>
 
 /* Base address is defined in pcie_local_reg.h. Macros which access the
  * registers include the base address in their definition.
@@ -166,52 +165,52 @@
 #define CE_SRC_DESC_INFO_GATHER_SHIFT 15
 #define CE_SRC_DESC_INFO_BYTE_SWAP_MASK 0x00004000
 #define CE_SRC_DESC_INFO_BYTE_SWAP_SHIFT 14
-#define CE_SRC_DESC_INFO_HOST_INT_DISABLE_MASK     0x00002000
-#define CE_SRC_DESC_INFO_HOST_INT_DISABLE_SHIFT    13
-#define CE_SRC_DESC_INFO_TARGET_INT_DISABLE_MASK   0x00001000
-#define CE_SRC_DESC_INFO_TARGET_INT_DISABLE_SHIFT  12
-#define CE_SRC_DESC_INFO_META_DATA_MASK            0x00000FFF
-#define CE_SRC_DESC_INFO_META_DATA_SHIFT           0
+#define CE_SRC_DESC_INFO_HOST_INT_DISABLE_MASK 0x00002000
+#define CE_SRC_DESC_INFO_HOST_INT_DISABLE_SHIFT 13
+#define CE_SRC_DESC_INFO_TARGET_INT_DISABLE_MASK 0x00001000
+#define CE_SRC_DESC_INFO_TARGET_INT_DISABLE_SHIFT 12
+#define CE_SRC_DESC_INFO_META_DATA_MASK 0x00000FFF
+#define CE_SRC_DESC_INFO_META_DATA_SHIFT 0
 #else
-#define CE_SRC_DESC_INFO_NBYTES_MASK               0x0000FFFF
-#define CE_SRC_DESC_INFO_NBYTES_SHIFT              0
-#define CE_SRC_DESC_INFO_GATHER_MASK               0x00010000
-#define CE_SRC_DESC_INFO_GATHER_SHIFT              16
-#define CE_SRC_DESC_INFO_BYTE_SWAP_MASK            0x00020000
-#define CE_SRC_DESC_INFO_BYTE_SWAP_SHIFT           17
-#define CE_SRC_DESC_INFO_HOST_INT_DISABLE_MASK     0x00040000
-#define CE_SRC_DESC_INFO_HOST_INT_DISABLE_SHIFT    18
-#define CE_SRC_DESC_INFO_TARGET_INT_DISABLE_MASK   0x00080000
-#define CE_SRC_DESC_INFO_TARGET_INT_DISABLE_SHIFT  19
-#define CE_SRC_DESC_INFO_META_DATA_MASK            0xFFF00000
-#define CE_SRC_DESC_INFO_META_DATA_SHIFT           20
+#define CE_SRC_DESC_INFO_NBYTES_MASK 0x0000FFFF
+#define CE_SRC_DESC_INFO_NBYTES_SHIFT 0
+#define CE_SRC_DESC_INFO_GATHER_MASK 0x00010000
+#define CE_SRC_DESC_INFO_GATHER_SHIFT 16
+#define CE_SRC_DESC_INFO_BYTE_SWAP_MASK 0x00020000
+#define CE_SRC_DESC_INFO_BYTE_SWAP_SHIFT 17
+#define CE_SRC_DESC_INFO_HOST_INT_DISABLE_MASK 0x00040000
+#define CE_SRC_DESC_INFO_HOST_INT_DISABLE_SHIFT 18
+#define CE_SRC_DESC_INFO_TARGET_INT_DISABLE_MASK 0x00080000
+#define CE_SRC_DESC_INFO_TARGET_INT_DISABLE_SHIFT 19
+#define CE_SRC_DESC_INFO_META_DATA_MASK 0xFFF00000
+#define CE_SRC_DESC_INFO_META_DATA_SHIFT 20
 #endif
 #if _BYTE_ORDER == _BIG_ENDIAN
-#define CE_DEST_DESC_INFO_NBYTES_MASK              0xFFFF0000
-#define CE_DEST_DESC_INFO_NBYTES_SHIFT             16
-#define CE_DEST_DESC_INFO_GATHER_MASK              0x00008000
-#define CE_DEST_DESC_INFO_GATHER_SHIFT             15
-#define CE_DEST_DESC_INFO_BYTE_SWAP_MASK           0x00004000
-#define CE_DEST_DESC_INFO_BYTE_SWAP_SHIFT          14
-#define CE_DEST_DESC_INFO_HOST_INT_DISABLE_MASK    0x00002000
-#define CE_DEST_DESC_INFO_HOST_INT_DISABLE_SHIFT   13
-#define CE_DEST_DESC_INFO_TARGET_INT_DISABLE_MASK  0x00001000
+#define CE_DEST_DESC_INFO_NBYTES_MASK 0xFFFF0000
+#define CE_DEST_DESC_INFO_NBYTES_SHIFT 16
+#define CE_DEST_DESC_INFO_GATHER_MASK 0x00008000
+#define CE_DEST_DESC_INFO_GATHER_SHIFT 15
+#define CE_DEST_DESC_INFO_BYTE_SWAP_MASK 0x00004000
+#define CE_DEST_DESC_INFO_BYTE_SWAP_SHIFT 14
+#define CE_DEST_DESC_INFO_HOST_INT_DISABLE_MASK 0x00002000
+#define CE_DEST_DESC_INFO_HOST_INT_DISABLE_SHIFT 13
+#define CE_DEST_DESC_INFO_TARGET_INT_DISABLE_MASK 0x00001000
 #define CE_DEST_DESC_INFO_TARGET_INT_DISABLE_SHIFT 12
-#define CE_DEST_DESC_INFO_META_DATA_MASK           0x00000FFF
-#define CE_DEST_DESC_INFO_META_DATA_SHIFT          0
+#define CE_DEST_DESC_INFO_META_DATA_MASK 0x00000FFF
+#define CE_DEST_DESC_INFO_META_DATA_SHIFT 0
 #else
-#define CE_DEST_DESC_INFO_NBYTES_MASK              0x0000FFFF
-#define CE_DEST_DESC_INFO_NBYTES_SHIFT             0
-#define CE_DEST_DESC_INFO_GATHER_MASK              0x00010000
-#define CE_DEST_DESC_INFO_GATHER_SHIFT             16
-#define CE_DEST_DESC_INFO_BYTE_SWAP_MASK           0x00020000
-#define CE_DEST_DESC_INFO_BYTE_SWAP_SHIFT          17
-#define CE_DEST_DESC_INFO_HOST_INT_DISABLE_MASK    0x00040000
-#define CE_DEST_DESC_INFO_HOST_INT_DISABLE_SHIFT   18
-#define CE_DEST_DESC_INFO_TARGET_INT_DISABLE_MASK  0x00080000
+#define CE_DEST_DESC_INFO_NBYTES_MASK 0x0000FFFF
+#define CE_DEST_DESC_INFO_NBYTES_SHIFT 0
+#define CE_DEST_DESC_INFO_GATHER_MASK 0x00010000
+#define CE_DEST_DESC_INFO_GATHER_SHIFT 16
+#define CE_DEST_DESC_INFO_BYTE_SWAP_MASK 0x00020000
+#define CE_DEST_DESC_INFO_BYTE_SWAP_SHIFT 17
+#define CE_DEST_DESC_INFO_HOST_INT_DISABLE_MASK 0x00040000
+#define CE_DEST_DESC_INFO_HOST_INT_DISABLE_SHIFT 18
+#define CE_DEST_DESC_INFO_TARGET_INT_DISABLE_MASK 0x00080000
 #define CE_DEST_DESC_INFO_TARGET_INT_DISABLE_SHIFT 19
-#define CE_DEST_DESC_INFO_META_DATA_MASK           0xFFF00000
-#define CE_DEST_DESC_INFO_META_DATA_SHIFT          20
+#define CE_DEST_DESC_INFO_META_DATA_MASK 0xFFF00000
+#define CE_DEST_DESC_INFO_META_DATA_SHIFT 20
 #endif
 
 #define MY_TARGET_DEF AR900B_TARGETdef
@@ -219,13 +218,13 @@
 #define MY_CEREG_DEF AR900B_CE_TARGETdef
 #define MY_TARGET_BOARD_DATA_SZ AR900B_BOARD_DATA_SZ
 #define MY_TARGET_BOARD_EXT_DATA_SZ AR900B_BOARD_EXT_DATA_SZ
-#include "targetdef.h"
 #include "hostdef.h"
+#include "targetdef.h"
 qdf_export_symbol(AR900B_CE_TARGETdef);
 #else
 #include "common_drv.h"
-#include "targetdef.h"
 #include "hostdef.h"
+#include "targetdef.h"
 struct targetdef_s *AR900B_TARGETdef;
 struct hostdef_s *AR900B_HOSTdef;
 #endif /*AR900B_HEADERS_DEF */

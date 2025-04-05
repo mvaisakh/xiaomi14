@@ -5,20 +5,20 @@
 
 #include <linux/gunyah/gh_msgq.h>
 #include <linux/kthread.h>
-#include <linux/slab.h>
 #include <linux/list.h>
 #include <linux/of.h>
+#include <linux/slab.h>
 
-#include <mmrm_vm_interface.h>
-#include "mmrm_vm_fe.h"
 #include "mmrm_vm_debug.h"
+#include "mmrm_vm_fe.h"
+#include <mmrm_vm_interface.h>
 
 void mmrm_vm_fe_msgq_msg_handler(struct work_struct *work)
 {
 	struct mmrm_vm_thread_info *pthread_info =
 		container_of(work, struct mmrm_vm_thread_info, msgq_work.work);
-	struct mmrm_vm_driver_data *mmrm_vm =
-		container_of(pthread_info, struct mmrm_vm_driver_data, thread_info);
+	struct mmrm_vm_driver_data *mmrm_vm = container_of(
+		pthread_info, struct mmrm_vm_driver_data, thread_info);
 	struct list_head head;
 	struct mmrm_vm_msg *dummy = NULL;
 	struct mmrm_vm_msg *msg;
@@ -38,7 +38,8 @@ void mmrm_vm_fe_msgq_msg_handler(struct work_struct *work)
 
 int mmrm_vm_msgq_listener(void *data)
 {
-	struct mmrm_vm_driver_data *mmrm_vm = (struct mmrm_vm_driver_data *)data;
+	struct mmrm_vm_driver_data *mmrm_vm =
+		(struct mmrm_vm_driver_data *)data;
 
 	struct mmrm_vm_gh_msgq_info *pmsg_info = &mmrm_vm->msg_info;
 	struct mmrm_vm_thread_info *pthread_info = &mmrm_vm->thread_info;
@@ -52,7 +53,7 @@ int mmrm_vm_msgq_listener(void *data)
 			return -ENOMEM;
 
 		ret = gh_msgq_recv(pmsg_info->msgq_handle, msg->msg_buf,
-				GH_MSGQ_MAX_MSG_SIZE_BYTES, &size, 0);
+				   GH_MSGQ_MAX_MSG_SIZE_BYTES, &size, 0);
 		d_mpr_l("done ret=%d\n", ret);
 
 		if (ret < 0) {
@@ -67,14 +68,16 @@ int mmrm_vm_msgq_listener(void *data)
 		mutex_unlock(&pthread_info->list_lock);
 
 		queue_delayed_work(pthread_info->msg_workq,
-				 &pthread_info->msgq_work, msecs_to_jiffies(0));
+				   &pthread_info->msgq_work,
+				   msecs_to_jiffies(0));
 	}
 	return 0;
 }
 
-int mmrm_vm_msgq_send(struct mmrm_vm_driver_data *mmrm_vm, void *msg, size_t msg_size)
+int mmrm_vm_msgq_send(struct mmrm_vm_driver_data *mmrm_vm, void *msg,
+		      size_t msg_size)
 {
-	int  rc;
+	int rc;
 	struct mmrm_vm_gh_msgq_info *pmsg_info;
 
 	if (IS_ERR_OR_NULL(mmrm_vm))
@@ -112,22 +115,23 @@ int mmrm_vm_msgq_init(struct mmrm_vm_driver_data *mmrm_vm)
 	pmsg_info = &mmrm_vm->msg_info;
 	pthread_info = &mmrm_vm->thread_info;
 
-
 	mutex_init(&pthread_info->list_lock);
 	INIT_LIST_HEAD(&pthread_info->queued_msg);
 
-	pthread_info->msg_workq = create_singlethread_workqueue("vm_fe_message_workq");
+	pthread_info->msg_workq =
+		create_singlethread_workqueue("vm_fe_message_workq");
 	if (IS_ERR_OR_NULL(pthread_info->msg_workq)) {
 		rc = -1;
 		goto err;
 	}
 
-	INIT_DELAYED_WORK(&pthread_info->msgq_work, mmrm_vm_fe_msgq_msg_handler);
+	INIT_DELAYED_WORK(&pthread_info->msgq_work,
+			  mmrm_vm_fe_msgq_msg_handler);
 
 	pmsg_info->msgq_label = GH_MSGQ_LABEL_MMRM;
 	pmsg_info->msgq_handle = gh_msgq_register(pmsg_info->msgq_label);
-	d_mpr_h("%s: label:%d handle:%p\n", __func__,
-		pmsg_info->msgq_label, pmsg_info->msgq_handle);
+	d_mpr_h("%s: label:%d handle:%p\n", __func__, pmsg_info->msgq_label,
+		pmsg_info->msgq_handle);
 
 	if (IS_ERR(pmsg_info->msgq_handle)) {
 		rc = PTR_ERR(pmsg_info->msgq_handle);
@@ -136,7 +140,7 @@ int mmrm_vm_msgq_init(struct mmrm_vm_driver_data *mmrm_vm)
 	}
 
 	pthread_info->msgq_listener_thread =
-			kthread_create(mmrm_vm_msgq_listener, mmrm_vm, "mmrm_vm_fe");
+		kthread_create(mmrm_vm_msgq_listener, mmrm_vm, "mmrm_vm_fe");
 	if (IS_ERR_OR_NULL(pthread_info->msgq_listener_thread)) {
 		rc = PTR_ERR(pmsg_info->msgq_handle);
 		goto err_listener_thread;

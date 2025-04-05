@@ -13,10 +13,9 @@
 #include "tpg_hw/tpg_hw_v_1_4/tpg_hw_v_1_4_data.h"
 
 static int cam_tpg_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+				struct v4l2_subdev_fh *fh)
 {
-	struct cam_tpg_device *tpg_dev =
-		v4l2_get_subdevdata(sd);
+	struct cam_tpg_device *tpg_dev = v4l2_get_subdevdata(sd);
 
 	bool crm_active = cam_req_mgr_is_open();
 
@@ -32,7 +31,8 @@ static int cam_tpg_subdev_close(struct v4l2_subdev *sd,
 
 	mutex_lock(&tpg_dev->mutex);
 	if (tpg_dev->state == CAM_TPG_STATE_INIT) {
-		CAM_DBG(CAM_TPG, "TPG node %d is succesfully closed", tpg_dev->soc_info.index);
+		CAM_DBG(CAM_TPG, "TPG node %d is succesfully closed",
+			tpg_dev->soc_info.index);
 		mutex_unlock(&tpg_dev->mutex);
 		return 0;
 	}
@@ -42,8 +42,8 @@ static int cam_tpg_subdev_close(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static long cam_tpg_subdev_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, void *arg)
+static long cam_tpg_subdev_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
+				 void *arg)
 {
 	struct cam_tpg_device *tpg_dev = v4l2_get_subdevdata(sd);
 	int rc = 0;
@@ -70,30 +70,27 @@ static long cam_tpg_subdev_ioctl(struct v4l2_subdev *sd,
 	return rc;
 }
 
-
 #ifdef CONFIG_COMPAT
 static long cam_tpg_subdev_compat_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, unsigned long arg)
+					unsigned int cmd, unsigned long arg)
 {
 	int32_t rc = 0;
 	struct cam_control cmd_data;
 
-	if (copy_from_user(&cmd_data, (void __user *)arg,
-		sizeof(cmd_data))) {
+	if (copy_from_user(&cmd_data, (void __user *)arg, sizeof(cmd_data))) {
 		CAM_ERR(CAM_TPG, "Failed to copy from user_ptr=%pK size=%zu",
 			(void __user *)arg, sizeof(cmd_data));
 		return -EFAULT;
 	}
 
 	/* All the arguments converted to 64 bit here
-	 * Passed to the api in core.c
-	 */
+   * Passed to the api in core.c
+   */
 	switch (cmd) {
 	case VIDIOC_CAM_CONTROL:
 		rc = cam_tpg_subdev_ioctl(sd, cmd, &cmd_data);
 		if (rc)
-			CAM_ERR(CAM_TPG,
-				"Failed in subdev_ioctl: %d", rc);
+			CAM_ERR(CAM_TPG, "Failed in subdev_ioctl: %d", rc);
 		break;
 	default:
 		CAM_ERR(CAM_TPG, "Invalid compat ioctl cmd: %d", cmd);
@@ -103,7 +100,7 @@ static long cam_tpg_subdev_compat_ioctl(struct v4l2_subdev *sd,
 
 	if (!rc) {
 		if (copy_to_user((void __user *)arg, &cmd_data,
-			sizeof(cmd_data))) {
+				 sizeof(cmd_data))) {
 			CAM_ERR(CAM_TPG,
 				"Failed to copy to user_ptr=%pK size=%zu",
 				(void __user *)arg, sizeof(cmd_data));
@@ -115,14 +112,12 @@ static long cam_tpg_subdev_compat_ioctl(struct v4l2_subdev *sd,
 }
 #endif
 
-
 static struct v4l2_subdev_core_ops tpg_subdev_core_ops = {
 	.ioctl = cam_tpg_subdev_ioctl,
 #ifdef CONFIG_COMPAT
 	.compat_ioctl32 = cam_tpg_subdev_compat_ioctl,
 #endif
 };
-
 
 static const struct v4l2_subdev_ops tpg_subdev_ops = {
 	.core = &tpg_subdev_core_ops,
@@ -134,24 +129,20 @@ static const struct v4l2_subdev_internal_ops tpg_subdev_intern_ops = {
 
 static irqreturn_t cam_tpg_irq_handler(int irq_num, void *data)
 {
-	struct cam_tpg_device *tpg_dev =
-		(struct cam_tpg_device *)data;
+	struct cam_tpg_device *tpg_dev = (struct cam_tpg_device *)data;
 	struct tpg_hw *hw = &tpg_dev->tpg_hw;
-	irqreturn_t    rc = IRQ_NONE;
+	irqreturn_t rc = IRQ_NONE;
 
 	/* handle the registered irq handler */
-	if (hw &&
-		hw->hw_info &&
-		hw->hw_info->ops &&
-		hw->hw_info->ops->handle_irq) {
+	if (hw && hw->hw_info && hw->hw_info->ops &&
+	    hw->hw_info->ops->handle_irq) {
 		rc = hw->hw_info->ops->handle_irq(hw);
 	}
 
 	return rc;
 }
 
-static int tpg_subdev_init(struct cam_tpg_device *tpg_dev,
-		struct device *dev)
+static int tpg_subdev_init(struct cam_tpg_device *tpg_dev, struct device *dev)
 {
 	int32_t rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
@@ -172,16 +163,14 @@ static int tpg_subdev_init(struct cam_tpg_device *tpg_dev,
 	else
 		CAM_DBG(CAM_TPG, "TPG subdev init done");
 	return rc;
-
 }
 
-static int tpg_soc_info_init(struct cam_tpg_device *tpg_dev,
-		struct device *dev)
+static int tpg_soc_info_init(struct cam_tpg_device *tpg_dev, struct device *dev)
 {
 	int32_t rc = 0, i;
 	struct platform_device *pdev = to_platform_device(dev);
 	struct device_node *of_node = NULL;
-	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = {0};
+	void *irq_data[CAM_SOC_MAX_IRQ_LINES_PER_DEV] = { 0 };
 
 	if (!dev || !tpg_dev)
 		return -EINVAL;
@@ -195,7 +184,7 @@ static int tpg_soc_info_init(struct cam_tpg_device *tpg_dev,
 	rc = cam_soc_util_get_dt_properties(&tpg_dev->soc_info);
 	if (rc < 0) {
 		CAM_ERR(CAM_CSIPHY, "parsing common soc dt(rc %d)", rc);
-		return  rc;
+		return rc;
 	}
 
 	rc = of_property_read_u32(of_node, "phy-id", &(tpg_dev->phy_id));
@@ -219,7 +208,7 @@ static int tpg_soc_info_init(struct cam_tpg_device *tpg_dev,
 }
 
 static int tpg_register_cpas_client(struct cam_tpg_device *tpg_dev,
-		struct device *dev)
+				    struct device *dev)
 {
 	int32_t rc = 0;
 	struct cam_cpas_register_params cpas_parms;
@@ -246,21 +235,21 @@ static int tpg_register_cpas_client(struct cam_tpg_device *tpg_dev,
 }
 
 static int cam_tpg_hw_layer_init(struct cam_tpg_device *tpg_dev,
-		struct device *dev)
+				 struct device *dev)
 {
 	/* get top tpg hw information */
-	const struct of_device_id      *match_dev = NULL;
+	const struct of_device_id *match_dev = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	match_dev = of_match_device(pdev->dev.driver->of_match_table,
-		&pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_ERR(CAM_TPG, "No matching table for the top tpg hw");
 		return -EINVAL;
 	}
 
-	tpg_dev->tpg_hw.hw_idx   = tpg_dev->soc_info.index;
-	tpg_dev->tpg_hw.hw_info  = (struct tpg_hw_info *)match_dev->data;
+	tpg_dev->tpg_hw.hw_idx = tpg_dev->soc_info.index;
+	tpg_dev->tpg_hw.hw_info = (struct tpg_hw_info *)match_dev->data;
 	tpg_dev->tpg_hw.soc_info = &tpg_dev->soc_info;
 	tpg_dev->tpg_hw.cpas_handle = tpg_dev->cpas_handle;
 	spin_lock_init(&tpg_dev->tpg_hw.hw_state_lock);
@@ -271,22 +260,22 @@ static int cam_tpg_hw_layer_init(struct cam_tpg_device *tpg_dev,
 	INIT_LIST_HEAD(&(tpg_dev->tpg_hw.waiting_request_q));
 	INIT_LIST_HEAD(&(tpg_dev->tpg_hw.active_request_q));
 	tpg_dev->tpg_hw.waiting_request_q_depth = 0;
-	tpg_dev->tpg_hw.active_request_q_depth  = 0;
-	tpg_dev->tpg_hw.settings_update         = 0;
-	tpg_dev->tpg_hw.tpg_clock               = 0;
+	tpg_dev->tpg_hw.active_request_q_depth = 0;
+	tpg_dev->tpg_hw.settings_update = 0;
+	tpg_dev->tpg_hw.tpg_clock = 0;
 	tpg_dev->tpg_hw.hw_info->layer_init(&tpg_dev->tpg_hw);
 	return 0;
 }
 
-static int cam_tpg_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+static int cam_tpg_component_bind(struct device *dev, struct device *master_dev,
+				  void *data)
 {
 	int rc = 0;
-	struct cam_tpg_device  *tpg_dev = NULL;
+	struct cam_tpg_device *tpg_dev = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	tpg_dev = devm_kzalloc(&pdev->dev,
-		sizeof(struct cam_tpg_device), GFP_KERNEL);
+	tpg_dev = devm_kzalloc(&pdev->dev, sizeof(struct cam_tpg_device),
+			       GFP_KERNEL);
 	if (!tpg_dev) {
 		CAM_ERR(CAM_TPG, "TPG dev allocation failed");
 		return -ENOMEM;
@@ -333,10 +322,10 @@ bind_error_exit:
 }
 
 static void cam_tpg_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
 	struct platform_device *pdev = to_platform_device(dev);
-	struct cam_tpg_device  *tpg_dev = platform_get_drvdata(pdev);
+	struct cam_tpg_device *tpg_dev = platform_get_drvdata(pdev);
 
 	CAM_INFO(CAM_TPG, "Unbind TPG component");
 	cam_cpas_unregister_client(tpg_dev->cpas_handle);
@@ -364,7 +353,6 @@ static int32_t cam_tpg_platform_probe(struct platform_device *pdev)
 
 	return rc;
 }
-
 
 static int32_t cam_tpg_device_remove(struct platform_device *pdev)
 {
@@ -399,14 +387,15 @@ static const struct of_device_id cam_tpg_dt_match[] = {
 MODULE_DEVICE_TABLE(of, cam_tpg_dt_match);
 
 struct platform_driver cam_tpg_driver = {
-	.probe = cam_tpg_platform_probe,
-	.remove = cam_tpg_device_remove,
-	.driver = {
-		.name = CAMX_TPG_DEV_NAME,
-		.owner = THIS_MODULE,
-		.of_match_table = cam_tpg_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_tpg_platform_probe,
+    .remove = cam_tpg_device_remove,
+    .driver =
+        {
+            .name = CAMX_TPG_DEV_NAME,
+            .owner = THIS_MODULE,
+            .of_match_table = cam_tpg_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int32_t cam_tpg_init_module(void)

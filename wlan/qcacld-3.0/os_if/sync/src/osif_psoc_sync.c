@@ -16,10 +16,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "linux/device.h"
+#include "osif_psoc_sync.h"
 #include "__osif_driver_sync.h"
 #include "__osif_psoc_sync.h"
-#include "osif_psoc_sync.h"
+#include "linux/device.h"
 #include "qdf_lock.h"
 #include "qdf_status.h"
 #include "qdf_types.h"
@@ -189,8 +189,7 @@ typedef QDF_STATUS (*psoc_start_func)(struct dsc_psoc *, const char *);
 static int
 __osif_psoc_sync_start_callback(struct device *dev,
 				struct osif_psoc_sync **out_psoc_sync,
-				const char *desc,
-				psoc_start_func psoc_start_cb)
+				const char *desc, psoc_start_func psoc_start_cb)
 {
 	QDF_STATUS status;
 	struct osif_psoc_sync *psoc_sync;
@@ -210,11 +209,9 @@ __osif_psoc_sync_start_callback(struct device *dev,
 	return 0;
 }
 
-static int
-__osif_psoc_sync_start_wait_callback(struct device *dev,
-				     struct osif_psoc_sync **out_psoc_sync,
-				     const char *desc,
-				     psoc_start_func psoc_start_cb)
+static int __osif_psoc_sync_start_wait_callback(
+	struct device *dev, struct osif_psoc_sync **out_psoc_sync,
+	const char *desc, psoc_start_func psoc_start_cb)
 {
 	QDF_STATUS status;
 	struct osif_psoc_sync *psoc_sync;
@@ -361,4 +358,3 @@ QDF_STATUS osif_psoc_sync_dsc_vdev_create(struct device *dev,
 
 	return status;
 }
-

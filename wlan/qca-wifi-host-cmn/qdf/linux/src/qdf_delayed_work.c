@@ -17,10 +17,10 @@
  */
 
 #include "qdf_delayed_work.h"
+#include "qdf_module.h"
 #include "qdf_status.h"
 #include "qdf_trace.h"
 #include "qdf_types.h"
-#include "qdf_module.h"
 
 #ifdef WLAN_DELAYED_WORK_DEBUG
 #include "qdf_tracker.h"
@@ -65,7 +65,8 @@ static inline QDF_STATUS qdf_dwork_dbg_track(struct qdf_delayed_work *dwork,
 
 static inline void qdf_dwork_dbg_untrack(struct qdf_delayed_work *dwork,
 					 const char *func, uint32_t line)
-{ }
+{
+}
 #endif /* WLAN_DELAYED_WORK_DEBUG */
 
 static void __qdf_delayed_work_handler(struct work_struct *work)
@@ -78,8 +79,8 @@ static void __qdf_delayed_work_handler(struct work_struct *work)
 
 QDF_STATUS __qdf_delayed_work_create(struct qdf_delayed_work *dwork,
 				     qdf_delayed_work_cb callback,
-				     void *context,
-				     const char *func, uint32_t line)
+				     void *context, const char *func,
+				     uint32_t line)
 {
 	QDF_STATUS status;
 

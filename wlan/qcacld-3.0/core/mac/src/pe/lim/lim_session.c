@@ -30,15 +30,15 @@
 /*--------------------------------------------------------------------------
    Include Files
    ------------------------------------------------------------------------*/
-#include "ani_global.h"
-#include "lim_ft_defs.h"
-#include "lim_ft.h"
 #include "lim_session.h"
+#include "ani_global.h"
+#include "lim_ft.h"
+#include "lim_ft_defs.h"
 #include "lim_utils.h"
 
-#include "sch_api.h"
-#include "lim_send_messages.h"
 #include "cfg_ucfg_api.h"
+#include "lim_send_messages.h"
+#include "sch_api.h"
 #include <lim_assoc_utils.h>
 
 #ifdef WLAN_ALLOCATE_GLOBAL_BUFFERS_DYNAMICALLY
@@ -49,7 +49,7 @@ QDF_STATUS pe_allocate_dph_node_array_buffer(void)
 	uint32_t buf_size;
 
 	buf_size = WLAN_MAX_VDEVS * (SIR_SAP_MAX_NUM_PEERS + 1) *
-		sizeof(struct sDphHashNode);
+		   sizeof(struct sDphHashNode);
 	g_dph_node_array = qdf_mem_malloc(buf_size);
 	if (!g_dph_node_array)
 		return QDF_STATUS_E_NOMEM;
@@ -63,18 +63,18 @@ void pe_free_dph_node_array_buffer(void)
 	g_dph_node_array = NULL;
 }
 
-static inline
-struct sDphHashNode *pe_get_session_dph_node_array(uint8_t session_id)
+static inline struct sDphHashNode *
+pe_get_session_dph_node_array(uint8_t session_id)
 {
 	return &g_dph_node_array[session_id * (SIR_SAP_MAX_NUM_PEERS + 1)];
 }
 
 #else /* WLAN_ALLOCATE_GLOBAL_BUFFERS_DYNAMICALLY */
-static struct sDphHashNode
-	g_dph_node_array[WLAN_MAX_VDEVS][SIR_SAP_MAX_NUM_PEERS + 1];
+static struct sDphHashNode g_dph_node_array[WLAN_MAX_VDEVS]
+					   [SIR_SAP_MAX_NUM_PEERS + 1];
 
-static inline
-struct sDphHashNode *pe_get_session_dph_node_array(uint8_t session_id)
+static inline struct sDphHashNode *
+pe_get_session_dph_node_array(uint8_t session_id)
 {
 	return g_dph_node_array[session_id];
 }
@@ -84,7 +84,8 @@ struct sDphHashNode *pe_get_session_dph_node_array(uint8_t session_id)
 
    \brief pe_init_beacon_params() - Initialize the beaconParams structure
 
-   \param struct pe_session *         - pointer to the session context or NULL if session can not be created.
+   \param struct pe_session *         - pointer to the session context or NULL
+   if session can not be created.
    \return void
    \sa
 
@@ -106,19 +107,19 @@ static void pe_init_beacon_params(struct mac_context *mac,
 
 	/* Number of legacy STAs associated */
 	qdf_mem_zero((void *)&pe_session->gLim11bParams,
-		    sizeof(tLimProtStaParams));
+		     sizeof(tLimProtStaParams));
 	qdf_mem_zero((void *)&pe_session->gLim11aParams,
-		    sizeof(tLimProtStaParams));
+		     sizeof(tLimProtStaParams));
 	qdf_mem_zero((void *)&pe_session->gLim11gParams,
-		    sizeof(tLimProtStaParams));
+		     sizeof(tLimProtStaParams));
 	qdf_mem_zero((void *)&pe_session->gLimNonGfParams,
-		    sizeof(tLimProtStaParams));
+		     sizeof(tLimProtStaParams));
 	qdf_mem_zero((void *)&pe_session->gLimHt20Params,
-		    sizeof(tLimProtStaParams));
+		     sizeof(tLimProtStaParams));
 	qdf_mem_zero((void *)&pe_session->gLimLsigTxopParams,
-		    sizeof(tLimProtStaParams));
+		     sizeof(tLimProtStaParams));
 	qdf_mem_zero((void *)&pe_session->gLimOlbcParams,
-		    sizeof(tLimProtStaParams));
+		     sizeof(tLimProtStaParams));
 }
 
 /*
@@ -150,35 +151,36 @@ static void pe_reset_protection_callback(void *ptr)
 	}
 
 	/*
-	 * During CAC period, if the callback is triggered, the beacon
-	 * template may get updated. Subsequently if the vdev is not up, the
-	 * vdev would be made up -- which should not happen during the CAC
-	 * period. To avoid this, ignore the protection callback if the session
-	 * is not yet up.
-	 */
+   * During CAC period, if the callback is triggered, the beacon
+   * template may get updated. Subsequently if the vdev is not up, the
+   * vdev would be made up -- which should not happen during the CAC
+   * period. To avoid this, ignore the protection callback if the session
+   * is not yet up.
+   */
 	if (!wma_is_vdev_up(pe_session_entry->smeSessionId)) {
 		pe_err("session is not up yet. exiting timer callback");
 		return;
 	}
 
 	/*
-	 * If dfsIncludeChanSwIe is set restrat timer as we are going to change
-	 * channel and no point in checking protection mode for this channel.
-	 */
+   * If dfsIncludeChanSwIe is set restrat timer as we are going to change
+   * channel and no point in checking protection mode for this channel.
+   */
 	if (pe_session_entry->dfsIncludeChanSwIe) {
 		pe_err("CSA going on restart timer");
 		goto restart_timer;
 	}
 	current_protection_state |=
-	       pe_session_entry->gLimOverlap11gParams.protectionEnabled        |
-	       pe_session_entry->gLimOverlap11aParams.protectionEnabled   << 1 |
-	       pe_session_entry->gLimOverlapHt20Params.protectionEnabled  << 2 |
-	       pe_session_entry->gLimOverlapNonGfParams.protectionEnabled << 3 |
-	       pe_session_entry->gLimOlbcParams.protectionEnabled         << 4;
+		pe_session_entry->gLimOverlap11gParams.protectionEnabled |
+		pe_session_entry->gLimOverlap11aParams.protectionEnabled << 1 |
+		pe_session_entry->gLimOverlapHt20Params.protectionEnabled << 2 |
+		pe_session_entry->gLimOverlapNonGfParams.protectionEnabled
+			<< 3 |
+		pe_session_entry->gLimOlbcParams.protectionEnabled << 4;
 
 	pe_debug("old protection state: 0x%04X, new protection state: 0x%04X",
-		  pe_session_entry->old_protection_state,
-		  current_protection_state);
+		 pe_session_entry->old_protection_state,
+		 current_protection_state);
 
 	qdf_mem_zero(&pe_session_entry->gLimOverlap11gParams,
 		     sizeof(pe_session_entry->gLimOverlap11gParams));
@@ -193,9 +195,9 @@ static void pe_reset_protection_callback(void *ptr)
 		     sizeof(pe_session_entry->gLimOlbcParams));
 
 	/*
-	 * Do not reset fShortPreamble and beaconInterval, as they
-	 * are not updated.
-	 */
+   * Do not reset fShortPreamble and beaconInterval, as they
+   * are not updated.
+   */
 	pe_session_entry->beaconParams.llaCoexist = 0;
 	pe_session_entry->beaconParams.llbCoexist = 0;
 	pe_session_entry->beaconParams.llgCoexist = 0;
@@ -205,68 +207,66 @@ static void pe_reset_protection_callback(void *ptr)
 	pe_session_entry->beaconParams.fLsigTXOPProtectionFullSupport = 0;
 	pe_session_entry->beaconParams.gHTObssMode = 0;
 
-
 	old_op_mode = pe_session_entry->htOperMode;
 	pe_session_entry->htOperMode = eSIR_HT_OP_MODE_PURE;
 	mac_ctx->lim.gHTOperMode = eSIR_HT_OP_MODE_PURE;
 
 	qdf_mem_zero(&beacon_params, sizeof(tUpdateBeaconParams));
 	/* index 0, is self node, peers start from 1 */
-	for (i = 1 ; i <= mac_ctx->lim.max_sta_of_pe_session; i++) {
-		station_hash_node = dph_get_hash_entry(mac_ctx, i,
-					&pe_session_entry->dph.dphHashTable);
+	for (i = 1; i <= mac_ctx->lim.max_sta_of_pe_session; i++) {
+		station_hash_node = dph_get_hash_entry(
+			mac_ctx, i, &pe_session_entry->dph.dphHashTable);
 		if (!station_hash_node)
 			continue;
 		lim_decide_ap_protection(mac_ctx, station_hash_node->staAddr,
-		&beacon_params, pe_session_entry);
+					 &beacon_params, pe_session_entry);
 	}
 
 	if (pe_session_entry->htOperMode != old_op_mode)
 		bcn_prms_changed = true;
 
 	if ((current_protection_state !=
-		pe_session_entry->old_protection_state) &&
-		(false == mac_ctx->sap.SapDfsInfo.is_dfs_cac_timer_running)) {
+	     pe_session_entry->old_protection_state) &&
+	    (false == mac_ctx->sap.SapDfsInfo.is_dfs_cac_timer_running)) {
 		pe_debug("protection changed, update beacon template");
 		/* update beacon fix params and send update to FW */
 		qdf_mem_zero(&beacon_params, sizeof(tUpdateBeaconParams));
 		beacon_params.bss_idx = pe_session_entry->vdev_id;
 		beacon_params.fShortPreamble =
-				pe_session_entry->beaconParams.fShortPreamble;
+			pe_session_entry->beaconParams.fShortPreamble;
 		beacon_params.beaconInterval =
-				pe_session_entry->beaconParams.beaconInterval;
+			pe_session_entry->beaconParams.beaconInterval;
 		beacon_params.llaCoexist =
-				pe_session_entry->beaconParams.llaCoexist;
+			pe_session_entry->beaconParams.llaCoexist;
 		beacon_params.llbCoexist =
-				pe_session_entry->beaconParams.llbCoexist;
+			pe_session_entry->beaconParams.llbCoexist;
 		beacon_params.llgCoexist =
-				pe_session_entry->beaconParams.llgCoexist;
+			pe_session_entry->beaconParams.llgCoexist;
 		beacon_params.ht20MhzCoexist =
-				pe_session_entry->beaconParams.ht20Coexist;
+			pe_session_entry->beaconParams.ht20Coexist;
 		beacon_params.llnNonGFCoexist =
-				pe_session_entry->beaconParams.llnNonGFCoexist;
+			pe_session_entry->beaconParams.llnNonGFCoexist;
 		beacon_params.fLsigTXOPProtectionFullSupport =
-				pe_session_entry->beaconParams.
-					fLsigTXOPProtectionFullSupport;
+			pe_session_entry->beaconParams
+				.fLsigTXOPProtectionFullSupport;
 		beacon_params.fRIFSMode =
-				pe_session_entry->beaconParams.fRIFSMode;
-		beacon_params.vdev_id =
-				pe_session_entry->vdev_id;
+			pe_session_entry->beaconParams.fRIFSMode;
+		beacon_params.vdev_id = pe_session_entry->vdev_id;
 		beacon_params.paramChangeBitmap |= PARAM_llBCOEXIST_CHANGED;
 		bcn_prms_changed = true;
 	}
 
 	if (bcn_prms_changed) {
 		sch_set_fixed_beacon_fields(mac_ctx, pe_session_entry);
-		lim_send_beacon_params(mac_ctx, &beacon_params, pe_session_entry);
+		lim_send_beacon_params(mac_ctx, &beacon_params,
+				       pe_session_entry);
 	}
 
 	pe_session_entry->old_protection_state = current_protection_state;
 restart_timer:
-	if (qdf_mc_timer_start(&pe_session_entry->
-				protection_fields_reset_timer,
-				SCH_PROTECTION_RESET_TIME)
-		!= QDF_STATUS_SUCCESS) {
+	if (qdf_mc_timer_start(&pe_session_entry->protection_fields_reset_timer,
+			       SCH_PROTECTION_RESET_TIME) !=
+	    QDF_STATUS_SUCCESS) {
 		pe_err("cannot create or start protectionFieldsResetTimer");
 	}
 }
@@ -278,8 +278,8 @@ restart_timer:
  *
  * Return: void
  */
-static void
-pe_init_pmf_comeback_timer(tpAniSirGlobal mac_ctx, struct pe_session *session)
+static void pe_init_pmf_comeback_timer(tpAniSirGlobal mac_ctx,
+				       struct pe_session *session)
 {
 	QDF_STATUS status;
 
@@ -290,10 +290,9 @@ pe_init_pmf_comeback_timer(tpAniSirGlobal mac_ctx, struct pe_session *session)
 	session->pmf_retry_timer_info.mac = mac_ctx;
 	session->pmf_retry_timer_info.vdev_id = session->vdev_id;
 	session->pmf_retry_timer_info.retried = false;
-	status = qdf_mc_timer_init(
-			&session->pmf_retry_timer, QDF_TIMER_TYPE_SW,
-			lim_pmf_comeback_timer_callback,
-			(void *)&session->pmf_retry_timer_info);
+	status = qdf_mc_timer_init(&session->pmf_retry_timer, QDF_TIMER_TYPE_SW,
+				   lim_pmf_comeback_timer_callback,
+				   (void *)&session->pmf_retry_timer_info);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		pe_err("cannot init pmf comeback timer");
 }
@@ -370,8 +369,12 @@ static void pe_init_fils_info(struct pe_session *session)
 	fils_info->auth_info.domain_name = NULL;
 }
 #else
-static void pe_delete_fils_info(struct pe_session *session) { }
-static void pe_init_fils_info(struct pe_session *session) { }
+static void pe_delete_fils_info(struct pe_session *session)
+{
+}
+static void pe_init_fils_info(struct pe_session *session)
+{
+}
 #endif
 
 /**
@@ -386,31 +389,29 @@ static void pe_init_fils_info(struct pe_session *session) { }
  * Return: number of peer idx pool size
  */
 #ifdef FEATURE_WLAN_TDLS
-static inline uint8_t
-lim_get_peer_idxpool_size(uint16_t num_sta, enum bss_type bss_type)
+static inline uint8_t lim_get_peer_idxpool_size(uint16_t num_sta,
+						enum bss_type bss_type)
 {
 	/*
-	 * In station role, index 1 is reserved for peer
-	 * corresponding to AP. For TDLS the index should
-	 * start from 2
-	 */
+   * In station role, index 1 is reserved for peer
+   * corresponding to AP. For TDLS the index should
+   * start from 2
+   */
 	if (bss_type == eSIR_INFRASTRUCTURE_MODE)
 		return num_sta + 2;
 	else
 		return num_sta + 1;
-
 }
 #else
-static inline uint8_t
-lim_get_peer_idxpool_size(uint16_t num_sta, enum bss_type bss_type)
+static inline uint8_t lim_get_peer_idxpool_size(uint16_t num_sta,
+						enum bss_type bss_type)
 {
 	return num_sta + 1;
 }
 #endif
 
 void lim_set_bcn_probe_filter(struct mac_context *mac_ctx,
-				struct pe_session *session,
-				uint8_t sap_channel)
+			      struct pe_session *session, uint8_t sap_channel)
 {
 	struct mgmt_beacon_probe_filter *filter;
 	enum bss_type bss_type;
@@ -427,8 +428,8 @@ void lim_set_bcn_probe_filter(struct mac_context *mac_ctx,
 	bssid = &session->bssId;
 
 	if (session_id >= WLAN_MAX_VDEVS) {
-		pe_err("Invalid session_id %d of type %d",
-			session_id, bss_type);
+		pe_err("Invalid session_id %d of type %d", session_id,
+		       bss_type);
 		return;
 	}
 
@@ -437,7 +438,8 @@ void lim_set_bcn_probe_filter(struct mac_context *mac_ctx,
 	if (eSIR_INFRASTRUCTURE_MODE == bss_type) {
 		filter->num_sta_sessions++;
 		sir_copy_mac_addr(filter->sta_bssid[session_id], *bssid);
-		pe_debug("Set filter for STA Session %d bssid "QDF_MAC_ADDR_FMT,
+		pe_debug(
+			"Set filter for STA Session %d bssid " QDF_MAC_ADDR_FMT,
 			session_id, QDF_MAC_ADDR_REF(*bssid));
 	} else if (eSIR_INFRA_AP_MODE == bss_type) {
 		if (!sap_channel) {
@@ -446,8 +448,8 @@ void lim_set_bcn_probe_filter(struct mac_context *mac_ctx,
 		}
 		filter->num_sap_sessions++;
 		filter->sap_channel[session_id] = sap_channel;
-		pe_debug("Set filter for SAP session %d channel %d",
-			session_id, sap_channel);
+		pe_debug("Set filter for SAP session %d channel %d", session_id,
+			 sap_channel);
 	}
 
 done:
@@ -471,8 +473,8 @@ void lim_reset_bcn_probe_filter(struct mac_context *mac_ctx,
 	session_id = session->peSessionId;
 
 	if (session_id >= WLAN_MAX_VDEVS) {
-		pe_err("Invalid session_id %d of type %d",
-			session_id, bss_type);
+		pe_err("Invalid session_id %d of type %d", session_id,
+		       bss_type);
 		return;
 	}
 
@@ -482,7 +484,7 @@ void lim_reset_bcn_probe_filter(struct mac_context *mac_ctx,
 		if (filter->num_sta_sessions)
 			filter->num_sta_sessions--;
 		qdf_mem_zero(&filter->sta_bssid[session_id],
-			    sizeof(tSirMacAddr));
+			     sizeof(tSirMacAddr));
 		pe_debug("Cleared STA Filter for session %d", session_id);
 	} else if (eSIR_INFRA_AP_MODE == bss_type) {
 		if (filter->num_sap_sessions)
@@ -496,7 +498,7 @@ void lim_reset_bcn_probe_filter(struct mac_context *mac_ctx,
 }
 
 void lim_update_bcn_probe_filter(struct mac_context *mac_ctx,
-					struct pe_session *session)
+				 struct pe_session *session)
 {
 	struct mgmt_beacon_probe_filter *filter;
 	enum bss_type bss_type;
@@ -511,8 +513,8 @@ void lim_update_bcn_probe_filter(struct mac_context *mac_ctx,
 	session_id = session->peSessionId;
 
 	if (session_id >= WLAN_MAX_VDEVS) {
-		pe_err("Invalid session_id %d of type %d",
-			session_id, bss_type);
+		pe_err("Invalid session_id %d of type %d", session_id,
+		       bss_type);
 		return;
 	}
 
@@ -522,20 +524,19 @@ void lim_update_bcn_probe_filter(struct mac_context *mac_ctx,
 		filter->sap_channel[session_id] = wlan_reg_freq_to_chan(
 			mac_ctx->pdev, session->curr_op_freq);
 		pe_debug("Updated SAP Filter for session %d channel %d",
-			session_id, filter->sap_channel[session_id]);
+			 session_id, filter->sap_channel[session_id]);
 	} else {
-		pe_debug("Invalid session type %d session id %d",
-			bss_type, session_id);
+		pe_debug("Invalid session type %d session id %d", bss_type,
+			 session_id);
 	}
 
 	pe_debug("sta %d sap %d", filter->num_sta_sessions,
 		 filter->num_sap_sessions);
 }
 
-struct pe_session *pe_create_session(struct mac_context *mac,
-				     uint8_t *bssid, uint8_t *sessionId,
-				     uint16_t numSta, enum bss_type bssType,
-				     uint8_t vdev_id)
+struct pe_session *pe_create_session(struct mac_context *mac, uint8_t *bssid,
+				     uint8_t *sessionId, uint16_t numSta,
+				     enum bss_type bssType, uint8_t vdev_id)
 {
 	QDF_STATUS status;
 	uint8_t i;
@@ -563,7 +564,7 @@ struct pe_session *pe_create_session(struct mac_context *mac,
 		return NULL;
 
 	session_ptr->dph.dphHashTable.pDphNodeArray =
-					pe_get_session_dph_node_array(i);
+		pe_get_session_dph_node_array(i);
 	session_ptr->dph.dphHashTable.size = numSta + 1;
 	dph_hash_table_init(mac, &session_ptr->dph.dphHashTable);
 
@@ -588,7 +589,7 @@ struct pe_session *pe_create_session(struct mac_context *mac,
 	session_ptr->htSecondaryChannelOffset = 0;
 #ifdef FEATURE_WLAN_TDLS
 	qdf_mem_zero(session_ptr->peerAIDBitmap,
-		    sizeof(session_ptr->peerAIDBitmap));
+		     sizeof(session_ptr->peerAIDBitmap));
 #endif
 	lim_update_tdls_set_state_for_fw(session_ptr, true);
 	session_ptr->fWaitForProbeRsp = 0;
@@ -603,19 +604,18 @@ struct pe_session *pe_create_session(struct mac_context *mac,
 			qdf_mem_malloc(SIR_MAX_BEACON_SIZE);
 		session_ptr->pSchBeaconFrameEnd =
 			qdf_mem_malloc(SIR_MAX_BEACON_SIZE);
-		if ((!session_ptr->pSchProbeRspTemplate)
-		    || (!session_ptr->pSchBeaconFrameBegin)
-		    || (!session_ptr->pSchBeaconFrameEnd)) {
+		if ((!session_ptr->pSchProbeRspTemplate) ||
+		    (!session_ptr->pSchBeaconFrameBegin) ||
+		    (!session_ptr->pSchBeaconFrameEnd)) {
 			goto free_session_attrs;
 		}
 	}
 
 	/*
-	 * Get vdev object from soc which automatically increments
-	 * reference count.
-	 */
-	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac->psoc,
-						    vdev_id,
+   * Get vdev object from soc which automatically increments
+   * reference count.
+   */
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac->psoc, vdev_id,
 						    WLAN_LEGACY_MAC_ID);
 	if (!vdev) {
 		pe_err("vdev is NULL for vdev_id: %u", vdev_id);
@@ -627,13 +627,14 @@ struct pe_session *pe_create_session(struct mac_context *mac,
 	session_ptr->opmode = wlan_vdev_mlme_get_opmode(vdev);
 	mlme_set_tdls_chan_switch_prohibited(vdev, false);
 	mlme_set_tdls_prohibited(vdev, false);
-	pe_debug("Create PE session: %d opmode %d vdev_id %d  BSSID: "QDF_MAC_ADDR_FMT" Max No of STA: %d",
-		 *sessionId, session_ptr->opmode, vdev_id,
-		 QDF_MAC_ADDR_REF(bssid), numSta);
+	pe_debug(
+		"Create PE session: %d opmode %d vdev_id %d  BSSID: " QDF_MAC_ADDR_FMT
+		" Max No of STA: %d",
+		*sessionId, session_ptr->opmode, vdev_id,
+		QDF_MAC_ADDR_REF(bssid), numSta);
 
 	if (!lim_create_peer_idxpool(
-		session_ptr,
-		lim_get_peer_idxpool_size(numSta, bssType)))
+		    session_ptr, lim_get_peer_idxpool_size(numSta, bssType)))
 		goto free_session_attrs;
 
 	if (eSIR_INFRASTRUCTURE_MODE == bssType)
@@ -647,11 +648,10 @@ struct pe_session *pe_create_session(struct mac_context *mac,
 		session_ptr->is_session_obss_offload_enabled = false;
 		session_ptr->is_obss_reset_timer_initialized = false;
 
-		status = qdf_mc_timer_init(&session_ptr->
-					   protection_fields_reset_timer,
-					   QDF_TIMER_TYPE_SW,
-					   pe_reset_protection_callback,
-					   (void *)&mac->lim.gpSession[i]);
+		status = qdf_mc_timer_init(
+			&session_ptr->protection_fields_reset_timer,
+			QDF_TIMER_TYPE_SW, pe_reset_protection_callback,
+			(void *)&mac->lim.gpSession[i]);
 
 		if (QDF_IS_STATUS_ERROR(status))
 			pe_err("cannot create protection fields reset timer");
@@ -710,29 +710,30 @@ free_session_attrs:
 
    \param mac                   - pointer to global adapter context
    \param bssid                   - BSSID of the session
-   \param sessionId             -session ID is returned here, if session is found.
+   \param sessionId             -session ID is returned here, if session is
+   found.
 
-   \return struct pe_session *         - pointer to the session context or NULL if session is not found.
+   \return struct pe_session *         - pointer to the session context or NULL
+   if session is not found.
 
    \sa
    --------------------------------------------------------------------------*/
-struct pe_session *pe_find_session_by_bssid(struct mac_context *mac, uint8_t *bssid,
-				     uint8_t *sessionId)
+struct pe_session *pe_find_session_by_bssid(struct mac_context *mac,
+					    uint8_t *bssid, uint8_t *sessionId)
 {
 	uint8_t i;
 
 	for (i = 0; i < mac->lim.maxBssId; i++) {
 		/* If BSSID matches return corresponding tables address */
-		if ((mac->lim.gpSession[i].valid)
-		    && (sir_compare_mac_addr(mac->lim.gpSession[i].bssId,
-					    bssid))) {
+		if ((mac->lim.gpSession[i].valid) &&
+		    (sir_compare_mac_addr(mac->lim.gpSession[i].bssId,
+					  bssid))) {
 			*sessionId = i;
 			return &mac->lim.gpSession[i];
 		}
 	}
 
 	return NULL;
-
 }
 
 struct pe_session *pe_find_session_by_vdev_id(struct mac_context *mac,
@@ -751,10 +752,9 @@ struct pe_session *pe_find_session_by_vdev_id(struct mac_context *mac,
 	return NULL;
 }
 
-struct pe_session
-*pe_find_session_by_vdev_id_and_state(struct mac_context *mac,
-				      uint8_t vdev_id,
-				      enum eLimMlmStates lim_state)
+struct pe_session *
+pe_find_session_by_vdev_id_and_state(struct mac_context *mac, uint8_t vdev_id,
+				     enum eLimMlmStates lim_state)
 {
 	uint8_t i;
 
@@ -764,17 +764,16 @@ struct pe_session
 		    mac->lim.gpSession[i].limMlmState == lim_state)
 			return &mac->lim.gpSession[i];
 	}
-	pe_debug("Session lookup fails for vdev_id: %d, mlm state: %d",
-		 vdev_id, lim_state);
+	pe_debug("Session lookup fails for vdev_id: %d, mlm state: %d", vdev_id,
+		 lim_state);
 
 	return NULL;
 }
 
-struct pe_session *
-pe_find_session_by_bssid_and_vdev_id(struct mac_context *mac,
-				     uint8_t *bssid,
-				     uint8_t vdev_id,
-				     uint8_t *sessionId)
+struct pe_session *pe_find_session_by_bssid_and_vdev_id(struct mac_context *mac,
+							uint8_t *bssid,
+							uint8_t vdev_id,
+							uint8_t *sessionId)
 {
 	uint8_t i;
 
@@ -783,7 +782,7 @@ pe_find_session_by_bssid_and_vdev_id(struct mac_context *mac,
 		if ((mac->lim.gpSession[i].valid) &&
 		    (mac->lim.gpSession[i].vdev_id == vdev_id) &&
 		    (sir_compare_mac_addr(mac->lim.gpSession[i].bssId,
-					    bssid))) {
+					  bssid))) {
 			*sessionId = i;
 			return &mac->lim.gpSession[i];
 		}
@@ -793,20 +792,23 @@ pe_find_session_by_bssid_and_vdev_id(struct mac_context *mac,
 }
 
 /*--------------------------------------------------------------------------
-   \brief pe_find_session_by_session_id() - looks up the PE session given the session ID.
+   \brief pe_find_session_by_session_id() - looks up the PE session given the
+   session ID.
 
    This function returns the session context  if the session
    corresponding to the given session ID is found in the PE session table.
 
    \param mac                   - pointer to global adapter context
-   \param sessionId             -session ID for which session context needs to be looked up.
+   \param sessionId             -session ID for which session context needs to
+   be looked up.
 
-   \return struct pe_session *         - pointer to the session context or NULL if session is not found.
+   \return struct pe_session *         - pointer to the session context or NULL
+   if session is not found.
 
    \sa
    --------------------------------------------------------------------------*/
 struct pe_session *pe_find_session_by_session_id(struct mac_context *mac,
-					  uint8_t sessionId)
+						 uint8_t sessionId)
 {
 	if (sessionId >= mac->lim.maxBssId) {
 		pe_err("Invalid sessionId: %d", sessionId);
@@ -854,9 +856,10 @@ void pe_delete_session(struct mac_context *mac_ctx, struct pe_session *session)
 		return;
 	}
 
-	pe_debug("Delete PE session: %d opmode: %d vdev_id: %d BSSID: "QDF_MAC_ADDR_FMT,
-		 session->peSessionId, session->opmode, session->vdev_id,
-		 QDF_MAC_ADDR_REF(session->bssId));
+	pe_debug(
+		"Delete PE session: %d opmode: %d vdev_id: %d BSSID: " QDF_MAC_ADDR_FMT,
+		session->peSessionId, session->opmode, session->vdev_id,
+		QDF_MAC_ADDR_REF(session->bssId));
 
 	lim_reset_bcn_probe_filter(mac_ctx, session);
 	lim_sae_auth_cleanup_retry(mac_ctx, session->vdev_id);
@@ -921,8 +924,8 @@ void pe_delete_session(struct mac_context *mac_ctx, struct pe_session *session)
 
 	if (session->dph.dphHashTable.pDphNodeArray) {
 		qdf_mem_zero(session->dph.dphHashTable.pDphNodeArray,
-			sizeof(struct sDphHashNode) *
-			(SIR_SAP_MAX_NUM_PEERS + 1));
+			     sizeof(struct sDphHashNode) *
+				     (SIR_SAP_MAX_NUM_PEERS + 1));
 		session->dph.dphHashTable.pDphNodeArray = NULL;
 	}
 
@@ -952,8 +955,7 @@ void pe_delete_session(struct mac_context *mac_ctx, struct pe_session *session)
 		for (i = 0; i < session->dph.dphHashTable.size; i++) {
 			if (!session->parsedAssocReq[i])
 				continue;
-			tmp_ptr = ((tpSirAssocReq)
-				  (session->parsedAssocReq[i]));
+			tmp_ptr = ((tpSirAssocReq)(session->parsedAssocReq[i]));
 			lim_free_assoc_req_frm_buf(tmp_ptr);
 			qdf_mem_free(session->parsedAssocReq[i]);
 			session->parsedAssocReq[i] = NULL;
@@ -963,7 +965,7 @@ void pe_delete_session(struct mac_context *mac_ctx, struct pe_session *session)
 		session->parsedAssocReq = NULL;
 	}
 	if (session->limAssocResponseData) {
-		assoc_rsp = (tpSirAssocRsp) session->limAssocResponseData;
+		assoc_rsp = (tpSirAssocRsp)session->limAssocResponseData;
 		qdf_mem_free(assoc_rsp->sha384_ft_subelem.gtk);
 		qdf_mem_free(assoc_rsp->sha384_ft_subelem.igtk);
 		qdf_mem_free(session->limAssocResponseData);
@@ -1034,22 +1036,25 @@ void pe_delete_session(struct mac_context *mac_ctx, struct pe_session *session)
 }
 
 /*--------------------------------------------------------------------------
-   \brief pe_find_session_by_peer_sta() - looks up the PE session given the Station Address.
+   \brief pe_find_session_by_peer_sta() - looks up the PE session given the
+   Station Address.
 
    This function returns the session context and the session ID if the session
    corresponding to the given station address is found in the PE session table.
 
    \param mac                   - pointer to global adapter context
    \param sa                       - Peer STA Address of the session
-   \param sessionId             -session ID is returned here, if session is found.
+   \param sessionId             -session ID is returned here, if session is
+   found.
 
-   \return struct pe_session *         - pointer to the session context or NULL if session is not found.
+   \return struct pe_session *         - pointer to the session context or NULL
+   if session is not found.
 
    \sa
    --------------------------------------------------------------------------*/
 
-struct pe_session *pe_find_session_by_peer_sta(struct mac_context *mac, uint8_t *sa,
-					uint8_t *sessionId)
+struct pe_session *pe_find_session_by_peer_sta(struct mac_context *mac,
+					       uint8_t *sa, uint8_t *sessionId)
 {
 	uint8_t i;
 	tpDphHashNode pSta;
@@ -1057,10 +1062,9 @@ struct pe_session *pe_find_session_by_peer_sta(struct mac_context *mac, uint8_t 
 
 	for (i = 0; i < mac->lim.maxBssId; i++) {
 		if ((mac->lim.gpSession[i].valid)) {
-			pSta =
-				dph_lookup_hash_entry(mac, sa, &aid,
-						      &mac->lim.gpSession[i].dph.
-						      dphHashTable);
+			pSta = dph_lookup_hash_entry(
+				mac, sa, &aid,
+				&mac->lim.gpSession[i].dph.dphHashTable);
 			if (pSta) {
 				*sessionId = i;
 				return &mac->lim.gpSession[i];
@@ -1068,7 +1072,7 @@ struct pe_session *pe_find_session_by_peer_sta(struct mac_context *mac, uint8_t 
 		}
 	}
 
-	pe_debug("Session lookup fails for Peer: "QDF_MAC_ADDR_FMT,
+	pe_debug("Session lookup fails for Peer: " QDF_MAC_ADDR_FMT,
 		 QDF_MAC_ADDR_REF(sa));
 	return NULL;
 }
@@ -1083,15 +1087,15 @@ struct pe_session *pe_find_session_by_peer_sta(struct mac_context *mac, uint8_t 
  * Return: pe session entry for given scan id if found else NULL
  */
 struct pe_session *pe_find_session_by_scan_id(struct mac_context *mac_ctx,
-				       uint32_t scan_id)
+					      uint32_t scan_id)
 {
 	uint8_t i;
 
 	for (i = 0; i < mac_ctx->lim.maxBssId; i++) {
 		if ((mac_ctx->lim.gpSession[i].valid) &&
 		    (mac_ctx->lim.gpSession[i].ftPEContext.pFTPreAuthReq) &&
-		    (mac_ctx->lim.gpSession[i].ftPEContext.pFTPreAuthReq
-		     ->scan_id == scan_id)) {
+		    (mac_ctx->lim.gpSession[i]
+			     .ftPEContext.pFTPreAuthReq->scan_id == scan_id)) {
 			return &mac_ctx->lim.gpSession[i];
 		}
 	}

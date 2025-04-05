@@ -3,72 +3,67 @@
  * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/of.h>
+#include "wcd-spi-registers.h"
+#include <linux/bitops.h>
+#include <linux/component.h>
 #include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
-#include <linux/bitops.h>
-#include <linux/spi/spi.h>
-#include <linux/regmap.h>
-#include <linux/component.h>
-#include <linux/ratelimit.h>
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
+#include <linux/ratelimit.h>
+#include <linux/regmap.h>
+#include <linux/spi/spi.h>
+#include <soc/wcd-spi-ac.h>
 #include <sound/wcd-dsp-mgr.h>
 #include <sound/wcd-spi.h>
-#include <soc/wcd-spi-ac.h>
-#include "wcd-spi-registers.h"
 
 /* Byte manipulations */
-#define SHIFT_1_BYTES    (8)
-#define SHIFT_2_BYTES    (16)
-#define SHIFT_3_BYTES    (24)
+#define SHIFT_1_BYTES (8)
+#define SHIFT_2_BYTES (16)
+#define SHIFT_3_BYTES (24)
 
 /* Command opcodes */
-#define WCD_SPI_CMD_NOP     (0x00)
-#define WCD_SPI_CMD_WREN    (0x06)
-#define WCD_SPI_CMD_CLKREQ  (0xDA)
-#define WCD_SPI_CMD_RDSR    (0x05)
-#define WCD_SPI_CMD_IRR     (0x81)
-#define WCD_SPI_CMD_IRW     (0x82)
-#define WCD_SPI_CMD_MIOR    (0x83)
-#define WCD_SPI_CMD_FREAD   (0x0B)
-#define WCD_SPI_CMD_MIOW    (0x02)
-#define WCD_SPI_WRITE_FRAME_OPCODE \
-	(WCD_SPI_CMD_MIOW << SHIFT_3_BYTES)
-#define WCD_SPI_READ_FRAME_OPCODE \
-	(WCD_SPI_CMD_MIOR << SHIFT_3_BYTES)
-#define WCD_SPI_FREAD_FRAME_OPCODE \
-	(WCD_SPI_CMD_FREAD << SHIFT_3_BYTES)
+#define WCD_SPI_CMD_NOP (0x00)
+#define WCD_SPI_CMD_WREN (0x06)
+#define WCD_SPI_CMD_CLKREQ (0xDA)
+#define WCD_SPI_CMD_RDSR (0x05)
+#define WCD_SPI_CMD_IRR (0x81)
+#define WCD_SPI_CMD_IRW (0x82)
+#define WCD_SPI_CMD_MIOR (0x83)
+#define WCD_SPI_CMD_FREAD (0x0B)
+#define WCD_SPI_CMD_MIOW (0x02)
+#define WCD_SPI_WRITE_FRAME_OPCODE (WCD_SPI_CMD_MIOW << SHIFT_3_BYTES)
+#define WCD_SPI_READ_FRAME_OPCODE (WCD_SPI_CMD_MIOR << SHIFT_3_BYTES)
+#define WCD_SPI_FREAD_FRAME_OPCODE (WCD_SPI_CMD_FREAD << SHIFT_3_BYTES)
 
 /* Command lengths */
-#define WCD_SPI_OPCODE_LEN       (0x01)
-#define WCD_SPI_CMD_NOP_LEN      (0x01)
-#define WCD_SPI_CMD_WREN_LEN     (0x01)
-#define WCD_SPI_CMD_CLKREQ_LEN   (0x04)
-#define WCD_SPI_CMD_IRR_LEN      (0x04)
-#define WCD_SPI_CMD_IRW_LEN      (0x06)
+#define WCD_SPI_OPCODE_LEN (0x01)
+#define WCD_SPI_CMD_NOP_LEN (0x01)
+#define WCD_SPI_CMD_WREN_LEN (0x01)
+#define WCD_SPI_CMD_CLKREQ_LEN (0x04)
+#define WCD_SPI_CMD_IRR_LEN (0x04)
+#define WCD_SPI_CMD_IRW_LEN (0x06)
 #define WCD_SPI_WRITE_SINGLE_LEN (0x08)
-#define WCD_SPI_READ_SINGLE_LEN  (0x13)
-#define WCD_SPI_CMD_FREAD_LEN    (0x13)
+#define WCD_SPI_READ_SINGLE_LEN (0x13)
+#define WCD_SPI_CMD_FREAD_LEN (0x13)
 
 /* Command delays */
 #define WCD_SPI_CLKREQ_DELAY_USECS (500)
-#define WCD_SPI_CLK_OFF_TIMER_MS   (500)
+#define WCD_SPI_CLK_OFF_TIMER_MS (500)
 #define WCD_SPI_RESUME_TIMEOUT_MS 100
 
 /* Command masks */
-#define WCD_CMD_ADDR_MASK            \
-	(0xFF |                      \
-	 (0xFF << SHIFT_1_BYTES) |   \
-	 (0xFF << SHIFT_2_BYTES))
+#define WCD_CMD_ADDR_MASK \
+	(0xFF | (0xFF << SHIFT_1_BYTES) | (0xFF << SHIFT_2_BYTES))
 
 /* Clock ctrl request related */
 #define WCD_SPI_CLK_ENABLE true
 #define WCD_SPI_CLK_DISABLE false
-#define WCD_SPI_CLK_FLAG_DELAYED    (1 << 0)
-#define WCD_SPI_CLK_FLAG_IMMEDIATE  (1 << 1)
+#define WCD_SPI_CLK_FLAG_DELAYED (1 << 0)
+#define WCD_SPI_CLK_FLAG_IMMEDIATE (1 << 1)
 
 /* Internal addresses */
 #define WCD_SPI_ADDR_IPC_CTL_HOST (0x012014)
@@ -88,27 +83,27 @@
 #define WCD_SPI_RW_MAX_BUF_SIZE (WCD_SPI_RW_MULTI_MAX_LEN + 32)
 
 /* Alignment requirements */
-#define WCD_SPI_RW_MIN_ALIGN    WCD_SPI_WORD_BYTE_CNT
-#define WCD_SPI_RW_MULTI_ALIGN  (16)
+#define WCD_SPI_RW_MIN_ALIGN WCD_SPI_WORD_BYTE_CNT
+#define WCD_SPI_RW_MULTI_ALIGN (16)
 
 /* Status mask bits */
 #define WCD_SPI_CLK_STATE_ENABLED BIT(0)
 #define WCD_SPI_IS_SUSPENDED BIT(1)
 
 /* Locking related */
-#define WCD_SPI_MUTEX_LOCK(spi, lock)              \
-{                                                  \
-	dev_vdbg(&spi->dev, "%s: mutex_lock(%s)\n", \
-		 __func__, __stringify_1(lock));    \
-	mutex_lock(&lock);                         \
-}
+#define WCD_SPI_MUTEX_LOCK(spi, lock)                                 \
+	{                                                             \
+		dev_vdbg(&spi->dev, "%s: mutex_lock(%s)\n", __func__, \
+			 __stringify_1(lock));                        \
+		mutex_lock(&lock);                                    \
+	}
 
-#define WCD_SPI_MUTEX_UNLOCK(spi, lock)              \
-{                                                    \
-	dev_vdbg(&spi->dev, "%s: mutex_unlock(%s)\n", \
-		 __func__, __stringify_1(lock));      \
-	mutex_unlock(&lock);                         \
-}
+#define WCD_SPI_MUTEX_UNLOCK(spi, lock)                                 \
+	{                                                               \
+		dev_vdbg(&spi->dev, "%s: mutex_unlock(%s)\n", __func__, \
+			 __stringify_1(lock));                          \
+		mutex_unlock(&lock);                                    \
+	}
 
 struct wcd_spi_debug_data {
 	struct dentry *dir;
@@ -168,7 +163,6 @@ enum xfer_request {
 	WCD_SPI_XFER_READ,
 };
 
-
 static char *wcd_spi_xfer_req_str(enum xfer_request req)
 {
 	if (req == WCD_SPI_XFER_WRITE)
@@ -219,8 +213,9 @@ static int wcd_spi_wait_for_resume(struct wcd_spi_priv *wcd_spi)
 	/* If suspended then wait for resume to happen */
 	reinit_completion(&wcd_spi->resume_comp);
 	WCD_SPI_MUTEX_UNLOCK(spi, wcd_spi->clk_mutex);
-	rc = wait_for_completion_timeout(&wcd_spi->resume_comp,
-				msecs_to_jiffies(WCD_SPI_RESUME_TIMEOUT_MS));
+	rc = wait_for_completion_timeout(
+		&wcd_spi->resume_comp,
+		msecs_to_jiffies(WCD_SPI_RESUME_TIMEOUT_MS));
 	WCD_SPI_MUTEX_LOCK(spi, wcd_spi->clk_mutex);
 	if (rc == 0) {
 		dev_err(&spi->dev, "%s: failed to resume in %u msec\n",
@@ -236,8 +231,8 @@ done:
 	return rc;
 }
 
-static int wcd_spi_read_single(struct spi_device *spi,
-			       u32 remote_addr, u32 *val)
+static int wcd_spi_read_single(struct spi_device *spi, u32 remote_addr,
+			       u32 *val)
 {
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 	struct spi_transfer *tx_xfer = &wcd_spi->xfer2[0];
@@ -247,12 +242,10 @@ static int wcd_spi_read_single(struct spi_device *spi,
 	u32 frame = 0;
 	int ret;
 
-	dev_dbg(&spi->dev, "%s: remote_addr = 0x%x\n",
-		__func__, remote_addr);
+	dev_dbg(&spi->dev, "%s: remote_addr = 0x%x\n", __func__, remote_addr);
 
 	if (!tx_buf) {
-		dev_err(&spi->dev, "%s: tx_buf not allocated\n",
-			__func__);
+		dev_err(&spi->dev, "%s: tx_buf not allocated\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -271,16 +264,15 @@ static int wcd_spi_read_single(struct spi_device *spi,
 
 	ret = spi_sync(spi, &wcd_spi->msg2);
 	if (ret)
-		dev_err(&spi->dev, "%s: spi_sync failed, err %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: spi_sync failed, err %d\n", __func__,
+			ret);
 	else
-		memcpy((u8*) val, rx_buf, sizeof(*val));
+		memcpy((u8 *)val, rx_buf, sizeof(*val));
 
 	return ret;
 }
 
-static int wcd_spi_read_multi(struct spi_device *spi,
-			      u32 remote_addr, u8 *data,
+static int wcd_spi_read_multi(struct spi_device *spi, u32 remote_addr, u8 *data,
 			      size_t len)
 {
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
@@ -290,8 +282,8 @@ static int wcd_spi_read_multi(struct spi_device *spi,
 	u32 frame = 0;
 	int ret;
 
-	dev_dbg(&spi->dev,  "%s: addr 0x%x, len = %zd\n",
-		__func__, remote_addr, len);
+	dev_dbg(&spi->dev, "%s: addr 0x%x, len = %zd\n", __func__, remote_addr,
+		len);
 
 	frame |= WCD_SPI_FREAD_FRAME_OPCODE;
 	frame |= remote_addr & WCD_CMD_ADDR_MASK;
@@ -311,8 +303,7 @@ static int wcd_spi_read_multi(struct spi_device *spi,
 
 	ret = spi_sync(spi, &wcd_spi->msg1);
 	if (ret) {
-		dev_err(&spi->dev, "%s: failed, err = %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: failed, err = %d\n", __func__, ret);
 		goto done;
 	}
 
@@ -321,16 +312,16 @@ done:
 	return ret;
 }
 
-static int wcd_spi_write_single(struct spi_device *spi,
-				u32 remote_addr, u32 val)
+static int wcd_spi_write_single(struct spi_device *spi, u32 remote_addr,
+				u32 val)
 {
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 	struct spi_transfer *xfer = &wcd_spi->xfer1;
 	u8 *tx_buf = wcd_spi->tx_buf;
 	u32 frame = 0;
 
-	dev_dbg(&spi->dev, "%s: remote_addr = 0x%x, val = 0x%x\n",
-		__func__, remote_addr, val);
+	dev_dbg(&spi->dev, "%s: remote_addr = 0x%x, val = 0x%x\n", __func__,
+		remote_addr, val);
 
 	memset(tx_buf, 0, WCD_SPI_WRITE_SINGLE_LEN);
 	frame |= WCD_SPI_WRITE_FRAME_OPCODE;
@@ -347,9 +338,8 @@ static int wcd_spi_write_single(struct spi_device *spi,
 	return spi_sync(spi, &wcd_spi->msg1);
 }
 
-static int wcd_spi_write_multi(struct spi_device *spi,
-			       u32 remote_addr, u8 *data,
-			       size_t len)
+static int wcd_spi_write_multi(struct spi_device *spi, u32 remote_addr,
+			       u8 *data, size_t len)
 {
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 	struct spi_transfer *xfer = &wcd_spi->xfer1;
@@ -357,8 +347,8 @@ static int wcd_spi_write_multi(struct spi_device *spi,
 	u8 *tx_buf = wcd_spi->tx_buf;
 	int xfer_len, ret;
 
-	dev_dbg(&spi->dev, "%s: addr = 0x%x len = %zd\n",
-		__func__, remote_addr, len);
+	dev_dbg(&spi->dev, "%s: addr = 0x%x len = %zd\n", __func__, remote_addr,
+		len);
 
 	frame |= WCD_SPI_WRITE_FRAME_OPCODE;
 	frame |= (remote_addr & WCD_CMD_ADDR_MASK);
@@ -367,8 +357,7 @@ static int wcd_spi_write_multi(struct spi_device *spi,
 	xfer_len = len + sizeof(frame);
 
 	if (!tx_buf) {
-		dev_err(&spi->dev, "%s: tx_buf not allocated\n",
-			__func__);
+		dev_err(&spi->dev, "%s: tx_buf not allocated\n", __func__);
 		return -ENOMEM;
 	}
 
@@ -381,8 +370,7 @@ static int wcd_spi_write_multi(struct spi_device *spi,
 
 	ret = spi_sync(spi, &wcd_spi->msg1);
 	if (ret < 0)
-		dev_err(&spi->dev,
-			"%s: Failed, addr = 0x%x, len = %zd\n",
+		dev_err(&spi->dev, "%s: Failed, addr = 0x%x, len = %zd\n",
 			__func__, remote_addr, len);
 	return ret;
 }
@@ -398,14 +386,11 @@ static int wcd_spi_transfer_split(struct spi_device *spi,
 
 	/* Perform single writes until multi word alignment is met */
 	loop_cnt = 1;
-	while (remain_size &&
-	       !IS_ALIGNED(addr, WCD_SPI_RW_MULTI_ALIGN)) {
+	while (remain_size && !IS_ALIGNED(addr, WCD_SPI_RW_MULTI_ALIGN)) {
 		if (xfer_req == WCD_SPI_XFER_WRITE)
-			ret = wcd_spi_write_single(spi, addr,
-						   (*(u32 *)data));
+			ret = wcd_spi_write_single(spi, addr, (*(u32 *)data));
 		else
-			ret = wcd_spi_read_single(spi, addr,
-						  (u32 *)data);
+			ret = wcd_spi_read_single(spi, addr, (u32 *)data);
 		if (ret < 0) {
 			dev_err(&spi->dev,
 				"%s: %s fail iter(%d) start-word addr (0x%x)\n",
@@ -444,12 +429,11 @@ static int wcd_spi_transfer_split(struct spi_device *spi,
 	}
 
 	/*
-	 * Perform write for max possible data that is multiple
-	 * of the minimum size for multi-write commands.
-	 */
+   * Perform write for max possible data that is multiple
+   * of the minimum size for multi-write commands.
+   */
 	to_xfer = remain_size - (remain_size % WCD_SPI_RW_MULTI_MIN_LEN);
-	if (remain_size >= WCD_SPI_RW_MULTI_MIN_LEN &&
-	    to_xfer > 0) {
+	if (remain_size >= WCD_SPI_RW_MULTI_MIN_LEN && to_xfer > 0) {
 		if (xfer_req == WCD_SPI_XFER_WRITE)
 			ret = wcd_spi_write_multi(spi, addr, data, to_xfer);
 		else
@@ -457,8 +441,8 @@ static int wcd_spi_transfer_split(struct spi_device *spi,
 		if (ret < 0) {
 			dev_err(&spi->dev,
 				"%s: %s fail write addr (0x%x), size (0x%x)\n",
-				__func__, wcd_spi_xfer_req_str(xfer_req),
-				addr, to_xfer);
+				__func__, wcd_spi_xfer_req_str(xfer_req), addr,
+				to_xfer);
 			goto done;
 		}
 
@@ -473,7 +457,7 @@ static int wcd_spi_transfer_split(struct spi_device *spi,
 		if (xfer_req == WCD_SPI_XFER_WRITE)
 			ret = wcd_spi_write_single(spi, addr, (*((u32 *)data)));
 		else
-			ret = wcd_spi_read_single(spi, addr,  (u32 *) data);
+			ret = wcd_spi_read_single(spi, addr, (u32 *)data);
 		if (ret < 0) {
 			dev_err(&spi->dev,
 				"%s: %s fail iter(%d) end-write addr (0x%x)\n",
@@ -507,9 +491,8 @@ static int wcd_spi_cmd_clkreq(struct spi_device *spi)
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 	struct spi_transfer *xfer = &wcd_spi->xfer1;
 	u8 *tx_buf = wcd_spi->tx_buf;
-	u8 cmd[WCD_SPI_CMD_CLKREQ_LEN] = {
-		WCD_SPI_CMD_CLKREQ,
-		0xBA, 0x80, 0x00};
+	u8 cmd[WCD_SPI_CMD_CLKREQ_LEN] = { WCD_SPI_CMD_CLKREQ, 0xBA, 0x80,
+					   0x00 };
 
 	memcpy(tx_buf, cmd, WCD_SPI_CMD_CLKREQ_LEN);
 	wcd_spi_reinit_xfer(xfer);
@@ -530,8 +513,7 @@ static int wcd_spi_cmd_wr_en(struct spi_device *spi)
 	return spi_write(spi, tx_buf, WCD_SPI_CMD_WREN_LEN);
 }
 
-static int wcd_spi_cmd_rdsr(struct spi_device *spi,
-			    u32 *rdsr_status)
+static int wcd_spi_cmd_rdsr(struct spi_device *spi, u32 *rdsr_status)
 {
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 	struct spi_transfer *tx_xfer = &wcd_spi->xfer2[0];
@@ -552,15 +534,15 @@ static int wcd_spi_cmd_rdsr(struct spi_device *spi,
 
 	ret = spi_sync(spi, &wcd_spi->msg2);
 	if (ret < 0) {
-		dev_err(&spi->dev, "%s: RDSR failed, err = %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: RDSR failed, err = %d\n", __func__,
+			ret);
 		goto done;
 	}
 
-	*rdsr_status = be32_to_cpu(*((u32*)rx_buf));
+	*rdsr_status = be32_to_cpu(*((u32 *)rx_buf));
 
-	dev_dbg(&spi->dev, "%s: RDSR success, value = 0x%x\n",
-		__func__, *rdsr_status);
+	dev_dbg(&spi->dev, "%s: RDSR success, value = 0x%x\n", __func__,
+		*rdsr_status);
 done:
 	return ret;
 }
@@ -586,36 +568,34 @@ static int wcd_spi_clk_enable(struct spi_device *spi)
 
 	ret = wcd_spi_cmd_nop(spi);
 	if (ret < 0) {
-		dev_err(&spi->dev, "%s: NOP1 failed, err = %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: NOP1 failed, err = %d\n", __func__,
+			ret);
 		goto done;
 	}
 
 	ret = wcd_spi_cmd_clkreq(spi);
 	if (ret < 0) {
-		dev_err(&spi->dev, "%s: CLK_REQ failed, err = %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: CLK_REQ failed, err = %d\n", __func__,
+			ret);
 		goto done;
 	}
 
 	ret = wcd_spi_cmd_nop(spi);
 	if (ret < 0) {
-		dev_err(&spi->dev, "%s: NOP2 failed, err = %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: NOP2 failed, err = %d\n", __func__,
+			ret);
 		goto done;
 	}
 	wcd_spi_cmd_rdsr(spi, &rd_status);
 	/*
-	 * Read status zero means reads are not
-	 * happenning on the bus, possibly because
-	 * clock request failed.
-	 */
+   * Read status zero means reads are not
+   * happenning on the bus, possibly because
+   * clock request failed.
+   */
 	if (rd_status) {
-		set_bit(WCD_SPI_CLK_STATE_ENABLED,
-			&wcd_spi->status_mask);
+		set_bit(WCD_SPI_CLK_STATE_ENABLED, &wcd_spi->status_mask);
 	} else {
-		dev_err(&spi->dev, "%s: RDSR status is zero\n",
-			__func__);
+		dev_err(&spi->dev, "%s: RDSR status is zero\n", __func__);
 		ret = -EIO;
 	}
 done:
@@ -629,12 +609,11 @@ static int wcd_spi_clk_disable(struct spi_device *spi)
 
 	ret = wcd_spi_write_single(spi, WCD_SPI_ADDR_IPC_CTL_HOST, 0x01);
 	if (ret < 0)
-		dev_err(&spi->dev, "%s: Failed, err = %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: Failed, err = %d\n", __func__, ret);
 	/*
-	 * clear this bit even if clock disable failed
-	 * as the source clocks might get turned off.
-	 */
+   * clear this bit even if clock disable failed
+   * as the source clocks might get turned off.
+   */
 	clear_bit(WCD_SPI_CLK_STATE_ENABLED, &wcd_spi->status_mask);
 
 	/* once the clock is released, SPI access can be released as well */
@@ -651,23 +630,21 @@ static int wcd_spi_clk_disable(struct spi_device *spi)
 	return ret;
 }
 
-static int wcd_spi_clk_ctrl(struct spi_device *spi,
-			    bool request, u32 flags)
+static int wcd_spi_clk_ctrl(struct spi_device *spi, bool request, u32 flags)
 {
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 	int ret = 0;
 	const char *delay_str;
 
-	delay_str = (flags == WCD_SPI_CLK_FLAG_DELAYED) ?
-		    "delayed" : "immediate";
+	delay_str = (flags == WCD_SPI_CLK_FLAG_DELAYED) ? "delayed" :
+							  "immediate";
 
 	WCD_SPI_MUTEX_LOCK(spi, wcd_spi->clk_mutex);
 
 	/* Reject any unbalanced disable request */
-	if (wcd_spi->clk_users < 0 ||
-	    (!request && wcd_spi->clk_users == 0)) {
+	if (wcd_spi->clk_users < 0 || (!request && wcd_spi->clk_users == 0)) {
 		dev_err(&spi->dev, "%s: Unbalanced clk_users %d for %s\n",
-			 __func__, wcd_spi->clk_users,
+			__func__, wcd_spi->clk_users,
 			request ? "enable" : "disable");
 		ret = -EINVAL;
 
@@ -679,9 +656,9 @@ static int wcd_spi_clk_ctrl(struct spi_device *spi,
 
 	if (request == WCD_SPI_CLK_ENABLE) {
 		/*
-		 * If the SPI bus is suspended, then return error
-		 * as the transaction cannot be completed.
-		 */
+     * If the SPI bus is suspended, then return error
+     * as the transaction cannot be completed.
+     */
 		if (wcd_spi_is_suspended(wcd_spi)) {
 			dev_err(&spi->dev,
 				"%s: SPI suspended, cannot enable clk\n",
@@ -698,9 +675,9 @@ static int wcd_spi_clk_ctrl(struct spi_device *spi,
 		wcd_spi->clk_users++;
 
 		/*
-		 * If clk state is already set,
-		 * then clk wasnt really disabled
-		 */
+     * If clk state is already set,
+     * then clk wasnt really disabled
+     */
 		if (test_bit(WCD_SPI_CLK_STATE_ENABLED, &wcd_spi->status_mask))
 			goto done;
 		else if (wcd_spi->clk_users == 1)
@@ -714,12 +691,13 @@ static int wcd_spi_clk_ctrl(struct spi_device *spi,
 			goto done;
 
 		/*
-		 * If we are here, clk_users must be 0 and needs
-		 * to be disabled. Call the disable based on the
-		 * flags.
-		 */
+     * If we are here, clk_users must be 0 and needs
+     * to be disabled. Call the disable based on the
+     * flags.
+     */
 		if (flags == WCD_SPI_CLK_FLAG_DELAYED) {
-			schedule_delayed_work(&wcd_spi->clk_dwork,
+			schedule_delayed_work(
+				&wcd_spi->clk_dwork,
 				msecs_to_jiffies(WCD_SPI_CLK_OFF_TIMER_MS));
 		} else {
 			ret = wcd_spi_clk_disable(spi);
@@ -754,23 +732,20 @@ static int wcd_spi_init(struct spi_device *spi)
 		goto err_wr_en;
 
 	/*
-	 * In case spi_init is called after component deinit,
-	 * it is possible hardware register state is also reset.
-	 * Sync the regcache here so hardware state is updated
-	 * to reflect the cache.
-	 */
+   * In case spi_init is called after component deinit,
+   * it is possible hardware register state is also reset.
+   * Sync the regcache here so hardware state is updated
+   * to reflect the cache.
+   */
 	regcache_sync(wcd_spi->regmap);
 
-	regmap_write(wcd_spi->regmap, WCD_SPI_SLAVE_CONFIG,
-		     0x0F3D0800);
+	regmap_write(wcd_spi->regmap, WCD_SPI_SLAVE_CONFIG, 0x0F3D0800);
 
 	/* Write the MTU to max allowed size */
-	regmap_update_bits(wcd_spi->regmap,
-			   WCD_SPI_SLAVE_TRNS_LEN,
-			   0xFFFF0000, 0xFFFF0000);
+	regmap_update_bits(wcd_spi->regmap, WCD_SPI_SLAVE_TRNS_LEN, 0xFFFF0000,
+			   0xFFFF0000);
 err_wr_en:
-	wcd_spi_clk_ctrl(spi, WCD_SPI_CLK_DISABLE,
-			 WCD_SPI_CLK_FLAG_IMMEDIATE);
+	wcd_spi_clk_ctrl(spi, WCD_SPI_CLK_DISABLE, WCD_SPI_CLK_FLAG_IMMEDIATE);
 done:
 	return ret;
 }
@@ -789,14 +764,12 @@ static void wcd_spi_clk_work(struct work_struct *work)
 	WCD_SPI_MUTEX_LOCK(spi, wcd_spi->clk_mutex);
 	ret = wcd_spi_clk_disable(spi);
 	if (ret < 0)
-		dev_err(&spi->dev,
-			"%s: Failed to disable clk, err = %d\n",
+		dev_err(&spi->dev, "%s: Failed to disable clk, err = %d\n",
 			__func__, ret);
 	WCD_SPI_MUTEX_UNLOCK(spi, wcd_spi->clk_mutex);
 }
 
-static int __wcd_spi_data_xfer(struct spi_device *spi,
-			       struct wcd_spi_msg *msg,
+static int __wcd_spi_data_xfer(struct spi_device *spi, struct wcd_spi_msg *msg,
 			       enum xfer_request xfer_req)
 {
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
@@ -804,13 +777,11 @@ static int __wcd_spi_data_xfer(struct spi_device *spi,
 
 	/* Check for minimum alignment requirements */
 	if (!IS_ALIGNED(msg->remote_addr, WCD_SPI_RW_MIN_ALIGN)) {
-		dev_err(&spi->dev,
-			"%s addr 0x%x is not aligned to 0x%x\n",
+		dev_err(&spi->dev, "%s addr 0x%x is not aligned to 0x%x\n",
 			__func__, msg->remote_addr, WCD_SPI_RW_MIN_ALIGN);
 		return -EINVAL;
 	} else if (msg->len % WCD_SPI_WORD_BYTE_CNT) {
-		dev_err(&spi->dev,
-			"%s len 0x%zx is not multiple of %d\n",
+		dev_err(&spi->dev, "%s len 0x%zx is not multiple of %d\n",
 			__func__, msg->len, WCD_SPI_WORD_BYTE_CNT);
 		return -EINVAL;
 	}
@@ -831,7 +802,7 @@ static int __wcd_spi_data_xfer(struct spi_device *spi,
 						   (*((u32 *)msg->data)));
 		else
 			ret = wcd_spi_read_single(spi, msg->remote_addr,
-						  (u32 *) msg->data);
+						  (u32 *)msg->data);
 	} else {
 		ret = wcd_spi_transfer_split(spi, msg, xfer_req);
 	}
@@ -841,15 +812,14 @@ done:
 	return ret;
 }
 
-static int wcd_spi_data_xfer(struct spi_device *spi,
-			     struct wcd_spi_msg *msg,
+static int wcd_spi_data_xfer(struct spi_device *spi, struct wcd_spi_msg *msg,
 			     enum xfer_request req)
 {
 	int ret, ret1;
 
 	if (msg->len <= 0) {
-		dev_err(&spi->dev, "%s: Invalid size %zd\n",
-			__func__, msg->len);
+		dev_err(&spi->dev, "%s: Invalid size %zd\n", __func__,
+			msg->len);
 		return -EINVAL;
 	}
 
@@ -857,8 +827,7 @@ static int wcd_spi_data_xfer(struct spi_device *spi,
 	ret = wcd_spi_clk_ctrl(spi, WCD_SPI_CLK_ENABLE,
 			       WCD_SPI_CLK_FLAG_IMMEDIATE);
 	if (ret < 0) {
-		dev_err(&spi->dev, "%s: clk enable failed %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: clk enable failed %d\n", __func__, ret);
 		goto done;
 	}
 
@@ -867,15 +836,15 @@ static int wcd_spi_data_xfer(struct spi_device *spi,
 	if (ret < 0)
 		dev_err(&spi->dev,
 			"%s: Failed %s, addr = 0x%x, size = 0x%zx, err = %d\n",
-			__func__, wcd_spi_xfer_req_str(req),
-			msg->remote_addr, msg->len, ret);
+			__func__, wcd_spi_xfer_req_str(req), msg->remote_addr,
+			msg->len, ret);
 
 	/* Release the clock even if xfer failed */
 	ret1 = wcd_spi_clk_ctrl(spi, WCD_SPI_CLK_DISABLE,
 				WCD_SPI_CLK_FLAG_DELAYED);
 	if (ret1 < 0)
-		dev_err(&spi->dev, "%s: clk disable failed %d\n",
-			__func__, ret1);
+		dev_err(&spi->dev, "%s: clk disable failed %d\n", __func__,
+			ret1);
 done:
 	return ret;
 }
@@ -889,17 +858,16 @@ done:
  * about the write are encapsulated in @msg. Write size should be multiple
  * of 4 bytes and write address should be 4-byte aligned.
  */
-static int wcd_spi_data_write(struct spi_device *spi,
-		       struct wcd_spi_msg *msg)
+static int wcd_spi_data_write(struct spi_device *spi, struct wcd_spi_msg *msg)
 {
 	if (!spi || !msg) {
 		pr_err("%s: Invalid %s\n", __func__,
-			(!spi) ? "spi device" : "msg");
+		       (!spi) ? "spi device" : "msg");
 		return -EINVAL;
 	}
 
-	dev_dbg_ratelimited(&spi->dev, "%s: addr = 0x%x, len = %zu\n",
-			    __func__, msg->remote_addr, msg->len);
+	dev_dbg_ratelimited(&spi->dev, "%s: addr = 0x%x, len = %zu\n", __func__,
+			    msg->remote_addr, msg->len);
 	return wcd_spi_data_xfer(spi, msg, WCD_SPI_XFER_WRITE);
 }
 
@@ -912,30 +880,28 @@ static int wcd_spi_data_write(struct spi_device *spi,
  * about the read are encapsulated in @msg. Read size should be multiple
  * of 4 bytes and read address should be 4-byte aligned.
  */
-static int wcd_spi_data_read(struct spi_device *spi,
-		      struct wcd_spi_msg *msg)
+static int wcd_spi_data_read(struct spi_device *spi, struct wcd_spi_msg *msg)
 {
 	if (!spi || !msg) {
 		pr_err("%s: Invalid %s\n", __func__,
-			(!spi) ? "spi device" : "msg");
+		       (!spi) ? "spi device" : "msg");
 		return -EINVAL;
 	}
 
-	dev_dbg_ratelimited(&spi->dev, "%s: addr = 0x%x,len = %zu\n",
-			    __func__, msg->remote_addr, msg->len);
+	dev_dbg_ratelimited(&spi->dev, "%s: addr = 0x%x,len = %zu\n", __func__,
+			    msg->remote_addr, msg->len);
 	return wcd_spi_data_xfer(spi, msg, WCD_SPI_XFER_READ);
 }
 
-static int wdsp_spi_dload_section(struct spi_device *spi,
-				  void *data)
+static int wdsp_spi_dload_section(struct spi_device *spi, void *data)
 {
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 	struct wdsp_img_section *sec = data;
 	struct wcd_spi_msg msg;
 	int ret;
 
-	dev_dbg(&spi->dev, "%s: addr = 0x%x, size = 0x%zx\n",
-		__func__, sec->addr, sec->size);
+	dev_dbg(&spi->dev, "%s: addr = 0x%x, size = 0x%zx\n", __func__,
+		sec->addr, sec->size);
 
 	msg.remote_addr = sec->addr + wcd_spi->mem_base_addr;
 	msg.data = sec->data;
@@ -959,8 +925,8 @@ static int wdsp_spi_read_section(struct spi_device *spi, void *data)
 	msg.data = sec->data;
 	msg.len = sec->size;
 
-	dev_dbg(&spi->dev, "%s: addr = 0x%x, size = 0x%zx\n",
-		__func__, msg.remote_addr, msg.len);
+	dev_dbg(&spi->dev, "%s: addr = 0x%x, size = 0x%zx\n", __func__,
+		msg.remote_addr, msg.len);
 
 	ret = wcd_spi_data_xfer(spi, &msg, WCD_SPI_XFER_READ);
 	if (ret < 0)
@@ -970,23 +936,21 @@ static int wdsp_spi_read_section(struct spi_device *spi, void *data)
 }
 
 static int wdsp_spi_event_handler(struct device *dev, void *priv_data,
-				  enum wdsp_event_type event,
-				  void *data)
+				  enum wdsp_event_type event, void *data)
 {
 	struct spi_device *spi = to_spi_device(dev);
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 	struct wcd_spi_ops *spi_ops;
 	int ret = 0;
 
-	dev_dbg(&spi->dev, "%s: event type %d\n",
-		__func__, event);
+	dev_dbg(&spi->dev, "%s: event type %d\n", __func__, event);
 
 	switch (event) {
 	case WDSP_EVENT_PRE_SHUTDOWN:
 		if (wcd_spi->ac_dev) {
 			ret = wcd_spi_access_ctl(wcd_spi->ac_dev,
-					 WCD_SPI_ACCESS_REQUEST,
-					 WCD_SPI_AC_REMOTE_DOWN);
+						 WCD_SPI_ACCESS_REQUEST,
+						 WCD_SPI_AC_REMOTE_DOWN);
 			if (ret)
 				dev_err(&spi->dev,
 					"%s: request access failed %d\n",
@@ -1006,8 +970,8 @@ static int wdsp_spi_event_handler(struct device *dev, void *priv_data,
 	case WDSP_EVENT_POST_BOOTUP:
 		if (wcd_spi->ac_dev) {
 			ret = wcd_spi_access_ctl(wcd_spi->ac_dev,
-					 WCD_SPI_ACCESS_RELEASE,
-					 WCD_SPI_AC_REMOTE_DOWN);
+						 WCD_SPI_ACCESS_RELEASE,
+						 WCD_SPI_AC_REMOTE_DOWN);
 			if (ret)
 				dev_err(&spi->dev,
 					"%s: release access failed %d\n",
@@ -1020,8 +984,8 @@ static int wdsp_spi_event_handler(struct device *dev, void *priv_data,
 		ret = wcd_spi_clk_ctrl(spi, WCD_SPI_CLK_ENABLE,
 				       WCD_SPI_CLK_FLAG_IMMEDIATE);
 		if (ret < 0)
-			dev_err(&spi->dev, "%s: clk_req failed %d\n",
-				__func__, ret);
+			dev_err(&spi->dev, "%s: clk_req failed %d\n", __func__,
+				ret);
 		break;
 
 	case WDSP_EVENT_POST_DLOAD_CODE:
@@ -1056,30 +1020,27 @@ static int wdsp_spi_event_handler(struct device *dev, void *priv_data,
 
 	case WDSP_EVENT_GET_DEVOPS:
 		if (!data) {
-			dev_err(&spi->dev, "%s: invalid data\n",
-				__func__);
+			dev_err(&spi->dev, "%s: invalid data\n", __func__);
 			ret = -EINVAL;
 			break;
 		}
 
-		spi_ops = (struct wcd_spi_ops *) data;
+		spi_ops = (struct wcd_spi_ops *)data;
 		spi_ops->spi_dev = spi;
 		spi_ops->read_dev = wcd_spi_data_read;
 		spi_ops->write_dev = wcd_spi_data_write;
 		break;
 
 	default:
-		dev_dbg(&spi->dev, "%s: Unhandled event %d\n",
-			__func__, event);
+		dev_dbg(&spi->dev, "%s: Unhandled event %d\n", __func__, event);
 		break;
 	}
 
 	return ret;
 }
 
-static int wcd_spi_bus_gwrite(void *context, const void *reg,
-			      size_t reg_len, const void *val,
-			      size_t val_len)
+static int wcd_spi_bus_gwrite(void *context, const void *reg, size_t reg_len,
+			      const void *val, size_t val_len)
 {
 	struct device *dev = context;
 	struct spi_device *spi = to_spi_device(dev);
@@ -1097,22 +1058,19 @@ static int wcd_spi_bus_gwrite(void *context, const void *reg,
 	memset(tx_buf, 0, WCD_SPI_CMD_IRW_LEN);
 	tx_buf[0] = WCD_SPI_CMD_IRW;
 	tx_buf[1] = *((u8 *)reg);
-	memcpy(tx_buf + WCD_SPI_OPCODE_LEN + reg_len,
-	       val, val_len);
+	memcpy(tx_buf + WCD_SPI_OPCODE_LEN + reg_len, val, val_len);
 
 	return spi_write(spi, tx_buf, WCD_SPI_CMD_IRW_LEN);
 }
 
-static int wcd_spi_bus_write(void *context, const void *data,
-			     size_t count)
+static int wcd_spi_bus_write(void *context, const void *data, size_t count)
 {
 	struct device *dev = context;
 	struct spi_device *spi = to_spi_device(dev);
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 
 	if (count < (wcd_spi->reg_bytes + wcd_spi->val_bytes)) {
-		dev_err(&spi->dev, "%s: Invalid size %zd\n",
-			__func__, count);
+		dev_err(&spi->dev, "%s: Invalid size %zd\n", __func__, count);
 		WARN_ON(1);
 		return -EINVAL;
 	}
@@ -1122,9 +1080,8 @@ static int wcd_spi_bus_write(void *context, const void *data,
 				  count - wcd_spi->reg_bytes);
 }
 
-static int wcd_spi_bus_read(void *context, const void *reg,
-			    size_t reg_len, void *val,
-			    size_t val_len)
+static int wcd_spi_bus_read(void *context, const void *reg, size_t reg_len,
+			    void *val, size_t val_len)
 {
 	struct device *dev = context;
 	struct spi_device *spi = to_spi_device(dev);
@@ -1159,8 +1116,8 @@ static int wcd_spi_bus_read(void *context, const void *reg,
 
 	ret = spi_sync(spi, &wcd_spi->msg2);
 	if (ret) {
-		dev_err(&spi->dev, "%s: spi_sync failed, err %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: spi_sync failed, err %d\n", __func__,
+			ret);
 		goto done;
 	}
 
@@ -1189,16 +1146,16 @@ static int wcd_spi_state_show(struct seq_file *f, void *ptr)
 	else
 		clk_state = "disabled";
 
-	clk_mutex = mutex_is_locked(&wcd_spi->clk_mutex) ?
-		    "locked" : "unlocked";
+	clk_mutex = mutex_is_locked(&wcd_spi->clk_mutex) ? "locked" :
+							   "unlocked";
 
-	xfer_mutex = mutex_is_locked(&wcd_spi->xfer_mutex) ?
-		     "locked" : "unlocked";
+	xfer_mutex = mutex_is_locked(&wcd_spi->xfer_mutex) ? "locked" :
+							     "unlocked";
 
-	seq_printf(f, "clk_state = %s\nclk_users = %d\n"
+	seq_printf(f,
+		   "clk_state = %s\nclk_users = %d\n"
 		   "clk_mutex = %s\nxfer_mutex = %s\n",
-		   clk_state, wcd_spi->clk_users, clk_mutex,
-		   xfer_mutex);
+		   clk_state, wcd_spi->clk_users, clk_mutex, xfer_mutex);
 	return 0;
 }
 
@@ -1282,45 +1239,41 @@ static int wcd_spi_debugfs_init(struct spi_device *spi)
 	}
 
 	debugfs_create_file("state", 0444, dbg_data->dir, spi, &state_fops);
-	debugfs_create_u32("addr", 0644, dbg_data->dir,
-			   &dbg_data->addr);
-	debugfs_create_u32("size", 0644, dbg_data->dir,
-			   &dbg_data->size);
+	debugfs_create_u32("addr", 0644, dbg_data->dir, &dbg_data->addr);
+	debugfs_create_u32("size", 0644, dbg_data->dir, &dbg_data->size);
 
-	debugfs_create_file("mem_read", 0444, dbg_data->dir,
-			    spi, &mem_read_fops);
+	debugfs_create_file("mem_read", 0444, dbg_data->dir, spi,
+			    &mem_read_fops);
 done:
 	return rc;
 }
 
-
 static const struct reg_default wcd_spi_defaults[] = {
-	{WCD_SPI_SLAVE_SANITY, 0xDEADBEEF},
-	{WCD_SPI_SLAVE_DEVICE_ID, 0x00500000},
-	{WCD_SPI_SLAVE_STATUS, 0x80100000},
-	{WCD_SPI_SLAVE_CONFIG, 0x0F200808},
-	{WCD_SPI_SLAVE_SW_RESET, 0x00000000},
-	{WCD_SPI_SLAVE_IRQ_STATUS, 0x00000000},
-	{WCD_SPI_SLAVE_IRQ_EN, 0x00000000},
-	{WCD_SPI_SLAVE_IRQ_CLR, 0x00000000},
-	{WCD_SPI_SLAVE_IRQ_FORCE, 0x00000000},
-	{WCD_SPI_SLAVE_TX, 0x00000000},
-	{WCD_SPI_SLAVE_TEST_BUS_DATA, 0x00000000},
-	{WCD_SPI_SLAVE_TEST_BUS_CTRL, 0x00000000},
-	{WCD_SPI_SLAVE_SW_RST_IRQ, 0x00000000},
-	{WCD_SPI_SLAVE_CHAR_CFG, 0x00000000},
-	{WCD_SPI_SLAVE_CHAR_DATA_MOSI, 0x00000000},
-	{WCD_SPI_SLAVE_CHAR_DATA_CS_N, 0x00000000},
-	{WCD_SPI_SLAVE_CHAR_DATA_MISO, 0x00000000},
-	{WCD_SPI_SLAVE_TRNS_BYTE_CNT, 0x00000000},
-	{WCD_SPI_SLAVE_TRNS_LEN, 0x00000000},
-	{WCD_SPI_SLAVE_FIFO_LEVEL, 0x00000000},
-	{WCD_SPI_SLAVE_GENERICS, 0x80000000},
-	{WCD_SPI_SLAVE_EXT_BASE_ADDR, 0x00000000},
+	{ WCD_SPI_SLAVE_SANITY, 0xDEADBEEF },
+	{ WCD_SPI_SLAVE_DEVICE_ID, 0x00500000 },
+	{ WCD_SPI_SLAVE_STATUS, 0x80100000 },
+	{ WCD_SPI_SLAVE_CONFIG, 0x0F200808 },
+	{ WCD_SPI_SLAVE_SW_RESET, 0x00000000 },
+	{ WCD_SPI_SLAVE_IRQ_STATUS, 0x00000000 },
+	{ WCD_SPI_SLAVE_IRQ_EN, 0x00000000 },
+	{ WCD_SPI_SLAVE_IRQ_CLR, 0x00000000 },
+	{ WCD_SPI_SLAVE_IRQ_FORCE, 0x00000000 },
+	{ WCD_SPI_SLAVE_TX, 0x00000000 },
+	{ WCD_SPI_SLAVE_TEST_BUS_DATA, 0x00000000 },
+	{ WCD_SPI_SLAVE_TEST_BUS_CTRL, 0x00000000 },
+	{ WCD_SPI_SLAVE_SW_RST_IRQ, 0x00000000 },
+	{ WCD_SPI_SLAVE_CHAR_CFG, 0x00000000 },
+	{ WCD_SPI_SLAVE_CHAR_DATA_MOSI, 0x00000000 },
+	{ WCD_SPI_SLAVE_CHAR_DATA_CS_N, 0x00000000 },
+	{ WCD_SPI_SLAVE_CHAR_DATA_MISO, 0x00000000 },
+	{ WCD_SPI_SLAVE_TRNS_BYTE_CNT, 0x00000000 },
+	{ WCD_SPI_SLAVE_TRNS_LEN, 0x00000000 },
+	{ WCD_SPI_SLAVE_FIFO_LEVEL, 0x00000000 },
+	{ WCD_SPI_SLAVE_GENERICS, 0x80000000 },
+	{ WCD_SPI_SLAVE_EXT_BASE_ADDR, 0x00000000 },
 };
 
-static bool wcd_spi_is_volatile_reg(struct device *dev,
-				    unsigned int reg)
+static bool wcd_spi_is_volatile_reg(struct device *dev, unsigned int reg)
 {
 	switch (reg) {
 	case WCD_SPI_SLAVE_SANITY:
@@ -1337,8 +1290,7 @@ static bool wcd_spi_is_volatile_reg(struct device *dev,
 	return false;
 }
 
-static bool wcd_spi_is_readable_reg(struct device *dev,
-				    unsigned int reg)
+static bool wcd_spi_is_readable_reg(struct device *dev, unsigned int reg)
 {
 	switch (reg) {
 	case WCD_SPI_SLAVE_SW_RESET:
@@ -1361,8 +1313,7 @@ static struct regmap_config wcd_spi_regmap_cfg = {
 	.readable_reg = wcd_spi_is_readable_reg,
 };
 
-static int wcd_spi_add_ac_dev(struct device *dev,
-			       struct device_node *node)
+static int wcd_spi_add_ac_dev(struct device *dev, struct device_node *node)
 {
 	struct spi_device *spi = to_spi_device(dev);
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
@@ -1372,8 +1323,8 @@ static int wcd_spi_add_ac_dev(struct device *dev,
 	pdev = platform_device_alloc("wcd-spi-ac", -1);
 	if (IS_ERR_OR_NULL(pdev)) {
 		ret = PTR_ERR(pdev);
-		dev_err(dev, "%s: pdev alloc failed, ret = %d\n",
-			__func__, ret);
+		dev_err(dev, "%s: pdev alloc failed, ret = %d\n", __func__,
+			ret);
 		return ret;
 	}
 
@@ -1382,8 +1333,7 @@ static int wcd_spi_add_ac_dev(struct device *dev,
 
 	ret = platform_device_add(pdev);
 	if (ret) {
-		dev_err(dev, "%s: pdev add failed, ret = %d\n",
-			__func__, ret);
+		dev_err(dev, "%s: pdev add failed, ret = %d\n", __func__, ret);
 		goto dealloc_pdev;
 	}
 
@@ -1408,8 +1358,8 @@ static int wdsp_spi_init(struct device *dev, void *priv_data)
 
 	ret = wcd_spi_init(spi);
 	if (ret < 0)
-		dev_err(&spi->dev, "%s: Init failed, err = %d\n",
-			__func__, ret);
+		dev_err(&spi->dev, "%s: Init failed, err = %d\n", __func__,
+			ret);
 	return ret;
 }
 
@@ -1419,9 +1369,9 @@ static int wdsp_spi_deinit(struct device *dev, void *priv_data)
 	struct wcd_spi_priv *wcd_spi = spi_get_drvdata(spi);
 
 	/*
-	 * Deinit means the hardware is reset. Mark the cache
-	 * as dirty here, so init will sync the cache
-	 */
+   * Deinit means the hardware is reset. Mark the cache
+   * as dirty here, so init will sync the cache
+   */
 	regcache_mark_dirty(wcd_spi->regmap);
 
 	return 0;
@@ -1433,8 +1383,7 @@ static struct wdsp_cmpnt_ops wdsp_spi_ops = {
 	.event_handler = wdsp_spi_event_handler,
 };
 
-static int wcd_spi_component_bind(struct device *dev,
-				  struct device *master,
+static int wcd_spi_component_bind(struct device *dev, struct device *master,
 				  void *data)
 {
 	struct spi_device *spi = to_spi_device(dev);
@@ -1444,10 +1393,8 @@ static int wcd_spi_component_bind(struct device *dev,
 	wcd_spi->m_dev = master;
 	wcd_spi->m_ops = data;
 
-	if (wcd_spi->m_ops &&
-	    wcd_spi->m_ops->register_cmpnt_ops)
-		ret = wcd_spi->m_ops->register_cmpnt_ops(master, dev,
-							 wcd_spi,
+	if (wcd_spi->m_ops && wcd_spi->m_ops->register_cmpnt_ops)
+		ret = wcd_spi->m_ops->register_cmpnt_ops(master, dev, wcd_spi,
 							 &wdsp_spi_ops);
 	if (ret) {
 		dev_err(dev, "%s: register_cmpnt_ops failed, err = %d\n",
@@ -1500,8 +1447,7 @@ done:
 	return ret;
 }
 
-static void wcd_spi_component_unbind(struct device *dev,
-				     struct device *master,
+static void wcd_spi_component_unbind(struct device *dev, struct device *master,
 				     void *data)
 {
 	struct spi_device *spi = to_spi_device(dev);
@@ -1518,10 +1464,10 @@ static void wcd_spi_component_unbind(struct device *dev,
 	spi_transfer_del(&wcd_spi->xfer2[0]);
 	spi_transfer_del(&wcd_spi->xfer2[1]);
 
-	dma_free_coherent(&spi->dev, WCD_SPI_RW_MAX_BUF_SIZE,
-			  wcd_spi->tx_buf, wcd_spi->tx_dma);
-	dma_free_coherent(&spi->dev, WCD_SPI_RW_MAX_BUF_SIZE,
-			  wcd_spi->rx_buf, wcd_spi->rx_dma);
+	dma_free_coherent(&spi->dev, WCD_SPI_RW_MAX_BUF_SIZE, wcd_spi->tx_buf,
+			  wcd_spi->tx_dma);
+	dma_free_coherent(&spi->dev, WCD_SPI_RW_MAX_BUF_SIZE, wcd_spi->rx_buf,
+			  wcd_spi->rx_dma);
 	wcd_spi->tx_buf = NULL;
 	wcd_spi->rx_buf = NULL;
 }
@@ -1536,22 +1482,20 @@ static int wcd_spi_probe(struct spi_device *spi)
 	struct wcd_spi_priv *wcd_spi;
 	int ret = 0;
 
-	wcd_spi = devm_kzalloc(&spi->dev, sizeof(*wcd_spi),
-			       GFP_KERNEL);
+	wcd_spi = devm_kzalloc(&spi->dev, sizeof(*wcd_spi), GFP_KERNEL);
 	if (!wcd_spi)
 		return -ENOMEM;
 
-	ret = of_property_read_u32(spi->dev.of_node,
-				   "qcom,mem-base-addr",
+	ret = of_property_read_u32(spi->dev.of_node, "qcom,mem-base-addr",
 				   &wcd_spi->mem_base_addr);
 	if (ret < 0) {
-		dev_err(&spi->dev, "%s: Missing %s DT entry",
-			__func__, "qcom,mem-base-addr");
+		dev_err(&spi->dev, "%s: Missing %s DT entry", __func__,
+			"qcom,mem-base-addr");
 		goto err_ret;
 	}
 
-	dev_dbg(&spi->dev,
-		"%s: mem_base_addr 0x%x\n", __func__, wcd_spi->mem_base_addr);
+	dev_dbg(&spi->dev, "%s: mem_base_addr 0x%x\n", __func__,
+		wcd_spi->mem_base_addr);
 
 	mutex_init(&wcd_spi->clk_mutex);
 	mutex_init(&wcd_spi->xfer_mutex);
@@ -1609,13 +1553,12 @@ static int wcd_spi_suspend(struct device *dev)
 	}
 
 	/*
-	 * If we are here, it is okay to let the suspend go
-	 * through for this driver. But, still need to notify
-	 * the master to make sure all other components can suspend
-	 * as well.
-	 */
-	if (wcd_spi->m_dev && wcd_spi->m_ops &&
-	  wcd_spi->m_ops->suspend) {
+   * If we are here, it is okay to let the suspend go
+   * through for this driver. But, still need to notify
+   * the master to make sure all other components can suspend
+   * as well.
+   */
+	if (wcd_spi->m_dev && wcd_spi->m_ops && wcd_spi->m_ops->suspend) {
 		WCD_SPI_MUTEX_UNLOCK(spi, wcd_spi->clk_mutex);
 		rc = wcd_spi->m_ops->suspend(wcd_spi->m_dev);
 		WCD_SPI_MUTEX_LOCK(spi, wcd_spi->clk_mutex);
@@ -1624,8 +1567,8 @@ static int wcd_spi_suspend(struct device *dev)
 	if (rc == 0)
 		set_bit(WCD_SPI_IS_SUSPENDED, &wcd_spi->status_mask);
 	else
-		dev_dbg(&spi->dev, "%s: cannot suspend, err = %d\n",
-			__func__, rc);
+		dev_dbg(&spi->dev, "%s: cannot suspend, err = %d\n", __func__,
+			rc);
 done:
 	WCD_SPI_MUTEX_UNLOCK(spi, wcd_spi->clk_mutex);
 	return rc;
@@ -1651,21 +1594,24 @@ static const struct dev_pm_ops wcd_spi_pm_ops = {
 #endif
 
 static const struct of_device_id wcd_spi_of_match[] = {
-	{ .compatible = "qcom,wcd-spi-v2", },
-	{ }
+	{
+		.compatible = "qcom,wcd-spi-v2",
+	},
+	{}
 };
 MODULE_DEVICE_TABLE(of, wcd_spi_of_match);
 
 static struct spi_driver wcd_spi_driver = {
-	.driver = {
-		.name = "wcd-spi-v2",
-		.of_match_table = wcd_spi_of_match,
+    .driver =
+        {
+            .name = "wcd-spi-v2",
+            .of_match_table = wcd_spi_of_match,
 #ifdef CONFIG_PM
-		.pm = &wcd_spi_pm_ops,
+            .pm = &wcd_spi_pm_ops,
 #endif
-	},
-	.probe = wcd_spi_probe,
-	.remove = wcd_spi_remove,
+        },
+    .probe = wcd_spi_probe,
+    .remove = wcd_spi_remove,
 };
 
 module_spi_driver(wcd_spi_driver);

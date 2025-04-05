@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights reserved.
- * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2022, Qualcomm Innovation Center, Inc. All rights
+ * reserved. Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/interrupt.h>
-#include <linux/delay.h>
-#include <linux/kernel.h>
-#include <linux/kthread.h>
-#include <linux/slab.h>
-#include <linux/device.h>
-#include <linux/gpio/consumer.h>
-#include <linux/sde_io_util.h>
-#include <linux/of_gpio.h>
 #include "dp_lphw_hpd.h"
 #include "dp_debug.h"
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/gpio/consumer.h>
+#include <linux/interrupt.h>
+#include <linux/kernel.h>
+#include <linux/kthread.h>
+#include <linux/of_gpio.h>
+#include <linux/sde_io_util.h>
+#include <linux/slab.h>
 
 struct dp_lphw_hpd_private {
 	struct device *dev;
@@ -34,8 +34,8 @@ struct dp_lphw_hpd_private {
 
 static void dp_lphw_hpd_attention(struct work_struct *work)
 {
-	struct dp_lphw_hpd_private *lphw_hpd = container_of(work,
-				struct dp_lphw_hpd_private, attention);
+	struct dp_lphw_hpd_private *lphw_hpd =
+		container_of(work, struct dp_lphw_hpd_private, attention);
 
 	if (!lphw_hpd) {
 		DP_ERR("invalid input\n");
@@ -50,8 +50,8 @@ static void dp_lphw_hpd_attention(struct work_struct *work)
 
 static void dp_lphw_hpd_connect(struct work_struct *work)
 {
-	struct dp_lphw_hpd_private *lphw_hpd = container_of(work,
-				struct dp_lphw_hpd_private, connect);
+	struct dp_lphw_hpd_private *lphw_hpd =
+		container_of(work, struct dp_lphw_hpd_private, connect);
 
 	if (!lphw_hpd) {
 		DP_ERR("invalid input\n");
@@ -68,8 +68,8 @@ static void dp_lphw_hpd_connect(struct work_struct *work)
 
 static void dp_lphw_hpd_disconnect(struct work_struct *work)
 {
-	struct dp_lphw_hpd_private *lphw_hpd = container_of(work,
-				struct dp_lphw_hpd_private, disconnect);
+	struct dp_lphw_hpd_private *lphw_hpd =
+		container_of(work, struct dp_lphw_hpd_private, disconnect);
 
 	if (!lphw_hpd) {
 		DP_ERR("invalid input\n");
@@ -93,15 +93,15 @@ static irqreturn_t dp_tlmm_isr(int unused, void *data)
 		return IRQ_NONE;
 
 	/*
-	 * According to the DP spec, HPD high event can be confirmed only after
-	 * the HPD line has een asserted continuously for more than 100ms
-	 */
+   * According to the DP spec, HPD high event can be confirmed only after
+   * the HPD line has een asserted continuously for more than 100ms
+   */
 	usleep_range(99000, 100000);
 
 	hpd = gpio_get_value_cansleep(lphw_hpd->gpio_cfg.gpio);
 
-	DP_DEBUG("lphw_hpd state = %d, new hpd state = %d\n",
-			lphw_hpd->hpd, hpd);
+	DP_DEBUG("lphw_hpd state = %d, new hpd state = %d\n", lphw_hpd->hpd,
+		 hpd);
 	if (!lphw_hpd->hpd && hpd) {
 		lphw_hpd->hpd = true;
 		queue_work(lphw_hpd->connect_wq, &lphw_hpd->connect);
@@ -111,7 +111,7 @@ static irqreturn_t dp_tlmm_isr(int unused, void *data)
 }
 
 static void dp_lphw_hpd_host_init(struct dp_hpd *dp_hpd,
-		struct dp_catalog_hpd *catalog)
+				  struct dp_catalog_hpd *catalog)
 {
 	struct dp_lphw_hpd_private *lphw_hpd;
 
@@ -125,15 +125,15 @@ static void dp_lphw_hpd_host_init(struct dp_hpd *dp_hpd,
 	lphw_hpd->catalog->config_hpd(lphw_hpd->catalog, true);
 
 	/*
-	 * Changing the gpio function to dp controller for the hpd line is not
-	 * stopping the tlmm interrupts generation on function 0.
-	 * So, as an additional step, disable the gpio interrupt irq also
-	 */
+   * Changing the gpio function to dp controller for the hpd line is not
+   * stopping the tlmm interrupts generation on function 0.
+   * So, as an additional step, disable the gpio interrupt irq also
+   */
 	disable_irq(lphw_hpd->irq);
 }
 
 static void dp_lphw_hpd_host_deinit(struct dp_hpd *dp_hpd,
-		struct dp_catalog_hpd *catalog)
+				    struct dp_catalog_hpd *catalog)
 {
 	struct dp_lphw_hpd_private *lphw_hpd;
 
@@ -209,7 +209,7 @@ static int dp_lphw_hpd_simulate_connect(struct dp_hpd *dp_hpd, bool hpd)
 	lphw_hpd->base.hpd_irq = false;
 
 	if (!lphw_hpd->cb || !lphw_hpd->cb->configure ||
-			!lphw_hpd->cb->disconnect) {
+	    !lphw_hpd->cb->disconnect) {
 		DP_ERR("invalid callback\n");
 		return -EINVAL;
 	}
@@ -254,9 +254,9 @@ int dp_lphw_hpd_register(struct dp_hpd *dp_hpd)
 	lphw_hpd->hpd = gpio_get_value_cansleep(lphw_hpd->gpio_cfg.gpio);
 
 	rc = devm_request_threaded_irq(lphw_hpd->dev, lphw_hpd->irq, NULL,
-		dp_tlmm_isr,
-		IRQF_TRIGGER_RISING | IRQF_ONESHOT,
-		"dp-gpio-intp", lphw_hpd);
+				       dp_tlmm_isr,
+				       IRQF_TRIGGER_RISING | IRQF_ONESHOT,
+				       "dp-gpio-intp", lphw_hpd);
 	if (rc) {
 		DP_ERR("Failed to request INTP threaded IRQ: %d\n", rc);
 		return rc;
@@ -275,13 +275,12 @@ static void dp_lphw_hpd_deinit(struct dp_lphw_hpd_private *lphw_hpd)
 	int i = 0;
 
 	for (i = 0; i < parser->mp[DP_PHY_PM].num_vreg; i++) {
-
 		if (!strcmp(parser->mp[DP_PHY_PM].vreg_config[i].vreg_name,
-					"hpd-pwr")) {
+			    "hpd-pwr")) {
 			/* disable the hpd-pwr voltage regulator */
 			if (msm_dss_enable_vreg(
-				&parser->mp[DP_PHY_PM].vreg_config[i], 1,
-				false))
+				    &parser->mp[DP_PHY_PM].vreg_config[i], 1,
+				    false))
 				DP_ERR("hpd-pwr vreg not disabled\n");
 
 			break;
@@ -291,18 +290,17 @@ static void dp_lphw_hpd_deinit(struct dp_lphw_hpd_private *lphw_hpd)
 
 static void dp_lphw_hpd_init(struct dp_lphw_hpd_private *lphw_hpd)
 {
-	struct dp_pinctrl pinctrl = {0};
+	struct dp_pinctrl pinctrl = { 0 };
 	struct dp_parser *parser = lphw_hpd->parser;
 	int i = 0, rc = 0;
 
 	for (i = 0; i < parser->mp[DP_PHY_PM].num_vreg; i++) {
-
 		if (!strcmp(parser->mp[DP_PHY_PM].vreg_config[i].vreg_name,
-					"hpd-pwr")) {
+			    "hpd-pwr")) {
 			/* enable the hpd-pwr voltage regulator */
 			if (msm_dss_enable_vreg(
-				&parser->mp[DP_PHY_PM].vreg_config[i], 1,
-				true))
+				    &parser->mp[DP_PHY_PM].vreg_config[i], 1,
+				    true))
 				DP_ERR("hpd-pwr vreg not enabled\n");
 
 			break;
@@ -312,12 +310,12 @@ static void dp_lphw_hpd_init(struct dp_lphw_hpd_private *lphw_hpd)
 	pinctrl.pin = devm_pinctrl_get(lphw_hpd->dev);
 
 	if (!IS_ERR_OR_NULL(pinctrl.pin)) {
-		pinctrl.state_hpd_active = pinctrl_lookup_state(pinctrl.pin,
-						"mdss_dp_hpd_active");
+		pinctrl.state_hpd_active =
+			pinctrl_lookup_state(pinctrl.pin, "mdss_dp_hpd_active");
 
 		if (!IS_ERR_OR_NULL(pinctrl.state_hpd_active)) {
 			rc = pinctrl_select_state(pinctrl.pin,
-					pinctrl.state_hpd_active);
+						  pinctrl.state_hpd_active);
 			if (rc)
 				DP_ERR("failed to set hpd_active state\n");
 		}
@@ -341,7 +339,8 @@ static int dp_lphw_hpd_create_workqueue(struct dp_lphw_hpd_private *lphw_hpd)
 }
 
 struct dp_hpd *dp_lphw_hpd_get(struct device *dev, struct dp_parser *parser,
-	struct dp_catalog_hpd *catalog, struct dp_hpd_cb *cb)
+			       struct dp_catalog_hpd *catalog,
+			       struct dp_hpd_cb *cb)
 {
 	int rc = 0;
 	const char *hpd_gpio_name = "qcom,dp-hpd-gpio";
@@ -373,7 +372,7 @@ struct dp_hpd *dp_lphw_hpd_get(struct device *dev, struct dp_parser *parser,
 	lphw_hpd->gpio_cfg.value = 0;
 
 	rc = gpio_request(lphw_hpd->gpio_cfg.gpio,
-		lphw_hpd->gpio_cfg.gpio_name);
+			  lphw_hpd->gpio_cfg.gpio_name);
 	if (rc) {
 		DP_ERR("%s: failed to request gpio\n", hpd_gpio_name);
 		goto gpio_error;

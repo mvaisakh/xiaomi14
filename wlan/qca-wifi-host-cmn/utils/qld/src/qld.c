@@ -22,9 +22,9 @@
  * QLD: main file of QCA Live Dump (QLD)
  */
 
-#include "qld_priv.h"
-#include "qld_api.h"
 #include "qdf_module.h"
+#include "qld_api.h"
+#include "qld_priv.h"
 
 /* Handle for qld structure */
 static struct qld_list_handle *qld_handle;
@@ -120,7 +120,8 @@ int qld_register(void *addr, size_t size, char *name)
 	}
 	/* Check if data is already registered */
 	qdf_spinlock_acquire(&qld_handle->qld_lock);
-	qdf_list_for_each(&qld_handle->qld_list, qld, node) {
+	qdf_list_for_each(&qld_handle->qld_list, qld, node)
+	{
 		if (qld->entry.addr == (uintptr_t)addr) {
 			qld_err("%s already registered", qld->entry.name);
 			qdf_spinlock_release(&qld_handle->qld_lock);
@@ -134,7 +135,7 @@ int qld_register(void *addr, size_t size, char *name)
 
 	qld_debug("Insert addr=%pK size=%zu name=%s", (void *)addr, size, name);
 	qdf_spinlock_acquire(&qld_handle->qld_lock);
-	qld->entry.addr =  (uintptr_t)addr;
+	qld->entry.addr = (uintptr_t)addr;
 	qld->entry.size = size;
 	qdf_snprintf(qld->entry.name, sizeof(qld->entry.name), "%s", name);
 	qdf_list_insert_front(&qld_handle->qld_list, &qld->node);
@@ -146,7 +147,7 @@ qdf_export_symbol(qld_register);
 
 int qld_unregister(void *addr)
 {
-	struct qld_node *qld  = NULL;
+	struct qld_node *qld = NULL;
 	struct qld_node *cur_entry;
 
 	if (!qld_handle || !addr) {
@@ -154,7 +155,8 @@ int qld_unregister(void *addr)
 		return -EINVAL;
 	}
 	qdf_spinlock_acquire(&qld_handle->qld_lock);
-	qdf_list_for_each(&qld_handle->qld_list, cur_entry, node) {
+	qdf_list_for_each(&qld_handle->qld_list, cur_entry, node)
+	{
 		if (cur_entry->entry.addr == (uintptr_t)addr) {
 			qld = cur_entry;
 			break;
@@ -175,7 +177,7 @@ qdf_export_symbol(qld_unregister);
 
 int qld_iterate_list(qld_iter_func gen_table, void *qld_req)
 {
-	struct qld_node *qld  = NULL;
+	struct qld_node *qld = NULL;
 
 	if (!qld_handle)
 		return -EINVAL;
@@ -185,7 +187,8 @@ int qld_iterate_list(qld_iter_func gen_table, void *qld_req)
 		return -EINVAL;
 	}
 	qdf_spinlock_acquire(&qld_handle->qld_lock);
-	qdf_list_for_each(&qld_handle->qld_list, qld, node) {
+	qdf_list_for_each(&qld_handle->qld_list, qld, node)
+	{
 		(gen_table)(qld_req, &qld->entry);
 	}
 	qdf_spinlock_release(&qld_handle->qld_lock);

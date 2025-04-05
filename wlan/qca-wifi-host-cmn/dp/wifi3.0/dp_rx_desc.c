@@ -17,9 +17,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "dp_types.h"
-#include "dp_rx.h"
 #include "dp_ipa.h"
+#include "dp_rx.h"
+#include "dp_types.h"
 #include <qdf_module.h>
 #ifdef WLAN_FEATURE_OSRTP
 #include "xdp_sock_drv.h"
@@ -28,8 +28,8 @@
 #ifdef RX_DESC_MULTI_PAGE_ALLOC
 A_COMPILE_TIME_ASSERT(cookie_size_check,
 		      (DP_BLOCKMEM_SIZE /
-		       sizeof(union dp_rx_desc_list_elem_t))
-		      <= (1 << DP_RX_DESC_PAGE_ID_SHIFT));
+		       sizeof(union dp_rx_desc_list_elem_t)) <=
+			      (1 << DP_RX_DESC_PAGE_ID_SHIFT));
 
 QDF_STATUS dp_rx_desc_pool_is_allocated(struct rx_desc_pool *rx_desc_pool)
 {
@@ -43,8 +43,7 @@ QDF_STATUS dp_rx_desc_pool_is_allocated(struct rx_desc_pool *rx_desc_pool)
 
 qdf_export_symbol(dp_rx_desc_pool_is_allocated);
 
-QDF_STATUS dp_rx_desc_pool_alloc(struct dp_soc *soc,
-				 uint32_t num_elem,
+QDF_STATUS dp_rx_desc_pool_alloc(struct dp_soc *soc, uint32_t num_elem,
 				 struct rx_desc_pool *rx_desc_pool)
 {
 	uint32_t desc_size;
@@ -54,19 +53,18 @@ QDF_STATUS dp_rx_desc_pool_alloc(struct dp_soc *soc,
 	rx_desc_pool->elem_size = desc_size;
 	rx_desc_pool->desc_pages.page_size = DP_BLOCKMEM_SIZE;
 	dp_desc_multi_pages_mem_alloc(soc, rx_desc_pool->desc_type,
-				      &rx_desc_pool->desc_pages,
-				      desc_size, num_elem, 0, true);
+				      &rx_desc_pool->desc_pages, desc_size,
+				      num_elem, 0, true);
 	if (!rx_desc_pool->desc_pages.num_pages) {
-		qdf_err("Multi page alloc fail,size=%d, elem=%d",
-			desc_size, num_elem);
+		qdf_err("Multi page alloc fail,size=%d, elem=%d", desc_size,
+			num_elem);
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	if (qdf_mem_multi_page_link(soc->osdev,
-				    &rx_desc_pool->desc_pages,
+	if (qdf_mem_multi_page_link(soc->osdev, &rx_desc_pool->desc_pages,
 				    desc_size, num_elem, true)) {
-		qdf_err("overflow num link,size=%d, elem=%d",
-			desc_size, num_elem);
+		qdf_err("overflow num link,size=%d, elem=%d", desc_size,
+			num_elem);
 		goto free_rx_desc_pool;
 	}
 	return QDF_STATUS_SUCCESS;
@@ -80,8 +78,8 @@ free_rx_desc_pool:
 qdf_export_symbol(dp_rx_desc_pool_alloc);
 
 QDF_STATUS dp_rx_desc_pool_init_generic(struct dp_soc *soc,
-				  struct rx_desc_pool *rx_desc_pool,
-				  uint32_t pool_id)
+					struct rx_desc_pool *rx_desc_pool,
+					uint32_t pool_id)
 {
 	uint32_t id, page_id, offset, num_desc_per_page;
 	uint32_t count = 0;
@@ -94,16 +92,15 @@ QDF_STATUS dp_rx_desc_pool_init_generic(struct dp_soc *soc,
 		page_id = count / num_desc_per_page;
 		offset = count % num_desc_per_page;
 		/*
-		 * Below cookie size is from REO destination ring
-		 * reo_destination_ring -> buffer_addr_info -> sw_buffer_cookie
-		 * cookie size = 21 bits
-		 * 8 bits - offset
-		 * 8 bits - page ID
-		 * 4 bits - pool ID
-		 */
+     * Below cookie size is from REO destination ring
+     * reo_destination_ring -> buffer_addr_info -> sw_buffer_cookie
+     * cookie size = 21 bits
+     * 8 bits - offset
+     * 8 bits - page ID
+     * 4 bits - pool ID
+     */
 		id = ((pool_id << DP_RX_DESC_POOL_ID_SHIFT) |
-		      (page_id << DP_RX_DESC_PAGE_ID_SHIFT) |
-		      offset);
+		      (page_id << DP_RX_DESC_PAGE_ID_SHIFT) | offset);
 		rx_desc_elem->rx_desc.cookie = id;
 		rx_desc_elem->rx_desc.pool_id = pool_id;
 		rx_desc_elem->rx_desc.in_use = 0;
@@ -124,11 +121,10 @@ void dp_rx_desc_pool_init(struct dp_soc *soc, uint32_t pool_id,
 	qdf_spin_lock_bh(&rx_desc_pool->lock);
 	rx_desc_pool->pool_size = pool_size;
 
-	rx_desc_pool->freelist = (union dp_rx_desc_list_elem_t *)
-				  *rx_desc_pool->desc_pages.cacheable_pages;
+	rx_desc_pool->freelist = (union dp_rx_desc_list_elem_t *)*rx_desc_pool
+					 ->desc_pages.cacheable_pages;
 
-	status = soc->arch_ops.dp_rx_desc_pool_init(soc, rx_desc_pool,
-						    pool_id);
+	status = soc->arch_ops.dp_rx_desc_pool_init(soc, rx_desc_pool, pool_id);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		dp_err("RX desc pool initialization failed");
 
@@ -141,7 +137,7 @@ union dp_rx_desc_list_elem_t *dp_rx_desc_find(uint16_t page_id, uint16_t offset,
 					      struct rx_desc_pool *rx_desc_pool)
 {
 	return rx_desc_pool->desc_pages.cacheable_pages[page_id] +
-		rx_desc_pool->elem_size * offset;
+	       rx_desc_pool->elem_size * offset;
 }
 
 static QDF_STATUS dp_rx_desc_nbuf_collect(struct dp_soc *soc,
@@ -149,9 +145,10 @@ static QDF_STATUS dp_rx_desc_nbuf_collect(struct dp_soc *soc,
 					  qdf_nbuf_t *nbuf_unmap_list,
 					  qdf_nbuf_t *nbuf_free_list
 #ifdef WLAN_FEATURE_OSRTP
-					  , qdf_xbuf_t *xbuf_free_list
+					  ,
+					  qdf_xbuf_t *xbuf_free_list
 #endif
-					  )
+)
 {
 	uint32_t i, num_desc, page_id, offset, num_desc_per_page;
 	union dp_rx_desc_list_elem_t *rx_desc_elem;
@@ -172,11 +169,13 @@ static QDF_STATUS dp_rx_desc_nbuf_collect(struct dp_soc *soc,
 		if (rx_desc->in_use) {
 #ifdef WLAN_FEATURE_OSRTP
 			if (rx_desc->xbuf) {
-				DP_RX_XBUF_HEAD_APPEND(*xbuf_free_list, rx_desc->xbuf);
-				DP_RX_HEAD_APPEND(*nbuf_free_list, rx_desc->nbuf);
-			} else 
+				DP_RX_XBUF_HEAD_APPEND(*xbuf_free_list,
+						       rx_desc->xbuf);
+				DP_RX_HEAD_APPEND(*nbuf_free_list,
+						  rx_desc->nbuf);
+			} else
 #endif
-			if (!rx_desc->unmapped) {
+				if (!rx_desc->unmapped) {
 				DP_RX_HEAD_APPEND(*nbuf_unmap_list,
 						  rx_desc->nbuf);
 				rx_desc->unmapped = 1;
@@ -195,8 +194,7 @@ static void dp_rx_desc_nbuf_cleanup(struct dp_soc *soc,
 #ifdef WLAN_FEATURE_OSRTP
 				    qdf_xbuf_t xbuf_free_list,
 #endif
-				    uint16_t buf_size,
-				    bool is_mon_pool)
+				    uint16_t buf_size, bool is_mon_pool)
 {
 	qdf_nbuf_t nbuf = nbuf_unmap_list;
 	qdf_nbuf_t next;
@@ -215,15 +213,13 @@ static void dp_rx_desc_nbuf_cleanup(struct dp_soc *soc,
 		next = nbuf->next;
 
 		if (!is_mon_pool)
-			dp_audio_smmu_unmap(soc->osdev,
-					    QDF_NBUF_CB_PADDR(nbuf),
+			dp_audio_smmu_unmap(soc->osdev, QDF_NBUF_CB_PADDR(nbuf),
 					    buf_size);
 
 		if (qdf_atomic_read(&soc->ipa_mapped)) {
 			if (dp_ipa_handle_rx_buf_smmu_mapping(
-							soc, nbuf, buf_size,
-							false, __func__,
-							__LINE__))
+				    soc, nbuf, buf_size, false, __func__,
+				    __LINE__))
 				dp_info_rl("Unable to unmap nbuf: %pK", nbuf);
 		}
 		qdf_nbuf_unmap_nbytes_single(soc->osdev, nbuf,
@@ -251,16 +247,16 @@ void dp_rx_desc_nbuf_and_pool_free(struct dp_soc *soc, uint32_t pool_id,
 
 	qdf_spin_lock_bh(&rx_desc_pool->lock);
 #ifdef WLAN_FEATURE_OSRTP
-	dp_rx_desc_nbuf_collect(soc, rx_desc_pool,
-				&nbuf_unmap_list, &nbuf_free_list, &xbuf_free_list);
+	dp_rx_desc_nbuf_collect(soc, rx_desc_pool, &nbuf_unmap_list,
+				&nbuf_free_list, &xbuf_free_list);
 #else
-	dp_rx_desc_nbuf_collect(soc, rx_desc_pool,
-				&nbuf_unmap_list, &nbuf_free_list);
+	dp_rx_desc_nbuf_collect(soc, rx_desc_pool, &nbuf_unmap_list,
+				&nbuf_free_list);
 #endif
 	qdf_spin_unlock_bh(&rx_desc_pool->lock);
 #ifdef WLAN_FEATURE_OSRTP
-	dp_rx_desc_nbuf_cleanup(soc, nbuf_unmap_list, nbuf_free_list, xbuf_free_list,
-				rx_desc_pool->buf_size, false);
+	dp_rx_desc_nbuf_cleanup(soc, nbuf_unmap_list, nbuf_free_list,
+				xbuf_free_list, rx_desc_pool->buf_size, false);
 #else
 	dp_rx_desc_nbuf_cleanup(soc, nbuf_unmap_list, nbuf_free_list,
 				rx_desc_pool->buf_size, false);
@@ -268,8 +264,7 @@ void dp_rx_desc_nbuf_and_pool_free(struct dp_soc *soc, uint32_t pool_id,
 	qdf_spinlock_destroy(&rx_desc_pool->lock);
 }
 
-void dp_rx_desc_nbuf_free(struct dp_soc *soc,
-			  struct rx_desc_pool *rx_desc_pool,
+void dp_rx_desc_nbuf_free(struct dp_soc *soc, struct rx_desc_pool *rx_desc_pool,
 			  bool is_mon_pool)
 {
 	qdf_nbuf_t nbuf_unmap_list = NULL;
@@ -279,16 +274,17 @@ void dp_rx_desc_nbuf_free(struct dp_soc *soc,
 #endif
 	qdf_spin_lock_bh(&rx_desc_pool->lock);
 #ifdef WLAN_FEATURE_OSRTP
-	dp_rx_desc_nbuf_collect(soc, rx_desc_pool,
-				&nbuf_unmap_list, &nbuf_free_list, &xbuf_free_list);
+	dp_rx_desc_nbuf_collect(soc, rx_desc_pool, &nbuf_unmap_list,
+				&nbuf_free_list, &xbuf_free_list);
 #else
-	dp_rx_desc_nbuf_collect(soc, rx_desc_pool,
-				&nbuf_unmap_list, &nbuf_free_list);
+	dp_rx_desc_nbuf_collect(soc, rx_desc_pool, &nbuf_unmap_list,
+				&nbuf_free_list);
 #endif
 	qdf_spin_unlock_bh(&rx_desc_pool->lock);
 #ifdef WLAN_FEATURE_OSRTP
-	dp_rx_desc_nbuf_cleanup(soc, nbuf_unmap_list, nbuf_free_list, xbuf_free_list,
-				rx_desc_pool->buf_size, is_mon_pool);
+	dp_rx_desc_nbuf_cleanup(soc, nbuf_unmap_list, nbuf_free_list,
+				xbuf_free_list, rx_desc_pool->buf_size,
+				is_mon_pool);
 #else
 	dp_rx_desc_nbuf_cleanup(soc, nbuf_unmap_list, nbuf_free_list,
 				rx_desc_pool->buf_size, is_mon_pool);
@@ -297,8 +293,7 @@ void dp_rx_desc_nbuf_free(struct dp_soc *soc,
 
 qdf_export_symbol(dp_rx_desc_nbuf_free);
 
-void dp_rx_desc_pool_free(struct dp_soc *soc,
-			  struct rx_desc_pool *rx_desc_pool)
+void dp_rx_desc_pool_free(struct dp_soc *soc, struct rx_desc_pool *rx_desc_pool)
 {
 	if (qdf_unlikely(!(rx_desc_pool->desc_pages.cacheable_pages)))
 		return;
@@ -310,8 +305,7 @@ void dp_rx_desc_pool_free(struct dp_soc *soc,
 qdf_export_symbol(dp_rx_desc_pool_free);
 
 void dp_rx_desc_pool_deinit(struct dp_soc *soc,
-			    struct rx_desc_pool *rx_desc_pool,
-			    uint32_t pool_id)
+			    struct rx_desc_pool *rx_desc_pool, uint32_t pool_id)
 {
 	qdf_spin_lock_bh(&rx_desc_pool->lock);
 
@@ -340,12 +334,11 @@ QDF_STATUS dp_rx_desc_pool_is_allocated(struct rx_desc_pool *rx_desc_pool)
 
 qdf_export_symbol(dp_rx_desc_pool_is_allocated);
 
-QDF_STATUS dp_rx_desc_pool_alloc(struct dp_soc *soc,
-				 uint32_t pool_size,
+QDF_STATUS dp_rx_desc_pool_alloc(struct dp_soc *soc, uint32_t pool_size,
 				 struct rx_desc_pool *rx_desc_pool)
 {
-	rx_desc_pool->array = qdf_mem_common_alloc(pool_size *
-				     sizeof(union dp_rx_desc_list_elem_t));
+	rx_desc_pool->array = qdf_mem_common_alloc(
+		pool_size * sizeof(union dp_rx_desc_list_elem_t));
 
 	if (!(rx_desc_pool->array)) {
 		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_FATAL,
@@ -358,8 +351,8 @@ QDF_STATUS dp_rx_desc_pool_alloc(struct dp_soc *soc,
 qdf_export_symbol(dp_rx_desc_pool_alloc);
 
 QDF_STATUS dp_rx_desc_pool_init_generic(struct dp_soc *soc,
-				  struct rx_desc_pool *rx_desc_pool,
-				  uint32_t pool_id)
+					struct rx_desc_pool *rx_desc_pool,
+					uint32_t pool_id)
 {
 	int i;
 
@@ -391,8 +384,7 @@ void dp_rx_desc_pool_init(struct dp_soc *soc, uint32_t pool_id,
 	rx_desc_pool->freelist = &rx_desc_pool->array[0];
 	qdf_mem_zero(rx_desc_pool->freelist, rx_desc_pool->pool_size);
 
-	status = soc->arch_ops.dp_rx_desc_pool_init(soc, rx_desc_pool,
-						    pool_id);
+	status = soc->arch_ops.dp_rx_desc_pool_init(soc, rx_desc_pool, pool_id);
 	if (!QDF_IS_STATUS_SUCCESS(status))
 		dp_err("RX desc pool initialization failed");
 
@@ -402,8 +394,8 @@ void dp_rx_desc_pool_init(struct dp_soc *soc, uint32_t pool_id,
 qdf_export_symbol(dp_rx_desc_pool_init);
 
 #ifdef WLAN_SUPPORT_PPEDS
-static inline
-qdf_nbuf_t dp_rx_desc_get_nbuf(struct rx_desc_pool *rx_desc_pool, int i)
+static inline qdf_nbuf_t dp_rx_desc_get_nbuf(struct rx_desc_pool *rx_desc_pool,
+					     int i)
 {
 	if (rx_desc_pool->array[i].rx_desc.has_reuse_nbuf)
 		return rx_desc_pool->array[i].rx_desc.reuse_nbuf;
@@ -411,8 +403,8 @@ qdf_nbuf_t dp_rx_desc_get_nbuf(struct rx_desc_pool *rx_desc_pool, int i)
 		return rx_desc_pool->array[i].rx_desc.nbuf;
 }
 #else
-static inline
-qdf_nbuf_t dp_rx_desc_get_nbuf(struct rx_desc_pool *rx_desc_pool, int i)
+static inline qdf_nbuf_t dp_rx_desc_get_nbuf(struct rx_desc_pool *rx_desc_pool,
+					     int i)
 {
 	return rx_desc_pool->array[i].rx_desc.nbuf;
 }
@@ -441,8 +433,7 @@ void dp_rx_desc_nbuf_and_pool_free(struct dp_soc *soc, uint32_t pool_id,
 	qdf_spinlock_destroy(&rx_desc_pool->lock);
 }
 
-void dp_rx_desc_nbuf_free(struct dp_soc *soc,
-			  struct rx_desc_pool *rx_desc_pool,
+void dp_rx_desc_nbuf_free(struct dp_soc *soc, struct rx_desc_pool *rx_desc_pool,
 			  bool is_mon_pool)
 {
 	qdf_nbuf_t nbuf;
@@ -463,10 +454,14 @@ void dp_rx_desc_nbuf_free(struct dp_soc *soc,
 			if (!(rx_desc_pool->array[i].rx_desc.unmapped)) {
 #ifdef WLAN_FEATURE_OSRTP
 				if (xbuf)
-					qdf_xbuf_unmap_nbytes_single(soc->osdev, xbuf, QDF_DMA_FROM_DEVICE, rx_desc_pool->buf_size);
+					qdf_xbuf_unmap_nbytes_single(
+						soc->osdev, xbuf,
+						QDF_DMA_FROM_DEVICE,
+						rx_desc_pool->buf_size);
 				else
 #endif
-				dp_rx_nbuf_unmap_pool(soc, rx_desc_pool, nbuf);
+					dp_rx_nbuf_unmap_pool(soc, rx_desc_pool,
+							      nbuf);
 				rx_desc_pool->array[i].rx_desc.unmapped = 1;
 			}
 #ifdef WLAN_FEATURE_OSRTP
@@ -481,8 +476,7 @@ void dp_rx_desc_nbuf_free(struct dp_soc *soc,
 qdf_export_symbol(dp_rx_desc_nbuf_free);
 
 #ifdef DP_RX_MON_MEM_FRAG
-void dp_rx_desc_frag_free(struct dp_soc *soc,
-			  struct rx_desc_pool *rx_desc_pool)
+void dp_rx_desc_frag_free(struct dp_soc *soc, struct rx_desc_pool *rx_desc_pool)
 {
 	qdf_dma_addr_t paddr;
 	qdf_frag_t vaddr;
@@ -494,7 +488,8 @@ void dp_rx_desc_frag_free(struct dp_soc *soc,
 			paddr = rx_desc_pool->array[i].rx_desc.paddr_buf_start;
 			vaddr = rx_desc_pool->array[i].rx_desc.rx_buf_start;
 
-			dp_rx_desc_free_dbg_info(&rx_desc_pool->array[i].rx_desc);
+			dp_rx_desc_free_dbg_info(
+				&rx_desc_pool->array[i].rx_desc);
 			if (!(rx_desc_pool->array[i].rx_desc.unmapped)) {
 				qdf_mem_unmap_page(soc->osdev, paddr,
 						   rx_desc_pool->buf_size,
@@ -510,8 +505,7 @@ void dp_rx_desc_frag_free(struct dp_soc *soc,
 qdf_export_symbol(dp_rx_desc_frag_free);
 #endif
 
-void dp_rx_desc_pool_free(struct dp_soc *soc,
-			  struct rx_desc_pool *rx_desc_pool)
+void dp_rx_desc_pool_free(struct dp_soc *soc, struct rx_desc_pool *rx_desc_pool)
 {
 	qdf_mem_common_free(rx_desc_pool->array);
 }
@@ -519,8 +513,7 @@ void dp_rx_desc_pool_free(struct dp_soc *soc,
 qdf_export_symbol(dp_rx_desc_pool_free);
 
 void dp_rx_desc_pool_deinit(struct dp_soc *soc,
-			    struct rx_desc_pool *rx_desc_pool,
-			    uint32_t pool_id)
+			    struct rx_desc_pool *rx_desc_pool, uint32_t pool_id)
 {
 	if (rx_desc_pool->pool_size) {
 		qdf_spin_lock_bh(&rx_desc_pool->lock);
@@ -544,16 +537,16 @@ qdf_export_symbol(dp_rx_desc_pool_deinit);
 #endif /* RX_DESC_MULTI_PAGE_ALLOC */
 
 void dp_rx_desc_pool_deinit_generic(struct dp_soc *soc,
-			       struct rx_desc_pool *rx_desc_pool,
-			       uint32_t pool_id)
+				    struct rx_desc_pool *rx_desc_pool,
+				    uint32_t pool_id)
 {
 }
 
 uint16_t dp_rx_get_free_desc_list(struct dp_soc *soc, uint32_t pool_id,
-				struct rx_desc_pool *rx_desc_pool,
-				uint16_t num_descs,
-				union dp_rx_desc_list_elem_t **desc_list,
-				union dp_rx_desc_list_elem_t **tail)
+				  struct rx_desc_pool *rx_desc_pool,
+				  uint16_t num_descs,
+				  union dp_rx_desc_list_elem_t **desc_list,
+				  union dp_rx_desc_list_elem_t **tail)
 {
 	uint16_t count;
 
@@ -562,7 +555,6 @@ uint16_t dp_rx_get_free_desc_list(struct dp_soc *soc, uint32_t pool_id,
 	*desc_list = *tail = rx_desc_pool->freelist;
 
 	for (count = 0; count < num_descs; count++) {
-
 		if (qdf_unlikely(!rx_desc_pool->freelist)) {
 			qdf_spin_unlock_bh(&rx_desc_pool->lock);
 			return count;
@@ -577,21 +569,20 @@ uint16_t dp_rx_get_free_desc_list(struct dp_soc *soc, uint32_t pool_id,
 
 qdf_export_symbol(dp_rx_get_free_desc_list);
 
-void dp_rx_add_desc_list_to_free_list(struct dp_soc *soc,
-				union dp_rx_desc_list_elem_t **local_desc_list,
-				union dp_rx_desc_list_elem_t **tail,
-				uint16_t pool_id,
-				struct rx_desc_pool *rx_desc_pool)
+void dp_rx_add_desc_list_to_free_list(
+	struct dp_soc *soc, union dp_rx_desc_list_elem_t **local_desc_list,
+	union dp_rx_desc_list_elem_t **tail, uint16_t pool_id,
+	struct rx_desc_pool *rx_desc_pool)
 {
 	union dp_rx_desc_list_elem_t *temp_list = NULL;
 
 	qdf_spin_lock_bh(&rx_desc_pool->lock);
 
-
 	temp_list = rx_desc_pool->freelist;
-	QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_DEBUG,
-	"temp_list: %pK, *local_desc_list: %pK, *tail: %pK (*tail)->next: %pK",
-	temp_list, *local_desc_list, *tail, (*tail)->next);
+	QDF_TRACE(
+		QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_DEBUG,
+		"temp_list: %pK, *local_desc_list: %pK, *tail: %pK (*tail)->next: %pK",
+		temp_list, *local_desc_list, *tail, (*tail)->next);
 	rx_desc_pool->freelist = *local_desc_list;
 	(*tail)->next = temp_list;
 	*tail = NULL;

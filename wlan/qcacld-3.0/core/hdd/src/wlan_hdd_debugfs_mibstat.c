@@ -23,8 +23,8 @@
  * debugfs with MIB statistics
  */
 
-#include <cds_sched.h>
 #include "osif_sync.h"
+#include <cds_sched.h>
 #include <wlan_hdd_debugfs_mibstat.h>
 #include <wlan_hdd_stats.h>
 #include <wma_api.h>
@@ -56,25 +56,24 @@ void hdd_debugfs_process_mib_stats(struct hdd_adapter *adapter,
 	buffer = mib_stats.result;
 	buffer += mib_stats.len;
 
-	len = scnprintf(buffer, DEBUGFS_MIBSTATS_BUF_SIZE - mib_stats.len,
-			"dot11RTSSuccessCount %d "
-			"\ndot11RTSFailureCount %d "
-			"\ndot11QosFailedCount %d "
-			"\ndot11QosRetryCount %d "
-			"\ndot11QosTransmittedFrameCount %d "
-			"\ndot11QosMPDUsReceivedCount %d "
-			"\ndot11TransmittedAMPDUCount %d "
-			"\ndot11QosACKFailureCount %d",
-			stats->mib_stats->mib_mac_statistics.rts_success_cnt,
-			stats->mib_stats->mib_mac_statistics.rts_fail_cnt,
-			stats->mib_stats->mib_qos_counters.qos_failed_cnt,
-			stats->mib_stats->mib_qos_counters.qos_retry_cnt,
-			stats->mib_stats->mib_qos_counters.qos_tx_frame_cnt,
-			stats->mib_stats->mib_qos_counters.qos_mpdu_rx_cnt,
-			stats->mib_stats->mib_counters_group3.tx_ampdu_cnt,
-			stats->mib_stats->
-				mib_qos_counters.tx_qos_ack_fail_cnt_up
-			);
+	len = scnprintf(
+		buffer, DEBUGFS_MIBSTATS_BUF_SIZE - mib_stats.len,
+		"dot11RTSSuccessCount %d "
+		"\ndot11RTSFailureCount %d "
+		"\ndot11QosFailedCount %d "
+		"\ndot11QosRetryCount %d "
+		"\ndot11QosTransmittedFrameCount %d "
+		"\ndot11QosMPDUsReceivedCount %d "
+		"\ndot11TransmittedAMPDUCount %d "
+		"\ndot11QosACKFailureCount %d",
+		stats->mib_stats->mib_mac_statistics.rts_success_cnt,
+		stats->mib_stats->mib_mac_statistics.rts_fail_cnt,
+		stats->mib_stats->mib_qos_counters.qos_failed_cnt,
+		stats->mib_stats->mib_qos_counters.qos_retry_cnt,
+		stats->mib_stats->mib_qos_counters.qos_tx_frame_cnt,
+		stats->mib_stats->mib_qos_counters.qos_mpdu_rx_cnt,
+		stats->mib_stats->mib_counters_group3.tx_ampdu_cnt,
+		stats->mib_stats->mib_qos_counters.tx_qos_ack_fail_cnt_up);
 
 	buffer += len;
 	mib_stats.len += len;
@@ -88,7 +87,7 @@ static inline void wlan_hdd_mibstats_free_buf(void)
 	qdf_mutex_acquire(&mibstats_lock);
 	qdf_mem_free(mib_stats.result);
 	mib_stats.result = NULL;
-	mib_stats.len =  0;
+	mib_stats.len = 0;
 	qdf_mutex_release(&mibstats_lock);
 }
 
@@ -121,8 +120,8 @@ static int wlan_hdd_mibstats_alloc_buf(void)
  *
  * Return: number of characters copied; 0 on no-copy
  */
-static ssize_t hdd_debugfs_mib_stats_update(char __user *buf,
-					    size_t count, loff_t *pos)
+static ssize_t hdd_debugfs_mib_stats_update(char __user *buf, size_t count,
+					    loff_t *pos)
 {
 	ssize_t ret_cnt;
 
@@ -134,8 +133,7 @@ static ssize_t hdd_debugfs_mib_stats_update(char __user *buf,
 		return 0;
 	}
 
-	ret_cnt = simple_read_from_buffer(buf, count, pos,
-					  mib_stats.result,
+	ret_cnt = simple_read_from_buffer(buf, count, pos, mib_stats.result,
 					  mib_stats.len);
 	qdf_mutex_release(&mibstats_lock);
 	hdd_debug("mib stats read req: count: %zu, pos: %lld", count, *pos);
@@ -208,8 +206,8 @@ static int wlan_hdd_release_mib_stats_debugfs(struct inode *inode,
  * Return: Number of bytes read on success, error number otherwise
  */
 static ssize_t __wlan_hdd_read_mib_stats_debugfs(struct net_device *net_dev,
-						 char __user *buf,
-						 size_t count, loff_t *pos)
+						 char __user *buf, size_t count,
+						 loff_t *pos)
 
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(net_dev);
@@ -256,8 +254,8 @@ free_buf:
  * Return: Number of bytes read on success, error number otherwise
  */
 static ssize_t wlan_hdd_read_mib_stats_debugfs(struct file *file,
-				   char __user *buf, size_t count,
-				   loff_t *pos)
+					       char __user *buf, size_t count,
+					       loff_t *pos)
 {
 	struct net_device *net_dev = file_inode(file)->i_private;
 	struct osif_vdev_sync *vdev_sync;
@@ -267,8 +265,7 @@ static ssize_t wlan_hdd_read_mib_stats_debugfs(struct file *file,
 	if (err_size)
 		return err_size;
 
-	err_size = __wlan_hdd_read_mib_stats_debugfs(net_dev, buf,
-						     count, pos);
+	err_size = __wlan_hdd_read_mib_stats_debugfs(net_dev, buf, count, pos);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -316,7 +313,7 @@ static int __wlan_hdd_open_mib_stats_debugfs(struct net_device *net_dev)
  * Return: Errno
  */
 static int wlan_hdd_open_mib_stats_debugfs(struct inode *inode,
-			       struct file *file)
+					   struct file *file)
 {
 	struct net_device *net_dev = inode->i_private;
 	struct osif_vdev_sync *vdev_sync;
@@ -352,8 +349,7 @@ int wlan_hdd_create_mib_stats_file(struct hdd_adapter *adapter)
 
 void wlan_hdd_create_mib_stats_lock(void)
 {
-	if (QDF_IS_STATUS_ERROR(qdf_mutex_create(
-				&mibstats_lock)))
+	if (QDF_IS_STATUS_ERROR(qdf_mutex_create(&mibstats_lock)))
 		hdd_err("mibstats lock init failed!");
 }
 

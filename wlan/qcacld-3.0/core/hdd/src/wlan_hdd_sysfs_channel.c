@@ -21,9 +21,9 @@
  * implementation for creating sysfs file channel
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
 #include "wlan_hdd_sysfs_channel.h"
+#include "osif_vdev_sync.h"
+#include <wlan_hdd_includes.h>
 
 static ssize_t __show_channel_number(struct net_device *net_dev, char *buf)
 {
@@ -61,8 +61,7 @@ exit:
 }
 
 static ssize_t show_channel_number(struct device *dev,
-				   struct device_attribute *attr,
-				   char *buf)
+				   struct device_attribute *attr, char *buf)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;

@@ -21,18 +21,17 @@
  * implementation for creating sysfs file rts_cts
  */
 
-#include <wlan_hdd_includes.h>
-#include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs.h>
 #include "wlan_hdd_sysfs_rts_cts.h"
-#include <wlan_mlme_ucfg_api.h>
-#include <cfg_ucfg_api.h>
+#include "osif_vdev_sync.h"
 #include <cfg_mlme_threshold.h>
+#include <cfg_ucfg_api.h>
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_sysfs.h>
+#include <wlan_mlme_ucfg_api.h>
 #include <wma_api.h>
 
-static ssize_t
-__hdd_sysfs_rts_cts_store(struct net_device *net_dev,
-			  char const *buf, size_t count)
+static ssize_t __hdd_sysfs_rts_cts_store(struct net_device *net_dev,
+					 char const *buf, size_t count)
 {
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
 	char buf_local[MAX_SYSFS_USER_COMMAND_SIZE_LENGTH + 1];
@@ -53,8 +52,8 @@ __hdd_sysfs_rts_cts_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -88,8 +87,8 @@ __hdd_sysfs_rts_cts_store(struct net_device *net_dev,
 	}
 
 	ret = wma_cli_set_command(adapter->deflink->vdev_id,
-				  wmi_vdev_param_enable_rtscts,
-				  value, VDEV_CMD);
+				  wmi_vdev_param_enable_rtscts, value,
+				  VDEV_CMD);
 	if (ret) {
 		hdd_err_rl("Failed to set firmware, ret %d", ret);
 		return ret;
@@ -104,10 +103,9 @@ __hdd_sysfs_rts_cts_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_rts_cts_store(struct device *dev,
-			struct device_attribute *attr,
-			char const *buf, size_t count)
+static ssize_t hdd_sysfs_rts_cts_store(struct device *dev,
+				       struct device_attribute *attr,
+				       char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -124,8 +122,7 @@ hdd_sysfs_rts_cts_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(rts_cts, 0220,
-		   NULL, hdd_sysfs_rts_cts_store);
+static DEVICE_ATTR(rts_cts, 0220, NULL, hdd_sysfs_rts_cts_store);
 
 int hdd_sysfs_rts_cts_create(struct hdd_adapter *adapter)
 {

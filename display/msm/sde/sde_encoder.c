@@ -17,59 +17,59 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
-#include <linux/kthread.h>
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 #include <linux/debugfs.h>
 #include <linux/input.h>
-#include <linux/seq_file.h>
+#include <linux/kthread.h>
 #include <linux/sde_rsc.h>
+#include <linux/seq_file.h>
 
 #include "msm_drv.h"
-#include "sde_kms.h"
-#include <drm/drm_crtc.h>
-#include <drm/drm_probe_helper.h>
-#include <drm/drm_edid.h>
-#include "sde_hwio.h"
-#include "sde_hw_catalog.h"
-#include "sde_hw_intf.h"
-#include "sde_hw_ctl.h"
-#include "sde_formats.h"
-#include "sde_encoder.h"
-#include "sde_encoder_phys.h"
-#include "sde_hw_dsc.h"
-#include "sde_hw_vdc.h"
-#include "sde_crtc.h"
-#include "sde_trace.h"
 #include "sde_core_irq.h"
-#include "sde_hw_top.h"
-#include "sde_hw_qdss.h"
+#include "sde_crtc.h"
+#include "sde_encoder.h"
 #include "sde_encoder_dce.h"
-#include "sde_vm.h"
+#include "sde_encoder_phys.h"
 #include "sde_fence.h"
+#include "sde_formats.h"
+#include "sde_hw_catalog.h"
+#include "sde_hw_ctl.h"
+#include "sde_hw_dsc.h"
+#include "sde_hw_intf.h"
+#include "sde_hw_qdss.h"
+#include "sde_hw_top.h"
+#include "sde_hw_vdc.h"
+#include "sde_hwio.h"
+#include "sde_kms.h"
+#include "sde_trace.h"
+#include "sde_vm.h"
+#include <drm/drm_crtc.h>
+#include <drm/drm_edid.h>
+#include <drm/drm_probe_helper.h>
 
-#define SDE_DEBUG_ENC(e, fmt, ...) SDE_DEBUG("enc%d " fmt,\
-		(e) ? (e)->base.base.id : -1, ##__VA_ARGS__)
+#define SDE_DEBUG_ENC(e, fmt, ...) \
+	SDE_DEBUG("enc%d " fmt, (e) ? (e)->base.base.id : -1, ##__VA_ARGS__)
 
-#define SDE_ERROR_ENC(e, fmt, ...) SDE_ERROR("enc%d " fmt,\
-		(e) ? (e)->base.base.id : -1, ##__VA_ARGS__)
+#define SDE_ERROR_ENC(e, fmt, ...) \
+	SDE_ERROR("enc%d " fmt, (e) ? (e)->base.base.id : -1, ##__VA_ARGS__)
 
-#define SDE_DEBUG_PHYS(p, fmt, ...) SDE_DEBUG("enc%d intf%d pp%d " fmt,\
-		(p) ? (p)->parent->base.id : -1, \
-		(p) ? (p)->intf_idx - INTF_0 : -1, \
-		(p) ? ((p)->hw_pp ? (p)->hw_pp->idx - PINGPONG_0 : -1) : -1, \
-		##__VA_ARGS__)
+#define SDE_DEBUG_PHYS(p, fmt, ...)                                            \
+	SDE_DEBUG("enc%d intf%d pp%d " fmt, (p) ? (p)->parent->base.id : -1,   \
+		  (p) ? (p)->intf_idx - INTF_0 : -1,                           \
+		  (p) ? ((p)->hw_pp ? (p)->hw_pp->idx - PINGPONG_0 : -1) : -1, \
+		  ##__VA_ARGS__)
 
-#define SDE_ERROR_PHYS(p, fmt, ...) SDE_ERROR("enc%d intf%d pp%d " fmt,\
-		(p) ? (p)->parent->base.id : -1, \
-		(p) ? (p)->intf_idx - INTF_0 : -1, \
-		(p) ? ((p)->hw_pp ? (p)->hw_pp->idx - PINGPONG_0 : -1) : -1, \
-		##__VA_ARGS__)
+#define SDE_ERROR_PHYS(p, fmt, ...)                                            \
+	SDE_ERROR("enc%d intf%d pp%d " fmt, (p) ? (p)->parent->base.id : -1,   \
+		  (p) ? (p)->intf_idx - INTF_0 : -1,                           \
+		  (p) ? ((p)->hw_pp ? (p)->hw_pp->idx - PINGPONG_0 : -1) : -1, \
+		  ##__VA_ARGS__)
 
-#define SEC_TO_MILLI_SEC		1000
+#define SEC_TO_MILLI_SEC 1000
 
-#define MISR_BUFF_SIZE			256
+#define MISR_BUFF_SIZE 256
 
-#define IDLE_SHORT_TIMEOUT	1
+#define IDLE_SHORT_TIMEOUT 1
 
 #define EVT_TIME_OUT_SPLIT 2
 
@@ -77,13 +77,13 @@
 #define DELAY_KICKOFF_POLL_TIMEOUT_US 100000
 
 /* Maximum number of VSYNC wait attempts for RSC state transition */
-#define MAX_RSC_WAIT	5
+#define MAX_RSC_WAIT 5
 
 /* Worst case time required for trigger the frame after the EPT wait */
-#define EPT_BACKOFF_THRESHOLD	(3 * NSEC_PER_MSEC)
+#define EPT_BACKOFF_THRESHOLD (3 * NSEC_PER_MSEC)
 
-#define IS_ROI_UPDATED(a, b) (a.x1 != b.x1 || a.x2 != b.x2 || \
-			a.y1 != b.y1 || a.y2 != b.y2)
+#define IS_ROI_UPDATED(a, b) \
+	(a.x1 != b.x1 || a.x2 != b.x2 || a.y1 != b.y1 || a.y2 != b.y2)
 
 /**
  * enum sde_enc_rc_events - events for resource control state machine
@@ -126,7 +126,7 @@
  *	This event is triggered from the input event thread when touch event is
  *	received from the input device. On receiving this event,
  *      - If the device is in SDE_ENC_RC_STATE_IDLE state, it turns ON the
-	  clocks and enable RSC.
+          clocks and enable RSC.
  *      - If the device is in SDE_ENC_RC_STATE_ON state, it resets the delayed
  *        off work since a new commit is imminent.
  */
@@ -150,7 +150,7 @@ void sde_encoder_uidle_enable(struct drm_encoder *drm_enc, bool enable)
 		struct sde_encoder_phys *phys = sde_enc->phys_encs[i];
 
 		if (phys && phys->hw_ctl && phys->hw_ctl->ops.uidle_enable &&
-				phys->split_role != ENC_ROLE_SLAVE) {
+		    phys->split_role != ENC_ROLE_SLAVE) {
 			if (enable)
 				SDE_EVT32(DRMID(drm_enc), enable);
 			phys->hw_ctl->ops.uidle_enable(phys->hw_ctl, enable);
@@ -183,7 +183,7 @@ ktime_t sde_encoder_calc_last_vsync_timestamp(struct drm_encoder *drm_enc)
 	struct sde_encoder_phys *cur_master;
 	u64 vsync_counter, qtmr_counter, hw_diff, hw_diff_ns, frametime_ns;
 	ktime_t tvblank, cur_time;
-	struct intf_status intf_status = {0};
+	struct intf_status intf_status = { 0 };
 	unsigned long features;
 	u32 fps;
 	bool is_cmd, is_vid;
@@ -194,24 +194,28 @@ ktime_t sde_encoder_calc_last_vsync_timestamp(struct drm_encoder *drm_enc)
 	is_cmd = sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE);
 	is_vid = sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_VIDEO_MODE);
 
-	if (!cur_master || !cur_master->hw_intf || !fps
-			|| !cur_master->hw_intf->ops.get_vsync_timestamp || (!is_cmd && !is_vid))
+	if (!cur_master || !cur_master->hw_intf || !fps ||
+	    !cur_master->hw_intf->ops.get_vsync_timestamp ||
+	    (!is_cmd && !is_vid))
 		return 0;
 
 	features = cur_master->hw_intf->cap->features;
 
 	/*
-	 * if MDP VSYNC HW timestamp is not supported and if programmable fetch is enabled,
-	 * avoid calculation and rely on ktime_get, as the HW vsync timestamp will be updated
-	 * at panel vsync and not at MDP VSYNC
-	 */
-	if (!test_bit(SDE_INTF_MDP_VSYNC_TS, &features) && cur_master->hw_intf->ops.get_status) {
-		cur_master->hw_intf->ops.get_status(cur_master->hw_intf, &intf_status);
+   * if MDP VSYNC HW timestamp is not supported and if programmable fetch is
+   * enabled, avoid calculation and rely on ktime_get, as the HW vsync timestamp
+   * will be updated at panel vsync and not at MDP VSYNC
+   */
+	if (!test_bit(SDE_INTF_MDP_VSYNC_TS, &features) &&
+	    cur_master->hw_intf->ops.get_status) {
+		cur_master->hw_intf->ops.get_status(cur_master->hw_intf,
+						    &intf_status);
 		if (intf_status.is_prog_fetch_en)
 			return 0;
 	}
 
-	vsync_counter = cur_master->hw_intf->ops.get_vsync_timestamp(cur_master->hw_intf, is_vid);
+	vsync_counter = cur_master->hw_intf->ops.get_vsync_timestamp(
+		cur_master->hw_intf, is_vid);
 	qtmr_counter = arch_timer_read_counter();
 	cur_time = ktime_get_ns();
 
@@ -219,60 +223,68 @@ ktime_t sde_encoder_calc_last_vsync_timestamp(struct drm_encoder *drm_enc)
 	if (qtmr_counter < vsync_counter) {
 		hw_diff = (0xffffffffffffff - vsync_counter) + qtmr_counter;
 		SDE_EVT32(DRMID(drm_enc), vsync_counter >> 32, vsync_counter,
-				qtmr_counter >> 32, qtmr_counter, hw_diff,
-				fps, SDE_EVTLOG_FUNC_CASE1);
+			  qtmr_counter >> 32, qtmr_counter, hw_diff, fps,
+			  SDE_EVTLOG_FUNC_CASE1);
 	} else {
 		hw_diff = qtmr_counter - vsync_counter;
 	}
 
-	hw_diff_ns = DIV_ROUND_UP(hw_diff * 1000 * 10, 192); /* 19.2 MHz clock */
+	hw_diff_ns =
+		DIV_ROUND_UP(hw_diff * 1000 * 10, 192); /* 19.2 MHz clock */
 	frametime_ns = DIV_ROUND_UP(1000000000, fps);
 
 	/* avoid setting timestamp, if diff is more than one vsync */
 	if (ktime_compare(hw_diff_ns, frametime_ns) > 0) {
 		tvblank = 0;
 		SDE_EVT32(DRMID(drm_enc), vsync_counter >> 32, vsync_counter,
-				qtmr_counter >> 32, qtmr_counter, ktime_to_us(hw_diff_ns),
-				fps, SDE_EVTLOG_ERROR);
+			  qtmr_counter >> 32, qtmr_counter,
+			  ktime_to_us(hw_diff_ns), fps, SDE_EVTLOG_ERROR);
 	} else {
 		tvblank = ktime_sub_ns(cur_time, hw_diff_ns);
 	}
 
-	SDE_DEBUG_ENC(sde_enc,
-			"vsync:%llu, qtmr:%llu, diff_ns:%llu, ts:%llu, cur_ts:%llu, fps:%d\n",
-			vsync_counter, qtmr_counter, ktime_to_us(hw_diff_ns),
-			ktime_to_us(tvblank), ktime_to_us(cur_time), fps);
+	SDE_DEBUG_ENC(
+		sde_enc,
+		"vsync:%llu, qtmr:%llu, diff_ns:%llu, ts:%llu, cur_ts:%llu, fps:%d\n",
+		vsync_counter, qtmr_counter, ktime_to_us(hw_diff_ns),
+		ktime_to_us(tvblank), ktime_to_us(cur_time), fps);
 
-	SDE_EVT32_VERBOSE(DRMID(drm_enc), hw_diff >> 32, hw_diff, ktime_to_us(hw_diff_ns),
-			ktime_to_us(tvblank), ktime_to_us(cur_time), fps, SDE_EVTLOG_FUNC_CASE2);
+	SDE_EVT32_VERBOSE(DRMID(drm_enc), hw_diff >> 32, hw_diff,
+			  ktime_to_us(hw_diff_ns), ktime_to_us(tvblank),
+			  ktime_to_us(cur_time), fps, SDE_EVTLOG_FUNC_CASE2);
 
 	return tvblank;
 }
 
-static void _sde_encoder_control_fal10_veto(struct drm_encoder *drm_enc, bool veto)
+static void _sde_encoder_control_fal10_veto(struct drm_encoder *drm_enc,
+					    bool veto)
 {
 	bool clone_mode;
 	struct sde_kms *sde_kms = sde_encoder_get_kms(drm_enc);
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 
-	if (!sde_kms || !sde_kms->hw_uidle || !sde_kms->hw_uidle->ops.uidle_fal10_override)
+	if (!sde_kms || !sde_kms->hw_uidle ||
+	    !sde_kms->hw_uidle->ops.uidle_fal10_override)
 		return;
 
-	if (test_bit(SDE_UIDLE_WB_FAL_STATUS, &sde_kms->catalog->uidle_cfg.features))
+	if (test_bit(SDE_UIDLE_WB_FAL_STATUS,
+		     &sde_kms->catalog->uidle_cfg.features))
 		return;
 
 	/*
-	 * clone mode is the only scenario where we want to enable software override
-	 * of fal10 veto.
-	 */
+   * clone mode is the only scenario where we want to enable software override
+   * of fal10 veto.
+   */
 	clone_mode = sde_encoder_in_clone_mode(drm_enc);
 	SDE_EVT32(DRMID(drm_enc), clone_mode, veto);
 
 	if (clone_mode && veto) {
-		sde_kms->hw_uidle->ops.uidle_fal10_override(sde_kms->hw_uidle, veto);
+		sde_kms->hw_uidle->ops.uidle_fal10_override(sde_kms->hw_uidle,
+							    veto);
 		sde_enc->fal10_veto_override = true;
 	} else if (sde_enc->fal10_veto_override && !veto) {
-		sde_kms->hw_uidle->ops.uidle_fal10_override(sde_kms->hw_uidle, veto);
+		sde_kms->hw_uidle->ops.uidle_fal10_override(sde_kms->hw_uidle,
+							    veto);
 		sde_enc->fal10_veto_override = false;
 	}
 }
@@ -299,8 +311,7 @@ static void _sde_encoder_pm_qos_add_request(struct drm_encoder *drm_enc)
 	if (sde_enc->mode_info.frame_rate > DEFAULT_FPS)
 		cpu_mask = to_cpumask(&sde_kms->catalog->perf.cpu_mask_perf);
 	if (!cpu_mask &&
-			sde_encoder_check_curr_mode(drm_enc,
-				MSM_DISPLAY_CMD_MODE))
+	    sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
 		cpu_mask = to_cpumask(&sde_kms->catalog->perf.cpu_mask);
 
 	if (!cpu_mask)
@@ -310,13 +321,13 @@ static void _sde_encoder_pm_qos_add_request(struct drm_encoder *drm_enc)
 		cpu_dev = get_cpu_device(cpu);
 		if (!cpu_dev) {
 			SDE_ERROR("%s: failed to get cpu%d device\n", __func__,
-					cpu);
+				  cpu);
 			return;
 		}
 		cpumask_set_cpu(cpu, &sde_enc->valid_cpu_mask);
-		dev_pm_qos_add_request(cpu_dev,
-				&sde_enc->pm_qos_cpu_req[cpu],
-				DEV_PM_QOS_RESUME_LATENCY, cpu_dma_latency);
+		dev_pm_qos_add_request(cpu_dev, &sde_enc->pm_qos_cpu_req[cpu],
+				       DEV_PM_QOS_RESUME_LATENCY,
+				       cpu_dma_latency);
 		SDE_EVT32_VERBOSE(DRMID(drm_enc), cpu_dma_latency, cpu);
 	}
 }
@@ -331,7 +342,7 @@ static void _sde_encoder_pm_qos_remove_request(struct drm_encoder *drm_enc)
 		cpu_dev = get_cpu_device(cpu);
 		if (!cpu_dev) {
 			SDE_ERROR("%s: failed to get cpu%d device\n", __func__,
-					cpu);
+				  cpu);
 			continue;
 		}
 		dev_pm_qos_remove_request(&sde_enc->pm_qos_cpu_req[cpu]);
@@ -340,13 +351,13 @@ static void _sde_encoder_pm_qos_remove_request(struct drm_encoder *drm_enc)
 	cpumask_clear(&sde_enc->valid_cpu_mask);
 }
 
-static bool _sde_encoder_is_autorefresh_enabled(
-		struct sde_encoder_virt *sde_enc)
+static bool
+_sde_encoder_is_autorefresh_enabled(struct sde_encoder_virt *sde_enc)
 {
 	struct drm_connector *drm_conn;
 
 	if (!sde_enc->cur_master ||
-		!(sde_enc->disp_info.capabilities & MSM_DISPLAY_CAP_CMD_MODE))
+	    !(sde_enc->disp_info.capabilities & MSM_DISPLAY_CAP_CMD_MODE))
 		return false;
 
 	drm_conn = sde_enc->cur_master->connector;
@@ -355,12 +366,14 @@ static bool _sde_encoder_is_autorefresh_enabled(
 		return false;
 
 	return sde_connector_get_property(drm_conn->state,
-			CONNECTOR_PROP_AUTOREFRESH) ? true : false;
+					  CONNECTOR_PROP_AUTOREFRESH) ?
+		       true :
+		       false;
 }
 
 static void sde_configure_qdss(struct sde_encoder_virt *sde_enc,
-				struct sde_hw_qdss *hw_qdss,
-				struct sde_encoder_phys *phys, bool enable)
+			       struct sde_hw_qdss *hw_qdss,
+			       struct sde_encoder_phys *phys, bool enable)
 {
 	if (sde_enc->qdss_status == enable)
 		return;
@@ -368,12 +381,13 @@ static void sde_configure_qdss(struct sde_encoder_virt *sde_enc,
 	sde_enc->qdss_status = enable;
 
 	phys->hw_mdptop->ops.set_mdp_hw_events(phys->hw_mdptop,
-						sde_enc->qdss_status);
+					       sde_enc->qdss_status);
 	hw_qdss->ops.enable_qdss_events(hw_qdss, sde_enc->qdss_status);
 }
 
 static int _sde_encoder_wait_timeout(int32_t drm_id, int32_t hw_id,
-	s64 timeout_ms, struct sde_encoder_wait_info *info)
+				     s64 timeout_ms,
+				     struct sde_encoder_wait_info *info)
 {
 	int rc = 0;
 	s64 wait_time_jiffies = msecs_to_jiffies(timeout_ms);
@@ -383,31 +397,31 @@ static int _sde_encoder_wait_timeout(int32_t drm_id, int32_t hw_id,
 
 	do {
 		rc = wait_event_timeout(*(info->wq),
-			atomic_read(info->atomic_cnt) == info->count_check,
-			wait_time_jiffies);
+					atomic_read(info->atomic_cnt) ==
+						info->count_check,
+					wait_time_jiffies);
 		cur_ktime = ktime_get();
 
-		SDE_EVT32(drm_id, hw_id, rc, ktime_to_ms(cur_ktime),
-			timeout_ms, atomic_read(info->atomic_cnt),
-			info->count_check);
+		SDE_EVT32(drm_id, hw_id, rc, ktime_to_ms(cur_ktime), timeout_ms,
+			  atomic_read(info->atomic_cnt), info->count_check);
 
 		/* Make an early exit if the condition is already satisfied */
 		if ((atomic_read(info->atomic_cnt) < info->count_check) &&
-				(info->count_check < curr_atomic_cnt)) {
+		    (info->count_check < curr_atomic_cnt)) {
 			rc = true;
 			break;
 		}
 
-	/* If we timed out, counter is valid and time is less, wait again */
+		/* If we timed out, counter is valid and time is less, wait again */
 	} while ((atomic_read(info->atomic_cnt) != info->count_check) &&
-			(rc == 0) &&
-			(ktime_compare_safe(exp_ktime, cur_ktime) > 0));
+		 (rc == 0) && (ktime_compare_safe(exp_ktime, cur_ktime) > 0));
 
 	return rc;
 }
 
-int sde_encoder_helper_hw_fence_extended_wait(struct sde_encoder_phys *phys_enc,
-	struct sde_hw_ctl *ctl, struct sde_encoder_wait_info *wait_info, int wait_type)
+int sde_encoder_helper_hw_fence_extended_wait(
+	struct sde_encoder_phys *phys_enc, struct sde_hw_ctl *ctl,
+	struct sde_encoder_wait_info *wait_info, int wait_type)
 {
 	int ret = -ETIMEDOUT;
 	s64 standard_kickoff_timeout_ms = wait_info->timeout_ms;
@@ -416,7 +430,8 @@ int sde_encoder_helper_hw_fence_extended_wait(struct sde_encoder_phys *phys_enc,
 	wait_info->timeout_ms = EXTENDED_KICKOFF_TIMEOUT_MS;
 
 	while (ret == -ETIMEDOUT && timeout_iters--) {
-		ret = sde_encoder_helper_wait_for_irq(phys_enc, wait_type, wait_info);
+		ret = sde_encoder_helper_wait_for_irq(phys_enc, wait_type,
+						      wait_info);
 		if (ret == -ETIMEDOUT) {
 			/* if dma_fence is not signaled, keep waiting */
 			if (!sde_crtc_is_fence_signaled(phys_enc->parent->crtc))
@@ -429,21 +444,23 @@ int sde_encoder_helper_hw_fence_extended_wait(struct sde_encoder_phys *phys_enc,
 			}
 
 			/*
-			 * In case the sw and hw fences were triggered at the same time,
-			 * wait the standard kickoff time one more time. Only override if
-			 * we timeout again.
-			 */
+       * In case the sw and hw fences were triggered at the same time,
+       * wait the standard kickoff time one more time. Only override if
+       * we timeout again.
+       */
 			wait_info->timeout_ms = standard_kickoff_timeout_ms;
-			ret = sde_encoder_helper_wait_for_irq(phys_enc, wait_type, wait_info);
+			ret = sde_encoder_helper_wait_for_irq(
+				phys_enc, wait_type, wait_info);
 			if (ret == -ETIMEDOUT) {
-				sde_encoder_helper_hw_fence_sw_override(phys_enc, ctl);
+				sde_encoder_helper_hw_fence_sw_override(
+					phys_enc, ctl);
 
 				/*
-				 * wait the original timeout time again if we
-				 * did sw override due to fence being signaled
-				 */
-				ret = sde_encoder_helper_wait_for_irq(phys_enc, wait_type,
-					wait_info);
+         * wait the original timeout time again if we
+         * did sw override due to fence being signaled
+         */
+				ret = sde_encoder_helper_wait_for_irq(
+					phys_enc, wait_type, wait_info);
 			}
 			break;
 		}
@@ -460,8 +477,7 @@ bool sde_encoder_is_primary_display(struct drm_encoder *drm_enc)
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 
 	return sde_enc &&
-		(sde_enc->disp_info.display_type ==
-		SDE_CONNECTOR_PRIMARY);
+	       (sde_enc->disp_info.display_type == SDE_CONNECTOR_PRIMARY);
 }
 
 bool sde_encoder_is_built_in_display(struct drm_encoder *drm_enc)
@@ -469,7 +485,7 @@ bool sde_encoder_is_built_in_display(struct drm_encoder *drm_enc)
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 
 	return sde_enc &&
-		(sde_enc->disp_info.display_type == SDE_CONNECTOR_PRIMARY ||
+	       (sde_enc->disp_info.display_type == SDE_CONNECTOR_PRIMARY ||
 		sde_enc->disp_info.display_type == SDE_CONNECTOR_SECONDARY);
 }
 
@@ -478,7 +494,7 @@ bool sde_encoder_is_dsi_display(struct drm_encoder *drm_enc)
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 
 	return sde_enc &&
-		(sde_enc->disp_info.intf_type == DRM_MODE_CONNECTOR_DSI);
+	       (sde_enc->disp_info.intf_type == DRM_MODE_CONNECTOR_DSI);
 }
 
 int sde_encoder_in_cont_splash(struct drm_encoder *drm_enc)
@@ -486,33 +502,32 @@ int sde_encoder_in_cont_splash(struct drm_encoder *drm_enc)
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 
 	return sde_enc && sde_enc->cur_master &&
-		sde_enc->cur_master->cont_splash_enabled;
+	       sde_enc->cur_master->cont_splash_enabled;
 }
 
 void sde_encoder_helper_report_irq_timeout(struct sde_encoder_phys *phys_enc,
-		enum sde_intr_idx intr_idx)
+					   enum sde_intr_idx intr_idx)
 {
-	SDE_EVT32(DRMID(phys_enc->parent),
-			phys_enc->intf_idx - INTF_0,
-			phys_enc->hw_pp->idx - PINGPONG_0,
-			intr_idx);
+	SDE_EVT32(DRMID(phys_enc->parent), phys_enc->intf_idx - INTF_0,
+		  phys_enc->hw_pp->idx - PINGPONG_0, intr_idx);
 	SDE_ERROR_PHYS(phys_enc, "irq %d timeout\n", intr_idx);
 
 	if (phys_enc->parent_ops.handle_frame_done)
 		phys_enc->parent_ops.handle_frame_done(
-				phys_enc->parent, phys_enc,
-				SDE_ENCODER_FRAME_EVENT_ERROR);
+			phys_enc->parent, phys_enc,
+			SDE_ENCODER_FRAME_EVENT_ERROR);
 }
 
 int sde_encoder_helper_wait_for_irq(struct sde_encoder_phys *phys_enc,
-		enum sde_intr_idx intr_idx,
-		struct sde_encoder_wait_info *wait_info)
+				    enum sde_intr_idx intr_idx,
+				    struct sde_encoder_wait_info *wait_info)
 {
 	struct sde_encoder_irq *irq;
 	u32 irq_status;
 	int ret, i;
 
-	if (!phys_enc || !phys_enc->hw_pp || !wait_info || intr_idx >= INTR_IDX_MAX) {
+	if (!phys_enc || !phys_enc->hw_pp || !wait_info ||
+	    intr_idx >= INTR_IDX_MAX) {
 		SDE_ERROR("invalid params\n");
 		return -EINVAL;
 	}
@@ -524,51 +539,56 @@ int sde_encoder_helper_wait_for_irq(struct sde_encoder_phys *phys_enc,
 	if (phys_enc->enable_state == SDE_ENC_DISABLED) {
 		SDE_ERROR_PHYS(phys_enc, "encoder is disabled\n");
 		SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-				irq->irq_idx, intr_idx, SDE_EVTLOG_ERROR);
+			  irq->irq_idx, intr_idx, SDE_EVTLOG_ERROR);
 		return -EWOULDBLOCK;
 	}
 
 	if (irq->irq_idx < 0) {
 		SDE_DEBUG_PHYS(phys_enc, "irq %s hw %d disabled, skip wait\n",
-				irq->name, irq->hw_idx);
+			       irq->name, irq->hw_idx);
 		SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-				irq->irq_idx);
+			  irq->irq_idx);
 		return 0;
 	}
 
 	SDE_DEBUG_PHYS(phys_enc, "pending_cnt %d\n",
-			atomic_read(wait_info->atomic_cnt));
+		       atomic_read(wait_info->atomic_cnt));
 	SDE_EVT32_VERBOSE(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-		irq->irq_idx, phys_enc->hw_pp->idx - PINGPONG_0,
-		atomic_read(wait_info->atomic_cnt), SDE_EVTLOG_FUNC_ENTRY);
+			  irq->irq_idx, phys_enc->hw_pp->idx - PINGPONG_0,
+			  atomic_read(wait_info->atomic_cnt),
+			  SDE_EVTLOG_FUNC_ENTRY);
 
 	/*
-	 * Some module X may disable interrupt for longer duration
-	 * and it may trigger all interrupts including timer interrupt
-	 * when module X again enable the interrupt.
-	 * That may cause interrupt wait timeout API in this API.
-	 * It is handled by split the wait timer in two halves.
-	 */
+   * Some module X may disable interrupt for longer duration
+   * and it may trigger all interrupts including timer interrupt
+   * when module X again enable the interrupt.
+   * That may cause interrupt wait timeout API in this API.
+   * It is handled by split the wait timer in two halves.
+   */
 
 	for (i = 0; i < EVT_TIME_OUT_SPLIT; i++) {
-		ret = _sde_encoder_wait_timeout(DRMID(phys_enc->parent),
-				irq->hw_idx,
-				(wait_info->timeout_ms/EVT_TIME_OUT_SPLIT),
-				wait_info);
+		ret = _sde_encoder_wait_timeout(
+			DRMID(phys_enc->parent), irq->hw_idx,
+			(wait_info->timeout_ms / EVT_TIME_OUT_SPLIT),
+			wait_info);
 		if (ret)
 			break;
 	}
 
 	if (ret <= 0) {
-		irq_status = sde_core_irq_read(phys_enc->sde_kms,
-				irq->irq_idx, true);
+		irq_status = sde_core_irq_read(phys_enc->sde_kms, irq->irq_idx,
+					       true);
 		if (irq_status) {
 			unsigned long flags;
 
 			SDE_EVT32(DRMID(phys_enc->parent), intr_idx,
-				irq->hw_idx, irq->irq_idx, phys_enc->hw_pp->idx - PINGPONG_0,
-				atomic_read(wait_info->atomic_cnt), SDE_EVTLOG_FUNC_CASE1);
-			SDE_DEBUG_PHYS(phys_enc, "done but irq %d not triggered\n", irq->irq_idx);
+				  irq->hw_idx, irq->irq_idx,
+				  phys_enc->hw_pp->idx - PINGPONG_0,
+				  atomic_read(wait_info->atomic_cnt),
+				  SDE_EVTLOG_FUNC_CASE1);
+			SDE_DEBUG_PHYS(phys_enc,
+				       "done but irq %d not triggered\n",
+				       irq->irq_idx);
 			local_irq_save(flags);
 			irq->cb.func(phys_enc, irq->irq_idx);
 			local_irq_restore(flags);
@@ -576,27 +596,29 @@ int sde_encoder_helper_wait_for_irq(struct sde_encoder_phys *phys_enc,
 		} else {
 			ret = -ETIMEDOUT;
 			SDE_EVT32(DRMID(phys_enc->parent), intr_idx,
-				irq->hw_idx, irq->irq_idx,
-				phys_enc->hw_pp->idx - PINGPONG_0,
-				atomic_read(wait_info->atomic_cnt), irq_status,
-				SDE_EVTLOG_ERROR);
+				  irq->hw_idx, irq->irq_idx,
+				  phys_enc->hw_pp->idx - PINGPONG_0,
+				  atomic_read(wait_info->atomic_cnt),
+				  irq_status, SDE_EVTLOG_ERROR);
 		}
 	} else {
 		ret = 0;
 		SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-			irq->irq_idx, phys_enc->hw_pp->idx - PINGPONG_0,
-			atomic_read(wait_info->atomic_cnt), SDE_EVTLOG_FUNC_CASE2);
+			  irq->irq_idx, phys_enc->hw_pp->idx - PINGPONG_0,
+			  atomic_read(wait_info->atomic_cnt),
+			  SDE_EVTLOG_FUNC_CASE2);
 	}
 
 	SDE_EVT32_VERBOSE(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-		irq->irq_idx, ret, phys_enc->hw_pp->idx - PINGPONG_0,
-		atomic_read(wait_info->atomic_cnt), SDE_EVTLOG_FUNC_EXIT);
+			  irq->irq_idx, ret, phys_enc->hw_pp->idx - PINGPONG_0,
+			  atomic_read(wait_info->atomic_cnt),
+			  SDE_EVTLOG_FUNC_EXIT);
 
 	return ret;
 }
 
 int sde_encoder_helper_register_irq(struct sde_encoder_phys *phys_enc,
-		enum sde_intr_idx intr_idx)
+				    enum sde_intr_idx intr_idx)
 {
 	struct sde_encoder_irq *irq;
 	int ret = 0;
@@ -609,26 +631,26 @@ int sde_encoder_helper_register_irq(struct sde_encoder_phys *phys_enc,
 
 	if (irq->irq_idx >= 0) {
 		SDE_DEBUG_PHYS(phys_enc,
-				"skipping already registered irq %s type %d\n",
-				irq->name, irq->intr_type);
+			       "skipping already registered irq %s type %d\n",
+			       irq->name, irq->intr_type);
 		return 0;
 	}
 
 	irq->irq_idx = sde_core_irq_idx_lookup(phys_enc->sde_kms,
-			irq->intr_type, irq->hw_idx);
+					       irq->intr_type, irq->hw_idx);
 	if (irq->irq_idx < 0) {
 		SDE_ERROR_PHYS(phys_enc,
-			"failed to lookup IRQ index for %s type:%d\n",
-			irq->name, irq->intr_type);
+			       "failed to lookup IRQ index for %s type:%d\n",
+			       irq->name, irq->intr_type);
 		return -EINVAL;
 	}
 
 	ret = sde_core_irq_register_callback(phys_enc->sde_kms, irq->irq_idx,
-			&irq->cb);
+					     &irq->cb);
 	if (ret) {
 		SDE_ERROR_PHYS(phys_enc,
-			"failed to register IRQ callback for %s\n",
-			irq->name);
+			       "failed to register IRQ callback for %s\n",
+			       irq->name);
 		irq->irq_idx = -EINVAL;
 		return ret;
 	}
@@ -636,27 +658,27 @@ int sde_encoder_helper_register_irq(struct sde_encoder_phys *phys_enc,
 	ret = sde_core_irq_enable(phys_enc->sde_kms, &irq->irq_idx, 1);
 	if (ret) {
 		SDE_ERROR_PHYS(phys_enc,
-			"enable IRQ for intr:%s failed, irq_idx %d\n",
-			irq->name, irq->irq_idx);
+			       "enable IRQ for intr:%s failed, irq_idx %d\n",
+			       irq->name, irq->irq_idx);
 
 		sde_core_irq_unregister_callback(phys_enc->sde_kms,
-				irq->irq_idx, &irq->cb);
+						 irq->irq_idx, &irq->cb);
 
 		SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-				irq->irq_idx, SDE_EVTLOG_ERROR);
+			  irq->irq_idx, SDE_EVTLOG_ERROR);
 		irq->irq_idx = -EINVAL;
 		return ret;
 	}
 
 	SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx, irq->irq_idx);
-	SDE_DEBUG_PHYS(phys_enc, "registered irq %s idx: %d\n",
-			irq->name, irq->irq_idx);
+	SDE_DEBUG_PHYS(phys_enc, "registered irq %s idx: %d\n", irq->name,
+		       irq->irq_idx);
 
 	return ret;
 }
 
 int sde_encoder_helper_unregister_irq(struct sde_encoder_phys *phys_enc,
-		enum sde_intr_idx intr_idx)
+				      enum sde_intr_idx intr_idx)
 {
 	struct sde_encoder_irq *irq;
 	int ret;
@@ -671,23 +693,23 @@ int sde_encoder_helper_unregister_irq(struct sde_encoder_phys *phys_enc,
 	if (irq->irq_idx < 0) {
 		SDE_ERROR(
 			"extra unregister irq, enc%d intr_idx:0x%x hw_idx:0x%x irq_idx:0x%x\n",
-				DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-				irq->irq_idx);
+			DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
+			irq->irq_idx);
 		SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-				irq->irq_idx, SDE_EVTLOG_ERROR);
+			  irq->irq_idx, SDE_EVTLOG_ERROR);
 		return 0;
 	}
 
 	ret = sde_core_irq_disable(phys_enc->sde_kms, &irq->irq_idx, 1);
 	if (ret)
 		SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-				irq->irq_idx, ret, SDE_EVTLOG_ERROR);
+			  irq->irq_idx, ret, SDE_EVTLOG_ERROR);
 
 	ret = sde_core_irq_unregister_callback(phys_enc->sde_kms, irq->irq_idx,
-			&irq->cb);
+					       &irq->cb);
 	if (ret)
 		SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx,
-				irq->irq_idx, ret, SDE_EVTLOG_ERROR);
+			  irq->irq_idx, ret, SDE_EVTLOG_ERROR);
 
 	SDE_EVT32(DRMID(phys_enc->parent), intr_idx, irq->hw_idx, irq->irq_idx);
 	SDE_DEBUG_PHYS(phys_enc, "unregistered %d\n", irq->irq_idx);
@@ -698,16 +720,16 @@ int sde_encoder_helper_unregister_irq(struct sde_encoder_phys *phys_enc,
 }
 
 void sde_encoder_get_hw_resources(struct drm_encoder *drm_enc,
-		struct sde_encoder_hw_resources *hw_res,
-		struct drm_connector_state *conn_state)
+				  struct sde_encoder_hw_resources *hw_res,
+				  struct drm_connector_state *conn_state)
 {
 	struct sde_encoder_virt *sde_enc = NULL;
 	int ret, i = 0;
 
 	if (!hw_res || !drm_enc || !conn_state || !hw_res->comp_info) {
 		SDE_ERROR("rc %d, drm_enc %d, res %d, state %d, comp-info %d\n",
-				-EINVAL, !drm_enc, !hw_res, !conn_state,
-				hw_res ? !hw_res->comp_info : 0);
+			  -EINVAL, !drm_enc, !hw_res, !conn_state,
+			  hw_res ? !hw_res->comp_info : 0);
 		return;
 	}
 
@@ -726,16 +748,16 @@ void sde_encoder_get_hw_resources(struct drm_encoder *drm_enc,
 	}
 
 	/*
-	 * NOTE: Do not use sde_encoder_get_mode_info here as this function is
-	 * called from atomic_check phase. Use the below API to get mode
-	 * information of the temporary conn_state passed
-	 */
+   * NOTE: Do not use sde_encoder_get_mode_info here as this function is
+   * called from atomic_check phase. Use the below API to get mode
+   * information of the temporary conn_state passed
+   */
 	ret = sde_connector_state_get_topology(conn_state, &hw_res->topology);
 	if (ret)
 		SDE_ERROR("failed to get topology ret %d\n", ret);
 
 	ret = sde_connector_state_get_compression_info(conn_state,
-			hw_res->comp_info);
+						       hw_res->comp_info);
 	if (ret)
 		SDE_ERROR("failed to get compression info ret %d\n", ret);
 }
@@ -785,7 +807,7 @@ void sde_encoder_destroy(struct drm_encoder *drm_enc)
 
 	if (sde_enc->num_phys_encs)
 		SDE_ERROR_ENC(sde_enc, "expected 0 num_phys_encs not %d\n",
-				sde_enc->num_phys_encs);
+			      sde_enc->num_phys_encs);
 	sde_enc->num_phys_encs = 0;
 	mutex_unlock(&sde_enc->enc_lock);
 
@@ -798,8 +820,7 @@ void sde_encoder_destroy(struct drm_encoder *drm_enc)
 	kfree(sde_enc);
 }
 
-void sde_encoder_helper_update_intf_cfg(
-		struct sde_encoder_phys *phys_enc)
+void sde_encoder_helper_update_intf_cfg(struct sde_encoder_phys *phys_enc)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_hw_intf_cfg_v1 *intf_cfg;
@@ -813,11 +834,8 @@ void sde_encoder_helper_update_intf_cfg(
 	sde_enc = to_sde_encoder_virt(phys_enc->parent);
 	intf_cfg = &sde_enc->cur_master->intf_cfg_v1;
 
-	SDE_DEBUG_ENC(sde_enc,
-			"intf_cfg updated for %d at idx %d\n",
-			phys_enc->intf_idx,
-			intf_cfg->intf_count);
-
+	SDE_DEBUG_ENC(sde_enc, "intf_cfg updated for %d at idx %d\n",
+		      phys_enc->intf_idx, intf_cfg->intf_count);
 
 	/* setup interface configuration */
 	if (intf_cfg->intf_count >= MAX_INTF_PER_CTL_V1) {
@@ -839,27 +857,22 @@ void sde_encoder_helper_update_intf_cfg(
 	/* setup which pp blk will connect to this intf */
 	if (phys_enc->hw_intf->ops.bind_pingpong_blk)
 		phys_enc->hw_intf->ops.bind_pingpong_blk(
-				phys_enc->hw_intf,
-				true,
-				phys_enc->hw_pp->idx);
-
+			phys_enc->hw_intf, true, phys_enc->hw_pp->idx);
 
 	/*setup merge_3d configuration */
 	mode_3d = sde_encoder_helper_get_3d_blend_mode(phys_enc);
 
 	if (mode_3d && phys_enc->hw_pp->merge_3d &&
-			intf_cfg->merge_3d_count < MAX_MERGE_3D_PER_CTL_V1)
+	    intf_cfg->merge_3d_count < MAX_MERGE_3D_PER_CTL_V1)
 		intf_cfg->merge_3d[intf_cfg->merge_3d_count++] =
 			phys_enc->hw_pp->merge_3d->idx;
 
 	if (phys_enc->hw_pp->ops.setup_3d_mode)
-		phys_enc->hw_pp->ops.setup_3d_mode(phys_enc->hw_pp,
-				mode_3d);
+		phys_enc->hw_pp->ops.setup_3d_mode(phys_enc->hw_pp, mode_3d);
 }
 
-void sde_encoder_helper_split_config(
-		struct sde_encoder_phys *phys_enc,
-		enum sde_intf interface)
+void sde_encoder_helper_split_config(struct sde_encoder_phys *phys_enc,
+				     enum sde_intf interface)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct split_pipe_cfg *cfg;
@@ -885,11 +898,11 @@ void sde_encoder_helper_split_config(
 		cfg->split_link_en = true;
 
 	/**
-	 * disable split modes since encoder will be operating in as the only
-	 * encoder, either for the entire use case in the case of, for example,
-	 * single DSI, or for this frame in the case of left/right only partial
-	 * update.
-	 */
+   * disable split modes since encoder will be operating in as the only
+   * encoder, either for the entire use case in the case of, for example,
+   * single DSI, or for this frame in the case of left/right only partial
+   * update.
+   */
 	if (phys_enc->split_role == ENC_ROLE_SOLO) {
 		if (hw_mdptop->ops.setup_split_pipe)
 			hw_mdptop->ops.setup_split_pipe(hw_mdptop, cfg);
@@ -903,7 +916,7 @@ void sde_encoder_helper_split_config(
 	cfg->intf = interface;
 
 	if (cfg->en && phys_enc->ops.needs_single_flush &&
-			phys_enc->ops.needs_single_flush(phys_enc))
+	    phys_enc->ops.needs_single_flush(phys_enc))
 		cfg->split_flush_en = true;
 
 	topology = sde_connector_get_topology_name(phys_enc->connector);
@@ -919,13 +932,13 @@ void sde_encoder_helper_split_config(
 			hw_mdptop->ops.setup_split_pipe(hw_mdptop, cfg);
 	} else if (sde_enc->hw_pp[0]) {
 		/*
-		 * slave encoder
-		 * - determine split index from master index,
-		 *   assume master is first pp
-		 */
+     * slave encoder
+     * - determine split index from master index,
+     *   assume master is first pp
+     */
 		cfg->pp_split_index = sde_enc->hw_pp[0]->idx - PINGPONG_0;
 		SDE_DEBUG_ENC(sde_enc, "master using pp%d\n",
-				cfg->pp_split_index);
+			      cfg->pp_split_index);
 
 		if (hw_mdptop->ops.setup_pp_split)
 			hw_mdptop->ops.setup_pp_split(hw_mdptop, cfg);
@@ -955,7 +968,7 @@ bool sde_encoder_in_clone_mode(struct drm_encoder *drm_enc)
 }
 
 bool sde_encoder_is_cwb_disabling(struct drm_encoder *drm_enc,
-	struct drm_crtc *crtc)
+				  struct drm_crtc *crtc)
 {
 	struct sde_encoder_virt *sde_enc;
 	int i;
@@ -978,7 +991,7 @@ bool sde_encoder_is_cwb_disabling(struct drm_encoder *drm_enc,
 }
 
 void sde_encoder_set_clone_mode(struct drm_encoder *drm_enc,
-	 struct drm_crtc_state *crtc_state)
+				struct drm_crtc_state *crtc_state)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_crtc_state *sde_crtc_state;
@@ -992,7 +1005,7 @@ void sde_encoder_set_clone_mode(struct drm_encoder *drm_enc,
 	sde_crtc_state = to_sde_crtc_state(crtc_state);
 
 	if ((sde_enc->disp_info.intf_type != DRM_MODE_CONNECTOR_VIRTUAL) ||
-		(!(sde_crtc_state->cwb_enc_mask & drm_encoder_mask(drm_enc))))
+	    (!(sde_crtc_state->cwb_enc_mask & drm_encoder_mask(drm_enc))))
 		return;
 
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
@@ -1000,7 +1013,8 @@ void sde_encoder_set_clone_mode(struct drm_encoder *drm_enc,
 
 		if (phys) {
 			phys->in_clone_mode = true;
-			SDE_DEBUG("enc:%d phys state:%d\n", DRMID(drm_enc), phys->enable_state);
+			SDE_DEBUG("enc:%d phys state:%d\n", DRMID(drm_enc),
+				  phys->enable_state);
 		}
 	}
 
@@ -1008,9 +1022,10 @@ void sde_encoder_set_clone_mode(struct drm_encoder *drm_enc,
 	sde_crtc_state->cwb_enc_mask = 0;
 }
 
-static int _sde_encoder_atomic_check_phys_enc(struct sde_encoder_virt *sde_enc,
-	struct drm_crtc_state *crtc_state,
-	struct drm_connector_state *conn_state)
+static int
+_sde_encoder_atomic_check_phys_enc(struct sde_encoder_virt *sde_enc,
+				   struct drm_crtc_state *crtc_state,
+				   struct drm_connector_state *conn_state)
 {
 	const struct drm_display_mode *mode;
 	struct drm_display_mode *adj_mode;
@@ -1026,14 +1041,14 @@ static int _sde_encoder_atomic_check_phys_enc(struct sde_encoder_virt *sde_enc,
 
 		if (phys && phys->ops.atomic_check)
 			ret = phys->ops.atomic_check(phys, crtc_state,
-					conn_state);
+						     conn_state);
 		else if (phys && phys->ops.mode_fixup)
 			if (!phys->ops.mode_fixup(phys, mode, adj_mode))
 				ret = -EINVAL;
 
 		if (ret) {
 			SDE_ERROR_ENC(sde_enc,
-					"mode unsupported, phys idx %d\n", i);
+				      "mode unsupported, phys idx %d\n", i);
 			break;
 		}
 	}
@@ -1041,9 +1056,12 @@ static int _sde_encoder_atomic_check_phys_enc(struct sde_encoder_virt *sde_enc,
 	return ret;
 }
 
-static int _sde_encoder_atomic_check_pu_roi(struct sde_encoder_virt *sde_enc,
-	struct drm_crtc_state *crtc_state, struct drm_connector_state *conn_state,
-	struct sde_connector_state *sde_conn_state, struct sde_crtc_state *sde_crtc_state)
+static int
+_sde_encoder_atomic_check_pu_roi(struct sde_encoder_virt *sde_enc,
+				 struct drm_crtc_state *crtc_state,
+				 struct drm_connector_state *conn_state,
+				 struct sde_connector_state *sde_conn_state,
+				 struct sde_crtc_state *sde_crtc_state)
 {
 	struct drm_display_mode *mode = &crtc_state->adjusted_mode;
 	int ret = 0;
@@ -1052,16 +1070,19 @@ static int _sde_encoder_atomic_check_pu_roi(struct sde_encoder_virt *sde_enc,
 		struct sde_rect mode_roi, roi;
 		u32 width, height;
 
-		sde_crtc_get_resolution(crtc_state->crtc, crtc_state, mode, &width, &height);
+		sde_crtc_get_resolution(crtc_state->crtc, crtc_state, mode,
+					&width, &height);
 		mode_roi.x = 0;
 		mode_roi.y = 0;
 		mode_roi.w = width;
 		mode_roi.h = height;
 
 		if (sde_conn_state->rois.num_rects) {
-			sde_kms_rect_merge_rectangles(&sde_conn_state->rois, &roi);
+			sde_kms_rect_merge_rectangles(&sde_conn_state->rois,
+						      &roi);
 			if (!sde_kms_rect_is_equal(&mode_roi, &roi)) {
-				SDE_ERROR_ENC(sde_enc,
+				SDE_ERROR_ENC(
+					sde_enc,
 					"roi (%d,%d,%d,%d) on connector invalid during modeset\n",
 					roi.x, roi.y, roi.w, roi.h);
 				ret = -EINVAL;
@@ -1069,9 +1090,11 @@ static int _sde_encoder_atomic_check_pu_roi(struct sde_encoder_virt *sde_enc,
 		}
 
 		if (sde_crtc_state->user_roi_list.num_rects) {
-			sde_kms_rect_merge_rectangles(&sde_crtc_state->user_roi_list, &roi);
+			sde_kms_rect_merge_rectangles(
+				&sde_crtc_state->user_roi_list, &roi);
 			if (!sde_kms_rect_is_equal(&mode_roi, &roi)) {
-				SDE_ERROR_ENC(sde_enc,
+				SDE_ERROR_ENC(
+					sde_enc,
 					"roi (%d,%d,%d,%d) on crtc invalid during modeset\n",
 					roi.x, roi.y, roi.w, roi.h);
 				ret = -EINVAL;
@@ -1082,8 +1105,8 @@ static int _sde_encoder_atomic_check_pu_roi(struct sde_encoder_virt *sde_enc,
 	return ret;
 }
 
-static int _sde_encoder_atomic_check_reserve(struct drm_encoder *drm_enc,
-	struct drm_crtc_state *crtc_state,
+static int _sde_encoder_atomic_check_reserve(
+	struct drm_encoder *drm_enc, struct drm_crtc_state *crtc_state,
 	struct drm_connector_state *conn_state,
 	struct sde_encoder_virt *sde_enc, struct sde_kms *sde_kms,
 	struct sde_connector *sde_conn,
@@ -1096,23 +1119,25 @@ static int _sde_encoder_atomic_check_reserve(struct drm_encoder *drm_enc,
 	if (sde_conn && msm_atomic_needs_modeset(crtc_state, conn_state)) {
 		struct msm_display_topology *topology = NULL;
 
-		sub_mode.dsc_mode = sde_connector_get_property(conn_state,
-				CONNECTOR_PROP_DSC_MODE);
-		sub_mode.pixel_format_mode = sde_connector_get_property(conn_state,
-				CONNECTOR_PROP_BPP_MODE);
-		ret = sde_connector_get_mode_info(&sde_conn->base,
-				adj_mode, &sub_mode, &sde_conn_state->mode_info);
+		sub_mode.dsc_mode = sde_connector_get_property(
+			conn_state, CONNECTOR_PROP_DSC_MODE);
+		sub_mode.pixel_format_mode = sde_connector_get_property(
+			conn_state, CONNECTOR_PROP_BPP_MODE);
+		ret = sde_connector_get_mode_info(&sde_conn->base, adj_mode,
+						  &sub_mode,
+						  &sde_conn_state->mode_info);
 		if (ret) {
 			SDE_ERROR_ENC(sde_enc,
-				"failed to get mode info, rc = %d\n", ret);
+				      "failed to get mode info, rc = %d\n",
+				      ret);
 			return ret;
 		}
 
 		if (sde_conn_state->mode_info.comp_info.comp_type &&
-			sde_conn_state->mode_info.comp_info.comp_ratio >=
-					MSM_DISPLAY_COMPRESSION_RATIO_MAX) {
-			SDE_ERROR_ENC(sde_enc,
-				"invalid compression ratio: %d\n",
+		    sde_conn_state->mode_info.comp_info.comp_ratio >=
+			    MSM_DISPLAY_COMPRESSION_RATIO_MAX) {
+			SDE_ERROR_ENC(
+				sde_enc, "invalid compression ratio: %d\n",
 				sde_conn_state->mode_info.comp_info.comp_ratio);
 			ret = -EINVAL;
 			return ret;
@@ -1120,35 +1145,40 @@ static int _sde_encoder_atomic_check_reserve(struct drm_encoder *drm_enc,
 
 		/* Reserve dynamic resources, indicating atomic_check phase */
 		ret = sde_rm_reserve(&sde_kms->rm, drm_enc, crtc_state,
-			conn_state, true);
+				     conn_state, true);
 		if (ret) {
 			if (ret != -EAGAIN)
-				SDE_ERROR_ENC(sde_enc,
-					"RM failed to reserve resources, rc = %d\n", ret);
+				SDE_ERROR_ENC(
+					sde_enc,
+					"RM failed to reserve resources, rc = %d\n",
+					ret);
 			return ret;
 		}
 
 		/**
-		 * Update connector state with the topology selected for the
-		 * resource set validated. Reset the topology if we are
-		 * de-activating crtc.
-		 */
+     * Update connector state with the topology selected for the
+     * resource set validated. Reset the topology if we are
+     * de-activating crtc.
+     */
 		if (crtc_state->active) {
 			topology = &sde_conn_state->mode_info.topology;
-			ret = sde_rm_update_topology(&sde_kms->rm,
-					conn_state, topology);
+			ret = sde_rm_update_topology(&sde_kms->rm, conn_state,
+						     topology);
 			if (ret) {
-				SDE_ERROR_ENC(sde_enc,
-					"RM failed to update topology, rc: %d\n", ret);
+				SDE_ERROR_ENC(
+					sde_enc,
+					"RM failed to update topology, rc: %d\n",
+					ret);
 				return ret;
 			}
 		}
 
 		ret = sde_connector_set_blob_data(conn_state->connector,
-				conn_state,
-				CONNECTOR_PROP_SDE_INFO);
+						  conn_state,
+						  CONNECTOR_PROP_SDE_INFO);
 		if (ret) {
-			SDE_ERROR_ENC(sde_enc,
+			SDE_ERROR_ENC(
+				sde_enc,
 				"connector failed to update info, rc: %d\n",
 				ret);
 			return ret;
@@ -1184,8 +1214,9 @@ bool sde_encoder_is_line_insertion_supported(struct drm_encoder *drm_enc)
 	return sde_connector_is_line_insertion_supported(sde_conn);
 }
 
-static void _sde_encoder_get_qsync_fps_callback(struct drm_encoder *drm_enc,
-			u32 *qsync_fps, struct drm_connector_state *conn_state)
+static void
+_sde_encoder_get_qsync_fps_callback(struct drm_encoder *drm_enc, u32 *qsync_fps,
+				    struct drm_connector_state *conn_state)
 {
 	struct sde_encoder_virt *sde_enc;
 	int rc = 0;
@@ -1219,18 +1250,20 @@ static void _sde_encoder_get_qsync_fps_callback(struct drm_encoder *drm_enc,
 	*qsync_fps = rc;
 }
 
-static int _sde_encoder_avr_step_check(struct sde_connector *sde_conn,
-		struct sde_connector_state *sde_conn_state)
+static int
+_sde_encoder_avr_step_check(struct sde_connector *sde_conn,
+			    struct sde_connector_state *sde_conn_state)
 {
 	u32 nom_fps = drm_mode_vrefresh(sde_conn_state->msm_mode.base);
 	u32 min_fps, step_fps = 0;
 	u32 vtotal = sde_conn_state->msm_mode.base->vtotal;
 	u32 qsync_mode = sde_connector_get_property(&sde_conn_state->base,
-			CONNECTOR_PROP_QSYNC_MODE);
-	u32 avr_step_state = sde_connector_get_property(&sde_conn_state->base,
-			CONNECTOR_PROP_AVR_STEP_STATE);
+						    CONNECTOR_PROP_QSYNC_MODE);
+	u32 avr_step_state = sde_connector_get_property(
+		&sde_conn_state->base, CONNECTOR_PROP_AVR_STEP_STATE);
 
-	if ((avr_step_state == AVR_STEP_NONE) || !sde_conn->ops.get_avr_step_fps)
+	if ((avr_step_state == AVR_STEP_NONE) ||
+	    !sde_conn->ops.get_avr_step_fps)
 		return 0;
 
 	if (!qsync_mode && avr_step_state) {
@@ -1240,50 +1273,56 @@ static int _sde_encoder_avr_step_check(struct sde_connector *sde_conn,
 
 	step_fps = sde_conn->ops.get_avr_step_fps(&sde_conn_state->base);
 
-	_sde_encoder_get_qsync_fps_callback(sde_conn_state->base.best_encoder, &min_fps,
-		&sde_conn_state->base);
-	if (!min_fps || !nom_fps || step_fps % nom_fps || step_fps % min_fps
-			|| step_fps < nom_fps || (vtotal * nom_fps) % step_fps) {
-		SDE_ERROR("invalid avr_step rate! nom:%u min:%u step:%u vtotal:%u\n", nom_fps,
-				min_fps, step_fps, vtotal);
+	_sde_encoder_get_qsync_fps_callback(sde_conn_state->base.best_encoder,
+					    &min_fps, &sde_conn_state->base);
+	if (!min_fps || !nom_fps || step_fps % nom_fps || step_fps % min_fps ||
+	    step_fps < nom_fps || (vtotal * nom_fps) % step_fps) {
+		SDE_ERROR(
+			"invalid avr_step rate! nom:%u min:%u step:%u vtotal:%u\n",
+			nom_fps, min_fps, step_fps, vtotal);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static int _sde_encoder_atomic_check_qsync(struct sde_connector *sde_conn,
-		struct sde_connector_state *sde_conn_state)
+static int
+_sde_encoder_atomic_check_qsync(struct sde_connector *sde_conn,
+				struct sde_connector_state *sde_conn_state)
 {
 	int rc = 0;
 	bool qsync_dirty, has_modeset, ept;
 	struct drm_connector_state *conn_state = &sde_conn_state->base;
 	u32 qsync_mode;
 
-	has_modeset = sde_crtc_atomic_check_has_modeset(conn_state->state, conn_state->crtc);
+	has_modeset = sde_crtc_atomic_check_has_modeset(conn_state->state,
+							conn_state->crtc);
 	qsync_dirty = msm_property_is_dirty(&sde_conn->property_info,
-			&sde_conn_state->property_state, CONNECTOR_PROP_QSYNC_MODE);
+					    &sde_conn_state->property_state,
+					    CONNECTOR_PROP_QSYNC_MODE);
 	ept = msm_property_is_dirty(&sde_conn->property_info,
-				&sde_conn_state->property_state, CONNECTOR_PROP_EPT);
+				    &sde_conn_state->property_state,
+				    CONNECTOR_PROP_EPT);
 
 	if (has_modeset && qsync_dirty &&
-		(msm_is_mode_seamless_poms(&sde_conn_state->msm_mode) ||
-			msm_is_mode_seamless_dyn_clk(&sde_conn_state->msm_mode))) {
+	    (msm_is_mode_seamless_poms(&sde_conn_state->msm_mode) ||
+	     msm_is_mode_seamless_dyn_clk(&sde_conn_state->msm_mode))) {
 		SDE_ERROR("invalid qsync update during modeset priv flag:%x\n",
-				sde_conn_state->msm_mode.private_flags);
+			  sde_conn_state->msm_mode.private_flags);
 		return -EINVAL;
 	}
 
-	qsync_mode = sde_connector_get_property(conn_state, CONNECTOR_PROP_QSYNC_MODE);
+	qsync_mode = sde_connector_get_property(conn_state,
+						CONNECTOR_PROP_QSYNC_MODE);
 	if (qsync_dirty || (qsync_mode && has_modeset))
-		rc =  _sde_encoder_avr_step_check(sde_conn, sde_conn_state);
+		rc = _sde_encoder_avr_step_check(sde_conn, sde_conn_state);
 
 	return rc;
 }
 
-static int sde_encoder_virt_atomic_check(
-	struct drm_encoder *drm_enc, struct drm_crtc_state *crtc_state,
-	struct drm_connector_state *conn_state)
+static int sde_encoder_virt_atomic_check(struct drm_encoder *drm_enc,
+					 struct drm_crtc_state *crtc_state,
+					 struct drm_connector_state *conn_state)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_kms *sde_kms;
@@ -1299,7 +1338,7 @@ static int sde_encoder_virt_atomic_check(
 
 	if (!drm_enc || !crtc_state || !conn_state) {
 		SDE_ERROR("invalid arg(s), drm_enc %d, crtc/conn state %d/%d\n",
-				!drm_enc, !crtc_state, !conn_state);
+			  !drm_enc, !crtc_state, !conn_state);
 		return -EINVAL;
 	}
 
@@ -1321,40 +1360,43 @@ static int sde_encoder_virt_atomic_check(
 		return ret;
 
 	SDE_EVT32(DRMID(drm_enc), crtc_state->mode_changed,
-		crtc_state->active_changed, crtc_state->connectors_changed);
+		  crtc_state->active_changed, crtc_state->connectors_changed);
 
 	ret = _sde_encoder_atomic_check_phys_enc(sde_enc, crtc_state,
-			conn_state);
+						 conn_state);
 	if (ret)
 		return ret;
 
-	ret = _sde_encoder_atomic_check_pu_roi(sde_enc, crtc_state,
-			conn_state, sde_conn_state, sde_crtc_state);
+	ret = _sde_encoder_atomic_check_pu_roi(sde_enc, crtc_state, conn_state,
+					       sde_conn_state, sde_crtc_state);
 	if (ret)
 		return ret;
 
 	/**
-	 * record topology in previous atomic state to be able to handle
-	 * topology transitions correctly.
-	 */
-	old_top  = sde_connector_get_property(conn_state,
-				CONNECTOR_PROP_TOPOLOGY_NAME);
+   * record topology in previous atomic state to be able to handle
+   * topology transitions correctly.
+   */
+	old_top = sde_connector_get_property(conn_state,
+					     CONNECTOR_PROP_TOPOLOGY_NAME);
 	ret = sde_connector_set_old_topology_name(conn_state, old_top);
 	if (ret)
 		return ret;
 
-	ret = _sde_encoder_atomic_check_reserve(drm_enc, crtc_state,
-			conn_state, sde_enc, sde_kms, sde_conn, sde_conn_state);
+	ret = _sde_encoder_atomic_check_reserve(drm_enc, crtc_state, conn_state,
+						sde_enc, sde_kms, sde_conn,
+						sde_conn_state);
 	if (ret)
 		return ret;
 
-	top_name  = sde_connector_get_property(conn_state,
-				CONNECTOR_PROP_TOPOLOGY_NAME);
-	if ((disp_info->capabilities & MSM_DISPLAY_SPLIT_LINK) && crtc_state->active) {
+	top_name = sde_connector_get_property(conn_state,
+					      CONNECTOR_PROP_TOPOLOGY_NAME);
+	if ((disp_info->capabilities & MSM_DISPLAY_SPLIT_LINK) &&
+	    crtc_state->active) {
 		if ((top_name != SDE_RM_TOPOLOGY_DUALPIPE_3DMERGE) &&
-			       (top_name != SDE_RM_TOPOLOGY_DUALPIPE_DSCMERGE)) {
-			SDE_ERROR_ENC(sde_enc, "Splitlink check failed, top_name:%d",
-					 top_name);
+		    (top_name != SDE_RM_TOPOLOGY_DUALPIPE_DSCMERGE)) {
+			SDE_ERROR_ENC(sde_enc,
+				      "Splitlink check failed, top_name:%d",
+				      top_name);
 			return -EINVAL;
 		}
 	}
@@ -1362,7 +1404,7 @@ static int sde_encoder_virt_atomic_check(
 	ret = sde_connector_roi_v1_check_roi(conn_state);
 	if (ret) {
 		SDE_ERROR_ENC(sde_enc, "connector roi check failed, rc: %d",
-				ret);
+			      ret);
 		return ret;
 	}
 
@@ -1371,16 +1413,15 @@ static int sde_encoder_virt_atomic_check(
 	ret = _sde_encoder_atomic_check_qsync(sde_conn, sde_conn_state);
 
 	SDE_EVT32(DRMID(drm_enc), adj_mode->flags,
-		sde_conn_state->msm_mode.private_flags,
-		old_top, drm_mode_vrefresh(adj_mode), adj_mode->hdisplay,
-		adj_mode->vdisplay, adj_mode->htotal, adj_mode->vtotal, ret);
+		  sde_conn_state->msm_mode.private_flags, old_top,
+		  drm_mode_vrefresh(adj_mode), adj_mode->hdisplay,
+		  adj_mode->vdisplay, adj_mode->htotal, adj_mode->vtotal, ret);
 
 	return ret;
 }
 
-static void _sde_encoder_get_connector_roi(
-		struct sde_encoder_virt *sde_enc,
-		struct sde_rect *merged_conn_roi)
+static void _sde_encoder_get_connector_roi(struct sde_encoder_virt *sde_enc,
+					   struct sde_rect *merged_conn_roi)
 {
 	struct drm_connector *drm_conn;
 	struct sde_connector_state *c_state;
@@ -1430,7 +1471,7 @@ static int _sde_encoder_update_roi(struct drm_encoder *drm_enc)
 	}
 
 	memcpy(&sde_enc->prv_conn_roi, &sde_enc->cur_conn_roi,
-			sizeof(sde_enc->prv_conn_roi));
+	       sizeof(sde_enc->prv_conn_roi));
 	memcpy(&sde_enc->cur_conn_roi, &roi, sizeof(sde_enc->cur_conn_roi));
 
 	return 0;
@@ -1483,43 +1524,56 @@ static void _sde_encoder_update_ppb_size(struct drm_encoder *drm_enc)
 	for (i = 0; i < num_lm_or_pp; i++) {
 		struct sde_hw_pingpong *hw_pp = sde_enc->hw_pp[i];
 		if (!hw_pp) {
-			SDE_ERROR_ENC(sde_enc, "invalid hw_pp i:%d pp_cnt:%d\n", i, num_lm_or_pp);
+			SDE_ERROR_ENC(sde_enc, "invalid hw_pp i:%d pp_cnt:%d\n",
+				      i, num_lm_or_pp);
 			return;
 		}
 
 		if (hw_pp->ops.set_ppb_fifo_size) {
-			pixels_per_pp = mult_frac(mode->hdisplay, latency_lines, num_lm_or_pp);
+			pixels_per_pp = mult_frac(mode->hdisplay, latency_lines,
+						  num_lm_or_pp);
 			hw_pp->ops.set_ppb_fifo_size(hw_pp, pixels_per_pp);
 
-			SDE_EVT32(DRMID(drm_enc), i, hw_pp->idx, mode->hdisplay, pixels_per_pp,
-					sde_kms->catalog->ppb_sz_program, SDE_EVTLOG_FUNC_CASE1);
-			SDE_DEBUG_ENC(sde_enc, "hw-pp i:%d pp_cnt:%d pixels_per_pp:%d\n",
-					i, num_lm_or_pp, pixels_per_pp);
+			SDE_EVT32(DRMID(drm_enc), i, hw_pp->idx, mode->hdisplay,
+				  pixels_per_pp,
+				  sde_kms->catalog->ppb_sz_program,
+				  SDE_EVTLOG_FUNC_CASE1);
+			SDE_DEBUG_ENC(sde_enc,
+				      "hw-pp i:%d pp_cnt:%d pixels_per_pp:%d\n",
+				      i, num_lm_or_pp, pixels_per_pp);
 		} else if (hw_mdp->ops.set_ppb_fifo_size) {
-			struct sde_connector *sde_conn =
-					to_sde_connector(sde_enc->cur_master->connector);
+			struct sde_connector *sde_conn = to_sde_connector(
+				sde_enc->cur_master->connector);
 
 			if (!sde_conn || !sde_conn->max_mode_width) {
-				SDE_DEBUG_ENC(sde_enc, "failed to get max horizantal resolution\n");
+				SDE_DEBUG_ENC(
+					sde_enc,
+					"failed to get max horizantal resolution\n");
 				return;
 			}
 
 			pixels_per_pp = mult_frac(sde_conn->max_mode_width,
-					latency_lines, num_lm_or_pp);
-			hw_mdp->ops.set_ppb_fifo_size(hw_mdp, hw_pp->idx, pixels_per_pp);
+						  latency_lines, num_lm_or_pp);
+			hw_mdp->ops.set_ppb_fifo_size(hw_mdp, hw_pp->idx,
+						      pixels_per_pp);
 
-			SDE_EVT32(DRMID(drm_enc), i, hw_pp->idx, sde_conn->max_mode_width,
-					pixels_per_pp, sde_kms->catalog->ppb_sz_program,
-					SDE_EVTLOG_FUNC_CASE2);
-			SDE_DEBUG_ENC(sde_enc, "hw-pp i:%d pp_cnt:%d pixels_per_pp:%d\n",
-					i, num_lm_or_pp, pixels_per_pp);
+			SDE_EVT32(DRMID(drm_enc), i, hw_pp->idx,
+				  sde_conn->max_mode_width, pixels_per_pp,
+				  sde_kms->catalog->ppb_sz_program,
+				  SDE_EVTLOG_FUNC_CASE2);
+			SDE_DEBUG_ENC(sde_enc,
+				      "hw-pp i:%d pp_cnt:%d pixels_per_pp:%d\n",
+				      i, num_lm_or_pp, pixels_per_pp);
 		} else {
-			SDE_ERROR_ENC(sde_enc, "invalid - ppb fifo size support is partial\n");
+			SDE_ERROR_ENC(
+				sde_enc,
+				"invalid - ppb fifo size support is partial\n");
 		}
 	}
 }
 
-void sde_encoder_helper_vsync_config(struct sde_encoder_phys *phys_enc, u32 vsync_source)
+void sde_encoder_helper_vsync_config(struct sde_encoder_phys *phys_enc,
+				     u32 vsync_source)
 {
 	struct sde_vsync_source_cfg vsync_cfg = { 0 };
 	struct sde_kms *sde_kms;
@@ -1534,8 +1588,8 @@ void sde_encoder_helper_vsync_config(struct sde_encoder_phys *phys_enc, u32 vsyn
 		return;
 	} else if (sde_enc->num_phys_encs > ARRAY_SIZE(sde_enc->hw_pp)) {
 		SDE_ERROR("invalid num phys enc %d/%d\n",
-				sde_enc->num_phys_encs,
-				(int) ARRAY_SIZE(sde_enc->hw_pp));
+			  sde_enc->num_phys_encs,
+			  (int)ARRAY_SIZE(sde_enc->hw_pp));
 		return;
 	}
 
@@ -1564,7 +1618,7 @@ void sde_encoder_helper_vsync_config(struct sde_encoder_phys *phys_enc, u32 vsyn
 }
 
 static void _sde_encoder_update_vsync_source(struct sde_encoder_virt *sde_enc,
-			struct msm_display_info *disp_info)
+					     struct msm_display_info *disp_info)
 {
 	struct sde_encoder_phys *phys;
 	struct sde_connector *sde_conn;
@@ -1573,36 +1627,40 @@ static void _sde_encoder_update_vsync_source(struct sde_encoder_virt *sde_enc,
 
 	if (!sde_enc || !disp_info) {
 		SDE_ERROR("invalid param sde_enc:%d or disp_info:%d\n",
-					sde_enc != NULL, disp_info != NULL);
+			  sde_enc != NULL, disp_info != NULL);
 		return;
 	} else if (sde_enc->num_phys_encs > ARRAY_SIZE(sde_enc->hw_pp)) {
 		SDE_ERROR("invalid num phys enc %d/%d\n",
-				sde_enc->num_phys_encs,
-				(int) ARRAY_SIZE(sde_enc->hw_pp));
+			  sde_enc->num_phys_encs,
+			  (int)ARRAY_SIZE(sde_enc->hw_pp));
 		return;
 	}
 
 	sde_conn = to_sde_connector(sde_enc->cur_master->connector);
 
 	if (sde_encoder_check_curr_mode(&sde_enc->base, MSM_DISPLAY_CMD_MODE)) {
-		if (disp_info->is_te_using_watchdog_timer || sde_conn->panel_dead)
-			vsync_source = SDE_VSYNC_SOURCE_WD_TIMER_4 + sde_enc->te_source;
+		if (disp_info->is_te_using_watchdog_timer ||
+		    sde_conn->panel_dead)
+			vsync_source = SDE_VSYNC_SOURCE_WD_TIMER_4 +
+				       sde_enc->te_source;
 		else
 			vsync_source = sde_enc->te_source;
 
 		SDE_EVT32(DRMID(&sde_enc->base), vsync_source,
-				disp_info->is_te_using_watchdog_timer);
+			  disp_info->is_te_using_watchdog_timer);
 
 		for (i = 0; i < sde_enc->num_phys_encs; i++) {
 			phys = sde_enc->phys_encs[i];
 
 			if (phys && phys->ops.setup_vsync_source)
-				phys->ops.setup_vsync_source(phys, vsync_source, disp_info);
+				phys->ops.setup_vsync_source(phys, vsync_source,
+							     disp_info);
 		}
 	}
 }
 
-static void sde_encoder_control_te(struct sde_encoder_virt *sde_enc, bool enable)
+static void sde_encoder_control_te(struct sde_encoder_virt *sde_enc,
+				   bool enable)
 {
 	struct sde_encoder_phys *phys;
 	int i;
@@ -1612,16 +1670,17 @@ static void sde_encoder_control_te(struct sde_encoder_virt *sde_enc, bool enable
 		return;
 	}
 
-	for (i = 0; i < sde_enc->num_phys_encs && i < ARRAY_SIZE(sde_enc->phys_encs); i++) {
+	for (i = 0;
+	     i < sde_enc->num_phys_encs && i < ARRAY_SIZE(sde_enc->phys_encs);
+	     i++) {
 		phys = sde_enc->phys_encs[i];
 		if (phys && phys->ops.control_te)
 			phys->ops.control_te(phys, enable);
 	}
 }
 
-
 int sde_encoder_helper_switch_vsync(struct drm_encoder *drm_enc,
-	 bool watchdog_te)
+				    bool watchdog_te)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct msm_display_info disp_info;
@@ -1644,9 +1703,10 @@ int sde_encoder_helper_switch_vsync(struct drm_encoder *drm_enc,
 	return 0;
 }
 
-static int _sde_encoder_rsc_client_update_vsync_wait(
-	struct drm_encoder *drm_enc, struct sde_encoder_virt *sde_enc,
-	int wait_vblank_crtc_id)
+static int
+_sde_encoder_rsc_client_update_vsync_wait(struct drm_encoder *drm_enc,
+					  struct sde_encoder_virt *sde_enc,
+					  int wait_vblank_crtc_id)
 {
 	int wait_refcount = 0, ret = 0;
 	int pipe = -1;
@@ -1660,42 +1720,42 @@ static int _sde_encoder_rsc_client_update_vsync_wait(
 		wait_refcount =
 			sde_rsc_client_get_vsync_refcount(sde_enc->rsc_client);
 	SDE_EVT32_VERBOSE(DRMID(drm_enc), wait_vblank_crtc_id, wait_refcount,
-			SDE_EVTLOG_FUNC_ENTRY);
+			  SDE_EVTLOG_FUNC_ENTRY);
 
 	if (crtc->base.id != wait_vblank_crtc_id) {
-		primary_crtc = drm_crtc_find(drm_enc->dev,
-				NULL, wait_vblank_crtc_id);
+		primary_crtc =
+			drm_crtc_find(drm_enc->dev, NULL, wait_vblank_crtc_id);
 		if (!primary_crtc) {
 			SDE_ERROR_ENC(sde_enc,
-					"failed to find primary crtc id %d\n",
-					wait_vblank_crtc_id);
+				      "failed to find primary crtc id %d\n",
+				      wait_vblank_crtc_id);
 			return -EINVAL;
 		}
 		pipe = drm_crtc_index(primary_crtc);
 	}
 
 	/**
-	 * note: VBLANK is expected to be enabled at this point in
-	 * resource control state machine if on primary CRTC
-	 */
+   * note: VBLANK is expected to be enabled at this point in
+   * resource control state machine if on primary CRTC
+   */
 	for (wait_count = 0; wait_count < MAX_RSC_WAIT; wait_count++) {
 		if (sde_rsc_client_is_state_update_complete(
-				sde_enc->rsc_client))
+			    sde_enc->rsc_client))
 			break;
 
 		if (crtc->base.id == wait_vblank_crtc_id)
 			ret = sde_encoder_wait_for_event(drm_enc,
-					MSM_ENC_VBLANK);
+							 MSM_ENC_VBLANK);
 		else
 			drm_wait_one_vblank(drm_enc->dev, pipe);
 
 		if (ret) {
 			SDE_ERROR_ENC(sde_enc,
-					"wait for vblank failed ret:%d\n", ret);
+				      "wait for vblank failed ret:%d\n", ret);
 			/**
-			 * rsc hardware may hang without vsync. avoid rsc hang
-			 * by generating the vsync from watchdog timer.
-			 */
+       * rsc hardware may hang without vsync. avoid rsc hang
+       * by generating the vsync from watchdog timer.
+       */
 			if (crtc->base.id == wait_vblank_crtc_id)
 				sde_encoder_helper_switch_vsync(drm_enc, true);
 		}
@@ -1703,17 +1763,18 @@ static int _sde_encoder_rsc_client_update_vsync_wait(
 
 	if (wait_count >= MAX_RSC_WAIT)
 		SDE_EVT32(DRMID(drm_enc), wait_vblank_crtc_id, wait_count,
-				SDE_EVTLOG_ERROR);
+			  SDE_EVTLOG_ERROR);
 
 	if (wait_refcount)
 		sde_rsc_client_reset_vsync_refcount(sde_enc->rsc_client);
 	SDE_EVT32_VERBOSE(DRMID(drm_enc), wait_vblank_crtc_id, wait_refcount,
-			SDE_EVTLOG_FUNC_EXIT);
+			  SDE_EVTLOG_FUNC_EXIT);
 
 	return ret;
 }
 
-static int _sde_encoder_rsc_state_trigger(struct drm_encoder *drm_enc, enum sde_rsc_state rsc_state)
+static int _sde_encoder_rsc_state_trigger(struct drm_encoder *drm_enc,
+					  enum sde_rsc_state rsc_state)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct msm_display_info *disp_info;
@@ -1723,53 +1784,56 @@ static int _sde_encoder_rsc_state_trigger(struct drm_encoder *drm_enc, enum sde_
 	int ret;
 
 	/**
-	 * Already checked drm_enc, sde_enc is valid in function
-	 * _sde_encoder_update_rsc_client() which pass the parameters
-	 * to this function.
-	 */
+   * Already checked drm_enc, sde_enc is valid in function
+   * _sde_encoder_update_rsc_client() which pass the parameters
+   * to this function.
+   */
 	sde_enc = to_sde_encoder_virt(drm_enc);
 	crtc = sde_enc->crtc;
 	disp_info = &sde_enc->disp_info;
 	rsc_config = &sde_enc->rsc_config;
 
-	if (rsc_state != SDE_RSC_IDLE_STATE && !sde_enc->rsc_state_init
-			&& (disp_info->display_type == SDE_CONNECTOR_PRIMARY)) {
+	if (rsc_state != SDE_RSC_IDLE_STATE && !sde_enc->rsc_state_init &&
+	    (disp_info->display_type == SDE_CONNECTOR_PRIMARY)) {
 		/* update it only once */
 		sde_enc->rsc_state_init = true;
 
 		ret = sde_rsc_client_state_update(sde_enc->rsc_client,
-			rsc_state, rsc_config, crtc->base.id,
-			&wait_vblank_crtc_id);
+						  rsc_state, rsc_config,
+						  crtc->base.id,
+						  &wait_vblank_crtc_id);
 	} else {
 		ret = sde_rsc_client_state_update(sde_enc->rsc_client,
-			rsc_state, NULL, crtc->base.id,
-			&wait_vblank_crtc_id);
+						  rsc_state, NULL,
+						  crtc->base.id,
+						  &wait_vblank_crtc_id);
 	}
 
 	/**
-	 * if RSC performed a state change that requires a VBLANK wait, it will
-	 * set wait_vblank_crtc_id to the CRTC whose VBLANK we must wait on.
-	 *
-	 * if we are the primary display, we will need to enable and wait
-	 * locally since we hold the commit thread
-	 *
-	 * if we are an external display, we must send a signal to the primary
-	 * to enable its VBLANK and wait one, since the RSC hardware is driven
-	 * by the primary panel's VBLANK signals
-	 */
+   * if RSC performed a state change that requires a VBLANK wait, it will
+   * set wait_vblank_crtc_id to the CRTC whose VBLANK we must wait on.
+   *
+   * if we are the primary display, we will need to enable and wait
+   * locally since we hold the commit thread
+   *
+   * if we are an external display, we must send a signal to the primary
+   * to enable its VBLANK and wait one, since the RSC hardware is driven
+   * by the primary panel's VBLANK signals
+   */
 	SDE_EVT32_VERBOSE(DRMID(drm_enc), wait_vblank_crtc_id);
 	if (ret) {
-		SDE_ERROR_ENC(sde_enc, "sde rsc client update failed ret:%d\n", ret);
+		SDE_ERROR_ENC(sde_enc, "sde rsc client update failed ret:%d\n",
+			      ret);
 	} else if (wait_vblank_crtc_id != SDE_RSC_INVALID_CRTC_ID) {
-		ret = _sde_encoder_rsc_client_update_vsync_wait(drm_enc,
-			sde_enc, wait_vblank_crtc_id);
+		ret = _sde_encoder_rsc_client_update_vsync_wait(
+			drm_enc, sde_enc, wait_vblank_crtc_id);
 	}
 
 	return ret;
 }
 
-static int _sde_encoder_update_rsc_client(
-		struct drm_encoder *drm_enc, bool enable)
+static int _sde_encoder_update_rsc_client(struct drm_encoder *drm_enc,
+					  bool enable)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct drm_crtc *crtc;
@@ -1806,16 +1870,17 @@ static int _sde_encoder_update_rsc_client(
 	}
 
 	/**
-	 * only primary command mode panel without Qsync can request CMD state.
-	 * all other panels/displays can request for VID state including
-	 * secondary command mode panel.
-	 * Clone mode encoder can request CLK STATE only.
-	 */
+   * only primary command mode panel without Qsync can request CMD state.
+   * all other panels/displays can request for VID state including
+   * secondary command mode panel.
+   * Clone mode encoder can request CLK STATE only.
+   */
 	if (sde_enc->cur_master) {
 		qsync_mode = sde_connector_get_qsync_mode(
-				sde_enc->cur_master->connector);
+			sde_enc->cur_master->connector);
 		sde_enc->autorefresh_solver_disable =
-			 _sde_encoder_is_autorefresh_enabled(sde_enc) ? true : false;
+			_sde_encoder_is_autorefresh_enabled(sde_enc) ? true :
+								       false;
 	}
 
 	/* left primary encoder keep vote */
@@ -1825,8 +1890,9 @@ static int _sde_encoder_update_rsc_client(
 	}
 
 	if ((disp_info->display_type != SDE_CONNECTOR_PRIMARY) ||
-			(disp_info->display_type && qsync_mode) ||
-			sde_enc->autorefresh_solver_disable || mode_info->disable_rsc_solver)
+	    (disp_info->display_type && qsync_mode) ||
+	    sde_enc->autorefresh_solver_disable ||
+	    mode_info->disable_rsc_solver)
 		rsc_state = enable ? SDE_RSC_CLK_STATE : SDE_RSC_IDLE_STATE;
 	else if (sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
 		rsc_state = enable ? SDE_RSC_CMD_STATE : SDE_RSC_IDLE_STATE;
@@ -1835,12 +1901,12 @@ static int _sde_encoder_update_rsc_client(
 
 	drm_for_each_encoder(enc, drm_enc->dev) {
 		if (enc->base.id != drm_enc->base.id &&
-			 sde_encoder_in_cont_splash(enc))
+		    sde_encoder_in_cont_splash(enc))
 			rsc_state = SDE_RSC_CLK_STATE;
 	}
 
 	is_vid_mode = sde_encoder_check_curr_mode(&sde_enc->base,
-				MSM_DISPLAY_VIDEO_MODE);
+						  MSM_DISPLAY_VIDEO_MODE);
 	mode = &sde_enc->crtc->state->mode;
 	v_front_porch = mode->vsync_start - mode->vdisplay;
 
@@ -1858,8 +1924,8 @@ static int _sde_encoder_update_rsc_client(
 		sde_enc->rsc_state_init = false;
 	}
 
-	SDE_EVT32(DRMID(drm_enc), rsc_state, qsync_mode,
-				 rsc_config->fps, sde_enc->rsc_state_init);
+	SDE_EVT32(DRMID(drm_enc), rsc_state, qsync_mode, rsc_config->fps,
+		  sde_enc->rsc_state_init);
 
 	ret = _sde_encoder_rsc_state_trigger(drm_enc, rsc_state);
 
@@ -1889,12 +1955,11 @@ void sde_encoder_irq_control(struct drm_encoder *drm_enc, bool enable)
 			phys->ops.dynamic_irq_control(phys, enable);
 	}
 	sde_kms_cpu_vote_for_irq(sde_encoder_get_kms(drm_enc), enable);
-
 }
 
 /* keep track of the userspace vblank during modeset */
 static void _sde_encoder_modeset_helper_locked(struct drm_encoder *drm_enc,
-		u32 sw_event)
+					       u32 sw_event)
 {
 	struct sde_encoder_virt *sde_enc;
 	bool enable;
@@ -1906,8 +1971,8 @@ static void _sde_encoder_modeset_helper_locked(struct drm_encoder *drm_enc,
 	}
 
 	sde_enc = to_sde_encoder_virt(drm_enc);
-	SDE_DEBUG_ENC(sde_enc, "sw_event:%d, vblank_enabled:%d\n",
-			sw_event, sde_enc->vblank_enabled);
+	SDE_DEBUG_ENC(sde_enc, "sw_event:%d, vblank_enabled:%d\n", sw_event,
+		      sde_enc->vblank_enabled);
 
 	/* nothing to do if vblank not enabled by userspace */
 	if (!sde_enc->vblank_enabled)
@@ -1941,7 +2006,7 @@ struct sde_rsc_client *sde_encoder_get_rsc_client(struct drm_encoder *drm_enc)
 }
 
 static int _sde_encoder_resource_control_helper(struct drm_encoder *drm_enc,
-		bool enable)
+						bool enable)
 {
 	struct sde_kms *sde_kms;
 	struct sde_encoder_virt *sde_enc;
@@ -1972,7 +2037,7 @@ static int _sde_encoder_resource_control_helper(struct drm_encoder *drm_enc,
 		sde_enc->elevated_ahb_vote = true;
 		/* enable DSI clks */
 		rc = sde_connector_clk_ctrl(sde_enc->cur_master->connector,
-				true);
+					    true);
 		if (rc) {
 			SDE_ERROR("failed to enable clk control %d\n", rc);
 			pm_runtime_put_sync(drm_enc->dev->dev);
@@ -2000,8 +2065,8 @@ static int _sde_encoder_resource_control_helper(struct drm_encoder *drm_enc,
 	return 0;
 }
 
-static void sde_encoder_misr_configure(struct drm_encoder *drm_enc,
-		bool enable, u32 frame_count)
+static void sde_encoder_misr_configure(struct drm_encoder *drm_enc, bool enable,
+				       u32 frame_count)
 {
 	struct sde_encoder_virt *sde_enc;
 	int i;
@@ -2037,10 +2102,12 @@ void sde_encoder_clear_fence_error_in_progress(struct sde_encoder_phys *phys_enc
 
 	sde_crtc = to_sde_crtc(phys_enc->parent->crtc);
 
-	if ((!phys_enc->sde_hw_fence_error_status) && (!sde_crtc->input_fence_status) &&
-		phys_enc->fence_error_handle_in_progress) {
+	if ((!phys_enc->sde_hw_fence_error_status) &&
+	    (!sde_crtc->input_fence_status) &&
+	    phys_enc->fence_error_handle_in_progress) {
 		phys_enc->fence_error_handle_in_progress = false;
-		SDE_EVT32(DRMID(phys_enc->parent), phys_enc->fence_error_handle_in_progress);
+		SDE_EVT32(DRMID(phys_enc->parent),
+			  phys_enc->fence_error_handle_in_progress);
 	}
 }
 
@@ -2063,24 +2130,31 @@ static int sde_encoder_hw_fence_signal(struct sde_encoder_phys *phys_enc)
 	pending_kickoff_cnt = atomic_read(&phys_enc->pending_kickoff_cnt);
 
 	/* out of order hw fence error signal is needed for video panel. */
-	if (sde_encoder_check_curr_mode(phys_enc->parent, MSM_DISPLAY_VIDEO_MODE)) {
+	if (sde_encoder_check_curr_mode(phys_enc->parent,
+					MSM_DISPLAY_VIDEO_MODE)) {
 		/* out of order hw fence error signal */
-		rc = msm_hw_fence_update_txq_error(hwfence_data->hw_fence_handle,
-			phys_enc->sde_hw_fence_handle, phys_enc->sde_hw_fence_error_value,
+		rc = msm_hw_fence_update_txq_error(
+			hwfence_data->hw_fence_handle,
+			phys_enc->sde_hw_fence_handle,
+			phys_enc->sde_hw_fence_error_value,
 			MSM_HW_FENCE_UPDATE_ERROR_WITH_MOVE);
 		if (rc) {
-			SDE_ERROR("msm_hw_fence_update_txq_error failed, rc = %d\n", rc);
-			SDE_EVT32(DRMID(phys_enc->parent), rc, SDE_EVTLOG_ERROR);
+			SDE_ERROR(
+				"msm_hw_fence_update_txq_error failed, rc = %d\n",
+				rc);
+			SDE_EVT32(DRMID(phys_enc->parent), rc,
+				  SDE_EVTLOG_ERROR);
 		}
 
-	/* wait for frame done to avoid out of order signalling for cmd mode. */
+		/* wait for frame done to avoid out of order signalling for cmd mode. */
 	} else if (pending_kickoff_cnt) {
 		SDE_EVT32(DRMID(phys_enc->parent), SDE_EVTLOG_FUNC_CASE1);
-		rc = sde_encoder_wait_for_event(phys_enc->parent, MSM_ENC_TX_COMPLETE);
+		rc = sde_encoder_wait_for_event(phys_enc->parent,
+						MSM_ENC_TX_COMPLETE);
 		if (rc && rc != -EWOULDBLOCK) {
 			SDE_DEBUG("wait for frame done failed %d\n", rc);
-			SDE_EVT32(DRMID(phys_enc->parent), rc, pending_kickoff_cnt,
-				SDE_EVTLOG_ERROR);
+			SDE_EVT32(DRMID(phys_enc->parent), rc,
+				  pending_kickoff_cnt, SDE_EVTLOG_ERROR);
 		}
 	}
 
@@ -2128,8 +2202,8 @@ int sde_encoder_handle_dma_fence_out_of_order(struct drm_encoder *drm_enc)
 	ctx = sde_crtc->output_fence;
 	time_stamp = ktime_get();
 	/* out of order sw fence error signal for video panel.
-	 * Hold the last good frame for video mode panel.
-	 */
+   * Hold the last good frame for video mode panel.
+   */
 	if (phys_enc->sde_hw_fence_error_value) {
 		fence_status = phys_enc->sde_hw_fence_error_value;
 		phys_enc->sde_hw_fence_error_value = 0;
@@ -2138,57 +2212,68 @@ int sde_encoder_handle_dma_fence_out_of_order(struct drm_encoder *drm_enc)
 	}
 
 	is_vid = sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_VIDEO_MODE);
-	SDE_EVT32(is_vid, fence_status, phys_enc->fence_error_handle_in_progress);
+	SDE_EVT32(is_vid, fence_status,
+		  phys_enc->fence_error_handle_in_progress);
 	if (is_vid) {
 		/* update last_good_frame_fence_seqno after at least one good frame */
 		if (!phys_enc->fence_error_handle_in_progress) {
 			ctx->sde_fence_error_ctx.last_good_frame_fence_seqno =
-				ctx->sde_fence_error_ctx.curr_frame_fence_seqno - 1;
+				ctx->sde_fence_error_ctx.curr_frame_fence_seqno -
+				1;
 			phys_enc->fence_error_handle_in_progress = true;
 		}
 
 		/* signal release fence for vid panel */
-		sde_fence_error_ctx_update(ctx, fence_status, HANDLE_OUT_OF_ORDER);
+		sde_fence_error_ctx_update(ctx, fence_status,
+					   HANDLE_OUT_OF_ORDER);
 	} else {
 		/*
-		 * out of order sw fence error signal for CMD panel.
-		 * always wait frame done for cmd panel.
-		 * signal the sw fence error release fence for CMD panel.
-		 */
-		pending_kickoff_cnt = atomic_read(&phys_enc->pending_kickoff_cnt);
+     * out of order sw fence error signal for CMD panel.
+     * always wait frame done for cmd panel.
+     * signal the sw fence error release fence for CMD panel.
+     */
+		pending_kickoff_cnt =
+			atomic_read(&phys_enc->pending_kickoff_cnt);
 
 		if (pending_kickoff_cnt) {
-			SDE_EVT32(DRMID(drm_enc), pending_kickoff_cnt, SDE_EVTLOG_FUNC_CASE1);
-			rc = sde_encoder_wait_for_event(drm_enc, MSM_ENC_TX_COMPLETE);
+			SDE_EVT32(DRMID(drm_enc), pending_kickoff_cnt,
+				  SDE_EVTLOG_FUNC_CASE1);
+			rc = sde_encoder_wait_for_event(drm_enc,
+							MSM_ENC_TX_COMPLETE);
 			if (rc && rc != -EWOULDBLOCK) {
-				SDE_DEBUG("wait for frame done failed %d\n", rc);
-				SDE_EVT32(DRMID(drm_enc), rc, pending_kickoff_cnt,
-					SDE_EVTLOG_ERROR);
+				SDE_DEBUG("wait for frame done failed %d\n",
+					  rc);
+				SDE_EVT32(DRMID(drm_enc), rc,
+					  pending_kickoff_cnt,
+					  SDE_EVTLOG_ERROR);
 			}
 		}
 
 		/* update fence error context for cmd panel */
-		sde_fence_error_ctx_update(ctx, fence_status, SET_ERROR_ONLY_CMD_RELEASE);
+		sde_fence_error_ctx_update(ctx, fence_status,
+					   SET_ERROR_ONLY_CMD_RELEASE);
 	}
 
 	sde_fence_signal(ctx, time_stamp, SDE_FENCE_SIGNAL, NULL);
 
 	/**
-	 * clear flag in sde_fence_error_ctx after fence signal,
-	 * the last_good_frame_fence_seqno is supposed to be updated or cleared after
-	 * at least one good frame in case of constant fence error
-	 */
+   * clear flag in sde_fence_error_ctx after fence signal,
+   * the last_good_frame_fence_seqno is supposed to be updated or cleared after
+   * at least one good frame in case of constant fence error
+   */
 	sde_fence_error_ctx_update(ctx, 0, NO_ERROR);
 
 	/* signal retire fence */
 	for (i = 0; i < cstate->num_connectors; ++i) {
 		conn = cstate->connectors[i];
-		sde_connector_fence_error_ctx_signal(conn, fence_status, is_vid);
+		sde_connector_fence_error_ctx_signal(conn, fence_status,
+						     is_vid);
 	}
 
 	SDE_EVT32(ctx->sde_fence_error_ctx.fence_error_status,
-		ctx->sde_fence_error_ctx.fence_error_state,
-		ctx->sde_fence_error_ctx.last_good_frame_fence_seqno, pending_kickoff_cnt);
+		  ctx->sde_fence_error_ctx.fence_error_state,
+		  ctx->sde_fence_error_ctx.last_good_frame_fence_seqno,
+		  pending_kickoff_cnt);
 
 	return rc;
 }
@@ -2203,7 +2288,7 @@ int sde_encoder_hw_fence_error_handle(struct drm_encoder *drm_enc)
 
 	sde_enc = to_sde_encoder_virt(drm_enc);
 	if (!sde_enc || !sde_enc->phys_encs[0] ||
-		!sde_enc->phys_encs[0]->sde_hw_fence_error_status)
+	    !sde_enc->phys_encs[0]->sde_hw_fence_error_status)
 		return 0;
 
 	SDE_EVT32(DRMID(drm_enc), SDE_EVTLOG_FUNC_ENTRY);
@@ -2218,11 +2303,14 @@ int sde_encoder_hw_fence_error_handle(struct drm_encoder *drm_enc)
 
 	rc = sde_encoder_handle_dma_fence_out_of_order(phys_enc->parent);
 	if (rc) {
-		SDE_DEBUG("sde_encoder_handle_dma_fence_out_of_order failed, rc = %d\n", rc);
+		SDE_DEBUG(
+			"sde_encoder_handle_dma_fence_out_of_order failed, rc = %d\n",
+			rc);
 		SDE_EVT32(DRMID(phys_enc->parent), rc, SDE_EVTLOG_ERROR);
 	}
 
-	if (!phys_enc->sde_kms || !phys_enc->sde_kms->dev || !phys_enc->sde_kms->dev->dev_private) {
+	if (!phys_enc->sde_kms || !phys_enc->sde_kms->dev ||
+	    !phys_enc->sde_kms->dev->dev_private) {
 		SDE_EVT32(DRMID(drm_enc), SDE_EVTLOG_ERROR);
 		return -EINVAL;
 	}
@@ -2233,9 +2321,11 @@ int sde_encoder_hw_fence_error_handle(struct drm_encoder *drm_enc)
 			continue;
 
 		SDE_EVT32(DRMID(drm_enc), SDE_EVTLOG_FUNC_CASE1);
-		rc = entry->ops.fence_error_handle_submodule(phys_enc->hw_ctl, entry->data);
+		rc = entry->ops.fence_error_handle_submodule(phys_enc->hw_ctl,
+							     entry->data);
 		if (rc) {
-			SDE_ERROR("fence_error_handle_submodule failed for device: %d\n",
+			SDE_ERROR(
+				"fence_error_handle_submodule failed for device: %d\n",
 				entry->dev->id);
 			SDE_EVT32(DRMID(drm_enc), rc, SDE_EVTLOG_ERROR);
 		}
@@ -2252,7 +2342,8 @@ int sde_encoder_hw_fence_error_handle(struct drm_encoder *drm_enc)
 }
 
 static void sde_encoder_input_event_handler(struct input_handle *handle,
-	unsigned int type, unsigned int code, int value)
+					    unsigned int type,
+					    unsigned int code, int value)
 {
 	struct drm_encoder *drm_enc = NULL;
 	struct sde_encoder_virt *sde_enc = NULL;
@@ -2272,12 +2363,12 @@ static void sde_encoder_input_event_handler(struct input_handle *handle,
 
 	priv = drm_enc->dev->dev_private;
 	sde_enc = to_sde_encoder_virt(drm_enc);
-	if (!sde_enc->crtc || (sde_enc->crtc->index
-			>= ARRAY_SIZE(priv->disp_thread))) {
+	if (!sde_enc->crtc ||
+	    (sde_enc->crtc->index >= ARRAY_SIZE(priv->disp_thread))) {
 		SDE_DEBUG_ENC(sde_enc,
-			"invalid cached CRTC: %d or crtc index: %d\n",
-			sde_enc->crtc == NULL,
-			sde_enc->crtc ? sde_enc->crtc->index : -EINVAL);
+			      "invalid cached CRTC: %d or crtc index: %d\n",
+			      sde_enc->crtc == NULL,
+			      sde_enc->crtc ? sde_enc->crtc->index : -EINVAL);
 		return;
 	}
 
@@ -2285,8 +2376,7 @@ static void sde_encoder_input_event_handler(struct input_handle *handle,
 
 	disp_thread = &priv->disp_thread[sde_enc->crtc->index];
 
-	kthread_queue_work(&disp_thread->worker,
-				&sde_enc->input_event_work);
+	kthread_queue_work(&disp_thread->worker, &sde_enc->input_event_work);
 }
 
 void sde_encoder_control_idle_pc(struct drm_encoder *drm_enc, bool enable)
@@ -2310,7 +2400,7 @@ void sde_encoder_control_idle_pc(struct drm_encoder *drm_enc, bool enable)
 }
 
 static void _sde_encoder_rc_restart_delayed(struct sde_encoder_virt *sde_enc,
-	u32 sw_event)
+					    u32 sw_event)
 {
 	struct drm_encoder *drm_enc = &sde_enc->base;
 	struct msm_drm_private *priv;
@@ -2325,8 +2415,7 @@ static void _sde_encoder_rc_restart_delayed(struct sde_encoder_virt *sde_enc,
 
 	/* set idle timeout based on master connector's lp value */
 	if (sde_enc->cur_master)
-		lp = sde_connector_get_lp(
-				sde_enc->cur_master->connector);
+		lp = sde_connector_get_lp(sde_enc->cur_master->connector);
 	else
 		lp = SDE_MODE_DPMS_ON;
 
@@ -2347,24 +2436,20 @@ static void _sde_encoder_rc_restart_delayed(struct sde_encoder_virt *sde_enc,
 	priv = drm_enc->dev->dev_private;
 	disp_thread = &priv->disp_thread[sde_enc->crtc->index];
 
-	kthread_mod_delayed_work(
-			&disp_thread->worker,
-			&sde_enc->delayed_off_work,
-			msecs_to_jiffies(idle_pc_duration));
-	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			idle_pc_duration, SDE_EVTLOG_FUNC_CASE2);
-	SDE_DEBUG_ENC(sde_enc, "sw_event:%d, work scheduled\n",
-			sw_event);
+	kthread_mod_delayed_work(&disp_thread->worker,
+				 &sde_enc->delayed_off_work,
+				 msecs_to_jiffies(idle_pc_duration));
+	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state, idle_pc_duration,
+		  SDE_EVTLOG_FUNC_CASE2);
+	SDE_DEBUG_ENC(sde_enc, "sw_event:%d, work scheduled\n", sw_event);
 }
 
-
-
 static void _sde_encoder_rc_cancel_delayed(struct sde_encoder_virt *sde_enc,
-	u32 sw_event)
+					   u32 sw_event)
 {
 	if (kthread_cancel_delayed_work_sync(&sde_enc->delayed_off_work))
 		SDE_DEBUG_ENC(sde_enc, "sw_event:%d, work cancelled\n",
-				sw_event);
+			      sw_event);
 }
 
 void sde_encoder_cancel_delayed_work(struct drm_encoder *encoder)
@@ -2379,7 +2464,7 @@ void sde_encoder_cancel_delayed_work(struct drm_encoder *encoder)
 }
 
 static void _sde_encoder_rc_kickoff_delayed(struct sde_encoder_virt *sde_enc,
-	u32 sw_event)
+					    u32 sw_event)
 {
 	if (_sde_encoder_is_autorefresh_enabled(sde_enc))
 		_sde_encoder_rc_cancel_delayed(sde_enc, sw_event);
@@ -2387,8 +2472,9 @@ static void _sde_encoder_rc_kickoff_delayed(struct sde_encoder_virt *sde_enc,
 		_sde_encoder_rc_restart_delayed(sde_enc, sw_event);
 }
 
-static int _sde_encoder_rc_kickoff(struct drm_encoder *drm_enc,
-	u32 sw_event, struct sde_encoder_virt *sde_enc, bool is_vid_mode)
+static int _sde_encoder_rc_kickoff(struct drm_encoder *drm_enc, u32 sw_event,
+				   struct sde_encoder_virt *sde_enc,
+				   bool is_vid_mode)
 {
 	int ret = 0;
 
@@ -2397,16 +2483,16 @@ static int _sde_encoder_rc_kickoff(struct drm_encoder *drm_enc,
 	/* return if the resource control is already in ON state */
 	if (sde_enc->rc_state == SDE_ENC_RC_STATE_ON) {
 		SDE_DEBUG_ENC(sde_enc, "sw_event:%d, rc in ON state\n",
-				sw_event);
+			      sw_event);
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_EVTLOG_FUNC_CASE1);
+			  SDE_EVTLOG_FUNC_CASE1);
 		goto end;
 	} else if (sde_enc->rc_state != SDE_ENC_RC_STATE_OFF &&
-			sde_enc->rc_state != SDE_ENC_RC_STATE_IDLE) {
+		   sde_enc->rc_state != SDE_ENC_RC_STATE_IDLE) {
 		SDE_ERROR_ENC(sde_enc, "sw_event:%d, rc in state %d\n",
-				sw_event, sde_enc->rc_state);
+			      sw_event, sde_enc->rc_state);
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-				SDE_EVTLOG_ERROR);
+			  SDE_EVTLOG_ERROR);
 		goto end;
 	}
 
@@ -2415,21 +2501,18 @@ static int _sde_encoder_rc_kickoff(struct drm_encoder *drm_enc,
 		_sde_encoder_pm_qos_add_request(drm_enc);
 	} else {
 		/* enable all the clks and resources */
-		ret = _sde_encoder_resource_control_helper(drm_enc,
-				true);
+		ret = _sde_encoder_resource_control_helper(drm_enc, true);
 		if (ret) {
-			SDE_ERROR_ENC(sde_enc,
-					"sw_event:%d, rc in state %d\n",
-					sw_event, sde_enc->rc_state);
-			SDE_EVT32(DRMID(drm_enc), sw_event,
-					sde_enc->rc_state,
-					SDE_EVTLOG_ERROR);
+			SDE_ERROR_ENC(sde_enc, "sw_event:%d, rc in state %d\n",
+				      sw_event, sde_enc->rc_state);
+			SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
+				  SDE_EVTLOG_ERROR);
 			goto end;
 		}
 		_sde_encoder_update_rsc_client(drm_enc, true);
 	}
 	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_ENC_RC_STATE_ON, SDE_EVTLOG_FUNC_CASE1);
+		  SDE_ENC_RC_STATE_ON, SDE_EVTLOG_FUNC_CASE1);
 	sde_enc->rc_state = SDE_ENC_RC_STATE_ON;
 
 end:
@@ -2439,37 +2522,36 @@ end:
 	return ret;
 }
 
-static int _sde_encoder_rc_pre_stop(struct drm_encoder *drm_enc,
-	u32 sw_event, struct sde_encoder_virt *sde_enc, bool is_vid_mode)
+static int _sde_encoder_rc_pre_stop(struct drm_encoder *drm_enc, u32 sw_event,
+				    struct sde_encoder_virt *sde_enc,
+				    bool is_vid_mode)
 {
 	/* cancel delayed off work, if any */
 	_sde_encoder_rc_cancel_delayed(sde_enc, sw_event);
 
 	mutex_lock(&sde_enc->rc_lock);
 
-	if (is_vid_mode &&
-		  sde_enc->rc_state == SDE_ENC_RC_STATE_IDLE) {
+	if (is_vid_mode && sde_enc->rc_state == SDE_ENC_RC_STATE_IDLE) {
 		sde_encoder_irq_control(drm_enc, true);
 	}
 	/* skip if is already OFF or IDLE, resources are off already */
 	else if (sde_enc->rc_state == SDE_ENC_RC_STATE_OFF ||
-			sde_enc->rc_state == SDE_ENC_RC_STATE_IDLE) {
+		 sde_enc->rc_state == SDE_ENC_RC_STATE_IDLE) {
 		SDE_DEBUG_ENC(sde_enc, "sw_event:%d, rc in %d state\n",
-				sw_event, sde_enc->rc_state);
+			      sw_event, sde_enc->rc_state);
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_EVTLOG_FUNC_CASE3);
+			  SDE_EVTLOG_FUNC_CASE3);
 		goto end;
 	}
 
 	/**
-	 * IRQs are still enabled currently, which allows wait for
-	 * VBLANK which RSC may require to correctly transition to OFF
-	 */
+   * IRQs are still enabled currently, which allows wait for
+   * VBLANK which RSC may require to correctly transition to OFF
+   */
 	_sde_encoder_update_rsc_client(drm_enc, false);
 
 	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_ENC_RC_STATE_PRE_OFF,
-			SDE_EVTLOG_FUNC_CASE3);
+		  SDE_ENC_RC_STATE_PRE_OFF, SDE_EVTLOG_FUNC_CASE3);
 
 	sde_enc->rc_state = SDE_ENC_RC_STATE_PRE_OFF;
 
@@ -2478,8 +2560,8 @@ end:
 	return 0;
 }
 
-static int _sde_encoder_rc_stop(struct drm_encoder *drm_enc,
-	u32 sw_event, struct sde_encoder_virt *sde_enc)
+static int _sde_encoder_rc_stop(struct drm_encoder *drm_enc, u32 sw_event,
+				struct sde_encoder_virt *sde_enc)
 {
 	int ret = 0;
 
@@ -2487,29 +2569,29 @@ static int _sde_encoder_rc_stop(struct drm_encoder *drm_enc,
 	/* return if the resource control is already in OFF state */
 	if (sde_enc->rc_state == SDE_ENC_RC_STATE_OFF) {
 		SDE_DEBUG_ENC(sde_enc, "sw_event:%d, rc in OFF state\n",
-				sw_event);
+			      sw_event);
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_EVTLOG_FUNC_CASE4);
+			  SDE_EVTLOG_FUNC_CASE4);
 		goto end;
 	} else if (sde_enc->rc_state == SDE_ENC_RC_STATE_ON ||
 		   sde_enc->rc_state == SDE_ENC_RC_STATE_MODESET) {
 		SDE_ERROR_ENC(sde_enc, "sw_event:%d, rc in state %d\n",
-				sw_event, sde_enc->rc_state);
+			      sw_event, sde_enc->rc_state);
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-				SDE_EVTLOG_ERROR);
+			  SDE_EVTLOG_ERROR);
 		ret = -EINVAL;
 		goto end;
 	}
 
 	/**
-	 * expect to arrive here only if in either idle state or pre-off
-	 * and in IDLE state the resources are already disabled
-	 */
+   * expect to arrive here only if in either idle state or pre-off
+   * and in IDLE state the resources are already disabled
+   */
 	if (sde_enc->rc_state == SDE_ENC_RC_STATE_PRE_OFF)
 		_sde_encoder_resource_control_helper(drm_enc, false);
 
 	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_ENC_RC_STATE_OFF, SDE_EVTLOG_FUNC_CASE4);
+		  SDE_ENC_RC_STATE_OFF, SDE_EVTLOG_FUNC_CASE4);
 
 	sde_enc->rc_state = SDE_ENC_RC_STATE_OFF;
 
@@ -2519,7 +2601,8 @@ end:
 }
 
 static int _sde_encoder_rc_pre_modeset(struct drm_encoder *drm_enc,
-	u32 sw_event, struct sde_encoder_virt *sde_enc)
+				       u32 sw_event,
+				       struct sde_encoder_virt *sde_enc)
 {
 	int ret = 0;
 
@@ -2527,33 +2610,30 @@ static int _sde_encoder_rc_pre_modeset(struct drm_encoder *drm_enc,
 
 	if (sde_enc->rc_state == SDE_ENC_RC_STATE_OFF) {
 		SDE_DEBUG_ENC(sde_enc, "sw_event:%d, rc in OFF state\n",
-				sw_event);
+			      sw_event);
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_EVTLOG_FUNC_CASE5);
+			  SDE_EVTLOG_FUNC_CASE5);
 		goto end;
 	} else if (sde_enc->rc_state != SDE_ENC_RC_STATE_ON) {
 		/* enable all the clks and resources */
-		ret = _sde_encoder_resource_control_helper(drm_enc,
-				true);
+		ret = _sde_encoder_resource_control_helper(drm_enc, true);
 		if (ret) {
-			SDE_ERROR_ENC(sde_enc,
-					"sw_event:%d, rc in state %d\n",
-					sw_event, sde_enc->rc_state);
-			SDE_EVT32(DRMID(drm_enc), sw_event,
-					sde_enc->rc_state,
-					SDE_EVTLOG_ERROR);
+			SDE_ERROR_ENC(sde_enc, "sw_event:%d, rc in state %d\n",
+				      sw_event, sde_enc->rc_state);
+			SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
+				  SDE_EVTLOG_ERROR);
 			goto end;
 		}
 
 		_sde_encoder_update_rsc_client(drm_enc, true);
 
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_ENC_RC_STATE_ON, SDE_EVTLOG_FUNC_CASE5);
+			  SDE_ENC_RC_STATE_ON, SDE_EVTLOG_FUNC_CASE5);
 		sde_enc->rc_state = SDE_ENC_RC_STATE_ON;
 	}
 
 	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-		SDE_ENC_RC_STATE_MODESET, SDE_EVTLOG_FUNC_CASE5);
+		  SDE_ENC_RC_STATE_MODESET, SDE_EVTLOG_FUNC_CASE5);
 
 	sde_enc->rc_state = SDE_ENC_RC_STATE_MODESET;
 	_sde_encoder_pm_qos_remove_request(drm_enc);
@@ -2564,7 +2644,8 @@ end:
 }
 
 static int _sde_encoder_rc_post_modeset(struct drm_encoder *drm_enc,
-	u32 sw_event, struct sde_encoder_virt *sde_enc)
+					u32 sw_event,
+					struct sde_encoder_virt *sde_enc)
 {
 	int ret = 0;
 
@@ -2572,23 +2653,22 @@ static int _sde_encoder_rc_post_modeset(struct drm_encoder *drm_enc,
 
 	if (sde_enc->rc_state == SDE_ENC_RC_STATE_OFF) {
 		SDE_DEBUG_ENC(sde_enc, "sw_event:%d, rc in OFF state\n",
-				sw_event);
+			      sw_event);
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_EVTLOG_FUNC_CASE5);
+			  SDE_EVTLOG_FUNC_CASE5);
 		goto end;
 	} else if (sde_enc->rc_state != SDE_ENC_RC_STATE_MODESET) {
-		SDE_ERROR_ENC(sde_enc,
-				"sw_event:%d, rc:%d !MODESET state\n",
-				sw_event, sde_enc->rc_state);
+		SDE_ERROR_ENC(sde_enc, "sw_event:%d, rc:%d !MODESET state\n",
+			      sw_event, sde_enc->rc_state);
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-				SDE_EVTLOG_ERROR);
+			  SDE_EVTLOG_ERROR);
 		ret = -EINVAL;
 		goto end;
 	}
 
 	/* toggle te bit to update vsync source for sim cmd mode panels */
-	if (sde_encoder_check_curr_mode(&sde_enc->base, MSM_DISPLAY_CMD_MODE)
-			&& sde_enc->disp_info.is_te_using_watchdog_timer) {
+	if (sde_encoder_check_curr_mode(&sde_enc->base, MSM_DISPLAY_CMD_MODE) &&
+	    sde_enc->disp_info.is_te_using_watchdog_timer) {
 		sde_encoder_control_te(sde_enc, false);
 		_sde_encoder_update_vsync_source(sde_enc, &sde_enc->disp_info);
 		sde_encoder_control_te(sde_enc, true);
@@ -2597,7 +2677,7 @@ static int _sde_encoder_rc_post_modeset(struct drm_encoder *drm_enc,
 	_sde_encoder_update_rsc_client(drm_enc, true);
 
 	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_ENC_RC_STATE_ON, SDE_EVTLOG_FUNC_CASE6);
+		  SDE_ENC_RC_STATE_ON, SDE_EVTLOG_FUNC_CASE6);
 
 	sde_enc->rc_state = SDE_ENC_RC_STATE_ON;
 	_sde_encoder_pm_qos_add_request(drm_enc);
@@ -2607,8 +2687,9 @@ end:
 	return ret;
 }
 
-static int _sde_encoder_rc_idle(struct drm_encoder *drm_enc,
-	u32 sw_event, struct sde_encoder_virt *sde_enc, bool is_vid_mode)
+static int _sde_encoder_rc_idle(struct drm_encoder *drm_enc, u32 sw_event,
+				struct sde_encoder_virt *sde_enc,
+				bool is_vid_mode)
 {
 	struct msm_drm_private *priv;
 	struct sde_kms *sde_kms;
@@ -2625,18 +2706,21 @@ static int _sde_encoder_rc_idle(struct drm_encoder *drm_enc,
 
 	if (sde_conn->panel_dead) {
 		SDE_DEBUG_ENC(sde_enc, "skip idle. Panel in dead state\n");
-		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state, SDE_EVTLOG_ERROR);
+		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
+			  SDE_EVTLOG_ERROR);
 		goto end;
 	} else if (sde_enc->rc_state != SDE_ENC_RC_STATE_ON) {
 		SDE_DEBUG_ENC(sde_enc, "sw_event:%d, rc:%d !ON state\n",
-				sw_event, sde_enc->rc_state);
-		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state, SDE_EVTLOG_ERROR);
+			      sw_event, sde_enc->rc_state);
+		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
+			  SDE_EVTLOG_ERROR);
 		goto end;
 	} else if (sde_crtc_frame_pending(sde_enc->crtc) ||
-			sde_crtc->kickoff_in_progress) {
+		   sde_crtc->kickoff_in_progress) {
 		SDE_DEBUG_ENC(sde_enc, "skip idle entry");
 		SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			sde_crtc_frame_pending(sde_enc->crtc), SDE_EVTLOG_ERROR);
+			  sde_crtc_frame_pending(sde_enc->crtc),
+			  SDE_EVTLOG_ERROR);
 		_sde_encoder_rc_kickoff_delayed(sde_enc, sw_event);
 		goto end;
 	}
@@ -2647,7 +2731,8 @@ static int _sde_encoder_rc_idle(struct drm_encoder *drm_enc,
 		_sde_encoder_pm_qos_remove_request(drm_enc);
 	} else {
 		if (priv->event_thread[crtc_id].thread)
-			kthread_flush_worker(&priv->event_thread[crtc_id].worker);
+			kthread_flush_worker(
+				&priv->event_thread[crtc_id].worker);
 
 		/* disable all the clks and resources */
 		_sde_encoder_update_rsc_client(drm_enc, false);
@@ -2655,11 +2740,11 @@ static int _sde_encoder_rc_idle(struct drm_encoder *drm_enc,
 
 		if (!sde_kms->perf.bw_vote_mode)
 			memset(&sde_crtc->cur_perf, 0,
-				sizeof(struct sde_core_perf_params));
+			       sizeof(struct sde_core_perf_params));
 	}
 
 	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
-			SDE_ENC_RC_STATE_IDLE, SDE_EVTLOG_FUNC_CASE7);
+		  SDE_ENC_RC_STATE_IDLE, SDE_EVTLOG_FUNC_CASE7);
 	sde_enc->rc_state = SDE_ENC_RC_STATE_IDLE;
 
 end:
@@ -2668,8 +2753,10 @@ end:
 }
 
 static int _sde_encoder_rc_early_wakeup(struct drm_encoder *drm_enc,
-	u32 sw_event, struct sde_encoder_virt *sde_enc,
-	struct msm_drm_private *priv, bool is_vid_mode)
+					u32 sw_event,
+					struct sde_encoder_virt *sde_enc,
+					struct msm_drm_private *priv,
+					bool is_vid_mode)
 {
 	bool autorefresh_enabled = false;
 	struct msm_drm_thread *disp_thread;
@@ -2681,8 +2768,9 @@ static int _sde_encoder_rc_early_wakeup(struct drm_encoder *drm_enc,
 #endif
 
 	if (!sde_enc->crtc ||
-		sde_enc->crtc->index >= ARRAY_SIZE(priv->disp_thread)) {
-		SDE_DEBUG_ENC(sde_enc,
+	    sde_enc->crtc->index >= ARRAY_SIZE(priv->disp_thread)) {
+		SDE_DEBUG_ENC(
+			sde_enc,
 			"invalid crtc:%d or crtc index:%d , sw_event:%u\n",
 			sde_enc->crtc == NULL,
 			sde_enc->crtc ? sde_enc->crtc->index : -EINVAL,
@@ -2696,12 +2784,13 @@ static int _sde_encoder_rc_early_wakeup(struct drm_encoder *drm_enc,
 
 	if (sde_enc->rc_state == SDE_ENC_RC_STATE_ON) {
 		if (sde_enc->cur_master &&
-			sde_enc->cur_master->ops.is_autorefresh_enabled)
+		    sde_enc->cur_master->ops.is_autorefresh_enabled)
 			autorefresh_enabled =
-			sde_enc->cur_master->ops.is_autorefresh_enabled(
-						sde_enc->cur_master);
+				sde_enc->cur_master->ops.is_autorefresh_enabled(
+					sde_enc->cur_master);
 		if (autorefresh_enabled) {
-			SDE_DEBUG_ENC(sde_enc,
+			SDE_DEBUG_ENC(
+				sde_enc,
 				"not handling early wakeup since auto refresh is enabled\n");
 			goto end;
 		}
@@ -2715,64 +2804,58 @@ static int _sde_encoder_rc_early_wakeup(struct drm_encoder *drm_enc,
 
 		if (!sde_crtc_frame_pending(sde_enc->crtc)) {
 			kthread_mod_delayed_work(&disp_thread->worker,
-					&sde_enc->delayed_off_work,
-					msecs_to_jiffies(
-					delay_ms));
+						 &sde_enc->delayed_off_work,
+						 msecs_to_jiffies(delay_ms));
 			idle_pc_duration = delay_ms;
 		}
 #else
 		if (!sde_crtc_frame_pending(sde_enc->crtc)) {
-			kthread_mod_delayed_work(&disp_thread->worker,
-					&sde_enc->delayed_off_work,
-					msecs_to_jiffies(
-					IDLE_POWERCOLLAPSE_DURATION));
+			kthread_mod_delayed_work(
+				&disp_thread->worker,
+				&sde_enc->delayed_off_work,
+				msecs_to_jiffies(IDLE_POWERCOLLAPSE_DURATION));
 			idle_pc_duration = IDLE_POWERCOLLAPSE_DURATION;
 		}
 #endif
 
 	} else if (sde_enc->rc_state == SDE_ENC_RC_STATE_IDLE) {
 		/* enable all the clks and resources */
-		ret = _sde_encoder_resource_control_helper(drm_enc,
-				true);
+		ret = _sde_encoder_resource_control_helper(drm_enc, true);
 		if (ret) {
-			SDE_ERROR_ENC(sde_enc,
-					"sw_event:%d, rc in state %d\n",
-					sw_event, sde_enc->rc_state);
-			SDE_EVT32(DRMID(drm_enc), sw_event,
-					sde_enc->rc_state,
-					SDE_EVTLOG_ERROR);
+			SDE_ERROR_ENC(sde_enc, "sw_event:%d, rc in state %d\n",
+				      sw_event, sde_enc->rc_state);
+			SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
+				  SDE_EVTLOG_ERROR);
 			goto end;
 		}
 
 		_sde_encoder_update_rsc_client(drm_enc, true);
 
 		/*
-		 * In some cases, commit comes with slight delay
-		 * (> 80 ms)after early wake up, prevent clock switch
-		 * off to avoid jank in next update. So, increase the
-		 * command mode idle timeout sufficiently to prevent
-		 * such case.
-		 */
-		kthread_mod_delayed_work(&disp_thread->worker,
-				&sde_enc->delayed_off_work,
-				msecs_to_jiffies(
-				IDLE_POWERCOLLAPSE_IN_EARLY_WAKEUP));
+     * In some cases, commit comes with slight delay
+     * (> 80 ms)after early wake up, prevent clock switch
+     * off to avoid jank in next update. So, increase the
+     * command mode idle timeout sufficiently to prevent
+     * such case.
+     */
+		kthread_mod_delayed_work(
+			&disp_thread->worker, &sde_enc->delayed_off_work,
+			msecs_to_jiffies(IDLE_POWERCOLLAPSE_IN_EARLY_WAKEUP));
 		idle_pc_duration = IDLE_POWERCOLLAPSE_IN_EARLY_WAKEUP;
 
 		sde_enc->rc_state = SDE_ENC_RC_STATE_ON;
 	}
 
-	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state, SDE_ENC_RC_STATE_ON,
-			idle_pc_duration, SDE_EVTLOG_FUNC_CASE8);
+	SDE_EVT32(DRMID(drm_enc), sw_event, sde_enc->rc_state,
+		  SDE_ENC_RC_STATE_ON, idle_pc_duration, SDE_EVTLOG_FUNC_CASE8);
 
 end:
 	mutex_unlock(&sde_enc->rc_lock);
 	return ret;
 }
 
-
 static int sde_encoder_resource_control(struct drm_encoder *drm_enc,
-		u32 sw_event)
+					u32 sw_event)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct msm_drm_private *priv;
@@ -2781,7 +2864,7 @@ static int sde_encoder_resource_control(struct drm_encoder *drm_enc,
 
 	if (!drm_enc || !drm_enc->dev || !drm_enc->dev->dev_private) {
 		SDE_ERROR("invalid encoder parameters, sw_event:%u\n",
-				sw_event);
+			  sw_event);
 		return -EINVAL;
 	}
 	sde_enc = to_sde_encoder_virt(drm_enc);
@@ -2789,30 +2872,30 @@ static int sde_encoder_resource_control(struct drm_encoder *drm_enc,
 	if (sde_encoder_check_curr_mode(&sde_enc->base, MSM_DISPLAY_VIDEO_MODE))
 		is_vid_mode = true;
 	/*
-	 * when idle_pc is not supported, process only KICKOFF, STOP and MODESET
-	 * events and return early for other events (ie wb display).
-	 */
+   * when idle_pc is not supported, process only KICKOFF, STOP and MODESET
+   * events and return early for other events (ie wb display).
+   */
 	if (!sde_enc->idle_pc_enabled &&
-			(sw_event != SDE_ENC_RC_EVENT_KICKOFF &&
-			sw_event != SDE_ENC_RC_EVENT_PRE_MODESET &&
-			sw_event != SDE_ENC_RC_EVENT_POST_MODESET &&
-			sw_event != SDE_ENC_RC_EVENT_STOP &&
-			sw_event != SDE_ENC_RC_EVENT_PRE_STOP))
+	    (sw_event != SDE_ENC_RC_EVENT_KICKOFF &&
+	     sw_event != SDE_ENC_RC_EVENT_PRE_MODESET &&
+	     sw_event != SDE_ENC_RC_EVENT_POST_MODESET &&
+	     sw_event != SDE_ENC_RC_EVENT_STOP &&
+	     sw_event != SDE_ENC_RC_EVENT_PRE_STOP))
 		return 0;
 
-	SDE_DEBUG_ENC(sde_enc, "sw_event:%d, idle_pc:%d\n",
-			sw_event, sde_enc->idle_pc_enabled);
+	SDE_DEBUG_ENC(sde_enc, "sw_event:%d, idle_pc:%d\n", sw_event,
+		      sde_enc->idle_pc_enabled);
 	SDE_EVT32_VERBOSE(DRMID(drm_enc), sw_event, sde_enc->idle_pc_enabled,
-			sde_enc->rc_state, SDE_EVTLOG_FUNC_ENTRY);
+			  sde_enc->rc_state, SDE_EVTLOG_FUNC_ENTRY);
 
 	switch (sw_event) {
 	case SDE_ENC_RC_EVENT_KICKOFF:
 		ret = _sde_encoder_rc_kickoff(drm_enc, sw_event, sde_enc,
-				is_vid_mode);
+					      is_vid_mode);
 		break;
 	case SDE_ENC_RC_EVENT_PRE_STOP:
 		ret = _sde_encoder_rc_pre_stop(drm_enc, sw_event, sde_enc,
-				is_vid_mode);
+					       is_vid_mode);
 		break;
 	case SDE_ENC_RC_EVENT_STOP:
 		ret = _sde_encoder_rc_stop(drm_enc, sw_event, sde_enc);
@@ -2825,11 +2908,11 @@ static int sde_encoder_resource_control(struct drm_encoder *drm_enc,
 		break;
 	case SDE_ENC_RC_EVENT_ENTER_IDLE:
 		ret = _sde_encoder_rc_idle(drm_enc, sw_event, sde_enc,
-				is_vid_mode);
+					   is_vid_mode);
 		break;
 	case SDE_ENC_RC_EVENT_EARLY_WAKEUP:
 		ret = _sde_encoder_rc_early_wakeup(drm_enc, sw_event, sde_enc,
-				priv, is_vid_mode);
+						   priv, is_vid_mode);
 		break;
 	default:
 		SDE_EVT32(DRMID(drm_enc), sw_event, SDE_EVTLOG_ERROR);
@@ -2838,12 +2921,13 @@ static int sde_encoder_resource_control(struct drm_encoder *drm_enc,
 	}
 
 	SDE_EVT32_VERBOSE(DRMID(drm_enc), sw_event, sde_enc->idle_pc_enabled,
-			sde_enc->rc_state, SDE_EVTLOG_FUNC_EXIT);
+			  sde_enc->rc_state, SDE_EVTLOG_FUNC_EXIT);
 	return ret;
 }
 
 static void sde_encoder_virt_mode_switch(struct drm_encoder *drm_enc,
-	enum sde_intf_mode intf_mode, struct msm_display_mode *adj_mode)
+					 enum sde_intf_mode intf_mode,
+					 struct msm_display_mode *adj_mode)
 {
 	int i = 0;
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
@@ -2862,20 +2946,20 @@ static void sde_encoder_virt_mode_switch(struct drm_encoder *drm_enc,
 			sde_enc->phys_encs[i] = sde_enc->phys_vid_encs[i];
 
 		SDE_DEBUG_ENC(sde_enc, "switch to video physical encoder\n");
-		SDE_EVT32(DRMID(&sde_enc->base), intf_mode, poms_to_cmd, poms_to_vid,
-			SDE_EVTLOG_FUNC_CASE1);
+		SDE_EVT32(DRMID(&sde_enc->base), intf_mode, poms_to_cmd,
+			  poms_to_vid, SDE_EVTLOG_FUNC_CASE1);
 	} else if (intf_mode == INTF_MODE_VIDEO && poms_to_cmd) {
 		for (i = 0; i < sde_enc->num_phys_encs; i++)
 			sde_enc->phys_encs[i] = sde_enc->phys_cmd_encs[i];
 
 		SDE_DEBUG_ENC(sde_enc, "switch to command physical encoder\n");
-		SDE_EVT32(DRMID(&sde_enc->base), intf_mode, poms_to_cmd, poms_to_vid,
-			SDE_EVTLOG_FUNC_CASE2);
+		SDE_EVT32(DRMID(&sde_enc->base), intf_mode, poms_to_cmd,
+			  poms_to_vid, SDE_EVTLOG_FUNC_CASE2);
 	}
 }
 
-struct drm_connector *sde_encoder_get_connector(
-		struct drm_device *dev, struct drm_encoder *drm_enc)
+struct drm_connector *sde_encoder_get_connector(struct drm_device *dev,
+						struct drm_encoder *drm_enc)
 {
 	struct drm_connector_list_iter conn_iter;
 	struct drm_connector *conn = NULL, *conn_search;
@@ -2916,10 +3000,11 @@ static void _sde_encoder_virt_populate_hw_res(struct drm_encoder *drm_enc)
 
 		if (phys) {
 			sde_rm_init_hw_iter(&qdss_iter, drm_enc->base.id,
-						SDE_HW_BLK_QDSS);
+					    SDE_HW_BLK_QDSS);
 			for (j = 0; j < QDSS_MAX; j++) {
 				if (sde_rm_get_hw(&sde_kms->rm, &qdss_iter)) {
-					phys->hw_qdss = to_sde_hw_qdss(qdss_iter.hw);
+					phys->hw_qdss =
+						to_sde_hw_qdss(qdss_iter.hw);
 					break;
 				}
 			}
@@ -2965,7 +3050,9 @@ static void _sde_encoder_virt_populate_hw_res(struct drm_encoder *drm_enc)
 }
 
 static int sde_encoder_virt_modeset_rc(struct drm_encoder *drm_enc,
-	struct drm_display_mode *adj_mode, struct msm_display_mode *msm_mode, bool pre_modeset)
+				       struct drm_display_mode *adj_mode,
+				       struct msm_display_mode *msm_mode,
+				       bool pre_modeset)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	enum sde_intf_mode intf_mode;
@@ -2981,56 +3068,59 @@ static int sde_encoder_virt_modeset_rc(struct drm_encoder *drm_enc,
 			old_adj_mode = &sde_enc->cur_master->cached_mode;
 		if (old_adj_mode && is_cmd_mode)
 			res_switch = !drm_mode_match(old_adj_mode, adj_mode,
-					DRM_MODE_MATCH_TIMINGS);
+						     DRM_MODE_MATCH_TIMINGS);
 
-		if ((res_switch && sde_enc->disp_info.is_te_using_watchdog_timer) ||
-			sde_encoder_is_cwb_disabling(drm_enc, drm_enc->crtc)) {
+		if ((res_switch &&
+		     sde_enc->disp_info.is_te_using_watchdog_timer) ||
+		    sde_encoder_is_cwb_disabling(drm_enc, drm_enc->crtc)) {
 			/*
-			 * add tx wait for sim panel to avoid wd timer getting
-			 * updated in middle of frame to avoid early vsync
-			 */
-			ret = sde_encoder_wait_for_event(drm_enc, MSM_ENC_TX_COMPLETE);
+       * add tx wait for sim panel to avoid wd timer getting
+       * updated in middle of frame to avoid early vsync
+       */
+			ret = sde_encoder_wait_for_event(drm_enc,
+							 MSM_ENC_TX_COMPLETE);
 			if (ret && ret != -EWOULDBLOCK) {
-				SDE_ERROR_ENC(sde_enc, "wait for idle failed %d\n", ret);
-				SDE_EVT32(DRMID(drm_enc), ret, SDE_EVTLOG_ERROR);
+				SDE_ERROR_ENC(sde_enc,
+					      "wait for idle failed %d\n", ret);
+				SDE_EVT32(DRMID(drm_enc), ret,
+					  SDE_EVTLOG_ERROR);
 				return ret;
 			}
 		}
 
 		intf_mode = sde_encoder_get_intf_mode(drm_enc);
 		if (msm_is_mode_seamless_dms(msm_mode) ||
-				(msm_is_mode_seamless_dyn_clk(msm_mode) &&
-				 is_cmd_mode)) {
+		    (msm_is_mode_seamless_dyn_clk(msm_mode) && is_cmd_mode)) {
 			/* restore resource state before releasing them */
-			ret = sde_encoder_resource_control(drm_enc,
-					SDE_ENC_RC_EVENT_PRE_MODESET);
+			ret = sde_encoder_resource_control(
+				drm_enc, SDE_ENC_RC_EVENT_PRE_MODESET);
 			if (ret) {
-				SDE_ERROR_ENC(sde_enc,
+				SDE_ERROR_ENC(
+					sde_enc,
 					"sde resource control failed: %d\n",
 					ret);
 				return ret;
 			}
 
 			/*
-			 * Disable dce before switching the mode and after pre-
-			 * modeset to guarantee previous kickoff has finished.
-			 */
+       * Disable dce before switching the mode and after pre-
+       * modeset to guarantee previous kickoff has finished.
+       */
 			sde_encoder_dce_disable(sde_enc);
 		} else if (msm_is_mode_seamless_poms(msm_mode)) {
-			_sde_encoder_modeset_helper_locked(drm_enc,
-					SDE_ENC_RC_EVENT_PRE_MODESET);
+			_sde_encoder_modeset_helper_locked(
+				drm_enc, SDE_ENC_RC_EVENT_PRE_MODESET);
 			sde_encoder_virt_mode_switch(drm_enc, intf_mode,
-					msm_mode);
+						     msm_mode);
 		}
 	} else {
 		if (msm_is_mode_seamless_dms(msm_mode) ||
-				(msm_is_mode_seamless_dyn_clk(msm_mode) &&
-				is_cmd_mode))
-			sde_encoder_resource_control(&sde_enc->base,
-					SDE_ENC_RC_EVENT_POST_MODESET);
+		    (msm_is_mode_seamless_dyn_clk(msm_mode) && is_cmd_mode))
+			sde_encoder_resource_control(
+				&sde_enc->base, SDE_ENC_RC_EVENT_POST_MODESET);
 		else if (msm_is_mode_seamless_poms(msm_mode))
-			_sde_encoder_modeset_helper_locked(drm_enc,
-					SDE_ENC_RC_EVENT_POST_MODESET);
+			_sde_encoder_modeset_helper_locked(
+				drm_enc, SDE_ENC_RC_EVENT_POST_MODESET);
 	}
 
 	return 0;
@@ -3070,9 +3160,9 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 	SDE_EVT32(DRMID(drm_enc));
 
 	/*
-	 * cache the crtc in sde_enc on enable for duration of use case
-	 * for correctly servicing asynchronous irq events and timers
-	 */
+   * cache the crtc in sde_enc on enable for duration of use case
+   * for correctly servicing asynchronous irq events and timers
+   */
 	if (!drm_enc->crtc) {
 		SDE_ERROR("invalid crtc\n");
 		return;
@@ -3085,7 +3175,8 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 	sde_crtc_state = to_sde_crtc_state(crtc_state);
 
 	if (!((sde_enc->disp_info.intf_type == DRM_MODE_CONNECTOR_VIRTUAL) &&
-			((sde_crtc_state->cached_cwb_enc_mask & drm_encoder_mask(drm_enc)))))
+	      ((sde_crtc_state->cached_cwb_enc_mask &
+		drm_encoder_mask(drm_enc)))))
 		sde_crtc_set_qos_dirty(drm_enc->crtc);
 
 	/* get and store the mode_info */
@@ -3116,17 +3207,21 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 		return;
 
 	if ((sde_enc->disp_info.intf_type == DRM_MODE_CONNECTOR_VIRTUAL) &&
-			((sde_crtc_state->cached_cwb_enc_mask & drm_encoder_mask(drm_enc)))) {
+	    ((sde_crtc_state->cached_cwb_enc_mask &
+	      drm_encoder_mask(drm_enc)))) {
 		SDE_EVT32(DRMID(drm_enc), sde_crtc_state->cwb_enc_mask,
-				sde_crtc_state->cached_cwb_enc_mask);
-		sde_crtc_state->cwb_enc_mask = sde_crtc_state->cached_cwb_enc_mask;
+			  sde_crtc_state->cached_cwb_enc_mask);
+		sde_crtc_state->cwb_enc_mask =
+			sde_crtc_state->cached_cwb_enc_mask;
 		sde_encoder_set_clone_mode(drm_enc, crtc_state);
 	}
 
 	/* reserve dynamic resources now, indicating non test-only */
-	ret = sde_rm_reserve(&sde_kms->rm, drm_enc, drm_enc->crtc->state, conn->state, false);
+	ret = sde_rm_reserve(&sde_kms->rm, drm_enc, drm_enc->crtc->state,
+			     conn->state, false);
 	if (ret) {
-		SDE_ERROR_ENC(sde_enc, "failed to reserve hw resources, %d\n", ret);
+		SDE_ERROR_ENC(sde_enc, "failed to reserve hw resources, %d\n",
+			      ret);
 		return;
 	}
 
@@ -3146,15 +3241,17 @@ static void sde_encoder_virt_mode_set(struct drm_encoder *drm_enc,
 
 		if (phys) {
 			if (!sde_enc->hw_pp[i * num_pp_per_intf]) {
-				SDE_ERROR_ENC(sde_enc, "invalid phys %d pp_per_intf %d",
-						i, num_pp_per_intf);
+				SDE_ERROR_ENC(sde_enc,
+					      "invalid phys %d pp_per_intf %d",
+					      i, num_pp_per_intf);
 				return;
 			}
 			phys->hw_pp = sde_enc->hw_pp[i * num_pp_per_intf];
 			phys->connector = conn;
 			if (phys->ops.mode_set)
-				phys->ops.mode_set(phys, mode, adj_mode,
-				&sde_crtc->reinit_crtc_mixers);
+				phys->ops.mode_set(
+					phys, mode, adj_mode,
+					&sde_crtc->reinit_crtc_mixers);
 		}
 	}
 
@@ -3172,22 +3269,25 @@ void sde_encoder_idle_pc_enter(struct drm_encoder *drm_enc)
 	}
 	sde_enc = to_sde_encoder_virt(drm_enc);
 	/*
-	 * disable the vsync source after updating the
-	 * rsc state. rsc state update might have vsync wait
-	 * and vsync source must be disabled after it.
-	 * It will avoid generating any vsync from this point
-	 * till mode-2 entry. It is SW workaround for HW
-	 * limitation and should not be removed without
-	 * checking the updated design.
-	 */
+   * disable the vsync source after updating the
+   * rsc state. rsc state update might have vsync wait
+   * and vsync source must be disabled after it.
+   * It will avoid generating any vsync from this point
+   * till mode-2 entry. It is SW workaround for HW
+   * limitation and should not be removed without
+   * checking the updated design.
+   */
 	sde_encoder_control_te(sde_enc, false);
 
-	if (sde_enc->cur_master && sde_enc->cur_master->ops.idle_pc_cache_display_status)
-		sde_enc->cur_master->ops.idle_pc_cache_display_status(sde_enc->cur_master);
+	if (sde_enc->cur_master &&
+	    sde_enc->cur_master->ops.idle_pc_cache_display_status)
+		sde_enc->cur_master->ops.idle_pc_cache_display_status(
+			sde_enc->cur_master);
 }
 
 static int _sde_encoder_input_connect(struct input_handler *handler,
-	struct input_dev *dev, const struct input_device_id *id)
+				      struct input_dev *dev,
+				      const struct input_device_id *id)
 {
 	struct input_handle *handle;
 	int rc = 0;
@@ -3225,9 +3325,9 @@ error:
 
 static void _sde_encoder_input_disconnect(struct input_handle *handle)
 {
-	 input_close_device(handle);
-	 input_unregister_handle(handle);
-	 kfree(handle);
+	input_close_device(handle);
+	input_unregister_handle(handle);
+	kfree(handle);
 }
 
 /**
@@ -3240,20 +3340,19 @@ static const struct input_device_id sde_input_ids[] = {
 		.flags = INPUT_DEVICE_ID_MATCH_EVBIT,
 		.evbit = { BIT_MASK(EV_ABS) },
 		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
-					BIT_MASK(ABS_MT_POSITION_X) |
-					BIT_MASK(ABS_MT_POSITION_Y) },
+				    BIT_MASK(ABS_MT_POSITION_X) |
+				    BIT_MASK(ABS_MT_POSITION_Y) },
 	},
-	{ },
+	{},
 };
 
-static void _sde_encoder_input_handler_register(
-		struct drm_encoder *drm_enc)
+static void _sde_encoder_input_handler_register(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	int rc;
 
 	if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE) ||
-		!sde_enc->input_event_enabled)
+	    !sde_enc->input_event_enabled)
 		return;
 
 	if (sde_enc->input_handler && !sde_enc->input_handler->private) {
@@ -3263,37 +3362,33 @@ static void _sde_encoder_input_handler_register(
 		rc = input_register_handler(sde_enc->input_handler);
 		if (rc) {
 			SDE_ERROR("input_handler_register failed, rc= %d\n",
-						 rc);
+				  rc);
 			kfree(sde_enc->input_handler);
 		}
 	}
 }
 
-static void _sde_encoder_input_handler_unregister(
-		struct drm_encoder *drm_enc)
+static void _sde_encoder_input_handler_unregister(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 
 	if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE) ||
-		!sde_enc->input_event_enabled)
+	    !sde_enc->input_event_enabled)
 		return;
 
 	if (sde_enc->input_handler && sde_enc->input_handler->private) {
 		input_unregister_handler(sde_enc->input_handler);
 		sde_enc->input_handler->private = NULL;
 	}
-
 }
 
-static int _sde_encoder_input_handler(
-		struct sde_encoder_virt *sde_enc)
+static int _sde_encoder_input_handler(struct sde_encoder_virt *sde_enc)
 {
 	struct input_handler *input_handler = NULL;
 	int rc = 0;
 
 	if (sde_enc->input_handler) {
-		SDE_ERROR_ENC(sde_enc,
-				"input_handle is active. unexpected\n");
+		SDE_ERROR_ENC(sde_enc, "input_handle is active. unexpected\n");
 		return -EINVAL;
 	}
 
@@ -3336,24 +3431,24 @@ static void _sde_encoder_virt_enable_helper(struct drm_encoder *drm_enc)
 	    sde_enc->cur_master->hw_mdptop &&
 	    sde_enc->cur_master->hw_mdptop->ops.intf_audio_select)
 		sde_enc->cur_master->hw_mdptop->ops.intf_audio_select(
-					sde_enc->cur_master->hw_mdptop);
+			sde_enc->cur_master->hw_mdptop);
 
 	if (sde_enc->cur_master->hw_mdptop &&
-			sde_enc->cur_master->hw_mdptop->ops.reset_ubwc &&
-			!sde_in_trusted_vm(sde_kms))
+	    sde_enc->cur_master->hw_mdptop->ops.reset_ubwc &&
+	    !sde_in_trusted_vm(sde_kms))
 		sde_enc->cur_master->hw_mdptop->ops.reset_ubwc(
-				sde_enc->cur_master->hw_mdptop,
-				sde_kms->catalog);
+			sde_enc->cur_master->hw_mdptop, sde_kms->catalog);
 
 	if (sde_enc->cur_master->hw_ctl &&
-			sde_enc->cur_master->hw_ctl->ops.setup_intf_cfg_v1 &&
-			!sde_enc->cur_master->cont_splash_enabled)
+	    sde_enc->cur_master->hw_ctl->ops.setup_intf_cfg_v1 &&
+	    !sde_enc->cur_master->cont_splash_enabled)
 		sde_enc->cur_master->hw_ctl->ops.setup_intf_cfg_v1(
-				sde_enc->cur_master->hw_ctl,
-				&sde_enc->cur_master->intf_cfg_v1);
+			sde_enc->cur_master->hw_ctl,
+			&sde_enc->cur_master->intf_cfg_v1);
 
 	if (sde_enc->cur_master->hw_ctl)
-		sde_fence_output_hw_fence_dir_write_init(sde_enc->cur_master->hw_ctl);
+		sde_fence_output_hw_fence_dir_write_init(
+			sde_enc->cur_master->hw_ctl);
 
 	_sde_encoder_update_vsync_source(sde_enc, &sde_enc->disp_info);
 
@@ -3380,7 +3475,7 @@ static void _sde_encoder_setup_dither(struct sde_encoder_phys *phys)
 	int num_lm;
 
 	if (!phys || !phys->connector || !phys->hw_pp ||
-			!phys->hw_pp->ops.setup_dither || !phys->parent)
+	    !phys->hw_pp->ops.setup_dither || !phys->parent)
 		return;
 
 	sde_kms = sde_encoder_get_kms(phys->parent);
@@ -3389,8 +3484,8 @@ static void _sde_encoder_setup_dither(struct sde_encoder_phys *phys)
 
 	topology = sde_connector_get_topology_name(phys->connector);
 	if ((topology == SDE_RM_TOPOLOGY_NONE) ||
-			((topology == SDE_RM_TOPOLOGY_PPSPLIT) &&
-			(phys->split_role == ENC_ROLE_SLAVE)))
+	    ((topology == SDE_RM_TOPOLOGY_PPSPLIT) &&
+	     (phys->split_role == ENC_ROLE_SLAVE)))
 		return;
 
 	drm_enc = phys->parent;
@@ -3407,8 +3502,8 @@ static void _sde_encoder_setup_dither(struct sde_encoder_phys *phys)
 	}
 
 	ret = sde_connector_get_dither_cfg(phys->connector,
-			phys->connector->state, &dither_cfg,
-			&len, sde_enc->idle_pc_restore);
+					   phys->connector->state, &dither_cfg,
+					   &len, sde_enc->idle_pc_restore);
 
 	/* skip reg writes when return values are invalid or no data */
 	if (ret && ret == -ENODATA)
@@ -3417,8 +3512,7 @@ static void _sde_encoder_setup_dither(struct sde_encoder_phys *phys)
 	num_lm = sde_rm_topology_get_num_lm(&sde_kms->rm, topology);
 	for (i = 0; i < num_lm; i++) {
 		hw_pp = sde_enc->hw_pp[i];
-		phys->hw_pp->ops.setup_dither(hw_pp,
-				dither_cfg, len);
+		phys->hw_pp->ops.setup_dither(hw_pp, dither_cfg, len);
 	}
 }
 
@@ -3440,7 +3534,7 @@ void sde_encoder_virt_restore(struct drm_encoder *drm_enc)
 	}
 
 	memset(&sde_enc->cur_master->intf_cfg_v1, 0,
-			sizeof(sde_enc->cur_master->intf_cfg_v1));
+	       sizeof(sde_enc->cur_master->intf_cfg_v1));
 	sde_enc->idle_pc_restore = true;
 
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
@@ -3465,15 +3559,16 @@ void sde_encoder_virt_restore(struct drm_encoder *drm_enc)
 	sde_encoder_control_te(sde_enc, true);
 
 	/*
-	 * During IPC misr ctl register is reset.
-	 * Need to reconfigure misr after every IPC.
-	 */
+   * During IPC misr ctl register is reset.
+   * Need to reconfigure misr after every IPC.
+   */
 	if (atomic_read(&sde_enc->misr_enable))
 		sde_enc->misr_reconfigure = true;
 }
 
 static void sde_encoder_populate_encoder_phys(struct drm_encoder *drm_enc,
-		struct sde_encoder_virt *sde_enc, struct msm_display_mode *msm_mode)
+					      struct sde_encoder_virt *sde_enc,
+					      struct msm_display_mode *msm_mode)
 {
 	struct msm_compression_info *comp_info = &sde_enc->mode_info.comp_info;
 	struct msm_display_info *disp_info = &sde_enc->disp_info;
@@ -3505,27 +3600,29 @@ static void sde_encoder_populate_encoder_phys(struct drm_encoder *drm_enc,
 
 		if (phys != sde_enc->cur_master) {
 			/**
-			 * on DMS request, the encoder will be enabled
-			 * already. Invoke restore to reconfigure the
-			 * new mode.
-			 */
+       * on DMS request, the encoder will be enabled
+       * already. Invoke restore to reconfigure the
+       * new mode.
+       */
 			if ((msm_is_mode_seamless_dms(msm_mode) ||
-				msm_is_mode_seamless_dyn_clk(msm_mode)) &&
-					phys->ops.restore)
+			     msm_is_mode_seamless_dyn_clk(msm_mode)) &&
+			    phys->ops.restore)
 				phys->ops.restore(phys);
 			else if (phys->ops.enable)
 				phys->ops.enable(phys);
 		}
 
-		if (atomic_read(&sde_enc->misr_enable)  && phys->ops.setup_misr &&
-		(sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_VIDEO_MODE)))
+		if (atomic_read(&sde_enc->misr_enable) &&
+		    phys->ops.setup_misr &&
+		    (sde_encoder_check_curr_mode(drm_enc,
+						 MSM_DISPLAY_VIDEO_MODE)))
 			phys->ops.setup_misr(phys, true,
-						sde_enc->misr_frame_count);
+					     sde_enc->misr_frame_count);
 	}
 
 	if ((msm_is_mode_seamless_dms(msm_mode) ||
-			msm_is_mode_seamless_dyn_clk(msm_mode)) &&
-			sde_enc->cur_master->ops.restore)
+	     msm_is_mode_seamless_dyn_clk(msm_mode)) &&
+	    sde_enc->cur_master->ops.restore)
 		sde_enc->cur_master->ops.restore(sde_enc->cur_master);
 	else if (sde_enc->cur_master->ops.enable)
 		sde_enc->cur_master->ops.enable(sde_enc->cur_master);
@@ -3533,8 +3630,8 @@ static void sde_encoder_populate_encoder_phys(struct drm_encoder *drm_enc,
 
 static void sde_encoder_off_work(struct kthread_work *work)
 {
-	struct sde_encoder_virt *sde_enc = container_of(work,
-			struct sde_encoder_virt, delayed_off_work.work);
+	struct sde_encoder_virt *sde_enc = container_of(
+		work, struct sde_encoder_virt, delayed_off_work.work);
 	struct drm_encoder *drm_enc;
 
 	if (!sde_enc) {
@@ -3602,22 +3699,22 @@ static void sde_encoder_virt_enable(struct drm_encoder *drm_enc)
 
 	msm_mode = &c_state->msm_mode;
 	if ((drm_enc->crtc->state->connectors_changed &&
-			sde_encoder_in_clone_mode(drm_enc)) ||
-			!(msm_is_mode_seamless_vrr(msm_mode)
-			|| msm_is_mode_seamless_dms(msm_mode)
-			|| msm_is_mode_seamless_dyn_clk(msm_mode)))
+	     sde_encoder_in_clone_mode(drm_enc)) ||
+	    !(msm_is_mode_seamless_vrr(msm_mode) ||
+	      msm_is_mode_seamless_dms(msm_mode) ||
+	      msm_is_mode_seamless_dyn_clk(msm_mode)))
 		kthread_init_delayed_work(&sde_enc->delayed_off_work,
-			sde_encoder_off_work);
+					  sde_encoder_off_work);
 
 	ret = sde_encoder_resource_control(drm_enc, SDE_ENC_RC_EVENT_KICKOFF);
 	if (ret) {
 		SDE_ERROR_ENC(sde_enc, "sde resource control failed: %d\n",
-				ret);
+			      ret);
 		return;
 	}
 
 	memset(&sde_enc->cur_master->intf_cfg_v1, 0,
-			sizeof(sde_enc->cur_master->intf_cfg_v1));
+	       sizeof(sde_enc->cur_master->intf_cfg_v1));
 
 	/* turn off vsync_in to update tear check configuration */
 	sde_encoder_control_te(sde_enc, false);
@@ -3646,9 +3743,9 @@ void sde_encoder_virt_reset(struct drm_encoder *drm_enc)
 
 	sde_enc->cur_master = NULL;
 	/*
-	 * clear the cached crtc in sde_enc on use case finish, after all the
-	 * outstanding events and timers have been completed
-	 */
+   * clear the cached crtc in sde_enc on use case finish, after all the
+   * outstanding events and timers have been completed
+   */
 	sde_enc->crtc = NULL;
 	memset(&sde_enc->mode_info, 0, sizeof(sde_enc->mode_info));
 
@@ -3714,18 +3811,18 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 
 	flush_delayed_work(&sde_conn->status_work);
 	/*
-	 * For primary command mode and video mode encoders, execute the
-	 * resource control pre-stop operations before the physical encoders
-	 * are disabled, to allow the rsc to transition its states properly.
-	 *
-	 * For other encoder types, rsc should not be enabled until after
-	 * they have been fully disabled, so delay the pre-stop operations
-	 * until after the physical disable calls have returned.
-	 */
+   * For primary command mode and video mode encoders, execute the
+   * resource control pre-stop operations before the physical encoders
+   * are disabled, to allow the rsc to transition its states properly.
+   *
+   * For other encoder types, rsc should not be enabled until after
+   * they have been fully disabled, so delay the pre-stop operations
+   * until after the physical disable calls have returned.
+   */
 	if (sde_enc->disp_info.display_type == SDE_CONNECTOR_PRIMARY &&
 	    (intf_mode == INTF_MODE_CMD || intf_mode == INTF_MODE_VIDEO)) {
 		sde_encoder_resource_control(drm_enc,
-				SDE_ENC_RC_EVENT_PRE_STOP);
+					     SDE_ENC_RC_EVENT_PRE_STOP);
 		for (i = 0; i < sde_enc->num_phys_encs; i++) {
 			struct sde_encoder_phys *phys = sde_enc->phys_encs[i];
 
@@ -3741,14 +3838,14 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 				phys->ops.disable(phys);
 		}
 		sde_encoder_resource_control(drm_enc,
-				SDE_ENC_RC_EVENT_PRE_STOP);
+					     SDE_ENC_RC_EVENT_PRE_STOP);
 	}
 
 	/*
-	 * disable dce after the transfer is complete (for command mode)
-	 * and after physical encoder is disabled, to make sure timing
-	 * engine is already disabled (for video mode).
-	 */
+   * disable dce after the transfer is complete (for command mode)
+   * and after physical encoder is disabled, to make sure timing
+   * engine is already disabled (for video mode).
+   */
 	if (!sde_in_trusted_vm(sde_kms))
 		sde_encoder_dce_disable(sde_enc);
 
@@ -3756,11 +3853,14 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 
 	/* reset connector topology name property */
 	if (sde_enc->cur_master && sde_enc->cur_master->connector &&
-			sde_enc->crtc && sde_enc->crtc->state->active_changed) {
-		ret = sde_rm_update_topology(&sde_kms->rm,
-				sde_enc->cur_master->connector->state, NULL);
+	    sde_enc->crtc && sde_enc->crtc->state->active_changed) {
+		ret = sde_rm_update_topology(
+			&sde_kms->rm, sde_enc->cur_master->connector->state,
+			NULL);
 		if (ret) {
-			SDE_ERROR_ENC(sde_enc, "RM failed to update topology, rc: %d\n", ret);
+			SDE_ERROR_ENC(sde_enc,
+				      "RM failed to update topology, rc: %d\n",
+				      ret);
 			return;
 		}
 	}
@@ -3769,15 +3869,17 @@ static void sde_encoder_virt_disable(struct drm_encoder *drm_enc)
 		sde_encoder_virt_reset(drm_enc);
 }
 
-static void _trigger_encoder_hw_fences_override(struct sde_kms *sde_kms, struct sde_hw_ctl *ctl)
+static void _trigger_encoder_hw_fences_override(struct sde_kms *sde_kms,
+						struct sde_hw_ctl *ctl)
 {
 	/* trigger hw-fences override signal */
-	if (sde_kms && sde_kms->catalog->hw_fence_rev && ctl->ops.hw_fence_trigger_sw_override)
+	if (sde_kms && sde_kms->catalog->hw_fence_rev &&
+	    ctl->ops.hw_fence_trigger_sw_override)
 		ctl->ops.hw_fence_trigger_sw_override(ctl);
 }
 
 void sde_encoder_helper_phys_disable(struct sde_encoder_phys *phys_enc,
-		struct sde_encoder_phys_wb *wb_enc)
+				     struct sde_encoder_phys_wb *wb_enc)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_hw_ctl *ctl = phys_enc->hw_ctl;
@@ -3792,23 +3894,28 @@ void sde_encoder_helper_phys_disable(struct sde_encoder_phys *phys_enc,
 
 	if (wb_enc) {
 		if (wb_enc->hw_wb->ops.bind_pingpong_blk) {
-			wb_enc->hw_wb->ops.bind_pingpong_blk(wb_enc->hw_wb,
-					false, phys_enc->hw_pp->idx);
+			wb_enc->hw_wb->ops.bind_pingpong_blk(
+				wb_enc->hw_wb, false, phys_enc->hw_pp->idx);
 
 			if (ctl->ops.update_bitmask)
 				ctl->ops.update_bitmask(ctl, SDE_HW_FLUSH_WB,
-						wb_enc->hw_wb->idx, true);
+							wb_enc->hw_wb->idx,
+							true);
 		}
 	} else {
 		for (i = 0; i < sde_enc->num_phys_encs; i++) {
-			if (sde_enc->phys_encs[i] && phys_enc->hw_intf->ops.bind_pingpong_blk) {
+			if (sde_enc->phys_encs[i] &&
+			    phys_enc->hw_intf->ops.bind_pingpong_blk) {
 				phys_enc->hw_intf->ops.bind_pingpong_blk(
-						sde_enc->phys_encs[i]->hw_intf, false,
-						sde_enc->phys_encs[i]->hw_pp->idx);
+					sde_enc->phys_encs[i]->hw_intf, false,
+					sde_enc->phys_encs[i]->hw_pp->idx);
 
 				if (ctl->ops.update_bitmask)
-					ctl->ops.update_bitmask(ctl, SDE_HW_FLUSH_INTF,
-							sde_enc->phys_encs[i]->hw_intf->idx, true);
+					ctl->ops.update_bitmask(
+						ctl, SDE_HW_FLUSH_INTF,
+						sde_enc->phys_encs[i]
+							->hw_intf->idx,
+						true);
 			}
 		}
 	}
@@ -3818,42 +3925,49 @@ void sde_encoder_helper_phys_disable(struct sde_encoder_phys *phys_enc,
 
 		if (ctl->ops.update_bitmask && phys_enc->hw_pp->merge_3d)
 			ctl->ops.update_bitmask(ctl, SDE_HW_FLUSH_MERGE_3D,
-					phys_enc->hw_pp->merge_3d->idx, true);
+						phys_enc->hw_pp->merge_3d->idx,
+						true);
 	}
 
 	if (phys_enc->hw_cdm && phys_enc->hw_cdm->ops.bind_pingpong_blk &&
-			phys_enc->hw_pp) {
-		phys_enc->hw_cdm->ops.bind_pingpong_blk(phys_enc->hw_cdm,
-				false, phys_enc->hw_pp->idx);
+	    phys_enc->hw_pp) {
+		phys_enc->hw_cdm->ops.bind_pingpong_blk(phys_enc->hw_cdm, false,
+							phys_enc->hw_pp->idx);
 
 		if (ctl->ops.update_bitmask)
 			ctl->ops.update_bitmask(ctl, SDE_HW_FLUSH_CDM,
-					phys_enc->hw_cdm->idx, true);
+						phys_enc->hw_cdm->idx, true);
 	}
 
-	if (phys_enc->hw_dnsc_blur && phys_enc->hw_dnsc_blur->ops.bind_pingpong_blk &&
-			phys_enc->hw_pp) {
-		phys_enc->hw_dnsc_blur->ops.bind_pingpong_blk(phys_enc->hw_dnsc_blur,
-				false, phys_enc->hw_pp->idx, phys_enc->in_clone_mode);
+	if (phys_enc->hw_dnsc_blur &&
+	    phys_enc->hw_dnsc_blur->ops.bind_pingpong_blk && phys_enc->hw_pp) {
+		phys_enc->hw_dnsc_blur->ops.bind_pingpong_blk(
+			phys_enc->hw_dnsc_blur, false, phys_enc->hw_pp->idx,
+			phys_enc->in_clone_mode);
 
 		if (ctl->ops.update_dnsc_blur_bitmask)
-			ctl->ops.update_dnsc_blur_bitmask(ctl, phys_enc->hw_dnsc_blur->idx, true);
+			ctl->ops.update_dnsc_blur_bitmask(
+				ctl, phys_enc->hw_dnsc_blur->idx, true);
 	}
 
 	if (phys_enc == sde_enc->cur_master && phys_enc->hw_pp &&
-			ctl->ops.reset_post_disable)
-		ctl->ops.reset_post_disable(ctl, &phys_enc->intf_cfg_v1,
-				phys_enc->hw_pp->merge_3d ?
-				phys_enc->hw_pp->merge_3d->idx : 0);
+	    ctl->ops.reset_post_disable)
+		ctl->ops.reset_post_disable(
+			ctl, &phys_enc->intf_cfg_v1,
+			phys_enc->hw_pp->merge_3d ?
+				phys_enc->hw_pp->merge_3d->idx :
+				0);
 
 	for (i = 0; i < MAX_CHANNELS_PER_ENC; i++) {
 		hw_dsc = sde_enc->hw_dsc[i];
 
 		if (hw_dsc && hw_dsc->ops.bind_pingpong_blk) {
-			hw_dsc->ops.bind_pingpong_blk(hw_dsc, false, PINGPONG_MAX);
+			hw_dsc->ops.bind_pingpong_blk(hw_dsc, false,
+						      PINGPONG_MAX);
 
 			if (ctl->ops.update_bitmask)
-				ctl->ops.update_bitmask(ctl, SDE_HW_FLUSH_DSC, hw_dsc->idx, true);
+				ctl->ops.update_bitmask(ctl, SDE_HW_FLUSH_DSC,
+							hw_dsc->idx, true);
 		}
 	}
 
@@ -3881,13 +3995,14 @@ void sde_encoder_helper_phys_reset(struct sde_encoder_phys *phys_enc)
 }
 
 static enum sde_intf sde_encoder_get_intf(struct sde_mdss_cfg *catalog,
-		enum sde_intf_type type, u32 controller_id)
+					  enum sde_intf_type type,
+					  u32 controller_id)
 {
 	int i = 0;
 
 	for (i = 0; i < catalog->intf_count; i++) {
-		if (catalog->intf[i].type == type
-		    && catalog->intf[i].controller_id == controller_id) {
+		if (catalog->intf[i].type == type &&
+		    catalog->intf[i].controller_id == controller_id) {
 			return catalog->intf[i].id;
 		}
 	}
@@ -3896,7 +4011,8 @@ static enum sde_intf sde_encoder_get_intf(struct sde_mdss_cfg *catalog,
 }
 
 static enum sde_wb sde_encoder_get_wb(struct sde_mdss_cfg *catalog,
-		enum sde_intf_type type, u32 controller_id)
+				      enum sde_intf_type type,
+				      u32 controller_id)
 {
 	if (controller_id < catalog->wb_count)
 		return catalog->wb[controller_id].id;
@@ -3904,8 +4020,8 @@ static enum sde_wb sde_encoder_get_wb(struct sde_mdss_cfg *catalog,
 	return WB_MAX;
 }
 
-void sde_encoder_hw_fence_status(struct sde_kms *sde_kms,
-	struct drm_crtc *crtc, struct sde_hw_ctl *hw_ctl)
+void sde_encoder_hw_fence_status(struct sde_kms *sde_kms, struct drm_crtc *crtc,
+				 struct sde_hw_ctl *hw_ctl)
 {
 	u64 start_timestamp, end_timestamp;
 
@@ -3914,35 +4030,32 @@ void sde_encoder_hw_fence_status(struct sde_kms *sde_kms,
 		return;
 	}
 
-	if ((sde_kms->debugfs_hw_fence & SDE_INPUT_HW_FENCE_TIMESTAMP)
-		&& sde_kms->hw_mdp->ops.hw_fence_input_status) {
-
-		sde_kms->hw_mdp->ops.hw_fence_input_status(sde_kms->hw_mdp,
-			&start_timestamp, &end_timestamp);
+	if ((sde_kms->debugfs_hw_fence & SDE_INPUT_HW_FENCE_TIMESTAMP) &&
+	    sde_kms->hw_mdp->ops.hw_fence_input_status) {
+		sde_kms->hw_mdp->ops.hw_fence_input_status(
+			sde_kms->hw_mdp, &start_timestamp, &end_timestamp);
 		trace_sde_hw_fence_status(crtc->base.id, "input",
-			start_timestamp, end_timestamp);
+					  start_timestamp, end_timestamp);
 	}
 
-	if ((sde_kms->debugfs_hw_fence & SDE_OUTPUT_HW_FENCE_TIMESTAMP)
-		&& hw_ctl->ops.hw_fence_output_status) {
-
-		hw_ctl->ops.hw_fence_output_status(hw_ctl,
-			&start_timestamp, &end_timestamp);
+	if ((sde_kms->debugfs_hw_fence & SDE_OUTPUT_HW_FENCE_TIMESTAMP) &&
+	    hw_ctl->ops.hw_fence_output_status) {
+		hw_ctl->ops.hw_fence_output_status(hw_ctl, &start_timestamp,
+						   &end_timestamp);
 		trace_sde_hw_fence_status(crtc->base.id, "output",
-			start_timestamp, end_timestamp);
+					  start_timestamp, end_timestamp);
 	}
 }
 
 void sde_encoder_perf_uidle_status(struct sde_kms *sde_kms,
-	struct drm_crtc *crtc)
+				   struct drm_crtc *crtc)
 {
 	struct sde_hw_uidle *uidle;
 	struct sde_uidle_cntr cntr;
 	struct sde_uidle_status status;
 
 	if (!sde_kms || !crtc || !sde_kms->hw_uidle) {
-		pr_err("invalid params %d %d\n",
-			!sde_kms, !crtc);
+		pr_err("invalid params %d %d\n", !sde_kms, !crtc);
 		return;
 	}
 
@@ -3951,42 +4064,34 @@ void sde_encoder_perf_uidle_status(struct sde_kms *sde_kms,
 		return;
 
 	uidle = sde_kms->hw_uidle;
-	if ((sde_kms->catalog->uidle_cfg.debugfs_perf & SDE_PERF_UIDLE_STATUS)
-			&& uidle->ops.uidle_get_status) {
-
+	if ((sde_kms->catalog->uidle_cfg.debugfs_perf &
+	     SDE_PERF_UIDLE_STATUS) &&
+	    uidle->ops.uidle_get_status) {
 		uidle->ops.uidle_get_status(uidle, &status);
 		trace_sde_perf_uidle_status(
-			crtc->base.id,
-			status.uidle_danger_status_0,
+			crtc->base.id, status.uidle_danger_status_0,
 			status.uidle_danger_status_1,
-			status.uidle_safe_status_0,
-			status.uidle_safe_status_1,
-			status.uidle_idle_status_0,
-			status.uidle_idle_status_1,
-			status.uidle_fal_status_0,
-			status.uidle_fal_status_1,
-			status.uidle_status,
-			status.uidle_en_fal10);
+			status.uidle_safe_status_0, status.uidle_safe_status_1,
+			status.uidle_idle_status_0, status.uidle_idle_status_1,
+			status.uidle_fal_status_0, status.uidle_fal_status_1,
+			status.uidle_status, status.uidle_en_fal10);
 	}
 
-	if ((sde_kms->catalog->uidle_cfg.debugfs_perf & SDE_PERF_UIDLE_CNT)
-			&& uidle->ops.uidle_get_cntr) {
-
+	if ((sde_kms->catalog->uidle_cfg.debugfs_perf & SDE_PERF_UIDLE_CNT) &&
+	    uidle->ops.uidle_get_cntr) {
 		uidle->ops.uidle_get_cntr(uidle, &cntr);
-		trace_sde_perf_uidle_cntr(
-			crtc->base.id,
-			cntr.fal1_gate_cntr,
-			cntr.fal10_gate_cntr,
-			cntr.fal_wait_gate_cntr,
-			cntr.fal1_num_transitions_cntr,
-			cntr.fal10_num_transitions_cntr,
-			cntr.min_gate_cntr,
-			cntr.max_gate_cntr);
+		trace_sde_perf_uidle_cntr(crtc->base.id, cntr.fal1_gate_cntr,
+					  cntr.fal10_gate_cntr,
+					  cntr.fal_wait_gate_cntr,
+					  cntr.fal1_num_transitions_cntr,
+					  cntr.fal10_num_transitions_cntr,
+					  cntr.min_gate_cntr,
+					  cntr.max_gate_cntr);
 	}
 }
 
 static void sde_encoder_vblank_callback(struct drm_encoder *drm_enc,
-		struct sde_encoder_phys *phy_enc)
+					struct sde_encoder_phys *phy_enc)
 {
 	struct sde_encoder_virt *sde_enc = NULL;
 	unsigned long lock_flags;
@@ -3999,10 +4104,11 @@ static void sde_encoder_vblank_callback(struct drm_encoder *drm_enc,
 	sde_enc = to_sde_encoder_virt(drm_enc);
 
 	/*
-	 * calculate accurate vsync timestamp when available
-	 * set current time otherwise
-	 */
-	if (test_bit(SDE_FEATURE_HW_VSYNC_TS, phy_enc->sde_kms->catalog->features))
+   * calculate accurate vsync timestamp when available
+   * set current time otherwise
+   */
+	if (test_bit(SDE_FEATURE_HW_VSYNC_TS,
+		     phy_enc->sde_kms->catalog->features))
 		ts = sde_encoder_calc_last_vsync_timestamp(drm_enc);
 	if (!ts)
 		ts = ktime_get();
@@ -4018,14 +4124,16 @@ static void sde_encoder_vblank_callback(struct drm_encoder *drm_enc,
 		sde_encoder_perf_uidle_status(phy_enc->sde_kms, sde_enc->crtc);
 
 	if (phy_enc->sde_kms->debugfs_hw_fence)
-		sde_encoder_hw_fence_status(phy_enc->sde_kms, sde_enc->crtc, phy_enc->hw_ctl);
+		sde_encoder_hw_fence_status(phy_enc->sde_kms, sde_enc->crtc,
+					    phy_enc->hw_ctl);
 
-	SDE_EVT32(DRMID(drm_enc), ktime_to_us(ts), atomic_read(&phy_enc->vsync_cnt));
+	SDE_EVT32(DRMID(drm_enc), ktime_to_us(ts),
+		  atomic_read(&phy_enc->vsync_cnt));
 	SDE_ATRACE_END("encoder_vblank_callback");
 }
 
 static void sde_encoder_underrun_callback(struct drm_encoder *drm_enc,
-		struct sde_encoder_phys *phy_enc)
+					  struct sde_encoder_phys *phy_enc)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	if (!phy_enc)
@@ -4036,15 +4144,15 @@ static void sde_encoder_underrun_callback(struct drm_encoder *drm_enc,
 	SDE_EVT32(DRMID(drm_enc), atomic_read(&phy_enc->underrun_cnt));
 
 	if (sde_enc->cur_master &&
-			sde_enc->cur_master->ops.get_underrun_line_count)
+	    sde_enc->cur_master->ops.get_underrun_line_count)
 		sde_enc->cur_master->ops.get_underrun_line_count(
-				sde_enc->cur_master);
+			sde_enc->cur_master);
 
 	trace_sde_encoder_underrun(DRMID(drm_enc),
-		atomic_read(&phy_enc->underrun_cnt));
+				   atomic_read(&phy_enc->underrun_cnt));
 
 	if (phy_enc->sde_kms &&
-			phy_enc->sde_kms->catalog->uidle_cfg.debugfs_perf)
+	    phy_enc->sde_kms->catalog->uidle_cfg.debugfs_perf)
 		sde_encoder_perf_uidle_status(phy_enc->sde_kms, sde_enc->crtc);
 
 	SDE_DBG_CTRL("stop_ftrace");
@@ -4054,7 +4162,8 @@ static void sde_encoder_underrun_callback(struct drm_encoder *drm_enc,
 }
 
 void sde_encoder_register_vblank_callback(struct drm_encoder *drm_enc,
-		void (*vbl_cb)(void *, ktime_t), void *vbl_data)
+					  void (*vbl_cb)(void *, ktime_t),
+					  void *vbl_data)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	unsigned long lock_flags;
@@ -4085,9 +4194,10 @@ void sde_encoder_register_vblank_callback(struct drm_encoder *drm_enc,
 	sde_enc->vblank_enabled = enable;
 }
 
-void sde_encoder_register_frame_event_callback(struct drm_encoder *drm_enc,
-			void (*frame_event_cb)(void *, u32 event, ktime_t ts),
-			struct drm_crtc *crtc)
+void sde_encoder_register_frame_event_callback(
+	struct drm_encoder *drm_enc,
+	void (*frame_event_cb)(void *, u32 event, ktime_t ts),
+	struct drm_crtc *crtc)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	unsigned long lock_flags;
@@ -4108,9 +4218,9 @@ void sde_encoder_register_frame_event_callback(struct drm_encoder *drm_enc,
 	spin_unlock_irqrestore(&sde_enc->enc_spinlock, lock_flags);
 }
 
-static void sde_encoder_frame_done_callback(
-		struct drm_encoder *drm_enc,
-		struct sde_encoder_phys *ready_phys, u32 event)
+static void sde_encoder_frame_done_callback(struct drm_encoder *drm_enc,
+					    struct sde_encoder_phys *ready_phys,
+					    u32 event)
 {
 	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
 	struct sde_kms *sde_kms = sde_encoder_get_kms(&sde_enc->base);
@@ -4122,50 +4232,55 @@ static void sde_encoder_frame_done_callback(
 
 	if (!sde_kms || !sde_enc->cur_master) {
 		SDE_ERROR("invalid param: sde_kms %pK, cur_master %pK\n",
-				sde_kms, sde_enc->cur_master);
+			  sde_kms, sde_enc->cur_master);
 		return;
 	}
 
 	sde_enc->crtc_frame_event_cb_data.connector =
-				sde_enc->cur_master->connector;
+		sde_enc->cur_master->connector;
 	if (sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
 		is_cmd_mode = true;
 
-	/* get precise vsync timestamp for retire fence, if precise vsync timestamp is enabled */
+	/* get precise vsync timestamp for retire fence, if precise vsync timestamp is
+   * enabled */
 	if (test_bit(SDE_FEATURE_HW_VSYNC_TS, sde_kms->catalog->features) &&
 	    (event & SDE_ENCODER_FRAME_EVENT_SIGNAL_RETIRE_FENCE) &&
-	    (!(event & (SDE_ENCODER_FRAME_EVENT_ERROR | SDE_ENCODER_FRAME_EVENT_PANEL_DEAD))))
+	    (!(event & (SDE_ENCODER_FRAME_EVENT_ERROR |
+			SDE_ENCODER_FRAME_EVENT_PANEL_DEAD))))
 		ts = sde_encoder_calc_last_vsync_timestamp(drm_enc);
 
 	/*
-	 * get current ktime for other events and when precise timestamp is not
-	 * available for retire-fence
-	 */
+   * get current ktime for other events and when precise timestamp is not
+   * available for retire-fence
+   */
 	if (!ts)
 		ts = ktime_get();
 
-	if (event & (SDE_ENCODER_FRAME_EVENT_DONE
-			| SDE_ENCODER_FRAME_EVENT_ERROR
-			| SDE_ENCODER_FRAME_EVENT_PANEL_DEAD) && is_cmd_mode
-			&& !sde_encoder_check_ctl_done_support(drm_enc)) {
-
+	if (event & (SDE_ENCODER_FRAME_EVENT_DONE |
+		     SDE_ENCODER_FRAME_EVENT_ERROR |
+		     SDE_ENCODER_FRAME_EVENT_PANEL_DEAD) &&
+	    is_cmd_mode && !sde_encoder_check_ctl_done_support(drm_enc)) {
 		if (ready_phys->connector)
 			topology = sde_connector_get_topology_name(
-							ready_phys->connector);
+				ready_phys->connector);
 
 		/* One of the physical encoders has become idle */
 		for (i = 0; i < sde_enc->num_phys_encs; i++) {
 			if (sde_enc->phys_encs[i] == ready_phys) {
-				SDE_EVT32_VERBOSE(DRMID(drm_enc), i,
-				     atomic_read(&sde_enc->frame_done_cnt[i]));
+				SDE_EVT32_VERBOSE(
+					DRMID(drm_enc), i,
+					atomic_read(
+						&sde_enc->frame_done_cnt[i]));
 				if (!atomic_add_unless(
-					&sde_enc->frame_done_cnt[i], 1, 2)) {
+					    &sde_enc->frame_done_cnt[i], 1,
+					    2)) {
 					SDE_EVT32(DRMID(drm_enc), event,
-						ready_phys->intf_idx,
-						SDE_EVTLOG_ERROR);
+						  ready_phys->intf_idx,
+						  SDE_EVTLOG_ERROR);
 					SDE_ERROR_ENC(sde_enc,
-						"intf idx:%d, event:%d\n",
-						ready_phys->intf_idx, event);
+						      "intf idx:%d, event:%d\n",
+						      ready_phys->intf_idx,
+						      event);
 					return;
 				}
 			}
@@ -4178,13 +4293,15 @@ static void sde_encoder_frame_done_callback(
 		if (trigger) {
 			if (sde_enc->crtc_frame_event_cb)
 				sde_enc->crtc_frame_event_cb(
-					&sde_enc->crtc_frame_event_cb_data, event, ts);
+					&sde_enc->crtc_frame_event_cb_data,
+					event, ts);
 			for (i = 0; i < sde_enc->num_phys_encs; i++)
 				atomic_add_unless(&sde_enc->frame_done_cnt[i],
-						-1, 0);
+						  -1, 0);
 		}
 	} else if (sde_enc->crtc_frame_event_cb) {
-		sde_enc->crtc_frame_event_cb(&sde_enc->crtc_frame_event_cb_data, event, ts);
+		sde_enc->crtc_frame_event_cb(&sde_enc->crtc_frame_event_cb_data,
+					     event, ts);
 	}
 }
 
@@ -4199,18 +4316,18 @@ int sde_encoder_idle_request(struct drm_encoder *drm_enc)
 
 	sde_enc = to_sde_encoder_virt(drm_enc);
 	sde_encoder_resource_control(&sde_enc->base,
-						SDE_ENC_RC_EVENT_ENTER_IDLE);
+				     SDE_ENC_RC_EVENT_ENTER_IDLE);
 
 	return 0;
 }
 
 /**
-* _sde_encoder_update_retire_txq - update tx queue for a retire hw fence
-* phys: Pointer to physical encoder structure
-*
-*/
+ * _sde_encoder_update_retire_txq - update tx queue for a retire hw fence
+ * phys: Pointer to physical encoder structure
+ *
+ */
 static inline void _sde_encoder_update_retire_txq(struct sde_encoder_phys *phys,
-	struct sde_kms *sde_kms)
+						  struct sde_kms *sde_kms)
 {
 	struct sde_connector *c_conn;
 	int line_count;
@@ -4221,11 +4338,12 @@ static inline void _sde_encoder_update_retire_txq(struct sde_encoder_phys *phys,
 		return;
 	}
 
-	line_count = sde_connector_get_property(phys->connector->state,
-			CONNECTOR_PROP_EARLY_FENCE_LINE);
+	line_count = sde_connector_get_property(
+		phys->connector->state, CONNECTOR_PROP_EARLY_FENCE_LINE);
 	if (c_conn->hwfence_wb_retire_fences_enable)
-		sde_fence_update_hw_fences_txq(c_conn->retire_fence, false, line_count,
-			sde_kms->debugfs_hw_fence);
+		sde_fence_update_hw_fences_txq(c_conn->retire_fence, false,
+					       line_count,
+					       sde_kms->debugfs_hw_fence);
 }
 
 /**
@@ -4236,10 +4354,9 @@ static inline void _sde_encoder_update_retire_txq(struct sde_encoder_phys *phys,
  * config_changed: if true new config is applied, avoid increment of retire
  *	count if false
  */
-static inline void _sde_encoder_trigger_flush(struct drm_encoder *drm_enc,
-		struct sde_encoder_phys *phys,
-		struct sde_ctl_flush_cfg *extra_flush,
-		bool config_changed)
+static inline void _sde_encoder_trigger_flush(
+	struct drm_encoder *drm_enc, struct sde_encoder_phys *phys,
+	struct sde_ctl_flush_cfg *extra_flush, bool config_changed)
 {
 	struct sde_hw_ctl *ctl;
 	unsigned long lock_flags;
@@ -4249,7 +4366,7 @@ static inline void _sde_encoder_trigger_flush(struct drm_encoder *drm_enc,
 
 	if (!drm_enc || !phys) {
 		SDE_ERROR("invalid argument(s), drm_enc %d, phys_enc %d\n",
-				!drm_enc, !phys);
+			  !drm_enc, !phys);
 		return;
 	}
 
@@ -4269,16 +4386,16 @@ static inline void _sde_encoder_trigger_flush(struct drm_encoder *drm_enc,
 
 	if (phys->split_role == ENC_ROLE_SKIP) {
 		SDE_DEBUG_ENC(to_sde_encoder_virt(phys->parent),
-				"skip flush pp%d ctl%d\n",
-				phys->hw_pp->idx - PINGPONG_0,
-				ctl->idx - CTL_0);
+			      "skip flush pp%d ctl%d\n",
+			      phys->hw_pp->idx - PINGPONG_0, ctl->idx - CTL_0);
 		return;
 	}
 
 	/* update pending counts and trigger kickoff ctl flush atomically */
 	spin_lock_irqsave(&sde_enc->enc_spinlock, lock_flags);
 
-	if (phys->ops.is_master && phys->ops.is_master(phys) && config_changed) {
+	if (phys->ops.is_master && phys->ops.is_master(phys) &&
+	    config_changed) {
 		atomic_inc(&phys->pending_retire_fence_cnt);
 		atomic_inc(&phys->pending_ctl_start_cnt);
 	}
@@ -4286,13 +4403,15 @@ static inline void _sde_encoder_trigger_flush(struct drm_encoder *drm_enc,
 	pend_ret_fence_cnt = atomic_read(&phys->pending_retire_fence_cnt);
 
 	if (phys->hw_intf && phys->hw_intf->cap->type == INTF_DP &&
-			ctl->ops.update_bitmask) {
+	    ctl->ops.update_bitmask) {
 		/* perform peripheral flush on every frame update for dp dsc */
 		if (phys->comp_type == MSM_DISPLAY_COMPRESSION_DSC &&
-				phys->comp_ratio && c_conn->ops.update_pps)
-			c_conn->ops.update_pps(phys->connector, NULL, c_conn->display);
+		    phys->comp_ratio && c_conn->ops.update_pps)
+			c_conn->ops.update_pps(phys->connector, NULL,
+					       c_conn->display);
 
-		ctl->ops.update_bitmask(ctl, SDE_HW_FLUSH_PERIPH, phys->hw_intf->idx, 1);
+		ctl->ops.update_bitmask(ctl, SDE_HW_FLUSH_PERIPH,
+					phys->hw_intf->idx, 1);
 	}
 
 	/* update flush mask to ignore fence error frame commit */
@@ -4301,8 +4420,8 @@ static inline void _sde_encoder_trigger_flush(struct drm_encoder *drm_enc,
 		SDE_EVT32(DRMID(drm_enc), SDE_EVTLOG_FUNC_CASE1);
 	}
 
-	if ((extra_flush && extra_flush->pending_flush_mask)
-			&& ctl->ops.update_pending_flush)
+	if ((extra_flush && extra_flush->pending_flush_mask) &&
+	    ctl->ops.update_pending_flush)
 		ctl->ops.update_pending_flush(ctl, extra_flush);
 
 	phys->ops.trigger_flush(phys);
@@ -4310,17 +4429,17 @@ static inline void _sde_encoder_trigger_flush(struct drm_encoder *drm_enc,
 	spin_unlock_irqrestore(&sde_enc->enc_spinlock, lock_flags);
 
 	if (ctl->ops.get_pending_flush) {
-		struct sde_ctl_flush_cfg pending_flush = {0,};
+		struct sde_ctl_flush_cfg pending_flush = {
+			0,
+		};
 
 		ctl->ops.get_pending_flush(ctl, &pending_flush);
 		SDE_EVT32(DRMID(drm_enc), phys->intf_idx - INTF_0,
-				ctl->idx - CTL_0,
-				pending_flush.pending_flush_mask,
-				pend_ret_fence_cnt);
+			  ctl->idx - CTL_0, pending_flush.pending_flush_mask,
+			  pend_ret_fence_cnt);
 	} else {
 		SDE_EVT32(DRMID(drm_enc), phys->intf_idx - INTF_0,
-				ctl->idx - CTL_0,
-				pend_ret_fence_cnt);
+			  ctl->idx - CTL_0, pend_ret_fence_cnt);
 	}
 }
 
@@ -4355,10 +4474,8 @@ static inline void _sde_encoder_trigger_start(struct sde_encoder_phys *phys)
 	sde_enc = to_sde_encoder_virt(phys->parent);
 
 	if (phys->split_role == ENC_ROLE_SKIP) {
-		SDE_DEBUG_ENC(sde_enc,
-				"skip start pp%d ctl%d\n",
-				phys->hw_pp->idx - PINGPONG_0,
-				ctl->idx - CTL_0);
+		SDE_DEBUG_ENC(sde_enc, "skip start pp%d ctl%d\n",
+			      phys->hw_pp->idx - PINGPONG_0, ctl->idx - CTL_0);
 		return;
 	}
 
@@ -4414,11 +4531,11 @@ void sde_encoder_helper_hw_reset(struct sde_encoder_phys *phys_enc)
 	if (!ctl || !ctl->ops.reset)
 		return;
 
-	SDE_DEBUG_ENC(sde_enc, "ctl %d reset\n",  ctl->idx);
+	SDE_DEBUG_ENC(sde_enc, "ctl %d reset\n", ctl->idx);
 	SDE_EVT32(DRMID(phys_enc->parent), ctl->idx);
 
 	if (phys_enc->ops.is_master && phys_enc->ops.is_master(phys_enc) &&
-			phys_enc->connector) {
+	    phys_enc->connector) {
 		sde_con = to_sde_connector(phys_enc->connector);
 		sde_con_disp = sde_connector_get_display(phys_enc->connector);
 
@@ -4426,7 +4543,7 @@ void sde_encoder_helper_hw_reset(struct sde_encoder_phys *phys_enc)
 			rc = sde_con->ops.soft_reset(sde_con_disp);
 			if (rc) {
 				SDE_ERROR_ENC(sde_enc,
-						"connector soft reset failure\n");
+					      "connector soft reset failure\n");
 				SDE_DBG_DUMP(SDE_DBG_BUILT_IN_ALL, "panic");
 			}
 		}
@@ -4435,7 +4552,8 @@ void sde_encoder_helper_hw_reset(struct sde_encoder_phys *phys_enc)
 	phys_enc->enable_state = SDE_ENC_ENABLED;
 }
 
-void sde_encoder_helper_update_out_fence_txq(struct sde_encoder_virt *sde_enc, bool is_vid)
+void sde_encoder_helper_update_out_fence_txq(struct sde_encoder_virt *sde_enc,
+					     bool is_vid)
 {
 	struct sde_crtc *sde_crtc;
 	struct sde_kms *sde_kms = NULL;
@@ -4453,8 +4571,8 @@ void sde_encoder_helper_update_out_fence_txq(struct sde_encoder_virt *sde_enc, b
 	sde_crtc = to_sde_crtc(sde_enc->crtc);
 
 	SDE_EVT32(DRMID(sde_enc->crtc), is_vid);
-	sde_fence_update_hw_fences_txq(sde_crtc->output_fence, is_vid, 0, sde_kms ?
-		sde_kms->debugfs_hw_fence : 0);
+	sde_fence_update_hw_fences_txq(sde_crtc->output_fence, is_vid, 0,
+				       sde_kms ? sde_kms->debugfs_hw_fence : 0);
 }
 
 /**
@@ -4469,15 +4587,17 @@ void sde_encoder_helper_update_out_fence_txq(struct sde_encoder_virt *sde_enc, b
  *	incrementing the retire count if false.
  */
 static void _sde_encoder_kickoff_phys(struct sde_encoder_virt *sde_enc,
-		bool config_changed)
+				      bool config_changed)
 {
 	struct sde_hw_ctl *ctl;
 	uint32_t i;
-	struct sde_ctl_flush_cfg pending_flush = {0,};
+	struct sde_ctl_flush_cfg pending_flush = {
+		0,
+	};
 	u32 pending_kickoff_cnt;
 	struct msm_drm_private *priv = NULL;
 	struct sde_kms *sde_kms = NULL;
-	struct sde_crtc_misr_info crtc_misr_info = {false, 0};
+	struct sde_crtc_misr_info crtc_misr_info = { false, 0 };
 	bool is_regdma_blocking = false, is_vid_mode = false;
 	struct sde_crtc *sde_crtc;
 
@@ -4493,8 +4613,9 @@ static void _sde_encoder_kickoff_phys(struct sde_encoder_virt *sde_enc,
 		if (!sde_encoder_in_clone_mode(&sde_enc->base))
 			sde_crtc->input_fence_status = 0;
 
-		SDE_EVT32(DRMID(&sde_enc->base), sde_encoder_in_clone_mode(&sde_enc->base),
-			sde_crtc->input_fence_status);
+		SDE_EVT32(DRMID(&sde_enc->base),
+			  sde_encoder_in_clone_mode(&sde_enc->base),
+			  sde_crtc->input_fence_status);
 
 		goto handle_elevated_ahb_vote;
 	}
@@ -4502,8 +4623,8 @@ static void _sde_encoder_kickoff_phys(struct sde_encoder_virt *sde_enc,
 	if (sde_encoder_check_curr_mode(&sde_enc->base, MSM_DISPLAY_VIDEO_MODE))
 		is_vid_mode = true;
 
-	is_regdma_blocking = (is_vid_mode ||
-			_sde_encoder_is_autorefresh_enabled(sde_enc));
+	is_regdma_blocking =
+		(is_vid_mode || _sde_encoder_is_autorefresh_enabled(sde_enc));
 
 	/* don't perform flush/start operations for slave encoders */
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
@@ -4519,14 +4640,14 @@ static void _sde_encoder_kickoff_phys(struct sde_encoder_virt *sde_enc,
 
 		if (phys->connector)
 			topology = sde_connector_get_topology_name(
-					phys->connector);
+				phys->connector);
 
 		if (!phys->ops.needs_single_flush ||
-				!phys->ops.needs_single_flush(phys)) {
+		    !phys->ops.needs_single_flush(phys)) {
 			if (config_changed && ctl->ops.reg_dma_flush)
 				ctl->ops.reg_dma_flush(ctl, is_regdma_blocking);
 			_sde_encoder_trigger_flush(&sde_enc->base, phys, 0x0,
-					config_changed);
+						   config_changed);
 		} else if (ctl->ops.get_pending_flush) {
 			ctl->ops.get_pending_flush(ctl, &pending_flush);
 		}
@@ -4538,8 +4659,7 @@ static void _sde_encoder_kickoff_phys(struct sde_encoder_virt *sde_enc,
 		if (config_changed && ctl->ops.reg_dma_flush)
 			ctl->ops.reg_dma_flush(ctl, is_regdma_blocking);
 		_sde_encoder_trigger_flush(&sde_enc->base, sde_enc->cur_master,
-						&pending_flush,
-						config_changed);
+					   &pending_flush, config_changed);
 	}
 
 	/* update pending_kickoff_cnt AFTER flush but before trigger start */
@@ -4550,27 +4670,28 @@ static void _sde_encoder_kickoff_phys(struct sde_encoder_virt *sde_enc,
 			continue;
 
 		if (!phys->ops.needs_single_flush ||
-				!phys->ops.needs_single_flush(phys)) {
+		    !phys->ops.needs_single_flush(phys)) {
 			pending_kickoff_cnt =
-					sde_encoder_phys_inc_pending(phys);
+				sde_encoder_phys_inc_pending(phys);
 			SDE_EVT32(pending_kickoff_cnt, SDE_EVTLOG_FUNC_CASE1);
 		} else {
 			pending_kickoff_cnt =
-					sde_encoder_phys_inc_pending(phys);
+				sde_encoder_phys_inc_pending(phys);
 			SDE_EVT32(pending_kickoff_cnt,
-					pending_flush.pending_flush_mask, SDE_EVTLOG_FUNC_CASE2);
+				  pending_flush.pending_flush_mask,
+				  SDE_EVTLOG_FUNC_CASE2);
 		}
 	}
 
 	if (atomic_read(&sde_enc->misr_enable))
 		sde_encoder_misr_configure(&sde_enc->base, true,
-				sde_enc->misr_frame_count);
+					   sde_enc->misr_frame_count);
 
 	sde_crtc_get_misr_info(sde_enc->crtc, &crtc_misr_info);
 	if (crtc_misr_info.misr_enable && sde_crtc &&
-				sde_crtc->misr_reconfigure) {
+	    sde_crtc->misr_reconfigure) {
 		sde_crtc_misr_setup(sde_enc->crtc, true,
-				crtc_misr_info.misr_frame_count);
+				    crtc_misr_info.misr_frame_count);
 		sde_crtc->misr_reconfigure = false;
 	}
 
@@ -4581,19 +4702,16 @@ handle_elevated_ahb_vote:
 		sde_kms = sde_encoder_get_kms(&sde_enc->base);
 		priv = sde_enc->base.dev->dev_private;
 		if (sde_kms != NULL) {
-			sde_power_scale_reg_bus(&priv->phandle,
-					VOTE_INDEX_LOW,
-					false);
+			sde_power_scale_reg_bus(&priv->phandle, VOTE_INDEX_LOW,
+						false);
 		}
 		sde_enc->elevated_ahb_vote = false;
 	}
-
 }
 
 static void _sde_encoder_ppsplit_swap_intf_for_right_only_update(
-		struct drm_encoder *drm_enc,
-		unsigned long *affected_displays,
-		int num_active_phys)
+	struct drm_encoder *drm_enc, unsigned long *affected_displays,
+	int num_active_phys)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_encoder_phys *master;
@@ -4613,44 +4731,44 @@ static void _sde_encoder_ppsplit_swap_intf_for_right_only_update(
 		return;
 
 	/*
-	 * For pingpong split, the slave pingpong won't generate IRQs. For
-	 * right-only updates, we can't swap pingpongs, or simply swap the
-	 * master/slave assignment, we actually have to swap the interfaces
-	 * so that the master physical encoder will use a pingpong/interface
-	 * that generates irqs on which to wait.
-	 */
+   * For pingpong split, the slave pingpong won't generate IRQs. For
+   * right-only updates, we can't swap pingpongs, or simply swap the
+   * master/slave assignment, we actually have to swap the interfaces
+   * so that the master physical encoder will use a pingpong/interface
+   * that generates irqs on which to wait.
+   */
 	is_right_only = !test_bit(0, affected_displays) &&
 			test_bit(1, affected_displays);
 
 	if (is_right_only && !sde_enc->intfs_swapped) {
 		/* right-only update swap interfaces */
 		swap(sde_enc->phys_encs[0]->intf_idx,
-				sde_enc->phys_encs[1]->intf_idx);
+		     sde_enc->phys_encs[1]->intf_idx);
 		sde_enc->intfs_swapped = true;
 	} else if (!is_right_only && sde_enc->intfs_swapped) {
 		/* left-only or full update, swap back */
 		swap(sde_enc->phys_encs[0]->intf_idx,
-				sde_enc->phys_encs[1]->intf_idx);
+		     sde_enc->phys_encs[1]->intf_idx);
 		sde_enc->intfs_swapped = false;
 	}
 
 	SDE_DEBUG_ENC(sde_enc,
-			"right_only %d swapped %d phys0->intf%d, phys1->intf%d\n",
-			is_right_only, sde_enc->intfs_swapped,
-			sde_enc->phys_encs[0]->intf_idx - INTF_0,
-			sde_enc->phys_encs[1]->intf_idx - INTF_0);
+		      "right_only %d swapped %d phys0->intf%d, phys1->intf%d\n",
+		      is_right_only, sde_enc->intfs_swapped,
+		      sde_enc->phys_encs[0]->intf_idx - INTF_0,
+		      sde_enc->phys_encs[1]->intf_idx - INTF_0);
 	SDE_EVT32(DRMID(drm_enc), is_right_only, sde_enc->intfs_swapped,
-			sde_enc->phys_encs[0]->intf_idx - INTF_0,
-			sde_enc->phys_encs[1]->intf_idx - INTF_0,
-			*affected_displays);
+		  sde_enc->phys_encs[0]->intf_idx - INTF_0,
+		  sde_enc->phys_encs[1]->intf_idx - INTF_0, *affected_displays);
 
 	/* ppsplit always uses master since ppslave invalid for irqs*/
 	if (num_active_phys == 1)
 		*affected_displays = BIT(0);
 }
 
-static void _sde_encoder_update_master(struct drm_encoder *drm_enc,
-		struct sde_encoder_kickoff_params *params)
+static void
+_sde_encoder_update_master(struct drm_encoder *drm_enc,
+			   struct sde_encoder_kickoff_params *params)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_encoder_phys *phys;
@@ -4669,13 +4787,13 @@ static void _sde_encoder_update_master(struct drm_encoder *drm_enc,
 	num_active_phys = hweight_long(params->affected_displays);
 
 	SDE_DEBUG_ENC(sde_enc, "affected_displays 0x%lx num_active_phys %d\n",
-			params->affected_displays, num_active_phys);
+		      params->affected_displays, num_active_phys);
 	SDE_EVT32_VERBOSE(DRMID(drm_enc), params->affected_displays,
-			num_active_phys);
+			  num_active_phys);
 
 	/* for left/right only update, ppsplit master switches interface */
-	_sde_encoder_ppsplit_swap_intf_for_right_only_update(drm_enc,
-			&params->affected_displays, num_active_phys);
+	_sde_encoder_ppsplit_swap_intf_for_right_only_update(
+		drm_enc, &params->affected_displays, num_active_phys);
 
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
 		enum sde_enc_split_role prv_role, new_role;
@@ -4704,11 +4822,11 @@ static void _sde_encoder_update_master(struct drm_encoder *drm_enc,
 		}
 
 		SDE_DEBUG_ENC(sde_enc, "pp %d role prv %d new %d active %d\n",
-				phys->hw_pp->idx - PINGPONG_0, prv_role,
-				phys->split_role, active);
+			      phys->hw_pp->idx - PINGPONG_0, prv_role,
+			      phys->split_role, active);
 		SDE_EVT32(DRMID(drm_enc), params->affected_displays,
-				phys->hw_pp->idx - PINGPONG_0, prv_role,
-				phys->split_role, active, num_active_phys);
+			  phys->hw_pp->idx - PINGPONG_0, prv_role,
+			  phys->split_role, active, num_active_phys);
 	}
 }
 
@@ -4745,11 +4863,11 @@ void sde_encoder_trigger_kickoff_pending(struct drm_encoder *drm_enc)
 		phys = sde_enc->phys_encs[i];
 
 		if (phys && phys->hw_ctl && (phys == sde_enc->cur_master) &&
-			sde_encoder_check_curr_mode(drm_enc,
-					MSM_DISPLAY_CMD_MODE)) {
+		    sde_encoder_check_curr_mode(drm_enc,
+						MSM_DISPLAY_CMD_MODE)) {
 			ctl = phys->hw_ctl;
 			if (ctl->ops.trigger_pending)
-			/* update only for command mode primary ctl */
+				/* update only for command mode primary ctl */
 				ctl->ops.trigger_pending(ctl);
 		}
 	}
@@ -4758,42 +4876,42 @@ void sde_encoder_trigger_kickoff_pending(struct drm_encoder *drm_enc)
 
 static void sde_encoder_esd_trigger_work_handler(struct kthread_work *work)
 {
-	struct sde_encoder_virt *sde_enc = container_of(work,
-				struct sde_encoder_virt, esd_trigger_work);
+	struct sde_encoder_virt *sde_enc =
+		container_of(work, struct sde_encoder_virt, esd_trigger_work);
 
 	if (!sde_enc) {
 		SDE_ERROR("invalid sde encoder\n");
 		return;
 	}
 
-	sde_encoder_resource_control(&sde_enc->base,
-			SDE_ENC_RC_EVENT_KICKOFF);
+	sde_encoder_resource_control(&sde_enc->base, SDE_ENC_RC_EVENT_KICKOFF);
 }
 
 static void sde_encoder_input_event_work_handler(struct kthread_work *work)
 {
-	struct sde_encoder_virt *sde_enc = container_of(work,
-				struct sde_encoder_virt, input_event_work);
+	struct sde_encoder_virt *sde_enc =
+		container_of(work, struct sde_encoder_virt, input_event_work);
 
 	if (!sde_enc) {
 		SDE_ERROR("invalid sde encoder\n");
 		return;
 	}
 #ifdef MI_DISPLAY_MODIFY
-        SDE_ATRACE_BEGIN("encoder_early_wakeup:input");
+	SDE_ATRACE_BEGIN("encoder_early_wakeup:input");
 #endif
 	sde_encoder_resource_control(&sde_enc->base,
-			SDE_ENC_RC_EVENT_EARLY_WAKEUP);
+				     SDE_ENC_RC_EVENT_EARLY_WAKEUP);
 #ifdef MI_DISPLAY_MODIFY
-        SDE_ATRACE_END("encoder_early_wakeup:input");
+	SDE_ATRACE_END("encoder_early_wakeup:input");
 #endif
 }
 
 static void sde_encoder_early_wakeup_work_handler(struct kthread_work *work)
 {
-	struct sde_encoder_virt *sde_enc = container_of(work,
-			struct sde_encoder_virt, early_wakeup_work);
-	struct sde_kms *sde_kms = to_sde_kms(ddev_to_msm_kms(sde_enc->base.dev));
+	struct sde_encoder_virt *sde_enc =
+		container_of(work, struct sde_encoder_virt, early_wakeup_work);
+	struct sde_kms *sde_kms =
+		to_sde_kms(ddev_to_msm_kms(sde_enc->base.dev));
 
 	if (!sde_kms)
 		return;
@@ -4801,8 +4919,9 @@ static void sde_encoder_early_wakeup_work_handler(struct kthread_work *work)
 	sde_vm_lock(sde_kms);
 	if (!sde_vm_owns_hw(sde_kms)) {
 		sde_vm_unlock(sde_kms);
-		SDE_DEBUG("skip early wakeup for ENC-%d, HW is owned by other VM\n",
-				DRMID(&sde_enc->base));
+		SDE_DEBUG(
+			"skip early wakeup for ENC-%d, HW is owned by other VM\n",
+			DRMID(&sde_enc->base));
 		return;
 	}
 
@@ -4812,7 +4931,7 @@ static void sde_encoder_early_wakeup_work_handler(struct kthread_work *work)
 	SDE_ATRACE_BEGIN("encoder_early_wakeup");
 #endif
 	sde_encoder_resource_control(&sde_enc->base,
-			SDE_ENC_RC_EVENT_EARLY_WAKEUP);
+				     SDE_ENC_RC_EVENT_EARLY_WAKEUP);
 #ifdef MI_DISPLAY_MODIFY
 	SDE_ATRACE_END("encoder_early_wakeup:hint");
 #else
@@ -4831,28 +4950,29 @@ void sde_encoder_early_wakeup(struct drm_encoder *drm_enc)
 	sde_enc = to_sde_encoder_virt(drm_enc);
 
 	if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE)) {
-		SDE_DEBUG_ENC(sde_enc,
+		SDE_DEBUG_ENC(
+			sde_enc,
 			"should only early wake up command mode display\n");
 		return;
 	}
 
-	if (!sde_enc->crtc || (sde_enc->crtc->index
-			>= ARRAY_SIZE(priv->event_thread))) {
+	if (!sde_enc->crtc ||
+	    (sde_enc->crtc->index >= ARRAY_SIZE(priv->event_thread))) {
 		SDE_DEBUG_ENC(sde_enc, "invalid CRTC: %d or crtc index: %d\n",
-			sde_enc->crtc == NULL,
-			sde_enc->crtc ? sde_enc->crtc->index : -EINVAL);
+			      sde_enc->crtc == NULL,
+			      sde_enc->crtc ? sde_enc->crtc->index : -EINVAL);
 		return;
 	}
 
 	disp_thread = &priv->disp_thread[sde_enc->crtc->index];
 
 	SDE_ATRACE_BEGIN("queue_early_wakeup_work");
-	kthread_queue_work(&disp_thread->worker,
-				&sde_enc->early_wakeup_work);
+	kthread_queue_work(&disp_thread->worker, &sde_enc->early_wakeup_work);
 	SDE_ATRACE_END("queue_early_wakeup_work");
 }
 
-void sde_encoder_handle_hw_fence_error(int ctl_idx, struct sde_kms *sde_kms, u32 handle, int error)
+void sde_encoder_handle_hw_fence_error(int ctl_idx, struct sde_kms *sde_kms,
+				       u32 handle, int error)
 {
 	struct drm_encoder *drm_enc;
 	struct sde_encoder_virt *sde_enc;
@@ -4872,8 +4992,9 @@ void sde_encoder_handle_hw_fence_error(int ctl_idx, struct sde_kms *sde_kms, u32
 	drm_for_each_encoder(drm_enc, sde_kms->dev) {
 		sde_enc = to_sde_encoder_virt(drm_enc);
 
-		if (sde_enc && sde_enc->phys_encs[0] && sde_enc->phys_encs[0]->hw_ctl &&
-			sde_enc->phys_encs[0]->hw_ctl->idx == ctl_idx) {
+		if (sde_enc && sde_enc->phys_encs[0] &&
+		    sde_enc->phys_encs[0]->hw_ctl &&
+		    sde_enc->phys_encs[0]->hw_ctl->idx == ctl_idx) {
 			encoder_detected = true;
 			cur_master = sde_enc->phys_encs[0];
 			SDE_EVT32(ctl_idx, SDE_EVTLOG_FUNC_CASE1);
@@ -4887,7 +5008,8 @@ void sde_encoder_handle_hw_fence_error(int ctl_idx, struct sde_kms *sde_kms, u32
 		return;
 	}
 
-	if (!cur_master->parent || !cur_master->parent->crtc || !cur_master->parent->crtc->state) {
+	if (!cur_master->parent || !cur_master->parent->crtc ||
+	    !cur_master->parent->crtc->state) {
 		SDE_DEBUG("unexpected null pointer in cur_master.\n");
 		SDE_EVT32(ctl_idx, SDE_EVTLOG_FUNC_CASE3, SDE_EVTLOG_ERROR);
 		return;
@@ -4895,9 +5017,11 @@ void sde_encoder_handle_hw_fence_error(int ctl_idx, struct sde_kms *sde_kms, u32
 
 	sde_crtc = to_sde_crtc(cur_master->parent->crtc);
 	sde_crtc_state = to_sde_crtc_state(cur_master->parent->crtc->state);
-	handle_fence_error = sde_crtc_get_property(sde_crtc_state, CRTC_PROP_HANDLE_FENCE_ERROR);
+	handle_fence_error = sde_crtc_get_property(
+		sde_crtc_state, CRTC_PROP_HANDLE_FENCE_ERROR);
 	if (!handle_fence_error) {
-		SDE_DEBUG("userspace not enabled handle fence error in kernel.\n");
+		SDE_DEBUG(
+			"userspace not enabled handle fence error in kernel.\n");
 		SDE_EVT32(ctl_idx, SDE_EVTLOG_FUNC_CASE4);
 		return;
 	}
@@ -4929,8 +5053,7 @@ int sde_encoder_poll_line_counts(struct drm_encoder *drm_enc)
 		return -EINVAL;
 	}
 	sde_enc = to_sde_encoder_virt(drm_enc);
-	if (!sde_enc->cur_master ||
-			!sde_enc->cur_master->ops.get_line_count) {
+	if (!sde_enc->cur_master || !sde_enc->cur_master->ops.get_line_count) {
 		SDE_DEBUG_ENC(sde_enc, "can't get master line count\n");
 		SDE_EVT32(DRMID(drm_enc), SDE_EVTLOG_ERROR);
 		return -EINVAL;
@@ -4938,13 +5061,13 @@ int sde_encoder_poll_line_counts(struct drm_encoder *drm_enc)
 
 	exp_ktime = ktime_add_ms(ktime_get(), timeout_us / 1000);
 
-	line_count = sde_enc->cur_master->ops.get_line_count(
-			sde_enc->cur_master);
+	line_count =
+		sde_enc->cur_master->ops.get_line_count(sde_enc->cur_master);
 
 	for (i = 0; i < (timeout_us * 2 / sleep_us); ++i) {
 		tmp = line_count;
 		line_count = sde_enc->cur_master->ops.get_line_count(
-				sde_enc->cur_master);
+			sde_enc->cur_master);
 		if (line_count < tmp) {
 			SDE_EVT32(DRMID(drm_enc), line_count);
 			return 0;
@@ -4977,34 +5100,34 @@ static int _helper_flush_qsync(struct sde_encoder_phys *phys_enc)
 
 	/* Flush the interfaces for AVR update or Qsync with INTF TE */
 	if (phys_enc->intf_mode == INTF_MODE_VIDEO ||
-			(phys_enc->intf_mode == INTF_MODE_CMD &&
-			phys_enc->has_intf_te)) {
+	    (phys_enc->intf_mode == INTF_MODE_CMD && phys_enc->has_intf_te)) {
 		sde_rm_init_hw_iter(&rm_iter, drm_enc->base.id,
-				SDE_HW_BLK_INTF);
+				    SDE_HW_BLK_INTF);
 		while (sde_rm_get_hw(&phys_enc->sde_kms->rm, &rm_iter)) {
-			struct sde_hw_intf *hw_intf = to_sde_hw_intf(rm_iter.hw);
+			struct sde_hw_intf *hw_intf =
+				to_sde_hw_intf(rm_iter.hw);
 
 			if (!hw_intf)
 				continue;
 
 			if (phys_enc->hw_ctl->ops.update_bitmask)
 				phys_enc->hw_ctl->ops.update_bitmask(
-						phys_enc->hw_ctl,
-						SDE_HW_FLUSH_INTF,
-						hw_intf->idx, 1);
+					phys_enc->hw_ctl, SDE_HW_FLUSH_INTF,
+					hw_intf->idx, 1);
 
 			intf_valid = true;
 		}
 
 		if (!intf_valid) {
 			SDE_ERROR_ENC(to_sde_encoder_virt(drm_enc),
-				"intf not found to flush\n");
+				      "intf not found to flush\n");
 			return -EFAULT;
 		}
 	} else {
 		sde_rm_init_hw_iter(&rm_iter, drm_enc->base.id, SDE_HW_BLK_LM);
 		while (sde_rm_get_hw(&phys_enc->sde_kms->rm, &rm_iter)) {
-			struct sde_hw_mixer *hw_lm = to_sde_hw_mixer(rm_iter.hw);
+			struct sde_hw_mixer *hw_lm =
+				to_sde_hw_mixer(rm_iter.hw);
 
 			if (!hw_lm)
 				continue;
@@ -5012,15 +5135,14 @@ static int _helper_flush_qsync(struct sde_encoder_phys *phys_enc)
 			/* update LM flush for HW without INTF TE */
 			if (phys_enc->hw_ctl->ops.update_bitmask_mixer)
 				phys_enc->hw_ctl->ops.update_bitmask_mixer(
-						phys_enc->hw_ctl,
-						hw_lm->idx, 1);
+					phys_enc->hw_ctl, hw_lm->idx, 1);
 
 			lm_valid = true;
 		}
 
 		if (!lm_valid) {
 			SDE_ERROR_ENC(to_sde_encoder_virt(drm_enc),
-				"lm not found to flush\n");
+				      "lm not found to flush\n");
 			return -EFAULT;
 		}
 	}
@@ -5028,8 +5150,8 @@ static int _helper_flush_qsync(struct sde_encoder_phys *phys_enc)
 	return 0;
 }
 
-static void _sde_encoder_helper_hdr_plus_mempool_update(
-		struct sde_encoder_virt *sde_enc)
+static void
+_sde_encoder_helper_hdr_plus_mempool_update(struct sde_encoder_virt *sde_enc)
 {
 	struct sde_connector_dyn_hdr_metadata *dhdr_meta = NULL;
 	struct sde_hw_mdp *mdptop = NULL;
@@ -5038,7 +5160,7 @@ static void _sde_encoder_helper_hdr_plus_mempool_update(
 	if (sde_enc->cur_master) {
 		mdptop = sde_enc->cur_master->hw_mdptop;
 		dhdr_meta = sde_connector_get_dyn_hdr_meta(
-				sde_enc->cur_master->connector);
+			sde_enc->cur_master->connector);
 	}
 
 	if (!mdptop || !dhdr_meta || !dhdr_meta->dynamic_hdr_update)
@@ -5047,10 +5169,9 @@ static void _sde_encoder_helper_hdr_plus_mempool_update(
 	if (mdptop->ops.set_hdr_plus_metadata) {
 		sde_enc->dynamic_hdr_updated = true;
 		mdptop->ops.set_hdr_plus_metadata(
-				mdptop, dhdr_meta->dynamic_hdr_payload,
-				dhdr_meta->dynamic_hdr_payload_size,
-				sde_enc->cur_master->intf_idx == INTF_0 ?
-				0 : 1);
+			mdptop, dhdr_meta->dynamic_hdr_payload,
+			dhdr_meta->dynamic_hdr_payload_size,
+			sde_enc->cur_master->intf_idx == INTF_0 ? 0 : 1);
 	}
 }
 
@@ -5067,11 +5188,10 @@ void sde_encoder_needs_hw_reset(struct drm_encoder *drm_enc)
 	}
 }
 
-static int _sde_encoder_prepare_for_kickoff_processing(struct drm_encoder *drm_enc,
-		struct sde_encoder_kickoff_params *params,
-		struct sde_encoder_virt *sde_enc,
-		struct sde_kms *sde_kms,
-		bool needs_hw_reset, bool is_cmd_mode)
+static int _sde_encoder_prepare_for_kickoff_processing(
+	struct drm_encoder *drm_enc, struct sde_encoder_kickoff_params *params,
+	struct sde_encoder_virt *sde_enc, struct sde_kms *sde_kms,
+	bool needs_hw_reset, bool is_cmd_mode)
 {
 	int rc, ret = 0;
 
@@ -5087,14 +5207,15 @@ static int _sde_encoder_prepare_for_kickoff_processing(struct drm_encoder *drm_e
 		rc = sde_connector_pre_kickoff(sde_enc->cur_master->connector);
 		if (rc) {
 			SDE_ERROR_ENC(sde_enc, "kickoff conn%d failed rc %d\n",
-					sde_enc->cur_master->connector->base.id, rc);
+				      sde_enc->cur_master->connector->base.id,
+				      rc);
 			ret = rc;
 		}
 	}
 
 	if (sde_enc->cur_master &&
-			((is_cmd_mode && sde_enc->cur_master->cont_splash_enabled) ||
-			!sde_enc->cur_master->cont_splash_enabled)) {
+	    ((is_cmd_mode && sde_enc->cur_master->cont_splash_enabled) ||
+	     !sde_enc->cur_master->cont_splash_enabled)) {
 		rc = sde_encoder_dce_setup(sde_enc, params);
 		if (rc) {
 			SDE_ERROR_ENC(sde_enc, "failed to setup DSC: %d\n", rc);
@@ -5106,7 +5227,7 @@ static int _sde_encoder_prepare_for_kickoff_processing(struct drm_encoder *drm_e
 
 	if (sde_enc->cur_master && !sde_enc->cur_master->cont_splash_enabled)
 		sde_configure_qdss(sde_enc, sde_enc->cur_master->hw_qdss,
-				sde_enc->cur_master, sde_kms->qdss_enabled);
+				   sde_enc->cur_master, sde_kms->qdss_enabled);
 
 	return ret;
 }
@@ -5131,45 +5252,55 @@ void _sde_encoder_delay_kickoff_processing(struct sde_encoder_virt *sde_enc)
 	if (!ept)
 		return;
 
-	qsync_mode = sde_connector_get_property(drm_conn->state, CONNECTOR_PROP_QSYNC_MODE);
+	qsync_mode = sde_connector_get_property(drm_conn->state,
+						CONNECTOR_PROP_QSYNC_MODE);
 	if (qsync_mode)
-		_sde_encoder_get_qsync_fps_callback(&sde_enc->base, &min_fps, drm_conn->state);
+		_sde_encoder_get_qsync_fps_callback(&sde_enc->base, &min_fps,
+						    drm_conn->state);
 	/* use min qsync fps, if feature is enabled; otherwise min default fps */
 	min_fps = min_fps ? min_fps : DEFAULT_MIN_FPS;
 	fps = sde_encoder_get_fps(&sde_enc->base);
 	min_fps = min(min_fps, fps);
 
-	is_cmd_mode = sde_encoder_check_curr_mode(&sde_enc->base, MSM_DISPLAY_CMD_MODE);
+	is_cmd_mode = sde_encoder_check_curr_mode(&sde_enc->base,
+						  MSM_DISPLAY_CMD_MODE);
 
 	/* for cmd mode with qsync - EPT_FPS will be used to delay the processing */
-	if (test_bit(SDE_FEATURE_EPT_FPS, sde_kms->catalog->features)
-			&& is_cmd_mode && qsync_mode) {
-		SDE_DEBUG("enc:%d, ept:%llu not applicable for cmd mode with qsync enabled",
-				DRMID(&sde_enc->base), ept);
+	if (test_bit(SDE_FEATURE_EPT_FPS, sde_kms->catalog->features) &&
+	    is_cmd_mode && qsync_mode) {
+		SDE_DEBUG(
+			"enc:%d, ept:%llu not applicable for cmd mode with qsync enabled",
+			DRMID(&sde_enc->base), ept);
 		return;
 	}
 
 	avr_step_fps = info->avr_step_fps;
 	current_ts = ktime_get_ns();
 	/* ept is in ns and avr_step is mulitple of refresh rate */
-	ept_ts = avr_step_fps ? ept - DIV_ROUND_UP(NSEC_PER_SEC, avr_step_fps) + NSEC_PER_MSEC
-				: ept - EPT_BACKOFF_THRESHOLD;
+	ept_ts = avr_step_fps ? ept - DIV_ROUND_UP(NSEC_PER_SEC, avr_step_fps) +
+					NSEC_PER_MSEC :
+				ept - EPT_BACKOFF_THRESHOLD;
 
 	/* ept time already elapsed */
 	if (ept_ts <= current_ts) {
-		SDE_DEBUG("enc:%d, ept elapsed; ept:%llu, ept_ts:%llu, current_ts:%llu\n",
-				DRMID(&sde_enc->base), ept, ept_ts, current_ts);
-		SDE_EVT32(DRMID(&sde_enc->base), qsync_mode, avr_step_fps, min_fps, fps,
-			ktime_to_us(current_ts), ktime_to_us(ept_ts), SDE_EVTLOG_FUNC_CASE1);
+		SDE_DEBUG(
+			"enc:%d, ept elapsed; ept:%llu, ept_ts:%llu, current_ts:%llu\n",
+			DRMID(&sde_enc->base), ept, ept_ts, current_ts);
+		SDE_EVT32(DRMID(&sde_enc->base), qsync_mode, avr_step_fps,
+			  min_fps, fps, ktime_to_us(current_ts),
+			  ktime_to_us(ept_ts), SDE_EVTLOG_FUNC_CASE1);
 		return;
 	}
 
-	next_vsync_time_ns = DIV_ROUND_UP(NSEC_PER_SEC, fps) + phy_enc->last_vsync_timestamp;
+	next_vsync_time_ns =
+		DIV_ROUND_UP(NSEC_PER_SEC, fps) + phy_enc->last_vsync_timestamp;
 	/* ept time is within last & next vsync expected with current fps */
 	if (!qsync_mode && (ept_ts < next_vsync_time_ns)) {
-		SDE_EVT32(DRMID(&sde_enc->base), qsync_mode, avr_step_fps, min_fps, fps,
-			ktime_to_us(current_ts), ktime_to_us(ept), ktime_to_us(ept_ts),
-			ktime_to_us(next_vsync_time_ns), is_cmd_mode, SDE_EVTLOG_FUNC_CASE2);
+		SDE_EVT32(DRMID(&sde_enc->base), qsync_mode, avr_step_fps,
+			  min_fps, fps, ktime_to_us(current_ts),
+			  ktime_to_us(ept), ktime_to_us(ept_ts),
+			  ktime_to_us(next_vsync_time_ns), is_cmd_mode,
+			  SDE_EVTLOG_FUNC_CASE2);
 		return;
 	}
 
@@ -5177,12 +5308,13 @@ void _sde_encoder_delay_kickoff_processing(struct sde_encoder_virt *sde_enc)
 	/* validate timeout is not beyond the min fps */
 	if (timeout_us > DIV_ROUND_UP(USEC_PER_SEC, min_fps)) {
 		pr_err_ratelimited(
-		"enc:%d, invalid timeout_us:%llu; ept:%llu, ept_ts:%llu, cur_ts:%llu min_fps:%d, fps:%d, qsync_mode:%d, avr_step_fps:%d\n",
-			DRMID(&sde_enc->base), timeout_us, ept, ept_ts, current_ts,
-			min_fps, fps, qsync_mode, avr_step_fps);
+			"enc:%d, invalid timeout_us:%llu; ept:%llu, ept_ts:%llu, cur_ts:%llu "
+			"min_fps:%d, fps:%d, qsync_mode:%d, avr_step_fps:%d\n",
+			DRMID(&sde_enc->base), timeout_us, ept, ept_ts,
+			current_ts, min_fps, fps, qsync_mode, avr_step_fps);
 		SDE_EVT32(DRMID(&sde_enc->base), qsync_mode, avr_step_fps,
-			min_fps, fps, ktime_to_us(current_ts),
-			ktime_to_us(ept_ts), timeout_us, SDE_EVTLOG_ERROR);
+			  min_fps, fps, ktime_to_us(current_ts),
+			  ktime_to_us(ept_ts), timeout_us, SDE_EVTLOG_ERROR);
 		return;
 	}
 
@@ -5192,11 +5324,12 @@ void _sde_encoder_delay_kickoff_processing(struct sde_encoder_virt *sde_enc)
 	SDE_ATRACE_END(atrace_buf);
 
 	SDE_EVT32(DRMID(&sde_enc->base), qsync_mode, avr_step_fps, min_fps, fps,
-		ktime_to_us(current_ts), ktime_to_us(ept_ts), timeout_us, SDE_EVTLOG_FUNC_CASE3);
+		  ktime_to_us(current_ts), ktime_to_us(ept_ts), timeout_us,
+		  SDE_EVTLOG_FUNC_CASE3);
 }
 
 int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
-		struct sde_encoder_kickoff_params *params)
+				    struct sde_encoder_kickoff_params *params)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_encoder_phys *phys, *cur_master;
@@ -5207,7 +5340,7 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 	struct msm_display_info *disp_info;
 
 	if (!drm_enc || !params || !drm_enc->dev ||
-		!drm_enc->dev->dev_private) {
+	    !drm_enc->dev->dev_private) {
 		SDE_ERROR("invalid args\n");
 		return -EINVAL;
 	}
@@ -5223,11 +5356,12 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 	SDE_EVT32(DRMID(drm_enc));
 
 	cur_master = sde_enc->cur_master;
-	is_cmd_mode = sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE);
+	is_cmd_mode =
+		sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE);
 	if (cur_master && cur_master->connector)
-		sde_enc->frame_trigger_mode =
-				sde_connector_get_property(cur_master->connector->state,
-					CONNECTOR_PROP_CMD_FRAME_TRIGGER_MODE);
+		sde_enc->frame_trigger_mode = sde_connector_get_property(
+			cur_master->connector->state,
+			CONNECTOR_PROP_CMD_FRAME_TRIGGER_MODE);
 
 	_sde_encoder_helper_hdr_plus_mempool_update(sde_enc);
 
@@ -5237,11 +5371,11 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 		phys = sde_enc->phys_encs[i];
 		params->frame_trigger_mode = sde_enc->frame_trigger_mode;
 		params->recovery_events_enabled =
-					sde_enc->recovery_events_enabled;
+			sde_enc->recovery_events_enabled;
 		if (phys) {
 			if (phys->ops.prepare_for_kickoff) {
-				rc = phys->ops.prepare_for_kickoff(
-						phys, params);
+				rc = phys->ops.prepare_for_kickoff(phys,
+								   params);
 				if (rc)
 					ret = rc;
 			}
@@ -5250,15 +5384,15 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 			_sde_encoder_setup_dither(phys);
 
 			if (sde_enc->cur_master &&
-					sde_connector_is_qsync_updated(
-					sde_enc->cur_master->connector))
+			    sde_connector_is_qsync_updated(
+				    sde_enc->cur_master->connector))
 				_helper_flush_qsync(phys);
 		}
 	}
 
 	if (is_cmd_mode && sde_enc->cur_master &&
-			 (sde_connector_is_qsync_updated(sde_enc->cur_master->connector) ||
-			 _sde_encoder_is_autorefresh_enabled(sde_enc)))
+	    (sde_connector_is_qsync_updated(sde_enc->cur_master->connector) ||
+	     _sde_encoder_is_autorefresh_enabled(sde_enc)))
 		_sde_encoder_update_rsc_client(drm_enc, true);
 
 	rc = sde_encoder_resource_control(drm_enc, SDE_ENC_RC_EVENT_KICKOFF);
@@ -5268,8 +5402,8 @@ int sde_encoder_prepare_for_kickoff(struct drm_encoder *drm_enc,
 		goto end;
 	}
 
-	ret = _sde_encoder_prepare_for_kickoff_processing(drm_enc, params, sde_enc, sde_kms,
-			needs_hw_reset, is_cmd_mode);
+	ret = _sde_encoder_prepare_for_kickoff_processing(
+		drm_enc, params, sde_enc, sde_kms, needs_hw_reset, is_cmd_mode);
 
 end:
 	SDE_ATRACE_END("sde_encoder_prepare_for_kickoff");
@@ -5328,15 +5462,14 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool config_changed)
 	}
 
 	if (sde_enc->autorefresh_solver_disable &&
-			!_sde_encoder_is_autorefresh_enabled(sde_enc))
+	    !_sde_encoder_is_autorefresh_enabled(sde_enc))
 		_sde_encoder_update_rsc_client(drm_enc, true);
 
 	SDE_ATRACE_END("encoder_kickoff");
-
 }
 
 void sde_encoder_helper_get_pp_line_count(struct drm_encoder *drm_enc,
-			struct sde_hw_pp_vsync_info *info)
+					  struct sde_hw_pp_vsync_info *info)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_encoder_phys *phys;
@@ -5349,10 +5482,10 @@ void sde_encoder_helper_get_pp_line_count(struct drm_encoder *drm_enc,
 
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
 		phys = sde_enc->phys_encs[i];
-		if (phys && phys->hw_intf && phys->hw_pp
-				&& phys->hw_intf->ops.get_vsync_info) {
-			ret = phys->hw_intf->ops.get_vsync_info(
-						phys->hw_intf, &info[i]);
+		if (phys && phys->hw_intf && phys->hw_pp &&
+		    phys->hw_intf->ops.get_vsync_info) {
+			ret = phys->hw_intf->ops.get_vsync_info(phys->hw_intf,
+								&info[i]);
 			if (!ret) {
 				info[i].pp_idx = phys->hw_pp->idx - PINGPONG_0;
 				info[i].intf_idx = phys->hw_intf->idx - INTF_0;
@@ -5362,14 +5495,14 @@ void sde_encoder_helper_get_pp_line_count(struct drm_encoder *drm_enc,
 }
 
 void sde_encoder_get_transfer_time(struct drm_encoder *drm_enc,
-			u32 *transfer_time_us)
+				   u32 *transfer_time_us)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct msm_mode_info *info;
 
 	if (!drm_enc || !transfer_time_us) {
 		SDE_ERROR("bad arg: encoder:%d transfer_time:%d\n", !drm_enc,
-				!transfer_time_us);
+			  !transfer_time_us);
 		return;
 	}
 
@@ -5424,8 +5557,10 @@ int sde_encoder_get_avr_status(struct drm_encoder *drm_enc)
 
 	sde_enc = to_sde_encoder_virt(drm_enc);
 	master = sde_enc->cur_master;
-	is_vid_mode = sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CAP_VID_MODE);
-	if (!master || !is_vid_mode || !sde_connector_get_qsync_mode(master->connector))
+	is_vid_mode =
+		sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CAP_VID_MODE);
+	if (!master || !is_vid_mode ||
+	    !sde_connector_get_qsync_mode(master->connector))
 		return -ENODATA;
 
 	if (!master->hw_intf->ops.get_avr_status)
@@ -5435,7 +5570,7 @@ int sde_encoder_get_avr_status(struct drm_encoder *drm_enc)
 }
 
 int sde_encoder_helper_reset_mixers(struct sde_encoder_phys *phys_enc,
-		struct drm_framebuffer *fb)
+				    struct drm_framebuffer *fb)
 {
 	struct drm_encoder *drm_enc;
 	struct sde_hw_mixer_cfg mixer;
@@ -5464,8 +5599,7 @@ int sde_encoder_helper_reset_mixers(struct sde_encoder_phys *phys_enc,
 		/* need to flush LM to remove it */
 		if (phys_enc->hw_ctl->ops.update_bitmask_mixer)
 			phys_enc->hw_ctl->ops.update_bitmask_mixer(
-					phys_enc->hw_ctl,
-					hw_lm->idx, 1);
+				phys_enc->hw_ctl, hw_lm->idx, 1);
 
 		if (fb) {
 			/* assume a single LM if targeting a frame buffer */
@@ -5495,13 +5629,15 @@ int sde_encoder_helper_reset_mixers(struct sde_encoder_phys *phys_enc,
 }
 
 void sde_encoder_helper_hw_fence_sw_override(struct sde_encoder_phys *phys_enc,
-		struct sde_hw_ctl *ctl)
+					     struct sde_hw_ctl *ctl)
 {
 	if (!ctl || !ctl->ops.hw_fence_trigger_sw_override)
 		return;
 
-	SDE_EVT32(DRMID(phys_enc->parent), ctl->idx, ctl->ops.get_hw_fence_status ?
-		ctl->ops.get_hw_fence_status(ctl) : SDE_EVTLOG_ERROR);
+	SDE_EVT32(DRMID(phys_enc->parent), ctl->idx,
+		  ctl->ops.get_hw_fence_status ?
+			  ctl->ops.get_hw_fence_status(ctl) :
+			  SDE_EVTLOG_ERROR);
 	sde_encoder_helper_reset_mixers(phys_enc, NULL);
 	ctl->ops.hw_fence_trigger_sw_override(ctl);
 }
@@ -5521,8 +5657,7 @@ int sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 
 	/* update the qsync parameters for the current frame */
 	if (sde_enc->cur_master)
-		sde_connector_set_qsync_params(
-				sde_enc->cur_master->connector);
+		sde_connector_set_qsync_params(sde_enc->cur_master->connector);
 
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
 		phys = sde_enc->phys_encs[i];
@@ -5535,19 +5670,19 @@ int sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 		if (phys && phys->hw_ctl) {
 			ctl = phys->hw_ctl;
 			/*
-			 * avoid clearing the pending flush during the first
-			 * frame update after idle power collpase as the
-			 * restore path would have updated the pending flush
-			 */
+       * avoid clearing the pending flush during the first
+       * frame update after idle power collpase as the
+       * restore path would have updated the pending flush
+       */
 			if (!sde_enc->idle_pc_restore &&
-					ctl->ops.clear_pending_flush)
+			    ctl->ops.clear_pending_flush)
 				ctl->ops.clear_pending_flush(ctl);
 		}
 	}
 
 	if (sde_enc->cur_master && sde_enc->cur_master->connector) {
 		rc = sde_connector_prepare_commit(
-				  sde_enc->cur_master->connector);
+			sde_enc->cur_master->connector);
 		if (rc)
 			SDE_ERROR_ENC(sde_enc,
 				      "prepare commit failed conn %d rc %d\n",
@@ -5559,25 +5694,26 @@ int sde_encoder_prepare_commit(struct drm_encoder *drm_enc)
 }
 
 void sde_encoder_helper_setup_misr(struct sde_encoder_phys *phys_enc,
-						bool enable, u32 frame_count)
+				   bool enable, u32 frame_count)
 {
 	if (!phys_enc)
 		return;
 
 	if (phys_enc->hw_intf && phys_enc->hw_intf->ops.setup_misr)
-		phys_enc->hw_intf->ops.setup_misr(phys_enc->hw_intf,
-				enable, frame_count);
+		phys_enc->hw_intf->ops.setup_misr(phys_enc->hw_intf, enable,
+						  frame_count);
 }
 
 int sde_encoder_helper_collect_misr(struct sde_encoder_phys *phys_enc,
-		bool nonblock, u32 *misr_value)
+				    bool nonblock, u32 *misr_value)
 {
 	if (!phys_enc)
 		return -EINVAL;
 
 	return phys_enc->hw_intf && phys_enc->hw_intf->ops.collect_misr ?
-			phys_enc->hw_intf->ops.collect_misr(phys_enc->hw_intf,
-			nonblock, misr_value) : -ENOTSUPP;
+		       phys_enc->hw_intf->ops.collect_misr(
+			       phys_enc->hw_intf, nonblock, misr_value) :
+		       -ENOTSUPP;
 }
 
 #if IS_ENABLED(CONFIG_DEBUG_FS)
@@ -5599,9 +5735,9 @@ static int _sde_encoder_status_show(struct seq_file *s, void *data)
 			continue;
 
 		seq_printf(s, "intf:%d    vsync:%8d     underrun:%8d    ",
-				phys->intf_idx - INTF_0,
-				atomic_read(&phys->vsync_cnt),
-				atomic_read(&phys->underrun_cnt));
+			   phys->intf_idx - INTF_0,
+			   atomic_read(&phys->vsync_cnt),
+			   atomic_read(&phys->underrun_cnt));
 
 		switch (phys->intf_mode) {
 		case INTF_MODE_VIDEO:
@@ -5627,13 +5763,14 @@ static int _sde_encoder_status_show(struct seq_file *s, void *data)
 }
 
 static int _sde_encoder_debugfs_status_open(struct inode *inode,
-		struct file *file)
+					    struct file *file)
 {
 	return single_open(file, _sde_encoder_status_show, inode->i_private);
 }
 
 static ssize_t _sde_encoder_misr_setup(struct file *file,
-		const char __user *user_buf, size_t count, loff_t *ppos)
+				       const char __user *user_buf,
+				       size_t count, loff_t *ppos)
 {
 	struct sde_encoder_virt *sde_enc;
 	char buf[MISR_BUFF_SIZE + 1];
@@ -5675,14 +5812,14 @@ static ssize_t _sde_encoder_misr_setup(struct file *file,
 	return count;
 }
 
-static ssize_t _sde_encoder_misr_read(struct file *file,
-		char __user *user_buff, size_t count, loff_t *ppos)
+static ssize_t _sde_encoder_misr_read(struct file *file, char __user *user_buff,
+				      size_t count, loff_t *ppos)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct sde_kms *sde_kms = NULL;
 	struct drm_encoder *drm_enc;
 	int i = 0, len = 0;
-	char buf[MISR_BUFF_SIZE + 1] = {'\0'};
+	char buf[MISR_BUFF_SIZE + 1] = { '\0' };
 	int rc;
 
 	if (*ppos)
@@ -5717,8 +5854,7 @@ static ssize_t _sde_encoder_misr_read(struct file *file,
 	}
 
 	if (!atomic_read(&sde_enc->misr_enable)) {
-		len += scnprintf(buf + len, MISR_BUFF_SIZE - len,
-				"disabled\n");
+		len += scnprintf(buf + len, MISR_BUFF_SIZE - len, "disabled\n");
 		goto buff_check;
 	}
 
@@ -5728,7 +5864,7 @@ static ssize_t _sde_encoder_misr_read(struct file *file,
 
 		if (!phys || !phys->ops.collect_misr) {
 			len += scnprintf(buf + len, MISR_BUFF_SIZE - len,
-					"invalid\n");
+					 "invalid\n");
 			SDE_ERROR_ENC(sde_enc, "invalid misr ops\n");
 			continue;
 		}
@@ -5736,16 +5872,16 @@ static ssize_t _sde_encoder_misr_read(struct file *file,
 		rc = phys->ops.collect_misr(phys, false, &misr_value);
 		if (rc) {
 			len += scnprintf(buf + len, MISR_BUFF_SIZE - len,
-					"invalid\n");
+					 "invalid\n");
 			SDE_ERROR_ENC(sde_enc, "failed to collect misr %d\n",
-					rc);
+				      rc);
 			continue;
 		} else {
 			len += scnprintf(buf + len, MISR_BUFF_SIZE - len,
-					"Intf idx:%d\n",
-					phys->intf_idx - INTF_0);
+					 "Intf idx:%d\n",
+					 phys->intf_idx - INTF_0);
 			len += scnprintf(buf + len, MISR_BUFF_SIZE - len,
-					"0x%x\n", misr_value);
+					 "0x%x\n", misr_value);
 		}
 	}
 
@@ -5760,7 +5896,7 @@ buff_check:
 		goto end;
 	}
 
-	*ppos += len;   /* increase offset */
+	*ppos += len; /* increase offset */
 
 end:
 	sde_vm_unlock(sde_kms);
@@ -5775,10 +5911,10 @@ static int _sde_encoder_init_debugfs(struct drm_encoder *drm_enc)
 	int i;
 
 	static const struct file_operations debugfs_status_fops = {
-		.open =		_sde_encoder_debugfs_status_open,
-		.read =		seq_read,
-		.llseek =	seq_lseek,
-		.release =	single_release,
+		.open = _sde_encoder_debugfs_status_open,
+		.read = seq_read,
+		.llseek = seq_lseek,
+		.release = single_release,
 	};
 
 	static const struct file_operations debugfs_misr_fops = {
@@ -5804,33 +5940,32 @@ static int _sde_encoder_init_debugfs(struct drm_encoder *drm_enc)
 	snprintf(name, SDE_NAME_SIZE, "encoder%u", drm_enc->base.id);
 
 	/* create overall sub-directory for the encoder */
-	sde_enc->debugfs_root = debugfs_create_dir(name,
-			drm_enc->dev->primary->debugfs_root);
+	sde_enc->debugfs_root =
+		debugfs_create_dir(name, drm_enc->dev->primary->debugfs_root);
 	if (!sde_enc->debugfs_root)
 		return -ENOMEM;
 
 	/* don't error check these */
-	debugfs_create_file("status", 0400,
-		sde_enc->debugfs_root, sde_enc, &debugfs_status_fops);
+	debugfs_create_file("status", 0400, sde_enc->debugfs_root, sde_enc,
+			    &debugfs_status_fops);
 
-	debugfs_create_file("misr_data", 0600,
-		sde_enc->debugfs_root, sde_enc, &debugfs_misr_fops);
+	debugfs_create_file("misr_data", 0600, sde_enc->debugfs_root, sde_enc,
+			    &debugfs_misr_fops);
 
 	debugfs_create_bool("idle_power_collapse", 0600, sde_enc->debugfs_root,
-			&sde_enc->idle_pc_enabled);
+			    &sde_enc->idle_pc_enabled);
 
 	debugfs_create_u32("frame_trigger_mode", 0400, sde_enc->debugfs_root,
-			&sde_enc->frame_trigger_mode);
+			   &sde_enc->frame_trigger_mode);
 
 	debugfs_create_x32("dynamic_irqs_config", 0600, sde_enc->debugfs_root,
-			(u32 *)&sde_enc->dynamic_irqs_config);
+			   (u32 *)&sde_enc->dynamic_irqs_config);
 
 	for (i = 0; i < sde_enc->num_phys_encs; i++)
 		if (sde_enc->phys_encs[i] &&
-				sde_enc->phys_encs[i]->ops.late_register)
+		    sde_enc->phys_encs[i]->ops.late_register)
 			sde_enc->phys_encs[i]->ops.late_register(
-					sde_enc->phys_encs[i],
-					sde_enc->debugfs_root);
+				sde_enc->phys_encs[i], sde_enc->debugfs_root);
 
 	return 0;
 }
@@ -5866,10 +6001,10 @@ static void sde_encoder_early_unregister(struct drm_encoder *encoder)
 	_sde_encoder_destroy_debugfs(encoder);
 }
 
-static int sde_encoder_virt_add_phys_encs(
-		struct msm_display_info *disp_info,
-		struct sde_encoder_virt *sde_enc,
-		struct sde_enc_phys_init_params *params)
+static int
+sde_encoder_virt_add_phys_encs(struct msm_display_info *disp_info,
+			       struct sde_encoder_virt *sde_enc,
+			       struct sde_enc_phys_init_params *params)
 {
 	struct sde_encoder_phys *enc = NULL;
 	u32 display_caps = disp_info->capabilities;
@@ -5877,13 +6012,13 @@ static int sde_encoder_virt_add_phys_encs(
 	SDE_DEBUG_ENC(sde_enc, "\n");
 
 	/*
-	 * We may create up to NUM_PHYS_ENCODER_TYPES physical encoder types
-	 * in this function, check up-front.
-	 */
+   * We may create up to NUM_PHYS_ENCODER_TYPES physical encoder types
+   * in this function, check up-front.
+   */
 	if (sde_enc->num_phys_encs + NUM_PHYS_ENCODER_TYPES >=
-			ARRAY_SIZE(sde_enc->phys_encs)) {
+	    ARRAY_SIZE(sde_enc->phys_encs)) {
 		SDE_ERROR_ENC(sde_enc, "too many physical encoders %d\n",
-			  sde_enc->num_phys_encs);
+			      sde_enc->num_phys_encs);
 		return -EINVAL;
 	}
 
@@ -5892,7 +6027,7 @@ static int sde_encoder_virt_add_phys_encs(
 
 		if (IS_ERR_OR_NULL(enc)) {
 			SDE_ERROR_ENC(sde_enc, "failed to init vid enc: %ld\n",
-				PTR_ERR(enc));
+				      PTR_ERR(enc));
 			return !enc ? -EINVAL : PTR_ERR(enc);
 		}
 
@@ -5904,7 +6039,7 @@ static int sde_encoder_virt_add_phys_encs(
 
 		if (IS_ERR_OR_NULL(enc)) {
 			SDE_ERROR_ENC(sde_enc, "failed to init cmd enc: %ld\n",
-				PTR_ERR(enc));
+				      PTR_ERR(enc));
 			return !enc ? -EINVAL : PTR_ERR(enc);
 		}
 		sde_enc->phys_cmd_encs[sde_enc->num_phys_encs] = enc;
@@ -5922,8 +6057,9 @@ static int sde_encoder_virt_add_phys_encs(
 	return 0;
 }
 
-static int sde_encoder_virt_add_phys_enc_wb(struct sde_encoder_virt *sde_enc,
-		struct sde_enc_phys_init_params *params)
+static int
+sde_encoder_virt_add_phys_enc_wb(struct sde_encoder_virt *sde_enc,
+				 struct sde_enc_phys_init_params *params)
 {
 	struct sde_encoder_phys *enc = NULL;
 
@@ -5936,7 +6072,7 @@ static int sde_encoder_virt_add_phys_enc_wb(struct sde_encoder_virt *sde_enc,
 
 	if (sde_enc->num_phys_encs + 1 >= ARRAY_SIZE(sde_enc->phys_encs)) {
 		SDE_ERROR_ENC(sde_enc, "too many physical encoders %d\n",
-			  sde_enc->num_phys_encs);
+			      sde_enc->num_phys_encs);
 		return -EINVAL;
 	}
 
@@ -5944,7 +6080,7 @@ static int sde_encoder_virt_add_phys_enc_wb(struct sde_encoder_virt *sde_enc,
 
 	if (IS_ERR_OR_NULL(enc)) {
 		SDE_ERROR_ENC(sde_enc, "failed to init wb enc: %ld\n",
-			PTR_ERR(enc));
+			      PTR_ERR(enc));
 		return !enc ? -EINVAL : PTR_ERR(enc);
 	}
 
@@ -5955,9 +6091,9 @@ static int sde_encoder_virt_add_phys_enc_wb(struct sde_encoder_virt *sde_enc,
 }
 
 static int sde_encoder_setup_display(struct sde_encoder_virt *sde_enc,
-				 struct sde_kms *sde_kms,
-				 struct msm_display_info *disp_info,
-				 int *drm_enc_mode)
+				     struct sde_kms *sde_kms,
+				     struct msm_display_info *disp_info,
+				     int *drm_enc_mode)
 {
 	int ret = 0;
 	int i = 0;
@@ -5971,8 +6107,8 @@ static int sde_encoder_setup_display(struct sde_encoder_virt *sde_enc,
 	struct sde_enc_phys_init_params phys_params;
 
 	if (!sde_enc || !sde_kms) {
-		SDE_ERROR("invalid arg(s), enc %d kms %d\n",
-				!sde_enc, !sde_kms);
+		SDE_ERROR("invalid arg(s), enc %d kms %d\n", !sde_enc,
+			  !sde_kms);
 		return -EINVAL;
 	}
 
@@ -6012,21 +6148,22 @@ static int sde_encoder_setup_display(struct sde_encoder_virt *sde_enc,
 
 	SDE_DEBUG("dsi_info->num_of_h_tiles %d\n", disp_info->num_of_h_tiles);
 
-	sde_enc->idle_pc_enabled = test_bit(SDE_FEATURE_IDLE_PC, sde_kms->catalog->features);
+	sde_enc->idle_pc_enabled =
+		test_bit(SDE_FEATURE_IDLE_PC, sde_kms->catalog->features);
 
-	sde_enc->input_event_enabled = test_bit(SDE_FEATURE_TOUCH_WAKEUP,
-						sde_kms->catalog->features);
+	sde_enc->input_event_enabled =
+		test_bit(SDE_FEATURE_TOUCH_WAKEUP, sde_kms->catalog->features);
 
-	sde_enc->ctl_done_supported = test_bit(SDE_FEATURE_CTL_DONE,
-						sde_kms->catalog->features);
+	sde_enc->ctl_done_supported =
+		test_bit(SDE_FEATURE_CTL_DONE, sde_kms->catalog->features);
 
 	mutex_lock(&sde_enc->enc_lock);
 	for (i = 0; i < disp_info->num_of_h_tiles && !ret; i++) {
 		/*
-		 * Left-most tile is at index 0, content is controller id
-		 * h_tile_instance_ids[2] = {0, 1}; DSI0 = left, DSI1 = right
-		 * h_tile_instance_ids[2] = {1, 0}; DSI1 = left, DSI0 = right
-		 */
+     * Left-most tile is at index 0, content is controller id
+     * h_tile_instance_ids[2] = {0, 1}; DSI0 = left, DSI1 = right
+     * h_tile_instance_ids[2] = {1, 0}; DSI1 = left, DSI0 = right
+     */
 		u32 controller_id = disp_info->h_tile_instance[i];
 
 		if (disp_info->num_of_h_tiles > 1) {
@@ -6038,16 +6175,16 @@ static int sde_encoder_setup_display(struct sde_encoder_virt *sde_enc,
 			phys_params.split_role = ENC_ROLE_SOLO;
 		}
 
-		SDE_DEBUG("h_tile_instance %d = %d, split_role %d\n",
-				i, controller_id, phys_params.split_role);
+		SDE_DEBUG("h_tile_instance %d = %d, split_role %d\n", i,
+			  controller_id, phys_params.split_role);
 
 		if (intf_type == INTF_WB) {
 			phys_params.intf_idx = INTF_MAX;
 			phys_params.wb_idx = sde_encoder_get_wb(
-					sde_kms->catalog,
-					intf_type, controller_id);
+				sde_kms->catalog, intf_type, controller_id);
 			if (phys_params.wb_idx == WB_MAX) {
-				SDE_ERROR_ENC(sde_enc,
+				SDE_ERROR_ENC(
+					sde_enc,
 					"could not get wb: type %d, id %d\n",
 					intf_type, controller_id);
 				ret = -EINVAL;
@@ -6055,10 +6192,10 @@ static int sde_encoder_setup_display(struct sde_encoder_virt *sde_enc,
 		} else {
 			phys_params.wb_idx = WB_MAX;
 			phys_params.intf_idx = sde_encoder_get_intf(
-					sde_kms->catalog, intf_type,
-					controller_id);
+				sde_kms->catalog, intf_type, controller_id);
 			if (phys_params.intf_idx == INTF_MAX) {
-				SDE_ERROR_ENC(sde_enc,
+				SDE_ERROR_ENC(
+					sde_enc,
 					"could not get wb: type %d, id %d\n",
 					intf_type, controller_id);
 				ret = -EINVAL;
@@ -6067,16 +6204,14 @@ static int sde_encoder_setup_display(struct sde_encoder_virt *sde_enc,
 
 		if (!ret) {
 			if (intf_type == INTF_WB)
-				ret = sde_encoder_virt_add_phys_enc_wb(sde_enc,
-						&phys_params);
+				ret = sde_encoder_virt_add_phys_enc_wb(
+					sde_enc, &phys_params);
 			else
 				ret = sde_encoder_virt_add_phys_encs(
-						disp_info,
-						sde_enc,
-						&phys_params);
+					disp_info, sde_enc, &phys_params);
 			if (ret)
 				SDE_ERROR_ENC(sde_enc,
-						"failed to add phys encs\n");
+					      "failed to add phys encs\n");
 		}
 	}
 
@@ -6093,7 +6228,6 @@ static int sde_encoder_setup_display(struct sde_encoder_virt *sde_enc,
 			atomic_set(&cmd_phys->vsync_cnt, 0);
 			atomic_set(&cmd_phys->underrun_cnt, 0);
 		}
-
 	}
 	mutex_unlock(&sde_enc->enc_lock);
 
@@ -6108,12 +6242,13 @@ static const struct drm_encoder_helper_funcs sde_encoder_helper_funcs = {
 };
 
 static const struct drm_encoder_funcs sde_encoder_funcs = {
-		.destroy = sde_encoder_destroy,
-		.late_register = sde_encoder_late_register,
-		.early_unregister = sde_encoder_early_unregister,
+	.destroy = sde_encoder_destroy,
+	.late_register = sde_encoder_late_register,
+	.early_unregister = sde_encoder_early_unregister,
 };
 
-struct drm_encoder *sde_encoder_init(struct drm_device *dev, struct msm_display_info *disp_info)
+struct drm_encoder *sde_encoder_init(struct drm_device *dev,
+				     struct msm_display_info *disp_info)
 {
 	struct msm_drm_private *priv = dev->dev_private;
 	struct sde_kms *sde_kms = to_sde_kms(priv->kms);
@@ -6132,7 +6267,7 @@ struct drm_encoder *sde_encoder_init(struct drm_device *dev, struct msm_display_
 
 	mutex_init(&sde_enc->enc_lock);
 	ret = sde_encoder_setup_display(sde_enc, sde_kms, disp_info,
-			&drm_enc_mode);
+					&drm_enc_mode);
 	if (ret)
 		goto fail;
 
@@ -6153,45 +6288,48 @@ struct drm_encoder *sde_encoder_init(struct drm_device *dev, struct msm_display_
 			intf_index = phys->intf_idx - INTF_0;
 	}
 	snprintf(name, SDE_NAME_SIZE, "rsc_enc%u", drm_enc->base.id);
-	sde_enc->rsc_client = sde_rsc_client_create(SDE_RSC_INDEX, name,
+	sde_enc->rsc_client = sde_rsc_client_create(
+		SDE_RSC_INDEX, name,
 		(disp_info->display_type == SDE_CONNECTOR_PRIMARY) ?
-		SDE_RSC_PRIMARY_DISP_CLIENT :
-		SDE_RSC_EXTERNAL_DISP_CLIENT, intf_index + 1);
+			SDE_RSC_PRIMARY_DISP_CLIENT :
+			SDE_RSC_EXTERNAL_DISP_CLIENT,
+		intf_index + 1);
 	if (IS_ERR_OR_NULL(sde_enc->rsc_client)) {
 		SDE_DEBUG("sde rsc client create failed :%ld\n",
-						PTR_ERR(sde_enc->rsc_client));
+			  PTR_ERR(sde_enc->rsc_client));
 		sde_enc->rsc_client = NULL;
 	}
 
 	if (disp_info->capabilities & MSM_DISPLAY_CAP_CMD_MODE &&
-		sde_enc->input_event_enabled) {
+	    sde_enc->input_event_enabled) {
 		ret = _sde_encoder_input_handler(sde_enc);
 		if (ret)
 			SDE_ERROR(
-			"input handler registration failed, rc = %d\n", ret);
+				"input handler registration failed, rc = %d\n",
+				ret);
 	}
 
 	/* Keep posted start as default configuration in driver
-	   if SBLUT is supported on target. Do not allow HAL to
-	   override driver's default frame trigger mode.
-	*/
-	if(sde_kms->catalog->dma_cfg.reg_dma_blks[REG_DMA_TYPE_SB].valid)
+     if SBLUT is supported on target. Do not allow HAL to
+     override driver's default frame trigger mode.
+  */
+	if (sde_kms->catalog->dma_cfg.reg_dma_blks[REG_DMA_TYPE_SB].valid)
 		sde_enc->frame_trigger_mode = FRAME_DONE_WAIT_POSTED_START;
 
 	mutex_init(&sde_enc->rc_lock);
 	kthread_init_delayed_work(&sde_enc->delayed_off_work,
-			sde_encoder_off_work);
+				  sde_encoder_off_work);
 	sde_enc->vblank_enabled = false;
 	sde_enc->qdss_status = false;
 
 	kthread_init_work(&sde_enc->input_event_work,
-			sde_encoder_input_event_work_handler);
+			  sde_encoder_input_event_work_handler);
 
 	kthread_init_work(&sde_enc->early_wakeup_work,
-			sde_encoder_early_wakeup_work_handler);
+			  sde_encoder_early_wakeup_work_handler);
 
 	kthread_init_work(&sde_enc->esd_trigger_work,
-			sde_encoder_esd_trigger_work_handler);
+			  sde_encoder_esd_trigger_work_handler);
 
 	memcpy(&sde_enc->disp_info, disp_info, sizeof(*disp_info));
 
@@ -6208,7 +6346,7 @@ fail:
 }
 
 int sde_encoder_wait_for_event(struct drm_encoder *drm_enc,
-	enum msm_event_wait event)
+			       enum msm_event_wait event)
 {
 	int (*fn_wait)(struct sde_encoder_phys *phys_enc) = NULL;
 	struct sde_encoder_virt *sde_enc = NULL;
@@ -6240,21 +6378,25 @@ int sde_encoder_wait_for_event(struct drm_encoder *drm_enc,
 			break;
 		default:
 			SDE_ERROR_ENC(sde_enc, "unknown wait event %d\n",
-					event);
+				      event);
 			return -EINVAL;
 		}
 
 		if (phys && fn_wait) {
 			snprintf(atrace_buf, sizeof(atrace_buf),
-				"wait_completion_event_%d", event);
+				 "wait_completion_event_%d", event);
 			SDE_ATRACE_BEGIN(atrace_buf);
 			ret = fn_wait(phys);
 			SDE_ATRACE_END(atrace_buf);
 			if (ret) {
-				SDE_ERROR_ENC(sde_enc, "intf_type:%d, event:%d i:%d, failed:%d\n",
-						sde_enc->disp_info.intf_type, event, i, ret);
-				SDE_EVT32(DRMID(drm_enc), sde_enc->disp_info.intf_type, event,
-						i, ret, SDE_EVTLOG_ERROR);
+				SDE_ERROR_ENC(
+					sde_enc,
+					"intf_type:%d, event:%d i:%d, failed:%d\n",
+					sde_enc->disp_info.intf_type, event, i,
+					ret);
+				SDE_EVT32(DRMID(drm_enc),
+					  sde_enc->disp_info.intf_type, event,
+					  i, ret, SDE_EVTLOG_ERROR);
 				return ret;
 			}
 		}
@@ -6263,14 +6405,14 @@ int sde_encoder_wait_for_event(struct drm_encoder *drm_enc,
 	return ret;
 }
 
-void sde_encoder_helper_get_jitter_bounds_ns(u32 frame_rate,
-		u32 jitter_num, u32 jitter_denom,
-		ktime_t *l_bound, ktime_t *u_bound)
+void sde_encoder_helper_get_jitter_bounds_ns(u32 frame_rate, u32 jitter_num,
+					     u32 jitter_denom, ktime_t *l_bound,
+					     ktime_t *u_bound)
 {
 	ktime_t jitter_ns, frametime_ns;
 
 	frametime_ns = (1 * 1000000000) / frame_rate;
-	jitter_ns =  jitter_num * frametime_ns;
+	jitter_ns = jitter_num * frametime_ns;
 	do_div(jitter_ns, jitter_denom * 100);
 
 	*l_bound = frametime_ns - jitter_ns;
@@ -6332,7 +6474,7 @@ u32 sde_encoder_get_frame_count(struct drm_encoder *encoder)
 }
 
 bool sde_encoder_get_vblank_timestamp(struct drm_encoder *encoder,
-		ktime_t *tvblank)
+				      ktime_t *tvblank)
 {
 	struct sde_encoder_virt *sde_enc = NULL;
 	struct sde_encoder_phys *phys;
@@ -6352,9 +6494,8 @@ bool sde_encoder_get_vblank_timestamp(struct drm_encoder *encoder,
 	return *tvblank ? true : false;
 }
 
-static void _sde_encoder_cache_hw_res_cont_splash(
-		struct drm_encoder *encoder,
-		struct sde_kms *sde_kms)
+static void _sde_encoder_cache_hw_res_cont_splash(struct drm_encoder *encoder,
+						  struct sde_kms *sde_kms)
 {
 	int i, idx;
 	struct sde_encoder_virt *sde_enc;
@@ -6380,20 +6521,20 @@ static void _sde_encoder_cache_hw_res_cont_splash(
 	}
 
 	/*
-	 * If we have multiple phys encoders with one controller, make
-	 * sure to populate the controller pointer in both phys encoders.
-	 */
+   * If we have multiple phys encoders with one controller, make
+   * sure to populate the controller pointer in both phys encoders.
+   */
 	for (idx = 0; idx < sde_enc->num_phys_encs; idx++) {
 		phys_enc = sde_enc->phys_encs[idx];
 		phys_enc->hw_ctl = NULL;
 
 		sde_rm_init_hw_iter(&ctl_iter, encoder->base.id,
-				SDE_HW_BLK_CTL);
+				    SDE_HW_BLK_CTL);
 		for (i = 0; i < sde_enc->num_phys_encs; i++) {
 			if (sde_rm_get_hw(&sde_kms->rm, &ctl_iter)) {
 				phys_enc->hw_ctl = to_sde_hw_ctl(ctl_iter.hw);
 				pr_debug("HW CTL intf_idx:%d hw_ctl:[0x%pK]\n",
-					phys_enc->intf_idx, phys_enc->hw_ctl);
+					 phys_enc->intf_idx, phys_enc->hw_ctl);
 			}
 		}
 	}
@@ -6417,8 +6558,9 @@ static void _sde_encoder_cache_hw_res_cont_splash(
  * @enable:	boolean indicates enable or displae state of splash
  * @Return:	true if successful in updating the encoder structure
  */
-int sde_encoder_update_caps_for_cont_splash(struct drm_encoder *encoder,
-		struct sde_splash_display *splash_display, bool enable)
+int sde_encoder_update_caps_for_cont_splash(
+	struct drm_encoder *encoder, struct sde_splash_display *splash_display,
+	bool enable)
 {
 	struct sde_encoder_virt *sde_enc;
 	struct msm_drm_private *priv;
@@ -6450,8 +6592,7 @@ int sde_encoder_update_caps_for_cont_splash(struct drm_encoder *encoder,
 		SDE_ERROR_ENC(sde_enc, "No connectors registered\n");
 		return -EINVAL;
 	}
-	SDE_DEBUG_ENC(sde_enc,
-			"num of connectors: %d\n", priv->num_connectors);
+	SDE_DEBUG_ENC(sde_enc, "num of connectors: %d\n", priv->num_connectors);
 
 	SDE_DEBUG_ENC(sde_enc, "enable: %d\n", enable);
 	if (!enable) {
@@ -6465,20 +6606,19 @@ int sde_encoder_update_caps_for_cont_splash(struct drm_encoder *encoder,
 
 	if (!splash_display) {
 		SDE_ERROR_ENC(sde_enc, "invalid splash data\n");
-		return  -EINVAL;
+		return -EINVAL;
 	}
 
 	for (i = 0; i < priv->num_connectors; i++) {
 		SDE_DEBUG_ENC(sde_enc, "connector id: %d\n",
-				priv->connectors[i]->base.id);
+			      priv->connectors[i]->base.id);
 		sde_conn = to_sde_connector(priv->connectors[i]);
 		if (!sde_conn->encoder) {
 			SDE_DEBUG_ENC(sde_enc,
-				"encoder not attached to connector\n");
+				      "encoder not attached to connector\n");
 			continue;
 		}
-		if (sde_conn->encoder->base.id
-				== encoder->base.id) {
+		if (sde_conn->encoder->base.id == encoder->base.id) {
 			conn = (priv->connectors[i]);
 			break;
 		}
@@ -6496,54 +6636,55 @@ int sde_encoder_update_caps_for_cont_splash(struct drm_encoder *encoder,
 		return -EINVAL;
 	}
 
-	sub_mode.dsc_mode = splash_display->dsc_cnt ? MSM_DISPLAY_DSC_MODE_ENABLED :
-			MSM_DISPLAY_DSC_MODE_DISABLED;
+	sub_mode.dsc_mode = splash_display->dsc_cnt ?
+				    MSM_DISPLAY_DSC_MODE_ENABLED :
+				    MSM_DISPLAY_DSC_MODE_DISABLED;
 	drm_mode = &encoder->crtc->state->adjusted_mode;
-	ret = sde_connector_get_mode_info(&sde_conn->base,
-		drm_mode, &sub_mode, &sde_conn_state->mode_info);
+	ret = sde_connector_get_mode_info(&sde_conn->base, drm_mode, &sub_mode,
+					  &sde_conn_state->mode_info);
 	if (ret) {
-		SDE_ERROR_ENC(sde_enc,
-			"conn: ->get_mode_info failed. ret=%d\n", ret);
+		SDE_ERROR_ENC(sde_enc, "conn: ->get_mode_info failed. ret=%d\n",
+			      ret);
 		return ret;
 	}
 
 	if (sde_conn->encoder) {
 		conn->state->best_encoder = sde_conn->encoder;
 		SDE_DEBUG_ENC(sde_enc,
-			"configured cstate->best_encoder to ID = %d\n",
-			conn->state->best_encoder->base.id);
+			      "configured cstate->best_encoder to ID = %d\n",
+			      conn->state->best_encoder->base.id);
 	} else {
 		SDE_ERROR_ENC(sde_enc, "No encoder mapped to connector=%d\n",
-				conn->base.id);
+			      conn->base.id);
 	}
 
 	sde_enc->crtc = encoder->crtc;
 
 	ret = sde_rm_reserve(&sde_kms->rm, encoder, encoder->crtc->state,
-			conn->state, false);
+			     conn->state, false);
 	if (ret) {
-		SDE_ERROR_ENC(sde_enc,
-			"failed to reserve hw resources, %d\n", ret);
+		SDE_ERROR_ENC(sde_enc, "failed to reserve hw resources, %d\n",
+			      ret);
 		return ret;
 	}
 
 	SDE_DEBUG_ENC(sde_enc, "connector topology = %llu\n",
-			sde_connector_get_topology_name(conn));
+		      sde_connector_get_topology_name(conn));
 	SDE_DEBUG_ENC(sde_enc, "hdisplay = %d, vdisplay = %d\n",
-			drm_mode->hdisplay, drm_mode->vdisplay);
+		      drm_mode->hdisplay, drm_mode->vdisplay);
 	drm_set_preferred_mode(conn, drm_mode->hdisplay, drm_mode->vdisplay);
 
 	bridge = drm_bridge_chain_get_first_bridge(encoder);
 	if (bridge) {
 		SDE_DEBUG_ENC(sde_enc, "Bridge mapped to encoder\n");
 		/*
-		 * For cont-splash use case, we update the mode
-		 * configurations manually. This will skip the
-		 * usually mode set call when actual frame is
-		 * pushed from framework. The bridge needs to
-		 * be updated with the current drm mode by
-		 * calling the bridge mode set ops.
-		 */
+     * For cont-splash use case, we update the mode
+     * configurations manually. This will skip the
+     * usually mode set call when actual frame is
+     * pushed from framework. The bridge needs to
+     * be updated with the current drm mode by
+     * calling the bridge mode set ops.
+     */
 		drm_bridge_chain_mode_set(bridge, drm_mode, drm_mode);
 	} else {
 		SDE_ERROR_ENC(sde_enc, "No bridge attached to encoder\n");
@@ -6556,7 +6697,7 @@ int sde_encoder_update_caps_for_cont_splash(struct drm_encoder *encoder,
 
 		if (!phys) {
 			SDE_ERROR_ENC(sde_enc,
-				"phys encoders not initialized\n");
+				      "phys encoders not initialized\n");
 			return -EINVAL;
 		}
 
@@ -6576,7 +6717,7 @@ int sde_encoder_update_caps_for_cont_splash(struct drm_encoder *encoder,
 }
 
 int sde_encoder_display_failure_notification(struct drm_encoder *enc,
-	bool skip_pre_kickoff)
+					     bool skip_pre_kickoff)
 {
 	struct msm_drm_thread *event_thread = NULL;
 	struct msm_drm_private *priv = NULL;
@@ -6589,12 +6730,12 @@ int sde_encoder_display_failure_notification(struct drm_encoder *enc,
 
 	priv = enc->dev->dev_private;
 	sde_enc = to_sde_encoder_virt(enc);
-	if (!sde_enc->crtc || (sde_enc->crtc->index
-			>= ARRAY_SIZE(priv->event_thread))) {
+	if (!sde_enc->crtc ||
+	    (sde_enc->crtc->index >= ARRAY_SIZE(priv->event_thread))) {
 		SDE_DEBUG_ENC(sde_enc,
-			"invalid cached CRTC: %d or crtc index: %d\n",
-			sde_enc->crtc == NULL,
-			sde_enc->crtc ? sde_enc->crtc->index : -EINVAL);
+			      "invalid cached CRTC: %d or crtc index: %d\n",
+			      sde_enc->crtc == NULL,
+			      sde_enc->crtc ? sde_enc->crtc->index : -EINVAL);
 		return -EINVAL;
 	}
 
@@ -6610,10 +6751,10 @@ int sde_encoder_display_failure_notification(struct drm_encoder *enc,
 	}
 
 	/*
-	 * panel may stop generating te signal (vsync) during esd failure. rsc
-	 * hardware may hang without vsync. Avoid rsc hang by generating the
-	 * vsync from watchdog timer instead of panel.
-	 */
+   * panel may stop generating te signal (vsync) during esd failure. rsc
+   * hardware may hang without vsync. Avoid rsc hang by generating the
+   * vsync from watchdog timer instead of panel.
+   */
 	sde_encoder_helper_switch_vsync(enc, true);
 
 	if (!skip_pre_kickoff) {
@@ -6693,7 +6834,8 @@ struct sde_hw_ctl *sde_encoder_get_hw_ctl(struct sde_connector *c_conn)
 		goto exit;
 
 	hw_ctl = cur_master->hw_ctl;
-	SDE_DEBUG("conn hw_ctl idx:%d intf_mode:%d\n", hw_ctl->idx, cur_master->intf_mode);
+	SDE_DEBUG("conn hw_ctl idx:%d intf_mode:%d\n", hw_ctl->idx,
+		  cur_master->intf_mode);
 
 exit:
 	return hw_ctl;
@@ -6706,18 +6848,17 @@ void sde_encoder_add_data_to_minidump_va(struct drm_encoder *drm_enc)
 	u32 i;
 
 	sde_enc = to_sde_encoder_virt(drm_enc);
-	for( i = 0; i < MAX_PHYS_ENCODERS_PER_VIRTUAL; i++)
-	{
+	for (i = 0; i < MAX_PHYS_ENCODERS_PER_VIRTUAL; i++) {
 		phys_enc = sde_enc->phys_encs[i];
-		if(phys_enc && phys_enc->ops.add_to_minidump)
+		if (phys_enc && phys_enc->ops.add_to_minidump)
 			phys_enc->ops.add_to_minidump(phys_enc);
 
 		phys_enc = sde_enc->phys_cmd_encs[i];
-		if(phys_enc && phys_enc->ops.add_to_minidump)
+		if (phys_enc && phys_enc->ops.add_to_minidump)
 			phys_enc->ops.add_to_minidump(phys_enc);
 
 		phys_enc = sde_enc->phys_vid_encs[i];
-		if(phys_enc && phys_enc->ops.add_to_minidump)
+		if (phys_enc && phys_enc->ops.add_to_minidump)
 			phys_enc->ops.add_to_minidump(phys_enc);
 	}
 }
@@ -6730,7 +6871,7 @@ void sde_encoder_misr_sign_event_notify(struct drm_encoder *drm_enc)
 	struct sde_connector_state *c_state = NULL;
 	struct sde_encoder_virt *sde_enc = NULL;
 	struct sde_encoder_phys *phys = NULL;
-	u32 current_misr_value[MAX_DSI_DISPLAYS] = {0};
+	u32 current_misr_value[MAX_DSI_DISPLAYS] = { 0 };
 	int rc = 0, i = 0;
 	bool misr_updated = false, roi_updated = false;
 	struct msm_roi_list *prev_roi, *c_state_roi;
@@ -6770,8 +6911,10 @@ void sde_encoder_misr_sign_event_notify(struct drm_encoder *drm_enc)
 	}
 
 	for (i = 0; i < sde_enc->num_phys_encs; i++) {
-		if (current_misr_value[i] != c_conn->previous_misr_sign.misr_sign_value[i]) {
-			c_conn->previous_misr_sign.misr_sign_value[i] = current_misr_value[i];
+		if (current_misr_value[i] !=
+		    c_conn->previous_misr_sign.misr_sign_value[i]) {
+			c_conn->previous_misr_sign.misr_sign_value[i] =
+				current_misr_value[i];
 			misr_updated = true;
 		}
 	}
@@ -6783,18 +6926,21 @@ void sde_encoder_misr_sign_event_notify(struct drm_encoder *drm_enc)
 		roi_updated = true;
 	} else {
 		for (i = 0; i < prev_roi->num_rects; i++) {
-			if (IS_ROI_UPDATED(prev_roi->roi[i], c_state_roi->roi[i]))
+			if (IS_ROI_UPDATED(prev_roi->roi[i],
+					   c_state_roi->roi[i]))
 				roi_updated = true;
 		}
 	}
 
 	if (roi_updated)
-		memcpy(&c_conn->previous_misr_sign.roi_list, &c_state->rois, sizeof(c_state->rois));
+		memcpy(&c_conn->previous_misr_sign.roi_list, &c_state->rois,
+		       sizeof(c_state->rois));
 
 	if (misr_updated || roi_updated) {
 		event.type = DRM_EVENT_MISR_SIGN;
 		event.length = sizeof(c_conn->previous_misr_sign);
-		msm_mode_object_event_notify(&connector->base, connector->dev, &event,
-						(u8 *)&c_conn->previous_misr_sign);
+		msm_mode_object_event_notify(&connector->base, connector->dev,
+					     &event,
+					     (u8 *)&c_conn->previous_misr_sign);
 	}
 }

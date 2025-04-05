@@ -17,12 +17,12 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <linux/dma-mapping.h>
 #include <linux/module.h>
+#include <linux/msm_dma_iommu_mapping.h>
 #include <linux/of_platform.h>
 #include <linux/pm_runtime.h>
 #include <linux/qcom-dma-mapping.h>
-#include <linux/msm_dma_iommu_mapping.h>
-#include <linux/dma-mapping.h>
 #include <linux/qcom-iommu-util.h>
 
 #include <soc/qcom/secure_buffer.h>
@@ -62,8 +62,8 @@ static DEFINE_MUTEX(smmu_list_lock);
 /* List of all smmu devices installed */
 static LIST_HEAD(sde_smmu_list);
 
-static int msm_smmu_attach(struct msm_mmu *mmu, const char * const *names,
-		int cnt)
+static int msm_smmu_attach(struct msm_mmu *mmu, const char *const *names,
+			   int cnt)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -97,8 +97,8 @@ static int msm_smmu_attach(struct msm_mmu *mmu, const char * const *names,
 	return 0;
 }
 
-static void msm_smmu_detach(struct msm_mmu *mmu, const char * const *names,
-		int cnt)
+static void msm_smmu_detach(struct msm_mmu *mmu, const char *const *names,
+			    int cnt)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -147,8 +147,8 @@ static int msm_enable_smmu_translations(struct msm_mmu *mmu)
 	return ret;
 }
 #else
-static int msm_smmu_set_attribute(struct msm_mmu *mmu,
-		enum iommu_attr attr, void *data)
+static int msm_smmu_set_attribute(struct msm_mmu *mmu, enum iommu_attr attr,
+				  void *data)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -165,8 +165,8 @@ static int msm_smmu_set_attribute(struct msm_mmu *mmu,
 }
 #endif
 
-static int msm_smmu_one_to_one_unmap(struct msm_mmu *mmu,
-				uint32_t dest_address, uint32_t size)
+static int msm_smmu_one_to_one_unmap(struct msm_mmu *mmu, uint32_t dest_address,
+				     uint32_t size)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -183,7 +183,8 @@ static int msm_smmu_one_to_one_unmap(struct msm_mmu *mmu,
 }
 
 static int msm_smmu_one_to_one_map(struct msm_mmu *mmu, uint32_t iova,
-		uint32_t dest_address, uint32_t size, int prot)
+				   uint32_t dest_address, uint32_t size,
+				   int prot)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -192,8 +193,7 @@ static int msm_smmu_one_to_one_map(struct msm_mmu *mmu, uint32_t iova,
 	if (!client || !client->domain)
 		return -ENODEV;
 
-	ret = iommu_map(client->domain, iova, dest_address,
-			size, prot);
+	ret = iommu_map(client->domain, iova, dest_address, size, prot);
 	if (ret)
 		pr_err("smmu map failed\n");
 
@@ -201,7 +201,7 @@ static int msm_smmu_one_to_one_map(struct msm_mmu *mmu, uint32_t iova,
 }
 
 static int msm_smmu_map(struct msm_mmu *mmu, uint64_t iova,
-		struct sg_table *sgt, unsigned int len, int prot)
+			struct sg_table *sgt, unsigned int len, int prot)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -209,17 +209,17 @@ static int msm_smmu_map(struct msm_mmu *mmu, uint64_t iova,
 
 	if (sgt && sgt->sgl) {
 		ret = iommu_map_sg(client->domain, iova, sgt->sgl,
-				sgt->orig_nents, prot);
+				   sgt->orig_nents, prot);
 		WARN_ON((int)ret < 0);
 		DRM_DEBUG("%pad/0x%x/0x%x/\n", &sgt->sgl->dma_address,
-				sgt->sgl->dma_length, prot);
+			  sgt->sgl->dma_length, prot);
 		SDE_EVT32(sgt->sgl->dma_address, sgt->sgl->dma_length, prot);
 	}
 	return (ret == len) ? 0 : -EINVAL;
 }
 
 static int msm_smmu_unmap(struct msm_mmu *mmu, uint64_t iova,
-		struct sg_table *sgt, unsigned int len)
+			  struct sg_table *sgt, unsigned int len)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -249,7 +249,7 @@ struct device *msm_smmu_get_dev(struct msm_mmu *mmu)
 }
 
 static int msm_smmu_map_dma_buf(struct msm_mmu *mmu, struct sg_table *sgt,
-		int dir, u32 flags)
+				int dir, u32 flags)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -262,12 +262,12 @@ static int msm_smmu_map_dma_buf(struct msm_mmu *mmu, struct sg_table *sgt,
 	}
 
 	/*
-	 * For import buffer type, dma_map_sg_attrs is called during
-	 * dma_buf_map_attachment and is not required to call again
-	 */
+   * For import buffer type, dma_map_sg_attrs is called during
+   * dma_buf_map_attachment and is not required to call again
+   */
 	if (!(flags & MSM_BO_EXTBUF)) {
 		ret = dma_map_sg_attrs(client->dev, sgt->sgl, sgt->nents, dir,
-				attrs);
+				       attrs);
 		if (!ret) {
 			DRM_ERROR("dma map sg failed\n");
 			return -ENOMEM;
@@ -275,19 +275,17 @@ static int msm_smmu_map_dma_buf(struct msm_mmu *mmu, struct sg_table *sgt,
 	}
 
 	if (sgt && sgt->sgl) {
-		DRM_DEBUG("%pad/0x%x/0x%x/0x%lx\n",
-				&sgt->sgl->dma_address, sgt->sgl->dma_length,
-				dir, attrs);
-		SDE_EVT32(sgt->sgl->dma_address, sgt->sgl->dma_length,
-				dir, attrs, client->secure, flags);
+		DRM_DEBUG("%pad/0x%x/0x%x/0x%lx\n", &sgt->sgl->dma_address,
+			  sgt->sgl->dma_length, dir, attrs);
+		SDE_EVT32(sgt->sgl->dma_address, sgt->sgl->dma_length, dir,
+			  attrs, client->secure, flags);
 	}
 
 	return 0;
 }
 
-
 static void msm_smmu_unmap_dma_buf(struct msm_mmu *mmu, struct sg_table *sgt,
-		int dir, u32 flags)
+				   int dir, u32 flags)
 {
 	struct msm_smmu *smmu = to_msm_smmu(mmu);
 	struct msm_smmu_client *client = msm_smmu_to_client(smmu);
@@ -298,11 +296,10 @@ static void msm_smmu_unmap_dma_buf(struct msm_mmu *mmu, struct sg_table *sgt,
 	}
 
 	if (sgt->sgl) {
-		DRM_DEBUG("%pad/0x%x/0x%x\n",
-				&sgt->sgl->dma_address, sgt->sgl->dma_length,
-				dir);
-		SDE_EVT32(sgt->sgl->dma_address, sgt->sgl->dma_length,
-				dir, client->secure, flags);
+		DRM_DEBUG("%pad/0x%x/0x%x\n", &sgt->sgl->dma_address,
+			  sgt->sgl->dma_length, dir);
+		SDE_EVT32(sgt->sgl->dma_address, sgt->sgl->dma_length, dir,
+			  client->secure, flags);
 	}
 
 	if (!(flags & MSM_BO_EXTBUF))
@@ -337,33 +334,37 @@ static const struct msm_mmu_funcs funcs = {
 };
 
 static struct msm_smmu_domain msm_smmu_domains[MSM_SMMU_DOMAIN_MAX] = {
-	[MSM_SMMU_DOMAIN_UNSECURE] = {
-		.label = "mdp_ns",
-		.secure = false,
-	},
-	[MSM_SMMU_DOMAIN_SECURE] = {
-		.label = "mdp_s",
-		.secure = true,
-	},
-	[MSM_SMMU_DOMAIN_NRT_UNSECURE] = {
-		.label = "rot_ns",
-		.secure = false,
-	},
-	[MSM_SMMU_DOMAIN_NRT_SECURE] = {
-		.label = "rot_s",
-		.secure = true,
-	},
+    [MSM_SMMU_DOMAIN_UNSECURE] =
+        {
+            .label = "mdp_ns",
+            .secure = false,
+        },
+    [MSM_SMMU_DOMAIN_SECURE] =
+        {
+            .label = "mdp_s",
+            .secure = true,
+        },
+    [MSM_SMMU_DOMAIN_NRT_UNSECURE] =
+        {
+            .label = "rot_ns",
+            .secure = false,
+        },
+    [MSM_SMMU_DOMAIN_NRT_SECURE] =
+        {
+            .label = "rot_s",
+            .secure = true,
+        },
 };
 
 static const struct of_device_id msm_smmu_dt_match[] = {
 	{ .compatible = "qcom,smmu_sde_unsec",
-		.data = &msm_smmu_domains[MSM_SMMU_DOMAIN_UNSECURE] },
+	  .data = &msm_smmu_domains[MSM_SMMU_DOMAIN_UNSECURE] },
 	{ .compatible = "qcom,smmu_sde_sec",
-		.data = &msm_smmu_domains[MSM_SMMU_DOMAIN_SECURE] },
+	  .data = &msm_smmu_domains[MSM_SMMU_DOMAIN_SECURE] },
 	{ .compatible = "qcom,smmu_sde_nrt_unsec",
-		.data = &msm_smmu_domains[MSM_SMMU_DOMAIN_NRT_UNSECURE] },
+	  .data = &msm_smmu_domains[MSM_SMMU_DOMAIN_NRT_UNSECURE] },
 	{ .compatible = "qcom,smmu_sde_nrt_sec",
-		.data = &msm_smmu_domains[MSM_SMMU_DOMAIN_NRT_SECURE] },
+	  .data = &msm_smmu_domains[MSM_SMMU_DOMAIN_NRT_SECURE] },
 	{}
 };
 MODULE_DEVICE_TABLE(of, msm_smmu_dt_match);
@@ -395,8 +396,8 @@ static struct msm_smmu_client *msm_smmu_get_smmu(const char *compat)
 }
 
 static struct device *msm_smmu_device_add(struct device *dev,
-		enum msm_mmu_domain_type domain,
-		struct msm_smmu *smmu)
+					  enum msm_mmu_domain_type domain,
+					  struct msm_smmu *smmu)
 {
 	int i;
 	const char *compat = NULL;
@@ -417,7 +418,7 @@ static struct device *msm_smmu_device_add(struct device *dev,
 	smmu->client = msm_smmu_get_smmu(compat);
 	if (IS_ERR_OR_NULL(smmu->client)) {
 		DRM_DEBUG("unable to find domain %d compat: %s\n", domain,
-				compat);
+			  compat);
 		return ERR_PTR(-ENODEV);
 	}
 
@@ -425,7 +426,7 @@ static struct device *msm_smmu_device_add(struct device *dev,
 }
 
 struct msm_mmu *msm_smmu_new(struct device *dev,
-		enum msm_mmu_domain_type domain)
+			     enum msm_mmu_domain_type domain)
 {
 	struct msm_smmu *smmu;
 	struct device *client_dev;
@@ -437,7 +438,7 @@ struct msm_mmu *msm_smmu_new(struct device *dev,
 	client_dev = msm_smmu_device_add(dev, domain, smmu);
 	if (IS_ERR_OR_NULL(client_dev)) {
 		kfree(smmu);
-		return (void *)client_dev ? : ERR_PTR(-ENODEV);
+		return (void *)client_dev ?: ERR_PTR(-ENODEV);
 	}
 
 	smmu->client_dev = client_dev;
@@ -447,8 +448,8 @@ struct msm_mmu *msm_smmu_new(struct device *dev,
 }
 
 static int msm_smmu_fault_handler(struct iommu_domain *domain,
-		struct device *dev, unsigned long iova,
-		int flags, void *token)
+				  struct device *dev, unsigned long iova,
+				  int flags, void *token)
 {
 	struct msm_smmu_client *client;
 	int rc = -EINVAL;
@@ -466,9 +467,9 @@ static int msm_smmu_fault_handler(struct iommu_domain *domain,
 	DRM_ERROR("SMMU device:%s", client->dev ? client->dev->kobj.name : "");
 
 	/*
-	 * return -ENOSYS to allow smmu driver to dump out useful
-	 * debug info.
-	 */
+   * return -ENOSYS to allow smmu driver to dump out useful
+   * debug info.
+   */
 	return rc;
 }
 
@@ -490,8 +491,8 @@ static int msm_smmu_bind(struct device *dev, struct device *master, void *data)
  * @master:     Pointer to container of drm device
  * @data:       Pointer to private data
  */
-static void msm_smmu_unbind(struct device *dev,
-		struct device *master, void *data)
+static void msm_smmu_unbind(struct device *dev, struct device *master,
+			    void *data)
 {
 }
 
@@ -518,7 +519,8 @@ static int msm_smmu_probe(struct platform_device *pdev)
 
 	match = of_match_device(msm_smmu_dt_match, &pdev->dev);
 	if (!match || !match->data) {
-		DISP_DEV_ERR(&pdev->dev, "probe failed as match data is invalid\n");
+		DISP_DEV_ERR(&pdev->dev,
+			     "probe failed as match data is invalid\n");
 		return -EINVAL;
 	}
 
@@ -545,16 +547,17 @@ static int msm_smmu_probe(struct platform_device *pdev)
 	client->domain_attached = true;
 
 	if (!client->dev->dma_parms)
-		client->dev->dma_parms = devm_kzalloc(client->dev,
-				sizeof(*client->dev->dma_parms), GFP_KERNEL);
+		client->dev->dma_parms = devm_kzalloc(
+			client->dev, sizeof(*client->dev->dma_parms),
+			GFP_KERNEL);
 	dma_set_max_seg_size(client->dev, DMA_BIT_MASK(32));
 	dma_set_seg_boundary(client->dev, (unsigned long)DMA_BIT_MASK(64));
 
-	iommu_set_fault_handler(client->domain,
-			msm_smmu_fault_handler, (void *)client);
+	iommu_set_fault_handler(client->domain, msm_smmu_fault_handler,
+				(void *)client);
 
-	DRM_INFO("Created domain %s, secure=%d\n",
-			domain->label, domain->secure);
+	DRM_INFO("Created domain %s, secure=%d\n", domain->label,
+		 domain->secure);
 
 	platform_set_drvdata(pdev, client);
 
@@ -590,13 +593,14 @@ static int msm_smmu_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver msm_smmu_driver = {
-	.probe = msm_smmu_probe,
-	.remove = msm_smmu_remove,
-	.driver = {
-		.name = "msmdrm_smmu",
-		.of_match_table = msm_smmu_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = msm_smmu_probe,
+    .remove = msm_smmu_remove,
+    .driver =
+        {
+            .name = "msmdrm_smmu",
+            .of_match_table = msm_smmu_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int __init msm_smmu_driver_init(void)

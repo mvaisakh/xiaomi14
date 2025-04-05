@@ -15,32 +15,32 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/slab.h>
-#include <linux/interrupt.h>
-#include <linux/if_arp.h>
-#include "hif_io32.h"
 #include "hif_runtime_pm.h"
-#include "hif.h"
-#include "target_type.h"
-#include "hif_main.h"
-#include "ce_main.h"
 #include "ce_api.h"
-#include "ce_internal.h"
-#include "ce_reg.h"
 #include "ce_bmi.h"
-#include "regtable.h"
-#include "hif_hw_version.h"
-#include <linux/debugfs.h>
-#include <linux/seq_file.h>
-#include "qdf_status.h"
-#include "qdf_atomic.h"
-#include "pld_common.h"
-#include "mp_dev.h"
+#include "ce_internal.h"
+#include "ce_main.h"
+#include "ce_reg.h"
+#include "hif.h"
 #include "hif_debug.h"
+#include "hif_hw_version.h"
+#include "hif_io32.h"
+#include "hif_main.h"
+#include "mp_dev.h"
+#include "pld_common.h"
+#include "qdf_atomic.h"
+#include "qdf_status.h"
+#include "regtable.h"
+#include "target_type.h"
+#include <linux/debugfs.h>
+#include <linux/if_arp.h>
+#include <linux/interrupt.h>
+#include <linux/seq_file.h>
+#include <linux/slab.h>
 
 #include "ce_tasklet.h"
-#include "targaddrs.h"
 #include "hif_exec.h"
+#include "targaddrs.h"
 
 #define CNSS_RUNTIME_FILE "cnss_runtime_pm"
 #define CNSS_RUNTIME_FILE_PERM QDF_FILE_USR_READ
@@ -62,19 +62,17 @@ static struct hif_rtpm_ctx *gp_hif_rtpm_ctx;
  */
 static const char *hif_rtpm_id_to_string(enum hif_rtpm_client_id id)
 {
-	static const char * const strings[] = {
-					"HIF_RTPM_ID_RESERVED",
-					"HIF_RTPM_HAL_REO_CMD",
-					"HIF_RTPM_WMI",
-					"HIF_RTPM_HTT",
-					"HIF_RTPM_DP",
-					"HIF_RTPM_RING_STATS",
-					"HIF_RTPM_CE",
-					"HIF_RTPM_FORCE_WAKE",
-					"HIF_RTPM_ID_PM_QOS_NOTIFY",
-					"HIF_RTPM_ID_WIPHY_SUSPEND",
-					"HIF_RTPM_ID_MAX"
-	};
+	static const char *const strings[] = { "HIF_RTPM_ID_RESERVED",
+					       "HIF_RTPM_HAL_REO_CMD",
+					       "HIF_RTPM_WMI",
+					       "HIF_RTPM_HTT",
+					       "HIF_RTPM_DP",
+					       "HIF_RTPM_RING_STATS",
+					       "HIF_RTPM_CE",
+					       "HIF_RTPM_FORCE_WAKE",
+					       "HIF_RTPM_ID_PM_QOS_NOTIFY",
+					       "HIF_RTPM_ID_WIPHY_SUSPEND",
+					       "HIF_RTPM_ID_MAX" };
 
 	return strings[id];
 }
@@ -98,9 +96,8 @@ static inline int hif_rtpm_read_usage_count(void)
  *
  * debugging tool added to allow for unified API for debug/sys fs rtpm printing
  */
-static void
-hif_rtpm_print(enum hif_rtpm_fill_type type, int *index, void *buf,
-	       char *fmt, ...)
+static void hif_rtpm_print(enum hif_rtpm_fill_type type, int *index, void *buf,
+			   char *fmt, ...)
 {
 	va_list args;
 
@@ -116,8 +113,8 @@ hif_rtpm_print(enum hif_rtpm_fill_type type, int *index, void *buf,
 	va_end(args);
 }
 
-#define HIF_RTPM_STATS(_type, _index,  _s, _rtpm_ctx, _name) \
-	hif_rtpm_print(_type, _index,  _s, "%30s: %u\n", #_name, \
+#define HIF_RTPM_STATS(_type, _index, _s, _rtpm_ctx, _name)     \
+	hif_rtpm_print(_type, _index, _s, "%30s: %u\n", #_name, \
 		       (_rtpm_ctx)->stats._name)
 
 int hif_rtpm_log_debug_stats(void *s, enum hif_rtpm_fill_type type)
@@ -125,8 +122,10 @@ int hif_rtpm_log_debug_stats(void *s, enum hif_rtpm_fill_type type)
 	int index = 0;
 	struct hif_rtpm_client *client = NULL;
 	struct hif_pm_runtime_lock *ctx;
-	static const char * const autopm_state[] = {"NONE", "ON", "RESUMING",
-			"RESUMING_LINKUP", "SUSPENDING", "SUSPENDED"};
+	static const char *const autopm_state[] = {
+		"NONE",	      "ON",	  "RESUMING", "RESUMING_LINKUP",
+		"SUSPENDING", "SUSPENDED"
+	};
 	int pm_state = qdf_atomic_read(&gp_hif_rtpm_ctx->pm_state);
 	int i;
 
@@ -139,7 +138,8 @@ int hif_rtpm_log_debug_stats(void *s, enum hif_rtpm_fill_type type)
 	hif_rtpm_print(type, &index, s, "%30s: %llu\n", "Last Busy timestamp",
 		       gp_hif_rtpm_ctx->stats.last_busy_ts);
 
-	hif_rtpm_print(type, &index, s, "%30s: %llu\n", "Last resume request timestamp",
+	hif_rtpm_print(type, &index, s, "%30s: %llu\n",
+		       "Last resume request timestamp",
 		       gp_hif_rtpm_ctx->stats.request_resume_ts);
 
 	hif_rtpm_print(type, &index, s, "%30s: %d\n", "Last resume request by",
@@ -234,16 +234,15 @@ static int hif_rtpm_debugfs_show(struct seq_file *s, void *data)
  */
 static int hif_rtpm_debugfs_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, hif_rtpm_debugfs_show,
-			inode->i_private);
+	return single_open(file, hif_rtpm_debugfs_show, inode->i_private);
 }
 
 static const struct file_operations hif_rtpm_fops = {
-	.owner          = THIS_MODULE,
-	.open           = hif_rtpm_debugfs_open,
-	.release        = single_release,
-	.read           = seq_read,
-	.llseek         = seq_lseek,
+	.owner = THIS_MODULE,
+	.open = hif_rtpm_debugfs_open,
+	.release = single_release,
+	.read = seq_read,
+	.llseek = seq_lseek,
 };
 
 /**
@@ -253,11 +252,9 @@ static const struct file_operations hif_rtpm_fops = {
  */
 static void hif_rtpm_debugfs_create(void)
 {
-	gp_hif_rtpm_ctx->pm_dentry = qdf_debugfs_create_entry(CNSS_RUNTIME_FILE,
-							CNSS_RUNTIME_FILE_PERM,
-							NULL,
-							NULL,
-							&hif_rtpm_fops);
+	gp_hif_rtpm_ctx->pm_dentry = qdf_debugfs_create_entry(
+		CNSS_RUNTIME_FILE, CNSS_RUNTIME_FILE_PERM, NULL, NULL,
+		&hif_rtpm_fops);
 }
 
 /**
@@ -369,8 +366,8 @@ static void hif_rtpm_sanitize_exit(void)
 	int i, active_count;
 
 	qdf_spin_lock_bh(&gp_hif_rtpm_ctx->prevent_list_lock);
-	list_for_each_entry_safe(ctx, tmp,
-				 &gp_hif_rtpm_ctx->prevent_list, list) {
+	list_for_each_entry_safe(ctx, tmp, &gp_hif_rtpm_ctx->prevent_list,
+				 list) {
 		hif_runtime_lock_deinit(ctx);
 	}
 	qdf_spin_unlock_bh(&gp_hif_rtpm_ctx->prevent_list_lock);
@@ -387,7 +384,7 @@ static void hif_rtpm_sanitize_exit(void)
 				QDF_DEBUG_PANIC("Client active on exit!");
 				while (active_count--)
 					__hif_rtpm_put_noidle(
-							gp_hif_rtpm_ctx->dev);
+						gp_hif_rtpm_ctx->dev);
 			}
 			QDF_DEBUG_PANIC("Client not deinitialized");
 			qdf_mem_free(client);
@@ -408,8 +405,8 @@ static void hif_rtpm_sanitize_ssr_exit(void)
 	struct hif_pm_runtime_lock *ctx, *tmp;
 
 	qdf_spin_lock_bh(&gp_hif_rtpm_ctx->prevent_list_lock);
-	list_for_each_entry_safe(ctx, tmp,
-				 &gp_hif_rtpm_ctx->prevent_list, list) {
+	list_for_each_entry_safe(ctx, tmp, &gp_hif_rtpm_ctx->prevent_list,
+				 list) {
 		__hif_pm_runtime_allow_suspend(ctx);
 	}
 	qdf_spin_unlock_bh(&gp_hif_rtpm_ctx->prevent_list_lock);
@@ -421,9 +418,8 @@ void hif_rtpm_close(struct hif_softc *scn)
 	hif_rtpm_deregister(HIF_RTPM_ID_CE);
 	hif_rtpm_deregister(HIF_RTPM_ID_FORCE_WAKE);
 
-	hif_is_recovery_in_progress(scn) ?
-		hif_rtpm_sanitize_ssr_exit() :
-		hif_rtpm_sanitize_exit();
+	hif_is_recovery_in_progress(scn) ? hif_rtpm_sanitize_ssr_exit() :
+					   hif_rtpm_sanitize_exit();
 
 	qdf_mem_set(gp_hif_rtpm_ctx, sizeof(*gp_hif_rtpm_ctx), 0);
 	gp_hif_rtpm_ctx = NULL;
@@ -528,8 +524,8 @@ QDF_STATUS hif_rtpm_deregister(uint32_t id)
 	client = gp_hif_rtpm_ctx->clients[id];
 	if (qdf_atomic_read(&client->active_count)) {
 		active_count = qdf_atomic_read(&client->active_count);
-		hif_err("Client: %u-%s Runtime PM active",
-			id, hif_rtpm_id_to_string(id));
+		hif_err("Client: %u-%s Runtime PM active", id,
+			hif_rtpm_id_to_string(id));
 		hif_err("last get called: 0x%llx, get count: %d, put count: %d",
 			client->get_ts, qdf_atomic_read(&client->get_count),
 			qdf_atomic_read(&client->put_count));
@@ -684,8 +680,8 @@ QDF_STATUS hif_rtpm_get(uint8_t type, uint32_t id)
 	if (pm_state <= HIF_RTPM_STATE_RESUMING_LINKUP) {
 		ret = __hif_rtpm_get(gp_hif_rtpm_ctx->dev);
 		/* Get will return 1 if the device is already active,
-		 * just return success in that case
-		 */
+     * just return success in that case
+     */
 		if (ret > 0) {
 			ret = QDF_STATUS_SUCCESS;
 		} else if (ret == 0 || ret == -EINPROGRESS) {
@@ -694,7 +690,7 @@ QDF_STATUS hif_rtpm_get(uint8_t type, uint32_t id)
 			if (pm_state >= HIF_RTPM_STATE_RESUMING) {
 				__hif_rtpm_put_noidle(gp_hif_rtpm_ctx->dev);
 				gp_hif_rtpm_ctx->stats.request_resume_ts =
-							qdf_get_log_timestamp();
+					qdf_get_log_timestamp();
 				gp_hif_rtpm_ctx->stats.request_resume_id = id;
 				ret = QDF_STATUS_E_FAILURE;
 			} else {
@@ -710,11 +706,11 @@ QDF_STATUS hif_rtpm_get(uint8_t type, uint32_t id)
 	} else if (pm_state >= HIF_RTPM_STATE_RESUMING) {
 		/* Do not log in performance path */
 		if (id != HIF_RTPM_ID_DP)
-			hif_info_high("request RTPM resume by %d- %s",
-				      id, hif_rtpm_id_to_string(id));
+			hif_info_high("request RTPM resume by %d- %s", id,
+				      hif_rtpm_id_to_string(id));
 		__hif_rtpm_request_resume(gp_hif_rtpm_ctx->dev);
 		gp_hif_rtpm_ctx->stats.request_resume_ts =
-						qdf_get_log_timestamp();
+			qdf_get_log_timestamp();
 		gp_hif_rtpm_ctx->stats.request_resume_id = id;
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -750,8 +746,8 @@ QDF_STATUS hif_rtpm_put(uint8_t type, uint32_t id)
 		QDF_BUG(0);
 		return QDF_STATUS_E_CANCELED;
 	} else if (!usage_count || !qdf_atomic_read(&client->active_count)) {
-		hif_info_high("Put without a Get operation, %u-%s",
-			      id, hif_rtpm_id_to_string(id));
+		hif_info_high("Put without a Get operation, %u-%s", id,
+			      hif_rtpm_id_to_string(id));
 		return QDF_STATUS_E_CANCELED;
 	}
 
@@ -796,17 +792,16 @@ static int __hif_pm_runtime_prevent_suspend(struct hif_pm_runtime_lock *lock)
 	ret = __hif_rtpm_get(gp_hif_rtpm_ctx->dev);
 
 	/**
-	 * The ret can be -EINPROGRESS, if Runtime status is RPM_RESUMING or
-	 * RPM_SUSPENDING. Any other negative value is an error.
-	 * We shouldn't do runtime_put here as in later point allow
-	 * suspend gets called with the context and there the usage count
-	 * is decremented, so suspend will be prevented.
-	 */
+   * The ret can be -EINPROGRESS, if Runtime status is RPM_RESUMING or
+   * RPM_SUSPENDING. Any other negative value is an error.
+   * We shouldn't do runtime_put here as in later point allow
+   * suspend gets called with the context and there the usage count
+   * is decremented, so suspend will be prevented.
+   */
 	if (ret < 0 && ret != -EINPROGRESS) {
 		gp_hif_rtpm_ctx->stats.runtime_get_err++;
 		hif_err("pm_state: %d ret: %d",
-			qdf_atomic_read(&gp_hif_rtpm_ctx->pm_state),
-			ret);
+			qdf_atomic_read(&gp_hif_rtpm_ctx->pm_state), ret);
 	}
 
 	list_add_tail(&lock->list, &gp_hif_rtpm_ctx->prevent_list);
@@ -835,10 +830,10 @@ static int __hif_pm_runtime_allow_suspend(struct hif_pm_runtime_lock *lock)
 
 	usage_count = hif_rtpm_read_usage_count();
 	/*
-	 * For runtime PM enabled case, the usage count should never be 0
-	 * at this point. For runtime PM disabled case, it should never be
-	 * 2 at this point. Catch unexpected PUT without GET here.
-	 */
+   * For runtime PM enabled case, the usage count should never be 0
+   * at this point. For runtime PM disabled case, it should never be
+   * 2 at this point. Catch unexpected PUT without GET here.
+   */
 	if (usage_count == 2 && !gp_hif_rtpm_ctx->enable_rpm) {
 		hif_err("Unexpected PUT when runtime PM is disabled");
 		QDF_BUG(0);
@@ -871,9 +866,8 @@ int hif_pm_runtime_prevent_suspend(struct hif_pm_runtime_lock *lock)
 	qdf_spin_unlock_bh(&gp_hif_rtpm_ctx->prevent_list_lock);
 
 	if (qdf_atomic_read(&gp_hif_rtpm_ctx->pm_state) >=
-		HIF_RTPM_STATE_SUSPENDING)
-		hif_info_high("request RTPM resume by %s",
-			      lock->name);
+	    HIF_RTPM_STATE_SUSPENDING)
+		hif_info_high("request RTPM resume by %s", lock->name);
 
 	return 0;
 }
@@ -885,8 +879,8 @@ int hif_pm_runtime_prevent_suspend(struct hif_pm_runtime_lock *lock)
  *
  * Return: 0 if successful.
  */
-static
-int __hif_pm_runtime_prevent_suspend_sync(struct hif_pm_runtime_lock *lock)
+static int
+__hif_pm_runtime_prevent_suspend_sync(struct hif_pm_runtime_lock *lock)
 {
 	int ret = 0;
 
@@ -896,17 +890,16 @@ int __hif_pm_runtime_prevent_suspend_sync(struct hif_pm_runtime_lock *lock)
 	ret = __hif_rtpm_get_sync(gp_hif_rtpm_ctx->dev);
 
 	/**
-	 * The ret can be -EINPROGRESS, if Runtime status is RPM_RESUMING or
-	 * RPM_SUSPENDING. Any other negative value is an error.
-	 * We shouldn't do runtime_put here as in later point allow
-	 * suspend gets called with the context and there the usage count
-	 * is decremented, so suspend will be prevented.
-	 */
+   * The ret can be -EINPROGRESS, if Runtime status is RPM_RESUMING or
+   * RPM_SUSPENDING. Any other negative value is an error.
+   * We shouldn't do runtime_put here as in later point allow
+   * suspend gets called with the context and there the usage count
+   * is decremented, so suspend will be prevented.
+   */
 	if (ret < 0 && ret != -EINPROGRESS) {
 		gp_hif_rtpm_ctx->stats.runtime_get_err++;
 		hif_err("pm_state: %d ret: %d",
-			qdf_atomic_read(&gp_hif_rtpm_ctx->pm_state),
-			ret);
+			qdf_atomic_read(&gp_hif_rtpm_ctx->pm_state), ret);
 	}
 
 	qdf_spin_lock_bh(&gp_hif_rtpm_ctx->prevent_list_lock);
@@ -933,9 +926,8 @@ int hif_pm_runtime_prevent_suspend_sync(struct hif_pm_runtime_lock *lock)
 	__hif_pm_runtime_prevent_suspend_sync(lock);
 
 	if (qdf_atomic_read(&gp_hif_rtpm_ctx->pm_state) >=
-		HIF_RTPM_STATE_SUSPENDING)
-		hif_info_high("request RTPM resume by %s",
-			      lock->name);
+	    HIF_RTPM_STATE_SUSPENDING)
+		hif_info_high("request RTPM resume by %s", lock->name);
 
 	return 0;
 }
@@ -977,7 +969,7 @@ QDF_STATUS hif_rtpm_sync_resume(void)
 		gp_hif_rtpm_ctx->stats.resume_count++;
 		gp_hif_rtpm_ctx->stats.resume_ts = qdf_get_log_timestamp();
 		gp_hif_rtpm_ctx->stats.last_busy_ts =
-					gp_hif_rtpm_ctx->stats.resume_ts;
+			gp_hif_rtpm_ctx->stats.resume_ts;
 		return QDF_STATUS_SUCCESS;
 	}
 
@@ -995,11 +987,11 @@ void hif_rtpm_check_and_request_resume(void)
 {
 	hif_rtpm_suspend_lock();
 	if (qdf_atomic_read(&gp_hif_rtpm_ctx->pm_state) ==
-			HIF_RTPM_STATE_SUSPENDED) {
+	    HIF_RTPM_STATE_SUSPENDED) {
 		hif_rtpm_suspend_unlock();
 		__hif_rtpm_request_resume(gp_hif_rtpm_ctx->dev);
 		gp_hif_rtpm_ctx->stats.request_resume_ts =
-						qdf_get_log_timestamp();
+			qdf_get_log_timestamp();
 		gp_hif_rtpm_ctx->stats.request_resume_id = HIF_RTPM_ID_RESERVED;
 	} else {
 		hif_rtpm_suspend_unlock();
@@ -1038,13 +1030,15 @@ void hif_rtpm_display_last_busy_hist(struct hif_opaque_softc *hif_ctx)
 		if (!rtpm_ctx->clients[i] ||
 		    (i != HIF_RTPM_ID_CE && i != HIF_RTPM_ID_DP))
 			continue;
-		hif_info_high("RTPM client:%s busy_ts:%llu get_ts:%llu put_ts:%llu get_cnt:%d put_cnt:%d",
-			      hif_rtpm_id_to_string(i),
-			      rtpm_ctx->clients[i]->last_busy_ts,
-			      rtpm_ctx->clients[i]->get_ts,
-			      rtpm_ctx->clients[i]->put_ts,
-			      qdf_atomic_read(&rtpm_ctx->clients[i]->get_count),
-			      qdf_atomic_read(&rtpm_ctx->clients[i]->put_count));
+		hif_info_high(
+			"RTPM client:%s busy_ts:%llu get_ts:%llu put_ts:%llu "
+			"get_cnt:%d put_cnt:%d",
+			hif_rtpm_id_to_string(i),
+			rtpm_ctx->clients[i]->last_busy_ts,
+			rtpm_ctx->clients[i]->get_ts,
+			rtpm_ctx->clients[i]->put_ts,
+			qdf_atomic_read(&rtpm_ctx->clients[i]->get_count),
+			qdf_atomic_read(&rtpm_ctx->clients[i]->put_count));
 	}
 
 	for (i = 0; i < CE_COUNT_MAX; i++) {
@@ -1053,12 +1047,17 @@ void hif_rtpm_display_last_busy_hist(struct hif_opaque_softc *hif_ctx)
 			continue;
 		cur_idx = hist->last_busy_idx;
 
-		hif_info_high("RTPM CE-%u last busy_cnt:%lu cur_idx:%lu ts1:%llu ts2:%llu ts3:%llu ts4:%llu",
-			      i, hist->last_busy_cnt, cur_idx,
-			      hist->last_busy_ts[cur_idx & HIF_RTPM_BUSY_HIST_MASK],
-			      hist->last_busy_ts[(cur_idx + 4) & HIF_RTPM_BUSY_HIST_MASK],
-			      hist->last_busy_ts[(cur_idx + 8) & HIF_RTPM_BUSY_HIST_MASK],
-			      hist->last_busy_ts[(cur_idx + 12) & HIF_RTPM_BUSY_HIST_MASK]);
+		hif_info_high(
+			"RTPM CE-%u last busy_cnt:%lu cur_idx:%lu ts1:%llu ts2:%llu "
+			"ts3:%llu ts4:%llu",
+			i, hist->last_busy_cnt, cur_idx,
+			hist->last_busy_ts[cur_idx & HIF_RTPM_BUSY_HIST_MASK],
+			hist->last_busy_ts[(cur_idx + 4) &
+					   HIF_RTPM_BUSY_HIST_MASK],
+			hist->last_busy_ts[(cur_idx + 8) &
+					   HIF_RTPM_BUSY_HIST_MASK],
+			hist->last_busy_ts[(cur_idx + 12) &
+					   HIF_RTPM_BUSY_HIST_MASK]);
 	}
 }
 
@@ -1087,7 +1086,7 @@ void hif_rtpm_mark_last_busy(uint32_t id)
 	if (gp_hif_rtpm_ctx->clients[id]) {
 		gp_hif_rtpm_ctx->clients[id]->last_busy_cnt++;
 		gp_hif_rtpm_ctx->clients[id]->last_busy_ts =
-					gp_hif_rtpm_ctx->stats.last_busy_ts;
+			gp_hif_rtpm_ctx->stats.last_busy_ts;
 	}
 }
 
@@ -1145,8 +1144,8 @@ void hif_rtpm_print_prevent_list(void)
 	if (prevent_list_count) {
 		list_for_each_entry(ctx, &gp_hif_rtpm_ctx->prevent_list, list)
 			len += qdf_scnprintf(str_buf + len,
-				PREVENT_LIST_STRING_LEN - len,
-				"%s ", ctx->name);
+					     PREVENT_LIST_STRING_LEN - len,
+					     "%s ", ctx->name);
 	}
 	qdf_spin_unlock(&gp_hif_rtpm_ctx->prevent_list_lock);
 
@@ -1197,8 +1196,7 @@ void hif_rtpm_suspend_unlock(void)
  *
  * Return: Void
  */
-static inline
-void hif_rtpm_set_state(enum hif_rtpm_state state)
+static inline void hif_rtpm_set_state(enum hif_rtpm_state state)
 {
 	qdf_atomic_set(&gp_hif_rtpm_ctx->pm_state, state);
 }

@@ -2,15 +2,15 @@
 /* Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  */
 
+#include <asoc/wcd-irq.h>
+#include <linux/irq.h>
+#include <linux/irqdomain.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/irq.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
-#include <linux/slab.h>
-#include <linux/irqdomain.h>
 #include <linux/regmap.h>
-#include <asoc/wcd-irq.h>
+#include <linux/slab.h>
 
 static int wcd_map_irq(struct wcd_irq_info *irq_info, int irq)
 {
@@ -32,7 +32,7 @@ static int wcd_map_irq(struct wcd_irq_info *irq_info, int irq)
  * Returns 0 on success or error on failure
  */
 int wcd_request_irq(struct wcd_irq_info *irq_info, int irq, const char *name,
-			irq_handler_t handler, void *data)
+		    irq_handler_t handler, void *data)
 {
 	if (!irq_info) {
 		pr_err("%s: Null IRQ handle\n", __func__);
@@ -43,8 +43,8 @@ int wcd_request_irq(struct wcd_irq_info *irq_info, int irq, const char *name,
 		return irq;
 
 	return devm_request_threaded_irq(irq_info->dev, irq, NULL, handler,
-				    IRQF_ONESHOT | IRQF_TRIGGER_RISING,
-				    name, data);
+					 IRQF_ONESHOT | IRQF_TRIGGER_RISING,
+					 name, data);
 }
 EXPORT_SYMBOL(wcd_request_irq);
 
@@ -115,11 +115,11 @@ static struct lock_class_key wcd_irq_lock_class;
 static struct lock_class_key wcd_irq_lock_requested_class;
 
 static int wcd_irq_chip_map(struct irq_domain *irqd, unsigned int virq,
-			irq_hw_number_t hw)
+			    irq_hw_number_t hw)
 {
 	irq_set_chip_and_handler(virq, &wcd_irq_chip, handle_simple_irq);
 	irq_set_lockdep_class(virq, &wcd_irq_lock_class,
-			&wcd_irq_lock_requested_class);
+			      &wcd_irq_lock_requested_class);
 	irq_set_nested_thread(virq, 1);
 	irq_set_noprobe(virq);
 
@@ -154,12 +154,12 @@ int wcd_irq_init(struct wcd_irq_info *irq_info, struct irq_domain **virq)
 	}
 
 	ret = devm_regmap_add_irq_chip(irq_info->dev, irq_info->regmap,
-				 irq_create_mapping(*virq, 0),
-				 IRQF_ONESHOT, 0, irq_info->wcd_regmap_irq_chip,
-				 &irq_info->irq_chip);
+				       irq_create_mapping(*virq, 0),
+				       IRQF_ONESHOT, 0,
+				       irq_info->wcd_regmap_irq_chip,
+				       &irq_info->irq_chip);
 	if (ret)
-		pr_err("%s: Failed to add IRQs: %d\n",
-			__func__, ret);
+		pr_err("%s: Failed to add IRQs: %d\n", __func__, ret);
 
 	return ret;
 }

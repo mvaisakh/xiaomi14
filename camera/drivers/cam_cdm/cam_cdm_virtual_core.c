@@ -6,22 +6,22 @@
 
 #include <linux/delay.h>
 #include <linux/io.h>
-#include <linux/of.h>
-#include <linux/module.h>
-#include <linux/timer.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/timer.h>
 
-#include "cam_soc_util.h"
-#include "cam_smmu_api.h"
-#include "cam_cdm_intf_api.h"
 #include "cam_cdm.h"
+#include "cam_cdm_core_common.h"
+#include "cam_cdm_intf_api.h"
+#include "cam_cdm_soc.h"
 #include "cam_cdm_util.h"
 #include "cam_cdm_virtual.h"
-#include "cam_cdm_core_common.h"
-#include "cam_cdm_soc.h"
+#include "cam_common_util.h"
 #include "cam_io_util.h"
 #include "cam_req_mgr_workq.h"
-#include "cam_common_util.h"
+#include "cam_smmu_api.h"
+#include "cam_soc_util.h"
 
 #define CAM_CDM_VIRTUAL_NAME "qcom,cam_virtual_cdm"
 
@@ -48,16 +48,16 @@ static void cam_virtual_cdm_work(struct work_struct *work)
 				payload->irq_data);
 			mutex_lock(&cdm_hw->hw_mutex);
 			node = cam_cdm_find_request_by_bl_tag(
-				payload->irq_data,
-				&core->bl_request_list);
+				payload->irq_data, &core->bl_request_list);
 			if (node) {
 				if (node->request_type ==
-					CAM_HW_CDM_BL_CB_CLIENT) {
-					cam_cdm_notify_clients(cdm_hw,
+				    CAM_HW_CDM_BL_CB_CLIENT) {
+					cam_cdm_notify_clients(
+						cdm_hw,
 						CAM_CDM_CB_STATUS_BL_SUCCESS,
 						(void *)node);
 				} else if (node->request_type ==
-					CAM_HW_CDM_BL_CB_INTERNAL) {
+					   CAM_HW_CDM_BL_CB_INTERNAL) {
 					CAM_ERR(CAM_CDM, "Invalid node=%pK %d",
 						node, node->request_type);
 				}
@@ -74,24 +74,23 @@ static void cam_virtual_cdm_work(struct work_struct *work)
 		}
 		kfree(payload);
 	}
-
 }
 
 int cam_virtual_cdm_submit_bl(struct cam_hw_info *cdm_hw,
-	struct cam_cdm_hw_intf_cmd_submit_bl *req,
-	struct cam_cdm_client *client)
+			      struct cam_cdm_hw_intf_cmd_submit_bl *req,
+			      struct cam_cdm_client *client)
 {
 	int i, rc = -EINVAL;
 	struct cam_cdm_bl_request *cdm_cmd = req->data;
 	struct cam_cdm *core = (struct cam_cdm *)cdm_hw->core_info;
 
 	mutex_lock(&client->lock);
-	for (i = 0; i < req->data->cmd_arrary_count ; i++) {
+	for (i = 0; i < req->data->cmd_arrary_count; i++) {
 		uintptr_t vaddr_ptr = 0;
 		size_t len = 0;
 
 		if ((!cdm_cmd->cmd[i].len) &&
-			(cdm_cmd->cmd[i].len > 0x100000)) {
+		    (cdm_cmd->cmd[i].len > 0x100000)) {
 			CAM_ERR(CAM_CDM,
 				"len(%d) is invalid count=%d total cnt=%d",
 				cdm_cmd->cmd[i].len, i,
@@ -105,11 +104,10 @@ int cam_virtual_cdm_submit_bl(struct cam_hw_info *cdm_hw,
 				&len);
 			if (rc) {
 				CAM_ERR(CAM_CDM,
-					"Falied to get CPU addr_i[%d] req_type %d", i,
-					req->data->type);
+					"Falied to get CPU addr_i[%d] req_type %d",
+					i, req->data->type);
 			}
-		} else if (req->data->type ==
-			CAM_CDM_BL_CMD_TYPE_KERNEL_IOVA) {
+		} else if (req->data->type == CAM_CDM_BL_CMD_TYPE_KERNEL_IOVA) {
 			rc = 0;
 			vaddr_ptr = cdm_cmd->cmd[i].bl_addr.kernel_iova;
 			len = cdm_cmd->cmd[i].offset + cdm_cmd->cmd[i].len;
@@ -121,11 +119,9 @@ int cam_virtual_cdm_submit_bl(struct cam_hw_info *cdm_hw,
 		}
 
 		if ((!rc) && (vaddr_ptr) && (len) &&
-			(len >= cdm_cmd->cmd[i].offset)) {
-
-
+		    (len >= cdm_cmd->cmd[i].offset)) {
 			if ((len - cdm_cmd->cmd[i].offset) <
-				cdm_cmd->cmd[i].len) {
+			    cdm_cmd->cmd[i].len) {
 				CAM_ERR(CAM_CDM, "Not enough buffer");
 				rc = -EINVAL;
 				goto put_cpu_buf;
@@ -138,13 +134,13 @@ int cam_virtual_cdm_submit_bl(struct cam_hw_info *cdm_hw,
 			rc = cam_cdm_util_cmd_buf_write(
 				&client->changebase_addr,
 				((uint32_t *)vaddr_ptr +
-					((cdm_cmd->cmd[i].offset)/4)),
+				 ((cdm_cmd->cmd[i].offset) / 4)),
 				cdm_cmd->cmd[i].len, client->data.base_array,
 				client->data.base_array_cnt, core->bl_tag);
 			if (rc) {
 				CAM_ERR(CAM_CDM,
-					"write failed for cnt=%d:%d len %u",
-					i, req->data->cmd_arrary_count,
+					"write failed for cnt=%d:%d len %u", i,
+					req->data->cmd_arrary_count,
 					cdm_cmd->cmd[i].len);
 				goto put_cpu_buf;
 			}
@@ -163,13 +159,14 @@ int cam_virtual_cdm_submit_bl(struct cam_hw_info *cdm_hw,
 			struct cam_cdm_work_payload *payload;
 
 			CAM_DBG(CAM_CDM,
-				"write BL success for cnt=%d with tag=%d",
-				i, core->bl_tag);
-			if (req->data->flag && (i == req->data->cmd_arrary_count)) {
+				"write BL success for cnt=%d with tag=%d", i,
+				core->bl_tag);
+			if (req->data->flag &&
+			    (i == req->data->cmd_arrary_count)) {
 				struct cam_cdm_bl_cb_request_entry *node;
 
-				node = kzalloc(sizeof(
-					struct cam_cdm_bl_cb_request_entry),
+				node = kzalloc(
+					sizeof(struct cam_cdm_bl_cb_request_entry),
 					GFP_KERNEL);
 				if (!node) {
 					rc = -ENOMEM;
@@ -182,23 +179,23 @@ int cam_virtual_cdm_submit_bl(struct cam_hw_info *cdm_hw,
 				node->userdata = req->data->userdata;
 				mutex_lock(&cdm_hw->hw_mutex);
 				list_add_tail(&node->entry,
-					&core->bl_request_list);
+					      &core->bl_request_list);
 				mutex_unlock(&cdm_hw->hw_mutex);
 
-				payload = kzalloc(sizeof(
-					struct cam_cdm_work_payload),
+				payload = kzalloc(
+					sizeof(struct cam_cdm_work_payload),
 					GFP_ATOMIC);
 				if (payload) {
 					payload->irq_status = 0x2;
 					payload->irq_data = core->bl_tag;
 					payload->hw = cdm_hw;
-					INIT_WORK((struct work_struct *)
-						&payload->work,
-						cam_virtual_cdm_work);
+					INIT_WORK((struct work_struct *)&payload
+							  ->work,
+						  cam_virtual_cdm_work);
 					payload->workq_scheduled_ts =
 						ktime_get();
 					queue_work(core->work_queue,
-						&payload->work);
+						   &payload->work);
 				}
 			}
 			core->bl_tag++;
@@ -208,9 +205,9 @@ int cam_virtual_cdm_submit_bl(struct cam_hw_info *cdm_hw,
 				core->bl_tag = 0;
 
 			if (req->data->type == CAM_CDM_BL_CMD_TYPE_MEM_HANDLE)
-				cam_mem_put_cpu_buf(cdm_cmd->cmd[i].bl_addr.mem_handle);
+				cam_mem_put_cpu_buf(
+					cdm_cmd->cmd[i].bl_addr.mem_handle);
 		}
-
 	}
 	mutex_unlock(&client->lock);
 	return rc;
@@ -222,7 +219,6 @@ put_cpu_buf:
 err:
 	mutex_unlock(&client->lock);
 	return rc;
-
 }
 
 int cam_virtual_cdm_probe(struct platform_device *pdev)
@@ -253,8 +249,8 @@ int cam_virtual_cdm_probe(struct platform_device *pdev)
 	cdm_hw->hw_state = CAM_HW_STATE_POWER_DOWN;
 	cdm_hw->soc_info.pdev = pdev;
 	cdm_hw_intf->hw_type = CAM_VIRTUAL_CDM;
-	cdm_hw->soc_info.soc_private = kzalloc(
-			sizeof(struct cam_cdm_private_dt_data), GFP_KERNEL);
+	cdm_hw->soc_info.soc_private =
+		kzalloc(sizeof(struct cam_cdm_private_dt_data), GFP_KERNEL);
 	if (!cdm_hw->soc_info.soc_private) {
 		rc = -ENOMEM;
 		goto soc_load_failed;
@@ -269,8 +265,8 @@ int cam_virtual_cdm_probe(struct platform_device *pdev)
 	}
 
 	cdm_core = (struct cam_cdm *)cdm_hw->core_info;
-	soc_private = (struct cam_cdm_private_dt_data *)
-					cdm_hw->soc_info.soc_private;
+	soc_private =
+		(struct cam_cdm_private_dt_data *)cdm_hw->soc_info.soc_private;
 	if (soc_private->dt_cdm_shared == true)
 		cdm_core->flags = CAM_CDM_FLAG_SHARED_CDM;
 	else
@@ -303,9 +299,9 @@ int cam_virtual_cdm_probe(struct platform_device *pdev)
 	mutex_lock(&cdm_hw->hw_mutex);
 	cdm_core->id = CAM_CDM_VIRTUAL;
 	memcpy(cdm_core->name, CAM_CDM_VIRTUAL_NAME,
-		sizeof(CAM_CDM_VIRTUAL_NAME));
-	cdm_core->work_queue = alloc_workqueue(cdm_core->name,
-		WQ_UNBOUND | WQ_MEM_RECLAIM | WQ_SYSFS,
+	       sizeof(CAM_CDM_VIRTUAL_NAME));
+	cdm_core->work_queue = alloc_workqueue(
+		cdm_core->name, WQ_UNBOUND | WQ_MEM_RECLAIM | WQ_SYSFS,
 		CAM_CDM_INFLIGHT_WORKS);
 	cdm_core->ops = NULL;
 
@@ -326,8 +322,8 @@ int cam_virtual_cdm_probe(struct platform_device *pdev)
 
 	CAM_DBG(CAM_CDM, "CDM%d probe successful", cdm_hw_intf->hw_idx);
 
-	rc = cam_cdm_intf_register_hw_cdm(cdm_hw_intf,
-			soc_private, CAM_VIRTUAL_CDM, &cdm_core->index);
+	rc = cam_cdm_intf_register_hw_cdm(cdm_hw_intf, soc_private,
+					  CAM_VIRTUAL_CDM, &cdm_core->index);
 	if (rc) {
 		CAM_ERR(CAM_CDM, "Virtual CDM Interface registration failed");
 		goto intf_registration_failed;
@@ -388,8 +384,8 @@ int cam_virtual_cdm_remove(struct platform_device *pdev)
 	}
 
 	rc = cam_cdm_intf_deregister_hw_cdm(cdm_hw_intf,
-			cdm_hw->soc_info.soc_private, CAM_VIRTUAL_CDM,
-			cdm_core->index);
+					    cdm_hw->soc_info.soc_private,
+					    CAM_VIRTUAL_CDM, cdm_core->index);
 	if (rc) {
 		CAM_ERR(CAM_CDM,
 			"Virtual CDM Interface de-registration failed");

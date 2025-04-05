@@ -18,10 +18,10 @@
  *  DOC: target_if_twt_cmd.c
  *  This file contains twt component's target related function definitions
  */
+#include "twt/core/src/wlan_twt_common.h"
+#include <target_if_ext_twt.h>
 #include <target_if_twt.h>
 #include <target_if_twt_cmd.h>
-#include <target_if_ext_twt.h>
-#include "twt/core/src/wlan_twt_common.h"
 
 QDF_STATUS
 target_if_twt_enable_req(struct wlan_objmgr_psoc *psoc,
@@ -36,8 +36,7 @@ target_if_twt_enable_req(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, req->pdev_id,
-					  WLAN_TWT_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, req->pdev_id, WLAN_TWT_ID);
 	if (!pdev) {
 		target_if_err("null pdev");
 		return QDF_STATUS_E_FAILURE;
@@ -72,8 +71,7 @@ target_if_twt_disable_req(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pdev = wlan_objmgr_get_pdev_by_id(psoc, req->pdev_id,
-					  WLAN_TWT_ID);
+	pdev = wlan_objmgr_get_pdev_by_id(psoc, req->pdev_id, WLAN_TWT_ID);
 	if (!pdev) {
 		target_if_err("null pdev");
 		return QDF_STATUS_E_FAILURE;
@@ -94,4 +92,3 @@ target_if_twt_disable_req(struct wlan_objmgr_psoc *psoc,
 
 	return ret;
 }
-

@@ -21,9 +21,9 @@
  */
 
 #include "../dfs.h"
+#include "../dfs_internal.h"
 #include "wlan_dfs_lmac_api.h"
 #include "wlan_dfs_mlme_api.h"
-#include "../dfs_internal.h"
 
 /**
  * dfs_adjust_pri_per_chan_busy() - Calculates adjust_pri.
@@ -41,7 +41,7 @@ static int dfs_adjust_pri_per_chan_busy(int ext_chan_busy, int pri_margin)
 
 	if (ext_chan_busy > DFS_EXT_CHAN_LOADING_THRESH) {
 		adjust_pri = ((ext_chan_busy - DFS_EXT_CHAN_LOADING_THRESH) *
-				(pri_margin));
+			      (pri_margin));
 		adjust_pri /= 100;
 	}
 
@@ -64,7 +64,7 @@ static int dfs_adjust_thresh_per_chan_busy(int ext_chan_busy, int thresh)
 
 	if (ext_chan_busy > DFS_EXT_CHAN_LOADING_THRESH) {
 		adjust_thresh = ((ext_chan_busy - DFS_EXT_CHAN_LOADING_THRESH) *
-				thresh);
+				 thresh);
 		adjust_thresh /= 100;
 	}
 
@@ -76,29 +76,27 @@ static int dfs_adjust_thresh_per_chan_busy(int ext_chan_busy, int thresh)
  * @dfs: Pointer to wlan_dfs structure.
  * @ext_chan_busy: Extension channel PRI.
  */
-static inline void dfs_get_cached_ext_chan_busy(
-		struct wlan_dfs *dfs,
-		int *ext_chan_busy)
+static inline void dfs_get_cached_ext_chan_busy(struct wlan_dfs *dfs,
+						int *ext_chan_busy)
 {
 	*ext_chan_busy = 0;
 	/* Check to see if the cached value of ext_chan_busy can be used. */
 
 	if (dfs->dfs_rinfo.dfs_ext_chan_busy &&
-			(dfs->dfs_rinfo.rn_lastfull_ts <
-			 dfs->dfs_rinfo.ext_chan_busy_ts)) {
+	    (dfs->dfs_rinfo.rn_lastfull_ts < dfs->dfs_rinfo.ext_chan_busy_ts)) {
 		*ext_chan_busy = dfs->dfs_rinfo.dfs_ext_chan_busy;
 		dfs_debug(dfs, WLAN_DEBUG_DFS2,
-				"Use cached copy of ext_chan_busy extchanbusy=%d rn_lastfull_ts=%llu ext_chan_busy_ts=%llu",
-				*ext_chan_busy,
-				(uint64_t)dfs->dfs_rinfo.rn_lastfull_ts,
-				(uint64_t)dfs->dfs_rinfo.ext_chan_busy_ts);
+			  "Use cached copy of ext_chan_busy extchanbusy=%d "
+			  "rn_lastfull_ts=%llu ext_chan_busy_ts=%llu",
+			  *ext_chan_busy,
+			  (uint64_t)dfs->dfs_rinfo.rn_lastfull_ts,
+			  (uint64_t)dfs->dfs_rinfo.ext_chan_busy_ts);
 	}
 }
 
 #if defined(WLAN_DFS_PARTIAL_OFFLOAD)
-int dfs_get_pri_margin(struct wlan_dfs *dfs,
-		int is_extchan_detect,
-		int is_fixed_pattern)
+int dfs_get_pri_margin(struct wlan_dfs *dfs, int is_extchan_detect,
+		       int is_fixed_pattern)
 {
 	int adjust_pri = 0, ext_chan_busy = 0;
 	int pri_margin;
@@ -117,8 +115,8 @@ int dfs_get_pri_margin(struct wlan_dfs *dfs,
 		} else {
 			dfs_get_cached_ext_chan_busy(dfs, &ext_chan_busy);
 		}
-		adjust_pri = dfs_adjust_pri_per_chan_busy(ext_chan_busy,
-			pri_margin);
+		adjust_pri =
+			dfs_adjust_pri_per_chan_busy(ext_chan_busy, pri_margin);
 		pri_margin -= adjust_pri;
 	}
 
@@ -126,9 +124,8 @@ int dfs_get_pri_margin(struct wlan_dfs *dfs,
 }
 #endif
 
-int dfs_get_filter_threshold(struct wlan_dfs *dfs,
-		struct dfs_filter *rf,
-		int is_extchan_detect)
+int dfs_get_filter_threshold(struct wlan_dfs *dfs, struct dfs_filter *rf,
+			     int is_extchan_detect)
 {
 	int ext_chan_busy = 0;
 	int thresh, adjust_thresh = 0;
@@ -148,8 +145,8 @@ int dfs_get_filter_threshold(struct wlan_dfs *dfs,
 		adjust_thresh =
 			dfs_adjust_thresh_per_chan_busy(ext_chan_busy, thresh);
 		dfs_debug(dfs, WLAN_DEBUG_DFS2,
-			" filterID=%d extchanbusy=%d adjust_thresh=%d",
-			rf->rf_pulseid, ext_chan_busy, adjust_thresh);
+			  " filterID=%d extchanbusy=%d adjust_thresh=%d",
+			  rf->rf_pulseid, ext_chan_busy, adjust_thresh);
 
 		thresh += adjust_thresh;
 	}
@@ -163,7 +160,7 @@ uint32_t dfs_round(int32_t val)
 
 	if (val < 0)
 		return 0;
-	ival = val/100;
+	ival = val / 100;
 	rem = val - (ival * 100);
 	if (rem < 50)
 		return ival;

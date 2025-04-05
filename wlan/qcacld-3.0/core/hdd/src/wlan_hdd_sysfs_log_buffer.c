@@ -14,15 +14,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_psoc_sync.h"
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_ioctl.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_log_buffer.h>
-#include <wlan_hdd_ioctl.h>
 
 static ssize_t hdd_sysfs_log_buffer_show(struct kobject *kobj,
-					 struct kobj_attribute *attr,
-					 char *buf)
+					 struct kobj_attribute *attr, char *buf)
 {
 	struct hdd_sysfs_print_ctx ctx;
 
@@ -34,8 +33,7 @@ static ssize_t hdd_sysfs_log_buffer_show(struct kobject *kobj,
 }
 
 static struct kobj_attribute log_buffer_attribute =
-	__ATTR(log_buffer, 0440, hdd_sysfs_log_buffer_show,
-	       NULL);
+	__ATTR(log_buffer, 0440, hdd_sysfs_log_buffer_show, NULL);
 
 int hdd_sysfs_log_buffer_create(struct kobject *driver_kobject)
 {
@@ -46,16 +44,14 @@ int hdd_sysfs_log_buffer_create(struct kobject *driver_kobject)
 		return -EINVAL;
 	}
 
-	error = sysfs_create_file(driver_kobject,
-				  &log_buffer_attribute.attr);
+	error = sysfs_create_file(driver_kobject, &log_buffer_attribute.attr);
 	if (error)
 		hdd_err("could not create log_buffer sysfs file");
 
 	return error;
 }
 
-void
-hdd_sysfs_log_buffer_destroy(struct kobject *driver_kobject)
+void hdd_sysfs_log_buffer_destroy(struct kobject *driver_kobject)
 {
 	if (!driver_kobject) {
 		hdd_err("could not get driver kobject!");

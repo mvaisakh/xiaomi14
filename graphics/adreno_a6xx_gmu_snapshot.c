@@ -22,46 +22,172 @@ static const unsigned int a6xx_gmu_gx_registers[] = {
 
 static const unsigned int a6xx_gmu_tcm_registers[] = {
 	/* ITCM */
-	0x1B400, 0x1C3FF,
+	0x1B400,
+	0x1C3FF,
 	/* DTCM */
-	0x1C400, 0x1D3FF,
+	0x1C400,
+	0x1D3FF,
 };
 
 static const unsigned int a6xx_gmu_registers[] = {
 	/* GMU CX */
-	0x1F400, 0x1F407, 0x1F410, 0x1F412, 0x1F500, 0x1F500, 0x1F507, 0x1F50A,
-	0x1F800, 0x1F804, 0x1F807, 0x1F808, 0x1F80B, 0x1F80C, 0x1F80F, 0x1F81C,
-	0x1F824, 0x1F82A, 0x1F82D, 0x1F830, 0x1F840, 0x1F853, 0x1F887, 0x1F889,
-	0x1F8A0, 0x1F8A2, 0x1F8A4, 0x1F8AF, 0x1F8C0, 0x1F8C3, 0x1F8D0, 0x1F8D0,
-	0x1F8E4, 0x1F8E4, 0x1F8E8, 0x1F8EC, 0x1F900, 0x1F903, 0x1F940, 0x1F940,
-	0x1F942, 0x1F944, 0x1F94C, 0x1F94D, 0x1F94F, 0x1F951, 0x1F954, 0x1F954,
-	0x1F957, 0x1F958, 0x1F95D, 0x1F95D, 0x1F962, 0x1F962, 0x1F964, 0x1F965,
-	0x1F980, 0x1F986, 0x1F990, 0x1F99E, 0x1F9C0, 0x1F9C0, 0x1F9C5, 0x1F9CC,
-	0x1F9E0, 0x1F9E2, 0x1F9F0, 0x1F9F0, 0x1FA00, 0x1FA01,
+	0x1F400,
+	0x1F407,
+	0x1F410,
+	0x1F412,
+	0x1F500,
+	0x1F500,
+	0x1F507,
+	0x1F50A,
+	0x1F800,
+	0x1F804,
+	0x1F807,
+	0x1F808,
+	0x1F80B,
+	0x1F80C,
+	0x1F80F,
+	0x1F81C,
+	0x1F824,
+	0x1F82A,
+	0x1F82D,
+	0x1F830,
+	0x1F840,
+	0x1F853,
+	0x1F887,
+	0x1F889,
+	0x1F8A0,
+	0x1F8A2,
+	0x1F8A4,
+	0x1F8AF,
+	0x1F8C0,
+	0x1F8C3,
+	0x1F8D0,
+	0x1F8D0,
+	0x1F8E4,
+	0x1F8E4,
+	0x1F8E8,
+	0x1F8EC,
+	0x1F900,
+	0x1F903,
+	0x1F940,
+	0x1F940,
+	0x1F942,
+	0x1F944,
+	0x1F94C,
+	0x1F94D,
+	0x1F94F,
+	0x1F951,
+	0x1F954,
+	0x1F954,
+	0x1F957,
+	0x1F958,
+	0x1F95D,
+	0x1F95D,
+	0x1F962,
+	0x1F962,
+	0x1F964,
+	0x1F965,
+	0x1F980,
+	0x1F986,
+	0x1F990,
+	0x1F99E,
+	0x1F9C0,
+	0x1F9C0,
+	0x1F9C5,
+	0x1F9CC,
+	0x1F9E0,
+	0x1F9E2,
+	0x1F9F0,
+	0x1F9F0,
+	0x1FA00,
+	0x1FA01,
 	/* GMU AO */
-	0x23B00, 0x23B16,
+	0x23B00,
+	0x23B16,
 };
 
 static const unsigned int a660_gmu_registers[] = {
 	/* GMU CX */
-	0x1F408, 0x1F40D, 0x1F40F, 0x1F40F, 0x1F50B, 0x1F50B, 0x1F860, 0x1F860,
-	0x1F870, 0x1F877, 0x1F8C4, 0x1F8C4, 0x1F8F0, 0x1F8F1, 0x1F948, 0x1F94A,
-	0x1F966, 0x1F96B, 0x1F970, 0x1F970, 0x1F972, 0x1F979, 0x1F9CD, 0x1F9D4,
-	0x1FA02, 0x1FA03, 0x20000, 0x20001, 0x20004, 0x20004, 0x20008, 0x20012,
-	0x20018, 0x20018,
+	0x1F408,
+	0x1F40D,
+	0x1F40F,
+	0x1F40F,
+	0x1F50B,
+	0x1F50B,
+	0x1F860,
+	0x1F860,
+	0x1F870,
+	0x1F877,
+	0x1F8C4,
+	0x1F8C4,
+	0x1F8F0,
+	0x1F8F1,
+	0x1F948,
+	0x1F94A,
+	0x1F966,
+	0x1F96B,
+	0x1F970,
+	0x1F970,
+	0x1F972,
+	0x1F979,
+	0x1F9CD,
+	0x1F9D4,
+	0x1FA02,
+	0x1FA03,
+	0x20000,
+	0x20001,
+	0x20004,
+	0x20004,
+	0x20008,
+	0x20012,
+	0x20018,
+	0x20018,
 	/* GMU AO LPAC */
-	0x23B30, 0x23B30,
+	0x23B30,
+	0x23B30,
 };
 
 static const unsigned int a6xx_gmu_gpucc_registers[] = {
 	/* GPU CC */
-	0x24000, 0x24012, 0x24040, 0x24052, 0x24400, 0x24404, 0x24407, 0x2440B,
-	0x24415, 0x2441C, 0x2441E, 0x2442D, 0x2443C, 0x2443D, 0x2443F, 0x24440,
-	0x24442, 0x24449, 0x24458, 0x2445A, 0x24540, 0x2455E, 0x24800, 0x24802,
-	0x24C00, 0x24C02, 0x25400, 0x25402, 0x25800, 0x25802, 0x25C00, 0x25C02,
-	0x26000, 0x26002,
+	0x24000,
+	0x24012,
+	0x24040,
+	0x24052,
+	0x24400,
+	0x24404,
+	0x24407,
+	0x2440B,
+	0x24415,
+	0x2441C,
+	0x2441E,
+	0x2442D,
+	0x2443C,
+	0x2443D,
+	0x2443F,
+	0x24440,
+	0x24442,
+	0x24449,
+	0x24458,
+	0x2445A,
+	0x24540,
+	0x2455E,
+	0x24800,
+	0x24802,
+	0x24C00,
+	0x24C02,
+	0x25400,
+	0x25402,
+	0x25800,
+	0x25802,
+	0x25C00,
+	0x25C02,
+	0x26000,
+	0x26002,
 	/* GPU CC ACD */
-	0x26400, 0x26416, 0x26420, 0x26427,
+	0x26400,
+	0x26416,
+	0x26420,
+	0x26427,
 };
 
 static const unsigned int a662_gmu_gpucc_registers[] = {
@@ -159,13 +285,12 @@ struct gmu_mem_type_desc {
 	uint32_t type;
 };
 
-static size_t a6xx_snapshot_gmu_mem(struct kgsl_device *device,
-		u8 *buf, size_t remain, void *priv)
+static size_t a6xx_snapshot_gmu_mem(struct kgsl_device *device, u8 *buf,
+				    size_t remain, void *priv)
 {
 	struct kgsl_snapshot_gmu_mem *mem_hdr =
 		(struct kgsl_snapshot_gmu_mem *)buf;
-	unsigned int *data = (unsigned int *)
-		(buf + sizeof(*mem_hdr));
+	unsigned int *data = (unsigned int *)(buf + sizeof(*mem_hdr));
 	struct gmu_mem_type_desc *desc = priv;
 
 	if (priv == NULL || desc->memdesc->hostptr == NULL)
@@ -190,8 +315,8 @@ static size_t a6xx_snapshot_gmu_mem(struct kgsl_device *device,
 	return desc->memdesc->size + sizeof(*mem_hdr);
 }
 
-static size_t a6xx_gmu_snapshot_dtcm(struct kgsl_device *device,
-		u8 *buf, size_t remain, void *priv)
+static size_t a6xx_gmu_snapshot_dtcm(struct kgsl_device *device, u8 *buf,
+				     size_t remain, void *priv)
 {
 	struct kgsl_snapshot_gmu_mem *mem_hdr =
 		(struct kgsl_snapshot_gmu_mem *)buf;
@@ -216,11 +341,11 @@ static size_t a6xx_gmu_snapshot_dtcm(struct kgsl_device *device,
 	return gmu->vma[GMU_DTCM].size + sizeof(*mem_hdr);
 }
 
-static size_t a6xx_gmu_snapshot_itcm(struct kgsl_device *device,
-	u8 *buf, size_t remain, void *priv)
+static size_t a6xx_gmu_snapshot_itcm(struct kgsl_device *device, u8 *buf,
+				     size_t remain, void *priv)
 {
 	struct kgsl_snapshot_gmu_mem *mem_hdr =
-			(struct kgsl_snapshot_gmu_mem *)buf;
+		(struct kgsl_snapshot_gmu_mem *)buf;
 	void *dest = buf + sizeof(*mem_hdr);
 	struct a6xx_gmu_device *gmu = (struct a6xx_gmu_device *)priv;
 
@@ -245,14 +370,14 @@ static size_t a6xx_gmu_snapshot_itcm(struct kgsl_device *device,
 }
 
 static void a6xx_gmu_snapshot_memories(struct kgsl_device *device,
-	struct a6xx_gmu_device *gmu, struct kgsl_snapshot *snapshot)
+				       struct a6xx_gmu_device *gmu,
+				       struct kgsl_snapshot *snapshot)
 {
 	struct gmu_mem_type_desc desc;
 	struct kgsl_memdesc *md;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(gmu->gmu_globals); i++) {
-
 		md = &gmu->gmu_globals[i];
 		if (!md->size)
 			continue;
@@ -268,8 +393,9 @@ static void a6xx_gmu_snapshot_memories(struct kgsl_device *device,
 			desc.type = SNAPSHOT_GMU_MEM_BIN_BLOCK;
 
 		kgsl_snapshot_add_section(device,
-			KGSL_SNAPSHOT_SECTION_GMU_MEMORY,
-			snapshot, a6xx_snapshot_gmu_mem, &desc);
+					  KGSL_SNAPSHOT_SECTION_GMU_MEMORY,
+					  snapshot, a6xx_snapshot_gmu_mem,
+					  &desc);
 	}
 }
 
@@ -278,11 +404,11 @@ struct kgsl_snapshot_gmu_version {
 	uint32_t value;
 };
 
-static size_t a6xx_snapshot_gmu_version(struct kgsl_device *device,
-		u8 *buf, size_t remain, void *priv)
+static size_t a6xx_snapshot_gmu_version(struct kgsl_device *device, u8 *buf,
+					size_t remain, void *priv)
 {
 	struct kgsl_snapshot_debug *header = (struct kgsl_snapshot_debug *)buf;
-	uint32_t *data = (uint32_t *) (buf + sizeof(*header));
+	uint32_t *data = (uint32_t *)(buf + sizeof(*header));
 	struct kgsl_snapshot_gmu_version *ver = priv;
 
 	if (remain < DEBUG_SECTION_SZ(1)) {
@@ -299,34 +425,44 @@ static size_t a6xx_snapshot_gmu_version(struct kgsl_device *device,
 }
 
 static void a6xx_gmu_snapshot_versions(struct kgsl_device *device,
-		struct a6xx_gmu_device *gmu,
-		struct kgsl_snapshot *snapshot)
+				       struct a6xx_gmu_device *gmu,
+				       struct kgsl_snapshot *snapshot)
 {
 	int i;
 
 	struct kgsl_snapshot_gmu_version gmu_vers[] = {
-		{ .type = SNAPSHOT_DEBUG_GMU_CORE_VERSION,
-			.value = gmu->ver.core, },
-		{ .type = SNAPSHOT_DEBUG_GMU_CORE_DEV_VERSION,
-			.value = gmu->ver.core_dev, },
-		{ .type = SNAPSHOT_DEBUG_GMU_PWR_VERSION,
-			.value = gmu->ver.pwr, },
-		{ .type = SNAPSHOT_DEBUG_GMU_PWR_DEV_VERSION,
-			.value = gmu->ver.pwr_dev, },
-		{ .type = SNAPSHOT_DEBUG_GMU_HFI_VERSION,
-			.value = gmu->ver.hfi, },
+		{
+			.type = SNAPSHOT_DEBUG_GMU_CORE_VERSION,
+			.value = gmu->ver.core,
+		},
+		{
+			.type = SNAPSHOT_DEBUG_GMU_CORE_DEV_VERSION,
+			.value = gmu->ver.core_dev,
+		},
+		{
+			.type = SNAPSHOT_DEBUG_GMU_PWR_VERSION,
+			.value = gmu->ver.pwr,
+		},
+		{
+			.type = SNAPSHOT_DEBUG_GMU_PWR_DEV_VERSION,
+			.value = gmu->ver.pwr_dev,
+		},
+		{
+			.type = SNAPSHOT_DEBUG_GMU_HFI_VERSION,
+			.value = gmu->ver.hfi,
+		},
 	};
 
 	for (i = 0; i < ARRAY_SIZE(gmu_vers); i++)
 		kgsl_snapshot_add_section(device, KGSL_SNAPSHOT_SECTION_DEBUG,
-				snapshot, a6xx_snapshot_gmu_version,
-				&gmu_vers[i]);
+					  snapshot, a6xx_snapshot_gmu_version,
+					  &gmu_vers[i]);
 }
 
 #define RSCC_OFFSET_DWORDS 0x38000
 
 static size_t a6xx_snapshot_rscc_registers(struct kgsl_device *device, u8 *buf,
-	size_t remain, void *priv)
+					   size_t remain, void *priv)
 {
 	struct kgsl_snapshot_regs *header = (struct kgsl_snapshot_regs *)buf;
 	struct kgsl_snapshot_registers *regs = priv;
@@ -356,7 +492,7 @@ static size_t a6xx_snapshot_rscc_registers(struct kgsl_device *device, u8 *buf,
 			unsigned int val;
 
 			val = __raw_readl(gmu->rscc_virt +
-				((k - RSCC_OFFSET_DWORDS) << 2));
+					  ((k - RSCC_OFFSET_DWORDS) << 2));
 			*data++ = k;
 			*data++ = val;
 		}
@@ -369,7 +505,7 @@ static size_t a6xx_snapshot_rscc_registers(struct kgsl_device *device, u8 *buf,
 }
 
 static void snapshot_rscc_registers(struct adreno_device *adreno_dev,
-	struct kgsl_snapshot *snapshot)
+				    struct kgsl_snapshot *snapshot)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 
@@ -381,15 +517,16 @@ static void snapshot_rscc_registers(struct adreno_device *adreno_dev,
 		r.count = ARRAY_SIZE(a650_rscc_registers) / 2;
 
 		kgsl_snapshot_add_section(device, KGSL_SNAPSHOT_SECTION_REGS,
-			snapshot, a6xx_snapshot_rscc_registers, &r);
+					  snapshot,
+					  a6xx_snapshot_rscc_registers, &r);
 	} else if (adreno_is_a615_family(adreno_dev) ||
-			adreno_is_a630(adreno_dev)) {
-		adreno_snapshot_registers(device, snapshot,
-			a630_rscc_snapshot_registers,
+		   adreno_is_a630(adreno_dev)) {
+		adreno_snapshot_registers(
+			device, snapshot, a630_rscc_snapshot_registers,
 			ARRAY_SIZE(a630_rscc_snapshot_registers) / 2);
 	} else if (adreno_is_a640(adreno_dev) || adreno_is_a680(adreno_dev)) {
-		adreno_snapshot_registers(device, snapshot,
-			a6xx_rscc_snapshot_registers,
+		adreno_snapshot_registers(
+			device, snapshot, a6xx_rscc_snapshot_registers,
 			ARRAY_SIZE(a6xx_rscc_snapshot_registers) / 2);
 	}
 }
@@ -403,45 +540,44 @@ static void snapshot_rscc_registers(struct adreno_device *adreno_dev,
  * into the snapshot memory
  */
 void a6xx_gmu_device_snapshot(struct kgsl_device *device,
-	struct kgsl_snapshot *snapshot)
+			      struct kgsl_snapshot *snapshot)
 {
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 	struct a6xx_gmu_device *gmu = to_a6xx_gmu(adreno_dev);
 
 	kgsl_snapshot_add_section(device, KGSL_SNAPSHOT_SECTION_GMU_MEMORY,
-		snapshot, a6xx_gmu_snapshot_itcm, gmu);
+				  snapshot, a6xx_gmu_snapshot_itcm, gmu);
 
 	a6xx_gmu_snapshot_versions(device, gmu, snapshot);
 
 	a6xx_gmu_snapshot_memories(device, gmu, snapshot);
 
 	/* Snapshot tcms as registers for legacy targets */
-	if (adreno_is_a630(adreno_dev) ||
-			adreno_is_a615_family(adreno_dev))
-		adreno_snapshot_registers(device, snapshot,
-				a6xx_gmu_tcm_registers,
-				ARRAY_SIZE(a6xx_gmu_tcm_registers) / 2);
+	if (adreno_is_a630(adreno_dev) || adreno_is_a615_family(adreno_dev))
+		adreno_snapshot_registers(
+			device, snapshot, a6xx_gmu_tcm_registers,
+			ARRAY_SIZE(a6xx_gmu_tcm_registers) / 2);
 
 	adreno_snapshot_registers(device, snapshot, a6xx_gmu_registers,
-					ARRAY_SIZE(a6xx_gmu_registers) / 2);
+				  ARRAY_SIZE(a6xx_gmu_registers) / 2);
 
 	if (adreno_is_a662(adreno_dev) || adreno_is_a621(adreno_dev))
-		adreno_snapshot_registers(device, snapshot,
-			a662_gmu_gpucc_registers,
+		adreno_snapshot_registers(
+			device, snapshot, a662_gmu_gpucc_registers,
 			ARRAY_SIZE(a662_gmu_gpucc_registers) / 2);
 	else if (adreno_is_a663(adreno_dev))
-		adreno_snapshot_registers(device, snapshot,
-			a663_gmu_gpucc_registers,
+		adreno_snapshot_registers(
+			device, snapshot, a663_gmu_gpucc_registers,
 			ARRAY_SIZE(a663_gmu_gpucc_registers) / 2);
 	else
-		adreno_snapshot_registers(device, snapshot,
-			a6xx_gmu_gpucc_registers,
+		adreno_snapshot_registers(
+			device, snapshot, a6xx_gmu_gpucc_registers,
 			ARRAY_SIZE(a6xx_gmu_gpucc_registers) / 2);
 
 	/* Snapshot A660 specific GMU registers */
 	if (adreno_is_a660(adreno_dev))
 		adreno_snapshot_registers(device, snapshot, a660_gmu_registers,
-					ARRAY_SIZE(a660_gmu_registers) / 2);
+					  ARRAY_SIZE(a660_gmu_registers) / 2);
 
 	snapshot_rscc_registers(adreno_dev, snapshot);
 
@@ -453,9 +589,8 @@ void a6xx_gmu_device_snapshot(struct kgsl_device *device,
 	/* Make sure the previous write posted before reading */
 	wmb();
 
-	adreno_snapshot_registers(device, snapshot,
-			a6xx_gmu_gx_registers,
-			ARRAY_SIZE(a6xx_gmu_gx_registers) / 2);
+	adreno_snapshot_registers(device, snapshot, a6xx_gmu_gx_registers,
+				  ARRAY_SIZE(a6xx_gmu_gx_registers) / 2);
 
 	/* A stalled SMMU can lead to NoC timeouts when host accesses DTCM */
 	if (a6xx_is_smmu_stalled(device)) {
@@ -466,5 +601,5 @@ void a6xx_gmu_device_snapshot(struct kgsl_device *device,
 
 dtcm:
 	kgsl_snapshot_add_section(device, KGSL_SNAPSHOT_SECTION_GMU_MEMORY,
-		snapshot, a6xx_gmu_snapshot_dtcm, gmu);
+				  snapshot, a6xx_gmu_snapshot_dtcm, gmu);
 }

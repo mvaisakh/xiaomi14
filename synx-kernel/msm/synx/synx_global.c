@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
 #include <linux/hwspinlock.h>
@@ -15,11 +16,11 @@ static struct hwspinlock *synx_hwlock;
 static u32 synx_gmem_lock_owner(u32 idx)
 {
 	/*
-	 * subscribers field of global table index 0 is used to
-	 * maintain synx gmem lock owner data.
-	 * core updates the field after acquiring the lock and
-	 * before releasing the lock appropriately.
-	 */
+   * subscribers field of global table index 0 is used to
+   * maintain synx gmem lock owner data.
+   * core updates the field after acquiring the lock and
+   * before releasing the lock appropriately.
+   */
 	return synx_gmem.table[0].subscribers;
 }
 
@@ -44,8 +45,8 @@ static int synx_gmem_lock(u32 idx, unsigned long *flags)
 	if (!synx_hwlock)
 		return -SYNX_INVALID;
 
-	rc = hwspin_lock_timeout_irqsave(
-		synx_hwlock, SYNX_HWSPIN_TIMEOUT, flags);
+	rc = hwspin_lock_timeout_irqsave(synx_hwlock, SYNX_HWSPIN_TIMEOUT,
+					 flags);
 	if (!rc)
 		synx_gmem_lock_owner_set(idx);
 
@@ -58,24 +59,22 @@ static void synx_gmem_unlock(u32 idx, unsigned long *flags)
 	hwspin_unlock_irqrestore(synx_hwlock, flags);
 }
 
-static void synx_global_print_data(
-	struct synx_global_coredata *synx_g_obj,
-	const char *func)
+static void synx_global_print_data(struct synx_global_coredata *synx_g_obj,
+				   const char *func)
 {
 	int i = 0;
 
-	dprintk(SYNX_VERB, "%s: status %u, handle %u, refcount %u",
-		func, synx_g_obj->status,
-		synx_g_obj->handle, synx_g_obj->refcount);
+	dprintk(SYNX_VERB, "%s: status %u, handle %u, refcount %u", func,
+		synx_g_obj->status, synx_g_obj->handle, synx_g_obj->refcount);
 
-	dprintk(SYNX_VERB, "%s: subscribers %u, waiters %u, pending %u",
-		func, synx_g_obj->subscribers, synx_g_obj->waiters,
+	dprintk(SYNX_VERB, "%s: subscribers %u, waiters %u, pending %u", func,
+		synx_g_obj->subscribers, synx_g_obj->waiters,
 		synx_g_obj->num_child);
 
 	for (i = 0; i < SYNX_GLOBAL_MAX_PARENTS; i++)
 		if (synx_g_obj->parents[i])
-			dprintk(SYNX_VERB, "%s: parents %u:%u",
-				func, i, synx_g_obj->parents[i]);
+			dprintk(SYNX_VERB, "%s: parents %u:%u", func, i,
+				synx_g_obj->parents[i]);
 }
 
 int synx_global_dump_shared_memory(void)
@@ -94,16 +93,16 @@ int synx_global_dump_shared_memory(void)
 		if (rc)
 			return rc;
 
-		dprintk(SYNX_VERB, "%s: idx %d, bitmap value %d",
-		__func__, idx, synx_gmem.bitmap[idx]);
+		dprintk(SYNX_VERB, "%s: idx %d, bitmap value %d", __func__, idx,
+			synx_gmem.bitmap[idx]);
 
 		synx_gmem_unlock(idx, &flags);
 	}
 
 	/* Print table memory*/
 	for (idx = 0;
-		idx < SHRD_MEM_DUMP_NUM_BMAP_WORDS * sizeof(u32) * NUM_CHAR_BIT;
-		idx++) {
+	     idx < SHRD_MEM_DUMP_NUM_BMAP_WORDS * sizeof(u32) * NUM_CHAR_BIT;
+	     idx++) {
 		rc = synx_gmem_lock(idx, &flags);
 
 		if (rc)
@@ -131,8 +130,8 @@ static int synx_gmem_init(void)
 	}
 
 	/* zero idx not allocated for clients */
-	ipclite_global_test_and_set_bit(0,
-		(ipclite_atomic_uint32_t *)synx_gmem.bitmap);
+	ipclite_global_test_and_set_bit(
+		0, (ipclite_atomic_uint32_t *)synx_gmem.bitmap);
 	memset(&synx_gmem.table[0], 0, sizeof(struct synx_global_coredata));
 
 	return SYNX_SUCCESS;
@@ -144,15 +143,20 @@ u32 synx_global_map_core_id(enum synx_core_id id)
 
 	switch (id) {
 	case SYNX_CORE_APSS:
-		host_id = IPCMEM_APPS; break;
+		host_id = IPCMEM_APPS;
+		break;
 	case SYNX_CORE_NSP:
-		host_id = IPCMEM_CDSP; break;
+		host_id = IPCMEM_CDSP;
+		break;
 	case SYNX_CORE_IRIS:
-		host_id = IPCMEM_VPU; break;
+		host_id = IPCMEM_VPU;
+		break;
 	case SYNX_CORE_EVA:
-		host_id = IPCMEM_CVP; break;
+		host_id = IPCMEM_CVP;
+		break;
 	case SYNX_CORE_ICP:
-		host_id = IPCMEM_CAM; break;
+		host_id = IPCMEM_CAM;
+		break;
 	default:
 		host_id = IPCMEM_NUM_HOSTS;
 		dprintk(SYNX_ERR, "invalid core id\n");
@@ -174,13 +178,16 @@ int synx_global_alloc_index(u32 *idx)
 		return -SYNX_INVALID;
 
 	do {
-		index = find_first_zero_bit((unsigned long *)synx_gmem.bitmap, size);
+		index = find_first_zero_bit((unsigned long *)synx_gmem.bitmap,
+					    size);
 		if (index >= size) {
 			rc = -SYNX_NOMEM;
 			break;
 		}
-		prev = ipclite_global_test_and_set_bit(index % 32,
-				(ipclite_atomic_uint32_t *)(synx_gmem.bitmap + index/32));
+		prev = ipclite_global_test_and_set_bit(
+			index % 32,
+			(ipclite_atomic_uint32_t *)(synx_gmem.bitmap +
+						    index / 32));
 		if ((prev & (1UL << (index % 32))) == 0) {
 			*idx = index;
 			dprintk(SYNX_MEM, "allocated global idx %u\n", *idx);
@@ -209,20 +216,18 @@ int synx_global_init_coredata(u32 h_synx)
 		return rc;
 	synx_g_obj = &synx_gmem.table[idx];
 	if (synx_g_obj->status != 0 || synx_g_obj->refcount != 0 ||
-		synx_g_obj->subscribers != 0 || synx_g_obj->handle != 0 ||
-		synx_g_obj->parents[0] != 0) {
+	    synx_g_obj->subscribers != 0 || synx_g_obj->handle != 0 ||
+	    synx_g_obj->parents[0] != 0) {
 		dprintk(SYNX_ERR,
-				"entry not cleared for idx %u,\n"
-				"synx_g_obj->status %d,\n"
-				"synx_g_obj->refcount %d,\n"
-				"synx_g_obj->subscribers %d,\n"
-				"synx_g_obj->handle %u,\n"
-				"synx_g_obj->parents[0] %d\n",
-				idx, synx_g_obj->status,
-				synx_g_obj->refcount,
-				synx_g_obj->subscribers,
-				synx_g_obj->handle,
-				synx_g_obj->parents[0]);
+			"entry not cleared for idx %u,\n"
+			"synx_g_obj->status %d,\n"
+			"synx_g_obj->refcount %d,\n"
+			"synx_g_obj->subscribers %d,\n"
+			"synx_g_obj->handle %u,\n"
+			"synx_g_obj->parents[0] %d\n",
+			idx, synx_g_obj->status, synx_g_obj->refcount,
+			synx_g_obj->subscribers, synx_g_obj->handle,
+			synx_g_obj->parents[0]);
 		synx_gmem_unlock(idx, &flags);
 		return -SYNX_INVALID;
 	}
@@ -237,9 +242,9 @@ int synx_global_init_coredata(u32 h_synx)
 	return SYNX_SUCCESS;
 }
 
-static int synx_global_get_waiting_cores_locked(
-	struct synx_global_coredata *synx_g_obj,
-	bool *cores)
+static int
+synx_global_get_waiting_cores_locked(struct synx_global_coredata *synx_g_obj,
+				     bool *cores)
 {
 	int i;
 
@@ -247,8 +252,7 @@ static int synx_global_get_waiting_cores_locked(
 	for (i = 0; i < SYNX_CORE_MAX; i++) {
 		if (synx_g_obj->waiters & (1UL << i)) {
 			cores[i] = true;
-			dprintk(SYNX_VERB,
-				"waiting for handle %u/n",
+			dprintk(SYNX_VERB, "waiting for handle %u/n",
 				synx_g_obj->handle);
 		}
 	}
@@ -420,8 +424,9 @@ u32 synx_global_get_parents_num(u32 idx)
 	return count;
 }
 
-static int synx_global_get_parents_locked(
-	struct synx_global_coredata *synx_g_obj, u32 *parents)
+static int
+synx_global_get_parents_locked(struct synx_global_coredata *synx_g_obj,
+			       u32 *parents)
 {
 	u32 i;
 
@@ -473,15 +478,15 @@ u32 synx_global_get_status(u32 idx)
 	if (rc)
 		return rc;
 	synx_g_obj = &synx_gmem.table[idx];
-	if (synx_g_obj->status != SYNX_STATE_ACTIVE && synx_g_obj->num_child == 0)
+	if (synx_g_obj->status != SYNX_STATE_ACTIVE &&
+	    synx_g_obj->num_child == 0)
 		status = synx_g_obj->status;
 	synx_gmem_unlock(idx, &flags);
 
 	return status;
 }
 
-u32 synx_global_test_status_set_wait(u32 idx,
-	enum synx_core_id id)
+u32 synx_global_test_status_set_wait(u32 idx, enum synx_core_id id)
 {
 	int rc;
 	unsigned long flags;
@@ -504,8 +509,7 @@ u32 synx_global_test_status_set_wait(u32 idx,
 	if (status == SYNX_STATE_ACTIVE || synx_g_obj->num_child != 0) {
 		synx_g_obj->waiters |= (1UL << id);
 		status = SYNX_STATE_ACTIVE;
-	}
-	else
+	} else
 		dprintk(SYNX_DBG, "handle %u already signaled %u",
 			synx_g_obj->handle, synx_g_obj->status);
 	synx_gmem_unlock(idx, &flags);
@@ -513,8 +517,7 @@ u32 synx_global_test_status_set_wait(u32 idx,
 	return status;
 }
 
-static int synx_global_update_status_core(u32 idx,
-	u32 status)
+static int synx_global_update_status_core(u32 idx, u32 status)
 {
 	u32 i, p_idx;
 	int rc;
@@ -522,8 +525,8 @@ static int synx_global_update_status_core(u32 idx,
 	unsigned long flags;
 	uint64_t data;
 	struct synx_global_coredata *synx_g_obj;
-	u32 h_parents[SYNX_GLOBAL_MAX_PARENTS] = {0};
-	bool wait_cores[SYNX_CORE_MAX] = {false};
+	u32 h_parents[SYNX_GLOBAL_MAX_PARENTS] = { 0 };
+	bool wait_cores[SYNX_CORE_MAX] = { false };
 
 	rc = synx_gmem_lock(idx, &flags);
 	if (rc)
@@ -537,21 +540,20 @@ static int synx_global_update_status_core(u32 idx,
 		/* composite handle */
 		synx_g_obj->num_child--;
 		if (synx_g_obj->status == SYNX_STATE_ACTIVE ||
-			(status > SYNX_STATE_SIGNALED_SUCCESS &&
-			status <= SYNX_STATE_SIGNALED_MAX))
+		    (status > SYNX_STATE_SIGNALED_SUCCESS &&
+		     status <= SYNX_STATE_SIGNALED_MAX))
 			synx_g_obj->status = status;
 
 		if (synx_g_obj->num_child == 0) {
 			data |= synx_g_obj->status;
 			synx_global_get_waiting_cores_locked(synx_g_obj,
-				wait_cores);
+							     wait_cores);
 			synx_global_get_parents_locked(synx_g_obj, h_parents);
 
 			/* release ref held by constituting handles */
 			synx_g_obj->refcount--;
 			if (synx_g_obj->refcount == 0) {
-				memset(synx_g_obj, 0,
-					sizeof(*synx_g_obj));
+				memset(synx_g_obj, 0, sizeof(*synx_g_obj));
 				clear = true;
 			}
 		} else {
@@ -564,42 +566,39 @@ static int synx_global_update_status_core(u32 idx,
 	} else {
 		synx_g_obj->status = status;
 		data |= synx_g_obj->status;
-		synx_global_get_waiting_cores_locked(synx_g_obj,
-			wait_cores);
+		synx_global_get_waiting_cores_locked(synx_g_obj, wait_cores);
 		synx_global_get_parents_locked(synx_g_obj, h_parents);
 	}
 	synx_gmem_unlock(idx, &flags);
 
 	if (clear) {
-		ipclite_global_test_and_clear_bit(idx%32,
-			(ipclite_atomic_uint32_t *)(synx_gmem.bitmap + idx/32));
-		dprintk(SYNX_MEM,
-			"cleared global idx %u\n", idx);
+		ipclite_global_test_and_clear_bit(
+			idx % 32, (ipclite_atomic_uint32_t *)(synx_gmem.bitmap +
+							      idx / 32));
+		dprintk(SYNX_MEM, "cleared global idx %u\n", idx);
 	}
 
 	/* notify waiting clients on signal */
 	if (data) {
 		/* notify wait client */
 
-	/* In case of SSR, someone might be waiting on same core
-	 * However, in other cases, synx_signal API will take care
-	 * of signaling handles on same core and thus we don't need
-	 * to send interrupt
-	 */
+		/* In case of SSR, someone might be waiting on same core
+     * However, in other cases, synx_signal API will take care
+     * of signaling handles on same core and thus we don't need
+     * to send interrupt
+     */
 		if (status == SYNX_STATE_SIGNALED_SSR)
 			i = 0;
 		else
 			i = 1;
 
-		for (; i < SYNX_CORE_MAX ; i++) {
+		for (; i < SYNX_CORE_MAX; i++) {
 			if (!wait_cores[i])
 				continue;
 			dprintk(SYNX_DBG,
 				"invoking ipc signal handle %u, status %u\n",
 				synx_g_obj->handle, synx_g_obj->status);
-			if (ipclite_msg_send(
-				synx_global_map_core_id(i),
-				data))
+			if (ipclite_msg_send(synx_global_map_core_id(i), data))
 				dprintk(SYNX_ERR,
 					"ipc signaling %llu to core %u failed\n",
 					data, i);
@@ -700,8 +699,9 @@ void synx_global_put_ref(u32 idx)
 	synx_gmem_unlock(idx, &flags);
 
 	if (clear) {
-		ipclite_global_test_and_clear_bit(idx%32,
-			(ipclite_atomic_uint32_t *)(synx_gmem.bitmap + idx/32));
+		ipclite_global_test_and_clear_bit(
+			idx % 32, (ipclite_atomic_uint32_t *)(synx_gmem.bitmap +
+							      idx / 32));
 		dprintk(SYNX_MEM, "cleared global idx %u\n", idx);
 	}
 }
@@ -744,14 +744,14 @@ int synx_global_merge(u32 *idx_list, u32 num_list, u32 p_idx)
 		}
 		if (synx_g_obj->status == SYNX_STATE_ACTIVE)
 			num_child++;
-		else if (synx_g_obj->status >
-			SYNX_STATE_SIGNALED_SUCCESS &&
-			synx_g_obj->status <= SYNX_STATE_SIGNALED_MAX)
+		else if (synx_g_obj->status > SYNX_STATE_SIGNALED_SUCCESS &&
+			 synx_g_obj->status <= SYNX_STATE_SIGNALED_MAX)
 			parent_status = synx_g_obj->status;
 		else if (parent_status == SYNX_STATE_ACTIVE)
 			parent_status = synx_g_obj->status;
 
-		if (synx_g_obj->status != SYNX_STATE_ACTIVE && synx_g_obj->num_child != 0)
+		if (synx_g_obj->status != SYNX_STATE_ACTIVE &&
+		    synx_g_obj->num_child != 0)
 			num_child++;
 
 		dprintk(SYNX_MEM, "synx_obj->status %d parent status %d\n",
@@ -811,7 +811,7 @@ int synx_global_recover(enum synx_core_id core_id)
 	if (!synx_gmem.table)
 		return -SYNX_NOMEM;
 
-	clear_idx = kzalloc(sizeof(int)*SYNX_GLOBAL_MAX_OBJS, GFP_KERNEL);
+	clear_idx = kzalloc(sizeof(int) * SYNX_GLOBAL_MAX_OBJS, GFP_KERNEL);
 
 	if (!clear_idx)
 		return -SYNX_NOMEM;
@@ -824,8 +824,7 @@ int synx_global_recover(enum synx_core_id core_id)
 		hwspin_unlock_raw(synx_hwlock);
 	}
 
-	idx = find_next_bit((unsigned long *)synx_gmem.bitmap,
-			size, idx + 1);
+	idx = find_next_bit((unsigned long *)synx_gmem.bitmap, size, idx + 1);
 	while (idx < size) {
 		update = false;
 		rc = synx_gmem_lock(idx, &flags);
@@ -833,7 +832,7 @@ int synx_global_recover(enum synx_core_id core_id)
 			goto free;
 		synx_g_obj = &synx_gmem.table[idx];
 		if (synx_g_obj->refcount &&
-			 synx_g_obj->subscribers & (1UL << core_id)) {
+		    synx_g_obj->subscribers & (1UL << core_id)) {
 			synx_g_obj->subscribers &= ~(1UL << core_id);
 			synx_g_obj->refcount--;
 			if (synx_g_obj->refcount == 0) {
@@ -845,16 +844,17 @@ int synx_global_recover(enum synx_core_id core_id)
 		}
 		synx_gmem_unlock(idx, &flags);
 		if (update)
-			synx_global_update_status(idx,
-				SYNX_STATE_SIGNALED_SSR);
-		idx = find_next_bit((unsigned long *)synx_gmem.bitmap,
-				size, idx + 1);
+			synx_global_update_status(idx, SYNX_STATE_SIGNALED_SSR);
+		idx = find_next_bit((unsigned long *)synx_gmem.bitmap, size,
+				    idx + 1);
 	}
 
 	for (idx = 1; idx < size; idx++) {
 		if (clear_idx[idx]) {
-			ipclite_global_test_and_clear_bit(idx % 32,
-				(ipclite_atomic_uint32_t *)(synx_gmem.bitmap + idx/32));
+			ipclite_global_test_and_clear_bit(
+				idx % 32,
+				(ipclite_atomic_uint32_t *)(synx_gmem.bitmap +
+							    idx / 32));
 			dprintk(SYNX_MEM, "released global idx %u\n", idx);
 		}
 	}
@@ -867,7 +867,7 @@ free:
 int synx_global_mem_init(void)
 {
 	int rc;
-	int bitmap_size = SYNX_GLOBAL_MAX_OBJS/32;
+	int bitmap_size = SYNX_GLOBAL_MAX_OBJS / 32;
 	struct global_region_info mem_info;
 
 	rc = get_global_partition_info(&mem_info);
@@ -882,8 +882,7 @@ int synx_global_mem_init(void)
 
 	synx_gmem.bitmap = (u32 *)mem_info.virt_base;
 	synx_gmem.locks = synx_gmem.bitmap + bitmap_size;
-	synx_gmem.table =
-		(struct synx_global_coredata *)(synx_gmem.locks + 2);
+	synx_gmem.table = (struct synx_global_coredata *)(synx_gmem.locks + 2);
 	dprintk(SYNX_DBG, "global memory bitmap %pK, table %pK\n",
 		synx_gmem.bitmap, synx_gmem.table);
 

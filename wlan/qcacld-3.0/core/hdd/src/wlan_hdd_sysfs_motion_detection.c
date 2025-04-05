@@ -21,12 +21,12 @@
  * implementation for creating sysfs file motion_detection
  */
 
+#include "osif_vdev_sync.h"
+#include "sme_api.h"
 #include <wlan_hdd_includes.h>
 #include <wlan_hdd_main.h>
-#include "osif_vdev_sync.h"
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_motion_detection.h>
-#include "sme_api.h"
 
 #define HDD_SYSFS_MT_CONFIG_UINT32_ARGS (10)
 #define HDD_SYSFS_MT_CONFIG_UINT8_ARGS (5)
@@ -34,9 +34,8 @@
 #define HDD_SYSFS_MT_CONFIG_UINT8_INDEX (11)
 #define MAX_SYSFS_MT_USER_COMMAND_SIZE_LENGTH (64)
 
-static ssize_t
-__hdd_sysfs_mt_bl_config_store(struct net_device *net_dev,
-			       char const *buf, size_t count)
+static ssize_t __hdd_sysfs_mt_bl_config_store(struct net_device *net_dev,
+					      char const *buf, size_t count)
 {
 	struct sme_motion_det_base_line_cfg motion_det_base_line_cfg;
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
@@ -57,8 +56,8 @@ __hdd_sysfs_mt_bl_config_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -108,10 +107,9 @@ __hdd_sysfs_mt_bl_config_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_mt_bl_config_store(struct device *dev,
-			     struct device_attribute *attr,
-			     char const *buf, size_t count)
+static ssize_t hdd_sysfs_mt_bl_config_store(struct device *dev,
+					    struct device_attribute *attr,
+					    char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -128,9 +126,8 @@ hdd_sysfs_mt_bl_config_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_mt_bl_start_store(struct net_device *net_dev,
-			      char const *buf, size_t count)
+static ssize_t __hdd_sysfs_mt_bl_start_store(struct net_device *net_dev,
+					     char const *buf, size_t count)
 {
 	struct sme_motion_det_base_line_en motion_det_base_line;
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
@@ -152,8 +149,8 @@ __hdd_sysfs_mt_bl_start_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -167,8 +164,8 @@ __hdd_sysfs_mt_bl_start_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("mt_bl_start: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("mt_bl_start: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -193,10 +190,9 @@ __hdd_sysfs_mt_bl_start_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_mt_bl_start_store(struct device *dev,
-			    struct device_attribute *attr,
-			    char const *buf, size_t count)
+static ssize_t hdd_sysfs_mt_bl_start_store(struct device *dev,
+					   struct device_attribute *attr,
+					   char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -213,9 +209,8 @@ hdd_sysfs_mt_bl_start_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_mt_config_store(struct net_device *net_dev,
-			    char const *buf, size_t count)
+static ssize_t __hdd_sysfs_mt_config_store(struct net_device *net_dev,
+					   char const *buf, size_t count)
 {
 	struct sme_motion_det_cfg motion_det_cfg;
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
@@ -237,8 +232,8 @@ __hdd_sysfs_mt_config_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -246,19 +241,21 @@ __hdd_sysfs_mt_config_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("mt_config: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("mt_config: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	for (i = 0; i < HDD_SYSFS_MT_CONFIG_NUM_ARGS; i++) {
 		token = strsep(&sptr, " ");
 		if (!token) {
-			hdd_err_rl("mt_config: not enough args(%d), expected args_num: 15",
-				   i);
+			hdd_err_rl(
+				"mt_config: not enough args(%d), expected args_num: 15",
+				i);
 			return -EINVAL;
 		}
-		if ( i >= HDD_SYSFS_MT_CONFIG_UINT8_INDEX) {
-			if (kstrtou8(token, 0,
-				     &val_8[i - HDD_SYSFS_MT_CONFIG_UINT8_INDEX]))
+		if (i >= HDD_SYSFS_MT_CONFIG_UINT8_INDEX) {
+			if (kstrtou8(
+				    token, 0,
+				    &val_8[i - HDD_SYSFS_MT_CONFIG_UINT8_INDEX]))
 				return -EINVAL;
 		} else {
 			if (kstrtou32(token, 0, &val_32[i]))
@@ -283,15 +280,14 @@ __hdd_sysfs_mt_config_store(struct net_device *net_dev,
 	motion_det_cfg.md_fine_thr_low = val_8[3];
 	adapter->motion_detection_mode = val_8[4];
 	sme_motion_det_config(hdd_ctx->mac_handle, &motion_det_cfg);
-	adapter->motion_det_cfg =  true;
+	adapter->motion_det_cfg = true;
 
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_mt_config_store(struct device *dev,
-			  struct device_attribute *attr,
-			  char const *buf, size_t count)
+static ssize_t hdd_sysfs_mt_config_store(struct device *dev,
+					 struct device_attribute *attr,
+					 char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -308,9 +304,8 @@ hdd_sysfs_mt_config_store(struct device *dev,
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_mt_start_store(struct net_device *net_dev,
-			   char const *buf, size_t count)
+static ssize_t __hdd_sysfs_mt_start_store(struct net_device *net_dev,
+					  char const *buf, size_t count)
 {
 	struct sme_motion_det_en motion_det;
 	struct hdd_adapter *adapter = netdev_priv(net_dev);
@@ -331,8 +326,8 @@ __hdd_sysfs_mt_start_store(struct net_device *net_dev,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 
 	if (ret) {
 		hdd_err_rl("invalid input");
@@ -340,8 +335,8 @@ __hdd_sysfs_mt_start_store(struct net_device *net_dev,
 	}
 
 	sptr = buf_local;
-	hdd_debug("mt_start: count %zu buf_local:(%s) net_devname %s",
-		  count, buf_local, net_dev->name);
+	hdd_debug("mt_start: count %zu buf_local:(%s) net_devname %s", count,
+		  buf_local, net_dev->name);
 
 	/* Get value */
 	token = strsep(&sptr, " ");
@@ -382,10 +377,9 @@ __hdd_sysfs_mt_start_store(struct net_device *net_dev,
 	return count;
 }
 
-static ssize_t
-hdd_sysfs_mt_start_store(struct device *dev,
-			 struct device_attribute *attr,
-			 char const *buf, size_t count)
+static ssize_t hdd_sysfs_mt_start_store(struct device *dev,
+					struct device_attribute *attr,
+					char const *buf, size_t count)
 {
 	struct net_device *net_dev = container_of(dev, struct net_device, dev);
 	struct osif_vdev_sync *vdev_sync;
@@ -402,17 +396,13 @@ hdd_sysfs_mt_start_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(mt_bl_config, 0220,
-		   NULL, hdd_sysfs_mt_bl_config_store);
+static DEVICE_ATTR(mt_bl_config, 0220, NULL, hdd_sysfs_mt_bl_config_store);
 
-static DEVICE_ATTR(mt_bl_start, 0220,
-		   NULL, hdd_sysfs_mt_bl_start_store);
+static DEVICE_ATTR(mt_bl_start, 0220, NULL, hdd_sysfs_mt_bl_start_store);
 
-static DEVICE_ATTR(mt_config, 0220,
-		   NULL, hdd_sysfs_mt_config_store);
+static DEVICE_ATTR(mt_config, 0220, NULL, hdd_sysfs_mt_config_store);
 
-static DEVICE_ATTR(mt_start, 0220,
-		   NULL, hdd_sysfs_mt_start_store);
+static DEVICE_ATTR(mt_start, 0220, NULL, hdd_sysfs_mt_start_store);
 
 static int hdd_sysfs_mt_bl_config_create(struct hdd_adapter *adapter)
 {

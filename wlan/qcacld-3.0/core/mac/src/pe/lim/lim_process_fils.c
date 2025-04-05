@@ -18,16 +18,16 @@
  */
 
 #include "lim_process_fils.h"
+#include "qdf_util.h"
+#include "wlan_cm_roam_api.h"
+#include "wlan_crypto_global_api.h"
+#include <lim_assoc_utils.h>
+#include <lim_prop_exts_utils.h>
 #include <lim_send_messages.h>
+#include <lim_session.h>
 #include <lim_types.h>
 #include <lim_utils.h>
-#include <lim_prop_exts_utils.h>
-#include <lim_assoc_utils.h>
-#include <lim_session.h>
 #include <qdf_crypto.h>
-#include "qdf_util.h"
-#include "wlan_crypto_global_api.h"
-#include "wlan_cm_roam_api.h"
 
 #ifdef WLAN_FEATURE_FILS_SK
 
@@ -42,13 +42,13 @@
  */
 static void lim_fils_data_dump(char *type, uint8_t *data, uint32_t len)
 {
-
 	pe_debug("%s : length %d", type, len);
 	qdf_trace_hex_dump(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_DEBUG, data, len);
 }
 #else
 static void lim_fils_data_dump(char *type, uint8_t *data, uint32_t len)
-{ }
+{
+}
 #endif
 
 /**
@@ -87,7 +87,6 @@ static uint8_t lim_get_auth_tag_len(enum fils_erp_cryptosuite crypto_suite)
 		return -EINVAL;
 	}
 }
-
 
 /**
  * lim_get_crypto_type()- This API returns crypto type based on akm suite used
@@ -273,8 +272,10 @@ static int lim_get_ick_len(uint8_t akm)
  * Return: QDF_STATUS
  */
 static QDF_STATUS lim_get_key_from_prf(uint8_t *type, uint8_t *secret,
-		uint32_t secret_len, uint8_t *label, uint8_t *optional_data,
-		uint32_t optional_data_len, uint8_t *key, uint32_t keylen)
+				       uint32_t secret_len, uint8_t *label,
+				       uint8_t *optional_data,
+				       uint32_t optional_data_len, uint8_t *key,
+				       uint32_t keylen)
 {
 	uint8_t count[2];
 	uint8_t *addr[4];
@@ -284,7 +285,7 @@ static QDF_STATUS lim_get_key_from_prf(uint8_t *type, uint8_t *secret,
 	uint32_t i = 0, remain_len;
 	uint16_t iteration;
 	uint8_t crypto_digest_len = lim_get_crypto_digest_len(type);
-	uint8_t tmp_hash[SHA384_DIGEST_SIZE] = {0};
+	uint8_t tmp_hash[SHA384_DIGEST_SIZE] = { 0 };
 
 	if (!crypto_digest_len) {
 		pe_err("Incorrect crypto length");
@@ -311,8 +312,8 @@ static QDF_STATUS lim_get_key_from_prf(uint8_t *type, uint8_t *secret,
 		if (remain_len >= crypto_digest_len)
 			remain_len = crypto_digest_len;
 
-		if (qdf_get_hmac_hash(type, secret, secret_len, 4,
-				addr, len, tmp_hash) < 0) {
+		if (qdf_get_hmac_hash(type, secret, secret_len, 4, addr, len,
+				      tmp_hash) < 0) {
 			pe_err("qdf_get_hmac_hash failed");
 			return QDF_STATUS_E_FAILURE;
 		}
@@ -332,7 +333,8 @@ static QDF_STATUS lim_get_key_from_prf(uint8_t *type, uint8_t *secret,
  * Return: remaining length
  */
 static uint32_t lim_process_fils_eap_tlv(struct pe_session *pe_session,
-				uint8_t *wrapped_data, uint32_t data_len)
+					 uint8_t *wrapped_data,
+					 uint32_t data_len)
 {
 	struct fils_eap_tlv *tlv;
 	struct fils_auth_rsp_info *auth_info;
@@ -343,14 +345,14 @@ static uint32_t lim_process_fils_eap_tlv(struct pe_session *pe_session,
 	auth_tag_len = lim_get_auth_tag_len(HMAC_SHA256_128);
 
 	while (data_len > (auth_tag_len + 1)) {
-		tlv = (struct fils_eap_tlv *) wrapped_data;
+		tlv = (struct fils_eap_tlv *)wrapped_data;
 
-		pe_debug("tlv type %x len %u total %u",
-			tlv->type, tlv->length, data_len);
+		pe_debug("tlv type %x len %u total %u", tlv->type, tlv->length,
+			 data_len);
 
 		if (tlv->length > (data_len - 2)) {
-			pe_err("tlv len %d greater data_len %d",
-				tlv->length, data_len);
+			pe_err("tlv len %d greater data_len %d", tlv->length,
+			       data_len);
 			return 0;
 		}
 
@@ -360,8 +362,8 @@ static uint32_t lim_process_fils_eap_tlv(struct pe_session *pe_session,
 			if (!auth_info->keyname)
 				return 0;
 
-			qdf_mem_copy(auth_info->keyname,
-				     tlv->data, tlv->length);
+			qdf_mem_copy(auth_info->keyname, tlv->data,
+				     tlv->length);
 			auth_info->keylength = tlv->length;
 			data_len -= (tlv->length + 2);
 			wrapped_data += (tlv->length + 2);
@@ -383,8 +385,8 @@ static uint32_t lim_process_fils_eap_tlv(struct pe_session *pe_session,
 			if (!auth_info->domain_name)
 				return 0;
 
-			qdf_mem_copy(auth_info->domain_name,
-				     tlv->data, tlv->length);
+			qdf_mem_copy(auth_info->domain_name, tlv->data,
+				     tlv->length);
 			auth_info->domain_len = tlv->length;
 			data_len -= (tlv->length + 2);
 			wrapped_data += (tlv->length + 2);
@@ -415,10 +417,10 @@ static uint32_t lim_process_fils_eap_tlv(struct pe_session *pe_session,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS
-lim_generate_key_data(struct pe_fils_session *fils_info,
-		      uint8_t *key_label, uint8_t *data, uint32_t data_len,
-		      uint8_t *key_data, uint32_t key_data_len)
+static QDF_STATUS lim_generate_key_data(struct pe_fils_session *fils_info,
+					uint8_t *key_label, uint8_t *data,
+					uint32_t data_len, uint8_t *key_data,
+					uint32_t key_data_len)
 {
 	QDF_STATUS status;
 
@@ -447,18 +449,18 @@ static void lim_generate_ap_key_auth(struct pe_session *pe_session)
 	uint8_t *buf, *addr[1];
 	uint32_t len;
 	struct pe_fils_session *fils_info = pe_session->fils_info;
-	uint8_t data[SIR_FILS_NONCE_LENGTH + SIR_FILS_NONCE_LENGTH
-			+ QDF_MAC_ADDR_SIZE + QDF_MAC_ADDR_SIZE] = {0};
+	uint8_t data[SIR_FILS_NONCE_LENGTH + SIR_FILS_NONCE_LENGTH +
+		     QDF_MAC_ADDR_SIZE + QDF_MAC_ADDR_SIZE] = { 0 };
 
 	if (!fils_info)
 		return;
 
 	len = SIR_FILS_NONCE_LENGTH + SIR_FILS_NONCE_LENGTH +
-			QDF_MAC_ADDR_SIZE +  QDF_MAC_ADDR_SIZE;
+	      QDF_MAC_ADDR_SIZE + QDF_MAC_ADDR_SIZE;
 	addr[0] = data;
 	buf = data;
 	qdf_mem_copy(buf, fils_info->auth_info.fils_nonce,
-			SIR_FILS_NONCE_LENGTH);
+		     SIR_FILS_NONCE_LENGTH);
 	buf += SIR_FILS_NONCE_LENGTH;
 	qdf_mem_copy(buf, fils_info->fils_nonce, SIR_FILS_NONCE_LENGTH);
 	buf += SIR_FILS_NONCE_LENGTH;
@@ -472,9 +474,9 @@ static void lim_generate_ap_key_auth(struct pe_session *pe_session)
 			      &len, fils_info->ap_key_auth_data) < 0)
 		pe_err("failed to generate PMK id");
 	fils_info->ap_key_auth_len = lim_get_crypto_digest_len(
-				lim_get_hmac_crypto_type(fils_info->akm));
+		lim_get_hmac_crypto_type(fils_info->akm));
 	lim_fils_data_dump("AP Key Auth", fils_info->ap_key_auth_data,
-		fils_info->ap_key_auth_len);
+			   fils_info->ap_key_auth_len);
 }
 
 /**
@@ -489,21 +491,21 @@ static void lim_generate_key_auth(struct pe_session *pe_session)
 	uint8_t *buf, *addr[1];
 	uint32_t len;
 	struct pe_fils_session *fils_info = pe_session->fils_info;
-	uint8_t data[SIR_FILS_NONCE_LENGTH + SIR_FILS_NONCE_LENGTH
-			+ QDF_MAC_ADDR_SIZE + QDF_MAC_ADDR_SIZE] = {0};
+	uint8_t data[SIR_FILS_NONCE_LENGTH + SIR_FILS_NONCE_LENGTH +
+		     QDF_MAC_ADDR_SIZE + QDF_MAC_ADDR_SIZE] = { 0 };
 
 	if (!fils_info)
 		return;
 
 	len = SIR_FILS_NONCE_LENGTH + SIR_FILS_NONCE_LENGTH +
-			QDF_MAC_ADDR_SIZE +  QDF_MAC_ADDR_SIZE;
+	      QDF_MAC_ADDR_SIZE + QDF_MAC_ADDR_SIZE;
 
 	addr[0] = data;
 	buf = data;
 	qdf_mem_copy(buf, fils_info->fils_nonce, SIR_FILS_NONCE_LENGTH);
 	buf += SIR_FILS_NONCE_LENGTH;
 	qdf_mem_copy(buf, fils_info->auth_info.fils_nonce,
-			SIR_FILS_NONCE_LENGTH);
+		     SIR_FILS_NONCE_LENGTH);
 	buf += SIR_FILS_NONCE_LENGTH;
 	qdf_mem_copy(buf, pe_session->self_mac_addr, QDF_MAC_ADDR_SIZE);
 	buf += QDF_MAC_ADDR_SIZE;
@@ -511,13 +513,13 @@ static void lim_generate_key_auth(struct pe_session *pe_session)
 	buf += QDF_MAC_ADDR_SIZE;
 
 	if (qdf_get_hmac_hash(lim_get_hmac_crypto_type(fils_info->akm),
-			      fils_info->ick, fils_info->ick_len, 1,
-			      &addr[0], &len, fils_info->key_auth) < 0)
+			      fils_info->ick, fils_info->ick_len, 1, &addr[0],
+			      &len, fils_info->key_auth) < 0)
 		pe_err("failed to generate key auth");
 	fils_info->key_auth_len = lim_get_crypto_digest_len(
-				lim_get_hmac_crypto_type(fils_info->akm));
-	lim_fils_data_dump("STA Key Auth",
-			fils_info->key_auth, fils_info->key_auth_len);
+		lim_get_hmac_crypto_type(fils_info->akm));
+	lim_fils_data_dump("STA Key Auth", fils_info->key_auth,
+			   fils_info->key_auth_len);
 }
 
 /**
@@ -538,7 +540,7 @@ static void lim_get_keys(struct mac_context *mac_ctx,
 	uint8_t *data;
 	uint8_t data_len;
 	struct pe_fils_session *fils_info = pe_session->fils_info;
-	uint8_t key_data[FILS_MAX_KEY_DATA_LEN] = {0};
+	uint8_t key_data[FILS_MAX_KEY_DATA_LEN] = { 0 };
 	uint8_t key_data_len;
 	uint8_t ick_len;
 	uint8_t kek_len;
@@ -557,17 +559,17 @@ static void lim_get_keys(struct mac_context *mac_ctx,
 		fils_ft_len = lim_get_fils_ft_length(fils_info->akm);
 
 	/*
-	 * [IEEE 802.11ai - 12.12.2.5.3]
-	 * FILS-Key-Data = PRF-X(PMK, “FILS PTK Derivation”, SPA || AA ||
-	 *                                              SNonce || ANonce)
-	 * ICK = L(FILS-Key-Data, 0, ICK_bits)
-	 * KEK = L(FILS-Key-Data, ICK_bits, KEK_bits)
-	 * TK = L(FILS-Key-Data, ICK_bits + KEK_bits, TK_bits)
-	 * When doing FT initial mobility domain association using
-	 * FILS authentication,
-	 * FILS-FT = L(FILS-Key-Data, ICK_bits + KEK_bits +
-	 *             TK_bits, FILS-FT_bits)
-	 */
+   * [IEEE 802.11ai - 12.12.2.5.3]
+   * FILS-Key-Data = PRF-X(PMK, “FILS PTK Derivation”, SPA || AA ||
+   *                                              SNonce || ANonce)
+   * ICK = L(FILS-Key-Data, 0, ICK_bits)
+   * KEK = L(FILS-Key-Data, ICK_bits, KEK_bits)
+   * TK = L(FILS-Key-Data, ICK_bits + KEK_bits, TK_bits)
+   * When doing FT initial mobility domain association using
+   * FILS authentication,
+   * FILS-FT = L(FILS-Key-Data, ICK_bits + KEK_bits +
+   *             TK_bits, FILS-FT_bits)
+   */
 	key_data_len = ick_len + kek_len + tk_len + fils_ft_len;
 
 	data_len = 2 * SIR_FILS_NONCE_LENGTH + 2 * QDF_MAC_ADDR_SIZE;
@@ -587,11 +589,11 @@ static void lim_get_keys(struct mac_context *mac_ctx,
 	buf += SIR_FILS_NONCE_LENGTH;
 
 	qdf_mem_copy(buf, fils_info->auth_info.fils_nonce,
-			SIR_FILS_NONCE_LENGTH);
+		     SIR_FILS_NONCE_LENGTH);
 
 	/* Derive FILS-Key-Data */
-	lim_generate_key_data(fils_info, key_label, data, data_len,
-				key_data, key_data_len);
+	lim_generate_key_data(fils_info, key_label, data, data_len, key_data,
+			      key_data_len);
 	buf = key_data;
 
 	qdf_mem_copy(fils_info->ick, buf, ick_len);
@@ -607,10 +609,10 @@ static void lim_get_keys(struct mac_context *mac_ctx,
 	buf += tk_len;
 
 	/*
-	 * Derive FILS-FT:
-	 * FILS-FT =
-	 *     L(FILS-Key-Data, ICK_bits + KEK_bits + TK_bits, FILS-FT_bits)
-	 */
+   * Derive FILS-FT:
+   * FILS-FT =
+   *     L(FILS-Key-Data, ICK_bits + KEK_bits + TK_bits, FILS-FT_bits)
+   */
 	if (pe_session->is11Rconnection && fils_ft_len) {
 		qdf_mem_copy(fils_info->fils_ft, buf, fils_ft_len);
 		fils_info->fils_ft_len = fils_ft_len;
@@ -618,7 +620,7 @@ static void lim_get_keys(struct mac_context *mac_ctx,
 						pe_session->vdev_id,
 						fils_info->fils_ft,
 						fils_ft_len);
-		if  (QDF_IS_STATUS_ERROR(status))
+		if (QDF_IS_STATUS_ERROR(status))
 			pe_err("Failed to update FILS FT to mlme");
 	}
 	qdf_mem_zero(data, data_len);
@@ -658,7 +660,7 @@ static void lim_generate_pmkid(struct pe_session *pe_session)
  */
 static void lim_generate_pmk(struct pe_session *pe_session)
 {
-	uint8_t nonce[2 * SIR_FILS_NONCE_LENGTH] = {0};
+	uint8_t nonce[2 * SIR_FILS_NONCE_LENGTH] = { 0 };
 	uint8_t nonce_len = 2 * SIR_FILS_NONCE_LENGTH;
 	uint8_t *addr[1];
 	uint32_t len[1];
@@ -669,11 +671,11 @@ static void lim_generate_pmk(struct pe_session *pe_session)
 
 	/* Snonce */
 	qdf_mem_copy(nonce, pe_session->fils_info->fils_nonce,
-			SIR_FILS_NONCE_LENGTH);
+		     SIR_FILS_NONCE_LENGTH);
 	/* anonce */
 	qdf_mem_copy(nonce + SIR_FILS_NONCE_LENGTH,
-			pe_session->fils_info->auth_info.fils_nonce,
-			SIR_FILS_NONCE_LENGTH);
+		     pe_session->fils_info->auth_info.fils_nonce,
+		     SIR_FILS_NONCE_LENGTH);
 	fils_info->fils_pmk_len = lim_get_pmk_length(fils_info->akm);
 
 	if (fils_info->fils_pmk)
@@ -701,7 +703,7 @@ static void lim_generate_pmk(struct pe_session *pe_session)
  */
 static void lim_generate_rmsk_data(struct pe_session *pe_session)
 {
-	uint8_t optional_data[4] = {0};
+	uint8_t optional_data[4] = { 0 };
 	uint8_t rmsk_label[] = RMSK_LABEL;
 	struct pe_fils_session *fils_info = pe_session->fils_info;
 	struct fils_auth_rsp_info *auth_info;
@@ -716,15 +718,16 @@ static void lim_generate_rmsk_data(struct pe_session *pe_session)
 		return;
 
 	/*
-	 * Sequence number sent in EAP-INIT packet,
-	 * it should be in network byte order
-	 */
+   * Sequence number sent in EAP-INIT packet,
+   * it should be in network byte order
+   */
 	lim_copy_u16_be(&optional_data[0], fils_info->sequence_number);
 	lim_copy_u16_be(&optional_data[2], fils_info->fils_rrk_len);
-	qdf_default_hmac_sha256_kdf(
-		fils_info->fils_rrk, fils_info->fils_rrk_len, rmsk_label,
-		optional_data, sizeof(optional_data), fils_info->fils_rmsk,
-		fils_info->fils_rmsk_len);
+	qdf_default_hmac_sha256_kdf(fils_info->fils_rrk,
+				    fils_info->fils_rrk_len, rmsk_label,
+				    optional_data, sizeof(optional_data),
+				    fils_info->fils_rmsk,
+				    fils_info->fils_rmsk_len);
 }
 
 /**
@@ -737,7 +740,8 @@ static void lim_generate_rmsk_data(struct pe_session *pe_session)
  * Return: None
  */
 static QDF_STATUS lim_process_auth_wrapped_data(struct pe_session *pe_session,
-			uint8_t *wrapped_data, uint32_t data_len)
+						uint8_t *wrapped_data,
+						uint32_t data_len)
 {
 	uint8_t code;
 	uint8_t identifier;
@@ -745,7 +749,7 @@ static QDF_STATUS lim_process_auth_wrapped_data(struct pe_session *pe_session,
 	uint8_t type;
 	unsigned long flags;
 	struct pe_fils_session *fils_info;
-	uint8_t hash[32] = {0}, crypto;
+	uint8_t hash[32] = { 0 }, crypto;
 	uint32_t remaining_len = data_len, new_len;
 	uint8_t *input_data[1];
 	uint32_t input_len[1];
@@ -789,14 +793,14 @@ static QDF_STATUS lim_process_auth_wrapped_data(struct pe_session *pe_session,
 	/* Validate Auth sequence number */
 	if (fils_info->auth_info.sequence < fils_info->sequence_number) {
 		pe_err("sequence EAP-finish:%d is less than EAP-init:%d",
-			fils_info->auth_info.sequence,
-			fils_info->sequence_number);
+		       fils_info->auth_info.sequence,
+		       fils_info->sequence_number);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	/* Parse attached TLVs */
-	new_len = lim_process_fils_eap_tlv(pe_session,
-				wrapped_data, remaining_len);
+	new_len = lim_process_fils_eap_tlv(pe_session, wrapped_data,
+					   remaining_len);
 
 	wrapped_data += remaining_len - new_len;
 	remaining_len = new_len;
@@ -809,18 +813,15 @@ static QDF_STATUS lim_process_auth_wrapped_data(struct pe_session *pe_session,
 	input_len[0] -= auth_tag_len;
 	/* if we have auth tag remaining */
 	if (remaining_len == auth_tag_len) {
-		qdf_get_hmac_hash(HMAC_SHA256_CRYPTO_TYPE,
-				fils_info->fils_rik,
-				fils_info->fils_rik_len,
-				SINGLE_ELEMENT_HASH_CNT,
-				input_data, input_len, hash);
+		qdf_get_hmac_hash(HMAC_SHA256_CRYPTO_TYPE, fils_info->fils_rik,
+				  fils_info->fils_rik_len,
+				  SINGLE_ELEMENT_HASH_CNT, input_data,
+				  input_len, hash);
 	} else {
-		pe_err("invalid remaining len %d",
-			remaining_len);
+		pe_err("invalid remaining len %d", remaining_len);
 	}
 	if (qdf_mem_cmp(wrapped_data, hash, auth_tag_len)) {
-		pe_err("integratity check failed for auth, crypto %d",
-			crypto);
+		pe_err("integratity check failed for auth, crypto %d", crypto);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -840,8 +841,8 @@ static QDF_STATUS lim_process_auth_wrapped_data(struct pe_session *pe_session,
  * Return: true if frame is valid or fils is disable, false otherwise
  */
 bool lim_is_valid_fils_auth_frame(struct mac_context *mac_ctx,
-		struct pe_session *pe_session,
-		tSirMacAuthFrameBody *rx_auth_frm_body)
+				  struct pe_session *pe_session,
+				  tSirMacAuthFrameBody *rx_auth_frm_body)
 {
 	if (!pe_session->fils_info)
 		return true;
@@ -850,20 +851,20 @@ bool lim_is_valid_fils_auth_frame(struct mac_context *mac_ctx,
 		return true;
 
 	if (qdf_mem_cmp(rx_auth_frm_body->session,
-				pe_session->fils_info->fils_session,
-				SIR_FILS_SESSION_LENGTH)) {
+			pe_session->fils_info->fils_session,
+			SIR_FILS_SESSION_LENGTH)) {
 		lim_fils_data_dump("Current FILS session",
-				pe_session->fils_info->fils_session,
-				SIR_FILS_SESSION_LENGTH);
+				   pe_session->fils_info->fils_session,
+				   SIR_FILS_SESSION_LENGTH);
 		lim_fils_data_dump("FILS Session in pkt",
-				rx_auth_frm_body->session,
-				SIR_FILS_SESSION_LENGTH);
+				   rx_auth_frm_body->session,
+				   SIR_FILS_SESSION_LENGTH);
 		return false;
 	}
 	qdf_mem_copy(pe_session->fils_info->auth_info.fils_nonce,
-			rx_auth_frm_body->nonce, SIR_FILS_NONCE_LENGTH);
+		     rx_auth_frm_body->nonce, SIR_FILS_NONCE_LENGTH);
 	pe_session->fils_info->auth_info.assoc_delay =
-			rx_auth_frm_body->assoc_delay_info;
+		rx_auth_frm_body->assoc_delay_info;
 	return true;
 }
 
@@ -877,7 +878,7 @@ bool lim_is_valid_fils_auth_frame(struct mac_context *mac_ctx,
 static int lim_create_fils_wrapper_data(struct pe_fils_session *fils_info)
 {
 	uint8_t *buf;
-	uint8_t auth_tag[FILS_AUTH_TAG_MAX_LENGTH] = {0};
+	uint8_t auth_tag[FILS_AUTH_TAG_MAX_LENGTH] = { 0 };
 	uint32_t length = 0;
 	QDF_STATUS status;
 	int buf_len;
@@ -886,7 +887,8 @@ static int lim_create_fils_wrapper_data(struct pe_fils_session *fils_info)
 		return 0;
 
 	if (!fils_info->keyname_nai_length || !fils_info->fils_rrk_len) {
-		pe_debug("FILS_PMKSA: NO keyname nai/RRK configured. Use PMKSA caching");
+		pe_debug(
+			"FILS_PMKSA: NO keyname nai/RRK configured. Use PMKSA caching");
 		return 0;
 	}
 
@@ -922,12 +924,12 @@ static int lim_create_fils_wrapper_data(struct pe_fils_session *fils_info)
 	buf++;
 
 	/**
-	 *  flag
-	 *  0 1 2  <-- 5 -->
-	 * ----------------
-	 * |R|B|L| Reserved|
-	 * -----------------
-	 */
+   *  flag
+   *  0 1 2  <-- 5 -->
+   * ----------------
+   * |R|B|L| Reserved|
+   * -----------------
+   */
 	*buf = 0x20; /* l=1, b=0, r=0 */
 	buf++;
 	/* sequence */
@@ -943,7 +945,7 @@ static int lim_create_fils_wrapper_data(struct pe_fils_session *fils_info)
 	buf++;
 	/* NAI Data */
 	qdf_mem_copy(buf, fils_info->keyname_nai_data,
-			fils_info->keyname_nai_length);
+		     fils_info->keyname_nai_length);
 	buf += fils_info->keyname_nai_length;
 
 	/* cryptosuite */
@@ -951,9 +953,9 @@ static int lim_create_fils_wrapper_data(struct pe_fils_session *fils_info)
 	buf++;
 
 	/*
-	 * This should be moved to just after sending probe to save time
-	 * lim_process_switch_channel_join_req ??
-	 */
+   * This should be moved to just after sending probe to save time
+   * lim_process_switch_channel_join_req ??
+   */
 	fils_info->fils_rik = qdf_mem_malloc(fils_info->fils_rrk_len);
 	if (!fils_info->fils_rik) {
 		qdf_mem_free(fils_info->fils_erp_reauth_pkt);
@@ -976,15 +978,15 @@ static int lim_create_fils_wrapper_data(struct pe_fils_session *fils_info)
 
 	fils_info->fils_erp_reauth_pkt_len = buf_len;
 	length = fils_info->fils_erp_reauth_pkt_len -
-			lim_get_auth_tag_len(HMAC_SHA256_128);
-	qdf_get_hmac_hash(HMAC_SHA256_CRYPTO_TYPE,
-			fils_info->fils_rik, fils_info->fils_rik_len, 1,
-			&fils_info->fils_erp_reauth_pkt, &length, auth_tag);
+		 lim_get_auth_tag_len(HMAC_SHA256_128);
+	qdf_get_hmac_hash(HMAC_SHA256_CRYPTO_TYPE, fils_info->fils_rik,
+			  fils_info->fils_rik_len, 1,
+			  &fils_info->fils_erp_reauth_pkt, &length, auth_tag);
 
 	lim_fils_data_dump("Auth tag", auth_tag,
-			lim_get_auth_tag_len(HMAC_SHA256_128));
+			   lim_get_auth_tag_len(HMAC_SHA256_128));
 	lim_fils_data_dump("EAP init pkt", fils_info->fils_erp_reauth_pkt,
-			fils_info->fils_erp_reauth_pkt_len);
+			   fils_info->fils_erp_reauth_pkt_len);
 
 	qdf_mem_copy(buf, auth_tag, lim_get_auth_tag_len(HMAC_SHA256_128));
 	buf += lim_get_auth_tag_len(HMAC_SHA256_128);
@@ -1004,8 +1006,7 @@ static int lim_create_fils_wrapper_data(struct pe_fils_session *fils_info)
  *
  * Return: None
  */
-void lim_add_fils_data_to_auth_frame(struct pe_session *session,
-		uint8_t *body)
+void lim_add_fils_data_to_auth_frame(struct pe_session *session, uint8_t *body)
 {
 	struct pe_fils_session *fils_info;
 
@@ -1018,13 +1019,13 @@ void lim_add_fils_data_to_auth_frame(struct pe_session *session,
 	qdf_mem_copy(body, fils_info->rsn_ie, fils_info->rsn_ie_len);
 	body += fils_info->rsn_ie_len;
 	lim_fils_data_dump("FILS RSN", fils_info->rsn_ie,
-			fils_info->rsn_ie_len);
+			   fils_info->rsn_ie_len);
 
 	/*
-	 * FT-FILS IEEE-802.11ai specification mandates
-	 * MDIE to be sent in auth frame during initial
-	 * mobility domain association
-	 */
+   * FT-FILS IEEE-802.11ai specification mandates
+   * MDIE to be sent in auth frame during initial
+   * mobility domain association
+   */
 	if (session->is11Rconnection) {
 		struct bss_description *bss_desc;
 
@@ -1036,8 +1037,7 @@ void lim_add_fils_data_to_auth_frame(struct pe_session *session,
 			body++;
 			*body = SIR_MDIE_SIZE;
 			body++;
-			qdf_mem_copy(body, &bss_desc->mdie[0],
-			     SIR_MDIE_SIZE);
+			qdf_mem_copy(body, &bss_desc->mdie[0], SIR_MDIE_SIZE);
 			pe_debug("FILS: mdie = %02x %02x %02x",
 				 bss_desc->mdie[0], bss_desc->mdie[1],
 				 bss_desc->mdie[2]);
@@ -1063,7 +1063,7 @@ void lim_add_fils_data_to_auth_frame(struct pe_session *session,
 	body = body + SIR_FILS_NONCE_LENGTH;
 	/* Dump data */
 	lim_fils_data_dump("fils anonce", fils_info->fils_nonce,
-			SIR_FILS_NONCE_LENGTH);
+			   SIR_FILS_NONCE_LENGTH);
 
 	/*   *** Session ***  */
 	/* Add element id */
@@ -1080,8 +1080,8 @@ void lim_add_fils_data_to_auth_frame(struct pe_session *session,
 	qdf_mem_copy(body, fils_info->fils_session, SIR_FILS_SESSION_LENGTH);
 	body = body + SIR_FILS_SESSION_LENGTH;
 	/* dump data */
-	lim_fils_data_dump("Fils Session",
-		fils_info->fils_session, SIR_FILS_SESSION_LENGTH);
+	lim_fils_data_dump("Fils Session", fils_info->fils_session,
+			   SIR_FILS_SESSION_LENGTH);
 
 	if (!fils_info->fils_erp_reauth_pkt ||
 	    !fils_info->fils_erp_reauth_pkt_len) {
@@ -1101,10 +1101,10 @@ void lim_add_fils_data_to_auth_frame(struct pe_session *session,
 	body++;
 	/* Copy data */
 	qdf_mem_copy(body, fils_info->fils_erp_reauth_pkt,
-			fils_info->fils_erp_reauth_pkt_len);
+		     fils_info->fils_erp_reauth_pkt_len);
 	lim_fils_data_dump("Fils ERP reauth Pkt",
-			fils_info->fils_erp_reauth_pkt,
-			fils_info->fils_erp_reauth_pkt_len);
+			   fils_info->fils_erp_reauth_pkt,
+			   fils_info->fils_erp_reauth_pkt_len);
 	body = body + fils_info->fils_erp_reauth_pkt_len;
 }
 
@@ -1131,7 +1131,7 @@ static QDF_STATUS lim_generate_fils_pmkr0(struct pe_session *pe_session)
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct pe_fils_session *fils_info = pe_session->fils_info;
 	struct bss_description *bss_desc =
-			&pe_session->lim_join_req->bssDescription;
+		&pe_session->lim_join_req->bssDescription;
 
 	if (!fils_info)
 		return QDF_STATUS_E_FAILURE;
@@ -1143,17 +1143,18 @@ static QDF_STATUS lim_generate_fils_pmkr0(struct pe_session *pe_session)
 	r0_key_data_len = pmkr0_len + FILS_FT_PMK_R0_SALT_LEN;
 
 	/*
-	 * [IEEE 802.11ai 12.7.1.7.3]
-	 * R0-Key-Data = KDF-Hash-Length(XXKey, "FT-R0", SSIDlength || SSID ||
-	 *                             MDID || R0KHlength || R0KH-ID || S0KH-ID)
-	 * PMK-R0 = L(R0-Key-Data, 0, Q)
-	 * PMK-R0Name-Salt = L(R0-Key-Data, Q, 128)
-	 * Length = Q + 128
-	 */
-	key_data_len = (1 + ssid_length + mdid_len + 1 + r0kh_len +
-			QDF_MAC_ADDR_SIZE);
-	pe_debug("FT-FILS: ssid_length:%d MDID len:%d R0KH len:%d key_data len:%d",
-		 ssid_length, mdid_len, r0kh_len, key_data_len);
+   * [IEEE 802.11ai 12.7.1.7.3]
+   * R0-Key-Data = KDF-Hash-Length(XXKey, "FT-R0", SSIDlength || SSID ||
+   *                             MDID || R0KHlength || R0KH-ID || S0KH-ID)
+   * PMK-R0 = L(R0-Key-Data, 0, Q)
+   * PMK-R0Name-Salt = L(R0-Key-Data, Q, 128)
+   * Length = Q + 128
+   */
+	key_data_len =
+		(1 + ssid_length + mdid_len + 1 + r0kh_len + QDF_MAC_ADDR_SIZE);
+	pe_debug(
+		"FT-FILS: ssid_length:%d MDID len:%d R0KH len:%d key_data len:%d",
+		ssid_length, mdid_len, r0kh_len, key_data_len);
 
 	data_buf_len = (key_data_len + FILS_FT_MAX_R0_KEY_DATA_LEN +
 			SHA384_DIGEST_SIZE);
@@ -1166,9 +1167,9 @@ static QDF_STATUS lim_generate_fils_pmkr0(struct pe_session *pe_session)
 	hash = &data_buf[key_data_len + FILS_FT_MAX_R0_KEY_DATA_LEN];
 
 	/*
-	 * key_data is (SSIDlength || SSID || MDID || R0KHlength || R0KH-ID ||
-	 *              S0KH-ID)
-	 */
+   * key_data is (SSIDlength || SSID || MDID || R0KHlength || R0KH-ID ||
+   *              S0KH-ID)
+   */
 	buf = key_data;
 
 	*key_data = pe_session->ssId.length;
@@ -1191,8 +1192,8 @@ static QDF_STATUS lim_generate_fils_pmkr0(struct pe_session *pe_session)
 	pe_debug("FT-FILS: Derive R0-Key-Data");
 	status = lim_get_key_from_prf(lim_get_hmac_crypto_type(fils_info->akm),
 				      fils_info->fils_ft,
-				      fils_info->fils_ft_len, key_label,
-				      buf, key_data_len, r0_key_data,
+				      fils_info->fils_ft_len, key_label, buf,
+				      key_data_len, r0_key_data,
 				      r0_key_data_len);
 	if (QDF_IS_STATUS_ERROR(status))
 		goto free_buf;
@@ -1205,16 +1206,16 @@ static QDF_STATUS lim_generate_fils_pmkr0(struct pe_session *pe_session)
 	pmkr0_name_salt = r0_key_data + pmkr0_len;
 
 	/*
-	 * [IEEE 802.11-2016 12.7.1.7.3]
-	 * PMKR0Name = Truncate-128(Hash("FT-R0N" || PMK-R0Name-Salt)
-	 * The Hash function requires the crypto type, number of scatterlist
-	 * parameters, scatterlist, lengths of scatterlist arguments, pointer
-	 * to output hash.
-	 *
-	 * The scatterlist has two arguments - label "FT-R0N" and
-	 * PMK-R0Name-Salt
-	 *
-	 */
+   * [IEEE 802.11-2016 12.7.1.7.3]
+   * PMKR0Name = Truncate-128(Hash("FT-R0N" || PMK-R0Name-Salt)
+   * The Hash function requires the crypto type, number of scatterlist
+   * parameters, scatterlist, lengths of scatterlist arguments, pointer
+   * to output hash.
+   *
+   * The scatterlist has two arguments - label "FT-R0N" and
+   * PMK-R0Name-Salt
+   *
+   */
 	scatter_list[SCTR_LST_ELEM0] = FT_PMK_R0_NAME_KEY_LABEL;
 	len[SCTR_LST_ELEM0] = SCTR_LST_R0_LABEL_LEN;
 	scatter_list[SCTR_LST_ELEM1] = pmkr0_name_salt;
@@ -1253,7 +1254,7 @@ static QDF_STATUS lim_generate_fils_pmkr1_name(struct mac_context *mac_ctx,
 	uint8_t *buf;
 	uint8_t gp_mgmt_cipher_suite[4];
 	uint32_t ret;
-	tDot11fIERSN dot11f_ie_rsn = {0};
+	tDot11fIERSN dot11f_ie_rsn = { 0 };
 	struct pe_fils_session *fils_info = pe_session->fils_info;
 
 	if (!fils_info)
@@ -1264,10 +1265,10 @@ static QDF_STATUS lim_generate_fils_pmkr1_name(struct mac_context *mac_ctx,
 		return QDF_STATUS_E_NOMEM;
 
 	/*
-	 * [IEEE 802.11-2016 12.7.1.7.4]
-	 * PMKR1Name = Truncate-128(Hash("FT-R1N" || PMKR0Name ||
-	 *                               R1KH-ID || S1KH-ID))
-	 */
+   * [IEEE 802.11-2016 12.7.1.7.4]
+   * PMKR1Name = Truncate-128(Hash("FT-R1N" || PMKR0Name ||
+   *                               R1KH-ID || S1KH-ID))
+   */
 	scatter_list[SCTR_LST_ELEM0] = FT_PMK_R1_NAME_KEY_LABEL;
 	len[SCTR_LST_ELEM0] = SCTR_LST_R1_LABEL_LEN;
 	scatter_list[SCTR_LST_ELEM1] = fils_info->pmkr0_name;
@@ -1295,8 +1296,8 @@ static QDF_STATUS lim_generate_fils_pmkr1_name(struct mac_context *mac_ctx,
 	}
 
 	ret = dot11f_unpack_ie_rsn(mac_ctx, fils_info->rsn_ie + 2,
-				   fils_info->rsn_ie_len - 2,
-				   &dot11f_ie_rsn, 0);
+				   fils_info->rsn_ie_len - 2, &dot11f_ie_rsn,
+				   0);
 
 	if (!DOT11F_SUCCEEDED(ret)) {
 		pe_err("unpack RSN IE failed, ret: %d", ret);
@@ -1307,14 +1308,14 @@ static QDF_STATUS lim_generate_fils_pmkr1_name(struct mac_context *mac_ctx,
 
 	if (fils_info->group_mgmt_cipher_present) {
 		/*
-		 * If 802.11w is enabled, group management cipher
-		 * suite is added at the end of RSN IE after
-		 * PMKID. Since the driver has opaque RSN IE
-		 * saved in fils_session, strip the last 4 bytes
-		 * of the RSN IE to get group mgmt cipher suite.
-		 * Then copy the PMKID followed by the grp mgmt cipher
-		 * suite.
-		 */
+     * If 802.11w is enabled, group management cipher
+     * suite is added at the end of RSN IE after
+     * PMKID. Since the driver has opaque RSN IE
+     * saved in fils_session, strip the last 4 bytes
+     * of the RSN IE to get group mgmt cipher suite.
+     * Then copy the PMKID followed by the grp mgmt cipher
+     * suite.
+     */
 
 		buf -= 4;
 		fils_info->rsn_ie[1] -= 4; /* strip the grp mgmt cipher len */
@@ -1325,16 +1326,16 @@ static QDF_STATUS lim_generate_fils_pmkr1_name(struct mac_context *mac_ctx,
 		/* Skip past PMKID and PMKID count */
 		buf -= (dot11f_ie_rsn.pmkid_count * PMKID_LEN) + 2;
 		fils_info->rsn_ie[1] -=
-				(dot11f_ie_rsn.pmkid_count * PMKID_LEN) + 2;
+			(dot11f_ie_rsn.pmkid_count * PMKID_LEN) + 2;
 		/* Clear the buffer occupied by PMKID */
 		qdf_mem_zero(buf, (dot11f_ie_rsn.pmkid_count * PMKID_LEN) + 2);
 	}
 
 	/*
-	 * Add PMKID count as 1. PMKID count field is 2 bytes long.
-	 * Copy the PMKR1-Name in the PMKID list at the end of the
-	 * RSN IE.
-	 */
+   * Add PMKID count as 1. PMKID count field is 2 bytes long.
+   * Copy the PMKR1-Name in the PMKID list at the end of the
+   * RSN IE.
+   */
 	*buf = 1; /* RSNIE PMKID Count = 1 */
 	buf += 2; /* RSNIE PMKID count field is 2 bytes */
 	/* PMKID = fils_info->pmkr1_name */
@@ -1357,7 +1358,7 @@ static QDF_STATUS lim_generate_fils_pmkr1_name(struct mac_context *mac_ctx,
 		qdf_mem_zero(pe_session->lim_join_req->rsnIE.rsnIEdata,
 			     WLAN_MAX_IE_LEN + 2);
 		pe_session->lim_join_req->rsnIE.length =
-						fils_info->rsn_ie[1] + 2;
+			fils_info->rsn_ie[1] + 2;
 		qdf_mem_copy(pe_session->lim_join_req->rsnIE.rsnIEdata,
 			     fils_info->rsn_ie,
 			     pe_session->lim_join_req->rsnIE.length);
@@ -1377,13 +1378,13 @@ static QDF_STATUS lim_generate_fils_pmkr1_name(struct mac_context *mac_ctx,
  * Return: true if fils data needs to be processed else false
  */
 bool lim_process_fils_auth_frame2(struct mac_context *mac_ctx,
-		struct pe_session *pe_session,
-		tSirMacAuthFrameBody *rx_auth_frm_body)
+				  struct pe_session *pe_session,
+				  tSirMacAuthFrameBody *rx_auth_frm_body)
 {
 	int i;
 	uint32_t ret;
 	bool pmkid_found = false;
-	tDot11fIERSN dot11f_ie_rsn = {0};
+	tDot11fIERSN dot11f_ie_rsn = { 0 };
 	QDF_STATUS status;
 
 	if (!pe_session->fils_info)
@@ -1393,17 +1394,17 @@ bool lim_process_fils_auth_frame2(struct mac_context *mac_ctx,
 		return false;
 
 	ret = dot11f_unpack_ie_rsn(mac_ctx, &rx_auth_frm_body->rsn_ie.info[0],
-				rx_auth_frm_body->rsn_ie.length,
-				&dot11f_ie_rsn, 0);
+				   rx_auth_frm_body->rsn_ie.length,
+				   &dot11f_ie_rsn, 0);
 	if (!DOT11F_SUCCEEDED(ret)) {
 		pe_err("unpack failed, ret: %d", ret);
 		return false;
 	}
 
 	/*
-	 * copy FTIE to fils_info and send it over assoc response frame
-	 * for FT-FILS connection
-	 */
+   * copy FTIE to fils_info and send it over assoc response frame
+   * for FT-FILS connection
+   */
 	if (pe_session->is11Rconnection && pe_session->fils_info) {
 		pe_session->fils_info->ft_ie = rx_auth_frm_body->ft_ie;
 		if (!pe_session->fils_info->ft_ie.present) {
@@ -1413,19 +1414,19 @@ bool lim_process_fils_auth_frame2(struct mac_context *mac_ctx,
 
 	for (i = 0; i < dot11f_ie_rsn.pmkid_count; i++) {
 		if (qdf_mem_cmp(dot11f_ie_rsn.pmkid[i],
-		    pe_session->fils_info->fils_pmkid,
-		    PMKID_LEN) == 0) {
+				pe_session->fils_info->fils_pmkid,
+				PMKID_LEN) == 0) {
 			pmkid_found = true;
 			pe_debug("pmkid match in rsn ie total_count %d",
-				dot11f_ie_rsn.pmkid_count);
+				 dot11f_ie_rsn.pmkid_count);
 			break;
 		}
 	}
 	if (!pmkid_found) {
 		if (QDF_STATUS_SUCCESS !=
-		    lim_process_auth_wrapped_data(pe_session,
-			rx_auth_frm_body->wrapped_data,
-			rx_auth_frm_body->wrapped_data_len))
+		    lim_process_auth_wrapped_data(
+			    pe_session, rx_auth_frm_body->wrapped_data,
+			    rx_auth_frm_body->wrapped_data_len))
 			return false;
 	}
 	lim_get_keys(mac_ctx, pe_session);
@@ -1479,7 +1480,7 @@ void lim_update_fils_config(struct mac_context *mac_ctx,
 {
 	struct pe_fils_session *pe_fils_info;
 	struct wlan_fils_connection_info *fils_info = NULL;
-	tDot11fIERSN dot11f_ie_rsn = {0};
+	tDot11fIERSN dot11f_ie_rsn = { 0 };
 	uint32_t ret;
 	struct mlme_legacy_priv *mlme_priv;
 
@@ -1505,8 +1506,7 @@ void lim_update_fils_config(struct mac_context *mac_ctx,
 
 	if (fils_info->key_nai_length > FILS_MAX_KEYNAME_NAI_LENGTH) {
 		pe_err("Restricting the key_nai_length of %d to max %d",
-		       fils_info->key_nai_length,
-		       FILS_MAX_KEYNAME_NAI_LENGTH);
+		       fils_info->key_nai_length, FILS_MAX_KEYNAME_NAI_LENGTH);
 		fils_info->key_nai_length = FILS_MAX_KEYNAME_NAI_LENGTH;
 	}
 
@@ -1517,45 +1517,41 @@ void lim_update_fils_config(struct mac_context *mac_ctx,
 			return;
 
 		qdf_mem_copy(pe_fils_info->keyname_nai_data,
-			     fils_info->keyname_nai,
-			     fils_info->key_nai_length);
+			     fils_info->keyname_nai, fils_info->key_nai_length);
 	}
 
 	if (fils_info->r_rk_length) {
-		pe_fils_info->fils_rrk =
-			qdf_mem_malloc(fils_info->r_rk_length);
+		pe_fils_info->fils_rrk = qdf_mem_malloc(fils_info->r_rk_length);
 		if (!pe_fils_info->fils_rrk) {
 			qdf_mem_free(pe_fils_info->keyname_nai_data);
 			return;
 		}
 
 		if (fils_info->r_rk_length <= WLAN_FILS_MAX_RRK_LENGTH)
-			qdf_mem_copy(pe_fils_info->fils_rrk,
-				     fils_info->r_rk,
+			qdf_mem_copy(pe_fils_info->fils_rrk, fils_info->r_rk,
 				     fils_info->r_rk_length);
 	}
 
-	qdf_mem_copy(pe_fils_info->fils_pmkid, fils_info->pmkid,
-		     PMKID_LEN);
+	qdf_mem_copy(pe_fils_info->fils_pmkid, fils_info->pmkid, PMKID_LEN);
 	pe_fils_info->rsn_ie_len = session->lim_join_req->rsnIE.length;
 	qdf_mem_copy(pe_fils_info->rsn_ie,
 		     session->lim_join_req->rsnIE.rsnIEdata,
 		     session->lim_join_req->rsnIE.length);
 
 	/*
-	 * When AP is MFP capable and STA is also MFP capable,
-	 * the supplicant fills the RSN IE with PMKID count as 0
-	 * and PMKID as 0, then appends the group management cipher
-	 * suite. This opaque RSN IE is copied into fils_info in pe
-	 * session. For FT-FILS association, STA has to fill the
-	 * PMKR0 derived after authentication response is received from
-	 * the AP. So unpack the RSN IE to find if group management cipher
-	 * suite is present and based on this RSN IE will be constructed in
-	 * lim_generate_fils_pmkr1_name() for FT-FILS connection.
-	 */
+   * When AP is MFP capable and STA is also MFP capable,
+   * the supplicant fills the RSN IE with PMKID count as 0
+   * and PMKID as 0, then appends the group management cipher
+   * suite. This opaque RSN IE is copied into fils_info in pe
+   * session. For FT-FILS association, STA has to fill the
+   * PMKR0 derived after authentication response is received from
+   * the AP. So unpack the RSN IE to find if group management cipher
+   * suite is present and based on this RSN IE will be constructed in
+   * lim_generate_fils_pmkr1_name() for FT-FILS connection.
+   */
 	ret = dot11f_unpack_ie_rsn(mac_ctx, pe_fils_info->rsn_ie + 2,
-				   pe_fils_info->rsn_ie_len - 2,
-				   &dot11f_ie_rsn, 0);
+				   pe_fils_info->rsn_ie_len - 2, &dot11f_ie_rsn,
+				   0);
 	if (DOT11F_SUCCEEDED(ret))
 		pe_fils_info->group_mgmt_cipher_present =
 			dot11f_ie_rsn.gp_mgmt_cipher_suite_present;
@@ -1564,8 +1560,7 @@ void lim_update_fils_config(struct mac_context *mac_ctx,
 
 	pe_fils_info->fils_pmk_len = fils_info->pmk_len;
 	if (fils_info->pmk_len) {
-		pe_fils_info->fils_pmk =
-			qdf_mem_malloc(fils_info->pmk_len);
+		pe_fils_info->fils_pmk = qdf_mem_malloc(fils_info->pmk_len);
 		if (!pe_fils_info->fils_pmk) {
 			qdf_mem_free(pe_fils_info->keyname_nai_data);
 			qdf_mem_free(pe_fils_info->fils_rrk);
@@ -1575,13 +1570,13 @@ void lim_update_fils_config(struct mac_context *mac_ctx,
 			     fils_info->pmk_len);
 	}
 
-	pe_debug("FILS: fils=%d nai-len=%d rrk_len=%d akm=%d auth=%d pmk_len=%d rsn_len:%d",
-		 fils_info->is_fils_connection,
-		 fils_info->key_nai_length,
-		 fils_info->r_rk_length,
-		 fils_info->akm_type,
-		 fils_info->auth_type,
-		 fils_info->pmk_len, pe_fils_info->rsn_ie_len);
+	pe_debug(
+		"FILS: fils=%d nai-len=%d rrk_len=%d akm=%d auth=%d pmk_len=%d "
+		"rsn_len:%d",
+		fils_info->is_fils_connection, fils_info->key_nai_length,
+		fils_info->r_rk_length, fils_info->akm_type,
+		fils_info->auth_type, fils_info->pmk_len,
+		pe_fils_info->rsn_ie_len);
 }
 
 #define EXTENDED_IE_HEADER_LEN 3
@@ -1611,7 +1606,7 @@ QDF_STATUS lim_create_fils_auth_data(struct mac_context *mac_ctx,
 		session->fils_info->fils_rik = NULL;
 	}
 
-	if  (session->fils_info->fils_erp_reauth_pkt) {
+	if (session->fils_info->fils_erp_reauth_pkt) {
 		qdf_mem_free(session->fils_info->fils_erp_reauth_pkt);
 		session->fils_info->fils_erp_reauth_pkt = NULL;
 	}
@@ -1649,9 +1644,9 @@ void populate_fils_connect_params(struct mac_context *mac_ctx,
 	if (!lim_is_fils_connection(session))
 		return;
 
-	if (!fils_info->fils_pmk_len ||
-	    !fils_info->tk_len || !fils_info->gtk_len ||
-	    !fils_info->fils_pmk || !fils_info->kek_len) {
+	if (!fils_info->fils_pmk_len || !fils_info->tk_len ||
+	    !fils_info->gtk_len || !fils_info->fils_pmk ||
+	    !fils_info->kek_len) {
 		pe_err("Invalid FILS info pmk len %d kek len %d tk len %d gtk len %d",
 		       fils_info->fils_pmk_len, fils_info->kek_len,
 		       fils_info->tk_len, fils_info->gtk_len);
@@ -1691,8 +1686,7 @@ void populate_fils_connect_params(struct mac_context *mac_ctx,
 	cds_copy_hlp_info(&fils_info->dst_mac, &fils_info->src_mac,
 			  fils_info->hlp_data_len, fils_info->hlp_data,
 			  &fils_ie->dst_mac, &fils_ie->src_mac,
-			  &fils_ie->hlp_data_len,
-			  fils_ie->hlp_data);
+			  &fils_ie->hlp_data_len, fils_ie->hlp_data);
 
 	pe_debug("FILS connect params copied lim");
 }
@@ -1743,19 +1737,18 @@ static QDF_STATUS lim_parse_kde_elements(struct mac_context *mac_ctx,
 
 		if (rem_len < elem_len || elem_len > kde_list_len) {
 			pe_err("Invalid elem_len %d rem_len %d list_len %d",
-				elem_len, rem_len, kde_list_len);
+			       elem_len, rem_len, kde_list_len);
 			return QDF_STATUS_E_FAILURE;
 		}
 
 		if (elem_len < KDE_IE_DATA_OFFSET) {
-			pe_err("Not enough len to parse elem_len %d",
-				elem_len);
+			pe_err("Not enough len to parse elem_len %d", elem_len);
 			return QDF_STATUS_E_FAILURE;
 		}
 
 		if (lim_check_if_vendor_oui_match(mac_ctx, KDE_OUI_TYPE,
-				KDE_OUI_TYPE_SIZE, current_ie, elem_len)) {
-
+						  KDE_OUI_TYPE_SIZE, current_ie,
+						  elem_len)) {
 			data_type = *(temp_ie + KDE_DATA_TYPE_OFFSET);
 			ie_data = (temp_ie + KDE_IE_DATA_OFFSET);
 			data_len = (elem_len - KDE_IE_DATA_OFFSET);
@@ -1764,31 +1757,31 @@ static QDF_STATUS lim_parse_kde_elements(struct mac_context *mac_ctx,
 			case DATA_TYPE_GTK:
 				if (data_len < GTK_OFFSET) {
 					pe_err("Invalid KDE data_len %d",
-						data_len);
+					       data_len);
 					return QDF_STATUS_E_FAILURE;
 				}
-				qdf_mem_copy(fils_info->gtk, (ie_data +
-					     GTK_OFFSET), (data_len -
-					     GTK_OFFSET));
+				qdf_mem_copy(fils_info->gtk,
+					     (ie_data + GTK_OFFSET),
+					     (data_len - GTK_OFFSET));
 				fils_info->gtk_len = (data_len - GTK_OFFSET);
 				break;
 
 			case DATA_TYPE_IGTK:
 				if (data_len < IGTK_OFFSET) {
 					pe_err("Invalid KDE data_len %d",
-						data_len);
+					       data_len);
 					return QDF_STATUS_E_FAILURE;
 				}
 				fils_info->igtk_len = (data_len - IGTK_OFFSET);
-				qdf_mem_copy(fils_info->igtk, (ie_data +
-					     IGTK_OFFSET), (data_len -
-					     IGTK_OFFSET));
-				qdf_mem_copy(fils_info->ipn, (ie_data +
-					     IPN_OFFSET), IPN_LEN);
-			break;
+				qdf_mem_copy(fils_info->igtk,
+					     (ie_data + IGTK_OFFSET),
+					     (data_len - IGTK_OFFSET));
+				qdf_mem_copy(fils_info->ipn,
+					     (ie_data + IPN_OFFSET), IPN_LEN);
+				break;
 			default:
 				pe_err("Unknown KDE data type %x", data_type);
-			break;
+				break;
 			}
 		}
 
@@ -1858,8 +1851,8 @@ bool lim_verify_fils_params_assoc_rsp(struct mac_context *mac_ctx,
 	}
 
 	/* Compare FILS session */
-	if (qdf_mem_cmp(fils_info->fils_session,
-			fils_session.session, DOT11F_IE_FILS_SESSION_MAX_LEN)) {
+	if (qdf_mem_cmp(fils_info->fils_session, fils_session.session,
+			DOT11F_IE_FILS_SESSION_MAX_LEN)) {
 		pe_err("FILS session mismatch");
 		goto verify_fils_params_fails;
 	}
@@ -1874,14 +1867,12 @@ bool lim_verify_fils_params_assoc_rsp(struct mac_context *mac_ctx,
 
 	/* Compare FILS key auth */
 	if (fils_key_auth->num_key_auth != fils_info->key_auth_len ||
-	    qdf_mem_cmp(fils_info->ap_key_auth_data,
-			fils_key_auth->key_auth,
+	    qdf_mem_cmp(fils_info->ap_key_auth_data, fils_key_auth->key_auth,
 			fils_info->ap_key_auth_len)) {
 		lim_fils_data_dump("session keyauth",
 				   fils_info->ap_key_auth_data,
 				   fils_info->ap_key_auth_len);
-		lim_fils_data_dump("Pkt keyauth",
-				   fils_key_auth->key_auth,
+		lim_fils_data_dump("Pkt keyauth", fils_key_auth->key_auth,
 				   fils_key_auth->num_key_auth);
 		qdf_mem_free(fils_key_auth);
 		goto verify_fils_params_fails;
@@ -1904,10 +1895,8 @@ bool lim_verify_fils_params_assoc_rsp(struct mac_context *mac_ctx,
 		goto verify_fils_params_fails;
 	}
 
-	lim_update_fils_hlp_data(&assoc_rsp->dst_mac,
-				 &assoc_rsp->src_mac,
-				 assoc_rsp->hlp_data_len,
-				 assoc_rsp->hlp_data,
+	lim_update_fils_hlp_data(&assoc_rsp->dst_mac, &assoc_rsp->src_mac,
+				 assoc_rsp->hlp_data_len, assoc_rsp->hlp_data,
 				 session_entry);
 	return true;
 
@@ -1929,11 +1918,10 @@ verify_fils_params_fails:
  *
  * Return: QDF_STATUS_SUCCESS if found, else QDF_STATUS_E_FAILURE
  */
-static QDF_STATUS find_ie_data_after_fils_session_ie(struct mac_context *mac_ctx,
-						     uint8_t *buf,
-						     uint32_t buf_len,
-						     uint8_t **ie,
-						     uint32_t *ie_len)
+static QDF_STATUS
+find_ie_data_after_fils_session_ie(struct mac_context *mac_ctx, uint8_t *buf,
+				   uint32_t buf_len, uint8_t **ie,
+				   uint32_t *ie_len)
 {
 	uint32_t left = buf_len;
 	uint8_t *ptr = buf;
@@ -2000,13 +1988,14 @@ static int fils_aead_encrypt(const uint8_t *kek, unsigned int kek_len,
 		return -EINVAL;
 	}
 
-	if (!own_mac || !bssid || !snonce ||
-	    !anonce || data_len == 0 || plain_text_len == 0 ||
-	    !out) {
-		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			  FL("Error missing params mac:%pK bssid:%pK snonce:%pK anonce:%pK data_len:%zu plain_text_len:%zu out:%pK"),
-			  own_mac, bssid, snonce, anonce, data_len,
-			  plain_text_len, out);
+	if (!own_mac || !bssid || !snonce || !anonce || data_len == 0 ||
+	    plain_text_len == 0 || !out) {
+		QDF_TRACE(
+			QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
+			FL("Error missing params mac:%pK bssid:%pK snonce:%pK anonce:%pK "
+			   "data_len:%zu plain_text_len:%zu out:%pK"),
+			own_mac, bssid, snonce, anonce, data_len,
+			plain_text_len, out);
 		return -EINVAL;
 	}
 
@@ -2035,7 +2024,7 @@ static int fils_aead_encrypt(const uint8_t *kek, unsigned int kek_len,
 
 	/* AES-SIV S2V */
 	/* K1 = leftmost(K, len(K)/2) */
-	ret = qdf_aes_s2v(kek, kek_len/2, aad, aad_len, 6, v);
+	ret = qdf_aes_s2v(kek, kek_len / 2, aad, aad_len, 6, v);
 	if (ret)
 		goto error;
 
@@ -2048,8 +2037,8 @@ static int fils_aead_encrypt(const uint8_t *kek, unsigned int kek_len,
 	v[12] &= 0x7F;
 	v[8] &= 0x7F;
 
-	ret = qdf_aes_ctr(kek + kek_len/2, kek_len/2, v, buf, plain_text_len,
-		      out + AES_BLOCK_SIZE, true);
+	ret = qdf_aes_ctr(kek + kek_len / 2, kek_len / 2, v, buf,
+			  plain_text_len, out + AES_BLOCK_SIZE, true);
 
 error:
 	if (plain_text == out)
@@ -2058,8 +2047,8 @@ error:
 }
 
 QDF_STATUS aead_encrypt_assoc_req(struct mac_context *mac_ctx,
-				  struct pe_session *pe_session,
-				  uint8_t *frm, uint32_t *frm_len)
+				  struct pe_session *pe_session, uint8_t *frm,
+				  uint32_t *frm_len)
 {
 	uint8_t *plain_text = NULL, *data;
 	uint32_t plain_text_len = 0, data_len;
@@ -2067,21 +2056,20 @@ QDF_STATUS aead_encrypt_assoc_req(struct mac_context *mac_ctx,
 	struct pe_fils_session *fils_info = pe_session->fils_info;
 
 	/*
-	 * data is the packet data after MAC header till
-	 * FILS session IE(inclusive)
-	 */
+   * data is the packet data after MAC header till
+   * FILS session IE(inclusive)
+   */
 	data = frm + sizeof(tSirMacMgmtHdr);
 
 	/*
-	 * plain_text is the packet data after FILS session IE
-	 * which needs to be encrypted. Get plain_text ptr and
-	 * plain_text_len values using find_ptr_aft_fils_session_ie()
-	 */
-	status = find_ie_data_after_fils_session_ie(mac_ctx, data +
-					      FIXED_PARAM_OFFSET_ASSOC_REQ,
-					      (*frm_len -
-					      FIXED_PARAM_OFFSET_ASSOC_REQ),
-					      &plain_text, &plain_text_len);
+   * plain_text is the packet data after FILS session IE
+   * which needs to be encrypted. Get plain_text ptr and
+   * plain_text_len values using find_ptr_aft_fils_session_ie()
+   */
+	status = find_ie_data_after_fils_session_ie(
+		mac_ctx, data + FIXED_PARAM_OFFSET_ASSOC_REQ,
+		(*frm_len - FIXED_PARAM_OFFSET_ASSOC_REQ), &plain_text,
+		&plain_text_len);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pe_err("Could not find FILS session IE");
 		return QDF_STATUS_E_FAILURE;
@@ -2094,18 +2082,17 @@ QDF_STATUS aead_encrypt_assoc_req(struct mac_context *mac_ctx,
 	if (fils_aead_encrypt(fils_info->kek, fils_info->kek_len,
 			      pe_session->self_mac_addr, pe_session->bssId,
 			      fils_info->fils_nonce,
-			      fils_info->auth_info.fils_nonce,
-			      data, data_len, plain_text, plain_text_len,
-			      plain_text)) {
+			      fils_info->auth_info.fils_nonce, data, data_len,
+			      plain_text, plain_text_len, plain_text)) {
 		pe_err("AEAD Encryption fails!");
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	/*
-	 * AEAD encrypted output(cipher_text) will have length equals to
-	 * plain_text_len + AES_BLOCK_SIZE(AEAD encryption header info).
-	 * Add this to frm_len
-	 */
+   * AEAD encrypted output(cipher_text) will have length equals to
+   * plain_text_len + AES_BLOCK_SIZE(AEAD encryption header info).
+   * Add this to frm_len
+   */
 	(*frm_len) += (AES_BLOCK_SIZE);
 
 	return QDF_STATUS_SUCCESS;
@@ -2150,13 +2137,14 @@ static int fils_aead_decrypt(const uint8_t *kek, unsigned int kek_len,
 		return -EINVAL;
 	}
 
-	if (!own_mac || !bssid || !snonce ||
-	    !anonce || data_len == 0 || ciphered_text_len < AES_BLOCK_SIZE ||
-	    !plain_text) {
-		QDF_TRACE(QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
-			  FL("Error missing params mac:%pK bssid:%pK snonce:%pK anonce:%pK data_len:%zu ciphered_text_len:%zu plain_text:%pK"),
-			  own_mac, bssid, snonce, anonce, data_len,
-			  ciphered_text_len, plain_text);
+	if (!own_mac || !bssid || !snonce || !anonce || data_len == 0 ||
+	    ciphered_text_len < AES_BLOCK_SIZE || !plain_text) {
+		QDF_TRACE(
+			QDF_MODULE_ID_QDF, QDF_TRACE_LEVEL_ERROR,
+			FL("Error missing params mac:%pK bssid:%pK snonce:%pK anonce:%pK "
+			   "data_len:%zu ciphered_text_len:%zu plain_text:%pK"),
+			own_mac, bssid, snonce, anonce, data_len,
+			ciphered_text_len, plain_text);
 		return -EINVAL;
 	}
 
@@ -2178,7 +2166,7 @@ static int fils_aead_decrypt(const uint8_t *kek, unsigned int kek_len,
 
 	/* AES-SIV CTR */
 	/* K2 = rightmost(K, len(K)/2) */
-	ret = qdf_aes_ctr(kek + kek_len/2, kek_len/2, v, buf, buf_len,
+	ret = qdf_aes_ctr(kek + kek_len / 2, kek_len / 2, v, buf, buf_len,
 			  plain_text, false);
 	if (ret)
 		goto error;
@@ -2198,7 +2186,7 @@ static int fils_aead_decrypt(const uint8_t *kek, unsigned int kek_len,
 
 	/* AES-SIV S2V */
 	/* K1 = leftmost(K, len(K)/2) */
-	ret = qdf_aes_s2v(kek, kek_len/2, aad, aad_len, 6, v);
+	ret = qdf_aes_s2v(kek, kek_len / 2, aad, aad_len, 6, v);
 	if (ret)
 		goto error;
 
@@ -2217,8 +2205,8 @@ error:
 
 QDF_STATUS aead_decrypt_assoc_rsp(struct mac_context *mac_ctx,
 				  struct pe_session *session,
-				  tDot11fAssocResponse *ar,
-				  uint8_t *p_frame, uint32_t *n_frame)
+				  tDot11fAssocResponse *ar, uint8_t *p_frame,
+				  uint32_t *n_frame)
 {
 	QDF_STATUS status;
 	uint32_t data_len, fils_ies_len;
@@ -2230,11 +2218,10 @@ QDF_STATUS aead_decrypt_assoc_rsp(struct mac_context *mac_ctx,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = find_ie_data_after_fils_session_ie(mac_ctx, p_frame +
-					      FIXED_PARAM_OFFSET_ASSOC_RSP,
-					      ((*n_frame) -
-					      FIXED_PARAM_OFFSET_ASSOC_RSP),
-					      &fils_ies, &fils_ies_len);
+	status = find_ie_data_after_fils_session_ie(
+		mac_ctx, p_frame + FIXED_PARAM_OFFSET_ASSOC_RSP,
+		((*n_frame) - FIXED_PARAM_OFFSET_ASSOC_RSP), &fils_ies,
+		&fils_ies_len);
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		pe_err("FILS session IE not present");
 		return status;
@@ -2245,9 +2232,8 @@ QDF_STATUS aead_decrypt_assoc_rsp(struct mac_context *mac_ctx,
 	if (fils_aead_decrypt(fils_info->kek, fils_info->kek_len,
 			      session->self_mac_addr, session->bssId,
 			      fils_info->fils_nonce,
-			      fils_info->auth_info.fils_nonce,
-			      p_frame, data_len,
-			      fils_ies, fils_ies_len, fils_ies)){
+			      fils_info->auth_info.fils_nonce, p_frame,
+			      data_len, fils_ies, fils_ies_len, fils_ies)) {
 		pe_err("AEAD decryption fails");
 		return QDF_STATUS_E_FAILURE;
 	}

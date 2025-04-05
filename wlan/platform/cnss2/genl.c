@@ -6,14 +6,14 @@
 
 #define pr_fmt(fmt) "cnss_genl: " fmt
 
+#include <linux/delay.h>
 #include <linux/err.h>
 #include <linux/module.h>
-#include <linux/delay.h>
-#include <net/netlink.h>
 #include <net/genetlink.h>
+#include <net/netlink.h>
 
-#include "main.h"
 #include "debug.h"
+#include "main.h"
 
 #define CNSS_GENL_FAMILY_NAME "cnss-genl"
 #define CNSS_GENL_MCAST_GROUP_NAME "cnss-genl-grp"
@@ -95,28 +95,29 @@ static int cnss_genl_send_data(u8 type, char *file_name, u32 total_size,
 	int ret = 0;
 	char filename[CNSS_GENL_STR_LEN_MAX + 1];
 
-	cnss_pr_dbg_buf("type: %u, file_name %s, total_size: %x, seg_id %u, end %u, data_len %u\n",
-			type, file_name, total_size, seg_id, end, data_len);
+	cnss_pr_dbg_buf(
+		"type: %u, file_name %s, total_size: %x, seg_id %u, end %u, "
+		"data_len %u\n",
+		type, file_name, total_size, seg_id, end, data_len);
 
 	if (!file_name)
 		strlcpy(filename, "default", sizeof(filename));
 	else
 		strlcpy(filename, file_name, sizeof(filename));
 
-	skb = genlmsg_new(NLMSG_HDRLEN +
-			  nla_total_size(sizeof(type)) +
-			  nla_total_size(strlen(filename) + 1) +
-			  nla_total_size(sizeof(total_size)) +
-			  nla_total_size(sizeof(seg_id)) +
-			  nla_total_size(sizeof(end)) +
-			  nla_total_size(sizeof(data_len)) +
-			  nla_total_size(data_len), GFP_KERNEL);
+	skb = genlmsg_new(NLMSG_HDRLEN + nla_total_size(sizeof(type)) +
+				  nla_total_size(strlen(filename) + 1) +
+				  nla_total_size(sizeof(total_size)) +
+				  nla_total_size(sizeof(seg_id)) +
+				  nla_total_size(sizeof(end)) +
+				  nla_total_size(sizeof(data_len)) +
+				  nla_total_size(data_len),
+			  GFP_KERNEL);
 	if (!skb)
 		return -ENOMEM;
 
-	msg_header = genlmsg_put(skb, 0, 0,
-				 &cnss_genl_family, 0,
-				 CNSS_GENL_CMD_MSG);
+	msg_header =
+		genlmsg_put(skb, 0, 0, &cnss_genl_family, 0, CNSS_GENL_CMD_MSG);
 	if (!msg_header) {
 		ret = -ENOMEM;
 		goto fail;

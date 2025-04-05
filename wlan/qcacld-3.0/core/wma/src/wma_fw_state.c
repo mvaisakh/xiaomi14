@@ -41,8 +41,7 @@ QDF_STATUS wma_get_fw_state(tp_wma_handle wma_handle)
 	cmd = (wmi_echo_cmd_fixed_param *)wmi_buf_data(wmi_buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_echo_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN(
-		       wmi_echo_cmd_fixed_param));
+		       WMITLV_GET_STRUCT_TLVLEN(wmi_echo_cmd_fixed_param));
 	cmd->value = true;
 
 	if (wmi_unified_cmd_send(wma_handle->wmi_handle, wmi_buf, len,
@@ -86,8 +85,7 @@ static int wma_echo_event_handler(void *handle, uint8_t *buf, uint32_t len)
 
 void wma_register_fw_state_events(wmi_unified_t wmi_handle)
 {
-	wmi_unified_register_event_handler(wmi_handle,
-					   wmi_echo_event_id,
+	wmi_unified_register_event_handler(wmi_handle, wmi_echo_event_id,
 					   wma_echo_event_handler,
 					   WMA_RX_SERIALIZER_CTX);
 }

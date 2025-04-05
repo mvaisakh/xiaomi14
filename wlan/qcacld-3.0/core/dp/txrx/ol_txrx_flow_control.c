@@ -18,34 +18,34 @@
  */
 
 /* OS abstraction libraries */
-#include <qdf_nbuf.h>           /* qdf_nbuf_t, etc. */
-#include <qdf_atomic.h>         /* qdf_atomic_read, etc. */
-#include <qdf_util.h>           /* qdf_unlikely */
+#include <qdf_atomic.h> /* qdf_atomic_read, etc. */
+#include <qdf_nbuf.h> /* qdf_nbuf_t, etc. */
+#include <qdf_util.h> /* qdf_unlikely */
 
 /* APIs for other modules */
-#include <htt.h>                /* HTT_TX_EXT_TID_MGMT */
-#include <ol_htt_tx_api.h>      /* htt_tx_desc_tid */
+#include <htt.h> /* HTT_TX_EXT_TID_MGMT */
+#include <ol_htt_tx_api.h> /* htt_tx_desc_tid */
 
 /* internal header files relevant for all systems */
-#include <ol_txrx_internal.h>   /* TXRX_ASSERT1 */
-#include <ol_tx_desc.h>         /* ol_tx_desc */
-#include <ol_tx_send.h>         /* ol_tx_send */
-#include <ol_txrx.h>            /* ol_txrx_get_vdev_from_vdev_id */
+#include <ol_tx_desc.h> /* ol_tx_desc */
+#include <ol_tx_send.h> /* ol_tx_send */
+#include <ol_txrx.h> /* ol_txrx_get_vdev_from_vdev_id */
+#include <ol_txrx_internal.h> /* TXRX_ASSERT1 */
 
 /* internal header files relevant only for HL systems */
-#include <ol_tx_queue.h>        /* ol_tx_enqueue */
+#include <ol_tx_queue.h> /* ol_tx_enqueue */
 
 /* internal header files relevant only for specific systems (Pronto) */
-#include <ol_txrx_encap.h>      /* OL_TX_ENCAP, etc */
-#include <ol_tx.h>
-#include <ol_cfg.h>
 #include <cdp_txrx_handle.h>
+#include <ol_cfg.h>
+#include <ol_tx.h>
+#include <ol_txrx_encap.h> /* OL_TX_ENCAP, etc */
 #define INVALID_FLOW_ID 0xFF
 #define MAX_INVALID_BIN 3
 
 #ifdef QCA_LL_TX_FLOW_GLOBAL_MGMT_POOL
-#define TX_FLOW_MGMT_POOL_ID	0xEF
-#define TX_FLOW_MGMT_POOL_SIZE  32
+#define TX_FLOW_MGMT_POOL_ID 0xEF
+#define TX_FLOW_MGMT_POOL_SIZE 32
 
 /**
  * ol_tx_register_global_mgmt_pool() - register global pool for mgmt packets
@@ -53,8 +53,7 @@
  *
  * Return: none
  */
-static void
-ol_tx_register_global_mgmt_pool(struct ol_txrx_pdev_t *pdev)
+static void ol_tx_register_global_mgmt_pool(struct ol_txrx_pdev_t *pdev)
 {
 	pdev->mgmt_pool = ol_tx_create_flow_pool(TX_FLOW_MGMT_POOL_ID,
 						 TX_FLOW_MGMT_POOL_SIZE);
@@ -68,14 +67,12 @@ ol_tx_register_global_mgmt_pool(struct ol_txrx_pdev_t *pdev)
  *
  * Return: none
  */
-static void
-ol_tx_deregister_global_mgmt_pool(struct ol_txrx_pdev_t *pdev)
+static void ol_tx_deregister_global_mgmt_pool(struct ol_txrx_pdev_t *pdev)
 {
 	ol_tx_dec_pool_ref(pdev->mgmt_pool, false);
 }
 #else
-static inline void
-ol_tx_register_global_mgmt_pool(struct ol_txrx_pdev_t *pdev)
+static inline void ol_tx_register_global_mgmt_pool(struct ol_txrx_pdev_t *pdev)
 {
 }
 static inline void
@@ -98,9 +95,10 @@ bool ol_txrx_fwd_desc_thresh_check(struct ol_txrx_vdev_t *txrx_vdev)
 		return false;
 
 	qdf_spin_lock_bh(&pool->flow_pool_lock);
-	enough_desc_flag = (pool->avail_desc < (pool->stop_th +
-				OL_TX_NON_FWD_RESERVE))
-		? false : true;
+	enough_desc_flag =
+		(pool->avail_desc < (pool->stop_th + OL_TX_NON_FWD_RESERVE)) ?
+			false :
+			true;
 	qdf_spin_unlock_bh(&pool->flow_pool_lock);
 	return enough_desc_flag;
 }
@@ -143,8 +141,8 @@ uint32_t ol_tx_get_total_free_desc(struct ol_txrx_pdev_t *pdev)
 
 	free_desc = pdev->tx_desc.num_free;
 	qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
-	TAILQ_FOREACH(pool, &pdev->tx_desc.flow_pool_list,
-		      flow_pool_list_elem) {
+	TAILQ_FOREACH(pool, &pdev->tx_desc.flow_pool_list, flow_pool_list_elem)
+	{
 		qdf_spin_lock_bh(&pool->flow_pool_lock);
 		free_desc += pool->avail_desc;
 		qdf_spin_unlock_bh(&pool->flow_pool_lock);
@@ -273,7 +271,7 @@ static int ol_tx_delete_flow_pool(struct ol_tx_flow_pool_t *pool, bool force)
 
 		qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
 		TAILQ_INSERT_TAIL(&pdev->tx_desc.flow_pool_list, pool,
-				 flow_pool_list_elem);
+				  flow_pool_list_elem);
 		qdf_spin_unlock_bh(&pdev->tx_desc.flow_pool_list_lock);
 	}
 
@@ -302,10 +300,10 @@ QDF_STATUS ol_tx_inc_pool_ref(struct ol_tx_flow_pool_t *pool)
 	qdf_spin_lock_bh(&pool->flow_pool_lock);
 	qdf_atomic_inc(&pool->ref_cnt);
 	qdf_spin_unlock_bh(&pool->flow_pool_lock);
-	ol_txrx_dbg("pool %pK, ref_cnt %x",
-		    pool, qdf_atomic_read(&pool->ref_cnt));
+	ol_txrx_dbg("pool %pK, ref_cnt %x", pool,
+		    qdf_atomic_read(&pool->ref_cnt));
 
-	return  QDF_STATUS_SUCCESS;
+	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS ol_tx_dec_pool_ref(struct ol_tx_flow_pool_t *pool, bool force)
@@ -343,11 +341,11 @@ QDF_STATUS ol_tx_dec_pool_ref(struct ol_tx_flow_pool_t *pool, bool force)
 	} else {
 		qdf_spin_unlock_bh(&pool->flow_pool_lock);
 		qdf_spin_unlock_bh(&pdev->tx_desc.flow_pool_list_lock);
-		ol_txrx_dbg("pool %pK, ref_cnt %x",
-			    pool, qdf_atomic_read(&pool->ref_cnt));
+		ol_txrx_dbg("pool %pK, ref_cnt %x", pool,
+			    qdf_atomic_read(&pool->ref_cnt));
 	}
 
-	return  QDF_STATUS_SUCCESS;
+	return QDF_STATUS_SUCCESS;
 }
 
 /**
@@ -356,15 +354,14 @@ QDF_STATUS ol_tx_dec_pool_ref(struct ol_tx_flow_pool_t *pool, bool force)
  *
  * Returns: String corresponding to flow pool status
  */
-static const char *ol_tx_flow_pool_status_to_str
-					(enum flow_pool_status status)
+static const char *ol_tx_flow_pool_status_to_str(enum flow_pool_status status)
 {
 	switch (status) {
-	CASE_RETURN_STRING(FLOW_POOL_ACTIVE_UNPAUSED);
-	CASE_RETURN_STRING(FLOW_POOL_ACTIVE_PAUSED);
-	CASE_RETURN_STRING(FLOW_POOL_NON_PRIO_PAUSED);
-	CASE_RETURN_STRING(FLOW_POOL_INVALID);
-	CASE_RETURN_STRING(FLOW_POOL_INACTIVE);
+		CASE_RETURN_STRING(FLOW_POOL_ACTIVE_UNPAUSED);
+		CASE_RETURN_STRING(FLOW_POOL_ACTIVE_PAUSED);
+		CASE_RETURN_STRING(FLOW_POOL_NON_PRIO_PAUSED);
+		CASE_RETURN_STRING(FLOW_POOL_INVALID);
+		CASE_RETURN_STRING(FLOW_POOL_INACTIVE);
 	default:
 		return "unknown";
 	}
@@ -383,21 +380,19 @@ void ol_tx_dump_flow_pool_info_compact(struct ol_txrx_pdev_t *pdev)
 		return;
 
 	bytes_written = snprintf(&comb_log_str[bytes_written], free_size,
-				 "G:(%d,%d) ",
-				 pdev->tx_desc.pool_size,
+				 "G:(%d,%d) ", pdev->tx_desc.pool_size,
 				 pdev->tx_desc.num_free);
 
 	free_size -= bytes_written;
 
 	qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
-	TAILQ_FOREACH(pool, &pdev->tx_desc.flow_pool_list,
-		      flow_pool_list_elem) {
+	TAILQ_FOREACH(pool, &pdev->tx_desc.flow_pool_list, flow_pool_list_elem)
+	{
 		qdf_spin_lock_bh(&pool->flow_pool_lock);
-		bytes_written += snprintf(&comb_log_str[bytes_written],
-					  free_size, "| %d (%d,%d)",
-					  pool->flow_pool_id,
-					  pool->flow_pool_size,
-					  pool->avail_desc);
+		bytes_written +=
+			snprintf(&comb_log_str[bytes_written], free_size,
+				 "| %d (%d,%d)", pool->flow_pool_id,
+				 pool->flow_pool_size, pool->avail_desc);
 		free_size -= bytes_written;
 		qdf_spin_unlock_bh(&pool->flow_pool_lock);
 	}
@@ -433,8 +428,7 @@ void ol_tx_dump_flow_pool_info(struct cdp_soc_t *soc_hdl)
 	}
 
 	txrx_nofl_info("Global total %d :: avail %d invalid flow_pool %d ",
-		       pdev->tx_desc.pool_size,
-		       pdev->tx_desc.num_free,
+		       pdev->tx_desc.pool_size, pdev->tx_desc.num_free,
 		       pdev->tx_desc.num_invalid_bin);
 
 	txrx_nofl_info("maps %d pool unmaps %d pool resize %d pkt drops %d",
@@ -443,13 +437,13 @@ void ol_tx_dump_flow_pool_info(struct cdp_soc_t *soc_hdl)
 		       pdev->pool_stats.pool_resize_count,
 		       pdev->pool_stats.pkt_drop_no_pool);
 	/*
-	 * Nested spin lock.
-	 * Always take in below order.
-	 * flow_pool_list_lock -> flow_pool_lock
-	 */
+   * Nested spin lock.
+   * Always take in below order.
+   * flow_pool_list_lock -> flow_pool_lock
+   */
 	qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
-	TAILQ_FOREACH(pool, &pdev->tx_desc.flow_pool_list,
-					 flow_pool_list_elem) {
+	TAILQ_FOREACH(pool, &pdev->tx_desc.flow_pool_list, flow_pool_list_elem)
+	{
 		ol_tx_inc_pool_ref(pool);
 		qdf_spin_lock_bh(&pool->flow_pool_lock);
 		qdf_mem_copy(&tmp_pool, pool, sizeof(tmp_pool));
@@ -461,18 +455,18 @@ void ol_tx_dump_flow_pool_info(struct cdp_soc_t *soc_hdl)
 
 		txrx_nofl_info("flow_pool_id %d ::", tmp_pool.flow_pool_id);
 		txrx_nofl_info("status %s flow_id %d flow_type %d",
-			       ol_tx_flow_pool_status_to_str
-					(tmp_pool.status),
+			       ol_tx_flow_pool_status_to_str(tmp_pool.status),
 			       tmp_pool.member_flow_id, tmp_pool.flow_type);
-		txrx_nofl_info("total %d :: available %d :: deficient %d :: overflow %d :: pkt dropped (no desc) %d",
-			       tmp_pool.flow_pool_size, tmp_pool.avail_desc,
-			       tmp_pool.deficient_desc,
-			       tmp_pool.overflow_desc,
-			       tmp_pool.pkt_drop_no_desc);
-		txrx_nofl_info("thresh: start %d stop %d prio start %d prio stop %d",
-			       tmp_pool.start_th, tmp_pool.stop_th,
-			       tmp_pool.start_priority_th,
-			       tmp_pool.stop_priority_th);
+		txrx_nofl_info(
+			"total %d :: available %d :: deficient %d :: overflow %d :: "
+			"pkt dropped (no desc) %d",
+			tmp_pool.flow_pool_size, tmp_pool.avail_desc,
+			tmp_pool.deficient_desc, tmp_pool.overflow_desc,
+			tmp_pool.pkt_drop_no_desc);
+		txrx_nofl_info(
+			"thresh: start %d stop %d prio start %d prio stop %d",
+			tmp_pool.start_th, tmp_pool.stop_th,
+			tmp_pool.start_priority_th, tmp_pool.stop_priority_th);
 		pool_prev = pool;
 		qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
 	}
@@ -481,7 +475,6 @@ void ol_tx_dump_flow_pool_info(struct cdp_soc_t *soc_hdl)
 	/* decrement ref count for last pool in list */
 	if (pool_prev)
 		ol_tx_dec_pool_ref(pool_prev, false);
-
 }
 
 /**
@@ -514,8 +507,8 @@ void ol_tx_clear_flow_pool_stats(void)
  * Return: actual descriptors moved
  */
 static int ol_tx_move_desc_n(struct ol_tx_flow_pool_t *src_pool,
-		      struct ol_tx_flow_pool_t *dst_pool,
-		      int desc_move_count)
+			     struct ol_tx_flow_pool_t *dst_pool,
+			     int desc_move_count)
 {
 	uint16_t count = 0, i;
 	struct ol_tx_desc_t *tx_desc;
@@ -527,7 +520,6 @@ static int ol_tx_move_desc_n(struct ol_tx_flow_pool_t *src_pool,
 		tx_desc = ol_tx_get_desc_flow_pool(src_pool);
 		((union ol_tx_desc_list_elem_t *)tx_desc)->next = temp_list;
 		temp_list = (union ol_tx_desc_list_elem_t *)tx_desc;
-
 	}
 	qdf_spin_unlock_bh(&src_pool->flow_pool_lock);
 
@@ -557,7 +549,6 @@ static int ol_tx_move_desc_n(struct ol_tx_flow_pool_t *src_pool,
 	return count;
 }
 
-
 /**
  * ol_tx_distribute_descs_to_deficient_pools() - Distribute descriptors
  * @src_pool: source pool
@@ -586,27 +577,31 @@ ol_tx_distribute_descs_to_deficient_pools(struct ol_tx_flow_pool_t *src_pool)
 	}
 	qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
 	TAILQ_FOREACH(dst_pool, &pdev->tx_desc.flow_pool_list,
-					 flow_pool_list_elem) {
+		      flow_pool_list_elem)
+	{
 		qdf_spin_lock_bh(&dst_pool->flow_pool_lock);
 		if (dst_pool->deficient_desc) {
 			desc_move_count =
 				(dst_pool->deficient_desc > desc_count) ?
-					desc_count : dst_pool->deficient_desc;
+					desc_count :
+					dst_pool->deficient_desc;
 			qdf_spin_unlock_bh(&dst_pool->flow_pool_lock);
-			desc_move_count = ol_tx_move_desc_n(src_pool,
-						dst_pool, desc_move_count);
+			desc_move_count = ol_tx_move_desc_n(src_pool, dst_pool,
+							    desc_move_count);
 			desc_count -= desc_move_count;
 
 			qdf_spin_lock_bh(&dst_pool->flow_pool_lock);
 			if (dst_pool->status == FLOW_POOL_ACTIVE_PAUSED) {
 				if (dst_pool->avail_desc > dst_pool->start_th) {
-					pdev->pause_cb(dst_pool->member_flow_id,
-					      WLAN_NETIF_PRIORITY_QUEUE_ON,
-					      WLAN_DATA_FLOW_CONTROL_PRIORITY);
+					pdev->pause_cb(
+						dst_pool->member_flow_id,
+						WLAN_NETIF_PRIORITY_QUEUE_ON,
+						WLAN_DATA_FLOW_CONTROL_PRIORITY);
 
-					pdev->pause_cb(dst_pool->member_flow_id,
-						      WLAN_WAKE_ALL_NETIF_QUEUE,
-						      WLAN_DATA_FLOW_CONTROL);
+					pdev->pause_cb(
+						dst_pool->member_flow_id,
+						WLAN_WAKE_ALL_NETIF_QUEUE,
+						WLAN_DATA_FLOW_CONTROL);
 
 					dst_pool->status =
 						FLOW_POOL_ACTIVE_UNPAUSED;
@@ -650,7 +645,8 @@ struct ol_tx_flow_pool_t *ol_tx_create_flow_pool(uint8_t flow_pool_id,
 		return NULL;
 	}
 	stop_threshold = ol_cfg_get_tx_flow_stop_queue_th(pdev->ctrl_pdev);
-	start_threshold = stop_threshold +
+	start_threshold =
+		stop_threshold +
 		ol_cfg_get_tx_flow_start_queue_offset(pdev->ctrl_pdev);
 	pool = qdf_mem_malloc(sizeof(*pool));
 	if (!pool)
@@ -659,15 +655,15 @@ struct ol_tx_flow_pool_t *ol_tx_create_flow_pool(uint8_t flow_pool_id,
 	pool->flow_pool_id = flow_pool_id;
 	pool->flow_pool_size = flow_pool_size;
 	pool->status = FLOW_POOL_ACTIVE_UNPAUSED;
-	pool->start_th = (start_threshold * flow_pool_size)/100;
-	pool->stop_th = (stop_threshold * flow_pool_size)/100;
-	pool->stop_priority_th = (TX_PRIORITY_TH * pool->stop_th)/100;
+	pool->start_th = (start_threshold * flow_pool_size) / 100;
+	pool->stop_th = (stop_threshold * flow_pool_size) / 100;
+	pool->stop_priority_th = (TX_PRIORITY_TH * pool->stop_th) / 100;
 	if (pool->stop_priority_th >= MAX_TSO_SEGMENT_DESC)
 		pool->stop_priority_th -= MAX_TSO_SEGMENT_DESC;
 
-	pool->start_priority_th = (TX_PRIORITY_TH * pool->start_th)/100;
+	pool->start_priority_th = (TX_PRIORITY_TH * pool->start_th) / 100;
 	if (pool->start_priority_th >= MAX_TSO_SEGMENT_DESC)
-			pool->start_priority_th -= MAX_TSO_SEGMENT_DESC;
+		pool->start_priority_th -= MAX_TSO_SEGMENT_DESC;
 
 	qdf_spinlock_create(&pool->flow_pool_lock);
 	qdf_atomic_init(&pool->ref_cnt);
@@ -685,7 +681,6 @@ struct ol_tx_flow_pool_t *ol_tx_create_flow_pool(uint8_t flow_pool_id,
 		tx_desc->pool = pool;
 		((union ol_tx_desc_list_elem_t *)tx_desc)->next = temp_list;
 		temp_list = (union ol_tx_desc_list_elem_t *)tx_desc;
-
 	}
 	qdf_spin_unlock_bh(&pdev->tx_mutex);
 
@@ -699,7 +694,7 @@ struct ol_tx_flow_pool_t *ol_tx_create_flow_pool(uint8_t flow_pool_id,
 	/* Add flow_pool to flow_pool_list */
 	qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
 	TAILQ_INSERT_TAIL(&pdev->tx_desc.flow_pool_list, pool,
-			 flow_pool_list_elem);
+			  flow_pool_list_elem);
 	qdf_spin_unlock_bh(&pdev->tx_desc.flow_pool_list_lock);
 
 	return pool;
@@ -733,8 +728,7 @@ int ol_tx_free_invalid_flow_pool(struct ol_tx_flow_pool_t *pool)
 	qdf_spin_unlock_bh(&pool->flow_pool_lock);
 
 	pdev->tx_desc.num_invalid_bin--;
-	ol_txrx_info("invalid pool deleted %d",
-		     pdev->tx_desc.num_invalid_bin);
+	ol_txrx_info("invalid pool deleted %d", pdev->tx_desc.num_invalid_bin);
 
 	return ol_tx_dec_pool_ref(pool, false);
 }
@@ -765,8 +759,8 @@ static struct ol_tx_flow_pool_t *ol_tx_get_flow_pool(uint8_t flow_pool_id)
 	}
 
 	qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
-	TAILQ_FOREACH(pool, &pdev->tx_desc.flow_pool_list,
-					 flow_pool_list_elem) {
+	TAILQ_FOREACH(pool, &pdev->tx_desc.flow_pool_list, flow_pool_list_elem)
+	{
 		qdf_spin_lock_bh(&pool->flow_pool_lock);
 		if (pool->flow_pool_id == flow_pool_id) {
 			qdf_spin_unlock_bh(&pool->flow_pool_lock);
@@ -877,14 +871,11 @@ void ol_tx_flow_pool_map_handler(uint8_t flow_id, uint8_t flow_type,
 	}
 
 	switch (type) {
-
 	case FLOW_TYPE_VDEV:
 		ol_tx_flow_pool_vdev_map(pool, flow_id);
-		pdev->pause_cb(flow_id,
-			       WLAN_NETIF_PRIORITY_QUEUE_ON,
+		pdev->pause_cb(flow_id, WLAN_NETIF_PRIORITY_QUEUE_ON,
 			       WLAN_DATA_FLOW_CONTROL_PRIORITY);
-		pdev->pause_cb(flow_id,
-			       WLAN_WAKE_ALL_NETIF_QUEUE,
+		pdev->pause_cb(flow_id, WLAN_WAKE_ALL_NETIF_QUEUE,
 			       WLAN_DATA_FLOW_CONTROL);
 		break;
 	default:
@@ -907,15 +898,15 @@ void ol_tx_flow_pool_map_handler(uint8_t flow_id, uint8_t flow_type,
  * Return: none
  */
 void ol_tx_flow_pool_unmap_handler(uint8_t flow_id, uint8_t flow_type,
-							  uint8_t flow_pool_id)
+				   uint8_t flow_pool_id)
 {
 	struct ol_txrx_soc_t *soc = cds_get_context(QDF_MODULE_ID_SOC);
 	ol_txrx_pdev_handle pdev;
 	struct ol_tx_flow_pool_t *pool;
 	enum htt_flow_type type = flow_type;
 
-	ol_txrx_dbg("flow_id %d flow_type %d flow_pool_id %d",
-		    flow_id, flow_type, flow_pool_id);
+	ol_txrx_dbg("flow_id %d flow_type %d flow_pool_id %d", flow_id,
+		    flow_type, flow_pool_id);
 
 	if (qdf_unlikely(!soc))
 		return;
@@ -934,7 +925,6 @@ void ol_tx_flow_pool_unmap_handler(uint8_t flow_id, uint8_t flow_type,
 	}
 
 	switch (type) {
-
 	case FLOW_TYPE_VDEV:
 		ol_tx_flow_pool_vdev_unmap(pool, flow_id);
 		break;
@@ -944,9 +934,9 @@ void ol_tx_flow_pool_unmap_handler(uint8_t flow_id, uint8_t flow_type,
 	}
 
 	/*
-	 * only delete if all descriptors are available
-	 * and pool ref count becomes 0
-	 */
+   * only delete if all descriptors are available
+   * and pool ref count becomes 0
+   */
 	ol_tx_dec_pool_ref(pool, false);
 }
 
@@ -985,7 +975,8 @@ int ol_tx_distribute_descs_to_deficient_pools_from_global_pool(void)
 	/* find out total deficient desc required */
 	qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
 	TAILQ_FOREACH(dst_pool, &pdev->tx_desc.flow_pool_list,
-		      flow_pool_list_elem) {
+		      flow_pool_list_elem)
+	{
 		qdf_spin_lock_bh(&dst_pool->flow_pool_lock);
 		total_desc_req += dst_pool->deficient_desc;
 		qdf_spin_unlock_bh(&dst_pool->flow_pool_lock);
@@ -994,7 +985,8 @@ int ol_tx_distribute_descs_to_deficient_pools_from_global_pool(void)
 
 	qdf_spin_lock_bh(&pdev->tx_mutex);
 	desc_move_count = (pdev->tx_desc.num_free >= total_desc_req) ?
-				 total_desc_req : pdev->tx_desc.num_free;
+				  total_desc_req :
+				  pdev->tx_desc.num_free;
 
 	for (i = 0; i < desc_move_count; i++) {
 		tx_desc = ol_tx_get_desc_global_pool(pdev);
@@ -1009,12 +1001,14 @@ int ol_tx_distribute_descs_to_deficient_pools_from_global_pool(void)
 	/* distribute desc to deficient pool */
 	qdf_spin_lock_bh(&pdev->tx_desc.flow_pool_list_lock);
 	TAILQ_FOREACH(dst_pool, &pdev->tx_desc.flow_pool_list,
-		      flow_pool_list_elem) {
+		      flow_pool_list_elem)
+	{
 		qdf_spin_lock_bh(&dst_pool->flow_pool_lock);
 		if (dst_pool->deficient_desc) {
 			temp_count =
 				(dst_pool->deficient_desc > desc_move_count) ?
-				desc_move_count : dst_pool->deficient_desc;
+					desc_move_count :
+					dst_pool->deficient_desc;
 
 			desc_move_count -= temp_count;
 			dst_pool->deficient_desc -= temp_count;
@@ -1026,15 +1020,16 @@ int ol_tx_distribute_descs_to_deficient_pools_from_global_pool(void)
 
 			if (dst_pool->status == FLOW_POOL_ACTIVE_PAUSED) {
 				if (dst_pool->avail_desc > dst_pool->start_th) {
-					pdev->pause_cb(dst_pool->member_flow_id,
-						      WLAN_WAKE_ALL_NETIF_QUEUE,
-						      WLAN_DATA_FLOW_CONTROL);
+					pdev->pause_cb(
+						dst_pool->member_flow_id,
+						WLAN_WAKE_ALL_NETIF_QUEUE,
+						WLAN_DATA_FLOW_CONTROL);
 					dst_pool->status =
 						FLOW_POOL_ACTIVE_UNPAUSED;
 				}
 			} else if ((dst_pool->status == FLOW_POOL_INVALID) &&
 				   (dst_pool->avail_desc ==
-					 dst_pool->flow_pool_size)) {
+				    dst_pool->flow_pool_size)) {
 				free_invalid_pool = 1;
 				tmp_pool = dst_pool;
 			}
@@ -1065,8 +1060,7 @@ static void ol_tx_flow_pool_update_queue_state(struct ol_txrx_pdev_t *pdev,
 	if (pool->avail_desc > pool->start_th) {
 		pool->status = FLOW_POOL_ACTIVE_UNPAUSED;
 		qdf_spin_unlock_bh(&pool->flow_pool_lock);
-		pdev->pause_cb(pool->member_flow_id,
-			       WLAN_WAKE_ALL_NETIF_QUEUE,
+		pdev->pause_cb(pool->member_flow_id, WLAN_WAKE_ALL_NETIF_QUEUE,
 			       WLAN_DATA_FLOW_CONTROL);
 	} else if (pool->avail_desc < pool->stop_th &&
 		   pool->avail_desc >= pool->stop_priority_th) {
@@ -1081,8 +1075,7 @@ static void ol_tx_flow_pool_update_queue_state(struct ol_txrx_pdev_t *pdev,
 	} else if (pool->avail_desc < pool->stop_priority_th) {
 		pool->status = FLOW_POOL_ACTIVE_PAUSED;
 		qdf_spin_unlock_bh(&pool->flow_pool_lock);
-		pdev->pause_cb(pool->member_flow_id,
-			       WLAN_STOP_ALL_NETIF_QUEUE,
+		pdev->pause_cb(pool->member_flow_id, WLAN_STOP_ALL_NETIF_QUEUE,
 			       WLAN_DATA_FLOW_CONTROL);
 	} else {
 		qdf_spin_unlock_bh(&pool->flow_pool_lock);
@@ -1118,8 +1111,9 @@ static void ol_tx_flow_pool_update(struct ol_tx_flow_pool_t *pool,
 	}
 
 	stop_threshold = ol_cfg_get_tx_flow_stop_queue_th(pdev->ctrl_pdev);
-	start_threshold = stop_threshold +
-			ol_cfg_get_tx_flow_start_queue_offset(pdev->ctrl_pdev);
+	start_threshold =
+		stop_threshold +
+		ol_cfg_get_tx_flow_start_queue_offset(pdev->ctrl_pdev);
 	pool->flow_pool_size = new_pool_size;
 	pool->start_th = (start_threshold * new_pool_size) / 100;
 	pool->stop_th = (stop_threshold * new_pool_size) / 100;
@@ -1188,23 +1182,23 @@ static void ol_tx_flow_pool_resize(struct ol_tx_flow_pool_t *pool,
 		if (diff) {
 			/* Have enough descriptors */
 			if (pool->avail_desc >=
-				 (diff + pool->start_priority_th)) {
+			    (diff + pool->start_priority_th)) {
 				move_desc_to_global = diff;
 			}
 			/* Do not have enough descriptors */
 			else if (pool->avail_desc > pool->start_priority_th) {
 				move_desc_to_global = pool->avail_desc -
-						 pool->start_priority_th;
+						      pool->start_priority_th;
 				overflow_count = diff - move_desc_to_global;
 			}
 
 			/* Move desc to temp_list */
 			for (i = 0; i < move_desc_to_global; i++) {
 				tx_desc = ol_tx_get_desc_flow_pool(pool);
-				((union ol_tx_desc_list_elem_t *)tx_desc)->next
-								 = temp_list;
+				((union ol_tx_desc_list_elem_t *)tx_desc)->next =
+					temp_list;
 				temp_list =
-				  (union ol_tx_desc_list_elem_t *)tx_desc;
+					(union ol_tx_desc_list_elem_t *)tx_desc;
 			}
 		}
 
@@ -1254,7 +1248,7 @@ static void ol_tx_flow_pool_resize(struct ol_tx_flow_pool_t *pool,
 		for (i = 0; i < move_desc_from_global; i++) {
 			tx_desc = ol_tx_get_desc_global_pool(pdev);
 			((union ol_tx_desc_list_elem_t *)tx_desc)->next =
-								 temp_list;
+				temp_list;
 			temp_list = (union ol_tx_desc_list_elem_t *)tx_desc;
 		}
 		qdf_spin_unlock_bh(&pdev->tx_mutex);
@@ -1294,8 +1288,8 @@ void ol_tx_flow_pool_resize_handler(uint8_t flow_pool_id,
 	ol_txrx_pdev_handle pdev;
 	struct ol_tx_flow_pool_t *pool;
 
-	ol_txrx_dbg("flow_pool_id %d flow_pool_size %d",
-		    flow_pool_id, flow_pool_size);
+	ol_txrx_dbg("flow_pool_id %d flow_pool_size %d", flow_pool_id,
+		    flow_pool_size);
 
 	if (qdf_unlikely(!soc))
 		return;
@@ -1326,8 +1320,7 @@ void ol_tx_flow_pool_resize_handler(uint8_t flow_pool_id,
  *
  * Return: netif_reason_type
  */
-static enum netif_reason_type
-ol_txrx_map_to_netif_reason_type(uint32_t reason)
+static enum netif_reason_type ol_txrx_map_to_netif_reason_type(uint32_t reason)
 {
 	switch (reason) {
 	case OL_TXQ_PAUSE_REASON_FW:
@@ -1404,8 +1397,7 @@ void ol_txrx_vdev_unpause(struct cdp_soc_t *soc_hdl, uint8_t vdev_id,
 	if (netif_reason == WLAN_REASON_TYPE_MAX)
 		return;
 
-	pdev->pause_cb(vdev->vdev_id, WLAN_WAKE_ALL_NETIF_QUEUE,
-			netif_reason);
+	pdev->pause_cb(vdev->vdev_id, WLAN_WAKE_ALL_NETIF_QUEUE, netif_reason);
 }
 
 /**
@@ -1420,7 +1412,8 @@ void ol_txrx_pdev_pause(struct ol_txrx_pdev_t *pdev, uint32_t reason)
 	struct ol_txrx_soc_t *soc = cds_get_context(QDF_MODULE_ID_SOC);
 	struct ol_txrx_vdev_t *vdev = NULL, *tmp;
 
-	TAILQ_FOREACH_SAFE(vdev, &pdev->vdev_list, vdev_list_elem, tmp) {
+	TAILQ_FOREACH_SAFE(vdev, &pdev->vdev_list, vdev_list_elem, tmp)
+	{
 		ol_txrx_vdev_pause(ol_txrx_soc_t_to_cdp_soc_t(soc),
 				   vdev->vdev_id, reason, 0);
 	}
@@ -1438,7 +1431,8 @@ void ol_txrx_pdev_unpause(struct ol_txrx_pdev_t *pdev, uint32_t reason)
 	struct ol_txrx_soc_t *soc = cds_get_context(QDF_MODULE_ID_SOC);
 	struct ol_txrx_vdev_t *vdev = NULL, *tmp;
 
-	TAILQ_FOREACH_SAFE(vdev, &pdev->vdev_list, vdev_list_elem, tmp) {
+	TAILQ_FOREACH_SAFE(vdev, &pdev->vdev_list, vdev_list_elem, tmp)
+	{
 		ol_txrx_vdev_unpause(ol_txrx_soc_t_to_cdp_soc_t(soc),
 				     vdev->vdev_id, reason, 0);
 	}

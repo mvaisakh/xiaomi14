@@ -4,41 +4,41 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/module.h>
 #include <linux/mod_devicetable.h>
+#include <linux/module.h>
 #include <linux/of_device.h>
 
-#include "camera_main.h"
 #include "cam_debug_util.h"
 #include "cam_hw.h"
 #include "cam_hw_intf.h"
 #include "cam_icp_hw_intf.h"
-#include "cam_icp_v2_core.h"
 #include "cam_icp_soc_common.h"
+#include "cam_icp_v2_core.h"
+#include "camera_main.h"
 
 static int max_icp_v2_hw_idx = -1;
 
 struct cam_icp_v2_hw_info cam_icp_v2_hw_info[] = {
 	{
 		.ob_irq_status = 0xC,
-		.ob_irq_mask   = 0x0,
-		.ob_irq_clear  = 0x4,
-		.ob_irq_set    = 0x8,
-		.ob_irq_cmd    = 0x10,
-		.host2icpint   = 0x124,
-		.pfault_info   = 0x128,
+		.ob_irq_mask = 0x0,
+		.ob_irq_clear = 0x4,
+		.ob_irq_set = 0x8,
+		.ob_irq_cmd = 0x10,
+		.host2icpint = 0x124,
+		.pfault_info = 0x128,
 	},
 };
 
 struct cam_icp_v2_hw_info cam_icp_v2_1_hw_info[] = {
 	{
 		.ob_irq_status = 0x20C,
-		.ob_irq_mask   = 0x200,
-		.ob_irq_clear  = 0x204,
-		.ob_irq_set    = 0x208,
-		.ob_irq_cmd    = 0x210,
-		.host2icpint   = 0x300,
-		.pfault_info   = 0x400,
+		.ob_irq_mask = 0x200,
+		.ob_irq_clear = 0x204,
+		.ob_irq_set = 0x208,
+		.ob_irq_cmd = 0x210,
+		.host2icpint = 0x300,
+		.pfault_info = 0x400,
 	},
 };
 
@@ -48,7 +48,7 @@ uint32_t cam_icp_v2_get_device_num(void)
 }
 
 static int cam_icp_v2_soc_info_init(struct cam_hw_soc_info *soc_info,
-	struct platform_device *pdev)
+				    struct platform_device *pdev)
 {
 	struct cam_icp_soc_info *icp_soc_info = NULL;
 
@@ -71,8 +71,8 @@ static inline void cam_icp_v2_soc_info_deinit(struct cam_hw_soc_info *soc_info)
 	kfree(soc_info->soc_private);
 }
 
-static int cam_icp_v2_component_bind(struct device *dev,
-	struct device *mdev, void *data)
+static int cam_icp_v2_component_bind(struct device *dev, struct device *mdev,
+				     void *data)
 {
 	int rc = 0;
 	struct cam_hw_intf *icp_v2_intf = NULL;
@@ -81,8 +81,8 @@ static int cam_icp_v2_component_bind(struct device *dev,
 	const struct of_device_id *match_dev = NULL;
 	struct platform_device *pdev = to_platform_device(dev);
 
-	match_dev = of_match_device(
-		pdev->dev.driver->of_match_table, &pdev->dev);
+	match_dev =
+		of_match_device(pdev->dev.driver->of_match_table, &pdev->dev);
 	if (!match_dev) {
 		CAM_DBG(CAM_ICP, "No ICP v2 hardware info");
 		return -EINVAL;
@@ -116,7 +116,7 @@ static int cam_icp_v2_component_bind(struct device *dev,
 	init_completion(&icp_v2_info->hw_complete);
 
 	rc = cam_icp_soc_resources_init(&icp_v2_info->soc_info,
-		cam_icp_v2_handle_irq, icp_v2_info);
+					cam_icp_v2_handle_irq, icp_v2_info);
 	if (rc) {
 		CAM_ERR(CAM_ICP, "soc resources init failed rc=%d", rc);
 		goto free_soc_info;
@@ -161,8 +161,8 @@ free_hw_intf:
 	return rc;
 }
 
-static void cam_icp_v2_component_unbind(struct device *dev,
-	struct device *mdev, void *data)
+static void cam_icp_v2_component_unbind(struct device *dev, struct device *mdev,
+					void *data)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct cam_hw_intf *icp_v2_intf = platform_get_drvdata(pdev);
@@ -216,13 +216,14 @@ static int cam_icp_v2_driver_remove(struct platform_device *pdev)
 }
 
 struct platform_driver cam_icp_v2_driver = {
-	.probe = cam_icp_v2_driver_probe,
-	.remove = cam_icp_v2_driver_remove,
-	.driver = {
-		.name = "cam-icp_v2",
-		.of_match_table = cam_icp_v2_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_icp_v2_driver_probe,
+    .remove = cam_icp_v2_driver_remove,
+    .driver =
+        {
+            .name = "cam-icp_v2",
+            .of_match_table = cam_icp_v2_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_icp_v2_init_module(void)

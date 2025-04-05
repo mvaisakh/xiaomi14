@@ -20,15 +20,15 @@
  * DOC: This file contains fw offload south bound interface definitions
  */
 
+#include "wlan_fwol_tgt_api.h"
 #include "scheduler_api.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include "wlan_objmgr_global_obj.h"
-#include "wlan_objmgr_pdev_obj.h"
+#include "target_if.h"
+#include "wlan_fw_offload_main.h"
 #include "wlan_fwol_public_structs.h"
 #include "wlan_fwol_ucfg_api.h"
-#include "wlan_fwol_tgt_api.h"
-#include "wlan_fw_offload_main.h"
-#include "target_if.h"
+#include "wlan_objmgr_global_obj.h"
+#include "wlan_objmgr_pdev_obj.h"
+#include "wlan_objmgr_psoc_obj.h"
 
 QDF_STATUS tgt_fwol_register_ev_handler(struct wlan_objmgr_psoc *psoc)
 {
@@ -92,8 +92,8 @@ QDF_STATUS tgt_fwol_unregister_ev_handler(struct wlan_objmgr_psoc *psoc)
  *
  * Return: QDF_STATUS_SUCCESS on success.
  */
-__attribute__((unused))
-static QDF_STATUS fwol_flush_callback(struct scheduler_msg *msg)
+__attribute__((unused)) static QDF_STATUS
+fwol_flush_callback(struct scheduler_msg *msg)
 {
 	struct wlan_fwol_rx_event *event;
 
@@ -122,7 +122,7 @@ tgt_fwol_get_elna_bypass_resp(struct wlan_objmgr_psoc *psoc,
 			      struct get_elna_bypass_response *resp)
 {
 	QDF_STATUS status;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct wlan_fwol_rx_event *event;
 
 	event = qdf_mem_malloc(sizeof(*event));
@@ -143,8 +143,7 @@ tgt_fwol_get_elna_bypass_resp(struct wlan_objmgr_psoc *psoc,
 	msg.bodyptr = event;
 	msg.callback = fwol_process_event;
 	msg.flush_callback = fwol_flush_callback;
-	status = scheduler_post_message(QDF_MODULE_ID_FWOL,
-					QDF_MODULE_ID_FWOL,
+	status = scheduler_post_message(QDF_MODULE_ID_FWOL, QDF_MODULE_ID_FWOL,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 
 	if (QDF_IS_STATUS_SUCCESS(status))
@@ -196,16 +195,15 @@ notify_thermal_throttle_handler(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 	thermal_cbs = &fwol_obj->thermal_cbs;
-	fwol_nofl_debug("thermal evt: pdev %d lvl %d",
-			info->pdev_id, info->level);
+	fwol_nofl_debug("thermal evt: pdev %d lvl %d", info->pdev_id,
+			info->level);
 	if (info->pdev_id <= fwol_obj->thermal_throttle.pdev_id ||
 	    fwol_obj->thermal_throttle.pdev_id == WLAN_INVALID_PDEV_ID) {
 		fwol_obj->thermal_throttle.level = info->level;
 		fwol_obj->thermal_throttle.pdev_id = info->pdev_id;
 		if (thermal_cbs->notify_thermal_throttle_handler)
-			status =
-			thermal_cbs->notify_thermal_throttle_handler(psoc,
-								     info);
+			status = thermal_cbs->notify_thermal_throttle_handler(
+				psoc, info);
 		else
 			fwol_debug("no thermal throttle handler");
 	}
@@ -220,7 +218,7 @@ tgt_fwol_get_thermal_stats_resp(struct wlan_objmgr_psoc *psoc,
 				struct thermal_throttle_info *resp)
 {
 	QDF_STATUS status;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct wlan_fwol_rx_event *event;
 
 	event = qdf_mem_malloc(sizeof(*event));
@@ -241,8 +239,7 @@ tgt_fwol_get_thermal_stats_resp(struct wlan_objmgr_psoc *psoc,
 	msg.bodyptr = event;
 	msg.callback = fwol_process_event;
 	msg.flush_callback = fwol_flush_callback;
-	status = scheduler_post_message(QDF_MODULE_ID_FWOL,
-					QDF_MODULE_ID_FWOL,
+	status = scheduler_post_message(QDF_MODULE_ID_FWOL, QDF_MODULE_ID_FWOL,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 
 	if (QDF_IS_STATUS_SUCCESS(status))
@@ -252,7 +249,6 @@ tgt_fwol_get_thermal_stats_resp(struct wlan_objmgr_psoc *psoc,
 	fwol_flush_callback(&msg);
 
 	return status;
-
 }
 #endif
 
@@ -273,7 +269,7 @@ static void
 tgt_fwol_register_notify_thermal_throttle_evt(struct wlan_fwol_rx_ops *rx_ops)
 {
 	rx_ops->notify_thermal_throttle_handler =
-					notify_thermal_throttle_handler;
+		notify_thermal_throttle_handler;
 }
 #else
 static void

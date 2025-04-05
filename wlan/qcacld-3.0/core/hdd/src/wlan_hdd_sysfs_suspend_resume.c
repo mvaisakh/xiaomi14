@@ -20,15 +20,14 @@
  * implementation for creating sysfs file wlan_suspend/wlan_resume
  */
 
-#include <wlan_hdd_includes.h>
+#include "wlan_hdd_sysfs_suspend_resume.h"
 #include "osif_vdev_sync.h"
 #include "wlan_hdd_power.h"
 #include "wlan_hdd_sysfs.h"
-#include "wlan_hdd_sysfs_suspend_resume.h"
+#include <wlan_hdd_includes.h>
 
-static ssize_t __hdd_sysfs_suspend_store(
-		struct net_device *net_dev,
-		const char *buf, size_t count)
+static ssize_t __hdd_sysfs_suspend_store(struct net_device *net_dev,
+					 const char *buf, size_t count)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -47,8 +46,8 @@ static ssize_t __hdd_sysfs_suspend_store(
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -74,8 +73,8 @@ static ssize_t __hdd_sysfs_suspend_store(
 
 	hdd_nofl_info("wlan_suspend: pause_setting %d, resume_setting %d",
 		      pause_setting, resume_setting);
-	ret = hdd_wlan_fake_apps_suspend(hdd_ctx->wiphy, net_dev,
-					 pause_setting, resume_setting);
+	ret = hdd_wlan_fake_apps_suspend(hdd_ctx->wiphy, net_dev, pause_setting,
+					 resume_setting);
 	if (ret != 0) {
 		hdd_err_rl("suspend test failed");
 		return -EINVAL;
@@ -96,8 +95,7 @@ static ssize_t hdd_sysfs_suspend_store(struct device *dev,
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_suspend_store(
-				net_dev, buf, count);
+	errno_size = __hdd_sysfs_suspend_store(net_dev, buf, count);
 	if (errno_size < 0)
 		hdd_err_rl("errno_size %zd", errno_size);
 
@@ -106,8 +104,7 @@ static ssize_t hdd_sysfs_suspend_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(wlan_suspend, 0220,
-		   NULL, hdd_sysfs_suspend_store);
+static DEVICE_ATTR(wlan_suspend, 0220, NULL, hdd_sysfs_suspend_store);
 
 int hdd_sysfs_suspend_create(struct hdd_adapter *adapter)
 {
@@ -125,9 +122,8 @@ void hdd_sysfs_suspend_destroy(struct hdd_adapter *adapter)
 	device_remove_file(&adapter->dev->dev, &dev_attr_wlan_suspend);
 }
 
-static ssize_t __hdd_sysfs_resume_store(
-		struct net_device *net_dev,
-		const char *buf, size_t count)
+static ssize_t __hdd_sysfs_resume_store(struct net_device *net_dev,
+					const char *buf, size_t count)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(net_dev);
 	struct hdd_context *hdd_ctx;
@@ -165,8 +161,7 @@ static ssize_t hdd_sysfs_resume_store(struct device *dev,
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_resume_store(
-				net_dev, buf, count);
+	errno_size = __hdd_sysfs_resume_store(net_dev, buf, count);
 	if (errno_size < 0)
 		hdd_err_rl("errno_size %zd", errno_size);
 
@@ -175,8 +170,7 @@ static ssize_t hdd_sysfs_resume_store(struct device *dev,
 	return errno_size;
 }
 
-static DEVICE_ATTR(wlan_resume, 0220,
-		   NULL, hdd_sysfs_resume_store);
+static DEVICE_ATTR(wlan_resume, 0220, NULL, hdd_sysfs_resume_store);
 
 int hdd_sysfs_resume_create(struct hdd_adapter *adapter)
 {

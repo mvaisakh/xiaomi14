@@ -18,14 +18,14 @@
  */
 
 #include <drm/drm_crtc.h>
-#include <drm/drm_fourcc.h>
 #include <drm/drm_damage_helper.h>
+#include <drm/drm_fourcc.h>
 #include <drm/drm_gem_framebuffer_helper.h>
 #include <drm/drm_probe_helper.h>
 
 #include "msm_drv.h"
-#include "msm_kms.h"
 #include "msm_gem.h"
+#include "msm_kms.h"
 
 struct msm_framebuffer {
 	struct drm_framebuffer base;
@@ -48,7 +48,7 @@ static const struct drm_framebuffer_funcs msm_framebuffer_funcs = {
  * this, the gpu doesn't care about fb's.
  */
 int msm_framebuffer_prepare(struct drm_framebuffer *fb,
-		struct msm_gem_address_space *aspace)
+			    struct msm_gem_address_space *aspace)
 {
 	struct msm_framebuffer *msm_fb;
 	int ret, i, n;
@@ -72,7 +72,7 @@ int msm_framebuffer_prepare(struct drm_framebuffer *fb,
 }
 
 void msm_framebuffer_cleanup(struct drm_framebuffer *fb,
-		struct msm_gem_address_space *aspace)
+			     struct msm_gem_address_space *aspace)
 {
 	struct msm_framebuffer *msm_fb;
 	int i, n;
@@ -90,9 +90,8 @@ void msm_framebuffer_cleanup(struct drm_framebuffer *fb,
 }
 
 uint32_t msm_framebuffer_iova(struct drm_framebuffer *fb,
-		struct msm_gem_address_space *aspace, int plane)
+			      struct msm_gem_address_space *aspace, int plane)
 {
-
 	if (!fb) {
 		DRM_ERROR("from:%pS null fb\n", __builtin_return_address(0));
 		return -EINVAL;
@@ -104,8 +103,7 @@ uint32_t msm_framebuffer_iova(struct drm_framebuffer *fb,
 	return msm_gem_iova(fb->obj[plane], aspace) + fb->offsets[plane];
 }
 
-uint32_t msm_framebuffer_phys(struct drm_framebuffer *fb,
-		int plane)
+uint32_t msm_framebuffer_phys(struct drm_framebuffer *fb, int plane)
 {
 	struct msm_framebuffer *msm_fb;
 	dma_addr_t phys_addr;
@@ -142,12 +140,12 @@ const struct msm_format *msm_framebuffer_format(struct drm_framebuffer *fb)
 	return fb ? (to_msm_framebuffer(fb))->format : NULL;
 }
 
-struct drm_framebuffer *msm_framebuffer_create(struct drm_device *dev,
-		struct drm_file *file, const struct drm_mode_fb_cmd2 *mode_cmd)
+struct drm_framebuffer *
+msm_framebuffer_create(struct drm_device *dev, struct drm_file *file,
+		       const struct drm_mode_fb_cmd2 *mode_cmd)
 {
-	const struct drm_format_info *info = drm_get_format_info(dev,
-								mode_cmd);
-	struct drm_gem_object *bos[4] = {0};
+	const struct drm_format_info *info = drm_get_format_info(dev, mode_cmd);
+	struct drm_gem_object *bos[4] = { 0 };
 	struct drm_framebuffer *fb;
 	int ret, i, n = info->num_planes;
 
@@ -173,12 +171,12 @@ out_unref:
 	return ERR_PTR(ret);
 }
 
-struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
-		const struct drm_mode_fb_cmd2 *mode_cmd,
-		struct drm_gem_object **bos)
+struct drm_framebuffer *
+msm_framebuffer_init(struct drm_device *dev,
+		     const struct drm_mode_fb_cmd2 *mode_cmd,
+		     struct drm_gem_object **bos)
 {
-	const struct drm_format_info *info = drm_get_format_info(dev,
-								mode_cmd);
+	const struct drm_format_info *info = drm_get_format_info(dev, mode_cmd);
 	struct msm_drm_private *priv = dev->dev_private;
 	struct msm_kms *kms = priv->kms;
 	struct msm_framebuffer *msm_fb = NULL;
@@ -187,17 +185,17 @@ struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
 	int ret, i, num_planes;
 	bool is_modified = false;
 
-	DBG("create framebuffer: dev=%pK, mode_cmd=%pK (%dx%d@%4.4s)",
-			dev, mode_cmd, mode_cmd->width, mode_cmd->height,
-			(char *)&mode_cmd->pixel_format);
+	DBG("create framebuffer: dev=%pK, mode_cmd=%pK (%dx%d@%4.4s)", dev,
+	    mode_cmd, mode_cmd->width, mode_cmd->height,
+	    (char *)&mode_cmd->pixel_format);
 
 	num_planes = info->num_planes;
 
 	format = kms->funcs->get_format(kms, mode_cmd->pixel_format,
-			mode_cmd->modifier[0]);
+					mode_cmd->modifier[0]);
 	if (!format) {
 		DISP_DEV_ERR(dev->dev, "unsupported pixel format: %4.4s\n",
-				(char *)&mode_cmd->pixel_format);
+			     (char *)&mode_cmd->pixel_format);
 		ret = -EINVAL;
 		goto fail;
 	}
@@ -228,12 +226,13 @@ struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
 
 	if (is_modified) {
 		if (!kms->funcs->check_modified_format) {
-			DISP_DEV_ERR(dev->dev, "can't check modified fb format\n");
+			DISP_DEV_ERR(dev->dev,
+				     "can't check modified fb format\n");
 			ret = -EINVAL;
 			goto fail;
 		} else {
 			ret = kms->funcs->check_modified_format(
-					kms, msm_fb->format, mode_cmd, bos);
+				kms, msm_fb->format, mode_cmd, bos);
 			if (ret)
 				goto fail;
 		}
@@ -247,15 +246,14 @@ struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
 		}
 
 		for (i = 0; i < num_planes; i++) {
-			unsigned int width = mode_cmd->width / (i ?
-					info->hsub : 1);
-			unsigned int height = mode_cmd->height / (i ?
-					info->vsub : 1);
+			unsigned int width =
+				mode_cmd->width / (i ? info->hsub : 1);
+			unsigned int height =
+				mode_cmd->height / (i ? info->vsub : 1);
 			unsigned int min_size;
 
-			min_size = (height - 1) * mode_cmd->pitches[i]
-				+ width * info->cpp[i]
-				+ mode_cmd->offsets[i];
+			min_size = (height - 1) * mode_cmd->pitches[i] +
+				   width * info->cpp[i] + mode_cmd->offsets[i];
 
 			if (!bos[i] || bos[i]->size < min_size) {
 				ret = -EINVAL;
@@ -285,8 +283,8 @@ fail:
 	return ERR_PTR(ret);
 }
 
-int msm_framebuffer_set_cache_hint(struct drm_framebuffer *fb,
-		u32 flags, u32 rd_type, u32 wr_type)
+int msm_framebuffer_set_cache_hint(struct drm_framebuffer *fb, u32 flags,
+				   u32 rd_type, u32 wr_type)
 {
 	struct msm_framebuffer *msm_fb;
 
@@ -301,8 +299,8 @@ int msm_framebuffer_set_cache_hint(struct drm_framebuffer *fb,
 	return 0;
 }
 
-int  msm_framebuffer_get_cache_hint(struct drm_framebuffer *fb,
-		u32 *flags, u32 *rd_type, u32 *wr_type)
+int msm_framebuffer_get_cache_hint(struct drm_framebuffer *fb, u32 *flags,
+				   u32 *rd_type, u32 *wr_type)
 {
 	struct msm_framebuffer *msm_fb;
 

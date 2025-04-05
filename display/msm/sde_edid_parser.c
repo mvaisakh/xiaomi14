@@ -4,13 +4,13 @@
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 #include <drm/drm_edid.h>
 #include <linux/hdmi.h>
 
-#include "sde_kms.h"
-#include "sde_edid_parser.h"
 #include "sde/sde_connector.h"
+#include "sde_edid_parser.h"
+#include "sde_kms.h"
 
 #define DBC_START_OFFSET 4
 #define EDID_DTD_LEN 18
@@ -53,26 +53,22 @@ static u8 *sde_find_cea_extension(struct edid *edid)
 	return sde_find_edid_extension(edid, SDE_CEA_EXT);
 }
 
-static int
-sde_cea_db_payload_len(const u8 *db)
+static int sde_cea_db_payload_len(const u8 *db)
 {
 	return db[0] & 0x1f;
 }
 
-static int
-sde_cea_db_tag(const u8 *db)
+static int sde_cea_db_tag(const u8 *db)
 {
 	return db[0] >> 5;
 }
 
-static int
-sde_cea_revision(const u8 *cea)
+static int sde_cea_revision(const u8 *cea)
 {
 	return cea[1];
 }
 
-static int
-sde_cea_db_offsets(const u8 *cea, int *start, int *end)
+static int sde_cea_db_offsets(const u8 *cea, int *start, int *end)
 {
 	/* Data block offset in CEA extension block */
 	*start = 4;
@@ -84,13 +80,13 @@ sde_cea_db_offsets(const u8 *cea, int *start, int *end)
 	return 0;
 }
 
-#define sde_for_each_cea_db(cea, i, start, end) \
-for ((i) = (start); \
-(i) < (end) && (i) + sde_cea_db_payload_len(&(cea)[(i)]) < (end); \
-(i) += sde_cea_db_payload_len(&(cea)[(i)]) + 1)
+#define sde_for_each_cea_db(cea, i, start, end)                                \
+	for ((i) = (start);                                                    \
+	     (i) < (end) && (i) + sde_cea_db_payload_len(&(cea)[(i)]) < (end); \
+	     (i) += sde_cea_db_payload_len(&(cea)[(i)]) + 1)
 
 static const u8 *_sde_edid_find_block(const u8 *in_buf, u32 start_offset,
-	u8 type, u8 *len)
+				      u8 type, u8 *len)
 {
 	/* the start of data block collection, start of Video Data Block */
 	u32 offset = start_offset;
@@ -98,11 +94,11 @@ static const u8 *_sde_edid_find_block(const u8 *in_buf, u32 start_offset,
 
 	SDE_EDID_DEBUG("%s +", __func__);
 	/*
-	 * * edid buffer 1, byte 2 being 4 means no non-DTD/Data block
-	 *   collection present.
-	 * * edid buffer 1, byte 2 being 0 means no non-DTD/DATA block
-	 *   collection present and no DTD data present.
-	 */
+   * * edid buffer 1, byte 2 being 4 means no non-DTD/Data block
+   *   collection present.
+   * * edid buffer 1, byte 2 being 0 means no non-DTD/DATA block
+   *   collection present and no DTD data present.
+   */
 
 	if ((dbc_offset == 0) || (dbc_offset == 4)) {
 		SDE_EDID_DEBUG("EDID: no DTD or non-DTD data present\n");
@@ -116,7 +112,7 @@ static const u8 *_sde_edid_find_block(const u8 *in_buf, u32 start_offset,
 		    (in_buf[offset] >> 5) == type) {
 			*len = block_len;
 			SDE_EDID_DEBUG("block=%d found @ 0x%x w/ len=%d\n",
-				type, offset, block_len);
+				       type, offset, block_len);
 
 			return in_buf + offset;
 		}
@@ -139,7 +135,7 @@ static void sde_edid_extract_vendor_id(struct sde_edid_ctrl *edid_ctrl)
 
 	vendor_id = edid_ctrl->vendor_id;
 	id_codes = ((u32)edid_ctrl->edid->mfg_id[0] << 8) +
-		edid_ctrl->edid->mfg_id[1];
+		   edid_ctrl->edid->mfg_id[1];
 
 	vendor_id[0] = 'A' - 1 + ((id_codes >> 10) & 0x1F);
 	vendor_id[1] = 'A' - 1 + ((id_codes >> 5) & 0x1F);
@@ -149,8 +145,7 @@ static void sde_edid_extract_vendor_id(struct sde_edid_ctrl *edid_ctrl)
 	SDE_EDID_DEBUG("%s -", __func__);
 }
 
-static void _sde_edid_extract_audio_data_blocks(
-	struct sde_edid_ctrl *edid_ctrl)
+static void _sde_edid_extract_audio_data_blocks(struct sde_edid_ctrl *edid_ctrl)
 {
 	u8 len = 0;
 	u8 adb_max = 0;
@@ -172,15 +167,14 @@ static void _sde_edid_extract_audio_data_blocks(
 	edid_ctrl->adb_size = 0;
 
 	memset(edid_ctrl->audio_data_block, 0,
-		sizeof(edid_ctrl->audio_data_block));
+	       sizeof(edid_ctrl->audio_data_block));
 
 	do {
 		len = 0;
-		adb = _sde_edid_find_block(cea, offset, AUDIO_DATA_BLOCK,
-			&len);
+		adb = _sde_edid_find_block(cea, offset, AUDIO_DATA_BLOCK, &len);
 
 		if ((adb == NULL) || (len > MAX_AUDIO_DATA_BLOCK_SIZE ||
-			adb_max >= MAX_NUMBER_ADB)) {
+				      adb_max >= MAX_NUMBER_ADB)) {
 			if (!edid_ctrl->adb_size) {
 				SDE_DEBUG("No/Invalid Audio Data Block\n");
 				return;
@@ -190,7 +184,7 @@ static void _sde_edid_extract_audio_data_blocks(
 		}
 
 		memcpy(edid_ctrl->audio_data_block + edid_ctrl->adb_size,
-			adb + 1, len);
+		       adb + 1, len);
 		offset = (adb - cea) + 1 + len;
 
 		edid_ctrl->adb_size += len;
@@ -200,7 +194,7 @@ static void _sde_edid_extract_audio_data_blocks(
 }
 
 static void sde_edid_parse_hdr_plus_info(struct drm_connector *connector,
-	const u8 *db)
+					 const u8 *db)
 {
 	struct sde_connector *c_conn;
 
@@ -209,7 +203,7 @@ static void sde_edid_parse_hdr_plus_info(struct drm_connector *connector,
 }
 
 static void sde_edid_parse_vsvdb_info(struct drm_connector *connector,
-	const u8 *db)
+				      const u8 *db)
 {
 	u8 db_len = 0;
 	u32 ieee_code = 0;
@@ -231,7 +225,7 @@ static void sde_edid_parse_vsvdb_info(struct drm_connector *connector,
 }
 
 static bool sde_edid_is_luminance_value_present(u32 block_length,
-	enum luminance_value value)
+						enum luminance_value value)
 {
 	return block_length > NO_LUMINANCE_DATA && value <= block_length;
 }
@@ -243,10 +237,8 @@ static bool sde_edid_is_luminance_value_present(u32 block_length,
  *
  * Parses the HDR extended block to extract sink info for @connector.
  */
-static void
-sde_edid_parse_hdr_db(struct drm_connector *connector, const u8 *db)
+static void sde_edid_parse_hdr_db(struct drm_connector *connector, const u8 *db)
 {
-
 	u8 len = 0;
 	struct sde_connector *c_conn;
 
@@ -282,7 +274,6 @@ sde_edid_parse_hdr_db(struct drm_connector *connector, const u8 *db)
 	SDE_EDID_DEBUG("min luminance %d\n", c_conn->hdr_min_luminance);
 }
 
-
 /*
  * drm_extract_clrmetry_db - Parse the HDMI colorimetry extended block
  * @connector: connector corresponding to the HDMI sink
@@ -290,10 +281,8 @@ sde_edid_parse_hdr_db(struct drm_connector *connector, const u8 *db)
  *
  * Parses the HDMI colorimetry block to extract sink info for @connector.
  */
-static void
-sde_parse_clrmetry_db(struct drm_connector *connector, const u8 *db)
+static void sde_parse_clrmetry_db(struct drm_connector *connector, const u8 *db)
 {
-
 	struct sde_connector *c_conn;
 
 	c_conn = to_sde_connector(connector);
@@ -340,9 +329,8 @@ sde_parse_clrmetry_db(struct drm_connector *connector, const u8 *db)
  * @edid: handle to the EDID structure
  * Parses the all extended tag blocks extract sink info for @connector.
  */
-static void
-sde_edid_parse_extended_blk_info(struct drm_connector *connector,
-	struct edid *edid)
+static void sde_edid_parse_extended_blk_info(struct drm_connector *connector,
+					     struct edid *edid)
 {
 	const u8 *cea = sde_find_cea_extension(edid);
 	const u8 *db = NULL;
@@ -353,16 +341,17 @@ sde_edid_parse_extended_blk_info(struct drm_connector *connector,
 		if (sde_cea_db_offsets(cea, &start, &end))
 			return;
 
-		sde_for_each_cea_db(cea, i, start, end) {
+		sde_for_each_cea_db(cea, i, start, end)
+		{
 			db = &cea[i];
 
 			if (sde_cea_db_tag(db) == USE_EXTENDED_TAG) {
 				SDE_EDID_DEBUG("found ext tag block = %d\n",
-						db[1]);
+					       db[1]);
 				switch (db[1]) {
 				case VENDOR_SPECIFIC_VIDEO_DATA_BLOCK:
 					sde_edid_parse_vsvdb_info(connector,
-							db);
+								  db);
 					break;
 				case HDR_STATIC_METADATA_DATA_BLOCK:
 					sde_edid_parse_hdr_db(connector, db);
@@ -378,8 +367,8 @@ sde_edid_parse_extended_blk_info(struct drm_connector *connector,
 	}
 }
 
-static void _sde_edid_extract_speaker_allocation_data(
-	struct sde_edid_ctrl *edid_ctrl)
+static void
+_sde_edid_extract_speaker_allocation_data(struct sde_edid_ctrl *edid_ctrl)
 {
 	u8 len;
 	const u8 *sadb = NULL;
@@ -397,7 +386,7 @@ static void _sde_edid_extract_speaker_allocation_data(
 	}
 
 	sadb = _sde_edid_find_block(cea, DBC_START_OFFSET,
-		SPEAKER_ALLOCATION_DATA_BLOCK, &len);
+				    SPEAKER_ALLOCATION_DATA_BLOCK, &len);
 	if ((sadb == NULL) || (len != MAX_SPKR_ALLOC_DATA_BLOCK_SIZE)) {
 		SDE_DEBUG("No/Invalid Speaker Allocation Data Block\n");
 		return;
@@ -407,14 +396,13 @@ static void _sde_edid_extract_speaker_allocation_data(
 	edid_ctrl->sadb_size = len;
 
 	SDE_EDID_DEBUG("speaker alloc data SP byte = %08x %s%s%s%s%s%s%s\n",
-		sadb[1],
-		(sadb[1] & BIT(0)) ? "FL/FR," : "",
-		(sadb[1] & BIT(1)) ? "LFE," : "",
-		(sadb[1] & BIT(2)) ? "FC," : "",
-		(sadb[1] & BIT(3)) ? "RL/RR," : "",
-		(sadb[1] & BIT(4)) ? "RC," : "",
-		(sadb[1] & BIT(5)) ? "FLC/FRC," : "",
-		(sadb[1] & BIT(6)) ? "RLC/RRC," : "");
+		       sadb[1], (sadb[1] & BIT(0)) ? "FL/FR," : "",
+		       (sadb[1] & BIT(1)) ? "LFE," : "",
+		       (sadb[1] & BIT(2)) ? "FC," : "",
+		       (sadb[1] & BIT(3)) ? "RL/RR," : "",
+		       (sadb[1] & BIT(4)) ? "RC," : "",
+		       (sadb[1] & BIT(5)) ? "FLC/FRC," : "",
+		       (sadb[1] & BIT(6)) ? "RLC/RRC," : "");
 	SDE_EDID_DEBUG("%s -", __func__);
 }
 
@@ -452,20 +440,17 @@ void sde_edid_deinit(void **input)
 	SDE_EDID_DEBUG("%s -", __func__);
 }
 
-int _sde_edid_update_modes(struct drm_connector *connector,
-	void *input)
+int _sde_edid_update_modes(struct drm_connector *connector, void *input)
 {
 	int rc = 0;
 	struct sde_edid_ctrl *edid_ctrl = (struct sde_edid_ctrl *)(input);
 
 	SDE_EDID_DEBUG("%s +", __func__);
 	if (edid_ctrl->edid) {
-		drm_connector_update_edid_property(connector,
-			edid_ctrl->edid);
+		drm_connector_update_edid_property(connector, edid_ctrl->edid);
 
 		rc = drm_add_edid_modes(connector, edid_ctrl->edid);
-		sde_edid_parse_extended_blk_info(connector,
-				edid_ctrl->edid);
+		sde_edid_parse_extended_blk_info(connector, edid_ctrl->edid);
 		SDE_EDID_DEBUG("%s -", __func__);
 		return rc;
 	}
@@ -526,8 +511,8 @@ void sde_parse_edid(void *input)
 	}
 }
 
-void sde_get_edid(struct drm_connector *connector,
-				  struct i2c_adapter *adapter, void **input)
+void sde_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter,
+		  void **input)
 {
 	struct sde_edid_ctrl *edid_ctrl = (struct sde_edid_ctrl *)(*input);
 

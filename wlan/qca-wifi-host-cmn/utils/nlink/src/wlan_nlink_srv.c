@@ -18,23 +18,23 @@
  */
 
 /******************************************************************************
-* wlan_nlink_srv.c
-*
-* This file contains the definitions specific to the wlan_nlink_srv
-*
-******************************************************************************/
+ * wlan_nlink_srv.c
+ *
+ * This file contains the definitions specific to the wlan_nlink_srv
+ *
+ ******************************************************************************/
 
-#include <linux/version.h>
+#include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/init.h>
 #include <linux/netdevice.h>
 #include <linux/netlink.h>
 #include <linux/skbuff.h>
+#include <linux/version.h>
 #include <net/sock.h>
-#include <wlan_nlink_srv.h>
-#include <qdf_trace.h>
 #include <qdf_module.h>
+#include <qdf_trace.h>
+#include <wlan_nlink_srv.h>
 
 #define WLAN_CLD80211_MAX_SIZE (SKB_WITH_OVERHEAD(8192UL) - NLMSG_HDRLEN)
 
@@ -70,8 +70,8 @@ int nl_srv_init(void *wiphy, int proto)
 	wiphy_ptr = wiphy;
 	radio_idx = cnss_logger_device_register(wiphy, THIS_MODULE->name);
 	QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-		  "%s: radio_index: %d, wiphy_ptr: %pK",
-		  __func__, radio_idx, wiphy_ptr);
+		  "%s: radio_index: %d, wiphy_ptr: %pK", __func__, radio_idx,
+		  wiphy_ptr);
 
 	if (radio_idx >= 0)
 		logger_initialized = true;
@@ -129,9 +129,10 @@ int nl_srv_ucast(struct sk_buff *skb, int dst_pid, int flag)
 	if (nl_srv_is_initialized() == 0) {
 		err = cnss_logger_nl_ucast(skb, dst_pid, flag);
 		if (err < 0)
-			QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
-				  "NLINK: netlink_unicast to pid[%d] failed, ret[%d]",
-				  dst_pid, err);
+			QDF_TRACE(
+				QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
+				"NLINK: netlink_unicast to pid[%d] failed, ret[%d]",
+				dst_pid, err);
 	} else {
 		dev_kfree_skb(skb);
 	}
@@ -161,7 +162,7 @@ int nl_srv_bcast(struct sk_buff *skb)
 #else
 	NETLINK_CB(skb).portid = 0;
 #endif
-	 /* destination group */
+	/* destination group */
 	NETLINK_CB(skb).dst_group = WLAN_NLINK_MCAST_GRP_ID;
 
 	if (nl_srv_is_initialized() == 0) {
@@ -169,11 +170,10 @@ int nl_srv_bcast(struct sk_buff *skb)
 		if ((err < 0) && (err != -ESRCH)) {
 			QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
 				  "NLINK: netlink_broadcast failed err = %d",
-				   err);
+				  err);
 			dev_kfree_skb(skb);
 		}
-	}
-	else
+	} else
 		dev_kfree_skb(skb);
 	return err;
 }
@@ -263,9 +263,9 @@ qdf_export_symbol(nl_srv_is_initialized);
  * diagnostics netlink socket can only be exposed by one instance of the driver.
  */
 #elif defined(CNSS_GENL)
+#include <net/genetlink.h>
 #include <qdf_mem.h>
 #include <wlan_nlink_common.h>
-#include <net/genetlink.h>
 #ifdef CONFIG_CNSS_OUT_OF_TREE
 #include "cnss_nl.h"
 #else
@@ -273,7 +273,7 @@ qdf_export_symbol(nl_srv_is_initialized);
 #endif
 
 void cld80211_oem_send_reply(struct sk_buff *msg, void *hdr,
-				    struct nlattr *nest, int flags)
+			     struct nlattr *nest, int flags)
 {
 	struct genl_family *cld80211_fam = cld80211_get_genl_family();
 
@@ -284,9 +284,8 @@ void cld80211_oem_send_reply(struct sk_buff *msg, void *hdr,
 				CLD80211_MCGRP_OEM_MSGS, flags);
 }
 
-struct sk_buff *
-cld80211_oem_rsp_alloc_skb(uint32_t portid, void **hdr, struct nlattr **nest,
-			   int *flags)
+struct sk_buff *cld80211_oem_rsp_alloc_skb(uint32_t portid, void **hdr,
+					   struct nlattr **nest, int *flags)
 {
 	struct sk_buff *msg;
 
@@ -296,21 +295,21 @@ cld80211_oem_rsp_alloc_skb(uint32_t portid, void **hdr, struct nlattr **nest,
 	msg = nlmsg_new(WLAN_CLD80211_MAX_SIZE, *flags);
 	if (!msg) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-					"nlmsg malloc fails");
+			  "nlmsg malloc fails");
 		return NULL;
 	}
 
 	*hdr = nl80211hdr_put(msg, portid, 0, *flags, WLAN_NL_MSG_OEM);
 	if (*hdr == NULL) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-					"nl80211 hdr put failed");
+			  "nl80211 hdr put failed");
 		goto nla_put_failure;
 	}
 
 	*nest = nla_nest_start(msg, CLD80211_ATTR_VENDOR_DATA);
 	if (*nest == NULL) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-					"nla_nest_start failed");
+			  "nla_nest_start failed");
 		goto nla_put_failure;
 	}
 	return msg;
@@ -346,8 +345,8 @@ int nl_srv_unregister(tWlanNlModTypes msg_type, nl_srv_msg_callback msg_handler)
 	return 0;
 }
 
-void *nl80211hdr_put(struct sk_buff *skb, uint32_t portid,
-		     uint32_t seq, int flags, uint8_t cmd)
+void *nl80211hdr_put(struct sk_buff *skb, uint32_t portid, uint32_t seq,
+		     int flags, uint8_t cmd)
 {
 	struct genl_family *cld80211_fam = cld80211_get_genl_family();
 
@@ -369,8 +368,8 @@ void *nl80211hdr_put(struct sk_buff *skb, uint32_t portid,
  * Return: zero on success
  */
 static int cld80211_fill_data(struct sk_buff *msg, uint32_t portid,
-					uint32_t seq, int flags, uint8_t cmd,
-					uint8_t *buf, int len)
+			      uint32_t seq, int flags, uint8_t cmd,
+			      uint8_t *buf, int len)
 {
 	void *hdr;
 	struct nlattr *nest;
@@ -378,20 +377,20 @@ static int cld80211_fill_data(struct sk_buff *msg, uint32_t portid,
 	hdr = nl80211hdr_put(msg, portid, seq, flags, cmd);
 	if (!hdr) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-						"nl80211 hdr put failed");
+			  "nl80211 hdr put failed");
 		return -EPERM;
 	}
 
 	nest = nla_nest_start(msg, CLD80211_ATTR_VENDOR_DATA);
 	if (!nest) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-						"nla_nest_start failed");
+			  "nla_nest_start failed");
 		goto nla_put_failure;
 	}
 
 	if (nla_put(msg, CLD80211_ATTR_DATA, len, buf)) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-							"nla_put failed");
+			  "nla_put failed");
 		goto nla_put_failure;
 	}
 
@@ -417,7 +416,7 @@ nla_put_failure:
  * Return: zero on success
  */
 static int send_msg_to_cld80211(int mcgroup_id, int pid, int app_id,
-						uint8_t *buf, int len)
+				uint8_t *buf, int len)
 {
 	struct sk_buff *msg;
 	struct genl_family *cld80211_fam = cld80211_get_genl_family();
@@ -430,8 +429,8 @@ static int send_msg_to_cld80211(int mcgroup_id, int pid, int app_id,
 	if (len > NLMSG_DEFAULT_SIZE) {
 		if (len > WLAN_CLD80211_MAX_SIZE) {
 			QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-				"buf size:%d if more than max size: %d",
-				len, (int) WLAN_CLD80211_MAX_SIZE);
+				  "buf size:%d if more than max size: %d", len,
+				  (int)WLAN_CLD80211_MAX_SIZE);
 			return -ENOMEM;
 		}
 		msg = nlmsg_new(WLAN_CLD80211_MAX_SIZE, flags);
@@ -440,7 +439,7 @@ static int send_msg_to_cld80211(int mcgroup_id, int pid, int app_id,
 	}
 	if (!msg) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-						"nlmsg malloc fails");
+			  "nlmsg malloc fails");
 		return -EPERM;
 	}
 
@@ -450,8 +449,8 @@ static int send_msg_to_cld80211(int mcgroup_id, int pid, int app_id,
 		return -EPERM;
 	}
 
-	genlmsg_multicast_netns(cld80211_fam, &init_net, msg, 0,
-						mcgroup_id, flags);
+	genlmsg_multicast_netns(cld80211_fam, &init_net, msg, 0, mcgroup_id,
+				flags);
 	return 0;
 }
 
@@ -476,7 +475,7 @@ int nl_srv_bcast(struct sk_buff *skb, int mcgroup_id, int app_id)
 	status = send_msg_to_cld80211(mcgroup_id, 0, app_id, msg, msg_len);
 	if (status) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-			"send msg to cld80211 fails for app id %d", app_id);
+			  "send msg to cld80211 fails for app id %d", app_id);
 		dev_kfree_skb(skb);
 		return -EPERM;
 	}
@@ -501,19 +500,19 @@ qdf_export_symbol(nl_srv_bcast);
  *
  * return: zero on success, error code otherwise
  */
-int nl_srv_ucast(struct sk_buff *skb, int dst_pid, int flag,
-					int app_id, int mcgroup_id)
+int nl_srv_ucast(struct sk_buff *skb, int dst_pid, int flag, int app_id,
+		 int mcgroup_id)
 {
 	struct nlmsghdr *nlh = (struct nlmsghdr *)skb->data;
 	void *msg = NLMSG_DATA(nlh);
 	uint32_t msg_len = nlmsg_len(nlh);
 	int status;
 
-	status = send_msg_to_cld80211(mcgroup_id, dst_pid, app_id,
-					msg, msg_len);
+	status =
+		send_msg_to_cld80211(mcgroup_id, dst_pid, app_id, msg, msg_len);
 	if (status) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
-			"send msg to cld80211 fails for app id %d", app_id);
+			  "send msg to cld80211 fails for app id %d", app_id);
 		dev_kfree_skb(skb);
 		return -EPERM;
 	}
@@ -541,13 +540,10 @@ static void nl_srv_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh);
 int nl_srv_init(void *wiphy, int proto)
 {
 	int retcode = 0;
-	struct netlink_kernel_cfg cfg = {
-		.groups = WLAN_NLINK_MCAST_GRP_ID,
-		.input = nl_srv_rcv
-	};
+	struct netlink_kernel_cfg cfg = { .groups = WLAN_NLINK_MCAST_GRP_ID,
+					  .input = nl_srv_rcv };
 
-	nl_srv_sock = netlink_kernel_create(&init_net, proto,
-					    &cfg);
+	nl_srv_sock = netlink_kernel_create(&init_net, proto, &cfg);
 
 	if (nl_srv_sock) {
 		memset(nl_srv_msg_handler, 0, sizeof(nl_srv_msg_handler));
@@ -623,15 +619,16 @@ int nl_srv_ucast(struct sk_buff *skb, int dst_pid, int flag)
 {
 	int err = -EINVAL;
 
-	NETLINK_CB(skb).portid = 0;     /* sender's pid */
-	NETLINK_CB(skb).dst_group = 0;  /* not multicast */
+	NETLINK_CB(skb).portid = 0; /* sender's pid */
+	NETLINK_CB(skb).dst_group = 0; /* not multicast */
 
 	if (nl_srv_sock) {
 		err = netlink_unicast(nl_srv_sock, skb, dst_pid, flag);
 		if (err < 0)
-			QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
-				  "NLINK: netlink_unicast to pid[%d] failed, ret[%d]",
-				  dst_pid, err);
+			QDF_TRACE(
+				QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
+				"NLINK: netlink_unicast to pid[%d] failed, ret[%d]",
+				dst_pid, err);
 	} else {
 		dev_kfree_skb(skb);
 	}
@@ -651,8 +648,9 @@ int nl_srv_bcast(struct sk_buff *skb)
 	if (in_interrupt() || irqs_disabled() || in_atomic())
 		flags = GFP_ATOMIC;
 
-	NETLINK_CB(skb).portid = 0;     /* sender's pid */
-	NETLINK_CB(skb).dst_group = WLAN_NLINK_MCAST_GRP_ID;    /* destination group */
+	NETLINK_CB(skb).portid = 0; /* sender's pid */
+	NETLINK_CB(skb).dst_group =
+		WLAN_NLINK_MCAST_GRP_ID; /* destination group */
 
 	if (nl_srv_sock) {
 		err = netlink_broadcast(nl_srv_sock, skb, 0,
@@ -660,7 +658,7 @@ int nl_srv_bcast(struct sk_buff *skb)
 		if ((err < 0) && (err != -ESRCH)) {
 			QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
 				  "NLINK: netlink_broadcast failed err = %d",
-				   err);
+				  err);
 			dev_kfree_skb(skb);
 		}
 	} else
@@ -695,11 +693,13 @@ static void nl_srv_rcv_skb(struct sk_buff *skb)
 
 		nlh = (struct nlmsghdr *)skb->data;
 
-		if (nlh->nlmsg_len < sizeof(*nlh) || skb->len < nlh->nlmsg_len) {
-			QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
-				  "NLINK: Invalid "
-				  "Netlink message: skb[%pK], len[%d], nlhdr[%pK], nlmsg_len[%d]",
-				  skb, skb->len, nlh, nlh->nlmsg_len);
+		if (nlh->nlmsg_len < sizeof(*nlh) ||
+		    skb->len < nlh->nlmsg_len) {
+			QDF_TRACE(
+				QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_WARN,
+				"NLINK: Invalid "
+				"Netlink message: skb[%pK], len[%d], nlhdr[%pK], nlmsg_len[%d]",
+				skb, skb->len, nlh, nlh->nlmsg_len);
 			return;
 		}
 
@@ -738,13 +738,14 @@ static void nl_srv_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 	}
 
 	/*
-	 * All the messages must at least carry the tAniMsgHdr
-	 * Drop any message with invalid length
-	 */
+   * All the messages must at least carry the tAniMsgHdr
+   * Drop any message with invalid length
+   */
 	if (nlh->nlmsg_len < NLMSG_LENGTH(sizeof(tAniMsgHdr))) {
-		QDF_TRACE_DEBUG_RL(QDF_MODULE_ID_HDD,
-				   "NLINK: Received NL Msg with invalid len[%x]",
-				   nlh->nlmsg_len);
+		QDF_TRACE_DEBUG_RL(
+			QDF_MODULE_ID_HDD,
+			"NLINK: Received NL Msg with invalid len[%x]",
+			nlh->nlmsg_len);
 		return;
 	}
 
@@ -834,7 +835,7 @@ qdf_export_symbol(nl_srv_is_initialized);
 void nl_srv_ucast_oem(struct sk_buff *skb, int dst_pid, int flag)
 {
 	nl_srv_ucast(skb, dst_pid, flag, WLAN_NL_MSG_OEM,
-					CLD80211_MCGRP_OEM_MSGS);
+		     CLD80211_MCGRP_OEM_MSGS);
 }
 #else
 void nl_srv_ucast_oem(struct sk_buff *skb, int dst_pid, int flag)

@@ -29,20 +29,20 @@
  *
  */
 
-#include "cds_api.h"
-#include "wni_cfg.h"
 #include "ani_global.h"
+#include "cds_api.h"
 #include "sir_mac_prot_def.h"
+#include "wni_cfg.h"
 
-#include "lim_utils.h"
 #include "lim_api.h"
+#include "lim_utils.h"
 
-#include "wma_if.h"
 #include "sch_api.h"
+#include "wma_if.h"
 
+#include "lim_mlo.h"
 #include "parser_api.h"
 #include "wlan_utility.h"
-#include "lim_mlo.h"
 
 /* Offset of Channel Switch count field in CSA/ECSA IE */
 #define SCH_CSA_SWITCH_COUNT_OFFSET 2
@@ -81,15 +81,13 @@ static void sch_get_csa_ecsa_count_offset(const uint8_t *ie, uint32_t ie_len,
 		ie_len -= 2;
 		offset += 2;
 
-		if (elem_id == DOT11F_EID_CHANSWITCHANN &&
-		    elem_len == 3)
-			*csa_count_offset = offset +
-					SCH_CSA_SWITCH_COUNT_OFFSET;
+		if (elem_id == DOT11F_EID_CHANSWITCHANN && elem_len == 3)
+			*csa_count_offset =
+				offset + SCH_CSA_SWITCH_COUNT_OFFSET;
 
-		if (elem_id == DOT11F_EID_EXT_CHAN_SWITCH_ANN &&
-		    elem_len == 4)
-			*ecsa_count_offset = offset +
-					SCH_ECSA_SWITCH_COUNT_OFFSET;
+		if (elem_id == DOT11F_EID_EXT_CHAN_SWITCH_ANN && elem_len == 4)
+			*ecsa_count_offset =
+				offset + SCH_ECSA_SWITCH_COUNT_OFFSET;
 
 		if (ie_len < elem_len)
 			return;
@@ -112,8 +110,7 @@ static void sch_get_csa_ecsa_count_offset(const uint8_t *ie, uint32_t ie_len,
  */
 static void lim_update_link_info(struct mac_context *mac_ctx,
 				 struct pe_session *session,
-				 tDot11fBeacon1 *bcn_1,
-				 tDot11fBeacon2 *bcn_2)
+				 tDot11fBeacon1 *bcn_1, tDot11fBeacon2 *bcn_2)
 {
 	struct mlo_link_ie *link_ie = &session->mlo_link_info.link_ie;
 	uint16_t offset;
@@ -224,10 +221,10 @@ static void lim_update_link_info(struct mac_context *mac_ctx,
 	}
 
 	/*
-	 * MLOTD
-	 * If max channel switch time is not exist, calculate one for partner
-	 * link, if current link enters CAC
-	 */
+   * MLOTD
+   * If max channel switch time is not exist, calculate one for partner
+   * link, if current link enters CAC
+   */
 
 	if (session->mlo_link_info.bcn_tmpl_exist) {
 		if (bcn_2->ChanSwitchAnn.present ||
@@ -251,7 +248,7 @@ static void lim_update_link_info(struct mac_context *mac_ctx,
 								 true);
 		}
 	} else {
-		//save one time
+		// save one time
 		session->mlo_link_info.bcn_tmpl_exist = true;
 		session->mlo_link_info.link_ie.bss_param_change_cnt = 0;
 		qdf_mem_copy(&link_ie->link_cap, &bcn_1->Capabilities,
@@ -275,9 +272,8 @@ static void lim_update_link_info(struct mac_context *mac_ctx,
 }
 
 static void lim_upt_mlo_partner_info(struct mac_context *mac,
-				     struct pe_session *session,
-				     uint8_t *ie, uint32_t ie_len,
-				     uint16_t ie_offset)
+				     struct pe_session *session, uint8_t *ie,
+				     uint32_t ie_len, uint16_t ie_offset)
 {
 	const uint8_t *mlo_ie;
 	uint16_t subie_len;
@@ -288,8 +284,7 @@ static void lim_upt_mlo_partner_info(struct mac_context *mac,
 	uint16_t per_sta_ofst = mac->sch.sch_mlo_partner.mlo_ie_link_info_ofst;
 
 	mlo_ie = wlan_get_ext_ie_ptr_from_ext_id(MLO_IE_OUI_TYPE,
-						 MLO_IE_OUI_SIZE,
-						 ie, ie_len);
+						 MLO_IE_OUI_SIZE, ie, ie_len);
 	/* IE is not present */
 	if (!mlo_ie) {
 		pe_err("no mlo ie in mlo ap vdev id %d", session->vdev_id);
@@ -307,24 +302,24 @@ static void lim_upt_mlo_partner_info(struct mac_context *mac,
 			continue;
 		}
 		subie_sta_prof = mlo_ie + per_sta_ofst +
-					sch_info->link_info_sta_prof_ofst;
+				 sch_info->link_info_sta_prof_ofst;
 		per_sta_ofst += 1; /* subelement ID */
 		subie_len = mlo_ie[per_sta_ofst];
 		per_sta_ofst += 1; /* length */
 		per_sta_ofst += subie_len; /* payload of per sta info */
-		subie_sta_prof_len = subie_len + 2 -
-					sch_info->link_info_sta_prof_ofst;
+		subie_sta_prof_len =
+			subie_len + 2 - sch_info->link_info_sta_prof_ofst;
 		sch_get_csa_ecsa_count_offset(subie_sta_prof,
 					      subie_sta_prof_len,
 					      &sch_info->bcn_csa_cnt_ofst,
 					      &sch_info->bcn_ext_csa_cnt_ofst);
 		/* plus offset from IE of sta prof to ie */
 		if (sch_info->bcn_csa_cnt_ofst)
-			sch_info->bcn_csa_cnt_ofst += ie_offset +
-						subie_sta_prof - ie;
+			sch_info->bcn_csa_cnt_ofst +=
+				ie_offset + subie_sta_prof - ie;
 		if (sch_info->bcn_ext_csa_cnt_ofst)
-			sch_info->bcn_ext_csa_cnt_ofst += ie_offset +
-						subie_sta_prof - ie;
+			sch_info->bcn_ext_csa_cnt_ofst +=
+				ie_offset + subie_sta_prof - ie;
 		pe_debug("vdev %d mlo csa_count_offset %d ecsa_count_offset %d",
 			 sch_info->vdev_id, sch_info->bcn_csa_cnt_ofst,
 			 sch_info->bcn_ext_csa_cnt_ofst);
@@ -333,15 +328,13 @@ static void lim_upt_mlo_partner_info(struct mac_context *mac,
 #else
 static void lim_update_link_info(struct mac_context *mac_ctx,
 				 struct pe_session *session,
-				 tDot11fBeacon1 *bcn_1,
-				 tDot11fBeacon2 *bcn_2)
+				 tDot11fBeacon1 *bcn_1, tDot11fBeacon2 *bcn_2)
 {
 }
 
 static void lim_upt_mlo_partner_info(struct mac_context *mac,
-				     struct pe_session *session,
-				     uint8_t *ie, uint32_t ie_len,
-				     uint16_t ie_offset)
+				     struct pe_session *session, uint8_t *ie,
+				     uint32_t ie_len, uint16_t ie_offset)
 {
 }
 #endif
@@ -360,7 +353,7 @@ static QDF_STATUS sch_get_p2p_ie_offset(uint8_t *pextra_ie,
 
 	*pie_offset = 0;
 	while (left_len > 2) {
-		elem_id  = ie_ptr[0];
+		elem_id = ie_ptr[0];
 		elem_len = ie_ptr[1];
 		left_len -= 2;
 
@@ -394,10 +387,11 @@ static QDF_STATUS sch_get_p2p_ie_offset(uint8_t *pextra_ie,
  *
  * Return: status of operation
  */
-static QDF_STATUS
-sch_append_addn_ie(struct mac_context *mac_ctx, struct pe_session *session,
-		   uint8_t *frm, uint32_t bcn_size_left,
-		   uint32_t *num_bytes, uint8_t *addn_ie, uint16_t addn_ielen)
+static QDF_STATUS sch_append_addn_ie(struct mac_context *mac_ctx,
+				     struct pe_session *session, uint8_t *frm,
+				     uint32_t bcn_size_left,
+				     uint32_t *num_bytes, uint8_t *addn_ie,
+				     uint16_t addn_ielen)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	uint8_t add_ie[WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN];
@@ -410,18 +404,18 @@ sch_append_addn_ie(struct mac_context *mac_ctx, struct pe_session *session,
 	valid_ie = (addn_ielen <= WNI_CFG_PROBE_RSP_BCN_ADDNIE_DATA_LEN &&
 		    addn_ielen && (addn_ielen <= bcn_size_left));
 	if (!valid_ie) {
-		pe_err("addn_ielen %d exceed left %d",
-		       addn_ielen, bcn_size_left);
+		pe_err("addn_ielen %d exceed left %d", addn_ielen,
+		       bcn_size_left);
 		return status;
 	}
 
 	qdf_mem_zero(&ext_p2p_ie[0], DOT11F_IE_P2PBEACON_MAX_LEN + 2);
 	/*
-	 * P2P IE extracted in wlan_hdd_add_hostapd_conf_vsie may not
-	 * be at the end of additional IE buffer. The buffer sent to WMA
-	 * expect P2P IE at the end of beacon buffer and will result in
-	 * beacon corruption if P2P IE is not at end of beacon buffer.
-	 */
+   * P2P IE extracted in wlan_hdd_add_hostapd_conf_vsie may not
+   * be at the end of additional IE buffer. The buffer sent to WMA
+   * expect P2P IE at the end of beacon buffer and will result in
+   * beacon corruption if P2P IE is not at end of beacon buffer.
+   */
 	status = lim_strip_ie(mac_ctx, addn_ie, &addn_ielen, WLAN_ELEMID_VENDOR,
 			      ONE_BYTE, SIR_MAC_P2P_OUI, SIR_MAC_P2P_OUI_SIZE,
 			      ext_p2p_ie, DOT11F_IE_P2PBEACON_MAX_LEN);
@@ -463,28 +457,26 @@ sch_append_addn_ie(struct mac_context *mac_ctx, struct pe_session *session,
 	return status;
 }
 
-static void
-populate_channel_switch_ann(struct mac_context *mac_ctx,
-			    tDot11fBeacon2 *bcn,
-			    struct pe_session *pe_session)
+static void populate_channel_switch_ann(struct mac_context *mac_ctx,
+					tDot11fBeacon2 *bcn,
+					struct pe_session *pe_session)
 {
 	populate_dot11f_chan_switch_ann(mac_ctx, &bcn->ChanSwitchAnn,
 					pe_session);
-	pe_debug("csa: mode:%d chan:%d count:%d",
-		 bcn->ChanSwitchAnn.switchMode,
-		 bcn->ChanSwitchAnn.newChannel,
-		 bcn->ChanSwitchAnn.switchCount);
+	pe_debug("csa: mode:%d chan:%d count:%d", bcn->ChanSwitchAnn.switchMode,
+		 bcn->ChanSwitchAnn.newChannel, bcn->ChanSwitchAnn.switchCount);
 
 	if (!pe_session->dfsIncludeChanWrapperIe)
 		return;
 
-	populate_dot11f_chan_switch_wrapper(mac_ctx,
-					    &bcn->ChannelSwitchWrapper,
+	populate_dot11f_chan_switch_wrapper(mac_ctx, &bcn->ChannelSwitchWrapper,
 					    pe_session);
 	pe_debug("wrapper: width:%d f0:%d f1:%d",
 		 bcn->ChannelSwitchWrapper.WiderBWChanSwitchAnn.newChanWidth,
-		 bcn->ChannelSwitchWrapper.WiderBWChanSwitchAnn.newCenterChanFreq0,
-		 bcn->ChannelSwitchWrapper.WiderBWChanSwitchAnn.newCenterChanFreq1);
+		 bcn->ChannelSwitchWrapper.WiderBWChanSwitchAnn
+			 .newCenterChanFreq0,
+		 bcn->ChannelSwitchWrapper.WiderBWChanSwitchAnn
+			 .newCenterChanFreq1);
 }
 
 /**
@@ -499,22 +491,24 @@ static uint16_t sch_get_tim_size(uint32_t max_aid)
 	uint8_t N2;
 
 	/**
-	 * The TIM ie format:
-	 * +----------+------+----------+-------------------------------------------------+
-	 * |Element ID|Length|DTIM Count|DTIM Period|Bitmap Control|Partial Virtual Bitmap|
-	 * +----------+------+----------+-----------+--------------+----------------------+
-	 *   1 Byte    1 Byte  1Byte       1 Byte        1 Byte          0~255 Byte
-	 *
-	 * According to 80211 Spec, The Partial Virtual Bitmap field consists of octets
-	 * numbered N1 to N2 of the traffic indication virtual bitmap, where N1 is the
-	 * largest even number such that bits numbered 1 to (N1 * 8) – 1 in the traffic
-	 * indication virtual bitmap are all 0, and N2 is the smallest number such that
-	 * bits numbered (N2 + 1) * 8 to 2007 in the traffic indication virtual bitmap
-	 * are all 0. In this case, the Bitmap Offset subfield value contains the number
-	 * N1/2, and the Length field is set to (N2 – N1) + 4. Always start with AID 1 as
-	 * minimum, N1 = (1 / 8) = 0. TIM size = length + 1Byte Element ID + 1Byte Length.
-	 * The expression is reduced to (N2 - 0) + 4 + 2 = N2 + 6;
-	 */
+   * The TIM ie format:
+   * +----------+------+----------+-------------------------------------------------+
+   * |Element ID|Length|DTIM Count|DTIM Period|Bitmap Control|Partial Virtual
+   * Bitmap|
+   * +----------+------+----------+-----------+--------------+----------------------+
+   *   1 Byte    1 Byte  1Byte       1 Byte        1 Byte          0~255 Byte
+   *
+   * According to 80211 Spec, The Partial Virtual Bitmap field consists of
+   * octets numbered N1 to N2 of the traffic indication virtual bitmap, where N1
+   * is the largest even number such that bits numbered 1 to (N1 * 8) – 1 in the
+   * traffic indication virtual bitmap are all 0, and N2 is the smallest number
+   * such that bits numbered (N2 + 1) * 8 to 2007 in the traffic indication
+   * virtual bitmap are all 0. In this case, the Bitmap Offset subfield value
+   * contains the number N1/2, and the Length field is set to (N2 – N1) + 4.
+   * Always start with AID 1 as minimum, N1 = (1 / 8) = 0. TIM size = length +
+   * 1Byte Element ID + 1Byte Length. The expression is reduced to (N2 - 0) + 4
+   * + 2 = N2 + 6;
+   */
 	N2 = max_aid / 8;
 	tim_size = N2 + 6;
 
@@ -532,10 +526,11 @@ static uint16_t sch_get_tim_size(uint32_t max_aid)
  */
 
 QDF_STATUS
-sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *session)
+sch_set_fixed_beacon_fields(struct mac_context *mac_ctx,
+			    struct pe_session *session)
 {
-	tpAniBeaconStruct bcn_struct = (tpAniBeaconStruct)
-						session->pSchBeaconFrameBegin;
+	tpAniBeaconStruct bcn_struct =
+		(tpAniBeaconStruct)session->pSchBeaconFrameBegin;
 	tpSirMacMgmtHdr mac;
 	uint16_t offset, bcn_size_left;
 	uint8_t *ptr;
@@ -583,11 +578,11 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 		return QDF_STATUS_E_NOMEM;
 	}
 	/*
-	 * First set the fixed fields:
-	 * set the TFP headers, set the mac header
-	 */
-	qdf_mem_zero((uint8_t *) &bcn_struct->macHdr, sizeof(tSirMacMgmtHdr));
-	mac = (tpSirMacMgmtHdr) &bcn_struct->macHdr;
+   * First set the fixed fields:
+   * set the TFP headers, set the mac header
+   */
+	qdf_mem_zero((uint8_t *)&bcn_struct->macHdr, sizeof(tSirMacMgmtHdr));
+	mac = (tpSirMacMgmtHdr)&bcn_struct->macHdr;
 	mac->fc.type = SIR_MAC_MGMT_FRAME;
 	mac->fc.subType = SIR_MAC_MGMT_BEACON;
 
@@ -602,8 +597,7 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 	mac->fc.toDS = 0;
 
 	/* Skip over the timestamp (it'll be updated later). */
-	bcn_1->BeaconInterval.interval =
-		session->beaconParams.beaconInterval;
+	bcn_1->BeaconInterval.interval = session->beaconParams.beaconInterval;
 	populate_dot11f_capabilities(mac_ctx, &bcn_1->Capabilities, session);
 	if (session->ssidHidden) {
 		bcn_1->SSID.present = 1;
@@ -625,27 +619,26 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 
 	if (LIM_IS_AP_ROLE(session)) {
 		/* Initialize the default IE bitmap to zero */
-		qdf_mem_zero((uint8_t *) &(session->DefProbeRspIeBitmap),
-			    (sizeof(uint32_t) * 8));
+		qdf_mem_zero((uint8_t *)&(session->DefProbeRspIeBitmap),
+			     (sizeof(uint32_t) * 8));
 
 		/* Initialize the default IE bitmap to zero */
-		qdf_mem_zero((uint8_t *) &(session->probeRespFrame),
-			    sizeof(session->probeRespFrame));
+		qdf_mem_zero((uint8_t *)&(session->probeRespFrame),
+			     sizeof(session->probeRespFrame));
 
 		/*
-		 * Can be efficiently updated whenever new IE added in Probe
-		 * response in future
-		 */
-		if (lim_update_probe_rsp_template_ie_bitmap_beacon1(mac_ctx,
-					bcn_1, session) != QDF_STATUS_SUCCESS)
+     * Can be efficiently updated whenever new IE added in Probe
+     * response in future
+     */
+		if (lim_update_probe_rsp_template_ie_bitmap_beacon1(
+			    mac_ctx, bcn_1, session) != QDF_STATUS_SUCCESS)
 			pe_err("Failed to build ProbeRsp template");
 	}
 
 	n_status = dot11f_pack_beacon1(mac_ctx, bcn_1, ptr,
 				       SIR_MAX_BEACON_SIZE - offset, &n_bytes);
 	if (DOT11F_FAILED(n_status)) {
-		pe_err("Failed to packed a tDot11fBeacon1 (0x%08x)",
-			n_status);
+		pe_err("Failed to packed a tDot11fBeacon1 (0x%08x)", n_status);
 		qdf_mem_free(bcn_1);
 		qdf_mem_free(bcn_2);
 		qdf_mem_free(wsc_prb_res);
@@ -654,26 +647,22 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 		pe_warn("Warnings while packing a tDot11fBeacon1(0x%08x)",
 			n_status);
 	}
-	session->schBeaconOffsetBegin = offset + (uint16_t) n_bytes;
+	session->schBeaconOffsetBegin = offset + (uint16_t)n_bytes;
 	/* Initialize the 'new' fields at the end of the beacon */
-	is_6ghz_chsw =
-		WLAN_REG_IS_6GHZ_CHAN_FREQ(session->curr_op_freq) ||
-		WLAN_REG_IS_6GHZ_CHAN_FREQ
-			(session->gLimChannelSwitch.sw_target_freq);
+	is_6ghz_chsw = WLAN_REG_IS_6GHZ_CHAN_FREQ(session->curr_op_freq) ||
+		       WLAN_REG_IS_6GHZ_CHAN_FREQ(
+			       session->gLimChannelSwitch.sw_target_freq);
 	if (session->limSystemRole == eLIM_AP_ROLE &&
 	    session->dfsIncludeChanSwIe == true) {
 		if (!CHAN_HOP_ALL_BANDS_ENABLE ||
 		    session->lim_non_ecsa_cap_num == 0 || is_6ghz_chsw) {
 			tDot11fIEext_chan_switch_ann *ext_csa =
-						&bcn_2->ext_chan_switch_ann;
-			populate_dot_11_f_ext_chann_switch_ann(mac_ctx,
-							       ext_csa,
+				&bcn_2->ext_chan_switch_ann;
+			populate_dot_11_f_ext_chann_switch_ann(mac_ctx, ext_csa,
 							       session);
 			pe_debug("ecsa: mode:%d reg:%d chan:%d count:%d",
-				 ext_csa->switch_mode,
-				 ext_csa->new_reg_class,
-				 ext_csa->new_channel,
-				 ext_csa->switch_count);
+				 ext_csa->switch_mode, ext_csa->new_reg_class,
+				 ext_csa->new_channel, ext_csa->switch_count);
 		}
 
 		if (session->lim_non_ecsa_cap_num &&
@@ -682,8 +671,8 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 			populate_channel_switch_ann(mac_ctx, bcn_2, session);
 	}
 
-	populate_dot11_supp_operating_classes(mac_ctx,
-		&bcn_2->SuppOperatingClasses, session);
+	populate_dot11_supp_operating_classes(
+		mac_ctx, &bcn_2->SuppOperatingClasses, session);
 	populate_dot11f_country(mac_ctx, &bcn_2->Country, session);
 	if (bcn_1->Capabilities.qos)
 		populate_dot11f_edca_param_set(mac_ctx, &bcn_2->EDCAParamSet,
@@ -706,8 +695,7 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 			mac_ctx, &bcn_2->max_chan_switch_time, session);
 
 	if (mac_ctx->rrm.rrmConfig.sap_rrm_enabled)
-		populate_dot11f_rrm_ie(mac_ctx, &bcn_2->RRMEnabledCap,
-			session);
+		populate_dot11f_rrm_ie(mac_ctx, &bcn_2->RRMEnabledCap, session);
 
 #ifdef FEATURE_AP_MCC_CH_AVOIDANCE
 	/* populate proprietary IE for MDM device operating in AP-MCC */
@@ -729,41 +717,35 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 		is_vht_enabled = true;
 		/* following is for MU MIMO: we do not support it yet */
 		/*
-		populate_dot11f_vht_ext_bss_load( mac_ctx, &bcn2.VHTExtBssLoad);
-		*/
-		populate_dot11f_tx_power_env(mac_ctx,
-					     &bcn_2->transmit_power_env[0],
-					     session->ch_width,
-					     session->curr_op_freq,
-					     &bcn_2->num_transmit_power_env,
-					     false);
+    populate_dot11f_vht_ext_bss_load( mac_ctx, &bcn2.VHTExtBssLoad);
+    */
+		populate_dot11f_tx_power_env(
+			mac_ctx, &bcn_2->transmit_power_env[0],
+			session->ch_width, session->curr_op_freq,
+			&bcn_2->num_transmit_power_env, false);
 		populate_dot11f_qcn_ie(mac_ctx, session, &bcn_2->qcn_ie,
 				       QCN_IE_ATTR_ID_ALL);
 	}
 
 	if (wlan_reg_is_6ghz_chan_freq(session->curr_op_freq)) {
-		populate_dot11f_tx_power_env(mac_ctx,
-					     &bcn_2->transmit_power_env[0],
-					     session->ch_width,
-					     session->curr_op_freq,
-					     &bcn_2->num_transmit_power_env,
-					     false);
+		populate_dot11f_tx_power_env(
+			mac_ctx, &bcn_2->transmit_power_env[0],
+			session->ch_width, session->curr_op_freq,
+			&bcn_2->num_transmit_power_env, false);
 		populate_dot11f_qcn_ie(mac_ctx, session, &bcn_2->qcn_ie,
 				       QCN_IE_ATTR_ID_ALL);
 	}
 
 	if (lim_is_session_he_capable(session)) {
 		pe_debug("Populate HE IEs");
-		populate_dot11f_he_caps(mac_ctx, session,
-					&bcn_2->he_cap);
-		populate_dot11f_he_operation(mac_ctx, session,
-					&bcn_2->he_op);
+		populate_dot11f_he_caps(mac_ctx, session, &bcn_2->he_cap);
+		populate_dot11f_he_operation(mac_ctx, session, &bcn_2->he_op);
 		populate_dot11f_sr_info(mac_ctx, session,
 					&bcn_2->spatial_reuse);
 		populate_dot11f_he_6ghz_cap(mac_ctx, session,
 					    &bcn_2->he_6ghz_band_cap);
 		populate_dot11f_he_bss_color_change(mac_ctx, session,
-					&bcn_2->bss_color_change);
+						    &bcn_2->bss_color_change);
 	}
 
 	if (lim_is_session_eht_capable(session)) {
@@ -776,8 +758,8 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 				session);
 
 	populate_dot11f_ext_supp_rates(mac_ctx,
-				POPULATE_DOT11F_RATES_OPERATIONAL,
-				&bcn_2->ExtSuppRates, session);
+				       POPULATE_DOT11F_RATES_OPERATIONAL,
+				       &bcn_2->ExtSuppRates, session);
 
 	if (session->pLimStartBssReq) {
 		populate_dot11f_wpa(mac_ctx, &session->pLimStartBssReq->rsnIE,
@@ -791,33 +773,34 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 
 	if (session->limWmeEnabled)
 		populate_dot11f_wmm(mac_ctx, &bcn_2->WMMInfoAp,
-				&bcn_2->WMMParams, &bcn_2->WMMCaps, session);
+				    &bcn_2->WMMParams, &bcn_2->WMMCaps,
+				    session);
 
 	if (LIM_IS_AP_ROLE(session)) {
 		if (session->wps_state != SAP_WPS_DISABLED) {
-			populate_dot11f_beacon_wpsi_es(mac_ctx,
-						&bcn_2->WscBeacon, session);
+			populate_dot11f_beacon_wpsi_es(
+				mac_ctx, &bcn_2->WscBeacon, session);
 		}
 	} else {
 		wps_ap_enable = mac_ctx->mlme_cfg->wps_params.enable_wps &
-					    WNI_CFG_WPS_ENABLE_AP;
+				WNI_CFG_WPS_ENABLE_AP;
 		if (wps_ap_enable)
 			populate_dot11f_wsc(mac_ctx, &bcn_2->WscBeacon);
 
 		if (mac_ctx->lim.wscIeInfo.wscEnrollmentState ==
-						eLIM_WSC_ENROLL_BEGIN) {
+		    eLIM_WSC_ENROLL_BEGIN) {
 			populate_dot11f_wsc_registrar_info(mac_ctx,
-						&bcn_2->WscBeacon);
+							   &bcn_2->WscBeacon);
 			mac_ctx->lim.wscIeInfo.wscEnrollmentState =
-						eLIM_WSC_ENROLL_IN_PROGRESS;
+				eLIM_WSC_ENROLL_IN_PROGRESS;
 		}
 
 		if (mac_ctx->lim.wscIeInfo.wscEnrollmentState ==
-						eLIM_WSC_ENROLL_END) {
-			de_populate_dot11f_wsc_registrar_info(mac_ctx,
-							&bcn_2->WscBeacon);
+		    eLIM_WSC_ENROLL_END) {
+			de_populate_dot11f_wsc_registrar_info(
+				mac_ctx, &bcn_2->WscBeacon);
 			mac_ctx->lim.wscIeInfo.wscEnrollmentState =
-							eLIM_WSC_ENROLL_NOOP;
+				eLIM_WSC_ENROLL_NOOP;
 		}
 	}
 
@@ -830,36 +813,36 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 				&bcn_2->reduced_neighbor_report);
 		} else if (!wlan_reg_is_6ghz_chan_freq(session->curr_op_freq)) {
 			/*
-			 * TD: If current AP is MLO, RNR IE is already populated
-			 *     More effor to populate RNR IE for
-			 *     MLO SAP + 6G legacy SAP
-			 */
+       * TD: If current AP is MLO, RNR IE is already populated
+       *     More effor to populate RNR IE for
+       *     MLO SAP + 6G legacy SAP
+       */
 			populate_dot11f_6g_rnr(mac_ctx, session,
 					       &bcn_2->reduced_neighbor_report);
 		}
 		/*
-		 * Can be efficiently updated whenever new IE added  in Probe
-		 * response in future
-		 */
-		lim_update_probe_rsp_template_ie_bitmap_beacon2(mac_ctx, bcn_2,
-					&session->DefProbeRspIeBitmap[0],
-					&session->probeRespFrame);
+     * Can be efficiently updated whenever new IE added  in Probe
+     * response in future
+     */
+		lim_update_probe_rsp_template_ie_bitmap_beacon2(
+			mac_ctx, bcn_2, &session->DefProbeRspIeBitmap[0],
+			&session->probeRespFrame);
 
 		/* update probe response WPS IE instead of beacon WPS IE */
 		if (session->wps_state != SAP_WPS_DISABLED) {
 			if (session->APWPSIEs.SirWPSProbeRspIE.FieldPresent)
-				populate_dot11f_probe_res_wpsi_es(mac_ctx,
-							wsc_prb_res, session);
+				populate_dot11f_probe_res_wpsi_es(
+					mac_ctx, wsc_prb_res, session);
 			else
 				wsc_prb_res->present = 0;
 			if (wsc_prb_res->present) {
 				set_probe_rsp_ie_bitmap(
 					&session->DefProbeRspIeBitmap[0],
 					SIR_MAC_WPA_EID);
-				qdf_mem_copy((void *)
-					&session->probeRespFrame.WscProbeRes,
-					(void *)wsc_prb_res,
-					sizeof(tDot11fIEWscProbeRes));
+				qdf_mem_copy((void *)&session->probeRespFrame
+						     .WscProbeRes,
+					     (void *)wsc_prb_res,
+					     sizeof(tDot11fIEWscProbeRes));
 			}
 		}
 	}
@@ -867,9 +850,9 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 	addnie_present = (session->add_ie_params.probeRespBCNDataLen != 0);
 	if (addnie_present) {
 		/*
-		 * Strip HE cap/op from additional IE buffer if any, as they
-		 * should be populated already.
-		 */
+     * Strip HE cap/op from additional IE buffer if any, as they
+     * should be populated already.
+     */
 		lim_strip_he_ies_from_add_ies(mac_ctx, session);
 		lim_strip_eht_ies_from_add_ies(mac_ctx, session);
 		lim_strip_wapi_ies_from_add_ies(mac_ctx, session);
@@ -883,13 +866,13 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 			return QDF_STATUS_E_NOMEM;
 		}
 		qdf_mem_copy(addn_ie,
-			session->add_ie_params.probeRespBCNData_buff,
-			addn_ielen);
+			     session->add_ie_params.probeRespBCNData_buff,
+			     addn_ielen);
 
 		qdf_mem_zero((uint8_t *)&extracted_extcap,
 			     sizeof(tDot11fIEExtCap));
-		status = lim_strip_extcap_update_struct(mac_ctx, addn_ie,
-				&addn_ielen, &extracted_extcap);
+		status = lim_strip_extcap_update_struct(
+			mac_ctx, addn_ie, &addn_ielen, &extracted_extcap);
 		if (QDF_STATUS_SUCCESS != status) {
 			extcap_present = false;
 			pe_debug("extcap not extracted");
@@ -897,8 +880,7 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 		/* merge extcap IE */
 		if (extcap_present) {
 			lim_merge_extcap_struct(&bcn_2->ExtCap,
-						&extracted_extcap,
-						true);
+						&extracted_extcap, true);
 			populate_dot11f_bcn_prot_extcaps(mac_ctx, session,
 							 &bcn_2->ExtCap);
 		}
@@ -916,13 +898,12 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 				       session->pSchBeaconFrameEnd,
 				       SIR_MAX_BEACON_SIZE, &n_bytes);
 	if (DOT11F_FAILED(n_status)) {
-		pe_err("Failed to packed a tDot11fBeacon2 (0x%08x)",
-			n_status);
+		pe_err("Failed to packed a tDot11fBeacon2 (0x%08x)", n_status);
 		status = QDF_STATUS_E_FAILURE;
 		goto free_and_exit;
 	} else if (DOT11F_WARNED(n_status)) {
 		pe_err("Warnings while packing a tDot11fBeacon2(0x%08x)",
-			n_status);
+		       n_status);
 	}
 
 	/* Strip EHT capabilities IE */
@@ -947,8 +928,7 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 		}
 
 		lim_ieee80211_pack_ehtop(eht_op_ie, bcn_2->eht_op,
-					 bcn_2->VHTOperation,
-					 bcn_2->he_op,
+					 bcn_2->VHTOperation, bcn_2->he_op,
 					 bcn_2->HTInfo);
 		eht_op_ie_len = eht_op_ie[1] + 2;
 
@@ -975,8 +955,7 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 			goto free_and_exit;
 		}
 
-		is_band_2g =
-			WLAN_REG_IS_24GHZ_CH_FREQ(session->curr_op_freq);
+		is_band_2g = WLAN_REG_IS_24GHZ_CH_FREQ(session->curr_op_freq);
 
 		lim_ieee80211_pack_ehtcap(eht_cap_ie, bcn_2->eht_cap,
 					  bcn_2->he_cap, is_band_2g);
@@ -992,7 +971,8 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 
 	if (mlo_ie_len) {
 		status = lim_fill_complete_mlo_ie(session, mlo_ie_len,
-					 session->pSchBeaconFrameEnd + n_bytes);
+						  session->pSchBeaconFrameEnd +
+							  n_bytes);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			pe_debug("assemble ml ie error");
 			mlo_ie_len = 0;
@@ -1005,59 +985,57 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 	mac_ctx->sch.csa_count_offset = 0;
 	if (session->dfsIncludeChanSwIe)
 		sch_get_csa_ecsa_count_offset(session->pSchBeaconFrameEnd,
-					      n_bytes,
-					      &csa_count_offset,
+					      n_bytes, &csa_count_offset,
 					      &ecsa_count_offset);
 
 	if (csa_count_offset)
-		mac_ctx->sch.csa_count_offset =
-				session->schBeaconOffsetBegin + tim_size +
-				csa_count_offset;
+		mac_ctx->sch.csa_count_offset = session->schBeaconOffsetBegin +
+						tim_size + csa_count_offset;
 	if (ecsa_count_offset)
-		mac_ctx->sch.ecsa_count_offset =
-				session->schBeaconOffsetBegin + tim_size +
-				ecsa_count_offset;
+		mac_ctx->sch.ecsa_count_offset = session->schBeaconOffsetBegin +
+						 tim_size + ecsa_count_offset;
 
 	if (wlan_vdev_mlme_is_mlo_ap(session->vdev))
-		lim_upt_mlo_partner_info(mac_ctx, session,
-					 session->pSchBeaconFrameEnd, n_bytes,
-					 session->schBeaconOffsetBegin +
-					 tim_size);
+		lim_upt_mlo_partner_info(
+			mac_ctx, session, session->pSchBeaconFrameEnd, n_bytes,
+			session->schBeaconOffsetBegin + tim_size);
 
 	extra_ie = session->pSchBeaconFrameEnd + n_bytes;
 	extra_ie_offset = n_bytes;
 
 	/*
-	 * Max size left to append additional IE.= (MAX beacon size - TIM IE -
-	 * beacon fix size (bcn_1 + header) - beacon variable size (bcn_1).
-	 */
+   * Max size left to append additional IE.= (MAX beacon size - TIM IE -
+   * beacon fix size (bcn_1 + header) - beacon variable size (bcn_1).
+   */
 	bcn_size_left = SIR_MAX_BEACON_SIZE - tim_size -
-				session->schBeaconOffsetBegin -
-				(uint16_t)n_bytes;
+			session->schBeaconOffsetBegin - (uint16_t)n_bytes;
 
 	/* TODO: Append additional IE here. */
 	if (addn_ielen > 0)
 		sch_append_addn_ie(mac_ctx, session,
 				   session->pSchBeaconFrameEnd + n_bytes,
-				   bcn_size_left, &n_bytes,
-				   addn_ie, addn_ielen);
+				   bcn_size_left, &n_bytes, addn_ie,
+				   addn_ielen);
 
-	session->schBeaconOffsetEnd = (uint16_t) n_bytes;
+	session->schBeaconOffsetEnd = (uint16_t)n_bytes;
 	extra_ie_len = n_bytes - extra_ie_offset;
 	/* Get the p2p Ie Offset */
 	status = sch_get_p2p_ie_offset(extra_ie, extra_ie_len, &p2p_ie_offset);
 	if (QDF_STATUS_SUCCESS == status)
 		/* Update the P2P Ie Offset */
-		mac_ctx->sch.p2p_ie_offset =
-			session->schBeaconOffsetBegin + tim_size +
-			extra_ie_offset + p2p_ie_offset;
+		mac_ctx->sch.p2p_ie_offset = session->schBeaconOffsetBegin +
+					     tim_size + extra_ie_offset +
+					     p2p_ie_offset;
 	else
 		mac_ctx->sch.p2p_ie_offset = 0;
 
-	pe_debug("vdev %d: beacon begin offset %d fixed size %d csa_count_offset %d ecsa_count_offset %d max_bcn_size_left %d addn_ielen %d beacon end offset %d",
-		 session->vdev_id, offset, session->schBeaconOffsetBegin,
-		 mac_ctx->sch.csa_count_offset, mac_ctx->sch.ecsa_count_offset,
-		 bcn_size_left, addn_ielen, session->schBeaconOffsetEnd);
+	pe_debug(
+		"vdev %d: beacon begin offset %d fixed size %d csa_count_offset %d "
+		"ecsa_count_offset %d max_bcn_size_left %d addn_ielen %d beacon end "
+		"offset %d",
+		session->vdev_id, offset, session->schBeaconOffsetBegin,
+		mac_ctx->sch.csa_count_offset, mac_ctx->sch.ecsa_count_offset,
+		bcn_size_left, addn_ielen, session->schBeaconOffsetEnd);
 	mac_ctx->sch.beacon_changed = 1;
 	status = QDF_STATUS_SUCCESS;
 
@@ -1091,7 +1069,8 @@ lim_update_probe_rsp_template_ie_bitmap_beacon1(struct mac_context *mac,
 	/* SSID */
 	if (beacon1->SSID.present) {
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, WLAN_ELEMID_SSID);
-		/* populating it, because probe response has to go with SSID even in hidden case */
+		/* populating it, because probe response has to go with SSID even in hidden
+     * case */
 		populate_dot11f_ssid(mac, &pe_session->ssId, &prb_rsp->SSID);
 	}
 	/* supported rates */
@@ -1100,7 +1079,6 @@ lim_update_probe_rsp_template_ie_bitmap_beacon1(struct mac_context *mac,
 		qdf_mem_copy((void *)&prb_rsp->SuppRates,
 			     (void *)&beacon1->SuppRates,
 			     sizeof(beacon1->SuppRates));
-
 	}
 	/* DS Parameter set */
 	if (beacon1->DSParams.present) {
@@ -1109,26 +1087,24 @@ lim_update_probe_rsp_template_ie_bitmap_beacon1(struct mac_context *mac,
 		qdf_mem_copy((void *)&prb_rsp->DSParams,
 			     (void *)&beacon1->DSParams,
 			     sizeof(beacon1->DSParams));
-
 	}
 
 	return QDF_STATUS_SUCCESS;
 }
 
-void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
-						     tDot11fBeacon2 *beacon2,
-						     uint32_t *DefProbeRspIeBitmap,
-						     tDot11fProbeResponse *prb_rsp)
+void lim_update_probe_rsp_template_ie_bitmap_beacon2(
+	struct mac_context *mac, tDot11fBeacon2 *beacon2,
+	uint32_t *DefProbeRspIeBitmap, tDot11fProbeResponse *prb_rsp)
 {
 	uint8_t i;
 	uint16_t num_tpe = beacon2->num_transmit_power_env;
 
 	if (beacon2->Country.present) {
-		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, WLAN_ELEMID_COUNTRY);
+		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
+					WLAN_ELEMID_COUNTRY);
 		qdf_mem_copy((void *)&prb_rsp->Country,
 			     (void *)&beacon2->Country,
 			     sizeof(beacon2->Country));
-
 	}
 	/* Power constraint */
 	if (beacon2->PowerConstraints.present) {
@@ -1137,7 +1113,6 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 		qdf_mem_copy((void *)&prb_rsp->PowerConstraints,
 			     (void *)&beacon2->PowerConstraints,
 			     sizeof(beacon2->PowerConstraints));
-
 	}
 	/* Channel Switch Annoouncement WLAN_ELEMID_CHANSWITCHANN */
 	if (beacon2->ChanSwitchAnn.present) {
@@ -1146,16 +1121,15 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 		qdf_mem_copy((void *)&prb_rsp->ChanSwitchAnn,
 			     (void *)&beacon2->ChanSwitchAnn,
 			     sizeof(beacon2->ChanSwitchAnn));
-
 	}
 
 	/* EXT Channel Switch Announcement CHNL_EXTENDED_SWITCH_ANN_EID*/
 	if (beacon2->ext_chan_switch_ann.present) {
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
-			WLAN_ELEMID_EXTCHANSWITCHANN);
+					WLAN_ELEMID_EXTCHANSWITCHANN);
 		qdf_mem_copy((void *)&prb_rsp->ext_chan_switch_ann,
-			(void *)&beacon2->ext_chan_switch_ann,
-			sizeof(beacon2->ext_chan_switch_ann));
+			     (void *)&beacon2->ext_chan_switch_ann,
+			     sizeof(beacon2->ext_chan_switch_ann));
 	}
 
 	/* Supported operating class */
@@ -1163,8 +1137,8 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
 					WLAN_ELEMID_SUPP_OP_CLASS);
 		qdf_mem_copy((void *)&prb_rsp->SuppOperatingClasses,
-				(void *)&beacon2->SuppOperatingClasses,
-				sizeof(beacon2->SuppOperatingClasses));
+			     (void *)&beacon2->SuppOperatingClasses,
+			     sizeof(beacon2->SuppOperatingClasses));
 	}
 
 #ifdef FEATURE_AP_MCC_CH_AVOIDANCE
@@ -1183,7 +1157,6 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 		qdf_mem_copy((void *)&prb_rsp->ERPInfo,
 			     (void *)&beacon2->ERPInfo,
 			     sizeof(beacon2->ERPInfo));
-
 	}
 	/* Extended supported rates */
 	if (beacon2->ExtSuppRates.present) {
@@ -1192,7 +1165,6 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 		qdf_mem_copy((void *)&prb_rsp->ExtSuppRates,
 			     (void *)&beacon2->ExtSuppRates,
 			     sizeof(beacon2->ExtSuppRates));
-
 	}
 
 	/* WPA */
@@ -1200,7 +1172,6 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, SIR_MAC_WPA_EID);
 		qdf_mem_copy((void *)&prb_rsp->WPA, (void *)&beacon2->WPA,
 			     sizeof(beacon2->WPA));
-
 	}
 
 	/* RSN */
@@ -1214,8 +1185,7 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 	/* WAPI */
 	if (beacon2->WAPI.present) {
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, WLAN_ELEMID_WAPI);
-		qdf_mem_copy((void *)&prb_rsp->WAPI,
-			     (void *)&beacon2->WAPI,
+		qdf_mem_copy((void *)&prb_rsp->WAPI, (void *)&beacon2->WAPI,
 			     sizeof(beacon2->WAPI));
 	}
 
@@ -1226,7 +1196,6 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 		qdf_mem_copy((void *)&prb_rsp->EDCAParamSet,
 			     (void *)&beacon2->EDCAParamSet,
 			     sizeof(beacon2->EDCAParamSet));
-
 	}
 	/* Vendor specific - currently no vendor specific IEs added */
 	/* Requested IEs - currently we are not processing this will be added later */
@@ -1239,7 +1208,8 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 	}
 	/* HT Info IE */
 	if (beacon2->HTInfo.present) {
-		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, WLAN_ELEMID_HTINFO_ANA);
+		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
+					WLAN_ELEMID_HTINFO_ANA);
 		qdf_mem_copy((void *)&prb_rsp->HTInfo, (void *)&beacon2->HTInfo,
 			     sizeof(beacon2->HTInfo));
 	}
@@ -1251,8 +1221,7 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 			     sizeof(beacon2->VHTCaps));
 	}
 	if (beacon2->VHTOperation.present) {
-		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
-					WLAN_ELEMID_VHTOP);
+		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, WLAN_ELEMID_VHTOP);
 		qdf_mem_copy((void *)&prb_rsp->VHTOperation,
 			     (void *)&beacon2->VHTOperation,
 			     sizeof(beacon2->VHTOperation));
@@ -1295,31 +1264,25 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 	if (beacon2->qcn_ie.present) {
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
 					WLAN_ELEMID_VENDOR);
-		qdf_mem_copy((void *)&prb_rsp->qcn_ie,
-			     (void *)&beacon2->qcn_ie,
+		qdf_mem_copy((void *)&prb_rsp->qcn_ie, (void *)&beacon2->qcn_ie,
 			     sizeof(beacon2->qcn_ie));
 	}
 
 	/* Extended Capability */
 	if (beacon2->ExtCap.present) {
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, DOT11F_EID_EXTCAP);
-		qdf_mem_copy((void *)&prb_rsp->ExtCap,
-			     (void *)&beacon2->ExtCap,
+		qdf_mem_copy((void *)&prb_rsp->ExtCap, (void *)&beacon2->ExtCap,
 			     sizeof(beacon2->ExtCap));
 	}
 
 	if (beacon2->he_cap.present) {
-		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
-					DOT11F_EID_HE_CAP);
-		qdf_mem_copy((void *)&prb_rsp->he_cap,
-			     (void *)&beacon2->he_cap,
+		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, DOT11F_EID_HE_CAP);
+		qdf_mem_copy((void *)&prb_rsp->he_cap, (void *)&beacon2->he_cap,
 			     sizeof(beacon2->he_cap));
 	}
 	if (beacon2->he_op.present) {
-		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
-					DOT11F_EID_HE_OP);
-		qdf_mem_copy((void *)&prb_rsp->he_op,
-			     (void *)&beacon2->he_op,
+		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, DOT11F_EID_HE_OP);
+		qdf_mem_copy((void *)&prb_rsp->he_op, (void *)&beacon2->he_op,
 			     sizeof(beacon2->he_op));
 	}
 
@@ -1348,18 +1311,14 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 	}
 
 	if (beacon2->eht_op.present) {
-		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
-					DOT11F_EID_EHT_OP);
-		qdf_mem_copy((void *)&prb_rsp->eht_op,
-			     (void *)&beacon2->eht_op,
+		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, DOT11F_EID_EHT_OP);
+		qdf_mem_copy((void *)&prb_rsp->eht_op, (void *)&beacon2->eht_op,
 			     sizeof(beacon2->eht_op));
 	}
 
 	if (beacon2->mlo_ie.present) {
-		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
-					DOT11F_EID_MLO_IE);
-		qdf_mem_copy((void *)&prb_rsp->mlo_ie,
-			     (void *)&beacon2->mlo_ie,
+		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, DOT11F_EID_MLO_IE);
+		qdf_mem_copy((void *)&prb_rsp->mlo_ie, (void *)&beacon2->mlo_ie,
 			     sizeof(beacon2->mlo_ie));
 	}
 
@@ -1378,7 +1337,6 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 			     (void *)&beacon2->TPCReport,
 			     sizeof(beacon2->TPCReport));
 	}
-
 }
 
 void set_probe_rsp_ie_bitmap(uint32_t *IeBitmap, uint32_t pos)
@@ -1428,14 +1386,14 @@ static QDF_STATUS write_beacon_to_memory(struct mac_context *mac, uint16_t size,
 				pe_session->pSchBeaconFrameEnd[i];
 	}
 	/* Update the beacon length */
-	pBeacon = (tpAniBeaconStruct) pe_session->pSchBeaconFrameBegin;
+	pBeacon = (tpAniBeaconStruct)pe_session->pSchBeaconFrameBegin;
 	/* Do not include the beaconLength indicator itself */
 	if (length == 0) {
 		pBeacon->beaconLength = 0;
 		/* Dont copy entire beacon, Copy length field alone */
 		size = 4;
 	} else
-		pBeacon->beaconLength = (uint32_t) size - sizeof(uint32_t);
+		pBeacon->beaconLength = (uint32_t)size - sizeof(uint32_t);
 
 	if (!mac->sch.beacon_changed)
 		return QDF_STATUS_E_FAILURE;
@@ -1467,12 +1425,12 @@ static QDF_STATUS write_beacon_to_memory(struct mac_context *mac, uint16_t size,
  * @param *timLength pointer to limLength, which needs to be returned.
  * @return None
  */
-void sch_generate_tim(struct mac_context *mac, uint8_t **pPtr, uint16_t *timLength,
-		      uint8_t dtimPeriod)
+void sch_generate_tim(struct mac_context *mac, uint8_t **pPtr,
+		      uint16_t *timLength, uint8_t dtimPeriod)
 {
 	uint8_t *ptr = *pPtr;
 	uint32_t val = 0;
-	uint32_t minAid = 1;    /* Always start with AID 1 as minimum */
+	uint32_t minAid = 1; /* Always start with AID 1 as minimum */
 	uint32_t maxAid = HAL_NUM_STA;
 	/* Generate partial virtual bitmap */
 	uint8_t N1 = minAid / 8;
@@ -1485,17 +1443,17 @@ void sch_generate_tim(struct mac_context *mac, uint8_t **pPtr, uint16_t *timLeng
 	val = dtimPeriod;
 
 	/*
-	 * Write 0xFF to firmware's field to detect firmware's mal-function
-	 * early. DTIM count and bitmap control usually cannot be 0xFF, so it
-	 * is easy to know that firmware never updated DTIM count/bitmap control
-	 * field after host driver downloaded beacon template if end-user complaints
-	 * that DTIM count and bitmapControl is 0xFF.
-	 */
+   * Write 0xFF to firmware's field to detect firmware's mal-function
+   * early. DTIM count and bitmap control usually cannot be 0xFF, so it
+   * is easy to know that firmware never updated DTIM count/bitmap control
+   * field after host driver downloaded beacon template if end-user complaints
+   * that DTIM count and bitmapControl is 0xFF.
+   */
 	*ptr++ = WLAN_ELEMID_TIM;
-	*ptr++ = (uint8_t) (*timLength);
+	*ptr++ = (uint8_t)(*timLength);
 	/* location for dtimCount. will be filled in by FW. */
 	*ptr++ = 0xFF;
-	*ptr++ = (uint8_t) val;
+	*ptr++ = (uint8_t)val;
 	/* location for bitmap control. will be filled in by FW. */
 	*ptr++ = 0xFF;
 	ptr += (N2 - N1 + 1);
@@ -1530,23 +1488,21 @@ QDF_STATUS sch_process_pre_beacon_ind(struct mac_context *mac,
 
 	switch (GET_LIM_SYSTEM_ROLE(pe_session)) {
 	case eLIM_AP_ROLE: {
-		uint8_t *ptr =
-			&pe_session->pSchBeaconFrameBegin[pe_session->
-							     schBeaconOffsetBegin];
+		uint8_t *ptr = &pe_session->pSchBeaconFrameBegin
+					[pe_session->schBeaconOffsetBegin];
 		uint16_t timLength = 0;
 
 		if (pe_session->statypeForBss == STA_ENTRY_SELF) {
 			sch_generate_tim(mac, &ptr, &timLength,
 					 pe_session->dtimPeriod);
 			beaconSize += 2 + timLength;
-			status =
-			    write_beacon_to_memory(mac, (uint16_t) beaconSize,
-						   (uint16_t) beaconSize,
-						   pe_session, reason);
+			status = write_beacon_to_memory(mac,
+							(uint16_t)beaconSize,
+							(uint16_t)beaconSize,
+							pe_session, reason);
 		} else
 			pe_err("can not send beacon for PEER session entry");
-			}
-			break;
+	} break;
 
 	default:
 		pe_err("Error-PE has Receive PreBeconGenIndication when System is in %d role",

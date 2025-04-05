@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,14 +21,14 @@
  * Implementation for creating sysfs file bmiss
  */
 
-#include <wlan_hdd_includes.h>
-#include <wlan_hdd_sysfs.h>
 #include "osif_vdev_sync.h"
-#include <wlan_hdd_sysfs_bmiss.h>
-#include <wlan_hdd_stats.h>
 #include <wlan_cp_stats_mc_ucfg_api.h>
+#include <wlan_hdd_includes.h>
+#include <wlan_hdd_stats.h>
+#include <wlan_hdd_sysfs.h>
+#include <wlan_hdd_sysfs_bmiss.h>
 
-static struct infra_cp_stats_event*
+static struct infra_cp_stats_event *
 wlan_hdd_get_bmiss(struct hdd_adapter *adapter)
 {
 	struct hdd_station_ctx *hdd_sta_ctx;
@@ -45,8 +46,7 @@ wlan_hdd_get_bmiss(struct hdd_adapter *adapter)
 							 peer_mac, &errno);
 }
 
-static ssize_t
-__hdd_sysfs_bmiss_show(struct net_device *net_dev, char *buf)
+static ssize_t __hdd_sysfs_bmiss_show(struct net_device *net_dev, char *buf)
 {
 	struct hdd_adapter *adapter;
 	struct hdd_context *hdd_ctx;
@@ -82,50 +82,53 @@ __hdd_sysfs_bmiss_show(struct net_device *net_dev, char *buf)
 			return ret;
 
 		ret += scnprintf(
-			buf + ret, PAGE_SIZE - ret,
-			"rssi_sample%d-rssi:%d\n", idx,
+			buf + ret, PAGE_SIZE - ret, "rssi_sample%d-rssi:%d\n",
+			idx,
 			ev_ptr->bmiss_infra_cp_stats->rssi_samples[idx].rssi);
 		if ((PAGE_SIZE - ret) <= 0)
 			return ret;
 
-		ret += scnprintf(
-			buf + ret, PAGE_SIZE - ret,
-			"rssi_sample%d-sample_time:%u\n", idx,
-			ev_ptr->bmiss_infra_cp_stats->rssi_samples[idx].sample_time);
+		ret += scnprintf(buf + ret, PAGE_SIZE - ret,
+				 "rssi_sample%d-sample_time:%u\n", idx,
+				 ev_ptr->bmiss_infra_cp_stats->rssi_samples[idx]
+					 .sample_time);
 	}
 	if ((PAGE_SIZE - ret) <= 0)
 		return ret;
 
-	ret += scnprintf(buf + ret, PAGE_SIZE - ret,
-			 "rssi_sample_curr_index:%u\n"
-			 "num_first_bmiss:%u\n"
-			 "num_final_bmiss:%u\n"
-			 "num_null_sent_in_first_bmiss:%u\n"
-			 "num_null_failed_in_first_bmiss:%u\n"
-			 "num_null_sent_in_final_bmiss:%u\n"
-			 "num_null_failed_in_final_bmiss:%u\n"
-			 "cons_bmiss_stats.num_of_bmiss_sequences:%u\n"
-			 "cons_bmiss_stats.num_bitmask_wraparound:%u\n"
-			 "cons_bmiss_stats.num_bcn_hist_lost:%u\n",
-			 ev_ptr->bmiss_infra_cp_stats->rssi_sample_curr_index,
-			 ev_ptr->bmiss_infra_cp_stats->num_first_bmiss,
-			 ev_ptr->bmiss_infra_cp_stats->num_final_bmiss,
-			 ev_ptr->bmiss_infra_cp_stats->num_null_sent_in_first_bmiss,
-			 ev_ptr->bmiss_infra_cp_stats->num_null_failed_in_first_bmiss,
-			 ev_ptr->bmiss_infra_cp_stats->num_null_sent_in_final_bmiss,
-			 ev_ptr->bmiss_infra_cp_stats->num_null_failed_in_final_bmiss,
-			 ev_ptr->bmiss_infra_cp_stats->cons_bmiss_stats.num_of_bmiss_sequences,
-			 ev_ptr->bmiss_infra_cp_stats->cons_bmiss_stats.num_bitmask_wraparound,
-			 ev_ptr->bmiss_infra_cp_stats->cons_bmiss_stats.num_bcn_hist_lost);
+	ret += scnprintf(
+		buf + ret, PAGE_SIZE - ret,
+		"rssi_sample_curr_index:%u\n"
+		"num_first_bmiss:%u\n"
+		"num_final_bmiss:%u\n"
+		"num_null_sent_in_first_bmiss:%u\n"
+		"num_null_failed_in_first_bmiss:%u\n"
+		"num_null_sent_in_final_bmiss:%u\n"
+		"num_null_failed_in_final_bmiss:%u\n"
+		"cons_bmiss_stats.num_of_bmiss_sequences:%u\n"
+		"cons_bmiss_stats.num_bitmask_wraparound:%u\n"
+		"cons_bmiss_stats.num_bcn_hist_lost:%u\n",
+		ev_ptr->bmiss_infra_cp_stats->rssi_sample_curr_index,
+		ev_ptr->bmiss_infra_cp_stats->num_first_bmiss,
+		ev_ptr->bmiss_infra_cp_stats->num_final_bmiss,
+		ev_ptr->bmiss_infra_cp_stats->num_null_sent_in_first_bmiss,
+		ev_ptr->bmiss_infra_cp_stats->num_null_failed_in_first_bmiss,
+		ev_ptr->bmiss_infra_cp_stats->num_null_sent_in_final_bmiss,
+		ev_ptr->bmiss_infra_cp_stats->num_null_failed_in_final_bmiss,
+		ev_ptr->bmiss_infra_cp_stats->cons_bmiss_stats
+			.num_of_bmiss_sequences,
+		ev_ptr->bmiss_infra_cp_stats->cons_bmiss_stats
+			.num_bitmask_wraparound,
+		ev_ptr->bmiss_infra_cp_stats->cons_bmiss_stats
+			.num_bcn_hist_lost);
 
 	qdf_mem_free(ev_ptr->bmiss_infra_cp_stats);
 	qdf_mem_free(ev_ptr);
 	return ret;
 }
 
-static ssize_t
-hdd_sysfs_bmiss_show(struct device *dev, struct device_attribute *attr,
-		     char *buf)
+static ssize_t hdd_sysfs_bmiss_show(struct device *dev,
+				    struct device_attribute *attr, char *buf)
 {
 	struct net_device *net_dev;
 	struct osif_vdev_sync *vdev_sync;
@@ -147,8 +150,7 @@ int hdd_sysfs_bmiss_create(struct hdd_adapter *adapter)
 {
 	int error;
 
-	error = device_create_file(&adapter->dev->dev,
-				   &dev_attr_bmiss);
+	error = device_create_file(&adapter->dev->dev, &dev_attr_bmiss);
 	if (!error)
 		hdd_err("could not create bmiss sysfs file");
 	return error;
@@ -158,4 +160,3 @@ void hdd_sysfs_bmiss_destroy(struct hdd_adapter *adapter)
 {
 	device_remove_file(&adapter->dev->dev, &dev_attr_bmiss);
 }
-

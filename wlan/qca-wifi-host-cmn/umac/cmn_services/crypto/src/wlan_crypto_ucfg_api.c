@@ -21,23 +21,22 @@
  */
 
 #include <qdf_types.h>
+#include <wlan_crypto_global_api.h>
 #include <wlan_crypto_global_def.h>
 #include <wlan_objmgr_vdev_obj.h>
-#include <wlan_crypto_global_api.h>
 QDF_STATUS ucfg_crypto_set_key_req(struct wlan_objmgr_vdev *vdev,
 				   struct wlan_crypto_key *req,
 				   enum wlan_crypto_key_type key_type)
 {
 	/*
-	 * It is the job of dispatcher to decide whether the
-	 * request has to be sent to scheduler or should be
-	 * sent as a offload request or process directly.
-	 *
-	 * Current requirement is to process set key request
-	 * as run to completion without posting any messages.
-	 * Hence the request handler is directly called from
-	 * here.
-	 */
+   * It is the job of dispatcher to decide whether the
+   * request has to be sent to scheduler or should be
+   * sent as a offload request or process directly.
+   *
+   * Current requirement is to process set key request
+   * as run to completion without posting any messages.
+   * Hence the request handler is directly called from
+   * here.
+   */
 	return wlan_crypto_set_key_req(vdev, req, key_type);
 }
-

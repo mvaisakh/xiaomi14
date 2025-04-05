@@ -19,23 +19,23 @@
  * DOC: Implements MLME component object creation/initialization/destroy
  */
 
+#include "connection_mgr/core/src/wlan_cm_main.h"
+#include <cdp_txrx_cmn.h>
+#include <include/wlan_mlme_cmn.h>
+#include <include/wlan_pdev_mlme.h>
+#include <include/wlan_vdev_mlme.h>
+#include <target_if_vdev_mgr_tx_ops.h>
+#include <vdev_mgr/core/src/vdev_mlme_sm.h>
+#include <wlan_lmac_if_def.h>
+#include <wlan_mlme_dbg.h>
+#include <wlan_mlo_mgr_public_api.h>
 #include <wlan_objmgr_cmn.h>
 #include <wlan_objmgr_global_obj.h>
 #include <wlan_objmgr_vdev_obj.h>
-#include <wlan_mlme_dbg.h>
-#include <include/wlan_mlme_cmn.h>
-#include <include/wlan_vdev_mlme.h>
-#include <include/wlan_pdev_mlme.h>
-#include <vdev_mgr/core/src/vdev_mlme_sm.h>
 #include <wlan_pdev_mlme_api.h>
-#include <wlan_vdev_mlme_api.h>
 #include <wlan_serialization_api.h>
 #include <wlan_utility.h>
-#include <cdp_txrx_cmn.h>
-#include <wlan_lmac_if_def.h>
-#include <target_if_vdev_mgr_tx_ops.h>
-#include "connection_mgr/core/src/wlan_cm_main.h"
-#include <wlan_mlo_mgr_public_api.h>
+#include <wlan_vdev_mlme_api.h>
 
 static QDF_STATUS mlme_vdev_obj_create_handler(struct wlan_objmgr_vdev *vdev,
 					       void *arg)
@@ -59,9 +59,9 @@ static QDF_STATUS mlme_vdev_obj_create_handler(struct wlan_objmgr_vdev *vdev,
 	}
 
 	/**
-	 * 1st check whether for this vdev any vdev commands are pending for
-	 * response.
-	 */
+   * 1st check whether for this vdev any vdev commands are pending for
+   * response.
+   */
 	psoc = wlan_pdev_get_psoc(pdev);
 	if (!psoc) {
 		mlme_err("PSOC is NULL");
@@ -80,8 +80,9 @@ static QDF_STATUS mlme_vdev_obj_create_handler(struct wlan_objmgr_vdev *vdev,
 		if (status == QDF_STATUS_E_ALREADY) {
 			mlme_err("Go through, since timer initializes later.");
 		} else {
-			mlme_err("The vdev response is pending for VDEV_%d status:%d",
-				 wlan_vdev_get_id(vdev), status);
+			mlme_err(
+				"The vdev response is pending for VDEV_%d status:%d",
+				wlan_vdev_get_id(vdev), status);
 			return QDF_STATUS_E_FAILURE;
 		}
 	}
@@ -115,8 +116,7 @@ static QDF_STATUS mlme_vdev_obj_create_handler(struct wlan_objmgr_vdev *vdev,
 		goto cm_sm_create_failed;
 	}
 
-	if (mlme_vdev_ops_ext_hdl_create(vdev_mlme) !=
-						QDF_STATUS_SUCCESS) {
+	if (mlme_vdev_ops_ext_hdl_create(vdev_mlme) != QDF_STATUS_SUCCESS) {
 		mlme_err("Legacy vdev object creation failed");
 		goto ext_hdl_create_failed;
 	}
@@ -131,14 +131,15 @@ static QDF_STATUS mlme_vdev_obj_create_handler(struct wlan_objmgr_vdev *vdev,
 					      QDF_STATUS_SUCCESS);
 
 	if (mlme_vdev_ops_ext_hdl_post_create(vdev_mlme) !=
-						QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		mlme_err("Legacy vdev object post creation failed");
 		goto ext_hdl_post_create_failed;
 	}
 
 	qdf_mem_set(vdev_mlme->mgmt.rate_info.ratemask_params,
 		    WLAN_VDEV_RATEMASK_TYPE_MAX *
-		    sizeof(struct vdev_ratemask_params), 0xFF);
+			    sizeof(struct vdev_ratemask_params),
+		    0xFF);
 
 	return QDF_STATUS_SUCCESS;
 
@@ -183,8 +184,8 @@ static QDF_STATUS mlme_vdev_obj_destroy_handler(struct wlan_objmgr_vdev *vdev,
 					      vdev_mlme);
 
 	wlan_minidump_remove(vdev_mlme, sizeof(*vdev_mlme),
-			     wlan_vdev_get_psoc(vdev),
-			     WLAN_MD_OBJMGR_VDEV_MLME, "vdev_mlme");
+			     wlan_vdev_get_psoc(vdev), WLAN_MD_OBJMGR_VDEV_MLME,
+			     "vdev_mlme");
 
 	qdf_mem_free(vdev_mlme);
 
@@ -192,9 +193,9 @@ static QDF_STATUS mlme_vdev_obj_destroy_handler(struct wlan_objmgr_vdev *vdev,
 }
 
 static void mlme_scan_serialization_comp_info_cb(
-		struct wlan_objmgr_vdev *vdev,
-		union wlan_serialization_rules_info *comp_info,
-		struct wlan_serialization_command *cmd)
+	struct wlan_objmgr_vdev *vdev,
+	union wlan_serialization_rules_info *comp_info,
+	struct wlan_serialization_command *cmd)
 {
 	struct wlan_objmgr_pdev *pdev;
 	struct scan_start_request *scan_start_req = cmd->umac_cmd;
@@ -241,11 +242,9 @@ QDF_STATUS wlan_mlme_psoc_enable(struct wlan_objmgr_psoc *psoc)
 		return status;
 	}
 
-	status = wlan_serialization_register_comp_info_cb
-			(psoc,
-			 WLAN_UMAC_COMP_MLME,
-			 WLAN_SER_CMD_SCAN,
-			 mlme_scan_serialization_comp_info_cb);
+	status = wlan_serialization_register_comp_info_cb(
+		psoc, WLAN_UMAC_COMP_MLME, WLAN_SER_CMD_SCAN,
+		mlme_scan_serialization_comp_info_cb);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("Serialize scan cmd register failed");
 		mlme_psoc_ext_disable_cb(psoc);
@@ -270,10 +269,8 @@ QDF_STATUS wlan_mlme_psoc_disable(struct wlan_objmgr_psoc *psoc)
 	if (tx_ops && tx_ops->vdev_mlme_detach)
 		tx_ops->vdev_mlme_detach(psoc);
 
-	status = wlan_serialization_deregister_comp_info_cb
-						(psoc,
-						 WLAN_UMAC_COMP_MLME,
-						 WLAN_SER_CMD_SCAN);
+	status = wlan_serialization_deregister_comp_info_cb(
+		psoc, WLAN_UMAC_COMP_MLME, WLAN_SER_CMD_SCAN);
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_err("Serialize scan cmd deregister failed");
 
@@ -286,20 +283,17 @@ QDF_STATUS wlan_mlme_psoc_disable(struct wlan_objmgr_psoc *psoc)
 
 QDF_STATUS wlan_vdev_mlme_init(void)
 {
-	if (wlan_objmgr_register_vdev_create_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_vdev_obj_create_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_register_vdev_create_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_vdev_obj_create_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
-	if (wlan_objmgr_register_vdev_destroy_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_vdev_obj_destroy_handler, NULL)
-						!= QDF_STATUS_SUCCESS) {
-		if (wlan_objmgr_unregister_vdev_create_handler
-					(WLAN_UMAC_COMP_MLME,
-					 mlme_vdev_obj_create_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_register_vdev_destroy_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_vdev_obj_destroy_handler, NULL) !=
+	    QDF_STATUS_SUCCESS) {
+		if (wlan_objmgr_unregister_vdev_create_handler(
+			    WLAN_UMAC_COMP_MLME, mlme_vdev_obj_create_handler,
+			    NULL) != QDF_STATUS_SUCCESS)
 			return QDF_STATUS_E_FAILURE;
 
 		return QDF_STATUS_E_FAILURE;
@@ -310,16 +304,14 @@ QDF_STATUS wlan_vdev_mlme_init(void)
 
 QDF_STATUS wlan_vdev_mlme_deinit(void)
 {
-	if (wlan_objmgr_unregister_vdev_create_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_vdev_obj_create_handler, NULL)
-					!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_unregister_vdev_create_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_vdev_obj_create_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
-	if (wlan_objmgr_unregister_vdev_destroy_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_vdev_obj_destroy_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_unregister_vdev_destroy_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_vdev_obj_destroy_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
 	return QDF_STATUS_SUCCESS;

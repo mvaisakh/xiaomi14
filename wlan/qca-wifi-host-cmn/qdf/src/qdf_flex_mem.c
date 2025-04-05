@@ -30,7 +30,7 @@ qdf_flex_mem_seg_alloc(struct qdf_flex_mem_pool *pool)
 {
 	struct qdf_flex_mem_segment *seg;
 	size_t total_size = sizeof(struct qdf_flex_mem_segment) +
-		pool->item_size * QDF_FM_BITMAP_BITS;
+			    pool->item_size * QDF_FM_BITMAP_BITS;
 
 	seg = qdf_talloc(pool, total_size);
 	if (!seg)
@@ -61,7 +61,8 @@ void qdf_flex_mem_deinit(struct qdf_flex_mem_pool *pool)
 
 	qdf_spinlock_destroy(&pool->lock);
 
-	qdf_list_for_each_del(&pool->seg_list, seg, next, node) {
+	qdf_list_for_each_del(&pool->seg_list, seg, next, node)
+	{
 		QDF_BUG(!seg->used_bitmap);
 		if (seg->used_bitmap)
 			continue;
@@ -77,7 +78,8 @@ static void *__qdf_flex_mem_alloc(struct qdf_flex_mem_pool *pool)
 {
 	struct qdf_flex_mem_segment *seg;
 
-	qdf_list_for_each(&pool->seg_list, seg, node) {
+	qdf_list_for_each(&pool->seg_list, seg, node)
+	{
 		int index;
 		void *ptr;
 
@@ -139,7 +141,8 @@ static void __qdf_flex_mem_free(struct qdf_flex_mem_pool *pool, void *ptr)
 	void *high_addr;
 	unsigned long index;
 
-	qdf_list_for_each(&pool->seg_list, seg, node) {
+	qdf_list_for_each(&pool->seg_list, seg, node)
+	{
 		low_addr = seg->bytes;
 		high_addr = low_addr + pool->item_size * QDF_FM_BITMAP_BITS;
 
@@ -174,4 +177,3 @@ void qdf_flex_mem_free(struct qdf_flex_mem_pool *pool, void *ptr)
 	qdf_spin_unlock_bh(&pool->lock);
 }
 qdf_export_symbol(qdf_flex_mem_free);
-

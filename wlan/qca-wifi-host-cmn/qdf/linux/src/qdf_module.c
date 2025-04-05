@@ -22,12 +22,12 @@
  */
 
 #include <linux/module.h>
-#include <qdf_perf.h>
-#include <qdf_trace.h>
-#include <qdf_nbuf.h>
-#include <qdf_mem.h>
 #include <qdf_event.h>
+#include <qdf_mem.h>
+#include <qdf_nbuf.h>
+#include <qdf_perf.h>
 #include <qdf_talloc.h>
+#include <qdf_trace.h>
 
 MODULE_AUTHOR("Qualcomm Atheros Inc.");
 MODULE_DESCRIPTION("Qualcomm Atheros Device Framework Module");

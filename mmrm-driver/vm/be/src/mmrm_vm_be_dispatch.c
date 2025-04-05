@@ -2,10 +2,10 @@
 /*
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
+#include "mmrm_vm_be.h"
 #include "mmrm_vm_debug.h"
 #include "mmrm_vm_interface.h"
 #include "mmrm_vm_msgq.h"
-#include "mmrm_vm_be.h"
 
 /**
  * mmrm_vm_be_send_response - send response to FE
@@ -15,7 +15,8 @@
 
 int mmrm_vm_be_send_response(struct mmrm_vm_driver_data *mmrm_vm, void *msg)
 {
-	struct mmrm_vm_response_msg_pkt *ppkt = (struct mmrm_vm_response_msg_pkt *)msg;
+	struct mmrm_vm_response_msg_pkt *ppkt =
+		(struct mmrm_vm_response_msg_pkt *)msg;
 	struct mmrm_vm_msg_hdr *hdr = &ppkt->hdr;
 	size_t msg_size = sizeof(*hdr) + hdr->size;
 	int rc;
@@ -35,7 +36,7 @@ int mmrm_vm_be_send_response(struct mmrm_vm_driver_data *mmrm_vm, void *msg)
  * req: request parameters
  */
 static int mmrm_vm_be_client_register(struct mmrm_vm_driver_data *mmrm_vm,
-	struct mmrm_vm_api_request_msg *req)
+				      struct mmrm_vm_api_request_msg *req)
 {
 	struct mmrm_client *pClient;
 	int rc;
@@ -45,15 +46,16 @@ static int mmrm_vm_be_client_register(struct mmrm_vm_driver_data *mmrm_vm,
 	// unpacketizing the call from fe on SVM
 	client_desc.client_type = req->data.reg.client_type;
 	memcpy(&(client_desc.client_info.desc), &(req->data.reg.desc),
-				sizeof(client_desc.client_info.desc));
+	       sizeof(client_desc.client_info.desc));
 	client_desc.priority = req->data.reg.priority;
 
 	d_mpr_l("%s: register type:%d priority:%d\n", __func__,
-			client_desc.client_type, client_desc.priority);
+		client_desc.client_type, client_desc.priority);
 	d_mpr_l("%s: domain:%d client ID:%d\n", __func__,
-			client_desc.client_info.desc.client_domain,
-			client_desc.client_info.desc.client_id);
-	d_mpr_l("%s: clk name:%s\n", __func__, client_desc.client_info.desc.name);
+		client_desc.client_info.desc.client_domain,
+		client_desc.client_info.desc.client_id);
+	d_mpr_l("%s: clk name:%s\n", __func__,
+		client_desc.client_info.desc.name);
 
 	// call mmrm register function
 	pClient = mmrm_client_register(&client_desc);
@@ -62,7 +64,8 @@ static int mmrm_vm_be_client_register(struct mmrm_vm_driver_data *mmrm_vm,
 		pkt.msg.data.reg.client_id = pClient->client_uid;
 	} else {
 		pkt.msg.data.reg.client_id = U32_MAX;
-		d_mpr_e("%s: client:%p client id:%d\n", __func__, pClient, pkt.msg.data.reg.client_id);
+		d_mpr_e("%s: client:%p client id:%d\n", __func__, pClient,
+			pkt.msg.data.reg.client_id);
 	}
 
 	// prepare response packet & send to fe on SVM
@@ -70,7 +73,8 @@ static int mmrm_vm_be_client_register(struct mmrm_vm_driver_data *mmrm_vm,
 	pkt.msg.hd.seq_no = req->hd.seq_no;
 	pkt.hdr.size = sizeof(pkt.msg.hd) + sizeof(pkt.msg.data.reg);
 
-	d_mpr_l("%s: cmd_id:%d data size:%d\n", __func__, pkt.msg.hd.cmd_id, pkt.hdr.size);
+	d_mpr_l("%s: cmd_id:%d data size:%d\n", __func__, pkt.msg.hd.cmd_id,
+		pkt.hdr.size);
 
 	rc = mmrm_vm_be_send_response(mmrm_vm, &pkt);
 	if (rc != 0)
@@ -84,7 +88,7 @@ static int mmrm_vm_be_client_register(struct mmrm_vm_driver_data *mmrm_vm,
  * req: set client value request parameters
  */
 static int mmrm_vm_be_client_setvalue(struct mmrm_vm_driver_data *mmrm_vm,
-	struct mmrm_vm_api_request_msg *req)
+				      struct mmrm_vm_api_request_msg *req)
 {
 	struct mmrm_vm_response_msg_pkt pkt_resp;
 	int rc;
@@ -92,16 +96,19 @@ static int mmrm_vm_be_client_setvalue(struct mmrm_vm_driver_data *mmrm_vm,
 
 	// call mmrm client set value function, and fill response packet
 
-	rc = mmrm_client_set_value(mmrm_vm->clk_client_tbl[req_param->client_id],
-			&req_param->data, req_param->val);
+	rc = mmrm_client_set_value(
+		mmrm_vm->clk_client_tbl[req_param->client_id], &req_param->data,
+		req_param->val);
 
 	if (rc != 0) {
-		d_mpr_e("%s: set value rc:%d client id:%d\n", __func__, rc, req_param->client_id);
+		d_mpr_e("%s: set value rc:%d client id:%d\n", __func__, rc,
+			req_param->client_id);
 	}
 	// prepare response packet & send to fe on SVM
 	pkt_resp.msg.hd.cmd_id = MMRM_VM_RESPONSE_SETVALUE;
 	pkt_resp.msg.hd.seq_no = req->hd.seq_no;
-	pkt_resp.hdr.size = sizeof(pkt_resp.msg.hd) + sizeof(pkt_resp.msg.data.setval);
+	pkt_resp.hdr.size =
+		sizeof(pkt_resp.msg.hd) + sizeof(pkt_resp.msg.data.setval);
 
 	pkt_resp.msg.data.setval.val = rc;
 
@@ -120,22 +127,26 @@ static int mmrm_vm_be_client_setvalue(struct mmrm_vm_driver_data *mmrm_vm,
  * mmrm_vm: driver private data
  * req: set client value request parameters
  */
-static int mmrm_vm_be_client_setvalue_inrange(struct mmrm_vm_driver_data *mmrm_vm,
-	struct mmrm_vm_api_request_msg *req)
+static int
+mmrm_vm_be_client_setvalue_inrange(struct mmrm_vm_driver_data *mmrm_vm,
+				   struct mmrm_vm_api_request_msg *req)
 {
 	struct mmrm_vm_response_msg_pkt pkt;
 	int rc;
-	struct mmrm_vm_setvalue_inrange_request *req_param = &req->data.setval_range;
+	struct mmrm_vm_setvalue_inrange_request *req_param =
+		&req->data.setval_range;
 
-	rc = mmrm_client_set_value_in_range(mmrm_vm->clk_client_tbl[req_param->client_id],
-		&req_param->data, &req_param->val);
+	rc = mmrm_client_set_value_in_range(
+		mmrm_vm->clk_client_tbl[req_param->client_id], &req_param->data,
+		&req_param->val);
 
 	pkt.msg.hd.cmd_id = MMRM_VM_RESPONSE_SETVALUE_INRANGE;
 	pkt.msg.hd.seq_no = req->hd.seq_no;
 	pkt.msg.data.setval_range.ret_code = rc;
 	pkt.hdr.size = sizeof(pkt.msg.hd) + sizeof(pkt.msg.data.setval_range);
 
-	d_mpr_l("%s: cmd_id:%d data size:%d\n", __func__, pkt.msg.hd.cmd_id, pkt.hdr.size);
+	d_mpr_l("%s: cmd_id:%d data size:%d\n", __func__, pkt.msg.hd.cmd_id,
+		pkt.hdr.size);
 
 	rc = mmrm_vm_be_send_response(mmrm_vm, &pkt);
 	if (rc != 0)
@@ -149,7 +160,7 @@ static int mmrm_vm_be_client_setvalue_inrange(struct mmrm_vm_driver_data *mmrm_v
  * req: set client value request parameters
  */
 static int mmrm_vm_be_client_getvalue(struct mmrm_vm_driver_data *mmrm_vm,
-	struct mmrm_vm_api_request_msg *req)
+				      struct mmrm_vm_api_request_msg *req)
 {
 	struct mmrm_vm_response_msg_pkt pkt;
 	int rc;
@@ -157,7 +168,8 @@ static int mmrm_vm_be_client_getvalue(struct mmrm_vm_driver_data *mmrm_vm,
 	struct mmrm_client_res_value val;
 	struct mmrm_client_res_value *p_val = &pkt.msg.data.getval.val;
 
-	rc = mmrm_client_get_value(mmrm_vm->clk_client_tbl[req_param->client_id], &val);
+	rc = mmrm_client_get_value(
+		mmrm_vm->clk_client_tbl[req_param->client_id], &val);
 
 	pkt.msg.hd.cmd_id = MMRM_VM_RESPONSE_GETVALUE;
 	pkt.msg.hd.seq_no = req->hd.seq_no;
@@ -167,7 +179,8 @@ static int mmrm_vm_be_client_getvalue(struct mmrm_vm_driver_data *mmrm_vm,
 	p_val->max = val.max;
 	p_val->min = val.min;
 
-//	pr_err("%s: cmd_id:%d data size:%d\n", __func__, pkt.msg.hd.cmd_id, pkt.hdr.size);
+	//	pr_err("%s: cmd_id:%d data size:%d\n", __func__, pkt.msg.hd.cmd_id,
+	//pkt.hdr.size);
 
 	rc = mmrm_vm_be_send_response(mmrm_vm, &pkt);
 	if (rc != 0)
@@ -181,14 +194,15 @@ static int mmrm_vm_be_client_getvalue(struct mmrm_vm_driver_data *mmrm_vm,
  * req: set client value request parameters
  */
 static int mmrm_vm_be_client_deregister(struct mmrm_vm_driver_data *mmrm_vm,
-		struct mmrm_vm_api_request_msg *req)
+					struct mmrm_vm_api_request_msg *req)
 {
 	int rc;
 	struct mmrm_vm_response_msg_pkt pkt;
 	struct mmrm_vm_deregister_request *req_param = &req->data.dereg;
 
-	rc = mmrm_client_deregister(mmrm_vm->clk_client_tbl[req_param->client_id]);
-//	pr_err("%s: client:%d\n", __func__, req_param->client_id);
+	rc = mmrm_client_deregister(
+		mmrm_vm->clk_client_tbl[req_param->client_id]);
+	//	pr_err("%s: client:%d\n", __func__, req_param->client_id);
 
 	pkt.msg.hd.cmd_id = MMRM_VM_RESPONSE_DEREGISTER;
 	pkt.msg.hd.seq_no = req->hd.seq_no;
@@ -196,8 +210,8 @@ static int mmrm_vm_be_client_deregister(struct mmrm_vm_driver_data *mmrm_vm,
 	pkt.hdr.size = sizeof(pkt.msg.hd) + sizeof(pkt.msg.data.dereg);
 	pkt.msg.data.dereg.ret_code = rc;
 
-//	pr_err("%s: cmd_id:%d data size:%d ret:%d\n", __func__,
-//		pkt.msg.hd.cmd_id, pkt.hdr.size, pkt.msg.data.dereg.ret_code);
+	//	pr_err("%s: cmd_id:%d data size:%d ret:%d\n", __func__,
+	//		pkt.msg.hd.cmd_id, pkt.hdr.size, pkt.msg.data.dereg.ret_code);
 
 	rc = mmrm_vm_be_send_response(mmrm_vm, &pkt);
 	if (rc != 0)
@@ -211,7 +225,7 @@ static int mmrm_vm_be_client_deregister(struct mmrm_vm_driver_data *mmrm_vm,
  * req: request parameters
  */
 static int mmrm_vm_be_client_noop(struct mmrm_vm_driver_data *mmrm_vm,
-		struct mmrm_vm_api_request_msg *req)
+				  struct mmrm_vm_api_request_msg *req)
 {
 	int rc = 0;
 	struct mmrm_vm_response_msg_pkt pkt;
@@ -234,7 +248,8 @@ static int mmrm_vm_be_client_noop(struct mmrm_vm_driver_data *mmrm_vm,
  * data: request message buffer pointer
  * size: request message size
  */
-int mmrm_vm_be_recv(struct mmrm_vm_driver_data *mmrm_vm, void *data, size_t size)
+int mmrm_vm_be_recv(struct mmrm_vm_driver_data *mmrm_vm, void *data,
+		    size_t size)
 {
 	struct mmrm_vm_api_request_msg *cmd = data;
 	int rc = -1;

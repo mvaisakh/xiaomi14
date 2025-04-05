@@ -29,8 +29,7 @@
  * return: void
  */
 void dp_cal_client_attach(struct cdp_cal_client **cal_client_ctx,
-			  struct cdp_pdev *pdev,
-			  qdf_device_t osdev,
+			  struct cdp_pdev *pdev, qdf_device_t osdev,
 			  void (*dp_iterate_peer_list)(struct cdp_pdev *))
 {
 	struct cal_client *cal_cl;
@@ -82,7 +81,7 @@ void dp_cal_client_timer_start(void *ctx)
 	struct cal_client *cal_cl;
 
 	if (ctx) {
-		cal_cl  = (struct cal_client *)ctx;
+		cal_cl = (struct cal_client *)ctx;
 		qdf_timer_start(&cal_cl->cal_client_timer, DP_CAL_CLIENT_TIME);
 	}
 }
@@ -138,20 +137,20 @@ void dp_cal_client_update_peer_stats(struct cdp_peer_stats *peer_stats)
 	uint32_t temp_tx_data = peer_stats->tx.tx_success.num;
 	uint32_t temp_tx_ucast_pkts = peer_stats->tx.ucast.num;
 
-	peer_stats->rx.rx_byte_rate = temp_rx_bytes -
-					peer_stats->rx.rx_bytes_success_last;
-	peer_stats->rx.rx_data_rate  = temp_rx_data -
-					peer_stats->rx.rx_data_success_last;
-	peer_stats->tx.tx_byte_rate = temp_tx_bytes -
-					peer_stats->tx.tx_bytes_success_last;
-	peer_stats->tx.tx_data_rate  = temp_tx_data -
-					peer_stats->tx.tx_data_success_last;
-	peer_stats->tx.tx_data_ucast_rate = temp_tx_ucast_pkts -
-					peer_stats->tx.tx_data_ucast_last;
+	peer_stats->rx.rx_byte_rate =
+		temp_rx_bytes - peer_stats->rx.rx_bytes_success_last;
+	peer_stats->rx.rx_data_rate =
+		temp_rx_data - peer_stats->rx.rx_data_success_last;
+	peer_stats->tx.tx_byte_rate =
+		temp_tx_bytes - peer_stats->tx.tx_bytes_success_last;
+	peer_stats->tx.tx_data_rate =
+		temp_tx_data - peer_stats->tx.tx_data_success_last;
+	peer_stats->tx.tx_data_ucast_rate =
+		temp_tx_ucast_pkts - peer_stats->tx.tx_data_ucast_last;
 
 	/* Check tx and rx packets in last one second, and increment
-	 * inactive time for peer
-	 */
+   * inactive time for peer
+   */
 	if (peer_stats->tx.tx_data_rate || peer_stats->rx.rx_data_rate)
 		peer_stats->tx.inactive_time = 0;
 	else
@@ -165,21 +164,22 @@ void dp_cal_client_update_peer_stats(struct cdp_peer_stats *peer_stats)
 
 	if (peer_stats->tx.tx_data_ucast_rate) {
 		if (peer_stats->tx.tx_data_ucast_rate >
-				peer_stats->tx.tx_data_rate)
+		    peer_stats->tx.tx_data_rate)
 			peer_stats->tx.last_per =
 				((peer_stats->tx.tx_data_ucast_rate -
-					peer_stats->tx.tx_data_rate) * 100) /
+				  peer_stats->tx.tx_data_rate) *
+				 100) /
 				peer_stats->tx.tx_data_ucast_rate;
 		else
 			peer_stats->tx.last_per = 0;
 	}
-
 }
 
 qdf_export_symbol(dp_cal_client_update_peer_stats);
 
-void dp_cal_client_update_peer_stats_wifi3(struct cdp_calibr_stats_intf *peer_stats_intf,
-					   struct cdp_calibr_stats *peer_calibr_stats)
+void dp_cal_client_update_peer_stats_wifi3(
+	struct cdp_calibr_stats_intf *peer_stats_intf,
+	struct cdp_calibr_stats *peer_calibr_stats)
 {
 	uint32_t temp_rx_bytes = peer_stats_intf->to_stack.bytes;
 	uint32_t temp_rx_data = peer_stats_intf->to_stack.num;
@@ -187,21 +187,22 @@ void dp_cal_client_update_peer_stats_wifi3(struct cdp_calibr_stats_intf *peer_st
 	uint32_t temp_tx_data = peer_stats_intf->tx_success.num;
 	uint32_t temp_tx_ucast_pkts = peer_stats_intf->tx_ucast.num;
 
-	peer_calibr_stats->rx.rx_byte_rate = temp_rx_bytes -
-				peer_calibr_stats->rx.rx_bytes_success_last;
-	peer_calibr_stats->rx.rx_data_rate  = temp_rx_data -
-				peer_calibr_stats->rx.rx_data_success_last;
-	peer_calibr_stats->tx.tx_byte_rate = temp_tx_bytes -
-				peer_calibr_stats->tx.tx_bytes_success_last;
-	peer_calibr_stats->tx.tx_data_rate  = temp_tx_data -
-				peer_calibr_stats->tx.tx_data_success_last;
-	peer_calibr_stats->tx.tx_data_ucast_rate = temp_tx_ucast_pkts -
-				peer_calibr_stats->tx.tx_data_ucast_last;
+	peer_calibr_stats->rx.rx_byte_rate =
+		temp_rx_bytes - peer_calibr_stats->rx.rx_bytes_success_last;
+	peer_calibr_stats->rx.rx_data_rate =
+		temp_rx_data - peer_calibr_stats->rx.rx_data_success_last;
+	peer_calibr_stats->tx.tx_byte_rate =
+		temp_tx_bytes - peer_calibr_stats->tx.tx_bytes_success_last;
+	peer_calibr_stats->tx.tx_data_rate =
+		temp_tx_data - peer_calibr_stats->tx.tx_data_success_last;
+	peer_calibr_stats->tx.tx_data_ucast_rate =
+		temp_tx_ucast_pkts - peer_calibr_stats->tx.tx_data_ucast_last;
 
 	/* Check tx and rx packets in last one second, and increment
-	 * inactive time for peer
-	 */
-	if (peer_calibr_stats->tx.tx_data_rate || peer_calibr_stats->rx.rx_data_rate)
+   * inactive time for peer
+   */
+	if (peer_calibr_stats->tx.tx_data_rate ||
+	    peer_calibr_stats->rx.rx_data_rate)
 		peer_calibr_stats->tx.inactive_time = 0;
 	else
 		peer_calibr_stats->tx.inactive_time++;
@@ -214,10 +215,11 @@ void dp_cal_client_update_peer_stats_wifi3(struct cdp_calibr_stats_intf *peer_st
 
 	if (peer_calibr_stats->tx.tx_data_ucast_rate) {
 		if (peer_calibr_stats->tx.tx_data_ucast_rate >
-				peer_calibr_stats->tx.tx_data_rate)
+		    peer_calibr_stats->tx.tx_data_rate)
 			peer_calibr_stats->tx.last_per =
 				((peer_calibr_stats->tx.tx_data_ucast_rate -
-					peer_calibr_stats->tx.tx_data_rate) * 100) /
+				  peer_calibr_stats->tx.tx_data_rate) *
+				 100) /
 				peer_calibr_stats->tx.tx_data_ucast_rate;
 		else
 			peer_calibr_stats->tx.last_per = 0;

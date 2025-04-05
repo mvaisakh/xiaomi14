@@ -3,17 +3,17 @@
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
-#include "ipahal.h"
 #include "ipahal_hw_stats.h"
+#include "ipahal.h"
 #include "ipahal_hw_stats_i.h"
 #include "ipahal_i.h"
 
 struct ipahal_hw_stats_obj {
-	struct ipahal_stats_init_pyld *(*generate_init_pyld)(void *params,
-		bool is_atomic_ctx);
+	struct ipahal_stats_init_pyld *(*generate_init_pyld)(
+		void *params, bool is_atomic_ctx);
 	int (*get_offset)(void *params, struct ipahal_stats_offset *out);
 	int (*parse_stats)(void *init_params, void *raw_stats,
-		void *parsed_stats);
+			   void *parsed_stats);
 };
 
 static int _count_ones(u32 number)
@@ -28,8 +28,8 @@ static int _count_ones(u32 number)
 	return count;
 }
 
-static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_quota(
-	void *params, bool is_atomic_ctx)
+static struct ipahal_stats_init_pyld *
+ipahal_generate_init_pyld_quota(void *params, bool is_atomic_ctx)
 {
 	struct ipahal_stats_init_pyld *pyld;
 	struct ipahal_stats_init_quota *in =
@@ -37,8 +37,9 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_quota(
 	int entries = _count_ones(in->enabled_bitmask[0]);
 
 	IPAHAL_DBG_LOW("entries = %d\n", entries);
-	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
-		entries * sizeof(struct ipahal_stats_quota_hw), is_atomic_ctx);
+	pyld = IPAHAL_MEM_ALLOC(
+		sizeof(*pyld) + entries * sizeof(struct ipahal_stats_quota_hw),
+		is_atomic_ctx);
 	if (!pyld) {
 		IPAHAL_ERR("no mem\n");
 		return NULL;
@@ -48,8 +49,8 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_quota(
 	return pyld;
 }
 
-static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_quota_v5_0(
-	void *params, bool is_atomic_ctx)
+static struct ipahal_stats_init_pyld *
+ipahal_generate_init_pyld_quota_v5_0(void *params, bool is_atomic_ctx)
 {
 	struct ipahal_stats_init_pyld *pyld;
 	struct ipahal_stats_init_quota *in =
@@ -61,8 +62,9 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_quota_v5_0(
 		entries += _count_ones(in->enabled_bitmask[i]);
 
 	IPAHAL_DBG_LOW("entries = %d\n", entries);
-	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
-		entries * sizeof(struct ipahal_stats_quota_hw), is_atomic_ctx);
+	pyld = IPAHAL_MEM_ALLOC(
+		sizeof(*pyld) + entries * sizeof(struct ipahal_stats_quota_hw),
+		is_atomic_ctx);
 	if (!pyld) {
 		IPAHAL_ERR("no mem\n");
 		return NULL;
@@ -73,7 +75,7 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_quota_v5_0(
 }
 
 static int ipahal_get_offset_quota(void *params,
-	struct ipahal_stats_offset *out)
+				   struct ipahal_stats_offset *out)
 {
 	struct ipahal_stats_get_offset_quota *in =
 		(struct ipahal_stats_get_offset_quota *)params;
@@ -87,7 +89,7 @@ static int ipahal_get_offset_quota(void *params,
 }
 
 static int ipahal_get_offset_quota_v5_0(void *params,
-	struct ipahal_stats_offset *out)
+					struct ipahal_stats_offset *out)
 {
 	struct ipahal_stats_get_offset_quota *in =
 		(struct ipahal_stats_get_offset_quota *)params;
@@ -104,7 +106,7 @@ static int ipahal_get_offset_quota_v5_0(void *params,
 }
 
 static int ipahal_parse_stats_quota(void *init_params, void *raw_stats,
-	void *parsed_stats)
+				    void *parsed_stats)
 {
 	struct ipahal_stats_init_quota *init =
 		(struct ipahal_stats_init_quota *)init_params;
@@ -136,7 +138,7 @@ static int ipahal_parse_stats_quota(void *init_params, void *raw_stats,
 }
 
 static int ipahal_parse_stats_quota_v5_0(void *init_params, void *raw_stats,
-	void *parsed_stats)
+					 void *parsed_stats)
 {
 	struct ipahal_stats_init_quota *init =
 		(struct ipahal_stats_init_quota *)init_params;
@@ -168,8 +170,8 @@ static int ipahal_parse_stats_quota_v5_0(void *init_params, void *raw_stats,
 	return 0;
 }
 
-static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_tethering(
-	void *params, bool is_atomic_ctx)
+static struct ipahal_stats_init_pyld *
+ipahal_generate_init_pyld_tethering(void *params, bool is_atomic_ctx)
 {
 	struct ipahal_stats_init_pyld *pyld;
 	struct ipahal_stats_init_tethering *in =
@@ -192,20 +194,22 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_tethering(
 	}
 	IPAHAL_DBG_LOW("sum all entries = %d\n", entries);
 
-	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
-		hdr_entries * sizeof(struct ipahal_stats_tethering_hdr_hw) +
-		entries * sizeof(struct ipahal_stats_tethering_hw),
+	pyld = IPAHAL_MEM_ALLOC(
+		sizeof(*pyld) +
+			hdr_entries *
+				sizeof(struct ipahal_stats_tethering_hdr_hw) +
+			entries * sizeof(struct ipahal_stats_tethering_hw),
 		is_atomic_ctx);
 	if (!pyld)
 		return NULL;
 
 	pyld->len = hdr_entries * sizeof(struct ipahal_stats_tethering_hdr_hw) +
-		entries * sizeof(struct ipahal_stats_tethering_hw);
+		    entries * sizeof(struct ipahal_stats_tethering_hw);
 
 	pyld_ptr = pyld->data;
 	incremental_offset =
-		(hdr_entries * sizeof(struct ipahal_stats_tethering_hdr_hw))
-			/ 8;
+		(hdr_entries * sizeof(struct ipahal_stats_tethering_hdr_hw)) /
+		8;
 	for (i = 0; i < sizeof(in->prod_bitmask[0]) * 8; i++) {
 		if (in->prod_bitmask[0] & (1 << i)) {
 			struct ipahal_stats_tethering_hdr_hw *hdr = pyld_ptr;
@@ -215,8 +219,8 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_tethering(
 			IPAHAL_DBG_LOW("hdr->dst_mask=0x%x\n", hdr->dst_mask);
 			IPAHAL_DBG_LOW("hdr->offset=0x%x\n", hdr->offset);
 			/* add the stats entry */
-			incremental_offset += _count_ones(
-				in->cons_bitmask[i][0]) *
+			incremental_offset +=
+				_count_ones(in->cons_bitmask[i][0]) *
 				sizeof(struct ipahal_stats_tethering_hw) / 8;
 			pyld_ptr += sizeof(*hdr);
 		}
@@ -225,8 +229,8 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_tethering(
 	return pyld;
 }
 
-static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_tethering_v5_0(
-	void *params, bool is_atomic_ctx)
+static struct ipahal_stats_init_pyld *
+ipahal_generate_init_pyld_tethering_v5_0(void *params, bool is_atomic_ctx)
 {
 	struct ipahal_stats_init_pyld *pyld;
 	struct ipahal_stats_init_tethering *in =
@@ -248,14 +252,14 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_tethering_v5_0(
 			reg_idx++;
 		}
 		if ((reg_idx < IPAHAL_IPA5_PIPE_REG_NUM) &&
-			(in->prod_bitmask[reg_idx] & ipahal_get_ep_bit(i))) {
+		    (in->prod_bitmask[reg_idx] & ipahal_get_ep_bit(i))) {
 			bool has_cons = false;
 
 			for (j = 0; j < IPAHAL_IPA5_PIPE_REG_NUM; j++) {
 				if (in->cons_bitmask[i][j]) {
 					has_cons = true;
-					entries +=
-						_count_ones(in->cons_bitmask[i][j]);
+					entries += _count_ones(
+						in->cons_bitmask[i][j]);
 				}
 			}
 			if (!has_cons) {
@@ -266,63 +270,66 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_tethering_v5_0(
 	}
 	IPAHAL_DBG_LOW("sum all entries = %d\n", entries);
 
-	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
-		hdr_entries *
-		sizeof(struct ipahal_stats_tethering_hdr_v5_0_hw) +
-		entries * sizeof(struct ipahal_stats_tethering_hw),
+	pyld = IPAHAL_MEM_ALLOC(
+		sizeof(*pyld) +
+			hdr_entries *
+				sizeof(struct ipahal_stats_tethering_hdr_v5_0_hw) +
+			entries * sizeof(struct ipahal_stats_tethering_hw),
 		is_atomic_ctx);
 	if (!pyld)
 		return NULL;
 
 	pyld->len = hdr_entries *
-		sizeof(struct ipahal_stats_tethering_hdr_v5_0_hw) +
-		entries * sizeof(struct ipahal_stats_tethering_hw);
+			    sizeof(struct ipahal_stats_tethering_hdr_v5_0_hw) +
+		    entries * sizeof(struct ipahal_stats_tethering_hw);
 
 	pyld_ptr = pyld->data;
 
 	/*
-	 * Note that the address of the offset in the RAM line is of RAM line
-	 *(8-byte address) and not like the address in the “BASE” register,
-	 * which is a byte address
-	 */
+   * Note that the address of the offset in the RAM line is of RAM line
+   *(8-byte address) and not like the address in the “BASE” register,
+   * which is a byte address
+   */
 	incremental_offset =
 		(hdr_entries *
-			sizeof(struct ipahal_stats_tethering_hdr_v5_0_hw))
-		/ 8;
+		 sizeof(struct ipahal_stats_tethering_hdr_v5_0_hw)) /
+		8;
 
 	reg_idx = 0;
 	for (i = 0; i < IPAHAL_IPA5_PIPES_NUM; i++) {
-
 		if (i > 0 && !(i % IPAHAL_MAX_PIPES_PER_REG)) {
 			reg_idx++;
 		}
 
 		if ((reg_idx < IPAHAL_IPA5_PIPE_REG_NUM) &&
-			(in->prod_bitmask[reg_idx] & ipahal_get_ep_bit(i))) {
+		    (in->prod_bitmask[reg_idx] & ipahal_get_ep_bit(i))) {
 			struct ipahal_stats_tethering_hdr_v5_0_hw *hdr =
 				pyld_ptr;
 			// TODO: for future versions of num HW consumers > 16
 			hdr->dst_mask_31_0 =
-				((in->cons_bitmask[i][0] >> IPAHAL_IPA5_PRODUCER_PIPE_NUM) |
-				(in->cons_bitmask[i][1] << IPAHAL_IPA5_PRODUCER_PIPE_NUM));
-			hdr->dst_mask_63_32 =
-				in->cons_bitmask[i][1] >> IPAHAL_IPA5_PRODUCER_PIPE_NUM;
+				((in->cons_bitmask[i][0] >>
+				  IPAHAL_IPA5_PRODUCER_PIPE_NUM) |
+				 (in->cons_bitmask[i][1]
+				  << IPAHAL_IPA5_PRODUCER_PIPE_NUM));
+			hdr->dst_mask_63_32 = in->cons_bitmask[i][1] >>
+					      IPAHAL_IPA5_PRODUCER_PIPE_NUM;
 			// TODO: for future when num pipes > 64
 			hdr->dst_mask_95_64 = 0;
 			hdr->dst_mask_127_96 = 0;
 			hdr->offset = incremental_offset;
 			IPAHAL_DBG_LOW("Pipe: %d\n", i);
 			IPAHAL_DBG_LOW("hdr->dst_mask_31_0=[0x%x],"
-				"hdr->dst_mask_63_32=[0x%x],"
-				"hdr->dst_mask_95_64=[0x%x],"
-				"hdr->dst_mask_127_96=[0x%x]\n",
-				hdr->dst_mask_31_0, hdr->dst_mask_63_32,
-				hdr->dst_mask_95_64, hdr->dst_mask_127_96);
+				       "hdr->dst_mask_63_32=[0x%x],"
+				       "hdr->dst_mask_95_64=[0x%x],"
+				       "hdr->dst_mask_127_96=[0x%x]\n",
+				       hdr->dst_mask_31_0, hdr->dst_mask_63_32,
+				       hdr->dst_mask_95_64,
+				       hdr->dst_mask_127_96);
 			IPAHAL_DBG_LOW("hdr->offset=0x%x\n", hdr->offset);
 			/* add the stats entry */
 			incremental_offset +=
 				(_count_ones(in->cons_bitmask[i][0]) +
-				_count_ones(in->cons_bitmask[i][1])) *
+				 _count_ones(in->cons_bitmask[i][1])) *
 				sizeof(struct ipahal_stats_tethering_hw) / 8;
 			pyld_ptr += sizeof(*hdr);
 		}
@@ -332,7 +339,7 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_tethering_v5_0(
 }
 
 static int ipahal_get_offset_tethering(void *params,
-	struct ipahal_stats_offset *out)
+				       struct ipahal_stats_offset *out)
 {
 	struct ipahal_stats_get_offset_tethering *in =
 		(struct ipahal_stats_get_offset_tethering *)params;
@@ -352,14 +359,14 @@ static int ipahal_get_offset_tethering(void *params,
 
 	/* skip the header */
 	out->offset = _count_ones(in->init.prod_bitmask[0]) *
-		sizeof(struct ipahal_stats_tethering_hdr_hw);
+		      sizeof(struct ipahal_stats_tethering_hdr_hw);
 	out->size = entries * sizeof(struct ipahal_stats_tethering_hw);
 
 	return 0;
 }
 
 static int ipahal_get_offset_tethering_v5_0(void *params,
-	struct ipahal_stats_offset *out)
+					    struct ipahal_stats_offset *out)
 {
 	struct ipahal_stats_get_offset_tethering *in =
 		(struct ipahal_stats_get_offset_tethering *)params;
@@ -375,7 +382,7 @@ static int ipahal_get_offset_tethering_v5_0(void *params,
 			for (j = 0; j < IPAHAL_IPA5_PIPE_REG_NUM; j++) {
 				if (in->init.cons_bitmask[i][j]) {
 					has_cons = true;
-					entries +=_count_ones(
+					entries += _count_ones(
 						in->init.cons_bitmask[i][j]);
 				}
 			}
@@ -390,8 +397,9 @@ static int ipahal_get_offset_tethering_v5_0(void *params,
 	/* skip the header */
 	out->offset = 0;
 	for (j = 0; j < IPAHAL_IPA5_PIPE_REG_NUM; j++)
-		out->offset += _count_ones(in->init.prod_bitmask[j]) *
-		sizeof(struct ipahal_stats_tethering_hdr_v5_0_hw);
+		out->offset +=
+			_count_ones(in->init.prod_bitmask[j]) *
+			sizeof(struct ipahal_stats_tethering_hdr_v5_0_hw);
 
 	out->size = entries * sizeof(struct ipahal_stats_tethering_hw);
 
@@ -399,7 +407,7 @@ static int ipahal_get_offset_tethering_v5_0(void *params,
 }
 
 static int ipahal_parse_stats_tethering(void *init_params, void *raw_stats,
-	void *parsed_stats)
+					void *parsed_stats)
 {
 	struct ipahal_stats_init_tethering *init =
 		(struct ipahal_stats_init_tethering *)init_params;
@@ -421,19 +429,19 @@ static int ipahal_parse_stats_tethering(void *init_params, void *raw_stats,
 				out->stats[i][j].num_ipv4_bytes =
 					raw_hw[stat_idx].num_ipv4_bytes;
 				IPAHAL_DBG_LOW("num_ipv4_bytes %lld\n",
-					out->stats[i][j].num_ipv4_bytes);
+					       out->stats[i][j].num_ipv4_bytes);
 				out->stats[i][j].num_ipv4_pkts =
 					raw_hw[stat_idx].num_ipv4_pkts;
 				IPAHAL_DBG_LOW("num_ipv4_pkts %lld\n",
-					out->stats[i][j].num_ipv4_pkts);
+					       out->stats[i][j].num_ipv4_pkts);
 				out->stats[i][j].num_ipv6_pkts =
 					raw_hw[stat_idx].num_ipv6_pkts;
 				IPAHAL_DBG_LOW("num_ipv6_pkts %lld\n",
-					out->stats[i][j].num_ipv6_pkts);
+					       out->stats[i][j].num_ipv6_pkts);
 				out->stats[i][j].num_ipv6_bytes =
 					raw_hw[stat_idx].num_ipv6_bytes;
 				IPAHAL_DBG_LOW("num_ipv6_bytes %lld\n",
-					out->stats[i][j].num_ipv6_bytes);
+					       out->stats[i][j].num_ipv6_bytes);
 				stat_idx++;
 			}
 		}
@@ -443,7 +451,7 @@ static int ipahal_parse_stats_tethering(void *init_params, void *raw_stats,
 }
 
 static int ipahal_parse_stats_tethering_v5_0(void *init_params, void *raw_stats,
-	void *parsed_stats)
+					     void *parsed_stats)
 {
 	struct ipahal_stats_init_tethering *init =
 		(struct ipahal_stats_init_tethering *)init_params;
@@ -462,27 +470,27 @@ static int ipahal_parse_stats_tethering_v5_0(void *init_params, void *raw_stats,
 		for (j = 0; j < IPAHAL_IPA5_PIPES_NUM; j++) {
 			cons_idx = ipahal_get_ep_reg_idx(j);
 			if ((init->prod_bitmask[prod_idx] &
-				ipahal_get_ep_bit(i)) &&
-				init->cons_bitmask[i][cons_idx] &
-				ipahal_get_ep_bit(j)) {
+			     ipahal_get_ep_bit(i)) &&
+			    init->cons_bitmask[i][cons_idx] &
+				    ipahal_get_ep_bit(j)) {
 				IPAHAL_DBG_LOW("prod %d cons %d\n", i, j);
 				IPAHAL_DBG_LOW("stat_idx %d\n", stat_idx);
 				out->stats[i][j].num_ipv4_bytes =
 					raw_hw[stat_idx].num_ipv4_bytes;
 				IPAHAL_DBG_LOW("num_ipv4_bytes %lld\n",
-					out->stats[i][j].num_ipv4_bytes);
+					       out->stats[i][j].num_ipv4_bytes);
 				out->stats[i][j].num_ipv4_pkts =
 					raw_hw[stat_idx].num_ipv4_pkts;
 				IPAHAL_DBG_LOW("num_ipv4_pkts %lld\n",
-					out->stats[i][j].num_ipv4_pkts);
+					       out->stats[i][j].num_ipv4_pkts);
 				out->stats[i][j].num_ipv6_pkts =
 					raw_hw[stat_idx].num_ipv6_pkts;
 				IPAHAL_DBG_LOW("num_ipv6_pkts %lld\n",
-					out->stats[i][j].num_ipv6_pkts);
+					       out->stats[i][j].num_ipv6_pkts);
 				out->stats[i][j].num_ipv6_bytes =
 					raw_hw[stat_idx].num_ipv6_bytes;
 				IPAHAL_DBG_LOW("num_ipv6_bytes %lld\n",
-					out->stats[i][j].num_ipv6_bytes);
+					       out->stats[i][j].num_ipv6_bytes);
 				stat_idx++;
 			}
 		}
@@ -491,45 +499,43 @@ static int ipahal_parse_stats_tethering_v5_0(void *init_params, void *raw_stats,
 	return 0;
 }
 
-static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_flt_rt_v4_5(
-	void *params, bool is_atomic_ctx)
+static struct ipahal_stats_init_pyld *
+ipahal_generate_init_pyld_flt_rt_v4_5(void *params, bool is_atomic_ctx)
 {
 	struct ipahal_stats_init_pyld *pyld;
 	long num = (long)(params); /* params is treated as a pointer. */
 
-	if (num > IPA_MAX_FLT_RT_CNT_INDEX ||
-		num <= 0) {
+	if (num > IPA_MAX_FLT_RT_CNT_INDEX || num <= 0) {
 		IPAHAL_ERR("num %d not valid\n", num);
 		return NULL;
 	}
-	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
-		num *
-		sizeof(struct ipahal_stats_flt_rt_v4_5_hw),
+	pyld = IPAHAL_MEM_ALLOC(
+		sizeof(*pyld) +
+			num * sizeof(struct ipahal_stats_flt_rt_v4_5_hw),
 		is_atomic_ctx);
 	if (!pyld)
 		return NULL;
-	pyld->len = num *
-		sizeof(struct ipahal_stats_flt_rt_v4_5_hw);
+	pyld->len = num * sizeof(struct ipahal_stats_flt_rt_v4_5_hw);
 	return pyld;
 }
 
 static int ipahal_get_offset_flt_rt_v4_5(void *params,
-	struct ipahal_stats_offset *out)
+					 struct ipahal_stats_offset *out)
 {
 	struct ipahal_stats_get_offset_flt_rt_v4_5 *in =
 		(struct ipahal_stats_get_offset_flt_rt_v4_5 *)params;
 	int num;
 
-	out->offset = (in->start_id - 1) *
-		sizeof(struct ipahal_stats_flt_rt_v4_5);
+	out->offset =
+		(in->start_id - 1) * sizeof(struct ipahal_stats_flt_rt_v4_5);
 	num = in->end_id - in->start_id + 1;
 	out->size = num * sizeof(struct ipahal_stats_flt_rt_v4_5);
 
 	return 0;
 }
 
-static int ipahal_parse_stats_flt_rt_v4_5(void *init_params,
-	void *raw_stats, void *parsed_stats)
+static int ipahal_parse_stats_flt_rt_v4_5(void *init_params, void *raw_stats,
+					  void *parsed_stats)
 {
 	struct ipahal_stats_flt_rt_v4_5_hw *raw_hw =
 		(struct ipahal_stats_flt_rt_v4_5_hw *)raw_stats;
@@ -540,23 +546,19 @@ static int ipahal_parse_stats_flt_rt_v4_5(void *init_params,
 	num = query->end_id - query->start_id + 1;
 	IPAHAL_DBG_LOW("\n");
 	for (i = 0; i < num; i++) {
-		((struct ipa_flt_rt_stats *)
-		query->stats)[i].num_bytes =
+		((struct ipa_flt_rt_stats *)query->stats)[i].num_bytes =
 			raw_hw[i].num_bytes;
-		((struct ipa_flt_rt_stats *)
-		query->stats)[i].num_pkts_hash =
+		((struct ipa_flt_rt_stats *)query->stats)[i].num_pkts_hash =
 			raw_hw[i].num_packets_hash;
-		((struct ipa_flt_rt_stats *)
-		query->stats)[i].num_pkts =
+		((struct ipa_flt_rt_stats *)query->stats)[i].num_pkts =
 			raw_hw[i].num_packets;
 	}
 
 	return 0;
 }
 
-
-static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_flt_rt(
-	void *params, bool is_atomic_ctx)
+static struct ipahal_stats_init_pyld *
+ipahal_generate_init_pyld_flt_rt(void *params, bool is_atomic_ctx)
 {
 	struct ipahal_stats_init_pyld *pyld;
 	struct ipahal_stats_init_flt_rt *in =
@@ -591,9 +593,11 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_flt_rt(
 	}
 	IPAHAL_DBG_LOW("hdr_entries = %d\n", hdr_entries);
 
-	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
-		hdr_entries * sizeof(struct ipahal_stats_flt_rt_hdr_hw) +
-		num_rules * sizeof(struct ipahal_stats_flt_rt_hw),
+	pyld = IPAHAL_MEM_ALLOC(
+		sizeof(*pyld) +
+			hdr_entries *
+				sizeof(struct ipahal_stats_flt_rt_hdr_hw) +
+			num_rules * sizeof(struct ipahal_stats_flt_rt_hw),
 		is_atomic_ctx);
 	if (!pyld) {
 		IPAHAL_ERR("no mem\n");
@@ -601,12 +605,11 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_flt_rt(
 	}
 
 	pyld->len = hdr_entries * sizeof(struct ipahal_stats_flt_rt_hdr_hw) +
-		num_rules * sizeof(struct ipahal_stats_flt_rt_hw);
+		    num_rules * sizeof(struct ipahal_stats_flt_rt_hw);
 
 	pyld_ptr = pyld->data;
 	incremental_offset =
-		(hdr_entries * sizeof(struct ipahal_stats_flt_rt_hdr_hw))
-			/ 8;
+		(hdr_entries * sizeof(struct ipahal_stats_flt_rt_hdr_hw)) / 8;
 	for (i = start_entry; i < hdr_entries; i++) {
 		struct ipahal_stats_flt_rt_hdr_hw *hdr = pyld_ptr;
 
@@ -614,7 +617,7 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_flt_rt(
 		hdr->cnt_offset = incremental_offset;
 		/* add the stats entry */
 		incremental_offset += _count_ones(in->rule_id_bitmask[i]) *
-			sizeof(struct ipahal_stats_flt_rt_hw) / 8;
+				      sizeof(struct ipahal_stats_flt_rt_hw) / 8;
 		pyld_ptr += sizeof(*hdr);
 	}
 
@@ -622,7 +625,7 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_flt_rt(
 }
 
 static int ipahal_get_offset_flt_rt(void *params,
-	struct ipahal_stats_offset *out)
+				    struct ipahal_stats_offset *out)
 {
 	struct ipahal_stats_get_offset_flt_rt *in =
 		(struct ipahal_stats_get_offset_flt_rt *)params;
@@ -676,7 +679,7 @@ static int ipahal_get_offset_flt_rt(void *params,
 }
 
 static int ipahal_parse_stats_flt_rt(void *init_params, void *raw_stats,
-	void *parsed_stats)
+				     void *parsed_stats)
 {
 	struct ipahal_stats_flt_rt_hw *raw_hw =
 		(struct ipahal_stats_flt_rt_hw *)raw_stats;
@@ -691,8 +694,8 @@ static int ipahal_parse_stats_flt_rt(void *init_params, void *raw_stats,
 	return 0;
 }
 
-static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_drop(
-	void *params, bool is_atomic_ctx)
+static struct ipahal_stats_init_pyld *
+ipahal_generate_init_pyld_drop(void *params, bool is_atomic_ctx)
 {
 	struct ipahal_stats_init_pyld *pyld;
 	struct ipahal_stats_init_drop *in =
@@ -700,8 +703,9 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_drop(
 	int entries = _count_ones(in->enabled_bitmask[0]);
 
 	IPAHAL_DBG_LOW("entries = %d\n", entries);
-	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
-		entries * sizeof(struct ipahal_stats_drop_hw), is_atomic_ctx);
+	pyld = IPAHAL_MEM_ALLOC(
+		sizeof(*pyld) + entries * sizeof(struct ipahal_stats_drop_hw),
+		is_atomic_ctx);
 	if (!pyld)
 		return NULL;
 
@@ -710,8 +714,8 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_drop(
 	return pyld;
 }
 
-static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_drop_v5_0(
-	void *params, bool is_atomic_ctx)
+static struct ipahal_stats_init_pyld *
+ipahal_generate_init_pyld_drop_v5_0(void *params, bool is_atomic_ctx)
 {
 	struct ipahal_stats_init_pyld *pyld;
 	struct ipahal_stats_init_drop *in =
@@ -722,8 +726,9 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_drop_v5_0(
 	for (i = 0; i < IPAHAL_IPA5_PIPE_REG_NUM; i++)
 		entries += _count_ones(in->enabled_bitmask[i]);
 	IPAHAL_DBG_LOW("entries = %d\n", entries);
-	pyld = IPAHAL_MEM_ALLOC(sizeof(*pyld) +
-		entries * sizeof(struct ipahal_stats_drop_hw), is_atomic_ctx);
+	pyld = IPAHAL_MEM_ALLOC(
+		sizeof(*pyld) + entries * sizeof(struct ipahal_stats_drop_hw),
+		is_atomic_ctx);
 	if (!pyld)
 		return NULL;
 
@@ -732,8 +737,7 @@ static struct ipahal_stats_init_pyld *ipahal_generate_init_pyld_drop_v5_0(
 	return pyld;
 }
 
-static int ipahal_get_offset_drop(void *params,
-	struct ipahal_stats_offset *out)
+static int ipahal_get_offset_drop(void *params, struct ipahal_stats_offset *out)
 {
 	struct ipahal_stats_get_offset_drop *in =
 		(struct ipahal_stats_get_offset_drop *)params;
@@ -747,7 +751,7 @@ static int ipahal_get_offset_drop(void *params,
 }
 
 static int ipahal_get_offset_drop_v5_0(void *params,
-	struct ipahal_stats_offset *out)
+				       struct ipahal_stats_offset *out)
 {
 	struct ipahal_stats_get_offset_drop *in =
 		(struct ipahal_stats_get_offset_drop *)params;
@@ -765,7 +769,7 @@ static int ipahal_get_offset_drop_v5_0(void *params,
 }
 
 static int ipahal_parse_stats_drop(void *init_params, void *raw_stats,
-	void *parsed_stats)
+				   void *parsed_stats)
 {
 	struct ipahal_stats_init_drop *init =
 		(struct ipahal_stats_init_drop *)init_params;
@@ -792,7 +796,7 @@ static int ipahal_parse_stats_drop(void *init_params, void *raw_stats,
 }
 
 static int ipahal_parse_stats_drop_v5_0(void *init_params, void *raw_stats,
-	void *parsed_stats)
+					void *parsed_stats)
 {
 	struct ipahal_stats_init_drop *init =
 		(struct ipahal_stats_init_drop *)init_params;
@@ -819,68 +823,51 @@ static int ipahal_parse_stats_drop_v5_0(void *init_params, void *raw_stats,
 	return 0;
 }
 
-static struct ipahal_hw_stats_obj
-	ipahal_hw_stats_objs[IPA_HW_MAX][IPAHAL_HW_STATS_MAX] = {
+static struct ipahal_hw_stats_obj ipahal_hw_stats_objs[IPA_HW_MAX][IPAHAL_HW_STATS_MAX] = {
 	/* IPAv4 */
-	[IPA_HW_v4_0][IPAHAL_HW_STATS_QUOTA] = {
-		ipahal_generate_init_pyld_quota,
-		ipahal_get_offset_quota,
-		ipahal_parse_stats_quota
-	},
-	[IPA_HW_v4_0][IPAHAL_HW_STATS_TETHERING] = {
-		ipahal_generate_init_pyld_tethering,
-		ipahal_get_offset_tethering,
-		ipahal_parse_stats_tethering
-	},
-	[IPA_HW_v4_0][IPAHAL_HW_STATS_FNR] = {
-		ipahal_generate_init_pyld_flt_rt,
-		ipahal_get_offset_flt_rt,
-		ipahal_parse_stats_flt_rt
-	},
-	[IPA_HW_v4_0][IPAHAL_HW_STATS_DROP] = {
-		ipahal_generate_init_pyld_drop,
-		ipahal_get_offset_drop,
-		ipahal_parse_stats_drop
-	},
+	[IPA_HW_v4_0][IPAHAL_HW_STATS_QUOTA] = { ipahal_generate_init_pyld_quota,
+						 ipahal_get_offset_quota,
+						 ipahal_parse_stats_quota },
+	[IPA_HW_v4_0]
+		[IPAHAL_HW_STATS_TETHERING] = { ipahal_generate_init_pyld_tethering,
+						ipahal_get_offset_tethering,
+						ipahal_parse_stats_tethering },
+	[IPA_HW_v4_0][IPAHAL_HW_STATS_FNR] = { ipahal_generate_init_pyld_flt_rt,
+					       ipahal_get_offset_flt_rt,
+					       ipahal_parse_stats_flt_rt },
+	[IPA_HW_v4_0][IPAHAL_HW_STATS_DROP] = { ipahal_generate_init_pyld_drop,
+						ipahal_get_offset_drop,
+						ipahal_parse_stats_drop },
 
 	/* IPAv4_5 */
-	[IPA_HW_v4_5][IPAHAL_HW_STATS_QUOTA] = {
-		ipahal_generate_init_pyld_quota,
-		ipahal_get_offset_quota,
-		ipahal_parse_stats_quota
-	},
-	[IPA_HW_v4_5][IPAHAL_HW_STATS_FNR] = {
-		ipahal_generate_init_pyld_flt_rt_v4_5,
-		ipahal_get_offset_flt_rt_v4_5,
-		ipahal_parse_stats_flt_rt_v4_5
-	},
-	[IPA_HW_v4_5][IPAHAL_HW_STATS_TETHERING] = {
-		ipahal_generate_init_pyld_tethering,
-		ipahal_get_offset_tethering,
-		ipahal_parse_stats_tethering
-	},
-	[IPA_HW_v4_5][IPAHAL_HW_STATS_DROP] = {
-		ipahal_generate_init_pyld_drop,
-		ipahal_get_offset_drop,
-		ipahal_parse_stats_drop
-	},
+	[IPA_HW_v4_5][IPAHAL_HW_STATS_QUOTA] = { ipahal_generate_init_pyld_quota,
+						 ipahal_get_offset_quota,
+						 ipahal_parse_stats_quota },
+	[IPA_HW_v4_5]
+		[IPAHAL_HW_STATS_FNR] = { ipahal_generate_init_pyld_flt_rt_v4_5,
+					  ipahal_get_offset_flt_rt_v4_5,
+					  ipahal_parse_stats_flt_rt_v4_5 },
+	[IPA_HW_v4_5]
+		[IPAHAL_HW_STATS_TETHERING] = { ipahal_generate_init_pyld_tethering,
+						ipahal_get_offset_tethering,
+						ipahal_parse_stats_tethering },
+	[IPA_HW_v4_5][IPAHAL_HW_STATS_DROP] = { ipahal_generate_init_pyld_drop,
+						ipahal_get_offset_drop,
+						ipahal_parse_stats_drop },
 
 	/* IPAv5_0 */
-	[IPA_HW_v5_0][IPAHAL_HW_STATS_TETHERING] = {
-	ipahal_generate_init_pyld_tethering_v5_0,
-	ipahal_get_offset_tethering_v5_0,
-	ipahal_parse_stats_tethering_v5_0
-	},
-	[IPA_HW_v5_0][IPAHAL_HW_STATS_QUOTA] = {
-	ipahal_generate_init_pyld_quota_v5_0,
-	ipahal_get_offset_quota_v5_0,
-	ipahal_parse_stats_quota_v5_0
-	},
-	[IPA_HW_v5_0][IPAHAL_HW_STATS_DROP] = {
-	ipahal_generate_init_pyld_drop_v5_0,
-	ipahal_get_offset_drop_v5_0,
-	ipahal_parse_stats_drop_v5_0
-	},
+	[IPA_HW_v5_0]
+		[IPAHAL_HW_STATS_TETHERING] = { ipahal_generate_init_pyld_tethering_v5_0,
+						ipahal_get_offset_tethering_v5_0,
+						ipahal_parse_stats_tethering_v5_0 },
+	[IPA_HW_v5_0]
+		[IPAHAL_HW_STATS_QUOTA] = { ipahal_generate_init_pyld_quota_v5_0,
+					    ipahal_get_offset_quota_v5_0,
+					    ipahal_parse_stats_quota_v5_0 },
+	[IPA_HW_v5_0]
+		[IPAHAL_HW_STATS_DROP] = { ipahal_generate_init_pyld_drop_v5_0,
+					   ipahal_get_offset_drop_v5_0,
+					   ipahal_parse_stats_drop_v5_0 },
 };
 
 int ipahal_hw_stats_init(enum ipa_hw_type ipa_hw_type)
@@ -898,28 +885,28 @@ int ipahal_hw_stats_init(enum ipa_hw_type ipa_hw_type)
 	}
 
 	memset(&zero_obj, 0, sizeof(zero_obj));
-	for (i = IPA_HW_v4_0 ; i < ipa_hw_type ; i++) {
+	for (i = IPA_HW_v4_0; i < ipa_hw_type; i++) {
 		for (j = 0; j < IPAHAL_HW_STATS_MAX; j++) {
 			if (!memcmp(&ipahal_hw_stats_objs[i + 1][j], &zero_obj,
-				sizeof(struct ipahal_hw_stats_obj))) {
+				    sizeof(struct ipahal_hw_stats_obj))) {
 				memcpy(&ipahal_hw_stats_objs[i + 1][j],
-					&ipahal_hw_stats_objs[i][j],
-					sizeof(struct ipahal_hw_stats_obj));
+				       &ipahal_hw_stats_objs[i][j],
+				       sizeof(struct ipahal_hw_stats_obj));
 			} else {
 				/*
-				 * explicitly overridden stat.
-				 * Check validity
-				 */
+         * explicitly overridden stat.
+         * Check validity
+         */
 				hw_stat_ptr = &ipahal_hw_stats_objs[i + 1][j];
 				if (!hw_stat_ptr->get_offset) {
 					IPAHAL_ERR(
-					  "stat=%d get_offset null ver=%d\n",
-					  j, i+1);
+						"stat=%d get_offset null ver=%d\n",
+						j, i + 1);
 					WARN_ON(1);
 				}
 				if (!hw_stat_ptr->parse_stats) {
 					IPAHAL_ERR(
-					  "stat=%d parse_stats null ver=%d\n",
+						"stat=%d parse_stats null ver=%d\n",
 						j, i + 1);
 					WARN_ON(1);
 				}
@@ -931,7 +918,7 @@ int ipahal_hw_stats_init(enum ipa_hw_type ipa_hw_type)
 }
 
 int ipahal_stats_get_offset(enum ipahal_hw_stats_type type, void *params,
-	struct ipahal_stats_offset *out)
+			    struct ipahal_stats_offset *out)
 {
 	if (type < 0 || type >= IPAHAL_HW_STATS_MAX) {
 		IPAHAL_ERR("Invalid type stat=%d\n", type);
@@ -949,8 +936,9 @@ int ipahal_stats_get_offset(enum ipahal_hw_stats_type type, void *params,
 		params, out);
 }
 
-struct ipahal_stats_init_pyld *ipahal_stats_generate_init_pyld(
-	enum ipahal_hw_stats_type type, void *params, bool is_atomic_ctx)
+struct ipahal_stats_init_pyld *
+ipahal_stats_generate_init_pyld(enum ipahal_hw_stats_type type, void *params,
+				bool is_atomic_ctx)
 {
 	struct ipahal_hw_stats_obj *hw_obj_ptr;
 
@@ -965,10 +953,10 @@ struct ipahal_stats_init_pyld *ipahal_stats_generate_init_pyld(
 }
 
 int ipahal_parse_stats(enum ipahal_hw_stats_type type, void *init_params,
-	void *raw_stats, void *parsed_stats)
+		       void *raw_stats, void *parsed_stats)
 {
 	if (WARN((type < 0 || type >= IPAHAL_HW_STATS_MAX),
-		"Invalid type stat = %d\n", type))
+		 "Invalid type stat = %d\n", type))
 		return -EFAULT;
 
 	if (WARN((!raw_stats || !parsed_stats), "Null arg\n"))
@@ -979,7 +967,7 @@ int ipahal_parse_stats(enum ipahal_hw_stats_type type, void *init_params,
 }
 
 void ipahal_set_flt_rt_sw_stats(void *raw_stats,
-	struct ipa_flt_rt_stats sw_stats)
+				struct ipa_flt_rt_stats sw_stats)
 {
 	struct ipahal_stats_flt_rt_v4_5_hw *raw_hw =
 		(struct ipahal_stats_flt_rt_v4_5_hw *)raw_stats;

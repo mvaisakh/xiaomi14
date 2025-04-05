@@ -16,20 +16,20 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-#include "hif_io32.h"
-#include "reg_struct.h"
 #include "ce_api.h"
-#include "ce_main.h"
 #include "ce_internal.h"
+#include "ce_main.h"
 #include "ce_reg.h"
-#include "qdf_lock.h"
-#include "regtable.h"
-#include "hif_main.h"
-#include "hif_debug.h"
 #include "hal_api.h"
-#include "pld_common.h"
-#include "qdf_module.h"
 #include "hif.h"
+#include "hif_debug.h"
+#include "hif_io32.h"
+#include "hif_main.h"
+#include "pld_common.h"
+#include "qdf_lock.h"
+#include "qdf_module.h"
+#include "reg_struct.h"
+#include "regtable.h"
 
 /*
  * Support for Copy Engine hardware, which is mainly used for
@@ -71,11 +71,11 @@
  * Target TX harsh result toeplitz_hash_result
  */
 
-#define CE_ADDR_COPY(desc, dma_addr) do {\
-		(desc)->buffer_addr_lo = (uint32_t)((dma_addr) &\
-							  0xFFFFFFFF);\
-		(desc)->buffer_addr_hi =\
-			(uint32_t)(((dma_addr) >> 32) & 0xFF);\
+#define CE_ADDR_COPY(desc, dma_addr)                                          \
+	do {                                                                  \
+		(desc)->buffer_addr_lo = (uint32_t)((dma_addr) & 0xFFFFFFFF); \
+		(desc)->buffer_addr_hi =                                      \
+			(uint32_t)(((dma_addr) >> 32) & 0xFF);                \
 	} while (0)
 
 void hif_display_ctrl_traffic_pipes_state(struct hif_opaque_softc *hif_ctx)
@@ -85,11 +85,10 @@ void hif_display_ctrl_traffic_pipes_state(struct hif_opaque_softc *hif_ctx)
 	uint32_t hp = 0, tp = 0;
 
 	CE_state = scn->ce_id_to_state[2];
-	hal_get_sw_hptp(scn->hal_soc,
-			CE_state->status_ring->srng_ctx,
-			&tp, &hp);
-	hif_info_high("CE-2 Dest status ring current snapshot HP:%u TP:%u",
-		      hp, tp);
+	hal_get_sw_hptp(scn->hal_soc, CE_state->status_ring->srng_ctx, &tp,
+			&hp);
+	hif_info_high("CE-2 Dest status ring current snapshot HP:%u TP:%u", hp,
+		      tp);
 
 	hp = 0;
 	tp = 0;
@@ -101,9 +100,8 @@ void hif_display_ctrl_traffic_pipes_state(struct hif_opaque_softc *hif_ctx)
 #if defined(HIF_CONFIG_SLUB_DEBUG_ON) || defined(HIF_CE_DEBUG_DATA_BUF)
 void hif_record_ce_srng_desc_event(struct hif_softc *scn, int ce_id,
 				   enum hif_ce_event_type type,
-				   union ce_srng_desc *descriptor,
-				   void *memory, int index,
-				   int len, void *hal_ring)
+				   union ce_srng_desc *descriptor, void *memory,
+				   int index, int len, void *hal_ring)
 {
 	int record_index;
 	struct hif_ce_desc_event *event;
@@ -124,8 +122,8 @@ void hif_record_ce_srng_desc_event(struct hif_softc *scn, int ce_id,
 	if (!hist_ev)
 		return;
 
-	record_index = get_next_record_index(
-			&ce_hist->history_index[ce_id], HIF_CE_HISTORY_MAX);
+	record_index = get_next_record_index(&ce_hist->history_index[ce_id],
+					     HIF_CE_HISTORY_MAX);
 
 	event = &hist_ev[record_index];
 
@@ -157,14 +155,11 @@ void hif_record_ce_srng_desc_event(struct hif_softc *scn, int ce_id,
 }
 #endif /* HIF_CONFIG_SLUB_DEBUG_ON || HIF_CE_DEBUG_DATA_BUF */
 
-static QDF_STATUS
-ce_send_nolock_srng(struct CE_handle *copyeng,
-			   void *per_transfer_context,
-			   qdf_dma_addr_t buffer,
-			   uint32_t nbytes,
-			   uint32_t transfer_id,
-			   uint32_t flags,
-			   uint32_t user_flags)
+static QDF_STATUS ce_send_nolock_srng(struct CE_handle *copyeng,
+				      void *per_transfer_context,
+				      qdf_dma_addr_t buffer, uint32_t nbytes,
+				      uint32_t transfer_id, uint32_t flags,
+				      uint32_t user_flags)
 {
 	QDF_STATUS status;
 	struct CE_state *CE_state = (struct CE_state *)copyeng;
@@ -177,7 +172,7 @@ ce_send_nolock_srng(struct CE_handle *copyeng,
 	if (Q_TARGET_ACCESS_BEGIN(scn) < 0)
 		return QDF_STATUS_E_FAILURE;
 	if (unlikely(hal_srng_src_num_avail(scn->hal_soc, src_ring->srng_ctx,
-					false) <= 0)) {
+					    false) <= 0)) {
 		OL_ATH_CE_PKT_ERROR_COUNT_INCR(scn, CE_RING_DELTA_FAIL);
 		Q_TARGET_ACCESS_END(scn);
 		return QDF_STATUS_E_FAILURE;
@@ -192,29 +187,28 @@ ce_send_nolock_srng(struct CE_handle *copyeng,
 		}
 
 		src_desc = hal_srng_src_get_next_reaped(scn->hal_soc,
-				src_ring->srng_ctx);
+							src_ring->srng_ctx);
 		if (!src_desc) {
 			Q_TARGET_ACCESS_END(scn);
 			return QDF_STATUS_E_INVAL;
 		}
 
 		/* Update low 32 bits source descriptor address */
-		src_desc->buffer_addr_lo =
-			(uint32_t)(dma_addr & 0xFFFFFFFF);
-		src_desc->buffer_addr_hi =
-			(uint32_t)((dma_addr >> 32) & 0xFF);
+		src_desc->buffer_addr_lo = (uint32_t)(dma_addr & 0xFFFFFFFF);
+		src_desc->buffer_addr_hi = (uint32_t)((dma_addr >> 32) & 0xFF);
 
 		src_desc->meta_data = transfer_id;
 
 		/*
-		 * Set the swap bit if:
-		 * typical sends on this CE are swapped (host is big-endian)
-		 * and this send doesn't disable the swapping
-		 * (data is not bytestream)
-		 */
+     * Set the swap bit if:
+     * typical sends on this CE are swapped (host is big-endian)
+     * and this send doesn't disable the swapping
+     * (data is not bytestream)
+     */
 		src_desc->byte_swap =
-			(((CE_state->attr_flags & CE_ATTR_BYTE_SWAP_DATA)
-			  != 0) & ((flags & CE_SEND_FLAG_SWAP_DISABLE) == 0));
+			(((CE_state->attr_flags & CE_ATTR_BYTE_SWAP_DATA) !=
+			  0) &
+			 ((flags & CE_SEND_FLAG_SWAP_DISABLE) == 0));
 		src_desc->gather = ((flags & CE_SEND_FLAG_GATHER) != 0);
 		src_desc->nbytes = nbytes;
 
@@ -225,8 +219,8 @@ ce_send_nolock_srng(struct CE_handle *copyeng,
 		hal_srng_access_end(scn->hal_soc, src_ring->srng_ctx);
 
 		/* src_ring->write index hasn't been updated event though
-		 * the register has already been written to.
-		 */
+     * the register has already been written to.
+     */
 		hif_record_ce_srng_desc_event(scn, CE_state->id, event_type,
 					      (union ce_srng_desc *)src_desc,
 					      per_transfer_context,
@@ -240,10 +234,10 @@ ce_send_nolock_srng(struct CE_handle *copyeng,
 	return status;
 }
 
-static QDF_STATUS
-ce_sendlist_send_srng(struct CE_handle *copyeng,
-		 void *per_transfer_context,
-		 struct ce_sendlist *sendlist, unsigned int transfer_id)
+static QDF_STATUS ce_sendlist_send_srng(struct CE_handle *copyeng,
+					void *per_transfer_context,
+					struct ce_sendlist *sendlist,
+					unsigned int transfer_id)
 {
 	QDF_STATUS status = QDF_STATUS_E_NOMEM;
 	struct ce_sendlist_s *sl = (struct ce_sendlist_s *)sendlist;
@@ -270,11 +264,10 @@ ce_sendlist_send_srng(struct CE_handle *copyeng,
 			item = &sl->item[i];
 			/* TBDXXX: Support extensible sendlist_types? */
 			QDF_ASSERT(item->send_type == CE_SIMPLE_BUFFER_TYPE);
-			status = ce_send_nolock_srng(copyeng,
-					CE_SENDLIST_ITEM_CTXT,
-				(qdf_dma_addr_t) item->data,
-				item->u.nbytes, transfer_id,
-				item->flags | CE_SEND_FLAG_GATHER,
+			status = ce_send_nolock_srng(
+				copyeng, CE_SENDLIST_ITEM_CTXT,
+				(qdf_dma_addr_t)item->data, item->u.nbytes,
+				transfer_id, item->flags | CE_SEND_FLAG_GATHER,
 				item->user_flags);
 			QDF_ASSERT(status == QDF_STATUS_SUCCESS);
 		}
@@ -283,25 +276,26 @@ ce_sendlist_send_srng(struct CE_handle *copyeng,
 		/* TBDXXX: Support extensible sendlist_types? */
 		QDF_ASSERT(item->send_type == CE_SIMPLE_BUFFER_TYPE);
 		status = ce_send_nolock_srng(copyeng, per_transfer_context,
-					(qdf_dma_addr_t) item->data,
-					item->u.nbytes,
-					transfer_id, item->flags,
-					item->user_flags);
+					     (qdf_dma_addr_t)item->data,
+					     item->u.nbytes, transfer_id,
+					     item->flags, item->user_flags);
 		QDF_ASSERT(status == QDF_STATUS_SUCCESS);
 		QDF_NBUF_UPDATE_TX_PKT_COUNT((qdf_nbuf_t)per_transfer_context,
-					QDF_NBUF_TX_PKT_CE);
-		DPTRACE(qdf_dp_trace((qdf_nbuf_t)per_transfer_context,
+					     QDF_NBUF_TX_PKT_CE);
+		DPTRACE(qdf_dp_trace(
+			(qdf_nbuf_t)per_transfer_context,
 			QDF_DP_TRACE_CE_PACKET_PTR_RECORD,
 			QDF_TRACE_DEFAULT_PDEV_ID,
 			(uint8_t *)(((qdf_nbuf_t)per_transfer_context)->data),
-			sizeof(((qdf_nbuf_t)per_transfer_context)->data), QDF_TX));
+			sizeof(((qdf_nbuf_t)per_transfer_context)->data),
+			QDF_TX));
 	} else {
 		/*
-		 * Probably not worth the additional complexity to support
-		 * partial sends with continuation or notification.  We expect
-		 * to use large rings and small sendlists. If we can't handle
-		 * the entire request at once, punt it back to the caller.
-		 */
+     * Probably not worth the additional complexity to support
+     * partial sends with continuation or notification.  We expect
+     * to use large rings and small sendlists. If we can't handle
+     * the entire request at once, punt it back to the caller.
+     */
 	}
 	qdf_spin_unlock_bh(&CE_state->ce_index_lock);
 
@@ -321,9 +315,9 @@ ce_sendlist_send_srng(struct CE_handle *copyeng,
  *
  * Return: QDF_STATUS_SUCCESS if the buffer is enqueued
  */
-static QDF_STATUS
-ce_recv_buf_enqueue_srng(struct CE_handle *copyeng,
-		    void *per_recv_context, qdf_dma_addr_t buffer)
+static QDF_STATUS ce_recv_buf_enqueue_srng(struct CE_handle *copyeng,
+					   void *per_recv_context,
+					   qdf_dma_addr_t buffer)
 {
 	QDF_STATUS status;
 	struct CE_state *CE_state = (struct CE_state *)copyeng;
@@ -349,23 +343,22 @@ ce_recv_buf_enqueue_srng(struct CE_handle *copyeng,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if ((hal_srng_src_num_avail(scn->hal_soc,
-					dest_ring->srng_ctx, false) > 0)) {
+	if ((hal_srng_src_num_avail(scn->hal_soc, dest_ring->srng_ctx, false) >
+	     0)) {
 		dest_desc = hal_srng_src_get_next(scn->hal_soc,
 						  dest_ring->srng_ctx);
 
 		if (!dest_desc) {
 			status = QDF_STATUS_E_FAILURE;
 		} else {
-
 			CE_ADDR_COPY(dest_desc, dma_addr);
 
 			dest_ring->per_transfer_context[write_index] =
 				per_recv_context;
 
 			/* Update Destination Ring Write Index */
-			write_index = CE_RING_IDX_INCR(nentries_mask,
-								write_index);
+			write_index =
+				CE_RING_IDX_INCR(nentries_mask, write_index);
 			status = QDF_STATUS_SUCCESS;
 		}
 	} else {
@@ -378,9 +371,8 @@ ce_recv_buf_enqueue_srng(struct CE_handle *copyeng,
 	hif_record_ce_srng_desc_event(scn, CE_state->id,
 				      HIF_CE_DEST_RING_BUFFER_POST,
 				      (union ce_srng_desc *)dest_desc,
-				      per_recv_context,
-				      dest_ring->write_index, 0,
-				      dest_ring->srng_ctx);
+				      per_recv_context, dest_ring->write_index,
+				      0, dest_ring->srng_ctx);
 
 	Q_TARGET_ACCESS_END(scn);
 	qdf_spin_unlock_bh(&CE_state->ce_index_lock);
@@ -391,25 +383,22 @@ ce_recv_buf_enqueue_srng(struct CE_handle *copyeng,
  * Guts of ce_recv_entries_done.
  * The caller takes responsibility for any necessary locking.
  */
-static unsigned int
-ce_recv_entries_done_nolock_srng(struct hif_softc *scn,
-			    struct CE_state *CE_state)
+static unsigned int ce_recv_entries_done_nolock_srng(struct hif_softc *scn,
+						     struct CE_state *CE_state)
 {
 	struct CE_ring_state *status_ring = CE_state->status_ring;
 
-	return hal_srng_dst_num_valid(scn->hal_soc,
-				status_ring->srng_ctx, false);
+	return hal_srng_dst_num_valid(scn->hal_soc, status_ring->srng_ctx,
+				      false);
 }
 
 /*
  * Guts of ce_send_entries_done.
  * The caller takes responsibility for any necessary locking.
  */
-static unsigned int
-ce_send_entries_done_nolock_srng(struct hif_softc *scn,
-					struct CE_state *CE_state)
+static unsigned int ce_send_entries_done_nolock_srng(struct hif_softc *scn,
+						     struct CE_state *CE_state)
 {
-
 	struct CE_ring_state *src_ring = CE_state->src_ring;
 	int count = 0;
 
@@ -427,14 +416,10 @@ ce_send_entries_done_nolock_srng(struct hif_softc *scn,
  * Guts of ce_completed_recv_next.
  * The caller takes responsibility for any necessary locking.
  */
-static QDF_STATUS
-ce_completed_recv_next_nolock_srng(struct CE_state *CE_state,
-			      void **per_CE_contextp,
-			      void **per_transfer_contextp,
-			      qdf_dma_addr_t *bufferp,
-			      unsigned int *nbytesp,
-			      unsigned int *transfer_idp,
-			      unsigned int *flagsp)
+static QDF_STATUS ce_completed_recv_next_nolock_srng(
+	struct CE_state *CE_state, void **per_CE_contextp,
+	void **per_transfer_contextp, qdf_dma_addr_t *bufferp,
+	unsigned int *nbytesp, unsigned int *transfer_idp, unsigned int *flagsp)
 {
 	QDF_STATUS status;
 	struct CE_ring_state *dest_ring = CE_state->dest_ring;
@@ -459,22 +444,21 @@ ce_completed_recv_next_nolock_srng(struct CE_state *CE_state,
 	}
 
 	/*
-	 * By copying the dest_desc_info element to local memory, we could
-	 * avoid extra memory read from non-cachable memory.
-	 */
+   * By copying the dest_desc_info element to local memory, we could
+   * avoid extra memory read from non-cachable memory.
+   */
 	dest_status_info = *dest_status;
 	nbytes = dest_status_info.nbytes;
 	if (nbytes == 0) {
 		uint32_t hp, tp;
 
 		/*
-		 * This closes a relatively unusual race where the Host
-		 * sees the updated DRRI before the update to the
-		 * corresponding descriptor has completed. We treat this
-		 * as a descriptor that is not yet done.
-		 */
-		hal_get_sw_hptp(scn->hal_soc, status_ring->srng_ctx,
-				&tp, &hp);
+     * This closes a relatively unusual race where the Host
+     * sees the updated DRRI before the update to the
+     * corresponding descriptor has completed. We treat this
+     * as a descriptor that is not yet done.
+     */
+		hal_get_sw_hptp(scn->hal_soc, status_ring->srng_ctx, &tp, &hp);
 		hif_info_rl("No data to reap, hp %d tp %d", hp, tp);
 		status = QDF_STATUS_E_FAILURE;
 		hal_srng_access_end_reap(scn->hal_soc, status_ring->srng_ctx);
@@ -482,9 +466,9 @@ ce_completed_recv_next_nolock_srng(struct CE_state *CE_state,
 	}
 
 	/*
-	 * Move the tail pointer since nbytes is non-zero and
-	 * this entry is processed.
-	 */
+   * Move the tail pointer since nbytes is non-zero and
+   * this entry is processed.
+   */
 	hal_srng_dst_get_next(scn->hal_soc, status_ring->srng_ctx);
 
 	dest_status->nbytes = 0;
@@ -497,14 +481,14 @@ ce_completed_recv_next_nolock_srng(struct CE_state *CE_state,
 		*per_CE_contextp = CE_state->recv_context;
 
 	/* NOTE: sw_index is more like a read_index in this context. It has a
-	 * one-to-one mapping with status ring.
-	 * Get the per trasnfer context from dest_ring.
-	 */
+   * one-to-one mapping with status ring.
+   * Get the per trasnfer context from dest_ring.
+   */
 	if (per_transfer_contextp)
 		*per_transfer_contextp =
 			dest_ring->per_transfer_context[sw_index];
 
-	dest_ring->per_transfer_context[sw_index] = 0;  /* sanity */
+	dest_ring->per_transfer_context[sw_index] = 0; /* sanity */
 
 	/* Update sw_index */
 	sw_index = CE_RING_IDX_INCR(nentries_mask, sw_index);
@@ -513,28 +497,24 @@ ce_completed_recv_next_nolock_srng(struct CE_state *CE_state,
 
 	hal_srng_access_end(scn->hal_soc, status_ring->srng_ctx);
 	hif_record_ce_srng_desc_event(scn, CE_state->id,
-				      HIF_CE_DEST_RING_BUFFER_REAP,
-				      NULL,
-				      dest_ring->
-				      per_transfer_context[sw_index],
+				      HIF_CE_DEST_RING_BUFFER_REAP, NULL,
+				      dest_ring->per_transfer_context[sw_index],
 				      dest_ring->sw_index, nbytes,
 				      dest_ring->srng_ctx);
 
 done:
 	hif_record_ce_srng_desc_event(scn, CE_state->id,
 				      HIF_CE_DEST_STATUS_RING_REAP,
-				      (union ce_srng_desc *)dest_status,
-				      NULL,
-				      -1, 0,
-				      status_ring->srng_ctx);
+				      (union ce_srng_desc *)dest_status, NULL,
+				      -1, 0, status_ring->srng_ctx);
 
 	return status;
 }
 
-static QDF_STATUS
-ce_revoke_recv_next_srng(struct CE_handle *copyeng,
-		    void **per_CE_contextp,
-		    void **per_transfer_contextp, qdf_dma_addr_t *bufferp)
+static QDF_STATUS ce_revoke_recv_next_srng(struct CE_handle *copyeng,
+					   void **per_CE_contextp,
+					   void **per_transfer_contextp,
+					   qdf_dma_addr_t *bufferp)
 {
 	struct CE_state *CE_state = (struct CE_state *)copyeng;
 	struct CE_ring_state *dest_ring = CE_state->dest_ring;
@@ -549,9 +529,9 @@ ce_revoke_recv_next_srng(struct CE_handle *copyeng,
 		*per_CE_contextp = CE_state->recv_context;
 
 	/* NOTE: sw_index is more like a read_index in this context. It has a
-	 * one-to-one mapping with status ring.
-	 * Get the per trasnfer context from dest_ring.
-	 */
+   * one-to-one mapping with status ring.
+   * Get the per trasnfer context from dest_ring.
+   */
 	if (per_transfer_contextp)
 		*per_transfer_contextp =
 			dest_ring->per_transfer_context[sw_index];
@@ -572,16 +552,11 @@ ce_revoke_recv_next_srng(struct CE_handle *copyeng,
  * Guts of ce_completed_send_next.
  * The caller takes responsibility for any necessary locking.
  */
-static QDF_STATUS
-ce_completed_send_next_nolock_srng(struct CE_state *CE_state,
-			      void **per_CE_contextp,
-			      void **per_transfer_contextp,
-			      qdf_dma_addr_t *bufferp,
-			      unsigned int *nbytesp,
-			      unsigned int *transfer_idp,
-			      unsigned int *sw_idx,
-			      unsigned int *hw_idx,
-			      uint32_t *toeplitz_hash_result)
+static QDF_STATUS ce_completed_send_next_nolock_srng(
+	struct CE_state *CE_state, void **per_CE_contextp,
+	void **per_transfer_contextp, qdf_dma_addr_t *bufferp,
+	unsigned int *nbytesp, unsigned int *transfer_idp, unsigned int *sw_idx,
+	unsigned int *hw_idx, uint32_t *toeplitz_hash_result)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct CE_ring_state *src_ring = CE_state->src_ring;
@@ -598,19 +573,16 @@ ce_completed_send_next_nolock_srng(struct CE_state *CE_state,
 
 	src_desc = hal_srng_src_reap_next(scn->hal_soc, src_ring->srng_ctx);
 	if (src_desc) {
-		hif_record_ce_srng_desc_event(scn, CE_state->id,
-					      HIF_TX_DESC_COMPLETION,
-					      (union ce_srng_desc *)src_desc,
-					      src_ring->
-					      per_transfer_context[swi],
-					      swi, src_desc->nbytes,
-					      src_ring->srng_ctx);
+		hif_record_ce_srng_desc_event(
+			scn, CE_state->id, HIF_TX_DESC_COMPLETION,
+			(union ce_srng_desc *)src_desc,
+			src_ring->per_transfer_context[swi], swi,
+			src_desc->nbytes, src_ring->srng_ctx);
 
 		/* Return data from completed source descriptor */
-		*bufferp = (qdf_dma_addr_t)
-			(((uint64_t)(src_desc)->buffer_addr_lo +
-			  ((uint64_t)((src_desc)->buffer_addr_hi &
-				  0xFF) << 32)));
+		*bufferp = (qdf_dma_addr_t)((
+			(uint64_t)(src_desc)->buffer_addr_lo +
+			((uint64_t)((src_desc)->buffer_addr_hi & 0xFF) << 32)));
 		*nbytesp = src_desc->nbytes;
 		*transfer_idp = src_desc->meta_data;
 		*toeplitz_hash_result = 0; /*src_desc->toeplitz_hash_result;*/
@@ -623,7 +595,7 @@ ce_completed_send_next_nolock_srng(struct CE_state *CE_state,
 			*per_transfer_contextp =
 				src_ring->per_transfer_context[sw_index];
 
-		src_ring->per_transfer_context[sw_index] = 0;   /* sanity */
+		src_ring->per_transfer_context[sw_index] = 0; /* sanity */
 
 		/* Update sw_index */
 		sw_index = CE_RING_IDX_INCR(nentries_mask, sw_index);
@@ -637,13 +609,10 @@ ce_completed_send_next_nolock_srng(struct CE_state *CE_state,
 
 /* NB: Modelled after ce_completed_send_next */
 static QDF_STATUS
-ce_cancel_send_next_srng(struct CE_handle *copyeng,
-		void **per_CE_contextp,
-		void **per_transfer_contextp,
-		qdf_dma_addr_t *bufferp,
-		unsigned int *nbytesp,
-		unsigned int *transfer_idp,
-		uint32_t *toeplitz_hash_result)
+ce_cancel_send_next_srng(struct CE_handle *copyeng, void **per_CE_contextp,
+			 void **per_transfer_contextp, qdf_dma_addr_t *bufferp,
+			 unsigned int *nbytesp, unsigned int *transfer_idp,
+			 uint32_t *toeplitz_hash_result)
 {
 	struct CE_state *CE_state;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -668,13 +637,12 @@ ce_cancel_send_next_srng(struct CE_handle *copyeng,
 	}
 
 	src_desc = hal_srng_src_pending_reap_next(scn->hal_soc,
-			src_ring->srng_ctx);
+						  src_ring->srng_ctx);
 	if (src_desc) {
 		/* Return data from completed source descriptor */
-		*bufferp = (qdf_dma_addr_t)
-			(((uint64_t)(src_desc)->buffer_addr_lo +
-			  ((uint64_t)((src_desc)->buffer_addr_hi &
-				  0xFF) << 32)));
+		*bufferp = (qdf_dma_addr_t)((
+			(uint64_t)(src_desc)->buffer_addr_lo +
+			((uint64_t)((src_desc)->buffer_addr_hi & 0xFF) << 32)));
 		*nbytesp = src_desc->nbytes;
 		*transfer_idp = src_desc->meta_data;
 		*toeplitz_hash_result = 0; /*src_desc->toeplitz_hash_result;*/
@@ -687,7 +655,7 @@ ce_cancel_send_next_srng(struct CE_handle *copyeng,
 			*per_transfer_contextp =
 				src_ring->per_transfer_context[sw_index];
 
-		src_ring->per_transfer_context[sw_index] = 0;   /* sanity */
+		src_ring->per_transfer_context[sw_index] = 0; /* sanity */
 
 		/* Update sw_index */
 		sw_index = CE_RING_IDX_INCR(nentries_mask, sw_index);
@@ -706,9 +674,8 @@ ce_cancel_send_next_srng(struct CE_handle *copyeng,
  *
  * Called with target_lock held.
  */
-static void
-ce_per_engine_handler_adjust_srng(struct CE_state *CE_state,
-			     int disable_copy_compl_intr)
+static void ce_per_engine_handler_adjust_srng(struct CE_state *CE_state,
+					      int disable_copy_compl_intr)
 {
 }
 
@@ -735,7 +702,7 @@ static uint32_t ce_get_desc_size_srng(uint8_t ring_type)
 }
 
 static void ce_srng_msi_ring_params_setup(struct hif_softc *scn, uint32_t ce_id,
-			      struct hal_srng_params *ring_params)
+					  struct hal_srng_params *ring_params)
 {
 	uint32_t addr_low;
 	uint32_t addr_high;
@@ -758,7 +725,7 @@ static void ce_srng_msi_ring_params_setup(struct hif_softc *scn, uint32_t ce_id,
 
 	ring_params->msi_addr = addr_low;
 	ring_params->msi_addr |= (qdf_dma_addr_t)(((uint64_t)addr_high) << 32);
-	ring_params->msi_data =  irq_id + msi_data_start;
+	ring_params->msi_data = irq_id + msi_data_start;
 	ring_params->flags |= HAL_SRNG_MSI_INTR;
 
 	hif_debug("ce_id %d irq_id %d, msi_addr %pK, msi_data %d", ce_id,
@@ -769,7 +736,7 @@ static void ce_srng_src_ring_setup(struct hif_softc *scn, uint32_t ce_id,
 				   struct CE_ring_state *src_ring,
 				   struct CE_attr *attr)
 {
-	struct hal_srng_params ring_params = {0};
+	struct hal_srng_params ring_params = { 0 };
 
 	hif_debug("%s: ce_id %d", __func__, ce_id);
 
@@ -777,11 +744,11 @@ static void ce_srng_src_ring_setup(struct hif_softc *scn, uint32_t ce_id,
 	ring_params.ring_base_vaddr = src_ring->base_addr_owner_space;
 	ring_params.num_entries = src_ring->nentries;
 	/*
-	 * The minimum increment for the timer is 8us
-	 * A default value of 0 disables the timer
-	 * A valid default value caused continuous interrupts to
-	 * fire with MSI enabled. Need to revisit usage of the timer
-	 */
+   * The minimum increment for the timer is 8us
+   * A default value of 0 disables the timer
+   * A valid default value caused continuous interrupts to
+   * fire with MSI enabled. Need to revisit usage of the timer
+   */
 
 	if (!(CE_ATTR_DISABLE_INTR & attr->flags)) {
 		ce_srng_msi_ring_params_setup(scn, ce_id, &ring_params);
@@ -791,8 +758,8 @@ static void ce_srng_src_ring_setup(struct hif_softc *scn, uint32_t ce_id,
 		ring_params.prefetch_timer = HAL_SRNG_PREFETCH_TIMER;
 	}
 
-	src_ring->srng_ctx = hal_srng_setup(scn->hal_soc, CE_SRC, ce_id, 0,
-					    &ring_params, 0);
+	src_ring->srng_ctx =
+		hal_srng_setup(scn->hal_soc, CE_SRC, ce_id, 0, &ring_params, 0);
 }
 
 #ifdef WLAN_WAR_CE_DISABLE_SRNG_TIMER_IRQ
@@ -847,9 +814,9 @@ static inline bool ce_is_status_ring_timer_thresh_war_needed(void)
  * engine data structures work with 1 empty entry, but the software frequently
  * fails to post the last entry due to the race condition.
  */
-static void ce_srng_initialize_dest_timer_interrupt_war(
-					struct CE_ring_state *dest_ring,
-					struct hal_srng_params *ring_params)
+static void
+ce_srng_initialize_dest_timer_interrupt_war(struct CE_ring_state *dest_ring,
+					    struct hal_srng_params *ring_params)
 {
 	int num_buffers_when_fully_posted = dest_ring->nentries - 2;
 
@@ -859,12 +826,11 @@ static void ce_srng_initialize_dest_timer_interrupt_war(
 	ring_params->flags |= HAL_SRNG_LOW_THRES_INTR_ENABLE;
 }
 
-static void ce_srng_dest_ring_setup(struct hif_softc *scn,
-				    uint32_t ce_id,
+static void ce_srng_dest_ring_setup(struct hif_softc *scn, uint32_t ce_id,
 				    struct CE_ring_state *dest_ring,
 				    struct CE_attr *attr)
 {
-	struct hal_srng_params ring_params = {0};
+	struct hal_srng_params ring_params = { 0 };
 
 	hif_debug("ce_id: %d", ce_id);
 
@@ -877,7 +843,7 @@ static void ce_srng_dest_ring_setup(struct hif_softc *scn,
 		ce_srng_msi_ring_params_setup(scn, ce_id, &ring_params);
 		if (ce_is_status_ring_timer_thresh_war_needed()) {
 			ce_srng_initialize_dest_timer_interrupt_war(
-					dest_ring, &ring_params);
+				dest_ring, &ring_params);
 		} else {
 			/* normal behavior for future chips */
 			ce_srng_initialize_dest_ring_thresh(dest_ring,
@@ -887,8 +853,8 @@ static void ce_srng_dest_ring_setup(struct hif_softc *scn,
 	}
 
 	/*Dest ring is also source ring*/
-	dest_ring->srng_ctx = hal_srng_setup(scn->hal_soc, CE_DST, ce_id, 0,
-					     &ring_params, 0);
+	dest_ring->srng_ctx =
+		hal_srng_setup(scn->hal_soc, CE_DST, ce_id, 0, &ring_params, 0);
 }
 
 #ifdef WLAN_CE_INTERRUPT_THRESHOLD_CONFIG
@@ -900,19 +866,19 @@ static void ce_srng_dest_ring_setup(struct hif_softc *scn,
  *
  * Return: None
  */
-static inline
-void ce_status_ring_config_int_threshold(struct hif_softc *scn,
-					 struct hal_srng_params *ring_params)
+static inline void
+ce_status_ring_config_int_threshold(struct hif_softc *scn,
+				    struct hal_srng_params *ring_params)
 {
 	ring_params->intr_timer_thres_us =
-			scn->ini_cfg.ce_status_ring_timer_threshold;
+		scn->ini_cfg.ce_status_ring_timer_threshold;
 	ring_params->intr_batch_cntr_thres_entries =
-			scn->ini_cfg.ce_status_ring_batch_count_threshold;
+		scn->ini_cfg.ce_status_ring_batch_count_threshold;
 }
 #else
-static inline
-void ce_status_ring_config_int_threshold(struct hif_softc *scn,
-					 struct hal_srng_params *ring_params)
+static inline void
+ce_status_ring_config_int_threshold(struct hif_softc *scn,
+				    struct hal_srng_params *ring_params)
 {
 	ring_params->intr_timer_thres_us = 0x1000;
 	ring_params->intr_batch_cntr_thres_entries = 0x1;
@@ -920,10 +886,10 @@ void ce_status_ring_config_int_threshold(struct hif_softc *scn,
 #endif /* WLAN_CE_INTERRUPT_THRESHOLD_CONFIG */
 
 static void ce_srng_status_ring_setup(struct hif_softc *scn, uint32_t ce_id,
-				struct CE_ring_state *status_ring,
-				struct CE_attr *attr)
+				      struct CE_ring_state *status_ring,
+				      struct CE_attr *attr)
 {
-	struct hal_srng_params ring_params = {0};
+	struct hal_srng_params ring_params = { 0 };
 
 	hif_debug("ce_id: %d", ce_id);
 
@@ -941,8 +907,8 @@ static void ce_srng_status_ring_setup(struct hif_softc *scn, uint32_t ce_id,
 }
 
 static int ce_ring_setup_srng(struct hif_softc *scn, uint8_t ring_type,
-		uint32_t ce_id, struct CE_ring_state *ring,
-		struct CE_attr *attr)
+			      uint32_t ce_id, struct CE_ring_state *ring,
+			      struct CE_attr *attr)
 {
 	switch (ring_type) {
 	case CE_RING_SRC:
@@ -963,21 +929,20 @@ static int ce_ring_setup_srng(struct hif_softc *scn, uint8_t ring_type,
 }
 
 static void ce_ring_cleanup_srng(struct hif_softc *scn,
-				 struct CE_state *CE_state,
-				 uint8_t ring_type)
+				 struct CE_state *CE_state, uint8_t ring_type)
 {
 	hal_ring_handle_t hal_srng = NULL;
 
 	switch (ring_type) {
 	case CE_RING_SRC:
 		hal_srng = (hal_ring_handle_t)CE_state->src_ring->srng_ctx;
-	break;
+		break;
 	case CE_RING_DEST:
 		hal_srng = (hal_ring_handle_t)CE_state->dest_ring->srng_ctx;
-	break;
+		break;
 	case CE_RING_STATUS:
 		hal_srng = (hal_ring_handle_t)CE_state->status_ring->srng_ctx;
-	break;
+		break;
 	}
 
 	if (hal_srng)
@@ -991,22 +956,20 @@ static void ce_construct_shadow_config_srng(struct hif_softc *scn)
 
 	for (ce_id = 0; ce_id < scn->ce_count; ce_id++) {
 		if (hif_state->host_ce_config[ce_id].src_nentries)
-			hal_set_one_shadow_config(scn->hal_soc,
-						  CE_SRC, ce_id);
+			hal_set_one_shadow_config(scn->hal_soc, CE_SRC, ce_id);
 
 		if (hif_state->host_ce_config[ce_id].dest_nentries) {
-			hal_set_one_shadow_config(scn->hal_soc,
-						  CE_DST, ce_id);
+			hal_set_one_shadow_config(scn->hal_soc, CE_DST, ce_id);
 
-			hal_set_one_shadow_config(scn->hal_soc,
-						  CE_DST_STATUS, ce_id);
+			hal_set_one_shadow_config(scn->hal_soc, CE_DST_STATUS,
+						  ce_id);
 		}
 	}
 }
 
-static void ce_prepare_shadow_register_v2_cfg_srng(struct hif_softc *scn,
-		struct pld_shadow_reg_v2_cfg **shadow_config,
-		int *num_shadow_registers_configured)
+static void ce_prepare_shadow_register_v2_cfg_srng(
+	struct hif_softc *scn, struct pld_shadow_reg_v2_cfg **shadow_config,
+	int *num_shadow_registers_configured)
 {
 	if (!scn->hal_soc) {
 		hif_err("hal not initialized: not initializing shadow config");
@@ -1032,9 +995,9 @@ static void ce_prepare_shadow_register_v2_cfg_srng(struct hif_softc *scn,
 }
 
 #ifdef CONFIG_SHADOW_V3
-static void ce_prepare_shadow_register_v3_cfg_srng(struct hif_softc *scn,
-		struct pld_shadow_reg_v3_cfg **shadow_config,
-		int *num_shadow_registers_configured)
+static void ce_prepare_shadow_register_v3_cfg_srng(
+	struct hif_softc *scn, struct pld_shadow_reg_v3_cfg **shadow_config,
+	int *num_shadow_registers_configured)
 {
 	if (!scn->hal_soc) {
 		hif_err("hal not initialized: not initializing shadow config");
@@ -1069,17 +1032,16 @@ static void ce_prepare_shadow_register_v3_cfg_srng(struct hif_softc *scn,
  *
  * Return: 0 for success and non zero for failure
  */
-static
-int ce_get_index_info_srng(struct hif_softc *scn, void *ce_state,
-			   struct ce_index *info)
+static int ce_get_index_info_srng(struct hif_softc *scn, void *ce_state,
+				  struct ce_index *info)
 {
 	struct CE_state *CE_state = (struct CE_state *)ce_state;
 	uint32_t tp, hp;
 
 	info->id = CE_state->id;
 	if (CE_state->src_ring) {
-		hal_get_sw_hptp(scn->hal_soc, CE_state->src_ring->srng_ctx,
-				&tp, &hp);
+		hal_get_sw_hptp(scn->hal_soc, CE_state->src_ring->srng_ctx, &tp,
+				&hp);
 		info->u.srng_info.tp = tp;
 		info->u.srng_info.hp = hp;
 	} else if (CE_state->dest_ring && CE_state->status_ring) {
@@ -1108,13 +1070,14 @@ int ce_get_index_info_srng(struct hif_softc *scn, void *ce_state,
  *
  * Return: 0 for success and non zero for failure
  */
-static QDF_STATUS
-ce_set_srng_msi_irq_config_by_ceid(struct hif_softc *scn, uint8_t ce_id,
-				   uint64_t addr, uint32_t data)
+static QDF_STATUS ce_set_srng_msi_irq_config_by_ceid(struct hif_softc *scn,
+						     uint8_t ce_id,
+						     uint64_t addr,
+						     uint32_t data)
 {
 	struct CE_state *ce_state;
 	hal_ring_handle_t ring_hdl;
-	struct hal_srng_params ring_params = {0};
+	struct hal_srng_params ring_params = { 0 };
 
 	ce_state = scn->ce_id_to_state[ce_id];
 	if (!ce_state)
@@ -1139,7 +1102,7 @@ ce_set_srng_msi_irq_config_by_ceid(struct hif_softc *scn, uint8_t ce_id,
 
 		if (ce_is_status_ring_timer_thresh_war_needed()) {
 			ce_srng_initialize_dest_timer_interrupt_war(
-					ce_state->dest_ring, &ring_params);
+				ce_state->dest_ring, &ring_params);
 		} else {
 			ce_srng_initialize_dest_ring_thresh(ce_state->dest_ring,
 							    &ring_params);
@@ -1155,10 +1118,9 @@ ce_set_srng_msi_irq_config_by_ceid(struct hif_softc *scn, uint8_t ce_id,
 	return QDF_STATUS_SUCCESS;
 }
 
-static
-uint16_t ce_get_direct_link_dest_srng_buffers(struct hif_softc *scn,
-					      uint64_t **dma_addr,
-					      uint32_t *buf_size)
+static uint16_t ce_get_direct_link_dest_srng_buffers(struct hif_softc *scn,
+						     uint64_t **dma_addr,
+						     uint32_t *buf_size)
 {
 	struct HIF_CE_state *hif_state = HIF_GET_CE_STATE(scn);
 	struct CE_state *ce_state;
@@ -1210,9 +1172,9 @@ uint16_t ce_get_direct_link_dest_srng_buffers(struct hif_softc *scn,
  *
  * Return: QDF status
  */
-static void
-ce_save_srng_info(struct hif_softc *hif_ctx, struct hif_ce_ring_info *srng_info,
-		  void *srng_ctx)
+static void ce_save_srng_info(struct hif_softc *hif_ctx,
+			      struct hif_ce_ring_info *srng_info,
+			      void *srng_ctx)
 {
 	struct hal_srng_params params;
 
@@ -1223,16 +1185,14 @@ ce_save_srng_info(struct hif_softc *hif_ctx, struct hif_ce_ring_info *srng_info,
 	srng_info->num_entries = params.num_entries;
 	srng_info->entry_size = params.entry_size;
 	srng_info->ring_base_paddr = params.ring_base_paddr;
-	srng_info->hp_paddr =
-		      hal_srng_get_hp_addr(hif_ctx->hal_soc, srng_ctx);
-	srng_info->tp_paddr =
-		      hal_srng_get_tp_addr(hif_ctx->hal_soc, srng_ctx);
+	srng_info->hp_paddr = hal_srng_get_hp_addr(hif_ctx->hal_soc, srng_ctx);
+	srng_info->tp_paddr = hal_srng_get_tp_addr(hif_ctx->hal_soc, srng_ctx);
 }
 
-static
-QDF_STATUS ce_get_direct_link_srng_info(struct hif_softc *scn,
-					struct hif_direct_link_ce_info *info,
-					uint8_t max_ce_info_len)
+static QDF_STATUS
+ce_get_direct_link_srng_info(struct hif_softc *scn,
+			     struct hif_direct_link_ce_info *info,
+			     uint8_t max_ce_info_len)
 {
 	struct HIF_CE_state *hif_state = HIF_GET_CE_STATE(scn);
 	struct CE_state *ce_state;
@@ -1308,8 +1268,7 @@ static struct ce_ops ce_service_srng = {
 		ce_prepare_shadow_register_v3_cfg_srng,
 #endif
 #ifdef HIF_CE_LOG_INFO
-	.ce_get_index_info =
-		ce_get_index_info_srng,
+	.ce_get_index_info = ce_get_index_info_srng,
 #endif
 #ifdef FEATURE_DIRECT_LINK
 	.ce_set_irq_config_by_ceid = ce_set_srng_msi_irq_config_by_ceid,

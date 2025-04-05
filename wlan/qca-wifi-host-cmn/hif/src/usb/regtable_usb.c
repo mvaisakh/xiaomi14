@@ -16,16 +16,15 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "target_type.h"
-#include "targaddrs.h"
 #include "regtable_usb.h"
-#include "ar9888def.h"
 #include "ar6320def.h"
 #include "ar6320v2def.h"
+#include "ar9888def.h"
 #include "hif_debug.h"
+#include "targaddrs.h"
+#include "target_type.h"
 
-void target_register_tbl_attach(struct hif_softc *scn,
-					uint32_t target_type)
+void target_register_tbl_attach(struct hif_softc *scn, uint32_t target_type)
 {
 	switch (target_type) {
 	case TARGET_TYPE_AR9888:

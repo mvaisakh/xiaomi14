@@ -22,8 +22,8 @@
 
 #include <qdf_status.h>
 #include <target_if.h>
-#include <wlan_gpio_priv_api.h>
 #include <target_if_gpio.h>
+#include <wlan_gpio_priv_api.h>
 #include <wmi_unified_gpio_api.h>
 
 /**
@@ -33,9 +33,8 @@
  *
  * Return: status of operation.
  */
-static QDF_STATUS
-target_if_set_gpio_config(struct wlan_objmgr_psoc *psoc,
-			  struct gpio_config_params *param)
+static QDF_STATUS target_if_set_gpio_config(struct wlan_objmgr_psoc *psoc,
+					    struct gpio_config_params *param)
 {
 	struct wmi_unified *wmi_handle;
 
@@ -55,9 +54,8 @@ target_if_set_gpio_config(struct wlan_objmgr_psoc *psoc,
  *
  * Return: status of operation.
  */
-static QDF_STATUS
-target_if_set_gpio_output(struct wlan_objmgr_psoc *psoc,
-			  struct gpio_output_params *param)
+static QDF_STATUS target_if_set_gpio_output(struct wlan_objmgr_psoc *psoc,
+					    struct gpio_output_params *param)
 {
 	struct wmi_unified *wmi_handle;
 
@@ -86,4 +84,3 @@ target_if_gpio_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 
 	return QDF_STATUS_SUCCESS;
 }
-

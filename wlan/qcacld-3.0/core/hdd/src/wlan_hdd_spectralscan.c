@@ -23,19 +23,19 @@
  * WLAN Host Device Driver Spectral Scan Implementation
  */
 
-#include <linux/version.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <net/cfg80211.h>
-#include "osif_sync.h"
-#include "wlan_hdd_includes.h"
-#include "cds_api.h"
-#include "ani_global.h"
-#include "wlan_cfg80211_spectral.h"
 #include "wlan_hdd_spectralscan.h"
-#include <wlan_spectral_ucfg_api.h>
-#include "wma.h"
+#include "ani_global.h"
+#include "cds_api.h"
+#include "osif_sync.h"
+#include "wlan_cfg80211_spectral.h"
+#include "wlan_hdd_includes.h"
 #include "wlan_hdd_object_manager.h"
+#include "wma.h"
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/version.h>
+#include <net/cfg80211.h>
+#include <wlan_spectral_ucfg_api.h>
 #ifdef CNSS_GENL
 #ifdef CONFIG_CNSS_OUT_OF_TREE
 #include "cnss_nl.h"
@@ -56,9 +56,9 @@
  * Return: 0 on success and errno on failure
  */
 static int __wlan_hdd_cfg80211_spectral_scan_start(struct wiphy *wiphy,
-						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+						   struct wireless_dev *wdev,
+						   const void *data,
+						   int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -89,9 +89,8 @@ static int __wlan_hdd_cfg80211_spectral_scan_start(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 	wlan_spectral_update_rx_chainmask(adapter->deflink);
-	ret = wlan_cfg80211_spectral_scan_config_and_start(wiphy, hdd_ctx->pdev,
-							   vdev, data,
-							   data_len);
+	ret = wlan_cfg80211_spectral_scan_config_and_start(
+		wiphy, hdd_ctx->pdev, vdev, data, data_len);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_SPECTRAL_ID);
 	hdd_exit();
 
@@ -110,9 +109,9 @@ static int __wlan_hdd_cfg80211_spectral_scan_start(struct wiphy *wiphy,
  * Return: 0 on success and errno on failure
  */
 static int __wlan_hdd_cfg80211_spectral_scan_stop(struct wiphy *wiphy,
-						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+						  struct wireless_dev *wdev,
+						  const void *data,
+						  int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -142,8 +141,8 @@ static int __wlan_hdd_cfg80211_spectral_scan_stop(struct wiphy *wiphy,
 		hdd_err("can't get vdev");
 		return -EINVAL;
 	}
-	ret = wlan_cfg80211_spectral_scan_stop(wiphy, hdd_ctx->pdev,
-					       vdev, data, data_len);
+	ret = wlan_cfg80211_spectral_scan_stop(wiphy, hdd_ctx->pdev, vdev, data,
+					       data_len);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_SPECTRAL_ID);
 	hdd_exit();
 
@@ -161,11 +160,10 @@ static int __wlan_hdd_cfg80211_spectral_scan_stop(struct wiphy *wiphy,
  *
  * Return: 0 on success and errno on failure
  */
-static int __wlan_hdd_cfg80211_spectral_scan_get_config(
-						struct wiphy *wiphy,
-						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+static int
+__wlan_hdd_cfg80211_spectral_scan_get_config(struct wiphy *wiphy,
+					     struct wireless_dev *wdev,
+					     const void *data, int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -195,8 +193,8 @@ static int __wlan_hdd_cfg80211_spectral_scan_get_config(
 		hdd_err("can't get vdev");
 		return -EINVAL;
 	}
-	ret = wlan_cfg80211_spectral_scan_get_config(wiphy, hdd_ctx->pdev,
-						     vdev, data, data_len);
+	ret = wlan_cfg80211_spectral_scan_get_config(wiphy, hdd_ctx->pdev, vdev,
+						     data, data_len);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_SPECTRAL_ID);
 	hdd_exit();
 
@@ -214,11 +212,10 @@ static int __wlan_hdd_cfg80211_spectral_scan_get_config(
  *
  * Return: 0 on success and errno on failure
  */
-static int __wlan_hdd_cfg80211_spectral_scan_get_diag_stats(
-						struct wiphy *wiphy,
-						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+static int
+__wlan_hdd_cfg80211_spectral_scan_get_diag_stats(struct wiphy *wiphy,
+						 struct wireless_dev *wdev,
+						 const void *data, int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -248,9 +245,8 @@ static int __wlan_hdd_cfg80211_spectral_scan_get_diag_stats(
 		hdd_err("can't get vdev");
 		return -EINVAL;
 	}
-	ret = wlan_cfg80211_spectral_scan_get_diag_stats(
-						wiphy, hdd_ctx->pdev,
-						vdev, data, data_len);
+	ret = wlan_cfg80211_spectral_scan_get_diag_stats(wiphy, hdd_ctx->pdev,
+							 vdev, data, data_len);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_SPECTRAL_ID);
 	hdd_exit();
 
@@ -268,11 +264,10 @@ static int __wlan_hdd_cfg80211_spectral_scan_get_diag_stats(
  *
  * Return: 0 on success and errno on failure
  */
-static int __wlan_hdd_cfg80211_spectral_scan_get_cap_info(
-						struct wiphy *wiphy,
-						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+static int
+__wlan_hdd_cfg80211_spectral_scan_get_cap_info(struct wiphy *wiphy,
+					       struct wireless_dev *wdev,
+					       const void *data, int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -302,8 +297,8 @@ static int __wlan_hdd_cfg80211_spectral_scan_get_cap_info(
 		hdd_err("can't get vdev");
 		return -EINVAL;
 	}
-	ret = wlan_cfg80211_spectral_scan_get_cap(wiphy, hdd_ctx->pdev,
-						  vdev, data, data_len);
+	ret = wlan_cfg80211_spectral_scan_get_cap(wiphy, hdd_ctx->pdev, vdev,
+						  data, data_len);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_SPECTRAL_ID);
 	hdd_exit();
 
@@ -322,11 +317,10 @@ static int __wlan_hdd_cfg80211_spectral_scan_get_cap_info(
  *
  * Return: 0 on success and errno on failure
  */
-static int __wlan_hdd_cfg80211_spectral_scan_get_status(
-						struct wiphy *wiphy,
-						struct wireless_dev *wdev,
-						const void *data,
-						int data_len)
+static int
+__wlan_hdd_cfg80211_spectral_scan_get_status(struct wiphy *wiphy,
+					     struct wireless_dev *wdev,
+					     const void *data, int data_len)
 {
 	int ret;
 	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
@@ -356,8 +350,8 @@ static int __wlan_hdd_cfg80211_spectral_scan_get_status(
 		hdd_err("can't get vdev");
 		return -EINVAL;
 	}
-	ret = wlan_cfg80211_spectral_scan_get_status(wiphy, hdd_ctx->pdev,
-						     vdev, data, data_len);
+	ret = wlan_cfg80211_spectral_scan_get_status(wiphy, hdd_ctx->pdev, vdev,
+						     data, data_len);
 	hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_SPECTRAL_ID);
 	hdd_exit();
 
@@ -366,8 +360,7 @@ static int __wlan_hdd_cfg80211_spectral_scan_get_status(
 
 int wlan_hdd_cfg80211_spectral_scan_start(struct wiphy *wiphy,
 					  struct wireless_dev *wdev,
-					  const void *data,
-					  int data_len)
+					  const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -376,8 +369,8 @@ int wlan_hdd_cfg80211_spectral_scan_start(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_spectral_scan_start(wiphy, wdev,
-							data, data_len);
+	errno = __wlan_hdd_cfg80211_spectral_scan_start(wiphy, wdev, data,
+							data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -386,8 +379,7 @@ int wlan_hdd_cfg80211_spectral_scan_start(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_spectral_scan_stop(struct wiphy *wiphy,
 					 struct wireless_dev *wdev,
-					 const void *data,
-					 int data_len)
+					 const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -396,8 +388,8 @@ int wlan_hdd_cfg80211_spectral_scan_stop(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_spectral_scan_stop(wiphy, wdev,
-						       data, data_len);
+	errno = __wlan_hdd_cfg80211_spectral_scan_stop(wiphy, wdev, data,
+						       data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -406,8 +398,7 @@ int wlan_hdd_cfg80211_spectral_scan_stop(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_spectral_scan_get_config(struct wiphy *wiphy,
 					       struct wireless_dev *wdev,
-					       const void *data,
-					       int data_len)
+					       const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -416,8 +407,8 @@ int wlan_hdd_cfg80211_spectral_scan_get_config(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_spectral_scan_get_config(wiphy, wdev,
-							     data, data_len);
+	errno = __wlan_hdd_cfg80211_spectral_scan_get_config(wiphy, wdev, data,
+							     data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -436,9 +427,8 @@ int wlan_hdd_cfg80211_spectral_scan_get_diag_stats(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_spectral_scan_get_diag_stats(wiphy, wdev,
-								 data,
-								 data_len);
+	errno = __wlan_hdd_cfg80211_spectral_scan_get_diag_stats(
+		wiphy, wdev, data, data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -447,8 +437,7 @@ int wlan_hdd_cfg80211_spectral_scan_get_diag_stats(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_spectral_scan_get_cap_info(struct wiphy *wiphy,
 						 struct wireless_dev *wdev,
-						 const void *data,
-						 int data_len)
+						 const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -467,8 +456,7 @@ int wlan_hdd_cfg80211_spectral_scan_get_cap_info(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_spectral_scan_get_status(struct wiphy *wiphy,
 					       struct wireless_dev *wdev,
-					       const void *data,
-					       int data_len)
+					       const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -477,8 +465,8 @@ int wlan_hdd_cfg80211_spectral_scan_get_status(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_spectral_scan_get_status(wiphy, wdev,
-							     data, data_len);
+	errno = __wlan_hdd_cfg80211_spectral_scan_get_status(wiphy, wdev, data,
+							     data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
@@ -521,10 +509,10 @@ static void send_spectral_scan_reg_rsp_msg(struct hdd_context *hdd_ctx)
 	skb_put(skb, NLMSG_SPACE(sizeof(struct spectral_scan_msg_v)));
 
 	hdd_info("sending App Reg Response to process pid %d",
-			hdd_ctx->sscan_pid);
+		 hdd_ctx->sscan_pid);
 
 	err = nl_srv_ucast(skb, hdd_ctx->sscan_pid, MSG_DONTWAIT,
-			WLAN_NL_MSG_SPECTRAL_SCAN, CLD80211_MCGRP_OEM_MSGS);
+			   WLAN_NL_MSG_SPECTRAL_SCAN, CLD80211_MCGRP_OEM_MSGS);
 
 	if (err < 0)
 		hdd_err("SPECTRAL: failed to send to spectral scan reg"
@@ -556,11 +544,11 @@ static void __spectral_scan_msg_handler(const void *data, int data_len,
 		return;
 
 	/*
-	 * audit note: it is ok to pass a NULL policy here since only
-	 * one attribute is parsed and it is explicitly validated
-	 */
-	if (wlan_cfg80211_nla_parse(tb, CLD80211_ATTR_MAX, data,
-				    data_len, NULL)) {
+   * audit note: it is ok to pass a NULL policy here since only
+   * one attribute is parsed and it is explicitly validated
+   */
+	if (wlan_cfg80211_nla_parse(tb, CLD80211_ATTR_MAX, data, data_len,
+				    NULL)) {
 		hdd_err("nla parse fails");
 		return;
 	}
@@ -586,10 +574,9 @@ static void __spectral_scan_msg_handler(const void *data, int data_len,
 	case SPECTRAL_SCAN_REGISTER_REQ:
 		hdd_ctx->sscan_pid = ss_msg->pid;
 		hdd_debug("spectral scan application registered, pid=%d",
-				 hdd_ctx->sscan_pid);
+			  hdd_ctx->sscan_pid);
 		send_spectral_scan_reg_rsp_msg(hdd_ctx);
-		ucfg_spectral_scan_set_ppid(hdd_ctx->pdev,
-					    hdd_ctx->sscan_pid);
+		ucfg_spectral_scan_set_ppid(hdd_ctx->pdev, hdd_ctx->sscan_pid);
 		break;
 	default:
 		hdd_warn("invalid message type %d", ss_msg->msg_type);
@@ -597,8 +584,8 @@ static void __spectral_scan_msg_handler(const void *data, int data_len,
 	}
 }
 
-static void spectral_scan_msg_handler(const void *data, int data_len,
-				      void *ctx, int pid)
+static void spectral_scan_msg_handler(const void *data, int data_len, void *ctx,
+				      int pid)
 {
 	struct device *dev = ctx;
 	struct osif_psoc_sync *psoc_sync;

@@ -21,9 +21,9 @@
  */
 
 #include "wlan_qmi_wfds_api.h"
+#include "wlan_qmi_main.h"
 #include "wlan_qmi_objmgr.h"
 #include "wlan_qmi_priv.h"
-#include "wlan_qmi_main.h"
 
 QDF_STATUS wlan_qmi_wfds_init(struct wlan_objmgr_psoc *psoc)
 {
@@ -61,7 +61,7 @@ wlan_qmi_wfds_send_config_msg(struct wlan_objmgr_psoc *psoc,
 
 	if (!qmi_ctx) {
 		qmi_err("QMI context is NULL");
-		return  QDF_STATUS_E_INVAL;
+		return QDF_STATUS_E_INVAL;
 	}
 
 	if (qmi_ctx->qmi_cbs.qmi_wfds_send_config_msg)
@@ -78,7 +78,7 @@ wlan_qmi_wfds_send_req_mem_msg(struct wlan_objmgr_psoc *psoc,
 
 	if (!qmi_ctx) {
 		qmi_err("QMI context is NULL");
-		return  QDF_STATUS_E_INVAL;
+		return QDF_STATUS_E_INVAL;
 	}
 
 	if (qmi_ctx->qmi_cbs.qmi_wfds_send_req_mem_msg)
@@ -88,8 +88,9 @@ wlan_qmi_wfds_send_req_mem_msg(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-wlan_qmi_wfds_ipcc_map_n_cfg_msg(struct wlan_objmgr_psoc *psoc,
-			struct wlan_qmi_wfds_ipcc_map_n_cfg_req_msg *src_info)
+wlan_qmi_wfds_ipcc_map_n_cfg_msg(
+	struct wlan_objmgr_psoc *psoc,
+	struct wlan_qmi_wfds_ipcc_map_n_cfg_req_msg *src_info)
 {
 	struct wlan_qmi_psoc_context *qmi_ctx = qmi_psoc_get_priv(psoc);
 
@@ -99,7 +100,8 @@ wlan_qmi_wfds_ipcc_map_n_cfg_msg(struct wlan_objmgr_psoc *psoc,
 	}
 
 	if (qmi_ctx->qmi_cbs.qmi_wfds_send_ipcc_map_n_cfg_msg)
-		return qmi_ctx->qmi_cbs.qmi_wfds_send_ipcc_map_n_cfg_msg(src_info);
+		return qmi_ctx->qmi_cbs.qmi_wfds_send_ipcc_map_n_cfg_msg(
+			src_info);
 
 	return QDF_STATUS_E_FAILURE;
 }

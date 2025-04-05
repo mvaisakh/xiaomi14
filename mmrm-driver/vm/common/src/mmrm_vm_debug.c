@@ -19,7 +19,8 @@ struct dentry *msm_mmrm_debugfs_init(void)
 	/* create a directory in debugfs root (/sys/kernel/debug) */
 	dir = debugfs_create_dir("mmrm_vm", NULL);
 	if (IS_ERR_OR_NULL(dir)) {
-		d_mpr_e("%s: Call to debugfs_create_dir(%s) failed!\n", __func__, "mmrm");
+		d_mpr_e("%s: Call to debugfs_create_dir(%s) failed!\n",
+			__func__, "mmrm");
 		goto failed_create_dir;
 	}
 
@@ -41,4 +42,3 @@ void msm_mmrm_debugfs_deinit(struct dentry *dir)
 {
 	debugfs_remove_recursive(dir);
 }
-

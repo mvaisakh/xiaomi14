@@ -2,9 +2,9 @@
 
 #include "p2phc.h"
 
-p2phc_t g_p2phc = {.hooks_is_reg = false};
+p2phc_t g_p2phc = { .hooks_is_reg = false };
 
-#define ETH_HLEN	14		/* Total octets in header.	 */
+#define ETH_HLEN 14 /* Total octets in header.	 */
 
 #define IP_HDR_LEN_MAX (60)
 #define TCP_HDR_LEN_MAX (60)
@@ -16,8 +16,8 @@ static inline int p2phc_enable(const struct net *net)
 }
 
 /*
-* netfilter hooks handler
-*/
+ * netfilter hooks handler
+ */
 static inline int __disable_tcp_timestamps(struct sk_buff *skb)
 {
 	struct sock *sk;
@@ -40,25 +40,29 @@ static inline int __disable_tcp_timestamps(struct sk_buff *skb)
 
 #ifdef TX_HOOK_NETDEV
 static inline unsigned int __p2phc_tx_netdev_hook(struct sk_buff *skb,
-	struct net_device *dev)
+						  struct net_device *dev)
 {
 	p2phc_t *p2phc = &g_p2phc;
 	spinlock_t *plock = NULL;
 	struct dlhc *dlc = NULL;
 	struct iphdr *iph = NULL;
 	struct tcphdr *tcph = NULL;
-	unsigned char hc[HDR_LEN_MAX] = {0,}, dl_type;
+	unsigned char hc[HDR_LEN_MAX] =
+      {
+          0,
+      },
+                dl_type;
 	unsigned char *phc = hc, *h;
 	int hlen, hclen, clen;
 	unsigned int verdict = NF_ACCEPT;
-	static atomic_t pkg_cmp = {0}, pkg_mark = {0};
+	static atomic_t pkg_cmp = { 0 }, pkg_mark = { 0 };
 	(void)pkg_cmp;
 	(void)pkg_mark;
 
 	if (strncmp(skb->dev->name, "p2p", 3))
 		return NF_ACCEPT;
 
-	//p2phc_dbg("%s dev:%s", __func__, skb->dev->name);
+	// p2phc_dbg("%s dev:%s", __func__, skb->dev->name);
 
 	iph = ip_hdr(skb);
 	if (iph == NULL)
@@ -106,9 +110,10 @@ static inline unsigned int __p2phc_tx_netdev_hook(struct sk_buff *skb,
 	dl_type = hc[0] & DL_TYPE_MASK;
 
 	if (clen) {
-		p2phc_dbg("%s hc compress clen:%d cnt:%d", __func__, clen, atomic_inc_return(&pkg_cmp));
+		p2phc_dbg("%s hc compress clen:%d cnt:%d", __func__, clen,
+			  atomic_inc_return(&pkg_cmp));
 		/*p2phc_dbg("%s ack:%u win:%hu", __func__,
-			ntohl(tcph->ack_seq), ntohs(tcph->window));*/
+            ntohl(tcph->ack_seq), ntohs(tcph->window));*/
 		/* mac header */
 		memmove(skb->data + clen, skb->data, ETH_HLEN);
 		skb_pull(skb, clen);
@@ -116,8 +121,10 @@ static inline unsigned int __p2phc_tx_netdev_hook(struct sk_buff *skb,
 		/* ip header */
 		memcpy(h + clen, hc, hclen);
 		skb->network_header += clen;
-	} else if (dl_type == DL_TYPE_UNCOMPRESSED_TCP || dl_type == DL_TYPE_UNCOMPRESSED_UDP) {
-		p2phc_dbg("%s hc mark cid:%d cnt:%d", __func__, hc[9], atomic_inc_return(&pkg_mark));
+	} else if (dl_type == DL_TYPE_UNCOMPRESSED_TCP ||
+		   dl_type == DL_TYPE_UNCOMPRESSED_UDP) {
+		p2phc_dbg("%s hc mark cid:%d cnt:%d", __func__, hc[9],
+			  atomic_inc_return(&pkg_mark));
 		h[0] &= ~DL_TYPE_MASK;
 		h[0] |= dl_type;
 		h[9] = hc[9];
@@ -138,8 +145,7 @@ err:
 	return verdict;
 }
 
-unsigned int p2phc_tx_netdev_hook(struct sk_buff *skb,
-	struct net_device *dev)
+unsigned int p2phc_tx_netdev_hook(struct sk_buff *skb, struct net_device *dev)
 {
 	unsigned int ret = -1;
 #ifdef TIME_DUMP
@@ -156,17 +162,18 @@ unsigned int p2phc_tx_netdev_hook(struct sk_buff *skb,
 	return ret;
 }
 
-
 #elif defined(TX_HOOK_IPV4)
 
 static unsigned int tx_ipv4_hook(void *priv, struct sk_buff *skb,
-	const struct nf_hook_state *state)
+				 const struct nf_hook_state *state)
 {
 	p2phc_t *p2phc = (p2phc_t *)priv;
 	struct dlhc *dlc = NULL;
 	struct iphdr *iph = NULL;
 	struct tcphdr *tcph = NULL;
-	unsigned char hc[HDR_LEN_MAX] = {0,};
+	unsigned char hc[HDR_LEN_MAX] = {
+		0,
+	};
 	unsigned char *phc = hc, *h;
 	int hlen, hclen, clen;
 	unsigned int verdict = NF_ACCEPT;
@@ -174,7 +181,7 @@ static unsigned int tx_ipv4_hook(void *priv, struct sk_buff *skb,
 	if (strncmp(skb->dev->name, "p2p", 3))
 		return NF_ACCEPT;
 
-	//p2phc_dbg("%s dev:%s", __func__, skb->dev->name);
+	// p2phc_dbg("%s dev:%s", __func__, skb->dev->name);
 
 	iph = ip_hdr(skb);
 	if (iph == NULL)
@@ -212,16 +219,16 @@ static unsigned int tx_ipv4_hook(void *priv, struct sk_buff *skb,
 	clen = hlen - hclen;
 
 	if (clen) {
-		//p2phc_dbg("%s hc compress clen:%d", __func__, clen);
+		// p2phc_dbg("%s hc compress clen:%d", __func__, clen);
 		memcpy(h + clen, hc, hclen);
 		skb_pull(skb, clen);
 		skb_reset_mac_header(skb);
 		skb->network_header += clen;
 	} else if (hc[0] & DL_TYPE_UNCOMPRESSED_TCP) {
-		//p2phc_dbg("%s hc mark cid:%d", __func__, hc[9]);
+		// p2phc_dbg("%s hc mark cid:%d", __func__, hc[9]);
 		h[0] |= DL_TYPE_UNCOMPRESSED_TCP;
 		h[9] = hc[9];
-		//ip_send_check(iph);
+		// ip_send_check(iph);
 	} else {
 		goto err;
 	}
@@ -242,7 +249,7 @@ err:
 #endif
 
 static inline unsigned int __rx_inet_hook(void *priv, struct sk_buff *skb,
-	const struct nf_hook_state *state)
+					  const struct nf_hook_state *state)
 {
 	p2phc_t *p2phc = (p2phc_t *)priv;
 	spinlock_t *plock = NULL;
@@ -251,14 +258,14 @@ static inline unsigned int __rx_inet_hook(void *priv, struct sk_buff *skb,
 	unsigned char *h, dl_type;
 	int len, hclen;
 	unsigned int verdict = NF_ACCEPT;
-	static atomic_t pkg_cmp = {0}, pkg_mark = {0};
+	static atomic_t pkg_cmp = { 0 }, pkg_mark = { 0 };
 	(void)pkg_cmp;
 	(void)pkg_mark;
 
 	if (strncmp(skb->dev->name, "p2p", 3))
 		return NF_ACCEPT;
 
-	//p2phc_dbg("%s dev:%s", __func__, skb->dev->name);
+	// p2phc_dbg("%s dev:%s", __func__, skb->dev->name);
 
 	iph = ip_hdr(skb);
 	if (iph == NULL)
@@ -266,9 +273,11 @@ static inline unsigned int __rx_inet_hook(void *priv, struct sk_buff *skb,
 	h = (unsigned char *)iph;
 
 	dl_type = h[0] & DL_TYPE_MASK;
-	if (dl_type == DL_TYPE_UNCOMPRESSED_TCP || dl_type == DL_TYPE_COMPRESSED_TCP) {
+	if (dl_type == DL_TYPE_UNCOMPRESSED_TCP ||
+	    dl_type == DL_TYPE_COMPRESSED_TCP) {
 		plock = &p2phc->tcp_rx_lock;
-	} else if (dl_type == DL_TYPE_UNCOMPRESSED_UDP || dl_type == DL_TYPE_COMPRESSED_UDP) {
+	} else if (dl_type == DL_TYPE_UNCOMPRESSED_UDP ||
+		   dl_type == DL_TYPE_COMPRESSED_UDP) {
 		plock = &p2phc->udp_rx_lock;
 	} else {
 		return NF_ACCEPT;
@@ -292,23 +301,28 @@ static inline unsigned int __rx_inet_hook(void *priv, struct sk_buff *skb,
 
 	/* rx handler */
 	len = skb->len;
-	if (dl_type == DL_TYPE_COMPRESSED_TCP || dl_type == DL_TYPE_COMPRESSED_UDP) {
-		p2phc_dbg("%s hc uncompress cnt:%d", __func__, atomic_inc_return(&pkg_cmp));
+	if (dl_type == DL_TYPE_COMPRESSED_TCP ||
+	    dl_type == DL_TYPE_COMPRESSED_UDP) {
+		p2phc_dbg("%s hc uncompress cnt:%d", __func__,
+			  atomic_inc_return(&pkg_cmp));
 		skb_put(skb, HDR_LEN_MAX);
 		spin_lock(plock);
 		hclen = dlhc_uncompress(dlc, h, len);
 		spin_unlock(plock);
 		if (hclen <= 0) {
-			p2phc_err("%s hc uncompress err [%02x %02x]", __func__, h[0], h[1]);
+			p2phc_err("%s hc uncompress err [%02x %02x]", __func__,
+				  h[0], h[1]);
 			verdict = NF_DROP;
 			goto err;
 		}
 		skb->transport_header = skb->network_header + (iph->ihl * 4);
 		/*p2phc_dbg("%s ack:%u win:%hu", __func__,
-			ntohl(tcp_hdr(skb)->ack_seq), ntohs(tcp_hdr(skb)->window));*/
+            ntohl(tcp_hdr(skb)->ack_seq), ntohs(tcp_hdr(skb)->window));*/
 		// TODO revert skb_put length:(HDR_LEN_MAX - (hclen - len))
-	} else if (dl_type == DL_TYPE_UNCOMPRESSED_TCP || dl_type == DL_TYPE_UNCOMPRESSED_UDP) {
-		p2phc_dbg("%s hc remember, cid:%d cnt:%d", __func__, h[9], atomic_inc_return(&pkg_mark));
+	} else if (dl_type == DL_TYPE_UNCOMPRESSED_TCP ||
+		   dl_type == DL_TYPE_UNCOMPRESSED_UDP) {
+		p2phc_dbg("%s hc remember, cid:%d cnt:%d", __func__, h[9],
+			  atomic_inc_return(&pkg_mark));
 		spin_lock(plock);
 		hclen = dlhc_remember(dlc, h, len);
 		spin_unlock(plock);
@@ -332,7 +346,7 @@ err:
 }
 
 static unsigned int rx_inet_hook(void *priv, struct sk_buff *skb,
-	const struct nf_hook_state *state)
+				 const struct nf_hook_state *state)
 {
 	unsigned int ret;
 #ifdef TIME_DUMP
@@ -376,16 +390,17 @@ static inline int p2phc_p2px_event(struct net_device *dev, enum netdev_cmd cmd)
 	if (cmd == NETDEV_REGISTER && !g_p2phc.hooks_is_reg) {
 		p2phc_hooks[0].dev = dev;
 		ret = nf_register_net_hooks(&init_net, p2phc_hooks,
-						ARRAY_SIZE(p2phc_hooks));
+					    ARRAY_SIZE(p2phc_hooks));
 		if (ret) {
-			p2phc_err("%s nf_register_net_hooks err:%d", __func__, ret);
+			p2phc_err("%s nf_register_net_hooks err:%d", __func__,
+				  ret);
 			return 0;
 		}
 		g_p2phc.hooks_is_reg = true;
 		p2phc_info("%s nf_register_net_hooks", __func__);
 	} else if (cmd == NETDEV_UNREGISTER && g_p2phc.hooks_is_reg) {
 		nf_unregister_net_hooks(&init_net, p2phc_hooks,
-				    ARRAY_SIZE(p2phc_hooks));
+					ARRAY_SIZE(p2phc_hooks));
 		g_p2phc.hooks_is_reg = false;
 		p2phc_info("%s nf_unregister_net_hooks", __func__);
 	}
@@ -397,33 +412,33 @@ static inline int p2phc_p2px_event(struct net_device *dev, enum netdev_cmd cmd)
 static const char *__netdev_cmd_to_name(enum netdev_cmd cmd)
 {
 #define N(val) 						\
-	case NETDEV_##val:				\
-		return "NETDEV_" __stringify(val);
-	switch (cmd) {
-	N(UP) N(DOWN) N(REBOOT) N(CHANGE) N(REGISTER) N(UNREGISTER)
-	N(CHANGEMTU) N(CHANGEADDR) N(GOING_DOWN) N(CHANGENAME) N(FEAT_CHANGE)
-	N(BONDING_FAILOVER) N(PRE_UP) N(PRE_TYPE_CHANGE) N(POST_TYPE_CHANGE)
-	N(POST_INIT) N(RELEASE) N(NOTIFY_PEERS) N(JOIN) N(CHANGEUPPER)
-	N(RESEND_IGMP) N(PRECHANGEMTU) N(CHANGEINFODATA) N(BONDING_INFO)
-	N(PRECHANGEUPPER) N(CHANGELOWERSTATE) N(UDP_TUNNEL_PUSH_INFO)
-	N(UDP_TUNNEL_DROP_INFO) N(CHANGE_TX_QUEUE_LEN)
-	N(CVLAN_FILTER_PUSH_INFO) N(CVLAN_FILTER_DROP_INFO)
-	N(SVLAN_FILTER_PUSH_INFO) N(SVLAN_FILTER_DROP_INFO)
-	N(PRE_CHANGEADDR)
-	}
+        case NETDEV_##val:				\
+                return "NETDEV_" __stringify(val);
+        switch (cmd) {
+        N(UP) N(DOWN) N(REBOOT) N(CHANGE) N(REGISTER) N(UNREGISTER)
+        N(CHANGEMTU) N(CHANGEADDR) N(GOING_DOWN) N(CHANGENAME) N(FEAT_CHANGE)
+        N(BONDING_FAILOVER) N(PRE_UP) N(PRE_TYPE_CHANGE) N(POST_TYPE_CHANGE)
+        N(POST_INIT) N(RELEASE) N(NOTIFY_PEERS) N(JOIN) N(CHANGEUPPER)
+        N(RESEND_IGMP) N(PRECHANGEMTU) N(CHANGEINFODATA) N(BONDING_INFO)
+        N(PRECHANGEUPPER) N(CHANGELOWERSTATE) N(UDP_TUNNEL_PUSH_INFO)
+        N(UDP_TUNNEL_DROP_INFO) N(CHANGE_TX_QUEUE_LEN)
+        N(CVLAN_FILTER_PUSH_INFO) N(CVLAN_FILTER_DROP_INFO)
+        N(SVLAN_FILTER_PUSH_INFO) N(SVLAN_FILTER_DROP_INFO)
+        N(PRE_CHANGEADDR)
+        }
 #undef N
-	return "UNKNOWN_NETDEV_EVENT";
+        return "UNKNOWN_NETDEV_EVENT";
 }
 */
 
-static int p2phc_device_event(struct notifier_block *nb,
-			       unsigned long event, void *data)
+static int p2phc_device_event(struct notifier_block *nb, unsigned long event,
+			      void *data)
 {
 	struct net_device *dev = netdev_notifier_info_to_dev(data);
 	p2phc_t *p2phc = &g_p2phc;
 	struct dlhc *dlc = NULL;
 
-	if(strncmp(dev->name, "p2p", 3)) {
+	if (strncmp(dev->name, "p2p", 3)) {
 		return NOTIFY_DONE;
 	}
 
@@ -439,9 +454,9 @@ static int p2phc_device_event(struct notifier_block *nb,
 #endif
 
 	/*
-	p2phc_dbg("%s %s %s", __func__, dev->name, __netdev_cmd_to_name(event));
-	p2phc_dbg("%s dev->operstate:%d", __func__, dev->operstate);
-	*/
+  p2phc_dbg("%s %s %s", __func__, dev->name, __netdev_cmd_to_name(event));
+  p2phc_dbg("%s dev->operstate:%d", __func__, dev->operstate);
+  */
 
 	switch (event) {
 	case NETDEV_REGISTER:
@@ -450,12 +465,12 @@ static int p2phc_device_event(struct notifier_block *nb,
 		break;
 	case NETDEV_UP:
 	case NETDEV_CHANGE:
-		if (netif_oper_up(dev)){
+		if (netif_oper_up(dev)) {
 			p2phc_dbg("%s dlhc_reset", __func__);
 			dlhc_reset(dlc);
 		}
 		break;
-	default :
+	default:
 		break;
 	}
 
@@ -476,11 +491,12 @@ int p2phc_init(void)
 
 #ifdef PER_CPU
 	int cpu;
-	for (cpu = 0; cpu < CONFIG_NR_CPUS; cpu ++) {
+	for (cpu = 0; cpu < CONFIG_NR_CPUS; cpu++) {
 		g_p2phc.dlc[cpu] = dlhc_init(16, 16);
 		if (IS_ERR(g_p2phc.dlc[cpu]))
 			goto err_init;
-		p2phc_info("%s dlhc_init cpu:%d, dlc:%p", __func__, cpu, g_p2phc.dlc[cpu]);
+		p2phc_info("%s dlhc_init cpu:%d, dlc:%p", __func__, cpu,
+			   g_p2phc.dlc[cpu]);
 	}
 #else
 	g_p2phc.dlc = dlhc_init(16, 16);
@@ -496,7 +512,8 @@ int p2phc_init(void)
 
 	ret = register_netdevice_notifier(&p2phc_nb);
 	if (ret) {
-		p2phc_err("%s register_netdevice_notifier err:%d", __func__, ret);
+		p2phc_err("%s register_netdevice_notifier err:%d", __func__,
+			  ret);
 		goto err_reg_notifier;
 	}
 
@@ -507,12 +524,13 @@ err_reg_notifier:
 	unregister_netdevice_notifier(&p2phc_nb);
 err_init:
 #ifdef PER_CPU
-	for (cpu = 0; cpu < CONFIG_NR_CPUS; cpu ++) {
+	for (cpu = 0; cpu < CONFIG_NR_CPUS; cpu++) {
 		if (g_p2phc.dlc[cpu]) {
 			dlhc_free(g_p2phc.dlc[cpu]);
 			g_p2phc.dlc[cpu] = NULL;
 		}
-		p2phc_info("%s dlhc_free cpu:%d, dlc:%p", __func__, cpu, g_p2phc.dlc[cpu]);
+		p2phc_info("%s dlhc_free cpu:%d, dlc:%p", __func__, cpu,
+			   g_p2phc.dlc[cpu]);
 	}
 #else
 	if (g_p2phc.dlc) {
@@ -535,12 +553,13 @@ int p2phc_cleanup(void)
 
 #ifdef PER_CPU
 	int cpu;
-	for (cpu = 0; cpu < CONFIG_NR_CPUS; cpu ++) {
+	for (cpu = 0; cpu < CONFIG_NR_CPUS; cpu++) {
 		if (g_p2phc.dlc[cpu]) {
 			dlhc_free(g_p2phc.dlc[cpu]);
 			g_p2phc.dlc[cpu] = NULL;
 		}
-		p2phc_dbg("%s dlhc_free cpu:%d, dlc:%p", __func__, cpu, g_p2phc.dlc[cpu]);
+		p2phc_dbg("%s dlhc_free cpu:%d, dlc:%p", __func__, cpu,
+			  g_p2phc.dlc[cpu]);
 	}
 #else
 	if (g_p2phc.dlc) {
@@ -552,7 +571,7 @@ int p2phc_cleanup(void)
 
 	if (g_p2phc.hooks_is_reg) {
 		nf_unregister_net_hooks(&init_net, p2phc_hooks,
-				    ARRAY_SIZE(p2phc_hooks));
+					ARRAY_SIZE(p2phc_hooks));
 		g_p2phc.hooks_is_reg = false;
 		p2phc_info("%s nf_unregister_net_hooks", __func__);
 	}

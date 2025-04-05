@@ -44,13 +44,14 @@ send_peer_add_wds_entry_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd = (wmi_peer_add_wds_entry_cmd_fixed_param *)wmi_buf_data(buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_peer_add_wds_entry_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_peer_add_wds_entry_cmd_fixed_param));
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_peer_add_wds_entry_cmd_fixed_param));
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(param->dest_addr, &cmd->wds_macaddr);
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(param->peer_addr, &cmd->peer_macaddr);
 
 	cmd->flags = (param->flags & WMI_HOST_WDS_FLAG_STATIC) ?
-					WMI_WDS_FLAG_STATIC : 0;
+			     WMI_WDS_FLAG_STATIC :
+			     0;
 	cmd->vdev_id = param->vdev_id;
 
 	wmi_mtrace(WMI_PEER_ADD_WDS_ENTRY_CMDID, cmd->vdev_id, 0);
@@ -83,10 +84,11 @@ send_peer_del_wds_entry_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_NOMEM;
 
 	cmd = (wmi_peer_remove_wds_entry_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_peer_remove_wds_entry_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_peer_remove_wds_entry_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_peer_remove_wds_entry_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_peer_remove_wds_entry_cmd_fixed_param));
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(param->dest_addr, &cmd->wds_macaddr);
 
 	cmd->vdev_id = param->vdev_id;
@@ -121,15 +123,17 @@ send_peer_update_wds_entry_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_NOMEM;
 
 	cmd = (wmi_peer_update_wds_entry_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_peer_update_wds_entry_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_peer_update_wds_entry_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_peer_update_wds_entry_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(
+			wmi_peer_update_wds_entry_cmd_fixed_param));
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(param->dest_addr, &cmd->wds_macaddr);
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(param->peer_addr, &cmd->peer_macaddr);
 
 	cmd->flags = (param->flags & WMI_HOST_WDS_FLAG_STATIC) ?
-						WMI_WDS_FLAG_STATIC : 0;
+			     WMI_WDS_FLAG_STATIC :
+			     0;
 	cmd->vdev_id = param->vdev_id;
 
 	wmi_mtrace(WMI_PEER_UPDATE_WDS_ENTRY_CMDID, cmd->vdev_id, 0);

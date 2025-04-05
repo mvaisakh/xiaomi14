@@ -11,15 +11,15 @@
  * GNU General Public License for more details.
  *
  */
-#define pr_fmt(fmt)	"[drm-dp] %s: " fmt, __func__
+#define pr_fmt(fmt) "[drm-dp] %s: " fmt, __func__
 
-#include <linux/interrupt.h>
+#include "dp_bridge_hpd.h"
 #include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/kthread.h>
 #include <linux/slab.h>
-#include <linux/device.h>
-#include "dp_bridge_hpd.h"
 
 struct dp_bridge_hpd_private {
 	struct device *dev;
@@ -33,7 +33,7 @@ struct dp_bridge_hpd_private {
 };
 
 static int dp_bridge_hpd_connect(struct dp_bridge_hpd_private *bridge_hpd,
-		bool hpd)
+				 bool hpd)
 {
 	int rc = 0;
 
@@ -47,9 +47,8 @@ static int dp_bridge_hpd_connect(struct dp_bridge_hpd_private *bridge_hpd,
 	bridge_hpd->base.alt_mode_cfg_done = hpd;
 	bridge_hpd->base.hpd_irq = false;
 
-	if (!bridge_hpd->cb ||
-		!bridge_hpd->cb->configure ||
-		!bridge_hpd->cb->disconnect) {
+	if (!bridge_hpd->cb || !bridge_hpd->cb->configure ||
+	    !bridge_hpd->cb->disconnect) {
 		pr_err("invalid cb\n");
 		rc = -EINVAL;
 		goto error;
@@ -86,8 +85,8 @@ error:
 static void dp_bridge_hpd_work(struct work_struct *work)
 {
 	struct delayed_work *dw = to_delayed_work(work);
-	struct dp_bridge_hpd_private *bridge_hpd = container_of(dw,
-		struct dp_bridge_hpd_private, work);
+	struct dp_bridge_hpd_private *bridge_hpd =
+		container_of(dw, struct dp_bridge_hpd_private, work);
 
 	mutex_lock(&bridge_hpd->hpd_lock);
 
@@ -160,11 +159,11 @@ static int dp_bridge_hpd_register(struct dp_hpd *dp_hpd)
 	bridge_hpd = container_of(dp_hpd, struct dp_bridge_hpd_private, base);
 
 	return bridge_hpd->bridge->register_hpd(bridge_hpd->bridge,
-			dp_bridge_hpd_cb, bridge_hpd);
+						dp_bridge_hpd_cb, bridge_hpd);
 }
 
-struct dp_hpd *dp_bridge_hpd_get(struct device *dev,
-	struct dp_hpd_cb *cb, struct dp_aux_bridge *aux_bridge)
+struct dp_hpd *dp_bridge_hpd_get(struct device *dev, struct dp_hpd_cb *cb,
+				 struct dp_aux_bridge *aux_bridge)
 {
 	int rc = 0;
 	struct dp_bridge_hpd_private *bridge_hpd;

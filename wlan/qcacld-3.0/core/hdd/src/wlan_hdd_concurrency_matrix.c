@@ -25,23 +25,22 @@
  */
 
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
 #include <wlan_hdd_concurrency_matrix.h>
+#include <wlan_hdd_includes.h>
 
-#define CDS_MAX_FEATURE_SET   8
-#define MAX_CONCURRENT_MATRIX \
-	QCA_WLAN_VENDOR_ATTR_GET_CONCURRENCY_MATRIX_MAX
+#define CDS_MAX_FEATURE_SET 8
+#define MAX_CONCURRENT_MATRIX QCA_WLAN_VENDOR_ATTR_GET_CONCURRENCY_MATRIX_MAX
 #define MATRIX_CONFIG_PARAM_SET_SIZE_MAX \
 	QCA_WLAN_VENDOR_ATTR_GET_CONCURRENCY_MATRIX_CONFIG_PARAM_SET_SIZE_MAX
 
 const struct nla_policy
-wlan_hdd_get_concurrency_matrix_policy[MAX_CONCURRENT_MATRIX + 1] = {
-	[MATRIX_CONFIG_PARAM_SET_SIZE_MAX] = {.type = NLA_U32},
-};
+	wlan_hdd_get_concurrency_matrix_policy[MAX_CONCURRENT_MATRIX + 1] = {
+		[MATRIX_CONFIG_PARAM_SET_SIZE_MAX] = { .type = NLA_U32 },
+	};
 
 /**
  * __wlan_hdd_cfg80211_get_concurrency_matrix() - to retrieve concurrency matrix
@@ -54,13 +53,12 @@ wlan_hdd_get_concurrency_matrix_policy[MAX_CONCURRENT_MATRIX + 1] = {
  *
  * Return: int status code
  */
-static int
-__wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
-					   struct wireless_dev *wdev,
-					   const void *data,
-					   int data_len)
+static int __wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
+						      struct wireless_dev *wdev,
+						      const void *data,
+						      int data_len)
 {
-	uint32_t feature_set_matrix[CDS_MAX_FEATURE_SET] = {0};
+	uint32_t feature_set_matrix[CDS_MAX_FEATURE_SET] = { 0 };
 	uint8_t i, feature_sets, max_feature_sets;
 	struct nlattr *tb[MAX_CONCURRENT_MATRIX + 1];
 	struct sk_buff *reply_skb;
@@ -96,9 +94,9 @@ __wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
 	/* Fill feature combination matrix */
 	feature_sets = 0;
 	feature_set_matrix[feature_sets++] = WIFI_FEATURE_INFRA |
-						WIFI_FEATURE_P2P;
+					     WIFI_FEATURE_P2P;
 	feature_set_matrix[feature_sets++] = WIFI_FEATURE_INFRA |
-						WIFI_FEATURE_NAN;
+					     WIFI_FEATURE_NAN;
 	/* Add more feature combinations here */
 
 	feature_sets = QDF_MIN(feature_sets, max_feature_sets);
@@ -114,13 +112,13 @@ __wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
 		return -ENOMEM;
 	}
 
-	if (nla_put_u32(reply_skb,
-		QCA_WLAN_VENDOR_ATTR_GET_CONCURRENCY_MATRIX_RESULTS_SET_SIZE,
-		feature_sets) ||
+	if (nla_put_u32(
+		    reply_skb,
+		    QCA_WLAN_VENDOR_ATTR_GET_CONCURRENCY_MATRIX_RESULTS_SET_SIZE,
+		    feature_sets) ||
 	    nla_put(reply_skb,
 		    QCA_WLAN_VENDOR_ATTR_GET_CONCURRENCY_MATRIX_RESULTS_SET,
-		    sizeof(u32) * feature_sets,
-		    feature_set_matrix)) {
+		    sizeof(u32) * feature_sets, feature_set_matrix)) {
 		hdd_err("nla put fail");
 		wlan_cfg80211_vendor_free_skb(reply_skb);
 		return -EINVAL;
@@ -133,8 +131,7 @@ __wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
 					     struct wireless_dev *wdev,
-					     const void *data,
-					     int data_len)
+					     const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -143,11 +140,10 @@ int wlan_hdd_cfg80211_get_concurrency_matrix(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_get_concurrency_matrix(wiphy, wdev,
-							   data, data_len);
+	errno = __wlan_hdd_cfg80211_get_concurrency_matrix(wiphy, wdev, data,
+							   data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
 	return errno;
 }
-

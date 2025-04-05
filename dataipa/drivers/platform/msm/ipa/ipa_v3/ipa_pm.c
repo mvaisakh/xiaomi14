@@ -3,51 +3,50 @@
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/debugfs.h>
 #include "ipa_pm.h"
-#include "ipa_stats.h"
 #include "ipa_i.h"
-
+#include "ipa_stats.h"
+#include <linux/debugfs.h>
 
 #define IPA_PM_DRV_NAME "ipa_pm"
 
-#define IPA_PM_DBG(fmt, args...) \
-	do { \
-		pr_debug(IPA_PM_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IPA_PM_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPA_PM_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_PM_DBG(fmt, args...)                                            \
+	do {                                                                \
+		pr_debug(IPA_PM_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                           \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                      \
+				IPA_PM_DRV_NAME " %s:%d " fmt, ##args);     \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                  \
+				IPA_PM_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
-#define IPA_PM_DBG_LOW(fmt, args...) \
-	do { \
-		pr_debug(IPA_PM_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPA_PM_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_PM_DBG_LOW(fmt, args...)                                        \
+	do {                                                                \
+		pr_debug(IPA_PM_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+			 ##args);                                           \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                  \
+				IPA_PM_DRV_NAME " %s:%d " fmt, ##args);     \
 	} while (0)
-#define IPA_PM_ERR(fmt, args...) \
-	do { \
-		pr_err(IPA_PM_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IPA_PM_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPA_PM_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_PM_ERR(fmt, args...)                                          \
+	do {                                                              \
+		pr_err(IPA_PM_DRV_NAME " %s:%d " fmt, __func__, __LINE__, \
+		       ##args);                                           \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                    \
+				IPA_PM_DRV_NAME " %s:%d " fmt, ##args);   \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),                \
+				IPA_PM_DRV_NAME " %s:%d " fmt, ##args);   \
 	} while (0)
-#define IPA_PM_ERR_RL(fmt, args...) \
-	do { \
-		pr_err_ratelimited_ipa(IPA_PM_DRV_NAME " %s:%d " fmt, \
-			__func__, __LINE__, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(), \
-			IPA_PM_DRV_NAME " %s:%d " fmt, ## args); \
-		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(), \
-			IPA_PM_DRV_NAME " %s:%d " fmt, ## args); \
+#define IPA_PM_ERR_RL(fmt, args...)                                     \
+	do {                                                            \
+		pr_err_ratelimited_ipa(IPA_PM_DRV_NAME " %s:%d " fmt,   \
+				       __func__, __LINE__, ##args);     \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf(),                  \
+				IPA_PM_DRV_NAME " %s:%d " fmt, ##args); \
+		IPA_IPC_LOGGING(ipa3_get_ipc_logbuf_low(),              \
+				IPA_PM_DRV_NAME " %s:%d " fmt, ##args); \
 	} while (0)
-#define IPA_PM_DBG_STATE(hdl, name, state) \
+#define IPA_PM_DBG_STATE(hdl, name, state)               \
 	IPA_PM_DBG_LOW("Client[%d] %s: %s\n", hdl, name, \
-		client_state_to_str[state])
+		       client_state_to_str[state])
 
 /*
  * struct ipa_pm_exception_list - holds information about an exception
@@ -115,15 +114,15 @@ enum ipa_pm_state {
 	IPA_PM_STATE_MAX
 };
 
-#define IPA_PM_STATE_ACTIVE(state) \
-	(state == IPA_PM_ACTIVATED ||\
-		state == IPA_PM_ACTIVATED_PENDING_DEACTIVATION ||\
-		state  == IPA_PM_ACTIVATED_TIMER_SET ||\
-		state == IPA_PM_ACTIVATED_PENDING_RESCHEDULE)
+#define IPA_PM_STATE_ACTIVE(state)                         \
+	(state == IPA_PM_ACTIVATED ||                      \
+	 state == IPA_PM_ACTIVATED_PENDING_DEACTIVATION || \
+	 state == IPA_PM_ACTIVATED_TIMER_SET ||            \
+	 state == IPA_PM_ACTIVATED_PENDING_RESCHEDULE)
 
-#define IPA_PM_STATE_IN_PROGRESS(state) \
-	(state == IPA_PM_ACTIVATE_IN_PROGRESS \
-		|| state == IPA_PM_DEACTIVATE_IN_PROGRESS)
+#define IPA_PM_STATE_IN_PROGRESS(state)          \
+	(state == IPA_PM_ACTIVATE_IN_PROGRESS || \
+	 state == IPA_PM_DEACTIVATE_IN_PROGRESS)
 
 /*
  * struct ipa_pm_client - holds information about a specific IPA client
@@ -250,8 +249,8 @@ static int calculate_throughput(void)
 			if (client->group == IPA_PM_GROUP_DEFAULT) {
 				client_tput[n++] = client->throughput;
 			} else if (!group_voted[client->group]) {
-				client_tput[n++] = ipa_pm_ctx->group_tput
-					[client->group];
+				client_tput[n++] =
+					ipa_pm_ctx->group_tput[client->group];
 				group_voted[client->group] = true;
 			}
 		}
@@ -261,12 +260,12 @@ static int calculate_throughput(void)
 	aggregated_tput = 0;
 
 	/**
-	 * throughput algorithm:
-	 * 1) pop the max and second_max
-	 * 2) add the 2nd max to aggregated tput
-	 * 3) insert the value of max - 2nd max
-	 * 4) repeat until array is of size 1
-	 */
+   * throughput algorithm:
+   * 1) pop the max and second_max
+   * 2) add the 2nd max to aggregated tput
+   * 3) insert the value of max - 2nd max
+   * 4) repeat until array is of size 1
+   */
 	while (n > 1) {
 		max = pop_max_from_array(client_tput, &n);
 		second_max = pop_max_from_array(client_tput, &n);
@@ -293,8 +292,8 @@ static void deactivate_client(u32 hdl)
 	ipa_pm_ctx->clk_scaling.active_client_bitmask[idx] &=
 		~(ipahal_get_ep_bit(hdl));
 	spin_unlock_irqrestore(&ipa_pm_ctx->clk_scaling.lock, flags);
-	IPA_PM_DBG_LOW("active bitmask (%d): %x\n",
-		idx, ipa_pm_ctx->clk_scaling.active_client_bitmask[idx]);
+	IPA_PM_DBG_LOW("active bitmask (%d): %x\n", idx,
+		       ipa_pm_ctx->clk_scaling.active_client_bitmask[idx]);
 }
 
 /**
@@ -311,8 +310,8 @@ static void activate_client(u32 hdl)
 	ipa_pm_ctx->clk_scaling.active_client_bitmask[idx] |=
 		(ipahal_get_ep_bit(hdl));
 	spin_unlock_irqrestore(&ipa_pm_ctx->clk_scaling.lock, flags);
-	IPA_PM_DBG_LOW("active bitmask (%d): %x\n",
-		idx, ipa_pm_ctx->clk_scaling.active_client_bitmask[idx]);
+	IPA_PM_DBG_LOW("active bitmask (%d): %x\n", idx,
+		       ipa_pm_ctx->clk_scaling.active_client_bitmask[idx]);
 }
 
 /**
@@ -332,12 +331,13 @@ static void set_current_threshold(void)
 	spin_lock_irqsave(&ipa_pm_ctx->clk_scaling.lock, flags);
 	for (i = 0; i < clk->exception_size; i++) {
 		exception = &clk->exception_list[i];
-		if (exception->pending == 0 && ((exception->bitmask[0]
-			& ~clk->active_client_bitmask[0]) == 0) &&
-			((exception->bitmask[1] &
-				~clk->active_client_bitmask[1]) == 0)) {
+		if (exception->pending == 0 &&
+		    ((exception->bitmask[0] & ~clk->active_client_bitmask[0]) ==
+		     0) &&
+		    ((exception->bitmask[1] & ~clk->active_client_bitmask[1]) ==
+		     0)) {
 			spin_unlock_irqrestore(&ipa_pm_ctx->clk_scaling.lock,
-				 flags);
+					       flags);
 			clk->current_threshold = exception->threshold;
 			IPA_PM_DBG("Exception %d set\n", i);
 			return;
@@ -379,7 +379,6 @@ static int do_clk_scaling(void)
 	}
 
 	IPA_PM_DBG_LOW("old idx was at %d\n", ipa_pm_ctx->clk_scaling.cur_vote);
-
 
 	if (ipa_pm_ctx->clk_scaling.cur_vote != new_th_idx) {
 		ipa_pm_ctx->clk_scaling.cur_vote = new_th_idx;
@@ -446,7 +445,7 @@ static void activate_work_func(struct work_struct *work)
 	mutex_lock(&ipa_pm_ctx->client_mutex);
 	if (client->callback) {
 		client->callback(client->callback_params,
-			IPA_PM_CLIENT_ACTIVATED);
+				 IPA_PM_CLIENT_ACTIVATED);
 	}
 	mutex_unlock(&ipa_pm_ctx->client_mutex);
 
@@ -481,11 +480,11 @@ static void delayed_deferred_deactivate_work_func(struct work_struct *work)
 	case IPA_PM_ACTIVATED_PENDING_RESCHEDULE:
 		delay = IPA_PM_DEFERRED_TIMEOUT;
 		if (ipa3_ctx->ipa3_hw_mode == IPA_HW_MODE_VIRTUAL ||
-			ipa3_ctx->ipa3_hw_mode == IPA_HW_MODE_EMULATION)
+		    ipa3_ctx->ipa3_hw_mode == IPA_HW_MODE_EMULATION)
 			delay *= 5;
 
 		queue_delayed_work(ipa_pm_ctx->wq, &client->deactivate_work,
-			msecs_to_jiffies(delay));
+				   msecs_to_jiffies(delay));
 		client->state = IPA_PM_ACTIVATED_PENDING_DEACTIVATION;
 		goto bail;
 	case IPA_PM_ACTIVATED_PENDING_DEACTIVATION:
@@ -549,11 +548,10 @@ static int add_client_to_exception_list(u32 hdl)
 	for (i = 0; i < ipa_pm_ctx->clk_scaling.exception_size; i++) {
 		exception = &ipa_pm_ctx->clk_scaling.exception_list[i];
 		if (strnstr(exception->clients, ipa_pm_ctx->clients[hdl]->name,
-			len) && (strlen(exception->clients)
-			== len)) {
+			    len) &&
+		    (strlen(exception->clients) == len)) {
 			exception->pending--;
-			IPA_PM_DBG("Pending: %d\n",
-			exception->pending);
+			IPA_PM_DBG("Pending: %d\n", exception->pending);
 
 			if (exception->pending < 0) {
 				WARN_ON(1);
@@ -566,7 +564,7 @@ static int add_client_to_exception_list(u32 hdl)
 		}
 	}
 	IPA_PM_DBG("%s added to exception list\n",
-		ipa_pm_ctx->clients[hdl]->name);
+		   ipa_pm_ctx->clients[hdl]->name);
 	mutex_unlock(&ipa_pm_ctx->client_mutex);
 
 	return 0;
@@ -592,8 +590,7 @@ static int remove_client_from_exception_list(u32 hdl)
 		exception = &ipa_pm_ctx->clk_scaling.exception_list[i];
 		if (exception->bitmask[idx] & (ep_bit)) {
 			exception->pending++;
-			IPA_PM_DBG("Pending: %d\n",
-			exception->pending);
+			IPA_PM_DBG("Pending: %d\n", exception->pending);
 			exception->bitmask[idx] &= ~(ep_bit);
 		}
 	}
@@ -621,14 +618,14 @@ int ipa_pm_init(struct ipa_pm_init_params *params)
 		return -EINVAL;
 	}
 
-	if (params->threshold_size <= 0
-		|| params->threshold_size > IPA_PM_THRESHOLD_MAX) {
+	if (params->threshold_size <= 0 ||
+	    params->threshold_size > IPA_PM_THRESHOLD_MAX) {
 		IPA_PM_ERR("Invalid threshold size\n");
 		return -EINVAL;
 	}
 
-	if (params->exception_size < 0
-		|| params->exception_size > IPA_PM_EXCEPTION_MAX) {
+	if (params->exception_size < 0 ||
+	    params->exception_size > IPA_PM_EXCEPTION_MAX) {
 		IPA_PM_ERR("Invalid exception size\n");
 		return -EINVAL;
 	}
@@ -639,7 +636,6 @@ int ipa_pm_init(struct ipa_pm_init_params *params)
 		IPA_PM_ERR("Already initialized\n");
 		return -EPERM;
 	}
-
 
 	ipa_pm_ctx = kzalloc(sizeof(*ipa_pm_ctx), GFP_KERNEL);
 	if (!ipa_pm_ctx) {
@@ -676,7 +672,8 @@ int ipa_pm_init(struct ipa_pm_init_params *params)
 
 		/* Parse the commas to count the size of the clients */
 		for (j = 0; j < IPA_PM_MAX_EX_CL &&
-			clk_scaling->exception_list[i].clients[j]; j++) {
+			    clk_scaling->exception_list[i].clients[j];
+		     j++) {
 			if (clk_scaling->exception_list[i].clients[j] == ',')
 				clk_scaling->exception_list[i].pending++;
 		}
@@ -684,22 +681,23 @@ int ipa_pm_init(struct ipa_pm_init_params *params)
 		/* for the first client */
 		clk_scaling->exception_list[i].pending++;
 		IPA_PM_DBG("Pending: %d\n",
-			clk_scaling->exception_list[i].pending);
+			   clk_scaling->exception_list[i].pending);
 
 		/* populate the threshold */
 		for (j = 0; j < params->threshold_size; j++) {
-			clk_scaling->exception_list[i].threshold[j]
-			= params->exceptions[i].threshold[j];
+			clk_scaling->exception_list[i].threshold[j] =
+				params->exceptions[i].threshold[j];
 		}
-
 	}
 	IPA_PM_DBG("initialization success");
 
 #if IS_ENABLED(CONFIG_QCOM_VA_MINIDUMP)
 	/*Adding ipa3_ctx pointer to minidump list*/
-	mini_dump = (struct ipa_minidump_data *)kzalloc(sizeof(struct ipa_minidump_data), GFP_KERNEL);
+	mini_dump = (struct ipa_minidump_data *)kzalloc(
+		sizeof(struct ipa_minidump_data), GFP_KERNEL);
 	if (mini_dump != NULL) {
-		strlcpy(mini_dump->data.owner, "ipa_pm_ctx", sizeof(mini_dump->data.owner));
+		strlcpy(mini_dump->data.owner, "ipa_pm_ctx",
+			sizeof(mini_dump->data.owner));
 		mini_dump->data.vaddr = (unsigned long)(ipa_pm_ctx);
 		mini_dump->data.size = sizeof(*ipa_pm_ctx);
 		list_add(&mini_dump->entry, &ipa3_ctx->minidump_list_head);
@@ -760,12 +758,12 @@ int ipa_pm_register(struct ipa_pm_register_params *params, u32 *hdl)
 	if (elem < 0 || elem > IPA_PM_MAX_CLIENTS) {
 		mutex_unlock(&ipa_pm_ctx->client_mutex);
 		IPA_PM_ERR("client already registered or full array elem=%d\n",
-			elem);
+			   elem);
 		return elem;
 	}
 
-	ipa_pm_ctx->clients[*hdl] = kzalloc(sizeof
-		(struct ipa_pm_client), GFP_KERNEL);
+	ipa_pm_ctx->clients[*hdl] =
+		kzalloc(sizeof(struct ipa_pm_client), GFP_KERNEL);
 	if (!ipa_pm_ctx->clients[*hdl]) {
 		mutex_unlock(&ipa_pm_ctx->client_mutex);
 		IPA_PM_ERR(":kzalloc err.\n");
@@ -778,7 +776,7 @@ int ipa_pm_register(struct ipa_pm_register_params *params, u32 *hdl)
 	spin_lock_init(&client->state_lock);
 
 	INIT_DELAYED_WORK(&client->deactivate_work,
-		delayed_deferred_deactivate_work_func);
+			  delayed_deferred_deactivate_work_func);
 
 	INIT_WORK(&client->activate_work, activate_work_func);
 
@@ -793,7 +791,7 @@ int ipa_pm_register(struct ipa_pm_register_params *params, u32 *hdl)
 	if (!client->wlock) {
 		ipa_pm_deregister(*hdl);
 		IPA_PM_ERR("IPA wakeup source register failed %s\n",
-			client->name);
+			   client->name);
 		return -ENOMEM;
 	}
 
@@ -893,7 +891,7 @@ int ipa_pm_associate_ipa_cons_to_client(u32 hdl, enum ipa_client_type consumer)
 	}
 
 	if (hdl >= IPA_PM_MAX_CLIENTS || consumer < 0 ||
-		consumer >= IPA_CLIENT_MAX) {
+	    consumer >= IPA_CLIENT_MAX) {
 		IPA_PM_ERR("invalid params\n");
 		return -EINVAL;
 	}
@@ -978,8 +976,8 @@ static int ipa_pm_activate_helper(struct ipa_pm_client *client, bool sync)
 			IPA_ACTIVE_CLIENTS_INC_SPECIAL(client->name);
 			spin_lock_irqsave(&client->state_lock, flags);
 		} else
-			result = ipa3_inc_client_enable_clks_no_block
-				 (&log_info);
+			result =
+				ipa3_inc_client_enable_clks_no_block(&log_info);
 	}
 
 	/* we got the clocks */
@@ -1091,12 +1089,12 @@ int ipa_pm_deferred_deactivate(u32 hdl)
 	case IPA_PM_ACTIVATED:
 		delay = IPA_PM_DEFERRED_TIMEOUT;
 		if (ipa3_ctx->ipa3_hw_mode == IPA_HW_MODE_VIRTUAL ||
-			ipa3_ctx->ipa3_hw_mode == IPA_HW_MODE_EMULATION)
+		    ipa3_ctx->ipa3_hw_mode == IPA_HW_MODE_EMULATION)
 			delay *= 5;
 
 		client->state = IPA_PM_ACTIVATED_PENDING_DEACTIVATION;
 		queue_delayed_work(ipa_pm_ctx->wq, &client->deactivate_work,
-			msecs_to_jiffies(delay));
+				   msecs_to_jiffies(delay));
 		break;
 	case IPA_PM_ACTIVATED_TIMER_SET:
 		fallthrough;
@@ -1158,16 +1156,16 @@ int ipa_pm_deactivate_all_deferred(void)
 		if (client->state == IPA_PM_ACTIVATED_TIMER_SET) {
 			client->state = IPA_PM_ACTIVATED;
 			IPA_PM_DBG_STATE(client->hdl, client->name,
-				client->state);
+					 client->state);
 			spin_unlock_irqrestore(&client->state_lock, flags);
 		} else if (client->state ==
-				IPA_PM_ACTIVATED_PENDING_DEACTIVATION ||
-			client->state ==
-				IPA_PM_ACTIVATED_PENDING_RESCHEDULE) {
+				   IPA_PM_ACTIVATED_PENDING_DEACTIVATION ||
+			   client->state ==
+				   IPA_PM_ACTIVATED_PENDING_RESCHEDULE) {
 			run_algorithm = true;
 			client->state = IPA_PM_DEACTIVATED;
 			IPA_PM_DBG_STATE(client->hdl, client->name,
-				client->state);
+					 client->state);
 			spin_unlock_irqrestore(&client->state_lock, flags);
 			if (!client->skip_clk_vote) {
 				IPA_ACTIVE_CLIENTS_DEC_SPECIAL(client->name);
@@ -1263,7 +1261,7 @@ int ipa_pm_handle_suspend(u32 pipe_bitmask, u32 pipe_arr_idx)
 		return -EINVAL;
 	}
 
-	IPA_PM_DBG_LOW("bitmask: %d",  pipe_bitmask);
+	IPA_PM_DBG_LOW("bitmask: %d", pipe_bitmask);
 
 	if (pipe_bitmask == 0)
 		return 0;
@@ -1276,8 +1274,9 @@ int ipa_pm_handle_suspend(u32 pipe_bitmask, u32 pipe_arr_idx)
 			client = ipa_pm_ctx->clients_by_pipe[i + pipe_add];
 			if (client && !client_notified[client->hdl]) {
 				if (client->callback) {
-					client->callback(client->callback_params
-						, IPA_PM_REQUEST_WAKEUP);
+					client->callback(
+						client->callback_params,
+						IPA_PM_REQUEST_WAKEUP);
 					client_notified[client->hdl] = true;
 				}
 			}
@@ -1306,8 +1305,8 @@ int ipa_pm_set_throughput(u32 hdl, int throughput)
 	}
 
 	mutex_lock(&ipa_pm_ctx->client_mutex);
-	if (hdl >= IPA_PM_MAX_CLIENTS || ipa_pm_ctx->clients[hdl] == NULL
-		|| throughput < 0) {
+	if (hdl >= IPA_PM_MAX_CLIENTS || ipa_pm_ctx->clients[hdl] == NULL ||
+	    throughput < 0) {
 		IPA_PM_ERR("Invalid Params\n");
 		mutex_unlock(&ipa_pm_ctx->client_mutex);
 		return -EINVAL;
@@ -1315,10 +1314,10 @@ int ipa_pm_set_throughput(u32 hdl, int throughput)
 	client = ipa_pm_ctx->clients[hdl];
 
 	if (client->group == IPA_PM_GROUP_DEFAULT)
-		IPA_PM_DBG_LOW("Old throughput: %d\n",  client->throughput);
+		IPA_PM_DBG_LOW("Old throughput: %d\n", client->throughput);
 	else
-		IPA_PM_DBG_LOW("old Group %d throughput: %d\n",
-			client->group, ipa_pm_ctx->group_tput[client->group]);
+		IPA_PM_DBG_LOW("old Group %d throughput: %d\n", client->group,
+			       ipa_pm_ctx->group_tput[client->group]);
 
 	if (client->group == IPA_PM_GROUP_DEFAULT)
 		client->throughput = throughput;
@@ -1326,16 +1325,16 @@ int ipa_pm_set_throughput(u32 hdl, int throughput)
 		ipa_pm_ctx->group_tput[client->group] = throughput;
 
 	if (client->group == IPA_PM_GROUP_DEFAULT)
-		IPA_PM_DBG_LOW("New throughput: %d\n",  client->throughput);
+		IPA_PM_DBG_LOW("New throughput: %d\n", client->throughput);
 	else
-		IPA_PM_DBG_LOW("New Group %d throughput: %d\n",
-			client->group, ipa_pm_ctx->group_tput[client->group]);
+		IPA_PM_DBG_LOW("New Group %d throughput: %d\n", client->group,
+			       ipa_pm_ctx->group_tput[client->group]);
 	mutex_unlock(&ipa_pm_ctx->client_mutex);
 
 	if (ipa_pm_ctx->clients[hdl]) {
 		spin_lock_irqsave(&client->state_lock, flags);
-		if (IPA_PM_STATE_ACTIVE(client->state) || (client->group !=
-			IPA_PM_GROUP_DEFAULT)) {
+		if (IPA_PM_STATE_ACTIVE(client->state) ||
+		    (client->group != IPA_PM_GROUP_DEFAULT)) {
 			spin_unlock_irqrestore(&client->state_lock, flags);
 			do_clk_scaling();
 			return 0;
@@ -1380,8 +1379,8 @@ int ipa_pm_stat(char *buf, int size)
 	cnt += result;
 
 	for (i = 0; i < clk->threshold_size; i++) {
-		result = scnprintf(buf + cnt, size - cnt,
-			"%d, ", clk->current_threshold[i]);
+		result = scnprintf(buf + cnt, size - cnt, "%d, ",
+				   clk->current_threshold[i]);
 		cnt += result;
 	}
 
@@ -1389,13 +1388,12 @@ int ipa_pm_stat(char *buf, int size)
 	cnt += result;
 
 	result = scnprintf(buf + cnt, size - cnt,
-		"Aggregated tput: %d, Cur vote: %d",
-		ipa_pm_ctx->aggregated_tput, clk->cur_vote);
+			   "Aggregated tput: %d, Cur vote: %d",
+			   ipa_pm_ctx->aggregated_tput, clk->cur_vote);
 	cnt += result;
 
 	result = scnprintf(buf + cnt, size - cnt, "\n\nRegistered Clients:\n");
 	cnt += result;
-
 
 	for (i = 1; i < IPA_PM_MAX_CLIENTS; i++) {
 		client = ipa_pm_ctx->clients[i];
@@ -1409,8 +1407,9 @@ int ipa_pm_stat(char *buf, int size)
 		else
 			tput = ipa_pm_ctx->group_tput[client->group];
 
-		result = scnprintf(buf + cnt, size - cnt,
-		"Client[%d]: %s State:%s\nGroup: %s Throughput: %d Pipes: ",
+		result = scnprintf(
+			buf + cnt, size - cnt,
+			"Client[%d]: %s State:%s\nGroup: %s Throughput: %d Pipes: ",
 			i, client->name, client_state_to_str[client->state],
 			ipa_pm_group_to_str[client->group], tput);
 		cnt += result;
@@ -1418,7 +1417,7 @@ int ipa_pm_stat(char *buf, int size)
 		for (j = 0; j < ipa3_get_max_num_pipes(); j++) {
 			if (ipa_pm_ctx->clients_by_pipe[j] == client) {
 				result = scnprintf(buf + cnt, size - cnt,
-					"%d, ", j);
+						   "%d, ", j);
 				cnt += result;
 			}
 		}
@@ -1457,19 +1456,20 @@ int ipa_pm_exceptions_stat(char *buf, int size)
 		exception = &ipa_pm_ctx->clk_scaling.exception_list[i];
 		if (exception == NULL) {
 			result = scnprintf(buf + cnt, size - cnt,
-			"Exception %d is NULL\n\n", i);
+					   "Exception %d is NULL\n\n", i);
 			cnt += result;
 			continue;
 		}
 
-		result = scnprintf(buf + cnt, size - cnt,
-			"Exception %d: %s\nPending: %d Bitmask: %X %X Threshold: ["
-			, i, exception->clients, exception->pending,
+		result = scnprintf(
+			buf + cnt, size - cnt,
+			"Exception %d: %s\nPending: %d Bitmask: %X %X Threshold: [",
+			i, exception->clients, exception->pending,
 			exception->bitmask[0], exception->bitmask[1]);
 		cnt += result;
 		for (j = 0; j < ipa_pm_ctx->clk_scaling.threshold_size; j++) {
-			result = scnprintf(buf + cnt, size - cnt,
-				"%d, ", exception->threshold[j]);
+			result = scnprintf(buf + cnt, size - cnt, "%d, ",
+					   exception->threshold[j]);
 			cnt += result;
 		}
 		result = scnprintf(buf + cnt, size - cnt, "\b\b]\n\n");
@@ -1487,19 +1487,25 @@ int ipa_pm_get_scaling_bw_levels(struct ipa_lnx_clock_stats *clock_stats)
 	if (ipa_pm_ctx) {
 		clk = &ipa_pm_ctx->clk_scaling;
 		if (clk->threshold_size >= 3) {
-			clock_stats->scale_thresh_svs = clk->current_threshold[0];
-			clock_stats->scale_thresh_nom = clk->current_threshold[1];
-			clock_stats->scale_thresh_tur = clk->current_threshold[2];
+			clock_stats->scale_thresh_svs =
+				clk->current_threshold[0];
+			clock_stats->scale_thresh_nom =
+				clk->current_threshold[1];
+			clock_stats->scale_thresh_tur =
+				clk->current_threshold[2];
 			return 0;
-		} else return -EINVAL;
-	} else return -EINVAL;
+		} else
+			return -EINVAL;
+	} else
+		return -EINVAL;
 }
 
 int ipa_pm_get_aggregated_throughput(void)
 {
 	if (ipa_pm_ctx)
 		return ipa_pm_ctx->aggregated_tput;
-	else return 0;
+	else
+		return 0;
 }
 
 int ipa_pm_get_current_clk_vote(void)
@@ -1509,7 +1515,6 @@ int ipa_pm_get_current_clk_vote(void)
 	else
 		return ipa3_ctx->app_clock_vote.cnt;
 }
-
 
 static int ipa_get_pm_hdl_from_name(char *client_name)
 {
@@ -1525,7 +1530,7 @@ static int ipa_get_pm_hdl_from_name(char *client_name)
 }
 
 bool ipa_get_pm_client_stats_filled(struct pm_client_stats *pm_stats_ptr,
-	int pm_client_index)
+				    int pm_client_index)
 {
 	struct ipa_pm_client *client;
 	unsigned long flags;
@@ -1544,13 +1549,15 @@ bool ipa_get_pm_client_stats_filled(struct pm_client_stats *pm_stats_ptr,
 	if (client->group == IPA_PM_GROUP_DEFAULT)
 		pm_stats_ptr->pm_client_bw = client->throughput;
 	else {
-		pm_stats_ptr->pm_client_bw = ipa_pm_ctx->group_tput[client->group];
+		pm_stats_ptr->pm_client_bw =
+			ipa_pm_ctx->group_tput[client->group];
 	}
 
 	pm_stats_ptr->pm_client_type = IPA_CLIENT_MAX;
 	for (i = 0; i < ipa3_get_max_num_pipes(); i++) {
 		if (ipa_pm_ctx->clients_by_pipe[i] == client) {
-			pm_stats_ptr->pm_client_type = ipa3_get_client_by_pipe(i);
+			pm_stats_ptr->pm_client_type =
+				ipa3_get_client_by_pipe(i);
 			break;
 		}
 	}
@@ -1606,7 +1613,7 @@ int ipa_pm_add_dummy_clients(s8 power_plan)
 	};
 
 	if (power_plan < 0 ||
-		(power_plan - 1) >= ipa_pm_ctx->clk_scaling.threshold_size) {
+	    (power_plan - 1) >= ipa_pm_ctx->clk_scaling.threshold_size) {
 		pr_err("Invalid power plan(%d)\n", power_plan);
 		return -EFAULT;
 	}
@@ -1615,12 +1622,12 @@ int ipa_pm_add_dummy_clients(s8 power_plan)
 	if (power_plan == 0)
 		tput = 0;
 	else
-		tput = ipa_pm_ctx->clk_scaling.current_threshold[power_plan-1];
+		tput = ipa_pm_ctx->clk_scaling.current_threshold[power_plan - 1];
 
 	/*
-	 * register with local handles to prevent overwriting global handles
-	 * in the case of a failure
-	 */
+   * register with local handles to prevent overwriting global handles
+   * in the case of a failure
+   */
 	rc = ipa_pm_register(&dummy1_params, &hdl_1);
 	if (rc) {
 		pr_err("fail to register client 1 rc = %d\n", rc);

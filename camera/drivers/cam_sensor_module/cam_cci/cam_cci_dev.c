@@ -5,9 +5,9 @@
  */
 
 #include "cam_cci_dev.h"
-#include "cam_req_mgr_dev.h"
-#include "cam_cci_soc.h"
 #include "cam_cci_core.h"
+#include "cam_cci_soc.h"
+#include "cam_req_mgr_dev.h"
 #include "camera_main.h"
 /* xiaomi add for cci debug start */
 #include "cam_cci_debug_util.h"
@@ -25,14 +25,15 @@ struct v4l2_subdev *cam_cci_get_subdev(int cci_dev_index)
 	if ((cci_dev_index < MAX_CCI) && (g_cci_subdev[cci_dev_index] != NULL))
 		sub_device = g_cci_subdev[cci_dev_index];
 	else
-		CAM_WARN(CAM_CCI, "CCI subdev not available at Index: %u, MAX_CCI : %u",
-			cci_dev_index, MAX_CCI);
+		CAM_WARN(CAM_CCI,
+			 "CCI subdev not available at Index: %u, MAX_CCI : %u",
+			 cci_dev_index, MAX_CCI);
 
 	return sub_device;
 }
 
-static long cam_cci_subdev_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, void *arg)
+static long cam_cci_subdev_ioctl(struct v4l2_subdev *sd, unsigned int cmd,
+				 void *arg)
 {
 	int32_t rc = 0;
 
@@ -57,7 +58,7 @@ static long cam_cci_subdev_ioctl(struct v4l2_subdev *sd,
 
 #ifdef CONFIG_COMPAT
 static long cam_cci_subdev_compat_ioctl(struct v4l2_subdev *sd,
-	unsigned int cmd, unsigned long arg)
+					unsigned int cmd, unsigned long arg)
 {
 	return cam_cci_subdev_ioctl(sd, cmd, NULL);
 }
@@ -68,37 +69,33 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 	uint32_t irq_status0, irq_status1, reg_bmsk;
 	uint32_t irq_update_rd_done = 0;
 	struct cci_device *cci_dev = data;
-	struct cam_hw_soc_info *soc_info =
-		&cci_dev->soc_info;
+	struct cam_hw_soc_info *soc_info = &cci_dev->soc_info;
 	void __iomem *base = soc_info->reg_map[0].mem_base;
 	unsigned long flags;
 	bool rd_done_th_assert = false;
 
 	irq_status0 = cam_io_r_mb(base + CCI_IRQ_STATUS_0_ADDR);
 	irq_status1 = cam_io_r_mb(base + CCI_IRQ_STATUS_1_ADDR);
-	CAM_DBG(CAM_CCI,
-		"BASE: %p, irq0:%x irq1:%x",
-		base, irq_status0, irq_status1);
+	CAM_DBG(CAM_CCI, "BASE: %p, irq0:%x irq1:%x", base, irq_status0,
+		irq_status1);
 
 	cam_io_w_mb(irq_status0, base + CCI_IRQ_CLEAR_0_ADDR);
 	cam_io_w_mb(irq_status1, base + CCI_IRQ_CLEAR_1_ADDR);
 
 	reg_bmsk = CCI_IRQ_MASK_1_RMSK;
 	if ((irq_status1 & CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD) &&
-	!(irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_RD_DONE_BMSK)) {
+	    !(irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_RD_DONE_BMSK)) {
 		reg_bmsk &= ~CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD;
 		spin_lock_irqsave(&cci_dev->lock_status, flags);
-		cci_dev->irqs_disabled |=
-			CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD;
+		cci_dev->irqs_disabled |= CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD;
 		spin_unlock_irqrestore(&cci_dev->lock_status, flags);
 	}
 
 	if ((irq_status1 & CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD) &&
-	!(irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_RD_DONE_BMSK)) {
+	    !(irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_RD_DONE_BMSK)) {
 		reg_bmsk &= ~CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD;
 		spin_lock_irqsave(&cci_dev->lock_status, flags);
-		cci_dev->irqs_disabled |=
-			CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD;
+		cci_dev->irqs_disabled |= CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD;
 		spin_unlock_irqrestore(&cci_dev->lock_status, flags);
 	}
 
@@ -107,11 +104,11 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 		CAM_DBG(CAM_CCI, "Updating the reg mask for irq1: 0x%x",
 			reg_bmsk);
 	} else if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_RD_DONE_BMSK ||
-		irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_RD_DONE_BMSK) {
+		   irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_RD_DONE_BMSK) {
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_RD_DONE_BMSK) {
 			spin_lock_irqsave(&cci_dev->lock_status, flags);
 			if (cci_dev->irqs_disabled &
-				CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD) {
+			    CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD) {
 				irq_update_rd_done |=
 					CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD;
 				cci_dev->irqs_disabled &=
@@ -122,7 +119,7 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_RD_DONE_BMSK) {
 			spin_lock_irqsave(&cci_dev->lock_status, flags);
 			if (cci_dev->irqs_disabled &
-				CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD) {
+			    CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD) {
 				irq_update_rd_done |=
 					CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD;
 				cci_dev->irqs_disabled &=
@@ -164,23 +161,23 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 	}
 
 	if ((irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_RD_DONE_BMSK) &&
-		(irq_status1 & CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD)) {
+	    (irq_status1 & CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD)) {
 		cci_dev->cci_master_info[MASTER_0].status = 0;
 		rd_done_th_assert = true;
 		complete(&cci_dev->cci_master_info[MASTER_0].th_complete);
 		complete(&cci_dev->cci_master_info[MASTER_0].rd_done);
 	}
 	if ((irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_RD_DONE_BMSK) &&
-		(!rd_done_th_assert)) {
+	    (!rd_done_th_assert)) {
 		cci_dev->cci_master_info[MASTER_0].status = 0;
 		rd_done_th_assert = true;
 		if (cci_dev->is_burst_read[MASTER_0])
 			complete(
-			&cci_dev->cci_master_info[MASTER_0].th_complete);
+				&cci_dev->cci_master_info[MASTER_0].th_complete);
 		complete(&cci_dev->cci_master_info[MASTER_0].rd_done);
 	}
 	if ((irq_status1 & CCI_IRQ_STATUS_1_I2C_M0_RD_THRESHOLD) &&
-		(!rd_done_th_assert)) {
+	    (!rd_done_th_assert)) {
 		cci_dev->cci_master_info[MASTER_0].status = 0;
 		complete(&cci_dev->cci_master_info[MASTER_0].th_complete);
 	}
@@ -220,23 +217,23 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 	}
 	rd_done_th_assert = false;
 	if ((irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_RD_DONE_BMSK) &&
-		(irq_status1 & CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD)) {
+	    (irq_status1 & CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD)) {
 		cci_dev->cci_master_info[MASTER_1].status = 0;
 		rd_done_th_assert = true;
 		complete(&cci_dev->cci_master_info[MASTER_1].th_complete);
 		complete(&cci_dev->cci_master_info[MASTER_1].rd_done);
 	}
 	if ((irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_RD_DONE_BMSK) &&
-		(!rd_done_th_assert)) {
+	    (!rd_done_th_assert)) {
 		cci_dev->cci_master_info[MASTER_1].status = 0;
 		rd_done_th_assert = true;
 		if (cci_dev->is_burst_read[MASTER_1])
 			complete(
-			&cci_dev->cci_master_info[MASTER_1].th_complete);
+				&cci_dev->cci_master_info[MASTER_1].th_complete);
 		complete(&cci_dev->cci_master_info[MASTER_1].rd_done);
 	}
 	if ((irq_status1 & CCI_IRQ_STATUS_1_I2C_M1_RD_THRESHOLD) &&
-		(!rd_done_th_assert)) {
+	    (!rd_done_th_assert)) {
 		cci_dev->cci_master_info[MASTER_1].status = 0;
 		complete(&cci_dev->cci_master_info[MASTER_1].th_complete);
 	}
@@ -282,53 +279,55 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 
 	if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_Q0Q1_HALT_ACK_BMSK) {
 		cci_dev->cci_master_info[MASTER_0].reset_pending = true;
-		cam_io_w_mb(CCI_M0_RESET_RMSK,
-			base + CCI_RESET_CMD_ADDR);
+		cam_io_w_mb(CCI_M0_RESET_RMSK, base + CCI_RESET_CMD_ADDR);
 	}
 	if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_Q0Q1_HALT_ACK_BMSK) {
 		cci_dev->cci_master_info[MASTER_1].reset_pending = true;
-		cam_io_w_mb(CCI_M1_RESET_RMSK,
-			base + CCI_RESET_CMD_ADDR);
+		cam_io_w_mb(CCI_M1_RESET_RMSK, base + CCI_RESET_CMD_ADDR);
 	}
 	if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_ERROR_BMSK) {
 		cci_dev->cci_master_info[MASTER_0].status = -EINVAL;
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_Q0_NACK_ERROR_BMSK) {
 			if (cci_dev->is_probing)
-				CAM_INFO(CAM_CCI,
+				CAM_INFO(
+					CAM_CCI,
 					"Base:%pK,cci: %d, M0_Q0 NACK ERROR: 0x%x",
-					base, cci_dev->soc_info.index, irq_status0);
+					base, cci_dev->soc_info.index,
+					irq_status0);
 			else
 				CAM_ERR(CAM_CCI,
 					"Base:%pK,cci: %d, M0_Q0 NACK ERROR: 0x%x",
-					base, cci_dev->soc_info.index, irq_status0);
+					base, cci_dev->soc_info.index,
+					irq_status0);
 			/* xiaomi add for cci cmds dump start */
 			cam_cci_cmds_dump(cci_dev, MASTER_0, QUEUE_0);
 			/* xiaomi add for cci cmds dump end */
-			cam_cci_dump_registers(cci_dev, MASTER_0,
-					QUEUE_0);
+			cam_cci_dump_registers(cci_dev, MASTER_0, QUEUE_0);
 			complete_all(&cci_dev->cci_master_info[MASTER_0]
-				.report_q[QUEUE_0]);
+					      .report_q[QUEUE_0]);
 		}
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_Q1_NACK_ERROR_BMSK) {
 			if (cci_dev->is_probing)
-				CAM_INFO(CAM_CCI,
+				CAM_INFO(
+					CAM_CCI,
 					"Base:%pK,cci: %d, M0_Q1 NACK ERROR: 0x%x",
-					base, cci_dev->soc_info.index, irq_status0);
+					base, cci_dev->soc_info.index,
+					irq_status0);
 			else
 				CAM_ERR(CAM_CCI,
 					"Base:%pK,cci: %d, M0_Q1 NACK ERROR: 0x%x",
-					base, cci_dev->soc_info.index, irq_status0);
+					base, cci_dev->soc_info.index,
+					irq_status0);
 			/* xiaomi add for cci cmds dump start */
 			cam_cci_cmds_dump(cci_dev, MASTER_0, QUEUE_1);
 			/* xiaomi add for cci cmds dump end */
-			cam_cci_dump_registers(cci_dev, MASTER_0,
-					QUEUE_1);
+			cam_cci_dump_registers(cci_dev, MASTER_0, QUEUE_1);
 			complete_all(&cci_dev->cci_master_info[MASTER_0]
-			.report_q[QUEUE_1]);
+					      .report_q[QUEUE_1]);
 		}
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_Q0Q1_ERROR_BMSK)
 			CAM_ERR(CAM_CCI,
-			"Base:%pK, cci: %d, M0 QUEUE_OVER/UNDER_FLOW OR CMD ERR: 0x%x",
+				"Base:%pK, cci: %d, M0 QUEUE_OVER/UNDER_FLOW OR CMD ERR: 0x%x",
 				base, cci_dev->soc_info.index, irq_status0);
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M0_RD_ERROR_BMSK)
 			CAM_ERR(CAM_CCI,
@@ -342,41 +341,45 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 		cci_dev->cci_master_info[MASTER_1].status = -EINVAL;
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_Q0_NACK_ERROR_BMSK) {
 			if (cci_dev->is_probing)
-				CAM_INFO(CAM_CCI,
+				CAM_INFO(
+					CAM_CCI,
 					"Base:%pK, cci: %d, M1_Q0 NACK ERROR: 0x%x",
-					base, cci_dev->soc_info.index, irq_status0);
+					base, cci_dev->soc_info.index,
+					irq_status0);
 			else
 				CAM_ERR(CAM_CCI,
 					"Base:%pK, cci: %d, M1_Q0 NACK ERROR: 0x%x",
-					base, cci_dev->soc_info.index, irq_status0);
+					base, cci_dev->soc_info.index,
+					irq_status0);
 			/* xiaomi add for cci cmds dump start */
 			cam_cci_cmds_dump(cci_dev, MASTER_1, QUEUE_0);
 			/* xiaomi add for cci cmds dump end */
-			cam_cci_dump_registers(cci_dev, MASTER_1,
-					QUEUE_0);
+			cam_cci_dump_registers(cci_dev, MASTER_1, QUEUE_0);
 			complete_all(&cci_dev->cci_master_info[MASTER_1]
-			.report_q[QUEUE_0]);
+					      .report_q[QUEUE_0]);
 		}
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_Q1_NACK_ERROR_BMSK) {
 			if (cci_dev->is_probing)
-				CAM_INFO(CAM_CCI,
+				CAM_INFO(
+					CAM_CCI,
 					"Base:%pK, cci: %d, M1_Q1 NACK ERROR: 0x%x",
-					base, cci_dev->soc_info.index, irq_status0);
+					base, cci_dev->soc_info.index,
+					irq_status0);
 			else
 				CAM_ERR(CAM_CCI,
 					"Base:%pK, cci: %d, M1_Q1 NACK ERROR: 0x%x",
-					base, cci_dev->soc_info.index, irq_status0);
+					base, cci_dev->soc_info.index,
+					irq_status0);
 			/* xiaomi add for cci cmds dump start */
 			cam_cci_cmds_dump(cci_dev, MASTER_1, QUEUE_1);
 			/* xiaomi add for cci cmds dump end */
-			cam_cci_dump_registers(cci_dev, MASTER_1,
-				QUEUE_1);
+			cam_cci_dump_registers(cci_dev, MASTER_1, QUEUE_1);
 			complete_all(&cci_dev->cci_master_info[MASTER_1]
-			.report_q[QUEUE_1]);
+					      .report_q[QUEUE_1]);
 		}
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_Q0Q1_ERROR_BMSK)
 			CAM_ERR(CAM_CCI,
-			"Base:%pK, cci: %d, M1 QUEUE_OVER_UNDER_FLOW OR CMD ERROR:0x%x",
+				"Base:%pK, cci: %d, M1 QUEUE_OVER_UNDER_FLOW OR CMD ERROR:0x%x",
 				base, cci_dev->soc_info.index, irq_status0);
 		if (irq_status0 & CCI_IRQ_STATUS_0_I2C_M1_RD_ERROR_BMSK)
 			CAM_ERR(CAM_CCI,
@@ -391,16 +394,16 @@ irqreturn_t cam_cci_irq(int irq_num, void *data)
 }
 
 static int cam_cci_irq_routine(struct v4l2_subdev *sd, u32 status,
-	bool *handled)
+			       bool *handled)
 {
 	struct cci_device *cci_dev = v4l2_get_subdevdata(sd);
 	irqreturn_t ret;
-	struct cam_hw_soc_info *soc_info =
-		&cci_dev->soc_info;
+	struct cam_hw_soc_info *soc_info = &cci_dev->soc_info;
 
 	ret = cam_cci_irq(soc_info->irq_num[0], cci_dev);
 	if (ret == IRQ_NONE)
-		CAM_ERR(CAM_CCI, "Interrupt was not handled properly, ret %d", ret);
+		CAM_ERR(CAM_CCI, "Interrupt was not handled properly, ret %d",
+			ret);
 
 	*handled = true;
 	return 0;
@@ -438,15 +441,15 @@ static int cam_cci_set_debug(void *data, u64 val)
 	return 0;
 }
 
-DEFINE_DEBUGFS_ATTRIBUTE(cam_cci_debug,
-	cam_cci_get_debug,
-	cam_cci_set_debug, "%16llu\n");
+DEFINE_DEBUGFS_ATTRIBUTE(cam_cci_debug, cam_cci_get_debug, cam_cci_set_debug,
+			 "%16llu\n");
 
 static int cam_cci_create_debugfs_entry(struct cci_device *cci_dev)
 {
 	int rc = 0, idx;
 	struct dentry *dbgfileptr = NULL;
-	static char * const filename[] = { "en_dump_cci0", "en_dump_cci1", "en_dump_cci2"};
+	static char *const filename[] = { "en_dump_cci0", "en_dump_cci1",
+					  "en_dump_cci2" };
 	/* xiaomi add for cci debug start */
 	char debugfs_name[DEBUGFS_NAME_MAX_SIZE];
 	/* xiaomi add for cci debug end */
@@ -469,11 +472,12 @@ static int cam_cci_create_debugfs_entry(struct cci_device *cci_dev)
 		return -ENODEV;
 	}
 
-	debugfs_create_file(filename[idx], 0644, debugfs_root, cci_dev, &cam_cci_debug);
+	debugfs_create_file(filename[idx], 0644, debugfs_root, cci_dev,
+			    &cam_cci_debug);
 
 	/* xiaomi modified for cci debug start */
 	snprintf(debugfs_name, DEBUGFS_NAME_MAX_SIZE, "cci%d",
-		cci_dev->soc_info.index);
+		 cci_dev->soc_info.index);
 	dbgfileptr = debugfs_create_dir(debugfs_name, debugfs_root);
 	if (!dbgfileptr) {
 		CAM_ERR(CAM_CCI, "debugfs directory creation fail");
@@ -485,8 +489,8 @@ static int cam_cci_create_debugfs_entry(struct cci_device *cci_dev)
 	return 0;
 }
 
-static int cam_cci_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+static int cam_cci_component_bind(struct device *dev, struct device *master_dev,
+				  void *data)
 {
 	struct cam_cpas_register_params cpas_parms;
 	struct cci_device *new_cci_dev;
@@ -497,8 +501,8 @@ static int cam_cci_component_bind(struct device *dev,
 	uint32_t *cci_write_cmds0, *cci_write_cmds1;
 	/* xiaomi add for cci cmds dump start */
 
-	new_cci_dev = devm_kzalloc(&pdev->dev, sizeof(struct cci_device),
-		GFP_KERNEL);
+	new_cci_dev =
+		devm_kzalloc(&pdev->dev, sizeof(struct cci_device), GFP_KERNEL);
 	if (!new_cci_dev) {
 		CAM_ERR(CAM_CCI, "Memory allocation failed for cci_dev");
 		return -ENOMEM;
@@ -517,19 +521,14 @@ static int cam_cci_component_bind(struct device *dev,
 		goto cci_no_resource;
 	}
 
-	new_cci_dev->v4l2_dev_str.internal_ops =
-		&cci_subdev_intern_ops;
-	new_cci_dev->v4l2_dev_str.ops =
-		&cci_subdev_ops;
+	new_cci_dev->v4l2_dev_str.internal_ops = &cci_subdev_intern_ops;
+	new_cci_dev->v4l2_dev_str.ops = &cci_subdev_ops;
 	strlcpy(new_cci_dev->device_name, CAMX_CCI_DEV_NAME,
 		sizeof(new_cci_dev->device_name));
-	new_cci_dev->v4l2_dev_str.name =
-		new_cci_dev->device_name;
+	new_cci_dev->v4l2_dev_str.name = new_cci_dev->device_name;
 	new_cci_dev->v4l2_dev_str.sd_flags = V4L2_SUBDEV_FL_HAS_EVENTS;
-	new_cci_dev->v4l2_dev_str.ent_function =
-		CAM_CCI_DEVICE_TYPE;
-	new_cci_dev->v4l2_dev_str.token =
-		new_cci_dev;
+	new_cci_dev->v4l2_dev_str.ent_function = CAM_CCI_DEVICE_TYPE;
+	new_cci_dev->v4l2_dev_str.token = new_cci_dev;
 
 	rc = cam_register_subdev(&(new_cci_dev->v4l2_dev_str));
 	if (rc < 0) {
@@ -541,7 +540,7 @@ static int cam_cci_component_bind(struct device *dev,
 	v4l2_set_subdevdata(&new_cci_dev->v4l2_dev_str.sd, new_cci_dev);
 	if (soc_info->index >= MAX_CCI) {
 		CAM_ERR(CAM_CCI, "Invalid index: %d max supported:%d",
-			soc_info->index, MAX_CCI-1);
+			soc_info->index, MAX_CCI - 1);
 		goto cci_no_resource;
 	}
 
@@ -572,7 +571,7 @@ static int cam_cci_component_bind(struct device *dev,
 
 	/* xiaomi add for cci cmds dump start */
 	cci_write_cmds0 = kvcalloc(CCI_I2C_CMDS_SNAPSHOT_MAX_COUNT,
-		sizeof(uint32_t), GFP_KERNEL);
+				   sizeof(uint32_t), GFP_KERNEL);
 	if (!cci_write_cmds0) {
 		CAM_ERR(CAM_CCI, "Memory allocation failed for master0 cmds");
 		return -ENOMEM;
@@ -581,7 +580,7 @@ static int cam_cci_component_bind(struct device *dev,
 		cci_write_cmds0;
 
 	cci_write_cmds1 = kvcalloc(CCI_I2C_CMDS_SNAPSHOT_MAX_COUNT,
-		sizeof(uint32_t), GFP_KERNEL);
+				   sizeof(uint32_t), GFP_KERNEL);
 	if (!cci_write_cmds1) {
 		CAM_ERR(CAM_CCI, "Memory allocation failed for master1 cmds");
 		return -ENOMEM;
@@ -601,14 +600,13 @@ cci_no_resource:
 }
 
 static void cam_cci_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+				     struct device *master_dev, void *data)
 {
 	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
 
 	struct v4l2_subdev *subdev = platform_get_drvdata(pdev);
-	struct cci_device *cci_dev =
-		v4l2_get_subdevdata(subdev);
+	struct cci_device *cci_dev = v4l2_get_subdevdata(subdev);
 
 	cam_cpas_unregister_client(cci_dev->cpas_handle);
 	debugfs_root = NULL;
@@ -643,22 +641,22 @@ static int cam_cci_device_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id cam_cci_dt_match[] = {
-	{.compatible = "qcom,cci"},
-	{}
-};
+static const struct of_device_id cam_cci_dt_match[] = { { .compatible =
+								  "qcom,cci" },
+							{} };
 
 MODULE_DEVICE_TABLE(of, cam_cci_dt_match);
 
 struct platform_driver cci_driver = {
-	.probe = cam_cci_platform_probe,
-	.remove = cam_cci_device_remove,
-	.driver = {
-		.name = CAMX_CCI_DEV_NAME,
-		.owner = THIS_MODULE,
-		.of_match_table = cam_cci_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_cci_platform_probe,
+    .remove = cam_cci_device_remove,
+    .driver =
+        {
+            .name = CAMX_CCI_DEV_NAME,
+            .owner = THIS_MODULE,
+            .of_match_table = cam_cci_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_cci_init_module(void)

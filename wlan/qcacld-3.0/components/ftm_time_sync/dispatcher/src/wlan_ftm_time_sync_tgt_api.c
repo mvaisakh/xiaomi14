@@ -86,19 +86,19 @@ QDF_STATUS tgt_ftm_ts_offset_evt(struct wlan_objmgr_psoc *psoc,
 
 	vdev_priv = ftm_time_sync_vdev_get_priv(vdev);
 
-	vdev_priv->num_qtime_pair = param->num_qtime <
-			FTM_TIME_SYNC_QTIME_PAIR_MAX ? param->num_qtime :
+	vdev_priv->num_qtime_pair =
+		param->num_qtime < FTM_TIME_SYNC_QTIME_PAIR_MAX ?
+			param->num_qtime :
 			FTM_TIME_SYNC_QTIME_PAIR_MAX;
 
 	for (iter = 0; iter < vdev_priv->num_qtime_pair; iter++) {
 		vdev_priv->ftm_ts_priv.time_pair[iter].qtime_initiator =
-						param->pairs[iter].qtime_initiator;
+			param->pairs[iter].qtime_initiator;
 		vdev_priv->ftm_ts_priv.time_pair[iter].qtime_target =
-						param->pairs[iter].qtime_target;
+			param->pairs[iter].qtime_target;
 	}
 
 	ftm_time_sync_vdev_put_ref(vdev);
 
 	return QDF_STATUS_SUCCESS;
 }
-

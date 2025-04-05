@@ -24,13 +24,13 @@
  * - (de)init common specific ucfg handler
  * - (de)register to WMI events for psoc open
  */
-#include <wlan_objmgr_cmn.h>
-#include "wlan_cp_stats_defs.h"
 #include "wlan_cp_stats_ol_api.h"
 #include "wlan_cp_stats_cmn_api_i.h"
+#include "wlan_cp_stats_defs.h"
+#include <target_if_cp_stats.h>
 #include <wlan_cp_stats_ucfg_api.h>
 #include <wlan_cp_stats_utils_api.h>
-#include <target_if_cp_stats.h>
+#include <wlan_objmgr_cmn.h>
 
 QDF_STATUS wlan_cp_stats_psoc_obj_init_ol(struct psoc_cp_stats *psoc_cs)
 {

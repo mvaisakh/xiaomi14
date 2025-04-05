@@ -12,107 +12,108 @@
 #include <linux/types.h>
 #include <misc/qseecom_kernel.h>
 
-#include "hdcp_qseecom.h"
 #include "hdcp_main.h"
+#include "hdcp_qseecom.h"
 
 #define HDCP_CMD_STATUS_TO_STR(x) #x
 
-#define hdcp2_app_init_var(x) \
-	struct hdcp_##x##_req *req_buf = NULL; \
-	struct hdcp_##x##_rsp *rsp_buf = NULL; \
-	if (!handle || !handle->qseecom_handle) { \
-		pr_err("invalid qseecom_handle while processing %s\n", #x); \
-		rc = -EINVAL; \
-		goto error; \
-	} \
-	req_buf = (struct hdcp_##x##_req *)handle->qseecom_handle->sbuf; \
-	rsp_buf = (struct hdcp_##x##_rsp *)(handle->qseecom_handle->sbuf + \
-			   QSEECOM_ALIGN(sizeof(struct hdcp_##x##_req))); \
+#define hdcp2_app_init_var(x)                                                 \
+	struct hdcp_##x##_req *req_buf = NULL;                                \
+	struct hdcp_##x##_rsp *rsp_buf = NULL;                                \
+	if (!handle || !handle->qseecom_handle) {                             \
+		pr_err("invalid qseecom_handle while processing %s\n", #x);   \
+		rc = -EINVAL;                                                 \
+		goto error;                                                   \
+	}                                                                     \
+	req_buf = (struct hdcp_##x##_req *)handle->qseecom_handle->sbuf;      \
+	rsp_buf = (struct hdcp_##x##_rsp *)(handle->qseecom_handle->sbuf +    \
+					    QSEECOM_ALIGN(sizeof(             \
+						    struct hdcp_##x##_req))); \
 	req_buf->commandid = hdcp_cmd_##x
 
-#define hdcp2_app_process_cmd(x) \
-	({ \
-		int rc = qseecom_send_command( \
-			handle->qseecom_handle, req_buf, \
-			QSEECOM_ALIGN(sizeof(struct hdcp_##x##_req)), rsp_buf, \
-			QSEECOM_ALIGN(sizeof(struct hdcp_##x##_rsp))); \
-		if ((rc < 0) || (rsp_buf->status != HDCP_SUCCESS)) { \
+#define hdcp2_app_process_cmd(x)                                                        \
+	({                                                                              \
+		int rc = qseecom_send_command(                                          \
+			handle->qseecom_handle, req_buf,                                \
+			QSEECOM_ALIGN(sizeof(struct hdcp_##x##_req)), rsp_buf,          \
+			QSEECOM_ALIGN(sizeof(struct hdcp_##x##_rsp)));                  \
+		if ((rc < 0) || (rsp_buf->status != HDCP_SUCCESS)) {                    \
 			pr_err("qseecom cmd %s failed with err = %d, status = %d:%s\n", \
-				   #x, rc, rsp_buf->status, \
-				   hdcp_cmd_status_to_str(rsp_buf->status)); \
-			rc = -EINVAL; \
-		} \
-		rc; \
+			       #x, rc, rsp_buf->status,                                 \
+			       hdcp_cmd_status_to_str(rsp_buf->status));                \
+			rc = -EINVAL;                                                   \
+		}                                                                       \
+		rc;                                                                     \
 	})
 
-const char *hdcp_errors[] =	{"HDCP_SUCCESS",
-				"HDCP_FAIL",
-				"HDCP_BAD_PARAM",
-				"HDCP_DEVICE_TYPE_UNSUPPORTED",
-				"HDCP_INVALID_COMMAND",
-				"HDCP_INVALID_COMMAND_HANDLE",
-				"HDCP_ERROR_SIZE_IN",
-				"HDCP_ERROR_SIZE_OUT",
-				"HDCP_DATA_SIZE_INSUFFICIENT",
-				"HDCP_UNSUPPORTED_RX_VERSION",
-				"HDCP_WRONG_RX_CAPAB_MASK",
-				"HDCP_WRONG_RX_RSVD",
-				"HDCP_WRONG_RX_HDCP_CAPABLE",
-				"HDCP_RSA_SIGNATURE_VERIFY_FAILED",
-				"HDCP_VERIFY_H_PRIME_FAILED",
-				"HDCP_LC_FAILED",
-				"HDCP_MESSAGE_TIMEOUT",
-				"HDCP_COUNTER_ROLL_OVER",
-				"HDCP_WRONG_RXINFO_RSVD",
-				"HDCP_RXINFO_MAX_DEVS",
-				"HDCP_RXINFO_MAX_CASCADE",
-				"HDCP_WRONG_INITIAL_SEQ_NUM_V",
-				"HDCP_SEQ_NUM_V_ROLL_OVER",
-				"HDCP_WRONG_SEQ_NUM_V",
-				"HDCP_VERIFY_V_FAILED",
-				"HDCP_RPT_METHOD_INVOKED",
-				"HDCP_RPT_STRM_LEN_WRONG",
-				"HDCP_VERIFY_STRM_M_FAILED",
-				"HDCP_TRANSMITTER_NOT_FOUND",
-				"HDCP_SESSION_NOT_FOUND",
-				"HDCP_MAX_SESSION_EXCEEDED",
-				"HDCP_MAX_CONNECTION_EXCEEDED",
-				"HDCP_MAX_STREAMS_EXCEEDED",
-				"HDCP_MAX_DEVICES",
-				"HDCP_ALLOC_FAILED",
-				"HDCP_CONNECTION_NOT_FOUND",
-				"HDCP_HASH_FAILED",
-				"HDCP_BN_FAILED",
-				"HDCP_ENCRYPT_KM_FAILED",
-				"HDCP_DECRYPT_KM_FAILED",
-				"HDCP_HMAC_FAILED",
-				"HDCP_GET_RANDOM_FAILED",
-				"HDCP_INVALID_KEY_HEADER",
-				"HDCP_INVALID_KEY_LC_HASH",
-				"HDCP_INVALID_KEY_HASH",
-				"HDCP_KEY_WRITE_FAILED",
-				"HDCP_KEY_READ_FAILED",
-				"HDCP_KEY_DECRYPT_FAILED",
-				"HDCP_TEST_KEY_ON_SECURE_DEVICE",
-				"HDCP_KEY_VERSION_UNSUPPORTED",
-				"HDCP_RXID_NOT_FOUND",
-				"HDCP_STORAGE_INIT_FAILED",
-				"HDCP_STORAGE_FILE_OPEN_FAILED",
-				"HDCP_STORAGE_FILE_READ_FAILED",
-				"HDCP_STORAGE_FILE_WRITE_FAILED",
-				"HDCP_STORAGE_ID_UNSUPPORTED",
-				"HDCP_MUTUAL_EXCLUSIVE_DEVICE_PRESENT",
-				"HDCP_INVALID_STATE",
-				"HDCP_CONFIG_READ_FAILED",
-				"HDCP_OPEN_TZ_SERVICE_FAILED",
-				"HDCP_HW_CLOCK_OFF",
-				"HDCP_SET_HW_KEY_FAILED",
-				"HDCP_CLEAR_HW_KEY_FAILED",
-				"HDCP_GET_CONTENT_LEVEL_FAILED",
-				"HDCP_STREAMID_INUSE",
-				"HDCP_STREAM_NOT_FOUND",
-				"HDCP_FORCE_ENCRYPTION_FAILED",
-				"HDCP_STREAMNUMBER_INUSE"};
+const char *hdcp_errors[] = { "HDCP_SUCCESS",
+			      "HDCP_FAIL",
+			      "HDCP_BAD_PARAM",
+			      "HDCP_DEVICE_TYPE_UNSUPPORTED",
+			      "HDCP_INVALID_COMMAND",
+			      "HDCP_INVALID_COMMAND_HANDLE",
+			      "HDCP_ERROR_SIZE_IN",
+			      "HDCP_ERROR_SIZE_OUT",
+			      "HDCP_DATA_SIZE_INSUFFICIENT",
+			      "HDCP_UNSUPPORTED_RX_VERSION",
+			      "HDCP_WRONG_RX_CAPAB_MASK",
+			      "HDCP_WRONG_RX_RSVD",
+			      "HDCP_WRONG_RX_HDCP_CAPABLE",
+			      "HDCP_RSA_SIGNATURE_VERIFY_FAILED",
+			      "HDCP_VERIFY_H_PRIME_FAILED",
+			      "HDCP_LC_FAILED",
+			      "HDCP_MESSAGE_TIMEOUT",
+			      "HDCP_COUNTER_ROLL_OVER",
+			      "HDCP_WRONG_RXINFO_RSVD",
+			      "HDCP_RXINFO_MAX_DEVS",
+			      "HDCP_RXINFO_MAX_CASCADE",
+			      "HDCP_WRONG_INITIAL_SEQ_NUM_V",
+			      "HDCP_SEQ_NUM_V_ROLL_OVER",
+			      "HDCP_WRONG_SEQ_NUM_V",
+			      "HDCP_VERIFY_V_FAILED",
+			      "HDCP_RPT_METHOD_INVOKED",
+			      "HDCP_RPT_STRM_LEN_WRONG",
+			      "HDCP_VERIFY_STRM_M_FAILED",
+			      "HDCP_TRANSMITTER_NOT_FOUND",
+			      "HDCP_SESSION_NOT_FOUND",
+			      "HDCP_MAX_SESSION_EXCEEDED",
+			      "HDCP_MAX_CONNECTION_EXCEEDED",
+			      "HDCP_MAX_STREAMS_EXCEEDED",
+			      "HDCP_MAX_DEVICES",
+			      "HDCP_ALLOC_FAILED",
+			      "HDCP_CONNECTION_NOT_FOUND",
+			      "HDCP_HASH_FAILED",
+			      "HDCP_BN_FAILED",
+			      "HDCP_ENCRYPT_KM_FAILED",
+			      "HDCP_DECRYPT_KM_FAILED",
+			      "HDCP_HMAC_FAILED",
+			      "HDCP_GET_RANDOM_FAILED",
+			      "HDCP_INVALID_KEY_HEADER",
+			      "HDCP_INVALID_KEY_LC_HASH",
+			      "HDCP_INVALID_KEY_HASH",
+			      "HDCP_KEY_WRITE_FAILED",
+			      "HDCP_KEY_READ_FAILED",
+			      "HDCP_KEY_DECRYPT_FAILED",
+			      "HDCP_TEST_KEY_ON_SECURE_DEVICE",
+			      "HDCP_KEY_VERSION_UNSUPPORTED",
+			      "HDCP_RXID_NOT_FOUND",
+			      "HDCP_STORAGE_INIT_FAILED",
+			      "HDCP_STORAGE_FILE_OPEN_FAILED",
+			      "HDCP_STORAGE_FILE_READ_FAILED",
+			      "HDCP_STORAGE_FILE_WRITE_FAILED",
+			      "HDCP_STORAGE_ID_UNSUPPORTED",
+			      "HDCP_MUTUAL_EXCLUSIVE_DEVICE_PRESENT",
+			      "HDCP_INVALID_STATE",
+			      "HDCP_CONFIG_READ_FAILED",
+			      "HDCP_OPEN_TZ_SERVICE_FAILED",
+			      "HDCP_HW_CLOCK_OFF",
+			      "HDCP_SET_HW_KEY_FAILED",
+			      "HDCP_CLEAR_HW_KEY_FAILED",
+			      "HDCP_GET_CONTENT_LEVEL_FAILED",
+			      "HDCP_STREAMID_INUSE",
+			      "HDCP_STREAM_NOT_FOUND",
+			      "HDCP_FORCE_ENCRYPTION_FAILED",
+			      "HDCP_STREAMNUMBER_INUSE" };
 
 #define HDCP_TXMTR_SERVICE_ID 0x0001000
 #define SERVICE_CREATE_CMD(x) (HDCP_TXMTR_SERVICE_ID | x)
@@ -167,10 +168,11 @@ static int hdcp1_app_load(struct hdcp1_qsee_handle *handle)
 	}
 
 	if (!hdcp1_qseecom_handle_g) {
-		rc = qseecom_start_app(&hdcp1_qseecom_handle_g, handle->app_name,
-				QSEECOM_SBUFF_SIZE);
+		rc = qseecom_start_app(&hdcp1_qseecom_handle_g,
+				       handle->app_name, QSEECOM_SBUFF_SIZE);
 		if (rc) {
-			pr_err("%s app load failed (%d)\n", handle->app_name, rc);
+			pr_err("%s app load failed (%d)\n", handle->app_name,
+			       rc);
 			goto error;
 		}
 	}
@@ -178,7 +180,7 @@ static int hdcp1_app_load(struct hdcp1_qsee_handle *handle)
 	hdcp1_app_started++;
 
 	rc = qseecom_start_app(&handle->hdcpops_handle, HDCP1OPS_APP_NAME,
-			QSEECOM_SBUFF_SIZE);
+			       QSEECOM_SBUFF_SIZE);
 	if (rc) {
 		pr_warn("%s app load failed (%d)\n", HDCP1OPS_APP_NAME, rc);
 		handle->hdcpops_handle = NULL;
@@ -209,15 +211,17 @@ static void hdcp1_app_unload(struct hdcp1_qsee_handle *handle)
 		/* deallocate the resources for HDCP 1.x ops handle */
 		rc = qseecom_shutdown_app(&handle->hdcpops_handle);
 		if (rc)
-			pr_warn("%s app unload failed (%d)\n", HDCP1OPS_APP_NAME, rc);
+			pr_warn("%s app unload failed (%d)\n",
+				HDCP1OPS_APP_NAME, rc);
 	}
 
 	hdcp1_app_started--;
 	if (!hdcp1_app_started) {
-	/* deallocate the resources for qseecom HDCP 1.x handle */
+		/* deallocate the resources for qseecom HDCP 1.x handle */
 		rc = qseecom_shutdown_app(&hdcp1_qseecom_handle_g);
 		if (rc) {
-			pr_err("%s app unload failed (%d)\n", handle->app_name, rc);
+			pr_err("%s app unload failed (%d)\n", handle->app_name,
+			       rc);
 			return;
 		}
 		hdcp1_qseecom_handle_g = NULL;
@@ -229,7 +233,7 @@ static void hdcp1_app_unload(struct hdcp1_qsee_handle *handle)
 }
 
 static int hdcp1_set_key(struct hdcp1_qsee_handle *hdcp1_handle, u32 *aksv_msb,
-				 u32 *aksv_lsb)
+			 u32 *aksv_lsb)
 {
 	int rc = 0;
 	struct hdcp1_key_set_req *key_set_req;
@@ -256,11 +260,14 @@ static int hdcp1_set_key(struct hdcp1_qsee_handle *hdcp1_handle, u32 *aksv_msb,
 	/* set keys and request aksv */
 	key_set_req = (struct hdcp1_key_set_req *)handle->sbuf;
 	key_set_req->commandid = HDCP1_SET_KEY;
-	key_set_rsp = (struct hdcp1_key_set_rsp *)(handle->sbuf +
-			QSEECOM_ALIGN(sizeof(struct hdcp1_key_set_req)));
+	key_set_rsp =
+		(struct hdcp1_key_set_rsp *)(handle->sbuf +
+					     QSEECOM_ALIGN(sizeof(
+						     struct hdcp1_key_set_req)));
 	rc = qseecom_send_command(
-		handle, key_set_req, QSEECOM_ALIGN(sizeof(struct hdcp1_key_set_req)),
-		key_set_rsp, QSEECOM_ALIGN(sizeof(struct hdcp1_key_set_rsp)));
+		handle, key_set_req,
+		QSEECOM_ALIGN(sizeof(struct hdcp1_key_set_req)), key_set_rsp,
+		QSEECOM_ALIGN(sizeof(struct hdcp1_key_set_rsp)));
 
 	if (rc < 0) {
 		pr_err("qseecom cmd failed err=%d\n", rc);
@@ -275,9 +282,9 @@ static int hdcp1_set_key(struct hdcp1_qsee_handle *hdcp1_handle, u32 *aksv_msb,
 
 	/* copy bytes into msb and lsb */
 	*aksv_msb = key_set_rsp->ksv[0] << 24 | key_set_rsp->ksv[1] << 16 |
-				key_set_rsp->ksv[2] << 8 | key_set_rsp->ksv[3];
+		    key_set_rsp->ksv[2] << 8 | key_set_rsp->ksv[3];
 	*aksv_lsb = key_set_rsp->ksv[4] << 24 | key_set_rsp->ksv[5] << 16 |
-				key_set_rsp->ksv[6] << 8 | key_set_rsp->ksv[7];
+		    key_set_rsp->ksv[6] << 8 | key_set_rsp->ksv[7];
 
 	rc = hdcp1_validate_aksv(*aksv_msb, *aksv_lsb);
 	if (rc) {
@@ -310,11 +317,13 @@ static int hdcp1_verify_key(struct hdcp1_qsee_handle *hdcp1_handle)
 	key_verify_req = (struct hdcp1_key_verify_req *)handle->sbuf;
 	key_verify_req->commandid = HDCP1_KEY_VERIFY;
 	key_verify_rsp =
-		(struct hdcp1_key_verify_rsp *)(handle->sbuf +
-		 QSEECOM_ALIGN(sizeof(struct hdcp1_key_verify_req)));
+		(struct hdcp1_key_verify_rsp
+			 *)(handle->sbuf +
+			    QSEECOM_ALIGN(sizeof(struct hdcp1_key_verify_req)));
 	rc = qseecom_send_command(
 		handle, key_verify_req,
-		QSEECOM_ALIGN(sizeof(struct hdcp1_key_verify_req)), key_verify_rsp,
+		QSEECOM_ALIGN(sizeof(struct hdcp1_key_verify_req)),
+		key_verify_rsp,
 		QSEECOM_ALIGN(sizeof(struct hdcp1_key_set_rsp)));
 
 	if (rc < 0) {
@@ -341,18 +350,19 @@ static int hdcp2_app_unload(struct hdcp2_qsee_handle *handle)
 
 	hdcp2_app_started--;
 	if (!hdcp2_app_started) {
-
 		hdcp2_app_process_cmd(deinit);
 		/* deallocate the resources for qseecom HDCPSRM handle */
 		rc = qseecom_shutdown_app(&handle->hdcpsrm_qseecom_handle);
 		if (rc)
-			pr_err("qseecom_shutdown_app failed for HDCPSRM (%d)\n", rc);
+			pr_err("qseecom_shutdown_app failed for HDCPSRM (%d)\n",
+			       rc);
 
 		hdcpsrm_qseecom_handle_g = NULL;
 		/* deallocate the resources for qseecom HDCP2P2 handle */
 		rc = qseecom_shutdown_app(&handle->qseecom_handle);
 		if (rc) {
-			pr_err("qseecom_shutdown_app failed for HDCP2P2 (%d)\n", rc);
+			pr_err("qseecom_shutdown_app failed for HDCP2P2 (%d)\n",
+			       rc);
 			return rc;
 		}
 		qseecom_handle_g = NULL;
@@ -521,11 +531,14 @@ int hdcp1_set_enc_qseecom(void *data, bool enable)
 	set_enc_req = (struct hdcp1_set_enc_req *)handle->sbuf;
 	set_enc_req->commandid = HDCP1_SET_ENC;
 	set_enc_req->enable = enable;
-	set_enc_rsp = (struct hdcp1_set_enc_rsp *)(handle->sbuf +
-		   QSEECOM_ALIGN(sizeof(struct hdcp1_set_enc_req)));
+	set_enc_rsp =
+		(struct hdcp1_set_enc_rsp *)(handle->sbuf +
+					     QSEECOM_ALIGN(sizeof(
+						     struct hdcp1_set_enc_req)));
 	rc = qseecom_send_command(
-		handle, set_enc_req, QSEECOM_ALIGN(sizeof(struct hdcp1_set_enc_req)),
-		set_enc_rsp, QSEECOM_ALIGN(sizeof(struct hdcp1_set_enc_rsp)));
+		handle, set_enc_req,
+		QSEECOM_ALIGN(sizeof(struct hdcp1_set_enc_req)), set_enc_rsp,
+		QSEECOM_ALIGN(sizeof(struct hdcp1_set_enc_rsp)));
 
 	if (rc < 0) {
 		pr_err("qseecom cmd failed err=%d\n", rc);
@@ -582,23 +595,25 @@ int hdcp1_ops_notify_qseecom(void *data, void *topo, bool is_authenticated)
 		topology->max_cascade_exceeded;
 
 	/*
-	 * For hdcp1.4 below two nodes are not applicable but as
-	 * TZ ops ta talks with other drivers with same structure
-	 * and want to maintain same interface across hdcp versions,
-	 * we are setting the values to 0.
-	 */
+   * For hdcp1.4 below two nodes are not applicable but as
+   * TZ ops ta talks with other drivers with same structure
+   * and want to maintain same interface across hdcp versions,
+   * we are setting the values to 0.
+   */
 	ops_notify_req->topology.hdcp2LegacyDeviceDownstream = 0;
 	ops_notify_req->topology.hdcp1DeviceDownstream = 0;
 
 	memset(ops_notify_req->recv_id_list, 0,
-		   sizeof(uint8_t) * MAX_REC_ID_LIST_SIZE);
+	       sizeof(uint8_t) * MAX_REC_ID_LIST_SIZE);
 
 	ops_notify_rsp =
-		(struct hdcp1_ops_notify_rsp *)(handle->sbuf +
-		  QSEECOM_ALIGN(sizeof(struct hdcp1_ops_notify_req)));
+		(struct hdcp1_ops_notify_rsp
+			 *)(handle->sbuf +
+			    QSEECOM_ALIGN(sizeof(struct hdcp1_ops_notify_req)));
 	rc = qseecom_send_command(
 		handle, ops_notify_req,
-		QSEECOM_ALIGN(sizeof(struct hdcp1_ops_notify_req)), ops_notify_rsp,
+		QSEECOM_ALIGN(sizeof(struct hdcp1_ops_notify_req)),
+		ops_notify_rsp,
 		QSEECOM_ALIGN(sizeof(struct hdcp1_ops_notify_rsp)));
 
 	rc = ops_notify_rsp->ret;
@@ -661,7 +676,7 @@ void hdcp1_stop_qseecom(void *data)
 	struct hdcp1_qsee_handle *hdcp1_handle = data;
 
 	if (!hdcp1_handle || !hdcp1_handle->qseecom_handle ||
-		!hdcp1_handle->hdcpops_handle) {
+	    !hdcp1_handle->hdcpops_handle) {
 		pr_err("invalid handle\n");
 		return;
 	}
@@ -762,7 +777,7 @@ static int hdcp2_app_init(struct hdcp2_qsee_handle *handle)
 	app_minor_version = HCDP_TXMTR_GET_MINOR_VERSION(rsp_buf->appversion);
 	if (app_minor_version != HDCP_CLIENT_MINOR_VERSION) {
 		pr_err("client-app minor version mismatch app(%d), client(%d)\n",
-			   app_minor_version, HDCP_CLIENT_MINOR_VERSION);
+		       app_minor_version, HDCP_CLIENT_MINOR_VERSION);
 		rc = -1;
 		goto error;
 	}
@@ -770,13 +785,13 @@ static int hdcp2_app_init(struct hdcp2_qsee_handle *handle)
 	pr_debug("success\n");
 
 	pr_debug("client version major(%d), minor(%d), patch(%d)\n",
-			 HDCP_CLIENT_MAJOR_VERSION, HDCP_CLIENT_MINOR_VERSION,
-			 HDCP_CLIENT_PATCH_VERSION);
+		 HDCP_CLIENT_MAJOR_VERSION, HDCP_CLIENT_MINOR_VERSION,
+		 HDCP_CLIENT_PATCH_VERSION);
 
 	pr_debug("app version major(%d), minor(%d), patch(%d)\n",
-			 HCDP_TXMTR_GET_MAJOR_VERSION(rsp_buf->appversion),
-			 HCDP_TXMTR_GET_MINOR_VERSION(rsp_buf->appversion),
-			 HCDP_TXMTR_GET_PATCH_VERSION(rsp_buf->appversion));
+		 HCDP_TXMTR_GET_MAJOR_VERSION(rsp_buf->appversion),
+		 HCDP_TXMTR_GET_MINOR_VERSION(rsp_buf->appversion),
+		 HCDP_TXMTR_GET_PATCH_VERSION(rsp_buf->appversion));
 error:
 	return rc;
 }
@@ -830,8 +845,8 @@ static int hdcp_get_version(struct hdcp2_qsee_handle *handle)
 
 	app_major_version = HCDP_TXMTR_GET_MAJOR_VERSION(rsp_buf->appversion);
 
-	pr_debug("hdp2p2 app major version %d, app version %d\n", app_major_version,
-			 rsp_buf->appversion);
+	pr_debug("hdp2p2 app major version %d, app version %d\n",
+		 app_major_version, rsp_buf->appversion);
 
 	if (app_major_version == 1)
 		handle->legacy_app = true;
@@ -856,10 +871,11 @@ static int hdcp2_app_load(struct hdcp2_qsee_handle *handle)
 	}
 
 	if (!qseecom_handle_g) {
-		rc = qseecom_start_app(&qseecom_handle_g,
-			 handle->app_name, QSEECOM_SBUFF_SIZE);
+		rc = qseecom_start_app(&qseecom_handle_g, handle->app_name,
+				       QSEECOM_SBUFF_SIZE);
 		if (rc) {
-			pr_err("qseecom_start_app failed for HDCP2P2 (%d)\n", rc);
+			pr_err("qseecom_start_app failed for HDCP2P2 (%d)\n",
+			       rc);
 			goto error;
 		}
 	}
@@ -868,9 +884,10 @@ static int hdcp2_app_load(struct hdcp2_qsee_handle *handle)
 
 	if (!hdcpsrm_qseecom_handle_g) {
 		rc = qseecom_start_app(&hdcpsrm_qseecom_handle_g,
-			 HDCPSRM_APP_NAME, QSEECOM_SBUFF_SIZE);
+				       HDCPSRM_APP_NAME, QSEECOM_SBUFF_SIZE);
 		if (rc) {
-			pr_err("qseecom_start_app failed for HDCPSRM (%d)\n", rc);
+			pr_err("qseecom_start_app failed for HDCPSRM (%d)\n",
+			       rc);
 			goto hdcpsrm_error;
 		}
 	}
@@ -983,7 +1000,7 @@ void *hdcp2_init_qseecom(u32 device_type)
 		return NULL;
 	}
 
-	handle->app_data.request.data =  handle->req_buf;
+	handle->app_data.request.data = handle->req_buf;
 	handle->app_data.response.data = handle->res_buf;
 error:
 	return handle;
@@ -1178,9 +1195,9 @@ int hdcp2_app_enable_encryption_qseecom(void *ctx, uint32_t req_len)
 	handle->app_data.request.length = req_len;
 
 	/*
-	 * wait at least 200ms before enabling encryption
-	 * as per hdcp2p2 specifications.
-	 */
+   * wait at least 200ms before enabling encryption
+   * as per hdcp2p2 specifications.
+   */
 	msleep(SLEEP_SET_HW_KEY_MS);
 
 	req_buf->ctxhandle = handle->tz_ctxhandle;
@@ -1307,7 +1324,7 @@ error:
 }
 
 int hdcp2_open_stream_qseecom(void *ctx, uint8_t vc_payload_id,
-		uint8_t stream_number, uint32_t *stream_id)
+			      uint8_t stream_number, uint32_t *stream_id)
 {
 	struct hdcp2_qsee_handle *handle = (struct hdcp2_qsee_handle *)ctx;
 	int rc = 0;

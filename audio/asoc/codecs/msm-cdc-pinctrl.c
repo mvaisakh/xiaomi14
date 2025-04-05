@@ -2,18 +2,18 @@
 /* Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
-#include <linux/kernel.h>
+#include <asoc/msm-cdc-pinctrl.h>
+#include <linux/err.h>
+#include <linux/gpio.h>
 #include <linux/init.h>
 #include <linux/io.h>
-#include <linux/err.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
-#include <linux/platform_device.h>
-#include <linux/gpio.h>
 #include <linux/of_gpio.h>
 #include <linux/pinctrl/qcom-pinctrl.h>
-#include <asoc/msm-cdc-pinctrl.h>
+#include <linux/platform_device.h>
 
 #define MAX_GPIOS 16
 
@@ -33,8 +33,8 @@ struct msm_cdc_pinctrl_info {
 	bool chip_wakeup_reg;
 };
 
-static struct msm_cdc_pinctrl_info *msm_cdc_pinctrl_get_gpiodata(
-						struct device_node *np)
+static struct msm_cdc_pinctrl_info *
+msm_cdc_pinctrl_get_gpiodata(struct device_node *np)
 {
 	struct platform_device *pdev;
 	struct msm_cdc_pinctrl_info *gpio_data;
@@ -46,14 +46,16 @@ static struct msm_cdc_pinctrl_info *msm_cdc_pinctrl_get_gpiodata(
 
 	pdev = of_find_device_by_node(np);
 	if (!pdev) {
-		pr_err_ratelimited("%s: platform device not found!\n", __func__);
+		pr_err_ratelimited("%s: platform device not found!\n",
+				   __func__);
 		return NULL;
 	}
 
 	gpio_data = dev_get_drvdata(&pdev->dev);
 	if (!gpio_data)
-		dev_err_ratelimited(&pdev->dev, "%s: cannot find cdc gpio info\n",
-			__func__);
+		dev_err_ratelimited(&pdev->dev,
+				    "%s: cannot find cdc gpio info\n",
+				    __func__);
 
 	return gpio_data;
 }
@@ -95,7 +97,8 @@ int msm_cdc_pinctrl_select_sleep_state(struct device_node *np)
 		return -EINVAL;
 
 	if (!gpio_data->pinctrl_sleep) {
-		pr_err_ratelimited("%s: pinctrl sleep state is null\n", __func__);
+		pr_err_ratelimited("%s: pinctrl sleep state is null\n",
+				   __func__);
 		return -EINVAL;
 	}
 	gpio_data->state = false;
@@ -120,7 +123,8 @@ int msm_cdc_pinctrl_select_alt_active_state(struct device_node *np)
 		return -EINVAL;
 
 	if (!gpio_data->pinctrl_alt_active) {
-		pr_err_ratelimited("%s: pinctrl alt_active state is null\n", __func__);
+		pr_err_ratelimited("%s: pinctrl alt_active state is null\n",
+				   __func__);
 		return -EINVAL;
 	}
 	gpio_data->state = true;
@@ -145,7 +149,8 @@ int msm_cdc_pinctrl_select_active_state(struct device_node *np)
 		return -EINVAL;
 
 	if (!gpio_data->pinctrl_active) {
-		pr_err_ratelimited("%s: pinctrl active state is null\n", __func__);
+		pr_err_ratelimited("%s: pinctrl active state is null\n",
+				   __func__);
 		return -EINVAL;
 	}
 	gpio_data->state = true;
@@ -203,11 +208,11 @@ int msm_cdc_pinctrl_set_wakeup_capable(struct device_node *np, bool enable)
 		for (i = 0; i < gpio_data->wakeup_reg_count; i++) {
 			temp = ioread32(gpio_data->chip_wakeup_register[i]);
 			if (enable)
-				temp |= (1 <<
-					 gpio_data->chip_wakeup_maskbit[i]);
+				temp |= (1
+					 << gpio_data->chip_wakeup_maskbit[i]);
 			else
-				temp &= ~(1 <<
-					  gpio_data->chip_wakeup_maskbit[i]);
+				temp &= ~(1
+					  << gpio_data->chip_wakeup_maskbit[i]);
 			iowrite32(temp, gpio_data->chip_wakeup_register[i]);
 		}
 	}
@@ -220,15 +225,14 @@ static int msm_cdc_pinctrl_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 	struct msm_cdc_pinctrl_info *gpio_data;
-	u32 tlmm_gpio[MAX_GPIOS] = {0};
-	u32 chip_wakeup_reg[MAX_GPIOS] = {0};
-	u32 chip_wakeup_default_val[MAX_GPIOS] = {0};
+	u32 tlmm_gpio[MAX_GPIOS] = { 0 };
+	u32 chip_wakeup_reg[MAX_GPIOS] = { 0 };
+	u32 chip_wakeup_default_val[MAX_GPIOS] = { 0 };
 	u32 i = 0, temp = 0;
 	int count = 0;
 
-	gpio_data = devm_kzalloc(&pdev->dev,
-				 sizeof(struct msm_cdc_pinctrl_info),
-				 GFP_KERNEL);
+	gpio_data = devm_kzalloc(
+		&pdev->dev, sizeof(struct msm_cdc_pinctrl_info), GFP_KERNEL);
 	if (!gpio_data)
 		return -ENOMEM;
 
@@ -240,28 +244,31 @@ static int msm_cdc_pinctrl_probe(struct platform_device *pdev)
 		goto err_pctrl_get;
 	}
 
-	gpio_data->pinctrl_active = pinctrl_lookup_state(
-					gpio_data->pinctrl, "aud_active");
+	gpio_data->pinctrl_active =
+		pinctrl_lookup_state(gpio_data->pinctrl, "aud_active");
 	if (IS_ERR_OR_NULL(gpio_data->pinctrl_active)) {
-		dev_err(&pdev->dev, "%s: Cannot get aud_active pinctrl state:%ld\n",
+		dev_err(&pdev->dev,
+			"%s: Cannot get aud_active pinctrl state:%ld\n",
 			__func__, PTR_ERR(gpio_data->pinctrl_active));
 		ret = PTR_ERR(gpio_data->pinctrl_active);
 		goto err_lookup_state;
 	}
 
-	gpio_data->pinctrl_sleep = pinctrl_lookup_state(
-					gpio_data->pinctrl, "aud_sleep");
+	gpio_data->pinctrl_sleep =
+		pinctrl_lookup_state(gpio_data->pinctrl, "aud_sleep");
 	if (IS_ERR_OR_NULL(gpio_data->pinctrl_sleep)) {
-		dev_err(&pdev->dev, "%s: Cannot get aud_sleep pinctrl state:%ld\n",
+		dev_err(&pdev->dev,
+			"%s: Cannot get aud_sleep pinctrl state:%ld\n",
 			__func__, PTR_ERR(gpio_data->pinctrl_sleep));
 		ret = PTR_ERR(gpio_data->pinctrl_sleep);
 		goto err_lookup_state;
 	}
 
-	gpio_data->pinctrl_alt_active = pinctrl_lookup_state(
-					gpio_data->pinctrl, "aud_alt_active");
+	gpio_data->pinctrl_alt_active =
+		pinctrl_lookup_state(gpio_data->pinctrl, "aud_alt_active");
 	if (IS_ERR_OR_NULL(gpio_data->pinctrl_alt_active)) {
-		dev_dbg(&pdev->dev, "%s: Cannot get aud_alt_active pinctrl state:%ld\n",
+		dev_dbg(&pdev->dev,
+			"%s: Cannot get aud_alt_active pinctrl state:%ld\n",
 			__func__, PTR_ERR(gpio_data->pinctrl_alt_active));
 	}
 
@@ -271,51 +278,59 @@ static int msm_cdc_pinctrl_probe(struct platform_device *pdev)
 		ret = pinctrl_select_state(gpio_data->pinctrl,
 					   gpio_data->pinctrl_sleep);
 		if (ret)
-			dev_err(&pdev->dev, "%s: set cdc gpio sleep state fail: %d\n",
+			dev_err(&pdev->dev,
+				"%s: set cdc gpio sleep state fail: %d\n",
 				__func__, ret);
 	}
 
-
-	count = of_property_count_u32_elems(pdev->dev.of_node, "qcom,chip-wakeup-reg");
+	count = of_property_count_u32_elems(pdev->dev.of_node,
+					    "qcom,chip-wakeup-reg");
 	if (count <= 0)
 		goto cdc_tlmm_gpio;
-	if (!of_property_read_u32_array(pdev->dev.of_node, "qcom,chip-wakeup-reg",
-				chip_wakeup_reg, count)) {
-		if (of_property_read_u32_array(pdev->dev.of_node,
-					   "qcom,chip-wakeup-maskbit",
-					   gpio_data->chip_wakeup_maskbit, count)) {
+	if (!of_property_read_u32_array(pdev->dev.of_node,
+					"qcom,chip-wakeup-reg", chip_wakeup_reg,
+					count)) {
+		if (of_property_read_u32_array(
+			    pdev->dev.of_node, "qcom,chip-wakeup-maskbit",
+			    gpio_data->chip_wakeup_maskbit, count)) {
 			dev_err(&pdev->dev,
 				"chip-wakeup-maskbit needed if chip-wakeup-reg is defined!\n");
 			goto cdc_tlmm_gpio;
 		}
 		gpio_data->chip_wakeup_reg = true;
 		for (i = 0; i < count; i++) {
-			gpio_data->chip_wakeup_register[i] =
-				devm_ioremap(&pdev->dev, chip_wakeup_reg[i], 0x4);
+			gpio_data->chip_wakeup_register[i] = devm_ioremap(
+				&pdev->dev, chip_wakeup_reg[i], 0x4);
 		}
-		if (!of_property_read_u32_array(pdev->dev.of_node,
-					"qcom,chip-wakeup-default-val",
-					chip_wakeup_default_val, count)) {
+		if (!of_property_read_u32_array(
+			    pdev->dev.of_node, "qcom,chip-wakeup-default-val",
+			    chip_wakeup_default_val, count)) {
 			for (i = 0; i < count; i++) {
-				temp = ioread32(gpio_data->chip_wakeup_register[i]);
+				temp = ioread32(
+					gpio_data->chip_wakeup_register[i]);
 				if (chip_wakeup_default_val[i])
-					temp |= (1 <<
-						 gpio_data->chip_wakeup_maskbit[i]);
+					temp |= (1
+						 << gpio_data->chip_wakeup_maskbit
+							    [i]);
 				else
-					temp &= ~(1 <<
-						  gpio_data->chip_wakeup_maskbit[i]);
-				iowrite32(temp, gpio_data->chip_wakeup_register[i]);
+					temp &= ~(
+						1
+						<< gpio_data->chip_wakeup_maskbit
+							   [i]);
+				iowrite32(temp,
+					  gpio_data->chip_wakeup_register[i]);
 			}
 		}
 		gpio_data->wakeup_reg_count = count;
 	}
 
 cdc_tlmm_gpio:
-	count = of_property_count_u32_elems(pdev->dev.of_node, "qcom,tlmm-pins");
+	count = of_property_count_u32_elems(pdev->dev.of_node,
+					    "qcom,tlmm-pins");
 	if (count <= 0)
 		goto cdc_rst;
 	if (!of_property_read_u32_array(pdev->dev.of_node, "qcom,tlmm-pins",
-				tlmm_gpio, count)) {
+					tlmm_gpio, count)) {
 		gpio_data->wakeup_capable = true;
 		for (i = 0; i < count; i++)
 			gpio_data->tlmm_gpio[i] = tlmm_gpio[i];
@@ -323,8 +338,8 @@ cdc_tlmm_gpio:
 	}
 
 cdc_rst:
-	gpio_data->gpio = of_get_named_gpio(pdev->dev.of_node,
-					    "qcom,cdc-rst-n-gpio", 0);
+	gpio_data->gpio =
+		of_get_named_gpio(pdev->dev.of_node, "qcom,cdc-rst-n-gpio", 0);
 	if (gpio_is_valid(gpio_data->gpio)) {
 		ret = gpio_request(gpio_data->gpio, "MSM_CDC_RESET");
 		if (ret) {
@@ -365,19 +380,20 @@ static int msm_cdc_pinctrl_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id msm_cdc_pinctrl_match[] = {
-	{.compatible = "qcom,msm-cdc-pinctrl"},
+	{ .compatible = "qcom,msm-cdc-pinctrl" },
 	{}
 };
 
 static struct platform_driver msm_cdc_pinctrl_driver = {
-	.driver = {
-		.name = "msm-cdc-pinctrl",
-		.owner = THIS_MODULE,
-		.of_match_table = msm_cdc_pinctrl_match,
-		.suppress_bind_attrs = true,
-	},
-	.probe = msm_cdc_pinctrl_probe,
-	.remove = msm_cdc_pinctrl_remove,
+    .driver =
+        {
+            .name = "msm-cdc-pinctrl",
+            .owner = THIS_MODULE,
+            .of_match_table = msm_cdc_pinctrl_match,
+            .suppress_bind_attrs = true,
+        },
+    .probe = msm_cdc_pinctrl_probe,
+    .remove = msm_cdc_pinctrl_remove,
 };
 
 int msm_cdc_pinctrl_drv_init(void)

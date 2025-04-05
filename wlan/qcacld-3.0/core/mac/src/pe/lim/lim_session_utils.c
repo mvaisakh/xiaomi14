@@ -26,10 +26,10 @@
 /*--------------------------------------------------------------------------
    Include Files
    ------------------------------------------------------------------------*/
+#include "lim_session_utils.h"
 #include "ani_global.h"
 #include "lim_ft_defs.h"
 #include "lim_session.h"
-#include "lim_session_utils.h"
 #include "lim_utils.h"
 
 /**
@@ -47,12 +47,11 @@ uint8_t lim_is_in_mcc(struct mac_context *mac_ctx)
 
 	for (i = 0; i < mac_ctx->lim.maxBssId; i++) {
 		/*
-		 * if another session is valid and it is on different channel
-		 * it is an off channel operation.
-		 */
+     * if another session is valid and it is on different channel
+     * it is an off channel operation.
+     */
 		if ((mac_ctx->lim.gpSession[i].valid)) {
-			curr_oper_freq =
-				mac_ctx->lim.gpSession[i].curr_op_freq;
+			curr_oper_freq = mac_ctx->lim.gpSession[i].curr_op_freq;
 			if (curr_oper_freq == 0)
 				continue;
 			if (freq == 0)

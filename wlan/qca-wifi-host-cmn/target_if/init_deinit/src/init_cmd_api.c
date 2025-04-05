@@ -22,19 +22,19 @@
  *
  * WMI Init command prepare & send APIs
  */
+#include <cdp_txrx_ctrl.h>
+#include <init_cmd_api.h>
 #include <qdf_status.h>
 #include <qdf_types.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <target_if.h>
 #include <service_ready_util.h>
-#include <wlan_tgt_def_config.h>
-#include <wlan_reg_ucfg_api.h>
-#include <init_cmd_api.h>
-#include <target_if_scan.h>
+#include <target_if.h>
 #include <target_if_reg.h>
+#include <target_if_scan.h>
 #include <target_if_twt.h>
-#include <cdp_txrx_ctrl.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_reg_ucfg_api.h>
+#include <wlan_tgt_def_config.h>
 
 /**
  *  init_deinit_alloc_host_mem_chunk() - allocates chunk of memory requested
@@ -52,10 +52,10 @@
  *  Return: num_units on successful allocation
  *          0 on failure
  */
-static uint32_t init_deinit_alloc_host_mem_chunk(struct wlan_objmgr_psoc *psoc,
-			struct target_psoc_info *tgt_hdl,
-			u_int32_t req_id, u_int32_t idx, u_int32_t num_units,
-			u_int32_t unit_len, u_int32_t num_unit_info)
+static uint32_t init_deinit_alloc_host_mem_chunk(
+	struct wlan_objmgr_psoc *psoc, struct target_psoc_info *tgt_hdl,
+	u_int32_t req_id, u_int32_t idx, u_int32_t num_units,
+	u_int32_t unit_len, u_int32_t num_unit_info)
 {
 	qdf_dma_addr_t paddr;
 	uint32_t ichunk = 0;
@@ -64,7 +64,7 @@ static uint32_t init_deinit_alloc_host_mem_chunk(struct wlan_objmgr_psoc *psoc,
 
 	info = (&tgt_hdl->info);
 
-	if (!num_units  || !unit_len)
+	if (!num_units || !unit_len)
 		return 0;
 
 	qdf_dev = wlan_psoc_get_qdf_dev(psoc);
@@ -72,15 +72,15 @@ static uint32_t init_deinit_alloc_host_mem_chunk(struct wlan_objmgr_psoc *psoc,
 		return 0;
 
 	/*
-	 * We have skip smaller chunks memory allocation for TXBF_CV and
-	 * CFR_CAPTURE buffer as Firmware is expecting continuous memory
-	 */
+   * We have skip smaller chunks memory allocation for TXBF_CV and
+   * CFR_CAPTURE buffer as Firmware is expecting continuous memory
+   */
 	if (!((num_unit_info & HOST_CONTIGUOUS_MEM_CHUNK_REQUIRED) &&
 	      (req_id == TXBF_CV_POOL0 || req_id == TXBF_CV_POOL1 ||
-	      req_id == TXBF_CV_POOL2 ||
-	      req_id == CFR_CAPTURE_HOST_MEM_REQ_ID))) {
+	       req_id == TXBF_CV_POOL2 ||
+	       req_id == CFR_CAPTURE_HOST_MEM_REQ_ID))) {
 		ichunk = ((num_units * unit_len) >>
-			HOST_MEM_CHUNK_MAX_SIZE_POWER2);
+			  HOST_MEM_CHUNK_MAX_SIZE_POWER2);
 		if (ichunk)
 			num_units = num_units / (ichunk + 1);
 	}
@@ -88,11 +88,11 @@ static uint32_t init_deinit_alloc_host_mem_chunk(struct wlan_objmgr_psoc *psoc,
 	info->mem_chunks[idx].vaddr = NULL;
 	/* reduce the requested allocation by half until allocation succeeds */
 	while (!info->mem_chunks[idx].vaddr && num_units) {
-		info->mem_chunks[idx].vaddr = qdf_mem_alloc_consistent(qdf_dev,
-				qdf_dev->dev, num_units * unit_len, &paddr);
+		info->mem_chunks[idx].vaddr = qdf_mem_alloc_consistent(
+			qdf_dev, qdf_dev->dev, num_units * unit_len, &paddr);
 		if (!info->mem_chunks[idx].vaddr) {
 			if (num_unit_info &
-					HOST_CONTIGUOUS_MEM_CHUNK_REQUIRED) {
+			    HOST_CONTIGUOUS_MEM_CHUNK_REQUIRED) {
 				num_units = 0;
 				target_if_err("mem chink alloc failed for %d",
 					      idx);
@@ -102,12 +102,12 @@ static uint32_t init_deinit_alloc_host_mem_chunk(struct wlan_objmgr_psoc *psoc,
 			num_units = (num_units >> 1);
 		} else {
 			info->mem_chunks[idx].paddr = paddr;
-			info->mem_chunks[idx].len = num_units*unit_len;
-			info->mem_chunks[idx].req_id =  req_id;
+			info->mem_chunks[idx].len = num_units * unit_len;
+			info->mem_chunks[idx].req_id = req_id;
 		}
 	}
-	target_if_debug("req_id %d idx %d num_units %d unit_len %d",
-			req_id, idx, num_units, unit_len);
+	target_if_debug("req_id %d idx %d num_units %d unit_len %d", req_id,
+			idx, num_units, unit_len);
 
 	return num_units;
 }
@@ -130,9 +130,11 @@ static uint32_t init_deinit_alloc_host_mem_chunk(struct wlan_objmgr_psoc *psoc,
  *          QDF_STATUS_E_FAILURE on failure
  */
 static QDF_STATUS init_deinit_alloc_host_mem(struct wlan_objmgr_psoc *psoc,
-		struct target_psoc_info *tgt_hdl, u_int32_t req_id,
-		u_int32_t num_units, u_int32_t unit_len,
-		u_int32_t num_unit_info)
+					     struct target_psoc_info *tgt_hdl,
+					     u_int32_t req_id,
+					     u_int32_t num_units,
+					     u_int32_t unit_len,
+					     u_int32_t num_unit_info)
 {
 	struct tgt_info *info;
 	uint32_t remaining_units;
@@ -142,7 +144,7 @@ static QDF_STATUS init_deinit_alloc_host_mem(struct wlan_objmgr_psoc *psoc,
 	info = (&tgt_hdl->info);
 	/* adjust the length to nearest multiple of unit size */
 	unit_len = (unit_len + (HOST_MEM_SIZE_UNIT - 1)) &
-				(~(HOST_MEM_SIZE_UNIT - 1));
+		   (~(HOST_MEM_SIZE_UNIT - 1));
 	idx = info->num_mem_chunks;
 	remaining_units = num_units;
 
@@ -150,9 +152,9 @@ static QDF_STATUS init_deinit_alloc_host_mem(struct wlan_objmgr_psoc *psoc,
 		if (idx == MAX_MEM_CHUNKS) {
 			target_if_err(
 				"REACHED MAX CHUNK LIMIT for mem units %d",
-					num_units);
+				num_units);
 			target_if_err(
-			"unit len %d requested by FW, only allocated %d",
+				"unit len %d requested by FW, only allocated %d",
 				unit_len, (num_units - remaining_units));
 			info->num_mem_chunks = idx;
 			return QDF_STATUS_E_FAILURE;
@@ -161,14 +163,12 @@ static QDF_STATUS init_deinit_alloc_host_mem(struct wlan_objmgr_psoc *psoc,
 		if ((tgt_hdl->tif_ops) &&
 		    (tgt_hdl->tif_ops->mem_mgr_alloc_chunk))
 			allocated_units = tgt_hdl->tif_ops->mem_mgr_alloc_chunk(
-						psoc, tgt_hdl, req_id, idx,
-						remaining_units,
-						unit_len, num_unit_info);
+				psoc, tgt_hdl, req_id, idx, remaining_units,
+				unit_len, num_unit_info);
 		else
 			allocated_units = init_deinit_alloc_host_mem_chunk(
-						psoc, tgt_hdl, req_id, idx,
-						remaining_units,
-						unit_len, num_unit_info);
+				psoc, tgt_hdl, req_id, idx, remaining_units,
+				unit_len, num_unit_info);
 		if (allocated_units == 0) {
 			target_if_err("FAILED TO ALLOC mem unit len %d",
 				      unit_len);
@@ -186,7 +186,7 @@ static QDF_STATUS init_deinit_alloc_host_mem(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS init_deinit_free_num_units(struct wlan_objmgr_psoc *psoc,
-			struct target_psoc_info *tgt_hdl)
+				      struct target_psoc_info *tgt_hdl)
 {
 	struct tgt_info *info;
 	qdf_device_t qdf_dev;
@@ -198,8 +198,7 @@ QDF_STATUS init_deinit_free_num_units(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	if ((tgt_hdl->tif_ops) &&
-	    (tgt_hdl->tif_ops->mem_mgr_free_chunks)) {
+	if ((tgt_hdl->tif_ops) && (tgt_hdl->tif_ops->mem_mgr_free_chunks)) {
 		status = tgt_hdl->tif_ops->mem_mgr_free_chunks(psoc, tgt_hdl);
 	} else {
 		qdf_dev = wlan_psoc_get_qdf_dev(psoc);
@@ -211,11 +210,11 @@ QDF_STATUS init_deinit_free_num_units(struct wlan_objmgr_psoc *psoc,
 		info = (&tgt_hdl->info);
 		for (idx = 0; idx < info->num_mem_chunks; idx++) {
 			qdf_mem_free_consistent(
-					qdf_dev, qdf_dev->dev,
-					info->mem_chunks[idx].len,
-					info->mem_chunks[idx].vaddr,
-					info->mem_chunks[idx].paddr,
-					qdf_get_dma_mem_context(
+				qdf_dev, qdf_dev->dev,
+				info->mem_chunks[idx].len,
+				info->mem_chunks[idx].vaddr,
+				info->mem_chunks[idx].paddr,
+				qdf_get_dma_mem_context(
 					(&info->mem_chunks[idx]), memctx));
 
 			info->mem_chunks[idx].vaddr = NULL;
@@ -229,9 +228,9 @@ QDF_STATUS init_deinit_free_num_units(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-QDF_STATUS init_deinit_handle_host_mem_req(
-		struct wlan_objmgr_psoc *psoc,
-		struct target_psoc_info *tgt_hdl, uint8_t *event)
+QDF_STATUS init_deinit_handle_host_mem_req(struct wlan_objmgr_psoc *psoc,
+					   struct target_psoc_info *tgt_hdl,
+					   uint8_t *event)
 {
 	uint32_t num_mem_reqs;
 	host_mem_req mem_reqs;
@@ -249,33 +248,32 @@ QDF_STATUS init_deinit_handle_host_mem_req(
 	wmi_handle = target_psoc_get_wmi_hdl(tgt_hdl);
 	info = (&tgt_hdl->info);
 
-	num_mem_reqs = wmi_extract_num_mem_reqs_from_service_ready(
-							wmi_handle, event);
+	num_mem_reqs =
+		wmi_extract_num_mem_reqs_from_service_ready(wmi_handle, event);
 	if (!num_mem_reqs)
 		return QDF_STATUS_SUCCESS;
 
 	if (num_mem_reqs > MAX_MEM_CHUNKS) {
 		target_if_err_rl("num_mem_reqs:%u is out of bounds",
-				num_mem_reqs);
+				 num_mem_reqs);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	for (i = 0; i < WMI_FW_PRIORITY_MAX; i++) {
 		for (idx = 0; idx < num_mem_reqs; idx++) {
 			status = wmi_extract_host_mem_req_from_service_ready(
-					wmi_handle, event, &mem_reqs,
-					info->wlan_res_cfg.num_active_peers,
-					info->wlan_res_cfg.num_peers, i, idx);
+				wmi_handle, event, &mem_reqs,
+				info->wlan_res_cfg.num_active_peers,
+				info->wlan_res_cfg.num_peers, i, idx);
 			if (mem_reqs.tgt_num_units) {
 				status = init_deinit_alloc_host_mem(
-						psoc,
-						tgt_hdl,
-						mem_reqs.req_id,
-						mem_reqs.tgt_num_units,
-						mem_reqs.unit_size,
-						mem_reqs.num_unit_info);
+					psoc, tgt_hdl, mem_reqs.req_id,
+					mem_reqs.tgt_num_units,
+					mem_reqs.unit_size,
+					mem_reqs.num_unit_info);
 				if (status == QDF_STATUS_E_FAILURE) {
-					target_if_err("num_mem_chunk exceeds supp number");
+					target_if_err(
+						"num_mem_chunk exceeds supp number");
 				} else if (status == QDF_STATUS_E_NOMEM) {
 					target_if_err("mem alloc failure");
 				}
@@ -330,10 +328,9 @@ static bool is_num_band_to_mac_required(struct target_psoc_info *tgt_hdl)
 }
 #endif
 
-void init_deinit_derive_band_to_mac_param(
-		struct wlan_objmgr_psoc *psoc,
-		struct target_psoc_info *tgt_hdl,
-		struct wmi_init_cmd_param *init_param)
+void init_deinit_derive_band_to_mac_param(struct wlan_objmgr_psoc *psoc,
+					  struct target_psoc_info *tgt_hdl,
+					  struct wmi_init_cmd_param *init_param)
 {
 	uint8_t i;
 	struct wlan_psoc_host_mac_phy_caps *mac_phy_cap;
@@ -362,18 +359,16 @@ void init_deinit_derive_band_to_mac_param(
 
 	for (i = 0; i < target_psoc_get_num_radios(tgt_hdl); i++) {
 		if (mac_phy_cap->supported_bands ==
-			(WMI_HOST_WLAN_5G_CAPABILITY |
-					WMI_HOST_WLAN_2G_CAPABILITY)) {
+		    (WMI_HOST_WLAN_5G_CAPABILITY |
+		     WMI_HOST_WLAN_2G_CAPABILITY)) {
 			/*Supports both 5G and 2G. Use freq from both radios*/
 			target_if_debug("Supports both 2G and 5G");
 			band_to_mac[i].pdev_id = mac_phy_cap->pdev_id;
-			band_to_mac[i].start_freq =
-					reg_cap[i].low_2ghz_chan;
-			band_to_mac[i].end_freq =
-					reg_cap[i].high_5ghz_chan;
+			band_to_mac[i].start_freq = reg_cap[i].low_2ghz_chan;
+			band_to_mac[i].end_freq = reg_cap[i].high_5ghz_chan;
 
 		} else if (mac_phy_cap->supported_bands ==
-				WMI_HOST_WLAN_2G_CAPABILITY) {
+			   WMI_HOST_WLAN_2G_CAPABILITY) {
 			reg_cap[mac_phy_cap->phy_id].low_5ghz_chan = 0;
 			reg_cap[mac_phy_cap->phy_id].high_5ghz_chan = 0;
 
@@ -381,17 +376,16 @@ void init_deinit_derive_band_to_mac_param(
 				goto next_mac_phy_cap;
 
 			band_to_mac[i].pdev_id = mac_phy_cap->pdev_id;
-			band_to_mac[i].start_freq =
-					reg_cap[i].low_2ghz_chan;
-			band_to_mac[i].end_freq =
-					reg_cap[i].high_2ghz_chan;
-			target_if_debug("2G radio - pdev_id = %d start_freq = %d end_freq= %d",
-				       band_to_mac[i].pdev_id,
-				       band_to_mac[i].start_freq,
-				       band_to_mac[i].end_freq);
+			band_to_mac[i].start_freq = reg_cap[i].low_2ghz_chan;
+			band_to_mac[i].end_freq = reg_cap[i].high_2ghz_chan;
+			target_if_debug(
+				"2G radio - pdev_id = %d start_freq = %d end_freq= %d",
+				band_to_mac[i].pdev_id,
+				band_to_mac[i].start_freq,
+				band_to_mac[i].end_freq);
 
 		} else if (mac_phy_cap->supported_bands ==
-					WMI_HOST_WLAN_5G_CAPABILITY) {
+			   WMI_HOST_WLAN_5G_CAPABILITY) {
 			reg_cap[mac_phy_cap->phy_id].low_2ghz_chan = 0;
 			reg_cap[mac_phy_cap->phy_id].high_2ghz_chan = 0;
 
@@ -399,15 +393,14 @@ void init_deinit_derive_band_to_mac_param(
 				goto next_mac_phy_cap;
 
 			band_to_mac[i].pdev_id = mac_phy_cap->pdev_id;
-			band_to_mac[i].start_freq =
-						reg_cap[i].low_5ghz_chan;
-			band_to_mac[i].end_freq =
-						reg_cap[i].high_5ghz_chan;
+			band_to_mac[i].start_freq = reg_cap[i].low_5ghz_chan;
+			band_to_mac[i].end_freq = reg_cap[i].high_5ghz_chan;
 
-			target_if_debug("5G radio -pdev_id = %d start_freq = %d end_freq =%d\n",
-				       band_to_mac[i].pdev_id,
-				       band_to_mac[i].start_freq,
-				       band_to_mac[i].end_freq);
+			target_if_debug(
+				"5G radio -pdev_id = %d start_freq = %d end_freq =%d\n",
+				band_to_mac[i].pdev_id,
+				band_to_mac[i].start_freq,
+				band_to_mac[i].end_freq);
 		}
 
 next_mac_phy_cap:
@@ -424,9 +417,9 @@ next_mac_phy_cap:
  *
  * Return: void
  */
-static void init_deinit_derive_afc_dev_type_param(
-		struct wlan_objmgr_psoc *psoc,
-		struct wmi_init_cmd_param *init_param)
+static void
+init_deinit_derive_afc_dev_type_param(struct wlan_objmgr_psoc *psoc,
+				      struct wmi_init_cmd_param *init_param)
 {
 	enum reg_afc_dev_deploy_type reg_afc_dev_type;
 	target_resource_config *tgt_cfg;
@@ -434,8 +427,7 @@ static void init_deinit_derive_afc_dev_type_param(
 
 	tgt_cfg = init_param->res_cfg;
 
-	ret_val = target_if_reg_get_afc_dev_type(psoc,
-						 &reg_afc_dev_type);
+	ret_val = target_if_reg_get_afc_dev_type(psoc, &reg_afc_dev_type);
 
 	if (QDF_IS_STATUS_ERROR(ret_val)) {
 		target_if_err("get afc dev type failed");
@@ -449,33 +441,32 @@ static void init_deinit_derive_afc_dev_type_param(
 		tgt_cfg->afc_outdoor_support = true;
 }
 #else
-static inline void init_deinit_derive_afc_dev_type_param(
-		struct wlan_objmgr_psoc *psoc,
-		struct wmi_init_cmd_param *init_param)
+static inline void
+init_deinit_derive_afc_dev_type_param(struct wlan_objmgr_psoc *psoc,
+				      struct wmi_init_cmd_param *init_param)
 {
 }
 #endif
 
 #ifdef WLAN_FEATURE_11BE_MLO
 #ifdef FEATURE_WLAN_TDLS
-static void
-init_deinit_set_tdls_mlo_vdev(struct wmi_init_cmd_param *init_param,
-			      struct wmi_unified *wmi_handle)
+static void init_deinit_set_tdls_mlo_vdev(struct wmi_init_cmd_param *init_param,
+					  struct wmi_unified *wmi_handle)
 {
 	if (wmi_service_enabled(wmi_handle, wmi_service_tdls_mlo_support))
 		init_param->res_cfg->num_tdls_vdevs = WLAN_UMAC_MLO_MAX_VDEVS;
 }
 #else
-static void
-init_deinit_set_tdls_mlo_vdev(struct wmi_init_cmd_param *init_param,
-			      struct wmi_unified *wmi_handle)
-{}
+static void init_deinit_set_tdls_mlo_vdev(struct wmi_init_cmd_param *init_param,
+					  struct wmi_unified *wmi_handle)
+{
+}
 #endif
 #else
-static void
-init_deinit_set_tdls_mlo_vdev(struct wmi_init_cmd_param *init_param,
-			      struct wmi_unified *wmi_handle)
-{}
+static void init_deinit_set_tdls_mlo_vdev(struct wmi_init_cmd_param *init_param,
+					  struct wmi_unified *wmi_handle)
+{
+}
 #endif
 
 /**
@@ -491,20 +482,18 @@ init_deinit_set_dp_rx_peer_metadata_ver(struct wlan_objmgr_psoc *psoc,
 					uint8_t peer_md_ver)
 {
 	ol_txrx_soc_handle soc;
-	cdp_config_param_type val = {0};
+	cdp_config_param_type val = { 0 };
 
 	val.cdp_peer_metadata_ver = peer_md_ver;
 	soc = wlan_psoc_get_dp_handle(psoc);
 
-	cdp_txrx_set_psoc_param(soc, CDP_CFG_RX_PEER_METADATA_VER,
-				val);
+	cdp_txrx_set_psoc_param(soc, CDP_CFG_RX_PEER_METADATA_VER, val);
 }
 
-void init_deinit_prepare_send_init_cmd(
-		 struct wlan_objmgr_psoc *psoc,
-		 struct target_psoc_info *tgt_hdl)
+void init_deinit_prepare_send_init_cmd(struct wlan_objmgr_psoc *psoc,
+				       struct target_psoc_info *tgt_hdl)
 {
-	struct wmi_init_cmd_param init_param = {0};
+	struct wmi_init_cmd_param init_param = { 0 };
 	struct tgt_info *info;
 	struct wmi_unified *wmi_handle;
 	QDF_STATUS ret_val;
@@ -523,11 +512,11 @@ void init_deinit_prepare_send_init_cmd(
 	init_param.mem_chunks = info->mem_chunks;
 
 	if (init_deinit_is_service_ext_msg(psoc, tgt_hdl) ==
-			QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		init_param.hw_mode_id = info->preferred_hw_mode;
 		/* Temp change, until FW submits support for handling this TLV
-		 * For single mode, skip sending hw_mode
-		 */
+     * For single mode, skip sending hw_mode
+     */
 		if (info->preferred_hw_mode == WMI_HOST_HW_MODE_SINGLE)
 			init_param.hw_mode_id = WMI_HOST_HW_MODE_MAX;
 
@@ -563,11 +552,12 @@ void init_deinit_prepare_send_init_cmd(
 
 	target_if_debug("FW version 0x%x ", info->target_caps.fw_version);
 	if (init_deinit_is_service_ext_msg(psoc, tgt_hdl) ==
-							QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		fw_build_vers_ext = info->service_ext_param.fw_build_vers_ext;
-		target_if_debug("fw_build_vers_ext:0x%x HDL version info:0x%0x, CRM sub ID:0x%x\n",
-				fw_build_vers_ext, fw_build_vers_ext & 0x3FF,
-				(fw_build_vers_ext >> 25) & 0x7F);
+		target_if_debug(
+			"fw_build_vers_ext:0x%x HDL version info:0x%0x, CRM sub ID:0x%x\n",
+			fw_build_vers_ext, fw_build_vers_ext & 0x3FF,
+			(fw_build_vers_ext >> 25) & 0x7F);
 	} else {
 		target_if_debug("0x%x\n", info->target_caps.fw_version_1);
 	}
@@ -577,14 +567,14 @@ void init_deinit_prepare_send_init_cmd(
 
 	if (wmi_service_enabled(wmi_handle, wmi_service_v1a_v1b_supported))
 		info->wlan_res_cfg.dp_peer_meta_data_ver =
-					CDP_RX_PEER_METADATA_V1_A_B;
+			CDP_RX_PEER_METADATA_V1_A_B;
 	else
 		info->wlan_res_cfg.dp_peer_meta_data_ver =
 			target_psoc_get_target_dp_peer_meta_data_ver(tgt_hdl);
 
 	/* notify DP rx peer metadata version */
 	init_deinit_set_dp_rx_peer_metadata_ver(
-			psoc, info->wlan_res_cfg.dp_peer_meta_data_ver);
+		psoc, info->wlan_res_cfg.dp_peer_meta_data_ver);
 
 	init_deinit_set_tdls_mlo_vdev(&init_param, wmi_handle);
 

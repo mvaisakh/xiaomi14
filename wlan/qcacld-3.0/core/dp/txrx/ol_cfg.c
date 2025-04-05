@@ -16,10 +16,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <ol_cfg.h>
-#include <ol_if_athvar.h>
 #include <cdp_txrx_cfg.h>
 #include <cdp_txrx_handle.h>
+#include <ol_cfg.h>
+#include <ol_if_athvar.h>
 
 unsigned int vow_config;
 
@@ -32,29 +32,26 @@ unsigned int vow_config;
  * Return: none
  */
 void ol_tx_set_flow_control_parameters(struct cdp_cfg *cfg_pdev,
-	struct txrx_pdev_cfg_param_t *cfg_param)
+				       struct txrx_pdev_cfg_param_t *cfg_param)
 {
 	struct txrx_pdev_cfg_t *cfg_ctx = (struct txrx_pdev_cfg_t *)cfg_pdev;
 
 	cfg_ctx->tx_flow_start_queue_offset =
-					cfg_param->tx_flow_start_queue_offset;
-	cfg_ctx->tx_flow_stop_queue_th =
-					cfg_param->tx_flow_stop_queue_th;
+		cfg_param->tx_flow_start_queue_offset;
+	cfg_ctx->tx_flow_stop_queue_th = cfg_param->tx_flow_stop_queue_th;
 }
 #endif
 
 #ifdef CONFIG_HL_SUPPORT
 
 #ifdef CONFIG_CREDIT_REP_THROUGH_CREDIT_UPDATE
-static inline
-void ol_pdev_cfg_credit_update(struct txrx_pdev_cfg_t *cfg_ctx)
+static inline void ol_pdev_cfg_credit_update(struct txrx_pdev_cfg_t *cfg_ctx)
 {
 	cfg_ctx->tx_free_at_download = 1;
 	cfg_ctx->credit_update_enabled = 1;
 }
 #else
-static inline
-void ol_pdev_cfg_credit_update(struct txrx_pdev_cfg_t *cfg_ctx)
+static inline void ol_pdev_cfg_credit_update(struct txrx_pdev_cfg_t *cfg_ctx)
 {
 	cfg_ctx->tx_free_at_download = 0;
 	cfg_ctx->credit_update_enabled = 0;
@@ -68,8 +65,7 @@ void ol_pdev_cfg_credit_update(struct txrx_pdev_cfg_t *cfg_ctx)
  *
  * Return: None
  */
-static inline
-void ol_pdev_cfg_param_update(struct txrx_pdev_cfg_t *cfg_ctx)
+static inline void ol_pdev_cfg_param_update(struct txrx_pdev_cfg_t *cfg_ctx)
 {
 	cfg_ctx->is_high_latency = 1;
 	/* 802.1Q and SNAP / LLC headers are accounted for elsewhere */
@@ -78,27 +74,24 @@ void ol_pdev_cfg_param_update(struct txrx_pdev_cfg_t *cfg_ctx)
 }
 
 #else /* CONFIG_HL_SUPPORT */
-static inline
-void ol_pdev_cfg_param_update(struct txrx_pdev_cfg_t *cfg_ctx)
+static inline void ol_pdev_cfg_param_update(struct txrx_pdev_cfg_t *cfg_ctx)
 {
 	/*
-	 * Need to change HTT_LL_TX_HDR_SIZE_IP accordingly.
-	 * Include payload, up to the end of UDP header for IPv4 case
-	 */
+   * Need to change HTT_LL_TX_HDR_SIZE_IP accordingly.
+   * Include payload, up to the end of UDP header for IPv4 case
+   */
 	cfg_ctx->tx_download_size = 16;
 }
 #endif
 
 #ifdef CONFIG_RX_PN_CHECK_OFFLOAD
-static inline
-void ol_pdev_cfg_rx_pn_check(struct txrx_pdev_cfg_t *cfg_ctx)
+static inline void ol_pdev_cfg_rx_pn_check(struct txrx_pdev_cfg_t *cfg_ctx)
 {
 	/* Do not do pn check on host */
 	cfg_ctx->rx_pn_check = 0;
 }
 #else
-static inline
-void ol_pdev_cfg_rx_pn_check(struct txrx_pdev_cfg_t *cfg_ctx)
+static inline void ol_pdev_cfg_rx_pn_check(struct txrx_pdev_cfg_t *cfg_ctx)
 {
 	/* Do pn check on host */
 	cfg_ctx->rx_pn_check = 1;
@@ -106,14 +99,12 @@ void ol_pdev_cfg_rx_pn_check(struct txrx_pdev_cfg_t *cfg_ctx)
 #endif /* CONFIG_RX_PN_CHECK_OFFLOAD */
 
 #if CFG_TGT_DEFAULT_RX_SKIP_DEFRAG_TIMEOUT_DUP_DETECTION_CHECK
-static inline
-uint8_t ol_defrag_timeout_check(void)
+static inline uint8_t ol_defrag_timeout_check(void)
 {
 	return 1;
 }
 #else
-static inline
-uint8_t ol_defrag_timeout_check(void)
+static inline uint8_t ol_defrag_timeout_check(void)
 {
 	return 0;
 }
@@ -137,17 +128,17 @@ void ol_cfg_update_del_ack_params(struct txrx_pdev_cfg_t *cfg_ctx,
 #endif
 
 #ifdef WLAN_SUPPORT_TXRX_HL_BUNDLE
-static inline
-void ol_cfg_update_bundle_params(struct txrx_pdev_cfg_t *cfg_ctx,
-				 struct txrx_pdev_cfg_param_t *cfg_param)
+static inline void
+ol_cfg_update_bundle_params(struct txrx_pdev_cfg_t *cfg_ctx,
+			    struct txrx_pdev_cfg_param_t *cfg_param)
 {
 	cfg_ctx->bundle_timer_value = cfg_param->bundle_timer_value;
 	cfg_ctx->bundle_size = cfg_param->bundle_size;
 }
 #else
-static inline
-void ol_cfg_update_bundle_params(struct txrx_pdev_cfg_t *cfg_ctx,
-				 struct txrx_pdev_cfg_param_t *cfg_param)
+static inline void
+ol_cfg_update_bundle_params(struct txrx_pdev_cfg_t *cfg_ctx,
+			    struct txrx_pdev_cfg_param_t *cfg_param)
 {
 }
 #endif
@@ -313,9 +304,9 @@ int ol_cfg_max_peer_id(struct cdp_cfg *cfg_pdev)
 {
 	struct txrx_pdev_cfg_t *cfg = (struct txrx_pdev_cfg_t *)cfg_pdev;
 	/*
-	 * TBDXXX - this value must match the peer table
-	 * size allocated in FW
-	 */
+   * TBDXXX - this value must match the peer table
+   * size allocated in FW
+   */
 	return cfg->max_peer_id;
 }
 
@@ -341,7 +332,7 @@ int ol_cfg_rx_fwd_check(struct cdp_cfg *cfg_pdev)
 }
 
 void ol_set_cfg_rx_fwd_disabled(struct cdp_cfg *cfg_pdev,
-		uint8_t disable_rx_fwd)
+				uint8_t disable_rx_fwd)
 {
 	struct txrx_pdev_cfg_t *cfg = (struct txrx_pdev_cfg_t *)cfg_pdev;
 
@@ -416,7 +407,6 @@ void ol_cfg_set_tx_free_at_download(struct cdp_cfg *cfg_pdev)
 	cfg->tx_free_at_download = 1;
 }
 
-
 #ifdef CONFIG_HL_SUPPORT
 uint16_t ol_cfg_target_tx_credit(struct cdp_cfg *cfg_pdev)
 {
@@ -433,7 +423,7 @@ uint16_t ol_cfg_target_tx_credit(struct cdp_cfg *cfg_pdev)
 	uint16_t vow_max_sta = (cfg->vow_config & 0xffff0000) >> 16;
 	uint16_t vow_max_desc_persta = cfg->vow_config & 0x0000ffff;
 
-	rc =  (cfg->target_tx_credit + (vow_max_sta * vow_max_desc_persta));
+	rc = (cfg->target_tx_credit + (vow_max_sta * vow_max_desc_persta));
 
 	return rc;
 }

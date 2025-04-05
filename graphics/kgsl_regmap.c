@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
 #include <linux/io.h>
@@ -14,10 +15,11 @@
 	((region)->virt + (((_offset) - (region)->offset) << 2))
 
 static int kgsl_regmap_init_region(struct kgsl_regmap *regmap,
-		struct platform_device *pdev,
-		struct kgsl_regmap_region *region,
-		struct resource *res, const struct kgsl_regmap_ops *ops,
-		void *priv)
+				   struct platform_device *pdev,
+				   struct kgsl_regmap_region *region,
+				   struct resource *res,
+				   const struct kgsl_regmap_ops *ops,
+				   void *priv)
 {
 	void __iomem *ptr;
 
@@ -38,8 +40,8 @@ static int kgsl_regmap_init_region(struct kgsl_regmap *regmap,
  * from this base
  */
 int kgsl_regmap_init(struct platform_device *pdev, struct kgsl_regmap *regmap,
-		const char *name, const struct kgsl_regmap_ops *ops,
-		void *priv)
+		     const char *name, const struct kgsl_regmap_ops *ops,
+		     void *priv)
 {
 	struct kgsl_regmap_region *region;
 	struct resource *res;
@@ -61,8 +63,9 @@ int kgsl_regmap_init(struct platform_device *pdev, struct kgsl_regmap *regmap,
 }
 
 /* Add a new region to the regmap */
-int kgsl_regmap_add_region(struct kgsl_regmap *regmap, struct platform_device *pdev,
-		const char *name, const struct kgsl_regmap_ops *ops, void *priv)
+int kgsl_regmap_add_region(struct kgsl_regmap *regmap,
+			   struct platform_device *pdev, const char *name,
+			   const struct kgsl_regmap_ops *ops, void *priv)
 {
 	struct kgsl_regmap_region *region;
 	struct resource *res;
@@ -84,11 +87,10 @@ int kgsl_regmap_add_region(struct kgsl_regmap *regmap, struct platform_device *p
 	return ret;
 }
 
-#define in_range(a, base, len) \
-	(((a) >= (base)) && ((a) < ((base) + (len))))
+#define in_range(a, base, len) (((a) >= (base)) && ((a) < ((base) + (len))))
 
 struct kgsl_regmap_region *kgsl_regmap_get_region(struct kgsl_regmap *regmap,
-		u32 offset)
+						  u32 offset)
 {
 	int i;
 
@@ -112,7 +114,8 @@ bool kgsl_regmap_valid_offset(struct kgsl_regmap *regmap, u32 offset)
 
 u32 kgsl_regmap_read(struct kgsl_regmap *regmap, u32 offset)
 {
-	struct kgsl_regmap_region *region = kgsl_regmap_get_region(regmap, offset);
+	struct kgsl_regmap_region *region =
+		kgsl_regmap_get_region(regmap, offset);
 	u32 val;
 
 	if (WARN(!region, "Out of bounds register read offset: 0x%x\n", offset))
@@ -130,9 +133,11 @@ u32 kgsl_regmap_read(struct kgsl_regmap *regmap, u32 offset)
 
 void kgsl_regmap_write(struct kgsl_regmap *regmap, u32 value, u32 offset)
 {
-	struct kgsl_regmap_region *region = kgsl_regmap_get_region(regmap, offset);
+	struct kgsl_regmap_region *region =
+		kgsl_regmap_get_region(regmap, offset);
 
-	if (WARN(!region, "Out of bounds register write offset: 0x%x\n", offset))
+	if (WARN(!region, "Out of bounds register write offset: 0x%x\n",
+		 offset))
 		return;
 
 	if (region->ops && region->ops->preaccess)
@@ -146,52 +151,54 @@ void kgsl_regmap_write(struct kgsl_regmap *regmap, u32 value, u32 offset)
 }
 
 void kgsl_regmap_multi_write(struct kgsl_regmap *regmap,
-		const struct kgsl_regmap_list *list, int count)
+			     const struct kgsl_regmap_list *list, int count)
 {
 	struct kgsl_regmap_region *region, *prev = NULL;
 	int i;
 
 	/*
-	 * do one write barrier to ensure all previous writes are done before
-	 * starting the list
-	 */
+   * do one write barrier to ensure all previous writes are done before
+   * starting the list
+   */
 	wmb();
 
 	for (i = 0; i < count; i++) {
 		region = kgsl_regmap_get_region(regmap, list[i].offset);
 
 		if (WARN(!region, "Out of bounds register write offset: 0x%x\n",
-			list[i].offset))
+			 list[i].offset))
 			continue;
 
 		/*
-		 * The registers might be in different regions. If a region has
-		 * a preaccess function we need to call it at least once before
-		 * writing registers but we don't want to call it every time if
-		 * we can avoid it. "cache" the current region and don't call
-		 * pre-access if it is the same region from the previous access.
-		 * This isn't perfect but it should cut down on some unneeded
-		 * cpu cycles
-		 */
+     * The registers might be in different regions. If a region has
+     * a preaccess function we need to call it at least once before
+     * writing registers but we don't want to call it every time if
+     * we can avoid it. "cache" the current region and don't call
+     * pre-access if it is the same region from the previous access.
+     * This isn't perfect but it should cut down on some unneeded
+     * cpu cycles
+     */
 
 		if (region != prev && region->ops && region->ops->preaccess)
 			region->ops->preaccess(region);
 
 		prev = region;
 
-		writel_relaxed(list[i].val, region_addr(region, list[i].offset));
+		writel_relaxed(list[i].val,
+			       region_addr(region, list[i].offset));
 		trace_kgsl_regwrite(list[i].val, list[i].offset);
 	}
 }
 
-void kgsl_regmap_rmw(struct kgsl_regmap *regmap, u32 offset, u32 mask,
-		u32 or)
+void kgsl_regmap_rmw(struct kgsl_regmap *regmap, u32 offset, u32 mask, u32 or)
 {
-	struct kgsl_regmap_region *region = kgsl_regmap_get_region(regmap, offset);
+	struct kgsl_regmap_region *region =
+		kgsl_regmap_get_region(regmap, offset);
 	u32 val;
 
-	if (WARN(!region, "Out of bounds register read-modify-write offset: 0x%x\n",
-		offset))
+	if (WARN(!region,
+		 "Out of bounds register read-modify-write offset: 0x%x\n",
+		 offset))
 		return;
 
 	if (region->ops && region->ops->preaccess)
@@ -206,22 +213,24 @@ void kgsl_regmap_rmw(struct kgsl_regmap *regmap, u32 offset, u32 mask,
 }
 
 void kgsl_regmap_bulk_write(struct kgsl_regmap *regmap, u32 offset,
-		const void *data, int dwords)
+			    const void *data, int dwords)
 {
-	struct kgsl_regmap_region *region = kgsl_regmap_get_region(regmap, offset);
+	struct kgsl_regmap_region *region =
+		kgsl_regmap_get_region(regmap, offset);
 
-	if (WARN(!region, "Out of bounds register bulk write offset: 0x%x\n", offset))
+	if (WARN(!region, "Out of bounds register bulk write offset: 0x%x\n",
+		 offset))
 		return;
 
 	if (region->ops && region->ops->preaccess)
 		region->ops->preaccess(region);
 
 	/*
-	 * A bulk write operation can only be in one region - it cannot
-	 * cross boundaries
-	 */
+   * A bulk write operation can only be in one region - it cannot
+   * cross boundaries
+   */
 	if (WARN((offset - region->offset) + dwords > region->size,
-		"OUt of bounds bulk write size: 0x%x\n", offset + dwords))
+		 "OUt of bounds bulk write size: 0x%x\n", offset + dwords))
 		return;
 
 	/* Make sure all pending write are done first */
@@ -230,22 +239,24 @@ void kgsl_regmap_bulk_write(struct kgsl_regmap *regmap, u32 offset,
 }
 
 void kgsl_regmap_bulk_read(struct kgsl_regmap *regmap, u32 offset,
-		const void *data, int dwords)
+			   const void *data, int dwords)
 {
-	struct kgsl_regmap_region *region = kgsl_regmap_get_region(regmap, offset);
+	struct kgsl_regmap_region *region =
+		kgsl_regmap_get_region(regmap, offset);
 
-	if (WARN(!region, "Out of bounds register bulk read offset: 0x%x\n", offset))
+	if (WARN(!region, "Out of bounds register bulk read offset: 0x%x\n",
+		 offset))
 		return;
 
 	if (region->ops && region->ops->preaccess)
 		region->ops->preaccess(region);
 
 	/*
-	 * A bulk read operation can only be in one region - it cannot
-	 * cross boundaries
-	 */
+   * A bulk read operation can only be in one region - it cannot
+   * cross boundaries
+   */
 	if (WARN((offset - region->offset) + dwords > region->size,
-		"Out of bounds bulk read size: 0x%x\n", offset + dwords))
+		 "Out of bounds bulk read size: 0x%x\n", offset + dwords))
 		return;
 
 	memcpy_fromio(region_addr(region, offset), data, dwords << 2);
@@ -256,7 +267,8 @@ void kgsl_regmap_bulk_read(struct kgsl_regmap *regmap, u32 offset,
 
 void __iomem *kgsl_regmap_virt(struct kgsl_regmap *regmap, u32 offset)
 {
-	struct kgsl_regmap_region *region = kgsl_regmap_get_region(regmap, offset);
+	struct kgsl_regmap_region *region =
+		kgsl_regmap_get_region(regmap, offset);
 
 	if (region)
 		return region_addr(region, offset);
@@ -264,10 +276,11 @@ void __iomem *kgsl_regmap_virt(struct kgsl_regmap *regmap, u32 offset)
 	return NULL;
 }
 
-void kgsl_regmap_read_indexed(struct kgsl_regmap *regmap, u32 addr,
-		u32 data, u32 *dest, int count)
+void kgsl_regmap_read_indexed(struct kgsl_regmap *regmap, u32 addr, u32 data,
+			      u32 *dest, int count)
 {
-	struct kgsl_regmap_region *region = kgsl_regmap_get_region(regmap, addr);
+	struct kgsl_regmap_region *region =
+		kgsl_regmap_get_region(regmap, addr);
 	int i;
 
 	if (!region)
@@ -294,9 +307,11 @@ void kgsl_regmap_read_indexed(struct kgsl_regmap *regmap, u32 addr,
 }
 
 void kgsl_regmap_read_indexed_interleaved(struct kgsl_regmap *regmap, u32 addr,
-		u32 data, u32 *dest, u32 start, int count)
+					  u32 data, u32 *dest, u32 start,
+					  int count)
 {
-	struct kgsl_regmap_region *region = kgsl_regmap_get_region(regmap, addr);
+	struct kgsl_regmap_region *region =
+		kgsl_regmap_get_region(regmap, addr);
 	int i;
 
 	if (!region)
@@ -323,7 +338,7 @@ void kgsl_regmap_read_indexed_interleaved(struct kgsl_regmap *regmap, u32 addr,
 
 /* A special helper function to work with read_poll_timeout */
 int kgsl_regmap_poll_read(struct kgsl_regmap_region *region, u32 offset,
-		u32 *val)
+			  u32 *val)
 {
 	/* FIXME: WARN on !region? */
 	if (WARN(!region, "Out of bounds poll read: 0x%x\n", offset))

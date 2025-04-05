@@ -17,11 +17,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <scheduler_api.h>
-#include <scheduler_core.h>
 #include <qdf_atomic.h>
 #include <qdf_module.h>
 #include <qdf_platform.h>
+#include <scheduler_api.h>
+#include <scheduler_core.h>
 
 struct sched_qdf_mc_timer_cb_wrapper {
 	qdf_mc_timer_callback_t timer_callback;
@@ -68,8 +68,7 @@ static inline void scheduler_watchdog_notify(struct scheduler_ctx *sched)
 
 	sched_fatal("Callback %s (type 0x%x) exceeded its allotted time of %ds",
 		    sched->watchdog_callback ? symbol : "<null>",
-		    sched->watchdog_msg_type,
-		    sched->timeout / 1000);
+		    sched->watchdog_msg_type, sched->timeout / 1000);
 }
 
 static void scheduler_watchdog_timeout(void *arg)
@@ -106,8 +105,7 @@ QDF_STATUS scheduler_enable(void)
 
 	qdf_atomic_clear_bit(MC_SHUTDOWN_EVENT_MASK,
 			     &sched_ctx->sch_event_flag);
-	qdf_atomic_clear_bit(MC_POST_EVENT_MASK,
-			     &sched_ctx->sch_event_flag);
+	qdf_atomic_clear_bit(MC_POST_EVENT_MASK, &sched_ctx->sch_event_flag);
 
 	/* create the scheduler thread */
 	sched_ctx->sch_thread = qdf_create_thread(scheduler_thread, sched_ctx,
@@ -177,10 +175,8 @@ QDF_STATUS scheduler_init(void)
 	qdf_init_waitqueue_head(&sched_ctx->sch_wait_queue);
 	sched_ctx->sch_event_flag = 0;
 	sched_ctx->timeout = SCHEDULER_WATCHDOG_TIMEOUT;
-	qdf_timer_init(NULL,
-		       &sched_ctx->watchdog_timer,
-		       &scheduler_watchdog_timeout,
-		       sched_ctx,
+	qdf_timer_init(NULL, &sched_ctx->watchdog_timer,
+		       &scheduler_watchdog_timeout, sched_ctx,
 		       QDF_TIMER_TYPE_SW);
 
 	qdf_register_mc_timer_callback(scheduler_mc_timer_callback);
@@ -272,16 +268,16 @@ QDF_STATUS scheduler_post_msg_by_priority(uint32_t qid,
 		return QDF_STATUS_E_FAILURE;
 	}
 	/* Target_If is a special message queue in phase 3 convergence because
-	 * its used by both legacy WMA and as well as new UMAC components which
-	 * directly populate callback handlers in message body.
-	 * 1) WMA legacy messages should not have callback
-	 * 2) New target_if message needs to have valid callback
-	 * Clear callback handler for legacy WMA messages such that in case
-	 * if someone is sending legacy WMA message from stack which has
-	 * uninitialized callback then its handled properly. Also change
-	 * legacy WMA message queue id to target_if queue such that its  always
-	 * handled in right order.
-	 */
+   * its used by both legacy WMA and as well as new UMAC components which
+   * directly populate callback handlers in message body.
+   * 1) WMA legacy messages should not have callback
+   * 2) New target_if message needs to have valid callback
+   * Clear callback handler for legacy WMA messages such that in case
+   * if someone is sending legacy WMA message from stack which has
+   * uninitialized callback then its handled properly. Also change
+   * legacy WMA message queue id to target_if queue such that its  always
+   * handled in right order.
+   */
 	if (QDF_MODULE_ID_WMA == que_id) {
 		msg->callback = NULL;
 		/* change legacy WMA message id to new target_if mq id */
@@ -424,15 +420,15 @@ QDF_STATUS scheduler_target_if_mq_handler(struct scheduler_msg *msg)
 	target_if_msg_handler = msg->callback;
 
 	/* Target_If is a special message queue in phase 3 convergence because
-	 * its used by both legacy WMA and as well as new UMAC components. New
-	 * UMAC components directly pass their message handlers as callback in
-	 * message body.
-	 * 1) All Legacy WMA messages do not contain message callback so invoke
-	 *    registered legacy WMA handler. Scheduler message posting APIs
-	 *    makes sure legacy WMA messages do not have callbacks.
-	 * 2) For new messages which have valid callbacks invoke their callbacks
-	 *    directly.
-	 */
+   * its used by both legacy WMA and as well as new UMAC components. New
+   * UMAC components directly pass their message handlers as callback in
+   * message body.
+   * 1) All Legacy WMA messages do not contain message callback so invoke
+   *    registered legacy WMA handler. Scheduler message posting APIs
+   *    makes sure legacy WMA messages do not have callbacks.
+   * 2) For new messages which have valid callbacks invoke their callbacks
+   *    directly.
+   */
 	if (!target_if_msg_handler)
 		status = sched_ctx->legacy_wma_handler(msg);
 	else
@@ -460,9 +456,8 @@ QDF_STATUS scheduler_os_if_mq_handler(struct scheduler_msg *msg)
 	return QDF_STATUS_SUCCESS;
 }
 
-struct sched_qdf_mc_timer_cb_wrapper *scheduler_qdf_mc_timer_init(
-		qdf_mc_timer_callback_t timer_callback,
-		void *data)
+struct sched_qdf_mc_timer_cb_wrapper *
+scheduler_qdf_mc_timer_init(qdf_mc_timer_callback_t timer_callback, void *data)
 {
 	struct sched_qdf_mc_timer_cb_wrapper *wrapper_ptr;
 
@@ -476,7 +471,7 @@ struct sched_qdf_mc_timer_cb_wrapper *scheduler_qdf_mc_timer_init(
 }
 
 void *scheduler_qdf_mc_timer_deinit_return_data_ptr(
-		struct sched_qdf_mc_timer_cb_wrapper *wrapper_ptr)
+	struct sched_qdf_mc_timer_cb_wrapper *wrapper_ptr)
 {
 	void *data_ptr;
 
@@ -490,7 +485,8 @@ void *scheduler_qdf_mc_timer_deinit_return_data_ptr(
 	return data_ptr;
 }
 
-QDF_STATUS scheduler_qdf_mc_timer_callback_t_wrapper(struct scheduler_msg *msg)
+QDF_STATUS
+scheduler_qdf_mc_timer_callback_t_wrapper(struct scheduler_msg *msg)
 {
 	struct sched_qdf_mc_timer_cb_wrapper *mc_timer_wrapper;
 	qdf_mc_timer_callback_t timer_cb;
@@ -592,8 +588,8 @@ void scheduler_set_watchdog_timeout(uint32_t timeout)
 	sched_ctx->timeout = timeout;
 }
 
-QDF_STATUS scheduler_register_wma_legacy_handler(scheduler_msg_process_fn_t
-						wma_callback)
+QDF_STATUS
+scheduler_register_wma_legacy_handler(scheduler_msg_process_fn_t wma_callback)
 {
 	struct scheduler_ctx *sched_ctx = scheduler_get_context();
 
@@ -606,8 +602,8 @@ QDF_STATUS scheduler_register_wma_legacy_handler(scheduler_msg_process_fn_t
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS scheduler_register_sys_legacy_handler(scheduler_msg_process_fn_t
-						sys_callback)
+QDF_STATUS
+scheduler_register_sys_legacy_handler(scheduler_msg_process_fn_t sys_callback)
 {
 	struct scheduler_ctx *sched_ctx = scheduler_get_context();
 
@@ -654,7 +650,7 @@ static QDF_STATUS scheduler_msg_flush_mc(struct scheduler_msg *msg)
 
 void scheduler_mc_timer_callback(qdf_mc_timer_t *timer)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	QDF_STATUS status;
 	struct sched_qdf_mc_timer_cb_wrapper *mc_timer_wrapper;
 	qdf_mc_timer_callback_t callback = NULL;
@@ -666,10 +662,10 @@ void scheduler_mc_timer_callback(qdf_mc_timer_t *timer)
 		return;
 
 	/*
-	 * Save the jiffies value in a per-timer context in qdf_mc_timer_t.
-	 * It will help the debugger to know the exact time at which the host
-	 * stops/expiry of the QDF timer.
-	 */
+   * Save the jiffies value in a per-timer context in qdf_mc_timer_t.
+   * It will help the debugger to know the exact time at which the host
+   * stops/expiry of the QDF timer.
+   */
 	timer->timer_end_jiffies = jiffies;
 
 	qdf_spin_lock_irqsave(&timer->platform_info.spinlock);
@@ -677,9 +673,9 @@ void scheduler_mc_timer_callback(qdf_mc_timer_t *timer)
 	switch (timer->state) {
 	case QDF_TIMER_STATE_STARTING:
 		/* we are in this state because someone just started the timer,
-		 * MC timer got started and expired, but the time content have
-		 * not been updated this is a rare race condition!
-		 */
+     * MC timer got started and expired, but the time content have
+     * not been updated this is a rare race condition!
+     */
 		timer->state = QDF_TIMER_STATE_STOPPED;
 		status = QDF_STATUS_E_ALREADY;
 		break;
@@ -694,13 +690,13 @@ void scheduler_mc_timer_callback(qdf_mc_timer_t *timer)
 
 	case QDF_TIMER_STATE_RUNNING:
 		/* need to go to stop state here because the call-back function
-		 * may restart timer (to emulate periodic timer)
-		 */
+     * may restart timer (to emulate periodic timer)
+     */
 		timer->state = QDF_TIMER_STATE_STOPPED;
 		/* copy the relevant timer information to local variables;
-		 * once we exits from this critical section, the timer content
-		 * may be modified by other tasks
-		 */
+     * once we exits from this critical section, the timer content
+     * may be modified by other tasks
+     */
 		callback = timer->callback;
 		user_data = timer->user_data;
 		type = timer->type;
@@ -779,8 +775,7 @@ QDF_STATUS scheduler_get_queue_size(QDF_MODULE_ID qid, uint32_t *size)
 QDF_STATUS scheduler_post_message_debug(QDF_MODULE_ID src_id,
 					QDF_MODULE_ID dest_id,
 					QDF_MODULE_ID que_id,
-					struct scheduler_msg *msg,
-					int line,
+					struct scheduler_msg *msg, int line,
 					const char *func)
 {
 	QDF_STATUS status;

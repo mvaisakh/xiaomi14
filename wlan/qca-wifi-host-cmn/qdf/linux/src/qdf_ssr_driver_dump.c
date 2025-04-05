@@ -17,17 +17,17 @@
 #include "qdf_ssr_driver_dump.h"
 #include "qdf_lock.h"
 #include "qdf_str.h"
-#include <qdf_trace.h>
-#include <qdf_parse.h>
-#include <qdf_module.h>
-#include <qdf_util.h>
 #include <qdf_mem.h>
+#include <qdf_module.h>
+#include <qdf_parse.h>
+#include <qdf_trace.h>
 #include <qdf_types.h>
+#include <qdf_util.h>
 
 static qdf_mutex_t region_list_mutex;
 
 static struct cnss_ssr_driver_dump_entry
-dump_entry_list[CNSS_HOST_DUMP_TYPE_MAX];
+	dump_entry_list[CNSS_HOST_DUMP_TYPE_MAX];
 
 static size_t num_of_regions_registered;
 
@@ -167,8 +167,7 @@ ret:
 }
 
 QDF_STATUS
-qdf_ssr_driver_dump_retrieve_regions(qdf_ssr_driver_dump_entry
-				     *input_array,
+qdf_ssr_driver_dump_retrieve_regions(qdf_ssr_driver_dump_entry *input_array,
 				     size_t *num_entries_loaded)
 {
 	QDF_STATUS status;

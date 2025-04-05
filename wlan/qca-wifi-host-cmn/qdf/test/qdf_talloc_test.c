@@ -16,9 +16,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "qdf_talloc_test.h"
 #include "qdf_status.h"
 #include "qdf_talloc.h"
-#include "qdf_talloc_test.h"
 #include "qdf_trace.h"
 
 static uint32_t qdf_talloc_test_alloc_free(void)
@@ -67,4 +67,3 @@ uint32_t qdf_talloc_unit_test(void)
 
 	return errors;
 }
-

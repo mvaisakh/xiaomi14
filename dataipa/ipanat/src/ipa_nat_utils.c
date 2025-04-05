@@ -27,18 +27,19 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "ipa_nat_utils.h"
-#include <sys/ioctl.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #define IPA_MAX_MSG_LEN 4096
 
 static char dbg_buff[IPA_MAX_MSG_LEN];
 
-#if !defined(MSM_IPA_TESTS) && !defined(USE_GLIB) && !defined(FEATURE_IPA_ANDROID)
-size_t strlcpy(char* dst, const char* src, size_t size)
+#if !defined(MSM_IPA_TESTS) && !defined(USE_GLIB) && \
+	!defined(FEATURE_IPA_ANDROID)
+size_t strlcpy(char *dst, const char *src, size_t size)
 {
 	size_t i;
 
@@ -54,37 +55,32 @@ size_t strlcpy(char* dst, const char* src, size_t size)
 }
 #endif
 
-ipa_descriptor* ipa_descriptor_open(void)
+ipa_descriptor *ipa_descriptor_open(void)
 {
-	ipa_descriptor* desc_ptr;
+	ipa_descriptor *desc_ptr;
 	int res = 0;
 
 	IPADBG("In\n");
 
 	desc_ptr = calloc(1, sizeof(ipa_descriptor));
 
-	if ( desc_ptr == NULL )
-	{
+	if (desc_ptr == NULL) {
 		IPAERR("Unable to allocate ipa_descriptor\n");
 		goto bail;
 	}
 
 	desc_ptr->fd = open(IPA_DEV_NAME, O_RDONLY);
 
-	if (desc_ptr->fd < 0)
-	{
+	if (desc_ptr->fd < 0) {
 		IPAERR("Unable to open ipa device\n");
 		goto free;
 	}
 
 	res = ioctl(desc_ptr->fd, IPA_IOC_GET_HW_VERSION, &desc_ptr->ver);
 
-	if (res == 0)
-	{
+	if (res == 0) {
 		IPADBG("IPA version is %d\n", desc_ptr->ver);
-	}
-	else
-	{
+	} else {
 		IPAERR("Unable to get IPA version. Error %d\n", res);
 		desc_ptr->ver = IPA_HW_None;
 	}
@@ -101,15 +97,12 @@ bail:
 	return desc_ptr;
 }
 
-void ipa_descriptor_close(
-	ipa_descriptor* desc_ptr)
+void ipa_descriptor_close(ipa_descriptor *desc_ptr)
 {
 	IPADBG("In\n");
 
-	if ( desc_ptr )
-	{
-		if ( desc_ptr->fd >= 0)
-		{
+	if (desc_ptr) {
+		if (desc_ptr->fd >= 0) {
 			close(desc_ptr->fd);
 		}
 		free(desc_ptr);
@@ -118,40 +111,34 @@ void ipa_descriptor_close(
 	IPADBG("Out\n");
 }
 
-void ipa_read_debug_info(
-	const char* debug_file_path)
+void ipa_read_debug_info(const char *debug_file_path)
 {
 	size_t result;
-	FILE* debug_file;
+	FILE *debug_file;
 
 	debug_file = fopen(debug_file_path, "r");
-	if (debug_file == NULL)
-	{
+	if (debug_file == NULL) {
 		printf("Failed to open %s\n", debug_file_path);
 		return;
 	}
 
-	for (;;)
-	{
-		result = fread(dbg_buff, sizeof(char), IPA_MAX_MSG_LEN, debug_file);
+	for (;;) {
+		result = fread(dbg_buff, sizeof(char), IPA_MAX_MSG_LEN,
+			       debug_file);
 		if (!result)
 			break;
 
-		if (result < IPA_MAX_MSG_LEN)
-		{
-			if (ferror(debug_file))
-			{
-				printf("Failed to read from %s\n", debug_file_path);
+		if (result < IPA_MAX_MSG_LEN) {
+			if (ferror(debug_file)) {
+				printf("Failed to read from %s\n",
+				       debug_file_path);
 				break;
 			}
 
 			dbg_buff[result] = '\0';
-		}
-		else
-		{
+		} else {
 			dbg_buff[IPA_MAX_MSG_LEN - 1] = '\0';
 		}
-
 
 		printf("%s", dbg_buff);
 
@@ -163,50 +150,42 @@ void ipa_read_debug_info(
 
 void log_nat_message(char *msg)
 {
-	 return;
+	return;
 }
 
-int currTimeAs(
-	TimeAs_t  timeAs,
-	uint64_t* valPtr )
+int currTimeAs(TimeAs_t timeAs, uint64_t *valPtr)
 {
 	struct timespec timeSpec;
 
 	int ret = 0;
 
-	if ( ! VALID_TIMEAS(timeAs) || ! valPtr )
-	{
-		IPAERR("Bad arg: timeAs (%u) and/or valPtr (%p)\n",
-			   timeAs, valPtr );
+	if (!VALID_TIMEAS(timeAs) || !valPtr) {
+		IPAERR("Bad arg: timeAs (%u) and/or valPtr (%p)\n", timeAs,
+		       valPtr);
 		ret = -1;
 		goto bail;
 	}
 
 	memset(&timeSpec, 0, sizeof(timeSpec));
 
-	if ( clock_gettime(CLOCK_MONOTONIC, &timeSpec) != 0 )
-	{
-		IPAERR("Can't get system clock time\n" );
+	if (clock_gettime(CLOCK_MONOTONIC, &timeSpec) != 0) {
+		IPAERR("Can't get system clock time\n");
 		ret = -1;
 		goto bail;
 	}
 
-	switch( timeAs )
-	{
+	switch (timeAs) {
 	case TimeAsNanSecs:
-		*valPtr =
-			(uint64_t) (SECS2NanSECS((uint64_t) timeSpec.tv_sec) +
-						((uint64_t) timeSpec.tv_nsec));
+		*valPtr = (uint64_t)(SECS2NanSECS((uint64_t)timeSpec.tv_sec) +
+				     ((uint64_t)timeSpec.tv_nsec));
 		break;
 	case TimeAsMicSecs:
-		*valPtr =
-			(uint64_t) (SECS2MicSECS((uint64_t) timeSpec.tv_sec) +
-						((uint64_t) timeSpec.tv_nsec / 1000));
+		*valPtr = (uint64_t)(SECS2MicSECS((uint64_t)timeSpec.tv_sec) +
+				     ((uint64_t)timeSpec.tv_nsec / 1000));
 		break;
 	case TimeAsMilSecs:
-		*valPtr =
-			(uint64_t) (SECS2MilSECS((uint64_t) timeSpec.tv_sec) +
-						((uint64_t) timeSpec.tv_nsec / 1000000));
+		*valPtr = (uint64_t)(SECS2MilSECS((uint64_t)timeSpec.tv_sec) +
+				     ((uint64_t)timeSpec.tv_nsec / 1000000));
 		break;
 	}
 

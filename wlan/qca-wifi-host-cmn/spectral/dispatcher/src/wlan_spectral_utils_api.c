@@ -18,11 +18,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <wlan_spectral_utils_api.h>
-#include <qdf_module.h>
 #include "../../core/spectral_cmn_api_i.h"
-#include <wlan_spectral_tgt_api.h>
 #include <cfg_ucfg_api.h>
+#include <qdf_module.h>
+#include <wlan_spectral_tgt_api.h>
+#include <wlan_spectral_utils_api.h>
 
 bool wlan_spectral_is_mode_disabled_pdev(struct wlan_objmgr_pdev *pdev,
 					 enum spectral_scan_mode smode)
@@ -41,14 +41,18 @@ bool wlan_spectral_is_mode_disabled_pdev(struct wlan_objmgr_pdev *pdev,
 		break;
 
 	case SPECTRAL_SCAN_MODE_AGILE:
-		spectral_mode_disable = wlan_pdev_nif_feat_ext_cap_get(
-			pdev, WLAN_PDEV_FEXT_AGILE_SPECTRAL_SCAN_DIS) &&
-					wlan_pdev_nif_feat_ext_cap_get(
-			pdev, WLAN_PDEV_FEXT_AGILE_SPECTRAL_SCAN_160_DIS) &&
-					wlan_pdev_nif_feat_ext_cap_get(
-			pdev, WLAN_PDEV_FEXT_AGILE_SPECTRAL_SCAN_80P80_DIS) &&
-					wlan_pdev_nif_feat_ext_cap_get(
-			pdev, WLAN_PDEV_FEXT_AGILE_SPECTRAL_SCAN_320_DIS);
+		spectral_mode_disable =
+			wlan_pdev_nif_feat_ext_cap_get(
+				pdev, WLAN_PDEV_FEXT_AGILE_SPECTRAL_SCAN_DIS) &&
+			wlan_pdev_nif_feat_ext_cap_get(
+				pdev,
+				WLAN_PDEV_FEXT_AGILE_SPECTRAL_SCAN_160_DIS) &&
+			wlan_pdev_nif_feat_ext_cap_get(
+				pdev,
+				WLAN_PDEV_FEXT_AGILE_SPECTRAL_SCAN_80P80_DIS) &&
+			wlan_pdev_nif_feat_ext_cap_get(
+				pdev,
+				WLAN_PDEV_FEXT_AGILE_SPECTRAL_SCAN_320_DIS);
 		break;
 
 	default:
@@ -60,8 +64,7 @@ bool wlan_spectral_is_mode_disabled_pdev(struct wlan_objmgr_pdev *pdev,
 	return spectral_mode_disable;
 }
 
-bool
-wlan_spectral_is_feature_disabled_ini(struct wlan_objmgr_psoc *psoc)
+bool wlan_spectral_is_feature_disabled_ini(struct wlan_objmgr_psoc *psoc)
 {
 	if (!psoc) {
 		spectral_err("PSOC is NULL!");
@@ -72,8 +75,7 @@ wlan_spectral_is_feature_disabled_ini(struct wlan_objmgr_psoc *psoc)
 					  WLAN_SOC_F_SPECTRAL_INI_DISABLE);
 }
 
-bool
-wlan_spectral_is_feature_disabled_psoc(struct wlan_objmgr_psoc *psoc)
+bool wlan_spectral_is_feature_disabled_psoc(struct wlan_objmgr_psoc *psoc)
 {
 	if (!psoc) {
 		spectral_err("psoc is NULL!");
@@ -83,8 +85,7 @@ wlan_spectral_is_feature_disabled_psoc(struct wlan_objmgr_psoc *psoc)
 	return wlan_spectral_is_feature_disabled_ini(psoc);
 }
 
-bool
-wlan_spectral_is_feature_disabled_pdev(struct wlan_objmgr_pdev *pdev)
+bool wlan_spectral_is_feature_disabled_pdev(struct wlan_objmgr_pdev *pdev)
 {
 	enum spectral_scan_mode smode;
 
@@ -129,31 +130,27 @@ QDF_STATUS
 wlan_spectral_init(void)
 {
 	if (wlan_objmgr_register_psoc_create_handler(
-		WLAN_UMAC_COMP_SPECTRAL,
-		wlan_spectral_psoc_obj_create_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_SPECTRAL,
+		    wlan_spectral_psoc_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_register_psoc_destroy_handler(
-		WLAN_UMAC_COMP_SPECTRAL,
-		wlan_spectral_psoc_obj_destroy_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_SPECTRAL,
+		    wlan_spectral_psoc_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_register_pdev_create_handler(
-		WLAN_UMAC_COMP_SPECTRAL,
-		wlan_spectral_pdev_obj_create_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_SPECTRAL,
+		    wlan_spectral_pdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_register_pdev_destroy_handler(
-		WLAN_UMAC_COMP_SPECTRAL,
-		wlan_spectral_pdev_obj_destroy_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_SPECTRAL,
+		    wlan_spectral_pdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -164,31 +161,27 @@ QDF_STATUS
 wlan_spectral_deinit(void)
 {
 	if (wlan_objmgr_unregister_psoc_create_handler(
-		WLAN_UMAC_COMP_SPECTRAL,
-		wlan_spectral_psoc_obj_create_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_SPECTRAL,
+		    wlan_spectral_psoc_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_unregister_psoc_destroy_handler(
-		WLAN_UMAC_COMP_SPECTRAL,
-		wlan_spectral_psoc_obj_destroy_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_SPECTRAL,
+		    wlan_spectral_psoc_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_unregister_pdev_create_handler(
-		WLAN_UMAC_COMP_SPECTRAL,
-		wlan_spectral_pdev_obj_create_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_SPECTRAL,
+		    wlan_spectral_pdev_obj_create_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	if (wlan_objmgr_unregister_pdev_destroy_handler(
-		WLAN_UMAC_COMP_SPECTRAL,
-		wlan_spectral_pdev_obj_destroy_handler,
-		NULL) !=
-	    QDF_STATUS_SUCCESS) {
+		    WLAN_UMAC_COMP_SPECTRAL,
+		    wlan_spectral_pdev_obj_destroy_handler,
+		    NULL) != QDF_STATUS_SUCCESS) {
 		return QDF_STATUS_E_FAILURE;
 	}
 	return QDF_STATUS_SUCCESS;
@@ -217,19 +210,18 @@ spectral_register_legacy_cb(struct wlan_objmgr_psoc *psoc,
 	}
 
 	sc->legacy_cbacks.vdev_get_chan_freq =
-	    legacy_cbacks->vdev_get_chan_freq;
+		legacy_cbacks->vdev_get_chan_freq;
 	sc->legacy_cbacks.vdev_get_chan_freq_seg2 =
-	    legacy_cbacks->vdev_get_chan_freq_seg2;
+		legacy_cbacks->vdev_get_chan_freq_seg2;
 	sc->legacy_cbacks.vdev_get_ch_width = legacy_cbacks->vdev_get_ch_width;
 	sc->legacy_cbacks.vdev_get_sec20chan_freq_mhz =
-	    legacy_cbacks->vdev_get_sec20chan_freq_mhz;
+		legacy_cbacks->vdev_get_sec20chan_freq_mhz;
 
 	return QDF_STATUS_SUCCESS;
 }
 qdf_export_symbol(spectral_register_legacy_cb);
 
-int16_t
-spectral_vdev_get_chan_freq(struct wlan_objmgr_vdev *vdev)
+int16_t spectral_vdev_get_chan_freq(struct wlan_objmgr_vdev *vdev)
 {
 	struct spectral_context *sc;
 
@@ -247,8 +239,7 @@ spectral_vdev_get_chan_freq(struct wlan_objmgr_vdev *vdev)
 	return sc->legacy_cbacks.vdev_get_chan_freq(vdev);
 }
 
-int16_t
-spectral_vdev_get_chan_freq_seg2(struct wlan_objmgr_vdev *vdev)
+int16_t spectral_vdev_get_chan_freq_seg2(struct wlan_objmgr_vdev *vdev)
 {
 	struct spectral_context *sc;
 	struct wlan_channel *des_chan;
@@ -270,8 +261,7 @@ spectral_vdev_get_chan_freq_seg2(struct wlan_objmgr_vdev *vdev)
 	return sc->legacy_cbacks.vdev_get_chan_freq_seg2(vdev);
 }
 
-enum phy_ch_width
-spectral_vdev_get_ch_width(struct wlan_objmgr_vdev *vdev)
+enum phy_ch_width spectral_vdev_get_ch_width(struct wlan_objmgr_vdev *vdev)
 {
 	struct spectral_context *sc;
 
@@ -289,9 +279,8 @@ spectral_vdev_get_ch_width(struct wlan_objmgr_vdev *vdev)
 	return sc->legacy_cbacks.vdev_get_ch_width(vdev);
 }
 
-int
-spectral_vdev_get_sec20chan_freq_mhz(struct wlan_objmgr_vdev *vdev,
-				     uint16_t *sec20chan_freq)
+int spectral_vdev_get_sec20chan_freq_mhz(struct wlan_objmgr_vdev *vdev,
+					 uint16_t *sec20chan_freq)
 {
 	struct spectral_context *sc;
 
@@ -310,22 +299,21 @@ spectral_vdev_get_sec20chan_freq_mhz(struct wlan_objmgr_vdev *vdev,
 							     sec20chan_freq);
 }
 
-void
-wlan_lmac_if_sptrl_register_rx_ops(struct wlan_lmac_if_rx_ops *rx_ops)
+void wlan_lmac_if_sptrl_register_rx_ops(struct wlan_lmac_if_rx_ops *rx_ops)
 {
 	struct wlan_lmac_if_sptrl_rx_ops *sptrl_rx_ops = &rx_ops->sptrl_rx_ops;
 
 	/* Spectral rx ops */
 	sptrl_rx_ops->sptrlro_get_pdev_target_handle =
-					tgt_get_pdev_target_handle;
+		tgt_get_pdev_target_handle;
 	sptrl_rx_ops->sptrlro_get_psoc_target_handle =
-					tgt_get_psoc_target_handle;
+		tgt_get_psoc_target_handle;
 	sptrl_rx_ops->sptrlro_vdev_get_chan_freq = spectral_vdev_get_chan_freq;
 	sptrl_rx_ops->sptrlro_vdev_get_chan_freq_seg2 =
-					spectral_vdev_get_chan_freq_seg2;
+		spectral_vdev_get_chan_freq_seg2;
 	sptrl_rx_ops->sptrlro_vdev_get_ch_width = spectral_vdev_get_ch_width;
 	sptrl_rx_ops->sptrlro_vdev_get_sec20chan_freq_mhz =
-	    spectral_vdev_get_sec20chan_freq_mhz;
+		spectral_vdev_get_sec20chan_freq_mhz;
 	sptrl_rx_ops->sptrlro_spectral_is_feature_disabled_pdev =
 		wlan_spectral_is_feature_disabled_pdev;
 	sptrl_rx_ops->sptrlro_spectral_is_feature_disabled_psoc =

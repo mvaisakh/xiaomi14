@@ -21,12 +21,12 @@
  * DOC: Public APIs to perform operations on Global objects
  */
 
-#include "wlan_objmgr_global_obj_i.h"
-#include <wlan_objmgr_global_obj.h>
-#include "wlan_objmgr_debug.h"
-#include "wlan_objmgr_psoc_obj.h"
 #include "qdf_mem.h"
+#include "wlan_objmgr_debug.h"
+#include "wlan_objmgr_global_obj_i.h"
+#include "wlan_objmgr_psoc_obj.h"
 #include <qdf_module.h>
+#include <wlan_objmgr_global_obj.h>
 
 /* Global object, it is declared globally */
 struct wlan_objmgr_global *g_umac_glb_obj;
@@ -48,7 +48,7 @@ QDF_STATUS wlan_objmgr_global_obj_init(void)
 
 	/* Allocation of memory for Global object */
 	umac_global_obj = (struct wlan_objmgr_global *)qdf_mem_malloc(
-				sizeof(*umac_global_obj));
+		sizeof(*umac_global_obj));
 	if (!umac_global_obj)
 		return QDF_STATUS_E_NOMEM;
 
@@ -89,9 +89,8 @@ qdf_export_symbol(wlan_objmgr_global_obj_deinit);
  * APIs to register/unregister handlers
  */
 QDF_STATUS wlan_objmgr_register_psoc_create_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_psoc_create_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_psoc_create_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -117,9 +116,8 @@ QDF_STATUS wlan_objmgr_register_psoc_create_handler(
 qdf_export_symbol(wlan_objmgr_register_psoc_create_handler);
 
 QDF_STATUS wlan_objmgr_unregister_psoc_create_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_psoc_create_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_psoc_create_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -144,9 +142,8 @@ QDF_STATUS wlan_objmgr_unregister_psoc_create_handler(
 qdf_export_symbol(wlan_objmgr_unregister_psoc_create_handler);
 
 QDF_STATUS wlan_objmgr_register_psoc_destroy_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_psoc_destroy_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_psoc_destroy_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -171,9 +168,8 @@ QDF_STATUS wlan_objmgr_register_psoc_destroy_handler(
 qdf_export_symbol(wlan_objmgr_register_psoc_destroy_handler);
 
 QDF_STATUS wlan_objmgr_unregister_psoc_destroy_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_psoc_destroy_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_psoc_destroy_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -198,9 +194,8 @@ QDF_STATUS wlan_objmgr_unregister_psoc_destroy_handler(
 qdf_export_symbol(wlan_objmgr_unregister_psoc_destroy_handler);
 
 QDF_STATUS wlan_objmgr_register_psoc_status_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_psoc_status_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_psoc_status_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -223,9 +218,8 @@ QDF_STATUS wlan_objmgr_register_psoc_status_handler(
 }
 
 QDF_STATUS wlan_objmgr_unregister_psoc_status_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_psoc_status_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_psoc_status_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -247,11 +241,9 @@ QDF_STATUS wlan_objmgr_unregister_psoc_status_handler(
 	return QDF_STATUS_SUCCESS;
 }
 
-
 QDF_STATUS wlan_objmgr_register_pdev_create_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_pdev_create_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_pdev_create_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -276,9 +268,8 @@ QDF_STATUS wlan_objmgr_register_pdev_create_handler(
 qdf_export_symbol(wlan_objmgr_register_pdev_create_handler);
 
 QDF_STATUS wlan_objmgr_unregister_pdev_create_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_pdev_create_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_pdev_create_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -303,9 +294,8 @@ QDF_STATUS wlan_objmgr_unregister_pdev_create_handler(
 qdf_export_symbol(wlan_objmgr_unregister_pdev_create_handler);
 
 QDF_STATUS wlan_objmgr_register_pdev_destroy_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_pdev_destroy_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_pdev_destroy_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -330,9 +320,8 @@ QDF_STATUS wlan_objmgr_register_pdev_destroy_handler(
 qdf_export_symbol(wlan_objmgr_register_pdev_destroy_handler);
 
 QDF_STATUS wlan_objmgr_unregister_pdev_destroy_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_pdev_destroy_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_pdev_destroy_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -357,9 +346,8 @@ QDF_STATUS wlan_objmgr_unregister_pdev_destroy_handler(
 qdf_export_symbol(wlan_objmgr_unregister_pdev_destroy_handler);
 
 QDF_STATUS wlan_objmgr_register_pdev_status_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_pdev_status_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_pdev_status_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -382,9 +370,8 @@ QDF_STATUS wlan_objmgr_register_pdev_status_handler(
 }
 
 QDF_STATUS wlan_objmgr_unregister_pdev_status_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_pdev_status_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_pdev_status_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -406,11 +393,9 @@ QDF_STATUS wlan_objmgr_unregister_pdev_status_handler(
 	return QDF_STATUS_SUCCESS;
 }
 
-
 QDF_STATUS wlan_objmgr_register_vdev_create_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_vdev_create_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_vdev_create_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -435,9 +420,8 @@ QDF_STATUS wlan_objmgr_register_vdev_create_handler(
 qdf_export_symbol(wlan_objmgr_register_vdev_create_handler);
 
 QDF_STATUS wlan_objmgr_unregister_vdev_create_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_vdev_create_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_vdev_create_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -462,9 +446,8 @@ QDF_STATUS wlan_objmgr_unregister_vdev_create_handler(
 qdf_export_symbol(wlan_objmgr_unregister_vdev_create_handler);
 
 QDF_STATUS wlan_objmgr_register_vdev_destroy_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_vdev_destroy_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_vdev_destroy_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -489,9 +472,8 @@ QDF_STATUS wlan_objmgr_register_vdev_destroy_handler(
 qdf_export_symbol(wlan_objmgr_register_vdev_destroy_handler);
 
 QDF_STATUS wlan_objmgr_unregister_vdev_destroy_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_vdev_destroy_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_vdev_destroy_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -516,9 +498,8 @@ QDF_STATUS wlan_objmgr_unregister_vdev_destroy_handler(
 qdf_export_symbol(wlan_objmgr_unregister_vdev_destroy_handler);
 
 QDF_STATUS wlan_objmgr_register_vdev_status_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_vdev_status_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_vdev_status_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -541,9 +522,8 @@ QDF_STATUS wlan_objmgr_register_vdev_status_handler(
 }
 
 QDF_STATUS wlan_objmgr_unregister_vdev_status_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_vdev_status_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_vdev_status_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -566,8 +546,8 @@ QDF_STATUS wlan_objmgr_unregister_vdev_status_handler(
 }
 
 QDF_STATUS wlan_objmgr_register_vdev_peer_free_notify_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_vdev_peer_free_notify_handler handler)
+	enum wlan_umac_comp_id id,
+	wlan_objmgr_vdev_peer_free_notify_handler handler)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -591,8 +571,8 @@ QDF_STATUS wlan_objmgr_register_vdev_peer_free_notify_handler(
 }
 
 QDF_STATUS wlan_objmgr_unregister_vdev_peer_free_notify_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_vdev_peer_free_notify_handler handler)
+	enum wlan_umac_comp_id id,
+	wlan_objmgr_vdev_peer_free_notify_handler handler)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -616,9 +596,8 @@ QDF_STATUS wlan_objmgr_unregister_vdev_peer_free_notify_handler(
 }
 
 QDF_STATUS wlan_objmgr_register_peer_create_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_peer_create_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_peer_create_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -644,9 +623,8 @@ QDF_STATUS wlan_objmgr_register_peer_create_handler(
 qdf_export_symbol(wlan_objmgr_register_peer_create_handler);
 
 QDF_STATUS wlan_objmgr_unregister_peer_create_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_peer_create_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_peer_create_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -672,9 +650,8 @@ QDF_STATUS wlan_objmgr_unregister_peer_create_handler(
 qdf_export_symbol(wlan_objmgr_unregister_peer_create_handler);
 
 QDF_STATUS wlan_objmgr_register_peer_destroy_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_peer_destroy_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_peer_destroy_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -700,9 +677,8 @@ QDF_STATUS wlan_objmgr_register_peer_destroy_handler(
 qdf_export_symbol(wlan_objmgr_register_peer_destroy_handler);
 
 QDF_STATUS wlan_objmgr_unregister_peer_destroy_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_peer_destroy_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_peer_destroy_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -728,9 +704,8 @@ QDF_STATUS wlan_objmgr_unregister_peer_destroy_handler(
 qdf_export_symbol(wlan_objmgr_unregister_peer_destroy_handler);
 
 QDF_STATUS wlan_objmgr_register_peer_status_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_peer_status_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_peer_status_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -753,9 +728,8 @@ QDF_STATUS wlan_objmgr_register_peer_status_handler(
 }
 
 QDF_STATUS wlan_objmgr_unregister_peer_status_handler(
-		enum wlan_umac_comp_id id,
-		wlan_objmgr_peer_status_handler handler,
-		void *arg)
+	enum wlan_umac_comp_id id, wlan_objmgr_peer_status_handler handler,
+	void *arg)
 {
 	/* If id is not within valid range, return */
 	if (id >= WLAN_UMAC_MAX_COMPONENTS) {
@@ -834,8 +808,7 @@ QDF_STATUS wlan_objmgr_global_obj_can_destroyed(void)
 }
 qdf_export_symbol(wlan_objmgr_global_obj_can_destroyed);
 
-void wlan_objmgr_print_ref_ids(qdf_atomic_t *id,
-				QDF_TRACE_LEVEL log_level)
+void wlan_objmgr_print_ref_ids(qdf_atomic_t *id, QDF_TRACE_LEVEL log_level)
 {
 	uint32_t i;
 	uint32_t pending_ref;
@@ -851,9 +824,9 @@ void wlan_objmgr_print_ref_ids(qdf_atomic_t *id,
 	return;
 }
 
-QDF_STATUS wlan_objmgr_iterate_psoc_list(
-		wlan_objmgr_psoc_handler handler,
-		void *arg, wlan_objmgr_ref_dbgid dbg_id)
+QDF_STATUS wlan_objmgr_iterate_psoc_list(wlan_objmgr_psoc_handler handler,
+					 void *arg,
+					 wlan_objmgr_ref_dbgid dbg_id)
 {
 	uint8_t index = 0;
 
@@ -861,8 +834,8 @@ QDF_STATUS wlan_objmgr_iterate_psoc_list(
 
 	while (index < WLAN_OBJMGR_MAX_DEVICES) {
 		if (g_umac_glb_obj->psoc[index]) {
-			handler((void *)g_umac_glb_obj->psoc[index],
-				arg, index);
+			handler((void *)g_umac_glb_obj->psoc[index], arg,
+				index);
 		}
 		index++;
 	}
@@ -874,8 +847,8 @@ QDF_STATUS wlan_objmgr_iterate_psoc_list(
 
 qdf_export_symbol(wlan_objmgr_iterate_psoc_list);
 
-struct wlan_objmgr_psoc
-*wlan_objmgr_get_psoc_by_id(uint8_t psoc_id, wlan_objmgr_ref_dbgid dbg_id)
+struct wlan_objmgr_psoc *
+wlan_objmgr_get_psoc_by_id(uint8_t psoc_id, wlan_objmgr_ref_dbgid dbg_id)
 {
 	struct wlan_objmgr_psoc *psoc;
 
@@ -888,8 +861,8 @@ struct wlan_objmgr_psoc
 
 	psoc = g_umac_glb_obj->psoc[psoc_id];
 	if (psoc) {
-		if (QDF_IS_STATUS_ERROR(wlan_objmgr_psoc_try_get_ref(psoc,
-								     dbg_id)))
+		if (QDF_IS_STATUS_ERROR(
+			    wlan_objmgr_psoc_try_get_ref(psoc, dbg_id)))
 			psoc = NULL;
 	}
 

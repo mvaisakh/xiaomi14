@@ -25,23 +25,25 @@
 
 #include "ani_global.h"
 
-#include "csr_support.h"
-#include "csr_inside_api.h"
-#include "sme_qos_internal.h"
-#include "wma_types.h"
 #include "cds_utils.h"
-#include "wlan_policy_mgr_api.h"
-#include "wlan_serialization_legacy_api.h"
-#include "wlan_reg_services_api.h"
-#include "wlan_crypto_global_api.h"
+#include "csr_inside_api.h"
+#include "csr_support.h"
+#include "sme_qos_internal.h"
 #include "wlan_cm_roam_api.h"
+#include "wlan_crypto_global_api.h"
+#include "wlan_objmgr_vdev_obj.h"
+#include "wlan_policy_mgr_api.h"
+#include "wlan_reg_services_api.h"
+#include "wlan_serialization_legacy_api.h"
+#include "wma_types.h"
 #include <../../core/src/wlan_cm_vdev_api.h>
 #include <wlan_mlo_mgr_public_structs.h>
-#include "wlan_objmgr_vdev_obj.h"
 
-#define CASE_RETURN_STR(n) {\
-	case (n): return (# n);\
-}
+#define CASE_RETURN_STR(n)   \
+	{                    \
+	case (n):            \
+		return (#n); \
+	}
 
 const char *get_e_roam_cmd_status_str(eRoamCmdStatus val)
 {
@@ -90,9 +92,9 @@ const char *get_e_csr_roam_result_str(eCsrRoamResult val)
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_MIC_ERROR_GROUP);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_AUTHENTICATED);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_NEW_RSN_BSS);
- #ifdef FEATURE_WLAN_WAPI
+#ifdef FEATURE_WLAN_WAPI
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_NEW_WAPI_BSS);
- #endif /* FEATURE_WLAN_WAPI */
+#endif /* FEATURE_WLAN_WAPI */
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_INFRA_STARTED);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_INFRA_START_FAILED);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_INFRA_STOPPED);
@@ -112,8 +114,8 @@ const char *get_e_csr_roam_result_str(eCsrRoamResult val)
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_TDLS_SHOULD_DISCOVER);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_TDLS_SHOULD_TEARDOWN);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_TDLS_SHOULD_PEER_DISCONNECTED);
-		CASE_RETURN_STR
-			(eCSR_ROAM_RESULT_TDLS_CONNECTION_TRACKER_NOTIFICATION);
+		CASE_RETURN_STR(
+			eCSR_ROAM_RESULT_TDLS_CONNECTION_TRACKER_NOTIFICATION);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_DFS_RADAR_FOUND_IND);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_CHANNEL_CHANGE_SUCCESS);
 		CASE_RETURN_STR(eCSR_ROAM_RESULT_CHANNEL_CHANGE_FAILURE);
@@ -210,7 +212,7 @@ tListElem *csr_nonscan_pending_ll_peek_head(struct mac_context *mac_ctx,
 			return &sme_cmd->Link;
 		}
 		cmd = wlan_serialization_get_pending_list_next_node_using_psoc(
-						mac_ctx->psoc, cmd, false);
+			mac_ctx->psoc, cmd, false);
 	}
 
 	return NULL;
@@ -223,7 +225,7 @@ bool csr_nonscan_active_ll_remove_entry(struct mac_context *mac_ctx,
 
 	head = csr_nonscan_active_ll_peek_head(mac_ctx, inter_locked);
 	if (head == entry)
-	return true;
+		return true;
 
 	return false;
 }
@@ -240,10 +242,9 @@ tListElem *csr_nonscan_pending_ll_next(struct mac_context *mac_ctx,
 	cmd.cmd_id = sme_cmd->cmd_id;
 	cmd.cmd_type = csr_get_cmd_type(sme_cmd);
 	cmd.vdev = wlan_objmgr_get_vdev_by_id_from_psoc_no_state(
-				mac_ctx->psoc,
-				sme_cmd->vdev_id, WLAN_LEGACY_SME_ID);
+		mac_ctx->psoc, sme_cmd->vdev_id, WLAN_LEGACY_SME_ID);
 	tcmd = wlan_serialization_get_pending_list_next_node_using_psoc(
-				mac_ctx->psoc, &cmd, false);
+		mac_ctx->psoc, &cmd, false);
 	if (cmd.vdev)
 		wlan_objmgr_vdev_release_ref(cmd.vdev, WLAN_LEGACY_SME_ID);
 	while (tcmd) {
@@ -252,7 +253,7 @@ tListElem *csr_nonscan_pending_ll_next(struct mac_context *mac_ctx,
 			return &sme_cmd->Link;
 		}
 		tcmd = wlan_serialization_get_pending_list_next_node_using_psoc(
-						mac_ctx->psoc, tcmd, false);
+			mac_ctx->psoc, tcmd, false);
 	}
 
 	return NULL;
@@ -286,8 +287,8 @@ bool csr_is_conn_state_connected_infra_ap(struct mac_context *mac_ctx,
 {
 	return csr_is_conn_state(mac_ctx, session_id,
 				 eCSR_ASSOC_STATE_TYPE_INFRA_CONNECTED) ||
-		csr_is_conn_state(mac_ctx, session_id,
-				  eCSR_ASSOC_STATE_TYPE_INFRA_DISCONNECTED);
+	       csr_is_conn_state(mac_ctx, session_id,
+				 eCSR_ASSOC_STATE_TYPE_INFRA_DISCONNECTED);
 }
 
 bool csr_is_conn_state_disconnected_wds(struct mac_context *mac_ctx,
@@ -304,8 +305,7 @@ bool csr_is_conn_state_wds(struct mac_context *mac, uint32_t sessionId)
 }
 
 enum csr_cfgdot11mode
-csr_get_vdev_dot11_mode(struct mac_context *mac,
-			uint8_t vdev_id,
+csr_get_vdev_dot11_mode(struct mac_context *mac, uint8_t vdev_id,
 			enum csr_cfgdot11mode curr_dot11_mode)
 {
 	struct wlan_objmgr_vdev *vdev;
@@ -346,8 +346,8 @@ csr_get_vdev_dot11_mode(struct mac_context *mac,
 	    vdev_dot11_mode == MLME_VDEV_DOT11_MODE_11BE)
 		dot11_mode = eCSR_CFG_DOT11_MODE_11BE;
 #endif
-	sme_debug("INI vdev_dot11_mode %d new dot11_mode %d",
-		  vdev_dot11_mode, dot11_mode);
+	sme_debug("INI vdev_dot11_mode %d new dot11_mode %d", vdev_dot11_mode,
+		  dot11_mode);
 
 	return dot11_mode;
 }
@@ -402,7 +402,7 @@ qdf_freq_t csr_get_concurrent_operation_freq(struct mac_context *mac_ctx)
 }
 
 uint32_t csr_get_beaconing_concurrent_channel(struct mac_context *mac_ctx,
-					     uint8_t vdev_id_to_skip)
+					      uint8_t vdev_id_to_skip)
 {
 	struct csr_roam_session *session = NULL;
 	uint8_t i = 0;
@@ -417,9 +417,10 @@ uint32_t csr_get_beaconing_concurrent_channel(struct mac_context *mac_ctx,
 		persona = wlan_get_opmode_from_vdev_id(mac_ctx->pdev, i);
 		if (((persona == QDF_P2P_GO_MODE) ||
 		     (persona == QDF_SAP_MODE)) &&
-		     (session->connectState !=
-		      eCSR_ASSOC_STATE_TYPE_NOT_CONNECTED))
-			return wlan_get_operation_chan_freq_vdev_id(mac_ctx->pdev, i);
+		    (session->connectState !=
+		     eCSR_ASSOC_STATE_TYPE_NOT_CONNECTED))
+			return wlan_get_operation_chan_freq_vdev_id(
+				mac_ctx->pdev, i);
 	}
 
 	return 0;
@@ -427,7 +428,7 @@ uint32_t csr_get_beaconing_concurrent_channel(struct mac_context *mac_ctx,
 
 #ifdef FEATURE_WLAN_MCC_TO_SCC_SWITCH
 
-#define HALF_BW_OF(eCSR_bw_val) ((eCSR_bw_val)/2)
+#define HALF_BW_OF(eCSR_bw_val) ((eCSR_bw_val) / 2)
 
 /* calculation of center channel based on V/HT BW and WIFI channel bw=5MHz) */
 
@@ -453,12 +454,13 @@ uint32_t csr_get_beaconing_concurrent_channel(struct mac_context *mac_ctx,
  * Return: none
  */
 static void csr_calc_chb_for_sap_phymode(struct mac_context *mac_ctx,
-		uint32_t *sap_ch, eCsrPhyMode *sap_phymode,
-		uint32_t *sap_cch, uint32_t *sap_hbw, uint8_t *chb)
+					 uint32_t *sap_ch,
+					 eCsrPhyMode *sap_phymode,
+					 uint32_t *sap_cch, uint32_t *sap_hbw,
+					 uint8_t *chb)
 {
 	if (*sap_phymode == eCSR_DOT11_MODE_11n ||
-			*sap_phymode == eCSR_DOT11_MODE_11n_ONLY) {
-
+	    *sap_phymode == eCSR_DOT11_MODE_11n_ONLY) {
 		*sap_hbw = HALF_BW_OF(eCSR_BW_40MHz_VAL);
 		if (*chb == PHY_DOUBLE_CHANNEL_LOW_PRIMARY)
 			*sap_cch = CSR_GET_HT40_PLUS_CCH(*sap_ch);
@@ -473,39 +475,39 @@ static void csr_calc_chb_for_sap_phymode(struct mac_context *mac_ctx,
 		   CSR_IS_DOT11_PHY_MODE_11BE_ONLY(*sap_phymode)) {
 		/*11AC only 80/40/20 Mhz supported in Rome */
 		if (mac_ctx->roam.configParam.nVhtChannelWidth ==
-				(WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ + 1)) {
+		    (WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ + 1)) {
 			*sap_hbw = HALF_BW_OF(eCSR_BW_80MHz_VAL);
 			if (*chb ==
-				(PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW - 1))
+			    (PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW - 1))
 				*sap_cch = CSR_GET_HT80_PLUS_LL_CCH(*sap_ch);
 			else if (*chb ==
-				(PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW
-				     - 1))
+				 (PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW -
+				  1))
 				*sap_cch = CSR_GET_HT80_PLUS_HL_CCH(*sap_ch);
 			else if (*chb ==
-				 (PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH
-				     - 1))
+				 (PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH -
+				  1))
 				*sap_cch = CSR_GET_HT80_MINUS_LH_CCH(*sap_ch);
 			else if (*chb ==
-				(PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH
-				     - 1))
+				 (PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH -
+				  1))
 				*sap_cch = CSR_GET_HT80_MINUS_HH_CCH(*sap_ch);
 		} else {
 			*sap_hbw = HALF_BW_OF(eCSR_BW_40MHz_VAL);
-			if (*chb == (PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW
-					- 1))
+			if (*chb ==
+			    (PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_LOW - 1))
 				*sap_cch = CSR_GET_HT40_PLUS_CCH(*sap_ch);
 			else if (*chb ==
-				(PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW
-				     - 1))
+				 (PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_LOW -
+				  1))
 				*sap_cch = CSR_GET_HT40_MINUS_CCH(*sap_ch);
 			else if (*chb ==
-				(PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH
-				     - 1))
+				 (PHY_QUADRUPLE_CHANNEL_20MHZ_LOW_40MHZ_HIGH -
+				  1))
 				*sap_cch = CSR_GET_HT40_PLUS_CCH(*sap_ch);
 			else if (*chb ==
-				(PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH
-				     - 1))
+				 (PHY_QUADRUPLE_CHANNEL_20MHZ_HIGH_40MHZ_HIGH -
+				  1))
 				*sap_cch = CSR_GET_HT40_MINUS_CCH(*sap_ch);
 		}
 	}
@@ -551,11 +553,10 @@ static eCSR_BW_Val csr_get_half_bw(enum phy_ch_width ch_width)
  * Return: none
  */
 static void csr_handle_conc_chnl_overlap_for_sap_go(
-		struct mac_context *mac_ctx,
-		struct csr_roam_session *session,
-		uint32_t *sap_ch_freq, uint32_t *sap_hbw, uint32_t *sap_cfreq,
-		uint32_t *intf_ch_freq, uint32_t *intf_hbw,
-		uint32_t *intf_cfreq, enum QDF_OPMODE op_mode)
+	struct mac_context *mac_ctx, struct csr_roam_session *session,
+	uint32_t *sap_ch_freq, uint32_t *sap_hbw, uint32_t *sap_cfreq,
+	uint32_t *intf_ch_freq, uint32_t *intf_hbw, uint32_t *intf_cfreq,
+	enum QDF_OPMODE op_mode)
 {
 	qdf_freq_t op_chan_freq;
 	qdf_freq_t freq_seg_0;
@@ -564,15 +565,15 @@ static void csr_handle_conc_chnl_overlap_for_sap_go(
 	wlan_get_op_chan_freq_info_vdev_id(mac_ctx->pdev, session->vdev_id,
 					   &op_chan_freq, &freq_seg_0,
 					   &ch_width);
-	sme_debug("op_chan_freq:%d freq_seg_0:%d ch_width:%d",
-		  op_chan_freq, freq_seg_0, ch_width);
+	sme_debug("op_chan_freq:%d freq_seg_0:%d ch_width:%d", op_chan_freq,
+		  freq_seg_0, ch_width);
 	/*
-	 * if conc_custom_rule1 is defined then we don't
-	 * want p2pgo to follow SAP's channel or SAP to
-	 * follow P2PGO's channel.
-	 */
+   * if conc_custom_rule1 is defined then we don't
+   * want p2pgo to follow SAP's channel or SAP to
+   * follow P2PGO's channel.
+   */
 	if (0 == mac_ctx->roam.configParam.conc_custom_rule1 &&
-		0 == mac_ctx->roam.configParam.conc_custom_rule2) {
+	    0 == mac_ctx->roam.configParam.conc_custom_rule2) {
 		if (*sap_ch_freq == 0) {
 			*sap_ch_freq = op_chan_freq;
 			*sap_cfreq = freq_seg_0;
@@ -590,8 +591,10 @@ static void csr_handle_conc_chnl_overlap_for_sap_go(
 }
 
 uint16_t csr_check_concurrent_channel_overlap(struct mac_context *mac_ctx,
-			uint32_t sap_ch_freq, eCsrPhyMode sap_phymode,
-			uint8_t cc_switch_mode, uint8_t vdev_id)
+					      uint32_t sap_ch_freq,
+					      eCsrPhyMode sap_phymode,
+					      uint8_t cc_switch_mode,
+					      uint8_t vdev_id)
 {
 	struct csr_roam_session *session = NULL;
 	uint8_t i = 0, chb = PHY_SINGLE_CHANNEL_CENTERED;
@@ -603,7 +606,7 @@ uint16_t csr_check_concurrent_channel_overlap(struct mac_context *mac_ctx,
 	enum phy_ch_width ch_width;
 
 	if (mac_ctx->roam.configParam.cc_switch_mode ==
-			QDF_MCC_TO_SCC_SWITCH_DISABLE)
+	    QDF_MCC_TO_SCC_SWITCH_DISABLE)
 		return 0;
 
 	if (policy_mgr_is_vdev_ll_lt_sap(mac_ctx->psoc, vdev_id))
@@ -636,32 +639,31 @@ uint16_t csr_check_concurrent_channel_overlap(struct mac_context *mac_ctx,
 		if ((op_mode == QDF_STA_MODE ||
 		     op_mode == QDF_P2P_CLIENT_MODE) &&
 		    cm_is_vdevid_connected(mac_ctx->pdev, i)) {
-			wlan_get_op_chan_freq_info_vdev_id(mac_ctx->pdev,
-					   session->vdev_id,
-					   &intf_ch_freq, &intf_cfreq,
-					   &ch_width);
+			wlan_get_op_chan_freq_info_vdev_id(
+				mac_ctx->pdev, session->vdev_id, &intf_ch_freq,
+				&intf_cfreq, &ch_width);
 			intf_hbw = csr_get_half_bw(ch_width);
-			sme_debug("%d: intf_ch:%d intf_cfreq:%d intf_hbw:%d ch_width %d",
-				  i, intf_ch_freq, intf_cfreq, intf_hbw,
-				  ch_width);
+			sme_debug(
+				"%d: intf_ch:%d intf_cfreq:%d intf_hbw:%d ch_width %d",
+				i, intf_ch_freq, intf_cfreq, intf_hbw,
+				ch_width);
 		} else if ((op_mode == QDF_P2P_GO_MODE ||
 			    op_mode == QDF_SAP_MODE) &&
 			   (session->connectState !=
-			     eCSR_ASSOC_STATE_TYPE_NOT_CONNECTED)) {
-
+			    eCSR_ASSOC_STATE_TYPE_NOT_CONNECTED)) {
 			if (session->ch_switch_in_progress)
 				continue;
 
-			csr_handle_conc_chnl_overlap_for_sap_go(mac_ctx,
-					session, &sap_ch_freq, &sap_hbw,
-					&sap_cfreq, &intf_ch_freq, &intf_hbw,
-					&intf_cfreq, op_mode);
+			csr_handle_conc_chnl_overlap_for_sap_go(
+				mac_ctx, session, &sap_ch_freq, &sap_hbw,
+				&sap_cfreq, &intf_ch_freq, &intf_hbw,
+				&intf_cfreq, op_mode);
 		}
 		if (intf_ch_freq &&
 		    ((intf_ch_freq <= wlan_reg_ch_to_freq(CHAN_ENUM_2484) &&
-		     sap_ch_freq <= wlan_reg_ch_to_freq(CHAN_ENUM_2484)) ||
-		    (intf_ch_freq > wlan_reg_ch_to_freq(CHAN_ENUM_2484) &&
-		     sap_ch_freq > wlan_reg_ch_to_freq(CHAN_ENUM_2484))))
+		      sap_ch_freq <= wlan_reg_ch_to_freq(CHAN_ENUM_2484)) ||
+		     (intf_ch_freq > wlan_reg_ch_to_freq(CHAN_ENUM_2484) &&
+		      sap_ch_freq > wlan_reg_ch_to_freq(CHAN_ENUM_2484))))
 			break;
 	}
 
@@ -676,29 +678,31 @@ uint16_t csr_check_concurrent_channel_overlap(struct mac_context *mac_ctx,
 		intf_lfreq = intf_cfreq - intf_hbw;
 		intf_hfreq = intf_cfreq + intf_hbw;
 
-		sme_debug("SAP:  OCH: %03d CCH: %03d BW: %d LF: %d HF: %d INTF: OCH: %03d CF: %d BW: %d LF: %d HF: %d",
-			sap_ch_freq, sap_cfreq, sap_hbw * 2,
-			sap_lfreq, sap_hfreq, intf_ch_freq,
-			intf_cfreq, intf_hbw * 2, intf_lfreq, intf_hfreq);
+		sme_debug(
+			"SAP:  OCH: %03d CCH: %03d BW: %d LF: %d HF: %d INTF: OCH: %03d "
+			"CF: %d BW: %d LF: %d HF: %d",
+			sap_ch_freq, sap_cfreq, sap_hbw * 2, sap_lfreq,
+			sap_hfreq, intf_ch_freq, intf_cfreq, intf_hbw * 2,
+			intf_lfreq, intf_hfreq);
 
 		if (!(((sap_lfreq > intf_lfreq && sap_lfreq < intf_hfreq) ||
-			(sap_hfreq > intf_lfreq && sap_hfreq < intf_hfreq)) ||
-			((intf_lfreq > sap_lfreq && intf_lfreq < sap_hfreq) ||
-			(intf_hfreq > sap_lfreq && intf_hfreq < sap_hfreq))))
+		       (sap_hfreq > intf_lfreq && sap_hfreq < intf_hfreq)) ||
+		      ((intf_lfreq > sap_lfreq && intf_lfreq < sap_hfreq) ||
+		       (intf_hfreq > sap_lfreq && intf_hfreq < sap_hfreq))))
 			intf_ch_freq = 0;
 	} else if (intf_ch_freq && sap_ch_freq != intf_ch_freq &&
 		   (policy_mgr_is_force_scc(mac_ctx->psoc))) {
 		policy_mgr_check_scc_channel(mac_ctx->psoc, &intf_ch_freq,
 					     sap_ch_freq, vdev_id,
 					     cc_switch_mode);
-	} else if ((intf_ch_freq == sap_ch_freq) && (cc_switch_mode ==
-				QDF_MCC_TO_SCC_SWITCH_WITH_FAVORITE_CHANNEL)) {
+	} else if ((intf_ch_freq == sap_ch_freq) &&
+		   (cc_switch_mode ==
+		    QDF_MCC_TO_SCC_SWITCH_WITH_FAVORITE_CHANNEL)) {
 		if (WLAN_REG_IS_24GHZ_CH_FREQ(intf_ch_freq) ||
 		    WLAN_REG_IS_6GHZ_CHAN_FREQ(sap_ch_freq)) {
-			status =
-				policy_mgr_get_sap_mandatory_channel(
-					mac_ctx->psoc, sap_ch_freq,
-					&intf_ch_freq, vdev_id);
+			status = policy_mgr_get_sap_mandatory_channel(
+				mac_ctx->psoc, sap_ch_freq, &intf_ch_freq,
+				vdev_id);
 			if (QDF_IS_STATUS_ERROR(status))
 				sme_err("no mandatory channel");
 		}
@@ -708,8 +712,7 @@ uint16_t csr_check_concurrent_channel_overlap(struct mac_context *mac_ctx,
 		intf_ch_freq = 0;
 
 	sme_debug("##Concurrent Channels (%d, %d) %s Interfering", sap_ch_freq,
-		  intf_ch_freq,
-		  intf_ch_freq == 0 ? "Not" : "Are");
+		  intf_ch_freq, intf_ch_freq == 0 ? "Not" : "Are");
 
 	return intf_ch_freq;
 }
@@ -721,8 +724,8 @@ bool csr_is_all_session_disconnected(struct mac_context *mac)
 	bool fRc = true;
 
 	for (i = 0; i < WLAN_MAX_VDEVS; i++) {
-		if (CSR_IS_SESSION_VALID(mac, i)
-		    && !csr_is_conn_state_disconnected(mac, i)) {
+		if (CSR_IS_SESSION_VALID(mac, i) &&
+		    !csr_is_conn_state_disconnected(mac, i)) {
 			fRc = false;
 			break;
 		}
@@ -738,15 +741,13 @@ bool csr_is_infra_ap_started(struct mac_context *mac)
 
 	for (sessionId = 0; sessionId < WLAN_MAX_VDEVS; sessionId++) {
 		if (CSR_IS_SESSION_VALID(mac, sessionId) &&
-				(csr_is_conn_state_connected_infra_ap(mac,
-					sessionId))) {
+		    (csr_is_conn_state_connected_infra_ap(mac, sessionId))) {
 			fRc = true;
 			break;
 		}
 	}
 
 	return fRc;
-
 }
 
 bool csr_is_conn_state_disconnected(struct mac_context *mac, uint8_t vdev_id)
@@ -809,7 +810,7 @@ uint32_t csr_translate_to_wni_cfg_dot11_mode(struct mac_context *mac,
 			ret = MLME_DOT11_MODE_11BE;
 		else
 #endif
-		if (IS_FEATURE_SUPPORTED_BY_FW(DOT11AX))
+			if (IS_FEATURE_SUPPORTED_BY_FW(DOT11AX))
 			ret = MLME_DOT11_MODE_11AX;
 		else if (IS_FEATURE_SUPPORTED_BY_FW(DOT11AC))
 			ret = MLME_DOT11_MODE_11AC;
@@ -897,7 +898,7 @@ uint32_t csr_translate_to_wni_cfg_dot11_mode(struct mac_context *mac,
 }
 
 enum reg_phymode csr_convert_to_reg_phy_mode(eCsrPhyMode csr_phy_mode,
-				       qdf_freq_t freq)
+					     qdf_freq_t freq)
 {
 	if (csr_phy_mode == eCSR_DOT11_MODE_AUTO)
 		return REG_PHYMODE_MAX - 1;
@@ -976,8 +977,7 @@ bool csr_is_auth_type_ese(enum csr_akm_type AuthType)
 
 bool csr_is_pmkid_found_for_peer(struct mac_context *mac,
 				 struct csr_roam_session *session,
-				 tSirMacAddr peer_mac_addr,
-				 uint8_t *pmkid,
+				 tSirMacAddr peer_mac_addr, uint8_t *pmkid,
 				 uint16_t pmkid_count)
 {
 	uint32_t i;
@@ -999,8 +999,8 @@ bool csr_is_pmkid_found_for_peer(struct mac_context *mac,
 
 	session_pmkid = pmkid_cache->pmkid;
 	for (i = 0; i < pmkid_count; i++) {
-		if (!qdf_mem_cmp(pmkid + (i * PMKID_LEN),
-				 session_pmkid, PMKID_LEN)) {
+		if (!qdf_mem_cmp(pmkid + (i * PMKID_LEN), session_pmkid,
+				 PMKID_LEN)) {
 			qdf_mem_free(pmkid_cache);
 			return true;
 		}
@@ -1024,9 +1024,9 @@ bool csr_is_bssid_match(struct qdf_mac_addr *pProfBssid,
 
 	do {
 		/* Give the profile the benefit of the doubt... accept
-		 * either all 0 or the real broadcast Bssid (all 0xff)
-		 * as broadcast Bssids (meaning to match any Bssids).
-		 */
+     * either all 0 or the real broadcast Bssid (all 0xff)
+     * as broadcast Bssids (meaning to match any Bssids).
+     */
 		if (qdf_is_macaddr_zero(&ProfileBssid) ||
 		    qdf_is_macaddr_broadcast(&ProfileBssid)) {
 			fMatch = true;
@@ -1067,7 +1067,7 @@ csr_get_cfg_dot11_mode_from_csr_phy_mode(bool is_ap, eCsrPhyMode phyMode)
 			cfgDot11Mode = eCSR_CFG_DOT11_MODE_11G;
 		break;
 	case eCSR_DOT11_MODE_11n:
-			cfgDot11Mode = eCSR_CFG_DOT11_MODE_11N;
+		cfgDot11Mode = eCSR_CFG_DOT11_MODE_11N;
 		break;
 	case eCSR_DOT11_MODE_11n_ONLY:
 		if (is_ap)
@@ -1140,10 +1140,9 @@ csr_get_cfg_dot11_mode_from_csr_phy_mode(bool is_ap, eCsrPhyMode phyMode)
 	return cfgDot11Mode;
 }
 
-QDF_STATUS csr_get_modify_profile_fields(struct mac_context *mac,
-					uint32_t sessionId,
-					 tCsrRoamModifyProfileFields *
-					 pModifyProfileFields)
+QDF_STATUS
+csr_get_modify_profile_fields(struct mac_context *mac, uint32_t sessionId,
+			      tCsrRoamModifyProfileFields *pModifyProfileFields)
 {
 	if (!pModifyProfileFields)
 		return QDF_STATUS_E_FAILURE;
@@ -1155,10 +1154,9 @@ QDF_STATUS csr_get_modify_profile_fields(struct mac_context *mac,
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS csr_set_modify_profile_fields(struct mac_context *mac,
-					uint32_t sessionId,
-					 tCsrRoamModifyProfileFields *
-					 pModifyProfileFields)
+QDF_STATUS
+csr_set_modify_profile_fields(struct mac_context *mac, uint32_t sessionId,
+			      tCsrRoamModifyProfileFields *pModifyProfileFields)
 {
 	struct csr_roam_session *pSession = CSR_GET_SESSION(mac, sessionId);
 
@@ -1167,8 +1165,8 @@ QDF_STATUS csr_set_modify_profile_fields(struct mac_context *mac,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	qdf_mem_copy(&pSession->modifyProfileFields,
-		     pModifyProfileFields, sizeof(tCsrRoamModifyProfileFields));
+	qdf_mem_copy(&pSession->modifyProfileFields, pModifyProfileFields,
+		     sizeof(tCsrRoamModifyProfileFields));
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1189,9 +1187,9 @@ uint16_t sme_chn_to_freq(uint8_t chanNum)
 const char *sme_bss_type_to_string(const uint8_t bss_type)
 {
 	switch (bss_type) {
-	CASE_RETURN_STRING(eCSR_BSS_TYPE_INFRASTRUCTURE);
-	CASE_RETURN_STRING(eCSR_BSS_TYPE_INFRA_AP);
-	CASE_RETURN_STRING(eCSR_BSS_TYPE_ANY);
+		CASE_RETURN_STRING(eCSR_BSS_TYPE_INFRASTRUCTURE);
+		CASE_RETURN_STRING(eCSR_BSS_TYPE_INFRA_AP);
+		CASE_RETURN_STRING(eCSR_BSS_TYPE_ANY);
 	default:
 		return "unknown bss type";
 	}
@@ -1234,20 +1232,19 @@ bool csr_is_mcc_channel(struct mac_context *mac_ctx, uint32_t chan_freq)
 		oper_mode =
 			wlan_get_opmode_from_vdev_id(mac_ctx->pdev, vdev_id);
 		if ((((oper_mode == QDF_STA_MODE) ||
-		     (oper_mode == QDF_P2P_CLIENT_MODE)) &&
-		    cm_is_vdevid_connected(mac_ctx->pdev, vdev_id)) ||
+		      (oper_mode == QDF_P2P_CLIENT_MODE)) &&
+		     cm_is_vdevid_connected(mac_ctx->pdev, vdev_id)) ||
 		    (((oper_mode == QDF_P2P_GO_MODE) ||
 		      (oper_mode == QDF_SAP_MODE)) &&
 		     (session->connectState !=
 		      eCSR_ASSOC_STATE_TYPE_NOT_CONNECTED)))
-			oper_chan_freq =
-			    wlan_get_operation_chan_freq_vdev_id(mac_ctx->pdev,
-								 vdev_id);
+			oper_chan_freq = wlan_get_operation_chan_freq_vdev_id(
+				mac_ctx->pdev, vdev_id);
 
 		if (!oper_chan_freq)
 			continue;
-		same_band_freqs = WLAN_REG_IS_SAME_BAND_FREQS(
-			chan_freq, oper_chan_freq);
+		same_band_freqs =
+			WLAN_REG_IS_SAME_BAND_FREQS(chan_freq, oper_chan_freq);
 
 		if (oper_chan_freq && chan_freq != oper_chan_freq &&
 		    (!hw_dbs_capable || same_band_freqs))

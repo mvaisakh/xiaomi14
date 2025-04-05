@@ -37,17 +37,17 @@
  * Include Files
  * -------------------------------------------------------------------------*/
 
-#include "qdf_trace.h"
 #include "cds_utils.h"
 #include "qdf_mem.h"
-#include <linux/err.h>
-#include <linux/random.h>
-#include <linux/crypto.h>
-#include <linux/scatterlist.h>
-#include <linux/completion.h>
-#include <linux/ieee80211.h>
-#include <crypto/hash.h>
+#include "qdf_trace.h"
 #include <crypto/aes.h>
+#include <crypto/hash.h>
+#include <linux/completion.h>
+#include <linux/crypto.h>
+#include <linux/err.h>
+#include <linux/ieee80211.h>
+#include <linux/random.h>
+#include <linux/scatterlist.h>
 
 #include "cds_ieee80211_common.h"
 #include <qdf_crypto.h>
@@ -89,11 +89,11 @@ uint8_t cds_get_gmac_mmie_size(void)
 
 uint32_t cds_chan_to_freq(uint8_t chan)
 {
-	if (chan < CDS_24_GHZ_CHANNEL_14)       /* ch 0 - ch 13 */
+	if (chan < CDS_24_GHZ_CHANNEL_14) /* ch 0 - ch 13 */
 		return CDS_24_GHZ_BASE_FREQ + chan * CDS_CHAN_SPACING_5MHZ;
 	else if (chan == CDS_24_GHZ_CHANNEL_14) /* ch 14 */
 		return CDS_CHAN_14_FREQ;
-	else if (chan < CDS_24_GHZ_CHANNEL_27)  /* ch 15 - ch 26 */
+	else if (chan < CDS_24_GHZ_CHANNEL_27) /* ch 15 - ch 26 */
 		return CDS_CHAN_15_FREQ +
 		       (chan - CDS_24_GHZ_CHANNEL_15) * CDS_CHAN_SPACING_20MHZ;
 	else if (chan == CDS_5_GHZ_CHANNEL_170)
@@ -128,12 +128,10 @@ enum cds_band_type cds_chan_to_band(uint32_t chan)
 
 void cds_copy_hlp_info(struct qdf_mac_addr *input_dst_mac,
 		       struct qdf_mac_addr *input_src_mac,
-		       uint16_t input_hlp_data_len,
-		       uint8_t *input_hlp_data,
+		       uint16_t input_hlp_data_len, uint8_t *input_hlp_data,
 		       struct qdf_mac_addr *output_dst_mac,
 		       struct qdf_mac_addr *output_src_mac,
-		       uint16_t *output_hlp_data_len,
-		       uint8_t *output_hlp_data)
+		       uint16_t *output_hlp_data_len, uint8_t *output_hlp_data)
 {
 	if (!input_hlp_data_len) {
 		cds_debug("Input HLP data len zero\n");

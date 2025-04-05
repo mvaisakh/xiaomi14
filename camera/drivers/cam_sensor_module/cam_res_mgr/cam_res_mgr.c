@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
+#include "cam_debug_util.h"
+#include "cam_res_mgr_api.h"
+#include "cam_res_mgr_private.h"
+#include "camera_main.h"
+#include <linux/gpio.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <linux/gpio.h>
-#include "cam_debug_util.h"
-#include "cam_res_mgr_api.h"
-#include "cam_res_mgr_private.h"
-#include "camera_main.h"
 
 static struct cam_res_mgr *cam_res;
 
@@ -27,10 +28,10 @@ static void cam_res_mgr_free_res(void)
 		return;
 
 	mutex_lock(&cam_res->gpio_res_lock);
-	list_for_each_entry_safe(gpio_res, gpio_temp,
-		&cam_res->gpio_res_list, list) {
-		list_for_each_entry_safe(dev_res, dev_temp,
-			&gpio_res->dev_list, list) {
+	list_for_each_entry_safe(gpio_res, gpio_temp, &cam_res->gpio_res_list,
+				 list) {
+		list_for_each_entry_safe(dev_res, dev_temp, &gpio_res->dev_list,
+					 list) {
 			list_del_init(&dev_res->list);
 			kfree(dev_res);
 		}
@@ -41,7 +42,7 @@ static void cam_res_mgr_free_res(void)
 
 	mutex_lock(&cam_res->flash_res_lock);
 	list_for_each_entry_safe(flash_res, flash_temp,
-		&cam_res->flash_res_list, list) {
+				 &cam_res->flash_res_list, list) {
 		list_del_init(&flash_res->list);
 		kfree(flash_res);
 	}
@@ -55,9 +56,9 @@ void cam_res_mgr_led_trigger_register(const char *name, struct led_trigger **tp)
 
 	if (!cam_res) {
 		/*
-		 * If this driver not probed, then just register the
-		 * led trigger.
-		 */
+     * If this driver not probed, then just register the
+     * led trigger.
+     */
 		led_trigger_register_simple(name, tp);
 		return;
 	}
@@ -102,9 +103,9 @@ void cam_res_mgr_led_trigger_unregister(struct led_trigger *tp)
 
 	if (!cam_res) {
 		/*
-		 * If this driver not probed, then just unregister the
-		 * led trigger.
-		 */
+     * If this driver not probed, then just unregister the
+     * led trigger.
+     */
 		led_trigger_unregister_simple(tp);
 		return;
 	}
@@ -127,16 +128,16 @@ void cam_res_mgr_led_trigger_unregister(struct led_trigger *tp)
 EXPORT_SYMBOL(cam_res_mgr_led_trigger_unregister);
 
 void cam_res_mgr_led_trigger_event(struct led_trigger *trig,
-	enum led_brightness brightness)
+				   enum led_brightness brightness)
 {
 	bool found = false;
 	struct cam_flash_res *flash_res;
 
 	if (!cam_res) {
 		/*
-		 * If this driver not probed, then just trigger
-		 * the led event.
-		 */
+     * If this driver not probed, then just trigger
+     * the led event.
+     */
 		led_trigger_event(trig, brightness);
 		return;
 	}
@@ -155,8 +156,7 @@ void cam_res_mgr_led_trigger_event(struct led_trigger *trig,
 }
 EXPORT_SYMBOL(cam_res_mgr_led_trigger_event);
 
-int cam_res_mgr_util_get_idx_from_shared_pctrl_gpio(
-	uint gpio)
+int cam_res_mgr_util_get_idx_from_shared_pctrl_gpio(uint gpio)
 {
 	int index = 0;
 	struct cam_res_mgr_dt *dt = &cam_res->dt;
@@ -173,8 +173,7 @@ int cam_res_mgr_util_get_idx_from_shared_pctrl_gpio(
 }
 EXPORT_SYMBOL(cam_res_mgr_util_get_idx_from_shared_pctrl_gpio);
 
-int cam_res_mgr_util_get_idx_from_shared_gpio(
-	uint gpio)
+int cam_res_mgr_util_get_idx_from_shared_gpio(uint gpio)
 {
 	int index = 0;
 	struct cam_res_mgr_dt *dt = &cam_res->dt;
@@ -191,8 +190,7 @@ int cam_res_mgr_util_get_idx_from_shared_gpio(
 }
 EXPORT_SYMBOL(cam_res_mgr_util_get_idx_from_shared_gpio);
 
-static bool cam_res_mgr_gpio_is_in_shared_pctrl_gpio(
-	uint gpio)
+static bool cam_res_mgr_gpio_is_in_shared_pctrl_gpio(uint gpio)
 {
 	int index = 0;
 	bool found = false;
@@ -208,8 +206,7 @@ static bool cam_res_mgr_gpio_is_in_shared_pctrl_gpio(
 	return found;
 }
 
-static bool cam_res_mgr_gpio_is_in_shared_gpio(
-	uint gpio)
+static bool cam_res_mgr_gpio_is_in_shared_gpio(uint gpio)
 {
 	int index = 0;
 	bool found = false;
@@ -231,7 +228,7 @@ int cam_res_mgr_util_shared_gpio_check_hold(uint gpio)
 	int dev_num = 0;
 	struct list_head *list;
 	struct cam_gpio_res *gpio_res = NULL;
-	struct cam_res_mgr_dt *dt =  NULL;
+	struct cam_res_mgr_dt *dt = NULL;
 	bool is_shared_gpio = false;
 	bool is_shared_pctrl_gpio = false;
 
@@ -247,10 +244,8 @@ int cam_res_mgr_util_shared_gpio_check_hold(uint gpio)
 
 	dt = &cam_res->dt;
 
-	is_shared_gpio =
-		cam_res_mgr_gpio_is_in_shared_gpio(gpio);
-	is_shared_pctrl_gpio =
-		cam_res_mgr_gpio_is_in_shared_pctrl_gpio(gpio);
+	is_shared_gpio = cam_res_mgr_gpio_is_in_shared_gpio(gpio);
+	is_shared_pctrl_gpio = cam_res_mgr_gpio_is_in_shared_pctrl_gpio(gpio);
 
 	if (is_shared_gpio && is_shared_pctrl_gpio) {
 		CAM_ERR(CAM_RES,
@@ -266,11 +261,8 @@ int cam_res_mgr_util_shared_gpio_check_hold(uint gpio)
 			return -EINVAL;
 		}
 
-		list_for_each_entry(gpio_res,
-			&cam_res->gpio_res_list, list) {
-
-			if (gpio_res->gpio ==
-				dt->shared_gpio[index]) {
+		list_for_each_entry(gpio_res, &cam_res->gpio_res_list, list) {
+			if (gpio_res->gpio == dt->shared_gpio[index]) {
 				list_for_each(list, &gpio_res->dev_list)
 					dev_num++;
 
@@ -290,10 +282,8 @@ int cam_res_mgr_util_shared_gpio_check_hold(uint gpio)
 			return -EINVAL;
 		}
 
-		list_for_each_entry(gpio_res,
-			&cam_res->gpio_res_list, list) {
-			if (gpio_res->gpio ==
-				dt->shared_pctrl_gpio[index]) {
+		list_for_each_entry(gpio_res, &cam_res->gpio_res_list, list) {
+			if (gpio_res->gpio == dt->shared_pctrl_gpio[index]) {
 				list_for_each(list, &gpio_res->dev_list)
 					dev_num++;
 
@@ -307,11 +297,8 @@ int cam_res_mgr_util_shared_gpio_check_hold(uint gpio)
 	}
 
 	for (index = 0; index < dt->num_shared_gpio; index++) {
-		list_for_each_entry(gpio_res,
-			&cam_res->gpio_res_list, list) {
-
-			if (gpio_res->gpio ==
-				dt->shared_gpio[index]) {
+		list_for_each_entry(gpio_res, &cam_res->gpio_res_list, list) {
+			if (gpio_res->gpio == dt->shared_gpio[index]) {
 				list_for_each(list, &gpio_res->dev_list)
 					dev_num++;
 
@@ -325,11 +312,8 @@ int cam_res_mgr_util_shared_gpio_check_hold(uint gpio)
 	}
 
 	for (index = 0; index < dt->num_shared_pctrl_gpio; index++) {
-		list_for_each_entry(gpio_res,
-			&cam_res->gpio_res_list, list) {
-
-			if (gpio_res->gpio ==
-				dt->shared_pctrl_gpio[index]) {
+		list_for_each_entry(gpio_res, &cam_res->gpio_res_list, list) {
+			if (gpio_res->gpio == dt->shared_pctrl_gpio[index]) {
 				list_for_each(list, &gpio_res->dev_list)
 					dev_num++;
 
@@ -347,8 +331,7 @@ int cam_res_mgr_util_shared_gpio_check_hold(uint gpio)
 }
 EXPORT_SYMBOL(cam_res_mgr_util_shared_gpio_check_hold);
 
-static int cam_res_mgr_shared_pinctrl_select_state(
-	int idx, bool active)
+static int cam_res_mgr_shared_pinctrl_select_state(int idx, bool active)
 {
 	int rc = 0;
 
@@ -363,20 +346,20 @@ static int cam_res_mgr_shared_pinctrl_select_state(
 	}
 
 	if (active &&
-		(cam_res->pctrl_res[idx].pstatus != PINCTRL_STATUS_ACTIVE)) {
+	    (cam_res->pctrl_res[idx].pstatus != PINCTRL_STATUS_ACTIVE)) {
 		CAM_DBG(CAM_RES,
 			"pinctrl select state to active for the shared_pctrl_gpio idx: %d",
 			idx);
 		rc = pinctrl_select_state(cam_res->pinctrl,
-			cam_res->pctrl_res[idx].active);
+					  cam_res->pctrl_res[idx].active);
 		cam_res->pctrl_res[idx].pstatus = PINCTRL_STATUS_ACTIVE;
 	} else if (!active &&
-		(cam_res->pctrl_res[idx].pstatus == PINCTRL_STATUS_ACTIVE)) {
+		   (cam_res->pctrl_res[idx].pstatus == PINCTRL_STATUS_ACTIVE)) {
 		CAM_DBG(CAM_RES,
 			"pinctrl select state to suspend for the shared_pctrl_gpio idx: %d",
 			idx);
 		rc = pinctrl_select_state(cam_res->pinctrl,
-			cam_res->pctrl_res[idx].suspend);
+					  cam_res->pctrl_res[idx].suspend);
 		cam_res->pctrl_res[idx].pstatus = PINCTRL_STATUS_SUSPEND;
 	}
 
@@ -384,7 +367,7 @@ static int cam_res_mgr_shared_pinctrl_select_state(
 }
 
 static int cam_res_mgr_add_device(struct device *dev,
-	struct cam_gpio_res *gpio_res)
+				  struct cam_gpio_res *gpio_res)
 {
 	struct cam_dev_res *dev_res = NULL;
 
@@ -423,7 +406,7 @@ static bool __cam_res_mgr_find_if_gpio_is_shared(uint gpio)
 
 	if (found_in_shared_pctrl_gpio && found_in_shared_gpio) {
 		CAM_WARN(CAM_RES, "gpio: %u cannot be shared in both list",
-			gpio);
+			 gpio);
 		return false;
 	}
 
@@ -433,15 +416,14 @@ static bool __cam_res_mgr_find_if_gpio_is_shared(uint gpio)
 	return false;
 }
 
-
-int cam_res_mgr_gpio_request(struct device *dev, uint gpio,
-		unsigned long flags, const char *label)
+int cam_res_mgr_gpio_request(struct device *dev, uint gpio, unsigned long flags,
+			     const char *label)
 {
-	int                          rc = 0;
-	bool                         dev_found = false;
-	bool                         gpio_found = false;
-	int                          pctrl_idx = -1;
-	struct cam_gpio_res         *gpio_res = NULL;
+	int rc = 0;
+	bool dev_found = false;
+	bool gpio_found = false;
+	int pctrl_idx = -1;
+	struct cam_gpio_res *gpio_res = NULL;
 
 	mutex_lock(&cam_res->gpio_res_lock);
 	if (cam_res && cam_res->shared_gpio_enabled) {
@@ -453,12 +435,12 @@ int cam_res_mgr_gpio_request(struct device *dev, uint gpio,
 	}
 
 	/*
-	 * gpio_found equal to false has two situation:
-	 * 1. shared gpio/pinctrl_gpio not enabled
-	 * 2. shared gpio/pinctrl_gpio enabled, but not find this gpio
-	 *    from the gpio_res_list
-	 * These two situations both need request gpio.
-	 */
+   * gpio_found equal to false has two situation:
+   * 1. shared gpio/pinctrl_gpio not enabled
+   * 2. shared gpio/pinctrl_gpio enabled, but not find this gpio
+   *    from the gpio_res_list
+   * These two situations both need request gpio.
+   */
 	if (!gpio_found) {
 		CAM_DBG(CAM_RES, "gpio: %u not found in gpio_res list", gpio);
 		rc = gpio_request_one(gpio, flags, label);
@@ -470,14 +452,13 @@ int cam_res_mgr_gpio_request(struct device *dev, uint gpio,
 	}
 
 	/*
-	 * If the gpio is in the shared list, and not find
-	 * from gpio_res_list, then insert a cam_gpio_res
-	 * to gpio_res_list.
-	 */
-	if ((!gpio_found && cam_res
-		&& cam_res->shared_gpio_enabled) &&
-		(cam_res_mgr_gpio_is_in_shared_gpio(gpio) ||
-		(cam_res_mgr_gpio_is_in_shared_pctrl_gpio(gpio)))) {
+   * If the gpio is in the shared list, and not find
+   * from gpio_res_list, then insert a cam_gpio_res
+   * to gpio_res_list.
+   */
+	if ((!gpio_found && cam_res && cam_res->shared_gpio_enabled) &&
+	    (cam_res_mgr_gpio_is_in_shared_gpio(gpio) ||
+	     (cam_res_mgr_gpio_is_in_shared_pctrl_gpio(gpio)))) {
 		CAM_DBG(CAM_RES, "gpio: %u is shared", gpio);
 
 		gpio_res = kzalloc(sizeof(struct cam_gpio_res), GFP_KERNEL);
@@ -500,16 +481,13 @@ int cam_res_mgr_gpio_request(struct device *dev, uint gpio,
 	}
 
 	/* if shared gpio is in pinctrl gpio list */
-	if (!gpio_found && cam_res
-		&& cam_res->shared_gpio_enabled &&
-		cam_res_mgr_gpio_is_in_shared_pctrl_gpio(gpio)) {
+	if (!gpio_found && cam_res && cam_res->shared_gpio_enabled &&
+	    cam_res_mgr_gpio_is_in_shared_pctrl_gpio(gpio)) {
 		pctrl_idx =
 			cam_res_mgr_util_get_idx_from_shared_pctrl_gpio(gpio);
-		CAM_DBG(CAM_RES,
-			"shared_pctrl_gpio is at idx: %d", pctrl_idx);
+		CAM_DBG(CAM_RES, "shared_pctrl_gpio is at idx: %d", pctrl_idx);
 		if (pctrl_idx < 0) {
-			CAM_ERR(CAM_RES,
-				"pctrl_gpio: %u not found", gpio);
+			CAM_ERR(CAM_RES, "pctrl_gpio: %u not found", gpio);
 			rc = -EINVAL;
 			goto end;
 		}
@@ -518,8 +496,7 @@ int cam_res_mgr_gpio_request(struct device *dev, uint gpio,
 		cam_res_mgr_shared_pinctrl_select_state(pctrl_idx, true);
 	}
 
-	if (gpio_found && cam_res
-		&& cam_res->shared_gpio_enabled) {
+	if (gpio_found && cam_res && cam_res->shared_gpio_enabled) {
 		struct cam_dev_res *dev_res = NULL;
 
 		list_for_each_entry(dev_res, &gpio_res->dev_list, list) {
@@ -546,8 +523,8 @@ end:
 }
 EXPORT_SYMBOL(cam_res_mgr_gpio_request);
 
-bool cam_res_mgr_util_check_if_gpio_is_shared(
-	struct gpio *gpio_tbl, uint8_t size)
+bool cam_res_mgr_util_check_if_gpio_is_shared(struct gpio *gpio_tbl,
+					      uint8_t size)
 {
 	int i = 0;
 	bool found = false;
@@ -574,15 +551,14 @@ EXPORT_SYMBOL(cam_res_mgr_util_check_if_gpio_is_shared);
 
 static void cam_res_mgr_gpio_free(struct device *dev, uint gpio)
 {
-	bool                   gpio_found = false;
-	bool                   need_free = true;
-	int                    dev_num = 0;
-	struct cam_gpio_res   *gpio_res = NULL;
-	bool                   is_shared_pctrl_gpio = false;
-	int                    pctrl_idx = -1;
+	bool gpio_found = false;
+	bool need_free = true;
+	int dev_num = 0;
+	struct cam_gpio_res *gpio_res = NULL;
+	bool is_shared_pctrl_gpio = false;
+	int pctrl_idx = -1;
 
-	is_shared_pctrl_gpio =
-			cam_res_mgr_gpio_is_in_shared_pctrl_gpio(gpio);
+	is_shared_pctrl_gpio = cam_res_mgr_gpio_is_in_shared_pctrl_gpio(gpio);
 
 	mutex_lock(&cam_res->gpio_res_lock);
 	if (cam_res && cam_res->shared_gpio_enabled) {
@@ -594,8 +570,7 @@ static void cam_res_mgr_gpio_free(struct device *dev, uint gpio)
 		}
 	}
 
-	if (gpio_found && cam_res
-		&& cam_res->shared_gpio_enabled) {
+	if (gpio_found && cam_res && cam_res->shared_gpio_enabled) {
 		struct list_head *list;
 		struct cam_dev_res *dev_res = NULL;
 
@@ -604,20 +579,20 @@ static void cam_res_mgr_gpio_free(struct device *dev, uint gpio)
 			dev_num++;
 
 		/*
-		 * Need free the gpio if only has last 1 device
-		 * in the dev_list, otherwise, not free this
-		 * gpio.
-		 */
+     * Need free the gpio if only has last 1 device
+     * in the dev_list, otherwise, not free this
+     * gpio.
+     */
 		if (dev_num == 1) {
 			dev_res = list_first_entry(&gpio_res->dev_list,
-				struct cam_dev_res, list);
+						   struct cam_dev_res, list);
 			list_del_init(&dev_res->list);
 			kfree(dev_res);
 			list_del_init(&gpio_res->list);
 			kfree(gpio_res);
 		} else {
-			list_for_each_entry(dev_res,
-				&gpio_res->dev_list, list) {
+			list_for_each_entry(dev_res, &gpio_res->dev_list,
+					    list) {
 				if (dev_res->dev == dev) {
 					list_del_init(&dev_res->list);
 					kfree(dev_res);
@@ -633,8 +608,8 @@ static void cam_res_mgr_gpio_free(struct device *dev, uint gpio)
 			pctrl_idx =
 				cam_res_mgr_util_get_idx_from_shared_pctrl_gpio(
 					gpio);
-			cam_res_mgr_shared_pinctrl_select_state(
-				pctrl_idx, false);
+			cam_res_mgr_shared_pinctrl_select_state(pctrl_idx,
+								false);
 		}
 
 		CAM_DBG(CAM_RES, "freeing gpio: %u", gpio);
@@ -644,8 +619,8 @@ static void cam_res_mgr_gpio_free(struct device *dev, uint gpio)
 	mutex_unlock(&cam_res->gpio_res_lock);
 }
 
-void cam_res_mgr_gpio_free_arry(struct device *dev,
-		const struct gpio *array, size_t num)
+void cam_res_mgr_gpio_free_arry(struct device *dev, const struct gpio *array,
+				size_t num)
 {
 	while (num--)
 		cam_res_mgr_gpio_free(dev, (array[num]).gpio);
@@ -669,9 +644,9 @@ int cam_res_mgr_gpio_set_value(unsigned int gpio, int value)
 	}
 
 	/*
-	 * Set the value directly if can't find the gpio from
-	 * gpio_res_list, otherwise, need add ref count support
-	 **/
+   * Set the value directly if can't find the gpio from
+   * gpio_res_list, otherwise, need add ref count support
+   **/
 	if (!found) {
 		gpio_set_value_cansleep(gpio, value);
 	} else {
@@ -679,15 +654,14 @@ int cam_res_mgr_gpio_set_value(unsigned int gpio, int value)
 			gpio_res->power_on_count++;
 			if (gpio_res->power_on_count < 2) {
 				gpio_set_value_cansleep(gpio, value);
-				CAM_DBG(CAM_RES,
-					"Shared GPIO(%d) : HIGH", gpio);
+				CAM_DBG(CAM_RES, "Shared GPIO(%d) : HIGH",
+					gpio);
 			}
 		} else {
 			gpio_res->power_on_count--;
 			if (gpio_res->power_on_count < 1) {
 				gpio_set_value_cansleep(gpio, value);
-				CAM_DBG(CAM_RES,
-					"Shared GPIO(%d) : LOW", gpio);
+				CAM_DBG(CAM_RES, "Shared GPIO(%d) : LOW", gpio);
 			}
 		}
 	}
@@ -697,8 +671,7 @@ int cam_res_mgr_gpio_set_value(unsigned int gpio, int value)
 }
 EXPORT_SYMBOL(cam_res_mgr_gpio_set_value);
 
-static int cam_res_mgr_shared_pinctrl_init(
-	struct device *dev)
+static int cam_res_mgr_shared_pinctrl_init(struct device *dev)
 {
 	int i = 0;
 	char pctrl_active[50];
@@ -712,29 +685,23 @@ static int cam_res_mgr_shared_pinctrl_init(
 	}
 
 	for (i = 0; i < dt->num_shared_pctrl_gpio; i++) {
-		snprintf(pctrl_active, sizeof(pctrl_active),
-			"%s%s",
-			cam_res->dt.pctrl_name[i],
-			"_active");
-		CAM_DBG(CAM_RES, "pctrl_active at index: %d name: %s",
-			i, pctrl_active);
-		snprintf(pctrl_suspend, sizeof(pctrl_suspend),
-			"%s%s",
-			cam_res->dt.pctrl_name[i],
-			"_suspend");
-		CAM_DBG(CAM_RES, "pctrl_suspend at index: %d name: %s",
-			i, pctrl_suspend);
-		cam_res->pctrl_res[i].active =
-			pinctrl_lookup_state(cam_res->pinctrl,
+		snprintf(pctrl_active, sizeof(pctrl_active), "%s%s",
+			 cam_res->dt.pctrl_name[i], "_active");
+		CAM_DBG(CAM_RES, "pctrl_active at index: %d name: %s", i,
 			pctrl_active);
+		snprintf(pctrl_suspend, sizeof(pctrl_suspend), "%s%s",
+			 cam_res->dt.pctrl_name[i], "_suspend");
+		CAM_DBG(CAM_RES, "pctrl_suspend at index: %d name: %s", i,
+			pctrl_suspend);
+		cam_res->pctrl_res[i].active =
+			pinctrl_lookup_state(cam_res->pinctrl, pctrl_active);
 		if (IS_ERR_OR_NULL(cam_res->pctrl_res[i].active)) {
 			CAM_ERR(CAM_RES,
 				"Failed to get the active state pinctrl handle");
 			return -EINVAL;
 		}
 		cam_res->pctrl_res[i].suspend =
-			pinctrl_lookup_state(cam_res->pinctrl,
-			pctrl_suspend);
+			pinctrl_lookup_state(cam_res->pinctrl, pctrl_suspend);
 		if (IS_ERR_OR_NULL(cam_res->pctrl_res[i].active)) {
 			CAM_ERR(CAM_RES,
 				"Failed to get the active state pinctrl handle");
@@ -748,33 +715,29 @@ static int cam_res_mgr_shared_pinctrl_init(
 	return 0;
 }
 
-static int cam_res_mgr_parse_dt_shared_gpio(
-	struct device *dev)
+static int cam_res_mgr_parse_dt_shared_gpio(struct device *dev)
 {
 	int rc = 0;
 	struct device_node *of_node = NULL;
 	struct cam_res_mgr_dt *dt = &cam_res->dt;
 
 	of_node = dev->of_node;
-	dt->num_shared_gpio = of_property_count_u32_elems(of_node,
-		"gpios-shared");
+	dt->num_shared_gpio =
+		of_property_count_u32_elems(of_node, "gpios-shared");
 
 	if (dt->num_shared_gpio <= 0) {
-		CAM_DBG(CAM_RES,
-			"Not found any shared gpio");
+		CAM_DBG(CAM_RES, "Not found any shared gpio");
 		return -ENODEV;
 	}
 
 	if (dt->num_shared_gpio >= MAX_SHARED_GPIO_SIZE) {
-		CAM_ERR(CAM_RES,
-			"shared_gpio: %d max supported: %d",
-			MAX_SHARED_GPIO_SIZE,
-			dt->num_shared_gpio);
+		CAM_ERR(CAM_RES, "shared_gpio: %d max supported: %d",
+			MAX_SHARED_GPIO_SIZE, dt->num_shared_gpio);
 		return -EINVAL;
 	}
 
 	rc = of_property_read_u32_array(of_node, "gpios-shared",
-		dt->shared_gpio, dt->num_shared_gpio);
+					dt->shared_gpio, dt->num_shared_gpio);
 	if (rc) {
 		CAM_ERR(CAM_RES, "Get shared gpio array failed.");
 		return -EINVAL;
@@ -783,8 +746,7 @@ static int cam_res_mgr_parse_dt_shared_gpio(
 	return rc;
 }
 
-static int cam_res_mgr_parse_dt_shared_pinctrl_gpio(
-	struct device *dev)
+static int cam_res_mgr_parse_dt_shared_pinctrl_gpio(struct device *dev)
 {
 	int rc = 0, i = 0;
 	int pinctrl_name_nodes = 0;
@@ -792,12 +754,11 @@ static int cam_res_mgr_parse_dt_shared_pinctrl_gpio(
 	struct cam_res_mgr_dt *dt = &cam_res->dt;
 
 	of_node = dev->of_node;
-	dt->num_shared_pctrl_gpio = of_property_count_u32_elems(of_node,
-		"gpios-shared-pinctrl");
+	dt->num_shared_pctrl_gpio =
+		of_property_count_u32_elems(of_node, "gpios-shared-pinctrl");
 
 	if (dt->num_shared_pctrl_gpio <= 0) {
-		CAM_DBG(CAM_RES,
-			"Not found any shared pinctrl res");
+		CAM_DBG(CAM_RES, "Not found any shared pinctrl res");
 		return -ENODEV;
 	}
 
@@ -808,22 +769,22 @@ static int cam_res_mgr_parse_dt_shared_pinctrl_gpio(
 		return -EINVAL;
 	}
 
-	pinctrl_name_nodes = of_property_count_strings(of_node,
-		"shared-pctrl-gpio-names");
+	pinctrl_name_nodes =
+		of_property_count_strings(of_node, "shared-pctrl-gpio-names");
 
 	if (pinctrl_name_nodes != dt->num_shared_pctrl_gpio) {
 		CAM_ERR(CAM_RES,
 			"Mismatch between entries:: pctrl_gpio: %d and pctrl_name: %d",
-			dt->num_shared_pctrl_gpio,
-			pinctrl_name_nodes);
+			dt->num_shared_pctrl_gpio, pinctrl_name_nodes);
 		return -EINVAL;
 	}
 
-	CAM_INFO(CAM_RES,
-		"number of pctrl_gpio: %d", dt->num_shared_pctrl_gpio);
+	CAM_INFO(CAM_RES, "number of pctrl_gpio: %d",
+		 dt->num_shared_pctrl_gpio);
 
 	rc = of_property_read_u32_array(of_node, "gpios-shared-pinctrl",
-		dt->shared_pctrl_gpio, dt->num_shared_pctrl_gpio);
+					dt->shared_pctrl_gpio,
+					dt->num_shared_pctrl_gpio);
 	if (rc) {
 		CAM_ERR(CAM_RES, "Get shared pinctrl gpio array failed.");
 		return -EINVAL;
@@ -831,10 +792,10 @@ static int cam_res_mgr_parse_dt_shared_pinctrl_gpio(
 
 	for (i = 0; i < pinctrl_name_nodes; i++) {
 		rc = of_property_read_string_index(of_node,
-			"shared-pctrl-gpio-names",
-			i, &(dt->pctrl_name[i]));
-		CAM_INFO(CAM_RES, "shared-pctrl-gpio-names[%d] = %s",
-			i, dt->pctrl_name[i]);
+						   "shared-pctrl-gpio-names", i,
+						   &(dt->pctrl_name[i]));
+		CAM_INFO(CAM_RES, "shared-pctrl-gpio-names[%d] = %s", i,
+			 dt->pctrl_name[i]);
 		if (rc) {
 			CAM_ERR(CAM_RES,
 				"i= %d pinctrl_name_nodes= %d reading clock-names failed",
@@ -853,11 +814,10 @@ static int cam_res_mgr_parse_dt(struct device *dev)
 	rc = cam_res_mgr_parse_dt_shared_gpio(dev);
 	if (rc) {
 		if (rc == -ENODEV) {
-			CAM_DBG(CAM_RES,
-				"Shared GPIO resources not available");
+			CAM_DBG(CAM_RES, "Shared GPIO resources not available");
 		} else {
-			CAM_ERR(CAM_RES,
-				"Shared gpio parsing failed: rc: %d", rc);
+			CAM_ERR(CAM_RES, "Shared gpio parsing failed: rc: %d",
+				rc);
 			return rc;
 		}
 	}
@@ -868,8 +828,7 @@ static int cam_res_mgr_parse_dt(struct device *dev)
 			CAM_DBG(CAM_RES,
 				"Pinctrl shared resources not available");
 		} else {
-			CAM_ERR(CAM_RES,  "Pinctrl parsing failed: rc: %d",
-				rc);
+			CAM_ERR(CAM_RES, "Pinctrl parsing failed: rc: %d", rc);
 			return rc;
 		}
 	} else {
@@ -885,7 +844,7 @@ static int cam_res_mgr_parse_dt(struct device *dev)
 }
 
 static int cam_res_mgr_component_bind(struct device *dev,
-	struct device *master_dev, void *data)
+				      struct device *master_dev, void *data)
 {
 	int rc = 0;
 	struct platform_device *pdev = to_platform_device(dev);
@@ -900,8 +859,7 @@ static int cam_res_mgr_component_bind(struct device *dev,
 	CAM_DBG(CAM_RES, "ENTER");
 	rc = cam_res_mgr_parse_dt(&pdev->dev);
 	if (rc) {
-		CAM_ERR(CAM_RES,
-			"Error in parsing device tree, rc: %d", rc);
+		CAM_ERR(CAM_RES, "Error in parsing device tree, rc: %d", rc);
 		kfree(cam_res);
 		return rc;
 	}
@@ -925,7 +883,7 @@ static int cam_res_mgr_component_bind(struct device *dev,
 }
 
 static void cam_res_mgr_component_unbind(struct device *dev,
-	struct device *master_dev, void *data)
+					 struct device *master_dev, void *data)
 {
 	if (cam_res) {
 		cam_res_mgr_free_res();
@@ -964,20 +922,21 @@ static int cam_res_mgr_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id cam_res_mgr_dt_match[] = {
-	{.compatible = "qcom,cam-res-mgr"},
+	{ .compatible = "qcom,cam-res-mgr" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, cam_res_mgr_dt_match);
 
 struct platform_driver cam_res_mgr_driver = {
-	.probe = cam_res_mgr_probe,
-	.remove = cam_res_mgr_remove,
-	.driver = {
-		.name = "cam_res_mgr",
-		.owner = THIS_MODULE,
-		.of_match_table = cam_res_mgr_dt_match,
-		.suppress_bind_attrs = true,
-	},
+    .probe = cam_res_mgr_probe,
+    .remove = cam_res_mgr_remove,
+    .driver =
+        {
+            .name = "cam_res_mgr",
+            .owner = THIS_MODULE,
+            .of_match_table = cam_res_mgr_dt_match,
+            .suppress_bind_attrs = true,
+        },
 };
 
 int cam_res_mgr_init(void)

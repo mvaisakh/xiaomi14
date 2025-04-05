@@ -23,12 +23,12 @@
 
 #include <qdf_mem.h>
 #include <qdf_status.h>
+#include <target_if.h>
 #include <target_if_scan.h>
-#include <wmi_unified_priv.h>
-#include <wmi_unified_param.h>
 #include <wlan_objmgr_psoc_obj.h>
 #include <wlan_scan_tgt_api.h>
-#include <target_if.h>
+#include <wmi_unified_param.h>
+#include <wmi_unified_priv.h>
 
 static inline struct wlan_lmac_if_scan_rx_ops *
 target_if_scan_get_rx_ops(struct wlan_objmgr_psoc *psoc)
@@ -44,8 +44,8 @@ target_if_scan_get_rx_ops(struct wlan_objmgr_psoc *psoc)
 	return &rx_ops->scan;
 }
 
-static int
-target_if_scan_event_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
+static int target_if_scan_event_handler(ol_scn_t scn, uint8_t *data,
+					uint32_t datalen)
 {
 	struct scan_event_info *event_info;
 	struct wlan_objmgr_psoc *psoc;
@@ -75,7 +75,7 @@ target_if_scan_event_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 		return -ENOMEM;
 
 	if (wmi_extract_vdev_scan_ev_param(wmi_handle, data,
-	   &(event_info->event))) {
+					   &(event_info->event))) {
 		target_if_err("Failed to extract wmi scan event");
 		qdf_mem_free(event_info);
 		return -EINVAL;
@@ -103,8 +103,7 @@ target_if_scan_event_handler(ol_scn_t scn, uint8_t *data, uint32_t datalen)
 
 #ifdef FEATURE_WLAN_SCAN_PNO
 
-int target_if_nlo_complete_handler(ol_scn_t scn, uint8_t *data,
-	uint32_t len)
+int target_if_nlo_complete_handler(ol_scn_t scn, uint8_t *data, uint32_t len)
 {
 	struct scan_event_info *event_info;
 	struct wlan_objmgr_psoc *psoc;
@@ -163,8 +162,7 @@ int target_if_nlo_complete_handler(ol_scn_t scn, uint8_t *data,
 	return 0;
 }
 
-int target_if_nlo_match_event_handler(ol_scn_t scn, uint8_t *data,
-	uint32_t len)
+int target_if_nlo_match_event_handler(ol_scn_t scn, uint8_t *data, uint32_t len)
 {
 	struct scan_event_info *event_info;
 	struct wlan_objmgr_psoc *psoc;
@@ -225,7 +223,7 @@ int target_if_nlo_match_event_handler(ol_scn_t scn, uint8_t *data,
 
 static QDF_STATUS
 target_if_scan_register_pno_event_handler(struct wlan_objmgr_psoc *psoc,
-	void *arg)
+					  void *arg)
 {
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
@@ -236,19 +234,16 @@ target_if_scan_register_pno_event_handler(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wmi_unified_register_event(
-			wmi_handle,
-			wmi_nlo_match_event_id,
-			target_if_nlo_match_event_handler);
+	status = wmi_unified_register_event(wmi_handle, wmi_nlo_match_event_id,
+					    target_if_nlo_match_event_handler);
 	if (status) {
 		target_if_err("Failed to register nlo match event cb");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wmi_unified_register_event(
-			wmi_handle,
-			wmi_nlo_scan_complete_event_id,
-			target_if_nlo_complete_handler);
+	status = wmi_unified_register_event(wmi_handle,
+					    wmi_nlo_scan_complete_event_id,
+					    target_if_nlo_complete_handler);
 	if (status) {
 		target_if_err("Failed to register nlo scan comp event cb");
 		return QDF_STATUS_E_FAILURE;
@@ -259,7 +254,7 @@ target_if_scan_register_pno_event_handler(struct wlan_objmgr_psoc *psoc,
 
 static QDF_STATUS
 target_if_scan_unregister_pno_event_handler(struct wlan_objmgr_psoc *psoc,
-		void *arg)
+					    void *arg)
 {
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
@@ -270,17 +265,15 @@ target_if_scan_unregister_pno_event_handler(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wmi_unified_unregister_event(
-			wmi_handle,
-			wmi_nlo_match_event_id);
+	status = wmi_unified_unregister_event(wmi_handle,
+					      wmi_nlo_match_event_id);
 	if (status) {
 		target_if_err("Failed to unregister nlo match event cb");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wmi_unified_unregister_event(
-			wmi_handle,
-			wmi_nlo_scan_complete_event_id);
+	status = wmi_unified_unregister_event(wmi_handle,
+					      wmi_nlo_scan_complete_event_id);
 	if (status) {
 		target_if_err("Failed to unregister nlo scan comp event cb");
 		return QDF_STATUS_E_FAILURE;
@@ -289,9 +282,8 @@ target_if_scan_unregister_pno_event_handler(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-target_if_pno_start(struct wlan_objmgr_psoc *psoc,
-	struct pno_scan_req_params *req)
+static QDF_STATUS target_if_pno_start(struct wlan_objmgr_psoc *psoc,
+				      struct pno_scan_req_params *req)
 {
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
@@ -312,9 +304,8 @@ target_if_pno_start(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-static QDF_STATUS
-target_if_pno_stop(struct wlan_objmgr_psoc *psoc,
-	uint8_t vdev_id)
+static QDF_STATUS target_if_pno_stop(struct wlan_objmgr_psoc *psoc,
+				     uint8_t vdev_id)
 {
 	struct wmi_unified *wmi_handle;
 
@@ -331,36 +322,33 @@ target_if_pno_stop(struct wlan_objmgr_psoc *psoc,
 
 static inline QDF_STATUS
 target_if_scan_register_pno_event_handler(struct wlan_objmgr_psoc *psoc,
-	void *arg)
+					  void *arg)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
 static inline QDF_STATUS
 target_if_scan_unregister_pno_event_handler(struct wlan_objmgr_psoc *psoc,
-	void *arg)
+					    void *arg)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline QDF_STATUS
-target_if_pno_start(struct wlan_objmgr_psoc *psoc,
-	struct pno_scan_req_params *req)
+static inline QDF_STATUS target_if_pno_start(struct wlan_objmgr_psoc *psoc,
+					     struct pno_scan_req_params *req)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline QDF_STATUS
-target_if_pno_stop(struct wlan_objmgr_psoc *psoc,
-	uint8_t vdev_id)
+static inline QDF_STATUS target_if_pno_stop(struct wlan_objmgr_psoc *psoc,
+					    uint8_t vdev_id)
 {
 	return QDF_STATUS_SUCCESS;
 }
 #endif
 
-static QDF_STATUS
-target_if_obss_scan_disable(struct wlan_objmgr_psoc *psoc,
-			    uint8_t vdev_id)
+static QDF_STATUS target_if_obss_scan_disable(struct wlan_objmgr_psoc *psoc,
+					      uint8_t vdev_id)
 {
 	struct wmi_unified *wmi_handle;
 
@@ -385,10 +373,8 @@ target_if_scan_register_event_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wmi_unified_register_event(
-			wmi_handle,
-			wmi_scan_event_id,
-			target_if_scan_event_handler);
+	status = wmi_unified_register_event(wmi_handle, wmi_scan_event_id,
+					    target_if_scan_event_handler);
 	if (status) {
 		target_if_err("Failed to register Scan match event cb");
 		return QDF_STATUS_E_FAILURE;
@@ -401,7 +387,7 @@ target_if_scan_register_event_handler(struct wlan_objmgr_psoc *psoc, void *arg)
 
 QDF_STATUS
 target_if_scan_unregister_event_handler(struct wlan_objmgr_psoc *psoc,
-		void *arg)
+					void *arg)
 {
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
@@ -412,9 +398,7 @@ target_if_scan_unregister_event_handler(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wmi_unified_unregister_event(
-			wmi_handle,
-			wmi_scan_event_id);
+	status = wmi_unified_unregister_event(wmi_handle, wmi_scan_event_id);
 	if (status) {
 		target_if_err("Failed to unregister Scan match event cb");
 		return QDF_STATUS_E_FAILURE;
@@ -427,7 +411,7 @@ target_if_scan_unregister_event_handler(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS
 target_if_scan_start(struct wlan_objmgr_pdev *pdev,
-		struct scan_start_request *req)
+		     struct scan_start_request *req)
 {
 	wmi_unified_t pdev_wmi_handle;
 
@@ -441,7 +425,7 @@ target_if_scan_start(struct wlan_objmgr_pdev *pdev,
 
 QDF_STATUS
 target_if_scan_cancel(struct wlan_objmgr_pdev *pdev,
-		struct scan_cancel_param *req)
+		      struct scan_cancel_param *req)
 {
 	wmi_unified_t pdev_wmi_handle;
 
@@ -505,7 +489,7 @@ target_if_scan_tx_ops_register(struct wlan_lmac_if_tx_ops *tx_ops)
 
 QDF_STATUS
 target_if_scan_set_max_active_scans(struct wlan_objmgr_psoc *psoc,
-		uint32_t max_active_scans)
+				    uint32_t max_active_scans)
 {
 	struct wlan_lmac_if_scan_rx_ops *scan_rx_ops;
 	QDF_STATUS status;
@@ -517,8 +501,8 @@ target_if_scan_set_max_active_scans(struct wlan_objmgr_psoc *psoc,
 	}
 
 	if (scan_rx_ops->scan_set_max_active_scans) {
-		status = scan_rx_ops->scan_set_max_active_scans(psoc,
-				max_active_scans);
+		status = scan_rx_ops->scan_set_max_active_scans(
+			psoc, max_active_scans);
 	} else {
 		target_if_err("scan_set_max_active_scans uninitialized");
 		status = QDF_STATUS_E_FAULT;

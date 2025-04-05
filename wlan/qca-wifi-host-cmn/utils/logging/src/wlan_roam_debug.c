@@ -21,23 +21,21 @@
  * DOC: Roaming debug log operations routines and global data
  */
 
-#include <qdf_types.h>
+#include "wlan_roam_debug.h"
 #include <qdf_atomic.h>
 #include <qdf_mem.h>
+#include <qdf_module.h>
 #include <qdf_time.h>
 #include <qdf_trace.h>
-#include <qdf_module.h>
+#include <qdf_types.h>
 #include <wlan_cmn.h>
-#include "wlan_roam_debug.h"
 
 #ifdef FEATURE_ROAM_DEBUG
 static void wlan_roam_rec_print(struct wlan_roam_debug_rec *dbg_rec,
-				uint32_t idx, uint32_t delta,
-				bool to_kernel);
+				uint32_t idx, uint32_t delta, bool to_kernel);
 
 static void wlan_conn_rec_print(struct wlan_roam_debug_rec *dbg_rec,
-				uint32_t idx, uint32_t delta,
-				bool to_kernel);
+				uint32_t idx, uint32_t delta, bool to_kernel);
 
 #ifdef WLAN_LOGGING_BUFFERS_DYNAMICALLY
 static struct wlan_roam_debug_info *global_wlan_roam_debug_table;
@@ -50,8 +48,8 @@ static struct wlan_roam_debug_info *global_wlan_roam_debug_table;
 void wlan_roam_debug_init(void)
 {
 	uint8_t i;
-	global_wlan_roam_debug_table = qdf_mem_valloc(
-				sizeof(struct wlan_roam_debug_info) * REC_MAX);
+	global_wlan_roam_debug_table =
+		qdf_mem_valloc(sizeof(struct wlan_roam_debug_info) * REC_MAX);
 
 	QDF_BUG(global_wlan_roam_debug_table);
 
@@ -59,7 +57,7 @@ void wlan_roam_debug_init(void)
 		for (i = 0; i < REC_MAX; i++) {
 			qdf_atomic_init(&global_wlan_roam_debug_table[i].index);
 			global_wlan_roam_debug_table[i].num_max_rec =
-						WLAN_ROAM_DEBUG_MAX_REC;
+				WLAN_ROAM_DEBUG_MAX_REC;
 			if (i == REC_ROAM)
 				global_wlan_roam_debug_table[i].rec_print =
 					wlan_roam_rec_print;
@@ -72,8 +70,8 @@ void wlan_roam_debug_init(void)
 
 qdf_export_symbol(wlan_roam_debug_init);
 
-static inline struct wlan_roam_debug_info *wlan_roam_debug_get_table(
-	wlan_rec_type type)
+static inline struct wlan_roam_debug_info *
+wlan_roam_debug_get_table(wlan_rec_type type)
 {
 	if (type >= REC_MAX)
 		return NULL;
@@ -99,16 +97,16 @@ qdf_export_symbol(wlan_roam_debug_deinit);
  * the crash dump without having to dereference complex stack traces.
  */
 static struct wlan_roam_debug_info global_wlan_roam_debug_table[REC_MAX] = {
-	[REC_ROAM] = {{ 0 },
-		      .num_max_rec = WLAN_ROAM_DEBUG_MAX_REC,
-		      .rec_print = wlan_roam_rec_print},
-	[REC_CONN] = {{ 0 },
-		      .num_max_rec = WLAN_ROAM_DEBUG_MAX_REC,
-		      .rec_print = wlan_conn_rec_print},
+	[REC_ROAM] = { { 0 },
+		       .num_max_rec = WLAN_ROAM_DEBUG_MAX_REC,
+		       .rec_print = wlan_roam_rec_print },
+	[REC_CONN] = { { 0 },
+		       .num_max_rec = WLAN_ROAM_DEBUG_MAX_REC,
+		       .rec_print = wlan_conn_rec_print },
 };
 
-static inline struct wlan_roam_debug_info *wlan_roam_debug_get_table(
-	wlan_rec_type type)
+static inline struct wlan_roam_debug_info *
+wlan_roam_debug_get_table(wlan_rec_type type)
 {
 	if (type >= REC_MAX)
 		return NULL;
@@ -147,19 +145,19 @@ static int wlan_roam_next_debug_log_index(qdf_atomic_t *index, int size)
  *
  * Return: none
  */
-void wlan_roam_debug_log(uint8_t vdev_id, uint8_t op,
-			uint16_t peer_id, void *mac_addr,
-			void *peer_obj, uint32_t arg1, uint32_t arg2)
+void wlan_roam_debug_log(uint8_t vdev_id, uint8_t op, uint16_t peer_id,
+			 void *mac_addr, void *peer_obj, uint32_t arg1,
+			 uint32_t arg2)
 {
-	wlan_rec_debug_log(REC_ROAM, vdev_id, op, peer_id, mac_addr,
-			   peer_obj, arg1, arg2);
+	wlan_rec_debug_log(REC_ROAM, vdev_id, op, peer_id, mac_addr, peer_obj,
+			   arg1, arg2);
 }
 
 qdf_export_symbol(wlan_roam_debug_log);
 
 void wlan_rec_debug_log(wlan_rec_type rec_type, uint8_t vdev_id, uint8_t op,
-			uint16_t peer_id, const void *mac_addr,
-			void *peer_obj, uint32_t arg1, uint32_t arg2)
+			uint16_t peer_id, const void *mac_addr, void *peer_obj,
+			uint32_t arg1, uint32_t arg2)
 {
 	uint32_t i;
 	struct wlan_roam_debug_info *dbg_tbl;
@@ -169,20 +167,17 @@ void wlan_rec_debug_log(wlan_rec_type rec_type, uint8_t vdev_id, uint8_t op,
 	if (!dbg_tbl)
 		return;
 
-	i = wlan_roam_next_debug_log_index(
-				    &dbg_tbl->index,
-				    WLAN_ROAM_DEBUG_MAX_REC);
+	i = wlan_roam_next_debug_log_index(&dbg_tbl->index,
+					   WLAN_ROAM_DEBUG_MAX_REC);
 	rec = &dbg_tbl->rec[i];
 	rec->time = qdf_get_log_timestamp();
 	rec->operation = op;
 	rec->vdev_id = vdev_id;
 	rec->peer_id = peer_id;
 	if (mac_addr)
-		qdf_mem_copy(rec->mac_addr.bytes, mac_addr,
-			     QDF_MAC_ADDR_SIZE);
+		qdf_mem_copy(rec->mac_addr.bytes, mac_addr, QDF_MAC_ADDR_SIZE);
 	else
-		qdf_mem_zero(rec->mac_addr.bytes,
-			     QDF_MAC_ADDR_SIZE);
+		qdf_mem_zero(rec->mac_addr.bytes, QDF_MAC_ADDR_SIZE);
 	rec->peer_obj = peer_obj;
 	rec->arg1 = arg1;
 	rec->arg2 = arg2;
@@ -256,38 +251,37 @@ static char *wlan_roam_debug_string(uint32_t op)
 	}
 }
 
-void wlan_roam_rec_print(struct wlan_roam_debug_rec *dbg_rec,
-			 uint32_t idx, uint32_t delta,
-			 bool to_kernel)
+void wlan_roam_rec_print(struct wlan_roam_debug_rec *dbg_rec, uint32_t idx,
+			 uint32_t delta, bool to_kernel)
 {
-	roam_debug("index = %5d timestamp = 0x%016llx delta ms = %-12u",
-		   idx, dbg_rec->time, delta);
-	roam_debug("info = %-24s vdev_id = %-3d mac addr = "QDF_MAC_ADDR_FMT,
+	roam_debug("index = %5d timestamp = 0x%016llx delta ms = %-12u", idx,
+		   dbg_rec->time, delta);
+	roam_debug("info = %-24s vdev_id = %-3d mac addr = " QDF_MAC_ADDR_FMT,
 		   wlan_roam_debug_string(dbg_rec->operation),
 		   (int8_t)dbg_rec->vdev_id,
 		   QDF_MAC_ADDR_REF(dbg_rec->mac_addr.bytes));
 	roam_debug("peer obj = 0x%pK peer_id = %-4d", dbg_rec->peer_obj,
 		   (int8_t)dbg_rec->peer_id);
-	roam_debug("arg1 = 0x%-8x arg2 = 0x%-8x", dbg_rec->arg1,
-		   dbg_rec->arg2);
+	roam_debug("arg1 = 0x%-8x arg2 = 0x%-8x", dbg_rec->arg1, dbg_rec->arg2);
 }
 
-void wlan_conn_rec_print(struct wlan_roam_debug_rec *dbg_rec,
-			 uint32_t idx, uint32_t delta,
-			 bool to_kernel)
+void wlan_conn_rec_print(struct wlan_roam_debug_rec *dbg_rec, uint32_t idx,
+			 uint32_t delta, bool to_kernel)
 {
 	if (to_kernel) {
-		roam_info("i %d ti 0x%08llx ms %u vdv %d %s a1 0x%x a2 0x%x "QDF_MAC_ADDR_FMT,
-			  idx, dbg_rec->time, delta, (int8_t)dbg_rec->vdev_id,
-			  wlan_roam_debug_string(dbg_rec->operation),
-			  dbg_rec->arg1, dbg_rec->arg2,
-			  QDF_MAC_ADDR_REF(dbg_rec->mac_addr.bytes));
+		roam_info(
+			"i %d ti 0x%08llx ms %u vdv %d %s a1 0x%x a2 0x%x " QDF_MAC_ADDR_FMT,
+			idx, dbg_rec->time, delta, (int8_t)dbg_rec->vdev_id,
+			wlan_roam_debug_string(dbg_rec->operation),
+			dbg_rec->arg1, dbg_rec->arg2,
+			QDF_MAC_ADDR_REF(dbg_rec->mac_addr.bytes));
 	} else {
-		roam_debug("i %d ti 0x%08llx ms %u vdv %d %s a1 0x%x a2 0x%x "QDF_MAC_ADDR_FMT,
-			   idx, dbg_rec->time, delta, (int8_t)dbg_rec->vdev_id,
-			   wlan_roam_debug_string(dbg_rec->operation),
-			   dbg_rec->arg1, dbg_rec->arg2,
-			   QDF_MAC_ADDR_REF(dbg_rec->mac_addr.bytes));
+		roam_debug(
+			"i %d ti 0x%08llx ms %u vdv %d %s a1 0x%x a2 0x%x " QDF_MAC_ADDR_FMT,
+			idx, dbg_rec->time, delta, (int8_t)dbg_rec->vdev_id,
+			wlan_roam_debug_string(dbg_rec->operation),
+			dbg_rec->arg1, dbg_rec->arg2,
+			QDF_MAC_ADDR_REF(dbg_rec->mac_addr.bytes));
 	}
 }
 
@@ -323,7 +317,7 @@ void wlan_rec_debug_dump_table(wlan_rec_type rec_type, uint32_t count,
 		   current_index);
 
 	i = (current_index + WLAN_ROAM_DEBUG_MAX_REC - count) %
-		WLAN_ROAM_DEBUG_MAX_REC;
+	    WLAN_ROAM_DEBUG_MAX_REC;
 	do {
 		/* wrap around */
 		i = (i + 1) % WLAN_ROAM_DEBUG_MAX_REC;
@@ -338,12 +332,12 @@ void wlan_rec_debug_dump_table(wlan_rec_type rec_type, uint32_t count,
 		if (startt == 0)
 			startt = dbg_rec->time;
 		/*
-		 * Divide by 19200 == right shift 8 bits, then divide by 75
-		 * 32 bit computation keeps both 32 and 64 bit compilers happy.
-		 * The value will roll over after approx. 33554 seconds.
-		 */
-		delta = (uint32_t) (((dbg_rec->time - startt) >> 8) &
-				    0xffffffff);
+     * Divide by 19200 == right shift 8 bits, then divide by 75
+     * 32 bit computation keeps both 32 and 64 bit compilers happy.
+     * The value will roll over after approx. 33554 seconds.
+     */
+		delta = (uint32_t)(((dbg_rec->time - startt) >> 8) &
+				   0xffffffff);
 		delta = delta / (DEBUG_CLOCK_TICKS_PER_MSEC >> 8);
 
 		if (dbg_tbl->rec_print)

@@ -223,8 +223,8 @@ QDF_STATUS qdf_wait_single_event(qdf_event_t *event, uint32_t timeout)
 		long ret;
 
 		ret = wait_for_completion_timeout(
-				&event->complete,
-				__qdf_scaled_msecs_to_jiffies(timeout));
+			&event->complete,
+			__qdf_scaled_msecs_to_jiffies(timeout));
 
 		if (ret <= 0)
 			return QDF_STATUS_E_TIMEOUT;
@@ -255,12 +255,11 @@ void qdf_complete_wait_events(void)
 		return;
 
 	qdf_spin_lock(&qdf_wait_event_lock);
-	qdf_list_peek_front(&qdf_wait_event_list,
-			    &list_node);
+	qdf_list_peek_front(&qdf_wait_event_list, &list_node);
 
 	while (list_node) {
-		event_node = qdf_container_of(list_node,
-						struct qdf_evt_node, node);
+		event_node =
+			qdf_container_of(list_node, struct qdf_evt_node, node);
 
 		if (!event_node->pevent->done) {
 			event_node->pevent->force_set = true;
@@ -268,7 +267,7 @@ void qdf_complete_wait_events(void)
 		}
 
 		status = qdf_list_peek_next(&qdf_wait_event_list,
-					&event_node->node, &list_node);
+					    &event_node->node, &list_node);
 
 		if (!QDF_IS_STATUS_SUCCESS(status))
 			break;
@@ -328,8 +327,9 @@ QDF_STATUS qdf_wait_for_event_completion(qdf_event_t *event, uint32_t timeout)
 		long ret;
 
 		/* update the timeout if it's on an emulation platform */
-		ret = wait_for_completion_timeout(&event->complete,
-						  __qdf_scaled_msecs_to_jiffies(timeout));
+		ret = wait_for_completion_timeout(
+			&event->complete,
+			__qdf_scaled_msecs_to_jiffies(timeout));
 
 		if (ret <= 0) {
 			status = QDF_STATUS_E_TIMEOUT;

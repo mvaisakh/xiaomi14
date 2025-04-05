@@ -23,15 +23,15 @@
  */
 
 #include "wlan_serialization_legacy_api.h"
-#include "wlan_serialization_main_i.h"
-#include "wlan_serialization_utils_i.h"
 #include "wlan_objmgr_vdev_obj.h"
 #include "wlan_serialization_internal_i.h"
-#include "wlan_serialization_scan_i.h"
+#include "wlan_serialization_main_i.h"
 #include "wlan_serialization_non_scan_i.h"
+#include "wlan_serialization_scan_i.h"
+#include "wlan_serialization_utils_i.h"
 
-static struct wlan_objmgr_pdev *wlan_serialization_get_first_pdev(
-			struct wlan_objmgr_psoc *psoc)
+static struct wlan_objmgr_pdev *
+wlan_serialization_get_first_pdev(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_objmgr_pdev *pdev;
 	uint8_t i = 0;
@@ -42,7 +42,7 @@ static struct wlan_objmgr_pdev *wlan_serialization_get_first_pdev(
 	}
 	for (i = 0; i < WLAN_UMAC_MAX_PDEVS; i++) {
 		pdev = wlan_objmgr_get_pdev_by_id(psoc, i,
-					WLAN_SERIALIZATION_ID);
+						  WLAN_SERIALIZATION_ID);
 		if (pdev)
 			break;
 	}
@@ -67,7 +67,7 @@ wlan_serialization_get_pdev_priv_obj_using_psoc(struct wlan_objmgr_psoc *psoc)
 		return NULL;
 	}
 
-	ser_pdev_obj =  wlan_serialization_get_pdev_obj(pdev);
+	ser_pdev_obj = wlan_serialization_get_pdev_obj(pdev);
 	wlan_objmgr_pdev_release_ref(pdev, WLAN_SERIALIZATION_ID);
 	if (!ser_pdev_obj) {
 		ser_err("invalid ser_pdev_obj");
@@ -78,13 +78,12 @@ wlan_serialization_get_pdev_priv_obj_using_psoc(struct wlan_objmgr_psoc *psoc)
 }
 
 uint32_t wlan_serialization_get_pending_list_count(
-				struct wlan_objmgr_psoc *psoc,
-				uint8_t is_cmd_from_pending_scan_queue)
+	struct wlan_objmgr_psoc *psoc, uint8_t is_cmd_from_pending_scan_queue)
 {
 	struct wlan_ser_pdev_obj *ser_pdev_obj;
 	qdf_list_t *queue;
 	uint32_t count = 0;
-	struct wlan_serialization_pdev_queue  *pdev_queue;
+	struct wlan_serialization_pdev_queue *pdev_queue;
 
 	ser_pdev_obj = wlan_serialization_get_pdev_priv_obj_using_psoc(psoc);
 	if (!ser_pdev_obj) {
@@ -96,7 +95,7 @@ uint32_t wlan_serialization_get_pending_list_count(
 		pdev_queue = &ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_SCAN];
 	else
 		pdev_queue =
-		&ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
+			&ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
 	queue = &pdev_queue->pending_list;
 	wlan_serialization_acquire_lock(&pdev_queue->pdev_queue_lock);
 	count = qdf_list_size(queue);
@@ -105,17 +104,16 @@ uint32_t wlan_serialization_get_pending_list_count(
 	return count;
 }
 
-struct wlan_serialization_command*
+struct wlan_serialization_command *
 wlan_serialization_peek_head_active_cmd_using_psoc(
-			struct wlan_objmgr_psoc *psoc,
-			uint8_t is_cmd_from_active_scan_queue)
+	struct wlan_objmgr_psoc *psoc, uint8_t is_cmd_from_active_scan_queue)
 {
 	struct wlan_ser_pdev_obj *ser_pdev_obj;
 	struct wlan_serialization_command_list *cmd_list = NULL;
 	struct wlan_serialization_command *cmd = NULL;
 	qdf_list_node_t *nnode = NULL;
 	qdf_list_t *queue;
-	struct wlan_serialization_pdev_queue  *pdev_queue;
+	struct wlan_serialization_pdev_queue *pdev_queue;
 
 	ser_pdev_obj = wlan_serialization_get_pdev_priv_obj_using_psoc(psoc);
 	if (!ser_pdev_obj) {
@@ -127,38 +125,37 @@ wlan_serialization_peek_head_active_cmd_using_psoc(
 		pdev_queue = &ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_SCAN];
 	else
 		pdev_queue =
-		&ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
+			&ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
 	queue = &pdev_queue->active_list;
 	if (wlan_serialization_list_empty(queue)) {
 		ser_debug_rl("Empty Queue");
 		goto end;
 	}
 
-	if (QDF_STATUS_SUCCESS != wlan_serialization_get_cmd_from_queue(queue,
-						&nnode)) {
+	if (QDF_STATUS_SUCCESS !=
+	    wlan_serialization_get_cmd_from_queue(queue, &nnode)) {
 		ser_err("Can't get command from queue");
 		goto end;
 	}
 
-	cmd_list = qdf_container_of(nnode,
-			struct wlan_serialization_command_list, pdev_node);
+	cmd_list = qdf_container_of(
+		nnode, struct wlan_serialization_command_list, pdev_node);
 	cmd = &cmd_list->cmd;
 
 end:
 	return cmd;
 }
 
-struct wlan_serialization_command*
+struct wlan_serialization_command *
 wlan_serialization_peek_head_pending_cmd_using_psoc(
-			struct wlan_objmgr_psoc *psoc,
-			uint8_t is_cmd_from_pending_scan_queue)
+	struct wlan_objmgr_psoc *psoc, uint8_t is_cmd_from_pending_scan_queue)
 {
 	struct wlan_ser_pdev_obj *ser_pdev_obj;
 	struct wlan_serialization_command_list *cmd_list = NULL;
 	struct wlan_serialization_command *cmd = NULL;
 	qdf_list_node_t *nnode = NULL;
 	qdf_list_t *queue;
-	struct wlan_serialization_pdev_queue  *pdev_queue;
+	struct wlan_serialization_pdev_queue *pdev_queue;
 
 	ser_pdev_obj = wlan_serialization_get_pdev_priv_obj_using_psoc(psoc);
 	if (!ser_pdev_obj) {
@@ -169,34 +166,33 @@ wlan_serialization_peek_head_pending_cmd_using_psoc(
 		pdev_queue = &ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_SCAN];
 	else
 		pdev_queue =
-		&ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
+			&ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
 	queue = &pdev_queue->pending_list;
 	if (wlan_serialization_list_empty(queue))
 		goto end;
 
 	wlan_serialization_acquire_lock(&pdev_queue->pdev_queue_lock);
-	if (QDF_STATUS_SUCCESS != wlan_serialization_get_cmd_from_queue(
-							queue,
-							&nnode)) {
+	if (QDF_STATUS_SUCCESS !=
+	    wlan_serialization_get_cmd_from_queue(queue, &nnode)) {
 		wlan_serialization_release_lock(&pdev_queue->pdev_queue_lock);
 		ser_err("Can't get command from queue");
 		goto end;
 	}
 	wlan_serialization_release_lock(&pdev_queue->pdev_queue_lock);
-	cmd_list = qdf_container_of(nnode,
-			struct wlan_serialization_command_list, pdev_node);
+	cmd_list = qdf_container_of(
+		nnode, struct wlan_serialization_command_list, pdev_node);
 	cmd = &cmd_list->cmd;
-	ser_debug("cmd_type[%d] cmd_id[%d]matched",
-		  cmd_list->cmd.cmd_type, cmd_list->cmd.cmd_id);
+	ser_debug("cmd_type[%d] cmd_id[%d]matched", cmd_list->cmd.cmd_type,
+		  cmd_list->cmd.cmd_id);
 
 end:
 	return cmd;
 }
 
-static struct wlan_serialization_command*
+static struct wlan_serialization_command *
 wlan_serialization_get_list_next_node(qdf_list_t *queue,
-			struct wlan_serialization_command *cmd,
-			struct wlan_ser_pdev_obj *ser_pdev_obj)
+				      struct wlan_serialization_command *cmd,
+				      struct wlan_ser_pdev_obj *ser_pdev_obj)
 {
 	struct wlan_serialization_command_list *cmd_list = NULL;
 	qdf_list_node_t *pnode = NULL, *nnode = NULL;
@@ -222,13 +218,11 @@ wlan_serialization_get_list_next_node(qdf_list_t *queue,
 
 		pnode = nnode;
 		cmd_list = qdf_container_of(
-					nnode,
-					struct wlan_serialization_command_list,
-					pdev_node);
-		if (wlan_serialization_match_cmd_id_type(
-				nnode, cmd, WLAN_SER_PDEV_NODE) &&
-		    wlan_serialization_match_cmd_vdev(nnode,
-						      cmd->vdev,
+			nnode, struct wlan_serialization_command_list,
+			pdev_node);
+		if (wlan_serialization_match_cmd_id_type(nnode, cmd,
+							 WLAN_SER_PDEV_NODE) &&
+		    wlan_serialization_match_cmd_vdev(nnode, cmd->vdev,
 						      WLAN_SER_PDEV_NODE)) {
 			found = true;
 		}
@@ -236,9 +230,8 @@ wlan_serialization_get_list_next_node(qdf_list_t *queue,
 	}
 	if (nnode && found) {
 		cmd_list = qdf_container_of(
-				nnode,
-				struct wlan_serialization_command_list,
-				pdev_node);
+			nnode, struct wlan_serialization_command_list,
+			pdev_node);
 		ret_cmd = &cmd_list->cmd;
 	}
 	if (!found) {
@@ -253,15 +246,15 @@ wlan_serialization_get_list_next_node(qdf_list_t *queue,
 	return ret_cmd;
 }
 
-struct wlan_serialization_command*
+struct wlan_serialization_command *
 wlan_serialization_get_pending_list_next_node_using_psoc(
-			struct wlan_objmgr_psoc *psoc,
-			struct wlan_serialization_command *prev_cmd,
-			uint8_t is_cmd_for_pending_scan_queue)
+	struct wlan_objmgr_psoc *psoc,
+	struct wlan_serialization_command *prev_cmd,
+	uint8_t is_cmd_for_pending_scan_queue)
 {
 	struct wlan_ser_pdev_obj *ser_pdev_obj;
 	qdf_list_t *queue;
-	struct wlan_serialization_pdev_queue  *pdev_queue;
+	struct wlan_serialization_pdev_queue *pdev_queue;
 	struct wlan_serialization_command *cmd;
 
 	if (!prev_cmd) {
@@ -278,7 +271,7 @@ wlan_serialization_get_pending_list_next_node_using_psoc(
 		pdev_queue = &ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_SCAN];
 	else
 		pdev_queue =
-		&ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
+			&ser_pdev_obj->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
 	queue = &pdev_queue->pending_list;
 
 	wlan_serialization_acquire_lock(&pdev_queue->pdev_queue_lock);

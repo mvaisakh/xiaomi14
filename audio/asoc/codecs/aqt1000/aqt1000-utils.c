@@ -2,14 +2,14 @@
 /* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
  */
 
+#include "aqt1000-utils.h"
+#include "aqt1000.h"
+#include <linux/delay.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/slab.h>
 #include <linux/regmap.h>
-#include <linux/delay.h>
 #include <linux/sched.h>
-#include "aqt1000.h"
-#include "aqt1000-utils.h"
+#include <linux/slab.h>
 
 #define REG_BYTES 2
 #define VAL_BYTES 1
@@ -31,22 +31,21 @@ static int aqt_page_write(struct aqt1000 *aqt, unsigned short *reg)
 	if (aqt->prev_pg_valid) {
 		prev_pg_num = aqt->prev_pg;
 		if (prev_pg_num != pg_num) {
-			ret = aqt->write_dev(
-					aqt, PAGE_REG_ADDR,
-					(void *) &pg_num, 1);
+			ret = aqt->write_dev(aqt, PAGE_REG_ADDR,
+					     (void *)&pg_num, 1);
 			if (ret < 0)
 				dev_err(aqt->dev,
 					"%s: page write error, pg_num: 0x%x\n",
 					__func__, pg_num);
 			else {
 				aqt->prev_pg = pg_num;
-				dev_dbg(aqt->dev, "%s: Page 0x%x Write to 0x00\n",
+				dev_dbg(aqt->dev,
+					"%s: Page 0x%x Write to 0x00\n",
 					__func__, pg_num);
 			}
 		}
 	} else {
-		ret = aqt->write_dev(
-				aqt, PAGE_REG_ADDR, (void *) &pg_num, 1);
+		ret = aqt->write_dev(aqt, PAGE_REG_ADDR, (void *)&pg_num, 1);
 		if (ret < 0)
 			dev_err(aqt->dev,
 				"%s: page write error, pg_num: 0x%x\n",
@@ -94,21 +93,22 @@ static int regmap_bus_read(void *context, const void *reg, size_t reg_size,
 		goto err;
 	ret = aqt->read_dev(aqt, c_reg, val, val_size);
 	if (ret < 0)
-		dev_err(dev, "%s: Codec read failed (%d), reg: 0x%x, size:%zd\n",
+		dev_err(dev,
+			"%s: Codec read failed (%d), reg: 0x%x, size:%zd\n",
 			__func__, ret, rreg, val_size);
 	else {
 		for (i = 0; i < val_size; i++)
-			dev_dbg(dev, "%s: Read 0x%02x from 0x%x\n",
-				__func__, ((u8 *)val)[i], rreg + i);
+			dev_dbg(dev, "%s: Read 0x%02x from 0x%x\n", __func__,
+				((u8 *)val)[i], rreg + i);
 	}
 err:
 	mutex_unlock(&aqt->io_lock);
 	return ret;
 }
 
-static int regmap_bus_gather_write(void *context,
-				   const void *reg, size_t reg_size,
-				   const void *val, size_t val_size)
+static int regmap_bus_gather_write(void *context, const void *reg,
+				   size_t reg_size, const void *val,
+				   size_t val_size)
 {
 	struct device *dev = context;
 	struct aqt1000 *aqt = dev_get_drvdata(dev);
@@ -137,12 +137,12 @@ static int regmap_bus_gather_write(void *context,
 		goto err;
 
 	for (i = 0; i < val_size; i++)
-		dev_dbg(dev, "Write %02x to 0x%x\n", ((u8 *)val)[i],
-			rreg + i);
+		dev_dbg(dev, "Write %02x to 0x%x\n", ((u8 *)val)[i], rreg + i);
 
-	ret = aqt->write_dev(aqt, c_reg, (void *) val, val_size);
+	ret = aqt->write_dev(aqt, c_reg, (void *)val, val_size);
 	if (ret < 0)
-		dev_err(dev, "%s: Codec write failed (%d), reg:0x%x, size:%zd\n",
+		dev_err(dev,
+			"%s: Codec write failed (%d), reg:0x%x, size:%zd\n",
 			__func__, ret, rreg, val_size);
 
 err:
@@ -161,8 +161,7 @@ static int regmap_bus_write(void *context, const void *data, size_t count)
 	WARN_ON(count < REG_BYTES);
 
 	return regmap_bus_gather_write(context, data, REG_BYTES,
-					       data + REG_BYTES,
-					       count - REG_BYTES);
+				       data + REG_BYTES, count - REG_BYTES);
 }
 
 static struct regmap_bus regmap_bus_config = {

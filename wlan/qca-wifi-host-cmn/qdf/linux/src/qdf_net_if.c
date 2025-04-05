@@ -22,8 +22,8 @@
  * This file provides OS dependent network interface related APIs
  */
 #include "qdf_net_if.h"
-#include "qdf_types.h"
 #include "qdf_module.h"
+#include "qdf_types.h"
 #include "qdf_util.h"
 #include <linux/netdevice.h>
 
@@ -82,7 +82,7 @@ qdf_export_symbol(qdf_net_if_get_dev_by_name);
  * Return: QDF_STATUS_SUCCESS on success
  */
 QDF_STATUS
-qdf_net_if_release_dev(struct qdf_net_if  *nif)
+qdf_net_if_release_dev(struct qdf_net_if *nif)
 {
 	return __qdf_net_if_release_dev(nif);
 }
@@ -90,7 +90,7 @@ qdf_net_if_release_dev(struct qdf_net_if  *nif)
 qdf_export_symbol(qdf_net_if_release_dev);
 
 QDF_STATUS
-qdf_net_if_hold_dev(struct qdf_net_if  *nif)
+qdf_net_if_hold_dev(struct qdf_net_if *nif)
 {
 	return __qdf_net_if_hold_dev(nif);
 }
@@ -108,10 +108,8 @@ qdf_export_symbol(qdf_net_if_hold_dev);
  *
  * Return: void
  */
-void
-qdf_net_update_net_device_dev_addr(struct net_device *ndev,
-				   const void *src_addr,
-				   size_t len)
+void qdf_net_update_net_device_dev_addr(struct net_device *ndev,
+					const void *src_addr, size_t len)
 {
 	__qdf_net_update_net_device_dev_addr(ndev, src_addr, len);
 }

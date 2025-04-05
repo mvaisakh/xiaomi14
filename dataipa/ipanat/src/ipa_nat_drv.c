@@ -43,27 +43,21 @@
  *
  * Returns:	0  On Success, negative on failure
  */
-int ipa_nat_add_ipv4_tbl(
-	uint32_t public_ip_addr,
-	const char *mem_type_ptr,
-	uint16_t number_of_entries,
-	uint32_t *tbl_hdl)
+int ipa_nat_add_ipv4_tbl(uint32_t public_ip_addr, const char *mem_type_ptr,
+			 uint16_t number_of_entries, uint32_t *tbl_hdl)
 {
 	int ret;
 
 	if (tbl_hdl == NULL || mem_type_ptr == NULL || number_of_entries == 0) {
-		IPAERR(
-			"Invalid parameters tbl_hdl=%pK mem_type_ptr=%p number_of_entries=%d\n",
-			tbl_hdl,
-			mem_type_ptr,
-			number_of_entries);
+		IPAERR("Invalid parameters tbl_hdl=%pK mem_type_ptr=%p number_of_entries=%d\n",
+		       tbl_hdl, mem_type_ptr, number_of_entries);
 		return -EINVAL;
 	}
 
 	*tbl_hdl = 0;
 
-	ret = ipa_nati_add_ipv4_tbl(
-		public_ip_addr, mem_type_ptr, number_of_entries, tbl_hdl);
+	ret = ipa_nati_add_ipv4_tbl(public_ip_addr, mem_type_ptr,
+				    number_of_entries, tbl_hdl);
 
 	if (ret) {
 		IPAERR("unable to add NAT table\n");
@@ -83,10 +77,9 @@ int ipa_nat_add_ipv4_tbl(
  *
  * Returns:	0  On Success, negative on failure
  */
-int ipa_nat_del_ipv4_tbl(
-	uint32_t tbl_hdl)
+int ipa_nat_del_ipv4_tbl(uint32_t tbl_hdl)
 {
-	if ( ! VALID_TBL_HDL(tbl_hdl) ) {
+	if (!VALID_TBL_HDL(tbl_hdl)) {
 		IPAERR("Invalid table handle passed 0x%08X\n", tbl_hdl);
 		return -EINVAL;
 	}
@@ -106,19 +99,14 @@ int ipa_nat_del_ipv4_tbl(
  *
  * Returns:	0  On Success, negative on failure
  */
-int ipa_nat_add_ipv4_rule(
-	uint32_t tbl_hdl,
-	const ipa_nat_ipv4_rule *clnt_rule,
-	uint32_t *rule_hdl)
+int ipa_nat_add_ipv4_rule(uint32_t tbl_hdl, const ipa_nat_ipv4_rule *clnt_rule,
+			  uint32_t *rule_hdl)
 {
 	int result = -EINVAL;
 
-	if ( ! VALID_TBL_HDL(tbl_hdl) ||
-		 rule_hdl == NULL ||
-		 clnt_rule == NULL ) {
-		IPAERR(
-			"Invalid parameters tbl_hdl=%d clnt_rule=%pK rule_hdl=%pK\n",
-			tbl_hdl, clnt_rule, rule_hdl);
+	if (!VALID_TBL_HDL(tbl_hdl) || rule_hdl == NULL || clnt_rule == NULL) {
+		IPAERR("Invalid parameters tbl_hdl=%d clnt_rule=%pK rule_hdl=%pK\n",
+		       tbl_hdl, clnt_rule, rule_hdl);
 		return result;
 	}
 
@@ -142,27 +130,24 @@ int ipa_nat_add_ipv4_rule(
  *
  * Returns:	0  On Success, negative on failure
  */
-int ipa_nat_del_ipv4_rule(
-	uint32_t tbl_hdl,
-	uint32_t rule_hdl)
+int ipa_nat_del_ipv4_rule(uint32_t tbl_hdl, uint32_t rule_hdl)
 {
 	int result = -EINVAL;
 
-	if ( ! VALID_TBL_HDL(tbl_hdl) || ! VALID_RULE_HDL(rule_hdl) )
-	{
+	if (!VALID_TBL_HDL(tbl_hdl) || !VALID_RULE_HDL(rule_hdl)) {
 		IPAERR("Invalid parameters tbl_hdl=0x%08X rule_hdl=0x%08X\n",
-			   tbl_hdl, rule_hdl);
+		       tbl_hdl, rule_hdl);
 		return result;
 	}
 
-	IPADBG("Passed Table: 0x%08X and rule handle 0x%08X\n", tbl_hdl, rule_hdl);
+	IPADBG("Passed Table: 0x%08X and rule handle 0x%08X\n", tbl_hdl,
+	       rule_hdl);
 
 	result = ipa_nati_del_ipv4_rule(tbl_hdl, rule_hdl);
 	if (result) {
-		IPAERR(
-			"Unable to delete rule with handle 0x%08X "
-			"from hw for NAT table with handle 0x%08X\n",
-			rule_hdl, tbl_hdl);
+		IPAERR("Unable to delete rule with handle 0x%08X "
+		       "from hw for NAT table with handle 0x%08X\n",
+		       rule_hdl, tbl_hdl);
 		return result;
 	}
 
@@ -180,17 +165,13 @@ int ipa_nat_del_ipv4_rule(
  *
  * Returns:	0  On Success, negative on failure
  */
-int ipa_nat_query_timestamp(
-	uint32_t tbl_hdl,
-	uint32_t rule_hdl,
-	uint32_t *time_stamp)
+int ipa_nat_query_timestamp(uint32_t tbl_hdl, uint32_t rule_hdl,
+			    uint32_t *time_stamp)
 {
-	if ( ! VALID_TBL_HDL(tbl_hdl) ||
-		 ! VALID_RULE_HDL(rule_hdl) ||
-		 time_stamp == NULL )
-	{
+	if (!VALID_TBL_HDL(tbl_hdl) || !VALID_RULE_HDL(rule_hdl) ||
+	    time_stamp == NULL) {
 		IPAERR("Invalid parameters passed tbl_hdl=0x%x rule_hdl=%u time_stamp=%pK\n",
-			   tbl_hdl, rule_hdl, time_stamp);
+		       tbl_hdl, rule_hdl, time_stamp);
 		return -EINVAL;
 	}
 
@@ -200,34 +181,29 @@ int ipa_nat_query_timestamp(
 }
 
 /**
-* ipa_nat_modify_pdn() - modify single PDN entry in the PDN config table
-* @table_handle: [in] handle of ipv4 nat table
-* @pdn_index : [in] the index of the entry to be modified
-* @pdn_info : [in] values for the PDN entry to be changed
-*
-* Modify a PDN entry
-*
-* Returns:	0  On Success, negative on failure
-*/
-int ipa_nat_modify_pdn(
-	uint32_t tbl_hdl,
-	uint8_t pdn_index,
-	ipa_nat_pdn_entry *pdn_info)
+ * ipa_nat_modify_pdn() - modify single PDN entry in the PDN config table
+ * @table_handle: [in] handle of ipv4 nat table
+ * @pdn_index : [in] the index of the entry to be modified
+ * @pdn_info : [in] values for the PDN entry to be changed
+ *
+ * Modify a PDN entry
+ *
+ * Returns:	0  On Success, negative on failure
+ */
+int ipa_nat_modify_pdn(uint32_t tbl_hdl, uint8_t pdn_index,
+		       ipa_nat_pdn_entry *pdn_info)
 {
 	struct ipa_ioc_nat_pdn_entry pdn_data;
 
-	if ( ! VALID_TBL_HDL(tbl_hdl) ||
-		 pdn_info == NULL) {
-		IPAERR(
-			"invalid parameters passed tbl_hdl=%d pdn_info=%pK\n",
-			tbl_hdl, pdn_info);
+	if (!VALID_TBL_HDL(tbl_hdl) || pdn_info == NULL) {
+		IPAERR("invalid parameters passed tbl_hdl=%d pdn_info=%pK\n",
+		       tbl_hdl, pdn_info);
 		return -EINVAL;
 	}
 
 	if (pdn_index > IPA_MAX_PDN_NUM) {
-		IPAERR(
-			"PDN index %d is out of range maximum %d",
-			pdn_index, IPA_MAX_PDN_NUM);
+		IPAERR("PDN index %d is out of range maximum %d", pdn_index,
+		       IPA_MAX_PDN_NUM);
 		return -EINVAL;
 	}
 
@@ -240,20 +216,17 @@ int ipa_nat_modify_pdn(
 }
 
 /**
-* ipa_nat_get_pdn_index() - get a PDN index for a public ip
-* @public_ip : [in] IPv4 address of the PDN entry
-* @pdn_index : [out] the index of the requested PDN entry
-*
-* Get a PDN entry
-*
-* Returns:	0  On Success, negative on failure
-*/
-int ipa_nat_get_pdn_index(
-	uint32_t public_ip,
-	uint8_t *pdn_index)
+ * ipa_nat_get_pdn_index() - get a PDN index for a public ip
+ * @public_ip : [in] IPv4 address of the PDN entry
+ * @pdn_index : [out] the index of the requested PDN entry
+ *
+ * Get a PDN entry
+ *
+ * Returns:	0  On Success, negative on failure
+ */
+int ipa_nat_get_pdn_index(uint32_t public_ip, uint8_t *pdn_index)
 {
-	if(!pdn_index)
-	{
+	if (!pdn_index) {
 		IPAERR("NULL PDN index\n");
 		return -EINVAL;
 	}
@@ -262,26 +235,22 @@ int ipa_nat_get_pdn_index(
 }
 
 /**
-* ipa_nat_alloc_pdn() - allocate a PDN for new WAN
-* @pdn_info : [in] values for the PDN entry to be created
-* @pdn_index : [out] the index of the requested PDN entry
-*
-* allocate a new PDN entry
-*
-* Returns:	0  On Success, negative on failure
-*/
-int ipa_nat_alloc_pdn(
-	ipa_nat_pdn_entry *pdn_info,
-	uint8_t *pdn_index)
+ * ipa_nat_alloc_pdn() - allocate a PDN for new WAN
+ * @pdn_info : [in] values for the PDN entry to be created
+ * @pdn_index : [out] the index of the requested PDN entry
+ *
+ * allocate a new PDN entry
+ *
+ * Returns:	0  On Success, negative on failure
+ */
+int ipa_nat_alloc_pdn(ipa_nat_pdn_entry *pdn_info, uint8_t *pdn_index)
 {
-	if(!pdn_info)
-	{
+	if (!pdn_info) {
 		IPAERR("NULL PDN info\n");
 		return -EINVAL;
 	}
 
-	if(!pdn_index)
-	{
+	if (!pdn_index) {
 		IPAERR("NULL PDN index\n");
 		return -EINVAL;
 	}
@@ -290,18 +259,16 @@ int ipa_nat_alloc_pdn(
 }
 
 /**
-* ipa_nat_get_pdn_count() - get the number of allocated PDNs
-* @pdn_cnt : [out] the number of allocated PDNs
-*
-* get the number of allocated PDNs
-*
-* Returns:	0  On Success, negative on failure
-*/
-int ipa_nat_get_pdn_count(
-	uint8_t *pdn_cnt)
+ * ipa_nat_get_pdn_count() - get the number of allocated PDNs
+ * @pdn_cnt : [out] the number of allocated PDNs
+ *
+ * get the number of allocated PDNs
+ *
+ * Returns:	0  On Success, negative on failure
+ */
+int ipa_nat_get_pdn_count(uint8_t *pdn_cnt)
 {
-	if(!pdn_cnt)
-	{
+	if (!pdn_cnt) {
 		IPAERR("NULL PDN count\n");
 		return -EINVAL;
 	}
@@ -312,17 +279,16 @@ int ipa_nat_get_pdn_count(
 }
 
 /**
-* ipa_nat_dealloc_pdn() - deallocate a PDN entry
-* @pdn_index : [in] pdn index to be deallocated
-*
-* deallocate a PDN in specified index - zero the PDN entry
-*
-* Returns:	0  On Success, negative on failure
-*/
-int ipa_nat_dealloc_pdn(
-	uint8_t pdn_index)
+ * ipa_nat_dealloc_pdn() - deallocate a PDN entry
+ * @pdn_index : [in] pdn index to be deallocated
+ *
+ * deallocate a PDN in specified index - zero the PDN entry
+ *
+ * Returns:	0  On Success, negative on failure
+ */
+int ipa_nat_dealloc_pdn(uint8_t pdn_index)
 {
-	if(pdn_index > IPA_MAX_PDN_NUM) {
+	if (pdn_index > IPA_MAX_PDN_NUM) {
 		IPAERR("PDN index is out of range %d", pdn_index);
 		return -EINVAL;
 	}
@@ -334,12 +300,10 @@ int ipa_nat_dealloc_pdn(
  * ipa_nat_vote_clock() - used for voting clock
  * @vote_type: [in] desired vote type
  */
-int ipa_nat_vote_clock(
-	enum ipa_app_clock_vote_type vote_type )
+int ipa_nat_vote_clock(enum ipa_app_clock_vote_type vote_type)
 {
-	if ( ! (vote_type >= IPA_APP_CLK_DEVOTE &&
-			vote_type <= IPA_APP_CLK_RESET_VOTE) )
-	{
+	if (!(vote_type >= IPA_APP_CLK_DEVOTE &&
+	      vote_type <= IPA_APP_CLK_RESET_VOTE)) {
 		IPAERR("Bad vote_type(%u) parameter\n", vote_type);
 		return -EINVAL;
 	}

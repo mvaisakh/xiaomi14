@@ -19,12 +19,12 @@
  * DOC: contains interface prototypes for son api
  */
 
-#include <son_api.h>
-#include <wlan_reg_services_api.h>
-#include <wlan_mlme_api.h>
 #include <ieee80211_external.h>
+#include <son_api.h>
 #include <wlan_cfg80211_scan.h>
+#include <wlan_mlme_api.h>
 #include <wlan_mlme_main.h>
+#include <wlan_reg_services_api.h>
 
 /**
  * struct son_mlme_deliver_cbs - son mlme deliver callbacks
@@ -75,7 +75,7 @@ wlan_son_register_mlme_deliver_cb(struct wlan_objmgr_psoc *psoc,
 #ifdef WLAN_FEATURE_11AX
 static bool wlan_son_is_he_supported(struct wlan_objmgr_psoc *psoc)
 {
-	tDot11fIEhe_cap he_cap = {0};
+	tDot11fIEhe_cap he_cap = { 0 };
 
 	mlme_cfg_get_he_caps(psoc, &he_cap);
 	return !!he_cap.present;
@@ -90,8 +90,7 @@ static bool wlan_son_is_he_supported(struct wlan_objmgr_psoc *psoc)
 QDF_STATUS wlan_son_peer_ext_stat_enable(struct wlan_objmgr_pdev *pdev,
 					 uint8_t *mac_addr,
 					 struct wlan_objmgr_vdev *vdev,
-					 uint32_t stats_count,
-					 uint32_t enable)
+					 uint32_t stats_count, uint32_t enable)
 {
 	struct wlan_lmac_if_tx_ops *tx_ops;
 	struct wlan_objmgr_psoc *psoc;
@@ -111,10 +110,8 @@ QDF_STATUS wlan_son_peer_ext_stat_enable(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_NULL_VALUE;
 	}
 	if (tx_ops->son_tx_ops.peer_ext_stats_enable)
-		return tx_ops->son_tx_ops.peer_ext_stats_enable(pdev,
-								mac_addr, vdev,
-								stats_count,
-								enable);
+		return tx_ops->son_tx_ops.peer_ext_stats_enable(
+			pdev, mac_addr, vdev, stats_count, enable);
 
 	return QDF_STATUS_E_NULL_VALUE;
 }
@@ -146,9 +143,8 @@ QDF_STATUS wlan_son_peer_req_inst_stats(struct wlan_objmgr_pdev *pdev,
 	return QDF_STATUS_E_NULL_VALUE;
 }
 
-uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
-				qdf_freq_t freq, bool flag_160,
-				struct ch_params *chan_params)
+uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+				bool flag_160, struct ch_params *chan_params)
 {
 	uint32_t flags = 0;
 	qdf_freq_t sec_freq;
@@ -178,8 +174,7 @@ uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
 	qdf_mem_zero(&ch_width40_ch_params, sizeof(ch_width40_ch_params));
 	if (wlan_reg_is_24ghz_ch_freq(freq)) {
 		if (bandwidth == CH_WIDTH_80P80MHZ ||
-		    bandwidth == CH_WIDTH_160MHZ ||
-		    bandwidth == CH_WIDTH_80MHZ)
+		    bandwidth == CH_WIDTH_160MHZ || bandwidth == CH_WIDTH_80MHZ)
 			bandwidth = CH_WIDTH_40MHZ;
 	}
 
@@ -188,8 +183,7 @@ uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
 	case CH_WIDTH_80P80MHZ:
 		ch_params.ch_width = CH_WIDTH_80P80MHZ;
 		if (wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
-					pdev, freq,
-					&ch_params, REG_CURRENT_PWR_MODE) !=
+			    pdev, freq, &ch_params, REG_CURRENT_PWR_MODE) !=
 		    CHANNEL_STATE_INVALID) {
 			if (!flag_160) {
 				chan_params->ch_width = CH_WIDTH_80P80MHZ;
@@ -199,7 +193,7 @@ uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
 			}
 			if (is_he_enabled)
 				flags |= VENDOR_CHAN_FLAG2(
-				    QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HE80_80);
+					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HE80_80);
 			flags |= QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_VHT80_80;
 		}
 		bandwidth = CH_WIDTH_160MHZ;
@@ -207,8 +201,7 @@ uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
 	case CH_WIDTH_160MHZ:
 		ch_params.ch_width = CH_WIDTH_160MHZ;
 		if (wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
-					pdev, freq,
-					&ch_params, REG_CURRENT_PWR_MODE) !=
+			    pdev, freq, &ch_params, REG_CURRENT_PWR_MODE) !=
 		    CHANNEL_STATE_INVALID) {
 			if (flag_160) {
 				chan_params->ch_width = CH_WIDTH_160MHZ;
@@ -218,7 +211,7 @@ uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
 			}
 			if (is_he_enabled)
 				flags |= VENDOR_CHAN_FLAG2(
-				    QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HE160);
+					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HE160);
 			flags |= QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_VHT160;
 		}
 		bandwidth = CH_WIDTH_80MHZ;
@@ -226,8 +219,7 @@ uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
 	case CH_WIDTH_80MHZ:
 		ch_params.ch_width = CH_WIDTH_80MHZ;
 		if (wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
-					pdev, freq,
-					&ch_params, REG_CURRENT_PWR_MODE) !=
+			    pdev, freq, &ch_params, REG_CURRENT_PWR_MODE) !=
 		    CHANNEL_STATE_INVALID) {
 			if (!flag_160 &&
 			    chan_params->ch_width != CH_WIDTH_80P80MHZ) {
@@ -257,28 +249,26 @@ uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
 			sec_freq = 0;
 
 		if (wlan_reg_get_bonded_channel_state_for_pwrmode(
-							pdev, freq,
-							bandwidth, sec_freq,
-							REG_CURRENT_PWR_MODE) !=
-		    CHANNEL_STATE_INVALID) {
+			    pdev, freq, bandwidth, sec_freq,
+			    REG_CURRENT_PWR_MODE) != CHANNEL_STATE_INVALID) {
 			if (ch_width40_ch_params.sec_ch_offset ==
 			    LOW_PRIMARY_CH) {
 				if (is_he_enabled)
-				  flags |=
-				    QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HE40PLUS;
+					flags |=
+						QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HE40PLUS;
 				flags |=
-				    QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_VHT40PLUS;
+					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_VHT40PLUS;
 				flags |=
-				    QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HT40PLUS;
+					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HT40PLUS;
 			} else if (ch_width40_ch_params.sec_ch_offset ==
 				   HIGH_PRIMARY_CH) {
 				if (is_he_enabled)
-				  flags |=
-				    QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HE40MINUS;
+					flags |=
+						QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HE40MINUS;
 				flags |=
-				   QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_VHT40MINUS;
+					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_VHT40MINUS;
 				flags |=
-				    QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HT40PLUS;
+					QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HT40PLUS;
 			}
 		}
 		bandwidth = CH_WIDTH_20MHZ;
@@ -292,20 +282,16 @@ uint32_t wlan_son_get_chan_flag(struct wlan_objmgr_pdev *pdev,
 		fallthrough;
 	case CH_WIDTH_10MHZ:
 		if (wlan_reg_get_bonded_channel_state_for_pwrmode(
-							pdev, freq,
-							bandwidth, 0,
-							REG_CURRENT_PWR_MODE) !=
-		     CHANNEL_STATE_INVALID &&
-		     sub_20_channel_width == WLAN_SUB_20_CH_WIDTH_10)
+			    pdev, freq, bandwidth, 0, REG_CURRENT_PWR_MODE) !=
+			    CHANNEL_STATE_INVALID &&
+		    sub_20_channel_width == WLAN_SUB_20_CH_WIDTH_10)
 			flags |= QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_HALF;
 		bandwidth = CH_WIDTH_5MHZ;
 		fallthrough;
 	case CH_WIDTH_5MHZ:
 		if (wlan_reg_get_bonded_channel_state_for_pwrmode(
-							pdev, freq,
-							bandwidth, 0,
-							REG_CURRENT_PWR_MODE) !=
-		    CHANNEL_STATE_INVALID &&
+			    pdev, freq, bandwidth, 0, REG_CURRENT_PWR_MODE) !=
+			    CHANNEL_STATE_INVALID &&
 		    sub_20_channel_width == WLAN_SUB_20_CH_WIDTH_5)
 			flags |= QCA_WLAN_VENDOR_CHANNEL_PROP_FLAG_QUARTER;
 		break;
@@ -360,8 +346,7 @@ bool wlan_son_peer_is_kickout_allow(struct wlan_objmgr_vdev *vdev,
 		son_err("invalid psoc");
 		return kickout_allow;
 	}
-	peer = wlan_objmgr_get_peer_by_mac(psoc, macaddr,
-					   WLAN_SON_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, macaddr, WLAN_SON_ID);
 
 	if (!peer) {
 		son_err("peer is null");
@@ -381,10 +366,9 @@ bool wlan_son_peer_is_kickout_allow(struct wlan_objmgr_vdev *vdev,
 	return kickout_allow;
 }
 
-void wlan_son_ind_assoc_req_frm(struct wlan_objmgr_vdev *vdev,
-				uint8_t *macaddr, bool is_reassoc,
-				uint8_t *frame, uint16_t frame_len,
-				QDF_STATUS status)
+void wlan_son_ind_assoc_req_frm(struct wlan_objmgr_vdev *vdev, uint8_t *macaddr,
+				bool is_reassoc, uint8_t *frame,
+				uint16_t frame_len, QDF_STATUS status)
 {
 	struct wlan_objmgr_peer *peer;
 	struct wlan_lmac_if_rx_ops *rx_ops;
@@ -406,8 +390,7 @@ void wlan_son_ind_assoc_req_frm(struct wlan_objmgr_vdev *vdev,
 		son_err("invalid rx ops");
 		return;
 	}
-	peer = wlan_objmgr_get_peer_by_mac(psoc, macaddr,
-					   WLAN_SON_ID);
+	peer = wlan_objmgr_get_peer_by_mac(psoc, macaddr, WLAN_SON_ID);
 	if (!peer) {
 		son_err("peer is null");
 		return;
@@ -417,18 +400,16 @@ void wlan_son_ind_assoc_req_frm(struct wlan_objmgr_vdev *vdev,
 		sub_type = IEEE80211_FC0_SUBTYPE_REASSOC_REQ;
 	if (QDF_IS_STATUS_SUCCESS(status))
 		assocstatus = STATUS_SUCCESS;
-	son_debug("subtype %u frame_len %u assocstatus %u",
-		  sub_type, frame_len, assocstatus);
-	rx_ops->son_rx_ops.process_mgmt_frame(vdev, peer, sub_type,
-					      frame, frame_len,
-					      &assocstatus);
+	son_debug("subtype %u frame_len %u assocstatus %u", sub_type, frame_len,
+		  assocstatus);
+	rx_ops->son_rx_ops.process_mgmt_frame(vdev, peer, sub_type, frame,
+					      frame_len, &assocstatus);
 	wlan_objmgr_peer_release_ref(peer, WLAN_SON_ID);
 }
 
 static int wlan_son_deliver_mlme_event(struct wlan_objmgr_vdev *vdev,
 				       struct wlan_objmgr_peer *peer,
-				       uint32_t event,
-				       void *event_data)
+				       uint32_t event, void *event_data)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_lmac_if_rx_ops *rx_ops;
@@ -444,9 +425,7 @@ static int wlan_son_deliver_mlme_event(struct wlan_objmgr_vdev *vdev,
 	rx_ops = wlan_psoc_get_lmac_if_rxops(psoc);
 	if (rx_ops && rx_ops->son_rx_ops.deliver_event) {
 		son_debug("deliver mlme event %d", event);
-		ret = rx_ops->son_rx_ops.deliver_event(vdev,
-						       peer,
-						       event,
+		ret = rx_ops->son_rx_ops.deliver_event(vdev, peer, event,
 						       event_data);
 	} else {
 		return -EINVAL;
@@ -455,15 +434,12 @@ static int wlan_son_deliver_mlme_event(struct wlan_objmgr_vdev *vdev,
 	return ret;
 }
 
-int wlan_son_deliver_tx_power(struct wlan_objmgr_vdev *vdev,
-			      int32_t max_pwr)
+int wlan_son_deliver_tx_power(struct wlan_objmgr_vdev *vdev, int32_t max_pwr)
 {
 	int ret;
 
 	son_debug("tx power %d", max_pwr);
-	ret = wlan_son_deliver_mlme_event(vdev,
-					  NULL,
-					  MLME_EVENT_TX_PWR_CHANGE,
+	ret = wlan_son_deliver_mlme_event(vdev, NULL, MLME_EVENT_TX_PWR_CHANGE,
 					  &max_pwr);
 
 	return ret;
@@ -477,17 +453,14 @@ int wlan_son_deliver_vdev_stop(struct wlan_objmgr_vdev *vdev)
 
 	event.state = VDEV_STATE_STOPPED;
 	son_debug("state %d", event.state);
-	ret = wlan_son_deliver_mlme_event(vdev,
-					  NULL,
-					  MLME_EVENT_VDEV_STATE,
+	ret = wlan_son_deliver_mlme_event(vdev, NULL, MLME_EVENT_VDEV_STATE,
 					  &event);
 
 	return ret;
 }
 
 int wlan_son_deliver_inst_rssi(struct wlan_objmgr_vdev *vdev,
-			       struct wlan_objmgr_peer *peer,
-			       uint32_t irssi)
+			       struct wlan_objmgr_peer *peer, uint32_t irssi)
 {
 	struct wlan_peer_inst_rssi event;
 	int ret;
@@ -501,18 +474,14 @@ int wlan_son_deliver_inst_rssi(struct wlan_objmgr_vdev *vdev,
 		son_debug("irssi invalid");
 	}
 
-	ret = wlan_son_deliver_mlme_event(vdev,
-					  peer,
-					  MLME_EVENT_INST_RSSI,
+	ret = wlan_son_deliver_mlme_event(vdev, peer, MLME_EVENT_INST_RSSI,
 					  &event);
 
 	return ret;
 }
 
-int wlan_son_deliver_opmode(struct wlan_objmgr_vdev *vdev,
-			    uint8_t bw,
-			    uint8_t nss,
-			    uint8_t *addr)
+int wlan_son_deliver_opmode(struct wlan_objmgr_vdev *vdev, uint8_t bw,
+			    uint8_t nss, uint8_t *addr)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct ieee80211_opmode_update_data opmode;
@@ -528,23 +497,21 @@ int wlan_son_deliver_opmode(struct wlan_objmgr_vdev *vdev,
 	opmode.num_streams = nss;
 	qdf_mem_copy(opmode.macaddr, addr, QDF_MAC_ADDR_SIZE);
 
-	son_debug("bw %d, nss %d, addr " QDF_MAC_ADDR_FMT,
-		  bw, nss, QDF_MAC_ADDR_REF(addr));
+	son_debug("bw %d, nss %d, addr " QDF_MAC_ADDR_FMT, bw, nss,
+		  QDF_MAC_ADDR_REF(addr));
 
 	if (!g_son_mlme_deliver_cbs.deliver_opmode) {
 		son_err("invalid deliver opmode cb");
 		return -EINVAL;
 	}
 
-	g_son_mlme_deliver_cbs.deliver_opmode(vdev,
-					      sizeof(opmode),
+	g_son_mlme_deliver_cbs.deliver_opmode(vdev, sizeof(opmode),
 					      (uint8_t *)&opmode);
 
 	return 0;
 }
 
-int wlan_son_deliver_smps(struct wlan_objmgr_vdev *vdev,
-			  uint8_t is_static,
+int wlan_son_deliver_smps(struct wlan_objmgr_vdev *vdev, uint8_t is_static,
 			  uint8_t *addr)
 {
 	struct wlan_objmgr_psoc *psoc;
@@ -560,25 +527,22 @@ int wlan_son_deliver_smps(struct wlan_objmgr_vdev *vdev,
 	smps.is_static = is_static;
 	qdf_mem_copy(smps.macaddr, addr, QDF_MAC_ADDR_SIZE);
 
-	son_debug("is_static %d, addr" QDF_MAC_ADDR_FMT,
-		  is_static, QDF_MAC_ADDR_REF(addr));
+	son_debug("is_static %d, addr" QDF_MAC_ADDR_FMT, is_static,
+		  QDF_MAC_ADDR_REF(addr));
 
 	if (!g_son_mlme_deliver_cbs.deliver_smps) {
 		son_err("invalid deliver smps cb");
 		return -EINVAL;
 	}
 
-	g_son_mlme_deliver_cbs.deliver_smps(vdev,
-					    sizeof(smps),
+	g_son_mlme_deliver_cbs.deliver_smps(vdev, sizeof(smps),
 					    (uint8_t *)&smps);
 
 	return 0;
 }
 
-int wlan_son_deliver_rrm_rpt(struct wlan_objmgr_vdev *vdev,
-			     uint8_t *mac_addr,
-			     uint8_t *frm,
-			     uint32_t flen)
+int wlan_son_deliver_rrm_rpt(struct wlan_objmgr_vdev *vdev, uint8_t *mac_addr,
+			     uint8_t *frm, uint32_t flen)
 {
 	struct wlan_act_frm_info rrm_info;
 	struct wlan_lmac_if_rx_ops *rx_ops;
@@ -617,8 +581,7 @@ int wlan_son_deliver_rrm_rpt(struct wlan_objmgr_vdev *vdev,
 	qdf_mem_zero(&rrm_info, sizeof(rrm_info));
 	rrm_info.ia = &ia;
 	rrm_info.ald_info = 0;
-	qdf_mem_copy(rrm_info.data.rrm_data.macaddr,
-		     mac_addr,
+	qdf_mem_copy(rrm_info.data.rrm_data.macaddr, mac_addr,
 		     QDF_MAC_ADDR_SIZE);
 	/* IEEE80211_ACTION_RM_TOKEN */
 	rrm_info.data.rrm_data.dialog_token = *frm;
@@ -629,8 +592,8 @@ int wlan_son_deliver_rrm_rpt(struct wlan_objmgr_vdev *vdev,
 	pos = frm;
 	end = pos + flen;
 
-	while ((ie = wlan_get_ie_ptr_from_eid(WLAN_ELEMID_MEASREP,
-					      pos, end - pos))) {
+	while ((ie = wlan_get_ie_ptr_from_eid(WLAN_ELEMID_MEASREP, pos,
+					      end - pos))) {
 		if (ie[1] < 3) {
 			son_err("Bad Measurement Report element");
 			wlan_objmgr_peer_release_ref(peer, WLAN_SON_ID);
@@ -645,14 +608,11 @@ int wlan_son_deliver_rrm_rpt(struct wlan_objmgr_vdev *vdev,
 
 	son_debug("Sta: " QDF_MAC_ADDR_FMT
 		  "Category %d Action %d Num_Report %d Rptlen %d",
-		  QDF_MAC_ADDR_REF(mac_addr),
-		  ACTION_CATEGORY_RRM,
-		  RRM_RADIO_MEASURE_RPT,
-		  total_bcnrpt_count,
-		  flen);
+		  QDF_MAC_ADDR_REF(mac_addr), ACTION_CATEGORY_RRM,
+		  RRM_RADIO_MEASURE_RPT, total_bcnrpt_count, flen);
 
-	rx_ops->son_rx_ops.process_mgmt_frame(vdev, peer, sub_type,
-					      frm, flen, &rrm_info);
+	rx_ops->son_rx_ops.process_mgmt_frame(vdev, peer, sub_type, frm, flen,
+					      &rrm_info);
 
 	wlan_objmgr_peer_release_ref(peer, WLAN_SON_ID);
 
@@ -681,9 +641,8 @@ int wlan_son_anqp_frame(struct wlan_objmgr_vdev *vdev, int subtype,
 
 	rx_ops = wlan_psoc_get_lmac_if_rxops(psoc);
 	if (rx_ops && rx_ops->son_rx_ops.process_mgmt_frame)
-		ret = rx_ops->son_rx_ops.process_mgmt_frame(vdev, NULL,
-							    subtype, frame,
-							    frame_len, &info);
+		ret = rx_ops->son_rx_ops.process_mgmt_frame(
+			vdev, NULL, subtype, frame, frame_len, &info);
 	else
 		return -EINVAL;
 	return ret;
@@ -694,9 +653,7 @@ static int wlan_son_deliver_cbs(struct wlan_objmgr_vdev *vdev,
 {
 	int ret;
 
-	ret = wlan_son_deliver_mlme_event(vdev,
-					  NULL,
-					  MLME_EVENT_CBS_STATUS,
+	ret = wlan_son_deliver_mlme_event(vdev, NULL, MLME_EVENT_CBS_STATUS,
 					  &type);
 
 	return ret;
@@ -712,31 +669,29 @@ static int wlan_son_deliver_cbs_cancelled(struct wlan_objmgr_vdev *vdev)
 	return wlan_son_deliver_cbs(vdev, CBS_CANCELLED);
 }
 
-static void
-wlan_son_cbs_set_state(struct son_cbs *cbs, enum son_cbs_state state)
+static void wlan_son_cbs_set_state(struct son_cbs *cbs,
+				   enum son_cbs_state state)
 {
-	son_debug("Change State CBS OLD[%d] --> NEW[%d]",
-		  cbs->cbs_state, state);
+	son_debug("Change State CBS OLD[%d] --> NEW[%d]", cbs->cbs_state,
+		  state);
 	cbs->cbs_state = state;
 }
 
-static enum
-son_cbs_state wlan_son_cbs_get_state(struct son_cbs *cbs)
+static enum son_cbs_state wlan_son_cbs_get_state(struct son_cbs *cbs)
 {
 	return cbs->cbs_state;
 }
 
-static void
-wlan_son_cbs_init_dwell_params(struct son_cbs *cbs,
-			       int dwell_split_time,
-			       int dwell_rest_time)
+static void wlan_son_cbs_init_dwell_params(struct son_cbs *cbs,
+					   int dwell_split_time,
+					   int dwell_rest_time)
 {
 	int i;
 
 	if (!cbs || !cbs->vdev)
 		return;
-	son_debug("dwell_split_time %d, dwell_rest_time %d",
-		  dwell_split_time, dwell_rest_time);
+	son_debug("dwell_split_time %d, dwell_rest_time %d", dwell_split_time,
+		  dwell_rest_time);
 	son_debug("vdev_id: %d\n", wlan_vdev_get_id(cbs->vdev));
 
 	switch (dwell_split_time) {
@@ -759,11 +714,11 @@ wlan_son_cbs_init_dwell_params(struct son_cbs *cbs,
 			cbs->scan_dwell_rest[2] = dwell_rest_time;
 			cbs->scan_dwell_rest[3] = dwell_rest_time;
 			cbs->scan_dwell_rest[4] = dwell_rest_time +
-							TOTAL_DWELL_TIME -
-							DEFAULT_BEACON_INTERVAL;
+						  TOTAL_DWELL_TIME -
+						  DEFAULT_BEACON_INTERVAL;
 			cbs->scan_dwell_rest[5] = dwell_rest_time +
-							TOTAL_DWELL_TIME -
-							DEFAULT_BEACON_INTERVAL;
+						  TOTAL_DWELL_TIME -
+						  DEFAULT_BEACON_INTERVAL;
 			cbs->scan_dwell_rest[6] = dwell_rest_time;
 			cbs->scan_dwell_rest[7] = dwell_rest_time;
 			cbs->scan_dwell_rest[8] = 0;
@@ -804,11 +759,11 @@ wlan_son_cbs_init_dwell_params(struct son_cbs *cbs,
 			cbs->scan_dwell_rest[0] = dwell_rest_time;
 			cbs->scan_dwell_rest[1] = dwell_rest_time;
 			cbs->scan_dwell_rest[2] = dwell_rest_time +
-							TOTAL_DWELL_TIME -
-							DEFAULT_BEACON_INTERVAL;
+						  TOTAL_DWELL_TIME -
+						  DEFAULT_BEACON_INTERVAL;
 			cbs->scan_dwell_rest[3] = dwell_rest_time +
-							TOTAL_DWELL_TIME -
-							DEFAULT_BEACON_INTERVAL;
+						  TOTAL_DWELL_TIME -
+						  DEFAULT_BEACON_INTERVAL;
 			cbs->scan_dwell_rest[4] = 0;
 			cbs->scan_dwell_rest[5] = 0;
 			cbs->scan_dwell_rest[6] = 0;
@@ -856,11 +811,11 @@ wlan_son_cbs_init_dwell_params(struct son_cbs *cbs,
 			cbs->scan_dwell_rest[0] = dwell_rest_time;
 			cbs->scan_dwell_rest[1] = dwell_rest_time;
 			cbs->scan_dwell_rest[2] = dwell_rest_time +
-							TOTAL_DWELL_TIME -
-							DEFAULT_BEACON_INTERVAL;
+						  TOTAL_DWELL_TIME -
+						  DEFAULT_BEACON_INTERVAL;
 			cbs->scan_dwell_rest[3] = dwell_rest_time +
-							TOTAL_DWELL_TIME -
-							DEFAULT_BEACON_INTERVAL;
+						  TOTAL_DWELL_TIME -
+						  DEFAULT_BEACON_INTERVAL;
 			cbs->scan_dwell_rest[4] = 0;
 			cbs->scan_dwell_rest[5] = 0;
 			cbs->scan_dwell_rest[6] = 0;
@@ -869,10 +824,10 @@ wlan_son_cbs_init_dwell_params(struct son_cbs *cbs,
 			cbs->scan_dwell_rest[9] = 0;
 			cbs->scan_offset[0] = 0;
 			cbs->scan_offset[1] = 0;
-			cbs->scan_offset[2] = DEFAULT_BEACON_INTERVAL -
-							dwell_split_time;
-			cbs->scan_offset[3] = DEFAULT_BEACON_INTERVAL -
-							dwell_split_time;
+			cbs->scan_offset[2] =
+				DEFAULT_BEACON_INTERVAL - dwell_split_time;
+			cbs->scan_offset[3] =
+				DEFAULT_BEACON_INTERVAL - dwell_split_time;
 			cbs->scan_offset[4] = 0;
 			cbs->scan_offset[5] = 0;
 			cbs->scan_offset[6] = 0;
@@ -891,11 +846,11 @@ wlan_son_cbs_init_dwell_params(struct son_cbs *cbs,
 			cbs->scan_dwell_rest[8] = 0;
 			cbs->scan_dwell_rest[9] = 0;
 			cbs->scan_offset[0] = 0;
-			cbs->scan_offset[1] = DEFAULT_BEACON_INTERVAL -
-							dwell_split_time;
+			cbs->scan_offset[1] =
+				DEFAULT_BEACON_INTERVAL - dwell_split_time;
 			cbs->scan_offset[2] = 0;
-			cbs->scan_offset[3] = DEFAULT_BEACON_INTERVAL -
-							dwell_split_time;
+			cbs->scan_offset[3] =
+				DEFAULT_BEACON_INTERVAL - dwell_split_time;
 			cbs->scan_offset[4] = 0;
 			cbs->scan_offset[5] = 0;
 			cbs->scan_offset[6] = 0;
@@ -963,8 +918,7 @@ static int wlan_son_cbs_stop(struct son_cbs *cbs)
 		status = wlan_abort_scan(pdev,
 					 wlan_objmgr_pdev_get_pdev_id(pdev),
 					 cbs->vdev->vdev_objmgr.vdev_id,
-					 cbs->cbs_scan_id,
-					 true);
+					 cbs->cbs_scan_id, true);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			son_err("failed to abort cbs");
 			return -EBUSY;
@@ -983,8 +937,7 @@ static void wlan_cbs_timer_handler(void *arg)
 	son_debug("state: %d", state);
 	if (state == CBS_REST) {
 		son_debug("vdev_id: %d dwell_split_cnt: %d",
-			  wlan_vdev_get_id(cbs->vdev),
-			  cbs->dwell_split_cnt);
+			  wlan_vdev_get_id(cbs->vdev), cbs->dwell_split_cnt);
 		qdf_spin_lock_bh(&g_cbs_lock);
 		wlan_son_cbs_set_state(cbs, CBS_SCAN);
 		cbs->dwell_split_cnt--;
@@ -1014,21 +967,19 @@ static int wlan_cbs_iterate(struct son_cbs *cbs)
 		}
 		wlan_son_deliver_cbs_completed(cbs->vdev);
 
-		ucfg_scan_unregister_requester(psoc,
-					       cbs->cbs_scan_requestor);
+		ucfg_scan_unregister_requester(psoc, cbs->cbs_scan_requestor);
 		son_debug("Unregister cbs_scan_requestor: %u",
 			  cbs->cbs_scan_requestor);
 
 		if (cbs->wait_time) {
 			wlan_son_cbs_set_state(cbs, CBS_WAIT);
-			qdf_timer_mod(&cbs->cbs_timer,
-				      cbs->wait_time);
+			qdf_timer_mod(&cbs->cbs_timer, cbs->wait_time);
 		} else {
 			wlan_son_cbs_set_state(cbs, CBS_INIT);
 		}
 	} else {
-		offset_array_idx = cbs->max_arr_size_used -
-				   cbs->dwell_split_cnt - 1;
+		offset_array_idx =
+			cbs->max_arr_size_used - cbs->dwell_split_cnt - 1;
 		if (offset_array_idx < MIN_SCAN_OFFSET_ARRAY_SIZE ||
 		    offset_array_idx > MAX_SCAN_OFFSET_ARRAY_SIZE) {
 			qdf_spin_unlock_bh(&g_cbs_lock);
@@ -1049,8 +1000,7 @@ static int wlan_cbs_iterate(struct son_cbs *cbs)
 }
 
 static void wlan_cbs_scan_event_cb(struct wlan_objmgr_vdev *vdev,
-				   struct scan_event *event,
-				   void *arg)
+				   struct scan_event *event, void *arg)
 {
 	son_debug("event type: %d", event->type);
 	switch (event->type) {
@@ -1082,15 +1032,13 @@ int wlan_son_cbs_init(void)
 			}
 			return -ENOMEM;
 		}
-		qdf_timer_init(NULL,
-			       &g_son_cbs[i]->cbs_timer,
-			       wlan_cbs_timer_handler,
-			       g_son_cbs[i],
+		qdf_timer_init(NULL, &g_son_cbs[i]->cbs_timer,
+			       wlan_cbs_timer_handler, g_son_cbs[i],
 			       QDF_TIMER_TYPE_WAKE_APPS);
 
-		g_son_cbs[i]->rest_time  = CBS_DEFAULT_RESTTIME;
+		g_son_cbs[i]->rest_time = CBS_DEFAULT_RESTTIME;
 		g_son_cbs[i]->dwell_time = CBS_DEFAULT_DWELL_TIME;
-		g_son_cbs[i]->wait_time  = CBS_DEFAULT_WAIT_TIME;
+		g_son_cbs[i]->wait_time = CBS_DEFAULT_WAIT_TIME;
 		g_son_cbs[i]->dwell_split_time = CBS_DEFAULT_DWELL_SPLIT_TIME;
 		g_son_cbs[i]->min_dwell_rest_time = CBS_DEFAULT_DWELL_REST_TIME;
 
@@ -1146,8 +1094,7 @@ int wlan_son_cbs_enable(struct wlan_objmgr_vdev *vdev)
 	}
 
 	state = wlan_son_cbs_get_state(cbs);
-	if (state != CBS_INIT &&
-	    state != CBS_WAIT) {
+	if (state != CBS_INIT && state != CBS_WAIT) {
 		son_err("can't start scan in state %d", state);
 		return -EINVAL;
 	}
@@ -1162,16 +1109,12 @@ int wlan_son_cbs_enable(struct wlan_objmgr_vdev *vdev)
 			son_err("Failed to get VDEV reference");
 			return -EAGAIN;
 		}
-		son_debug("vdev_id: %d referenced",
-			  wlan_vdev_get_id(vdev));
+		son_debug("vdev_id: %d referenced", wlan_vdev_get_id(vdev));
 	}
-	cbs->cbs_scan_requestor =
-		ucfg_scan_register_requester(psoc,
-					     (uint8_t *)"cbs",
-					     wlan_cbs_scan_event_cb,
-					     (void *)cbs);
-	son_debug("cbs_scan_requestor: %u vdev_id: %d",
-		  cbs->cbs_scan_requestor, wlan_vdev_get_id(vdev));
+	cbs->cbs_scan_requestor = ucfg_scan_register_requester(
+		psoc, (uint8_t *)"cbs", wlan_cbs_scan_event_cb, (void *)cbs);
+	son_debug("cbs_scan_requestor: %u vdev_id: %d", cbs->cbs_scan_requestor,
+		  wlan_vdev_get_id(vdev));
 
 	if (!cbs->cbs_scan_requestor) {
 		wlan_objmgr_vdev_release_ref(vdev, WLAN_SON_ID);
@@ -1207,13 +1150,14 @@ int wlan_son_cbs_enable(struct wlan_objmgr_vdev *vdev)
 	if (cbs->min_dwell_rest_time % DEFAULT_BEACON_INTERVAL) {
 		cbs->min_dwell_rest_time =
 			(cbs->min_dwell_rest_time /
-			(2 * DEFAULT_BEACON_INTERVAL)) *
-			(2 * DEFAULT_BEACON_INTERVAL) +
-			(cbs->min_dwell_rest_time % 200 < 100) ? 100 : 200;
+			 (2 * DEFAULT_BEACON_INTERVAL)) *
+						(2 * DEFAULT_BEACON_INTERVAL) +
+					(cbs->min_dwell_rest_time % 200 < 100) ?
+				100 :
+				200;
 	}
 
-	wlan_son_cbs_init_dwell_params(cbs,
-				       cbs->dwell_split_time,
+	wlan_son_cbs_init_dwell_params(cbs, cbs->dwell_split_time,
 				       cbs->min_dwell_rest_time);
 
 	cbs->dwell_split_cnt--;
@@ -1252,8 +1196,8 @@ int wlan_son_cbs_disable(struct wlan_objmgr_vdev *vdev)
 
 	wlan_son_cbs_stop(cbs);
 
-	son_debug("cbs_scan_requestor: %d vdev_id: %d",
-		  cbs->cbs_scan_requestor, wlan_vdev_get_id(vdev));
+	son_debug("cbs_scan_requestor: %d vdev_id: %d", cbs->cbs_scan_requestor,
+		  wlan_vdev_get_id(vdev));
 	ucfg_scan_unregister_requester(psoc, cbs->cbs_scan_requestor);
 
 	qdf_spin_lock_bh(&g_cbs_lock);
@@ -1271,8 +1215,7 @@ int wlan_son_cbs_disable(struct wlan_objmgr_vdev *vdev)
 	return 0;
 }
 
-int wlan_son_set_cbs(struct wlan_objmgr_vdev *vdev,
-		     bool enable)
+int wlan_son_set_cbs(struct wlan_objmgr_vdev *vdev, bool enable)
 {
 	son_debug("Enable: %u", enable);
 
@@ -1287,8 +1230,7 @@ int wlan_son_set_cbs(struct wlan_objmgr_vdev *vdev,
 	return 0;
 }
 
-int wlan_son_set_cbs_wait_time(struct wlan_objmgr_vdev *vdev,
-			       uint32_t val)
+int wlan_son_set_cbs_wait_time(struct wlan_objmgr_vdev *vdev, uint32_t val)
 {
 	if (!g_son_cbs[wlan_vdev_get_id(vdev)])
 		return -EINVAL;
@@ -1298,11 +1240,11 @@ int wlan_son_set_cbs_wait_time(struct wlan_objmgr_vdev *vdev,
 
 	if (val % DEFAULT_BEACON_INTERVAL != 0) {
 		val = (val / (2 * DEFAULT_BEACON_INTERVAL)) *
-			(2 * DEFAULT_BEACON_INTERVAL) +
-			(val % (2 * DEFAULT_BEACON_INTERVAL) <
-				DEFAULT_BEACON_INTERVAL) ?
-				DEFAULT_BEACON_INTERVAL :
-				2 * DEFAULT_BEACON_INTERVAL;
+					      (2 * DEFAULT_BEACON_INTERVAL) +
+				      (val % (2 * DEFAULT_BEACON_INTERVAL) <
+				       DEFAULT_BEACON_INTERVAL) ?
+			      DEFAULT_BEACON_INTERVAL :
+			      2 * DEFAULT_BEACON_INTERVAL;
 	}
 	qdf_spin_lock_bh(&g_cbs_lock);
 	g_son_cbs[wlan_vdev_get_id(vdev)]->wait_time = val;
@@ -1319,12 +1261,10 @@ int wlan_son_set_cbs_dwell_split_time(struct wlan_objmgr_vdev *vdev,
 	if (!g_son_cbs[wlan_vdev_get_id(vdev)])
 		return -EINVAL;
 
-	son_debug("vdev_id: %d dwell split time %d",
-		  wlan_vdev_get_id(vdev), val);
-	if (val != CBS_DWELL_TIME_10MS &&
-	    val != CBS_DWELL_TIME_25MS &&
-	    val != CBS_DWELL_TIME_50MS &&
-	    val != CBS_DWELL_TIME_75MS) {
+	son_debug("vdev_id: %d dwell split time %d", wlan_vdev_get_id(vdev),
+		  val);
+	if (val != CBS_DWELL_TIME_10MS && val != CBS_DWELL_TIME_25MS &&
+	    val != CBS_DWELL_TIME_50MS && val != CBS_DWELL_TIME_75MS) {
 		son_err("dwell time not supported ");
 		return -EINVAL;
 	}
@@ -1344,9 +1284,8 @@ uint8_t wlan_son_get_node_tx_power(struct element_info assoc_req_ies)
 {
 	const uint8_t *power_cap_ie_data;
 
-	power_cap_ie_data = wlan_get_ie_ptr_from_eid(WLAN_ELEMID_PWRCAP,
-						     assoc_req_ies.ptr,
-						     assoc_req_ies.len);
+	power_cap_ie_data = wlan_get_ie_ptr_from_eid(
+		WLAN_ELEMID_PWRCAP, assoc_req_ies.ptr, assoc_req_ies.len);
 	if (power_cap_ie_data)
 		return *(power_cap_ie_data + 3);
 	else
@@ -1359,15 +1298,12 @@ QDF_STATUS wlan_son_get_peer_rrm_info(struct element_info assoc_req_ies,
 {
 	const uint8_t *eid;
 
-	eid = wlan_get_ie_ptr_from_eid(WLAN_ELEMID_RRM,
-				       assoc_req_ies.ptr,
+	eid = wlan_get_ie_ptr_from_eid(WLAN_ELEMID_RRM, assoc_req_ies.ptr,
 				       assoc_req_ies.len);
 	if (eid) {
 		qdf_mem_copy(rrmcaps, &eid[2], eid[1]);
-		if ((rrmcaps[0] &
-		    IEEE80211_RRM_CAPS_BEACON_REPORT_PASSIVE) ||
-		    (rrmcaps[0] &
-		    IEEE80211_RRM_CAPS_BEACON_REPORT_ACTIVE))
+		if ((rrmcaps[0] & IEEE80211_RRM_CAPS_BEACON_REPORT_PASSIVE) ||
+		    (rrmcaps[0] & IEEE80211_RRM_CAPS_BEACON_REPORT_ACTIVE))
 			*is_beacon_meas_supported = true;
 		return QDF_STATUS_SUCCESS;
 	}

@@ -25,15 +25,16 @@
  * Date:      04/23/2007
  * History:-
  * Date: 04/08/2008       Modified by: Santosh Mandiganal
- * Modification Information: Code to allocate and free the  memory for DumpTable entry.
+ * Modification Information: Code to allocate and free the  memory for DumpTable
+ * entry.
  * --------------------------------------------------------------------------
  *
  */
 /* Standard include files */
-#include "lim_api.h"             /* lim_cleanup */
+#include "mac_init_api.h"
+#include "lim_api.h" /* lim_cleanup */
 #include "sir_types.h"
 #include "sys_entry_func.h"
-#include "mac_init_api.h"
 #include "wlan_mlme_main.h"
 #include "wlan_psoc_mlme_api.h"
 
@@ -69,8 +70,7 @@ static inline void mac_free_context_buffer(void)
 }
 #endif /* WLAN_ALLOCATE_GLOBAL_BUFFERS_DYNAMICALLY */
 
-QDF_STATUS mac_start(mac_handle_t mac_handle,
-		     struct mac_start_params *params)
+QDF_STATUS mac_start(mac_handle_t mac_handle, struct mac_start_params *params)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct mac_context *mac = MAC_CONTEXT(mac_handle);
@@ -114,10 +114,10 @@ QDF_STATUS mac_open(struct wlan_objmgr_psoc *psoc, mac_handle_t *mac_handle,
 		return QDF_STATUS_E_NOMEM;
 
 	/*
-	 * Set various global fields of mac here
-	 * (Could be platform dependent as some variables in mac are platform
-	 * dependent)
-	 */
+   * Set various global fields of mac here
+   * (Could be platform dependent as some variables in mac are platform
+   * dependent)
+   */
 	mac->hdd_handle = hdd_handle;
 
 	status = wlan_objmgr_psoc_try_get_ref(psoc, WLAN_LEGACY_MAC_ID);
@@ -167,7 +167,6 @@ free_mac_context:
 
 QDF_STATUS mac_close(mac_handle_t mac_handle)
 {
-
 	struct mac_context *mac = MAC_CONTEXT(mac_handle);
 
 	if (!mac)
@@ -210,4 +209,3 @@ void mac_register_bcn_report_send_cb(struct mac_context *mac,
 	mac->lim.sme_bcn_rcv_callback = cb;
 }
 #endif
-

@@ -5,9 +5,9 @@
 
 #include <linux/kthread.h>
 
-#include <linux/qcom-iommu-util.h>
-#include <dt-bindings/arm/msm/qti-smmu-proxy-dt-ids.h>
 #include "qti-smmu-proxy-common.h"
+#include <dt-bindings/arm/msm/qti-smmu-proxy-dt-ids.h>
+#include <linux/qcom-iommu-util.h>
 
 #define RECEIVER_COMPAT_STR "smmu-proxy-receiver"
 #define CB_COMPAT_STR "smmu-proxy-cb"
@@ -37,7 +37,7 @@ struct task_struct *receiver_msgq_handler_thread;
 static int zero_dma_buf(struct dma_buf *dmabuf)
 {
 	int ret;
-	struct iosys_map vmap_struct = {0};
+	struct iosys_map vmap_struct = { 0 };
 
 	ret = dma_buf_vmap(dmabuf, &vmap_struct);
 	if (ret) {
@@ -48,14 +48,16 @@ static int zero_dma_buf(struct dma_buf *dmabuf)
 	/* Use DMA_TO_DEVICE since we are not reading anything */
 	ret = dma_buf_begin_cpu_access(dmabuf, DMA_TO_DEVICE);
 	if (ret) {
-		pr_err("%s: dma_buf_begin_cpu_access() failed with %d\n", __func__, ret);
+		pr_err("%s: dma_buf_begin_cpu_access() failed with %d\n",
+		       __func__, ret);
 		goto unmap;
 	}
 
 	memset(vmap_struct.vaddr, 0, dmabuf->size);
 	ret = dma_buf_end_cpu_access(dmabuf, DMA_TO_DEVICE);
 	if (ret)
-		pr_err("%s: dma_buf_end_cpu_access() failed with %d\n", __func__, ret);
+		pr_err("%s: dma_buf_end_cpu_access() failed with %d\n",
+		       __func__, ret);
 unmap:
 	dma_buf_vunmap(dmabuf, &vmap_struct);
 
@@ -73,7 +75,8 @@ static int iommu_unmap_and_relinquish(u32 hdl)
 	mutex_lock(&buffer_state_lock);
 	buf_state = xa_load(&buffer_state_arr, hdl);
 	if (!buf_state) {
-		pr_err("%s: handle 0x%llx unknown to proxy driver!\n", __func__, hdl);
+		pr_err("%s: handle 0x%llx unknown to proxy driver!\n", __func__,
+		       hdl);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -86,9 +89,10 @@ static int iommu_unmap_and_relinquish(u32 hdl)
 
 	for (cb_id = 0; cb_id < QTI_SMMU_PROXY_CB_IDS_LEN; cb_id++) {
 		if (buf_state->cb_info[cb_id].mapped) {
-			dma_buf_unmap_attachment(buf_state->cb_info[cb_id].attachment,
-						 buf_state->cb_info[cb_id].sg_table,
-						 DMA_BIDIRECTIONAL);
+			dma_buf_unmap_attachment(
+				buf_state->cb_info[cb_id].attachment,
+				buf_state->cb_info[cb_id].sg_table,
+				DMA_BIDIRECTIONAL);
 			dma_buf_detach(buf_state->dmabuf,
 				       buf_state->cb_info[cb_id].attachment);
 			buf_state->cb_info[cb_id].mapped = false;
@@ -96,7 +100,8 @@ static int iommu_unmap_and_relinquish(u32 hdl)
 			/* If nothing left is mapped for this CB, unprogram its SMR */
 			cb_map_counts[cb_id]--;
 			if (!cb_map_counts[cb_id]) {
-				ret = qcom_iommu_sid_switch(cb_devices[cb_id], SID_RELEASE);
+				ret = qcom_iommu_sid_switch(cb_devices[cb_id],
+							    SID_RELEASE);
 				if (ret) {
 					pr_err("%s: Failed to unprogram SMR for cb_id %d rc: %d\n",
 					       __func__, cb_id, ret);
@@ -127,7 +132,8 @@ static int process_unmap_request(struct smmu_proxy_unmap_req *req, size_t size)
 
 	resp = kzalloc(sizeof(*resp), GFP_KERNEL);
 	if (!resp) {
-		pr_err("%s: Failed to allocate memory for response\n", __func__);
+		pr_err("%s: Failed to allocate memory for response\n",
+		       __func__);
 		return -ENOMEM;
 	}
 
@@ -139,7 +145,8 @@ static int process_unmap_request(struct smmu_proxy_unmap_req *req, size_t size)
 
 	ret = gh_msgq_send(msgq_hdl, resp, resp->hdr.msg_size, 0);
 	if (ret < 0)
-		pr_err("%s: failed to send response to mapping request rc: %d\n", __func__, ret);
+		pr_err("%s: failed to send response to mapping request rc: %d\n",
+		       __func__, ret);
 	else
 		pr_debug("%s: response to mapping request sent\n", __func__);
 
@@ -148,10 +155,9 @@ static int process_unmap_request(struct smmu_proxy_unmap_req *req, size_t size)
 	return ret;
 }
 
-static
-inline
-struct sg_table *retrieve_and_iommu_map(struct mem_buf_retrieve_kernel_arg *retrieve_arg,
-					u32 cb_id)
+static inline struct sg_table *
+retrieve_and_iommu_map(struct mem_buf_retrieve_kernel_arg *retrieve_arg,
+		       u32 cb_id)
 {
 	int ret;
 	struct dma_buf *dmabuf;
@@ -190,13 +196,15 @@ struct sg_table *retrieve_and_iommu_map(struct mem_buf_retrieve_kernel_arg *retr
 		dmabuf = mem_buf_retrieve(retrieve_arg);
 		if (IS_ERR(dmabuf)) {
 			ret = PTR_ERR(dmabuf);
-			pr_err("%s: Failed to retrieve DMA-BUF rc: %d\n", __func__, ret);
+			pr_err("%s: Failed to retrieve DMA-BUF rc: %d\n",
+			       __func__, ret);
 			goto unlock_err;
 		}
 
 		ret = zero_dma_buf(dmabuf);
 		if (ret) {
-			pr_err("%s: Failed to zero the DMA-BUF rc: %d\n", __func__, ret);
+			pr_err("%s: Failed to zero the DMA-BUF rc: %d\n",
+			       __func__, ret);
 			goto free_buf;
 		}
 
@@ -238,18 +246,18 @@ struct sg_table *retrieve_and_iommu_map(struct mem_buf_retrieve_kernel_arg *retr
 	if (!cb_map_counts[cb_id]) {
 		ret = qcom_iommu_sid_switch(cb_devices[cb_id], SID_ACQUIRE);
 		if (ret) {
-			pr_err("%s: Failed to program SMRs for cb_id %d rc: %d\n", __func__,
-			       cb_id, ret);
+			pr_err("%s: Failed to program SMRs for cb_id %d rc: %d\n",
+			       __func__, cb_id, ret);
 			goto unmap;
 		}
 	}
 	cb_map_counts[cb_id]++;
 
-	ret = xa_err(xa_store(&buffer_state_arr, retrieve_arg->memparcel_hdl, buf_state,
-		     GFP_KERNEL));
+	ret = xa_err(xa_store(&buffer_state_arr, retrieve_arg->memparcel_hdl,
+			      buf_state, GFP_KERNEL));
 	if (ret < 0) {
-		pr_err("%s: Failed to store new buffer in xarray rc: %d\n", __func__,
-		       ret);
+		pr_err("%s: Failed to store new buffer in xarray rc: %d\n",
+		       __func__, ret);
 		goto dec_cb_map_count;
 	}
 
@@ -289,34 +297,38 @@ static int process_map_request(struct smmu_proxy_map_req *req, size_t size)
 	u32 n_acl_entries = req->acl_desc.n_acl_entries;
 	size_t map_req_len = offsetof(struct smmu_proxy_map_req,
 				      acl_desc.acl_entries[n_acl_entries]);
-	struct mem_buf_retrieve_kernel_arg retrieve_arg = {0};
+	struct mem_buf_retrieve_kernel_arg retrieve_arg = { 0 };
 	int i;
 	struct sg_table *table;
 
 	/*
-	 * Last entry of smmu_proxy_map_req is an array of arbitrary length.
-	 * Validate that the number of entries fits within the buffer given
-	 * to us by the message queue.
-	 */
+   * Last entry of smmu_proxy_map_req is an array of arbitrary length.
+   * Validate that the number of entries fits within the buffer given
+   * to us by the message queue.
+   */
 	if (map_req_len > size) {
-		pr_err("%s: Reported size of smmu_proxy_map_request (%d bytes) greater than message size given by message queue (%d bytes)\n",
+		pr_err("%s: Reported size of smmu_proxy_map_request (%d bytes) greater "
+		       "than message size given by message queue (%d bytes)\n",
 		       __func__, map_req_len, size);
 		return -EINVAL;
 	}
 
 	resp = kzalloc(sizeof(*resp), GFP_KERNEL);
 	if (!resp) {
-		pr_err("%s: Failed to allocate memory for response\n", __func__);
+		pr_err("%s: Failed to allocate memory for response\n",
+		       __func__);
 		return -ENOMEM;
 	}
 
-	retrieve_arg.vmids = kmalloc_array(n_acl_entries, sizeof(*retrieve_arg.vmids), GFP_KERNEL);
+	retrieve_arg.vmids = kmalloc_array(
+		n_acl_entries, sizeof(*retrieve_arg.vmids), GFP_KERNEL);
 	if (!retrieve_arg.vmids) {
 		ret = -ENOMEM;
 		goto free_resp;
 	}
 
-	retrieve_arg.perms = kmalloc_array(n_acl_entries, sizeof(*retrieve_arg.perms), GFP_KERNEL);
+	retrieve_arg.perms = kmalloc_array(
+		n_acl_entries, sizeof(*retrieve_arg.perms), GFP_KERNEL);
 	if (!retrieve_arg.perms) {
 		ret = -ENOMEM;
 		goto free_vmids;
@@ -345,7 +357,8 @@ static int process_map_request(struct smmu_proxy_map_req *req, size_t size)
 
 	ret = gh_msgq_send(msgq_hdl, resp, resp->hdr.msg_size, 0);
 	if (ret < 0) {
-		pr_err("%s: failed to send response to mapping request rc: %d\n", __func__, ret);
+		pr_err("%s: failed to send response to mapping request rc: %d\n",
+		       __func__, ret);
 		iommu_unmap_and_relinquish(req->hdl);
 	} else {
 		pr_debug("%s: response to mapping request sent\n", __func__);
@@ -391,7 +404,8 @@ static void smmu_proxy_process_msg(void *buf, size_t size)
 handle_err:
 	resp = kzalloc(sizeof(resp), GFP_KERNEL);
 	if (!resp) {
-		pr_err("%s: Failed to allocate memory for response\n", __func__);
+		pr_err("%s: Failed to allocate memory for response\n",
+		       __func__);
 		return;
 	}
 
@@ -401,12 +415,12 @@ handle_err:
 
 	ret = gh_msgq_send(msgq_hdl, resp, resp->msg_size, 0);
 	if (ret < 0)
-		pr_err("%s: failed to send error response rc: %d\n", __func__, ret);
+		pr_err("%s: failed to send error response rc: %d\n", __func__,
+		       ret);
 	else
 		pr_debug("%s: response to mapping request sent\n", __func__);
 
 	kfree(resp);
-
 }
 
 static int receiver_msgq_handler(void *msgq_hdl)
@@ -420,9 +434,12 @@ static int receiver_msgq_handler(void *msgq_hdl)
 		return -ENOMEM;
 
 	while (!kthread_should_stop()) {
-		ret = gh_msgq_recv(msgq_hdl, buf, GH_MSGQ_MAX_MSG_SIZE_BYTES, &size, 0);
+		ret = gh_msgq_recv(msgq_hdl, buf, GH_MSGQ_MAX_MSG_SIZE_BYTES,
+				   &size, 0);
 		if (ret < 0) {
-			pr_err_ratelimited("%s failed to receive message rc: %d\n", __func__, ret);
+			pr_err_ratelimited(
+				"%s failed to receive message rc: %d\n",
+				__func__, ret);
 		} else {
 			smmu_proxy_process_msg(buf, size);
 		}
@@ -449,14 +466,16 @@ static int smmu_proxy_ac_lock_toggle(int dma_buf_fd, bool lock)
 
 	ret = mem_buf_dma_buf_get_memparcel_hdl(dmabuf, &handle);
 	if (ret) {
-		pr_err("%s: Failed to get memparcel handle rc: %d\n", __func__, ret);
+		pr_err("%s: Failed to get memparcel handle rc: %d\n", __func__,
+		       ret);
 		goto free_buf;
 	}
 
 	mutex_lock(&buffer_state_lock);
 	buf_state = xa_load(&buffer_state_arr, handle);
 	if (!buf_state) {
-		pr_err("%s: handle 0x%llx unknown to proxy driver!\n", __func__, handle);
+		pr_err("%s: handle 0x%llx unknown to proxy driver!\n", __func__,
+		       handle);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -493,20 +512,23 @@ int smmu_proxy_clear_all_buffers(void __user *context_bank_id_array,
 
 	/* Checking this allows us to keep cb_id_arr fixed in length */
 	if (num_cb_ids > QTI_SMMU_PROXY_CB_IDS_LEN) {
-		pr_err("%s: Invalid number of CB IDs: %u\n", __func__, num_cb_ids);
+		pr_err("%s: Invalid number of CB IDs: %u\n", __func__,
+		       num_cb_ids);
 		return -EINVAL;
 	}
 
-	ret = copy_struct_from_user(&cb_ids, sizeof(cb_ids), context_bank_id_array,
-				    sizeof(cb_ids));
+	ret = copy_struct_from_user(&cb_ids, sizeof(cb_ids),
+				    context_bank_id_array, sizeof(cb_ids));
 	if (ret) {
-		pr_err("%s: Failed to get CB IDs from user space rc %d\n", __func__, ret);
+		pr_err("%s: Failed to get CB IDs from user space rc %d\n",
+		       __func__, ret);
 		return ret;
 	}
 
 	for (i = 0; i < num_cb_ids; i++) {
 		if (cb_ids[i] >= QTI_SMMU_PROXY_CB_IDS_LEN) {
-			pr_err("%s: Invalid CB ID of %u at pos %d\n", __func__, cb_ids[i], i);
+			pr_err("%s: Invalid CB ID of %u at pos %d\n", __func__,
+			       cb_ids[i], i);
 			return -EINVAL;
 		}
 	}
@@ -525,7 +547,8 @@ int smmu_proxy_clear_all_buffers(void __user *context_bank_id_array,
 
 		ret = zero_dma_buf(buf_state->dmabuf);
 		if (ret) {
-			pr_err("%s: dma_buf_vmap() failed with %d\n", __func__, ret);
+			pr_err("%s: dma_buf_vmap() failed with %d\n", __func__,
+			       ret);
 			break;
 		}
 	}
@@ -534,7 +557,8 @@ int smmu_proxy_clear_all_buffers(void __user *context_bank_id_array,
 	return ret;
 }
 
-static int smmu_proxy_get_dma_buf(struct smmu_proxy_get_dma_buf_ctl *get_dma_buf_ctl)
+static int
+smmu_proxy_get_dma_buf(struct smmu_proxy_get_dma_buf_ctl *get_dma_buf_ctl)
 {
 	struct smmu_proxy_buffer_state *buf_state;
 	int fd, ret = 0;
@@ -552,8 +576,8 @@ static int smmu_proxy_get_dma_buf(struct smmu_proxy_get_dma_buf_ctl *get_dma_buf
 	fd = dma_buf_fd(buf_state->dmabuf, O_RDWR | O_CLOEXEC);
 	if (fd < 0) {
 		ret = fd;
-		pr_err("%s: Failed to install FD for dma-buf rc: %d\n", __func__,
-		       ret);
+		pr_err("%s: Failed to install FD for dma-buf rc: %d\n",
+		       __func__, ret);
 		dma_buf_put(buf_state->dmabuf);
 	} else {
 		get_dma_buf_ctl->dma_buf_fd = fd;
@@ -565,7 +589,7 @@ out:
 }
 
 static long smmu_proxy_dev_ioctl(struct file *filp, unsigned int cmd,
-			      unsigned long arg)
+				 unsigned long arg)
 {
 	unsigned int dir = _IOC_DIR(cmd);
 	union smmu_proxy_ioctl_arg ioctl_arg;
@@ -581,10 +605,8 @@ static long smmu_proxy_dev_ioctl(struct file *filp, unsigned int cmd,
 		memset(&ioctl_arg, 0, sizeof(ioctl_arg));
 
 	switch (cmd) {
-	case QTI_SMMU_PROXY_AC_LOCK_BUFFER:
-	{
-		struct smmu_proxy_acl_ctl *acl_ctl =
-			&ioctl_arg.acl_ctl;
+	case QTI_SMMU_PROXY_AC_LOCK_BUFFER: {
+		struct smmu_proxy_acl_ctl *acl_ctl = &ioctl_arg.acl_ctl;
 
 		ret = smmu_proxy_ac_lock_toggle(acl_ctl->dma_buf_fd, true);
 		if (ret)
@@ -592,10 +614,8 @@ static long smmu_proxy_dev_ioctl(struct file *filp, unsigned int cmd,
 
 		break;
 	}
-	case QTI_SMMU_PROXY_AC_UNLOCK_BUFFER:
-	{
-		struct smmu_proxy_acl_ctl *acl_ctl =
-			&ioctl_arg.acl_ctl;
+	case QTI_SMMU_PROXY_AC_UNLOCK_BUFFER: {
+		struct smmu_proxy_acl_ctl *acl_ctl = &ioctl_arg.acl_ctl;
 
 		ret = smmu_proxy_ac_lock_toggle(acl_ctl->dma_buf_fd, false);
 		if (ret)
@@ -603,17 +623,16 @@ static long smmu_proxy_dev_ioctl(struct file *filp, unsigned int cmd,
 
 		break;
 	}
-	case QTI_SMMU_PROXY_WIPE_BUFFERS:
-	{
+	case QTI_SMMU_PROXY_WIPE_BUFFERS: {
 		struct smmu_proxy_wipe_buf_ctl *wipe_buf_ctl =
 			&ioctl_arg.wipe_buf_ctl;
 
-		ret = smmu_proxy_clear_all_buffers((void *) wipe_buf_ctl->context_bank_id_array,
-						   wipe_buf_ctl->num_cb_ids);
+		ret = smmu_proxy_clear_all_buffers(
+			(void *)wipe_buf_ctl->context_bank_id_array,
+			wipe_buf_ctl->num_cb_ids);
 		break;
 	}
-	case QTI_SMMU_PROXY_GET_DMA_BUF:
-	{
+	case QTI_SMMU_PROXY_GET_DMA_BUF: {
 		ret = smmu_proxy_get_dma_buf(&ioctl_arg.get_dma_buf_ctl);
 		break;
 	}
@@ -643,22 +662,25 @@ static int receiver_probe_handler(struct device *dev)
 	msgq_hdl = gh_msgq_register(GH_MSGQ_LABEL_SMMU_PROXY);
 	if (IS_ERR(msgq_hdl)) {
 		ret = PTR_ERR(msgq_hdl);
-		dev_err(dev, "Queue registration failed: %d!\n", PTR_ERR(msgq_hdl));
+		dev_err(dev, "Queue registration failed: %d!\n",
+			PTR_ERR(msgq_hdl));
 		return ret;
 	}
 
-	receiver_msgq_handler_thread = kthread_run(receiver_msgq_handler, msgq_hdl,
-						   "smmu_proxy_msgq_handler");
+	receiver_msgq_handler_thread = kthread_run(
+		receiver_msgq_handler, msgq_hdl, "smmu_proxy_msgq_handler");
 	if (IS_ERR(receiver_msgq_handler_thread)) {
 		ret = PTR_ERR(receiver_msgq_handler_thread);
-		dev_err(dev, "Failed to launch receiver_msgq_handler thread: %d\n",
+		dev_err(dev,
+			"Failed to launch receiver_msgq_handler thread: %d\n",
 			PTR_ERR(receiver_msgq_handler_thread));
 		goto free_msgq;
 	}
 
 	ret = smmu_proxy_create_dev(&smmu_proxy_dev_fops);
 	if (ret) {
-		pr_err("Failed to create character device with error %d\n", ret);
+		pr_err("Failed to create character device with error %d\n",
+		       ret);
 		goto free_kthread;
 	}
 
@@ -673,7 +695,8 @@ free_msgq:
 static int proxy_fault_handler(struct iommu_domain *domain, struct device *dev,
 			       unsigned long iova, int flags, void *token)
 {
-	dev_err(dev, "Context fault with IOVA %llx and fault flags %d\n", iova, flags);
+	dev_err(dev, "Context fault with IOVA %llx and fault flags %d\n", iova,
+		flags);
 	return -EINVAL;
 }
 
@@ -695,7 +718,8 @@ static int cb_probe_handler(struct device *dev)
 	}
 
 	if (cb_devices[context_bank_id]) {
-		dev_err(dev, "Context bank %u is already populated\n", context_bank_id);
+		dev_err(dev, "Context bank %u is already populated\n",
+			context_bank_id);
 		return -EINVAL;
 	}
 
@@ -730,24 +754,25 @@ static int smmu_proxy_probe(struct platform_device *pdev)
 	if (of_device_is_compatible(dev->of_node, CB_COMPAT_STR)) {
 		return cb_probe_handler(dev);
 	} else if (of_device_is_compatible(dev->of_node, RECEIVER_COMPAT_STR)) {
-		return  receiver_probe_handler(dev);
+		return receiver_probe_handler(dev);
 	} else {
 		return -EINVAL;
 	}
 }
 
 static const struct of_device_id smmu_proxy_match_table[] = {
-	{.compatible = RECEIVER_COMPAT_STR},
-	{.compatible = CB_COMPAT_STR},
+	{ .compatible = RECEIVER_COMPAT_STR },
+	{ .compatible = CB_COMPAT_STR },
 	{},
 };
 
 static struct platform_driver smmu_proxy_driver = {
-	.probe = smmu_proxy_probe,
-	.driver = {
-		.name = "qti-smmu-proxy",
-		.of_match_table = smmu_proxy_match_table,
-	},
+    .probe = smmu_proxy_probe,
+    .driver =
+        {
+            .name = "qti-smmu-proxy",
+            .of_match_table = smmu_proxy_match_table,
+        },
 };
 
 int __init init_smmu_proxy_driver(void)
@@ -762,7 +787,8 @@ int __init init_smmu_proxy_driver(void)
 	}
 
 	if (csf_version.arch_ver == 2 && csf_version.max_ver == 0) {
-		pr_err("%s: CSF 2.5 not in use, not loading module\n", __func__);
+		pr_err("%s: CSF 2.5 not in use, not loading module\n",
+		       __func__);
 		return -EINVAL;
 	}
 

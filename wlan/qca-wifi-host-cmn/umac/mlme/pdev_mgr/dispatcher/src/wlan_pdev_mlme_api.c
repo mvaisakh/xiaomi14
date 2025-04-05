@@ -18,11 +18,11 @@
  * DOC: Implements PDEV MLME public APIs
  */
 
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_mlme_dbg.h>
 #include "include/wlan_pdev_mlme.h"
-#include <wlan_pdev_mlme_api.h>
 #include <qdf_module.h>
+#include <wlan_mlme_dbg.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_pdev_mlme_api.h>
 
 struct pdev_mlme_obj *wlan_pdev_mlme_get_cmpt_obj(struct wlan_objmgr_pdev *pdev)
 {
@@ -55,4 +55,3 @@ mlme_pdev_ext_t *wlan_pdev_mlme_get_ext_hdl(struct wlan_objmgr_pdev *pdev)
 }
 
 qdf_export_symbol(wlan_pdev_mlme_get_ext_hdl);
-

@@ -2,20 +2,20 @@
 /* Copyright (c) 2015-2017, 2019 The Linux Foundation. All rights reserved.
  */
 
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/err.h>
-#include <linux/module.h>
-#include <linux/of.h>
+#include "audio-ext-clk-up.h"
+#include <dt-bindings/clock/audio-ext-clk.h>
 #include <linux/clk.h>
 #include <linux/clk/msm-clk-provider.h>
 #include <linux/clk/msm-clk.h>
-#include <linux/platform_device.h>
+#include <linux/err.h>
 #include <linux/gpio.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/of.h>
 #include <linux/of_gpio.h>
-#include <dt-bindings/clock/audio-ext-clk.h>
+#include <linux/platform_device.h>
 #include <sound/q6afe-v2.h>
-#include "audio-ext-clk-up.h"
 
 struct pinctrl_info {
 	struct pinctrl *pinctrl;
@@ -41,12 +41,9 @@ struct audio_ext_ap_clk2 {
 };
 
 static struct afe_clk_set clk2_config = {
-	Q6AFE_LPASS_CLK_CONFIG_API_VERSION,
-	Q6AFE_LPASS_CLK_ID_SPEAKER_I2S_OSR,
-	Q6AFE_LPASS_IBIT_CLK_11_P2896_MHZ,
-	Q6AFE_LPASS_CLK_ATTRIBUTE_COUPLE_NO,
-	Q6AFE_LPASS_CLK_ROOT_DEFAULT,
-	0,
+	Q6AFE_LPASS_CLK_CONFIG_API_VERSION, Q6AFE_LPASS_CLK_ID_SPEAKER_I2S_OSR,
+	Q6AFE_LPASS_IBIT_CLK_11_P2896_MHZ,  Q6AFE_LPASS_CLK_ATTRIBUTE_COUPLE_NO,
+	Q6AFE_LPASS_CLK_ROOT_DEFAULT,	    0,
 };
 
 static inline struct audio_ext_ap_clk *to_audio_ap_clk(struct clk *clk)
@@ -84,15 +81,13 @@ static int audio_ext_clk2_prepare(struct clk *clk)
 	struct pinctrl_info *pnctrl_info = &audio_clk2->pnctrl_info;
 	int ret;
 
-
 	if (!pnctrl_info->pinctrl || !pnctrl_info->active)
 		return 0;
 
-	ret = pinctrl_select_state(pnctrl_info->pinctrl,
-				   pnctrl_info->active);
+	ret = pinctrl_select_state(pnctrl_info->pinctrl, pnctrl_info->active);
 	if (ret) {
-		pr_err("%s: active state select failed with %d\n",
-			__func__, ret);
+		pr_err("%s: active state select failed with %d\n", __func__,
+		       ret);
 		return -EIO;
 	}
 
@@ -115,11 +110,10 @@ static void audio_ext_clk2_unprepare(struct clk *clk)
 	if (!pnctrl_info->pinctrl || !pnctrl_info->sleep)
 		return;
 
-	ret = pinctrl_select_state(pnctrl_info->pinctrl,
-				   pnctrl_info->sleep);
+	ret = pinctrl_select_state(pnctrl_info->pinctrl, pnctrl_info->sleep);
 	if (ret)
-		pr_err("%s: sleep state select failed with %d\n",
-			__func__, ret);
+		pr_err("%s: sleep state select failed with %d\n", __func__,
+		       ret);
 
 	clk2_config.enable = 0;
 	ret = afe_set_lpass_clk_cfg(IDX_RSVD_3, &clk2_config);
@@ -138,38 +132,42 @@ static const struct clk_ops audio_ext_ap_clk2_ops = {
 };
 
 static struct audio_ext_pmi_clk audio_pmi_clk = {
-	.gpio = -EINVAL,
-	.c = {
-		.dbg_name = "audio_ext_pmi_clk",
-		.ops = &clk_ops_dummy,
-		CLK_INIT(audio_pmi_clk.c),
-	},
+    .gpio = -EINVAL,
+    .c =
+        {
+            .dbg_name = "audio_ext_pmi_clk",
+            .ops = &clk_ops_dummy,
+            CLK_INIT(audio_pmi_clk.c),
+        },
 };
 
 static struct audio_ext_pmi_clk audio_pmi_lnbb_clk = {
-	.gpio = -EINVAL,
-	.c = {
-		.dbg_name = "audio_ext_pmi_lnbb_clk",
-		.ops = &clk_ops_dummy,
-		CLK_INIT(audio_pmi_lnbb_clk.c),
-	},
+    .gpio = -EINVAL,
+    .c =
+        {
+            .dbg_name = "audio_ext_pmi_lnbb_clk",
+            .ops = &clk_ops_dummy,
+            CLK_INIT(audio_pmi_lnbb_clk.c),
+        },
 };
 
 static struct audio_ext_ap_clk audio_ap_clk = {
-	.gpio = -EINVAL,
-	.c = {
-		.dbg_name = "audio_ext_ap_clk",
-		.ops = &audio_ext_ap_clk_ops,
-		CLK_INIT(audio_ap_clk.c),
-	},
+    .gpio = -EINVAL,
+    .c =
+        {
+            .dbg_name = "audio_ext_ap_clk",
+            .ops = &audio_ext_ap_clk_ops,
+            CLK_INIT(audio_ap_clk.c),
+        },
 };
 
 static struct audio_ext_ap_clk2 audio_ap_clk2 = {
-	.c = {
-		.dbg_name = "audio_ext_ap_clk2",
-		.ops = &audio_ext_ap_clk2_ops,
-		CLK_INIT(audio_ap_clk2.c),
-	},
+    .c =
+        {
+            .dbg_name = "audio_ext_ap_clk2",
+            .ops = &audio_ext_ap_clk2_ops,
+            CLK_INIT(audio_ap_clk2.c),
+        },
 };
 
 static struct clk_lookup audio_ref_clock[] = {
@@ -188,8 +186,7 @@ static int audio_get_pinctrl(struct platform_device *pdev)
 	pnctrl_info = &audio_ap_clk2.pnctrl_info;
 
 	if (pnctrl_info->pinctrl) {
-		dev_dbg(&pdev->dev, "%s: already requested before\n",
-			__func__);
+		dev_dbg(&pdev->dev, "%s: already requested before\n", __func__);
 		return -EINVAL;
 	}
 
@@ -214,8 +211,7 @@ static int audio_get_pinctrl(struct platform_device *pdev)
 		goto err;
 	}
 	/* Reset the TLMM pins to a default state */
-	ret = pinctrl_select_state(pnctrl_info->pinctrl,
-				   pnctrl_info->sleep);
+	ret = pinctrl_select_state(pnctrl_info->pinctrl, pnctrl_info->sleep);
 	if (ret) {
 		dev_err(&pdev->dev, "%s: Disable TLMM pins failed with %d\n",
 			__func__, ret);
@@ -245,10 +241,11 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 			goto err;
 		}
 		if (of_property_read_bool(pdev->dev.of_node,
-					"qcom,node_has_rpm_clock")) {
+					  "qcom,node_has_rpm_clock")) {
 			audio_clk = clk_get(&pdev->dev, NULL);
 			if (IS_ERR(audio_clk)) {
-				dev_err(&pdev->dev, "Failed to get RPM div clk\n");
+				dev_err(&pdev->dev,
+					"Failed to get RPM div clk\n");
 				ret = PTR_ERR(audio_clk);
 				goto err_gpio;
 			}
@@ -259,7 +256,7 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 
 	} else {
 		if (of_property_read_bool(pdev->dev.of_node,
-					"qcom,node_has_rpm_clock")) {
+					  "qcom,node_has_rpm_clock")) {
 			audio_clk = clk_get(&pdev->dev, NULL);
 			if (IS_ERR(audio_clk)) {
 				dev_err(&pdev->dev, "Failed to get lnbbclk2\n");
@@ -273,11 +270,10 @@ static int audio_ref_clk_probe(struct platform_device *pdev)
 
 	ret = audio_get_pinctrl(pdev);
 	if (ret)
-		dev_dbg(&pdev->dev, "%s: Parsing pinctrl failed\n",
-			__func__);
+		dev_dbg(&pdev->dev, "%s: Parsing pinctrl failed\n", __func__);
 
 	ret = of_msm_clock_register(pdev->dev.of_node, audio_ref_clock,
-			      ARRAY_SIZE(audio_ref_clock));
+				    ARRAY_SIZE(audio_ref_clock));
 	if (ret) {
 		dev_err(&pdev->dev, "%s: audio ref clock register failed\n",
 			__func__);
@@ -311,20 +307,21 @@ static int audio_ref_clk_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id audio_ref_clk_match[] = {
-	{.compatible = "qcom,audio-ref-clk"},
+	{ .compatible = "qcom,audio-ref-clk" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, audio_ref_clk_match);
 
 static struct platform_driver audio_ref_clk_driver = {
-	.driver = {
-		.name = "audio-ref-clk",
-		.owner = THIS_MODULE,
-		.of_match_table = audio_ref_clk_match,
-		.suppress_bind_attrs = true,
-	},
-	.probe = audio_ref_clk_probe,
-	.remove = audio_ref_clk_remove,
+    .driver =
+        {
+            .name = "audio-ref-clk",
+            .owner = THIS_MODULE,
+            .of_match_table = audio_ref_clk_match,
+            .suppress_bind_attrs = true,
+        },
+    .probe = audio_ref_clk_probe,
+    .remove = audio_ref_clk_remove,
 };
 
 int audio_ref_clk_platform_init(void)

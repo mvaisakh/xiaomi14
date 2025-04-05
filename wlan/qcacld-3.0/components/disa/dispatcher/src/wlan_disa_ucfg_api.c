@@ -23,12 +23,10 @@
 #include "wlan_disa_ucfg_api.h"
 #include "wlan_disa_main.h"
 
-QDF_STATUS ucfg_disa_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
-		struct disa_encrypt_decrypt_req_params *req,
-		encrypt_decrypt_resp_callback cb,
-		void *cookie)
+QDF_STATUS
+ucfg_disa_encrypt_decrypt_req(struct wlan_objmgr_psoc *psoc,
+			      struct disa_encrypt_decrypt_req_params *req,
+			      encrypt_decrypt_resp_callback cb, void *cookie)
 {
 	return disa_core_encrypt_decrypt_req(psoc, req, cb, cookie);
 }
-
-

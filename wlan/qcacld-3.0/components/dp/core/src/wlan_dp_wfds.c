@@ -14,15 +14,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include "wlan_dp_wfds.h"
-#include "hif.h"
-#include "hal_api.h"
-#include "dp_types.h"
 #include "dp_rx.h"
+#include "dp_types.h"
+#include "hal_api.h"
+#include "hif.h"
 #include "pld_common.h"
-#include "wlan_objmgr_psoc_obj.h"
-#include <qdf_mem.h>
 #include "wlan_dp_prealloc.h"
+#include "wlan_objmgr_psoc_obj.h"
 #include <htc_api.h>
+#include <qdf_mem.h>
 
 static struct dp_direct_link_wfds_context *gp_dl_wfds_ctx;
 
@@ -36,18 +36,18 @@ static QDF_STATUS
 dp_wfds_send_config_msg(struct dp_direct_link_wfds_context *dl_wfds)
 {
 	struct dp_direct_link_context *direct_link_ctx =
-					dl_wfds->direct_link_ctx;
+		dl_wfds->direct_link_ctx;
 	struct wlan_qmi_wfds_config_req_msg *info;
 	struct dp_soc *dp_soc =
 		wlan_psoc_get_dp_handle(dl_wfds->direct_link_ctx->dp_ctx->psoc);
 	struct hif_opaque_softc *hif_ctx;
 	qdf_device_t qdf_dev;
 	void *hal_soc;
-	struct hal_mem_info mem_info = {0};
-	struct hif_direct_link_ce_info ce_info[QMI_WFDS_CE_MAX_SRNG] = {0};
+	struct hal_mem_info mem_info = { 0 };
+	struct hif_direct_link_ce_info ce_info[QMI_WFDS_CE_MAX_SRNG] = { 0 };
 	QDF_STATUS status;
 	struct hif_ce_ring_info *srng_info;
-	struct hal_srng_params srng_params = {0};
+	struct hal_srng_params srng_params = { 0 };
 	hal_ring_handle_t refill_ring;
 	uint8_t i;
 
@@ -69,10 +69,10 @@ dp_wfds_send_config_msg(struct dp_direct_link_wfds_context *dl_wfds)
 		return QDF_STATUS_E_NOMEM;
 
 	info->shadow_rdptr_mem_paddr =
-				(uint64_t)mem_info.shadow_rdptr_mem_paddr;
+		(uint64_t)mem_info.shadow_rdptr_mem_paddr;
 	info->shadow_rdptr_mem_size = sizeof(uint32_t) * HAL_SRNG_ID_MAX;
 	info->shadow_wrptr_mem_paddr =
-				(uint64_t)mem_info.shadow_wrptr_mem_paddr;
+		(uint64_t)mem_info.shadow_wrptr_mem_paddr;
 	info->shadow_wrptr_mem_size = sizeof(uint32_t) * HAL_MAX_LMAC_RINGS;
 	info->pcie_bar_pa = (uint64_t)mem_info.dev_base_paddr;
 
@@ -82,13 +82,13 @@ dp_wfds_send_config_msg(struct dp_direct_link_wfds_context *dl_wfds)
 	dl_wfds->iommu_cfg.shadow_wrptr_map_size = info->shadow_wrptr_mem_size;
 
 	pld_audio_smmu_map(qdf_dev->dev,
-			   qdf_mem_paddr_from_dmaaddr(qdf_dev,
-						      info->shadow_rdptr_mem_paddr),
+			   qdf_mem_paddr_from_dmaaddr(
+				   qdf_dev, info->shadow_rdptr_mem_paddr),
 			   info->shadow_rdptr_mem_paddr,
 			   info->shadow_rdptr_mem_size);
 	pld_audio_smmu_map(qdf_dev->dev,
-			   qdf_mem_paddr_from_dmaaddr(qdf_dev,
-						      info->shadow_wrptr_mem_paddr),
+			   qdf_mem_paddr_from_dmaaddr(
+				   qdf_dev, info->shadow_wrptr_mem_paddr),
 			   info->shadow_wrptr_mem_paddr,
 			   info->shadow_wrptr_mem_size);
 
@@ -111,7 +111,7 @@ dp_wfds_send_config_msg(struct dp_direct_link_wfds_context *dl_wfds)
 		info->ce_info[i].srng_info.num_entries = srng_info->num_entries;
 		info->ce_info[i].srng_info.entry_size = srng_info->entry_size;
 		info->ce_info[i].srng_info.ring_base_paddr =
-						     srng_info->ring_base_paddr;
+			srng_info->ring_base_paddr;
 		info->ce_info[i].srng_info.hp_paddr = srng_info->hp_paddr;
 		info->ce_info[i].srng_info.tp_paddr = srng_info->tp_paddr;
 
@@ -120,37 +120,39 @@ dp_wfds_send_config_msg(struct dp_direct_link_wfds_context *dl_wfds)
 		dl_wfds->iommu_cfg.direct_link_srng_ring_map_size[i] =
 			srng_info->entry_size * srng_info->num_entries * 4;
 
-		pld_audio_smmu_map(qdf_dev->dev,
-				   qdf_mem_paddr_from_dmaaddr(qdf_dev,
-							      srng_info->ring_base_paddr),
-				   srng_info->ring_base_paddr,
-				   dl_wfds->iommu_cfg.direct_link_srng_ring_map_size[i]);
+		pld_audio_smmu_map(
+			qdf_dev->dev,
+			qdf_mem_paddr_from_dmaaddr(qdf_dev,
+						   srng_info->ring_base_paddr),
+			srng_info->ring_base_paddr,
+			dl_wfds->iommu_cfg.direct_link_srng_ring_map_size[i]);
 	}
 
 	refill_ring = direct_link_ctx->direct_link_refill_ring_hdl->hal_srng;
 	hal_get_srng_params(hal_soc, refill_ring, &srng_params);
 	info->rx_refill_ring.ring_id = srng_params.ring_id;
-	info->rx_refill_ring.dir =
-		(srng_params.ring_dir == HAL_SRNG_SRC_RING) ?
-		QMI_WFDS_SRNG_SOURCE_RING : QMI_WFDS_SRNG_DESTINATION_RING;
+	info->rx_refill_ring.dir = (srng_params.ring_dir == HAL_SRNG_SRC_RING) ?
+					   QMI_WFDS_SRNG_SOURCE_RING :
+					   QMI_WFDS_SRNG_DESTINATION_RING;
 	info->rx_refill_ring.num_entries = srng_params.num_entries;
 	info->rx_refill_ring.entry_size = srng_params.entry_size;
 	info->rx_refill_ring.ring_base_paddr = srng_params.ring_base_paddr;
 
-	dl_wfds->iommu_cfg.direct_link_refill_ring_base_paddr = srng_params.ring_base_paddr;
+	dl_wfds->iommu_cfg.direct_link_refill_ring_base_paddr =
+		srng_params.ring_base_paddr;
 	dl_wfds->iommu_cfg.direct_link_refill_ring_map_size =
 		srng_params.entry_size * srng_params.num_entries * 4;
 
 	pld_audio_smmu_map(qdf_dev->dev,
-			   qdf_mem_paddr_from_dmaaddr(qdf_dev,
-						      srng_params.ring_base_paddr),
+			   qdf_mem_paddr_from_dmaaddr(
+				   qdf_dev, srng_params.ring_base_paddr),
 			   srng_params.ring_base_paddr,
 			   dl_wfds->iommu_cfg.direct_link_refill_ring_map_size);
 
 	info->rx_refill_ring.hp_paddr =
-				hal_srng_get_hp_addr(hal_soc, refill_ring);
+		hal_srng_get_hp_addr(hal_soc, refill_ring);
 	info->rx_refill_ring.tp_paddr =
-				hal_srng_get_tp_addr(hal_soc, refill_ring);
+		hal_srng_get_tp_addr(hal_soc, refill_ring);
 
 	info->rx_pkt_tlv_len = dp_soc->rx_pkt_tlv_size;
 	info->rx_rbm = dp_rx_get_rx_bm_id(dp_soc);
@@ -167,8 +169,7 @@ dp_wfds_send_config_msg(struct dp_direct_link_wfds_context *dl_wfds)
 		return status;
 	}
 
-	qdf_atomic_set(&dl_wfds->wfds_state,
-		       DP_WFDS_SVC_CONFIG_DONE);
+	qdf_atomic_set(&dl_wfds->wfds_state, DP_WFDS_SVC_CONFIG_DONE);
 
 	return status;
 }
@@ -209,23 +210,23 @@ dp_wfds_req_mem_msg(struct dp_direct_link_wfds_context *dl_wfds)
 			uint64_t *dma_addr = NULL;
 			uint32_t buf_size;
 
-			num_pages =
-			    hif_get_direct_link_ce_dest_srng_buffers(hif_ctx,
-								     &dma_addr,
-								     &buf_size);
+			num_pages = hif_get_direct_link_ce_dest_srng_buffers(
+				hif_ctx, &dma_addr, &buf_size);
 			qdf_assert(dma_addr);
 
 			info->mem_arena_page_info[i].num_entries_per_page =
-					qdf_page_size / buf_size;
+				qdf_page_size / buf_size;
 			info->mem_arena_page_info[i].page_dma_addr_len =
-								      num_pages;
+				num_pages;
 			while (num_pages--) {
-				info->mem_arena_page_info[i].page_dma_addr[num_pages] =
-							dma_addr[num_pages];
-				pld_audio_smmu_map(qdf_dev->dev,
-						   qdf_mem_paddr_from_dmaaddr(qdf_dev, dma_addr[num_pages]),
-						   dma_addr[num_pages],
-						   buf_size);
+				info->mem_arena_page_info[i]
+					.page_dma_addr[num_pages] =
+					dma_addr[num_pages];
+				pld_audio_smmu_map(
+					qdf_dev->dev,
+					qdf_mem_paddr_from_dmaaddr(
+						qdf_dev, dma_addr[num_pages]),
+					dma_addr[num_pages], buf_size);
 			}
 
 			qdf_mem_free(dma_addr);
@@ -236,23 +237,25 @@ dp_wfds_req_mem_msg(struct dp_direct_link_wfds_context *dl_wfds)
 		pages = &dl_wfds->mem_arena_pages[i];
 
 		info->mem_arena_page_info[i].num_entries_per_page =
-		       dl_wfds->mem_arena_pages[i].num_element_per_page;
+			dl_wfds->mem_arena_pages[i].num_element_per_page;
 		info->mem_arena_page_info[i].page_dma_addr_len = num_pages;
 
 		while (num_pages--) {
 			info->mem_arena_page_info[i].page_dma_addr[num_pages] =
-					pages->dma_pages[num_pages].page_p_addr;
+				pages->dma_pages[num_pages].page_p_addr;
 
-			pld_audio_smmu_map(qdf_dev->dev,
-					qdf_mem_paddr_from_dmaaddr(qdf_dev, pages->dma_pages[num_pages].page_p_addr),
-					pages->dma_pages[num_pages].page_p_addr,
-					pages->page_size);
+			pld_audio_smmu_map(
+				qdf_dev->dev,
+				qdf_mem_paddr_from_dmaaddr(
+					qdf_dev,
+					pages->dma_pages[num_pages].page_p_addr),
+				pages->dma_pages[num_pages].page_p_addr,
+				pages->page_size);
 		}
 	}
 
 	status = wlan_qmi_wfds_send_req_mem_msg(
-					dl_wfds->direct_link_ctx->dp_ctx->psoc,
-					info);
+		dl_wfds->direct_link_ctx->dp_ctx->psoc, info);
 	qdf_mem_free(info);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -260,8 +263,7 @@ dp_wfds_req_mem_msg(struct dp_direct_link_wfds_context *dl_wfds)
 		return status;
 	}
 
-	qdf_atomic_set(&dl_wfds->wfds_state,
-		       DP_WFDS_SVC_MEM_CONFIG_DONE);
+	qdf_atomic_set(&dl_wfds->wfds_state, DP_WFDS_SVC_MEM_CONFIG_DONE);
 
 	return status;
 }
@@ -276,14 +278,13 @@ dp_wfds_req_mem_msg(struct dp_direct_link_wfds_context *dl_wfds)
 static QDF_STATUS
 dp_wfds_ipcc_map_n_cfg_msg(struct dp_direct_link_wfds_context *dlink_wfds)
 {
-	struct wlan_qmi_wfds_ipcc_map_n_cfg_req_msg info = {0};
+	struct wlan_qmi_wfds_ipcc_map_n_cfg_req_msg info = { 0 };
 	QDF_STATUS status;
 
 	info.status = QMI_WFDS_STATUS_SUCCESS;
 
 	status = wlan_qmi_wfds_ipcc_map_n_cfg_msg(
-				dlink_wfds->direct_link_ctx->dp_ctx->psoc,
-				&info);
+		dlink_wfds->direct_link_ctx->dp_ctx->psoc, &info);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		dp_err("IPCC map n cfg message send failed %d", status);
 		return status;
@@ -309,10 +310,9 @@ static void dp_wfds_work(void *arg)
 	dp_debug("entry");
 
 	qdf_spinlock_acquire(&dl_wfds->wfds_event_list_lock);
-	while ((wfds_evt =
-		qdf_list_first_entry_or_null(&dl_wfds->wfds_event_list,
-					     struct dp_wfds_event,
-					     list_node))) {
+	while ((wfds_evt = qdf_list_first_entry_or_null(
+			&dl_wfds->wfds_event_list, struct dp_wfds_event,
+			list_node))) {
 		qdf_list_remove_node(&dl_wfds->wfds_event_list,
 				     &wfds_evt->list_node);
 		qdf_spinlock_release(&dl_wfds->wfds_event_list_lock);
@@ -362,8 +362,7 @@ dp_wfds_event_post(struct dp_direct_link_wfds_context *dl_wfds,
 	wfds_evt->data = data;
 
 	qdf_spinlock_acquire(&dl_wfds->wfds_event_list_lock);
-	qdf_list_insert_back(&dl_wfds->wfds_event_list,
-			     &wfds_evt->list_node);
+	qdf_list_insert_back(&dl_wfds->wfds_event_list, &wfds_evt->list_node);
 	qdf_spinlock_release(&dl_wfds->wfds_event_list_lock);
 
 	qdf_queue_work(0, dl_wfds->wfds_wq, &dl_wfds->wfds_work);
@@ -403,10 +402,9 @@ dp_wfds_get_desc_type_from_mem_arena(enum wlan_qmi_wfds_mem_arenas mem_arena)
  *
  * Return: None
  */
-static void
-dp_wfds_alloc_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
-			enum wlan_qmi_wfds_mem_arenas mem_arena,
-			uint16_t entry_size, uint16_t num_entries)
+static void dp_wfds_alloc_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
+				    enum wlan_qmi_wfds_mem_arenas mem_arena,
+				    uint16_t entry_size, uint16_t num_entries)
 {
 	qdf_device_t qdf_ctx = dl_wfds->direct_link_ctx->dp_ctx->qdf_dev;
 	uint32_t desc_type;
@@ -414,10 +412,9 @@ dp_wfds_alloc_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
 	desc_type = dp_wfds_get_desc_type_from_mem_arena(mem_arena);
 
 	if (desc_type != QDF_DP_DESC_TYPE_MAX)
-		dp_prealloc_get_multi_pages(desc_type, entry_size,
-					    num_entries,
-					    &dl_wfds->mem_arena_pages[mem_arena],
-					    false);
+		dp_prealloc_get_multi_pages(
+			desc_type, entry_size, num_entries,
+			&dl_wfds->mem_arena_pages[mem_arena], false);
 
 	if (!dl_wfds->mem_arena_pages[mem_arena].num_pages)
 		qdf_mem_multi_pages_alloc(qdf_ctx,
@@ -432,17 +429,16 @@ dp_wfds_alloc_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
  *
  * Return: None
  */
-static void
-dp_wfds_free_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
-		       enum wlan_qmi_wfds_mem_arenas mem_arena)
+static void dp_wfds_free_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
+				   enum wlan_qmi_wfds_mem_arenas mem_arena)
 {
 	qdf_device_t qdf_ctx = dl_wfds->direct_link_ctx->dp_ctx->qdf_dev;
 	uint32_t desc_type;
 
 	if (dl_wfds->mem_arena_pages[mem_arena].is_mem_prealloc) {
 		desc_type = dp_wfds_get_desc_type_from_mem_arena(mem_arena);
-		dp_prealloc_put_multi_pages(desc_type,
-					  &dl_wfds->mem_arena_pages[mem_arena]);
+		dp_prealloc_put_multi_pages(
+			desc_type, &dl_wfds->mem_arena_pages[mem_arena]);
 	} else {
 		qdf_mem_multi_pages_free(qdf_ctx,
 					 &dl_wfds->mem_arena_pages[mem_arena],
@@ -450,32 +446,27 @@ dp_wfds_free_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
 	}
 }
 #else
-static void
-dp_wfds_alloc_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
-			enum wlan_qmi_wfds_mem_arenas mem_arena,
-			uint16_t entry_size, uint16_t num_entries)
+static void dp_wfds_alloc_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
+				    enum wlan_qmi_wfds_mem_arenas mem_arena,
+				    uint16_t entry_size, uint16_t num_entries)
 {
 	qdf_device_t qdf_ctx = dl_wfds->direct_link_ctx->dp_ctx->qdf_dev;
 
-	qdf_mem_multi_pages_alloc(qdf_ctx,
-				  &dl_wfds->mem_arena_pages[mem_arena],
+	qdf_mem_multi_pages_alloc(qdf_ctx, &dl_wfds->mem_arena_pages[mem_arena],
 				  entry_size, num_entries, 0, false);
 }
 
-static void
-dp_wfds_free_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
-		       enum wlan_qmi_wfds_mem_arenas mem_arena)
+static void dp_wfds_free_mem_arena(struct dp_direct_link_wfds_context *dl_wfds,
+				   enum wlan_qmi_wfds_mem_arenas mem_arena)
 {
 	qdf_device_t qdf_ctx = dl_wfds->direct_link_ctx->dp_ctx->qdf_dev;
 
-	qdf_mem_multi_pages_free(qdf_ctx,
-				 &dl_wfds->mem_arena_pages[mem_arena],
+	qdf_mem_multi_pages_free(qdf_ctx, &dl_wfds->mem_arena_pages[mem_arena],
 				 0, false);
 }
 #endif
 
-void
-dp_wfds_handle_request_mem_ind(struct wlan_qmi_wfds_mem_ind_msg *mem_msg)
+void dp_wfds_handle_request_mem_ind(struct wlan_qmi_wfds_mem_ind_msg *mem_msg)
 {
 	struct dp_direct_link_wfds_context *dl_wfds = gp_dl_wfds_ctx;
 	uint8_t i;
@@ -516,8 +507,8 @@ dp_wfds_handle_request_mem_ind(struct wlan_qmi_wfds_mem_ind_msg *mem_msg)
 	dp_wfds_event_post(dl_wfds, DP_WFDS_MEM_REQ, NULL);
 }
 
-void
-dp_wfds_handle_ipcc_map_n_cfg_ind(struct wlan_qmi_wfds_ipcc_map_n_cfg_ind_msg *ipcc_msg)
+void dp_wfds_handle_ipcc_map_n_cfg_ind(
+	struct wlan_qmi_wfds_ipcc_map_n_cfg_ind_msg *ipcc_msg)
 {
 	struct dp_direct_link_wfds_context *dl_wfds = gp_dl_wfds_ctx;
 	qdf_device_t qdf_ctx = dl_wfds->direct_link_ctx->dp_ctx->qdf_dev;
@@ -534,17 +525,17 @@ dp_wfds_handle_ipcc_map_n_cfg_ind(struct wlan_qmi_wfds_ipcc_map_n_cfg_ind_msg *i
 	dp_debug("Received IPCC map n cfg indication from QMI server");
 
 	/*
-	 * IPCC Address for all the CE srngs will be the same and only the
-	 * IPCC data will differ.
-	 */
+   * IPCC Address for all the CE srngs will be the same and only the
+   * IPCC data will differ.
+   */
 	pld_smmu_map(qdf_ctx->dev, ipcc_msg->ipcc_ce_info[0].ipcc_trig_addr,
 		     &dl_wfds->ipcc_dma_addr, sizeof(uint32_t));
 
 	for (i = 0; i < ipcc_msg->ipcc_ce_info_len; i++)
-		hif_set_irq_config_by_ceid(hif_ctx,
-				      ipcc_msg->ipcc_ce_info[i].ce_id,
-				      dl_wfds->ipcc_dma_addr,
-				      ipcc_msg->ipcc_ce_info[i].ipcc_trig_data);
+		hif_set_irq_config_by_ceid(
+			hif_ctx, ipcc_msg->ipcc_ce_info[i].ce_id,
+			dl_wfds->ipcc_dma_addr,
+			ipcc_msg->ipcc_ce_info[i].ipcc_trig_data);
 
 	dp_wfds_event_post(dl_wfds, DP_WFDS_IPCC_MAP_N_CFG, NULL);
 }
@@ -582,8 +573,7 @@ void dp_wfds_del_server(void)
 	dp_debug("WFDS QMI server exiting");
 
 	dl_wfds_state = qdf_atomic_read(&dl_wfds->wfds_state);
-	qdf_atomic_set(&dl_wfds->wfds_state,
-		       DP_WFDS_SVC_DISCONNECTED);
+	qdf_atomic_set(&dl_wfds->wfds_state, DP_WFDS_SVC_DISCONNECTED);
 
 	if (dl_wfds_state >= DP_WFDS_SVC_IPCC_MAP_N_CFG_DONE &&
 	    dl_wfds->ipcc_dma_addr)
@@ -604,9 +594,10 @@ void dp_wfds_del_server(void)
 			mp_info = &dl_wfds->mem_arena_pages[i];
 			for (page_idx = 0; page_idx < mp_info->num_pages;
 			     page_idx++)
-				pld_audio_smmu_unmap(qdf_ctx->dev,
-				       mp_info->dma_pages[page_idx].page_p_addr,
-				       mp_info->page_size);
+				pld_audio_smmu_unmap(
+					qdf_ctx->dev,
+					mp_info->dma_pages[page_idx].page_p_addr,
+					mp_info->page_size);
 
 			dp_wfds_free_mem_arena(dl_wfds, i);
 		}
@@ -615,9 +606,8 @@ void dp_wfds_del_server(void)
 		dl_wfds->mem_arena_pages = NULL;
 		dl_wfds->num_mem_arenas = 0;
 
-		num_pages = hif_get_direct_link_ce_dest_srng_buffers(hif_ctx,
-								     &dma_addr,
-								     &buf_size);
+		num_pages = hif_get_direct_link_ce_dest_srng_buffers(
+			hif_ctx, &dma_addr, &buf_size);
 		qdf_assert(dma_addr);
 
 		while (num_pages--)
@@ -636,11 +626,15 @@ void dp_wfds_del_server(void)
 				     dl_wfds->iommu_cfg.shadow_wrptr_map_size);
 
 		for (i = 0; i < QMI_WFDS_CE_MAX_SRNG; i++)
-			pld_audio_smmu_unmap(qdf_ctx->dev,
-				dl_wfds->iommu_cfg.direct_link_srng_ring_base_paddr[i],
-				dl_wfds->iommu_cfg.direct_link_srng_ring_map_size[i]);
+			pld_audio_smmu_unmap(
+				qdf_ctx->dev,
+				dl_wfds->iommu_cfg
+					.direct_link_srng_ring_base_paddr[i],
+				dl_wfds->iommu_cfg
+					.direct_link_srng_ring_map_size[i]);
 
-		pld_audio_smmu_unmap(qdf_ctx->dev,
+		pld_audio_smmu_unmap(
+			qdf_ctx->dev,
 			dl_wfds->iommu_cfg.direct_link_refill_ring_base_paddr,
 			dl_wfds->iommu_cfg.direct_link_refill_ring_map_size);
 	}
@@ -662,8 +656,7 @@ QDF_STATUS dp_wfds_init(struct dp_direct_link_context *dp_direct_link_ctx)
 	qdf_spinlock_create(&dl_wfds->wfds_event_list_lock);
 	qdf_list_create(&dl_wfds->wfds_event_list, 0);
 
-	status = qdf_create_work(0, &dl_wfds->wfds_work,
-				 dp_wfds_work, dl_wfds);
+	status = qdf_create_work(0, &dl_wfds->wfds_work, dp_wfds_work, dl_wfds);
 	if (status != QDF_STATUS_SUCCESS) {
 		dp_err("DP QMI work create failed");
 		goto wfds_work_create_fail;
@@ -675,8 +668,7 @@ QDF_STATUS dp_wfds_init(struct dp_direct_link_context *dp_direct_link_ctx)
 		goto wfds_wq_alloc_fail;
 	}
 
-	qdf_atomic_set(&dl_wfds->wfds_state,
-		       DP_WFDS_SVC_DISCONNECTED);
+	qdf_atomic_set(&dl_wfds->wfds_state, DP_WFDS_SVC_DISCONNECTED);
 
 	status = wlan_qmi_wfds_init(dp_direct_link_ctx->dp_ctx->psoc);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -729,10 +721,9 @@ void dp_wfds_deinit(struct dp_direct_link_context *dp_direct_link_ctx,
 	qdf_spinlock_destroy(&dl_wfds->wfds_event_list_lock);
 	qdf_list_destroy(&dl_wfds->wfds_event_list);
 
-	if (qdf_atomic_read(&dl_wfds->wfds_state) !=
-	    DP_WFDS_SVC_DISCONNECTED)
-		wlan_qmi_wfds_send_misc_req_msg(dp_direct_link_ctx->dp_ctx->psoc,
-						is_ssr);
+	if (qdf_atomic_read(&dl_wfds->wfds_state) != DP_WFDS_SVC_DISCONNECTED)
+		wlan_qmi_wfds_send_misc_req_msg(
+			dp_direct_link_ctx->dp_ctx->psoc, is_ssr);
 
 	wlan_qmi_wfds_deinit(dp_direct_link_ctx->dp_ctx->psoc);
 	gp_dl_wfds_ctx = NULL;

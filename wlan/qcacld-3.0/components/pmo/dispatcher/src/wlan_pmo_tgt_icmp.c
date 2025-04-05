@@ -18,9 +18,9 @@
  * DOC: Implements public API for pmo to interact with target/WMI
  */
 
-#include "wlan_pmo_tgt_api.h"
-#include "wlan_pmo_obj_mgmt_public_struct.h"
 #include "wlan_pmo_main.h"
+#include "wlan_pmo_obj_mgmt_public_struct.h"
+#include "wlan_pmo_tgt_api.h"
 
 QDF_STATUS
 pmo_tgt_config_icmp_offload_req(struct wlan_objmgr_psoc *psoc,

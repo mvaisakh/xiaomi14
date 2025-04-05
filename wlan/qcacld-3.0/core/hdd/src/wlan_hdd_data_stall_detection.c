@@ -23,14 +23,14 @@
  * WLAN Host Device Driver Data Stall detection API implementation
  */
 
-#include <wlan_qct_sys.h>
-#include <scheduler_api.h>
 #include "wlan_hdd_data_stall_detection.h"
-#include "wlan_hdd_main.h"
 #include "cdp_txrx_cmn.h"
 #include "cdp_txrx_misc.h"
-#include "ol_txrx_types.h"
 #include "ol_defines.h"
+#include "ol_txrx_types.h"
+#include "wlan_hdd_main.h"
+#include <scheduler_api.h>
+#include <wlan_qct_sys.h>
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
 #include "host_diag_core_event.h"
 #include "host_diag_core_log.h"
@@ -48,15 +48,14 @@
 static void hdd_data_stall_send_event(uint32_t reason)
 {
 	WLAN_HOST_DIAG_EVENT_DEF(sta_data_stall,
-				struct host_event_wlan_datastall);
+				 struct host_event_wlan_datastall);
 	qdf_mem_zero(&sta_data_stall, sizeof(sta_data_stall));
 	sta_data_stall.reason = reason;
 	hdd_debug("Posting data stall event %x", reason);
 	WLAN_HOST_DIAG_EVENT_REPORT(&sta_data_stall, EVENT_WLAN_STA_DATASTALL);
 
 	cdp_display_stats(cds_get_context(QDF_MODULE_ID_SOC),
-			  CDP_TXRX_PATH_STATS,
-			  QDF_STATS_VERBOSITY_LEVEL_LOW);
+			  CDP_TXRX_PATH_STATS, QDF_STATS_VERBOSITY_LEVEL_LOW);
 }
 #else
 static inline void hdd_data_stall_send_event(uint32_t reason)
@@ -94,10 +93,9 @@ static QDF_STATUS hdd_data_stall_process_event(struct scheduler_msg *msg)
  *
  * Return: void
  */
-static void hdd_data_stall_process_cb(
-			struct data_stall_event_info *info)
+static void hdd_data_stall_process_cb(struct data_stall_event_info *info)
 {
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct data_stall_event_info *data_stall_event_info;
 	QDF_STATUS status;
 
@@ -117,8 +115,7 @@ static void hdd_data_stall_process_cb(
 	msg.bodyptr = data_stall_event_info;
 	msg.bodyval = 0;
 
-	status = scheduler_post_message(QDF_MODULE_ID_HDD,
-					QDF_MODULE_ID_HDD,
+	status = scheduler_post_message(QDF_MODULE_ID_HDD, QDF_MODULE_ID_HDD,
 					QDF_MODULE_ID_SYS, &msg);
 
 	if (status != QDF_STATUS_SUCCESS)

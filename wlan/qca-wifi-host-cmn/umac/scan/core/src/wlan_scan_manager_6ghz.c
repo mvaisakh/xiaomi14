@@ -22,9 +22,9 @@
  */
 
 #include "wlan_scan_main.h"
+#include "wlan_scan_manager.h"
 #include "wlan_utility.h"
 #include <wlan_reg_services_api.h>
-#include "wlan_scan_manager.h"
 
 /* Beacon/probe weightage multiplier */
 #define BCN_PROBE_WEIGHTAGE 5
@@ -49,9 +49,8 @@
  *
  * Return: None
  */
-static void
-scm_sort_6ghz_channel_list(struct wlan_objmgr_vdev *vdev,
-			   struct chan_list *chan_list)
+static void scm_sort_6ghz_channel_list(struct wlan_objmgr_vdev *vdev,
+				       struct chan_list *chan_list)
 {
 	uint8_t i, j = 0, max, tmp_list_count;
 	struct meta_rnr_channel *channel;
@@ -94,9 +93,9 @@ scm_sort_6ghz_channel_list(struct wlan_objmgr_vdev *vdev,
 		rnr_chan_info[j].flags = temp_list[i].flags;
 		j++;
 		/*
-		 * Log the info only if weight or bss_beacon_probe_count are
-		 * non-zero to avoid excessive logging.
-		 */
+     * Log the info only if weight or bss_beacon_probe_count are
+     * non-zero to avoid excessive logging.
+     */
 		if (weight || channel->bss_beacon_probe_count)
 			scm_debug("Freq %d weight %d bcn_cnt %d",
 				  temp_list[i].freq, weight,
@@ -107,8 +106,7 @@ scm_sort_6ghz_channel_list(struct wlan_objmgr_vdev *vdev,
 	for (i = 0; i < tmp_list_count - 1; i++) {
 		max = i;
 		for (j = i + 1; j < tmp_list_count; j++) {
-			if (rnr_chan_info[j].weight >
-			    rnr_chan_info[max].weight)
+			if (rnr_chan_info[j].weight > rnr_chan_info[max].weight)
 				max = j;
 		}
 		if (max != i) {
@@ -159,28 +157,27 @@ static void scm_update_rnr_info(struct wlan_objmgr_psoc *psoc,
 		qdf_list_peek_front(&chan->rnr_list, &cur_node);
 		while (cur_node && total_count) {
 			rnr_node = qdf_container_of(cur_node,
-						    struct scan_rnr_node,
-						    node);
+						    struct scan_rnr_node, node);
 			if (!qdf_is_macaddr_zero(&rnr_node->entry.bssid) &&
 			    req->scan_req.num_hint_bssid <
-			    WLAN_SCAN_MAX_HINT_BSSID) {
-				qdf_mem_copy(&req->scan_req.hint_bssid[
-							num_bssid].bssid,
+				    WLAN_SCAN_MAX_HINT_BSSID) {
+				qdf_mem_copy(&req->scan_req
+						      .hint_bssid[num_bssid]
+						      .bssid,
 					     &rnr_node->entry.bssid,
 					     QDF_MAC_ADDR_SIZE);
-				req->scan_req.hint_bssid[
-					num_bssid++].freq_flags = freq << 16;
+				req->scan_req.hint_bssid[num_bssid++]
+					.freq_flags = freq << 16;
 				req->scan_req.num_hint_bssid++;
 				hint = true;
 			}
 			if (rnr_node->entry.short_ssid &&
 			    req->scan_req.num_hint_s_ssid <
-				   WLAN_SCAN_MAX_HINT_S_SSID) {
-				req->scan_req.hint_s_ssid[
-					num_ssid].short_ssid =
-						rnr_node->entry.short_ssid;
-				req->scan_req.hint_s_ssid[
-					num_ssid++].freq_flags = freq << 16;
+				    WLAN_SCAN_MAX_HINT_S_SSID) {
+				req->scan_req.hint_s_ssid[num_ssid].short_ssid =
+					rnr_node->entry.short_ssid;
+				req->scan_req.hint_s_ssid[num_ssid++]
+					.freq_flags = freq << 16;
 				req->scan_req.num_hint_s_ssid++;
 				hint = true;
 			}
@@ -232,9 +229,8 @@ static void scm_add_rnr_info(struct wlan_objmgr_pdev *pdev,
 	scm_update_rnr_info(psoc, req);
 }
 #else
-static void
-scm_sort_6ghz_channel_list(struct wlan_objmgr_vdev *vdev,
-			   struct chan_list *chan_list)
+static void scm_sort_6ghz_channel_list(struct wlan_objmgr_vdev *vdev,
+				       struct chan_list *chan_list)
 {
 }
 
@@ -244,8 +240,7 @@ static void scm_add_rnr_info(struct wlan_objmgr_pdev *pdev,
 }
 #endif
 
-static inline bool
-scm_is_full_scan_by_userspace(struct chan_list *chan_list)
+static inline bool scm_is_full_scan_by_userspace(struct chan_list *chan_list)
 {
 	return (chan_list->num_chan >= FULL_SCAN_CH_COUNT_MIN_BY_USERSPACE);
 }
@@ -275,7 +270,7 @@ void scm_add_all_valid_6g_channels(struct wlan_objmgr_pdev *pdev,
 	}
 
 	cur_chan_list = qdf_mem_malloc(NUM_CHANNELS *
-				sizeof(struct regulatory_channel));
+				       sizeof(struct regulatory_channel));
 	if (!cur_chan_list)
 		return;
 
@@ -305,9 +300,9 @@ void scm_add_all_valid_6g_channels(struct wlan_objmgr_pdev *pdev,
 		if (!found && cur_chan_list[i].state != CHANNEL_STATE_DISABLE &&
 		    cur_chan_list[i].state != CHANNEL_STATE_INVALID) {
 			chan_list->chan[chan_list->num_chan].freq =
-						cur_chan_list[i].center_freq;
+				cur_chan_list[i].center_freq;
 			chan_list->chan[chan_list->num_chan].flags =
-						FLAG_SCAN_ONLY_IF_RNR_FOUND;
+				FLAG_SCAN_ONLY_IF_RNR_FOUND;
 			chan_list->num_chan++;
 		}
 	}
@@ -318,11 +313,10 @@ void scm_add_all_valid_6g_channels(struct wlan_objmgr_pdev *pdev,
 	qdf_mem_free(cur_chan_list);
 }
 
-static void
-scm_copy_valid_channels(struct wlan_objmgr_psoc *psoc,
-			enum scan_mode_6ghz scan_mode,
-			struct scan_start_request *req,
-			uint8_t *num_scan_ch)
+static void scm_copy_valid_channels(struct wlan_objmgr_psoc *psoc,
+				    enum scan_mode_6ghz scan_mode,
+				    struct scan_start_request *req,
+				    uint8_t *num_scan_ch)
 {
 	uint8_t i, num_ch = *num_scan_ch;
 	struct chan_list *chan_list = &req->scan_req.chan_list;
@@ -333,17 +327,16 @@ scm_copy_valid_channels(struct wlan_objmgr_psoc *psoc,
 		/* Don't add any 6g channels */
 		for (i = 0; i < chan_list->num_chan; i++)
 			if (!wlan_reg_is_6ghz_chan_freq(
-					chan_list->chan[i].freq))
-				chan_list->chan[num_ch++] =
-					chan_list->chan[i];
+				    chan_list->chan[i].freq))
+				chan_list->chan[num_ch++] = chan_list->chan[i];
 		break;
 	case SCAN_MODE_6G_PSC_CHANNEL:
 	case SCAN_MODE_6G_PSC_DUTY_CYCLE:
 		/*
-		 * Filter out non-PSC 6g channels if firmware doesn't
-		 * supports RNR_ONLY scan flag/feature and the scan type is
-		 * allowed to be optimized.
-		 */
+     * Filter out non-PSC 6g channels if firmware doesn't
+     * supports RNR_ONLY scan flag/feature and the scan type is
+     * allowed to be optimized.
+     */
 		if (!scm_is_6ghz_scan_optimization_supported(psoc) &&
 		    !scm_is_scan_type_exempted_from_optimization(req)) {
 			for (i = 0; i < chan_list->num_chan; i++) {
@@ -357,29 +350,29 @@ scm_copy_valid_channels(struct wlan_objmgr_psoc *psoc,
 			break;
 		}
 		/*
-		 * Consider the complete channel list if firmware supports
-		 * RNR_ONLY scan flag/feature.
-		 */
+     * Consider the complete channel list if firmware supports
+     * RNR_ONLY scan flag/feature.
+     */
 		fallthrough;
 	default:
 		/*
-		 * Allow all 2g/5g/6g channels. Below are also covered in this
-		 * 1. SCAN_MODE_6G_ALL_CHANNEL: Copy all channels and RNR flag
-		 *    won't be set for any channel.
-		 * 2. SCAN_MODE_6G_PSC_CHANNEL: Copy all channels and RNR flag
-		 *    will be set for non-PSC.
-		 * 3. SCAN_MODE_6G_PSC_DUTY_CYCLE: Copy all channels and RNR
-		 *    flag will be set for non-PSC for all scans and RNR flag
-		 *    will be set for PSC channels only for duty cycle scan.
-		 */
+     * Allow all 2g/5g/6g channels. Below are also covered in this
+     * 1. SCAN_MODE_6G_ALL_CHANNEL: Copy all channels and RNR flag
+     *    won't be set for any channel.
+     * 2. SCAN_MODE_6G_PSC_CHANNEL: Copy all channels and RNR flag
+     *    will be set for non-PSC.
+     * 3. SCAN_MODE_6G_PSC_DUTY_CYCLE: Copy all channels and RNR
+     *    flag will be set for non-PSC for all scans and RNR flag
+     *    will be set for PSC channels only for duty cycle scan.
+     */
 		num_ch = chan_list->num_chan;
 	}
 
 	*num_scan_ch = num_ch;
 }
 
-static inline void
-scm_set_rnr_flag_non_psc_6g_ch(struct chan_info *chan, uint8_t num_chan)
+static inline void scm_set_rnr_flag_non_psc_6g_ch(struct chan_info *chan,
+						  uint8_t num_chan)
 {
 	uint8_t i;
 
@@ -389,8 +382,8 @@ scm_set_rnr_flag_non_psc_6g_ch(struct chan_info *chan, uint8_t num_chan)
 			chan[i].flags = FLAG_SCAN_ONLY_IF_RNR_FOUND;
 }
 
-static inline void
-scm_set_rnr_flag_all_6g_ch(struct chan_info *chan, uint8_t num_chan)
+static inline void scm_set_rnr_flag_all_6g_ch(struct chan_info *chan,
+					      uint8_t num_chan)
 {
 	uint8_t i;
 
@@ -420,8 +413,7 @@ scm_is_6ghz_scan_optimization_supported(struct wlan_objmgr_psoc *psoc)
 }
 
 void scm_add_channel_flags(struct wlan_objmgr_vdev *vdev,
-			   struct chan_list *chan_list,
-			   uint8_t *num_chan,
+			   struct chan_list *chan_list, uint8_t *num_chan,
 			   bool is_colocated_6ghz_scan_enabled,
 			   bool is_pno_scan)
 {
@@ -444,16 +436,16 @@ void scm_add_channel_flags(struct wlan_objmgr_vdev *vdev,
 	switch (scan_mode) {
 	case SCAN_MODE_6G_RNR_ONLY:
 		/*
-		 * When the ini is set to SCAN_MODE_6G_RNR_ONLY
-		 * always set RNR flag for all(PSC and non-PSC) channels.
-		 */
+     * When the ini is set to SCAN_MODE_6G_RNR_ONLY
+     * always set RNR flag for all(PSC and non-PSC) channels.
+     */
 		scm_set_rnr_flag_all_6g_ch(&chan_list->chan[0], num_scan_chan);
 		break;
 	case SCAN_MODE_6G_PSC_CHANNEL:
 		/*
-		 * When the ini is set to SCAN_MODE_6G_PSC_CHANNEL,
-		 * always set RNR flag for non-PSC channels.
-		 */
+     * When the ini is set to SCAN_MODE_6G_PSC_CHANNEL,
+     * always set RNR flag for non-PSC channels.
+     */
 		scm_set_rnr_flag_non_psc_6g_ch(&chan_list->chan[0],
 					       num_scan_chan);
 		break;
@@ -464,43 +456,42 @@ void scm_add_channel_flags(struct wlan_objmgr_vdev *vdev,
 						   num_scan_chan);
 		else if (scan_mode == SCAN_MODE_6G_PSC_DUTY_CYCLE) {
 			if (!is_pno_scan)
-				scm_set_rnr_flag_non_psc_6g_ch(&chan_list->chan[0],
-							       num_scan_chan);
+				scm_set_rnr_flag_non_psc_6g_ch(
+					&chan_list->chan[0], num_scan_chan);
 		}
 
 		fallthrough;
 		/* Even when the scan mode is SCAN_MODE_6G_PSC_DUTY_CYCLE or
-		 * SCAN_MODE_6G_ALL_DUTY_CYCLE, it is better to add other 6 GHz
-		 * channels to the channel list and set the bit
-		 * FLAG_SCAN_ONLY_IF_RNR_FOUND for these new channels.
-		 * This can help to find the APs which have co-located APs in
-		 * given 2 GHz/5 GHz channels.
-		 * Let it fallthrough as this is already addressed through the
-		 * scan mode SCAN_MODE_6G_ALL_CHANNEL.
-		 */
+     * SCAN_MODE_6G_ALL_DUTY_CYCLE, it is better to add other 6 GHz
+     * channels to the channel list and set the bit
+     * FLAG_SCAN_ONLY_IF_RNR_FOUND for these new channels.
+     * This can help to find the APs which have co-located APs in
+     * given 2 GHz/5 GHz channels.
+     * Let it fallthrough as this is already addressed through the
+     * scan mode SCAN_MODE_6G_ALL_CHANNEL.
+     */
 	case SCAN_MODE_6G_ALL_CHANNEL:
 		/*
-		 * When the ini is set to SCAN_MODE_6G_ALL_CHANNEL,
-		 * Host fills all remaining (other than channel(s) present in
-		 * host scan req) valid 6 GHz channel(s) to scan requests and
-		 * set the flag FLAG_SCAN_ONLY_IF_RNR_FOUND for each remaining
-		 * channels.
-		 */
+     * When the ini is set to SCAN_MODE_6G_ALL_CHANNEL,
+     * Host fills all remaining (other than channel(s) present in
+     * host scan req) valid 6 GHz channel(s) to scan requests and
+     * set the flag FLAG_SCAN_ONLY_IF_RNR_FOUND for each remaining
+     * channels.
+     */
 		scm_add_all_valid_6g_channels(pdev, chan_list, num_chan,
 					      is_colocated_6ghz_scan_enabled);
 		break;
 	default:
 		/*
-		 * Don't set the RNR flag for SCAN_MODE_6G_NO_CHANNEL/
-		 * SCAN_MODE_6G_RNR_ONLY
-		 */
+     * Don't set the RNR flag for SCAN_MODE_6G_NO_CHANNEL/
+     * SCAN_MODE_6G_RNR_ONLY
+     */
 		break;
 	}
 }
 
-void
-scm_update_6ghz_channel_list(struct scan_start_request *req,
-			     struct wlan_scan_obj *scan_obj)
+void scm_update_6ghz_channel_list(struct scan_start_request *req,
+				  struct wlan_scan_obj *scan_obj)
 {
 	struct wlan_objmgr_vdev *vdev = req->vdev;
 	struct wlan_objmgr_pdev *pdev;
@@ -517,10 +508,8 @@ scm_update_6ghz_channel_list(struct scan_start_request *req,
 
 	/* Dont update the channel list for not STA mode */
 	op_mode = wlan_vdev_mlme_get_opmode(req->vdev);
-	if (op_mode == QDF_SAP_MODE ||
-	    op_mode == QDF_P2P_DEVICE_MODE ||
-	    op_mode == QDF_P2P_CLIENT_MODE ||
-	    op_mode == QDF_P2P_GO_MODE)
+	if (op_mode == QDF_SAP_MODE || op_mode == QDF_P2P_DEVICE_MODE ||
+	    op_mode == QDF_P2P_CLIENT_MODE || op_mode == QDF_P2P_GO_MODE)
 		return;
 
 	if (!wlan_reg_is_6ghz_band_set(pdev)) {
@@ -532,11 +521,11 @@ scm_update_6ghz_channel_list(struct scan_start_request *req,
 	scm_debug("6g scan mode %d", scan_mode);
 
 	/*
-	 * Host has learned RNR info/channels from previous scan. Add them to
-	 * the scan request and don't set RNR_ONLY flag to scan them without
-	 * optimization. Don't add RNR info if the scan type is exempted from
-	 * optimization.
-	 */
+   * Host has learned RNR info/channels from previous scan. Add them to
+   * the scan request and don't set RNR_ONLY flag to scan them without
+   * optimization. Don't add RNR info if the scan type is exempted from
+   * optimization.
+   */
 	if (scan_mode != SCAN_MODE_6G_NO_CHANNEL &&
 	    scm_is_full_scan_by_userspace(chan_list) &&
 	    !scm_is_scan_type_exempted_from_optimization(req))

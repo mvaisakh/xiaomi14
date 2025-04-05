@@ -5,10 +5,10 @@
  */
 
 #include "ipa_i.h"
-#include <linux/dmapool.h>
-#include <linux/delay.h>
-#include <linux/mm.h>
 #include "ipa_qmi_service.h"
+#include <linux/delay.h>
+#include <linux/dmapool.h>
+#include <linux/mm.h>
 
 #define IPA_HW_INTERFACE_WDI_VERSION 0x0001
 #define IPA_HW_WDI_RX_MBOX_START_INDEX 48
@@ -19,8 +19,7 @@
 
 #define IPA_AGGR_PKT_LIMIT 1
 #define IPA_AGGR_HARD_BYTE_LIMIT 2 /*2 Kbytes Agger hard byte limit*/
-#define UPDATE_RI_MODERATION_THRESHOLD		8
-
+#define UPDATE_RI_MODERATION_THRESHOLD 8
 
 #define IPA_WDI_CONNECTED BIT(0)
 #define IPA_WDI_ENABLED BIT(1)
@@ -48,7 +47,6 @@ static struct ipa_pm_wdi_context ipa_pm_wdi_ctx = {
 	.ipa_wrapper_pm_hdl = 0
 };
 
-
 struct ipa_wdi_res {
 	struct ipa_wdi_buffer_info *res;
 	unsigned int nents;
@@ -66,8 +64,7 @@ static void ipa3_uc_wdi_loaded_handler(void);
  * in WDI
  */
 enum ipa_hw_2_cpu_wdi_events {
-	IPA_HW_2_CPU_EVENT_WDI_ERROR =
-		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 0),
+	IPA_HW_2_CPU_EVENT_WDI_ERROR = FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 0),
 };
 
 /**
@@ -89,9 +86,9 @@ enum ipa_hw_2_cpu_wdi_events {
 enum ipa_hw_wdi_channel_states {
 	IPA_HW_WDI_CHANNEL_STATE_INITED_DISABLED = 1,
 	IPA_HW_WDI_CHANNEL_STATE_ENABLED_SUSPEND = 2,
-	IPA_HW_WDI_CHANNEL_STATE_RUNNING         = 3,
-	IPA_HW_WDI_CHANNEL_STATE_ERROR           = 4,
-	IPA_HW_WDI_CHANNEL_STATE_INVALID         = 0xFF
+	IPA_HW_WDI_CHANNEL_STATE_RUNNING = 3,
+	IPA_HW_WDI_CHANNEL_STATE_ERROR = 4,
+	IPA_HW_WDI_CHANNEL_STATE_INVALID = 0xFF
 };
 
 /**
@@ -107,21 +104,21 @@ enum ipa_hw_wdi_channel_states {
  * @IPA_CPU_2_HW_CMD_WDI_TEAR_DOWN : Command to tear down WDI Tx/ Rx Path
  */
 enum ipa_cpu_2_hw_wdi_commands {
-	IPA_CPU_2_HW_CMD_WDI_TX_SET_UP  =
+	IPA_CPU_2_HW_CMD_WDI_TX_SET_UP =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 0),
-	IPA_CPU_2_HW_CMD_WDI_RX_SET_UP  =
+	IPA_CPU_2_HW_CMD_WDI_RX_SET_UP =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 1),
 	IPA_CPU_2_HW_CMD_WDI_RX_EXT_CFG =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 2),
-	IPA_CPU_2_HW_CMD_WDI_CH_ENABLE  =
+	IPA_CPU_2_HW_CMD_WDI_CH_ENABLE =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 3),
 	IPA_CPU_2_HW_CMD_WDI_CH_DISABLE =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 4),
 	IPA_CPU_2_HW_CMD_WDI_CH_SUSPEND =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 5),
-	IPA_CPU_2_HW_CMD_WDI_CH_RESUME  =
+	IPA_CPU_2_HW_CMD_WDI_CH_RESUME =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 6),
-	IPA_CPU_2_HW_CMD_WDI_TEAR_DOWN  =
+	IPA_CPU_2_HW_CMD_WDI_TEAR_DOWN =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 7),
 };
 
@@ -130,39 +127,39 @@ enum ipa_cpu_2_hw_wdi_commands {
  * command response status to be sent to CPU.
  */
 enum ipa_hw_2_cpu_cmd_resp_status {
-	IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS            =
+	IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 0),
-	IPA_HW_2_CPU_MAX_WDI_TX_CHANNELS               =
+	IPA_HW_2_CPU_MAX_WDI_TX_CHANNELS =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 1),
-	IPA_HW_2_CPU_WDI_CE_RING_OVERRUN_POSSIBILITY   =
+	IPA_HW_2_CPU_WDI_CE_RING_OVERRUN_POSSIBILITY =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 2),
-	IPA_HW_2_CPU_WDI_CE_RING_SET_UP_FAILURE        =
+	IPA_HW_2_CPU_WDI_CE_RING_SET_UP_FAILURE =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 3),
-	IPA_HW_2_CPU_WDI_CE_RING_PARAMS_UNALIGNED      =
+	IPA_HW_2_CPU_WDI_CE_RING_PARAMS_UNALIGNED =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 4),
 	IPA_HW_2_CPU_WDI_COMP_RING_OVERRUN_POSSIBILITY =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 5),
-	IPA_HW_2_CPU_WDI_COMP_RING_SET_UP_FAILURE      =
+	IPA_HW_2_CPU_WDI_COMP_RING_SET_UP_FAILURE =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 6),
-	IPA_HW_2_CPU_WDI_COMP_RING_PARAMS_UNALIGNED    =
+	IPA_HW_2_CPU_WDI_COMP_RING_PARAMS_UNALIGNED =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 7),
-	IPA_HW_2_CPU_WDI_UNKNOWN_TX_CHANNEL            =
+	IPA_HW_2_CPU_WDI_UNKNOWN_TX_CHANNEL =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 8),
-	IPA_HW_2_CPU_WDI_TX_INVALID_FSM_TRANSITION     =
+	IPA_HW_2_CPU_WDI_TX_INVALID_FSM_TRANSITION =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 9),
-	IPA_HW_2_CPU_WDI_TX_FSM_TRANSITION_ERROR       =
+	IPA_HW_2_CPU_WDI_TX_FSM_TRANSITION_ERROR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 10),
-	IPA_HW_2_CPU_MAX_WDI_RX_CHANNELS               =
+	IPA_HW_2_CPU_MAX_WDI_RX_CHANNELS =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 11),
-	IPA_HW_2_CPU_WDI_RX_RING_PARAMS_UNALIGNED      =
+	IPA_HW_2_CPU_WDI_RX_RING_PARAMS_UNALIGNED =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 12),
-	IPA_HW_2_CPU_WDI_RX_RING_SET_UP_FAILURE        =
+	IPA_HW_2_CPU_WDI_RX_RING_SET_UP_FAILURE =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 13),
-	IPA_HW_2_CPU_WDI_UNKNOWN_RX_CHANNEL            =
+	IPA_HW_2_CPU_WDI_UNKNOWN_RX_CHANNEL =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 14),
-	IPA_HW_2_CPU_WDI_RX_INVALID_FSM_TRANSITION     =
+	IPA_HW_2_CPU_WDI_RX_INVALID_FSM_TRANSITION =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 15),
-	IPA_HW_2_CPU_WDI_RX_FSM_TRANSITION_ERROR       =
+	IPA_HW_2_CPU_WDI_RX_FSM_TRANSITION_ERROR =
 		FEATURE_ENUM_VAL(IPA_HW_FEATURE_WDI, 16),
 };
 
@@ -172,7 +169,7 @@ enum ipa_hw_2_cpu_cmd_resp_status {
  * @IPA_HW_WDI_CHANNEL_ERROR : Error is specific to channel
  */
 enum ipa_hw_wdi_errors {
-	IPA_HW_WDI_ERROR_NONE    = 0,
+	IPA_HW_WDI_ERROR_NONE = 0,
 	IPA_HW_WDI_CHANNEL_ERROR = 1
 };
 
@@ -187,11 +184,11 @@ enum ipa_hw_wdi_errors {
  * @IPA_HW_WDI_CH_ERR_RESERVED : Reserved - Not available for CPU to use
  */
 enum ipa_hw_wdi_ch_errors {
-	IPA_HW_WDI_CH_ERR_NONE                 = 0,
+	IPA_HW_WDI_CH_ERR_NONE = 0,
 	IPA_HW_WDI_TX_COMP_RING_WP_UPDATE_FAIL = 1,
-	IPA_HW_WDI_TX_FSM_ERROR                = 2,
-	IPA_HW_WDI_TX_COMP_RE_FETCH_FAIL       = 3,
-	IPA_HW_WDI_CH_ERR_RESERVED             = 0xFF
+	IPA_HW_WDI_TX_FSM_ERROR = 2,
+	IPA_HW_WDI_TX_COMP_RE_FETCH_FAIL = 3,
+	IPA_HW_WDI_CH_ERR_RESERVED = 0xFF
 };
 
 /**
@@ -211,8 +208,8 @@ struct IpaHwSharedMemWdiMapping_t {
 	u32 reserved_3F_3C;
 	u16 interfaceVersionWdi;
 	u16 reserved_43_42;
-	u8  wdi_tx_ch_0_state;
-	u8  wdi_rx_ch_0_state;
+	u8 wdi_tx_ch_0_state;
+	u8 wdi_rx_ch_0_state;
 	u16 reserved_47_46;
 } __packed;
 
@@ -247,8 +244,8 @@ struct IpaHwWdiTxSetUpCmdData_t {
 	u16 reserved_ce_ring;
 	u32 ce_ring_doorbell_pa;
 	u16 num_tx_buffers;
-	u8  ipa_pipe_number;
-	u8  reserved;
+	u8 ipa_pipe_number;
+	u8 reserved;
 } __packed;
 
 struct IpaHwWdi2TxSetUpCmdData_t {
@@ -263,8 +260,8 @@ struct IpaHwWdi2TxSetUpCmdData_t {
 	u32 ce_ring_doorbell_pa;
 	u32 ce_ring_doorbell_pa_hi;
 	u16 num_tx_buffers;
-	u8  ipa_pipe_number;
-	u8  reserved;
+	u8 ipa_pipe_number;
+	u8 reserved;
 } __packed;
 /**
  * struct IpaHwWdiRxSetUpCmdData_t -  Structure holding the parameters for
@@ -284,7 +281,7 @@ struct IpaHwWdiRxSetUpCmdData_t {
 	u32 rx_ring_base_pa;
 	u32 rx_ring_size;
 	u32 rx_ring_rp_pa;
-	u8  ipa_pipe_number;
+	u8 ipa_pipe_number;
 } __packed;
 
 struct IpaHwWdi2RxSetUpCmdData_t {
@@ -298,7 +295,7 @@ struct IpaHwWdi2RxSetUpCmdData_t {
 	u32 rx_comp_ring_size;
 	u32 rx_comp_ring_wp_pa;
 	u32 rx_comp_ring_wp_pa_hi;
-	u8  ipa_pipe_number;
+	u8 ipa_pipe_number;
 } __packed;
 /**
  * union IpaHwWdiRxExtCfgCmdData_t - Structure holding the parameters for
@@ -311,9 +308,9 @@ struct IpaHwWdi2RxSetUpCmdData_t {
  */
 union IpaHwWdiRxExtCfgCmdData_t {
 	struct IpaHwWdiRxExtCfgCmdParams_t {
-		u32 ipa_pipe_number:8;
-		u32 qmap_id:8;
-		u32 reserved:16;
+		u32 ipa_pipe_number : 8;
+		u32 qmap_id : 8;
+		u32 reserved : 16;
 	} __packed params;
 	u32 raw32b;
 } __packed;
@@ -332,8 +329,8 @@ union IpaHwWdiRxExtCfgCmdData_t {
  */
 union IpaHwWdiCommonChCmdData_t {
 	struct IpaHwWdiCommonChCmdParams_t {
-		u32 ipa_pipe_number:8;
-		u32 reserved:24;
+		u32 ipa_pipe_number : 8;
+		u32 reserved : 24;
 	} __packed params;
 	u32 raw32b;
 } __packed;
@@ -352,33 +349,32 @@ union IpaHwWdiCommonChCmdData_t {
  */
 union IpaHwWdiErrorEventData_t {
 	struct IpaHwWdiErrorEventParams_t {
-		u32 wdi_error_type:8;
-		u32 reserved:8;
-		u32 ipa_pipe_number:8;
-		u32 wdi_ch_err_type:8;
+		u32 wdi_error_type : 8;
+		u32 reserved : 8;
+		u32 ipa_pipe_number : 8;
+		u32 wdi_ch_err_type : 8;
 	} __packed params;
 	u32 raw32b;
 } __packed;
 
 static void ipa3_uc_wdi_event_log_info_handler(
-struct IpaHwEventLogInfoData_t *uc_event_top_mmio)
+	struct IpaHwEventLogInfoData_t *uc_event_top_mmio)
 
 {
 	struct Ipa3HwEventInfoData_t *stats_ptr = &uc_event_top_mmio->statsInfo;
 
-	if ((uc_event_top_mmio->protocolMask &
-		(1 << IPA_HW_PROTOCOL_WDI)) == 0) {
+	if ((uc_event_top_mmio->protocolMask & (1 << IPA_HW_PROTOCOL_WDI)) ==
+	    0) {
 		IPAERR("WDI protocol missing 0x%x\n",
-			uc_event_top_mmio->protocolMask);
+		       uc_event_top_mmio->protocolMask);
 		return;
 	}
 
 	if (stats_ptr->featureInfo[IPA_HW_PROTOCOL_WDI].params.size !=
-		sizeof(struct IpaHwStatsWDIInfoData_t)) {
+	    sizeof(struct IpaHwStatsWDIInfoData_t)) {
 		IPAERR("wdi stats sz invalid exp=%zu is=%u\n",
-			sizeof(struct IpaHwStatsWDIInfoData_t),
-			stats_ptr->featureInfo[
-				IPA_HW_PROTOCOL_WDI].params.size);
+		       sizeof(struct IpaHwStatsWDIInfoData_t),
+		       stats_ptr->featureInfo[IPA_HW_PROTOCOL_WDI].params.size);
 		return;
 	}
 
@@ -387,45 +383,43 @@ struct IpaHwEventLogInfoData_t *uc_event_top_mmio)
 		stats_ptr->featureInfo[IPA_HW_PROTOCOL_WDI].params.offset;
 	IPAERR("WDI stats ofst=0x%x\n", ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_ofst);
 	if (ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_ofst +
-		sizeof(struct IpaHwStatsWDIInfoData_t) >=
-		ipa3_ctx->ctrl->ipa_reg_base_ofst +
-		ipahal_get_reg_n_ofst(IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
-		ipa3_ctx->smem_sz) {
+		    sizeof(struct IpaHwStatsWDIInfoData_t) >=
+	    ipa3_ctx->ctrl->ipa_reg_base_ofst +
+		    ipahal_get_reg_n_ofst(IPA_SW_AREA_RAM_DIRECT_ACCESS_n, 0) +
+		    ipa3_ctx->smem_sz) {
 		IPAERR("uc_wdi_stats 0x%x outside SRAM\n",
-			ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_ofst);
+		       ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_ofst);
 		return;
 	}
 
 	ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio =
 		ioremap(ipa3_ctx->ipa_wrapper_base +
-		ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_ofst,
-		sizeof(struct IpaHwStatsWDIInfoData_t));
+				ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_ofst,
+			sizeof(struct IpaHwStatsWDIInfoData_t));
 	if (!ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio) {
 		IPAERR("fail to ioremap uc wdi stats\n");
 		return;
 	}
 }
 
-static void ipa3_uc_wdi_event_handler(struct IpaHwSharedMemCommonMapping_t
-				     *uc_sram_mmio)
+static void
+ipa3_uc_wdi_event_handler(struct IpaHwSharedMemCommonMapping_t *uc_sram_mmio)
 
 {
 	union IpaHwWdiErrorEventData_t wdi_evt;
 	struct IpaHwSharedMemWdiMapping_t *wdi_sram_mmio_ext;
 
-	if (uc_sram_mmio->eventOp ==
-		IPA_HW_2_CPU_EVENT_WDI_ERROR) {
+	if (uc_sram_mmio->eventOp == IPA_HW_2_CPU_EVENT_WDI_ERROR) {
 		wdi_evt.raw32b = uc_sram_mmio->eventParams;
 		IPADBG("uC WDI evt errType=%u pipe=%d cherrType=%u\n",
-			wdi_evt.params.wdi_error_type,
-			wdi_evt.params.ipa_pipe_number,
-			wdi_evt.params.wdi_ch_err_type);
+		       wdi_evt.params.wdi_error_type,
+		       wdi_evt.params.ipa_pipe_number,
+		       wdi_evt.params.wdi_ch_err_type);
 		wdi_sram_mmio_ext =
-			(struct IpaHwSharedMemWdiMapping_t *)
-			uc_sram_mmio;
+			(struct IpaHwSharedMemWdiMapping_t *)uc_sram_mmio;
 		IPADBG("tx_ch_state=%u rx_ch_state=%u\n",
-			wdi_sram_mmio_ext->wdi_tx_ch_0_state,
-			wdi_sram_mmio_ext->wdi_rx_ch_0_state);
+		       wdi_sram_mmio_ext->wdi_tx_ch_0_state,
+		       wdi_sram_mmio_ext->wdi_rx_ch_0_state);
 	}
 }
 
@@ -450,24 +444,24 @@ int ipa3_get_wdi_gsi_stats(struct ipa_uc_dbg_ring_stats *stats)
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
 	for (i = 0; i < MAX_WDI2_CHANNELS; i++) {
 		stats->u.ring[i].ringFull = ioread32(
-			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio
-			+ i * IPA3_UC_DEBUG_STATS_OFF +
+			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio +
+			i * IPA3_UC_DEBUG_STATS_OFF +
 			IPA3_UC_DEBUG_STATS_RINGFULL_OFF);
 		stats->u.ring[i].ringEmpty = ioread32(
-			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio
-			+ i * IPA3_UC_DEBUG_STATS_OFF +
+			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio +
+			i * IPA3_UC_DEBUG_STATS_OFF +
 			IPA3_UC_DEBUG_STATS_RINGEMPTY_OFF);
 		stats->u.ring[i].ringUsageHigh = ioread32(
-			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio
-			+ i * IPA3_UC_DEBUG_STATS_OFF +
+			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio +
+			i * IPA3_UC_DEBUG_STATS_OFF +
 			IPA3_UC_DEBUG_STATS_RINGUSAGEHIGH_OFF);
 		stats->u.ring[i].ringUsageLow = ioread32(
-			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio
-			+ i * IPA3_UC_DEBUG_STATS_OFF +
+			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio +
+			i * IPA3_UC_DEBUG_STATS_OFF +
 			IPA3_UC_DEBUG_STATS_RINGUSAGELOW_OFF);
 		stats->u.ring[i].RingUtilCount = ioread32(
-			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio
-			+ i * IPA3_UC_DEBUG_STATS_OFF +
+			ipa3_ctx->wdi2_ctx.dbg_stats.uc_dbg_stats_mmio +
+			i * IPA3_UC_DEBUG_STATS_OFF +
 			IPA3_UC_DEBUG_STATS_RINGUTILCOUNT_OFF);
 	}
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
@@ -486,15 +480,16 @@ int ipa3_get_wdi_gsi_stats(struct ipa_uc_dbg_ring_stats *stats)
  */
 int ipa_get_wdi_stats(struct IpaHwStatsWDIInfoData_t *stats)
 {
-#define TX_STATS(y) stats->tx_ch_stats.y = \
-	ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio->tx_ch_stats.y
-#define RX_STATS(y) stats->rx_ch_stats.y = \
-	ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio->rx_ch_stats.y
+#define TX_STATS(y)            \
+	stats->tx_ch_stats.y = \
+		ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio->tx_ch_stats.y
+#define RX_STATS(y)            \
+	stats->rx_ch_stats.y = \
+		ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio->rx_ch_stats.y
 
 	if (!stats || !ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio) {
-		IPAERR("bad parms stats=%pK wdi_stats=%pK\n",
-			stats,
-			ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio);
+		IPAERR("bad parms stats=%pK wdi_stats=%pK\n", stats,
+		       ipa3_ctx->uc_wdi_ctx.wdi_uc_stats_mmio);
 		return -EINVAL;
 	}
 	IPA_ACTIVE_CLIENTS_INC_SIMPLE();
@@ -555,8 +550,7 @@ int ipa3_wdi_init(void)
 	uc_wdi_cbs.ipa_uc_event_hdlr = ipa3_uc_wdi_event_handler;
 	uc_wdi_cbs.ipa_uc_event_log_info_hdlr =
 		ipa3_uc_wdi_event_log_info_handler;
-	uc_wdi_cbs.ipa_uc_loaded_hdlr =
-		ipa3_uc_wdi_loaded_handler;
+	uc_wdi_cbs.ipa_uc_loaded_hdlr = ipa3_uc_wdi_loaded_handler;
 
 	ipa3_uc_register_handlers(IPA_HW_FEATURE_WDI, &uc_wdi_cbs);
 
@@ -564,13 +558,13 @@ int ipa3_wdi_init(void)
 }
 
 static int ipa_create_ap_smmu_mapping_pa(phys_addr_t pa, size_t len,
-		bool device, unsigned long *iova)
+					 bool device, unsigned long *iova)
 {
 	struct ipa_smmu_cb_ctx *cb = ipa3_get_smmu_ctx(IPA_SMMU_CB_AP);
 	unsigned long va = roundup(cb->next_addr, PAGE_SIZE);
 	int prot = IOMMU_READ | IOMMU_WRITE;
-	size_t true_len = roundup(len + pa - rounddown(pa, PAGE_SIZE),
-			PAGE_SIZE);
+	size_t true_len =
+		roundup(len + pa - rounddown(pa, PAGE_SIZE), PAGE_SIZE);
 	int ret;
 
 	if (!cb->valid) {
@@ -582,8 +576,7 @@ static int ipa_create_ap_smmu_mapping_pa(phys_addr_t pa, size_t len,
 		va = roundup(cb->next_addr, len);
 
 	ret = ipa3_iommu_map(cb->iommu_domain, va, rounddown(pa, PAGE_SIZE),
-			true_len,
-			device ? (prot | IOMMU_MMIO) : prot);
+			     true_len, device ? (prot | IOMMU_MMIO) : prot);
 	if (ret) {
 		IPAERR("iommu map failed for pa=%pa len=%zu\n", &pa, true_len);
 		return -EINVAL;
@@ -598,13 +591,13 @@ static int ipa_create_ap_smmu_mapping_pa(phys_addr_t pa, size_t len,
 }
 
 static int ipa_create_uc_smmu_mapping_pa(phys_addr_t pa, size_t len,
-		bool device, unsigned long *iova)
+					 bool device, unsigned long *iova)
 {
 	struct ipa_smmu_cb_ctx *cb = ipa3_get_smmu_ctx(IPA_SMMU_CB_UC);
 	unsigned long va = roundup(cb->next_addr, PAGE_SIZE);
 	int prot = IOMMU_READ | IOMMU_WRITE;
-	size_t true_len = roundup(len + pa - rounddown(pa, PAGE_SIZE),
-			PAGE_SIZE);
+	size_t true_len =
+		roundup(len + pa - rounddown(pa, PAGE_SIZE), PAGE_SIZE);
 	int ret;
 
 	if (!cb->valid) {
@@ -613,8 +606,7 @@ static int ipa_create_uc_smmu_mapping_pa(phys_addr_t pa, size_t len,
 	}
 
 	ret = ipa3_iommu_map(cb->iommu_domain, va, rounddown(pa, PAGE_SIZE),
-			true_len,
-			device ? (prot | IOMMU_MMIO) : prot);
+			     true_len, device ? (prot | IOMMU_MMIO) : prot);
 	if (ret) {
 		IPAERR("iommu map failed for pa=%pa len=%zu\n", &pa, true_len);
 		return -EINVAL;
@@ -627,7 +619,7 @@ static int ipa_create_uc_smmu_mapping_pa(phys_addr_t pa, size_t len,
 }
 
 static int ipa_create_ap_smmu_mapping_sgt(struct sg_table *sgt,
-		unsigned long *iova)
+					  unsigned long *iova)
 {
 	struct ipa_smmu_cb_ctx *cb = ipa3_get_smmu_ctx(IPA_SMMU_CB_AP);
 	unsigned long va = roundup(cb->next_addr, PAGE_SIZE);
@@ -654,8 +646,7 @@ static int ipa_create_ap_smmu_mapping_sgt(struct sg_table *sgt,
 	}
 
 	if (len > PAGE_SIZE) {
-		va = roundup(cb->next_addr,
-				roundup_pow_of_two(len));
+		va = roundup(cb->next_addr, roundup_pow_of_two(len));
 		start_iova = va;
 	}
 
@@ -666,8 +657,8 @@ static int ipa_create_ap_smmu_mapping_sgt(struct sg_table *sgt,
 
 		ret = ipa3_iommu_map(cb->iommu_domain, va, phys, len, prot);
 		if (ret) {
-			IPAERR("iommu map failed for pa=%pa len=%zu\n",
-					&phys, len);
+			IPAERR("iommu map failed for pa=%pa len=%zu\n", &phys,
+			       len);
 			goto bad_mapping;
 		}
 		va += len;
@@ -686,13 +677,12 @@ static int ipa_create_ap_smmu_mapping_sgt(struct sg_table *sgt,
 bad_mapping:
 	for_each_sg(sgt->sgl, sg, count, i)
 		iommu_unmap(cb->iommu_domain, sg_dma_address(sg),
-				sg_dma_len(sg));
+			    sg_dma_len(sg));
 	return -EINVAL;
 }
 
-
 static int ipa_create_uc_smmu_mapping_sgt(struct sg_table *sgt,
-		unsigned long *iova)
+					  unsigned long *iova)
 {
 	struct ipa_smmu_cb_ctx *cb = ipa3_get_smmu_ctx(IPA_SMMU_CB_UC);
 	unsigned long va = roundup(cb->next_addr, PAGE_SIZE);
@@ -721,8 +711,8 @@ static int ipa_create_uc_smmu_mapping_sgt(struct sg_table *sgt,
 
 		ret = ipa3_iommu_map(cb->iommu_domain, va, phys, len, prot);
 		if (ret) {
-			IPAERR("iommu map failed for pa=%pa len=%zu\n",
-					&phys, len);
+			IPAERR("iommu map failed for pa=%pa len=%zu\n", &phys,
+			       len);
 			goto bad_mapping;
 		}
 		va += len;
@@ -737,7 +727,7 @@ static int ipa_create_uc_smmu_mapping_sgt(struct sg_table *sgt,
 bad_mapping:
 	for_each_sg(sgt->sgl, sg, count, i)
 		iommu_unmap(cb->iommu_domain, sg_dma_address(sg),
-				sg_dma_len(sg));
+			    sg_dma_len(sg));
 	return -EINVAL;
 }
 
@@ -754,8 +744,7 @@ static void ipa_release_ap_smmu_mappings(enum ipa_client_type client)
 			end = IPA_WDI_CE_DB_RES;
 	} else {
 		start = IPA_WDI_RX_RING_RES;
-		if (ipa3_ctx->ipa_wdi2 ||
-			(ipa_get_wdi_version() >= IPA_WDI_3))
+		if (ipa3_ctx->ipa_wdi2 || (ipa_get_wdi_version() >= IPA_WDI_3))
 			end = IPA_WDI_RX_COMP_RING_WP_RES;
 		else
 			end = IPA_WDI_RX_RING_RP_RES;
@@ -765,8 +754,8 @@ static void ipa_release_ap_smmu_mappings(enum ipa_client_type client)
 		if (wdi_res[i].valid) {
 			for (j = 0; j < wdi_res[i].nents; j++) {
 				iommu_unmap(cb->iommu_domain,
-					wdi_res[i].res[j].iova,
-					wdi_res[i].res[j].size);
+					    wdi_res[i].res[j].iova,
+					    wdi_res[i].res[j].size);
 				ipa3_ctx->wdi_map_cnt--;
 			}
 			kfree(wdi_res[i].res);
@@ -802,8 +791,8 @@ static void ipa_release_uc_smmu_mappings(enum ipa_client_type client)
 		if (wdi_res[i].valid) {
 			for (j = 0; j < wdi_res[i].nents; j++) {
 				iommu_unmap(cb->iommu_domain,
-					wdi_res[i].res[j].iova,
-					wdi_res[i].res[j].size);
+					    wdi_res[i].res[j].iova,
+					    wdi_res[i].res[j].size);
 				ipa3_ctx->wdi_map_cnt--;
 			}
 			kfree(wdi_res[i].res);
@@ -814,16 +803,15 @@ static void ipa_release_uc_smmu_mappings(enum ipa_client_type client)
 
 	if (ipa3_ctx->wdi_map_cnt == 0)
 		cb->next_addr = cb->va_end;
-
 }
 
 static void ipa_save_uc_smmu_mapping_pa(int res_idx, phys_addr_t pa,
-		unsigned long iova, size_t len)
+					unsigned long iova, size_t len)
 {
-	IPADBG("--res_idx=%d pa=0x%pa iova=0x%lx sz=0x%zx\n", res_idx,
-		&pa, iova, len);
-	wdi_res[res_idx].res = kzalloc(sizeof(*wdi_res[res_idx].res),
-		GFP_KERNEL);
+	IPADBG("--res_idx=%d pa=0x%pa iova=0x%lx sz=0x%zx\n", res_idx, &pa,
+	       iova, len);
+	wdi_res[res_idx].res =
+		kzalloc(sizeof(*wdi_res[res_idx].res), GFP_KERNEL);
 	if (!wdi_res[res_idx].res) {
 		WARN_ON(1);
 		return;
@@ -832,15 +820,15 @@ static void ipa_save_uc_smmu_mapping_pa(int res_idx, phys_addr_t pa,
 	wdi_res[res_idx].valid = true;
 	wdi_res[res_idx].res->pa = rounddown(pa, PAGE_SIZE);
 	wdi_res[res_idx].res->iova = rounddown(iova, PAGE_SIZE);
-	wdi_res[res_idx].res->size = roundup(len + pa - rounddown(pa,
-				PAGE_SIZE), PAGE_SIZE);
+	wdi_res[res_idx].res->size =
+		roundup(len + pa - rounddown(pa, PAGE_SIZE), PAGE_SIZE);
 	IPADBG("res_idx=%d pa=0x%pa iova=0x%lx sz=0x%zx\n", res_idx,
-			&wdi_res[res_idx].res->pa, wdi_res[res_idx].res->iova,
-			wdi_res[res_idx].res->size);
+	       &wdi_res[res_idx].res->pa, wdi_res[res_idx].res->iova,
+	       wdi_res[res_idx].res->size);
 }
 
 static void ipa_save_uc_smmu_mapping_sgt(int res_idx, struct sg_table *sgt,
-		unsigned long iova)
+					 unsigned long iova)
 {
 	int i;
 	struct scatterlist *sg;
@@ -851,9 +839,8 @@ static void ipa_save_uc_smmu_mapping_sgt(int res_idx, struct sg_table *sgt,
 		return;
 	}
 
-	wdi_res[res_idx].res = kcalloc(sgt->nents,
-		sizeof(*wdi_res[res_idx].res),
-			GFP_KERNEL);
+	wdi_res[res_idx].res =
+		kcalloc(sgt->nents, sizeof(*wdi_res[res_idx].res), GFP_KERNEL);
 	if (!wdi_res[res_idx].res) {
 		WARN_ON(1);
 		return;
@@ -864,19 +851,19 @@ static void ipa_save_uc_smmu_mapping_sgt(int res_idx, struct sg_table *sgt,
 		/* directly get sg_tbl PA from wlan */
 		wdi_res[res_idx].res[i].pa = sg->dma_address;
 		wdi_res[res_idx].res[i].iova = curr_iova;
-		wdi_res[res_idx].res[i].size = PAGE_ALIGN(sg->offset +
-				sg->length);
+		wdi_res[res_idx].res[i].size =
+			PAGE_ALIGN(sg->offset + sg->length);
 		IPADBG("res_idx=%d pa=0x%pa iova=0x%lx sz=0x%zx\n", res_idx,
-			&wdi_res[res_idx].res[i].pa,
-			wdi_res[res_idx].res[i].iova,
-			wdi_res[res_idx].res[i].size);
+		       &wdi_res[res_idx].res[i].pa,
+		       wdi_res[res_idx].res[i].iova,
+		       wdi_res[res_idx].res[i].size);
 		curr_iova += wdi_res[res_idx].res[i].size;
 	}
 }
 
-int ipa_create_uc_smmu_mapping(int res_idx, bool wlan_smmu_en,
-		phys_addr_t pa, struct sg_table *sgt, size_t len, bool device,
-		unsigned long *iova)
+int ipa_create_uc_smmu_mapping(int res_idx, bool wlan_smmu_en, phys_addr_t pa,
+			       struct sg_table *sgt, size_t len, bool device,
+			       unsigned long *iova)
 {
 	/* support for SMMU on WLAN but no SMMU on IPA */
 	if (wlan_smmu_en && ipa3_ctx->s1_bypass_arr[IPA_SMMU_CB_UC]) {
@@ -892,8 +879,10 @@ int ipa_create_uc_smmu_mapping(int res_idx, bool wlan_smmu_en,
 
 	/* no SMMU on WLAN but SMMU on IPA */
 	if (!wlan_smmu_en && !ipa3_ctx->s1_bypass_arr[IPA_SMMU_CB_UC]) {
-		if (ipa_create_uc_smmu_mapping_pa(pa, len,
-			(res_idx == IPA_WDI_CE_DB_RES) ? true : false, iova)) {
+		if (ipa_create_uc_smmu_mapping_pa(
+			    pa, len,
+			    (res_idx == IPA_WDI_CE_DB_RES) ? true : false,
+			    iova)) {
 			IPAERR("Fail to create mapping res %d\n", res_idx);
 			return -EFAULT;
 		}
@@ -908,11 +897,13 @@ int ipa_create_uc_smmu_mapping(int res_idx, bool wlan_smmu_en,
 		case IPA_WDI_RX_COMP_RING_WP_RES:
 		case IPA_WDI_CE_DB_RES:
 		case IPA_WDI_TX_DB_RES:
-			if (ipa_create_uc_smmu_mapping_pa(pa, len,
-				(res_idx == IPA_WDI_CE_DB_RES) ? true : false,
-				iova)) {
+			if (ipa_create_uc_smmu_mapping_pa(
+				    pa, len,
+				    (res_idx == IPA_WDI_CE_DB_RES) ? true :
+								     false,
+				    iova)) {
 				IPAERR("Fail to create mapping res %d\n",
-						res_idx);
+				       res_idx);
 				return -EFAULT;
 			}
 			ipa_save_uc_smmu_mapping_pa(res_idx, pa, *iova, len);
@@ -923,7 +914,7 @@ int ipa_create_uc_smmu_mapping(int res_idx, bool wlan_smmu_en,
 		case IPA_WDI_CE_RING_RES:
 			if (ipa_create_uc_smmu_mapping_sgt(sgt, iova)) {
 				IPAERR("Fail to create mapping res %d\n",
-						res_idx);
+				       res_idx);
 				WARN_ON(1);
 				return -EFAULT;
 			}
@@ -943,28 +934,27 @@ void ipa3_release_wdi3_gsi_smmu_mappings(u8 dir)
 	int i, j, start, end;
 
 	if ((dir == IPA_WDI3_TX_DIR) || (dir == IPA_WDI3_TX1_DIR)) {
-		start = (dir == IPA_WDI3_TX_DIR) ?
-				IPA_WDI_TX_RING_RES :
-				IPA_WDI_TX1_RING_RES;
-		end = (dir == IPA_WDI3_TX_DIR) ?
-				IPA_WDI_TX_DB_RES : IPA_WDI_TX1_DB_RES;
+		start = (dir == IPA_WDI3_TX_DIR) ? IPA_WDI_TX_RING_RES :
+						   IPA_WDI_TX1_RING_RES;
+		end = (dir == IPA_WDI3_TX_DIR) ? IPA_WDI_TX_DB_RES :
+						 IPA_WDI_TX1_DB_RES;
 	} else if (dir == IPA_WDI3_TX2_DIR) {
 		start = IPA_WDI_TX2_RING_RES;
 		end = IPA_WDI_TX2_DB_RES;
 	} else if (dir == IPA_WDI3_RX_DIR) {
 		start = IPA_WDI_RX_RING_RES;
-                end = IPA_WDI_RX_COMP_RING_WP_RES;
+		end = IPA_WDI_RX_COMP_RING_WP_RES;
 	} else {
-		 start = IPA_WDI_RX2_RING_RES;
-                end = IPA_WDI_RX2_COMP_RING_WP_RES;
+		start = IPA_WDI_RX2_RING_RES;
+		end = IPA_WDI_RX2_COMP_RING_WP_RES;
 	}
 
 	for (i = start; i <= end; i++) {
 		if (wdi_res[i].valid) {
 			for (j = 0; j < wdi_res[i].nents; j++) {
 				iommu_unmap(cb->iommu_domain,
-					wdi_res[i].res[j].iova,
-					wdi_res[i].res[j].size);
+					    wdi_res[i].res[j].iova,
+					    wdi_res[i].res[j].size);
 				ipa3_ctx->wdi_map_cnt--;
 			}
 			kfree(wdi_res[i].res);
@@ -977,9 +967,9 @@ void ipa3_release_wdi3_gsi_smmu_mappings(u8 dir)
 		cb->next_addr = cb->va_end;
 }
 
-int ipa_create_gsi_smmu_mapping(int res_idx, bool wlan_smmu_en,
-		phys_addr_t pa, struct sg_table *sgt, size_t len, bool device,
-		unsigned long *iova)
+int ipa_create_gsi_smmu_mapping(int res_idx, bool wlan_smmu_en, phys_addr_t pa,
+				struct sg_table *sgt, size_t len, bool device,
+				unsigned long *iova)
 {
 	/* support for SMMU on WLAN but no SMMU on IPA */
 	if (wlan_smmu_en && ipa3_ctx->s1_bypass_arr[IPA_SMMU_CB_AP]) {
@@ -995,11 +985,11 @@ int ipa_create_gsi_smmu_mapping(int res_idx, bool wlan_smmu_en,
 
 	/* no SMMU on WLAN but SMMU on IPA */
 	if (!wlan_smmu_en && !ipa3_ctx->s1_bypass_arr[IPA_SMMU_CB_AP]) {
-		if (ipa_create_ap_smmu_mapping_pa(pa, len,
-				(res_idx == IPA_WDI_CE_DB_RES) ? true : false,
-					iova)) {
-			IPAERR("Fail to create mapping res %d\n",
-					res_idx);
+		if (ipa_create_ap_smmu_mapping_pa(
+			    pa, len,
+			    (res_idx == IPA_WDI_CE_DB_RES) ? true : false,
+			    iova)) {
+			IPAERR("Fail to create mapping res %d\n", res_idx);
 			return -EFAULT;
 		}
 		ipa_save_uc_smmu_mapping_pa(res_idx, pa, *iova, len);
@@ -1019,12 +1009,15 @@ int ipa_create_gsi_smmu_mapping(int res_idx, bool wlan_smmu_en,
 		case IPA_WDI_CE2_DB_RES:
 		case IPA_WDI_TX2_DB_RES:
 
-			if (ipa_create_ap_smmu_mapping_pa(pa, len,
-				((res_idx == IPA_WDI_CE_DB_RES) ||
-				(res_idx == IPA_WDI_CE2_DB_RES)) ? true : false,
-						iova)) {
+			if (ipa_create_ap_smmu_mapping_pa(
+				    pa, len,
+				    ((res_idx == IPA_WDI_CE_DB_RES) ||
+				     (res_idx == IPA_WDI_CE2_DB_RES)) ?
+					    true :
+					    false,
+				    iova)) {
 				IPAERR("Fail to create mapping res %d\n",
-						res_idx);
+				       res_idx);
 				return -EFAULT;
 			}
 			ipa_save_uc_smmu_mapping_pa(res_idx, pa, *iova, len);
@@ -1042,7 +1035,7 @@ int ipa_create_gsi_smmu_mapping(int res_idx, bool wlan_smmu_en,
 
 			if (ipa_create_ap_smmu_mapping_sgt(sgt, iova)) {
 				IPAERR("Fail to create mapping res %d\n",
-						res_idx);
+				       res_idx);
 				return -EFAULT;
 			}
 			ipa_save_uc_smmu_mapping_sgt(res_idx, sgt, *iova);
@@ -1101,10 +1094,10 @@ static void ipa_gsi_chan_err_cb(struct gsi_chan_err_notify *notify)
 	}
 	ipa_assert();
 }
-static int ipa3_wdi2_gsi_alloc_evt_ring(
-			struct gsi_evt_ring_props *evt_ring_props,
-			enum ipa_client_type client,
-			unsigned long *evt_ring_hdl)
+static int
+ipa3_wdi2_gsi_alloc_evt_ring(struct gsi_evt_ring_props *evt_ring_props,
+			     enum ipa_client_type client,
+			     unsigned long *evt_ring_hdl)
 {
 	union __packed gsi_evt_scratch evt_scratch;
 	int result = -EFAULT;
@@ -1124,20 +1117,17 @@ static int ipa3_wdi2_gsi_alloc_evt_ring(
 	evt_ring_props->int_modt = IPA_GSI_EVT_RING_INT_MODT;
 	evt_ring_props->int_modc = 1;
 	IPADBG("GSI evt ring len: %d\n", evt_ring_props->ring_len);
-	IPADBG("client=%d moderation threshold cycles=%u cnt=%u\n",
-			client,
-			evt_ring_props->int_modt,
-			evt_ring_props->int_modc);
+	IPADBG("client=%d moderation threshold cycles=%u cnt=%u\n", client,
+	       evt_ring_props->int_modt, evt_ring_props->int_modc);
 
-
-	result = gsi_alloc_evt_ring(evt_ring_props,
-			ipa3_ctx->gsi_dev_hdl, evt_ring_hdl);
+	result = gsi_alloc_evt_ring(evt_ring_props, ipa3_ctx->gsi_dev_hdl,
+				    evt_ring_hdl);
 	IPADBG("gsi_alloc_evt_ring result: %d\n", result);
 	if (result != GSI_STATUS_SUCCESS)
 		goto fail_alloc_evt_ring;
 
 	evt_scratch.wdi.update_ri_moderation_config =
-				UPDATE_RI_MODERATION_THRESHOLD;
+		UPDATE_RI_MODERATION_THRESHOLD;
 	evt_scratch.wdi.update_ri_mod_timer_running = 0;
 	evt_scratch.wdi.evt_comp_count = 0;
 	evt_scratch.wdi.last_update_ri = 0;
@@ -1152,21 +1142,17 @@ static int ipa3_wdi2_gsi_alloc_evt_ring(
 
 fail_alloc_evt_ring:
 	return result;
-
 }
 static int ipa3_wdi2_gsi_alloc_channel_ring(
-				struct gsi_chan_props *channel_props,
-				enum ipa_client_type client,
-				unsigned long *chan_hdl,
-				unsigned long evt_ring_hdl)
+	struct gsi_chan_props *channel_props, enum ipa_client_type client,
+	unsigned long *chan_hdl, unsigned long evt_ring_hdl)
 {
 	int result = -EFAULT;
 	const struct ipa_gsi_ep_config *ep_cfg;
 
 	ep_cfg = ipa_get_gsi_ep_info(client);
 	if (!ep_cfg) {
-		IPAERR("Failed getting GSI EP info for client=%d\n",
-				client);
+		IPAERR("Failed getting GSI EP info for client=%d\n", client);
 		return -EPERM;
 	}
 
@@ -1192,7 +1178,7 @@ static int ipa3_wdi2_gsi_alloc_channel_ring(
 	channel_props->xfer_cb = NULL;
 
 	IPADBG("channel ring  base vaddr = 0x%pa\n",
-			channel_props->ring_base_vaddr);
+	       channel_props->ring_base_vaddr);
 
 	channel_props->use_db_eng = GSI_CHAN_DB_MODE;
 	channel_props->max_prefetch = GSI_ONE_PREFETCH_SEG;
@@ -1201,9 +1187,8 @@ static int ipa3_wdi2_gsi_alloc_channel_ring(
 	channel_props->err_cb = ipa_gsi_chan_err_cb;
 
 	IPADBG("Allocating GSI channel\n");
-	result =  gsi_alloc_channel(channel_props,
-			ipa3_ctx->gsi_dev_hdl,
-			chan_hdl);
+	result = gsi_alloc_channel(channel_props, ipa3_ctx->gsi_dev_hdl,
+				   chan_hdl);
 	if (result != GSI_STATUS_SUCCESS)
 		goto fail_alloc_channel;
 
@@ -1213,9 +1198,8 @@ fail_alloc_channel:
 	return result;
 }
 
-
 int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
-	struct ipa_wdi_out_params *out)
+			      struct ipa_wdi_out_params *out)
 {
 	u32 len;
 	int ipa_ep_idx, num_ring_ele;
@@ -1259,33 +1243,33 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 	if (IPA_CLIENT_IS_CONS(in->sys.client)) {
 		if (in->smmu_enabled) {
 			IPADBG("comp_ring_size=%d\n",
-				in->u.dl_smmu.comp_ring_size);
+			       in->u.dl_smmu.comp_ring_size);
 			IPADBG("ce_ring_size=%d\n", in->u.dl_smmu.ce_ring_size);
 			IPADBG("ce_ring_doorbell_pa=0x%pa\n",
-					&in->u.dl_smmu.ce_door_bell_pa);
+			       &in->u.dl_smmu.ce_door_bell_pa);
 			IPADBG("num_tx_buffers=%d\n",
-				in->u.dl_smmu.num_tx_buffers);
+			       in->u.dl_smmu.num_tx_buffers);
 		} else {
 			IPADBG("comp_ring_base_pa=0x%pa\n",
-					&in->u.dl.comp_ring_base_pa);
+			       &in->u.dl.comp_ring_base_pa);
 			IPADBG("comp_ring_size=%d\n", in->u.dl.comp_ring_size);
 			IPADBG("ce_ring_base_pa=0x%pa\n",
-				&in->u.dl.ce_ring_base_pa);
+			       &in->u.dl.ce_ring_base_pa);
 			IPADBG("ce_ring_size=%d\n", in->u.dl.ce_ring_size);
 			IPADBG("ce_ring_doorbell_pa=0x%pa\n",
-					&in->u.dl.ce_door_bell_pa);
+			       &in->u.dl.ce_door_bell_pa);
 			IPADBG("num_tx_buffers=%d\n", in->u.dl.num_tx_buffers);
 		}
 	} else {
 		if (in->smmu_enabled) {
 			IPADBG("rx_ring_size=%d\n",
-				in->u.ul_smmu.rdy_ring_size);
+			       in->u.ul_smmu.rdy_ring_size);
 			IPADBG("rx_ring_rp_pa=0x%pa\n",
-				&in->u.ul_smmu.rdy_ring_rp_pa);
+			       &in->u.ul_smmu.rdy_ring_rp_pa);
 			IPADBG("rx_comp_ring_size=%d\n",
-				in->u.ul_smmu.rdy_comp_ring_size);
+			       in->u.ul_smmu.rdy_comp_ring_size);
 			IPADBG("rx_comp_ring_wp_pa=0x%pa\n",
-				&in->u.ul_smmu.rdy_comp_ring_wp_pa);
+			       &in->u.ul_smmu.rdy_comp_ring_wp_pa);
 			ipa3_ctx->wdi2_ctx.rdy_ring_rp_pa =
 				in->u.ul_smmu.rdy_ring_rp_pa;
 			ipa3_ctx->wdi2_ctx.rdy_ring_size =
@@ -1296,17 +1280,16 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 				in->u.ul_smmu.rdy_comp_ring_size;
 		} else {
 			IPADBG("rx_ring_base_pa=0x%pa\n",
-				&in->u.ul.rdy_ring_base_pa);
-			IPADBG("rx_ring_size=%d\n",
-				in->u.ul.rdy_ring_size);
+			       &in->u.ul.rdy_ring_base_pa);
+			IPADBG("rx_ring_size=%d\n", in->u.ul.rdy_ring_size);
 			IPADBG("rx_ring_rp_pa=0x%pa\n",
-				&in->u.ul.rdy_ring_rp_pa);
+			       &in->u.ul.rdy_ring_rp_pa);
 			IPADBG("rx_comp_ring_base_pa=0x%pa\n",
-				&in->u.ul.rdy_comp_ring_base_pa);
+			       &in->u.ul.rdy_comp_ring_base_pa);
 			IPADBG("rx_comp_ring_size=%d\n",
-				in->u.ul.rdy_comp_ring_size);
+			       in->u.ul.rdy_comp_ring_size);
 			IPADBG("rx_comp_ring_wp_pa=0x%pa\n",
-				&in->u.ul.rdy_comp_ring_wp_pa);
+			       &in->u.ul.rdy_comp_ring_wp_pa);
 			ipa3_ctx->wdi2_ctx.rdy_ring_base_pa =
 				in->u.ul.rdy_ring_base_pa;
 			ipa3_ctx->wdi2_ctx.rdy_ring_rp_pa =
@@ -1323,18 +1306,13 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 	}
 	if (IPA_CLIENT_IS_CONS(in->sys.client)) {
 		len = in->smmu_enabled ? in->u.dl_smmu.comp_ring_size :
-			in->u.dl.comp_ring_size;
-		IPADBG("TX ring smmu_en=%d ring_size=%d %d\n",
-				in->smmu_enabled,
-				in->u.dl_smmu.comp_ring_size,
-				in->u.dl.comp_ring_size);
-		if (ipa_create_gsi_smmu_mapping(IPA_WDI_TX_RING_RES,
-					in->smmu_enabled,
-					in->u.dl.comp_ring_base_pa,
-					&in->u.dl_smmu.comp_ring,
-					len,
-					false,
-					&va)) {
+					 in->u.dl.comp_ring_size;
+		IPADBG("TX ring smmu_en=%d ring_size=%d %d\n", in->smmu_enabled,
+		       in->u.dl_smmu.comp_ring_size, in->u.dl.comp_ring_size);
+		if (ipa_create_gsi_smmu_mapping(
+			    IPA_WDI_TX_RING_RES, in->smmu_enabled,
+			    in->u.dl.comp_ring_base_pa,
+			    &in->u.dl_smmu.comp_ring, len, false, &va)) {
 			IPAERR("fail to create gsi mapping TX ring.\n");
 			result = -ENOMEM;
 			goto gsi_timeout;
@@ -1344,20 +1322,15 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 		gsi_channel_props.ring_len = len;
 
 		len = in->smmu_enabled ? in->u.dl_smmu.ce_ring_size :
-			in->u.dl.ce_ring_size;
-		IPADBG("CE ring smmu_en=%d ring_size=%d %d\n",
-				in->smmu_enabled,
-				in->u.dl_smmu.ce_ring_size,
-				in->u.dl.ce_ring_size);
+					 in->u.dl.ce_ring_size;
+		IPADBG("CE ring smmu_en=%d ring_size=%d %d\n", in->smmu_enabled,
+		       in->u.dl_smmu.ce_ring_size, in->u.dl.ce_ring_size);
 
 		/* WA: wlan passed ce_ring sg_table PA directly */
-		if (ipa_create_gsi_smmu_mapping(IPA_WDI_CE_RING_RES,
-					in->smmu_enabled,
-					in->u.dl.ce_ring_base_pa,
-					&in->u.dl_smmu.ce_ring,
-					len,
-					false,
-					&va)) {
+		if (ipa_create_gsi_smmu_mapping(
+			    IPA_WDI_CE_RING_RES, in->smmu_enabled,
+			    in->u.dl.ce_ring_base_pa, &in->u.dl_smmu.ce_ring,
+			    len, false, &va)) {
 			IPAERR("fail to create gsi mapping CE ring.\n");
 			result = -ENOMEM;
 			goto gsi_timeout;
@@ -1366,14 +1339,10 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 		gsi_evt_ring_props.ring_base_vaddr = NULL;
 		gsi_evt_ring_props.ring_len = len;
 		pa = in->smmu_enabled ? in->u.dl_smmu.ce_door_bell_pa :
-			in->u.dl.ce_door_bell_pa;
+					in->u.dl.ce_door_bell_pa;
 		if (ipa_create_gsi_smmu_mapping(IPA_WDI_CE_DB_RES,
-					in->smmu_enabled,
-					pa,
-					NULL,
-					4,
-					true,
-					&va)) {
+						in->smmu_enabled, pa, NULL, 4,
+						true, &va)) {
 			IPAERR("fail to create gsi mapping CE DB.\n");
 			result = -ENOMEM;
 			goto gsi_timeout;
@@ -1381,71 +1350,50 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 		gsi_evt_ring_props.rp_update_addr = va;
 	} else {
 		len = in->smmu_enabled ? in->u.ul_smmu.rdy_ring_size :
-			in->u.ul.rdy_ring_size;
-		IPADBG("RX ring smmu_en=%d ring_size=%d %d\n",
-				in->smmu_enabled,
-				in->u.ul_smmu.rdy_ring_size,
-				in->u.ul.rdy_ring_size);
-		if (ipa_create_gsi_smmu_mapping(IPA_WDI_RX_RING_RES,
-					in->smmu_enabled,
-					in->u.ul.rdy_ring_base_pa,
-					&in->u.ul_smmu.rdy_ring,
-					len,
-					false,
-					&va)) {
+					 in->u.ul.rdy_ring_size;
+		IPADBG("RX ring smmu_en=%d ring_size=%d %d\n", in->smmu_enabled,
+		       in->u.ul_smmu.rdy_ring_size, in->u.ul.rdy_ring_size);
+		if (ipa_create_gsi_smmu_mapping(
+			    IPA_WDI_RX_RING_RES, in->smmu_enabled,
+			    in->u.ul.rdy_ring_base_pa, &in->u.ul_smmu.rdy_ring,
+			    len, false, &va)) {
 			IPAERR("fail to create gsi RX ring.\n");
 			result = -ENOMEM;
 			goto gsi_timeout;
 		}
 		gsi_channel_props.ring_base_addr = va;
-		gsi_channel_props.ring_base_vaddr =  NULL;
+		gsi_channel_props.ring_base_vaddr = NULL;
 		gsi_channel_props.ring_len = len;
-		len = in->smmu_enabled ?
-			in->u.ul_smmu.rdy_comp_ring_size :
-			in->u.ul.rdy_comp_ring_size;
+		len = in->smmu_enabled ? in->u.ul_smmu.rdy_comp_ring_size :
+					 in->u.ul.rdy_comp_ring_size;
 		IPADBG("RX ring smmu_en=%d comp_ring_size=%d %d\n",
-				in->smmu_enabled,
-				in->u.ul_smmu.rdy_comp_ring_size,
-				in->u.ul.rdy_comp_ring_size);
+		       in->smmu_enabled, in->u.ul_smmu.rdy_comp_ring_size,
+		       in->u.ul.rdy_comp_ring_size);
 		if (ipa_create_gsi_smmu_mapping(
-					IPA_WDI_RX_COMP_RING_RES,
-					in->smmu_enabled,
-					in->u.ul.rdy_comp_ring_base_pa,
-					&in->u.ul_smmu.rdy_comp_ring,
-					len,
-					false,
-					&va)) {
+			    IPA_WDI_RX_COMP_RING_RES, in->smmu_enabled,
+			    in->u.ul.rdy_comp_ring_base_pa,
+			    &in->u.ul_smmu.rdy_comp_ring, len, false, &va)) {
 			IPAERR("fail to create gsi RX comp_ring.\n");
 			result = -ENOMEM;
 			goto gsi_timeout;
 		}
 		gsi_evt_ring_props.ring_base_addr = va;
 		pa = in->smmu_enabled ? in->u.ul_smmu.rdy_ring_rp_pa :
-			in->u.ul.rdy_ring_rp_pa;
+					in->u.ul.rdy_ring_rp_pa;
 		if (ipa_create_gsi_smmu_mapping(IPA_WDI_RX_RING_RP_RES,
-				in->smmu_enabled,
-				pa,
-				NULL,
-				4,
-				false,
-				&wifi_rx_ri_addr)) {
+						in->smmu_enabled, pa, NULL, 4,
+						false, &wifi_rx_ri_addr)) {
 			IPAERR("fail to create gsi RX rng RP\n");
 			result = -ENOMEM;
 			goto gsi_timeout;
 		}
 		gsi_evt_ring_props.ring_base_vaddr = NULL;
 		gsi_evt_ring_props.ring_len = len;
-		pa = in->smmu_enabled ?
-			in->u.ul_smmu.rdy_comp_ring_wp_pa :
-			in->u.ul.rdy_comp_ring_wp_pa;
-		if (ipa_create_gsi_smmu_mapping(
-					IPA_WDI_RX_COMP_RING_WP_RES,
-					in->smmu_enabled,
-					pa,
-					NULL,
-					4,
-					false,
-					&va)) {
+		pa = in->smmu_enabled ? in->u.ul_smmu.rdy_comp_ring_wp_pa :
+					in->u.ul.rdy_comp_ring_wp_pa;
+		if (ipa_create_gsi_smmu_mapping(IPA_WDI_RX_COMP_RING_WP_RES,
+						in->smmu_enabled, pa, NULL, 4,
+						false, &va)) {
 			IPAERR("fail to create gsi RX comp_rng WP\n");
 			result = -ENOMEM;
 			goto gsi_timeout;
@@ -1464,9 +1412,9 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 		in->sys.ipa_ep_cfg.aggr.aggr = IPA_GENERIC;
 		in->sys.ipa_ep_cfg.aggr.aggr_pkt_limit = IPA_AGGR_PKT_LIMIT;
 		in->sys.ipa_ep_cfg.aggr.aggr_byte_limit =
-						IPA_AGGR_HARD_BYTE_LIMIT;
+			IPA_AGGR_HARD_BYTE_LIMIT;
 		in->sys.ipa_ep_cfg.aggr.aggr_hard_byte_limit_en =
-						IPA_ENABLE_AGGR;
+			IPA_ENABLE_AGGR;
 	}
 	if (!ep->skip_ep_cfg) {
 		if (ipa3_cfg_ep(ipa_ep_idx, &in->sys.ipa_ep_cfg)) {
@@ -1477,30 +1425,31 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 	} else {
 		IPADBG("Skipping endpoint configuration.\n");
 	}
-	result = ipa3_wdi2_gsi_alloc_evt_ring(&gsi_evt_ring_props,
-				in->sys.client,
-				&ep->gsi_evt_ring_hdl);
+	result = ipa3_wdi2_gsi_alloc_evt_ring(
+		&gsi_evt_ring_props, in->sys.client, &ep->gsi_evt_ring_hdl);
 	if (result)
 		goto fail_alloc_evt_ring;
 
 	is_evt_rn_db_pcie_addr = IPA_CLIENT_IS_CONS(in->sys.client) ?
-		in->u.dl.is_evt_rn_db_pcie_addr :
-		in->u.ul.is_evt_rn_db_pcie_addr;
+					 in->u.dl.is_evt_rn_db_pcie_addr :
+					 in->u.ul.is_evt_rn_db_pcie_addr;
 
 	if (IPA_CLIENT_IS_CONS(in->sys.client)) {
-		is_evt_rn_db_pcie_addr = in->smmu_enabled ?
-			in->u.dl_smmu.is_evt_rn_db_pcie_addr :
-			in->u.dl.is_evt_rn_db_pcie_addr;
-		gsi_evt_ring_props.rp_update_addr = in->smmu_enabled ?
-			in->u.dl_smmu.ce_door_bell_pa :
-			in->u.dl.ce_door_bell_pa;
+		is_evt_rn_db_pcie_addr =
+			in->smmu_enabled ?
+				in->u.dl_smmu.is_evt_rn_db_pcie_addr :
+				in->u.dl.is_evt_rn_db_pcie_addr;
+		gsi_evt_ring_props.rp_update_addr =
+			in->smmu_enabled ? in->u.dl_smmu.ce_door_bell_pa :
+					   in->u.dl.ce_door_bell_pa;
 	} else {
-		is_evt_rn_db_pcie_addr = in->smmu_enabled ?
-			in->u.ul_smmu.is_evt_rn_db_pcie_addr :
-			in->u.ul.is_evt_rn_db_pcie_addr;
-		gsi_evt_ring_props.rp_update_addr = in->smmu_enabled ?
-			in->u.ul_smmu.rdy_comp_ring_wp_pa :
-			in->u.ul.rdy_comp_ring_wp_pa;
+		is_evt_rn_db_pcie_addr =
+			in->smmu_enabled ?
+				in->u.ul_smmu.is_evt_rn_db_pcie_addr :
+				in->u.ul.is_evt_rn_db_pcie_addr;
+		gsi_evt_ring_props.rp_update_addr =
+			in->smmu_enabled ? in->u.ul_smmu.rdy_comp_ring_wp_pa :
+					   in->u.ul.rdy_comp_ring_wp_pa;
 	}
 	if (!in->smmu_enabled) {
 		IPADBG("smmu disabled\n");
@@ -1519,18 +1468,19 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 			IPADBG("is_evt_rn_db_pcie_addr is DDR addr\n");
 
 		if (IPA_CLIENT_IS_CONS(in->sys.client)) {
-			if (ipa_create_gsi_smmu_mapping(IPA_WDI_CE_DB_RES,
-				true, gsi_evt_ring_props.rp_update_addr,
-				NULL, 4, true, &va)) {
-					IPAERR("failed to get smmu mapping\n");
-					result = -EFAULT;
-					goto fail_alloc_evt_ring;
+			if (ipa_create_gsi_smmu_mapping(
+				    IPA_WDI_CE_DB_RES, true,
+				    gsi_evt_ring_props.rp_update_addr, NULL, 4,
+				    true, &va)) {
+				IPAERR("failed to get smmu mapping\n");
+				result = -EFAULT;
+				goto fail_alloc_evt_ring;
 			}
 		} else {
 			if (ipa_create_gsi_smmu_mapping(
-				IPA_WDI_RX_COMP_RING_WP_RES,
-				true, gsi_evt_ring_props.rp_update_addr,
-				NULL, 4, true, &va)) {
+				    IPA_WDI_RX_COMP_RING_WP_RES, true,
+				    gsi_evt_ring_props.rp_update_addr, NULL, 4,
+				    true, &va)) {
 				IPAERR("failed to get smmu mapping\n");
 				result = -EFAULT;
 				goto fail_alloc_evt_ring;
@@ -1541,49 +1491,48 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 	}
 
 	/*
-	* Arch specific:
-	* pcie addr which are not via smmu, use pa directly!
-	* pcie and DDR via 2 different port
-	* assert bit 40 to indicate it is pcie addr
-	* WDI-3.0, MSM --> pcie via smmu
-	* WDI-3.0, MDM --> pcie not via smmu + dual port
-	* assert bit 40 in case
-	*/
-	if (!ipa3_is_msm_device() &&
-		in->smmu_enabled) {
+   * Arch specific:
+   * pcie addr which are not via smmu, use pa directly!
+   * pcie and DDR via 2 different port
+   * assert bit 40 to indicate it is pcie addr
+   * WDI-3.0, MSM --> pcie via smmu
+   * WDI-3.0, MDM --> pcie not via smmu + dual port
+   * assert bit 40 in case
+   */
+	if (!ipa3_is_msm_device() && in->smmu_enabled) {
 		/*
-		* Ir-respective of smmu enabled don't use IOVA addr
-		* since pcie not via smmu in MDM's
-		*/
+     * Ir-respective of smmu enabled don't use IOVA addr
+     * since pcie not via smmu in MDM's
+     */
 		if (is_evt_rn_db_pcie_addr == true) {
 			addr_low = (u32)gsi_evt_ring_props.rp_update_addr;
 			addr_high =
-				(u32)((u64)gsi_evt_ring_props.rp_update_addr
-				>> 32);
+				(u32)((u64)gsi_evt_ring_props.rp_update_addr >>
+				      32);
 		}
 	}
 
 	/*
-	* GSI recomendation to set bit-40 for (mdm targets && pcie addr)
-	* from wdi-3.0 interface document
-	*/
+   * GSI recomendation to set bit-40 for (mdm targets && pcie addr)
+   * from wdi-3.0 interface document
+   */
 	if (!ipa3_is_msm_device() && is_evt_rn_db_pcie_addr)
 		addr_high |= (1 << 8);
 
-	gsi_wdi3_write_evt_ring_db(ep->gsi_evt_ring_hdl, addr_low,
-			addr_high);
+	gsi_wdi3_write_evt_ring_db(ep->gsi_evt_ring_hdl, addr_low, addr_high);
 
 	/*copy mem info */
 	ep->gsi_mem_info.evt_ring_len = gsi_evt_ring_props.ring_len;
 	ep->gsi_mem_info.evt_ring_base_addr = gsi_evt_ring_props.ring_base_addr;
 	ep->gsi_mem_info.evt_ring_base_vaddr =
-				gsi_evt_ring_props.ring_base_vaddr;
+		gsi_evt_ring_props.ring_base_vaddr;
 	IPAERR("evt ring len: %d\n", ep->gsi_mem_info.evt_ring_len);
 	IPAERR("element size: %d\n", gsi_evt_ring_props.re_size);
 
 	result = ipa3_wdi2_gsi_alloc_channel_ring(&gsi_channel_props,
-					in->sys.client,
-				&ep->gsi_chan_hdl, ep->gsi_evt_ring_hdl);
+						  in->sys.client,
+						  &ep->gsi_chan_hdl,
+						  ep->gsi_evt_ring_hdl);
 	if (result)
 		goto fail_alloc_channel;
 
@@ -1598,72 +1547,78 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 	ep->gsi_mem_info.chan_ring_base_vaddr =
 		gsi_channel_props.ring_base_vaddr;
 
-	num_ring_ele = ep->gsi_mem_info.evt_ring_len/gsi_evt_ring_props.re_size;
+	num_ring_ele =
+		ep->gsi_mem_info.evt_ring_len / gsi_evt_ring_props.re_size;
 	IPAERR("UPDATE_RI_MODERATION_THRESHOLD: %d\n", num_ring_ele);
 	if (ipa3_ctx->ipa_hw_type < IPA_HW_v4_7) {
 		if (IPA_CLIENT_IS_PROD(in->sys.client)) {
 			is_txr_rn_db_pcie_addr =
-			in->smmu_enabled ?
-				in->u.ul_smmu.is_txr_rn_db_pcie_addr :
-				in->u.ul.is_txr_rn_db_pcie_addr;
+				in->smmu_enabled ?
+					in->u.ul_smmu.is_txr_rn_db_pcie_addr :
+					in->u.ul.is_txr_rn_db_pcie_addr;
 			if (!in->smmu_enabled) {
 				IPADBG("smmu disabled\n");
 				gsi_scratch.wdi2_new.wifi_rx_ri_addr_low =
 					in->u.ul.rdy_ring_rp_pa & 0xFFFFFFFF;
 				gsi_scratch.wdi2_new.wifi_rx_ri_addr_high =
 					(in->u.ul.rdy_ring_rp_pa &
-						0xFFFFF00000000) >> 32;
+					 0xFFFFF00000000) >>
+					32;
 			} else {
 				IPADBG("smmu eabled\n");
 				gsi_scratch.wdi.wifi_rx_ri_addr_low =
 					wifi_rx_ri_addr & 0xFFFFFFFF;
 				gsi_scratch.wdi.wifi_rx_ri_addr_high =
-					(wifi_rx_ri_addr & 0xFFFFF00000000) >> 32;
+					(wifi_rx_ri_addr & 0xFFFFF00000000) >>
+					32;
 			}
 
 			/*
-			* Arch specific:
-			* pcie addr which are not via smmu, use pa directly!
-			* pcie and DDR via 2 different port
-			* assert bit 40 to indicate it is pcie addr
-			* WDI-3.0, MSM --> pcie via smmu
-			* WDI-3.0, MDM --> pcie not via smmu + dual port
-			* assert bit 40 in case
-			*/
-			if (!ipa3_is_msm_device() &&
-					in->smmu_enabled) {
+       * Arch specific:
+       * pcie addr which are not via smmu, use pa directly!
+       * pcie and DDR via 2 different port
+       * assert bit 40 to indicate it is pcie addr
+       * WDI-3.0, MSM --> pcie via smmu
+       * WDI-3.0, MDM --> pcie not via smmu + dual port
+       * assert bit 40 in case
+       */
+			if (!ipa3_is_msm_device() && in->smmu_enabled) {
 				/*
-				* Ir-respective of smmu enabled don't use IOVA
-				* addr since pcie not via smmu in MDM's
-				*/
+         * Ir-respective of smmu enabled don't use IOVA
+         * addr since pcie not via smmu in MDM's
+         */
 				if (is_txr_rn_db_pcie_addr == true) {
-					gsi_scratch.wdi2_new.wifi_rx_ri_addr_low
-						= in->u.ul_smmu.rdy_ring_rp_pa
-							& 0xFFFFFFFF;
-				gsi_scratch.wdi2_new.wifi_rx_ri_addr_high =
-					(in->u.ul_smmu.rdy_ring_rp_pa &
-						0xFFFFF00000000) >> 32;
+					gsi_scratch.wdi2_new
+						.wifi_rx_ri_addr_low =
+						in->u.ul_smmu.rdy_ring_rp_pa &
+						0xFFFFFFFF;
+					gsi_scratch.wdi2_new
+						.wifi_rx_ri_addr_high =
+						(in->u.ul_smmu.rdy_ring_rp_pa &
+						 0xFFFFF00000000) >>
+						32;
 				}
 			}
 
 			/*
-			 * GSI recomendation to set bit-40 for
-			 * (mdm targets && pcie addr) from wdi-3.0
-			 * interface document
-			*/
+       * GSI recomendation to set bit-40 for
+       * (mdm targets && pcie addr) from wdi-3.0
+       * interface document
+       */
 
 			if (!ipa3_is_msm_device() && is_txr_rn_db_pcie_addr)
 				gsi_scratch.wdi2_new.wifi_rx_ri_addr_high =
-				(u32)((u32)
-				gsi_scratch.wdi2_new.wifi_rx_ri_addr_high |
-				(1 << 8));
+					(u32)((u32)gsi_scratch.wdi2_new
+						      .wifi_rx_ri_addr_high |
+					      (1 << 8));
 
 			gsi_scratch.wdi.wdi_rx_vdev_id = 0xff;
 			gsi_scratch.wdi.wdi_rx_fw_desc = 0xff;
 			gsi_scratch.wdi.endp_metadatareg_offset =
-						ipahal_get_reg_mn_ofst(
-						IPA_ENDP_INIT_HDR_METADATA_n, 0,
-								ipa_ep_idx)/4;
+				ipahal_get_reg_mn_ofst(
+					IPA_ENDP_INIT_HDR_METADATA_n, 0,
+					ipa_ep_idx) /
+				4;
 			gsi_scratch.wdi.qmap_id = 0;
 		}
 		gsi_scratch.wdi.update_ri_moderation_threshold =
@@ -1679,9 +1634,10 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 			gsi_scratch.wdi2_new.wdi_rx_vdev_id = 0xff;
 			gsi_scratch.wdi2_new.wdi_rx_fw_desc = 0xff;
 			gsi_scratch.wdi2_new.endp_metadatareg_offset =
-						ipahal_get_reg_mn_ofst(
-						IPA_ENDP_INIT_HDR_METADATA_n, 0,
-								ipa_ep_idx)/4;
+				ipahal_get_reg_mn_ofst(
+					IPA_ENDP_INIT_HDR_METADATA_n, 0,
+					ipa_ep_idx) /
+				4;
 			gsi_scratch.wdi2_new.qmap_id = 0;
 		}
 		gsi_scratch.wdi2_new.update_ri_moderation_threshold =
@@ -1690,11 +1646,9 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 		gsi_scratch.wdi2_new.wdi_rx_tre_proc_in_progress = 0;
 	}
 
-	result = gsi_write_channel_scratch(ep->gsi_chan_hdl,
-			gsi_scratch);
+	result = gsi_write_channel_scratch(ep->gsi_chan_hdl, gsi_scratch);
 	if (result != GSI_STATUS_SUCCESS) {
-		IPAERR("gsi_write_channel_scratch failed %d\n",
-				result);
+		IPAERR("gsi_write_channel_scratch failed %d\n", result);
 		goto fail_write_channel_scratch;
 	}
 
@@ -1714,8 +1668,8 @@ int ipa3_connect_gsi_wdi_pipe(struct ipa_wdi_in_params *in,
 
 	IPADBG("GSI connected.\n");
 	gsi_res = gsi_query_channel_db_addr(ep->gsi_chan_hdl,
-			&gsi_db_reg_phs_addr_lsb,
-			&gsi_db_reg_phs_addr_msb);
+					    &gsi_db_reg_phs_addr_lsb,
+					    &gsi_db_reg_phs_addr_msb);
 	out->uc_door_bell_pa = gsi_db_reg_phs_addr_lsb;
 	IPADBG("GSI query result: %d\n", gsi_res);
 	IPADBG("GSI lsb addr: %d\n", gsi_db_reg_phs_addr_lsb);
@@ -1752,7 +1706,7 @@ fail:
  * Note:	Should not be called from atomic context
  */
 int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
-		struct ipa_wdi_out_params *out)
+			 struct ipa_wdi_out_params *out)
 {
 	int ipa_ep_idx;
 	int result = -EFAULT;
@@ -1781,15 +1735,14 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 	if (!in->smmu_enabled) {
 		if (IPA_CLIENT_IS_CONS(in->sys.client)) {
 			if (in->u.dl.comp_ring_base_pa %
-				IPA_WDI_RING_ALIGNMENT ||
-				in->u.dl.ce_ring_base_pa %
-				IPA_WDI_RING_ALIGNMENT) {
+				    IPA_WDI_RING_ALIGNMENT ||
+			    in->u.dl.ce_ring_base_pa % IPA_WDI_RING_ALIGNMENT) {
 				IPAERR("alignment failure on TX\n");
-					return -EINVAL;
+				return -EINVAL;
 			}
 		} else {
 			if (in->u.ul.rdy_ring_base_pa %
-				IPA_WDI_RING_ALIGNMENT) {
+			    IPA_WDI_RING_ALIGNMENT) {
 				IPAERR("alignment failure on RX\n");
 				return -EINVAL;
 			}
@@ -1827,21 +1780,21 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 			cmd.size = sizeof(*tx);
 		if (in->smmu_enabled) {
 			IPADBG("comp_ring_size=%d\n",
-				in->u.dl_smmu.comp_ring_size);
+			       in->u.dl_smmu.comp_ring_size);
 			IPADBG("ce_ring_size=%d\n", in->u.dl_smmu.ce_ring_size);
 			IPADBG("ce_ring_doorbell_pa=0x%pa\n",
-					&in->u.dl_smmu.ce_door_bell_pa);
+			       &in->u.dl_smmu.ce_door_bell_pa);
 			IPADBG("num_tx_buffers=%d\n",
-				in->u.dl_smmu.num_tx_buffers);
+			       in->u.dl_smmu.num_tx_buffers);
 		} else {
 			IPADBG("comp_ring_base_pa=0x%pa\n",
-					&in->u.dl.comp_ring_base_pa);
+			       &in->u.dl.comp_ring_base_pa);
 			IPADBG("comp_ring_size=%d\n", in->u.dl.comp_ring_size);
 			IPADBG("ce_ring_base_pa=0x%pa\n",
-				&in->u.dl.ce_ring_base_pa);
+			       &in->u.dl.ce_ring_base_pa);
 			IPADBG("ce_ring_size=%d\n", in->u.dl.ce_ring_size);
 			IPADBG("ce_ring_doorbell_pa=0x%pa\n",
-					&in->u.dl.ce_door_bell_pa);
+			       &in->u.dl.ce_door_bell_pa);
 			IPADBG("num_tx_buffers=%d\n", in->u.dl.num_tx_buffers);
 		}
 	} else {
@@ -1851,13 +1804,13 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 			cmd.size = sizeof(*rx);
 		if (in->smmu_enabled) {
 			IPADBG("rx_ring_size=%d\n",
-				in->u.ul_smmu.rdy_ring_size);
+			       in->u.ul_smmu.rdy_ring_size);
 			IPADBG("rx_ring_rp_pa=0x%pa\n",
-				&in->u.ul_smmu.rdy_ring_rp_pa);
+			       &in->u.ul_smmu.rdy_ring_rp_pa);
 			IPADBG("rx_comp_ring_size=%d\n",
-				in->u.ul_smmu.rdy_comp_ring_size);
+			       in->u.ul_smmu.rdy_comp_ring_size);
 			IPADBG("rx_comp_ring_wp_pa=0x%pa\n",
-				&in->u.ul_smmu.rdy_comp_ring_wp_pa);
+			       &in->u.ul_smmu.rdy_comp_ring_wp_pa);
 			ipa3_ctx->uc_ctx.rdy_ring_rp_pa =
 				in->u.ul_smmu.rdy_ring_rp_pa;
 			ipa3_ctx->uc_ctx.rdy_ring_size =
@@ -1868,23 +1821,21 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 				in->u.ul_smmu.rdy_comp_ring_size;
 		} else {
 			IPADBG("rx_ring_base_pa=0x%pa\n",
-				&in->u.ul.rdy_ring_base_pa);
-			IPADBG("rx_ring_size=%d\n",
-				in->u.ul.rdy_ring_size);
+			       &in->u.ul.rdy_ring_base_pa);
+			IPADBG("rx_ring_size=%d\n", in->u.ul.rdy_ring_size);
 			IPADBG("rx_ring_rp_pa=0x%pa\n",
-				&in->u.ul.rdy_ring_rp_pa);
+			       &in->u.ul.rdy_ring_rp_pa);
 			IPADBG("rx_comp_ring_base_pa=0x%pa\n",
-				&in->u.ul.rdy_comp_ring_base_pa);
+			       &in->u.ul.rdy_comp_ring_base_pa);
 			IPADBG("rx_comp_ring_size=%d\n",
-				in->u.ul.rdy_comp_ring_size);
+			       in->u.ul.rdy_comp_ring_size);
 			IPADBG("rx_comp_ring_wp_pa=0x%pa\n",
-				&in->u.ul.rdy_comp_ring_wp_pa);
+			       &in->u.ul.rdy_comp_ring_wp_pa);
 			ipa3_ctx->uc_ctx.rdy_ring_base_pa =
 				in->u.ul.rdy_ring_base_pa;
 			ipa3_ctx->uc_ctx.rdy_ring_rp_pa =
 				in->u.ul.rdy_ring_rp_pa;
-			ipa3_ctx->uc_ctx.rdy_ring_size =
-				in->u.ul.rdy_ring_size;
+			ipa3_ctx->uc_ctx.rdy_ring_size = in->u.ul.rdy_ring_size;
 			ipa3_ctx->uc_ctx.rdy_comp_ring_base_pa =
 				in->u.ul.rdy_comp_ring_base_pa;
 			ipa3_ctx->uc_ctx.rdy_comp_ring_wp_pa =
@@ -1895,7 +1846,7 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 	}
 
 	cmd.base = dma_alloc_coherent(ipa3_ctx->uc_pdev, cmd.size,
-			&cmd.phys_base, GFP_KERNEL);
+				      &cmd.phys_base, GFP_KERNEL);
 	if (cmd.base == NULL) {
 		IPAERR("fail to get DMA memory.\n");
 		result = -ENOMEM;
@@ -1907,96 +1858,82 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 			tx_2 = (struct IpaHwWdi2TxSetUpCmdData_t *)cmd.base;
 
 			len = in->smmu_enabled ? in->u.dl_smmu.comp_ring_size :
-				in->u.dl.comp_ring_size;
+						 in->u.dl.comp_ring_size;
 			IPADBG("TX_2 ring smmu_en=%d ring_size=%d %d\n",
-				in->smmu_enabled,
-				in->u.dl_smmu.comp_ring_size,
-				in->u.dl.comp_ring_size);
-			if (ipa_create_uc_smmu_mapping(IPA_WDI_TX_RING_RES,
-					in->smmu_enabled,
-					in->u.dl.comp_ring_base_pa,
-					&in->u.dl_smmu.comp_ring,
-					len,
-					false,
-					&va)) {
+			       in->smmu_enabled, in->u.dl_smmu.comp_ring_size,
+			       in->u.dl.comp_ring_size);
+			if (ipa_create_uc_smmu_mapping(
+				    IPA_WDI_TX_RING_RES, in->smmu_enabled,
+				    in->u.dl.comp_ring_base_pa,
+				    &in->u.dl_smmu.comp_ring, len, false,
+				    &va)) {
 				IPAERR("fail to create uc mapping TX ring.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
 			}
 			tx_2->comp_ring_base_pa_hi =
-				(u32) ((va & 0xFFFFFFFF00000000) >> 32);
-			tx_2->comp_ring_base_pa = (u32) (va & 0xFFFFFFFF);
+				(u32)((va & 0xFFFFFFFF00000000) >> 32);
+			tx_2->comp_ring_base_pa = (u32)(va & 0xFFFFFFFF);
 			tx_2->comp_ring_size = len;
 			IPADBG("TX_2 comp_ring_base_pa_hi=0x%08x :0x%08x\n",
-					tx_2->comp_ring_base_pa_hi,
-					tx_2->comp_ring_base_pa);
+			       tx_2->comp_ring_base_pa_hi,
+			       tx_2->comp_ring_base_pa);
 
 			len = in->smmu_enabled ? in->u.dl_smmu.ce_ring_size :
-				in->u.dl.ce_ring_size;
+						 in->u.dl.ce_ring_size;
 			IPADBG("TX_2 CE ring smmu_en=%d ring_size=%d %d\n",
-					in->smmu_enabled,
-					in->u.dl_smmu.ce_ring_size,
-					in->u.dl.ce_ring_size);
+			       in->smmu_enabled, in->u.dl_smmu.ce_ring_size,
+			       in->u.dl.ce_ring_size);
 			/* WA: wlan passed ce_ring sg_table PA directly */
-			if (ipa_create_uc_smmu_mapping(IPA_WDI_CE_RING_RES,
-						in->smmu_enabled,
-						in->u.dl.ce_ring_base_pa,
-						&in->u.dl_smmu.ce_ring,
-						len,
-						false,
-						&va)) {
+			if (ipa_create_uc_smmu_mapping(
+				    IPA_WDI_CE_RING_RES, in->smmu_enabled,
+				    in->u.dl.ce_ring_base_pa,
+				    &in->u.dl_smmu.ce_ring, len, false, &va)) {
 				IPAERR("fail to create uc mapping CE ring.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
 			}
 			tx_2->ce_ring_base_pa_hi =
-				(u32) ((va & 0xFFFFFFFF00000000) >> 32);
-			tx_2->ce_ring_base_pa = (u32) (va & 0xFFFFFFFF);
+				(u32)((va & 0xFFFFFFFF00000000) >> 32);
+			tx_2->ce_ring_base_pa = (u32)(va & 0xFFFFFFFF);
 			tx_2->ce_ring_size = len;
 			IPADBG("TX_2 ce_ring_base_pa_hi=0x%08x :0x%08x\n",
-					tx_2->ce_ring_base_pa_hi,
-					tx_2->ce_ring_base_pa);
+			       tx_2->ce_ring_base_pa_hi, tx_2->ce_ring_base_pa);
 
 			pa = in->smmu_enabled ? in->u.dl_smmu.ce_door_bell_pa :
-				in->u.dl.ce_door_bell_pa;
+						in->u.dl.ce_door_bell_pa;
 			if (ipa_create_uc_smmu_mapping(IPA_WDI_CE_DB_RES,
-						in->smmu_enabled,
-						pa,
-						NULL,
-						4,
-						true,
-						&va)) {
+						       in->smmu_enabled, pa,
+						       NULL, 4, true, &va)) {
 				IPAERR("fail to create uc mapping CE DB.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
 			}
 			tx_2->ce_ring_doorbell_pa_hi =
-				(u32) ((va & 0xFFFFFFFF00000000) >> 32);
-			tx_2->ce_ring_doorbell_pa = (u32) (va & 0xFFFFFFFF);
+				(u32)((va & 0xFFFFFFFF00000000) >> 32);
+			tx_2->ce_ring_doorbell_pa = (u32)(va & 0xFFFFFFFF);
 			IPADBG("TX_2 ce_ring_doorbell_pa_hi=0x%08x :0x%08x\n",
-					tx_2->ce_ring_doorbell_pa_hi,
-					tx_2->ce_ring_doorbell_pa);
+			       tx_2->ce_ring_doorbell_pa_hi,
+			       tx_2->ce_ring_doorbell_pa);
 
-			tx_2->num_tx_buffers = in->smmu_enabled ?
-				in->u.dl_smmu.num_tx_buffers :
-				in->u.dl.num_tx_buffers;
+			tx_2->num_tx_buffers =
+				in->smmu_enabled ?
+					in->u.dl_smmu.num_tx_buffers :
+					in->u.dl.num_tx_buffers;
 			tx_2->ipa_pipe_number = ipa_ep_idx;
 		} else {
 			tx = (struct IpaHwWdiTxSetUpCmdData_t *)cmd.base;
 
 			len = in->smmu_enabled ? in->u.dl_smmu.comp_ring_size :
-				in->u.dl.comp_ring_size;
+						 in->u.dl.comp_ring_size;
 			IPADBG("TX ring smmu_en=%d ring_size=%d %d\n",
-					in->smmu_enabled,
-					in->u.dl_smmu.comp_ring_size,
-					in->u.dl.comp_ring_size);
-			if (ipa_create_uc_smmu_mapping(IPA_WDI_TX_RING_RES,
-						in->smmu_enabled,
-						in->u.dl.comp_ring_base_pa,
-						&in->u.dl_smmu.comp_ring,
-						len,
-						false,
-						&va)) {
+			       in->smmu_enabled, in->u.dl_smmu.comp_ring_size,
+			       in->u.dl.comp_ring_size);
+			if (ipa_create_uc_smmu_mapping(
+				    IPA_WDI_TX_RING_RES, in->smmu_enabled,
+				    in->u.dl.comp_ring_base_pa,
+				    &in->u.dl_smmu.comp_ring, len, false,
+				    &va)) {
 				IPAERR("fail to create uc mapping TX ring.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
@@ -2004,19 +1941,14 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 			tx->comp_ring_base_pa = va;
 			tx->comp_ring_size = len;
 			len = in->smmu_enabled ? in->u.dl_smmu.ce_ring_size :
-				in->u.dl.ce_ring_size;
+						 in->u.dl.ce_ring_size;
 			IPADBG("TX CE ring smmu_en=%d ring_size=%d %d 0x%lx\n",
-					in->smmu_enabled,
-					in->u.dl_smmu.ce_ring_size,
-					in->u.dl.ce_ring_size,
-					va);
-			if (ipa_create_uc_smmu_mapping(IPA_WDI_CE_RING_RES,
-						in->smmu_enabled,
-						in->u.dl.ce_ring_base_pa,
-						&in->u.dl_smmu.ce_ring,
-						len,
-						false,
-						&va)) {
+			       in->smmu_enabled, in->u.dl_smmu.ce_ring_size,
+			       in->u.dl.ce_ring_size, va);
+			if (ipa_create_uc_smmu_mapping(
+				    IPA_WDI_CE_RING_RES, in->smmu_enabled,
+				    in->u.dl.ce_ring_base_pa,
+				    &in->u.dl_smmu.ce_ring, len, false, &va)) {
 				IPAERR("fail to create uc mapping CE ring.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
@@ -2024,14 +1956,10 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 			tx->ce_ring_base_pa = va;
 			tx->ce_ring_size = len;
 			pa = in->smmu_enabled ? in->u.dl_smmu.ce_door_bell_pa :
-				in->u.dl.ce_door_bell_pa;
+						in->u.dl.ce_door_bell_pa;
 			if (ipa_create_uc_smmu_mapping(IPA_WDI_CE_DB_RES,
-						in->smmu_enabled,
-						pa,
-						NULL,
-						4,
-						true,
-						&va)) {
+						       in->smmu_enabled, pa,
+						       NULL, 4, true, &va)) {
 				IPAERR("fail to create uc mapping CE DB.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
@@ -2039,135 +1967,117 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 
 			IPADBG("CE doorbell pa: 0x%pa va:0x%lx\n", &pa, va);
 			IPADBG("Is wdi_over_pcie ? (%s)\n",
-				ipa3_ctx->wdi_over_pcie ? "Yes":"No");
+			       ipa3_ctx->wdi_over_pcie ? "Yes" : "No");
 
 			if (ipa3_ctx->wdi_over_pcie)
 				tx->ce_ring_doorbell_pa = pa;
 			else
 				tx->ce_ring_doorbell_pa = va;
 
-			tx->num_tx_buffers = in->smmu_enabled ?
-				in->u.dl_smmu.num_tx_buffers :
-				in->u.dl.num_tx_buffers;
+			tx->num_tx_buffers =
+				in->smmu_enabled ?
+					in->u.dl_smmu.num_tx_buffers :
+					in->u.dl.num_tx_buffers;
 			tx->ipa_pipe_number = ipa_ep_idx;
 		}
-		out->uc_door_bell_pa = ipa3_ctx->ipa_wrapper_base +
-				ipahal_get_reg_base() +
-				ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-				IPA_HW_WDI_TX_MBOX_START_INDEX/32,
+		out->uc_door_bell_pa =
+			ipa3_ctx->ipa_wrapper_base + ipahal_get_reg_base() +
+			ipahal_get_reg_mn_ofst(
+				IPA_UC_MAILBOX_m_n,
+				IPA_HW_WDI_TX_MBOX_START_INDEX / 32,
 				IPA_HW_WDI_TX_MBOX_START_INDEX % 32);
 	} else {
 		if (ipa3_ctx->ipa_wdi2) {
 			rx_2 = (struct IpaHwWdi2RxSetUpCmdData_t *)cmd.base;
 
 			len = in->smmu_enabled ? in->u.ul_smmu.rdy_ring_size :
-				in->u.ul.rdy_ring_size;
+						 in->u.ul.rdy_ring_size;
 			IPADBG("RX_2 ring smmu_en=%d ring_size=%d %d\n",
-				in->smmu_enabled,
-				in->u.ul_smmu.rdy_ring_size,
-				in->u.ul.rdy_ring_size);
-			if (ipa_create_uc_smmu_mapping(IPA_WDI_RX_RING_RES,
-						in->smmu_enabled,
-						in->u.ul.rdy_ring_base_pa,
-						&in->u.ul_smmu.rdy_ring,
-						len,
-						false,
-						&va)) {
+			       in->smmu_enabled, in->u.ul_smmu.rdy_ring_size,
+			       in->u.ul.rdy_ring_size);
+			if (ipa_create_uc_smmu_mapping(
+				    IPA_WDI_RX_RING_RES, in->smmu_enabled,
+				    in->u.ul.rdy_ring_base_pa,
+				    &in->u.ul_smmu.rdy_ring, len, false, &va)) {
 				IPAERR("fail to create uc RX_2 ring.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
 			}
 			rx_2->rx_ring_base_pa_hi =
-				(u32) ((va & 0xFFFFFFFF00000000) >> 32);
-			rx_2->rx_ring_base_pa = (u32) (va & 0xFFFFFFFF);
+				(u32)((va & 0xFFFFFFFF00000000) >> 32);
+			rx_2->rx_ring_base_pa = (u32)(va & 0xFFFFFFFF);
 			rx_2->rx_ring_size = len;
 			IPADBG("RX_2 rx_ring_base_pa_hi=0x%08x:0x%08x\n",
-					rx_2->rx_ring_base_pa_hi,
-					rx_2->rx_ring_base_pa);
+			       rx_2->rx_ring_base_pa_hi, rx_2->rx_ring_base_pa);
 
 			pa = in->smmu_enabled ? in->u.ul_smmu.rdy_ring_rp_pa :
-				in->u.ul.rdy_ring_rp_pa;
+						in->u.ul.rdy_ring_rp_pa;
 			if (ipa_create_uc_smmu_mapping(IPA_WDI_RX_RING_RP_RES,
-						in->smmu_enabled,
-						pa,
-						NULL,
-						4,
-						false,
-						&va)) {
+						       in->smmu_enabled, pa,
+						       NULL, 4, false, &va)) {
 				IPAERR("fail to create uc RX_2 rng RP\n");
 				result = -ENOMEM;
 				goto uc_timeout;
 			}
 			rx_2->rx_ring_rp_pa_hi =
-				(u32) ((va & 0xFFFFFFFF00000000) >> 32);
-			rx_2->rx_ring_rp_pa = (u32) (va & 0xFFFFFFFF);
+				(u32)((va & 0xFFFFFFFF00000000) >> 32);
+			rx_2->rx_ring_rp_pa = (u32)(va & 0xFFFFFFFF);
 			IPADBG("RX_2 rx_ring_rp_pa_hi=0x%08x :0x%08x\n",
-					rx_2->rx_ring_rp_pa_hi,
-					rx_2->rx_ring_rp_pa);
+			       rx_2->rx_ring_rp_pa_hi, rx_2->rx_ring_rp_pa);
 			len = in->smmu_enabled ?
-				in->u.ul_smmu.rdy_comp_ring_size :
-				in->u.ul.rdy_comp_ring_size;
+				      in->u.ul_smmu.rdy_comp_ring_size :
+				      in->u.ul.rdy_comp_ring_size;
 			IPADBG("RX_2 ring smmu_en=%d comp_ring_size=%d %d\n",
-					in->smmu_enabled,
-					in->u.ul_smmu.rdy_comp_ring_size,
-					in->u.ul.rdy_comp_ring_size);
-			if (ipa_create_uc_smmu_mapping(IPA_WDI_RX_COMP_RING_RES,
-						in->smmu_enabled,
-						in->u.ul.rdy_comp_ring_base_pa,
-						&in->u.ul_smmu.rdy_comp_ring,
-						len,
-						false,
-						&va)) {
+			       in->smmu_enabled,
+			       in->u.ul_smmu.rdy_comp_ring_size,
+			       in->u.ul.rdy_comp_ring_size);
+			if (ipa_create_uc_smmu_mapping(
+				    IPA_WDI_RX_COMP_RING_RES, in->smmu_enabled,
+				    in->u.ul.rdy_comp_ring_base_pa,
+				    &in->u.ul_smmu.rdy_comp_ring, len, false,
+				    &va)) {
 				IPAERR("fail to create uc RX_2 comp_ring.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
 			}
 			rx_2->rx_comp_ring_base_pa_hi =
-				(u32) ((va & 0xFFFFFFFF00000000) >> 32);
-			rx_2->rx_comp_ring_base_pa = (u32) (va & 0xFFFFFFFF);
+				(u32)((va & 0xFFFFFFFF00000000) >> 32);
+			rx_2->rx_comp_ring_base_pa = (u32)(va & 0xFFFFFFFF);
 			rx_2->rx_comp_ring_size = len;
 			IPADBG("RX_2 rx_comp_ring_base_pa_hi=0x%08x:0x%08x\n",
-					rx_2->rx_comp_ring_base_pa_hi,
-					rx_2->rx_comp_ring_base_pa);
+			       rx_2->rx_comp_ring_base_pa_hi,
+			       rx_2->rx_comp_ring_base_pa);
 
 			pa = in->smmu_enabled ?
-				in->u.ul_smmu.rdy_comp_ring_wp_pa :
-				in->u.ul.rdy_comp_ring_wp_pa;
+				     in->u.ul_smmu.rdy_comp_ring_wp_pa :
+				     in->u.ul.rdy_comp_ring_wp_pa;
 			if (ipa_create_uc_smmu_mapping(
-						IPA_WDI_RX_COMP_RING_WP_RES,
-						in->smmu_enabled,
-						pa,
-						NULL,
-						4,
-						false,
-						&va)) {
+				    IPA_WDI_RX_COMP_RING_WP_RES,
+				    in->smmu_enabled, pa, NULL, 4, false,
+				    &va)) {
 				IPAERR("fail to create uc RX_2 comp_rng WP\n");
 				result = -ENOMEM;
 				goto uc_timeout;
 			}
 			rx_2->rx_comp_ring_wp_pa_hi =
-				(u32) ((va & 0xFFFFFFFF00000000) >> 32);
-			rx_2->rx_comp_ring_wp_pa = (u32) (va & 0xFFFFFFFF);
+				(u32)((va & 0xFFFFFFFF00000000) >> 32);
+			rx_2->rx_comp_ring_wp_pa = (u32)(va & 0xFFFFFFFF);
 			IPADBG("RX_2 rx_comp_ring_wp_pa_hi=0x%08x:0x%08x\n",
-					rx_2->rx_comp_ring_wp_pa_hi,
-					rx_2->rx_comp_ring_wp_pa);
+			       rx_2->rx_comp_ring_wp_pa_hi,
+			       rx_2->rx_comp_ring_wp_pa);
 			rx_2->ipa_pipe_number = ipa_ep_idx;
 		} else {
 			rx = (struct IpaHwWdiRxSetUpCmdData_t *)cmd.base;
 
 			len = in->smmu_enabled ? in->u.ul_smmu.rdy_ring_size :
-				in->u.ul.rdy_ring_size;
+						 in->u.ul.rdy_ring_size;
 			IPADBG("RX ring smmu_en=%d ring_size=%d %d\n",
-					in->smmu_enabled,
-					in->u.ul_smmu.rdy_ring_size,
-					in->u.ul.rdy_ring_size);
-			if (ipa_create_uc_smmu_mapping(IPA_WDI_RX_RING_RES,
-						in->smmu_enabled,
-						in->u.ul.rdy_ring_base_pa,
-						&in->u.ul_smmu.rdy_ring,
-						len,
-						false,
-						&va)) {
+			       in->smmu_enabled, in->u.ul_smmu.rdy_ring_size,
+			       in->u.ul.rdy_ring_size);
+			if (ipa_create_uc_smmu_mapping(
+				    IPA_WDI_RX_RING_RES, in->smmu_enabled,
+				    in->u.ul.rdy_ring_base_pa,
+				    &in->u.ul_smmu.rdy_ring, len, false, &va)) {
 				IPAERR("fail to create uc mapping RX ring.\n");
 				result = -ENOMEM;
 				goto uc_timeout;
@@ -2176,14 +2086,10 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 			rx->rx_ring_size = len;
 
 			pa = in->smmu_enabled ? in->u.ul_smmu.rdy_ring_rp_pa :
-				in->u.ul.rdy_ring_rp_pa;
+						in->u.ul.rdy_ring_rp_pa;
 			if (ipa_create_uc_smmu_mapping(IPA_WDI_RX_RING_RP_RES,
-						in->smmu_enabled,
-						pa,
-						NULL,
-						4,
-						false,
-						&va)) {
+						       in->smmu_enabled, pa,
+						       NULL, 4, false, &va)) {
 				IPAERR("fail to create uc mapping RX rng RP\n");
 				result = -ENOMEM;
 				goto uc_timeout;
@@ -2191,11 +2097,12 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 			rx->rx_ring_rp_pa = va;
 			rx->ipa_pipe_number = ipa_ep_idx;
 		}
-		out->uc_door_bell_pa = ipa3_ctx->ipa_wrapper_base +
-				ipahal_get_reg_base() +
-				ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-					IPA_HW_WDI_RX_MBOX_START_INDEX/32,
-					IPA_HW_WDI_RX_MBOX_START_INDEX % 32);
+		out->uc_door_bell_pa =
+			ipa3_ctx->ipa_wrapper_base + ipahal_get_reg_base() +
+			ipahal_get_reg_mn_ofst(
+				IPA_UC_MAILBOX_m_n,
+				IPA_HW_WDI_RX_MBOX_START_INDEX / 32,
+				IPA_HW_WDI_RX_MBOX_START_INDEX % 32);
 	}
 
 	ep->valid = 1;
@@ -2204,7 +2111,7 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 	result = ipa3_disable_data_path(ipa_ep_idx);
 	if (result) {
 		IPAERR("disable data path failed res=%d clnt=%d.\n", result,
-			ipa_ep_idx);
+		       ipa_ep_idx);
 		goto uc_timeout;
 	}
 	if (IPA_CLIENT_IS_PROD(in->sys.client)) {
@@ -2214,11 +2121,11 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 	}
 
 	result = ipa3_uc_send_cmd((u32)(cmd.phys_base),
-				IPA_CLIENT_IS_CONS(in->sys.client) ?
-				IPA_CPU_2_HW_CMD_WDI_TX_SET_UP :
-				IPA_CPU_2_HW_CMD_WDI_RX_SET_UP,
-				IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
-				false, 10*HZ);
+				  IPA_CLIENT_IS_CONS(in->sys.client) ?
+					  IPA_CPU_2_HW_CMD_WDI_TX_SET_UP :
+					  IPA_CPU_2_HW_CMD_WDI_RX_SET_UP,
+				  IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS, false,
+				  10 * HZ);
 
 	if (result) {
 		result = -EFAULT;
@@ -2240,9 +2147,9 @@ int ipa_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 		in->sys.ipa_ep_cfg.aggr.aggr = IPA_GENERIC;
 		in->sys.ipa_ep_cfg.aggr.aggr_pkt_limit = IPA_AGGR_PKT_LIMIT;
 		in->sys.ipa_ep_cfg.aggr.aggr_byte_limit =
-						IPA_AGGR_HARD_BYTE_LIMIT;
+			IPA_AGGR_HARD_BYTE_LIMIT;
 		in->sys.ipa_ep_cfg.aggr.aggr_hard_byte_limit_en =
-						IPA_ENABLE_AGGR;
+			IPA_ENABLE_AGGR;
 	}
 	if (!ep->skip_ep_cfg) {
 		if (ipa3_cfg_ep(ipa_ep_idx, &in->sys.ipa_ep_cfg)) {
@@ -2305,8 +2212,7 @@ int ipa3_disconnect_gsi_wdi_pipe(u32 clnt_hdl)
 
 	result = ipa3_release_gsi_channel(clnt_hdl);
 	if (result) {
-		IPAERR("GSI dealloc channel failed %d\n",
-				result);
+		IPAERR("GSI dealloc channel failed %d\n", result);
 		goto fail_dealloc_channel;
 	}
 	ipa_release_ap_smmu_mappings(clnt_hdl);
@@ -2317,8 +2223,8 @@ int ipa3_disconnect_gsi_wdi_pipe(u32 clnt_hdl)
 	else
 		IPADBG("uc_wdi_ctx.stats_notify already null\n");
 	if (ipa3_ctx->ipa_hw_type >= IPA_HW_v4_5 &&
-		ipa3_ctx->ipa_hw_type != IPA_HW_v4_7 &&
-		ipa3_ctx->ipa_hw_type != IPA_HW_v4_11)
+	    ipa3_ctx->ipa_hw_type != IPA_HW_v4_7 &&
+	    ipa3_ctx->ipa_hw_type != IPA_HW_v4_11)
 		ipa3_uc_debug_stats_dealloc(IPA_HW_PROTOCOL_WDI);
 	IPADBG("client (ep: %d) disconnected\n", clnt_hdl);
 
@@ -2370,10 +2276,9 @@ int ipa_disconnect_wdi_pipe(u32 clnt_hdl)
 
 	tear.params.ipa_pipe_number = clnt_hdl;
 
-	result = ipa3_uc_send_cmd(tear.raw32b,
-				IPA_CPU_2_HW_CMD_WDI_TEAR_DOWN,
-				IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
-				false, 10*HZ);
+	result = ipa3_uc_send_cmd(tear.raw32b, IPA_CPU_2_HW_CMD_WDI_TEAR_DOWN,
+				  IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS, false,
+				  10 * HZ);
 
 	if (result) {
 		result = -EFAULT;
@@ -2433,7 +2338,6 @@ int ipa3_enable_gsi_wdi_pipe(u32 clnt_hdl)
 		ipa3_cfg_ep_holb(clnt_hdl, &holb_cfg);
 	}
 
-
 	IPA_ACTIVE_CLIENTS_DEC_EP(ipa3_get_client_mapping(clnt_hdl));
 	ep->gsi_offload_state |= IPA_WDI_ENABLED;
 	IPADBG("client (ep: %d) enabled\n", clnt_hdl);
@@ -2460,18 +2364,18 @@ int ipa3_disable_gsi_wdi_pipe(u32 clnt_hdl)
 	result = ipa3_disable_data_path(clnt_hdl);
 	if (result) {
 		IPAERR("disable data path failed res=%d clnt=%d.\n", result,
-				clnt_hdl);
+		       clnt_hdl);
 		goto gsi_timeout;
 	}
 
 	/**
-	 * To avoid data stall during continuous SAP on/off before
-	 * setting delay to IPA Consumer pipe (Client Producer),
-	 * remove delay and enable holb on IPA Producer pipe
-	 */
+   * To avoid data stall during continuous SAP on/off before
+   * setting delay to IPA Consumer pipe (Client Producer),
+   * remove delay and enable holb on IPA Producer pipe
+   */
 	if (IPA_CLIENT_IS_PROD(ep->client)) {
-		IPADBG("Stopping PROD channel - hdl=%d clnt=%d\n",
-			clnt_hdl, ep->client);
+		IPADBG("Stopping PROD channel - hdl=%d clnt=%d\n", clnt_hdl,
+		       ep->client);
 		/* remove delay on wlan-prod pipe*/
 		memset(&ep_cfg_ctrl, 0, sizeof(struct ipa_ep_cfg_ctrl));
 		ipa_cfg_ep_ctrl(clnt_hdl, &ep_cfg_ctrl);
@@ -2479,21 +2383,19 @@ int ipa3_disable_gsi_wdi_pipe(u32 clnt_hdl)
 		cons_hdl = ipa_get_ep_mapping(IPA_CLIENT_WLAN1_CONS);
 		if (cons_hdl == IPA_EP_NOT_ALLOCATED) {
 			IPAERR("Client %u is not mapped\n",
-				IPA_CLIENT_WLAN1_CONS);
+			       IPA_CLIENT_WLAN1_CONS);
 			goto gsi_timeout;
 		}
 		if (ipa3_ctx->ep[cons_hdl].valid == 1) {
 			result = ipa3_disable_data_path(cons_hdl);
 			if (result) {
 				IPAERR("disable data path failed\n");
-				IPAERR("res=%d clnt=%d\n",
-						result, cons_hdl);
+				IPAERR("res=%d clnt=%d\n", result, cons_hdl);
 				goto gsi_timeout;
 			}
 		}
 		usleep_range(IPA_UC_POLL_SLEEP_USEC * IPA_UC_POLL_SLEEP_USEC,
-			IPA_UC_POLL_SLEEP_USEC * IPA_UC_POLL_SLEEP_USEC);
-
+			     IPA_UC_POLL_SLEEP_USEC * IPA_UC_POLL_SLEEP_USEC);
 	}
 
 	/* Set the delay after disabling IPA Producer pipe */
@@ -2551,10 +2453,9 @@ int ipa_enable_wdi_pipe(u32 clnt_hdl)
 	IPA_ACTIVE_CLIENTS_INC_EP(ipa3_get_client_mapping(clnt_hdl));
 	enable.params.ipa_pipe_number = clnt_hdl;
 
-	result = ipa3_uc_send_cmd(enable.raw32b,
-		IPA_CPU_2_HW_CMD_WDI_CH_ENABLE,
-		IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
-		false, 10*HZ);
+	result = ipa3_uc_send_cmd(enable.raw32b, IPA_CPU_2_HW_CMD_WDI_CH_ENABLE,
+				  IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS, false,
+				  10 * HZ);
 
 	if (result) {
 		result = -EFAULT;
@@ -2622,19 +2523,19 @@ int ipa_disable_wdi_pipe(u32 clnt_hdl)
 	result = ipa3_disable_data_path(clnt_hdl);
 	if (result) {
 		IPAERR("disable data path failed res=%d clnt=%d.\n", result,
-			clnt_hdl);
+		       clnt_hdl);
 		result = -EPERM;
 		goto uc_timeout;
 	}
 
 	/**
-	 * To avoid data stall during continuous SAP on/off before
-	 * setting delay to IPA Consumer pipe (Client Producer),
-	 * remove delay and enable holb on IPA Producer pipe
-	 */
+   * To avoid data stall during continuous SAP on/off before
+   * setting delay to IPA Consumer pipe (Client Producer),
+   * remove delay and enable holb on IPA Producer pipe
+   */
 	if (IPA_CLIENT_IS_PROD(ep->client)) {
-		IPADBG("Stopping PROD channel - hdl=%d clnt=%d\n",
-			clnt_hdl, ep->client);
+		IPADBG("Stopping PROD channel - hdl=%d clnt=%d\n", clnt_hdl,
+		       ep->client);
 		/* remove delay on wlan-prod pipe*/
 		memset(&ep_cfg_ctrl, 0, sizeof(struct ipa_ep_cfg_ctrl));
 		ipa_cfg_ep_ctrl(clnt_hdl, &ep_cfg_ctrl);
@@ -2642,29 +2543,27 @@ int ipa_disable_wdi_pipe(u32 clnt_hdl)
 		cons_hdl = ipa_get_ep_mapping(IPA_CLIENT_WLAN1_CONS);
 		if (cons_hdl == IPA_EP_NOT_ALLOCATED) {
 			IPAERR("Client %u is not mapped\n",
-				IPA_CLIENT_WLAN1_CONS);
+			       IPA_CLIENT_WLAN1_CONS);
 			goto uc_timeout;
 		}
 		if (ipa3_ctx->ep[cons_hdl].valid == 1) {
 			result = ipa3_disable_data_path(cons_hdl);
 			if (result) {
 				IPAERR("disable data path failed\n");
-				IPAERR("res=%d clnt=%d\n",
-					result, cons_hdl);
+				IPAERR("res=%d clnt=%d\n", result, cons_hdl);
 				result = -EPERM;
 				goto uc_timeout;
 			}
 		}
 		usleep_range(IPA_UC_POLL_SLEEP_USEC * IPA_UC_POLL_SLEEP_USEC,
-			IPA_UC_POLL_SLEEP_USEC * IPA_UC_POLL_SLEEP_USEC);
-
+			     IPA_UC_POLL_SLEEP_USEC * IPA_UC_POLL_SLEEP_USEC);
 	}
 
 	disable.params.ipa_pipe_number = clnt_hdl;
 	result = ipa3_uc_send_cmd(disable.raw32b,
-		IPA_CPU_2_HW_CMD_WDI_CH_DISABLE,
-		IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
-		false, 10*HZ);
+				  IPA_CPU_2_HW_CMD_WDI_CH_DISABLE,
+				  IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS, false,
+				  10 * HZ);
 
 	if (result) {
 		result = -EFAULT;
@@ -2679,7 +2578,6 @@ int ipa_disable_wdi_pipe(u32 clnt_hdl)
 	}
 	ep->uc_offload_state &= ~IPA_WDI_ENABLED;
 	IPADBG("client (ep: %d) disabled\n", clnt_hdl);
-
 
 uc_timeout:
 	IPA_ACTIVE_CLIENTS_DEC_EP(ipa3_get_client_mapping(clnt_hdl));
@@ -2711,38 +2609,34 @@ int ipa3_resume_gsi_wdi_pipe(u32 clnt_hdl)
 	result = ipa_cfg_ep_ctrl(clnt_hdl, &ep_cfg_ctrl);
 	if (result)
 		IPAERR("client (ep: %d) fail un-susp/delay result=%d\n",
-				clnt_hdl, result);
+		       clnt_hdl, result);
 	else
 		IPADBG("client (ep: %d) un-susp/delay\n", clnt_hdl);
 
-	result =  gsi_start_channel(ep->gsi_chan_hdl);
+	result = gsi_start_channel(ep->gsi_chan_hdl);
 	if (result != GSI_STATUS_SUCCESS) {
 		IPAERR("gsi_start_channel failed %d\n", result);
 		ipa_assert();
 	}
 	if (IPA_CLIENT_IS_HOLB_CONS(ep->client)) {
 		res = ipa3_uc_client_add_holb_monitor(ep->gsi_chan_hdl,
-						HOLB_MONITOR_MASK, holb_max_cnt,
-						IPA_EE_AP);
+						      HOLB_MONITOR_MASK,
+						      holb_max_cnt, IPA_EE_AP);
 		if (res)
 			IPAERR("Add HOLB monitor failed for gsi ch %d\n",
-					ep->gsi_chan_hdl);
+			       ep->gsi_chan_hdl);
 	}
 	pcmd_t = &ipa3_ctx->gsi_info[IPA_HW_PROTOCOL_WDI];
 	/* start uC gsi dbg stats monitor */
 	if (ipa3_ctx->ipa_hw_type >= IPA_HW_v4_5 &&
-		ipa3_ctx->ipa_hw_type != IPA_HW_v4_7 &&
-		ipa3_ctx->ipa_hw_type != IPA_HW_v4_11) {
+	    ipa3_ctx->ipa_hw_type != IPA_HW_v4_7 &&
+	    ipa3_ctx->ipa_hw_type != IPA_HW_v4_11) {
 		if (IPA_CLIENT_IS_PROD(ep->client)) {
-			pcmd_t->ch_id_info[0].ch_id
-				= ep->gsi_chan_hdl;
-			pcmd_t->ch_id_info[0].dir
-				= DIR_PRODUCER;
+			pcmd_t->ch_id_info[0].ch_id = ep->gsi_chan_hdl;
+			pcmd_t->ch_id_info[0].dir = DIR_PRODUCER;
 		} else {
-			pcmd_t->ch_id_info[1].ch_id
-				= ep->gsi_chan_hdl;
-			pcmd_t->ch_id_info[1].dir
-				= DIR_CONSUMER;
+			pcmd_t->ch_id_info[1].ch_id = ep->gsi_chan_hdl;
+			pcmd_t->ch_id_info[1].dir = DIR_CONSUMER;
 		}
 		ipa3_uc_debug_stats_alloc(
 			ipa3_ctx->gsi_info[IPA_HW_PROTOCOL_WDI]);
@@ -2750,15 +2644,14 @@ int ipa3_resume_gsi_wdi_pipe(u32 clnt_hdl)
 	gsi_query_channel_info(ep->gsi_chan_hdl, &chan_info);
 	gsi_read_channel_scratch(ep->gsi_chan_hdl, &gsi_scratch);
 	IPADBG("ch=%lu channel base = 0x%llx , event base 0x%llx\n",
-				ep->gsi_chan_hdl,
-				ep->gsi_mem_info.chan_ring_base_addr,
-				ep->gsi_mem_info.evt_ring_base_addr);
+	       ep->gsi_chan_hdl, ep->gsi_mem_info.chan_ring_base_addr,
+	       ep->gsi_mem_info.evt_ring_base_addr);
 	IPADBG("RP=0x%llx WP=0x%llx ev_valid=%d ERP=0x%llx EWP=0x%llx\n",
-			chan_info.rp, chan_info.wp, chan_info.evt_valid,
-			chan_info.evt_rp, chan_info.evt_wp);
+	       chan_info.rp, chan_info.wp, chan_info.evt_valid,
+	       chan_info.evt_rp, chan_info.evt_wp);
 	IPADBG("Scratch 0 = %x Scratch 1 = %x Scratch 2 = %x Scratch 3 = %x\n",
-				gsi_scratch.data.word1, gsi_scratch.data.word2,
-				gsi_scratch.data.word3, gsi_scratch.data.word4);
+	       gsi_scratch.data.word1, gsi_scratch.data.word2,
+	       gsi_scratch.data.word3, gsi_scratch.data.word4);
 
 	ep->gsi_offload_state |= IPA_WDI_RESUMED;
 	IPADBG("exit\n");
@@ -2804,10 +2697,9 @@ int ipa_resume_wdi_pipe(u32 clnt_hdl)
 	IPA_ACTIVE_CLIENTS_INC_EP(ipa3_get_client_mapping(clnt_hdl));
 	resume.params.ipa_pipe_number = clnt_hdl;
 
-	result = ipa3_uc_send_cmd(resume.raw32b,
-		IPA_CPU_2_HW_CMD_WDI_CH_RESUME,
-		IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
-		false, 10*HZ);
+	result = ipa3_uc_send_cmd(resume.raw32b, IPA_CPU_2_HW_CMD_WDI_CH_RESUME,
+				  IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS, false,
+				  10 * HZ);
 
 	if (result) {
 		result = -EFAULT;
@@ -2819,7 +2711,7 @@ int ipa_resume_wdi_pipe(u32 clnt_hdl)
 	result = ipa_cfg_ep_ctrl(clnt_hdl, &ep_cfg_ctrl);
 	if (result)
 		IPAERR("client (ep: %d) fail un-susp/delay result=%d\n",
-				clnt_hdl, result);
+		       clnt_hdl, result);
 	else
 		IPADBG("client (ep: %d) un-susp/delay\n", clnt_hdl);
 
@@ -2852,8 +2744,8 @@ int ipa3_suspend_gsi_wdi_pipe(u32 clnt_hdl)
 	}
 	ep = &ipa3_ctx->ep[ipa_ep_idx];
 
-	if (ep->gsi_offload_state != (IPA_WDI_CONNECTED | IPA_WDI_ENABLED |
-				IPA_WDI_RESUMED)) {
+	if (ep->gsi_offload_state !=
+	    (IPA_WDI_CONNECTED | IPA_WDI_ENABLED | IPA_WDI_RESUMED)) {
 		IPAERR("WDI channel bad state %d\n", ep->gsi_offload_state);
 		return -EFAULT;
 	}
@@ -2863,19 +2755,19 @@ int ipa3_suspend_gsi_wdi_pipe(u32 clnt_hdl)
 			source_pipe_reg_idx = ipahal_get_ep_reg_idx(ipa_ep_idx);
 
 			IPADBG("suspended pipe %d\n", ipa_ep_idx);
-			res = ipa3_enable_force_clear(clnt_hdl,
-				false, source_pipe_bitmask,
-					source_pipe_reg_idx);
+			res = ipa3_enable_force_clear(clnt_hdl, false,
+						      source_pipe_bitmask,
+						      source_pipe_reg_idx);
 			if (res) {
 				/*
-				 * assuming here modem SSR, AP can remove
-				 * the delay in this case
-				 */
+         * assuming here modem SSR, AP can remove
+         * the delay in this case
+         */
 				IPAERR("failed to force clear %d\n", res);
 				IPAERR("remove delay from SCND reg\n");
 				if (ipa3_ctx->ipa_endp_delay_wa_v2) {
 					ipa3_remove_secondary_flow_ctrl(
-							ep->gsi_chan_hdl);
+						ep->gsi_chan_hdl);
 				} else {
 					ep_ctrl_scnd.endp_delay = false;
 					ipahal_write_reg_n_fields(
@@ -2889,12 +2781,12 @@ int ipa3_suspend_gsi_wdi_pipe(u32 clnt_hdl)
 retry_gsi_stop:
 		res = ipa_stop_gsi_channel(ipa_ep_idx);
 		if (res != 0 && res != -GSI_STATUS_AGAIN &&
-				res != -GSI_STATUS_TIMED_OUT) {
+		    res != -GSI_STATUS_TIMED_OUT) {
 			IPAERR("failed to stop channel res = %d\n", res);
 			goto fail_stop_channel;
 		} else if (res == -GSI_STATUS_AGAIN) {
 			IPADBG("GSI stop channel failed retry cnt = %d\n",
-						retry_cnt);
+			       retry_cnt);
 			retry_cnt++;
 			if (retry_cnt >= GSI_STOP_MAX_RETRY_CNT)
 				goto fail_stop_channel;
@@ -2905,33 +2797,28 @@ retry_gsi_stop:
 		gsi_query_channel_info(ep->gsi_chan_hdl, &chan_info);
 		gsi_read_channel_scratch(ep->gsi_chan_hdl, &gsi_scratch);
 		IPADBG("ch=%lu channel base = 0x%llx , event base 0x%llx\n",
-				ep->gsi_chan_hdl,
-				ep->gsi_mem_info.chan_ring_base_addr,
-				ep->gsi_mem_info.evt_ring_base_addr);
+		       ep->gsi_chan_hdl, ep->gsi_mem_info.chan_ring_base_addr,
+		       ep->gsi_mem_info.evt_ring_base_addr);
 		IPADBG("RP=0x%llx WP=0x%llx ev_valid=%d ERP=0x%llx",
-				chan_info.rp, chan_info.wp,
-				chan_info.evt_valid, chan_info.evt_rp);
+		       chan_info.rp, chan_info.wp, chan_info.evt_valid,
+		       chan_info.evt_rp);
 		IPADBG("EWP=0x%llx\n", chan_info.evt_wp);
 		IPADBG("Scratch 0 = %x Scratch 1 = %x Scratch 2 = %x",
-				gsi_scratch.data.word1, gsi_scratch.data.word2,
-				gsi_scratch.data.word3);
+		       gsi_scratch.data.word1, gsi_scratch.data.word2,
+		       gsi_scratch.data.word3);
 		IPADBG("Scratch 3 = %x\n", gsi_scratch.data.word4);
 	}
 	pcmd_t = &ipa3_ctx->gsi_info[IPA_HW_PROTOCOL_WDI];
 	/* stop uC gsi dbg stats monitor */
 	if (ipa3_ctx->ipa_hw_type >= IPA_HW_v4_5 &&
-		ipa3_ctx->ipa_hw_type != IPA_HW_v4_7 &&
-		ipa3_ctx->ipa_hw_type != IPA_HW_v4_11) {
+	    ipa3_ctx->ipa_hw_type != IPA_HW_v4_7 &&
+	    ipa3_ctx->ipa_hw_type != IPA_HW_v4_11) {
 		if (IPA_CLIENT_IS_PROD(ep->client)) {
-			pcmd_t->ch_id_info[0].ch_id
-				= 0xff;
-			pcmd_t->ch_id_info[0].dir
-				= DIR_PRODUCER;
+			pcmd_t->ch_id_info[0].ch_id = 0xff;
+			pcmd_t->ch_id_info[0].dir = DIR_PRODUCER;
 		} else {
-			pcmd_t->ch_id_info[1].ch_id
-				= 0xff;
-			pcmd_t->ch_id_info[1].dir
-				= DIR_CONSUMER;
+			pcmd_t->ch_id_info[1].ch_id = 0xff;
+			pcmd_t->ch_id_info[1].dir = DIR_CONSUMER;
 		}
 		ipa3_uc_debug_stats_alloc(
 			ipa3_ctx->gsi_info[IPA_HW_PROTOCOL_WDI]);
@@ -2982,8 +2869,8 @@ int ipa_suspend_wdi_pipe(u32 clnt_hdl)
 
 	ep = &ipa3_ctx->ep[clnt_hdl];
 
-	if (ep->uc_offload_state != (IPA_WDI_CONNECTED | IPA_WDI_ENABLED |
-				IPA_WDI_RESUMED)) {
+	if (ep->uc_offload_state !=
+	    (IPA_WDI_CONNECTED | IPA_WDI_ENABLED | IPA_WDI_RESUMED)) {
 		IPAERR("WDI channel bad state %d\n", ep->uc_offload_state);
 		return -EFAULT;
 	}
@@ -2992,29 +2879,30 @@ int ipa_suspend_wdi_pipe(u32 clnt_hdl)
 
 	if (IPA_CLIENT_IS_PROD(ep->client)) {
 		/*
-		 * For WDI 2.0 need to ensure pipe will be empty before suspend
-		 * as IPA uC will fail to suspend the pipe otherwise.
-		 */
+     * For WDI 2.0 need to ensure pipe will be empty before suspend
+     * as IPA uC will fail to suspend the pipe otherwise.
+     */
 		if (ipa3_ctx->ipa_wdi2) {
 			source_pipe_bitmask = ipahal_get_ep_bit(clnt_hdl);
 			source_pipe_reg_idx = ipahal_get_ep_reg_idx(clnt_hdl);
-			result = ipa3_enable_force_clear(clnt_hdl,
-				false, source_pipe_bitmask,source_pipe_reg_idx);
+			result = ipa3_enable_force_clear(clnt_hdl, false,
+							 source_pipe_bitmask,
+							 source_pipe_reg_idx);
 			if (result) {
 				/*
-				 * assuming here modem SSR, AP can remove
-				 * the delay in this case
-				 */
+         * assuming here modem SSR, AP can remove
+         * the delay in this case
+         */
 				IPAERR("failed to force clear %d\n", result);
 				IPAERR("remove delay from SCND reg\n");
 				if (ipa3_ctx->ipa_endp_delay_wa_v2) {
 					ipa3_remove_secondary_flow_ctrl(
-							ep->gsi_chan_hdl);
+						ep->gsi_chan_hdl);
 				} else {
 					ep_ctrl_scnd.endp_delay = false;
 					ipahal_write_reg_n_fields(
-					IPA_ENDP_INIT_CTRL_SCND_n, clnt_hdl,
-					&ep_ctrl_scnd);
+						IPA_ENDP_INIT_CTRL_SCND_n,
+						clnt_hdl, &ep_ctrl_scnd);
 				}
 			} else {
 				disable_force_clear = true;
@@ -3024,9 +2912,9 @@ int ipa_suspend_wdi_pipe(u32 clnt_hdl)
 		IPADBG("Post suspend event first for IPA Producer\n");
 		IPADBG("Client: %d clnt_hdl: %d\n", ep->client, clnt_hdl);
 		result = ipa3_uc_send_cmd(suspend.raw32b,
-			IPA_CPU_2_HW_CMD_WDI_CH_SUSPEND,
-			IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
-			false, 10*HZ);
+					  IPA_CPU_2_HW_CMD_WDI_CH_SUSPEND,
+					  IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
+					  false, 10 * HZ);
 
 		if (result) {
 			result = -EFAULT;
@@ -3041,7 +2929,7 @@ int ipa_suspend_wdi_pipe(u32 clnt_hdl)
 			result = ipa_cfg_ep_ctrl(clnt_hdl, &ep_cfg_ctrl);
 			if (result)
 				IPAERR("(ep: %d) failed to suspend result=%d\n",
-						clnt_hdl, result);
+				       clnt_hdl, result);
 			else
 				IPADBG("(ep: %d) suspended\n", clnt_hdl);
 		}
@@ -3050,16 +2938,16 @@ int ipa_suspend_wdi_pipe(u32 clnt_hdl)
 		result = ipa_cfg_ep_ctrl(clnt_hdl, &ep_cfg_ctrl);
 		if (result)
 			IPAERR("client (ep: %d) failed to delay result=%d\n",
-					clnt_hdl, result);
+			       clnt_hdl, result);
 		else
 			IPADBG("client (ep: %d) delayed\n", clnt_hdl);
 	}
 
 	if (IPA_CLIENT_IS_CONS(ep->client)) {
 		result = ipa3_uc_send_cmd(suspend.raw32b,
-			IPA_CPU_2_HW_CMD_WDI_CH_SUSPEND,
-			IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
-			false, 10*HZ);
+					  IPA_CPU_2_HW_CMD_WDI_CH_SUSPEND,
+					  IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
+					  false, 10 * HZ);
 
 		if (result) {
 			result = -EFAULT;
@@ -3087,11 +2975,10 @@ EXPORT_SYMBOL(ipa_suspend_wdi_pipe);
  *
  * Returns:	0 on success, negative on failure
  */
-int ipa_broadcast_wdi_quota_reach_ind(uint32_t fid,
-	uint64_t num_bytes)
+int ipa_broadcast_wdi_quota_reach_ind(uint32_t fid, uint64_t num_bytes)
 {
-	IPAERR_RL("Quota reached indication on fid(%d) Mbytes(%lu)\n",
-			  fid, (unsigned long)num_bytes);
+	IPAERR_RL("Quota reached indication on fid(%d) Mbytes(%lu)\n", fid,
+		  (unsigned long)num_bytes);
 	ipa3_broadcast_quota_reach_ind(0, IPA_UPSTEAM_WLAN, false);
 	return 0;
 }
@@ -3111,22 +2998,23 @@ int ipa3_write_qmapid_gsi_wdi_pipe(u32 clnt_hdl, u8 qmap_id)
 		memset(&gsi_scratch3, 0, sizeof(gsi_scratch3));
 		gsi_scratch3.wdi.qmap_id = qmap_id;
 		gsi_scratch3.wdi.endp_metadatareg_offset =
-			ipahal_get_reg_mn_ofst(
-				IPA_ENDP_INIT_HDR_METADATA_n, 0, clnt_hdl)/4;
+			ipahal_get_reg_mn_ofst(IPA_ENDP_INIT_HDR_METADATA_n, 0,
+					       clnt_hdl) /
+			4;
 		result = gsi_write_channel_scratch3_reg(ep->gsi_chan_hdl,
-								gsi_scratch3);
+							gsi_scratch3);
 	} else {
 		memset(&gsi_scratch2, 0, sizeof(gsi_scratch2));
 		gsi_scratch2.wdi.qmap_id = qmap_id;
 		gsi_scratch2.wdi.endp_metadatareg_offset =
-			ipahal_get_reg_mn_ofst(
-				IPA_ENDP_INIT_HDR_METADATA_n, 0, clnt_hdl)/4;
+			ipahal_get_reg_mn_ofst(IPA_ENDP_INIT_HDR_METADATA_n, 0,
+					       clnt_hdl) /
+			4;
 		result = gsi_write_channel_scratch2_reg(ep->gsi_chan_hdl,
-								gsi_scratch2);
+							gsi_scratch2);
 	}
 	if (result != GSI_STATUS_SUCCESS) {
-		IPAERR("gsi_write_channel_scratch failed %d\n",
-			result);
+		IPAERR("gsi_write_channel_scratch failed %d\n", result);
 		goto fail_write_channel_scratch;
 	}
 
@@ -3167,10 +3055,9 @@ int ipa3_write_qmapid_wdi_pipe(u32 clnt_hdl, u8 qmap_id)
 	qmap.params.ipa_pipe_number = clnt_hdl;
 	qmap.params.qmap_id = qmap_id;
 
-	result = ipa3_uc_send_cmd(qmap.raw32b,
-		IPA_CPU_2_HW_CMD_WDI_RX_EXT_CFG,
-		IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS,
-		false, 10*HZ);
+	result = ipa3_uc_send_cmd(qmap.raw32b, IPA_CPU_2_HW_CMD_WDI_RX_EXT_CFG,
+				  IPA_HW_2_CPU_WDI_CMD_STATUS_SUCCESS, false,
+				  10 * HZ);
 
 	if (result) {
 		result = -EFAULT;
@@ -3193,8 +3080,7 @@ uc_timeout:
  * Returns:	0 on success, negative on failure
  *
  */
-int ipa3_uc_reg_rdyCB(
-	struct ipa_wdi_uc_ready_params *inout)
+int ipa3_uc_reg_rdyCB(struct ipa_wdi_uc_ready_params *inout)
 {
 	int result = 0;
 
@@ -3230,7 +3116,6 @@ int ipa3_uc_dereg_rdyCB(void)
 	return 0;
 }
 
-
 /**
  * ipa_uc_wdi_get_dbpa() - To retrieve
  * doorbell physical address of wlan pipes
@@ -3240,8 +3125,7 @@ int ipa3_uc_dereg_rdyCB(void)
  * Returns:	0 on success, negative on failure
  *
  */
-int ipa_uc_wdi_get_dbpa(
-	struct ipa_wdi_db_params *param)
+int ipa_uc_wdi_get_dbpa(struct ipa_wdi_db_params *param)
 {
 	if (param == NULL || param->client >= IPA_CLIENT_MAX) {
 		IPAERR("bad parm. param=%pK ", param);
@@ -3251,17 +3135,19 @@ int ipa_uc_wdi_get_dbpa(
 	}
 
 	if (IPA_CLIENT_IS_CONS(param->client)) {
-		param->uc_door_bell_pa = ipa3_ctx->ipa_wrapper_base +
-				ipahal_get_reg_base() +
-				ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-					IPA_HW_WDI_TX_MBOX_START_INDEX/32,
-					IPA_HW_WDI_TX_MBOX_START_INDEX % 32);
+		param->uc_door_bell_pa =
+			ipa3_ctx->ipa_wrapper_base + ipahal_get_reg_base() +
+			ipahal_get_reg_mn_ofst(
+				IPA_UC_MAILBOX_m_n,
+				IPA_HW_WDI_TX_MBOX_START_INDEX / 32,
+				IPA_HW_WDI_TX_MBOX_START_INDEX % 32);
 	} else {
-		param->uc_door_bell_pa = ipa3_ctx->ipa_wrapper_base +
-				ipahal_get_reg_base() +
-				ipahal_get_reg_mn_ofst(IPA_UC_MAILBOX_m_n,
-					IPA_HW_WDI_RX_MBOX_START_INDEX/32,
-					IPA_HW_WDI_RX_MBOX_START_INDEX % 32);
+		param->uc_door_bell_pa =
+			ipa3_ctx->ipa_wrapper_base + ipahal_get_reg_base() +
+			ipahal_get_reg_mn_ofst(
+				IPA_UC_MAILBOX_m_n,
+				IPA_HW_WDI_RX_MBOX_START_INDEX / 32,
+				IPA_HW_WDI_RX_MBOX_START_INDEX % 32);
 	}
 
 	return 0;
@@ -3276,11 +3162,9 @@ static void ipa3_uc_wdi_loaded_handler(void)
 	}
 
 	if (ipa3_ctx->uc_wdi_ctx.uc_ready_cb) {
-		ipa3_ctx->uc_wdi_ctx.uc_ready_cb(
-			ipa3_ctx->uc_wdi_ctx.priv);
+		ipa3_ctx->uc_wdi_ctx.uc_ready_cb(ipa3_ctx->uc_wdi_ctx.priv);
 
-		ipa3_ctx->uc_wdi_ctx.uc_ready_cb =
-			NULL;
+		ipa3_ctx->uc_wdi_ctx.uc_ready_cb = NULL;
 		ipa3_ctx->uc_wdi_ctx.priv = NULL;
 	}
 }
@@ -3309,12 +3193,13 @@ int ipa3_create_wdi_mapping(u32 num_buffers, struct ipa_wdi_buffer_info *info)
 
 	for (i = 0; i < num_buffers; i++) {
 		IPADBG_LOW("i=%d pa=0x%pa iova=0x%lx sz=0x%zx\n", i,
-			&info[i].pa, info[i].iova, info[i].size);
-		info[i].result = ipa3_iommu_map(cb->iommu_domain,
-			rounddown(info[i].iova, PAGE_SIZE),
+			   &info[i].pa, info[i].iova, info[i].size);
+		info[i].result = ipa3_iommu_map(
+			cb->iommu_domain, rounddown(info[i].iova, PAGE_SIZE),
 			rounddown(info[i].pa, PAGE_SIZE),
 			roundup(info[i].size + info[i].pa -
-				rounddown(info[i].pa, PAGE_SIZE), PAGE_SIZE),
+					rounddown(info[i].pa, PAGE_SIZE),
+				PAGE_SIZE),
 			prot);
 	}
 
@@ -3340,11 +3225,12 @@ int ipa3_release_wdi_mapping(u32 num_buffers, struct ipa_wdi_buffer_info *info)
 
 	for (i = 0; i < num_buffers; i++) {
 		IPADBG_LOW("i=%d pa=0x%pa iova=0x%lx sz=0x%zx\n", i,
-			&info[i].pa, info[i].iova, info[i].size);
-		info[i].result = iommu_unmap(cb->iommu_domain,
-			rounddown(info[i].iova, PAGE_SIZE),
+			   &info[i].pa, info[i].iova, info[i].size);
+		info[i].result = iommu_unmap(
+			cb->iommu_domain, rounddown(info[i].iova, PAGE_SIZE),
 			roundup(info[i].size + info[i].pa -
-				rounddown(info[i].pa, PAGE_SIZE), PAGE_SIZE));
+					rounddown(info[i].pa, PAGE_SIZE),
+				PAGE_SIZE));
 	}
 
 	return ret;
@@ -3356,7 +3242,8 @@ static void ipa_wdi_pm_wrapper_cb(void *p, enum ipa_pm_cb_event event)
 	IPADBG("received pm event %d\n", event);
 }
 
-int ipa_pm_wrapper_wdi_set_perf_profile_internal(struct ipa_wdi_perf_profile *profile)
+int ipa_pm_wrapper_wdi_set_perf_profile_internal(
+	struct ipa_wdi_perf_profile *profile)
 {
 	int res = 0;
 
@@ -3366,18 +3253,18 @@ int ipa_pm_wrapper_wdi_set_perf_profile_internal(struct ipa_wdi_perf_profile *pr
 	}
 
 	res = ipa_pm_set_throughput(ipa_pm_wdi_ctx.ipa_wrapper_pm_hdl,
-			profile->max_supported_bw_mbps);
+				    profile->max_supported_bw_mbps);
 	if (res) {
 		IPAERR("fail to set pm throughput\n");
 		return -EFAULT;
 	}
 
-	 return 0;
+	return 0;
 }
 EXPORT_SYMBOL(ipa_pm_wrapper_wdi_set_perf_profile_internal);
 
 int ipa_pm_wrapper_connect_wdi_pipe(struct ipa_wdi_in_params *in,
-				struct ipa_wdi_out_params *out)
+				    struct ipa_wdi_out_params *out)
 {
 	int ret = 0;
 	struct ipa_pm_register_params pm_params;
@@ -3387,7 +3274,7 @@ int ipa_pm_wrapper_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 		return -EINVAL;
 	}
 	if (ipa_pm_wdi_ctx.curr_pm_state != IPA_PM_WDI_PM_DEREGISTERED &&
-		ipa_pm_wdi_ctx.curr_pm_state != IPA_PM_WDI_PM_REGISTERED) {
+	    ipa_pm_wdi_ctx.curr_pm_state != IPA_PM_WDI_PM_REGISTERED) {
 		IPAERR("Unexpected current ipa pm state\n");
 		return -EINVAL;
 	}
@@ -3398,7 +3285,8 @@ int ipa_pm_wrapper_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 		pm_params.callback = ipa_wdi_pm_wrapper_cb;
 		pm_params.user_data = NULL;
 		pm_params.group = IPA_PM_GROUP_DEFAULT;
-		if (ipa_pm_register(&pm_params, &ipa_pm_wdi_ctx.ipa_wrapper_pm_hdl)) {
+		if (ipa_pm_register(&pm_params,
+				    &ipa_pm_wdi_ctx.ipa_wrapper_pm_hdl)) {
 			IPAERR("fail to register ipa pm\n");
 			ret = -EFAULT;
 			return ret;
@@ -3406,7 +3294,7 @@ int ipa_pm_wrapper_connect_wdi_pipe(struct ipa_wdi_in_params *in,
 		ipa_pm_wdi_ctx.curr_pm_state = IPA_PM_WDI_PM_REGISTERED;
 	}
 
-	if (ipa_connect_wdi_pipe(in,out)) {
+	if (ipa_connect_wdi_pipe(in, out)) {
 		IPAERR("fail to setup pipe\n");
 		ret = -EFAULT;
 		return ret;
@@ -3420,7 +3308,7 @@ int ipa_pm_wrapper_disconnect_wdi_pipe(u32 clnt_hdl)
 {
 	int ret = 0;
 	if (ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEACTIVATE_IN_PROC ||
-		ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_ACTIVATE) {
+	    ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_ACTIVATE) {
 		IPAERR("Unexpected current ipa pm state\n");
 		return -EFAULT;
 	}
@@ -3430,9 +3318,8 @@ int ipa_pm_wrapper_disconnect_wdi_pipe(u32 clnt_hdl)
 	}
 
 	if (ipa_pm_wdi_ctx.curr_pm_state != IPA_PM_WDI_PM_DEREGISTER_IN_PROC) {
-		ipa_pm_wdi_ctx.curr_pm_state  = IPA_PM_WDI_PM_DEREGISTER_IN_PROC;
-	}
-	else {
+		ipa_pm_wdi_ctx.curr_pm_state = IPA_PM_WDI_PM_DEREGISTER_IN_PROC;
+	} else {
 		if (ipa_pm_deregister(ipa_pm_wdi_ctx.ipa_wrapper_pm_hdl)) {
 			IPAERR("fail to deregister ipa pm\n");
 			return -EFAULT;
@@ -3448,8 +3335,8 @@ int ipa_pm_wrapper_enable_wdi_pipe(u32 clnt_hdl)
 {
 	int ret = 0;
 	if (ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEREGISTER_IN_PROC ||
-		ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEREGISTERED ||
-			ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEACTIVATE_IN_PROC) {
+	    ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEREGISTERED ||
+	    ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEACTIVATE_IN_PROC) {
 		IPAERR("Unexpected current ipa pm state\n");
 		return -EFAULT;
 	}
@@ -3474,8 +3361,8 @@ int ipa_pm_wrapper_disable_pipe(u32 clnt_hdl)
 {
 	int ret = 0;
 	if (ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_REGISTERED ||
-		ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEREGISTER_IN_PROC ||
-			ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEREGISTERED) {
+	    ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEREGISTER_IN_PROC ||
+	    ipa_pm_wdi_ctx.curr_pm_state == IPA_PM_WDI_PM_DEREGISTERED) {
 		IPAERR("Unexpected current ipa pm state\n");
 		return -EFAULT;
 	}
@@ -3487,9 +3374,8 @@ int ipa_pm_wrapper_disable_pipe(u32 clnt_hdl)
 
 	if (ipa_pm_wdi_ctx.curr_pm_state != IPA_PM_WDI_PM_DEACTIVATE_IN_PROC) {
 		ipa_pm_wdi_ctx.curr_pm_state = IPA_PM_WDI_PM_DEACTIVATE_IN_PROC;
-	}
-	else {
-		if(ipa_pm_deactivate_sync(ipa_pm_wdi_ctx.ipa_wrapper_pm_hdl)) {
+	} else {
+		if (ipa_pm_deactivate_sync(ipa_pm_wdi_ctx.ipa_wrapper_pm_hdl)) {
 			IPAERR("fail to deactivate ipa pm\n");
 			return -EFAULT;
 		}

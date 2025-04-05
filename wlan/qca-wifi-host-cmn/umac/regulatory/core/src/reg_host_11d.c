@@ -28,8 +28,8 @@
 #include "reg_host_11d.h"
 #include "reg_services_common.h"
 
-static QDF_STATUS reg_11d_scan_trigger_handler(
-	struct wlan_regulatory_psoc_priv_obj *soc_reg)
+static QDF_STATUS
+reg_11d_scan_trigger_handler(struct wlan_regulatory_psoc_priv_obj *soc_reg)
 {
 	struct scan_start_request *req;
 	struct wlan_objmgr_vdev *vdev;
@@ -40,8 +40,7 @@ static QDF_STATUS reg_11d_scan_trigger_handler(
 		return QDF_STATUS_E_NOMEM;
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
-		soc_reg->psoc_ptr,
-		soc_reg->vdev_id_for_11d_scan,
+		soc_reg->psoc_ptr, soc_reg->vdev_id_for_11d_scan,
 		WLAN_REGULATORY_SB_ID);
 	if (!vdev) {
 		reg_err("vdev object is NULL id %d",
@@ -66,9 +65,10 @@ static QDF_STATUS reg_11d_scan_trigger_handler(
 	req->scan_req.scan_f_passive = false;
 
 	status = ucfg_scan_start(req);
-	reg_nofl_debug("11d scan trigger vdev %d scan_id %d req_id %d status %d",
-		       soc_reg->vdev_id_for_11d_scan, soc_reg->scan_id,
-		       soc_reg->scan_req_id, status);
+	reg_nofl_debug(
+		"11d scan trigger vdev %d scan_id %d req_id %d status %d",
+		soc_reg->vdev_id_for_11d_scan, soc_reg->scan_id,
+		soc_reg->scan_req_id, status);
 
 	if (status != QDF_STATUS_SUCCESS)
 		/* Don't free req here, ucfg_scan_start will do free */
@@ -80,14 +80,10 @@ static QDF_STATUS reg_11d_scan_trigger_handler(
 	return status;
 }
 
-static void reg_11d_scan_event_cb(
-	struct wlan_objmgr_vdev *vdev,
-	struct scan_event *event, void *arg)
-{
-};
+static void reg_11d_scan_event_cb(struct wlan_objmgr_vdev *vdev,
+				  struct scan_event *event, void *arg) {};
 
-QDF_STATUS reg_11d_host_scan(
-	struct wlan_regulatory_psoc_priv_obj *soc_reg)
+QDF_STATUS reg_11d_host_scan(struct wlan_regulatory_psoc_priv_obj *soc_reg)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
@@ -135,10 +131,8 @@ QDF_STATUS reg_11d_host_scan_init(struct wlan_objmgr_psoc *psoc)
 		reg_debug("host 11d scan are already inited");
 		return QDF_STATUS_SUCCESS;
 	}
-	soc_reg->scan_req_id =
-		ucfg_scan_register_requester(psoc, "11d",
-					     reg_11d_scan_event_cb,
-					     soc_reg);
+	soc_reg->scan_req_id = ucfg_scan_register_requester(
+		psoc, "11d", reg_11d_scan_event_cb, soc_reg);
 	qdf_mc_timer_init(&soc_reg->timer, QDF_TIMER_TYPE_SW,
 			  reg_11d_scan_timer, soc_reg);
 

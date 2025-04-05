@@ -20,11 +20,11 @@
  * This file provide definition for APIs registered through lmac Tx Ops
  */
 
-#include <wmi_unified_11be_api.h>
-#include <init_deinit_lmac.h>
 #include "target_if_mlo_mgr.h"
-#include <wlan_objmgr_peer_obj.h>
+#include <init_deinit_lmac.h>
 #include <wlan_mlo_t2lm.h>
+#include <wlan_objmgr_peer_obj.h>
+#include <wmi_unified_11be_api.h>
 
 /**
  * target_if_mlo_link_set_active_resp_handler() - function to handle mlo link
@@ -35,9 +35,9 @@
  *
  * Return: 0 on success, else error on failure
  */
-static int
-target_if_mlo_link_set_active_resp_handler(ol_scn_t scn, uint8_t *data,
-					   uint32_t datalen)
+static int target_if_mlo_link_set_active_resp_handler(ol_scn_t scn,
+						      uint8_t *data,
+						      uint32_t datalen)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -88,9 +88,8 @@ target_if_mlo_link_set_active_resp_handler(ol_scn_t scn, uint8_t *data,
  *
  * Return: 0 on success, else error on failure
  */
-static int
-target_if_mlo_link_removal_event_handler(ol_scn_t scn, uint8_t *data,
-					 uint32_t datalen)
+static int target_if_mlo_link_removal_event_handler(ol_scn_t scn, uint8_t *data,
+						    uint32_t datalen)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
@@ -130,7 +129,7 @@ target_if_mlo_link_removal_event_handler(ol_scn_t scn, uint8_t *data,
 	}
 
 	status = wmi_extract_mlo_link_removal_tbtt_update(
-			wmi_handle, data, &evt_params.tbtt_info);
+		wmi_handle, data, &evt_params.tbtt_info);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Unable to extract TBTT update TLV, ret = %d",
 			      status);
@@ -144,9 +143,8 @@ exit:
 
 QDF_STATUS
 target_if_extract_mlo_link_removal_info_mgmt_rx(
-		wmi_unified_t wmi_handle,
-		void *evt_buf,
-		struct mgmt_rx_event_params *rx_event)
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct mgmt_rx_event_params *rx_event)
 {
 	QDF_STATUS status;
 	struct mgmt_rx_mlo_link_removal_info *link_removal_info;
@@ -159,10 +157,10 @@ target_if_extract_mlo_link_removal_info_mgmt_rx(
 	rx_event->link_removal_info = NULL;
 	if (!rx_event->num_link_removal_info) {
 		/**
-		 * This is not an error. Only probe request frames will contain
-		 * Link removal TLVs, that too only till the link removal TBTT
-		 * countdown completion.
-		 */
+     * This is not an error. Only probe request frames will contain
+     * Link removal TLVs, that too only till the link removal TBTT
+     * countdown completion.
+     */
 		target_if_debug("Link removal TLVs are not present");
 		return QDF_STATUS_SUCCESS;
 	}
@@ -176,9 +174,8 @@ target_if_extract_mlo_link_removal_info_mgmt_rx(
 	}
 
 	status = wmi_extract_mgmt_rx_mlo_link_removal_info(
-					wmi_handle, evt_buf,
-					link_removal_info,
-					rx_event->num_link_removal_info);
+		wmi_handle, evt_buf, link_removal_info,
+		rx_event->num_link_removal_info);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Unable to extract link removal TLVs");
 		rx_event->num_link_removal_info = 0;
@@ -217,15 +214,15 @@ target_if_send_mlo_link_switch_cnf_cmd(struct wlan_objmgr_psoc *psoc,
 	return wmi_send_mlo_link_switch_req_cnf_cmd(wmi_handle, params);
 }
 
-static int
-target_if_mlo_link_switch_request_event_handler(ol_scn_t scn, uint8_t *data,
-						uint32_t datalen)
+static int target_if_mlo_link_switch_request_event_handler(ol_scn_t scn,
+							   uint8_t *data,
+							   uint32_t datalen)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
 	struct wlan_lmac_if_mlo_rx_ops *mlo_rx_ops;
 	QDF_STATUS status;
-	struct wlan_mlo_link_switch_req req = {0};
+	struct wlan_mlo_link_switch_req req = { 0 };
 
 	if (!scn || !data) {
 		target_if_err("scn: 0x%pK, data: 0x%pK", scn, data);
@@ -250,8 +247,8 @@ target_if_mlo_link_switch_request_event_handler(ol_scn_t scn, uint8_t *data,
 		return -EINVAL;
 	}
 
-	status = wmi_extract_mlo_link_switch_request_evt(wmi_handle, data,
-							 &req);
+	status =
+		wmi_extract_mlo_link_switch_request_evt(wmi_handle, data, &req);
 
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Unable to extract fixed param, ret = %d",
@@ -265,11 +262,11 @@ exit:
 	return status;
 }
 
-static inline void
-target_if_mlo_register_link_switch_cnf_handler(struct wlan_lmac_if_mlo_tx_ops *mlo_tx_ops)
+static inline void target_if_mlo_register_link_switch_cnf_handler(
+	struct wlan_lmac_if_mlo_tx_ops *mlo_tx_ops)
 {
 	mlo_tx_ops->send_mlo_link_switch_cnf_cmd =
-			target_if_send_mlo_link_switch_cnf_cmd;
+		target_if_send_mlo_link_switch_cnf_cmd;
 }
 
 static QDF_STATUS
@@ -278,16 +275,15 @@ target_if_mlo_register_link_switch_event_handler(struct wmi_unified *wmi_handle)
 	QDF_STATUS status;
 
 	status = wmi_unified_register_event_handler(
-			wmi_handle,
-			wmi_mlo_link_switch_request_eventid,
-			target_if_mlo_link_switch_request_event_handler,
-			WMI_RX_SERIALIZER_CTX);
+		wmi_handle, wmi_mlo_link_switch_request_eventid,
+		target_if_mlo_link_switch_request_event_handler,
+		WMI_RX_SERIALIZER_CTX);
 
 	return status;
 }
 
-static inline void
-target_if_mlo_unregister_link_switch_event_handler(struct wmi_unified *wmi_handle)
+static inline void target_if_mlo_unregister_link_switch_event_handler(
+	struct wmi_unified *wmi_handle)
 {
 	wmi_unified_unregister_event(wmi_handle,
 				     wmi_mlo_link_switch_request_eventid);
@@ -299,8 +295,8 @@ target_if_mlo_register_link_switch_event_handler(struct wmi_unified *wmi_handle)
 	return QDF_STATUS_E_NOSUPPORT;
 }
 
-static inline void
-target_if_mlo_unregister_link_switch_event_handler(struct wmi_unified *wmi_handle)
+static inline void target_if_mlo_unregister_link_switch_event_handler(
+	struct wmi_unified *wmi_handle)
 {
 }
 
@@ -311,8 +307,8 @@ target_if_send_mlo_link_switch_cnf_cmd(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline void
-target_if_mlo_register_link_switch_cnf_handler(struct wlan_lmac_if_mlo_tx_ops *mlo_tx_ops)
+static inline void target_if_mlo_register_link_switch_cnf_handler(
+	struct wlan_lmac_if_mlo_tx_ops *mlo_tx_ops)
 {
 }
 
@@ -333,9 +329,9 @@ target_if_mlo_link_switch_request_event_handler(ol_scn_t scn, uint8_t *data,
  *
  * Return: 0 on success, else error on failure
  */
-static int
-target_if_mlo_link_disable_request_event_handler(ol_scn_t scn, uint8_t *data,
-						 uint32_t datalen)
+static int target_if_mlo_link_disable_request_event_handler(ol_scn_t scn,
+							    uint8_t *data,
+							    uint32_t datalen)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
@@ -374,8 +370,8 @@ target_if_mlo_link_disable_request_event_handler(ol_scn_t scn, uint8_t *data,
 		goto exit;
 	}
 
-	status = mlo_rx_ops->mlo_link_disable_request_handler(psoc,
-							      &evt_params);
+	status =
+		mlo_rx_ops->mlo_link_disable_request_handler(psoc, &evt_params);
 exit:
 	return qdf_status_to_os_return(status);
 }
@@ -405,18 +401,17 @@ target_if_mlo_register_event_handler(struct wlan_objmgr_psoc *psoc)
 	}
 
 	status = wmi_unified_register_event(
-			wmi_handle,
-			wmi_mlo_link_removal_eventid,
-			target_if_mlo_link_removal_event_handler);
+		wmi_handle, wmi_mlo_link_removal_eventid,
+		target_if_mlo_link_removal_event_handler);
 	if (QDF_IS_STATUS_ERROR(status))
-		target_if_err("Couldn't register handler for Link removal WMI event %d",
-			      status);
+		target_if_err(
+			"Couldn't register handler for Link removal WMI event %d",
+			status);
 
 	status = wmi_unified_register_event_handler(
-			wmi_handle,
-			wmi_mlo_link_set_active_resp_eventid,
-			target_if_mlo_link_set_active_resp_handler,
-			WMI_RX_SERIALIZER_CTX);
+		wmi_handle, wmi_mlo_link_set_active_resp_eventid,
+		target_if_mlo_link_set_active_resp_handler,
+		WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		target_if_err("Register mlo link set active resp cb errcode %d",
 			      status);
@@ -427,21 +422,23 @@ target_if_mlo_register_event_handler(struct wlan_objmgr_psoc *psoc)
 	target_if_mlo_register_vdev_tid_to_link_map_event(wmi_handle);
 	target_if_mlo_register_mlo_link_state_info_event(wmi_handle);
 
-	status = wmi_unified_register_event_handler(wmi_handle,
-			wmi_mlo_link_disable_request_eventid,
-			target_if_mlo_link_disable_request_event_handler,
-			WMI_RX_SERIALIZER_CTX);
+	status = wmi_unified_register_event_handler(
+		wmi_handle, wmi_mlo_link_disable_request_eventid,
+		target_if_mlo_link_disable_request_event_handler,
+		WMI_RX_SERIALIZER_CTX);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		target_if_err("Couldn't register handler for link disable request WMI event %d",
-			      status);
+		target_if_err(
+			"Couldn't register handler for link disable request WMI event %d",
+			status);
 		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 	}
 
 	status = target_if_mlo_register_link_switch_event_handler(wmi_handle);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		target_if_err("Couldn't register handler for link switch WMI event %d",
-			      status);
+		target_if_err(
+			"Couldn't register handler for link switch WMI event %d",
+			status);
 		if (status == QDF_STATUS_E_NOSUPPORT)
 			status = QDF_STATUS_SUCCESS;
 	}
@@ -472,11 +469,10 @@ target_if_mlo_unregister_event_handler(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	wmi_unified_unregister_event_handler(wmi_handle,
-		wmi_mlo_link_set_active_resp_eventid);
+	wmi_unified_unregister_event_handler(
+		wmi_handle, wmi_mlo_link_set_active_resp_eventid);
 
-	wmi_unified_unregister_event(wmi_handle,
-				     wmi_mlo_link_removal_eventid);
+	wmi_unified_unregister_event(wmi_handle, wmi_mlo_link_removal_eventid);
 
 	target_if_mlo_unregister_vdev_tid_to_link_map_event(wmi_handle);
 	target_if_mlo_unregister_mlo_link_state_info_event(wmi_handle);
@@ -521,11 +517,12 @@ target_if_mlo_link_set_active(struct wlan_objmgr_psoc *psoc,
 	return ret;
 }
 
-static int target_if_mlo_vdev_tid_to_link_map_event_handler(
-		ol_scn_t scn, uint8_t *event_buff, uint32_t len)
+static int target_if_mlo_vdev_tid_to_link_map_event_handler(ol_scn_t scn,
+							    uint8_t *event_buff,
+							    uint32_t len)
 {
 	struct wlan_objmgr_psoc *psoc;
-	struct mlo_vdev_host_tid_to_link_map_resp event = {0};
+	struct mlo_vdev_host_tid_to_link_map_resp event = { 0 };
 	struct wmi_unified *wmi_handle;
 	struct wlan_lmac_if_mlo_rx_ops *rx_ops;
 	QDF_STATUS status;
@@ -565,29 +562,30 @@ static int target_if_mlo_vdev_tid_to_link_map_event_handler(
 }
 
 void target_if_mlo_register_vdev_tid_to_link_map_event(
-		struct wmi_unified *wmi_handle)
+	struct wmi_unified *wmi_handle)
 {
 	wmi_unified_register_event_handler(
-			wmi_handle, wmi_mlo_ap_vdev_tid_to_link_map_eventid,
-			target_if_mlo_vdev_tid_to_link_map_event_handler,
-			WMI_RX_EXECUTION_CTX);
+		wmi_handle, wmi_mlo_ap_vdev_tid_to_link_map_eventid,
+		target_if_mlo_vdev_tid_to_link_map_event_handler,
+		WMI_RX_EXECUTION_CTX);
 }
 
 void target_if_mlo_unregister_vdev_tid_to_link_map_event(
-		struct wmi_unified *wmi_handle)
+	struct wmi_unified *wmi_handle)
 {
 	wmi_unified_unregister_event_handler(
-			wmi_handle, wmi_mlo_ap_vdev_tid_to_link_map_eventid);
+		wmi_handle, wmi_mlo_ap_vdev_tid_to_link_map_eventid);
 }
 
-static int target_if_mlo_link_state_info_event_handler(
-		ol_scn_t scn, uint8_t *event_buff, uint32_t len)
+static int target_if_mlo_link_state_info_event_handler(ol_scn_t scn,
+						       uint8_t *event_buff,
+						       uint32_t len)
 {
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
 	QDF_STATUS status;
 	struct wlan_lmac_if_mlo_rx_ops *mlo_rx_ops;
-	struct ml_link_state_info_event event = {0};
+	struct ml_link_state_info_event event = { 0 };
 
 	if (!event_buff) {
 		target_if_err("Received NULL event ptr from FW");
@@ -623,7 +621,7 @@ static int target_if_mlo_link_state_info_event_handler(
 }
 
 void target_if_mlo_register_mlo_link_state_info_event(
-		struct wmi_unified *wmi_handle)
+	struct wmi_unified *wmi_handle)
 {
 	wmi_unified_register_event_handler(
 		wmi_handle, wmi_mlo_link_state_info_eventid,
@@ -631,12 +629,11 @@ void target_if_mlo_register_mlo_link_state_info_event(
 		WMI_RX_EXECUTION_CTX);
 }
 
-void  target_if_mlo_unregister_mlo_link_state_info_event(
-		struct wmi_unified *wmi_handle)
+void target_if_mlo_unregister_mlo_link_state_info_event(
+	struct wmi_unified *wmi_handle)
 {
-	wmi_unified_unregister_event_handler(
-			wmi_handle,
-			wmi_mlo_link_state_info_eventid);
+	wmi_unified_unregister_event_handler(wmi_handle,
+					     wmi_mlo_link_state_info_eventid);
 }
 
 #ifdef WLAN_FEATURE_11BE_MLO_ADV_FEATURE
@@ -647,18 +644,18 @@ void  target_if_mlo_unregister_mlo_link_state_info_event(
  *
  * Return: none
  */
-static inline void target_if_fill_provisioned_links(
-		struct wmi_host_tid_to_link_map_params *params,
-		struct wlan_t2lm_info *t2lm)
+static inline void
+target_if_fill_provisioned_links(struct wmi_host_tid_to_link_map_params *params,
+				 struct wlan_t2lm_info *t2lm)
 {
 	qdf_mem_copy(&params->t2lm_info[params->num_dir].t2lm_provisioned_links,
 		     &t2lm->ieee_link_map_tid,
 		     sizeof(uint16_t) * T2LM_MAX_NUM_TIDS);
 }
 #else
-static inline void target_if_fill_provisioned_links(
-		struct wmi_host_tid_to_link_map_params *params,
-		struct wlan_t2lm_info *t2lm)
+static inline void
+target_if_fill_provisioned_links(struct wmi_host_tid_to_link_map_params *params,
+				 struct wlan_t2lm_info *t2lm)
 {
 	qdf_mem_copy(&params->t2lm_info[params->num_dir].t2lm_provisioned_links,
 		     &t2lm->hw_link_map_tid,
@@ -671,7 +668,7 @@ target_if_mlo_send_tid_to_link_mapping(struct wlan_objmgr_vdev *vdev,
 				       struct wlan_t2lm_info *t2lm)
 {
 	struct wmi_unified *wmi_handle = NULL;
-	struct wmi_host_tid_to_link_map_params params = {0};
+	struct wmi_host_tid_to_link_map_params params = { 0 };
 	struct wlan_objmgr_pdev *pdev = NULL;
 	int tid = 0;
 	QDF_STATUS status;
@@ -692,7 +689,8 @@ target_if_mlo_send_tid_to_link_mapping(struct wlan_objmgr_vdev *vdev,
 	qdf_mem_copy(params.peer_macaddr, vdev->vdev_objmgr.bss_peer->macaddr,
 		     QDF_MAC_ADDR_SIZE);
 
-	t2lm_debug("Fill T2LM WMI info for peer: " QDF_MAC_ADDR_FMT " pdev_id:%d",
+	t2lm_debug("Fill T2LM WMI info for peer: " QDF_MAC_ADDR_FMT
+		   " pdev_id:%d",
 		   QDF_MAC_ADDR_REF(params.peer_macaddr), params.pdev_id);
 
 	params.t2lm_info[params.num_dir].direction = t2lm->direction;
@@ -708,17 +706,19 @@ target_if_mlo_send_tid_to_link_mapping(struct wlan_objmgr_vdev *vdev,
 
 	for (tid = 0; tid < T2LM_MAX_NUM_TIDS; tid++) {
 		t2lm_debug("tid:%d hw_link_map:%x ieee_link_map:%x", tid,
-			   params.t2lm_info[params.num_dir].t2lm_provisioned_links[tid],
+			   params.t2lm_info[params.num_dir]
+				   .t2lm_provisioned_links[tid],
 			   t2lm->ieee_link_map_tid[tid]);
 	}
 
 	params.num_dir++;
 
-	status = wmi_send_mlo_peer_tid_to_link_map_cmd(wmi_handle, &params, true);
+	status = wmi_send_mlo_peer_tid_to_link_map_cmd(wmi_handle, &params,
+						       true);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		t2lm_err("Failed to send T2LM WMI command for pdev_id:%d peer_mac: " QDF_MAC_ADDR_FMT,
-			 params.pdev_id,
-			 QDF_MAC_ADDR_REF(params.peer_macaddr));
+		t2lm_err("Failed to send T2LM WMI command for pdev_id:%d "
+			 "peer_mac: " QDF_MAC_ADDR_FMT,
+			 params.pdev_id, QDF_MAC_ADDR_REF(params.peer_macaddr));
 		return status;
 	}
 
@@ -730,7 +730,7 @@ target_if_request_ml_link_state_info(struct wlan_objmgr_psoc *psoc,
 				     struct mlo_link_state_cmd_params *cmd)
 {
 	struct wmi_unified *wmi_handle = NULL;
-	struct wmi_host_link_state_params params = {0};
+	struct wmi_host_link_state_params params = { 0 };
 	QDF_STATUS status;
 
 	if (!psoc) {
@@ -750,16 +750,15 @@ target_if_request_ml_link_state_info(struct wlan_objmgr_psoc *psoc,
 	}
 
 	params.vdev_id = cmd->vdev_id;
-	qdf_mem_copy(params.mld_mac, cmd->mld_mac,
-		     QDF_MAC_ADDR_SIZE);
+	qdf_mem_copy(params.mld_mac, cmd->mld_mac, QDF_MAC_ADDR_SIZE);
 
 	status = wmi_send_mlo_link_state_request_cmd(wmi_handle, &params);
 	return status;
 }
 
 QDF_STATUS target_if_mlo_send_link_removal_cmd(
-		struct wlan_objmgr_psoc *psoc,
-		const struct mlo_link_removal_cmd_params *param)
+	struct wlan_objmgr_psoc *psoc,
+	const struct mlo_link_removal_cmd_params *param)
 {
 	struct wmi_unified *wmi_handle;
 
@@ -797,9 +796,9 @@ QDF_STATUS target_if_mlo_send_vdev_pause(struct wlan_objmgr_psoc *psoc,
 }
 
 #ifdef QCA_SUPPORT_PRIMARY_LINK_MIGRATE
-static QDF_STATUS target_if_mlo_send_peer_ptqm_migrate_cmd(
-					struct wlan_objmgr_vdev *vdev,
-					struct peer_ptqm_migrate_params *param)
+static QDF_STATUS
+target_if_mlo_send_peer_ptqm_migrate_cmd(struct wlan_objmgr_vdev *vdev,
+					 struct peer_ptqm_migrate_params *param)
 {
 	struct wlan_objmgr_pdev *pdev = NULL;
 	struct wmi_unified *wmi_handle;
@@ -830,14 +829,14 @@ static QDF_STATUS target_if_mlo_send_peer_ptqm_migrate_cmd(
 }
 
 static void target_if_mlo_register_peer_ptqm_migrate_send(
-		struct wlan_lmac_if_mlo_tx_ops *mlo_tx_ops)
+	struct wlan_lmac_if_mlo_tx_ops *mlo_tx_ops)
 {
 	mlo_tx_ops->peer_ptqm_migrate_send =
-				target_if_mlo_send_peer_ptqm_migrate_cmd;
+		target_if_mlo_send_peer_ptqm_migrate_cmd;
 }
 #else
 static void target_if_mlo_register_peer_ptqm_migrate_send(
-		struct wlan_lmac_if_mlo_tx_ops *mlo_tx_ops)
+	struct wlan_lmac_if_mlo_tx_ops *mlo_tx_ops)
 {
 }
 #endif
@@ -865,10 +864,8 @@ target_if_mlo_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	mlo_tx_ops->register_events =
-		target_if_mlo_register_event_handler;
-	mlo_tx_ops->unregister_events =
-		target_if_mlo_unregister_event_handler;
+	mlo_tx_ops->register_events = target_if_mlo_register_event_handler;
+	mlo_tx_ops->unregister_events = target_if_mlo_unregister_event_handler;
 	mlo_tx_ops->link_set_active = target_if_mlo_link_set_active;
 	mlo_tx_ops->send_tid_to_link_mapping =
 		target_if_mlo_send_tid_to_link_mapping;
@@ -882,4 +879,3 @@ target_if_mlo_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 	target_if_mlo_register_peer_ptqm_migrate_send(mlo_tx_ops);
 	return QDF_STATUS_SUCCESS;
 }
-

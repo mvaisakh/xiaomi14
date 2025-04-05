@@ -19,16 +19,16 @@
 /*
  * DOC: contains scan 11d api and functionality
  */
-#include <qdf_status.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_scan_public_structs.h>
-#include <wlan_scan_utils_api.h>
-#include "wlan_scan_main.h"
 #include "wlan_scan_11d.h"
 #include "wlan_reg_services_api.h"
 #include "wlan_reg_ucfg_api.h"
+#include "wlan_scan_main.h"
+#include <qdf_status.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
+#include <wlan_scan_public_structs.h>
+#include <wlan_scan_utils_api.h>
 
 /**
  * wlan_pdevid_get_cc_db() - private API to get cc db from pdev id
@@ -82,8 +82,7 @@ wlan_pdev_get_cc_db(struct wlan_objmgr_psoc *psoc,
  *
  * Return: true or false
  */
-static bool
-scm_11d_elected_country_algo_fcc(struct scan_country_code_db *cc_db)
+static bool scm_11d_elected_country_algo_fcc(struct scan_country_code_db *cc_db)
 {
 	uint8_t i;
 	uint8_t country_idx;
@@ -115,8 +114,7 @@ scm_11d_elected_country_algo_fcc(struct scan_country_code_db *cc_db)
 		if ((max_votes < cc_db->votes[i].votes) &&
 		    (cc_db->votes[i].votes >= MIN_11D_AP_COUNT)) {
 			scm_debug("Votes for Country %c%c : %d",
-				  cc_db->votes[i].cc[0],
-				  cc_db->votes[i].cc[1],
+				  cc_db->votes[i].cc[0], cc_db->votes[i].cc[1],
 				  cc_db->votes[i].votes);
 			max_votes = cc_db->votes[i].votes;
 			country_idx = i;
@@ -126,8 +124,7 @@ scm_11d_elected_country_algo_fcc(struct scan_country_code_db *cc_db)
 
 algo_done:
 	if (found) {
-		qdf_mem_copy(cc_db->elected_cc,
-			     cc_db->votes[country_idx].cc,
+		qdf_mem_copy(cc_db->elected_cc, cc_db->votes[country_idx].cc,
 			     REG_ALPHA2_LEN + 1);
 
 		scm_debug("Selected Country is %c%c With count %d",
@@ -145,8 +142,7 @@ algo_done:
  *
  * Return: true or false
  */
-static bool
-scm_11d_elected_country_info(struct scan_country_code_db *cc_db)
+static bool scm_11d_elected_country_info(struct scan_country_code_db *cc_db)
 {
 	uint8_t i, j = 0;
 	uint8_t max_votes;
@@ -160,13 +156,12 @@ scm_11d_elected_country_info(struct scan_country_code_db *cc_db)
 
 	for (i = 1; i < cc_db->num_country_codes; i++) {
 		/*
-		 * If we have a tie for max votes for 2 different country codes,
-		 * pick random.
-		 */
+     * If we have a tie for max votes for 2 different country codes,
+     * pick random.
+     */
 		if (max_votes < cc_db->votes[i].votes) {
 			scm_debug("Votes for Country %c%c : %d",
-				  cc_db->votes[i].cc[0],
-				  cc_db->votes[i].cc[1],
+				  cc_db->votes[i].cc[0], cc_db->votes[i].cc[1],
 				  cc_db->votes[i].votes);
 
 			max_votes = cc_db->votes[i].votes;
@@ -174,12 +169,10 @@ scm_11d_elected_country_info(struct scan_country_code_db *cc_db)
 		}
 	}
 
-	qdf_mem_copy(cc_db->elected_cc, cc_db->votes[j].cc,
-		     REG_ALPHA2_LEN + 1);
+	qdf_mem_copy(cc_db->elected_cc, cc_db->votes[j].cc, REG_ALPHA2_LEN + 1);
 
 	scm_debug("Selected Country is %c%c With count %d",
-		  cc_db->votes[j].cc[0],
-		  cc_db->votes[j].cc[1],
+		  cc_db->votes[j].cc[0], cc_db->votes[j].cc[1],
 		  cc_db->votes[j].votes);
 
 	return true;
@@ -193,12 +186,11 @@ scm_11d_elected_country_info(struct scan_country_code_db *cc_db)
  *
  * Return: true or false
  */
-static bool
-scm_11d_set_country_code(struct wlan_objmgr_pdev *pdev,
-			 uint8_t *elected_cc, uint8_t *current_cc)
+static bool scm_11d_set_country_code(struct wlan_objmgr_pdev *pdev,
+				     uint8_t *elected_cc, uint8_t *current_cc)
 {
-	scm_debug("elected country %c%c, current country %c%c",
-		  elected_cc[0], elected_cc[1], current_cc[0], current_cc[1]);
+	scm_debug("elected country %c%c, current country %c%c", elected_cc[0],
+		  elected_cc[1], current_cc[0], current_cc[1]);
 
 	if (!qdf_mem_cmp(elected_cc, current_cc, REG_ALPHA2_LEN + 1))
 		return true;
@@ -237,15 +229,14 @@ QDF_STATUS scm_11d_cc_db_init(struct wlan_objmgr_psoc *psoc)
 	}
 
 	cc_db = (struct scan_country_code_db *)qdf_mem_malloc_atomic(
-		   sizeof(struct scan_country_code_db) * WLAN_UMAC_MAX_PDEVS);
+		sizeof(struct scan_country_code_db) * WLAN_UMAC_MAX_PDEVS);
 	if (!cc_db) {
 		scm_err("alloc country code db error");
 		return QDF_STATUS_E_INVAL;
 	}
 
 	qdf_mem_zero(cc_db,
-		     sizeof(struct scan_country_code_db) *
-			    WLAN_UMAC_MAX_PDEVS);
+		     sizeof(struct scan_country_code_db) * WLAN_UMAC_MAX_PDEVS);
 
 	scan_obj->cc_db = cc_db;
 	return QDF_STATUS_SUCCESS;
@@ -280,8 +271,7 @@ QDF_STATUS scm_11d_cc_db_deinit(struct wlan_objmgr_psoc *psoc)
  * Return: QDF_STATUS
  */
 static QDF_STATUS
-scm_11d_handle_country_info(void *arg,
-			    struct scan_cache_entry *scan_entry)
+scm_11d_handle_country_info(void *arg, struct scan_cache_entry *scan_entry)
 {
 	uint8_t i;
 	bool match = false;
@@ -393,7 +383,6 @@ void scm_11d_decide_country_code(struct wlan_objmgr_vdev *vdev)
 		found = scm_11d_elected_country_info(cc_db);
 
 	if (found)
-		scm_11d_set_country_code(pdev, cc_db->elected_cc,
-					 current_cc);
+		scm_11d_set_country_code(pdev, cc_db->elected_cc, current_cc);
 	scm_11d_reset_cc_db(cc_db);
 }

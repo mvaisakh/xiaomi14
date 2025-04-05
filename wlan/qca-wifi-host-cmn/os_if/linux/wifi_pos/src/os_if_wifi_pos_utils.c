@@ -20,10 +20,10 @@
  * component's os_if layer.
  */
 
-#include "wlan_objmgr_psoc_obj.h"
 #include "os_if_wifi_pos_utils.h"
-#include "wifi_pos_ucfg_i.h"
 #include "os_if_wifi_pos.h"
+#include "wifi_pos_ucfg_i.h"
+#include "wlan_objmgr_psoc_obj.h"
 
 #if defined(WIFI_POS_CONVERGED) && defined(WLAN_FEATURE_RTT_11AZ_SUPPORT)
 static struct wifi_pos_osif_ops osif_ops = {

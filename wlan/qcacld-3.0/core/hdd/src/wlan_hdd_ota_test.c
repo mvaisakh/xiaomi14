@@ -25,18 +25,18 @@
  */
 
 #include "osif_sync.h"
-#include <wlan_hdd_includes.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
 #include <sme_power_save_api.h>
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_ota_test.h>
 
-const struct nla_policy qca_wlan_vendor_ota_test_policy[
-		QCA_WLAN_VENDOR_ATTR_OTA_TEST_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_OTA_TEST_ENABLE] = {.type = NLA_U8 },
-};
+const struct nla_policy
+	qca_wlan_vendor_ota_test_policy[QCA_WLAN_VENDOR_ATTR_OTA_TEST_MAX + 1] = {
+		[QCA_WLAN_VENDOR_ATTR_OTA_TEST_ENABLE] = { .type = NLA_U8 },
+	};
 
 /**
  * __wlan_hdd_cfg80211_set_ota_test() - enable/disable OTA test
@@ -49,12 +49,11 @@ const struct nla_policy qca_wlan_vendor_ota_test_policy[
  */
 static int __wlan_hdd_cfg80211_set_ota_test(struct wiphy *wiphy,
 					    struct wireless_dev *wdev,
-					    const void *data,
-					    int data_len)
+					    const void *data, int data_len)
 {
 	struct net_device *dev = wdev->netdev;
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
-	struct hdd_context *hdd_ctx  = wiphy_priv(wiphy);
+	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_OTA_TEST_MAX + 1];
 	uint8_t ota_enable = 0;
 	QDF_STATUS status;
@@ -71,8 +70,8 @@ static int __wlan_hdd_cfg80211_set_ota_test(struct wiphy *wiphy,
 	if (wlan_hdd_validate_context(hdd_ctx) != 0)
 		return -EINVAL;
 
-	if (wlan_cfg80211_nla_parse(tb, QCA_WLAN_VENDOR_ATTR_OTA_TEST_MAX,
-				    data, data_len,
+	if (wlan_cfg80211_nla_parse(tb, QCA_WLAN_VENDOR_ATTR_OTA_TEST_MAX, data,
+				    data_len,
 				    qca_wlan_vendor_ota_test_policy)) {
 		hdd_err("invalid attr");
 		return -EINVAL;
@@ -83,8 +82,7 @@ static int __wlan_hdd_cfg80211_set_ota_test(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	ota_enable = nla_get_u8(
-		tb[QCA_WLAN_VENDOR_ATTR_OTA_TEST_ENABLE]);
+	ota_enable = nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_OTA_TEST_ENABLE]);
 
 	hdd_debug(" OTA test enable = %d", ota_enable);
 	if (ota_enable != 1) {
@@ -94,7 +92,7 @@ static int __wlan_hdd_cfg80211_set_ota_test(struct wiphy *wiphy,
 
 	mac_handle = hdd_ctx->mac_handle;
 	current_roam_state = sme_get_current_roam_state(
-					mac_handle, adapter->deflink->vdev_id);
+		mac_handle, adapter->deflink->vdev_id);
 	status = sme_stop_roaming(mac_handle, adapter->deflink->vdev_id,
 				  REASON_SME_ISSUED, RSO_INVALID_REQUESTOR);
 	if (status != QDF_STATUS_SUCCESS) {
@@ -110,15 +108,15 @@ static int __wlan_hdd_cfg80211_set_ota_test(struct wiphy *wiphy,
 		if (current_roam_state == eCSR_ROAMING_STATE_JOINING ||
 		    current_roam_state == eCSR_ROAMING_STATE_JOINED)
 			status = sme_start_roaming(mac_handle,
-						 adapter->deflink->vdev_id,
-						 REASON_SME_ISSUED,
-						 RSO_INVALID_REQUESTOR);
+						   adapter->deflink->vdev_id,
+						   REASON_SME_ISSUED,
+						   RSO_INVALID_REQUESTOR);
 		else if (current_roam_state == eCSR_ROAMING_STATE_STOP ||
 			 current_roam_state == eCSR_ROAMING_STATE_IDLE)
 			status = sme_stop_roaming(mac_handle,
-						 adapter->deflink->vdev_id,
-						 REASON_SME_ISSUED,
-						 RSO_INVALID_REQUESTOR);
+						  adapter->deflink->vdev_id,
+						  REASON_SME_ISSUED,
+						  RSO_INVALID_REQUESTOR);
 
 		if (status != QDF_STATUS_SUCCESS)
 			hdd_err("Restoring roaming state failed");
@@ -129,8 +127,7 @@ static int __wlan_hdd_cfg80211_set_ota_test(struct wiphy *wiphy,
 }
 
 int wlan_hdd_cfg80211_set_ota_test(struct wiphy *wiphy,
-				   struct wireless_dev *wdev,
-				   const void *data,
+				   struct wireless_dev *wdev, const void *data,
 				   int data_len)
 {
 	struct osif_vdev_sync *vdev_sync;
@@ -146,4 +143,3 @@ int wlan_hdd_cfg80211_set_ota_test(struct wiphy *wiphy,
 
 	return errno;
 }
-

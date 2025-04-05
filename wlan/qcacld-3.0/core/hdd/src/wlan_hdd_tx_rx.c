@@ -26,39 +26,38 @@
 /* denote that this file does not allow legacy hddLog */
 #define HDD_DISALLOW_LEGACY_HDDLOG 1
 #include "osif_sync.h"
-#include <wlan_hdd_tx_rx.h>
-#include <wlan_hdd_softap_tx_rx.h>
-#include <wlan_hdd_napi.h>
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
+#include <cds_sched.h>
+#include <cds_utils.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
 #include <linux/inetdevice.h>
-#include <cds_sched.h>
-#include <cds_utils.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
+#include <wlan_hdd_napi.h>
+#include <wlan_hdd_softap_tx_rx.h>
+#include <wlan_hdd_tx_rx.h>
 
-#include <linux/wireless.h>
-#include <net/cfg80211.h>
 #include "sap_api.h"
+#include "wlan_hdd_cfg80211.h"
+#include "wlan_hdd_power.h"
 #include "wlan_hdd_wmm.h"
 #include <cdp_txrx_cmn.h>
-#include <cdp_txrx_peer_ops.h>
 #include <cdp_txrx_flow_ctrl_v2.h>
 #include <cdp_txrx_misc.h>
-#include "wlan_hdd_power.h"
-#include "wlan_hdd_cfg80211.h"
-#include <wlan_hdd_tsf.h>
+#include <cdp_txrx_peer_ops.h>
+#include <linux/wireless.h>
+#include <net/cfg80211.h>
 #include <net/tcp.h>
+#include <wlan_hdd_tsf.h>
 
-#include <ol_defines.h>
 #include "cfg_ucfg_api.h"
-#include "target_type.h"
-#include "wlan_hdd_object_manager.h"
-#include <wlan_hdd_sar_limits.h>
-#include "wlan_hdd_object_manager.h"
-#include "wlan_dp_ucfg_api.h"
 #include "os_if_dp.h"
+#include "target_type.h"
+#include "wlan_dp_ucfg_api.h"
+#include "wlan_hdd_object_manager.h"
 #include "wlan_ipa_ucfg_api.h"
+#include <ol_defines.h>
+#include <wlan_hdd_sar_limits.h>
 
 #ifdef TX_MULTIQ_PER_AC
 #if defined(QCA_LL_TX_FLOW_CONTROL_V2) || defined(QCA_LL_PDEV_TX_FLOW_CONTROL)
@@ -70,43 +69,16 @@
  * The seventeenth queue is mapped to AC_VO to allow for proper prioritization.
  */
 const uint8_t hdd_qdisc_ac_to_tl_ac[] = {
-	SME_AC_VO,
-	SME_AC_VO,
-	SME_AC_VO,
-	SME_AC_VO,
-	SME_AC_VI,
-	SME_AC_VI,
-	SME_AC_VI,
-	SME_AC_VI,
-	SME_AC_BE,
-	SME_AC_BE,
-	SME_AC_BE,
-	SME_AC_BE,
-	SME_AC_BK,
-	SME_AC_BK,
-	SME_AC_BK,
-	SME_AC_BK,
-	SME_AC_VO,
+	SME_AC_VO, SME_AC_VO, SME_AC_VO, SME_AC_VO, SME_AC_VI, SME_AC_VI,
+	SME_AC_VI, SME_AC_VI, SME_AC_BE, SME_AC_BE, SME_AC_BE, SME_AC_BE,
+	SME_AC_BK, SME_AC_BK, SME_AC_BK, SME_AC_BK, SME_AC_VO,
 };
 
 #else
 const uint8_t hdd_qdisc_ac_to_tl_ac[] = {
-	SME_AC_VO,
-	SME_AC_VO,
-	SME_AC_VO,
-	SME_AC_VO,
-	SME_AC_VI,
-	SME_AC_VI,
-	SME_AC_VI,
-	SME_AC_VI,
-	SME_AC_BE,
-	SME_AC_BE,
-	SME_AC_BE,
-	SME_AC_BE,
-	SME_AC_BK,
-	SME_AC_BK,
-	SME_AC_BK,
-	SME_AC_BK,
+	SME_AC_VO, SME_AC_VO, SME_AC_VO, SME_AC_VO, SME_AC_VI, SME_AC_VI,
+	SME_AC_VI, SME_AC_VI, SME_AC_BE, SME_AC_BE, SME_AC_BE, SME_AC_BE,
+	SME_AC_BK, SME_AC_BK, SME_AC_BK, SME_AC_BK,
 };
 
 #endif
@@ -119,11 +91,7 @@ const uint8_t hdd_qdisc_ac_to_tl_ac[] = {
  * The fifth queue is mapped to AC_VO to allow for proper prioritization.
  */
 const uint8_t hdd_qdisc_ac_to_tl_ac[] = {
-	SME_AC_VO,
-	SME_AC_VI,
-	SME_AC_BE,
-	SME_AC_BK,
-	SME_AC_VO,
+	SME_AC_VO, SME_AC_VI, SME_AC_BE, SME_AC_BK, SME_AC_VO,
 };
 
 #else
@@ -194,16 +162,14 @@ void hdd_tx_resume_timer_expired_handler(void *adapter_context)
 		wlan_hdd_netif_queue_control(adapter,
 					     WLAN_NETIF_PRIORITY_QUEUE_ON,
 					     WLAN_DATA_FLOW_CONTROL_PRIORITY);
-		cdp_hl_fc_set_os_queue_status(soc,
-					      adapter->deflink->vdev_id,
+		cdp_hl_fc_set_os_queue_status(soc, adapter->deflink->vdev_id,
 					      WLAN_NETIF_PRIORITY_QUEUE_ON);
 	}
 	if (np_qpaused) {
 		wlan_hdd_netif_queue_control(adapter,
 					     WLAN_WAKE_NON_PRIORITY_QUEUE,
 					     WLAN_DATA_FLOW_CONTROL);
-		cdp_hl_fc_set_os_queue_status(soc,
-					      adapter->deflink->vdev_id,
+		cdp_hl_fc_set_os_queue_status(soc, adapter->deflink->vdev_id,
 					      WLAN_WAKE_NON_PRIORITY_QUEUE);
 	}
 }
@@ -222,7 +188,7 @@ void hdd_tx_resume_timer_expired_handler(void *adapter_context)
  */
 void hdd_tx_resume_timer_expired_handler(void *adapter_context)
 {
-	struct hdd_adapter *adapter = (struct hdd_adapter *) adapter_context;
+	struct hdd_adapter *adapter = (struct hdd_adapter *)adapter_context;
 
 	if (!adapter) {
 		/* INVALID ARG */
@@ -242,8 +208,7 @@ void hdd_tx_resume_timer_expired_handler(void *adapter_context)
  *
  * Return: None
  */
-static void
-hdd_tx_resume_false(struct hdd_adapter *adapter, bool tx_resume)
+static void hdd_tx_resume_false(struct hdd_adapter *adapter, bool tx_resume)
 {
 	QDF_STATUS status;
 	qdf_mc_timer_t *fc_timer;
@@ -259,7 +224,6 @@ hdd_tx_resume_false(struct hdd_adapter *adapter, bool tx_resume)
 	fc_timer = &adapter->tx_flow_control_timer;
 	if (QDF_TIMER_STATE_STOPPED != qdf_mc_timer_get_current_state(fc_timer))
 		goto update_stats;
-
 
 	status = qdf_mc_timer_start(fc_timer,
 				    WLAN_HDD_TX_FLOW_CONTROL_OS_Q_BLOCK_TIME);
@@ -285,7 +249,7 @@ update_stats:
  */
 void hdd_tx_resume_cb(void *adapter_context, bool tx_resume)
 {
-	struct hdd_adapter *adapter = (struct hdd_adapter *) adapter_context;
+	struct hdd_adapter *adapter = (struct hdd_adapter *)adapter_context;
 	struct hdd_station_ctx *hdd_sta_ctx = NULL;
 
 	if (!adapter) {
@@ -298,16 +262,15 @@ void hdd_tx_resume_cb(void *adapter_context, bool tx_resume)
 	/* Resume TX  */
 	if (true == tx_resume) {
 		if (QDF_TIMER_STATE_STOPPED !=
-		    qdf_mc_timer_get_current_state(&adapter->
-						   tx_flow_control_timer)) {
+		    qdf_mc_timer_get_current_state(
+			    &adapter->tx_flow_control_timer)) {
 			qdf_mc_timer_stop(&adapter->tx_flow_control_timer);
 		}
 		hdd_debug("Enabling queues");
-		wlan_hdd_netif_queue_control(adapter,
-					     WLAN_WAKE_ALL_NETIF_QUEUE,
+		wlan_hdd_netif_queue_control(adapter, WLAN_WAKE_ALL_NETIF_QUEUE,
 					     WLAN_DATA_FLOW_CONTROL);
 		adapter->deflink->hdd_stats.tx_rx_stats.is_txflow_paused =
-									false;
+			false;
 		adapter->deflink->hdd_stats.tx_rx_stats.txflow_unpause_cnt++;
 	}
 	hdd_tx_resume_false(adapter, tx_resume);
@@ -315,7 +278,7 @@ void hdd_tx_resume_cb(void *adapter_context, bool tx_resume)
 
 bool hdd_tx_flow_control_is_pause(void *adapter_context)
 {
-	struct hdd_adapter *adapter = (struct hdd_adapter *) adapter_context;
+	struct hdd_adapter *adapter = (struct hdd_adapter *)adapter_context;
 
 	if ((!adapter) || (WLAN_HDD_ADAPTER_MAGIC != adapter->magic)) {
 		/* INVALID ARG */
@@ -326,21 +289,19 @@ bool hdd_tx_flow_control_is_pause(void *adapter_context)
 	return adapter->pause_map & (1 << WLAN_DATA_FLOW_CONTROL);
 }
 
-void hdd_register_tx_flow_control(struct hdd_adapter *adapter,
-		qdf_mc_timer_callback_t timer_callback,
-		ol_txrx_tx_flow_control_fp flow_control_fp,
-		ol_txrx_tx_flow_control_is_pause_fp flow_control_is_pause_fp)
+void hdd_register_tx_flow_control(
+	struct hdd_adapter *adapter, qdf_mc_timer_callback_t timer_callback,
+	ol_txrx_tx_flow_control_fp flow_control_fp,
+	ol_txrx_tx_flow_control_is_pause_fp flow_control_is_pause_fp)
 {
 	if (adapter->tx_flow_timer_initialized == false) {
 		qdf_mc_timer_init(&adapter->tx_flow_control_timer,
-			  QDF_TIMER_TYPE_SW,
-			  timer_callback,
-			  adapter);
+				  QDF_TIMER_TYPE_SW, timer_callback, adapter);
 		adapter->tx_flow_timer_initialized = true;
 	}
 	cdp_fc_register(cds_get_context(QDF_MODULE_ID_SOC),
-		adapter->deflink->vdev_id, flow_control_fp, adapter,
-		flow_control_is_pause_fp);
+			adapter->deflink->vdev_id, flow_control_fp, adapter,
+			flow_control_is_pause_fp);
 }
 
 /**
@@ -352,7 +313,7 @@ void hdd_register_tx_flow_control(struct hdd_adapter *adapter,
 void hdd_deregister_tx_flow_control(struct hdd_adapter *adapter)
 {
 	cdp_fc_deregister(cds_get_context(QDF_MODULE_ID_SOC),
-			adapter->deflink->vdev_id);
+			  adapter->deflink->vdev_id);
 	if (adapter->tx_flow_timer_initialized == true) {
 		qdf_mc_timer_stop(&adapter->tx_flow_control_timer);
 		qdf_mc_timer_destroy(&adapter->tx_flow_control_timer);
@@ -360,8 +321,7 @@ void hdd_deregister_tx_flow_control(struct hdd_adapter *adapter)
 	}
 }
 
-void hdd_get_tx_resource(uint8_t vdev_id,
-			 struct qdf_mac_addr *mac_addr)
+void hdd_get_tx_resource(uint8_t vdev_id, struct qdf_mac_addr *mac_addr)
 {
 	struct hdd_adapter *adapter;
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
@@ -401,8 +361,8 @@ void hdd_get_tx_resource(uint8_t vdev_id,
 	}
 }
 
-unsigned int
-hdd_get_tx_flow_low_watermark(hdd_cb_handle cb_ctx, qdf_netdev_t netdev)
+unsigned int hdd_get_tx_flow_low_watermark(hdd_cb_handle cb_ctx,
+					   qdf_netdev_t netdev)
 {
 	struct hdd_adapter *adapter;
 
@@ -415,8 +375,7 @@ hdd_get_tx_flow_low_watermark(hdd_cb_handle cb_ctx, qdf_netdev_t netdev)
 #endif /* QCA_LL_LEGACY_TX_FLOW_CONTROL */
 
 #ifdef RECEIVE_OFFLOAD
-qdf_napi_struct
-*hdd_legacy_gro_get_napi(qdf_nbuf_t nbuf, bool enable_rxthread)
+qdf_napi_struct *hdd_legacy_gro_get_napi(qdf_nbuf_t nbuf, bool enable_rxthread)
 {
 	struct qca_napi_info *qca_napii;
 	struct qca_napi_data *napid;
@@ -431,19 +390,18 @@ qdf_napi_struct
 		return NULL;
 
 	/*
-	 * As we are breaking context in Rxthread mode, there is rx_thread NAPI
-	 * corresponds each hif_napi.
-	 */
+   * As we are breaking context in Rxthread mode, there is rx_thread NAPI
+   * corresponds each hif_napi.
+   */
 	if (enable_rxthread)
-		napi_to_use =  &qca_napii->rx_thread_napi;
+		napi_to_use = &qca_napii->rx_thread_napi;
 	else
 		napi_to_use = &qca_napii->napi;
 
 	return (qdf_napi_struct *)napi_to_use;
 }
 #else
-qdf_napi_struct
-*hdd_legacy_gro_get_napi(qdf_nbuf_t nbuf, bool enable_rxthread)
+qdf_napi_struct *hdd_legacy_gro_get_napi(qdf_nbuf_t nbuf, bool enable_rxthread)
 {
 	return NULL;
 }
@@ -471,8 +429,7 @@ int hdd_set_udp_qos_upgrade_config(struct hdd_adapter *adapter,
 }
 
 #ifdef QCA_WIFI_FTM
-static inline bool
-hdd_drop_tx_packet_on_ftm(struct sk_buff *skb)
+static inline bool hdd_drop_tx_packet_on_ftm(struct sk_buff *skb)
 {
 	if (hdd_get_conparam() == QDF_GLOBAL_FTM_MODE) {
 		kfree_skb(skb);
@@ -481,8 +438,7 @@ hdd_drop_tx_packet_on_ftm(struct sk_buff *skb)
 	return false;
 }
 #else
-static inline bool
-hdd_drop_tx_packet_on_ftm(struct sk_buff *skb)
+static inline bool hdd_drop_tx_packet_on_ftm(struct sk_buff *skb)
 {
 	return false;
 }
@@ -501,12 +457,11 @@ hdd_drop_tx_packet_on_ftm(struct sk_buff *skb)
  *
  * Return: None
  */
-static void __hdd_hard_start_xmit(struct sk_buff *skb,
-				  struct net_device *dev)
+static void __hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 	struct hdd_tx_rx_stats *stats =
-				&adapter->deflink->hdd_stats.tx_rx_stats;
+		&adapter->deflink->hdd_stats.tx_rx_stats;
 	struct hdd_station_ctx *sta_ctx = &adapter->deflink->session.station;
 	int cpu = qdf_get_smp_processor_id();
 	bool granted;
@@ -520,15 +475,15 @@ static void __hdd_hard_start_xmit(struct sk_buff *skb,
 #ifdef WLAN_FEATURE_OSRTP
 	if (!qdf_nbuf_is_osrtp_pkt(skb))
 #endif
-	osif_dp_mark_pkt_type(skb);
+		osif_dp_mark_pkt_type(skb);
 
 	/* Get TL AC corresponding to Qdisc queue index/AC. */
 	ac = hdd_qdisc_ac_to_tl_ac[skb->queue_mapping];
 
 	/*
-	 * user priority from IP header, which is already extracted and set from
-	 * select_queue call back function
-	 */
+   * user priority from IP header, which is already extracted and set from
+   * select_queue call back function
+   */
 	up = skb->priority;
 
 	++stats->per_cpu[cpu].tx_classified_ac[ac];
@@ -539,26 +494,25 @@ static void __hdd_hard_start_xmit(struct sk_buff *skb,
 
 	if (HDD_PSB_CHANGED == adapter->psb_changed) {
 		/*
-		 * Function which will determine acquire admittance for a
-		 * WMM AC is required or not based on psb configuration done
-		 * in the framework
-		 */
+     * Function which will determine acquire admittance for a
+     * WMM AC is required or not based on psb configuration done
+     * in the framework
+     */
 		hdd_wmm_acquire_access_required(adapter, ac);
 	}
 	/*
-	 * Make sure we already have access to this access category
-	 * or it is EAPOL or WAPI frame during initial authentication which
-	 * can have artificially boosted higher qos priority.
-	 */
+   * Make sure we already have access to this access category
+   * or it is EAPOL or WAPI frame during initial authentication which
+   * can have artificially boosted higher qos priority.
+   */
 
 	if (((adapter->psb_changed & (1 << ac)) &&
-	     likely(adapter->hdd_wmm_status.ac_status[ac].
-			is_access_allowed)) ||
+	     likely(adapter->hdd_wmm_status.ac_status[ac].is_access_allowed)) ||
 	    ((!sta_ctx->conn_info.is_authenticated) &&
 	     (QDF_NBUF_CB_PACKET_TYPE_EAPOL ==
-	      QDF_NBUF_CB_GET_PACKET_TYPE(skb) ||
+		      QDF_NBUF_CB_GET_PACKET_TYPE(skb) ||
 	      QDF_NBUF_CB_PACKET_TYPE_WAPI ==
-	      QDF_NBUF_CB_GET_PACKET_TYPE(skb)))) {
+		      QDF_NBUF_CB_GET_PACKET_TYPE(skb)))) {
 		granted = true;
 	} else {
 		status = hdd_wmm_acquire_access(adapter, ac, &granted);
@@ -568,13 +522,12 @@ static void __hdd_hard_start_xmit(struct sk_buff *skb,
 	if (!granted) {
 		bool is_default_ac = false;
 		/*
-		 * ADDTS request for this AC is sent, for now
-		 * send this packet through next available lower
-		 * Access category until ADDTS negotiation completes.
-		 */
-		while (!likely
-			       (adapter->hdd_wmm_status.ac_status[ac].
-			       is_access_allowed)) {
+     * ADDTS request for this AC is sent, for now
+     * send this packet through next available lower
+     * Access category until ADDTS negotiation completes.
+     */
+		while (!likely(adapter->hdd_wmm_status.ac_status[ac]
+				       .is_access_allowed)) {
 			switch (ac) {
 			case SME_AC_VO:
 				ac = SME_AC_VI;
@@ -602,12 +555,12 @@ static void __hdd_hard_start_xmit(struct sk_buff *skb,
 	}
 
 	/*
-	 * vdev in link_info is directly dereferenced because this is per
-	 * packet path, hdd_get_vdev_by_user() usage will be very costly
-	 * as it involves lock access.
-	 * Expectation here is vdev will be present during TX/RX processing
-	 * and also DP internally maintaining vdev ref count
-	 */
+   * vdev in link_info is directly dereferenced because this is per
+   * packet path, hdd_get_vdev_by_user() usage will be very costly
+   * as it involves lock access.
+   * Expectation here is vdev will be present during TX/RX processing
+   * and also DP internally maintaining vdev ref count
+   */
 	status = ucfg_dp_start_xmit((qdf_nbuf_t)skb, adapter->deflink->vdev);
 	if (QDF_IS_STATUS_SUCCESS(status)) {
 		netif_trans_update(dev);
@@ -661,20 +614,19 @@ static void __hdd_tx_timeout(struct net_device *dev)
 
 	TX_TIMEOUT_TRACE(dev, QDF_MODULE_ID_HDD_DATA);
 	DPTRACE(qdf_dp_trace(NULL, QDF_DP_TRACE_HDD_TX_TIMEOUT,
-				QDF_TRACE_DEFAULT_PDEV_ID,
-				NULL, 0, QDF_TX));
+			     QDF_TRACE_DEFAULT_PDEV_ID, NULL, 0, QDF_TX));
 
 	/* Getting here implies we disabled the TX queues for too
-	 * long. Queues are disabled either because of disassociation
-	 * or low resource scenarios. In case of disassociation it is
-	 * ok to ignore this. But if associated, we have do possible
-	 * recovery here
-	 */
+   * long. Queues are disabled either because of disassociation
+   * or low resource scenarios. In case of disassociation it is
+   * ok to ignore this. But if associated, we have do possible
+   * recovery here
+   */
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
 		txq = netdev_get_tx_queue(dev, i);
-		hdd_debug("Queue: %d status: %d txq->trans_start: %lu",
-			  i, netif_tx_queue_stopped(txq), txq->trans_start);
+		hdd_debug("Queue: %d status: %d txq->trans_start: %lu", i,
+			  netif_tx_queue_stopped(txq), txq->trans_start);
 	}
 
 	hdd_debug("carrier state: %d", netif_carrier_ok(dev));
@@ -756,14 +708,14 @@ void hdd_get_tsf_time_cb(qdf_netdev_t netdev, uint64_t input_time,
 const char *hdd_reason_type_to_string(enum netif_reason_type reason)
 {
 	switch (reason) {
-	CASE_RETURN_STRING(WLAN_CONTROL_PATH);
-	CASE_RETURN_STRING(WLAN_DATA_FLOW_CONTROL);
-	CASE_RETURN_STRING(WLAN_FW_PAUSE);
-	CASE_RETURN_STRING(WLAN_TX_ABORT);
-	CASE_RETURN_STRING(WLAN_VDEV_STOP);
-	CASE_RETURN_STRING(WLAN_PEER_UNAUTHORISED);
-	CASE_RETURN_STRING(WLAN_THERMAL_MITIGATION);
-	CASE_RETURN_STRING(WLAN_DATA_FLOW_CONTROL_PRIORITY);
+		CASE_RETURN_STRING(WLAN_CONTROL_PATH);
+		CASE_RETURN_STRING(WLAN_DATA_FLOW_CONTROL);
+		CASE_RETURN_STRING(WLAN_FW_PAUSE);
+		CASE_RETURN_STRING(WLAN_TX_ABORT);
+		CASE_RETURN_STRING(WLAN_VDEV_STOP);
+		CASE_RETURN_STRING(WLAN_PEER_UNAUTHORISED);
+		CASE_RETURN_STRING(WLAN_THERMAL_MITIGATION);
+		CASE_RETURN_STRING(WLAN_DATA_FLOW_CONTROL_PRIORITY);
 	default:
 		return "Invalid";
 	}
@@ -780,27 +732,26 @@ const char *hdd_reason_type_to_string(enum netif_reason_type reason)
  */
 const char *hdd_action_type_to_string(enum netif_action_type action)
 {
-
 	switch (action) {
-	CASE_RETURN_STRING(WLAN_STOP_ALL_NETIF_QUEUE);
-	CASE_RETURN_STRING(WLAN_START_ALL_NETIF_QUEUE);
-	CASE_RETURN_STRING(WLAN_WAKE_ALL_NETIF_QUEUE);
-	CASE_RETURN_STRING(WLAN_STOP_ALL_NETIF_QUEUE_N_CARRIER);
-	CASE_RETURN_STRING(WLAN_START_ALL_NETIF_QUEUE_N_CARRIER);
-	CASE_RETURN_STRING(WLAN_NETIF_TX_DISABLE);
-	CASE_RETURN_STRING(WLAN_NETIF_TX_DISABLE_N_CARRIER);
-	CASE_RETURN_STRING(WLAN_NETIF_CARRIER_ON);
-	CASE_RETURN_STRING(WLAN_NETIF_CARRIER_OFF);
-	CASE_RETURN_STRING(WLAN_NETIF_PRIORITY_QUEUE_ON);
-	CASE_RETURN_STRING(WLAN_NETIF_PRIORITY_QUEUE_OFF);
-	CASE_RETURN_STRING(WLAN_NETIF_VO_QUEUE_ON);
-	CASE_RETURN_STRING(WLAN_NETIF_VO_QUEUE_OFF);
-	CASE_RETURN_STRING(WLAN_NETIF_VI_QUEUE_ON);
-	CASE_RETURN_STRING(WLAN_NETIF_VI_QUEUE_OFF);
-	CASE_RETURN_STRING(WLAN_NETIF_BE_BK_QUEUE_ON);
-	CASE_RETURN_STRING(WLAN_NETIF_BE_BK_QUEUE_OFF);
-	CASE_RETURN_STRING(WLAN_WAKE_NON_PRIORITY_QUEUE);
-	CASE_RETURN_STRING(WLAN_STOP_NON_PRIORITY_QUEUE);
+		CASE_RETURN_STRING(WLAN_STOP_ALL_NETIF_QUEUE);
+		CASE_RETURN_STRING(WLAN_START_ALL_NETIF_QUEUE);
+		CASE_RETURN_STRING(WLAN_WAKE_ALL_NETIF_QUEUE);
+		CASE_RETURN_STRING(WLAN_STOP_ALL_NETIF_QUEUE_N_CARRIER);
+		CASE_RETURN_STRING(WLAN_START_ALL_NETIF_QUEUE_N_CARRIER);
+		CASE_RETURN_STRING(WLAN_NETIF_TX_DISABLE);
+		CASE_RETURN_STRING(WLAN_NETIF_TX_DISABLE_N_CARRIER);
+		CASE_RETURN_STRING(WLAN_NETIF_CARRIER_ON);
+		CASE_RETURN_STRING(WLAN_NETIF_CARRIER_OFF);
+		CASE_RETURN_STRING(WLAN_NETIF_PRIORITY_QUEUE_ON);
+		CASE_RETURN_STRING(WLAN_NETIF_PRIORITY_QUEUE_OFF);
+		CASE_RETURN_STRING(WLAN_NETIF_VO_QUEUE_ON);
+		CASE_RETURN_STRING(WLAN_NETIF_VO_QUEUE_OFF);
+		CASE_RETURN_STRING(WLAN_NETIF_VI_QUEUE_ON);
+		CASE_RETURN_STRING(WLAN_NETIF_VI_QUEUE_OFF);
+		CASE_RETURN_STRING(WLAN_NETIF_BE_BK_QUEUE_ON);
+		CASE_RETURN_STRING(WLAN_NETIF_BE_BK_QUEUE_OFF);
+		CASE_RETURN_STRING(WLAN_WAKE_NON_PRIORITY_QUEUE);
+		CASE_RETURN_STRING(WLAN_STOP_NON_PRIORITY_QUEUE);
 	default:
 		return "Invalid";
 	}
@@ -813,7 +764,8 @@ const char *hdd_action_type_to_string(enum netif_action_type action)
  * @reason: reason type
  */
 static void wlan_hdd_update_queue_oper_stats(struct hdd_adapter *adapter,
-	enum netif_action_type action, enum netif_reason_type reason)
+					     enum netif_action_type action,
+					     enum netif_reason_type reason)
 {
 	switch (action) {
 	case WLAN_STOP_ALL_NETIF_QUEUE:
@@ -876,12 +828,12 @@ static void wlan_hdd_update_txq_timestamp(struct net_device *dev)
 		txq = netdev_get_tx_queue(dev, i);
 
 		/*
-		 * On UP system, kernel will trigger watchdog bite if spinlock
-		 * recursion is detected. Unfortunately recursion is possible
-		 * when it is called in dev_queue_xmit() context, where stack
-		 * grabs the lock before calling driver's ndo_start_xmit
-		 * callback.
-		 */
+     * On UP system, kernel will trigger watchdog bite if spinlock
+     * recursion is detected. Unfortunately recursion is possible
+     * when it is called in dev_queue_xmit() context, where stack
+     * grabs the lock before calling driver's ndo_start_xmit
+     * callback.
+     */
 		if (!hdd_netdev_queue_is_locked(txq)) {
 			if (__netif_tx_trylock(txq)) {
 				txq_trans_update(txq);
@@ -926,11 +878,10 @@ static void wlan_hdd_update_pause_time(struct hdd_adapter *adapter,
 	for (i = 0; i < WLAN_REASON_TYPE_MAX; i++) {
 		if (temp_map & (1 << i)) {
 			adapter->queue_oper_stats[i].total_pause_time +=
-								 pause_time;
+				pause_time;
 			break;
 		}
 	}
-
 }
 
 uint32_t
@@ -941,9 +892,7 @@ wlan_hdd_dump_queue_history_state(struct hdd_netif_queue_history *queue_history,
 	unsigned int index = 0;
 
 	for (i = 0; i < NUM_TX_QUEUES; i++) {
-		index += qdf_scnprintf(buf + index,
-				       size - index,
-				       "%u:0x%lx ",
+		index += qdf_scnprintf(buf + index, size - index, "%u:0x%lx ",
 				       i, queue_history->tx_q_state[i]);
 	}
 
@@ -1019,8 +968,8 @@ static inline void wlan_hdd_wake_non_priority_queue(struct hdd_adapter *adapter)
 	}
 }
 
-static inline
-void hdd_wake_queues_for_ac(struct net_device *dev, enum hdd_wmm_linuxac ac)
+static inline void hdd_wake_queues_for_ac(struct net_device *dev,
+					  enum hdd_wmm_linuxac ac)
 {
 	uint8_t i;
 
@@ -1028,8 +977,8 @@ void hdd_wake_queues_for_ac(struct net_device *dev, enum hdd_wmm_linuxac ac)
 		netif_wake_subqueue(dev, TX_GET_QUEUE_IDX(ac, i));
 }
 
-static inline
-void hdd_stop_queues_for_ac(struct net_device *dev, enum hdd_wmm_linuxac ac)
+static inline void hdd_stop_queues_for_ac(struct net_device *dev,
+					  enum hdd_wmm_linuxac ac)
 {
 	uint8_t i;
 
@@ -1050,7 +999,8 @@ void hdd_stop_queues_for_ac(struct net_device *dev, enum hdd_wmm_linuxac ac)
  * Return: None
  */
 void wlan_hdd_netif_queue_control(struct hdd_adapter *adapter,
-	enum netif_action_type action, enum netif_reason_type reason)
+				  enum netif_action_type action,
+				  enum netif_reason_type reason)
 {
 	uint32_t temp_map;
 	uint8_t index;
@@ -1069,7 +1019,6 @@ void wlan_hdd_netif_queue_control(struct hdd_adapter *adapter,
 		  adapter->deflink->vdev_id, action, reason);
 
 	switch (action) {
-
 	case WLAN_NETIF_CARRIER_ON:
 		netif_carrier_on(adapter->dev);
 		break;
@@ -1111,7 +1060,8 @@ void wlan_hdd_netif_queue_control(struct hdd_adapter *adapter,
 		}
 		if (!adapter->pause_map) {
 			netif_wake_subqueue(adapter->dev,
-				HDD_LINUX_AC_HI_PRIO * TX_QUEUES_PER_AC);
+					    HDD_LINUX_AC_HI_PRIO *
+						    TX_QUEUES_PER_AC);
 			wlan_hdd_update_pause_time(adapter, temp_map);
 		}
 		spin_unlock_bh(&adapter->pause_map_lock);
@@ -1121,7 +1071,8 @@ void wlan_hdd_netif_queue_control(struct hdd_adapter *adapter,
 		spin_lock_bh(&adapter->pause_map_lock);
 		if (!adapter->pause_map) {
 			netif_stop_subqueue(adapter->dev,
-				    HDD_LINUX_AC_HI_PRIO * TX_QUEUES_PER_AC);
+					    HDD_LINUX_AC_HI_PRIO *
+						    TX_QUEUES_PER_AC);
 			wlan_hdd_update_txq_timestamp(adapter->dev);
 			wlan_hdd_update_unpause_time(adapter);
 		}
@@ -1300,8 +1251,7 @@ void hdd_print_netdev_txq_status(struct net_device *dev)
 	for (i = 0; i < dev->num_tx_queues; i++) {
 		struct netdev_queue *txq = netdev_get_tx_queue(dev, i);
 
-			hdd_debug("netdev tx queue[%u] state:0x%lx",
-				  i, txq->state);
+		hdd_debug("netdev tx queue[%u] state:0x%lx", i, txq->state);
 	}
 }
 
@@ -1315,10 +1265,10 @@ void hdd_print_netdev_txq_status(struct net_device *dev)
 int hdd_set_mon_rx_cb(struct net_device *dev)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
-	struct hdd_context *hdd_ctx =  WLAN_HDD_GET_CTX(adapter);
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 	int ret;
 	QDF_STATUS qdf_status;
-	struct ol_txrx_desc_type sta_desc = {0};
+	struct ol_txrx_desc_type sta_desc = { 0 };
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 	struct wlan_objmgr_vdev *vdev;
 
@@ -1369,12 +1319,12 @@ void hdd_tx_queue_cb(hdd_handle_t hdd_handle, uint32_t vdev_id,
 	struct wlan_hdd_link_info *link_info;
 
 	/*
-	 * Validating the context is not required here.
-	 * if there is a driver unload/SSR in progress happening in a
-	 * different context and it has been scheduled to run and
-	 * driver got a firmware event of sta kick out, then it is
-	 * good to disable the Tx Queue to stop the influx of traffic.
-	 */
+   * Validating the context is not required here.
+   * if there is a driver unload/SSR in progress happening in a
+   * different context and it has been scheduled to run and
+   * driver got a firmware event of sta kick out, then it is
+   * good to disable the Tx Queue to stop the influx of traffic.
+   */
 	if (!hdd_ctx) {
 		hdd_err("Invalid context passed");
 		return;
@@ -1401,8 +1351,7 @@ void hdd_tx_queue_cb(hdd_handle_t hdd_handle, uint32_t vdev_id,
 static void hdd_ini_tx_flow_control(struct hdd_config *config,
 				    struct wlan_objmgr_psoc *psoc)
 {
-	config->tx_flow_low_watermark =
-		cfg_get(psoc, CFG_DP_LL_TX_FLOW_LWM);
+	config->tx_flow_low_watermark = cfg_get(psoc, CFG_DP_LL_TX_FLOW_LWM);
 	config->tx_flow_hi_watermark_offset =
 		cfg_get(psoc, CFG_DP_LL_TX_FLOW_HWM_OFFSET);
 	config->tx_flow_max_queue_depth =
@@ -1438,10 +1387,8 @@ static void hdd_ini_tx_flow_control(struct hdd_config *config,
 static void hdd_ini_mscs_params(struct hdd_config *config,
 				struct wlan_objmgr_psoc *psoc)
 {
-	config->mscs_pkt_threshold =
-		cfg_get(psoc, CFG_VO_PKT_COUNT_THRESHOLD);
-	config->mscs_voice_interval =
-		cfg_get(psoc, CFG_MSCS_VOICE_INTERVAL);
+	config->mscs_pkt_threshold = cfg_get(psoc, CFG_VO_PKT_COUNT_THRESHOLD);
+	config->mscs_voice_interval = cfg_get(psoc, CFG_MSCS_VOICE_INTERVAL);
 }
 
 #else
@@ -1458,8 +1405,7 @@ void hdd_dp_cfg_update(struct wlan_objmgr_psoc *psoc,
 
 	config = hdd_ctx->config;
 
-	config->napi_cpu_affinity_mask =
-		cfg_get(psoc, CFG_DP_NAPI_CE_CPU_MASK);
+	config->napi_cpu_affinity_mask = cfg_get(psoc, CFG_DP_NAPI_CE_CPU_MASK);
 	config->cfg_wmi_credit_cnt = cfg_get(psoc, CFG_DP_HTC_WMI_CREDIT_CNT);
 
 	hdd_ini_tx_flow_control(config, psoc);
@@ -1500,17 +1446,17 @@ static void hdd_set_tx_flow_info(struct hdd_adapter *adapter,
 		return;
 
 	/*
-	 * This is first adapter detected as active
-	 * set as default for none concurrency case
-	 */
+   * This is first adapter detected as active
+   * set as default for none concurrency case
+   */
 	if (!(*pre_adp_channel)) {
 		/* If IPA UC data path is enabled,
-		 * target should reserve extra tx descriptors
-		 * for IPA data path.
-		 * Then host data path should allow less TX
-		 * packet pumping in case IPA
-		 * data path enabled
-		 */
+     * target should reserve extra tx descriptors
+     * for IPA data path.
+     * Then host data path should allow less TX
+     * packet pumping in case IPA
+     * data path enabled
+     */
 		if (ucfg_ipa_uc_is_enabled() &&
 		    adapter->device_mode == QDF_SAP_MODE) {
 			adapter->tx_flow_low_watermark =
@@ -1522,41 +1468,40 @@ static void hdd_set_tx_flow_info(struct hdd_adapter *adapter,
 		}
 		adapter->tx_flow_hi_watermark_offset =
 			hdd_ctx->config->tx_flow_hi_watermark_offset;
-		cdp_fc_ll_set_tx_pause_q_depth(soc,
-				adapter->deflink->vdev_id,
-				hdd_ctx->config->tx_flow_max_queue_depth);
+		cdp_fc_ll_set_tx_pause_q_depth(
+			soc, adapter->deflink->vdev_id,
+			hdd_ctx->config->tx_flow_max_queue_depth);
 		hdd_debug("MODE %d,CH %d,LWM %d,HWM %d,TXQDEP %d",
-			  adapter->device_mode,
-			  target_channel,
+			  adapter->device_mode, target_channel,
 			  adapter->tx_flow_low_watermark,
 			  adapter->tx_flow_low_watermark +
-			  adapter->tx_flow_hi_watermark_offset,
+				  adapter->tx_flow_hi_watermark_offset,
 			  hdd_ctx->config->tx_flow_max_queue_depth);
 		*pre_adp_channel = target_channel;
 		*pre_adp_ctx = adapter;
 	} else {
 		/*
-		 * SCC, disable TX flow control for both
-		 * SCC each adapter cannot reserve dedicated
-		 * channel resource, as a result, if any adapter
-		 * blocked OS Q by flow control,
-		 * blocked adapter will lost chance to recover
-		 */
+     * SCC, disable TX flow control for both
+     * SCC each adapter cannot reserve dedicated
+     * channel resource, as a result, if any adapter
+     * blocked OS Q by flow control,
+     * blocked adapter will lost chance to recover
+     */
 		if (*pre_adp_channel == target_channel) {
 			/* Current adapter */
 			adapter->tx_flow_low_watermark = 0;
 			adapter->tx_flow_hi_watermark_offset = 0;
-			cdp_fc_ll_set_tx_pause_q_depth(soc,
-				adapter->deflink->vdev_id,
+			cdp_fc_ll_set_tx_pause_q_depth(
+				soc, adapter->deflink->vdev_id,
 				hdd_ctx->config->tx_hbw_flow_max_queue_depth);
-			hdd_debug("SCC: MODE %s(%d), CH %d, LWM %d, HWM %d, TXQDEP %d",
-			          qdf_opmode_str(adapter->device_mode),
-			          adapter->device_mode,
-			          target_channel,
-			          adapter->tx_flow_low_watermark,
-			          adapter->tx_flow_low_watermark +
-			          adapter->tx_flow_hi_watermark_offset,
-			          hdd_ctx->config->tx_hbw_flow_max_queue_depth);
+			hdd_debug(
+				"SCC: MODE %s(%d), CH %d, LWM %d, HWM %d, TXQDEP %d",
+				qdf_opmode_str(adapter->device_mode),
+				adapter->device_mode, target_channel,
+				adapter->tx_flow_low_watermark,
+				adapter->tx_flow_low_watermark +
+					adapter->tx_flow_hi_watermark_offset,
+				hdd_ctx->config->tx_hbw_flow_max_queue_depth);
 
 			if (!(*pre_adp_ctx)) {
 				hdd_err("SCC: Previous adapter context NULL");
@@ -1567,22 +1512,23 @@ static void hdd_set_tx_flow_info(struct hdd_adapter *adapter,
 			/* Previous adapter */
 			(*pre_adp_ctx)->tx_flow_low_watermark = 0;
 			(*pre_adp_ctx)->tx_flow_hi_watermark_offset = 0;
-			cdp_fc_ll_set_tx_pause_q_depth(soc,
-				(*pre_adp_ctx)->deflink->vdev_id,
+			cdp_fc_ll_set_tx_pause_q_depth(
+				soc, (*pre_adp_ctx)->deflink->vdev_id,
 				hdd_ctx->config->tx_hbw_flow_max_queue_depth);
-			hdd_debug("SCC: MODE %s(%d), CH %d, LWM %d, HWM %d, TXQDEP %d",
-				  qdf_opmode_str((*pre_adp_ctx)->device_mode),
-				  (*pre_adp_ctx)->device_mode,
-				  target_channel,
-				  (*pre_adp_ctx)->tx_flow_low_watermark,
-				  (*pre_adp_ctx)->tx_flow_low_watermark +
-				  (*pre_adp_ctx)->tx_flow_hi_watermark_offset,
-				 hdd_ctx->config->tx_hbw_flow_max_queue_depth);
+			hdd_debug(
+				"SCC: MODE %s(%d), CH %d, LWM %d, HWM %d, TXQDEP %d",
+				qdf_opmode_str((*pre_adp_ctx)->device_mode),
+				(*pre_adp_ctx)->device_mode, target_channel,
+				(*pre_adp_ctx)->tx_flow_low_watermark,
+				(*pre_adp_ctx)->tx_flow_low_watermark +
+					(*pre_adp_ctx)
+						->tx_flow_hi_watermark_offset,
+				hdd_ctx->config->tx_hbw_flow_max_queue_depth);
 		} else {
 			/*
-			 * MCC, each adapter will have dedicated
-			 * resource
-			 */
+       * MCC, each adapter will have dedicated
+       * resource
+       */
 			/* current channel is 2.4 */
 			if (target_channel <=
 			    WLAN_HDD_TX_FLOW_CONTROL_MAX_24BAND_CH) {
@@ -1607,17 +1553,17 @@ static void hdd_set_tx_flow_info(struct hdd_adapter *adapter,
 				hdd_ctx->config->tx_hbw_flow_low_watermark;
 			adapter5->tx_flow_hi_watermark_offset =
 				hdd_ctx->config->tx_hbw_flow_hi_watermark_offset;
-			cdp_fc_ll_set_tx_pause_q_depth(soc,
-				adapter5->deflink->vdev_id,
+			cdp_fc_ll_set_tx_pause_q_depth(
+				soc, adapter5->deflink->vdev_id,
 				hdd_ctx->config->tx_hbw_flow_max_queue_depth);
-			hdd_debug("MCC: MODE %s(%d), CH %d, LWM %d, HWM %d, TXQDEP %d",
-				  qdf_opmode_str(adapter5->device_mode),
-				  adapter5->device_mode,
-				  channel5,
-				  adapter5->tx_flow_low_watermark,
-				  adapter5->tx_flow_low_watermark +
-				  adapter5->tx_flow_hi_watermark_offset,
-				  hdd_ctx->config->tx_hbw_flow_max_queue_depth);
+			hdd_debug(
+				"MCC: MODE %s(%d), CH %d, LWM %d, HWM %d, TXQDEP %d",
+				qdf_opmode_str(adapter5->device_mode),
+				adapter5->device_mode, channel5,
+				adapter5->tx_flow_low_watermark,
+				adapter5->tx_flow_low_watermark +
+					adapter5->tx_flow_hi_watermark_offset,
+				hdd_ctx->config->tx_hbw_flow_max_queue_depth);
 
 			if (!adapter2_4) {
 				hdd_err("MCC: 2.4GHz adapter context NULL");
@@ -1628,17 +1574,17 @@ static void hdd_set_tx_flow_info(struct hdd_adapter *adapter,
 				hdd_ctx->config->tx_lbw_flow_low_watermark;
 			adapter2_4->tx_flow_hi_watermark_offset =
 				hdd_ctx->config->tx_lbw_flow_hi_watermark_offset;
-			cdp_fc_ll_set_tx_pause_q_depth(soc,
-				adapter2_4->deflink->vdev_id,
+			cdp_fc_ll_set_tx_pause_q_depth(
+				soc, adapter2_4->deflink->vdev_id,
 				hdd_ctx->config->tx_lbw_flow_max_queue_depth);
-			hdd_debug("MCC: MODE %s(%d), CH %d, LWM %d, HWM %d, TXQDEP %d",
-				  qdf_opmode_str(adapter2_4->device_mode),
-				  adapter2_4->device_mode,
-				  channel24,
-				  adapter2_4->tx_flow_low_watermark,
-				  adapter2_4->tx_flow_low_watermark +
-				  adapter2_4->tx_flow_hi_watermark_offset,
-				  hdd_ctx->config->tx_lbw_flow_max_queue_depth);
+			hdd_debug(
+				"MCC: MODE %s(%d), CH %d, LWM %d, HWM %d, TXQDEP %d",
+				qdf_opmode_str(adapter2_4->device_mode),
+				adapter2_4->device_mode, channel24,
+				adapter2_4->tx_flow_low_watermark,
+				adapter2_4->tx_flow_low_watermark +
+					adapter2_4->tx_flow_hi_watermark_offset,
+				hdd_ctx->config->tx_lbw_flow_max_queue_depth);
 		}
 	}
 }
@@ -1662,7 +1608,8 @@ void wlan_hdd_set_tx_flow_info(void)
 		return;
 
 	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
-					   dbgid) {
+					   dbgid)
+	{
 		switch (adapter->device_mode) {
 		case QDF_STA_MODE:
 		case QDF_P2P_CLIENT_MODE:
@@ -1692,11 +1639,8 @@ void wlan_hdd_set_tx_flow_info(void)
 			break;
 		}
 
-		hdd_set_tx_flow_info(adapter,
-				     &pre_adp_ctx,
-				     target_channel,
-				     &pre_adp_channel,
-				     dbgid);
+		hdd_set_tx_flow_info(adapter, &pre_adp_ctx, target_channel,
+				     &pre_adp_channel, dbgid);
 		target_channel = 0;
 
 		hdd_adapter_dev_put_debug(adapter, dbgid);

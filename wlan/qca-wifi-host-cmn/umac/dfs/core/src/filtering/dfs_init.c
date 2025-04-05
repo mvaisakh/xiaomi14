@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2013, 2016-2019, 2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2002-2010, Atheros Communications Inc.
+ * Copyright (c) 2013, 2016-2019, 2021 The Linux Foundation. All rights
+ * reserved. Copyright (c) 2002-2010, Atheros Communications Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,16 +22,15 @@
 
 #include "../dfs.h"
 #include "wlan_dfs_lmac_api.h"
+#include "wlan_dfs_utils_api.h"
 #include <wlan_objmgr_vdev_obj.h>
 #include <wlan_reg_services_api.h>
-#include "wlan_dfs_utils_api.h"
 
 /**
  * dfs_reset_filtertype() - Reset filtertype.
  * @ft: Pointer to dfs_filtertype structure.
  */
-static inline void dfs_reset_filtertype(
-		struct dfs_filtertype *ft)
+static inline void dfs_reset_filtertype(struct dfs_filtertype *ft)
 {
 	int j;
 	struct dfs_filter *rf;
@@ -86,11 +85,11 @@ void dfs_reset_alldelaylines(struct wlan_dfs *dfs)
 
 	for (i = 0; i < dfs->dfs_rinfo.rn_numbin5radars; i++) {
 		qdf_mem_zero(&(dfs->dfs_b5radars[i].br_elems[0]),
-				sizeof(struct dfs_bin5elem) * DFS_MAX_B5_SIZE);
+			     sizeof(struct dfs_bin5elem) * DFS_MAX_B5_SIZE);
 		dfs->dfs_b5radars[i].br_firstelem = 0;
 		dfs->dfs_b5radars[i].br_numelems = 0;
-		dfs->dfs_b5radars[i].br_lastelem =
-			(0xFFFFFFFF) & DFS_MAX_B5_MASK;
+		dfs->dfs_b5radars[i].br_lastelem = (0xFFFFFFFF) &
+						   DFS_MAX_B5_MASK;
 	}
 }
 
@@ -116,7 +115,7 @@ void dfs_reset_radarq(struct wlan_dfs *dfs)
 	struct dfs_event *event;
 
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "dfs is NULL");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs is NULL");
 		return;
 	}
 
@@ -139,9 +138,7 @@ void dfs_reset_radarq(struct wlan_dfs *dfs)
  *
  * Return: 1 if too many overlapping radar filters else 0.
  */
-static inline bool dfs_fill_ft_index_table(
-		struct wlan_dfs *dfs,
-		int i)
+static inline bool dfs_fill_ft_index_table(struct wlan_dfs *dfs, int i)
 {
 	uint32_t stop = 0, tableindex = 0;
 
@@ -156,7 +153,8 @@ static inline bool dfs_fill_ft_index_table(
 		(dfs->dfs_ftindextable[i])[tableindex] =
 			(int8_t)(dfs->dfs_rinfo.rn_ftindex);
 	} else {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "Too many overlapping radar filters");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,
+			"Too many overlapping radar filters");
 		return 1;
 	}
 
@@ -174,19 +172,17 @@ static inline bool dfs_fill_ft_index_table(
  *
  * Return: 1 if too many overlapping radar filters else 0.
  */
-static inline bool dfs_fill_filter_type(
-		struct wlan_dfs *dfs,
-		struct dfs_filtertype **ft,
-		struct dfs_pulse *dfs_radars,
-		int32_t *min_rssithresh,
-		uint32_t *max_pulsedur,
-		int p)
+static inline bool dfs_fill_filter_type(struct wlan_dfs *dfs,
+					struct dfs_filtertype **ft,
+					struct dfs_pulse *dfs_radars,
+					int32_t *min_rssithresh,
+					uint32_t *max_pulsedur, int p)
 {
 	int i;
 
 	/* No filter of the appropriate dur was found. */
 	if ((dfs->dfs_rinfo.rn_ftindex + 1) > DFS_MAX_RADAR_TYPES) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "Too many filter types");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "Too many filter types");
 		return 1;
 	}
 	(*ft) = dfs->dfs_radarf[dfs->dfs_rinfo.rn_ftindex];
@@ -217,7 +213,7 @@ static inline bool dfs_fill_filter_type(
 }
 
 int dfs_init_radar_filters(struct wlan_dfs *dfs,
-		struct wlan_dfs_radar_tab_info *radar_info)
+			   struct wlan_dfs_radar_tab_info *radar_info)
 {
 	struct dfs_filtertype *ft = NULL;
 	struct dfs_filter *rf = NULL;
@@ -231,25 +227,25 @@ int dfs_init_radar_filters(struct wlan_dfs *dfs,
 	int retval;
 
 	if (!dfs) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "dfs is NULL");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "dfs is NULL");
 		return 1;
 	}
 
 	dfs_debug(dfs, WLAN_DEBUG_DFS,
-			"dfsdomain=%d, numradars=%d, numb5radars=%d",
-			 radar_info->dfsdomain,
-			radar_info->numradars, radar_info->numb5radars);
+		  "dfsdomain=%d, numradars=%d, numb5radars=%d",
+		  radar_info->dfsdomain, radar_info->numradars,
+		  radar_info->numb5radars);
 
 	/* Clear up the dfs domain flag first. */
 	dfs->wlan_dfs_isdfsregdomain = 0;
 
 	/*
-	 * If radar_info is NULL or dfsdomain is NULL, treat the
-	 * rest of the radar configuration as suspect.
-	 */
+   * If radar_info is NULL or dfsdomain is NULL, treat the
+   * rest of the radar configuration as suspect.
+   */
 	if (!radar_info || radar_info->dfsdomain == 0) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "Unknown dfs domain %d",
-				 dfs->dfsdomain);
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "Unknown dfs domain %d",
+			dfs->dfsdomain);
 		/* Disable radar detection since we don't have a radar domain.*/
 		dfs->dfs_proc_phyerr &= ~DFS_RADAR_EN;
 		dfs->dfs_proc_phyerr &= ~DFS_SECOND_SEGMENT_RADAR_EN;
@@ -277,19 +273,19 @@ int dfs_init_radar_filters(struct wlan_dfs *dfs,
 		ft = NULL;
 		for (n = 0; n < dfs->dfs_rinfo.rn_ftindex; n++) {
 			if ((dfs_radars[p].rp_pulsedur ==
-				    dfs->dfs_radarf[n]->ft_filterdur) &&
-				(dfs_radars[p].rp_numpulses ==
-				 dfs->dfs_radarf[n]->ft_numpulses) &&
-				(dfs_radars[p].rp_mindur ==
-				 dfs->dfs_radarf[n]->ft_mindur) &&
-				(dfs_radars[p].rp_maxdur ==
-				 dfs->dfs_radarf[n]->ft_maxdur)) {
+			     dfs->dfs_radarf[n]->ft_filterdur) &&
+			    (dfs_radars[p].rp_numpulses ==
+			     dfs->dfs_radarf[n]->ft_numpulses) &&
+			    (dfs_radars[p].rp_mindur ==
+			     dfs->dfs_radarf[n]->ft_mindur) &&
+			    (dfs_radars[p].rp_maxdur ==
+			     dfs->dfs_radarf[n]->ft_maxdur)) {
 				ft = dfs->dfs_radarf[n];
 				/* ft_rssithresh means the minimum rp_rssithresh
-				 * among the same radar type.
-				 * min_rssithresh means the minimum
-				 * rp_rssithresh among all radar type.
-				 */
+         * among the same radar type.
+         * min_rssithresh means the minimum
+         * rp_rssithresh among all radar type.
+         */
 				if (ft->ft_rssithresh >
 				    dfs_radars[p].rp_rssithresh)
 					ft->ft_rssithresh =
@@ -302,7 +298,8 @@ int dfs_init_radar_filters(struct wlan_dfs *dfs,
 
 		if (!ft) {
 			retval = dfs_fill_filter_type(dfs, &ft, dfs_radars,
-					&min_rssithresh, &max_pulsedur, p);
+						      &min_rssithresh,
+						      &max_pulsedur, p);
 			if (retval == 1)
 				goto bad4;
 		}
@@ -321,39 +318,41 @@ int dfs_init_radar_filters(struct wlan_dfs *dfs,
 		rf->rf_numpulses = dfs_radars[p].rp_numpulses;
 		rf->rf_ignore_pri_window = dfs_radars[p].rp_ignore_pri_window;
 		T = (100000000 / dfs_radars[p].rp_max_pulsefreq) -
-			100 * (dfs_radars[p].rp_meanoffset);
+		    100 * (dfs_radars[p].rp_meanoffset);
 		rf->rf_minpri = dfs_round((int32_t)T -
-				(100 * (dfs_radars[p].rp_pulsevar)));
+					  (100 * (dfs_radars[p].rp_pulsevar)));
 		Tmax = (100000000 / dfs_radars[p].rp_pulsefreq) -
-			100 * (dfs_radars[p].rp_meanoffset);
+		       100 * (dfs_radars[p].rp_meanoffset);
 		rf->rf_maxpri = dfs_round((int32_t)Tmax +
-				(100 * (dfs_radars[p].rp_pulsevar)));
+					  (100 * (dfs_radars[p].rp_pulsevar)));
 
 		if (rf->rf_minpri < ft->ft_minpri)
 			ft->ft_minpri = rf->rf_minpri;
 
-		rf->rf_fixed_pri_radar_pulse = (
-				dfs_radars[p].rp_max_pulsefreq ==
-				dfs_radars[p].rp_pulsefreq) ?  1 : 0;
+		rf->rf_fixed_pri_radar_pulse =
+			(dfs_radars[p].rp_max_pulsefreq ==
+			 dfs_radars[p].rp_pulsefreq) ?
+				1 :
+				0;
 		rf->rf_threshold = dfs_radars[p].rp_threshold;
 		rf->rf_filterlen = rf->rf_maxpri * rf->rf_numpulses;
 
 		dfs_debug(dfs, WLAN_DEBUG_DFS2,
-				"minprf = %d maxprf = %d pulsevar = %d thresh=%d",
-				dfs_radars[p].rp_pulsefreq,
-				dfs_radars[p].rp_max_pulsefreq,
-				dfs_radars[p].rp_pulsevar,
-				rf->rf_threshold);
+			  "minprf = %d maxprf = %d pulsevar = %d thresh=%d",
+			  dfs_radars[p].rp_pulsefreq,
+			  dfs_radars[p].rp_max_pulsefreq,
+			  dfs_radars[p].rp_pulsevar, rf->rf_threshold);
 
-		dfs_debug(dfs, WLAN_DEBUG_DFS2,
-				"minpri = %d maxpri = %d filterlen = %d filterID = %d",
-				rf->rf_minpri, rf->rf_maxpri,
-				rf->rf_filterlen, rf->rf_pulseid);
+		dfs_debug(
+			dfs, WLAN_DEBUG_DFS2,
+			"minpri = %d maxpri = %d filterlen = %d filterID = %d",
+			rf->rf_minpri, rf->rf_maxpri, rf->rf_filterlen,
+			rf->rf_pulseid);
 	}
 
 	dfs_print_filters(dfs);
 
-	dfs->dfs_rinfo.rn_numbin5radars  = numb5radars;
+	dfs->dfs_rinfo.rn_numbin5radars = numb5radars;
 	if (dfs->dfs_b5radars) {
 		qdf_mem_free(dfs->dfs_b5radars);
 		dfs->dfs_b5radars = NULL;
@@ -361,11 +360,11 @@ int dfs_init_radar_filters(struct wlan_dfs *dfs,
 
 	if (numb5radars) {
 		dfs->dfs_b5radars = (struct dfs_bin5radars *)qdf_mem_malloc(
-				numb5radars * sizeof(struct dfs_bin5radars));
+			numb5radars * sizeof(struct dfs_bin5radars));
 		/*
-		 * Malloc can return NULL if numb5radars is zero. But we still
-		 * want to reset the delay lines.
-		 */
+     * Malloc can return NULL if numb5radars is zero. But we still
+     * want to reset the delay lines.
+     */
 		if (!(dfs->dfs_b5radars))
 			goto bad4;
 	}
@@ -374,7 +373,7 @@ int dfs_init_radar_filters(struct wlan_dfs *dfs,
 		dfs->dfs_b5radars[n].br_pulse = b5pulses[n];
 		dfs->dfs_b5radars[n].br_pulse.b5_timewindow *= 1000000;
 		if (dfs->dfs_b5radars[n].br_pulse.b5_rssithresh <
-				min_rssithresh)
+		    min_rssithresh)
 			min_rssithresh =
 				dfs->dfs_b5radars[n].br_pulse.b5_rssithresh;
 
@@ -389,18 +388,18 @@ int dfs_init_radar_filters(struct wlan_dfs *dfs,
 
 	/* Convert durations to TSF ticks. */
 	dfs->dfs_rinfo.rn_maxpulsedur =
-		dfs_round((int32_t)((max_pulsedur * 100/80) * 100));
+		dfs_round((int32_t)((max_pulsedur * 100 / 80) * 100));
 	/*
-	 * Relax the max pulse duration a little bit due to inaccuracy
-	 * caused by chirping.
-	 */
+   * Relax the max pulse duration a little bit due to inaccuracy
+   * caused by chirping.
+   */
 	dfs->dfs_rinfo.rn_maxpulsedur = dfs->dfs_rinfo.rn_maxpulsedur + 20;
 
 	dfs_debug(dfs, WLAN_DEBUG_DFS, "DFS min filter rssiThresh = %d",
-			min_rssithresh);
+		  min_rssithresh);
 
 	dfs_debug(dfs, WLAN_DEBUG_DFS, "DFS max pulse dur = %d ticks",
-			dfs->dfs_rinfo.rn_maxpulsedur);
+		  dfs->dfs_rinfo.rn_maxpulsedur);
 
 	return 0;
 
@@ -415,7 +414,7 @@ void dfs_clear_stats(struct wlan_dfs *dfs)
 
 	qdf_mem_zero(&dfs->wlan_dfs_stats, sizeof(struct dfs_stats));
 	dfs->wlan_dfs_stats.last_reset_tstamp =
-	    lmac_get_tsf64(dfs->dfs_pdev_obj);
+		lmac_get_tsf64(dfs->dfs_pdev_obj);
 }
 
 bool dfs_check_intersect_excl(int low_freq, int high_freq, int center_freq)
@@ -435,11 +434,9 @@ int dfs_check_etsi_overlap(int center_freq, int chan_width,
 
 	return ((chan_freq_high == en302_502_freq_low) ||
 		dfs_check_intersect_excl(en302_502_freq_low,
-					 en302_502_freq_high,
-					 chan_freq_low) ||
+					 en302_502_freq_high, chan_freq_low) ||
 		dfs_check_intersect_excl(en302_502_freq_low,
-					 en302_502_freq_high,
-					 chan_freq_high));
+					 en302_502_freq_high, chan_freq_high));
 }
 
 #ifdef CONFIG_CHAN_FREQ_API
@@ -455,7 +452,7 @@ bool dfs_is_en302_502_applicable(struct wlan_dfs *dfs)
 	chan_freq = dfs->dfs_curchan->dfs_ch_mhz_freq_seg1;
 	vdev = wlan_objmgr_pdev_get_first_vdev(dfs->dfs_pdev_obj, WLAN_DFS_ID);
 	if (!vdev) {
-		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS,  "vdev is NULL");
+		dfs_err(dfs, WLAN_DEBUG_DFS_ALWAYS, "vdev is NULL");
 		return false;
 	}
 
@@ -466,28 +463,27 @@ bool dfs_is_en302_502_applicable(struct wlan_dfs *dfs)
 
 	if (WLAN_IS_CHAN_11AC_VHT80_80(dfs->dfs_curchan)) {
 		/* HT80_80 mode has 2 segments and each segment must
-		 * be checked for control channel first.
-		 */
-		overlap = dfs_check_etsi_overlap(
-				chan_freq, chan_width / 2,
-				ETSI_RADAR_EN302_502_FREQ_LOWER,
-				ETSI_RADAR_EN302_502_FREQ_UPPER);
+     * be checked for control channel first.
+     */
+		overlap =
+			dfs_check_etsi_overlap(chan_freq, chan_width / 2,
+					       ETSI_RADAR_EN302_502_FREQ_LOWER,
+					       ETSI_RADAR_EN302_502_FREQ_UPPER);
 
 		/* check for extension channel */
 		chan_freq = dfs->dfs_curchan->dfs_ch_mhz_freq_seg2;
 
-		overlap += dfs_check_etsi_overlap(
-				chan_freq, chan_width / 2,
-				ETSI_RADAR_EN302_502_FREQ_LOWER,
-				ETSI_RADAR_EN302_502_FREQ_UPPER);
+		overlap +=
+			dfs_check_etsi_overlap(chan_freq, chan_width / 2,
+					       ETSI_RADAR_EN302_502_FREQ_LOWER,
+					       ETSI_RADAR_EN302_502_FREQ_UPPER);
 	} else {
 		overlap = dfs_check_etsi_overlap(
-				chan_freq, chan_width,
-				ETSI_RADAR_EN302_502_FREQ_LOWER,
-				ETSI_RADAR_EN302_502_FREQ_UPPER);
+			chan_freq, chan_width, ETSI_RADAR_EN302_502_FREQ_LOWER,
+			ETSI_RADAR_EN302_502_FREQ_UPPER);
 	}
 
-	return(wlan_reg_is_regdmn_en302502_applicable(dfs->dfs_pdev_obj) &&
-	       overlap);
+	return (wlan_reg_is_regdmn_en302502_applicable(dfs->dfs_pdev_obj) &&
+		overlap);
 }
 #endif

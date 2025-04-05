@@ -4,10 +4,10 @@
  * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/platform_device.h>
-#include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/of_device.h>
+#include <linux/platform_device.h>
+#include <linux/slab.h>
 #include <soc/snd_event.h>
 
 struct snd_event_client {
@@ -79,7 +79,8 @@ static int check_and_update_fwk_state(void)
 				if (c->ops->enable) {
 					ret = c->ops->enable(c->dev, c->data);
 					if (ret) {
-						dev_err_ratelimited(c->dev,
+						dev_err_ratelimited(
+							c->dev,
 							"%s: enable failed\n",
 							__func__);
 						goto dev_en_failed;
@@ -90,7 +91,8 @@ static int check_and_update_fwk_state(void)
 				ret = master->ops->enable(master->dev,
 							  master->data);
 				if (ret) {
-					dev_err_ratelimited(master->dev,
+					dev_err_ratelimited(
+						master->dev,
 						"%s: enable failed\n",
 						__func__);
 					goto mstr_en_failed;
@@ -98,8 +100,7 @@ static int check_and_update_fwk_state(void)
 			}
 		} else {
 			if (master->ops->disable)
-				master->ops->disable(master->dev,
-						     master->data);
+				master->ops->disable(master->dev, master->data);
 			for (i = 0; i < master->clients->num_clients; i++) {
 				c = master->clients->cl_arr[i].clnt;
 				if (c->ops->disable)
@@ -133,8 +134,9 @@ static int snd_event_find_clients(struct snd_master *master)
 		struct snd_event_client *c;
 
 		if (c_arr->dev) {
-			pr_err_ratelimited("%s: client already present dev=%pK\n",
-				 __func__, c_arr->dev);
+			pr_err_ratelimited(
+				"%s: client already present dev=%pK\n",
+				__func__, c_arr->dev);
 			continue;
 		}
 
@@ -144,8 +146,8 @@ static int snd_event_find_clients(struct snd_master *master)
 
 			if (c_arr->compare(c->dev, c_arr->data)) {
 				dev_dbg(master->dev,
-					"%s: found client, dev=%pK\n",
-					__func__, c->dev);
+					"%s: found client, dev=%pK\n", __func__,
+					c->dev);
 				c_arr->dev = c->dev;
 				c_arr->clnt = c;
 				c->attached = true;
@@ -153,8 +155,7 @@ static int snd_event_find_clients(struct snd_master *master)
 			}
 		}
 		if (!c_arr->dev) {
-			dev_dbg(master->dev,
-				"%s: failed to find some client\n",
+			dev_dbg(master->dev, "%s: failed to find some client\n",
 				__func__);
 			ret = -ENXIO;
 			break;
@@ -194,8 +195,8 @@ int snd_event_client_register(struct device *dev,
 	c->ops = snd_ev_ops;
 	c->data = data;
 
-	dev_dbg(dev, "%s: adding client to SND event FW (ops %pK)\n",
-		__func__, snd_ev_ops);
+	dev_dbg(dev, "%s: adding client to SND event FW (ops %pK)\n", __func__,
+		snd_ev_ops);
 
 	mutex_lock(&snd_event_mutex);
 	list_add_tail(&c->node, &snd_event_client_list);
@@ -233,8 +234,7 @@ int snd_event_client_deregister(struct device *dev)
 		return -EINVAL;
 	}
 
-	dev_dbg(dev, "%s: removing client to SND event FW \n",
-		__func__);
+	dev_dbg(dev, "%s: removing client to SND event FW \n", __func__);
 
 	mutex_lock(&snd_event_mutex);
 	if (list_empty(&snd_event_client_list)) {
@@ -263,8 +263,8 @@ int snd_event_client_deregister(struct device *dev)
 				break;
 			}
 		}
-		if (dev_found ) {
-			if(master->clients_found) {
+		if (dev_found) {
+			if (master->clients_found) {
 				ret = check_and_update_fwk_state();
 				master->clients_found = false;
 			}
@@ -353,8 +353,7 @@ EXPORT_SYMBOL(snd_event_mstr_add_client);
  */
 int snd_event_master_register(struct device *dev,
 			      const struct snd_event_ops *ops,
-			      struct snd_event_clients *clients,
-			      void *data)
+			      struct snd_event_clients *clients, void *data)
 {
 	struct snd_master *new_master;
 	int ret = 0;
@@ -469,19 +468,20 @@ int snd_event_notify(struct device *dev, unsigned int state)
 		return -EINVAL;
 	}
 
-	dev_dbg(dev, "%s: snd_event_notify (state %u)\n",
-		__func__, state);
+	dev_dbg(dev, "%s: snd_event_notify (state %u)\n", __func__, state);
 
 	mutex_lock(&snd_event_mutex);
 	if (list_empty(&snd_event_client_list) && !master) {
-		dev_err_ratelimited(dev, "%s: No device registered\n", __func__);
+		dev_err_ratelimited(dev, "%s: No device registered\n",
+				    __func__);
 		ret = -ENODEV;
 		goto exit;
 	}
 
 	c = find_snd_event_client(dev);
 	if (!c && (!master || (master->dev != dev))) {
-		dev_err_ratelimited(dev, "%s: No snd dev entry found\n", __func__);
+		dev_err_ratelimited(dev, "%s: No snd dev entry found\n",
+				    __func__);
 		ret = -ENXIO;
 		goto exit;
 	}

@@ -22,24 +22,23 @@
  * This file defines regulatory component service functions
  */
 
-#include <wlan_cmn.h>
 #include <reg_services_public_struct.h>
+#include <wlan_cmn.h>
 #include <wlan_reg_services_api.h>
 #ifdef CONFIG_AFC_SUPPORT
 #include "reg_opclass.h"
 #endif
-#include <wlan_objmgr_psoc_obj.h>
-#include <qdf_lock.h>
-#include "reg_priv_objs.h"
-#include "reg_utils.h"
+#include "reg_build_chan_list.h"
 #include "reg_callbacks.h"
-#include "reg_services_common.h"
-#include <wlan_objmgr_psoc_obj.h>
 #include "reg_db.h"
 #include "reg_db_parser.h"
-#include "reg_build_chan_list.h"
-#include <wlan_objmgr_pdev_obj.h>
+#include "reg_priv_objs.h"
+#include "reg_services_common.h"
+#include "reg_utils.h"
+#include <qdf_lock.h>
 #include <target_if.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
 #ifdef WLAN_FEATURE_GET_USABLE_CHAN_LIST
 #include "wlan_mlme_ucfg_api.h"
 #include "wlan_nan_api.h"
@@ -58,8 +57,7 @@ static bool reg_is_chan_bit_punctured(uint16_t input_punc_bitmap,
 	return input_punc_bitmap & BIT(chan_idx);
 }
 #else
-static bool reg_is_chan_bit_punctured(uint16_t in_punc_bitmap,
-				      uint8_t chan_idx)
+static bool reg_is_chan_bit_punctured(uint16_t in_punc_bitmap, uint8_t chan_idx)
 {
 	return false;
 }
@@ -68,107 +66,54 @@ static bool reg_is_chan_bit_punctured(uint16_t in_punc_bitmap,
 #ifdef CONFIG_CHAN_FREQ_API
 /* bonded_chan_40mhz_list_freq - List of 40MHz bonnded channel frequencies */
 static const struct bonded_channel_freq bonded_chan_40mhz_list_freq[] = {
-	{5180, 5200},
-	{5220, 5240},
-	{5260, 5280},
-	{5300, 5320},
-	{5500, 5520},
-	{5540, 5560},
-	{5580, 5600},
-	{5620, 5640},
-	{5660, 5680},
-	{5700, 5720},
-	{5745, 5765},
-	{5785, 5805},
-	{5825, 5845},
-	{5865, 5885},
+	{ 5180, 5200 }, { 5220, 5240 }, { 5260, 5280 }, { 5300, 5320 },
+	{ 5500, 5520 }, { 5540, 5560 }, { 5580, 5600 }, { 5620, 5640 },
+	{ 5660, 5680 }, { 5700, 5720 }, { 5745, 5765 }, { 5785, 5805 },
+	{ 5825, 5845 }, { 5865, 5885 },
 #ifdef CONFIG_BAND_6GHZ
-	{5955, 5975},
-	{5995, 6015},
-	{6035, 6055},
-	{6075, 6095},
-	{6115, 6135},
-	{6155, 6175},
-	{6195, 6215},
-	{6235, 6255},
-	{6275, 6295},
-	{6315, 6335},
-	{6355, 6375},
-	{6395, 6415},
-	{6435, 6455},
-	{6475, 6495},
-	{6515, 6535},
-	{6555, 6575},
-	{6595, 6615},
-	{6635, 6655},
-	{6675, 6695},
-	{6715, 6735},
-	{6755, 6775},
-	{6795, 6815},
-	{6835, 6855},
-	{6875, 6895},
-	{6915, 6935},
-	{6955, 6975},
-	{6995, 7015},
-	{7035, 7055},
-	{7075, 7095}
+	{ 5955, 5975 }, { 5995, 6015 }, { 6035, 6055 }, { 6075, 6095 },
+	{ 6115, 6135 }, { 6155, 6175 }, { 6195, 6215 }, { 6235, 6255 },
+	{ 6275, 6295 }, { 6315, 6335 }, { 6355, 6375 }, { 6395, 6415 },
+	{ 6435, 6455 }, { 6475, 6495 }, { 6515, 6535 }, { 6555, 6575 },
+	{ 6595, 6615 }, { 6635, 6655 }, { 6675, 6695 }, { 6715, 6735 },
+	{ 6755, 6775 }, { 6795, 6815 }, { 6835, 6855 }, { 6875, 6895 },
+	{ 6915, 6935 }, { 6955, 6975 }, { 6995, 7015 }, { 7035, 7055 },
+	{ 7075, 7095 }
 #endif /*CONFIG_BAND_6GHZ*/
 };
 
 /* bonded_chan_80mhz_list_freq - List of 80MHz bonnded channel frequencies */
 static const struct bonded_channel_freq bonded_chan_80mhz_list_freq[] = {
-	{5180, 5240},
-	{5260, 5320},
-	{5500, 5560},
-	{5580, 5640},
-	{5660, 5720},
-	{5745, 5805},
-	{5825, 5885},
+	{ 5180, 5240 }, { 5260, 5320 }, { 5500, 5560 }, { 5580, 5640 },
+	{ 5660, 5720 }, { 5745, 5805 }, { 5825, 5885 },
 #ifdef CONFIG_BAND_6GHZ
-	{5955, 6015},
-	{6035, 6095},
-	{6115, 6175},
-	{6195, 6255},
-	{6275, 6335},
-	{6355, 6415},
-	{6435, 6495},
-	{6515, 6575},
-	{6595, 6655},
-	{6675, 6735},
-	{6755, 6815},
-	{6835, 6895},
-	{6915, 6975},
-	{6995, 7055}
+	{ 5955, 6015 }, { 6035, 6095 }, { 6115, 6175 }, { 6195, 6255 },
+	{ 6275, 6335 }, { 6355, 6415 }, { 6435, 6495 }, { 6515, 6575 },
+	{ 6595, 6655 }, { 6675, 6735 }, { 6755, 6815 }, { 6835, 6895 },
+	{ 6915, 6975 }, { 6995, 7055 }
 #endif /*CONFIG_BAND_6GHZ*/
 };
 
 /* bonded_chan_160mhz_list_freq - List of 160MHz bonnded channel frequencies */
 static const struct bonded_channel_freq bonded_chan_160mhz_list_freq[] = {
-	{5180, 5320},
-	{5500, 5640},
-	{5745, 5885},
+	{ 5180, 5320 }, { 5500, 5640 }, { 5745, 5885 },
 #ifdef CONFIG_BAND_6GHZ
-	{5955, 6095},
-	{6115, 6255},
-	{6275, 6415},
-	{6435, 6575},
-	{6595, 6735},
-	{6755, 6895},
-	{6915, 7055}
+	{ 5955, 6095 }, { 6115, 6255 }, { 6275, 6415 }, { 6435, 6575 },
+	{ 6595, 6735 }, { 6755, 6895 }, { 6915, 7055 }
 #endif /*CONFIG_BAND_6GHZ*/
 };
 
 #ifdef WLAN_FEATURE_11BE
 /* bonded_chan_320mhz_list_freq - List of 320MHz bonnded channel frequencies */
 static const struct bonded_channel_freq bonded_chan_320mhz_list_freq[] = {
-	{5500, 5720}, /* center freq: 5650: The 5Ghz 240MHz chan */
+	{ 5500, 5720 }, /* center freq: 5650: The 5Ghz 240MHz chan */
 #ifdef CONFIG_BAND_6GHZ
-	{5955, 6255}, /* center freq: 6105 */
-	{6115, 6415}, /* center freq: 6265 */
-	{6275, 6575}, /* center freq: 6425 */
-	{6435, 6735}, /* center freq: 6585 */
-	{6595, 6895}, /* center freq: 6745 */
-	{6755, 7055}  /* center freq: 6905 */
+	{ 5955, 6255 }, /* center freq: 6105 */
+	{ 6115, 6415 }, /* center freq: 6265 */
+	{ 6275, 6575 }, /* center freq: 6425 */
+	{ 6435, 6735 }, /* center freq: 6585 */
+	{ 6595, 6895 }, /* center freq: 6745 */
+	{ 6755, 7055 } /* center freq: 6905 */
 #endif /*CONFIG_BAND_6GHZ*/
 };
 #endif
@@ -187,20 +132,19 @@ struct bw_bonded_array_pair {
 };
 
 /* Mapping of chwidth to bonded array and size of bonded array */
-static const
-struct bw_bonded_array_pair bw_bonded_array_pair_map[] = {
+static const struct bw_bonded_array_pair bw_bonded_array_pair_map[] = {
 #ifdef WLAN_FEATURE_11BE
-	{CH_WIDTH_320MHZ, bonded_chan_320mhz_list_freq,
-		QDF_ARRAY_SIZE(bonded_chan_320mhz_list_freq)},
+	{ CH_WIDTH_320MHZ, bonded_chan_320mhz_list_freq,
+	  QDF_ARRAY_SIZE(bonded_chan_320mhz_list_freq) },
 #endif
-	{CH_WIDTH_160MHZ, bonded_chan_160mhz_list_freq,
-		QDF_ARRAY_SIZE(bonded_chan_160mhz_list_freq)},
-	{CH_WIDTH_80P80MHZ, bonded_chan_80mhz_list_freq,
-		QDF_ARRAY_SIZE(bonded_chan_80mhz_list_freq)},
-	{CH_WIDTH_80MHZ, bonded_chan_80mhz_list_freq,
-		QDF_ARRAY_SIZE(bonded_chan_80mhz_list_freq)},
-	{CH_WIDTH_40MHZ, bonded_chan_40mhz_list_freq,
-		QDF_ARRAY_SIZE(bonded_chan_40mhz_list_freq)},
+	{ CH_WIDTH_160MHZ, bonded_chan_160mhz_list_freq,
+	  QDF_ARRAY_SIZE(bonded_chan_160mhz_list_freq) },
+	{ CH_WIDTH_80P80MHZ, bonded_chan_80mhz_list_freq,
+	  QDF_ARRAY_SIZE(bonded_chan_80mhz_list_freq) },
+	{ CH_WIDTH_80MHZ, bonded_chan_80mhz_list_freq,
+	  QDF_ARRAY_SIZE(bonded_chan_80mhz_list_freq) },
+	{ CH_WIDTH_40MHZ, bonded_chan_40mhz_list_freq,
+	  QDF_ARRAY_SIZE(bonded_chan_40mhz_list_freq) },
 };
 
 #ifdef WLAN_FEATURE_11BE
@@ -246,75 +190,47 @@ struct bw_bonded_array_pair bw_bonded_array_pair_map[] = {
  *  B1111_0000_0000_0000 = 0xF000  : BIT(12) | BIT(13) | BIT(14) | BIT(15)
  *
  * Band: 320MHz  Puncturing Unit: 80Mhz+40Mhz (Right 80Mhz punctured)
- *  B0000_0000_0011_1111 = 0x003F  : BIT(4)  | BIT(5)   [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)]
- *  B0000_0000_1100_1111 = 0x00CF  : BIT(6)  | BIT(7)   [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)]
- *  B0000_0011_0000_1111 = 0x030F  : BIT(8)  | BIT(9)   [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)]
- *  B0000_1100_0000_1111 = 0x0C0F  : BIT(10) | BIT(11)  [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)]
- *  B0011_0000_0000_1111 = 0x300F  : BIT(12) | BIT(13)  [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)]
- *  B1100_0000_0000_1111 = 0xC00F  : BIT(14) | BIT(15)  [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)]
+ *  B0000_0000_0011_1111 = 0x003F  : BIT(4)  | BIT(5)   [right 80MHz: BIT(0) |
+ * BIT(1) | BIT(2) | BIT(3)] B0000_0000_1100_1111 = 0x00CF  : BIT(6)  | BIT(7)
+ * [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)] B0000_0011_0000_1111 =
+ * 0x030F  : BIT(8)  | BIT(9)   [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)]
+ *  B0000_1100_0000_1111 = 0x0C0F  : BIT(10) | BIT(11)  [right 80MHz: BIT(0) |
+ * BIT(1) | BIT(2) | BIT(3)] B0011_0000_0000_1111 = 0x300F  : BIT(12) | BIT(13)
+ * [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)] B1100_0000_0000_1111 =
+ * 0xC00F  : BIT(14) | BIT(15)  [right 80MHz: BIT(0) | BIT(1) | BIT(2) | BIT(3)]
  *
  * Band: 320MHz  Puncturing Unit: 80Mhz+40Mhz (Left 80Mhz punctured)
- *  B1111_0000_0000_0011 = 0xF003  : BIT(4)  | BIT(5)   [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
- *  B1111_0000_0000_1100 = 0xF00C  : BIT(6)  | BIT(7)   [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
- *  B1111_0000_0011_0000 = 0xF030  : BIT(8)  | BIT(9)   [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
- *  B1111_0000_1100_0000 = 0xF0C0  : BIT(10) | BIT(11)  [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
- *  B1111_0011_0000_0000 = 0xF300  : BIT(12) | BIT(13)  [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
- *  B1111_1100_0000_0000 = 0xFC00  : BIT(14) | BIT(15)  [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
+ *  B1111_0000_0000_0011 = 0xF003  : BIT(4)  | BIT(5)   [left 80MHz: BIT(12) |
+ * BIT(13) | BIT(14) | BIT(15)] B1111_0000_0000_1100 = 0xF00C  : BIT(6)  |
+ * BIT(7)   [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
+ *  B1111_0000_0011_0000 = 0xF030  : BIT(8)  | BIT(9)   [left 80MHz: BIT(12) |
+ * BIT(13) | BIT(14) | BIT(15)] B1111_0000_1100_0000 = 0xF0C0  : BIT(10) |
+ * BIT(11)  [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
+ *  B1111_0011_0000_0000 = 0xF300  : BIT(12) | BIT(13)  [left 80MHz: BIT(12) |
+ * BIT(13) | BIT(14) | BIT(15)] B1111_1100_0000_0000 = 0xFC00  : BIT(14) |
+ * BIT(15)  [left 80MHz: BIT(12) | BIT(13) | BIT(14) | BIT(15)]
  */
 static const uint16_t chan_80mhz_puncture_bitmap[] = {
 	/* 20Mhz puncturing pattern */
-	0x1,
-	0x2,
-	0x4,
-	0x8
+	0x1, 0x2, 0x4, 0x8
 };
 
 static const uint16_t chan_160mhz_puncture_bitmap[] = {
 	/* 20Mhz puncturing pattern */
-	0x1,
-	0x2,
-	0x4,
-	0x8,
-	0x10,
-	0x20,
-	0x40,
-	0x80,
+	0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80,
 	/* 40Mhz puncturing pattern */
-	0x3,
-	0xc,
-	0x30,
-	0xc0
+	0x3, 0xc, 0x30, 0xc0
 };
 
 static const uint16_t chan_320mhz_puncture_bitmap[] = {
 	/* 40Mhz puncturing pattern */
-	0x3,
-	0xc,
-	0x30,
-	0xc0,
-	0x300,
-	0xc00,
-	0x3000,
-	0xc000,
+	0x3, 0xc, 0x30, 0xc0, 0x300, 0xc00, 0x3000, 0xc000,
 	/* 80Mhz puncturing pattern */
-	0xf,
-	0xf0,
-	0xf00,
-	0xf000,
+	0xf, 0xf0, 0xf00, 0xf000,
 	/* 80+40Mhz puncturing pattern: Left 80MHz punctured */
-	0x3f,
-	0xcf,
-	0x30f,
-	0xc0f,
-	0x300f,
-	0xc00f,
+	0x3f, 0xcf, 0x30f, 0xc0f, 0x300f, 0xc00f,
 	/* 80+40Mhz puncturing pattern: Right 80MHz punctured */
-	0xf003,
-	0xf00c,
-	0xf030,
-	0xf0c0,
-	0xf300,
-	0xfc00
+	0xf003, 0xf00c, 0xf030, 0xf0c0, 0xf300, 0xfc00
 };
 
 struct bw_puncture_bitmap_pair {
@@ -323,25 +239,23 @@ struct bw_puncture_bitmap_pair {
 	uint16_t array_size;
 };
 
-static const
-struct bw_puncture_bitmap_pair bw_puncture_bitmap_pair_map[] = {
-	{CH_WIDTH_320MHZ, chan_320mhz_puncture_bitmap,
-		QDF_ARRAY_SIZE(chan_320mhz_puncture_bitmap)},
-	{CH_WIDTH_160MHZ, chan_160mhz_puncture_bitmap,
-		QDF_ARRAY_SIZE(chan_160mhz_puncture_bitmap)},
-	{CH_WIDTH_80MHZ, chan_80mhz_puncture_bitmap,
-		QDF_ARRAY_SIZE(chan_80mhz_puncture_bitmap)},
+static const struct bw_puncture_bitmap_pair bw_puncture_bitmap_pair_map[] = {
+	{ CH_WIDTH_320MHZ, chan_320mhz_puncture_bitmap,
+	  QDF_ARRAY_SIZE(chan_320mhz_puncture_bitmap) },
+	{ CH_WIDTH_160MHZ, chan_160mhz_puncture_bitmap,
+	  QDF_ARRAY_SIZE(chan_160mhz_puncture_bitmap) },
+	{ CH_WIDTH_80MHZ, chan_80mhz_puncture_bitmap,
+	  QDF_ARRAY_SIZE(chan_80mhz_puncture_bitmap) },
 };
 
-static inline qdf_freq_t
-reg_get_band_cen_from_bandstart(uint16_t bw, qdf_freq_t bandstart)
+static inline qdf_freq_t reg_get_band_cen_from_bandstart(uint16_t bw,
+							 qdf_freq_t bandstart)
 {
 	return bandstart - BW_10_MHZ + bw / 2;
 }
 
 #ifdef WLAN_FEATURE_11BE
-uint16_t
-reg_fetch_punc_bitmap(struct ch_params *ch_params)
+uint16_t reg_fetch_punc_bitmap(struct ch_params *ch_params)
 {
 	if (!ch_params)
 		return NO_SCHANS_PUNC;
@@ -351,8 +265,8 @@ reg_fetch_punc_bitmap(struct ch_params *ch_params)
 #endif
 
 #else /* WLAN_FEATURE_11BE */
-static inline qdf_freq_t
-reg_get_band_cen_from_bandstart(uint16_t bw, qdf_freq_t bandstart)
+static inline qdf_freq_t reg_get_band_cen_from_bandstart(uint16_t bw,
+							 qdf_freq_t bandstart)
 {
 	return 0;
 }
@@ -360,28 +274,27 @@ reg_get_band_cen_from_bandstart(uint16_t bw, qdf_freq_t bandstart)
 #endif /* WLAN_FEATURE_11BE */
 
 static bool reg_is_freq_within_bonded_chan(
-		qdf_freq_t freq,
-		const struct bonded_channel_freq *bonded_chan_arr,
-		enum phy_ch_width chwidth, qdf_freq_t cen320_freq)
+	qdf_freq_t freq, const struct bonded_channel_freq *bonded_chan_arr,
+	enum phy_ch_width chwidth, qdf_freq_t cen320_freq)
 {
 	qdf_freq_t band_center;
 
 	if (reg_is_ch_width_320(chwidth) && cen320_freq) {
 		/*
-		 * For the 5GHz 320/240 MHz channel, bonded pair ends are not
-		 * symmetric around the center of the channel. Use the start
-		 * frequency of the bonded channel to calculate the center
-		 */
+     * For the 5GHz 320/240 MHz channel, bonded pair ends are not
+     * symmetric around the center of the channel. Use the start
+     * frequency of the bonded channel to calculate the center
+     */
 		if (REG_IS_5GHZ_FREQ(freq)) {
 			qdf_freq_t start_freq = bonded_chan_arr->start_freq;
 			uint16_t bw = reg_get_bw_value(chwidth);
 
 			band_center =
-				reg_get_band_cen_from_bandstart(bw,
-								start_freq);
+				reg_get_band_cen_from_bandstart(bw, start_freq);
 		} else
 			band_center = (bonded_chan_arr->start_freq +
-					bonded_chan_arr->end_freq) >> 1;
+				       bonded_chan_arr->end_freq) >>
+				      1;
 		if (band_center != cen320_freq)
 			return false;
 	}
@@ -394,8 +307,7 @@ static bool reg_is_freq_within_bonded_chan(
 }
 
 const struct bonded_channel_freq *
-reg_get_bonded_chan_entry(qdf_freq_t freq,
-			  enum phy_ch_width chwidth,
+reg_get_bonded_chan_entry(qdf_freq_t freq, enum phy_ch_width chwidth,
 			  qdf_freq_t cen320_freq)
 {
 	const struct bonded_channel_freq *bonded_chan_arr;
@@ -422,8 +334,9 @@ reg_get_bonded_chan_entry(qdf_freq_t freq,
 			return &bonded_chan_arr[i];
 	}
 
-	reg_debug("Could not find a bonded pair for freq %d and width %d cen320_freq %u",
-		  freq, chwidth, cen320_freq);
+	reg_debug(
+		"Could not find a bonded pair for freq %d and width %d cen320_freq %u",
+		freq, chwidth, cen320_freq);
 	return NULL;
 }
 
@@ -432,7 +345,7 @@ reg_get_bonded_chan_entry(qdf_freq_t freq,
 enum phy_ch_width get_next_lower_bandwidth(enum phy_ch_width ch_width)
 {
 	static const enum phy_ch_width get_next_lower_bw[] = {
-    /* 80+80 mode not supported in chips that support 320 mode */
+	/* 80+80 mode not supported in chips that support 320 mode */
 #ifdef WLAN_FEATURE_11BE
 		[CH_WIDTH_320MHZ] = CH_WIDTH_160MHZ,
 #endif
@@ -449,852 +362,852 @@ enum phy_ch_width get_next_lower_bandwidth(enum phy_ch_width ch_width)
 }
 
 const struct chan_map channel_map_us[NUM_CHANNELS] = {
-	[CHAN_ENUM_2412] = {2412, 1, 20, 40},
-	[CHAN_ENUM_2417] = {2417, 2, 20, 40},
-	[CHAN_ENUM_2422] = {2422, 3, 20, 40},
-	[CHAN_ENUM_2427] = {2427, 4, 20, 40},
-	[CHAN_ENUM_2432] = {2432, 5, 20, 40},
-	[CHAN_ENUM_2437] = {2437, 6, 20, 40},
-	[CHAN_ENUM_2442] = {2442, 7, 20, 40},
-	[CHAN_ENUM_2447] = {2447, 8, 20, 40},
-	[CHAN_ENUM_2452] = {2452, 9, 20, 40},
-	[CHAN_ENUM_2457] = {2457, 10, 20, 40},
-	[CHAN_ENUM_2462] = {2462, 11, 20, 40},
-	[CHAN_ENUM_2467] = {2467, 12, 20, 40},
-	[CHAN_ENUM_2472] = {2472, 13, 20, 40},
-	[CHAN_ENUM_2484] = {2484, 14, 20, 20},
+	[CHAN_ENUM_2412] = { 2412, 1, 20, 40 },
+	[CHAN_ENUM_2417] = { 2417, 2, 20, 40 },
+	[CHAN_ENUM_2422] = { 2422, 3, 20, 40 },
+	[CHAN_ENUM_2427] = { 2427, 4, 20, 40 },
+	[CHAN_ENUM_2432] = { 2432, 5, 20, 40 },
+	[CHAN_ENUM_2437] = { 2437, 6, 20, 40 },
+	[CHAN_ENUM_2442] = { 2442, 7, 20, 40 },
+	[CHAN_ENUM_2447] = { 2447, 8, 20, 40 },
+	[CHAN_ENUM_2452] = { 2452, 9, 20, 40 },
+	[CHAN_ENUM_2457] = { 2457, 10, 20, 40 },
+	[CHAN_ENUM_2462] = { 2462, 11, 20, 40 },
+	[CHAN_ENUM_2467] = { 2467, 12, 20, 40 },
+	[CHAN_ENUM_2472] = { 2472, 13, 20, 40 },
+	[CHAN_ENUM_2484] = { 2484, 14, 20, 20 },
 #ifdef CONFIG_49GHZ_CHAN
-	[CHAN_ENUM_4912] = {4912, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4915] = {4915, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4917] = {4917, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4920] = {4920, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4922] = {4922, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4925] = {4925, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4927] = {4927, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4932] = {4932, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4935] = {4935, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4937] = {4937, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4940] = {4940, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4942] = {4942, 1, 5, 5},
-	[CHAN_ENUM_4945] = {4945, 11, 10, 10},
-	[CHAN_ENUM_4947] = {4947, 2, 5, 5},
-	[CHAN_ENUM_4950] = {4950, 20, 10, 20},
-	[CHAN_ENUM_4952] = {4952, 3, 5, 5},
-	[CHAN_ENUM_4955] = {4955, 21, 10, 20},
-	[CHAN_ENUM_4957] = {4957, 4, 5, 5},
-	[CHAN_ENUM_4960] = {4960, 22, 10, 20},
-	[CHAN_ENUM_4962] = {4962, 5, 5, 5},
-	[CHAN_ENUM_4965] = {4965, 23, 10, 20},
-	[CHAN_ENUM_4967] = {4967, 6, 5, 5},
-	[CHAN_ENUM_4970] = {4970, 24, 10, 20},
-	[CHAN_ENUM_4972] = {4972, 7, 5, 5},
-	[CHAN_ENUM_4975] = {4975, 25, 10, 20},
-	[CHAN_ENUM_4977] = {4977, 8, 5, 5},
-	[CHAN_ENUM_4980] = {4980, 26, 10, 20},
-	[CHAN_ENUM_4982] = {4982, 9, 5, 5},
-	[CHAN_ENUM_4985] = {4985, 19, 10, 10},
-	[CHAN_ENUM_4987] = {4987, 10, 5, 5},
-	[CHAN_ENUM_5032] = {5032, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5035] = {5035, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5037] = {5037, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5040] = {5040, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5042] = {5042, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5045] = {5045, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5047] = {5047, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5052] = {5052, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5055] = {5055, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5057] = {5057, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5060] = {5060, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5080] = {5080, INVALID_CHANNEL_NUM, 2, 20},
+	[CHAN_ENUM_4912] = { 4912, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4915] = { 4915, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4917] = { 4917, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4920] = { 4920, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4922] = { 4922, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4925] = { 4925, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4927] = { 4927, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4932] = { 4932, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4935] = { 4935, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4937] = { 4937, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4940] = { 4940, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4942] = { 4942, 1, 5, 5 },
+	[CHAN_ENUM_4945] = { 4945, 11, 10, 10 },
+	[CHAN_ENUM_4947] = { 4947, 2, 5, 5 },
+	[CHAN_ENUM_4950] = { 4950, 20, 10, 20 },
+	[CHAN_ENUM_4952] = { 4952, 3, 5, 5 },
+	[CHAN_ENUM_4955] = { 4955, 21, 10, 20 },
+	[CHAN_ENUM_4957] = { 4957, 4, 5, 5 },
+	[CHAN_ENUM_4960] = { 4960, 22, 10, 20 },
+	[CHAN_ENUM_4962] = { 4962, 5, 5, 5 },
+	[CHAN_ENUM_4965] = { 4965, 23, 10, 20 },
+	[CHAN_ENUM_4967] = { 4967, 6, 5, 5 },
+	[CHAN_ENUM_4970] = { 4970, 24, 10, 20 },
+	[CHAN_ENUM_4972] = { 4972, 7, 5, 5 },
+	[CHAN_ENUM_4975] = { 4975, 25, 10, 20 },
+	[CHAN_ENUM_4977] = { 4977, 8, 5, 5 },
+	[CHAN_ENUM_4980] = { 4980, 26, 10, 20 },
+	[CHAN_ENUM_4982] = { 4982, 9, 5, 5 },
+	[CHAN_ENUM_4985] = { 4985, 19, 10, 10 },
+	[CHAN_ENUM_4987] = { 4987, 10, 5, 5 },
+	[CHAN_ENUM_5032] = { 5032, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5035] = { 5035, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5037] = { 5037, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5040] = { 5040, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5042] = { 5042, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5045] = { 5045, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5047] = { 5047, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5052] = { 5052, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5055] = { 5055, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5057] = { 5057, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5060] = { 5060, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5080] = { 5080, INVALID_CHANNEL_NUM, 2, 20 },
 #endif /* CONFIG_49GHZ_CHAN */
-	[CHAN_ENUM_5180] = {5180, 36, 2, 160},
-	[CHAN_ENUM_5200] = {5200, 40, 2, 160},
-	[CHAN_ENUM_5220] = {5220, 44, 2, 160},
-	[CHAN_ENUM_5240] = {5240, 48, 2, 160},
-	[CHAN_ENUM_5260] = {5260, 52, 2, 160},
-	[CHAN_ENUM_5280] = {5280, 56, 2, 160},
-	[CHAN_ENUM_5300] = {5300, 60, 2, 160},
-	[CHAN_ENUM_5320] = {5320, 64, 2, 160},
-	[CHAN_ENUM_5500] = {5500, 100, 2, 240},
-	[CHAN_ENUM_5520] = {5520, 104, 2, 240},
-	[CHAN_ENUM_5540] = {5540, 108, 2, 240},
-	[CHAN_ENUM_5560] = {5560, 112, 2, 240},
-	[CHAN_ENUM_5580] = {5580, 116, 2, 240},
-	[CHAN_ENUM_5600] = {5600, 120, 2, 240},
-	[CHAN_ENUM_5620] = {5620, 124, 2, 240},
-	[CHAN_ENUM_5640] = {5640, 128, 2, 240},
-	[CHAN_ENUM_5660] = {5660, 132, 2, 240},
-	[CHAN_ENUM_5680] = {5680, 136, 2, 240},
-	[CHAN_ENUM_5700] = {5700, 140, 2, 240},
-	[CHAN_ENUM_5720] = {5720, 144, 2, 240},
-	[CHAN_ENUM_5745] = {5745, 149, 2, 160},
-	[CHAN_ENUM_5765] = {5765, 153, 2, 160},
-	[CHAN_ENUM_5785] = {5785, 157, 2, 160},
-	[CHAN_ENUM_5805] = {5805, 161, 2, 160},
-	[CHAN_ENUM_5825] = {5825, 165, 2, 160},
-	[CHAN_ENUM_5845] = {5845, 169, 2, 160},
+	[CHAN_ENUM_5180] = { 5180, 36, 2, 160 },
+	[CHAN_ENUM_5200] = { 5200, 40, 2, 160 },
+	[CHAN_ENUM_5220] = { 5220, 44, 2, 160 },
+	[CHAN_ENUM_5240] = { 5240, 48, 2, 160 },
+	[CHAN_ENUM_5260] = { 5260, 52, 2, 160 },
+	[CHAN_ENUM_5280] = { 5280, 56, 2, 160 },
+	[CHAN_ENUM_5300] = { 5300, 60, 2, 160 },
+	[CHAN_ENUM_5320] = { 5320, 64, 2, 160 },
+	[CHAN_ENUM_5500] = { 5500, 100, 2, 240 },
+	[CHAN_ENUM_5520] = { 5520, 104, 2, 240 },
+	[CHAN_ENUM_5540] = { 5540, 108, 2, 240 },
+	[CHAN_ENUM_5560] = { 5560, 112, 2, 240 },
+	[CHAN_ENUM_5580] = { 5580, 116, 2, 240 },
+	[CHAN_ENUM_5600] = { 5600, 120, 2, 240 },
+	[CHAN_ENUM_5620] = { 5620, 124, 2, 240 },
+	[CHAN_ENUM_5640] = { 5640, 128, 2, 240 },
+	[CHAN_ENUM_5660] = { 5660, 132, 2, 240 },
+	[CHAN_ENUM_5680] = { 5680, 136, 2, 240 },
+	[CHAN_ENUM_5700] = { 5700, 140, 2, 240 },
+	[CHAN_ENUM_5720] = { 5720, 144, 2, 240 },
+	[CHAN_ENUM_5745] = { 5745, 149, 2, 160 },
+	[CHAN_ENUM_5765] = { 5765, 153, 2, 160 },
+	[CHAN_ENUM_5785] = { 5785, 157, 2, 160 },
+	[CHAN_ENUM_5805] = { 5805, 161, 2, 160 },
+	[CHAN_ENUM_5825] = { 5825, 165, 2, 160 },
+	[CHAN_ENUM_5845] = { 5845, 169, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5850] = {5850, 170, 2, 160},
-	[CHAN_ENUM_5855] = {5855, 171, 2, 160},
-	[CHAN_ENUM_5860] = {5860, 172, 2, 160},
+	[CHAN_ENUM_5850] = { 5850, 170, 2, 160 },
+	[CHAN_ENUM_5855] = { 5855, 171, 2, 160 },
+	[CHAN_ENUM_5860] = { 5860, 172, 2, 160 },
 #endif
-	[CHAN_ENUM_5865] = {5865, 173, 2, 160},
+	[CHAN_ENUM_5865] = { 5865, 173, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5870] = {5870, 174, 2, 160},
-	[CHAN_ENUM_5875] = {5875, 175, 2, 160},
-	[CHAN_ENUM_5880] = {5880, 176, 2, 160},
+	[CHAN_ENUM_5870] = { 5870, 174, 2, 160 },
+	[CHAN_ENUM_5875] = { 5875, 175, 2, 160 },
+	[CHAN_ENUM_5880] = { 5880, 176, 2, 160 },
 #endif
-	[CHAN_ENUM_5885] = {5885, 177, 2, 160},
+	[CHAN_ENUM_5885] = { 5885, 177, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5890] = {5890, 178, 2, 160},
-	[CHAN_ENUM_5895] = {5895, 179, 2, 160},
-	[CHAN_ENUM_5900] = {5900, 180, 2, 160},
-	[CHAN_ENUM_5905] = {5905, 181, 2, 160},
-	[CHAN_ENUM_5910] = {5910, 182, 2, 160},
-	[CHAN_ENUM_5915] = {5915, 183, 2, 160},
-	[CHAN_ENUM_5920] = {5920, 184, 2, 160},
+	[CHAN_ENUM_5890] = { 5890, 178, 2, 160 },
+	[CHAN_ENUM_5895] = { 5895, 179, 2, 160 },
+	[CHAN_ENUM_5900] = { 5900, 180, 2, 160 },
+	[CHAN_ENUM_5905] = { 5905, 181, 2, 160 },
+	[CHAN_ENUM_5910] = { 5910, 182, 2, 160 },
+	[CHAN_ENUM_5915] = { 5915, 183, 2, 160 },
+	[CHAN_ENUM_5920] = { 5920, 184, 2, 160 },
 #endif /* WLAN_FEATURE_DSRC */
 #ifdef CONFIG_BAND_6GHZ
-	[CHAN_ENUM_5935] = {5935, 2, 2, 20},
-	[CHAN_ENUM_5955] = {5955, 1, 2, 320},
-	[CHAN_ENUM_5975] = {5975, 5, 2, 320},
-	[CHAN_ENUM_5995] = {5995, 9, 2, 320},
-	[CHAN_ENUM_6015] = {6015, 13, 2, 320},
-	[CHAN_ENUM_6035] = {6035, 17, 2, 320},
-	[CHAN_ENUM_6055] = {6055, 21, 2, 320},
-	[CHAN_ENUM_6075] = {6075, 25, 2, 320},
-	[CHAN_ENUM_6095] = {6095, 29, 2, 320},
-	[CHAN_ENUM_6115] = {6115, 33, 2, 320},
-	[CHAN_ENUM_6135] = {6135, 37, 2, 320},
-	[CHAN_ENUM_6155] = {6155, 41, 2, 320},
-	[CHAN_ENUM_6175] = {6175, 45, 2, 320},
-	[CHAN_ENUM_6195] = {6195, 49, 2, 320},
-	[CHAN_ENUM_6215] = {6215, 53, 2, 320},
-	[CHAN_ENUM_6235] = {6235, 57, 2, 320},
-	[CHAN_ENUM_6255] = {6255, 61, 2, 320},
-	[CHAN_ENUM_6275] = {6275, 65, 2, 320},
-	[CHAN_ENUM_6295] = {6295, 69, 2, 320},
-	[CHAN_ENUM_6315] = {6315, 73, 2, 320},
-	[CHAN_ENUM_6335] = {6335, 77, 2, 320},
-	[CHAN_ENUM_6355] = {6355, 81, 2, 320},
-	[CHAN_ENUM_6375] = {6375, 85, 2, 320},
-	[CHAN_ENUM_6395] = {6395, 89, 2, 320},
-	[CHAN_ENUM_6415] = {6415, 93, 2, 320},
-	[CHAN_ENUM_6435] = {6435, 97, 2, 320},
-	[CHAN_ENUM_6455] = {6455, 101, 2, 320},
-	[CHAN_ENUM_6475] = {6475, 105, 2, 320},
-	[CHAN_ENUM_6495] = {6495, 109, 2, 320},
-	[CHAN_ENUM_6515] = {6515, 113, 2, 320},
-	[CHAN_ENUM_6535] = {6535, 117, 2, 320},
-	[CHAN_ENUM_6555] = {6555, 121, 2, 320},
-	[CHAN_ENUM_6575] = {6575, 125, 2, 320},
-	[CHAN_ENUM_6595] = {6595, 129, 2, 320},
-	[CHAN_ENUM_6615] = {6615, 133, 2, 320},
-	[CHAN_ENUM_6635] = {6635, 137, 2, 320},
-	[CHAN_ENUM_6655] = {6655, 141, 2, 320},
-	[CHAN_ENUM_6675] = {6675, 145, 2, 320},
-	[CHAN_ENUM_6695] = {6695, 149, 2, 320},
-	[CHAN_ENUM_6715] = {6715, 153, 2, 320},
-	[CHAN_ENUM_6735] = {6735, 157, 2, 320},
-	[CHAN_ENUM_6755] = {6755, 161, 2, 320},
-	[CHAN_ENUM_6775] = {6775, 165, 2, 320},
-	[CHAN_ENUM_6795] = {6795, 169, 2, 320},
-	[CHAN_ENUM_6815] = {6815, 173, 2, 320},
-	[CHAN_ENUM_6835] = {6835, 177, 2, 320},
-	[CHAN_ENUM_6855] = {6855, 181, 2, 320},
-	[CHAN_ENUM_6875] = {6875, 185, 2, 320},
-	[CHAN_ENUM_6895] = {6895, 189, 2, 320},
-	[CHAN_ENUM_6915] = {6915, 193, 2, 320},
-	[CHAN_ENUM_6935] = {6935, 197, 2, 320},
-	[CHAN_ENUM_6955] = {6955, 201, 2, 320},
-	[CHAN_ENUM_6975] = {6975, 205, 2, 320},
-	[CHAN_ENUM_6995] = {6995, 209, 2, 320},
-	[CHAN_ENUM_7015] = {7015, 213, 2, 320},
-	[CHAN_ENUM_7035] = {7035, 217, 2, 320},
-	[CHAN_ENUM_7055] = {7055, 221, 2, 320},
-	[CHAN_ENUM_7075] = {7075, 225, 2, 160},
-	[CHAN_ENUM_7095] = {7095, 229, 2, 160},
-	[CHAN_ENUM_7115] = {7115, 233, 2, 160}
+	[CHAN_ENUM_5935] = { 5935, 2, 2, 20 },
+	[CHAN_ENUM_5955] = { 5955, 1, 2, 320 },
+	[CHAN_ENUM_5975] = { 5975, 5, 2, 320 },
+	[CHAN_ENUM_5995] = { 5995, 9, 2, 320 },
+	[CHAN_ENUM_6015] = { 6015, 13, 2, 320 },
+	[CHAN_ENUM_6035] = { 6035, 17, 2, 320 },
+	[CHAN_ENUM_6055] = { 6055, 21, 2, 320 },
+	[CHAN_ENUM_6075] = { 6075, 25, 2, 320 },
+	[CHAN_ENUM_6095] = { 6095, 29, 2, 320 },
+	[CHAN_ENUM_6115] = { 6115, 33, 2, 320 },
+	[CHAN_ENUM_6135] = { 6135, 37, 2, 320 },
+	[CHAN_ENUM_6155] = { 6155, 41, 2, 320 },
+	[CHAN_ENUM_6175] = { 6175, 45, 2, 320 },
+	[CHAN_ENUM_6195] = { 6195, 49, 2, 320 },
+	[CHAN_ENUM_6215] = { 6215, 53, 2, 320 },
+	[CHAN_ENUM_6235] = { 6235, 57, 2, 320 },
+	[CHAN_ENUM_6255] = { 6255, 61, 2, 320 },
+	[CHAN_ENUM_6275] = { 6275, 65, 2, 320 },
+	[CHAN_ENUM_6295] = { 6295, 69, 2, 320 },
+	[CHAN_ENUM_6315] = { 6315, 73, 2, 320 },
+	[CHAN_ENUM_6335] = { 6335, 77, 2, 320 },
+	[CHAN_ENUM_6355] = { 6355, 81, 2, 320 },
+	[CHAN_ENUM_6375] = { 6375, 85, 2, 320 },
+	[CHAN_ENUM_6395] = { 6395, 89, 2, 320 },
+	[CHAN_ENUM_6415] = { 6415, 93, 2, 320 },
+	[CHAN_ENUM_6435] = { 6435, 97, 2, 320 },
+	[CHAN_ENUM_6455] = { 6455, 101, 2, 320 },
+	[CHAN_ENUM_6475] = { 6475, 105, 2, 320 },
+	[CHAN_ENUM_6495] = { 6495, 109, 2, 320 },
+	[CHAN_ENUM_6515] = { 6515, 113, 2, 320 },
+	[CHAN_ENUM_6535] = { 6535, 117, 2, 320 },
+	[CHAN_ENUM_6555] = { 6555, 121, 2, 320 },
+	[CHAN_ENUM_6575] = { 6575, 125, 2, 320 },
+	[CHAN_ENUM_6595] = { 6595, 129, 2, 320 },
+	[CHAN_ENUM_6615] = { 6615, 133, 2, 320 },
+	[CHAN_ENUM_6635] = { 6635, 137, 2, 320 },
+	[CHAN_ENUM_6655] = { 6655, 141, 2, 320 },
+	[CHAN_ENUM_6675] = { 6675, 145, 2, 320 },
+	[CHAN_ENUM_6695] = { 6695, 149, 2, 320 },
+	[CHAN_ENUM_6715] = { 6715, 153, 2, 320 },
+	[CHAN_ENUM_6735] = { 6735, 157, 2, 320 },
+	[CHAN_ENUM_6755] = { 6755, 161, 2, 320 },
+	[CHAN_ENUM_6775] = { 6775, 165, 2, 320 },
+	[CHAN_ENUM_6795] = { 6795, 169, 2, 320 },
+	[CHAN_ENUM_6815] = { 6815, 173, 2, 320 },
+	[CHAN_ENUM_6835] = { 6835, 177, 2, 320 },
+	[CHAN_ENUM_6855] = { 6855, 181, 2, 320 },
+	[CHAN_ENUM_6875] = { 6875, 185, 2, 320 },
+	[CHAN_ENUM_6895] = { 6895, 189, 2, 320 },
+	[CHAN_ENUM_6915] = { 6915, 193, 2, 320 },
+	[CHAN_ENUM_6935] = { 6935, 197, 2, 320 },
+	[CHAN_ENUM_6955] = { 6955, 201, 2, 320 },
+	[CHAN_ENUM_6975] = { 6975, 205, 2, 320 },
+	[CHAN_ENUM_6995] = { 6995, 209, 2, 320 },
+	[CHAN_ENUM_7015] = { 7015, 213, 2, 320 },
+	[CHAN_ENUM_7035] = { 7035, 217, 2, 320 },
+	[CHAN_ENUM_7055] = { 7055, 221, 2, 320 },
+	[CHAN_ENUM_7075] = { 7075, 225, 2, 160 },
+	[CHAN_ENUM_7095] = { 7095, 229, 2, 160 },
+	[CHAN_ENUM_7115] = { 7115, 233, 2, 160 }
 #endif /* CONFIG_BAND_6GHZ */
 };
 
 const struct chan_map channel_map_eu[NUM_CHANNELS] = {
-	[CHAN_ENUM_2412] = {2412, 1, 20, 40},
-	[CHAN_ENUM_2417] = {2417, 2, 20, 40},
-	[CHAN_ENUM_2422] = {2422, 3, 20, 40},
-	[CHAN_ENUM_2427] = {2427, 4, 20, 40},
-	[CHAN_ENUM_2432] = {2432, 5, 20, 40},
-	[CHAN_ENUM_2437] = {2437, 6, 20, 40},
-	[CHAN_ENUM_2442] = {2442, 7, 20, 40},
-	[CHAN_ENUM_2447] = {2447, 8, 20, 40},
-	[CHAN_ENUM_2452] = {2452, 9, 20, 40},
-	[CHAN_ENUM_2457] = {2457, 10, 20, 40},
-	[CHAN_ENUM_2462] = {2462, 11, 20, 40},
-	[CHAN_ENUM_2467] = {2467, 12, 20, 40},
-	[CHAN_ENUM_2472] = {2472, 13, 20, 40},
-	[CHAN_ENUM_2484] = {2484, 14, 20, 20},
+	[CHAN_ENUM_2412] = { 2412, 1, 20, 40 },
+	[CHAN_ENUM_2417] = { 2417, 2, 20, 40 },
+	[CHAN_ENUM_2422] = { 2422, 3, 20, 40 },
+	[CHAN_ENUM_2427] = { 2427, 4, 20, 40 },
+	[CHAN_ENUM_2432] = { 2432, 5, 20, 40 },
+	[CHAN_ENUM_2437] = { 2437, 6, 20, 40 },
+	[CHAN_ENUM_2442] = { 2442, 7, 20, 40 },
+	[CHAN_ENUM_2447] = { 2447, 8, 20, 40 },
+	[CHAN_ENUM_2452] = { 2452, 9, 20, 40 },
+	[CHAN_ENUM_2457] = { 2457, 10, 20, 40 },
+	[CHAN_ENUM_2462] = { 2462, 11, 20, 40 },
+	[CHAN_ENUM_2467] = { 2467, 12, 20, 40 },
+	[CHAN_ENUM_2472] = { 2472, 13, 20, 40 },
+	[CHAN_ENUM_2484] = { 2484, 14, 20, 20 },
 #ifdef CONFIG_49GHZ_CHAN
-	[CHAN_ENUM_4912] = {4912, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4915] = {4915, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4917] = {4917, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4920] = {4920, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4922] = {4922, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4925] = {4925, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4927] = {4927, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4932] = {4932, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4935] = {4935, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4937] = {4937, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4940] = {4940, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4942] = {4942, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4945] = {4945, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4947] = {4947, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4950] = {4950, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4952] = {4952, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4955] = {4955, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4957] = {4957, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4960] = {4960, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4962] = {4962, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4965] = {4965, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4967] = {4967, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4970] = {4970, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4972] = {4972, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4975] = {4975, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4977] = {4977, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4980] = {4980, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4982] = {4982, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4985] = {4985, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4987] = {4987, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5032] = {5032, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5035] = {5035, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5037] = {5037, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5040] = {5040, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5042] = {5042, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5045] = {5045, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5047] = {5047, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5052] = {5052, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5055] = {5055, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5057] = {5057, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5060] = {5060, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5080] = {5080, INVALID_CHANNEL_NUM, 2, 20},
+	[CHAN_ENUM_4912] = { 4912, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4915] = { 4915, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4917] = { 4917, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4920] = { 4920, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4922] = { 4922, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4925] = { 4925, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4927] = { 4927, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4932] = { 4932, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4935] = { 4935, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4937] = { 4937, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4940] = { 4940, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4942] = { 4942, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4945] = { 4945, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4947] = { 4947, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4950] = { 4950, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4952] = { 4952, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4955] = { 4955, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4957] = { 4957, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4960] = { 4960, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4962] = { 4962, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4965] = { 4965, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4967] = { 4967, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4970] = { 4970, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4972] = { 4972, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4975] = { 4975, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4977] = { 4977, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4980] = { 4980, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4982] = { 4982, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4985] = { 4985, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4987] = { 4987, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5032] = { 5032, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5035] = { 5035, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5037] = { 5037, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5040] = { 5040, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5042] = { 5042, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5045] = { 5045, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5047] = { 5047, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5052] = { 5052, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5055] = { 5055, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5057] = { 5057, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5060] = { 5060, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5080] = { 5080, INVALID_CHANNEL_NUM, 2, 20 },
 #endif /* CONFIG_49GHZ_CHAN */
-	[CHAN_ENUM_5180] = {5180, 36, 2, 160},
-	[CHAN_ENUM_5200] = {5200, 40, 2, 160},
-	[CHAN_ENUM_5220] = {5220, 44, 2, 160},
-	[CHAN_ENUM_5240] = {5240, 48, 2, 160},
-	[CHAN_ENUM_5260] = {5260, 52, 2, 160},
-	[CHAN_ENUM_5280] = {5280, 56, 2, 160},
-	[CHAN_ENUM_5300] = {5300, 60, 2, 160},
-	[CHAN_ENUM_5320] = {5320, 64, 2, 160},
-	[CHAN_ENUM_5500] = {5500, 100, 2, 240},
-	[CHAN_ENUM_5520] = {5520, 104, 2, 240},
-	[CHAN_ENUM_5540] = {5540, 108, 2, 240},
-	[CHAN_ENUM_5560] = {5560, 112, 2, 240},
-	[CHAN_ENUM_5580] = {5580, 116, 2, 240},
-	[CHAN_ENUM_5600] = {5600, 120, 2, 240},
-	[CHAN_ENUM_5620] = {5620, 124, 2, 240},
-	[CHAN_ENUM_5640] = {5640, 128, 2, 240},
-	[CHAN_ENUM_5660] = {5660, 132, 2, 240},
-	[CHAN_ENUM_5680] = {5680, 136, 2, 240},
-	[CHAN_ENUM_5700] = {5700, 140, 2, 240},
-	[CHAN_ENUM_5720] = {5720, 144, 2, 240},
-	[CHAN_ENUM_5745] = {5745, 149, 2, 160},
-	[CHAN_ENUM_5765] = {5765, 153, 2, 160},
-	[CHAN_ENUM_5785] = {5785, 157, 2, 160},
-	[CHAN_ENUM_5805] = {5805, 161, 2, 160},
-	[CHAN_ENUM_5825] = {5825, 165, 2, 160},
-	[CHAN_ENUM_5845] = {5845, 169, 2, 160},
+	[CHAN_ENUM_5180] = { 5180, 36, 2, 160 },
+	[CHAN_ENUM_5200] = { 5200, 40, 2, 160 },
+	[CHAN_ENUM_5220] = { 5220, 44, 2, 160 },
+	[CHAN_ENUM_5240] = { 5240, 48, 2, 160 },
+	[CHAN_ENUM_5260] = { 5260, 52, 2, 160 },
+	[CHAN_ENUM_5280] = { 5280, 56, 2, 160 },
+	[CHAN_ENUM_5300] = { 5300, 60, 2, 160 },
+	[CHAN_ENUM_5320] = { 5320, 64, 2, 160 },
+	[CHAN_ENUM_5500] = { 5500, 100, 2, 240 },
+	[CHAN_ENUM_5520] = { 5520, 104, 2, 240 },
+	[CHAN_ENUM_5540] = { 5540, 108, 2, 240 },
+	[CHAN_ENUM_5560] = { 5560, 112, 2, 240 },
+	[CHAN_ENUM_5580] = { 5580, 116, 2, 240 },
+	[CHAN_ENUM_5600] = { 5600, 120, 2, 240 },
+	[CHAN_ENUM_5620] = { 5620, 124, 2, 240 },
+	[CHAN_ENUM_5640] = { 5640, 128, 2, 240 },
+	[CHAN_ENUM_5660] = { 5660, 132, 2, 240 },
+	[CHAN_ENUM_5680] = { 5680, 136, 2, 240 },
+	[CHAN_ENUM_5700] = { 5700, 140, 2, 240 },
+	[CHAN_ENUM_5720] = { 5720, 144, 2, 240 },
+	[CHAN_ENUM_5745] = { 5745, 149, 2, 160 },
+	[CHAN_ENUM_5765] = { 5765, 153, 2, 160 },
+	[CHAN_ENUM_5785] = { 5785, 157, 2, 160 },
+	[CHAN_ENUM_5805] = { 5805, 161, 2, 160 },
+	[CHAN_ENUM_5825] = { 5825, 165, 2, 160 },
+	[CHAN_ENUM_5845] = { 5845, 169, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5850] = {5850, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5855] = {5855, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5860] = {5860, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5850] = { 5850, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5855] = { 5855, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5860] = { 5860, INVALID_CHANNEL_NUM, 2, 160 },
 #endif
-	[CHAN_ENUM_5865] = {5865, 173, 2, 160},
+	[CHAN_ENUM_5865] = { 5865, 173, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5870] = {5870, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5875] = {5875, 175, 2, 160},
-	[CHAN_ENUM_5880] = {5880, 176, 2, 160},
+	[CHAN_ENUM_5870] = { 5870, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5875] = { 5875, 175, 2, 160 },
+	[CHAN_ENUM_5880] = { 5880, 176, 2, 160 },
 #endif
-	[CHAN_ENUM_5885] = {5885, 177, 2, 160},
+	[CHAN_ENUM_5885] = { 5885, 177, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5890] = {5890, 178, 2, 160},
-	[CHAN_ENUM_5895] = {5895, 179, 2, 160},
-	[CHAN_ENUM_5900] = {5900, 180, 2, 160},
-	[CHAN_ENUM_5905] = {5905, 181, 2, 160},
-	[CHAN_ENUM_5910] = {5910, 182, 2, 160},
-	[CHAN_ENUM_5915] = {5915, 183, 2, 160},
-	[CHAN_ENUM_5920] = {5920, 184, 2, 160},
+	[CHAN_ENUM_5890] = { 5890, 178, 2, 160 },
+	[CHAN_ENUM_5895] = { 5895, 179, 2, 160 },
+	[CHAN_ENUM_5900] = { 5900, 180, 2, 160 },
+	[CHAN_ENUM_5905] = { 5905, 181, 2, 160 },
+	[CHAN_ENUM_5910] = { 5910, 182, 2, 160 },
+	[CHAN_ENUM_5915] = { 5915, 183, 2, 160 },
+	[CHAN_ENUM_5920] = { 5920, 184, 2, 160 },
 #endif /* WLAN_FEATURE_DSRC */
 #ifdef CONFIG_BAND_6GHZ
-	[CHAN_ENUM_5935] = {5935, 2, 2, 20},
-	[CHAN_ENUM_5955] = {5955, 1, 2, 320},
-	[CHAN_ENUM_5975] = {5975, 5, 2, 320},
-	[CHAN_ENUM_5995] = {5995, 9, 2, 320},
-	[CHAN_ENUM_6015] = {6015, 13, 2, 320},
-	[CHAN_ENUM_6035] = {6035, 17, 2, 320},
-	[CHAN_ENUM_6055] = {6055, 21, 2, 320},
-	[CHAN_ENUM_6075] = {6075, 25, 2, 320},
-	[CHAN_ENUM_6095] = {6095, 29, 2, 320},
-	[CHAN_ENUM_6115] = {6115, 33, 2, 320},
-	[CHAN_ENUM_6135] = {6135, 37, 2, 320},
-	[CHAN_ENUM_6155] = {6155, 41, 2, 320},
-	[CHAN_ENUM_6175] = {6175, 45, 2, 320},
-	[CHAN_ENUM_6195] = {6195, 49, 2, 320},
-	[CHAN_ENUM_6215] = {6215, 53, 2, 320},
-	[CHAN_ENUM_6235] = {6235, 57, 2, 320},
-	[CHAN_ENUM_6255] = {6255, 61, 2, 320},
-	[CHAN_ENUM_6275] = {6275, 65, 2, 320},
-	[CHAN_ENUM_6295] = {6295, 69, 2, 320},
-	[CHAN_ENUM_6315] = {6315, 73, 2, 320},
-	[CHAN_ENUM_6335] = {6335, 77, 2, 320},
-	[CHAN_ENUM_6355] = {6355, 81, 2, 320},
-	[CHAN_ENUM_6375] = {6375, 85, 2, 320},
-	[CHAN_ENUM_6395] = {6395, 89, 2, 320},
-	[CHAN_ENUM_6415] = {6415, 93, 2, 320},
-	[CHAN_ENUM_6435] = {6435, 97, 2, 320},
-	[CHAN_ENUM_6455] = {6455, 101, 2, 320},
-	[CHAN_ENUM_6475] = {6475, 105, 2, 320},
-	[CHAN_ENUM_6495] = {6495, 109, 2, 320},
-	[CHAN_ENUM_6515] = {6515, 113, 2, 320},
-	[CHAN_ENUM_6535] = {6535, 117, 2, 320},
-	[CHAN_ENUM_6555] = {6555, 121, 2, 320},
-	[CHAN_ENUM_6575] = {6575, 125, 2, 320},
-	[CHAN_ENUM_6595] = {6595, 129, 2, 320},
-	[CHAN_ENUM_6615] = {6615, 133, 2, 320},
-	[CHAN_ENUM_6635] = {6635, 137, 2, 320},
-	[CHAN_ENUM_6655] = {6655, 141, 2, 320},
-	[CHAN_ENUM_6675] = {6675, 145, 2, 320},
-	[CHAN_ENUM_6695] = {6695, 149, 2, 320},
-	[CHAN_ENUM_6715] = {6715, 153, 2, 320},
-	[CHAN_ENUM_6735] = {6735, 157, 2, 320},
-	[CHAN_ENUM_6755] = {6755, 161, 2, 320},
-	[CHAN_ENUM_6775] = {6775, 165, 2, 320},
-	[CHAN_ENUM_6795] = {6795, 169, 2, 320},
-	[CHAN_ENUM_6815] = {6815, 173, 2, 320},
-	[CHAN_ENUM_6835] = {6835, 177, 2, 320},
-	[CHAN_ENUM_6855] = {6855, 181, 2, 320},
-	[CHAN_ENUM_6875] = {6875, 185, 2, 320},
-	[CHAN_ENUM_6895] = {6895, 189, 2, 320},
-	[CHAN_ENUM_6915] = {6915, 193, 2, 320},
-	[CHAN_ENUM_6935] = {6935, 197, 2, 320},
-	[CHAN_ENUM_6955] = {6955, 201, 2, 320},
-	[CHAN_ENUM_6975] = {6975, 205, 2, 320},
-	[CHAN_ENUM_6995] = {6995, 209, 2, 320},
-	[CHAN_ENUM_7015] = {7015, 213, 2, 320},
-	[CHAN_ENUM_7035] = {7035, 217, 2, 320},
-	[CHAN_ENUM_7055] = {7055, 221, 2, 320},
-	[CHAN_ENUM_7075] = {7075, 225, 2, 160},
-	[CHAN_ENUM_7095] = {7095, 229, 2, 160},
-	[CHAN_ENUM_7115] = {7115, 233, 2, 160}
+	[CHAN_ENUM_5935] = { 5935, 2, 2, 20 },
+	[CHAN_ENUM_5955] = { 5955, 1, 2, 320 },
+	[CHAN_ENUM_5975] = { 5975, 5, 2, 320 },
+	[CHAN_ENUM_5995] = { 5995, 9, 2, 320 },
+	[CHAN_ENUM_6015] = { 6015, 13, 2, 320 },
+	[CHAN_ENUM_6035] = { 6035, 17, 2, 320 },
+	[CHAN_ENUM_6055] = { 6055, 21, 2, 320 },
+	[CHAN_ENUM_6075] = { 6075, 25, 2, 320 },
+	[CHAN_ENUM_6095] = { 6095, 29, 2, 320 },
+	[CHAN_ENUM_6115] = { 6115, 33, 2, 320 },
+	[CHAN_ENUM_6135] = { 6135, 37, 2, 320 },
+	[CHAN_ENUM_6155] = { 6155, 41, 2, 320 },
+	[CHAN_ENUM_6175] = { 6175, 45, 2, 320 },
+	[CHAN_ENUM_6195] = { 6195, 49, 2, 320 },
+	[CHAN_ENUM_6215] = { 6215, 53, 2, 320 },
+	[CHAN_ENUM_6235] = { 6235, 57, 2, 320 },
+	[CHAN_ENUM_6255] = { 6255, 61, 2, 320 },
+	[CHAN_ENUM_6275] = { 6275, 65, 2, 320 },
+	[CHAN_ENUM_6295] = { 6295, 69, 2, 320 },
+	[CHAN_ENUM_6315] = { 6315, 73, 2, 320 },
+	[CHAN_ENUM_6335] = { 6335, 77, 2, 320 },
+	[CHAN_ENUM_6355] = { 6355, 81, 2, 320 },
+	[CHAN_ENUM_6375] = { 6375, 85, 2, 320 },
+	[CHAN_ENUM_6395] = { 6395, 89, 2, 320 },
+	[CHAN_ENUM_6415] = { 6415, 93, 2, 320 },
+	[CHAN_ENUM_6435] = { 6435, 97, 2, 320 },
+	[CHAN_ENUM_6455] = { 6455, 101, 2, 320 },
+	[CHAN_ENUM_6475] = { 6475, 105, 2, 320 },
+	[CHAN_ENUM_6495] = { 6495, 109, 2, 320 },
+	[CHAN_ENUM_6515] = { 6515, 113, 2, 320 },
+	[CHAN_ENUM_6535] = { 6535, 117, 2, 320 },
+	[CHAN_ENUM_6555] = { 6555, 121, 2, 320 },
+	[CHAN_ENUM_6575] = { 6575, 125, 2, 320 },
+	[CHAN_ENUM_6595] = { 6595, 129, 2, 320 },
+	[CHAN_ENUM_6615] = { 6615, 133, 2, 320 },
+	[CHAN_ENUM_6635] = { 6635, 137, 2, 320 },
+	[CHAN_ENUM_6655] = { 6655, 141, 2, 320 },
+	[CHAN_ENUM_6675] = { 6675, 145, 2, 320 },
+	[CHAN_ENUM_6695] = { 6695, 149, 2, 320 },
+	[CHAN_ENUM_6715] = { 6715, 153, 2, 320 },
+	[CHAN_ENUM_6735] = { 6735, 157, 2, 320 },
+	[CHAN_ENUM_6755] = { 6755, 161, 2, 320 },
+	[CHAN_ENUM_6775] = { 6775, 165, 2, 320 },
+	[CHAN_ENUM_6795] = { 6795, 169, 2, 320 },
+	[CHAN_ENUM_6815] = { 6815, 173, 2, 320 },
+	[CHAN_ENUM_6835] = { 6835, 177, 2, 320 },
+	[CHAN_ENUM_6855] = { 6855, 181, 2, 320 },
+	[CHAN_ENUM_6875] = { 6875, 185, 2, 320 },
+	[CHAN_ENUM_6895] = { 6895, 189, 2, 320 },
+	[CHAN_ENUM_6915] = { 6915, 193, 2, 320 },
+	[CHAN_ENUM_6935] = { 6935, 197, 2, 320 },
+	[CHAN_ENUM_6955] = { 6955, 201, 2, 320 },
+	[CHAN_ENUM_6975] = { 6975, 205, 2, 320 },
+	[CHAN_ENUM_6995] = { 6995, 209, 2, 320 },
+	[CHAN_ENUM_7015] = { 7015, 213, 2, 320 },
+	[CHAN_ENUM_7035] = { 7035, 217, 2, 320 },
+	[CHAN_ENUM_7055] = { 7055, 221, 2, 320 },
+	[CHAN_ENUM_7075] = { 7075, 225, 2, 160 },
+	[CHAN_ENUM_7095] = { 7095, 229, 2, 160 },
+	[CHAN_ENUM_7115] = { 7115, 233, 2, 160 }
 #endif /* CONFIG_BAND_6GHZ */
 };
 
 const struct chan_map channel_map_jp[NUM_CHANNELS] = {
-	[CHAN_ENUM_2412] = {2412, 1, 20, 40},
-	[CHAN_ENUM_2417] = {2417, 2, 20, 40},
-	[CHAN_ENUM_2422] = {2422, 3, 20, 40},
-	[CHAN_ENUM_2427] = {2427, 4, 20, 40},
-	[CHAN_ENUM_2432] = {2432, 5, 20, 40},
-	[CHAN_ENUM_2437] = {2437, 6, 20, 40},
-	[CHAN_ENUM_2442] = {2442, 7, 20, 40},
-	[CHAN_ENUM_2447] = {2447, 8, 20, 40},
-	[CHAN_ENUM_2452] = {2452, 9, 20, 40},
-	[CHAN_ENUM_2457] = {2457, 10, 20, 40},
-	[CHAN_ENUM_2462] = {2462, 11, 20, 40},
-	[CHAN_ENUM_2467] = {2467, 12, 20, 40},
-	[CHAN_ENUM_2472] = {2472, 13, 20, 40},
-	[CHAN_ENUM_2484] = {2484, 14, 20, 20},
+	[CHAN_ENUM_2412] = { 2412, 1, 20, 40 },
+	[CHAN_ENUM_2417] = { 2417, 2, 20, 40 },
+	[CHAN_ENUM_2422] = { 2422, 3, 20, 40 },
+	[CHAN_ENUM_2427] = { 2427, 4, 20, 40 },
+	[CHAN_ENUM_2432] = { 2432, 5, 20, 40 },
+	[CHAN_ENUM_2437] = { 2437, 6, 20, 40 },
+	[CHAN_ENUM_2442] = { 2442, 7, 20, 40 },
+	[CHAN_ENUM_2447] = { 2447, 8, 20, 40 },
+	[CHAN_ENUM_2452] = { 2452, 9, 20, 40 },
+	[CHAN_ENUM_2457] = { 2457, 10, 20, 40 },
+	[CHAN_ENUM_2462] = { 2462, 11, 20, 40 },
+	[CHAN_ENUM_2467] = { 2467, 12, 20, 40 },
+	[CHAN_ENUM_2472] = { 2472, 13, 20, 40 },
+	[CHAN_ENUM_2484] = { 2484, 14, 20, 20 },
 #ifdef CONFIG_49GHZ_CHAN
-	[CHAN_ENUM_4912] = {4912, 182, 5, 5},
-	[CHAN_ENUM_4915] = {4915, 183, 10, 10},
-	[CHAN_ENUM_4917] = {4917, 183, 5, 5},
-	[CHAN_ENUM_4920] = {4920, 184, 10, 20},
-	[CHAN_ENUM_4922] = {4922, 184, 5, 5},
-	[CHAN_ENUM_4925] = {4925, 185, 10, 10},
-	[CHAN_ENUM_4927] = {4927, 185, 5, 5},
-	[CHAN_ENUM_4932] = {4932, 186, 5, 5},
-	[CHAN_ENUM_4935] = {4935, 187, 10, 10},
-	[CHAN_ENUM_4937] = {4937, 187, 5, 5},
-	[CHAN_ENUM_4940] = {4940, 188, 10, 20},
-	[CHAN_ENUM_4942] = {4942, 188, 5, 5},
-	[CHAN_ENUM_4945] = {4945, 189, 10, 10},
-	[CHAN_ENUM_4947] = {4947, 189, 5, 5},
-	[CHAN_ENUM_4950] = {4950, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4952] = {4952, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4955] = {4955, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4957] = {4957, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4960] = {4960, 192, 20, 20},
-	[CHAN_ENUM_4962] = {4962, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4965] = {4965, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4967] = {4967, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4970] = {4970, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4972] = {4972, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4975] = {4975, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4977] = {4977, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4980] = {4980, 196, 20, 20},
-	[CHAN_ENUM_4982] = {4982, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4985] = {4985, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4987] = {4987, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5032] = {5032, 6, 5, 5},
-	[CHAN_ENUM_5035] = {5035, 7, 10, 10},
-	[CHAN_ENUM_5037] = {5037, 7, 5, 5},
-	[CHAN_ENUM_5040] = {5040, 8, 10, 20},
-	[CHAN_ENUM_5042] = {5042, 8, 5, 5},
-	[CHAN_ENUM_5045] = {5045, 9, 10, 10},
-	[CHAN_ENUM_5047] = {5047, 9, 5, 5},
-	[CHAN_ENUM_5052] = {5052, 10, 5, 5},
-	[CHAN_ENUM_5055] = {5055, 11, 10, 10},
-	[CHAN_ENUM_5057] = {5057, 11, 5, 5},
-	[CHAN_ENUM_5060] = {5060, 12, 20, 20},
-	[CHAN_ENUM_5080] = {5080, 16, 20, 20},
+	[CHAN_ENUM_4912] = { 4912, 182, 5, 5 },
+	[CHAN_ENUM_4915] = { 4915, 183, 10, 10 },
+	[CHAN_ENUM_4917] = { 4917, 183, 5, 5 },
+	[CHAN_ENUM_4920] = { 4920, 184, 10, 20 },
+	[CHAN_ENUM_4922] = { 4922, 184, 5, 5 },
+	[CHAN_ENUM_4925] = { 4925, 185, 10, 10 },
+	[CHAN_ENUM_4927] = { 4927, 185, 5, 5 },
+	[CHAN_ENUM_4932] = { 4932, 186, 5, 5 },
+	[CHAN_ENUM_4935] = { 4935, 187, 10, 10 },
+	[CHAN_ENUM_4937] = { 4937, 187, 5, 5 },
+	[CHAN_ENUM_4940] = { 4940, 188, 10, 20 },
+	[CHAN_ENUM_4942] = { 4942, 188, 5, 5 },
+	[CHAN_ENUM_4945] = { 4945, 189, 10, 10 },
+	[CHAN_ENUM_4947] = { 4947, 189, 5, 5 },
+	[CHAN_ENUM_4950] = { 4950, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4952] = { 4952, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4955] = { 4955, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4957] = { 4957, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4960] = { 4960, 192, 20, 20 },
+	[CHAN_ENUM_4962] = { 4962, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4965] = { 4965, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4967] = { 4967, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4970] = { 4970, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4972] = { 4972, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4975] = { 4975, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4977] = { 4977, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4980] = { 4980, 196, 20, 20 },
+	[CHAN_ENUM_4982] = { 4982, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4985] = { 4985, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4987] = { 4987, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5032] = { 5032, 6, 5, 5 },
+	[CHAN_ENUM_5035] = { 5035, 7, 10, 10 },
+	[CHAN_ENUM_5037] = { 5037, 7, 5, 5 },
+	[CHAN_ENUM_5040] = { 5040, 8, 10, 20 },
+	[CHAN_ENUM_5042] = { 5042, 8, 5, 5 },
+	[CHAN_ENUM_5045] = { 5045, 9, 10, 10 },
+	[CHAN_ENUM_5047] = { 5047, 9, 5, 5 },
+	[CHAN_ENUM_5052] = { 5052, 10, 5, 5 },
+	[CHAN_ENUM_5055] = { 5055, 11, 10, 10 },
+	[CHAN_ENUM_5057] = { 5057, 11, 5, 5 },
+	[CHAN_ENUM_5060] = { 5060, 12, 20, 20 },
+	[CHAN_ENUM_5080] = { 5080, 16, 20, 20 },
 #endif /* CONFIG_49GHZ_CHAN */
-	[CHAN_ENUM_5180] = {5180, 36, 2, 160},
-	[CHAN_ENUM_5200] = {5200, 40, 2, 160},
-	[CHAN_ENUM_5220] = {5220, 44, 2, 160},
-	[CHAN_ENUM_5240] = {5240, 48, 2, 160},
-	[CHAN_ENUM_5260] = {5260, 52, 2, 160},
-	[CHAN_ENUM_5280] = {5280, 56, 2, 160},
-	[CHAN_ENUM_5300] = {5300, 60, 2, 160},
-	[CHAN_ENUM_5320] = {5320, 64, 2, 160},
-	[CHAN_ENUM_5500] = {5500, 100, 2, 240},
-	[CHAN_ENUM_5520] = {5520, 104, 2, 240},
-	[CHAN_ENUM_5540] = {5540, 108, 2, 240},
-	[CHAN_ENUM_5560] = {5560, 112, 2, 240},
-	[CHAN_ENUM_5580] = {5580, 116, 2, 240},
-	[CHAN_ENUM_5600] = {5600, 120, 2, 240},
-	[CHAN_ENUM_5620] = {5620, 124, 2, 240},
-	[CHAN_ENUM_5640] = {5640, 128, 2, 240},
-	[CHAN_ENUM_5660] = {5660, 132, 2, 240},
-	[CHAN_ENUM_5680] = {5680, 136, 2, 240},
-	[CHAN_ENUM_5700] = {5700, 140, 2, 240},
-	[CHAN_ENUM_5720] = {5720, 144, 2, 240},
-	[CHAN_ENUM_5745] = {5745, 149, 2, 160},
-	[CHAN_ENUM_5765] = {5765, 153, 2, 160},
-	[CHAN_ENUM_5785] = {5785, 157, 2, 160},
-	[CHAN_ENUM_5805] = {5805, 161, 2, 160},
-	[CHAN_ENUM_5825] = {5825, 165, 2, 160},
-	[CHAN_ENUM_5845] = {5845, 169, 2, 160},
+	[CHAN_ENUM_5180] = { 5180, 36, 2, 160 },
+	[CHAN_ENUM_5200] = { 5200, 40, 2, 160 },
+	[CHAN_ENUM_5220] = { 5220, 44, 2, 160 },
+	[CHAN_ENUM_5240] = { 5240, 48, 2, 160 },
+	[CHAN_ENUM_5260] = { 5260, 52, 2, 160 },
+	[CHAN_ENUM_5280] = { 5280, 56, 2, 160 },
+	[CHAN_ENUM_5300] = { 5300, 60, 2, 160 },
+	[CHAN_ENUM_5320] = { 5320, 64, 2, 160 },
+	[CHAN_ENUM_5500] = { 5500, 100, 2, 240 },
+	[CHAN_ENUM_5520] = { 5520, 104, 2, 240 },
+	[CHAN_ENUM_5540] = { 5540, 108, 2, 240 },
+	[CHAN_ENUM_5560] = { 5560, 112, 2, 240 },
+	[CHAN_ENUM_5580] = { 5580, 116, 2, 240 },
+	[CHAN_ENUM_5600] = { 5600, 120, 2, 240 },
+	[CHAN_ENUM_5620] = { 5620, 124, 2, 240 },
+	[CHAN_ENUM_5640] = { 5640, 128, 2, 240 },
+	[CHAN_ENUM_5660] = { 5660, 132, 2, 240 },
+	[CHAN_ENUM_5680] = { 5680, 136, 2, 240 },
+	[CHAN_ENUM_5700] = { 5700, 140, 2, 240 },
+	[CHAN_ENUM_5720] = { 5720, 144, 2, 240 },
+	[CHAN_ENUM_5745] = { 5745, 149, 2, 160 },
+	[CHAN_ENUM_5765] = { 5765, 153, 2, 160 },
+	[CHAN_ENUM_5785] = { 5785, 157, 2, 160 },
+	[CHAN_ENUM_5805] = { 5805, 161, 2, 160 },
+	[CHAN_ENUM_5825] = { 5825, 165, 2, 160 },
+	[CHAN_ENUM_5845] = { 5845, 169, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5850] = {5850, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5855] = {5855, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5860] = {5860, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5850] = { 5850, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5855] = { 5855, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5860] = { 5860, INVALID_CHANNEL_NUM, 2, 160 },
 #endif
-	[CHAN_ENUM_5865] = {5865, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5865] = { 5865, INVALID_CHANNEL_NUM, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5870] = {5870, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5875] = {5875, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5880] = {5880, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5870] = { 5870, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5875] = { 5875, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5880] = { 5880, INVALID_CHANNEL_NUM, 2, 160 },
 #endif
-	[CHAN_ENUM_5885] = {5885, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5885] = { 5885, INVALID_CHANNEL_NUM, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5890] = {5890, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5895] = {5895, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5900] = {5900, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5905] = {5905, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5910] = {5910, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5915] = {5915, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5920] = {5920, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5890] = { 5890, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5895] = { 5895, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5900] = { 5900, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5905] = { 5905, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5910] = { 5910, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5915] = { 5915, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5920] = { 5920, INVALID_CHANNEL_NUM, 2, 160 },
 #endif /* WLAN_FEATURE_DSRC */
 #ifdef CONFIG_BAND_6GHZ
-	[CHAN_ENUM_5935] = {5935, 2, 2, 20},
-	[CHAN_ENUM_5955] = {5955, 1, 2, 320},
-	[CHAN_ENUM_5975] = {5975, 5, 2, 320},
-	[CHAN_ENUM_5995] = {5995, 9, 2, 320},
-	[CHAN_ENUM_6015] = {6015, 13, 2, 320},
-	[CHAN_ENUM_6035] = {6035, 17, 2, 320},
-	[CHAN_ENUM_6055] = {6055, 21, 2, 320},
-	[CHAN_ENUM_6075] = {6075, 25, 2, 320},
-	[CHAN_ENUM_6095] = {6095, 29, 2, 320},
-	[CHAN_ENUM_6115] = {6115, 33, 2, 320},
-	[CHAN_ENUM_6135] = {6135, 37, 2, 320},
-	[CHAN_ENUM_6155] = {6155, 41, 2, 320},
-	[CHAN_ENUM_6175] = {6175, 45, 2, 320},
-	[CHAN_ENUM_6195] = {6195, 49, 2, 320},
-	[CHAN_ENUM_6215] = {6215, 53, 2, 320},
-	[CHAN_ENUM_6235] = {6235, 57, 2, 320},
-	[CHAN_ENUM_6255] = {6255, 61, 2, 320},
-	[CHAN_ENUM_6275] = {6275, 65, 2, 320},
-	[CHAN_ENUM_6295] = {6295, 69, 2, 320},
-	[CHAN_ENUM_6315] = {6315, 73, 2, 320},
-	[CHAN_ENUM_6335] = {6335, 77, 2, 320},
-	[CHAN_ENUM_6355] = {6355, 81, 2, 320},
-	[CHAN_ENUM_6375] = {6375, 85, 2, 320},
-	[CHAN_ENUM_6395] = {6395, 89, 2, 320},
-	[CHAN_ENUM_6415] = {6415, 93, 2, 320},
-	[CHAN_ENUM_6435] = {6435, 97, 2, 320},
-	[CHAN_ENUM_6455] = {6455, 101, 2, 320},
-	[CHAN_ENUM_6475] = {6475, 105, 2, 320},
-	[CHAN_ENUM_6495] = {6495, 109, 2, 320},
-	[CHAN_ENUM_6515] = {6515, 113, 2, 320},
-	[CHAN_ENUM_6535] = {6535, 117, 2, 320},
-	[CHAN_ENUM_6555] = {6555, 121, 2, 320},
-	[CHAN_ENUM_6575] = {6575, 125, 2, 320},
-	[CHAN_ENUM_6595] = {6595, 129, 2, 320},
-	[CHAN_ENUM_6615] = {6615, 133, 2, 320},
-	[CHAN_ENUM_6635] = {6635, 137, 2, 320},
-	[CHAN_ENUM_6655] = {6655, 141, 2, 320},
-	[CHAN_ENUM_6675] = {6675, 145, 2, 320},
-	[CHAN_ENUM_6695] = {6695, 149, 2, 320},
-	[CHAN_ENUM_6715] = {6715, 153, 2, 320},
-	[CHAN_ENUM_6735] = {6735, 157, 2, 320},
-	[CHAN_ENUM_6755] = {6755, 161, 2, 320},
-	[CHAN_ENUM_6775] = {6775, 165, 2, 320},
-	[CHAN_ENUM_6795] = {6795, 169, 2, 320},
-	[CHAN_ENUM_6815] = {6815, 173, 2, 320},
-	[CHAN_ENUM_6835] = {6835, 177, 2, 320},
-	[CHAN_ENUM_6855] = {6855, 181, 2, 320},
-	[CHAN_ENUM_6875] = {6875, 185, 2, 320},
-	[CHAN_ENUM_6895] = {6895, 189, 2, 320},
-	[CHAN_ENUM_6915] = {6915, 193, 2, 320},
-	[CHAN_ENUM_6935] = {6935, 197, 2, 320},
-	[CHAN_ENUM_6955] = {6955, 201, 2, 320},
-	[CHAN_ENUM_6975] = {6975, 205, 2, 320},
-	[CHAN_ENUM_6995] = {6995, 209, 2, 320},
-	[CHAN_ENUM_7015] = {7015, 213, 2, 320},
-	[CHAN_ENUM_7035] = {7035, 217, 2, 320},
-	[CHAN_ENUM_7055] = {7055, 221, 2, 320},
-	[CHAN_ENUM_7075] = {7075, 225, 2, 160},
-	[CHAN_ENUM_7095] = {7095, 229, 2, 160},
-	[CHAN_ENUM_7115] = {7115, 233, 2, 160}
+	[CHAN_ENUM_5935] = { 5935, 2, 2, 20 },
+	[CHAN_ENUM_5955] = { 5955, 1, 2, 320 },
+	[CHAN_ENUM_5975] = { 5975, 5, 2, 320 },
+	[CHAN_ENUM_5995] = { 5995, 9, 2, 320 },
+	[CHAN_ENUM_6015] = { 6015, 13, 2, 320 },
+	[CHAN_ENUM_6035] = { 6035, 17, 2, 320 },
+	[CHAN_ENUM_6055] = { 6055, 21, 2, 320 },
+	[CHAN_ENUM_6075] = { 6075, 25, 2, 320 },
+	[CHAN_ENUM_6095] = { 6095, 29, 2, 320 },
+	[CHAN_ENUM_6115] = { 6115, 33, 2, 320 },
+	[CHAN_ENUM_6135] = { 6135, 37, 2, 320 },
+	[CHAN_ENUM_6155] = { 6155, 41, 2, 320 },
+	[CHAN_ENUM_6175] = { 6175, 45, 2, 320 },
+	[CHAN_ENUM_6195] = { 6195, 49, 2, 320 },
+	[CHAN_ENUM_6215] = { 6215, 53, 2, 320 },
+	[CHAN_ENUM_6235] = { 6235, 57, 2, 320 },
+	[CHAN_ENUM_6255] = { 6255, 61, 2, 320 },
+	[CHAN_ENUM_6275] = { 6275, 65, 2, 320 },
+	[CHAN_ENUM_6295] = { 6295, 69, 2, 320 },
+	[CHAN_ENUM_6315] = { 6315, 73, 2, 320 },
+	[CHAN_ENUM_6335] = { 6335, 77, 2, 320 },
+	[CHAN_ENUM_6355] = { 6355, 81, 2, 320 },
+	[CHAN_ENUM_6375] = { 6375, 85, 2, 320 },
+	[CHAN_ENUM_6395] = { 6395, 89, 2, 320 },
+	[CHAN_ENUM_6415] = { 6415, 93, 2, 320 },
+	[CHAN_ENUM_6435] = { 6435, 97, 2, 320 },
+	[CHAN_ENUM_6455] = { 6455, 101, 2, 320 },
+	[CHAN_ENUM_6475] = { 6475, 105, 2, 320 },
+	[CHAN_ENUM_6495] = { 6495, 109, 2, 320 },
+	[CHAN_ENUM_6515] = { 6515, 113, 2, 320 },
+	[CHAN_ENUM_6535] = { 6535, 117, 2, 320 },
+	[CHAN_ENUM_6555] = { 6555, 121, 2, 320 },
+	[CHAN_ENUM_6575] = { 6575, 125, 2, 320 },
+	[CHAN_ENUM_6595] = { 6595, 129, 2, 320 },
+	[CHAN_ENUM_6615] = { 6615, 133, 2, 320 },
+	[CHAN_ENUM_6635] = { 6635, 137, 2, 320 },
+	[CHAN_ENUM_6655] = { 6655, 141, 2, 320 },
+	[CHAN_ENUM_6675] = { 6675, 145, 2, 320 },
+	[CHAN_ENUM_6695] = { 6695, 149, 2, 320 },
+	[CHAN_ENUM_6715] = { 6715, 153, 2, 320 },
+	[CHAN_ENUM_6735] = { 6735, 157, 2, 320 },
+	[CHAN_ENUM_6755] = { 6755, 161, 2, 320 },
+	[CHAN_ENUM_6775] = { 6775, 165, 2, 320 },
+	[CHAN_ENUM_6795] = { 6795, 169, 2, 320 },
+	[CHAN_ENUM_6815] = { 6815, 173, 2, 320 },
+	[CHAN_ENUM_6835] = { 6835, 177, 2, 320 },
+	[CHAN_ENUM_6855] = { 6855, 181, 2, 320 },
+	[CHAN_ENUM_6875] = { 6875, 185, 2, 320 },
+	[CHAN_ENUM_6895] = { 6895, 189, 2, 320 },
+	[CHAN_ENUM_6915] = { 6915, 193, 2, 320 },
+	[CHAN_ENUM_6935] = { 6935, 197, 2, 320 },
+	[CHAN_ENUM_6955] = { 6955, 201, 2, 320 },
+	[CHAN_ENUM_6975] = { 6975, 205, 2, 320 },
+	[CHAN_ENUM_6995] = { 6995, 209, 2, 320 },
+	[CHAN_ENUM_7015] = { 7015, 213, 2, 320 },
+	[CHAN_ENUM_7035] = { 7035, 217, 2, 320 },
+	[CHAN_ENUM_7055] = { 7055, 221, 2, 320 },
+	[CHAN_ENUM_7075] = { 7075, 225, 2, 160 },
+	[CHAN_ENUM_7095] = { 7095, 229, 2, 160 },
+	[CHAN_ENUM_7115] = { 7115, 233, 2, 160 }
 #endif /* CONFIG_BAND_6GHZ */
 };
 
 const struct chan_map channel_map_global[NUM_CHANNELS] = {
-	[CHAN_ENUM_2412] = {2412, 1, 20, 40},
-	[CHAN_ENUM_2417] = {2417, 2, 20, 40},
-	[CHAN_ENUM_2422] = {2422, 3, 20, 40},
-	[CHAN_ENUM_2427] = {2427, 4, 20, 40},
-	[CHAN_ENUM_2432] = {2432, 5, 20, 40},
-	[CHAN_ENUM_2437] = {2437, 6, 20, 40},
-	[CHAN_ENUM_2442] = {2442, 7, 20, 40},
-	[CHAN_ENUM_2447] = {2447, 8, 20, 40},
-	[CHAN_ENUM_2452] = {2452, 9, 20, 40},
-	[CHAN_ENUM_2457] = {2457, 10, 20, 40},
-	[CHAN_ENUM_2462] = {2462, 11, 20, 40},
-	[CHAN_ENUM_2467] = {2467, 12, 20, 40},
-	[CHAN_ENUM_2472] = {2472, 13, 20, 40},
-	[CHAN_ENUM_2484] = {2484, 14, 20, 20},
+	[CHAN_ENUM_2412] = { 2412, 1, 20, 40 },
+	[CHAN_ENUM_2417] = { 2417, 2, 20, 40 },
+	[CHAN_ENUM_2422] = { 2422, 3, 20, 40 },
+	[CHAN_ENUM_2427] = { 2427, 4, 20, 40 },
+	[CHAN_ENUM_2432] = { 2432, 5, 20, 40 },
+	[CHAN_ENUM_2437] = { 2437, 6, 20, 40 },
+	[CHAN_ENUM_2442] = { 2442, 7, 20, 40 },
+	[CHAN_ENUM_2447] = { 2447, 8, 20, 40 },
+	[CHAN_ENUM_2452] = { 2452, 9, 20, 40 },
+	[CHAN_ENUM_2457] = { 2457, 10, 20, 40 },
+	[CHAN_ENUM_2462] = { 2462, 11, 20, 40 },
+	[CHAN_ENUM_2467] = { 2467, 12, 20, 40 },
+	[CHAN_ENUM_2472] = { 2472, 13, 20, 40 },
+	[CHAN_ENUM_2484] = { 2484, 14, 20, 20 },
 #ifdef CONFIG_49GHZ_CHAN
-	[CHAN_ENUM_4912] = {4912, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4915] = {4915, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4917] = {4917, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4920] = {4920, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4922] = {4922, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4925] = {4925, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4927] = {4927, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4932] = {4932, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4935] = {4935, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4937] = {4937, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4940] = {4940, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4942] = {4942, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4945] = {4945, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4947] = {4947, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4950] = {4950, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4952] = {4952, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4955] = {4955, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4957] = {4957, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4960] = {4960, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4962] = {4962, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4965] = {4965, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4967] = {4967, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4970] = {4970, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4972] = {4972, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4975] = {4975, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4977] = {4977, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4980] = {4980, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4982] = {4982, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4985] = {4985, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4987] = {4987, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5032] = {5032, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5035] = {5035, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5037] = {5037, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5040] = {5040, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5042] = {5042, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5045] = {5045, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5047] = {5047, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5052] = {5052, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5055] = {5055, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5057] = {5057, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5060] = {5060, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5080] = {5080, INVALID_CHANNEL_NUM, 2, 20},
+	[CHAN_ENUM_4912] = { 4912, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4915] = { 4915, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4917] = { 4917, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4920] = { 4920, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4922] = { 4922, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4925] = { 4925, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4927] = { 4927, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4932] = { 4932, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4935] = { 4935, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4937] = { 4937, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4940] = { 4940, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4942] = { 4942, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4945] = { 4945, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4947] = { 4947, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4950] = { 4950, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4952] = { 4952, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4955] = { 4955, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4957] = { 4957, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4960] = { 4960, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4962] = { 4962, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4965] = { 4965, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4967] = { 4967, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4970] = { 4970, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4972] = { 4972, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4975] = { 4975, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4977] = { 4977, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4980] = { 4980, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4982] = { 4982, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4985] = { 4985, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4987] = { 4987, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5032] = { 5032, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5035] = { 5035, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5037] = { 5037, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5040] = { 5040, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5042] = { 5042, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5045] = { 5045, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5047] = { 5047, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5052] = { 5052, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5055] = { 5055, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5057] = { 5057, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5060] = { 5060, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5080] = { 5080, INVALID_CHANNEL_NUM, 2, 20 },
 #endif /* CONFIG_49GHZ_CHAN */
-	[CHAN_ENUM_5180] = {5180, 36, 2, 160},
-	[CHAN_ENUM_5200] = {5200, 40, 2, 160},
-	[CHAN_ENUM_5220] = {5220, 44, 2, 160},
-	[CHAN_ENUM_5240] = {5240, 48, 2, 160},
-	[CHAN_ENUM_5260] = {5260, 52, 2, 160},
-	[CHAN_ENUM_5280] = {5280, 56, 2, 160},
-	[CHAN_ENUM_5300] = {5300, 60, 2, 160},
-	[CHAN_ENUM_5320] = {5320, 64, 2, 160},
-	[CHAN_ENUM_5500] = {5500, 100, 2, 240},
-	[CHAN_ENUM_5520] = {5520, 104, 2, 240},
-	[CHAN_ENUM_5540] = {5540, 108, 2, 240},
-	[CHAN_ENUM_5560] = {5560, 112, 2, 240},
-	[CHAN_ENUM_5580] = {5580, 116, 2, 240},
-	[CHAN_ENUM_5600] = {5600, 120, 2, 240},
-	[CHAN_ENUM_5620] = {5620, 124, 2, 240},
-	[CHAN_ENUM_5640] = {5640, 128, 2, 240},
-	[CHAN_ENUM_5660] = {5660, 132, 2, 240},
-	[CHAN_ENUM_5680] = {5680, 136, 2, 240},
-	[CHAN_ENUM_5700] = {5700, 140, 2, 240},
-	[CHAN_ENUM_5720] = {5720, 144, 2, 240},
-	[CHAN_ENUM_5745] = {5745, 149, 2, 160},
-	[CHAN_ENUM_5765] = {5765, 153, 2, 160},
-	[CHAN_ENUM_5785] = {5785, 157, 2, 160},
-	[CHAN_ENUM_5805] = {5805, 161, 2, 160},
-	[CHAN_ENUM_5825] = {5825, 165, 2, 160},
-	[CHAN_ENUM_5845] = {5845, 169, 2, 160},
+	[CHAN_ENUM_5180] = { 5180, 36, 2, 160 },
+	[CHAN_ENUM_5200] = { 5200, 40, 2, 160 },
+	[CHAN_ENUM_5220] = { 5220, 44, 2, 160 },
+	[CHAN_ENUM_5240] = { 5240, 48, 2, 160 },
+	[CHAN_ENUM_5260] = { 5260, 52, 2, 160 },
+	[CHAN_ENUM_5280] = { 5280, 56, 2, 160 },
+	[CHAN_ENUM_5300] = { 5300, 60, 2, 160 },
+	[CHAN_ENUM_5320] = { 5320, 64, 2, 160 },
+	[CHAN_ENUM_5500] = { 5500, 100, 2, 240 },
+	[CHAN_ENUM_5520] = { 5520, 104, 2, 240 },
+	[CHAN_ENUM_5540] = { 5540, 108, 2, 240 },
+	[CHAN_ENUM_5560] = { 5560, 112, 2, 240 },
+	[CHAN_ENUM_5580] = { 5580, 116, 2, 240 },
+	[CHAN_ENUM_5600] = { 5600, 120, 2, 240 },
+	[CHAN_ENUM_5620] = { 5620, 124, 2, 240 },
+	[CHAN_ENUM_5640] = { 5640, 128, 2, 240 },
+	[CHAN_ENUM_5660] = { 5660, 132, 2, 240 },
+	[CHAN_ENUM_5680] = { 5680, 136, 2, 240 },
+	[CHAN_ENUM_5700] = { 5700, 140, 2, 240 },
+	[CHAN_ENUM_5720] = { 5720, 144, 2, 240 },
+	[CHAN_ENUM_5745] = { 5745, 149, 2, 160 },
+	[CHAN_ENUM_5765] = { 5765, 153, 2, 160 },
+	[CHAN_ENUM_5785] = { 5785, 157, 2, 160 },
+	[CHAN_ENUM_5805] = { 5805, 161, 2, 160 },
+	[CHAN_ENUM_5825] = { 5825, 165, 2, 160 },
+	[CHAN_ENUM_5845] = { 5845, 169, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5850] = {5850, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5855] = {5855, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5860] = {5860, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5850] = { 5850, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5855] = { 5855, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5860] = { 5860, INVALID_CHANNEL_NUM, 2, 160 },
 #endif
-	[CHAN_ENUM_5865] = {5865, 173, 2, 160},
+	[CHAN_ENUM_5865] = { 5865, 173, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5870] = {5870, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5875] = {5875, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5880] = {5880, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5870] = { 5870, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5875] = { 5875, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5880] = { 5880, INVALID_CHANNEL_NUM, 2, 160 },
 #endif
-	[CHAN_ENUM_5885] = {5885, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5885] = { 5885, INVALID_CHANNEL_NUM, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5890] = {5890, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5895] = {5895, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5900] = {5900, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5905] = {5905, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5910] = {5910, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5915] = {5915, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5920] = {5920, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5890] = { 5890, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5895] = { 5895, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5900] = { 5900, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5905] = { 5905, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5910] = { 5910, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5915] = { 5915, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5920] = { 5920, INVALID_CHANNEL_NUM, 2, 160 },
 #endif /* WLAN_FEATURE_DSRC */
 #ifdef CONFIG_BAND_6GHZ
-	[CHAN_ENUM_5935] = {5935, 2, 2, 20},
-	[CHAN_ENUM_5955] = {5955, 1, 2, 320},
-	[CHAN_ENUM_5975] = {5975, 5, 2, 320},
-	[CHAN_ENUM_5995] = {5995, 9, 2, 320},
-	[CHAN_ENUM_6015] = {6015, 13, 2, 320},
-	[CHAN_ENUM_6035] = {6035, 17, 2, 320},
-	[CHAN_ENUM_6055] = {6055, 21, 2, 320},
-	[CHAN_ENUM_6075] = {6075, 25, 2, 320},
-	[CHAN_ENUM_6095] = {6095, 29, 2, 320},
-	[CHAN_ENUM_6115] = {6115, 33, 2, 320},
-	[CHAN_ENUM_6135] = {6135, 37, 2, 320},
-	[CHAN_ENUM_6155] = {6155, 41, 2, 320},
-	[CHAN_ENUM_6175] = {6175, 45, 2, 320},
-	[CHAN_ENUM_6195] = {6195, 49, 2, 320},
-	[CHAN_ENUM_6215] = {6215, 53, 2, 320},
-	[CHAN_ENUM_6235] = {6235, 57, 2, 320},
-	[CHAN_ENUM_6255] = {6255, 61, 2, 320},
-	[CHAN_ENUM_6275] = {6275, 65, 2, 320},
-	[CHAN_ENUM_6295] = {6295, 69, 2, 320},
-	[CHAN_ENUM_6315] = {6315, 73, 2, 320},
-	[CHAN_ENUM_6335] = {6335, 77, 2, 320},
-	[CHAN_ENUM_6355] = {6355, 81, 2, 320},
-	[CHAN_ENUM_6375] = {6375, 85, 2, 320},
-	[CHAN_ENUM_6395] = {6395, 89, 2, 320},
-	[CHAN_ENUM_6415] = {6415, 93, 2, 320},
-	[CHAN_ENUM_6435] = {6435, 97, 2, 320},
-	[CHAN_ENUM_6455] = {6455, 101, 2, 320},
-	[CHAN_ENUM_6475] = {6475, 105, 2, 320},
-	[CHAN_ENUM_6495] = {6495, 109, 2, 320},
-	[CHAN_ENUM_6515] = {6515, 113, 2, 320},
-	[CHAN_ENUM_6535] = {6535, 117, 2, 320},
-	[CHAN_ENUM_6555] = {6555, 121, 2, 320},
-	[CHAN_ENUM_6575] = {6575, 125, 2, 320},
-	[CHAN_ENUM_6595] = {6595, 129, 2, 320},
-	[CHAN_ENUM_6615] = {6615, 133, 2, 320},
-	[CHAN_ENUM_6635] = {6635, 137, 2, 320},
-	[CHAN_ENUM_6655] = {6655, 141, 2, 320},
-	[CHAN_ENUM_6675] = {6675, 145, 2, 320},
-	[CHAN_ENUM_6695] = {6695, 149, 2, 320},
-	[CHAN_ENUM_6715] = {6715, 153, 2, 320},
-	[CHAN_ENUM_6735] = {6735, 157, 2, 320},
-	[CHAN_ENUM_6755] = {6755, 161, 2, 320},
-	[CHAN_ENUM_6775] = {6775, 165, 2, 320},
-	[CHAN_ENUM_6795] = {6795, 169, 2, 320},
-	[CHAN_ENUM_6815] = {6815, 173, 2, 320},
-	[CHAN_ENUM_6835] = {6835, 177, 2, 320},
-	[CHAN_ENUM_6855] = {6855, 181, 2, 320},
-	[CHAN_ENUM_6875] = {6875, 185, 2, 320},
-	[CHAN_ENUM_6895] = {6895, 189, 2, 320},
-	[CHAN_ENUM_6915] = {6915, 193, 2, 320},
-	[CHAN_ENUM_6935] = {6935, 197, 2, 320},
-	[CHAN_ENUM_6955] = {6955, 201, 2, 320},
-	[CHAN_ENUM_6975] = {6975, 205, 2, 320},
-	[CHAN_ENUM_6995] = {6995, 209, 2, 320},
-	[CHAN_ENUM_7015] = {7015, 213, 2, 320},
-	[CHAN_ENUM_7035] = {7035, 217, 2, 320},
-	[CHAN_ENUM_7055] = {7055, 221, 2, 320},
-	[CHAN_ENUM_7075] = {7075, 225, 2, 160},
-	[CHAN_ENUM_7095] = {7095, 229, 2, 160},
-	[CHAN_ENUM_7115] = {7115, 233, 2, 160}
+	[CHAN_ENUM_5935] = { 5935, 2, 2, 20 },
+	[CHAN_ENUM_5955] = { 5955, 1, 2, 320 },
+	[CHAN_ENUM_5975] = { 5975, 5, 2, 320 },
+	[CHAN_ENUM_5995] = { 5995, 9, 2, 320 },
+	[CHAN_ENUM_6015] = { 6015, 13, 2, 320 },
+	[CHAN_ENUM_6035] = { 6035, 17, 2, 320 },
+	[CHAN_ENUM_6055] = { 6055, 21, 2, 320 },
+	[CHAN_ENUM_6075] = { 6075, 25, 2, 320 },
+	[CHAN_ENUM_6095] = { 6095, 29, 2, 320 },
+	[CHAN_ENUM_6115] = { 6115, 33, 2, 320 },
+	[CHAN_ENUM_6135] = { 6135, 37, 2, 320 },
+	[CHAN_ENUM_6155] = { 6155, 41, 2, 320 },
+	[CHAN_ENUM_6175] = { 6175, 45, 2, 320 },
+	[CHAN_ENUM_6195] = { 6195, 49, 2, 320 },
+	[CHAN_ENUM_6215] = { 6215, 53, 2, 320 },
+	[CHAN_ENUM_6235] = { 6235, 57, 2, 320 },
+	[CHAN_ENUM_6255] = { 6255, 61, 2, 320 },
+	[CHAN_ENUM_6275] = { 6275, 65, 2, 320 },
+	[CHAN_ENUM_6295] = { 6295, 69, 2, 320 },
+	[CHAN_ENUM_6315] = { 6315, 73, 2, 320 },
+	[CHAN_ENUM_6335] = { 6335, 77, 2, 320 },
+	[CHAN_ENUM_6355] = { 6355, 81, 2, 320 },
+	[CHAN_ENUM_6375] = { 6375, 85, 2, 320 },
+	[CHAN_ENUM_6395] = { 6395, 89, 2, 320 },
+	[CHAN_ENUM_6415] = { 6415, 93, 2, 320 },
+	[CHAN_ENUM_6435] = { 6435, 97, 2, 320 },
+	[CHAN_ENUM_6455] = { 6455, 101, 2, 320 },
+	[CHAN_ENUM_6475] = { 6475, 105, 2, 320 },
+	[CHAN_ENUM_6495] = { 6495, 109, 2, 320 },
+	[CHAN_ENUM_6515] = { 6515, 113, 2, 320 },
+	[CHAN_ENUM_6535] = { 6535, 117, 2, 320 },
+	[CHAN_ENUM_6555] = { 6555, 121, 2, 320 },
+	[CHAN_ENUM_6575] = { 6575, 125, 2, 320 },
+	[CHAN_ENUM_6595] = { 6595, 129, 2, 320 },
+	[CHAN_ENUM_6615] = { 6615, 133, 2, 320 },
+	[CHAN_ENUM_6635] = { 6635, 137, 2, 320 },
+	[CHAN_ENUM_6655] = { 6655, 141, 2, 320 },
+	[CHAN_ENUM_6675] = { 6675, 145, 2, 320 },
+	[CHAN_ENUM_6695] = { 6695, 149, 2, 320 },
+	[CHAN_ENUM_6715] = { 6715, 153, 2, 320 },
+	[CHAN_ENUM_6735] = { 6735, 157, 2, 320 },
+	[CHAN_ENUM_6755] = { 6755, 161, 2, 320 },
+	[CHAN_ENUM_6775] = { 6775, 165, 2, 320 },
+	[CHAN_ENUM_6795] = { 6795, 169, 2, 320 },
+	[CHAN_ENUM_6815] = { 6815, 173, 2, 320 },
+	[CHAN_ENUM_6835] = { 6835, 177, 2, 320 },
+	[CHAN_ENUM_6855] = { 6855, 181, 2, 320 },
+	[CHAN_ENUM_6875] = { 6875, 185, 2, 320 },
+	[CHAN_ENUM_6895] = { 6895, 189, 2, 320 },
+	[CHAN_ENUM_6915] = { 6915, 193, 2, 320 },
+	[CHAN_ENUM_6935] = { 6935, 197, 2, 320 },
+	[CHAN_ENUM_6955] = { 6955, 201, 2, 320 },
+	[CHAN_ENUM_6975] = { 6975, 205, 2, 320 },
+	[CHAN_ENUM_6995] = { 6995, 209, 2, 320 },
+	[CHAN_ENUM_7015] = { 7015, 213, 2, 320 },
+	[CHAN_ENUM_7035] = { 7035, 217, 2, 320 },
+	[CHAN_ENUM_7055] = { 7055, 221, 2, 320 },
+	[CHAN_ENUM_7075] = { 7075, 225, 2, 160 },
+	[CHAN_ENUM_7095] = { 7095, 229, 2, 160 },
+	[CHAN_ENUM_7115] = { 7115, 233, 2, 160 }
 #endif /* CONFIG_BAND_6GHZ */
 };
 
 const struct chan_map channel_map_china[NUM_CHANNELS] = {
-	[CHAN_ENUM_2412] = {2412, 1, 20, 40},
-	[CHAN_ENUM_2417] = {2417, 2, 20, 40},
-	[CHAN_ENUM_2422] = {2422, 3, 20, 40},
-	[CHAN_ENUM_2427] = {2427, 4, 20, 40},
-	[CHAN_ENUM_2432] = {2432, 5, 20, 40},
-	[CHAN_ENUM_2437] = {2437, 6, 20, 40},
-	[CHAN_ENUM_2442] = {2442, 7, 20, 40},
-	[CHAN_ENUM_2447] = {2447, 8, 20, 40},
-	[CHAN_ENUM_2452] = {2452, 9, 20, 40},
-	[CHAN_ENUM_2457] = {2457, 10, 20, 40},
-	[CHAN_ENUM_2462] = {2462, 11, 20, 40},
-	[CHAN_ENUM_2467] = {2467, 12, 20, 40},
-	[CHAN_ENUM_2472] = {2472, 13, 20, 40},
-	[CHAN_ENUM_2484] = {2484, 14, 20, 20},
+	[CHAN_ENUM_2412] = { 2412, 1, 20, 40 },
+	[CHAN_ENUM_2417] = { 2417, 2, 20, 40 },
+	[CHAN_ENUM_2422] = { 2422, 3, 20, 40 },
+	[CHAN_ENUM_2427] = { 2427, 4, 20, 40 },
+	[CHAN_ENUM_2432] = { 2432, 5, 20, 40 },
+	[CHAN_ENUM_2437] = { 2437, 6, 20, 40 },
+	[CHAN_ENUM_2442] = { 2442, 7, 20, 40 },
+	[CHAN_ENUM_2447] = { 2447, 8, 20, 40 },
+	[CHAN_ENUM_2452] = { 2452, 9, 20, 40 },
+	[CHAN_ENUM_2457] = { 2457, 10, 20, 40 },
+	[CHAN_ENUM_2462] = { 2462, 11, 20, 40 },
+	[CHAN_ENUM_2467] = { 2467, 12, 20, 40 },
+	[CHAN_ENUM_2472] = { 2472, 13, 20, 40 },
+	[CHAN_ENUM_2484] = { 2484, 14, 20, 20 },
 #ifdef CONFIG_49GHZ_CHAN
-	[CHAN_ENUM_4912] = {4912, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4915] = {4915, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4917] = {4917, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4920] = {4920, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4922] = {4922, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4925] = {4925, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4927] = {4927, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4932] = {4932, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4935] = {4935, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4937] = {4937, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4940] = {4940, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4942] = {4942, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4945] = {4945, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4947] = {4947, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4950] = {4950, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4952] = {4952, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4955] = {4955, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4957] = {4957, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4960] = {4960, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4962] = {4962, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4965] = {4965, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4967] = {4967, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4970] = {4970, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4972] = {4972, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4975] = {4975, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4977] = {4977, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4980] = {4980, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4982] = {4982, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4985] = {4985, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_4987] = {4987, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5032] = {5032, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5035] = {5035, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5037] = {5037, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5040] = {5040, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5042] = {5042, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5045] = {5045, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5047] = {5047, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5052] = {5052, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5055] = {5055, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5057] = {5057, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5060] = {5060, INVALID_CHANNEL_NUM, 2, 20},
-	[CHAN_ENUM_5080] = {5080, INVALID_CHANNEL_NUM, 2, 20},
+	[CHAN_ENUM_4912] = { 4912, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4915] = { 4915, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4917] = { 4917, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4920] = { 4920, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4922] = { 4922, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4925] = { 4925, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4927] = { 4927, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4932] = { 4932, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4935] = { 4935, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4937] = { 4937, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4940] = { 4940, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4942] = { 4942, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4945] = { 4945, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4947] = { 4947, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4950] = { 4950, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4952] = { 4952, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4955] = { 4955, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4957] = { 4957, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4960] = { 4960, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4962] = { 4962, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4965] = { 4965, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4967] = { 4967, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4970] = { 4970, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4972] = { 4972, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4975] = { 4975, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4977] = { 4977, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4980] = { 4980, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4982] = { 4982, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4985] = { 4985, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_4987] = { 4987, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5032] = { 5032, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5035] = { 5035, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5037] = { 5037, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5040] = { 5040, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5042] = { 5042, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5045] = { 5045, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5047] = { 5047, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5052] = { 5052, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5055] = { 5055, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5057] = { 5057, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5060] = { 5060, INVALID_CHANNEL_NUM, 2, 20 },
+	[CHAN_ENUM_5080] = { 5080, INVALID_CHANNEL_NUM, 2, 20 },
 #endif /* CONFIG_49GHZ_CHAN */
-	[CHAN_ENUM_5180] = {5180, 36, 2, 160},
-	[CHAN_ENUM_5200] = {5200, 40, 2, 160},
-	[CHAN_ENUM_5220] = {5220, 44, 2, 160},
-	[CHAN_ENUM_5240] = {5240, 48, 2, 160},
-	[CHAN_ENUM_5260] = {5260, 52, 2, 160},
-	[CHAN_ENUM_5280] = {5280, 56, 2, 160},
-	[CHAN_ENUM_5300] = {5300, 60, 2, 160},
-	[CHAN_ENUM_5320] = {5320, 64, 2, 160},
-	[CHAN_ENUM_5500] = {5500, 100, 2, 240},
-	[CHAN_ENUM_5520] = {5520, 104, 2, 240},
-	[CHAN_ENUM_5540] = {5540, 108, 2, 240},
-	[CHAN_ENUM_5560] = {5560, 112, 2, 240},
-	[CHAN_ENUM_5580] = {5580, 116, 2, 240},
-	[CHAN_ENUM_5600] = {5600, 120, 2, 240},
-	[CHAN_ENUM_5620] = {5620, 124, 2, 240},
-	[CHAN_ENUM_5640] = {5640, 128, 2, 240},
-	[CHAN_ENUM_5660] = {5660, 132, 2, 240},
-	[CHAN_ENUM_5680] = {5680, 136, 2, 240},
-	[CHAN_ENUM_5700] = {5700, 140, 2, 240},
-	[CHAN_ENUM_5720] = {5720, 144, 2, 240},
-	[CHAN_ENUM_5745] = {5745, 149, 2, 160},
-	[CHAN_ENUM_5765] = {5765, 153, 2, 160},
-	[CHAN_ENUM_5785] = {5785, 157, 2, 160},
-	[CHAN_ENUM_5805] = {5805, 161, 2, 160},
-	[CHAN_ENUM_5825] = {5825, 165, 2, 160},
-	[CHAN_ENUM_5845] = {5845, 169, 2, 160},
+	[CHAN_ENUM_5180] = { 5180, 36, 2, 160 },
+	[CHAN_ENUM_5200] = { 5200, 40, 2, 160 },
+	[CHAN_ENUM_5220] = { 5220, 44, 2, 160 },
+	[CHAN_ENUM_5240] = { 5240, 48, 2, 160 },
+	[CHAN_ENUM_5260] = { 5260, 52, 2, 160 },
+	[CHAN_ENUM_5280] = { 5280, 56, 2, 160 },
+	[CHAN_ENUM_5300] = { 5300, 60, 2, 160 },
+	[CHAN_ENUM_5320] = { 5320, 64, 2, 160 },
+	[CHAN_ENUM_5500] = { 5500, 100, 2, 240 },
+	[CHAN_ENUM_5520] = { 5520, 104, 2, 240 },
+	[CHAN_ENUM_5540] = { 5540, 108, 2, 240 },
+	[CHAN_ENUM_5560] = { 5560, 112, 2, 240 },
+	[CHAN_ENUM_5580] = { 5580, 116, 2, 240 },
+	[CHAN_ENUM_5600] = { 5600, 120, 2, 240 },
+	[CHAN_ENUM_5620] = { 5620, 124, 2, 240 },
+	[CHAN_ENUM_5640] = { 5640, 128, 2, 240 },
+	[CHAN_ENUM_5660] = { 5660, 132, 2, 240 },
+	[CHAN_ENUM_5680] = { 5680, 136, 2, 240 },
+	[CHAN_ENUM_5700] = { 5700, 140, 2, 240 },
+	[CHAN_ENUM_5720] = { 5720, 144, 2, 240 },
+	[CHAN_ENUM_5745] = { 5745, 149, 2, 160 },
+	[CHAN_ENUM_5765] = { 5765, 153, 2, 160 },
+	[CHAN_ENUM_5785] = { 5785, 157, 2, 160 },
+	[CHAN_ENUM_5805] = { 5805, 161, 2, 160 },
+	[CHAN_ENUM_5825] = { 5825, 165, 2, 160 },
+	[CHAN_ENUM_5845] = { 5845, 169, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5850] = {5850, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5855] = {5855, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5860] = {5860, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5850] = { 5850, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5855] = { 5855, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5860] = { 5860, INVALID_CHANNEL_NUM, 2, 160 },
 #endif
-	[CHAN_ENUM_5865] = {5865, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5865] = { 5865, INVALID_CHANNEL_NUM, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5870] = {5870, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5875] = {5875, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5880] = {5880, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5870] = { 5870, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5875] = { 5875, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5880] = { 5880, INVALID_CHANNEL_NUM, 2, 160 },
 #endif
-	[CHAN_ENUM_5885] = {5885, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5885] = { 5885, INVALID_CHANNEL_NUM, 2, 160 },
 #ifdef WLAN_FEATURE_DSRC
-	[CHAN_ENUM_5890] = {5890, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5895] = {5895, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5900] = {5900, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5905] = {5905, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5910] = {5910, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5915] = {5915, INVALID_CHANNEL_NUM, 2, 160},
-	[CHAN_ENUM_5920] = {5920, INVALID_CHANNEL_NUM, 2, 160},
+	[CHAN_ENUM_5890] = { 5890, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5895] = { 5895, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5900] = { 5900, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5905] = { 5905, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5910] = { 5910, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5915] = { 5915, INVALID_CHANNEL_NUM, 2, 160 },
+	[CHAN_ENUM_5920] = { 5920, INVALID_CHANNEL_NUM, 2, 160 },
 #endif /* WLAN_FEATURE_DSRC */
 #ifdef CONFIG_BAND_6GHZ
-	[CHAN_ENUM_5935] = {5935, 2, 2, 20},
-	[CHAN_ENUM_5955] = {5955, 1, 2, 320},
-	[CHAN_ENUM_5975] = {5975, 5, 2, 320},
-	[CHAN_ENUM_5995] = {5995, 9, 2, 320},
-	[CHAN_ENUM_6015] = {6015, 13, 2, 320},
-	[CHAN_ENUM_6035] = {6035, 17, 2, 320},
-	[CHAN_ENUM_6055] = {6055, 21, 2, 320},
-	[CHAN_ENUM_6075] = {6075, 25, 2, 320},
-	[CHAN_ENUM_6095] = {6095, 29, 2, 320},
-	[CHAN_ENUM_6115] = {6115, 33, 2, 320},
-	[CHAN_ENUM_6135] = {6135, 37, 2, 320},
-	[CHAN_ENUM_6155] = {6155, 41, 2, 320},
-	[CHAN_ENUM_6175] = {6175, 45, 2, 320},
-	[CHAN_ENUM_6195] = {6195, 49, 2, 320},
-	[CHAN_ENUM_6215] = {6215, 53, 2, 320},
-	[CHAN_ENUM_6235] = {6235, 57, 2, 320},
-	[CHAN_ENUM_6255] = {6255, 61, 2, 320},
-	[CHAN_ENUM_6275] = {6275, 65, 2, 320},
-	[CHAN_ENUM_6295] = {6295, 69, 2, 320},
-	[CHAN_ENUM_6315] = {6315, 73, 2, 320},
-	[CHAN_ENUM_6335] = {6335, 77, 2, 320},
-	[CHAN_ENUM_6355] = {6355, 81, 2, 320},
-	[CHAN_ENUM_6375] = {6375, 85, 2, 320},
-	[CHAN_ENUM_6395] = {6395, 89, 2, 320},
-	[CHAN_ENUM_6415] = {6415, 93, 2, 320},
-	[CHAN_ENUM_6435] = {6435, 97, 2, 320},
-	[CHAN_ENUM_6455] = {6455, 101, 2, 320},
-	[CHAN_ENUM_6475] = {6475, 105, 2, 320},
-	[CHAN_ENUM_6495] = {6495, 109, 2, 320},
-	[CHAN_ENUM_6515] = {6515, 113, 2, 320},
-	[CHAN_ENUM_6535] = {6535, 117, 2, 320},
-	[CHAN_ENUM_6555] = {6555, 121, 2, 320},
-	[CHAN_ENUM_6575] = {6575, 125, 2, 320},
-	[CHAN_ENUM_6595] = {6595, 129, 2, 320},
-	[CHAN_ENUM_6615] = {6615, 133, 2, 320},
-	[CHAN_ENUM_6635] = {6635, 137, 2, 320},
-	[CHAN_ENUM_6655] = {6655, 141, 2, 320},
-	[CHAN_ENUM_6675] = {6675, 145, 2, 320},
-	[CHAN_ENUM_6695] = {6695, 149, 2, 320},
-	[CHAN_ENUM_6715] = {6715, 153, 2, 320},
-	[CHAN_ENUM_6735] = {6735, 157, 2, 320},
-	[CHAN_ENUM_6755] = {6755, 161, 2, 320},
-	[CHAN_ENUM_6775] = {6775, 165, 2, 320},
-	[CHAN_ENUM_6795] = {6795, 169, 2, 320},
-	[CHAN_ENUM_6815] = {6815, 173, 2, 320},
-	[CHAN_ENUM_6835] = {6835, 177, 2, 320},
-	[CHAN_ENUM_6855] = {6855, 181, 2, 320},
-	[CHAN_ENUM_6875] = {6875, 185, 2, 320},
-	[CHAN_ENUM_6895] = {6895, 189, 2, 320},
-	[CHAN_ENUM_6915] = {6915, 193, 2, 320},
-	[CHAN_ENUM_6935] = {6935, 197, 2, 320},
-	[CHAN_ENUM_6955] = {6955, 201, 2, 320},
-	[CHAN_ENUM_6975] = {6975, 205, 2, 320},
-	[CHAN_ENUM_6995] = {6995, 209, 2, 320},
-	[CHAN_ENUM_7015] = {7015, 213, 2, 320},
-	[CHAN_ENUM_7035] = {7035, 217, 2, 320},
-	[CHAN_ENUM_7055] = {7055, 221, 2, 320},
-	[CHAN_ENUM_7075] = {7075, 225, 2, 160},
-	[CHAN_ENUM_7095] = {7095, 229, 2, 160},
-	[CHAN_ENUM_7115] = {7115, 233, 2, 160}
+	[CHAN_ENUM_5935] = { 5935, 2, 2, 20 },
+	[CHAN_ENUM_5955] = { 5955, 1, 2, 320 },
+	[CHAN_ENUM_5975] = { 5975, 5, 2, 320 },
+	[CHAN_ENUM_5995] = { 5995, 9, 2, 320 },
+	[CHAN_ENUM_6015] = { 6015, 13, 2, 320 },
+	[CHAN_ENUM_6035] = { 6035, 17, 2, 320 },
+	[CHAN_ENUM_6055] = { 6055, 21, 2, 320 },
+	[CHAN_ENUM_6075] = { 6075, 25, 2, 320 },
+	[CHAN_ENUM_6095] = { 6095, 29, 2, 320 },
+	[CHAN_ENUM_6115] = { 6115, 33, 2, 320 },
+	[CHAN_ENUM_6135] = { 6135, 37, 2, 320 },
+	[CHAN_ENUM_6155] = { 6155, 41, 2, 320 },
+	[CHAN_ENUM_6175] = { 6175, 45, 2, 320 },
+	[CHAN_ENUM_6195] = { 6195, 49, 2, 320 },
+	[CHAN_ENUM_6215] = { 6215, 53, 2, 320 },
+	[CHAN_ENUM_6235] = { 6235, 57, 2, 320 },
+	[CHAN_ENUM_6255] = { 6255, 61, 2, 320 },
+	[CHAN_ENUM_6275] = { 6275, 65, 2, 320 },
+	[CHAN_ENUM_6295] = { 6295, 69, 2, 320 },
+	[CHAN_ENUM_6315] = { 6315, 73, 2, 320 },
+	[CHAN_ENUM_6335] = { 6335, 77, 2, 320 },
+	[CHAN_ENUM_6355] = { 6355, 81, 2, 320 },
+	[CHAN_ENUM_6375] = { 6375, 85, 2, 320 },
+	[CHAN_ENUM_6395] = { 6395, 89, 2, 320 },
+	[CHAN_ENUM_6415] = { 6415, 93, 2, 320 },
+	[CHAN_ENUM_6435] = { 6435, 97, 2, 320 },
+	[CHAN_ENUM_6455] = { 6455, 101, 2, 320 },
+	[CHAN_ENUM_6475] = { 6475, 105, 2, 320 },
+	[CHAN_ENUM_6495] = { 6495, 109, 2, 320 },
+	[CHAN_ENUM_6515] = { 6515, 113, 2, 320 },
+	[CHAN_ENUM_6535] = { 6535, 117, 2, 320 },
+	[CHAN_ENUM_6555] = { 6555, 121, 2, 320 },
+	[CHAN_ENUM_6575] = { 6575, 125, 2, 320 },
+	[CHAN_ENUM_6595] = { 6595, 129, 2, 320 },
+	[CHAN_ENUM_6615] = { 6615, 133, 2, 320 },
+	[CHAN_ENUM_6635] = { 6635, 137, 2, 320 },
+	[CHAN_ENUM_6655] = { 6655, 141, 2, 320 },
+	[CHAN_ENUM_6675] = { 6675, 145, 2, 320 },
+	[CHAN_ENUM_6695] = { 6695, 149, 2, 320 },
+	[CHAN_ENUM_6715] = { 6715, 153, 2, 320 },
+	[CHAN_ENUM_6735] = { 6735, 157, 2, 320 },
+	[CHAN_ENUM_6755] = { 6755, 161, 2, 320 },
+	[CHAN_ENUM_6775] = { 6775, 165, 2, 320 },
+	[CHAN_ENUM_6795] = { 6795, 169, 2, 320 },
+	[CHAN_ENUM_6815] = { 6815, 173, 2, 320 },
+	[CHAN_ENUM_6835] = { 6835, 177, 2, 320 },
+	[CHAN_ENUM_6855] = { 6855, 181, 2, 320 },
+	[CHAN_ENUM_6875] = { 6875, 185, 2, 320 },
+	[CHAN_ENUM_6895] = { 6895, 189, 2, 320 },
+	[CHAN_ENUM_6915] = { 6915, 193, 2, 320 },
+	[CHAN_ENUM_6935] = { 6935, 197, 2, 320 },
+	[CHAN_ENUM_6955] = { 6955, 201, 2, 320 },
+	[CHAN_ENUM_6975] = { 6975, 205, 2, 320 },
+	[CHAN_ENUM_6995] = { 6995, 209, 2, 320 },
+	[CHAN_ENUM_7015] = { 7015, 213, 2, 320 },
+	[CHAN_ENUM_7035] = { 7035, 217, 2, 320 },
+	[CHAN_ENUM_7055] = { 7055, 221, 2, 320 },
+	[CHAN_ENUM_7075] = { 7075, 225, 2, 160 },
+	[CHAN_ENUM_7095] = { 7095, 229, 2, 160 },
+	[CHAN_ENUM_7115] = { 7115, 233, 2, 160 }
 #endif /* CONFIG_BAND_6GHZ */
 };
 
@@ -1396,8 +1309,8 @@ uint16_t reg_get_bw_value(enum phy_ch_width bw)
 }
 #endif
 
-struct wlan_lmac_if_reg_tx_ops *reg_get_psoc_tx_ops(
-		struct wlan_objmgr_psoc *psoc)
+struct wlan_lmac_if_reg_tx_ops *
+reg_get_psoc_tx_ops(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_lmac_if_tx_ops *tx_ops;
 
@@ -1451,8 +1364,7 @@ QDF_STATUS reg_read_default_country(struct wlan_objmgr_psoc *psoc,
 
 #ifdef WLAN_REG_PARTIAL_OFFLOAD
 QDF_STATUS reg_get_max_5g_bw_from_country_code(struct wlan_objmgr_pdev *pdev,
-					       uint16_t cc,
-					       uint16_t *max_bw_5g)
+					       uint16_t cc, uint16_t *max_bw_5g)
 {
 	uint16_t i;
 	int num_countries;
@@ -1498,8 +1410,7 @@ QDF_STATUS reg_get_max_5g_bw_from_regdomain(struct wlan_objmgr_pdev *pdev,
 #else
 
 QDF_STATUS reg_get_max_5g_bw_from_country_code(struct wlan_objmgr_pdev *pdev,
-					       uint16_t cc,
-					       uint16_t *max_bw_5g)
+					       uint16_t cc, uint16_t *max_bw_5g)
 {
 	*max_bw_5g = reg_get_max_bw_5G_for_fo(pdev);
 
@@ -1554,8 +1465,7 @@ void reg_get_current_dfs_region(struct wlan_objmgr_pdev *pdev,
 	*dfs_reg = pdev_priv_obj->dfs_region;
 }
 
-void reg_set_dfs_region(struct wlan_objmgr_pdev *pdev,
-			enum dfs_reg dfs_reg)
+void reg_set_dfs_region(struct wlan_objmgr_pdev *pdev, enum dfs_reg dfs_reg)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -1574,29 +1484,28 @@ static uint8_t reg_freq_to_chan_direct(qdf_freq_t freq)
 {
 	if (freq >= TWOG_CHAN_1_IN_MHZ && freq <= TWOG_CHAN_13_IN_MHZ)
 		return IEEE_2GHZ_CH1 +
-			(freq - TWOG_CHAN_1_IN_MHZ) / IEEE_CH_SEP;
+		       (freq - TWOG_CHAN_1_IN_MHZ) / IEEE_CH_SEP;
 
 	if (freq == TWOG_CHAN_14_IN_MHZ)
 		return IEEE_2GHZ_CH14;
 
 	if (freq >= FIVEG_CHAN_36_IN_MHZ && freq <= FIVEG_CHAN_177_IN_MHZ)
 		return IEEE_5GHZ_CH36 +
-			(freq - FIVEG_CHAN_36_IN_MHZ) / IEEE_CH_SEP;
+		       (freq - FIVEG_CHAN_36_IN_MHZ) / IEEE_CH_SEP;
 
 	if (freq == SIXG_CHAN_2_IN_MHZ)
 		return IEEE_6GHZ_CH2;
 
 	if (freq >= SIXG_CHAN_1_IN_MHZ && freq <= SIXG_CHAN_233_IN_MHZ)
 		return IEEE_6GHZ_CH1 +
-			(freq - SIXG_CHAN_1_IN_MHZ) / IEEE_CH_SEP;
+		       (freq - SIXG_CHAN_1_IN_MHZ) / IEEE_CH_SEP;
 
 	return 0;
 }
 
-static uint8_t
-reg_freq_to_chan_for_chlist(struct regulatory_channel *chan_list,
-			    qdf_freq_t freq,
-			    enum channel_enum num_chans)
+static uint8_t reg_freq_to_chan_for_chlist(struct regulatory_channel *chan_list,
+					   qdf_freq_t freq,
+					   enum channel_enum num_chans)
 {
 	uint32_t count;
 	uint8_t chan_ieee;
@@ -1638,8 +1547,7 @@ end:
 	return 0;
 }
 
-uint8_t reg_freq_to_chan(struct wlan_objmgr_pdev *pdev,
-			 qdf_freq_t freq)
+uint8_t reg_freq_to_chan(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq)
 {
 	struct regulatory_channel *chan_list;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -1671,8 +1579,7 @@ uint8_t reg_freq_to_chan(struct wlan_objmgr_pdev *pdev,
 
 	while (input_6g_pwr_mode < REG_INVALID_PWR_MODE) {
 		chan_list = reg_get_reg_maschan_lst_frm_6g_pwr_mode(
-							input_6g_pwr_mode,
-							pdev_priv_obj, 0);
+			input_6g_pwr_mode, pdev_priv_obj, 0);
 		if (!chan_list)
 			return 0;
 
@@ -1686,19 +1593,17 @@ uint8_t reg_freq_to_chan(struct wlan_objmgr_pdev *pdev,
 	return chan;
 }
 
-static uint16_t
-reg_compute_chan_to_freq_for_chlist(struct regulatory_channel *chan_list,
-				    uint8_t chan_num,
-				    enum channel_enum min_chan_range,
-				    enum channel_enum max_chan_range)
+static uint16_t reg_compute_chan_to_freq_for_chlist(
+	struct regulatory_channel *chan_list, uint8_t chan_num,
+	enum channel_enum min_chan_range, enum channel_enum max_chan_range)
 {
 	uint16_t count;
 
 	if (reg_is_chan_enum_invalid(min_chan_range) ||
 	    reg_is_chan_enum_invalid(max_chan_range)) {
-		reg_debug_rl("Invalid channel range: min_chan_range: 0x%X max_chan_range: 0x%X",
-			     min_chan_range,
-			     max_chan_range);
+		reg_debug_rl(
+			"Invalid channel range: min_chan_range: 0x%X max_chan_range: 0x%X",
+			min_chan_range, max_chan_range);
 		return 0;
 	}
 
@@ -1711,7 +1616,7 @@ reg_compute_chan_to_freq_for_chlist(struct regulatory_channel *chan_list,
 				continue;
 			} else if ((chan_list[count].chan_num >= chan_num) &&
 				   (chan_list[count].chan_num !=
-							INVALID_CHANNEL_NUM))
+				    INVALID_CHANNEL_NUM))
 				break;
 		}
 	}
@@ -1732,8 +1637,7 @@ reg_compute_chan_to_freq_for_chlist(struct regulatory_channel *chan_list,
 	if ((chan_list[count - 1].chan_num == INVALID_CHANNEL_NUM) ||
 	    REG_IS_49GHZ_FREQ(chan_list[count - 1].center_freq) ||
 	    (chan_list[count].chan_num == INVALID_CHANNEL_NUM)) {
-		reg_err("Channel %d invalid in current reg domain",
-			chan_num);
+		reg_err("Channel %d invalid in current reg domain", chan_num);
 		return 0;
 	}
 
@@ -1770,15 +1674,14 @@ static uint16_t reg_compute_chan_to_freq(struct wlan_objmgr_pdev *pdev,
 
 	chan_list = pdev_priv_obj->mas_chan_list;
 
-	freq = reg_compute_chan_to_freq_for_chlist(chan_list, chan_num,
-						   min_chan_range,
-						   max_chan_range);
+	freq = reg_compute_chan_to_freq_for_chlist(
+		chan_list, chan_num, min_chan_range, max_chan_range);
 
 	/* If the frequency is a 2G or 5G frequency, then it should be found
-	 * in the regulatory mas_chan_list.
-	 * If a valid 6G frequency has been returned with the current power mode
-	 * itself, then return the freq computed.
-	 */
+   * in the regulatory mas_chan_list.
+   * If a valid 6G frequency has been returned with the current power mode
+   * itself, then return the freq computed.
+   */
 	if (freq)
 		return freq;
 
@@ -1789,19 +1692,17 @@ static uint16_t reg_compute_chan_to_freq(struct wlan_objmgr_pdev *pdev,
 		return freq;
 
 	/* If a valid 6G frequency has not been found, then search in a
-	 * power mode's master channel list.
-	 */
+   * power mode's master channel list.
+   */
 	input_6g_pwr_mode = REG_AP_LPI;
 	while (input_6g_pwr_mode <= REG_CLI_SUB_VLP) {
 		chan_list = reg_get_reg_maschan_lst_frm_6g_pwr_mode(
-							input_6g_pwr_mode,
-							pdev_priv_obj, 0);
+			input_6g_pwr_mode, pdev_priv_obj, 0);
 		if (!chan_list)
 			return 0;
 
-		freq = reg_compute_chan_to_freq_for_chlist(chan_list, chan_num,
-							   min_chan_range,
-							   max_chan_range);
+		freq = reg_compute_chan_to_freq_for_chlist(
+			chan_list, chan_num, min_chan_range, max_chan_range);
 		if (freq)
 			break;
 		input_6g_pwr_mode++;
@@ -1821,8 +1722,7 @@ uint16_t reg_legacy_chan_to_freq(struct wlan_objmgr_pdev *pdev,
 		return 0;
 	}
 
-	return reg_compute_chan_to_freq(pdev, chan_num,
-					min_chan_range,
+	return reg_compute_chan_to_freq(pdev, chan_num, min_chan_range,
 					max_chan_range);
 }
 
@@ -1843,8 +1743,8 @@ QDF_STATUS reg_program_default_cc(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	reg_info = (struct cur_regulatory_info *)qdf_mem_malloc
-		(sizeof(struct cur_regulatory_info));
+	reg_info = (struct cur_regulatory_info *)qdf_mem_malloc(
+		sizeof(struct cur_regulatory_info));
 	if (!reg_info)
 		return QDF_STATUS_E_NOMEM;
 
@@ -1866,8 +1766,7 @@ QDF_STATUS reg_program_default_cc(struct wlan_objmgr_pdev *pdev,
 	if (regdmn & COUNTRY_ERD_FLAG) {
 		cc = regdmn & ~COUNTRY_ERD_FLAG;
 
-		reg_get_rdpair_from_country_code(cc,
-						 &country_index,
+		reg_get_rdpair_from_country_code(cc, &country_index,
 						 &regdmn_pair);
 
 		err = reg_get_cur_reginfo(reg_info, country_index, regdmn_pair);
@@ -1930,8 +1829,8 @@ static QDF_STATUS reg_program_chan_list_po(struct wlan_objmgr_psoc *psoc,
 	uint16_t country_index = -1, regdmn_pair = -1;
 	QDF_STATUS err;
 
-	reg_info = (struct cur_regulatory_info *)qdf_mem_malloc
-		(sizeof(struct cur_regulatory_info));
+	reg_info = (struct cur_regulatory_info *)qdf_mem_malloc(
+		sizeof(struct cur_regulatory_info));
 	if (!reg_info)
 		return QDF_STATUS_E_NOMEM;
 
@@ -1940,16 +1839,13 @@ static QDF_STATUS reg_program_chan_list_po(struct wlan_objmgr_psoc *psoc,
 
 	if (rd->flags == CC_IS_SET) {
 		reg_get_rdpair_from_country_code(rd->cc.country_code,
-						 &country_index,
-						 &regdmn_pair);
+						 &country_index, &regdmn_pair);
 	} else if (rd->flags == ALPHA_IS_SET) {
-		reg_get_rdpair_from_country_iso(rd->cc.alpha,
-						&country_index,
+		reg_get_rdpair_from_country_iso(rd->cc.alpha, &country_index,
 						&regdmn_pair);
 	} else if (rd->flags == REGDMN_IS_SET) {
 		err = reg_get_rdpair_from_regdmn_id(
-				rd->cc.regdmn.reg_2g_5g_pair_id,
-				&regdmn_pair);
+			rd->cc.regdmn.reg_2g_5g_pair_id, &regdmn_pair);
 		if (err == QDF_STATUS_E_FAILURE) {
 			reg_err("Failed to get regdmn idx for regdmn pair: %x",
 				rd->cc.regdmn.reg_2g_5g_pair_id);
@@ -2112,7 +2008,7 @@ QDF_STATUS reg_get_curr_regdomain(struct wlan_objmgr_pdev *pdev,
 	reg_get_num_reg_dmn_pairs(&num_reg_dmn);
 	for (index = 0; index < num_reg_dmn; index++) {
 		if (g_reg_dmn_pairs[index].reg_dmn_pair_id ==
-				cur_regdmn->regdmn_pair_id)
+		    cur_regdmn->regdmn_pair_id)
 			break;
 	}
 
@@ -2171,8 +2067,8 @@ QDF_STATUS reg_modify_chan_144(struct wlan_objmgr_pdev *pdev,
 
 	reg_tx_ops = reg_get_psoc_tx_ops(psoc);
 	if (reg_tx_ops->fill_umac_legacy_chanlist)
-		reg_tx_ops->fill_umac_legacy_chanlist(pdev,
-				pdev_priv_obj->cur_chan_list);
+		reg_tx_ops->fill_umac_legacy_chanlist(
+			pdev, pdev_priv_obj->cur_chan_list);
 
 	status = reg_send_scheduler_msg_sb(psoc, pdev);
 
@@ -2192,8 +2088,8 @@ bool reg_get_en_chan_144(struct wlan_objmgr_pdev *pdev)
 	return pdev_priv_obj->en_chan_144;
 }
 
-struct wlan_psoc_host_hal_reg_capabilities_ext *reg_get_hal_reg_cap(
-						struct wlan_objmgr_psoc *psoc)
+struct wlan_psoc_host_hal_reg_capabilities_ext *
+reg_get_hal_reg_cap(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 
@@ -2207,10 +2103,10 @@ struct wlan_psoc_host_hal_reg_capabilities_ext *reg_get_hal_reg_cap(
 	return psoc_priv_obj->reg_cap;
 }
 
-QDF_STATUS reg_set_hal_reg_cap(
-		struct wlan_objmgr_psoc *psoc,
-		struct wlan_psoc_host_hal_reg_capabilities_ext *reg_cap,
-		uint16_t phy_cnt)
+QDF_STATUS
+reg_set_hal_reg_cap(struct wlan_objmgr_psoc *psoc,
+		    struct wlan_psoc_host_hal_reg_capabilities_ext *reg_cap,
+		    uint16_t phy_cnt)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 
@@ -2227,15 +2123,17 @@ QDF_STATUS reg_set_hal_reg_cap(
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	qdf_mem_copy(psoc_priv_obj->reg_cap, reg_cap,
-		     phy_cnt *
-		     sizeof(struct wlan_psoc_host_hal_reg_capabilities_ext));
+	qdf_mem_copy(
+		psoc_priv_obj->reg_cap, reg_cap,
+		phy_cnt *
+			sizeof(struct wlan_psoc_host_hal_reg_capabilities_ext));
 
 	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS reg_update_hal_cap_wireless_modes(struct wlan_objmgr_psoc *psoc,
-					uint64_t wireless_modes, uint8_t phy_id)
+					     uint64_t wireless_modes,
+					     uint8_t phy_id)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 
@@ -2260,8 +2158,7 @@ QDF_STATUS reg_update_hal_reg_range_caps(struct wlan_objmgr_psoc *psoc,
 					 uint32_t low_2g_chan,
 					 uint32_t high_2g_chan,
 					 uint32_t low_5g_chan,
-					 uint32_t high_5g_chan,
-					 uint8_t phy_id)
+					 uint32_t high_5g_chan, uint8_t phy_id)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 	struct wlan_psoc_host_hal_reg_capabilities_ext *reg_cap;
@@ -2331,8 +2228,7 @@ bool reg_get_afc_disable_timer_check(struct wlan_objmgr_psoc *psoc)
 	return psoc_priv_obj->afc_disable_timer_check;
 }
 
-void reg_set_afc_disable_timer_check(struct wlan_objmgr_psoc *psoc,
-				     bool value)
+void reg_set_afc_disable_timer_check(struct wlan_objmgr_psoc *psoc, bool value)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 
@@ -2463,15 +2359,11 @@ bool reg_chan_in_range(struct regulatory_channel *chan_list,
 	}
 
 	chan_in_range = false;
-	if  ((low_limit_2g <= ch_enum) &&
-	     (high_limit_2g >= ch_enum) &&
-	     (low_limit_2g != NUM_CHANNELS) &&
-	     (high_limit_2g != NUM_CHANNELS))
+	if ((low_limit_2g <= ch_enum) && (high_limit_2g >= ch_enum) &&
+	    (low_limit_2g != NUM_CHANNELS) && (high_limit_2g != NUM_CHANNELS))
 		chan_in_range = true;
-	if  ((low_limit_5g <= ch_enum) &&
-	     (high_limit_5g >= ch_enum) &&
-	     (low_limit_5g != NUM_CHANNELS) &&
-	     (high_limit_5g != NUM_CHANNELS))
+	if ((low_limit_5g <= ch_enum) && (high_limit_5g >= ch_enum) &&
+	    (low_limit_5g != NUM_CHANNELS) && (high_limit_5g != NUM_CHANNELS))
 		chan_in_range = true;
 
 	if (chan_in_range)
@@ -2531,18 +2423,12 @@ static bool reg_is_ranges_overlap(qdf_freq_t low_freq, qdf_freq_t high_freq,
 				  qdf_freq_t start_edge_freq,
 				  qdf_freq_t end_edge_freq)
 {
-	return (reg_is_freq_in_between(start_edge_freq,
-				       end_edge_freq,
+	return (reg_is_freq_in_between(start_edge_freq, end_edge_freq,
 				       low_freq) ||
-		reg_is_freq_in_between(start_edge_freq,
-				       end_edge_freq,
+		reg_is_freq_in_between(start_edge_freq, end_edge_freq,
 				       high_freq) ||
-		reg_is_freq_in_between(low_freq,
-				       high_freq,
-				       start_edge_freq) ||
-		reg_is_freq_in_between(low_freq,
-				       high_freq,
-				       end_edge_freq));
+		reg_is_freq_in_between(low_freq, high_freq, start_edge_freq) ||
+		reg_is_freq_in_between(low_freq, high_freq, end_edge_freq));
 }
 
 bool reg_is_range_overlap_2g(qdf_freq_t low_freq, qdf_freq_t high_freq)
@@ -2598,8 +2484,7 @@ bool reg_is_freq_indoor(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq)
 		return false;
 	}
 
-	return (reg_chan->chan_flags &
-		REGULATORY_CHAN_INDOOR_ONLY);
+	return (reg_chan->chan_flags & REGULATORY_CHAN_INDOOR_ONLY);
 }
 
 uint16_t reg_get_min_chwidth(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq)
@@ -2735,14 +2620,12 @@ bool reg_is_6g_freq_indoor(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq)
  * Return: Return QDF_STATUS_SUCCESS, if PSD is filled for 6G TPE IE
  * else return QDF_STATUS_E_FAILURE.
  */
-static QDF_STATUS reg_get_max_psd(qdf_freq_t freq,
-				  uint16_t bw,
+static QDF_STATUS reg_get_max_psd(qdf_freq_t freq, uint16_t bw,
 				  enum reg_6g_ap_type reg_ap,
 				  enum reg_6g_client_type reg_client,
 				  uint8_t *tx_power)
 {
-	if (reg_ap == REG_INDOOR_AP ||
-	    reg_ap == REG_VERY_LOW_POWER_AP) {
+	if (reg_ap == REG_INDOOR_AP || reg_ap == REG_VERY_LOW_POWER_AP) {
 		switch (reg_client) {
 		case REG_DEFAULT_CLIENT:
 			*tx_power = REG_PSD_MAX_TXPOWER_FOR_DEFAULT_CLIENT;
@@ -2772,18 +2655,16 @@ static QDF_STATUS reg_get_max_psd(qdf_freq_t freq,
  * else return QDF_STATUS_E_FAILURE.
  */
 static QDF_STATUS reg_get_max_eirp(struct wlan_objmgr_pdev *pdev,
-				   qdf_freq_t freq,
-				   uint16_t bw,
+				   qdf_freq_t freq, uint16_t bw,
 				   enum reg_6g_ap_type reg_ap,
 				   enum reg_6g_client_type reg_client,
 				   uint8_t *tx_power)
 {
-	if (reg_ap == REG_INDOOR_AP ||
-	    reg_ap == REG_VERY_LOW_POWER_AP) {
+	if (reg_ap == REG_INDOOR_AP || reg_ap == REG_VERY_LOW_POWER_AP) {
 		switch (reg_client) {
 		case REG_DEFAULT_CLIENT:
-			*tx_power = reg_get_channel_reg_power_for_freq(pdev,
-								       freq);
+			*tx_power =
+				reg_get_channel_reg_power_for_freq(pdev, freq);
 			return QDF_STATUS_SUCCESS;
 		case REG_SUBORDINATE_CLIENT:
 			*tx_power = REG_EIRP_MAX_TXPOWER_FOR_SUBORDINATE_CLIENT;
@@ -2801,8 +2682,7 @@ QDF_STATUS reg_get_max_txpower_for_6g_tpe(struct wlan_objmgr_pdev *pdev,
 					  qdf_freq_t freq, uint8_t bw,
 					  enum reg_6g_ap_type reg_ap,
 					  enum reg_6g_client_type reg_client,
-					  bool is_psd,
-					  uint8_t *tx_power)
+					  bool is_psd, uint8_t *tx_power)
 {
 	if (!REG_IS_6GHZ_FREQ(freq)) {
 		reg_err_rl("%d is not a 6G channel frequency", freq);
@@ -2810,9 +2690,9 @@ QDF_STATUS reg_get_max_txpower_for_6g_tpe(struct wlan_objmgr_pdev *pdev,
 	}
 
 	/*
-	 * For now, there is support only for Indoor AP and we have only
-	 * LPI power values.
-	 */
+   * For now, there is support only for Indoor AP and we have only
+   * LPI power values.
+   */
 	if (is_psd)
 		return reg_get_max_psd(freq, bw, reg_ap, reg_client, tx_power);
 
@@ -2910,10 +2790,9 @@ reg_get_band_from_cur_chan_list(struct wlan_objmgr_pdev *pdev,
 	return num_channels;
 }
 
-uint16_t
-reg_get_band_channel_list(struct wlan_objmgr_pdev *pdev,
-			  uint8_t band_mask,
-			  struct regulatory_channel *channel_list)
+uint16_t reg_get_band_channel_list(struct wlan_objmgr_pdev *pdev,
+				   uint8_t band_mask,
+				   struct regulatory_channel *channel_list)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -2928,12 +2807,10 @@ reg_get_band_channel_list(struct wlan_objmgr_pdev *pdev,
 }
 
 #ifdef CONFIG_REG_6G_PWRMODE
-uint16_t
-reg_get_band_channel_list_for_pwrmode(struct wlan_objmgr_pdev *pdev,
-				      uint8_t band_mask,
-				      struct regulatory_channel *channel_list,
-				      enum supported_6g_pwr_types
-				      in_6g_pwr_mode)
+uint16_t reg_get_band_channel_list_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, uint8_t band_mask,
+	struct regulatory_channel *channel_list,
+	enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	struct regulatory_channel *reg_chan_list;
@@ -2978,14 +2855,13 @@ reg_get_secondary_band_channel_list(struct wlan_objmgr_pdev *pdev,
 	}
 
 	return reg_get_band_from_cur_chan_list(
-				pdev, band_mask, channel_list,
-				pdev_priv_obj->secondary_cur_chan_list);
+		pdev, band_mask, channel_list,
+		pdev_priv_obj->secondary_cur_chan_list);
 }
 #endif
 
 qdf_freq_t reg_chan_band_to_freq(struct wlan_objmgr_pdev *pdev,
-				 uint8_t chan_num,
-				 uint8_t band_mask)
+				 uint8_t chan_num, uint8_t band_mask)
 {
 	enum channel_enum min_chan, max_chan;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -3003,15 +2879,14 @@ qdf_freq_t reg_chan_band_to_freq(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (BAND_6G_PRESENT(band_mask)) {
-		if (BAND_2G_PRESENT(band_mask) ||
-		    BAND_5G_PRESENT(band_mask)) {
+		if (BAND_2G_PRESENT(band_mask) || BAND_5G_PRESENT(band_mask)) {
 			reg_err_rl("Incorrect band_mask %x", band_mask);
-				return 0;
+			return 0;
 		}
 
 		/* Handle 6G channel 2 as a special case as it does not follow
-		 * the regular increasing order of channel numbers
-		 */
+     * the regular increasing order of channel numbers
+     */
 		if (chan_num == SIXG_CHAN_2) {
 			struct regulatory_channel *mas_chan_list;
 
@@ -3020,28 +2895,26 @@ qdf_freq_t reg_chan_band_to_freq(struct wlan_objmgr_pdev *pdev,
 			if ((mas_chan_list[CHAN_ENUM_SIXG_2].state !=
 			     CHANNEL_STATE_DISABLE) &&
 			    !(mas_chan_list[CHAN_ENUM_SIXG_2].chan_flags &
-			     REGULATORY_CHAN_DISABLED))
-				return mas_chan_list[CHAN_ENUM_SIXG_2].
-								center_freq;
+			      REGULATORY_CHAN_DISABLED))
+				return mas_chan_list[CHAN_ENUM_SIXG_2]
+					.center_freq;
 			else
 				return 0;
 		}
 
 		/* MIN_6GHZ_CHANNEL corresponds to CHAN_ENUM_5935
-		 * ( a.k.a SIXG_CHAN_2). Skip it from the search space
-		 */
+     * ( a.k.a SIXG_CHAN_2). Skip it from the search space
+     */
 		min_chan = MIN_6GHZ_CHANNEL + 1;
 		max_chan = MAX_6GHZ_CHANNEL;
-		return reg_compute_chan_to_freq(pdev, chan_num,
-						min_chan,
+		return reg_compute_chan_to_freq(pdev, chan_num, min_chan,
 						max_chan);
 	} else {
 		if (BAND_2G_PRESENT(band_mask)) {
 			min_chan = MIN_24GHZ_CHANNEL;
 			max_chan = MAX_24GHZ_CHANNEL;
 			freq = reg_compute_chan_to_freq(pdev, chan_num,
-							min_chan,
-							max_chan);
+							min_chan, max_chan);
 			if (freq != 0)
 				return freq;
 		}
@@ -3051,8 +2924,7 @@ qdf_freq_t reg_chan_band_to_freq(struct wlan_objmgr_pdev *pdev,
 			max_chan = MAX_5GHZ_CHANNEL;
 
 			return reg_compute_chan_to_freq(pdev, chan_num,
-							min_chan,
-							max_chan);
+							min_chan, max_chan);
 		}
 
 		reg_err_rl("Incorrect band_mask %x", band_mask);
@@ -3104,8 +2976,7 @@ qdf_freq_t reg_max_5ghz_chan_freq(void)
 }
 #endif /* CONFIG_CHAN_FREQ_API */
 
-QDF_STATUS reg_enable_dfs_channels(struct wlan_objmgr_pdev *pdev,
-				   bool enable)
+QDF_STATUS reg_enable_dfs_channels(struct wlan_objmgr_pdev *pdev, bool enable)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
@@ -3145,11 +3016,11 @@ QDF_STATUS reg_enable_dfs_channels(struct wlan_objmgr_pdev *pdev,
 	reg_tx_ops = reg_get_psoc_tx_ops(psoc);
 
 	/* Fill the ic channel list with the updated current channel
-	 * chan list.
-	 */
+   * chan list.
+   */
 	if (reg_tx_ops->fill_umac_legacy_chanlist)
-		reg_tx_ops->fill_umac_legacy_chanlist(pdev,
-				pdev_priv_obj->cur_chan_list);
+		reg_tx_ops->fill_umac_legacy_chanlist(
+			pdev, pdev_priv_obj->cur_chan_list);
 
 	status = reg_send_scheduler_msg_sb(psoc, pdev);
 
@@ -3172,8 +3043,7 @@ bool reg_is_regdmn_en302502_applicable(struct wlan_objmgr_pdev *pdev)
 }
 #endif
 
-QDF_STATUS reg_get_phybitmap(struct wlan_objmgr_pdev *pdev,
-			     uint16_t *phybitmap)
+QDF_STATUS reg_get_phybitmap(struct wlan_objmgr_pdev *pdev, uint16_t *phybitmap)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -3297,11 +3167,11 @@ QDF_STATUS reg_modify_pdev_chan_range(struct wlan_objmgr_pdev *pdev)
 	reg_tx_ops = reg_get_psoc_tx_ops(psoc);
 
 	/* Fill the ic channel list with the updated current channel
-	 * chan list.
-	 */
+   * chan list.
+   */
 	if (reg_tx_ops->fill_umac_legacy_chanlist) {
-	    reg_tx_ops->fill_umac_legacy_chanlist(pdev,
-						  pdev_priv_obj->cur_chan_list);
+		reg_tx_ops->fill_umac_legacy_chanlist(
+			pdev, pdev_priv_obj->cur_chan_list);
 
 	} else {
 		if (dir == NORTHBOUND)
@@ -3318,8 +3188,8 @@ QDF_STATUS reg_update_pdev_wireless_modes(struct wlan_objmgr_pdev *pdev,
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
-	pdev_priv_obj = wlan_objmgr_pdev_get_comp_private_obj(pdev,
-							      WLAN_UMAC_COMP_REGULATORY);
+	pdev_priv_obj = wlan_objmgr_pdev_get_comp_private_obj(
+		pdev, WLAN_UMAC_COMP_REGULATORY);
 
 	if (!pdev_priv_obj) {
 		reg_err("reg pdev private obj is NULL");
@@ -3342,14 +3212,13 @@ QDF_STATUS reg_update_pdev_wireless_modes(struct wlan_objmgr_pdev *pdev,
  * Return: Return true if REG_UNII_BAND_1 or REG_UNII_BAND_2A, are present in
  * the UNII 5g bitmap else return false.
  */
-static bool
-reg_is_reg_unii_band_1_or_reg_unii_band_2a(uint8_t unii_5g_bitmap)
+static bool reg_is_reg_unii_band_1_or_reg_unii_band_2a(uint8_t unii_5g_bitmap)
 {
 	if (!unii_5g_bitmap)
 		return false;
 
 	return ((unii_5g_bitmap & (BIT(REG_UNII_BAND_1) |
-		 BIT(REG_UNII_BAND_2A))) ==  unii_5g_bitmap);
+				   BIT(REG_UNII_BAND_2A))) == unii_5g_bitmap);
 }
 
 QDF_STATUS reg_disable_chan_coex(struct wlan_objmgr_pdev *pdev,
@@ -3380,7 +3249,7 @@ QDF_STATUS reg_disable_chan_coex(struct wlan_objmgr_pdev *pdev,
 
 	if (pdev_priv_obj->unii_5g_bitmap == unii_5g_bitmap) {
 		reg_debug_rl("UNII bitmask for 5G channels is already set  %d",
-			    unii_5g_bitmap);
+			     unii_5g_bitmap);
 		return QDF_STATUS_SUCCESS;
 	}
 
@@ -3392,8 +3261,8 @@ QDF_STATUS reg_disable_chan_coex(struct wlan_objmgr_pdev *pdev,
 	reg_tx_ops = reg_get_psoc_tx_ops(psoc);
 
 	if (reg_tx_ops->fill_umac_legacy_chanlist) {
-		reg_tx_ops->fill_umac_legacy_chanlist(pdev,
-				pdev_priv_obj->cur_chan_list);
+		reg_tx_ops->fill_umac_legacy_chanlist(
+			pdev, pdev_priv_obj->cur_chan_list);
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -3409,10 +3278,9 @@ bool reg_is_chan_disabled(uint32_t chan_flags, enum channel_state chan_state)
 #ifdef CONFIG_REG_CLIENT
 #ifdef CONFIG_BAND_6GHZ
 static void reg_append_6g_channel_list_with_power(
-			struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
-			struct channel_power *ch_list,
-			uint8_t *count,
-			enum supported_6g_pwr_types in_6g_pwr_type)
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	struct channel_power *ch_list, uint8_t *count,
+	enum supported_6g_pwr_types in_6g_pwr_type)
 {
 	struct super_chan_info *sc_entry;
 	enum supported_6g_pwr_types pwr_type;
@@ -3431,9 +3299,9 @@ static void reg_append_6g_channel_list_with_power(
 		if (!reg_is_chan_disabled(sc_entry->chan_flags_arr[pwr_type],
 					  sc_entry->state_arr[pwr_type])) {
 			ch_list[count_6g].center_freq =
-					reg_ch_to_freq(i + MIN_6GHZ_CHANNEL);
+				reg_ch_to_freq(i + MIN_6GHZ_CHANNEL);
 			ch_list[count_6g].chan_num =
-					reg_ch_num(i + MIN_6GHZ_CHANNEL);
+				reg_ch_num(i + MIN_6GHZ_CHANNEL);
 			ch_list[count_6g++].tx_power =
 				sc_entry->reg_chan_pwr[pwr_type].tx_power;
 		}
@@ -3442,19 +3310,16 @@ static void reg_append_6g_channel_list_with_power(
 }
 #else
 static inline void reg_append_6g_channel_list_with_power(
-			struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
-			struct channel_power *ch_list,
-			uint8_t *count,
-			enum supported_6g_pwr_types in_6g_pwr_type)
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	struct channel_power *ch_list, uint8_t *count,
+	enum supported_6g_pwr_types in_6g_pwr_type)
 {
 }
 #endif
 
 QDF_STATUS reg_get_channel_list_with_power(
-				struct wlan_objmgr_pdev *pdev,
-				struct channel_power *ch_list,
-				uint8_t *num_chan,
-				enum supported_6g_pwr_types in_6g_pwr_type)
+	struct wlan_objmgr_pdev *pdev, struct channel_power *ch_list,
+	uint8_t *num_chan, enum supported_6g_pwr_types in_6g_pwr_type)
 {
 	uint8_t i, count;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -3486,8 +3351,8 @@ QDF_STATUS reg_get_channel_list_with_power(
 
 	for (i = 0, count = 0; i < max_curr_num_chan; i++) {
 		if (!reg_is_chan_disabled(
-				pdev_priv_obj->cur_chan_list[i].chan_flags,
-				pdev_priv_obj->cur_chan_list[i].state)) {
+			    pdev_priv_obj->cur_chan_list[i].chan_flags,
+			    pdev_priv_obj->cur_chan_list[i].state)) {
 			ch_list[count].center_freq =
 				pdev_priv_obj->cur_chan_list[i].center_freq;
 			ch_list[count].chan_num =
@@ -3511,11 +3376,10 @@ QDF_STATUS reg_get_channel_list_with_power(
 #endif
 
 #ifdef CONFIG_CHAN_FREQ_API
-QDF_STATUS reg_get_channel_list_with_power_for_freq(struct wlan_objmgr_pdev
-						    *pdev,
-						    struct channel_power
-						    *ch_list,
-						    uint8_t *num_chan)
+QDF_STATUS
+reg_get_channel_list_with_power_for_freq(struct wlan_objmgr_pdev *pdev,
+					 struct channel_power *ch_list,
+					 uint8_t *num_chan)
 {
 	int i, count;
 	struct regulatory_channel *reg_channels;
@@ -3542,8 +3406,7 @@ QDF_STATUS reg_get_channel_list_with_power_for_freq(struct wlan_objmgr_pdev
 			ch_list[count].center_freq =
 				reg_channels[i].center_freq;
 			ch_list[count].chan_num = reg_channels[i].chan_num;
-			ch_list[count++].tx_power =
-				reg_channels[i].tx_power;
+			ch_list[count++].tx_power = reg_channels[i].tx_power;
 		}
 	}
 
@@ -3574,9 +3437,8 @@ enum channel_enum reg_get_chan_enum_for_freq(qdf_freq_t freq)
 	return INVALID_CHANNEL;
 }
 
-bool
-reg_is_freq_present_in_cur_chan_list(struct wlan_objmgr_pdev *pdev,
-				     qdf_freq_t freq)
+bool reg_is_freq_present_in_cur_chan_list(struct wlan_objmgr_pdev *pdev,
+					  qdf_freq_t freq)
 {
 	enum channel_enum chan_enum;
 	struct regulatory_channel *cur_chan_list;
@@ -3614,10 +3476,8 @@ reg_is_freq_present_in_cur_chan_list(struct wlan_objmgr_pdev *pdev,
  *
  * Return: void
  */
-static bool
-is_freq_present_in_resp_list(uint32_t pcl_ch,
-			     struct get_usable_chan_res_params *res_msg,
-			     int count)
+static bool is_freq_present_in_resp_list(
+	uint32_t pcl_ch, struct get_usable_chan_res_params *res_msg, int count)
 {
 	int i;
 
@@ -3641,24 +3501,22 @@ is_freq_present_in_resp_list(uint32_t pcl_ch,
  *
  * Return: void
  */
-static void
-reg_update_usable_chan_resp(struct wlan_objmgr_pdev *pdev,
-			    struct get_usable_chan_res_params *res_msg,
-			    uint32_t *pcl_ch, uint32_t len,
-			    uint32_t iface_mode_mask,
-			    uint32_t band_mask, int *count,
-			    enum supported_6g_pwr_types in_6g_pwr_mode)
+static void reg_update_usable_chan_resp(
+	struct wlan_objmgr_pdev *pdev,
+	struct get_usable_chan_res_params *res_msg, uint32_t *pcl_ch,
+	uint32_t len, uint32_t iface_mode_mask, uint32_t band_mask, int *count,
+	enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	int i;
-	struct ch_params ch_params = {0};
+	struct ch_params ch_params = { 0 };
 	int index = *count;
 
 	for (i = 0; i < len && index < NUM_CHANNELS; i++) {
 		/* In case usable channels are required for multiple filter
-		 * mask, Some frequencies may present in res_msg . To avoid
-		 * frequency duplication, only mode mask is updated for
-		 * existing frequency.
-		 */
+     * mask, Some frequencies may present in res_msg . To avoid
+     * frequency duplication, only mode mask is updated for
+     * existing frequency.
+     */
 		if (is_freq_present_in_resp_list(pcl_ch[i], res_msg, *count))
 			continue;
 
@@ -3667,18 +3525,14 @@ reg_update_usable_chan_resp(struct wlan_objmgr_pdev *pdev,
 
 		ch_params.ch_width = CH_WIDTH_MAX;
 		reg_set_channel_params_for_pwrmode(
-				pdev,
-				pcl_ch[i],
-				0, &ch_params, in_6g_pwr_mode, true);
+			pdev, pcl_ch[i], 0, &ch_params, in_6g_pwr_mode, true);
 		res_msg[index].freq = (qdf_freq_t)pcl_ch[i];
 		res_msg[index].iface_mode_mask |= 1 << iface_mode_mask;
 		res_msg[index].bw = ch_params.ch_width;
 		if (ch_params.center_freq_seg0)
-			res_msg[index].seg0_freq =
-					ch_params.center_freq_seg0;
+			res_msg[index].seg0_freq = ch_params.center_freq_seg0;
 		if (ch_params.center_freq_seg1)
-			res_msg[index].seg1_freq =
-					ch_params.center_freq_seg1;
+			res_msg[index].seg1_freq = ch_params.center_freq_seg1;
 		index++;
 	}
 
@@ -3701,10 +3555,8 @@ reg_update_usable_chan_resp(struct wlan_objmgr_pdev *pdev,
 static QDF_STATUS
 reg_update_conn_chan_list(struct wlan_objmgr_pdev *pdev,
 			  struct get_usable_chan_res_params *res_msg,
-			  enum policy_mgr_con_mode mode,
-			  uint32_t iftype,
-			  uint32_t band_mask,
-			  uint32_t *count,
+			  enum policy_mgr_con_mode mode, uint32_t iftype,
+			  uint32_t band_mask, uint32_t *count,
 			  enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	uint32_t *pcl_ch;
@@ -3714,16 +3566,14 @@ reg_update_conn_chan_list(struct wlan_objmgr_pdev *pdev,
 	struct wlan_objmgr_psoc *psoc;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
-	pcl_ch = qdf_mem_malloc(NUM_CHANNELS *
-			sizeof(uint32_t));
+	pcl_ch = qdf_mem_malloc(NUM_CHANNELS * sizeof(uint32_t));
 
 	if (!pcl_ch) {
 		reg_err("pcl_ch invalid");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	weight_list = qdf_mem_malloc(NUM_CHANNELS *
-			sizeof(uint8_t));
+	weight_list = qdf_mem_malloc(NUM_CHANNELS * sizeof(uint8_t));
 
 	if (!weight_list) {
 		reg_err("weight_list invalid");
@@ -3741,16 +3591,14 @@ reg_update_conn_chan_list(struct wlan_objmgr_pdev *pdev,
 	len = NUM_CHANNELS;
 	weight_len = NUM_CHANNELS;
 
-	status = policy_mgr_get_pcl(psoc, mode, pcl_ch, &len,
-				    weight_list, weight_len,
-				    WLAN_INVALID_VDEV_ID);
+	status = policy_mgr_get_pcl(psoc, mode, pcl_ch, &len, weight_list,
+				    weight_len, WLAN_INVALID_VDEV_ID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		reg_err("get pcl failed for mode: %d", mode);
 		goto err;
 	}
-	reg_update_usable_chan_resp(pdev, res_msg, pcl_ch, len,
-				    iftype, band_mask, count,
-				    in_6g_pwr_mode);
+	reg_update_usable_chan_resp(pdev, res_msg, pcl_ch, len, iftype,
+				    band_mask, count, in_6g_pwr_mode);
 err:
 	qdf_mem_free(pcl_ch);
 	qdf_mem_free(weight_list);
@@ -3779,39 +3627,30 @@ reg_get_usable_channel_con_filter(struct wlan_objmgr_pdev *pdev,
 
 	while (iface_mode_mask) {
 		if (iface_mode_mask & 1 << IFTYPE_AP) {
-			status =
-			reg_update_conn_chan_list(pdev, res_msg, PM_SAP_MODE,
-						  IFTYPE_AP, req_msg.band_mask,
-						  count, in_6g_pwr_mode);
+			status = reg_update_conn_chan_list(
+				pdev, res_msg, PM_SAP_MODE, IFTYPE_AP,
+				req_msg.band_mask, count, in_6g_pwr_mode);
 			iface_mode_mask &= ~(1 << IFTYPE_AP);
 		} else if (iface_mode_mask & 1 << IFTYPE_STATION) {
-			status =
-			reg_update_conn_chan_list(pdev, res_msg, PM_STA_MODE,
-						  IFTYPE_STATION,
-						  req_msg.band_mask, count,
-						  in_6g_pwr_mode);
+			status = reg_update_conn_chan_list(
+				pdev, res_msg, PM_STA_MODE, IFTYPE_STATION,
+				req_msg.band_mask, count, in_6g_pwr_mode);
 			iface_mode_mask &= ~(1 << IFTYPE_STATION);
 		} else if (iface_mode_mask & 1 << IFTYPE_P2P_GO) {
-			status =
-			reg_update_conn_chan_list(pdev, res_msg, PM_P2P_GO_MODE,
-						  IFTYPE_P2P_GO,
-						  req_msg.band_mask, count,
-						  in_6g_pwr_mode);
+			status = reg_update_conn_chan_list(
+				pdev, res_msg, PM_P2P_GO_MODE, IFTYPE_P2P_GO,
+				req_msg.band_mask, count, in_6g_pwr_mode);
 			iface_mode_mask &= ~(1 << IFTYPE_P2P_GO);
 		} else if (iface_mode_mask & 1 << IFTYPE_P2P_CLIENT) {
-			status =
-			reg_update_conn_chan_list(pdev, res_msg,
-						  PM_P2P_CLIENT_MODE,
-						  IFTYPE_P2P_CLIENT,
-						  req_msg.band_mask, count,
-						  in_6g_pwr_mode);
+			status = reg_update_conn_chan_list(
+				pdev, res_msg, PM_P2P_CLIENT_MODE,
+				IFTYPE_P2P_CLIENT, req_msg.band_mask, count,
+				in_6g_pwr_mode);
 			iface_mode_mask &= ~(1 << IFTYPE_P2P_CLIENT);
 		} else if (iface_mode_mask & 1 << IFTYPE_NAN) {
-			status =
-			reg_update_conn_chan_list(pdev, res_msg,
-						  PM_NAN_DISC_MODE, IFTYPE_NAN,
-						  req_msg.band_mask, count,
-						  in_6g_pwr_mode);
+			status = reg_update_conn_chan_list(
+				pdev, res_msg, PM_NAN_DISC_MODE, IFTYPE_NAN,
+				req_msg.band_mask, count, in_6g_pwr_mode);
 			iface_mode_mask &= ~(1 << IFTYPE_NAN);
 		} else {
 			reg_err("invalid mode");
@@ -3828,9 +3667,8 @@ reg_get_usable_channel_con_filter(struct wlan_objmgr_pdev *pdev,
  *
  * Return: void
  */
-static void
-reg_remove_freq(struct get_usable_chan_res_params *res_msg,
-		int index)
+static void reg_remove_freq(struct get_usable_chan_res_params *res_msg,
+			    int index)
 {
 	reg_debug("removing freq %d", res_msg[index].freq);
 	qdf_mem_zero(&res_msg[index],
@@ -3871,8 +3709,7 @@ reg_skip_invalid_chan_freq(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ucfg_mlme_get_etsi_srd_chan_in_master_mode(psoc,
-						   &enable_srd_chan);
+	ucfg_mlme_get_etsi_srd_chan_in_master_mode(psoc, &enable_srd_chan);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		reg_err("failed to get srd chan info");
 		return QDF_STATUS_E_FAILURE;
@@ -3899,18 +3736,18 @@ reg_skip_invalid_chan_freq(struct wlan_objmgr_pdev *pdev,
 		for (chan_enum = 0; chan_enum < *no_usable_channels;
 		     chan_enum++) {
 			if (iface_mode_mask & (1 << IFTYPE_NAN)) {
-				if (!wlan_is_nan_allowed_on_freq(pdev,
-				     res_msg[chan_enum].freq))
+				if (!wlan_is_nan_allowed_on_freq(
+					    pdev, res_msg[chan_enum].freq))
 					res_msg[chan_enum].iface_mode_mask &=
 						~(iface_mode);
 				if (!res_msg[chan_enum].iface_mode_mask)
 					reg_remove_freq(res_msg, chan_enum);
 			} else {
 				if (wlan_reg_is_freq_indoor(
-					pdev, res_msg[chan_enum].freq) &&
-					!include_indoor_channel) {
+					    pdev, res_msg[chan_enum].freq) &&
+				    !include_indoor_channel) {
 					res_msg[chan_enum].iface_mode_mask &=
-							~(iface_mode);
+						~(iface_mode);
 					if (!res_msg[chan_enum].iface_mode_mask)
 						reg_remove_freq(res_msg,
 								chan_enum);
@@ -3918,7 +3755,7 @@ reg_skip_invalid_chan_freq(struct wlan_objmgr_pdev *pdev,
 
 				if (!(enable_srd_chan & srd_mask) &&
 				    reg_is_etsi13_srd_chan_for_freq(
-					pdev, res_msg[chan_enum].freq)) {
+					    pdev, res_msg[chan_enum].freq)) {
 					res_msg[chan_enum].iface_mode_mask &=
 						~(iface_mode);
 					if (!res_msg[chan_enum].iface_mode_mask)
@@ -3927,8 +3764,8 @@ reg_skip_invalid_chan_freq(struct wlan_objmgr_pdev *pdev,
 				}
 
 				if (!dfs_master_capable &&
-				    wlan_reg_is_dfs_for_freq(pdev,
-				    res_msg[chan_enum].freq)) {
+				    wlan_reg_is_dfs_for_freq(
+					    pdev, res_msg[chan_enum].freq)) {
 					res_msg[chan_enum].iface_mode_mask &=
 						~(iface_mode);
 					if (!res_msg[chan_enum].iface_mode_mask)
@@ -3963,9 +3800,8 @@ reg_get_usable_channel_no_filter(struct wlan_objmgr_pdev *pdev,
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
-	status =
-	reg_skip_invalid_chan_freq(pdev, res_msg,
-				   count, req_msg.iface_mode_mask);
+	status = reg_skip_invalid_chan_freq(pdev, res_msg, count,
+					    req_msg.iface_mode_mask);
 	return status;
 }
 
@@ -4005,15 +3841,16 @@ reg_get_usable_channel_coex_filter(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 	}
 	for (chan_enum = 0; chan_enum < *count; chan_enum++) {
-		for (i = 0; i <
-		    psoc_priv_obj->avoid_freq_list.ch_avoid_range_cnt; i++) {
-			freq_range =
-			psoc_priv_obj->avoid_freq_list.avoid_freq_range[i];
+		for (i = 0;
+		     i < psoc_priv_obj->avoid_freq_list.ch_avoid_range_cnt;
+		     i++) {
+			freq_range = psoc_priv_obj->avoid_freq_list
+					     .avoid_freq_range[i];
 
 			if (freq_range.start_freq <=
-			    chan_list[chan_enum].center_freq &&
+				    chan_list[chan_enum].center_freq &&
 			    freq_range.end_freq >=
-			    chan_list[chan_enum].center_freq) {
+				    chan_list[chan_enum].center_freq) {
 				reg_debug("avoid freq %d",
 					  chan_list[chan_enum].center_freq);
 				reg_remove_freq(res_msg, chan_enum);
@@ -4023,9 +3860,8 @@ reg_get_usable_channel_coex_filter(struct wlan_objmgr_pdev *pdev,
 	if (req_msg.iface_mode_mask & 1 << IFTYPE_AP ||
 	    req_msg.iface_mode_mask & 1 << IFTYPE_P2P_GO ||
 	    req_msg.iface_mode_mask & 1 << IFTYPE_NAN)
-		status =
-		reg_skip_invalid_chan_freq(pdev, res_msg, count,
-					   req_msg.iface_mode_mask);
+		status = reg_skip_invalid_chan_freq(pdev, res_msg, count,
+						    req_msg.iface_mode_mask);
 	return status;
 }
 
@@ -4035,8 +3871,7 @@ reg_get_usable_channel_coex_filter(struct wlan_objmgr_pdev *pdev,
  *
  * Return: Valid mode mask
  */
-static uint32_t
-reg_calculate_mode_mask(uint32_t iface_mode_mask)
+static uint32_t reg_calculate_mode_mask(uint32_t iface_mode_mask)
 {
 	int mode_mask = 0;
 
@@ -4065,25 +3900,23 @@ static QDF_STATUS
 reg_add_usable_channel_to_resp(struct wlan_objmgr_pdev *pdev,
 			       struct get_usable_chan_res_params *res_msg,
 			       uint32_t iface_mode_mask,
-			       struct regulatory_channel *chan_list,
-			       int *count,
+			       struct regulatory_channel *chan_list, int *count,
 			       enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	enum channel_enum chan_enum;
-	struct ch_params ch_params = {0};
+	struct ch_params ch_params = { 0 };
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	uint32_t mode_mask = 0;
 
 	mode_mask = reg_calculate_mode_mask(iface_mode_mask);
 
-	for (chan_enum = 0; chan_enum < *count &&
-	     chan_enum < NUM_CHANNELS; chan_enum++) {
+	for (chan_enum = 0; chan_enum < *count && chan_enum < NUM_CHANNELS;
+	     chan_enum++) {
 		ch_params.ch_width = CH_WIDTH_MAX;
 		reg_set_channel_params_for_pwrmode(
-				pdev,
-				chan_list[chan_enum].center_freq,
-				chan_list[chan_enum].max_bw, &ch_params,
-				in_6g_pwr_mode, true);
+			pdev, chan_list[chan_enum].center_freq,
+			chan_list[chan_enum].max_bw, &ch_params, in_6g_pwr_mode,
+			true);
 
 		res_msg[chan_enum].freq = chan_list[chan_enum].center_freq;
 		res_msg[chan_enum].iface_mode_mask = mode_mask;
@@ -4095,10 +3928,10 @@ reg_add_usable_channel_to_resp(struct wlan_objmgr_pdev *pdev,
 		res_msg[chan_enum].state = chan_list[chan_enum].state;
 		if (ch_params.center_freq_seg0)
 			res_msg[chan_enum].seg0_freq =
-					ch_params.center_freq_seg0;
+				ch_params.center_freq_seg0;
 		if (ch_params.center_freq_seg1)
 			res_msg[chan_enum].seg1_freq =
-					ch_params.center_freq_seg1;
+				ch_params.center_freq_seg1;
 	}
 
 	return status;
@@ -4114,8 +3947,7 @@ wlan_reg_get_usable_channel(struct wlan_objmgr_pdev *pdev,
 	struct regulatory_channel *chan_list;
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
-	chan_list = qdf_mem_malloc(NUM_CHANNELS *
-			sizeof(*chan_list));
+	chan_list = qdf_mem_malloc(NUM_CHANNELS * sizeof(*chan_list));
 
 	if (!chan_list) {
 		reg_err("chan_list invalid");
@@ -4125,14 +3957,11 @@ wlan_reg_get_usable_channel(struct wlan_objmgr_pdev *pdev,
 	if ((req_msg.filter_mask & 1 << FILTER_CELLULAR_COEX) ||
 	    (!(req_msg.filter_mask & 1 << FILTER_CELLULAR_COEX) &&
 	     !(req_msg.filter_mask & 1 << FILTER_WLAN_CONCURRENCY))) {
-		*usable_channels = reg_get_band_channel_list(pdev,
-							     req_msg.band_mask,
-							     chan_list);
-		status =
-		reg_add_usable_channel_to_resp(pdev, res_msg,
-					       req_msg.iface_mode_mask,
-					       chan_list, usable_channels,
-					       in_6g_pwr_mode);
+		*usable_channels = reg_get_band_channel_list(
+			pdev, req_msg.band_mask, chan_list);
+		status = reg_add_usable_channel_to_resp(
+			pdev, res_msg, req_msg.iface_mode_mask, chan_list,
+			usable_channels, in_6g_pwr_mode);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			qdf_mem_free(chan_list);
 			return status;
@@ -4140,20 +3969,18 @@ wlan_reg_get_usable_channel(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (req_msg.filter_mask & 1 << FILTER_WLAN_CONCURRENCY)
-		status =
-		reg_get_usable_channel_con_filter(pdev, req_msg, res_msg,
-						  usable_channels,
-						  in_6g_pwr_mode);
+		status = reg_get_usable_channel_con_filter(pdev, req_msg,
+							   res_msg,
+							   usable_channels,
+							   in_6g_pwr_mode);
 
 	if (req_msg.filter_mask & 1 << FILTER_CELLULAR_COEX)
-		status =
-		reg_get_usable_channel_coex_filter(pdev, req_msg, res_msg,
-						   chan_list, usable_channels);
+		status = reg_get_usable_channel_coex_filter(
+			pdev, req_msg, res_msg, chan_list, usable_channels);
 	if (!(req_msg.filter_mask & 1 << FILTER_CELLULAR_COEX) &&
 	    !(req_msg.filter_mask & 1 << FILTER_WLAN_CONCURRENCY))
-		status =
-		reg_get_usable_channel_no_filter(pdev, req_msg, res_msg,
-						 chan_list, usable_channels);
+		status = reg_get_usable_channel_no_filter(
+			pdev, req_msg, res_msg, chan_list, usable_channels);
 	reg_debug("usable chan count is %d", *usable_channels);
 
 	qdf_mem_free(chan_list);
@@ -4171,8 +3998,7 @@ wlan_reg_get_usable_channel(struct wlan_objmgr_pdev *pdev,
  * Return: channel state
  */
 static enum channel_state
-reg_get_nol_channel_state(struct wlan_objmgr_pdev *pdev,
-			  qdf_freq_t freq,
+reg_get_nol_channel_state(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
 			  enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	enum channel_enum ch_idx;
@@ -4200,8 +4026,7 @@ reg_get_nol_channel_state(struct wlan_objmgr_pdev *pdev,
  * Return: Channel State
  */
 static enum channel_state
-reg_get_5g_bonded_chan_state(struct wlan_objmgr_pdev *pdev,
-			     uint16_t freq,
+reg_get_5g_bonded_chan_state(struct wlan_objmgr_pdev *pdev, uint16_t freq,
 			     const struct bonded_channel_freq *bonded_chan_ptr,
 			     enum supported_6g_pwr_types in_6g_pwr_mode,
 			     uint16_t input_punc_bitmap)
@@ -4211,12 +4036,11 @@ reg_get_5g_bonded_chan_state(struct wlan_objmgr_pdev *pdev,
 	enum channel_state temp_chan_state;
 	uint8_t i = 0;
 
-	chan_cfreq =  bonded_chan_ptr->start_freq;
+	chan_cfreq = bonded_chan_ptr->start_freq;
 	while (chan_cfreq <= bonded_chan_ptr->end_freq) {
 		if (!reg_is_chan_bit_punctured(input_punc_bitmap, i)) {
-			temp_chan_state =
-				reg_get_nol_channel_state(pdev, chan_cfreq,
-							  in_6g_pwr_mode);
+			temp_chan_state = reg_get_nol_channel_state(
+				pdev, chan_cfreq, in_6g_pwr_mode);
 			if (temp_chan_state < chan_state)
 				chan_state = temp_chan_state;
 		}
@@ -4227,11 +4051,9 @@ reg_get_5g_bonded_chan_state(struct wlan_objmgr_pdev *pdev,
 	return chan_state;
 }
 
-enum channel_state
-reg_get_5g_chan_state(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
-		      enum phy_ch_width bw,
-		      enum supported_6g_pwr_types in_6g_pwr_mode,
-		      uint16_t input_punc_bitmap)
+enum channel_state reg_get_5g_chan_state(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq, enum phy_ch_width bw,
+	enum supported_6g_pwr_types in_6g_pwr_mode, uint16_t input_punc_bitmap)
 {
 	enum channel_enum ch_indx;
 	enum channel_state chan_state;
@@ -4253,9 +4075,8 @@ reg_get_5g_chan_state(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
 	if (!bonded_chan_ptr)
 		return CHANNEL_STATE_INVALID;
 
-	chan_state = reg_get_5g_bonded_chan_state(pdev, freq, bonded_chan_ptr,
-						  in_6g_pwr_mode,
-						  input_punc_bitmap);
+	chan_state = reg_get_5g_bonded_chan_state(
+		pdev, freq, bonded_chan_ptr, in_6g_pwr_mode, input_punc_bitmap);
 
 	if ((chan_state == CHANNEL_STATE_INVALID) ||
 	    (chan_state == CHANNEL_STATE_DISABLE))
@@ -4273,23 +4094,17 @@ reg_get_5g_chan_state(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
 	if (bw == CH_WIDTH_5MHZ)
 		bw_enabled = true;
 	else if (bw == CH_WIDTH_10MHZ)
-		bw_enabled = (min_bw <= 10) &&
-			(max_bw >= 10);
+		bw_enabled = (min_bw <= 10) && (max_bw >= 10);
 	else if (bw == CH_WIDTH_20MHZ)
-		bw_enabled = (min_bw <= 20) &&
-			(max_bw >= 20);
+		bw_enabled = (min_bw <= 20) && (max_bw >= 20);
 	else if (bw == CH_WIDTH_40MHZ)
-		bw_enabled = (min_bw <= 40) &&
-			(max_bw >= 40);
+		bw_enabled = (min_bw <= 40) && (max_bw >= 40);
 	else if (bw == CH_WIDTH_80MHZ)
-		bw_enabled = (min_bw <= 80) &&
-			(max_bw >= 80);
+		bw_enabled = (min_bw <= 80) && (max_bw >= 80);
 	else if (bw == CH_WIDTH_160MHZ)
-		bw_enabled = (min_bw <= 160) &&
-			(max_bw >= 160);
+		bw_enabled = (min_bw <= 160) && (max_bw >= 160);
 	else if (bw == CH_WIDTH_80P80MHZ)
-		bw_enabled = (min_bw <= 80) &&
-			(max_bw >= 80);
+		bw_enabled = (min_bw <= 80) && (max_bw >= 80);
 
 	if (bw_enabled)
 		return chan_state;
@@ -4299,23 +4114,18 @@ reg_get_5g_chan_state(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
 
 enum channel_state
 reg_get_ch_state_based_on_nol_flag(struct wlan_objmgr_pdev *pdev,
-				   qdf_freq_t freq,
-				   struct ch_params *ch_params,
-				   enum supported_6g_pwr_types
-				   in_6g_pwr_mode,
+				   qdf_freq_t freq, struct ch_params *ch_params,
+				   enum supported_6g_pwr_types in_6g_pwr_mode,
 				   bool treat_nol_chan_as_disabled)
 {
 	uint16_t input_punc_bitmap = reg_fetch_punc_bitmap(ch_params);
 
 	if (treat_nol_chan_as_disabled)
-		return wlan_reg_get_5g_bonded_channel_state_for_pwrmode(pdev,
-									freq,
-									ch_params,
-									in_6g_pwr_mode);
+		return wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
+			pdev, freq, ch_params, in_6g_pwr_mode);
 
 	return reg_get_5g_chan_state(pdev, freq, ch_params->ch_width,
-				     in_6g_pwr_mode,
-				     input_punc_bitmap);
+				     in_6g_pwr_mode, input_punc_bitmap);
 }
 
 #ifdef WLAN_FEATURE_11BE
@@ -4384,8 +4194,7 @@ static uint32_t reg_get_channel_flags_for_freq(struct wlan_objmgr_pdev *pdev,
 
 #ifdef CONFIG_REG_CLIENT
 enum channel_state reg_get_channel_state_from_secondary_list_for_freq(
-						struct wlan_objmgr_pdev *pdev,
-						qdf_freq_t freq)
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq)
 {
 	enum channel_enum ch_idx;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -4406,8 +4215,7 @@ enum channel_state reg_get_channel_state_from_secondary_list_for_freq(
 }
 
 static uint32_t reg_get_channel_flags_from_secondary_list_for_freq(
-						struct wlan_objmgr_pdev *pdev,
-						qdf_freq_t freq)
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq)
 {
 	enum channel_enum chan_enum;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -4454,9 +4262,8 @@ static uint16_t reg_get_psd_power(struct regulatory_channel *chan, bool *is_psd)
 
 QDF_STATUS
 reg_get_channel_power_attr_from_secondary_list_for_freq(
-		struct wlan_objmgr_pdev *pdev,
-		qdf_freq_t freq, bool *is_psd,
-		uint16_t *tx_power, uint16_t *psd_eirp, uint32_t *flags)
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq, bool *is_psd,
+	uint16_t *tx_power, uint16_t *psd_eirp, uint32_t *flags)
 {
 	enum channel_enum chan_enum;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -4534,22 +4341,17 @@ reg_decide_6ghz_power_within_bw_for_freq(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	state = reg_get_5g_bonded_channel_for_pwrmode(pdev,
-						      freq,
-						      bw,
-						      &bonded_chan_ptr,
-						      pwr_mode,
-						      input_punc_bitmap);
-	if (state != CHANNEL_STATE_ENABLE &&
-	    state != CHANNEL_STATE_DFS) {
+	state = reg_get_5g_bonded_channel_for_pwrmode(
+		pdev, freq, bw, &bonded_chan_ptr, pwr_mode, input_punc_bitmap);
+	if (state != CHANNEL_STATE_ENABLE && state != CHANNEL_STATE_DFS) {
 		reg_err("invalid channel state %d", state);
 		return QDF_STATUS_E_INVAL;
 	}
 
 	if (bw <= CH_WIDTH_20MHZ) {
 		if (reg_get_channel_power_attr_from_secondary_list_for_freq(
-			pdev, freq, is_psd, &tx_power,
-			&psd_eirp, &chan_flags) != QDF_STATUS_SUCCESS)
+			    pdev, freq, is_psd, &tx_power, &psd_eirp,
+			    &chan_flags) != QDF_STATUS_SUCCESS)
 			return QDF_STATUS_E_INVAL;
 		*min_psd_eirp = (int16_t)psd_eirp;
 		*min_tx_power = tx_power;
@@ -4560,8 +4362,8 @@ reg_decide_6ghz_power_within_bw_for_freq(struct wlan_objmgr_pdev *pdev,
 	start_freq = bonded_chan_ptr->start_freq;
 	while (start_freq <= bonded_chan_ptr->end_freq) {
 		if (reg_get_channel_power_attr_from_secondary_list_for_freq(
-			pdev, start_freq, is_psd, &tx_power,
-			&psd_eirp, &chan_flags) != QDF_STATUS_SUCCESS)
+			    pdev, start_freq, is_psd, &tx_power, &psd_eirp,
+			    &chan_flags) != QDF_STATUS_SUCCESS)
 			return QDF_STATUS_E_INVAL;
 
 		if (first_time) {
@@ -4607,14 +4409,10 @@ decide_power_type:
  *
  * Return: Channel State
  */
-static enum channel_state
-reg_get_5g_bonded_chan_array_for_pwrmode(struct wlan_objmgr_pdev *pdev,
-					 uint16_t freq,
-					 const struct bonded_channel_freq *
-					 bonded_chan_ptr,
-					 enum supported_6g_pwr_types
-					 in_6g_pwr_type,
-					 uint16_t input_punc_bitmap)
+static enum channel_state reg_get_5g_bonded_chan_array_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, uint16_t freq,
+	const struct bonded_channel_freq *bonded_chan_ptr,
+	enum supported_6g_pwr_types in_6g_pwr_type, uint16_t input_punc_bitmap)
 {
 	uint16_t chan_cfreq;
 	enum channel_state chan_state = CHANNEL_STATE_INVALID;
@@ -4626,13 +4424,11 @@ reg_get_5g_bonded_chan_array_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 		return chan_state;
 	}
 
-	chan_cfreq =  bonded_chan_ptr->start_freq;
+	chan_cfreq = bonded_chan_ptr->start_freq;
 	while (chan_cfreq <= bonded_chan_ptr->end_freq) {
 		if (!reg_is_chan_bit_punctured(input_punc_bitmap, i)) {
-			temp_chan_state =
-				reg_get_channel_state_for_pwrmode(pdev,
-								  chan_cfreq,
-								  in_6g_pwr_type);
+			temp_chan_state = reg_get_channel_state_for_pwrmode(
+				pdev, chan_cfreq, in_6g_pwr_type);
 			if (temp_chan_state < chan_state)
 				chan_state = temp_chan_state;
 		}
@@ -4647,8 +4443,7 @@ reg_get_5g_bonded_chan_array_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 
 QDF_STATUS reg_extract_puncture_by_bw(enum phy_ch_width ori_bw,
 				      uint16_t ori_puncture_bitmap,
-				      qdf_freq_t freq,
-				      qdf_freq_t cen320_freq,
+				      qdf_freq_t freq, qdf_freq_t cen320_freq,
 				      enum phy_ch_width new_bw,
 				      uint16_t *new_puncture_bitmap)
 {
@@ -4678,24 +4473,24 @@ QDF_STATUS reg_extract_puncture_by_bw(enum phy_ch_width ori_bw,
 
 	new_bit = 0;
 	*new_puncture_bitmap = 0;
-	chan_cfreq =  ori_bonded_chan->start_freq;
+	chan_cfreq = ori_bonded_chan->start_freq;
 	while (chan_cfreq <= ori_bonded_chan->end_freq) {
 		/*
-		 * If the "new_bw" is 20, then new_bonded_chan = NULL and the
-		 * output puncturing bitmap (*new_puncture_bitmap) as per spec
-		 * should be 0. However, if the "ori_puncture_bitmap" has
-		 * punctured the primary channel (the only channel in 20Mhz
-		 * case), then the output "(*ori_puncture_bitmap) should contain
-		 * the same so that the caller can recognize the error in the
-		 * input pattern.
-		 */
+     * If the "new_bw" is 20, then new_bonded_chan = NULL and the
+     * output puncturing bitmap (*new_puncture_bitmap) as per spec
+     * should be 0. However, if the "ori_puncture_bitmap" has
+     * punctured the primary channel (the only channel in 20Mhz
+     * case), then the output "(*ori_puncture_bitmap) should contain
+     * the same so that the caller can recognize the error in the
+     * input pattern.
+     */
 		if (freq == chan_cfreq ||
 		    (new_bonded_chan &&
 		     chan_cfreq >= new_bonded_chan->start_freq &&
 		     chan_cfreq <= new_bonded_chan->end_freq)) {
 			/* this frequency is in new bw */
-			*new_puncture_bitmap |=
-					(ori_puncture_bitmap & 1) << new_bit;
+			*new_puncture_bitmap |= (ori_puncture_bitmap & 1)
+						<< new_bit;
 			new_bit++;
 		}
 
@@ -4722,8 +4517,8 @@ bool reg_is_punc_bitmap_valid(enum phy_ch_width bw, uint16_t puncture_bitmap)
 	num_bws = QDF_ARRAY_SIZE(bw_puncture_bitmap_pair_map);
 	for (i = 0; i < num_bws; i++) {
 		if (bw == bw_puncture_bitmap_pair_map[i].chwidth) {
-			bonded_puncture_bitmap =
-			    bw_puncture_bitmap_pair_map[i].puncture_bitmap_arr;
+			bonded_puncture_bitmap = bw_puncture_bitmap_pair_map[i]
+							 .puncture_bitmap_arr;
 			array_size = bw_puncture_bitmap_pair_map[i].array_size;
 			break;
 		}
@@ -4750,8 +4545,8 @@ uint16_t reg_find_nearest_puncture_pattern(enum phy_ch_width bw,
 	uint16_t final_bitmap;
 
 	/* An input pattern = 0 will match any pattern
-	 * Therefore, ignore '0' pattern and return '0', as '0' matches '0'.
-	 */
+   * Therefore, ignore '0' pattern and return '0', as '0' matches '0'.
+   */
 	if (!proposed_bitmap)
 		return 0;
 
@@ -4761,8 +4556,8 @@ uint16_t reg_find_nearest_puncture_pattern(enum phy_ch_width bw,
 	num_bws = QDF_ARRAY_SIZE(bw_puncture_bitmap_pair_map);
 	for (i = 0; i < num_bws; i++) {
 		if (bw == bw_puncture_bitmap_pair_map[i].chwidth) {
-			bonded_puncture_bitmap =
-			    bw_puncture_bitmap_pair_map[i].puncture_bitmap_arr;
+			bonded_puncture_bitmap = bw_puncture_bitmap_pair_map[i]
+							 .puncture_bitmap_arr;
 			array_size = bw_puncture_bitmap_pair_map[i].array_size;
 			break;
 		}
@@ -4794,11 +4589,10 @@ uint16_t reg_find_nearest_puncture_pattern(enum phy_ch_width bw,
  * Return: void
  */
 static void reg_update_5g_bonded_channel_state_punc_for_pwrmode(
-			struct wlan_objmgr_pdev *pdev,
-			const struct bonded_channel_freq *bonded_chan_ptr,
-			struct ch_params *ch_params,
-			enum channel_state *chan_state,
-			enum supported_6g_pwr_types in_6g_pwr_mode)
+	struct wlan_objmgr_pdev *pdev,
+	const struct bonded_channel_freq *bonded_chan_ptr,
+	struct ch_params *ch_params, enum channel_state *chan_state,
+	enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	qdf_freq_t chan_cfreq;
 	enum channel_state temp_chan_state;
@@ -4811,11 +4605,10 @@ static void reg_update_5g_bonded_channel_state_punc_for_pwrmode(
 	    !ch_params->is_create_punc_bitmap)
 		return;
 
-	chan_cfreq =  bonded_chan_ptr->start_freq;
+	chan_cfreq = bonded_chan_ptr->start_freq;
 	while (chan_cfreq <= bonded_chan_ptr->end_freq) {
-		temp_chan_state =
-			reg_get_channel_state_for_pwrmode(pdev, chan_cfreq,
-							  in_6g_pwr_mode);
+		temp_chan_state = reg_get_channel_state_for_pwrmode(
+			pdev, chan_cfreq, in_6g_pwr_mode);
 		if (!reg_is_state_allowed(temp_chan_state))
 			puncture_bitmap |= BIT(i);
 		/* Remember of any of the sub20 channel is a DFS channel */
@@ -4835,10 +4628,8 @@ static void reg_update_5g_bonded_channel_state_punc_for_pwrmode(
 
 #ifdef CONFIG_REG_CLIENT
 QDF_STATUS reg_apply_puncture(struct wlan_objmgr_pdev *pdev,
-			      uint16_t puncture_bitmap,
-			      qdf_freq_t freq,
-			      enum phy_ch_width bw,
-			      qdf_freq_t cen320_freq)
+			      uint16_t puncture_bitmap, qdf_freq_t freq,
+			      enum phy_ch_width bw, qdf_freq_t cen320_freq)
 {
 	const struct bonded_channel_freq *bonded_chan;
 	qdf_freq_t chan_cfreq;
@@ -4918,22 +4709,18 @@ QDF_STATUS reg_remove_puncture(struct wlan_objmgr_pdev *pdev)
 
 #else
 static void reg_update_5g_bonded_channel_state_punc_for_pwrmode(
-			struct wlan_objmgr_pdev *pdev,
-			const struct bonded_channel_freq *bonded_chan_ptr,
-			struct ch_params *ch_params,
-			enum channel_state *chan_state,
-			enum supported_6g_pwr_types in_6g_pwr_mode)
+	struct wlan_objmgr_pdev *pdev,
+	const struct bonded_channel_freq *bonded_chan_ptr,
+	struct ch_params *ch_params, enum channel_state *chan_state,
+	enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 }
 #endif
 
 #ifdef CONFIG_REG_6G_PWRMODE
-enum channel_state
-reg_get_5g_bonded_channel_state_for_pwrmode(struct wlan_objmgr_pdev *pdev,
-					    qdf_freq_t freq,
-					    struct ch_params *ch_params,
-					    enum supported_6g_pwr_types
-					    in_6g_pwr_mode)
+enum channel_state reg_get_5g_bonded_channel_state_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+	struct ch_params *ch_params, enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	enum phy_ch_width bw;
 	enum channel_enum ch_indx;
@@ -4960,9 +4747,7 @@ reg_get_5g_bonded_channel_state_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 							   in_punc_bitmap);
 
 	reg_update_5g_bonded_channel_state_punc_for_pwrmode(
-						pdev, bonded_chan_ptr,
-						ch_params, &chan_state,
-						in_6g_pwr_mode);
+		pdev, bonded_chan_ptr, ch_params, &chan_state, in_6g_pwr_mode);
 
 	if ((chan_state == CHANNEL_STATE_INVALID) ||
 	    (chan_state == CHANNEL_STATE_DISABLE))
@@ -4986,23 +4771,17 @@ reg_get_5g_bonded_channel_state_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 	if (bw == CH_WIDTH_5MHZ)
 		bw_enabled = true;
 	else if (bw == CH_WIDTH_10MHZ)
-		bw_enabled = (min_bw <= 10) &&
-			(max_bw >= 10);
+		bw_enabled = (min_bw <= 10) && (max_bw >= 10);
 	else if (bw == CH_WIDTH_20MHZ)
-		bw_enabled = (min_bw <= 20) &&
-			(max_bw >= 20);
+		bw_enabled = (min_bw <= 20) && (max_bw >= 20);
 	else if (bw == CH_WIDTH_40MHZ)
-		bw_enabled = (min_bw <= 40) &&
-			(max_bw >= 40);
+		bw_enabled = (min_bw <= 40) && (max_bw >= 40);
 	else if (bw == CH_WIDTH_80MHZ)
-		bw_enabled = (min_bw <= 80) &&
-			(max_bw >= 80);
+		bw_enabled = (min_bw <= 80) && (max_bw >= 80);
 	else if (bw == CH_WIDTH_160MHZ)
-		bw_enabled = (min_bw <= 160) &&
-			(max_bw >= 160);
+		bw_enabled = (min_bw <= 160) && (max_bw >= 160);
 	else if (bw == CH_WIDTH_80P80MHZ)
-		bw_enabled = (min_bw <= 80) &&
-			(max_bw >= 80);
+		bw_enabled = (min_bw <= 80) && (max_bw >= 80);
 
 	if (bw_enabled)
 		return chan_state;
@@ -5010,11 +4789,9 @@ reg_get_5g_bonded_channel_state_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 }
 #endif
 
-enum channel_state
-reg_get_2g_bonded_channel_state_for_freq(struct wlan_objmgr_pdev *pdev,
-					 qdf_freq_t oper_ch_freq,
-					 qdf_freq_t sec_ch_freq,
-					 enum phy_ch_width bw)
+enum channel_state reg_get_2g_bonded_channel_state_for_freq(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t oper_ch_freq,
+	qdf_freq_t sec_ch_freq, enum phy_ch_width bw)
 {
 	enum channel_enum chan_idx;
 	enum channel_state chan_state;
@@ -5030,10 +4807,8 @@ reg_get_2g_bonded_channel_state_for_freq(struct wlan_objmgr_pdev *pdev,
 		if ((sec_ch_freq + 20 != oper_ch_freq) &&
 		    (oper_ch_freq + 20 != sec_ch_freq))
 			return CHANNEL_STATE_INVALID;
-		chan_state2 =
-		    reg_get_channel_state_for_pwrmode(pdev,
-						      sec_ch_freq,
-						      REG_CURRENT_PWR_MODE);
+		chan_state2 = reg_get_channel_state_for_pwrmode(
+			pdev, sec_ch_freq, REG_CURRENT_PWR_MODE);
 		if (chan_state2 == CHANNEL_STATE_INVALID)
 			return chan_state2;
 	}
@@ -5046,8 +4821,7 @@ reg_get_2g_bonded_channel_state_for_freq(struct wlan_objmgr_pdev *pdev,
 
 	reg_channels = pdev_priv_obj->cur_chan_list;
 
-	chan_state = reg_get_channel_state_for_pwrmode(pdev,
-						       oper_ch_freq,
+	chan_state = reg_get_channel_state_for_pwrmode(pdev, oper_ch_freq,
 						       REG_CURRENT_PWR_MODE);
 	if (chan_state2 < chan_state)
 		chan_state = chan_state2;
@@ -5063,13 +4837,13 @@ reg_get_2g_bonded_channel_state_for_freq(struct wlan_objmgr_pdev *pdev,
 		bw_enabled = true;
 	else if (bw == CH_WIDTH_10MHZ)
 		bw_enabled = (reg_channels[chan_idx].min_bw <= 10) &&
-			(reg_channels[chan_idx].max_bw >= 10);
+			     (reg_channels[chan_idx].max_bw >= 10);
 	else if (bw == CH_WIDTH_20MHZ)
 		bw_enabled = (reg_channels[chan_idx].min_bw <= 20) &&
-			(reg_channels[chan_idx].max_bw >= 20);
+			     (reg_channels[chan_idx].max_bw >= 20);
 	else if (bw == CH_WIDTH_40MHZ)
 		bw_enabled = (reg_channels[chan_idx].min_bw <= 40) &&
-			(reg_channels[chan_idx].max_bw >= 40);
+			     (reg_channels[chan_idx].max_bw >= 40);
 
 	if (bw_enabled)
 		return chan_state;
@@ -5093,17 +4867,15 @@ reg_get_2g_bonded_channel_state_for_freq(struct wlan_objmgr_pdev *pdev,
  *
  * Return - Channel state
  */
-static enum channel_state
-reg_get_20mhz_channel_state_based_on_nol(struct wlan_objmgr_pdev *pdev,
-					 qdf_freq_t freq,
-					 bool treat_nol_chan_as_disabled,
-					 enum supported_6g_pwr_types in_6g_pwr_type)
+static enum channel_state reg_get_20mhz_channel_state_based_on_nol(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+	bool treat_nol_chan_as_disabled,
+	enum supported_6g_pwr_types in_6g_pwr_type)
 {
 	if (treat_nol_chan_as_disabled)
-		return  reg_get_channel_state_for_pwrmode(pdev, freq,
-							  in_6g_pwr_type);
-	return reg_get_nol_channel_state(pdev, freq,
-					 in_6g_pwr_type);
+		return reg_get_channel_state_for_pwrmode(pdev, freq,
+							 in_6g_pwr_type);
+	return reg_get_nol_channel_state(pdev, freq, in_6g_pwr_type);
 }
 
 #define MAX_NUM_BONDED_PAIR 2
@@ -5123,22 +4895,20 @@ reg_get_20mhz_channel_state_based_on_nol(struct wlan_objmgr_pdev *pdev,
  *
  * Return: number of bonded channel arrays fetched.
  */
-static uint8_t
-reg_get_320_bonded_chan_array(struct wlan_objmgr_pdev *pdev,
-			      qdf_freq_t freq,
-			      qdf_freq_t band_center_320,
-			      const struct bonded_channel_freq bonded_chan_ar[],
-			      uint16_t array_size,
-			      const struct bonded_channel_freq
-			      *bonded_chan_ptr[])
+static uint8_t reg_get_320_bonded_chan_array(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+	qdf_freq_t band_center_320,
+	const struct bonded_channel_freq bonded_chan_ar[], uint16_t array_size,
+	const struct bonded_channel_freq *bonded_chan_ptr[])
 {
 	int i;
 	uint8_t num_bonded_pairs = 0;
 
 	/* Fetch all possible bonded channel pointers for the given freq */
 	if (!band_center_320) {
-		for (i = 0 ; i < array_size &&
-		     num_bonded_pairs < MAX_NUM_BONDED_PAIR; i++) {
+		for (i = 0;
+		     i < array_size && num_bonded_pairs < MAX_NUM_BONDED_PAIR;
+		     i++) {
 			if ((freq >= bonded_chan_ar[i].start_freq) &&
 			    (freq <= bonded_chan_ar[i].end_freq)) {
 				bonded_chan_ptr[num_bonded_pairs] =
@@ -5151,9 +4921,8 @@ reg_get_320_bonded_chan_array(struct wlan_objmgr_pdev *pdev,
 		for (i = 0; i < array_size; i++) {
 			qdf_freq_t bandstart = bonded_chan_ar[i].start_freq;
 
-			if (band_center_320 ==
-			    reg_get_band_cen_from_bandstart(BW_320_MHZ,
-							    bandstart)) {
+			if (band_center_320 == reg_get_band_cen_from_bandstart(
+						       BW_320_MHZ, bandstart)) {
 				bonded_chan_ptr[num_bonded_pairs] =
 					&bonded_chan_ar[i];
 				num_bonded_pairs++;
@@ -5166,13 +4935,12 @@ reg_get_320_bonded_chan_array(struct wlan_objmgr_pdev *pdev,
 
 #define SUB_CHAN_BW 20 /* 20 MHZ */
 #define BW_160MHZ 160
-#define  REG_IS_TOT_CHAN_BW_BELOW_160(_x, _y) \
+#define REG_IS_TOT_CHAN_BW_BELOW_160(_x, _y) \
 	(reg_is_state_allowed((_x)) && (_y) < BW_160MHZ)
 #endif
 
-qdf_freq_t
-reg_get_endchan_cen_from_bandstart(qdf_freq_t band_start,
-				   uint16_t bw)
+qdf_freq_t reg_get_endchan_cen_from_bandstart(qdf_freq_t band_start,
+					      uint16_t bw)
 {
 	uint16_t left_edge_freq = band_start - BW_10_MHZ;
 
@@ -5180,29 +4948,22 @@ reg_get_endchan_cen_from_bandstart(qdf_freq_t band_start,
 }
 
 #ifdef WLAN_FEATURE_11BE
-enum channel_state
-reg_get_chan_state_for_320(struct wlan_objmgr_pdev *pdev,
-			   uint16_t freq,
-			   qdf_freq_t band_center_320,
-			   enum phy_ch_width ch_width,
-			   const struct bonded_channel_freq
-			   **bonded_chan_ptr_ptr,
-			   enum supported_6g_pwr_types in_6g_pwr_type,
-			   bool treat_nol_chan_as_disabled,
-			   uint16_t input_punc_bitmap)
+enum channel_state reg_get_chan_state_for_320(
+	struct wlan_objmgr_pdev *pdev, uint16_t freq,
+	qdf_freq_t band_center_320, enum phy_ch_width ch_width,
+	const struct bonded_channel_freq **bonded_chan_ptr_ptr,
+	enum supported_6g_pwr_types in_6g_pwr_type,
+	bool treat_nol_chan_as_disabled, uint16_t input_punc_bitmap)
 {
 	uint8_t num_bonded_pairs;
-	uint16_t array_size =
-		QDF_ARRAY_SIZE(bonded_chan_320mhz_list_freq);
-	const struct bonded_channel_freq *bonded_ch_ptr[2] = {
-		NULL, NULL};
+	uint16_t array_size = QDF_ARRAY_SIZE(bonded_chan_320mhz_list_freq);
+	const struct bonded_channel_freq *bonded_ch_ptr[2] = { NULL, NULL };
 	uint16_t punct_pattern;
 
 	/* For now sending band center freq as 0 */
-	num_bonded_pairs =
-		reg_get_320_bonded_chan_array(pdev, freq, band_center_320,
-					      bonded_chan_320mhz_list_freq,
-					      array_size, bonded_ch_ptr);
+	num_bonded_pairs = reg_get_320_bonded_chan_array(
+		pdev, freq, band_center_320, bonded_chan_320mhz_list_freq,
+		array_size, bonded_ch_ptr);
 	if (!num_bonded_pairs) {
 		reg_info("No 320MHz bonded pair for freq %d", freq);
 		return CHANNEL_STATE_INVALID;
@@ -5210,13 +4971,9 @@ reg_get_chan_state_for_320(struct wlan_objmgr_pdev *pdev,
 	/* Taking only first bonded pair */
 	*bonded_chan_ptr_ptr = bonded_ch_ptr[0];
 
-	return reg_get_320_bonded_channel_state_for_pwrmode(pdev, freq,
-							    bonded_ch_ptr[0],
-							    ch_width,
-							    &punct_pattern,
-							    in_6g_pwr_type,
-							    treat_nol_chan_as_disabled,
-							    input_punc_bitmap);
+	return reg_get_320_bonded_channel_state_for_pwrmode(
+		pdev, freq, bonded_ch_ptr[0], ch_width, &punct_pattern,
+		in_6g_pwr_type, treat_nol_chan_as_disabled, input_punc_bitmap);
 }
 #endif
 
@@ -5240,17 +4997,11 @@ reg_verify_punc_for_320_and_set_channel_state(uint16_t punc_bitmap,
 }
 #endif /* CONFIG_REG_CLIENT */
 
-enum channel_state
-reg_get_320_bonded_channel_state_for_pwrmode(struct wlan_objmgr_pdev *pdev,
-					     qdf_freq_t freq,
-					     const struct bonded_channel_freq
-					     *bonded_chan_ptr,
-					     enum phy_ch_width bw,
-					     uint16_t *out_punc_bitmap,
-					     enum supported_6g_pwr_types
-					     in_6g_pwr_type,
-					     bool treat_nol_chan_as_disabled,
-					     uint16_t input_punc_bitmap)
+enum channel_state reg_get_320_bonded_channel_state_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+	const struct bonded_channel_freq *bonded_chan_ptr, enum phy_ch_width bw,
+	uint16_t *out_punc_bitmap, enum supported_6g_pwr_types in_6g_pwr_type,
+	bool treat_nol_chan_as_disabled, uint16_t input_punc_bitmap)
 {
 	enum channel_state chan_state = CHANNEL_STATE_INVALID;
 	enum channel_state temp_chan_state, prim_chan_state;
@@ -5263,20 +5014,19 @@ reg_get_320_bonded_channel_state_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 	if (!bonded_chan_ptr)
 		return chan_state;
 
-	startchan_cfreq =  bonded_chan_ptr->start_freq;
+	startchan_cfreq = bonded_chan_ptr->start_freq;
 	endchan_cfreq =
-		reg_get_endchan_cen_from_bandstart(startchan_cfreq,
-						   BW_320_MHZ);
+		reg_get_endchan_cen_from_bandstart(startchan_cfreq, BW_320_MHZ);
 	max_cont_bw = 0;
 	i = 0;
 
 	while (startchan_cfreq <= endchan_cfreq) {
 		if (!reg_is_chan_bit_punctured(input_punc_bitmap, i)) {
 			temp_chan_state =
-				reg_get_20mhz_channel_state_based_on_nol(pdev,
-									 startchan_cfreq,
-									 treat_nol_chan_as_disabled,
-									 in_6g_pwr_type);
+				reg_get_20mhz_channel_state_based_on_nol(
+					pdev, startchan_cfreq,
+					treat_nol_chan_as_disabled,
+					in_6g_pwr_type);
 
 			if (reg_is_state_allowed(temp_chan_state)) {
 				max_cont_bw += SUB_CHAN_BW;
@@ -5294,28 +5044,25 @@ reg_get_320_bonded_channel_state_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 	}
 
 	/* Validate puncture bitmap. Update channel state. */
-	reg_verify_punc_for_320_and_set_channel_state(*out_punc_bitmap,
-						      &chan_state,
-						      update_state);
+	reg_verify_punc_for_320_and_set_channel_state(
+		*out_punc_bitmap, &chan_state, update_state);
 
-	prim_chan_state =
-		reg_get_20mhz_channel_state_based_on_nol(pdev, freq,
-							 treat_nol_chan_as_disabled,
-							 in_6g_pwr_type);
+	prim_chan_state = reg_get_20mhz_channel_state_based_on_nol(
+		pdev, freq, treat_nol_chan_as_disabled, in_6g_pwr_type);
 
 	/* After iterating through all the subchannels, if the final channel
-	 * state is invalid/disable, it means all our subchannels are not
-	 * valid and we could not find a 320 MHZ channel.
-	 * If we have found a channel where the max width is:
-	 * 1. Less than 160: there is no puncturing needed. Hence return
-	 * the chan state as invalid. Or if the primary freq given is not
-	 * supported by regulatory, the channel cannot be enabled as a
-	 * punctured channel. So return channel state as invalid.
-	 * 2. If greater than 160: Mark the invalid channels as punctured.
-	 * and return channel state as ENABLE.
-	 */
+   * state is invalid/disable, it means all our subchannels are not
+   * valid and we could not find a 320 MHZ channel.
+   * If we have found a channel where the max width is:
+   * 1. Less than 160: there is no puncturing needed. Hence return
+   * the chan state as invalid. Or if the primary freq given is not
+   * supported by regulatory, the channel cannot be enabled as a
+   * punctured channel. So return channel state as invalid.
+   * 2. If greater than 160: Mark the invalid channels as punctured.
+   * and return channel state as ENABLE.
+   */
 	if (REG_IS_TOT_CHAN_BW_BELOW_160(chan_state, max_cont_bw) ||
-		!reg_is_state_allowed(prim_chan_state))
+	    !reg_is_state_allowed(prim_chan_state))
 		return CHANNEL_STATE_INVALID;
 
 	return chan_state;
@@ -5336,27 +5083,26 @@ static inline bool reg_is_pri_within_240mhz_chan(qdf_freq_t freq)
  *
  * Return: void.
  */
-static void
-reg_fill_chan320mhz_seg0_center(struct wlan_objmgr_pdev *pdev,
-				struct ch_params *ch_param, qdf_freq_t freq)
+static void reg_fill_chan320mhz_seg0_center(struct wlan_objmgr_pdev *pdev,
+					    struct ch_params *ch_param,
+					    qdf_freq_t freq)
 {
 	const struct bonded_channel_freq *t_bonded_ch_ptr;
 
 	t_bonded_ch_ptr = reg_get_bonded_chan_entry(freq, CH_WIDTH_160MHZ, 0);
 	if (t_bonded_ch_ptr) {
-		ch_param->mhz_freq_seg0 =
-			(t_bonded_ch_ptr->start_freq +
-			 t_bonded_ch_ptr->end_freq) / 2;
+		ch_param->mhz_freq_seg0 = (t_bonded_ch_ptr->start_freq +
+					   t_bonded_ch_ptr->end_freq) /
+					  2;
 		ch_param->center_freq_seg0 =
-			reg_freq_to_chan(pdev,
-					 ch_param->mhz_freq_seg0);
+			reg_freq_to_chan(pdev, ch_param->mhz_freq_seg0);
 	} else {
 		/**
-		 * If we do not find a 160Mhz  bonded  pair, since it is
-		 * for a 320Mhz channel we need to also see if we can find a
-		 * pseudo 160Mhz channel for the special case of
-		 * 5Ghz 240Mhz channel.
-		 */
+     * If we do not find a 160Mhz  bonded  pair, since it is
+     * for a 320Mhz channel we need to also see if we can find a
+     * pseudo 160Mhz channel for the special case of
+     * 5Ghz 240Mhz channel.
+     */
 		if (reg_is_pri_within_240mhz_chan(freq)) {
 			ch_param->mhz_freq_seg0 =
 				PRIM_SEG_FREQ_CENTER_240MHZ_5G_CHAN;
@@ -5397,16 +5143,12 @@ reg_fill_chan320mhz_seg0_center(struct wlan_objmgr_pdev *pdev,
  *
  * Return - None.
  */
-static void
-reg_fill_channel_list_for_320_for_pwrmode(
-			      struct wlan_objmgr_pdev *pdev,
-			      qdf_freq_t freq,
-			      enum phy_ch_width *in_ch_width,
-			      qdf_freq_t band_center_320,
-			      struct reg_channel_list *chan_list,
-			      bool *update_bw,
-			      enum supported_6g_pwr_types in_6g_pwr_mode,
-			      bool treat_nol_chan_as_disabled)
+static void reg_fill_channel_list_for_320_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+	enum phy_ch_width *in_ch_width, qdf_freq_t band_center_320,
+	struct reg_channel_list *chan_list, bool *update_bw,
+	enum supported_6g_pwr_types in_6g_pwr_mode,
+	bool treat_nol_chan_as_disabled)
 {
 	uint8_t num_bonded_pairs, i, num_ch_params;
 	enum channel_state chan_state;
@@ -5414,7 +5156,7 @@ reg_fill_channel_list_for_320_for_pwrmode(
 	uint16_t out_punc_bitmap;
 	uint16_t max_reg_bw;
 	enum channel_enum chan_enum;
-	const struct bonded_channel_freq *bonded_ch_ptr[2] = {NULL, NULL};
+	const struct bonded_channel_freq *bonded_ch_ptr[2] = { NULL, NULL };
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
 	*update_bw = false;
@@ -5432,26 +5174,24 @@ reg_fill_channel_list_for_320_for_pwrmode(
 	}
 
 	/* Maximum bandwidth of the channel supported by regulatory for
-	 * the given freq.
-	 */
+   * the given freq.
+   */
 	if (reg_get_min_max_bw_reg_chan_list(pdev, chan_enum, in_6g_pwr_mode,
 					     NULL, &max_reg_bw))
 		return;
 
 	/* Regulatory does not support BW greater than 160.
-	 * Try finding a channel in a lower mode.
-	 */
+   * Try finding a channel in a lower mode.
+   */
 	if (max_reg_bw <= BW_160MHZ) {
-		*in_ch_width =  get_next_lower_bandwidth(*in_ch_width);
+		*in_ch_width = get_next_lower_bandwidth(*in_ch_width);
 		*update_bw = true;
 		return;
 	}
 
-	num_bonded_pairs =
-		reg_get_320_bonded_chan_array(pdev, freq, band_center_320,
-					      bonded_chan_320mhz_list_freq,
-					      array_size,
-					      bonded_ch_ptr);
+	num_bonded_pairs = reg_get_320_bonded_chan_array(
+		pdev, freq, band_center_320, bonded_chan_320mhz_list_freq,
+		array_size, bonded_ch_ptr);
 
 	if (!num_bonded_pairs) {
 		if (band_center_320) {
@@ -5459,46 +5199,40 @@ reg_fill_channel_list_for_320_for_pwrmode(
 			chan_list->num_ch_params = 0;
 		} else {
 			/* Could not find a 320 MHZ bonded channel pair,
-			 * find a channel of lower BW.
-			 */
-			*in_ch_width =  get_next_lower_bandwidth(*in_ch_width);
+       * find a channel of lower BW.
+       */
+			*in_ch_width = get_next_lower_bandwidth(*in_ch_width);
 			*update_bw = true;
 		}
 		return;
 	}
 
-	for (i = 0, num_ch_params = 0 ; i < num_bonded_pairs; i++) {
+	for (i = 0, num_ch_params = 0; i < num_bonded_pairs; i++) {
 		uint16_t in_punc_bitmap =
 			chan_list->chan_param[i].input_punc_bitmap;
 
 		/* Chan_state to hold the channel state of bonding
-		 * pair of channels.
-		 */
-		chan_state =
-			reg_get_320_bonded_channel_state_for_pwrmode(pdev, freq,
-								     bonded_ch_ptr[i],
-								     *in_ch_width,
-								     &out_punc_bitmap,
-								     in_6g_pwr_mode,
-								     treat_nol_chan_as_disabled,
-								     in_punc_bitmap);
+     * pair of channels.
+     */
+		chan_state = reg_get_320_bonded_channel_state_for_pwrmode(
+			pdev, freq, bonded_ch_ptr[i], *in_ch_width,
+			&out_punc_bitmap, in_6g_pwr_mode,
+			treat_nol_chan_as_disabled, in_punc_bitmap);
 
 		if (reg_is_state_allowed(chan_state)) {
 			struct ch_params *t_chan_param =
-			    &chan_list->chan_param[num_ch_params];
+				&chan_list->chan_param[num_ch_params];
 			qdf_freq_t start_freq = bonded_ch_ptr[i]->start_freq;
 
 			t_chan_param->mhz_freq_seg1 =
 				reg_get_band_cen_from_bandstart(BW_320_MHZ,
 								start_freq);
-			t_chan_param->center_freq_seg1 =
-				reg_freq_to_chan(pdev,
-						 t_chan_param->mhz_freq_seg1);
+			t_chan_param->center_freq_seg1 = reg_freq_to_chan(
+				pdev, t_chan_param->mhz_freq_seg1);
 			t_chan_param->ch_width = *in_ch_width;
 			t_chan_param->reg_punc_bitmap = out_punc_bitmap;
 
-			reg_fill_chan320mhz_seg0_center(pdev,
-							t_chan_param,
+			reg_fill_chan320mhz_seg0_center(pdev, t_chan_param,
 							freq);
 			num_ch_params++;
 			chan_list->num_ch_params = num_ch_params;
@@ -5506,10 +5240,10 @@ reg_fill_channel_list_for_320_for_pwrmode(
 	}
 
 	/* The bonded pairs could not create any channels,
-	 * lower the bandwidth to find a channel.
-	 */
+   * lower the bandwidth to find a channel.
+   */
 	if (!chan_list->num_ch_params) {
-		*in_ch_width =  get_next_lower_bandwidth(*in_ch_width);
+		*in_ch_width = get_next_lower_bandwidth(*in_ch_width);
 		*update_bw = true;
 	}
 }
@@ -5526,15 +5260,11 @@ reg_fill_channel_list_for_320_for_pwrmode(
  * channel list will be chosen.
  * @treat_nol_chan_as_disabled: Bool to consider nol chan as enabled/disabled
  */
-static void
-reg_fill_pre320mhz_channel_for_pwrmode(
-			   struct wlan_objmgr_pdev *pdev,
-			   struct reg_channel_list *chan_list,
-			   enum phy_ch_width ch_width,
-			   qdf_freq_t freq,
-			   qdf_freq_t sec_ch_2g_freq,
-			   enum supported_6g_pwr_types in_6g_pwr_mode,
-			   bool treat_nol_chan_as_disabled)
+static void reg_fill_pre320mhz_channel_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, struct reg_channel_list *chan_list,
+	enum phy_ch_width ch_width, qdf_freq_t freq, qdf_freq_t sec_ch_2g_freq,
+	enum supported_6g_pwr_types in_6g_pwr_mode,
+	bool treat_nol_chan_as_disabled)
 {
 	chan_list->num_ch_params = 1;
 	chan_list->chan_param[0].ch_width = ch_width;
@@ -5545,15 +5275,12 @@ reg_fill_pre320mhz_channel_for_pwrmode(
 					   treat_nol_chan_as_disabled);
 }
 
-void
-reg_fill_channel_list_for_pwrmode(struct wlan_objmgr_pdev *pdev,
-				  qdf_freq_t freq,
-				  qdf_freq_t sec_ch_2g_freq,
-				  enum phy_ch_width in_ch_width,
-				  qdf_freq_t band_center_320,
-				  struct reg_channel_list *chan_list,
-				  enum supported_6g_pwr_types in_6g_pwr_mode,
-				  bool treat_nol_chan_as_disabled)
+void reg_fill_channel_list_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+	qdf_freq_t sec_ch_2g_freq, enum phy_ch_width in_ch_width,
+	qdf_freq_t band_center_320, struct reg_channel_list *chan_list,
+	enum supported_6g_pwr_types in_6g_pwr_mode,
+	bool treat_nol_chan_as_disabled)
 {
 	bool update_bw;
 
@@ -5568,43 +5295,36 @@ reg_fill_channel_list_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 	if (in_ch_width == CH_WIDTH_320MHZ) {
 		update_bw = 0;
 		reg_fill_channel_list_for_320_for_pwrmode(
-					      pdev, freq, &in_ch_width,
-					      band_center_320, chan_list,
-					      &update_bw, in_6g_pwr_mode,
-					      treat_nol_chan_as_disabled);
+			pdev, freq, &in_ch_width, band_center_320, chan_list,
+			&update_bw, in_6g_pwr_mode, treat_nol_chan_as_disabled);
 		if (!update_bw)
 			return;
 	}
 
 	/* A 320 channel is not available (or) user has not requested
-	 * for a 320MHZ channel, look for channels in lower modes,
-	 * reg_set_5g_channel_params_for_freq() finds for the
-	 * next available mode and fills ch_params.
-	 */
-	reg_fill_pre320mhz_channel_for_pwrmode(
-				   pdev, chan_list, in_ch_width, freq,
-				   sec_ch_2g_freq, in_6g_pwr_mode,
-				   treat_nol_chan_as_disabled);
+   * for a 320MHZ channel, look for channels in lower modes,
+   * reg_set_5g_channel_params_for_freq() finds for the
+   * next available mode and fills ch_params.
+   */
+	reg_fill_pre320mhz_channel_for_pwrmode(pdev, chan_list, in_ch_width,
+					       freq, sec_ch_2g_freq,
+					       in_6g_pwr_mode,
+					       treat_nol_chan_as_disabled);
 }
 #endif
 
-enum channel_state
-reg_get_5g_bonded_channel_for_pwrmode(struct wlan_objmgr_pdev *pdev,
-				      uint16_t freq,
-				      enum phy_ch_width ch_width,
-				      const struct bonded_channel_freq
-				      **bonded_chan_ptr_ptr,
-				      enum supported_6g_pwr_types
-				      in_6g_pwr_mode,
-				      uint16_t input_punc_bitmap)
+enum channel_state reg_get_5g_bonded_channel_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, uint16_t freq,
+	enum phy_ch_width ch_width,
+	const struct bonded_channel_freq **bonded_chan_ptr_ptr,
+	enum supported_6g_pwr_types in_6g_pwr_mode, uint16_t input_punc_bitmap)
 {
 	if (ch_width == CH_WIDTH_20MHZ)
 		return reg_get_channel_state_for_pwrmode(pdev, freq,
-						      in_6g_pwr_mode);
+							 in_6g_pwr_mode);
 
 	if (reg_is_ch_width_320(ch_width))
-		return reg_get_chan_state_for_320(pdev, freq, 0,
-						  ch_width,
+		return reg_get_chan_state_for_320(pdev, freq, 0, ch_width,
 						  bonded_chan_ptr_ptr,
 						  in_6g_pwr_mode, true,
 						  input_punc_bitmap);
@@ -5617,9 +5337,9 @@ reg_get_5g_bonded_channel_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 	}
 
 	return reg_get_5g_bonded_chan_array_for_pwrmode(pdev, freq,
-						     *bonded_chan_ptr_ptr,
-						     in_6g_pwr_mode,
-						     input_punc_bitmap);
+							*bonded_chan_ptr_ptr,
+							in_6g_pwr_mode,
+							input_punc_bitmap);
 }
 
 #ifdef CONFIG_REG_6G_PWRMODE
@@ -5637,17 +5357,14 @@ reg_get_5g_bonded_channel_for_pwrmode(struct wlan_objmgr_pdev *pdev,
  * Return: void
  */
 static void reg_set_5g_channel_params_for_pwrmode(
-					       struct wlan_objmgr_pdev *pdev,
-					       uint16_t freq,
-					       struct ch_params *ch_params,
-					       enum supported_6g_pwr_types
-					       in_6g_pwr_type,
-					       bool treat_nol_chan_as_disabled)
+	struct wlan_objmgr_pdev *pdev, uint16_t freq,
+	struct ch_params *ch_params, enum supported_6g_pwr_types in_6g_pwr_type,
+	bool treat_nol_chan_as_disabled)
 {
 	/*
-	 * Set channel parameters like center frequency for a bonded channel
-	 * state. Also return the maximum bandwidth supported by the channel.
-	 */
+   * Set channel parameters like center frequency for a bonded channel
+   * state. Also return the maximum bandwidth supported by the channel.
+   */
 
 	enum channel_state chan_state = CHANNEL_STATE_ENABLE;
 	enum channel_state chan_state2 = CHANNEL_STATE_ENABLE;
@@ -5689,17 +5406,17 @@ static void reg_set_5g_channel_params_for_pwrmode(
 	bw_80 = reg_get_bw_value(CH_WIDTH_80MHZ);
 
 	if (ch_params->ch_width == CH_WIDTH_80P80MHZ) {
-		sec_5g_chan_enum =
-			reg_get_chan_enum_for_freq(ch_params->mhz_freq_seg1 -
-					NEAREST_20MHZ_CHAN_FREQ_OFFSET);
+		sec_5g_chan_enum = reg_get_chan_enum_for_freq(
+			ch_params->mhz_freq_seg1 -
+			NEAREST_20MHZ_CHAN_FREQ_OFFSET);
 		if (reg_is_chan_enum_invalid(sec_5g_chan_enum)) {
 			reg_err("secondary channel freq is not valid");
 			return;
 		}
 
 		if (reg_get_min_max_bw_reg_chan_list(pdev, sec_5g_chan_enum,
-						     in_6g_pwr_type,
-						     NULL, &sec_5g_freq_max_bw))
+						     in_6g_pwr_type, NULL,
+						     &sec_5g_freq_max_bw))
 			return;
 	}
 
@@ -5713,29 +5430,26 @@ static void reg_set_5g_channel_params_for_pwrmode(
 
 		bonded_chan_ptr = NULL;
 		chan_state = reg_get_5g_bonded_channel_for_pwrmode(
-				pdev, freq, ch_params->ch_width,
-				&bonded_chan_ptr, in_6g_pwr_type,
-				in_punc_bitmap);
-		chan_state =
-			reg_get_ch_state_based_on_nol_flag(pdev, freq,
-							   ch_params,
-							   in_6g_pwr_type,
-							   treat_nol_chan_as_disabled);
+			pdev, freq, ch_params->ch_width, &bonded_chan_ptr,
+			in_6g_pwr_type, in_punc_bitmap);
+		chan_state = reg_get_ch_state_based_on_nol_flag(
+			pdev, freq, ch_params, in_6g_pwr_type,
+			treat_nol_chan_as_disabled);
 
 		if (ch_params->ch_width == CH_WIDTH_80P80MHZ) {
-			struct ch_params temp_ch_params = {0};
+			struct ch_params temp_ch_params = { 0 };
 
 			temp_ch_params.ch_width = CH_WIDTH_80MHZ;
 			/* Puncturing pattern is not needed for 80+80 */
 			reg_set_create_punc_bitmap(&temp_ch_params, false);
-			chan_state2 =
-				reg_get_ch_state_based_on_nol_flag(pdev,
-								   ch_params->mhz_freq_seg1 -
-								   NEAREST_20MHZ_CHAN_FREQ_OFFSET,
-								   &temp_ch_params, in_6g_pwr_type,
-								   treat_nol_chan_as_disabled);
-			chan_state = reg_combine_channel_states(
-					chan_state, chan_state2);
+			chan_state2 = reg_get_ch_state_based_on_nol_flag(
+				pdev,
+				ch_params->mhz_freq_seg1 -
+					NEAREST_20MHZ_CHAN_FREQ_OFFSET,
+				&temp_ch_params, in_6g_pwr_type,
+				treat_nol_chan_as_disabled);
+			chan_state = reg_combine_channel_states(chan_state,
+								chan_state2);
 		}
 
 		if ((chan_state != CHANNEL_STATE_ENABLE) &&
@@ -5744,18 +5458,14 @@ static void reg_set_5g_channel_params_for_pwrmode(
 		if (ch_params->ch_width <= CH_WIDTH_20MHZ) {
 			ch_params->sec_ch_offset = NO_SEC_CH;
 			ch_params->mhz_freq_seg0 = freq;
-				ch_params->center_freq_seg0 =
-				reg_freq_to_chan(pdev,
-						 ch_params->mhz_freq_seg0);
+			ch_params->center_freq_seg0 = reg_freq_to_chan(
+				pdev, ch_params->mhz_freq_seg0);
 			break;
 		} else if (ch_params->ch_width >= CH_WIDTH_40MHZ) {
 			const struct bonded_channel_freq *bonded_chan_ptr2;
 
-			bonded_chan_ptr2 =
-					reg_get_bonded_chan_entry(
-								freq,
-								CH_WIDTH_40MHZ,
-								0);
+			bonded_chan_ptr2 = reg_get_bonded_chan_entry(
+				freq, CH_WIDTH_40MHZ, 0);
 
 			if (!bonded_chan_ptr || !bonded_chan_ptr2)
 				goto update_bw;
@@ -5766,34 +5476,32 @@ static void reg_set_5g_channel_params_for_pwrmode(
 
 			ch_params->mhz_freq_seg0 =
 				(bonded_chan_ptr->start_freq +
-				 bonded_chan_ptr->end_freq) / 2;
-				ch_params->center_freq_seg0 =
-				reg_freq_to_chan(pdev,
-						 ch_params->mhz_freq_seg0);
+				 bonded_chan_ptr->end_freq) /
+				2;
+			ch_params->center_freq_seg0 = reg_freq_to_chan(
+				pdev, ch_params->mhz_freq_seg0);
 			break;
 		}
 update_bw:
 		ch_params->ch_width =
-		    get_next_lower_bandwidth(ch_params->ch_width);
+			get_next_lower_bandwidth(ch_params->ch_width);
 	}
 
 	if (ch_params->ch_width == CH_WIDTH_160MHZ) {
 		ch_params->mhz_freq_seg1 = ch_params->mhz_freq_seg0;
-			ch_params->center_freq_seg1 =
-				reg_freq_to_chan(pdev,
-						 ch_params->mhz_freq_seg1);
+		ch_params->center_freq_seg1 =
+			reg_freq_to_chan(pdev, ch_params->mhz_freq_seg1);
 
 		chan_state = reg_get_5g_bonded_channel_for_pwrmode(
-				pdev, freq, CH_WIDTH_80MHZ, &bonded_chan_ptr,
-				in_6g_pwr_type,
-				in_punc_bitmap);
+			pdev, freq, CH_WIDTH_80MHZ, &bonded_chan_ptr,
+			in_6g_pwr_type, in_punc_bitmap);
 		if (bonded_chan_ptr) {
 			ch_params->mhz_freq_seg0 =
 				(bonded_chan_ptr->start_freq +
-				 bonded_chan_ptr->end_freq) / 2;
-				ch_params->center_freq_seg0 =
-				reg_freq_to_chan(pdev,
-						 ch_params->mhz_freq_seg0);
+				 bonded_chan_ptr->end_freq) /
+				2;
+			ch_params->center_freq_seg0 = reg_freq_to_chan(
+				pdev, ch_params->mhz_freq_seg0);
 		}
 	}
 
@@ -5838,9 +5546,9 @@ static qdf_freq_t reg_get_sec_ch_2g_freq(struct wlan_objmgr_pdev *pdev,
 		sec_ch_2g_freq = primary_freq - HT40_SEC_OFFSET;
 
 	/*
-	 * For 2G primary frequencies <= 2452 (IEEE9), return HT40+ if
-	 * the secondary is available, else return HT40-.
-	 */
+   * For 2G primary frequencies <= 2452 (IEEE9), return HT40+ if
+   * the secondary is available, else return HT40-.
+   */
 	else if (!reg_is_freq_present_in_cur_chan_list(pdev, sec_ch_2g_freq))
 		sec_ch_2g_freq = primary_freq - HT40_SEC_OFFSET;
 
@@ -5881,10 +5589,8 @@ void reg_set_2g_channel_params_for_freq(struct wlan_objmgr_pdev *pdev,
 		if (max_bw < reg_get_bw_value(ch_params->ch_width))
 			goto update_bw;
 
-		chan_state =
-		reg_get_2g_bonded_channel_state_for_freq(pdev, oper_freq,
-							 sec_ch_2g_freq,
-							 ch_params->ch_width);
+		chan_state = reg_get_2g_bonded_channel_state_for_freq(
+			pdev, oper_freq, sec_ch_2g_freq, ch_params->ch_width);
 		if ((chan_state == CHANNEL_STATE_ENABLE) ||
 		    (chan_state == CHANNEL_STATE_DFS)) {
 			if (ch_params->ch_width == CH_WIDTH_40MHZ) {
@@ -5897,7 +5603,7 @@ void reg_set_2g_channel_params_for_freq(struct wlan_objmgr_pdev *pdev,
 				ch_params->mhz_freq_seg0 =
 					(oper_freq + sec_ch_2g_freq) / 2;
 				if (ch_params->mhz_freq_seg0 ==
-						TWOG_CHAN_14_IN_MHZ)
+				    TWOG_CHAN_14_IN_MHZ)
 					ch_params->center_freq_seg0 = 14;
 				else
 					ch_params->center_freq_seg0 =
@@ -5908,7 +5614,7 @@ void reg_set_2g_channel_params_for_freq(struct wlan_objmgr_pdev *pdev,
 				ch_params->sec_ch_offset = NO_SEC_CH;
 				ch_params->mhz_freq_seg0 = oper_freq;
 				if (ch_params->mhz_freq_seg0 ==
-						TWOG_CHAN_14_IN_MHZ)
+				    TWOG_CHAN_14_IN_MHZ)
 					ch_params->center_freq_seg0 = 14;
 				else
 					ch_params->center_freq_seg0 =
@@ -5920,7 +5626,7 @@ void reg_set_2g_channel_params_for_freq(struct wlan_objmgr_pdev *pdev,
 		}
 update_bw:
 		ch_params->ch_width =
-		    get_next_lower_bandwidth(ch_params->ch_width);
+			get_next_lower_bandwidth(ch_params->ch_width);
 	}
 	/* Overwrite mhz_freq_seg1 and center_freq_seg1 to 0 for 2.4 Ghz */
 	ch_params->mhz_freq_seg1 = 0;
@@ -5943,13 +5649,10 @@ static void reg_copy_ch_params(struct ch_params *ch_params,
 
 #ifdef CONFIG_REG_6G_PWRMODE
 #ifdef WLAN_FEATURE_11BE
-void
-reg_set_channel_params_for_pwrmode(struct wlan_objmgr_pdev *pdev,
-				   qdf_freq_t freq,
-				   qdf_freq_t sec_ch_2g_freq,
-				   struct ch_params *ch_params,
-				   enum supported_6g_pwr_types in_6g_pwr_mode,
-				   bool is_treat_nol_dis)
+void reg_set_channel_params_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+	qdf_freq_t sec_ch_2g_freq, struct ch_params *ch_params,
+	enum supported_6g_pwr_types in_6g_pwr_mode, bool is_treat_nol_dis)
 {
 	if (reg_is_5ghz_ch_freq(freq) || reg_is_6ghz_chan_freq(freq)) {
 		if (reg_is_ch_width_320(ch_params->ch_width)) {
@@ -5962,13 +5665,10 @@ reg_set_channel_params_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 				chan_list.chan_param[i].input_punc_bitmap =
 					ch_params->input_punc_bitmap;
 			}
-			reg_fill_channel_list_for_pwrmode(pdev, freq,
-							  sec_ch_2g_freq,
-							  ch_params->ch_width,
-							  ch_params->mhz_freq_seg1,
-							  &chan_list,
-							  in_6g_pwr_mode,
-							  is_treat_nol_dis);
+			reg_fill_channel_list_for_pwrmode(
+				pdev, freq, sec_ch_2g_freq, ch_params->ch_width,
+				ch_params->mhz_freq_seg1, &chan_list,
+				in_6g_pwr_mode, is_treat_nol_dis);
 			reg_copy_ch_params(ch_params, chan_list);
 		} else {
 			reg_set_5g_channel_params_for_pwrmode(pdev, freq,
@@ -5976,25 +5676,22 @@ reg_set_channel_params_for_pwrmode(struct wlan_objmgr_pdev *pdev,
 							      in_6g_pwr_mode,
 							      is_treat_nol_dis);
 		}
-	} else if  (reg_is_24ghz_ch_freq(freq)) {
+	} else if (reg_is_24ghz_ch_freq(freq)) {
 		reg_set_2g_channel_params_for_freq(pdev, freq, ch_params,
 						   sec_ch_2g_freq);
 	}
 }
 #else
-void
-reg_set_channel_params_for_pwrmode(struct wlan_objmgr_pdev *pdev,
-				   qdf_freq_t freq,
-				   qdf_freq_t sec_ch_2g_freq,
-				   struct ch_params *ch_params,
-				   enum supported_6g_pwr_types in_6g_pwr_mode,
-				   bool is_treat_nol_dis)
+void reg_set_channel_params_for_pwrmode(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+	qdf_freq_t sec_ch_2g_freq, struct ch_params *ch_params,
+	enum supported_6g_pwr_types in_6g_pwr_mode, bool is_treat_nol_dis)
 {
 	if (reg_is_5ghz_ch_freq(freq) || reg_is_6ghz_chan_freq(freq))
 		reg_set_5g_channel_params_for_pwrmode(pdev, freq, ch_params,
 						      in_6g_pwr_mode,
 						      is_treat_nol_dis);
-	else if  (reg_is_24ghz_ch_freq(freq))
+	else if (reg_is_24ghz_ch_freq(freq))
 		reg_set_2g_channel_params_for_freq(pdev, freq, ch_params,
 						   sec_ch_2g_freq);
 }
@@ -6042,8 +5739,8 @@ bool reg_is_dfs_in_secondary_list_for_freq(struct wlan_objmgr_pdev *pdev,
 {
 	uint32_t chan_flags;
 
-	chan_flags = reg_get_channel_flags_from_secondary_list_for_freq(pdev,
-									freq);
+	chan_flags =
+		reg_get_channel_flags_from_secondary_list_for_freq(pdev, freq);
 
 	return chan_flags & REGULATORY_CHAN_RADAR;
 }
@@ -6055,9 +5752,9 @@ bool reg_is_dfs_in_secondary_list_for_freq(struct wlan_objmgr_pdev *pdev,
  *
  * Return: psoc master channel list
  */
-static struct regulatory_channel *reg_get_psoc_mas_chan_list(
-						struct wlan_objmgr_pdev *pdev,
-						struct wlan_objmgr_psoc *psoc)
+static struct regulatory_channel *
+reg_get_psoc_mas_chan_list(struct wlan_objmgr_pdev *pdev,
+			   struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_regulatory_psoc_priv_obj *soc_reg;
 	uint8_t pdev_id;
@@ -6080,17 +5777,16 @@ static struct regulatory_channel *reg_get_psoc_mas_chan_list(
 	return soc_reg->mas_chan_params[phy_id].mas_chan_list;
 }
 #else
-static inline struct regulatory_channel *reg_get_psoc_mas_chan_list(
-						struct wlan_objmgr_pdev *pdev,
-						struct wlan_objmgr_psoc *psoc)
+static inline struct regulatory_channel *
+reg_get_psoc_mas_chan_list(struct wlan_objmgr_pdev *pdev,
+			   struct wlan_objmgr_psoc *psoc)
 {
 	return NULL;
 }
 #endif
 
 void reg_update_nol_ch_for_freq(struct wlan_objmgr_pdev *pdev,
-				uint16_t *chan_freq_list,
-				uint8_t num_chan,
+				uint16_t *chan_freq_list, uint8_t num_chan,
 				bool nol_chan)
 {
 	enum channel_enum chan_enum;
@@ -6105,7 +5801,6 @@ void reg_update_nol_ch_for_freq(struct wlan_objmgr_pdev *pdev,
 	}
 
 	psoc = wlan_pdev_get_psoc(pdev);
-
 
 	psoc_mas_chan_list = reg_get_psoc_mas_chan_list(pdev, psoc);
 	pdev_priv_obj = reg_get_pdev_obj(pdev);
@@ -6137,8 +5832,7 @@ void reg_update_nol_ch_for_freq(struct wlan_objmgr_pdev *pdev,
 }
 
 void reg_update_nol_history_ch_for_freq(struct wlan_objmgr_pdev *pdev,
-					uint16_t *chan_list,
-					uint8_t num_chan,
+					uint16_t *chan_list, uint8_t num_chan,
 					bool nol_history_chan)
 {
 	enum channel_enum chan_enum;
@@ -6153,7 +5847,7 @@ void reg_update_nol_history_ch_for_freq(struct wlan_objmgr_pdev *pdev,
 	}
 
 	pdev_priv_obj = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev, WLAN_UMAC_COMP_REGULATORY);
+		pdev, WLAN_UMAC_COMP_REGULATORY);
 
 	if (!pdev_priv_obj) {
 		reg_err("reg psoc private obj is NULL");
@@ -6187,12 +5881,10 @@ qdf_freq_t reg_max_chan_freq(void)
 
 bool reg_is_same_band_freqs(qdf_freq_t freq1, qdf_freq_t freq2)
 {
-	return (freq1 && freq2 && ((REG_IS_6GHZ_FREQ(freq1) &&
-				    REG_IS_6GHZ_FREQ(freq2)) ||
-				   (REG_IS_5GHZ_FREQ(freq1) &&
-				    REG_IS_5GHZ_FREQ(freq2)) ||
-				   (REG_IS_24GHZ_CH_FREQ(freq1) &&
-				    REG_IS_24GHZ_CH_FREQ(freq2))));
+	return (freq1 && freq2 &&
+		((REG_IS_6GHZ_FREQ(freq1) && REG_IS_6GHZ_FREQ(freq2)) ||
+		 (REG_IS_5GHZ_FREQ(freq1) && REG_IS_5GHZ_FREQ(freq2)) ||
+		 (REG_IS_24GHZ_CH_FREQ(freq1) && REG_IS_24GHZ_CH_FREQ(freq2))));
 }
 
 enum reg_wifi_band reg_freq_to_band(qdf_freq_t freq)
@@ -6212,12 +5904,11 @@ bool reg_is_disable_for_pwrmode(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
 {
 	enum channel_state ch_state;
 
-	ch_state = reg_get_channel_state_for_pwrmode(pdev,
-						     freq,
-						     in_6g_pwr_mode);
+	ch_state =
+		reg_get_channel_state_for_pwrmode(pdev, freq, in_6g_pwr_mode);
 
 	return (ch_state == CHANNEL_STATE_DISABLE) ||
-		(ch_state == CHANNEL_STATE_INVALID);
+	       (ch_state == CHANNEL_STATE_INVALID);
 }
 #endif
 
@@ -6227,8 +5918,8 @@ bool reg_is_disable_in_secondary_list_for_freq(struct wlan_objmgr_pdev *pdev,
 {
 	enum channel_state ch_state;
 
-	ch_state = reg_get_channel_state_from_secondary_list_for_freq(pdev,
-								      freq);
+	ch_state =
+		reg_get_channel_state_from_secondary_list_for_freq(pdev, freq);
 
 	return ch_state == CHANNEL_STATE_DISABLE;
 }
@@ -6238,16 +5929,16 @@ bool reg_is_enable_in_secondary_list_for_freq(struct wlan_objmgr_pdev *pdev,
 {
 	enum channel_state ch_state;
 
-	ch_state = reg_get_channel_state_from_secondary_list_for_freq(pdev,
-								      freq);
+	ch_state =
+		reg_get_channel_state_from_secondary_list_for_freq(pdev, freq);
 
 	return ch_state == CHANNEL_STATE_ENABLE;
 }
 
 #ifdef CONFIG_BAND_6GHZ
 static uint8_t reg_get_max_tx_power_from_super_chan_list(
-			struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
-			enum supported_6g_pwr_types in_6g_pwr_type)
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum supported_6g_pwr_types in_6g_pwr_type)
 {
 	struct super_chan_info *sc_entry;
 	enum supported_6g_pwr_types pwr_type;
@@ -6273,16 +5964,16 @@ static uint8_t reg_get_max_tx_power_from_super_chan_list(
 }
 #else
 static inline uint8_t reg_get_max_tx_power_from_super_chan_list(
-			struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
-			enum supported_6g_pwr_types in_6g_pwr_type)
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum supported_6g_pwr_types in_6g_pwr_type)
 {
 	return 0;
 }
 #endif
 
-uint8_t reg_get_max_tx_power_for_pwr_mode(
-				struct wlan_objmgr_pdev *pdev,
-				enum supported_6g_pwr_types in_6g_pwr_type)
+uint8_t
+reg_get_max_tx_power_for_pwr_mode(struct wlan_objmgr_pdev *pdev,
+				  enum supported_6g_pwr_types in_6g_pwr_type)
 {
 	uint8_t i, max_tx_power = 0, max_super_chan_power = 0;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -6307,19 +5998,17 @@ uint8_t reg_get_max_tx_power_for_pwr_mode(
 
 	for (i = 0; i < max_curr_num_chan; i++) {
 		if (!reg_is_chan_disabled(
-			pdev_priv_obj->cur_chan_list[i].chan_flags,
-			pdev_priv_obj->cur_chan_list[i].state) &&
+			    pdev_priv_obj->cur_chan_list[i].chan_flags,
+			    pdev_priv_obj->cur_chan_list[i].state) &&
 		    (pdev_priv_obj->cur_chan_list[i].tx_power > max_tx_power))
-			max_tx_power =
-			pdev_priv_obj->cur_chan_list[i].tx_power;
+			max_tx_power = pdev_priv_obj->cur_chan_list[i].tx_power;
 	}
 
 	if (in_6g_pwr_type == REG_CURRENT_PWR_MODE)
 		goto return_max_tx_power;
 
 	max_super_chan_power = reg_get_max_tx_power_from_super_chan_list(
-								pdev_priv_obj,
-								in_6g_pwr_type);
+		pdev_priv_obj, in_6g_pwr_type);
 
 	if (max_super_chan_power > max_tx_power)
 		max_tx_power = max_super_chan_power;
@@ -6343,7 +6032,7 @@ bool reg_is_passive_for_freq(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq)
 }
 #endif /* CONFIG_CHAN_FREQ_API */
 
-uint8_t  reg_get_max_tx_power(struct wlan_objmgr_pdev *pdev)
+uint8_t reg_get_max_tx_power(struct wlan_objmgr_pdev *pdev)
 {
 	struct regulatory_channel *cur_chan_list;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -6439,7 +6128,7 @@ bool reg_is_6ghz_supported(struct wlan_objmgr_psoc *psoc)
 
 	if (!IS_VALID_PSOC_REG_OBJ(psoc_priv_obj)) {
 		reg_err("psoc reg component is NULL");
-		return  false;
+		return false;
 	}
 
 	return psoc_priv_obj->six_ghz_supported;
@@ -6454,7 +6143,7 @@ bool reg_is_5dot9_ghz_supported(struct wlan_objmgr_psoc *psoc)
 
 	if (!IS_VALID_PSOC_REG_OBJ(psoc_priv_obj)) {
 		reg_err("psoc reg component is NULL");
-		return  false;
+		return false;
 	}
 
 	return psoc_priv_obj->five_dot_nine_ghz_supported;
@@ -6520,7 +6209,7 @@ reg_get_unii_5g_bitmap(struct wlan_objmgr_pdev *pdev, uint8_t *bitmap)
 		reg_err_rl("pdev reg component is NULL");
 		return QDF_STATUS_E_FAILURE;
 	}
-	*bitmap =  pdev_priv_obj->unii_5g_bitmap;
+	*bitmap = pdev_priv_obj->unii_5g_bitmap;
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -6574,8 +6263,7 @@ bool reg_is_phymode_unallowed(enum reg_phymode phy_in, uint32_t phymode_bitmap)
 
 #ifdef CHECK_REG_PHYMODE
 enum reg_phymode reg_get_max_phymode(struct wlan_objmgr_pdev *pdev,
-				     enum reg_phymode phy_in,
-				     qdf_freq_t freq)
+				     enum reg_phymode phy_in, qdf_freq_t freq)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	uint32_t phymode_bitmap;
@@ -6730,8 +6418,7 @@ reg_remove_indoor_concurrency(struct wlan_objmgr_pdev *pdev, uint8_t vdev_id,
 	return QDF_STATUS_E_FAILURE;
 }
 
-void
-reg_init_indoor_channel_list(struct wlan_objmgr_pdev *pdev)
+void reg_init_indoor_channel_list(struct wlan_objmgr_pdev *pdev)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	struct indoor_concurrency_list *list;
@@ -6775,9 +6462,8 @@ reg_compute_indoor_list_on_cc_change(struct wlan_objmgr_psoc *psoc,
 
 	/* Iterate through VDEV list */
 	for (vdev_id = 0; vdev_id < WLAN_UMAC_PSOC_MAX_VDEVS; vdev_id++) {
-		vdev =
-		wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
-						     WLAN_REGULATORY_SB_ID);
+		vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+			psoc, vdev_id, WLAN_REGULATORY_SB_ID);
 		if (!vdev)
 			continue;
 
@@ -6799,9 +6485,9 @@ reg_compute_indoor_list_on_cc_change(struct wlan_objmgr_psoc *psoc,
 		}
 
 		if (pdev_priv_obj->mas_chan_list[chan_enum].state !=
-		    CHANNEL_STATE_DISABLE &&
+			    CHANNEL_STATE_DISABLE &&
 		    pdev_priv_obj->mas_chan_list[chan_enum].chan_flags &
-		    REGULATORY_CHAN_INDOOR_ONLY)
+			    REGULATORY_CHAN_INDOOR_ONLY)
 			reg_add_indoor_concurrency(pdev, vdev_id,
 						   des_chan->ch_freq,
 						   des_chan->ch_width);
@@ -6884,9 +6570,8 @@ reg_get_reg_rules_for_pdev(struct wlan_objmgr_pdev *pdev)
 	return psoc_reg_rules;
 }
 
-uint8_t
-reg_get_num_rules_of_ap_pwr_type(struct wlan_objmgr_pdev *pdev,
-				 enum reg_6g_ap_type ap_pwr_type)
+uint8_t reg_get_num_rules_of_ap_pwr_type(struct wlan_objmgr_pdev *pdev,
+					 enum reg_6g_ap_type ap_pwr_type)
 {
 	struct reg_rule_info *psoc_reg_rules = reg_get_reg_rules_for_pdev(pdev);
 
@@ -6916,8 +6601,7 @@ static bool reg_is_empty_range(struct freq_range *in_range)
 	return !in_range->left && !in_range->right;
 }
 
-struct freq_range
-reg_init_freq_range(qdf_freq_t left, qdf_freq_t right)
+struct freq_range reg_init_freq_range(qdf_freq_t left, qdf_freq_t right)
 {
 	struct freq_range out_range;
 
@@ -6937,10 +6621,8 @@ reg_init_freq_range(qdf_freq_t left, qdf_freq_t right)
  *
  * Return: void
  */
-static void
-reg_assign_vars_with_range_vals(struct freq_range *in_range,
-				qdf_freq_t *left,
-				qdf_freq_t *right)
+static void reg_assign_vars_with_range_vals(struct freq_range *in_range,
+					    qdf_freq_t *left, qdf_freq_t *right)
 {
 	*left = in_range->left;
 	*right = in_range->right;
@@ -6953,9 +6635,8 @@ reg_assign_vars_with_range_vals(struct freq_range *in_range,
  *
  * Return: Intersected output range
  */
-static struct freq_range
-reg_intersect_ranges(struct freq_range *first_range,
-		     struct freq_range *second_range)
+static struct freq_range reg_intersect_ranges(struct freq_range *first_range,
+					      struct freq_range *second_range)
 {
 	struct freq_range out_range;
 	qdf_freq_t l_freq;
@@ -6970,11 +6651,10 @@ reg_intersect_ranges(struct freq_range *first_range,
 		l_freq = 0;
 		r_freq = 0;
 
-		reg_debug("Ranges do not overlap first= [%u, %u], second = [%u, %u]",
-			  first_range->left,
-			  first_range->right,
-			  second_range->left,
-			  second_range->right);
+		reg_debug(
+			"Ranges do not overlap first= [%u, %u], second = [%u, %u]",
+			first_range->left, first_range->right,
+			second_range->left, second_range->right);
 	}
 
 	out_range.left = l_freq;
@@ -6991,8 +6671,7 @@ reg_intersect_ranges(struct freq_range *first_range,
  *
  * Return: Void
  */
-typedef void (*reg_act_sp_rule_cb)(struct freq_range *rule_fr,
-				   void *arg);
+typedef void (*reg_act_sp_rule_cb)(struct freq_range *rule_fr, void *arg);
 
 /**
  * reg_iterate_sp_rules() - Iterate through the Standard Power reg rules, for
@@ -7006,10 +6685,10 @@ typedef void (*reg_act_sp_rule_cb)(struct freq_range *rule_fr,
  *
  * Return: Void
  */
-static void reg_iterate_sp_rules(struct wlan_objmgr_pdev *pdev,
-				 struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
-				 reg_act_sp_rule_cb sp_rule_action,
-				 void *arg)
+static void
+reg_iterate_sp_rules(struct wlan_objmgr_pdev *pdev,
+		     struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+		     reg_act_sp_rule_cb sp_rule_action, void *arg)
 {
 	struct cur_reg_rule *p_sp_reg_rule;
 	struct reg_rule_info *psoc_reg_rules;
@@ -7026,7 +6705,8 @@ static void reg_iterate_sp_rules(struct wlan_objmgr_pdev *pdev,
 		return;
 	}
 
-	n_6g_sp_ap_reg_rules = psoc_reg_rules->num_of_6g_ap_reg_rules[REG_STANDARD_POWER_AP];
+	n_6g_sp_ap_reg_rules =
+		psoc_reg_rules->num_of_6g_ap_reg_rules[REG_STANDARD_POWER_AP];
 	p_sp_reg_rule = psoc_reg_rules->reg_rules_6g_ap[REG_STANDARD_POWER_AP];
 
 	low_5g = pdev_priv_obj->range_5g_low;
@@ -7043,8 +6723,7 @@ static void reg_iterate_sp_rules(struct wlan_objmgr_pdev *pdev,
 
 		sp_range = reg_init_freq_range(p_sp_reg_rule->start_freq,
 					       p_sp_reg_rule->end_freq);
-		reg_debug("Rule:[%u, %u]",
-			  p_sp_reg_rule->start_freq,
+		reg_debug("Rule:[%u, %u]", p_sp_reg_rule->start_freq,
 			  p_sp_reg_rule->end_freq);
 		out_range = reg_intersect_ranges(&chip_range, &sp_range);
 
@@ -7079,15 +6758,14 @@ static void reg_afc_incr_num_ranges(struct freq_range *p_range,
  *
  * Return: number of frequency ranges
  */
-static uint8_t reg_get_num_sp_freq_ranges(struct wlan_objmgr_pdev *pdev,
-					  struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
+static uint8_t
+reg_get_num_sp_freq_ranges(struct wlan_objmgr_pdev *pdev,
+			   struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj)
 {
 	uint8_t num_freq_ranges;
 
 	num_freq_ranges = 0;
-	reg_iterate_sp_rules(pdev,
-			     pdev_priv_obj,
-			     reg_afc_incr_num_ranges,
+	reg_iterate_sp_rules(pdev, pdev_priv_obj, reg_afc_incr_num_ranges,
 			     &num_freq_ranges);
 
 	reg_debug("Num_freq_ranges=%u", num_freq_ranges);
@@ -7117,7 +6795,8 @@ static void reg_afc_get_intersected_ranges(struct freq_range *rule_fr,
 		reg_assign_vars_with_range_vals(rule_fr, &low, &high);
 		p_range->lowfreq = (uint16_t)low;
 		p_range->highfreq = (uint16_t)high;
-		reg_debug("Range = [%u, %u]", p_range->lowfreq, p_range->highfreq);
+		reg_debug("Range = [%u, %u]", p_range->lowfreq,
+			  p_range->highfreq);
 		(*pp_range)++;
 	}
 }
@@ -7132,20 +6811,19 @@ static void reg_afc_get_intersected_ranges(struct freq_range *rule_fr,
  *
  * Return: void
  */
-static void reg_cp_freq_ranges(struct wlan_objmgr_pdev *pdev,
-			       struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
-			       uint8_t num_freq_ranges,
-			       struct wlan_afc_freq_range_obj *p_range_obj)
+static void
+reg_cp_freq_ranges(struct wlan_objmgr_pdev *pdev,
+		   struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+		   uint8_t num_freq_ranges,
+		   struct wlan_afc_freq_range_obj *p_range_obj)
 {
 	struct wlan_afc_freq_range_obj *p_range;
 
 	reg_debug("Num freq ranges = %u", num_freq_ranges);
 
 	p_range = p_range_obj;
-	reg_iterate_sp_rules(pdev,
-			     pdev_priv_obj,
-			     reg_afc_get_intersected_ranges,
-			     &p_range);
+	reg_iterate_sp_rules(pdev, pdev_priv_obj,
+			     reg_afc_get_intersected_ranges, &p_range);
 }
 
 /**
@@ -7193,8 +6871,7 @@ reg_fill_afc_freq_ranges(struct wlan_objmgr_pdev *pdev,
  */
 static QDF_STATUS
 reg_fill_afc_opclass_obj(struct wlan_afc_opclass_obj *p_obj_opclass_obj,
-			 uint8_t opclass,
-			 uint8_t num_chans,
+			 uint8_t opclass, uint8_t num_chans,
 			 uint8_t *p_chan_lst)
 {
 	uint8_t *src, *dst;
@@ -7227,9 +6904,8 @@ reg_fill_afc_opclass_obj(struct wlan_afc_opclass_obj *p_obj_opclass_obj,
  *
  * Return: void
  */
-static void
-reg_free_afc_opclass_objs(struct wlan_afc_opclass_obj *opclass_objs,
-			  uint8_t num_opclass_objs)
+static void reg_free_afc_opclass_objs(struct wlan_afc_opclass_obj *opclass_objs,
+				      uint8_t num_opclass_objs)
 {
 	uint8_t i;
 
@@ -7254,10 +6930,8 @@ reg_free_afc_opclass_objs(struct wlan_afc_opclass_obj *opclass_objs,
  * Return: QDF_STATUS
  */
 static QDF_STATUS
-reg_fill_afc_opclasses_arr(struct wlan_objmgr_pdev *pdev,
-			   uint8_t num_opclasses,
-			   uint8_t *opclass_lst,
-			   uint8_t *chansize_lst,
+reg_fill_afc_opclasses_arr(struct wlan_objmgr_pdev *pdev, uint8_t num_opclasses,
+			   uint8_t *opclass_lst, uint8_t *chansize_lst,
 			   uint8_t *channel_lists[],
 			   struct wlan_afc_opclass_obj *p_opclass_obj_arr)
 {
@@ -7268,8 +6942,7 @@ reg_fill_afc_opclasses_arr(struct wlan_objmgr_pdev *pdev,
 		struct wlan_afc_opclass_obj *p_opclass_obj;
 
 		p_opclass_obj = &p_opclass_obj_arr[i];
-		status = reg_fill_afc_opclass_obj(p_opclass_obj,
-						  opclass_lst[i],
+		status = reg_fill_afc_opclass_obj(p_opclass_obj, opclass_lst[i],
 						  chansize_lst[i],
 						  channel_lists[i]);
 		if (QDF_IS_STATUS_ERROR(status)) {
@@ -7464,15 +7137,13 @@ reg_fill_freq_lst(struct wlan_objmgr_pdev *pdev,
 	struct wlan_afc_frange_list *p_frange_lst_local;
 	QDF_STATUS status;
 
-	num_freq_ranges =  reg_get_num_sp_freq_ranges(pdev, pdev_priv_obj);
+	num_freq_ranges = reg_get_num_sp_freq_ranges(pdev, pdev_priv_obj);
 	p_frange_lst_local = qdf_mem_malloc(sizeof(*p_frange_lst_local));
 	if (!p_frange_lst_local)
 		return NULL;
 
-	status = reg_fill_afc_freq_ranges(pdev,
-					  pdev_priv_obj,
-					  p_frange_lst_local,
-					  num_freq_ranges);
+	status = reg_fill_afc_freq_ranges(pdev, pdev_priv_obj,
+					  p_frange_lst_local, num_freq_ranges);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		reg_free_afc_freq_list(p_frange_lst_local);
 		return NULL;
@@ -7513,18 +7184,15 @@ reg_fill_afc_opclass_obj_lst(struct wlan_objmgr_pdev *pdev,
 	struct wlan_afc_opclass_obj *l_opclass_objs;
 	QDF_STATUS status;
 
-	status = reg_dmn_get_6g_opclasses_and_channels(pdev,
-						       p_afc_req->freq_lst,
-						       &num_opclasses,
-						       &opclass_lst,
-						       &chansize_lst,
-						       &channel_lists);
+	status = reg_dmn_get_6g_opclasses_and_channels(
+		pdev, p_afc_req->freq_lst, &num_opclasses, &opclass_lst,
+		&chansize_lst, &channel_lists);
 	if (status != QDF_STATUS_SUCCESS) {
 		reg_err("Opclasses and chans not allocated");
 		return NULL;
 	}
 
-	opclass_obj_lst =  qdf_mem_malloc(sizeof(*opclass_obj_lst));
+	opclass_obj_lst = qdf_mem_malloc(sizeof(*opclass_obj_lst));
 	if (!opclass_obj_lst) {
 		reg_dmn_free_6g_opclasses_and_channels(pdev, num_opclasses,
 						       opclass_lst,
@@ -7561,10 +7229,8 @@ reg_fill_afc_opclass_obj_lst(struct wlan_objmgr_pdev *pdev,
 	}
 
 	opclass_obj_lst->opclass_objs = l_opclass_objs;
-	reg_dmn_free_6g_opclasses_and_channels(pdev, num_opclasses,
-					       opclass_lst,
-					       chansize_lst,
-					       channel_lists);
+	reg_dmn_free_6g_opclasses_and_channels(pdev, num_opclasses, opclass_lst,
+					       chansize_lst, channel_lists);
 	return opclass_obj_lst;
 }
 
@@ -7587,7 +7253,7 @@ reg_fill_afc_location_obj(struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
 		return NULL;
 
 	p_afc_location->deployment_type =
-				pdev_priv_obj->reg_afc_dev_deployment_type;
+		pdev_priv_obj->reg_afc_dev_deployment_type;
 	return p_afc_location;
 }
 
@@ -7624,16 +7290,16 @@ reg_get_afc_req_info(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	p_afc_req->opclass_obj_lst = reg_fill_afc_opclass_obj_lst(pdev,
-								  p_afc_req);
+	p_afc_req->opclass_obj_lst =
+		reg_fill_afc_opclass_obj_lst(pdev, p_afc_req);
 	if (!p_afc_req->opclass_obj_lst) {
 		reg_err("opclass object lst not allocated");
 		reg_free_afc_req(pdev, p_afc_req);
 		return QDF_STATUS_E_NOMEM;
 	}
 
-	p_afc_req->afc_location = reg_fill_afc_location_obj(pdev_priv_obj,
-							    p_afc_req);
+	p_afc_req->afc_location =
+		reg_fill_afc_location_obj(pdev_priv_obj, p_afc_req);
 	if (!p_afc_req->afc_location) {
 		reg_err("AFC location not allocated");
 		reg_free_afc_req(pdev, p_afc_req);
@@ -7646,7 +7312,6 @@ reg_get_afc_req_info(struct wlan_objmgr_pdev *pdev,
 void reg_dmn_set_afc_req_id(struct wlan_afc_host_request *afc_req,
 			    uint64_t req_id)
 {
-
 	afc_req->req_id = req_id;
 }
 
@@ -7657,9 +7322,8 @@ void reg_dmn_set_afc_req_id(struct wlan_afc_host_request *afc_req,
  *
  * Return: void
  */
-static
-void reg_send_afc_request(struct wlan_objmgr_pdev *pdev,
-			  struct wlan_afc_host_request *afc_req)
+static void reg_send_afc_request(struct wlan_objmgr_pdev *pdev,
+				 struct wlan_afc_host_request *afc_req)
 {
 	afc_req_rx_evt_handler cbf;
 	void *arg;
@@ -7799,8 +7463,7 @@ QDF_STATUS reg_unregister_afc_req_rx_callback(struct wlan_objmgr_pdev *pdev,
 
 QDF_STATUS
 reg_register_afc_power_event_callback(struct wlan_objmgr_pdev *pdev,
-				      afc_power_tx_evt_handler cbf,
-				      void *arg)
+				      afc_power_tx_evt_handler cbf, void *arg)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -7844,9 +7507,9 @@ reg_unregister_afc_power_event_callback(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS
-reg_register_afc_payload_reset_event_callback(struct wlan_objmgr_pdev *pdev,
-					      afc_payload_reset_tx_evt_handler cbf,
-					      void *arg)
+reg_register_afc_payload_reset_event_callback(
+	struct wlan_objmgr_pdev *pdev, afc_payload_reset_tx_evt_handler cbf,
+	void *arg)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -7866,8 +7529,8 @@ reg_register_afc_payload_reset_event_callback(struct wlan_objmgr_pdev *pdev,
 }
 
 QDF_STATUS
-reg_unregister_afc_payload_reset_event_callback(struct wlan_objmgr_pdev *pdev,
-						afc_payload_reset_tx_evt_handler cbf)
+reg_unregister_afc_payload_reset_event_callback(
+	struct wlan_objmgr_pdev *pdev, afc_payload_reset_tx_evt_handler cbf)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -7906,9 +7569,8 @@ reg_get_afc_dev_deploy_type(struct wlan_objmgr_pdev *pdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-bool
-reg_is_sta_connect_allowed(struct wlan_objmgr_pdev *pdev,
-			   enum reg_6g_ap_type root_ap_pwr_mode)
+bool reg_is_sta_connect_allowed(struct wlan_objmgr_pdev *pdev,
+				enum reg_6g_ap_type root_ap_pwr_mode)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -7919,7 +7581,8 @@ reg_is_sta_connect_allowed(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (reg_get_num_rules_of_ap_pwr_type(pdev, REG_STANDARD_POWER_AP) &&
-	    (pdev_priv_obj->reg_afc_dev_deployment_type == AFC_DEPLOYMENT_OUTDOOR)) {
+	    (pdev_priv_obj->reg_afc_dev_deployment_type ==
+	     AFC_DEPLOYMENT_OUTDOOR)) {
 		if (root_ap_pwr_mode == REG_STANDARD_POWER_AP)
 			return true;
 		else
@@ -7929,9 +7592,9 @@ reg_is_sta_connect_allowed(struct wlan_objmgr_pdev *pdev,
 	return true;
 }
 
-QDF_STATUS reg_set_afc_soc_dev_type(struct wlan_objmgr_psoc *psoc,
-				    enum reg_afc_dev_deploy_type
-				    reg_afc_dev_type)
+QDF_STATUS
+reg_set_afc_soc_dev_type(struct wlan_objmgr_psoc *psoc,
+			 enum reg_afc_dev_deploy_type reg_afc_dev_type)
 {
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
 
@@ -7978,7 +7641,7 @@ reg_set_eirp_preferred_support(struct wlan_objmgr_psoc *psoc,
 	}
 
 	psoc_priv_obj->reg_is_eirp_support_preferred =
-					reg_is_eirp_support_preferred;
+		reg_is_eirp_support_preferred;
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -7996,7 +7659,7 @@ reg_get_eirp_preferred_support(struct wlan_objmgr_psoc *psoc,
 	}
 
 	*reg_is_eirp_support_preferred =
-			psoc_priv_obj->reg_is_eirp_support_preferred;
+		psoc_priv_obj->reg_is_eirp_support_preferred;
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -8004,9 +7667,9 @@ reg_get_eirp_preferred_support(struct wlan_objmgr_psoc *psoc,
 #endif /* CONFIG_AFC_SUPPORT */
 
 QDF_STATUS
-reg_get_cur_6g_client_type(struct wlan_objmgr_pdev *pdev,
-			   enum reg_6g_client_type
-			   *reg_cur_6g_client_mobility_type)
+reg_get_cur_6g_client_type(
+	struct wlan_objmgr_pdev *pdev,
+	enum reg_6g_client_type *reg_cur_6g_client_mobility_type)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -8021,7 +7684,7 @@ reg_get_cur_6g_client_type(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 
 	*reg_cur_6g_client_mobility_type =
-	    pdev_priv_obj->reg_cur_6g_client_mobility_type;
+		pdev_priv_obj->reg_cur_6g_client_mobility_type;
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -8058,7 +7721,7 @@ reg_set_6ghz_client_type_from_target(struct wlan_objmgr_pdev *pdev)
 	}
 
 	pdev_priv_obj->reg_cur_6g_client_mobility_type =
-					pdev_priv_obj->reg_target_client_type;
+		pdev_priv_obj->reg_target_client_type;
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -8161,8 +7824,7 @@ reg_get_6g_chan_psd_eirp_power(qdf_freq_t freq,
 
 QDF_STATUS reg_get_6g_chan_ap_power(struct wlan_objmgr_pdev *pdev,
 				    qdf_freq_t chan_freq, bool *is_psd,
-				    int16_t *tx_power,
-				    int16_t *eirp_psd_power)
+				    int16_t *tx_power, int16_t *eirp_psd_power)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	struct regulatory_channel *master_chan_list;
@@ -8181,14 +7843,12 @@ QDF_STATUS reg_get_6g_chan_ap_power(struct wlan_objmgr_pdev *pdev,
 
 	master_chan_list = pdev_priv_obj->mas_chan_list_6g_ap[ap_pwr_type];
 
-	reg_find_txpower_from_6g_list(chan_freq, master_chan_list,
-				      tx_power);
+	reg_find_txpower_from_6g_list(chan_freq, master_chan_list, tx_power);
 
 	*is_psd = reg_is_6g_psd_power(pdev);
 	if (*is_psd)
-		status = reg_get_6g_chan_psd_eirp_power(chan_freq,
-							master_chan_list,
-							eirp_psd_power);
+		status = reg_get_6g_chan_psd_eirp_power(
+			chan_freq, master_chan_list, eirp_psd_power);
 
 	return status;
 }
@@ -8216,21 +7876,19 @@ QDF_STATUS reg_get_client_power_for_connecting_ap(struct wlan_objmgr_pdev *pdev,
 	master_chan_list =
 		pdev_priv_obj->mas_chan_list_6g_client[ap_type][client_type];
 
-	reg_find_txpower_from_6g_list(chan_freq, master_chan_list,
-				      tx_power);
+	reg_find_txpower_from_6g_list(chan_freq, master_chan_list, tx_power);
 
 	if (is_psd)
-		status = reg_get_6g_chan_psd_eirp_power(chan_freq,
-							master_chan_list,
-							eirp_psd_power);
+		status = reg_get_6g_chan_psd_eirp_power(
+			chan_freq, master_chan_list, eirp_psd_power);
 
 	return status;
 }
 
 QDF_STATUS reg_get_client_power_for_6ghz_ap(struct wlan_objmgr_pdev *pdev,
 					    enum reg_6g_client_type client_type,
-					    qdf_freq_t chan_freq,
-					    bool *is_psd, uint16_t *tx_power,
+					    qdf_freq_t chan_freq, bool *is_psd,
+					    uint16_t *tx_power,
 					    uint16_t *eirp_psd_power)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -8248,23 +7906,22 @@ QDF_STATUS reg_get_client_power_for_6ghz_ap(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	master_chan_list = pdev_priv_obj->
-			mas_chan_list_6g_client[ap_pwr_type][client_type];
+	master_chan_list =
+		pdev_priv_obj->mas_chan_list_6g_client[ap_pwr_type][client_type];
 
-	reg_find_txpower_from_6g_list(chan_freq, master_chan_list,
-				      tx_power);
+	reg_find_txpower_from_6g_list(chan_freq, master_chan_list, tx_power);
 
 	*is_psd = reg_is_6g_psd_power(pdev);
 	if (*is_psd)
-		status = reg_get_6g_chan_psd_eirp_power(chan_freq,
-							master_chan_list,
-							eirp_psd_power);
+		status = reg_get_6g_chan_psd_eirp_power(
+			chan_freq, master_chan_list, eirp_psd_power);
 
 	return status;
 }
 
-QDF_STATUS reg_set_ap_pwr_and_update_chan_list(struct wlan_objmgr_pdev *pdev,
-					       enum reg_6g_ap_type ap_pwr_type)
+QDF_STATUS
+reg_set_ap_pwr_and_update_chan_list(struct wlan_objmgr_pdev *pdev,
+				    enum reg_6g_ap_type ap_pwr_type)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	QDF_STATUS status;
@@ -8331,7 +7988,7 @@ bool reg_is_ext_tpc_supported(struct wlan_objmgr_psoc *psoc)
 
 	if (!IS_VALID_PSOC_REG_OBJ(psoc_priv_obj)) {
 		reg_err("psoc reg component is NULL");
-		return  false;
+		return false;
 	}
 
 	return psoc_priv_obj->is_ext_tpc_supported;
@@ -8380,7 +8037,7 @@ bool reg_is_lower_6g_edge_ch_supp(struct wlan_objmgr_psoc *psoc)
 
 	if (!IS_VALID_PSOC_REG_OBJ(psoc_priv_obj)) {
 		reg_err("psoc reg component is NULL");
-		return  false;
+		return false;
 	}
 
 	return psoc_priv_obj->is_lower_6g_edge_ch_supported;
@@ -8394,7 +8051,7 @@ bool reg_is_upper_6g_edge_ch_disabled(struct wlan_objmgr_psoc *psoc)
 
 	if (!IS_VALID_PSOC_REG_OBJ(psoc_priv_obj)) {
 		reg_err("psoc reg component is NULL");
-		return  false;
+		return false;
 	}
 
 	return psoc_priv_obj->is_upper_6g_edge_ch_disabled;
@@ -8409,8 +8066,7 @@ static inline bool reg_is_within_range_inclusive(enum channel_enum left,
 
 uint16_t reg_convert_enum_to_6g_idx(enum channel_enum ch_idx)
 {
-	if (!reg_is_within_range_inclusive(MIN_6GHZ_CHANNEL,
-					   MAX_6GHZ_CHANNEL,
+	if (!reg_is_within_range_inclusive(MIN_6GHZ_CHANNEL, MAX_6GHZ_CHANNEL,
 					   ch_idx))
 		return INVALID_CHANNEL;
 
@@ -8464,9 +8120,8 @@ reg_get_superchan_entry(struct wlan_objmgr_pdev *pdev,
  *
  * Return: None
  */
-static QDF_STATUS
-reg_process_ch_avoid_freq_ext(struct wlan_objmgr_psoc *psoc,
-			      struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS reg_process_ch_avoid_freq_ext(struct wlan_objmgr_psoc *psoc,
+						struct wlan_objmgr_pdev *pdev)
 {
 	uint32_t i;
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
@@ -8513,7 +8168,7 @@ reg_process_ch_avoid_freq_ext(struct wlan_objmgr_psoc *psoc,
 	}
 
 	for (i = 0; i < psoc_priv_obj->avoid_freq_ext_list.ch_avoid_range_cnt;
-		i++) {
+	     i++) {
 		if (pdev_priv_obj->avoid_chan_ext_list.chan_cnt >=
 		    NUM_CHANNELS) {
 			reg_debug("ext avoid channel list full");
@@ -8534,25 +8189,24 @@ reg_process_ch_avoid_freq_ext(struct wlan_objmgr_psoc *psoc,
 		txpower = range->txpower;
 		is_valid_txpower = range->is_valid_txpower;
 
-		reg_debug("start: freq %d, ch %d, end: freq %d, ch %d txpower %d",
-			  range->start_freq, start_channel, range->end_freq,
-			  end_channel, txpower);
+		reg_debug(
+			"start: freq %d, ch %d, end: freq %d, ch %d txpower %d",
+			range->start_freq, start_channel, range->end_freq,
+			end_channel, txpower);
 
 		/* do not process frequency bands that are not mapped to
-		 * predefined channels
-		 */
+     * predefined channels
+     */
 		if (start_channel == 0 || end_channel == 0)
 			continue;
 
-		for (ch_loop = 0; ch_loop < NUM_CHANNELS;
-			ch_loop++) {
+		for (ch_loop = 0; ch_loop < NUM_CHANNELS; ch_loop++) {
 			if (REG_CH_TO_FREQ(ch_loop) >= range->start_freq) {
 				start_ch_idx = ch_loop;
 				break;
 			}
 		}
-		for (ch_loop = 0; ch_loop < NUM_CHANNELS;
-			ch_loop++) {
+		for (ch_loop = 0; ch_loop < NUM_CHANNELS; ch_loop++) {
 			if (REG_CH_TO_FREQ(ch_loop) >= range->end_freq) {
 				end_ch_idx = ch_loop;
 				if (REG_CH_TO_FREQ(ch_loop) > range->end_freq)
@@ -8565,51 +8219,49 @@ reg_process_ch_avoid_freq_ext(struct wlan_objmgr_psoc *psoc,
 		    reg_is_chan_enum_invalid(end_ch_idx))
 			continue;
 
-		for (ch_loop = start_ch_idx; ch_loop <= end_ch_idx;
-			ch_loop++) {
+		for (ch_loop = start_ch_idx; ch_loop <= end_ch_idx; ch_loop++) {
 			pdev_priv_obj->avoid_chan_ext_list.chan_freq_list
-			[pdev_priv_obj->avoid_chan_ext_list.chan_cnt++] =
-			REG_CH_TO_FREQ(ch_loop);
+				[pdev_priv_obj->avoid_chan_ext_list.chan_cnt++] =
+				REG_CH_TO_FREQ(ch_loop);
 
 			if (coex_unsafe_nb_user_prefer) {
-				if (unsafe_ch_list->chan_cnt >=
-					NUM_CHANNELS) {
+				if (unsafe_ch_list->chan_cnt >= NUM_CHANNELS) {
 					reg_warn("LTECoex unsafe ch list full");
 					break;
 				}
-				unsafe_ch_list->txpower[
-				unsafe_ch_list->chan_cnt] =
+				unsafe_ch_list
+					->txpower[unsafe_ch_list->chan_cnt] =
 					txpower;
-				unsafe_ch_list->is_valid_txpower[
-				unsafe_ch_list->chan_cnt] =
+				unsafe_ch_list->is_valid_txpower
+					[unsafe_ch_list->chan_cnt] =
 					is_valid_txpower;
-				unsafe_ch_list->chan_freq_list[
-				unsafe_ch_list->chan_cnt++] =
+				unsafe_ch_list->chan_freq_list
+					[unsafe_ch_list->chan_cnt++] =
 					REG_CH_TO_FREQ(ch_loop);
 			}
 
 			if (pdev_priv_obj->avoid_chan_ext_list.chan_cnt >=
-				NUM_CHANNELS) {
+			    NUM_CHANNELS) {
 				reg_debug("avoid freq ext list full");
 				break;
 			}
 		}
 		/* if start == end for 5G, meanwhile it only have one valid
-		 * channel updated, then disable 20M by default around
-		 * this center freq. For example input [5805-5805], it
-		 * will disable 20Mhz around 5805, then the range change
-		 * to [5705-5815], otherwise, not sure about how many width
-		 * need to disabled for such case.
-		 */
+     * channel updated, then disable 20M by default around
+     * this center freq. For example input [5805-5805], it
+     * will disable 20Mhz around 5805, then the range change
+     * to [5705-5815], otherwise, not sure about how many width
+     * need to disabled for such case.
+     */
 		if ((ch_loop - start_ch_idx) == 1 &&
 		    (range->end_freq - range->start_freq == 0) &&
-			reg_is_5ghz_ch_freq(range->start_freq)) {
+		    reg_is_5ghz_ch_freq(range->start_freq)) {
 			range->start_freq = range->start_freq - HALF_20MHZ_BW;
 			range->end_freq = range->end_freq + HALF_20MHZ_BW;
 		}
 
-		for (ch_loop = 0; ch_loop <
-			unsafe_ch_list->chan_cnt; ch_loop++) {
+		for (ch_loop = 0; ch_loop < unsafe_ch_list->chan_cnt;
+		     ch_loop++) {
 			if (ch_loop >= NUM_CHANNELS)
 				break;
 			reg_debug("Unsafe freq %d",
@@ -8629,9 +8281,8 @@ reg_process_ch_avoid_freq_ext(struct wlan_objmgr_psoc *psoc,
  *
  * Return: None
  */
-static void
-reg_update_avoid_ch_ext(struct wlan_objmgr_psoc *psoc,
-			void *object, void *arg)
+static void reg_update_avoid_ch_ext(struct wlan_objmgr_psoc *psoc, void *object,
+				    void *arg)
 {
 	struct wlan_objmgr_pdev *pdev = (struct wlan_objmgr_pdev *)object;
 	struct wlan_regulatory_psoc_priv_obj *psoc_priv_obj;
@@ -8688,10 +8339,8 @@ reg_process_ch_avoid_ext_event(struct wlan_objmgr_psoc *psoc,
 		range = &psoc_priv_obj->avoid_freq_ext_list.avoid_freq_range[i];
 		range->start_freq =
 			ch_avoid_event->avoid_freq_range[i].start_freq;
-		range->end_freq =
-			ch_avoid_event->avoid_freq_range[i].end_freq;
-		range->txpower =
-			ch_avoid_event->avoid_freq_range[i].txpower;
+		range->end_freq = ch_avoid_event->avoid_freq_range[i].end_freq;
+		range->txpower = ch_avoid_event->avoid_freq_range[i].txpower;
 		range->is_valid_txpower =
 			ch_avoid_event->avoid_freq_range[i].is_valid_txpower;
 	}
@@ -8711,8 +8360,7 @@ reg_process_ch_avoid_ext_event(struct wlan_objmgr_psoc *psoc,
 	}
 
 	status = wlan_objmgr_iterate_obj_list(psoc, WLAN_PDEV_OP,
-					      reg_update_avoid_ch_ext,
-					      NULL, 1,
+					      reg_update_avoid_ch_ext, NULL, 1,
 					      WLAN_REGULATORY_SB_ID);
 
 	wlan_objmgr_psoc_release_ref(psoc, WLAN_REGULATORY_SB_ID);
@@ -8856,15 +8504,15 @@ struct bw_wireless_modes_pair {
 /* Mapping of bandwidth to wireless modes */
 static const struct bw_wireless_modes_pair bw_wireless_modes_pair_map[] = {
 #ifdef WLAN_FEATURE_11BE
-	{CH_WIDTH_320MHZ, WIRELESS_320_MODES},
+	{ CH_WIDTH_320MHZ, WIRELESS_320_MODES },
 #endif
-	{CH_WIDTH_80P80MHZ, WIRELESS_80P80_MODES},
-	{CH_WIDTH_160MHZ, WIRELESS_160_MODES},
-	{CH_WIDTH_80MHZ, WIRELESS_80_MODES},
-	{CH_WIDTH_40MHZ, WIRELESS_40_MODES},
-	{CH_WIDTH_20MHZ, WIRELESS_20_MODES},
-	{CH_WIDTH_10MHZ, WIRELESS_10_MODES},
-	{CH_WIDTH_5MHZ, WIRELESS_5_MODES},
+	{ CH_WIDTH_80P80MHZ, WIRELESS_80P80_MODES },
+	{ CH_WIDTH_160MHZ, WIRELESS_160_MODES },
+	{ CH_WIDTH_80MHZ, WIRELESS_80_MODES },
+	{ CH_WIDTH_40MHZ, WIRELESS_40_MODES },
+	{ CH_WIDTH_20MHZ, WIRELESS_20_MODES },
+	{ CH_WIDTH_10MHZ, WIRELESS_10_MODES },
+	{ CH_WIDTH_5MHZ, WIRELESS_5_MODES },
 };
 
 QDF_STATUS reg_is_chwidth_supported(struct wlan_objmgr_pdev *pdev,
@@ -8889,8 +8537,9 @@ QDF_STATUS reg_is_chwidth_supported(struct wlan_objmgr_pdev *pdev,
 
 	for (idx = 0; idx < num_bws; ++idx) {
 		if (bw_wireless_modes_pair_map[idx].ch_width == ch_width) {
-			*is_supported = !!(wireless_modes &
-					   bw_wireless_modes_pair_map[idx].wireless_modes);
+			*is_supported = !!(
+				wireless_modes &
+				bw_wireless_modes_pair_map[idx].wireless_modes);
 			break;
 		}
 	}
@@ -8904,10 +8553,9 @@ bool reg_is_state_allowed(enum channel_state chan_state)
 		 (chan_state == CHANNEL_STATE_DISABLE));
 }
 
-static bool
-reg_is_freq_idx_enabled_on_cur_chan_list(struct wlan_regulatory_pdev_priv_obj
-					 *pdev_priv_obj,
-					 enum channel_enum freq_idx)
+static bool reg_is_freq_idx_enabled_on_cur_chan_list(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx)
 {
 	struct regulatory_channel *cur_chan_list;
 
@@ -8922,8 +8570,7 @@ reg_is_freq_idx_enabled_on_cur_chan_list(struct wlan_regulatory_pdev_priv_obj
 QDF_STATUS
 reg_get_min_max_bw_on_cur_chan_list(struct wlan_objmgr_pdev *pdev,
 				    enum channel_enum freq_idx,
-				    uint16_t *min_bw,
-				    uint16_t *max_bw)
+				    uint16_t *min_bw, uint16_t *max_bw)
 {
 	struct regulatory_channel *cur_chan_list;
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
@@ -8945,10 +8592,9 @@ reg_get_min_max_bw_on_cur_chan_list(struct wlan_objmgr_pdev *pdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-static enum channel_state
-reg_get_chan_state_on_cur_chan_list(struct wlan_regulatory_pdev_priv_obj
-				    *pdev_priv_obj,
-				    enum channel_enum freq_idx)
+static enum channel_state reg_get_chan_state_on_cur_chan_list(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx)
 {
 	struct regulatory_channel *cur_chan_list;
 	enum channel_state chan_state;
@@ -8962,10 +8608,9 @@ reg_get_chan_state_on_cur_chan_list(struct wlan_regulatory_pdev_priv_obj
 	return chan_state;
 }
 
-static enum channel_state
-reg_get_chan_state_based_on_nol_flag_cur_chan_list(struct wlan_regulatory_pdev_priv_obj
-						   *pdev_priv_obj,
-						   enum channel_enum freq_idx)
+static enum channel_state reg_get_chan_state_based_on_nol_flag_cur_chan_list(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx)
 {
 	struct regulatory_channel *cur_chan_list;
 	enum channel_state chan_state;
@@ -8978,7 +8623,7 @@ reg_get_chan_state_based_on_nol_flag_cur_chan_list(struct wlan_regulatory_pdev_p
 
 	if ((cur_chan_list[freq_idx].nol_chan ||
 	     cur_chan_list[freq_idx].nol_history) &&
-	     chan_state == CHANNEL_STATE_DISABLE)
+	    chan_state == CHANNEL_STATE_DISABLE)
 		chan_state = CHANNEL_STATE_DFS;
 
 	return chan_state;
@@ -8992,15 +8637,12 @@ reg_is_supr_entry_mode_disabled(const struct super_chan_info *super_chan_ent,
 	return ((super_chan_ent->chan_flags_arr[in_6g_pwr_mode] &
 		 REGULATORY_CHAN_DISABLED) &&
 		super_chan_ent->state_arr[in_6g_pwr_mode] ==
-		CHANNEL_STATE_DISABLE);
+			CHANNEL_STATE_DISABLE);
 }
 
-static bool
-reg_is_freq_idx_enabled_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
-					  *pdev_priv_obj,
-					  enum channel_enum freq_idx,
-					  enum supported_6g_pwr_types
-					  in_6g_pwr_mode)
+static bool reg_is_freq_idx_enabled_on_given_pwr_mode(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx, enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	const struct super_chan_info *super_chan_ent;
 	QDF_STATUS status;
@@ -9021,22 +8663,18 @@ reg_is_freq_idx_enabled_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
 	}
 
 	/* If the input 6G power mode is best power mode, get the best power
-	 * mode type from the super channel entry.
-	 */
+   * mode type from the super channel entry.
+   */
 	if (in_6g_pwr_mode == REG_BEST_PWR_MODE)
 		in_6g_pwr_mode = super_chan_ent->best_power_mode;
 
 	return !reg_is_supr_entry_mode_disabled(super_chan_ent, in_6g_pwr_mode);
 }
 
-static QDF_STATUS
-reg_get_min_max_bw_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
-				     *pdev_priv_obj,
-				     enum channel_enum freq_idx,
-				     enum supported_6g_pwr_types
-				     in_6g_pwr_mode,
-				     uint16_t *min_bw,
-				     uint16_t *max_bw)
+static QDF_STATUS reg_get_min_max_bw_on_given_pwr_mode(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx, enum supported_6g_pwr_types in_6g_pwr_mode,
+	uint16_t *min_bw, uint16_t *max_bw)
 {
 	const struct super_chan_info *super_chan_ent;
 	QDF_STATUS status;
@@ -9046,9 +8684,7 @@ reg_get_min_max_bw_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
 
 	if (freq_idx < MIN_6GHZ_CHANNEL)
 		return reg_get_min_max_bw_on_cur_chan_list(
-						       pdev_priv_obj->pdev_ptr,
-						       freq_idx,
-						       min_bw, max_bw);
+			pdev_priv_obj->pdev_ptr, freq_idx, min_bw, max_bw);
 
 	status = reg_get_superchan_entry(pdev_priv_obj->pdev_ptr, freq_idx,
 					 &super_chan_ent);
@@ -9059,8 +8695,8 @@ reg_get_min_max_bw_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
 	}
 
 	/* If the input 6G power mode is best power mode, get the best power
-	 * mode type from the super channel entry.
-	 */
+   * mode type from the super channel entry.
+   */
 	if (in_6g_pwr_mode == REG_BEST_PWR_MODE)
 		in_6g_pwr_mode = super_chan_ent->best_power_mode;
 
@@ -9077,12 +8713,9 @@ reg_get_min_max_bw_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
 	return QDF_STATUS_SUCCESS;
 }
 
-static enum channel_state
-reg_get_chan_state_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
-				     *pdev_priv_obj,
-				     enum channel_enum freq_idx,
-				     enum supported_6g_pwr_types
-				     in_6g_pwr_mode)
+static enum channel_state reg_get_chan_state_on_given_pwr_mode(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx, enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	const struct super_chan_info *super_chan_ent;
 	enum channel_state chan_state;
@@ -9093,7 +8726,7 @@ reg_get_chan_state_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
 
 	if (freq_idx < MIN_6GHZ_CHANNEL)
 		return reg_get_chan_state_on_cur_chan_list(pdev_priv_obj,
-				freq_idx);
+							   freq_idx);
 
 	status = reg_get_superchan_entry(pdev_priv_obj->pdev_ptr, freq_idx,
 					 &super_chan_ent);
@@ -9104,8 +8737,8 @@ reg_get_chan_state_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
 	}
 
 	/* If the input 6G power mode is best power mode, get the best power
-	 * mode type from the super channel entry.
-	 */
+   * mode type from the super channel entry.
+   */
 	if (in_6g_pwr_mode == REG_BEST_PWR_MODE)
 		in_6g_pwr_mode = super_chan_ent->best_power_mode;
 
@@ -9166,47 +8799,33 @@ reg_conv_6g_ap_type_to_supported_6g_pwr_types(enum reg_6g_ap_type ap_pwr_type)
 	return reg_enum_conv[ap_pwr_type];
 }
 #else
-static inline bool
-reg_is_freq_idx_enabled_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
-					  *pdev_priv_obj,
-					  enum channel_enum freq_idx,
-					  enum supported_6g_pwr_types
-					  in_6g_pwr_mode)
+static inline bool reg_is_freq_idx_enabled_on_given_pwr_mode(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx, enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	return reg_is_freq_idx_enabled_on_cur_chan_list(pdev_priv_obj,
 							freq_idx);
 }
 
-static inline QDF_STATUS
-reg_get_min_max_bw_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
-				     *pdev_priv_obj,
-				     enum channel_enum freq_idx,
-				     enum supported_6g_pwr_types
-				     in_6g_pwr_mode,
-				     uint16_t *min_bw,
-				     uint16_t *max_bw)
+static inline QDF_STATUS reg_get_min_max_bw_on_given_pwr_mode(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx, enum supported_6g_pwr_types in_6g_pwr_mode,
+	uint16_t *min_bw, uint16_t *max_bw)
 {
 	return reg_get_min_max_bw_on_cur_chan_list(pdev_priv_obj->pdev_ptr,
-						   freq_idx,
-						   min_bw, max_bw);
+						   freq_idx, min_bw, max_bw);
 }
 
-static inline enum channel_state
-reg_get_chan_state_on_given_pwr_mode(struct wlan_regulatory_pdev_priv_obj
-				     *pdev_priv_obj,
-				     enum channel_enum freq_idx,
-				     enum supported_6g_pwr_types
-				     in_6g_pwr_mode)
+static inline enum channel_state reg_get_chan_state_on_given_pwr_mode(
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj,
+	enum channel_enum freq_idx, enum supported_6g_pwr_types in_6g_pwr_mode)
 {
-	return reg_get_chan_state_on_cur_chan_list(pdev_priv_obj,
-						   freq_idx);
+	return reg_get_chan_state_on_cur_chan_list(pdev_priv_obj, freq_idx);
 }
 #endif /* CONFIG_BAND_6GHZ */
 
-bool
-reg_is_freq_enabled(struct wlan_objmgr_pdev *pdev,
-		    qdf_freq_t freq,
-		    enum supported_6g_pwr_types in_6g_pwr_mode)
+bool reg_is_freq_enabled(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+			 enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 	enum channel_enum freq_idx;
@@ -9250,19 +8869,16 @@ bool reg_is_freq_idx_enabled(struct wlan_objmgr_pdev *pdev,
 
 	case REG_BEST_PWR_MODE:
 	default:
-		return reg_is_freq_idx_enabled_on_given_pwr_mode(pdev_priv_obj,
-								 freq_idx,
-								 in_6g_pwr_mode
-								 );
+		return reg_is_freq_idx_enabled_on_given_pwr_mode(
+			pdev_priv_obj, freq_idx, in_6g_pwr_mode);
 	}
 }
 
-QDF_STATUS reg_get_min_max_bw_reg_chan_list(struct wlan_objmgr_pdev *pdev,
-					    enum channel_enum freq_idx,
-					    enum supported_6g_pwr_types
-					    in_6g_pwr_mode,
-					    uint16_t *min_bw,
-					    uint16_t *max_bw)
+QDF_STATUS
+reg_get_min_max_bw_reg_chan_list(struct wlan_objmgr_pdev *pdev,
+				 enum channel_enum freq_idx,
+				 enum supported_6g_pwr_types in_6g_pwr_mode,
+				 uint16_t *min_bw, uint16_t *max_bw)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -9274,17 +8890,13 @@ QDF_STATUS reg_get_min_max_bw_reg_chan_list(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (freq_idx < MIN_6GHZ_CHANNEL)
-		return reg_get_min_max_bw_on_cur_chan_list(
-							pdev,
-							freq_idx,
-							min_bw, max_bw);
+		return reg_get_min_max_bw_on_cur_chan_list(pdev, freq_idx,
+							   min_bw, max_bw);
 
 	switch (in_6g_pwr_mode) {
 	case REG_CURRENT_PWR_MODE:
-		return reg_get_min_max_bw_on_cur_chan_list(
-							pdev,
-							freq_idx,
-							min_bw, max_bw);
+		return reg_get_min_max_bw_on_cur_chan_list(pdev, freq_idx,
+							   min_bw, max_bw);
 
 	case REG_BEST_PWR_MODE:
 	default:
@@ -9295,11 +8907,10 @@ QDF_STATUS reg_get_min_max_bw_reg_chan_list(struct wlan_objmgr_pdev *pdev,
 	}
 }
 
-enum channel_state reg_get_chan_state(struct wlan_objmgr_pdev *pdev,
-				      enum channel_enum freq_idx,
-				      enum supported_6g_pwr_types
-				      in_6g_pwr_mode,
-				      bool treat_nol_chan_as_disabled)
+enum channel_state
+reg_get_chan_state(struct wlan_objmgr_pdev *pdev, enum channel_enum freq_idx,
+		   enum supported_6g_pwr_types in_6g_pwr_mode,
+		   bool treat_nol_chan_as_disabled)
 {
 	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
 
@@ -9312,12 +8923,11 @@ enum channel_state reg_get_chan_state(struct wlan_objmgr_pdev *pdev,
 
 	if (freq_idx < MIN_6GHZ_CHANNEL) {
 		if (treat_nol_chan_as_disabled)
-			return reg_get_chan_state_on_cur_chan_list(pdev_priv_obj,
-								   freq_idx);
+			return reg_get_chan_state_on_cur_chan_list(
+				pdev_priv_obj, freq_idx);
 		else
 			return reg_get_chan_state_based_on_nol_flag_cur_chan_list(
-								pdev_priv_obj,
-								freq_idx);
+				pdev_priv_obj, freq_idx);
 	}
 
 	switch (in_6g_pwr_mode) {
@@ -9327,10 +8937,8 @@ enum channel_state reg_get_chan_state(struct wlan_objmgr_pdev *pdev,
 
 	case REG_BEST_PWR_MODE:
 	default:
-		return reg_get_chan_state_on_given_pwr_mode(pdev_priv_obj,
-							    freq_idx,
-							    in_6g_pwr_mode
-							   );
+		return reg_get_chan_state_on_given_pwr_mode(
+			pdev_priv_obj, freq_idx, in_6g_pwr_mode);
 	}
 }
 
@@ -9404,12 +9012,9 @@ qdf_freq_t reg_get_thresh_priority_freq(struct wlan_objmgr_pdev *pdev)
  *
  * Return: Void
  */
-static void
-reg_get_eirp_from_psd_and_reg_max_eirp(struct wlan_objmgr_pdev *pdev,
-				       struct regulatory_channel *mas_chan_list,
-				       qdf_freq_t freq,
-				       uint16_t bw,
-				       int16_t *reg_eirp_pwr)
+static void reg_get_eirp_from_psd_and_reg_max_eirp(
+	struct wlan_objmgr_pdev *pdev, struct regulatory_channel *mas_chan_list,
+	qdf_freq_t freq, uint16_t bw, int16_t *reg_eirp_pwr)
 {
 	int16_t eirp_from_psd = 0, psd = 0;
 
@@ -9453,16 +9058,16 @@ reg_get_mas_chan_list_for_lookup(struct wlan_objmgr_pdev *pdev,
 	if (is_client_list_lookup_needed)
 		*master_chan_list =
 			pdev_priv_obj->mas_chan_list_6g_client[ap_pwr_type]
-								[client_type];
+							      [client_type];
 	else
 		*master_chan_list =
 			pdev_priv_obj->mas_chan_list_6g_ap[ap_pwr_type];
 }
 
 /**
- * reg_get_eirp_from_mas_chan_list() -  For the given power mode, using the bandwidth
- * and psd(from master channel entry), calculate an EIRP value. The minimum
- * of calculated EIRP and regulatory max EIRP is returned.
+ * reg_get_eirp_from_mas_chan_list() -  For the given power mode, using the
+ * bandwidth and psd(from master channel entry), calculate an EIRP value. The
+ * minimum of calculated EIRP and regulatory max EIRP is returned.
  * @pdev: Pointer to pdev
  * @freq: Frequency in mhz
  * @bw: Bandwidth in mhz
@@ -9495,10 +9100,8 @@ reg_get_eirp_from_mas_chan_list(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
 	reg_find_txpower_from_6g_list(freq, master_chan_list, &txpower);
 
 	if (is_psd)
-		reg_get_eirp_from_psd_and_reg_max_eirp(pdev,
-						       master_chan_list,
-						       freq, bw,
-						       &txpower);
+		reg_get_eirp_from_psd_and_reg_max_eirp(pdev, master_chan_list,
+						       freq, bw, &txpower);
 
 	return txpower;
 }
@@ -9510,8 +9113,7 @@ reg_get_eirp_from_mas_chan_list(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
  * @ieee_6g_cfi: IEEE value of 6 GHz cfi
  * Return: Center frequency in MHz
  */
-static qdf_freq_t
-reg_compute_6g_center_freq_from_cfi(uint8_t ieee_6g_cfi)
+static qdf_freq_t reg_compute_6g_center_freq_from_cfi(uint8_t ieee_6g_cfi)
 {
 	return (SIXG_START_FREQ + ieee_6g_cfi * FREQ_TO_CHAN_SCALE);
 }
@@ -9526,9 +9128,8 @@ reg_compute_6g_center_freq_from_cfi(uint8_t ieee_6g_cfi)
  */
 static bool reg_is_320_opclass(qdf_freq_t freq, uint8_t in_opclass)
 {
-	uint8_t local_op_class =
-		reg_dmn_get_opclass_from_freq_width(NULL, freq, BW_320_MHZ,
-						    BIT(BEHAV_NONE));
+	uint8_t local_op_class = reg_dmn_get_opclass_from_freq_width(
+		NULL, freq, BW_320_MHZ, BIT(BEHAV_NONE));
 	return (in_opclass == local_op_class);
 }
 #else
@@ -9551,8 +9152,7 @@ static inline bool reg_is_320_opclass(qdf_freq_t freq, uint8_t op_class)
  */
 static int8_t reg_find_eirp_in_afc_eirp_obj(struct wlan_objmgr_pdev *pdev,
 					    struct chan_eirp_obj *eirp_obj,
-					    qdf_freq_t freq,
-					    qdf_freq_t cen320,
+					    qdf_freq_t freq, qdf_freq_t cen320,
 					    uint8_t op_class)
 {
 	uint8_t k;
@@ -9569,8 +9169,7 @@ static int8_t reg_find_eirp_in_afc_eirp_obj(struct wlan_objmgr_pdev *pdev,
 		return 0;
 	}
 
-	nchans = reg_get_subchannels_for_opclass(eirp_obj->cfi,
-						 op_class,
+	nchans = reg_get_subchannels_for_opclass(eirp_obj->cfi, op_class,
 						 subchannels);
 
 	for (k = 0; k < nchans; k++)
@@ -9594,8 +9193,7 @@ static int8_t reg_find_eirp_in_afc_eirp_obj(struct wlan_objmgr_pdev *pdev,
  */
 static int8_t reg_find_eirp_in_afc_chan_obj(struct wlan_objmgr_pdev *pdev,
 					    struct afc_chan_obj *chan_obj,
-					    qdf_freq_t freq,
-					    qdf_freq_t cen320,
+					    qdf_freq_t freq, qdf_freq_t cen320,
 					    uint8_t op_class)
 {
 	uint8_t j;
@@ -9607,9 +9205,8 @@ static int8_t reg_find_eirp_in_afc_chan_obj(struct wlan_objmgr_pdev *pdev,
 		int8_t afc_eirp;
 		struct chan_eirp_obj *eirp_obj = &chan_obj->chan_eirp_info[j];
 
-		afc_eirp = reg_find_eirp_in_afc_eirp_obj(pdev, eirp_obj,
-							 freq, cen320,
-							 op_class);
+		afc_eirp = reg_find_eirp_in_afc_eirp_obj(pdev, eirp_obj, freq,
+							 cen320, op_class);
 
 		if (afc_eirp)
 			return afc_eirp;
@@ -9630,8 +9227,7 @@ static int8_t reg_find_eirp_in_afc_chan_obj(struct wlan_objmgr_pdev *pdev,
  * Return: true if channel is punctured, false otherwise.
  */
 #ifdef WLAN_FEATURE_11BE
-static bool
-reg_is_chan_punc(uint16_t in_punc_pattern, uint16_t bw)
+static bool reg_is_chan_punc(uint16_t in_punc_pattern, uint16_t bw)
 {
 	enum phy_ch_width ch_width = reg_find_chwidth_from_bw(bw);
 
@@ -9642,8 +9238,7 @@ reg_is_chan_punc(uint16_t in_punc_pattern, uint16_t bw)
 	return true;
 }
 #else
-static inline bool
-reg_is_chan_punc(uint16_t in_punc_pattern, uint16_t bw)
+static inline bool reg_is_chan_punc(uint16_t in_punc_pattern, uint16_t bw)
 {
 	return false;
 }
@@ -9657,8 +9252,7 @@ reg_is_chan_punc(uint16_t in_punc_pattern, uint16_t bw)
  *
  * Return: non-punctured bw in MHz
  */
-static uint16_t
-reg_find_non_punctured_bw(uint16_t bw,  uint16_t in_punc_pattern)
+static uint16_t reg_find_non_punctured_bw(uint16_t bw, uint16_t in_punc_pattern)
 {
 	uint8_t num_punc_bw = 0;
 
@@ -9686,13 +9280,11 @@ reg_find_non_punctured_bw(uint16_t bw,  uint16_t in_punc_pattern)
  *
  * Return: Regulatory and AFC intersected SP power of punctured channel
  */
-static int8_t
-reg_get_sp_eirp_for_punc_chans(struct wlan_objmgr_pdev *pdev,
-			       qdf_freq_t freq,
-			       qdf_freq_t cen320,
-			       uint16_t bw,
-			       uint16_t in_punc_pattern,
-			       int16_t reg_sp_eirp_pwr)
+static int8_t reg_get_sp_eirp_for_punc_chans(struct wlan_objmgr_pdev *pdev,
+					     qdf_freq_t freq, qdf_freq_t cen320,
+					     uint16_t bw,
+					     uint16_t in_punc_pattern,
+					     int16_t reg_sp_eirp_pwr)
 {
 	int16_t min_psd = REG_MIN_POWER;
 	int16_t afc_eirp_pwr = REG_MIN_POWER;
@@ -9713,11 +9305,12 @@ reg_get_sp_eirp_for_punc_chans(struct wlan_objmgr_pdev *pdev,
 
 	/* min_psd will be calculated here */
 	status = reg_tx_ops->reg_get_min_psd(pdev, freq, cen320,
-					     in_punc_pattern, bw,
-					     &min_psd);
+					     in_punc_pattern, bw, &min_psd);
 	if (status != QDF_STATUS_SUCCESS) {
-		reg_debug("Could not derive min_psd power for width %u, freq; %d, cen320: %d, in_punc: 0x%x\n",
-			  bw, freq, cen320, in_punc_pattern);
+		reg_debug(
+			"Could not derive min_psd power for width %u, freq; %d, cen320: "
+			"%d, in_punc: 0x%x\n",
+			bw, freq, cen320, in_punc_pattern);
 		return 0;
 	}
 
@@ -9725,14 +9318,17 @@ reg_get_sp_eirp_for_punc_chans(struct wlan_objmgr_pdev *pdev,
 
 	if (reg_psd_2_eirp(pdev, min_psd, non_punc_bw, &afc_eirp_pwr) !=
 	    QDF_STATUS_SUCCESS) {
-		reg_debug("Could not derive EIRP power for width %u, min_psd: %d\n", non_punc_bw, min_psd);
+		reg_debug(
+			"Could not derive EIRP power for width %u, min_psd: %d\n",
+			non_punc_bw, min_psd);
 		return 0;
 	}
 
-	reg_debug("freq = %u, bw: %u, cen320: %u, punc_pattern: 0x%x "
-		  "reg_sp_eirp: %d, min_psd: %d, non_punc_bw: %u, afc_eirp_pwr: %d\n",
-		  freq, bw, cen320, in_punc_pattern, reg_sp_eirp_pwr, min_psd,
-		  non_punc_bw, afc_eirp_pwr);
+	reg_debug(
+		"freq = %u, bw: %u, cen320: %u, punc_pattern: 0x%x "
+		"reg_sp_eirp: %d, min_psd: %d, non_punc_bw: %u, afc_eirp_pwr: %d\n",
+		freq, bw, cen320, in_punc_pattern, reg_sp_eirp_pwr, min_psd,
+		non_punc_bw, afc_eirp_pwr);
 
 	if (afc_eirp_pwr)
 		return QDF_MIN(afc_eirp_pwr, reg_sp_eirp_pwr);
@@ -9753,12 +9349,9 @@ reg_get_sp_eirp_for_punc_chans(struct wlan_objmgr_pdev *pdev,
  *
  * Return: EIRP
  */
-static int8_t
-reg_get_sp_eirp_before_afc_resp_rx(struct wlan_objmgr_pdev *pdev,
-				   qdf_freq_t freq,
-				   uint16_t bw,
-				   bool is_client_list_lookup_needed,
-				   enum reg_6g_client_type client_type)
+static int8_t reg_get_sp_eirp_before_afc_resp_rx(
+	struct wlan_objmgr_pdev *pdev, qdf_freq_t freq, uint16_t bw,
+	bool is_client_list_lookup_needed, enum reg_6g_client_type client_type)
 {
 	enum reg_afc_dev_deploy_type reg_afc_dev_type;
 	struct wlan_objmgr_psoc *psoc;
@@ -9779,10 +9372,9 @@ reg_get_sp_eirp_before_afc_resp_rx(struct wlan_objmgr_pdev *pdev,
 
 	if (reg_afc_dev_type == AFC_DEPLOYMENT_OUTDOOR && num_ap_sp_rules &&
 	    !num_ap_vlp_rules)
-		return reg_get_eirp_from_mas_chan_list(pdev, freq, bw,
-						       REG_STANDARD_POWER_AP,
-						       is_client_list_lookup_needed,
-						       client_type);
+		return reg_get_eirp_from_mas_chan_list(
+			pdev, freq, bw, REG_STANDARD_POWER_AP,
+			is_client_list_lookup_needed, client_type);
 	else
 		return 0;
 }
@@ -9802,10 +9394,8 @@ reg_get_sp_eirp_before_afc_resp_rx(struct wlan_objmgr_pdev *pdev,
  *
  * Return: EIRP
  */
-static int8_t reg_get_sp_eirp(struct wlan_objmgr_pdev *pdev,
-			      qdf_freq_t freq,
-			      qdf_freq_t cen320,
-			      uint16_t bw,
+static int8_t reg_get_sp_eirp(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+			      qdf_freq_t cen320, uint16_t bw,
 			      uint16_t in_punc_pattern,
 			      bool is_client_list_lookup_needed,
 			      enum reg_6g_client_type client_type)
@@ -9826,9 +9416,9 @@ static int8_t reg_get_sp_eirp(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (!reg_is_afc_power_event_received(pdev))
-		return reg_get_sp_eirp_before_afc_resp_rx(pdev, freq, bw,
-							  is_client_list_lookup_needed,
-							  client_type);
+		return reg_get_sp_eirp_before_afc_resp_rx(
+			pdev, freq, bw, is_client_list_lookup_needed,
+			client_type);
 
 	sp_master_chan_list =
 		pdev_priv_obj->mas_chan_list_6g_ap[REG_STANDARD_POWER_AP];
@@ -9851,13 +9441,8 @@ static int8_t reg_get_sp_eirp(struct wlan_objmgr_pdev *pdev,
 		return 0;
 	}
 
-	reg_freq_width_to_chan_op_class(pdev,
-					freq,
-					bw,
-					true,
-					BIT(BEHAV_NONE),
-					&op_class,
-					&chan_num);
+	reg_freq_width_to_chan_op_class(pdev, freq, bw, true, BIT(BEHAV_NONE),
+					&op_class, &chan_num);
 	reg_get_mas_chan_list_for_lookup(pdev, &sp_master_chan_list,
 					 REG_STANDARD_POWER_AP,
 					 is_client_list_lookup_needed,
@@ -9876,21 +9461,16 @@ static int8_t reg_get_sp_eirp(struct wlan_objmgr_pdev *pdev,
 	for (i = 0; i < power_info->num_chan_objs; i++) {
 		struct afc_chan_obj *chan_obj = &power_info->afc_chan_info[i];
 
-		afc_eirp_pwr = reg_find_eirp_in_afc_chan_obj(pdev,
-							     chan_obj,
-							     freq,
-							     cen320,
-							     op_class);
+		afc_eirp_pwr = reg_find_eirp_in_afc_chan_obj(
+			pdev, chan_obj, freq, cen320, op_class);
 		if (afc_eirp_pwr)
 			break;
 	}
 
 	is_psd = reg_is_6g_psd_power(pdev);
 	if (is_psd)
-		reg_get_eirp_from_psd_and_reg_max_eirp(pdev,
-						       sp_master_chan_list,
-						       freq, bw,
-						       &reg_sp_eirp_pwr);
+		reg_get_eirp_from_psd_and_reg_max_eirp(
+			pdev, sp_master_chan_list, freq, bw, &reg_sp_eirp_pwr);
 
 	if (afc_eirp_pwr)
 		return QDF_MIN(afc_eirp_pwr, (int8_t)reg_sp_eirp_pwr);
@@ -9898,15 +9478,14 @@ static int8_t reg_get_sp_eirp(struct wlan_objmgr_pdev *pdev,
 	return 0;
 }
 #else
-static int8_t reg_get_sp_eirp(struct wlan_objmgr_pdev *pdev,
-			      qdf_freq_t freq,
-			      qdf_freq_t cen320,
-			      uint16_t bw,
+static int8_t reg_get_sp_eirp(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+			      qdf_freq_t cen320, uint16_t bw,
 			      uint16_t in_punc_pattern,
 			      bool is_client_list_lookup_needed,
 			      enum reg_6g_client_type client_type)
 {
-	return reg_get_eirp_from_mas_chan_list(pdev, freq, bw, REG_STANDARD_POWER_AP,
+	return reg_get_eirp_from_mas_chan_list(pdev, freq, bw,
+					       REG_STANDARD_POWER_AP,
 					       is_client_list_lookup_needed,
 					       client_type);
 }
@@ -9929,11 +9508,11 @@ reg_get_best_pwr_mode_from_eirp_list(int8_t *eirp_list, uint8_t size)
 
 	for (i = 0; i < size; i++) {
 		/* Assuming the eirp = 0 means the mode is not available,
-		 * skip the mode.
-		 * EIRP = 0 may be a valid value. We need to fix this in
-		 * future by setting the min negative value (-128) to
-		 * the channels for which power mode is not available.
-		 */
+     * skip the mode.
+     * EIRP = 0 may be a valid value. We need to fix this in
+     * future by setting the min negative value (-128) to
+     * the channels for which power mode is not available.
+     */
 		if (!eirp_list[i])
 			continue;
 		if (eirp_list[i] > max) {
@@ -9946,8 +9525,8 @@ reg_get_best_pwr_mode_from_eirp_list(int8_t *eirp_list, uint8_t size)
 }
 
 int8_t reg_get_eirp_pwr(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
-			qdf_freq_t cen320,
-			uint16_t bw, enum reg_6g_ap_type ap_pwr_type,
+			qdf_freq_t cen320, uint16_t bw,
+			enum reg_6g_ap_type ap_pwr_type,
 			uint16_t in_punc_pattern,
 			bool is_client_list_lookup_needed,
 			enum reg_6g_client_type client_type)
@@ -9963,21 +9542,17 @@ int8_t reg_get_eirp_pwr(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
 }
 
 enum reg_6g_ap_type reg_get_best_pwr_mode(struct wlan_objmgr_pdev *pdev,
-					  qdf_freq_t freq,
-					  qdf_freq_t cen320,
-					  uint16_t bw,
-					  uint16_t in_punc_pattern)
+					  qdf_freq_t freq, qdf_freq_t cen320,
+					  uint16_t bw, uint16_t in_punc_pattern)
 {
 	int8_t eirp_list[REG_MAX_SUPP_AP_TYPE + 1];
 	enum reg_6g_ap_type ap_pwr_type;
 
 	for (ap_pwr_type = REG_INDOOR_AP; ap_pwr_type <= REG_VERY_LOW_POWER_AP;
 	     ap_pwr_type++)
-		eirp_list[ap_pwr_type] =
-				reg_get_eirp_pwr(pdev, freq, cen320, bw,
-						 ap_pwr_type, in_punc_pattern,
-						 false,
-						 REG_MAX_CLIENT_TYPE);
+		eirp_list[ap_pwr_type] = reg_get_eirp_pwr(
+			pdev, freq, cen320, bw, ap_pwr_type, in_punc_pattern,
+			false, REG_MAX_CLIENT_TYPE);
 
 	return reg_get_best_pwr_mode_from_eirp_list(eirp_list,
 						    REG_MAX_SUPP_AP_TYPE + 1);
@@ -10009,16 +9584,14 @@ QDF_STATUS reg_get_regd_rules(struct wlan_objmgr_pdev *pdev,
 }
 
 #if defined(CONFIG_AFC_SUPPORT) && defined(CONFIG_BAND_6GHZ)
-bool
-reg_is_sup_chan_entry_afc_done(struct wlan_objmgr_pdev *pdev,
-			       enum channel_enum chan_idx,
-			       enum supported_6g_pwr_types in_6g_pwr_mode)
+bool reg_is_sup_chan_entry_afc_done(struct wlan_objmgr_pdev *pdev,
+				    enum channel_enum chan_idx,
+				    enum supported_6g_pwr_types in_6g_pwr_mode)
 {
 	const struct super_chan_info *super_chan_ent;
 	QDF_STATUS status;
 
-	status = reg_get_superchan_entry(pdev, chan_idx,
-					 &super_chan_ent);
+	status = reg_get_superchan_entry(pdev, chan_idx, &super_chan_ent);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		reg_debug("Failed to get super channel entry for chan_idx %d",
 			  chan_idx);
@@ -10035,10 +9608,8 @@ reg_is_sup_chan_entry_afc_done(struct wlan_objmgr_pdev *pdev,
 		 REGULATORY_CHAN_AFC_NOT_DONE);
 }
 
-bool
-reg_is_6ghz_freq_txable(struct wlan_objmgr_pdev *pdev,
-			qdf_freq_t freq,
-			enum supported_6g_pwr_types in_6ghz_pwr_mode)
+bool reg_is_6ghz_freq_txable(struct wlan_objmgr_pdev *pdev, qdf_freq_t freq,
+			     enum supported_6g_pwr_types in_6ghz_pwr_mode)
 {
 	bool is_freq_enabled;
 	enum reg_afc_dev_deploy_type reg_afc_deploy_type;
@@ -10050,7 +9621,7 @@ reg_is_6ghz_freq_txable(struct wlan_objmgr_pdev *pdev,
 	reg_get_afc_dev_deploy_type(pdev, &reg_afc_deploy_type);
 
 	return (reg_afc_deploy_type != AFC_DEPLOYMENT_OUTDOOR) ||
-		reg_is_afc_done(pdev, freq);
+	       reg_is_afc_done(pdev, freq);
 }
 #endif
 
@@ -10071,7 +9642,7 @@ reg_display_super_chan_list(struct wlan_objmgr_pdev *pdev)
 	super_chan_list = pdev_priv_obj->super_chan_list;
 	for (i = 0; i < NUM_6GHZ_CHANNELS; i++) {
 		struct super_chan_info *chan_info = &super_chan_list[i];
-		struct regulatory_channel  cur_chan_list =
+		struct regulatory_channel cur_chan_list =
 			pdev_priv_obj->cur_chan_list[MIN_6GHZ_CHANNEL + i];
 		uint8_t j;
 
@@ -10083,7 +9654,7 @@ reg_display_super_chan_list(struct wlan_objmgr_pdev *pdev)
 			bool afc_not_done_bit;
 
 			afc_not_done_bit = chan_info->chan_flags_arr[j] &
-						REGULATORY_CHAN_AFC_NOT_DONE;
+					   REGULATORY_CHAN_AFC_NOT_DONE;
 			qdf_print("Power mode = %d\tPSD flag = %d\t"
 				  "PSD power = %d\tEIRP power = %d\t"
 				  "Chan flags = 0x%x\tChannel state = %d\t"
@@ -10093,9 +9664,8 @@ reg_display_super_chan_list(struct wlan_objmgr_pdev *pdev)
 				  chan_info->reg_chan_pwr[j].psd_eirp,
 				  chan_info->reg_chan_pwr[j].tx_power,
 				  chan_info->chan_flags_arr[j],
-				  chan_info->state_arr[j],
-				  chan_info->min_bw[j], chan_info->max_bw[j],
-				  afc_not_done_bit);
+				  chan_info->state_arr[j], chan_info->min_bw[j],
+				  chan_info->max_bw[j], afc_not_done_bit);
 		}
 	}
 
@@ -10144,7 +9714,7 @@ reg_get_afc_freq_range_and_psd_limits(struct wlan_objmgr_pdev *pdev,
 
 		afc_freq_info[i].low_freq = reg_afc_info->low_freq;
 		afc_freq_info[i].high_freq = reg_afc_info->high_freq;
-		afc_freq_info[i].max_psd  = reg_afc_info->max_psd;
+		afc_freq_info[i].max_psd = reg_afc_info->max_psd;
 	}
 	return QDF_STATUS_SUCCESS;
 }

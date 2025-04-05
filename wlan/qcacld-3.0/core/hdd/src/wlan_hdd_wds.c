@@ -25,9 +25,9 @@
  */
 
 /* Include Files */
+#include "wlan_hdd_wds.h"
 #include <cdp_txrx_ctrl.h>
 #include <wlan_hdd_main.h>
-#include "wlan_hdd_wds.h"
 
 void hdd_wds_config_dp_repeater_mode(struct wlan_objmgr_vdev *vdev)
 {
@@ -51,16 +51,14 @@ void hdd_wds_config_dp_repeater_mode(struct wlan_objmgr_vdev *vdev)
 
 	vdev_param.cdp_vdev_param_wds = true;
 	if (cdp_txrx_set_vdev_param(soc, vdev->vdev_objmgr.vdev_id,
-				    CDP_ENABLE_WDS,
-				    vdev_param))
+				    CDP_ENABLE_WDS, vdev_param))
 		hdd_debug("Failed to set WDS param on DP vdev");
 }
 
-void
-hdd_wds_replace_peer_mac(void *soc, struct hdd_adapter *adapter,
-			 uint8_t *mac_addr)
+void hdd_wds_replace_peer_mac(void *soc, struct hdd_adapter *adapter,
+			      uint8_t *mac_addr)
 {
-	struct cdp_ast_entry_info ast_entry_info = {0};
+	struct cdp_ast_entry_info ast_entry_info = { 0 };
 	cdp_config_param_type val;
 	QDF_STATUS status;
 
@@ -73,7 +71,7 @@ hdd_wds_replace_peer_mac(void *soc, struct hdd_adapter *adapter,
 		if (!val.cdp_vdev_param_wds)
 			return;
 
-		if (!cdp_peer_get_ast_info_by_soc(soc,  mac_addr,
+		if (!cdp_peer_get_ast_info_by_soc(soc, mac_addr,
 						  &ast_entry_info))
 			return;
 

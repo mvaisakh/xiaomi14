@@ -20,22 +20,20 @@
  * DOC: This file contains p2p configures interface definitions
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include "wlan_p2p_public_struct.h"
-#include "wlan_p2p_cfg_api.h"
 #include "../../core/src/wlan_p2p_main.h"
 #include "wlan_mlme_ucfg_api.h"
+#include "wlan_p2p_cfg_api.h"
+#include "wlan_p2p_public_struct.h"
+#include <wlan_objmgr_psoc_obj.h>
 
 static inline struct p2p_soc_priv_obj *
 wlan_psoc_get_p2p_object(struct wlan_objmgr_psoc *psoc)
 {
-	return wlan_objmgr_psoc_get_comp_private_obj(psoc,
-					WLAN_UMAC_COMP_P2P);
+	return wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_P2P);
 }
 
 QDF_STATUS
-cfg_p2p_get_go_keepalive_period(struct wlan_objmgr_psoc *psoc,
-				uint32_t *period)
+cfg_p2p_get_go_keepalive_period(struct wlan_objmgr_psoc *psoc, uint32_t *period)
 {
 	struct p2p_soc_priv_obj *p2p_soc_obj;
 
@@ -70,8 +68,7 @@ cfg_p2p_get_go_link_monitor_period(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS
-cfg_p2p_get_device_addr_admin(struct wlan_objmgr_psoc *psoc,
-			      bool *enable)
+cfg_p2p_get_device_addr_admin(struct wlan_objmgr_psoc *psoc, bool *enable)
 {
 	struct p2p_soc_priv_obj *p2p_soc_obj;
 

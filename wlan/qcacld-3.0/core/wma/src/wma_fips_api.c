@@ -22,15 +22,14 @@
  * WLAN Host Device Driver FIPS Certification Feature
  */
 
-#include "wma.h"
 #include "wma_fips_api.h"
+#include "wma.h"
 #include "wmi_unified_api.h"
 
 static wma_fips_cb fips_callback;
 static void *fips_context;
 
-static int
-wma_fips_event_handler(void *handle, uint8_t *event, uint32_t len)
+static int wma_fips_event_handler(void *handle, uint8_t *event, uint32_t len)
 {
 	tp_wma_handle wma_handle;
 	wmi_unified_t wmi_handle;
@@ -63,10 +62,8 @@ wma_fips_event_handler(void *handle, uint8_t *event, uint32_t len)
 	return 0;
 }
 
-QDF_STATUS wma_fips_request(WMA_HANDLE handle,
-			    struct fips_params *param,
-			    wma_fips_cb callback,
-			    void *context)
+QDF_STATUS wma_fips_request(WMA_HANDLE handle, struct fips_params *param,
+			    wma_fips_cb callback, void *context)
 {
 	tp_wma_handle wma_handle = handle;
 	wmi_unified_t wmi_handle;
@@ -83,8 +80,7 @@ QDF_STATUS wma_fips_request(WMA_HANDLE handle,
 	fips_context = context;
 	status = wmi_unified_pdev_fips_cmd_send(wmi_handle, param);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		wma_err("wmi_unified_pdev_fips_cmd_send() error: %u",
-			status);
+		wma_err("wmi_unified_pdev_fips_cmd_send() error: %u", status);
 		fips_callback = NULL;
 	}
 

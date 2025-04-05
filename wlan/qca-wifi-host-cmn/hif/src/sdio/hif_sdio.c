@@ -17,27 +17,27 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <qdf_types.h>
-#include <qdf_status.h>
-#include <qdf_timer.h>
-#include <qdf_time.h>
-#include <qdf_lock.h>
-#include <qdf_mem.h>
-#include <qdf_util.h>
-#include <qdf_defer.h>
-#include <qdf_atomic.h>
-#include <qdf_nbuf.h>
-#include <athdefs.h>
-#include "qdf_net_types.h"
+#include "a_osapi.h"
 #include "a_types.h"
 #include "athdefs.h"
-#include "a_osapi.h"
-#include <hif.h>
-#include <htc_services.h>
-#include <a_debug.h>
 #include "hif_sdio_dev.h"
 #include "if_sdio.h"
+#include "qdf_net_types.h"
 #include "regtable_sdio.h"
+#include <a_debug.h>
+#include <athdefs.h>
+#include <hif.h>
+#include <htc_services.h>
+#include <qdf_atomic.h>
+#include <qdf_defer.h>
+#include <qdf_lock.h>
+#include <qdf_mem.h>
+#include <qdf_nbuf.h>
+#include <qdf_status.h>
+#include <qdf_time.h>
+#include <qdf_timer.h>
+#include <qdf_types.h>
+#include <qdf_util.h>
 #include <transfer/transfer.h>
 
 #define ATH_MODULE_NAME hif_sdio
@@ -79,7 +79,6 @@ QDF_STATUS hif_start(struct hif_opaque_softc *hif_ctx)
  */
 void hif_flush_surprise_remove(struct hif_opaque_softc *hif_ctx)
 {
-
 }
 
 /**
@@ -118,16 +117,15 @@ void hif_sdio_stop(struct hif_softc *hif_ctx)
  * Return: QDF_STATUS
  */
 QDF_STATUS hif_send_head(struct hif_opaque_softc *hif_ctx, uint8_t pipe,
-		uint32_t transfer_id, uint32_t nbytes, qdf_nbuf_t buf,
-		uint32_t data_attr)
+			 uint32_t transfer_id, uint32_t nbytes, qdf_nbuf_t buf,
+			 uint32_t data_attr)
 {
 	struct hif_sdio_softc *scn = HIF_GET_SDIO_SOFTC(hif_ctx);
 	struct hif_sdio_dev *hif_device = scn->hif_handle;
 	struct hif_sdio_device *htc_sdio_device = hif_dev_from_hif(hif_device);
 
-	return hif_dev_send_buffer(htc_sdio_device,
-				transfer_id, pipe,
-				nbytes, buf);
+	return hif_dev_send_buffer(htc_sdio_device, transfer_id, pipe, nbytes,
+				   buf);
 }
 
 /**
@@ -150,8 +148,8 @@ int hif_map_service_to_pipe(struct hif_opaque_softc *hif_hdl,
 	struct hif_sdio_dev *hif_device = scn->hif_handle;
 	QDF_STATUS status;
 
-	status =  hif_dev_map_service_to_pipe(hif_device,
-					      service_id, ul_pipe, dl_pipe);
+	status = hif_dev_map_service_to_pipe(hif_device, service_id, ul_pipe,
+					     dl_pipe);
 	return qdf_status_to_os_return(status);
 }
 
@@ -164,8 +162,8 @@ int hif_map_service_to_pipe(struct hif_opaque_softc *hif_hdl,
 void hif_get_default_pipe(struct hif_opaque_softc *scn, uint8_t *ul_pipe,
 			  uint8_t *dl_pipe)
 {
-	hif_map_service_to_pipe(scn, HTC_CTRL_RSVD_SVC,
-				ul_pipe, dl_pipe, NULL, NULL);
+	hif_map_service_to_pipe(scn, HTC_CTRL_RSVD_SVC, ul_pipe, dl_pipe, NULL,
+				NULL);
 }
 
 /**
@@ -224,8 +222,6 @@ uint16_t hif_get_free_queue_number(struct hif_opaque_softc *hif_ctx,
  * Return: int
  */
 void hif_send_complete_check(struct hif_opaque_softc *hif_ctx, uint8_t pipe,
-				int force)
+			     int force)
 {
-
 }
-

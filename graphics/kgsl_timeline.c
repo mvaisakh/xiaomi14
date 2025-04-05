@@ -6,8 +6,8 @@
 
 #include <linux/dma-fence.h>
 #include <linux/file.h>
-#include <linux/list.h>
 #include <linux/kref.h>
+#include <linux/list.h>
 #include <linux/sync_file.h>
 
 #include "kgsl_device.h"
@@ -23,7 +23,8 @@ struct kgsl_timeline_fence {
 };
 
 struct dma_fence *kgsl_timelines_to_fence_array(struct kgsl_device *device,
-		u64 timelines, u32 count, u64 usize, bool any)
+						u64 timelines, u32 count,
+						u64 usize, bool any)
 {
 	void __user *uptr = u64_to_user_ptr(timelines);
 	struct dma_fence_array *array;
@@ -34,7 +35,7 @@ struct dma_fence *kgsl_timelines_to_fence_array(struct kgsl_device *device,
 		return ERR_PTR(-EINVAL);
 
 	fences = kcalloc(count, sizeof(*fences),
-		GFP_KERNEL | __GFP_NORETRY | __GFP_NOWARN);
+			 GFP_KERNEL | __GFP_NORETRY | __GFP_NOWARN);
 
 	if (!fences)
 		return ERR_PTR(-ENOMEM);
@@ -79,7 +80,7 @@ struct dma_fence *kgsl_timelines_to_fence_array(struct kgsl_device *device,
 	}
 
 	array = dma_fence_array_create(count, fences,
-		dma_fence_context_alloc(1), 0, any);
+				       dma_fence_context_alloc(1), 0, any);
 
 	if (array)
 		return &array->base;
@@ -97,8 +98,8 @@ err:
 
 void kgsl_timeline_destroy(struct kref *kref)
 {
-	struct kgsl_timeline *timeline = container_of(kref,
-		struct kgsl_timeline, ref);
+	struct kgsl_timeline *timeline =
+		container_of(kref, struct kgsl_timeline, ref);
 
 	WARN_ON(!list_empty(&timeline->fences));
 	WARN_ON(!list_empty(&timeline->events));
@@ -118,8 +119,8 @@ struct kgsl_timeline *kgsl_timeline_get(struct kgsl_timeline *timeline)
 	return timeline;
 }
 
-static struct kgsl_timeline *kgsl_timeline_alloc(struct kgsl_device_private *dev_priv,
-		u64 initial)
+static struct kgsl_timeline *
+kgsl_timeline_alloc(struct kgsl_device_private *dev_priv, u64 initial)
 {
 	struct kgsl_device *device = dev_priv->device;
 	struct kgsl_timeline *timeline;
@@ -148,8 +149,8 @@ static struct kgsl_timeline *kgsl_timeline_alloc(struct kgsl_device_private *dev
 	timeline->value = initial;
 	timeline->dev_priv = dev_priv;
 
-	snprintf((char *) timeline->name, sizeof(timeline->name),
-		"kgsl-sw-timeline-%d", id);
+	snprintf((char *)timeline->name, sizeof(timeline->name),
+		 "kgsl-sw-timeline-%d", id);
 
 	trace_kgsl_timeline_alloc(id, initial);
 
@@ -196,16 +197,16 @@ static bool timeline_fence_signaled(struct dma_fence *fence)
 	struct kgsl_timeline_fence *f = to_timeline_fence(fence);
 
 	return !__dma_fence_is_later(fence->seqno, f->timeline->value,
-		fence->ops);
+				     fence->ops);
 }
 
 static bool timeline_fence_enable_signaling(struct dma_fence *fence)
 {
 	/*
-	 * Return value of false indicates the fence already passed.
-	 * When fence is not passed we return true indicating successful
-	 * enabling.
-	 */
+   * Return value of false indicates the fence already passed.
+   * When fence is not passed we return true indicating successful
+   * enabling.
+   */
 	return !timeline_fence_signaled(fence);
 }
 
@@ -221,8 +222,7 @@ static const char *timeline_get_timeline_name(struct dma_fence *fence)
 	return f->timeline->name;
 }
 
-static void timeline_get_value_str(struct dma_fence *fence,
-		char *str, int size)
+static void timeline_get_value_str(struct dma_fence *fence, char *str, int size)
 {
 	struct kgsl_timeline_fence *f = to_timeline_fence(fence);
 
@@ -240,7 +240,7 @@ static const struct dma_fence_ops timeline_fence_ops = {
 };
 
 static void kgsl_timeline_add_fence(struct kgsl_timeline *timeline,
-		struct kgsl_timeline_fence *fence)
+				    struct kgsl_timeline_fence *fence)
 {
 	struct kgsl_timeline_fence *entry;
 	unsigned long flags;
@@ -308,7 +308,7 @@ void kgsl_timeline_signal(struct kgsl_timeline *timeline, u64 seqno)
 	spin_lock(&timeline->fence_lock);
 	list_for_each_entry_safe(fence, tmp, &timeline->fences, node)
 		if (timeline_fence_signaled(&fence->base) &&
-				kref_get_unless_zero(&fence->base.refcount))
+		    kref_get_unless_zero(&fence->base.refcount))
 			list_move(&fence->node, &temp);
 	spin_unlock(&timeline->fence_lock);
 
@@ -322,7 +322,7 @@ unlock:
 }
 
 struct dma_fence *kgsl_timeline_fence_alloc(struct kgsl_timeline *timeline,
-		u64 seqno)
+					    u64 seqno)
 {
 	struct kgsl_timeline_fence *fence;
 
@@ -336,16 +336,16 @@ struct dma_fence *kgsl_timeline_fence_alloc(struct kgsl_timeline *timeline,
 		return ERR_PTR(-ENOENT);
 	}
 
-	dma_fence_init(&fence->base, &timeline_fence_ops,
-		&timeline->lock, timeline->context, seqno);
+	dma_fence_init(&fence->base, &timeline_fence_ops, &timeline->lock,
+		       timeline->context, seqno);
 
 	INIT_LIST_HEAD(&fence->node);
 
 	/*
-	 * Once fence is checked as not signaled, allow it to be added
-	 * in the list before other thread such as kgsl_timeline_signal
-	 * can get chance to signal.
-	 */
+   * Once fence is checked as not signaled, allow it to be added
+   * in the list before other thread such as kgsl_timeline_signal
+   * can get chance to signal.
+   */
 	spin_lock_irq(&timeline->lock);
 	if (!dma_fence_is_signaled_locked(&fence->base))
 		kgsl_timeline_add_fence(timeline, fence);
@@ -359,7 +359,7 @@ struct dma_fence *kgsl_timeline_fence_alloc(struct kgsl_timeline *timeline,
 }
 
 long kgsl_ioctl_timeline_create(struct kgsl_device_private *dev_priv,
-		unsigned int cmd, void *data)
+				unsigned int cmd, void *data)
 {
 	struct kgsl_device *device = dev_priv->device;
 	struct kgsl_timeline_create *param = data;
@@ -377,8 +377,7 @@ long kgsl_ioctl_timeline_create(struct kgsl_device_private *dev_priv,
 	return 0;
 }
 
-struct kgsl_timeline *kgsl_timeline_by_id(struct kgsl_device *device,
-		u32 id)
+struct kgsl_timeline *kgsl_timeline_by_id(struct kgsl_device *device, u32 id)
 {
 	struct kgsl_timeline *timeline;
 	int ret = 0;
@@ -394,7 +393,7 @@ struct kgsl_timeline *kgsl_timeline_by_id(struct kgsl_device *device,
 }
 
 long kgsl_ioctl_timeline_wait(struct kgsl_device_private *dev_priv,
-		unsigned int cmd, void *data)
+			      unsigned int cmd, void *data)
 {
 	struct kgsl_device *device = dev_priv->device;
 	struct kgsl_timeline_wait *param = data;
@@ -403,14 +402,14 @@ long kgsl_ioctl_timeline_wait(struct kgsl_device_private *dev_priv,
 	signed long ret;
 
 	if (param->flags != KGSL_TIMELINE_WAIT_ANY &&
-		param->flags != KGSL_TIMELINE_WAIT_ALL)
+	    param->flags != KGSL_TIMELINE_WAIT_ALL)
 		return -EINVAL;
 
 	if (param->padding)
 		return -EINVAL;
 
-	fence = kgsl_timelines_to_fence_array(device, param->timelines,
-		param->count, param->timelines_size,
+	fence = kgsl_timelines_to_fence_array(
+		device, param->timelines, param->count, param->timelines_size,
 		(param->flags == KGSL_TIMELINE_WAIT_ANY));
 
 	if (IS_ERR(fence))
@@ -444,7 +443,7 @@ long kgsl_ioctl_timeline_wait(struct kgsl_device_private *dev_priv,
 }
 
 long kgsl_ioctl_timeline_query(struct kgsl_device_private *dev_priv,
-		unsigned int cmd, void *data)
+			       unsigned int cmd, void *data)
 {
 	struct kgsl_timeline_val *param = data;
 	struct kgsl_timeline *timeline;
@@ -459,16 +458,16 @@ long kgsl_ioctl_timeline_query(struct kgsl_device_private *dev_priv,
 		return -ENODEV;
 
 	/*
-	 * Start from the end of the list to find the last retired signal event
-	 * that was not yet processed. Leave the entry in the list until the
-	 * timeline signal actually advances the timeline's value. This ensures
-	 * subsequent query ioctls return a monotonically increasing seqno.
-	 */
+   * Start from the end of the list to find the last retired signal event
+   * that was not yet processed. Leave the entry in the list until the
+   * timeline signal actually advances the timeline's value. This ensures
+   * subsequent query ioctls return a monotonically increasing seqno.
+   */
 	spin_lock_irq(&timeline->lock);
 	seqno = timeline->value;
 	list_for_each_entry_reverse(event, &timeline->events, node) {
-		if (kgsl_check_timestamp(event->context->device,
-			event->context, event->timestamp)) {
+		if (kgsl_check_timestamp(event->context->device, event->context,
+					 event->timestamp)) {
 			seqno = event->seqno;
 			break;
 		}
@@ -482,7 +481,7 @@ long kgsl_ioctl_timeline_query(struct kgsl_device_private *dev_priv,
 }
 
 long kgsl_ioctl_timeline_fence_get(struct kgsl_device_private *dev_priv,
-		unsigned int cmd, void *data)
+				   unsigned int cmd, void *data)
 {
 	struct kgsl_device *device = dev_priv->device;
 	struct kgsl_timeline_fence_get *param = data;
@@ -525,7 +524,7 @@ out:
 }
 
 long kgsl_ioctl_timeline_signal(struct kgsl_device_private *dev_priv,
-		unsigned int cmd, void *data)
+				unsigned int cmd, void *data)
 {
 	struct kgsl_device *device = dev_priv->device;
 	struct kgsl_timeline_signal *param = data;
@@ -547,7 +546,8 @@ long kgsl_ioctl_timeline_signal(struct kgsl_device_private *dev_priv,
 		struct kgsl_timeline_val val;
 
 		if (copy_struct_from_user(&val, sizeof(val),
-			u64_to_user_ptr(timelines), param->timelines_size))
+					  u64_to_user_ptr(timelines),
+					  param->timelines_size))
 			return -EFAULT;
 
 		if (val.padding)
@@ -568,7 +568,7 @@ long kgsl_ioctl_timeline_signal(struct kgsl_device_private *dev_priv,
 }
 
 long kgsl_ioctl_timeline_destroy(struct kgsl_device_private *dev_priv,
-		unsigned int cmd, void *data)
+				 unsigned int cmd, void *data)
 {
 	struct kgsl_device *device = dev_priv->device;
 	struct kgsl_timeline_fence *fence, *tmp;
@@ -588,9 +588,9 @@ long kgsl_ioctl_timeline_destroy(struct kgsl_device_private *dev_priv,
 	}
 
 	/*
-	 * Validate that the id given is owned by the dev_priv
-	 * instance that is passed in. If not, abort.
-	 */
+   * Validate that the id given is owned by the dev_priv
+   * instance that is passed in. If not, abort.
+   */
 	if (timeline->dev_priv != dev_priv) {
 		spin_unlock(&device->timelines_lock);
 		return -EINVAL;

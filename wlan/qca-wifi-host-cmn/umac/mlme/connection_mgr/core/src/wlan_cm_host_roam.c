@@ -16,23 +16,21 @@
  */
 
 #include "wlan_cm_main.h"
+#include "wlan_cm_main_api.h"
 #include "wlan_cm_roam_sm.h"
 #include "wlan_cm_sm.h"
 #include <include/wlan_mlme_cmn.h>
-#include "wlan_cm_main_api.h"
+#include <wlan_cm_api.h>
 #include <wlan_scan_api.h>
 #include <wlan_serialization_api.h>
 #include <wlan_utility.h>
-#include <wlan_cm_api.h>
 #ifdef WLAN_POLICY_MGR_ENABLE
 #include "wlan_policy_mgr_api.h"
 #endif
 
-static void
-cm_fill_roam_fail_resp_from_cm_id(struct cnx_mgr *cm_ctx,
-				  struct wlan_cm_connect_resp *resp,
-				  wlan_cm_id cm_id,
-				  enum wlan_cm_connect_fail_reason reason)
+static void cm_fill_roam_fail_resp_from_cm_id(
+	struct cnx_mgr *cm_ctx, struct wlan_cm_connect_resp *resp,
+	wlan_cm_id cm_id, enum wlan_cm_connect_fail_reason reason)
 {
 	resp->connect_status = QDF_STATUS_E_FAILURE;
 	resp->cm_id = cm_id;
@@ -41,16 +39,15 @@ cm_fill_roam_fail_resp_from_cm_id(struct cnx_mgr *cm_ctx,
 	cm_fill_bss_info_in_roam_rsp_by_cm_id(cm_ctx, cm_id, resp);
 }
 
-static QDF_STATUS
-cm_reassoc_fail_disconnect(struct wlan_objmgr_vdev *vdev,
-			   enum wlan_cm_source source,
-			   enum wlan_reason_code reason_code,
-			   struct qdf_mac_addr *bssid)
+static QDF_STATUS cm_reassoc_fail_disconnect(struct wlan_objmgr_vdev *vdev,
+					     enum wlan_cm_source source,
+					     enum wlan_reason_code reason_code,
+					     struct qdf_mac_addr *bssid)
 {
 	struct cnx_mgr *cm_ctx;
 	struct cm_req *cm_req;
 	struct cm_disconnect_req *disconnect_req;
-	struct wlan_cm_disconnect_req req = {0};
+	struct wlan_cm_disconnect_req req = { 0 };
 	QDF_STATUS status;
 
 	cm_ctx = cm_get_cm_ctx(vdev);
@@ -58,9 +55,9 @@ cm_reassoc_fail_disconnect(struct wlan_objmgr_vdev *vdev,
 		return QDF_STATUS_E_INVAL;
 
 	/*
-	 * This would be freed as part of removal from cm req list if adding
-	 * to list is success after posting WLAN_CM_SM_EV_DISCONNECT_REQ.
-	 */
+   * This would be freed as part of removal from cm req list if adding
+   * to list is success after posting WLAN_CM_SM_EV_DISCONNECT_REQ.
+   */
 	cm_req = qdf_mem_malloc(sizeof(*cm_req));
 	if (!cm_req)
 		return QDF_STATUS_E_NOMEM;
@@ -84,10 +81,8 @@ cm_reassoc_fail_disconnect(struct wlan_objmgr_vdev *vdev,
 }
 
 QDF_STATUS
-cm_send_reassoc_start_fail(struct cnx_mgr *cm_ctx,
-			   wlan_cm_id cm_id,
-			   enum wlan_cm_connect_fail_reason reason,
-			   bool sync)
+cm_send_reassoc_start_fail(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id,
+			   enum wlan_cm_connect_fail_reason reason, bool sync)
 {
 	struct wlan_cm_connect_resp *resp;
 	QDF_STATUS status;
@@ -98,9 +93,9 @@ cm_send_reassoc_start_fail(struct cnx_mgr *cm_ctx,
 
 	cm_fill_roam_fail_resp_from_cm_id(cm_ctx, resp, cm_id, reason);
 	if (sync)
-		status = cm_sm_deliver_event_sync(
-				cm_ctx, WLAN_CM_SM_EV_REASSOC_FAILURE,
-				sizeof(*resp), resp);
+		status = cm_sm_deliver_event_sync(cm_ctx,
+						  WLAN_CM_SM_EV_REASSOC_FAILURE,
+						  sizeof(*resp), resp);
 	else
 		status = cm_sm_deliver_event(cm_ctx->vdev,
 					     WLAN_CM_SM_EV_REASSOC_FAILURE,
@@ -115,18 +110,18 @@ cm_send_reassoc_start_fail(struct cnx_mgr *cm_ctx,
 }
 
 #ifdef CONN_MGR_ADV_FEATURE
-static QDF_STATUS
-cm_update_roam_scan_filter(
-		struct wlan_objmgr_vdev *vdev, struct cm_roam_req *cm_req,
-		struct scan_filter *filter, bool security_valid_for_6ghz)
+static QDF_STATUS cm_update_roam_scan_filter(struct wlan_objmgr_vdev *vdev,
+					     struct cm_roam_req *cm_req,
+					     struct scan_filter *filter,
+					     bool security_valid_for_6ghz)
 {
 	return cm_update_advance_roam_scan_filter(vdev, filter);
 }
 #else
-static QDF_STATUS
-cm_update_roam_scan_filter(
-		struct wlan_objmgr_vdev *vdev, struct cm_roam_req *cm_req,
-		struct scan_filter *filter, bool security_valid_for_6ghz)
+static QDF_STATUS cm_update_roam_scan_filter(struct wlan_objmgr_vdev *vdev,
+					     struct cm_roam_req *cm_req,
+					     struct scan_filter *filter,
+					     bool security_valid_for_6ghz)
 {
 	uint16_t rsn_caps;
 
@@ -149,8 +144,7 @@ cm_update_roam_scan_filter(
 		filter->ignore_auth_enc_type = 1;
 	}
 
-	rsn_caps =
-		wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_RSN_CAP);
+	rsn_caps = wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_RSN_CAP);
 
 	if (rsn_caps & WLAN_CRYPTO_RSN_CAP_MFP_REQUIRED)
 		filter->pmf_cap = WLAN_PMF_REQUIRED;
@@ -163,8 +157,8 @@ cm_update_roam_scan_filter(
 #endif
 
 static QDF_STATUS cm_connect_prepare_scan_filter_for_roam(
-		struct cnx_mgr *cm_ctx, struct cm_roam_req *cm_req,
-		struct scan_filter *filter, bool security_valid_for_6ghz)
+	struct cnx_mgr *cm_ctx, struct cm_roam_req *cm_req,
+	struct scan_filter *filter, bool security_valid_for_6ghz)
 {
 	struct wlan_objmgr_vdev *vdev = cm_ctx->vdev;
 
@@ -236,9 +230,8 @@ static QDF_STATUS cm_roam_get_candidates(struct wlan_objmgr_pdev *pdev,
 
 	qdf_list_peek_front(candidate_list, &cur_node);
 	cm_req->candidate_list = candidate_list;
-	cm_req->cur_candidate = qdf_container_of(cur_node,
-						 struct scan_cache_node,
-						 node);
+	cm_req->cur_candidate =
+		qdf_container_of(cur_node, struct scan_cache_node, node);
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -267,10 +260,9 @@ static QDF_STATUS cm_host_roam_start(struct cnx_mgr *cm_ctx,
 	return cm_host_roam_preauth_start(cm_ctx, cm_req);
 }
 
-static
-QDF_STATUS cm_host_roam_start_fail(struct cnx_mgr *cm_ctx,
-				   struct cm_req *cm_req,
-				   enum wlan_cm_connect_fail_reason reason)
+static QDF_STATUS
+cm_host_roam_start_fail(struct cnx_mgr *cm_ctx, struct cm_req *cm_req,
+			enum wlan_cm_connect_fail_reason reason)
 {
 	cm_send_preauth_start_fail(cm_ctx, cm_req->cm_id, reason);
 
@@ -285,17 +277,15 @@ static QDF_STATUS cm_host_roam_start(struct cnx_mgr *cm_ctx,
 					&cm_req->roam_req);
 }
 
-static
-QDF_STATUS cm_host_roam_start_fail(struct cnx_mgr *cm_ctx,
-				   struct cm_req *cm_req,
-				   enum wlan_cm_connect_fail_reason reason)
+static QDF_STATUS
+cm_host_roam_start_fail(struct cnx_mgr *cm_ctx, struct cm_req *cm_req,
+			enum wlan_cm_connect_fail_reason reason)
 {
 	return cm_send_reassoc_start_fail(cm_ctx, cm_req->cm_id, reason, true);
 }
 #endif
 
-QDF_STATUS cm_host_roam_start_req(struct cnx_mgr *cm_ctx,
-				  struct cm_req *cm_req)
+QDF_STATUS cm_host_roam_start_req(struct cnx_mgr *cm_ctx, struct cm_req *cm_req)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_pdev *pdev;
@@ -353,8 +343,7 @@ QDF_STATUS cm_reassoc_active(struct cnx_mgr *cm_ctx, wlan_cm_id *cm_id)
 
 	discon_req->cm_id = *cm_id;
 	discon_req->req.vdev_id = req.req.vdev_id;
-	qdf_copy_macaddr(&discon_req->req.bssid,
-			 &req.req.bssid);
+	qdf_copy_macaddr(&discon_req->req.bssid, &req.req.bssid);
 	cm_update_scan_mlme_on_disconnect(cm_ctx->vdev, discon_req);
 	qdf_mem_free(discon_req);
 
@@ -381,9 +370,8 @@ QDF_STATUS cm_reassoc_disconnect_complete(struct cnx_mgr *cm_ctx,
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err(CM_PREFIX_FMT "Peer create request failed",
 			 CM_PREFIX_REF(vdev_id, cm_id));
-		status = cm_send_reassoc_start_fail(cm_ctx, cm_id,
-						    CM_PEER_CREATE_FAILED,
-						    true);
+		status = cm_send_reassoc_start_fail(
+			cm_ctx, cm_id, CM_PEER_CREATE_FAILED, true);
 	}
 
 	return status;
@@ -408,7 +396,9 @@ cm_resume_reassoc_after_peer_create(struct cnx_mgr *cm_ctx, wlan_cm_id *cm_id)
 	req->cm_id = *cm_id;
 	req->bss = cm_req->roam_req.cur_candidate;
 
-	mlme_nofl_info(CM_PREFIX_FMT "Reassoc to " QDF_SSID_FMT " " QDF_MAC_ADDR_FMT " rssi: %d freq: %d source %d",
+	mlme_nofl_info(CM_PREFIX_FMT "Reassoc to " QDF_SSID_FMT
+				     " " QDF_MAC_ADDR_FMT
+				     " rssi: %d freq: %d source %d",
 		       CM_PREFIX_REF(req->vdev_id, req->cm_id),
 		       QDF_SSID_REF(req->bss->entry->ssid.length,
 				    req->bss->entry->ssid.ssid),
@@ -434,30 +424,29 @@ QDF_STATUS cm_reassoc_complete(struct cnx_mgr *cm_ctx,
 			       struct wlan_cm_connect_resp *resp)
 {
 	/*
-	 * If the entry is not present in the list, it must have been cleared
-	 * already.
-	 */
+   * If the entry is not present in the list, it must have been cleared
+   * already.
+   */
 	if (!cm_get_req_by_cm_id(cm_ctx, resp->cm_id))
 		return QDF_STATUS_SUCCESS;
 
 	resp->is_reassoc = true;
 	cm_connect_complete(cm_ctx, resp);
 	/*
-	 * If roaming fails and conn_sm is in ROAMING state, then
-	 * initiate disconnect to cleanup and move conn_sm to INIT state
-	 */
+   * If roaming fails and conn_sm is in ROAMING state, then
+   * initiate disconnect to cleanup and move conn_sm to INIT state
+   */
 	if (QDF_IS_STATUS_ERROR(resp->connect_status) &&
 	    cm_get_state(cm_ctx) == WLAN_CM_S_ROAMING) {
 		cm_reassoc_fail_disconnect(cm_ctx->vdev, CM_ROAM_DISCONNECT,
-					   REASON_UNSPEC_FAILURE,
-					   &resp->bssid);
+					   REASON_UNSPEC_FAILURE, &resp->bssid);
 	}
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static void
-cm_reassoc_handle_event_post_fail(struct cnx_mgr *cm_ctx, wlan_cm_id cm_id)
+static void cm_reassoc_handle_event_post_fail(struct cnx_mgr *cm_ctx,
+					      wlan_cm_id cm_id)
 {
 	struct wlan_cm_connect_resp *resp;
 
@@ -511,13 +500,11 @@ static QDF_STATUS cm_activate_reassoc_req_sched_cb(struct scheduler_msg *msg)
 	if (!cm_ctx)
 		return QDF_STATUS_E_INVAL;
 
-	ret = cm_sm_deliver_event(vdev,
-				  WLAN_CM_SM_EV_REASSOC_ACTIVE,
-				  sizeof(wlan_cm_id),
-				  &cmd->cmd_id);
+	ret = cm_sm_deliver_event(vdev, WLAN_CM_SM_EV_REASSOC_ACTIVE,
+				  sizeof(wlan_cm_id), &cmd->cmd_id);
 	/*
-	 * Called from scheduler context hence posting failure
-	 */
+   * Called from scheduler context hence posting failure
+   */
 	if (QDF_IS_STATUS_ERROR(ret))
 		cm_reassoc_handle_event_post_fail(cm_ctx, cmd->cmd_id);
 
@@ -529,7 +516,7 @@ static QDF_STATUS
 cm_activate_reassoc_req(struct wlan_serialization_command *cmd)
 {
 	struct wlan_objmgr_vdev *vdev = cmd->vdev;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	QDF_STATUS ret;
 
 	msg.bodyptr = cmd;
@@ -540,8 +527,7 @@ cm_activate_reassoc_req(struct wlan_serialization_command *cmd)
 	if (QDF_IS_STATUS_ERROR(ret))
 		return ret;
 
-	ret = scheduler_post_message(QDF_MODULE_ID_MLME,
-				     QDF_MODULE_ID_MLME,
+	ret = scheduler_post_message(QDF_MODULE_ID_MLME, QDF_MODULE_ID_MLME,
 				     QDF_MODULE_ID_MLME, &msg);
 
 	if (QDF_IS_STATUS_ERROR(ret)) {
@@ -557,16 +543,13 @@ cm_activate_reassoc_req(struct wlan_serialization_command *cmd)
 static QDF_STATUS
 cm_activate_reassoc_req(struct wlan_serialization_command *cmd)
 {
-	return cm_sm_deliver_event(cmd->vdev,
-				   WLAN_CM_SM_EV_REASSOC_ACTIVE,
-				   sizeof(wlan_cm_id),
-				   &cmd->cmd_id);
+	return cm_sm_deliver_event(cmd->vdev, WLAN_CM_SM_EV_REASSOC_ACTIVE,
+				   sizeof(wlan_cm_id), &cmd->cmd_id);
 }
 #endif
 
-static QDF_STATUS
-cm_ser_reassoc_cb(struct wlan_serialization_command *cmd,
-		  enum wlan_serialization_cb_reason reason)
+static QDF_STATUS cm_ser_reassoc_cb(struct wlan_serialization_command *cmd,
+				    enum wlan_serialization_cb_reason reason)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	struct wlan_objmgr_vdev *vdev;
@@ -586,26 +569,26 @@ cm_ser_reassoc_cb(struct wlan_serialization_command *cmd,
 	switch (reason) {
 	case WLAN_SER_CB_ACTIVATE_CMD:
 		/*
-		 * For pending to active reason, use async api to take lock.
-		 * For direct activation use sync api to avoid taking lock
-		 * as lock is already acquired by the requester.
-		 */
+     * For pending to active reason, use async api to take lock.
+     * For direct activation use sync api to avoid taking lock
+     * as lock is already acquired by the requester.
+     */
 		if (cmd->activation_reason == SER_PENDING_TO_ACTIVE)
 			status = cm_activate_reassoc_req(cmd);
 		else
 			status = cm_sm_deliver_event_sync(
-					cm_ctx, WLAN_CM_SM_EV_REASSOC_ACTIVE,
-					sizeof(wlan_cm_id), &cmd->cmd_id);
+				cm_ctx, WLAN_CM_SM_EV_REASSOC_ACTIVE,
+				sizeof(wlan_cm_id), &cmd->cmd_id);
 
 		if (QDF_IS_STATUS_SUCCESS(status))
 			break;
 		/*
-		 * Handle failure if posting fails, i.e. the SM state has
-		 * changed or head cm_id doesn't match the active cm_id.
-		 * connect active should be handled only in JOIN_PENDING. If
-		 * new command has been received connect activation should be
-		 * aborted from here with connect req cleanup.
-		 */
+     * Handle failure if posting fails, i.e. the SM state has
+     * changed or head cm_id doesn't match the active cm_id.
+     * connect active should be handled only in JOIN_PENDING. If
+     * new command has been received connect activation should be
+     * aborted from here with connect req cleanup.
+     */
 		cm_reassoc_handle_event_post_fail(cm_ctx, cmd->cmd_id);
 		break;
 	case WLAN_SER_CB_CANCEL_CMD:
@@ -630,11 +613,13 @@ cm_ser_reassoc_cb(struct wlan_serialization_command *cmd,
 	return status;
 }
 
-#define REASSOC_TIMEOUT	10000
+#define REASSOC_TIMEOUT 10000
 static QDF_STATUS cm_ser_reassoc_req(struct cnx_mgr *cm_ctx,
 				     struct cm_roam_req *cm_req)
 {
-	struct wlan_serialization_command cmd = {0, };
+	struct wlan_serialization_command cmd = {
+		0,
+	};
 	enum wlan_serialization_status ser_cmd_status;
 	QDF_STATUS status;
 	uint8_t vdev_id = wlan_vdev_get_id(cm_ctx->vdev);
@@ -726,7 +711,8 @@ void cm_reassoc_hw_mode_change_resp(struct wlan_objmgr_pdev *pdev,
 	enum wlan_cm_sm_evt event = WLAN_CM_SM_EV_HW_MODE_SUCCESS;
 	struct cnx_mgr *cm_ctx;
 
-	mlme_debug(CM_PREFIX_FMT "Continue Reassoc after HW mode change, status %d",
+	mlme_debug(CM_PREFIX_FMT
+		   "Continue Reassoc after HW mode change, status %d",
 		   CM_PREFIX_REF(vdev_id, cm_id), status);
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_pdev(pdev, vdev_id,
@@ -742,16 +728,16 @@ void cm_reassoc_hw_mode_change_resp(struct wlan_objmgr_pdev *pdev,
 
 	if (QDF_IS_STATUS_ERROR(status))
 		event = WLAN_CM_SM_EV_HW_MODE_FAILURE;
-	qdf_status = cm_sm_deliver_event(vdev, event, sizeof(wlan_cm_id),
-					 &cm_id);
+	qdf_status =
+		cm_sm_deliver_event(vdev, event, sizeof(wlan_cm_id), &cm_id);
 
 	/*
-	 * Handle failure if posting fails, i.e. the SM state has
-	 * changed or head cm_id doesn't match the active cm_id.
-	 * hw mode change resp should be handled in REASSOC state. If
-	 * new command has been received reassoc should be
-	 * aborted from here with reassoc req cleanup.
-	 */
+   * Handle failure if posting fails, i.e. the SM state has
+   * changed or head cm_id doesn't match the active cm_id.
+   * hw mode change resp should be handled in REASSOC state. If
+   * new command has been received reassoc should be
+   * aborted from here with reassoc req cleanup.
+   */
 	if (QDF_IS_STATUS_ERROR(status))
 		cm_reassoc_handle_event_post_fail(cm_ctx, cm_id);
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_MLME_CM_ID);
@@ -774,9 +760,8 @@ cm_check_for_reassoc_hw_mode_change(struct cnx_mgr *cm_ctx,
 
 	candidate_freq = cm_req->cur_candidate->entry->channel.chan_freq;
 	status = policy_mgr_handle_conc_multiport(
-			psoc, cm_req->req.vdev_id,
-			candidate_freq, POLICY_MGR_UPDATE_REASON_LFR2_ROAM,
-			cm_req->cm_id);
+		psoc, cm_req->req.vdev_id, candidate_freq,
+		POLICY_MGR_UPDATE_REASON_LFR2_ROAM, cm_req->cm_id);
 	if (status == QDF_STATUS_E_NOSUPPORT)
 		status = QDF_STATUS_E_ALREADY;
 
@@ -791,8 +776,7 @@ cm_check_for_reassoc_hw_mode_change(struct cnx_mgr *cm_ctx,
 }
 #endif
 
-QDF_STATUS cm_reassoc_start(struct cnx_mgr *cm_ctx,
-			    struct cm_roam_req *cm_req)
+QDF_STATUS cm_reassoc_start(struct cnx_mgr *cm_ctx, struct cm_roam_req *cm_req)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	uint8_t vdev_id = wlan_vdev_get_id(cm_ctx->vdev);
@@ -805,7 +789,8 @@ QDF_STATUS cm_reassoc_start(struct cnx_mgr *cm_ctx,
 			 CM_PREFIX_REF(vdev_id, cm_req->cm_id), status);
 		goto err;
 	} else if (QDF_IS_STATUS_SUCCESS(status)) {
-		mlme_debug(CM_PREFIX_FMT "Reassoc will continue after HW mode change",
+		mlme_debug(CM_PREFIX_FMT
+			   "Reassoc will continue after HW mode change",
 			   CM_PREFIX_REF(vdev_id, cm_req->cm_id));
 		return QDF_STATUS_SUCCESS;
 	}
@@ -838,8 +823,7 @@ QDF_STATUS cm_reassoc_rsp(struct wlan_objmgr_vdev *vdev,
 	cm_id = cm_ctx->active_cm_id;
 	prefix = CM_ID_GET_PREFIX(cm_id);
 
-	if (prefix != ROAM_REQ_PREFIX ||
-	    cm_id != resp->cm_id) {
+	if (prefix != ROAM_REQ_PREFIX || cm_id != resp->cm_id) {
 		mlme_err(CM_PREFIX_FMT " Active cm_id 0x%x is different",
 			 CM_PREFIX_REF(wlan_vdev_get_id(vdev), resp->cm_id),
 			 cm_id);
@@ -851,19 +835,19 @@ QDF_STATUS cm_reassoc_rsp(struct wlan_objmgr_vdev *vdev,
 
 	if (QDF_IS_STATUS_SUCCESS(resp->connect_status)) {
 		/*
-		 * On successful connection to sae single pmk AP,
-		 * clear all the single pmk AP.
-		 */
+     * On successful connection to sae single pmk AP,
+     * clear all the single pmk AP.
+     */
 		if (cm_is_cm_id_current_candidate_single_pmk(cm_ctx, cm_id))
 			wlan_crypto_selective_clear_sae_single_pmk_entries(
-					vdev, &pmksa_mac);
+				vdev, &pmksa_mac);
 		event = WLAN_CM_SM_EV_REASSOC_DONE;
 	} else {
 		event = WLAN_CM_SM_EV_REASSOC_FAILURE;
 	}
 
-	qdf_status = cm_sm_deliver_event(cm_ctx->vdev, event, sizeof(*resp),
-					 resp);
+	qdf_status =
+		cm_sm_deliver_event(cm_ctx->vdev, event, sizeof(*resp), resp);
 	if (QDF_IS_STATUS_SUCCESS(qdf_status))
 		return qdf_status;
 post_err:
@@ -901,14 +885,13 @@ QDF_STATUS cm_roam_bss_peer_create_rsp(struct wlan_objmgr_vdev *vdev,
 		if (!cm_req)
 			return QDF_STATUS_E_INVAL;
 
-		return cm_send_reassoc_start_fail(
-				cm_ctx, cm_id,
-				CM_PEER_CREATE_FAILED, false);
+		return cm_send_reassoc_start_fail(cm_ctx, cm_id,
+						  CM_PEER_CREATE_FAILED, false);
 	}
 
-	qdf_status = cm_sm_deliver_event(
-			vdev, WLAN_CM_SM_EV_BSS_CREATE_PEER_SUCCESS,
-			sizeof(wlan_cm_id), &cm_id);
+	qdf_status = cm_sm_deliver_event(vdev,
+					 WLAN_CM_SM_EV_BSS_CREATE_PEER_SUCCESS,
+					 sizeof(wlan_cm_id), &cm_id);
 	if (QDF_IS_STATUS_SUCCESS(qdf_status))
 		return qdf_status;
 
@@ -940,10 +923,9 @@ QDF_STATUS cm_roam_disconnect_rsp(struct wlan_objmgr_vdev *vdev,
 		qdf_status = QDF_STATUS_E_FAILURE;
 		goto disconnect_complete;
 	}
-	qdf_status =
-		cm_sm_deliver_event(vdev,
-				    WLAN_CM_SM_EV_HO_ROAM_DISCONNECT_DONE,
-				    sizeof(*resp), resp);
+	qdf_status = cm_sm_deliver_event(vdev,
+					 WLAN_CM_SM_EV_HO_ROAM_DISCONNECT_DONE,
+					 sizeof(*resp), resp);
 	if (QDF_IS_STATUS_SUCCESS(qdf_status))
 		return qdf_status;
 

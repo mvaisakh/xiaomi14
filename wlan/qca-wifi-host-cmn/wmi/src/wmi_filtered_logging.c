@@ -22,7 +22,7 @@ static struct wmi_log_buf_t *wmi_log_buf_allocate(void)
 {
 	struct wmi_log_buf_t *cmd_log_buf;
 	int buf_size = WMI_FILTERED_CMD_EVT_MAX_NUM_ENTRY *
-			sizeof(struct wmi_command_debug);
+		       sizeof(struct wmi_command_debug);
 
 	cmd_log_buf = qdf_mem_malloc(sizeof(struct wmi_log_buf_t));
 	if (!cmd_log_buf)
@@ -46,8 +46,7 @@ void wmi_filtered_logging_init(wmi_unified_t wmi_handle)
 	int buf_size = WMI_FILTERED_CMD_EVT_SUPPORTED * sizeof(int);
 
 	/* alloc buffer to save user inputs, for WMI_CMD */
-	wmi_handle->log_info.filtered_wmi_cmds =
-					qdf_mem_malloc(buf_size);
+	wmi_handle->log_info.filtered_wmi_cmds = qdf_mem_malloc(buf_size);
 	if (!wmi_handle->log_info.filtered_wmi_cmds)
 		return;
 
@@ -59,8 +58,7 @@ void wmi_filtered_logging_init(wmi_unified_t wmi_handle)
 		goto fail1;
 
 	/* alloc buffer to save user inputs, for WMI_EVT */
-	wmi_handle->log_info.filtered_wmi_evts =
-					qdf_mem_malloc(buf_size);
+	wmi_handle->log_info.filtered_wmi_evts = qdf_mem_malloc(buf_size);
 	if (!wmi_handle->log_info.filtered_wmi_evts)
 		goto fail2;
 
@@ -95,15 +93,14 @@ void wmi_filtered_logging_free(wmi_unified_t wmi_handle)
 	wmi_handle->log_info.filtered_wmi_evts = NULL;
 
 	if (wmi_handle->log_info.wmi_filtered_command_log) {
-		qdf_mem_free(wmi_handle->log_info.
-			     wmi_filtered_command_log->buf);
+		qdf_mem_free(
+			wmi_handle->log_info.wmi_filtered_command_log->buf);
 		wmi_handle->log_info.wmi_filtered_command_log->buf = NULL;
 		qdf_mem_free(wmi_handle->log_info.wmi_filtered_command_log);
 		wmi_handle->log_info.wmi_filtered_command_log = NULL;
 	}
 	if (wmi_handle->log_info.wmi_filtered_event_log) {
-		qdf_mem_free(wmi_handle->log_info.
-			     wmi_filtered_event_log->buf);
+		qdf_mem_free(wmi_handle->log_info.wmi_filtered_event_log->buf);
 		wmi_handle->log_info.wmi_filtered_event_log->buf = NULL;
 		qdf_mem_free(wmi_handle->log_info.wmi_filtered_event_log);
 		wmi_handle->log_info.wmi_filtered_event_log = NULL;
@@ -117,7 +114,7 @@ static int wmi_reset_filtered_buffers(wmi_unified_t wmi_handle,
 				      struct wmi_log_buf_t *cmd_log_buf)
 {
 	int buf_size = WMI_FILTERED_CMD_EVT_MAX_NUM_ENTRY *
-			sizeof(struct wmi_command_debug);
+		       sizeof(struct wmi_command_debug);
 
 	if (!cmd_log_buf)
 		return 0;
@@ -153,8 +150,7 @@ static bool wmi_id_in_list(uint32_t *id_list, uint32_t id)
 /*
  * Add command or event ids to list to be recorded
  */
-static int wmi_add_to_record_list(wmi_unified_t wmi_handle,
-				  uint32_t id,
+static int wmi_add_to_record_list(wmi_unified_t wmi_handle, uint32_t id,
 				  enum WMI_RECORD_TYPE record_type)
 {
 	uint32_t *target_list;
@@ -199,15 +195,14 @@ static void wmi_specific_cmd_evt_record(uint32_t id, uint8_t *buf,
 
 	idx = *log_buffer->p_buf_tail_idx;
 	tmpbuf[idx].command = id;
-	qdf_mem_copy(tmpbuf[idx].data, buf,
-		     WMI_DEBUG_ENTRY_MAX_LENGTH);
+	qdf_mem_copy(tmpbuf[idx].data, buf, WMI_DEBUG_ENTRY_MAX_LENGTH);
 	tmpbuf[idx].time = qdf_get_log_timestamp();
 	(*log_buffer->p_buf_tail_idx)++;
 	log_buffer->length++;
 }
 
-void wmi_specific_cmd_record(wmi_unified_t wmi_handle,
-			     uint32_t id, uint8_t *buf)
+void wmi_specific_cmd_record(wmi_unified_t wmi_handle, uint32_t id,
+			     uint8_t *buf)
 {
 	uint32_t *target_list;
 	struct wmi_log_buf_t *log_buffer;
@@ -226,8 +221,8 @@ void wmi_specific_cmd_record(wmi_unified_t wmi_handle,
 	}
 }
 
-void wmi_specific_evt_record(wmi_unified_t wmi_handle,
-			     uint32_t id, uint8_t *buf)
+void wmi_specific_evt_record(wmi_unified_t wmi_handle, uint32_t id,
+			     uint8_t *buf)
 {
 	uint32_t *target_list;
 	struct wmi_log_buf_t *log_buffer;
@@ -275,8 +270,7 @@ int debug_filtered_wmi_cmds_show(qdf_debugfs_file_t m, void *v)
 
 	for (i = 0; i < WMI_FILTERED_CMD_EVT_SUPPORTED; i++) {
 		if (target_list[i] != 0) {
-			wmi_filtered_seq_printf(m, "0x%x ",
-						target_list[i]);
+			wmi_filtered_seq_printf(m, "0x%x ", target_list[i]);
 		}
 	}
 	wmi_filtered_seq_printf(m, "\n");
@@ -295,8 +289,7 @@ int debug_filtered_wmi_evts_show(qdf_debugfs_file_t m, void *v)
 		return 0;
 	for (i = 0; i < WMI_FILTERED_CMD_EVT_SUPPORTED; i++) {
 		if (target_list[i] != 0) {
-			wmi_filtered_seq_printf(m, "0x%x ",
-						target_list[i]);
+			wmi_filtered_seq_printf(m, "0x%x ", target_list[i]);
 		}
 	}
 	wmi_filtered_seq_printf(m, "\n");
@@ -316,8 +309,7 @@ static int wmi_log_show(wmi_unified_t wmi_handle, void *buf,
 	qdf_spin_lock_bh(&wmi_handle->log_info.wmi_record_lock);
 	if (!wmi_log->length) {
 		qdf_spin_unlock_bh(&wmi_handle->log_info.wmi_record_lock);
-		return wmi_filtered_seq_printf(m,
-					       "Nothing to read!\n");
+		return wmi_filtered_seq_printf(m, "Nothing to read!\n");
 	}
 	if (wmi_log->length <= wmi_ring_size)
 		nread = wmi_log->length;
@@ -336,17 +328,14 @@ static int wmi_log_show(wmi_unified_t wmi_handle, void *buf,
 		struct wmi_event_debug *wmi_record;
 
 		wmi_record = &(((struct wmi_event_debug *)wmi_log->buf)[pos]);
-		qdf_log_timestamp_to_secs(wmi_record->time, &secs,
-					  &usecs);
+		qdf_log_timestamp_to_secs(wmi_record->time, &secs, &usecs);
 		outlen += wmi_filtered_seq_printf(m, "Event ID = %x\n",
 						  (wmi_record->event));
-		outlen +=
-			wmi_filtered_seq_printf(m,
-						"Event TIME = [%llu.%06llu]\n",
-						secs, usecs);
+		outlen += wmi_filtered_seq_printf(
+			m, "Event TIME = [%llu.%06llu]\n", secs, usecs);
 		outlen += wmi_filtered_seq_printf(m, "CMD = ");
-		for (i = 0; i < (WMI_DEBUG_ENTRY_MAX_LENGTH /
-				sizeof(uint32_t)); i++)
+		for (i = 0; i < (WMI_DEBUG_ENTRY_MAX_LENGTH / sizeof(uint32_t));
+		     i++)
 			outlen += wmi_filtered_seq_printf(m, "%x ",
 							  wmi_record->data[i]);
 		outlen += wmi_filtered_seq_printf(m, "\n");
@@ -380,14 +369,13 @@ int debug_wmi_filtered_event_log_show(qdf_debugfs_file_t m, void *v)
 	return wmi_log_show(wmi_handle, wmi_log, m);
 }
 
-ssize_t debug_filtered_wmi_cmds_write(struct file *file,
-				      const char __user *buf,
+ssize_t debug_filtered_wmi_cmds_write(struct file *file, const char __user *buf,
 				      size_t count, loff_t *ppos)
 {
 	wmi_unified_t wmi_handle =
 		((struct seq_file *)file->private_data)->private;
 	int k, ret;
-	char locbuf[12] = {0};
+	char locbuf[12] = { 0 };
 	int buf_size = WMI_FILTERED_CMD_EVT_SUPPORTED * sizeof(int);
 
 	if ((!buf) || (count > 8 || count <= 0))
@@ -417,14 +405,13 @@ ssize_t debug_filtered_wmi_cmds_write(struct file *file,
 	return count;
 }
 
-ssize_t debug_filtered_wmi_evts_write(struct file *file,
-				      const char __user *buf,
+ssize_t debug_filtered_wmi_evts_write(struct file *file, const char __user *buf,
 				      size_t count, loff_t *ppos)
 {
 	wmi_unified_t wmi_handle =
 		((struct seq_file *)file->private_data)->private;
 	int k, ret;
-	char locbuf[12] = {0};
+	char locbuf[12] = { 0 };
 	int buf_size = WMI_FILTERED_CMD_EVT_SUPPORTED * sizeof(int);
 
 	if ((!buf) || (count > 8 || count <= 0))
@@ -461,7 +448,7 @@ ssize_t debug_wmi_filtered_command_log_write(struct file *file,
 	wmi_unified_t wmi_handle =
 		((struct seq_file *)file->private_data)->private;
 	int k, ret;
-	char locbuf[12] = {0};
+	char locbuf[12] = { 0 };
 	struct wmi_log_buf_t *cmd_log_buf;
 
 	if ((!buf) || (count > 8 || count <= 0))
@@ -484,13 +471,13 @@ ssize_t debug_wmi_filtered_command_log_write(struct file *file,
 }
 
 ssize_t debug_wmi_filtered_event_log_write(struct file *file,
-					   const char __user *buf,
-					   size_t count, loff_t *ppos)
+					   const char __user *buf, size_t count,
+					   loff_t *ppos)
 {
 	wmi_unified_t wmi_handle =
 		((struct seq_file *)file->private_data)->private;
 	int k, ret;
-	char locbuf[12] = {0};
+	char locbuf[12] = { 0 };
 	struct wmi_log_buf_t *cmd_log_buf;
 
 	if ((!buf) || (count > 8 || count <= 0))

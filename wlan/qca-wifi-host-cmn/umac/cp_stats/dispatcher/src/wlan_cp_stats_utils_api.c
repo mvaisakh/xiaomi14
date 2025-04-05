@@ -23,83 +23,75 @@
  * This file provide public API definitions for other accessing other UMAC
  * components
  */
+#include "../../core/src/wlan_cp_stats_comp_handler.h"
 #include "../../core/src/wlan_cp_stats_defs.h"
 #include "../../core/src/wlan_cp_stats_obj_mgr_handler.h"
-#include "../../core/src/wlan_cp_stats_comp_handler.h"
-#include <wlan_cp_stats_utils_api.h>
 #include <wlan_cp_stats_ucfg_api.h>
+#include <wlan_cp_stats_utils_api.h>
 
 QDF_STATUS wlan_cp_stats_init(void)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 
-	status = wlan_objmgr_register_psoc_create_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_psoc_obj_create_handler,
-				 NULL);
+	status = wlan_objmgr_register_psoc_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_psoc_obj_create_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cp_stats_err("Failed to register psoc create handler");
 		goto wlan_cp_stats_psoc_init_fail1;
 	}
 
-	status = wlan_objmgr_register_psoc_destroy_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_psoc_obj_destroy_handler,
-				 NULL);
+	status = wlan_objmgr_register_psoc_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_psoc_obj_destroy_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cp_stats_err("Failed to register psoc destroy handler");
 		goto wlan_cp_stats_psoc_init_fail2;
 	}
 
-	status = wlan_objmgr_register_pdev_create_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_pdev_obj_create_handler,
-				 NULL);
+	status = wlan_objmgr_register_pdev_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_pdev_obj_create_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cp_stats_err("Failed to register pdev create handler");
 		goto wlan_cp_stats_pdev_init_fail1;
 	}
 
-	status = wlan_objmgr_register_pdev_destroy_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_pdev_obj_destroy_handler,
-				 NULL);
+	status = wlan_objmgr_register_pdev_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_pdev_obj_destroy_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cp_stats_err("Failed to register pdev destroy handler");
 		goto wlan_cp_stats_pdev_init_fail2;
 	}
 
-	status = wlan_objmgr_register_vdev_create_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_vdev_obj_create_handler,
-				 NULL);
+	status = wlan_objmgr_register_vdev_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_vdev_obj_create_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cp_stats_err("Failed to register vdev create handler");
 		goto wlan_cp_stats_vdev_init_fail1;
 	}
 
-	status = wlan_objmgr_register_vdev_destroy_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_vdev_obj_destroy_handler,
-				 NULL);
+	status = wlan_objmgr_register_vdev_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_vdev_obj_destroy_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cp_stats_err("Failed to register vdev destroy handler");
 		goto wlan_cp_stats_vdev_init_fail2;
 	}
 
-	status = wlan_objmgr_register_peer_create_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_peer_obj_create_handler,
-				 NULL);
+	status = wlan_objmgr_register_peer_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_peer_obj_create_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cp_stats_err("Failed to register peer create handler");
 		goto wlan_cp_stats_peer_init_fail1;
 	}
 
-	status = wlan_objmgr_register_peer_destroy_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_peer_obj_destroy_handler,
-				 NULL);
+	status = wlan_objmgr_register_peer_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_peer_obj_destroy_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		cp_stats_err("Failed to register peer destroy handler");
 		goto wlan_cp_stats_peer_init_fail2;
@@ -108,40 +100,33 @@ QDF_STATUS wlan_cp_stats_init(void)
 	return QDF_STATUS_SUCCESS;
 
 wlan_cp_stats_peer_init_fail2:
-	wlan_objmgr_unregister_peer_create_handler
-		(WLAN_UMAC_COMP_CP_STATS,
-		 wlan_cp_stats_peer_obj_create_handler,
-		 NULL);
+	wlan_objmgr_unregister_peer_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_peer_obj_create_handler,
+		NULL);
 wlan_cp_stats_peer_init_fail1:
-	wlan_objmgr_unregister_vdev_destroy_handler
-		(WLAN_UMAC_COMP_CP_STATS,
-		 wlan_cp_stats_vdev_obj_destroy_handler,
-		 NULL);
+	wlan_objmgr_unregister_vdev_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_vdev_obj_destroy_handler,
+		NULL);
 wlan_cp_stats_vdev_init_fail2:
-	wlan_objmgr_unregister_vdev_create_handler
-		(WLAN_UMAC_COMP_CP_STATS,
-		 wlan_cp_stats_vdev_obj_create_handler,
-		 NULL);
+	wlan_objmgr_unregister_vdev_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_vdev_obj_create_handler,
+		NULL);
 wlan_cp_stats_vdev_init_fail1:
-	wlan_objmgr_unregister_pdev_destroy_handler
-		(WLAN_UMAC_COMP_CP_STATS,
-		 wlan_cp_stats_pdev_obj_destroy_handler,
-		 NULL);
+	wlan_objmgr_unregister_pdev_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_pdev_obj_destroy_handler,
+		NULL);
 wlan_cp_stats_pdev_init_fail2:
-	wlan_objmgr_unregister_pdev_create_handler
-		(WLAN_UMAC_COMP_CP_STATS,
-		 wlan_cp_stats_pdev_obj_create_handler,
-		 NULL);
+	wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_pdev_obj_create_handler,
+		NULL);
 wlan_cp_stats_pdev_init_fail1:
-	wlan_objmgr_unregister_psoc_destroy_handler
-		(WLAN_UMAC_COMP_CP_STATS,
-		 wlan_cp_stats_psoc_obj_destroy_handler,
-		 NULL);
+	wlan_objmgr_unregister_psoc_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_psoc_obj_destroy_handler,
+		NULL);
 wlan_cp_stats_psoc_init_fail2:
-	wlan_objmgr_unregister_psoc_create_handler
-		(WLAN_UMAC_COMP_CP_STATS,
-		 wlan_cp_stats_psoc_obj_create_handler,
-		 NULL);
+	wlan_objmgr_unregister_psoc_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_psoc_obj_create_handler,
+		NULL);
 wlan_cp_stats_psoc_init_fail1:
 	return status;
 }
@@ -150,59 +135,51 @@ QDF_STATUS wlan_cp_stats_deinit(void)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 
-	status = wlan_objmgr_unregister_psoc_create_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_psoc_obj_create_handler,
-				 NULL);
+	status = wlan_objmgr_unregister_psoc_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_psoc_obj_create_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		cp_stats_err("Failed to unregister psoc create handler");
 
-	status = wlan_objmgr_unregister_psoc_destroy_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_psoc_obj_destroy_handler,
-				 NULL);
+	status = wlan_objmgr_unregister_psoc_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_psoc_obj_destroy_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		cp_stats_err("Failed to unregister psoc destroy handler");
 
-	status = wlan_objmgr_unregister_pdev_create_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_pdev_obj_create_handler,
-				 NULL);
+	status = wlan_objmgr_unregister_pdev_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_pdev_obj_create_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		cp_stats_err("Failed to unregister pdev create handler");
 
-	status = wlan_objmgr_unregister_pdev_destroy_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_pdev_obj_destroy_handler,
-				 NULL);
+	status = wlan_objmgr_unregister_pdev_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_pdev_obj_destroy_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		cp_stats_err("Failed to unregister pdev destroy handler");
 
-	status = wlan_objmgr_unregister_vdev_create_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_vdev_obj_create_handler,
-				 NULL);
+	status = wlan_objmgr_unregister_vdev_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_vdev_obj_create_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		cp_stats_err("Failed to unregister vdev create handler");
 
-	status = wlan_objmgr_unregister_vdev_destroy_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_vdev_obj_destroy_handler,
-				 NULL);
+	status = wlan_objmgr_unregister_vdev_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_vdev_obj_destroy_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		cp_stats_err("Failed to unregister vdev destroy handler");
 
-	status = wlan_objmgr_unregister_peer_create_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_peer_obj_create_handler,
-				 NULL);
+	status = wlan_objmgr_unregister_peer_create_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_peer_obj_create_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		cp_stats_err("Failed to unregister peer create handler");
 
-	status = wlan_objmgr_unregister_peer_destroy_handler
-				(WLAN_UMAC_COMP_CP_STATS,
-				 wlan_cp_stats_peer_obj_destroy_handler,
-				 NULL);
+	status = wlan_objmgr_unregister_peer_destroy_handler(
+		WLAN_UMAC_COMP_CP_STATS, wlan_cp_stats_peer_obj_destroy_handler,
+		NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		cp_stats_err("Failed to unregister peer destroy handler");
 
@@ -219,8 +196,8 @@ QDF_STATUS wlan_cp_stats_open(struct wlan_objmgr_psoc *psoc)
 		cp_stats_err("PSOC is null!");
 		return QDF_STATUS_E_INVAL;
 	}
-	csc =
-	wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CP_STATS);
+	csc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
+						    WLAN_UMAC_COMP_CP_STATS);
 	if (!csc) {
 		cp_stats_err("cp_stats_context is null!");
 		return QDF_STATUS_E_FAILURE;
@@ -241,8 +218,8 @@ QDF_STATUS wlan_cp_stats_close(struct wlan_objmgr_psoc *psoc)
 		cp_stats_err("PSOC is null!");
 		return QDF_STATUS_E_INVAL;
 	}
-	csc =
-	wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CP_STATS);
+	csc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
+						    WLAN_UMAC_COMP_CP_STATS);
 	if (csc && csc->cp_stats_close) {
 		csc->cp_stats_close(psoc);
 		qdf_spinlock_destroy(&csc->csc_lock);
@@ -261,8 +238,8 @@ QDF_STATUS wlan_cp_stats_enable(struct wlan_objmgr_psoc *psoc)
 		cp_stats_err("PSOC is null!");
 		return QDF_STATUS_E_INVAL;
 	}
-	csc =
-	wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CP_STATS);
+	csc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
+						    WLAN_UMAC_COMP_CP_STATS);
 	if (!csc) {
 		cp_stats_err("cp_stats_context is null!");
 		return QDF_STATUS_E_FAILURE;
@@ -282,8 +259,8 @@ QDF_STATUS wlan_cp_stats_disable(struct wlan_objmgr_psoc *psoc)
 		cp_stats_err("PSOC is null!\n");
 		return QDF_STATUS_E_INVAL;
 	}
-	csc =
-	wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_CP_STATS);
+	csc = wlan_objmgr_psoc_get_comp_private_obj(psoc,
+						    WLAN_UMAC_COMP_CP_STATS);
 	if (csc && csc->cp_stats_disable)
 		csc->cp_stats_disable(psoc);
 
@@ -293,8 +270,8 @@ QDF_STATUS wlan_cp_stats_disable(struct wlan_objmgr_psoc *psoc)
 QDF_STATUS
 wlan_cp_stats_comp_obj_cfg(enum wlan_objmgr_obj_type obj_type,
 			   enum wlan_cp_stats_cfg_state cfg_state,
-			   enum wlan_umac_comp_id comp_id,
-			   void *cmn_obj, void *data)
+			   enum wlan_umac_comp_id comp_id, void *cmn_obj,
+			   void *data)
 {
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct cp_stats_context *csc;
@@ -318,9 +295,8 @@ wlan_cp_stats_comp_obj_cfg(enum wlan_objmgr_obj_type obj_type,
 	switch (obj_type) {
 	case WLAN_PSOC_OP:
 		psoc = (struct wlan_objmgr_psoc *)cmn_obj;
-		csc =
-		wlan_objmgr_psoc_get_comp_private_obj
-				(psoc, WLAN_UMAC_COMP_CP_STATS);
+		csc = wlan_objmgr_psoc_get_comp_private_obj(
+			psoc, WLAN_UMAC_COMP_CP_STATS);
 		break;
 	case WLAN_PDEV_OP:
 		pdev = (struct wlan_objmgr_pdev *)cmn_obj;
@@ -345,9 +321,8 @@ wlan_cp_stats_comp_obj_cfg(enum wlan_objmgr_obj_type obj_type,
 	}
 
 	if (csc->cp_stats_comp_obj_config)
-		status = csc->cp_stats_comp_obj_config(obj_type, cfg_state,
-							cp_stats_comp_id,
-							cmn_obj, data);
+		status = csc->cp_stats_comp_obj_config(
+			obj_type, cfg_state, cp_stats_comp_id, cmn_obj, data);
 
 	return status;
 }
@@ -371,8 +346,8 @@ void wlan_cp_stats_peer_rx_pnerr(struct wlan_objmgr_peer *peer)
 #if defined(WLAN_SUPPORT_TWT) && defined(WLAN_TWT_CONV_SUPPORTED)
 QDF_STATUS
 tgt_cp_stats_twt_get_session_evt_handler(
-				struct wlan_objmgr_psoc *psoc,
-				struct twt_session_stats_info *twt_params)
+	struct wlan_objmgr_psoc *psoc,
+	struct twt_session_stats_info *twt_params)
 {
 	return wlan_cp_stats_twt_get_session_evt_handler(psoc, twt_params);
 }

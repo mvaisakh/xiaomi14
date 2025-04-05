@@ -3,14 +3,14 @@
  * Copyright (c) 2017-2018, 2020 The Linux Foundation. All rights reserved.
  */
 
-#include "cam_cpas_hw_intf.h"
 #include "cam_cpas_hw.h"
+#include "cam_cpas_hw_intf.h"
 #include "cam_cpas_soc.h"
 
 int cam_camsstop_get_hw_info(struct cam_hw_info *cpas_hw,
-	struct cam_cpas_hw_caps *hw_caps)
+			     struct cam_cpas_hw_caps *hw_caps)
 {
-	struct cam_cpas *cpas_core = (struct cam_cpas *) cpas_hw->core_info;
+	struct cam_cpas *cpas_core = (struct cam_cpas *)cpas_hw->core_info;
 	struct cam_hw_soc_info *soc_info = &cpas_hw->soc_info;
 	int32_t reg_indx = cpas_core->regbase_index[CAM_CPAS_REG_CAMSS];
 	uint32_t reg_value;
@@ -28,15 +28,16 @@ int cam_camsstop_get_hw_info(struct cam_hw_info *cpas_hw,
 	hw_caps->camera_version.incr =
 		CAM_BITS_MASK_SHIFT(reg_value, 0xffff, 0x0);
 
-	CAM_DBG(CAM_FD, "Family %d, version %d.%d.%d",
-		hw_caps->camera_family, hw_caps->camera_version.major,
-		hw_caps->camera_version.minor, hw_caps->camera_version.incr);
+	CAM_DBG(CAM_FD, "Family %d, version %d.%d.%d", hw_caps->camera_family,
+		hw_caps->camera_version.major, hw_caps->camera_version.minor,
+		hw_caps->camera_version.incr);
 
 	return 0;
 }
 
 int cam_camsstop_setup_regbase_indices(struct cam_hw_soc_info *soc_info,
-	int32_t regbase_index[], int32_t num_reg_map)
+				       int32_t regbase_index[],
+				       int32_t num_reg_map)
 {
 	uint32_t index;
 	int rc;
@@ -53,7 +54,8 @@ int cam_camsstop_setup_regbase_indices(struct cam_hw_soc_info *soc_info,
 	}
 
 	rc = cam_common_util_get_string_index(soc_info->mem_block_name,
-		soc_info->num_mem_block, "cam_camss", &index);
+					      soc_info->num_mem_block,
+					      "cam_camss", &index);
 	if ((rc == 0) && (index < num_reg_map)) {
 		regbase_index[CAM_CPAS_REG_CAMSS] = index;
 	} else {

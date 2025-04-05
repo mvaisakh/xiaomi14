@@ -24,76 +24,76 @@
  *
  */
 
-#include <linux/module.h>
-#include <linux/kobject.h>
-#include <linux/fs.h>
-#include <linux/string.h>
-#include "wlan_hdd_includes.h"
 #include "wlan_hdd_sysfs.h"
-#include "qwlan_version.h"
 #include "cds_api.h"
-#include <wlan_osif_request_manager.h>
+#include "qwlan_version.h"
+#include "wlan_hdd_includes.h"
+#include <linux/fs.h>
+#include <linux/kobject.h>
+#include <linux/module.h>
+#include <linux/string.h>
 #include <qdf_mem.h>
+#include <wlan_osif_request_manager.h>
 #ifdef WLAN_POWER_DEBUG
 #include <sir_api.h>
 #endif
 #include "osif_sync.h"
-#include "wlan_hdd_sysfs_sta_info.h"
+#include "wlan_hdd_eht.h"
 #include "wlan_hdd_sysfs_channel.h"
-#include <wlan_hdd_sysfs_fw_mode_config.h>
-#include <wlan_hdd_sysfs_reassoc.h>
-#include <wlan_hdd_sysfs_mem_stats.h>
+#include "wlan_hdd_sysfs_connect_info.h"
 #include "wlan_hdd_sysfs_crash_inject.h"
+#include "wlan_hdd_sysfs_dcm.h"
+#include "wlan_hdd_sysfs_modify_acl.h"
+#include "wlan_hdd_sysfs_sta_info.h"
 #include "wlan_hdd_sysfs_suspend_resume.h"
 #include "wlan_hdd_sysfs_unit_test.h"
-#include "wlan_hdd_sysfs_modify_acl.h"
-#include "wlan_hdd_sysfs_connect_info.h"
-#include <wlan_hdd_sysfs_scan_disable.h>
-#include "wlan_hdd_sysfs_dcm.h"
-#include <wlan_hdd_sysfs_wow_ito.h>
-#include <wlan_hdd_sysfs_wowl_add_ptrn.h>
-#include <wlan_hdd_sysfs_wowl_del_ptrn.h>
-#include <wlan_hdd_sysfs_tx_stbc.h>
-#include <wlan_hdd_sysfs_wlan_dbg.h>
-#include <wlan_hdd_sysfs_txrx_fw_st_rst.h>
-#include <wlan_hdd_sysfs_gtx_bw_mask.h>
-#include <wlan_hdd_sysfs_scan_config.h>
-#include <wlan_hdd_sysfs_monitor_mode_channel.h>
-#include <wlan_hdd_sysfs_range_ext.h>
-#include <wlan_hdd_sysfs_radar.h>
-#include <wlan_hdd_sysfs_rts_cts.h>
-#include <wlan_hdd_sysfs_he_bss_color.h>
-#include <wlan_hdd_sysfs_txrx_fw_stats.h>
-#include <wlan_hdd_sysfs_txrx_stats.h>
+#include "wma_api.h"
+#include <wlan_hdd_sysfs_add_timestamp.h>
+#include <wlan_hdd_sysfs_bmiss.h>
+#include <wlan_hdd_sysfs_dfsnol.h>
+#include <wlan_hdd_sysfs_direct_link_ut_cmd.h>
+#include <wlan_hdd_sysfs_dl_modes.h>
+#include <wlan_hdd_sysfs_dp_aggregation.h>
 #include <wlan_hdd_sysfs_dp_trace.h>
+#include <wlan_hdd_sysfs_dp_traffic_end_indication.h>
+#include <wlan_hdd_sysfs_dp_tx_delay_stats.h>
+#include <wlan_hdd_sysfs_dump_in_progress.h>
+#include <wlan_hdd_sysfs_eht_rate.h>
+#include <wlan_hdd_sysfs_fw_mode_config.h>
+#include <wlan_hdd_sysfs_get_freq_for_pwr.h>
+#include <wlan_hdd_sysfs_gtx_bw_mask.h>
+#include <wlan_hdd_sysfs_he_bss_color.h>
+#include <wlan_hdd_sysfs_ipa.h>
+#include <wlan_hdd_sysfs_log_buffer.h>
+#include <wlan_hdd_sysfs_mem_stats.h>
+#include <wlan_hdd_sysfs_monitor_mode_channel.h>
+#include <wlan_hdd_sysfs_motion_detection.h>
+#include <wlan_hdd_sysfs_pkt_log.h>
+#include <wlan_hdd_sysfs_policy_mgr.h>
+#include <wlan_hdd_sysfs_radar.h>
+#include <wlan_hdd_sysfs_range_ext.h>
+#include <wlan_hdd_sysfs_reassoc.h>
+#include <wlan_hdd_sysfs_roam_trigger_bitmap.h>
+#include <wlan_hdd_sysfs_rts_cts.h>
+#include <wlan_hdd_sysfs_runtime_pm.h>
+#include <wlan_hdd_sysfs_scan_config.h>
+#include <wlan_hdd_sysfs_scan_disable.h>
 #include <wlan_hdd_sysfs_stats.h>
+#include <wlan_hdd_sysfs_swlm.h>
 #include <wlan_hdd_sysfs_tdls_peers.h>
 #include <wlan_hdd_sysfs_temperature.h>
 #include <wlan_hdd_sysfs_thermal_cfg.h>
-#include <wlan_hdd_sysfs_motion_detection.h>
-#include <wlan_hdd_sysfs_ipa.h>
-#include <wlan_hdd_sysfs_pkt_log.h>
-#include <wlan_hdd_sysfs_policy_mgr.h>
-#include <wlan_hdd_sysfs_dp_aggregation.h>
-#include <wlan_hdd_sysfs_dl_modes.h>
-#include <wlan_hdd_sysfs_swlm.h>
-#include <wlan_hdd_sysfs_dump_in_progress.h>
+#include <wlan_hdd_sysfs_tx_stbc.h>
+#include <wlan_hdd_sysfs_txrx_fw_st_rst.h>
+#include <wlan_hdd_sysfs_txrx_fw_stats.h>
+#include <wlan_hdd_sysfs_txrx_stats.h>
 #include <wlan_hdd_sysfs_txrx_stats_console.h>
-#include <wlan_hdd_sysfs_add_timestamp.h>
-#include "wma_api.h"
-#include "wlan_hdd_eht.h"
-#include <wlan_hdd_sysfs_bmiss.h>
-#include <wlan_hdd_sysfs_get_freq_for_pwr.h>
-#include <wlan_hdd_sysfs_dp_tx_delay_stats.h>
-#include <wlan_hdd_sysfs_wifi_features.h>
-#include <wlan_hdd_sysfs_dp_traffic_end_indication.h>
-#include <wlan_hdd_sysfs_eht_rate.h>
-#include <wlan_hdd_sysfs_direct_link_ut_cmd.h>
-#include <wlan_hdd_sysfs_runtime_pm.h>
-#include <wlan_hdd_sysfs_log_buffer.h>
-#include <wlan_hdd_sysfs_dfsnol.h>
 #include <wlan_hdd_sysfs_wds_mode.h>
-#include <wlan_hdd_sysfs_roam_trigger_bitmap.h>
+#include <wlan_hdd_sysfs_wifi_features.h>
+#include <wlan_hdd_sysfs_wlan_dbg.h>
+#include <wlan_hdd_sysfs_wow_ito.h>
+#include <wlan_hdd_sysfs_wowl_add_ptrn.h>
+#include <wlan_hdd_sysfs_wowl_del_ptrn.h>
 
 // MIUI ADD: WIFI_P2PHC
 #include "p2phc.h"
@@ -116,9 +116,9 @@ static struct kobject *fw_kobject;
 static struct kobject *psoc_kobject;
 static struct kobject *wifi_kobject;
 
-int
-hdd_sysfs_validate_and_copy_buf(char *dest_buf, size_t dest_buf_size,
-				char const *source_buf, size_t source_buf_size)
+int hdd_sysfs_validate_and_copy_buf(char *dest_buf, size_t dest_buf_size,
+				    char const *source_buf,
+				    size_t source_buf_size)
 {
 	if (source_buf_size > (dest_buf_size - 1)) {
 		hdd_err_rl("Command length is larger than %zu bytes",
@@ -127,9 +127,9 @@ hdd_sysfs_validate_and_copy_buf(char *dest_buf, size_t dest_buf_size,
 	}
 
 	/* sysfs already provides kernel space buffer so copy from user
-	 * is not needed. Doing this extra copy operation just to ensure
-	 * the local buf is properly null-terminated.
-	 */
+   * is not needed. Doing this extra copy operation just to ensure
+   * the local buf is properly null-terminated.
+   */
 	strlcpy(dest_buf, source_buf, dest_buf_size);
 	/* default 'echo' cmd takes new line character to here */
 	if (dest_buf[source_buf_size - 1] == '\n')
@@ -144,8 +144,7 @@ static ssize_t __show_driver_version(char *buf)
 }
 
 static ssize_t show_driver_version(struct kobject *kobj,
-				   struct kobj_attribute *attr,
-				   char *buf)
+				   struct kobj_attribute *attr, char *buf)
 {
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	struct osif_psoc_sync *psoc_sync;
@@ -167,30 +166,26 @@ static ssize_t show_driver_version(struct kobject *kobj,
 	return length;
 }
 
-static ssize_t __show_fw_version(struct hdd_context *hdd_ctx,
-				 char *buf)
+static ssize_t __show_fw_version(struct hdd_context *hdd_ctx, char *buf)
 {
 	hdd_debug("Rcvd req for FW version");
 
-	return scnprintf(buf, PAGE_SIZE,
-			 "FW:%d.%d.%d.%d.%d.%d HW:%s Board version: %x Ref design id: %x Customer id: %x Project id: %x Board Data Rev: %x\n",
-			 hdd_ctx->fw_version_info.major_spid,
-			 hdd_ctx->fw_version_info.minor_spid,
-			 hdd_ctx->fw_version_info.siid,
-			 hdd_ctx->fw_version_info.rel_id,
-			 hdd_ctx->fw_version_info.crmid,
-			 hdd_ctx->fw_version_info.sub_id,
-			 hdd_ctx->target_hw_name,
-			 hdd_ctx->hw_bd_info.bdf_version,
-			 hdd_ctx->hw_bd_info.ref_design_id,
-			 hdd_ctx->hw_bd_info.customer_id,
-			 hdd_ctx->hw_bd_info.project_id,
-			 hdd_ctx->hw_bd_info.board_data_rev);
+	return scnprintf(
+		buf, PAGE_SIZE,
+		"FW:%d.%d.%d.%d.%d.%d HW:%s Board version: %x Ref design id: %x Customer "
+		"id: %x Project id: %x Board Data Rev: %x\n",
+		hdd_ctx->fw_version_info.major_spid,
+		hdd_ctx->fw_version_info.minor_spid,
+		hdd_ctx->fw_version_info.siid, hdd_ctx->fw_version_info.rel_id,
+		hdd_ctx->fw_version_info.crmid, hdd_ctx->fw_version_info.sub_id,
+		hdd_ctx->target_hw_name, hdd_ctx->hw_bd_info.bdf_version,
+		hdd_ctx->hw_bd_info.ref_design_id,
+		hdd_ctx->hw_bd_info.customer_id, hdd_ctx->hw_bd_info.project_id,
+		hdd_ctx->hw_bd_info.board_data_rev);
 }
 
 static ssize_t show_fw_version(struct kobject *kobj,
-			       struct kobj_attribute *attr,
-			       char *buf)
+			       struct kobj_attribute *attr, char *buf)
 {
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	struct osif_psoc_sync *psoc_sync;
@@ -253,8 +248,7 @@ static void hdd_power_debugstats_cb(struct power_stats_response *response,
 		debug_registers = qdf_mem_malloc(debug_registers_len);
 		priv->power_stats.debug_registers = debug_registers;
 		if (debug_registers) {
-			qdf_mem_copy(debug_registers,
-				     response->debug_registers,
+			qdf_mem_copy(debug_registers, response->debug_registers,
 				     debug_registers_len);
 		} else {
 			hdd_err("Power stats memory alloc fails!");
@@ -266,8 +260,7 @@ static void hdd_power_debugstats_cb(struct power_stats_response *response,
 	hdd_exit();
 }
 
-static ssize_t __show_device_power_stats(struct hdd_context *hdd_ctx,
-					 char *buf)
+static ssize_t __show_device_power_stats(struct hdd_context *hdd_ctx, char *buf)
 {
 	QDF_STATUS status;
 	struct power_stats_response *chip_power_stats;
@@ -292,8 +285,7 @@ static ssize_t __show_device_power_stats(struct hdd_context *hdd_ctx,
 	cookie = osif_request_cookie(request);
 
 	status = sme_power_debug_stats_req(hdd_ctx->mac_handle,
-					   hdd_power_debugstats_cb,
-					   cookie);
+					   hdd_power_debugstats_cb, cookie);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("chip power stats request failed");
 		ret_cnt = qdf_status_to_os_return(status);
@@ -311,26 +303,26 @@ static ssize_t __show_device_power_stats(struct hdd_context *hdd_ctx,
 	chip_power_stats = &priv->power_stats;
 
 	ret_cnt += scnprintf(buf, PAGE_SIZE,
-			"POWER DEBUG STATS\n=================\n"
-			"cumulative_sleep_time_ms: %d\n"
-			"cumulative_total_on_time_ms: %d\n"
-			"deep_sleep_enter_counter: %d\n"
-			"last_deep_sleep_enter_tstamp_ms: %d\n"
-			"debug_register_fmt: %d\n"
-			"num_debug_register: %d\n",
-			chip_power_stats->cumulative_sleep_time_ms,
-			chip_power_stats->cumulative_total_on_time_ms,
-			chip_power_stats->deep_sleep_enter_counter,
-			chip_power_stats->last_deep_sleep_enter_tstamp_ms,
-			chip_power_stats->debug_register_fmt,
-			chip_power_stats->num_debug_register);
+			     "POWER DEBUG STATS\n=================\n"
+			     "cumulative_sleep_time_ms: %d\n"
+			     "cumulative_total_on_time_ms: %d\n"
+			     "deep_sleep_enter_counter: %d\n"
+			     "last_deep_sleep_enter_tstamp_ms: %d\n"
+			     "debug_register_fmt: %d\n"
+			     "num_debug_register: %d\n",
+			     chip_power_stats->cumulative_sleep_time_ms,
+			     chip_power_stats->cumulative_total_on_time_ms,
+			     chip_power_stats->deep_sleep_enter_counter,
+			     chip_power_stats->last_deep_sleep_enter_tstamp_ms,
+			     chip_power_stats->debug_register_fmt,
+			     chip_power_stats->num_debug_register);
 
 	for (j = 0; j < chip_power_stats->num_debug_register; j++) {
 		if ((PAGE_SIZE - ret_cnt) > 0)
-			ret_cnt += scnprintf(buf + ret_cnt,
-					PAGE_SIZE - ret_cnt,
-					"debug_registers[%d]: 0x%x\n", j,
-					chip_power_stats->debug_registers[j]);
+			ret_cnt +=
+				scnprintf(buf + ret_cnt, PAGE_SIZE - ret_cnt,
+					  "debug_registers[%d]: 0x%x\n", j,
+					  chip_power_stats->debug_registers[j]);
 		else
 			j = chip_power_stats->num_debug_register;
 	}
@@ -342,8 +334,7 @@ cleanup:
 }
 
 static ssize_t show_device_power_stats(struct kobject *kobj,
-				       struct kobj_attribute *attr,
-				       char *buf)
+				       struct kobj_attribute *attr, char *buf)
 {
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	struct osif_psoc_sync *psoc_sync;
@@ -371,8 +362,7 @@ struct beacon_reception_stats_priv {
 	struct bcn_reception_stats_rsp beacon_stats;
 };
 
-static void hdd_beacon_debugstats_cb(struct bcn_reception_stats_rsp
-				     *response,
+static void hdd_beacon_debugstats_cb(struct bcn_reception_stats_rsp *response,
 				     void *context)
 {
 	struct osif_request *request;
@@ -446,8 +436,7 @@ static ssize_t __show_beacon_reception_stats(struct net_device *net_dev,
 
 	status = sme_beacon_debug_stats_req(hdd_ctx->mac_handle,
 					    adapter->deflink->vdev_id,
-					   hdd_beacon_debugstats_cb,
-					   cookie);
+					    hdd_beacon_debugstats_cb, cookie);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		hdd_err("chip power stats request failed");
 		ret_val = -EINVAL;
@@ -464,30 +453,26 @@ static ssize_t __show_beacon_reception_stats(struct net_device *net_dev,
 	beacon_stats = &priv->beacon_stats;
 
 	ret_val += scnprintf(buf, PAGE_SIZE,
-			"BEACON RECEPTION STATS\n=================\n"
-			"vdev id: %u\n"
-			"Total Beacon Count: %u\n"
-			"Total Beacon Miss Count: %u\n",
-			beacon_stats->vdev_id,
-			beacon_stats->total_bcn_cnt,
-			beacon_stats->total_bmiss_cnt);
+			     "BEACON RECEPTION STATS\n=================\n"
+			     "vdev id: %u\n"
+			     "Total Beacon Count: %u\n"
+			     "Total Beacon Miss Count: %u\n",
+			     beacon_stats->vdev_id, beacon_stats->total_bcn_cnt,
+			     beacon_stats->total_bmiss_cnt);
 
 	ret_val += scnprintf(buf + ret_val, PAGE_SIZE - ret_val,
 			     "Beacon Miss Bit map ");
 
 	for (j = 0; j < MAX_BCNMISS_BITMAP; j++) {
 		if ((PAGE_SIZE - ret_val) > 0) {
-			ret_val += scnprintf(buf + ret_val,
-					     PAGE_SIZE - ret_val,
+			ret_val += scnprintf(buf + ret_val, PAGE_SIZE - ret_val,
 					     "[0x%x] ",
 					     beacon_stats->bmiss_bitmap[j]);
 		}
 	}
 
 	if ((PAGE_SIZE - ret_val) > 0)
-		ret_val += scnprintf(buf + ret_val,
-				     PAGE_SIZE - ret_val,
-				     "\n");
+		ret_val += scnprintf(buf + ret_val, PAGE_SIZE - ret_val, "\n");
 cleanup:
 	osif_request_put(request);
 	hdd_exit();
@@ -513,8 +498,7 @@ static ssize_t show_beacon_reception_stats(struct device *dev,
 	return err_size;
 }
 
-static DEVICE_ATTR(beacon_stats, 0444,
-		   show_beacon_reception_stats, NULL);
+static DEVICE_ATTR(beacon_stats, 0444, show_beacon_reception_stats, NULL);
 #endif
 
 static struct kobj_attribute dr_ver_attribute =
@@ -627,8 +611,8 @@ hdd_sysfs_wakeup_logs_to_console_store(struct kobject *kobj,
 	int ret, value;
 	char *sptr, *token;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -683,14 +667,14 @@ static void hdd_sysfs_create_driver_root_obj(void)
 		return;
 	}
 
-    // MIUI ADD: WIFI_P2PHC
+	// MIUI ADD: WIFI_P2PHC
 	p2phc_kobject = kobject_create_and_add("p2phc", driver_kobject);
 	if (!p2phc_kobject) {
 		hdd_err("could not allocate p2phc kobject");
 		kobject_put(driver_kobject);
 		driver_kobject = NULL;
 	}
-    //END WIFI_P2PHC
+	// END WIFI_P2PHC
 
 	wlan_kobject = kobject_create_and_add("wlan", driver_kobject);
 	if (!wlan_kobject) {
@@ -706,13 +690,13 @@ static void hdd_sysfs_destroy_driver_root_obj(void)
 		kobject_put(wlan_kobject);
 		wlan_kobject = NULL;
 	}
-    
+
 	// MIUI ADD: WIFI_P2PHC
 	if (p2phc_kobject) {
 		kobject_put(p2phc_kobject);
 		p2phc_kobject = NULL;
 	}
-	//END WIFI_P2PHC
+	// END WIFI_P2PHC
 
 	if (driver_kobject) {
 		kobject_put(driver_kobject);
@@ -776,8 +760,7 @@ int hdd_sysfs_print(void *ctx, const char *fmt, ...)
 		p_ctx->idx += ret;
 		if (p_ctx->new_line) {
 			ret += scnprintf(p_ctx->buf + p_ctx->idx,
-					  PAGE_SIZE - p_ctx->idx,
-					  "\n");
+					 PAGE_SIZE - p_ctx->idx, "\n");
 			p_ctx->idx += ret;
 		}
 	}
@@ -787,8 +770,7 @@ int hdd_sysfs_print(void *ctx, const char *fmt, ...)
 }
 
 #ifdef WLAN_FEATURE_BEACON_RECEPTION_STATS
-static int hdd_sysfs_create_bcn_reception_interface(struct hdd_adapter
-						     *adapter)
+static int hdd_sysfs_create_bcn_reception_interface(struct hdd_adapter *adapter)
 {
 	int error;
 
@@ -799,8 +781,8 @@ static int hdd_sysfs_create_bcn_reception_interface(struct hdd_adapter
 	return error;
 }
 
-static void hdd_sysfs_destroy_bcn_reception_interface(struct hdd_adapter
-						      *adapter)
+static void
+hdd_sysfs_destroy_bcn_reception_interface(struct hdd_adapter *adapter)
 {
 	device_remove_file(&adapter->dev->dev, &dev_attr_beacon_stats);
 }
@@ -818,8 +800,7 @@ hdd_sysfs_destroy_bcn_reception_interface(struct hdd_adapter *adapter)
 
 #endif /* WLAN_FEATURE_BEACON_RECEPTION_STATS */
 
-static void
-hdd_sysfs_create_sta_adapter_root_obj(struct hdd_adapter *adapter)
+static void hdd_sysfs_create_sta_adapter_root_obj(struct hdd_adapter *adapter)
 {
 	hdd_sysfs_create_bcn_reception_interface(adapter);
 	hdd_sysfs_reassoc_create(adapter);
@@ -849,8 +830,7 @@ hdd_sysfs_create_sta_adapter_root_obj(struct hdd_adapter *adapter)
 	hdd_sysfs_direct_link_ut_cmd_create(adapter);
 }
 
-static void
-hdd_sysfs_destroy_sta_adapter_root_obj(struct hdd_adapter *adapter)
+static void hdd_sysfs_destroy_sta_adapter_root_obj(struct hdd_adapter *adapter)
 {
 	hdd_sysfs_direct_link_ut_destroy(adapter);
 	hdd_sysfs_dp_tx_delay_stats_destroy(adapter);
@@ -880,8 +860,7 @@ hdd_sysfs_destroy_sta_adapter_root_obj(struct hdd_adapter *adapter)
 	hdd_sysfs_destroy_bcn_reception_interface(adapter);
 }
 
-static void
-hdd_sysfs_create_sap_adapter_root_obj(struct hdd_adapter *adapter)
+static void hdd_sysfs_create_sap_adapter_root_obj(struct hdd_adapter *adapter)
 {
 	hdd_sysfs_channel_interface_create(adapter);
 	hdd_sysfs_sta_info_interface_create(adapter);
@@ -912,8 +891,7 @@ hdd_sysfs_create_sap_adapter_root_obj(struct hdd_adapter *adapter)
 	hdd_sysfs_dfsnol_create(adapter);
 }
 
-static void
-hdd_sysfs_destroy_sap_adapter_root_obj(struct hdd_adapter *adapter)
+static void hdd_sysfs_destroy_sap_adapter_root_obj(struct hdd_adapter *adapter)
 {
 	hdd_sysfs_dfsnol_destroy(adapter);
 	hdd_sysfs_direct_link_ut_destroy(adapter);
@@ -964,7 +942,7 @@ void hdd_create_sysfs_files(struct hdd_context *hdd_ctx)
 	hdd_sysfs_p2phc_switch_create(p2phc_kobject);
 	// END WIFI_P2PHC
 	hdd_sysfs_mem_stats_create(wlan_kobject);
-	if  (QDF_GLOBAL_MISSION_MODE == hdd_get_conparam()) {
+	if (QDF_GLOBAL_MISSION_MODE == hdd_get_conparam()) {
 		hdd_sysfs_create_powerstats_interface();
 		hdd_sysfs_create_dump_in_progress_interface(wifi_kobject);
 		hdd_sysfs_fw_mode_config_create(driver_kobject);
@@ -992,7 +970,7 @@ void hdd_create_sysfs_files(struct hdd_context *hdd_ctx)
 
 void hdd_destroy_sysfs_files(void)
 {
-	if  (QDF_GLOBAL_MISSION_MODE == hdd_get_conparam()) {
+	if (QDF_GLOBAL_MISSION_MODE == hdd_get_conparam()) {
 		hdd_sysfs_roam_trigger_bitmap_destroy(driver_kobject);
 		hdd_sysfs_wds_mode_destroy(driver_kobject);
 		hdd_sysfs_log_buffer_destroy(driver_kobject);
@@ -1024,8 +1002,7 @@ void hdd_destroy_sysfs_files(void)
 	hdd_sysfs_destroy_driver_root_obj();
 }
 
-static
-void hdd_sysfs_create_ftm_adapter_root_obj(struct hdd_adapter *adapter)
+static void hdd_sysfs_create_ftm_adapter_root_obj(struct hdd_adapter *adapter)
 {
 	hdd_sysfs_unit_test_target_create(adapter);
 }
@@ -1039,7 +1016,7 @@ void hdd_create_adapter_sysfs_files(struct hdd_adapter *adapter)
 		return;
 	}
 
-	switch (device_mode){
+	switch (device_mode) {
 	case QDF_STA_MODE:
 	case QDF_P2P_DEVICE_MODE:
 	case QDF_P2P_CLIENT_MODE:
@@ -1060,8 +1037,7 @@ void hdd_create_adapter_sysfs_files(struct hdd_adapter *adapter)
 	}
 }
 
-static
-void hdd_sysfs_destroy_ftm_adapter_root_obj(struct hdd_adapter *adapter)
+static void hdd_sysfs_destroy_ftm_adapter_root_obj(struct hdd_adapter *adapter)
 {
 	hdd_sysfs_unit_test_target_destroy(adapter);
 }
@@ -1074,7 +1050,7 @@ void hdd_destroy_adapter_sysfs_files(struct hdd_adapter *adapter)
 		hdd_err("link adapter returning!!");
 		return;
 	}
-	switch (device_mode){
+	switch (device_mode) {
 	case QDF_STA_MODE:
 	case QDF_P2P_DEVICE_MODE:
 	case QDF_P2P_CLIENT_MODE:

@@ -18,14 +18,14 @@
  * DOC: Implements PSOC MLME APIs
  */
 
-#include <qdf_module.h>
-#include <wlan_objmgr_cmn.h>
-#include <wlan_objmgr_global_obj.h>
-#include <wlan_mlme_dbg.h>
 #include <include/wlan_mlme_cmn.h>
 #include <include/wlan_psoc_mlme.h>
-#include <wlan_psoc_mlme_main.h>
+#include <qdf_module.h>
+#include <wlan_mlme_dbg.h>
+#include <wlan_objmgr_cmn.h>
+#include <wlan_objmgr_global_obj.h>
 #include <wlan_psoc_mlme_api.h>
+#include <wlan_psoc_mlme_main.h>
 
 struct psoc_mlme_obj *mlme_psoc_get_priv(struct wlan_objmgr_psoc *psoc)
 {
@@ -63,10 +63,8 @@ static QDF_STATUS mlme_psoc_obj_create_handler(struct wlan_objmgr_psoc *psoc,
 		goto init_failed;
 	}
 
-	status = wlan_objmgr_psoc_component_obj_attach(psoc,
-						       WLAN_UMAC_COMP_MLME,
-						       psoc_mlme,
-						       QDF_STATUS_SUCCESS);
+	status = wlan_objmgr_psoc_component_obj_attach(
+		psoc, WLAN_UMAC_COMP_MLME, psoc_mlme, QDF_STATUS_SUCCESS);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("Failed to attach psoc_ctx with psoc");
 		goto init_failed;
@@ -102,20 +100,17 @@ static QDF_STATUS mlme_psoc_obj_destroy_handler(struct wlan_objmgr_psoc *psoc,
 
 QDF_STATUS wlan_psoc_mlme_init(void)
 {
-	if (wlan_objmgr_register_psoc_create_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_psoc_obj_create_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_register_psoc_create_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_psoc_obj_create_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
-	if (wlan_objmgr_register_psoc_destroy_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_psoc_obj_destroy_handler, NULL)
-						!= QDF_STATUS_SUCCESS) {
-		if (wlan_objmgr_unregister_psoc_create_handler
-					(WLAN_UMAC_COMP_MLME,
-					 mlme_psoc_obj_create_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_register_psoc_destroy_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_psoc_obj_destroy_handler, NULL) !=
+	    QDF_STATUS_SUCCESS) {
+		if (wlan_objmgr_unregister_psoc_create_handler(
+			    WLAN_UMAC_COMP_MLME, mlme_psoc_obj_create_handler,
+			    NULL) != QDF_STATUS_SUCCESS)
 			return QDF_STATUS_E_FAILURE;
 
 		return QDF_STATUS_E_FAILURE;
@@ -126,16 +121,14 @@ QDF_STATUS wlan_psoc_mlme_init(void)
 
 QDF_STATUS wlan_psoc_mlme_deinit(void)
 {
-	if (wlan_objmgr_unregister_psoc_create_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_psoc_obj_create_handler, NULL)
-					!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_unregister_psoc_create_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_psoc_obj_create_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
-	if (wlan_objmgr_unregister_psoc_destroy_handler
-				(WLAN_UMAC_COMP_MLME,
-				 mlme_psoc_obj_destroy_handler, NULL)
-						!= QDF_STATUS_SUCCESS)
+	if (wlan_objmgr_unregister_psoc_destroy_handler(
+		    WLAN_UMAC_COMP_MLME, mlme_psoc_obj_destroy_handler, NULL) !=
+	    QDF_STATUS_SUCCESS)
 		return QDF_STATUS_E_FAILURE;
 
 	return QDF_STATUS_SUCCESS;

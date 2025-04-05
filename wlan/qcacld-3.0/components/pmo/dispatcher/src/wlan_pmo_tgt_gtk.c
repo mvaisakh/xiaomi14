@@ -22,13 +22,13 @@
  * with target/wmi.
  */
 
-#include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_gtk_public_struct.h"
-#include "wlan_pmo_obj_mgmt_public_struct.h"
 #include "wlan_pmo_main.h"
+#include "wlan_pmo_obj_mgmt_public_struct.h"
+#include "wlan_pmo_tgt_api.h"
 
 QDF_STATUS pmo_tgt_send_gtk_offload_req(struct wlan_objmgr_vdev *vdev,
-		struct pmo_gtk_req *gtk_req)
+					struct pmo_gtk_req *gtk_req)
 {
 	struct pmo_gtk_req *op_gtk_req = NULL;
 	QDF_STATUS status;
@@ -39,8 +39,7 @@ QDF_STATUS pmo_tgt_send_gtk_offload_req(struct wlan_objmgr_vdev *vdev,
 	pmo_enter();
 	psoc = wlan_vdev_get_psoc(vdev);
 	if (!psoc) {
-		pmo_err("Failed to find psoc from from vdev:%pK",
-			vdev);
+		pmo_err("Failed to find psoc from from vdev:%pK", vdev);
 		status = QDF_STATUS_E_INVAL;
 		goto out;
 	}
@@ -62,14 +61,12 @@ QDF_STATUS pmo_tgt_send_gtk_offload_req(struct wlan_objmgr_vdev *vdev,
 
 	if (gtk_req->flags == PMO_GTK_OFFLOAD_ENABLE) {
 		qdf_atomic_set(&vdev_ctx->gtk_err_enable, true);
-		qdf_mem_copy(op_gtk_req->kck, gtk_req->kck,
-			     gtk_req->kck_len);
+		qdf_mem_copy(op_gtk_req->kck, gtk_req->kck, gtk_req->kck_len);
 		op_gtk_req->kck_len = gtk_req->kck_len;
-		qdf_mem_copy(op_gtk_req->kek, gtk_req->kek,
-			     PMO_KEK_LEN);
+		qdf_mem_copy(op_gtk_req->kek, gtk_req->kek, PMO_KEK_LEN);
 		op_gtk_req->kek_len = gtk_req->kek_len;
 		qdf_mem_copy(&op_gtk_req->replay_counter,
-			&gtk_req->replay_counter, PMO_REPLAY_COUNTER_LEN);
+			     &gtk_req->replay_counter, PMO_REPLAY_COUNTER_LEN);
 	} else {
 		qdf_atomic_set(&vdev_ctx->gtk_err_enable, false);
 	}
@@ -89,7 +86,6 @@ out:
 
 QDF_STATUS pmo_tgt_get_gtk_rsp(struct wlan_objmgr_vdev *vdev)
 {
-
 	struct wlan_objmgr_psoc *psoc;
 	QDF_STATUS status;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
@@ -97,8 +93,7 @@ QDF_STATUS pmo_tgt_get_gtk_rsp(struct wlan_objmgr_vdev *vdev)
 	pmo_enter();
 	psoc = wlan_vdev_get_psoc(vdev);
 	if (!psoc) {
-		pmo_err("Failed to find psoc from from vdev:%pK",
-			vdev);
+		pmo_err("Failed to find psoc from from vdev:%pK", vdev);
 		status = QDF_STATUS_E_NULL_VALUE;
 		goto out;
 	}
@@ -119,7 +114,7 @@ out:
 }
 
 QDF_STATUS pmo_tgt_gtk_rsp_evt(struct wlan_objmgr_psoc *psoc,
-			struct pmo_gtk_rsp_params *rsp_param)
+			       struct pmo_gtk_rsp_params *rsp_param)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_vdev *vdev;
@@ -135,8 +130,8 @@ QDF_STATUS pmo_tgt_gtk_rsp_evt(struct wlan_objmgr_psoc *psoc,
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, rsp_param->vdev_id,
 						    WLAN_PMO_ID);
 	if (!vdev) {
-		pmo_err("vdev is null vdev_id:%d psoc:%pK",
-			rsp_param->vdev_id, psoc);
+		pmo_err("vdev is null vdev_id:%d psoc:%pK", rsp_param->vdev_id,
+			psoc);
 		status = QDF_STATUS_E_NULL_VALUE;
 		goto out;
 	}
@@ -156,16 +151,14 @@ QDF_STATUS pmo_tgt_gtk_rsp_evt(struct wlan_objmgr_psoc *psoc,
 
 	if (vdev_ctx->vdev_gtk_rsp_req.callback) {
 		pmo_debug("callback:%pK context:%pK psoc:%pK vdev_id:%d",
-			vdev_ctx->vdev_gtk_rsp_req.callback,
-			vdev_ctx->vdev_gtk_rsp_req.callback_context,
-			psoc, rsp_param->vdev_id);
+			  vdev_ctx->vdev_gtk_rsp_req.callback,
+			  vdev_ctx->vdev_gtk_rsp_req.callback_context, psoc,
+			  rsp_param->vdev_id);
 		vdev_ctx->vdev_gtk_rsp_req.callback(
-			vdev_ctx->vdev_gtk_rsp_req.callback_context,
-			rsp_param);
+			vdev_ctx->vdev_gtk_rsp_req.callback_context, rsp_param);
 	} else {
 		pmo_err("gtk rsp callback is null for vdev_id:%d psoc %pK",
-			rsp_param->vdev_id,
-			psoc);
+			rsp_param->vdev_id, psoc);
 	}
 
 dec_ref:
@@ -175,4 +168,3 @@ out:
 
 	return status;
 }
-

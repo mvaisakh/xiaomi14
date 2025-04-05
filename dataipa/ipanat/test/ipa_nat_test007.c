@@ -29,31 +29,26 @@
 
 /*=========================================================================*/
 /*!
-	@file
-	ipa_nat_test007.cpp
+        @file
+        ipa_nat_test007.cpp
 
-	@brief
-	Verify the following scenario:
-	1. Add ipv4 table
-	2. add same ipv rules
-	3. delete second followed by first
-	4. Delete ipv4 table
+        @brief
+        Verify the following scenario:
+        1. Add ipv4 table
+        2. add same ipv rules
+        3. delete second followed by first
+        4. Delete ipv4 table
 */
 /*=========================================================================*/
 
 #include "ipa_nat_test.h"
 
-int ipa_nat_test007(
-	const char* nat_mem_type,
-	u32 pub_ip_add,
-	int total_entries,
-	u32 tbl_hdl,
-	int sep,
-	void* arb_data_ptr)
+int ipa_nat_test007(const char *nat_mem_type, u32 pub_ip_add, int total_entries,
+		    u32 tbl_hdl, int sep, void *arb_data_ptr)
 {
-	int* tbl_hdl_ptr = (int*) arb_data_ptr;
+	int *tbl_hdl_ptr = (int *)arb_data_ptr;
 
-	ipa_nat_ipv4_rule ipv4_rule = {0};
+	ipa_nat_ipv4_rule ipv4_rule = { 0 };
 
 	u32 rule_hdl;
 	u32 rule_hdl1;
@@ -69,9 +64,9 @@ int ipa_nat_test007(
 
 	IPADBG("In\n");
 
-	if ( sep )
-	{
-		ret = ipa_nat_add_ipv4_tbl(pub_ip_add, nat_mem_type, total_entries, &tbl_hdl);
+	if (sep) {
+		ret = ipa_nat_add_ipv4_tbl(pub_ip_add, nat_mem_type,
+					   total_entries, &tbl_hdl);
 		CHECK_ERR_TBL_STOP(ret, tbl_hdl);
 	}
 
@@ -87,8 +82,7 @@ int ipa_nat_test007(
 	ret = ipa_nat_del_ipv4_rule(tbl_hdl, rule_hdl);
 	CHECK_ERR_TBL_STOP(ret, tbl_hdl);
 
-	if ( sep )
-	{
+	if (sep) {
 		ret = ipa_nat_del_ipv4_tbl(tbl_hdl);
 		*tbl_hdl_ptr = 0;
 		CHECK_ERR(ret);

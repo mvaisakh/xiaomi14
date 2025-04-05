@@ -6,15 +6,15 @@
  *
  */
 
+#include "rmnet_ctl_client.h"
+#include "rmnet_ctl.h"
 #include <linux/debugfs.h>
 #include <linux/ipc_logging.h>
 #include <linux/version.h>
-#include "rmnet_ctl.h"
-#include "rmnet_ctl_client.h"
 
 #define RMNET_CTL_LOG_PAGE 10
 #define RMNET_CTL_LOG_NAME "rmnet_ctl"
-#define RMNET_CTL_LOG_LVL  "ipc_log_lvl"
+#define RMNET_CTL_LOG_LVL "ipc_log_lvl"
 
 struct rmnet_ctl_client {
 	struct rmnet_ctl_client_hooks hooks;
@@ -45,14 +45,14 @@ void rmnet_ctl_set_dbgfs(bool enable)
 {
 	if (enable) {
 		if (IS_ERR_OR_NULL(ctl_ep.dbgfs_dir))
-			ctl_ep.dbgfs_dir = debugfs_create_dir(
-				RMNET_CTL_LOG_NAME, NULL);
+			ctl_ep.dbgfs_dir =
+				debugfs_create_dir(RMNET_CTL_LOG_NAME, NULL);
 
 		if (!IS_ERR_OR_NULL(ctl_ep.dbgfs_dir))
-			debugfs_create_u8((const char *) RMNET_CTL_LOG_LVL,
-					  (umode_t) 0644,
-					  (struct dentry *) ctl_ep.dbgfs_dir,
-					  (u8 *) &ipc_log_lvl);
+			debugfs_create_u8((const char *)RMNET_CTL_LOG_LVL,
+					  (umode_t)0644,
+					  (struct dentry *)ctl_ep.dbgfs_dir,
+					  (u8 *)&ipc_log_lvl);
 
 		if (!ctl_ep.ipc_log)
 			ctl_ep.ipc_log = ipc_log_context_create(
@@ -198,16 +198,16 @@ int rmnet_ctl_send_client(void *handle, struct sk_buff *skb)
 }
 EXPORT_SYMBOL(rmnet_ctl_send_client);
 
-void rmnet_ctl_log(enum rmnet_ctl_log_lvl lvl, const char *msg,
-		   int rc, const void *data, unsigned int len)
+void rmnet_ctl_log(enum rmnet_ctl_log_lvl lvl, const char *msg, int rc,
+		   const void *data, unsigned int len)
 {
 	if (lvl <= ipc_log_lvl && ctl_ep.ipc_log) {
 		if (data == NULL || len == 0)
-			ipc_log_string(ctl_ep.ipc_log, "%3s(%d): (null)\n",
-				       msg, rc);
+			ipc_log_string(ctl_ep.ipc_log, "%3s(%d): (null)\n", msg,
+				       rc);
 		else
-			ipc_log_string(ctl_ep.ipc_log, "%3s(%d): %*ph\n",
-				       msg, rc, len > 32 ? 32 : len, data);
+			ipc_log_string(ctl_ep.ipc_log, "%3s(%d): %*ph\n", msg,
+				       rc, len > 32 ? 32 : len, data);
 	}
 }
 EXPORT_SYMBOL(rmnet_ctl_log);

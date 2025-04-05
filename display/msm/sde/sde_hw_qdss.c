@@ -3,21 +3,21 @@
  * Copyright (c) 2019, 2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)     "[drm:%s:%d] " fmt, __func__, __LINE__
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 
 #include <linux/mutex.h>
 #include <linux/platform_device.h>
 
-#include "sde_kms.h"
 #include "sde_dbg.h"
 #include "sde_hw_qdss.h"
+#include "sde_kms.h"
 
-#define QDSS_CONFIG	0x0
+#define QDSS_CONFIG 0x0
 
 static struct sde_qdss_cfg *_qdss_offset(enum sde_qdss qdss,
-		struct sde_mdss_cfg *m,
-		void __iomem *addr,
-		struct sde_hw_blk_reg_map *b)
+					 struct sde_mdss_cfg *m,
+					 void __iomem *addr,
+					 struct sde_hw_blk_reg_map *b)
 {
 	int i;
 
@@ -36,7 +36,7 @@ static struct sde_qdss_cfg *_qdss_offset(enum sde_qdss qdss,
 }
 
 static void sde_hw_qdss_enable_qdss_events(struct sde_hw_qdss *hw_qdss,
-							bool enable)
+					   bool enable)
 {
 	struct sde_hw_blk_reg_map *c = &hw_qdss->hw;
 	u32 val;
@@ -52,9 +52,8 @@ static void _setup_qdss_ops(struct sde_hw_qdss_ops *ops)
 	ops->enable_qdss_events = sde_hw_qdss_enable_qdss_events;
 }
 
-struct sde_hw_blk_reg_map *sde_hw_qdss_init(enum sde_qdss idx,
-			void __iomem *addr,
-			struct sde_mdss_cfg *m)
+struct sde_hw_blk_reg_map *
+sde_hw_qdss_init(enum sde_qdss idx, void __iomem *addr, struct sde_mdss_cfg *m)
 {
 	struct sde_hw_qdss *c;
 	struct sde_qdss_cfg *cfg;
@@ -74,7 +73,8 @@ struct sde_hw_blk_reg_map *sde_hw_qdss_init(enum sde_qdss idx,
 	_setup_qdss_ops(&c->ops);
 
 	sde_dbg_reg_register_dump_range(SDE_DBG_NAME, cfg->name, c->hw.blk_off,
-			c->hw.blk_off + c->hw.length, c->hw.xin_id);
+					c->hw.blk_off + c->hw.length,
+					c->hw.xin_id);
 
 	return &c->hw;
 }

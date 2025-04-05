@@ -28,34 +28,32 @@ QDF_STATUS ucfg_ftm_time_sync_init(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_register_psoc_create_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_psoc_create_notification,
-				NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_psoc_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ftm_time_sync_err("Failed to register psoc create handler");
 		return status;
 	}
 
 	status = wlan_objmgr_register_psoc_destroy_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_psoc_destroy_notification,
-				NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_psoc_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ftm_time_sync_err("Failed to register psoc delete handler");
 		goto fail_destroy_psoc;
 	}
 
 	status = wlan_objmgr_register_vdev_create_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_vdev_create_notification, NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_vdev_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ftm_time_sync_err("Failed to register vdev create handler");
 		goto fail_create_vdev;
 	}
 
 	status = wlan_objmgr_register_vdev_destroy_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_vdev_destroy_notification, NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_vdev_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		ftm_time_sync_err("Failed to register vdev destroy handler");
 		goto fail_destroy_vdev;
@@ -64,18 +62,18 @@ QDF_STATUS ucfg_ftm_time_sync_init(void)
 
 fail_destroy_vdev:
 	wlan_objmgr_unregister_vdev_create_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_vdev_create_notification, NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_vdev_create_notification, NULL);
 
 fail_create_vdev:
 	wlan_objmgr_unregister_psoc_destroy_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_psoc_destroy_notification, NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_psoc_destroy_notification, NULL);
 
 fail_destroy_psoc:
 	wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_psoc_create_notification, NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_psoc_create_notification, NULL);
 
 	return status;
 }
@@ -85,34 +83,31 @@ void ucfg_ftm_time_sync_deinit(void)
 	QDF_STATUS status;
 
 	status = wlan_objmgr_unregister_vdev_destroy_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_vdev_destroy_notification,
-				NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_vdev_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ftm_time_sync_err("Failed to unregister vdev delete handler");
 
 	status = wlan_objmgr_unregister_vdev_create_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_vdev_create_notification, NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_vdev_create_notification, NULL);
 	if (!QDF_IS_STATUS_ERROR(status))
 		ftm_time_sync_err("Failed to unregister vdev create handler");
 
 	status = wlan_objmgr_unregister_psoc_destroy_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_psoc_destroy_notification,
-				NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_psoc_destroy_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ftm_time_sync_err("Failed to unregister psoc destroy handler");
 
 	status = wlan_objmgr_unregister_psoc_create_handler(
-				WLAN_UMAC_COMP_FTM_TIME_SYNC,
-				ftm_time_sync_psoc_create_notification,
-				NULL);
+		WLAN_UMAC_COMP_FTM_TIME_SYNC,
+		ftm_time_sync_psoc_create_notification, NULL);
 	if (QDF_IS_STATUS_ERROR(status))
 		ftm_time_sync_err("Failed to unregister psoc create handler");
 }
 
-bool  ucfg_is_ftm_time_sync_enable(struct wlan_objmgr_psoc *psoc)
+bool ucfg_is_ftm_time_sync_enable(struct wlan_objmgr_psoc *psoc)
 {
 	return ftm_time_sync_is_enable(psoc);
 }
@@ -123,9 +118,8 @@ void ucfg_ftm_time_sync_set_enable(struct wlan_objmgr_psoc *psoc, bool enable)
 }
 
 void ucfg_ftm_time_sync_update_sta_connect_state(
-					struct wlan_objmgr_vdev *vdev,
-					enum ftm_time_sync_sta_state sta_state,
-					struct qdf_mac_addr bssid)
+	struct wlan_objmgr_vdev *vdev, enum ftm_time_sync_sta_state sta_state,
+	struct qdf_mac_addr bssid)
 {
 	struct wlan_objmgr_psoc *psoc;
 	enum ftm_time_sync_role role;

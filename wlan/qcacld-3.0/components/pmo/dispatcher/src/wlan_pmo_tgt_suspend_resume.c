@@ -21,13 +21,14 @@
  * DOC: Implements public API for pmo to interact with target/WMI
  */
 
+#include "wlan_pmo_main.h"
+#include "wlan_pmo_obj_mgmt_public_struct.h"
 #include "wlan_pmo_tgt_api.h"
 #include "wlan_pmo_wow.h"
-#include "wlan_pmo_obj_mgmt_public_struct.h"
-#include "wlan_pmo_main.h"
 
 QDF_STATUS pmo_tgt_vdev_update_param_req(struct wlan_objmgr_vdev *vdev,
-		enum pmo_vdev_param_id param_id, uint32_t param_value)
+					 enum pmo_vdev_param_id param_id,
+					 uint32_t param_value)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -45,7 +46,7 @@ QDF_STATUS pmo_tgt_vdev_update_param_req(struct wlan_objmgr_vdev *vdev,
 	}
 
 	status = pmo_tx_ops.send_vdev_param_update_req(vdev, param_id,
-			param_value);
+						       param_value);
 out:
 	pmo_exit();
 
@@ -76,7 +77,8 @@ pmo_tgt_send_igmp_offload_req(struct wlan_objmgr_vdev *vdev,
 #endif
 
 QDF_STATUS pmo_tgt_send_vdev_sta_ps_param(struct wlan_objmgr_vdev *vdev,
-		enum pmo_sta_powersave_param ps_param, uint32_t param_value)
+					  enum pmo_sta_powersave_param ps_param,
+					  uint32_t param_value)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
@@ -92,13 +94,13 @@ QDF_STATUS pmo_tgt_send_vdev_sta_ps_param(struct wlan_objmgr_vdev *vdev,
 	}
 
 	status = pmo_tx_ops.send_vdev_sta_ps_param_req(vdev, ps_param,
-			param_value);
+						       param_value);
 out:
 	return status;
 }
 
 void pmo_tgt_psoc_update_wow_bus_suspend_state(struct wlan_objmgr_psoc *psoc,
-		uint8_t val)
+					       uint8_t val)
 {
 	struct wlan_pmo_tx_ops pmo_tx_ops;
 
@@ -112,7 +114,6 @@ void pmo_tgt_psoc_update_wow_bus_suspend_state(struct wlan_objmgr_psoc *psoc,
 
 int pmo_tgt_psoc_get_host_credits(struct wlan_objmgr_psoc *psoc)
 {
-
 	struct wlan_pmo_tx_ops pmo_tx_ops;
 
 	pmo_tx_ops = GET_PMO_TX_OPS_FROM_PSOC(psoc);
@@ -126,7 +127,6 @@ int pmo_tgt_psoc_get_host_credits(struct wlan_objmgr_psoc *psoc)
 
 int pmo_tgt_psoc_get_pending_cmnds(struct wlan_objmgr_psoc *psoc)
 {
-
 	struct wlan_pmo_tx_ops pmo_tx_ops;
 
 	pmo_tx_ops = GET_PMO_TX_OPS_FROM_PSOC(psoc);
@@ -139,7 +139,7 @@ int pmo_tgt_psoc_get_pending_cmnds(struct wlan_objmgr_psoc *psoc)
 }
 
 void pmo_tgt_update_target_suspend_flag(struct wlan_objmgr_psoc *psoc,
-		uint8_t val)
+					uint8_t val)
 {
 	struct wlan_pmo_tx_ops pmo_tx_ops;
 
@@ -177,7 +177,7 @@ bool pmo_tgt_is_target_suspended(struct wlan_objmgr_psoc *psoc)
 }
 
 QDF_STATUS pmo_tgt_psoc_send_wow_enable_req(struct wlan_objmgr_psoc *psoc,
-	struct pmo_wow_cmd_params *param)
+					    struct pmo_wow_cmd_params *param)
 {
 	struct pmo_psoc_priv_obj *psoc_ctx;
 	struct wlan_pmo_tx_ops pmo_tx_ops;
@@ -202,7 +202,7 @@ QDF_STATUS pmo_tgt_psoc_send_wow_enable_req(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS pmo_tgt_psoc_send_supend_req(struct wlan_objmgr_psoc *psoc,
-		struct pmo_suspend_params *param)
+					struct pmo_suspend_params *param)
 {
 	struct wlan_pmo_tx_ops pmo_tx_ops;
 
@@ -295,7 +295,8 @@ QDF_STATUS pmo_tgt_psoc_send_idle_roam_monitor(struct wlan_objmgr_psoc *psoc,
 	return pmo_tx_ops.psoc_send_idle_roam_suspend_mode(psoc, val);
 }
 
-QDF_STATUS pmo_tgt_psoc_set_wow_enable_ack_failed(struct wlan_objmgr_psoc *psoc)
+QDF_STATUS
+pmo_tgt_psoc_set_wow_enable_ack_failed(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_pmo_tx_ops pmo_tx_ops;
 

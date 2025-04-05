@@ -21,14 +21,14 @@
  * DOC: contains nan target if functions
  */
 
+#include "target_if_nan.h"
 #include "../../../nan/core/src/nan_main_i.h"
 #include "nan_public_structs.h"
 #include "nan_ucfg_api.h"
-#include "target_if_nan.h"
-#include "wlan_nan_api.h"
-#include "target_if.h"
-#include "wmi_unified_api.h"
 #include "scheduler_api.h"
+#include "target_if.h"
+#include "wlan_nan_api.h"
+#include "wmi_unified_api.h"
 #include <wmi_unified.h>
 
 static QDF_STATUS target_if_nan_event_flush_cb(struct scheduler_msg *msg)
@@ -180,15 +180,15 @@ free_res:
 	return status;
 }
 
-static QDF_STATUS target_if_nan_ndp_initiator_req(
-			struct nan_datapath_initiator_req *ndp_req)
+static QDF_STATUS
+target_if_nan_ndp_initiator_req(struct nan_datapath_initiator_req *ndp_req)
 {
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
-	struct scheduler_msg pe_msg = {0};
+	struct scheduler_msg pe_msg = { 0 };
 	struct wlan_nan_rx_ops *nan_rx_ops;
-	struct nan_datapath_initiator_rsp ndp_rsp = {0};
+	struct nan_datapath_initiator_rsp ndp_rsp = { 0 };
 
 	if (!ndp_req) {
 		target_if_err("ndp_req is null.");
@@ -266,12 +266,12 @@ static int target_if_nan_dmesg_handler(ol_scn_t scn, uint8_t *data,
 }
 
 static int target_if_ndp_initiator_rsp_handler(ol_scn_t scn, uint8_t *data,
-						uint32_t len)
+					       uint32_t len)
 {
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct nan_datapath_initiator_rsp *rsp;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -319,7 +319,7 @@ static int target_if_ndp_ind_handler(ol_scn_t scn, uint8_t *data,
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct nan_datapath_indication_event *rsp;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -362,12 +362,12 @@ static int target_if_ndp_ind_handler(ol_scn_t scn, uint8_t *data,
 }
 
 static int target_if_ndp_confirm_handler(ol_scn_t scn, uint8_t *data,
-					uint32_t data_len)
+					 uint32_t data_len)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct nan_datapath_confirm_event *rsp;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -409,15 +409,15 @@ static int target_if_ndp_confirm_handler(ol_scn_t scn, uint8_t *data,
 	return 0;
 }
 
-static QDF_STATUS target_if_nan_ndp_responder_req(
-				struct nan_datapath_responder_req *req)
+static QDF_STATUS
+target_if_nan_ndp_responder_req(struct nan_datapath_responder_req *req)
 {
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
-	struct scheduler_msg pe_msg = {0};
+	struct scheduler_msg pe_msg = { 0 };
 	struct wlan_nan_rx_ops *nan_rx_ops;
-	struct nan_datapath_responder_rsp rsp = {0};
+	struct nan_datapath_responder_rsp rsp = { 0 };
 
 	if (!req) {
 		target_if_err("Invalid req.");
@@ -459,12 +459,12 @@ static QDF_STATUS target_if_nan_ndp_responder_req(
 }
 
 static int target_if_ndp_responder_rsp_handler(ol_scn_t scn, uint8_t *data,
-						uint32_t len)
+					       uint32_t len)
 {
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct nan_datapath_responder_rsp *rsp;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -511,9 +511,9 @@ static QDF_STATUS target_if_nan_ndp_end_req(struct nan_datapath_end_req *req)
 	QDF_STATUS status;
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct wlan_nan_rx_ops *nan_rx_ops;
-	struct nan_datapath_end_rsp_event end_rsp = {0};
+	struct nan_datapath_end_rsp_event end_rsp = { 0 };
 
 	if (!req) {
 		target_if_err("req is null");
@@ -561,7 +561,7 @@ static int target_if_ndp_end_rsp_handler(ol_scn_t scn, uint8_t *data,
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct nan_datapath_end_rsp_event *end_rsp;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -609,7 +609,7 @@ static int target_if_ndp_end_ind_handler(ol_scn_t scn, uint8_t *data,
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct nan_datapath_end_indication_event *rsp = NULL;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -631,7 +631,7 @@ static int target_if_ndp_end_ind_handler(ol_scn_t scn, uint8_t *data,
 	}
 
 	rsp->vdev = wlan_objmgr_get_vdev_by_opmode_from_psoc(
-			  wmi_handle->soc->wmi_psoc, QDF_NDI_MODE, WLAN_NAN_ID);
+		wmi_handle->soc->wmi_psoc, QDF_NDI_MODE, WLAN_NAN_ID);
 	if (!rsp->vdev) {
 		target_if_err("vdev is null");
 		qdf_mem_free(rsp);
@@ -660,7 +660,7 @@ static int target_if_ndp_sch_update_handler(ol_scn_t scn, uint8_t *data,
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct nan_datapath_sch_update_event *rsp;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -737,7 +737,7 @@ static int target_if_ndp_host_event_handler(ol_scn_t scn, uint8_t *data,
 	QDF_STATUS status;
 	struct wlan_objmgr_psoc *psoc;
 	struct wmi_unified *wmi_handle;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct nan_datapath_host_event *host_evt = NULL;
 
 	psoc = target_if_get_psoc_from_scn_hdl(scn);
@@ -872,19 +872,19 @@ static QDF_STATUS target_if_nan_discovery_req(void *req, uint32_t req_type)
 		status = target_if_nan_disable_req(req);
 		break;
 	case NAN_GENERIC_REQ: {
-			struct nan_generic_req *nan_req = req;
+		struct nan_generic_req *nan_req = req;
 
-			status = target_if_nan_generic_req(nan_req->psoc,
-							   &nan_req->params);
-			break;
-		}
+		status = target_if_nan_generic_req(nan_req->psoc,
+						   &nan_req->params);
+		break;
+	}
 	case NAN_ENABLE_REQ: {
-			struct nan_enable_req *nan_req = req;
+		struct nan_enable_req *nan_req = req;
 
-			status = target_if_nan_generic_req(nan_req->psoc,
-							   &nan_req->params);
-			break;
-		}
+		status = target_if_nan_generic_req(nan_req->psoc,
+						   &nan_req->params);
+		break;
+	}
 	default:
 		target_if_err("Invalid NAN req type");
 		status = QDF_STATUS_E_INVAL;
@@ -908,8 +908,8 @@ void target_if_nan_register_rx_ops(struct wlan_nan_rx_ops *rx_ops)
 
 int target_if_nan_rsp_handler(ol_scn_t scn, uint8_t *data, uint32_t len)
 {
-	struct nan_event_params *nan_rsp, temp_evt_params = {0};
-	struct scheduler_msg msg = {0};
+	struct nan_event_params *nan_rsp, temp_evt_params = { 0 };
+	struct scheduler_msg msg = { 0 };
 	struct wmi_unified *wmi_handle;
 	struct wlan_objmgr_psoc *psoc;
 	QDF_STATUS status;
@@ -985,10 +985,9 @@ QDF_STATUS target_if_nan_register_events(struct wlan_objmgr_psoc *psoc)
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_unified_register_event_handler(handle,
-		wmi_ndp_initiator_rsp_event_id,
-		target_if_ndp_initiator_rsp_handler,
-		WMI_RX_UMAC_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_ndp_initiator_rsp_event_id,
+		target_if_ndp_initiator_rsp_handler, WMI_RX_UMAC_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event registration failed, ret: %d", ret);
 		return QDF_STATUS_E_FAILURE;
@@ -1004,9 +1003,9 @@ QDF_STATUS target_if_nan_register_events(struct wlan_objmgr_psoc *psoc)
 	}
 
 	ret = wmi_unified_register_event_handler(handle,
-		wmi_ndp_indication_event_id,
-		target_if_ndp_ind_handler,
-		WMI_RX_UMAC_CTX);
+						 wmi_ndp_indication_event_id,
+						 target_if_ndp_ind_handler,
+						 WMI_RX_UMAC_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event registration failed, ret: %d", ret);
 		target_if_nan_deregister_events(psoc);
@@ -1014,9 +1013,27 @@ QDF_STATUS target_if_nan_register_events(struct wlan_objmgr_psoc *psoc)
 	}
 
 	ret = wmi_unified_register_event_handler(handle,
-		wmi_ndp_confirm_event_id,
-		target_if_ndp_confirm_handler,
-		WMI_RX_UMAC_CTX);
+						 wmi_ndp_confirm_event_id,
+						 target_if_ndp_confirm_handler,
+						 WMI_RX_UMAC_CTX);
+	if (QDF_IS_STATUS_ERROR(ret)) {
+		target_if_err("wmi event registration failed, ret: %d", ret);
+		target_if_nan_deregister_events(psoc);
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_ndp_responder_rsp_event_id,
+		target_if_ndp_responder_rsp_handler, WMI_RX_UMAC_CTX);
+	if (QDF_IS_STATUS_ERROR(ret)) {
+		target_if_err("wmi event registration failed, ret: %d", ret);
+		target_if_nan_deregister_events(psoc);
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_ndp_end_indication_event_id,
+		target_if_ndp_end_ind_handler, WMI_RX_UMAC_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event registration failed, ret: %d", ret);
 		target_if_nan_deregister_events(psoc);
@@ -1024,48 +1041,27 @@ QDF_STATUS target_if_nan_register_events(struct wlan_objmgr_psoc *psoc)
 	}
 
 	ret = wmi_unified_register_event_handler(handle,
-		wmi_ndp_responder_rsp_event_id,
-		target_if_ndp_responder_rsp_handler,
-		WMI_RX_UMAC_CTX);
+						 wmi_ndp_end_rsp_event_id,
+						 target_if_ndp_end_rsp_handler,
+						 WMI_RX_UMAC_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event registration failed, ret: %d", ret);
 		target_if_nan_deregister_events(psoc);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_unified_register_event_handler(handle,
-		wmi_ndp_end_indication_event_id,
-		target_if_ndp_end_ind_handler,
-		WMI_RX_UMAC_CTX);
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_ndl_schedule_update_event_id,
+		target_if_ndp_sch_update_handler, WMI_RX_UMAC_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event registration failed, ret: %d", ret);
 		target_if_nan_deregister_events(psoc);
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	ret = wmi_unified_register_event_handler(handle,
-		wmi_ndp_end_rsp_event_id,
-		target_if_ndp_end_rsp_handler,
+	ret = wmi_unified_register_event_handler(
+		handle, wmi_ndp_event_id, target_if_ndp_host_event_handler,
 		WMI_RX_UMAC_CTX);
-	if (QDF_IS_STATUS_ERROR(ret)) {
-		target_if_err("wmi event registration failed, ret: %d", ret);
-		target_if_nan_deregister_events(psoc);
-		return QDF_STATUS_E_FAILURE;
-	}
-
-	ret = wmi_unified_register_event_handler(handle,
-		wmi_ndl_schedule_update_event_id,
-		target_if_ndp_sch_update_handler,
-		WMI_RX_UMAC_CTX);
-	if (QDF_IS_STATUS_ERROR(ret)) {
-		target_if_err("wmi event registration failed, ret: %d", ret);
-		target_if_nan_deregister_events(psoc);
-		return QDF_STATUS_E_FAILURE;
-	}
-
-	ret = wmi_unified_register_event_handler(handle, wmi_ndp_event_id,
-					       target_if_ndp_host_event_handler,
-					       WMI_RX_UMAC_CTX);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event registration failed, ret: %d", ret);
 		target_if_nan_deregister_events(psoc);
@@ -1084,43 +1080,43 @@ QDF_STATUS target_if_nan_deregister_events(struct wlan_objmgr_psoc *psoc)
 		target_if_err("handle is NULL");
 		return QDF_STATUS_E_FAILURE;
 	}
-	ret = wmi_unified_unregister_event_handler(handle,
-				wmi_ndl_schedule_update_event_id);
+	ret = wmi_unified_unregister_event_handler(
+		handle, wmi_ndl_schedule_update_event_id);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event deregistration failed, ret: %d", ret);
 		status = ret;
 	}
 
 	ret = wmi_unified_unregister_event_handler(handle,
-				wmi_ndp_end_rsp_event_id);
+						   wmi_ndp_end_rsp_event_id);
+	if (QDF_IS_STATUS_ERROR(ret)) {
+		target_if_err("wmi event deregistration failed, ret: %d", ret);
+		status = ret;
+	}
+
+	ret = wmi_unified_unregister_event_handler(
+		handle, wmi_ndp_end_indication_event_id);
+	if (QDF_IS_STATUS_ERROR(ret)) {
+		target_if_err("wmi event deregistration failed, ret: %d", ret);
+		status = ret;
+	}
+
+	ret = wmi_unified_unregister_event_handler(
+		handle, wmi_ndp_responder_rsp_event_id);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event deregistration failed, ret: %d", ret);
 		status = ret;
 	}
 
 	ret = wmi_unified_unregister_event_handler(handle,
-				wmi_ndp_end_indication_event_id);
+						   wmi_ndp_confirm_event_id);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event deregistration failed, ret: %d", ret);
 		status = ret;
 	}
 
 	ret = wmi_unified_unregister_event_handler(handle,
-				wmi_ndp_responder_rsp_event_id);
-	if (QDF_IS_STATUS_ERROR(ret)) {
-		target_if_err("wmi event deregistration failed, ret: %d", ret);
-		status = ret;
-	}
-
-	ret = wmi_unified_unregister_event_handler(handle,
-				wmi_ndp_confirm_event_id);
-	if (QDF_IS_STATUS_ERROR(ret)) {
-		target_if_err("wmi event deregistration failed, ret: %d", ret);
-		status = ret;
-	}
-
-	ret = wmi_unified_unregister_event_handler(handle,
-				wmi_ndp_indication_event_id);
+						   wmi_ndp_indication_event_id);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event deregistration failed, ret: %d", ret);
 		status = ret;
@@ -1133,8 +1129,8 @@ QDF_STATUS target_if_nan_deregister_events(struct wlan_objmgr_psoc *psoc)
 		status = ret;
 	}
 
-	ret = wmi_unified_unregister_event_handler(handle,
-				wmi_ndp_initiator_rsp_event_id);
+	ret = wmi_unified_unregister_event_handler(
+		handle, wmi_ndp_initiator_rsp_event_id);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("wmi event deregistration failed, ret: %d", ret);
 		status = ret;
@@ -1166,9 +1162,10 @@ void target_if_nan_set_vdev_feature_config(struct wlan_objmgr_psoc *psoc,
 	}
 
 	if (!target_if_is_vdev_valid(vdev_id)) {
-		target_if_err("vdev_id: %d is invalid, reject the req: param id %d",
-			      vdev_id,
-			      wmi_vdev_param_enable_disable_nan_config_features);
+		target_if_err(
+			"vdev_id: %d is invalid, reject the req: param id %d",
+			vdev_id,
+			wmi_vdev_param_enable_disable_nan_config_features);
 		return;
 	}
 

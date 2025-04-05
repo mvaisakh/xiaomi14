@@ -24,19 +24,19 @@
  *
  */
 
-#include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/version.h>
+#include <linux/module.h>
 #include <linux/netdevice.h>
-#include <net/netlink.h>
+#include <linux/version.h>
 #include <net/cfg80211.h>
+#include <net/netlink.h>
 
-#include <qdf_types.h>
 #include "wlan_objmgr_vdev_obj.h"
 #include <qdf_module.h>
+#include <qdf_types.h>
 
-#include "wlan_nl_to_crypto_params.h"
 #include "wlan_crypto_global_def.h"
+#include "wlan_nl_to_crypto_params.h"
 
 /**
  * struct osif_akm_type_crypto_mapping - mapping akm type received from
@@ -69,24 +69,22 @@ struct osif_cipher_crypto_mapping {
 /*
  * mapping table for auth type received from NL and crypto auth type
  */
-static const wlan_crypto_auth_mode
-	osif_auth_type_crypto_mapping[] = {
+static const wlan_crypto_auth_mode osif_auth_type_crypto_mapping[] = {
 	[NL80211_AUTHTYPE_AUTOMATIC] = WLAN_CRYPTO_AUTH_AUTO,
 	[NL80211_AUTHTYPE_OPEN_SYSTEM] = WLAN_CRYPTO_AUTH_OPEN,
 	[NL80211_AUTHTYPE_FT] = WLAN_CRYPTO_AUTH_OPEN,
 	[NL80211_AUTHTYPE_SHARED_KEY] = WLAN_CRYPTO_AUTH_SHARED,
 	[NL80211_AUTHTYPE_NETWORK_EAP] = WLAN_CRYPTO_AUTH_8021X,
-#if defined(WLAN_FEATURE_FILS_SK) && \
+#if defined(WLAN_FEATURE_FILS_SK) &&                  \
 	(defined(CFG80211_FILS_SK_OFFLOAD_SUPPORT) || \
-		 (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)))
+	 (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)))
 	[NL80211_AUTHTYPE_FILS_SK] = WLAN_CRYPTO_AUTH_FILS_SK,
 #endif
 	[NL80211_AUTHTYPE_SAE] = WLAN_CRYPTO_AUTH_SAE,
 };
 
 /* mapping table for akm type received from NL and crypto akm type */
-static const struct osif_akm_type_crypto_mapping
-	osif_akm_type_crypto_mapping[] = {
+static const struct osif_akm_type_crypto_mapping osif_akm_type_crypto_mapping[] = {
 	{
 		.akm_suite = WLAN_AKM_SUITE_8021X,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_IEEE8021X,
@@ -111,15 +109,13 @@ static const struct osif_akm_type_crypto_mapping
 		.akm_suite = WLAN_AKM_SUITE_FT_OVER_SAE,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_FT_SAE,
 	},
-#if defined(WLAN_AKM_SUITE_FT_8021X) || \
-			defined(FEATURE_WLAN_FT_IEEE8021X)
+#if defined(WLAN_AKM_SUITE_FT_8021X) || defined(FEATURE_WLAN_FT_IEEE8021X)
 	{
 		.akm_suite = WLAN_AKM_SUITE_FT_8021X,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_FT_IEEE8021X,
 	},
 #endif
-#if defined(WLAN_AKM_SUITE_FT_PSK) || \
-			defined(FEATURE_WLAN_FT_PSK)
+#if defined(WLAN_AKM_SUITE_FT_PSK) || defined(FEATURE_WLAN_FT_PSK)
 	{
 		.akm_suite = WLAN_AKM_SUITE_FT_PSK,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_FT_PSK,
@@ -128,7 +124,7 @@ static const struct osif_akm_type_crypto_mapping
 #ifdef FEATURE_WLAN_ESE
 	{
 #ifndef WLAN_AKM_SUITE_CCKM
-#define WLAN_AKM_SUITE_CCKM         0x00409600
+#define WLAN_AKM_SUITE_CCKM 0x00409600
 #endif
 		.akm_suite = WLAN_AKM_SUITE_CCKM,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_CCKM,
@@ -136,48 +132,44 @@ static const struct osif_akm_type_crypto_mapping
 #endif
 	{
 #ifndef WLAN_AKM_SUITE_OSEN
-#define WLAN_AKM_SUITE_OSEN         0x506f9a01
+#define WLAN_AKM_SUITE_OSEN 0x506f9a01
 #endif
 		.akm_suite = WLAN_AKM_SUITE_OSEN,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_OSEN,
 	},
 #if defined(WLAN_AKM_SUITE_8021X_SUITE_B) || \
-		defined(FEATURE_WLAN_IEEE8021X_SUITE_B)
+	defined(FEATURE_WLAN_IEEE8021X_SUITE_B)
 	{
 		.akm_suite = WLAN_AKM_SUITE_8021X_SUITE_B,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_IEEE8021X_SUITE_B,
 	},
 #endif
 #if defined(WLAN_AKM_SUITE_8021X_SUITE_B_192) || \
-		defined(FEATURE_WLAN_IEEE8021X_SUITE_B)
+	defined(FEATURE_WLAN_IEEE8021X_SUITE_B)
 	{
 		.akm_suite = WLAN_AKM_SUITE_8021X_SUITE_B_192,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_IEEE8021X_SUITE_B_192,
 	},
 #endif
-#if defined(WLAN_AKM_SUITE_FILS_SHA256) || \
-				defined(FEATURE_WLAN_FILS)
+#if defined(WLAN_AKM_SUITE_FILS_SHA256) || defined(FEATURE_WLAN_FILS)
 	{
 		.akm_suite = WLAN_AKM_SUITE_FILS_SHA256,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_FILS_SHA256,
 	},
 #endif
-#if defined(WLAN_AKM_SUITE_FILS_SHA384) || \
-				defined(FEATURE_WLAN_FILS)
+#if defined(WLAN_AKM_SUITE_FILS_SHA384) || defined(FEATURE_WLAN_FILS)
 	{
 		.akm_suite = WLAN_AKM_SUITE_FILS_SHA384,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_FILS_SHA384,
 	},
 #endif
-#if defined(WLAN_AKM_SUITE_FT_FILS_SHA256) || \
-				defined(FEATURE_WLAN_FILS)
+#if defined(WLAN_AKM_SUITE_FT_FILS_SHA256) || defined(FEATURE_WLAN_FILS)
 	{
 		.akm_suite = WLAN_AKM_SUITE_FT_FILS_SHA256,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_FT_FILS_SHA256,
 	},
 #endif
-#if defined(WLAN_AKM_SUITE_FT_FILS_SHA384) || \
-				defined(FEATURE_WLAN_FILS)
+#if defined(WLAN_AKM_SUITE_FT_FILS_SHA384) || defined(FEATURE_WLAN_FILS)
 	{
 		.akm_suite = WLAN_AKM_SUITE_FT_FILS_SHA384,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_FT_FILS_SHA384,
@@ -185,14 +177,14 @@ static const struct osif_akm_type_crypto_mapping
 #endif
 	{
 #ifndef WLAN_AKM_SUITE_OWE
-#define WLAN_AKM_SUITE_OWE          0x000FAC12
+#define WLAN_AKM_SUITE_OWE 0x000FAC12
 #endif
 		.akm_suite = WLAN_AKM_SUITE_OWE,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_OWE,
 	},
 	{
 #ifndef WLAN_AKM_SUITE_DPP
-#define WLAN_AKM_SUITE_DPP      0x506f9a02
+#define WLAN_AKM_SUITE_DPP 0x506f9a02
 #endif
 		.akm_suite = WLAN_AKM_SUITE_DPP,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_DPP,
@@ -214,8 +206,7 @@ static const struct osif_akm_type_crypto_mapping
 };
 
 /* mapping table for cipher type received from NL and crypto cipher type */
-static const struct osif_cipher_crypto_mapping
-	osif_cipher_crypto_mapping[] = {
+static const struct osif_cipher_crypto_mapping osif_cipher_crypto_mapping[] = {
 	{
 		.cipher_suite = IW_AUTH_CIPHER_NONE,
 		.cipher_crypto = WLAN_CRYPTO_CIPHER_NONE,
@@ -319,8 +310,8 @@ wlan_crypto_key_mgmt osif_nl_to_crypto_akm_type(u32 key_mgmt)
 	for (index = 0; index < QDF_ARRAY_SIZE(osif_akm_type_crypto_mapping);
 	     index++) {
 		if (osif_akm_type_crypto_mapping[index].akm_suite == key_mgmt) {
-			crypto_akm_type = osif_akm_type_crypto_mapping[index].
-							akm_type_crypto;
+			crypto_akm_type = osif_akm_type_crypto_mapping[index]
+						  .akm_type_crypto;
 			akm_type_crypto_exist = true;
 			break;
 		}
@@ -329,8 +320,9 @@ wlan_crypto_key_mgmt osif_nl_to_crypto_akm_type(u32 key_mgmt)
 		QDF_TRACE_ERROR(QDF_MODULE_ID_OS_IF, "Unknown type: %d",
 				key_mgmt);
 	else
-		QDF_TRACE_DEBUG(QDF_MODULE_ID_OS_IF, "Akm suite, NL: %d, crypto: %d",
-				key_mgmt, crypto_akm_type);
+		QDF_TRACE_DEBUG(QDF_MODULE_ID_OS_IF,
+				"Akm suite, NL: %d, crypto: %d", key_mgmt,
+				crypto_akm_type);
 
 	return crypto_akm_type;
 }
@@ -344,8 +336,8 @@ enum wlan_crypto_cipher_type osif_nl_to_crypto_cipher_type(u32 cipher)
 	for (index = 0; index < QDF_ARRAY_SIZE(osif_cipher_crypto_mapping);
 	     index++) {
 		if (osif_cipher_crypto_mapping[index].cipher_suite == cipher) {
-			crypto_cipher_type = osif_cipher_crypto_mapping[index].
-								cipher_crypto;
+			crypto_cipher_type =
+				osif_cipher_crypto_mapping[index].cipher_crypto;
 			cipher_crypto_exist = true;
 			break;
 		}
@@ -373,4 +365,3 @@ int osif_nl_to_crypto_cipher_len(u32 cipher)
 
 	return -EINVAL;
 }
-

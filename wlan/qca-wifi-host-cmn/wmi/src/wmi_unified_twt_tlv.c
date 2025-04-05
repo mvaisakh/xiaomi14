@@ -17,15 +17,15 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <osdep.h>
 #include "wmi.h"
 #include "wmi_unified_priv.h"
-#include "wmi_unified_twt_param.h"
 #include "wmi_unified_twt_api.h"
+#include "wmi_unified_twt_param.h"
+#include <osdep.h>
 
 #if defined(WLAN_SUPPORT_TWT) && defined(WLAN_TWT_CONV_SUPPORTED)
 static QDF_STATUS send_twt_enable_cmd_tlv(wmi_unified_t wmi_handle,
-			struct twt_enable_param *params)
+					  struct twt_enable_param *params)
 {
 	wmi_twt_enable_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -38,32 +38,30 @@ static QDF_STATUS send_twt_enable_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_twt_enable_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-			WMITLV_TAG_STRUC_wmi_twt_enable_cmd_fixed_param,
-			WMITLV_GET_STRUCT_TLVLEN
-			(wmi_twt_enable_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_enable_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_enable_cmd_fixed_param));
 
-	cmd->pdev_id =
-		wmi_handle->ops->convert_pdev_id_host_to_target(
-						wmi_handle,
-						params->pdev_id);
-	cmd->sta_cong_timer_ms =            params->sta_cong_timer_ms;
-	cmd->mbss_support =                 params->mbss_support;
-	cmd->default_slot_size =            params->default_slot_size;
-	cmd->congestion_thresh_setup =      params->congestion_thresh_setup;
-	cmd->congestion_thresh_teardown =   params->congestion_thresh_teardown;
-	cmd->congestion_thresh_critical =   params->congestion_thresh_critical;
+	cmd->pdev_id = wmi_handle->ops->convert_pdev_id_host_to_target(
+		wmi_handle, params->pdev_id);
+	cmd->sta_cong_timer_ms = params->sta_cong_timer_ms;
+	cmd->mbss_support = params->mbss_support;
+	cmd->default_slot_size = params->default_slot_size;
+	cmd->congestion_thresh_setup = params->congestion_thresh_setup;
+	cmd->congestion_thresh_teardown = params->congestion_thresh_teardown;
+	cmd->congestion_thresh_critical = params->congestion_thresh_critical;
 	cmd->interference_thresh_teardown =
-					params->interference_thresh_teardown;
-	cmd->interference_thresh_setup =    params->interference_thresh_setup;
-	cmd->min_no_sta_setup =             params->min_no_sta_setup;
-	cmd->min_no_sta_teardown =          params->min_no_sta_teardown;
-	cmd->no_of_bcast_mcast_slots =      params->no_of_bcast_mcast_slots;
-	cmd->min_no_twt_slots =             params->min_no_twt_slots;
-	cmd->max_no_sta_twt =               params->max_no_sta_twt;
-	cmd->mode_check_interval =          params->mode_check_interval;
-	cmd->add_sta_slot_interval =        params->add_sta_slot_interval;
-	cmd->remove_sta_slot_interval =     params->remove_sta_slot_interval;
+		params->interference_thresh_teardown;
+	cmd->interference_thresh_setup = params->interference_thresh_setup;
+	cmd->min_no_sta_setup = params->min_no_sta_setup;
+	cmd->min_no_sta_teardown = params->min_no_sta_teardown;
+	cmd->no_of_bcast_mcast_slots = params->no_of_bcast_mcast_slots;
+	cmd->min_no_twt_slots = params->min_no_twt_slots;
+	cmd->max_no_sta_twt = params->max_no_sta_twt;
+	cmd->mode_check_interval = params->mode_check_interval;
+	cmd->add_sta_slot_interval = params->add_sta_slot_interval;
+	cmd->remove_sta_slot_interval = params->remove_sta_slot_interval;
 
 	TWT_EN_DIS_FLAGS_SET_BTWT(cmd->flags, params->b_twt_enable);
 	TWT_EN_DIS_FLAGS_SET_B_R_TWT(cmd->flags, params->r_twt_enable);
@@ -107,7 +105,7 @@ wmi_convert_dis_reason_code(enum HOST_TWT_DISABLE_REASON reason)
 }
 
 static QDF_STATUS send_twt_disable_cmd_tlv(wmi_unified_t wmi_handle,
-			struct twt_disable_param *params)
+					   struct twt_disable_param *params)
 {
 	wmi_twt_disable_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -120,23 +118,20 @@ static QDF_STATUS send_twt_disable_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_twt_disable_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-			WMITLV_TAG_STRUC_wmi_twt_disable_cmd_fixed_param,
-			WMITLV_GET_STRUCT_TLVLEN
-			(wmi_twt_disable_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_disable_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_disable_cmd_fixed_param));
 
-	cmd->pdev_id =
-		wmi_handle->ops->convert_pdev_id_host_to_target(
-						wmi_handle,
-						params->pdev_id);
+	cmd->pdev_id = wmi_handle->ops->convert_pdev_id_host_to_target(
+		wmi_handle, params->pdev_id);
 	if (params->ext_conf_present) {
 		TWT_EN_DIS_FLAGS_SET_SPLIT_CONFIG(cmd->flags, 1);
 		TWT_EN_DIS_FLAGS_SET_REQ_RESP(cmd->flags, params->twt_role);
 		TWT_EN_DIS_FLAGS_SET_I_B_TWT(cmd->flags, params->twt_oper);
 	}
 
-	cmd->reason_code = wmi_convert_dis_reason_code(
-					params->dis_reason_code);
+	cmd->reason_code = wmi_convert_dis_reason_code(params->dis_reason_code);
 	status = wmi_unified_cmd_send(wmi_handle, buf, sizeof(*cmd),
 				      WMI_TWT_DISABLE_CMDID);
 	if (QDF_IS_STATUS_ERROR(status)) {
@@ -179,19 +174,19 @@ send_twt_add_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_twt_add_dialog_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_twt_add_dialog_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_add_dialog_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_add_dialog_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_add_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr.bytes,
 				   &cmd->peer_macaddr);
-	cmd->dialog_id =         params->dialog_id;
-	cmd->wake_intvl_us =     params->wake_intvl_us;
+	cmd->dialog_id = params->dialog_id;
+	cmd->wake_intvl_us = params->wake_intvl_us;
 	cmd->wake_intvl_mantis = params->wake_intvl_mantis;
-	cmd->wake_dura_us =      params->wake_dura_us;
-	cmd->sp_offset_us =      params->sp_offset_us;
+	cmd->wake_dura_us = params->wake_dura_us;
+	cmd->sp_offset_us = params->sp_offset_us;
 	cmd->min_wake_intvl_us = params->min_wake_intvl_us;
 	cmd->max_wake_intvl_us = params->max_wake_intvl_us;
 	cmd->min_wake_dura_us = params->min_wake_dura_us;
@@ -250,10 +245,10 @@ send_twt_del_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_twt_del_dialog_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_twt_del_dialog_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_del_dialog_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_del_dialog_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_del_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr.bytes,
@@ -287,10 +282,10 @@ send_twt_pause_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	}
 
 	cmd = (wmi_twt_pause_dialog_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_twt_pause_dialog_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_pause_dialog_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_pause_dialog_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_pause_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr.bytes,
@@ -320,10 +315,10 @@ send_twt_nudge_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 
 	cmd = (wmi_twt_nudge_dialog_cmd_fixed_param *)wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_twt_nudge_dialog_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_nudge_dialog_cmd_fixed_param));
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_nudge_dialog_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_nudge_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr.bytes,
@@ -333,12 +328,13 @@ send_twt_nudge_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd->next_twt_size = params->next_twt_size;
 	cmd->sp_start_offset = params->sp_start_offset;
 
-	wmi_debug("vdev_id: %d dialog_id: %d duration(in ms): %u next_twt_size: %d "
-		  "peer_macaddr: " QDF_MAC_ADDR_FMT " sp_start_offset: %d",
-		  cmd->vdev_id, cmd->dialog_id, cmd->suspend_duration_ms,
-		  cmd->next_twt_size,
-		  QDF_MAC_ADDR_REF(params->peer_macaddr.bytes),
-		  cmd->sp_start_offset);
+	wmi_debug(
+		"vdev_id: %d dialog_id: %d duration(in ms): %u next_twt_size: %d "
+		"peer_macaddr: " QDF_MAC_ADDR_FMT " sp_start_offset: %d",
+		cmd->vdev_id, cmd->dialog_id, cmd->suspend_duration_ms,
+		cmd->next_twt_size,
+		QDF_MAC_ADDR_REF(params->peer_macaddr.bytes),
+		cmd->sp_start_offset);
 
 	status = wmi_unified_cmd_send(wmi_handle, buf, sizeof(*cmd),
 				      WMI_TWT_NUDGE_DIALOG_CMDID);
@@ -348,8 +344,9 @@ send_twt_nudge_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	return status;
 }
 
-static QDF_STATUS send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
-			struct twt_resume_dialog_cmd_param *params)
+static QDF_STATUS
+send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
+			       struct twt_resume_dialog_cmd_param *params)
 {
 	wmi_twt_resume_dialog_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -363,9 +360,9 @@ static QDF_STATUS send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 
 	cmd = (wmi_twt_resume_dialog_cmd_fixed_param *)wmi_buf_data(buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
-			WMITLV_TAG_STRUC_wmi_twt_resume_dialog_cmd_fixed_param,
-			WMITLV_GET_STRUCT_TLVLEN
-			(wmi_twt_resume_dialog_cmd_fixed_param));
+		       WMITLV_TAG_STRUC_wmi_twt_resume_dialog_cmd_fixed_param,
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_twt_resume_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr.bytes,
@@ -375,7 +372,7 @@ static QDF_STATUS send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd->next_twt_size = params->next_twt_size;
 
 	status = wmi_unified_cmd_send(wmi_handle, buf, sizeof(*cmd),
-						WMI_TWT_RESUME_DIALOG_CMDID);
+				      WMI_TWT_RESUME_DIALOG_CMDID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wmi_err("Failed to send WMI_TWT_RESUME_DIALOG_CMDID");
 		wmi_buf_free(buf);
@@ -402,8 +399,8 @@ send_twt_btwt_invite_sta_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd = (wmi_twt_btwt_invite_sta_cmd_fixed_param *)wmi_buf_data(buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_twt_btwt_invite_sta_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_btwt_invite_sta_cmd_fixed_param));
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_twt_btwt_invite_sta_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr.bytes,
@@ -424,8 +421,7 @@ send_twt_btwt_invite_sta_cmd_tlv(wmi_unified_t wmi_handle,
 
 static QDF_STATUS
 send_twt_btwt_remove_sta_cmd_tlv(wmi_unified_t wmi_handle,
-				 struct twt_btwt_remove_sta_cmd_param
-				 *params)
+				 struct twt_btwt_remove_sta_cmd_param *params)
 {
 	wmi_twt_btwt_remove_sta_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -440,8 +436,8 @@ send_twt_btwt_remove_sta_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd = (wmi_twt_btwt_remove_sta_cmd_fixed_param *)wmi_buf_data(buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_twt_btwt_remove_sta_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_btwt_remove_sta_cmd_fixed_param));
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_twt_btwt_remove_sta_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr.bytes,
@@ -478,9 +474,9 @@ wmi_twt_enable_status_to_host_twt_status(WMI_ENABLE_TWT_STATUS_T status)
 	}
 }
 
-static QDF_STATUS extract_twt_enable_comp_event_tlv(wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct twt_enable_complete_event_param *params)
+static QDF_STATUS extract_twt_enable_comp_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_enable_complete_event_param *params)
 {
 	WMI_TWT_ENABLE_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_enable_complete_event_fixed_param *ev;
@@ -493,9 +489,8 @@ static QDF_STATUS extract_twt_enable_comp_event_tlv(wmi_unified_t wmi_handle,
 
 	ev = param_buf->fixed_param;
 
-	params->pdev_id =
-		wmi_handle->ops->convert_pdev_id_target_to_host(wmi_handle,
-								ev->pdev_id);
+	params->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host(
+		wmi_handle, ev->pdev_id);
 	params->status = wmi_twt_enable_status_to_host_twt_status(ev->status);
 
 	return QDF_STATUS_SUCCESS;
@@ -518,9 +513,9 @@ wmi_twt_disable_status_to_host_twt_status(WMI_DISABLE_TWT_STATUS_T status)
 	}
 }
 
-static QDF_STATUS extract_twt_disable_comp_event_tlv(wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct twt_disable_complete_event_param *params)
+static QDF_STATUS extract_twt_disable_comp_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_disable_complete_event_param *params)
 {
 	WMI_TWT_DISABLE_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_disable_complete_event_fixed_param *ev;
@@ -533,9 +528,8 @@ static QDF_STATUS extract_twt_disable_comp_event_tlv(wmi_unified_t wmi_handle,
 
 	ev = param_buf->fixed_param;
 
-	params->pdev_id =
-		wmi_handle->ops->convert_pdev_id_target_to_host(wmi_handle,
-								ev->pdev_id);
+	params->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host(
+		wmi_handle, ev->pdev_id);
 	params->status = wmi_twt_disable_status_to_host_twt_status(ev->status);
 
 	return QDF_STATUS_SUCCESS;
@@ -592,9 +586,8 @@ wmi_get_converted_twt_add_dialog_status(WMI_ADD_TWT_STATUS_T tgt_status)
  * Return: QDF_STATUS_SUCCESS on success or QDF STATUS error values on failure
  */
 static QDF_STATUS extract_twt_add_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct twt_add_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_add_dialog_complete_event_param *params)
 {
 	WMI_TWT_ADD_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_add_dialog_complete_event_fixed_param *ev;
@@ -628,12 +621,10 @@ static QDF_STATUS extract_twt_add_dialog_comp_event_tlv(
  *
  * Return: QDF_STATUS_SUCCESS on success and QDF_STATUS_E_INVAL for failure
  */
-static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters
-(
-	wmi_unified_t wmi_handle, uint8_t *evt_buf,
-	uint32_t evt_buf_len, uint32_t idx,
-	struct twt_add_dialog_additional_params *additional_params
-)
+static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf, uint32_t evt_buf_len,
+	uint32_t idx,
+	struct twt_add_dialog_additional_params *additional_params)
 {
 	WMI_TWT_ADD_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_add_dialog_complete_event_fixed_param *ev;
@@ -649,8 +640,8 @@ static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters
 	ev = param_buf->fixed_param;
 
 	if (idx >= param_buf->num_twt_params) {
-		wmi_err("Invalid idx %d while num_twt_params = %d",
-			 idx, param_buf->num_twt_params);
+		wmi_err("Invalid idx %d while num_twt_params = %d", idx,
+			param_buf->num_twt_params);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -660,12 +651,13 @@ static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters
 	}
 
 	expected_len = (sizeof(wmi_twt_add_dialog_complete_event_fixed_param) +
-			WMI_TLV_HDR_SIZE + (param_buf->num_twt_params *
-			sizeof(wmi_twt_add_dialog_additional_params)));
+			WMI_TLV_HDR_SIZE +
+			(param_buf->num_twt_params *
+			 sizeof(wmi_twt_add_dialog_additional_params)));
 
 	if (evt_buf_len != expected_len) {
 		wmi_err("Got invalid len data from FW %d expected %d",
-			 evt_buf_len, expected_len);
+			evt_buf_len, expected_len);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -677,20 +669,20 @@ static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters
 	additional_params->protection = TWT_FLAGS_GET_PROTECTION(flags);
 	additional_params->b_twt_id0 = TWT_FLAGS_GET_BTWT_ID0(flags);
 	additional_params->info_frame_disabled =
-				TWT_FLAGS_GET_TWT_INFO_FRAME_DISABLED(flags);
+		TWT_FLAGS_GET_TWT_INFO_FRAME_DISABLED(flags);
 	additional_params->wake_dur_us = param_buf->twt_params[idx].wake_dur_us;
 	additional_params->wake_intvl_us =
-				param_buf->twt_params[idx].wake_intvl_us;
+		param_buf->twt_params[idx].wake_intvl_us;
 	additional_params->sp_offset_us =
-				param_buf->twt_params[idx].sp_offset_us;
+		param_buf->twt_params[idx].sp_offset_us;
 	additional_params->sp_tsf_us_lo =
-				param_buf->twt_params[idx].sp_tsf_us_lo;
+		param_buf->twt_params[idx].sp_tsf_us_lo;
 	additional_params->sp_tsf_us_hi =
-				param_buf->twt_params[idx].sp_tsf_us_hi;
+		param_buf->twt_params[idx].sp_tsf_us_hi;
 	additional_params->pm_responder_bit_valid =
-				TWT_FLAGS_GET_PM_RESPONDER_MODE_VALID(flags);
+		TWT_FLAGS_GET_PM_RESPONDER_MODE_VALID(flags);
 	additional_params->pm_responder_bit =
-				TWT_FLAGS_GET_PM_RESPONDER_MODE(flags);
+		TWT_FLAGS_GET_PM_RESPONDER_MODE(flags);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -727,9 +719,8 @@ wmi_get_converted_twt_del_dialog_status(WMI_DEL_TWT_STATUS_T tgt_status)
 }
 
 static QDF_STATUS extract_twt_del_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct twt_del_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_del_dialog_complete_event_param *params)
 {
 	WMI_TWT_DEL_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_del_dialog_complete_event_fixed_param *ev;
@@ -781,9 +772,8 @@ wmi_twt_pause_status_to_host_twt_status(WMI_PAUSE_TWT_STATUS_T status)
 }
 
 static QDF_STATUS extract_twt_pause_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct twt_pause_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_pause_dialog_complete_event_param *params)
 {
 	WMI_TWT_PAUSE_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_pause_dialog_complete_event_fixed_param *ev;
@@ -835,9 +825,8 @@ wmi_twt_nudge_status_to_host_twt_status(WMI_TWT_NUDGE_STATUS_T status)
 }
 
 static QDF_STATUS extract_twt_nudge_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct twt_nudge_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_nudge_dialog_complete_event_param *params)
 {
 	WMI_TWT_NUDGE_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_nudge_dialog_complete_event_fixed_param *ev;
@@ -895,9 +884,8 @@ wmi_get_converted_twt_resume_dialog_status(WMI_RESUME_TWT_STATUS_T tgt_status)
 }
 
 static QDF_STATUS extract_twt_resume_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct twt_resume_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_resume_dialog_complete_event_param *params)
 {
 	WMI_TWT_RESUME_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_resume_dialog_complete_event_fixed_param *ev;
@@ -933,16 +921,14 @@ wmi_get_converted_twt_notify_status(WMI_TWT_NOTIFICATION_ID_T tgt_status)
 	}
 }
 
-static QDF_STATUS extract_twt_notify_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct twt_notify_event_param *params)
+static QDF_STATUS
+extract_twt_notify_event_tlv(wmi_unified_t wmi_handle, uint8_t *evt_buf,
+			     struct twt_notify_event_param *params)
 {
 	WMI_TWT_NOTIFY_EVENTID_param_tlvs *param_buf;
 	wmi_twt_notify_event_fixed_param *ev;
 
-	param_buf =
-		(WMI_TWT_NOTIFY_EVENTID_param_tlvs *)evt_buf;
+	param_buf = (WMI_TWT_NOTIFY_EVENTID_param_tlvs *)evt_buf;
 	if (!param_buf) {
 		wmi_err("evt_buf is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -966,13 +952,9 @@ static QDF_STATUS extract_twt_notify_event_tlv(
 }
 
 #ifdef WLAN_SUPPORT_BCAST_TWT
-static QDF_STATUS
-extract_twt_btwt_invite_sta_comp_event_tlv(
-				   wmi_unified_t wmi_handle,
-				   uint8_t *evt_buf,
-				   struct
-				   twt_btwt_invite_sta_complete_event_param
-				   *params)
+static QDF_STATUS extract_twt_btwt_invite_sta_comp_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_btwt_invite_sta_complete_event_param *params)
 {
 	WMI_TWT_BTWT_INVITE_STA_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_btwt_invite_sta_complete_event_fixed_param *ev;
@@ -995,13 +977,9 @@ extract_twt_btwt_invite_sta_comp_event_tlv(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-extract_twt_btwt_remove_sta_comp_event_tlv(
-				   wmi_unified_t wmi_handle,
-				   uint8_t *evt_buf,
-				   struct
-				   twt_btwt_remove_sta_complete_event_param
-				   *params)
+static QDF_STATUS extract_twt_btwt_remove_sta_comp_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_btwt_remove_sta_complete_event_param *params)
 {
 	WMI_TWT_BTWT_REMOVE_STA_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_btwt_remove_sta_complete_event_fixed_param *ev;
@@ -1026,34 +1004,29 @@ extract_twt_btwt_remove_sta_comp_event_tlv(
 #endif
 
 #ifdef WLAN_SUPPORT_BCAST_TWT
-static void
-wmi_twt_attach_bcast_twt_tlv(struct wmi_ops *ops)
+static void wmi_twt_attach_bcast_twt_tlv(struct wmi_ops *ops)
 {
 	ops->send_twt_btwt_invite_sta_cmd = send_twt_btwt_invite_sta_cmd_tlv;
 	ops->send_twt_btwt_remove_sta_cmd = send_twt_btwt_remove_sta_cmd_tlv;
 	ops->extract_twt_btwt_invite_sta_comp_event =
-				extract_twt_btwt_invite_sta_comp_event_tlv;
+		extract_twt_btwt_invite_sta_comp_event_tlv;
 	ops->extract_twt_btwt_remove_sta_comp_event =
-				extract_twt_btwt_remove_sta_comp_event_tlv;
+		extract_twt_btwt_remove_sta_comp_event_tlv;
 }
 #else
-static void
-wmi_twt_attach_bcast_twt_tlv(struct wmi_ops *ops)
+static void wmi_twt_attach_bcast_twt_tlv(struct wmi_ops *ops)
 {
 }
 #endif
 
-static QDF_STATUS
-extract_twt_session_stats_event_tlv(wmi_unified_t wmi_handle,
-				    uint8_t *evt_buf,
-				    struct twt_session_stats_event_param
-				    *params)
+static QDF_STATUS extract_twt_session_stats_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_session_stats_event_param *params)
 {
 	WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *param_buf;
 	wmi_pdev_twt_session_stats_event_fixed_param *ev;
 
-	param_buf =
-		(WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *)evt_buf;
+	param_buf = (WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *)evt_buf;
 	if (!param_buf) {
 		wmi_err("evt_buf is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -1061,24 +1034,19 @@ extract_twt_session_stats_event_tlv(wmi_unified_t wmi_handle,
 
 	ev = param_buf->fixed_param;
 	params->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host(
-							wmi_handle,
-							ev->pdev_id);
+		wmi_handle, ev->pdev_id);
 	params->num_sessions = param_buf->num_twt_sessions;
 
-	wmi_debug("pdev_id=%d, num of TWT sessions=%d",
-		 params->pdev_id, params->num_sessions);
+	wmi_debug("pdev_id=%d, num of TWT sessions=%d", params->pdev_id,
+		  params->num_sessions);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-extract_twt_session_stats_event_data(wmi_unified_t wmi_handle,
-				     uint8_t *evt_buf,
-				     struct twt_session_stats_event_param
-				     *params,
-				     struct twt_session_stats_info
-				     *session,
-				     uint32_t idx)
+static QDF_STATUS extract_twt_session_stats_event_data(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct twt_session_stats_event_param *params,
+	struct twt_session_stats_info *session, uint32_t idx)
 {
 	WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *param_buf;
 	wmi_twt_session_stats_info *twt_session;
@@ -1086,16 +1054,15 @@ extract_twt_session_stats_event_data(wmi_unified_t wmi_handle,
 	wmi_mac_addr *m1;
 	uint8_t *m2;
 
-	param_buf =
-		(WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *)evt_buf;
+	param_buf = (WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *)evt_buf;
 	if (!param_buf) {
 		wmi_err("evt_buf is NULL");
 		return QDF_STATUS_E_INVAL;
 	}
 
 	if (idx >= param_buf->num_twt_sessions) {
-		wmi_err("wrong idx, idx=%d, num_sessions=%d",
-			 idx, param_buf->num_twt_sessions);
+		wmi_err("wrong idx, idx=%d, num_sessions=%d", idx,
+			param_buf->num_twt_sessions);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -1113,9 +1080,9 @@ extract_twt_session_stats_event_data(wmi_unified_t wmi_handle,
 	session->announ = WMI_TWT_SESSION_FLAG_ANNOUN_TWT_GET(flags);
 	session->protection = WMI_TWT_SESSION_FLAG_TWT_PROTECTION_GET(flags);
 	session->info_frame_disabled =
-			WMI_TWT_SESSION_FLAG_TWT_INFO_FRAME_DISABLED_GET(flags);
+		WMI_TWT_SESSION_FLAG_TWT_INFO_FRAME_DISABLED_GET(flags);
 	session->pm_responder_bit =
-			WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_GET(flags);
+		WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_GET(flags);
 	session->pm_responder_bit_valid =
 		WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_VALID_GET(flags);
 	session->dialog_id = twt_session->dialog_id;
@@ -1124,20 +1091,22 @@ extract_twt_session_stats_event_data(wmi_unified_t wmi_handle,
 	session->sp_offset_us = twt_session->sp_offset_us;
 	session->sp_tsf_us_lo = twt_session->sp_tsf_us_lo;
 	session->sp_tsf_us_hi = twt_session->sp_tsf_us_hi;
-	wmi_debug("type=%d id=%d bcast=%d trig=%d announ=%d diagid=%d wake_dur=%ul wake_int=%ul offset=%ul",
-		 session->event_type, session->flow_id,
-		 session->bcast, session->trig,
-		 session->announ, session->dialog_id, session->wake_dura_us,
-		 session->wake_intvl_us, session->sp_offset_us);
+	wmi_debug(
+		"type=%d id=%d bcast=%d trig=%d announ=%d diagid=%d wake_dur=%ul "
+		"wake_int=%ul offset=%ul",
+		session->event_type, session->flow_id, session->bcast,
+		session->trig, session->announ, session->dialog_id,
+		session->wake_dura_us, session->wake_intvl_us,
+		session->sp_offset_us);
 	wmi_debug("resp_pm_valid=%d resp_pm=%d",
 		  session->pm_responder_bit_valid, session->pm_responder_bit);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_twt_cap_service_ready_ext2_tlv(
-				wmi_unified_t wmi_handle, uint8_t *event,
-				struct wmi_twt_cap_bitmap_params *var)
+static QDF_STATUS
+extract_twt_cap_service_ready_ext2_tlv(wmi_unified_t wmi_handle, uint8_t *event,
+				       struct wmi_twt_cap_bitmap_params *var)
 {
 	WMI_SERVICE_READY_EXT2_EVENTID_param_tlvs *param_buf;
 	wmi_twt_caps_params *twt_caps;
@@ -1150,8 +1119,8 @@ static QDF_STATUS extract_twt_cap_service_ready_ext2_tlv(
 	if (!twt_caps)
 		return QDF_STATUS_E_INVAL;
 
-	var->twt_ack_support_cap = WMI_GET_BITS(twt_caps->twt_capability_bitmap,
-						0, 1);
+	var->twt_ack_support_cap =
+		WMI_GET_BITS(twt_caps->twt_capability_bitmap, 0, 1);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1176,8 +1145,7 @@ wmi_get_converted_twt_command_for_ack_event(WMI_CMD_ID tgt_cmd)
 }
 
 static QDF_STATUS
-extract_twt_ack_comp_event_tlv(wmi_unified_t wmi_handle,
-			       uint8_t *evt_buf,
+extract_twt_ack_comp_event_tlv(wmi_unified_t wmi_handle, uint8_t *evt_buf,
 			       struct twt_ack_complete_event_param *var)
 {
 	WMI_TWT_ACK_EVENTID_param_tlvs *param_buf;
@@ -1195,29 +1163,29 @@ extract_twt_ack_comp_event_tlv(wmi_unified_t wmi_handle,
 	WMI_MAC_ADDR_TO_CHAR_ARRAY(&ack_event->peer_macaddr,
 				   var->peer_macaddr.bytes);
 	var->dialog_id = ack_event->dialog_id;
-	var->twt_cmd_ack = wmi_get_converted_twt_command_for_ack_event(
-						ack_event->twt_cmd);
+	var->twt_cmd_ack =
+		wmi_get_converted_twt_command_for_ack_event(ack_event->twt_cmd);
 
 	switch (ack_event->twt_cmd) {
 	case WMI_TWT_ADD_DIALOG_CMDID:
 		var->status = wmi_get_converted_twt_add_dialog_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	case WMI_TWT_DEL_DIALOG_CMDID:
 		var->status = wmi_get_converted_twt_del_dialog_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	case WMI_TWT_PAUSE_DIALOG_CMDID:
 		var->status = wmi_twt_pause_status_to_host_twt_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	case WMI_TWT_RESUME_DIALOG_CMDID:
 		var->status = wmi_get_converted_twt_resume_dialog_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	case WMI_TWT_NUDGE_DIALOG_CMDID:
 		var->status = wmi_twt_nudge_status_to_host_twt_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	default:
 		break;
@@ -1226,7 +1194,7 @@ extract_twt_ack_comp_event_tlv(wmi_unified_t wmi_handle,
 }
 #elif WLAN_SUPPORT_TWT
 static QDF_STATUS send_twt_enable_cmd_tlv(wmi_unified_t wmi_handle,
-			struct wmi_twt_enable_param *params)
+					  struct wmi_twt_enable_param *params)
 {
 	wmi_twt_enable_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -1238,33 +1206,31 @@ static QDF_STATUS send_twt_enable_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	cmd = (wmi_twt_enable_cmd_fixed_param *) wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-			WMITLV_TAG_STRUC_wmi_twt_enable_cmd_fixed_param,
-			WMITLV_GET_STRUCT_TLVLEN
-			(wmi_twt_enable_cmd_fixed_param));
+	cmd = (wmi_twt_enable_cmd_fixed_param *)wmi_buf_data(buf);
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_enable_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_enable_cmd_fixed_param));
 
-	cmd->pdev_id =
-		wmi_handle->ops->convert_pdev_id_host_to_target(
-						wmi_handle,
-						params->pdev_id);
-	cmd->sta_cong_timer_ms =            params->sta_cong_timer_ms;
-	cmd->mbss_support =                 params->mbss_support;
-	cmd->default_slot_size =            params->default_slot_size;
-	cmd->congestion_thresh_setup =      params->congestion_thresh_setup;
-	cmd->congestion_thresh_teardown =   params->congestion_thresh_teardown;
-	cmd->congestion_thresh_critical =   params->congestion_thresh_critical;
+	cmd->pdev_id = wmi_handle->ops->convert_pdev_id_host_to_target(
+		wmi_handle, params->pdev_id);
+	cmd->sta_cong_timer_ms = params->sta_cong_timer_ms;
+	cmd->mbss_support = params->mbss_support;
+	cmd->default_slot_size = params->default_slot_size;
+	cmd->congestion_thresh_setup = params->congestion_thresh_setup;
+	cmd->congestion_thresh_teardown = params->congestion_thresh_teardown;
+	cmd->congestion_thresh_critical = params->congestion_thresh_critical;
 	cmd->interference_thresh_teardown =
-					params->interference_thresh_teardown;
-	cmd->interference_thresh_setup =    params->interference_thresh_setup;
-	cmd->min_no_sta_setup =             params->min_no_sta_setup;
-	cmd->min_no_sta_teardown =          params->min_no_sta_teardown;
-	cmd->no_of_bcast_mcast_slots =      params->no_of_bcast_mcast_slots;
-	cmd->min_no_twt_slots =             params->min_no_twt_slots;
-	cmd->max_no_sta_twt =               params->max_no_sta_twt;
-	cmd->mode_check_interval =          params->mode_check_interval;
-	cmd->add_sta_slot_interval =        params->add_sta_slot_interval;
-	cmd->remove_sta_slot_interval =     params->remove_sta_slot_interval;
+		params->interference_thresh_teardown;
+	cmd->interference_thresh_setup = params->interference_thresh_setup;
+	cmd->min_no_sta_setup = params->min_no_sta_setup;
+	cmd->min_no_sta_teardown = params->min_no_sta_teardown;
+	cmd->no_of_bcast_mcast_slots = params->no_of_bcast_mcast_slots;
+	cmd->min_no_twt_slots = params->min_no_twt_slots;
+	cmd->max_no_sta_twt = params->max_no_sta_twt;
+	cmd->mode_check_interval = params->mode_check_interval;
+	cmd->add_sta_slot_interval = params->add_sta_slot_interval;
+	cmd->remove_sta_slot_interval = params->remove_sta_slot_interval;
 
 	TWT_EN_DIS_FLAGS_SET_BTWT(cmd->flags, params->b_twt_enable);
 	TWT_EN_DIS_FLAGS_SET_B_R_TWT(cmd->flags, params->r_twt_enable);
@@ -1289,7 +1255,7 @@ static QDF_STATUS send_twt_enable_cmd_tlv(wmi_unified_t wmi_handle,
 }
 
 static QDF_STATUS send_twt_disable_cmd_tlv(wmi_unified_t wmi_handle,
-			struct wmi_twt_disable_param *params)
+					   struct wmi_twt_disable_param *params)
 {
 	wmi_twt_disable_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -1301,16 +1267,14 @@ static QDF_STATUS send_twt_disable_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	cmd = (wmi_twt_disable_cmd_fixed_param *) wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-			WMITLV_TAG_STRUC_wmi_twt_disable_cmd_fixed_param,
-			WMITLV_GET_STRUCT_TLVLEN
-			(wmi_twt_disable_cmd_fixed_param));
+	cmd = (wmi_twt_disable_cmd_fixed_param *)wmi_buf_data(buf);
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_disable_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_disable_cmd_fixed_param));
 
-	cmd->pdev_id =
-		wmi_handle->ops->convert_pdev_id_host_to_target(
-						wmi_handle,
-						params->pdev_id);
+	cmd->pdev_id = wmi_handle->ops->convert_pdev_id_host_to_target(
+		wmi_handle, params->pdev_id);
 	if (params->ext_conf_present) {
 		TWT_EN_DIS_FLAGS_SET_SPLIT_CONFIG(cmd->flags, 1);
 		TWT_EN_DIS_FLAGS_SET_REQ_RESP(cmd->flags, params->twt_role);
@@ -1330,7 +1294,7 @@ static QDF_STATUS send_twt_disable_cmd_tlv(wmi_unified_t wmi_handle,
 #ifdef WLAN_SUPPORT_BCAST_TWT
 static void
 twt_add_dialog_set_bcast_twt_params(struct wmi_twt_add_dialog_param *params,
-                wmi_twt_add_dialog_cmd_fixed_param *cmd)
+				    wmi_twt_add_dialog_cmd_fixed_param *cmd)
 {
 	TWT_FLAGS_SET_BTWT_ID0(cmd->flags, params->flag_b_twt_id0);
 	cmd->b_twt_persistence = params->b_twt_persistence;
@@ -1339,7 +1303,7 @@ twt_add_dialog_set_bcast_twt_params(struct wmi_twt_add_dialog_param *params,
 #else
 static void
 twt_add_dialog_set_bcast_twt_params(struct wmi_twt_add_dialog_param *params,
-                wmi_twt_add_dialog_cmd_fixed_param *cmd)
+				    wmi_twt_add_dialog_cmd_fixed_param *cmd)
 {
 }
 #endif
@@ -1358,19 +1322,19 @@ send_twt_add_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	cmd = (wmi_twt_add_dialog_cmd_fixed_param *) wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_twt_add_dialog_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_add_dialog_cmd_fixed_param));
+	cmd = (wmi_twt_add_dialog_cmd_fixed_param *)wmi_buf_data(buf);
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_add_dialog_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_add_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr, &cmd->peer_macaddr);
-	cmd->dialog_id =         params->dialog_id;
-	cmd->wake_intvl_us =     params->wake_intvl_us;
+	cmd->dialog_id = params->dialog_id;
+	cmd->wake_intvl_us = params->wake_intvl_us;
 	cmd->wake_intvl_mantis = params->wake_intvl_mantis;
-	cmd->wake_dura_us =      params->wake_dura_us;
-	cmd->sp_offset_us =      params->sp_offset_us;
+	cmd->wake_dura_us = params->wake_dura_us;
+	cmd->sp_offset_us = params->sp_offset_us;
 	cmd->min_wake_intvl_us = params->min_wake_intvl_us;
 	cmd->max_wake_intvl_us = params->max_wake_intvl_us;
 	cmd->min_wake_dura_us = params->min_wake_dura_us;
@@ -1402,14 +1366,14 @@ send_twt_add_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 #ifdef WLAN_SUPPORT_BCAST_TWT
 static void
 twt_del_dialog_set_bcast_twt_params(struct wmi_twt_del_dialog_param *params,
-                wmi_twt_del_dialog_cmd_fixed_param *cmd)
+				    wmi_twt_del_dialog_cmd_fixed_param *cmd)
 {
 	cmd->b_twt_persistence = params->b_twt_persistence;
 }
 #else
 static void
 twt_del_dialog_set_bcast_twt_params(struct wmi_twt_del_dialog_param *params,
-                wmi_twt_del_dialog_cmd_fixed_param *cmd)
+				    wmi_twt_del_dialog_cmd_fixed_param *cmd)
 {
 }
 #endif
@@ -1428,11 +1392,11 @@ send_twt_del_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	cmd = (wmi_twt_del_dialog_cmd_fixed_param *) wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_twt_del_dialog_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_del_dialog_cmd_fixed_param));
+	cmd = (wmi_twt_del_dialog_cmd_fixed_param *)wmi_buf_data(buf);
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_del_dialog_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_del_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr, &cmd->peer_macaddr);
@@ -1464,11 +1428,11 @@ send_twt_pause_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	cmd = (wmi_twt_pause_dialog_cmd_fixed_param *) wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_twt_pause_dialog_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_pause_dialog_cmd_fixed_param));
+	cmd = (wmi_twt_pause_dialog_cmd_fixed_param *)wmi_buf_data(buf);
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_pause_dialog_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_pause_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr, &cmd->peer_macaddr);
@@ -1496,11 +1460,11 @@ send_twt_nudge_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	if (!buf)
 		return QDF_STATUS_E_FAILURE;
 
-	cmd = (wmi_twt_nudge_dialog_cmd_fixed_param *) wmi_buf_data(buf);
-	WMITLV_SET_HDR(&cmd->tlv_header,
-		       WMITLV_TAG_STRUC_wmi_twt_nudge_dialog_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_nudge_dialog_cmd_fixed_param));
+	cmd = (wmi_twt_nudge_dialog_cmd_fixed_param *)wmi_buf_data(buf);
+	WMITLV_SET_HDR(
+		&cmd->tlv_header,
+		WMITLV_TAG_STRUC_wmi_twt_nudge_dialog_cmd_fixed_param,
+		WMITLV_GET_STRUCT_TLVLEN(wmi_twt_nudge_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr, &cmd->peer_macaddr);
@@ -1508,10 +1472,11 @@ send_twt_nudge_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd->suspend_duration_ms = params->suspend_duration / 1000;
 	cmd->next_twt_size = params->next_twt_size;
 
-	wmi_debug("vdev_id: %d dialog_id: %d duration(in ms): %u next_twt_size: %d "
-		  "peer_macaddr: "QDF_MAC_ADDR_FMT, cmd->vdev_id,
-		  cmd->dialog_id, cmd->suspend_duration_ms, cmd->next_twt_size,
-		  QDF_MAC_ADDR_REF(params->peer_macaddr));
+	wmi_debug(
+		"vdev_id: %d dialog_id: %d duration(in ms): %u next_twt_size: %d "
+		"peer_macaddr: " QDF_MAC_ADDR_FMT,
+		cmd->vdev_id, cmd->dialog_id, cmd->suspend_duration_ms,
+		cmd->next_twt_size, QDF_MAC_ADDR_REF(params->peer_macaddr));
 
 	status = wmi_unified_cmd_send(wmi_handle, buf, sizeof(*cmd),
 				      WMI_TWT_NUDGE_DIALOG_CMDID);
@@ -1521,8 +1486,9 @@ send_twt_nudge_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	return status;
 }
 
-static QDF_STATUS send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
-			struct wmi_twt_resume_dialog_cmd_param *params)
+static QDF_STATUS
+send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
+			       struct wmi_twt_resume_dialog_cmd_param *params)
 {
 	wmi_twt_resume_dialog_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -1534,11 +1500,11 @@ static QDF_STATUS send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	cmd = (wmi_twt_resume_dialog_cmd_fixed_param *) wmi_buf_data(buf);
+	cmd = (wmi_twt_resume_dialog_cmd_fixed_param *)wmi_buf_data(buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
-			WMITLV_TAG_STRUC_wmi_twt_resume_dialog_cmd_fixed_param,
-			WMITLV_GET_STRUCT_TLVLEN
-			(wmi_twt_resume_dialog_cmd_fixed_param));
+		       WMITLV_TAG_STRUC_wmi_twt_resume_dialog_cmd_fixed_param,
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_twt_resume_dialog_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr, &cmd->peer_macaddr);
@@ -1547,7 +1513,7 @@ static QDF_STATUS send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd->next_twt_size = params->next_twt_size;
 
 	status = wmi_unified_cmd_send(wmi_handle, buf, sizeof(*cmd),
-						WMI_TWT_RESUME_DIALOG_CMDID);
+				      WMI_TWT_RESUME_DIALOG_CMDID);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		wmi_err("Failed to send WMI_TWT_RESUME_DIALOG_CMDID");
 		wmi_buf_free(buf);
@@ -1557,10 +1523,9 @@ static QDF_STATUS send_twt_resume_dialog_cmd_tlv(wmi_unified_t wmi_handle,
 }
 
 #ifdef WLAN_SUPPORT_BCAST_TWT
-static QDF_STATUS
-send_twt_btwt_invite_sta_cmd_tlv(wmi_unified_t wmi_handle,
-				 struct wmi_twt_btwt_invite_sta_cmd_param
-				 *params)
+static QDF_STATUS send_twt_btwt_invite_sta_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct wmi_twt_btwt_invite_sta_cmd_param *params)
 {
 	wmi_twt_btwt_invite_sta_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -1575,8 +1540,8 @@ send_twt_btwt_invite_sta_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd = (wmi_twt_btwt_invite_sta_cmd_fixed_param *)wmi_buf_data(buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_twt_btwt_invite_sta_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_btwt_invite_sta_cmd_fixed_param));
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_twt_btwt_invite_sta_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr, &cmd->peer_macaddr);
@@ -1591,10 +1556,9 @@ send_twt_btwt_invite_sta_cmd_tlv(wmi_unified_t wmi_handle,
 	return status;
 }
 
-static QDF_STATUS
-send_twt_btwt_remove_sta_cmd_tlv(wmi_unified_t wmi_handle,
-				 struct wmi_twt_btwt_remove_sta_cmd_param
-				 *params)
+static QDF_STATUS send_twt_btwt_remove_sta_cmd_tlv(
+	wmi_unified_t wmi_handle,
+	struct wmi_twt_btwt_remove_sta_cmd_param *params)
 {
 	wmi_twt_btwt_remove_sta_cmd_fixed_param *cmd;
 	wmi_buf_t buf;
@@ -1609,8 +1573,8 @@ send_twt_btwt_remove_sta_cmd_tlv(wmi_unified_t wmi_handle,
 	cmd = (wmi_twt_btwt_remove_sta_cmd_fixed_param *)wmi_buf_data(buf);
 	WMITLV_SET_HDR(&cmd->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_twt_btwt_remove_sta_cmd_fixed_param,
-		       WMITLV_GET_STRUCT_TLVLEN
-		       (wmi_twt_btwt_remove_sta_cmd_fixed_param));
+		       WMITLV_GET_STRUCT_TLVLEN(
+			       wmi_twt_btwt_remove_sta_cmd_fixed_param));
 
 	cmd->vdev_id = params->vdev_id;
 	WMI_CHAR_ARRAY_TO_MAC_ADDR(params->peer_macaddr, &cmd->peer_macaddr);
@@ -1626,9 +1590,9 @@ send_twt_btwt_remove_sta_cmd_tlv(wmi_unified_t wmi_handle,
 }
 #endif
 
-static QDF_STATUS extract_twt_enable_comp_event_tlv(wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct wmi_twt_enable_complete_event_param *params)
+static QDF_STATUS extract_twt_enable_comp_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_enable_complete_event_param *params)
 {
 	WMI_TWT_ENABLE_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_enable_complete_event_fixed_param *ev;
@@ -1641,17 +1605,16 @@ static QDF_STATUS extract_twt_enable_comp_event_tlv(wmi_unified_t wmi_handle,
 
 	ev = param_buf->fixed_param;
 
-	params->pdev_id =
-		wmi_handle->ops->convert_pdev_id_target_to_host(wmi_handle,
-								ev->pdev_id);
+	params->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host(
+		wmi_handle, ev->pdev_id);
 	params->status = ev->status;
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_twt_disable_comp_event_tlv(wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct wmi_twt_disable_complete_event *params)
+static QDF_STATUS extract_twt_disable_comp_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_disable_complete_event *params)
 {
 	WMI_TWT_DISABLE_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_disable_complete_event_fixed_param *ev;
@@ -1725,9 +1688,8 @@ wmi_get_converted_twt_add_dialog_status(WMI_ADD_TWT_STATUS_T tgt_status)
  * Return: QDF_STATUS_SUCCESS on success or QDF STATUS error values on failure
  */
 static QDF_STATUS extract_twt_add_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct wmi_twt_add_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_add_dialog_complete_event_param *params)
 {
 	WMI_TWT_ADD_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_add_dialog_complete_event_fixed_param *ev;
@@ -1760,12 +1722,10 @@ static QDF_STATUS extract_twt_add_dialog_comp_event_tlv(
  *
  * Return: QDF_STATUS_SUCCESS on success and QDF_STATUS_E_INVAL for failure
  */
-static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters
-(
-	wmi_unified_t wmi_handle, uint8_t *evt_buf,
-	uint32_t evt_buf_len, uint32_t idx,
-	struct wmi_twt_add_dialog_additional_params *additional_params
-)
+static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf, uint32_t evt_buf_len,
+	uint32_t idx,
+	struct wmi_twt_add_dialog_additional_params *additional_params)
 {
 	WMI_TWT_ADD_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_add_dialog_complete_event_fixed_param *ev;
@@ -1781,8 +1741,8 @@ static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters
 	ev = param_buf->fixed_param;
 
 	if (idx >= param_buf->num_twt_params) {
-		wmi_err("Invalid idx %d while num_twt_params = %d",
-			 idx, param_buf->num_twt_params);
+		wmi_err("Invalid idx %d while num_twt_params = %d", idx,
+			param_buf->num_twt_params);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -1792,12 +1752,13 @@ static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters
 	}
 
 	expected_len = (sizeof(wmi_twt_add_dialog_complete_event_fixed_param) +
-			WMI_TLV_HDR_SIZE + (param_buf->num_twt_params *
-			sizeof(wmi_twt_add_dialog_additional_params)));
+			WMI_TLV_HDR_SIZE +
+			(param_buf->num_twt_params *
+			 sizeof(wmi_twt_add_dialog_additional_params)));
 
 	if (evt_buf_len != expected_len) {
 		wmi_err("Got invalid len data from FW %d expected %d",
-			 evt_buf_len, expected_len);
+			evt_buf_len, expected_len);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -1809,20 +1770,20 @@ static QDF_STATUS extract_twt_add_dialog_comp_additional_parameters
 	additional_params->protection = TWT_FLAGS_GET_PROTECTION(flags);
 	additional_params->b_twt_id0 = TWT_FLAGS_GET_BTWT_ID0(flags);
 	additional_params->info_frame_disabled =
-				TWT_FLAGS_GET_TWT_INFO_FRAME_DISABLED(flags);
+		TWT_FLAGS_GET_TWT_INFO_FRAME_DISABLED(flags);
 	additional_params->wake_dur_us = param_buf->twt_params[idx].wake_dur_us;
 	additional_params->wake_intvl_us =
-				param_buf->twt_params[idx].wake_intvl_us;
+		param_buf->twt_params[idx].wake_intvl_us;
 	additional_params->sp_offset_us =
-				param_buf->twt_params[idx].sp_offset_us;
+		param_buf->twt_params[idx].sp_offset_us;
 	additional_params->sp_tsf_us_lo =
-				param_buf->twt_params[idx].sp_tsf_us_lo;
+		param_buf->twt_params[idx].sp_tsf_us_lo;
 	additional_params->sp_tsf_us_hi =
-				param_buf->twt_params[idx].sp_tsf_us_hi;
+		param_buf->twt_params[idx].sp_tsf_us_hi;
 	additional_params->pm_responder_bit_valid =
-				TWT_FLAGS_GET_PM_RESPONDER_MODE_VALID(flags);
+		TWT_FLAGS_GET_PM_RESPONDER_MODE_VALID(flags);
 	additional_params->pm_responder_bit =
-				TWT_FLAGS_GET_PM_RESPONDER_MODE(flags);
+		TWT_FLAGS_GET_PM_RESPONDER_MODE(flags);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -1863,9 +1824,8 @@ wmi_get_converted_twt_del_dialog_status(WMI_DEL_TWT_STATUS_T tgt_status)
 }
 
 static QDF_STATUS extract_twt_del_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct wmi_twt_del_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_del_dialog_complete_event_param *params)
 {
 	WMI_TWT_DEL_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_del_dialog_complete_event_fixed_param *ev;
@@ -1918,9 +1878,8 @@ wmi_twt_pause_status_to_host_twt_status(WMI_PAUSE_TWT_STATUS_T status)
 }
 
 static QDF_STATUS extract_twt_pause_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct wmi_twt_pause_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_pause_dialog_complete_event_param *params)
 {
 	WMI_TWT_PAUSE_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_pause_dialog_complete_event_fixed_param *ev;
@@ -1973,9 +1932,8 @@ wmi_twt_nudge_status_to_host_twt_status(WMI_TWT_NUDGE_STATUS_T status)
 }
 
 static QDF_STATUS extract_twt_nudge_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct wmi_twt_nudge_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_nudge_dialog_complete_event_param *params)
 {
 	WMI_TWT_NUDGE_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_nudge_dialog_complete_event_fixed_param *ev;
@@ -2032,9 +1990,8 @@ wmi_get_converted_twt_resume_dialog_status(WMI_RESUME_TWT_STATUS_T tgt_status)
 }
 
 static QDF_STATUS extract_twt_resume_dialog_comp_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct wmi_twt_resume_dialog_complete_event_param *params)
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_resume_dialog_complete_event_param *params)
 {
 	WMI_TWT_RESUME_DIALOG_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_resume_dialog_complete_event_fixed_param *ev;
@@ -2056,16 +2013,14 @@ static QDF_STATUS extract_twt_resume_dialog_comp_event_tlv(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_twt_notify_event_tlv(
-		wmi_unified_t wmi_handle,
-		uint8_t *evt_buf,
-		struct wmi_twt_notify_event_param *params)
+static QDF_STATUS
+extract_twt_notify_event_tlv(wmi_unified_t wmi_handle, uint8_t *evt_buf,
+			     struct wmi_twt_notify_event_param *params)
 {
 	WMI_TWT_NOTIFY_EVENTID_param_tlvs *param_buf;
 	wmi_twt_notify_event_fixed_param *ev;
 
-	param_buf =
-		(WMI_TWT_NOTIFY_EVENTID_param_tlvs *)evt_buf;
+	param_buf = (WMI_TWT_NOTIFY_EVENTID_param_tlvs *)evt_buf;
 	if (!param_buf) {
 		wmi_err("evt_buf is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -2079,13 +2034,9 @@ static QDF_STATUS extract_twt_notify_event_tlv(
 }
 
 #ifdef WLAN_SUPPORT_BCAST_TWT
-static QDF_STATUS
-extract_twt_btwt_invite_sta_comp_event_tlv(
-					   wmi_unified_t wmi_handle,
-					   uint8_t *evt_buf,
-					   struct
-					   wmi_twt_btwt_invite_sta_complete_event_param
-					   *params)
+static QDF_STATUS extract_twt_btwt_invite_sta_comp_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_btwt_invite_sta_complete_event_param *params)
 {
 	WMI_TWT_BTWT_INVITE_STA_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_btwt_invite_sta_complete_event_fixed_param *ev;
@@ -2107,13 +2058,9 @@ extract_twt_btwt_invite_sta_comp_event_tlv(
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-extract_twt_btwt_remove_sta_comp_event_tlv(
-					   wmi_unified_t wmi_handle,
-					   uint8_t *evt_buf,
-					   struct
-					   wmi_twt_btwt_remove_sta_complete_event_param
-					   *params)
+static QDF_STATUS extract_twt_btwt_remove_sta_comp_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_btwt_remove_sta_complete_event_param *params)
 {
 	WMI_TWT_BTWT_REMOVE_STA_COMPLETE_EVENTID_param_tlvs *param_buf;
 	wmi_twt_btwt_remove_sta_complete_event_fixed_param *ev;
@@ -2137,34 +2084,29 @@ extract_twt_btwt_remove_sta_comp_event_tlv(
 #endif
 
 #ifdef WLAN_SUPPORT_BCAST_TWT
-static void
-wmi_twt_attach_bcast_twt_tlv(struct wmi_ops *ops)
+static void wmi_twt_attach_bcast_twt_tlv(struct wmi_ops *ops)
 {
 	ops->send_twt_btwt_invite_sta_cmd = send_twt_btwt_invite_sta_cmd_tlv;
 	ops->send_twt_btwt_remove_sta_cmd = send_twt_btwt_remove_sta_cmd_tlv;
 	ops->extract_twt_btwt_invite_sta_comp_event =
-				extract_twt_btwt_invite_sta_comp_event_tlv;
+		extract_twt_btwt_invite_sta_comp_event_tlv;
 	ops->extract_twt_btwt_remove_sta_comp_event =
-				extract_twt_btwt_remove_sta_comp_event_tlv;
+		extract_twt_btwt_remove_sta_comp_event_tlv;
 }
 #else
-static void
-wmi_twt_attach_bcast_twt_tlv(struct wmi_ops *ops)
+static void wmi_twt_attach_bcast_twt_tlv(struct wmi_ops *ops)
 {
 }
 #endif
 
-static QDF_STATUS
-extract_twt_session_stats_event_tlv(wmi_unified_t wmi_handle,
-				    uint8_t *evt_buf,
-				    struct wmi_twt_session_stats_event_param
-				    *params)
+static QDF_STATUS extract_twt_session_stats_event_tlv(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_session_stats_event_param *params)
 {
 	WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *param_buf;
 	wmi_pdev_twt_session_stats_event_fixed_param *ev;
 
-	param_buf =
-		(WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *)evt_buf;
+	param_buf = (WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *)evt_buf;
 	if (!param_buf) {
 		wmi_err("evt_buf is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -2172,24 +2114,19 @@ extract_twt_session_stats_event_tlv(wmi_unified_t wmi_handle,
 
 	ev = param_buf->fixed_param;
 	params->pdev_id = wmi_handle->ops->convert_pdev_id_target_to_host(
-							wmi_handle,
-							ev->pdev_id);
+		wmi_handle, ev->pdev_id);
 	params->num_sessions = param_buf->num_twt_sessions;
 
-	wmi_debug("pdev_id=%d, num of TWT sessions=%d",
-		 params->pdev_id, params->num_sessions);
+	wmi_debug("pdev_id=%d, num of TWT sessions=%d", params->pdev_id,
+		  params->num_sessions);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS
-extract_twt_session_stats_event_data(wmi_unified_t wmi_handle,
-				     uint8_t *evt_buf,
-				     struct wmi_twt_session_stats_event_param
-				     *params,
-				     struct wmi_host_twt_session_stats_info
-				     *session,
-				     uint32_t idx)
+static QDF_STATUS extract_twt_session_stats_event_data(
+	wmi_unified_t wmi_handle, uint8_t *evt_buf,
+	struct wmi_twt_session_stats_event_param *params,
+	struct wmi_host_twt_session_stats_info *session, uint32_t idx)
 {
 	WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *param_buf;
 	wmi_twt_session_stats_info *twt_session;
@@ -2197,16 +2134,15 @@ extract_twt_session_stats_event_data(wmi_unified_t wmi_handle,
 	wmi_mac_addr *m1;
 	uint8_t *m2;
 
-	param_buf =
-		(WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *)evt_buf;
+	param_buf = (WMI_TWT_SESSION_STATS_EVENTID_param_tlvs *)evt_buf;
 	if (!param_buf) {
 		wmi_err("evt_buf is NULL");
 		return QDF_STATUS_E_INVAL;
 	}
 
 	if (idx >= param_buf->num_twt_sessions) {
-		wmi_err("wrong idx, idx=%d, num_sessions=%d",
-			 idx, param_buf->num_twt_sessions);
+		wmi_err("wrong idx, idx=%d, num_sessions=%d", idx,
+			param_buf->num_twt_sessions);
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -2224,9 +2160,9 @@ extract_twt_session_stats_event_data(wmi_unified_t wmi_handle,
 	session->announ = WMI_TWT_SESSION_FLAG_ANNOUN_TWT_GET(flags);
 	session->protection = WMI_TWT_SESSION_FLAG_TWT_PROTECTION_GET(flags);
 	session->info_frame_disabled =
-			WMI_TWT_SESSION_FLAG_TWT_INFO_FRAME_DISABLED_GET(flags);
+		WMI_TWT_SESSION_FLAG_TWT_INFO_FRAME_DISABLED_GET(flags);
 	session->pm_responder_bit =
-			WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_GET(flags);
+		WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_GET(flags);
 	session->pm_responder_bit_valid =
 		WMI_TWT_SESSION_FLAG_TWT_PM_RESPONDER_MODE_VALID_GET(flags);
 	session->dialog_id = twt_session->dialog_id;
@@ -2235,20 +2171,22 @@ extract_twt_session_stats_event_data(wmi_unified_t wmi_handle,
 	session->sp_offset_us = twt_session->sp_offset_us;
 	session->sp_tsf_us_lo = twt_session->sp_tsf_us_lo;
 	session->sp_tsf_us_hi = twt_session->sp_tsf_us_hi;
-	wmi_debug("type=%d id=%d bcast=%d trig=%d announ=%d diagid=%d wake_dur=%ul wake_int=%ul offset=%ul",
-		 session->event_type, session->flow_id,
-		 session->bcast, session->trig,
-		 session->announ, session->dialog_id, session->wake_dura_us,
-		 session->wake_intvl_us, session->sp_offset_us);
+	wmi_debug(
+		"type=%d id=%d bcast=%d trig=%d announ=%d diagid=%d wake_dur=%ul "
+		"wake_int=%ul offset=%ul",
+		session->event_type, session->flow_id, session->bcast,
+		session->trig, session->announ, session->dialog_id,
+		session->wake_dura_us, session->wake_intvl_us,
+		session->sp_offset_us);
 	wmi_debug("resp_pm_valid=%d resp_pm=%d",
 		  session->pm_responder_bit_valid, session->pm_responder_bit);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS extract_twt_cap_service_ready_ext2_tlv(
-				wmi_unified_t wmi_handle, uint8_t *event,
-				struct wmi_twt_cap_bitmap_params *var)
+static QDF_STATUS
+extract_twt_cap_service_ready_ext2_tlv(wmi_unified_t wmi_handle, uint8_t *event,
+				       struct wmi_twt_cap_bitmap_params *var)
 {
 	WMI_SERVICE_READY_EXT2_EVENTID_param_tlvs *param_buf;
 	wmi_twt_caps_params *twt_caps;
@@ -2261,8 +2199,8 @@ static QDF_STATUS extract_twt_cap_service_ready_ext2_tlv(
 	if (!twt_caps)
 		return QDF_STATUS_E_INVAL;
 
-	var->twt_ack_support_cap = WMI_GET_BITS(twt_caps->twt_capability_bitmap,
-						0, 1);
+	var->twt_ack_support_cap =
+		WMI_GET_BITS(twt_caps->twt_capability_bitmap, 0, 1);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -2287,8 +2225,7 @@ wmi_get_converted_twt_command_for_ack_event(WMI_CMD_ID tgt_cmd)
 }
 
 static QDF_STATUS
-extract_twt_ack_comp_event_tlv(wmi_unified_t wmi_handle,
-			       uint8_t *evt_buf,
+extract_twt_ack_comp_event_tlv(wmi_unified_t wmi_handle, uint8_t *evt_buf,
 			       struct wmi_twt_ack_complete_event_param *var)
 {
 	WMI_TWT_ACK_EVENTID_param_tlvs *param_buf;
@@ -2306,29 +2243,29 @@ extract_twt_ack_comp_event_tlv(wmi_unified_t wmi_handle,
 	WMI_MAC_ADDR_TO_CHAR_ARRAY(&ack_event->peer_macaddr,
 				   var->peer_macaddr.bytes);
 	var->dialog_id = ack_event->dialog_id;
-	var->twt_cmd_ack = wmi_get_converted_twt_command_for_ack_event(
-						ack_event->twt_cmd);
+	var->twt_cmd_ack =
+		wmi_get_converted_twt_command_for_ack_event(ack_event->twt_cmd);
 
 	switch (ack_event->twt_cmd) {
 	case WMI_TWT_ADD_DIALOG_CMDID:
 		var->status = wmi_get_converted_twt_add_dialog_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	case WMI_TWT_DEL_DIALOG_CMDID:
 		var->status = wmi_get_converted_twt_del_dialog_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	case WMI_TWT_PAUSE_DIALOG_CMDID:
 		var->status = wmi_twt_pause_status_to_host_twt_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	case WMI_TWT_RESUME_DIALOG_CMDID:
 		var->status = wmi_get_converted_twt_resume_dialog_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	case WMI_TWT_NUDGE_DIALOG_CMDID:
 		var->status = wmi_twt_nudge_status_to_host_twt_status(
-						ack_event->status);
+			ack_event->status);
 		break;
 	default:
 		break;
@@ -2350,27 +2287,26 @@ void wmi_twt_attach_tlv(wmi_unified_t wmi_handle)
 	ops->send_twt_resume_dialog_cmd = send_twt_resume_dialog_cmd_tlv;
 	ops->extract_twt_enable_comp_event = extract_twt_enable_comp_event_tlv;
 	ops->extract_twt_disable_comp_event =
-				extract_twt_disable_comp_event_tlv;
+		extract_twt_disable_comp_event_tlv;
 	ops->extract_twt_add_dialog_comp_event =
-				extract_twt_add_dialog_comp_event_tlv;
+		extract_twt_add_dialog_comp_event_tlv;
 	ops->extract_twt_add_dialog_comp_additional_params =
-			extract_twt_add_dialog_comp_additional_parameters;
+		extract_twt_add_dialog_comp_additional_parameters;
 	ops->extract_twt_del_dialog_comp_event =
-				extract_twt_del_dialog_comp_event_tlv;
+		extract_twt_del_dialog_comp_event_tlv;
 	ops->extract_twt_pause_dialog_comp_event =
-				extract_twt_pause_dialog_comp_event_tlv;
+		extract_twt_pause_dialog_comp_event_tlv;
 	ops->extract_twt_nudge_dialog_comp_event =
-				extract_twt_nudge_dialog_comp_event_tlv;
+		extract_twt_nudge_dialog_comp_event_tlv;
 	ops->extract_twt_resume_dialog_comp_event =
-				extract_twt_resume_dialog_comp_event_tlv;
+		extract_twt_resume_dialog_comp_event_tlv;
 	ops->extract_twt_session_stats_event =
-				extract_twt_session_stats_event_tlv;
+		extract_twt_session_stats_event_tlv;
 	ops->extract_twt_session_stats_data =
-				extract_twt_session_stats_event_data;
-	ops->extract_twt_notify_event =
-				extract_twt_notify_event_tlv;
+		extract_twt_session_stats_event_data;
+	ops->extract_twt_notify_event = extract_twt_notify_event_tlv;
 	ops->extract_twt_cap_service_ready_ext2 =
-				extract_twt_cap_service_ready_ext2_tlv,
+		extract_twt_cap_service_ready_ext2_tlv,
 	ops->extract_twt_ack_comp_event = extract_twt_ack_comp_event_tlv;
 	wmi_twt_attach_bcast_twt_tlv(ops);
 }

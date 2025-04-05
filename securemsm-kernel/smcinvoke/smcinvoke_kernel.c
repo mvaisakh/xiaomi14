@@ -3,19 +3,19 @@
  * Copyright (c) 2021, The Linux Foundation. All rights reserved.
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
-#include <linux/file.h>
-#include <linux/fs.h>
-#include <linux/fdtable.h>
-#include <linux/anon_inodes.h>
-#include <linux/delay.h>
-#include <linux/kref.h>
-#include <linux/types.h>
-#include <linux/slab.h>
-#include <linux/firmware.h>
-#include <linux/elf.h>
+#include "IClientEnv.h"
 #include "smcinvoke.h"
 #include "smcinvoke_object.h"
-#include "IClientEnv.h"
+#include <linux/anon_inodes.h>
+#include <linux/delay.h>
+#include <linux/elf.h>
+#include <linux/fdtable.h>
+#include <linux/file.h>
+#include <linux/firmware.h>
+#include <linux/fs.h>
+#include <linux/kref.h>
+#include <linux/slab.h>
+#include <linux/types.h>
 #if IS_ENABLED(CONFIG_QSEECOM_COMPAT)
 #include "IQSEEComCompat.h"
 #include "IQSEEComCompatAppLoader.h"
@@ -45,38 +45,36 @@ struct tzobject_context {
 	struct kref refs;
 };
 
-static int invoke_over_smcinvoke(void *cxt,
-			uint32_t op,
-			union ObjectArg *args,
-			uint32_t counts);
+static int invoke_over_smcinvoke(void *cxt, uint32_t op, union ObjectArg *args,
+				 uint32_t counts);
 
 static struct Object tzobject_new(int fd)
 {
 	struct tzobject_context *me =
-			kzalloc(sizeof(struct tzobject_context), GFP_KERNEL);
+		kzalloc(sizeof(struct tzobject_context), GFP_KERNEL);
 	if (!me)
 		return Object_NULL;
 
 	kref_init(&me->refs);
 	me->fd = fd;
-	pr_debug("%s: me->fd = %d, me->refs = %u\n", __func__,
-			me->fd, kref_read(&me->refs));
-	return (struct Object) { invoke_over_smcinvoke, me };
+	pr_debug("%s: me->fd = %d, me->refs = %u\n", __func__, me->fd,
+		 kref_read(&me->refs));
+	return (struct Object){ invoke_over_smcinvoke, me };
 }
 
 static void tzobject_delete(struct kref *refs)
 {
-	struct tzobject_context *me = container_of(refs,
-				struct tzobject_context, refs);
+	struct tzobject_context *me =
+		container_of(refs, struct tzobject_context, refs);
 
-	pr_info("%s: me->fd = %d, me->refs = %d, files = %p\n",
-		__func__, me->fd, kref_read(&me->refs), current->files);
+	pr_info("%s: me->fd = %d, me->refs = %d, files = %p\n", __func__,
+		me->fd, kref_read(&me->refs), current->files);
 	/*
-	 * after _close_fd(), ref_cnt will be 0,
-	 * but smcinvoke_release() was still not called,
-	 * so we first call smcinvoke_release_from_kernel_client() to
-	 * free filp and ask TZ to release object, then call _close_fd()
-	 */
+   * after _close_fd(), ref_cnt will be 0,
+   * but smcinvoke_release() was still not called,
+   * so we first call smcinvoke_release_from_kernel_client() to
+   * free filp and ask TZ to release object, then call _close_fd()
+   */
 	smcinvoke_release_from_kernel_client(me->fd);
 	close_fd(me->fd);
 	kfree(me);
@@ -106,18 +104,20 @@ int getHandleFromObject(struct Object obj, int *handle)
 	int ret = 0;
 
 	if (Object_isNull(obj)) {
-	/* set NULL Object's fd to be -1 */
+		/* set NULL Object's fd to be -1 */
 		*handle = SMCINVOKE_USERSPACE_OBJ_NULL;
 		return ret;
 	}
 
 	if (obj.invoke == invoke_over_smcinvoke) {
-		struct tzobject_context *ctx = (struct tzobject_context *)(obj.context);
+		struct tzobject_context *ctx =
+			(struct tzobject_context *)(obj.context);
 
 		if (ctx != NULL) {
 			*handle = ctx->fd;
 		} else {
-			pr_err("Failed to get tzobject_context obj handle, ret = %d\n", ret);
+			pr_err("Failed to get tzobject_context obj handle, ret = %d\n",
+			       ret);
 			ret = OBJECT_ERROR_BADOBJ;
 		}
 	} else {
@@ -128,10 +128,8 @@ int getHandleFromObject(struct Object obj, int *handle)
 	return ret;
 }
 
-static int marshalIn(struct smcinvoke_cmd_req *req,
-			union smcinvoke_arg *argptr,
-			uint32_t op, union ObjectArg *args,
-			uint32_t counts)
+static int marshalIn(struct smcinvoke_cmd_req *req, union smcinvoke_arg *argptr,
+		     uint32_t op, union ObjectArg *args, uint32_t counts)
 {
 	size_t i = 0;
 
@@ -140,12 +138,14 @@ static int marshalIn(struct smcinvoke_cmd_req *req,
 	req->argsize = sizeof(union smcinvoke_arg);
 	req->args = (uintptr_t)argptr;
 
-	FOR_ARGS(i, counts, buffers) {
-		argptr[i].b.addr = (uintptr_t) args[i].b.ptr;
+	FOR_ARGS(i, counts, buffers)
+	{
+		argptr[i].b.addr = (uintptr_t)args[i].b.ptr;
 		argptr[i].b.size = args[i].b.size;
 	}
 
-	FOR_ARGS(i, counts, OI) {
+	FOR_ARGS(i, counts, OI)
+	{
 		int handle = -1, ret;
 
 		ret = getHandleFromObject(args[i].o, &handle);
@@ -156,16 +156,16 @@ static int marshalIn(struct smcinvoke_cmd_req *req,
 		argptr[i].o.fd = handle;
 	}
 
-	FOR_ARGS(i, counts, OO) {
+	FOR_ARGS(i, counts, OO)
+	{
 		argptr[i].o.fd = SMCINVOKE_USERSPACE_OBJ_NULL;
 	}
 	return OBJECT_OK;
 }
 
 static int marshalOut(struct smcinvoke_cmd_req *req,
-			union smcinvoke_arg *argptr,
-			union ObjectArg *args, uint32_t counts,
-			struct tzobject_context *me)
+		      union smcinvoke_arg *argptr, union ObjectArg *args,
+		      uint32_t counts, struct tzobject_context *me)
 {
 	int ret = req->result;
 	bool failed = false;
@@ -173,23 +173,26 @@ static int marshalOut(struct smcinvoke_cmd_req *req,
 
 	argptr = (union smcinvoke_arg *)(uintptr_t)(req->args);
 
-	FOR_ARGS(i, counts, BO) {
+	FOR_ARGS(i, counts, BO)
+	{
 		args[i].b.size = argptr[i].b.size;
 	}
 
-	FOR_ARGS(i, counts, OO) {
+	FOR_ARGS(i, counts, OO)
+	{
 		ret = getObjectFromHandle(argptr[i].o.fd, &(args[i].o));
 		if (ret) {
-			pr_err("Failed to get OO[%zu] from handle = %d\n",
-				i, (int)argptr[i].o.fd);
+			pr_err("Failed to get OO[%zu] from handle = %d\n", i,
+			       (int)argptr[i].o.fd);
 			failed = true;
 			break;
 		}
-		pr_debug("Succeed to create OO for args[%zu].o, fd = %d\n",
-			i, (int)argptr[i].o.fd);
+		pr_debug("Succeed to create OO for args[%zu].o, fd = %d\n", i,
+			 (int)argptr[i].o.fd);
 	}
 	if (failed) {
-		FOR_ARGS(i, counts, OO) {
+		FOR_ARGS(i, counts, OO)
+		{
 			Object_ASSIGN_NULL(args[i].o);
 		}
 		/* Only overwrite ret value if invoke result is 0 */
@@ -199,26 +202,25 @@ static int marshalOut(struct smcinvoke_cmd_req *req,
 	return ret;
 }
 
-static int invoke_over_smcinvoke(void *cxt,
-			uint32_t op,
-			union ObjectArg *args,
-			uint32_t counts)
+static int invoke_over_smcinvoke(void *cxt, uint32_t op, union ObjectArg *args,
+				 uint32_t counts)
 {
 	int ret = OBJECT_OK;
-	struct smcinvoke_cmd_req req = {0, 0, 0, 0, 0};
+	struct smcinvoke_cmd_req req = { 0, 0, 0, 0, 0 };
 	size_t i = 0;
 	struct tzobject_context *me = NULL;
 	uint32_t method;
 	union smcinvoke_arg *argptr = NULL;
 
-	FOR_ARGS(i, counts, OO) {
+	FOR_ARGS(i, counts, OO)
+	{
 		args[i].o = Object_NULL;
 	}
 
 	me = (struct tzobject_context *)cxt;
 	method = ObjectOp_methodID(op);
 	pr_debug("%s: cxt = %p, fd = %d, op = %u, cnt = %x, refs = %u\n",
-			__func__, me, me->fd, op, counts, kref_read(&me->refs));
+		 __func__, me, me->fd, op, counts, kref_read(&me->refs));
 
 	if (ObjectOp_isLocal(op)) {
 		switch (method) {
@@ -233,7 +235,7 @@ static int invoke_over_smcinvoke(void *cxt,
 	}
 
 	argptr = kcalloc(OBJECT_COUNTS_TOTAL(counts),
-			sizeof(union smcinvoke_arg), GFP_KERNEL);
+			 sizeof(union smcinvoke_arg), GFP_KERNEL);
 	if (argptr == NULL)
 		return OBJECT_ERROR_KMEM;
 
@@ -244,9 +246,10 @@ static int invoke_over_smcinvoke(void *cxt,
 	ret = process_invoke_request_from_kernel_client(me->fd, &req);
 	if (ret) {
 		pr_err("INVOKE failed with ret = %d, result = %d\n"
-			"obj.context = %p, fd = %d, op = %d, counts = 0x%x\n",
-			ret, req.result, me, me->fd, op, counts);
-		FOR_ARGS(i, counts, OO) {
+		       "obj.context = %p, fd = %d, op = %d, counts = 0x%x\n",
+		       ret, req.result, me, me->fd, op, counts);
+		FOR_ARGS(i, counts, OO)
+		{
 			struct smcinvoke_obj obj = argptr[i].o;
 
 			if (obj.fd >= 0) {
@@ -256,8 +259,7 @@ static int invoke_over_smcinvoke(void *cxt,
 		}
 		if (ret == -EBUSY) {
 			ret = OBJECT_ERROR_BUSY;
-		}
-		else if (ret == -ENOMEM){
+		} else if (ret == -ENOMEM) {
 			ret = OBJECT_ERROR_KMEM;
 		} else {
 			ret = OBJECT_ERROR_UNAVAIL;
@@ -295,7 +297,7 @@ int get_root_obj(struct Object *rootObj)
  */
 int32_t get_client_env_object(struct Object *clientEnvObj)
 {
-	int32_t  ret = OBJECT_ERROR;
+	int32_t ret = OBJECT_ERROR;
 	int retry_count = 0;
 	struct Object rootObj = Object_NULL;
 
@@ -308,13 +310,15 @@ int32_t get_client_env_object(struct Object *clientEnvObj)
 
 	/* get client env */
 	do {
-		ret = IClientEnv_registerWithCredentials(rootObj,
-			Object_NULL, clientEnvObj);
+		ret = IClientEnv_registerWithCredentials(rootObj, Object_NULL,
+							 clientEnvObj);
 		if (ret == OBJECT_ERROR_BUSY) {
-			pr_err("Secure side is busy,will retry after 5 ms, retry_count = %d",retry_count);
+			pr_err("Secure side is busy,will retry after 5 ms, retry_count = %d",
+			       retry_count);
 			msleep(SMCINVOKE_INTERFACE_BUSY_WAIT_MS);
 		}
-	} while ((ret == OBJECT_ERROR_BUSY) && (retry_count++ < SMCINVOKE_INTERFACE_MAX_RETRY));
+	} while ((ret == OBJECT_ERROR_BUSY) &&
+		 (retry_count++ < SMCINVOKE_INTERFACE_MAX_RETRY));
 
 	if (ret)
 		pr_err("Failed to get ClientEnvObject, ret = %d\n", ret);
@@ -330,18 +334,19 @@ static int load_app(struct qseecom_compat_context *cxt, const char *app_name)
 	size_t fw_size = 0;
 	u8 *imgbuf_va = NULL;
 	int ret = 0;
-	char dist_name[MAX_APP_NAME_SIZE] = {0};
+	char dist_name[MAX_APP_NAME_SIZE] = { 0 };
 	size_t dist_name_len = 0;
-	struct qtee_shm shm = {0};
+	struct qtee_shm shm = { 0 };
 
 	if (strnlen(app_name, MAX_APP_NAME_SIZE) == MAX_APP_NAME_SIZE) {
 		pr_err("The app_name (%s) with length %zu is not valid\n",
-			app_name, strnlen(app_name, MAX_APP_NAME_SIZE));
+		       app_name, strnlen(app_name, MAX_APP_NAME_SIZE));
 		return -EINVAL;
 	}
 
-	ret = IQSEEComCompatAppLoader_lookupTA(cxt->app_loader,
-		app_name, strlen(app_name), &cxt->app_controller);
+	ret = IQSEEComCompatAppLoader_lookupTA(cxt->app_loader, app_name,
+					       strlen(app_name),
+					       &cxt->app_controller);
 	if (!ret) {
 		pr_info("app %s exists\n", app_name);
 		return ret;
@@ -354,13 +359,12 @@ static int load_app(struct qseecom_compat_context *cxt, const char *app_name)
 	}
 
 	ret = IQSEEComCompatAppLoader_loadFromBuffer(
-			cxt->app_loader, imgbuf_va, fw_size,
-			app_name, strlen(app_name),
-			dist_name, MAX_APP_NAME_SIZE, &dist_name_len,
-			&cxt->app_controller);
+		cxt->app_loader, imgbuf_va, fw_size, app_name, strlen(app_name),
+		dist_name, MAX_APP_NAME_SIZE, &dist_name_len,
+		&cxt->app_controller);
 	if (ret) {
-		pr_err("loadFromBuffer failed for app %s, ret = %d\n",
-				app_name, ret);
+		pr_err("loadFromBuffer failed for app %s, ret = %d\n", app_name,
+		       ret);
 		goto exit_release_shm;
 	}
 	cxt->app_arch = *(uint8_t *)(imgbuf_va + EI_CLASS);
@@ -373,14 +377,13 @@ exit_release_shm:
 	return ret;
 }
 
-static int __qseecom_start_app(struct qseecom_handle **handle,
-					char *app_name, uint32_t size)
+static int __qseecom_start_app(struct qseecom_handle **handle, char *app_name,
+			       uint32_t size)
 {
 	int ret = 0;
 	struct qseecom_compat_context *cxt = NULL;
 
-	pr_warn("%s, start app %s, size %zu\n",
-		__func__, app_name, size);
+	pr_warn("%s, start app %s, size %zu\n", __func__, app_name, size);
 	if (app_name == NULL || handle == NULL) {
 		pr_err("app_name is null or invalid handle\n");
 		return -EINVAL;
@@ -394,16 +397,16 @@ static int __qseecom_start_app(struct qseecom_handle **handle,
 	ret = get_client_env_object(&cxt->client_env);
 	if (ret) {
 		pr_err("failed to get clientEnv when loading app %s, ret %d\n",
-			app_name, ret);
+		       app_name, ret);
 		ret = -EINVAL;
 		goto exit_free_cxt;
 	}
 	/* get apploader with CQSEEComCompatAppLoader_UID */
 	ret = IClientEnv_open(cxt->client_env, CQSEEComCompatAppLoader_UID,
-				&cxt->app_loader);
+			      &cxt->app_loader);
 	if (ret) {
 		pr_err("failed to get apploader when loading app %s, ret %d\n",
-			app_name, ret);
+		       app_name, ret);
 		ret = -EINVAL;
 		goto exit_release_clientenv;
 	}
@@ -411,8 +414,7 @@ static int __qseecom_start_app(struct qseecom_handle **handle,
 	/* load app*/
 	ret = load_app(cxt, app_name);
 	if (ret) {
-		pr_err("failed to load app %s, ret = %d\n",
-			app_name, ret);
+		pr_err("failed to load app %s, ret = %d\n", app_name, ret);
 		ret = -EINVAL;
 		goto exit_release_apploader;
 	}
@@ -445,9 +447,8 @@ exit_free_cxt:
 
 static int __qseecom_shutdown_app(struct qseecom_handle **handle)
 {
-
 	struct qseecom_compat_context *cxt = NULL;
-	if ((handle == NULL)  || (*handle == NULL)) {
+	if ((handle == NULL) || (*handle == NULL)) {
 		pr_err("Handle is NULL\n");
 		return -EINVAL;
 	}
@@ -464,62 +465,62 @@ static int __qseecom_shutdown_app(struct qseecom_handle **handle)
 }
 
 static int __qseecom_send_command(struct qseecom_handle *handle, void *send_buf,
-			uint32_t sbuf_len, void *resp_buf, uint32_t rbuf_len)
+				  uint32_t sbuf_len, void *resp_buf,
+				  uint32_t rbuf_len)
 {
 	struct qseecom_compat_context *cxt =
-			(struct qseecom_compat_context *)handle;
+		(struct qseecom_compat_context *)handle;
 	size_t out_len = 0;
 
-	pr_debug("%s, sbuf_len %u, rbuf_len %u\n",
-		__func__, sbuf_len, rbuf_len);
+	pr_debug("%s, sbuf_len %u, rbuf_len %u\n", __func__, sbuf_len,
+		 rbuf_len);
 
 	if (!handle || !send_buf || !resp_buf || !sbuf_len || !rbuf_len) {
-		pr_err("One of params is invalid. %s, handle %x, send_buf %x,resp_buf %x,sbuf_len %u, rbuf_len %u\n",
-			 __func__, handle, send_buf, resp_buf, sbuf_len, rbuf_len);
+		pr_err("One of params is invalid. %s, handle %x, send_buf %x,resp_buf "
+		       "%x,sbuf_len %u, rbuf_len %u\n",
+		       __func__, handle, send_buf, resp_buf, sbuf_len,
+		       rbuf_len);
 		return -EINVAL;
 	}
-	return IQSEEComCompat_sendRequest(cxt->app_controller,
-				  send_buf, sbuf_len,
-				  resp_buf, rbuf_len,
-				  send_buf, sbuf_len, &out_len,
-				  resp_buf, rbuf_len, &out_len,
-				  NULL, 0, /* embedded offset array */
-				  (cxt->app_arch == ELFCLASS64),
-				  Object_NULL, Object_NULL,
-				  Object_NULL, Object_NULL);
+	return IQSEEComCompat_sendRequest(
+		cxt->app_controller, send_buf, sbuf_len, resp_buf, rbuf_len,
+		send_buf, sbuf_len, &out_len, resp_buf, rbuf_len, &out_len,
+		NULL, 0, /* embedded offset array */
+		(cxt->app_arch == ELFCLASS64), Object_NULL, Object_NULL,
+		Object_NULL, Object_NULL);
 }
 
 #if IS_ENABLED(CONFIG_QSEECOM_PROXY)
 const static struct qseecom_drv_ops qseecom_driver_ops = {
-       .qseecom_send_command = __qseecom_send_command,
-       .qseecom_start_app = __qseecom_start_app,
-       .qseecom_shutdown_app = __qseecom_shutdown_app,
+	.qseecom_send_command = __qseecom_send_command,
+	.qseecom_start_app = __qseecom_start_app,
+	.qseecom_shutdown_app = __qseecom_shutdown_app,
 };
 
 int get_qseecom_kernel_fun_ops(void)
 {
-        return provide_qseecom_kernel_fun_ops(&qseecom_driver_ops);
+	return provide_qseecom_kernel_fun_ops(&qseecom_driver_ops);
 }
 #else
 
-int qseecom_start_app(struct qseecom_handle **handle,
-                    char *app_name, uint32_t size)
+int qseecom_start_app(struct qseecom_handle **handle, char *app_name,
+		      uint32_t size)
 {
-    return __qseecom_start_app(handle, app_name, size);
+	return __qseecom_start_app(handle, app_name, size);
 }
 EXPORT_SYMBOL(qseecom_start_app);
 
 int qseecom_shutdown_app(struct qseecom_handle **handle)
 {
-    return __qseecom_shutdown_app(handle);
+	return __qseecom_shutdown_app(handle);
 }
 EXPORT_SYMBOL(qseecom_shutdown_app);
 
 int qseecom_send_command(struct qseecom_handle *handle, void *send_buf,
-            uint32_t sbuf_len, void *resp_buf, uint32_t rbuf_len)
+			 uint32_t sbuf_len, void *resp_buf, uint32_t rbuf_len)
 {
-    return __qseecom_send_command(handle, send_buf, sbuf_len,
-                        resp_buf, rbuf_len);
+	return __qseecom_send_command(handle, send_buf, sbuf_len, resp_buf,
+				      rbuf_len);
 }
 EXPORT_SYMBOL(qseecom_send_command);
 #endif

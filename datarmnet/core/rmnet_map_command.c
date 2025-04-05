@@ -11,30 +11,33 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/netdevice.h>
 #include "rmnet_config.h"
 #include "rmnet_map.h"
 #include "rmnet_private.h"
 #include "rmnet_vnd.h"
+#include <linux/netdevice.h>
 
-#define RMNET_DL_IND_HDR_SIZE (sizeof(struct rmnet_map_dl_ind_hdr) + \
-			       sizeof(struct rmnet_map_header) + \
-			       sizeof(struct rmnet_map_control_command_header))
+#define RMNET_DL_IND_HDR_SIZE                  \
+	(sizeof(struct rmnet_map_dl_ind_hdr) + \
+	 sizeof(struct rmnet_map_header) +     \
+	 sizeof(struct rmnet_map_control_command_header))
 
-#define RMNET_MAP_CMD_SIZE (sizeof(struct rmnet_map_header) + \
-			    sizeof(struct rmnet_map_control_command_header))
+#define RMNET_MAP_CMD_SIZE                 \
+	(sizeof(struct rmnet_map_header) + \
+	 sizeof(struct rmnet_map_control_command_header))
 
-#define RMNET_DL_IND_TRL_SIZE (sizeof(struct rmnet_map_dl_ind_trl) + \
-			       sizeof(struct rmnet_map_header) + \
-			       sizeof(struct rmnet_map_control_command_header))
+#define RMNET_DL_IND_TRL_SIZE                  \
+	(sizeof(struct rmnet_map_dl_ind_trl) + \
+	 sizeof(struct rmnet_map_header) +     \
+	 sizeof(struct rmnet_map_control_command_header))
 
-#define RMNET_PB_IND_HDR_SIZE (sizeof(struct rmnet_map_pb_ind_hdr) + \
-			       sizeof(struct rmnet_map_header) + \
-			       sizeof(struct rmnet_map_control_command_header))
+#define RMNET_PB_IND_HDR_SIZE                  \
+	(sizeof(struct rmnet_map_pb_ind_hdr) + \
+	 sizeof(struct rmnet_map_header) +     \
+	 sizeof(struct rmnet_map_control_command_header))
 
 static u8 rmnet_map_do_flow_control(struct sk_buff *skb,
-				    struct rmnet_port *port,
-				    int enable)
+				    struct rmnet_port *port, int enable)
 {
 	struct rmnet_map_header *qmap;
 	struct rmnet_map_control_command *cmd;
@@ -68,9 +71,9 @@ static u8 rmnet_map_do_flow_control(struct sk_buff *skb,
 	qos_id = ntohl(cmd->flow_control.qos_id);
 
 	/* Ignore the ip family and pass the sequence number for both v4 and v6
-	 * sequence. User space does not support creating dedicated flows for
-	 * the 2 protocols
-	 */
+   * sequence. User space does not support creating dedicated flows for
+   * the 2 protocols
+   */
 	r = rmnet_vnd_do_flow_control(vnd, enable);
 	if (r) {
 		kfree_skb(skb);
@@ -80,8 +83,7 @@ static u8 rmnet_map_do_flow_control(struct sk_buff *skb,
 	}
 }
 
-static void rmnet_map_send_ack(struct sk_buff *skb,
-			       unsigned char type,
+static void rmnet_map_send_ack(struct sk_buff *skb, unsigned char type,
 			       struct rmnet_port *port)
 {
 	struct rmnet_map_control_command *cmd;
@@ -101,10 +103,9 @@ static void rmnet_map_send_ack(struct sk_buff *skb,
 	netif_tx_unlock(dev);
 }
 
-void
-rmnet_map_dl_hdr_notify_v2(struct rmnet_port *port,
-			   struct rmnet_map_dl_ind_hdr *dlhdr,
-			   struct rmnet_map_control_command_header *qcmd)
+void rmnet_map_dl_hdr_notify_v2(struct rmnet_port *port,
+				struct rmnet_map_dl_ind_hdr *dlhdr,
+				struct rmnet_map_control_command_header *qcmd)
 {
 	struct rmnet_map_dl_ind *tmp;
 
@@ -112,10 +113,9 @@ rmnet_map_dl_hdr_notify_v2(struct rmnet_port *port,
 		tmp->dl_hdr_handler_v2(dlhdr, qcmd);
 }
 
-void
-rmnet_map_dl_trl_notify_v2(struct rmnet_port *port,
-			   struct rmnet_map_dl_ind_trl *dltrl,
-			   struct rmnet_map_control_command_header *qcmd)
+void rmnet_map_dl_trl_notify_v2(struct rmnet_port *port,
+				struct rmnet_map_dl_ind_trl *dltrl,
+				struct rmnet_map_control_command_header *qcmd)
 {
 	struct rmnet_map_dl_ind *tmp;
 
@@ -133,8 +133,7 @@ void rmnet_map_pb_ind_notify(struct rmnet_port *port,
 }
 
 static void rmnet_map_process_pb_ind(struct sk_buff *skb,
-				     struct rmnet_port *port,
-				     bool rmnet_perf)
+				     struct rmnet_port *port, bool rmnet_perf)
 {
 	struct rmnet_map_pb_ind_hdr *pbhdr;
 	u32 data_format;
@@ -146,8 +145,10 @@ static void rmnet_map_process_pb_ind(struct sk_buff *skb,
 	data_format = port->data_format;
 	is_dl_mark_v2 = data_format & RMNET_INGRESS_FORMAT_DL_MARKER_V2;
 	if (is_dl_mark_v2) {
-		pskb_pull(skb, sizeof(struct rmnet_map_header) +
-				  sizeof(struct rmnet_map_control_command_header));
+		pskb_pull(
+			skb,
+			sizeof(struct rmnet_map_header) +
+				sizeof(struct rmnet_map_control_command_header));
 	}
 
 	pbhdr = (struct rmnet_map_pb_ind_hdr *)rmnet_map_data_ptr(skb);
@@ -214,8 +215,7 @@ static void rmnet_map_process_flow_start(struct sk_buff *skb,
 }
 
 static void rmnet_map_process_flow_end(struct sk_buff *skb,
-				       struct rmnet_port *port,
-				       bool rmnet_perf)
+				       struct rmnet_port *port, bool rmnet_perf)
 {
 	struct rmnet_map_dl_ind_trl *dltrl;
 	struct rmnet_map_control_command_header *qcmd;
@@ -357,9 +357,11 @@ int rmnet_map_dl_ind_register(struct rmnet_port *port,
 		empty_ind_list = false;
 		if (dl_ind_iterator->priority < dl_ind->priority) {
 			if (dl_ind_iterator->list.next) {
-				if (dl_ind->priority
-				    < list_entry_rcu(dl_ind_iterator->list.next,
-				    typeof(*dl_ind_iterator), list)->priority) {
+				if (dl_ind->priority <
+				    list_entry_rcu(dl_ind_iterator->list.next,
+						   typeof(*dl_ind_iterator),
+						   list)
+					    ->priority) {
 					list_add_rcu(&dl_ind->list,
 						     &dl_ind_iterator->list);
 					break;
@@ -416,9 +418,11 @@ int rmnet_map_pb_ind_register(struct rmnet_port *port,
 		empty_ind_list = false;
 		if (pb_ind_iterator->priority < pb_ind->priority) {
 			if (pb_ind_iterator->list.next) {
-				if (pb_ind->priority
-				    < list_entry_rcu(pb_ind_iterator->list.next,
-				    typeof(*pb_ind_iterator), list)->priority) {
+				if (pb_ind->priority <
+				    list_entry_rcu(pb_ind_iterator->list.next,
+						   typeof(*pb_ind_iterator),
+						   list)
+					    ->priority) {
 					list_add_rcu(&pb_ind->list,
 						     &pb_ind_iterator->list);
 					break;

@@ -8,20 +8,20 @@
  */
 
 #include "sigma_dut.h"
+#include <ctype.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <ctype.h>
 #ifdef __linux__
-#include <regex.h>
 #include <dirent.h>
-#include <sys/time.h>
-#include <netpacket/packet.h>
 #include <linux/if_ether.h>
+#include <netpacket/packet.h>
+#include <regex.h>
+#include <sys/time.h>
 #ifdef ANDROID
-#include <cutils/properties.h>
-#include <android/log.h>
 #include "keystore_get.h"
+#include <android/log.h>
+#include <cutils/properties.h>
 #else /* ANDROID */
 #include <ifaddrs.h>
 #endif /* ANDROID */
@@ -30,16 +30,16 @@
 #ifdef __QNXNTO__
 #include <net/if_dl.h>
 #endif /* __QNXNTO__ */
+#include "miracast.h"
+#include "nl80211_copy.h"
+#include "qca-vendor_copy.h"
 #include "wpa_ctrl.h"
 #include "wpa_helpers.h"
-#include "miracast.h"
-#include "qca-vendor_copy.h"
-#include "nl80211_copy.h"
 
 /* Temporary files for sta_send_addba */
-#define VI_QOS_TMP_FILE     "/tmp/vi-qos.tmp"
-#define VI_QOS_FILE         "/tmp/vi-qos.txt"
-#define VI_QOS_REFFILE      "/etc/vi-qos.txt"
+#define VI_QOS_TMP_FILE "/tmp/vi-qos.tmp"
+#define VI_QOS_FILE "/tmp/vi-qos.txt"
+#define VI_QOS_REFFILE "/etc/vi-qos.txt"
 
 /*
  * MTU for Ethernet need to take into account 8-byte SNAP header
@@ -57,7 +57,7 @@
 #define DEFAULT_NEIGHBOR_BSSID_INFO "17"
 #define DEFAULT_NEIGHBOR_PHY_TYPE "1"
 
-#define WIL_DEFAULT_BI	100
+#define WIL_DEFAULT_BI 100
 
 /* default remain on channel time for transmitting frames (milliseconds) */
 #define WIL_TRANSMIT_FRAME_DEFAULT_ROC 500
@@ -77,13 +77,13 @@ extern enum driver_type wifi_chip_type;
 extern char *sigma_radio_ifname[];
 
 #ifdef __linux__
-#define WIL_WMI_MAX_PAYLOAD	248
-#define WIL_WMI_ESE_CFG_CMDID	0xa01
-#define WIL_WMI_BF_TRIG_CMDID	0x83a
-#define WIL_WMI_UNIT_TEST_CMDID	0x900
-#define WIL_WMI_P2P_CFG_CMDID	0x910
-#define WIL_WMI_START_LISTEN_CMDID	0x914
-#define WIL_WMI_DISCOVERY_STOP_CMDID	0x917
+#define WIL_WMI_MAX_PAYLOAD 248
+#define WIL_WMI_ESE_CFG_CMDID 0xa01
+#define WIL_WMI_BF_TRIG_CMDID 0x83a
+#define WIL_WMI_UNIT_TEST_CMDID 0x900
+#define WIL_WMI_P2P_CFG_CMDID 0x910
+#define WIL_WMI_START_LISTEN_CMDID 0x914
+#define WIL_WMI_DISCOVERY_STOP_CMDID 0x917
 
 struct wil_wmi_header {
 	uint8_t mid;
@@ -141,7 +141,7 @@ struct wil_wmi_ese_slot {
 	uint32_t reserved;
 } __attribute__((packed));
 
-#define WIL_WMI_MAX_ESE_SLOTS	4
+#define WIL_WMI_MAX_ESE_SLOTS 4
 struct wil_wmi_ese_cfg {
 	uint8_t serial_num;
 	/* wil_wmi_sched_scheme_advertisment */
@@ -154,7 +154,7 @@ struct wil_wmi_ese_cfg {
 	struct wil_wmi_ese_slot slots[WIL_WMI_MAX_ESE_SLOTS];
 } __attribute__((packed));
 
-#define WIL_WMI_UT_FORCE_MCS	6
+#define WIL_WMI_UT_FORCE_MCS 6
 struct wil_wmi_force_mcs {
 	/* WIL_WMI_UT_HW_SYSAPI */
 	uint16_t module_id;
@@ -169,7 +169,7 @@ struct wil_wmi_force_mcs {
 } __attribute__((packed));
 
 #define WIL_WMI_UT_HW_SYSAPI 10
-#define WIL_WMI_UT_FORCE_RSN_IE	0x29
+#define WIL_WMI_UT_FORCE_RSN_IE 0x29
 struct wil_wmi_force_rsn_ie {
 	/* WIL_WMI_UT_HW_SYSAPI */
 	uint16_t module_id;
@@ -231,10 +231,8 @@ static int android_keystore_get(char cmd, const char *key, unsigned char *val)
 }
 #endif /* ANDROID */
 
-
 #ifdef NL80211_SUPPORT
-static int nl80211_sta_set_power_save(struct sigma_dut *dut,
-				      const char *intf,
+static int nl80211_sta_set_power_save(struct sigma_dut *dut, const char *intf,
 				      enum nl80211_ps_state ps_state)
 {
 	struct nl_msg *msg;
@@ -275,7 +273,6 @@ static int nl80211_sta_set_power_save(struct sigma_dut *dut,
 }
 #endif /* NL80211_SUPPORT */
 
-
 static int set_power_save_wcn(struct sigma_dut *dut, const char *intf, int ps)
 {
 	char buf[100];
@@ -289,13 +286,12 @@ static int set_power_save_wcn(struct sigma_dut *dut, const char *intf, int ps)
 
 	snprintf(buf, sizeof(buf), "iwpriv %s setPower %d", intf, ps);
 	if (system(buf) != 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"iwpriv setPower %d failed", ps);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "iwpriv setPower %d failed",
+				ps);
 		return -1;
 	}
 	return 0;
 }
-
 
 int set_ps(const char *intf, struct sigma_dut *dut, int enabled)
 {
@@ -327,11 +323,11 @@ int set_ps(const char *intf, struct sigma_dut *dut, int enabled)
 	}
 
 set_power_save:
-	snprintf(buf, sizeof(buf), "./iw dev %s set power_save %s",
-		 intf, enabled ? "on" : "off");
+	snprintf(buf, sizeof(buf), "./iw dev %s set power_save %s", intf,
+		 enabled ? "on" : "off");
 	if (system(buf) != 0) {
-		snprintf(buf, sizeof(buf), "iw dev %s set power_save %s",
-			 intf, enabled ? "on" : "off");
+		snprintf(buf, sizeof(buf), "iw dev %s set power_save %s", intf,
+			 enabled ? "on" : "off");
 		if (system(buf) != 0) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"Failed to set power save %s",
@@ -345,7 +341,6 @@ set_power_save:
 	return -1;
 #endif /* __linux__ */
 }
-
 
 #ifdef __linux__
 
@@ -366,8 +361,8 @@ static int wil6210_get_debugfs_dir(struct sigma_dut *dut, char *path,
 		    strcmp(entry->d_name, "..") == 0)
 			continue;
 
-		if (snprintf(path, len, "%s/%s/wil6210",
-			     root_path, entry->d_name) >= (int) len) {
+		if (snprintf(path, len, "%s/%s/wil6210", root_path,
+			     entry->d_name) >= (int)len) {
 			ret = -3;
 			break;
 		}
@@ -384,7 +379,6 @@ static int wil6210_get_debugfs_dir(struct sigma_dut *dut, char *path,
 	return ret;
 }
 
-
 static int wil6210_wmi_send(struct sigma_dut *dut, uint16_t command,
 			    void *payload, uint16_t length)
 {
@@ -399,8 +393,8 @@ static int wil6210_wmi_send(struct sigma_dut *dut, uint16_t command,
 
 	if (length > WIL_WMI_MAX_PAYLOAD) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"payload too large(%u, max %u)",
-				length, WIL_WMI_MAX_PAYLOAD);
+				"payload too large(%u, max %u)", length,
+				WIL_WMI_MAX_PAYLOAD);
 		return -1;
 	}
 
@@ -419,8 +413,8 @@ static int wil6210_wmi_send(struct sigma_dut *dut, uint16_t command,
 		return -1;
 	f = fopen(fname, "wb");
 	if (!f) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"failed to open: %s", fname);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "failed to open: %s",
+				fname);
 		return -1;
 	}
 
@@ -428,14 +422,13 @@ static int wil6210_wmi_send(struct sigma_dut *dut, uint16_t command,
 	written = fwrite(&cmd, 1, towrite, f);
 	fclose(f);
 	if (written != towrite) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"failed to send wmi %u", command);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "failed to send wmi %u",
+				command);
 		return -1;
 	}
 
 	return 0;
 }
-
 
 static int wil6210_get_sta_info_field(struct sigma_dut *dut, const char *bssid,
 				      const char *pattern, unsigned int *field)
@@ -457,21 +450,21 @@ static int wil6210_get_sta_info_field(struct sigma_dut *dut, const char *bssid,
 		return -1;
 	f = fopen(fname, "r");
 	if (!f) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"failed to open: %s", fname);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "failed to open: %s",
+				fname);
 		return -1;
 	}
 
 	if (regcomp(&re, pattern, REG_EXTENDED)) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"regcomp failed: %s", pattern);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "regcomp failed: %s",
+				pattern);
 		goto out;
 	}
 
 	/*
-	 * find the entry for the mac address
-	 * line is of the form: [n] 11:22:33:44:55:66 state AID aid
-	 */
+   * find the entry for the mac address
+   * line is of the form: [n] 11:22:33:44:55:66 state AID aid
+   */
 	while (fgets(buf, sizeof(buf), f)) {
 		if (strcasestr(buf, bssid)) {
 			/* extract the field (CID/AID/state) */
@@ -487,15 +480,13 @@ static int wil6210_get_sta_info_field(struct sigma_dut *dut, const char *bssid,
 
 	regfree(&re);
 	if (ret)
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"could not extract field");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "could not extract field");
 
 out:
 	fclose(f);
 
 	return ret;
 }
-
 
 static int wil6210_get_cid(struct sigma_dut *dut, const char *bssid,
 			   unsigned int *cid)
@@ -505,9 +496,7 @@ static int wil6210_get_cid(struct sigma_dut *dut, const char *bssid,
 	return wil6210_get_sta_info_field(dut, bssid, pattern, cid);
 }
 
-
-static int wil6210_send_brp_rx(struct sigma_dut *dut, const char *mac,
-			       int l_rx)
+static int wil6210_send_brp_rx(struct sigma_dut *dut, const char *mac, int l_rx)
 {
 	struct wil_wmi_bf_trig_cmd cmd;
 	unsigned int cid;
@@ -520,10 +509,8 @@ static int wil6210_send_brp_rx(struct sigma_dut *dut, const char *mac,
 	cmd.bf_type = WIL_WMI_BRP_RX;
 	cmd.sta_id = cid;
 	/* training length (l_rx) is ignored, FW always uses length 16 */
-	return wil6210_wmi_send(dut, WIL_WMI_BF_TRIG_CMDID,
-				&cmd, sizeof(cmd));
+	return wil6210_wmi_send(dut, WIL_WMI_BF_TRIG_CMDID, &cmd, sizeof(cmd));
 }
-
 
 static int wil6210_send_sls(struct sigma_dut *dut, const char *mac)
 {
@@ -535,15 +522,13 @@ static int wil6210_send_sls(struct sigma_dut *dut, const char *mac)
 		return -1;
 
 	cmd.bf_type = WIL_WMI_SLS;
-	return wil6210_wmi_send(dut, WIL_WMI_BF_TRIG_CMDID,
-				&cmd, sizeof(cmd));
+	return wil6210_wmi_send(dut, WIL_WMI_BF_TRIG_CMDID, &cmd, sizeof(cmd));
 }
-
 
 int wil6210_set_ese(struct sigma_dut *dut, int count,
 		    struct sigma_ese_alloc *allocs)
 {
-	struct wil_wmi_ese_cfg cmd = { };
+	struct wil_wmi_ese_cfg cmd = {};
 	int i;
 
 	if (count == 0 || count > WIL_WMI_MAX_ESE_SLOTS)
@@ -561,9 +546,9 @@ int wil6210_set_ese(struct sigma_dut *dut, int count,
 	cmd.num_allocs = count;
 	for (i = 0; i < count; i++) {
 		/*
-		 * Convert percent from BI (BI specified in milliseconds)
-		 * to absolute duration in microseconds.
-		 */
+     * Convert percent from BI (BI specified in milliseconds)
+     * to absolute duration in microseconds.
+     */
 		cmd.slots[i].duration =
 			(allocs[i].percent_bi * dut->ap_bcnint * 1000) / 100;
 		switch (allocs[i].type) {
@@ -581,50 +566,47 @@ int wil6210_set_ese(struct sigma_dut *dut, int count,
 		}
 		cmd.slots[i].src_aid = allocs[i].src_aid;
 		cmd.slots[i].dst_aid = allocs[i].dst_aid;
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"slot %d, duration %u, type %d, srcAID %u dstAID %u",
-				i, cmd.slots[i].duration,
-				cmd.slots[i].slot_type, cmd.slots[i].src_aid,
-				cmd.slots[i].dst_aid);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"slot %d, duration %u, type %d, srcAID %u dstAID %u", i,
+			cmd.slots[i].duration, cmd.slots[i].slot_type,
+			cmd.slots[i].src_aid, cmd.slots[i].dst_aid);
 	}
 
 	return wil6210_wmi_send(dut, WIL_WMI_ESE_CFG_CMDID, &cmd, sizeof(cmd));
 }
 
-
 int wil6210_set_force_mcs(struct sigma_dut *dut, int force, int mcs)
 {
-	struct wil_wmi_force_mcs cmd = { };
+	struct wil_wmi_force_mcs cmd = {};
 
 	cmd.module_id = WIL_WMI_UT_HW_SYSAPI;
 	cmd.subtype_id = WIL_WMI_UT_FORCE_MCS;
-	cmd.force_enable = (uint32_t) force;
-	cmd.mcs = (uint32_t) mcs;
+	cmd.force_enable = (uint32_t)force;
+	cmd.mcs = (uint32_t)mcs;
 
-	return wil6210_wmi_send(dut, WIL_WMI_UNIT_TEST_CMDID,
-				&cmd, sizeof(cmd));
+	return wil6210_wmi_send(dut, WIL_WMI_UNIT_TEST_CMDID, &cmd,
+				sizeof(cmd));
 }
-
 
 static int wil6210_force_rsn_ie(struct sigma_dut *dut, int state)
 {
-	struct wil_wmi_force_rsn_ie cmd = { };
+	struct wil_wmi_force_rsn_ie cmd = {};
 
 	cmd.module_id = WIL_WMI_UT_HW_SYSAPI;
 	cmd.subtype_id = WIL_WMI_UT_FORCE_RSN_IE;
-	cmd.state = (uint32_t) state;
+	cmd.state = (uint32_t)state;
 
-	return wil6210_wmi_send(dut, WIL_WMI_UNIT_TEST_CMDID,
-				&cmd, sizeof(cmd));
+	return wil6210_wmi_send(dut, WIL_WMI_UNIT_TEST_CMDID, &cmd,
+				sizeof(cmd));
 }
-
 
 /*
  * this function is also used to configure generic remain-on-channel
  */
 static int wil6210_p2p_cfg(struct sigma_dut *dut, int freq)
 {
-	struct wil_wmi_p2p_cfg_cmd cmd = { };
+	struct wil_wmi_p2p_cfg_cmd cmd = {};
 	int channel = freq_to_channel(freq);
 
 	if (channel < 0)
@@ -634,10 +616,8 @@ static int wil6210_p2p_cfg(struct sigma_dut *dut, int freq)
 	cmd.bcon_interval = WIL_DEFAULT_BI;
 	cmd.discovery_mode = WMI_DISCOVERY_MODE_PEER2PEER;
 
-	return wil6210_wmi_send(dut, WIL_WMI_P2P_CFG_CMDID,
-				&cmd, sizeof(cmd));
+	return wil6210_wmi_send(dut, WIL_WMI_P2P_CFG_CMDID, &cmd, sizeof(cmd));
 }
-
 
 static int wil6210_remain_on_channel(struct sigma_dut *dut, int freq)
 {
@@ -649,25 +629,23 @@ static int wil6210_remain_on_channel(struct sigma_dut *dut, int freq)
 	ret = wil6210_wmi_send(dut, WIL_WMI_START_LISTEN_CMDID, NULL, 0);
 	if (!ret) {
 		/*
-		 * wait a bit to allow FW to setup the radio
-		 * especially important if we switch channels
-		 */
+     * wait a bit to allow FW to setup the radio
+     * especially important if we switch channels
+     */
 		usleep(500000);
 	}
 
 	return ret;
 }
 
-
 static int wil6210_stop_discovery(struct sigma_dut *dut)
 {
 	return wil6210_wmi_send(dut, WIL_WMI_DISCOVERY_STOP_CMDID, NULL, 0);
 }
 
-
 static int wil6210_transmit_frame(struct sigma_dut *dut, int freq,
-				  int wait_duration,
-				  const char *frame, size_t frame_len)
+				  int wait_duration, const char *frame,
+				  size_t frame_len)
 {
 	char buf[128], fname[128];
 	FILE *f;
@@ -691,8 +669,8 @@ static int wil6210_transmit_frame(struct sigma_dut *dut, int freq,
 
 	f = fopen(fname, "wb");
 	if (!f) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"failed to open: %s", fname);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "failed to open: %s",
+				fname);
 		res = -1;
 		goto out_stop;
 	}
@@ -700,9 +678,10 @@ static int wil6210_transmit_frame(struct sigma_dut *dut, int freq,
 	fclose(f);
 
 	if (written != frame_len) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"failed to transmit frame (got %zd, expected %zd)",
-				written, frame_len);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"failed to transmit frame (got %zd, expected %zd)",
+			written, frame_len);
 		res = -1;
 		goto out_stop;
 	}
@@ -713,7 +692,6 @@ out_stop:
 	wil6210_stop_discovery(dut);
 	return res;
 }
-
 
 static int find_template_frame_tag(struct template_frame_tag *tags,
 				   int total_tags, int tag_num)
@@ -728,11 +706,10 @@ static int find_template_frame_tag(struct template_frame_tag *tags,
 	return -1;
 }
 
-
 static int replace_p2p_attribute(struct sigma_dut *dut, char *buf, size_t len,
 				 int id, const char *value, size_t val_len)
 {
-	struct wfa_p2p_attribute *attr = (struct wfa_p2p_attribute *) buf;
+	struct wfa_p2p_attribute *attr = (struct wfa_p2p_attribute *)buf;
 
 	if (len < 3 + val_len) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
@@ -748,9 +725,10 @@ static int replace_p2p_attribute(struct sigma_dut *dut, char *buf, size_t len,
 	}
 
 	if (attr->id != id) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"incorrect attribute id (expected %d actual %d)",
-				id, attr->id);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"incorrect attribute id (expected %d actual %d)", id,
+			attr->id);
 		return -1;
 	}
 
@@ -758,7 +736,6 @@ static int replace_p2p_attribute(struct sigma_dut *dut, char *buf, size_t len,
 
 	return 0;
 }
-
 
 static int parse_template_frame_file(struct sigma_dut *dut, const char *fname,
 				     char *buf, size_t *length,
@@ -785,24 +762,24 @@ static int parse_template_frame_file(struct sigma_dut *dut, const char *fname,
 	}
 
 	/*
-	 * template file format: lines beginning with # are comments and
-	 * ignored.
-	 * It is possible to tag bytes in the frame to make it easy
-	 * to replace fields in the template, espcially if they appear
-	 * in variable-sized sections (such as IEs)
-	 * This is done by a line beginning with $NUM where NUM is an integer
-	 * tag number. It can be followed by space(s) and comment.
-	 * The next line is considered the tagged bytes. The parser will fill
-	 * the tag number, offset and length of the tagged bytes.
-	 * rest of the lines contain frame bytes as sequence of hex digits,
-	 * 2 digits for each byte. Spaces are allowed between bytes.
-	 * On bytes lines only hex digits and spaces are allowed
-	 */
+   * template file format: lines beginning with # are comments and
+   * ignored.
+   * It is possible to tag bytes in the frame to make it easy
+   * to replace fields in the template, espcially if they appear
+   * in variable-sized sections (such as IEs)
+   * This is done by a line beginning with $NUM where NUM is an integer
+   * tag number. It can be followed by space(s) and comment.
+   * The next line is considered the tagged bytes. The parser will fill
+   * the tag number, offset and length of the tagged bytes.
+   * rest of the lines contain frame bytes as sequence of hex digits,
+   * 2 digits for each byte. Spaces are allowed between bytes.
+   * On bytes lines only hex digits and spaces are allowed
+   */
 	while (!feof(f)) {
 		if (!fgets(line, sizeof(line), f))
 			break;
 		index = 0;
-		while (isspace((unsigned char) line[index]))
+		while (isspace((unsigned char)line[index]))
 			index++;
 		if (!line[index] || line[index] == '#')
 			continue;
@@ -816,7 +793,7 @@ static int parse_template_frame_file(struct sigma_dut *dut, const char *fname,
 			continue;
 		}
 		while (line[index]) {
-			if (isspace((unsigned char) line[index])) {
+			if (isspace((unsigned char)line[index])) {
 				index++;
 				continue;
 			}
@@ -859,7 +836,6 @@ out:
 
 #endif /* __linux__ */
 
-
 static void static_ip_file(int proto, const char *addr, const char *mask,
 			   const char *gw)
 {
@@ -867,15 +843,13 @@ static void static_ip_file(int proto, const char *addr, const char *mask,
 		FILE *f = fopen("static-ip", "w");
 		if (f) {
 			fprintf(f, "%d %s %s %s\n", proto, addr,
-				mask ? mask : "N/A",
-				gw ? gw : "N/A");
+				mask ? mask : "N/A", gw ? gw : "N/A");
 			fclose(f);
 		}
 	} else {
 		unlink("static-ip");
 	}
 }
-
 
 static int send_neighbor_request(struct sigma_dut *dut, const char *intf,
 				 const char *ssid)
@@ -884,12 +858,12 @@ static int send_neighbor_request(struct sigma_dut *dut, const char *intf,
 	int ret = 0;
 
 	/* Use wpa_supplicant to send neighbor report request */
-	snprintf(buf, sizeof(buf), "NEIGHBOR_REP_REQUEST ssid=\"%s\"",
-		 ssid);
+	snprintf(buf, sizeof(buf), "NEIGHBOR_REP_REQUEST ssid=\"%s\"", ssid);
 	ret = wpa_command(intf, buf);
 	if (ret == 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Neighbor report request sent through wpa_command");
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Neighbor report request sent through wpa_command");
 		return 0;
 	}
 
@@ -897,8 +871,7 @@ static int send_neighbor_request(struct sigma_dut *dut, const char *intf,
 	sigma_dut_print(dut, DUT_MSG_INFO,
 			"wpa_command failed, ret:%d; fall back to iwpriv", ret);
 
-	snprintf(buf, sizeof(buf), "iwpriv %s neighbor %s",
-		 intf, ssid);
+	snprintf(buf, sizeof(buf), "iwpriv %s neighbor %s", intf, ssid);
 	sigma_dut_print(dut, DUT_MSG_INFO, "Request: %s", buf);
 
 	if (system(buf) != 0) {
@@ -915,7 +888,6 @@ static int send_neighbor_request(struct sigma_dut *dut, const char *intf,
 #endif /* __linux__ */
 }
 
-
 static int send_trans_mgmt_query(struct sigma_dut *dut, const char *intf,
 				 struct sigma_cmd *cmd)
 {
@@ -924,9 +896,9 @@ static int send_trans_mgmt_query(struct sigma_dut *dut, const char *intf,
 	char buf[1024];
 
 	/*
-	 * In the earlier builds we used WNM_QUERY and in later
-	 * builds used WNM_BSS_QUERY.
-	 */
+   * In the earlier builds we used WNM_QUERY and in later
+   * builds used WNM_BSS_QUERY.
+   */
 
 	val = get_param(cmd, "BTMQuery_Reason_Code");
 	if (val)
@@ -948,12 +920,10 @@ static int send_trans_mgmt_query(struct sigma_dut *dut, const char *intf,
 		return -1;
 	}
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"transition management query sent");
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "transition management query sent");
 
 	return 0;
 }
-
 
 int is_ip_addr(const char *str)
 {
@@ -968,7 +938,6 @@ int is_ip_addr(const char *str)
 
 	return inet_aton(str, &addr);
 }
-
 
 int get_ip_config(struct sigma_dut *dut, const char *ifname, char *buf,
 		  size_t buf_len)
@@ -999,7 +968,8 @@ int get_ip_config(struct sigma_dut *dut, const char *ifname, char *buf,
 		memset(&ifr, 0, sizeof(ifr));
 		strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 		if (ioctl(s, SIOCGIFADDR, &ifr) < 0) {
-			sigma_dut_print(dut, DUT_MSG_INFO, "Failed to get "
+			sigma_dut_print(dut, DUT_MSG_INFO,
+					"Failed to get "
 					"%s IP address: %s",
 					ifname, strerror(errno));
 		} else {
@@ -1022,8 +992,7 @@ int get_ip_config(struct sigma_dut *dut, const char *ifname, char *buf,
 		snprintf(tmp, sizeof(tmp), "dhcp.%s.result", ifname);
 		if (property_get(tmp, prop, NULL) != 0 &&
 		    strcmp(prop, "ok") == 0) {
-			snprintf(tmp, sizeof(tmp), "dhcp.%s.ipaddress",
-				 ifname);
+			snprintf(tmp, sizeof(tmp), "dhcp.%s.ipaddress", ifname);
 			if (property_get(tmp, prop, NULL) != 0 &&
 			    strcmp(ip, prop) == 0)
 				is_dhcp = 1;
@@ -1046,14 +1015,14 @@ int get_ip_config(struct sigma_dut *dut, const char *ifname, char *buf,
 	else
 		str_ps = "ps ax";
 	snprintf(tmp, sizeof(tmp),
-		 "%s | grep dhclient | grep -v grep | grep -q %s",
-		 str_ps, ifname);
+		 "%s | grep dhclient | grep -v grep | grep -q %s", str_ps,
+		 ifname);
 	if (system(tmp) == 0)
 		is_dhcp = 1;
 	else {
 		snprintf(tmp, sizeof(tmp),
-			 "%s | grep udhcpc | grep -v grep | grep -q %s",
-			 str_ps, ifname);
+			 "%s | grep udhcpc | grep -v grep | grep -q %s", str_ps,
+			 ifname);
 		if (system(tmp) == 0)
 			is_dhcp = 1;
 		else {
@@ -1093,15 +1062,12 @@ int get_ip_config(struct sigma_dut *dut, const char *ifname, char *buf,
 	}
 #endif /* ANDROID */
 
-	snprintf(buf, buf_len, "dhcp,%d,ip,%s,mask,%s,primary-dns,%s",
-		 is_dhcp, ip, mask, dns);
+	snprintf(buf, buf_len, "dhcp,%d,ip,%s,mask,%s,primary-dns,%s", is_dhcp,
+		 ip, mask, dns);
 	buf[buf_len - 1] = '\0';
 
 	return 0;
 }
-
-
-
 
 int get_ipv6_config(struct sigma_dut *dut, const char *ifname, char *buf,
 		    size_t buf_len)
@@ -1185,7 +1151,6 @@ int get_ipv6_config(struct sigma_dut *dut, const char *ifname, char *buf,
 	return -1;
 }
 
-
 static enum sigma_cmd_result cmd_sta_get_ip_config(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
 						   struct sigma_cmd *cmd)
@@ -1205,19 +1170,20 @@ static enum sigma_cmd_result cmd_sta_get_ip_config(struct sigma_dut *dut,
 		ifname = intf;
 
 	/*
-	 * UCC may assume the IP address to be available immediately after
-	 * association without trying to run sta_get_ip_config multiple times.
-	 * Sigma CAPI does not specify this command as a block command that
-	 * would wait for the address to become available, but to pass tests
-	 * more reliably, it looks like such a wait may be needed here.
-	 */
+   * UCC may assume the IP address to be available immediately after
+   * association without trying to run sta_get_ip_config multiple times.
+   * Sigma CAPI does not specify this command as a block command that
+   * would wait for the address to become available, but to pass tests
+   * more reliably, it looks like such a wait may be needed here.
+   */
 	if (wait_ip_addr(dut, ifname, 15) < 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO, "Could not get IP address "
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Could not get IP address "
 				"for sta_get_ip_config");
 		/*
-		 * Try to continue anyway since many UCC tests do not really
-		 * care about the return value from here..
-		 */
+     * Try to continue anyway since many UCC tests do not really
+     * care about the return value from here..
+     */
 	}
 
 	val = get_param(cmd, "Type");
@@ -1227,19 +1193,22 @@ static enum sigma_cmd_result cmd_sta_get_ip_config(struct sigma_dut *dut,
 		int i;
 
 		/*
-		 * Since we do not have proper wait for IPv6 addresses, use a
-		 * fixed two second delay here as a workaround for UCC script
-		 * assuming IPv6 address is available when this command returns.
-		 * Some scripts did not use Type,2 properly for IPv6, so include
-		 * also the cases where the previous sta_set_ip_config indicated
-		 * use of IPv6.
-		 */
-		sigma_dut_print(dut, DUT_MSG_INFO, "Wait up to extra ten seconds in sta_get_ip_config for IPv6 address");
+     * Since we do not have proper wait for IPv6 addresses, use a
+     * fixed two second delay here as a workaround for UCC script
+     * assuming IPv6 address is available when this command returns.
+     * Some scripts did not use Type,2 properly for IPv6, so include
+     * also the cases where the previous sta_set_ip_config indicated
+     * use of IPv6.
+     */
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Wait up to extra ten seconds in sta_get_ip_config for IPv6 address");
 		for (i = 0; i < 10; i++) {
 			sleep(1);
-			if (get_ipv6_config(dut, ifname, buf, sizeof(buf)) == 0)
-			{
-				sigma_dut_print(dut, DUT_MSG_INFO, "Found IPv6 address");
+			if (get_ipv6_config(dut, ifname, buf, sizeof(buf)) ==
+			    0) {
+				sigma_dut_print(dut, DUT_MSG_INFO,
+						"Found IPv6 address");
 				send_resp(dut, conn, SIGMA_COMPLETE, buf);
 #ifdef ANDROID
 				sigma_dut_print(dut, DUT_MSG_INFO,
@@ -1266,7 +1235,6 @@ static enum sigma_cmd_result cmd_sta_get_ip_config(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, buf);
 	return 0;
 }
-
 
 static void kill_dhcp_client(struct sigma_dut *dut, const char *ifname)
 {
@@ -1308,7 +1276,6 @@ static void kill_dhcp_client(struct sigma_dut *dut, const char *ifname)
 #endif /* __linux__ */
 }
 
-
 /* Get DHCP client path. e.g. dhclient -> /sbin/dhclient
  *
  * name: input, DHCP client name
@@ -1320,13 +1287,9 @@ static int get_dhcp_client_path(const char *name, char *buf, size_t buf_size)
 {
 	char *path[] = {
 #ifdef ANDROID
-		"/system/bin",
-		"/vendor/bin"
+		"/system/bin", "/vendor/bin"
 #else /* ANDROID */
-		"/bin",
-		"/sbin",
-		"/usr/bin",
-		"/usr/sbin"
+		"/bin", "/sbin", "/usr/bin", "/usr/sbin"
 #endif /* ANDROID */
 	};
 	int i, num = sizeof(path) / sizeof(path[0]);
@@ -1340,7 +1303,6 @@ static int get_dhcp_client_path(const char *name, char *buf, size_t buf_size)
 	/* not found */
 	return -1;
 }
-
 
 static int start_dhcp_client(struct sigma_dut *dut, const char *ifname)
 {
@@ -1362,14 +1324,14 @@ static int start_dhcp_client(struct sigma_dut *dut, const char *ifname)
 #else /* ANDROID */
 	if (get_dhcp_client_path("dhclient", fpath, sizeof(fpath)) == 0) {
 		snprintf(buf, sizeof(buf),
-			 "%s -nw -pf /var/run/dhclient-%s.pid %s",
-			 fpath, ifname, ifname);
+			 "%s -nw -pf /var/run/dhclient-%s.pid %s", fpath,
+			 ifname, ifname);
 	} else if (get_dhcp_client_path("dhcpcd", fpath, sizeof(fpath)) == 0) {
 		snprintf(buf, sizeof(buf), "%s -t 0 %s &", fpath, ifname);
 	} else if (get_dhcp_client_path("udhcpc", fpath, sizeof(fpath)) == 0) {
 		snprintf(buf, sizeof(buf),
-			 "%s -i %s -p /var/run/dhclient-%s.pid -b",
-			 fpath, ifname, ifname);
+			 "%s -i %s -p /var/run/dhclient-%s.pid -b", fpath,
+			 ifname, ifname);
 	} else {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"DHCP client program missing");
@@ -1391,7 +1353,6 @@ static int start_dhcp_client(struct sigma_dut *dut, const char *ifname)
 	return 0;
 }
 
-
 static int clear_ip_addr(struct sigma_dut *dut, const char *ifname)
 {
 #ifdef __linux__
@@ -1407,7 +1368,6 @@ static int clear_ip_addr(struct sigma_dut *dut, const char *ifname)
 
 	return 0;
 }
-
 
 #ifdef ANDROID
 static int add_ipv6_rule(struct sigma_dut *dut, const char *ifname)
@@ -1454,14 +1414,14 @@ static int add_ipv6_rule(struct sigma_dut *dut, const char *ifname)
 			 "ip -6 rule add from all lookup %d prio 22000",
 			 tableid);
 		if (system(cmd) != 0) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Failed to run %s", cmd);
+			sigma_dut_print(dut, DUT_MSG_INFO, "Failed to run %s",
+					cmd);
 			free(result);
 			return -1;
 		}
 	} else {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"No Valid Table Id found %s", pos);
+		sigma_dut_print(dut, DUT_MSG_INFO, "No Valid Table Id found %s",
+				pos);
 		free(result);
 		return -1;
 	}
@@ -1471,17 +1431,15 @@ static int add_ipv6_rule(struct sigma_dut *dut, const char *ifname)
 }
 #endif /* ANDROID */
 
-
-int set_ipv4_addr(struct sigma_dut *dut, const char *ifname,
-		  const char *ip, const char *mask)
+int set_ipv4_addr(struct sigma_dut *dut, const char *ifname, const char *ip,
+		  const char *mask)
 {
 	char buf[200];
 
-	snprintf(buf, sizeof(buf), "ifconfig %s %s netmask %s",
-		 ifname, ip, mask);
+	snprintf(buf, sizeof(buf), "ifconfig %s %s netmask %s", ifname, ip,
+		 mask);
 	return system(buf) == 0;
 }
-
 
 int set_ipv4_gw(struct sigma_dut *dut, const char *gw)
 {
@@ -1494,8 +1452,7 @@ int set_ipv4_gw(struct sigma_dut *dut, const char *gw)
 
 	snprintf(buf, sizeof(buf), "route add default gw %s", gw);
 	if (!dut->no_ip_addr_set && system(buf) != 0) {
-		snprintf(buf, sizeof(buf), "ip ro re default via %s",
-			 gw);
+		snprintf(buf, sizeof(buf), "ip ro re default via %s", gw);
 		if (system(buf) != 0)
 			return 0;
 	}
@@ -1503,14 +1460,12 @@ int set_ipv4_gw(struct sigma_dut *dut, const char *gw)
 	return 1;
 }
 
-
 static void enable_sta_ipv6_configuration(struct sigma_dut *dut,
-					      const char *ifname,
-					      char *buf, size_t buf_size)
+					  const char *ifname, char *buf,
+					  size_t buf_size)
 {
 #if defined(ANDROID)
-	snprintf(buf, buf_size,
-		 "sysctl net.ipv6.conf.%s.disable_ipv6=0",
+	snprintf(buf, buf_size, "sysctl net.ipv6.conf.%s.disable_ipv6=0",
 		 ifname);
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 	if (system(buf) != 0) {
@@ -1518,9 +1473,8 @@ static void enable_sta_ipv6_configuration(struct sigma_dut *dut,
 				"Failed to enable IPv6 address");
 	}
 #elif defined(LINUX_EMBEDDED)
-	snprintf(buf, buf_size,
-		"echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra",
-		ifname);
+	snprintf(buf, buf_size, "echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra",
+		 ifname);
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 	if (system(buf) != 0) {
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
@@ -1530,7 +1484,6 @@ static void enable_sta_ipv6_configuration(struct sigma_dut *dut,
 	/* No configuration changes needed */
 #endif
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_ip_config(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
@@ -1574,18 +1527,19 @@ static enum sigma_cmd_result cmd_sta_set_ip_config(struct sigma_dut *dut,
 #ifdef __linux__
 		if (type == 2) {
 			dut->last_set_ip_config_ipv6 = 1;
-			sigma_dut_print(dut, DUT_MSG_INFO, "Using IPv6 "
+			sigma_dut_print(dut, DUT_MSG_INFO,
+					"Using IPv6 "
 					"stateless address autoconfiguration");
 
 			enable_sta_ipv6_configuration(dut, ifname, buf,
 						      sizeof(buf));
 #ifdef ANDROID
 			/*
-			 * This sleep is required as the assignment in case of
-			 * Android is taking time and is done by the kernel.
-			 * The subsequent ping for IPv6 is impacting HS20 test
-			 * case.
-			 */
+       * This sleep is required as the assignment in case of
+       * Android is taking time and is done by the kernel.
+       * The subsequent ping for IPv6 is impacting HS20 test
+       * case.
+       */
 			sleep(2);
 			add_ipv6_rule(dut, intf);
 #endif /* ANDROID */
@@ -1632,13 +1586,15 @@ static enum sigma_cmd_result cmd_sta_set_ip_config(struct sigma_dut *dut,
 				 ifname);
 			sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 			if (system(buf) != 0) {
-				sigma_dut_print(dut, DUT_MSG_DEBUG,
-						"Failed to disable IPv6 address before association");
+				sigma_dut_print(
+					dut, DUT_MSG_DEBUG,
+					"Failed to disable IPv6 address before association");
 			}
 		} else {
 			if (set_ipv6_addr(dut, ip, mask, ifname) != 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set IPv6 address");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set IPv6 address");
 				return 0;
 			}
 		}
@@ -1680,9 +1636,10 @@ static enum sigma_cmd_result cmd_sta_set_ip_config(struct sigma_dut *dut,
 		kill_pid(dut, concat_sigma_tmpdir(dut, "/sigma_dut-dnsmasq.pid",
 						  dnsmasq, sizeof(dnsmasq)));
 
-		len = snprintf(dns_cmd, sizeof(dns_cmd),
-			       "/system/bin/dnsmasq -uroot --no-resolv -S%s -x/%s", val,
-			       dnsmasq);
+		len = snprintf(
+			dns_cmd, sizeof(dns_cmd),
+			"/system/bin/dnsmasq -uroot --no-resolv -S%s -x/%s",
+			val, dnsmasq);
 		if (len < 0 || len >= sizeof(dns_cmd))
 			return ERROR_SEND_STATUS;
 		sigma_dut_print(dut, DUT_MSG_DEBUG, "Running %s", dns_cmd);
@@ -1696,13 +1653,15 @@ static enum sigma_cmd_result cmd_sta_set_ip_config(struct sigma_dut *dut,
 		int len;
 
 		if (system("sed -i '/nameserver/d' /etc/resolv.conf") != 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to clear nameserver entries in /etc/resolv.conf");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to clear nameserver entries in /etc/resolv.conf");
 			return ERROR_SEND_STATUS;
 		}
 
 		len = snprintf(dns_cmd, sizeof(dns_cmd),
-			       "sed -i '1 i nameserver %s' /etc/resolv.conf", val);
+			       "sed -i '1 i nameserver %s' /etc/resolv.conf",
+			       val);
 		if (len < 0 || len >= sizeof(dns_cmd))
 			return ERROR_SEND_STATUS;
 
@@ -1718,15 +1677,16 @@ static enum sigma_cmd_result cmd_sta_set_ip_config(struct sigma_dut *dut,
 	val = get_param(cmd, "secondary-dns");
 	if (val) {
 		/* TODO */
-		sigma_dut_print(dut, DUT_MSG_INFO, "Ignored secondary-dns %s "
-				"setting", val);
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Ignored secondary-dns %s "
+				"setting",
+				val);
 	}
 
 	static_ip_file(4, ip, mask, gw);
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_get_info(struct sigma_dut *dut,
 					      struct sigma_conn *conn,
@@ -1737,7 +1697,6 @@ static enum sigma_cmd_result cmd_sta_get_info(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, "vendor,Atheros");
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_get_mac_address(struct sigma_dut *dut,
 						     struct sigma_conn *conn,
@@ -1757,8 +1716,8 @@ static enum sigma_cmd_result cmd_sta_get_mac_address(struct sigma_dut *dut,
 					     sizeof(addr)) < 0)
 			return -2;
 	} else {
-		if (get_wpa_status(get_station_ifname(dut), "address",
-				   addr, sizeof(addr)) < 0)
+		if (get_wpa_status(get_station_ifname(dut), "address", addr,
+				   sizeof(addr)) < 0)
 			return -2;
 	}
 
@@ -1766,7 +1725,6 @@ static enum sigma_cmd_result cmd_sta_get_mac_address(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, resp);
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_is_connected(struct sigma_dut *dut,
 						  struct sigma_conn *conn,
@@ -1794,7 +1752,6 @@ static enum sigma_cmd_result cmd_sta_is_connected(struct sigma_dut *dut,
 
 	return 0;
 }
-
 
 static enum sigma_cmd_result
 cmd_sta_verify_ip_connection(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -1832,7 +1789,6 @@ cmd_sta_verify_ip_connection(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 static enum sigma_cmd_result cmd_sta_get_bssid(struct sigma_dut *dut,
 					       struct sigma_conn *conn,
 					       struct sigma_cmd *cmd)
@@ -1840,15 +1796,14 @@ static enum sigma_cmd_result cmd_sta_get_bssid(struct sigma_dut *dut,
 	/* const char *intf = get_param(cmd, "Interface"); */
 	char bssid[20], resp[50];
 
-	if (get_wpa_status(get_station_ifname(dut), "bssid",
-			   bssid, sizeof(bssid)) < 0)
+	if (get_wpa_status(get_station_ifname(dut), "bssid", bssid,
+			   sizeof(bssid)) < 0)
 		strlcpy(bssid, "00:00:00:00:00:00", sizeof(bssid));
 
 	snprintf(resp, sizeof(resp), "bssid,%s", bssid);
 	send_resp(dut, conn, SIGMA_COMPLETE, resp);
 	return 0;
 }
-
 
 #ifdef __SAMSUNG__
 static int add_use_network(const char *ifname)
@@ -1860,7 +1815,6 @@ static int add_use_network(const char *ifname)
 	return 0;
 }
 #endif /* __SAMSUNG__ */
-
 
 static int add_network_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			      const char *ifname, struct sigma_cmd *cmd)
@@ -1904,7 +1858,6 @@ static int add_network_common(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return id;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_encryption(struct sigma_dut *dut,
 						    struct sigma_conn *conn,
@@ -1961,9 +1914,8 @@ static enum sigma_cmd_result cmd_sta_set_encryption(struct sigma_dut *dut,
 	return 1;
 }
 
-
-static int set_akm_suites(struct sigma_dut *dut, const char *ifname,
-			  int id, const char *val)
+static int set_akm_suites(struct sigma_dut *dut, const char *ifname, int id,
+			  const char *val)
 {
 	char key_mgmt[200], *end, *pos;
 	const char *in_pos = val;
@@ -2045,11 +1997,10 @@ static int set_akm_suites(struct sigma_dut *dut, const char *ifname,
 		while (*in_pos == ';')
 			in_pos++;
 	}
-	sigma_dut_print(dut, DUT_MSG_DEBUG, "AKMSuiteType %s --> %s",
-			val, key_mgmt);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "AKMSuiteType %s --> %s", val,
+			key_mgmt);
 	return set_network(ifname, id, "key_mgmt", key_mgmt);
 }
-
 
 static int set_wpa_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			  const char *ifname, struct sigma_cmd *cmd)
@@ -2072,7 +2023,7 @@ static int set_wpa_common(struct sigma_dut *dut, struct sigma_conn *conn,
 		val = "OWE";
 	if (val == NULL) {
 		/* keyMgmtType is being replaced with AKMSuiteType, so ignore
-		 * this missing parameter and assume proto=WPA2. */
+     * this missing parameter and assume proto=WPA2. */
 		if (set_network(ifname, id, "proto", "WPA2") < 0)
 			return ERROR_SEND_STATUS;
 	} else if (strcasecmp(val, "wpa") == 0 ||
@@ -2098,7 +2049,8 @@ static int set_wpa_common(struct sigma_dut *dut, struct sigma_conn *conn,
 		if (set_network(ifname, id, "proto", "RSN") < 0)
 			return -2;
 	} else {
-		send_resp(dut, conn, SIGMA_INVALID, "errorCode,Unrecognized keyMgmtType value");
+		send_resp(dut, conn, SIGMA_INVALID,
+			  "errorCode,Unrecognized keyMgmtType value");
 		return 0;
 	}
 
@@ -2112,8 +2064,8 @@ static int set_wpa_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			if (set_network(ifname, id, "pairwise", "CCMP") < 0)
 				return -2;
 		} else if (strcasecmp(val, "aes-ccmp-tkip") == 0) {
-			if (set_network(ifname, id, "pairwise",
-					"CCMP TKIP") < 0)
+			if (set_network(ifname, id, "pairwise", "CCMP TKIP") <
+			    0)
 				return -2;
 		} else if (strcasecmp(val, "aes-gcmp") == 0) {
 			if (set_network(ifname, id, "pairwise", "GCMP") < 0)
@@ -2135,14 +2087,13 @@ static int set_wpa_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			if (set_network(ifname, id, "pairwise", "GCMP-256") < 0)
 				return -2;
 		} else if (strcasecmp(val, "AES-CCMP-256") == 0) {
-			if (set_network(ifname, id, "pairwise",
-					"CCMP-256") < 0)
+			if (set_network(ifname, id, "pairwise", "CCMP-256") < 0)
 				return -2;
 		} else if (strcasecmp(val, "AES-GCMP-128") == 0) {
-			if (set_network(ifname, id, "pairwise",	"GCMP") < 0)
+			if (set_network(ifname, id, "pairwise", "GCMP") < 0)
 				return -2;
 		} else if (strcasecmp(val, "AES-CCMP-128") == 0) {
-			if (set_network(ifname, id, "pairwise",	"CCMP") < 0)
+			if (set_network(ifname, id, "pairwise", "CCMP") < 0)
 				return -2;
 		} else if (strcasecmp(val, "AES-CCMP-128 AES-GCMP-256") == 0 ||
 			   strcasecmp(val, "AES-GCMP-256 AES-CCMP-128") == 0) {
@@ -2150,8 +2101,9 @@ static int set_wpa_common(struct sigma_dut *dut, struct sigma_conn *conn,
 					"GCMP-256 CCMP") < 0)
 				return -2;
 		} else {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Unrecognized PairwiseCipher value");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Unrecognized PairwiseCipher value");
 			return 0;
 		}
 	} else if (dut->device_mode == MODE_11BE) {
@@ -2251,7 +2203,8 @@ static int set_wpa_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			   strcasecmp(val, "Forced_Disabled") == 0) {
 			dut->sta_pmf = STA_PMF_DISABLED;
 		} else {
-			send_resp(dut, conn, SIGMA_INVALID, "errorCode,Unrecognized PMF value");
+			send_resp(dut, conn, SIGMA_INVALID,
+				  "errorCode,Unrecognized PMF value");
 			return 0;
 		}
 	} else if (owe || suite_b) {
@@ -2287,8 +2240,8 @@ static int sta_set_eht_mlo_active_tx_links(struct sigma_dut *dut,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
@@ -2316,7 +2269,6 @@ static int sta_set_eht_mlo_active_tx_links(struct sigma_dut *dut,
 				link_addr[i][2], link_addr[i][3],
 				link_addr[i][4], link_addr[i][5]);
 		nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, &link_addr[i][0]);
-
 	}
 	nla_nest_end(msg, attr);
 	nla_nest_end(msg, params);
@@ -2335,7 +2287,6 @@ static int sta_set_eht_mlo_active_tx_links(struct sigma_dut *dut,
 #endif /* NL80211_SUPPORT */
 }
 
-
 static int wcn_set_ignore_h2e_rsnxe(struct sigma_dut *dut, const char *intf,
 				    uint8_t cfg)
 {
@@ -2344,12 +2295,13 @@ static int wcn_set_ignore_h2e_rsnxe(struct sigma_dut *dut, const char *intf,
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_IGNORE_H2E_RSNXE, cfg);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Ignore SAE H2E requirement mismatch can't be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Ignore SAE H2E requirement mismatch can't be set without "
+		"NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_psk(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
@@ -2389,8 +2341,9 @@ static enum sigma_cmd_result cmd_sta_set_psk(struct sigma_dut *dut,
 				return -2;
 		}
 		if (wpa_command(ifname, "SET sae_groups ") != 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to clear sae_groups to default");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to clear sae_groups to default");
 			return -2;
 		}
 		if (!pmf) {
@@ -2404,13 +2357,14 @@ static enum sigma_cmd_result cmd_sta_set_psk(struct sigma_dut *dut,
 					"FT-SAE FT-PSK") < 0)
 				return -2;
 		} else if (!akm) {
-			if (set_network(ifname, id, "key_mgmt",
-					"SAE WPA-PSK") < 0)
+			if (set_network(ifname, id, "key_mgmt", "SAE WPA-PSK") <
+			    0)
 				return -2;
 		}
 		if (wpa_command(ifname, "SET sae_groups ") != 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to clear sae_groups to default");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to clear sae_groups to default");
 			return -2;
 		}
 		if (!pmf) {
@@ -2427,9 +2381,8 @@ static enum sigma_cmd_result cmd_sta_set_psk(struct sigma_dut *dut,
 	} else if (val && strcasecmp(val, "wpa2-ft") == 0) {
 		if (set_network(ifname, id, "key_mgmt", "FT-PSK") < 0)
 			return -2;
-	} else if (!akm &&
-		   ((val && strcasecmp(val, "wpa2-sha256") == 0) ||
-		    dut->sta_pmf == STA_PMF_REQUIRED)) {
+	} else if (!akm && ((val && strcasecmp(val, "wpa2-sha256") == 0) ||
+			    dut->sta_pmf == STA_PMF_REQUIRED)) {
 		if (set_network(ifname, id, "key_mgmt",
 				"WPA-PSK WPA-PSK-SHA256") < 0)
 			return -2;
@@ -2567,15 +2520,14 @@ static enum sigma_cmd_result cmd_sta_set_psk(struct sigma_dut *dut,
 		return -2;
 
 	val = get_param(cmd, "ProfileConnect");
-	if (dut->program == PROGRAM_LOCR2 &&
-	    val && strcasecmp(val, "disable") == 0) {
+	if (dut->program == PROGRAM_LOCR2 && val &&
+	    strcasecmp(val, "disable") == 0) {
 		snprintf(buf, sizeof(buf), "ENABLE_NETWORK %d no-connect", id);
 		wpa_command(ifname, buf);
 	}
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result set_trust_root_system(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
@@ -2603,7 +2555,6 @@ static enum sigma_cmd_result set_trust_root_system(struct sigma_dut *dut,
 
 	return SUCCESS_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result set_trust_root(struct sigma_dut *dut,
 					    struct sigma_conn *conn,
@@ -2650,7 +2601,6 @@ ca_cert_selected:
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static int set_eap_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			  const char *ifname, int username_identity,
 			  struct sigma_cmd *cmd)
@@ -2685,9 +2635,8 @@ static int set_eap_common(struct sigma_dut *dut, struct sigma_conn *conn,
 	} else if (val && strcasecmp(val, "wpa2-ft") == 0) {
 		if (set_network(ifname, id, "key_mgmt", "FT-EAP") < 0)
 			return -2;
-	} else if (!akm &&
-		   ((val && strcasecmp(val, "wpa2-sha256") == 0) ||
-		    dut->sta_pmf == STA_PMF_REQUIRED)) {
+	} else if (!akm && ((val && strcasecmp(val, "wpa2-sha256") == 0) ||
+			    dut->sta_pmf == STA_PMF_REQUIRED)) {
 		if (set_network(ifname, id, "key_mgmt",
 				"WPA-EAP WPA-EAP-SHA256") < 0)
 			return -2;
@@ -2729,8 +2678,10 @@ static int set_eap_common(struct sigma_dut *dut, struct sigma_conn *conn,
 	if (trust_root) {
 		if (strcmp(trust_root, "DEFAULT") == 0 && !domain &&
 		    !domain_suffix) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,trustRootCA DEFAULT used without specifying Domain or DomainSuffix");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,trustRootCA DEFAULT used without specifying Domain "
+				"or DomainSuffix");
 			return STATUS_SENT_ERROR;
 		}
 		res = set_trust_root(dut, conn, ifname, id, trust_root);
@@ -2751,9 +2702,10 @@ static int set_eap_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			fclose(f);
 		}
 		if (!result) {
-			snprintf(buf2, sizeof(buf2),
-				 "ErrorCode,ServerCert hash could not be read from %s",
-				 buf);
+			snprintf(
+				buf2, sizeof(buf2),
+				"ErrorCode,ServerCert hash could not be read from %s",
+				buf);
 			send_resp(dut, conn, SIGMA_ERROR, buf2);
 			return STATUS_SENT_ERROR;
 		}
@@ -2769,8 +2721,9 @@ static int set_eap_common(struct sigma_dut *dut, struct sigma_conn *conn,
 
 		snprintf(buf, sizeof(buf), "%s/%s.tod", sigma_cert_path, val);
 		if (file_exists(buf)) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"TOD policy enabled for the configured ServerCert hash");
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"TOD policy enabled for the configured ServerCert hash");
 			dut->sta_tod_policy = 1;
 		}
 	}
@@ -2805,28 +2758,26 @@ static int set_eap_common(struct sigma_dut *dut, struct sigma_conn *conn,
 		if (!file_exists(buf)) {
 			char msg[300];
 
-			snprintf(msg, sizeof(msg),
-				 "ErrorCode,imsiPrivacyCert file (%s) not found",
-				 buf);
+			snprintf(
+				msg, sizeof(msg),
+				"ErrorCode,imsiPrivacyCert file (%s) not found",
+				buf);
 			send_resp(dut, conn, SIGMA_ERROR, msg);
 			return STATUS_SENT_ERROR;
 		}
 #endif /* __linux__ */
-		if (set_network_quoted(ifname, id, "imsi_privacy_cert",
-				       buf) < 0)
+		if (set_network_quoted(ifname, id, "imsi_privacy_cert", buf) <
+		    0)
 			return ERROR_SEND_STATUS;
 	}
 
 	val = get_param(cmd, "imsiPrivacyCertID");
-	if (val && set_network_quoted(ifname, id, "imsi_privacy_attr",
-				      val) < 0)
+	if (val && set_network_quoted(ifname, id, "imsi_privacy_attr", val) < 0)
 		return ERROR_SEND_STATUS;
 
 	if (dut->akm_values &
-	    ((1 << AKM_FILS_SHA256) |
-	     (1 << AKM_FILS_SHA384) |
-	     (1 << AKM_FT_FILS_SHA256) |
-	     (1 << AKM_FT_FILS_SHA384)))
+	    ((1 << AKM_FILS_SHA256) | (1 << AKM_FILS_SHA384) |
+	     (1 << AKM_FT_FILS_SHA256) | (1 << AKM_FT_FILS_SHA384)))
 		erp = 1;
 	if (erp && set_network(ifname, id, "erp", "1") < 0)
 		return ERROR_SEND_STATUS;
@@ -2835,7 +2786,6 @@ static int set_eap_common(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return id;
 }
-
 
 static int set_tls_cipher(const char *ifname, int id, const char *cipher)
 {
@@ -2846,8 +2796,8 @@ static int set_tls_cipher(const char *ifname, int id, const char *cipher)
 
 	if (strcasecmp(cipher, "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384") == 0)
 		val = "ECDHE-ECDSA-AES256-GCM-SHA384";
-	else if (strcasecmp(cipher,
-			    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384") == 0)
+	else if (strcasecmp(cipher, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384") ==
+		 0)
 		val = "ECDHE-RSA-AES256-GCM-SHA384";
 	else if (strcasecmp(cipher, "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384") == 0)
 		val = "DHE-RSA-AES256-GCM-SHA384";
@@ -2862,7 +2812,6 @@ static int set_tls_cipher(const char *ifname, int id, const char *cipher)
 
 	return set_network_quoted(ifname, id, "openssl_ciphers", val);
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_eaptls(struct sigma_dut *dut,
 						struct sigma_conn *conn,
@@ -2908,11 +2857,11 @@ static enum sigma_cmd_result cmd_sta_set_eaptls(struct sigma_dut *dut,
 	length = android_keystore_get(ANDROID_KEYSTORE_GET, buf, kvalue);
 	if (length < 0) {
 		/*
-		 * JB started reporting keystore type mismatches, so retry with
-		 * the GET_PUBKEY command if the generic GET fails.
-		 */
-		length = android_keystore_get(ANDROID_KEYSTORE_GET_PUBKEY,
-					      buf, kvalue);
+     * JB started reporting keystore type mismatches, so retry with
+     * the GET_PUBKEY command if the generic GET fails.
+     */
+		length = android_keystore_get(ANDROID_KEYSTORE_GET_PUBKEY, buf,
+					      kvalue);
 	}
 
 	if (property_get("ro.build.version.release", prop, NULL) != 0) {
@@ -2923,8 +2872,8 @@ static enum sigma_cmd_result cmd_sta_set_eaptls(struct sigma_dut *dut,
 		jb_or_newer = 1; /* assume newer */
 
 	if (jb_or_newer && length > 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Use Android keystore [%s]", buf);
+		sigma_dut_print(dut, DUT_MSG_INFO, "Use Android keystore [%s]",
+				buf);
 		if (set_network(ifname, id, "engine", "1") < 0)
 			return -2;
 		if (set_network_quoted(ifname, id, "engine_id", "keystore") < 0)
@@ -2937,8 +2886,8 @@ static enum sigma_cmd_result cmd_sta_set_eaptls(struct sigma_dut *dut,
 			return -2;
 		return 1;
 	} else if (length > 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Use Android keystore [%s]", buf);
+		sigma_dut_print(dut, DUT_MSG_INFO, "Use Android keystore [%s]",
+				buf);
 		snprintf(buf, sizeof(buf), "keystore://USRPKEY_%s", val);
 		if (set_network_quoted(ifname, id, "private_key", buf) < 0)
 			return -2;
@@ -2953,8 +2902,10 @@ static enum sigma_cmd_result cmd_sta_set_eaptls(struct sigma_dut *dut,
 #ifdef __linux__
 	if (!file_exists(buf)) {
 		char msg[300];
-		snprintf(msg, sizeof(msg), "ErrorCode,clientCertificate file "
-			 "(%s) not found", buf);
+		snprintf(msg, sizeof(msg),
+			 "ErrorCode,clientCertificate file "
+			 "(%s) not found",
+			 buf);
 		send_resp(dut, conn, SIGMA_ERROR, msg);
 		return -3;
 	}
@@ -2993,14 +2944,15 @@ static enum sigma_cmd_result cmd_sta_set_eaptls(struct sigma_dut *dut,
 
 	if (type && strcasecmp(type, "EAPTLS_1_3") == 0) {
 		sigma_dut_print(dut, DUT_MSG_INFO, "Enable only TLS v1.3");
-		if (set_network_quoted(ifname, id, "phase1",
-				       "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1 tls_disable_tlsv1_2=1 tls_disable_tlsv1_3=0") < 0)
+		if (set_network_quoted(
+			    ifname, id, "phase1",
+			    "tls_disable_tlsv1_0=1 tls_disable_tlsv1_1=1 "
+			    "tls_disable_tlsv1_2=1 tls_disable_tlsv1_3=0") < 0)
 			return ERROR_SEND_STATUS;
 	}
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_eapttls(struct sigma_dut *dut,
 						 struct sigma_conn *conn,
@@ -3037,7 +2989,6 @@ static enum sigma_cmd_result cmd_sta_set_eapttls(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static enum sigma_cmd_result cmd_sta_set_eapsim(struct sigma_dut *dut,
 						struct sigma_conn *conn,
 						struct sigma_cmd *cmd)
@@ -3063,7 +3014,6 @@ static enum sigma_cmd_result cmd_sta_set_eapsim(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_peap(struct sigma_dut *dut,
 					      struct sigma_conn *conn,
@@ -3116,7 +3066,6 @@ static enum sigma_cmd_result cmd_sta_set_peap(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static enum sigma_cmd_result cmd_sta_set_eapfast(struct sigma_dut *dut,
 						 struct sigma_conn *conn,
 						 struct sigma_cmd *cmd)
@@ -3158,8 +3107,10 @@ static enum sigma_cmd_result cmd_sta_set_eapfast(struct sigma_dut *dut,
 	val = get_param(cmd, "validateServer");
 	if (val) {
 		/* TODO */
-		sigma_dut_print(dut, DUT_MSG_INFO, "Ignored EAP-FAST "
-				"validateServer=%s", val);
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Ignored EAP-FAST "
+				"validateServer=%s",
+				val);
 	}
 
 	val = get_param(cmd, "pacFile");
@@ -3169,13 +3120,11 @@ static enum sigma_cmd_result cmd_sta_set_eapfast(struct sigma_dut *dut,
 			return -2;
 	}
 
-	if (set_network_quoted(ifname, id, "phase1", "fast_provisioning=2") <
-	    0)
+	if (set_network_quoted(ifname, id, "phase1", "fast_provisioning=2") < 0)
 		return -2;
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_eapaka(struct sigma_dut *dut,
 						struct sigma_conn *conn,
@@ -3199,8 +3148,8 @@ static enum sigma_cmd_result cmd_sta_set_eapaka(struct sigma_dut *dut,
 		return id;
 
 	/* RFC 5448: EAP-AKA' MUST use the leading character "6" (ASCII 36
-	 * hexadecimal).
-	 */
+   * hexadecimal).
+   */
 	if (username && username[0] == '6') {
 		if (set_network(ifname, id, "eap", "AKA'") < 0)
 			return -2;
@@ -3210,7 +3159,6 @@ static enum sigma_cmd_result cmd_sta_set_eapaka(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_eapakaprime(struct sigma_dut *dut,
 						     struct sigma_conn *conn,
@@ -3237,7 +3185,6 @@ static enum sigma_cmd_result cmd_sta_set_eapakaprime(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static int sta_set_open(struct sigma_dut *dut, struct sigma_conn *conn,
 			struct sigma_cmd *cmd)
@@ -3266,7 +3213,6 @@ static int sta_set_open(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result sta_set_owe(struct sigma_dut *dut,
 					 struct sigma_conn *conn,
@@ -3300,21 +3246,23 @@ static enum sigma_cmd_result sta_set_owe(struct sigma_dut *dut,
 
 	val = get_param(cmd, "ECGroupID");
 	if (val && strcmp(val, "0") == 0) {
-		if (wpa_command(ifname,
-				"VENDOR_ELEM_ADD 13 ff23200000783590fb7440e03d5b3b33911f86affdcc6b4411b707846ac4ff08ddc8831ccd") != 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to set OWE DH Param element override");
+		if (wpa_command(
+			    ifname,
+			    "VENDOR_ELEM_ADD 13 "
+			    "ff23200000783590fb7440e03d5b3b33911f86affdcc6b4411"
+			    "b707846ac4ff08ddc8831ccd") != 0) {
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to set OWE DH Param element override");
 			return ERROR_SEND_STATUS;
 		}
 	} else if (val && set_network(ifname, id, "owe_group", val) < 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to set owe_group");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to set owe_group");
 		return ERROR_SEND_STATUS;
 	}
 
 	return SUCCESS_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_security(struct sigma_dut *dut,
 						  struct sigma_conn *conn,
@@ -3332,8 +3280,7 @@ static enum sigma_cmd_result cmd_sta_set_security(struct sigma_dut *dut,
 		return sta_set_open(dut, conn, cmd);
 	if (strcasecmp(type, "OWE") == 0)
 		return sta_set_owe(dut, conn, cmd);
-	if (strcasecmp(type, "PSK") == 0 ||
-	    strcasecmp(type, "PSK-SAE") == 0 ||
+	if (strcasecmp(type, "PSK") == 0 || strcasecmp(type, "PSK-SAE") == 0 ||
 	    strcasecmp(type, "SAE") == 0)
 		return cmd_sta_set_psk(dut, conn, cmd);
 	if (strcasecmp(type, "EAPTLS") == 0 ||
@@ -3354,11 +3301,9 @@ static enum sigma_cmd_result cmd_sta_set_security(struct sigma_dut *dut,
 	if (strcasecmp(type, "wep") == 0)
 		return cmd_sta_set_encryption(dut, conn, cmd);
 
-	send_resp(dut, conn, SIGMA_ERROR,
-		  "ErrorCode,Unsupported Type value");
+	send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unsupported Type value");
 	return 0;
 }
-
 
 int ath6kl_client_uapsd(struct sigma_dut *dut, const char *intf, int uapsd)
 {
@@ -3376,7 +3321,7 @@ int ath6kl_client_uapsd(struct sigma_dut *dut, const char *intf, int uapsd)
 	if (res < 0)
 		return 0; /* not ath6kl */
 
-	if (res >= (int) sizeof(path))
+	if (res >= (int)sizeof(path))
 		res = sizeof(path) - 1;
 	path[res] = '\0';
 	pos = strrchr(path, '/');
@@ -3386,7 +3331,8 @@ int ath6kl_client_uapsd(struct sigma_dut *dut, const char *intf, int uapsd)
 		pos++;
 	res = snprintf(fname, sizeof(fname),
 		       "/sys/kernel/debug/ieee80211/%s/ath6kl/"
-		       "create_qos", pos);
+		       "create_qos",
+		       pos);
 	if (res < 0 || res >= sizeof(fname) || !file_exists(fname))
 		return 0; /* not ath6kl */
 
@@ -3397,13 +3343,14 @@ int ath6kl_client_uapsd(struct sigma_dut *dut, const char *intf, int uapsd)
 
 		sigma_dut_print(dut, DUT_MSG_DEBUG, "Use ath6kl create_qos");
 		fprintf(f, "4 2 2 1 2 9999999 9999999 9999999 7777777 0 4 "
-			"45000 200 56789000 56789000 5678900 0 0 9999999 "
-			"20000 0\n");
+			   "45000 200 56789000 56789000 5678900 0 0 9999999 "
+			   "20000 0\n");
 		fclose(f);
 	} else {
 		res = snprintf(fname, sizeof(fname),
 			       "/sys/kernel/debug/ieee80211/%s/ath6kl/"
-			       "delete_qos", pos);
+			       "delete_qos",
+			       pos);
 		if (res < 0 || res >= sizeof(fname))
 			return -1;
 
@@ -3419,7 +3366,6 @@ int ath6kl_client_uapsd(struct sigma_dut *dut, const char *intf, int uapsd)
 
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_uapsd(struct sigma_dut *dut,
 					       struct sigma_conn *conn,
@@ -3459,16 +3405,17 @@ static enum sigma_cmd_result cmd_sta_set_uapsd(struct sigma_dut *dut,
 
 	dut->client_uapsd = ac_be || ac_bk || ac_vi || ac_vo;
 
-	snprintf(buf, sizeof(buf), "P2P_SET client_apsd %d,%d,%d,%d;%d",
-		 ac_be, ac_bk, ac_vi, ac_vo, max_sp_len);
+	snprintf(buf, sizeof(buf), "P2P_SET client_apsd %d,%d,%d,%d;%d", ac_be,
+		 ac_bk, ac_vi, ac_vo, max_sp_len);
 	ret1 = wpa_command(intf, buf);
 
-	snprintf(buf, sizeof(buf), "SET uapsd %d,%d,%d,%d;%d",
-		 ac_be, ac_bk, ac_vi, ac_vo, max_sp_len);
+	snprintf(buf, sizeof(buf), "SET uapsd %d,%d,%d,%d;%d", ac_be, ac_bk,
+		 ac_vi, ac_vo, max_sp_len);
 	ret2 = wpa_command(intf, buf);
 
 	if (ret1 && ret2) {
-		sigma_dut_print(dut, DUT_MSG_INFO, "Failed to set client mode "
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Failed to set client mode "
 				"UAPSD parameters.");
 		return -2;
 	}
@@ -3516,14 +3463,13 @@ static int sta_send_add_tspec_params(struct sigma_dut *dut, const char *intf,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
 	msg = nl80211_drv_msg(dut, dut->nl_ctx, ifindex, 0, NL80211_CMD_VENDOR);
-	if (!msg ||
-	    nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex) ||
+	if (!msg || nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex) ||
 	    nla_put_u32(msg, NL80211_ATTR_VENDOR_ID, OUI_QCA) ||
 	    nla_put_u32(msg, NL80211_ATTR_VENDOR_SUBCMD,
 			QCA_NL80211_VENDOR_SUBCMD_CONFIG_TSPEC))
@@ -3572,9 +3518,10 @@ static int sta_send_add_tspec_params(struct sigma_dut *dut, const char *intf,
 			tspec_info->burstsize) ||
 	    nla_put_u32(msg, QCA_WLAN_VENDOR_ATTR_CONFIG_TSPEC_MINIMUM_PHY_RATE,
 			tspec_info->phyrate) ||
-	    nla_put_u16(msg,
-			QCA_WLAN_VENDOR_ATTR_CONFIG_TSPEC_SURPLUS_BANDWIDTH_ALLOWANCE,
-			tspec_info->sba))
+	    nla_put_u16(
+		    msg,
+		    QCA_WLAN_VENDOR_ATTR_CONFIG_TSPEC_SURPLUS_BANDWIDTH_ALLOWANCE,
+		    tspec_info->sba))
 		goto fail;
 
 	nla_nest_end(msg, params);
@@ -3591,12 +3538,11 @@ static int sta_send_add_tspec_params(struct sigma_dut *dut, const char *intf,
 
 fail:
 	sigma_dut_print(dut, DUT_MSG_ERROR,
-		"%s: err in adding vendor_cmd and vendor_data",
-		__func__);
+			"%s: err in adding vendor_cmd and vendor_data",
+			__func__);
 	nlmsg_free(msg);
 	return -1;
 }
-
 
 static int sta_send_del_tspec_params(struct sigma_dut *dut, const char *intf,
 				     uint8_t tid)
@@ -3609,14 +3555,13 @@ static int sta_send_del_tspec_params(struct sigma_dut *dut, const char *intf,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
 	msg = nl80211_drv_msg(dut, dut->nl_ctx, ifindex, 0, NL80211_CMD_VENDOR);
-	if (!msg ||
-	    nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex) ||
+	if (!msg || nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex) ||
 	    nla_put_u32(msg, NL80211_ATTR_VENDOR_ID, OUI_QCA) ||
 	    nla_put_u32(msg, NL80211_ATTR_VENDOR_SUBCMD,
 			QCA_NL80211_VENDOR_SUBCMD_CONFIG_TSPEC))
@@ -3642,14 +3587,13 @@ static int sta_send_del_tspec_params(struct sigma_dut *dut, const char *intf,
 
 fail:
 	sigma_dut_print(dut, DUT_MSG_ERROR,
-		"%s: err in adding vendor_cmd and vendor_data",
-		__func__);
+			"%s: err in adding vendor_cmd and vendor_data",
+			__func__);
 	nlmsg_free(msg);
 	return -1;
 }
 
 #endif /* NL80211_SUPPORT */
-
 
 static enum sigma_cmd_result cmd_sta_set_wmm(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
@@ -3688,19 +3632,19 @@ static enum sigma_cmd_result cmd_sta_set_wmm(struct sigma_dut *dut,
 	struct tspec *tspec_info;
 #endif /* NL80211_SUPPORT */
 
-	if (intf == NULL || grp == NULL || act == NULL )
+	if (intf == NULL || grp == NULL || act == NULL)
 		return -1;
 
 	if (strcasecmp(act, "addts") == 0) {
-		if (tid == NULL || dir == NULL || psb == NULL ||
-		    up == NULL || fixed == NULL || size == NULL)
+		if (tid == NULL || dir == NULL || psb == NULL || up == NULL ||
+		    fixed == NULL || size == NULL)
 			return -1;
 
 		/*
-		 * Note: Sigma CAPI spec lists uplink, downlink, and bidi as the
-		 * possible values, but WMM-AC and V-E test scripts use "UP,
-		 * "DOWN", and "BIDI".
-		 */
+     * Note: Sigma CAPI spec lists uplink, downlink, and bidi as the
+     * possible values, but WMM-AC and V-E test scripts use "UP,
+     * "DOWN", and "BIDI".
+     */
 		if (strcasecmp(dir, "uplink") == 0 ||
 		    strcasecmp(dir, "up") == 0) {
 			direction = 0;
@@ -3753,45 +3697,45 @@ static enum sigma_cmd_result cmd_sta_set_wmm(struct sigma_dut *dut,
 		handle = 7000 + dut->dialog_token;
 
 		/*
-		 * size: convert to hex
-		 * maxsi: convert to hex
-		 * mindr: convert to hex
-		 * meandr: convert to hex
-		 * peakdr: convert to hex
-		 * burstsize: convert to hex
-		 * phyrate: convert to hex
-		 * sba: convert to hex with modification
-		 * minsi: convert to integer
-		 * sus: convert to integer
-		 * inact: convert to integer
-		 * maxsi: convert to integer
-		 */
+     * size: convert to hex
+     * maxsi: convert to hex
+     * mindr: convert to hex
+     * meandr: convert to hex
+     * peakdr: convert to hex
+     * burstsize: convert to hex
+     * phyrate: convert to hex
+     * sba: convert to hex with modification
+     * minsi: convert to integer
+     * sus: convert to integer
+     * inact: convert to integer
+     * maxsi: convert to integer
+     */
 
 		/*
-		 * The Nominal MSDU Size field is 2 octets long and contains an
-		 * unsigned integer that specifies the nominal size, in octets,
-		 * of MSDUs belonging to the traffic under this traffic
-		 * specification and is defined in Figure 16. If the Fixed
-		 * subfield is set to 1, then the size of the MSDU is fixed and
-		 * is indicated by the Size Subfield. If the Fixed subfield is
-		 * set to 0, then the size of the MSDU might not be fixed and
-		 * the Size indicates the nominal MSDU size.
-		 *
-		 * The Surplus Bandwidth Allowance Factor field is 2 octets long
-		 * and specifies the excess allocation of time (and bandwidth)
-		 * over and above the stated rates required to transport an MSDU
-		 * belonging to the traffic in this TSPEC. This field is
-		 * represented as an unsigned binary number with an implicit
-		 * binary point after the leftmost 3 bits. For example, an SBA
-		 * of 1.75 is represented as 0x3800. This field is included to
-		 * account for retransmissions. As such, the value of this field
-		 * must be greater than unity.
-		 */
+     * The Nominal MSDU Size field is 2 octets long and contains an
+     * unsigned integer that specifies the nominal size, in octets,
+     * of MSDUs belonging to the traffic under this traffic
+     * specification and is defined in Figure 16. If the Fixed
+     * subfield is set to 1, then the size of the MSDU is fixed and
+     * is indicated by the Size Subfield. If the Fixed subfield is
+     * set to 0, then the size of the MSDU might not be fixed and
+     * the Size indicates the nominal MSDU size.
+     *
+     * The Surplus Bandwidth Allowance Factor field is 2 octets long
+     * and specifies the excess allocation of time (and bandwidth)
+     * over and above the stated rates required to transport an MSDU
+     * belonging to the traffic in this TSPEC. This field is
+     * represented as an unsigned binary number with an implicit
+     * binary point after the leftmost 3 bits. For example, an SBA
+     * of 1.75 is represented as 0x3800. This field is included to
+     * account for retransmissions. As such, the value of this field
+     * must be greater than unity.
+     */
 
 		if (sba)
-			sba_val = (unsigned int)
-				(((int) sba_fv << 13) |
-				 (int) ((sba_fv - (int) sba_fv) * 8192));
+			sba_val = (unsigned int)(((int)sba_fv << 13) |
+						 (int)((sba_fv - (int)sba_fv) *
+						       8192));
 
 #ifdef NL80211_SUPPORT
 		tspec_info = malloc(sizeof(struct tspec));
@@ -3804,30 +3748,32 @@ static enum sigma_cmd_result cmd_sta_set_wmm(struct sigma_dut *dut,
 		tspec_info->psb_ts = psb_ts;
 		tspec_info->up = up ? atoi(up) : 0;
 		tspec_info->ack = 0;
-		tspec_info->nomsize = (unsigned int) ((fixed_int << 15) |
-						      atoi(size));
+		tspec_info->nomsize =
+			(unsigned int)((fixed_int << 15) | atoi(size));
 		tspec_info->msize = msize ? atoi(msize) : 0;
 		tspec_info->minsi = minsi ? atoi(minsi) : 0;
 		tspec_info->maxsi = maxsi ? atoi(maxsi) : 0;
 		tspec_info->inact = inact ? atoi(inact) : 0;
 		tspec_info->sussi = sus ? atoi(sus) : 0;
 		tspec_info->mindr = mindr ? atoi(mindr) : 0;
-		tspec_info->meandr =  meandr ? atoi(meandr) : 0;
-		tspec_info->peakdr =  peakdr ? atoi(peakdr) : 0;
+		tspec_info->meandr = meandr ? atoi(meandr) : 0;
+		tspec_info->peakdr = peakdr ? atoi(peakdr) : 0;
 		tspec_info->burstsize = burstsize ? atoi(burstsize) : 0;
-		tspec_info->phyrate =  phyrate ? atoi(phyrate) : 0;
+		tspec_info->phyrate = phyrate ? atoi(phyrate) : 0;
 		tspec_info->sba = sba_val;
 
 		tspec_status = sta_send_add_tspec_params(dut, intf, tspec_info);
 		free(tspec_info);
 		if (!tspec_status) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"addtspec request netlink command sent");
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"addtspec request netlink command sent");
 			dut->tid_to_handle[atoi(tid)] = handle;
 			return SUCCESS_SEND_STATUS;
 		}
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"addtspec request netlink command cmd failed - try iwpriv");
+		sigma_dut_print(
+			dut, DUT_MSG_DEBUG,
+			"addtspec request netlink command cmd failed - try iwpriv");
 #endif /* NL80211_SUPPORT */
 
 		snprintf(buf, sizeof(buf),
@@ -3837,25 +3783,20 @@ static enum sigma_cmd_result cmd_sta_set_wmm(struct sigma_dut *dut,
 			 " 0x%X %d %d %d %d"
 			 " %d %d",
 			 intf, handle, tid, direction, psb_ts, up,
-			 (unsigned int) ((fixed_int << 15) | atoi(size)),
-			 msize ? atoi(msize) : 0,
-			 mindr ? atoi(mindr) : 0,
-			 meandr ? atoi(meandr) : 0,
-			 peakdr ? atoi(peakdr) : 0,
+			 (unsigned int)((fixed_int << 15) | atoi(size)),
+			 msize ? atoi(msize) : 0, mindr ? atoi(mindr) : 0,
+			 meandr ? atoi(meandr) : 0, peakdr ? atoi(peakdr) : 0,
 			 burstsize ? atoi(burstsize) : 0,
-			 phyrate ? atoi(phyrate) : 0,
-			 sba_val,
-			 minsi ? atoi(minsi) : 0,
-			 sus ? atoi(sus) : 0,
-			 0, 0,
-			 inact ? atoi(inact) : 0,
-			 maxsi ? atoi(maxsi) : 0);
+			 phyrate ? atoi(phyrate) : 0, sba_val,
+			 minsi ? atoi(minsi) : 0, sus ? atoi(sus) : 0, 0, 0,
+			 inact ? atoi(inact) : 0, maxsi ? atoi(maxsi) : 0);
 
 		if (system(buf) != 0) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"iwpriv addtspec request failed");
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Failed to execute addTspec command");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Failed to execute addTspec command");
 			return 0;
 		}
 
@@ -3887,23 +3828,26 @@ static enum sigma_cmd_result cmd_sta_set_wmm(struct sigma_dut *dut,
 #ifdef NL80211_SUPPORT
 		tspec_status = sta_send_del_tspec_params(dut, intf, atoi(tid));
 		if (!tspec_status) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"deltspec request netlink command sent");
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"deltspec request netlink command sent");
 			dut->tid_to_handle[atoi(tid)] = 0;
 			return SUCCESS_SEND_STATUS;
 		}
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"deltspec request netlink command failed - try iwpriv");
+		sigma_dut_print(
+			dut, DUT_MSG_DEBUG,
+			"deltspec request netlink command failed - try iwpriv");
 #endif /* NL80211_SUPPORT */
 
-		snprintf(buf, sizeof(buf), "iwpriv %s delTspec %d",
-			 intf, handle);
+		snprintf(buf, sizeof(buf), "iwpriv %s delTspec %d", intf,
+			 handle);
 
 		if (system(buf) != 0) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"iwpriv deltspec request failed");
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Failed to execute delTspec command");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Failed to execute delTspec command");
 			return 0;
 		}
 
@@ -3922,7 +3866,6 @@ static enum sigma_cmd_result cmd_sta_set_wmm(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static int find_network(struct sigma_dut *dut, const char *ssid)
 {
 	char list[4096];
@@ -3930,8 +3873,8 @@ static int find_network(struct sigma_dut *dut, const char *ssid)
 
 	sigma_dut_print(dut, DUT_MSG_DEBUG,
 			"Search for profile based on SSID: '%s'", ssid);
-	if (wpa_command_resp(get_station_ifname(dut), "LIST_NETWORKS",
-			     list, sizeof(list)) < 0)
+	if (wpa_command_resp(get_station_ifname(dut), "LIST_NETWORKS", list,
+			     sizeof(list)) < 0)
 		return -1;
 	pos = strstr(list, ssid);
 	if (!pos || pos == list || pos[-1] != '\t' || pos[strlen(ssid)] != '\t')
@@ -3943,7 +3886,6 @@ static int find_network(struct sigma_dut *dut, const char *ssid)
 	snprintf(dut->infra_ssid, sizeof(dut->infra_ssid), "%s", ssid);
 	return 0;
 }
-
 
 /**
  * enum qca_sta_helper_config_params - This helper enum defines the config
@@ -3963,7 +3905,7 @@ enum qca_sta_helper_config_params {
 	STA_SET_RX_STBC,
 
 	/* For the attributes QCA_WLAN_VENDOR_ATTR_CONFIG_TX_MSDU_AGGREGATION
-	 * and QCA_WLAN_VENDOR_ATTR_CONFIG_RX_MSDU_AGGREGATION */
+   * and QCA_WLAN_VENDOR_ATTR_CONFIG_RX_MSDU_AGGREGATION */
 	STA_SET_AMSDU,
 
 	/* For the attribute QCA_WLAN_VENDOR_ATTR_CONFIG_CHANNEL_WIDTH */
@@ -3976,11 +3918,11 @@ enum qca_sta_helper_config_params {
 	STA_SET_EHT_EML_CAPABILITY,
 
 	/* For the attribute
-	 * QCA_WLAN_VENDOR_ATTR_CONFIG_EHT_MLO_MAX_SIMULTANEOUS_LINKS */
+   * QCA_WLAN_VENDOR_ATTR_CONFIG_EHT_MLO_MAX_SIMULTANEOUS_LINKS */
 	STA_SET_EHT_MLO_MAX_SIMULTANEOUS_LINKS,
 
 	/* For the attribute
-	 * QCA_WLAN_VENDOR_ATTR_CONFIG_EHT_MLO_MAX_NUM_LINKS */
+   * QCA_WLAN_VENDOR_ATTR_CONFIG_EHT_MLO_MAX_NUM_LINKS */
 	STA_SET_EHT_MLO_MAX_NUM_LINKS,
 
 	/* For the attribute QCA_WLAN_VENDOR_ATTR_CONFIG_EHT_MLO_MODE */
@@ -3990,7 +3932,7 @@ enum qca_sta_helper_config_params {
 	STA_SET_DYN_BW,
 
 	/* For the attributes QCA_WLAN_VENDOR_ATTR_CONFIG_TX_MPDU_AGGREGATION
-	 * and QCA_WLAN_VENDOR_ATTR_CONFIG_RX_MPDU_AGGREGATION */
+   * and QCA_WLAN_VENDOR_ATTR_CONFIG_RX_MPDU_AGGREGATION */
 	STA_SET_AMPDU,
 
 	/* For the attribute QCA_WLAN_VENDOR_ATTR_CONFIG_NSS */
@@ -4002,7 +3944,6 @@ enum qca_sta_helper_config_params {
 	/* For the attribute QCA_WLAN_VENDOR_ATTR_CONFIG_EMLSR_MODE_SWITCH */
 	STA_SET_EMLSR_MODE_SWITCH,
 };
-
 
 static int sta_config_params(struct sigma_dut *dut, const char *intf,
 			     enum qca_sta_helper_config_params config_cmd,
@@ -4017,8 +3958,8 @@ static int sta_config_params(struct sigma_dut *dut, const char *intf,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Interface %s does not exist",
-				__func__, intf);
+				"%s: Interface %s does not exist", __func__,
+				intf);
 		return -1;
 	}
 
@@ -4050,9 +3991,9 @@ static int sta_config_params(struct sigma_dut *dut, const char *intf,
 		break;
 	case STA_SET_AMSDU:
 		/* The driver expects both Tx and Rx aggregation parameters to
-		 * set A-MSDU configuration. Include both Tx and Rx MSDU
-		 * aggregation parameters in the command.
-		 */
+     * set A-MSDU configuration. Include both Tx and Rx MSDU
+     * aggregation parameters in the command.
+     */
 		if (nla_put_u8(msg,
 			       QCA_WLAN_VENDOR_ATTR_CONFIG_TX_MSDU_AGGREGATION,
 			       value) ||
@@ -4078,9 +4019,10 @@ static int sta_config_params(struct sigma_dut *dut, const char *intf,
 			goto fail;
 		break;
 	case STA_SET_EHT_MLO_MAX_SIMULTANEOUS_LINKS:
-		if (nla_put_u8(msg,
-			       QCA_WLAN_VENDOR_ATTR_CONFIG_EHT_MLO_MAX_SIMULTANEOUS_LINKS,
-			       value))
+		if (nla_put_u8(
+			    msg,
+			    QCA_WLAN_VENDOR_ATTR_CONFIG_EHT_MLO_MAX_SIMULTANEOUS_LINKS,
+			    value))
 			goto fail;
 		break;
 	case STA_SET_EHT_MLO_MAX_NUM_LINKS:
@@ -4101,9 +4043,9 @@ static int sta_config_params(struct sigma_dut *dut, const char *intf,
 		break;
 	case STA_SET_AMPDU:
 		/* The driver expects both Tx and Rx aggregation parameters to
-		 * set A-MPDU configuration. Include both Tx and Rx MPDU
-		 * aggregation parameters in the command.
-		 */
+     * set A-MPDU configuration. Include both Tx and Rx MPDU
+     * aggregation parameters in the command.
+     */
 		if (nla_put_u8(msg,
 			       QCA_WLAN_VENDOR_ATTR_CONFIG_TX_MPDU_AGGREGATION,
 			       value) ||
@@ -4150,7 +4092,6 @@ fail:
 	return -1;
 }
 
-
 void free_dscp_policy_table(struct sigma_dut *dut)
 {
 	struct dscp_policy_data *dscp_policy;
@@ -4162,8 +4103,7 @@ void free_dscp_policy_table(struct sigma_dut *dut)
 	}
 }
 
-
-static char * protocol_to_str(int proto)
+static char *protocol_to_str(int proto)
 {
 	switch (proto) {
 	case 6:
@@ -4177,15 +4117,14 @@ static char * protocol_to_str(int proto)
 	}
 }
 
-
 static int delete_nft_table(struct sigma_dut *dut, const char *table,
-			   const char *ip_type)
+			    const char *ip_type)
 {
 	int res;
 	char cmd[200];
 
 	res = snprintf(cmd, sizeof(cmd), "nft delete table %s %s_%s", ip_type,
-		      table, ip_type);
+		       table, ip_type);
 	if (snprintf_error(sizeof(cmd), res)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"Failed to create delete table command");
@@ -4199,7 +4138,6 @@ static int delete_nft_table(struct sigma_dut *dut, const char *table,
 
 	return 0;
 }
-
 
 static int remove_nft_rule(struct sigma_dut *dut, int policy_id,
 			   enum ip_version ip_ver)
@@ -4216,13 +4154,11 @@ static int remove_nft_rule(struct sigma_dut *dut, int policy_id,
 		return -1;
 	}
 
-
 	if (ip_ver == IPV6)
 		return delete_nft_table(dut, table, "ip6");
 	else
 		return delete_nft_table(dut, table, "ip");
 }
-
 
 static int remove_iptable_rule(struct sigma_dut *dut,
 			       struct dscp_policy_data *dscp_policy)
@@ -4235,10 +4171,10 @@ static int remove_iptable_rule(struct sigma_dut *dut,
 	pos = ip_cmd;
 	len = sizeof(ip_cmd);
 
-	ret = snprintf(pos, len,
-		       "%s -t mangle -D OUTPUT -o %s",
+	ret = snprintf(pos, len, "%s -t mangle -D OUTPUT -o %s",
 #ifdef ANDROID
-		       ip_ver == IPV6 ? "/system/bin/ip6tables" : "/system/bin/iptables",
+		       ip_ver == IPV6 ? "/system/bin/ip6tables" :
+					"/system/bin/iptables",
 #else /* ANDROID */
 		       ip_ver == IPV6 ? "ip6tables" : "iptables",
 #endif /* ANDROID */
@@ -4256,9 +4192,10 @@ static int remove_iptable_rule(struct sigma_dut *dut,
 	if (strlen(dscp_policy->src_ip)) {
 		ret = snprintf(pos, len, " -s %s", dscp_policy->src_ip);
 		if (snprintf_error(len, ret)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Error in adding src_ip %s in delete command",
-					dscp_policy->src_ip);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Error in adding src_ip %s in delete command",
+				dscp_policy->src_ip);
 			return -1;
 		}
 		pos += ret;
@@ -4266,12 +4203,12 @@ static int remove_iptable_rule(struct sigma_dut *dut,
 	}
 
 	if (strlen(dscp_policy->dst_ip)) {
-		ret = snprintf(pos, len, " -d %s",
-			       dscp_policy->dst_ip);
+		ret = snprintf(pos, len, " -d %s", dscp_policy->dst_ip);
 		if (snprintf_error(len, ret)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Error in adding dst_ip %s in delete cmd",
-					dscp_policy->dst_ip);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Error in adding dst_ip %s in delete cmd",
+				dscp_policy->dst_ip);
 			return -1;
 		}
 		pos += ret;
@@ -4283,9 +4220,10 @@ static int remove_iptable_rule(struct sigma_dut *dut,
 		ret = snprintf(pos, len, " -p %s",
 			       protocol_to_str(dscp_policy->protocol));
 		if (snprintf_error(len, ret)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Error in adding protocol %d in delete command",
-					dscp_policy->protocol);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Error in adding protocol %d in delete command",
+				dscp_policy->protocol);
 			return -1;
 		}
 		pos += ret;
@@ -4293,12 +4231,12 @@ static int remove_iptable_rule(struct sigma_dut *dut,
 	}
 
 	if (dscp_policy->src_port) {
-		ret = snprintf(pos, len, " --sport %d",
-			       dscp_policy->src_port);
+		ret = snprintf(pos, len, " --sport %d", dscp_policy->src_port);
 		if (snprintf_error(len, ret)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Error in adding src_port %d in delete command",
-					 dscp_policy->src_port);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Error in adding src_port %d in delete command",
+				dscp_policy->src_port);
 			return -1;
 		}
 		pos += ret;
@@ -4306,12 +4244,12 @@ static int remove_iptable_rule(struct sigma_dut *dut,
 	}
 
 	if (dscp_policy->dst_port) {
-		ret = snprintf(pos, len, " --dport %d",
-			       dscp_policy->dst_port);
+		ret = snprintf(pos, len, " --dport %d", dscp_policy->dst_port);
 		if (snprintf_error(len, ret)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Error in adding dst_port %d in delete command",
-					 dscp_policy->dst_port);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Error in adding dst_port %d in delete command",
+				dscp_policy->dst_port);
 			return -1;
 		}
 		pos += ret;
@@ -4320,13 +4258,12 @@ static int remove_iptable_rule(struct sigma_dut *dut,
 
 	if (dscp_policy->start_port && dscp_policy->end_port) {
 		ret = snprintf(pos, len, " --match multiport --dports %d:%d",
-			       dscp_policy->start_port,
-			       dscp_policy->end_port);
+			       dscp_policy->start_port, dscp_policy->end_port);
 		if (snprintf_error(len, ret)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Error in adding start:end port %d:%d in delete command",
-					 dscp_policy->start_port,
-					 dscp_policy->end_port);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Error in adding start:end port %d:%d in delete command",
+				dscp_policy->start_port, dscp_policy->end_port);
 			return -1;
 		}
 		pos += ret;
@@ -4342,21 +4279,20 @@ static int remove_iptable_rule(struct sigma_dut *dut,
 		return -1;
 	}
 	ret = system(ip_cmd);
-	sigma_dut_print(dut, DUT_MSG_DEBUG, "iptables rule: %s err: %d",
-			ip_cmd, ret);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "iptables rule: %s err: %d", ip_cmd,
+			ret);
 
 	return ret;
 }
 
-
 static int remove_dscp_policy_rule(struct sigma_dut *dut,
 				   struct dscp_policy_data *dscp_policy)
 {
-	return dut->dscp_use_iptables ? remove_iptable_rule(dut, dscp_policy) :
-		remove_nft_rule(dut, dscp_policy->policy_id,
-				dscp_policy->ip_version);
+	return dut->dscp_use_iptables ?
+		       remove_iptable_rule(dut, dscp_policy) :
+		       remove_nft_rule(dut, dscp_policy->policy_id,
+				       dscp_policy->ip_version);
 }
-
 
 static int create_nft_table(struct sigma_dut *dut, int policy_id,
 			    const char *table_name, enum ip_version ip_ver)
@@ -4367,9 +4303,10 @@ static int create_nft_table(struct sigma_dut *dut, int policy_id,
 	res = snprintf(cmd, sizeof(cmd), "nft add table %s %s",
 		       ip_ver == IPV6 ? "ip6" : "ip", table_name);
 	if (snprintf_error(sizeof(cmd), res)) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Failed to add rule to create table for policy id %d",
-				policy_id);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Failed to add rule to create table for policy id %d",
+			policy_id);
 		return -1;
 	}
 
@@ -4378,13 +4315,15 @@ static int create_nft_table(struct sigma_dut *dut, int policy_id,
 		return -1;
 	}
 
-	res = snprintf(cmd, sizeof(cmd),
-		       "nft add chain %s %s OUTPUT { type filter hook output priority 0 \\; }",
-		       ip_ver == IPV6 ? "ip6" : "ip", table_name);
+	res = snprintf(
+		cmd, sizeof(cmd),
+		"nft add chain %s %s OUTPUT { type filter hook output priority 0 \\; }",
+		ip_ver == IPV6 ? "ip6" : "ip", table_name);
 	if (snprintf_error(sizeof(cmd), res)) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Failed to add rule to create chain for table = %s",
-				table_name);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"Failed to add rule to create chain for table = %s",
+			table_name);
 		return -1;
 	}
 
@@ -4395,7 +4334,6 @@ static int create_nft_table(struct sigma_dut *dut, int policy_id,
 
 	return 0;
 }
-
 
 static int remove_dscp_policy(struct sigma_dut *dut, u8 policy_id)
 {
@@ -4411,9 +4349,9 @@ static int remove_dscp_policy(struct sigma_dut *dut, u8 policy_id)
 	}
 
 	/*
-	 * Consider remove request for a policy id which does not exist as
-	 * success.
-	 */
+   * Consider remove request for a policy id which does not exist as
+   * success.
+   */
 	if (!dscp_policy)
 		return 0;
 
@@ -4430,7 +4368,6 @@ static int remove_dscp_policy(struct sigma_dut *dut, u8 policy_id)
 	return 0;
 }
 
-
 static int add_nft_rule(struct sigma_dut *dut,
 			struct dscp_policy_data *dscp_policy)
 {
@@ -4445,8 +4382,8 @@ static int add_nft_rule(struct sigma_dut *dut,
 		strlcpy(ip, "ip", sizeof(ip));
 
 	ret = snprintf(table_name, sizeof(table_name),
-		       "wifi_%s_dscp_policy_%d_%s",
-		       dut->station_ifname, policy_id, ip);
+		       "wifi_%s_dscp_policy_%d_%s", dut->station_ifname,
+		       policy_id, ip);
 	if (snprintf_error(sizeof(table_name), ret))
 		return -1;
 
@@ -4459,9 +4396,8 @@ static int add_nft_rule(struct sigma_dut *dut,
 	pos = nft_cmd;
 	len = sizeof(nft_cmd);
 
-	ret = snprintf(pos, len,
-		       "nft add rule %s %s OUTPUT oifname \"%s\"",
-		       ip, table_name, dut->station_ifname);
+	ret = snprintf(pos, len, "nft add rule %s %s OUTPUT oifname \"%s\"", ip,
+		       table_name, dut->station_ifname);
 	if (snprintf_error(len, ret)) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
 				"Failed to create nft cmd %s", nft_cmd);
@@ -4516,8 +4452,7 @@ static int add_nft_rule(struct sigma_dut *dut,
 	if (dscp_policy->start_port && dscp_policy->end_port) {
 		ret = snprintf(pos, len, " %s dport %d-%d",
 			       protocol_to_str(dscp_policy->protocol),
-			       dscp_policy->start_port,
-			       dscp_policy->end_port);
+			       dscp_policy->start_port, dscp_policy->end_port);
 		if (snprintf_error(len, ret))
 			return -1;
 
@@ -4531,12 +4466,11 @@ static int add_nft_rule(struct sigma_dut *dut,
 		return -1;
 
 	ret = system(nft_cmd);
-	sigma_dut_print(dut, DUT_MSG_INFO, "nft rule: %s err: %d",
-			nft_cmd, ret);
+	sigma_dut_print(dut, DUT_MSG_INFO, "nft rule: %s err: %d", nft_cmd,
+			ret);
 
 	return ret;
 }
-
 
 static int add_iptable_rule(struct sigma_dut *dut,
 			    struct dscp_policy_data *dscp_policy)
@@ -4552,15 +4486,15 @@ static int add_iptable_rule(struct sigma_dut *dut,
 	len = sizeof(ip_cmd);
 
 	/*
-	 * DSCP target in the mangle table doesn't stop processing of rules
-	 * so to make sure the most granular rule is applied last, add the new
-	 * rules in granularity increasing order.
-	 */
+   * DSCP target in the mangle table doesn't stop processing of rules
+   * so to make sure the most granular rule is applied last, add the new
+   * rules in granularity increasing order.
+   */
 	while (active_policy) {
 		/*
-		 * Domain name rules are managed in sigma_dut thus don't count
-		 * them while counting the number of active rules.
-		 */
+     * Domain name rules are managed in sigma_dut thus don't count
+     * them while counting the number of active rules.
+     */
 		if (strlen(active_policy->domain_name)) {
 			active_policy = active_policy->next;
 			continue;
@@ -4578,10 +4512,10 @@ static int add_iptable_rule(struct sigma_dut *dut,
 		active_policy = active_policy->next;
 	}
 
-	ret = snprintf(pos, len,
-		       "%s -t mangle -I OUTPUT %d -o %s",
+	ret = snprintf(pos, len, "%s -t mangle -I OUTPUT %d -o %s",
 #ifdef ANDROID
-		       ip_ver == IPV6 ? "/system/bin/ip6tables" : "/system/bin/iptables",
+		       ip_ver == IPV6 ? "/system/bin/ip6tables" :
+					"/system/bin/iptables",
 #else /* ANDROID */
 		       ip_ver == IPV6 ? "ip6tables" : "iptables",
 #endif /* ANDROID */
@@ -4625,9 +4559,10 @@ static int add_iptable_rule(struct sigma_dut *dut,
 		ret = snprintf(pos, len, " -p %s",
 			       protocol_to_str(dscp_policy->protocol));
 		if (snprintf_error(len, ret)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Error in adding protocol %d in add command",
-					 dscp_policy->protocol);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Error in adding protocol %d in add command",
+				dscp_policy->protocol);
 			return -1;
 		}
 		pos += ret;
@@ -4639,7 +4574,7 @@ static int add_iptable_rule(struct sigma_dut *dut,
 		if (snprintf_error(len, ret)) {
 			sigma_dut_print(dut, DUT_MSG_INFO,
 					"Error in adding src_port %d",
-					 dscp_policy->src_port);
+					dscp_policy->src_port);
 			return -1;
 		}
 		pos += ret;
@@ -4675,25 +4610,23 @@ static int add_iptable_rule(struct sigma_dut *dut,
 	ret = snprintf(pos, len, " -j DSCP --set-dscp 0x%0x",
 		       dscp_policy->dscp);
 	if (snprintf_error(len, ret)) {
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Error in adding dscp %0x", dscp_policy->dscp);
+		sigma_dut_print(dut, DUT_MSG_INFO, "Error in adding dscp %0x",
+				dscp_policy->dscp);
 		return -1;
 	}
 	ret = system(ip_cmd);
-	sigma_dut_print(dut, DUT_MSG_DEBUG, "iptables rule: %s err: %d",
-			ip_cmd, ret);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "iptables rule: %s err: %d", ip_cmd,
+			ret);
 
 	return ret;
 }
-
 
 static int add_dscp_policy_rule(struct sigma_dut *dut,
 				struct dscp_policy_data *dscp_policy)
 {
 	return dut->dscp_use_iptables ? add_iptable_rule(dut, dscp_policy) :
-		add_nft_rule(dut, dscp_policy);
+					add_nft_rule(dut, dscp_policy);
 }
-
 
 static void clear_all_dscp_policies(struct sigma_dut *dut)
 {
@@ -4701,23 +4634,29 @@ static void clear_all_dscp_policies(struct sigma_dut *dut)
 
 	if (dut->dscp_use_iptables) {
 #ifdef ANDROID
-		if (system("/system/bin/iptables -t mangle -F && /system/bin/iptables -t mangle -X") != 0 ||
-		    system("/system/bin/ip6tables -t mangle -F && /system/bin/ip6tables -t mangle -X") != 0)
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"iptables: Failed to flush DSCP policy");
+		if (system("/system/bin/iptables -t mangle -F && /system/bin/iptables -t "
+			   "mangle -X") != 0 ||
+		    system("/system/bin/ip6tables -t mangle -F && /system/bin/ip6tables -t "
+			   "mangle -X") != 0)
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"iptables: Failed to flush DSCP policy");
 #else /* ANDROID */
-		if (system("iptables -t mangle -F && iptables -t mangle -X") != 0 ||
-		    system("ip6tables -t mangle -F && ip6tables -t mangle -X") != 0)
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"iptables: Failed to flush DSCP policy");
+		if (system("iptables -t mangle -F && iptables -t mangle -X") !=
+			    0 ||
+		    system("ip6tables -t mangle -F && ip6tables -t mangle -X") !=
+			    0)
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"iptables: Failed to flush DSCP policy");
 #endif /* ANDROID */
 	} else {
 		if (system("nft flush ruleset") != 0)
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"nftables: Failed to flush DSCP policy");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"nftables: Failed to flush DSCP policy");
 	}
 }
-
 
 static int send_dscp_response(struct sigma_dut *dut,
 			      struct dscp_policy_status *status_list,
@@ -4769,7 +4708,6 @@ static int send_dscp_response(struct sigma_dut *dut,
 	return 0;
 }
 
-
 #ifdef ANDROID
 static void thread_cancel_handler(int sig)
 {
@@ -4778,8 +4716,7 @@ static void thread_cancel_handler(int sig)
 }
 #endif /* ANDROID */
 
-
-static void * mon_dscp_policies(void *ptr)
+static void *mon_dscp_policies(void *ptr)
 {
 	struct sigma_dut *dut = ptr;
 	int ret, policy_id;
@@ -4788,19 +4725,17 @@ static void * mon_dscp_policies(void *ptr)
 	struct dscp_policy_data *policy = NULL, *current_policy, *prev_policy;
 	struct dscp_policy_status status_list[10];
 	int num_status = 0;
-	const char *events[] = {
-		"CTRL-EVENT-DISCONNECTED",
-		"CTRL-EVENT-DSCP-POLICY",
-		NULL
-	};
+	const char *events[] = { "CTRL-EVENT-DISCONNECTED",
+				 "CTRL-EVENT-DSCP-POLICY", NULL };
 #ifdef ANDROID
 	struct sigaction actions;
 #endif /* ANDROID */
 
 	ctrl = open_wpa_mon(get_station_ifname(dut));
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		return NULL;
 	}
 
@@ -4820,8 +4755,8 @@ static void * mon_dscp_policies(void *ptr)
 #endif /* ANDROID */
 
 	while (1) {
-		ret = get_wpa_cli_events_timeout(dut, ctrl, events,
-						 buf, sizeof(buf), 0);
+		ret = get_wpa_cli_events_timeout(dut, ctrl, events, buf,
+						 sizeof(buf), 0);
 
 		if (ret || strlen(buf) == 0) {
 			sigma_dut_print(dut, DUT_MSG_INFO,
@@ -4862,9 +4797,11 @@ static void * mon_dscp_policies(void *ptr)
 		policy_id = atoi(pos + 10);
 
 		if (num_status >= ARRAY_SIZE(status_list)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Max policies allowed per DSCP request reached. Drop policy id %d request",
-					policy_id);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Max policies allowed per DSCP request reached. Drop "
+				"policy id %d request",
+				policy_id);
 			continue;
 		}
 		status_list[num_status].id = policy_id;
@@ -4880,9 +4817,9 @@ static void * mon_dscp_policies(void *ptr)
 			goto reject;
 
 		/*
-		 * In case of "add" also if policy with same policy id exist it
-		 * shall be removed. So always call remove_dscp_policy().
-		 */
+     * In case of "add" also if policy with same policy id exist it
+     * shall be removed. So always call remove_dscp_policy().
+     */
 		if (remove_dscp_policy(dut, policy_id))
 			goto reject;
 
@@ -4922,7 +4859,7 @@ static void * mon_dscp_policies(void *ptr)
 			if (!end)
 				end = pos + strlen(pos);
 
-			if (end - pos >= (int) sizeof(policy->domain_name))
+			if (end - pos >= (int)sizeof(policy->domain_name))
 				goto reject;
 
 			memcpy(policy->domain_name, pos, end - pos);
@@ -4952,7 +4889,7 @@ static void * mon_dscp_policies(void *ptr)
 			if (!end)
 				end = pos + strlen(pos);
 
-			if (end - pos >= (int) sizeof(policy->src_ip))
+			if (end - pos >= (int)sizeof(policy->src_ip))
 				goto reject;
 
 			memcpy(policy->src_ip, pos, end - pos);
@@ -4967,7 +4904,7 @@ static void * mon_dscp_policies(void *ptr)
 			if (!end)
 				end = pos + strlen(pos);
 
-			if (end - pos >= (int) sizeof(policy->dst_ip))
+			if (end - pos >= (int)sizeof(policy->dst_ip))
 				goto reject;
 
 			memcpy(policy->dst_ip, pos, end - pos);
@@ -4997,17 +4934,17 @@ static void * mon_dscp_policies(void *ptr)
 		}
 
 		/*
-		 * Skip adding nft rules for doman name policies.
-		 * Domain name rules are applied in sigma_dut itself.
-		 */
+     * Skip adding nft rules for doman name policies.
+     * Domain name rules are applied in sigma_dut itself.
+     */
 		if (!strlen(policy->domain_name) &&
 		    add_dscp_policy_rule(dut, policy))
 			goto reject;
 
 		/*
-		 * Add the new policy in policy table in granularity increasing
-		 * order.
-		 */
+     * Add the new policy in policy table in granularity increasing
+     * order.
+     */
 		current_policy = dut->dscp_policy_table;
 		prev_policy = NULL;
 
@@ -5047,14 +4984,12 @@ reject:
 	return NULL;
 }
 
-
 static void start_dscp_policy_mon_thread(struct sigma_dut *dut)
 {
 	/* Create event thread */
 	pthread_create(&dut->dscp_policy_mon_thread, NULL, &mon_dscp_policies,
-		       (void *) dut);
+		       (void *)dut);
 }
-
 
 void stop_dscp_policy_mon_thread(struct sigma_dut *dut)
 {
@@ -5068,7 +5003,6 @@ void stop_dscp_policy_mon_thread(struct sigma_dut *dut)
 		dut->dscp_policy_mon_thread = 0;
 	}
 }
-
 
 static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 					       struct sigma_conn *conn,
@@ -5100,8 +5034,8 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 	if ((dut->program == PROGRAM_EHT || dut->device_mode == MODE_11BE) &&
 	    get_driver_type(dut) == DRIVER_WCN) {
 		if (multi_link) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"multi link %s", multi_link);
+			sigma_dut_print(dut, DUT_MSG_DEBUG, "multi link %s",
+					multi_link);
 			if (strcasecmp(multi_link, "Enable") == 0)
 				sta_config_params(dut, intf,
 						  STA_SET_EHT_MLO_MAX_NUM_LINKS,
@@ -5128,8 +5062,9 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 		snprintf(buf, sizeof(buf), "TEST_ASSOC_IE %s",
 			 dut->rsne_override);
 		if (wpa_command(get_station_ifname(dut), buf) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to set DEV_CONFIGURE_IE RSNE override");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to set DEV_CONFIGURE_IE RSNE override");
 			return 0;
 		}
 	}
@@ -5138,8 +5073,9 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 		snprintf(buf, sizeof(buf), "SET sae_commit_override %s",
 			 dut->sae_commit_override);
 		if (wpa_command(get_station_ifname(dut), buf) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to set SAE commit override");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to set SAE commit override");
 			return 0;
 		}
 	}
@@ -5160,7 +5096,8 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 			return -2;
 
 		if (dut->wps_method == WFA_CS_WPS_NOT_READY) {
-			send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,WPS "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "ErrorCode,WPS "
 				  "parameters not yet set");
 			return 0;
 		}
@@ -5175,11 +5112,13 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 		}
 	} else {
 		if (strcmp(ssid, dut->infra_ssid) == 0) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"sta_associate for the most recently added network");
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"sta_associate for the most recently added network");
 		} else if (find_network(dut, ssid) < 0) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"sta_associate for a previously stored network profile");
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"sta_associate for a previously stored network profile");
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,Profile not found");
 			return 0;
@@ -5188,13 +5127,14 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 		if (bssid &&
 		    set_network(get_station_ifname(dut), dut->infra_network_id,
 				"bssid", bssid) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,"
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "ErrorCode,"
 				  "Invalid bssid argument");
 			return 0;
 		} else if (ap_link_mac &&
 			   set_network(get_station_ifname(dut),
-				       dut->infra_network_id,
-				       "bssid", ap_link_mac) < 0) {
+				       dut->infra_network_id, "bssid",
+				       ap_link_mac) < 0) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,Invalid bssid argument");
 			return 0;
@@ -5216,7 +5156,8 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 		snprintf(buf, sizeof(buf), "SELECT_NETWORK %d%s",
 			 dut->infra_network_id, extra);
 		if (wpa_command(get_station_ifname(dut), buf) < 0) {
-			sigma_dut_print(dut, DUT_MSG_INFO, "Failed to select "
+			sigma_dut_print(dut, DUT_MSG_INFO,
+					"Failed to select "
 					"network id %d on %s",
 					dut->infra_network_id,
 					get_station_ifname(dut));
@@ -5229,18 +5170,16 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 		return SUCCESS_SEND_STATUS;
 
 	/* Wait for connection result to be able to store server certificate
-	 * hash for trust root override testing
-	 * (dev_exec_action,ServerCertTrust). */
+   * hash for trust root override testing
+   * (dev_exec_action,ServerCertTrust). */
 
 	for (e = 0; e < 20; e++) {
-		const char *events[] = {
-			"CTRL-EVENT-EAP-PEER-CERT",
-			"CTRL-EVENT-EAP-TLS-CERT-ERROR",
-			"CTRL-EVENT-DISCONNECTED",
-			"CTRL-EVENT-CONNECTED",
-			"CTRL-EVENT-NETWORK-NOT-FOUND",
-			NULL
-		};
+		const char *events[] = { "CTRL-EVENT-EAP-PEER-CERT",
+					 "CTRL-EVENT-EAP-TLS-CERT-ERROR",
+					 "CTRL-EVENT-DISCONNECTED",
+					 "CTRL-EVENT-CONNECTED",
+					 "CTRL-EVENT-NETWORK-NOT-FOUND",
+					 NULL };
 		char buf[1024];
 		int res;
 
@@ -5267,9 +5206,10 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 					tod = 2;
 				else
 					tod = 0;
-				sigma_dut_print(dut, DUT_MSG_DEBUG,
-						"Server certificate TOD policy: %d",
-						tod);
+				sigma_dut_print(
+					dut, DUT_MSG_DEBUG,
+					"Server certificate TOD policy: %d",
+					tod);
 				dut->server_cert_tod = tod;
 
 				pos += 6;
@@ -5285,8 +5225,9 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 		}
 
 		if (strstr(buf, "CTRL-EVENT-EAP-TLS-CERT-ERROR")) {
-			send_resp(dut, conn, SIGMA_COMPLETE,
-				  "Result,TLS server certificate validation failed");
+			send_resp(
+				dut, conn, SIGMA_COMPLETE,
+				"Result,TLS server certificate validation failed");
 			ret = STATUS_SENT_ERROR;
 			break;
 		}
@@ -5316,24 +5257,26 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 		if (strstr(buf, "CTRL-EVENT-CONNECTED")) {
 			if (dut->dhcp_client_running && dut->client_privacy) {
 				/*
-				 * Interface MAC address will be changed by
-				 * wpa_supplicant before connection attempt when
-				 * client privacy enabled. Restart DHCP client
-				 * to make sure DHCP frames use the correct
-				 * source MAC address.
-				 * */
+         * Interface MAC address will be changed by
+         * wpa_supplicant before connection attempt when
+         * client privacy enabled. Restart DHCP client
+         * to make sure DHCP frames use the correct
+         * source MAC address.
+         * */
 				kill_dhcp_client(dut, ifname);
 				if (start_dhcp_client(dut, ifname) < 0) {
-					send_resp(dut, conn, SIGMA_COMPLETE,
-						  "Result,DHCP client start failed");
+					send_resp(
+						dut, conn, SIGMA_COMPLETE,
+						"Result,DHCP client start failed");
 					ret = STATUS_SENT_ERROR;
 					break;
 				}
 			}
 			if (tod >= 0) {
-				sigma_dut_print(dut, DUT_MSG_DEBUG,
-						"Network profile TOD policy update: %d -> %d",
-						dut->sta_tod_policy, tod);
+				sigma_dut_print(
+					dut, DUT_MSG_DEBUG,
+					"Network profile TOD policy update: %d -> %d",
+					dut->sta_tod_policy, tod);
 				dut->sta_tod_policy = tod;
 			}
 			if (dut->program == PROGRAM_QM) {
@@ -5341,16 +5284,16 @@ static enum sigma_cmd_result cmd_sta_associate(struct sigma_dut *dut,
 				char ipv6[100];
 
 				if (get_hwaddr(ifname, iface_mac_addr) < 0) {
-					sigma_dut_print(dut, DUT_MSG_ERROR,
-							"%s: get_hwaddr %s failed",
-							__func__, ifname);
+					sigma_dut_print(
+						dut, DUT_MSG_ERROR,
+						"%s: get_hwaddr %s failed",
+						__func__, ifname);
 					ret = ERROR_SEND_STATUS;
 					break;
 				}
 
-				convert_mac_addr_to_ipv6_lladdr(iface_mac_addr,
-								ipv6,
-								sizeof(ipv6));
+				convert_mac_addr_to_ipv6_lladdr(
+					iface_mac_addr, ipv6, sizeof(ipv6));
 
 				if (set_ipv6_addr(dut, ipv6, "64", ifname) !=
 				    0) {
@@ -5370,26 +5313,25 @@ done:
 	return ret;
 }
 
-
 static int run_hs20_osu(struct sigma_dut *dut, const char *params)
 {
 	char buf[500], cmd[200];
 	int res;
 
 	/* Use hs20-osu-client file at the current dir, if found; otherwise use
-	 * default path */
+   * default path */
 	res = snprintf(cmd, sizeof(cmd),
-		       "%s -w \"%s\" -r hs20-osu-client.res %s%s -dddKt -f Logs/hs20-osu-client.txt",
-		       file_exists("./hs20-osu-client") ?
-		       "./hs20-osu-client" : "hs20-osu-client",
-		       sigma_wpas_ctrl,
-		       dut->summary_log ? "-s " : "",
+		       "%s -w \"%s\" -r hs20-osu-client.res %s%s -dddKt -f "
+		       "Logs/hs20-osu-client.txt",
+		       file_exists("./hs20-osu-client") ? "./hs20-osu-client" :
+							  "hs20-osu-client",
+		       sigma_wpas_ctrl, dut->summary_log ? "-s " : "",
 		       dut->summary_log ? dut->summary_log : "");
-	if (res < 0 || res >= (int) sizeof(cmd))
+	if (res < 0 || res >= (int)sizeof(cmd))
 		return -1;
 
 	res = snprintf(buf, sizeof(buf), "%s %s", cmd, params);
-	if (res < 0 || res >= (int) sizeof(buf))
+	if (res < 0 || res >= (int)sizeof(buf))
 		return -1;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 
@@ -5403,11 +5345,8 @@ static int run_hs20_osu(struct sigma_dut *dut, const char *params)
 	return 0;
 }
 
-
-static int download_ppsmo(struct sigma_dut *dut,
-			  struct sigma_conn *conn,
-			  const char *intf,
-			  struct sigma_cmd *cmd)
+static int download_ppsmo(struct sigma_dut *dut, struct sigma_conn *conn,
+			  const char *intf, struct sigma_cmd *cmd)
 {
 	const char *name, *path, *val;
 	char url[500], buf[600], fbuf[100];
@@ -5420,10 +5359,13 @@ static int download_ppsmo(struct sigma_dut *dut,
 
 	if (strcasecmp(path, "VendorSpecific") == 0) {
 		snprintf(url, sizeof(url), "PPS/%s", name);
-		sigma_dut_print(dut, DUT_MSG_INFO, "Use pre-configured PPS MO "
-				"from the device (%s)", url);
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Use pre-configured PPS MO "
+				"from the device (%s)",
+				url);
 		if (!file_exists(url)) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Requested "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Requested "
 				  "PPS MO file does not exist");
 			return 0;
 		}
@@ -5435,14 +5377,16 @@ static int download_ppsmo(struct sigma_dut *dut,
 		}
 	} else if (strncasecmp(path, "http:", 5) != 0 &&
 		   strncasecmp(path, "https:", 6) != 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,"
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "ErrorCode,"
 			  "Unsupported FilePath value");
 		return 0;
 	} else {
 		snprintf(url, sizeof(url), "%s/%s", path, name);
 		sigma_dut_print(dut, DUT_MSG_INFO, "Downloading PPS MO from %s",
 				url);
-		snprintf(buf, sizeof(buf), "wget -T 10 -t 3 -O pps-tnds.xml '%s'", url);
+		snprintf(buf, sizeof(buf),
+			 "wget -T 10 -t 3 -O pps-tnds.xml '%s'", url);
 		remove("pps-tnds.xml");
 		if (system(buf) != 0) {
 			send_resp(dut, conn, SIGMA_ERROR,
@@ -5472,13 +5416,15 @@ static int download_ppsmo(struct sigma_dut *dut,
 		end = strchr(pos, '/');
 		if (end == NULL ||
 		    strcmp(end, "/PerProviderSubscription") != 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Invalid managementTreeURI postfix");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Invalid managementTreeURI postfix");
 			return 0;
 		}
-		if (end - pos >= (int) sizeof(fbuf)) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Too long FQDN in managementTreeURI");
+		if (end - pos >= (int)sizeof(fbuf)) {
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Too long FQDN in managementTreeURI");
 			return 0;
 		}
 		memcpy(fbuf, pos, end - pos);
@@ -5526,8 +5472,7 @@ static int download_ppsmo(struct sigma_dut *dut,
 		}
 
 		snprintf(buf, sizeof(buf),
-			 "cp Certs/aaa-ca.pem SP/%s/aaa-ca.pem",
-			 fqdn);
+			 "cp Certs/aaa-ca.pem SP/%s/aaa-ca.pem", fqdn);
 		if (system(buf)) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Failed to copy AAA CA cert");
@@ -5535,8 +5480,7 @@ static int download_ppsmo(struct sigma_dut *dut,
 		}
 	} else {
 		snprintf(buf, sizeof(buf),
-			 "dl_osu_ca SP/%s/pps.xml SP/%s/ca.pem",
-			 fqdn, fqdn);
+			 "dl_osu_ca SP/%s/pps.xml SP/%s/ca.pem", fqdn, fqdn);
 		if (run_hs20_osu(dut, buf) < 0) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Failed to download OSU CA cert");
@@ -5544,8 +5488,8 @@ static int download_ppsmo(struct sigma_dut *dut,
 		}
 
 		snprintf(buf, sizeof(buf),
-			 "dl_aaa_ca SP/%s/pps.xml SP/%s/aaa-ca.pem",
-			 fqdn, fqdn);
+			 "dl_aaa_ca SP/%s/pps.xml SP/%s/aaa-ca.pem", fqdn,
+			 fqdn);
 		if (run_hs20_osu(dut, buf) < 0) {
 			sigma_dut_print(dut, DUT_MSG_INFO,
 					"Failed to download AAA CA cert");
@@ -5555,8 +5499,9 @@ static int download_ppsmo(struct sigma_dut *dut,
 	if (file_exists("next-client-cert.pem")) {
 		snprintf(buf, sizeof(buf), "SP/%s/client-cert.pem", fqdn);
 		if (rename("next-client-cert.pem", buf) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Could not move client certificate");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Could not move client certificate");
 			return 0;
 		}
 	}
@@ -5581,11 +5526,8 @@ static int download_ppsmo(struct sigma_dut *dut,
 	return 1;
 }
 
-
-static int download_cert(struct sigma_dut *dut,
-			 struct sigma_conn *conn,
-			 const char *intf,
-			 struct sigma_cmd *cmd)
+static int download_cert(struct sigma_dut *dut, struct sigma_conn *conn,
+			 const char *intf, struct sigma_cmd *cmd)
 {
 	const char *name, *path;
 	char url[500], buf[600];
@@ -5597,10 +5539,13 @@ static int download_cert(struct sigma_dut *dut,
 
 	if (strcasecmp(path, "VendorSpecific") == 0) {
 		snprintf(url, sizeof(url), "Certs/%s-cert.pem", name);
-		sigma_dut_print(dut, DUT_MSG_INFO, "Use pre-configured client "
-				"certificate from the device (%s)", url);
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Use pre-configured client "
+				"certificate from the device (%s)",
+				url);
 		if (!file_exists(url)) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Requested "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Requested "
 				  "certificate file does not exist");
 			return 0;
 		}
@@ -5613,10 +5558,13 @@ static int download_cert(struct sigma_dut *dut,
 		}
 
 		snprintf(url, sizeof(url), "Certs/%s-key.pem", name);
-		sigma_dut_print(dut, DUT_MSG_INFO, "Use pre-configured client "
-				"private key from the device (%s)", url);
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Use pre-configured client "
+				"private key from the device (%s)",
+				url);
 		if (!file_exists(url)) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Requested "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Requested "
 				  "private key file does not exist");
 			return 0;
 		}
@@ -5628,13 +5576,16 @@ static int download_cert(struct sigma_dut *dut,
 		}
 	} else if (strncasecmp(path, "http:", 5) != 0 &&
 		   strncasecmp(path, "https:", 6) != 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,"
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "ErrorCode,"
 			  "Unsupported FilePath value");
 		return 0;
 	} else {
 		snprintf(url, sizeof(url), "%s/%s.pem", path, name);
-		sigma_dut_print(dut, DUT_MSG_INFO, "Downloading client "
-				"certificate/key from %s", url);
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Downloading client "
+				"certificate/key from %s",
+				url);
 		snprintf(buf, sizeof(buf),
 			 "wget -T 10 -t 3 -O next-client-cert.pem '%s'", url);
 		if (system(buf) != 0) {
@@ -5644,8 +5595,8 @@ static int download_cert(struct sigma_dut *dut,
 			return 0;
 		}
 
-		if (system("cp next-client-cert.pem next-client-key.pem") != 0)
-		{
+		if (system("cp next-client-cert.pem next-client-key.pem") !=
+		    0) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Failed to copy client key");
 			return 0;
@@ -5654,7 +5605,6 @@ static int download_cert(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static int cmd_sta_preset_testparameters_60ghz(struct sigma_dut *dut,
 					       struct sigma_conn *conn,
@@ -5673,20 +5623,21 @@ static int cmd_sta_preset_testparameters_60ghz(struct sigma_dut *dut,
 
 		dut->wsc_fragment = 1;
 		/* set long attributes to force fragmentation */
-		if (wpa_command(intf, "SET device_name "
-				WPS_LONG_DEVICE_NAME) < 0)
+		if (wpa_command(intf, "SET device_name " WPS_LONG_DEVICE_NAME) <
+		    0)
 			return -2;
-		if (wpa_command(intf, "SET manufacturer "
-				WPS_LONG_MANUFACTURER) < 0)
+		if (wpa_command(intf,
+				"SET manufacturer " WPS_LONG_MANUFACTURER) < 0)
 			return -2;
-		if (wpa_command(intf, "SET model_name "
-				WPS_LONG_MODEL_NAME) < 0)
+		if (wpa_command(intf, "SET model_name " WPS_LONG_MODEL_NAME) <
+		    0)
 			return -2;
-		if (wpa_command(intf, "SET model_number "
-				WPS_LONG_MODEL_NUMBER) < 0)
+		if (wpa_command(intf,
+				"SET model_number " WPS_LONG_MODEL_NUMBER) < 0)
 			return -2;
-		if (wpa_command(intf, "SET serial_number "
-				WPS_LONG_SERIAL_NUMBER) < 0)
+		if (wpa_command(intf,
+				"SET serial_number " WPS_LONG_SERIAL_NUMBER) <
+		    0)
 			return -2;
 	}
 
@@ -5709,7 +5660,6 @@ static int cmd_sta_preset_testparameters_60ghz(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static int cmd_sta_preset_testparameters_hs2_r2(struct sigma_dut *dut,
 						struct sigma_conn *conn,
 						const char *intf,
@@ -5730,7 +5680,6 @@ static int cmd_sta_preset_testparameters_hs2_r2(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static int cmd_sta_preset_testparameters_oce(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
@@ -5806,7 +5755,6 @@ static int cmd_sta_preset_testparameters_oce(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static void ath_sta_set_noack(struct sigma_dut *dut, const char *intf,
 			      const char *val)
 {
@@ -5828,7 +5776,6 @@ static void ath_sta_set_noack(struct sigma_dut *dut, const char *intf,
 	}
 }
 
-
 static void ath_sta_set_rts(struct sigma_dut *dut, const char *intf,
 			    const char *val)
 {
@@ -5840,7 +5787,6 @@ static void ath_sta_set_rts(struct sigma_dut *dut, const char *intf,
 	}
 }
 
-
 static void ath_sta_set_wmm(struct sigma_dut *dut, const char *intf,
 			    const char *val)
 {
@@ -5849,27 +5795,25 @@ static void ath_sta_set_wmm(struct sigma_dut *dut, const char *intf,
 	}
 }
 
-
 static int wcn_sta_set_wmm(struct sigma_dut *dut, const char *intf,
 			   const char *val)
 {
 #ifdef NL80211_SUPPORT
 	int wmmenable = 1;
 
-	if (val &&
-	    (strcasecmp(val, "off") == 0 || strcmp(val, "0") == 0))
+	if (val && (strcasecmp(val, "off") == 0 || strcmp(val, "0") == 0))
 		wmmenable = 0;
 
 	return wcn_wifi_test_config_set_u8(
 		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_WMM_ENABLE,
 		wmmenable);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"WMM cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"WMM cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static void ath_sta_set_sgi(struct sigma_dut *dut, const char *intf,
 			    const char *val)
@@ -5880,7 +5824,6 @@ static void ath_sta_set_sgi(struct sigma_dut *dut, const char *intf,
 
 	run_iwpriv(dut, intf, "shortgi %d", sgi20);
 }
-
 
 static void ath_sta_set_11nrates(struct sigma_dut *dut, const char *intf,
 				 const char *val)
@@ -5903,7 +5846,6 @@ static void ath_sta_set_11nrates(struct sigma_dut *dut, const char *intf,
 	/* Channel width gets messed up, fix this */
 	run_iwpriv(dut, intf, "chwidth %d", dut->chwidth);
 }
-
 
 static void iwpriv_sta_set_amsdu(struct sigma_dut *dut, const char *intf,
 				 const char *val)
@@ -5929,7 +5871,6 @@ static void iwpriv_sta_set_amsdu(struct sigma_dut *dut, const char *intf,
 		sigma_dut_print(dut, DUT_MSG_ERROR, "iwpriv amsdu failed");
 }
 
-
 static int iwpriv_sta_set_ampdu(struct sigma_dut *dut, const char *intf,
 				int ampdu)
 {
@@ -5947,9 +5888,7 @@ static int iwpriv_sta_set_ampdu(struct sigma_dut *dut, const char *intf,
 	return 0;
 }
 
-
-static int wcn_sta_set_ampdu(struct sigma_dut *dut, const char *intf,
-			     int ampdu)
+static int wcn_sta_set_ampdu(struct sigma_dut *dut, const char *intf, int ampdu)
 {
 	int maxaggregation = 63;
 
@@ -5963,9 +5902,7 @@ static int wcn_sta_set_ampdu(struct sigma_dut *dut, const char *intf,
 #endif /* NL80211_SUPPORT */
 
 	return iwpriv_sta_set_ampdu(dut, intf, ampdu);
-
 }
-
 
 static void ath_sta_set_stbc(struct sigma_dut *dut, const char *intf,
 			     const char *val)
@@ -5974,9 +5911,8 @@ static void ath_sta_set_stbc(struct sigma_dut *dut, const char *intf,
 	run_iwpriv(dut, intf, "rx_stbc %s", val);
 }
 
-
 static int wcn_sta_set_cts_width(struct sigma_dut *dut, const char *intf,
-				  const char *val)
+				 const char *val)
 {
 	char buf[60];
 
@@ -6005,7 +5941,6 @@ static int wcn_sta_set_cts_width(struct sigma_dut *dut, const char *intf,
 	return 0;
 }
 
-
 int ath_set_width(struct sigma_dut *dut, struct sigma_conn *conn,
 		  const char *intf, const char *val)
 {
@@ -6033,7 +5968,6 @@ int ath_set_width(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 static int wcn_sta_set_sp_stream(struct sigma_dut *dut, const char *intf,
 				 const char *val)
 {
@@ -6058,8 +5992,7 @@ static int wcn_sta_set_sp_stream(struct sigma_dut *dut, const char *intf,
 #endif /* NL80211_SUPPORT */
 
 	if (run_iwpriv(dut, intf, "nss %d", sta_nss) < 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to set SP_STREAM");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to set SP_STREAM");
 		return -1;
 	}
 
@@ -6067,7 +6000,6 @@ static int wcn_sta_set_sp_stream(struct sigma_dut *dut, const char *intf,
 
 	return 0;
 }
-
 
 static void wcn_sta_set_stbc(struct sigma_dut *dut, const char *intf,
 			     const char *val)
@@ -6096,18 +6028,18 @@ static void wcn_sta_set_stbc(struct sigma_dut *dut, const char *intf,
 		sigma_dut_print(dut, DUT_MSG_ERROR, "iwpriv rx_stbc failed");
 }
 
-
 static int mbo_set_cellular_data_capa(struct sigma_dut *dut,
-				      struct sigma_conn *conn,
-				      const char *intf, int capa)
+				      struct sigma_conn *conn, const char *intf,
+				      int capa)
 {
 	char buf[32];
 
 	if (capa > 0 && capa < 4) {
 		snprintf(buf, sizeof(buf), "SET mbo_cell_capa %d", capa);
 		if (wpa_command(intf, buf) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode, Failed to set cellular data capability");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode, Failed to set cellular data capability");
 			return 0;
 		}
 		return 1;
@@ -6119,7 +6051,6 @@ static int mbo_set_cellular_data_capa(struct sigma_dut *dut,
 		  "ErrorCode,Invalid cellular data capability");
 	return 0;
 }
-
 
 static int mbo_set_roaming(struct sigma_dut *dut, struct sigma_conn *conn,
 			   const char *intf, const char *val)
@@ -6149,10 +6080,9 @@ static int mbo_set_roaming(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 static int mbo_set_assoc_disallow(struct sigma_dut *dut,
-				  struct sigma_conn *conn,
-				  const char *intf, const char *val)
+				  struct sigma_conn *conn, const char *intf,
+				  const char *val)
 {
 	if (strcasecmp(val, "Disable") == 0) {
 		if (wpa_command(intf, "SET ignore_assoc_disallow 1") < 0) {
@@ -6178,7 +6108,6 @@ static int mbo_set_assoc_disallow(struct sigma_dut *dut,
 		  "ErrorCode,Unknown value provided for Assoc_disallow");
 	return 0;
 }
-
 
 static int mbo_set_bss_trans_req(struct sigma_dut *dut, struct sigma_conn *conn,
 				 const char *intf, const char *val)
@@ -6208,10 +6137,8 @@ static int mbo_set_bss_trans_req(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 static int mbo_set_non_pref_ch_list(struct sigma_dut *dut,
-				    struct sigma_conn *conn,
-				    const char *intf,
+				    struct sigma_conn *conn, const char *intf,
 				    struct sigma_cmd *cmd)
 {
 	const char *ch, *pref, *op_class, *reason;
@@ -6251,22 +6178,24 @@ static int mbo_set_non_pref_ch_list(struct sigma_dut *dut,
 			dut->non_pref_ch_list =
 				calloc(1, NON_PREF_CH_LIST_SIZE);
 			if (!dut->non_pref_ch_list) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to allocate memory for non_pref_ch_list");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to allocate memory for non_pref_ch_list");
 				return 0;
 			}
 		}
 		len = strlen(dut->non_pref_ch_list);
 		ret = snprintf(dut->non_pref_ch_list + len,
-			       NON_PREF_CH_LIST_SIZE - len,
-			       " %s:%s:%s:%s", op_class, ch, pref, reason);
+			       NON_PREF_CH_LIST_SIZE - len, " %s:%s:%s:%s",
+			       op_class, ch, pref, reason);
 		if (ret > 0 && ret < NON_PREF_CH_LIST_SIZE - len) {
 			sigma_dut_print(dut, DUT_MSG_DEBUG, "non_pref_list: %s",
 					dut->non_pref_ch_list);
 		} else {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"snprintf failed for non_pref_list, ret = %d",
-					ret);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"snprintf failed for non_pref_list, ret = %d",
+				ret);
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,snprintf failed");
 			free(dut->non_pref_ch_list);
@@ -6277,10 +6206,10 @@ static int mbo_set_non_pref_ch_list(struct sigma_dut *dut,
 
 	ret = snprintf(buf, sizeof(buf), "SET non_pref_chan%s",
 		       dut->non_pref_ch_list ? dut->non_pref_ch_list : " ");
-	if (ret < 0 || ret >= (int) sizeof(buf)) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"snprintf failed for set non_pref_chan, ret: %d",
-				ret);
+	if (ret < 0 || ret >= (int)sizeof(buf)) {
+		sigma_dut_print(
+			dut, DUT_MSG_DEBUG,
+			"snprintf failed for set non_pref_chan, ret: %d", ret);
 		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,snprint failed");
 		return 0;
 	}
@@ -6294,7 +6223,6 @@ static int mbo_set_non_pref_ch_list(struct sigma_dut *dut,
 	return 1;
 }
 
-
 #ifdef NL80211_SUPPORT
 
 static int sta_set_he_htc_supp(struct sigma_dut *dut, const char *intf,
@@ -6305,7 +6233,6 @@ static int sta_set_he_htc_supp(struct sigma_dut *dut, const char *intf,
 		cfg);
 }
 
-
 static int sta_set_he_fragmentation(struct sigma_dut *dut, const char *intf,
 				    enum he_fragmentation_val frag)
 {
@@ -6314,14 +6241,12 @@ static int sta_set_he_fragmentation(struct sigma_dut *dut, const char *intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_FRAGMENTATION, frag);
 }
 
-
 int wcn_set_he_ltf(struct sigma_dut *dut, const char *intf,
 		   enum qca_wlan_he_ltf_cfg ltf)
 {
 	return wcn_wifi_test_config_set_u8(
 		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_LTF, ltf);
 }
-
 
 static int nlvendor_sta_set_noack(struct sigma_dut *dut, const char *intf,
 				  int noack, enum qca_wlan_ac_type ac)
@@ -6334,8 +6259,8 @@ static int nlvendor_sta_set_noack(struct sigma_dut *dut, const char *intf,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
@@ -6367,7 +6292,6 @@ static int nlvendor_sta_set_noack(struct sigma_dut *dut, const char *intf,
 	return ret;
 }
 
-
 static void wcn_sta_set_noack(struct sigma_dut *dut, const char *intf,
 			      const char *val)
 {
@@ -6384,15 +6308,15 @@ static void wcn_sta_set_noack(struct sigma_dut *dut, const char *intf,
 		noack = strcasecmp(result, "Disable") != 0;
 		ret = nlvendor_sta_set_noack(dut, intf, noack, ac);
 		if (ret) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"nlvendor_sta_set_noack failed for ac:%d, ret:%d",
-					ac, ret);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"nlvendor_sta_set_noack failed for ac:%d, ret:%d",
+				ac, ret);
 		}
 		result = strtok_r(NULL, ":", &saveptr);
 		ac++;
 	}
 }
-
 
 static int nlvendor_sta_set_phymode(struct sigma_dut *dut, const char *intf,
 				    enum qca_wlan_vendor_phy_mode val)
@@ -6409,8 +6333,7 @@ static int nlvendor_sta_set_phymode(struct sigma_dut *dut, const char *intf,
 		return -1;
 	}
 
-	msg = nl80211_drv_msg(dut, dut->nl_ctx, ifindex, 0,
-			      NL80211_CMD_VENDOR);
+	msg = nl80211_drv_msg(dut, dut->nl_ctx, ifindex, 0, NL80211_CMD_VENDOR);
 	if (!msg) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s: err in adding vendor_cmd", __func__);
@@ -6427,8 +6350,8 @@ static int nlvendor_sta_set_phymode(struct sigma_dut *dut, const char *intf,
 	}
 
 	params = nla_nest_start(msg, NL80211_ATTR_VENDOR_DATA);
-	if (!params || nla_put_u32(msg, QCA_WLAN_VENDOR_ATTR_CONFIG_PHY_MODE,
-				   val)) {
+	if (!params ||
+	    nla_put_u32(msg, QCA_WLAN_VENDOR_ATTR_CONFIG_PHY_MODE, val)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s: err in adding vendor_data", __func__);
 		nlmsg_free(msg);
@@ -6447,7 +6370,6 @@ static int nlvendor_sta_set_phymode(struct sigma_dut *dut, const char *intf,
 	return 0;
 }
 
-
 static enum qca_wlan_vendor_phy_mode get_qca_vendor_phymode(const char *val)
 {
 	if (strcmp(val, "11a") == 0) {
@@ -6465,9 +6387,8 @@ static enum qca_wlan_vendor_phy_mode get_qca_vendor_phymode(const char *val)
 		return QCA_WLAN_VENDOR_PHY_MODE_11B;
 	}
 
-	if (strcmp(val, "11n") == 0 ||
-		   strcmp(val, "11nl") == 0 ||
-		   strcmp(val, "11nl(nabg)") == 0) {
+	if (strcmp(val, "11n") == 0 || strcmp(val, "11nl") == 0 ||
+	    strcmp(val, "11nl(nabg)") == 0) {
 		/* IEEE80211_MODE_11AGN */
 		return QCA_WLAN_VENDOR_PHY_MODE_11AGN;
 	}
@@ -6477,20 +6398,17 @@ static enum qca_wlan_vendor_phy_mode get_qca_vendor_phymode(const char *val)
 		return QCA_WLAN_VENDOR_PHY_MODE_11NG_HT40;
 	}
 
-	if (strcmp(val, "AC") == 0 ||
-		   strcasecmp(val, "11AC") == 0) {
+	if (strcmp(val, "AC") == 0 || strcasecmp(val, "11AC") == 0) {
 		/* IEEE80211_MODE_11AC_VHT80 */
 		return QCA_WLAN_VENDOR_PHY_MODE_11AC_VHT80;
 	}
 
-	if (strcmp(val, "11na") == 0 ||
-		   strcasecmp(val, "11an") == 0) {
+	if (strcmp(val, "11na") == 0 || strcasecmp(val, "11an") == 0) {
 		/* IEEE80211_MODE_11NA_HT40 */
 		return QCA_WLAN_VENDOR_PHY_MODE_11NA_HT40;
 	}
 
-	if (strcmp(val, "11ax") == 0 ||
-		   strcmp(val, "auto") == 0) {
+	if (strcmp(val, "11ax") == 0 || strcmp(val, "auto") == 0) {
 		/* IEEE80211_MODE_AUTO */
 		return QCA_WLAN_VENDOR_PHY_MODE_AUTO;
 	}
@@ -6500,7 +6418,6 @@ static enum qca_wlan_vendor_phy_mode get_qca_vendor_phymode(const char *val)
 
 #endif /* NL80211_SUPPORT */
 
-
 static int get_phymode(const char *val)
 {
 	if (strcmp(val, "11a") == 0)
@@ -6509,24 +6426,19 @@ static int get_phymode(const char *val)
 		return 3; /* IEEE80211_MODE_11G */
 	if (strcmp(val, "11b") == 0)
 		return 2; /* IEEE80211_MODE_11B */
-	if (strcmp(val, "11n") == 0 ||
-	    strcmp(val, "11nl") == 0 ||
+	if (strcmp(val, "11n") == 0 || strcmp(val, "11nl") == 0 ||
 	    strcmp(val, "11nl(nabg)") == 0)
 		return 22; /* IEEE80211_MODE_11AGN */
 	if (strcmp(val, "11ng") == 0)
 		return 13; /* IEEE80211_MODE_11NG_HT40 */
-	if (strcmp(val, "AC") == 0 ||
-	    strcasecmp(val, "11AC") == 0)
+	if (strcmp(val, "AC") == 0 || strcasecmp(val, "11AC") == 0)
 		return 19; /* IEEE80211_MODE_11AC_VHT80 */
-	if (strcmp(val, "11na") == 0 ||
-	    strcasecmp(val, "11an") == 0)
+	if (strcmp(val, "11na") == 0 || strcasecmp(val, "11an") == 0)
 		return 14; /* IEEE80211_MODE_11NA_HT40 */
-	if (strcmp(val, "11ax") == 0 ||
-	    strcmp(val, "auto") == 0)
+	if (strcmp(val, "11ax") == 0 || strcmp(val, "auto") == 0)
 		return 0; /* IEEE80211_MODE_AUTO */
 	return -1;
 }
-
 
 static void sta_set_phymode(struct sigma_dut *dut, const char *intf,
 			    const char *val)
@@ -6539,8 +6451,7 @@ static void sta_set_phymode(struct sigma_dut *dut, const char *intf,
 	qca_phymode = get_qca_vendor_phymode(val);
 	if (qca_phymode == -1) {
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Ignoring mode change for mode: %s",
-				val);
+				"Ignoring mode change for mode: %s", val);
 		return;
 	}
 
@@ -6551,16 +6462,14 @@ static void sta_set_phymode(struct sigma_dut *dut, const char *intf,
 	phymode = get_phymode(val);
 	if (phymode == -1) {
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Ignoring mode change for mode: %s",
-				val);
+				"Ignoring mode change for mode: %s", val);
 		return;
 	}
 
 	len = snprintf(buf, sizeof(buf), "iwpriv %s setphymode %d", intf,
 		       phymode);
 	if (len < 0 || len >= sizeof(buf)) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to set phymode");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to set phymode");
 		return;
 	}
 
@@ -6568,7 +6477,6 @@ static void sta_set_phymode(struct sigma_dut *dut, const char *intf,
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"iwpriv setting of phymode failed");
 }
-
 
 static enum sigma_cmd_result
 cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -6593,8 +6501,8 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 
 		if (dut->sta_ft_ds != sta_ft_ds &&
 		    get_driver_type(dut) == DRIVER_WCN &&
-		    sta_config_params(dut, intf, STA_SET_FT_DS,
-				      sta_ft_ds) != 0) {
+		    sta_config_params(dut, intf, STA_SET_FT_DS, sta_ft_ds) !=
+			    0) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Failed to enable/disable FT_DS");
 			return STATUS_SENT_ERROR;
@@ -6604,10 +6512,10 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	val = get_param(cmd, "Program");
-	if (val && (strcasecmp(val, "HS2-R2") == 0 ||
-		    strcasecmp(val, "HS2-R3") == 0 ||
-		    strcasecmp(val, "HS2-2022") == 0 ||
-		    strcasecmp(val, "HS2-R4") == 0))
+	if (val &&
+	    (strcasecmp(val, "HS2-R2") == 0 || strcasecmp(val, "HS2-R3") == 0 ||
+	     strcasecmp(val, "HS2-2022") == 0 ||
+	     strcasecmp(val, "HS2-R4") == 0))
 		return cmd_sta_preset_testparameters_hs2_r2(dut, conn, intf,
 							    cmd);
 
@@ -6620,8 +6528,8 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 			sigma_dut_print(dut, DUT_MSG_INFO, "WPS disabled");
 		} else {
 			/* wps_disable can have other value from the previous
-			 * test, so make sure it has the correct value.
-			 */
+       * test, so make sure it has the correct value.
+       */
 			dut->wps_disable = 0;
 		}
 
@@ -6638,14 +6546,13 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 		return nan_cmd_sta_preset_testparameters(dut, conn, cmd);
 #endif /* ANDROID_NAN */
 #ifdef MIRACAST
-	if (val && (strcasecmp(val, "WFD") == 0 ||
-		    strcasecmp(val, "DisplayR2") == 0))
+	if (val &&
+	    (strcasecmp(val, "WFD") == 0 || strcasecmp(val, "DisplayR2") == 0))
 		return miracast_preset_testparameters(dut, conn, cmd);
 #endif /* MIRACAST */
 
-	if (val &&
-	    (strcasecmp(val, "MBO") == 0 || strcasecmp(val, "HE") == 0 ||
-	     strcasecmp(val, "EHT") == 0)) {
+	if (val && (strcasecmp(val, "MBO") == 0 || strcasecmp(val, "HE") == 0 ||
+		    strcasecmp(val, "EHT") == 0)) {
 		bool eht = strcasecmp(val, "EHT") == 0;
 
 		val = get_param(cmd, "Cellular_Data_Cap");
@@ -6728,20 +6635,13 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	val = get_param(cmd, "Mode");
 	if (val) {
-		if (strcmp(val, "11b") == 0 ||
-		    strcmp(val, "11g") == 0 ||
-		    strcmp(val, "11a") == 0 ||
-		    strcmp(val, "11n") == 0 ||
-		    strcmp(val, "11ng") == 0 ||
-		    strcmp(val, "11nl") == 0 ||
-		    strcmp(val, "11nl(nabg)") == 0 ||
-		    strcmp(val, "AC") == 0 ||
-		    strcmp(val, "11AC") == 0 ||
-		    strcmp(val, "11ac") == 0 ||
-		    strcmp(val, "11na") == 0 ||
-		    strcmp(val, "11an") == 0 ||
-		    strcmp(val, "11ax") == 0 ||
-		    strcmp(val, "11be") == 0) {
+		if (strcmp(val, "11b") == 0 || strcmp(val, "11g") == 0 ||
+		    strcmp(val, "11a") == 0 || strcmp(val, "11n") == 0 ||
+		    strcmp(val, "11ng") == 0 || strcmp(val, "11nl") == 0 ||
+		    strcmp(val, "11nl(nabg)") == 0 || strcmp(val, "AC") == 0 ||
+		    strcmp(val, "11AC") == 0 || strcmp(val, "11ac") == 0 ||
+		    strcmp(val, "11na") == 0 || strcmp(val, "11an") == 0 ||
+		    strcmp(val, "11ax") == 0 || strcmp(val, "11be") == 0) {
 			/* STA supports all modes by default */
 			dut->device_mode = dev_mode_to_enum(val);
 		} else {
@@ -6751,7 +6651,7 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 		}
 
 		/* Change the mode only in case of testbed for HE program
-		 * and for 11a and 11g modes only. */
+     * and for 11a and 11g modes only. */
 		if (dut->program == PROGRAM_HE &&
 		    dut->device_type == STA_testbed) {
 			sta_set_phymode(dut, intf, val);
@@ -6886,7 +6786,7 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 			}
 		} else if (strcasecmp(val, "HiLoMac") == 0) {
 			/* STA should respond with TDLS setup req for a TDLS
-			 * setup req */
+       * setup req */
 			if (wpa_command(intf, "SET tdls_testing 0x80")) {
 				send_resp(dut, conn, SIGMA_ERROR,
 					  "ErrorCode,Failed to enable HiLoMac "
@@ -6895,21 +6795,21 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 			}
 		} else if (strcasecmp(val, "WeakSecurity") == 0) {
 			/*
-			 * Since all security modes are enabled by default when
-			 * Sigma control is used, there is no need to do
-			 * anything here.
-			 */
+       * Since all security modes are enabled by default when
+       * Sigma control is used, there is no need to do
+       * anything here.
+       */
 		} else if (strcasecmp(val, "ExistLink") == 0) {
 			/*
-			 * Since we allow new TDLS Setup Request even if there
-			 * is an existing link, nothing needs to be done for
-			 * this.
-			 */
+       * Since we allow new TDLS Setup Request even if there
+       * is an existing link, nothing needs to be done for
+       * this.
+       */
 		} else {
 			/* TODO:
-			 * ExistLink: STA should send TDLS setup req even if
-			 * direct link already exists
-			 */
+       * ExistLink: STA should send TDLS setup req even if
+       * direct link already exists
+       */
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,Unsupported TDLSmode value");
 			return 0;
@@ -6929,15 +6829,17 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 		if (strcasecmp(val, "Enable") == 0) {
 			if (sta_set_he_fragmentation(dut, intf,
 						     HE_FRAG_LEVEL1)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to enable HE Fragmentation");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to enable HE Fragmentation");
 				return 0;
 			}
 		} else if (strcasecmp(val, "Disable") == 0) {
 			if (sta_set_he_fragmentation(dut, intf,
 						     HE_FRAG_DISABLE)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to disable HE Fragmentation");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to disable HE Fragmentation");
 				return 0;
 			}
 		}
@@ -6949,9 +6851,11 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 		char buf[128];
 		int len;
 
-		len = snprintf(buf, sizeof(buf),
-			       "MSCS add up_bitmap=F0 up_limit=7 stream_timeout=60000 frame_classifier=045F%032x",
-			       0);
+		len = snprintf(
+			buf, sizeof(buf),
+			"MSCS add up_bitmap=F0 up_limit=7 stream_timeout=60000 "
+			"frame_classifier=045F%032x",
+			0);
 
 		if (len < 0 || len >= sizeof(buf)) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
@@ -6960,7 +6864,8 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 		}
 
 		if (wpa_command(intf, buf) != 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
+			send_resp(
+				dut, conn, SIGMA_ERROR,
 				"ErrorCode,Failed to include MSCS descriptor");
 			return STATUS_SENT_ERROR;
 		}
@@ -6987,8 +6892,9 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 				       disable_scs);
 			if (len < 0 || len >= sizeof(buf) ||
 			    wpa_command(intf, buf) != 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to update SCS support");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to update SCS support");
 				return STATUS_SENT_ERROR;
 			}
 			dut->prev_disable_scs_support = disable_scs;
@@ -7016,8 +6922,9 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 				       disable_mscs);
 			if (len < 0 || len >= sizeof(buf) ||
 			    wpa_command(intf, buf) != 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to update MSCS support");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to update MSCS support");
 				return STATUS_SENT_ERROR;
 			}
 			dut->prev_disable_mscs_support = disable_mscs;
@@ -7043,8 +6950,9 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 
 		if (len < 0 || len >= sizeof(buf) ||
 		    wpa_command(intf, buf) != 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to update DSCP policy capability");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to update DSCP policy capability");
 			return STATUS_SENT_ERROR;
 		}
 	}
@@ -7069,15 +6977,12 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 		int len;
 
 		if (strcasecmp(val, "0") == 0) {
-			len = snprintf(buf, sizeof(buf),
-				       "STA_AUTOCONNECT %d",
+			len = snprintf(buf, sizeof(buf), "STA_AUTOCONNECT %d",
 				       dut->autoconnect_default);
 		} else if (strcasecmp(val, "1") == 0) {
-			len = snprintf(buf, sizeof(buf),
-				       "STA_AUTOCONNECT 0");
+			len = snprintf(buf, sizeof(buf), "STA_AUTOCONNECT 0");
 		} else if (strcasecmp(val, "2") == 0) {
-			len = snprintf(buf, sizeof(buf),
-				       "STA_AUTOCONNECT 1");
+			len = snprintf(buf, sizeof(buf), "STA_AUTOCONNECT 1");
 		} else {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"Invalid Deauth_Reconnect_Policy");
@@ -7086,8 +6991,9 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 
 		if (len < 0 || len >= sizeof(buf) ||
 		    wpa_command(intf, buf) != 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to update Deauth_Reconnect_Policy");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to update Deauth_Reconnect_Policy");
 			return STATUS_SENT_ERROR;
 		}
 	}
@@ -7095,8 +7001,7 @@ cmd_sta_preset_testparameters(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 1;
 }
 
-
-static const char * ath_get_radio_name(const char *radio_name)
+static const char *ath_get_radio_name(const char *radio_name)
 {
 	if (radio_name == NULL)
 		return "wifi0";
@@ -7106,7 +7011,6 @@ static const char * ath_get_radio_name(const char *radio_name)
 		return "wifi2";
 	return "wifi0";
 }
-
 
 static void ath_sta_set_txsp_stream(struct sigma_dut *dut, const char *intf,
 				    const char *val)
@@ -7162,7 +7066,6 @@ static void ath_sta_set_txsp_stream(struct sigma_dut *dut, const char *intf,
 	run_iwpriv(dut, intf, "vht_mcsmap 0x%04x", vht_mcsmap);
 }
 
-
 static void ath_sta_set_rxsp_stream(struct sigma_dut *dut, const char *intf,
 				    const char *val)
 {
@@ -7217,36 +7120,36 @@ static void ath_sta_set_rxsp_stream(struct sigma_dut *dut, const char *intf,
 	run_iwpriv(dut, intf, "vht_mcsmap 0x%04x", vht_mcsmap);
 }
 
-
 void ath_set_zero_crc(struct sigma_dut *dut, const char *val)
 {
 	if (strcasecmp(val, "enable") == 0) {
-		if (system("athdiag --set --address=0x2a204 --and=0xbfffffff")
-		    != 0) {
+		if (system("athdiag --set --address=0x2a204 --and=0xbfffffff") !=
+		    0) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"Disable BB_VHTSIGB_CRC_CALC failed");
 		}
 
-		if (system("athdiag --set --address=0x2a204 --or=0x80000000")
-		    != 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Enable FORCE_VHT_SIGB_CRC_VALUE_ZERO failed");
+		if (system("athdiag --set --address=0x2a204 --or=0x80000000") !=
+		    0) {
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Enable FORCE_VHT_SIGB_CRC_VALUE_ZERO failed");
 		}
 	} else {
-		if (system("athdiag --set --address=0x2a204 --and=0x7fffffff")
-		    != 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Disable FORCE_VHT_SIGB_CRC_VALUE_ZERO failed");
+		if (system("athdiag --set --address=0x2a204 --and=0x7fffffff") !=
+		    0) {
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Disable FORCE_VHT_SIGB_CRC_VALUE_ZERO failed");
 		}
 
-		if (system("athdiag --set --address=0x2a204 --or=0x40000000")
-		    != 0) {
+		if (system("athdiag --set --address=0x2a204 --or=0x40000000") !=
+		    0) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"Enable BB_VHTSIGB_CRC_CALC failed");
 		}
 	}
 }
-
 
 static int wcn_sta_set_width(struct sigma_dut *dut, const char *intf,
 			     const char *val)
@@ -7308,7 +7211,6 @@ static int wcn_sta_set_width(struct sigma_dut *dut, const char *intf,
 	return 0;
 }
 
-
 static int nlvendor_sta_set_addba_reject(struct sigma_dut *dut,
 					 const char *intf, int addbareject)
 {
@@ -7318,12 +7220,12 @@ static int nlvendor_sta_set_addba_reject(struct sigma_dut *dut,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_ACCEPT_ADDBA_REQ,
 		!addbareject);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"ADDBA_REJECT cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"ADDBA_REJECT cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_addba_reject(struct sigma_dut *dut, const char *intf,
 				int addbareject)
@@ -7334,22 +7236,23 @@ static int sta_set_addba_reject(struct sigma_dut *dut, const char *intf,
 	case DRIVER_WCN:
 		ret = nlvendor_sta_set_addba_reject(dut, intf, addbareject);
 		if (ret) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"nlvendor_sta_set_addba_reject failed, ret:%d",
-					ret);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"nlvendor_sta_set_addba_reject failed, ret:%d",
+				ret);
 			return ret;
 		}
 		break;
 	default:
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"errorCode,Unsupported ADDBA_REJECT with the current driver");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"errorCode,Unsupported ADDBA_REJECT with the current driver");
 		ret = -1;
 		break;
 	}
 
 	return ret;
 }
-
 
 static int nlvendor_config_send_addba(struct sigma_dut *dut, const char *intf,
 				      int enable)
@@ -7359,12 +7262,12 @@ static int nlvendor_config_send_addba(struct sigma_dut *dut, const char *intf,
 		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_SEND_ADDBA_REQ,
 		enable);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Disable addba not possible without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Disable addba not possible without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 #ifdef NL80211_SUPPORT
 static int nl80211_sta_set_rts(struct sigma_dut *dut, const char *intf, int val)
@@ -7376,8 +7279,8 @@ static int nl80211_sta_set_rts(struct sigma_dut *dut, const char *intf, int val)
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
@@ -7385,8 +7288,7 @@ static int nl80211_sta_set_rts(struct sigma_dut *dut, const char *intf, int val)
 				    NL80211_CMD_SET_WIPHY)) ||
 	    nla_put_u32(msg, NL80211_ATTR_WIPHY_RTS_THRESHOLD, val)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: err in adding RTS threshold",
-				__func__);
+				"%s: err in adding RTS threshold", __func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -7401,7 +7303,6 @@ static int nl80211_sta_set_rts(struct sigma_dut *dut, const char *intf, int val)
 }
 #endif /* NL80211_SUPPORT */
 
-
 static int sta_set_rts(struct sigma_dut *dut, const char *intf, int val)
 {
 	char buf[100];
@@ -7409,8 +7310,9 @@ static int sta_set_rts(struct sigma_dut *dut, const char *intf, int val)
 #ifdef NL80211_SUPPORT
 	if (nl80211_sta_set_rts(dut, intf, val) == 0)
 		return 0;
-	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"Fall back to using iwconfig for setting RTS threshold");
+	sigma_dut_print(
+		dut, DUT_MSG_DEBUG,
+		"Fall back to using iwconfig for setting RTS threshold");
 #endif /* NL80211_SUPPORT */
 
 	snprintf(buf, sizeof(buf), "iwconfig %s rts %d", intf, val);
@@ -7421,7 +7323,6 @@ static int sta_set_rts(struct sigma_dut *dut, const char *intf, int val)
 	}
 	return 0;
 }
-
 
 static int wcn_config_dyn_bw_sig(struct sigma_dut *dut, const char *intf,
 				 const char *val)
@@ -7440,8 +7341,8 @@ static int wcn_config_dyn_bw_sig(struct sigma_dut *dut, const char *intf,
 		if (res) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"Set DYN_BW_SGL using NL failed");
-			if (run_iwpriv(dut, intf,
-				       "cwmenable %d", set_val) != 0) {
+			if (run_iwpriv(dut, intf, "cwmenable %d", set_val) !=
+			    0) {
 				sigma_dut_print(dut, DUT_MSG_ERROR,
 						"iwpriv cwmenable %d failed",
 						set_val);
@@ -7458,7 +7359,6 @@ static int wcn_config_dyn_bw_sig(struct sigma_dut *dut, const char *intf,
 
 	return 0;
 }
-
 
 static enum sigma_cmd_result
 cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
@@ -7541,9 +7441,9 @@ cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
 			/* Disable sending of addba using nl vendor command */
 			ret = nlvendor_config_send_addba(dut, intf, 0);
 			if (ret) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Failed to disable addba, ret:%d",
-						ret);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Failed to disable addba, ret:%d", ret);
 			}
 		}
 	}
@@ -7559,8 +7459,9 @@ cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
 			if (strcmp(val, "1") == 0 ||
 			    strcasecmp(val, "Enable") == 0) {
 				/* Enable AMSDU Aggregation */
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,AMSDU aggregation not supported");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,AMSDU aggregation not supported");
 				return STATUS_SENT_ERROR;
 			}
 			break;
@@ -7617,8 +7518,9 @@ cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
 		switch (get_driver_type(dut)) {
 		case DRIVER_WCN:
 			if (wcn_sta_set_sp_stream(dut, intf, val) < 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set TXSP_STREAM");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set TXSP_STREAM");
 				return STATUS_SENT_ERROR;
 			}
 			break;
@@ -7637,8 +7539,9 @@ cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
 		switch (get_driver_type(dut)) {
 		case DRIVER_WCN:
 			if (wcn_sta_set_sp_stream(dut, intf, val) < 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set RXSP_STREAM");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set RXSP_STREAM");
 				return STATUS_SENT_ERROR;
 			}
 			break;
@@ -7682,8 +7585,9 @@ cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
 				       "wifitool %s beeliner_fw_test 100 1",
 				       intf);
 			if (res < 0 || res >= sizeof(buf) || system(buf) != 0) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"wifitool beeliner_fw_test 100 1 failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"wifitool beeliner_fw_test 100 1 failed");
 			}
 		} else if (strcasecmp(val, "Disable") == 0) {
 			if (sta_set_rts(dut, intf, 2347) != 0) {
@@ -7735,12 +7639,14 @@ cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
 			res = sta_config_params(dut, intf, STA_SET_DYN_BW,
 						set_val);
 			if (res) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Set DYN_BW_SGL using NL failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Set DYN_BW_SGL using NL failed");
 				if (run_iwpriv(dut, intf, "cwmenable %d") < 0) {
-					sigma_dut_print(dut, DUT_MSG_ERROR,
-							"iwpriv cwmenable %d failed",
-							set_val);
+					sigma_dut_print(
+						dut, DUT_MSG_ERROR,
+						"iwpriv cwmenable %d failed",
+						set_val);
 					return ERROR_SEND_STATUS;
 				}
 			}
@@ -7780,8 +7686,9 @@ cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
 			if (sta_config_params(dut, intf,
 					      STA_SET_LISTEN_INTERVAL,
 					      atoi(val))) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Setting listen interval failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Setting listen interval failed");
 			}
 			break;
 		default:
@@ -7792,7 +7699,6 @@ cmd_sta_set_wireless_common(const char *intf, struct sigma_dut *dut,
 	return SUCCESS_SEND_STATUS;
 }
 
-
 static int sta_set_force_mcs(struct sigma_dut *dut, int force, int mcs)
 {
 	switch (get_driver_type(dut)) {
@@ -7801,12 +7707,12 @@ static int sta_set_force_mcs(struct sigma_dut *dut, int force, int mcs)
 		return wil6210_set_force_mcs(dut, force, mcs);
 #endif /* __linux__ */
 	default:
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Unsupported sta_set_force_mcs with the current driver");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Unsupported sta_set_force_mcs with the current driver");
 		return -1;
 	}
 }
-
 
 static int sta_60g_force_rsn_ie(struct sigma_dut *dut, int state)
 {
@@ -7816,12 +7722,12 @@ static int sta_60g_force_rsn_ie(struct sigma_dut *dut, int state)
 		return wil6210_force_rsn_ie(dut, state);
 #endif /* __linux__ */
 	default:
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Unsupported sta_60g_force_rsn_ie with the current driver");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Unsupported sta_60g_force_rsn_ie with the current driver");
 		return -1;
 	}
 }
-
 
 static int sta_set_60g_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			      struct sigma_cmd *cmd)
@@ -7836,18 +7742,18 @@ static int sta_set_60g_common(struct sigma_dut *dut, struct sigma_conn *conn,
 		dut->amsdu_size = atoi(val);
 		if (dut->amsdu_size > IEEE80211_MAX_DATA_LEN_DMG ||
 		    dut->amsdu_size < IEEE80211_SNAP_LEN_DMG) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"MSDUSize %d is above max %d or below min %d",
-					dut->amsdu_size,
-					IEEE80211_MAX_DATA_LEN_DMG,
-					IEEE80211_SNAP_LEN_DMG);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"MSDUSize %d is above max %d or below min %d",
+				dut->amsdu_size, IEEE80211_MAX_DATA_LEN_DMG,
+				IEEE80211_SNAP_LEN_DMG);
 			dut->amsdu_size = 0;
 			return ERROR_SEND_STATUS;
 		}
 
 		mtu = dut->amsdu_size - IEEE80211_SNAP_LEN_DMG;
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Setting amsdu_size to %d", mtu);
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "Setting amsdu_size to %d",
+				mtu);
 		snprintf(buf, sizeof(buf), "ifconfig %s mtu %d",
 			 get_station_ifname(dut), mtu);
 
@@ -7868,8 +7774,8 @@ static int sta_set_60g_common(struct sigma_dut *dut, struct sigma_conn *conn,
 			return ERROR_SEND_STATUS;
 		}
 
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Setting BAckRcvBuf to %s", val);
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "Setting BAckRcvBuf to %s",
+				val);
 	}
 
 	val = get_param(cmd, "MCS_FixedRate");
@@ -7883,7 +7789,6 @@ static int sta_set_60g_common(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return SUCCESS_SEND_STATUS;
 }
-
 
 static int sta_pcp_start(struct sigma_dut *dut, struct sigma_conn *conn,
 			 struct sigma_cmd *cmd)
@@ -7931,48 +7836,51 @@ static int sta_pcp_start(struct sigma_dut *dut, struct sigma_conn *conn,
 	if (val && strcasecmp(val, "OPEN") == 0) {
 		dut->ap_key_mgmt = AP_OPEN;
 		if (set_network(ifname, net_id, "key_mgmt", "NONE") < 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to set supplicant to %s security",
-					val);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to set supplicant to %s security", val);
 			return ERROR_SEND_STATUS;
 		}
 	} else if (val && strcasecmp(val, "WPA2-PSK") == 0) {
 		dut->ap_key_mgmt = AP_WPA2_PSK;
 		if (set_network(ifname, net_id, "key_mgmt", "WPA-PSK") < 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to set supplicant to %s security",
-					val);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to set supplicant to %s security", val);
 			return ERROR_SEND_STATUS;
 		}
 
 		if (set_network(ifname, net_id, "proto", "RSN") < 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to set supplicant to proto RSN");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to set supplicant to proto RSN");
 			return ERROR_SEND_STATUS;
 		}
 	} else if (val) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Requested Security %s is not supported on 60GHz",
-				val);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Requested Security %s is not supported on 60GHz", val);
 		return INVALID_SEND_STATUS;
 	}
 
 	val = get_param(cmd, "Encrypt");
 	if (val && strcasecmp(val, "AES-GCMP") == 0) {
 		if (set_network(ifname, net_id, "pairwise", "GCMP") < 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to set supplicant to pairwise GCMP");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to set supplicant to pairwise GCMP");
 			return ERROR_SEND_STATUS;
 		}
 		if (set_network(ifname, net_id, "group", "GCMP") < 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to set supplicant to group GCMP");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to set supplicant to group GCMP");
 			return ERROR_SEND_STATUS;
 		}
 	} else if (val) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Requested Encrypt %s is not supported on 60 GHz",
-				val);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Requested Encrypt %s is not supported on 60 GHz", val);
 		return INVALID_SEND_STATUS;
 	}
 
@@ -8020,8 +7928,8 @@ static int sta_pcp_start(struct sigma_dut *dut, struct sigma_conn *conn,
 	snprintf(buf, sizeof(buf), "SELECT_NETWORK %d", net_id);
 	if (wpa_command(ifname, buf) < 0) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Failed to select network id %d on %s",
-				net_id, ifname);
+				"Failed to select network id %d on %s", net_id,
+				ifname);
 		return ERROR_SEND_STATUS;
 	}
 
@@ -8029,7 +7937,6 @@ static int sta_pcp_start(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return SUCCESS_SEND_STATUS;
 }
-
 
 static int wil6210_set_abft_len(struct sigma_dut *dut, int abft_len)
 {
@@ -8048,8 +7955,8 @@ static int wil6210_set_abft_len(struct sigma_dut *dut, int abft_len)
 		return -1;
 	f = fopen(fname, "w");
 	if (!f) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"failed to open: %s", fname);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "failed to open: %s",
+				fname);
 		return -1;
 	}
 
@@ -8058,7 +7965,6 @@ static int wil6210_set_abft_len(struct sigma_dut *dut, int abft_len)
 
 	return 0;
 }
-
 
 int sta_set_60g_abft_len(struct sigma_dut *dut, struct sigma_conn *conn,
 			 int abft_len)
@@ -8073,9 +7979,8 @@ int sta_set_60g_abft_len(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 }
 
-
 static int sta_set_60g_pcp(struct sigma_dut *dut, struct sigma_conn *conn,
-			    struct sigma_cmd *cmd)
+			   struct sigma_cmd *cmd)
 {
 	const char *val;
 	unsigned int abft_len = 1; /* default is one slot */
@@ -8154,8 +8059,9 @@ static int sta_set_60g_pcp(struct sigma_dut *dut, struct sigma_conn *conn,
 		else if (strcasecmp(val, "Disable") == 0)
 			dut->ap_ampdu = 2;
 		else {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,AMPDU value is not Enable nor Disabled");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,AMPDU value is not Enable nor Disabled");
 			return -1;
 		}
 	}
@@ -8177,8 +8083,8 @@ static int sta_set_60g_pcp(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	val = get_param(cmd, "ABFTLRang");
 	if (val) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"ABFTLRang parameter %s", val);
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "ABFTLRang parameter %s",
+				val);
 		if (strcmp(val, "Gt1") == 0)
 			abft_len = 2; /* 2 slots in this case */
 	}
@@ -8197,7 +8103,6 @@ static int sta_set_60g_pcp(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return sta_set_60g_common(dut, conn, cmd);
 }
-
 
 static int sta_set_60g_sta(struct sigma_dut *dut, struct sigma_conn *conn,
 			   struct sigma_cmd *cmd)
@@ -8235,7 +8140,6 @@ static int sta_set_60g_sta(struct sigma_dut *dut, struct sigma_conn *conn,
 	return sta_set_60g_common(dut, conn, cmd);
 }
 
-
 static enum sigma_cmd_result cmd_sta_disconnect(struct sigma_dut *dut,
 						struct sigma_conn *conn,
 						struct sigma_cmd *cmd)
@@ -8243,10 +8147,8 @@ static enum sigma_cmd_result cmd_sta_disconnect(struct sigma_dut *dut,
 	const char *intf = get_param(cmd, "Interface");
 	const char *val = get_param(cmd, "maintain_profile");
 
-	if (dut->program == PROGRAM_OCE ||
-	    dut->program == PROGRAM_HE ||
-	    dut->program == PROGRAM_EHT ||
-	    dut->program == PROGRAM_LOCR2 ||
+	if (dut->program == PROGRAM_OCE || dut->program == PROGRAM_HE ||
+	    dut->program == PROGRAM_EHT || dut->program == PROGRAM_LOCR2 ||
 	    (val && atoi(val) == 1)) {
 		wpa_command(intf, "DISCONNECT");
 		return 1;
@@ -8254,12 +8156,11 @@ static enum sigma_cmd_result cmd_sta_disconnect(struct sigma_dut *dut,
 
 	disconnect_station(dut);
 	/* Try to ignore old scan results to avoid HS 2.0R2 test case failures
-	 * due to cached results. */
+   * due to cached results. */
 	wpa_command(intf, "SET ignore_old_scan_res 1");
 	wpa_command(intf, "BSS_FLUSH");
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
@@ -8280,7 +8181,8 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 	int ft_ds = 0;
 
 	if (bssid == NULL) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Missing bssid "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Missing bssid "
 			  "argument");
 		return STATUS_SENT_ERROR;
 	}
@@ -8293,17 +8195,18 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 
 	if (wifi_chip_type != DRIVER_WCN && wifi_chip_type != DRIVER_AR6003) {
 		/* The current network may be from sta_associate or
-		 * sta_hs2_associate
-		 */
+     * sta_hs2_associate
+     */
 		if (set_network(intf, dut->infra_network_id, "bssid", bssid) <
-		    0 ||
+			    0 ||
 		    set_network(intf, 0, "bssid", bssid) < 0)
 			return ERROR_SEND_STATUS;
 	}
 
 	ctrl = open_wpa_mon(intf);
 	if (ctrl == NULL) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to open "
+		sigma_dut_print(dut, DUT_MSG_ERROR,
+				"Failed to open "
 				"wpa_supplicant monitor connection");
 		return ERROR_SEND_STATUS;
 	}
@@ -8331,8 +8234,9 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 		snprintf(buf, sizeof(buf), "TEST_ASSOC_IE %s",
 			 dut->rsne_override);
 		if (wpa_command(intf, buf) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to set DEV_CONFIGURE_IE RSNE override");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to set DEV_CONFIGURE_IE RSNE override");
 			return 0;
 		}
 	}
@@ -8342,9 +8246,10 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 			if (!freq)
 				freq = channel_to_freq(dut, chan);
 			if (!freq) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Invalid channel number provided: %d",
-						chan);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Invalid channel number provided: %d",
+					chan);
 				send_resp(dut, conn, SIGMA_INVALID,
 					  "ErrorCode,Invalid channel number");
 				goto close_mon_conn;
@@ -8354,7 +8259,7 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 		} else {
 			res = snprintf(buf, sizeof(buf), "SCAN TYPE=ONLY");
 		}
-		if (res < 0 || res >= (int) sizeof(buf)) {
+		if (res < 0 || res >= (int)sizeof(buf)) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,snprintf failed");
 			goto close_mon_conn;
@@ -8378,10 +8283,10 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 		}
 
 		res = snprintf(buf, sizeof(buf), "FT_DS %s", bssid);
-		if (res > 0 && res < (int) sizeof(buf))
+		if (res > 0 && res < (int)sizeof(buf))
 			res = wpa_command(intf, buf);
 
-		if (res < 0 || res >= (int) sizeof(buf)) {
+		if (res < 0 || res >= (int)sizeof(buf)) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,FT_DS command failed");
 			status = STATUS_SENT_ERROR;
@@ -8392,9 +8297,10 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 			if (!freq)
 				freq = channel_to_freq(dut, chan);
 			if (!freq) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Invalid channel number provided: %d",
-						chan);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Invalid channel number provided: %d",
+					chan);
 				send_resp(dut, conn, SIGMA_INVALID,
 					  "ErrorCode,Invalid channel number");
 				goto close_mon_conn;
@@ -8404,7 +8310,7 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 		} else {
 			res = snprintf(buf, sizeof(buf), "SCAN TYPE=ONLY");
 		}
-		if (res < 0 || res >= (int) sizeof(buf)) {
+		if (res < 0 || res >= (int)sizeof(buf)) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,snprintf failed");
 			goto close_mon_conn;
@@ -8427,16 +8333,17 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 			goto close_mon_conn;
 		}
 
-		if (set_network(intf, dut->infra_network_id, "bssid", "any")
-		    < 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to set "
+		if (set_network(intf, dut->infra_network_id, "bssid", "any") <
+		    0) {
+			sigma_dut_print(dut, DUT_MSG_ERROR,
+					"Failed to set "
 					"bssid to any during FASTREASSOC");
 			status = ERROR_SEND_STATUS;
 			goto close_mon_conn;
 		}
-		res = snprintf(buf, sizeof(buf), "FASTREASSOC %s %d",
-			       bssid, is_6ghz_freq(freq) ? freq : chan);
-		if (res < 0 || res >= (int) sizeof(buf) ||
+		res = snprintf(buf, sizeof(buf), "FASTREASSOC %s %d", bssid,
+			       is_6ghz_freq(freq) ? freq : chan);
+		if (res < 0 || res >= (int)sizeof(buf) ||
 		    wcn_driver_cmd(intf, buf) < 0) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Failed to run FASTREASSOC");
@@ -8445,13 +8352,14 @@ static enum sigma_cmd_result cmd_sta_reassoc(struct sigma_dut *dut,
 		sigma_dut_print(dut, DUT_MSG_INFO,
 				"sta_reassoc: Run %s successful", buf);
 	} else if (wpa_command(intf, "REASSOCIATE")) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed to "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Failed to "
 			  "request reassociation");
 		goto close_mon_conn;
 	}
 
-	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-CONNECTED",
-				buf, sizeof(buf));
+	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-CONNECTED", buf,
+				sizeof(buf));
 	if (res < 0) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "errorCode,Connection did not complete");
@@ -8466,12 +8374,10 @@ close_mon_conn:
 	return status;
 }
 
-
 static void hs2_clear_credentials(const char *intf)
 {
 	wpa_command(intf, "REMOVE_CRED all");
 }
-
 
 #ifdef __linux__
 static int wil6210_get_aid(struct sigma_dut *dut, const char *bssid,
@@ -8482,7 +8388,6 @@ static int wil6210_get_aid(struct sigma_dut *dut, const char *bssid,
 	return wil6210_get_sta_info_field(dut, bssid, pattern, aid);
 }
 #endif /* __linux__ */
-
 
 static int sta_get_aid_60g(struct sigma_dut *dut, const char *bssid,
 			   unsigned int *aid)
@@ -8498,7 +8403,6 @@ static int sta_get_aid_60g(struct sigma_dut *dut, const char *bssid,
 	}
 }
 
-
 static int sta_get_parameter_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 				 struct sigma_cmd *cmd)
 {
@@ -8513,8 +8417,8 @@ static int sta_get_parameter_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 		unsigned int aid = 0;
 		char bssid[20];
 
-		if (get_wpa_status(get_station_ifname(dut), "bssid",
-				   bssid, sizeof(bssid)) < 0) {
+		if (get_wpa_status(get_station_ifname(dut), "bssid", bssid,
+				   sizeof(bssid)) < 0) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"could not get bssid");
 			return -2;
@@ -8536,17 +8440,17 @@ static int sta_get_parameter_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 		char *saveptr;
 
 		if (ifname == NULL) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"For get DiscoveredDevList need Interface name.");
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"For get DiscoveredDevList need Interface name.");
 			return -1;
 		}
 
 		/*
-		 * Use "BSS RANGE=ALL MASK=0x2" which provides a list
-		 * of BSSIDs in "bssid=<BSSID>\n"
-		 */
-		if (wpa_command_resp(ifname, "BSS RANGE=ALL MASK=0x2",
-				     bss_list,
+     * Use "BSS RANGE=ALL MASK=0x2" which provides a list
+     * of BSSIDs in "bssid=<BSSID>\n"
+     */
+		if (wpa_command_resp(ifname, "BSS RANGE=ALL MASK=0x2", bss_list,
 				     sizeof(bss_list)) < 0) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"Failed to get bss list");
@@ -8554,8 +8458,8 @@ static int sta_get_parameter_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 		}
 
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"bss list for ifname:%s is:%s",
-				ifname, bss_list);
+				"bss list for ifname:%s is:%s", ifname,
+				bss_list);
 
 		snprintf(buf, sizeof(buf), "DeviceList");
 		bss_line = strtok_r(bss_list, "\n", &saveptr);
@@ -8565,26 +8469,26 @@ static int sta_get_parameter_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 				int len;
 
 				len = snprintf(buf + strlen(buf),
-					       sizeof(buf) - strlen(buf),
-					       ",%s", bss_id);
+					       sizeof(buf) - strlen(buf), ",%s",
+					       bss_id);
 				free(bss_id);
 				bss_id = NULL;
 				if (len < 0) {
-					sigma_dut_print(dut,
-							DUT_MSG_ERROR,
+					sigma_dut_print(dut, DUT_MSG_ERROR,
 							"Failed to read BSSID");
-					send_resp(dut, conn, SIGMA_ERROR,
-						  "ErrorCode,Failed to read BSS ID");
+					send_resp(
+						dut, conn, SIGMA_ERROR,
+						"ErrorCode,Failed to read BSS ID");
 					return 0;
 				}
 
-				if ((size_t) len >= sizeof(buf) - strlen(buf)) {
-					sigma_dut_print(dut,
-							DUT_MSG_ERROR,
-							"Response buf too small for list");
-					send_resp(dut, conn,
-						  SIGMA_ERROR,
-						  "ErrorCode,Response buf too small for list");
+				if ((size_t)len >= sizeof(buf) - strlen(buf)) {
+					sigma_dut_print(
+						dut, DUT_MSG_ERROR,
+						"Response buf too small for list");
+					send_resp(
+						dut, conn, SIGMA_ERROR,
+						"ErrorCode,Response buf too small for list");
 					return 0;
 				}
 			}
@@ -8601,7 +8505,6 @@ static int sta_get_parameter_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 	send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unsupported parameter");
 	return 0;
 }
-
 
 static int sta_get_parameter_he(struct sigma_dut *dut, struct sigma_conn *conn,
 				struct sigma_cmd *cmd)
@@ -8632,7 +8535,6 @@ static int sta_get_parameter_he(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 #ifdef NL80211_SUPPORT
 
 struct station_info {
@@ -8641,21 +8543,16 @@ struct station_info {
 	uint32_t beacon_replay_count;
 };
 
-
 static int qca_get_sta_info_handler(struct nl_msg *msg, void *arg)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct station_info *data = arg;
 	struct nlattr *info[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAX + 1];
-	static struct nla_policy info_policy[
-		QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAX + 1] = {
-		[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_MIC_ERROR_COUNT] = {
-			.type = NLA_U32
-		},
-		[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_REPLAY_COUNT] = {
-			.type = NLA_U32
-		},
+	static struct nla_policy info_policy[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_MAX +
+					     1] = {
+		[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_MIC_ERROR_COUNT] = { .type = NLA_U32 },
+		[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_REPLAY_COUNT] = { .type = NLA_U32 },
 	};
 
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
@@ -8670,22 +8567,21 @@ static int qca_get_sta_info_handler(struct nl_msg *msg, void *arg)
 	}
 
 	if (info[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_MIC_ERROR_COUNT]) {
-		data->filled |=
-			BIT_ULL(QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_MIC_ERROR_COUNT);
-		data->beacon_mic_error_count =
-			nla_get_u32(info[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_MIC_ERROR_COUNT]);
+		data->filled |= BIT_ULL(
+			QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_MIC_ERROR_COUNT);
+		data->beacon_mic_error_count = nla_get_u32(
+			info[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_MIC_ERROR_COUNT]);
 	}
 
 	if (info[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_REPLAY_COUNT]) {
-		data->filled |=
-			BIT_ULL(QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_REPLAY_COUNT);
-		data->beacon_replay_count =
-			nla_get_u32(info[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_REPLAY_COUNT]);
+		data->filled |= BIT_ULL(
+			QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_REPLAY_COUNT);
+		data->beacon_replay_count = nla_get_u32(
+			info[QCA_WLAN_VENDOR_ATTR_GET_STA_INFO_BEACON_REPLAY_COUNT]);
 	}
 
 	return NL_SKIP;
 }
-
 
 static int qca_nl80211_get_sta_info(struct sigma_dut *dut, const char *intf,
 				    struct station_info *sta_data)
@@ -8724,9 +8620,7 @@ static int qca_nl80211_get_sta_info(struct sigma_dut *dut, const char *intf,
 }
 #endif /* NL80211_SUPPORT */
 
-
-static int get_bip_mic_error_count(struct sigma_dut *dut,
-				   const char *ifname,
+static int get_bip_mic_error_count(struct sigma_dut *dut, const char *ifname,
 				   unsigned int *count)
 {
 #ifdef NL80211_SUPPORT
@@ -8751,12 +8645,12 @@ static int get_bip_mic_error_count(struct sigma_dut *dut,
 	*count = sta_data.beacon_mic_error_count;
 	return 0;
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"BIP MIC error count cannot be fetched without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"BIP MIC error count cannot be fetched without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int get_cmac_replay_count(struct sigma_dut *dut, const char *ifname,
 				 unsigned int *count)
@@ -8783,12 +8677,12 @@ static int get_cmac_replay_count(struct sigma_dut *dut, const char *ifname,
 	*count = sta_data.beacon_replay_count;
 	return 0;
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"CMAC replay count cannot be fetched without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"CMAC replay count cannot be fetched without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static enum sigma_cmd_result sta_get_parameter_wpa3(struct sigma_dut *dut,
 						    struct sigma_conn *conn,
@@ -8829,7 +8723,6 @@ static enum sigma_cmd_result sta_get_parameter_wpa3(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unsupported parameter");
 	return STATUS_SENT_ERROR;
 }
-
 
 static enum sigma_cmd_result sta_get_pmk(struct sigma_dut *dut,
 					 struct sigma_conn *conn,
@@ -8889,7 +8782,6 @@ static enum sigma_cmd_result sta_get_pmk(struct sigma_dut *dut,
 	return STATUS_SENT;
 }
 
-
 static enum sigma_cmd_result cmd_sta_get_parameter(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
 						   struct sigma_cmd *cmd)
@@ -8912,8 +8804,7 @@ static enum sigma_cmd_result cmd_sta_get_parameter(struct sigma_dut *dut,
 	if (strcasecmp(program, "60ghz") == 0)
 		return sta_get_parameter_60g(dut, conn, cmd);
 
-	if (strcasecmp(program, "he") == 0 ||
-	    strcasecmp(program, "eht") == 0)
+	if (strcasecmp(program, "he") == 0 || strcasecmp(program, "eht") == 0)
 		return sta_get_parameter_he(dut, conn, cmd);
 
 #ifdef ANDROID_NAN
@@ -8932,7 +8823,6 @@ static enum sigma_cmd_result cmd_sta_get_parameter(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unsupported parameter");
 	return 0;
 }
-
 
 static void sta_reset_default_ath(struct sigma_dut *dut, const char *intf,
 				  const char *type)
@@ -8958,9 +8848,10 @@ static void sta_reset_default_ath(struct sigma_dut *dut, const char *intf,
 		snprintf(buf, sizeof(buf), "wifitool %s beeliner_fw_test 54 0",
 			 intf);
 		if (system(buf) != 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"wifitool %s beeliner_fw_test 54 0 failed",
-					intf);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"wifitool %s beeliner_fw_test 54 0 failed",
+				intf);
 		}
 
 		/* Enable Dynamic Bandwidth signalling by default */
@@ -9000,7 +8891,6 @@ static void sta_reset_default_ath(struct sigma_dut *dut, const char *intf,
 	}
 }
 
-
 #ifdef NL80211_SUPPORT
 
 static int sta_set_he_mcs(struct sigma_dut *dut, const char *intf,
@@ -9010,7 +8900,6 @@ static int sta_set_he_mcs(struct sigma_dut *dut, const char *intf,
 		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_MCS, mcs);
 }
 
-
 static int sta_set_eht_mcs(struct sigma_dut *dut, const char *intf, uint8_t mcs)
 {
 	return wcn_wifi_test_config_set_u8(
@@ -9019,9 +8908,8 @@ static int sta_set_eht_mcs(struct sigma_dut *dut, const char *intf, uint8_t mcs)
 
 #endif /* NL80211_SUPPORT */
 
-
-static int sta_set_inactive_period(struct sigma_dut *dut,
-				   const char *intf, int val)
+static int sta_set_inactive_period(struct sigma_dut *dut, const char *intf,
+				   int val)
 {
 #ifdef NL80211_SUPPORT
 	return wcn_wifi_test_config_set_u8(
@@ -9029,12 +8917,12 @@ static int sta_set_inactive_period(struct sigma_dut *dut,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_FORCE_MLO_POWER_SAVE_BCN_PERIOD,
 		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"EHT inactivate link cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"EHT inactivate link cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_action_tx_in_he_tb_ppdu(struct sigma_dut *dut,
 					   const char *intf, int enable)
@@ -9045,12 +8933,12 @@ static int sta_set_action_tx_in_he_tb_ppdu(struct sigma_dut *dut,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_ACTION_TX_TB_PPDU,
 		enable);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"HE action Tx TB PPDU cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"HE action Tx TB PPDU cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_heconfig_and_wep_tkip(struct sigma_dut *dut,
 					 const char *intf, int enable)
@@ -9060,12 +8948,12 @@ static int sta_set_heconfig_and_wep_tkip(struct sigma_dut *dut,
 		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_WEP_TKIP_IN_HE,
 		enable);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"HE config enablement cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"HE config enablement cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_eht_testbed_def(struct sigma_dut *dut, const char *intf,
 				   int cfg)
@@ -9081,9 +8969,8 @@ static int sta_set_eht_testbed_def(struct sigma_dut *dut, const char *intf,
 #endif /* NL80211_SUPPORT */
 }
 
-
-static int sta_set_eht_beamformee_ss_80(struct sigma_dut *dut,
-					const char *intf, int cfg)
+static int sta_set_eht_beamformee_ss_80(struct sigma_dut *dut, const char *intf,
+					int cfg)
 {
 #ifdef NL80211_SUPPORT
 	return wcn_wifi_test_config_set_u8(
@@ -9095,7 +8982,6 @@ static int sta_set_eht_beamformee_ss_80(struct sigma_dut *dut,
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_eht_beamformee_ss_160(struct sigma_dut *dut,
 					 const char *intf, int cfg)
@@ -9111,7 +8997,6 @@ static int sta_set_eht_beamformee_ss_160(struct sigma_dut *dut,
 #endif /* NL80211_SUPPORT */
 }
 
-
 static int sta_set_eht_beamformee_ss_320(struct sigma_dut *dut,
 					 const char *intf, int cfg)
 {
@@ -9126,7 +9011,6 @@ static int sta_set_eht_beamformee_ss_320(struct sigma_dut *dut,
 #endif /* NL80211_SUPPORT */
 }
 
-
 static int sta_set_mlo_str_tx(struct sigma_dut *dut, const char *intf, int cfg)
 {
 #ifdef NL80211_SUPPORT
@@ -9139,21 +9023,18 @@ static int sta_set_mlo_str_tx(struct sigma_dut *dut, const char *intf, int cfg)
 #endif /* NL80211_SUPPORT */
 }
 
-
 static int sta_set_eht_emlsr_padding_delay(struct sigma_dut *dut,
-					 const char *intf, u8 val)
+					   const char *intf, u8 val)
 {
 #ifdef NL80211_SUPPORT
 	return wcn_wifi_test_config_set_u8(
 		dut, intf,
-		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_EMLSR_PADDING_DELAY,
-		val);
+		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_EMLSR_PADDING_DELAY, val);
 #else /* NL80211_SUPPORT */
 	sigma_dut_print(dut, DUT_MSG_ERROR, "NL80211_SUPPORT is not defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_eht_tb_sounding_fb_rl(struct sigma_dut *dut,
 					 const char *intf, int cfg)
@@ -9169,7 +9050,6 @@ static int sta_set_eht_tb_sounding_fb_rl(struct sigma_dut *dut,
 #endif /* NL80211_SUPPORT */
 }
 
-
 static int sta_set_exclude_sta_prof_ml_ie(struct sigma_dut *dut,
 					  const char *intf, int cfg)
 {
@@ -9184,7 +9064,6 @@ static int sta_set_exclude_sta_prof_ml_ie(struct sigma_dut *dut,
 #endif /* NL80211_SUPPORT */
 }
 
-
 static int sta_set_eht_om_ctrl_supp(struct sigma_dut *dut, const char *intf,
 				    int val)
 {
@@ -9193,24 +9072,23 @@ static int sta_set_eht_om_ctrl_supp(struct sigma_dut *dut, const char *intf,
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_EHT_OM_CTRL_SUPPORT, val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"EHT OM ctrl cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"EHT OM ctrl cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
 
-
 #ifdef NL80211_SUPPORT
 
-static int sta_set_he_testbed_def(struct sigma_dut *dut,
-				  const char *intf, int cfg)
+static int sta_set_he_testbed_def(struct sigma_dut *dut, const char *intf,
+				  int cfg)
 {
 	return wcn_wifi_test_config_set_u8(
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_SET_HE_TESTBED_DEFAULTS,
 		cfg);
 }
-
 
 static int sta_set_2g_vht_supp(struct sigma_dut *dut, const char *intf, int cfg)
 {
@@ -9221,24 +9099,22 @@ static int sta_set_2g_vht_supp(struct sigma_dut *dut, const char *intf, int cfg)
 
 #endif /* NL80211_SUPPORT */
 
-
-int sta_set_addba_buf_size(struct sigma_dut *dut,
-			   const char *intf, int bufsize)
+int sta_set_addba_buf_size(struct sigma_dut *dut, const char *intf, int bufsize)
 {
 #ifdef NL80211_SUPPORT
 	return wcn_wifi_test_config_set_u16(
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_ADDBA_BUFF_SIZE, bufsize);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"AddBA bufsize cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"AddBA bufsize cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
 
-
-static int sta_set_scan_unicast_probe(struct sigma_dut *dut,
-				      const char *intf, int val)
+static int sta_set_scan_unicast_probe(struct sigma_dut *dut, const char *intf,
+				      int val)
 {
 #ifdef NL80211_SUPPORT
 	return wcn_wifi_test_config_set_u8(
@@ -9246,12 +9122,13 @@ static int sta_set_scan_unicast_probe(struct sigma_dut *dut,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_USE_BSSID_IN_PROBE_REQ_RA,
 		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Unicast RA in Probe Request frame cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Unicast RA in Probe Request frame cannot be set without "
+		"NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_rx_ctrl_multi_bss(struct sigma_dut *dut, const char *intf,
 				     int enable)
@@ -9263,11 +9140,11 @@ static int sta_set_rx_ctrl_multi_bss(struct sigma_dut *dut, const char *intf,
 		enable);
 #else /* NL80211_SUPPORT */
 	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Rx ctrl frame to Multi-BSS cannot be changed without NL80211_SUPPORT defined");
+			"Rx ctrl frame to Multi-BSS cannot be changed without "
+			"NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_bcast_twt_support(struct sigma_dut *dut, const char *intf,
 				     int enable)
@@ -9278,12 +9155,12 @@ static int sta_set_bcast_twt_support(struct sigma_dut *dut, const char *intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_BCAST_TWT_SUPPORT,
 		enable);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"BCAST TWT cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"BCAST TWT cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_tx_beamformee(struct sigma_dut *dut, const char *intf,
 				 int enable)
@@ -9294,12 +9171,12 @@ static int sta_set_tx_beamformee(struct sigma_dut *dut, const char *intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_ENABLE_TX_BEAMFORMEE,
 		enable);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"tx beamformee cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"tx beamformee cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_beamformee_sts(struct sigma_dut *dut, const char *intf,
 				  int val)
@@ -9310,12 +9187,12 @@ static int sta_set_beamformee_sts(struct sigma_dut *dut, const char *intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_TX_BEAMFORMEE_NSTS,
 		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"beamformee sts cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"beamformee sts cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 #ifdef NL80211_SUPPORT
 static int sta_set_mac_padding_duration(struct sigma_dut *dut, const char *intf,
@@ -9327,7 +9204,6 @@ static int sta_set_mac_padding_duration(struct sigma_dut *dut, const char *intf,
 }
 #endif /* NL80211_SUPPORT */
 
-
 static int sta_set_tx_su_ppdu_cfg(struct sigma_dut *dut, const char *intf,
 				  int val)
 {
@@ -9336,12 +9212,12 @@ static int sta_set_tx_su_ppdu_cfg(struct sigma_dut *dut, const char *intf,
 		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_TX_SUPPDU,
 		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Tx SU PPDU cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Tx SU PPDU cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_mgmt_data_tx_disable_cfg(struct sigma_dut *dut,
 					    const char *intf, int val)
@@ -9352,12 +9228,12 @@ static int sta_set_mgmt_data_tx_disable_cfg(struct sigma_dut *dut,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_DISABLE_DATA_MGMT_RSP_TX,
 		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Tx disable config cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Tx disable config cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_keep_alive_data_cfg(struct sigma_dut *dut, const char *intf,
 				       int val)
@@ -9368,12 +9244,12 @@ static int sta_set_keep_alive_data_cfg(struct sigma_dut *dut, const char *intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_KEEP_ALIVE_FRAME_TYPE,
 		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Keep alive data type cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Keep alive data type cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 #ifdef NL80211_SUPPORT
 static int sta_set_he_om_ctrl_reset(struct sigma_dut *dut, const char *intf)
@@ -9384,7 +9260,6 @@ static int sta_set_he_om_ctrl_reset(struct sigma_dut *dut, const char *intf)
 }
 #endif /* NL80211_SUPPORT */
 
-
 static int sta_set_mu_edca_override(struct sigma_dut *dut, const char *intf,
 				    int val)
 {
@@ -9393,12 +9268,12 @@ static int sta_set_mu_edca_override(struct sigma_dut *dut, const char *intf,
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_OVERRIDE_MU_EDCA, val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"MU EDCA override cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"MU EDCA override cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_er_su_ppdu_type_tx(struct sigma_dut *dut, const char *intf,
 				      int val)
@@ -9408,27 +9283,27 @@ static int sta_set_er_su_ppdu_type_tx(struct sigma_dut *dut, const char *intf,
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_ER_SU_PPDU_TYPE, val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"ER-SU PPDU type cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"ER-SU PPDU type cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_ru_242_tone_tx(struct sigma_dut *dut, const char *intf,
 				  int val)
 {
 #ifdef NL80211_SUPPORT
 	return wcn_wifi_test_config_set_u8(
-		dut, intf,
-		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_RU_242_TONE_TX, val);
+		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_RU_242_TONE_TX,
+		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"RU 242 tone cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"RU 242 tone cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_om_ctrl_supp(struct sigma_dut *dut, const char *intf,
 				int val)
@@ -9438,12 +9313,12 @@ static int sta_set_om_ctrl_supp(struct sigma_dut *dut, const char *intf,
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_OM_CTRL_SUPP, val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"HE OM ctrl cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"HE OM ctrl cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 #ifdef NL80211_SUPPORT
 
@@ -9483,7 +9358,6 @@ static int features_info_handler(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-
 static int check_feature(enum qca_wlan_vendor_features feature,
 			 struct features_info *info)
 {
@@ -9492,12 +9366,10 @@ static int check_feature(enum qca_wlan_vendor_features feature,
 	if (!info)
 		return 0;
 
-	return (idx < info->flags_len) &&
-		(info->flags[idx] & BIT(feature % 8));
+	return (idx < info->flags_len) && (info->flags[idx] & BIT(feature % 8));
 }
 
 #endif /* NL80211_SUPPORT */
-
 
 static void sta_get_twt_feature_async_supp(struct sigma_dut *dut,
 					   const char *intf)
@@ -9510,8 +9382,8 @@ static void sta_get_twt_feature_async_supp(struct sigma_dut *dut,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return;
 	}
 
@@ -9542,16 +9414,15 @@ static void sta_get_twt_feature_async_supp(struct sigma_dut *dut,
 	else
 		dut->sta_async_twt_supp = 0;
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"%s: sta_async_twt_supp %d",
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "%s: sta_async_twt_supp %d",
 			__func__, dut->sta_async_twt_supp);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"TWT async supp get cannot be done without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_INFO,
+		"TWT async supp get cannot be done without NL80211_SUPPORT defined");
 	dut->sta_async_twt_supp = 0;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_twt_req_support(struct sigma_dut *dut, const char *intf,
 				   int val)
@@ -9561,12 +9432,12 @@ static int sta_set_twt_req_support(struct sigma_dut *dut, const char *intf,
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_HE_TWT_REQ_SUPPORT, val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"TWT Request cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"TWT Request cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_bss_max_idle_period(struct sigma_dut *dut, const char *intf,
 				       int val)
@@ -9576,12 +9447,12 @@ static int sta_set_bss_max_idle_period(struct sigma_dut *dut, const char *intf,
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_BSS_MAX_IDLE_PERIOD, val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"BSS max idle period cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"BSS max idle period cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_bss_max_idle_support(struct sigma_dut *dut, const char *intf,
 					int val)
@@ -9592,12 +9463,12 @@ static int sta_set_bss_max_idle_support(struct sigma_dut *dut, const char *intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_BSS_MAX_IDLE_PERIOD_ENABLE,
 		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"BSS max idle support cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"BSS max idle support cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_fullbw_ulmumimo(struct sigma_dut *dut, const char *intf,
 				   int val)
@@ -9607,12 +9478,12 @@ static int sta_set_fullbw_ulmumimo(struct sigma_dut *dut, const char *intf,
 		dut, intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_FULL_BW_UL_MU_MIMO, val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Full BW UL MU MIMO cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Full BW UL MU MIMO cannot be changed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_punctured_preamble_rx(struct sigma_dut *dut,
 					 const char *intf, int val)
@@ -9623,17 +9494,17 @@ static int sta_set_punctured_preamble_rx(struct sigma_dut *dut,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_PUNCTURED_PREAMBLE_RX,
 		val);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Punctured preamble Rx cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Punctured preamble Rx cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
 
-
 static int wcn_set_he_tx_rate(struct sigma_dut *dut, const char *intf,
 			      u16 tx_rate, u8 nss)
 {
- #ifdef NL80211_SUPPORT
+#ifdef NL80211_SUPPORT
 	struct nlattr *attr;
 	struct nlattr *attr1;
 	int ifindex, ret;
@@ -9643,17 +9514,18 @@ static int wcn_set_he_tx_rate(struct sigma_dut *dut, const char *intf,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
 	if (!(msg = nl80211_drv_msg(dut, dut->nl_ctx, ifindex, 0,
 				    NL80211_CMD_SET_TX_BITRATE_MASK)) ||
 	    !(attr = nla_nest_start(msg, NL80211_ATTR_TX_RATES))) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: NL80211_CMD_SET_TX_BITRATE_MASK msg failed",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: NL80211_CMD_SET_TX_BITRATE_MASK msg failed",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -9665,9 +9537,10 @@ static int wcn_set_he_tx_rate(struct sigma_dut *dut, const char *intf,
 
 	attr1 = nla_nest_start(msg, NL80211_BAND_2GHZ);
 	if (!attr1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Netlink nest start failed for NL80211_BAND_2GHZ",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: Netlink nest start failed for NL80211_BAND_2GHZ",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -9682,9 +9555,10 @@ static int wcn_set_he_tx_rate(struct sigma_dut *dut, const char *intf,
 
 	attr1 = nla_nest_start(msg, NL80211_BAND_5GHZ);
 	if (!attr1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Netlink nest start failed for NL80211_BAND_5GHZ",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: Netlink nest start failed for NL80211_BAND_5GHZ",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -9699,9 +9573,10 @@ static int wcn_set_he_tx_rate(struct sigma_dut *dut, const char *intf,
 
 	attr1 = nla_nest_start(msg, NL80211_BAND_6GHZ);
 	if (!attr1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Netlink nest start failed for NL80211_BAND_6GHZ",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: Netlink nest start failed for NL80211_BAND_6GHZ",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -9727,10 +9602,9 @@ static int wcn_set_he_tx_rate(struct sigma_dut *dut, const char *intf,
 #endif /* NL80211_SUPPORT */
 }
 
-
 int wcn_set_he_gi(struct sigma_dut *dut, const char *intf, u8 gi_val)
 {
- #ifdef NL80211_SUPPORT
+#ifdef NL80211_SUPPORT
 	struct nlattr *attr;
 	struct nlattr *attr1;
 	int ifindex, ret;
@@ -9739,29 +9613,31 @@ int wcn_set_he_gi(struct sigma_dut *dut, const char *intf, u8 gi_val)
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
 	if (!(msg = nl80211_drv_msg(dut, dut->nl_ctx, ifindex, 0,
 				    NL80211_CMD_SET_TX_BITRATE_MASK)) ||
 	    !(attr = nla_nest_start(msg, NL80211_ATTR_TX_RATES))) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: NL80211_CMD_SET_TX_BITRATE_MASK msg failed",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: NL80211_CMD_SET_TX_BITRATE_MASK msg failed",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG, "%s: Setting HE GI %d",
-			__func__, gi_val);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "%s: Setting HE GI %d", __func__,
+			gi_val);
 
 	attr1 = nla_nest_start(msg, NL80211_BAND_2GHZ);
 	if (!attr1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Netlink nest start failed for NL80211_BAND_2GHZ",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: Netlink nest start failed for NL80211_BAND_2GHZ",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -9770,9 +9646,10 @@ int wcn_set_he_gi(struct sigma_dut *dut, const char *intf, u8 gi_val)
 
 	attr1 = nla_nest_start(msg, NL80211_BAND_5GHZ);
 	if (!attr1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Netlink nest start failed for NL80211_BAND_5GHZ",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: Netlink nest start failed for NL80211_BAND_5GHZ",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -9791,11 +9668,10 @@ int wcn_set_he_gi(struct sigma_dut *dut, const char *intf, u8 gi_val)
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_set_vht_gi(struct sigma_dut *dut, const char *intf, u8 gi_val)
 {
- #ifdef NL80211_SUPPORT
+#ifdef NL80211_SUPPORT
 	struct nlattr *attr;
 	struct nlattr *attr1;
 	int ifindex, ret;
@@ -9804,29 +9680,31 @@ static int sta_set_vht_gi(struct sigma_dut *dut, const char *intf, u8 gi_val)
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
 	if (!(msg = nl80211_drv_msg(dut, dut->nl_ctx, ifindex, 0,
 				    NL80211_CMD_SET_TX_BITRATE_MASK)) ||
 	    !(attr = nla_nest_start(msg, NL80211_ATTR_TX_RATES))) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: NL80211_CMD_SET_TX_BITRATE_MASK msg failed",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: NL80211_CMD_SET_TX_BITRATE_MASK msg failed",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG, "%s: Setting VHT GI %d",
-			__func__, gi_val);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "%s: Setting VHT GI %d", __func__,
+			gi_val);
 
 	attr1 = nla_nest_start(msg, NL80211_BAND_2GHZ);
 	if (!attr1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Netlink nest start failed for NL80211_BAND_2GHZ",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: Netlink nest start failed for NL80211_BAND_2GHZ",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -9835,9 +9713,10 @@ static int sta_set_vht_gi(struct sigma_dut *dut, const char *intf, u8 gi_val)
 
 	attr1 = nla_nest_start(msg, NL80211_BAND_5GHZ);
 	if (!attr1) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Netlink nest start failed for NL80211_BAND_5GHZ",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s: Netlink nest start failed for NL80211_BAND_5GHZ",
+			__func__);
 		nlmsg_free(msg);
 		return -1;
 	}
@@ -9856,7 +9735,6 @@ static int sta_set_vht_gi(struct sigma_dut *dut, const char *intf, u8 gi_val)
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 				  const char *type)
@@ -9874,14 +9752,16 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 		/* reset the rate to Auto rate */
 		if (wcn_set_he_tx_rate(dut, intf, 0x0FFF, 2)) {
 			/* 0xFFF value for setting MCS 0-12 */
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"wcn_set_he_tx_rate failed, using iwpriv");
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"wcn_set_he_tx_rate failed, using iwpriv");
 			snprintf(buf, sizeof(buf),
 				 "iwpriv %s set_11ax_rate 0xff", intf);
 			if (system(buf) != 0) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"iwpriv %s set_11ax_rate 0xff failed",
-						intf);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"iwpriv %s set_11ax_rate 0xff failed",
+					intf);
 			}
 		}
 
@@ -9910,32 +9790,36 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 		nl80211_close_event_sock(dut);
 
 		/* Reset the device HE capabilities to its default supported
-		 * configuration. */
+     * configuration. */
 		sta_set_he_testbed_def(dut, intf, 0);
 
 		/* Disable noackpolicy for all AC */
 		if (nlvendor_sta_set_noack(dut, intf, 0, QCA_WLAN_AC_ALL)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Disable of noackpolicy for all AC failed");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Disable of noackpolicy for all AC failed");
 		}
 #endif /* NL80211_SUPPORT */
 
 		/* Enable WMM by default */
 		if (wcn_sta_set_wmm(dut, intf, "on")) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Enable of WMM in sta_reset_default_wcn failed");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Enable of WMM in sta_reset_default_wcn failed");
 		}
 
 		/* Disable ADDBA_REJECT by default */
 		if (nlvendor_sta_set_addba_reject(dut, intf, 0)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Disable of addba_reject in sta_reset_default_wcn failed");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Disable of addba_reject in sta_reset_default_wcn failed");
 		}
 
 		/* Enable sending of ADDBA by default */
 		if (nlvendor_config_send_addba(dut, intf, 1)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Enable sending of ADDBA in sta_reset_default_wcn failed");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Enable sending of ADDBA in sta_reset_default_wcn failed");
 		}
 
 		/* Enable AMPDU by default */
@@ -9943,21 +9827,23 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 
 #ifdef NL80211_SUPPORT
 		if (wcn_set_he_ltf(dut, intf, QCA_WLAN_HE_LTF_AUTO)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Set LTF config to default in sta_reset_default_wcn failed");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Set LTF config to default in sta_reset_default_wcn failed");
 		}
 
 		/* set the beamformee NSTS(maximum number of
-		 * space-time streams) to default DUT config
-		 */
+     * space-time streams) to default DUT config
+     */
 		if (sta_set_beamformee_sts(dut, intf, 7)) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"Failed to set BeamformeeSTS");
 		}
 
 		if (sta_set_mgmt_data_tx_disable_cfg(dut, intf, 0)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to reset mgmt/data Tx disable config");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to reset mgmt/data Tx disable config");
 		}
 
 		if (sta_set_mac_padding_duration(
@@ -9968,18 +9854,19 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 		}
 
 		if (sta_set_mu_edca_override(dut, intf, 0)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"ErrorCode,Failed to set MU EDCA override disable");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"ErrorCode,Failed to set MU EDCA override disable");
 		}
 
 		if (sta_set_ru_242_tone_tx(dut, intf, 0)) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
-				  "Failed to set RU 242 tone Tx");
+					"Failed to set RU 242 tone Tx");
 		}
 
 		if (sta_set_er_su_ppdu_type_tx(dut, intf, 0)) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
-				  "Failed to set ER-SU PPDU type Tx");
+					"Failed to set ER-SU PPDU type Tx");
 		}
 
 		if (sta_set_om_ctrl_supp(dut, intf, 1)) {
@@ -10010,15 +9897,16 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 #endif /* NL80211_SUPPORT */
 
 		if (sta_set_tx_beamformee(dut, intf, 1)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Set tx beamformee enable by default in sta_reset_default_wcn failed");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Set tx beamformee enable by default in "
+				"sta_reset_default_wcn failed");
 		}
 
 		wpa_command(intf, "SET oce 1");
 
 		/* Set nss to 1 and MCS 0-7 in case of testbed */
 		if (type && strcasecmp(type, "Testbed") == 0) {
-
 			wpa_command(intf, "SET oce 0");
 
 			if (wcn_sta_set_sp_stream(dut, intf, "1SS") < 0) {
@@ -10052,36 +9940,40 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 			/* HE fragmentation default off */
 			if (sta_set_he_fragmentation(dut, intf,
 						     HE_FRAG_DISABLE)) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Setting of HE fragmentation failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Setting of HE fragmentation failed");
 			}
 
 			/* set the beamformee NSTS(maximum number of
-			 * space-time streams) to default testbed config
-			 */
+       * space-time streams) to default testbed config
+       */
 			if (sta_set_beamformee_sts(dut, intf, 3)) {
 				sigma_dut_print(dut, DUT_MSG_ERROR,
 						"Failed to set BeamformeeSTS");
 			}
 
 			if (sta_set_punctured_preamble_rx(dut, intf, 0)) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Failed to reset PreamblePunctRx support");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Failed to reset PreamblePunctRx support");
 			}
 
 			if (sta_set_bss_max_idle_period(dut, intf, 0)) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Failed to reset BSS max idle period");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Failed to reset BSS max idle period");
 			}
 
 			/* +HTC-HE support default off */
 			if (sta_set_he_htc_supp(dut, intf, 0)) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Setting of +HTC-HE support failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Setting of +HTC-HE support failed");
 			}
 
 			/* Set device HE capabilities to testbed default
-			 * configuration. */
+       * configuration. */
 			if (sta_set_he_testbed_def(dut, intf, 1)) {
 				sigma_dut_print(dut, DUT_MSG_DEBUG,
 						"Failed to set HE defaults");
@@ -10093,8 +9985,9 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 
 			/* Enable WEP/TKIP with HE capability in testbed */
 			if (sta_set_heconfig_and_wep_tkip(dut, intf, 1)) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Enabling HE config with WEP/TKIP failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Enabling HE config with WEP/TKIP failed");
 			}
 		}
 
@@ -10118,15 +10011,16 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 
 			/* Disable WEP/TKIP with HE capability in DUT */
 			if (sta_set_heconfig_and_wep_tkip(dut, intf, 0)) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Enabling HE config with WEP/TKIP failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Enabling HE config with WEP/TKIP failed");
 			}
 		}
 	}
 
 	if (dut->program == PROGRAM_EHT || dut->device_mode == MODE_11BE) {
 		/* Reset the device EHT capabilities to its default supported
-		 * configuration. */
+     * configuration. */
 		sta_set_eht_testbed_def(dut, intf, 0);
 		sta_config_params(dut, intf,
 				  STA_SET_EHT_MLO_MAX_SIMULTANEOUS_LINKS, 0);
@@ -10156,31 +10050,27 @@ static void sta_reset_default_wcn(struct sigma_dut *dut, const char *intf,
 	}
 }
 
-
 static int sta_set_client_privacy(struct sigma_dut *dut,
 				  struct sigma_conn *conn, const char *intf,
 				  int enable)
 {
-	if (enable &&
-	    (wpa_command(intf, "SET mac_addr 1") < 0 ||
-	     wpa_command(intf, "SET rand_addr_lifetime 1") < 0 ||
-	     (wpa_command(intf, "MAC_RAND_SCAN enable=1 all") < 0 &&
-	      wpa_command(intf, "SET preassoc_mac_addr 1") < 0) ||
-	     wpa_command(intf, "SET gas_rand_mac_addr 1") < 0 ||
-	     wpa_command(intf, "SET gas_rand_addr_lifetime 1") < 0))
+	if (enable && (wpa_command(intf, "SET mac_addr 1") < 0 ||
+		       wpa_command(intf, "SET rand_addr_lifetime 1") < 0 ||
+		       (wpa_command(intf, "MAC_RAND_SCAN enable=1 all") < 0 &&
+			wpa_command(intf, "SET preassoc_mac_addr 1") < 0) ||
+		       wpa_command(intf, "SET gas_rand_mac_addr 1") < 0 ||
+		       wpa_command(intf, "SET gas_rand_addr_lifetime 1") < 0))
 		return -1;
 
-	if (!enable &&
-	    (wpa_command(intf, "SET mac_addr 0") < 0 ||
-	     (wpa_command(intf, "MAC_RAND_SCAN enable=0 all") < 0 &&
-	      wpa_command(intf, "SET preassoc_mac_addr 0") < 0) ||
-	     wpa_command(intf, "SET gas_rand_mac_addr 0") < 0))
+	if (!enable && (wpa_command(intf, "SET mac_addr 0") < 0 ||
+			(wpa_command(intf, "MAC_RAND_SCAN enable=0 all") < 0 &&
+			 wpa_command(intf, "SET preassoc_mac_addr 0") < 0) ||
+			wpa_command(intf, "SET gas_rand_mac_addr 0") < 0))
 		return -1;
 
 	dut->client_privacy = enable;
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_reset_default(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
@@ -10196,12 +10086,11 @@ static enum sigma_cmd_result cmd_sta_reset_default(struct sigma_dut *dut,
 	int ret;
 
 #ifdef ANDROID
-	kill_pid(dut, concat_sigma_tmpdir(dut, "/sigma_dut-dnsmasq.pid",
-					  buf, sizeof(buf)));
+	kill_pid(dut, concat_sigma_tmpdir(dut, "/sigma_dut-dnsmasq.pid", buf,
+					  sizeof(buf)));
 #endif /* ANDROID */
 
-	if (dut->station_ifname_2g &&
-	    strcmp(dut->station_ifname_2g, intf) == 0)
+	if (dut->station_ifname_2g && strcmp(dut->station_ifname_2g, intf) == 0)
 		dut->use_5g = 0;
 	else if (dut->station_ifname_5g &&
 		 strcmp(dut->station_ifname_5g, intf) == 0)
@@ -10230,15 +10119,14 @@ static enum sigma_cmd_result cmd_sta_reset_default(struct sigma_dut *dut,
 		dut->no_tpk_expiration = 0;
 		if (get_driver_type(dut) == DRIVER_WCN) {
 			/* Enable the WCN driver in TDLS Explicit trigger mode
-			 */
+       */
 			wpa_command(intf, "SET tdls_external_control 0");
 			wpa_command(intf, "SET tdls_trigger_control 0");
 		}
 	}
 
 #ifdef MIRACAST
-	if (dut->program == PROGRAM_WFD ||
-	    dut->program == PROGRAM_DISPLAYR2)
+	if (dut->program == PROGRAM_WFD || dut->program == PROGRAM_DISPLAYR2)
 		miracast_sta_reset_default(dut, conn, cmd);
 #endif /* MIRACAST */
 
@@ -10309,8 +10197,9 @@ static enum sigma_cmd_result cmd_sta_reset_default(struct sigma_dut *dut,
 		}
 
 		if (dut->device_type == STA_unknown) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Device type is not STA testbed or DUT");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Device type is not STA testbed or DUT");
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Unknown device type");
 			return 0;
@@ -10357,7 +10246,8 @@ static enum sigma_cmd_result cmd_sta_reset_default(struct sigma_dut *dut,
 	if (dut->tmp_mac_addr && dut->set_macaddr) {
 		dut->tmp_mac_addr = 0;
 		if (system(dut->set_macaddr) != 0) {
-			sigma_dut_print(dut, DUT_MSG_INFO, "Failed to clear "
+			sigma_dut_print(dut, DUT_MSG_INFO,
+					"Failed to clear "
 					"temporary MAC address");
 		}
 	}
@@ -10470,8 +10360,7 @@ static enum sigma_cmd_result cmd_sta_reset_default(struct sigma_dut *dut,
 	dut->sta_ft_ds = 0;
 
 #ifdef NL80211_SUPPORT
-	if (get_driver_type(dut) == DRIVER_WCN &&
-	    dut->config_rsnie == 1) {
+	if (get_driver_type(dut) == DRIVER_WCN && dut->config_rsnie == 1) {
 		dut->config_rsnie = 0;
 		sta_config_params(dut, intf, STA_SET_RSNIE, 0);
 	}
@@ -10493,11 +10382,11 @@ static enum sigma_cmd_result cmd_sta_reset_default(struct sigma_dut *dut,
 
 	if (sta_set_client_privacy(dut, conn, intf,
 				   dut->device_type == STA_dut &&
-				   dut->client_privacy_default)) {
+					   dut->client_privacy_default)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"Failed to set client privacy functionality");
 		/* sta_reset_default command is not really supposed to fail,
-		 * so allow this to continue. */
+     * so allow this to continue. */
 	}
 
 	if (get_driver_type(dut) == DRIVER_WCN)
@@ -10518,7 +10407,6 @@ static enum sigma_cmd_result cmd_sta_reset_default(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static enum sigma_cmd_result cmd_sta_get_events(struct sigma_dut *dut,
 						struct sigma_conn *conn,
 						struct sigma_cmd *cmd)
@@ -10534,7 +10422,6 @@ static enum sigma_cmd_result cmd_sta_get_events(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unsupported parameter");
 	return 0;
 }
-
 
 static int sta_exec_action_url(struct sigma_dut *dut, struct sigma_conn *conn,
 			       struct sigma_cmd *cmd)
@@ -10561,8 +10448,8 @@ static int sta_exec_action_url(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	if (pid == 0) {
-		char * argv[5] = { "wget", "-O", "/dev/null",
-				   (char *) url, NULL };
+		char *argv[5] = { "wget", "-O", "/dev/null", (char *)url,
+				  NULL };
 
 		execv("/usr/bin/wget", argv);
 		perror("execv");
@@ -10601,7 +10488,6 @@ static int sta_exec_action_url(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 static enum sigma_cmd_result cmd_sta_exec_action(struct sigma_dut *dut,
 						 struct sigma_conn *conn,
 						 struct sigma_cmd *cmd)
@@ -10627,7 +10513,6 @@ static enum sigma_cmd_result cmd_sta_exec_action(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unsupported parameter");
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_11n(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
@@ -10687,7 +10572,6 @@ static enum sigma_cmd_result cmd_sta_set_11n(struct sigma_dut *dut,
 	return cmd_sta_set_wireless_common(intf, dut, conn, cmd);
 }
 
-
 static void cmd_set_max_he_mcs(struct sigma_dut *dut, const char *intf,
 			       int mcs_config)
 {
@@ -10700,9 +10584,10 @@ static void cmd_set_max_he_mcs(struct sigma_dut *dut, const char *intf,
 	case HE_80_MCS0_11:
 		ret = sta_set_he_mcs(dut, intf, mcs_config);
 		if (ret) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"cmd_set_max_he_mcs: Setting of MCS:%d failed, ret:%d",
-					mcs_config, ret);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"cmd_set_max_he_mcs: Setting of MCS:%d failed, ret:%d",
+				mcs_config, ret);
 		}
 		break;
 	default:
@@ -10712,11 +10597,11 @@ static void cmd_set_max_he_mcs(struct sigma_dut *dut, const char *intf,
 		break;
 	}
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"max HE MCS cannot be changed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"max HE MCS cannot be changed without NL80211_SUPPORT defined");
 #endif /* NL80211_SUPPORT */
 }
-
 
 struct wait_event {
 	struct sigma_dut *dut;
@@ -10777,11 +10662,10 @@ static int twt_event_handler(struct nl_msg *msg, void *arg)
 				"Invalid vendor data or len");
 		return NL_SKIP;
 	}
-	sigma_dut_print(wait->dut, DUT_MSG_DEBUG,
-			"event data len %ld", len);
+	sigma_dut_print(wait->dut, DUT_MSG_DEBUG, "event data len %ld", len);
 	hex_dump(wait->dut, data, len);
 	if (nla_parse(twt_rsp, QCA_WLAN_VENDOR_ATTR_CONFIG_TWT_MAX,
-		      (struct nlattr *) data, len, NULL)) {
+		      (struct nlattr *)data, len, NULL)) {
 		sigma_dut_print(wait->dut, DUT_MSG_ERROR,
 				"vendor data parse error");
 		return NL_SKIP;
@@ -10821,7 +10705,6 @@ static int twt_event_handler(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-
 static int wait_on_nl_socket(struct nl_sock *sock, struct sigma_dut *dut,
 			     unsigned int timeout)
 {
@@ -10854,8 +10737,7 @@ static int wait_on_nl_socket(struct nl_sock *sock, struct sigma_dut *dut,
 	return retval;
 }
 
-
-#define TWT_ASYNC_EVENT_WAIT_TIME_SEC   6
+#define TWT_ASYNC_EVENT_WAIT_TIME_SEC 6
 
 static int twt_async_event_wait(struct sigma_dut *dut, unsigned int twt_op)
 {
@@ -10866,8 +10748,7 @@ static int twt_async_event_wait(struct sigma_dut *dut, unsigned int twt_op)
 	if (dut->nl_ctx->event_sock)
 		cb = nl_socket_get_cb(dut->nl_ctx->event_sock);
 	if (!cb) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"event callback not found");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "event callback not found");
 		return ERROR_SEND_STATUS;
 	}
 
@@ -10878,16 +10759,17 @@ static int twt_async_event_wait(struct sigma_dut *dut, unsigned int twt_op)
 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, twt_event_handler, &wait_info);
 
 	while (!wait_info.cmd) {
-		select_retval = wait_on_nl_socket(
-			dut->nl_ctx->event_sock, dut,
-			TWT_ASYNC_EVENT_WAIT_TIME_SEC);
+		select_retval =
+			wait_on_nl_socket(dut->nl_ctx->event_sock, dut,
+					  TWT_ASYNC_EVENT_WAIT_TIME_SEC);
 
 		if (select_retval > 0) {
 			err_code = nl_recvmsgs(dut->nl_ctx->event_sock, cb);
 			if (err_code < 0) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"%s: nl rcv failed, err_code %d",
-						__func__, err_code);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"%s: nl rcv failed, err_code %d",
+					__func__, err_code);
 				break;
 			}
 		} else {
@@ -10897,7 +10779,6 @@ static int twt_async_event_wait(struct sigma_dut *dut, unsigned int twt_op)
 			err_code = 1;
 			break;
 		}
-
 	}
 	nl_cb_put(cb);
 
@@ -10905,14 +10786,13 @@ static int twt_async_event_wait(struct sigma_dut *dut, unsigned int twt_op)
 		err_code = 1;
 
 	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"%s: rcvd cmd %d, err_code %d, s_ret %d",
-			__func__, wait_info.cmd, err_code, select_retval);
+			"%s: rcvd cmd %d, err_code %d, s_ret %d", __func__,
+			wait_info.cmd, err_code, select_retval);
 
 	return err_code;
 }
 
 #endif /* NL80211_SUPPORT */
-
 
 static int sta_twt_send_suspend(struct sigma_dut *dut, struct sigma_conn *conn,
 				struct sigma_cmd *cmd)
@@ -10926,8 +10806,8 @@ static int sta_twt_send_suspend(struct sigma_dut *dut, struct sigma_conn *conn,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return ERROR_SEND_STATUS;
 	}
 
@@ -10963,12 +10843,12 @@ static int sta_twt_send_suspend(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return twt_async_event_wait(dut, QCA_WLAN_TWT_SUSPEND);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"TWT suspend cannot be done without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"TWT suspend cannot be done without NL80211_SUPPORT defined");
 	return ERROR_SEND_STATUS;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_twt_send_nudge(struct sigma_dut *dut, struct sigma_conn *conn,
 			      struct sigma_cmd *cmd,
@@ -10984,8 +10864,8 @@ static int sta_twt_send_nudge(struct sigma_dut *dut, struct sigma_conn *conn,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return ERROR_SEND_STATUS;
 	}
 
@@ -11027,12 +10907,12 @@ static int sta_twt_send_nudge(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return twt_async_event_wait(dut, QCA_WLAN_TWT_NUDGE);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"TWT suspend cannot be done without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"TWT suspend cannot be done without NL80211_SUPPORT defined");
 	return ERROR_SEND_STATUS;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_twt_suspend_or_nudge(struct sigma_dut *dut,
 				    struct sigma_conn *conn,
@@ -11052,7 +10932,6 @@ static int sta_twt_suspend_or_nudge(struct sigma_dut *dut,
 	return sta_twt_send_suspend(dut, conn, cmd);
 }
 
-
 static int sta_twt_resume(struct sigma_dut *dut, struct sigma_conn *conn,
 			  struct sigma_cmd *cmd)
 {
@@ -11068,8 +10947,8 @@ static int sta_twt_resume(struct sigma_dut *dut, struct sigma_conn *conn,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return ERROR_SEND_STATUS;
 	}
 
@@ -11116,16 +10995,16 @@ static int sta_twt_resume(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return twt_async_event_wait(dut, QCA_WLAN_TWT_RESUME);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"TWT resume cannot be done without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"TWT resume cannot be done without NL80211_SUPPORT defined");
 	return ERROR_SEND_STATUS;
 #endif /* NL80211_SUPPORT */
 }
 
-
-#define TWT_REQUEST_CMD     0
-#define TWT_SUGGEST_CMD     1
-#define TWT_DEMAND_CMD      2
+#define TWT_REQUEST_CMD 0
+#define TWT_SUGGEST_CMD 1
+#define TWT_DEMAND_CMD 2
 
 static int sta_twt_request(struct sigma_dut *dut, struct sigma_conn *conn,
 			   struct sigma_cmd *cmd)
@@ -11138,17 +11017,17 @@ static int sta_twt_request(struct sigma_dut *dut, struct sigma_conn *conn,
 	const char *val;
 	const char *intf = get_param(cmd, "Interface");
 	int wake_interval_exp = 10, nominal_min_wake_dur = 255,
-		wake_interval_mantissa = 512;
+	    wake_interval_mantissa = 512;
 	int flow_type = 0, twt_trigger = 0, target_wake_time = 0,
-		protection = 0, cmd_type = QCA_WLAN_VENDOR_TWT_SETUP_SUGGEST;
+	    protection = 0, cmd_type = QCA_WLAN_VENDOR_TWT_SETUP_SUGGEST;
 	int bcast_twt = 0;
 	int bcast_twt_id = 0, bcast_twt_recommdn = 0, bcast_twt_persis = 0;
 
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
@@ -11252,7 +11131,8 @@ static int sta_twt_request(struct sigma_dut *dut, struct sigma_conn *conn,
 		      msg, QCA_WLAN_VENDOR_ATTR_CONFIG_TWT_PARAMS)) ||
 	    nla_put_u8(msg, QCA_WLAN_VENDOR_ATTR_TWT_SETUP_WAKE_INTVL_EXP,
 		       wake_interval_exp) ||
-	    nla_put_u8(msg, QCA_WLAN_VENDOR_ATTR_TWT_SETUP_REQ_TYPE, cmd_type) ||
+	    nla_put_u8(msg, QCA_WLAN_VENDOR_ATTR_TWT_SETUP_REQ_TYPE,
+		       cmd_type) ||
 	    (twt_trigger &&
 	     nla_put_flag(msg, QCA_WLAN_VENDOR_ATTR_TWT_SETUP_TRIGGER)) ||
 	    nla_put_u8(msg, QCA_WLAN_VENDOR_ATTR_TWT_SETUP_FLOW_TYPE,
@@ -11298,17 +11178,17 @@ static int sta_twt_request(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return twt_async_event_wait(dut, QCA_WLAN_TWT_SET);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"TWT request cannot be done without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"TWT request cannot be done without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
 
-
 static int sta_twt_teardown(struct sigma_dut *dut, struct sigma_conn *conn,
 			    struct sigma_cmd *cmd)
 {
- #ifdef NL80211_SUPPORT
+#ifdef NL80211_SUPPORT
 	struct nlattr *params;
 	struct nlattr *attr;
 	int ifindex, ret;
@@ -11321,8 +11201,8 @@ static int sta_twt_teardown(struct sigma_dut *dut, struct sigma_conn *conn,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
@@ -11342,8 +11222,7 @@ static int sta_twt_teardown(struct sigma_dut *dut, struct sigma_conn *conn,
 	    nla_put_u8(msg, QCA_WLAN_VENDOR_ATTR_CONFIG_TWT_OPERATION,
 		       QCA_WLAN_TWT_TERMINATE) ||
 	    !(params = nla_nest_start(
-		      msg,
-		      QCA_WLAN_VENDOR_ATTR_CONFIG_TWT_PARAMS)) ||
+		      msg, QCA_WLAN_VENDOR_ATTR_CONFIG_TWT_PARAMS)) ||
 	    nla_put_u8(msg, QCA_WLAN_VENDOR_ATTR_TWT_SETUP_FLOW_TYPE, 0) ||
 	    (bcast_twt &&
 	     nla_put_flag(msg, QCA_WLAN_VENDOR_ATTR_TWT_SETUP_BCAST)) ||
@@ -11371,12 +11250,12 @@ static int sta_twt_teardown(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return twt_async_event_wait(dut, QCA_WLAN_TWT_TERMINATE);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"TWT teardown cannot be done without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"TWT teardown cannot be done without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int sta_transmit_omi(struct sigma_dut *dut, struct sigma_conn *conn,
 			    struct sigma_cmd *cmd)
@@ -11397,8 +11276,8 @@ static int sta_transmit_omi(struct sigma_dut *dut, struct sigma_conn *conn,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 	val = get_param(cmd, "OMCtrl_RxNSS");
@@ -11482,16 +11361,16 @@ static int sta_transmit_omi(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return ret;
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"OMI TX cannot be processed without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"OMI TX cannot be processed without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
 
-
-static enum sigma_cmd_result
-cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
-			 struct sigma_cmd *cmd)
+static enum sigma_cmd_result cmd_sta_set_wireless_vht(struct sigma_dut *dut,
+						      struct sigma_conn *conn,
+						      struct sigma_cmd *cmd)
 {
 	const char *intf = get_param(cmd, "Interface");
 	const char *val;
@@ -11511,7 +11390,7 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 			gi_val = NL80211_TXRATE_FORCE_LGI;
 		else
 			gi_val = NL80211_TXRATE_FORCE_SGI;
-		if (sta_set_vht_gi(dut, intf, (u8) gi_val)) {
+		if (sta_set_vht_gi(dut, intf, (u8)gi_val)) {
 			sigma_dut_print(dut, DUT_MSG_INFO,
 					"sta_set_vht_gi failed, using iwpriv");
 			run_iwpriv(dut, intf, "shortgi %d", sgi80);
@@ -11523,8 +11402,9 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 		switch (get_driver_type(dut)) {
 		case DRIVER_WCN:
 			if (sta_set_tx_beamformee(dut, intf, 1)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set TX beamformee enable");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set TX beamformee enable");
 				return STATUS_SENT_ERROR;
 			}
 			break;
@@ -11558,8 +11438,9 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 			break;
 		case DRIVER_WCN:
 			if (wcn_sta_set_sp_stream(dut, intf, "1SS") < 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set RX/TXSP_STREAM");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set RX/TXSP_STREAM");
 				return STATUS_SENT_ERROR;
 			}
 			break;
@@ -11586,7 +11467,7 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 
 		bcc = strcmp(val, "1") == 0 || strcasecmp(val, "Enable") == 0;
 		/* use LDPC iwpriv itself to set bcc coding, bcc coding
-		 * is mutually exclusive to bcc */
+     * is mutually exclusive to bcc */
 		iwpriv_status = run_iwpriv(dut, intf, "ldpc %d", !bcc);
 		if (iwpriv_status)
 			sta_config_params(dut, intf, STA_SET_LDPC, !bcc);
@@ -11615,41 +11496,46 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 		if (mcs >= 0 && mcs <= 11) {
 			ratecode += mcs;
 			tx_rate = 1 << mcs;
-			if (dut->device_type == STA_testbed &&
-			    mcs > 7 && mcs <= 11) {
+			if (dut->device_type == STA_testbed && mcs > 7 &&
+			    mcs <= 11) {
 				if (mcs <= 9)
 					mcs_config = HE_80_MCS0_9;
 				else
 					mcs_config = HE_80_MCS0_11;
 				ret = sta_set_he_mcs(dut, intf, mcs_config);
 				if (ret) {
-					sigma_dut_print(dut, DUT_MSG_ERROR,
-							"MCS_FixedRate: mcs setting failed, mcs:%d, mcs_config %d, ret:%d",
-							mcs, mcs_config, ret);
+					sigma_dut_print(
+						dut, DUT_MSG_ERROR,
+						"MCS_FixedRate: mcs setting failed, mcs:%d, "
+						"mcs_config %d, ret:%d",
+						mcs, mcs_config, ret);
 				}
 			}
 
 			if (wcn_set_he_tx_rate(dut, intf, tx_rate,
 					       dut->sta_nss)) {
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"wcn_set_he_tx_rate failed, using iwpriv");
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"wcn_set_he_tx_rate failed, using iwpriv");
 				snprintf(buf, sizeof(buf),
-					 "iwpriv %s set_11ax_rate 0x%03x",
-					 intf, ratecode);
+					 "iwpriv %s set_11ax_rate 0x%03x", intf,
+					 ratecode);
 				if (system(buf) != 0) {
-					sigma_dut_print(dut, DUT_MSG_ERROR,
-							"MCS_FixedRate: iwpriv setting of 11ax rates 0x%03x failed",
-							ratecode);
+					sigma_dut_print(
+						dut, DUT_MSG_ERROR,
+						"MCS_FixedRate: iwpriv setting of 11ax rates 0x%03x failed",
+						ratecode);
 				}
 			}
 		} else {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"MCS_FixedRate: HE MCS %d not supported",
-					mcs);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"MCS_FixedRate: HE MCS %d not supported", mcs);
 		}
 #else /* NL80211_SUPPORT */
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"MCS_FixedRate cannot be changed without NL80211_SUPPORT defined");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"MCS_FixedRate cannot be changed without NL80211_SUPPORT defined");
 #endif /* NL80211_SUPPORT */
 	}
 
@@ -11687,7 +11573,6 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 
 			run_iwpriv(dut, intf, "rxchainmask %d", config_val);
 			run_iwpriv(dut, intf, "txchainmask %d", config_val);
-
 		}
 
 		/* Extract the channel width information */
@@ -11769,8 +11654,8 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 			int ret;
 
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"nss_mcs_cap: mcs: %d, nss %d",
-					mcs, nss);
+					"nss_mcs_cap: mcs: %d, nss %d", mcs,
+					nss);
 
 			if (mcs >= 0 && mcs <= 9) {
 				mcs_config = EHT_MCS0_9;
@@ -11786,16 +11671,19 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 
 			ret = sta_set_eht_mcs(dut, intf, mcs_config);
 			if (ret) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"nss_mcs_cap: EHT: Setting of MCS failed, mcs_config: %d, ret: %d",
-						mcs_config, ret);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"nss_mcs_cap: EHT: Setting of MCS failed, mcs_config: %d, ret: %d",
+					mcs_config, ret);
 				send_resp(dut, conn, SIGMA_ERROR,
 					  "errorCode,Failed to set MCS");
 				return STATUS_SENT_ERROR;
 			}
 #else /* NL80211_SUPPORT */
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"nss_mcs_cap: EHT: MCS cannot be changed without NL80211_SUPPORT defined");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"nss_mcs_cap: EHT: MCS cannot be changed without "
+				"NL80211_SUPPORT defined");
 #endif /* NL80211_SUPPORT */
 		}
 
@@ -11815,9 +11703,10 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 				   mcs == 13) {
 				mcs_config = HE_80_MCS0_11;
 			} else {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"nss_mcs_cap: HE: Invalid mcs: %d",
-						mcs);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"nss_mcs_cap: HE: Invalid mcs: %d",
+					mcs);
 				send_resp(dut, conn, SIGMA_ERROR,
 					  "errorCode,Invalid MCS");
 				return STATUS_SENT_ERROR;
@@ -11825,16 +11714,19 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 
 			ret = sta_set_he_mcs(dut, intf, mcs_config);
 			if (ret) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"nss_mcs_cap: HE: Setting of MCS failed, mcs_config: %d, ret: %d",
-						mcs_config, ret);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"nss_mcs_cap: HE: Setting of MCS failed, mcs_config: %d, ret: %d",
+					mcs_config, ret);
 				send_resp(dut, conn, SIGMA_ERROR,
 					  "errorCode,Failed to set MCS");
 				return STATUS_SENT_ERROR;
 			}
 #else /* NL80211_SUPPORT */
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"nss_mcs_cap: HE: MCS cannot be changed without NL80211_SUPPORT defined");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"nss_mcs_cap: HE: MCS cannot be changed without "
+				"NL80211_SUPPORT defined");
 #endif /* NL80211_SUPPORT */
 		} else {
 			run_iwpriv(dut, intf, "vhtmcs %d", mcs);
@@ -11900,7 +11792,7 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	val = get_param(cmd, "Vht_tkip");
 	if (val)
-		tkip = strcmp(val, "1") == 0 ||	strcasecmp(val, "Enable") == 0;
+		tkip = strcmp(val, "1") == 0 || strcasecmp(val, "Enable") == 0;
 
 	val = get_param(cmd, "Vht_wep");
 	if (val)
@@ -11912,8 +11804,9 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 		} else if ((tkip == 0 && wep != 1) || (wep == 0 && tkip != 1)) {
 			run_iwpriv(dut, intf, "htweptkip 0");
 		} else {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,mixed mode of VHT TKIP/WEP not supported");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,mixed mode of VHT TKIP/WEP not supported");
 			return STATUS_SENT_ERROR;
 		}
 	}
@@ -11929,20 +11822,23 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 			} else if (strcasecmp(val, "Disable") == 0) {
 				set_val = 0;
 			} else {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Invalid TWTSchedSTASupport");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Invalid TWTSchedSTASupport");
 				return STATUS_SENT_ERROR;
 			}
 
 			if (sta_set_bcast_twt_support(dut, intf, set_val)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set TWTSchedSTASupport");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set TWTSchedSTASupport");
 				return STATUS_SENT_ERROR;
 			}
 			break;
 		default:
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Setting TWTSchedSTASupport not supported");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Setting TWTSchedSTASupport not supported");
 			break;
 		}
 	}
@@ -11964,8 +11860,9 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 			}
 
 			if (sta_set_rx_ctrl_multi_bss(dut, intf, set_val)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set MBSSID_RxCtrl");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set MBSSID_RxCtrl");
 				return STATUS_SENT_ERROR;
 			}
 			break;
@@ -11981,15 +11878,17 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 		switch (get_driver_type(dut)) {
 		case DRIVER_WCN:
 			if (wcn_sta_set_width(dut, intf, val) < 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set txBandwidth");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set txBandwidth");
 				return STATUS_SENT_ERROR;
 			}
 			break;
 		case DRIVER_ATHEROS:
 			if (ath_set_width(dut, conn, intf, val) < 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set txBandwidth");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set txBandwidth");
 				return STATUS_SENT_ERROR;
 			}
 			break;
@@ -12003,8 +11902,9 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 	val = get_param(cmd, "BeamformeeSTS");
 	if (val) {
 		if (sta_set_tx_beamformee(dut, intf, 1)) {
-			send_resp(dut, conn, SIGMA_ERROR,
-					"ErrorCode,Failed to set TX beamformee enable");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to set TX beamformee enable");
 			return STATUS_SENT_ERROR;
 		}
 
@@ -12032,13 +11932,16 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 			break;
 		}
 		if (sta_set_mac_padding_duration(dut, intf, set_val)) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to set MAC padding duration");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to set MAC padding duration");
 			return STATUS_SENT_ERROR;
 		}
 #else /* NL80211_SUPPORT */
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"MAC padding duration cannot be changed without NL80211_SUPPORT defined");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"MAC padding duration cannot be changed without "
+			"NL80211_SUPPORT defined");
 #endif /* NL80211_SUPPORT */
 	}
 
@@ -12081,9 +11984,10 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 		}
 
 		if (sta_set_punctured_preamble_rx(dut, intf, set_val)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Failed to set PreamblePunctRx support %d",
-					set_val);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Failed to set PreamblePunctRx support %d",
+				set_val);
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,Failed to set PreamblePunctRx");
 			return STATUS_SENT_ERROR;
@@ -12186,8 +12090,9 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 		else if (strcasecmp(val, "Disable") == 0)
 			set_val = 0;
 		if (sta_set_bss_max_idle_support(dut, intf, set_val)) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to set BSS max idle support");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to set BSS max idle support");
 			return STATUS_SENT_ERROR;
 		}
 	}
@@ -12227,25 +12132,24 @@ cmd_sta_set_wireless_vht(struct sigma_dut *dut, struct sigma_conn *conn,
 	return cmd_sta_set_wireless_common(intf, dut, conn, cmd);
 }
 
-
-static enum sigma_cmd_result
-cmd_sta_set_wireless_eht(struct sigma_dut *dut, struct sigma_conn *conn,
-			 struct sigma_cmd *cmd)
+static enum sigma_cmd_result cmd_sta_set_wireless_eht(struct sigma_dut *dut,
+						      struct sigma_conn *conn,
+						      struct sigma_cmd *cmd)
 {
 	const char *intf = get_param(cmd, "Interface");
 	const char *val;
 
 	val = get_param(cmd, "BeamformeeSS_80");
 	if (val)
-		sta_set_eht_beamformee_ss_80(dut, intf, (u8) atoi(val));
+		sta_set_eht_beamformee_ss_80(dut, intf, (u8)atoi(val));
 
 	val = get_param(cmd, "BeamformeeSS_160");
 	if (val)
-		sta_set_eht_beamformee_ss_160(dut, intf, (u8) atoi(val));
+		sta_set_eht_beamformee_ss_160(dut, intf, (u8)atoi(val));
 
 	val = get_param(cmd, "BeamformeeSS_320");
 	if (val)
-		sta_set_eht_beamformee_ss_320(dut, intf, (u8) atoi(val));
+		sta_set_eht_beamformee_ss_320(dut, intf, (u8)atoi(val));
 
 	val = get_param(cmd, "MLOmode");
 	if (val) {
@@ -12261,8 +12165,8 @@ cmd_sta_set_wireless_eht(struct sigma_dut *dut, struct sigma_conn *conn,
 			sta_config_params(dut, intf,
 					  STA_SET_EHT_MLO_MAX_NUM_LINKS, 2);
 			/* Configure STR Tx for testbed. The configuration
-			 * gets reset with disconnection.
-			 */
+       * gets reset with disconnection.
+       */
 			if (dut->device_type == STA_testbed)
 				sta_set_mlo_str_tx(dut, intf, 1);
 		} else if (strcasecmp(val, "EMLSR") == 0) {
@@ -12301,29 +12205,30 @@ cmd_sta_set_wireless_eht(struct sigma_dut *dut, struct sigma_conn *conn,
 		else if (ival == 256)
 			set_val = 4;
 		else
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Unsupported EMLSR_Padding_Delay value '%s'",
-					val);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Unsupported EMLSR_Padding_Delay value '%s'",
+				val);
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"EMLSR padding %s us, set val %d",
-				val, set_val);
+				"EMLSR padding %s us, set val %d", val,
+				set_val);
 		sta_set_eht_emlsr_padding_delay(dut, intf, set_val);
 	}
 
 	val = get_param(cmd, "TBSoundingFBRateLimit");
 	if (val)
-		sta_set_eht_tb_sounding_fb_rl(dut, intf, (u8) atoi(val));
+		sta_set_eht_tb_sounding_fb_rl(dut, intf, (u8)atoi(val));
 
 	val = get_param(cmd, "MaxNumofSimultaneousLinks");
 	if (val)
 		sta_config_params(dut, intf,
 				  STA_SET_EHT_MLO_MAX_SIMULTANEOUS_LINKS,
-				  (u8) atoi(val));
+				  (u8)atoi(val));
 
 	val = get_param(cmd, "EMLCapaPresent");
 	if (val)
 		sta_config_params(dut, intf, STA_SET_EHT_EML_CAPABILITY,
-				  (u8) atoi(val));
+				  (u8)atoi(val));
 
 	val = get_param(cmd, "EHT_OMControl");
 	if (val) {
@@ -12336,9 +12241,7 @@ cmd_sta_set_wireless_eht(struct sigma_dut *dut, struct sigma_conn *conn,
 	return cmd_sta_set_wireless_vht(dut, conn, cmd);
 }
 
-
-static int sta_set_wireless_60g(struct sigma_dut *dut,
-				struct sigma_conn *conn,
+static int sta_set_wireless_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 				struct sigma_cmd *cmd)
 {
 	const char *dev_role = get_param(cmd, "DevRole");
@@ -12353,11 +12256,9 @@ static int sta_set_wireless_60g(struct sigma_dut *dut,
 		return sta_set_60g_pcp(dut, conn, cmd);
 	if (strcasecmp(dev_role, "STA") == 0)
 		return sta_set_60g_sta(dut, conn, cmd);
-	send_resp(dut, conn, SIGMA_INVALID,
-		  "ErrorCode,DevRole not supported");
+	send_resp(dut, conn, SIGMA_INVALID, "ErrorCode,DevRole not supported");
 	return 0;
 }
-
 
 static int sta_set_wireless_oce(struct sigma_dut *dut, struct sigma_conn *conn,
 				struct sigma_cmd *cmd)
@@ -12374,10 +12275,9 @@ static int sta_set_wireless_oce(struct sigma_dut *dut, struct sigma_conn *conn,
 	return cmd_sta_set_wireless_common(intf, dut, conn, cmd);
 }
 
-
-static enum sigma_cmd_result
-sta_set_wireless_wpa3(struct sigma_dut *dut, struct sigma_conn *conn,
-		      struct sigma_cmd *cmd)
+static enum sigma_cmd_result sta_set_wireless_wpa3(struct sigma_dut *dut,
+						   struct sigma_conn *conn,
+						   struct sigma_cmd *cmd)
 {
 	const char *intf = get_param(cmd, "Interface");
 	const char *val;
@@ -12389,8 +12289,9 @@ sta_set_wireless_wpa3(struct sigma_dut *dut, struct sigma_conn *conn,
 	val = get_param(cmd, "ClientPrivacy");
 	if (val && dut->client_privacy != atoi(val) &&
 	    sta_set_client_privacy(dut, conn, intf, atoi(val))) {
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Failed to configure random MAC address use");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"errorCode,Failed to configure random MAC address use");
 		return STATUS_SENT_ERROR;
 	}
 
@@ -12402,8 +12303,9 @@ sta_set_wireless_wpa3(struct sigma_dut *dut, struct sigma_conn *conn,
 			 strcasecmp(val, "disable") == 0);
 
 		if (wpa_command(intf, buf) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Failed to enable/disable G2 transmit");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Failed to enable/disable G2 transmit");
 			return STATUS_SENT_ERROR;
 		}
 	}
@@ -12411,18 +12313,17 @@ sta_set_wireless_wpa3(struct sigma_dut *dut, struct sigma_conn *conn,
 	return cmd_sta_set_wireless_common(intf, dut, conn, cmd);
 }
 
-
-static enum sigma_cmd_result
-sta_set_wireless_loc_r2(struct sigma_dut *dut, struct sigma_conn *conn,
-			struct sigma_cmd *cmd)
+static enum sigma_cmd_result sta_set_wireless_loc_r2(struct sigma_dut *dut,
+						     struct sigma_conn *conn,
+						     struct sigma_cmd *cmd)
 {
 	const char *i2rlmr_iftmr = get_param(cmd, "I2RLMRIFTMR");
 	const char *session_terminate = get_param(cmd, "FTMSessionTerminate");
 
 	if (i2rlmr_iftmr) {
 		dut->i2rlmr_iftmr = atoi(i2rlmr_iftmr);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"i2rlmr_iftmr value is %d", dut->i2rlmr_iftmr);
+		sigma_dut_print(dut, DUT_MSG_INFO, "i2rlmr_iftmr value is %d",
+				dut->i2rlmr_iftmr);
 	}
 
 	if (session_terminate) {
@@ -12437,7 +12338,6 @@ sta_set_wireless_loc_r2(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return SUCCESS_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_wireless(struct sigma_dut *dut,
 						  struct sigma_conn *conn,
@@ -12476,58 +12376,57 @@ static enum sigma_cmd_result cmd_sta_set_wireless(struct sigma_dut *dut,
 	return 0;
 }
 
-
 static void ath_sta_inject_frame(struct sigma_dut *dut, const char *intf,
 				 int tid)
 {
 	char buf[100];
-	int tid_to_dscp [] = { 0x00, 0x20, 0x40, 0x60, 0x80, 0xa0, 0xc0, 0xe0 };
+	int tid_to_dscp[] = { 0x00, 0x20, 0x40, 0x60, 0x80, 0xa0, 0xc0, 0xe0 };
 
 	if (tid < 0 ||
-	    tid >= (int) (sizeof(tid_to_dscp) / sizeof(tid_to_dscp[0]))) {
+	    tid >= (int)(sizeof(tid_to_dscp) / sizeof(tid_to_dscp[0]))) {
 		sigma_dut_print(dut, DUT_MSG_ERROR, "Unsupported TID: %d", tid);
 		return;
 	}
 
 	/*
-	 * Two ways to ensure that addba request with a
-	 * non zero TID could be sent out. EV 117296
-	 */
-	snprintf(buf, sizeof(buf),
-		 "ping -c 8 -Q %d `arp -a | grep wlan0 | awk '{print $2}' | tr -d '()'`",
-		 tid);
+   * Two ways to ensure that addba request with a
+   * non zero TID could be sent out. EV 117296
+   */
+	snprintf(
+		buf, sizeof(buf),
+		"ping -c 8 -Q %d `arp -a | grep wlan0 | awk '{print $2}' | tr -d '()'`",
+		tid);
 	if (system(buf) != 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Ping did not send out");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "Ping did not send out");
 	}
 
 	snprintf(buf, sizeof(buf),
-		 "iwconfig %s | grep Access | awk '{print $6}' > %s",
-		 intf, VI_QOS_TMP_FILE);
+		 "iwconfig %s | grep Access | awk '{print $6}' > %s", intf,
+		 VI_QOS_TMP_FILE);
 	if (system(buf) != 0)
 		return;
 
 	snprintf(buf, sizeof(buf),
-		 "ifconfig %s | grep HWaddr | cut -b 39-56 >> %s",
-		 intf, VI_QOS_TMP_FILE);
+		 "ifconfig %s | grep HWaddr | cut -b 39-56 >> %s", intf,
+		 VI_QOS_TMP_FILE);
 	if (system(buf) != 0)
 		sigma_dut_print(dut, DUT_MSG_ERROR, "HWaddr matching failed");
 
-	snprintf(buf,sizeof(buf), "sed -n '3,$p' %s >> %s",
-		 VI_QOS_REFFILE, VI_QOS_TMP_FILE);
+	snprintf(buf, sizeof(buf), "sed -n '3,$p' %s >> %s", VI_QOS_REFFILE,
+		 VI_QOS_TMP_FILE);
 	if (system(buf) != 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"VI_QOS_TEMP_FILE generation error failed");
 	}
-	snprintf(buf, sizeof(buf), "sed '5 c %x' %s > %s",
-		 tid_to_dscp[tid], VI_QOS_TMP_FILE, VI_QOS_FILE);
+	snprintf(buf, sizeof(buf), "sed '5 c %x' %s > %s", tid_to_dscp[tid],
+		 VI_QOS_TMP_FILE, VI_QOS_FILE);
 	if (system(buf) != 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"VI_QOS_FILE generation failed");
 	}
 
-	snprintf(buf, sizeof(buf), "sed '5 c %x' %s > %s",
-		 tid_to_dscp[tid], VI_QOS_TMP_FILE, VI_QOS_FILE);
+	snprintf(buf, sizeof(buf), "sed '5 c %x' %s > %s", tid_to_dscp[tid],
+		 VI_QOS_TMP_FILE, VI_QOS_FILE);
 	if (system(buf) != 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"VI_QOS_FILE generation failed");
@@ -12537,7 +12436,6 @@ static void ath_sta_inject_frame(struct sigma_dut *dut, const char *intf,
 	if (system(buf) != 0) {
 	}
 }
-
 
 static int ath_sta_send_addba(struct sigma_dut *dut, struct sigma_conn *conn,
 			      struct sigma_cmd *cmd)
@@ -12573,7 +12471,6 @@ static int ath_sta_send_addba(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return 1;
 }
-
 
 #ifdef __linux__
 
@@ -12626,8 +12523,8 @@ static int wil6210_send_addba(struct sigma_dut *dut, const char *dest_mac,
 	}
 
 	if (!found) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"no TX VRING for %s", dest_mac);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "no TX VRING for %s",
+				dest_mac);
 		goto out;
 	}
 
@@ -12641,8 +12538,8 @@ static int wil6210_send_addba(struct sigma_dut *dut, const char *dest_mac,
 	rc = regexec(&re, buf, 2, m, 0);
 	regfree(&re);
 	if (rc || m[1].rm_so < 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"no VRING TX ID for %s", dest_mac);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "no VRING TX ID for %s",
+				dest_mac);
 		goto out;
 	}
 	buf[m[1].rm_eo] = 0;
@@ -12655,8 +12552,7 @@ static int wil6210_send_addba(struct sigma_dut *dut, const char *dest_mac,
 		return -1;
 	f = fopen(buf, "w");
 	if (!f) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"failed to open: %s", buf);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "failed to open: %s", buf);
 		return -1;
 	}
 
@@ -12670,7 +12566,6 @@ out:
 	return ret;
 }
 
-
 int send_addba_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 		   struct sigma_cmd *cmd, const char *mac_param)
 {
@@ -12681,16 +12576,19 @@ int send_addba_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 	if (val) {
 		tid = atoi(val);
 		if (tid != 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Ignore TID %d for send_addba use TID 0 for 60g since only 0 required on TX",
-					tid);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Ignore TID %d for send_addba use TID 0 for 60g since "
+				"only 0 required on TX",
+				tid);
 		}
 	}
 
 	val = get_param(cmd, mac_param);
 	if (!val) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Currently not supporting addba for 60G without Dest_mac");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Currently not supporting addba for 60G without Dest_mac");
 		return ERROR_SEND_STATUS;
 	}
 
@@ -12701,7 +12599,6 @@ int send_addba_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 }
 
 #endif /* __linux__ */
-
 
 static int wcn_sta_send_addba(struct sigma_dut *dut, struct sigma_conn *conn,
 			      struct sigma_cmd *cmd)
@@ -12731,8 +12628,8 @@ static int wcn_sta_send_addba(struct sigma_dut *dut, struct sigma_conn *conn,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "ErrorCode,sta_send_addba interface invalid");
 		return 0;
@@ -12757,8 +12654,9 @@ static int wcn_sta_send_addba(struct sigma_dut *dut, struct sigma_conn *conn,
 				"%s: err in adding vendor_cmd and vendor_data",
 				__func__);
 		nlmsg_free(msg);
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "ErrorCode,sta_send_addba err in adding vendor_cmd and vendor_data");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"ErrorCode,sta_send_addba err in adding vendor_cmd and vendor_data");
 		return 0;
 	}
 	nla_nest_end(msg, params);
@@ -12775,13 +12673,13 @@ static int wcn_sta_send_addba(struct sigma_dut *dut, struct sigma_conn *conn,
 		return 0;
 	}
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"sta_send_addba not supported without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"sta_send_addba not supported without NL80211_SUPPORT defined");
 #endif /* NL80211_SUPPORT */
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_send_addba(struct sigma_dut *dut,
 						struct sigma_conn *conn,
@@ -12798,36 +12696,33 @@ static enum sigma_cmd_result cmd_sta_send_addba(struct sigma_dut *dut,
 #endif /* __linux__ */
 	default:
 		/*
-		 * There is no driver specific implementation for other drivers.
-		 * Ignore the command and report COMPLETE since the following
-		 * throughput test operation will end up sending ADDBA anyway.
-		 */
+     * There is no driver specific implementation for other drivers.
+     * Ignore the command and report COMPLETE since the following
+     * throughput test operation will end up sending ADDBA anyway.
+     */
 		return 1;
 	}
 }
 
-
 int inject_eth_frame(int s, const void *data, size_t len,
 		     unsigned short ethtype, char *dst, char *src)
 {
-	struct iovec iov[4] = {
-		{
-			.iov_base = dst,
-			.iov_len = ETH_ALEN,
-		},
-		{
-			.iov_base = src,
-			.iov_len = ETH_ALEN,
-		},
-		{
-			.iov_base = &ethtype,
-			.iov_len = sizeof(unsigned short),
-		},
-		{
-			.iov_base = (void *) data,
-			.iov_len = len,
-		}
-	};
+	struct iovec iov[4] = { {
+					.iov_base = dst,
+					.iov_len = ETH_ALEN,
+				},
+				{
+					.iov_base = src,
+					.iov_len = ETH_ALEN,
+				},
+				{
+					.iov_base = &ethtype,
+					.iov_len = sizeof(unsigned short),
+				},
+				{
+					.iov_base = (void *)data,
+					.iov_len = len,
+				} };
 	struct msghdr msg = {
 		.msg_name = NULL,
 		.msg_namelen = 0,
@@ -12845,27 +12740,32 @@ int inject_eth_frame(int s, const void *data, size_t len,
 
 int inject_frame(int s, const void *data, size_t len, int encrypt)
 {
-#define	IEEE80211_RADIOTAP_F_WEP	0x04
-#define	IEEE80211_RADIOTAP_F_FRAG	0x08
+#define IEEE80211_RADIOTAP_F_WEP 0x04
+#define IEEE80211_RADIOTAP_F_FRAG 0x08
 	unsigned char rtap_hdr[] = {
-		0x00, 0x00, /* radiotap version */
-		0x0e, 0x00, /* radiotap length */
-		0x02, 0xc0, 0x00, 0x00, /* bmap: flags, tx and rx flags */
+		0x00,
+		0x00, /* radiotap version */
+		0x0e,
+		0x00, /* radiotap length */
+		0x02,
+		0xc0,
+		0x00,
+		0x00, /* bmap: flags, tx and rx flags */
 		IEEE80211_RADIOTAP_F_FRAG, /* F_FRAG (fragment if required) */
-		0x00,       /* padding */
-		0x00, 0x00, /* RX and TX flags to indicate that */
-		0x00, 0x00, /* this is the injected frame directly */
+		0x00, /* padding */
+		0x00,
+		0x00, /* RX and TX flags to indicate that */
+		0x00,
+		0x00, /* this is the injected frame directly */
 	};
-	struct iovec iov[2] = {
-		{
-			.iov_base = &rtap_hdr,
-			.iov_len = sizeof(rtap_hdr),
-		},
-		{
-			.iov_base = (void *) data,
-			.iov_len = len,
-		}
-	};
+	struct iovec iov[2] = { {
+					.iov_base = &rtap_hdr,
+					.iov_len = sizeof(rtap_hdr),
+				},
+				{
+					.iov_base = (void *)data,
+					.iov_len = len,
+				} };
 	struct msghdr msg = {
 		.msg_name = NULL,
 		.msg_namelen = 0,
@@ -12881,7 +12781,6 @@ int inject_frame(int s, const void *data, size_t len, int encrypt)
 
 	return sendmsg(s, &msg, 0);
 }
-
 
 int open_monitor(const char *ifname)
 {
@@ -12915,7 +12814,7 @@ int open_monitor(const char *ifname)
 		return -1;
 	}
 
-	if (bind(s, (struct sockaddr *) &ll, sizeof(ll)) < 0) {
+	if (bind(s, (struct sockaddr *)&ll, sizeof(ll)) < 0) {
 		perror("monitor socket bind");
 		close(s);
 		return -1;
@@ -12923,7 +12822,6 @@ int open_monitor(const char *ifname)
 
 	return s;
 }
-
 
 static int hex2num(char c)
 {
@@ -12935,7 +12833,6 @@ static int hex2num(char c)
 		return c - 'A' + 10;
 	return -1;
 }
-
 
 int hwaddr_aton(const char *txt, unsigned char *addr)
 {
@@ -12960,7 +12857,6 @@ int hwaddr_aton(const char *txt, unsigned char *addr)
 
 #endif /* defined(__linux__) || defined(__QNXNTO__) */
 
-
 #ifdef NL80211_SUPPORT
 static int nl80211_send_frame_cmd(struct sigma_dut *dut, const char *intf,
 				  const u8 *data, size_t data_len, int freq)
@@ -12972,8 +12868,8 @@ static int nl80211_send_frame_cmd(struct sigma_dut *dut, const char *intf,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
@@ -12990,9 +12886,10 @@ static int nl80211_send_frame_cmd(struct sigma_dut *dut, const char *intf,
 
 	ret = send_and_recv_msgs(dut, dut->nl_ctx, msg, NULL, NULL);
 	if (ret) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"nl80211: Frame command failed: ret=%d (%s) req=%u",
-				ret, strerror(-ret), freq);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"nl80211: Frame command failed: ret=%d (%s) req=%u",
+			ret, strerror(-ret), freq);
 		return -1;
 	}
 
@@ -13000,14 +12897,16 @@ static int nl80211_send_frame_cmd(struct sigma_dut *dut, const char *intf,
 }
 #endif /* NL80211_SUPPORT */
 
-
 enum send_frame_type {
-	DISASSOC, DEAUTH, SAQUERY, AUTH, ASSOCREQ, REASSOCREQ, DLS_REQ
+	DISASSOC,
+	DEAUTH,
+	SAQUERY,
+	AUTH,
+	ASSOCREQ,
+	REASSOCREQ,
+	DLS_REQ
 };
-enum send_frame_protection {
-	CORRECT_KEY, INCORRECT_KEY, UNPROTECTED
-};
-
+enum send_frame_protection { CORRECT_KEY, INCORRECT_KEY, UNPROTECTED };
 
 static int sta_inject_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 			    const char *intf, enum send_frame_type frame,
@@ -13028,23 +12927,26 @@ static int sta_inject_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 		return 0;
 	}
 
-	if (get_wpa_status(get_station_ifname(dut), "bssid",
-			   bssid, sizeof(bssid)) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not get "
+	if (get_wpa_status(get_station_ifname(dut), "bssid", bssid,
+			   sizeof(bssid)) < 0) {
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not get "
 			  "current BSSID");
 		return 0;
 	}
 
-	if (get_wpa_status(get_station_ifname(dut), "address",
-			   addr, sizeof(addr)) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not get "
+	if (get_wpa_status(get_station_ifname(dut), "address", addr,
+			   sizeof(addr)) < 0) {
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not get "
 			  "own MAC address");
 		return 0;
 	}
 
-	if (get_wpa_status(get_station_ifname(dut), "ssid", ssid, sizeof(ssid))
-	    < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not get "
+	if (get_wpa_status(get_station_ifname(dut), "ssid", ssid,
+			   sizeof(ssid)) < 0) {
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not get "
 			  "current SSID");
 		return 0;
 	}
@@ -13194,9 +13096,11 @@ static int sta_inject_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 			memcpy(pos, "\x32\x04\x30\x48\x60\x6c", 6);
 			pos += 6;
 			/* RSN */
-			memcpy(pos, "\x30\x1a\x01\x00\x00\x0f\xac\x04\x01\x00"
+			memcpy(pos,
+			       "\x30\x1a\x01\x00\x00\x0f\xac\x04\x01\x00"
 			       "\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x02\xc0"
-			       "\x00\x00\x00\x00\x0f\xac\x06", 28);
+			       "\x00\x00\x00\x00\x0f\xac\x06",
+			       28);
 			pos += 28;
 			break;
 		case REASSOCREQ:
@@ -13310,10 +13214,11 @@ static int sta_inject_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 		int freq;
 		char freq_str[10];
 
-		if (get_wpa_status(get_station_ifname(dut), "freq",
-				   freq_str, sizeof(freq_str)) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Could not get current operating frequency");
+		if (get_wpa_status(get_station_ifname(dut), "freq", freq_str,
+				   sizeof(freq_str)) < 0) {
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Could not get current operating frequency");
 			return 0;
 		}
 		freq = atoi(freq_str);
@@ -13324,20 +13229,21 @@ static int sta_inject_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 			return 0;
 		}
 #else /* NL80211_SUPPORT */
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Failed to inject frame (no NL80211_SUPPORT)");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"errorCode,Failed to inject frame (no NL80211_SUPPORT)");
 		return 0;
 #endif /* NL80211_SUPPORT */
 	}
 
 	return 1;
 #else /* __linux__ */
-	send_resp(dut, conn, SIGMA_ERROR, "errorCode,sta_send_frame not "
+	send_resp(dut, conn, SIGMA_ERROR,
+		  "errorCode,sta_send_frame not "
 		  "yet supported");
 	return 0;
 #endif /* __linux__ */
 }
-
 
 static int cmd_sta_send_frame_tdls(struct sigma_dut *dut,
 				   struct sigma_conn *conn,
@@ -13423,8 +13329,7 @@ static int cmd_sta_send_frame_tdls(struct sigma_dut *dut,
 				res = wpa_command(intf,
 						  "SET tdls_testing 0x108");
 			else
-				res = wpa_command(intf,
-						  "SET tdls_testing 0x8");
+				res = wpa_command(intf, "SET tdls_testing 0x8");
 			if (res) {
 				send_resp(dut, conn, SIGMA_ERROR,
 					  "ErrorCode,Failed to set short TPK "
@@ -13452,11 +13357,9 @@ static int cmd_sta_send_frame_tdls(struct sigma_dut *dut,
 		return 1;
 	}
 
-	send_resp(dut, conn, SIGMA_ERROR,
-		  "ErrorCode,Unsupported TDLS frame");
+	send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unsupported TDLS frame");
 	return 0;
 }
-
 
 static int sta_ap_known(const char *ifname, const char *bssid)
 {
@@ -13470,7 +13373,6 @@ static int sta_ap_known(const char *ifname, const char *bssid)
 	return 1;
 }
 
-
 static int sta_scan_ap(struct sigma_dut *dut, const char *ifname,
 		       const char *bssid)
 {
@@ -13480,12 +13382,12 @@ static int sta_scan_ap(struct sigma_dut *dut, const char *ifname,
 
 	if (sta_ap_known(ifname, bssid))
 		return 0;
-	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"AP not in BSS table - start scan");
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "AP not in BSS table - start scan");
 
 	ctrl = open_wpa_mon(ifname);
 	if (ctrl == NULL) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to open "
+		sigma_dut_print(dut, DUT_MSG_ERROR,
+				"Failed to open "
 				"wpa_supplicant monitor connection");
 		return -1;
 	}
@@ -13497,8 +13399,8 @@ static int sta_scan_ap(struct sigma_dut *dut, const char *ifname,
 		return -1;
 	}
 
-	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-SCAN-RESULTS",
-				buf, sizeof(buf));
+	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-SCAN-RESULTS", buf,
+				sizeof(buf));
 
 	wpa_ctrl_detach(ctrl);
 	wpa_ctrl_close(ctrl);
@@ -13514,7 +13416,6 @@ static int sta_scan_ap(struct sigma_dut *dut, const char *ifname,
 	return -1;
 }
 
-
 static int cmd_sta_send_frame_hs2_neighadv(struct sigma_dut *dut,
 					   struct sigma_conn *conn,
 					   struct sigma_cmd *cmd,
@@ -13524,14 +13425,14 @@ static int cmd_sta_send_frame_hs2_neighadv(struct sigma_dut *dut,
 
 	snprintf(buf, sizeof(buf), "ndsend 2001:DB8::1 %s", intf);
 	if (system(buf) != 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Failed to run "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "ErrorCode,Failed to run "
 			  "ndsend");
 		return 0;
 	}
 
 	return 1;
 }
-
 
 static int cmd_sta_send_frame_hs2_neighsolreq(struct sigma_dut *dut,
 					      struct sigma_conn *conn,
@@ -13549,12 +13450,12 @@ static int cmd_sta_send_frame_hs2_neighsolreq(struct sigma_dut *dut,
 	if (system(buf) == 0) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
 				"Neighbor Solicitation got a response "
-				"for %s@%s", ip, intf);
+				"for %s@%s",
+				ip, intf);
 	}
 
 	return 1;
 }
-
 
 static int cmd_sta_send_frame_hs2_arpprobe(struct sigma_dut *dut,
 					   struct sigma_conn *conn,
@@ -13572,13 +13473,14 @@ static int cmd_sta_send_frame_hs2_arpprobe(struct sigma_dut *dut,
 	snprintf(buf, sizeof(buf), "arping -I %s -D %s -c 4", ifname, ip);
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 	if (system(buf) != 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO, "arping DAD got a response "
-				"for %s@%s", ip, ifname);
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"arping DAD got a response "
+				"for %s@%s",
+				ip, ifname);
 	}
 
 	return 1;
 }
-
 
 static int cmd_sta_send_frame_hs2_arpannounce(struct sigma_dut *dut,
 					      struct sigma_conn *conn,
@@ -13601,8 +13503,8 @@ static int cmd_sta_send_frame_hs2_arpannounce(struct sigma_dut *dut,
 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 	if (ioctl(s, SIOCGIFADDR, &ifr) < 0) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Failed to get %s IP address: %s",
-				ifname, strerror(errno));
+				"Failed to get %s IP address: %s", ifname,
+				strerror(errno));
 		close(s);
 		return -1;
 	}
@@ -13620,7 +13522,6 @@ static int cmd_sta_send_frame_hs2_arpannounce(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static int cmd_sta_send_frame_hs2_arpreply(struct sigma_dut *dut,
 					   struct sigma_conn *conn,
 					   struct sigma_cmd *cmd,
@@ -13636,7 +13537,7 @@ static int cmd_sta_send_frame_hs2_arpreply(struct sigma_dut *dut,
 
 	val = get_param(cmd, "dest");
 	if (val)
-		hwaddr_aton(val, (unsigned char *) dst);
+		hwaddr_aton(val, (unsigned char *)dst);
 
 	val = get_param(cmd, "DestIP");
 	if (val)
@@ -13647,7 +13548,7 @@ static int cmd_sta_send_frame_hs2_arpreply(struct sigma_dut *dut,
 	if (get_wpa_status(get_station_ifname(dut), "address", addr,
 			   sizeof(addr)) < 0)
 		return -2;
-	hwaddr_aton(addr, (unsigned char *) src);
+	hwaddr_aton(addr, (unsigned char *)src);
 
 	pos = buf;
 	*pos++ = 0x00;
@@ -13669,14 +13570,16 @@ static int cmd_sta_send_frame_hs2_arpreply(struct sigma_dut *dut,
 
 	s = open_monitor(get_station_ifname(dut));
 	if (s < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed to open "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Failed to open "
 			  "monitor socket");
 		return 0;
 	}
 
 	res = inject_eth_frame(s, buf, pos - buf, ethtype, dst, src);
 	if (res < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed to "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Failed to "
 			  "inject frame");
 		close(s);
 		return 0;
@@ -13686,7 +13589,6 @@ static int cmd_sta_send_frame_hs2_arpreply(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static int cmd_sta_send_frame_hs2_dls_req(struct sigma_dut *dut,
 					  struct sigma_conn *conn,
@@ -13699,23 +13601,24 @@ static int cmd_sta_send_frame_hs2_dls_req(struct sigma_dut *dut,
 		snprintf(buf, sizeof(buf),
 			 "iw dev %s interface add sigmadut type monitor",
 			 get_station_ifname(dut));
-		if (system(buf) != 0 ||
-		    if_nametoindex("sigmadut") == 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to add "
-					"monitor interface with '%s'", buf);
+		if (system(buf) != 0 || if_nametoindex("sigmadut") == 0) {
+			sigma_dut_print(dut, DUT_MSG_ERROR,
+					"Failed to add "
+					"monitor interface with '%s'",
+					buf);
 			return -2;
 		}
 	}
 
 	if (system("ifconfig sigmadut up") != 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to set "
+		sigma_dut_print(dut, DUT_MSG_ERROR,
+				"Failed to set "
 				"monitor interface up");
 		return -2;
 	}
 
 	return sta_inject_frame(dut, conn, intf, DLS_REQ, UNPROTECTED, dest, 1);
 }
-
 
 static int cmd_sta_send_frame_hs2(struct sigma_dut *dut,
 				  struct sigma_conn *conn,
@@ -13762,7 +13665,8 @@ static int cmd_sta_send_frame_hs2(struct sigma_dut *dut,
 	}
 
 	if (sta_scan_ap(dut, intf, dest) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Could not find "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "ErrorCode,Could not find "
 			  "the requested AP");
 		return 0;
 	}
@@ -13891,13 +13795,15 @@ static int cmd_sta_send_frame_hs2(struct sigma_dut *dut,
 	}
 
 	if (count && count2) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Wait before sending out "
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Wait before sending out "
 				"second query");
 		sleep(1);
 	}
 
 	if (count2 && wpa_command(intf, buf)) {
-		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,HS20_ANQP_GET "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "ErrorCode,HS20_ANQP_GET "
 			  "failed");
 		return 0;
 	}
@@ -13905,7 +13811,8 @@ static int cmd_sta_send_frame_hs2(struct sigma_dut *dut,
 	val = get_param(cmd, "NAI_HOME_REALM_LIST");
 	if (val) {
 		if (count || count2) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG, "Wait before "
+			sigma_dut_print(dut, DUT_MSG_DEBUG,
+					"Wait before "
 					"sending out second query");
 			sleep(1);
 		}
@@ -13913,8 +13820,7 @@ static int cmd_sta_send_frame_hs2(struct sigma_dut *dut,
 		if (strcmp(val, "1") == 0)
 			val = "mail.example.com";
 		snprintf(buf, end - pos,
-			 "HS20_GET_NAI_HOME_REALM_LIST %s realm=%s",
-			 dest, val);
+			 "HS20_GET_NAI_HOME_REALM_LIST %s realm=%s", dest, val);
 		if (wpa_command(intf, buf)) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,HS20_GET_NAI_HOME_REALM_LIST "
@@ -13926,13 +13832,13 @@ static int cmd_sta_send_frame_hs2(struct sigma_dut *dut,
 	val = get_param(cmd, "ICON_REQUEST");
 	if (val) {
 		if (count || count2) {
-			sigma_dut_print(dut, DUT_MSG_DEBUG, "Wait before "
+			sigma_dut_print(dut, DUT_MSG_DEBUG,
+					"Wait before "
 					"sending out second query");
 			sleep(1);
 		}
 
-		snprintf(buf, end - pos,
-			 "HS20_ICON_REQUEST %s %s", dest, val);
+		snprintf(buf, end - pos, "HS20_ICON_REQUEST %s %s", dest, val);
 		if (wpa_command(intf, buf)) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrorCode,HS20_ICON_REQUEST failed");
@@ -13942,7 +13848,6 @@ static int cmd_sta_send_frame_hs2(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static int ath_sta_send_frame_vht(struct sigma_dut *dut,
 				  struct sigma_conn *conn,
@@ -14016,7 +13921,6 @@ static int ath_sta_send_frame_vht(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static int wcn_sta_set_pmf_config(struct sigma_dut *dut, const char *intf,
 				  enum send_frame_protection protected)
 {
@@ -14025,12 +13929,12 @@ static int wcn_sta_set_pmf_config(struct sigma_dut *dut, const char *intf,
 		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_PMF_PROTECTION,
 		protected);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"PMF config cannot be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"PMF config cannot be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int cmd_sta_send_frame_vht(struct sigma_dut *dut,
 				  struct sigma_conn *conn,
@@ -14040,12 +13944,12 @@ static int cmd_sta_send_frame_vht(struct sigma_dut *dut,
 	case DRIVER_ATHEROS:
 		return ath_sta_send_frame_vht(dut, conn, cmd);
 	default:
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Unsupported sta_set_frame(VHT) with the current driver");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"errorCode,Unsupported sta_set_frame(VHT) with the current driver");
 		return 0;
 	}
 }
-
 
 static int wcn_sta_send_disassoc(struct sigma_dut *dut, const char *intf)
 {
@@ -14053,12 +13957,12 @@ static int wcn_sta_send_disassoc(struct sigma_dut *dut, const char *intf)
 	return wcn_wifi_test_config_set_flag(
 		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_DISASSOC_TX);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Disassoc Tx cannot be done without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Disassoc Tx cannot be done without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int wcn_sta_send_frame_he(struct sigma_dut *dut, struct sigma_conn *conn,
 				 struct sigma_cmd *cmd)
@@ -14102,10 +14006,12 @@ static int wcn_sta_send_frame_he(struct sigma_dut *dut, struct sigma_conn *conn,
 		val = get_param(cmd, "PPDUTxType");
 		if (val && strcasecmp(val, "TB") == 0) {
 			if (sta_set_action_tx_in_he_tb_ppdu(dut, intf, 1)) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"failed to send TB PPDU Tx cfg");
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,set TB PPDU Tx cfg failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"failed to send TB PPDU Tx cfg");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,set TB PPDU Tx cfg failed");
 				return 0;
 			}
 			return 1;
@@ -14123,27 +14029,26 @@ static int wcn_sta_send_frame_he(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 1;
 }
 
-
-static int cmd_sta_send_frame_he(struct sigma_dut *dut,
-				 struct sigma_conn *conn,
+static int cmd_sta_send_frame_he(struct sigma_dut *dut, struct sigma_conn *conn,
 				 struct sigma_cmd *cmd)
 {
 	switch (get_driver_type(dut)) {
 	case DRIVER_WCN:
 		return wcn_sta_send_frame_he(dut, conn, cmd);
 	default:
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Unsupported sta_set_frame(HE) with the current driver");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"errorCode,Unsupported sta_set_frame(HE) with the current driver");
 		return 0;
 	}
 }
 
-
 #ifdef __linux__
 
-static int
-wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
-			   const char *frame_name, const char *dest_mac)
+static int wil6210_send_p2p_frame_60g(struct sigma_dut *dut,
+				      struct sigma_cmd *cmd,
+				      const char *frame_name,
+				      const char *dest_mac)
 {
 	int isprobereq = strcasecmp(frame_name, "probereq") == 0;
 	const char *ssid = get_param(cmd, "ssid");
@@ -14157,7 +14062,7 @@ wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
 		device_macstr[3 * ETH_ALEN], client_mac[ETH_ALEN];
 	const char *group_ssid;
 	const int group_ssid_prefix_len = 9;
-	struct ieee80211_hdr_3addr *hdr = (struct ieee80211_hdr_3addr *) frame;
+	struct ieee80211_hdr_3addr *hdr = (struct ieee80211_hdr_3addr *)frame;
 	size_t framelen = sizeof(frame);
 	struct template_frame_tag tags[2];
 	size_t tags_total = ARRAY_SIZE(tags);
@@ -14169,8 +14074,7 @@ wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
 		return -1;
 	}
 	if (isprobereq && !ssid) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Missing argument: ssid");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "Missing argument: ssid");
 		return -1;
 	}
 	if (!isprobereq && (!group_id || !client_id)) {
@@ -14184,8 +14088,8 @@ wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
 	freq = channel_to_freq(dut, channel);
 
 	if (!freq) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"invalid channel: %s", channelstr);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "invalid channel: %s",
+				channelstr);
 		return -1;
 	}
 
@@ -14203,15 +14107,15 @@ wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
 		fname = "P2P_device_discovery_req.txt";
 	}
 
-	if (parse_template_frame_file(dut, fname, frame, &framelen,
-				      tags, &tags_total)) {
+	if (parse_template_frame_file(dut, fname, frame, &framelen, tags,
+				      &tags_total)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"invalid frame template: %s", fname);
 		return -1;
 	}
 
-	if (get_wpa_status(get_station_ifname(dut), "address",
-			   src_mac, sizeof(src_mac)) < 0 ||
+	if (get_wpa_status(get_station_ifname(dut), "address", src_mac,
+			   sizeof(src_mac)) < 0 ||
 	    parse_mac_address(dut, src_mac, &hdr->addr2[0]) ||
 	    parse_mac_address(dut, dest_mac, &hdr->addr1[0]))
 		return -1;
@@ -14226,7 +14130,7 @@ wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
 			return -1;
 		}
 		if (parse_mac_address(dut, client_id,
-				      (unsigned char *) client_mac)) {
+				      (unsigned char *)client_mac)) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"invalid client_id: %s", client_id);
 			return -1;
@@ -14241,11 +14145,11 @@ wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
 		}
 
 		/*
-		 * group_id arg contains device MAC address followed by
-		 * space and SSID (DIRECT-somessid).
-		 * group id attribute contains device address (6 bytes)
-		 * followed by SSID prefix DIRECT-XX (9 bytes)
-		 */
+     * group_id arg contains device MAC address followed by
+     * space and SSID (DIRECT-somessid).
+     * group id attribute contains device address (6 bytes)
+     * followed by SSID prefix DIRECT-XX (9 bytes)
+     */
 		if (strlen(group_id) < sizeof(device_macstr)) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"group_id arg too short");
@@ -14254,9 +14158,10 @@ wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
 		memcpy(device_macstr, group_id, sizeof(device_macstr));
 		device_macstr[sizeof(device_macstr) - 1] = '\0';
 		if (parse_mac_address(dut, device_macstr,
-				      (unsigned char *) group_id_attr)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"fail to parse device address from group_id");
+				      (unsigned char *)group_id_attr)) {
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"fail to parse device address from group_id");
 			return -1;
 		}
 		group_ssid = strchr(group_id, ' ');
@@ -14310,7 +14215,6 @@ wil6210_send_p2p_frame_60g(struct sigma_dut *dut, struct sigma_cmd *cmd,
 
 	return 0;
 }
-
 
 int wil6210_send_frame_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 			   struct sigma_cmd *cmd)
@@ -14369,7 +14273,6 @@ int wil6210_send_frame_60g(struct sigma_dut *dut, struct sigma_conn *conn,
 
 #endif /* __linux__ */
 
-
 static int cmd_sta_send_frame_60g(struct sigma_dut *dut,
 				  struct sigma_conn *conn,
 				  struct sigma_cmd *cmd)
@@ -14380,12 +14283,12 @@ static int cmd_sta_send_frame_60g(struct sigma_dut *dut,
 		return wil6210_send_frame_60g(dut, conn, cmd);
 #endif /* __linux__ */
 	default:
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Unsupported sta_set_frame(60G) with the current driver");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"errorCode,Unsupported sta_set_frame(60G) with the current driver");
 		return 0;
 	}
 }
-
 
 static int mbo_send_anqp_query(struct sigma_dut *dut, struct sigma_conn *conn,
 			       const char *intf, struct sigma_cmd *cmd)
@@ -14420,9 +14323,9 @@ static int mbo_send_anqp_query(struct sigma_dut *dut, struct sigma_conn *conn,
 	}
 
 	/* Set gas_address3 field to IEEE 802.11-2012 standard compliant form
-	 * (Address3 = Wildcard BSSID when sent to not-associated AP;
-	 * if associated, AP BSSID).
-	 */
+   * (Address3 = Wildcard BSSID when sent to not-associated AP;
+   * if associated, AP BSSID).
+   */
 	if (wpa_command(intf, "SET gas_address3 1") < 0) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "ErrorCode,Failed to set gas_address3");
@@ -14438,10 +14341,8 @@ static int mbo_send_anqp_query(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 1;
 }
 
-
 static int mbo_cmd_sta_send_frame(struct sigma_dut *dut,
-				  struct sigma_conn *conn,
-				  const char *intf,
+				  struct sigma_conn *conn, const char *intf,
 				  struct sigma_cmd *cmd)
 {
 	const char *val = get_param(cmd, "FrameName");
@@ -14451,7 +14352,6 @@ static int mbo_cmd_sta_send_frame(struct sigma_dut *dut,
 
 	return 2;
 }
-
 
 static enum sigma_cmd_result cmd_sta_send_frame_wpa3(struct sigma_dut *dut,
 						     struct sigma_conn *conn,
@@ -14516,8 +14416,7 @@ static enum sigma_cmd_result cmd_sta_send_frame_wpa3(struct sigma_dut *dut,
 			return STATUS_SENT_ERROR;
 		}
 
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"ANQP Query sent: %s", buf);
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "ANQP Query sent: %s", buf);
 
 		return SUCCESS_SEND_STATUS;
 	}
@@ -14526,11 +14425,10 @@ static enum sigma_cmd_result cmd_sta_send_frame_wpa3(struct sigma_dut *dut,
 	return STATUS_SENT_ERROR;
 }
 
-
-static int
-get_type4_frame_classifier(struct sigma_dut *dut, struct sigma_cmd *cmd,
-			   char *pos, int rem_len, int num_of_scs_desc,
-			   int num_of_tclas_elem)
+static int get_type4_frame_classifier(struct sigma_dut *dut,
+				      struct sigma_cmd *cmd, char *pos,
+				      int rem_len, int num_of_scs_desc,
+				      int num_of_tclas_elem)
 {
 	const char *val;
 	int ipv6;
@@ -14658,11 +14556,10 @@ get_type4_frame_classifier(struct sigma_dut *dut, struct sigma_cmd *cmd,
 	return total_len;
 }
 
-
-static int
-get_type10_frame_classifier(struct sigma_dut *dut, struct sigma_cmd *cmd,
-			    char *pos, int rem_len, int num_of_scs_desc,
-			    int num_of_tclas_elem)
+static int get_type10_frame_classifier(struct sigma_dut *dut,
+				       struct sigma_cmd *cmd, char *pos,
+				       int rem_len, int num_of_scs_desc,
+				       int num_of_tclas_elem)
 {
 	const char *val;
 	int len, total_len = 0;
@@ -14670,8 +14567,7 @@ get_type10_frame_classifier(struct sigma_dut *dut, struct sigma_cmd *cmd,
 	val = get_param_fmt(cmd, "TCLASElem_ProtoInstance_%d_%d",
 			    num_of_scs_desc, num_of_tclas_elem);
 	if (val) {
-		len = snprintf(pos, rem_len, " prot_instance=%s",
-			       val);
+		len = snprintf(pos, rem_len, " prot_instance=%s", val);
 		if (len < 0 || len >= rem_len)
 			return -1;
 
@@ -14697,8 +14593,7 @@ get_type10_frame_classifier(struct sigma_dut *dut, struct sigma_cmd *cmd,
 			break;
 		default:
 			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Invalid protocol %d",
-					atoi(val));
+					"Invalid protocol %d", atoi(val));
 			return -1;
 		}
 
@@ -14711,8 +14606,8 @@ get_type10_frame_classifier(struct sigma_dut *dut, struct sigma_cmd *cmd,
 		total_len += len;
 	}
 
-	val = get_param_fmt(cmd, "TCLASElem_FilterValue_%d_%d",
-			    num_of_scs_desc, num_of_tclas_elem);
+	val = get_param_fmt(cmd, "TCLASElem_FilterValue_%d_%d", num_of_scs_desc,
+			    num_of_tclas_elem);
 	if (val) {
 		len = snprintf(pos, rem_len, " filter_value=%s", (val + 2));
 		if (len < 0 || len >= rem_len)
@@ -14738,10 +14633,10 @@ get_type10_frame_classifier(struct sigma_dut *dut, struct sigma_cmd *cmd,
 	return total_len;
 }
 
-
-static enum sigma_cmd_result
-cmd_sta_send_frame_scs(struct sigma_dut *dut, struct sigma_conn *conn,
-		       const char *intf, struct sigma_cmd *cmd)
+static enum sigma_cmd_result cmd_sta_send_frame_scs(struct sigma_dut *dut,
+						    struct sigma_conn *conn,
+						    const char *intf,
+						    struct sigma_cmd *cmd)
 {
 	char buf[4096], *pos;
 	const char *val, *scs_id, *classifier_type;
@@ -14773,8 +14668,7 @@ cmd_sta_send_frame_scs(struct sigma_dut *dut, struct sigma_conn *conn,
 			return INVALID_SEND_STATUS;
 
 		if (strcasecmp(val, "Add") == 0) {
-			len = snprintf(pos, rem_len, " scs_id=%s add",
-				       scs_id);
+			len = snprintf(pos, rem_len, " scs_id=%s add", scs_id);
 		} else if (strcasecmp(val, "Change") == 0) {
 			len = snprintf(pos, rem_len, " scs_id=%s change",
 				       scs_id);
@@ -14815,9 +14709,8 @@ cmd_sta_send_frame_scs(struct sigma_dut *dut, struct sigma_conn *conn,
 		pos += len;
 		rem_len -= len;
 
-		classifier_type = get_param_fmt(cmd,
-						"TCLASElem_ClassifierType_%d_1",
-						num_of_scs_desc);
+		classifier_type = get_param_fmt(
+			cmd, "TCLASElem_ClassifierType_%d_1", num_of_scs_desc);
 		if (!classifier_type) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"classifier type missing");
@@ -14837,13 +14730,11 @@ cmd_sta_send_frame_scs(struct sigma_dut *dut, struct sigma_conn *conn,
 
 			if (strcmp(classifier_type, "10") == 0) {
 				total_bytes = get_type10_frame_classifier(
-					dut, cmd, pos, rem_len,
-					num_of_scs_desc,
+					dut, cmd, pos, rem_len, num_of_scs_desc,
 					num_of_tclas_elem);
 			} else if (strcmp(classifier_type, "4") == 0) {
 				total_bytes = get_type4_frame_classifier(
-					dut, cmd, pos, rem_len,
-					num_of_scs_desc,
+					dut, cmd, pos, rem_len, num_of_scs_desc,
 					num_of_tclas_elem);
 			} else {
 				sigma_dut_print(dut, DUT_MSG_ERROR,
@@ -14867,14 +14758,15 @@ cmd_sta_send_frame_scs(struct sigma_dut *dut, struct sigma_conn *conn,
 					    "TCLASProcessingElem_Processing_%d",
 					    num_of_scs_desc);
 			if (!val) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"Tclas_processing element %d empty",
-						num_of_scs_desc);
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"Tclas_processing element %d empty",
+					num_of_scs_desc);
 				goto fail;
 			}
 
-			len = snprintf(pos, rem_len,
-				       " tclas_processing=%s", val);
+			len = snprintf(pos, rem_len, " tclas_processing=%s",
+				       val);
 			if (len < 0 || len >= rem_len)
 				goto fail;
 
@@ -14893,8 +14785,7 @@ scs_desc_end:
 		return STATUS_SENT_ERROR;
 	}
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"SCS frame request sent: %s", buf);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "SCS frame request sent: %s", buf);
 
 	return SUCCESS_SEND_STATUS;
 fail:
@@ -14903,10 +14794,10 @@ fail:
 	return ERROR_SEND_STATUS;
 }
 
-
-static enum sigma_cmd_result
-cmd_sta_send_frame_mscs(struct sigma_dut *dut, struct sigma_conn *conn,
-			const char *intf, struct sigma_cmd *cmd)
+static enum sigma_cmd_result cmd_sta_send_frame_mscs(struct sigma_dut *dut,
+						     struct sigma_conn *conn,
+						     const char *intf,
+						     struct sigma_cmd *cmd)
 {
 	char buf[128], *pos;
 	const char *val, *classifier_type = "04", *type;
@@ -14915,8 +14806,8 @@ cmd_sta_send_frame_mscs(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	type = get_param(cmd, "Request_Type");
 	if (!type) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: type not valid", __func__);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "%s: type not valid",
+				__func__);
 		return INVALID_SEND_STATUS;
 	}
 
@@ -14934,8 +14825,8 @@ cmd_sta_send_frame_mscs(struct sigma_dut *dut, struct sigma_conn *conn,
 		}
 		return SUCCESS_SEND_STATUS;
 	} else {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: request type invalid", __func__);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "%s: request type invalid",
+				__func__);
 		return INVALID_SEND_STATUS;
 	}
 
@@ -15008,8 +14899,8 @@ cmd_sta_send_frame_mscs(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	val = get_param(cmd, "TCLAS_Mask");
 	if (!val) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: invalid tclas mask", __func__);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "%s: invalid tclas mask",
+				__func__);
 		return INVALID_SEND_STATUS;
 	}
 
@@ -15024,16 +14915,13 @@ cmd_sta_send_frame_mscs(struct sigma_dut *dut, struct sigma_conn *conn,
 		return STATUS_SENT_ERROR;
 	}
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"MSCS frame request sent: %s", buf);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "MSCS frame request sent: %s", buf);
 
 	return SUCCESS_SEND_STATUS;
 fail:
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Failed to create MSCS frame req");
+	sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to create MSCS frame req");
 	return ERROR_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result
 cmd_sta_send_frame_dscp_query(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -15075,14 +14963,13 @@ cmd_sta_send_frame_dscp_query(struct sigma_dut *dut, struct sigma_conn *conn,
 		return STATUS_SENT_ERROR;
 	}
 
-	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"DSCP policy query frame sent: %s", buf);
+	sigma_dut_print(dut, DUT_MSG_DEBUG, "DSCP policy query frame sent: %s",
+			buf);
 	return SUCCESS_SEND_STATUS;
 fail:
 	sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to send DSCP query");
 	return ERROR_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result
 cmd_sta_send_frame_dscp_response(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -15097,8 +14984,9 @@ cmd_sta_send_frame_dscp_response(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	len = snprintf(pos, rem_len, "DSCP_RESP");
 	if (snprintf_error(rem_len, len)) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to create DSCP Policy Response command");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to create DSCP Policy Response command");
 		return ERROR_SEND_STATUS;
 	}
 
@@ -15127,8 +15015,9 @@ cmd_sta_send_frame_dscp_response(struct sigma_dut *dut, struct sigma_conn *conn,
 
 		if (i == dut->num_dscp_status) {
 			free(list);
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,DSCP policy id not found in status list");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,DSCP policy id not found in status list");
 			return STATUS_SENT_ERROR;
 		}
 
@@ -15153,8 +15042,9 @@ cmd_sta_send_frame_dscp_response(struct sigma_dut *dut, struct sigma_conn *conn,
 	free(list);
 
 	if (wpa_command(intf, buf) != 0) {
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "ErrorCode,Failed to send DSCP Policy Response frame");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"ErrorCode,Failed to send DSCP Policy Response frame");
 		return STATUS_SENT_ERROR;
 	}
 
@@ -15163,10 +15053,10 @@ cmd_sta_send_frame_dscp_response(struct sigma_dut *dut, struct sigma_conn *conn,
 	return SUCCESS_SEND_STATUS;
 }
 
-
-static enum sigma_cmd_result
-cmd_sta_send_frame_qm(struct sigma_dut *dut, struct sigma_conn *conn,
-		      const char *intf, struct sigma_cmd *cmd)
+static enum sigma_cmd_result cmd_sta_send_frame_qm(struct sigma_dut *dut,
+						   struct sigma_conn *conn,
+						   const char *intf,
+						   struct sigma_cmd *cmd)
 {
 	const char *val;
 
@@ -15184,13 +15074,12 @@ cmd_sta_send_frame_qm(struct sigma_dut *dut, struct sigma_conn *conn,
 								cmd);
 
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: frame name - %s is invalid",
-				__func__, val);
+				"%s: frame name - %s is invalid", __func__,
+				val);
 	}
 
 	return INVALID_SEND_STATUS;
 }
-
 
 enum sigma_cmd_result cmd_sta_send_frame(struct sigma_dut *dut,
 					 struct sigma_conn *conn,
@@ -15212,11 +15101,11 @@ enum sigma_cmd_result cmd_sta_send_frame(struct sigma_dut *dut,
 		val = get_param(cmd, "frame");
 	if (val && strcasecmp(val, "TDLS") == 0)
 		return cmd_sta_send_frame_tdls(dut, conn, cmd);
-	if (val && (strcasecmp(val, "HS2") == 0 ||
-		    strcasecmp(val, "HS2-R2") == 0 ||
-		    strcasecmp(val, "HS2-R3") == 0 ||
-		    strcasecmp(val, "HS2-2022") == 0 ||
-		    strcasecmp(val, "HS2-R4") == 0))
+	if (val &&
+	    (strcasecmp(val, "HS2") == 0 || strcasecmp(val, "HS2-R2") == 0 ||
+	     strcasecmp(val, "HS2-R3") == 0 ||
+	     strcasecmp(val, "HS2-2022") == 0 ||
+	     strcasecmp(val, "HS2-R4") == 0))
 		return cmd_sta_send_frame_hs2(dut, conn, cmd);
 	if (val && strcasecmp(val, "VHT") == 0)
 		return cmd_sta_send_frame_vht(dut, conn, cmd);
@@ -15319,7 +15208,8 @@ enum sigma_cmd_result cmd_sta_send_frame(struct sigma_dut *dut,
 
 		res = send_neighbor_request(dut, intf, val);
 		if (res) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,"
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,"
 				  "Failed to send neighbor report request");
 			return 0;
 		}
@@ -15332,14 +15222,16 @@ enum sigma_cmd_result cmd_sta_send_frame(struct sigma_dut *dut,
 
 		res = send_trans_mgmt_query(dut, intf, cmd);
 		if (res) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,"
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,"
 				  "Failed to send Transition Management Query");
 			return 0;
 		}
 
 		return 1;
 	} else {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Unsupported "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Unsupported "
 			  "PMFFrameType");
 		return 0;
 	}
@@ -15351,20 +15243,22 @@ enum sigma_cmd_result cmd_sta_send_frame(struct sigma_dut *dut,
 		return -1;
 	if (strcasecmp(val, "Correct-key") == 0 ||
 	    strcasecmp(val, "CorrectKey") == 0)
-		protected = CORRECT_KEY;
+	protected = CORRECT_KEY;
 	else if (strcasecmp(val, "IncorrectKey") == 0)
 		protected = INCORRECT_KEY;
-	else if (strcasecmp(val, "Unprotected") == 0)
-		protected = UNPROTECTED;
-	else {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Unsupported "
+	else if (strcasecmp(val, "Unprotected") == 0) protected = UNPROTECTED;
+	else
+	{
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Unsupported "
 			  "PMFProtected");
 		return 0;
 	}
 
 	if (protected != UNPROTECTED &&
 	    (frame == AUTH || frame == ASSOCREQ || frame == REASSOCREQ)) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Impossible "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Impossible "
 			  "PMFProtected for auth/assocreq/reassocreq");
 		return 0;
 	}
@@ -15373,16 +15267,18 @@ enum sigma_cmd_result cmd_sta_send_frame(struct sigma_dut *dut,
 		snprintf(buf, sizeof(buf),
 			 "iw dev %s interface add sigmadut type monitor",
 			 get_station_ifname(dut));
-		if (system(buf) != 0 ||
-		    if_nametoindex("sigmadut") == 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to add "
-					"monitor interface with '%s'", buf);
+		if (system(buf) != 0 || if_nametoindex("sigmadut") == 0) {
+			sigma_dut_print(dut, DUT_MSG_ERROR,
+					"Failed to add "
+					"monitor interface with '%s'",
+					buf);
 			return -2;
 		}
 	}
 
 	if (system("ifconfig sigmadut up") != 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to set "
+		sigma_dut_print(dut, DUT_MSG_ERROR,
+				"Failed to set "
 				"monitor interface up");
 		return -2;
 	}
@@ -15390,11 +15286,9 @@ enum sigma_cmd_result cmd_sta_send_frame(struct sigma_dut *dut,
 	return sta_inject_frame(dut, conn, intf, frame, protected, NULL, 1);
 }
 
-
 static int cmd_sta_set_parameter_hs2(struct sigma_dut *dut,
 				     struct sigma_conn *conn,
-				     struct sigma_cmd *cmd,
-				     const char *ifname)
+				     struct sigma_cmd *cmd, const char *ifname)
 {
 	char buf[200];
 	const char *val;
@@ -15413,7 +15307,6 @@ static int cmd_sta_set_parameter_hs2(struct sigma_dut *dut,
 	return 1;
 }
 
-
 int cmd_sta_set_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 			  struct sigma_cmd *cmd)
 {
@@ -15424,16 +15317,15 @@ int cmd_sta_set_parameter(struct sigma_dut *dut, struct sigma_conn *conn,
 		return -1;
 
 	val = get_param(cmd, "program");
-	if (val && (strcasecmp(val, "HS2") == 0 ||
-		    strcasecmp(val, "HS2-R2") == 0 ||
-		    strcasecmp(val, "HS2-R3") == 0 ||
-		    strcasecmp(val, "HS2-2022") == 0 ||
-		    strcasecmp(val, "HS2-R4") == 0))
+	if (val &&
+	    (strcasecmp(val, "HS2") == 0 || strcasecmp(val, "HS2-R2") == 0 ||
+	     strcasecmp(val, "HS2-R3") == 0 ||
+	     strcasecmp(val, "HS2-2022") == 0 ||
+	     strcasecmp(val, "HS2-R4") == 0))
 		return cmd_sta_set_parameter_hs2(dut, conn, cmd, intf);
 
 	return -1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_macaddr(struct sigma_dut *dut,
 						 struct sigma_conn *conn,
@@ -15445,8 +15337,10 @@ static enum sigma_cmd_result cmd_sta_set_macaddr(struct sigma_dut *dut,
 	if (intf == NULL || mac == NULL)
 		return -1;
 
-	sigma_dut_print(dut, DUT_MSG_INFO, "Change local MAC address for "
-			"interface %s to %s", intf, mac);
+	sigma_dut_print(dut, DUT_MSG_INFO,
+			"Change local MAC address for "
+			"interface %s to %s",
+			intf, mac);
 
 	if (dut->set_macaddr) {
 		char buf[128];
@@ -15460,7 +15354,7 @@ static enum sigma_cmd_result cmd_sta_set_macaddr(struct sigma_dut *dut,
 				       dut->set_macaddr, mac);
 			dut->tmp_mac_addr = 1;
 		}
-		if (res < 0 || res >= (int) sizeof(buf))
+		if (res < 0 || res >= (int)sizeof(buf))
 			return -1;
 		if (system(buf) != 0) {
 			send_resp(dut, conn, SIGMA_ERROR,
@@ -15474,22 +15368,21 @@ static enum sigma_cmd_result cmd_sta_set_macaddr(struct sigma_dut *dut,
 	if (strcasecmp(mac, "default") == 0)
 		return 1;
 
-	send_resp(dut, conn, SIGMA_ERROR, "errorCode,Unsupported "
+	send_resp(dut, conn, SIGMA_ERROR,
+		  "errorCode,Unsupported "
 		  "command");
 	return 0;
 }
 
-
-static int iwpriv_tdlsoffchnmode(struct sigma_dut *dut,
-				 struct sigma_conn *conn, const char *intf,
-				 int val)
+static int iwpriv_tdlsoffchnmode(struct sigma_dut *dut, struct sigma_conn *conn,
+				 const char *intf, int val)
 {
 	char buf[200];
 	int res;
 
-	res = snprintf(buf, sizeof(buf), "iwpriv %s tdlsoffchnmode %d",
-		       intf, val);
-	if (res < 0 || res >= (int) sizeof(buf))
+	res = snprintf(buf, sizeof(buf), "iwpriv %s tdlsoffchnmode %d", intf,
+		       val);
+	if (res < 0 || res >= (int)sizeof(buf))
 		return -1;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 	if (system(buf) != 0) {
@@ -15500,7 +15393,6 @@ static int iwpriv_tdlsoffchnmode(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static int off_chan_val(enum sec_ch_offset off)
 {
@@ -15516,7 +15408,6 @@ static int off_chan_val(enum sec_ch_offset off)
 	return 0;
 }
 
-
 static int iwpriv_set_offchan(struct sigma_dut *dut, struct sigma_conn *conn,
 			      const char *intf, int off_ch_num,
 			      enum sec_ch_offset sec)
@@ -15524,9 +15415,9 @@ static int iwpriv_set_offchan(struct sigma_dut *dut, struct sigma_conn *conn,
 	char buf[200];
 	int res;
 
-	res = snprintf(buf, sizeof(buf), "iwpriv %s tdlsoffchan %d",
-		       intf, off_ch_num);
-	if (res < 0 || res >= (int) sizeof(buf))
+	res = snprintf(buf, sizeof(buf), "iwpriv %s tdlsoffchan %d", intf,
+		       off_ch_num);
+	if (res < 0 || res >= (int)sizeof(buf))
 		return -1;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 	if (system(buf) != 0) {
@@ -15535,9 +15426,9 @@ static int iwpriv_set_offchan(struct sigma_dut *dut, struct sigma_conn *conn,
 		return 0;
 	}
 
-	res = snprintf(buf, sizeof(buf), "iwpriv %s tdlsecchnoffst %d",
-		       intf, off_chan_val(sec));
-	if (res < 0 || res >= (int) sizeof(buf))
+	res = snprintf(buf, sizeof(buf), "iwpriv %s tdlsecchnoffst %d", intf,
+		       off_chan_val(sec));
+	if (res < 0 || res >= (int)sizeof(buf))
 		return -1;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 	if (system(buf) != 0) {
@@ -15549,18 +15440,16 @@ static int iwpriv_set_offchan(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 1;
 }
 
-
 static int tdls_set_offchannel_offset(struct sigma_dut *dut,
-				      struct sigma_conn *conn,
-				      const char *intf, int off_ch_num,
-				      enum sec_ch_offset sec)
+				      struct sigma_conn *conn, const char *intf,
+				      int off_ch_num, enum sec_ch_offset sec)
 {
 	char buf[200];
 	int res;
 
 	res = snprintf(buf, sizeof(buf), "DRIVER TDLSOFFCHANNEL %d",
 		       off_ch_num);
-	if (res < 0 || res >= (int) sizeof(buf))
+	if (res < 0 || res >= (int)sizeof(buf))
 		return -1;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 
@@ -15571,7 +15460,7 @@ static int tdls_set_offchannel_offset(struct sigma_dut *dut,
 	}
 	res = snprintf(buf, sizeof(buf), "DRIVER TDLSSECONDARYCHANNELOFFSET %d",
 		       off_chan_val(sec));
-	if (res < 0 || res >= (int) sizeof(buf))
+	if (res < 0 || res >= (int)sizeof(buf))
 		return -1;
 
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
@@ -15585,29 +15474,26 @@ static int tdls_set_offchannel_offset(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static int tdls_set_offchannel_mode(struct sigma_dut *dut,
-				    struct sigma_conn *conn,
-				    const char *intf, int val)
+				    struct sigma_conn *conn, const char *intf,
+				    int val)
 {
 	char buf[200];
 	int res;
 
-	res = snprintf(buf, sizeof(buf), "DRIVER TDLSOFFCHANNELMODE %d",
-		       val);
-	if (res < 0 || res >= (int) sizeof(buf))
+	res = snprintf(buf, sizeof(buf), "DRIVER TDLSOFFCHANNELMODE %d", val);
+	if (res < 0 || res >= (int)sizeof(buf))
 		return -1;
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Run: %s", buf);
 
 	if (wpa_command(intf, buf) < 0) {
 		send_resp(dut, conn, SIGMA_ERROR,
-			"ErrorCode,Failed to configure offchannel mode");
+			  "ErrorCode,Failed to configure offchannel mode");
 		return 0;
 	}
 
 	return 1;
 }
-
 
 static int cmd_sta_set_rfeature_tdls(const char *intf, struct sigma_dut *dut,
 				     struct sigma_conn *conn,
@@ -15633,7 +15519,8 @@ static int cmd_sta_set_rfeature_tdls(const char *intf, struct sigma_dut *dut,
 		else if (strcasecmp(val, "Disable") == 0)
 			snprintf(buf, sizeof(buf), "SET ps 98");
 		else {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,"
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,"
 				  "Unsupported uapsd parameter value");
 			return 0;
 		}
@@ -15662,7 +15549,7 @@ static int cmd_sta_set_rfeature_tdls(const char *intf, struct sigma_dut *dut,
 		    strcasecmp(val, "Initiate") == 0)
 			chsm = CHSM_ENABLE;
 		else if (strcasecmp(val, "Disable") == 0 ||
-		    strcasecmp(val, "passive") == 0)
+			 strcasecmp(val, "passive") == 0)
 			chsm = CHSM_DISABLE;
 		else if (strcasecmp(val, "RejReq") == 0)
 			chsm = CHSM_REJREQ;
@@ -15773,7 +15660,6 @@ static int cmd_sta_set_rfeature_tdls(const char *intf, struct sigma_dut *dut,
 	return res;
 }
 
-
 static int ath_sta_set_rfeature_vht(const char *intf, struct sigma_dut *dut,
 				    struct sigma_conn *conn,
 				    struct sigma_cmd *cmd)
@@ -15795,7 +15681,7 @@ static int ath_sta_set_rfeature_vht(const char *intf, struct sigma_dut *dut,
 		result = strtok_r(token, ";", &saveptr);
 		if (!result) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
-				"VHT NSS not specified");
+					"VHT NSS not specified");
 			goto failed;
 		}
 		if (strcasecmp(result, "def") != 0) {
@@ -15804,13 +15690,12 @@ static int ath_sta_set_rfeature_vht(const char *intf, struct sigma_dut *dut,
 				ath_disable_txbf(dut, intf);
 			if (run_iwpriv(dut, intf, "nss %d", nss) < 0)
 				goto failed;
-
 		}
 
 		result = strtok_r(NULL, ";", &saveptr);
 		if (!result) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
-				"VHT MCS not specified");
+					"VHT MCS not specified");
 			goto failed;
 		}
 		if (strcasecmp(result, "def") == 0) {
@@ -15832,7 +15717,6 @@ failed:
 	return 0;
 }
 
-
 static int cmd_sta_set_rfeature_vht(const char *intf, struct sigma_dut *dut,
 				    struct sigma_conn *conn,
 				    struct sigma_cmd *cmd)
@@ -15841,16 +15725,17 @@ static int cmd_sta_set_rfeature_vht(const char *intf, struct sigma_dut *dut,
 	case DRIVER_ATHEROS:
 		return ath_sta_set_rfeature_vht(intf, dut, conn, cmd);
 	default:
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Unsupported sta_set_rfeature(VHT) with the current driver");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"errorCode,Unsupported sta_set_rfeature(VHT) with the current driver");
 		return 0;
 	}
 }
 
-
-static enum sigma_cmd_result
-wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
-			struct sigma_conn *conn, struct sigma_cmd *cmd)
+static enum sigma_cmd_result wcn_sta_set_rfeature_he(const char *intf,
+						     struct sigma_dut *dut,
+						     struct sigma_conn *conn,
+						     struct sigma_cmd *cmd)
 {
 	const char *val;
 	char *token = NULL, *result;
@@ -15930,9 +15815,10 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 					mcs_config = HE_80_MCS0_11;
 				ret = sta_set_he_mcs(dut, intf, mcs_config);
 				if (ret) {
-					sigma_dut_print(dut, DUT_MSG_ERROR,
-							"nss_mcs_opt: mcs setting failed, mcs:%d, mcs_config %d, ret:%d",
-							mcs, mcs_config, ret);
+					sigma_dut_print(
+						dut, DUT_MSG_ERROR,
+						"nss_mcs_opt: mcs setting failed, mcs:%d, mcs_config %d, ret:%d",
+						mcs, mcs_config, ret);
 					goto failed;
 				}
 			}
@@ -15944,14 +15830,16 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 		}
 
 		if (wcn_set_he_tx_rate(dut, intf, tx_rate, dut->sta_nss)) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"wcn_set_he_tx_rate failed, using iwpriv");
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"wcn_set_he_tx_rate failed, using iwpriv");
 			snprintf(buf, sizeof(buf),
-				 "iwpriv %s set_11ax_rate 0x%03x",
-				 intf, ratecode);
+				 "iwpriv %s set_11ax_rate 0x%03x", intf,
+				 ratecode);
 			if (system(buf) != 0) {
-				sigma_dut_print(dut, DUT_MSG_ERROR,
-						"iwpriv setting of 11ax rates failed");
+				sigma_dut_print(
+					dut, DUT_MSG_ERROR,
+					"iwpriv setting of 11ax rates failed");
 				goto failed;
 			}
 		}
@@ -15980,19 +15868,20 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 					  "errorCode,Invalid link address");
 				return STATUS_SENT_ERROR;
 			}
-			sigma_dut_print(dut, DUT_MSG_DEBUG,
-					"link_mac[%d]: %02x:%02x:%02x:%02x:%02x:%02x",
-					num_links, link_addr[num_links][0],
-					link_addr[num_links][1],
-					link_addr[num_links][2],
-					link_addr[num_links][3],
-					link_addr[num_links][4],
-					link_addr[num_links][5]);
+			sigma_dut_print(
+				dut, DUT_MSG_DEBUG,
+				"link_mac[%d]: %02x:%02x:%02x:%02x:%02x:%02x",
+				num_links, link_addr[num_links][0],
+				link_addr[num_links][1],
+				link_addr[num_links][2],
+				link_addr[num_links][3],
+				link_addr[num_links][4],
+				link_addr[num_links][5]);
 			num_links++;
 			result = strtok_r(NULL, " ", &saveptr);
 		}
-		sta_set_eht_mlo_active_tx_links(dut, intf,
-						num_links, link_addr);
+		sta_set_eht_mlo_active_tx_links(dut, intf, num_links,
+						link_addr);
 	}
 
 	val = get_param(cmd, "InactiveAllMultiLinks");
@@ -16006,8 +15895,9 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 			}
 
 			if (sta_set_inactive_period(dut, intf, atoi(val))) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "ErrorCode,Failed to set InactivePeriod");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"ErrorCode,Failed to set InactivePeriod");
 				return STATUS_SENT_ERROR;
 			}
 		} else {
@@ -16045,14 +15935,15 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 					"wcn_set_he_gi failed, using iwpriv");
 			if (system(buf) != 0) {
 				send_resp(dut, conn, SIGMA_ERROR,
-						"errorCode,Failed to set shortgi");
+					  "errorCode,Failed to set shortgi");
 				return STATUS_SENT_ERROR;
 			}
-			snprintf(buf, sizeof(buf), "iwpriv %s shortgi %d",
-					intf, fix_rate_sgi);
+			snprintf(buf, sizeof(buf), "iwpriv %s shortgi %d", intf,
+				 fix_rate_sgi);
 			if (system(buf) != 0) {
-				send_resp(dut, conn, SIGMA_ERROR,
-						"errorCode,Failed to set fix rate shortgi");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"errorCode,Failed to set fix rate shortgi");
 				return STATUS_SENT_ERROR;
 			}
 		}
@@ -16063,7 +15954,8 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 #ifdef NL80211_SUPPORT
 		if (strcmp(val, "3.2") == 0) {
 			wcn_set_he_ltf(dut, intf, QCA_WLAN_HE_LTF_1X);
-		} if (strcmp(val, "6.4") == 0) {
+		}
+		if (strcmp(val, "6.4") == 0) {
 			wcn_set_he_ltf(dut, intf, QCA_WLAN_HE_LTF_2X);
 		} else if (strcmp(val, "12.8") == 0) {
 			wcn_set_he_ltf(dut, intf, QCA_WLAN_HE_LTF_4X);
@@ -16073,8 +15965,9 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 			return STATUS_SENT_ERROR;
 		}
 #else /* NL80211_SUPPORT */
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"LTF cannot be set without NL80211_SUPPORT defined");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"LTF cannot be set without NL80211_SUPPORT defined");
 		return ERROR_SEND_STATUS;
 #endif /* NL80211_SUPPORT */
 	}
@@ -16089,8 +15982,9 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 			set_val = QCA_WLAN_KEEP_ALIVE_MGMT;
 
 		if (sta_set_keep_alive_data_cfg(dut, intf, set_val)) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to set keep alive type config");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to set keep alive type config");
 			return STATUS_SENT_ERROR;
 		}
 	}
@@ -16121,8 +16015,9 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 			set_val = 1;
 
 		if (sta_set_mgmt_data_tx_disable_cfg(dut, intf, set_val)) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Failed to set mgmt/data Tx disable config");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Failed to set mgmt/data Tx disable config");
 			return STATUS_SENT_ERROR;
 		}
 	}
@@ -16203,14 +16098,16 @@ wcn_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
 	if (val) {
 		if (strcasecmp(val, "Override") == 0) {
 			if (sta_set_mu_edca_override(dut, intf, 1)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "errorCode,MU EDCA override set failed");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"errorCode,MU EDCA override set failed");
 				return STATUS_SENT;
 			}
 		} else if (strcasecmp(val, "Disable") == 0) {
 			if (sta_set_mu_edca_override(dut, intf, 0)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "errorCode,MU EDCA override disable failed");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"errorCode,MU EDCA override disable failed");
 				return STATUS_SENT;
 			}
 		}
@@ -16274,21 +16171,21 @@ failed:
 	return ERROR_SEND_STATUS;
 }
 
-
-static enum sigma_cmd_result
-cmd_sta_set_rfeature_he(const char *intf, struct sigma_dut *dut,
-			struct sigma_conn *conn, struct sigma_cmd *cmd)
+static enum sigma_cmd_result cmd_sta_set_rfeature_he(const char *intf,
+						     struct sigma_dut *dut,
+						     struct sigma_conn *conn,
+						     struct sigma_cmd *cmd)
 {
 	switch (get_driver_type(dut)) {
 	case DRIVER_WCN:
 		return wcn_sta_set_rfeature_he(intf, dut, conn, cmd);
 	default:
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Unsupported sta_set_rfeature(HE) with the current driver");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"errorCode,Unsupported sta_set_rfeature(HE) with the current driver");
 		return STATUS_SENT_ERROR;
 	}
 }
-
 
 static int cmd_sta_set_power_save_he(const char *intf, struct sigma_dut *dut,
 				     struct sigma_conn *conn,
@@ -16319,7 +16216,6 @@ static int cmd_sta_set_power_save_he(const char *intf, struct sigma_dut *dut,
 	return 0;
 }
 
-
 static int btm_query_candidate_list(struct sigma_dut *dut,
 				    struct sigma_conn *conn,
 				    struct sigma_cmd *cmd)
@@ -16329,11 +16225,11 @@ static int btm_query_candidate_list(struct sigma_dut *dut,
 	char buf[10];
 
 	/*
-	 * Neighbor Report elements format:
-	 * neighbor=<BSSID>,<BSSID Information>,<Operating Class>,
-	 * <Channel Number>,<PHY Type>[,<hexdump of Optional Subelements>]
-	 * eg: neighbor=aa:bb:cc:dd:ee:ff,17,81,6,1,030101
-	 */
+   * Neighbor Report elements format:
+   * neighbor=<BSSID>,<BSSID Information>,<Operating Class>,
+   * <Channel Number>,<PHY Type>[,<hexdump of Optional Subelements>]
+   * eg: neighbor=aa:bb:cc:dd:ee:ff,17,81,6,1,030101
+   */
 
 	bssid = get_param(cmd, "Nebor_BSSID");
 	if (!bssid) {
@@ -16378,10 +16274,11 @@ static int btm_query_candidate_list(struct sigma_dut *dut,
 	if (pref) {
 		/* hexdump for preferrence subelement */
 		ret = snprintf(buf, sizeof(buf), ",0301%02x", atoi(pref));
-		if (ret < 0 || ret >= (int) sizeof(buf)) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"snprintf failed for optional subelement ret: %d",
-					ret);
+		if (ret < 0 || ret >= (int)sizeof(buf)) {
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"snprintf failed for optional subelement ret: %d",
+				ret);
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,snprintf failed for subelement");
 			return 0;
@@ -16391,8 +16288,9 @@ static int btm_query_candidate_list(struct sigma_dut *dut,
 	if (!dut->btm_query_cand_list) {
 		dut->btm_query_cand_list = calloc(1, NEIGHBOR_REPORT_SIZE);
 		if (!dut->btm_query_cand_list) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode,Failed to allocate memory for btm_query_cand_list");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Failed to allocate memory for btm_query_cand_list");
 			return 0;
 		}
 	}
@@ -16402,9 +16300,10 @@ static int btm_query_candidate_list(struct sigma_dut *dut,
 		       NEIGHBOR_REPORT_SIZE - len, " neighbor=%s,%s,%s,%s,%s%s",
 		       bssid, info, op_class, ch, phy_type, buf);
 	if (ret < 0 || ret >= NEIGHBOR_REPORT_SIZE - len) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"snprintf failed for neighbor report list ret: %d",
-				ret);
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"snprintf failed for neighbor report list ret: %d",
+			ret);
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "errorCode,snprintf failed for neighbor report");
 		free(dut->btm_query_cand_list);
@@ -16414,7 +16313,6 @@ static int btm_query_candidate_list(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 int sta_extract_60g_ese(struct sigma_dut *dut, struct sigma_cmd *cmd,
 			struct sigma_ese_alloc *allocs, int *allocs_size)
@@ -16438,9 +16336,9 @@ int sta_extract_60g_ese(struct sigma_dut *dut, struct sigma_cmd *cmd,
 	for (i = 0; i < count; i++) {
 		val = get_param_indexed(cmd, "PercentBI", i);
 		if (!val) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"Missing PercentBI parameter at index %d",
-					i);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"Missing PercentBI parameter at index %d", i);
 			return -1;
 		}
 		allocs[i].percent_bi = atoi(val);
@@ -16459,15 +16357,14 @@ int sta_extract_60g_ese(struct sigma_dut *dut, struct sigma_cmd *cmd,
 
 		allocs[i].type = ESE_CBAP;
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Alloc %d PercentBI %d SrcAID %d DstAID %d",
-				i, allocs[i].percent_bi, allocs[i].src_aid,
+				"Alloc %d PercentBI %d SrcAID %d DstAID %d", i,
+				allocs[i].percent_bi, allocs[i].src_aid,
 				allocs[i].dst_aid);
 	}
 
 	*allocs_size = count;
 	return 0;
 }
-
 
 static int sta_set_60g_ese(struct sigma_dut *dut, int count,
 			   struct sigma_ese_alloc *allocs)
@@ -16480,12 +16377,12 @@ static int sta_set_60g_ese(struct sigma_dut *dut, int count,
 		return 1;
 #endif /* __linux__ */
 	default:
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Unsupported sta_set_60g_ese with the current driver");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Unsupported sta_set_60g_ese with the current driver");
 		return -1;
 	}
 }
-
 
 static int cmd_sta_set_rfeature_60g(const char *intf, struct sigma_dut *dut,
 				    struct sigma_conn *conn,
@@ -16519,7 +16416,6 @@ static int cmd_sta_set_rfeature_60g(const char *intf, struct sigma_dut *dut,
 	return STATUS_SENT;
 }
 
-
 static int wcn_sta_override_oci(struct sigma_dut *dut, const char *intf,
 				const char *oci_frametype, uint32_t oci_freq)
 {
@@ -16534,8 +16430,8 @@ static int wcn_sta_override_oci(struct sigma_dut *dut, const char *intf,
 	ifindex = if_nametoindex(intf);
 	if (ifindex == 0) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s: Index for interface %s failed",
-				__func__, intf);
+				"%s: Index for interface %s failed", __func__,
+				intf);
 		return -1;
 	}
 
@@ -16550,7 +16446,6 @@ static int wcn_sta_override_oci(struct sigma_dut *dut, const char *intf,
 				__func__, oci_frametype);
 		return -1;
 	}
-
 
 	if (!(msg = nl80211_drv_msg(dut, dut->nl_ctx, ifindex, 0,
 				    NL80211_CMD_VENDOR)) ||
@@ -16583,27 +16478,27 @@ static int wcn_sta_override_oci(struct sigma_dut *dut, const char *intf,
 	}
 	return ret;
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"OCI override not possible without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"OCI override not possible without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int wcn_sta_ignore_csa(struct sigma_dut *dut, const char *intf,
 			      uint8_t ignore_csa)
 {
 #ifdef NL80211_SUPPORT
 	return wcn_wifi_test_config_set_u8(
-		dut, intf,
-		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_IGNORE_CSA, ignore_csa);
+		dut, intf, QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_IGNORE_CSA,
+		ignore_csa);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"IgnoreCSA can't be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"IgnoreCSA can't be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int wcn_sta_set_rsnxe_used(struct sigma_dut *dut, const char *intf,
 				  uint8_t rsnxe_used)
@@ -16614,12 +16509,12 @@ static int wcn_sta_set_rsnxe_used(struct sigma_dut *dut, const char *intf,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_FT_REASSOCREQ_RSNXE_USED,
 		rsnxe_used);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"RSNXE_Used can't be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"RSNXE_Used can't be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
-
 
 static int wcn_sta_ignore_sa_query_timeout(struct sigma_dut *dut,
 					   const char *intf,
@@ -16631,17 +16526,17 @@ static int wcn_sta_ignore_sa_query_timeout(struct sigma_dut *dut,
 		QCA_WLAN_VENDOR_ATTR_WIFI_TEST_CONFIG_IGNORE_SA_QUERY_TIMEOUT,
 		ignore_sa_query_timeout);
 #else /* NL80211_SUPPORT */
-	sigma_dut_print(dut, DUT_MSG_ERROR,
-			"Ignore SA Query timeout can't be set without NL80211_SUPPORT defined");
+	sigma_dut_print(
+		dut, DUT_MSG_ERROR,
+		"Ignore SA Query timeout can't be set without NL80211_SUPPORT defined");
 	return -1;
 #endif /* NL80211_SUPPORT */
 }
 
-
-static enum sigma_cmd_result
-cmd_sta_set_rfeature_wpa3(const char *intf, struct sigma_dut *dut,
-			  struct sigma_conn *conn,
-			  struct sigma_cmd *cmd)
+static enum sigma_cmd_result cmd_sta_set_rfeature_wpa3(const char *intf,
+						       struct sigma_dut *dut,
+						       struct sigma_conn *conn,
+						       struct sigma_cmd *cmd)
 {
 	const char *val, *oci_chan, *oci_frametype;
 
@@ -16649,8 +16544,9 @@ cmd_sta_set_rfeature_wpa3(const char *intf, struct sigma_dut *dut,
 	if (val && atoi(val) == 1) {
 		if (wifi_chip_type == DRIVER_WCN) {
 			if (wcn_sta_set_rsnxe_used(dut, intf, 1)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "errorCode,Failed to set ft_rsnxe_used");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"errorCode,Failed to set ft_rsnxe_used");
 				return STATUS_SENT_ERROR;
 			}
 			return SUCCESS_SEND_STATUS;
@@ -16700,12 +16596,10 @@ cmd_sta_set_rfeature_wpa3(const char *intf, struct sigma_dut *dut,
 				 oci_freq);
 		} else if (strcasecmp(oci_frametype, "GrpKeyM2") == 0) {
 			snprintf(buf, sizeof(buf),
-				 "SET oci_freq_override_eapol_g2 %d",
-				 oci_freq);
+				 "SET oci_freq_override_eapol_g2 %d", oci_freq);
 		} else if (strcasecmp(oci_frametype, "Reassocreq") == 0) {
 			snprintf(buf, sizeof(buf),
-				 "SET oci_freq_override_ft_assoc %d",
-				 oci_freq);
+				 "SET oci_freq_override_ft_assoc %d", oci_freq);
 		} else {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Unsupported OCIFrameType");
@@ -16735,8 +16629,9 @@ cmd_sta_set_rfeature_wpa3(const char *intf, struct sigma_dut *dut,
 	if (val && atoi(val) == 0) {
 		if (wifi_chip_type == DRIVER_WCN) {
 			if (wcn_sta_ignore_sa_query_timeout(dut, intf, 1)) {
-				send_resp(dut, conn, SIGMA_ERROR,
-					  "errorCode,Failed to set ignore SA Query timeout");
+				send_resp(
+					dut, conn, SIGMA_ERROR,
+					"errorCode,Failed to set ignore SA Query timeout");
 				return STATUS_SENT_ERROR;
 			}
 			return SUCCESS_SEND_STATUS;
@@ -16748,10 +16643,10 @@ cmd_sta_set_rfeature_wpa3(const char *intf, struct sigma_dut *dut,
 	return STATUS_SENT_ERROR;
 }
 
-
-static enum sigma_cmd_result
-cmd_sta_set_rfeature_qm(const char *intf, struct sigma_dut *dut,
-			struct sigma_conn *conn, struct sigma_cmd *cmd)
+static enum sigma_cmd_result cmd_sta_set_rfeature_qm(const char *intf,
+						     struct sigma_dut *dut,
+						     struct sigma_conn *conn,
+						     struct sigma_cmd *cmd)
 {
 	const char *val;
 
@@ -16791,16 +16686,15 @@ cmd_sta_set_rfeature_qm(const char *intf, struct sigma_dut *dut,
 		}
 
 		dut->dscp_status[i].status = strcasecmp(val, "Remove") ?
-			DSCP_POLICY_SUCCESS : DSCP_POLICY_REJECT;
+						     DSCP_POLICY_SUCCESS :
+						     DSCP_POLICY_REJECT;
 
 		return SUCCESS_SEND_STATUS;
 	}
 
-	send_resp(dut, conn, SIGMA_ERROR,
-		  "errorCode,Unsupported QM rfeature");
+	send_resp(dut, conn, SIGMA_ERROR, "errorCode,Unsupported QM rfeature");
 	return STATUS_SENT_ERROR;
 }
-
 
 static enum sigma_cmd_result
 cmd_sta_set_rfeature_loc_r2(const char *intf, struct sigma_dut *dut,
@@ -16810,13 +16704,12 @@ cmd_sta_set_rfeature_loc_r2(const char *intf, struct sigma_dut *dut,
 
 	if (rnm_mfp) {
 		dut->rnm_mfp = atoi(rnm_mfp);
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"rnm_mfp value is %d", dut->rnm_mfp);
+		sigma_dut_print(dut, DUT_MSG_INFO, "rnm_mfp value is %d",
+				dut->rnm_mfp);
 	}
 
 	return SUCCESS_SEND_STATUS;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_rfeature(struct sigma_dut *dut,
 						  struct sigma_conn *conn,
@@ -16875,7 +16768,6 @@ static enum sigma_cmd_result cmd_sta_set_rfeature(struct sigma_dut *dut,
 	return 0;
 }
 
-
 static enum sigma_cmd_result cmd_sta_set_radio(struct sigma_dut *dut,
 					       struct sigma_conn *conn,
 					       struct sigma_cmd *cmd)
@@ -16895,14 +16787,14 @@ static enum sigma_cmd_result cmd_sta_set_radio(struct sigma_dut *dut,
 		return -1;
 
 	if (res) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed to change "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Failed to change "
 			  "radio mode");
 		return 0;
 	}
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_pwrsave(struct sigma_dut *dut,
 						 struct sigma_conn *conn,
@@ -16919,9 +16811,9 @@ static enum sigma_cmd_result cmd_sta_set_pwrsave(struct sigma_dut *dut,
 
 	if (prog && strcasecmp(prog, "60GHz") == 0) {
 		/*
-		 * The CAPI mode parameter does not exist in 60G
-		 * unscheduled PS.
-		 */
+     * The CAPI mode parameter does not exist in 60G
+     * unscheduled PS.
+     */
 		if (powersave && strcasecmp(powersave, "unscheduled") == 0)
 			res = set_ps(intf, dut, 1);
 	} else if (prog && get_driver_type(dut) == DRIVER_WCN &&
@@ -16940,14 +16832,14 @@ static enum sigma_cmd_result cmd_sta_set_pwrsave(struct sigma_dut *dut,
 	}
 
 	if (res) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed to change "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Failed to change "
 			  "power save mode");
 		return 0;
 	}
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_bssid_pool(struct sigma_dut *dut,
 						struct sigma_conn *conn,
@@ -16967,7 +16859,8 @@ static enum sigma_cmd_result cmd_sta_bssid_pool(struct sigma_dut *dut,
 	if (atoi(val) == 0 || bssid == NULL) {
 		/* Disable BSSID filter */
 		if (wpa_command(intf, "SET bssid_filter ")) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Failed "
 				  "to disable BSSID filter");
 			return 0;
 		}
@@ -16984,14 +16877,14 @@ static enum sigma_cmd_result cmd_sta_bssid_pool(struct sigma_dut *dut,
 	res = wpa_command(intf, buf);
 	free(buf);
 	if (res) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed to enable "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Failed to enable "
 			  "BSSID filter");
 		return 0;
 	}
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_reset_parm(struct sigma_dut *dut,
 						struct sigma_conn *conn,
@@ -17009,7 +16902,6 @@ static enum sigma_cmd_result cmd_sta_reset_parm(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static enum sigma_cmd_result cmd_sta_get_key(struct sigma_dut *dut,
 					     struct sigma_conn *conn,
 					     struct sigma_cmd *cmd)
@@ -17024,7 +16916,8 @@ static enum sigma_cmd_result cmd_sta_get_key(struct sigma_dut *dut,
 	if (strcasecmp(key_type, "GTK") == 0) {
 		if (wpa_command_resp(intf, "GET gtk", buf, sizeof(buf)) < 0 ||
 		    strncmp(buf, "FAIL", 4) == 0) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Could "
 				  "not fetch current GTK");
 			return 0;
 		}
@@ -17032,7 +16925,8 @@ static enum sigma_cmd_result cmd_sta_get_key(struct sigma_dut *dut,
 		send_resp(dut, conn, SIGMA_COMPLETE, resp);
 		return 0;
 	} else {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Unsupported "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Unsupported "
 			  "KeyType");
 		return 0;
 	}
@@ -17040,14 +16934,14 @@ static enum sigma_cmd_result cmd_sta_get_key(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static int hs2_set_policy(struct sigma_dut *dut)
 {
 #ifdef ANDROID
 	system("ip rule del prio 23000");
 	if (system("ip rule add from all lookup main prio 23000") != 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to run:ip rule add from all lookup main prio");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to run:ip rule add from all lookup main prio");
 		return -1;
 	}
 	if (system("ip route flush cache") != 0) {
@@ -17061,7 +16955,6 @@ static int hs2_set_policy(struct sigma_dut *dut)
 #endif /* ANDROID */
 }
 
-
 static enum sigma_cmd_result cmd_sta_hs2_associate(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
 						   struct sigma_cmd *cmd)
@@ -17074,12 +16967,9 @@ static enum sigma_cmd_result cmd_sta_hs2_associate(struct sigma_dut *dut,
 	char bssid[20], ssid[40], resp[100], buf[100], blacklisted[100];
 	int tries = 0;
 	int ignore_blacklist = 0;
-	const char *events[] = {
-		"CTRL-EVENT-CONNECTED",
-		"INTERWORKING-BLACKLISTED",
-		"INTERWORKING-NO-MATCH",
-		NULL
-	};
+	const char *events[] = { "CTRL-EVENT-CONNECTED",
+				 "INTERWORKING-BLACKLISTED",
+				 "INTERWORKING-NO-MATCH", NULL };
 
 	start_sta_mode(dut);
 
@@ -17102,14 +16992,16 @@ static enum sigma_cmd_result cmd_sta_hs2_associate(struct sigma_dut *dut,
 try_again:
 	ctrl = open_wpa_mon(intf);
 	if (ctrl == NULL) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to open "
+		sigma_dut_print(dut, DUT_MSG_ERROR,
+				"Failed to open "
 				"wpa_supplicant monitor connection");
 		return -2;
 	}
 
 	tries++;
 	if (wpa_command(intf, "INTERWORKING_SELECT auto")) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed to start "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Failed to start "
 			  "Interworking connection");
 		wpa_ctrl_detach(ctrl);
 		wpa_ctrl_close(ctrl);
@@ -17135,25 +17027,30 @@ try_again:
 		end = strchr(blacklisted, ' ');
 		if (end)
 			*end = '\0';
-		sigma_dut_print(dut, DUT_MSG_DEBUG, "Try to connect to a blacklisted network: %s",
+		sigma_dut_print(dut, DUT_MSG_DEBUG,
+				"Try to connect to a blacklisted network: %s",
 				blacklisted);
 		r = snprintf(buf, sizeof(buf), "INTERWORKING_CONNECT %s",
 			     blacklisted);
 		if (r < 0 || r >= sizeof(buf) || wpa_command(intf, buf)) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Failed to start Interworking connection to blacklisted network");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode,Failed to start Interworking connection to "
+				"blacklisted network");
 			wpa_ctrl_detach(ctrl);
 			wpa_ctrl_close(ctrl);
 			return 0;
 		}
-		res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-CONNECTED",
-					buf, sizeof(buf));
+		res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-CONNECTED", buf,
+					sizeof(buf));
 	}
 
 	wpa_ctrl_detach(ctrl);
 	wpa_ctrl_close(ctrl);
 
 	if (res < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Could not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "ErrorCode,Could not "
 			  "connect");
 		return 0;
 	}
@@ -17161,17 +17058,22 @@ try_again:
 	if (strstr(buf, "INTERWORKING-NO-MATCH") ||
 	    strstr(buf, "INTERWORKING-BLACKLISTED")) {
 		if (tries < 2) {
-			sigma_dut_print(dut, DUT_MSG_INFO, "No match found - try again to verify no APs were missed in the scan");
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"No match found - try again to verify no APs were missed "
+				"in the scan");
 			goto try_again;
 		}
-		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,No network with "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "ErrorCode,No network with "
 			  "matching credentials found");
 		return 0;
 	}
 
 	if (get_wpa_status(intf, "bssid", bssid, sizeof(bssid)) < 0 ||
 	    get_wpa_status(intf, "ssid", ssid, sizeof(ssid)) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Could not "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "ErrorCode,Could not "
 			  "get current BSSID/SSID");
 		return 0;
 	}
@@ -17181,7 +17083,6 @@ try_again:
 	hs2_set_policy(dut);
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_hs2_venue_info(struct sigma_dut *dut,
 						    struct sigma_conn *conn,
@@ -17204,8 +17105,9 @@ static enum sigma_cmd_result cmd_sta_hs2_venue_info(struct sigma_dut *dut,
 	}
 	ctrl = open_wpa_mon(intf);
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		return -2;
 	}
 
@@ -17275,7 +17177,6 @@ fail:
 	return 0;
 }
 
-
 static int sta_add_credential_uname_pwd(struct sigma_dut *dut,
 					struct sigma_conn *conn,
 					const char *ifname,
@@ -17295,28 +17196,32 @@ static int sta_add_credential_uname_pwd(struct sigma_dut *dut,
 
 	val = get_param(cmd, "REALM");
 	if (val && set_cred_quoted(ifname, id, "realm", val) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not set "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not set "
 			  "realm");
 		return 0;
 	}
 
 	val = get_param(cmd, "HOME_FQDN");
 	if (val && set_cred_quoted(ifname, id, "domain", val) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not set "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not set "
 			  "home_fqdn");
 		return 0;
 	}
 
 	val = get_param(cmd, "Username");
 	if (val && set_cred_quoted(ifname, id, "username", val) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not set "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not set "
 			  "username");
 		return 0;
 	}
 
 	val = get_param(cmd, "Password");
 	if (val && set_cred_quoted(ifname, id, "password", val) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not set "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not set "
 			  "password");
 		return 0;
 	}
@@ -17328,14 +17233,17 @@ static int sta_add_credential_uname_pwd(struct sigma_dut *dut,
 #ifdef __linux__
 		if (!file_exists(fname)) {
 			char msg[300];
-			snprintf(msg, sizeof(msg), "ErrorCode,ROOT_CA "
-				 "file (%s) not found", fname);
+			snprintf(msg, sizeof(msg),
+				 "ErrorCode,ROOT_CA "
+				 "file (%s) not found",
+				 fname);
 			send_resp(dut, conn, SIGMA_ERROR, msg);
 			return 0;
 		}
 #endif /* __linux__ */
 		if (set_cred_quoted(ifname, id, "ca_cert", fname) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Could "
 				  "not set root CA");
 			return 0;
 		}
@@ -17343,7 +17251,6 @@ static int sta_add_credential_uname_pwd(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static int update_devdetail_imsi(struct sigma_dut *dut, const char *imsi)
 {
@@ -17363,8 +17270,8 @@ static int update_devdetail_imsi(struct sigma_dut *dut, const char *imsi)
 	while (fgets(buf, sizeof(buf), in)) {
 		char *pos = strstr(buf, "<IMSI>");
 		if (pos) {
-			sigma_dut_print(dut, DUT_MSG_INFO, "Updated DevDetail IMSI to %s",
-					imsi);
+			sigma_dut_print(dut, DUT_MSG_INFO,
+					"Updated DevDetail IMSI to %s", imsi);
 			pos += 6;
 			*pos = '\0';
 			fprintf(out, "%s%s</IMSI>\n", buf, imsi);
@@ -17384,10 +17291,9 @@ static int update_devdetail_imsi(struct sigma_dut *dut, const char *imsi)
 	return 0;
 }
 
-
 static int sta_add_credential_sim(struct sigma_dut *dut,
-				  struct sigma_conn *conn,
-				  const char *ifname, struct sigma_cmd *cmd)
+				  struct sigma_conn *conn, const char *ifname,
+				  struct sigma_cmd *cmd)
 {
 	const char *val, *imsi = NULL;
 	int id;
@@ -17409,8 +17315,7 @@ static int sta_add_credential_sim(struct sigma_dut *dut,
 
 	val = get_param(cmd, "PLMN_MCC");
 	if (val == NULL) {
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Missing PLMN_MCC");
+		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Missing PLMN_MCC");
 		return 0;
 	}
 	if (strlen(val) != 3) {
@@ -17421,8 +17326,7 @@ static int sta_add_credential_sim(struct sigma_dut *dut,
 
 	val = get_param(cmd, "PLMN_MNC");
 	if (val == NULL) {
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,Missing PLMN_MNC");
+		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Missing PLMN_MNC");
 		return 0;
 	}
 	if (strlen(val) != 2 && strlen(val) != 3) {
@@ -17433,7 +17337,8 @@ static int sta_add_credential_sim(struct sigma_dut *dut,
 
 	val = get_param(cmd, "IMSI");
 	if (val == NULL) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Missing SIM "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Missing SIM "
 			  "IMSI");
 		return 0;
 	}
@@ -17458,30 +17363,33 @@ static int sta_add_credential_sim(struct sigma_dut *dut,
 	}
 	pos += mnc_len;
 
-	res = snprintf(buf, sizeof(buf), "%s%s-%s",plmn_mcc, plmn_mnc, pos);
-	if (res < 0 || res >= (int) sizeof(buf))
+	res = snprintf(buf, sizeof(buf), "%s%s-%s", plmn_mcc, plmn_mnc, pos);
+	if (res < 0 || res >= (int)sizeof(buf))
 		return -1;
 	if (set_cred_quoted(ifname, id, "imsi", buf) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could "
 			  "not set IMSI");
 		return 0;
 	}
 
 	val = get_param(cmd, "Password");
 	if (val && set_cred_quoted(ifname, id, "milenage", val) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could "
 			  "not set password");
 		return 0;
 	}
 
 	if (is_passpoint_r2_or_newer(dut->program)) {
 		/*
-		 * Set provisioning_sp for the test cases where SIM/USIM
-		 * provisioning is used.
-		 */
+     * Set provisioning_sp for the test cases where SIM/USIM
+     * provisioning is used.
+     */
 		if (val && set_cred_quoted(ifname, id, "provisioning_sp",
 					   "wi-fi.org") < 0) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Could "
 				  "not set provisioning_sp");
 			return 0;
 		}
@@ -17492,10 +17400,8 @@ static int sta_add_credential_sim(struct sigma_dut *dut,
 	return 1;
 }
 
-
 static int sta_add_credential_cert(struct sigma_dut *dut,
-				   struct sigma_conn *conn,
-				   const char *ifname,
+				   struct sigma_conn *conn, const char *ifname,
 				   struct sigma_cmd *cmd)
 {
 	const char *val;
@@ -17512,21 +17418,24 @@ static int sta_add_credential_cert(struct sigma_dut *dut,
 
 	val = get_param(cmd, "REALM");
 	if (val && set_cred_quoted(ifname, id, "realm", val) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not set "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not set "
 			  "realm");
 		return 0;
 	}
 
 	val = get_param(cmd, "HOME_FQDN");
 	if (val && set_cred_quoted(ifname, id, "domain", val) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not set "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not set "
 			  "home_fqdn");
 		return 0;
 	}
 
 	val = get_param(cmd, "Username");
 	if (val && set_cred_quoted(ifname, id, "username", val) < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not set "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not set "
 			  "username");
 		return 0;
 	}
@@ -17540,18 +17449,21 @@ static int sta_add_credential_cert(struct sigma_dut *dut,
 			char msg[300];
 			snprintf(msg, sizeof(msg),
 				 "ErrorCode,clientCertificate "
-				 "file (%s) not found", fname);
+				 "file (%s) not found",
+				 fname);
 			send_resp(dut, conn, SIGMA_ERROR, msg);
 			return 0;
 		}
 #endif /* __linux__ */
 		if (set_cred_quoted(ifname, id, "client_cert", fname) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Could "
 				  "not set client_cert");
 			return 0;
 		}
 		if (set_cred_quoted(ifname, id, "private_key", fname) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Could "
 				  "not set private_key");
 			return 0;
 		}
@@ -17564,14 +17476,17 @@ static int sta_add_credential_cert(struct sigma_dut *dut,
 #ifdef __linux__
 		if (!file_exists(fname)) {
 			char msg[300];
-			snprintf(msg, sizeof(msg), "ErrorCode,ROOT_CA "
-				 "file (%s) not found", fname);
+			snprintf(msg, sizeof(msg),
+				 "ErrorCode,ROOT_CA "
+				 "file (%s) not found",
+				 fname);
 			send_resp(dut, conn, SIGMA_ERROR, msg);
 			return 0;
 		}
 #endif /* __linux__ */
 		if (set_cred_quoted(ifname, id, "ca_cert", fname) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could "
+			send_resp(dut, conn, SIGMA_ERROR,
+				  "errorCode,Could "
 				  "not set root CA");
 			return 0;
 		}
@@ -17579,7 +17494,6 @@ static int sta_add_credential_cert(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_add_credential(struct sigma_dut *dut,
 						    struct sigma_conn *conn,
@@ -17603,11 +17517,11 @@ static enum sigma_cmd_result cmd_sta_add_credential(struct sigma_dut *dut,
 	if (strcasecmp(type, "cert") == 0)
 		return sta_add_credential_cert(dut, conn, intf, cmd);
 
-	send_resp(dut, conn, SIGMA_ERROR, "ErrorCode,Unsupported credential "
+	send_resp(dut, conn, SIGMA_ERROR,
+		  "ErrorCode,Unsupported credential "
 		  "type");
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_scan(struct sigma_dut *dut,
 					  struct sigma_conn *conn,
@@ -17626,8 +17540,8 @@ static enum sigma_cmd_result cmd_sta_scan(struct sigma_dut *dut,
 
 	val = get_param(cmd, "GetParameter");
 	if (val && strcmp(val, "SSID_BSSID") == 0) {
-		if (get_wpa_ssid_bssid(dut, get_station_ifname(dut),
-				       buf, sizeof(buf)) < 0) {
+		if (get_wpa_ssid_bssid(dut, get_station_ifname(dut), buf,
+				       sizeof(buf)) < 0) {
 			sigma_dut_print(dut, DUT_MSG_ERROR,
 					"Could not get ssid bssid");
 			return ERROR_SEND_STATUS;
@@ -17641,7 +17555,7 @@ static enum sigma_cmd_result cmd_sta_scan(struct sigma_dut *dut,
 	val = get_param(cmd, "HESSID");
 	if (val) {
 		res = snprintf(buf, sizeof(buf), "SET hessid %s", val);
-		if (res < 0 || res >= (int) sizeof(buf))
+		if (res < 0 || res >= (int)sizeof(buf))
 			return -1;
 		wpa_command(intf, buf);
 	}
@@ -17650,7 +17564,7 @@ static enum sigma_cmd_result cmd_sta_scan(struct sigma_dut *dut,
 	if (val) {
 		res = snprintf(buf, sizeof(buf), "SET access_network_type %s",
 			       val);
-		if (res < 0 || res >= (int) sizeof(buf))
+		if (res < 0 || res >= (int)sizeof(buf))
 			return -1;
 		wpa_command(intf, buf);
 	}
@@ -17688,14 +17602,13 @@ static enum sigma_cmd_result cmd_sta_scan(struct sigma_dut *dut,
 
 		short_ssid_hex = strtoul(short_ssid, NULL, 16);
 		short_ssid_hex = ((short_ssid_hex & 0xFF) << 24) |
-			(((short_ssid_hex >> 8) & 0xFF) << 16) |
-			(((short_ssid_hex >> 16) & 0xFF) << 8) |
-			((short_ssid_hex >> 24) & 0xFF);
+				 (((short_ssid_hex >> 8) & 0xFF) << 16) |
+				 (((short_ssid_hex >> 16) & 0xFF) << 8) |
+				 ((short_ssid_hex >> 24) & 0xFF);
 
 		res = snprintf(buf, sizeof(buf),
-			       "VENDOR_ELEM_ADD 14 ff053a%08x",
-			       short_ssid_hex);
-		if (res < 0 || res >= (int) sizeof(buf) ||
+			       "VENDOR_ELEM_ADD 14 ff053a%08x", short_ssid_hex);
+		if (res < 0 || res >= (int)sizeof(buf) ||
 		    wpa_command(intf, buf)) {
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "errorCode,Failed to add short SSID");
@@ -17722,14 +17635,11 @@ static enum sigma_cmd_result cmd_sta_scan(struct sigma_dut *dut,
 	}
 
 	res = snprintf(buf, sizeof(buf), "SCAN%s%s%s%s%s%s%s",
-			bssid ? " bssid=": "",
-			bssid ? bssid : "",
-			ssid ? " ssid " : "",
-			ssid ? ssid_hex : "",
-			wildcard_ssid ? " wildcard_ssid=1" : "",
-			scan_freq ? " freq=" : "",
-			scan_freq ? scan_freq : "");
-	if (res < 0 || res >= (int) sizeof(buf)) {
+		       bssid ? " bssid=" : "", bssid ? bssid : "",
+		       ssid ? " ssid " : "", ssid ? ssid_hex : "",
+		       wildcard_ssid ? " wildcard_ssid=1" : "",
+		       scan_freq ? " freq=" : "", scan_freq ? scan_freq : "");
+	if (res < 0 || res >= (int)sizeof(buf)) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "errorCode,Could not build scan command");
 		status = STATUS_SENT_ERROR;
@@ -17738,14 +17648,17 @@ static enum sigma_cmd_result cmd_sta_scan(struct sigma_dut *dut,
 
 	res = wpa_command_resp(intf, buf, scan_res, sizeof(scan_res));
 	if (strncmp(scan_res, "FAIL-BUSY", 9) == 0) {
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Scan request rejected with busy status, abort ongoing scan and try again");
+		sigma_dut_print(
+			dut, DUT_MSG_DEBUG,
+			"Scan request rejected with busy status, abort ongoing "
+			"scan and try again");
 		wpa_command(intf, "ABORT_SCAN");
 		res = wpa_command(intf, buf);
 	}
 
 	if (res < 0) {
-		send_resp(dut, conn, SIGMA_ERROR, "errorCode,Could not start "
+		send_resp(dut, conn, SIGMA_ERROR,
+			  "errorCode,Could not start "
 			  "scan");
 		status = STATUS_SENT_ERROR;
 	} else {
@@ -17760,8 +17673,8 @@ remove_s_ssid:
 	if (ctrl) {
 		if (status == SUCCESS_SEND_STATUS) {
 			res = get_wpa_cli_event(dut, ctrl,
-						"CTRL-EVENT-SCAN-RESULTS",
-						buf, sizeof(buf));
+						"CTRL-EVENT-SCAN-RESULTS", buf,
+						sizeof(buf));
 			if (res < 0) {
 				send_resp(dut, conn, SIGMA_ERROR,
 					  "ErrorCode,scan did not complete");
@@ -17775,7 +17688,6 @@ remove_s_ssid:
 
 	return status;
 }
-
 
 static enum sigma_cmd_result cmd_sta_scan_bss(struct sigma_dut *dut,
 					      struct sigma_conn *conn,
@@ -17799,8 +17711,9 @@ static enum sigma_cmd_result cmd_sta_scan_bss(struct sigma_dut *dut,
 
 	ctrl = open_wpa_mon(intf);
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		return -1;
 	}
 
@@ -17812,8 +17725,8 @@ static enum sigma_cmd_result cmd_sta_scan_bss(struct sigma_dut *dut,
 		return 0;
 	}
 
-	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-SCAN-RESULTS",
-				buf, sizeof(buf));
+	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-SCAN-RESULTS", buf,
+				sizeof(buf));
 
 	wpa_ctrl_detach(ctrl);
 	wpa_ctrl_close(ctrl);
@@ -17843,8 +17756,7 @@ static enum sigma_cmd_result cmd_sta_scan_bss(struct sigma_dut *dut,
 
 	pos = strstr(buf, "\nssid=");
 	if (!pos) {
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "errorCode,SSID not found");
+		send_resp(dut, conn, SIGMA_ERROR, "errorCode,SSID not found");
 		return 0;
 	}
 	ssid = pos + 6;
@@ -17855,7 +17767,6 @@ static enum sigma_cmd_result cmd_sta_scan_bss(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, resp);
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_set_systime(struct sigma_dut *dut,
 						 struct sigma_conn *conn,
@@ -17903,7 +17814,7 @@ static enum sigma_cmd_result cmd_sta_set_systime(struct sigma_dut *dut,
 		tm.tm_year = year - 1900;
 	}
 	t = mktime(&tm);
-	if (t == (time_t) -1) {
+	if (t == (time_t)-1) {
 		send_resp(dut, conn, SIGMA_ERROR,
 			  "errorCode,Invalid date or time");
 		return 0;
@@ -17925,7 +17836,6 @@ static enum sigma_cmd_result cmd_sta_set_systime(struct sigma_dut *dut,
 
 	return -1;
 }
-
 
 static enum sigma_cmd_result cmd_sta_osu(struct sigma_dut *dut,
 					 struct sigma_conn *conn,
@@ -17951,13 +17861,10 @@ static enum sigma_cmd_result cmd_sta_osu(struct sigma_dut *dut,
 
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Trigger OSU");
 	mkdir("Logs", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-	res = snprintf(buf, sizeof(buf),
-		       "%s %s%s%s %s%s%s signup osu-ca.pem",
-		       prod_ess_assoc ? "" : "-N",
-		       name ? "-O'" : "", name ? name : "",
-		       name ? "'" : "",
-		       osu_ssid ? "-o'" : "", osu_ssid ? osu_ssid : "",
-		       osu_ssid ? "'" : "");
+	res = snprintf(buf, sizeof(buf), "%s %s%s%s %s%s%s signup osu-ca.pem",
+		       prod_ess_assoc ? "" : "-N", name ? "-O'" : "",
+		       name ? name : "", name ? "'" : "", osu_ssid ? "-o'" : "",
+		       osu_ssid ? osu_ssid : "", osu_ssid ? "'" : "");
 
 	hs2_set_policy(dut);
 	if (run_hs20_osu(dut, buf) < 0) {
@@ -17974,8 +17881,9 @@ static enum sigma_cmd_result cmd_sta_osu(struct sigma_dut *dut,
 			if (pos)
 				*pos = '\0';
 			fclose(f);
-			sigma_dut_summary(dut, "hs20-osu-client provisioning failed: %s",
-					  res);
+			sigma_dut_summary(
+				dut, "hs20-osu-client provisioning failed: %s",
+				res);
 			snprintf(resp, sizeof(resp), "notify-send '%s'", res);
 			if (system(resp) != 0) {
 			}
@@ -17994,19 +17902,21 @@ static enum sigma_cmd_result cmd_sta_osu(struct sigma_dut *dut,
 
 	ctrl = open_wpa_mon(intf);
 	if (ctrl == NULL) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to open "
+		sigma_dut_print(dut, DUT_MSG_ERROR,
+				"Failed to open "
 				"wpa_supplicant monitor connection");
 		return -1;
 	}
 
-	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-CONNECTED",
-				buf, sizeof(buf));
+	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-CONNECTED", buf,
+				sizeof(buf));
 
 	wpa_ctrl_detach(ctrl);
 	wpa_ctrl_close(ctrl);
 
 	if (res < 0) {
-		sigma_dut_print(dut, DUT_MSG_INFO, "Failed to connect to "
+		sigma_dut_print(dut, DUT_MSG_INFO,
+				"Failed to connect to "
 				"network after OSU");
 		send_resp(dut, conn, SIGMA_COMPLETE, "SSID,,BSSID,");
 		return 0;
@@ -18025,7 +17935,6 @@ report:
 	return 0;
 }
 
-
 static enum sigma_cmd_result cmd_sta_policy_update(struct sigma_dut *dut,
 						   struct sigma_conn *conn,
 						   struct sigma_cmd *cmd)
@@ -18043,7 +17952,7 @@ static enum sigma_cmd_result cmd_sta_policy_update(struct sigma_dut *dut,
 
 	if (timeout) {
 		/* TODO: time out the command and return
-		 * PolicyUpdateStatus,TIMEOUT if needed. */
+     * PolicyUpdateStatus,TIMEOUT if needed. */
 	}
 
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Trigger policy update");
@@ -18056,7 +17965,6 @@ static enum sigma_cmd_result cmd_sta_policy_update(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, "PolicyUpdateStatus,SUCCESS");
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_sta_er_config(struct sigma_dut *dut,
 					       struct sigma_conn *conn,
@@ -18115,7 +18023,8 @@ static enum sigma_cmd_result cmd_sta_er_config(struct sigma_dut *dut,
 
 	ctrl = open_wpa_mon(intf);
 	if (ctrl == NULL) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to open "
+		sigma_dut_print(dut, DUT_MSG_ERROR,
+				"Failed to open "
 				"wpa_supplicant monitor connection");
 		return -2;
 	}
@@ -18133,8 +18042,8 @@ static enum sigma_cmd_result cmd_sta_er_config(struct sigma_dut *dut,
 
 	ascii2hexstr(ssid, ssid_hex);
 	ascii2hexstr(passphrase, passphrase_hex);
-	snprintf(buf, sizeof(buf), "WPS_REG %s %s %s %s %s %s",
-		 bssid, pin, ssid_hex, keymgmt, cipher, passphrase_hex);
+	snprintf(buf, sizeof(buf), "WPS_REG %s %s %s %s %s %s", bssid, pin,
+		 ssid_hex, keymgmt, cipher, passphrase_hex);
 
 	if (wpa_command(intf, buf) < 0) {
 		wpa_ctrl_detach(ctrl);
@@ -18149,7 +18058,6 @@ static enum sigma_cmd_result cmd_sta_er_config(struct sigma_dut *dut,
 
 	return wps_connection_event(dut, conn, ctrl, intf, 0);
 }
-
 
 static enum sigma_cmd_result
 cmd_sta_wps_connect_pw_token(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -18168,7 +18076,8 @@ cmd_sta_wps_connect_pw_token(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	ctrl = open_wpa_mon(intf);
 	if (ctrl == NULL) {
-		sigma_dut_print(dut, DUT_MSG_ERROR, "Failed to open "
+		sigma_dut_print(dut, DUT_MSG_ERROR,
+				"Failed to open "
 				"wpa_supplicant monitor connection");
 		return -2;
 	}
@@ -18186,7 +18095,6 @@ cmd_sta_wps_connect_pw_token(struct sigma_dut *dut, struct sigma_conn *conn,
 	return wps_connection_event(dut, conn, ctrl, intf, 0);
 }
 
-
 static enum sigma_cmd_result cmd_start_wps_registration(struct sigma_dut *dut,
 							struct sigma_conn *conn,
 							struct sigma_cmd *cmd)
@@ -18198,13 +18106,8 @@ static enum sigma_cmd_result cmd_start_wps_registration(struct sigma_dut *dut,
 	const char *role;
 	int res;
 	char buf[256];
-	const char *events[] = {
-		"CTRL-EVENT-CONNECTED",
-		"WPS-OVERLAP-DETECTED",
-		"WPS-TIMEOUT",
-		"WPS-FAIL",
-		NULL
-	};
+	const char *events[] = { "CTRL-EVENT-CONNECTED", "WPS-OVERLAP-DETECTED",
+				 "WPS-TIMEOUT", "WPS-FAIL", NULL };
 	int id = 0;
 
 	/* 60G WPS tests do not pass Interface parameter */
@@ -18216,7 +18119,7 @@ static enum sigma_cmd_result cmd_start_wps_registration(struct sigma_dut *dut,
 
 	if (config_method) {
 		/* WFA_CS_WPS_PIN_KEYPAD mode is set when using the
-		 * sta_wps_enter_pin before calling start_wps_registration. */
+     * sta_wps_enter_pin before calling start_wps_registration. */
 		if (strcasecmp(config_method, "PBC") == 0)
 			dut->wps_method = WFA_CS_WPS_PBC;
 	}
@@ -18249,8 +18152,9 @@ static enum sigma_cmd_result cmd_start_wps_registration(struct sigma_dut *dut,
 
 	ctrl = open_wpa_mon(intf);
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		return -2;
 	}
 
@@ -18306,8 +18210,9 @@ static enum sigma_cmd_result cmd_start_wps_registration(struct sigma_dut *dut,
 			}
 		} else {
 			/* TODO: PIN method */
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Unsupported WpsConfigMethod value");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Unsupported WpsConfigMethod value");
 			goto fail;
 		}
 		res = get_wpa_cli_events(dut, ctrl, events, buf, sizeof(buf));
@@ -18335,19 +18240,15 @@ fail:
 	return 0;
 }
 
-
 static int req_intf(struct sigma_cmd *cmd)
 {
 	return get_param(cmd, "interface") == NULL ? -1 : 0;
 }
 
-
 void sta_register_cmds(void)
 {
-	sigma_dut_reg_cmd("sta_get_ip_config", req_intf,
-			  cmd_sta_get_ip_config);
-	sigma_dut_reg_cmd("sta_set_ip_config", req_intf,
-			  cmd_sta_set_ip_config);
+	sigma_dut_reg_cmd("sta_get_ip_config", req_intf, cmd_sta_get_ip_config);
+	sigma_dut_reg_cmd("sta_set_ip_config", req_intf, cmd_sta_set_ip_config);
 	sigma_dut_reg_cmd("sta_get_info", req_intf, cmd_sta_get_info);
 	sigma_dut_reg_cmd("sta_get_mac_address", req_intf,
 			  cmd_sta_get_mac_address);
@@ -18384,8 +18285,7 @@ void sta_register_cmds(void)
 	sigma_dut_reg_cmd("sta_disconnect", req_intf, cmd_sta_disconnect);
 	sigma_dut_reg_cmd("sta_reassoc", req_intf, cmd_sta_reassoc);
 	sigma_dut_reg_cmd("sta_reassociate", req_intf, cmd_sta_reassoc);
-	sigma_dut_reg_cmd("sta_reset_default", req_intf,
-			  cmd_sta_reset_default);
+	sigma_dut_reg_cmd("sta_reset_default", req_intf, cmd_sta_reset_default);
 	sigma_dut_reg_cmd("sta_send_frame", req_intf, cmd_sta_send_frame);
 	sigma_dut_reg_cmd("sta_set_macaddr", req_intf, cmd_sta_set_macaddr);
 	sigma_dut_reg_cmd("sta_set_rfeature", req_intf, cmd_sta_set_rfeature);
@@ -18395,8 +18295,7 @@ void sta_register_cmds(void)
 	sigma_dut_reg_cmd("sta_bssid_pool", req_intf, cmd_sta_bssid_pool);
 	sigma_dut_reg_cmd("sta_reset_parm", req_intf, cmd_sta_reset_parm);
 	sigma_dut_reg_cmd("sta_get_key", req_intf, cmd_sta_get_key);
-	sigma_dut_reg_cmd("sta_hs2_associate", req_intf,
-			  cmd_sta_hs2_associate);
+	sigma_dut_reg_cmd("sta_hs2_associate", req_intf, cmd_sta_hs2_associate);
 	sigma_dut_reg_cmd("sta_hs2_venue_info", req_intf,
 			  cmd_sta_hs2_venue_info);
 	sigma_dut_reg_cmd("sta_add_credential", req_intf,

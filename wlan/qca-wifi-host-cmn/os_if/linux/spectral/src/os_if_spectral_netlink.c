@@ -19,12 +19,12 @@
  */
 
 #include <os_if_spectral_netlink.h>
-#include <wlan_cfg80211_spectral.h>
+#include <qdf_module.h>
 #include <spectral_cmn_api_i.h>
 #include <spectral_defs_i.h>
-#include <wlan_nlink_srv.h>
+#include <wlan_cfg80211_spectral.h>
 #include <wlan_nlink_common.h>
-#include <qdf_module.h>
+#include <wlan_nlink_srv.h>
 #ifdef CNSS_GENL
 #ifdef CONFIG_CNSS_OUT_OF_TREE
 #include "cnss_nl.h"
@@ -54,19 +54,17 @@ static atomic_t spectral_nl_users = ATOMIC_INIT(0);
 #endif
 
 #if (KERNEL_VERSION(2, 6, 31) > LINUX_VERSION_CODE)
-void
-os_if_spectral_nl_data_ready(struct sock *sk, int len)
+void os_if_spectral_nl_data_ready(struct sock *sk, int len)
 {
 	spectral_debug("%d", __LINE__);
 }
 
 #else
-void
-os_if_spectral_nl_data_ready(struct sk_buff *skb)
+void os_if_spectral_nl_data_ready(struct sk_buff *skb)
 {
 	spectral_debug("%d", __LINE__);
 }
-#endif				/* VERSION */
+#endif /* VERSION */
 
 #ifndef CNSS_GENL
 /**
@@ -80,15 +78,13 @@ os_if_spectral_nl_data_ready(struct sk_buff *skb)
  * Return: None
  */
 #if KERNEL_VERSION(3, 6, 0) <= LINUX_VERSION_CODE
-static void
-os_if_spectral_init_nl_cfg(struct netlink_kernel_cfg *cfg)
+static void os_if_spectral_init_nl_cfg(struct netlink_kernel_cfg *cfg)
 {
 	cfg->groups = 1;
 	cfg->input = os_if_spectral_nl_data_ready;
 }
 #else
-static void
-os_if_spectral_init_nl_cfg(struct netlink_kernel_cfg *cfg)
+static void os_if_spectral_init_nl_cfg(struct netlink_kernel_cfg *cfg)
 {
 }
 #endif
@@ -101,53 +97,39 @@ os_if_spectral_init_nl_cfg(struct netlink_kernel_cfg *cfg)
  * Return: None
  */
 #if KERNEL_VERSION(3, 7, 0) <= LINUX_VERSION_CODE
-static void
-os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
+static void os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
 {
-	os_if_spectral_nl_sock =
-	    (struct sock *)netlink_kernel_create(&init_net,
-						 SPECTRAL_NETLINK, cfg);
+	os_if_spectral_nl_sock = (struct sock *)netlink_kernel_create(
+		&init_net, SPECTRAL_NETLINK, cfg);
 }
 #elif KERNEL_VERSION(3, 6, 0) <= LINUX_VERSION_CODE
-static void
-os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
+static void os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
 {
-	os_if_spectral_nl_sock =
-	    (struct sock *)netlink_kernel_create(&init_net,
-						 SPECTRAL_NETLINK,
-						 THIS_MODULE, cfg);
+	os_if_spectral_nl_sock = (struct sock *)netlink_kernel_create(
+		&init_net, SPECTRAL_NETLINK, THIS_MODULE, cfg);
 }
 #elif (KERNEL_VERSION(2, 6, 31) > LINUX_VERSION_CODE)
-static void
-os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
+static void os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
 {
-	os_if_spectral_nl_sock =
-	    (struct sock *)netlink_kernel_create(
-		SPECTRAL_NETLINK, 1,
-		&os_if_spectral_nl_data_ready,
+	os_if_spectral_nl_sock = (struct sock *)netlink_kernel_create(
+		SPECTRAL_NETLINK, 1, &os_if_spectral_nl_data_ready,
 		THIS_MODULE);
 }
 #else
 #if (KERNEL_VERSION(3, 10, 0) <= LINUX_VERSION_CODE)
-static void
-os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
+static void os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
 {
 	memset(cfg, 0, sizeof(*cfg));
 	cfg->groups = 1;
 	cfg->input = &os_if_spectral_nl_data_ready;
-	os_if_spectral_nl_sock =
-	    (struct sock *)netlink_kernel_create(&init_net,
-						 SPECTRAL_NETLINK, cfg);
+	os_if_spectral_nl_sock = (struct sock *)netlink_kernel_create(
+		&init_net, SPECTRAL_NETLINK, cfg);
 }
 #else
-static void
-os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
+static void os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
 {
-	os_if_spectral_nl_sock =
-	    (struct sock *)netlink_kernel_create(
-		&init_net,
-		SPECTRAL_NETLINK, 1,
-		&os_if_spectral_nl_data_ready,
+	os_if_spectral_nl_sock = (struct sock *)netlink_kernel_create(
+		&init_net, SPECTRAL_NETLINK, 1, &os_if_spectral_nl_data_ready,
 		NULL, THIS_MODULE);
 }
 #endif
@@ -160,8 +142,7 @@ os_if_spectral_create_nl_sock(struct netlink_kernel_cfg *cfg)
  *
  * Return: 0 on success else failure
  */
-static int
-os_if_spectral_init_nl(struct wlan_objmgr_pdev *pdev)
+static int os_if_spectral_init_nl(struct wlan_objmgr_pdev *pdev)
 {
 	struct pdev_spectral *ps = NULL;
 	struct netlink_kernel_cfg cfg;
@@ -206,8 +187,7 @@ os_if_spectral_init_nl(struct wlan_objmgr_pdev *pdev)
  *
  * Return: Success/Failure
  */
-static int
-os_if_spectral_destroy_netlink(struct wlan_objmgr_pdev *pdev)
+static int os_if_spectral_destroy_netlink(struct wlan_objmgr_pdev *pdev)
 {
 	struct pdev_spectral *ps = NULL;
 
@@ -231,23 +211,20 @@ os_if_spectral_destroy_netlink(struct wlan_objmgr_pdev *pdev)
 }
 #else
 
-static int
-os_if_spectral_init_nl(struct wlan_objmgr_pdev *pdev)
+static int os_if_spectral_init_nl(struct wlan_objmgr_pdev *pdev)
 {
 	return 0;
 }
 
-static int
-os_if_spectral_destroy_netlink(struct wlan_objmgr_pdev *pdev)
+static int os_if_spectral_destroy_netlink(struct wlan_objmgr_pdev *pdev)
 {
 	return 0;
 }
 #endif
 
-void *
-os_if_spectral_prep_skb(struct wlan_objmgr_pdev *pdev,
-			enum spectral_msg_type smsg_type,
-			enum spectral_msg_buf_type buf_type)
+void *os_if_spectral_prep_skb(struct wlan_objmgr_pdev *pdev,
+			      enum spectral_msg_type smsg_type,
+			      enum spectral_msg_buf_type buf_type)
 {
 	struct pdev_spectral *ps = NULL;
 	struct nlmsghdr *spectral_nlh = NULL;
@@ -264,8 +241,7 @@ os_if_spectral_prep_skb(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (buf_type >= SPECTRAL_MSG_BUF_TYPE_MAX) {
-		osif_err("Invalid Spectral message buffer type %u",
-			 buf_type);
+		osif_err("Invalid Spectral message buffer type %u", buf_type);
 		return NULL;
 	}
 
@@ -280,8 +256,7 @@ os_if_spectral_prep_skb(struct wlan_objmgr_pdev *pdev,
 	if (buf_type == SPECTRAL_MSG_BUF_NEW) {
 		QDF_ASSERT(!ps->skb[smsg_type]);
 		ps->skb[smsg_type] =
-				qdf_nbuf_alloc(NULL, MAX_SPECTRAL_PAYLOAD,
-					       0, 0, false);
+			qdf_nbuf_alloc(NULL, MAX_SPECTRAL_PAYLOAD, 0, 0, false);
 
 		if (!ps->skb[smsg_type]) {
 			osif_err("alloc skb (len=%u, msg_type=%u) failed",
@@ -295,12 +270,12 @@ os_if_spectral_prep_skb(struct wlan_objmgr_pdev *pdev,
 		qdf_mem_zero(spectral_nlh, sizeof(*spectral_nlh));
 
 		/*
-		 * Possible bug that size of  struct spectral_samp_msg and
-		 * SPECTRAL_MSG differ by 3 bytes  so we miss 3 bytes
-		 */
+     * Possible bug that size of  struct spectral_samp_msg and
+     * SPECTRAL_MSG differ by 3 bytes  so we miss 3 bytes
+     */
 
 		spectral_nlh->nlmsg_len =
-				NLMSG_SPACE(sizeof(struct spectral_samp_msg));
+			NLMSG_SPACE(sizeof(struct spectral_samp_msg));
 		spectral_nlh->nlmsg_pid = 0;
 		spectral_nlh->nlmsg_flags = 0;
 		spectral_nlh->nlmsg_type = WLAN_NL_MSG_SPECTRAL_SCAN;
@@ -321,37 +296,29 @@ os_if_spectral_prep_skb(struct wlan_objmgr_pdev *pdev,
 }
 
 #if (KERNEL_VERSION(2, 6, 31) > LINUX_VERSION_CODE)
-static inline void
-os_if_init_spectral_skb_dst_pid(
-	struct sk_buff *skb,
-	struct pdev_spectral *ps)
+static inline void os_if_init_spectral_skb_dst_pid(struct sk_buff *skb,
+						   struct pdev_spectral *ps)
 {
-	NETLINK_CB(skb).dst_pid =
-	    ps->spectral_pid;
+	NETLINK_CB(skb).dst_pid = ps->spectral_pid;
 }
 #else
-static inline void
-os_if_init_spectral_skb_dst_pid(
-	struct sk_buff *skb,
-	struct pdev_spectral *ps)
+static inline void os_if_init_spectral_skb_dst_pid(struct sk_buff *skb,
+						   struct pdev_spectral *ps)
 {
 }
-#endif			/* VERSION - field deprecated by newer kernels */
+#endif /* VERSION - field deprecated by newer kernels */
 
 #if KERNEL_VERSION(3, 7, 0) > LINUX_VERSION_CODE
-static inline void
-os_if_init_spectral_skb_pid_portid(struct sk_buff *skb)
+static inline void os_if_init_spectral_skb_pid_portid(struct sk_buff *skb)
 {
-	NETLINK_CB(skb).pid = 0;  /* from kernel */
+	NETLINK_CB(skb).pid = 0; /* from kernel */
 }
 #else
-static inline void
-os_if_init_spectral_skb_pid_portid(struct sk_buff *skb)
+static inline void os_if_init_spectral_skb_pid_portid(struct sk_buff *skb)
 {
-	NETLINK_CB(skb).portid = 0;  /* from kernel */
+	NETLINK_CB(skb).portid = 0; /* from kernel */
 }
 #endif
-
 
 /**
  * os_if_spectral_nl_unicast_msg() - Sends unicast Spectral message to user
@@ -362,9 +329,8 @@ os_if_init_spectral_skb_pid_portid(struct sk_buff *skb)
  * Return: void
  */
 #ifndef CNSS_GENL
-static int
-os_if_spectral_nl_unicast_msg(struct wlan_objmgr_pdev *pdev,
-			      enum spectral_msg_type smsg_type)
+static int os_if_spectral_nl_unicast_msg(struct wlan_objmgr_pdev *pdev,
+					 enum spectral_msg_type smsg_type)
 {
 	struct pdev_spectral *ps = NULL;
 	int status;
@@ -392,8 +358,7 @@ os_if_spectral_nl_unicast_msg(struct wlan_objmgr_pdev *pdev,
 	}
 
 	if (!ps->spectral_sock) {
-		osif_err("Spectral Socket is invalid, msg_type= %u",
-			 smsg_type);
+		osif_err("Spectral Socket is invalid, msg_type= %u", smsg_type);
 		qdf_nbuf_free(ps->skb[smsg_type]);
 		ps->skb[smsg_type] = NULL;
 
@@ -408,8 +373,7 @@ os_if_spectral_nl_unicast_msg(struct wlan_objmgr_pdev *pdev,
 	NETLINK_CB(ps->skb[smsg_type]).dst_group = 0;
 
 	os_if_spectral_remove_nbuf_debug_entry(ps->skb[smsg_type]);
-	status = netlink_unicast(ps->spectral_sock,
-				 ps->skb[smsg_type],
+	status = netlink_unicast(ps->spectral_sock, ps->skb[smsg_type],
 				 ps->spectral_pid, MSG_DONTWAIT);
 
 	/* clear the local copy, free would be done by netlink layer */
@@ -419,9 +383,8 @@ os_if_spectral_nl_unicast_msg(struct wlan_objmgr_pdev *pdev,
 }
 #else
 
-static int
-os_if_spectral_nl_unicast_msg(struct wlan_objmgr_pdev *pdev,
-			      enum spectral_msg_type smsg_type)
+static int os_if_spectral_nl_unicast_msg(struct wlan_objmgr_pdev *pdev,
+					 enum spectral_msg_type smsg_type)
 {
 	struct pdev_spectral *ps = NULL;
 	int status;
@@ -473,9 +436,8 @@ os_if_spectral_nl_unicast_msg(struct wlan_objmgr_pdev *pdev,
  *
  * Return: void
  */
-static int
-os_if_spectral_nl_bcast_msg(struct wlan_objmgr_pdev *pdev,
-			    enum spectral_msg_type smsg_type)
+static int os_if_spectral_nl_bcast_msg(struct wlan_objmgr_pdev *pdev,
+				       enum spectral_msg_type smsg_type)
 {
 #if (KERNEL_VERSION(2, 6, 31) >= LINUX_VERSION_CODE)
 	fd_set write_set;
@@ -518,9 +480,8 @@ os_if_spectral_nl_bcast_msg(struct wlan_objmgr_pdev *pdev,
 	}
 
 	os_if_spectral_remove_nbuf_debug_entry(ps->skb[smsg_type]);
-	status = netlink_broadcast(ps->spectral_sock,
-				   ps->skb[smsg_type],
-				   0, 1, GFP_ATOMIC);
+	status = netlink_broadcast(ps->spectral_sock, ps->skb[smsg_type], 0, 1,
+				   GFP_ATOMIC);
 
 	/* clear the local copy, free would be done by netlink layer */
 	ps->skb[smsg_type] = NULL;
@@ -536,9 +497,8 @@ os_if_spectral_nl_bcast_msg(struct wlan_objmgr_pdev *pdev,
  *
  * Return: void
  */
-static void
-os_if_spectral_free_skb(struct wlan_objmgr_pdev *pdev,
-			enum spectral_msg_type smsg_type)
+static void os_if_spectral_free_skb(struct wlan_objmgr_pdev *pdev,
+				    enum spectral_msg_type smsg_type)
 {
 	struct pdev_spectral *ps = NULL;
 
@@ -572,10 +532,9 @@ os_if_spectral_free_skb(struct wlan_objmgr_pdev *pdev,
 	ps->skb[smsg_type] = NULL;
 }
 
-void
-os_if_spectral_netlink_init(struct wlan_objmgr_pdev *pdev)
+void os_if_spectral_netlink_init(struct wlan_objmgr_pdev *pdev)
 {
-	struct spectral_nl_cb nl_cb = {0};
+	struct spectral_nl_cb nl_cb = { 0 };
 	struct spectral_context *sptrl_ctx;
 
 	if (!pdev) {

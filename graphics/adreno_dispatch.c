@@ -4,15 +4,15 @@
  * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
-#include <linux/slab.h>
-#include <linux/sysfs.h>
-#include <soc/qcom/msm_performance.h>
 #include "adreno.h"
 #include "adreno_sysfs.h"
 #include "adreno_trace.h"
 #include "kgsl_eventlog.h"
 #include "kgsl_gmu_core.h"
 #include "kgsl_timeline.h"
+#include <linux/slab.h>
+#include <linux/sysfs.h>
+#include <soc/qcom/msm_performance.h>
 
 #define DRAWQUEUE_NEXT(_i, _s) (((_i) + 1) % (_s))
 
@@ -55,23 +55,24 @@ static unsigned int _fault_timer_interval = 200;
 /* Use a kmem cache to speed up allocations for dispatcher jobs */
 static struct kmem_cache *jobs_cache;
 
-#define DRAWQUEUE_RB(_drawqueue) \
-	((struct adreno_ringbuffer *) \
-		container_of((_drawqueue),\
-		struct adreno_ringbuffer, dispatch_q))
+#define DRAWQUEUE_RB(_drawqueue)                   \
+	((struct adreno_ringbuffer *)container_of( \
+		(_drawqueue), struct adreno_ringbuffer, dispatch_q))
 
 #define DRAWQUEUE(_ringbuffer) (&(_ringbuffer)->dispatch_q)
 
-static bool adreno_drawqueue_is_empty(struct adreno_dispatcher_drawqueue *drawqueue)
+static bool
+adreno_drawqueue_is_empty(struct adreno_dispatcher_drawqueue *drawqueue)
 {
 	return (drawqueue && drawqueue->head == drawqueue->tail);
 }
 
-static int adreno_dispatch_retire_drawqueue(struct adreno_device *adreno_dev,
-		struct adreno_dispatcher_drawqueue *drawqueue);
+static int
+adreno_dispatch_retire_drawqueue(struct adreno_device *adreno_dev,
+				 struct adreno_dispatcher_drawqueue *drawqueue);
 
-static inline bool drawqueue_is_current(
-		struct adreno_dispatcher_drawqueue *drawqueue)
+static inline bool
+drawqueue_is_current(struct adreno_dispatcher_drawqueue *drawqueue)
 {
 	struct adreno_ringbuffer *rb = DRAWQUEUE_RB(drawqueue);
 	struct adreno_device *adreno_dev = ADRENO_RB_DEVICE(rb);
@@ -80,7 +81,7 @@ static inline bool drawqueue_is_current(
 }
 
 static void _add_context(struct adreno_device *adreno_dev,
-		struct adreno_context *drawctxt)
+			 struct adreno_context *drawctxt)
 {
 	/* Remove it from the list */
 	list_del_init(&drawctxt->active_node);
@@ -98,7 +99,7 @@ static int __count_context(struct adreno_context *drawctxt, void *data)
 }
 
 static int __count_drawqueue_context(struct adreno_context *drawctxt,
-				void *data)
+				     void *data)
 {
 	unsigned long expires = drawctxt->active_time + msecs_to_jiffies(100);
 
@@ -106,11 +107,15 @@ static int __count_drawqueue_context(struct adreno_context *drawctxt,
 		return 0;
 
 	return (&drawctxt->rb->dispatch_q ==
-			(struct adreno_dispatcher_drawqueue *) data) ? 1 : 0;
+		(struct adreno_dispatcher_drawqueue *)data) ?
+		       1 :
+		       0;
 }
 
 static int _adreno_count_active_contexts(struct adreno_device *adreno_dev,
-		int (*func)(struct adreno_context *, void *), void *data)
+					 int (*func)(struct adreno_context *,
+						     void *),
+					 void *data)
 {
 	struct adreno_context *ctxt;
 	int count = 0;
@@ -126,8 +131,8 @@ static int _adreno_count_active_contexts(struct adreno_device *adreno_dev,
 }
 
 static void _track_context(struct adreno_device *adreno_dev,
-		struct adreno_dispatcher_drawqueue *drawqueue,
-		struct adreno_context *drawctxt)
+			   struct adreno_dispatcher_drawqueue *drawqueue,
+			   struct adreno_context *drawctxt)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 
@@ -135,12 +140,10 @@ static void _track_context(struct adreno_device *adreno_dev,
 
 	_add_context(adreno_dev, drawctxt);
 
-	device->active_context_count =
-			_adreno_count_active_contexts(adreno_dev,
-					__count_context, NULL);
-	drawqueue->active_context_count =
-			_adreno_count_active_contexts(adreno_dev,
-					__count_drawqueue_context, drawqueue);
+	device->active_context_count = _adreno_count_active_contexts(
+		adreno_dev, __count_context, NULL);
+	drawqueue->active_context_count = _adreno_count_active_contexts(
+		adreno_dev, __count_drawqueue_context, drawqueue);
 
 	spin_unlock(&adreno_dev->active_list_lock);
 }
@@ -155,8 +158,9 @@ static void _track_context(struct adreno_device *adreno_dev,
 static inline int
 _drawqueue_inflight(struct adreno_dispatcher_drawqueue *drawqueue)
 {
-	return (drawqueue->active_context_count > 1)
-		? _dispatcher_q_inflight_lo : _dispatcher_q_inflight_hi;
+	return (drawqueue->active_context_count > 1) ?
+		       _dispatcher_q_inflight_lo :
+		       _dispatcher_q_inflight_hi;
 }
 
 static void fault_detect_read(struct adreno_device *adreno_dev)
@@ -170,14 +174,14 @@ static void fault_detect_read(struct adreno_device *adreno_dev)
 	for (i = 0; i < adreno_dev->num_ringbuffers; i++) {
 		struct adreno_ringbuffer *rb = &(adreno_dev->ringbuffers[i]);
 
-		adreno_rb_readtimestamp(adreno_dev, rb,
-			KGSL_TIMESTAMP_RETIRED, &(rb->fault_detect_ts));
+		adreno_rb_readtimestamp(adreno_dev, rb, KGSL_TIMESTAMP_RETIRED,
+					&(rb->fault_detect_ts));
 	}
 
 	for (i = 0; i < adreno_dev->soft_ft_count; i++) {
 		if (adreno_dev->soft_ft_regs[i])
 			kgsl_regread(device, adreno_dev->soft_ft_regs[i],
-				&adreno_dev->soft_ft_vals[i]);
+				     &adreno_dev->soft_ft_vals[i]);
 	}
 }
 
@@ -187,7 +191,7 @@ void adreno_dispatcher_start_fault_timer(struct adreno_device *adreno_dev)
 
 	if (adreno_soft_fault_detect(adreno_dev))
 		mod_timer(&dispatcher->fault_timer,
-			jiffies + msecs_to_jiffies(_fault_timer_interval));
+			  jiffies + msecs_to_jiffies(_fault_timer_interval));
 }
 
 /*
@@ -219,19 +223,19 @@ static void _retire_timestamp(struct kgsl_drawobj *drawobj)
 	struct adreno_context *drawctxt = ADRENO_CONTEXT(context);
 	struct kgsl_device *device = context->device;
 	struct adreno_ringbuffer *rb = drawctxt->rb;
-	struct retire_info info = {0};
+	struct retire_info info = { 0 };
 
 	/*
-	 * Write the start and end timestamp to the memstore to keep the
-	 * accounting sane
-	 */
+   * Write the start and end timestamp to the memstore to keep the
+   * accounting sane
+   */
 	kgsl_sharedmem_writel(device->memstore,
-		KGSL_MEMSTORE_OFFSET(context->id, soptimestamp),
-		drawobj->timestamp);
+			      KGSL_MEMSTORE_OFFSET(context->id, soptimestamp),
+			      drawobj->timestamp);
 
 	kgsl_sharedmem_writel(device->memstore,
-		KGSL_MEMSTORE_OFFSET(context->id, eoptimestamp),
-		drawobj->timestamp);
+			      KGSL_MEMSTORE_OFFSET(context->id, eoptimestamp),
+			      drawobj->timestamp);
 
 	drawctxt->submitted_timestamp = drawobj->timestamp;
 
@@ -244,9 +248,9 @@ static void _retire_timestamp(struct kgsl_drawobj *drawobj)
 	info.timestamp = drawobj->timestamp;
 
 	msm_perf_events_update(MSM_PERF_GFX, MSM_PERF_RETIRED,
-				pid_nr(context->proc_priv->pid),
-				context->id, drawobj->timestamp,
-				!!(drawobj->flags & KGSL_DRAWOBJ_END_OF_FRAME));
+			       pid_nr(context->proc_priv->pid), context->id,
+			       drawobj->timestamp,
+			       !!(drawobj->flags & KGSL_DRAWOBJ_END_OF_FRAME));
 
 	if (drawobj->flags & KGSL_DRAWOBJ_END_OF_FRAME) {
 		atomic64_inc(&context->proc_priv->frame_count);
@@ -254,22 +258,23 @@ static void _retire_timestamp(struct kgsl_drawobj *drawobj)
 	}
 
 	/*
-	 * For A3xx we still get the rptr from the CP_RB_RPTR instead of
-	 * rptr scratch out address. At this point GPU clocks turned off.
-	 * So avoid reading GPU register directly for A3xx.
-	 */
+   * For A3xx we still get the rptr from the CP_RB_RPTR instead of
+   * rptr scratch out address. At this point GPU clocks turned off.
+   * So avoid reading GPU register directly for A3xx.
+   */
 	if (adreno_is_a3xx(ADRENO_DEVICE(device))) {
-		trace_adreno_cmdbatch_retired(context, &info,
-			drawobj->flags, rb->dispatch_q.inflight, 0);
+		trace_adreno_cmdbatch_retired(context, &info, drawobj->flags,
+					      rb->dispatch_q.inflight, 0);
 	} else {
 		info.rptr = adreno_get_rptr(rb);
 
-		trace_adreno_cmdbatch_retired(context, &info,
-			drawobj->flags, rb->dispatch_q.inflight, 0);
+		trace_adreno_cmdbatch_retired(context, &info, drawobj->flags,
+					      rb->dispatch_q.inflight, 0);
 	}
 
 	log_kgsl_cmdbatch_retired_event(context->id, drawobj->timestamp,
-		context->priority, drawobj->flags, 0, 0);
+					context->priority, drawobj->flags, 0,
+					0);
 
 	kgsl_drawobj_destroy(drawobj);
 }
@@ -281,14 +286,16 @@ static int _check_context_queue(struct adreno_context *drawctxt, u32 count)
 	spin_lock(&drawctxt->lock);
 
 	/*
-	 * Wake up if there is room in the context or if the whole thing got
-	 * invalidated while we were asleep
-	 */
+   * Wake up if there is room in the context or if the whole thing got
+   * invalidated while we were asleep
+   */
 
 	if (kgsl_context_invalid(&drawctxt->base))
 		ret = 1;
 	else
-		ret = ((drawctxt->queued + count) < _context_drawqueue_size) ? 1 : 0;
+		ret = ((drawctxt->queued + count) < _context_drawqueue_size) ?
+			      1 :
+			      0;
 
 	spin_unlock(&drawctxt->lock);
 
@@ -304,19 +311,19 @@ static bool _marker_expired(struct kgsl_drawobj_cmd *markerobj)
 	struct kgsl_drawobj *drawobj = DRAWOBJ(markerobj);
 
 	return (drawobj->flags & KGSL_DRAWOBJ_MARKER) &&
-		kgsl_check_timestamp(drawobj->device, drawobj->context,
-			markerobj->marker_timestamp);
+	       kgsl_check_timestamp(drawobj->device, drawobj->context,
+				    markerobj->marker_timestamp);
 }
 
 static inline void _pop_drawobj(struct adreno_context *drawctxt)
 {
-	drawctxt->drawqueue_head = DRAWQUEUE_NEXT(drawctxt->drawqueue_head,
-		ADRENO_CONTEXT_DRAWQUEUE_SIZE);
+	drawctxt->drawqueue_head = DRAWQUEUE_NEXT(
+		drawctxt->drawqueue_head, ADRENO_CONTEXT_DRAWQUEUE_SIZE);
 	drawctxt->queued--;
 }
 
 static int dispatch_retire_markerobj(struct kgsl_drawobj *drawobj,
-				struct adreno_context *drawctxt)
+				     struct adreno_context *drawctxt)
 {
 	struct kgsl_drawobj_cmd *cmdobj = CMDOBJ(drawobj);
 
@@ -327,19 +334,19 @@ static int dispatch_retire_markerobj(struct kgsl_drawobj *drawobj,
 	}
 
 	/*
-	 * If the marker isn't expired but the SKIP bit
-	 * is set then there are real commands following
-	 * this one in the queue. This means that we
-	 * need to dispatch the command so that we can
-	 * keep the timestamp accounting correct. If
-	 * skip isn't set then we block this queue
-	 * until the dependent timestamp expires
-	 */
+   * If the marker isn't expired but the SKIP bit
+   * is set then there are real commands following
+   * this one in the queue. This means that we
+   * need to dispatch the command so that we can
+   * keep the timestamp accounting correct. If
+   * skip isn't set then we block this queue
+   * until the dependent timestamp expires
+   */
 	return test_bit(CMDOBJ_SKIP, &cmdobj->priv) ? 1 : -EAGAIN;
 }
 
 static int dispatch_retire_syncobj(struct kgsl_drawobj *drawobj,
-				struct adreno_context *drawctxt)
+				   struct adreno_context *drawctxt)
 {
 	struct kgsl_drawobj_sync *syncobj = SYNCOBJ(drawobj);
 
@@ -350,19 +357,19 @@ static int dispatch_retire_syncobj(struct kgsl_drawobj *drawobj,
 	}
 
 	/*
-	 * If we got here, there are pending events for sync object.
-	 * Start the canary timer if it hasnt been started already.
-	 */
+   * If we got here, there are pending events for sync object.
+   * Start the canary timer if it hasnt been started already.
+   */
 	if (!syncobj->timeout_jiffies) {
 		syncobj->timeout_jiffies = jiffies + msecs_to_jiffies(5000);
-			mod_timer(&syncobj->timer, syncobj->timeout_jiffies);
+		mod_timer(&syncobj->timer, syncobj->timeout_jiffies);
 	}
 
 	return -EAGAIN;
 }
 
 static int drawqueue_retire_timelineobj(struct kgsl_drawobj *drawobj,
-		struct adreno_context *drawctxt)
+					struct adreno_context *drawctxt)
 {
 	struct kgsl_drawobj_timeline *timelineobj = TIMELINEOBJ(drawobj);
 
@@ -373,7 +380,7 @@ static int drawqueue_retire_timelineobj(struct kgsl_drawobj *drawobj,
 }
 
 static int drawqueue_retire_bindobj(struct kgsl_drawobj *drawobj,
-		struct adreno_context *drawctxt)
+				    struct adreno_context *drawctxt)
 {
 	struct kgsl_drawobj_bind *bindobj = BINDOBJ(drawobj);
 
@@ -385,9 +392,9 @@ static int drawqueue_retire_bindobj(struct kgsl_drawobj *drawobj,
 
 	if (!test_and_set_bit(KGSL_BINDOBJ_STATE_START, &bindobj->state)) {
 		/*
-		 * Take a referencre to the drawobj and the context because both
-		 * get referenced in the bind callback
-		 */
+     * Take a referencre to the drawobj and the context because both
+     * get referenced in the bind callback
+     */
 		_kgsl_context_get(&drawctxt->base);
 		kref_get(&drawobj->refcount);
 
@@ -405,8 +412,8 @@ static int drawqueue_retire_bindobj(struct kgsl_drawobj *drawobj,
  * c) -EAGAIN for markerobj whose marker timestamp has not expired yet.
  * c) NULL for no commands remaining in drawqueue.
  */
-static struct kgsl_drawobj *_process_drawqueue_get_next_drawobj(
-				struct adreno_context *drawctxt)
+static struct kgsl_drawobj *
+_process_drawqueue_get_next_drawobj(struct adreno_context *drawctxt)
 {
 	struct kgsl_drawobj *drawobj;
 	unsigned int i = drawctxt->drawqueue_head;
@@ -415,7 +422,7 @@ static struct kgsl_drawobj *_process_drawqueue_get_next_drawobj(
 		return NULL;
 
 	for (i = drawctxt->drawqueue_head; i != drawctxt->drawqueue_tail;
-			i = DRAWQUEUE_NEXT(i, ADRENO_CONTEXT_DRAWQUEUE_SIZE)) {
+	     i = DRAWQUEUE_NEXT(i, ADRENO_CONTEXT_DRAWQUEUE_SIZE)) {
 		int ret = 0;
 
 		drawobj = drawctxt->drawqueue[i];
@@ -462,9 +469,9 @@ static struct kgsl_drawobj *_process_drawqueue_get_next_drawobj(
  * being submitted so if a failure happens, push it back on the head of the the
  * context queue to be reconsidered again unless the context got detached.
  */
-static inline int adreno_dispatcher_requeue_cmdobj(
-		struct adreno_context *drawctxt,
-		struct kgsl_drawobj_cmd *cmdobj)
+static inline int
+adreno_dispatcher_requeue_cmdobj(struct adreno_context *drawctxt,
+				 struct kgsl_drawobj_cmd *cmdobj)
 {
 	unsigned int prev;
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
@@ -479,13 +486,13 @@ static inline int adreno_dispatcher_requeue_cmdobj(
 	}
 
 	prev = drawctxt->drawqueue_head == 0 ?
-		(ADRENO_CONTEXT_DRAWQUEUE_SIZE - 1) :
-		(drawctxt->drawqueue_head - 1);
+		       (ADRENO_CONTEXT_DRAWQUEUE_SIZE - 1) :
+		       (drawctxt->drawqueue_head - 1);
 
 	/*
-	 * The maximum queue size always needs to be one less then the size of
-	 * the ringbuffer queue so there is "room" to put the drawobj back in
-	 */
+   * The maximum queue size always needs to be one less then the size of
+   * the ringbuffer queue so there is "room" to put the drawobj back in
+   */
 
 	WARN_ON(prev == drawctxt->drawqueue_tail);
 
@@ -507,7 +514,7 @@ static inline int adreno_dispatcher_requeue_cmdobj(
  * Add a context to the dispatcher pending list.
  */
 static int dispatcher_queue_context(struct adreno_device *adreno_dev,
-		struct adreno_context *drawctxt)
+				    struct adreno_context *drawctxt)
 {
 	struct adreno_dispatcher *dispatcher = &adreno_dev->dispatcher;
 	struct adreno_dispatch_job *job;
@@ -545,7 +552,7 @@ static int dispatcher_queue_context(struct adreno_device *adreno_dev,
  * Send a KGSL drawobj to the GPU hardware
  */
 static int sendcmd(struct adreno_device *adreno_dev,
-	struct kgsl_drawobj_cmd *cmdobj)
+		   struct kgsl_drawobj_cmd *cmdobj)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
@@ -553,12 +560,13 @@ static int sendcmd(struct adreno_device *adreno_dev,
 	struct adreno_dispatcher *dispatcher = &adreno_dev->dispatcher;
 	struct adreno_context *drawctxt = ADRENO_CONTEXT(drawobj->context);
 	struct kgsl_context *context = drawobj->context;
-	struct adreno_dispatcher_drawqueue *dispatch_q = &drawctxt->rb->dispatch_q;
+	struct adreno_dispatcher_drawqueue *dispatch_q =
+		&drawctxt->rb->dispatch_q;
 	struct adreno_submit_time time;
 	uint64_t secs = 0;
 	unsigned long nsecs = 0;
 	int ret;
-	struct submission_info info = {0};
+	struct submission_info info = { 0 };
 
 	mutex_lock(&device->mutex);
 	if (adreno_gpu_halt(adreno_dev) != 0) {
@@ -572,7 +580,7 @@ static int sendcmd(struct adreno_device *adreno_dev,
 	dispatch_q->inflight++;
 
 	if (dispatcher->inflight == 1 &&
-			!test_bit(ADRENO_DISPATCHER_POWER, &dispatcher->priv)) {
+	    !test_bit(ADRENO_DISPATCHER_POWER, &dispatcher->priv)) {
 		/* Time to make the donuts.  Turn on the GPU */
 		ret = adreno_active_count_get(adreno_dev);
 		if (ret) {
@@ -588,21 +596,19 @@ static int sendcmd(struct adreno_device *adreno_dev,
 	if (test_bit(ADRENO_DEVICE_DRAWOBJ_PROFILE, &adreno_dev->priv)) {
 		set_bit(CMDOBJ_PROFILE, &cmdobj->priv);
 		cmdobj->profile_index = adreno_dev->profile_index;
-		adreno_dev->profile_index =
-			(adreno_dev->profile_index + 1) %
-			ADRENO_DRAWOBJ_PROFILE_COUNT;
+		adreno_dev->profile_index = (adreno_dev->profile_index + 1) %
+					    ADRENO_DRAWOBJ_PROFILE_COUNT;
 	}
 
 	ret = adreno_ringbuffer_submitcmd(adreno_dev, cmdobj, &time);
 
 	/*
-	 * On the first command, if the submission was successful, then read the
-	 * fault registers.  If it failed then turn off the GPU. Sad face.
-	 */
+   * On the first command, if the submission was successful, then read the
+   * fault registers.  If it failed then turn off the GPU. Sad face.
+   */
 
 	if (dispatcher->inflight == 1) {
 		if (ret == 0) {
-
 			/* Stop fault timer before reading fault registers */
 			adreno_dispatcher_stop_fault_timer(device);
 
@@ -612,14 +618,13 @@ static int sendcmd(struct adreno_device *adreno_dev,
 			adreno_dispatcher_start_fault_timer(adreno_dev);
 
 			if (!test_and_set_bit(ADRENO_DISPATCHER_ACTIVE,
-				&dispatcher->priv))
+					      &dispatcher->priv))
 				reinit_completion(&dispatcher->idle_gate);
 		} else {
 			adreno_active_count_put(adreno_dev);
 			clear_bit(ADRENO_DISPATCHER_POWER, &dispatcher->priv);
 		}
 	}
-
 
 	if (ret) {
 		dispatcher->inflight--;
@@ -628,18 +633,18 @@ static int sendcmd(struct adreno_device *adreno_dev,
 		mutex_unlock(&device->mutex);
 
 		/*
-		 * Don't log a message in case of:
-		 * -ENOENT means that the context was detached before the
-		 * command was submitted
-		 * -ENOSPC means that there temporarily isn't any room in the
-		 *  ringbuffer
-		 *  -PROTO means that a fault is currently being worked
-		 */
+     * Don't log a message in case of:
+     * -ENOENT means that the context was detached before the
+     * command was submitted
+     * -ENOSPC means that there temporarily isn't any room in the
+     *  ringbuffer
+     *  -PROTO means that a fault is currently being worked
+     */
 
 		if (ret != -ENOENT && ret != -ENOSPC && ret != -EPROTO)
 			dev_err(device->dev,
-				     "Unable to submit command to the ringbuffer %d\n",
-				     ret);
+				"Unable to submit command to the ringbuffer %d\n",
+				ret);
 		return ret;
 	}
 
@@ -647,57 +652,56 @@ static int sendcmd(struct adreno_device *adreno_dev,
 	nsecs = do_div(secs, 1000000000);
 
 	/*
-	 * For the first submission in any given command queue update the
-	 * expected expire time - this won't actually be used / updated until
-	 * the command queue in question goes current, but universally setting
-	 * it here avoids the possibilty of some race conditions with preempt
-	 */
+   * For the first submission in any given command queue update the
+   * expected expire time - this won't actually be used / updated until
+   * the command queue in question goes current, but universally setting
+   * it here avoids the possibilty of some race conditions with preempt
+   */
 
 	if (dispatch_q->inflight == 1)
-		dispatch_q->expires = jiffies +
-			msecs_to_jiffies(adreno_drawobj_timeout);
+		dispatch_q->expires =
+			jiffies + msecs_to_jiffies(adreno_drawobj_timeout);
 
-	info.inflight = (int) dispatcher->inflight;
+	info.inflight = (int)dispatcher->inflight;
 	info.rb_id = drawctxt->rb->id;
 	info.rptr = adreno_get_rptr(drawctxt->rb);
 	info.wptr = drawctxt->rb->wptr;
 	info.gmu_dispatch_queue = -1;
 
 	msm_perf_events_update(MSM_PERF_GFX, MSM_PERF_SUBMIT,
-			       pid_nr(context->proc_priv->pid),
-			       context->id, drawobj->timestamp,
+			       pid_nr(context->proc_priv->pid), context->id,
+			       drawobj->timestamp,
 			       !!(drawobj->flags & KGSL_DRAWOBJ_END_OF_FRAME));
 
-	trace_adreno_cmdbatch_submitted(drawobj, &info,
-			time.ticks, (unsigned long) secs, nsecs / 1000,
-			dispatch_q->inflight);
+	trace_adreno_cmdbatch_submitted(drawobj, &info, time.ticks,
+					(unsigned long)secs, nsecs / 1000,
+					dispatch_q->inflight);
 
 	log_kgsl_cmdbatch_submitted_event(context->id, drawobj->timestamp,
-		context->priority, drawobj->flags);
+					  context->priority, drawobj->flags);
 
 	mutex_unlock(&device->mutex);
 
 	cmdobj->submit_ticks = time.ticks;
 
 	dispatch_q->cmd_q[dispatch_q->tail] = cmdobj;
-	dispatch_q->tail = (dispatch_q->tail + 1) %
-		ADRENO_DISPATCH_DRAWQUEUE_SIZE;
+	dispatch_q->tail =
+		(dispatch_q->tail + 1) % ADRENO_DISPATCH_DRAWQUEUE_SIZE;
 
 	/*
-	 * If we believe ourselves to be current and preemption isn't a thing,
-	 * then set up the timer.  If this misses, then preemption is indeed a
-	 * thing and the timer will be set up in due time
-	 */
+   * If we believe ourselves to be current and preemption isn't a thing,
+   * then set up the timer.  If this misses, then preemption is indeed a
+   * thing and the timer will be set up in due time
+   */
 	if (adreno_in_preempt_state(adreno_dev, ADRENO_PREEMPT_NONE)) {
 		if (drawqueue_is_current(dispatch_q))
 			mod_timer(&dispatcher->timer, dispatch_q->expires);
 	}
 
-
 	/*
-	 * we just submitted something, readjust ringbuffer
-	 * execution level
-	 */
+   * we just submitted something, readjust ringbuffer
+   * execution level
+   */
 	if (gpudev->preemption_schedule)
 		gpudev->preemption_schedule(adreno_dev);
 	return 0;
@@ -713,10 +717,10 @@ static int sendcmd(struct adreno_device *adreno_dev,
  * 0 if the context is empty or detached and negative on error
  */
 static int dispatcher_context_sendcmds(struct adreno_device *adreno_dev,
-		struct adreno_context *drawctxt)
+				       struct adreno_context *drawctxt)
 {
 	struct adreno_dispatcher_drawqueue *dispatch_q =
-					&(drawctxt->rb->dispatch_q);
+		&(drawctxt->rb->dispatch_q);
 	int count = 0;
 	int ret = 0;
 	int inflight = _drawqueue_inflight(dispatch_q);
@@ -730,10 +734,10 @@ static int dispatcher_context_sendcmds(struct adreno_device *adreno_dev,
 	}
 
 	/*
-	 * Each context can send a specific number of drawobjs per cycle
-	 */
+   * Each context can send a specific number of drawobjs per cycle
+   */
 	while ((count < _context_drawobj_burst) &&
-		(dispatch_q->inflight < inflight)) {
+	       (dispatch_q->inflight < inflight)) {
 		struct kgsl_drawobj *drawobj;
 		struct kgsl_drawobj_cmd *cmdobj;
 		struct kgsl_context *context;
@@ -745,11 +749,11 @@ static int dispatcher_context_sendcmds(struct adreno_device *adreno_dev,
 		drawobj = _process_drawqueue_get_next_drawobj(drawctxt);
 
 		/*
-		 * adreno_context_get_drawobj returns -EAGAIN if the current
-		 * drawobj has pending sync points so no more to do here.
-		 * When the sync points are satisfied then the context will get
-		 * reqeueued
-		 */
+     * adreno_context_get_drawobj returns -EAGAIN if the current
+     * drawobj has pending sync points so no more to do here.
+     * When the sync points are satisfied then the context will get
+     * reqeueued
+     */
 
 		if (IS_ERR_OR_NULL(drawobj)) {
 			if (IS_ERR(drawobj))
@@ -764,23 +768,24 @@ static int dispatcher_context_sendcmds(struct adreno_device *adreno_dev,
 		cmdobj = CMDOBJ(drawobj);
 		context = drawobj->context;
 		trace_adreno_cmdbatch_ready(context->id, context->priority,
-			drawobj->timestamp, cmdobj->requeue_cnt);
+					    drawobj->timestamp,
+					    cmdobj->requeue_cnt);
 		ret = sendcmd(adreno_dev, cmdobj);
 
 		/*
-		 * On error from sendcmd() try to requeue the cmdobj
-		 * unless we got back -ENOENT which means that the context has
-		 * been detached and there will be no more deliveries from here
-		 */
+     * On error from sendcmd() try to requeue the cmdobj
+     * unless we got back -ENOENT which means that the context has
+     * been detached and there will be no more deliveries from here
+     */
 		if (ret != 0) {
 			/* Destroy the cmdobj on -ENOENT */
 			if (ret == -ENOENT)
 				kgsl_drawobj_destroy(drawobj);
 			else {
 				/*
-				 * If the requeue returns an error, return that
-				 * instead of whatever sendcmd() sent us
-				 */
+         * If the requeue returns an error, return that
+         * instead of whatever sendcmd() sent us
+         */
 				int r = adreno_dispatcher_requeue_cmdobj(
 					drawctxt, cmdobj);
 				if (r)
@@ -796,9 +801,9 @@ static int dispatcher_context_sendcmds(struct adreno_device *adreno_dev,
 	}
 
 	/*
-	 * Wake up any snoozing threads if we have consumed any real commands
-	 * or marker commands and we have room in the context queue.
-	 */
+   * Wake up any snoozing threads if we have consumed any real commands
+   * or marker commands and we have room in the context queue.
+   */
 
 	if (_check_context_queue(drawctxt, 0))
 		wake_up_all(&drawctxt->wq);
@@ -816,7 +821,8 @@ static bool adreno_gpu_stopped(struct adreno_device *adreno_dev)
 }
 
 static void dispatcher_handle_jobs_list(struct adreno_device *adreno_dev,
-		int id, unsigned long *map, struct llist_node *list)
+					int id, unsigned long *map,
+					struct llist_node *list)
 {
 	struct adreno_dispatcher *dispatcher = &adreno_dev->dispatcher;
 	struct adreno_dispatch_job *job, *next;
@@ -837,13 +843,13 @@ static void dispatcher_handle_jobs_list(struct adreno_device *adreno_dev,
 		}
 
 		/*
-		 * Due to the nature of the lockless queue the same context
-		 * might have multiple jobs on the list. We allow this so we
-		 * don't have to query the list on the producer side but on the
-		 * consumer side we only want each context to be considered
-		 * once. Use a bitmap to remember which contexts we've already
-		 * seen and quietly discard duplicate jobs
-		 */
+     * Due to the nature of the lockless queue the same context
+     * might have multiple jobs on the list. We allow this so we
+     * don't have to query the list on the producer side but on the
+     * consumer side we only want each context to be considered
+     * once. Use a bitmap to remember which contexts we've already
+     * seen and quietly discard duplicate jobs
+     */
 		if (test_and_set_bit(job->drawctxt->base.id, map)) {
 			kgsl_context_put(&job->drawctxt->base);
 			kmem_cache_free(jobs_cache, job);
@@ -851,10 +857,10 @@ static void dispatcher_handle_jobs_list(struct adreno_device *adreno_dev,
 		}
 
 		/*
-		 * If gpu is in fault or dispatcher is halted, add back the jobs
-		 * so that they are processed after recovery or when dispatcher
-		 * is resumed.
-		 */
+     * If gpu is in fault or dispatcher is halted, add back the jobs
+     * so that they are processed after recovery or when dispatcher
+     * is resumed.
+     */
 		if (adreno_gpu_stopped(adreno_dev)) {
 			llist_add(&job->node, &dispatcher->jobs[id]);
 			continue;
@@ -863,9 +869,9 @@ static void dispatcher_handle_jobs_list(struct adreno_device *adreno_dev,
 		ret = dispatcher_context_sendcmds(adreno_dev, job->drawctxt);
 
 		/*
-		 * If the context had nothing queued or the context has been
-		 * destroyed then drop the job
-		 */
+     * If the context had nothing queued or the context has been
+     * destroyed then drop the job
+     */
 		if (!ret || ret == -ENOENT) {
 			kgsl_context_put(&job->drawctxt->base);
 			kmem_cache_free(jobs_cache, job);
@@ -873,11 +879,11 @@ static void dispatcher_handle_jobs_list(struct adreno_device *adreno_dev,
 		}
 
 		/*
-		 * If the ringbuffer is full then requeue the job to be
-		 * considered first next time. Otherwise the context
-		 * either successfully submmitted to the GPU or another error
-		 * happened and it should go back on the regular queue
-		 */
+     * If the ringbuffer is full then requeue the job to be
+     * considered first next time. Otherwise the context
+     * either successfully submmitted to the GPU or another error
+     * happened and it should go back on the regular queue
+     */
 		if (ret == -EBUSY)
 			llist_add(&job->node, &dispatcher->requeue[id]);
 		else
@@ -998,15 +1004,14 @@ done:
  * batch.
  */
 static int get_timestamp(struct adreno_context *drawctxt,
-		struct kgsl_drawobj *drawobj, unsigned int *timestamp,
-		unsigned int user_ts)
+			 struct kgsl_drawobj *drawobj, unsigned int *timestamp,
+			 unsigned int user_ts)
 {
-
 	if (drawctxt->base.flags & KGSL_CONTEXT_USER_GENERATED_TS) {
 		/*
-		 * User specified timestamps need to be greater than the last
-		 * issued timestamp in the context
-		 */
+     * User specified timestamps need to be greater than the last
+     * issued timestamp in the context
+     */
 		if (timestamp_cmp(drawctxt->timestamp, user_ts) >= 0)
 			return -ERANGE;
 
@@ -1020,20 +1025,20 @@ static int get_timestamp(struct adreno_context *drawctxt,
 }
 
 static void _set_ft_policy(struct adreno_device *adreno_dev,
-		struct adreno_context *drawctxt,
-		struct kgsl_drawobj_cmd *cmdobj)
+			   struct adreno_context *drawctxt,
+			   struct kgsl_drawobj_cmd *cmdobj)
 {
 	/*
-	 * Set the fault tolerance policy for the command batch - assuming the
-	 * context hasn't disabled FT use the current device policy
-	 */
+   * Set the fault tolerance policy for the command batch - assuming the
+   * context hasn't disabled FT use the current device policy
+   */
 	if (drawctxt->base.flags & KGSL_CONTEXT_NO_FAULT_TOLERANCE)
 		set_bit(KGSL_FT_DISABLE, &cmdobj->fault_policy);
 	/*
-	 *  Set the fault tolerance policy to FT_REPLAY - As context wants
-	 *  to invalidate it after a replay attempt fails. This doesn't
-	 *  require to execute the default FT policy.
-	 */
+   *  Set the fault tolerance policy to FT_REPLAY - As context wants
+   *  to invalidate it after a replay attempt fails. This doesn't
+   *  require to execute the default FT policy.
+   */
 	else if (drawctxt->base.flags & KGSL_CONTEXT_INVALIDATE_ON_FAULT)
 		set_bit(KGSL_FT_REPLAY, &cmdobj->fault_policy);
 	else
@@ -1041,22 +1046,22 @@ static void _set_ft_policy(struct adreno_device *adreno_dev,
 }
 
 static void _cmdobj_set_flags(struct adreno_context *drawctxt,
-			struct kgsl_drawobj_cmd *cmdobj)
+			      struct kgsl_drawobj_cmd *cmdobj)
 {
 	/*
-	 * Force the preamble for this submission only - this is usually
-	 * requested by the dispatcher as part of fault recovery
-	 */
+   * Force the preamble for this submission only - this is usually
+   * requested by the dispatcher as part of fault recovery
+   */
 	if (test_and_clear_bit(ADRENO_CONTEXT_FORCE_PREAMBLE,
-				&drawctxt->base.priv))
+			       &drawctxt->base.priv))
 		set_bit(CMDOBJ_FORCE_PREAMBLE, &cmdobj->priv);
 
 	/*
-	 * Force the premable if set from userspace in the context or
-	 * command obj flags
-	 */
+   * Force the premable if set from userspace in the context or
+   * command obj flags
+   */
 	if ((drawctxt->base.flags & KGSL_CONTEXT_CTX_SWITCH) ||
-		(cmdobj->base.flags & KGSL_DRAWOBJ_CTX_SWITCH))
+	    (cmdobj->base.flags & KGSL_DRAWOBJ_CTX_SWITCH))
 		set_bit(CMDOBJ_FORCE_PREAMBLE, &cmdobj->priv);
 
 	/* Skip this ib if IFH_NOP is enabled */
@@ -1064,59 +1069,60 @@ static void _cmdobj_set_flags(struct adreno_context *drawctxt,
 		set_bit(CMDOBJ_SKIP, &cmdobj->priv);
 
 	/*
-	 * If we are waiting for the end of frame and it hasn't appeared yet,
-	 * then mark the command obj as skipped.  It will still progress
-	 * through the pipeline but it won't actually send any commands
-	 */
+   * If we are waiting for the end of frame and it hasn't appeared yet,
+   * then mark the command obj as skipped.  It will still progress
+   * through the pipeline but it won't actually send any commands
+   */
 
 	if (test_bit(ADRENO_CONTEXT_SKIP_EOF, &drawctxt->base.priv)) {
 		set_bit(CMDOBJ_SKIP, &cmdobj->priv);
 
 		/*
-		 * If this command obj represents the EOF then clear the way
-		 * for the dispatcher to continue submitting
-		 */
+     * If this command obj represents the EOF then clear the way
+     * for the dispatcher to continue submitting
+     */
 
 		if (cmdobj->base.flags & KGSL_DRAWOBJ_END_OF_FRAME) {
 			clear_bit(ADRENO_CONTEXT_SKIP_EOF,
 				  &drawctxt->base.priv);
 
 			/*
-			 * Force the preamble on the next command to ensure that
-			 * the state is correct
-			 */
+       * Force the preamble on the next command to ensure that
+       * the state is correct
+       */
 			set_bit(ADRENO_CONTEXT_FORCE_PREAMBLE,
 				&drawctxt->base.priv);
 		}
 	}
 }
 
-static inline int _wait_for_room_in_context_queue(
-	struct adreno_context *drawctxt, u32 count) __must_hold(&drawctxt->lock)
+static inline int
+_wait_for_room_in_context_queue(struct adreno_context *drawctxt, u32 count)
+	__must_hold(&drawctxt->lock)
 {
 	int ret = 0;
 
 	/*
-	 * There is always a possibility that dispatcher may end up pushing
-	 * the last popped draw object back to the context drawqueue. Hence,
-	 * we can only queue up to _context_drawqueue_size - 1 here to make
-	 * sure we never let drawqueue->queued exceed _context_drawqueue_size.
-	 */
+   * There is always a possibility that dispatcher may end up pushing
+   * the last popped draw object back to the context drawqueue. Hence,
+   * we can only queue up to _context_drawqueue_size - 1 here to make
+   * sure we never let drawqueue->queued exceed _context_drawqueue_size.
+   */
 	if ((drawctxt->queued + count) > (_context_drawqueue_size - 1)) {
 		trace_adreno_drawctxt_sleep(drawctxt);
 		spin_unlock(&drawctxt->lock);
 
-		ret = wait_event_interruptible_timeout(drawctxt->wq,
-			_check_context_queue(drawctxt, count),
+		ret = wait_event_interruptible_timeout(
+			drawctxt->wq, _check_context_queue(drawctxt, count),
 			msecs_to_jiffies(_context_queue_wait));
 
 		spin_lock(&drawctxt->lock);
 		trace_adreno_drawctxt_wake(drawctxt);
 
 		/*
-		 * Account for the possibility that the context got invalidated
-		 * while we were sleeping
-		 */
+     * Account for the possibility that the context got invalidated
+     * while we were sleeping
+     */
 		if (ret > 0)
 			ret = kgsl_check_context_state(&drawctxt->base);
 		else if (ret == 0)
@@ -1126,8 +1132,8 @@ static inline int _wait_for_room_in_context_queue(
 	return ret;
 }
 
-static unsigned int _check_context_state_to_queue_cmds(
-	struct adreno_context *drawctxt, u32 count)
+static unsigned int
+_check_context_state_to_queue_cmds(struct adreno_context *drawctxt, u32 count)
 {
 	int ret = kgsl_check_context_state(&drawctxt->base);
 
@@ -1138,24 +1144,25 @@ static unsigned int _check_context_state_to_queue_cmds(
 }
 
 static void _queue_drawobj(struct adreno_context *drawctxt,
-	struct kgsl_drawobj *drawobj)
+			   struct kgsl_drawobj *drawobj)
 {
 	struct kgsl_context *context = drawobj->context;
 
 	/* Put the command into the queue */
 	drawctxt->drawqueue[drawctxt->drawqueue_tail] = drawobj;
-	drawctxt->drawqueue_tail = (drawctxt->drawqueue_tail + 1) %
-			ADRENO_CONTEXT_DRAWQUEUE_SIZE;
+	drawctxt->drawqueue_tail =
+		(drawctxt->drawqueue_tail + 1) % ADRENO_CONTEXT_DRAWQUEUE_SIZE;
 	drawctxt->queued++;
 	msm_perf_events_update(MSM_PERF_GFX, MSM_PERF_QUEUE,
-				pid_nr(context->proc_priv->pid),
-				context->id, drawobj->timestamp,
-				!!(drawobj->flags & KGSL_DRAWOBJ_END_OF_FRAME));
+			       pid_nr(context->proc_priv->pid), context->id,
+			       drawobj->timestamp,
+			       !!(drawobj->flags & KGSL_DRAWOBJ_END_OF_FRAME));
 	trace_adreno_cmdbatch_queued(drawobj, drawctxt->queued);
 }
 
 static int drawctxt_queue_bindobj(struct adreno_context *drawctxt,
-	struct kgsl_drawobj *drawobj, u32 *timestamp, u32 user_ts)
+				  struct kgsl_drawobj *drawobj, u32 *timestamp,
+				  u32 user_ts)
 {
 	int ret;
 
@@ -1170,21 +1177,22 @@ static int drawctxt_queue_bindobj(struct adreno_context *drawctxt,
 }
 
 static void drawctxt_queue_timelineobj(struct adreno_context *drawctxt,
-	struct kgsl_drawobj *drawobj)
+				       struct kgsl_drawobj *drawobj)
 {
 	/*
-	 * This drawobj is not submitted to the GPU so use a timestamp of 0.
-	 * Update the timestamp through a subsequent marker to keep userspace
-	 * happy.
-	 */
+   * This drawobj is not submitted to the GPU so use a timestamp of 0.
+   * Update the timestamp through a subsequent marker to keep userspace
+   * happy.
+   */
 	drawobj->timestamp = 0;
 
 	_queue_drawobj(drawctxt, drawobj);
 }
 
 static int drawctxt_queue_markerobj(struct adreno_device *adreno_dev,
-	struct adreno_context *drawctxt, struct kgsl_drawobj *drawobj,
-	uint32_t *timestamp, unsigned int user_ts)
+				    struct adreno_context *drawctxt,
+				    struct kgsl_drawobj *drawobj,
+				    uint32_t *timestamp, unsigned int user_ts)
 {
 	struct kgsl_drawobj_cmd *markerobj = CMDOBJ(drawobj);
 	int ret;
@@ -1194,20 +1202,21 @@ static int drawctxt_queue_markerobj(struct adreno_device *adreno_dev,
 		return ret;
 
 	/*
-	 * See if we can fastpath this thing - if nothing is queued
-	 * and nothing is inflight retire without bothering the GPU
-	 */
-	if (!drawctxt->queued && kgsl_check_timestamp(drawobj->device,
-			drawobj->context, drawctxt->queued_timestamp)) {
+   * See if we can fastpath this thing - if nothing is queued
+   * and nothing is inflight retire without bothering the GPU
+   */
+	if (!drawctxt->queued &&
+	    kgsl_check_timestamp(drawobj->device, drawobj->context,
+				 drawctxt->queued_timestamp)) {
 		_retire_timestamp(drawobj);
 		return 1;
 	}
 
 	/*
-	 * Remember the last queued timestamp - the marker will block
-	 * until that timestamp is expired (unless another command
-	 * comes along and forces the marker to execute)
-	 */
+   * Remember the last queued timestamp - the marker will block
+   * until that timestamp is expired (unless another command
+   * comes along and forces the marker to execute)
+   */
 
 	markerobj->marker_timestamp = drawctxt->queued_timestamp;
 	drawctxt->queued_timestamp = *timestamp;
@@ -1220,8 +1229,9 @@ static int drawctxt_queue_markerobj(struct adreno_device *adreno_dev,
 }
 
 static int drawctxt_queue_cmdobj(struct adreno_device *adreno_dev,
-	struct adreno_context *drawctxt, struct kgsl_drawobj *drawobj,
-	uint32_t *timestamp, unsigned int user_ts)
+				 struct adreno_context *drawctxt,
+				 struct kgsl_drawobj *drawobj,
+				 uint32_t *timestamp, unsigned int user_ts)
 {
 	struct kgsl_drawobj_cmd *cmdobj = CMDOBJ(drawobj);
 	unsigned int j;
@@ -1232,17 +1242,17 @@ static int drawctxt_queue_cmdobj(struct adreno_device *adreno_dev,
 		return ret;
 
 	/*
-	 * If this is a real command then we need to force any markers
-	 * queued before it to dispatch to keep time linear - set the
-	 * skip bit so the commands get NOPed.
-	 */
+   * If this is a real command then we need to force any markers
+   * queued before it to dispatch to keep time linear - set the
+   * skip bit so the commands get NOPed.
+   */
 	j = drawctxt->drawqueue_head;
 
 	while (j != drawctxt->drawqueue_tail) {
 		if (drawctxt->drawqueue[j]->type == MARKEROBJ_TYPE) {
 			struct kgsl_drawobj_cmd *markerobj =
 				CMDOBJ(drawctxt->drawqueue[j]);
-				set_bit(CMDOBJ_SKIP, &markerobj->priv);
+			set_bit(CMDOBJ_SKIP, &markerobj->priv);
 		}
 
 		j = DRAWQUEUE_NEXT(j, ADRENO_CONTEXT_DRAWQUEUE_SIZE);
@@ -1258,7 +1268,8 @@ static int drawctxt_queue_cmdobj(struct adreno_device *adreno_dev,
 }
 
 static void drawctxt_queue_syncobj(struct adreno_context *drawctxt,
-	struct kgsl_drawobj *drawobj, uint32_t *timestamp)
+				   struct kgsl_drawobj *drawobj,
+				   uint32_t *timestamp)
 {
 	*timestamp = 0;
 	drawobj->timestamp = 0;
@@ -1271,8 +1282,9 @@ static void drawctxt_queue_syncobj(struct adreno_context *drawctxt,
  * block until there is
  */
 static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
-		struct kgsl_context *context, struct kgsl_drawobj *drawobj[],
-		uint32_t count, uint32_t *timestamp)
+					struct kgsl_context *context,
+					struct kgsl_drawobj *drawobj[],
+					uint32_t count, uint32_t *timestamp)
 
 {
 	struct kgsl_device *device = dev_priv->device;
@@ -1284,11 +1296,11 @@ static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 	unsigned int i, user_ts;
 
 	/*
-	 * There is always a possibility that dispatcher may end up pushing
-	 * the last popped draw object back to the context drawqueue. Hence,
-	 * we can only queue up to _context_drawqueue_size - 1 here to make
-	 * sure we never let drawqueue->queued exceed _context_drawqueue_size.
-	 */
+   * There is always a possibility that dispatcher may end up pushing
+   * the last popped draw object back to the context drawqueue. Hence,
+   * we can only queue up to _context_drawqueue_size - 1 here to make
+   * sure we never let drawqueue->queued exceed _context_drawqueue_size.
+   */
 	if (!count || count > _context_drawqueue_size - 1)
 		return -EINVAL;
 
@@ -1321,15 +1333,15 @@ static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 	user_ts = *timestamp;
 
 	/*
-	 * If there is only one drawobj in the array and it is of
-	 * type SYNCOBJ_TYPE, skip comparing user_ts as it can be 0
-	 */
+   * If there is only one drawobj in the array and it is of
+   * type SYNCOBJ_TYPE, skip comparing user_ts as it can be 0
+   */
 	if (!(count == 1 && drawobj[0]->type == SYNCOBJ_TYPE) &&
-		(drawctxt->base.flags & KGSL_CONTEXT_USER_GENERATED_TS)) {
+	    (drawctxt->base.flags & KGSL_CONTEXT_USER_GENERATED_TS)) {
 		/*
-		 * User specified timestamps need to be greater than the last
-		 * issued timestamp in the context
-		 */
+     * User specified timestamps need to be greater than the last
+     * issued timestamp in the context
+     */
 		if (timestamp_cmp(drawctxt->timestamp, user_ts) >= 0) {
 			spin_unlock(&drawctxt->lock);
 			kmem_cache_free(jobs_cache, job);
@@ -1338,11 +1350,11 @@ static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 	}
 
 	for (i = 0; i < count; i++) {
-
 		switch (drawobj[i]->type) {
 		case MARKEROBJ_TYPE:
 			ret = drawctxt_queue_markerobj(adreno_dev, drawctxt,
-				drawobj[i], timestamp, user_ts);
+						       drawobj[i], timestamp,
+						       user_ts);
 			if (ret) {
 				spin_unlock(&drawctxt->lock);
 				kmem_cache_free(jobs_cache, job);
@@ -1355,7 +1367,8 @@ static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 			break;
 		case CMDOBJ_TYPE:
 			ret = drawctxt_queue_cmdobj(adreno_dev, drawctxt,
-				drawobj[i], timestamp, user_ts);
+						    drawobj[i], timestamp,
+						    user_ts);
 			if (ret) {
 				spin_unlock(&drawctxt->lock);
 				kmem_cache_free(jobs_cache, job);
@@ -1367,7 +1380,7 @@ static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 			break;
 		case BINDOBJ_TYPE:
 			ret = drawctxt_queue_bindobj(drawctxt, drawobj[i],
-				timestamp, user_ts);
+						     timestamp, user_ts);
 			if (ret) {
 				spin_unlock(&drawctxt->lock);
 				kmem_cache_free(jobs_cache, job);
@@ -1382,7 +1395,6 @@ static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 			kmem_cache_free(jobs_cache, job);
 			return -EINVAL;
 		}
-
 	}
 
 	dispatch_q = &(ADRENO_CONTEXT(drawobj[0]->context)->rb->dispatch_q);
@@ -1394,7 +1406,8 @@ static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 	/* Add the context to the dispatcher pending list */
 	if (_kgsl_context_get(&drawctxt->base)) {
 		trace_dispatch_queue_context(drawctxt);
-		llist_add(&job->node,
+		llist_add(
+			&job->node,
 			&adreno_dev->dispatcher.jobs[drawctxt->base.priority]);
 	} else {
 		kmem_cache_free(jobs_cache, job);
@@ -1402,13 +1415,13 @@ static int adreno_dispatcher_queue_cmds(struct kgsl_device_private *dev_priv,
 	}
 
 	/*
-	 * Only issue commands if inflight is less than burst -this prevents us
-	 * from sitting around waiting for the mutex on a busy system - the work
-	 * loop will schedule it for us. Inflight is mutex protected but the
-	 * worse that can happen is that it will go to 0 after we check and if
-	 * it goes to 0 it is because the work loop decremented it and the work
-	 * queue will try to schedule new commands anyway.
-	 */
+   * Only issue commands if inflight is less than burst -this prevents us
+   * from sitting around waiting for the mutex on a busy system - the work
+   * loop will schedule it for us. Inflight is mutex protected but the
+   * worse that can happen is that it will go to 0 after we check and if
+   * it goes to 0 it is because the work loop decremented it and the work
+   * queue will try to schedule new commands anyway.
+   */
 
 	if (dispatch_q->inflight < _context_drawobj_burst)
 		adreno_dispatcher_issuecmds(adreno_dev);
@@ -1438,23 +1451,23 @@ static void _skip_ib(struct kgsl_drawobj_cmd *cmdobj, uint64_t base)
 }
 
 static void _skip_cmd(struct kgsl_drawobj_cmd *cmdobj,
-	struct kgsl_drawobj_cmd **replay, int count)
+		      struct kgsl_drawobj_cmd **replay, int count)
 {
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
 	struct adreno_context *drawctxt = ADRENO_CONTEXT(drawobj->context);
 	int i;
 
 	/*
-	 * SKIPCMD policy: next IB issued for this context is tentative
-	 * if it fails we assume that GFT failed and if it succeeds
-	 * we mark GFT as a success.
-	 *
-	 * Find next commandbatch for the faulting context
-	 * If commandbatch is found
-	 * a) store the current commandbatch fault_policy in context's next
-	 *    commandbatch fault_policy
-	 * b) force preamble for next commandbatch
-	 */
+   * SKIPCMD policy: next IB issued for this context is tentative
+   * if it fails we assume that GFT failed and if it succeeds
+   * we mark GFT as a success.
+   *
+   * Find next commandbatch for the faulting context
+   * If commandbatch is found
+   * a) store the current commandbatch fault_policy in context's next
+   *    commandbatch fault_policy
+   * b) force preamble for next commandbatch
+   */
 	for (i = 1; i < count; i++) {
 		if (DRAWOBJ(replay[i])->context->id == drawobj->context->id) {
 			replay[i]->fault_policy = replay[0]->fault_policy;
@@ -1465,11 +1478,11 @@ static void _skip_cmd(struct kgsl_drawobj_cmd *cmdobj,
 	}
 
 	/*
-	 * If we did not find the next cmd then
-	 * a) set a flag for next command issued in this context
-	 * b) store the fault_policy, this fault_policy becomes the policy of
-	 *    next command issued in this context
-	 */
+   * If we did not find the next cmd then
+   * a) set a flag for next command issued in this context
+   * b) store the fault_policy, this fault_policy becomes the policy of
+   *    next command issued in this context
+   */
 	if ((i == count) && drawctxt) {
 		set_bit(ADRENO_CONTEXT_SKIP_CMD, &drawctxt->base.priv);
 		drawctxt->fault_policy = replay[0]->fault_policy;
@@ -1481,7 +1494,7 @@ static void _skip_cmd(struct kgsl_drawobj_cmd *cmdobj,
 }
 
 static void _skip_frame(struct kgsl_drawobj_cmd *cmdobj,
-	struct kgsl_drawobj_cmd **replay, int count)
+			struct kgsl_drawobj_cmd **replay, int count)
 {
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
 	struct adreno_context *drawctxt = ADRENO_CONTEXT(drawobj->context);
@@ -1489,22 +1502,21 @@ static void _skip_frame(struct kgsl_drawobj_cmd *cmdobj,
 	int i;
 
 	for (i = 0; i < count; i++) {
-
 		struct kgsl_drawobj *replay_obj = DRAWOBJ(replay[i]);
 
 		/*
-		 * Only operate on drawobj's that belong to the
-		 * faulting context
-		 */
+     * Only operate on drawobj's that belong to the
+     * faulting context
+     */
 
 		if (replay_obj->context->id != drawobj->context->id)
 			continue;
 
 		/*
-		 * Skip all the drawobjs in this context until
-		 * the EOF flag is seen.  If the EOF flag is seen then
-		 * force the preamble for the next command.
-		 */
+     * Skip all the drawobjs in this context until
+     * the EOF flag is seen.  If the EOF flag is seen then
+     * force the preamble for the next command.
+     */
 
 		if (skip) {
 			set_bit(CMDOBJ_SKIP, &replay[i]->priv);
@@ -1518,24 +1530,25 @@ static void _skip_frame(struct kgsl_drawobj_cmd *cmdobj,
 	}
 
 	/*
-	 * If the EOF flag hasn't been seen yet then set the flag in the
-	 * drawctxt to keep looking for it
-	 */
+   * If the EOF flag hasn't been seen yet then set the flag in the
+   * drawctxt to keep looking for it
+   */
 
 	if (skip && drawctxt)
 		set_bit(ADRENO_CONTEXT_SKIP_EOF, &drawctxt->base.priv);
 
 	/*
-	 * If we did see the EOF flag then force the preamble on for the
-	 * next command issued on this context
-	 */
+   * If we did see the EOF flag then force the preamble on for the
+   * next command issued on this context
+   */
 
 	if (!skip && drawctxt)
 		set_bit(ADRENO_CONTEXT_FORCE_PREAMBLE, &drawctxt->base.priv);
 }
 
 static void remove_invalidated_cmdobjs(struct kgsl_device *device,
-		struct kgsl_drawobj_cmd **replay, int count)
+				       struct kgsl_drawobj_cmd **replay,
+				       int count)
 {
 	int i;
 
@@ -1551,7 +1564,8 @@ static void remove_invalidated_cmdobjs(struct kgsl_device *device,
 
 			mutex_lock(&device->mutex);
 			kgsl_cancel_events_timestamp(device,
-				&drawobj->context->events, drawobj->timestamp);
+						     &drawobj->context->events,
+						     drawobj->timestamp);
 			mutex_unlock(&device->mutex);
 
 			kgsl_drawobj_destroy(drawobj);
@@ -1560,16 +1574,16 @@ static void remove_invalidated_cmdobjs(struct kgsl_device *device,
 }
 
 #define pr_fault(_d, _c, fmt, args...) \
-		pr_context(_d, (_c)->context, fmt, ##args)
+	pr_context(_d, (_c)->context, fmt, ##args)
 
 static void adreno_fault_header(struct kgsl_device *device,
-		struct adreno_ringbuffer *rb, struct kgsl_drawobj_cmd *cmdobj,
-		int fault)
+				struct adreno_ringbuffer *rb,
+				struct kgsl_drawobj_cmd *cmdobj, int fault)
 {
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
 	struct adreno_context *drawctxt =
-			drawobj ? ADRENO_CONTEXT(drawobj->context) : NULL;
+		drawobj ? ADRENO_CONTEXT(drawobj->context) : NULL;
 	unsigned int status, rptr, wptr, ib1sz, ib2sz;
 	uint64_t ib1base, ib2base;
 	bool gx_on = adreno_gx_is_on(adreno_dev);
@@ -1578,16 +1592,17 @@ static void adreno_fault_header(struct kgsl_device *device,
 
 	if (!gx_on) {
 		if (drawobj != NULL) {
-			pr_fault(device, drawobj,
+			pr_fault(
+				device, drawobj,
 				"%s fault ctx %u ctx_type %s ts %u and GX is OFF\n",
 				type, drawobj->context->id,
 				kgsl_context_type(drawctxt->type),
 				drawobj->timestamp);
 			pr_fault(device, drawobj, "cmdline: %s\n",
-					drawctxt->base.proc_priv->cmdline);
+				 drawctxt->base.proc_priv->cmdline);
 		} else
-			dev_err(device->dev, "RB[%d] : %s fault and GX is OFF\n",
-				id, type);
+			dev_err(device->dev,
+				"RB[%d] : %s fault and GX is OFF\n", id, type);
 
 		return;
 	}
@@ -1596,38 +1611,39 @@ static void adreno_fault_header(struct kgsl_device *device,
 	adreno_readreg(adreno_dev, ADRENO_REG_CP_RB_RPTR, &rptr);
 	adreno_readreg(adreno_dev, ADRENO_REG_CP_RB_WPTR, &wptr);
 	adreno_readreg64(adreno_dev, ADRENO_REG_CP_IB1_BASE,
-					  ADRENO_REG_CP_IB1_BASE_HI, &ib1base);
+			 ADRENO_REG_CP_IB1_BASE_HI, &ib1base);
 	adreno_readreg(adreno_dev, ADRENO_REG_CP_IB1_BUFSZ, &ib1sz);
 	adreno_readreg64(adreno_dev, ADRENO_REG_CP_IB2_BASE,
-					   ADRENO_REG_CP_IB2_BASE_HI, &ib2base);
+			 ADRENO_REG_CP_IB2_BASE_HI, &ib2base);
 	adreno_readreg(adreno_dev, ADRENO_REG_CP_IB2_BUFSZ, &ib2sz);
 
 	if (drawobj != NULL) {
 		drawctxt->base.total_fault_count++;
 		drawctxt->base.last_faulted_cmd_ts = drawobj->timestamp;
 
-		trace_adreno_gpu_fault(drawobj->context->id,
-			drawobj->timestamp,
-			status, rptr, wptr, ib1base, ib1sz,
-			ib2base, ib2sz, drawctxt->rb->id);
+		trace_adreno_gpu_fault(drawobj->context->id, drawobj->timestamp,
+				       status, rptr, wptr, ib1base, ib1sz,
+				       ib2base, ib2sz, drawctxt->rb->id);
 
-		pr_fault(device, drawobj,
-			"%s fault ctx %u ctx_type %s ts %u status %8.8X rb %4.4x/%4.4x ib1 %16.16llX/%4.4x ib2 %16.16llX/%4.4x\n",
+		pr_fault(
+			device, drawobj,
+			"%s fault ctx %u ctx_type %s ts %u status %8.8X rb %4.4x/%4.4x "
+			"ib1 %16.16llX/%4.4x ib2 %16.16llX/%4.4x\n",
 			type, drawobj->context->id,
-			kgsl_context_type(drawctxt->type),
-			drawobj->timestamp, status,
-			rptr, wptr, ib1base, ib1sz, ib2base, ib2sz);
+			kgsl_context_type(drawctxt->type), drawobj->timestamp,
+			status, rptr, wptr, ib1base, ib1sz, ib2base, ib2sz);
 
 		pr_fault(device, drawobj, "cmdline: %s\n",
-				drawctxt->base.proc_priv->cmdline);
+			 drawctxt->base.proc_priv->cmdline);
 
 		if (rb != NULL)
 			pr_fault(device, drawobj,
-				"%s fault rb %d rb sw r/w %4.4x/%4.4x\n",
-				type, rb->id, rptr, rb->wptr);
+				 "%s fault rb %d rb sw r/w %4.4x/%4.4x\n", type,
+				 rb->id, rptr, rb->wptr);
 	} else {
 		dev_err(device->dev,
-			"RB[%d] : %s fault status %8.8X rb %4.4x/%4.4x ib1 %16.16llX/%4.4x ib2 %16.16llX/%4.4x\n",
+			"RB[%d] : %s fault status %8.8X rb %4.4x/%4.4x ib1 %16.16llX/%4.4x "
+			"ib2 %16.16llX/%4.4x\n",
 			id, type, status, rptr, wptr, ib1base, ib1sz, ib2base,
 			ib2sz);
 		if (rb != NULL)
@@ -1638,13 +1654,13 @@ static void adreno_fault_header(struct kgsl_device *device,
 }
 
 void adreno_fault_skipcmd_detached(struct adreno_device *adreno_dev,
-				 struct adreno_context *drawctxt,
-				 struct kgsl_drawobj *drawobj)
+				   struct adreno_context *drawctxt,
+				   struct kgsl_drawobj *drawobj)
 {
 	if (test_bit(ADRENO_CONTEXT_SKIP_CMD, &drawctxt->base.priv) &&
-			kgsl_context_detached(&drawctxt->base)) {
+	    kgsl_context_detached(&drawctxt->base)) {
 		pr_context(KGSL_DEVICE(adreno_dev), drawobj->context,
-			"gpu detached context %d\n", drawobj->context->id);
+			   "gpu detached context %d\n", drawobj->context->id);
 		clear_bit(ADRENO_CONTEXT_SKIP_CMD, &drawctxt->base.priv);
 	}
 }
@@ -1661,9 +1677,8 @@ void adreno_fault_skipcmd_detached(struct adreno_device *adreno_dev,
  * @fault: The fault type
  */
 static void process_cmdobj_fault(struct kgsl_device *device,
-		struct kgsl_drawobj_cmd **replay, int count,
-		unsigned int base,
-		int fault)
+				 struct kgsl_drawobj_cmd **replay, int count,
+				 unsigned int base, int fault)
 {
 	struct kgsl_drawobj_cmd *cmdobj = replay[0];
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
@@ -1671,40 +1686,40 @@ static void process_cmdobj_fault(struct kgsl_device *device,
 	char *state = "failed";
 
 	/*
-	 * If GFT recovered more than X times in Y ms invalidate the context
-	 * and do not attempt recovery.
-	 * Example: X==3 and Y==3000 ms, GPU hung at 500ms, 1700ms, 25000ms and
-	 * 3000ms for the same context, we will not try FT and invalidate the
-	 * context @3000ms because context triggered GFT more than 3 times in
-	 * last 3 seconds. If a context caused recoverable GPU hangs
-	 * where 1st and 4th gpu hang are more than 3 seconds apart we
-	 * won't disable GFT and invalidate the context.
-	 */
+   * If GFT recovered more than X times in Y ms invalidate the context
+   * and do not attempt recovery.
+   * Example: X==3 and Y==3000 ms, GPU hung at 500ms, 1700ms, 25000ms and
+   * 3000ms for the same context, we will not try FT and invalidate the
+   * context @3000ms because context triggered GFT more than 3 times in
+   * last 3 seconds. If a context caused recoverable GPU hangs
+   * where 1st and 4th gpu hang are more than 3 seconds apart we
+   * won't disable GFT and invalidate the context.
+   */
 	if (test_bit(KGSL_FT_THROTTLE, &cmdobj->fault_policy)) {
 		if (ktime_ms_delta(ktime_get(), drawobj->context->fault_time) >
-				_fault_throttle_time) {
+		    _fault_throttle_time) {
 			drawobj->context->fault_time = ktime_get();
 			drawobj->context->fault_count = 1;
 		} else {
 			drawobj->context->fault_count++;
 			if (drawobj->context->fault_count >
-					_fault_throttle_burst) {
-				set_bit(KGSL_FT_DISABLE,
-						&cmdobj->fault_policy);
-				pr_context(device, drawobj->context,
-					 "gpu fault threshold exceeded %d faults in %d msecs\n",
-					 _fault_throttle_burst,
-					 _fault_throttle_time);
+			    _fault_throttle_burst) {
+				set_bit(KGSL_FT_DISABLE, &cmdobj->fault_policy);
+				pr_context(
+					device, drawobj->context,
+					"gpu fault threshold exceeded %d faults in %d msecs\n",
+					_fault_throttle_burst,
+					_fault_throttle_time);
 			}
 		}
 	}
 
 	/*
-	 * If FT is disabled for this cmdobj invalidate immediately
-	 */
+   * If FT is disabled for this cmdobj invalidate immediately
+   */
 
 	if (test_bit(KGSL_FT_DISABLE, &cmdobj->fault_policy) ||
-		test_bit(KGSL_FT_TEMP_DISABLE, &cmdobj->fault_policy)) {
+	    test_bit(KGSL_FT_TEMP_DISABLE, &cmdobj->fault_policy)) {
 		state = "skipped";
 		bitmap_zero(&cmdobj->fault_policy, BITS_PER_LONG);
 	}
@@ -1716,52 +1731,50 @@ static void process_cmdobj_fault(struct kgsl_device *device,
 	}
 
 	/*
-	 * Set a flag so we don't print another PM dump if the cmdobj fails
-	 * again on replay
-	 */
+   * Set a flag so we don't print another PM dump if the cmdobj fails
+   * again on replay
+   */
 
 	set_bit(KGSL_FT_SKIP_PMDUMP, &cmdobj->fault_policy);
 
 	/*
-	 * A hardware fault generally means something was deterministically
-	 * wrong with the cmdobj - no point in trying to replay it
-	 * Clear the replay bit and move on to the next policy level
-	 */
+   * A hardware fault generally means something was deterministically
+   * wrong with the cmdobj - no point in trying to replay it
+   * Clear the replay bit and move on to the next policy level
+   */
 
 	if (fault & ADRENO_HARD_FAULT)
 		clear_bit(KGSL_FT_REPLAY, &(cmdobj->fault_policy));
 
 	/*
-	 * A timeout fault means the IB timed out - clear the policy and
-	 * invalidate - this will clear the FT_SKIP_PMDUMP bit but that is okay
-	 * because we won't see this cmdobj again
-	 */
+   * A timeout fault means the IB timed out - clear the policy and
+   * invalidate - this will clear the FT_SKIP_PMDUMP bit but that is okay
+   * because we won't see this cmdobj again
+   */
 
 	if ((fault & ADRENO_TIMEOUT_FAULT) ||
-				(fault & ADRENO_CTX_DETATCH_TIMEOUT_FAULT))
+	    (fault & ADRENO_CTX_DETATCH_TIMEOUT_FAULT))
 		bitmap_zero(&cmdobj->fault_policy, BITS_PER_LONG);
 
 	/*
-	 * If the context had a GPU page fault then it is likely it would fault
-	 * again if replayed
-	 */
+   * If the context had a GPU page fault then it is likely it would fault
+   * again if replayed
+   */
 
-	if (test_bit(KGSL_CONTEXT_PRIV_PAGEFAULT,
-		     &drawobj->context->priv)) {
+	if (test_bit(KGSL_CONTEXT_PRIV_PAGEFAULT, &drawobj->context->priv)) {
 		/* we'll need to resume the mmu later... */
 		clear_bit(KGSL_FT_REPLAY, &cmdobj->fault_policy);
-		clear_bit(KGSL_CONTEXT_PRIV_PAGEFAULT,
-			  &drawobj->context->priv);
+		clear_bit(KGSL_CONTEXT_PRIV_PAGEFAULT, &drawobj->context->priv);
 	}
 
 	/*
-	 * Execute the fault tolerance policy. Each cmdobj stores the
-	 * current fault policy that was set when it was queued.
-	 * As the options are tried in descending priority
-	 * (REPLAY -> SKIPIBS -> SKIPFRAME -> NOTHING) the bits are cleared
-	 * from the cmdobj policy so the next thing can be tried if the
-	 * change comes around again
-	 */
+   * Execute the fault tolerance policy. Each cmdobj stores the
+   * current fault policy that was set when it was queued.
+   * As the options are tried in descending priority
+   * (REPLAY -> SKIPIBS -> SKIPFRAME -> NOTHING) the bits are cleared
+   * from the cmdobj policy so the next thing can be tried if the
+   * change comes around again
+   */
 
 	/* Replay the hanging cmdobj again */
 	if (test_and_clear_bit(KGSL_FT_REPLAY, &cmdobj->fault_policy)) {
@@ -1771,12 +1784,12 @@ static void process_cmdobj_fault(struct kgsl_device *device,
 	}
 
 	/*
-	 * Skip the last IB1 that was played but replay everything else.
-	 * Note that the last IB1 might not be in the "hung" cmdobj
-	 * because the CP may have caused a page-fault while it was prefetching
-	 * the next IB1/IB2. walk all outstanding commands and zap the
-	 * supposedly bad IB1 where ever it lurks.
-	 */
+   * Skip the last IB1 that was played but replay everything else.
+   * Note that the last IB1 might not be in the "hung" cmdobj
+   * because the CP may have caused a page-fault while it was prefetching
+   * the next IB1/IB2. walk all outstanding commands and zap the
+   * supposedly bad IB1 where ever it lurks.
+   */
 
 	if (test_and_clear_bit(KGSL_FT_SKIPIB, &cmdobj->fault_policy)) {
 		trace_adreno_cmdbatch_recovery(cmdobj, BIT(KGSL_FT_SKIPIB));
@@ -1784,8 +1797,8 @@ static void process_cmdobj_fault(struct kgsl_device *device,
 
 		for (i = 0; i < count; i++) {
 			if (replay[i] != NULL &&
-				DRAWOBJ(replay[i])->context->id ==
-					drawobj->context->id)
+			    DRAWOBJ(replay[i])->context->id ==
+				    drawobj->context->id)
 				_skip_ib(replay[i], base);
 		}
 
@@ -1803,22 +1816,21 @@ static void process_cmdobj_fault(struct kgsl_device *device,
 	}
 
 	if (test_and_clear_bit(KGSL_FT_SKIPFRAME, &cmdobj->fault_policy)) {
-		trace_adreno_cmdbatch_recovery(cmdobj,
-			BIT(KGSL_FT_SKIPFRAME));
+		trace_adreno_cmdbatch_recovery(cmdobj, BIT(KGSL_FT_SKIPFRAME));
 		set_bit(KGSL_FT_SKIPFRAME, &cmdobj->fault_recovery);
 
 		/*
-		 * Skip all the pending cmdobj's for this context until
-		 * the EOF frame is seen
-		 */
+     * Skip all the pending cmdobj's for this context until
+     * the EOF frame is seen
+     */
 		_skip_frame(cmdobj, replay, count);
 		return;
 	}
 
 	/* If we get here then all the policies failed */
 
-	pr_context(device, drawobj->context, "gpu %s ctx %d ts %u\n",
-		state, drawobj->context->id, drawobj->timestamp);
+	pr_context(device, drawobj->context, "gpu %s ctx %d ts %u\n", state,
+		   drawobj->context->id, drawobj->timestamp);
 
 	/* Mark the context as failed and invalidate it */
 	adreno_drawctxt_set_guilty(device, drawobj->context);
@@ -1833,9 +1845,8 @@ static void process_cmdobj_fault(struct kgsl_device *device,
  * @base: The IB1 base during the fault
  */
 static void recover_dispatch_q(struct kgsl_device *device,
-		struct adreno_dispatcher_drawqueue *dispatch_q,
-		int fault,
-		unsigned int base)
+			       struct adreno_dispatcher_drawqueue *dispatch_q,
+			       int fault, unsigned int base)
 {
 	struct adreno_device *adreno_dev = ADRENO_DEVICE(device);
 	struct kgsl_drawobj_cmd **replay;
@@ -1853,20 +1864,20 @@ static void recover_dispatch_q(struct kgsl_device *device,
 		/* Recovery failed - mark everybody on this q guilty */
 		while (ptr != dispatch_q->tail) {
 			struct kgsl_drawobj_cmd *cmdobj =
-						dispatch_q->cmd_q[ptr];
+				dispatch_q->cmd_q[ptr];
 			struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
 
 			adreno_drawctxt_set_guilty(device, drawobj->context);
 			kgsl_drawobj_destroy(drawobj);
 
 			ptr = DRAWQUEUE_NEXT(ptr,
-				ADRENO_DISPATCH_DRAWQUEUE_SIZE);
+					     ADRENO_DISPATCH_DRAWQUEUE_SIZE);
 		}
 
 		/*
-		 * Set the replay count to zero - this will ensure that the
-		 * hardware gets reset but nothing else gets played
-		 */
+     * Set the replay count to zero - this will ensure that the
+     * hardware gets reset but nothing else gets played
+     */
 
 		count = 0;
 		goto replay;
@@ -1881,8 +1892,7 @@ static void recover_dispatch_q(struct kgsl_device *device,
 	}
 
 	if (fault && count)
-		process_cmdobj_fault(device, replay,
-					count, base, fault);
+		process_cmdobj_fault(device, replay, count, base, fault);
 replay:
 	dispatch_q->inflight = 0;
 	dispatch_q->head = dispatch_q->tail = 0;
@@ -1891,16 +1901,15 @@ replay:
 
 	/* Replay the pending command buffers */
 	for (i = 0; i < count; i++) {
-
 		int ret;
 
 		if (replay[i] == NULL)
 			continue;
 
 		/*
-		 * Force the preamble on the first command (if applicable) to
-		 * avoid any strange stage issues
-		 */
+     * Force the preamble on the first command (if applicable) to
+     * avoid any strange stage issues
+     */
 
 		if (first == 0) {
 			set_bit(CMDOBJ_FORCE_PREAMBLE, &replay[i]->priv);
@@ -1908,29 +1917,30 @@ replay:
 		}
 
 		/*
-		 * Force each cmdobj to wait for idle - this avoids weird
-		 * CP parse issues
-		 */
+     * Force each cmdobj to wait for idle - this avoids weird
+     * CP parse issues
+     */
 
 		set_bit(CMDOBJ_WFI, &replay[i]->priv);
 
 		ret = sendcmd(adreno_dev, replay[i]);
 
 		/*
-		 * If sending the command fails, then try to recover by
-		 * invalidating the context
-		 */
+     * If sending the command fails, then try to recover by
+     * invalidating the context
+     */
 
 		if (ret) {
 			pr_context(device, replay[i]->base.context,
-				"gpu reset failed ctx %u ts %u\n",
-				replay[i]->base.context->id,
-				replay[i]->base.timestamp);
+				   "gpu reset failed ctx %u ts %u\n",
+				   replay[i]->base.context->id,
+				   replay[i]->base.timestamp);
 
 			/* Mark this context as guilty (failed recovery) */
-			adreno_drawctxt_set_guilty(device, replay[i]->base.context);
+			adreno_drawctxt_set_guilty(device,
+						   replay[i]->base.context);
 			remove_invalidated_cmdobjs(device, &replay[i],
-				count - i);
+						   count - i);
 		}
 	}
 
@@ -1941,7 +1951,8 @@ replay:
 }
 
 static void do_header_and_snapshot(struct kgsl_device *device, int fault,
-		struct adreno_ringbuffer *rb, struct kgsl_drawobj_cmd *cmdobj)
+				   struct adreno_ringbuffer *rb,
+				   struct kgsl_drawobj_cmd *cmdobj)
 {
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
 
@@ -1966,7 +1977,7 @@ static void do_header_and_snapshot(struct kgsl_device *device, int fault,
 
 	if (!(drawobj->context->flags & KGSL_CONTEXT_NO_SNAPSHOT))
 		kgsl_device_snapshot(device, drawobj->context, NULL,
-					fault & ADRENO_GMU_FAULT);
+				     fault & ADRENO_GMU_FAULT);
 }
 
 static int dispatcher_do_fault(struct adreno_device *adreno_dev)
@@ -1992,9 +2003,9 @@ static int dispatcher_do_fault(struct adreno_device *adreno_dev)
 	mutex_lock(&device->mutex);
 
 	/*
-	 * In the very unlikely case that the power is off, do nothing - the
-	 * state will be reset on power up and everybody will be happy
-	 */
+   * In the very unlikely case that the power is off, do nothing - the
+   * state will be reset on power up and everybody will be happy
+   */
 	if (!kgsl_state_is_awake(device)) {
 		mutex_unlock(&device->mutex);
 		return 0;
@@ -2003,23 +2014,23 @@ static int dispatcher_do_fault(struct adreno_device *adreno_dev)
 	/* Mask all GMU interrupts */
 	if (gmu_core_isenabled(device)) {
 		adreno_write_gmureg(adreno_dev,
-			ADRENO_REG_GMU_AO_HOST_INTERRUPT_MASK,
-			0xFFFFFFFF);
+				    ADRENO_REG_GMU_AO_HOST_INTERRUPT_MASK,
+				    0xFFFFFFFF);
 		adreno_write_gmureg(adreno_dev,
-			ADRENO_REG_GMU_GMU2HOST_INTR_MASK,
-			0xFFFFFFFF);
+				    ADRENO_REG_GMU_GMU2HOST_INTR_MASK,
+				    0xFFFFFFFF);
 	}
 
 	gx_on = adreno_gx_is_on(adreno_dev);
 
 	/*
-	 * On non-A3xx, read RBBM_STATUS3:SMMU_STALLED_ON_FAULT (BIT 24)
-	 * to tell if this function was entered after a pagefault. If so, only
-	 * proceed if the fault handler has already run in the IRQ thread,
-	 * else return early to give the fault handler a chance to run.
-	 */
-	if (!(fault & ADRENO_IOMMU_PAGE_FAULT) &&
-		!adreno_is_a3xx(adreno_dev) && gx_on) {
+   * On non-A3xx, read RBBM_STATUS3:SMMU_STALLED_ON_FAULT (BIT 24)
+   * to tell if this function was entered after a pagefault. If so, only
+   * proceed if the fault handler has already run in the IRQ thread,
+   * else return early to give the fault handler a chance to run.
+   */
+	if (!(fault & ADRENO_IOMMU_PAGE_FAULT) && !adreno_is_a3xx(adreno_dev) &&
+	    gx_on) {
 		unsigned int val;
 
 		adreno_readreg(adreno_dev, ADRENO_REG_RBBM_STATUS3, &val);
@@ -2037,20 +2048,20 @@ static int dispatcher_do_fault(struct adreno_device *adreno_dev)
 	adreno_dispatcher_stop_fault_timer(device);
 
 	/*
-	 * Deleting uninitialized timer will block for ever on kernel debug
-	 * disable build. Hence skip del timer if it is not initialized.
-	 */
+   * Deleting uninitialized timer will block for ever on kernel debug
+   * disable build. Hence skip del timer if it is not initialized.
+   */
 	if (adreno_is_preemption_enabled(adreno_dev))
 		del_timer_sync(&adreno_dev->preempt.timer);
 
 	if (gx_on)
 		adreno_readreg64(adreno_dev, ADRENO_REG_CP_RB_BASE,
-			ADRENO_REG_CP_RB_BASE_HI, &base);
+				 ADRENO_REG_CP_RB_BASE_HI, &base);
 
 	/*
-	 * Force the CP off for anything but a hard fault to make sure it is
-	 * good and stopped
-	 */
+   * Force the CP off for anything but a hard fault to make sure it is
+   * good and stopped
+   */
 	if (!(fault & ADRENO_HARD_FAULT) && gx_on) {
 		adreno_readreg(adreno_dev, ADRENO_REG_CP_ME_CNTL, &reg);
 		if (!adreno_is_a3xx(adreno_dev))
@@ -2060,11 +2071,11 @@ static int dispatcher_do_fault(struct adreno_device *adreno_dev)
 		adreno_writereg(adreno_dev, ADRENO_REG_CP_ME_CNTL, reg);
 	}
 	/*
-	 * retire cmdobj's from all the dispatch_q's before starting recovery
-	 */
-	FOR_EACH_RINGBUFFER(adreno_dev, rb, i) {
-		adreno_dispatch_retire_drawqueue(adreno_dev,
-			&(rb->dispatch_q));
+   * retire cmdobj's from all the dispatch_q's before starting recovery
+   */
+	FOR_EACH_RINGBUFFER(adreno_dev, rb, i)
+	{
+		adreno_dispatch_retire_drawqueue(adreno_dev, &(rb->dispatch_q));
 		/* Select the active dispatch_q */
 		if (base == rb->buffer_desc->gpuaddr) {
 			dispatch_q = &(rb->dispatch_q);
@@ -2083,10 +2094,11 @@ static int dispatcher_do_fault(struct adreno_device *adreno_dev)
 
 	if (gx_on)
 		adreno_readreg64(adreno_dev, ADRENO_REG_CP_IB1_BASE,
-			ADRENO_REG_CP_IB1_BASE_HI, &base);
+				 ADRENO_REG_CP_IB1_BASE_HI, &base);
 
-	if (!test_bit(KGSL_FT_PAGEFAULT_GPUHALT_ENABLE, &device->mmu.pfpolicy)
-		&& adreno_dev->cooperative_reset)
+	if (!test_bit(KGSL_FT_PAGEFAULT_GPUHALT_ENABLE,
+		      &device->mmu.pfpolicy) &&
+	    adreno_dev->cooperative_reset)
 		gmu_core_dev_cooperative_reset(device);
 
 	if (!(fault & ADRENO_GMU_FAULT_SKIP_SNAPSHOT))
@@ -2108,19 +2120,19 @@ static int dispatcher_do_fault(struct adreno_device *adreno_dev)
 	adreno_clear_gpu_halt(adreno_dev);
 
 	/*
-	 * If there is a stall in the ringbuffer after all commands have been
-	 * retired then we could hit problems if contexts are waiting for
-	 * internal timestamps that will never retire
-	 */
+   * If there is a stall in the ringbuffer after all commands have been
+   * retired then we could hit problems if contexts are waiting for
+   * internal timestamps that will never retire
+   */
 
 	if (hung_rb != NULL) {
 		kgsl_sharedmem_writel(device->memstore,
-			MEMSTORE_RB_OFFSET(hung_rb, soptimestamp),
-			hung_rb->timestamp);
+				      MEMSTORE_RB_OFFSET(hung_rb, soptimestamp),
+				      hung_rb->timestamp);
 
 		kgsl_sharedmem_writel(device->memstore,
-				MEMSTORE_RB_OFFSET(hung_rb, eoptimestamp),
-				hung_rb->timestamp);
+				      MEMSTORE_RB_OFFSET(hung_rb, eoptimestamp),
+				      hung_rb->timestamp);
 
 		/* Schedule any pending events to be run */
 		kgsl_process_event_group(device, &hung_rb->events);
@@ -2139,7 +2151,8 @@ static int dispatcher_do_fault(struct adreno_device *adreno_dev)
 	/* recover all the dispatch_q's starting with the one that hung */
 	if (dispatch_q)
 		recover_dispatch_q(device, dispatch_q, fault, base);
-	FOR_EACH_RINGBUFFER(adreno_dev, rb, i) {
+	FOR_EACH_RINGBUFFER(adreno_dev, rb, i)
+	{
 		dispatch_q_temp = &(rb->dispatch_q);
 		if (dispatch_q_temp != dispatch_q)
 			recover_dispatch_q(device, dispatch_q_temp, 0, base);
@@ -2151,7 +2164,7 @@ static int dispatcher_do_fault(struct adreno_device *adreno_dev)
 }
 
 static inline int drawobj_consumed(struct kgsl_drawobj *drawobj,
-		unsigned int consumed, unsigned int retired)
+				   unsigned int consumed, unsigned int retired)
 {
 	return ((timestamp_cmp(drawobj->timestamp, consumed) >= 0) &&
 		(timestamp_cmp(retired, drawobj->timestamp) < 0));
@@ -2180,26 +2193,27 @@ static const char *_ft_type(enum kgsl_ft_policy_bits nr)
 }
 
 static void _print_recovery(struct kgsl_device *device,
-		struct kgsl_drawobj_cmd *cmdobj)
+			    struct kgsl_drawobj_cmd *cmdobj)
 {
 	int nr = find_first_bit(&cmdobj->fault_recovery, BITS_PER_LONG);
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
 
-	pr_context(device, drawobj->context,
-		"gpu %s ctx %u ts %u policy %lX\n",
-		_ft_type(nr), drawobj->context->id, drawobj->timestamp,
-		cmdobj->fault_recovery);
+	pr_context(device, drawobj->context, "gpu %s ctx %u ts %u policy %lX\n",
+		   _ft_type(nr), drawobj->context->id, drawobj->timestamp,
+		   cmdobj->fault_recovery);
 }
 
 static void cmdobj_profile_ticks(struct adreno_device *adreno_dev,
-	struct kgsl_drawobj_cmd *cmdobj, uint64_t *start, uint64_t *retire,
-	uint64_t *active)
+				 struct kgsl_drawobj_cmd *cmdobj,
+				 uint64_t *start, uint64_t *retire,
+				 uint64_t *active)
 {
 	void *ptr = adreno_dev->profile_buffer->hostptr;
 	struct adreno_drawobj_profile_entry *entry;
 
-	entry = (struct adreno_drawobj_profile_entry *)
-		(ptr + (cmdobj->profile_index * sizeof(*entry)));
+	entry = (struct adreno_drawobj_profile_entry *)(ptr +
+							(cmdobj->profile_index *
+							 sizeof(*entry)));
 
 	/* get updated values of started and retired */
 	rmb();
@@ -2212,7 +2226,7 @@ static void cmdobj_profile_ticks(struct adreno_device *adreno_dev,
 }
 
 static void retire_cmdobj(struct adreno_device *adreno_dev,
-		struct kgsl_drawobj_cmd *cmdobj)
+			  struct kgsl_drawobj_cmd *cmdobj)
 {
 	struct adreno_dispatcher *dispatcher = &adreno_dev->dispatcher;
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
@@ -2220,7 +2234,7 @@ static void retire_cmdobj(struct adreno_device *adreno_dev,
 	struct adreno_ringbuffer *rb = drawctxt->rb;
 	struct kgsl_context *context = drawobj->context;
 	uint64_t start = 0, end = 0, active = 0;
-	struct retire_info info = {0};
+	struct retire_info info = { 0 };
 
 	if (cmdobj->fault_recovery != 0) {
 		set_bit(ADRENO_CONTEXT_FAULT, &drawobj->context->priv);
@@ -2239,13 +2253,13 @@ static void retire_cmdobj(struct adreno_device *adreno_dev,
 	info.active = active;
 
 	/* protected GPU work must not be reported */
-	if  (!(context->flags & KGSL_CONTEXT_SECURE))
+	if (!(context->flags & KGSL_CONTEXT_SECURE))
 		kgsl_work_period_update(KGSL_DEVICE(adreno_dev),
-					     context->proc_priv->period, active);
+					context->proc_priv->period, active);
 
 	msm_perf_events_update(MSM_PERF_GFX, MSM_PERF_RETIRED,
-			       pid_nr(context->proc_priv->pid),
-			       context->id, drawobj->timestamp,
+			       pid_nr(context->proc_priv->pid), context->id,
+			       drawobj->timestamp,
 			       !!(drawobj->flags & KGSL_DRAWOBJ_END_OF_FRAME));
 
 	if (drawobj->flags & KGSL_DRAWOBJ_END_OF_FRAME) {
@@ -2254,37 +2268,42 @@ static void retire_cmdobj(struct adreno_device *adreno_dev,
 	}
 
 	/*
-	 * For A3xx we still get the rptr from the CP_RB_RPTR instead of
-	 * rptr scratch out address. At this point GPU clocks turned off.
-	 * So avoid reading GPU register directly for A3xx.
-	 */
+   * For A3xx we still get the rptr from the CP_RB_RPTR instead of
+   * rptr scratch out address. At this point GPU clocks turned off.
+   * So avoid reading GPU register directly for A3xx.
+   */
 	if (adreno_is_a3xx(adreno_dev)) {
 		trace_adreno_cmdbatch_retired(drawobj->context, &info,
-			drawobj->flags, rb->dispatch_q.inflight,
-			cmdobj->fault_recovery);
+					      drawobj->flags,
+					      rb->dispatch_q.inflight,
+					      cmdobj->fault_recovery);
 	} else {
 		info.rptr = adreno_get_rptr(rb);
 		trace_adreno_cmdbatch_retired(drawobj->context, &info,
-			drawobj->flags, rb->dispatch_q.inflight,
-			cmdobj->fault_recovery);
+					      drawobj->flags,
+					      rb->dispatch_q.inflight,
+					      cmdobj->fault_recovery);
 	}
 
 	log_kgsl_cmdbatch_retired_event(context->id, drawobj->timestamp,
-		context->priority, drawobj->flags, start, end);
+					context->priority, drawobj->flags,
+					start, end);
 
 	drawctxt->submit_retire_ticks[drawctxt->ticks_index] =
 		end - cmdobj->submit_ticks;
 
-	drawctxt->ticks_index = (drawctxt->ticks_index + 1) %
-		SUBMIT_RETIRE_TICKS_SIZE;
+	drawctxt->ticks_index =
+		(drawctxt->ticks_index + 1) % SUBMIT_RETIRE_TICKS_SIZE;
 
 	trace_adreno_cmdbatch_done(drawobj->context->id,
-		drawobj->context->priority, drawobj->timestamp);
+				   drawobj->context->priority,
+				   drawobj->timestamp);
 	kgsl_drawobj_destroy(drawobj);
 }
 
-static int adreno_dispatch_retire_drawqueue(struct adreno_device *adreno_dev,
-		struct adreno_dispatcher_drawqueue *drawqueue)
+static int
+adreno_dispatch_retire_drawqueue(struct adreno_device *adreno_dev,
+				 struct adreno_dispatcher_drawqueue *drawqueue)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	struct adreno_dispatcher *dispatcher = &adreno_dev->dispatcher;
@@ -2296,7 +2315,7 @@ static int adreno_dispatch_retire_drawqueue(struct adreno_device *adreno_dev,
 		struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
 
 		if (!kgsl_check_timestamp(device, drawobj->context,
-			drawobj->timestamp))
+					  drawobj->timestamp))
 			break;
 
 		retire_cmdobj(adreno_dev, cmdobj);
@@ -2306,8 +2325,8 @@ static int adreno_dispatch_retire_drawqueue(struct adreno_device *adreno_dev,
 
 		drawqueue->cmd_q[drawqueue->head] = NULL;
 
-		drawqueue->head = DRAWQUEUE_NEXT(drawqueue->head,
-			ADRENO_DISPATCH_DRAWQUEUE_SIZE);
+		drawqueue->head = DRAWQUEUE_NEXT(
+			drawqueue->head, ADRENO_DISPATCH_DRAWQUEUE_SIZE);
 
 		count++;
 	}
@@ -2315,12 +2334,13 @@ static int adreno_dispatch_retire_drawqueue(struct adreno_device *adreno_dev,
 	return count;
 }
 
-static void _adreno_dispatch_check_timeout(struct adreno_device *adreno_dev,
-		struct adreno_dispatcher_drawqueue *drawqueue)
+static void
+_adreno_dispatch_check_timeout(struct adreno_device *adreno_dev,
+			       struct adreno_dispatcher_drawqueue *drawqueue)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 	struct kgsl_drawobj *drawobj =
-			DRAWOBJ(drawqueue->cmd_q[drawqueue->head]);
+		DRAWOBJ(drawqueue->cmd_q[drawqueue->head]);
 
 	/* Don't timeout if the timer hasn't expired yet (duh) */
 	if (time_is_after_jiffies(drawqueue->expires))
@@ -2335,19 +2355,20 @@ static void _adreno_dispatch_check_timeout(struct adreno_device *adreno_dev,
 		return;
 
 	pr_context(device, drawobj->context, "gpu timeout ctx %u ts %u\n",
-		drawobj->context->id, drawobj->timestamp);
+		   drawobj->context->id, drawobj->timestamp);
 
 	adreno_set_gpu_fault(adreno_dev, ADRENO_TIMEOUT_FAULT);
 
 	/*
-	 * This makes sure dispatcher doesn't run endlessly in cases where
-	 * we couldn't run recovery
-	 */
+   * This makes sure dispatcher doesn't run endlessly in cases where
+   * we couldn't run recovery
+   */
 	drawqueue->expires = jiffies + msecs_to_jiffies(adreno_drawobj_timeout);
 }
 
-static int adreno_dispatch_process_drawqueue(struct adreno_device *adreno_dev,
-		struct adreno_dispatcher_drawqueue *drawqueue)
+static int
+adreno_dispatch_process_drawqueue(struct adreno_device *adreno_dev,
+				  struct adreno_dispatcher_drawqueue *drawqueue)
 {
 	int count = adreno_dispatch_retire_drawqueue(adreno_dev, drawqueue);
 
@@ -2360,21 +2381,21 @@ static int adreno_dispatch_process_drawqueue(struct adreno_device *adreno_dev,
 		return count;
 
 	/*
-	 * If the current ringbuffer retired any commands then universally
-	 * reset the timeout
-	 */
+   * If the current ringbuffer retired any commands then universally
+   * reset the timeout
+   */
 
 	if (count) {
-		drawqueue->expires = jiffies +
-			msecs_to_jiffies(adreno_drawobj_timeout);
+		drawqueue->expires =
+			jiffies + msecs_to_jiffies(adreno_drawobj_timeout);
 		return count;
 	}
 
 	/*
-	 * If we get here then 1) the ringbuffer is current and 2) we haven't
-	 * retired anything.  Check to see if the timeout if valid for the
-	 * current drawobj and fault if it has expired
-	 */
+   * If we get here then 1) the ringbuffer is current and 2) we haven't
+   * retired anything.  Check to see if the timeout if valid for the
+   * current drawobj and fault if it has expired
+   */
 	_adreno_dispatch_check_timeout(adreno_dev, drawqueue);
 	return 0;
 }
@@ -2414,15 +2435,15 @@ static void adreno_dispatcher_work(struct kthread_work *work)
 	mutex_lock(&dispatcher->mutex);
 
 	/*
-	 * As long as there are inflight commands, process retired comamnds from
-	 * all drawqueues
-	 */
+   * As long as there are inflight commands, process retired comamnds from
+   * all drawqueues
+   */
 	for (i = 0; i < adreno_dev->num_ringbuffers; i++) {
 		struct adreno_dispatcher_drawqueue *drawqueue =
 			DRAWQUEUE(&adreno_dev->ringbuffers[i]);
 
 		count += adreno_dispatch_process_drawqueue(adreno_dev,
-			drawqueue);
+							   drawqueue);
 		if (dispatcher->inflight == 0)
 			break;
 	}
@@ -2430,11 +2451,10 @@ static void adreno_dispatcher_work(struct kthread_work *work)
 	kgsl_process_event_groups(device);
 
 	/*
-	 * dispatcher_do_fault() returns 0 if no faults occurred. If that is the
-	 * case, then clean up preemption and try to schedule more work
-	 */
+   * dispatcher_do_fault() returns 0 if no faults occurred. If that is the
+   * case, then clean up preemption and try to schedule more work
+   */
 	if (dispatcher_do_fault(adreno_dev) == 0) {
-
 		/* Clean up after preemption */
 		if (gpudev->preemption_schedule)
 			gpudev->preemption_schedule(adreno_dev);
@@ -2444,9 +2464,9 @@ static void adreno_dispatcher_work(struct kthread_work *work)
 	}
 
 	/*
-	 * If there are commands pending, update the timers, otherwise release
-	 * the power state to prepare for power down
-	 */
+   * If there are commands pending, update the timers, otherwise release
+   * the power state to prepare for power down
+   */
 	if (dispatcher->inflight > 0)
 		_dispatcher_update_timers(adreno_dev);
 	else
@@ -2469,14 +2489,13 @@ void adreno_dispatcher_schedule(struct kgsl_device *device)
  * for sync points or other concerns
  */
 static void adreno_dispatcher_queue_context(struct adreno_device *adreno_dev,
-	struct adreno_context *drawctxt)
+					    struct adreno_context *drawctxt)
 {
 	dispatcher_queue_context(adreno_dev, drawctxt);
 	adreno_dispatcher_schedule(KGSL_DEVICE(adreno_dev));
 }
 
-void adreno_dispatcher_fault(struct adreno_device *adreno_dev,
-		u32 fault)
+void adreno_dispatcher_fault(struct adreno_device *adreno_dev, u32 fault)
 {
 	adreno_set_gpu_fault(adreno_dev, fault);
 	adreno_dispatcher_schedule(KGSL_DEVICE(adreno_dev));
@@ -2489,8 +2508,8 @@ void adreno_dispatcher_fault(struct adreno_device *adreno_dev,
 static void adreno_dispatcher_timer(struct timer_list *t)
 {
 	struct adreno_dispatcher *dispatcher = from_timer(dispatcher, t, timer);
-	struct adreno_device *adreno_dev = container_of(dispatcher,
-					struct adreno_device, dispatcher);
+	struct adreno_device *adreno_dev =
+		container_of(dispatcher, struct adreno_device, dispatcher);
 
 	adreno_dispatcher_schedule(KGSL_DEVICE(adreno_dev));
 }
@@ -2524,7 +2543,8 @@ void adreno_dispatcher_stop(struct adreno_device *adreno_dev)
 }
 
 /* Return the ringbuffer that matches the draw context priority */
-static struct adreno_ringbuffer *dispatch_get_rb(struct adreno_device *adreno_dev,
+static struct adreno_ringbuffer *
+dispatch_get_rb(struct adreno_device *adreno_dev,
 		struct adreno_context *drawctxt)
 {
 	int level;
@@ -2534,17 +2554,18 @@ static struct adreno_ringbuffer *dispatch_get_rb(struct adreno_device *adreno_de
 		return &adreno_dev->ringbuffers[0];
 
 	/*
-	 * Math to convert the priority field in context structure to an RB ID.
-	 * Divide up the context priority based on number of ringbuffer levels.
-	 */
-	level = min_t(int, drawctxt->base.priority / adreno_dev->num_ringbuffers,
-		adreno_dev->num_ringbuffers - 1);
+   * Math to convert the priority field in context structure to an RB ID.
+   * Divide up the context priority based on number of ringbuffer levels.
+   */
+	level = min_t(int,
+		      drawctxt->base.priority / adreno_dev->num_ringbuffers,
+		      adreno_dev->num_ringbuffers - 1);
 
 	return &adreno_dev->ringbuffers[level];
 }
 
 static void adreno_dispatcher_setup_context(struct adreno_device *adreno_dev,
-		struct adreno_context *drawctxt)
+					    struct adreno_context *drawctxt)
 {
 	drawctxt->rb = dispatch_get_rb(adreno_dev, drawctxt);
 }
@@ -2558,12 +2579,14 @@ static void change_preemption(struct adreno_device *adreno_dev, void *priv)
 	int id, i, ret;
 
 	/* Make sure all ringbuffers are finished */
-	FOR_EACH_RINGBUFFER(adreno_dev, rb, i) {
+	FOR_EACH_RINGBUFFER(adreno_dev, rb, i)
+	{
 		ret = adreno_ringbuffer_waittimestamp(rb, rb->timestamp,
-			2 * 1000);
+						      2 * 1000);
 		if (ret) {
 			dev_err(device->dev,
-				"Cannot disable preemption because couldn't idle ringbuffer[%d] ret: %d\n",
+				"Cannot disable preemption because couldn't idle ringbuffer[%d] "
+				"ret: %d\n",
 				rb->id, ret);
 			return;
 		}
@@ -2581,11 +2604,12 @@ static void change_preemption(struct adreno_device *adreno_dev, void *priv)
 		drawctxt->rb = dispatch_get_rb(adreno_dev, drawctxt);
 
 		/*
-		 * Make sure context destroy checks against the correct
-		 * ringbuffer's timestamp.
-		 */
+     * Make sure context destroy checks against the correct
+     * ringbuffer's timestamp.
+     */
 		adreno_rb_readtimestamp(adreno_dev, drawctxt->rb,
-			KGSL_TIMESTAMP_RETIRED, &drawctxt->internal_timestamp);
+					KGSL_TIMESTAMP_RETIRED,
+					&drawctxt->internal_timestamp);
 	}
 	write_unlock(&device->context_lock);
 }
@@ -2593,7 +2617,7 @@ static void change_preemption(struct adreno_device *adreno_dev, void *priv)
 static int _preemption_store(struct adreno_device *adreno_dev, bool val)
 {
 	if (!adreno_preemption_feature_set(adreno_dev) ||
-		(test_bit(ADRENO_DEVICE_PREEMPTION, &adreno_dev->priv) == val))
+	    (test_bit(ADRENO_DEVICE_PREEMPTION, &adreno_dev->priv) == val))
 		return 0;
 
 	return adreno_power_cycle(adreno_dev, change_preemption, NULL);
@@ -2642,14 +2666,15 @@ static void adreno_dispatcher_close(struct adreno_device *adreno_dev)
 
 	adreno_dispatcher_stop_fault_timer(KGSL_DEVICE(adreno_dev));
 
-	FOR_EACH_RINGBUFFER(adreno_dev, rb, i) {
+	FOR_EACH_RINGBUFFER(adreno_dev, rb, i)
+	{
 		struct adreno_dispatcher_drawqueue *dispatch_q =
 			&(rb->dispatch_q);
 		while (!adreno_drawqueue_is_empty(dispatch_q)) {
 			kgsl_drawobj_destroy(
 				DRAWOBJ(dispatch_q->cmd_q[dispatch_q->head]));
-			dispatch_q->head = (dispatch_q->head + 1)
-				% ADRENO_DISPATCH_DRAWQUEUE_SIZE;
+			dispatch_q->head = (dispatch_q->head + 1) %
+					   ADRENO_DISPATCH_DRAWQUEUE_SIZE;
 		}
 	}
 
@@ -2671,19 +2696,19 @@ struct dispatcher_attribute {
 	ssize_t (*show)(struct adreno_dispatcher *dispatcher,
 			struct dispatcher_attribute *attr, char *buf);
 	ssize_t (*store)(struct adreno_dispatcher *dispatcher,
-			struct dispatcher_attribute *attr, const char *buf,
-			size_t count);
+			 struct dispatcher_attribute *attr, const char *buf,
+			 size_t count);
 	unsigned int max;
 	unsigned int *value;
 };
 
-#define DISPATCHER_UINT_ATTR(_name, _mode, _max, _value) \
-	struct dispatcher_attribute dispatcher_attr_##_name =  { \
+#define DISPATCHER_UINT_ATTR(_name, _mode, _max, _value)               \
+	struct dispatcher_attribute dispatcher_attr_##_name = {        \
 		.attr = { .name = __stringify(_name), .mode = _mode }, \
-		.show = _show_uint, \
-		.store = _store_uint, \
-		.max = _max, \
-		.value = &(_value), \
+		.show = _show_uint,                                    \
+		.store = _store_uint,                                  \
+		.max = _max,                                           \
+		.value = &(_value),                                    \
 	}
 
 #define to_dispatcher_attr(_a) \
@@ -2691,8 +2716,8 @@ struct dispatcher_attribute {
 #define to_dispatcher(k) container_of(k, struct adreno_dispatcher, kobj)
 
 static ssize_t _store_uint(struct adreno_dispatcher *dispatcher,
-		struct dispatcher_attribute *attr,
-		const char *buf, size_t size)
+			   struct dispatcher_attribute *attr, const char *buf,
+			   size_t size)
 {
 	unsigned int val = 0;
 	int ret;
@@ -2704,23 +2729,23 @@ static ssize_t _store_uint(struct adreno_dispatcher *dispatcher,
 	if (!val || (attr->max && (val > attr->max)))
 		return -EINVAL;
 
-	*((unsigned int *) attr->value) = val;
+	*((unsigned int *)attr->value) = val;
 	return size;
 }
 
 static ssize_t _show_uint(struct adreno_dispatcher *dispatcher,
-		struct dispatcher_attribute *attr,
-		char *buf)
+			  struct dispatcher_attribute *attr, char *buf)
 {
 	return scnprintf(buf, PAGE_SIZE, "%u\n",
-		*((unsigned int *) attr->value));
+			 *((unsigned int *)attr->value));
 }
 
 static DISPATCHER_UINT_ATTR(inflight, 0644, ADRENO_DISPATCH_DRAWQUEUE_SIZE,
-	_dispatcher_q_inflight_hi);
+			    _dispatcher_q_inflight_hi);
 
 static DISPATCHER_UINT_ATTR(inflight_low_latency, 0644,
-	ADRENO_DISPATCH_DRAWQUEUE_SIZE, _dispatcher_q_inflight_lo);
+			    ADRENO_DISPATCH_DRAWQUEUE_SIZE,
+			    _dispatcher_q_inflight_lo);
 /*
  * Our code that "puts back" a command from the context is much cleaner
  * if we are sure that there will always be enough room in the
@@ -2728,18 +2753,17 @@ static DISPATCHER_UINT_ATTR(inflight_low_latency, 0644,
  * ADRENO_CONTEXT_DRAWQUEUE_SIZE - 1
  */
 static DISPATCHER_UINT_ATTR(context_drawqueue_size, 0644,
-	ADRENO_CONTEXT_DRAWQUEUE_SIZE - 1, _context_drawqueue_size);
+			    ADRENO_CONTEXT_DRAWQUEUE_SIZE - 1,
+			    _context_drawqueue_size);
 static DISPATCHER_UINT_ATTR(context_burst_count, 0644, 0,
-	_context_drawobj_burst);
-static DISPATCHER_UINT_ATTR(drawobj_timeout, 0644, 0,
-	adreno_drawobj_timeout);
+			    _context_drawobj_burst);
+static DISPATCHER_UINT_ATTR(drawobj_timeout, 0644, 0, adreno_drawobj_timeout);
 static DISPATCHER_UINT_ATTR(context_queue_wait, 0644, 0, _context_queue_wait);
 static DISPATCHER_UINT_ATTR(fault_detect_interval, 0644, 0,
-	_fault_timer_interval);
-static DISPATCHER_UINT_ATTR(fault_throttle_time, 0644, 0,
-	_fault_throttle_time);
+			    _fault_timer_interval);
+static DISPATCHER_UINT_ATTR(fault_throttle_time, 0644, 0, _fault_throttle_time);
 static DISPATCHER_UINT_ATTR(fault_throttle_burst, 0644, 0,
-	_fault_throttle_burst);
+			    _fault_throttle_burst);
 
 static struct attribute *dispatcher_attrs[] = {
 	&dispatcher_attr_inflight.attr,
@@ -2757,7 +2781,7 @@ static struct attribute *dispatcher_attrs[] = {
 ATTRIBUTE_GROUPS(dispatcher);
 
 static ssize_t dispatcher_sysfs_show(struct kobject *kobj,
-				   struct attribute *attr, char *buf)
+				     struct attribute *attr, char *buf)
 {
 	struct adreno_dispatcher *dispatcher = to_dispatcher(kobj);
 	struct dispatcher_attribute *pattr = to_dispatcher_attr(attr);
@@ -2770,8 +2794,8 @@ static ssize_t dispatcher_sysfs_show(struct kobject *kobj,
 }
 
 static ssize_t dispatcher_sysfs_store(struct kobject *kobj,
-				    struct attribute *attr,
-				    const char *buf, size_t count)
+				      struct attribute *attr, const char *buf,
+				      size_t count)
 {
 	struct adreno_dispatcher *dispatcher = to_dispatcher(kobj);
 	struct dispatcher_attribute *pattr = to_dispatcher_attr(attr);
@@ -2817,7 +2841,7 @@ int adreno_dispatcher_init(struct adreno_device *adreno_dev)
 		return 0;
 
 	ret = kobject_init_and_add(&dispatcher->kobj, &ktype_dispatcher,
-		&device->dev->kobj, "dispatch");
+				   &device->dev->kobj, "dispatch");
 	if (ret)
 		return ret;
 
@@ -2873,9 +2897,9 @@ int adreno_dispatcher_idle(struct adreno_device *adreno_dev)
 		return 0;
 
 	/*
-	 * Ensure that this function is not called when dispatcher
-	 * mutex is held and device is started
-	 */
+   * Ensure that this function is not called when dispatcher
+   * mutex is held and device is started
+   */
 
 	if (WARN_ON(mutex_is_locked(&dispatcher->mutex)))
 		return -EDEADLK;
@@ -2885,14 +2909,14 @@ int adreno_dispatcher_idle(struct adreno_device *adreno_dev)
 	mutex_unlock(&device->mutex);
 
 	/*
-	 * Flush the worker to make sure all executing
-	 * or pending dispatcher works on worker are
-	 * finished
-	 */
+   * Flush the worker to make sure all executing
+   * or pending dispatcher works on worker are
+   * finished
+   */
 	kthread_flush_worker(dispatcher->worker);
 
-	ret = wait_for_completion_timeout(&dispatcher->idle_gate,
-			msecs_to_jiffies(ADRENO_IDLE_TIMEOUT));
+	ret = wait_for_completion_timeout(
+		&dispatcher->idle_gate, msecs_to_jiffies(ADRENO_IDLE_TIMEOUT));
 	if (ret == 0) {
 		ret = -ETIMEDOUT;
 		WARN(1, "Dispatcher halt timeout\n");
@@ -2905,9 +2929,9 @@ int adreno_dispatcher_idle(struct adreno_device *adreno_dev)
 	mutex_lock(&device->mutex);
 	adreno_put_gpu_halt(adreno_dev);
 	/*
-	 * requeue dispatcher work to resubmit pending commands
-	 * that may have been blocked due to this idling request
-	 */
+   * requeue dispatcher work to resubmit pending commands
+   * that may have been blocked due to this idling request
+   */
 	adreno_dispatcher_schedule(device);
 	return ret;
 }

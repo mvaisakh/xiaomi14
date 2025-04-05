@@ -27,21 +27,21 @@
 /*--------------------------------------------------------------------------
    Include Files
    ------------------------------------------------------------------------*/
+#include "epping_internal.h"
+#include "epping_main.h"
+#include "epping_test.h"
 #include <cds_api.h>
 #include <cds_sched.h>
+#include <linux/ctype.h>
 #include <linux/etherdevice.h>
 #include <linux/firmware.h>
-#include <wni_api.h>
-#include <wlan_ptt_sock_svc.h>
-#include <linux/wireless.h>
-#include <net/cfg80211.h>
 #include <linux/rtnetlink.h>
 #include <linux/semaphore.h>
-#include <linux/ctype.h>
-#include "epping_main.h"
-#include "epping_internal.h"
-#include "epping_test.h"
+#include <linux/wireless.h>
+#include <net/cfg80211.h>
 #include <wlan_hdd_napi.h>
+#include <wlan_ptt_sock_svc.h>
+#include <wni_api.h>
 
 #define AR6000_MAX_RX_BUFFERS 16
 #define AR6000_BUFFER_SIZE 1664
@@ -52,15 +52,16 @@ static bool enb_rx_dump;
 #ifdef HIF_SDIO
 void epping_refill(void *ctx, HTC_ENDPOINT_ID Endpoint)
 {
-	epping_context_t *pEpping_ctx = (epping_context_t *) ctx;
+	epping_context_t *pEpping_ctx = (epping_context_t *)ctx;
 	void *osBuf;
 	int RxBuffers;
 	int buffersToRefill;
 	HTC_PACKET *pPacket;
 	HTC_PACKET_QUEUE queue;
 
-	buffersToRefill = (int)AR6000_MAX_RX_BUFFERS -
-			  htc_get_num_recv_buffers(pEpping_ctx->HTCHandle, Endpoint);
+	buffersToRefill =
+		(int)AR6000_MAX_RX_BUFFERS -
+		htc_get_num_recv_buffers(pEpping_ctx->HTCHandle, Endpoint);
 
 	if (buffersToRefill <= 0) {
 		/* fast return, nothing to fill */
@@ -70,8 +71,8 @@ void epping_refill(void *ctx, HTC_ENDPOINT_ID Endpoint)
 	INIT_HTC_PACKET_QUEUE(&queue);
 
 	EPPING_LOG(QDF_TRACE_LEVEL_INFO,
-		   "%s: providing htc with %d buffers at eid=%d\n",
-		   __func__, buffersToRefill, Endpoint);
+		   "%s: providing htc with %d buffers at eid=%d\n", __func__,
+		   buffersToRefill, Endpoint);
 
 	for (RxBuffers = 0; RxBuffers < buffersToRefill; RxBuffers++) {
 		osBuf = qdf_nbuf_alloc(NULL, AR6000_BUFFER_SIZE,
@@ -80,8 +81,8 @@ void epping_refill(void *ctx, HTC_ENDPOINT_ID Endpoint)
 			break;
 		}
 		/* the HTC packet wrapper is at the head of the reserved area
-		 * in the skb */
-		pPacket = (HTC_PACKET *) (A_NETBUF_HEAD(osBuf));
+     * in the skb */
+		pPacket = (HTC_PACKET *)(A_NETBUF_HEAD(osBuf));
 		/* set re-fill info */
 		SET_HTC_PACKET_INFO_RX_REFILL(pPacket, osBuf,
 					      qdf_nbuf_data(osBuf),
@@ -100,17 +101,18 @@ void epping_refill(void *ctx, HTC_ENDPOINT_ID Endpoint)
 
 void epping_rx(void *ctx, HTC_PACKET *pPacket)
 {
-	epping_context_t *pEpping_ctx = (epping_context_t *) ctx;
+	epping_context_t *pEpping_ctx = (epping_context_t *)ctx;
 	epping_adapter_t *adapter = pEpping_ctx->epping_adapter;
 	struct net_device *dev = adapter->dev;
 	QDF_STATUS status = pPacket->Status;
 	HTC_ENDPOINT_ID eid = pPacket->Endpoint;
 	struct sk_buff *pktSkb = (struct sk_buff *)pPacket->pPktContext;
 
-	EPPING_LOG(QDF_TRACE_LEVEL_INFO,
-		   "%s: adapter = 0x%pK eid=%d, skb=0x%pK, data=0x%pK, len=0x%x status:%d",
-		   __func__, adapter, eid, pktSkb, pPacket->pBuffer,
-		   pPacket->ActualLength, status);
+	EPPING_LOG(
+		QDF_TRACE_LEVEL_INFO,
+		"%s: adapter = 0x%pK eid=%d, skb=0x%pK, data=0x%pK, len=0x%x status:%d",
+		__func__, adapter, eid, pktSkb, pPacket->pBuffer,
+		pPacket->ActualLength, status);
 
 	if (status != QDF_STATUS_SUCCESS) {
 		if (status != QDF_STATUS_E_CANCELED) {
@@ -140,10 +142,9 @@ void epping_rx(void *ctx, HTC_PACKET *pPacket)
 			else
 				netif_rx_ni(pktSkb);
 			if ((adapter->stats.rx_packets %
-				 EPPING_STATS_LOG_COUNT) == 0) {
+			     EPPING_STATS_LOG_COUNT) == 0) {
 				EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-					   "%s: total_rx_pkts = %lu",
-					   __func__,
+					   "%s: total_rx_pkts = %lu", __func__,
 					   adapter->stats.rx_packets);
 			}
 		} else {

@@ -21,31 +21,31 @@
  * DOC: defines driver functions interfacing with linux kernel
  */
 
-#include <qdf_list.h>
-#include <qdf_status.h>
-#include <linux/wireless.h>
-#include <linux/netdevice.h>
-#include <wlan_cfg80211.h>
-#include <wlan_osif_priv.h>
-#include <wlan_interop_issues_ap_ucfg_api.h>
-#include <wlan_cfg80211_interop_issues_ap.h>
-#include <osif_psoc_sync.h>
-#include <qdf_mem.h>
-#include <wlan_utility.h>
-#include "wlan_hdd_main.h"
 #include "cfg_ucfg_api.h"
+#include "wlan_hdd_main.h"
 #include "wlan_hdd_object_manager.h"
+#include <linux/netdevice.h>
+#include <linux/wireless.h>
+#include <osif_psoc_sync.h>
+#include <qdf_list.h>
+#include <qdf_mem.h>
+#include <qdf_status.h>
+#include <wlan_cfg80211.h>
+#include <wlan_cfg80211_interop_issues_ap.h>
+#include <wlan_interop_issues_ap_ucfg_api.h>
+#include <wlan_osif_priv.h>
+#include <wlan_utility.h>
 
-const struct nla_policy
-interop_issues_ap_policy[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_TYPE] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
-	[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_LIST] = {
-						.type = NLA_U32,
-						.len = sizeof(uint32_t) },
+const struct nla_policy interop_issues_ap_policy[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_MAX +
+						 1] = {
+	[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_TYPE] = { .type = NLA_U32,
+							  .len = sizeof(
+								  uint32_t) },
+	[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_LIST] = { .type = NLA_U32,
+							  .len = sizeof(
+								  uint32_t) },
 	[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_BSSID] =
-						VENDOR_NLA_POLICY_MAC_ADDR,
+		VENDOR_NLA_POLICY_MAC_ADDR,
 };
 
 /**
@@ -57,9 +57,8 @@ interop_issues_ap_policy[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_MAX + 1] = {
  *
  * Return: none
  */
-static void
-wlan_cfg80211_send_interop_issues_ap_cb(
-				struct wlan_interop_issues_ap_event *data)
+static void wlan_cfg80211_send_interop_issues_ap_cb(
+	struct wlan_interop_issues_ap_event *data)
 {
 	struct wlan_objmgr_pdev *pdev;
 	struct pdev_osif_priv *os_priv;
@@ -94,8 +93,7 @@ wlan_cfg80211_send_interop_issues_ap_cb(
 	osif_debug("interop issues ap mac:" QDF_MAC_ADDR_FMT,
 		   QDF_MAC_ADDR_REF(data->rap_addr.bytes));
 
-	if (nla_put(skb,
-		    QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_BSSID,
+	if (nla_put(skb, QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_BSSID,
 		    QDF_MAC_ADDR_SIZE, data->rap_addr.bytes)) {
 		osif_err("nla put fail");
 		wlan_cfg80211_vendor_free_skb(skb);
@@ -110,7 +108,7 @@ static void wlan_interop_issues_ap_register_cbk(struct wlan_objmgr_pdev *pdev)
 	struct wlan_interop_issues_ap_callbacks cb;
 
 	cb.os_if_interop_issues_ap_event_handler =
-					wlan_cfg80211_send_interop_issues_ap_cb;
+		wlan_cfg80211_send_interop_issues_ap_cb;
 	ucfg_register_interop_issues_ap_callback(pdev, &cb);
 }
 
@@ -121,9 +119,8 @@ static void wlan_interop_issues_ap_register_cbk(struct wlan_objmgr_pdev *pdev)
  *
  * Return: 0 on success; error number on failure
  */
-static int
-wlan_parse_interop_issues_ap(struct qdf_mac_addr *interop_issues_ap,
-			     struct nlattr *attr)
+static int wlan_parse_interop_issues_ap(struct qdf_mac_addr *interop_issues_ap,
+					struct nlattr *attr)
 {
 	struct nlattr *tb2[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_MAX + 1];
 	struct nlattr *curr_attr = NULL;
@@ -136,11 +133,10 @@ wlan_parse_interop_issues_ap(struct qdf_mac_addr *interop_issues_ap,
 			break;
 		}
 
-		if (wlan_cfg80211_nla_parse(tb2,
-				QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_MAX,
-				nla_data(curr_attr),
-				nla_len(curr_attr),
-				interop_issues_ap_policy)) {
+		if (wlan_cfg80211_nla_parse(
+			    tb2, QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_MAX,
+			    nla_data(curr_attr), nla_len(curr_attr),
+			    interop_issues_ap_policy)) {
 			osif_err("nla_parse failed");
 			return -EINVAL;
 		}
@@ -178,7 +174,7 @@ __wlan_cfg80211_set_interop_issues_ap_config(struct wiphy *wiphy,
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_MAX + 1];
 	struct nlattr *attr;
 	uint32_t count = 0;
-	struct wlan_interop_issues_ap_info interop_issues_ap = {0};
+	struct wlan_interop_issues_ap_info interop_issues_ap = { 0 };
 	struct wlan_objmgr_psoc *psoc;
 	struct wlan_objmgr_vdev *vdev;
 
@@ -203,17 +199,15 @@ __wlan_cfg80211_set_interop_issues_ap_config(struct wiphy *wiphy,
 
 	if (wlan_cfg80211_nla_parse(tb,
 				    QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_MAX,
-				    data, data_len,
-				    interop_issues_ap_policy)) {
+				    data, data_len, interop_issues_ap_policy)) {
 		osif_err("Invalid ATTR");
 		return -EINVAL;
 	}
 
 	attr = tb[QCA_WLAN_VENDOR_ATTR_INTEROP_ISSUES_AP_LIST];
 	if (attr) {
-		count =
-		     wlan_parse_interop_issues_ap(interop_issues_ap.rap_items,
-						  attr);
+		count = wlan_parse_interop_issues_ap(
+			interop_issues_ap.rap_items, attr);
 		if (count < 0)
 			return -EINVAL;
 	}
@@ -223,9 +217,9 @@ __wlan_cfg80211_set_interop_issues_ap_config(struct wiphy *wiphy,
 	interop_issues_ap.detect_enable = true;
 
 	/*
-	 * need to figure out a converged way of obtaining the vdev for
-	 * a given netdev that doesn't involve the legacy mechanism.
-	 */
+   * need to figure out a converged way of obtaining the vdev for
+   * a given netdev that doesn't involve the legacy mechanism.
+   */
 	ucfg_set_interop_issues_ap_config(psoc, &interop_issues_ap);
 
 	return 0;
@@ -242,8 +236,8 @@ int wlan_cfg80211_set_interop_issues_ap_config(struct wiphy *wiphy,
 	if (ret)
 		return ret;
 
-	ret = __wlan_cfg80211_set_interop_issues_ap_config(wiphy, wdev,
-							   data, data_len);
+	ret = __wlan_cfg80211_set_interop_issues_ap_config(wiphy, wdev, data,
+							   data_len);
 	osif_psoc_sync_op_stop(psoc_sync);
 
 	return ret;
@@ -252,12 +246,12 @@ int wlan_cfg80211_set_interop_issues_ap_config(struct wiphy *wiphy,
 void wlan_cfg80211_init_interop_issues_ap(struct wlan_objmgr_pdev *pdev)
 {
 	/*
-	 * the special mac is used to trigger uplayer sets
-	 * interop issues ap list to fw when driver reloads but
-	 * cnss-daemon does not restart.
-	 */
-	uint8_t fmac[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-	struct wlan_interop_issues_ap_info interop_issues_ap = {0};
+   * the special mac is used to trigger uplayer sets
+   * interop issues ap list to fw when driver reloads but
+   * cnss-daemon does not restart.
+   */
+	uint8_t fmac[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+	struct wlan_interop_issues_ap_info interop_issues_ap = { 0 };
 	struct wlan_interop_issues_ap_event data;
 	struct wlan_objmgr_psoc *psoc;
 

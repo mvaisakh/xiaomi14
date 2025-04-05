@@ -29,13 +29,13 @@
  * --------------------------------------------------------------------
  *
  */
-#include "cds_api.h"
 #include "ani_global.h"
+#include "cds_api.h"
 #include "wni_cfg.h"
 
-#include "sir_mac_prot_def.h"
-#include "sir_mac_prop_exts.h"
 #include "sir_common.h"
+#include "sir_mac_prop_exts.h"
+#include "sir_mac_prot_def.h"
 
 #include "lim_api.h"
 
@@ -45,8 +45,8 @@
 #include "lim_types.h"
 #include "lim_utils.h"
 
-#include "wma_types.h"
 #include "lim_mlo.h"
+#include "wma_types.h"
 
 #include <target_if_vdev_mgr_tx_ops.h>
 #include <wlan_cmn_ieee80211.h>
@@ -63,10 +63,10 @@
  */
 struct fd_action_header {
 	struct action_frm_hdr action_header;
-	uint16_t              fd_frame_cntl;
-	uint8_t               timestamp[WLAN_TIMESTAMP_LEN];
-	uint16_t              bcn_interval;
-	uint8_t               elem[];
+	uint16_t fd_frame_cntl;
+	uint8_t timestamp[WLAN_TIMESTAMP_LEN];
+	uint16_t bcn_interval;
+	uint8_t elem[];
 } qdf_packed;
 
 /**
@@ -82,9 +82,9 @@ struct tpe_ie {
 	struct ie_header tpe_header;
 	union {
 		struct {
-			uint8_t max_tx_pwr_count:3;
-			uint8_t max_tx_pwr_interpret:3;
-			uint8_t max_tx_pwr_category:2;
+			uint8_t max_tx_pwr_count : 3;
+			uint8_t max_tx_pwr_interpret : 3;
+			uint8_t max_tx_pwr_category : 2;
 		};
 		uint8_t tx_pwr_info;
 	};
@@ -111,8 +111,7 @@ static void lim_notify_link_info(struct pe_session *pe_session)
 	mlme_set_notify_co_located_ap_update_rnr(pe_session->vdev, false);
 	pe_debug("vdev id %d mlo notify beacon change info to partner link",
 		 wlan_vdev_get_id(pe_session->vdev));
-	lim_get_mlo_vdev_list(pe_session, &vdev_count,
-			      wlan_vdev_list);
+	lim_get_mlo_vdev_list(pe_session, &vdev_count, wlan_vdev_list);
 	for (link = 0; link < vdev_count; link++) {
 		if (!wlan_vdev_list[link])
 			continue;
@@ -149,7 +148,7 @@ static void lim_update_sch_mlo_partner(struct mac_context *mac,
 		bcn_info->beacon_interval = sch_info->beacon_interval;
 		bcn_info->csa_switch_count_offset = sch_info->bcn_csa_cnt_ofst;
 		bcn_info->ext_csa_switch_count_offset =
-					sch_info->bcn_ext_csa_cnt_ofst;
+			sch_info->bcn_ext_csa_cnt_ofst;
 	}
 }
 #else
@@ -204,12 +203,12 @@ static void lim_fd_cap_phymode_EHT(enum wlan_phymode phymode, uint8_t *fd_cap)
 	case WLAN_PHYMODE_11BEA_EHT80:
 	case WLAN_PHYMODE_11BEA_EHT160:
 	case WLAN_PHYMODE_11BEA_EHT320:
-		*fd_cap |= (WLAN_FD_CAP_PHY_INDEX_EHT <<
-						WLAN_FD_CAP_PHY_INDEX_S);
+		*fd_cap |=
+			(WLAN_FD_CAP_PHY_INDEX_EHT << WLAN_FD_CAP_PHY_INDEX_S);
 		break;
 	default:
-		*fd_cap |= (WLAN_FD_CAP_PHY_INDEX_NON_HT_OFDM <<
-						WLAN_FD_CAP_PHY_INDEX_S);
+		*fd_cap |= (WLAN_FD_CAP_PHY_INDEX_NON_HT_OFDM
+			    << WLAN_FD_CAP_PHY_INDEX_S);
 		break;
 	}
 }
@@ -222,8 +221,8 @@ static void lim_fd_cap_channel_width320(struct pe_session *pe_session,
 
 static void lim_fd_cap_phymode_EHT(enum wlan_phymode phymode, uint8_t *fd_cap)
 {
-	*fd_cap |= (WLAN_FD_CAP_PHY_INDEX_NON_HT_OFDM <<
-						WLAN_FD_CAP_PHY_INDEX_S);
+	*fd_cap |=
+		(WLAN_FD_CAP_PHY_INDEX_NON_HT_OFDM << WLAN_FD_CAP_PHY_INDEX_S);
 }
 #endif /* WLAN_FEATURE_11BE */
 
@@ -242,7 +241,7 @@ static void lim_populate_fd_capability(struct pe_session *pe_session,
 {
 	/* Setting ESS and Privacy bits */
 	fd_cap[0] |= ((!WLAN_FD_CAP_ESS_ENABLE << WLAN_FD_CAP_ESS_S) |
-		((pe_session->privacy) << WLAN_FD_CAP_PRIVACY_S));
+		      ((pe_session->privacy) << WLAN_FD_CAP_PRIVACY_S));
 
 	/* Channel Width Selection */
 	switch (pe_session->ch_width) {
@@ -257,8 +256,8 @@ static void lim_populate_fd_capability(struct pe_session *pe_session,
 		break;
 	case CH_WIDTH_160MHZ:
 	case CH_WIDTH_80P80MHZ:
-		fd_cap[0] |= (WLAN_FD_CHWIDTH_160_80_80 <<
-						WLAN_FD_CAP_BSS_CHWIDTH_S);
+		fd_cap[0] |= (WLAN_FD_CHWIDTH_160_80_80
+			      << WLAN_FD_CAP_BSS_CHWIDTH_S);
 		break;
 	default:
 		lim_fd_cap_channel_width320(pe_session, &fd_cap[0]);
@@ -295,16 +294,16 @@ static void lim_populate_fd_capability(struct pe_session *pe_session,
 	case WLAN_PHYMODE_11AXA_HE80:
 	case WLAN_PHYMODE_11AXA_HE160:
 	case WLAN_PHYMODE_11AXA_HE80_80:
-		fd_cap[1] |= (WLAN_FD_CAP_PHY_INDEX_HE <<
-					WLAN_FD_CAP_PHY_INDEX_S);
+		fd_cap[1] |=
+			(WLAN_FD_CAP_PHY_INDEX_HE << WLAN_FD_CAP_PHY_INDEX_S);
 		break;
 	case WLAN_PHYMODE_11AC_VHT20:
 	case WLAN_PHYMODE_11AC_VHT40:
 	case WLAN_PHYMODE_11AC_VHT80:
 	case WLAN_PHYMODE_11AC_VHT160:
 	case WLAN_PHYMODE_11AC_VHT80_80:
-		fd_cap[1] |= (WLAN_FD_CAP_PHY_INDEX_VHT <<
-					WLAN_FD_CAP_PHY_INDEX_S);
+		fd_cap[1] |=
+			(WLAN_FD_CAP_PHY_INDEX_VHT << WLAN_FD_CAP_PHY_INDEX_S);
 		break;
 	case WLAN_PHYMODE_11NA_HT20:
 	case WLAN_PHYMODE_11NG_HT20:
@@ -312,8 +311,8 @@ static void lim_populate_fd_capability(struct pe_session *pe_session,
 	case WLAN_PHYMODE_11NG_HT40MINUS:
 	case WLAN_PHYMODE_11NG_HT40:
 	case WLAN_PHYMODE_11NA_HT40:
-		fd_cap[1] |= (WLAN_FD_CAP_PHY_INDEX_HT <<
-					WLAN_FD_CAP_PHY_INDEX_S);
+		fd_cap[1] |=
+			(WLAN_FD_CAP_PHY_INDEX_HT << WLAN_FD_CAP_PHY_INDEX_S);
 		break;
 	default:
 		lim_fd_cap_phymode_EHT(cur_phymode, &fd_cap[1]);
@@ -340,9 +339,9 @@ static QDF_STATUS lim_populate_fd_tmpl_frame(struct mac_context *mac,
 	uint16_t fd_cntl_subfield = 0;
 	struct fd_action_header *fd_header;
 	struct wlan_objmgr_vdev *vdev;
-	uint8_t fd_cap[WLAN_FD_CAP_LEN] = {0};
+	uint8_t fd_cap[WLAN_FD_CAP_LEN] = { 0 };
 	uint8_t length = 0;
-	uint8_t ssid_len = 0, ssid[WLAN_SSID_MAX_LEN + 1] = {0};
+	uint8_t ssid_len = 0, ssid[WLAN_SSID_MAX_LEN + 1] = { 0 };
 	uint32_t shortssid;
 	uint16_t chwidth = pe_session->ch_width;
 	qdf_freq_t cur_chan_freq = pe_session->curr_op_freq;
@@ -382,15 +381,16 @@ static QDF_STATUS lim_populate_fd_tmpl_frame(struct mac_context *mac,
 	/* filling fd header */
 	fd_header = (struct fd_action_header *)frm;
 	fd_header->action_header.action_category = ACTION_CATEGORY_PUBLIC;
-	fd_header->action_header.action_code  = WLAN_ACTION_FILS_DISCOVERY;
+	fd_header->action_header.action_code = WLAN_ACTION_FILS_DISCOVERY;
 
 	/*
-	 * FILS DIscovery Frame Control Subfield - 2 byte
-	 * Enable Short SSID
-	 * When the Short SSID Indicator subfield is equal to 1,
-	 * the SSID Length subfield is equal to 3
-	 */
-	fd_cntl_subfield = WLAN_FD_SSID_LEN_PRES(WLAN_FD_FRAMECNTL_SHORTSSID_LEN);
+   * FILS DIscovery Frame Control Subfield - 2 byte
+   * Enable Short SSID
+   * When the Short SSID Indicator subfield is equal to 1,
+   * the SSID Length subfield is equal to 3
+   */
+	fd_cntl_subfield =
+		WLAN_FD_SSID_LEN_PRES(WLAN_FD_FRAMECNTL_SHORTSSID_LEN);
 	fd_cntl_subfield |= WLAN_FD_FRAMECNTL_SHORTSSID;
 
 	if (wlan_reg_is_6ghz_chan_freq(cur_chan_freq)) {
@@ -475,7 +475,7 @@ static QDF_STATUS lim_populate_fd_tmpl_frame(struct mac_context *mac,
 			}
 
 			/* +1 for including tx power info */
-			tpe_ie->tpe_header.ie_len  = tpe[idx].num_tx_power + 1;
+			tpe_ie->tpe_header.ie_len = tpe[idx].num_tx_power + 1;
 
 			if (tpe_ie->tpe_header.ie_len < WLAN_TPE_IE_MIN_LEN ||
 			    tpe_ie->tpe_header.ie_len > WLAN_TPE_IE_MAX_LEN) {
@@ -486,9 +486,9 @@ static QDF_STATUS lim_populate_fd_tmpl_frame(struct mac_context *mac,
 
 			tpe_ie->max_tx_pwr_count = tpe[idx].max_tx_pwr_count;
 			tpe_ie->max_tx_pwr_interpret =
-						tpe[idx].max_tx_pwr_interpret;
+				tpe[idx].max_tx_pwr_interpret;
 			tpe_ie->max_tx_pwr_category =
-						tpe[idx].max_tx_pwr_category;
+				tpe[idx].max_tx_pwr_category;
 			frm = &tpe_ie->elem[0];
 
 			for (i = 0; i < tpe[idx].num_tx_power; i++) {
@@ -512,8 +512,9 @@ static QDF_STATUS lim_populate_fd_tmpl_frame(struct mac_context *mac,
  *
  * return: status
  */
-static QDF_STATUS lim_send_fils_discovery_template(struct mac_context *mac,
-						   struct pe_session *pe_session)
+static QDF_STATUS
+lim_send_fils_discovery_template(struct mac_context *mac,
+				 struct pe_session *pe_session)
 {
 	struct fils_discovery_tmpl_params *fd_params;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -546,12 +547,11 @@ static QDF_STATUS lim_send_fils_discovery_template(struct mac_context *mac,
 			   fd_params->frm, n_bytes);
 
 	fd_params->tmpl_len = n_bytes;
-	fd_params->tmpl_len_aligned = roundup(fd_params->tmpl_len,
-					      sizeof(uint32_t));
+	fd_params->tmpl_len_aligned =
+		roundup(fd_params->tmpl_len, sizeof(uint32_t));
 
 	/* Sending data to wmi layer via target_if */
-	status = target_if_vdev_mgr_send_fd_tmpl(pe_session->vdev,
-						 fd_params);
+	status = target_if_vdev_mgr_send_fd_tmpl(pe_session->vdev, fd_params);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		pe_err("FAIL bytes %d retcode[%X]", n_bytes, status);
 	} else {
@@ -569,21 +569,21 @@ QDF_STATUS sch_send_beacon_req(struct mac_context *mac, uint8_t *beaconPayload,
 			       uint16_t size, struct pe_session *pe_session,
 			       enum sir_bcn_update_reason reason)
 {
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 	tpSendbeaconParams beaconParams = NULL;
 	QDF_STATUS retCode;
 
-	pe_debug("Indicating HAL to copy the beacon template [%d bytes] to memory, reason %d",
+	pe_debug(
+		"Indicating HAL to copy the beacon template [%d bytes] to memory, "
+		"reason %d",
 		size, reason);
 
-	if (LIM_IS_AP_ROLE(pe_session) &&
-	   (mac->sch.beacon_changed)) {
-		retCode = lim_send_probe_rsp_template_to_hal(mac,
-				pe_session,
-				&pe_session->DefProbeRspIeBitmap[0]);
+	if (LIM_IS_AP_ROLE(pe_session) && (mac->sch.beacon_changed)) {
+		retCode = lim_send_probe_rsp_template_to_hal(
+			mac, pe_session, &pe_session->DefProbeRspIeBitmap[0]);
 		if (QDF_STATUS_SUCCESS != retCode)
 			pe_err("FAILED to send probe response template with retCode %d",
-				retCode);
+			       retCode);
 		/*Fils Discovery Template */
 		retCode = lim_send_fils_discovery_template(mac, pe_session);
 		if (QDF_STATUS_SUCCESS != retCode)
@@ -604,7 +604,6 @@ QDF_STATUS sch_send_beacon_req(struct mac_context *mac, uint8_t *beaconPayload,
 	qdf_mem_copy(beaconParams->bssId, pe_session->bssId,
 		     sizeof(pe_session->bssId));
 
-
 	beaconParams->timIeOffset = pe_session->schBeaconOffsetBegin;
 	if (pe_session->dfsIncludeChanSwIe) {
 		beaconParams->csa_count_offset = mac->sch.csa_count_offset;
@@ -616,10 +615,8 @@ QDF_STATUS sch_send_beacon_req(struct mac_context *mac, uint8_t *beaconPayload,
 
 	/* p2pIeOffset should be atleast greater than timIeOffset */
 	if ((mac->sch.p2p_ie_offset != 0) &&
-	    (mac->sch.p2p_ie_offset <
-	     pe_session->schBeaconOffsetBegin)) {
-		pe_err("Invalid p2pIeOffset:[%d]",
-			mac->sch.p2p_ie_offset);
+	    (mac->sch.p2p_ie_offset < pe_session->schBeaconOffsetBegin)) {
+		pe_err("Invalid p2pIeOffset:[%d]", mac->sch.p2p_ie_offset);
 		QDF_ASSERT(0);
 		qdf_mem_free(beaconParams);
 		return QDF_STATUS_E_FAILURE;
@@ -627,15 +624,15 @@ QDF_STATUS sch_send_beacon_req(struct mac_context *mac, uint8_t *beaconPayload,
 	beaconParams->p2pIeOffset = mac->sch.p2p_ie_offset;
 
 	if (size > SIR_MAX_BEACON_SIZE) {
-		pe_err("beacon size (%d) exceed host limit %d",
-		       size, SIR_MAX_BEACON_SIZE);
+		pe_err("beacon size (%d) exceed host limit %d", size,
+		       SIR_MAX_BEACON_SIZE);
 		QDF_ASSERT(0);
 		qdf_mem_free(beaconParams);
 		return QDF_STATUS_E_FAILURE;
 	}
 	qdf_mem_copy(beaconParams->beacon, beaconPayload, size);
 
-	beaconParams->beaconLength = (uint32_t) size;
+	beaconParams->beaconLength = (uint32_t)size;
 	msgQ.bodyptr = beaconParams;
 	msgQ.bodyval = 0;
 
@@ -643,7 +640,7 @@ QDF_STATUS sch_send_beacon_req(struct mac_context *mac, uint8_t *beaconPayload,
 	retCode = wma_post_ctrl_msg(mac, &msgQ);
 	if (QDF_STATUS_SUCCESS != retCode)
 		pe_err("Posting SEND_BEACON_REQ to HAL failed, reason=%X",
-			retCode);
+		       retCode);
 
 	if (QDF_IS_STATUS_SUCCESS(retCode)) {
 		if (wlan_vdev_mlme_is_mlo_ap(pe_session->vdev))
@@ -671,7 +668,7 @@ static uint32_t lim_remove_p2p_ie_from_add_ie(struct mac_context *mac,
 
 	if (addIeWoP2pIe) {
 		while (left >= 2) {
-			elem_id  = ptr[0];
+			elem_id = ptr[0];
 			elem_len = ptr[1];
 			left -= 2;
 			if (elem_len > left) {
@@ -679,8 +676,7 @@ static uint32_t lim_remove_p2p_ie_from_add_ie(struct mac_context *mac,
 				return QDF_STATUS_E_FAILURE;
 			}
 			if ((elem_id == eid) &&
-				(!qdf_mem_cmp(&ptr[2],
-					"\x50\x6f\x9a\x09", 4))) {
+			    (!qdf_mem_cmp(&ptr[2], "\x50\x6f\x9a\x09", 4))) {
 				left -= elem_len;
 				ptr += (elem_len + 2);
 				qdf_mem_copy(&addIeWoP2pIe[offset], ptr, left);
@@ -699,7 +695,7 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 					    struct pe_session *pe_session,
 					    uint32_t *IeBitmap)
 {
-	struct scheduler_msg msgQ = {0};
+	struct scheduler_msg msgQ = { 0 };
 	uint8_t *pFrame2Hal = pe_session->pSchProbeRspTemplate;
 	tpSendProbeRespParams pprobeRespParams = NULL;
 	uint32_t retCode = QDF_STATUS_E_FAILURE;
@@ -721,22 +717,22 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 	addnIEPresent = (pe_session->add_ie_params.probeRespDataLen != 0);
 	if (addnIEPresent) {
 		/*
-		* probe response template should not have P2P IE.
-		* In case probe request has P2P IE or WPS IE, the
-		* probe request will be forwarded to the Host and
-		* Host will send the probe response. In other cases
-		* FW will send the probe response. So, if the template
-		* has P2P IE, the probe response sent to non P2P devices
-		* by the FW, may also have P2P IE which will fail
-		* P2P cert case 6.1.3
-		*/
-		addIeWoP2pIe = qdf_mem_malloc(pe_session->add_ie_params.
-						probeRespDataLen);
+     * probe response template should not have P2P IE.
+     * In case probe request has P2P IE or WPS IE, the
+     * probe request will be forwarded to the Host and
+     * Host will send the probe response. In other cases
+     * FW will send the probe response. So, if the template
+     * has P2P IE, the probe response sent to non P2P devices
+     * by the FW, may also have P2P IE which will fail
+     * P2P cert case 6.1.3
+     */
+		addIeWoP2pIe = qdf_mem_malloc(
+			pe_session->add_ie_params.probeRespDataLen);
 		if (!addIeWoP2pIe)
 			return QDF_STATUS_E_NOMEM;
 
-		retStatus = lim_remove_p2p_ie_from_add_ie(mac, pe_session,
-					addIeWoP2pIe, &addnIELenWoP2pIe);
+		retStatus = lim_remove_p2p_ie_from_add_ie(
+			mac, pe_session, addIeWoP2pIe, &addnIELenWoP2pIe);
 		if (retStatus != QDF_STATUS_SUCCESS) {
 			qdf_mem_free(addIeWoP2pIe);
 			return QDF_STATUS_E_FAILURE;
@@ -759,8 +755,8 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 
 		qdf_mem_zero((uint8_t *)&extracted_extcap,
 			     sizeof(tDot11fIEExtCap));
-		status = lim_strip_extcap_update_struct(mac, addIE,
-				&addn_ielen, &extracted_extcap);
+		status = lim_strip_extcap_update_struct(mac, addIE, &addn_ielen,
+							&extracted_extcap);
 		if (QDF_STATUS_SUCCESS != status) {
 			pe_debug("extcap not extracted");
 		} else {
@@ -769,29 +765,29 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 	}
 
 	/*
-	 * Extcap IE now support variable length, merge Extcap IE from addn_ie
-	 * may change the frame size. Therefore, MUST merge ExtCap IE before
-	 * dot11f get packed payload size.
-	 */
+   * Extcap IE now support variable length, merge Extcap IE from addn_ie
+   * may change the frame size. Therefore, MUST merge ExtCap IE before
+   * dot11f get packed payload size.
+   */
 	prb_rsp_frm = &pe_session->probeRespFrame;
 	if (extcap_present) {
-		lim_merge_extcap_struct(&prb_rsp_frm->ExtCap,
-					&extracted_extcap,
+		lim_merge_extcap_struct(&prb_rsp_frm->ExtCap, &extracted_extcap,
 					true);
 		populate_dot11f_bcn_prot_extcaps(mac, pe_session,
 						 &prb_rsp_frm->ExtCap);
 	}
 
-	nStatus = dot11f_get_packed_probe_response_size(mac,
-			&pe_session->probeRespFrame, &nPayload);
+	nStatus = dot11f_get_packed_probe_response_size(
+		mac, &pe_session->probeRespFrame, &nPayload);
 	if (DOT11F_FAILED(nStatus)) {
 		pe_err("Failed to calculate the packed size for a Probe Response (0x%08x)",
-			nStatus);
+		       nStatus);
 		/* We'll fall back on the worst case scenario: */
 		nPayload = sizeof(tDot11fProbeResponse);
 	} else if (DOT11F_WARNED(nStatus)) {
-		pe_err("There were warnings while calculating the packed size for a Probe Response (0x%08x)",
-			nStatus);
+		pe_err("There were warnings while calculating the packed size for a Probe "
+		       "Response (0x%08x)",
+		       nStatus);
 	}
 
 	mlo_ie_len = lim_get_frame_mlo_ie_len(pe_session);
@@ -801,7 +797,7 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 		if ((nBytes + addn_ielen) <= SIR_MAX_PROBE_RESP_SIZE)
 			nBytes += addn_ielen;
 		else
-			addnIEPresent = false;  /* Dont include the IE. */
+			addnIEPresent = false; /* Dont include the IE. */
 	}
 
 	/* Make sure we are not exceeding allocated len */
@@ -816,35 +812,34 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 
 	/* Next, we fill out the buffer descriptor: */
 	lim_populate_mac_header(mac, pFrame2Hal, SIR_MAC_MGMT_FRAME,
-					     SIR_MAC_MGMT_PROBE_RSP,
-					     pe_session->self_mac_addr,
-					     pe_session->self_mac_addr);
+				SIR_MAC_MGMT_PROBE_RSP,
+				pe_session->self_mac_addr,
+				pe_session->self_mac_addr);
 
-	pMacHdr = (tpSirMacMgmtHdr) pFrame2Hal;
+	pMacHdr = (tpSirMacMgmtHdr)pFrame2Hal;
 
 	sir_copy_mac_addr(pMacHdr->bssId, pe_session->bssId);
 
 	/* That done, pack the Probe Response: */
-	nStatus =
-		dot11f_pack_probe_response(mac, &pe_session->probeRespFrame,
-					   pFrame2Hal + sizeof(tSirMacMgmtHdr),
-					   nPayload, &nPayload);
+	nStatus = dot11f_pack_probe_response(
+		mac, &pe_session->probeRespFrame,
+		pFrame2Hal + sizeof(tSirMacMgmtHdr), nPayload, &nPayload);
 
 	if (DOT11F_FAILED(nStatus)) {
-		pe_err("Failed to pack a Probe Response (0x%08x)",
-			nStatus);
+		pe_err("Failed to pack a Probe Response (0x%08x)", nStatus);
 
 		qdf_mem_free(addIE);
 		return retCode; /* allocated! */
 	} else if (DOT11F_WARNED(nStatus)) {
 		pe_warn("There were warnings while packing a P"
-			"robe Response (0x%08x)", nStatus);
+			"robe Response (0x%08x)",
+			nStatus);
 	}
 
 	if (mlo_ie_len) {
-		status = lim_fill_complete_mlo_ie(pe_session, mlo_ie_len,
-					 pFrame2Hal + sizeof(tSirMacMgmtHdr) +
-					      nPayload);
+		status = lim_fill_complete_mlo_ie(
+			pe_session, mlo_ie_len,
+			pFrame2Hal + sizeof(tSirMacMgmtHdr) + nPayload);
 		if (QDF_IS_STATUS_ERROR(status)) {
 			pe_debug("assemble ml ie error");
 			mlo_ie_len = 0;
@@ -853,8 +848,8 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 	}
 
 	if (addnIEPresent) {
-		qdf_mem_copy(&pFrame2Hal[nBytes - addn_ielen],
-			     &addIE[0], addn_ielen);
+		qdf_mem_copy(&pFrame2Hal[nBytes - addn_ielen], &addIE[0],
+			     addn_ielen);
 	}
 
 	qdf_mem_free(addIE);
@@ -864,8 +859,8 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 		pe_err("malloc failed for bytes %d", nBytes);
 	} else {
 		sir_copy_mac_addr(pprobeRespParams->bssId, pe_session->bssId);
-		qdf_mem_copy(pprobeRespParams->probeRespTemplate,
-			     pFrame2Hal, nBytes);
+		qdf_mem_copy(pprobeRespParams->probeRespTemplate, pFrame2Hal,
+			     nBytes);
 		pprobeRespParams->probeRespTemplateLen = nBytes;
 		qdf_mem_copy(pprobeRespParams->ucProxyProbeReqValidIEBmap,
 			     IeBitmap, (sizeof(uint32_t) * 8));
@@ -879,7 +874,8 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
 			pe_err("FAIL bytes %d retcode[%X]", nBytes, retCode);
 			qdf_mem_free(pprobeRespParams);
 		} else {
-			pe_debug("Probe response template msg posted to HAL of bytes %d",
+			pe_debug(
+				"Probe response template msg posted to HAL of bytes %d",
 				nBytes);
 		}
 	}
@@ -897,15 +893,17 @@ uint32_t lim_send_probe_rsp_template_to_hal(struct mac_context *mac,
  *
  * Return: the length of the buffer on success and error code on failure.
  */
-int sch_gen_timing_advert_frame(struct mac_context *mac_ctx, tSirMacAddr self_addr,
-	uint8_t **buf, uint32_t *timestamp_offset, uint32_t *time_value_offset)
+int sch_gen_timing_advert_frame(struct mac_context *mac_ctx,
+				tSirMacAddr self_addr, uint8_t **buf,
+				uint32_t *timestamp_offset,
+				uint32_t *time_value_offset)
 {
 	tDot11fTimingAdvertisementFrame frame = {};
 	uint32_t payload_size, buf_size;
 	QDF_STATUS status;
 	uint32_t ret;
 	struct qdf_mac_addr wildcard_bssid = {
-		{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+		{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF },
 	};
 
 	/* Populate the TA fields */
@@ -915,8 +913,8 @@ int sch_gen_timing_advert_frame(struct mac_context *mac_ctx, tSirMacAddr self_ad
 		return qdf_status_to_os_return(status);
 	}
 
-	ret = dot11f_get_packed_timing_advertisement_frame_size(mac_ctx,
-		&frame, &payload_size);
+	ret = dot11f_get_packed_timing_advertisement_frame_size(mac_ctx, &frame,
+								&payload_size);
 	if (DOT11F_FAILED(ret)) {
 		pe_err("Error getting packed frame size %x", ret);
 		return -EINVAL;
@@ -930,9 +928,9 @@ int sch_gen_timing_advert_frame(struct mac_context *mac_ctx, tSirMacAddr self_ad
 		return -ENOMEM;
 
 	payload_size = 0;
-	ret = dot11f_pack_timing_advertisement_frame(mac_ctx, &frame,
-		*buf + sizeof(tSirMacMgmtHdr), buf_size -
-		sizeof(tSirMacMgmtHdr), &payload_size);
+	ret = dot11f_pack_timing_advertisement_frame(
+		mac_ctx, &frame, *buf + sizeof(tSirMacMgmtHdr),
+		buf_size - sizeof(tSirMacMgmtHdr), &payload_size);
 	pe_debug("TA payload size2 = %d", payload_size);
 	if (DOT11F_FAILED(ret)) {
 		pe_err("Error packing frame %x", ret);
@@ -942,17 +940,19 @@ int sch_gen_timing_advert_frame(struct mac_context *mac_ctx, tSirMacAddr self_ad
 		pe_warn("Warning packing frame");
 
 	lim_populate_mac_header(mac_ctx, *buf, SIR_MAC_MGMT_FRAME,
-		SIR_MAC_MGMT_TIME_ADVERT, wildcard_bssid.bytes, self_addr);
+				SIR_MAC_MGMT_TIME_ADVERT, wildcard_bssid.bytes,
+				self_addr);
 
 	/* The timestamp field is right after the header */
 	*timestamp_offset = sizeof(tSirMacMgmtHdr);
 
 	*time_value_offset = sizeof(tSirMacMgmtHdr) +
-		sizeof(tDot11fFfTimeStamp) + sizeof(tDot11fFfCapabilities);
+			     sizeof(tDot11fFfTimeStamp) +
+			     sizeof(tDot11fFfCapabilities);
 
 	/* Add the Country IE length */
 	dot11f_get_packed_ie_country(mac_ctx, &frame.Country,
-		time_value_offset);
+				     time_value_offset);
 	/* Add 2 for Country IE EID and Length fields */
 	*time_value_offset += 2;
 

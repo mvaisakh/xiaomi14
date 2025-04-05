@@ -5,11 +5,11 @@
  *
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
-#include "sde_hwio.h"
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
+#include "sde_dbg.h"
 #include "sde_hw_catalog.h"
 #include "sde_hw_top.h"
-#include "sde_dbg.h"
+#include "sde_hwio.h"
 #include "sde_kms.h"
 
 #define UIDLE_CTL 0x0
@@ -39,15 +39,13 @@
 #define UIDLE_MIN_GATE_CNTR 0x68
 #define UIDLE_MAX_GATE_CNTR 0x6c
 
-static const struct sde_uidle_cfg *_top_offset(enum sde_uidle uidle,
-		struct sde_mdss_cfg *m, void __iomem *addr,
-		unsigned long len, struct sde_hw_blk_reg_map *b)
+static const struct sde_uidle_cfg *
+_top_offset(enum sde_uidle uidle, struct sde_mdss_cfg *m, void __iomem *addr,
+	    unsigned long len, struct sde_hw_blk_reg_map *b)
 {
-
 	/* Make sure length of regs offsets is within the mapped memory */
 	if ((uidle == m->uidle_cfg.id) &&
-		(m->uidle_cfg.base + m->uidle_cfg.len) < len) {
-
+	    (m->uidle_cfg.base + m->uidle_cfg.len) < len) {
 		b->base_off = addr;
 		b->blk_off = m->uidle_cfg.base;
 		b->length = m->uidle_cfg.len;
@@ -59,62 +57,46 @@ static const struct sde_uidle_cfg *_top_offset(enum sde_uidle uidle,
 	}
 
 	SDE_ERROR("wrong uidle mapping params, will disable UIDLE!\n");
-	SDE_ERROR("base_off:0x%pK id:%d base:0x%x len:%d mmio_len:%ld\n",
-		addr, m->uidle_cfg.id, m->uidle_cfg.base,
-		m->uidle_cfg.len, len);
+	SDE_ERROR("base_off:0x%pK id:%d base:0x%x len:%d mmio_len:%ld\n", addr,
+		  m->uidle_cfg.id, m->uidle_cfg.base, m->uidle_cfg.len, len);
 	m->uidle_cfg.uidle_rev = 0;
 
 	return ERR_PTR(-EINVAL);
 }
 
 void sde_hw_uidle_get_status(struct sde_hw_uidle *uidle,
-		struct sde_uidle_status *status)
+			     struct sde_uidle_status *status)
 {
 	struct sde_hw_blk_reg_map *c = &uidle->hw;
 
-	status->uidle_danger_status_0 =
-		SDE_REG_READ(c, UIDLE_DANGER_STATUS_0);
-	status->uidle_danger_status_1 =
-		SDE_REG_READ(c, UIDLE_DANGER_STATUS_1);
-	status->uidle_safe_status_0 =
-		SDE_REG_READ(c, UIDLE_SAFE_STATUS_0);
-	status->uidle_safe_status_1 =
-		SDE_REG_READ(c, UIDLE_SAFE_STATUS_1);
-	status->uidle_idle_status_0 =
-		SDE_REG_READ(c, UIDLE_IDLE_STATUS_0);
-	status->uidle_idle_status_1 =
-		SDE_REG_READ(c, UIDLE_IDLE_STATUS_1);
-	status->uidle_fal_status_0 =
-		SDE_REG_READ(c, UIDLE_FAL_STATUS_0);
-	status->uidle_fal_status_1 =
-		SDE_REG_READ(c, UIDLE_FAL_STATUS_1);
+	status->uidle_danger_status_0 = SDE_REG_READ(c, UIDLE_DANGER_STATUS_0);
+	status->uidle_danger_status_1 = SDE_REG_READ(c, UIDLE_DANGER_STATUS_1);
+	status->uidle_safe_status_0 = SDE_REG_READ(c, UIDLE_SAFE_STATUS_0);
+	status->uidle_safe_status_1 = SDE_REG_READ(c, UIDLE_SAFE_STATUS_1);
+	status->uidle_idle_status_0 = SDE_REG_READ(c, UIDLE_IDLE_STATUS_0);
+	status->uidle_idle_status_1 = SDE_REG_READ(c, UIDLE_IDLE_STATUS_1);
+	status->uidle_fal_status_0 = SDE_REG_READ(c, UIDLE_FAL_STATUS_0);
+	status->uidle_fal_status_1 = SDE_REG_READ(c, UIDLE_FAL_STATUS_1);
 
-	status->uidle_status =
-		SDE_REG_READ(c, UIDLE_STATUS);
-	status->uidle_en_fal10 =
-		(status->uidle_status & BIT(2)) ? 1 : 0;
+	status->uidle_status = SDE_REG_READ(c, UIDLE_STATUS);
+	status->uidle_en_fal10 = (status->uidle_status & BIT(2)) ? 1 : 0;
 }
 
 void sde_hw_uidle_get_cntr(struct sde_hw_uidle *uidle,
-		struct sde_uidle_cntr *cntr)
+			   struct sde_uidle_cntr *cntr)
 {
 	struct sde_hw_blk_reg_map *c = &uidle->hw;
 	u32 reg_val;
 
-	cntr->fal1_gate_cntr =
-		SDE_REG_READ(c, UIDLE_FAL1_GATE_CNTR);
-	cntr->fal10_gate_cntr =
-		SDE_REG_READ(c, UIDLE_FAL10_GATE_CNTR);
-	cntr->fal_wait_gate_cntr =
-		SDE_REG_READ(c, UIDLE_FAL_WAIT_GATE_CNTR);
+	cntr->fal1_gate_cntr = SDE_REG_READ(c, UIDLE_FAL1_GATE_CNTR);
+	cntr->fal10_gate_cntr = SDE_REG_READ(c, UIDLE_FAL10_GATE_CNTR);
+	cntr->fal_wait_gate_cntr = SDE_REG_READ(c, UIDLE_FAL_WAIT_GATE_CNTR);
 	cntr->fal1_num_transitions_cntr =
 		SDE_REG_READ(c, UIDLE_FAL1_NUM_TRANSITIONS_CNTR);
 	cntr->fal10_num_transitions_cntr =
 		SDE_REG_READ(c, UIDLE_FAL10_NUM_TRANSITIONS_CNTR);
-	cntr->min_gate_cntr =
-		SDE_REG_READ(c, UIDLE_MIN_GATE_CNTR);
-	cntr->max_gate_cntr =
-		SDE_REG_READ(c, UIDLE_MAX_GATE_CNTR);
+	cntr->min_gate_cntr = SDE_REG_READ(c, UIDLE_MIN_GATE_CNTR);
+	cntr->max_gate_cntr = SDE_REG_READ(c, UIDLE_MAX_GATE_CNTR);
 
 	/* clear counters after read */
 	reg_val = SDE_REG_READ(c, UIDLE_GATE_CNTR_CTL);
@@ -136,7 +118,7 @@ void sde_hw_uidle_setup_cntr(struct sde_hw_uidle *uidle, bool enable)
 }
 
 void sde_hw_uidle_setup_wd_timer(struct sde_hw_uidle *uidle,
-		struct sde_uidle_wd_cfg *cfg)
+				 struct sde_uidle_wd_cfg *cfg)
 {
 	struct sde_hw_blk_reg_map *c = &uidle->hw;
 	u32 val_ctl, val_ctl2, val_ld;
@@ -149,7 +131,7 @@ void sde_hw_uidle_setup_wd_timer(struct sde_hw_uidle *uidle,
 
 	val_ctl2 = (val_ctl2 & ~BIT(0)) | (cfg->enable ? BIT(0) : 0);
 	val_ctl2 = (val_ctl2 & ~GENMASK(4, 1)) |
-		((cfg->granularity & 0xF) << 1);
+		   ((cfg->granularity & 0xF) << 1);
 	val_ctl2 = (val_ctl2 & ~BIT(8)) | (cfg->heart_beat ? BIT(8) : 0);
 
 	val_ld = cfg->load_value;
@@ -160,7 +142,7 @@ void sde_hw_uidle_setup_wd_timer(struct sde_hw_uidle *uidle,
 }
 
 void sde_hw_uidle_setup_ctl(struct sde_hw_uidle *uidle,
-		struct sde_uidle_ctl_cfg *cfg)
+			    struct sde_uidle_ctl_cfg *cfg)
 {
 	struct sde_hw_blk_reg_map *c = &uidle->hw;
 	bool enable = false;
@@ -169,20 +151,19 @@ void sde_hw_uidle_setup_ctl(struct sde_hw_uidle *uidle,
 	reg_val = SDE_REG_READ(c, UIDLE_CTL);
 
 	enable = (cfg->uidle_state > UIDLE_STATE_DISABLE &&
-		cfg->uidle_state < UIDLE_STATE_ENABLE_MAX);
+		  cfg->uidle_state < UIDLE_STATE_ENABLE_MAX);
 	reg_val = (reg_val & ~BIT(31)) | (enable ? BIT(31) : 0);
-	reg_val = (reg_val & ~BIT(30)) | (cfg->uidle_state
-			== UIDLE_STATE_FAL1_ONLY ? BIT(30) : 0);
+	reg_val = (reg_val & ~BIT(30)) |
+		  (cfg->uidle_state == UIDLE_STATE_FAL1_ONLY ? BIT(30) : 0);
 
 	reg_val = (reg_val & ~FAL10_DANGER_MSK) |
-		((cfg->fal10_danger << FAL10_DANGER_SHFT) &
-		FAL10_DANGER_MSK);
+		  ((cfg->fal10_danger << FAL10_DANGER_SHFT) & FAL10_DANGER_MSK);
 	reg_val = (reg_val & ~FAL10_EXIT_DANGER_MSK) |
-		((cfg->fal10_exit_danger << FAL10_EXIT_DANGER_SHFT) &
-		FAL10_EXIT_DANGER_MSK);
+		  ((cfg->fal10_exit_danger << FAL10_EXIT_DANGER_SHFT) &
+		   FAL10_EXIT_DANGER_MSK);
 	reg_val = (reg_val & ~FAL10_EXIT_CNT_MSK) |
-		((cfg->fal10_exit_cnt << FAL10_EXIT_CNT_SHFT) &
-		FAL10_EXIT_CNT_MSK);
+		  ((cfg->fal10_exit_cnt << FAL10_EXIT_CNT_SHFT) &
+		   FAL10_EXIT_CNT_MSK);
 
 	SDE_REG_WRITE(c, UIDLE_CTL, reg_val);
 	if (!enable)
@@ -192,7 +173,7 @@ void sde_hw_uidle_setup_ctl(struct sde_hw_uidle *uidle,
 }
 
 static void sde_hw_uilde_active_override(struct sde_hw_uidle *uidle,
-		bool enable)
+					 bool enable)
 {
 	struct sde_hw_blk_reg_map *c = &uidle->hw;
 	u32 reg_val = 0;
@@ -203,8 +184,7 @@ static void sde_hw_uilde_active_override(struct sde_hw_uidle *uidle,
 	SDE_REG_WRITE(c, UIDLE_QACTIVE_HF_OVERRIDE, reg_val);
 }
 
-static void sde_hw_uidle_fal10_override(struct sde_hw_uidle *uidle,
-		bool enable)
+static void sde_hw_uidle_fal10_override(struct sde_hw_uidle *uidle, bool enable)
 {
 	struct sde_hw_blk_reg_map *c = &uidle->hw;
 	u32 reg_val = 0;
@@ -217,7 +197,7 @@ static void sde_hw_uidle_fal10_override(struct sde_hw_uidle *uidle,
 }
 
 static inline void _setup_uidle_ops(struct sde_hw_uidle_ops *ops,
-		unsigned long cap)
+				    unsigned long cap)
 {
 	ops->set_uidle_ctl = sde_hw_uidle_setup_ctl;
 	ops->setup_wd_timer = sde_hw_uidle_setup_wd_timer;
@@ -229,9 +209,9 @@ static inline void _setup_uidle_ops(struct sde_hw_uidle_ops *ops,
 	ops->uidle_fal10_override = sde_hw_uidle_fal10_override;
 }
 
-struct sde_hw_uidle *sde_hw_uidle_init(enum sde_uidle idx,
-		void __iomem *addr, unsigned long len,
-		struct sde_mdss_cfg *m)
+struct sde_hw_uidle *sde_hw_uidle_init(enum sde_uidle idx, void __iomem *addr,
+				       unsigned long len,
+				       struct sde_mdss_cfg *m)
 {
 	struct sde_hw_uidle *c;
 	const struct sde_uidle_cfg *cfg;
@@ -247,15 +227,14 @@ struct sde_hw_uidle *sde_hw_uidle_init(enum sde_uidle idx,
 	}
 
 	/*
-	 * Assign ops
-	 */
+   * Assign ops
+   */
 	c->idx = idx;
 	c->cap = cfg;
 	_setup_uidle_ops(&c->ops, c->cap->features);
 
 	sde_dbg_reg_register_dump_range(SDE_DBG_NAME, "uidle", c->hw.blk_off,
-		c->hw.blk_off + c->hw.length, 0);
+					c->hw.blk_off + c->hw.length, 0);
 
 	return c;
 }
-

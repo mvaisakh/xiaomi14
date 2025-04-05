@@ -7,33 +7,27 @@
  */
 
 #include "sigma_dut.h"
-#include <sys/stat.h>
-#include <regex.h>
-#include "wpa_helpers.h"
 #include "wpa_ctrl.h"
+#include "wpa_helpers.h"
+#include <regex.h>
+#include <sys/stat.h>
 
 static const char LOC_XML_FILE_PATH[] = "./data/sigma-dut-target.xml";
 static const char LOC_11AZ_CONFIG_XML_FILE_PATH[] = "./data/lowi11az.xml";
 
 static const char LOC_LOWI_TEST_DISCOVERY[] = "lowi_test -a -b 2 -n 1";
 static const char LOC_LOWI_TEST_RANGING[] =
-"lowi_test -r ./data/sigma-dut-target.xml -n 1";
+	"lowi_test -r ./data/sigma-dut-target.xml -n 1";
 static const char LOC_LOWI_TEST_NEIGHBOR_RPT_REQ[] = "lowi_test -nrr";
 static const char LOC_LOWI_TEST_ANQP_REQ[] = "lowi_test -anqp -mac ";
 static const char LOC_LOWI_TEST_11AZ_CONFIG[] =
-"lowi_test -11az ./data/lowi11az.xml";
-static const char WPA_INTERWORKING_ENABLE[] =
-"SET interworking 1";
-static const char WPA_INTERWORKING_DISABLE[] =
-"SET interworking 0";
-static const char WPA_RM_ENABLE[] =
-"VENDOR 1374 74 08000400BD000000";
-static const char WPA_RM_DISABLE[] =
-"VENDOR 1374 74 0800040000000000";
-static const char WPA_ADDRESS_3_ENABLE[] =
-"SET gas_address3 1";
-static const char WPA_ADDRESS_3_DISABLE[] =
-"SET gas_address3 0";
+	"lowi_test -11az ./data/lowi11az.xml";
+static const char WPA_INTERWORKING_ENABLE[] = "SET interworking 1";
+static const char WPA_INTERWORKING_DISABLE[] = "SET interworking 0";
+static const char WPA_RM_ENABLE[] = "VENDOR 1374 74 08000400BD000000";
+static const char WPA_RM_DISABLE[] = "VENDOR 1374 74 0800040000000000";
+static const char WPA_ADDRESS_3_ENABLE[] = "SET gas_address3 1";
+static const char WPA_ADDRESS_3_DISABLE[] = "SET gas_address3 0";
 
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
@@ -66,7 +60,6 @@ struct capi_loc_cmd {
 	unsigned int freq;
 };
 
-
 static int loc_write_xml_file(struct sigma_dut *dut, const char *dst_mac_str,
 			      struct capi_loc_cmd *loc_cmd)
 {
@@ -81,8 +74,8 @@ static int loc_write_xml_file(struct sigma_dut *dut, const char *dst_mac_str,
 	}
 
 	/* Using this following defaults:
-	 * default value of band 1
-	 */
+   * default value of band 1
+   */
 	band = 1;
 
 #define FMT_BW_NO_PREF 0
@@ -169,11 +162,10 @@ static int loc_write_xml_file(struct sigma_dut *dut, const char *dst_mac_str,
 	fprintf(xml, "</body>\n");
 
 	fclose(xml);
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"%s - Successfully created XML file", __func__);
+	sigma_dut_print(dut, DUT_MSG_INFO, "%s - Successfully created XML file",
+			__func__);
 	return 0;
 }
-
 
 static int pass_request_to_ltest(struct sigma_dut *dut, enum lowi_tst_cmd cmd,
 				 const char *params)
@@ -192,15 +184,17 @@ static int pass_request_to_ltest(struct sigma_dut *dut, enum lowi_tst_cmd cmd,
 		break;
 	case LOWI_TST_ANQP_REQ:
 		if (!params) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"%s - No Destination Mac provided for ANQP Query",
-					__func__);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"%s - No Destination Mac provided for ANQP Query",
+				__func__);
 			return -1;
 		}
 
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s - Destination Mac provided for ANQP Query: %s",
-				__func__, params);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s - Destination Mac provided for ANQP Query: %s",
+			__func__, params);
 
 		snprintf(lowi_anqp_query, MAX_ANQP_CMND_SIZE, "%s%s",
 			 LOC_LOWI_TEST_ANQP_REQ, params);
@@ -214,9 +208,10 @@ static int pass_request_to_ltest(struct sigma_dut *dut, enum lowi_tst_cmd cmd,
 	sigma_dut_print(dut, DUT_MSG_INFO, "%s - 1 - Running command: %s",
 			__func__, LOC_LOWI_TEST_DISCOVERY);
 	ret = system(LOC_LOWI_TEST_DISCOVERY);
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"%s - Finished Performing Discovery Scan through LOWI_test: ret: %d",
-			__func__, ret);
+	sigma_dut_print(
+		dut, DUT_MSG_INFO,
+		"%s - Finished Performing Discovery Scan through LOWI_test: ret: %d",
+		__func__, ret);
 	sleep(1);
 	sigma_dut_print(dut, DUT_MSG_INFO, "%s - 2 - Running command: %s",
 			__func__, cmd_str);
@@ -227,7 +222,6 @@ static int pass_request_to_ltest(struct sigma_dut *dut, enum lowi_tst_cmd cmd,
 
 	return ret;
 }
-
 
 int loc_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 			    struct sigma_cmd *cmd)
@@ -254,8 +248,8 @@ int loc_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		return -1;
 	}
 
-	cmnd = strcasecmp(loc_op, "ANQPQuery") == 0 ?
-		LOWI_TST_ANQP_REQ : LOWI_TST_RANGING;
+	cmnd = strcasecmp(loc_op, "ANQPQuery") == 0 ? LOWI_TST_ANQP_REQ :
+						      LOWI_TST_RANGING;
 	sigma_dut_print(dut, DUT_MSG_INFO, "%s - Going to perform: %s",
 			__func__, loc_op);
 
@@ -270,8 +264,9 @@ int loc_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s - Incomplete command in LOC CAPI request",
 				__func__);
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "ErrMsg,Incomplete Loc CAPI command - missing interface");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"ErrMsg,Incomplete Loc CAPI command - missing interface");
 		return 0;
 	}
 
@@ -288,47 +283,57 @@ int loc_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		sigma_dut_print(dut, DUT_MSG_INFO, "%s - LOWI_TST_RANGING",
 				__func__);
 		if (!burstExp) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"%s - Incomplete command in LOC CAPI request",
-					__func__);
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrMsg,Incomplete Loc CAPI command - missing Burst Exp");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"%s - Incomplete command in LOC CAPI request",
+				__func__);
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrMsg,Incomplete Loc CAPI command - missing Burst Exp");
 			return 0;
 		}
 
 		if (!asap) {
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"%s - Incomplete command in LOC CAPI request",
-					__func__);
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrMsg,Incomplete Loc CAPI command - missing ASAP");
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"%s - Incomplete command in LOC CAPI request",
+				__func__);
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrMsg,Incomplete Loc CAPI command - missing ASAP");
 			return 0;
 		}
 
 		if (!fmtbw) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"%s - Incomplete command in LOC CAPI request",
-					__func__);
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrMsg,Incomplete Loc CAPI command - missing Format & BW");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"%s - Incomplete command in LOC CAPI request",
+				__func__);
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrMsg,Incomplete Loc CAPI command - missing Format & BW");
 			return 0;
 		}
 
 		if (!locCivic) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"%s - Incomplete command in LOC CAPI request",
-					__func__);
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrMsg,Incomplete Loc CAPI command - missing Location Civic");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"%s - Incomplete command in LOC CAPI request",
+				__func__);
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrMsg,Incomplete Loc CAPI command - missing Location Civic");
 			return 0;
 		}
 
 		if (!lci) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"%s - Incomplete command in LOC CAPI request",
-					__func__);
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrMsg,Incomplete Loc CAPI command - missing LCI");
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"%s - Incomplete command in LOC CAPI request",
+				__func__);
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrMsg,Incomplete Loc CAPI command - missing LCI");
 			return 0;
 		}
 
@@ -354,30 +359,31 @@ int loc_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		sigma_dut_print(dut, DUT_MSG_INFO, "%s - burstExp: %u",
 				__func__, loc_cmd.burstExp);
 		sscanf(asap, "%u", &loc_cmd.asap);
-		sigma_dut_print(dut, DUT_MSG_INFO, "%s - asap: %u",
-				__func__, loc_cmd.asap);
+		sigma_dut_print(dut, DUT_MSG_INFO, "%s - asap: %u", __func__,
+				loc_cmd.asap);
 		sscanf(fmtbw, "%u", &loc_cmd.fmtbw);
-		sigma_dut_print(dut, DUT_MSG_INFO, "%s - fmtbw: %u",
-				__func__, loc_cmd.fmtbw);
+		sigma_dut_print(dut, DUT_MSG_INFO, "%s - fmtbw: %u", __func__,
+				loc_cmd.fmtbw);
 		sscanf(locCivic, "%u", &loc_cmd.locCivic);
 		sigma_dut_print(dut, DUT_MSG_INFO, "%s - locCivic: %u",
 				__func__, loc_cmd.locCivic);
 		sscanf(lci, "%u", &loc_cmd.lci);
-		sigma_dut_print(dut, DUT_MSG_INFO, "%s - lci: %u",
-				__func__, loc_cmd.lci);
+		sigma_dut_print(dut, DUT_MSG_INFO, "%s - lci: %u", __func__,
+				loc_cmd.lci);
 
 		if (loc_write_xml_file(dut, destMacStr, &loc_cmd) < 0) {
-			sigma_dut_print(dut, DUT_MSG_ERROR,
-					"%s - Failed to write to XML file because of bad command",
-					__func__);
+			sigma_dut_print(
+				dut, DUT_MSG_ERROR,
+				"%s - Failed to write to XML file because of bad command",
+				__func__);
 			send_resp(dut, conn, SIGMA_ERROR,
 				  "ErrMsg,Bad CAPI command");
 			return 0;
 		}
 	} else {
 		/* ANQP Query */
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s - LOWI_TST_ANQP_REQ", __func__);
+		sigma_dut_print(dut, DUT_MSG_INFO, "%s - LOWI_TST_ANQP_REQ",
+				__func__);
 		params = destMacStr;
 	}
 
@@ -396,7 +402,6 @@ int loc_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 	send_resp(dut, conn, SIGMA_COMPLETE, NULL);
 	return 0;
 }
-
 
 int loc_cmd_sta_send_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 			   struct sigma_cmd *cmd)
@@ -452,11 +457,11 @@ int loc_cmd_sta_send_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s - Command missing LocCivic", __func__);
 	if (!lci)
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s - Command missing LCI", __func__);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "%s - Command missing LCI",
+				__func__);
 	if (!fqdn)
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s - Command missing FQDN", __func__);
+		sigma_dut_print(dut, DUT_MSG_ERROR, "%s - Command missing FQDN",
+				__func__);
 	if (!address3) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s - Command missing address3", __func__);
@@ -509,18 +514,15 @@ int loc_cmd_sta_send_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 enum e_rm_parse_states {
 	LOC_LOOKING_FOR_BIT = 0,
 	LOC_LOOKING_FOR_VAL,
 	LOC_MAX
 };
 
-
 void parse_rm_bits(struct sigma_dut *dut, const char *rmFlags,
 		   char rmBitFlags[LOC_MAX_RM_FLAGS][LOC_RM_FLAG_VAL_ARRAY])
 {
-
 	unsigned int bitPos = 0;
 	unsigned int bitVal = 0;
 	unsigned int idx = 0;
@@ -530,12 +532,13 @@ void parse_rm_bits(struct sigma_dut *dut, const char *rmFlags,
 
 	if (!rmFlags) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s - NULL pointer for rmFlags - Aborting", __func__);
+				"%s - NULL pointer for rmFlags - Aborting",
+				__func__);
 		return;
 	}
 
-	sigma_dut_print(dut, DUT_MSG_INFO, "%s - rmFlags: %s",
-			__func__, rmFlags);
+	sigma_dut_print(dut, DUT_MSG_INFO, "%s - rmFlags: %s", __func__,
+			rmFlags);
 	while (*rmFlags != '\0' && idx < LOC_MAX_RM_FLAGS) {
 		temp = *rmFlags;
 		rmFlags++;
@@ -544,43 +547,49 @@ void parse_rm_bits(struct sigma_dut *dut, const char *rmFlags,
 			if (temp >= '0' && temp <= '9') {
 				/* Parse Digit for bit Position */
 				bitPos = (bitPos * 10) + (temp - '0');
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s - LOC_LOOKING_FOR_BIT - parsing: %c, bitPos: %u",
-						__func__, temp, bitPos);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s - LOC_LOOKING_FOR_BIT - parsing: %c, bitPos: %u",
+					__func__, temp, bitPos);
 			} else if (temp == ':') {
 				/* move to Parsing Bit Value */
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s - LOC_LOOKING_FOR_BIT - processing: %c, bitPos: %u",
-						__func__, temp, bitPos);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s - LOC_LOOKING_FOR_BIT - processing: %c, bitPos: %u",
+					__func__, temp, bitPos);
 				rmBitFlags[idx][0] = bitPos;
 				rmParseStates = LOC_LOOKING_FOR_VAL;
 			} else if (temp == ';') {
 				/* End of Bit-Value Pair, reset and look for New Bit Position */
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s - LOC_LOOKING_FOR_BIT - processing: %c",
-						__func__, temp);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s - LOC_LOOKING_FOR_BIT - processing: %c",
+					__func__, temp);
 				rmBitFlags[idx][0] = bitPos;
 				/* rmBitFlags[idx][1] = bitVal; */
 				bitPos = 0;
 				bitVal = 0;
 				idx++;
 			} else { /* Ignore */
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s - LOC_LOOKING_FOR_BIT - ignoring: %c",
-						__func__, temp);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s - LOC_LOOKING_FOR_BIT - ignoring: %c",
+					__func__, temp);
 			}
 			break;
 		case LOC_LOOKING_FOR_VAL:
 			if (temp == '0' || temp == '1') {
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s - LOC_LOOKING_FOR_VAL - processing: %c",
-						__func__, temp);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s - LOC_LOOKING_FOR_VAL - processing: %c",
+					__func__, temp);
 				bitVal = temp - '0';
 				rmBitFlags[idx][1] = bitVal;
 			} else if (temp == ';') {
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s - LOC_LOOKING_FOR_VAL - processing: %c, bitPos: %u, bitVal: %u",
-						__func__, temp, bitPos, bitVal);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s - LOC_LOOKING_FOR_VAL - processing: %c, bitPos: %u, bitVal: %u",
+					__func__, temp, bitPos, bitVal);
 				/* rmBitFlags[idx][0] = bitPos; */
 				/* rmBitFlags[idx][1] = bitVal; */
 				bitPos = 0;
@@ -588,27 +597,26 @@ void parse_rm_bits(struct sigma_dut *dut, const char *rmFlags,
 				idx++;
 				rmParseStates = LOC_LOOKING_FOR_BIT;
 			} else { /* Ignore */
-				sigma_dut_print(dut, DUT_MSG_INFO,
-						"%s - LOC_LOOKING_FOR_VAL - ignoring: %c",
-						__func__, temp);
+				sigma_dut_print(
+					dut, DUT_MSG_INFO,
+					"%s - LOC_LOOKING_FOR_VAL - ignoring: %c",
+					__func__, temp);
 			}
 			break;
 		default: /* Ignore */
 			sigma_dut_print(dut, DUT_MSG_INFO,
-					"%s - default - ignoring: %c",
-					__func__, temp);
+					"%s - default - ignoring: %c", __func__,
+					temp);
 			break;
 		}
 	}
 
 	for (i = 0; i < LOC_MAX_RM_FLAGS; i++) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s - Bit Pos: %u : Bit Val: %u",
-				__func__, rmBitFlags[i][0],
-				rmBitFlags[i][1]);
+				"%s - Bit Pos: %u : Bit Val: %u", __func__,
+				rmBitFlags[i][0], rmBitFlags[i][1]);
 	}
 }
-
 
 int loc_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 				      struct sigma_conn *conn,
@@ -626,11 +634,11 @@ int loc_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 
 	sigma_dut_print(dut, DUT_MSG_INFO, "%s - 1", __func__);
 	/*
-	 * This function is used to configure the RM capability bits and
-	 * the Interworking bit only.
-	 * If these parameters are not present just returning COMPLETE
-	 * because all other parameters are ignored.
-	 */
+   * This function is used to configure the RM capability bits and
+   * the Interworking bit only.
+   * If these parameters are not present just returning COMPLETE
+   * because all other parameters are ignored.
+   */
 	if (!rmFTMRFlagStr && !interworkingEn) {
 		sigma_dut_print(dut, DUT_MSG_INFO, "%s - 2", __func__);
 		sigma_dut_print(dut, DUT_MSG_ERROR, "%s - Did not get %s",
@@ -652,8 +660,7 @@ int loc_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 				__func__, rmFTMRFlag);
 		if (rmFTMRFlag == 0) { /* Disable RM - FTMRR capability */
 			sigma_dut_print(dut, DUT_MSG_INFO,
-					"%s - Disabling RM - FTMRR",
-					__func__);
+					"%s - Disabling RM - FTMRR", __func__);
 			if (wpa_command(get_station_ifname(dut),
 					WPA_RM_DISABLE) < 0) {
 				send_resp(dut, conn, SIGMA_ERROR, NULL);
@@ -661,8 +668,7 @@ int loc_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 			}
 		} else if (rmFTMRFlag == 1) { /* Enable RM - FTMRR capability */
 			sigma_dut_print(dut, DUT_MSG_INFO,
-					"%s - Enabling RM - FTMRR",
-					__func__);
+					"%s - Enabling RM - FTMRR", __func__);
 			if (wpa_command(get_station_ifname(dut),
 					WPA_RM_ENABLE) < 0) {
 				send_resp(dut, conn, SIGMA_ERROR, NULL);
@@ -673,9 +679,10 @@ int loc_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 					"%s - No Setting for - FTMRR",
 					__func__);
 		}
-		sigma_dut_print(dut, DUT_MSG_INFO,
-				"%s - Succeeded in Enabling/Disabling RM Capability for FTMRR",
-				__func__);
+		sigma_dut_print(
+			dut, DUT_MSG_INFO,
+			"%s - Succeeded in Enabling/Disabling RM Capability for FTMRR",
+			__func__);
 	}
 
 	if (interworkingEn) {
@@ -693,7 +700,6 @@ int loc_cmd_sta_preset_testparameters(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, NULL);
 	return 0;
 }
-
 
 static enum sigma_cmd_result
 lowi_cmd_sta_reset_ptksa_cache(struct sigma_dut *dut, struct sigma_conn *conn,
@@ -728,15 +734,13 @@ lowi_cmd_sta_reset_ptksa_cache(struct sigma_dut *dut, struct sigma_conn *conn,
 	return STATUS_SENT;
 }
 
-
 int lowi_cmd_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
-				struct sigma_cmd *cmd)
+			       struct sigma_cmd *cmd)
 {
 #ifdef ANDROID_WIFI_HAL
 	if (wifi_hal_initialize(dut)) {
 		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s - wifihal init failed for - LOC",
-				__func__);
+				"%s - wifihal init failed for - LOC", __func__);
 		return -1;
 	}
 #endif /* ANDROID_WIFI_HAL */
@@ -746,7 +750,6 @@ int lowi_cmd_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	return 0;
 }
-
 
 static int loc_r2_set_11az_config(struct sigma_dut *dut, const char *dst_mac,
 				  struct capi_loc_cmd *loc_cmd)
@@ -768,12 +771,11 @@ static int loc_r2_set_11az_config(struct sigma_dut *dut, const char *dst_mac,
 	fprintf(xml, "</body>\n");
 
 	fclose(xml);
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"%s - Successfully created XML file", __func__);
+	sigma_dut_print(dut, DUT_MSG_INFO, "%s - Successfully created XML file",
+			__func__);
 
 	return system(LOC_LOWI_TEST_11AZ_CONFIG);
 }
-
 
 static int loc_r2_write_xml_file(struct sigma_dut *dut, const char *dst_mac,
 				 struct capi_loc_cmd *loc_cmd)
@@ -790,18 +792,18 @@ static int loc_r2_write_xml_file(struct sigma_dut *dut, const char *dst_mac,
 		return -1;
 	}
 
-#define LOC_R2_BW_VHT_20  0
-#define LOC_R2_BW_VHT_40  1
-#define LOC_R2_BW_VHT_80  2
+#define LOC_R2_BW_VHT_20 0
+#define LOC_R2_BW_VHT_40 1
+#define LOC_R2_BW_VHT_80 2
 #define LOC_R2_BW_VHT_160 3
 
 #define LOC_R2_PREAMBLE_HT 1
 #define LOC_R2_PREAMBLE_VHT 2
 #define LOC_R2_PREAMBLE_HE 3
 
-#define LOC_R2_BW_20  0
-#define LOC_R2_BW_40  1
-#define LOC_R2_BW_80  2
+#define LOC_R2_BW_20 0
+#define LOC_R2_BW_40 1
+#define LOC_R2_BW_80 2
 #define LOC_R2_BW_160 3
 
 	preamble = LOC_R2_PREAMBLE_HE;
@@ -871,11 +873,10 @@ static int loc_r2_write_xml_file(struct sigma_dut *dut, const char *dst_mac,
 	dut->i2rlmr_iftmr = 0;
 
 	fclose(xml);
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"%s - Successfully created XML file", __func__);
+	sigma_dut_print(dut, DUT_MSG_INFO, "%s - Successfully created XML file",
+			__func__);
 	return 0;
 }
-
 
 static int loc_r2_get_bss_frequency(struct sigma_dut *dut,
 				    struct sigma_conn *conn,
@@ -896,8 +897,9 @@ static int loc_r2_get_bss_frequency(struct sigma_dut *dut,
 
 	ctrl = open_wpa_mon(intf);
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		return 0;
 	}
 
@@ -909,8 +911,8 @@ static int loc_r2_get_bss_frequency(struct sigma_dut *dut,
 		return 0;
 	}
 
-	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-SCAN-RESULTS",
-				buf, sizeof(buf));
+	res = get_wpa_cli_event(dut, ctrl, "CTRL-EVENT-SCAN-RESULTS", buf,
+				sizeof(buf));
 
 	wpa_ctrl_detach(ctrl);
 	wpa_ctrl_close(ctrl);
@@ -938,7 +940,6 @@ static int loc_r2_get_bss_frequency(struct sigma_dut *dut,
 	freq = atoi(pos + 6);
 	return freq;
 }
-
 
 int loc_r2_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 			       struct sigma_cmd *cmd)
@@ -990,8 +991,9 @@ int loc_r2_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s - Incomplete command in LOCR2 CAPI request",
 				__func__);
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "ErrMsg,Incomplete Loc CAPI command - missing Format & BW");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"ErrMsg,Incomplete Loc CAPI command - missing Format & BW");
 		return 0;
 	}
 
@@ -999,35 +1001,36 @@ int loc_r2_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s - Incomplete command in LOCR2 CAPI request",
 				__func__);
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "ErrMsg,Incomplete Loc CAPI command - missing TMR Type(NTB or TB)");
+		send_resp(
+			dut, conn, SIGMA_ERROR,
+			"ErrMsg,Incomplete Loc CAPI command - missing TMR Type(NTB or TB)");
 		return 0;
 	}
 
 	if (ntb) {
 		sscanf(ntb, "%u", &loc_cmd.ntb);
-		sigma_dut_print(dut, DUT_MSG_INFO, "%s - ntb: %u",
-				__func__, loc_cmd.ntb);
+		sigma_dut_print(dut, DUT_MSG_INFO, "%s - ntb: %u", __func__,
+				loc_cmd.ntb);
 	} else {
 		sscanf(tb, "%u", &loc_cmd.tb);
-		sigma_dut_print(dut, DUT_MSG_INFO, "%s - tb: %u",
-				__func__, loc_cmd.tb);
+		sigma_dut_print(dut, DUT_MSG_INFO, "%s - tb: %u", __func__,
+				loc_cmd.tb);
 	}
 
 	sscanf(ftm_bw_rtt, "%u", &loc_cmd.ftm_bw_rtt);
-	sigma_dut_print(dut, DUT_MSG_INFO, "%s - ftmbw: %u",
-			__func__, loc_cmd.ftm_bw_rtt);
+	sigma_dut_print(dut, DUT_MSG_INFO, "%s - ftmbw: %u", __func__,
+			loc_cmd.ftm_bw_rtt);
 
 	loc_cmd.freq = loc_r2_get_bss_frequency(dut, conn, cmd);
-	sigma_dut_print(dut, DUT_MSG_INFO, "%s - freq: %u",
-			__func__, loc_cmd.freq);
+	sigma_dut_print(dut, DUT_MSG_INFO, "%s - freq: %u", __func__,
+			loc_cmd.freq);
 
 	if (loc_r2_write_xml_file(dut, dest_mac, &loc_cmd) < 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"%s - Failed to write to XML file because of bad command",
-				__func__);
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "ErrMsg,Bad CAPI command");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"%s - Failed to write to XML file because of bad command",
+			__func__);
+		send_resp(dut, conn, SIGMA_ERROR, "ErrMsg,Bad CAPI command");
 		return 0;
 	}
 
@@ -1035,8 +1038,7 @@ int loc_r2_cmd_sta_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 		sigma_dut_print(dut, DUT_MSG_ERROR,
 				"%s - Failed to set 11az config command",
 				__func__);
-		send_resp(dut, conn, SIGMA_ERROR,
-			  "ErrMsg,Bad CAPI command");
+		send_resp(dut, conn, SIGMA_ERROR, "ErrMsg,Bad CAPI command");
 		return 0;
 	}
 	sleep(1);

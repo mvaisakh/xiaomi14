@@ -22,23 +22,23 @@
  * This file contains dfs target interface
  */
 
-#include <target_if.h>
-#include <qdf_types.h>
-#include <qdf_status.h>
-#include <target_if_dfs.h>
-#include <wlan_module_ids.h>
-#include <wmi_unified_api.h>
-#include <wlan_lmac_if_def.h>
-#include <wmi_unified_priv.h>
-#include <wlan_scan_tgt_api.h>
-#include <wmi_unified_param.h>
-#include <wmi_unified_dfs_api.h>
-#include "wlan_dfs_tgt_api.h"
 #include "target_type.h"
+#include "wlan_dfs_tgt_api.h"
 #include <init_deinit_lmac.h>
-#include <wlan_reg_ucfg_api.h>
+#include <qdf_status.h>
+#include <qdf_types.h>
+#include <target_if.h>
+#include <target_if_dfs.h>
 #include <target_if_dfs_full_offload.h>
 #include <target_if_dfs_partial_offload.h>
+#include <wlan_lmac_if_def.h>
+#include <wlan_module_ids.h>
+#include <wlan_reg_ucfg_api.h>
+#include <wlan_scan_tgt_api.h>
+#include <wmi_unified_api.h>
+#include <wmi_unified_dfs_api.h>
+#include <wmi_unified_param.h>
+#include <wmi_unified_priv.h>
 
 /**
  * target_if_dfs_register_host_status_check_event() - Register host dfs
@@ -48,8 +48,8 @@
  * Return: QDF_STATUS.
  */
 #if defined(WLAN_DFS_PARTIAL_OFFLOAD) && defined(HOST_DFS_SPOOF_TEST)
-static QDF_STATUS target_if_dfs_register_host_status_check_event(
-		struct wlan_objmgr_psoc *psoc)
+static QDF_STATUS
+target_if_dfs_register_host_status_check_event(struct wlan_objmgr_psoc *psoc)
 
 {
 	wmi_unified_t wmi_handle;
@@ -61,9 +61,9 @@ static QDF_STATUS target_if_dfs_register_host_status_check_event(
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	retval = wmi_unified_register_event(wmi_handle,
-			wmi_host_dfs_status_check_event_id,
-			target_if_dfs_status_check_event_handler);
+	retval = wmi_unified_register_event(
+		wmi_handle, wmi_host_dfs_status_check_event_id,
+		target_if_dfs_status_check_event_handler);
 	if (QDF_IS_STATUS_ERROR(retval))
 		target_if_err("wmi_dfs_radar_detection_event_id ret=%d",
 			      retval);
@@ -71,8 +71,8 @@ static QDF_STATUS target_if_dfs_register_host_status_check_event(
 	return retval;
 }
 #else
-static QDF_STATUS target_if_dfs_register_host_status_check_event(
-		struct wlan_objmgr_psoc *psoc)
+static QDF_STATUS
+target_if_dfs_register_host_status_check_event(struct wlan_objmgr_psoc *psoc)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -112,8 +112,8 @@ static bool target_if_is_dfs_3(uint32_t target_type)
  *
  * Return: 0 on success; error code otherwise
  */
-static int target_if_radar_event_handler(
-	ol_scn_t scn, uint8_t *data, uint32_t datalen)
+static int target_if_radar_event_handler(ol_scn_t scn, uint8_t *data,
+					 uint32_t datalen)
 {
 	struct radar_event_info wlan_radar_event;
 	struct wlan_objmgr_psoc *psoc;
@@ -144,19 +144,17 @@ static int target_if_radar_event_handler(
 	}
 
 	if (QDF_IS_STATUS_ERROR(wmi_extract_wlan_radar_event_info(
-			wmi_handle, data,
-			&wlan_radar_event, datalen))) {
+		    wmi_handle, data, &wlan_radar_event, datalen))) {
 		target_if_err("failed to extract wlan radar event");
 		return -EFAULT;
 	}
 	pdev = wlan_objmgr_get_pdev_by_id(psoc, wlan_radar_event.pdev_id,
-					WLAN_DFS_ID);
+					  WLAN_DFS_ID);
 	if (!pdev) {
 		target_if_err("null pdev");
 		return -EINVAL;
 	}
-	dfs_rx_ops->dfs_process_phyerr_filter_offload(pdev,
-					&wlan_radar_event);
+	dfs_rx_ops->dfs_process_phyerr_filter_offload(pdev, &wlan_radar_event);
 	wlan_objmgr_pdev_release_ref(pdev, WLAN_DFS_ID);
 
 	return 0;
@@ -168,8 +166,8 @@ static int target_if_radar_event_handler(
  *
  * Return: QDF_STATUS.
  */
-static QDF_STATUS target_if_reg_phyerr_events_dfs2(
-				struct wlan_objmgr_psoc *psoc)
+static QDF_STATUS
+target_if_reg_phyerr_events_dfs2(struct wlan_objmgr_psoc *psoc)
 {
 	QDF_STATUS ret;
 	wmi_unified_t wmi_handle;
@@ -180,8 +178,7 @@ static QDF_STATUS target_if_reg_phyerr_events_dfs2(
 		return QDF_STATUS_E_INVAL;
 	}
 
-	ret = wmi_unified_register_event(wmi_handle,
-					 wmi_dfs_radar_event_id,
+	ret = wmi_unified_register_event(wmi_handle, wmi_dfs_radar_event_id,
 					 target_if_radar_event_handler);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		target_if_err("failed to register wmi_dfs_radar_event_id");
@@ -191,8 +188,8 @@ static QDF_STATUS target_if_reg_phyerr_events_dfs2(
 	return QDF_STATUS_SUCCESS;
 }
 #else
-static QDF_STATUS target_if_reg_phyerr_events_dfs2(
-				struct wlan_objmgr_psoc *psoc)
+static QDF_STATUS
+target_if_reg_phyerr_events_dfs2(struct wlan_objmgr_psoc *psoc)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -208,8 +205,7 @@ static bool target_if_dfs_offload(struct wlan_objmgr_psoc *psoc)
 		return false;
 	}
 
-	return wmi_service_enabled(wmi_handle,
-				   wmi_service_dfs_phyerr_offload);
+	return wmi_service_enabled(wmi_handle, wmi_service_dfs_phyerr_offload);
 }
 
 /**
@@ -250,9 +246,8 @@ static bool target_if_dfs_bangradar_320_supp(struct wlan_objmgr_psoc *psoc)
  * Return: true if wmi_service_radar_found_chan_freq_eq_center_freq is
  *         supported, false otherwise
  */
-static bool
-target_if_dfs_is_radar_found_chan_freq_eq_center_freq(
-						struct wlan_objmgr_psoc *psoc)
+static bool target_if_dfs_is_radar_found_chan_freq_eq_center_freq(
+	struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_handle;
 
@@ -261,14 +256,12 @@ target_if_dfs_is_radar_found_chan_freq_eq_center_freq(
 		target_if_err("null wmi_handle");
 		return false;
 	}
-	return wmi_service_enabled
-		(wmi_handle,
-		 wmi_service_radar_found_chan_freq_eq_center_freq);
+	return wmi_service_enabled(
+		wmi_handle, wmi_service_radar_found_chan_freq_eq_center_freq);
 }
 #else
-static bool
-target_if_dfs_is_radar_found_chan_freq_eq_center_freq(
-						struct wlan_objmgr_psoc *psoc)
+static bool target_if_dfs_is_radar_found_chan_freq_eq_center_freq(
+	struct wlan_objmgr_psoc *psoc)
 {
 	return false;
 }
@@ -295,8 +288,8 @@ static QDF_STATUS target_if_dfs_get_target_type(struct wlan_objmgr_pdev *pdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS target_if_dfs_register_event_handler(
-		struct wlan_objmgr_psoc *psoc)
+static QDF_STATUS
+target_if_dfs_register_event_handler(struct wlan_objmgr_psoc *psoc)
 {
 	struct target_psoc_info *tgt_psoc_info;
 
@@ -315,7 +308,7 @@ static QDF_STATUS target_if_dfs_register_event_handler(
 		target_if_dfs_register_host_status_check_event(psoc);
 
 		if (target_if_is_dfs_3(
-				target_psoc_get_target_type(tgt_psoc_info)))
+			    target_psoc_get_target_type(tgt_psoc_info)))
 			return target_if_dfs_reg_phyerr_events(psoc);
 		else
 			return target_if_reg_phyerr_events_dfs2(psoc);
@@ -325,7 +318,7 @@ static QDF_STATUS target_if_dfs_register_event_handler(
 }
 
 static QDF_STATUS target_if_dfs_is_pdev_5ghz(struct wlan_objmgr_pdev *pdev,
-		bool *is_5ghz)
+					     bool *is_5ghz)
 {
 	struct wlan_objmgr_psoc *psoc;
 	uint8_t pdev_id;
@@ -345,8 +338,7 @@ static QDF_STATUS target_if_dfs_is_pdev_5ghz(struct wlan_objmgr_pdev *pdev,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	if (reg_cap_ptr[pdev_id].wireless_modes &
-			HOST_REGDMN_MODE_11A)
+	if (reg_cap_ptr[pdev_id].wireless_modes & HOST_REGDMN_MODE_11A)
 		*is_5ghz = true;
 	else
 		*is_5ghz = false;
@@ -362,8 +354,8 @@ static QDF_STATUS target_if_dfs_is_pdev_5ghz(struct wlan_objmgr_pdev *pdev,
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS target_if_dfs_set_phyerr_filter_offload(
-					struct wlan_objmgr_pdev *pdev,
+static QDF_STATUS
+target_if_dfs_set_phyerr_filter_offload(struct wlan_objmgr_pdev *pdev,
 					bool dfs_phyerr_filter_offload)
 {
 	QDF_STATUS status;
@@ -380,8 +372,8 @@ static QDF_STATUS target_if_dfs_set_phyerr_filter_offload(
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wmi_unified_dfs_phyerr_filter_offload_en_cmd(wmi_handle,
-					dfs_phyerr_filter_offload);
+	status = wmi_unified_dfs_phyerr_filter_offload_en_cmd(
+		wmi_handle, dfs_phyerr_filter_offload);
 	if (QDF_IS_STATUS_ERROR(status))
 		target_if_err("phyerr filter offload %d set fail: %d",
 			      dfs_phyerr_filter_offload, status);
@@ -389,16 +381,16 @@ static QDF_STATUS target_if_dfs_set_phyerr_filter_offload(
 	return status;
 }
 #else
-static QDF_STATUS target_if_dfs_set_phyerr_filter_offload(
-					struct wlan_objmgr_pdev *pdev,
+static QDF_STATUS
+target_if_dfs_set_phyerr_filter_offload(struct wlan_objmgr_pdev *pdev,
 					bool dfs_phyerr_filter_offload)
 {
 	return QDF_STATUS_SUCCESS;
 }
 #endif
 
-static QDF_STATUS target_send_dfs_offload_enable_cmd(
-		struct wlan_objmgr_pdev *pdev, bool enable)
+static QDF_STATUS
+target_send_dfs_offload_enable_cmd(struct wlan_objmgr_pdev *pdev, bool enable)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 	uint8_t pdev_id;
@@ -418,8 +410,8 @@ static QDF_STATUS target_send_dfs_offload_enable_cmd(
 	pdev_id = wlan_objmgr_pdev_get_pdev_id(pdev);
 
 	if (enable)
-		status = wmi_unified_dfs_phyerr_offload_en_cmd(wmi_hdl,
-							       pdev_id);
+		status =
+			wmi_unified_dfs_phyerr_offload_en_cmd(wmi_hdl, pdev_id);
 	else
 		status = wmi_unified_dfs_phyerr_offload_dis_cmd(wmi_hdl,
 								pdev_id);
@@ -436,14 +428,14 @@ static QDF_STATUS target_send_dfs_offload_enable_cmd(
 
 #if defined(WLAN_DFS_PARTIAL_OFFLOAD) && defined(HOST_DFS_SPOOF_TEST)
 static void target_if_register_dfs_tx_ops_send_avg(
-		struct wlan_lmac_if_dfs_tx_ops *dfs_tx_ops)
+	struct wlan_lmac_if_dfs_tx_ops *dfs_tx_ops)
 {
 	dfs_tx_ops->dfs_send_avg_radar_params_to_fw =
 		&target_if_dfs_send_avg_params_to_fw;
 }
 #else
 static inline void target_if_register_dfs_tx_ops_send_avg(
-		struct wlan_lmac_if_dfs_tx_ops *dfs_tx_ops)
+	struct wlan_lmac_if_dfs_tx_ops *dfs_tx_ops)
 {
 }
 #endif
@@ -461,17 +453,15 @@ QDF_STATUS target_if_register_dfs_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 	dfs_tx_ops->dfs_reg_ev_handler = &target_if_dfs_register_event_handler;
 
 	dfs_tx_ops->dfs_process_emulate_bang_radar_cmd =
-				&target_process_bang_radar_cmd;
-	dfs_tx_ops->dfs_agile_ch_cfg_cmd =
-				&target_send_agile_ch_cfg_cmd;
-	dfs_tx_ops->dfs_ocac_abort_cmd =
-				&target_send_ocac_abort_cmd;
+		&target_process_bang_radar_cmd;
+	dfs_tx_ops->dfs_agile_ch_cfg_cmd = &target_send_agile_ch_cfg_cmd;
+	dfs_tx_ops->dfs_ocac_abort_cmd = &target_send_ocac_abort_cmd;
 	dfs_tx_ops->dfs_is_pdev_5ghz = &target_if_dfs_is_pdev_5ghz;
 	dfs_tx_ops->dfs_send_offload_enable_cmd =
 		&target_send_dfs_offload_enable_cmd;
 
 	dfs_tx_ops->dfs_set_phyerr_filter_offload =
-				&target_if_dfs_set_phyerr_filter_offload;
+		&target_if_dfs_set_phyerr_filter_offload;
 
 	dfs_tx_ops->dfs_get_caps = &target_if_dfs_get_caps;
 
@@ -479,12 +469,11 @@ QDF_STATUS target_if_register_dfs_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 
 	dfs_tx_ops->dfs_is_tgt_offload = &target_if_dfs_offload;
 	dfs_tx_ops->dfs_is_tgt_bangradar_320_supp =
-				&target_if_dfs_bangradar_320_supp;
+		&target_if_dfs_bangradar_320_supp;
 	dfs_tx_ops->dfs_is_tgt_radar_found_chan_freq_eq_center_freq =
 		&target_if_dfs_is_radar_found_chan_freq_eq_center_freq;
 
-	dfs_tx_ops->dfs_send_usenol_pdev_param =
-		&target_send_usenol_pdev_param;
+	dfs_tx_ops->dfs_send_usenol_pdev_param = &target_send_usenol_pdev_param;
 	dfs_tx_ops->dfs_send_subchan_marking_pdev_param =
 		&target_send_subchan_marking_pdev_param;
 	dfs_tx_ops->dfs_get_target_type = &target_if_dfs_get_target_type;

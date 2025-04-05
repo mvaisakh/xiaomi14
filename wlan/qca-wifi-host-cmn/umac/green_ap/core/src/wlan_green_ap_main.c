@@ -32,8 +32,8 @@
  *
  * Return: QDF_STATUS
  */
-static QDF_STATUS wlan_green_ap_ant_ps_reset
-		(struct wlan_pdev_green_ap_ctx *green_ap_ctx)
+static QDF_STATUS
+wlan_green_ap_ant_ps_reset(struct wlan_pdev_green_ap_ctx *green_ap_ctx)
 {
 	struct wlan_lmac_if_green_ap_tx_ops *green_ap_tx_ops;
 	struct wlan_objmgr_pdev *pdev;
@@ -54,11 +54,11 @@ static QDF_STATUS wlan_green_ap_ant_ps_reset
 		return QDF_STATUS_SUCCESS;
 
 	/*
-	 * Add protection against green AP enabling interrupts
-	 * when not valid or no VAPs exist
-	 */
+   * Add protection against green AP enabling interrupts
+   * when not valid or no VAPs exist
+   */
 	if (wlan_util_is_vdev_active(pdev, WLAN_GREEN_AP_ID) ==
-						QDF_STATUS_SUCCESS)
+	    QDF_STATUS_SUCCESS)
 		green_ap_tx_ops->reset_dev(pdev);
 	else
 		green_ap_err("Green AP tried to enable IRQs when invalid");
@@ -103,8 +103,7 @@ bool wlan_is_egap_enabled(struct wlan_pdev_green_ap_ctx *green_ap_ctx)
 	}
 	egap_params = &green_ap_ctx->egap_params;
 
-	if (egap_params->fw_egap_support &&
-	    egap_params->host_enable_egap &&
+	if (egap_params->fw_egap_support && egap_params->host_enable_egap &&
 	    egap_params->egap_feature_flags)
 		return true;
 	return false;
@@ -119,10 +118,10 @@ qdf_export_symbol(wlan_is_egap_enabled);
  *
  * Return: Success or Failure
  */
-static QDF_STATUS wlan_green_ap_ps_event_state_update(
-			struct wlan_pdev_green_ap_ctx *green_ap_ctx,
-			enum wlan_green_ap_ps_state state,
-			enum wlan_green_ap_ps_event event)
+static QDF_STATUS
+wlan_green_ap_ps_event_state_update(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
+				    enum wlan_green_ap_ps_state state,
+				    enum wlan_green_ap_ps_event event)
 {
 	if (!green_ap_ctx) {
 		green_ap_err("green ap context obtained is NULL");
@@ -142,9 +141,9 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 	uint8_t pdev_id;
 
 	/*
-	 * Remove the assignments once channel info is available for
-	 * converged component.
-	 */
+   * Remove the assignments once channel info is available for
+   * converged component.
+   */
 	uint16_t channel = 1;
 	uint32_t channel_flags = 1;
 
@@ -166,7 +165,8 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 	}
 
 	if (!green_ap_tx_ops->ps_on_off_send) {
-		green_ap_err("tx op for sending enable/disable green ap is NULL");
+		green_ap_err(
+			"tx op for sending enable/disable green ap is NULL");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -174,11 +174,11 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 
 	if (green_ap_tx_ops->get_current_channel)
 		channel = green_ap_tx_ops->get_current_channel(
-						green_ap_ctx->pdev);
+			green_ap_ctx->pdev);
 
 	if (green_ap_tx_ops->get_current_channel_flags)
 		channel_flags = green_ap_tx_ops->get_current_channel_flags(
-							green_ap_ctx->pdev);
+			green_ap_ctx->pdev);
 
 	/* handle the green ap ps event */
 	switch (event) {
@@ -211,22 +211,21 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 		break;
 	}
 
-	green_ap_debug("Green-AP event: %d, state: %d, num_nodes: %d",
-		       event, green_ap_ctx->ps_state, green_ap_ctx->num_nodes);
+	green_ap_debug("Green-AP event: %d, state: %d, num_nodes: %d", event,
+		       green_ap_ctx->ps_state, green_ap_ctx->num_nodes);
 
 	/* Confirm that power save is enabled before doing state transitions */
 	if (!green_ap_ctx->ps_enable) {
 		green_ap_debug("Green-AP is disabled");
 		if (green_ap_ctx->ps_state == WLAN_GREEN_AP_PS_ON_STATE) {
 			if (green_ap_tx_ops->ps_on_off_send(green_ap_ctx->pdev,
-								false, pdev_id))
+							    false, pdev_id))
 				green_ap_err("failed to set green ap mode");
 			wlan_green_ap_ant_ps_reset(green_ap_ctx);
 		}
 		wlan_green_ap_ps_event_state_update(
-				green_ap_ctx,
-				WLAN_GREEN_AP_PS_IDLE_STATE,
-				WLAN_GREEN_AP_PS_WAIT_EVENT);
+			green_ap_ctx, WLAN_GREEN_AP_PS_IDLE_STATE,
+			WLAN_GREEN_AP_PS_WAIT_EVENT);
 		goto done;
 	}
 
@@ -238,20 +237,18 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 		    (green_ap_ctx->num_nodes_multistream &&
 		     green_ap_ctx->ps_mode == WLAN_GREEN_AP_MODE_NUM_STREAM)) {
 			/*
-			 * Multistream nodes present, switchoff the power save
-			 */
+       * Multistream nodes present, switchoff the power save
+       */
 			green_ap_info("Transition to OFF from IDLE");
 			wlan_green_ap_ps_event_state_update(
-					green_ap_ctx,
-					WLAN_GREEN_AP_PS_OFF_STATE,
-					WLAN_GREEN_AP_PS_WAIT_EVENT);
+				green_ap_ctx, WLAN_GREEN_AP_PS_OFF_STATE,
+				WLAN_GREEN_AP_PS_WAIT_EVENT);
 		} else {
 			/* No Active nodes, get into power save */
 			green_ap_info("Transition to WAIT from IDLE");
 			wlan_green_ap_ps_event_state_update(
-					green_ap_ctx,
-					WLAN_GREEN_AP_PS_WAIT_STATE,
-					WLAN_GREEN_AP_PS_WAIT_EVENT);
+				green_ap_ctx, WLAN_GREEN_AP_PS_WAIT_STATE,
+				WLAN_GREEN_AP_PS_WAIT_EVENT);
 			qdf_timer_start(&green_ap_ctx->ps_timer,
 					green_ap_ctx->ps_trans_time * 1000);
 		}
@@ -264,9 +261,8 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 		     green_ap_ctx->ps_mode == WLAN_GREEN_AP_MODE_NUM_STREAM)) {
 			green_ap_info("Transition to WAIT from OFF");
 			wlan_green_ap_ps_event_state_update(
-						green_ap_ctx,
-						WLAN_GREEN_AP_PS_WAIT_STATE,
-						WLAN_GREEN_AP_PS_WAIT_EVENT);
+				green_ap_ctx, WLAN_GREEN_AP_PS_WAIT_STATE,
+				WLAN_GREEN_AP_PS_WAIT_EVENT);
 			qdf_timer_start(&green_ap_ctx->ps_timer,
 					green_ap_ctx->ps_trans_time * 1000);
 		}
@@ -281,16 +277,16 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 				break;
 			if ((channel == 0) || (channel_flags == 0)) {
 				/*
-				 * Stay in the current state and restart the
-				 * timer to check later.
-				 */
+         * Stay in the current state and restart the
+         * timer to check later.
+         */
 				qdf_timer_start(&green_ap_ctx->ps_timer,
-					green_ap_ctx->ps_on_time * 1000);
+						green_ap_ctx->ps_on_time *
+							1000);
 			} else {
 				wlan_green_ap_ps_event_state_update(
-						green_ap_ctx,
-						WLAN_GREEN_AP_PS_ON_STATE,
-						WLAN_GREEN_AP_PS_WAIT_EVENT);
+					green_ap_ctx, WLAN_GREEN_AP_PS_ON_STATE,
+					WLAN_GREEN_AP_PS_WAIT_EVENT);
 
 				green_ap_info("Transition to ON from WAIT");
 				green_ap_tx_ops->ps_on_off_send(
@@ -298,16 +294,17 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 				wlan_green_ap_ant_ps_reset(green_ap_ctx);
 
 				if (green_ap_ctx->ps_on_time)
-					qdf_timer_start(&green_ap_ctx->ps_timer,
-						green_ap_ctx->ps_on_time * 1000);
+					qdf_timer_start(
+						&green_ap_ctx->ps_timer,
+						green_ap_ctx->ps_on_time *
+							1000);
 			}
 		} else {
 			green_ap_info("Transition to OFF from WAIT");
 			qdf_timer_stop(&green_ap_ctx->ps_timer);
 			wlan_green_ap_ps_event_state_update(
-						green_ap_ctx,
-						WLAN_GREEN_AP_PS_OFF_STATE,
-						WLAN_GREEN_AP_PS_WAIT_EVENT);
+				green_ap_ctx, WLAN_GREEN_AP_PS_OFF_STATE,
+				WLAN_GREEN_AP_PS_WAIT_EVENT);
 		}
 		break;
 
@@ -317,28 +314,26 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 		    (green_ap_ctx->num_nodes_multistream &&
 		     green_ap_ctx->ps_mode == WLAN_GREEN_AP_MODE_NUM_STREAM)) {
 			qdf_timer_stop(&green_ap_ctx->ps_timer);
-			if (green_ap_tx_ops->ps_on_off_send(
-					green_ap_ctx->pdev, false, pdev_id)) {
+			if (green_ap_tx_ops->ps_on_off_send(green_ap_ctx->pdev,
+							    false, pdev_id)) {
 				green_ap_err("Failed to set Green AP mode");
 				goto done;
 			}
 			wlan_green_ap_ant_ps_reset(green_ap_ctx);
 			green_ap_info("Transition to OFF from ON\n");
 			wlan_green_ap_ps_event_state_update(
-						green_ap_ctx,
-						WLAN_GREEN_AP_PS_OFF_STATE,
-						WLAN_GREEN_AP_PS_WAIT_EVENT);
+				green_ap_ctx, WLAN_GREEN_AP_PS_OFF_STATE,
+				WLAN_GREEN_AP_PS_WAIT_EVENT);
 		} else if ((green_ap_ctx->ps_event ==
-					WLAN_GREEN_AP_PS_WAIT_EVENT) &&
+			    WLAN_GREEN_AP_PS_WAIT_EVENT) &&
 			   (green_ap_ctx->ps_on_time)) {
 			/* ps_on_time timeout, switch to ps wait */
 			wlan_green_ap_ps_event_state_update(
-						green_ap_ctx,
-						WLAN_GREEN_AP_PS_WAIT_STATE,
-						WLAN_GREEN_AP_PS_ON_EVENT);
+				green_ap_ctx, WLAN_GREEN_AP_PS_WAIT_STATE,
+				WLAN_GREEN_AP_PS_ON_EVENT);
 
-			if (green_ap_tx_ops->ps_on_off_send(
-					green_ap_ctx->pdev, false, pdev_id)) {
+			if (green_ap_tx_ops->ps_on_off_send(green_ap_ctx->pdev,
+							    false, pdev_id)) {
 				green_ap_err("Failed to set Green AP mode");
 				goto done;
 			}
@@ -353,9 +348,8 @@ QDF_STATUS wlan_green_ap_state_mc(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
 	default:
 		green_ap_err("invalid state %d", green_ap_ctx->ps_state);
 		wlan_green_ap_ps_event_state_update(
-						green_ap_ctx,
-						WLAN_GREEN_AP_PS_OFF_STATE,
-						WLAN_GREEN_AP_PS_WAIT_EVENT);
+			green_ap_ctx, WLAN_GREEN_AP_PS_OFF_STATE,
+			WLAN_GREEN_AP_PS_WAIT_EVENT);
 		break;
 	}
 
@@ -375,7 +369,7 @@ void wlan_green_ap_timer_fn(void *pdev)
 	}
 
 	green_ap_ctx = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev_ctx, WLAN_UMAC_COMP_GREEN_AP);
+		pdev_ctx, WLAN_UMAC_COMP_GREEN_AP);
 	if (!green_ap_ctx) {
 		green_ap_err("green ap context obtained is NULL");
 		return;
@@ -383,9 +377,8 @@ void wlan_green_ap_timer_fn(void *pdev)
 	wlan_green_ap_state_mc(green_ap_ctx, green_ap_ctx->ps_event);
 }
 
-void wlan_green_ap_check_mode(struct wlan_objmgr_pdev *pdev,
-		void *object,
-		void *arg)
+void wlan_green_ap_check_mode(struct wlan_objmgr_pdev *pdev, void *object,
+			      void *arg)
 {
 	struct wlan_objmgr_vdev *vdev = (struct wlan_objmgr_vdev *)object;
 	uint8_t *flag = (uint8_t *)arg;
@@ -403,8 +396,9 @@ void wlan_green_ap_check_mode(struct wlan_objmgr_pdev *pdev,
 #ifdef WLAN_SUPPORT_GAP_LL_PS_MODE
 #define LOW_LATENCY_MAX_CMDID 0x00000080
 
-uint32_t wlan_green_ap_get_cookie_id(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
-				     enum wlan_green_ap_ll_ps_state state)
+uint32_t
+wlan_green_ap_get_cookie_id(struct wlan_pdev_green_ap_ctx *green_ap_ctx,
+			    enum wlan_green_ap_ll_ps_state state)
 {
 	uint32_t id;
 	qdf_atomic_t *cmd_cnt;
@@ -438,21 +432,23 @@ uint32_t wlan_green_ap_get_cookie_id(struct wlan_pdev_green_ap_ctx *green_ap_ctx
 }
 
 QDF_STATUS
-wlan_green_ap_send_ll_ps_event_params(struct wlan_objmgr_pdev *pdev,
-		struct wlan_green_ap_ll_ps_event_param *event_param)
+wlan_green_ap_send_ll_ps_event_params(
+	struct wlan_objmgr_pdev *pdev,
+	struct wlan_green_ap_ll_ps_event_param *event_param)
 {
 	QDF_STATUS status;
 	struct wlan_pdev_green_ap_ctx *green_ap_ctx;
 
 	green_ap_ctx = wlan_objmgr_pdev_get_comp_private_obj(
-			pdev, WLAN_UMAC_COMP_GREEN_AP);
+		pdev, WLAN_UMAC_COMP_GREEN_AP);
 
 	if (!green_ap_ctx) {
 		green_ap_err("green ap context obtained is NULL");
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = green_ap_ctx->hdd_cback.send_event(green_ap_ctx->vdev, event_param);
+	status = green_ap_ctx->hdd_cback.send_event(green_ap_ctx->vdev,
+						    event_param);
 
 	return status;
 }

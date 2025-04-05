@@ -28,21 +28,21 @@
 /*--------------------------------------------------------------------------
    Include Files
    ------------------------------------------------------------------------*/
+#include "epping_internal.h"
+#include "epping_main.h"
+#include "qdf_net_if.h"
 #include <cds_api.h>
 #include <cds_sched.h>
+#include <linux/ctype.h>
 #include <linux/etherdevice.h>
 #include <linux/firmware.h>
-#include <wni_api.h>
-#include <wlan_ptt_sock_svc.h>
+#include <linux/rtnetlink.h>
+#include <linux/semaphore.h>
 #include <linux/wireless.h>
 #include <net/cfg80211.h>
 #include <pld_common.h>
-#include <linux/rtnetlink.h>
-#include <linux/semaphore.h>
-#include <linux/ctype.h>
-#include "epping_main.h"
-#include "epping_internal.h"
-#include "qdf_net_if.h"
+#include <wlan_ptt_sock_svc.h>
+#include <wni_api.h>
 
 static int epping_start_adapter(epping_adapter_t *adapter);
 static void epping_stop_adapter(epping_adapter_t *adapter);
@@ -53,15 +53,15 @@ static void epping_timer_expire(void *data)
 	epping_adapter_t *adapter;
 
 	if (!dev) {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: netdev = NULL", __func__);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "%s: netdev = NULL",
+			   __func__);
 		return;
 	}
 
 	adapter = netdev_priv(dev);
 	if (!adapter) {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: adapter = NULL", __func__);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "%s: adapter = NULL",
+			   __func__);
 		return;
 	}
 	adapter->epping_timer_state = EPPING_TX_TIMER_STOPPED;
@@ -131,15 +131,14 @@ static void epping_tx_queue_timeout(struct net_device *dev)
 		   __func__, adapter->started);
 
 	/* Getting here implies we disabled the TX queues
-	 * for too long. Since this is epping
-	 * (not because of disassociation or low resource scenarios),
-	 * try to restart the queue
-	 */
+   * for too long. Since this is epping
+   * (not because of disassociation or low resource scenarios),
+   * try to restart the queue
+   */
 	if (adapter->started)
 		netif_wake_queue(dev);
 end:
 	return;
-
 }
 
 static netdev_tx_t epping_hard_start_xmit(struct sk_buff *skb,
@@ -220,8 +219,8 @@ static int epping_set_mac_address(struct net_device *dev, void *addr)
 {
 	epping_adapter_t *adapter = netdev_priv(dev);
 	struct sockaddr *psta_mac_addr = addr;
-	qdf_mem_copy(&adapter->macAddressCurrent,
-		     psta_mac_addr->sa_data, ETH_ALEN);
+	qdf_mem_copy(&adapter->macAddressCurrent, psta_mac_addr->sa_data,
+		     ETH_ALEN);
 	qdf_net_update_net_device_dev_addr(dev, psta_mac_addr->sa_data,
 					   ETH_ALEN);
 	return 0;
@@ -232,8 +231,8 @@ static void epping_stop_adapter(epping_adapter_t *adapter)
 	qdf_device_t qdf_ctx = cds_get_context(QDF_MODULE_ID_QDF_DEVICE);
 
 	if (!qdf_ctx) {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: qdf_ctx is NULL\n", __func__);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "%s: qdf_ctx is NULL\n",
+			   __func__);
 		return;
 	}
 
@@ -242,8 +241,7 @@ static void epping_stop_adapter(epping_adapter_t *adapter)
 		netif_tx_disable(adapter->dev);
 		netif_carrier_off(adapter->dev);
 		adapter->started = false;
-		pld_request_bus_bandwidth(qdf_ctx->dev,
-					  PLD_BUS_WIDTH_LOW);
+		pld_request_bus_bandwidth(qdf_ctx->dev, PLD_BUS_WIDTH_LOW);
 	}
 }
 
@@ -252,19 +250,18 @@ static int epping_start_adapter(epping_adapter_t *adapter)
 	qdf_device_t qdf_ctx = cds_get_context(QDF_MODULE_ID_QDF_DEVICE);
 
 	if (!qdf_ctx) {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: qdf_ctx is NULL", __func__);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "%s: qdf_ctx is NULL",
+			   __func__);
 		return -EINVAL;
 	}
 
 	if (!adapter) {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: adapter= NULL\n", __func__);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "%s: adapter= NULL\n",
+			   __func__);
 		return -EINVAL;
 	}
 	if (!adapter->started) {
-		pld_request_bus_bandwidth(qdf_ctx->dev,
-					  PLD_BUS_WIDTH_HIGH);
+		pld_request_bus_bandwidth(qdf_ctx->dev, PLD_BUS_WIDTH_HIGH);
 		netif_carrier_on(adapter->dev);
 		EPPING_LOG(LOG1, FL("Enabling queues"));
 		netif_tx_start_all_queues(adapter->dev);
@@ -316,8 +313,8 @@ void epping_destroy_adapter(epping_adapter_t *adapter)
 	epping_context_t *pEpping_ctx;
 
 	if (!adapter || !adapter->pEpping_ctx) {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: adapter = NULL\n", __func__);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "%s: adapter = NULL\n",
+			   __func__);
 		return;
 	}
 
@@ -338,8 +335,8 @@ void epping_destroy_adapter(epping_adapter_t *adapter)
 
 	free_netdev(dev);
 	if (!pEpping_ctx)
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "%s: pEpping_ctx = NULL\n", __func__);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "%s: pEpping_ctx = NULL\n",
+			   __func__);
 	else
 		pEpping_ctx->epping_adapter = NULL;
 }
@@ -356,7 +353,7 @@ static struct net_device_ops epping_drv_ops = {
 	.ndo_select_queue = NULL,
 };
 
-#define EPPING_TX_QUEUE_MAX_LEN 128     /* need to be power of 2 */
+#define EPPING_TX_QUEUE_MAX_LEN 128 /* need to be power of 2 */
 
 epping_adapter_t *epping_add_adapter(epping_context_t *pEpping_ctx,
 				     tSirMacAddr macAddr,
@@ -381,22 +378,21 @@ epping_adapter_t *epping_add_adapter(epping_context_t *pEpping_ctx,
 	qdf_mem_zero(adapter, sizeof(*adapter));
 	adapter->dev = dev;
 	adapter->pEpping_ctx = pEpping_ctx;
-	adapter->device_mode = device_mode;    /* station, SAP, etc */
-	qdf_net_update_net_device_dev_addr(dev,
-					   (void *)macAddr,
+	adapter->device_mode = device_mode; /* station, SAP, etc */
+	qdf_net_update_net_device_dev_addr(dev, (void *)macAddr,
 					   sizeof(tSirMacAddr));
-	qdf_mem_copy(adapter->macAddressCurrent.bytes,
-		     macAddr, sizeof(tSirMacAddr));
+	qdf_mem_copy(adapter->macAddressCurrent.bytes, macAddr,
+		     sizeof(tSirMacAddr));
 	qdf_spinlock_create(&adapter->data_lock);
 	qdf_nbuf_queue_init(&adapter->nodrop_queue);
 	adapter->epping_timer_state = EPPING_TX_TIMER_STOPPED;
 	qdf_timer_init(epping_get_qdf_ctx(), &adapter->epping_timer,
-		epping_timer_expire, dev, QDF_TIMER_TYPE_SW);
+		       epping_timer_expire, dev, QDF_TIMER_TYPE_SW);
 	dev->type = ARPHRD_IEEE80211;
 	dev->needed_headroom += 24;
 	dev->netdev_ops = &epping_drv_ops;
-	dev->watchdog_timeo = 5 * HZ;   /* XXX */
-	dev->tx_queue_len = EPPING_TXBUF - 1;      /* 1 for mgmt frame */
+	dev->watchdog_timeo = 5 * HZ; /* XXX */
+	dev->tx_queue_len = EPPING_TXBUF - 1; /* 1 for mgmt frame */
 	if (epping_register_adapter(adapter, rtnl_held) == 0) {
 		EPPING_LOG(LOG1, FL("Disabling queues"));
 		netif_tx_disable(dev);
@@ -422,7 +418,7 @@ int epping_connect_service(epping_context_t *pEpping_ctx)
 	connect.EpCallbacks.EpTxCompleteMultiple = NULL;
 	connect.EpCallbacks.EpRecv = epping_rx;
 	/* epping_tx_complete use Multiple version */
-	connect.EpCallbacks.EpTxComplete  = epping_tx_complete;
+	connect.EpCallbacks.EpTxComplete = epping_tx_complete;
 	connect.MaxSendQueueDepth = 64;
 
 #ifdef HIF_SDIO
@@ -430,7 +426,7 @@ int epping_connect_service(epping_context_t *pEpping_ctx)
 	connect.EpCallbacks.EpSendFull =
 		epping_tx_queue_full /* ar6000_tx_queue_full */;
 #elif defined(HIF_USB) || defined(HIF_PCI) || defined(HIF_SNOC) || \
-      defined(HIF_IPCI)
+	defined(HIF_IPCI)
 	connect.EpCallbacks.EpRecvRefill = NULL /* provided by HIF */;
 	connect.EpCallbacks.EpSendFull = NULL /* provided by HIF */;
 	/* disable flow control for hw flow control */
@@ -439,40 +435,44 @@ int epping_connect_service(epping_context_t *pEpping_ctx)
 
 	/* connect to service */
 	connect.service_id = WMI_DATA_BE_SVC;
-	status = htc_connect_service(pEpping_ctx->HTCHandle, &connect, &response);
+	status = htc_connect_service(pEpping_ctx->HTCHandle, &connect,
+				     &response);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "Failed to connect to Endpoint Ping BE service status:%d\n",
-			   status);
+		EPPING_LOG(
+			QDF_TRACE_LEVEL_FATAL,
+			"Failed to connect to Endpoint Ping BE service status:%d\n",
+			status);
 		return status;
 	} else {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "eppingtest BE endpoint:%d\n", response.Endpoint);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "eppingtest BE endpoint:%d\n",
+			   response.Endpoint);
 	}
 	pEpping_ctx->EppingEndpoint[0] = response.Endpoint;
 
 #if defined(HIF_PCI) || defined(HIF_USB) || defined(HIF_SNOC) || \
-    defined(HIF_IPCI)
+	defined(HIF_IPCI)
 	connect.service_id = WMI_DATA_BK_SVC;
-	status = htc_connect_service(pEpping_ctx->HTCHandle, &connect, &response);
+	status = htc_connect_service(pEpping_ctx->HTCHandle, &connect,
+				     &response);
 	if (QDF_IS_STATUS_ERROR(status)) {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "Failed to connect to Endpoint Ping BK service status:%d\n",
-			   status);
+		EPPING_LOG(
+			QDF_TRACE_LEVEL_FATAL,
+			"Failed to connect to Endpoint Ping BK service status:%d\n",
+			status);
 		return status;
 	} else {
-		EPPING_LOG(QDF_TRACE_LEVEL_FATAL,
-			   "eppingtest BK endpoint:%d\n", response.Endpoint);
+		EPPING_LOG(QDF_TRACE_LEVEL_FATAL, "eppingtest BK endpoint:%d\n",
+			   response.Endpoint);
 	}
 	pEpping_ctx->EppingEndpoint[1] = response.Endpoint;
 	/* Since we do not create other two SVC use BK endpoint
-	 * for rest ACs (2, 3) */
+   * for rest ACs (2, 3) */
 	for (i = 2; i < EPPING_MAX_NUM_EPIDS; i++) {
 		pEpping_ctx->EppingEndpoint[i] = response.Endpoint;
 	}
 #else
 	/* we only use one endpoint for high latenance bus.
-	 * Map all AC's EPIDs to the same endpoint ID returned by HTC */
+   * Map all AC's EPIDs to the same endpoint ID returned by HTC */
 	for (i = 0; i < EPPING_MAX_NUM_EPIDS; i++) {
 		pEpping_ctx->EppingEndpoint[i] = response.Endpoint;
 	}

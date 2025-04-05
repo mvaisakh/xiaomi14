@@ -28,8 +28,9 @@
 #include "target_if_pmo.h"
 #include "wmi_unified_pmo_api.h"
 
-QDF_STATUS target_if_pmo_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_enable_req *ts_lphb_enable)
+QDF_STATUS
+target_if_pmo_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
+			       struct pmo_lphb_enable_req *ts_lphb_enable)
 {
 	wmi_hb_set_enable_cmd_fixed_param hb_enable_fp;
 	wmi_unified_t wmi_handle;
@@ -40,12 +41,12 @@ QDF_STATUS target_if_pmo_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
 	}
 
 	target_if_info("PMO_HB_SET_ENABLE enable=%d, item=%d, session=%d",
-		ts_lphb_enable->enable,
-		ts_lphb_enable->item, ts_lphb_enable->session);
+		       ts_lphb_enable->enable, ts_lphb_enable->item,
+		       ts_lphb_enable->session);
 
 	if ((ts_lphb_enable->item != 1) && (ts_lphb_enable->item != 2)) {
 		target_if_err("LPHB configuration wrong item %d",
-			ts_lphb_enable->item);
+			      ts_lphb_enable->item);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -64,10 +65,11 @@ QDF_STATUS target_if_pmo_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
 	return wmi_unified_lphb_config_hbenable_cmd(wmi_handle, &hb_enable_fp);
 }
 
-QDF_STATUS target_if_pmo_send_lphb_tcp_params(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_tcp_params *ts_lphb_tcp_param)
+QDF_STATUS target_if_pmo_send_lphb_tcp_params(
+	struct wlan_objmgr_psoc *psoc,
+	struct pmo_lphb_tcp_params *ts_lphb_tcp_param)
 {
-	wmi_hb_set_tcp_params_cmd_fixed_param hb_tcp_params_fp = {0};
+	wmi_hb_set_tcp_params_cmd_fixed_param hb_tcp_params_fp = { 0 };
 	wmi_unified_t wmi_handle;
 
 	if (!ts_lphb_tcp_param) {
@@ -76,14 +78,16 @@ QDF_STATUS target_if_pmo_send_lphb_tcp_params(struct wlan_objmgr_psoc *psoc,
 	}
 
 	target_if_info("PMO --> WMI_HB_SET_TCP_PARAMS srv_ip=%08x, "
-		"dev_ip=%08x, src_port=%d, dst_port=%d, timeout=%d, "
-		"session=%d, gateway_mac= "QDF_MAC_ADDR_FMT", time_period_sec=%d,"
-		"tcp_sn=%d", ts_lphb_tcp_param->srv_ip,
-		ts_lphb_tcp_param->dev_ip, ts_lphb_tcp_param->src_port,
-		ts_lphb_tcp_param->dst_port, ts_lphb_tcp_param->timeout,
-		ts_lphb_tcp_param->session,
-		QDF_MAC_ADDR_REF(ts_lphb_tcp_param->gateway_mac.bytes),
-		ts_lphb_tcp_param->time_period_sec, ts_lphb_tcp_param->tcp_sn);
+		       "dev_ip=%08x, src_port=%d, dst_port=%d, timeout=%d, "
+		       "session=%d, gateway_mac= " QDF_MAC_ADDR_FMT
+		       ", time_period_sec=%d,"
+		       "tcp_sn=%d",
+		       ts_lphb_tcp_param->srv_ip, ts_lphb_tcp_param->dev_ip,
+		       ts_lphb_tcp_param->src_port, ts_lphb_tcp_param->dst_port,
+		       ts_lphb_tcp_param->timeout, ts_lphb_tcp_param->session,
+		       QDF_MAC_ADDR_REF(ts_lphb_tcp_param->gateway_mac.bytes),
+		       ts_lphb_tcp_param->time_period_sec,
+		       ts_lphb_tcp_param->tcp_sn);
 
 	/* fill in values */
 	hb_tcp_params_fp.vdev_id = ts_lphb_tcp_param->session;
@@ -108,10 +112,11 @@ QDF_STATUS target_if_pmo_send_lphb_tcp_params(struct wlan_objmgr_psoc *psoc,
 						      &hb_tcp_params_fp);
 }
 
-QDF_STATUS target_if_pmo_send_lphb_tcp_pkt_filter(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_tcp_filter_req *ts_lphb_tcp_filter)
+QDF_STATUS target_if_pmo_send_lphb_tcp_pkt_filter(
+	struct wlan_objmgr_psoc *psoc,
+	struct pmo_lphb_tcp_filter_req *ts_lphb_tcp_filter)
 {
-	wmi_hb_set_tcp_pkt_filter_cmd_fixed_param hb_tcp_filter_fp = {0};
+	wmi_hb_set_tcp_pkt_filter_cmd_fixed_param hb_tcp_filter_fp = { 0 };
 	wmi_unified_t wmi_handle;
 
 	if (!ts_lphb_tcp_filter) {
@@ -119,7 +124,8 @@ QDF_STATUS target_if_pmo_send_lphb_tcp_pkt_filter(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	target_if_info("SET_TCP_PKT_FILTER length=%d, offset=%d, session=%d, "
+	target_if_info(
+		"SET_TCP_PKT_FILTER length=%d, offset=%d, session=%d, "
 		"filter=%2x:%2x:%2x:%2x:%2x:%2x ...",
 		ts_lphb_tcp_filter->length, ts_lphb_tcp_filter->offset,
 		ts_lphb_tcp_filter->session, ts_lphb_tcp_filter->filter[0],
@@ -146,10 +152,11 @@ QDF_STATUS target_if_pmo_send_lphb_tcp_pkt_filter(struct wlan_objmgr_psoc *psoc,
 							  &hb_tcp_filter_fp);
 }
 
-QDF_STATUS target_if_pmo_send_lphb_udp_params(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_udp_params *ts_lphb_udp_param)
+QDF_STATUS target_if_pmo_send_lphb_udp_params(
+	struct wlan_objmgr_psoc *psoc,
+	struct pmo_lphb_udp_params *ts_lphb_udp_param)
 {
-	wmi_hb_set_udp_params_cmd_fixed_param hb_udp_params_fp = {0};
+	wmi_hb_set_udp_params_cmd_fixed_param hb_udp_params_fp = { 0 };
 	wmi_unified_t wmi_handle;
 
 	if (!ts_lphb_udp_param) {
@@ -158,13 +165,13 @@ QDF_STATUS target_if_pmo_send_lphb_udp_params(struct wlan_objmgr_psoc *psoc,
 	}
 
 	target_if_info("HB_SET_UDP_PARAMS srv_ip=%d, dev_ip=%d, src_port=%d, "
-		"dst_port=%d, interval=%d, timeout=%d, session=%d, "
-		"gateway_mac= "QDF_MAC_ADDR_FMT,
-		ts_lphb_udp_param->srv_ip, ts_lphb_udp_param->dev_ip,
-		ts_lphb_udp_param->src_port, ts_lphb_udp_param->dst_port,
-		ts_lphb_udp_param->interval, ts_lphb_udp_param->timeout,
-		ts_lphb_udp_param->session,
-		QDF_MAC_ADDR_REF(ts_lphb_udp_param->gateway_mac.bytes));
+		       "dst_port=%d, interval=%d, timeout=%d, session=%d, "
+		       "gateway_mac= " QDF_MAC_ADDR_FMT,
+		       ts_lphb_udp_param->srv_ip, ts_lphb_udp_param->dev_ip,
+		       ts_lphb_udp_param->src_port, ts_lphb_udp_param->dst_port,
+		       ts_lphb_udp_param->interval, ts_lphb_udp_param->timeout,
+		       ts_lphb_udp_param->session,
+		       QDF_MAC_ADDR_REF(ts_lphb_udp_param->gateway_mac.bytes));
 
 	/* fill in values */
 	hb_udp_params_fp.vdev_id = ts_lphb_udp_param->session;
@@ -195,10 +202,11 @@ QDF_STATUS target_if_pmo_send_lphb_udp_params(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF status
  */
-QDF_STATUS target_if_pmo_send_lphb_udp_pkt_filter(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_udp_filter_req *ts_lphb_udp_filter)
+QDF_STATUS target_if_pmo_send_lphb_udp_pkt_filter(
+	struct wlan_objmgr_psoc *psoc,
+	struct pmo_lphb_udp_filter_req *ts_lphb_udp_filter)
 {
-	wmi_hb_set_udp_pkt_filter_cmd_fixed_param hb_udp_filter_fp = {0};
+	wmi_hb_set_udp_pkt_filter_cmd_fixed_param hb_udp_filter_fp = { 0 };
 	wmi_unified_t wmi_handle;
 
 	if (!ts_lphb_udp_filter) {
@@ -206,7 +214,8 @@ QDF_STATUS target_if_pmo_send_lphb_udp_pkt_filter(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	target_if_info("SET_UDP_PKT_FILTER length=%d, offset=%d, session=%d, "
+	target_if_info(
+		"SET_UDP_PKT_FILTER length=%d, offset=%d, session=%d, "
 		"filter=%2x:%2x:%2x:%2x:%2x:%2x ...",
 		ts_lphb_udp_filter->length, ts_lphb_udp_filter->offset,
 		ts_lphb_udp_filter->session, ts_lphb_udp_filter->filter[0],
@@ -233,7 +242,7 @@ QDF_STATUS target_if_pmo_send_lphb_udp_pkt_filter(struct wlan_objmgr_psoc *psoc,
 }
 
 QDF_STATUS target_if_pmo_lphb_evt_handler(struct wlan_objmgr_psoc *psoc,
-		uint8_t *event)
+					  uint8_t *event)
 {
 	wmi_hb_ind_event_fixed_param *hb_fp;
 	struct pmo_lphb_rsp *slphb_indication = NULL;
@@ -246,7 +255,7 @@ QDF_STATUS target_if_pmo_lphb_evt_handler(struct wlan_objmgr_psoc *psoc,
 		goto out;
 	}
 
-	hb_fp = (wmi_hb_ind_event_fixed_param *) event;
+	hb_fp = (wmi_hb_ind_event_fixed_param *)event;
 	if (!hb_fp) {
 		target_if_err("Invalid wmi_hb_ind_event_fixed_param buffer");
 		qdf_status = QDF_STATUS_E_INVAL;
@@ -254,11 +263,11 @@ QDF_STATUS target_if_pmo_lphb_evt_handler(struct wlan_objmgr_psoc *psoc,
 	}
 
 	target_if_debug("lphb indication received with\n"
-		  "vdev_id=%d, session=%d, reason=%d",
-		hb_fp->vdev_id, hb_fp->session, hb_fp->reason);
+			"vdev_id=%d, session=%d, reason=%d",
+			hb_fp->vdev_id, hb_fp->session, hb_fp->reason);
 
 	slphb_indication = (struct pmo_lphb_rsp *)qdf_mem_malloc(
-				sizeof(struct pmo_lphb_rsp));
+		sizeof(struct pmo_lphb_rsp));
 	if (!slphb_indication) {
 		qdf_status = QDF_STATUS_E_NOMEM;
 		goto out;
@@ -278,4 +287,3 @@ out:
 	return qdf_status;
 }
 #endif
-

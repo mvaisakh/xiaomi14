@@ -17,20 +17,19 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_types.h"
-#include "qdf_util.h"
-#include "qdf_types.h"
+#include "hal_api.h"
+#include "hal_flow.h"
+#include "hal_internal.h"
+#include "hal_rx_flow_info.h"
 #include "qdf_lock.h"
 #include "qdf_mem.h"
+#include "qdf_module.h"
 #include "qdf_nbuf.h"
-#include "hal_internal.h"
-#include "hal_api.h"
+#include "qdf_types.h"
+#include "qdf_util.h"
+#include "rx_flow_search_entry.h"
 #include "target_type.h"
 #include "wcss_version.h"
-#include "qdf_module.h"
-#include "hal_flow.h"
-#include "rx_flow_search_entry.h"
-#include "hal_rx_flow_info.h"
 
 #define UNIFIED_RXPCU_PPDU_END_INFO_8_RX_PPDU_DURATION_OFFSET \
 	RXPCU_PPDU_END_INFO_9_RX_PPDU_DURATION_OFFSET
@@ -105,31 +104,32 @@
 #define UNIFIED_TCL_DATA_CMD_2_BUF_OR_EXT_DESC_TYPE_MASK \
 	TCL_DATA_CMD_2_BUF_OR_EXT_DESC_TYPE_MASK
 
-#include "hal_wcn6450_tx.h"
-#include "hal_wcn6450_rx.h"
-#include <hal_generic_api.h>
-#include "hal_rh_rx.h"
-#include "hal_rh_api.h"
 #include "hal_api_mon.h"
+#include "hal_rh_api.h"
 #include "hal_rh_generic_api.h"
+#include "hal_rh_rx.h"
+#include "hal_wcn6450_rx.h"
+#include "hal_wcn6450_tx.h"
+#include <hal_generic_api.h>
 
 struct hal_hw_srng_config hw_srng_table_wcn6450[] = {
 	/* TODO: max_rings can populated by querying HW capabilities */
-	{/* REO_DST */ 0},
-	{/* REO_EXCEPTION */ 0},
-	{/* REO_REINJECT */ 0},
-	{/* REO_CMD */ 0},
-	{/* REO_STATUS */ 0},
-	{/* TCL_DATA */ 0},
-	{/* TCL_CMD */ 0},
-	{/* TCL_STATUS */ 0},
-	{/* CE_SRC */ 0},
-	{/* CE_DST */ 0},
-	{/* CE_DST_STATUS */ 0},
-	{/* WBM_IDLE_LINK */ 0},
-	{/* SW2WBM_RELEASE */ 0},
-	{/* WBM2SW_RELEASE */ 0},
-	{ /* RXDMA_BUF */
+	{ /* REO_DST */ 0 },
+	{ /* REO_EXCEPTION */ 0 },
+	{ /* REO_REINJECT */ 0 },
+	{ /* REO_CMD */ 0 },
+	{ /* REO_STATUS */ 0 },
+	{ /* TCL_DATA */ 0 },
+	{ /* TCL_CMD */ 0 },
+	{ /* TCL_STATUS */ 0 },
+	{ /* CE_SRC */ 0 },
+	{ /* CE_DST */ 0 },
+	{ /* CE_DST_STATUS */ 0 },
+	{ /* WBM_IDLE_LINK */ 0 },
+	{ /* SW2WBM_RELEASE */ 0 },
+	{ /* WBM2SW_RELEASE */ 0 },
+	{
+		/* RXDMA_BUF */
 		.start_ring_id = HAL_SRNG_WMAC1_SW2RXDMA0_BUF0,
 #ifdef IPA_OFFLOAD
 		.max_rings = 3,
@@ -140,88 +140,93 @@ struct hal_hw_srng_config hw_srng_table_wcn6450[] = {
 		.lmac_ring = TRUE,
 		.ring_dir = HAL_SRNG_SRC_RING,
 		/* reg_start is not set because LMAC rings are not accessed
-		 * from host
-		 */
+         * from host
+         */
 		.reg_start = {},
 		.reg_size = {},
 		.max_size = HAL_RXDMA_MAX_RING_SIZE,
 	},
-	{ /* RXDMA_DST */
+	{
+		/* RXDMA_DST */
 		.start_ring_id = HAL_SRNG_WMAC1_RXDMA2SW0,
 		.max_rings = 1,
 		.entry_size = sizeof(struct reo_entrance_ring) >> 2,
-		.lmac_ring =  TRUE,
+		.lmac_ring = TRUE,
 		.ring_dir = HAL_SRNG_DST_RING,
 		/* reg_start is not set because LMAC rings are not accessed
-		 * from host
-		 */
+         * from host
+         */
 		.reg_start = {},
 		.reg_size = {},
 		.max_size = HAL_RXDMA_MAX_RING_SIZE,
 	},
-	{/* RXDMA_MONITOR_BUF */ 0},
-	{ /* RXDMA_MONITOR_STATUS */
+	{ /* RXDMA_MONITOR_BUF */ 0 },
+	{
+		/* RXDMA_MONITOR_STATUS */
 		.start_ring_id = HAL_SRNG_WMAC1_SW2RXDMA1_STATBUF,
 		.max_rings = 1,
 		.entry_size = sizeof(struct wbm_buffer_ring) >> 2,
 		.lmac_ring = TRUE,
 		.ring_dir = HAL_SRNG_SRC_RING,
 		/* reg_start is not set because LMAC rings are not accessed
-		 * from host
-		 */
+         * from host
+         */
 		.reg_start = {},
 		.reg_size = {},
 		.max_size = HAL_RXDMA_MAX_RING_SIZE,
 	},
-	{/* RXDMA_MONITOR_DST */ 0},
-	{/* RXDMA_MONITOR_DESC */ 0},
-	{/* DIR_BUF_RX_DMA_SRC */
+	{ /* RXDMA_MONITOR_DST */ 0 },
+	{ /* RXDMA_MONITOR_DESC */ 0 },
+	{
+		/* DIR_BUF_RX_DMA_SRC */
 		.start_ring_id = HAL_SRNG_DIR_BUF_RX_SRC_DMA_RING,
 		/*
-		 * one ring is for spectral scan
-		 * the other is for cfr
-		 */
+         * one ring is for spectral scan
+         * the other is for cfr
+         */
 		.max_rings = 2,
 		.entry_size = 2,
 		.lmac_ring = TRUE,
 		.ring_dir = HAL_SRNG_SRC_RING,
 		/* reg_start is not set because LMAC rings are not accessed
-		 * from host
-		 */
+         * from host
+         */
 		.reg_start = {},
 		.reg_size = {},
 		.max_size = HAL_RXDMA_MAX_RING_SIZE,
 	},
 #ifdef WLAN_FEATURE_CIF_CFR
-	{/* WIFI_POS_SRC */
+	{
+		/* WIFI_POS_SRC */
 		.start_ring_id = HAL_SRNG_WIFI_POS_SRC_DMA_RING,
 		.max_rings = 1,
-		.entry_size = sizeof(wmi_oem_dma_buf_release_entry)  >> 2,
+		.entry_size = sizeof(wmi_oem_dma_buf_release_entry) >> 2,
 		.lmac_ring = TRUE,
 		.ring_dir = HAL_SRNG_SRC_RING,
 		/* reg_start is not set because LMAC rings are not accessed
-		 * from host
-		 */
+         * from host
+         */
 		.reg_start = {},
 		.reg_size = {},
 		.max_size = HAL_RXDMA_MAX_RING_SIZE,
 	},
 #endif
-	{ /* REO2PPE */ 0},
-	{ /* PPE2TCL */ 0},
-	{ /* PPE_RELEASE */ 0},
-	{ /* TX_MONITOR_BUF */ 0},
-	{ /* TX_MONITOR_DST */ 0},
-	{ /* SW2RXDMA_NEW */ 0},
-	{ /* SW2RXDMA_LINK_RELEASE */
+	{ /* REO2PPE */ 0 },
+	{ /* PPE2TCL */ 0 },
+	{ /* PPE_RELEASE */ 0 },
+	{ /* TX_MONITOR_BUF */ 0 },
+	{ /* TX_MONITOR_DST */ 0 },
+	{ /* SW2RXDMA_NEW */ 0 },
+	{
+		/* SW2RXDMA_LINK_RELEASE */
 		.start_ring_id = HAL_SRNG_WMAC1_SW2RXDMA_LINK_RING,
 		.max_rings = 1,
 		.entry_size = sizeof(struct wbm_buffer_ring) >> 2,
 		.lmac_ring = TRUE,
 		.ring_dir = HAL_SRNG_SRC_RING,
 		/* reg_start is not set because LMAC rings are not accessed
-		 * from host
-		 */
+         * from host
+         */
 		.reg_start = {},
 		.reg_size = {},
 		.max_size = HAL_RXDMA_MAX_RING_SIZE,
@@ -231,8 +236,7 @@ struct hal_hw_srng_config hw_srng_table_wcn6450[] = {
 
 static void hal_get_hw_hptp_6450(struct hal_soc *hal_soc,
 				 hal_ring_handle_t hal_ring_hdl,
-				 uint32_t *headp, uint32_t *tailp,
-				 uint8_t ring)
+				 uint32_t *headp, uint32_t *tailp, uint8_t ring)
 {
 }
 
@@ -249,8 +253,8 @@ static void hal_tx_desc_set_dscp_tid_table_id_6450(void *desc, uint8_t id)
 {
 }
 
-static void hal_tx_set_dscp_tid_map_6450(struct hal_soc *hal_soc,
-					 uint8_t *map, uint8_t id)
+static void hal_tx_set_dscp_tid_map_6450(struct hal_soc *hal_soc, uint8_t *map,
+					 uint8_t id)
 {
 }
 
@@ -280,13 +284,12 @@ static uint32_t hal_get_link_desc_size_6450(void)
 	return LINK_DESC_SIZE;
 }
 
-static void hal_reo_status_get_header_6450(hal_ring_desc_t ring_desc,
-					   int b, void *h1)
+static void hal_reo_status_get_header_6450(hal_ring_desc_t ring_desc, int b,
+					   void *h1)
 {
 }
 
-static void hal_rx_wbm_err_info_get_6450(void *wbm_desc,
-					 void *wbm_er_info1)
+static void hal_rx_wbm_err_info_get_6450(void *wbm_desc, void *wbm_er_info1)
 {
 }
 
@@ -340,8 +343,7 @@ static uint8_t hal_rx_get_filter_category_6450(uint8_t *buf)
 	return HAL_RX_GET_FILTER_CATEGORY(buf);
 }
 
-static void hal_reo_config_6450(struct hal_soc *soc,
-				uint32_t reg_val,
+static void hal_reo_config_6450(struct hal_soc *soc, uint32_t reg_val,
 				struct hal_reo_params *reo_params)
 {
 }
@@ -368,14 +370,11 @@ static void hal_compute_reo_remap_ix2_ix3_6450(uint32_t *ring,
 {
 }
 
-static void
-hal_setup_link_idle_list_6450(struct hal_soc *soc,
-			      qdf_dma_addr_t scatter_bufs_base_paddr[],
-			      void *scatter_bufs_base_vaddr[],
-			      uint32_t num_scatter_bufs,
-			      uint32_t scatter_buf_size,
-			      uint32_t last_buf_end_offset,
-			      uint32_t num_entries)
+static void hal_setup_link_idle_list_6450(
+	struct hal_soc *soc, qdf_dma_addr_t scatter_bufs_base_paddr[],
+	void *scatter_bufs_base_vaddr[], uint32_t num_scatter_bufs,
+	uint32_t scatter_buf_size, uint32_t last_buf_end_offset,
+	uint32_t num_entries)
 {
 }
 
@@ -423,7 +422,7 @@ static inline qdf_iomem_t hal_get_window_address_6450(struct hal_soc *hal_soc,
 	}
 
 	return hal_soc->dev_base_addr + (scale * WINDOW_START) +
-		(offset & WINDOW_RANGE_MASK);
+	       (offset & WINDOW_RANGE_MASK);
 }
 
 /*
@@ -470,8 +469,8 @@ static void hal_rx_mon_hw_desc_get_mpdu_status_6450(void *hw_desc_addr,
 
 	HAL_RX_GET_MSDU_AGGREGATION(rx_desc, rs);
 
-	rs->ant_signal_db = HAL_RX_GET(rx_msdu_start,
-				       RX_MSDU_START_5, USER_RSSI);
+	rs->ant_signal_db =
+		HAL_RX_GET(rx_msdu_start, RX_MSDU_START_5, USER_RSSI);
 	rs->is_stbc = HAL_RX_GET(rx_msdu_start, RX_MSDU_START_5, STBC);
 
 	reg_value = HAL_RX_GET(rx_msdu_start, RX_MSDU_START_5, SGI);
@@ -501,9 +500,9 @@ static uint8_t hal_rx_get_tlv_6450(void *rx_tlv)
  *
  * Return: None
  */
-static
-void hal_rx_proc_phyrx_other_receive_info_tlv_6450(void *rx_tlv_hdr,
-						   void *ppdu_info_handle)
+static void
+hal_rx_proc_phyrx_other_receive_info_tlv_6450(void *rx_tlv_hdr,
+					      void *ppdu_info_handle)
 {
 	uint32_t tlv_tag, tlv_len;
 	uint32_t temp_len, other_tlv_len, other_tlv_tag;
@@ -525,8 +524,8 @@ void hal_rx_proc_phyrx_other_receive_info_tlv_6450(void *rx_tlv_hdr,
 	switch (other_tlv_tag) {
 	default:
 		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_ERROR,
-			  "%s unhandled TLV type: %d, TLV len:%d",
-			  __func__, other_tlv_tag, other_tlv_len);
+			  "%s unhandled TLV type: %d, TLV len:%d", __func__,
+			  other_tlv_tag, other_tlv_len);
 		break;
 	}
 }
@@ -543,69 +542,55 @@ static void hal_rx_dump_msdu_start_tlv_6450(void *pkttlvs, uint8_t dbg_level)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)pkttlvs;
 	struct rx_msdu_start *msdu_start =
-					&pkt_tlvs->msdu_start_tlv.rx_msdu_start;
+		&pkt_tlvs->msdu_start_tlv.rx_msdu_start;
 
 	hal_verbose_debug(
-			  "rx_msdu_start tlv (1/2) - "
-			  "rxpcu_mpdu_filter_in_category: %x "
-			  "sw_frame_group_id: %x "
-			  "phy_ppdu_id: %x "
-			  "msdu_length: %x "
-			  "ipsec_esp: %x "
-			  "l3_offset: %x "
-			  "ipsec_ah: %x "
-			  "l4_offset: %x "
-			  "msdu_number: %x "
-			  "decap_format: %x "
-			  "ipv4_proto: %x "
-			  "ipv6_proto: %x "
-			  "tcp_proto: %x "
-			  "udp_proto: %x "
-			  "ip_frag: %x "
-			  "tcp_only_ack: %x "
-			  "da_is_bcast_mcast: %x "
-			  "ip4_protocol_ip6_next_header: %x "
-			  "toeplitz_hash_2_or_4: %x "
-			  "flow_id_toeplitz: %x "
-			  "user_rssi: %x "
-			  "pkt_type: %x "
-			  "stbc: %x "
-			  "sgi: %x "
-			  "rate_mcs: %x "
-			  "receive_bandwidth: %x "
-			  "reception_type: %x "
-			  "ppdu_start_timestamp: %u ",
-			  msdu_start->rxpcu_mpdu_filter_in_category,
-			  msdu_start->sw_frame_group_id,
-			  msdu_start->phy_ppdu_id,
-			  msdu_start->msdu_length,
-			  msdu_start->ipsec_esp,
-			  msdu_start->l3_offset,
-			  msdu_start->ipsec_ah,
-			  msdu_start->l4_offset,
-			  msdu_start->msdu_number,
-			  msdu_start->decap_format,
-			  msdu_start->ipv4_proto,
-			  msdu_start->ipv6_proto,
-			  msdu_start->tcp_proto,
-			  msdu_start->udp_proto,
-			  msdu_start->ip_frag,
-			  msdu_start->tcp_only_ack,
-			  msdu_start->da_is_bcast_mcast,
-			  msdu_start->ip4_protocol_ip6_next_header,
-			  msdu_start->toeplitz_hash_2_or_4,
-			  msdu_start->flow_id_toeplitz,
-			  msdu_start->user_rssi,
-			  msdu_start->pkt_type,
-			  msdu_start->stbc,
-			  msdu_start->sgi,
-			  msdu_start->rate_mcs,
-			  msdu_start->receive_bandwidth,
-			  msdu_start->reception_type,
-			  msdu_start->ppdu_start_timestamp);
+		"rx_msdu_start tlv (1/2) - "
+		"rxpcu_mpdu_filter_in_category: %x "
+		"sw_frame_group_id: %x "
+		"phy_ppdu_id: %x "
+		"msdu_length: %x "
+		"ipsec_esp: %x "
+		"l3_offset: %x "
+		"ipsec_ah: %x "
+		"l4_offset: %x "
+		"msdu_number: %x "
+		"decap_format: %x "
+		"ipv4_proto: %x "
+		"ipv6_proto: %x "
+		"tcp_proto: %x "
+		"udp_proto: %x "
+		"ip_frag: %x "
+		"tcp_only_ack: %x "
+		"da_is_bcast_mcast: %x "
+		"ip4_protocol_ip6_next_header: %x "
+		"toeplitz_hash_2_or_4: %x "
+		"flow_id_toeplitz: %x "
+		"user_rssi: %x "
+		"pkt_type: %x "
+		"stbc: %x "
+		"sgi: %x "
+		"rate_mcs: %x "
+		"receive_bandwidth: %x "
+		"reception_type: %x "
+		"ppdu_start_timestamp: %u ",
+		msdu_start->rxpcu_mpdu_filter_in_category,
+		msdu_start->sw_frame_group_id, msdu_start->phy_ppdu_id,
+		msdu_start->msdu_length, msdu_start->ipsec_esp,
+		msdu_start->l3_offset, msdu_start->ipsec_ah,
+		msdu_start->l4_offset, msdu_start->msdu_number,
+		msdu_start->decap_format, msdu_start->ipv4_proto,
+		msdu_start->ipv6_proto, msdu_start->tcp_proto,
+		msdu_start->udp_proto, msdu_start->ip_frag,
+		msdu_start->tcp_only_ack, msdu_start->da_is_bcast_mcast,
+		msdu_start->ip4_protocol_ip6_next_header,
+		msdu_start->toeplitz_hash_2_or_4, msdu_start->flow_id_toeplitz,
+		msdu_start->user_rssi, msdu_start->pkt_type, msdu_start->stbc,
+		msdu_start->sgi, msdu_start->rate_mcs,
+		msdu_start->receive_bandwidth, msdu_start->reception_type,
+		msdu_start->ppdu_start_timestamp);
 
-	hal_verbose_debug(
-			  "rx_msdu_start tlv (2/2) - "
+	hal_verbose_debug("rx_msdu_start tlv (2/2) - "
 			  "sw_phy_meta_data: %x ",
 			  msdu_start->sw_phy_meta_data);
 }
@@ -618,8 +603,7 @@ static void hal_rx_dump_msdu_start_tlv_6450(void *pkttlvs, uint8_t dbg_level)
  *
  * Return: void
  */
-static void hal_rx_dump_msdu_end_tlv_6450(void *pkttlvs,
-					  uint8_t dbg_level)
+static void hal_rx_dump_msdu_end_tlv_6450(void *pkttlvs, uint8_t dbg_level)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)pkttlvs;
 	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
@@ -646,22 +630,15 @@ static void hal_rx_dump_msdu_end_tlv_6450(void *pkttlvs,
 		       "wifi_parser_error: %x "
 		       "amsdu_parser_error: %x",
 		       msdu_end->rxpcu_mpdu_filter_in_category,
-		       msdu_end->sw_frame_group_id,
-		       msdu_end->phy_ppdu_id,
-		       msdu_end->ip_hdr_chksum,
-		       msdu_end->tcp_udp_chksum,
-		       msdu_end->key_id_octet,
-		       msdu_end->cce_super_rule,
+		       msdu_end->sw_frame_group_id, msdu_end->phy_ppdu_id,
+		       msdu_end->ip_hdr_chksum, msdu_end->tcp_udp_chksum,
+		       msdu_end->key_id_octet, msdu_end->cce_super_rule,
 		       msdu_end->cce_classify_not_done_truncate,
 		       msdu_end->cce_classify_not_done_cce_dis,
-		       msdu_end->reported_mpdu_length,
-		       msdu_end->first_msdu,
-		       msdu_end->last_msdu,
-		       msdu_end->sa_idx_timeout,
-		       msdu_end->da_idx_timeout,
-		       msdu_end->msdu_limit_error,
-		       msdu_end->flow_idx_timeout,
-		       msdu_end->flow_idx_invalid,
+		       msdu_end->reported_mpdu_length, msdu_end->first_msdu,
+		       msdu_end->last_msdu, msdu_end->sa_idx_timeout,
+		       msdu_end->da_idx_timeout, msdu_end->msdu_limit_error,
+		       msdu_end->flow_idx_timeout, msdu_end->flow_idx_invalid,
 		       msdu_end->wifi_parser_error,
 		       msdu_end->amsdu_parser_error);
 
@@ -691,29 +668,18 @@ static void hal_rx_dump_msdu_end_tlv_6450(void *pkttlvs,
 		       "fse_metadata: %x "
 		       "cce_metadata: %x "
 		       "sa_sw_peer_id: %x ",
-		       msdu_end->sa_is_valid,
-		       msdu_end->da_is_valid,
-		       msdu_end->da_is_mcbc,
-		       msdu_end->l3_header_padding,
-		       msdu_end->ipv6_options_crc,
-		       msdu_end->tcp_seq_number,
-		       msdu_end->tcp_ack_number,
-		       msdu_end->tcp_flag,
-		       msdu_end->lro_eligible,
-		       msdu_end->window_size,
-		       msdu_end->da_offset,
-		       msdu_end->sa_offset,
-		       msdu_end->da_offset_valid,
-		       msdu_end->sa_offset_valid,
+		       msdu_end->sa_is_valid, msdu_end->da_is_valid,
+		       msdu_end->da_is_mcbc, msdu_end->l3_header_padding,
+		       msdu_end->ipv6_options_crc, msdu_end->tcp_seq_number,
+		       msdu_end->tcp_ack_number, msdu_end->tcp_flag,
+		       msdu_end->lro_eligible, msdu_end->window_size,
+		       msdu_end->da_offset, msdu_end->sa_offset,
+		       msdu_end->da_offset_valid, msdu_end->sa_offset_valid,
 		       msdu_end->rule_indication_31_0,
-		       msdu_end->rule_indication_63_32,
-		       msdu_end->sa_idx,
-		       msdu_end->da_idx_or_sw_peer_id,
-		       msdu_end->msdu_drop,
-		       msdu_end->reo_destination_indication,
-		       msdu_end->flow_idx,
-		       msdu_end->fse_metadata,
-		       msdu_end->cce_metadata,
+		       msdu_end->rule_indication_63_32, msdu_end->sa_idx,
+		       msdu_end->da_idx_or_sw_peer_id, msdu_end->msdu_drop,
+		       msdu_end->reo_destination_indication, msdu_end->flow_idx,
+		       msdu_end->fse_metadata, msdu_end->cce_metadata,
 		       msdu_end->sa_sw_peer_id);
 	__QDF_TRACE_RL(dbg_level, QDF_MODULE_ID_DP,
 		       "rx_msdu_end tlv (3/3)"
@@ -724,25 +690,23 @@ static void hal_rx_dump_msdu_end_tlv_6450(void *pkttlvs,
 		       "cumulative_ip_length %x",
 		       msdu_end->aggregation_count,
 		       msdu_end->flow_aggregation_continuation,
-		       msdu_end->fisa_timeout,
-		       msdu_end->cumulative_l4_checksum,
+		       msdu_end->fisa_timeout, msdu_end->cumulative_l4_checksum,
 		       msdu_end->cumulative_ip_length);
 }
 
 /*
  * Get tid from RX_MPDU_START
  */
-#define HAL_RX_MPDU_INFO_TID_GET(_rx_mpdu_info) \
-	(_HAL_MS((*_OFFSET_TO_WORD_PTR((_rx_mpdu_info),	\
-		RX_MPDU_INFO_7_TID_OFFSET)),		\
-		RX_MPDU_INFO_7_TID_MASK,		\
-		RX_MPDU_INFO_7_TID_LSB))
+#define HAL_RX_MPDU_INFO_TID_GET(_rx_mpdu_info)                     \
+	(_HAL_MS((*_OFFSET_TO_WORD_PTR((_rx_mpdu_info),             \
+				       RX_MPDU_INFO_7_TID_OFFSET)), \
+		 RX_MPDU_INFO_7_TID_MASK, RX_MPDU_INFO_7_TID_LSB))
 
 static uint32_t hal_rx_mpdu_start_tid_get_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-			&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 	uint32_t tid;
 
 	tid = HAL_RX_MPDU_INFO_TID_GET(&mpdu_start->rx_mpdu_info_details);
@@ -750,11 +714,11 @@ static uint32_t hal_rx_mpdu_start_tid_get_6450(uint8_t *buf)
 	return tid;
 }
 
-#define HAL_RX_MSDU_START_RECEPTION_TYPE_GET(_rx_msdu_start) \
-	(_HAL_MS((*_OFFSET_TO_WORD_PTR((_rx_msdu_start),	\
-	RX_MSDU_START_5_RECEPTION_TYPE_OFFSET)),	\
-	RX_MSDU_START_5_RECEPTION_TYPE_MASK,		\
-	RX_MSDU_START_5_RECEPTION_TYPE_LSB))
+#define HAL_RX_MSDU_START_RECEPTION_TYPE_GET(_rx_msdu_start)                    \
+	(_HAL_MS((*_OFFSET_TO_WORD_PTR((_rx_msdu_start),                        \
+				       RX_MSDU_START_5_RECEPTION_TYPE_OFFSET)), \
+		 RX_MSDU_START_5_RECEPTION_TYPE_MASK,                           \
+		 RX_MSDU_START_5_RECEPTION_TYPE_LSB))
 
 /*
  * hal_rx_msdu_start_reception_type_get(): API to get the reception type
@@ -763,8 +727,7 @@ static uint32_t hal_rx_mpdu_start_tid_get_6450(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV header
  * Return: uint32_t(reception_type)
  */
-static
-uint32_t hal_rx_msdu_start_reception_type_get_6450(uint8_t *buf)
+static uint32_t hal_rx_msdu_start_reception_type_get_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_start *msdu_start =
@@ -824,8 +787,7 @@ static void *hal_rx_link_desc_msdu0_ptr_6450(void *link_desc)
  * @buf: Network buffer
  * Returns: rx fragment number
  */
-static
-uint8_t hal_rx_get_rx_fragment_number_6450(uint8_t *buf)
+static uint8_t hal_rx_get_rx_fragment_number_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = hal_rx_get_pkt_tlvs(buf);
 	struct rx_mpdu_info *rx_mpdu_info = hal_rx_get_mpdu_info(pkt_tlvs);
@@ -842,8 +804,7 @@ uint8_t hal_rx_get_rx_fragment_number_6450(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV headers
  * Return: da_is_mcbc
  */
-static uint8_t
-hal_rx_msdu_end_da_is_mcbc_get_6450(uint8_t *buf)
+static uint8_t hal_rx_msdu_end_da_is_mcbc_get_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
@@ -858,8 +819,7 @@ hal_rx_msdu_end_da_is_mcbc_get_6450(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV headers
  * Return: sa_is_valid bit
  */
-static uint8_t
-hal_rx_msdu_end_sa_is_valid_get_6450(uint8_t *buf)
+static uint8_t hal_rx_msdu_end_sa_is_valid_get_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
@@ -877,8 +837,7 @@ hal_rx_msdu_end_sa_is_valid_get_6450(uint8_t *buf)
  * @buf: pointer to the start of RX PKT TLV headers
  * Return: sa_idx (SA AST index)
  */
-static
-uint16_t hal_rx_msdu_end_sa_idx_get_6450(uint8_t *buf)
+static uint16_t hal_rx_msdu_end_sa_idx_get_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
@@ -932,7 +891,7 @@ static uint32_t hal_rx_encryption_info_valid_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-				 &pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 	struct rx_mpdu_info *mpdu_info = &mpdu_start->rx_mpdu_info_details;
 	uint32_t encryption_info = HAL_RX_MPDU_ENCRYPTION_INFO_VALID(mpdu_info);
 
@@ -949,7 +908,7 @@ static void hal_rx_print_pn_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-				 &pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 	struct rx_mpdu_info *mpdu_info = &mpdu_start->rx_mpdu_info_details;
 
 	uint32_t pn_31_0 = HAL_RX_MPDU_PN_31_0_GET(mpdu_info);
@@ -957,8 +916,9 @@ static void hal_rx_print_pn_6450(uint8_t *buf)
 	uint32_t pn_95_64 = HAL_RX_MPDU_PN_95_64_GET(mpdu_info);
 	uint32_t pn_127_96 = HAL_RX_MPDU_PN_127_96_GET(mpdu_info);
 
-	hal_debug("PN number pn_127_96 0x%x pn_95_64 0x%x pn_63_32 0x%x pn_31_0 0x%x",
-		  pn_127_96, pn_95_64, pn_63_32, pn_31_0);
+	hal_debug(
+		"PN number pn_127_96 0x%x pn_95_64 0x%x pn_63_32 0x%x pn_31_0 0x%x",
+		pn_127_96, pn_95_64, pn_63_32, pn_31_0);
 }
 
 /**
@@ -1042,10 +1002,10 @@ static uint32_t hal_rx_mpdu_start_sw_peer_id_get_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-			&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 
 	return HAL_RX_MPDU_INFO_SW_PEER_ID_GET(
-			&mpdu_start->rx_mpdu_info_details);
+		&mpdu_start->rx_mpdu_info_details);
 }
 
 /**
@@ -1059,7 +1019,7 @@ static uint32_t hal_rx_mpdu_get_to_ds_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-				 &pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 
 	struct rx_mpdu_info *mpdu_info = &mpdu_start->rx_mpdu_info_details;
 
@@ -1077,7 +1037,7 @@ static uint32_t hal_rx_mpdu_get_fr_ds_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-				 &pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 
 	struct rx_mpdu_info *mpdu_info = &mpdu_start->rx_mpdu_info_details;
 
@@ -1115,7 +1075,7 @@ static QDF_STATUS hal_rx_mpdu_get_addr1_6450(uint8_t *buf, uint8_t *mac_addr)
 
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-				 &pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 
 	struct rx_mpdu_info *mpdu_info = &mpdu_start->rx_mpdu_info_details;
 	struct hal_addr1 *addr = (struct hal_addr1 *)mac_addr;
@@ -1140,8 +1100,7 @@ static QDF_STATUS hal_rx_mpdu_get_addr1_6450(uint8_t *buf, uint8_t *mac_addr)
  * @mac_addr: pointer to mac address
  * Return: success/failure
  */
-static QDF_STATUS hal_rx_mpdu_get_addr2_6450(uint8_t *buf,
-					     uint8_t *mac_addr)
+static QDF_STATUS hal_rx_mpdu_get_addr2_6450(uint8_t *buf, uint8_t *mac_addr)
 {
 	struct __attribute__((__packed__)) hal_addr2 {
 		uint16_t ad2_15_0;
@@ -1150,7 +1109,7 @@ static QDF_STATUS hal_rx_mpdu_get_addr2_6450(uint8_t *buf,
 
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-				 &pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 
 	struct rx_mpdu_info *mpdu_info = &mpdu_start->rx_mpdu_info_details;
 	struct hal_addr2 *addr = (struct hal_addr2 *)mac_addr;
@@ -1184,7 +1143,7 @@ static QDF_STATUS hal_rx_mpdu_get_addr3_6450(uint8_t *buf, uint8_t *mac_addr)
 
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-				 &pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 
 	struct rx_mpdu_info *mpdu_info = &mpdu_start->rx_mpdu_info_details;
 	struct hal_addr3 *addr = (struct hal_addr3 *)mac_addr;
@@ -1218,7 +1177,7 @@ static QDF_STATUS hal_rx_mpdu_get_addr4_6450(uint8_t *buf, uint8_t *mac_addr)
 
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_mpdu_start *mpdu_start =
-				 &pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
+		&pkt_tlvs->mpdu_start_tlv.rx_mpdu_start;
 
 	struct rx_mpdu_info *mpdu_info = &mpdu_start->rx_mpdu_info_details;
 	struct hal_addr4 *addr = (struct hal_addr4 *)mac_addr;
@@ -1269,8 +1228,7 @@ static uint32_t hal_rx_hw_desc_get_ppduid_get_6450(void *rx_tlv_hdr,
 	return HAL_RX_GET(rx_mpdu_info, RX_MPDU_INFO_9, PHY_PPDU_ID);
 }
 
-static uint32_t
-hal_rx_get_ppdu_id_6450(uint8_t *buf)
+static uint32_t hal_rx_get_ppdu_id_6450(uint8_t *buf)
 {
 	return HAL_RX_GET_PPDU_ID(buf);
 }
@@ -1327,8 +1285,7 @@ static uint32_t hal_rx_msdu_fse_metadata_get_6450(uint8_t *buf)
  *
  * Return: cce_metadata
  */
-static uint16_t
-hal_rx_msdu_cce_metadata_get_6450(uint8_t *buf)
+static uint16_t hal_rx_msdu_cce_metadata_get_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
@@ -1346,11 +1303,10 @@ hal_rx_msdu_cce_metadata_get_6450(uint8_t *buf)
  *
  * Return: none
  */
-static inline void
-hal_rx_msdu_get_flow_params_6450(uint8_t *buf,
-				 bool *flow_invalid,
-				 bool *flow_timeout,
-				 uint32_t *flow_index)
+static inline void hal_rx_msdu_get_flow_params_6450(uint8_t *buf,
+						    bool *flow_invalid,
+						    bool *flow_timeout,
+						    uint32_t *flow_index)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
@@ -1366,8 +1322,7 @@ hal_rx_msdu_get_flow_params_6450(uint8_t *buf,
  *
  * Return: tcp checksum
  */
-static uint16_t
-hal_rx_tlv_get_tcp_chksum_6450(uint8_t *buf)
+static uint16_t hal_rx_tlv_get_tcp_chksum_6450(uint8_t *buf)
 {
 	return HAL_RX_TLV_GET_TCP_CHKSUM(buf);
 }
@@ -1378,8 +1333,7 @@ hal_rx_tlv_get_tcp_chksum_6450(uint8_t *buf)
  * @buf: Network buffer
  * Returns: rx sequence number
  */
-static
-uint16_t hal_rx_get_rx_sequence_6450(uint8_t *buf)
+static uint16_t hal_rx_get_rx_sequence_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = hal_rx_get_pkt_tlvs(buf);
 	struct rx_mpdu_info *rx_mpdu_info = hal_rx_get_mpdu_info(pkt_tlvs);
@@ -1394,8 +1348,7 @@ uint16_t hal_rx_get_rx_sequence_6450(uint8_t *buf)
  *
  * Return: cumulative checksum
  */
-static inline
-uint16_t hal_rx_get_fisa_cumulative_l4_checksum_6450(uint8_t *buf)
+static inline uint16_t hal_rx_get_fisa_cumulative_l4_checksum_6450(uint8_t *buf)
 {
 	return HAL_RX_TLV_GET_FISA_CUMULATIVE_L4_CHECKSUM(buf);
 }
@@ -1407,8 +1360,7 @@ uint16_t hal_rx_get_fisa_cumulative_l4_checksum_6450(uint8_t *buf)
  *
  * Return: cumulative length
  */
-static inline
-uint16_t hal_rx_get_fisa_cumulative_ip_length_6450(uint8_t *buf)
+static inline uint16_t hal_rx_get_fisa_cumulative_ip_length_6450(uint8_t *buf)
 {
 	return HAL_RX_TLV_GET_FISA_CUMULATIVE_IP_LENGTH(buf);
 }
@@ -1419,8 +1371,7 @@ uint16_t hal_rx_get_fisa_cumulative_ip_length_6450(uint8_t *buf)
  *
  * Return: udp proto bit
  */
-static inline
-bool hal_rx_get_udp_proto_6450(uint8_t *buf)
+static inline bool hal_rx_get_udp_proto_6450(uint8_t *buf)
 {
 	return HAL_RX_TLV_GET_UDP_PROTO(buf);
 }
@@ -1432,8 +1383,7 @@ bool hal_rx_get_udp_proto_6450(uint8_t *buf)
  *
  * Return: flow agg
  */
-static inline
-bool hal_rx_get_flow_agg_continuation_6450(uint8_t *buf)
+static inline bool hal_rx_get_flow_agg_continuation_6450(uint8_t *buf)
 {
 	return HAL_RX_TLV_GET_FLOW_AGGR_CONT(buf);
 }
@@ -1444,8 +1394,7 @@ bool hal_rx_get_flow_agg_continuation_6450(uint8_t *buf)
  *
  * Return: flow agg count
  */
-static inline
-uint8_t hal_rx_get_flow_agg_count_6450(uint8_t *buf)
+static inline uint8_t hal_rx_get_flow_agg_count_6450(uint8_t *buf)
 {
 	return HAL_RX_TLV_GET_FLOW_AGGR_COUNT(buf);
 }
@@ -1456,8 +1405,7 @@ uint8_t hal_rx_get_flow_agg_count_6450(uint8_t *buf)
  *
  * Return: fisa timeout
  */
-static inline
-bool hal_rx_get_fisa_timeout_6450(uint8_t *buf)
+static inline bool hal_rx_get_fisa_timeout_6450(uint8_t *buf)
 {
 	return HAL_RX_TLV_GET_FISA_TIMEOUT(buf);
 }
@@ -1490,9 +1438,8 @@ static uint8_t hal_rx_mpdu_start_tlv_tag_valid_6450(void *rx_tlv_hdr)
  *
  * Return: Success/Failure
  */
-static void *
-hal_rx_flow_setup_fse_6450(uint8_t *rx_fst, uint32_t table_offset,
-			   uint8_t *rx_flow)
+static void *hal_rx_flow_setup_fse_6450(uint8_t *rx_fst, uint32_t table_offset,
+					uint8_t *rx_flow)
 {
 	struct hal_rx_fst *fst = (struct hal_rx_fst *)rx_fst;
 	struct hal_rx_flow *flow = (struct hal_rx_flow *)rx_flow;
@@ -1507,7 +1454,7 @@ hal_rx_flow_setup_fse_6450(uint8_t *rx_fst, uint32_t table_offset,
 	}
 
 	fse = (uint8_t *)fst->base_vaddr +
-		(table_offset * HAL_RX_FST_ENTRY_SIZE);
+	      (table_offset * HAL_RX_FST_ENTRY_SIZE);
 
 	fse_valid = HAL_GET_FLD(fse, RX_FLOW_SEARCH_ENTRY_9, VALID);
 
@@ -1555,9 +1502,8 @@ hal_rx_flow_setup_fse_6450(uint8_t *rx_fst, uint32_t table_offset,
 			       (flow->tuple_info.dest_port));
 
 	HAL_CLR_FLD(fse, RX_FLOW_SEARCH_ENTRY_8, SRC_PORT);
-	HAL_SET_FLD(fse, RX_FLOW_SEARCH_ENTRY_8, SRC_PORT) |=
-		HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_8, SRC_PORT,
-			       (flow->tuple_info.src_port));
+	HAL_SET_FLD(fse, RX_FLOW_SEARCH_ENTRY_8, SRC_PORT) |= HAL_SET_FLD_SM(
+		RX_FLOW_SEARCH_ENTRY_8, SRC_PORT, (flow->tuple_info.src_port));
 
 	HAL_CLR_FLD(fse, RX_FLOW_SEARCH_ENTRY_9, L4_PROTOCOL);
 	HAL_SET_FLD(fse, RX_FLOW_SEARCH_ENTRY_9, L4_PROTOCOL) |=
@@ -1574,9 +1520,8 @@ hal_rx_flow_setup_fse_6450(uint8_t *rx_fst, uint32_t table_offset,
 		HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_9, VALID, 1);
 
 	HAL_CLR_FLD(fse, RX_FLOW_SEARCH_ENTRY_10, METADATA);
-	HAL_SET_FLD(fse, RX_FLOW_SEARCH_ENTRY_10, METADATA) =
-		HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_10, METADATA,
-			       (flow->fse_metadata));
+	HAL_SET_FLD(fse, RX_FLOW_SEARCH_ENTRY_10, METADATA) = HAL_SET_FLD_SM(
+		RX_FLOW_SEARCH_ENTRY_10, METADATA, (flow->fse_metadata));
 
 	HAL_CLR_FLD(fse, RX_FLOW_SEARCH_ENTRY_9, REO_DESTINATION_INDICATION);
 	HAL_SET_FLD(fse, RX_FLOW_SEARCH_ENTRY_9, REO_DESTINATION_INDICATION) |=
@@ -1603,9 +1548,10 @@ hal_rx_flow_setup_fse_6450(uint8_t *rx_fst, uint32_t table_offset,
  *
  * Return: Success/Failure
  */
-static uint32_t
-hal_rx_flow_setup_cmem_fse_6450(struct hal_soc *hal_soc, uint32_t cmem_ba,
-				uint32_t table_offset, uint8_t *rx_flow)
+static uint32_t hal_rx_flow_setup_cmem_fse_6450(struct hal_soc *hal_soc,
+						uint32_t cmem_ba,
+						uint32_t table_offset,
+						uint8_t *rx_flow)
 {
 	struct hal_rx_flow *flow = (struct hal_rx_flow *)rx_flow;
 	uint32_t fse_offset;
@@ -1614,68 +1560,94 @@ hal_rx_flow_setup_cmem_fse_6450(struct hal_soc *hal_soc, uint32_t cmem_ba,
 	fse_offset = cmem_ba + (table_offset * HAL_RX_FST_ENTRY_SIZE);
 
 	/* Reset the Valid bit */
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_9,
-							VALID), 0);
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_9, VALID),
+		       0);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_0, SRC_IP_127_96,
-				(flow->tuple_info.src_ip_127_96));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_0,
-							SRC_IP_127_96), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_0, SRC_IP_127_96,
+			       (flow->tuple_info.src_ip_127_96));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_0,
+					       SRC_IP_127_96),
+		       value);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_1, SRC_IP_95_64,
-				(flow->tuple_info.src_ip_95_64));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_1,
-							SRC_IP_95_64), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_1, SRC_IP_95_64,
+			       (flow->tuple_info.src_ip_95_64));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset +
+			       HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_1, SRC_IP_95_64),
+		       value);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_2, SRC_IP_63_32,
-				(flow->tuple_info.src_ip_63_32));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_2,
-							SRC_IP_63_32), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_2, SRC_IP_63_32,
+			       (flow->tuple_info.src_ip_63_32));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset +
+			       HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_2, SRC_IP_63_32),
+		       value);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_3, SRC_IP_31_0,
-				(flow->tuple_info.src_ip_31_0));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_3,
-							SRC_IP_31_0), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_3, SRC_IP_31_0,
+			       (flow->tuple_info.src_ip_31_0));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset +
+			       HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_3, SRC_IP_31_0),
+		       value);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_4, DEST_IP_127_96,
-				(flow->tuple_info.dest_ip_127_96));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_4,
-							DEST_IP_127_96), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_4, DEST_IP_127_96,
+			       (flow->tuple_info.dest_ip_127_96));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_4,
+					       DEST_IP_127_96),
+		       value);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_5, DEST_IP_95_64,
-				(flow->tuple_info.dest_ip_95_64));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_5,
-							DEST_IP_95_64), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_5, DEST_IP_95_64,
+			       (flow->tuple_info.dest_ip_95_64));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_5,
+					       DEST_IP_95_64),
+		       value);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_6, DEST_IP_63_32,
-				(flow->tuple_info.dest_ip_63_32));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_6,
-							DEST_IP_63_32), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_6, DEST_IP_63_32,
+			       (flow->tuple_info.dest_ip_63_32));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_6,
+					       DEST_IP_63_32),
+		       value);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_7, DEST_IP_31_0,
-				(flow->tuple_info.dest_ip_31_0));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_7,
-							DEST_IP_31_0), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_7, DEST_IP_31_0,
+			       (flow->tuple_info.dest_ip_31_0));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset +
+			       HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_7, DEST_IP_31_0),
+		       value);
 
 	value = 0 | HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_8, DEST_PORT,
-				(flow->tuple_info.dest_port));
+				   (flow->tuple_info.dest_port));
 	value |= HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_8, SRC_PORT,
 				(flow->tuple_info.src_port));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_8,
-							SRC_PORT), value);
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset +
+			       HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_8, SRC_PORT),
+		       value);
 
-	value  = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_10, METADATA,
-				(flow->fse_metadata));
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_10,
-							METADATA), value);
+	value = HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_10, METADATA,
+			       (flow->fse_metadata));
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset +
+			       HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_10, METADATA),
+		       value);
 
 	/* Reset all the other fields in FSE */
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_11,
-							MSDU_COUNT), 0);
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_12,
-							MSDU_BYTE_COUNT), 0);
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_13,
-							TIMESTAMP), 0);
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset +
+			       HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_11, MSDU_COUNT),
+		       0);
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_12,
+					       MSDU_BYTE_COUNT),
+		       0);
+	HAL_CMEM_WRITE(
+		hal_soc,
+		fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_13, TIMESTAMP), 0);
 
 	value = 0 | HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_9, L4_PROTOCOL,
 				   flow->tuple_info.l4_protocol);
@@ -1685,8 +1657,10 @@ hal_rx_flow_setup_cmem_fse_6450(struct hal_soc *hal_soc, uint32_t cmem_ba,
 				REO_DESTINATION_INDICATION,
 				flow->reo_destination_indication);
 	value |= HAL_SET_FLD_SM(RX_FLOW_SEARCH_ENTRY_9, VALID, 1);
-	HAL_CMEM_WRITE(hal_soc, fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_9,
-							L4_PROTOCOL), value);
+	HAL_CMEM_WRITE(hal_soc,
+		       fse_offset +
+			       HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_9, L4_PROTOCOL),
+		       value);
 
 	return fse_offset;
 }
@@ -1701,8 +1675,9 @@ hal_rx_flow_setup_cmem_fse_6450(struct hal_soc *hal_soc, uint32_t cmem_ba,
 static uint32_t hal_rx_flow_get_cmem_fse_ts_6450(struct hal_soc *hal_soc,
 						 uint32_t fse_offset)
 {
-	return HAL_CMEM_READ(hal_soc, fse_offset +
-			     HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_13, TIMESTAMP));
+	return HAL_CMEM_READ(hal_soc,
+			     fse_offset + HAL_OFFSET(RX_FLOW_SEARCH_ENTRY_13,
+						     TIMESTAMP));
 }
 
 /**
@@ -1714,9 +1689,9 @@ static uint32_t hal_rx_flow_get_cmem_fse_ts_6450(struct hal_soc *hal_soc,
  *
  * Return: If read is successful or not
  */
-static void
-hal_rx_flow_get_cmem_fse_6450(struct hal_soc *hal_soc, uint32_t fse_offset,
-			      uint32_t *fse, qdf_size_t len)
+static void hal_rx_flow_get_cmem_fse_6450(struct hal_soc *hal_soc,
+					  uint32_t fse_offset, uint32_t *fse,
+					  qdf_size_t len)
 {
 	int i;
 
@@ -1743,8 +1718,7 @@ hal_rx_msdu_get_reo_destination_indication_6450(uint8_t *buf,
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_end *msdu_end = &pkt_tlvs->msdu_end_tlv.rx_msdu_end;
 
-	*reo_destination_ind =
-			HAL_RX_MSDU_END_REO_DEST_IND_GET(msdu_end);
+	*reo_destination_ind = HAL_RX_MSDU_END_REO_DEST_IND_GET(msdu_end);
 }
 
 #ifdef WLAN_FEATURE_MARK_FIRST_WAKEUP_PACKET
@@ -1765,7 +1739,7 @@ static uint32_t hal_rx_msdu_start_get_len_6450(uint8_t *buf)
 {
 	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
 	struct rx_msdu_start *msdu_start =
-				&pkt_tlvs->msdu_start_tlv.rx_msdu_start;
+		&pkt_tlvs->msdu_start_tlv.rx_msdu_start;
 	uint32_t msdu_len;
 
 	msdu_len = HAL_RX_MSDU_START_MSDU_LEN_GET(msdu_start);
@@ -1782,213 +1756,207 @@ static void hal_hw_txrx_ops_attach_wcn6450(struct hal_soc *hal_soc)
 	hal_soc->ops->hal_reo_setup = hal_reo_setup_6450;
 	hal_soc->ops->hal_get_window_address = hal_get_window_address_6450;
 	hal_soc->ops->hal_reo_set_err_dst_remap =
-				hal_reo_set_err_dst_remap_6450;
+		hal_reo_set_err_dst_remap_6450;
 
 	/* tx */
 	hal_soc->ops->hal_tx_desc_set_dscp_tid_table_id =
-				hal_tx_desc_set_dscp_tid_table_id_6450;
+		hal_tx_desc_set_dscp_tid_table_id_6450;
 	hal_soc->ops->hal_tx_set_dscp_tid_map = hal_tx_set_dscp_tid_map_6450;
 	hal_soc->ops->hal_tx_update_dscp_tid = hal_tx_update_dscp_tid_6450;
 	hal_soc->ops->hal_tx_desc_set_lmac_id = hal_tx_desc_set_lmac_id_6450;
 	hal_soc->ops->hal_tx_desc_set_buf_addr =
-				hal_tx_desc_set_buf_addr_generic_rh;
+		hal_tx_desc_set_buf_addr_generic_rh;
 	hal_soc->ops->hal_tx_desc_set_search_type =
-				hal_tx_desc_set_search_type_generic_rh;
+		hal_tx_desc_set_search_type_generic_rh;
 	hal_soc->ops->hal_tx_desc_set_search_index =
-				hal_tx_desc_set_search_index_generic_rh;
+		hal_tx_desc_set_search_index_generic_rh;
 	hal_soc->ops->hal_tx_desc_set_cache_set_num =
-				hal_tx_desc_set_cache_set_num_generic_rh;
+		hal_tx_desc_set_cache_set_num_generic_rh;
 	hal_soc->ops->hal_tx_comp_get_status =
-				hal_tx_comp_get_status_generic_rh;
+		hal_tx_comp_get_status_generic_rh;
 	hal_soc->ops->hal_tx_comp_get_release_reason =
-				hal_tx_comp_get_release_reason_6450;
+		hal_tx_comp_get_release_reason_6450;
 	hal_soc->ops->hal_get_wbm_internal_error =
-				hal_get_wbm_internal_error_6450;
+		hal_get_wbm_internal_error_6450;
 	hal_soc->ops->hal_tx_desc_set_mesh_en = hal_tx_desc_set_mesh_en_6450;
 	hal_soc->ops->hal_tx_init_cmd_credit_ring =
-				hal_tx_init_cmd_credit_ring_6450;
+		hal_tx_init_cmd_credit_ring_6450;
 
 	/* rx */
 	hal_soc->ops->hal_rx_msdu_start_nss_get =
-				hal_rx_msdu_start_nss_get_6450;
+		hal_rx_msdu_start_nss_get_6450;
 	hal_soc->ops->hal_rx_mon_hw_desc_get_mpdu_status =
-				hal_rx_mon_hw_desc_get_mpdu_status_6450;
+		hal_rx_mon_hw_desc_get_mpdu_status_6450;
 	hal_soc->ops->hal_rx_get_tlv = hal_rx_get_tlv_6450;
 	hal_soc->ops->hal_rx_proc_phyrx_other_receive_info_tlv =
-				hal_rx_proc_phyrx_other_receive_info_tlv_6450;
+		hal_rx_proc_phyrx_other_receive_info_tlv_6450;
 
-	hal_soc->ops->hal_rx_dump_msdu_end_tlv =
-					hal_rx_dump_msdu_end_tlv_6450;
+	hal_soc->ops->hal_rx_dump_msdu_end_tlv = hal_rx_dump_msdu_end_tlv_6450;
 	hal_soc->ops->hal_rx_dump_rx_attention_tlv =
-					hal_rx_dump_rx_attention_tlv_generic_rh;
+		hal_rx_dump_rx_attention_tlv_generic_rh;
 	hal_soc->ops->hal_rx_dump_msdu_start_tlv =
-					hal_rx_dump_msdu_start_tlv_6450;
+		hal_rx_dump_msdu_start_tlv_6450;
 	hal_soc->ops->hal_rx_dump_mpdu_start_tlv =
-					hal_rx_dump_mpdu_start_tlv_generic_rh;
+		hal_rx_dump_mpdu_start_tlv_generic_rh;
 	hal_soc->ops->hal_rx_dump_mpdu_end_tlv =
-					hal_rx_dump_mpdu_end_tlv_generic_rh;
+		hal_rx_dump_mpdu_end_tlv_generic_rh;
 	hal_soc->ops->hal_rx_dump_pkt_hdr_tlv =
-					hal_rx_dump_pkt_hdr_tlv_generic_rh;
+		hal_rx_dump_pkt_hdr_tlv_generic_rh;
 
 	hal_soc->ops->hal_get_link_desc_size = hal_get_link_desc_size_6450;
 	hal_soc->ops->hal_rx_mpdu_start_tid_get =
-				hal_rx_mpdu_start_tid_get_6450;
+		hal_rx_mpdu_start_tid_get_6450;
 	hal_soc->ops->hal_rx_msdu_start_reception_type_get =
-				hal_rx_msdu_start_reception_type_get_6450;
+		hal_rx_msdu_start_reception_type_get_6450;
 	hal_soc->ops->hal_rx_msdu_end_da_idx_get =
-				hal_rx_msdu_end_da_idx_get_6450;
+		hal_rx_msdu_end_da_idx_get_6450;
 	hal_soc->ops->hal_rx_msdu_desc_info_get_ptr =
-				hal_rx_msdu_desc_info_get_ptr_6450;
+		hal_rx_msdu_desc_info_get_ptr_6450;
 	hal_soc->ops->hal_rx_link_desc_msdu0_ptr =
-				hal_rx_link_desc_msdu0_ptr_6450;
+		hal_rx_link_desc_msdu0_ptr_6450;
 	hal_soc->ops->hal_reo_status_get_header =
-				hal_reo_status_get_header_6450;
+		hal_reo_status_get_header_6450;
 	hal_soc->ops->hal_rx_status_get_tlv_info =
-				hal_rx_status_get_tlv_info_generic_rh;
-	hal_soc->ops->hal_rx_wbm_err_info_get =
-				hal_rx_wbm_err_info_get_6450;
+		hal_rx_status_get_tlv_info_generic_rh;
+	hal_soc->ops->hal_rx_wbm_err_info_get = hal_rx_wbm_err_info_get_6450;
 	hal_soc->ops->hal_tx_set_pcp_tid_map =
-				hal_tx_set_pcp_tid_map_generic_rh;
+		hal_tx_set_pcp_tid_map_generic_rh;
 	hal_soc->ops->hal_tx_update_pcp_tid_map =
-				hal_tx_update_pcp_tid_generic_rh;
+		hal_tx_update_pcp_tid_generic_rh;
 	hal_soc->ops->hal_tx_set_tidmap_prty =
-				hal_tx_update_tidmap_prty_generic_rh;
+		hal_tx_update_tidmap_prty_generic_rh;
 	hal_soc->ops->hal_rx_get_rx_fragment_number =
-				hal_rx_get_rx_fragment_number_6450;
+		hal_rx_get_rx_fragment_number_6450;
 	hal_soc->ops->hal_rx_msdu_end_da_is_mcbc_get =
-				hal_rx_msdu_end_da_is_mcbc_get_6450;
+		hal_rx_msdu_end_da_is_mcbc_get_6450;
 	hal_soc->ops->hal_rx_msdu_end_sa_is_valid_get =
-				hal_rx_msdu_end_sa_is_valid_get_6450;
+		hal_rx_msdu_end_sa_is_valid_get_6450;
 	hal_soc->ops->hal_rx_msdu_end_sa_idx_get =
-				hal_rx_msdu_end_sa_idx_get_6450;
+		hal_rx_msdu_end_sa_idx_get_6450;
 	hal_soc->ops->hal_rx_desc_is_first_msdu =
-				hal_rx_desc_is_first_msdu_6450;
+		hal_rx_desc_is_first_msdu_6450;
 	hal_soc->ops->hal_rx_msdu_end_l3_hdr_padding_get =
-				hal_rx_msdu_end_l3_hdr_padding_get_6450;
+		hal_rx_msdu_end_l3_hdr_padding_get_6450;
 	hal_soc->ops->hal_rx_encryption_info_valid =
-				hal_rx_encryption_info_valid_6450;
+		hal_rx_encryption_info_valid_6450;
 	hal_soc->ops->hal_rx_print_pn = hal_rx_print_pn_6450;
 	hal_soc->ops->hal_rx_msdu_end_first_msdu_get =
-				hal_rx_msdu_end_first_msdu_get_6450;
+		hal_rx_msdu_end_first_msdu_get_6450;
 	hal_soc->ops->hal_rx_msdu_end_da_is_valid_get =
-				hal_rx_msdu_end_da_is_valid_get_6450;
+		hal_rx_msdu_end_da_is_valid_get_6450;
 	hal_soc->ops->hal_rx_msdu_end_last_msdu_get =
-				hal_rx_msdu_end_last_msdu_get_6450;
+		hal_rx_msdu_end_last_msdu_get_6450;
 	hal_soc->ops->hal_rx_get_mpdu_mac_ad4_valid =
-				hal_rx_get_mpdu_mac_ad4_valid_6450;
+		hal_rx_get_mpdu_mac_ad4_valid_6450;
 	hal_soc->ops->hal_rx_mpdu_start_sw_peer_id_get =
-				hal_rx_mpdu_start_sw_peer_id_get_6450;
+		hal_rx_mpdu_start_sw_peer_id_get_6450;
 	hal_soc->ops->hal_rx_tlv_peer_meta_data_get =
-				hal_rx_mpdu_peer_meta_data_get_rh;
+		hal_rx_mpdu_peer_meta_data_get_rh;
 	hal_soc->ops->hal_rx_mpdu_get_to_ds = hal_rx_mpdu_get_to_ds_6450;
 	hal_soc->ops->hal_rx_mpdu_get_fr_ds = hal_rx_mpdu_get_fr_ds_6450;
 	hal_soc->ops->hal_rx_get_mpdu_frame_control_valid =
-				hal_rx_get_mpdu_frame_control_valid_6450;
+		hal_rx_get_mpdu_frame_control_valid_6450;
 	hal_soc->ops->hal_rx_get_frame_ctrl_field =
-				hal_rx_get_frame_ctrl_field_rh;
+		hal_rx_get_frame_ctrl_field_rh;
 	hal_soc->ops->hal_rx_mpdu_get_addr1 = hal_rx_mpdu_get_addr1_6450;
 	hal_soc->ops->hal_rx_mpdu_get_addr2 = hal_rx_mpdu_get_addr2_6450;
 	hal_soc->ops->hal_rx_mpdu_get_addr3 = hal_rx_mpdu_get_addr3_6450;
 	hal_soc->ops->hal_rx_mpdu_get_addr4 = hal_rx_mpdu_get_addr4_6450;
 	hal_soc->ops->hal_rx_get_mpdu_sequence_control_valid =
-			hal_rx_get_mpdu_sequence_control_valid_6450;
+		hal_rx_get_mpdu_sequence_control_valid_6450;
 	hal_soc->ops->hal_rx_is_unicast = hal_rx_is_unicast_6450;
 	hal_soc->ops->hal_rx_tid_get = hal_rx_tid_get_6450;
 	hal_soc->ops->hal_rx_hw_desc_get_ppduid_get =
-				hal_rx_hw_desc_get_ppduid_get_6450;
+		hal_rx_hw_desc_get_ppduid_get_6450;
 	hal_soc->ops->hal_rx_msdu0_buffer_addr_lsb =
-				hal_rx_msdu0_buffer_addr_lsb_6450;
+		hal_rx_msdu0_buffer_addr_lsb_6450;
 	hal_soc->ops->hal_rx_msdu_desc_info_ptr_get =
-				hal_rx_msdu_desc_info_ptr_get_6450;
+		hal_rx_msdu_desc_info_ptr_get_6450;
 	hal_soc->ops->hal_ent_mpdu_desc_info = hal_ent_mpdu_desc_info_6450;
 	hal_soc->ops->hal_dst_mpdu_desc_info = hal_dst_mpdu_desc_info_6450;
 	hal_soc->ops->hal_rx_get_fc_valid = hal_rx_get_fc_valid_6450;
 	hal_soc->ops->hal_rx_get_to_ds_flag = hal_rx_get_to_ds_flag_6450;
 	hal_soc->ops->hal_rx_get_mac_addr2_valid =
-				hal_rx_get_mac_addr2_valid_6450;
+		hal_rx_get_mac_addr2_valid_6450;
 	hal_soc->ops->hal_rx_get_filter_category =
-				hal_rx_get_filter_category_6450;
+		hal_rx_get_filter_category_6450;
 	hal_soc->ops->hal_rx_get_ppdu_id = hal_rx_get_ppdu_id_6450;
 	hal_soc->ops->hal_reo_config = hal_reo_config_6450;
 	hal_soc->ops->hal_rx_msdu_flow_idx_get = hal_rx_msdu_flow_idx_get_6450;
 	hal_soc->ops->hal_rx_msdu_flow_idx_invalid =
-				hal_rx_msdu_flow_idx_invalid_6450;
+		hal_rx_msdu_flow_idx_invalid_6450;
 	hal_soc->ops->hal_rx_msdu_flow_idx_timeout =
-				hal_rx_msdu_flow_idx_timeout_6450;
+		hal_rx_msdu_flow_idx_timeout_6450;
 	hal_soc->ops->hal_rx_msdu_fse_metadata_get =
-				hal_rx_msdu_fse_metadata_get_6450;
-	hal_soc->ops->hal_rx_msdu_cce_match_get =
-				hal_rx_msdu_cce_match_get_rh;
+		hal_rx_msdu_fse_metadata_get_6450;
+	hal_soc->ops->hal_rx_msdu_cce_match_get = hal_rx_msdu_cce_match_get_rh;
 	hal_soc->ops->hal_rx_msdu_cce_metadata_get =
-				hal_rx_msdu_cce_metadata_get_6450;
+		hal_rx_msdu_cce_metadata_get_6450;
 	hal_soc->ops->hal_rx_msdu_get_flow_params =
-				hal_rx_msdu_get_flow_params_6450;
+		hal_rx_msdu_get_flow_params_6450;
 	hal_soc->ops->hal_rx_tlv_get_tcp_chksum =
-				hal_rx_tlv_get_tcp_chksum_6450;
+		hal_rx_tlv_get_tcp_chksum_6450;
 	hal_soc->ops->hal_rx_get_rx_sequence = hal_rx_get_rx_sequence_6450;
 #if defined(QCA_WIFI_WCN6450) && defined(WLAN_CFR_ENABLE) && \
-    defined(WLAN_ENH_CFR_ENABLE)
+	defined(WLAN_ENH_CFR_ENABLE)
 	hal_soc->ops->hal_rx_get_bb_info = hal_rx_get_bb_info_6450;
 	hal_soc->ops->hal_rx_get_rtt_info = hal_rx_get_rtt_info_6450;
 #endif
 
 	/* rx - msdu end fast path info fields */
 	hal_soc->ops->hal_rx_msdu_packet_metadata_get =
-				hal_rx_msdu_packet_metadata_get_generic_rh;
+		hal_rx_msdu_packet_metadata_get_generic_rh;
 	hal_soc->ops->hal_rx_get_fisa_cumulative_l4_checksum =
-				hal_rx_get_fisa_cumulative_l4_checksum_6450;
+		hal_rx_get_fisa_cumulative_l4_checksum_6450;
 	hal_soc->ops->hal_rx_get_fisa_cumulative_ip_length =
-				hal_rx_get_fisa_cumulative_ip_length_6450;
+		hal_rx_get_fisa_cumulative_ip_length_6450;
 	hal_soc->ops->hal_rx_get_udp_proto = hal_rx_get_udp_proto_6450;
 	hal_soc->ops->hal_rx_get_fisa_flow_agg_continuation =
-				hal_rx_get_flow_agg_continuation_6450;
+		hal_rx_get_flow_agg_continuation_6450;
 	hal_soc->ops->hal_rx_get_fisa_flow_agg_count =
-				hal_rx_get_flow_agg_count_6450;
+		hal_rx_get_flow_agg_count_6450;
 	hal_soc->ops->hal_rx_get_fisa_timeout = hal_rx_get_fisa_timeout_6450;
 	hal_soc->ops->hal_rx_mpdu_start_tlv_tag_valid =
-				hal_rx_mpdu_start_tlv_tag_valid_6450;
+		hal_rx_mpdu_start_tlv_tag_valid_6450;
 
 	/* rx - TLV struct offsets */
 	hal_soc->ops->hal_rx_msdu_end_offset_get =
-				hal_rx_msdu_end_offset_get_generic;
+		hal_rx_msdu_end_offset_get_generic;
 	hal_soc->ops->hal_rx_attn_offset_get = hal_rx_attn_offset_get_generic;
 	hal_soc->ops->hal_rx_msdu_start_offset_get =
-				hal_rx_msdu_start_offset_get_generic;
+		hal_rx_msdu_start_offset_get_generic;
 	hal_soc->ops->hal_rx_mpdu_start_offset_get =
-				hal_rx_mpdu_start_offset_get_generic;
+		hal_rx_mpdu_start_offset_get_generic;
 	hal_soc->ops->hal_rx_mpdu_end_offset_get =
-				hal_rx_mpdu_end_offset_get_generic;
+		hal_rx_mpdu_end_offset_get_generic;
 #ifndef NO_RX_PKT_HDR_TLV
 	hal_soc->ops->hal_rx_pkt_tlv_offset_get =
-				hal_rx_pkt_tlv_offset_get_generic;
+		hal_rx_pkt_tlv_offset_get_generic;
 #endif
 	hal_soc->ops->hal_rx_flow_setup_fse = hal_rx_flow_setup_fse_6450;
 	hal_soc->ops->hal_rx_flow_get_tuple_info =
-				hal_rx_flow_get_tuple_info_rh;
-	hal_soc->ops->hal_rx_flow_delete_entry =
-				hal_rx_flow_delete_entry_rh;
+		hal_rx_flow_get_tuple_info_rh;
+	hal_soc->ops->hal_rx_flow_delete_entry = hal_rx_flow_delete_entry_rh;
 	hal_soc->ops->hal_rx_fst_get_fse_size = hal_rx_fst_get_fse_size_rh;
 	hal_soc->ops->hal_compute_reo_remap_ix2_ix3 =
-				hal_compute_reo_remap_ix2_ix3_6450;
+		hal_compute_reo_remap_ix2_ix3_6450;
 
 	/* CMEM FSE */
 	hal_soc->ops->hal_rx_flow_setup_cmem_fse =
-				hal_rx_flow_setup_cmem_fse_6450;
+		hal_rx_flow_setup_cmem_fse_6450;
 	hal_soc->ops->hal_rx_flow_get_cmem_fse_ts =
-				hal_rx_flow_get_cmem_fse_ts_6450;
+		hal_rx_flow_get_cmem_fse_ts_6450;
 	hal_soc->ops->hal_rx_flow_get_cmem_fse = hal_rx_flow_get_cmem_fse_6450;
 	hal_soc->ops->hal_rx_msdu_get_reo_destination_indication =
-			hal_rx_msdu_get_reo_destination_indication_6450;
-	hal_soc->ops->hal_setup_link_idle_list =
-				hal_setup_link_idle_list_6450;
+		hal_rx_msdu_get_reo_destination_indication_6450;
+	hal_soc->ops->hal_setup_link_idle_list = hal_setup_link_idle_list_6450;
 #ifdef WLAN_FEATURE_MARK_FIRST_WAKEUP_PACKET
 	hal_soc->ops->hal_get_first_wow_wakeup_packet =
-				hal_get_first_wow_wakeup_packet_6450;
+		hal_get_first_wow_wakeup_packet_6450;
 #endif
 	hal_soc->ops->hal_compute_reo_remap_ix0 =
-				hal_compute_reo_remap_ix0_6450;
-	hal_soc->ops->hal_rx_tlv_msdu_len_get =
-				hal_rx_msdu_start_get_len_6450;
+		hal_compute_reo_remap_ix0_6450;
+	hal_soc->ops->hal_rx_tlv_msdu_len_get = hal_rx_msdu_start_get_len_6450;
 }
 
 /**

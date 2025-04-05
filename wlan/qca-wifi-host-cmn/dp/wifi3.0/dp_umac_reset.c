@@ -13,10 +13,10 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <dp_internal.h>
-#include <wlan_cfg.h>
-#include <hif.h>
 #include <dp_htt.h>
+#include <dp_internal.h>
+#include <hif.h>
+#include <wlan_cfg.h>
 
 /**
  * dp_get_umac_reset_intr_ctx() - Get the interrupt context to be used by
@@ -31,12 +31,12 @@ static QDF_STATUS dp_get_umac_reset_intr_ctx(struct dp_soc *soc, int *intr_ctx)
 	int umac_reset_mask, i;
 
 	/**
-	 * Go over all the contexts and check which interrupt context has
-	 * the UMAC reset mask set.
-	 */
+   * Go over all the contexts and check which interrupt context has
+   * the UMAC reset mask set.
+   */
 	for (i = 0; i < wlan_cfg_get_num_contexts(soc->wlan_cfg_ctx); i++) {
-		umac_reset_mask = wlan_cfg_get_umac_reset_intr_mask(
-					soc->wlan_cfg_ctx, i);
+		umac_reset_mask =
+			wlan_cfg_get_umac_reset_intr_mask(soc->wlan_cfg_ctx, i);
 
 		if (umac_reset_mask) {
 			*intr_ctx = i;
@@ -54,8 +54,7 @@ static QDF_STATUS dp_get_umac_reset_intr_ctx(struct dp_soc *soc, int *intr_ctx)
  *
  * Return: QDF_STATUS of operation
  */
-static QDF_STATUS
-dp_umac_reset_send_setup_cmd(struct dp_soc *soc)
+static QDF_STATUS dp_umac_reset_send_setup_cmd(struct dp_soc *soc)
 {
 	struct dp_soc_umac_reset_ctx *umac_reset_ctx;
 	int msi_vector_count, ret;
@@ -70,8 +69,9 @@ dp_umac_reset_send_setup_cmd(struct dp_soc *soc)
 	if (ret) {
 		params.msi_data = UMAC_RESET_IPC;
 	} else {
-		params.msi_data = (umac_reset_ctx->intr_offset %
-				  msi_vector_count) + msi_base_data;
+		params.msi_data =
+			(umac_reset_ctx->intr_offset % msi_vector_count) +
+			msi_base_data;
 	}
 
 	params.shmem_addr_low =
@@ -95,7 +95,8 @@ QDF_STATUS dp_soc_umac_reset_init(struct cdp_soc_t *txrx_soc)
 	}
 
 	if (!soc->features.umac_hw_reset_support) {
-		dp_umac_reset_info("Target doesn't support the UMAC HW reset feature");
+		dp_umac_reset_info(
+			"Target doesn't support the UMAC HW reset feature");
 		return QDF_STATUS_E_NOSUPPORT;
 	}
 
@@ -112,11 +113,10 @@ QDF_STATUS dp_soc_umac_reset_init(struct cdp_soc_t *txrx_soc)
 	}
 
 	alloc_size = sizeof(htt_umac_hang_recovery_msg_shmem_t) +
-			DP_UMAC_RESET_SHMEM_ALIGN - 1;
-	umac_reset_ctx->shmem_vaddr_unaligned =
-	    qdf_mem_alloc_consistent(soc->osdev, soc->osdev->dev,
-				     alloc_size,
-				     &umac_reset_ctx->shmem_paddr_unaligned);
+		     DP_UMAC_RESET_SHMEM_ALIGN - 1;
+	umac_reset_ctx->shmem_vaddr_unaligned = qdf_mem_alloc_consistent(
+		soc->osdev, soc->osdev->dev, alloc_size,
+		&umac_reset_ctx->shmem_paddr_unaligned);
 	if (!umac_reset_ctx->shmem_vaddr_unaligned) {
 		dp_umac_reset_err("shmem allocation failed");
 		return QDF_STATUS_E_NOMEM;
@@ -125,9 +125,9 @@ QDF_STATUS dp_soc_umac_reset_init(struct cdp_soc_t *txrx_soc)
 	umac_reset_ctx->shmem_vaddr_aligned = (void *)(uintptr_t)qdf_roundup(
 		(uint64_t)(uintptr_t)umac_reset_ctx->shmem_vaddr_unaligned,
 		DP_UMAC_RESET_SHMEM_ALIGN);
-	umac_reset_ctx->shmem_paddr_aligned = qdf_roundup(
-		(uint64_t)umac_reset_ctx->shmem_paddr_unaligned,
-		DP_UMAC_RESET_SHMEM_ALIGN);
+	umac_reset_ctx->shmem_paddr_aligned =
+		qdf_roundup((uint64_t)umac_reset_ctx->shmem_paddr_unaligned,
+			    DP_UMAC_RESET_SHMEM_ALIGN);
 	umac_reset_ctx->shmem_size = alloc_size;
 
 	/* Write the magic number to the shared memory */
@@ -157,8 +157,7 @@ QDF_STATUS dp_soc_umac_reset_init(struct cdp_soc_t *txrx_soc)
  *
  * Return: Extracted Rx event in the form of enumeration umac_reset_rx_event
  */
-static enum umac_reset_rx_event
-dp_umac_reset_get_rx_event_from_shmem(
+static enum umac_reset_rx_event dp_umac_reset_get_rx_event_from_shmem(
 	struct dp_soc_umac_reset_ctx *umac_reset_ctx)
 {
 	htt_umac_hang_recovery_msg_shmem_t *shmem_vaddr;
@@ -187,12 +186,14 @@ dp_umac_reset_get_rx_event_from_shmem(
 
 	rx_event = UMAC_RESET_RX_EVENT_NONE;
 
-	if (HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_INITIATE_UMAC_RECOVERY_GET(t2h_msg)) {
+	if (HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_INITIATE_UMAC_RECOVERY_GET(
+		    t2h_msg)) {
 		rx_event |= UMAC_RESET_RX_EVENT_DO_TRIGGER_RECOVERY;
 		num_events++;
 	}
 
-	if (HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_INITIATE_TARGET_RECOVERY_SYNC_USING_UMAC_GET(t2h_msg)) {
+	if (HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_INITIATE_TARGET_RECOVERY_SYNC_USING_UMAC_GET(
+		    t2h_msg)) {
 		rx_event |= UMAC_RESET_RX_EVENT_DO_TRIGGER_TR_SYNC;
 		num_events++;
 	}
@@ -207,7 +208,8 @@ dp_umac_reset_get_rx_event_from_shmem(
 		num_events++;
 	}
 
-	if (HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_GET(t2h_msg)) {
+	if (HTT_UMAC_HANG_RECOVERY_MSG_SHMEM_DO_POST_RESET_COMPLETE_GET(
+		    t2h_msg)) {
 		rx_event |= UMAC_RESET_RX_EVENT_DO_POST_RESET_COMPELTE;
 		num_events++;
 	}
@@ -233,7 +235,7 @@ err:
  * Return: true if the shared memory has any valid bits set
  */
 static inline bool dp_umac_reset_peek_rx_event_from_shmem(
-				struct dp_soc_umac_reset_ctx *umac_reset_ctx)
+	struct dp_soc_umac_reset_ctx *umac_reset_ctx)
 {
 	htt_umac_hang_recovery_msg_shmem_t *shmem_vaddr;
 
@@ -285,9 +287,9 @@ dp_umac_reset_validate_n_update_state_machine_on_rx(
 	enum umac_reset_state next_state)
 {
 	if (umac_reset_ctx->current_state != current_exp_state) {
-		dp_umac_reset_err("state machine validation failed on rx event: %d, current state is %d",
-				  rx_event,
-				  umac_reset_ctx->current_state);
+		dp_umac_reset_err(
+			"state machine validation failed on rx event: %d, current state is %d",
+			rx_event, umac_reset_ctx->current_state);
 
 		if ((rx_event != UMAC_RESET_RX_EVENT_DO_TRIGGER_RECOVERY) &&
 		    (rx_event != UMAC_RESET_RX_EVENT_DO_TRIGGER_TR_SYNC))
@@ -331,15 +333,13 @@ bool dp_check_umac_reset_in_progress(struct dp_soc *soc)
  *
  * Return: status
  */
-static QDF_STATUS dp_umac_reset_initiate_umac_recovery(struct dp_soc *soc,
-				struct dp_soc_umac_reset_ctx *umac_reset_ctx,
-				enum umac_reset_rx_event rx_event,
-				bool is_target_recovery)
+static QDF_STATUS dp_umac_reset_initiate_umac_recovery(
+	struct dp_soc *soc, struct dp_soc_umac_reset_ctx *umac_reset_ctx,
+	enum umac_reset_rx_event rx_event, bool is_target_recovery)
 {
 	return dp_umac_reset_validate_n_update_state_machine_on_rx(
-					umac_reset_ctx, rx_event,
-					UMAC_RESET_STATE_WAIT_FOR_TRIGGER,
-					UMAC_RESET_STATE_DO_TRIGGER_RECEIVED);
+		umac_reset_ctx, rx_event, UMAC_RESET_STATE_WAIT_FOR_TRIGGER,
+		UMAC_RESET_STATE_DO_TRIGGER_RECEIVED);
 }
 
 /**
@@ -362,9 +362,10 @@ static void dp_umac_reset_complete_umac_recovery(struct dp_soc *soc)
  *
  * Return: QDF_STATUS status
  */
-static QDF_STATUS dp_umac_reset_handle_action_cb(struct dp_soc *soc,
-				struct dp_soc_umac_reset_ctx *umac_reset_ctx,
-				enum umac_reset_action action)
+static QDF_STATUS
+dp_umac_reset_handle_action_cb(struct dp_soc *soc,
+			       struct dp_soc_umac_reset_ctx *umac_reset_ctx,
+			       enum umac_reset_action action)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
@@ -389,8 +390,8 @@ static QDF_STATUS
 dp_umac_reset_post_tx_cmd(struct dp_soc_umac_reset_ctx *umac_reset_ctx,
 			  enum umac_reset_tx_cmd tx_cmd)
 {
-	struct dp_soc *soc = container_of(umac_reset_ctx, struct dp_soc,
-					  umac_reset_ctx);
+	struct dp_soc *soc =
+		container_of(umac_reset_ctx, struct dp_soc, umac_reset_ctx);
 
 	dp_umac_reset_post_tx_cmd_via_shmem(soc, &tx_cmd, 0);
 	return QDF_STATUS_SUCCESS;
@@ -459,7 +460,8 @@ static int dp_umac_reset_rx_event_handler(void *dp_ctx)
 	if (umac_reset_ctx->pending_action) {
 		if (rx_event != UMAC_RESET_RX_EVENT_NONE) {
 			dp_umac_reset_err("Invalid value(%u) for Rx event when "
-					  "action %u is pending\n", rx_event,
+					  "action %u is pending\n",
+					  rx_event,
 					  umac_reset_ctx->pending_action);
 			qdf_assert_always(0);
 		}
@@ -479,15 +481,14 @@ static int dp_umac_reset_rx_event_handler(void *dp_ctx)
 		target_recovery = true;
 		/* Fall through */
 	case UMAC_RESET_RX_EVENT_DO_TRIGGER_RECOVERY:
-		status =
-		dp_umac_reset_initiate_umac_recovery(soc, umac_reset_ctx,
-						     rx_event, target_recovery);
+		status = dp_umac_reset_initiate_umac_recovery(
+			soc, umac_reset_ctx, rx_event, target_recovery);
 
 		if (status != QDF_STATUS_SUCCESS)
 			break;
 
 		umac_reset_ctx->ts.trigger_start =
-						qdf_get_log_timestamp_usecs();
+			qdf_get_log_timestamp_usecs();
 
 		action = UMAC_RESET_ACTION_DO_TRIGGER_RECOVERY;
 
@@ -500,7 +501,7 @@ static int dp_umac_reset_rx_event_handler(void *dp_ctx)
 			UMAC_RESET_STATE_DO_PRE_RESET_RECEIVED);
 
 		umac_reset_ctx->ts.pre_reset_start =
-						qdf_get_log_timestamp_usecs();
+			qdf_get_log_timestamp_usecs();
 
 		action = UMAC_RESET_ACTION_DO_PRE_RESET;
 		break;
@@ -512,7 +513,7 @@ static int dp_umac_reset_rx_event_handler(void *dp_ctx)
 			UMAC_RESET_STATE_DO_POST_RESET_START_RECEIVED);
 
 		umac_reset_ctx->ts.post_reset_start =
-						qdf_get_log_timestamp_usecs();
+			qdf_get_log_timestamp_usecs();
 
 		action = UMAC_RESET_ACTION_DO_POST_RESET_START;
 		break;
@@ -524,7 +525,7 @@ static int dp_umac_reset_rx_event_handler(void *dp_ctx)
 			UMAC_RESET_STATE_DO_POST_RESET_COMPLETE_RECEIVED);
 
 		umac_reset_ctx->ts.post_reset_complete_start =
-						qdf_get_log_timestamp_usecs();
+			qdf_get_log_timestamp_usecs();
 
 		action = UMAC_RESET_ACTION_DO_POST_RESET_COMPLETE;
 		break;
@@ -561,14 +562,16 @@ QDF_STATUS dp_umac_reset_interrupt_attach(struct dp_soc *soc)
 	}
 
 	if (!soc->features.umac_hw_reset_support) {
-		dp_umac_reset_info("Target doesn't support the UMAC HW reset feature");
+		dp_umac_reset_info(
+			"Target doesn't support the UMAC HW reset feature");
 		return QDF_STATUS_SUCCESS;
 	}
 
 	umac_reset_ctx = &soc->umac_reset_ctx;
 
 	if (pld_get_enable_intx(soc->osdev->dev)) {
-		dp_umac_reset_err("UMAC reset is not supported in legacy interrupt mode");
+		dp_umac_reset_err(
+			"UMAC reset is not supported in legacy interrupt mode");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -592,21 +595,20 @@ QDF_STATUS dp_umac_reset_interrupt_attach(struct dp_soc *soc)
 			return QDF_STATUS_E_FAILURE;
 		}
 
-		umac_reset_vector = msi_vector_start +
-			       (umac_reset_ctx->intr_offset % msi_vector_count);
+		umac_reset_vector =
+			msi_vector_start +
+			(umac_reset_ctx->intr_offset % msi_vector_count);
 
 		/* Get IRQ number */
-		umac_reset_irq = pld_get_msi_irq(soc->osdev->dev,
-						 umac_reset_vector);
+		umac_reset_irq =
+			pld_get_msi_irq(soc->osdev->dev, umac_reset_vector);
 	}
 
 	/* Finally register to this IRQ from HIF layer */
 	return hif_register_umac_reset_handler(
-				soc->hif_handle,
-				dp_umac_reset_peek_rx_event,
-				dp_umac_reset_rx_event_handler,
-				&soc->intr_ctx[umac_reset_ctx->intr_offset],
-				umac_reset_irq);
+		soc->hif_handle, dp_umac_reset_peek_rx_event,
+		dp_umac_reset_rx_event_handler,
+		&soc->intr_ctx[umac_reset_ctx->intr_offset], umac_reset_irq);
 }
 
 QDF_STATUS dp_umac_reset_interrupt_detach(struct dp_soc *soc)
@@ -617,7 +619,8 @@ QDF_STATUS dp_umac_reset_interrupt_detach(struct dp_soc *soc)
 	}
 
 	if (!soc->features.umac_hw_reset_support) {
-		dp_umac_reset_info("Target doesn't support the UMAC HW reset feature");
+		dp_umac_reset_info(
+			"Target doesn't support the UMAC HW reset feature");
 		return QDF_STATUS_SUCCESS;
 	}
 
@@ -625,9 +628,8 @@ QDF_STATUS dp_umac_reset_interrupt_detach(struct dp_soc *soc)
 }
 
 QDF_STATUS dp_umac_reset_register_rx_action_callback(
-			struct dp_soc *soc,
-			QDF_STATUS (*handler)(struct dp_soc *soc),
-			enum umac_reset_action action)
+	struct dp_soc *soc, QDF_STATUS (*handler)(struct dp_soc *soc),
+	enum umac_reset_action action)
 {
 	struct dp_soc_umac_reset_ctx *umac_reset_ctx;
 
@@ -661,8 +663,8 @@ QDF_STATUS dp_umac_reset_register_rx_action_callback(
  *
  * Return: None
  */
-void
-dp_umac_reset_post_tx_cmd_via_shmem(struct dp_soc *soc, void *ctxt, int chip_id)
+void dp_umac_reset_post_tx_cmd_via_shmem(struct dp_soc *soc, void *ctxt,
+					 int chip_id)
 {
 	enum umac_reset_tx_cmd tx_cmd = *((enum umac_reset_tx_cmd *)ctxt);
 	htt_umac_hang_recovery_msg_shmem_t *shmem_vaddr;
@@ -689,11 +691,11 @@ dp_umac_reset_post_tx_cmd_via_shmem(struct dp_soc *soc, void *ctxt, int chip_id)
 		initiator = dp_umac_reset_initiator_check(soc);
 		if (!initiator)
 			umac_reset_ctx->current_state =
-					UMAC_RESET_STATE_WAIT_FOR_DO_PRE_RESET;
+				UMAC_RESET_STATE_WAIT_FOR_DO_PRE_RESET;
 
-		status = dp_htt_umac_reset_send_start_pre_reset_cmd(soc,
-								    initiator,
-				!dp_umac_reset_target_recovery_check(soc));
+		status = dp_htt_umac_reset_send_start_pre_reset_cmd(
+			soc, initiator,
+			!dp_umac_reset_target_recovery_check(soc));
 
 		if (status != QDF_STATUS_SUCCESS) {
 			dp_umac_reset_err("Unable to send Umac trigger");
@@ -711,7 +713,7 @@ dp_umac_reset_post_tx_cmd_via_shmem(struct dp_soc *soc, void *ctxt, int chip_id)
 			shmem_vaddr->h2t_msg, 1);
 
 		umac_reset_ctx->ts.pre_reset_done =
-						qdf_get_log_timestamp_usecs();
+			qdf_get_log_timestamp_usecs();
 		break;
 
 	case UMAC_RESET_TX_CMD_POST_RESET_START_DONE:
@@ -719,7 +721,7 @@ dp_umac_reset_post_tx_cmd_via_shmem(struct dp_soc *soc, void *ctxt, int chip_id)
 			shmem_vaddr->h2t_msg, 1);
 
 		umac_reset_ctx->ts.post_reset_done =
-						qdf_get_log_timestamp_usecs();
+			qdf_get_log_timestamp_usecs();
 		break;
 
 	case UMAC_RESET_TX_CMD_POST_RESET_COMPLETE_DONE:
@@ -727,7 +729,7 @@ dp_umac_reset_post_tx_cmd_via_shmem(struct dp_soc *soc, void *ctxt, int chip_id)
 			shmem_vaddr->h2t_msg, 1);
 
 		umac_reset_ctx->ts.post_reset_complete_done =
-						qdf_get_log_timestamp_usecs();
+			qdf_get_log_timestamp_usecs();
 		break;
 
 	default:
@@ -784,10 +786,10 @@ dp_umac_reset_notify_target(struct dp_soc_umac_reset_ctx *umac_reset_ctx)
 	}
 
 	/*
-	 * Update the state machine before sending the command to firmware
-	 * as we might get the response from firmware even before the state
-	 * is updated.
-	 */
+   * Update the state machine before sending the command to firmware
+   * as we might get the response from firmware even before the state
+   * is updated.
+   */
 	umac_reset_ctx->current_state = next_state;
 
 	status = dp_umac_reset_post_tx_cmd(umac_reset_ctx, tx_cmd);
@@ -809,9 +811,9 @@ dp_umac_reset_notify_target(struct dp_soc_umac_reset_ctx *umac_reset_ctx)
  *
  * Return: QDF status of operation
  */
-static QDF_STATUS dp_umac_reset_notify_completion(
-		struct dp_soc *soc,
-		enum umac_reset_state next_state)
+static QDF_STATUS
+dp_umac_reset_notify_completion(struct dp_soc *soc,
+				enum umac_reset_state next_state)
 {
 	struct dp_soc_umac_reset_ctx *umac_reset_ctx;
 
@@ -838,14 +840,16 @@ static void dp_umac_wait_for_quiescent_state(struct dp_soc *soc)
 		current_state = soc->umac_reset_ctx.current_state;
 
 	} while ((current_state == UMAC_RESET_STATE_DO_TRIGGER_RECEIVED) ||
-	(current_state == UMAC_RESET_STATE_DO_PRE_RESET_RECEIVED) ||
-	(current_state == UMAC_RESET_STATE_DO_POST_RESET_START_RECEIVED) ||
-	(current_state == UMAC_RESET_STATE_DO_POST_RESET_COMPLETE_RECEIVED));
+		 (current_state == UMAC_RESET_STATE_DO_PRE_RESET_RECEIVED) ||
+		 (current_state ==
+		  UMAC_RESET_STATE_DO_POST_RESET_START_RECEIVED) ||
+		 (current_state ==
+		  UMAC_RESET_STATE_DO_POST_RESET_COMPLETE_RECEIVED));
 }
 
-QDF_STATUS dp_umac_reset_notify_action_completion(
-		struct dp_soc *soc,
-		enum umac_reset_action action)
+QDF_STATUS
+dp_umac_reset_notify_action_completion(struct dp_soc *soc,
+				       enum umac_reset_action action)
 {
 	enum umac_reset_state next_state;
 
@@ -855,7 +859,8 @@ QDF_STATUS dp_umac_reset_notify_action_completion(
 	}
 
 	if (!soc->features.umac_hw_reset_support) {
-		dp_umac_reset_info("Target doesn't support the UMAC HW reset feature");
+		dp_umac_reset_info(
+			"Target doesn't support the UMAC HW reset feature");
 		return QDF_STATUS_E_NOSUPPORT;
 	}
 
@@ -934,14 +939,13 @@ QDF_STATUS dp_soc_umac_reset_deinit(struct cdp_soc_t *txrx_soc)
 	qdf_mem_free_consistent(soc->osdev, soc->osdev->dev,
 				umac_reset_ctx->shmem_size,
 				umac_reset_ctx->shmem_vaddr_unaligned,
-				umac_reset_ctx->shmem_paddr_unaligned,
-				0);
+				umac_reset_ctx->shmem_paddr_unaligned, 0);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-static inline const char *dp_umac_reset_current_state_to_str(
-		enum umac_reset_state current_state)
+static inline const char *
+dp_umac_reset_current_state_to_str(enum umac_reset_state current_state)
 {
 	switch (current_state) {
 	case UMAC_RESET_STATE_WAIT_FOR_TRIGGER:
@@ -973,8 +977,8 @@ static inline const char *dp_umac_reset_current_state_to_str(
 	}
 }
 
-static inline const char *dp_umac_reset_pending_action_to_str(
-		enum umac_reset_rx_event pending_action)
+static inline const char *
+dp_umac_reset_pending_action_to_str(enum umac_reset_rx_event pending_action)
 {
 	switch (pending_action) {
 	case UMAC_RESET_RX_EVENT_NONE:
@@ -1000,26 +1004,27 @@ QDF_STATUS dp_umac_reset_stats_print(struct dp_soc *soc)
 
 	umac_reset_ctx = &soc->umac_reset_ctx;
 
-	DP_UMAC_RESET_PRINT_STATS("UMAC reset stats for soc:%pK\n"
-		  "\t\ttrigger time                  :%u us\n"
-		  "\t\tPre_reset time                :%u us\n"
-		  "\t\tPost_reset time               :%u us\n"
-		  "\t\tPost_reset_complete time      :%u us\n"
-		  "\t\tCurrent state                 :%s\n"
-		  "\t\tPending action                :%s",
-		  soc,
-		  umac_reset_ctx->ts.trigger_done -
-		  umac_reset_ctx->ts.trigger_start,
-		  umac_reset_ctx->ts.pre_reset_done -
-		  umac_reset_ctx->ts.pre_reset_start,
-		  umac_reset_ctx->ts.post_reset_done -
-		  umac_reset_ctx->ts.post_reset_start,
-		  umac_reset_ctx->ts.post_reset_complete_done -
-		  umac_reset_ctx->ts.post_reset_complete_start,
-		  dp_umac_reset_current_state_to_str(
-			  umac_reset_ctx->current_state),
-		  dp_umac_reset_pending_action_to_str(
-			  umac_reset_ctx->pending_action));
+	DP_UMAC_RESET_PRINT_STATS(
+		"UMAC reset stats for soc:%pK\n"
+		"\t\ttrigger time                  :%u us\n"
+		"\t\tPre_reset time                :%u us\n"
+		"\t\tPost_reset time               :%u us\n"
+		"\t\tPost_reset_complete time      :%u us\n"
+		"\t\tCurrent state                 :%s\n"
+		"\t\tPending action                :%s",
+		soc,
+		umac_reset_ctx->ts.trigger_done -
+			umac_reset_ctx->ts.trigger_start,
+		umac_reset_ctx->ts.pre_reset_done -
+			umac_reset_ctx->ts.pre_reset_start,
+		umac_reset_ctx->ts.post_reset_done -
+			umac_reset_ctx->ts.post_reset_start,
+		umac_reset_ctx->ts.post_reset_complete_done -
+			umac_reset_ctx->ts.post_reset_complete_start,
+		dp_umac_reset_current_state_to_str(
+			umac_reset_ctx->current_state),
+		dp_umac_reset_pending_action_to_str(
+			umac_reset_ctx->pending_action));
 
 	return dp_mlo_umac_reset_stats_print(soc);
 }

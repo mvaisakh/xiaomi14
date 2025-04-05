@@ -16,9 +16,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "hal_reo.h"
 #include "hal_api.h"
 #include "hal_hw_headers.h"
-#include "hal_reo.h"
 #include "qdf_module.h"
 
 void hal_reo_init_cmd_ring(hal_soc_handle_t hal_soc_hdl,
@@ -42,11 +42,12 @@ void hal_reo_init_cmd_ring(hal_soc_handle_t hal_soc_hdl,
 	cmd_num = 1;
 	while (num_desc) {
 		/* Offsets of descriptor fields defined in HW headers start
-		 * from the field after TLV header */
+     * from the field after TLV header */
 		HAL_DESC_SET_FIELD(desc_addr, HAL_UNIFORM_REO_CMD_HEADER,
 				   REO_CMD_NUMBER, cmd_num);
 		desc_addr += desc_size;
-		num_desc--; cmd_num++;
+		num_desc--;
+		cmd_num++;
 	}
 
 	soc->reo_res_bitmap = 0;

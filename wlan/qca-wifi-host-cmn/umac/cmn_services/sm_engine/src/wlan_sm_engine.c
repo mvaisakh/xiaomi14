@@ -22,8 +22,8 @@
 
 #include "wlan_sm_engine.h"
 #include "wlan_sm_engine_dbg.h"
-#include <qdf_module.h>
 #include <qdf_mem.h>
+#include <qdf_module.h>
 #include <qdf_str.h>
 
 QDF_STATUS wlan_sm_dispatch(struct wlan_sm *sm, uint16_t event,
@@ -62,12 +62,13 @@ QDF_STATUS wlan_sm_dispatch(struct wlan_sm *sm, uint16_t event,
 	}
 
 	if (state != WLAN_SM_ENGINE_STATE_NONE) {
-		event_handled = (*sm->state_info[state].wlan_sm_event) (
-				 sm->ctx, event, event_data_len, event_data);
+		event_handled = (*sm->state_info[state].wlan_sm_event)(
+			sm->ctx, event, event_data_len, event_data);
 		if (!event_handled) {
-			sm_engine_nofl_info("%s: event %d not handled in state %s",
-					    sm->name, event,
-					    sm->state_info[sm->cur_state].name);
+			sm_engine_nofl_info(
+				"%s: event %d not handled in state %s",
+				sm->name, event,
+				sm->state_info[sm->cur_state].name);
 			return QDF_STATUS_E_INVAL;
 		}
 	}
@@ -98,7 +99,7 @@ void wlan_sm_transition_to(struct wlan_sm *sm, uint8_t state)
 	if (qdf_atomic_read(&sm->in_state_transition)) {
 		sm_engine_alert(
 			"%s: can not call state transition from entry/exit routines",
-					sm->name);
+			sm->name);
 		QDF_BUG(0);
 		return;
 	}
@@ -109,20 +110,19 @@ void wlan_sm_transition_to(struct wlan_sm *sm, uint8_t state)
 			     state, 0xFF);
 
 	if ((state == WLAN_SM_ENGINE_STATE_NONE) ||
-	    (state >= WLAN_SM_ENGINE_MAX_STATES) ||
-	    (state >= sm->num_states)) {
+	    (state >= WLAN_SM_ENGINE_MAX_STATES) || (state >= sm->num_states)) {
 		sm_engine_err(
 			"%s: to state %d needs to be a valid state current_state=%d",
-					sm->name, cur_state, state);
+			sm->name, cur_state, state);
 		return;
 	}
 
 	/*
-	 * Here state and sub state are derived for debug printing only
-	 * as SME keeps state and sub state as flat, to differentiate between
-	 * state and substate, checks current state if it has parent state,
-	 * the parent state is printed along with the sub state
-	 */
+   * Here state and sub state are derived for debug printing only
+   * as SME keeps state and sub state as flat, to differentiate between
+   * state and substate, checks current state if it has parent state,
+   * the parent state is printed along with the sub state
+   */
 	if (state_info[cur_state].parent_state != WLAN_SM_ENGINE_STATE_NONE)
 		old_state = state_info[cur_state].parent_state;
 	else
@@ -150,9 +150,9 @@ void wlan_sm_transition_to(struct wlan_sm *sm, uint8_t state)
 			     new_sub_st ? state_info[new_sub_st].name : "IDLE");
 
 	/*
-	 * call the exit function(s) of the current state hierarchy
-	 * starting from substate.
-	 */
+   * call the exit function(s) of the current state hierarchy
+   * starting from substate.
+   */
 	while (cur_state != WLAN_SM_ENGINE_STATE_NONE) {
 		if (state_info[cur_state].wlan_sm_exit)
 			state_info[cur_state].wlan_sm_exit(sm->ctx);
@@ -161,9 +161,9 @@ void wlan_sm_transition_to(struct wlan_sm *sm, uint8_t state)
 	}
 
 	/*
-	 * call the entry function(s) of the current state hierarchy
-	 * starting from superstate.
-	 */
+   * call the entry function(s) of the current state hierarchy
+   * starting from superstate.
+   */
 	cur_state = state;
 	while (cur_state != WLAN_SM_ENGINE_STATE_NONE) {
 		if (state_info[cur_state].wlan_sm_entry)
@@ -187,19 +187,20 @@ void wlan_sm_reset(struct wlan_sm *sm, uint8_t init_state)
 	sm->cur_state = init_state;
 }
 
-static QDF_STATUS wlan_sm_validate_state_info(const char *name,
-				const struct wlan_sm_state_info *state_info,
-				uint8_t i)
+static QDF_STATUS
+wlan_sm_validate_state_info(const char *name,
+			    const struct wlan_sm_state_info *state_info,
+			    uint8_t i)
 {
-	bool state_visited[WLAN_SM_ENGINE_MAX_STATES] = {false};
+	bool state_visited[WLAN_SM_ENGINE_MAX_STATES] = { false };
 	uint8_t state, next_state;
 	/*
-	 * make sure that the state definitions are in order
-	 */
+   * make sure that the state definitions are in order
+   */
 	if ((state_info[i].state >= WLAN_SM_ENGINE_MAX_STATES) ||
 	    (state_info[i].state != i)) {
-		sm_engine_err("%s: entry %d has invalid state %d",
-			      name, i, state_info[i].state);
+		sm_engine_err("%s: entry %d has invalid state %d", name, i,
+			      state_info[i].state);
 
 		return QDF_STATUS_E_FAILURE;
 	}
@@ -207,8 +208,8 @@ static QDF_STATUS wlan_sm_validate_state_info(const char *name,
 	state = state_info[i].state;
 	while (state != WLAN_SM_ENGINE_STATE_NONE) {
 		if (state_visited[state]) {
-			sm_engine_err("%s: detected a loop with entry %d",
-				      name, i);
+			sm_engine_err("%s: detected a loop with entry %d", name,
+				      i);
 			return QDF_STATUS_E_FAILURE;
 		}
 
@@ -218,7 +219,7 @@ static QDF_STATUS wlan_sm_validate_state_info(const char *name,
 			if (!state_info[next_state].has_substates) {
 				sm_engine_err(
 					"%s: state %d is marked as parent of %d but is not a super state",
-						name, next_state, state);
+					name, next_state, state);
 				return QDF_STATUS_E_FAILURE;
 			}
 		}
@@ -228,11 +229,9 @@ static QDF_STATUS wlan_sm_validate_state_info(const char *name,
 	return QDF_STATUS_SUCCESS;
 }
 
-struct wlan_sm *wlan_sm_create(const char *name, void *ctx,
-			       uint8_t init_state,
+struct wlan_sm *wlan_sm_create(const char *name, void *ctx, uint8_t init_state,
 			       struct wlan_sm_state_info *state_info,
-			       uint8_t num_states,
-			       const char **event_names,
+			       uint8_t num_states, const char **event_names,
 			       uint32_t num_event_names)
 {
 	struct wlan_sm *sm;
@@ -244,13 +243,13 @@ struct wlan_sm *wlan_sm_create(const char *name, void *ctx,
 	}
 
 	/*
-	 * validate the state_info table.
-	 * the entries need to be valid and also
-	 * need to be in order.
-	 */
+   * validate the state_info table.
+   * the entries need to be valid and also
+   * need to be in order.
+   */
 	for (i = 0; i < num_states; ++i) {
 		if (wlan_sm_validate_state_info(name, state_info, i) !=
-				QDF_STATUS_SUCCESS) {
+		    QDF_STATUS_SUCCESS) {
 			sm_engine_err("%s: states validation failed", name);
 			return NULL;
 		}

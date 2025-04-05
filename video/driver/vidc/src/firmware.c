@@ -1,22 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2023. Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023. Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
-#include <linux/types.h>
+#include <linux/firmware.h>
 #include <linux/list.h>
 #include <linux/of_address.h>
-#include <linux/firmware.h>
 #include <linux/qcom_scm.h>
 #include <linux/soc/qcom/mdt_loader.h>
 #include <linux/soc/qcom/smem.h>
+#include <linux/types.h>
 
+#include "firmware.h"
 #include "msm_vidc_core.h"
 #include "msm_vidc_debug.h"
 #include "msm_vidc_events.h"
 #include "msm_vidc_platform.h"
-#include "firmware.h"
 
-#define MAX_FIRMWARE_NAME_SIZE	128
+#define MAX_FIRMWARE_NAME_SIZE 128
 
 struct tzbsp_memprot {
 	u32 cp_start;
@@ -42,12 +43,13 @@ static int protect_cp_mem(struct msm_vidc_core *core)
 	memprot.cp_nonpixel_start = 0x0;
 	memprot.cp_nonpixel_size = 0x0;
 
-	venus_hfi_for_each_context_bank(core, cb) {
+	venus_hfi_for_each_context_bank(core, cb)
+	{
 		if (cb->region == MSM_VIDC_NON_SECURE) {
 			memprot.cp_size = cb->addr_range.start;
 
-			d_vpr_h("%s: memprot.cp_size: %#x\n",
-				__func__, memprot.cp_size);
+			d_vpr_h("%s: memprot.cp_size: %#x\n", __func__,
+				memprot.cp_size);
 		}
 
 		if (cb->region == MSM_VIDC_SECURE_NONPIXEL) {
@@ -61,13 +63,14 @@ static int protect_cp_mem(struct msm_vidc_core *core)
 	}
 
 	rc = qcom_scm_mem_protect_video_var(memprot.cp_start, memprot.cp_size,
-			memprot.cp_nonpixel_start, memprot.cp_nonpixel_size);
+					    memprot.cp_nonpixel_start,
+					    memprot.cp_nonpixel_size);
 	if (rc)
 		d_vpr_e("Failed to protect memory(%d)\n", rc);
 
-	trace_venus_hfi_var_done(
-		memprot.cp_start, memprot.cp_size,
-		memprot.cp_nonpixel_start, memprot.cp_nonpixel_size);
+	trace_venus_hfi_var_done(memprot.cp_start, memprot.cp_size,
+				 memprot.cp_nonpixel_start,
+				 memprot.cp_nonpixel_size);
 
 	return rc;
 }
@@ -98,8 +101,8 @@ static int __load_fw_to_memory(struct platform_device *pdev,
 
 	core = dev_get_drvdata(&pdev->dev);
 	if (!core) {
-		d_vpr_e("%s: core not found in device %s",
-			__func__, dev_name(&pdev->dev));
+		d_vpr_e("%s: core not found in device %s", __func__,
+			dev_name(&pdev->dev));
 		return -EINVAL;
 	}
 	scnprintf(firmware_name, ARRAY_SIZE(firmware_name), "%s.mbn", fw_name);
@@ -108,8 +111,7 @@ static int __load_fw_to_memory(struct platform_device *pdev,
 
 	node = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
 	if (!node) {
-		d_vpr_e("%s: failed to read \"memory-region\"\n",
-			__func__);
+		d_vpr_e("%s: failed to read \"memory-region\"\n", __func__);
 		return -EINVAL;
 	}
 
@@ -124,8 +126,8 @@ static int __load_fw_to_memory(struct platform_device *pdev,
 
 	rc = request_firmware(&firmware, firmware_name, &pdev->dev);
 	if (rc) {
-		d_vpr_e("%s: failed to request fw \"%s\", error %d\n",
-			__func__, firmware_name, rc);
+		d_vpr_e("%s: failed to request fw \"%s\", error %d\n", __func__,
+			firmware_name, rc);
 		goto exit;
 	}
 
@@ -139,32 +141,32 @@ static int __load_fw_to_memory(struct platform_device *pdev,
 
 	virt = memremap(phys, res_size, MEMREMAP_WC);
 	if (!virt) {
-		d_vpr_e("%s: failed to remap fw memory phys %pa[p]\n",
-				__func__, &phys);
+		d_vpr_e("%s: failed to remap fw memory phys %pa[p]\n", __func__,
+			&phys);
 		return -ENOMEM;
 	}
 
 	/* prevent system suspend during fw_load */
 	pm_stay_awake(pdev->dev.parent);
-	rc = qcom_mdt_load(&pdev->dev, firmware, firmware_name,
-		pas_id, virt, phys, res_size, NULL);
+	rc = qcom_mdt_load(&pdev->dev, firmware, firmware_name, pas_id, virt,
+			   phys, res_size, NULL);
 	pm_relax(pdev->dev.parent);
 	if (rc) {
-		d_vpr_e("%s: error %d loading fw \"%s\"\n",
-			__func__, rc, firmware_name);
+		d_vpr_e("%s: error %d loading fw \"%s\"\n", __func__, rc,
+			firmware_name);
 		goto exit;
 	}
 	rc = qcom_scm_pas_auth_and_reset(pas_id);
 	if (rc) {
-		d_vpr_e("%s: error %d authenticating fw \"%s\"\n",
-			__func__, rc, firmware_name);
+		d_vpr_e("%s: error %d authenticating fw \"%s\"\n", __func__, rc,
+			firmware_name);
 		goto exit;
 	}
 
 	memunmap(virt);
 	release_firmware(firmware);
-	d_vpr_h("%s: firmware \"%s\" loaded successfully\n",
-					__func__, firmware_name);
+	d_vpr_h("%s: firmware \"%s\" loaded successfully\n", __func__,
+		firmware_name);
 
 	return pas_id;
 
@@ -182,11 +184,11 @@ int fw_load(struct msm_vidc_core *core)
 	int rc;
 
 	if (!core->resource->fw_cookie) {
-		core->resource->fw_cookie = __load_fw_to_memory(core->pdev,
-							  core->platform->data.fwname);
+		core->resource->fw_cookie = __load_fw_to_memory(
+			core->pdev, core->platform->data.fwname);
 		if (core->resource->fw_cookie <= 0) {
-			d_vpr_e("%s: firmware download failed %d\n",
-					__func__, core->resource->fw_cookie);
+			d_vpr_e("%s: firmware download failed %d\n", __func__,
+				core->resource->fw_cookie);
 			core->resource->fw_cookie = 0;
 			return -ENOMEM;
 		}

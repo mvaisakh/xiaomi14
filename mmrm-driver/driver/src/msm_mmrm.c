@@ -3,49 +3,51 @@
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
 
+#include <linux/fs.h>
 #include <linux/module.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/soc/qcom/msm_mmrm.h>
-#include <linux/fs.h>
 
-#include "mmrm_internal.h"
-#include "mmrm_debug.h"
 #include "mmrm_clk_rsrc_mgr.h"
+#include "mmrm_debug.h"
+#include "mmrm_internal.h"
 
-#define	VERIFY_PDEV(pdev)	\
-{							\
-	if (!pdev) {			\
-		d_mpr_e("%s: null platform dev\n", __func__);\
-		rc = -EINVAL;		\
-		goto err_exit; \
-	}						\
-}
+#define VERIFY_PDEV(pdev)                                             \
+	{                                                             \
+		if (!pdev) {                                          \
+			d_mpr_e("%s: null platform dev\n", __func__); \
+			rc = -EINVAL;                                 \
+			goto err_exit;                                \
+		}                                                     \
+	}
 
-#define RESET_DRV_DATA(drv_data)	\
-{									\
-	kfree(drv_data);				\
-	drv_data = (void *) -EPROBE_DEFER; \
-}
+#define RESET_DRV_DATA(drv_data)                  \
+	{                                         \
+		kfree(drv_data);                  \
+		drv_data = (void *)-EPROBE_DEFER; \
+	}
 
-#define CHECK_SKIP_MMRM_CLK_RSRC(drv_data)	\
-{									\
-	if (!drv_data->is_clk_scaling_supported) {	\
-		d_mpr_h("%s: mmrm clk rsrc not supported\n", __func__);\
-		goto skip_mmrm;				\
-	}								\
-}
+#define CHECK_SKIP_MMRM_CLK_RSRC(drv_data)                           \
+	{                                                            \
+		if (!drv_data->is_clk_scaling_supported) {           \
+			d_mpr_h("%s: mmrm clk rsrc not supported\n", \
+				__func__);                           \
+			goto skip_mmrm;                              \
+		}                                                    \
+	}
 
-#define	MMRM_SYSFS_ENTRY_MAX_LEN PAGE_SIZE
+#define MMRM_SYSFS_ENTRY_MAX_LEN PAGE_SIZE
 
 extern int msm_mmrm_debug;
 extern u8 msm_mmrm_enable_throttle_feature;
 extern u8 msm_mmrm_allow_multiple_register;
 
-struct mmrm_driver_data *drv_data = (void *) -EPROBE_DEFER;
+struct mmrm_driver_data *drv_data = (void *)-EPROBE_DEFER;
 
-bool mmrm_client_check_scaling_supported(enum mmrm_client_type client_type, u32 client_domain)
+bool mmrm_client_check_scaling_supported(enum mmrm_client_type client_type,
+					 u32 client_domain)
 {
 	if (drv_data == (void *)-EPROBE_DEFER) {
 		d_mpr_e("%s: mmrm probe_init not done\n", __func__);
@@ -76,7 +78,7 @@ struct mmrm_client *mmrm_client_register(struct mmrm_client_desc *client_desc)
 		goto err_exit;
 	}
 
-	if (drv_data == (void *) -EPROBE_DEFER) {
+	if (drv_data == (void *)-EPROBE_DEFER) {
 		d_mpr_e("%s: mmrm probe_init not done\n", __func__);
 		goto err_exit;
 	}
@@ -86,15 +88,15 @@ struct mmrm_client *mmrm_client_register(struct mmrm_client_desc *client_desc)
 		/* check for skip mmrm */
 		CHECK_SKIP_MMRM_CLK_RSRC(drv_data);
 
-		client = mmrm_clk_client_register(
-					drv_data->clk_mgr, client_desc);
+		client = mmrm_clk_client_register(drv_data->clk_mgr,
+						  client_desc);
 		if (!client) {
 			d_mpr_e("%s: failed to register client\n", __func__);
 			goto err_exit;
 		}
 	} else {
-		d_mpr_e("%s: unknown client_type %d\n",
-			__func__, client_desc->client_type);
+		d_mpr_e("%s: unknown client_type %d\n", __func__,
+			client_desc->client_type);
 		goto err_exit;
 	}
 
@@ -118,7 +120,7 @@ int mmrm_client_deregister(struct mmrm_client *client)
 		goto err_exit;
 	}
 
-	if (drv_data == (void *) -EPROBE_DEFER) {
+	if (drv_data == (void *)-EPROBE_DEFER) {
 		d_mpr_e("%s: mmrm probe_init not done\n", __func__);
 		goto err_exit;
 	}
@@ -134,8 +136,8 @@ int mmrm_client_deregister(struct mmrm_client *client)
 			goto err_exit;
 		}
 	} else {
-		d_mpr_e("%s: unknown client_type %d\n",
-			__func__, client->client_type);
+		d_mpr_e("%s: unknown client_type %d\n", __func__,
+			client->client_type);
 	}
 
 skip_mmrm:
@@ -148,7 +150,8 @@ err_exit:
 EXPORT_SYMBOL(mmrm_client_deregister);
 
 int mmrm_client_set_value(struct mmrm_client *client,
-	struct mmrm_client_data *client_data, unsigned long val)
+			  struct mmrm_client_data *client_data,
+			  unsigned long val)
 {
 	int rc = 0;
 
@@ -160,7 +163,7 @@ int mmrm_client_set_value(struct mmrm_client *client,
 		goto err_exit;
 	}
 
-	if (drv_data == (void *) -EPROBE_DEFER) {
+	if (drv_data == (void *)-EPROBE_DEFER) {
 		d_mpr_e("%s: mmrm probe_init not done\n", __func__);
 		goto err_exit;
 	}
@@ -171,14 +174,15 @@ int mmrm_client_set_value(struct mmrm_client *client,
 		CHECK_SKIP_MMRM_CLK_RSRC(drv_data);
 
 		rc = mmrm_clk_client_setval(drv_data->clk_mgr, client,
-				client_data, val);
+					    client_data, val);
 		if (rc != 0) {
-			d_mpr_e("%s: failed to set value for client\n", __func__);
+			d_mpr_e("%s: failed to set value for client\n",
+				__func__);
 			goto err_exit;
 		}
 	} else {
-		d_mpr_e("%s: unknown client_type %d\n",
-			__func__, client->client_type);
+		d_mpr_e("%s: unknown client_type %d\n", __func__,
+			client->client_type);
 	}
 
 skip_mmrm:
@@ -191,21 +195,20 @@ err_exit:
 EXPORT_SYMBOL(mmrm_client_set_value);
 
 int mmrm_client_set_value_in_range(struct mmrm_client *client,
-	struct mmrm_client_data *client_data,
-	struct mmrm_client_res_value *val)
+				   struct mmrm_client_data *client_data,
+				   struct mmrm_client_res_value *val)
 {
 	int rc = 0;
 
 	/* check for null input */
 	if (!client || !client_data || !val) {
-		d_mpr_e(
-			"%s: invalid input client(%pK) client_data(%pK) val(%pK)\n",
+		d_mpr_e("%s: invalid input client(%pK) client_data(%pK) val(%pK)\n",
 			__func__, client, client_data, val);
 		rc = -EINVAL;
 		goto err_exit;
 	}
 
-	if (drv_data == (void *) -EPROBE_DEFER) {
+	if (drv_data == (void *)-EPROBE_DEFER) {
 		d_mpr_e("%s: mmrm probe_init not done\n", __func__);
 		goto err_exit;
 	}
@@ -215,15 +218,16 @@ int mmrm_client_set_value_in_range(struct mmrm_client *client,
 		/* check for skip mmrm */
 		CHECK_SKIP_MMRM_CLK_RSRC(drv_data);
 
-		rc = mmrm_clk_client_setval_inrange(drv_data->clk_mgr,
-				client, client_data, val);
+		rc = mmrm_clk_client_setval_inrange(drv_data->clk_mgr, client,
+						    client_data, val);
 		if (rc != 0) {
-			d_mpr_e("%s: failed to set value for client\n", __func__);
+			d_mpr_e("%s: failed to set value for client\n",
+				__func__);
 			goto err_exit;
 		}
 	} else {
-		d_mpr_e("%s: unknown client_type %d\n",
-			__func__, client->client_type);
+		d_mpr_e("%s: unknown client_type %d\n", __func__,
+			client->client_type);
 	}
 
 skip_mmrm:
@@ -236,19 +240,19 @@ err_exit:
 EXPORT_SYMBOL(mmrm_client_set_value_in_range);
 
 int mmrm_client_get_value(struct mmrm_client *client,
-	struct mmrm_client_res_value *val)
+			  struct mmrm_client_res_value *val)
 {
 	int rc = 0;
 
 	/* check for null input */
 	if (!client || !val) {
-		d_mpr_e("%s: invalid input client(%pK) val(%pK)\n",
-			__func__, client, val);
+		d_mpr_e("%s: invalid input client(%pK) val(%pK)\n", __func__,
+			client, val);
 		rc = -EINVAL;
 		goto err_exit;
 	}
 
-	if (drv_data == (void *) -EPROBE_DEFER) {
+	if (drv_data == (void *)-EPROBE_DEFER) {
 		d_mpr_e("%s: mmrm probe_init not done\n", __func__);
 		goto err_exit;
 	}
@@ -258,15 +262,15 @@ int mmrm_client_get_value(struct mmrm_client *client,
 		/* check for skip mmrm */
 		CHECK_SKIP_MMRM_CLK_RSRC(drv_data);
 
-		rc = mmrm_clk_client_getval(drv_data->clk_mgr,
-				client, val);
+		rc = mmrm_clk_client_getval(drv_data->clk_mgr, client, val);
 		if (rc != 0) {
-			d_mpr_e("%s: failed to get value for client\n", __func__);
+			d_mpr_e("%s: failed to get value for client\n",
+				__func__);
 			goto err_exit;
 		}
 	} else {
-		d_mpr_e("%s: unknown client_type %d\n",
-			__func__, client->client_type);
+		d_mpr_e("%s: unknown client_type %d\n", __func__,
+			client->client_type);
 	}
 
 skip_mmrm:
@@ -282,7 +286,7 @@ int mmrm_client_get_clk_count(void)
 {
 	struct mmrm_sw_clk_mgr_info *sinfo;
 
-	if (drv_data == (void *) -EPROBE_DEFER)
+	if (drv_data == (void *)-EPROBE_DEFER)
 		return 0;
 
 	sinfo = &(drv_data->clk_mgr->data.sw_info);
@@ -308,18 +312,20 @@ static int sysfs_get_param(const char *buf, u32 *param)
 }
 
 static ssize_t mmrm_sysfs_debug_get(struct device *dev,
-		struct device_attribute *attr, char *buf)
+				    struct device_attribute *attr, char *buf)
 {
 	int ret;
 
-	ret = scnprintf(buf, MMRM_SYSFS_ENTRY_MAX_LEN, "0x%x\n", msm_mmrm_debug);
+	ret = scnprintf(buf, MMRM_SYSFS_ENTRY_MAX_LEN, "0x%x\n",
+			msm_mmrm_debug);
 	pr_info("%s: 0x%04X\n", __func__, msm_mmrm_debug);
 
 	return ret;
 }
 
 static ssize_t mmrm_sysfs_debug_set(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+				    struct device_attribute *attr,
+				    const char *buf, size_t count)
 {
 	int ret;
 	u32 reg_addr;
@@ -332,18 +338,21 @@ static ssize_t mmrm_sysfs_debug_set(struct device *dev,
 }
 
 static ssize_t mmrm_sysfs_enable_throttle_get(struct device *dev,
-		struct device_attribute *attr, char *buf)
+					      struct device_attribute *attr,
+					      char *buf)
 {
 	int ret;
 
-	ret = scnprintf(buf, MMRM_SYSFS_ENTRY_MAX_LEN, "0x%x\n", msm_mmrm_enable_throttle_feature);
+	ret = scnprintf(buf, MMRM_SYSFS_ENTRY_MAX_LEN, "0x%x\n",
+			msm_mmrm_enable_throttle_feature);
 	pr_info("%s: 0x%04X\n", __func__, msm_mmrm_enable_throttle_feature);
 
 	return ret;
 }
 
 static ssize_t mmrm_sysfs_enable_throttle_set(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+					      struct device_attribute *attr,
+					      const char *buf, size_t count)
 {
 	u32 reg_addr;
 	int ret;
@@ -356,18 +365,21 @@ static ssize_t mmrm_sysfs_enable_throttle_set(struct device *dev,
 }
 
 static ssize_t mmrm_sysfs_allow_multiple_get(struct device *dev,
-		struct device_attribute *attr, char *buf)
+					     struct device_attribute *attr,
+					     char *buf)
 {
 	int ret;
 
-	ret = scnprintf(buf, MMRM_SYSFS_ENTRY_MAX_LEN, "0x%x\n", msm_mmrm_allow_multiple_register);
+	ret = scnprintf(buf, MMRM_SYSFS_ENTRY_MAX_LEN, "0x%x\n",
+			msm_mmrm_allow_multiple_register);
 	pr_info("%s: 0x%04X\n", __func__, msm_mmrm_allow_multiple_register);
 
 	return ret;
 }
 
 static ssize_t mmrm_sysfs_allow_multiple_set(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
+					     struct device_attribute *attr,
+					     const char *buf, size_t count)
 {
 	u32 reg_addr;
 	int ret;
@@ -379,13 +391,14 @@ static ssize_t mmrm_sysfs_allow_multiple_set(struct device *dev,
 	return count;
 }
 
-
 static ssize_t dump_enabled_client_info_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+					     struct device_attribute *attr,
+					     char *buf)
 {
 	int rc;
 
-	rc = mmrm_clk_print_enabled_client_info(drv_data->clk_mgr, buf, MMRM_SYSFS_ENTRY_MAX_LEN);
+	rc = mmrm_clk_print_enabled_client_info(drv_data->clk_mgr, buf,
+						MMRM_SYSFS_ENTRY_MAX_LEN);
 	if (rc == 0)
 		d_mpr_e("%s: failed to dump client info\n", __func__);
 
@@ -393,26 +406,25 @@ static ssize_t dump_enabled_client_info_show(struct device *dev,
 }
 
 static ssize_t dump_clk_res_info_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+				      struct device_attribute *attr, char *buf)
 {
-	int    i, len;
+	int i, len;
 	struct mmrm_clk_platform_resources *cres = &drv_data->clk_res;
 	struct nom_clk_src_set *clk_set = &cres->nom_clk_set;
 	struct nom_clk_src_info *pclk;
 	int left_spaces = MMRM_SYSFS_ENTRY_MAX_LEN;
 
 	len = scnprintf(buf, left_spaces, "threshold: %d\n",
-		cres->peak_threshold);
+			cres->peak_threshold);
 	left_spaces -= len;
 	buf += len;
 
-	for (i = 0, pclk = clk_set->clk_src_tbl; i < clk_set->count && left_spaces > 1; i++, pclk++) {
+	for (i = 0, pclk = clk_set->clk_src_tbl;
+	     i < clk_set->count && left_spaces > 1; i++, pclk++) {
 		len = scnprintf(buf, left_spaces, "%d\t%d\t% 8d\t%d\t%d\n",
-			pclk->domain,
-			pclk->clk_src_id,
-			pclk->nom_dyn_pwr,
-			pclk->nom_leak_pwr,
-			pclk->num_hw_block);
+				pclk->domain, pclk->clk_src_id,
+				pclk->nom_dyn_pwr, pclk->nom_leak_pwr,
+				pclk->num_hw_block);
 		left_spaces -= len;
 		buf += len;
 	}
@@ -420,33 +432,29 @@ static ssize_t dump_clk_res_info_show(struct device *dev,
 	return MMRM_SYSFS_ENTRY_MAX_LEN - left_spaces;
 }
 
-static DEVICE_ATTR(debug, 0644,
-		mmrm_sysfs_debug_get,
-		mmrm_sysfs_debug_set);
+static DEVICE_ATTR(debug, 0644, mmrm_sysfs_debug_get, mmrm_sysfs_debug_set);
 
 static DEVICE_ATTR(enable_throttle_feature, 0644,
-		mmrm_sysfs_enable_throttle_get,
-		mmrm_sysfs_enable_throttle_set);
+		   mmrm_sysfs_enable_throttle_get,
+		   mmrm_sysfs_enable_throttle_set);
 
-static DEVICE_ATTR(allow_multiple_register, 0644,
-		mmrm_sysfs_allow_multiple_get,
-		mmrm_sysfs_allow_multiple_set);
+static DEVICE_ATTR(allow_multiple_register, 0644, mmrm_sysfs_allow_multiple_get,
+		   mmrm_sysfs_allow_multiple_set);
 
 static DEVICE_ATTR_RO(dump_enabled_client_info);
 static DEVICE_ATTR_RO(dump_clk_res_info);
 
-
 static struct attribute *mmrm_fs_attrs[] = {
-		&dev_attr_debug.attr,
-		&dev_attr_enable_throttle_feature.attr,
-		&dev_attr_allow_multiple_register.attr,
-		&dev_attr_dump_enabled_client_info.attr,
-		&dev_attr_dump_clk_res_info.attr,
-		NULL,
+	&dev_attr_debug.attr,
+	&dev_attr_enable_throttle_feature.attr,
+	&dev_attr_allow_multiple_register.attr,
+	&dev_attr_dump_enabled_client_info.attr,
+	&dev_attr_dump_clk_res_info.attr,
+	NULL,
 };
 
 static struct attribute_group mmrm_fs_attrs_group = {
-		.attrs = mmrm_fs_attrs,
+	.attrs = mmrm_fs_attrs,
 };
 
 static int msm_mmrm_probe_init(struct platform_device *pdev)
@@ -477,8 +485,7 @@ static int msm_mmrm_probe_init(struct platform_device *pdev)
 
 	drv_data->platform_data = mmrm_get_platform_data(&pdev->dev);
 	if (!drv_data->platform_data) {
-		d_mpr_e("%s: unable to get platform data\n",
-			__func__);
+		d_mpr_e("%s: unable to get platform data\n", __func__);
 		rc = -EINVAL;
 		goto err_get_drv_data;
 	}
@@ -498,14 +505,12 @@ static int msm_mmrm_probe_init(struct platform_device *pdev)
 
 	rc = mmrm_init(drv_data);
 	if (rc) {
-		d_mpr_e("%s: failed to init mmrm\n",
-			__func__);
+		d_mpr_e("%s: failed to init mmrm\n", __func__);
 		goto err_mmrm_init;
 	}
 
 	if (sysfs_create_group(&pdev->dev.kobj, &mmrm_fs_attrs_group)) {
-		d_mpr_e("%s: failed to create sysfs\n",
-			__func__);
+		d_mpr_e("%s: failed to create sysfs\n", __func__);
 	}
 
 skip_mmrm:
@@ -571,19 +576,20 @@ err_exit:
 }
 
 static const struct of_device_id msm_mmrm_dt_match[] = {
-	{.compatible = "qcom,msm-mmrm"},
+	{ .compatible = "qcom,msm-mmrm" },
 	{}
 };
 
 MODULE_DEVICE_TABLE(of, msm_mmrm_dt_match);
 
 static struct platform_driver msm_mmrm_driver = {
-	.probe = msm_mmrm_probe,
-	.remove = msm_mmrm_remove,
-	.driver = {
-		.name = "msm-mmrm",
-		.of_match_table = msm_mmrm_dt_match,
-	},
+    .probe = msm_mmrm_probe,
+    .remove = msm_mmrm_remove,
+    .driver =
+        {
+            .name = "msm-mmrm",
+            .of_match_table = msm_mmrm_dt_match,
+        },
 };
 
 static int __init msm_mmrm_init(void)
@@ -592,8 +598,7 @@ static int __init msm_mmrm_init(void)
 
 	rc = platform_driver_register(&msm_mmrm_driver);
 	if (rc) {
-		d_mpr_e("%s: failed to register platform driver\n",
-			__func__);
+		d_mpr_e("%s: failed to register platform driver\n", __func__);
 		goto err_platform_drv_reg;
 	}
 

@@ -6,11 +6,11 @@
 
 #include "dsi_phy_timing_calc.h"
 
-static const u32 bits_per_pixel[DSI_PIXEL_FORMAT_MAX] = {
-	16, 18, 18, 24, 3, 8, 12, 30 };
+static const u32 bits_per_pixel[DSI_PIXEL_FORMAT_MAX] = { 16, 18, 18, 24,
+							  3,  8,  12, 30 };
 
 static int dsi_phy_cmn_validate_and_set(struct timing_entry *t,
-	char const *t_name)
+					char const *t_name)
 {
 	if (t->rec & 0xffffff00) {
 		/* Output value can only be 8 bits */
@@ -25,9 +25,8 @@ static int dsi_phy_cmn_validate_and_set(struct timing_entry *t,
  * calc_clk_prepare - calculates prepare timing params for clk lane.
  */
 static int calc_clk_prepare(struct dsi_phy_hw *phy,
-				struct phy_clk_params *clk_params,
-			    struct phy_timing_desc *desc,
-			    s32 *actual_frac,
+			    struct phy_clk_params *clk_params,
+			    struct phy_timing_desc *desc, s32 *actual_frac,
 			    s64 *actual_intermediate)
 {
 	u64 multiplier = BIT(20);
@@ -39,14 +38,15 @@ static int calc_clk_prepare(struct dsi_phy_hw *phy,
 	s64 clk_prep_actual;
 
 	t->rec_min = DIV_ROUND_UP((t->mipi_min * clk_params->bitclk_mbps),
-			(8 * clk_params->tlpx_numer_ns));
-	t->rec_max = rounddown(
-		mult_frac((t->mipi_max * clk_params->bitclk_mbps),
-			1, (8 * clk_params->tlpx_numer_ns)), 1);
+				  (8 * clk_params->tlpx_numer_ns));
+	t->rec_max =
+		rounddown(mult_frac((t->mipi_max * clk_params->bitclk_mbps), 1,
+				    (8 * clk_params->tlpx_numer_ns)),
+			  1);
 
-	dividend = ((t->rec_max - t->rec_min) *
-		clk_params->clk_prep_buf * multiplier);
-	temp  = roundup(div_s64(dividend, 100), multiplier);
+	dividend = ((t->rec_max - t->rec_min) * clk_params->clk_prep_buf *
+		    multiplier);
+	temp = roundup(div_s64(dividend, 100), multiplier);
 	temp += (t->rec_min * multiplier);
 	t->rec = div_s64(temp, multiplier);
 
@@ -55,16 +55,18 @@ static int calc_clk_prepare(struct dsi_phy_hw *phy,
 		goto error;
 
 	/* calculate theoretical value */
-	temp_multiple = 8 * t->reg_value * clk_params->tlpx_numer_ns
-			 * multiplier;
+	temp_multiple =
+		8 * t->reg_value * clk_params->tlpx_numer_ns * multiplier;
 	intermediate = div_s64(temp_multiple, clk_params->bitclk_mbps);
 	div_s64_rem(temp_multiple, clk_params->bitclk_mbps, &frac);
 	clk_prep_actual = div_s64((intermediate + frac), multiplier);
 
-	DSI_PHY_DBG(phy, "CLK_PREPARE:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max);
+	DSI_PHY_DBG(
+		phy,
+		"CLK_PREPARE:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max);
 	DSI_PHY_DBG(phy, " reg_value=%d, actual=%lld\n", t->reg_value,
-			clk_prep_actual);
+		    clk_prep_actual);
 
 	*actual_frac = frac;
 	*actual_intermediate = intermediate;
@@ -77,9 +79,9 @@ error:
  * calc_clk_zero - calculates zero timing params for clk lane.
  */
 static int calc_clk_zero(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc,
-			s32 actual_frac, s64 actual_intermediate)
+			 struct phy_clk_params *clk_params,
+			 struct phy_timing_desc *desc, s32 actual_frac,
+			 s64 actual_intermediate)
 {
 	u64 const multiplier = BIT(20);
 	int rc = 0;
@@ -101,17 +103,19 @@ static int calc_clk_zero(struct dsi_phy_hw *phy,
 	}
 	t->rec_max = ((t->rec_min > 255) ? 511 : 255);
 
-	t->rec = DIV_ROUND_UP((((t->rec_max - t->rec_min) *
-		clk_params->clk_zero_buf) + (t->rec_min * 100)), 100);
+	t->rec = DIV_ROUND_UP(
+		(((t->rec_max - t->rec_min) * clk_params->clk_zero_buf) +
+		 (t->rec_min * 100)),
+		100);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "clk_zero");
 	if (rc)
 		goto error;
 
-
-	DSI_PHY_DBG(phy, "CLK_ZERO:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"CLK_ZERO:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 error:
 	return rc;
 }
@@ -120,9 +124,8 @@ error:
  * calc_clk_trail - calculates prepare trail params for clk lane.
  */
 static int calc_clk_trail(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc,
-			s64 *teot_clk_lane)
+			  struct phy_clk_params *clk_params,
+			  struct phy_timing_desc *desc, s64 *teot_clk_lane)
 {
 	u64 const multiplier = BIT(20);
 	int rc = 0;
@@ -133,26 +136,24 @@ static int calc_clk_trail(struct dsi_phy_hw *phy,
 	s64 teot_clk_lane1;
 	struct phy_timing_ops *ops = phy->ops.timing_ops;
 
-	temp_multiple = div_s64(
-			(12 * multiplier * clk_params->tlpx_numer_ns),
-			clk_params->bitclk_mbps);
+	temp_multiple = div_s64((12 * multiplier * clk_params->tlpx_numer_ns),
+				clk_params->bitclk_mbps);
 	div_s64_rem(temp_multiple, multiplier, &frac);
 
-	mipi_max_tr = ((105 * multiplier) +
-		       (temp_multiple + frac));
+	mipi_max_tr = ((105 * multiplier) + (temp_multiple + frac));
 	teot_clk_lane1 = div_s64(mipi_max_tr, multiplier);
 
 	mipi_max = (mipi_max_tr - (clk_params->treot_ns * multiplier));
 	t->mipi_max = div_s64(mipi_max, multiplier);
 
-	temp_multiple = div_s64(
-			(t->mipi_min * multiplier * clk_params->bitclk_mbps),
+	temp_multiple =
+		div_s64((t->mipi_min * multiplier * clk_params->bitclk_mbps),
 			clk_params->tlpx_numer_ns);
 
 	div_s64_rem(temp_multiple, multiplier, &frac);
 	if (ops->calc_clk_trail_rec_min) {
-		t->rec_min = ops->calc_clk_trail_rec_min(temp_multiple,
-			frac, multiplier);
+		t->rec_min = ops->calc_clk_trail_rec_min(temp_multiple, frac,
+							 multiplier);
 	} else {
 		rc = -EINVAL;
 		goto error;
@@ -170,29 +171,30 @@ static int calc_clk_trail(struct dsi_phy_hw *phy,
 
 	t->rec = DIV_ROUND_UP(
 		(((t->rec_max - t->rec_min) * clk_params->clk_trail_buf) +
-		 (t->rec_min * 100)), 100);
+		 (t->rec_min * 100)),
+		100);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "clk_trail");
 	if (rc)
 		goto error;
 
 	*teot_clk_lane = teot_clk_lane1;
-	DSI_PHY_DBG(phy, "CLK_TRAIL:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"CLK_TRAIL:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, "
+		"reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 
 error:
 	return rc;
-
 }
 
 /**
  * calc_hs_prepare - calculates prepare timing params for data lanes in HS.
  */
 static int calc_hs_prepare(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc,
-			u64 *temp_mul)
+			   struct phy_clk_params *clk_params,
+			   struct phy_timing_desc *desc, u64 *temp_mul)
 {
 	u64 multiplier = BIT(20);
 	int rc = 0;
@@ -212,9 +214,8 @@ static int calc_hs_prepare(struct dsi_phy_hw *phy,
 	t->mipi_min = div_s64(mipi_min, multiplier);
 
 	/* mipi_max */
-	temp_multiple = div_s64(
-			(6 * multiplier * clk_params->tlpx_numer_ns),
-			clk_params->bitclk_mbps);
+	temp_multiple = div_s64((6 * multiplier * clk_params->tlpx_numer_ns),
+				clk_params->bitclk_mbps);
 	div_s64_rem(temp_multiple, multiplier, &frac);
 	mipi_max = (85 * multiplier) + temp_multiple;
 	t->mipi_max = div_s64(mipi_max, multiplier);
@@ -244,14 +245,15 @@ static int calc_hs_prepare(struct dsi_phy_hw *phy,
 	if (rc)
 		goto error;
 
-	temp_multiple = div_s64(
-			(8 * (temp + rec_temp1) * clk_params->tlpx_numer_ns),
+	temp_multiple =
+		div_s64((8 * (temp + rec_temp1) * clk_params->tlpx_numer_ns),
 			clk_params->bitclk_mbps);
 
 	*temp_mul = temp_multiple;
-	DSI_PHY_DBG(phy, "HS_PREP:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"HS_PREP:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 error:
 	return rc;
 }
@@ -261,8 +263,7 @@ error:
  */
 static int calc_hs_zero(struct dsi_phy_hw *phy,
 			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc,
-			u64 temp_multiple)
+			struct phy_timing_desc *desc, u64 temp_multiple)
 {
 	u64 const multiplier = BIT(20);
 	int rc = 0;
@@ -288,17 +289,18 @@ static int calc_hs_zero(struct dsi_phy_hw *phy,
 
 	t->rec_max = ((t->rec_min > 255) ? 511 : 255);
 	t->rec = DIV_ROUND_UP(
-			(((t->rec_max - t->rec_min) * clk_params->hs_zero_buf) +
-			 (t->rec_min * 100)),
-			100);
+		(((t->rec_max - t->rec_min) * clk_params->hs_zero_buf) +
+		 (t->rec_min * 100)),
+		100);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "hs_zero");
 	if (rc)
 		goto error;
 
-	DSI_PHY_DBG(phy, "HS_ZERO:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"HS_ZERO:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 
 error:
 	return rc;
@@ -308,18 +310,16 @@ error:
  * calc_hs_trail - calculates trail timing params for data lanes in HS.
  */
 static int calc_hs_trail(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc,
-			u64 teot_clk_lane)
+			 struct phy_clk_params *clk_params,
+			 struct phy_timing_desc *desc, u64 teot_clk_lane)
 {
 	int rc = 0;
 	struct timing_entry *t = &desc->hs_trail;
 	s64 rec_temp1;
 	struct phy_timing_ops *ops = phy->ops.timing_ops;
 
-	t->mipi_min = 60 +
-			mult_frac(clk_params->tlpx_numer_ns, 4,
-				  clk_params->bitclk_mbps);
+	t->mipi_min = 60 + mult_frac(clk_params->tlpx_numer_ns, 4,
+				     clk_params->bitclk_mbps);
 
 	t->mipi_max = teot_clk_lane - clk_params->treot_ns;
 
@@ -331,17 +331,17 @@ static int calc_hs_trail(struct dsi_phy_hw *phy,
 	}
 
 	rec_temp1 = DIV_ROUND_UP(
-			((t->rec_max - t->rec_min) * clk_params->hs_trail_buf),
-			100);
+		((t->rec_max - t->rec_min) * clk_params->hs_trail_buf), 100);
 	t->rec = rec_temp1 + t->rec_min;
 
 	rc = dsi_phy_cmn_validate_and_set(t, "hs_trail");
 	if (rc)
 		goto error;
 
-	DSI_PHY_DBG(phy, "HS_TRAIL:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"HS_TRAIL:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 
 error:
 	return rc;
@@ -357,18 +357,18 @@ static int calc_hs_rqst(struct dsi_phy_hw *phy,
 	int rc = 0;
 	struct timing_entry *t = &desc->hs_rqst;
 
-	t->rec = DIV_ROUND_UP(
-		((t->mipi_min * clk_params->bitclk_mbps) -
-		 (8 * clk_params->tlpx_numer_ns)),
-		(8 * clk_params->tlpx_numer_ns));
+	t->rec = DIV_ROUND_UP(((t->mipi_min * clk_params->bitclk_mbps) -
+			       (8 * clk_params->tlpx_numer_ns)),
+			      (8 * clk_params->tlpx_numer_ns));
 
 	rc = dsi_phy_cmn_validate_and_set(t, "hs_rqst");
 	if (rc)
 		goto error;
 
-	DSI_PHY_DBG(phy, "HS_RQST:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"HS_RQST:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 
 error:
 	return rc;
@@ -384,22 +384,23 @@ static int calc_hs_exit(struct dsi_phy_hw *phy,
 	int rc = 0;
 	struct timing_entry *t = &desc->hs_exit;
 
-	t->rec_min = (DIV_ROUND_UP(
-			(t->mipi_min * clk_params->bitclk_mbps),
-			(8 * clk_params->tlpx_numer_ns)) - 1);
+	t->rec_min = (DIV_ROUND_UP((t->mipi_min * clk_params->bitclk_mbps),
+				   (8 * clk_params->tlpx_numer_ns)) -
+		      1);
 
 	t->rec = DIV_ROUND_UP(
 		(((t->rec_max - t->rec_min) * clk_params->hs_exit_buf) +
-		 (t->rec_min * 100)), 100);
+		 (t->rec_min * 100)),
+		100);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "hs_exit");
 	if (rc)
 		goto error;
 
-
-	DSI_PHY_DBG(phy, "HS_EXIT:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"HS_EXIT:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 
 error:
 	return rc;
@@ -409,24 +410,25 @@ error:
  * calc_hs_rqst_clk - calculates rqst timing params for clock lane..
  */
 static int calc_hs_rqst_clk(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc)
+			    struct phy_clk_params *clk_params,
+			    struct phy_timing_desc *desc)
 {
 	int rc = 0;
 	struct timing_entry *t = &desc->hs_rqst_clk;
 
-	t->rec = DIV_ROUND_UP(
-		((t->mipi_min * clk_params->bitclk_mbps) -
-		 (8 * clk_params->tlpx_numer_ns)),
-		(8 * clk_params->tlpx_numer_ns));
+	t->rec = DIV_ROUND_UP(((t->mipi_min * clk_params->bitclk_mbps) -
+			       (8 * clk_params->tlpx_numer_ns)),
+			      (8 * clk_params->tlpx_numer_ns));
 
 	rc = dsi_phy_cmn_validate_and_set(t, "hs_rqst_clk");
 	if (rc)
 		goto error;
 
-	DSI_PHY_DBG(phy, "HS_RQST_CLK:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"HS_RQST_CLK:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, "
+		"reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 
 error:
 	return rc;
@@ -454,8 +456,8 @@ static s64 cal_clk_pulse_time(u32 inp1, u32 inp2, u32 bitclk_mbps)
  * calc_clk_post - calculates clk_post timing params for data lanes in HS.
  */
 static int calc_clk_post(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc)
+			 struct phy_clk_params *clk_params,
+			 struct phy_timing_desc *desc)
 {
 	int rc = 0;
 	struct timing_entry *t = &desc->clk_post;
@@ -466,8 +468,8 @@ static int calc_clk_post(struct dsi_phy_hw *phy,
 	t->mipi_min = cal_clk_pulse_time(52, 60, clk_params->bitclk_mbps);
 
 	/* recommended min
-	 * = roundup((mipi_min_ns + t_hs_trail_ns)/(16*bit_clk_ns), 0) - 1
-	 */
+   * = roundup((mipi_min_ns + t_hs_trail_ns)/(16*bit_clk_ns), 0) - 1
+   */
 	rec_cal1 = cal_clk_pulse_time(16, 0, clk_params->bitclk_mbps);
 
 	input1 = (desc->hs_trail.reg_value + 1) * 8;
@@ -480,16 +482,19 @@ static int calc_clk_post(struct dsi_phy_hw *phy,
 	t->rec_max = 255;
 
 	/* register value */
-	t->rec = DIV_ROUND_UP((((t->rec_max - t->rec_min) *
-		clk_params->clk_post_buf) + (t->rec_min * 100)), 100);
+	t->rec = DIV_ROUND_UP(
+		(((t->rec_max - t->rec_min) * clk_params->clk_post_buf) +
+		 (t->rec_min * 100)),
+		100);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "clk_post");
 	if (rc)
 		goto error;
 
-	DSI_PHY_DBG(phy, "CLK_POST:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"CLK_POST:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 error:
 	return rc;
 }
@@ -511,10 +516,10 @@ static int calc_clk_pre(struct dsi_phy_hw *phy,
 	t->mipi_min = cal_clk_pulse_time(8, 0, clk_params->bitclk_mbps);
 
 	/* recommended min
-	 * val1 = (tlpx_ns + clk_prepare_ns + clk_zero_ns + hs_rqst_ns)
-	 * val2 = (16 * bit_clk_ns)
-	 * final = roundup(val1/val2, 0) - 1
-	 */
+   * val1 = (tlpx_ns + clk_prepare_ns + clk_zero_ns + hs_rqst_ns)
+   * val2 = (16 * bit_clk_ns)
+   * final = roundup(val1/val2, 0) - 1
+   */
 	input1 = desc->clk_prepare.reg_value * 8;
 	clk_prepare = cal_clk_pulse_time(input1, 0, clk_params->bitclk_mbps);
 
@@ -530,16 +535,18 @@ static int calc_clk_pre(struct dsi_phy_hw *phy,
 	t->rec_max = 255;
 
 	/* register value */
-	t->rec =DIV_ROUND_UP((((t->rec_max - t->rec_min) *
-		125) + (t->rec_min * 100 * 100)), 100 * 100);
+	t->rec = DIV_ROUND_UP(
+		(((t->rec_max - t->rec_min) * 125) + (t->rec_min * 100 * 100)),
+		100 * 100);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "clk_pre");
 	if (rc)
 		goto error;
 
-	DSI_PHY_DBG(phy, "CLK_PRE:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
-		 t->mipi_min, t->mipi_max, t->rec_min, t->rec_max,
-		 t->reg_value);
+	DSI_PHY_DBG(
+		phy,
+		"CLK_PRE:mipi_min=%d, mipi_max=%d, rec_min=%d, rec_max=%d, reg_val=%d\n",
+		t->mipi_min, t->mipi_max, t->rec_min, t->rec_max, t->reg_value);
 error:
 	return rc;
 }
@@ -548,7 +555,8 @@ error:
  * dsi_phy_calc_timing_params - calculates timing paramets for a given bit clock
  */
 static int dsi_phy_cmn_calc_timing_params(struct dsi_phy_hw *phy,
-	struct phy_clk_params *clk_params, struct phy_timing_desc *desc)
+					  struct phy_clk_params *clk_params,
+					  struct phy_timing_desc *desc)
 {
 	int rc = 0;
 	s32 actual_frac = 0;
@@ -560,12 +568,12 @@ static int dsi_phy_cmn_calc_timing_params(struct dsi_phy_hw *phy,
 			      &actual_intermediate);
 	if (rc) {
 		DSI_PHY_ERR(phy, "clk_prepare calculations failed, rc=%d\n",
-				rc);
+			    rc);
 		goto error;
 	}
 
-	rc = calc_clk_zero(phy, clk_params, desc,
-		actual_frac, actual_intermediate);
+	rc = calc_clk_zero(phy, clk_params, desc, actual_frac,
+			   actual_intermediate);
 	if (rc) {
 		DSI_PHY_ERR(phy, "clk_zero calculations failed, rc=%d\n", rc);
 		goto error;
@@ -610,7 +618,7 @@ static int dsi_phy_cmn_calc_timing_params(struct dsi_phy_hw *phy,
 	rc = calc_hs_rqst_clk(phy, clk_params, desc);
 	if (rc) {
 		DSI_PHY_ERR(phy, "hs_rqst_clk calculations failed, rc=%d\n",
-				rc);
+			    rc);
 		goto error;
 	}
 
@@ -633,8 +641,8 @@ error:
  * calc_cphy_clk_prepare - calculates cphy_clk_prepare parameter for cphy.
  */
 static int calc_cphy_clk_prepare(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc)
+				 struct phy_clk_params *clk_params,
+				 struct phy_timing_desc *desc)
 {
 	u64 multiplier = BIT(20);
 	struct timing_entry *t = &desc->clk_prepare;
@@ -642,21 +650,22 @@ static int calc_cphy_clk_prepare(struct dsi_phy_hw *phy,
 	u64 dividend, temp;
 
 	t->rec_min = DIV_ROUND_UP((t->mipi_min * clk_params->bitclk_mbps),
-			(7 * clk_params->tlpx_numer_ns));
-	t->rec_max = rounddown(
-		mult_frac((t->mipi_max * clk_params->bitclk_mbps),
-			1, (7 * clk_params->tlpx_numer_ns)), 1);
+				  (7 * clk_params->tlpx_numer_ns));
+	t->rec_max =
+		rounddown(mult_frac((t->mipi_max * clk_params->bitclk_mbps), 1,
+				    (7 * clk_params->tlpx_numer_ns)),
+			  1);
 
-	dividend = ((t->rec_max - t->rec_min) *
-		clk_params->clk_prep_buf * multiplier);
-	temp  = roundup(div_s64(dividend, 100), multiplier);
+	dividend = ((t->rec_max - t->rec_min) * clk_params->clk_prep_buf *
+		    multiplier);
+	temp = roundup(div_s64(dividend, 100), multiplier);
 	temp += (t->rec_min * multiplier);
 	t->rec = div_s64(temp, multiplier);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "cphy_clk_prepare");
 
 	DSI_DEBUG("CPHY_CLK_PREPARE: rec_min=%d, rec_max=%d, reg_val=%d\n",
-		t->rec_min, t->rec_max, t->reg_value);
+		  t->rec_min, t->rec_max, t->reg_value);
 
 	return rc;
 }
@@ -665,37 +674,39 @@ static int calc_cphy_clk_prepare(struct dsi_phy_hw *phy,
  * calc_cphy_clk_pre - calculates cphy_clk_pre parameter for cphy.
  */
 static int calc_cphy_clk_pre(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc)
+			     struct phy_clk_params *clk_params,
+			     struct phy_timing_desc *desc)
 {
 	u64 multiplier = BIT(20);
 	struct timing_entry *t = &desc->clk_pre;
 	int rc = 0;
 	u64 dividend, temp;
 
-	t->mipi_min = min(300 - 38 - mult_frac(7, clk_params->tlpx_numer_ns,
-			clk_params->bitclk_mbps),
-			mult_frac(448, clk_params->tlpx_numer_ns,
-			clk_params->bitclk_mbps));
+	t->mipi_min = min(300 - 38 -
+				  mult_frac(7, clk_params->tlpx_numer_ns,
+					    clk_params->bitclk_mbps),
+			  mult_frac(448, clk_params->tlpx_numer_ns,
+				    clk_params->bitclk_mbps));
 	t->mipi_max = mult_frac(448, clk_params->tlpx_numer_ns,
-			clk_params->bitclk_mbps);
+				clk_params->bitclk_mbps);
 
 	t->rec_min = DIV_ROUND_UP((t->mipi_min * clk_params->bitclk_mbps),
-			(7 * clk_params->tlpx_numer_ns));
-	t->rec_max = rounddown(
-		mult_frac((t->mipi_max * clk_params->bitclk_mbps),
-			1, (7 * clk_params->tlpx_numer_ns)), 1);
+				  (7 * clk_params->tlpx_numer_ns));
+	t->rec_max =
+		rounddown(mult_frac((t->mipi_max * clk_params->bitclk_mbps), 1,
+				    (7 * clk_params->tlpx_numer_ns)),
+			  1);
 
-	dividend = ((t->rec_max - t->rec_min) * clk_params->clk_pre_buf
-			* multiplier);
-	temp  = roundup(div_s64(dividend, 100), multiplier);
+	dividend = ((t->rec_max - t->rec_min) * clk_params->clk_pre_buf *
+		    multiplier);
+	temp = roundup(div_s64(dividend, 100), multiplier);
 	temp += (t->rec_min * multiplier);
 	t->rec = div_s64(temp, multiplier);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "cphy_clk_pre");
 
 	DSI_DEBUG("CPHY_CLK_PRE: rec_min=%d, rec_max=%d, reg_val=%d\n",
-		t->rec_min, t->rec_max, t->reg_value);
+		  t->rec_min, t->rec_max, t->reg_value);
 
 	return rc;
 }
@@ -704,8 +715,8 @@ static int calc_cphy_clk_pre(struct dsi_phy_hw *phy,
  * calc_cphy_clk_post - calculates cphy_clk_post parameter for cphy.
  */
 static int calc_cphy_clk_post(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc)
+			      struct phy_clk_params *clk_params,
+			      struct phy_timing_desc *desc)
 {
 	u64 multiplier = BIT(20);
 	struct timing_entry *t = &desc->clk_post;
@@ -713,26 +724,27 @@ static int calc_cphy_clk_post(struct dsi_phy_hw *phy,
 	u64 dividend, temp;
 
 	t->mipi_min = mult_frac(7, clk_params->tlpx_numer_ns,
-			clk_params->bitclk_mbps);
+				clk_params->bitclk_mbps);
 	t->mipi_max = mult_frac(224, clk_params->tlpx_numer_ns,
-			clk_params->bitclk_mbps);
+				clk_params->bitclk_mbps);
 
 	t->rec_min = DIV_ROUND_UP((t->mipi_min * clk_params->bitclk_mbps),
-			(7 * clk_params->tlpx_numer_ns));
-	t->rec_max = rounddown(
-		mult_frac((t->mipi_max * clk_params->bitclk_mbps),
-			  1, (7 * clk_params->tlpx_numer_ns)), 1);
+				  (7 * clk_params->tlpx_numer_ns));
+	t->rec_max =
+		rounddown(mult_frac((t->mipi_max * clk_params->bitclk_mbps), 1,
+				    (7 * clk_params->tlpx_numer_ns)),
+			  1);
 
-	dividend = ((t->rec_max - t->rec_min) * clk_params->clk_post_buf
-			* multiplier);
-	temp  = roundup(div_s64(dividend, 100), multiplier);
+	dividend = ((t->rec_max - t->rec_min) * clk_params->clk_post_buf *
+		    multiplier);
+	temp = roundup(div_s64(dividend, 100), multiplier);
 	temp += (t->rec_min * multiplier);
 	t->rec = div_s64(temp, multiplier);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "cphy_clk_post");
 
 	DSI_DEBUG("CPHY_CLK_POST: rec_min=%d, rec_max=%d, reg_val=%d\n",
-		t->rec_min, t->rec_max, t->reg_value);
+		  t->rec_min, t->rec_max, t->reg_value);
 
 	return rc;
 }
@@ -741,29 +753,28 @@ static int calc_cphy_clk_post(struct dsi_phy_hw *phy,
  * calc_cphy_hs_rqst - calculates cphy_hs_rqst parameter for cphy.
  */
 static int calc_cphy_hs_rqst(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc)
+			     struct phy_clk_params *clk_params,
+			     struct phy_timing_desc *desc)
 {
 	u64 multiplier = BIT(20);
 	struct timing_entry *t = &desc->hs_rqst;
 	int rc = 0;
 	u64 dividend, temp;
 
-	t->rec_min = DIV_ROUND_UP(
-		((t->mipi_min * clk_params->bitclk_mbps) -
-		 (7 * clk_params->tlpx_numer_ns)),
-		(7 * clk_params->tlpx_numer_ns));
+	t->rec_min = DIV_ROUND_UP(((t->mipi_min * clk_params->bitclk_mbps) -
+				   (7 * clk_params->tlpx_numer_ns)),
+				  (7 * clk_params->tlpx_numer_ns));
 
-	dividend = ((t->rec_max - t->rec_min) *
-		clk_params->hs_rqst_buf * multiplier);
-	temp  = roundup(div_s64(dividend, 100), multiplier);
+	dividend = ((t->rec_max - t->rec_min) * clk_params->hs_rqst_buf *
+		    multiplier);
+	temp = roundup(div_s64(dividend, 100), multiplier);
 	temp += t->rec_min * multiplier;
 	t->rec = div_s64(temp, multiplier);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "cphy_hs_rqst");
 
 	DSI_DEBUG("CPHY_HS_RQST: rec_min=%d, rec_max=%d, reg_val=%d\n",
-		t->rec_min, t->rec_max, t->reg_value);
+		  t->rec_min, t->rec_max, t->reg_value);
 
 	return rc;
 }
@@ -772,28 +783,28 @@ static int calc_cphy_hs_rqst(struct dsi_phy_hw *phy,
  * calc_cphy_hs_exit - calculates cphy_hs_exit parameter for cphy.
  */
 static int calc_cphy_hs_exit(struct dsi_phy_hw *phy,
-			struct phy_clk_params *clk_params,
-			struct phy_timing_desc *desc)
+			     struct phy_clk_params *clk_params,
+			     struct phy_timing_desc *desc)
 {
 	int rc = 0;
 	u64 multiplier = BIT(20);
 	u64 dividend, temp;
 	struct timing_entry *t = &desc->hs_exit;
 
-	t->rec_min = (DIV_ROUND_UP(
-			(t->mipi_min * clk_params->bitclk_mbps),
-			(7 * clk_params->tlpx_numer_ns)) - 1);
+	t->rec_min = (DIV_ROUND_UP((t->mipi_min * clk_params->bitclk_mbps),
+				   (7 * clk_params->tlpx_numer_ns)) -
+		      1);
 
-	dividend = ((t->rec_max - t->rec_min) *
-		clk_params->hs_exit_buf * multiplier);
-	temp  = roundup(div_s64(dividend, 100), multiplier);
+	dividend = ((t->rec_max - t->rec_min) * clk_params->hs_exit_buf *
+		    multiplier);
+	temp = roundup(div_s64(dividend, 100), multiplier);
 	temp += t->rec_min * multiplier;
 	t->rec = div_s64(temp, multiplier);
 
 	rc = dsi_phy_cmn_validate_and_set(t, "cphy_hs_exit");
 
 	DSI_DEBUG("CPHY_HS_EXIT: rec_min=%d, rec_max=%d, reg_val=%d\n",
-		t->rec_min, t->rec_max, t->reg_value);
+		  t->rec_min, t->rec_max, t->reg_value);
 
 	return rc;
 }
@@ -802,8 +813,10 @@ static int calc_cphy_hs_exit(struct dsi_phy_hw *phy,
  * dsi_phy_calc_cphy_timing_params - calculates cphy timing parameters
  *					for a given bit clock
  */
-static int dsi_phy_cmn_calc_cphy_timing_params(struct dsi_phy_hw *phy,
-	struct phy_clk_params *clk_params, struct phy_timing_desc *desc)
+static int
+dsi_phy_cmn_calc_cphy_timing_params(struct dsi_phy_hw *phy,
+				    struct phy_clk_params *clk_params,
+				    struct phy_timing_desc *desc)
 {
 	int rc = 0;
 
@@ -877,7 +890,7 @@ int dsi_phy_hw_calculate_timing_params(struct dsi_phy_hw *phy,
 	u32 bpp;
 	u64 x, y;
 	struct phy_timing_desc desc;
-	struct phy_clk_params clk_params = {0};
+	struct phy_clk_params clk_params = { 0 };
 	struct phy_timing_ops *ops = phy->ops.timing_ops;
 
 	u32 phy_type = host->phy_type;
@@ -899,7 +912,6 @@ int dsi_phy_hw_calculate_timing_params(struct dsi_phy_hw *phy,
 	if (host->data_lanes & DSI_DATA_LANE_3)
 		num_of_lanes++;
 
-
 	if (use_mode_bit_clk)
 		x = mode->clk_rate_hz;
 	else {
@@ -914,7 +926,6 @@ int dsi_phy_hw_calculate_timing_params(struct dsi_phy_hw *phy,
 	clk_params.escclk_denom = esc_clk_mmss_cc_prediv;
 	clk_params.tlpx_numer_ns = tlpx_numer;
 	clk_params.treot_ns = tr_eot;
-
 
 	/* Setup default parameters */
 	desc.clk_prepare.mipi_min = clk_prepare_spec_min;
@@ -934,12 +945,12 @@ int dsi_phy_hw_calculate_timing_params(struct dsi_phy_hw *phy,
 	}
 
 	DSI_PHY_DBG(phy, "BIT CLOCK = %d, tlpx_numer_ns=%d, treot_ns=%d\n",
-	       clk_params.bitclk_mbps, clk_params.tlpx_numer_ns,
-	       clk_params.treot_ns);
+		    clk_params.bitclk_mbps, clk_params.tlpx_numer_ns,
+		    clk_params.treot_ns);
 
 	if (phy_type == DSI_PHY_TYPE_CPHY)
 		rc = dsi_phy_cmn_calc_cphy_timing_params(phy, &clk_params,
-							&desc);
+							 &desc);
 	else
 		rc = dsi_phy_cmn_calc_timing_params(phy, &clk_params, &desc);
 	if (rc) {
@@ -959,7 +970,7 @@ error:
 }
 
 int dsi_phy_timing_calc_init(struct dsi_phy_hw *phy,
-			enum dsi_phy_version version)
+			     enum dsi_phy_version version)
 {
 	struct phy_timing_ops *ops = NULL;
 
@@ -978,16 +989,13 @@ int dsi_phy_timing_calc_init(struct dsi_phy_hw *phy,
 	case DSI_PHY_VERSION_3_0:
 		ops->get_default_phy_params =
 			dsi_phy_hw_v3_0_get_default_phy_params;
-		ops->calc_clk_zero =
-			dsi_phy_hw_v3_0_calc_clk_zero;
+		ops->calc_clk_zero = dsi_phy_hw_v3_0_calc_clk_zero;
 		ops->calc_clk_trail_rec_min =
 			dsi_phy_hw_v3_0_calc_clk_trail_rec_min;
 		ops->calc_clk_trail_rec_max =
 			dsi_phy_hw_v3_0_calc_clk_trail_rec_max;
-		ops->calc_hs_zero =
-			dsi_phy_hw_v3_0_calc_hs_zero;
-		ops->calc_hs_trail =
-			dsi_phy_hw_v3_0_calc_hs_trail;
+		ops->calc_hs_zero = dsi_phy_hw_v3_0_calc_hs_zero;
+		ops->calc_hs_trail = dsi_phy_hw_v3_0_calc_hs_trail;
 		ops->update_timing_params =
 			dsi_phy_hw_v3_0_update_timing_params;
 		break;
@@ -999,16 +1007,13 @@ int dsi_phy_timing_calc_init(struct dsi_phy_hw *phy,
 	case DSI_PHY_VERSION_5_2:
 		ops->get_default_phy_params =
 			dsi_phy_hw_v4_0_get_default_phy_params;
-		ops->calc_clk_zero =
-			dsi_phy_hw_v4_0_calc_clk_zero;
+		ops->calc_clk_zero = dsi_phy_hw_v4_0_calc_clk_zero;
 		ops->calc_clk_trail_rec_min =
 			dsi_phy_hw_v4_0_calc_clk_trail_rec_min;
 		ops->calc_clk_trail_rec_max =
 			dsi_phy_hw_v4_0_calc_clk_trail_rec_max;
-		ops->calc_hs_zero =
-			dsi_phy_hw_v4_0_calc_hs_zero;
-		ops->calc_hs_trail =
-			dsi_phy_hw_v4_0_calc_hs_trail;
+		ops->calc_hs_zero = dsi_phy_hw_v4_0_calc_hs_zero;
+		ops->calc_hs_trail = dsi_phy_hw_v4_0_calc_hs_trail;
 		ops->update_timing_params =
 			dsi_phy_hw_v4_0_update_timing_params;
 		break;
@@ -1019,4 +1024,3 @@ int dsi_phy_timing_calc_init(struct dsi_phy_hw *phy,
 
 	return 0;
 }
-

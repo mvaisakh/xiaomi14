@@ -99,7 +99,7 @@ static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_idx, &a5xx_coresight_registers[30]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_clrc, &a5xx_coresight_registers[31]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_loadivt, &a5xx_coresight_registers[32]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_event_logic,
-				&a5xx_coresight_registers[33]);
+			     &a5xx_coresight_registers[33]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_over, &a5xx_coresight_registers[34]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_count0, &a5xx_coresight_registers[35]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_count1, &a5xx_coresight_registers[36]);
@@ -108,22 +108,22 @@ static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_count3, &a5xx_coresight_registers[38]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_count4, &a5xx_coresight_registers[39]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_count5, &a5xx_coresight_registers[40]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_trace_addr,
-				&a5xx_coresight_registers[41]);
+			     &a5xx_coresight_registers[41]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_trace_buf0,
-				&a5xx_coresight_registers[42]);
+			     &a5xx_coresight_registers[42]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_trace_buf1,
-				&a5xx_coresight_registers[43]);
+			     &a5xx_coresight_registers[43]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_trace_buf2,
-				&a5xx_coresight_registers[44]);
+			     &a5xx_coresight_registers[44]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_trace_buf3,
-				&a5xx_coresight_registers[45]);
+			     &a5xx_coresight_registers[45]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_trace_buf4,
-				&a5xx_coresight_registers[46]);
+			     &a5xx_coresight_registers[46]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_misr0, &a5xx_coresight_registers[47]);
 static ADRENO_CORESIGHT_ATTR(cfg_dbgbus_misr1, &a5xx_coresight_registers[48]);
 static ADRENO_CORESIGHT_ATTR(ahb_dbg_cntl, &a5xx_coresight_registers[49]);
 static ADRENO_CORESIGHT_ATTR(read_ahb_through_dbg,
-				&a5xx_coresight_registers[50]);
+			     &a5xx_coresight_registers[50]);
 static ADRENO_CORESIGHT_ATTR(dbg_lo_hi_gpio, &a5xx_coresight_registers[51]);
 static ADRENO_CORESIGHT_ATTR(ext_trace_bus_cntl, &a5xx_coresight_registers[52]);
 static ADRENO_CORESIGHT_ATTR(ext_vbif_dbg_cntl, &a5xx_coresight_registers[53]);
@@ -204,5 +204,5 @@ static const struct adreno_coresight a5xx_coresight = {
 void a5xx_coresight_init(struct adreno_device *adreno_dev)
 {
 	adreno_coresight_add_device(adreno_dev, "coresight-gfx",
-		&a5xx_coresight, &adreno_dev->gx_coresight);
+				    &a5xx_coresight, &adreno_dev->gx_coresight);
 }

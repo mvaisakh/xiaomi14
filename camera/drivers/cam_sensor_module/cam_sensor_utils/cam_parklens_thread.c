@@ -1,8 +1,7 @@
 #include "cam_parklens_thread.h"
 
 parklens_thread_t *parklens_thread_run(int32_t (*thread_handler)(void *data),
-	void *data,
-	const char thread_name[])
+				       void *data, const char thread_name[])
 {
 	struct task_struct *task;
 
@@ -82,7 +81,7 @@ int32_t parklens_event_reset(struct parklens_event *event)
 }
 
 int32_t parklens_wait_single_event(struct parklens_event *event,
-        uint32_t timeout)
+				   uint32_t timeout)
 {
 	if (in_interrupt())
 		return -1;
@@ -97,9 +96,8 @@ int32_t parklens_wait_single_event(struct parklens_event *event,
 	if (timeout) {
 		long ret;
 
-		ret = wait_for_completion_timeout(
-			&event->complete,
-			msecs_to_jiffies(timeout));
+		ret = wait_for_completion_timeout(&event->complete,
+						  msecs_to_jiffies(timeout));
 
 		if (ret <= 0)
 			return -4;
@@ -129,7 +127,7 @@ int32_t parklens_event_destroy(struct parklens_event *event)
 }
 
 int32_t parklens_wake_lock_create(struct parklens_wake_lock *lock,
-        const char *name)
+				  const char *name)
 {
 	memset(lock, 0, sizeof(*lock));
 	lock->priv = wakeup_source_register(lock->lock.dev, name);
@@ -159,6 +157,6 @@ int32_t parklens_wake_lock_release(struct parklens_wake_lock *lock)
 
 int32_t parklens_wake_lock_destroy(struct parklens_wake_lock *lock)
 {
-        wakeup_source_unregister(lock->priv);
-        return 0;
+	wakeup_source_unregister(lock->priv);
+	return 0;
 }

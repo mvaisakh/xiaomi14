@@ -22,8 +22,8 @@
  * in target if internally.
  */
 
-#include <target_if_dlm.h>
 #include "target_if.h"
+#include <target_if_dlm.h>
 
 #if defined(WLAN_FEATURE_ROAM_OFFLOAD)
 QDF_STATUS

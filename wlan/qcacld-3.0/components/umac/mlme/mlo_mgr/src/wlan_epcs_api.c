@@ -18,53 +18,51 @@
  * DOC: contains EPCS (Emergency Preparedness Communications Service)
  * related functionality
  */
-#include <wlan_cmn.h>
-#include <wlan_cm_public_struct.h>
 #include "wlan_epcs_api.h"
-#include <wlan_mlo_epcs.h>
-#include "wlan_cm_api.h"
-#include "wlan_mlo_mgr_roam.h"
-#include "wlan_cmn_ieee80211.h"
 #include "dot11f.h"
+#include "wlan_cm_api.h"
+#include "wlan_cmn_ieee80211.h"
+#include "wlan_mlo_mgr_roam.h"
+#include <wlan_cm_public_struct.h>
+#include <wlan_cmn.h>
+#include <wlan_mlo_epcs.h>
 
-#define EPCS_MIN_DIALOG_TOKEN         1
-#define EPCS_MAX_DIALOG_TOKEN         0xFF
+#define EPCS_MIN_DIALOG_TOKEN 1
+#define EPCS_MAX_DIALOG_TOKEN 0xFF
 
 static struct ac_param_record default_epcs_edca[] = {
 #ifndef ANI_LITTLE_BIT_ENDIAN
 	/* The txop is multiple of 32us units */
-	{0x07, 0x95, 79 /* 2.528ms */},
-	{0x03, 0x95, 79 /* 2.528ms */},
-	{0x02, 0x54, 128 /* 4.096ms */},
-	{0x02, 0x43, 65 /* 2.080ms */}
+	{ 0x07, 0x95, 79 /* 2.528ms */ },
+	{ 0x03, 0x95, 79 /* 2.528ms */ },
+	{ 0x02, 0x54, 128 /* 4.096ms */ },
+	{ 0x02, 0x43, 65 /* 2.080ms */ }
 #else
-	{0x70, 0x59, 79 /* 2.528ms */},
-	{0x30, 0x59, 79 /* 2.528ms */},
-	{0x20, 0x45, 128 /* 4.096ms */},
-	{0x20, 0x34, 65 /* 2.080ms */}
+	{ 0x70, 0x59, 79 /* 2.528ms */ },
+	{ 0x30, 0x59, 79 /* 2.528ms */ },
+	{ 0x20, 0x45, 128 /* 4.096ms */ },
+	{ 0x20, 0x34, 65 /* 2.080ms */ }
 #endif
 };
 
-static
-const char *epcs_get_event_str(enum wlan_epcs_evt event)
+static const char *epcs_get_event_str(enum wlan_epcs_evt event)
 {
 	if (event > WLAN_EPCS_EV_ACTION_FRAME_MAX)
 		return "";
 
 	switch (event) {
-	CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_RX_REQ);
-	CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_TX_RESP);
-	CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_TX_REQ);
-	CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_RX_RESP);
-	CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_RX_TEARDOWN);
-	CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_TX_TEARDOWN);
+		CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_RX_REQ);
+		CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_TX_RESP);
+		CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_TX_REQ);
+		CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_RX_RESP);
+		CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_RX_TEARDOWN);
+		CASE_RETURN_STRING(WLAN_EPCS_EV_ACTION_FRAME_TX_TEARDOWN);
 	default:
 		return "Unknown";
 	}
 }
 
-static uint8_t
-epcs_gen_dialog_token(struct wlan_mlo_peer_epcs_info *epcs_info)
+static uint8_t epcs_gen_dialog_token(struct wlan_mlo_peer_epcs_info *epcs_info)
 {
 	if (!epcs_info)
 		return 0;
@@ -113,12 +111,11 @@ static void epcs_update_mu_ac_value(tSirMacEdcaParamRecord *edca,
 		   edca->aci.aifsn, edca->cw.max, edca->cw.min);
 }
 
-static QDF_STATUS
-epcs_update_def_edca_param(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS epcs_update_def_edca_param(struct wlan_objmgr_vdev *vdev)
 {
 	int i;
 	struct mac_context *mac_ctx;
-	tSirMacEdcaParamRecord edca[QCA_WLAN_AC_ALL] = {0};
+	tSirMacEdcaParamRecord edca[QCA_WLAN_AC_ALL] = { 0 };
 
 	mac_ctx = cds_get_context(QDF_MODULE_ID_PE);
 	if (!mac_ctx)
@@ -133,13 +130,12 @@ epcs_update_def_edca_param(struct wlan_objmgr_vdev *vdev)
 	return lim_send_epcs_update_edca_params(vdev, edca, false);
 }
 
-static QDF_STATUS
-epcs_update_edca_param(struct wlan_objmgr_vdev *vdev,
-		       struct edca_ie *edca_ie)
+static QDF_STATUS epcs_update_edca_param(struct wlan_objmgr_vdev *vdev,
+					 struct edca_ie *edca_ie)
 {
 	struct mac_context *mac_ctx;
 	struct ac_param_record *ac_record;
-	tSirMacEdcaParamRecord edca[QCA_WLAN_AC_ALL] = {0};
+	tSirMacEdcaParamRecord edca[QCA_WLAN_AC_ALL] = { 0 };
 	int i;
 
 	mac_ctx = cds_get_context(QDF_MODULE_ID_PE);
@@ -161,12 +157,12 @@ epcs_update_edca_param(struct wlan_objmgr_vdev *vdev,
 	return lim_send_epcs_update_edca_params(vdev, edca, false);
 }
 
-static QDF_STATUS
-epcs_update_ven_wmm_param(struct wlan_objmgr_vdev *vdev, uint8_t *ven_wme_ie)
+static QDF_STATUS epcs_update_ven_wmm_param(struct wlan_objmgr_vdev *vdev,
+					    uint8_t *ven_wme_ie)
 {
 	struct mac_context *mac_ctx;
-	tDot11fIEWMMParams wmm_para = {0};
-	tSirMacEdcaParamRecord edca[QCA_WLAN_AC_ALL] = {0};
+	tDot11fIEWMMParams wmm_para = { 0 };
+	tSirMacEdcaParamRecord edca[QCA_WLAN_AC_ALL] = { 0 };
 	uint32_t status;
 
 	mac_ctx = cds_get_context(QDF_MODULE_ID_PE);
@@ -190,12 +186,10 @@ epcs_update_ven_wmm_param(struct wlan_objmgr_vdev *vdev, uint8_t *ven_wme_ie)
 	edca[QCA_WLAN_AC_BE].cw.min = wmm_para.acbe_acwmin;
 	edca[QCA_WLAN_AC_BE].txoplimit = wmm_para.acbe_txoplimit;
 	edca[QCA_WLAN_AC_BE].no_ack =
-				mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_BE];
+		mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_BE];
 	mlme_debug("WMM BE aci %d, acm %d, aifsn %d, cwmax %d, cwmin %d",
-		   edca[QCA_WLAN_AC_BE].aci.aci,
-		   edca[QCA_WLAN_AC_BE].aci.acm,
-		   edca[QCA_WLAN_AC_BE].aci.aifsn,
-		   edca[QCA_WLAN_AC_BE].cw.max,
+		   edca[QCA_WLAN_AC_BE].aci.aci, edca[QCA_WLAN_AC_BE].aci.acm,
+		   edca[QCA_WLAN_AC_BE].aci.aifsn, edca[QCA_WLAN_AC_BE].cw.max,
 		   edca[QCA_WLAN_AC_BE].cw.min);
 
 	edca[QCA_WLAN_AC_BK].aci.rsvd = wmm_para.unused2;
@@ -206,12 +200,10 @@ epcs_update_ven_wmm_param(struct wlan_objmgr_vdev *vdev, uint8_t *ven_wme_ie)
 	edca[QCA_WLAN_AC_BK].cw.min = wmm_para.acbk_acwmin;
 	edca[QCA_WLAN_AC_BK].txoplimit = wmm_para.acbk_txoplimit;
 	edca[QCA_WLAN_AC_BK].no_ack =
-				mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_BK];
+		mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_BK];
 	mlme_debug("WMM BK aci %d, acm %d, aifsn %d, cwmax %d, cwmin %d",
-		   edca[QCA_WLAN_AC_BK].aci.aci,
-		   edca[QCA_WLAN_AC_BK].aci.acm,
-		   edca[QCA_WLAN_AC_BK].aci.aifsn,
-		   edca[QCA_WLAN_AC_BK].cw.max,
+		   edca[QCA_WLAN_AC_BK].aci.aci, edca[QCA_WLAN_AC_BK].aci.acm,
+		   edca[QCA_WLAN_AC_BK].aci.aifsn, edca[QCA_WLAN_AC_BK].cw.max,
 		   edca[QCA_WLAN_AC_BK].cw.min);
 
 	edca[QCA_WLAN_AC_VI].aci.rsvd = wmm_para.unused3;
@@ -222,12 +214,10 @@ epcs_update_ven_wmm_param(struct wlan_objmgr_vdev *vdev, uint8_t *ven_wme_ie)
 	edca[QCA_WLAN_AC_VI].cw.min = wmm_para.acvi_acwmin;
 	edca[QCA_WLAN_AC_VI].txoplimit = wmm_para.acvi_txoplimit;
 	edca[QCA_WLAN_AC_VI].no_ack =
-				mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_VI];
+		mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_VI];
 	mlme_debug("WMM VI aci %d, acm %d, aifsn %d, cwmax %d, cwmin %d",
-		   edca[QCA_WLAN_AC_VI].aci.aci,
-		   edca[QCA_WLAN_AC_VI].aci.acm,
-		   edca[QCA_WLAN_AC_VI].aci.aifsn,
-		   edca[QCA_WLAN_AC_VI].cw.max,
+		   edca[QCA_WLAN_AC_VI].aci.aci, edca[QCA_WLAN_AC_VI].aci.acm,
+		   edca[QCA_WLAN_AC_VI].aci.aifsn, edca[QCA_WLAN_AC_VI].cw.max,
 		   edca[QCA_WLAN_AC_VI].cw.min);
 
 	edca[QCA_WLAN_AC_VO].aci.rsvd = wmm_para.unused4;
@@ -238,24 +228,21 @@ epcs_update_ven_wmm_param(struct wlan_objmgr_vdev *vdev, uint8_t *ven_wme_ie)
 	edca[QCA_WLAN_AC_VO].cw.min = wmm_para.acvo_acwmin;
 	edca[QCA_WLAN_AC_VO].txoplimit = wmm_para.acvo_txoplimit;
 	edca[QCA_WLAN_AC_VO].no_ack =
-				mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_VO];
+		mac_ctx->no_ack_policy_cfg[QCA_WLAN_AC_VO];
 	mlme_debug("WMM VO aci %d, acm %d, aifsn %d, cwmax %d, cwmin %d",
-		   edca[QCA_WLAN_AC_VO].aci.aci,
-		   edca[QCA_WLAN_AC_VO].aci.acm,
-		   edca[QCA_WLAN_AC_VO].aci.aifsn,
-		   edca[QCA_WLAN_AC_VO].cw.max,
+		   edca[QCA_WLAN_AC_VO].aci.aci, edca[QCA_WLAN_AC_VO].aci.acm,
+		   edca[QCA_WLAN_AC_VO].aci.aifsn, edca[QCA_WLAN_AC_VO].cw.max,
 		   edca[QCA_WLAN_AC_VO].cw.min);
 
 	return lim_send_epcs_update_edca_params(vdev, edca, false);
 }
 
-static QDF_STATUS
-epcs_update_mu_edca_param(struct wlan_objmgr_vdev *vdev,
-			  struct muedca_ie *muedca)
+static QDF_STATUS epcs_update_mu_edca_param(struct wlan_objmgr_vdev *vdev,
+					    struct muedca_ie *muedca)
 {
 	struct mac_context *mac_ctx;
 	struct muac_param_record *mu_record;
-	tSirMacEdcaParamRecord edca[QCA_WLAN_AC_ALL] = {0};
+	tSirMacEdcaParamRecord edca[QCA_WLAN_AC_ALL] = { 0 };
 	int i;
 
 	if (muedca->elem_id != DOT11F_EID_MU_EDCA_PARAM_SET ||
@@ -277,8 +264,7 @@ epcs_update_mu_edca_param(struct wlan_objmgr_vdev *vdev,
 	return lim_send_epcs_update_edca_params(vdev, edca, true);
 }
 
-static QDF_STATUS
-epcs_restore_edca_param(struct wlan_objmgr_vdev *vdev)
+static QDF_STATUS epcs_restore_edca_param(struct wlan_objmgr_vdev *vdev)
 {
 	struct wlan_objmgr_vdev *link_vdev;
 	struct wlan_mlo_dev_context *mlo_dev_ctx;
@@ -307,7 +293,7 @@ static QDF_STATUS epcs_handle_rx_req(struct wlan_objmgr_vdev *vdev,
 {
 	struct wlan_mlo_peer_context *ml_peer;
 	struct wlan_mlo_peer_epcs_info *epcs_info;
-	struct wlan_epcs_info epcs_req = {0};
+	struct wlan_epcs_info epcs_req = { 0 };
 	struct wlan_action_frame_args args;
 	struct ml_pa_info *edca_info;
 	struct ml_pa_partner_link_info *link;
@@ -361,9 +347,8 @@ static QDF_STATUS epcs_handle_rx_req(struct wlan_objmgr_vdev *vdev,
 	args.arg1 = epcs_info->self_gen_dialog_token;
 	args.arg2 = QDF_STATUS_SUCCESS;
 
-	status = lim_send_epcs_action_rsp_frame(vdev,
-						wlan_peer_get_macaddr(peer),
-						&args);
+	status = lim_send_epcs_action_rsp_frame(
+		vdev, wlan_peer_get_macaddr(peer), &args);
 	if (status != QDF_STATUS_SUCCESS) {
 		mlme_err("Send EPCS response frame error");
 		epcs_restore_edca_param(vdev);
@@ -381,7 +366,7 @@ static QDF_STATUS epcs_handle_rx_resp(struct wlan_objmgr_vdev *vdev,
 {
 	struct wlan_mlo_peer_context *ml_peer;
 	struct wlan_mlo_peer_epcs_info *epcs_info;
-	struct wlan_epcs_info epcs_rsp = {0};
+	struct wlan_epcs_info epcs_rsp = { 0 };
 	struct ml_pa_info *edca_info;
 	struct ml_pa_partner_link_info *link;
 	struct wlan_objmgr_vdev *link_vdev;
@@ -451,7 +436,7 @@ static QDF_STATUS epcs_handle_rx_teardown(struct wlan_objmgr_vdev *vdev,
 {
 	struct wlan_mlo_peer_context *ml_peer;
 	struct wlan_mlo_peer_epcs_info *epcs_info;
-	struct wlan_epcs_info epcs_req = {0};
+	struct wlan_epcs_info epcs_req = { 0 };
 	struct mac_context *mac_ctx;
 	QDF_STATUS status;
 
@@ -518,9 +503,8 @@ static QDF_STATUS epcs_handle_tx_req(struct wlan_objmgr_vdev *vdev)
 	args.action = EHT_EPCS_REQUEST;
 	args.arg1 = epcs_gen_dialog_token(epcs_info);
 
-	status = lim_send_epcs_action_req_frame(vdev,
-						wlan_peer_get_macaddr(peer),
-						&args);
+	status = lim_send_epcs_action_req_frame(
+		vdev, wlan_peer_get_macaddr(peer), &args);
 	if (QDF_IS_STATUS_ERROR(status))
 		mlme_err("Failed to send EPCS action request frame");
 
@@ -561,10 +545,8 @@ static QDF_STATUS epcs_handle_tx_teardown(struct wlan_objmgr_vdev *vdev)
 	args.category = ACTION_CATEGORY_PROTECTED_EHT;
 	args.action = EHT_EPCS_TEARDOWN;
 
-	status =
-	    lim_send_epcs_action_teardown_frame(vdev,
-						wlan_peer_get_macaddr(peer),
-						&args);
+	status = lim_send_epcs_action_teardown_frame(
+		vdev, wlan_peer_get_macaddr(peer), &args);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("Failed to send EPCS tear down frame");
 	} else {
@@ -581,13 +563,13 @@ release_peer:
 
 static QDF_STATUS epcs_deliver_event(struct wlan_objmgr_vdev *vdev,
 				     struct wlan_objmgr_peer *peer,
-				     enum wlan_epcs_evt event,
-				     void *event_data, uint32_t len)
+				     enum wlan_epcs_evt event, void *event_data,
+				     uint32_t len)
 {
 	QDF_STATUS status;
 
-	mlme_debug("EPCS event received: %s(%d)",
-		   epcs_get_event_str(event), event);
+	mlme_debug("EPCS event received: %s(%d)", epcs_get_event_str(event),
+		   event);
 
 	switch (event) {
 	case WLAN_EPCS_EV_ACTION_FRAME_RX_REQ:
@@ -609,8 +591,8 @@ static QDF_STATUS epcs_deliver_event(struct wlan_objmgr_vdev *vdev,
 
 QDF_STATUS wlan_epcs_deliver_event(struct wlan_objmgr_vdev *vdev,
 				   struct wlan_objmgr_peer *peer,
-				   enum wlan_epcs_evt event,
-				   void *event_data, uint32_t len)
+				   enum wlan_epcs_evt event, void *event_data,
+				   uint32_t len)
 {
 	return epcs_deliver_event(vdev, peer, event, event_data, len);
 }
@@ -620,8 +602,8 @@ static QDF_STATUS epcs_deliver_cmd(struct wlan_objmgr_vdev *vdev,
 {
 	QDF_STATUS status;
 
-	mlme_debug("EPCS cmd received: %s(%d)",
-		   epcs_get_event_str(event), event);
+	mlme_debug("EPCS cmd received: %s(%d)", epcs_get_event_str(event),
+		   event);
 
 	switch (event) {
 	case WLAN_EPCS_EV_ACTION_FRAME_TX_REQ:

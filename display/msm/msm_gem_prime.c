@@ -19,16 +19,16 @@
 
 #include "msm_drv.h"
 #include "msm_gem.h"
-#include "msm_mmu.h"
 #include "msm_kms.h"
+#include "msm_mmu.h"
 #include <linux/module.h>
 
 #include <drm/drm_drv.h>
 
-#include <linux/qcom-dma-mapping.h>
 #include <linux/dma-buf.h>
-#include <linux/version.h>
 #include <linux/mem-buf.h>
+#include <linux/qcom-dma-mapping.h>
+#include <linux/version.h>
 #include <soc/qcom/secure_buffer.h>
 #if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
 #include <linux/qti-smmu-proxy-callbacks.h>
@@ -42,7 +42,7 @@ struct sg_table *msm_gem_prime_get_sg_table(struct drm_gem_object *obj)
 	struct msm_gem_object *msm_obj = to_msm_bo(obj);
 	int npages = obj->size >> PAGE_SHIFT;
 
-	if (WARN_ON(!msm_obj->pages))  /* should have already pinned! */
+	if (WARN_ON(!msm_obj->pages)) /* should have already pinned! */
 		return NULL;
 
 	return drm_prime_pages_to_sg(obj->dev, msm_obj->pages, npages);
@@ -89,8 +89,10 @@ int msm_gem_prime_mmap(struct drm_gem_object *obj, struct vm_area_struct *vma)
 	return msm_gem_mmap_obj(vma->vm_private_data, vma);
 }
 
-struct drm_gem_object *msm_gem_prime_import_sg_table(struct drm_device *dev,
-		struct dma_buf_attachment *attach, struct sg_table *sg)
+struct drm_gem_object *
+msm_gem_prime_import_sg_table(struct drm_device *dev,
+			      struct dma_buf_attachment *attach,
+			      struct sg_table *sg)
 {
 	return msm_gem_import(dev, attach->dmabuf, sg);
 }
@@ -134,9 +136,9 @@ struct drm_gem_object *msm_gem_prime_import(struct drm_device *dev,
 		obj = dma_buf->priv;
 		if (obj->dev == dev) {
 			/*
-			 * Importing dmabuf exported from out own gem increases
-			 * refcount on gem itself instead of f_count of dmabuf.
-			 */
+       * Importing dmabuf exported from out own gem increases
+       * refcount on gem itself instead of f_count of dmabuf.
+       */
 			drm_gem_object_get(obj);
 			return obj;
 		}
@@ -155,7 +157,8 @@ struct drm_gem_object *msm_gem_prime_import(struct drm_device *dev,
 		goto fail_put;
 	}
 
-	ret = mem_buf_dma_buf_copy_vmperm(dma_buf, &vmid_list, &perms_list, &nelems);
+	ret = mem_buf_dma_buf_copy_vmperm(dma_buf, &vmid_list, &perms_list,
+					  &nelems);
 	if (ret) {
 		DRM_ERROR("get vmid list failure, ret:%d", ret);
 		goto fail_put;
@@ -163,9 +166,11 @@ struct drm_gem_object *msm_gem_prime_import(struct drm_device *dev,
 
 	for (i = 0; i < nelems; i++) {
 #if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
-		/* avoid VMID checks in trusted-vm, set flag in HLOS when only VMID_TVM is set */
+		/* avoid VMID checks in trusted-vm, set flag in HLOS when only VMID_TVM is
+     * set */
 		if ((vmid_list[i] == VMID_TVM) &&
-				(!kms->funcs->in_trusted_vm || !kms->funcs->in_trusted_vm(kms))) {
+		    (!kms->funcs->in_trusted_vm ||
+		     !kms->funcs->in_trusted_vm(kms))) {
 			is_vmid_tvm = true;
 			dma_map_attrs = DMA_ATTR_QTI_SMMU_PROXY_MAP;
 		}
@@ -182,7 +187,6 @@ struct drm_gem_object *msm_gem_prime_import(struct drm_device *dev,
 			is_vmid_sec_display = true;
 			break;
 		}
-
 	}
 
 	/* mem_buf_dma_buf_copy_vmperm uses kmemdup, do kfree to free up the memory */
@@ -190,26 +194,30 @@ struct drm_gem_object *msm_gem_prime_import(struct drm_device *dev,
 	kfree(perms_list);
 
 	/*
-	 * - attach default drm device for VMID_TVM-only or when IOMMU is not available
-	 * - avoid using lazy unmap feature as it doesn't add value without nested translations
-	 */
+   * - attach default drm device for VMID_TVM-only or when IOMMU is not
+   * available
+   * - avoid using lazy unmap feature as it doesn't add value without nested
+   * translations
+   */
 	if (is_vmid_cp_pixel) {
-		attach_dev = kms->funcs->get_address_space_device(kms, MSM_SMMU_DOMAIN_SECURE);
-	} else if (!iommu_present(&platform_bus_type) || is_vmid_tvm || is_vmid_cam_preview
-			|| is_vmid_sec_display) {
+		attach_dev = kms->funcs->get_address_space_device(
+			kms, MSM_SMMU_DOMAIN_SECURE);
+	} else if (!iommu_present(&platform_bus_type) || is_vmid_tvm ||
+		   is_vmid_cam_preview || is_vmid_sec_display) {
 		attach_dev = dev->dev;
 		lazy_unmap = false;
 	} else {
-		attach_dev = kms->funcs->get_address_space_device(kms, MSM_SMMU_DOMAIN_UNSECURE);
+		attach_dev = kms->funcs->get_address_space_device(
+			kms, MSM_SMMU_DOMAIN_UNSECURE);
 	}
 
 	/*
-	 * While transitioning from secure use-cases, the secure/non-secure
-	 * context bank might still not be attached back, while the
-	 * prime_fd_to_handle call is made for the next frame. Attach those
-	 * buffers to default drm device and reattaching with the correct
-	 * context-bank will be handled in msm_gem_delayed_import.
-	 */
+   * While transitioning from secure use-cases, the secure/non-secure
+   * context bank might still not be attached back, while the
+   * prime_fd_to_handle call is made for the next frame. Attach those
+   * buffers to default drm device and reattaching with the correct
+   * context-bank will be handled in msm_gem_delayed_import.
+   */
 	if (!attach_dev) {
 		DRM_DEBUG("attaching dma buf with default drm device\n");
 		attach_dev = dev->dev;
@@ -222,35 +230,38 @@ struct drm_gem_object *msm_gem_prime_import(struct drm_device *dev,
 	}
 
 	/*
-	 * For cached buffers where CPU access is required, dma_map_attachment
-	 * must be called now to allow user-space to perform cpu sync begin/end
-	 * otherwise do delayed mapping during the commit.
-	 */
+   * For cached buffers where CPU access is required, dma_map_attachment
+   * must be called now to allow user-space to perform cpu sync begin/end
+   * otherwise do delayed mapping during the commit.
+   */
 	if (lazy_unmap)
 		attach->dma_map_attrs |= DMA_ATTR_DELAYED_UNMAP;
 
 	attach->dma_map_attrs |= dma_map_attrs;
 
 	/*
-	 * avoid map_attachment for S2-only buffers and TVM buffers as it needs to be mapped
-	 * after the SID switch scm_call and will be handled during msm_gem_get_dma_addr
-	 */
+   * avoid map_attachment for S2-only buffers and TVM buffers as it needs to be
+   * mapped after the SID switch scm_call and will be handled during
+   * msm_gem_get_dma_addr
+   */
 	if (!is_vmid_tvm && !is_vmid_cam_preview && !is_vmid_sec_display) {
 		sgt = dma_buf_map_attachment(attach, DMA_BIDIRECTIONAL);
 		if (IS_ERR(sgt)) {
 			ret = PTR_ERR(sgt);
-			DRM_ERROR("dma_buf_map_attachment failure, err=%d\n", ret);
+			DRM_ERROR("dma_buf_map_attachment failure, err=%d\n",
+				  ret);
 			goto fail_detach;
 		}
 	} else {
-		DRM_DEBUG("deferring dma_buf_map_attachment; tvm:%d, sec_cam:%d, sec_disp:%d\n",
-				is_vmid_tvm, is_vmid_cam_preview, is_vmid_sec_display);
+		DRM_DEBUG(
+			"deferring dma_buf_map_attachment; tvm:%d, sec_cam:%d, sec_disp:%d\n",
+			is_vmid_tvm, is_vmid_cam_preview, is_vmid_sec_display);
 	}
 
 	/*
-	 * If importing a NULL sg table (i.e. for uncached buffers),
-	 * create a drm gem object with only the dma buf attachment.
-	 */
+   * If importing a NULL sg table (i.e. for uncached buffers),
+   * create a drm gem object with only the dma buf attachment.
+   */
 	obj = dev->driver->gem_prime_import_sg_table(dev, attach, sgt);
 	if (IS_ERR(obj)) {
 		ret = PTR_ERR(obj);

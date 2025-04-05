@@ -22,12 +22,12 @@
  * This file provide definition for APIs registered through lmac Tx Ops
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_mlme_dbg.h>
 #include <target_if_psoc_timer_tx_ops.h>
-#include <wlan_vdev_mgr_tgt_if_rx_defs.h>
-#include <target_if_vdev_mgr_tx_ops.h>
 #include <target_if_vdev_mgr_rx_ops.h>
+#include <target_if_vdev_mgr_tx_ops.h>
+#include <wlan_mlme_dbg.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_vdev_mgr_tgt_if_rx_defs.h>
 
 QDF_STATUS target_if_psoc_vdev_rsp_timer_inuse(struct wlan_objmgr_psoc *psoc,
 					       uint8_t vdev_id)
@@ -49,8 +49,8 @@ QDF_STATUS target_if_psoc_vdev_rsp_timer_inuse(struct wlan_objmgr_psoc *psoc,
 
 	vdev_rsp = rx_ops->psoc_get_vdev_response_timer_info(psoc, vdev_id);
 	if (!vdev_rsp) {
-		mlme_err("vdev response is NULL for VDEV_%d PSOC_%d",
-			 vdev_id, wlan_psoc_get_id(psoc));
+		mlme_err("vdev response is NULL for VDEV_%d PSOC_%d", vdev_id,
+			 wlan_psoc_get_id(psoc));
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -84,16 +84,16 @@ QDF_STATUS target_if_psoc_vdev_rsp_timer_init(struct wlan_objmgr_psoc *psoc,
 
 	vdev_rsp = rx_ops->psoc_get_vdev_response_timer_info(psoc, vdev_id);
 	if (!vdev_rsp) {
-		mlme_err("vdev response is NULL for VDEV_%d PSOC_%d",
-			 vdev_id, wlan_psoc_get_id(psoc));
+		mlme_err("vdev response is NULL for VDEV_%d PSOC_%d", vdev_id,
+			 wlan_psoc_get_id(psoc));
 		return QDF_STATUS_E_INVAL;
 	}
 
 	vdev_rsp->psoc = psoc;
 	vdev_rsp->vdev_id = vdev_id;
 	qdf_timer_init(NULL, &vdev_rsp->rsp_timer,
-		       target_if_vdev_mgr_rsp_timer_mgmt_cb,
-		       vdev_rsp, QDF_TIMER_TYPE_WAKE_APPS);
+		       target_if_vdev_mgr_rsp_timer_mgmt_cb, vdev_rsp,
+		       QDF_TIMER_TYPE_WAKE_APPS);
 	qdf_atomic_init(&vdev_rsp->rsp_timer_inuse);
 	qdf_atomic_inc(&vdev_rsp->rsp_timer_inuse);
 
@@ -121,8 +121,8 @@ void target_if_psoc_vdev_rsp_timer_deinit(struct wlan_objmgr_psoc *psoc,
 
 	vdev_rsp = rx_ops->psoc_get_vdev_response_timer_info(psoc, vdev_id);
 	if (!vdev_rsp) {
-		mlme_err("vdev response is NULL for VDEV_%d PSOC_%d",
-			 vdev_id, wlan_psoc_get_id(psoc));
+		mlme_err("vdev response is NULL for VDEV_%d PSOC_%d", vdev_id,
+			 wlan_psoc_get_id(psoc));
 		return;
 	}
 
@@ -144,18 +144,15 @@ void target_if_flush_psoc_vdev_timers(struct wlan_objmgr_psoc *psoc)
 	}
 
 	for (i = 0; i < WLAN_UMAC_PSOC_MAX_VDEVS; i++) {
-		vdev_rsp = rx_ops->psoc_get_vdev_response_timer_info(psoc,
-								     i);
+		vdev_rsp = rx_ops->psoc_get_vdev_response_timer_info(psoc, i);
 		if (vdev_rsp && qdf_atomic_read(&vdev_rsp->rsp_timer_inuse) &&
 		    qdf_timer_sync_cancel(&vdev_rsp->rsp_timer))
 			target_if_vdev_mgr_rsp_timer_cb(vdev_rsp);
 	}
 }
 
-QDF_STATUS target_if_vdev_mgr_rsp_timer_mod(
-					struct wlan_objmgr_psoc *psoc,
-					uint8_t vdev_id,
-					int mseconds)
+QDF_STATUS target_if_vdev_mgr_rsp_timer_mod(struct wlan_objmgr_psoc *psoc,
+					    uint8_t vdev_id, int mseconds)
 {
 	struct wlan_lmac_if_mlme_rx_ops *rx_ops;
 	struct vdev_response_timer *vdev_rsp;
@@ -176,4 +173,3 @@ QDF_STATUS target_if_vdev_mgr_rsp_timer_mod(
 	qdf_timer_mod(&vdev_rsp->rsp_timer, mseconds);
 	return QDF_STATUS_SUCCESS;
 }
-

@@ -23,11 +23,11 @@
  * TDLS south bound interface definitions
  */
 
+#include "../../core/src/wlan_tdls_cmds_process.h"
+#include "../../core/src/wlan_tdls_main.h"
+#include "../../core/src/wlan_tdls_mgmt.h"
 #include "qdf_status.h"
 #include <wlan_tdls_tgt_api.h>
-#include "../../core/src/wlan_tdls_main.h"
-#include "../../core/src/wlan_tdls_cmds_process.h"
-#include "../../core/src/wlan_tdls_mgmt.h"
 
 static inline struct wlan_lmac_if_tdls_tx_ops *
 wlan_psoc_get_tdls_txops(struct wlan_objmgr_psoc *psoc)
@@ -176,7 +176,9 @@ QDF_STATUS
 tgt_tdls_event_handler(struct wlan_objmgr_psoc *psoc,
 		       struct tdls_event_info *info)
 {
-	struct scheduler_msg msg = {0,};
+	struct scheduler_msg msg = {
+		0,
+	};
 	struct tdls_event_notify *notify;
 	uint8_t vdev_id;
 	QDF_STATUS status;
@@ -193,9 +195,8 @@ tgt_tdls_event_handler(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_NOMEM;
 
 	vdev_id = info->vdev_id;
-	notify->vdev =
-		wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-						     vdev_id, WLAN_TDLS_SB_ID);
+	notify->vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, vdev_id,
+							    WLAN_TDLS_SB_ID);
 	if (!notify->vdev) {
 		tdls_err("null vdev, vdev_id: %d, psoc: 0x%pK", vdev_id, psoc);
 		return QDF_STATUS_E_INVAL;
@@ -206,8 +207,7 @@ tgt_tdls_event_handler(struct wlan_objmgr_psoc *psoc,
 	msg.callback = tdls_process_evt;
 	msg.flush_callback = tgt_tdls_event_flush_cb;
 
-	status = scheduler_post_message(QDF_MODULE_ID_TDLS,
-					QDF_MODULE_ID_TDLS,
+	status = scheduler_post_message(QDF_MODULE_ID_TDLS, QDF_MODULE_ID_TDLS,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		tdls_err("can't post msg to handle tdls event");
@@ -235,25 +235,23 @@ static QDF_STATUS tgt_tdls_mgmt_frame_rx_flush_cb(struct scheduler_msg *msg)
 	return QDF_STATUS_SUCCESS;
 }
 
-static
-QDF_STATUS tgt_tdls_mgmt_frame_process_rx_cb(
-			struct wlan_objmgr_psoc *psoc,
-			struct wlan_objmgr_peer *peer,
-			qdf_nbuf_t buf,
-			struct mgmt_rx_event_params *mgmt_rx_params,
-			enum mgmt_frame_type frm_type)
+static QDF_STATUS
+tgt_tdls_mgmt_frame_process_rx_cb(struct wlan_objmgr_psoc *psoc,
+				  struct wlan_objmgr_peer *peer, qdf_nbuf_t buf,
+				  struct mgmt_rx_event_params *mgmt_rx_params,
+				  enum mgmt_frame_type frm_type)
 {
 	struct tdls_rx_mgmt_frame *rx_mgmt;
 	struct tdls_rx_mgmt_event *rx_mgmt_event;
 	struct tdls_soc_priv_obj *tdls_soc_obj;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct wlan_objmgr_vdev *vdev;
 	uint32_t vdev_id;
 	uint8_t *pdata;
 	QDF_STATUS status;
 
-	tdls_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-			WLAN_UMAC_COMP_TDLS);
+	tdls_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(
+		psoc, WLAN_UMAC_COMP_TDLS);
 	if (!tdls_soc_obj) {
 		tdls_err("tdls ctx is NULL, drop this frame");
 		return QDF_STATUS_E_FAILURE;
@@ -262,7 +260,8 @@ QDF_STATUS tgt_tdls_mgmt_frame_process_rx_cb(
 	if (!peer) {
 		vdev = tdls_get_vdev(psoc, WLAN_TDLS_SB_ID);
 		if (!vdev) {
-			tdls_err("current tdls vdev is null, can't get vdev id");
+			tdls_err(
+				"current tdls vdev is null, can't get vdev id");
 			return QDF_STATUS_E_FAILURE;
 		}
 		vdev_id = wlan_vdev_get_id(vdev);
@@ -281,7 +280,7 @@ QDF_STATUS tgt_tdls_mgmt_frame_process_rx_cb(
 		return QDF_STATUS_E_NOMEM;
 
 	rx_mgmt = qdf_mem_malloc_atomic(sizeof(*rx_mgmt) +
-			mgmt_rx_params->buf_len);
+					mgmt_rx_params->buf_len);
 	if (!rx_mgmt) {
 		tdls_debug_rl("Failed to allocate rx mgmt frame");
 		qdf_mem_free(rx_mgmt_event);
@@ -302,8 +301,7 @@ QDF_STATUS tgt_tdls_mgmt_frame_process_rx_cb(
 	msg.bodyptr = rx_mgmt_event;
 	msg.callback = tdls_process_rx_frame;
 	msg.flush_callback = tgt_tdls_mgmt_frame_rx_flush_cb;
-	status = scheduler_post_message(QDF_MODULE_ID_TDLS,
-					QDF_MODULE_ID_TDLS,
+	status = scheduler_post_message(QDF_MODULE_ID_TDLS, QDF_MODULE_ID_TDLS,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_mem_free(rx_mgmt);
@@ -315,17 +313,15 @@ QDF_STATUS tgt_tdls_mgmt_frame_process_rx_cb(
 	return status;
 }
 
-QDF_STATUS tgt_tdls_mgmt_frame_rx_cb(
-			struct wlan_objmgr_psoc *psoc,
-			struct wlan_objmgr_peer *peer,
-			qdf_nbuf_t buf,
-			struct mgmt_rx_event_params *mgmt_rx_params,
-			enum mgmt_frame_type frm_type)
+QDF_STATUS
+tgt_tdls_mgmt_frame_rx_cb(struct wlan_objmgr_psoc *psoc,
+			  struct wlan_objmgr_peer *peer, qdf_nbuf_t buf,
+			  struct mgmt_rx_event_params *mgmt_rx_params,
+			  enum mgmt_frame_type frm_type)
 {
 	QDF_STATUS status;
 
 	tdls_debug("psoc:%pK, peer:%pK, type:%d", psoc, peer, frm_type);
-
 
 	if (!buf) {
 		tdls_err("rx frame buff is null buf:%pK", buf);
@@ -334,7 +330,7 @@ QDF_STATUS tgt_tdls_mgmt_frame_rx_cb(
 
 	if (!mgmt_rx_params || !psoc) {
 		tdls_err("input is NULL mgmt_rx_params:%pK psoc:%pK, peer:%pK",
-			  mgmt_rx_params, psoc, peer);
+			 mgmt_rx_params, psoc, peer);
 		status = QDF_STATUS_E_INVAL;
 		goto release_nbuf;
 	}

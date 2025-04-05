@@ -24,12 +24,12 @@
  *
  */
 
-#include <linux/module.h>
+#include "osif_sync.h"
 #include <linux/kernel.h>
-#include <linux/version.h>
+#include <linux/module.h>
 #include <linux/proc_fs.h> /* Necessary because we use the proc fs */
 #include <linux/uaccess.h> /* for copy_to_user */
-#include "osif_sync.h"
+#include <linux/version.h>
 #include <sme_api.h>
 #include <wlan_hdd_includes.h>
 
@@ -77,7 +77,6 @@ void hdd_driver_mem_cleanup(void)
 		hdd_ctx->driver_dump_mem = NULL;
 	}
 }
-
 
 /**
  * __hdd_driver_memdump_read() - perform read operation in driver
@@ -133,15 +132,15 @@ static ssize_t __hdd_driver_memdump_read(struct file *file, char __user *buf,
 			}
 		}
 
-		qdf_status = qdf_state_info_dump_all(hdd_ctx->driver_dump_mem,
-						DRIVER_MEM_DUMP_SIZE,
-						&hdd_ctx->driver_dump_size);
+		qdf_status = qdf_state_info_dump_all(
+			hdd_ctx->driver_dump_mem, DRIVER_MEM_DUMP_SIZE,
+			&hdd_ctx->driver_dump_size);
 		/*
-		 * If qdf_status is QDF_STATUS_E_NOMEM, then memory allocated is
-		 * insufficient to dump driver information. This print can give
-		 * information to allocate more memory if more information from
-		 * each layer is added in future.
-		 */
+     * If qdf_status is QDF_STATUS_E_NOMEM, then memory allocated is
+     * insufficient to dump driver information. This print can give
+     * information to allocate more memory if more information from
+     * each layer is added in future.
+     */
 		if (qdf_status != QDF_STATUS_SUCCESS)
 			hdd_err("Error in dump driver information, status %d",
 				qdf_status);
@@ -154,7 +153,7 @@ static ssize_t __hdd_driver_memdump_read(struct file *file, char __user *buf,
 		no_of_bytes_read = count;
 
 	if (copy_to_user(buf, hdd_ctx->driver_dump_mem + *pos,
-					no_of_bytes_read)) {
+			 no_of_bytes_read)) {
 		hdd_err("copy to user space failed");
 		mutex_unlock(&hdd_ctx->memdump_lock);
 		return -EFAULT;
@@ -233,12 +232,13 @@ static int hdd_driver_memdump_procfs_init(struct hdd_context *hdd_ctx)
 	}
 
 	proc_file_driver = proc_create_data(PROCFS_DRIVER_DUMP_NAME,
-				     PROCFS_DRIVER_DUMP_PERM, proc_dir_driver,
-				     &driver_dump_fops, hdd_ctx);
+					    PROCFS_DRIVER_DUMP_PERM,
+					    proc_dir_driver, &driver_dump_fops,
+					    hdd_ctx);
 	if (!proc_file_driver) {
 		remove_proc_entry(PROCFS_DRIVER_DUMP_NAME, proc_dir_driver);
 		pr_debug("Could not initialize /proc/%s\n",
-			  PROCFS_DRIVER_DUMP_NAME);
+			 PROCFS_DRIVER_DUMP_NAME);
 		return -ENOMEM;
 	}
 
@@ -262,7 +262,7 @@ static void hdd_driver_memdump_procfs_remove(void)
 		return;
 	remove_proc_entry(PROCFS_DRIVER_DUMP_NAME, proc_dir_driver);
 	pr_debug("/proc/%s/%s removed\n", PROCFS_DRIVER_DUMP_DIR,
-					  PROCFS_DRIVER_DUMP_NAME);
+		 PROCFS_DRIVER_DUMP_NAME);
 	remove_proc_entry(PROCFS_DRIVER_DUMP_DIR, NULL);
 	pr_debug("/proc/%s removed\n", PROCFS_DRIVER_DUMP_DIR);
 }

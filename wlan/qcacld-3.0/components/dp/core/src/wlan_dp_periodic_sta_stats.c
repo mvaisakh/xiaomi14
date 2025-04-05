@@ -31,7 +31,8 @@ void dp_periodic_sta_stats_display(struct wlan_dp_psoc_context *dp_ctx)
 	if (!dp_ctx)
 		return;
 
-	dp_for_each_intf_held_safe(dp_ctx, dp_intf, next_dp_intf) {
+	dp_for_each_intf_held_safe(dp_ctx, dp_intf, next_dp_intf)
+	{
 		should_log = false;
 
 		if (dp_intf->device_mode != QDF_STA_MODE)
@@ -47,8 +48,8 @@ void dp_periodic_sta_stats_display(struct wlan_dp_psoc_context *dp_ctx)
 
 		dp_intf->periodic_stats_timer_counter++;
 		if ((dp_intf->periodic_stats_timer_counter *
-		    dp_cfg->bus_bw_compute_interval) >=
-				dp_cfg->periodic_stats_timer_interval) {
+		     dp_cfg->bus_bw_compute_interval) >=
+		    dp_cfg->periodic_stats_timer_interval) {
 			should_log = true;
 
 			dp_intf->periodic_stats_timer_count--;
@@ -149,5 +150,5 @@ void dp_periodic_sta_stats_mutex_create(struct wlan_dp_intf *dp_intf)
 
 void dp_periodic_sta_stats_mutex_destroy(struct wlan_dp_intf *dp_intf)
 {
-qdf_mutex_destroy(&dp_intf->sta_periodic_stats_lock);
+	qdf_mutex_destroy(&dp_intf->sta_periodic_stats_lock);
 }

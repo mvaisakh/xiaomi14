@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2020 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021, 2023 Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -22,13 +23,13 @@
  * in target if internally.
  */
 
-#include <target_if.h>
 #include <qdf_status.h>
-#include <wmi_unified_api.h>
-#include <wmi_unified_priv.h>
-#include <wmi_unified_param.h>
+#include <target_if.h>
 #include <target_if_ipa.h>
 #include <wlan_objmgr_psoc_obj.h>
+#include <wmi_unified_api.h>
+#include <wmi_unified_param.h>
+#include <wmi_unified_priv.h>
 
 /**
  * target_if_ipa_uc_offload_control_req() - send IPA offload control to FW
@@ -39,10 +40,10 @@
  */
 static QDF_STATUS
 target_if_ipa_uc_offload_control_req(struct wlan_objmgr_psoc *psoc,
-			struct ipa_uc_offload_control_params *req)
+				     struct ipa_uc_offload_control_params *req)
 {
 	return wmi_unified_ipa_offload_control_cmd(
-			get_wmi_unified_hdl_from_psoc(psoc), req);
+		get_wmi_unified_hdl_from_psoc(psoc), req);
 }
 
 /**
@@ -56,7 +57,7 @@ static QDF_STATUS
 target_if_ipa_intrabss_control_req(struct wlan_objmgr_psoc *psoc,
 				   struct ipa_intrabss_control_params *req)
 {
-	struct vdev_set_params param = {0};
+	struct vdev_set_params param = { 0 };
 	wmi_unified_t wmi_handle;
 
 	wmi_handle = (wmi_unified_t)get_wmi_unified_hdl_from_psoc(psoc);
@@ -84,7 +85,7 @@ target_if_ipa_register_tx_ops(struct wlan_lmac_if_tx_ops *tx_ops)
 	ipa_ops = &tx_ops->ipa_ops;
 
 	ipa_ops->ipa_uc_offload_control_req =
-			target_if_ipa_uc_offload_control_req;
+		target_if_ipa_uc_offload_control_req;
 	ipa_ops->ipa_intrabss_control_req = target_if_ipa_intrabss_control_req;
 
 	return QDF_STATUS_SUCCESS;

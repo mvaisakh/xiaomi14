@@ -20,15 +20,15 @@
  * DOC: contains NAN INI configurations
  */
 
-#include "wlan_objmgr_psoc_obj.h"
-#include "cfg_nan_api.h"
-#include "../../core/src/nan_main_i.h"
-#include "wlan_mlme_ucfg_api.h"
-#include "cfg_ucfg_api.h"
 #include "cfg_nan.h"
+#include "../../core/src/nan_main_i.h"
+#include "cfg_nan_api.h"
+#include "cfg_ucfg_api.h"
+#include "wlan_mlme_ucfg_api.h"
+#include "wlan_objmgr_psoc_obj.h"
 
-static inline struct nan_psoc_priv_obj
-		 *cfg_nan_get_priv_obj(struct wlan_objmgr_psoc *psoc)
+static inline struct nan_psoc_priv_obj *
+cfg_nan_get_priv_obj(struct wlan_objmgr_psoc *psoc)
 {
 	if (!psoc) {
 		nan_err("PSOC obj null");

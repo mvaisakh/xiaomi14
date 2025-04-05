@@ -21,68 +21,54 @@
  * WLAN Host Device Driver CFR capture Implementation
  */
 
-#include <linux/version.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <net/cfg80211.h>
-#include "wlan_hdd_includes.h"
-#include "osif_sync.h"
 #include "wlan_hdd_cfr.h"
+#include "osif_sync.h"
 #include "wlan_cfr_ucfg_api.h"
-#include "wlan_hdd_object_manager.h"
 #include "wlan_cmn.h"
+#include "wlan_hdd_includes.h"
+#include "wlan_hdd_object_manager.h"
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/version.h>
+#include <net/cfg80211.h>
 
-const struct nla_policy cfr_config_policy[
-		QCA_WLAN_VENDOR_ATTR_PEER_CFR_MAX + 1] = {
-	[QCA_WLAN_VENDOR_ATTR_CFR_PEER_MAC_ADDR] =
-		VENDOR_NLA_POLICY_MAC_ADDR,
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE] = {.type = NLA_FLAG},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_BANDWIDTH] = {.type = NLA_U8},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_PERIODICITY] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_METHOD] = {.type = NLA_U8},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_VERSION] = {.type = NLA_U8},
-	[QCA_WLAN_VENDOR_ATTR_PERIODIC_CFR_CAPTURE_ENABLE] = {
-						.type = NLA_FLAG},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE_GROUP_BITMAP] = {
-						.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DURATION] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_INTERVAL] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_CAPTURE_TYPE] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_UL_MU_MASK] = {.type = NLA_U64},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_FREEZE_TLV_DELAY_COUNT] = {
-						.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TABLE] = {
-						.type = NLA_NESTED},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_ENTRY] = {
-						.type = NLA_NESTED},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NUMBER] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TA] =
-		VENDOR_NLA_POLICY_MAC_ADDR,
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_RA] =
-		VENDOR_NLA_POLICY_MAC_ADDR,
+const struct nla_policy cfr_config_policy[QCA_WLAN_VENDOR_ATTR_PEER_CFR_MAX +
+					  1] = {
+	[QCA_WLAN_VENDOR_ATTR_CFR_PEER_MAC_ADDR] = VENDOR_NLA_POLICY_MAC_ADDR,
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE] = { .type = NLA_FLAG },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_BANDWIDTH] = { .type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_PERIODICITY] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_METHOD] = { .type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_VERSION] = { .type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_PERIODIC_CFR_CAPTURE_ENABLE] = { .type = NLA_FLAG },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE_GROUP_BITMAP] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DURATION] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_INTERVAL] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_CAPTURE_TYPE] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_UL_MU_MASK] = { .type = NLA_U64 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_FREEZE_TLV_DELAY_COUNT] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TABLE] = { .type = NLA_NESTED },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_ENTRY] = { .type = NLA_NESTED },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NUMBER] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TA] = VENDOR_NLA_POLICY_MAC_ADDR,
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_RA] = VENDOR_NLA_POLICY_MAC_ADDR,
 	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TA_MASK] =
 		VENDOR_NLA_POLICY_MAC_ADDR,
 	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_RA_MASK] =
 		VENDOR_NLA_POLICY_MAC_ADDR,
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NSS] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_BW] = {.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_MGMT_FILTER] = {
-						.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_CTRL_FILTER] = {
-						.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_DATA_FILTER] = {
-						.type = NLA_U32},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_TRANSPORT_MODE] = {
-						.type = NLA_U8},
-	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_RECEIVER_PID] = {
-						.type = NLA_U32},
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NSS] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_BW] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_MGMT_FILTER] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_CTRL_FILTER] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_DATA_FILTER] = { .type = NLA_U32 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_TRANSPORT_MODE] = { .type = NLA_U8 },
+	[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_RECEIVER_PID] = { .type = NLA_U32 },
 };
 
 #ifdef WLAN_ENH_CFR_ENABLE
-static void
-wlan_hdd_transport_mode_cfg(struct wlan_objmgr_pdev *pdev,
-			    uint8_t vdev_id, uint32_t pid,
-			    enum qca_wlan_vendor_cfr_data_transport_modes tx_mode)
+static void wlan_hdd_transport_mode_cfg(
+	struct wlan_objmgr_pdev *pdev, uint8_t vdev_id, uint32_t pid,
+	enum qca_wlan_vendor_cfr_data_transport_modes tx_mode)
 {
 	struct pdev_cfr *pa;
 
@@ -106,7 +92,7 @@ wlan_hdd_transport_mode_cfg(struct wlan_objmgr_pdev *pdev,
 }
 
 #define DEFAULT_CFR_NSS 0xff
-#define DEFAULT_CFR_BW  0xf
+#define DEFAULT_CFR_BW 0xf
 static QDF_STATUS
 wlan_cfg80211_cfr_set_group_config(struct wlan_objmgr_vdev *vdev,
 				   struct nlattr *tb[])
@@ -114,8 +100,8 @@ wlan_cfg80211_cfr_set_group_config(struct wlan_objmgr_vdev *vdev,
 	struct cfr_wlanconfig_param params = { 0 };
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NUMBER]) {
-		params.grp_id = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NUMBER]);
+		params.grp_id = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NUMBER]);
 		hdd_debug("group_id %d", params.grp_id);
 	}
 
@@ -166,15 +152,15 @@ wlan_cfg80211_cfr_set_group_config(struct wlan_objmgr_vdev *vdev,
 
 	params.nss = DEFAULT_CFR_NSS;
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NSS]) {
-		params.nss = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NSS]);
+		params.nss = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_NSS]);
 		hdd_debug("nss %d", params.nss);
 	}
 
 	params.bw = DEFAULT_CFR_BW;
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_BW]) {
-		params.bw = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_BW]);
+		params.bw =
+			nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_BW]);
 		hdd_debug("bw %d", params.bw);
 	}
 
@@ -184,32 +170,31 @@ wlan_cfg80211_cfr_set_group_config(struct wlan_objmgr_vdev *vdev,
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_MGMT_FILTER]) {
-		params.expected_mgmt_subtype = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_MGMT_FILTER]);
+		params.expected_mgmt_subtype = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_MGMT_FILTER]);
 		hdd_debug("expected_mgmt_subtype %d(%x)",
 			  params.expected_mgmt_subtype,
 			  params.expected_mgmt_subtype);
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_CTRL_FILTER]) {
-		params.expected_ctrl_subtype = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_CTRL_FILTER]);
+		params.expected_ctrl_subtype = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_CTRL_FILTER]);
 		hdd_debug("expected_mgmt_subtype %d(%x)",
 			  params.expected_ctrl_subtype,
 			  params.expected_ctrl_subtype);
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_DATA_FILTER]) {
-		params.expected_data_subtype = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_DATA_FILTER]);
+		params.expected_data_subtype = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_DATA_FILTER]);
 		hdd_debug("expected_mgmt_subtype %d(%x)",
 			  params.expected_data_subtype,
 			  params.expected_data_subtype);
 	}
 
-	if (!params.expected_mgmt_subtype ||
-	    !params.expected_ctrl_subtype ||
-		!params.expected_data_subtype) {
+	if (!params.expected_mgmt_subtype || !params.expected_ctrl_subtype ||
+	    !params.expected_data_subtype) {
 		hdd_debug("set frame type");
 		ucfg_cfr_set_frame_type_subtype(vdev, &params);
 	}
@@ -217,8 +202,8 @@ wlan_cfg80211_cfr_set_group_config(struct wlan_objmgr_vdev *vdev,
 	return QDF_STATUS_SUCCESS;
 }
 
-static enum capture_type convert_vendor_cfr_capture_type(
-			enum qca_wlan_vendor_cfr_capture_type type)
+static enum capture_type
+convert_vendor_cfr_capture_type(enum qca_wlan_vendor_cfr_capture_type type)
 {
 	switch (type) {
 	case QCA_WLAN_VENDOR_CFR_DIRECT_FTM:
@@ -237,9 +222,8 @@ static enum capture_type convert_vendor_cfr_capture_type(
 	}
 }
 
-static int
-wlan_cfg80211_cfr_set_config(struct wlan_objmgr_vdev *vdev,
-			     struct nlattr *tb[])
+static int wlan_cfg80211_cfr_set_config(struct wlan_objmgr_vdev *vdev,
+					struct nlattr *tb[])
 {
 	struct nlattr *group[QCA_WLAN_VENDOR_ATTR_PEER_CFR_MAX + 1];
 	struct nlattr *group_list;
@@ -252,22 +236,22 @@ wlan_cfg80211_cfr_set_config(struct wlan_objmgr_vdev *vdev,
 	uint64_t ul_mu_user_mask = 0;
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DURATION]) {
-		params.cap_dur = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_DURATION]);
+		params.cap_dur =
+			nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DURATION]);
 		ucfg_cfr_set_capture_duration(vdev, &params);
 		hdd_debug("params.cap_dur %d", params.cap_dur);
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_INTERVAL]) {
-		params.cap_intvl = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_INTERVAL]);
+		params.cap_intvl =
+			nla_get_u32(tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_INTERVAL]);
 		ucfg_cfr_set_capture_interval(vdev, &params);
 		hdd_debug("params.cap_intvl %d", params.cap_intvl);
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_CAPTURE_TYPE]) {
-		vendor_capture_type = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_CAPTURE_TYPE]);
+		vendor_capture_type = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_CAPTURE_TYPE]);
 		if ((vendor_capture_type < QCA_WLAN_VENDOR_CFR_DIRECT_FTM) ||
 		    (vendor_capture_type > QCA_WLAN_VENDOR_CFR_ALL_PACKET)) {
 			hdd_err_rl("invalid capture type %d",
@@ -280,24 +264,24 @@ wlan_cfg80211_cfr_set_config(struct wlan_objmgr_vdev *vdev,
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_UL_MU_MASK]) {
-		ul_mu_user_mask = nla_get_u64(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_UL_MU_MASK]);
+		ul_mu_user_mask = nla_get_u64(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_UL_MU_MASK]);
 		hdd_debug("ul_mu_user_mask_lower %d",
 			  params.ul_mu_user_mask_lower);
 	}
 
 	if (ul_mu_user_mask) {
 		params.ul_mu_user_mask_lower =
-				(uint32_t)(ul_mu_user_mask & 0xffffffff);
+			(uint32_t)(ul_mu_user_mask & 0xffffffff);
 		params.ul_mu_user_mask_lower =
-				(uint32_t)(ul_mu_user_mask >> 32);
+			(uint32_t)(ul_mu_user_mask >> 32);
 		hdd_debug("set ul mu user mask");
 		ucfg_cfr_set_ul_mu_user_mask(vdev, &params);
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_FREEZE_TLV_DELAY_COUNT]) {
-		params.freeze_tlv_delay_cnt_thr = nla_get_u32(tb[
-		QCA_WLAN_VENDOR_ATTR_PEER_CFR_FREEZE_TLV_DELAY_COUNT]);
+		params.freeze_tlv_delay_cnt_thr = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_FREEZE_TLV_DELAY_COUNT]);
 		if (params.freeze_tlv_delay_cnt_thr) {
 			params.freeze_tlv_delay_cnt_en = 1;
 			ucfg_cfr_set_freeze_tlv_delay_cnt(vdev, &params);
@@ -310,10 +294,9 @@ wlan_cfg80211_cfr_set_config(struct wlan_objmgr_vdev *vdev,
 		maxtype = QCA_WLAN_VENDOR_ATTR_PEER_CFR_MAX;
 		attr = QCA_WLAN_VENDOR_ATTR_PEER_CFR_GROUP_TABLE;
 		nla_for_each_nested(group_list, tb[attr], rem) {
-			if (wlan_cfg80211_nla_parse(group, maxtype,
-						    nla_data(group_list),
-						    nla_len(group_list),
-						    cfr_config_policy)) {
+			if (wlan_cfg80211_nla_parse(
+				    group, maxtype, nla_data(group_list),
+				    nla_len(group_list), cfr_config_policy)) {
 				hdd_err("nla_parse failed for cfr config group");
 				return -EINVAL;
 			}
@@ -326,13 +309,13 @@ wlan_cfg80211_cfr_set_config(struct wlan_objmgr_vdev *vdev,
 		uint32_t pid = 0;
 
 		if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_RECEIVER_PID])
-			pid = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_RECEIVER_PID]);
+			pid = nla_get_u32(
+				tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_RECEIVER_PID]);
 		else
 			hdd_debug("No PID received");
 
-		transport_mode = nla_get_u8(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_TRANSPORT_MODE]);
+		transport_mode = nla_get_u8(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_DATA_TRANSPORT_MODE]);
 
 		hdd_debug("tx mode attr %d, pid %d", transport_mode, pid);
 		if (transport_mode == QCA_WLAN_VENDOR_CFR_DATA_RELAY_FS ||
@@ -357,8 +340,7 @@ static QDF_STATUS hdd_stop_enh_cfr(struct wlan_objmgr_vdev *vdev)
 	hdd_debug("cleanup rcc mode");
 	wlan_objmgr_vdev_try_get_ref(vdev, WLAN_CFR_ID);
 	ucfg_cfr_set_rcc_mode(vdev, RCC_DIS_ALL_MODE, 0);
-	ucfg_cfr_subscribe_ppdu_desc(wlan_vdev_get_pdev(vdev),
-				     false);
+	ucfg_cfr_subscribe_ppdu_desc(wlan_vdev_get_pdev(vdev), false);
 	ucfg_cfr_committed_rcc_config(vdev);
 	ucfg_cfr_stop_indication(vdev);
 	ucfg_cfr_suspend(wlan_vdev_get_pdev(vdev));
@@ -373,9 +355,8 @@ QDF_STATUS hdd_cfr_disconnect(struct wlan_objmgr_vdev *vdev)
 	return hdd_stop_enh_cfr(vdev);
 }
 
-static int
-wlan_cfg80211_peer_enh_cfr_capture(struct hdd_adapter *adapter,
-				   struct nlattr **tb)
+static int wlan_cfg80211_peer_enh_cfr_capture(struct hdd_adapter *adapter,
+					      struct nlattr **tb)
 {
 	struct cfr_wlanconfig_param params = { 0 };
 	struct wlan_objmgr_vdev *vdev;
@@ -383,8 +364,8 @@ wlan_cfg80211_peer_enh_cfr_capture(struct hdd_adapter *adapter,
 	int ret = 0;
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE]) {
-		is_start_capture = nla_get_flag(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE]);
+		is_start_capture =
+			nla_get_flag(tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE]);
 	}
 
 	if (is_start_capture &&
@@ -405,13 +386,12 @@ wlan_cfg80211_peer_enh_cfr_capture(struct hdd_adapter *adapter,
 			hdd_err("set config failed");
 			goto out;
 		}
-		params.en_cfg = nla_get_u32(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE_GROUP_BITMAP]);
+		params.en_cfg = nla_get_u32(
+			tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE_GROUP_BITMAP]);
 		hdd_debug("params.en_cfg %d", params.en_cfg);
 		ucfg_cfr_set_en_bitmap(vdev, &params);
 		ucfg_cfr_resume(wlan_vdev_get_pdev(vdev));
-		ucfg_cfr_subscribe_ppdu_desc(wlan_vdev_get_pdev(vdev),
-					     true);
+		ucfg_cfr_subscribe_ppdu_desc(wlan_vdev_get_pdev(vdev), true);
 		ucfg_cfr_committed_rcc_config(vdev);
 	} else {
 		hdd_stop_enh_cfr(vdev);
@@ -421,9 +401,8 @@ out:
 	return ret;
 }
 #else
-static int
-wlan_cfg80211_peer_enh_cfr_capture(struct hdd_adapter *adapter,
-				   struct nlattr **tb)
+static int wlan_cfg80211_peer_enh_cfr_capture(struct hdd_adapter *adapter,
+					      struct nlattr **tb)
 {
 	return 0;
 }
@@ -452,8 +431,8 @@ wlan_cfg80211_peer_cfr_capture_cfg_adrastea(struct hdd_adapter *adapter,
 		   QDF_MAC_ADDR_SIZE);
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE]) {
-		is_start_capture = nla_get_flag(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE]);
+		is_start_capture =
+			nla_get_flag(tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE]);
 	}
 
 	vdev = hdd_objmgr_get_vdev_by_user(adapter->deflink, WLAN_CFR_ID);
@@ -485,8 +464,8 @@ wlan_cfg80211_peer_cfr_capture_cfg_adrastea(struct hdd_adapter *adapter,
 
 	if (is_start_capture) {
 		if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_PERIODICITY]) {
-			params.period = nla_get_u32(tb[
-				QCA_WLAN_VENDOR_ATTR_PEER_CFR_PERIODICITY]);
+			params.period = nla_get_u32(
+				tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_PERIODICITY]);
 			hdd_debug("params.periodicity %d", params.period);
 			/* Set the periodic CFR */
 			if (params.period)
@@ -494,11 +473,11 @@ wlan_cfg80211_peer_cfr_capture_cfg_adrastea(struct hdd_adapter *adapter,
 		}
 
 		if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_METHOD]) {
-			params.method = nla_get_u8(tb[
-				QCA_WLAN_VENDOR_ATTR_PEER_CFR_METHOD]);
+			params.method = nla_get_u8(
+				tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_METHOD]);
 			/* Adrastea supports only QOS NULL METHOD */
 			if (params.method !=
-					QCA_WLAN_VENDOR_CFR_METHOD_QOS_NULL) {
+			    QCA_WLAN_VENDOR_CFR_METHOD_QOS_NULL) {
 				hdd_err_rl("invalid capture method %d",
 					   params.method);
 				status = QDF_STATUS_E_INVAL;
@@ -507,8 +486,8 @@ wlan_cfg80211_peer_cfr_capture_cfg_adrastea(struct hdd_adapter *adapter,
 		}
 
 		if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_BANDWIDTH]) {
-			params.bandwidth = nla_get_u8(tb[
-				QCA_WLAN_VENDOR_ATTR_PEER_CFR_BANDWIDTH]);
+			params.bandwidth = nla_get_u8(
+				tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_BANDWIDTH]);
 			/* Adrastea supports only 20Mhz bandwidth CFR capture */
 			if (params.bandwidth != NL80211_CHAN_WIDTH_20_NOHT) {
 				hdd_err_rl("invalid capture bandwidth %d",
@@ -533,8 +512,7 @@ exit:
 	return status;
 }
 #elif defined(WLAN_CFR_DBR)
-static enum
-phy_ch_width convert_capture_bw(enum nl80211_chan_width capture_bw)
+static enum phy_ch_width convert_capture_bw(enum nl80211_chan_width capture_bw)
 {
 	switch (capture_bw) {
 	case NL80211_CHAN_WIDTH_20_NOHT:
@@ -578,8 +556,7 @@ wlan_cfg80211_peer_cfr_capture_cfg_adrastea(struct hdd_adapter *adapter,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	nla_memcpy(peer_addr.bytes, tb[id],
-		   QDF_MAC_ADDR_SIZE);
+	nla_memcpy(peer_addr.bytes, tb[id], QDF_MAC_ADDR_SIZE);
 
 	id = QCA_WLAN_VENDOR_ATTR_PEER_CFR_ENABLE;
 	if (tb[id])
@@ -626,7 +603,7 @@ wlan_cfg80211_peer_cfr_capture_cfg_adrastea(struct hdd_adapter *adapter,
 			params.method = nla_get_u8(tb[id]);
 			/* Adrastea supports only QOS NULL METHOD */
 			if (params.method !=
-					QCA_WLAN_VENDOR_CFR_METHOD_QOS_NULL) {
+			    QCA_WLAN_VENDOR_CFR_METHOD_QOS_NULL) {
 				hdd_err_rl("invalid capture method %d",
 					   params.method);
 				status = QDF_STATUS_E_INVAL;
@@ -670,33 +647,26 @@ wlan_cfg80211_peer_cfr_capture_cfg_adrastea(struct hdd_adapter *adapter,
 }
 #endif
 
-static int
-wlan_cfg80211_peer_cfr_capture_cfg(struct wiphy *wiphy,
-				   struct hdd_adapter *adapter,
-				   const void *data,
-				   int data_len)
+static int wlan_cfg80211_peer_cfr_capture_cfg(struct wiphy *wiphy,
+					      struct hdd_adapter *adapter,
+					      const void *data, int data_len)
 {
 	struct nlattr *tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_MAX + 1];
 	uint8_t version = 0;
 	QDF_STATUS status;
 
-	if (wlan_cfg80211_nla_parse(
-			tb,
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_MAX,
-			data,
-			data_len,
-			cfr_config_policy)) {
+	if (wlan_cfg80211_nla_parse(tb, QCA_WLAN_VENDOR_ATTR_PEER_CFR_MAX, data,
+				    data_len, cfr_config_policy)) {
 		hdd_err("Invalid ATTR");
 		return -EINVAL;
 	}
 
 	if (tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_VERSION]) {
-		version = nla_get_u8(tb[
-			QCA_WLAN_VENDOR_ATTR_PEER_CFR_VERSION]);
+		version = nla_get_u8(tb[QCA_WLAN_VENDOR_ATTR_PEER_CFR_VERSION]);
 		hdd_debug("version %d", version);
 		if (version == LEGACY_CFR_VERSION) {
 			status = wlan_cfg80211_peer_cfr_capture_cfg_adrastea(
-								adapter, tb);
+				adapter, tb);
 			return qdf_status_to_os_return(status);
 		} else if (version != ENHANCED_CFR_VERSION) {
 			hdd_err("unsupported version");
@@ -732,8 +702,7 @@ static int __wlan_hdd_cfg80211_peer_cfr_capture_cfg(struct wiphy *wiphy,
 	if (wlan_hdd_validate_vdev_id(adapter->deflink->vdev_id))
 		return -EINVAL;
 
-	wlan_cfg80211_peer_cfr_capture_cfg(wiphy, adapter,
-					   data, data_len);
+	wlan_cfg80211_peer_cfr_capture_cfg(wiphy, adapter, data, data_len);
 
 	hdd_exit();
 
@@ -742,8 +711,7 @@ static int __wlan_hdd_cfg80211_peer_cfr_capture_cfg(struct wiphy *wiphy,
 
 int wlan_hdd_cfg80211_peer_cfr_capture_cfg(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
-					   const void *data,
-					   int data_len)
+					   const void *data, int data_len)
 {
 	struct osif_psoc_sync *psoc_sync;
 	int errno;
@@ -752,8 +720,8 @@ int wlan_hdd_cfg80211_peer_cfr_capture_cfg(struct wiphy *wiphy,
 	if (errno)
 		return errno;
 
-	errno = __wlan_hdd_cfg80211_peer_cfr_capture_cfg(wiphy, wdev,
-							 data, data_len);
+	errno = __wlan_hdd_cfg80211_peer_cfr_capture_cfg(wiphy, wdev, data,
+							 data_len);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 

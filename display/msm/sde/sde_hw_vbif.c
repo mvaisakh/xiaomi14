@@ -5,44 +5,44 @@
  */
 #include <linux/iopoll.h>
 
-#include "sde_hwio.h"
+#include "sde_dbg.h"
 #include "sde_hw_catalog.h"
 #include "sde_hw_vbif.h"
-#include "sde_dbg.h"
+#include "sde_hwio.h"
 
-#define VBIF_VERSION			0x0000
-#define VBIF_CLKON			0x0004
-#define VBIF_CLK_FORCE_CTRL0		0x0008
-#define VBIF_CLK_FORCE_CTRL1		0x000C
-#define VBIF_QOS_REMAP_00		0x0020
-#define VBIF_QOS_REMAP_01		0x0024
-#define VBIF_QOS_REMAP_10		0x0028
-#define VBIF_QOS_REMAP_11		0x002C
-#define VBIF_WRITE_GATHER_EN		0x00AC
-#define VBIF_IN_RD_LIM_CONF0		0x00B0
-#define VBIF_IN_RD_LIM_CONF1		0x00B4
-#define VBIF_IN_RD_LIM_CONF2		0x00B8
-#define VBIF_IN_WR_LIM_CONF0		0x00C0
-#define VBIF_IN_WR_LIM_CONF1		0x00C4
-#define VBIF_IN_WR_LIM_CONF2		0x00C8
-#define VBIF_OUT_RD_LIM_CONF0		0x00D0
-#define VBIF_OUT_WR_LIM_CONF0		0x00D4
-#define VBIF_OUT_AXI_AMEMTYPE_CONF0	0x0160
-#define VBIF_OUT_AXI_AMEMTYPE_CONF1	0x0164
-#define VBIF_OUT_AXI_ASHARED		0x0170
-#define VBIF_OUT_AXI_AINNERSHARED	0x0174
-#define VBIF_XIN_PND_ERR		0x0190
-#define VBIF_XIN_SRC_ERR		0x0194
-#define VBIF_XIN_CLR_ERR		0x019C
-#define VBIF_XIN_HALT_CTRL0		0x0200
-#define VBIF_XIN_HALT_CTRL1		0x0204
-#define VBIF_AXI_HALT_CTRL0		0x0208
-#define VBIF_AXI_HALT_CTRL1		0x020c
-#define VBIF_XINL_QOS_RP_REMAP_000	0x0550
-#define VBIF_XINL_QOS_LVL_REMAP_000	0x0590
+#define VBIF_VERSION 0x0000
+#define VBIF_CLKON 0x0004
+#define VBIF_CLK_FORCE_CTRL0 0x0008
+#define VBIF_CLK_FORCE_CTRL1 0x000C
+#define VBIF_QOS_REMAP_00 0x0020
+#define VBIF_QOS_REMAP_01 0x0024
+#define VBIF_QOS_REMAP_10 0x0028
+#define VBIF_QOS_REMAP_11 0x002C
+#define VBIF_WRITE_GATHER_EN 0x00AC
+#define VBIF_IN_RD_LIM_CONF0 0x00B0
+#define VBIF_IN_RD_LIM_CONF1 0x00B4
+#define VBIF_IN_RD_LIM_CONF2 0x00B8
+#define VBIF_IN_WR_LIM_CONF0 0x00C0
+#define VBIF_IN_WR_LIM_CONF1 0x00C4
+#define VBIF_IN_WR_LIM_CONF2 0x00C8
+#define VBIF_OUT_RD_LIM_CONF0 0x00D0
+#define VBIF_OUT_WR_LIM_CONF0 0x00D4
+#define VBIF_OUT_AXI_AMEMTYPE_CONF0 0x0160
+#define VBIF_OUT_AXI_AMEMTYPE_CONF1 0x0164
+#define VBIF_OUT_AXI_ASHARED 0x0170
+#define VBIF_OUT_AXI_AINNERSHARED 0x0174
+#define VBIF_XIN_PND_ERR 0x0190
+#define VBIF_XIN_SRC_ERR 0x0194
+#define VBIF_XIN_CLR_ERR 0x019C
+#define VBIF_XIN_HALT_CTRL0 0x0200
+#define VBIF_XIN_HALT_CTRL1 0x0204
+#define VBIF_AXI_HALT_CTRL0 0x0208
+#define VBIF_AXI_HALT_CTRL1 0x020c
+#define VBIF_XINL_QOS_RP_REMAP_000 0x0550
+#define VBIF_XINL_QOS_LVL_REMAP_000 0x0590
 
-static void sde_hw_clear_errors(struct sde_hw_vbif *vbif,
-		u32 *pnd_errors, u32 *src_errors)
+static void sde_hw_clear_errors(struct sde_hw_vbif *vbif, u32 *pnd_errors,
+				u32 *src_errors)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 pnd, src;
@@ -61,8 +61,7 @@ static void sde_hw_clear_errors(struct sde_hw_vbif *vbif,
 	SDE_REG_WRITE(c, VBIF_XIN_CLR_ERR, pnd | src);
 }
 
-static void sde_hw_set_mem_type(struct sde_hw_vbif *vbif,
-		u32 xin_id, u32 value)
+static void sde_hw_set_mem_type(struct sde_hw_vbif *vbif, u32 xin_id, u32 value)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 reg_off;
@@ -70,9 +69,9 @@ static void sde_hw_set_mem_type(struct sde_hw_vbif *vbif,
 	u32 reg_val;
 
 	/*
-	 * Assume 4 bits per bit field, 8 fields per 32-bit register so
-	 * 16 bit fields maximum across two registers
-	 */
+   * Assume 4 bits per bit field, 8 fields per 32-bit register so
+   * 16 bit fields maximum across two registers
+   */
 	if (!vbif || xin_id >= MAX_XIN_COUNT)
 		return;
 
@@ -92,8 +91,8 @@ static void sde_hw_set_mem_type(struct sde_hw_vbif *vbif,
 	SDE_REG_WRITE(c, reg_off, reg_val);
 }
 
-static void sde_hw_set_mem_type_v1(struct sde_hw_vbif *vbif,
-		u32 xin_id, u32 value)
+static void sde_hw_set_mem_type_v1(struct sde_hw_vbif *vbif, u32 xin_id,
+				   u32 value)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 reg_val;
@@ -116,8 +115,8 @@ static void sde_hw_set_mem_type_v1(struct sde_hw_vbif *vbif,
 	SDE_REG_WRITE(c, VBIF_OUT_AXI_AINNERSHARED, 0);
 }
 
-static void sde_hw_set_limit_conf(struct sde_hw_vbif *vbif,
-		u32 xin_id, bool rd, u32 limit)
+static void sde_hw_set_limit_conf(struct sde_hw_vbif *vbif, u32 xin_id, bool rd,
+				  u32 limit)
 {
 	struct sde_hw_blk_reg_map *c = &vbif->hw;
 	u32 reg_val;
@@ -137,8 +136,7 @@ static void sde_hw_set_limit_conf(struct sde_hw_vbif *vbif,
 	SDE_REG_WRITE(c, reg_off, reg_val);
 }
 
-static u32 sde_hw_get_limit_conf(struct sde_hw_vbif *vbif,
-		u32 xin_id, bool rd)
+static u32 sde_hw_get_limit_conf(struct sde_hw_vbif *vbif, u32 xin_id, bool rd)
 {
 	struct sde_hw_blk_reg_map *c = &vbif->hw;
 	u32 reg_val;
@@ -159,8 +157,8 @@ static u32 sde_hw_get_limit_conf(struct sde_hw_vbif *vbif,
 	return limit;
 }
 
-static void sde_hw_set_xin_halt(struct sde_hw_vbif *vbif,
-		u32 xin_id, bool enable)
+static void sde_hw_set_xin_halt(struct sde_hw_vbif *vbif, u32 xin_id,
+				bool enable)
 {
 	struct sde_hw_blk_reg_map *c = &vbif->hw;
 	u32 reg_val;
@@ -176,8 +174,7 @@ static void sde_hw_set_xin_halt(struct sde_hw_vbif *vbif,
 	wmb(); /* make sure that xin client halted */
 }
 
-static bool sde_hw_get_xin_halt_status(struct sde_hw_vbif *vbif,
-		u32 xin_id)
+static bool sde_hw_get_xin_halt_status(struct sde_hw_vbif *vbif, u32 xin_id)
 {
 	struct sde_hw_blk_reg_map *c = &vbif->hw;
 	u32 reg_val;
@@ -201,12 +198,12 @@ static int sde_hw_get_axi_halt_status(struct sde_hw_vbif *vbif)
 	struct sde_hw_blk_reg_map *c = &vbif->hw;
 	int ctrl = 0;
 
-	return read_poll_timeout(sde_reg_read, ctrl, (ctrl & BIT(0)),
-			100, false, 4000, c, VBIF_AXI_HALT_CTRL1);
+	return read_poll_timeout(sde_reg_read, ctrl, (ctrl & BIT(0)), 100,
+				 false, 4000, c, VBIF_AXI_HALT_CTRL1);
 }
 
-static void sde_hw_set_qos_remap(struct sde_hw_vbif *vbif,
-		u32 xin_id, u32 level, u32 rp_remap, u32 lvl_remap)
+static void sde_hw_set_qos_remap(struct sde_hw_vbif *vbif, u32 xin_id,
+				 u32 level, u32 rp_remap, u32 lvl_remap)
 {
 	struct sde_hw_blk_reg_map *c;
 	u32 reg_val, reg_val_lvl, mask, reg_high, reg_shift;
@@ -250,7 +247,7 @@ static void sde_hw_set_write_gather_en(struct sde_hw_vbif *vbif, u32 xin_id)
 }
 
 static void _setup_vbif_ops(const struct sde_mdss_cfg *m,
-		struct sde_hw_vbif_ops *ops, unsigned long cap)
+			    struct sde_hw_vbif_ops *ops, unsigned long cap)
 {
 	ops->set_limit_conf = sde_hw_set_limit_conf;
 	ops->get_limit_conf = sde_hw_get_limit_conf;
@@ -269,9 +266,9 @@ static void _setup_vbif_ops(const struct sde_mdss_cfg *m,
 }
 
 static const struct sde_vbif_cfg *_top_offset(enum sde_vbif vbif,
-		const struct sde_mdss_cfg *m,
-		void __iomem *addr,
-		struct sde_hw_blk_reg_map *b)
+					      const struct sde_mdss_cfg *m,
+					      void __iomem *addr,
+					      struct sde_hw_blk_reg_map *b)
 {
 	int i;
 
@@ -289,9 +286,8 @@ static const struct sde_vbif_cfg *_top_offset(enum sde_vbif vbif,
 	return ERR_PTR(-EINVAL);
 }
 
-struct sde_hw_vbif *sde_hw_vbif_init(enum sde_vbif idx,
-		void __iomem *addr,
-		const struct sde_mdss_cfg *m)
+struct sde_hw_vbif *sde_hw_vbif_init(enum sde_vbif idx, void __iomem *addr,
+				     const struct sde_mdss_cfg *m)
 {
 	struct sde_hw_vbif *c;
 	const struct sde_vbif_cfg *cfg;
@@ -307,8 +303,8 @@ struct sde_hw_vbif *sde_hw_vbif_init(enum sde_vbif idx,
 	}
 
 	/*
-	 * Assign ops
-	 */
+   * Assign ops
+   */
 	c->idx = idx;
 	c->cap = cfg;
 	_setup_vbif_ops(m, &c->ops, c->cap->features);

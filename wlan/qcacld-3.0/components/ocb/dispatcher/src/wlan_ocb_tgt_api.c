@@ -21,15 +21,15 @@
  * DOC: This file contains ocb south bound interface definitions
  */
 
-#include <scheduler_api.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_objmgr_global_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
-#include "wlan_ocb_public_structs.h"
-#include "wlan_ocb_ucfg_api.h"
 #include "wlan_ocb_tgt_api.h"
 #include "wlan_ocb_main.h"
+#include "wlan_ocb_public_structs.h"
+#include "wlan_ocb_ucfg_api.h"
+#include <scheduler_api.h>
+#include <wlan_objmgr_global_obj.h>
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 
 /**
  * wlan_ocb_flush_callback() - OCB message flash callback
@@ -59,12 +59,11 @@ static QDF_STATUS wlan_ocb_flush_callback(struct scheduler_msg *msg)
  *
  * Return: QDF_STATUS_SUCCESS on success
  */
-static QDF_STATUS
-tgt_ocb_channel_config_status(struct wlan_objmgr_psoc *psoc,
-			      uint32_t status)
+static QDF_STATUS tgt_ocb_channel_config_status(struct wlan_objmgr_psoc *psoc,
+						uint32_t status)
 {
 	QDF_STATUS qdf_status;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct ocb_rx_event *event;
 
 	event = qdf_mem_malloc(sizeof(*event));
@@ -109,7 +108,7 @@ tgt_ocb_get_tsf_timer(struct wlan_objmgr_psoc *psoc,
 		      struct ocb_get_tsf_timer_response *response)
 {
 	QDF_STATUS status;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct ocb_rx_event *event;
 
 	event = qdf_mem_malloc(sizeof(*event));
@@ -122,9 +121,8 @@ tgt_ocb_get_tsf_timer(struct wlan_objmgr_psoc *psoc,
 		goto flush_ref;
 	}
 	event->psoc = psoc;
-	event->vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-							   response->vdev_id,
-							   WLAN_OCB_SB_ID);
+	event->vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+		psoc, response->vdev_id, WLAN_OCB_SB_ID);
 	if (!event->vdev) {
 		ocb_err("Cannot get vdev handle");
 		status = QDF_STATUS_E_FAILURE;
@@ -140,8 +138,7 @@ tgt_ocb_get_tsf_timer(struct wlan_objmgr_psoc *psoc,
 	msg.callback = ocb_process_evt;
 	msg.flush_callback = wlan_ocb_flush_callback;
 
-	status = scheduler_post_message(QDF_MODULE_ID_OCB,
-					QDF_MODULE_ID_OCB,
+	status = scheduler_post_message(QDF_MODULE_ID_OCB, QDF_MODULE_ID_OCB,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return QDF_STATUS_SUCCESS;
@@ -165,7 +162,7 @@ tgt_ocb_dcc_ndl_update(struct wlan_objmgr_psoc *psoc,
 		       struct ocb_dcc_update_ndl_response *resp)
 {
 	QDF_STATUS status;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct ocb_rx_event *event;
 
 	event = qdf_mem_malloc(sizeof(*event));
@@ -178,8 +175,7 @@ tgt_ocb_dcc_ndl_update(struct wlan_objmgr_psoc *psoc,
 		goto flush_ref;
 	}
 	event->psoc = psoc;
-	event->vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-							   resp->vdev_id,
+	event->vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc, resp->vdev_id,
 							   WLAN_OCB_SB_ID);
 	if (!event->vdev) {
 		ocb_err("Cannot get vdev handle");
@@ -194,8 +190,7 @@ tgt_ocb_dcc_ndl_update(struct wlan_objmgr_psoc *psoc,
 	msg.callback = ocb_process_evt;
 	msg.flush_callback = wlan_ocb_flush_callback;
 
-	status = scheduler_post_message(QDF_MODULE_ID_OCB,
-					QDF_MODULE_ID_OCB,
+	status = scheduler_post_message(QDF_MODULE_ID_OCB, QDF_MODULE_ID_OCB,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return QDF_STATUS_SUCCESS;
@@ -223,11 +218,10 @@ tgt_ocb_dcc_stats_indicate(struct wlan_objmgr_psoc *psoc,
 	QDF_STATUS status;
 	uint8_t *buf;
 	uint32_t size;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct ocb_rx_event *event;
 
-	size = sizeof(*event) +
-		response->channel_stats_array_len;
+	size = sizeof(*event) + response->channel_stats_array_len;
 	buf = qdf_mem_malloc(size);
 	if (!buf)
 		return QDF_STATUS_E_NOMEM;
@@ -239,9 +233,8 @@ tgt_ocb_dcc_stats_indicate(struct wlan_objmgr_psoc *psoc,
 		goto flush_ref;
 	}
 	event->psoc = psoc;
-	event->vdev = wlan_objmgr_get_vdev_by_id_from_psoc(psoc,
-							   response->vdev_id,
-							   WLAN_OCB_SB_ID);
+	event->vdev = wlan_objmgr_get_vdev_by_id_from_psoc(
+		psoc, response->vdev_id, WLAN_OCB_SB_ID);
 	if (!event->vdev) {
 		ocb_err("Cannot get vdev handle");
 		status = QDF_STATUS_E_FAILURE;
@@ -269,8 +262,7 @@ tgt_ocb_dcc_stats_indicate(struct wlan_objmgr_psoc *psoc,
 	msg.callback = ocb_process_evt;
 	msg.flush_callback = wlan_ocb_flush_callback;
 
-	status = scheduler_post_message(QDF_MODULE_ID_OCB,
-					QDF_MODULE_ID_OCB,
+	status = scheduler_post_message(QDF_MODULE_ID_OCB, QDF_MODULE_ID_OCB,
 					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_SUCCESS(status))
 		return QDF_STATUS_SUCCESS;

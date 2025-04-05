@@ -17,10 +17,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/platform_device.h>
 #include <linux/err.h>
-#include <linux/mmc/sdio_func.h>
 #include <linux/list.h>
+#include <linux/mmc/sdio_func.h>
+#include <linux/platform_device.h>
 #include <linux/slab.h>
 
 #ifdef CONFIG_PLD_SDIO_CNSS
@@ -30,39 +30,48 @@
 #include <net/cnss2.h>
 #endif
 
+#include "osif_psoc_sync.h"
 #include "pld_common.h"
 #include "pld_internal.h"
 #include "pld_sdio.h"
-#include "osif_psoc_sync.h"
 
 #ifdef CONFIG_SDIO
 /* SDIO manufacturer ID and Codes */
-#define MANUFACTURER_ID_AR6320_BASE        0x500
-#define MANUFACTURER_ID_QCA9377_BASE       0x700
-#define MANUFACTURER_ID_QCA9379_BASE       0x800
-#define MANUFACTURER_CODE                  0x271
+#define MANUFACTURER_ID_AR6320_BASE 0x500
+#define MANUFACTURER_ID_QCA9377_BASE 0x700
+#define MANUFACTURER_ID_QCA9379_BASE 0x800
+#define MANUFACTURER_CODE 0x271
 
 #ifndef CONFIG_CNSS
 static const struct pld_fw_files fw_files_qca6174_fw_1_1 = {
-	PREFIX "qwlan11.bin", PREFIX  "bdwlan11.bin", PREFIX "otp11.bin",
-	PREFIX  "utf11.bin", PREFIX "utfbd11.bin", PREFIX "qsetup11.bin",
-	PREFIX "epping11.bin", ""};
+	PREFIX "qwlan11.bin",  PREFIX "bdwlan11.bin",
+	PREFIX "otp11.bin",    PREFIX "utf11.bin",
+	PREFIX "utfbd11.bin",  PREFIX "qsetup11.bin",
+	PREFIX "epping11.bin", ""
+};
 static const struct pld_fw_files fw_files_qca6174_fw_2_0 = {
-	PREFIX "qwlan20.bin", PREFIX "bdwlan20.bin", PREFIX "otp20.bin",
-	PREFIX "utf20.bin", PREFIX "utfbd20.bin", PREFIX "qsetup20.bin",
-	PREFIX "epping20.bin", ""};
+	PREFIX "qwlan20.bin",  PREFIX "bdwlan20.bin",
+	PREFIX "otp20.bin",    PREFIX "utf20.bin",
+	PREFIX "utfbd20.bin",  PREFIX "qsetup20.bin",
+	PREFIX "epping20.bin", ""
+};
 static const struct pld_fw_files fw_files_qca6174_fw_1_3 = {
-	PREFIX "qwlan13.bin", PREFIX "bdwlan13.bin", PREFIX "otp13.bin",
-	PREFIX "utf13.bin", PREFIX "utfbd13.bin", PREFIX "qsetup13.bin",
-	PREFIX "epping13.bin", ""};
+	PREFIX "qwlan13.bin",  PREFIX "bdwlan13.bin",
+	PREFIX "otp13.bin",    PREFIX "utf13.bin",
+	PREFIX "utfbd13.bin",  PREFIX "qsetup13.bin",
+	PREFIX "epping13.bin", ""
+};
 static const struct pld_fw_files fw_files_qca6174_fw_3_0 = {
-	PREFIX "qwlan30.bin", PREFIX "bdwlan30.bin", PREFIX "otp30.bin",
-	PREFIX "utf30.bin", PREFIX "utfbd30.bin", PREFIX "qsetup30.bin",
-	PREFIX "epping30.bin", PREFIX "qwlan30i.bin"};
+	PREFIX "qwlan30.bin",  PREFIX "bdwlan30.bin", PREFIX "otp30.bin",
+	PREFIX "utf30.bin",    PREFIX "utfbd30.bin",  PREFIX "qsetup30.bin",
+	PREFIX "epping30.bin", PREFIX "qwlan30i.bin"
+};
 static const struct pld_fw_files fw_files_default = {
-	PREFIX "qwlan.bin", PREFIX "bdwlan.bin", PREFIX "otp.bin",
-	PREFIX "utf.bin", PREFIX "utfbd.bin", PREFIX "qsetup.bin",
-	PREFIX "epping.bin", ""};
+	PREFIX "qwlan.bin",  PREFIX "bdwlan.bin",
+	PREFIX "otp.bin",    PREFIX "utf.bin",
+	PREFIX "utfbd.bin",  PREFIX "qsetup.bin",
+	PREFIX "epping.bin", ""
+};
 #endif
 
 /**
@@ -93,13 +102,12 @@ static int pld_sdio_probe(struct sdio_func *sdio_func,
 	if (ret)
 		goto out;
 
-	return pld_context->ops->probe(dev, PLD_BUS_TYPE_SDIO,
-		       sdio_func, (void *)id);
+	return pld_context->ops->probe(dev, PLD_BUS_TYPE_SDIO, sdio_func,
+				       (void *)id);
 
 out:
 	return ret;
 }
-
 
 /**
  * pld_sdio_remove() - Remove function for SDIO device
@@ -148,7 +156,7 @@ out:
  * Return: int
  */
 static int pld_sdio_reinit(struct sdio_func *sdio_func,
-			  const struct sdio_device_id *id)
+			   const struct sdio_device_id *id)
 {
 	struct pld_context *pld_context;
 	struct device *dev = &sdio_func->dev;
@@ -156,7 +164,7 @@ static int pld_sdio_reinit(struct sdio_func *sdio_func,
 	pld_context = pld_get_global_context();
 	if (pld_context->ops->reinit)
 		return pld_context->ops->reinit(dev, PLD_BUS_TYPE_SDIO,
-		       sdio_func, (void *)id);
+						sdio_func, (void *)id);
 
 	return -ENODEV;
 }
@@ -216,8 +224,7 @@ static int pld_sdio_suspend(struct device *dev)
 	pm_message_t state = { .event = PM_EVENT_SUSPEND };
 
 	pld_context = pld_get_global_context();
-	return pld_context->ops->suspend(dev,
-					 PLD_BUS_TYPE_SDIO, state);
+	return pld_context->ops->suspend(dev, PLD_BUS_TYPE_SDIO, state);
 }
 
 /**
@@ -239,54 +246,86 @@ static int pld_sdio_resume(struct device *dev)
 #endif
 
 static struct sdio_device_id pld_sdio_id_table[] = {
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x1))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x2))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x3))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x4))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x5))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x6))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x7))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x8))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x9))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xA))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xB))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xC))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xD))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xE))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xF))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x1))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x2))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x3))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x4))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x5))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x6))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x7))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x8))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0x9))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xA))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xB))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xC))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xD))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xE))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9377_BASE | 0xF))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x0))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x1))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x2))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x3))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x4))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x5))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x6))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x7))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x8))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0x9))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xA))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xB))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xC))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xD))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xE))},
-	{SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_QCA9379_BASE | 0xF))},
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x1)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x2)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x3)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x4)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x5)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x6)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x7)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x8)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0x9)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xA)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xB)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xC)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xD)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xE)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE, (MANUFACTURER_ID_AR6320_BASE | 0xF)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x1)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x2)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x3)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x4)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x5)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x6)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x7)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x8)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0x9)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xA)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xB)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xC)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xD)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xE)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9377_BASE | 0xF)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x0)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x1)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x2)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x3)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x4)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x5)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x6)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x7)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x8)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0x9)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xA)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xB)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xC)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xD)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xE)) },
+	{ SDIO_DEVICE(MANUFACTURER_CODE,
+		      (MANUFACTURER_ID_QCA9379_BASE | 0xF)) },
 	{},
 };
 
@@ -317,8 +356,7 @@ static int pld_sdio_reinit(struct sdio_func *sdio_func,
  * Return: void
  */
 static void pld_sdio_shutdown(struct sdio_func *sdio_func)
-{
-	/* TODO */
+{ /* TODO */
 }
 
 /**
@@ -331,15 +369,14 @@ static void pld_sdio_shutdown(struct sdio_func *sdio_func)
  * Return: void
  */
 static void pld_sdio_crash_shutdown(struct sdio_func *sdio_func)
-{
-	/* TODO */
+{ /* TODO */
 }
 
 static void pld_sdio_uevent(struct sdio_func *sdio_func, uint32_t status)
 {
 	struct pld_context *pld_context;
 	struct device *dev = &sdio_func->dev;
-	struct pld_uevent_data data = {0};
+	struct pld_uevent_data data = { 0 };
 
 	pld_context = pld_get_global_context();
 
@@ -364,17 +401,17 @@ out:
 }
 
 struct cnss_sdio_wlan_driver pld_sdio_ops = {
-	.name       = "pld_sdio",
-	.id_table   = pld_sdio_id_table,
-	.probe      = pld_sdio_probe,
-	.remove     = pld_sdio_remove,
-	.reinit     = pld_sdio_reinit,
-	.shutdown   = pld_sdio_shutdown,
+	.name = "pld_sdio",
+	.id_table = pld_sdio_id_table,
+	.probe = pld_sdio_probe,
+	.remove = pld_sdio_remove,
+	.reinit = pld_sdio_reinit,
+	.shutdown = pld_sdio_shutdown,
 	.crash_shutdown = pld_sdio_crash_shutdown,
-	.update_status  = pld_sdio_uevent,
+	.update_status = pld_sdio_uevent,
 #ifdef CONFIG_PM
-	.suspend    = pld_sdio_suspend,
-	.resume     = pld_sdio_resume,
+	.suspend = pld_sdio_suspend,
+	.resume = pld_sdio_resume,
 #endif
 };
 
@@ -417,15 +454,15 @@ static const struct dev_pm_ops pld_device_pm_ops = {
 };
 #endif
 
-struct sdio_driver pld_sdio_ops = {
-	.name       = "pld_sdio",
-	.id_table   = pld_sdio_id_table,
-	.probe      = pld_sdio_probe,
-	.remove     = pld_sdio_remove,
+struct sdio_driver pld_sdio_ops = {.name = "pld_sdio",
+                                   .id_table = pld_sdio_id_table,
+                                   .probe = pld_sdio_probe,
+                                   .remove = pld_sdio_remove,
 #if defined(CONFIG_PM)
-	.drv = {
-		.pm = &pld_device_pm_ops,
-	}
+                                   .drv =
+                                       {
+                                           .pm = &pld_device_pm_ops,
+                                       }
 #endif
 };
 
@@ -465,29 +502,30 @@ int pld_sdio_get_fw_files_for_target(struct pld_fw_files *pfw_files,
 	memset(pfw_files, 0, sizeof(*pfw_files));
 
 	if (target_version == PLD_QCA9377_REV1_1_VERSION) {
-		cnss_get_qca9377_fw_files(&cnss_fw_files, PLD_MAX_FILE_NAME,
+		cnss_get_qca9377_fw_files(
+			&cnss_fw_files, PLD_MAX_FILE_NAME,
 			pld_sdio_is_tufello_dual_fw_supported());
 	} else {
-		ret = cnss_get_fw_files_for_target(&cnss_fw_files,
-					   target_type, target_version);
+		ret = cnss_get_fw_files_for_target(&cnss_fw_files, target_type,
+						   target_version);
 	}
 	if (0 != ret)
 		return ret;
 
 	snprintf(pfw_files->image_file, PLD_MAX_FILE_NAME, PREFIX "%s",
-		cnss_fw_files.image_file);
+		 cnss_fw_files.image_file);
 	snprintf(pfw_files->board_data, PLD_MAX_FILE_NAME, PREFIX "%s",
-		cnss_fw_files.board_data);
+		 cnss_fw_files.board_data);
 	snprintf(pfw_files->otp_data, PLD_MAX_FILE_NAME, PREFIX "%s",
-		cnss_fw_files.otp_data);
+		 cnss_fw_files.otp_data);
 	snprintf(pfw_files->utf_file, PLD_MAX_FILE_NAME, PREFIX "%s",
-		cnss_fw_files.utf_file);
+		 cnss_fw_files.utf_file);
 	snprintf(pfw_files->utf_board_data, PLD_MAX_FILE_NAME, PREFIX "%s",
-		cnss_fw_files.utf_board_data);
+		 cnss_fw_files.utf_board_data);
 	snprintf(pfw_files->epping_file, PLD_MAX_FILE_NAME, PREFIX "%s",
-		cnss_fw_files.epping_file);
+		 cnss_fw_files.epping_file);
 	snprintf(pfw_files->evicted_data, PLD_MAX_FILE_NAME, PREFIX "%s",
-		cnss_fw_files.evicted_data);
+		 cnss_fw_files.evicted_data);
 
 	return ret;
 }
@@ -496,13 +534,13 @@ int pld_sdio_get_fw_files_for_target(struct pld_fw_files *pfw_files,
 static inline void get_qca9377_fw_files(struct pld_fw_files *pfw_files,
 					u32 size)
 {
-		memcpy(pfw_files, &fw_files_default, sizeof(*pfw_files));
+	memcpy(pfw_files, &fw_files_default, sizeof(*pfw_files));
 }
 #else
 static inline void get_qca9377_fw_files(struct pld_fw_files *pfw_files,
 					u32 size)
 {
-		memcpy(pfw_files, &fw_files_qca6174_fw_3_0, sizeof(*pfw_files));
+	memcpy(pfw_files, &fw_files_qca6174_fw_3_0, sizeof(*pfw_files));
 }
 #endif
 
@@ -533,8 +571,7 @@ int pld_sdio_get_fw_files_for_target(struct pld_fw_files *pfw_files,
 		break;
 	default:
 		memcpy(pfw_files, &fw_files_default, sizeof(*pfw_files));
-		pr_err("%s version mismatch 0x%X ",
-				__func__, target_version);
+		pr_err("%s version mismatch 0x%X ", __func__, target_version);
 		break;
 	}
 

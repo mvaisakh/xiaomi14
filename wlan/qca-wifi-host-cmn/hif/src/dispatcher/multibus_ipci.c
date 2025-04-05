@@ -15,13 +15,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "hif.h"
-#include "hif_main.h"
-#include "multibus.h"
-#include "ipci_api.h"
-#include "hif_io32.h"
-#include "dummy.h"
 #include "ce_api.h"
+#include "dummy.h"
+#include "hif.h"
+#include "hif_io32.h"
+#include "hif_main.h"
+#include "ipci_api.h"
+#include "multibus.h"
 
 /**
  * hif_initialize_ipci_ops() - initialize the pci ops
@@ -69,18 +69,14 @@ QDF_STATUS hif_initialize_ipci_ops(struct hif_softc *hif_sc)
 		&hif_ipci_disable_power_management;
 	bus_ops->hif_grp_irq_configure = &hif_ipci_configure_grp_irq;
 	bus_ops->hif_grp_irq_deconfigure = &hif_ipci_deconfigure_grp_irq;
-	bus_ops->hif_display_stats =
-		&hif_ipci_display_stats;
-	bus_ops->hif_clear_stats =
-		&hif_ipci_clear_stats;
+	bus_ops->hif_display_stats = &hif_ipci_display_stats;
+	bus_ops->hif_clear_stats = &hif_ipci_clear_stats;
 	bus_ops->hif_addr_in_boundary = &hif_dummy_addr_in_boundary;
 	bus_ops->hif_needs_bmi = &hif_ipci_needs_bmi;
 #ifdef HIF_CPU_PERF_AFFINE_MASK
-	bus_ops->hif_config_irq_affinity =
-		&hif_ipci_config_irq_affinity;
+	bus_ops->hif_config_irq_affinity = &hif_ipci_config_irq_affinity;
 #else
-	bus_ops->hif_config_irq_affinity =
-		&hif_dummy_config_irq_affinity;
+	bus_ops->hif_config_irq_affinity = &hif_dummy_config_irq_affinity;
 #endif
 	bus_ops->hif_config_irq_by_ceid = &hif_dummy_config_irq_by_ceid;
 	bus_ops->hif_config_irq_clear_cpu_affinity =

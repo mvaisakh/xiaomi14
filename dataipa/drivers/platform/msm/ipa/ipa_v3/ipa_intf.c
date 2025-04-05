@@ -5,11 +5,11 @@
  * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
+#include "ipa_i.h"
 #include <linux/fs.h>
+#include <linux/msm_ipa.h>
 #include <linux/sched.h>
 #include <linux/sched/signal.h>
-#include "ipa_i.h"
-#include <linux/msm_ipa.h>
 
 struct ipa3_intf {
 	char name[IPA_RESOURCE_NAME_MAX];
@@ -50,7 +50,7 @@ struct ipa3_pull_msg {
  * Note:	Should not be called from atomic context
  */
 int ipa_register_intf(const char *name, const struct ipa_tx_intf *tx,
-		       const struct ipa_rx_intf *rx)
+		      const struct ipa_rx_intf *rx)
 {
 	return ipa3_register_intf_ext(name, tx, rx, NULL);
 }
@@ -72,33 +72,33 @@ EXPORT_SYMBOL(ipa_register_intf);
  * Note:	Should not be called from atomic context
  */
 int ipa3_register_intf_ext(const char *name, const struct ipa_tx_intf *tx,
-		       const struct ipa_rx_intf *rx,
-		       const struct ipa_ext_intf *ext)
+			   const struct ipa_rx_intf *rx,
+			   const struct ipa_ext_intf *ext)
 {
 	struct ipa3_intf *intf;
 	u32 len;
 
 	if (name == NULL || (tx == NULL && rx == NULL && ext == NULL)) {
 		IPAERR_RL("invalid params name=%pK tx=%pK rx=%pK ext=%pK\n",
-				name, tx, rx, ext);
+			  name, tx, rx, ext);
 		return -EINVAL;
 	}
 
 	if (tx && tx->num_props > IPA_NUM_PROPS_MAX) {
 		IPAERR_RL("invalid tx num_props=%d max=%d\n", tx->num_props,
-				IPA_NUM_PROPS_MAX);
+			  IPA_NUM_PROPS_MAX);
 		return -EINVAL;
 	}
 
 	if (rx && rx->num_props > IPA_NUM_PROPS_MAX) {
 		IPAERR_RL("invalid rx num_props=%d max=%d\n", rx->num_props,
-				IPA_NUM_PROPS_MAX);
+			  IPA_NUM_PROPS_MAX);
 		return -EINVAL;
 	}
 
 	if (ext && ext->num_props > IPA_NUM_PROPS_MAX) {
 		IPAERR_RL("invalid ext num_props=%d max=%d\n", ext->num_props,
-				IPA_NUM_PROPS_MAX);
+			  IPA_NUM_PROPS_MAX);
 		return -EINVAL;
 	}
 
@@ -218,9 +218,9 @@ int ipa3_query_intf(struct ipa_ioc_query_intf *lookup)
 		return result;
 	}
 
-	lookup->name[IPA_RESOURCE_NAME_MAX-1] = '\0';
+	lookup->name[IPA_RESOURCE_NAME_MAX - 1] = '\0';
 	if (strnlen(lookup->name, IPA_RESOURCE_NAME_MAX) ==
-			IPA_RESOURCE_NAME_MAX) {
+	    IPA_RESOURCE_NAME_MAX) {
 		IPAERR_RL("Interface name too long. (%s)\n", lookup->name);
 		return result;
 	}
@@ -261,7 +261,7 @@ int ipa3_query_intf_tx_props(struct ipa_ioc_query_intf_tx_props *tx)
 		return result;
 	}
 
-	tx->name[IPA_RESOURCE_NAME_MAX-1] = '\0';
+	tx->name[IPA_RESOURCE_NAME_MAX - 1] = '\0';
 	if (strnlen(tx->name, IPA_RESOURCE_NAME_MAX) == IPA_RESOURCE_NAME_MAX) {
 		IPAERR_RL("Interface name too long. (%s)\n", tx->name);
 		return result;
@@ -273,13 +273,13 @@ int ipa3_query_intf_tx_props(struct ipa_ioc_query_intf_tx_props *tx)
 			/* add the entry check */
 			if (entry->num_tx_props != tx->num_tx_props) {
 				IPAERR("invalid entry number(%u %u)\n",
-					entry->num_tx_props,
-						tx->num_tx_props);
+				       entry->num_tx_props, tx->num_tx_props);
 				mutex_unlock(&ipa3_ctx->lock);
 				return result;
 			}
-			memcpy(tx->tx, entry->tx, entry->num_tx_props *
-			       sizeof(struct ipa_ioc_tx_intf_prop));
+			memcpy(tx->tx, entry->tx,
+			       entry->num_tx_props *
+				       sizeof(struct ipa_ioc_tx_intf_prop));
 			result = 0;
 			break;
 		}
@@ -309,7 +309,7 @@ int ipa3_query_intf_rx_props(struct ipa_ioc_query_intf_rx_props *rx)
 		return result;
 	}
 
-	rx->name[IPA_RESOURCE_NAME_MAX-1] = '\0';
+	rx->name[IPA_RESOURCE_NAME_MAX - 1] = '\0';
 	if (strnlen(rx->name, IPA_RESOURCE_NAME_MAX) == IPA_RESOURCE_NAME_MAX) {
 		IPAERR_RL("Interface name too long. (%s)\n", rx->name);
 		return result;
@@ -321,13 +321,13 @@ int ipa3_query_intf_rx_props(struct ipa_ioc_query_intf_rx_props *rx)
 			/* add the entry check */
 			if (entry->num_rx_props != rx->num_rx_props) {
 				IPAERR("invalid entry number(%u %u)\n",
-					entry->num_rx_props,
-						rx->num_rx_props);
+				       entry->num_rx_props, rx->num_rx_props);
 				mutex_unlock(&ipa3_ctx->lock);
 				return result;
 			}
-			memcpy(rx->rx, entry->rx, entry->num_rx_props *
-					sizeof(struct ipa_ioc_rx_intf_prop));
+			memcpy(rx->rx, entry->rx,
+			       entry->num_rx_props *
+				       sizeof(struct ipa_ioc_rx_intf_prop));
 			result = 0;
 			break;
 		}
@@ -363,13 +363,14 @@ int ipa3_query_intf_ext_props(struct ipa_ioc_query_intf_ext_props *ext)
 			/* add the entry check */
 			if (entry->num_ext_props != ext->num_ext_props) {
 				IPAERR("invalid entry number(%u %u)\n",
-					entry->num_ext_props,
-						ext->num_ext_props);
+				       entry->num_ext_props,
+				       ext->num_ext_props);
 				mutex_unlock(&ipa3_ctx->lock);
 				return result;
 			}
-			memcpy(ext->ext, entry->ext, entry->num_ext_props *
-					sizeof(struct ipa_ioc_ext_intf_prop));
+			memcpy(ext->ext, entry->ext,
+			       entry->num_ext_props *
+				       sizeof(struct ipa_ioc_ext_intf_prop));
 			result = 0;
 			break;
 		}
@@ -403,15 +404,21 @@ static int wlan_msg_process(struct ipa_msg_meta *meta, void *buff)
 		event_ex_cur_con = buff;
 		for (cnt = 0; cnt < event_ex_cur_con->num_of_attribs; cnt++) {
 			if (event_ex_cur_con->attribs[cnt].attrib_type ==
-				WLAN_HDR_ATTRIB_MAC_ADDR) {
+			    WLAN_HDR_ATTRIB_MAC_ADDR) {
 				IPADBG("%02x:%02x:%02x:%02x:%02x:%02x,(%d)\n",
-				event_ex_cur_con->attribs[cnt].u.mac_addr[0],
-				event_ex_cur_con->attribs[cnt].u.mac_addr[1],
-				event_ex_cur_con->attribs[cnt].u.mac_addr[2],
-				event_ex_cur_con->attribs[cnt].u.mac_addr[3],
-				event_ex_cur_con->attribs[cnt].u.mac_addr[4],
-				event_ex_cur_con->attribs[cnt].u.mac_addr[5],
-				meta->msg_type);
+				       event_ex_cur_con->attribs[cnt]
+					       .u.mac_addr[0],
+				       event_ex_cur_con->attribs[cnt]
+					       .u.mac_addr[1],
+				       event_ex_cur_con->attribs[cnt]
+					       .u.mac_addr[2],
+				       event_ex_cur_con->attribs[cnt]
+					       .u.mac_addr[3],
+				       event_ex_cur_con->attribs[cnt]
+					       .u.mac_addr[4],
+				       event_ex_cur_con->attribs[cnt]
+					       .u.mac_addr[5],
+				       meta->msg_type);
 			}
 		}
 
@@ -446,30 +453,26 @@ static int wlan_msg_process(struct ipa_msg_meta *meta, void *buff)
 	if (meta->msg_type == WLAN_CLIENT_DISCONNECT) {
 		/* debug print */
 		event_ex_cur_discon = buff;
-		IPADBG("Mac %pM, msg %d\n",
-		event_ex_cur_discon->mac_addr,
-		meta->msg_type);
-		memcpy(mac2,
-			event_ex_cur_discon->mac_addr,
-			sizeof(mac2));
+		IPADBG("Mac %pM, msg %d\n", event_ex_cur_discon->mac_addr,
+		       meta->msg_type);
+		memcpy(mac2, event_ex_cur_discon->mac_addr, sizeof(mac2));
 
 		mutex_lock(&ipa3_ctx->msg_wlan_client_lock);
-		list_for_each_entry_safe(entry, next,
-				&ipa3_ctx->msg_wlan_client_list,
-				link) {
+		list_for_each_entry_safe(
+			entry, next, &ipa3_ctx->msg_wlan_client_list, link) {
 			event_ex_list = entry->buff;
 			max = event_ex_list->num_of_attribs;
 			for (cnt = 0; cnt < max; cnt++) {
 				memcpy(mac,
-					event_ex_list->attribs[cnt].u.mac_addr,
-					sizeof(mac));
+				       event_ex_list->attribs[cnt].u.mac_addr,
+				       sizeof(mac));
 				if (event_ex_list->attribs[cnt].attrib_type ==
-					WLAN_HDR_ATTRIB_MAC_ADDR) {
+				    WLAN_HDR_ATTRIB_MAC_ADDR) {
 					pr_debug("%pM\n", mac);
 
 					/* compare to delete one*/
-					if (memcmp(mac2, mac,
-						sizeof(mac)) == 0) {
+					if (memcmp(mac2, mac, sizeof(mac)) ==
+					    0) {
 						IPADBG("clean %d\n", total);
 						list_del(&entry->link);
 						kfree(entry);
@@ -500,7 +503,7 @@ static int wlan_msg_process(struct ipa_msg_meta *meta, void *buff)
  * Note:	Should not be called from atomic context
  */
 int ipa_send_msg(struct ipa_msg_meta *meta, void *buff,
-		  ipa_msg_free_fn callback)
+		 ipa_msg_free_fn callback)
 {
 	struct ipa3_push_msg *msg;
 	void *data = NULL;
@@ -508,7 +511,7 @@ int ipa_send_msg(struct ipa_msg_meta *meta, void *buff,
 	if (meta == NULL || (buff == NULL && callback != NULL) ||
 	    (buff != NULL && callback == NULL)) {
 		IPAERR_RL("invalid param meta=%pK buff=%pK, callback=%pK\n",
-		       meta, buff, callback);
+			  meta, buff, callback);
 		return -EINVAL;
 	}
 
@@ -519,7 +522,7 @@ int ipa_send_msg(struct ipa_msg_meta *meta, void *buff,
 
 	if (ipa3_ctx->ipa_wdi_opt_dpath && WLAN_IPA_EVENT(meta->msg_type)) {
 		IPAERR_RL("Opt data path enabled, ignore message type %d\n",
-			meta->msg_type);
+			  meta->msg_type);
 		if (buff)
 			callback(buff, meta->msg_len, meta->msg_type);
 		return 0;
@@ -580,14 +583,13 @@ int ipa3_resend_wlan_msg(void)
 
 	mutex_lock(&ipa3_ctx->msg_wlan_client_lock);
 	list_for_each_entry_safe(entry, next, &ipa3_ctx->msg_wlan_client_list,
-			link) {
-
+				 link) {
 		event_ex_list = entry->buff;
 		for (cnt = 0; cnt < event_ex_list->num_of_attribs; cnt++) {
 			if (event_ex_list->attribs[cnt].attrib_type ==
-				WLAN_HDR_ATTRIB_MAC_ADDR) {
+			    WLAN_HDR_ATTRIB_MAC_ADDR) {
 				IPADBG("%d-Mac %pM\n", total,
-				event_ex_list->attribs[cnt].u.mac_addr);
+				       event_ex_list->attribs[cnt].u.mac_addr);
 			}
 		}
 
@@ -633,8 +635,8 @@ int ipa3_register_pull_msg(struct ipa_msg_meta *meta, ipa_msg_pull_fn callback)
 	struct ipa3_pull_msg *msg;
 
 	if (meta == NULL || callback == NULL) {
-		IPAERR_RL("invalid param meta=%pK callback=%pK\n",
-				meta, callback);
+		IPAERR_RL("invalid param meta=%pK callback=%pK\n", meta,
+			  callback);
 		return -EINVAL;
 	}
 
@@ -722,7 +724,7 @@ ssize_t ipa3_read(struct file *filp, char __user *buf, size_t count,
 
 		if (!list_empty(&ipa3_ctx->msg_list)) {
 			msg = list_first_entry(&ipa3_ctx->msg_list,
-					struct ipa3_push_msg, link);
+					       struct ipa3_push_msg, link);
 			list_del(&msg->link);
 		}
 
@@ -732,7 +734,7 @@ ssize_t ipa3_read(struct file *filp, char __user *buf, size_t count,
 			locked = 0;
 			mutex_unlock(&ipa3_ctx->msg_lock);
 			if (copy_to_user(buf, &msg->meta,
-					  sizeof(struct ipa_msg_meta))) {
+					 sizeof(struct ipa_msg_meta))) {
 				ret = -EFAULT;
 				kfree(msg);
 				msg = NULL;
@@ -742,7 +744,7 @@ ssize_t ipa3_read(struct file *filp, char __user *buf, size_t count,
 			count -= sizeof(struct ipa_msg_meta);
 			if (msg->buff) {
 				if (copy_to_user(buf, msg->buff,
-						  msg->meta.msg_len)) {
+						 msg->meta.msg_len)) {
 					ret = -EFAULT;
 					kfree(msg);
 					msg = NULL;
@@ -751,7 +753,7 @@ ssize_t ipa3_read(struct file *filp, char __user *buf, size_t count,
 				buf += msg->meta.msg_len;
 				count -= msg->meta.msg_len;
 				msg->callback(msg->buff, msg->meta.msg_len,
-					       msg->meta.msg_type);
+					      msg->meta.msg_type);
 			}
 			IPA_STATS_INC_CNT(
 				ipa3_ctx->stats.msg_r[msg->meta.msg_type]);
@@ -805,8 +807,8 @@ int ipa3_pull_msg(struct ipa_msg_meta *meta, char *buff, size_t count)
 	int result = -EINVAL;
 
 	if (meta == NULL || buff == NULL || !count) {
-		IPAERR_RL("invalid param name=%pK buff=%pK count=%zu\n",
-				meta, buff, count);
+		IPAERR_RL("invalid param name=%pK buff=%pK count=%zu\n", meta,
+			  buff, count);
 		return result;
 	}
 

@@ -16,8 +16,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "qdf_periodic_work.h"
 #include "qdf_periodic_work_test.h"
+#include "qdf_periodic_work.h"
 #include "qdf_trace.h"
 
 #define pwork_iterations 2
@@ -44,8 +44,8 @@ static uint32_t qdf_pwork_stop_inside_cb(void)
 	struct qdf_pwork_ut_ctx ut_ctx = { .count = 0 };
 	QDF_STATUS status;
 
-	status = qdf_periodic_work_create(&ut_ctx.pwork,
-					  __qdf_pwork_inside_cb, &ut_ctx);
+	status = qdf_periodic_work_create(&ut_ctx.pwork, __qdf_pwork_inside_cb,
+					  &ut_ctx);
 	QDF_BUG(QDF_IS_STATUS_SUCCESS(status));
 
 	QDF_BUG(qdf_periodic_work_start(&ut_ctx.pwork, pwork_delay_ms));
@@ -73,8 +73,8 @@ static uint32_t qdf_pwork_stop_outside_cb(void)
 	struct qdf_pwork_ut_ctx ut_ctx = { .count = 0 };
 	QDF_STATUS status;
 
-	status = qdf_periodic_work_create(&ut_ctx.pwork,
-					  __qdf_pwork_outside_cb, &ut_ctx);
+	status = qdf_periodic_work_create(&ut_ctx.pwork, __qdf_pwork_outside_cb,
+					  &ut_ctx);
 	QDF_BUG(QDF_IS_STATUS_SUCCESS(status));
 
 	QDF_BUG(qdf_periodic_work_start(&ut_ctx.pwork, pwork_delay_ms));
@@ -99,4 +99,3 @@ uint32_t qdf_periodic_work_unit_test(void)
 
 	return errors;
 }
-

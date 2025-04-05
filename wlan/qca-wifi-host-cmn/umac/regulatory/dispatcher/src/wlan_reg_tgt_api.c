@@ -18,26 +18,26 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
- /**
+/**
  * @file wlan_req_tgt_api.c
  * @brief contains regulatory target interface definitions
  */
 
+#include <../../core/src/reg_build_chan_list.h>
+#include <../../core/src/reg_lte.h>
+#include <../../core/src/reg_offload_11d_scan.h>
+#include <../../core/src/reg_priv_objs.h>
+#include <../../core/src/reg_services_common.h>
+#include <../../core/src/reg_utils.h>
 #include <qdf_status.h>
 #include <qdf_types.h>
-#include <wlan_cmn.h>
 #include <reg_services_public_struct.h>
-#include <wlan_reg_tgt_api.h>
+#include <wlan_cmn.h>
 #include <wlan_objmgr_psoc_obj.h>
-#include <../../core/src/reg_priv_objs.h>
-#include <../../core/src/reg_utils.h>
-#include <../../core/src/reg_services_common.h>
-#include <../../core/src/reg_lte.h>
-#include <../../core/src/reg_build_chan_list.h>
-#include <../../core/src/reg_offload_11d_scan.h>
+#include <wlan_reg_tgt_api.h>
 
-QDF_STATUS tgt_reg_process_master_chan_list(struct cur_regulatory_info
-					    *reg_info)
+QDF_STATUS
+tgt_reg_process_master_chan_list(struct cur_regulatory_info *reg_info)
 {
 	struct wlan_regulatory_psoc_priv_obj *soc_reg;
 	struct wlan_objmgr_psoc *psoc;
@@ -57,8 +57,8 @@ QDF_STATUS tgt_reg_process_master_chan_list(struct cur_regulatory_info
 }
 
 #ifdef CONFIG_BAND_6GHZ
-QDF_STATUS tgt_reg_process_master_chan_list_ext(struct cur_regulatory_info
-						*reg_info)
+QDF_STATUS
+tgt_reg_process_master_chan_list_ext(struct cur_regulatory_info *reg_info)
 {
 	struct wlan_regulatory_psoc_priv_obj *soc_reg;
 	struct wlan_objmgr_psoc *psoc;
@@ -86,26 +86,26 @@ tgt_reg_process_afc_event(struct afc_regulatory_info *afc_info)
 #endif
 #endif
 
-QDF_STATUS tgt_reg_process_11d_new_country(struct wlan_objmgr_psoc *psoc,
-		struct reg_11d_new_country *reg_11d_new_cc)
+QDF_STATUS
+tgt_reg_process_11d_new_country(struct wlan_objmgr_psoc *psoc,
+				struct reg_11d_new_country *reg_11d_new_cc)
 {
 	return reg_save_new_11d_country(psoc, reg_11d_new_cc->alpha2);
 }
 
-QDF_STATUS tgt_reg_set_regdb_offloaded(struct wlan_objmgr_psoc *psoc,
-		bool val)
+QDF_STATUS tgt_reg_set_regdb_offloaded(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	return reg_set_regdb_offloaded(psoc, val);
 }
 
-QDF_STATUS tgt_reg_set_11d_offloaded(struct wlan_objmgr_psoc *psoc,
-		bool val)
+QDF_STATUS tgt_reg_set_11d_offloaded(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	return reg_set_11d_offloaded(psoc, val);
 }
 
-QDF_STATUS tgt_reg_process_ch_avoid_event(struct wlan_objmgr_psoc *psoc,
-		struct ch_avoid_ind_type *ch_avoid_evnt)
+QDF_STATUS
+tgt_reg_process_ch_avoid_event(struct wlan_objmgr_psoc *psoc,
+			       struct ch_avoid_ind_type *ch_avoid_evnt)
 {
 	return reg_process_ch_avoid_event(psoc, ch_avoid_evnt);
 }
@@ -115,8 +115,7 @@ bool tgt_reg_ignore_fw_reg_offload_ind(struct wlan_objmgr_psoc *psoc)
 	return reg_get_ignore_fw_reg_offload_ind(psoc);
 }
 
-QDF_STATUS tgt_reg_set_6ghz_supported(struct wlan_objmgr_psoc *psoc,
-				      bool val)
+QDF_STATUS tgt_reg_set_6ghz_supported(struct wlan_objmgr_psoc *psoc, bool val)
 {
 	return reg_set_6ghz_supported(psoc, val);
 }
@@ -149,16 +148,16 @@ tgt_reg_set_disable_upper_6g_edge_ch_supp(struct wlan_objmgr_psoc *psoc,
 #endif
 
 #ifdef CONFIG_AFC_SUPPORT
-QDF_STATUS tgt_reg_set_afc_dev_type(struct wlan_objmgr_psoc *psoc,
-				    enum reg_afc_dev_deploy_type
-				    reg_afc_dev_type)
+QDF_STATUS
+tgt_reg_set_afc_dev_type(struct wlan_objmgr_psoc *psoc,
+			 enum reg_afc_dev_deploy_type reg_afc_dev_type)
 {
 	return reg_set_afc_soc_dev_type(psoc, reg_afc_dev_type);
 }
 
-QDF_STATUS tgt_reg_get_afc_dev_type(struct wlan_objmgr_psoc *psoc,
-				    enum reg_afc_dev_deploy_type
-				    *reg_afc_dev_type)
+QDF_STATUS
+tgt_reg_get_afc_dev_type(struct wlan_objmgr_psoc *psoc,
+			 enum reg_afc_dev_deploy_type *reg_afc_dev_type)
 {
 	return reg_get_afc_soc_dev_type(psoc, reg_afc_dev_type);
 }
@@ -180,9 +179,9 @@ tgt_reg_get_eirp_preferred_support(struct wlan_objmgr_psoc *psoc,
 }
 #endif
 
-QDF_STATUS tgt_reg_process_r2p_table_update_response(
-						struct wlan_objmgr_psoc *psoc,
-						uint32_t pdev_id)
+QDF_STATUS
+tgt_reg_process_r2p_table_update_response(struct wlan_objmgr_psoc *psoc,
+					  uint32_t pdev_id)
 {
 	return reg_process_r2p_table_update_response(psoc, pdev_id);
 }

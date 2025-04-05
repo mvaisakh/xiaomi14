@@ -19,10 +19,10 @@
  * DOC: Implements low power heart beat offload feature API's
  */
 
-#include "wlan_pmo_main.h"
 #include "wlan_pmo_lphb.h"
-#include "wlan_pmo_tgt_api.h"
+#include "wlan_pmo_main.h"
 #include "wlan_pmo_obj_mgmt_public_struct.h"
+#include "wlan_pmo_tgt_api.h"
 
 #ifdef FEATURE_WLAN_LPHB
 /**
@@ -35,8 +35,9 @@
  * Return: QDF status
  */
 static QDF_STATUS pmo_core_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
-			struct pmo_psoc_priv_obj *psoc_ctx,
-			struct pmo_lphb_req *lphb_conf_req, bool by_user)
+					    struct pmo_psoc_priv_obj *psoc_ctx,
+					    struct pmo_lphb_req *lphb_conf_req,
+					    bool by_user)
 {
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
 	struct pmo_lphb_enable_req *ts_lphb_enable;
@@ -62,8 +63,7 @@ static QDF_STATUS pmo_core_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
 	if (ts_lphb_enable->enable && ts_lphb_enable->item > 0) {
 		i = ts_lphb_enable->item - 1;
 		qdf_spin_lock_bh(&psoc_ctx->lock);
-		psoc_ctx->wow.lphb_cache[i].cmd
-			= pmo_lphb_set_en_param_indid;
+		psoc_ctx->wow.lphb_cache[i].cmd = pmo_lphb_set_en_param_indid;
 		psoc_ctx->wow.lphb_cache[i].params.lphb_enable_req.enable =
 			ts_lphb_enable->enable;
 		psoc_ctx->wow.lphb_cache[i].params.lphb_enable_req.item =
@@ -75,7 +75,7 @@ static QDF_STATUS pmo_core_send_lphb_enable(struct wlan_objmgr_psoc *psoc,
 	} else {
 		qdf_spin_lock_bh(&psoc_ctx->lock);
 		qdf_mem_zero((void *)&psoc_ctx->wow.lphb_cache,
-				sizeof(psoc_ctx->wow.lphb_cache));
+			     sizeof(psoc_ctx->wow.lphb_cache));
 		qdf_spin_unlock_bh(&psoc_ctx->lock);
 		pmo_debug("cleared all cached LPHB status in WMA context");
 	}
@@ -91,13 +91,12 @@ out:
  *
  * Return: QDF status
  */
-static
-QDF_STATUS pmo_core_send_lphb_tcp_params(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_req *lphb_conf_req)
+static QDF_STATUS
+pmo_core_send_lphb_tcp_params(struct wlan_objmgr_psoc *psoc,
+			      struct pmo_lphb_req *lphb_conf_req)
 {
-	return pmo_tgt_send_lphb_tcp_params(psoc,
-			&lphb_conf_req->params.lphb_tcp_params);
-
+	return pmo_tgt_send_lphb_tcp_params(
+		psoc, &lphb_conf_req->params.lphb_tcp_params);
 }
 
 /**
@@ -107,12 +106,12 @@ QDF_STATUS pmo_core_send_lphb_tcp_params(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF status
  */
-static
-QDF_STATUS pmo_core_send_lphb_tcp_pkt_filter(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_req *lphb_conf_req)
+static QDF_STATUS
+pmo_core_send_lphb_tcp_pkt_filter(struct wlan_objmgr_psoc *psoc,
+				  struct pmo_lphb_req *lphb_conf_req)
 {
-	return pmo_tgt_send_lphb_tcp_pkt_filter(psoc,
-			&lphb_conf_req->params.lphb_tcp_filter_req);
+	return pmo_tgt_send_lphb_tcp_pkt_filter(
+		psoc, &lphb_conf_req->params.lphb_tcp_filter_req);
 }
 
 /**
@@ -122,12 +121,12 @@ QDF_STATUS pmo_core_send_lphb_tcp_pkt_filter(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF status
  */
-static
-QDF_STATUS pmo_core_send_lphb_udp_params(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_req *lphb_conf_req)
+static QDF_STATUS
+pmo_core_send_lphb_udp_params(struct wlan_objmgr_psoc *psoc,
+			      struct pmo_lphb_req *lphb_conf_req)
 {
-	return pmo_tgt_send_lphb_udp_params(psoc,
-			&lphb_conf_req->params.lphb_udp_params);
+	return pmo_tgt_send_lphb_udp_params(
+		psoc, &lphb_conf_req->params.lphb_udp_params);
 }
 
 /**
@@ -137,12 +136,12 @@ QDF_STATUS pmo_core_send_lphb_udp_params(struct wlan_objmgr_psoc *psoc,
  *
  * Return: QDF status
  */
-static
-QDF_STATUS pmo_core_send_lphb_udp_pkt_filter(struct wlan_objmgr_psoc *psoc,
-			struct pmo_lphb_req *lphb_conf_req)
+static QDF_STATUS
+pmo_core_send_lphb_udp_pkt_filter(struct wlan_objmgr_psoc *psoc,
+				  struct pmo_lphb_req *lphb_conf_req)
 {
-	return pmo_tgt_send_lphb_udp_pkt_filter(psoc,
-			&lphb_conf_req->params.lphb_udp_filter_req);
+	return pmo_tgt_send_lphb_udp_pkt_filter(
+		psoc, &lphb_conf_req->params.lphb_udp_filter_req);
 }
 
 /**
@@ -154,8 +153,8 @@ QDF_STATUS pmo_core_send_lphb_udp_pkt_filter(struct wlan_objmgr_psoc *psoc,
  * Return: QDF status
  */
 static QDF_STATUS pmo_process_lphb_conf_req(struct wlan_objmgr_psoc *psoc,
-		struct pmo_psoc_priv_obj *psoc_ctx,
-		struct pmo_lphb_req *lphb_conf_req)
+					    struct pmo_psoc_priv_obj *psoc_ctx,
+					    struct pmo_lphb_req *lphb_conf_req)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
 
@@ -163,7 +162,7 @@ static QDF_STATUS pmo_process_lphb_conf_req(struct wlan_objmgr_psoc *psoc,
 	switch (lphb_conf_req->cmd) {
 	case pmo_lphb_set_en_param_indid:
 		status = pmo_core_send_lphb_enable(psoc, psoc_ctx,
-					lphb_conf_req, true);
+						   lphb_conf_req, true);
 		break;
 
 	case pmo_lphb_set_tcp_pararm_indid:
@@ -201,16 +200,18 @@ void pmo_core_apply_lphb(struct wlan_objmgr_psoc *psoc)
 	for (i = 0; i < 2; i++) {
 		if (psoc_ctx->wow.lphb_cache[i].params.lphb_enable_req.enable) {
 			pmo_debug("LPHB cache for item %d is marked as enable",
-				i + 1);
-			pmo_core_send_lphb_enable(psoc, psoc_ctx,
-				&(psoc_ctx->wow.lphb_cache[i]), false);
+				  i + 1);
+			pmo_core_send_lphb_enable(
+				psoc, psoc_ctx, &(psoc_ctx->wow.lphb_cache[i]),
+				false);
 		}
 	}
 }
 
 QDF_STATUS pmo_core_lphb_config_req(struct wlan_objmgr_psoc *psoc,
-		struct pmo_lphb_req *lphb_req, void *lphb_cb_ctx,
-		pmo_lphb_callback callback)
+				    struct pmo_lphb_req *lphb_req,
+				    void *lphb_cb_ctx,
+				    pmo_lphb_callback callback)
 {
 	struct pmo_psoc_priv_obj *psoc_ctx;
 
@@ -240,4 +241,3 @@ QDF_STATUS pmo_core_lphb_config_req(struct wlan_objmgr_psoc *psoc,
 }
 
 #endif /* FEATURE_WLAN_LPHB */
-

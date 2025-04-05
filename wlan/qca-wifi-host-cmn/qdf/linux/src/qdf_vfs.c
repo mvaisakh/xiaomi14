@@ -22,10 +22,10 @@
  */
 
 #include "qdf_vfs.h"
-#include "qdf_util.h"
 #include "qdf_module.h"
-#include <linux/string.h>
+#include "qdf_util.h"
 #include <linux/kobject.h>
+#include <linux/string.h>
 
 QDF_STATUS
 qdf_vfs_set_file_attributes(struct qdf_dev_obj *devobj,

@@ -23,10 +23,10 @@
  * This file contains dfs target interface for partial offload
  */
 
-#include <target_if.h>
-#include "target_type.h"
 #include "target_if_dfs_partial_offload.h"
 #include "target_if_dfs.h"
+#include "target_type.h"
+#include <target_if.h>
 
 QDF_STATUS target_if_dfs_reg_phyerr_events(struct wlan_objmgr_psoc *psoc)
 {
@@ -35,7 +35,7 @@ QDF_STATUS target_if_dfs_reg_phyerr_events(struct wlan_objmgr_psoc *psoc)
 }
 
 QDF_STATUS target_if_dfs_get_caps(struct wlan_objmgr_pdev *pdev,
-		struct wlan_dfs_caps *dfs_caps)
+				  struct wlan_dfs_caps *dfs_caps)
 {
 	struct wlan_objmgr_psoc *psoc = NULL;
 	struct target_psoc_info *tgt_psoc_info;
@@ -87,9 +87,9 @@ QDF_STATUS target_if_dfs_get_caps(struct wlan_objmgr_pdev *pdev,
 }
 
 #if defined(HOST_DFS_SPOOF_TEST)
-QDF_STATUS target_if_dfs_send_avg_params_to_fw(
-		struct wlan_objmgr_pdev *pdev,
-		struct dfs_radar_found_params *params)
+QDF_STATUS
+target_if_dfs_send_avg_params_to_fw(struct wlan_objmgr_pdev *pdev,
+				    struct dfs_radar_found_params *params)
 {
 	QDF_STATUS status;
 	wmi_unified_t wmi_handle;
@@ -105,17 +105,16 @@ QDF_STATUS target_if_dfs_send_avg_params_to_fw(
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	status = wmi_unified_dfs_send_avg_params_cmd(wmi_handle,
-						     params);
+	status = wmi_unified_dfs_send_avg_params_cmd(wmi_handle, params);
 	if (QDF_IS_STATUS_ERROR(status))
-		target_if_err("dfs radar found average parameters send failed: %d",
-			      status);
+		target_if_err(
+			"dfs radar found average parameters send failed: %d",
+			status);
 
 	return status;
 }
 
-int target_if_dfs_status_check_event_handler(ol_scn_t scn,
-					     uint8_t *data,
+int target_if_dfs_status_check_event_handler(ol_scn_t scn, uint8_t *data,
 					     uint32_t datalen)
 {
 	struct wlan_objmgr_psoc *psoc;
@@ -136,8 +135,8 @@ int target_if_dfs_status_check_event_handler(ol_scn_t scn,
 	}
 
 	/* Since Partial Offload chipsets have only one pdev per psoc, the first
-	 * pdev from the pdev list is used.
-	 */
+   * pdev from the pdev list is used.
+   */
 	pdev = wlan_objmgr_get_pdev_by_id(psoc, 0, WLAN_DFS_ID);
 	if (!pdev) {
 		target_if_err("null pdev");
@@ -165,14 +164,14 @@ int target_if_dfs_status_check_event_handler(ol_scn_t scn,
 	}
 
 	if (wmi_extract_dfs_status_from_fw(wmi_hdl, data, &dfs_status_check) !=
-			QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		target_if_err("failed to extract status response from FW");
 		wlan_objmgr_pdev_release_ref(pdev, WLAN_DFS_ID);
 		return -EINVAL;
 	}
 
 	if (dfs_rx_ops->dfs_action_on_status(pdev, &dfs_status_check) !=
-		QDF_STATUS_SUCCESS) {
+	    QDF_STATUS_SUCCESS) {
 		target_if_err("dfs action on host dfs status from FW failed");
 		wlan_objmgr_pdev_release_ref(pdev, WLAN_DFS_ID);
 		return -EINVAL;

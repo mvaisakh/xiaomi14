@@ -21,22 +21,21 @@
  * DOC: This file contains p2p south bound interface definitions
  */
 
-#include <wlan_objmgr_psoc_obj.h>
-#include <wlan_mgmt_txrx_utils_api.h>
+#include "wlan_p2p_tgt_api.h"
+#include "../../core/src/wlan_p2p_main.h"
+#include "../../core/src/wlan_p2p_off_chan_tx.h"
+#include "../../core/src/wlan_p2p_roc.h"
+#include "wlan_p2p_public_struct.h"
 #include <scheduler_api.h>
-#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_mgmt_txrx_utils_api.h>
 #include <wlan_objmgr_global_obj.h>
 #include <wlan_objmgr_pdev_obj.h>
-#include <wlan_objmgr_vdev_obj.h>
 #include <wlan_objmgr_peer_obj.h>
-#include "wlan_p2p_tgt_api.h"
-#include "wlan_p2p_public_struct.h"
-#include "../../core/src/wlan_p2p_main.h"
-#include "../../core/src/wlan_p2p_roc.h"
-#include "../../core/src/wlan_p2p_off_chan_tx.h"
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
 
-#define IEEE80211_FC0_TYPE_MASK              0x0c
-#define P2P_NOISE_FLOOR_DBM_DEFAULT          (-96)
+#define IEEE80211_FC0_TYPE_MASK 0x0c
+#define P2P_NOISE_FLOOR_DBM_DEFAULT (-96)
 
 static inline struct wlan_lmac_if_p2p_tx_ops *
 wlan_psoc_get_p2p_tx_ops(struct wlan_objmgr_psoc *psoc)
@@ -45,8 +44,7 @@ wlan_psoc_get_p2p_tx_ops(struct wlan_objmgr_psoc *psoc)
 }
 
 #ifdef FEATURE_P2P_LISTEN_OFFLOAD
-QDF_STATUS tgt_p2p_register_lo_ev_handler(
-	struct wlan_objmgr_psoc *psoc)
+QDF_STATUS tgt_p2p_register_lo_ev_handler(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_lmac_if_p2p_tx_ops *p2p_ops;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -60,8 +58,7 @@ QDF_STATUS tgt_p2p_register_lo_ev_handler(
 	return status;
 }
 
-QDF_STATUS tgt_p2p_unregister_lo_ev_handler(
-	struct wlan_objmgr_psoc *psoc)
+QDF_STATUS tgt_p2p_unregister_lo_ev_handler(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_lmac_if_p2p_tx_ops *p2p_ops;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -79,7 +76,7 @@ QDF_STATUS tgt_p2p_lo_event_cb(struct wlan_objmgr_psoc *psoc,
 			       struct p2p_lo_event *event_info)
 {
 	struct p2p_lo_stop_event *lo_stop_event;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct p2p_soc_priv_obj *p2p_soc_obj;
 	QDF_STATUS status;
 
@@ -92,8 +89,8 @@ QDF_STATUS tgt_p2p_lo_event_cb(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	p2p_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-						WLAN_UMAC_COMP_P2P);
+	p2p_soc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_P2P);
 	if (!p2p_soc_obj) {
 		p2p_err("p2p soc object is NULL");
 		if (event_info)
@@ -118,10 +115,8 @@ QDF_STATUS tgt_p2p_lo_event_cb(struct wlan_objmgr_psoc *psoc,
 	msg.bodyptr = lo_stop_event;
 	msg.callback = p2p_process_evt;
 	msg.flush_callback = p2p_event_flush_callback;
-	status = scheduler_post_message(QDF_MODULE_ID_P2P,
-					QDF_MODULE_ID_P2P,
-					QDF_MODULE_ID_TARGET_IF,
-					&msg);
+	status = scheduler_post_message(QDF_MODULE_ID_P2P, QDF_MODULE_ID_P2P,
+					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_mem_free(lo_stop_event->lo_event);
 		qdf_mem_free(lo_stop_event);
@@ -137,7 +132,7 @@ tgt_p2p_add_mac_addr_status_event_cb(struct wlan_objmgr_psoc *psoc,
 				     struct p2p_set_mac_filter_evt *event_info)
 {
 	struct p2p_mac_filter_rsp *mac_filter_rsp;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct p2p_soc_priv_obj *p2p_soc_obj;
 	QDF_STATUS status;
 
@@ -150,8 +145,8 @@ tgt_p2p_add_mac_addr_status_event_cb(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	p2p_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(
-				psoc, WLAN_UMAC_COMP_P2P);
+	p2p_soc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_P2P);
 	if (!p2p_soc_obj) {
 		p2p_err("random_mac:p2p soc object is NULL");
 		return QDF_STATUS_E_INVAL;
@@ -176,8 +171,9 @@ tgt_p2p_add_mac_addr_status_event_cb(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-QDF_STATUS tgt_p2p_register_macaddr_rx_filter_evt_handler(
-	struct wlan_objmgr_psoc *psoc, bool reg)
+QDF_STATUS
+tgt_p2p_register_macaddr_rx_filter_evt_handler(struct wlan_objmgr_psoc *psoc,
+					       bool reg)
 {
 	struct wlan_lmac_if_p2p_tx_ops *p2p_ops;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -185,15 +181,15 @@ QDF_STATUS tgt_p2p_register_macaddr_rx_filter_evt_handler(
 	p2p_ops = wlan_psoc_get_p2p_tx_ops(psoc);
 	if (p2p_ops && p2p_ops->reg_mac_addr_rx_filter_handler) {
 		status = p2p_ops->reg_mac_addr_rx_filter_handler(psoc, reg);
-		p2p_debug("register mac addr rx filter event,  register %d status:%d",
-			  reg, status);
+		p2p_debug(
+			"register mac addr rx filter event,  register %d status:%d",
+			reg, status);
 	}
 
 	return status;
 }
 
-QDF_STATUS tgt_p2p_register_noa_ev_handler(
-	struct wlan_objmgr_psoc *psoc)
+QDF_STATUS tgt_p2p_register_noa_ev_handler(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_lmac_if_p2p_tx_ops *p2p_ops;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -207,8 +203,7 @@ QDF_STATUS tgt_p2p_register_noa_ev_handler(
 	return status;
 }
 
-QDF_STATUS tgt_p2p_unregister_noa_ev_handler(
-	struct wlan_objmgr_psoc *psoc)
+QDF_STATUS tgt_p2p_unregister_noa_ev_handler(struct wlan_objmgr_psoc *psoc)
 {
 	struct wlan_lmac_if_p2p_tx_ops *p2p_ops;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
@@ -223,16 +218,16 @@ QDF_STATUS tgt_p2p_unregister_noa_ev_handler(
 }
 
 void tgt_p2p_scan_event_cb(struct wlan_objmgr_vdev *vdev,
-	struct scan_event *event, void *arg)
+			   struct scan_event *event, void *arg)
 {
 	p2p_scan_event_cb(vdev, event, arg);
 }
 
-QDF_STATUS tgt_p2p_mgmt_download_comp_cb(void *context,
-	qdf_nbuf_t buf, bool free)
+QDF_STATUS tgt_p2p_mgmt_download_comp_cb(void *context, qdf_nbuf_t buf,
+					 bool free)
 {
-	p2p_debug("context:%pK, buf:%pK, free:%d", context,
-		qdf_nbuf_data(buf), free);
+	p2p_debug("context:%pK, buf:%pK, free:%d", context, qdf_nbuf_data(buf),
+		  free);
 
 	qdf_nbuf_free(buf);
 
@@ -240,14 +235,14 @@ QDF_STATUS tgt_p2p_mgmt_download_comp_cb(void *context,
 }
 
 QDF_STATUS tgt_p2p_mgmt_ota_comp_cb(void *context, qdf_nbuf_t buf,
-	uint32_t status, void *tx_compl_params)
+				    uint32_t status, void *tx_compl_params)
 {
 	struct p2p_tx_conf_event *tx_conf_event;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	QDF_STATUS ret;
 
 	p2p_debug("context:%pK, buf:%pK, status:%d, tx complete params:%pK",
-		context, buf, status, tx_compl_params);
+		  context, buf, status, tx_compl_params);
 
 	if (!context) {
 		p2p_err("invalid context");
@@ -268,10 +263,8 @@ QDF_STATUS tgt_p2p_mgmt_ota_comp_cb(void *context, qdf_nbuf_t buf,
 	msg.bodyptr = tx_conf_event;
 	msg.callback = p2p_process_evt;
 	msg.flush_callback = p2p_event_flush_callback;
-	ret = scheduler_post_message(QDF_MODULE_ID_P2P,
-				     QDF_MODULE_ID_P2P,
-				     QDF_MODULE_ID_TARGET_IF,
-				     &msg);
+	ret = scheduler_post_message(QDF_MODULE_ID_P2P, QDF_MODULE_ID_P2P,
+				     QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(ret)) {
 		qdf_mem_free(tx_conf_event);
 		qdf_nbuf_free(buf);
@@ -282,14 +275,15 @@ QDF_STATUS tgt_p2p_mgmt_ota_comp_cb(void *context, qdf_nbuf_t buf,
 }
 
 QDF_STATUS tgt_p2p_mgmt_frame_rx_cb(struct wlan_objmgr_psoc *psoc,
-	struct wlan_objmgr_peer *peer, qdf_nbuf_t buf,
-	struct mgmt_rx_event_params *mgmt_rx_params,
-	enum mgmt_frame_type frm_type)
+				    struct wlan_objmgr_peer *peer,
+				    qdf_nbuf_t buf,
+				    struct mgmt_rx_event_params *mgmt_rx_params,
+				    enum mgmt_frame_type frm_type)
 {
 	struct p2p_rx_mgmt_frame *rx_mgmt;
 	struct p2p_rx_mgmt_event *rx_mgmt_event;
 	struct p2p_soc_priv_obj *p2p_soc_obj;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct wlan_objmgr_vdev *vdev;
 	uint32_t vdev_id;
 	uint8_t *pdata;
@@ -303,8 +297,8 @@ QDF_STATUS tgt_p2p_mgmt_frame_rx_cb(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	p2p_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-			WLAN_UMAC_COMP_P2P);
+	p2p_soc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_P2P);
 	if (!p2p_soc_obj) {
 		p2p_err("p2p ctx is NULL, drop this frame");
 		qdf_nbuf_free(buf);
@@ -337,7 +331,7 @@ QDF_STATUS tgt_p2p_mgmt_frame_rx_cb(struct wlan_objmgr_psoc *psoc,
 	}
 
 	rx_mgmt = qdf_mem_malloc_atomic(sizeof(*rx_mgmt) +
-			mgmt_rx_params->buf_len);
+					mgmt_rx_params->buf_len);
 	if (!rx_mgmt) {
 		p2p_debug_rl("Failed to allocate rx mgmt frame");
 		qdf_nbuf_free(buf);
@@ -349,8 +343,7 @@ QDF_STATUS tgt_p2p_mgmt_frame_rx_cb(struct wlan_objmgr_psoc *psoc,
 	rx_mgmt->rx_freq = mgmt_rx_params->chan_freq;
 	rx_mgmt->vdev_id = vdev_id;
 	rx_mgmt->frm_type = frm_type;
-	rx_mgmt->rx_rssi = mgmt_rx_params->snr +
-				P2P_NOISE_FLOOR_DBM_DEFAULT;
+	rx_mgmt->rx_rssi = mgmt_rx_params->snr + P2P_NOISE_FLOOR_DBM_DEFAULT;
 	rx_mgmt_event->rx_mgmt = rx_mgmt;
 	rx_mgmt_event->p2p_soc_obj = p2p_soc_obj;
 	qdf_mem_copy(rx_mgmt->buf, pdata, mgmt_rx_params->buf_len);
@@ -358,10 +351,8 @@ QDF_STATUS tgt_p2p_mgmt_frame_rx_cb(struct wlan_objmgr_psoc *psoc,
 	msg.bodyptr = rx_mgmt_event;
 	msg.callback = p2p_process_evt;
 	msg.flush_callback = p2p_event_flush_callback;
-	status = scheduler_post_message(QDF_MODULE_ID_P2P,
-					QDF_MODULE_ID_P2P,
-					QDF_MODULE_ID_TARGET_IF,
-					&msg);
+	status = scheduler_post_message(QDF_MODULE_ID_P2P, QDF_MODULE_ID_P2P,
+					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_mem_free(rx_mgmt_event->rx_mgmt);
 		qdf_mem_free(rx_mgmt_event);
@@ -372,11 +363,11 @@ QDF_STATUS tgt_p2p_mgmt_frame_rx_cb(struct wlan_objmgr_psoc *psoc,
 	return status;
 }
 
-QDF_STATUS  tgt_p2p_noa_event_cb(struct wlan_objmgr_psoc *psoc,
-		struct p2p_noa_info *event_info)
+QDF_STATUS tgt_p2p_noa_event_cb(struct wlan_objmgr_psoc *psoc,
+				struct p2p_noa_info *event_info)
 {
 	struct p2p_noa_event *noa_event;
-	struct scheduler_msg msg = {0};
+	struct scheduler_msg msg = { 0 };
 	struct p2p_soc_priv_obj *p2p_soc_obj;
 	QDF_STATUS status;
 
@@ -389,8 +380,8 @@ QDF_STATUS  tgt_p2p_noa_event_cb(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_INVAL;
 	}
 
-	p2p_soc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
-			WLAN_UMAC_COMP_P2P);
+	p2p_soc_obj =
+		wlan_objmgr_psoc_get_comp_private_obj(psoc, WLAN_UMAC_COMP_P2P);
 	if (!p2p_soc_obj) {
 		p2p_err("p2p soc object is NULL");
 		if (event_info)
@@ -415,10 +406,8 @@ QDF_STATUS  tgt_p2p_noa_event_cb(struct wlan_objmgr_psoc *psoc,
 	msg.bodyptr = noa_event;
 	msg.callback = p2p_process_evt;
 	msg.flush_callback = p2p_event_flush_callback;
-	status = scheduler_post_message(QDF_MODULE_ID_P2P,
-					QDF_MODULE_ID_P2P,
-					QDF_MODULE_ID_TARGET_IF,
-					&msg);
+	status = scheduler_post_message(QDF_MODULE_ID_P2P, QDF_MODULE_ID_P2P,
+					QDF_MODULE_ID_TARGET_IF, &msg);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		qdf_mem_free(noa_event->noa_info);
 		qdf_mem_free(noa_event);

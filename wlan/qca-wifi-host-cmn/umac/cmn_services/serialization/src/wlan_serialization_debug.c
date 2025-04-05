@@ -21,28 +21,23 @@
  * This file defines the debug functions for serialization component.
  */
 
-#include <wlan_objmgr_vdev_obj.h>
-#include <wlan_objmgr_pdev_obj.h>
-#include <wlan_utility.h>
-#include "wlan_serialization_utils_i.h"
+#include "wlan_serialization_debug_i.h"
 #include "wlan_serialization_main_i.h"
 #include "wlan_serialization_queue_i.h"
-#include "wlan_serialization_debug_i.h"
+#include "wlan_serialization_utils_i.h"
+#include <wlan_objmgr_pdev_obj.h>
+#include <wlan_objmgr_vdev_obj.h>
+#include <wlan_utility.h>
 
 #ifdef WLAN_SER_DEBUG
 const char *ser_reason_string[SER_QUEUE_ACTION_MAX] = {
-	"REQUEST",
-	"REMOVE",
-	"CANCEL",
-	"TIMEOUT",
-	"ACTIVATION_FAILED",
+	"REQUEST",	     "REMOVE", "CANCEL", "TIMEOUT", "ACTIVATION_FAILED",
 	"PENDING_TO_ACTIVE",
 };
 
-static void wlan_ser_print_queues(
-		qdf_list_t *queue,
-		enum wlan_serialization_node node_type,
-		bool is_active_queue)
+static void wlan_ser_print_queues(qdf_list_t *queue,
+				  enum wlan_serialization_node node_type,
+				  bool is_active_queue)
 {
 	struct wlan_serialization_command_list *cmd_list = NULL;
 	uint32_t queuelen;
@@ -67,56 +62,48 @@ static void wlan_ser_print_queues(
 		if (status != QDF_STATUS_SUCCESS)
 			break;
 
-	if (node_type == WLAN_SER_PDEV_NODE)
-		cmd_list = qdf_container_of(
-				nnode,
-				struct wlan_serialization_command_list,
+		if (node_type == WLAN_SER_PDEV_NODE)
+			cmd_list = qdf_container_of(
+				nnode, struct wlan_serialization_command_list,
 				pdev_node);
-	else
-		cmd_list = qdf_container_of(
-				nnode,
-				struct wlan_serialization_command_list,
+		else
+			cmd_list = qdf_container_of(
+				nnode, struct wlan_serialization_command_list,
 				vdev_node);
 
-	ser_err_no_fl("|%8u|%6u|%6u|%8u|%8u|",
-		      cmd_list->cmd.cmd_type,
-		cmd_list->cmd.cmd_id,
-		wlan_vdev_get_id(cmd_list->cmd.vdev),
-		cmd_list->cmd.is_blocking,
-		cmd_list->cmd.is_high_priority);
+		ser_err_no_fl("|%8u|%6u|%6u|%8u|%8u|", cmd_list->cmd.cmd_type,
+			      cmd_list->cmd.cmd_id,
+			      wlan_vdev_get_id(cmd_list->cmd.vdev),
+			      cmd_list->cmd.is_blocking,
+			      cmd_list->cmd.is_high_priority);
 	}
 }
 
-static void wlan_ser_print_pdev_queue(
-		struct wlan_serialization_pdev_queue *ser_pdev_q_obj,
-		enum wlan_serialization_node node_type)
+static void
+wlan_ser_print_pdev_queue(struct wlan_serialization_pdev_queue *ser_pdev_q_obj,
+			  enum wlan_serialization_node node_type)
 {
 	/*Dump the active queue*/
-	wlan_ser_print_queues(&ser_pdev_q_obj->active_list,
-			      node_type, true);
+	wlan_ser_print_queues(&ser_pdev_q_obj->active_list, node_type, true);
 
 	/*Dump the pending queue*/
-	wlan_ser_print_queues(&ser_pdev_q_obj->pending_list,
-			      node_type, false);
+	wlan_ser_print_queues(&ser_pdev_q_obj->pending_list, node_type, false);
 }
 
-static void wlan_ser_print_vdev_queue(
-		struct wlan_serialization_vdev_queue *ser_vdev_q_obj,
-		enum wlan_serialization_node node_type)
+static void
+wlan_ser_print_vdev_queue(struct wlan_serialization_vdev_queue *ser_vdev_q_obj,
+			  enum wlan_serialization_node node_type)
 {
 	/*Dump the active queue*/
-	wlan_ser_print_queues(&ser_vdev_q_obj->active_list,
-			      node_type, true);
+	wlan_ser_print_queues(&ser_vdev_q_obj->active_list, node_type, true);
 
 	/*Dump the pending queue*/
-	wlan_ser_print_queues(&ser_vdev_q_obj->pending_list,
-			      node_type, false);
+	wlan_ser_print_queues(&ser_vdev_q_obj->pending_list, node_type, false);
 }
 
-static void wlan_ser_print_all_history(
-		struct wlan_serialization_pdev_queue *pdev_queue,
-		bool for_vdev_queue,
-		uint32_t vdev_id)
+static void
+wlan_ser_print_all_history(struct wlan_serialization_pdev_queue *pdev_queue,
+			   bool for_vdev_queue, uint32_t vdev_id)
 {
 	uint8_t idx;
 	uint8_t data_idx;
@@ -148,23 +135,18 @@ static void wlan_ser_print_all_history(
 			if (vdev_id != data->vdev_id)
 				continue;
 		}
-		ser_err_no_fl(
-			"|0x%016llx|%8d|%6d|%7d|%8d|%8d|%6s|%7s|%17s|",
-			data->time,
-			data->cmd_type,
-			data->cmd_id,
-			data->vdev_id,
-			data->is_blocking,
-			data->is_high_priority,
-			data->add_remove ? "ADD" : "REMOVE",
-			data->active_pending ? "ACTIVE" : "PENDING",
-			ser_reason_string[data->ser_reason]);
+		ser_err_no_fl("|0x%016llx|%8d|%6d|%7d|%8d|%8d|%6s|%7s|%17s|",
+			      data->time, data->cmd_type, data->cmd_id,
+			      data->vdev_id, data->is_blocking,
+			      data->is_high_priority,
+			      data->add_remove ? "ADD" : "REMOVE",
+			      data->active_pending ? "ACTIVE" : "PENDING",
+			      ser_reason_string[data->ser_reason]);
 	}
 }
 
-QDF_STATUS wlan_ser_print_history(
-		struct wlan_objmgr_vdev *vdev, uint8_t val,
-		uint32_t sub_val)
+QDF_STATUS wlan_ser_print_history(struct wlan_objmgr_vdev *vdev, uint8_t val,
+				  uint32_t sub_val)
 {
 	struct wlan_ser_pdev_obj *ser_pdev;
 	struct wlan_ser_vdev_obj *ser_vdev;
@@ -173,39 +155,38 @@ QDF_STATUS wlan_ser_print_history(
 	bool for_vdev_queue = false;
 	uint32_t vdev_id = WLAN_INVALID_VDEV_ID;
 
-	ser_pdev = wlan_serialization_get_pdev_obj(
-			wlan_vdev_get_pdev(vdev));
+	ser_pdev = wlan_serialization_get_pdev_obj(wlan_vdev_get_pdev(vdev));
 
 	ser_vdev = wlan_serialization_get_vdev_obj(vdev);
 
 	switch (val) {
 	/*
-	 * Print scan pdev queues
-	 */
+   * Print scan pdev queues
+   */
 	case SER_PDEV_QUEUE_COMP_SCAN:
 		ser_err_no_fl("Serialization SCAN Queues(LIVE)");
 		pdev_q = &ser_pdev->pdev_q[SER_PDEV_QUEUE_COMP_SCAN];
 		wlan_ser_print_pdev_queue(pdev_q, WLAN_SER_PDEV_NODE);
 		break;
 	/*
-	 * Print non scan queues
-	 */
+   * Print non scan queues
+   */
 	case SER_PDEV_QUEUE_COMP_NON_SCAN:
 		pdev_q = &ser_pdev->pdev_q[SER_PDEV_QUEUE_COMP_NON_SCAN];
 		ser_err_no_fl("Serialization NON SCAN Queues(LIVE)");
 		switch (sub_val) {
 		/*
-		 * Print non scan pdev queues
-		 */
+     * Print non scan pdev queues
+     */
 		case SER_PDEV_QUEUE_TYPE:
 			wlan_ser_print_pdev_queue(pdev_q, WLAN_SER_PDEV_NODE);
 			break;
 		/*
-		 * Print non scan pdev queues
-		 */
+     * Print non scan pdev queues
+     */
 		case SER_VDEV_QUEUE_TYPE:
 			vdev_q =
-			    &ser_vdev->vdev_q[SER_VDEV_QUEUE_COMP_NON_SCAN];
+				&ser_vdev->vdev_q[SER_VDEV_QUEUE_COMP_NON_SCAN];
 			for_vdev_queue = true;
 			vdev_id = wlan_vdev_get_id(vdev);
 			wlan_ser_print_vdev_queue(vdev_q, WLAN_SER_VDEV_NODE);
@@ -227,11 +208,9 @@ error:
 qdf_export_symbol(wlan_ser_print_history);
 
 void wlan_ser_update_cmd_history(
-		struct wlan_serialization_pdev_queue *pdev_queue,
-		struct wlan_serialization_command *cmd,
-		enum ser_queue_reason ser_reason,
-		bool add_remove,
-		bool active_queue)
+	struct wlan_serialization_pdev_queue *pdev_queue,
+	struct wlan_serialization_command *cmd,
+	enum ser_queue_reason ser_reason, bool add_remove, bool active_queue)
 {
 	struct ser_data *ser_data_info;
 	struct ser_history *ser_history_info;

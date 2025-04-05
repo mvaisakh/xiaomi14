@@ -20,15 +20,15 @@
  * DOC: contains nud event tracking main function definitions
  */
 
+#include "wlan_dp_nud_tracking.h"
 #include "osif_sync.h"
-#include "wlan_dp_main.h"
+#include "wlan_cm_roam_ucfg_api.h"
 #include "wlan_dlm_ucfg_api.h"
 #include "wlan_dp_cfg.h"
-#include <cdp_txrx_misc.h>
-#include "wlan_cm_roam_ucfg_api.h"
-#include <wlan_cm_api.h>
-#include "wlan_dp_nud_tracking.h"
+#include "wlan_dp_main.h"
 #include "wlan_vdev_mgr_api.h"
+#include <cdp_txrx_misc.h>
+#include <wlan_cm_api.h>
 
 #ifdef WLAN_NUD_TRACKING
 /**
@@ -44,7 +44,8 @@ static uint32_t dp_txrx_get_tx_ack_count(struct wlan_dp_intf *dp_intf)
 	struct wlan_dp_link *dp_link_next;
 	uint32_t ack_count = 0;
 
-	dp_for_each_link_held_safe(dp_intf, dp_link, dp_link_next) {
+	dp_for_each_link_held_safe(dp_intf, dp_link, dp_link_next)
+	{
 		ack_count += cdp_get_tx_ack_stats(soc, dp_link->link_id);
 	}
 
@@ -63,8 +64,7 @@ void dp_nud_set_gateway_addr(struct wlan_objmgr_vdev *vdev,
 	}
 
 	dp_intf = dp_link->dp_intf;
-	qdf_mem_copy(dp_intf->nud_tracking.gw_mac_addr.bytes,
-		     gw_mac_addr.bytes,
+	qdf_mem_copy(dp_intf->nud_tracking.gw_mac_addr.bytes, gw_mac_addr.bytes,
 		     sizeof(struct qdf_mac_addr));
 	dp_intf->nud_tracking.is_gw_updated = true;
 }
@@ -80,8 +80,7 @@ void dp_nud_incr_gw_rx_pkt_cnt(struct wlan_dp_intf *dp_intf,
 	if (!nud_tracking->is_gw_updated)
 		return;
 
-	if (qdf_is_macaddr_equal(&nud_tracking->gw_mac_addr,
-				 mac_addr))
+	if (qdf_is_macaddr_equal(&nud_tracking->gw_mac_addr, mac_addr))
 		qdf_atomic_inc(&nud_tracking->tx_rx_stats.gw_rx_packets);
 }
 
@@ -130,8 +129,8 @@ void dp_nud_reset_tracking(struct wlan_dp_intf *dp_intf)
 			     sizeof(struct dp_nud_tx_rx_stats));
 
 		dp_intf->nud_tracking.curr_state = DP_NUD_NONE;
-		qdf_atomic_set(&dp_intf
-			       ->nud_tracking.tx_rx_stats.gw_rx_packets, 0);
+		qdf_atomic_set(&dp_intf->nud_tracking.tx_rx_stats.gw_rx_packets,
+			       0);
 	}
 }
 
@@ -166,8 +165,7 @@ static void dp_nud_stats_info(struct wlan_dp_intf *dp_intf)
 
 	cb->os_if_dp_nud_stats_info(vdev);
 
-	pause_map = cb->dp_get_pause_map(cb->callback_ctx,
-					 dp_intf->dev);
+	pause_map = cb->dp_get_pause_map(cb->callback_ctx, dp_intf->dev);
 	dp_info("Current pause_map value %x", pause_map);
 	dp_objmgr_put_vdev_by_user(vdev, WLAN_DP_ID);
 }
@@ -186,19 +184,19 @@ static void dp_nud_capture_stats(struct wlan_dp_intf *dp_intf,
 	case DP_NUD_INCOMPLETE:
 	case DP_NUD_PROBE:
 		dp_intf->nud_tracking.tx_rx_stats.pre_tx_packets =
-				dp_intf->stats.tx_packets;
+			dp_intf->stats.tx_packets;
 		dp_intf->nud_tracking.tx_rx_stats.pre_rx_packets =
-				dp_intf->stats.rx_packets;
+			dp_intf->stats.rx_packets;
 		dp_intf->nud_tracking.tx_rx_stats.pre_tx_acked =
-				dp_txrx_get_tx_ack_count(dp_intf);
+			dp_txrx_get_tx_ack_count(dp_intf);
 		break;
 	case DP_NUD_FAILED:
 		dp_intf->nud_tracking.tx_rx_stats.post_tx_packets =
-				dp_intf->stats.tx_packets;
+			dp_intf->stats.tx_packets;
 		dp_intf->nud_tracking.tx_rx_stats.post_rx_packets =
-				dp_intf->stats.rx_packets;
+			dp_intf->stats.rx_packets;
 		dp_intf->nud_tracking.tx_rx_stats.post_tx_acked =
-				dp_txrx_get_tx_ack_count(dp_intf);
+			dp_txrx_get_tx_ack_count(dp_intf);
 		break;
 	default:
 		break;
@@ -226,12 +224,12 @@ static bool dp_nud_honour_failure(struct wlan_dp_intf *dp_intf)
 	dp_objmgr_put_vdev_by_user(vdev, WLAN_DP_ID);
 
 	tx_transmitted = nud_tracking->tx_rx_stats.post_tx_packets -
-		nud_tracking->tx_rx_stats.pre_tx_packets;
+			 nud_tracking->tx_rx_stats.pre_tx_packets;
 	tx_acked = nud_tracking->tx_rx_stats.post_tx_acked -
-		nud_tracking->tx_rx_stats.pre_tx_acked;
+		   nud_tracking->tx_rx_stats.pre_tx_acked;
 	gw_rx_pkt = qdf_atomic_read(&nud_tracking->tx_rx_stats.gw_rx_packets);
 	rx_received = nud_tracking->tx_rx_stats.post_rx_packets -
-		nud_tracking->tx_rx_stats.pre_rx_packets;
+		      nud_tracking->tx_rx_stats.pre_rx_packets;
 	ap_is_gateway = qdf_is_macaddr_equal(&dp_intf->nud_tracking.gw_mac_addr,
 					     (struct qdf_mac_addr *)bssid);
 
@@ -259,8 +257,7 @@ fail:
  *
  * Return: None
  */
-static void dp_nud_set_tracking(struct wlan_dp_intf *dp_intf,
-				uint8_t nud_state,
+static void dp_nud_set_tracking(struct wlan_dp_intf *dp_intf, uint8_t nud_state,
 				bool capture_enabled)
 {
 	dp_intf->nud_tracking.curr_state = nud_state;
@@ -304,8 +301,8 @@ void dp_nud_init_tracking(struct wlan_dp_intf *dp_intf)
 		dp_intf->nud_tracking.ignore_nud_tracking = false;
 		dp_intf->nud_tracking.is_gw_updated = false;
 
-		qdf_atomic_init(&dp_intf
-				->nud_tracking.tx_rx_stats.gw_rx_packets);
+		qdf_atomic_init(
+			&dp_intf->nud_tracking.tx_rx_stats.gw_rx_packets);
 		qdf_create_work(0, &dp_intf->nud_tracking.nud_event_work,
 				dp_nud_failure_work, dp_intf);
 	}
@@ -326,8 +323,8 @@ static void dp_nud_process_failure_event(struct wlan_dp_intf *dp_intf)
 		dp_nud_capture_stats(dp_intf, DP_NUD_FAILED);
 		if (dp_nud_honour_failure(dp_intf)) {
 			dp_intf->nud_tracking.curr_state = DP_NUD_FAILED;
-			qdf_sched_work(0, &dp_intf
-					->nud_tracking.nud_event_work);
+			qdf_sched_work(0,
+				       &dp_intf->nud_tracking.nud_event_work);
 		} else {
 			dp_info("NUD_START [0x%x]", DP_NUD_INCOMPLETE);
 			dp_nud_capture_stats(dp_intf, DP_NUD_INCOMPLETE);
@@ -391,10 +388,10 @@ static void dp_nud_filter_netevent(struct qdf_mac_addr *netdev_addr,
 	}
 
 	/*
-	 * NUD is used for STATION mode only, where all the MLO links
-	 * are assumed to be connected. Hence use the deflink here to check
-	 * if the interface is connected.
-	 */
+   * NUD is used for STATION mode only, where all the MLO links
+   * are assumed to be connected. Hence use the deflink here to check
+   * if the interface is connected.
+   */
 	dp_link = dp_intf->def_link;
 	vdev = dp_objmgr_get_vdev_by_user(dp_link, WLAN_DP_ID);
 	if (!vdev)
@@ -416,10 +413,11 @@ static void dp_nud_filter_netevent(struct qdf_mac_addr *netdev_addr,
 
 	if (!qdf_is_macaddr_equal(&dp_intf->nud_tracking.gw_mac_addr,
 				  gw_mac_addr)) {
-		dp_info("MAC mismatch NUD state %d GW MAC "
-			 QDF_MAC_ADDR_FMT " Event MAC " QDF_MAC_ADDR_FMT,
+		dp_info("MAC mismatch NUD state %d GW MAC " QDF_MAC_ADDR_FMT
+			" Event MAC " QDF_MAC_ADDR_FMT,
 			nud_state,
-			QDF_MAC_ADDR_REF(dp_intf->nud_tracking.gw_mac_addr.bytes),
+			QDF_MAC_ADDR_REF(
+				dp_intf->nud_tracking.gw_mac_addr.bytes),
 			QDF_MAC_ADDR_REF(gw_mac_addr->bytes));
 		return;
 	}
@@ -445,13 +443,13 @@ static void dp_nud_filter_netevent(struct qdf_mac_addr *netdev_addr,
 	case DP_NUD_FAILED:
 		dp_info("DP_NUD_FAILED [0x%x]", nud_state);
 		/*
-		 * This condition is to handle the scenario where NUD_FAILED
-		 * events are received without any NUD_PROBE/INCOMPLETE event
-		 * post roaming. Nud state is set to NONE as part of roaming.
-		 * NUD_FAILED is not honored when the curr state is any state
-		 * other than NUD_PROBE/INCOMPLETE so post roaming, nud state
-		 * is moved to DP_NUD_PROBE to honor future NUD_FAILED events.
-		 */
+     * This condition is to handle the scenario where NUD_FAILED
+     * events are received without any NUD_PROBE/INCOMPLETE event
+     * post roaming. Nud state is set to NONE as part of roaming.
+     * NUD_FAILED is not honored when the curr state is any state
+     * other than NUD_PROBE/INCOMPLETE so post roaming, nud state
+     * is moved to DP_NUD_PROBE to honor future NUD_FAILED events.
+     */
 		if (dp_intf->nud_tracking.curr_state == DP_NUD_NONE) {
 			dp_nud_capture_stats(dp_intf, DP_NUD_PROBE);
 			dp_nud_set_tracking(dp_intf, DP_NUD_PROBE, true);
@@ -460,8 +458,7 @@ static void dp_nud_filter_netevent(struct qdf_mac_addr *netdev_addr,
 		}
 		break;
 	default:
-		dp_info("NUD Event For Other State [0x%x]",
-			nud_state);
+		dp_info("NUD Event For Other State [0x%x]", nud_state);
 		break;
 	}
 	dp_exit();

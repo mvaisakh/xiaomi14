@@ -7,23 +7,23 @@
  *
  * Implementation of MIRACAST specific functionality.
  * For example, starting wfd session.
-*/
+ */
 
+#include "miracast.h"
 #include "sigma_dut.h"
+#include "wpa_ctrl.h"
+#include "wpa_helpers.h"
 #include <dlfcn.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
-#include "wpa_ctrl.h"
-#include "wpa_helpers.h"
-#include "miracast.h"
 #ifdef ANDROID
 #include "properties.h"
 #include <netutils/ifc.h>
 #endif /* ANDROID */
 
-#define HUNDRED_SECOND_TIMEOUT   100 /* 100 seconds */
+#define HUNDRED_SECOND_TIMEOUT 100 /* 100 seconds */
 #define DHCP_LEASE_FILE_PATH "/data/misc/dhcp/dnsmasq.leases"
-#define MIRACAST_CMD_LEN         512
+#define MIRACAST_CMD_LEN 512
 
 static int session_management_control_port = 7236;
 /* Followingng stores p2p interface name after P2P group formation */
@@ -31,20 +31,16 @@ static char wfd_ifname[32];
 
 extern void get_dhcp_info(uint32_t *ipaddr, uint32_t *gateway,
 			  uint32_t *prefixLength, uint32_t *dns1,
-			  uint32_t *dns2, uint32_t *server,
-			  uint32_t *lease);
+			  uint32_t *dns2, uint32_t *server, uint32_t *lease);
 
 extern int do_dhcp(char *);
 
-const char *ipaddr (in_addr_t addr)
+const char *ipaddr(in_addr_t addr)
 {
 	struct in_addr in_addr;
 	in_addr.s_addr = addr;
 	return inet_ntoa(in_addr);
 }
-
-
-
 
 static int miracast_load(struct sigma_dut *dut)
 {
@@ -56,19 +52,19 @@ static int miracast_load(struct sigma_dut *dut)
 	once = 0;
 	dlerror();
 	dut->miracast_lib = dlopen(dut->miracast_lib_path ?
-				   dut->miracast_lib_path : "libmiracast.so",
+					   dut->miracast_lib_path :
+					   "libmiracast.so",
 				   RTLD_LAZY);
 	if (!dut->miracast_lib) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"Fail to load Miracast library %s",
-				dlerror());
+				"Fail to load Miracast library %s", dlerror());
 		return -1;
 	}
-	sigma_dut_print(dut, DUT_MSG_INFO,
-			"Miracast Wi-Fi Display library found - starting service");
+	sigma_dut_print(
+		dut, DUT_MSG_INFO,
+		"Miracast Wi-Fi Display library found - starting service");
 	return 0;
 }
-
 
 static int miracast_unload(struct sigma_dut *dut)
 {
@@ -83,14 +79,13 @@ static int miracast_unload(struct sigma_dut *dut)
 	dut->miracast_lib = NULL;
 	if (err == 0) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
-			 "Miracast library successfully unloaded");
+				"Miracast library successfully unloaded");
 	} else {
 		sigma_dut_print(dut, DUT_MSG_INFO,
-			"Failed to unload Miracast library");
+				"Failed to unload Miracast library");
 	}
 	return err;
 }
-
 
 static void get_modified_peer_mac_address(struct sigma_dut *dut)
 {
@@ -102,12 +97,13 @@ static void get_modified_peer_mac_address(struct sigma_dut *dut)
 	dut->modified_peer_mac_address[0] = '\0';
 	ctrl = open_wpa_mon(wfd_ifname); /* Refer to wfd_ifname */
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		return;
 	}
-	res = get_wpa_cli_event(dut, ctrl, "AP-STA-CONNECTED",
-				event_buf, sizeof(event_buf));
+	res = get_wpa_cli_event(dut, ctrl, "AP-STA-CONNECTED", event_buf,
+				sizeof(event_buf));
 	wpa_ctrl_detach(ctrl);
 	wpa_ctrl_close(ctrl);
 
@@ -131,11 +127,9 @@ static void get_modified_peer_mac_address(struct sigma_dut *dut)
 		sizeof(dut->modified_peer_mac_address));
 }
 
-
 static int get_peer_ip_p2p_go(struct sigma_dut *dut, char *ipaddr,
 			      unsigned int wait_limit)
 {
-
 	FILE *fp;
 	char *macaddr;
 
@@ -183,11 +177,12 @@ static int get_peer_ip_p2p_go(struct sigma_dut *dut, char *ipaddr,
 			if (str1 == NULL)
 				break;
 
-			strlcpy(ipaddr,str1,32);
+			strlcpy(ipaddr, str1, 32);
 
-			sigma_dut_print(dut, DUT_MSG_INFO,
-					"Peer IP Address obtained and mac %s %s",
-					ipaddr, dummy_macaddress);
+			sigma_dut_print(
+				dut, DUT_MSG_INFO,
+				"Peer IP Address obtained and mac %s %s",
+				ipaddr, dummy_macaddress);
 
 			/* Match all the octets of MAC address */
 			if (strncasecmp(macaddr, dummy_macaddress, 17) == 0) {
@@ -211,29 +206,26 @@ static int get_peer_ip_p2p_go(struct sigma_dut *dut, char *ipaddr,
 	return 0;
 }
 
-
 static int miracast_start_dhcp_client(struct sigma_dut *dut, const char *ifname)
 {
 	int ret = ifc_init();
 
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "ifc init returned %d", ret);
-	ret = do_dhcp((char *) ifname);
+	ret = do_dhcp((char *)ifname);
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "do dhcp returned %d", ret);
 	return 0;
 }
-
 
 static void miracast_stop_dhcp_client(struct sigma_dut *dut, const char *ifname)
 {
 	ifc_close();
 }
 
-
 static int get_peer_ip_p2p_client(struct sigma_dut *dut, char *ipAddr,
 				  const char *intf, unsigned int wait_limit)
 {
-	uint32_t ipaddress, gateway, prefixLength,
-		dns1, dns2, serveraddr, lease;
+	uint32_t ipaddress, gateway, prefixLength, dns1, dns2, serveraddr,
+		lease;
 
 	get_dhcp_info(&ipaddress, &gateway, &prefixLength, &dns1, &dns2,
 		      &serveraddr, &lease);
@@ -250,39 +242,33 @@ static int get_peer_ip_p2p_client(struct sigma_dut *dut, char *ipAddr,
 	return wait_limit == 0 ? -1 : 0;
 }
 
-
 static int get_p2p_connection_event(struct sigma_dut *dut,
-				    const char *input_intf,
-				    char *output_intf,
-				    int size_output_intf,
-				    int *is_group_owner)
+				    const char *input_intf, char *output_intf,
+				    int size_output_intf, int *is_group_owner)
 {
 	/*
-	* Poll for the P2P Connection
-	* Then poll for IP
-	* Then poll for WFD session ID and exit
-	* P2P connection done
-	* Loop till connection is ready
-	*/
+   * Poll for the P2P Connection
+   * Then poll for IP
+   * Then poll for WFD session ID and exit
+   * P2P connection done
+   * Loop till connection is ready
+   */
 	struct wpa_ctrl *ctrl;
 	char *mode_string;
 	char event_buf[256];
 	char *ifname;
 	char *pos;
 	int res = 0;
-	const char *events[] = {
-		"P2P-GROUP-STARTED",
-		"P2P-GO-NEG-FAILURE",
-		"P2P-GROUP-FORMATION-FAILURE",
-		NULL
-	};
+	const char *events[] = { "P2P-GROUP-STARTED", "P2P-GO-NEG-FAILURE",
+				 "P2P-GROUP-FORMATION-FAILURE", NULL };
 
 	/* Wait for WPA CLI EVENTS */
 	/* Default timeout is 120s */
 	ctrl = open_wpa_mon(input_intf);
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		return -1;
 	}
 
@@ -340,9 +326,8 @@ static int get_p2p_connection_event(struct sigma_dut *dut,
 	return 0;
 }
 
-
 /* Following serves as an entry point function to perform rtsp tasks */
-static void * miracast_rtsp_thread_entry(void *ptr)
+static void *miracast_rtsp_thread_entry(void *ptr)
 {
 	struct sigma_dut *dut = ptr;
 	char output_ifname[16];
@@ -355,19 +340,21 @@ static void * miracast_rtsp_thread_entry(void *ptr)
 					 const char *, /* Peer IP */
 					 int, /* RTSP port number */
 					 int, /* WFD Device Type; 0-Source,
-						 1-P-Sink, 2-Secondary Sink */
+                                              1-P-Sink, 2-Secondary Sink */
 					 int *); /* for returning session ID */
 
 	miracast_load(dut);
 
 	if (dut->main_ifname) {
 		intf = get_main_ifname(dut);
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"miracast_rtsp_thread_entry: sigma_main_ifname = [%s]",
-				intf);
+		sigma_dut_print(
+			dut, DUT_MSG_DEBUG,
+			"miracast_rtsp_thread_entry: sigma_main_ifname = [%s]",
+			intf);
 	} else {
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"miracast_rtsp_thread_entry: sigma_main_ifname is NULL");
+		sigma_dut_print(
+			dut, DUT_MSG_DEBUG,
+			"miracast_rtsp_thread_entry: sigma_main_ifname is NULL");
 	}
 
 	if (get_p2p_connection_event(dut, intf, output_ifname,
@@ -412,8 +399,8 @@ static void * miracast_rtsp_thread_entry(void *ptr)
 		}
 	}
 
-	extn_start_wfd_connection = dlsym(dut->miracast_lib,
-					  "start_wfd_connection");
+	extn_start_wfd_connection =
+		dlsym(dut->miracast_lib, "start_wfd_connection");
 	if (extn_start_wfd_connection) {
 		extn_start_wfd_connection(NULL, peer_ip_address,
 					  session_management_control_port,
@@ -431,35 +418,34 @@ EXIT:
 	return NULL;
 }
 
-
 /*----------------------------------------------------------------------
   WFD Source IE: 000601101c440036
   len        WFD device info          control port              throughput
   110]    [00000 00100010 000]    [00011 10001000 100]    [00000 00000110 110]
-				       = 7236
+                                       = 7236
 
   WFD Sink IE: 000601511c440036
   len        WFD device info          control port              throughput
   110]    [00000 00101010 001]    [00011 10001000 100]    [00000 00000110 110]
-				       = 7236
+                                       = 7236
 
   WFD device info:
   BITS        NAME                DESCRIPTION
   -------------------------------------------
   1:0     WFD Device Type     0b00: WFD Source
-			      0b01: Primary Sink
-			      0b10: Secondary Sink
-			      0b11: Dual Role, either WFD Source/Primary sink
+                              0b01: Primary Sink
+                              0b10: Secondary Sink
+                              0b11: Dual Role, either WFD Source/Primary sink
 
   5:4     WFD Session         0b00: Not available for WFD Session
-			Availibility	0b01: Available for WFD Session
-							0b10, 0b11: Reserved
+                        Availibility	0b01: Available for WFD Session
+                                                        0b10, 0b11: Reserved
 
   6       WSD Support Bit     0b0: WFD Service Discovery not supported
-			      0b1: WFD Service Discovery supported
+                              0b1: WFD Service Discovery supported
 
   8       CP Support Bit      0b0: Content Protection via HDCP not supported
-			      0b1: Content Protection via HDCP supported
+                              0b1: Content Protection via HDCP supported
 ---------------------------------------------------------------------------
 */
 
@@ -470,8 +456,8 @@ static void miracast_set_wfd_ie(struct sigma_dut *sigma_dut)
 	if (sigma_dut->main_ifname != NULL)
 		intf = get_main_ifname(sigma_dut);
 
-	sigma_dut_print(sigma_dut, DUT_MSG_DEBUG, "miracast_set_wfd_ie() = intf = %s",
-			intf);
+	sigma_dut_print(sigma_dut, DUT_MSG_DEBUG,
+			"miracast_set_wfd_ie() = intf = %s", intf);
 	wpa_command(intf, "SET wifi_display 1");
 
 	if (sigma_dut->wfd_device_type == 0) {
@@ -483,7 +469,6 @@ static void miracast_set_wfd_ie(struct sigma_dut *sigma_dut)
 	}
 }
 
-
 void miracast_init(struct sigma_dut *dut)
 {
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Create thread pool for VDS");
@@ -491,12 +476,10 @@ void miracast_init(struct sigma_dut *dut)
 	sigma_dut_print(dut, DUT_MSG_DEBUG, "Clear groupID @ start");
 }
 
-
 void miracast_deinit(struct sigma_dut *dut)
 {
-	(void) miracast_unload(dut);
+	(void)miracast_unload(dut);
 }
-
 
 static void miracast_generate_string_cmd(struct sigma_cmd *cmd, char *strcmd,
 					 size_t size)
@@ -524,8 +507,7 @@ static void miracast_generate_string_cmd(struct sigma_cmd *cmd, char *strcmd,
 	printf("Miracast: generated command: %s\n", strcmd);
 }
 
-
-static void * auto_go_thread_entry(void *ptr)
+static void *auto_go_thread_entry(void *ptr)
 {
 	struct sigma_dut *dut = ptr;
 	struct wpa_ctrl *ctrl;
@@ -539,7 +521,7 @@ static void * auto_go_thread_entry(void *ptr)
 					 const char *, /* Peer IP */
 					 int, /* RTSP port number */
 					 int, /* WFD Device Type; 0-Source,
-						1-P-Sink, 2-Secondary Sink */
+                                             1-P-Sink, 2-Secondary Sink */
 					 int *); /* for returning session ID */
 
 	stop_dhcp(dut, wfd_ifname, 1);
@@ -550,12 +532,13 @@ static void * auto_go_thread_entry(void *ptr)
 	sigma_dut_print(dut, DUT_MSG_INFO, "Wait for AP-STA-CONNECTED");
 	ctrl = open_wpa_mon(wfd_ifname); /* Refer to wfd_ifname */
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		goto THR_EXIT;
 	}
-	res = get_wpa_cli_event(dut, ctrl, "AP-STA-CONNECTED",
-				event_buf, sizeof(event_buf));
+	res = get_wpa_cli_event(dut, ctrl, "AP-STA-CONNECTED", event_buf,
+				sizeof(event_buf));
 	wpa_ctrl_detach(ctrl);
 	wpa_ctrl_close(ctrl);
 
@@ -581,8 +564,8 @@ static void * auto_go_thread_entry(void *ptr)
 	}
 
 	sigma_dut_print(dut, DUT_MSG_INFO, "dlsym %p", dut->miracast_lib);
-	extn_start_wfd_connection = dlsym(dut->miracast_lib,
-					  "start_wfd_connection");
+	extn_start_wfd_connection =
+		dlsym(dut->miracast_lib, "start_wfd_connection");
 	if (!extn_start_wfd_connection)
 		sigma_dut_print(dut, DUT_MSG_INFO, "dlsym function NULL");
 	else
@@ -595,7 +578,6 @@ THR_EXIT:
 	sigma_dut_print(dut, DUT_MSG_INFO, "Reached auto GO thread exit");
 	return NULL;
 }
-
 
 void miracast_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 				struct sigma_cmd *cmd)
@@ -612,7 +594,7 @@ void miracast_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 	miracast_stop_dhcp_client(dut, intf);
 
 	/* This is where vendor Miracast library is loaded and function pointers
-	 * to Miracast functions (defined by CAPI) are loaded. */
+   * to Miracast functions (defined by CAPI) are loaded. */
 
 	if (miracast_load(dut) != 0) {
 		sigma_dut_print(dut, DUT_MSG_INFO,
@@ -635,28 +617,25 @@ void miracast_sta_reset_default(struct sigma_dut *dut, struct sigma_conn *conn,
 
 	/* delete threads if any */
 	/* TODO: if dut->rtsp_thread_handle running, call
-	 * miracast_release_rtsp_thread_resources(dut); */
+   * miracast_release_rtsp_thread_resources(dut); */
 }
-
 
 void miracast_start_autonomous_go(struct sigma_dut *dut,
 				  struct sigma_conn *conn,
 				  struct sigma_cmd *cmd, char *ifname)
 {
 	strlcpy(wfd_ifname, ifname, sizeof(wfd_ifname));
-	(void) pthread_create(&dut->rtsp_thread_handle, NULL,
-			      auto_go_thread_entry, dut);
+	(void)pthread_create(&dut->rtsp_thread_handle, NULL,
+			     auto_go_thread_entry, dut);
 }
-
 
 static void miracast_rtsp_thread_create(struct sigma_dut *dut,
 					struct sigma_conn *conn,
 					struct sigma_cmd *cmd)
 {
-	(void) pthread_create(&dut->rtsp_thread_handle, NULL,
-			      miracast_rtsp_thread_entry, dut);
+	(void)pthread_create(&dut->rtsp_thread_handle, NULL,
+			     miracast_rtsp_thread_entry, dut);
 }
-
 
 int miracast_dev_send_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 			    struct sigma_cmd *cmd)
@@ -703,7 +682,7 @@ int miracast_dev_send_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 		return 1;
 	}
 
-	if (strcasecmp(rtsp_msg_type,"SET_PARAMETER") == 0) {
+	if (strcasecmp(rtsp_msg_type, "SET_PARAMETER") == 0) {
 		const char *set_parameter = get_param(cmd, "SetParameter");
 		const char *transportType = get_param(cmd, "TransportType");
 
@@ -744,11 +723,10 @@ int miracast_dev_send_frame(struct sigma_dut *dut, struct sigma_conn *conn,
 	return 0;
 }
 
-
 int miracast_dev_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 			     struct sigma_cmd *cmd)
 {
-	const char *service_type = get_param(cmd,"ServiceType");
+	const char *service_type = get_param(cmd, "ServiceType");
 	int (*dev_exec_action)(const char *);
 	char string_cmd[MIRACAST_CMD_LEN] = { 0 };
 
@@ -773,7 +751,6 @@ int miracast_dev_exec_action(struct sigma_dut *dut, struct sigma_conn *conn,
 	return dev_exec_action(string_cmd);
 }
 
-
 int miracast_preset_testparameters(struct sigma_dut *dut,
 				   struct sigma_conn *conn,
 				   struct sigma_cmd *cmd)
@@ -795,7 +772,8 @@ int miracast_preset_testparameters(struct sigma_dut *dut,
 					     sizeof(string_resp));
 	if (ret == SIGMA_ERROR) {
 		send_resp(dut, conn, SIGMA_ERROR,
-			  "Miracast extension reported error in the command sta_preset_testparameters");
+			  "Miracast extension reported error in the command "
+			  "sta_preset_testparameters");
 		return 0;
 	}
 
@@ -809,7 +787,6 @@ int miracast_preset_testparameters(struct sigma_dut *dut,
 
 	return 1;
 }
-
 
 static int get_p2p_peers(struct sigma_dut *dut, char *respbuf, size_t bufsize)
 {
@@ -848,7 +825,6 @@ static int get_p2p_peers(struct sigma_dut *dut, char *respbuf, size_t bufsize)
 	return 0;
 }
 
-
 int miracast_cmd_sta_get_parameter(struct sigma_dut *dut,
 				   struct sigma_conn *conn,
 				   struct sigma_cmd *cmd)
@@ -857,7 +833,7 @@ int miracast_cmd_sta_get_parameter(struct sigma_dut *dut,
 	/* const char *program = get_param(cmd, "Program"); */
 	const char *parameter = get_param(cmd, "Parameter");
 	char resp_buf[1024]; /* may need to change depending on number of peer
-				devices found */
+                          devices found */
 
 	if (!parameter) {
 		send_resp(dut, conn, SIGMA_COMPLETE, "NULL");
@@ -878,7 +854,6 @@ int miracast_cmd_sta_get_parameter(struct sigma_dut *dut,
 	return 0;
 }
 
-
 int miracast_mdns_start_wfd_connection(struct sigma_dut *dut,
 				       struct sigma_conn *conn,
 				       struct sigma_cmd *cmd)
@@ -891,7 +866,7 @@ int miracast_mdns_start_wfd_connection(struct sigma_dut *dut,
 					 const char *, /* Peer IP */
 					 int, /* RTSP port number */
 					 int, /* WFD Device Type; 0-Source,
-						1-P-Sink, 2-Secondary Sink */
+                                             1-P-Sink, 2-Secondary Sink */
 					 int *); /* for returning session ID */
 	int count = 0;
 	char *sig_resp = NULL;
@@ -899,8 +874,8 @@ int miracast_mdns_start_wfd_connection(struct sigma_dut *dut,
 	if (init_wfd)
 		int_init_wfd = atoi(init_wfd);
 
-	extn_start_wfd_connection = dlsym(dut->miracast_lib,
-					  "start_wfd_connection");
+	extn_start_wfd_connection =
+		dlsym(dut->miracast_lib, "start_wfd_connection");
 	if (!extn_start_wfd_connection)
 		return -1;
 	if (int_init_wfd != 0) {
@@ -926,7 +901,6 @@ int miracast_mdns_start_wfd_connection(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, sig_resp);
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 						      struct sigma_conn *conn,
@@ -963,7 +937,7 @@ static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 					 const char *, /* Peer IP */
 					 int, /* RTSP port number */
 					 int, /* WFD Device Type; 0-Source,
-						 1-P-Sink, 2-Secondary Sink */
+                                              1-P-Sink, 2-Secondary Sink */
 					 int *); /* for returning session ID */
 	int count = 0;
 
@@ -1068,7 +1042,7 @@ static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 	/* Extracting Availability Bit */
 	ctemp[0] = availability[21];
 	ctemp[1] = '\0';
-	avail_bit = (int) strtol(ctemp, NULL, 16);
+	avail_bit = (int)strtol(ctemp, NULL, 16);
 
 	if ((avail_bit & 0x3) == 0) {
 		send_resp(dut, conn, SIGMA_COMPLETE,
@@ -1085,10 +1059,10 @@ static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 				snprintf(rtspport, 5, "%s", availability);
 		}
 		sigma_dut_print(dut, DUT_MSG_INFO,
-				"rtsp_port = %s, availability = %s ",
-				rtspport, availability);
-		session_management_control_port = (int) strtol(rtspport, NULL,
-							       16);
+				"rtsp_port = %s, availability = %s ", rtspport,
+				availability);
+		session_management_control_port =
+			(int)strtol(rtspport, NULL, 16);
 		sigma_dut_print(dut, DUT_MSG_INFO,
 				"SessionManagementControlPort = %d",
 				session_management_control_port);
@@ -1097,8 +1071,7 @@ static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 	memset(resp_buf, 0, sizeof(resp_buf));
 	res = wpa_command_resp(intf, cmd_buf, resp_buf, sizeof(resp_buf));
 	if (res < 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"wpa_command_resp failed");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "wpa_command_resp failed");
 		return 1;
 	}
 	if (strncmp(resp_buf, "FAIL", 4) == 0) {
@@ -1128,10 +1101,10 @@ static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 	snprintf(sig_resp_buf, sizeof(sig_resp_buf), "result");
 
 	if (is_group_owner) {
-		stop_dhcp(dut, output_intf,1);
+		stop_dhcp(dut, output_intf, 1);
 		snprintf(sig_resp_buf + strlen(sig_resp_buf),
 			 sizeof(sig_resp_buf) - strlen(sig_resp_buf), ",GO");
-		start_dhcp(dut, output_intf,1);
+		start_dhcp(dut, output_intf, 1);
 		sleep(5);
 	} else {
 		snprintf(sig_resp_buf + strlen(sig_resp_buf),
@@ -1144,8 +1117,8 @@ static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 	snprintf(sig_resp_buf + strlen(sig_resp_buf),
 		 sizeof(sig_resp_buf) - strlen(sig_resp_buf), ",GroupID,");
 
-	res = get_wpa_status(output_intf, "p2p_device_address",
-			     p2p_dev_address, sizeof(p2p_dev_address));
+	res = get_wpa_status(output_intf, "p2p_device_address", p2p_dev_address,
+			     sizeof(p2p_dev_address));
 	if (res < 0)
 		return -1;
 	sigma_dut_print(dut, DUT_MSG_INFO, "p2p_dev_address %s",
@@ -1180,12 +1153,12 @@ static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 	}
 
 	if (dut->wfd_device_type != 0)
-		sm_control_port = (int) strtol(rtspport, NULL, 16);
+		sm_control_port = (int)strtol(rtspport, NULL, 16);
 	else
 		sm_control_port = 7236;
 
-	extn_start_wfd_connection = dlsym(dut->miracast_lib,
-					  "start_wfd_connection");
+	extn_start_wfd_connection =
+		dlsym(dut->miracast_lib, "start_wfd_connection");
 	if (!extn_start_wfd_connection)
 		return -1;
 	extn_start_wfd_connection(NULL, peer_ip_address, sm_control_port,
@@ -1202,7 +1175,6 @@ static enum sigma_cmd_result cmd_start_wfd_connection(struct sigma_dut *dut,
 	send_resp(dut, conn, SIGMA_COMPLETE, sig_resp_buf);
 	return 0;
 }
-
 
 static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 						      struct sigma_conn *conn,
@@ -1225,7 +1197,8 @@ static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 					 const char * /* Peer IP */,
 					 int /* RTSP port number */,
 					 int /* WFD Device Type; 0-Source,
-						1-P-Sink, 2-Secondary Sink */,
+                                          1-P-Sink, 2-Secondary Sink */
+					 ,
 					 int *); /* for returning session ID */
 
 	snprintf(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s", p2p_dev_id);
@@ -1259,8 +1232,8 @@ static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 		strlcpy(method, "pbc", sizeof(method));
 		break;
 	}
-	snprintf(cmd_buf + strlen(cmd_buf),
-		 sizeof(cmd_buf) - strlen(cmd_buf), " join");
+	snprintf(cmd_buf + strlen(cmd_buf), sizeof(cmd_buf) - strlen(cmd_buf),
+		 " join");
 
 	/* run provisional discovery */
 	if (p2p_discover_peer(dut, intf, p2p_dev_id, 0) < 0) {
@@ -1278,8 +1251,7 @@ static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 
 	res = wpa_command_resp(intf, cmd_buf, resp_buf, sizeof(resp_buf));
 	if (res < 0) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"wpa_command_resp failed");
+		sigma_dut_print(dut, DUT_MSG_ERROR, "wpa_command_resp failed");
 		return 1;
 	}
 	if (strncmp(resp_buf, "FAIL", 4) == 0) {
@@ -1298,8 +1270,8 @@ static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 
 	miracast_start_dhcp_client(dut, output_ifname);
 
-	if (get_peer_ip_p2p_client(dut, peer_ip_address, output_ifname,
-				   30) < 0) {
+	if (get_peer_ip_p2p_client(dut, peer_ip_address, output_ifname, 30) <
+	    0) {
 		send_resp(dut, conn, SIGMA_ERROR, "Could not get remote IP");
 		return 0;
 	}
@@ -1309,8 +1281,8 @@ static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 		char *sub_elem = NULL;
 		char rtspport[5] = { '7', '2', '3', '6', '\0' };
 
-		sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"Log --- p2p address = %s", p2p_dev_id);
+		sigma_dut_print(dut, DUT_MSG_DEBUG, "Log --- p2p address = %s",
+				p2p_dev_id);
 		snprintf(cmd_buff, sizeof(cmd_buff), "P2P_PEER %s", p2p_dev_id);
 		if (wpa_command_resp(output_ifname, cmd_buff, rtsp_buff,
 				     sizeof(rtsp_buff)) >= 0 &&
@@ -1322,11 +1294,11 @@ static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 			sub_elem += 23;
 			snprintf(rtspport, 5, "%s", sub_elem);
 			sigma_dut_print(dut, DUT_MSG_DEBUG,
-				"rtsp_port = %s, subElem = %s",
-				rtspport, sub_elem);
+					"rtsp_port = %s, subElem = %s",
+					rtspport, sub_elem);
 		}
-		session_management_control_port = (int) strtol(rtspport, NULL,
-							       16);
+		session_management_control_port =
+			(int)strtol(rtspport, NULL, 16);
 		sigma_dut_print(dut, DUT_MSG_DEBUG,
 				"SessionManagementControlPort = %d",
 				session_management_control_port);
@@ -1335,8 +1307,8 @@ static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 		session_management_control_port = 7236;
 	}
 
-	extn_connect_go_start_wfd = dlsym(dut->miracast_lib,
-					  "connect_go_start_wfd");
+	extn_connect_go_start_wfd =
+		dlsym(dut->miracast_lib, "connect_go_start_wfd");
 	if (!extn_connect_go_start_wfd)
 		return -1;
 	extn_connect_go_start_wfd(NULL, peer_ip_address,
@@ -1350,12 +1322,10 @@ static enum sigma_cmd_result cmd_connect_go_start_wfd(struct sigma_dut *dut,
 	return 0;
 }
 
-
 static enum sigma_cmd_result cmd_sta_generate_event(struct sigma_dut *dut,
 						    struct sigma_conn *conn,
 						    struct sigma_cmd *cmd)
 {
-
 	/* const char *intf = get_param(cmd, "Interface"); */
 	/* const char *program = get_param(cmd, "Program"); */
 	const char *type = get_param(cmd, "Type");
@@ -1368,8 +1338,8 @@ static enum sigma_cmd_result cmd_sta_generate_event(struct sigma_dut *dut,
 		return 0;
 	}
 	miracast_generate_string_cmd(cmd, string_cmd, sizeof(string_cmd));
-	extn_sta_generate_event = dlsym(dut->miracast_lib,
-					"sta_generate_event");
+	extn_sta_generate_event =
+		dlsym(dut->miracast_lib, "sta_generate_event");
 	if (!extn_sta_generate_event)
 		return -1;
 	if (strcasecmp(type, "UIBC_Gen") == 0 ||
@@ -1390,8 +1360,9 @@ static enum sigma_cmd_result cmd_sta_generate_event(struct sigma_dut *dut,
 		return 0;
 	} else if (strcasecmp(type, "IdrReq") == 0) {
 		if (dut->wfd_device_type == 0) { /* Source */
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "errorCode, Unsupported Type for Generate Event");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"errorCode, Unsupported Type for Generate Event");
 		} else {
 			send_resp(dut, conn, SIGMA_COMPLETE, NULL);
 			extn_sta_generate_event(string_cmd);
@@ -1400,7 +1371,6 @@ static enum sigma_cmd_result cmd_sta_generate_event(struct sigma_dut *dut,
 	}
 	return 1;
 }
-
 
 static enum sigma_cmd_result cmd_reinvoke_wfd_session(struct sigma_dut *dut,
 						      struct sigma_conn *conn,
@@ -1421,33 +1391,36 @@ static enum sigma_cmd_result cmd_reinvoke_wfd_session(struct sigma_dut *dut,
 					 const char *, /* Peer IP */
 					 int, /* RTSP port number */
 					 int, /* WFD Device Type; 0-Source,
-						 1-P-Sink, 2-Secondary Sink */
+                                              1-P-Sink, 2-Secondary Sink */
 					 int *); /* for returning session ID */
 
 	/* All are compulsory parameters */
 	if (!intf || !grp_id || !invitation_action || !peer_address) {
-		send_resp(dut, conn, SIGMA_INVALID,
-			  "errorCode,Invalid parameters for Reinvoke WFD Session");
+		send_resp(
+			dut, conn, SIGMA_INVALID,
+			"errorCode,Invalid parameters for Reinvoke WFD Session");
 		return 0;
 	}
 
 	if (strcmp(invitation_action, "accept") == 0) {
 		/*
-		 * In a client-joining-a-running-group case, we need to
-		 * separately authorize the invitation.
-		 */
+     * In a client-joining-a-running-group case, we need to
+     * separately authorize the invitation.
+     */
 		miracast_stop_dhcp_client(dut, NULL);
 		sigma_dut_print(dut, DUT_MSG_DEBUG, "Trying to discover GO %s",
 				peer_address);
 		if (p2p_discover_peer(dut, intf, peer_address, 1) < 0) {
-			send_resp(dut, conn, SIGMA_ERROR,
-				  "ErrorCode,Could not discover the requested peer");
+			send_resp(
+				dut, conn, SIGMA_ERROR,
+				"ErrorCode,Could not discover the requested peer");
 			return 0;
 		}
 
 		snprintf(buf, sizeof(buf), "P2P_CONNECT %s %s join auth",
-			 peer_address, dut->wps_method == WFA_CS_WPS_PBC ?
-			 "pbc" : dut->wps_pin);
+			 peer_address,
+			 dut->wps_method == WFA_CS_WPS_PBC ? "pbc" :
+							     dut->wps_pin);
 		if (wpa_command(intf, buf) < 0)
 			return -2;
 
@@ -1461,9 +1434,10 @@ static enum sigma_cmd_result cmd_reinvoke_wfd_session(struct sigma_dut *dut,
 		return -1;
 	}
 	ssid++;
-	sigma_dut_print(dut, DUT_MSG_DEBUG,
-			"Search for persistent group credentials based on SSID: '%s'",
-			ssid);
+	sigma_dut_print(
+		dut, DUT_MSG_DEBUG,
+		"Search for persistent group credentials based on SSID: '%s'",
+		ssid);
 	if (wpa_command_resp(intf, "LIST_NETWORKS", buf, sizeof(buf)) < 0)
 		return -2;
 	pos = strstr(buf, ssid);
@@ -1476,8 +1450,8 @@ static enum sigma_cmd_result cmd_reinvoke_wfd_session(struct sigma_dut *dut,
 	while (pos > buf && pos[-1] != '\n')
 		pos--;
 	id = atoi(pos);
-	snprintf(buf, sizeof(buf), "P2P_INVITE persistent=%d peer=%s",
-		 id, peer_address);
+	snprintf(buf, sizeof(buf), "P2P_INVITE persistent=%d peer=%s", id,
+		 peer_address);
 
 	sigma_dut_print(dut, DUT_MSG_DEBUG,
 			"Trying to discover peer %s for invitation",
@@ -1490,8 +1464,9 @@ static enum sigma_cmd_result cmd_reinvoke_wfd_session(struct sigma_dut *dut,
 
 	ctrl = open_wpa_mon(intf);
 	if (!ctrl) {
-		sigma_dut_print(dut, DUT_MSG_ERROR,
-				"Failed to open wpa_supplicant monitor connection");
+		sigma_dut_print(
+			dut, DUT_MSG_ERROR,
+			"Failed to open wpa_supplicant monitor connection");
 		return -2;
 	}
 
@@ -1503,8 +1478,8 @@ static enum sigma_cmd_result cmd_reinvoke_wfd_session(struct sigma_dut *dut,
 		return -2;
 	}
 
-	res = get_wpa_cli_event(dut, ctrl, "P2P-INVITATION-RESULT",
-				buf, sizeof(buf));
+	res = get_wpa_cli_event(dut, ctrl, "P2P-INVITATION-RESULT", buf,
+				sizeof(buf));
 	wpa_ctrl_detach(ctrl);
 	wpa_ctrl_close(ctrl);
 	if (res < 0)
@@ -1530,8 +1505,8 @@ static enum sigma_cmd_result cmd_reinvoke_wfd_session(struct sigma_dut *dut,
 		return -2;
 	}
 
-	extn_start_wfd_connection = dlsym(dut->miracast_lib,
-					  "start_wfd_connection");
+	extn_start_wfd_connection =
+		dlsym(dut->miracast_lib, "start_wfd_connection");
 	if (extn_start_wfd_connection) {
 		extn_start_wfd_connection(NULL, peer_ip_address,
 					  session_management_control_port,
@@ -1540,54 +1515,44 @@ static enum sigma_cmd_result cmd_reinvoke_wfd_session(struct sigma_dut *dut,
 	} else {
 		sigma_dut_print(dut, DUT_MSG_INFO,
 				"dlsym seems to have error %p %p",
-				dut->miracast_lib,
-				extn_start_wfd_connection);
+				dut->miracast_lib, extn_start_wfd_connection);
 	}
 
 	return 1;
 }
 
-
 static int req_intf_peer(struct sigma_cmd *cmd)
 {
-	if (!get_param(cmd, "interface") ||
-	    !get_param(cmd, "PeerAddress"))
+	if (!get_param(cmd, "interface") || !get_param(cmd, "PeerAddress"))
 		return -1;
 	return 0;
 }
 
-
 static int req_intf_p2pdev_grpid(struct sigma_cmd *cmd)
 {
-	if (!get_param(cmd, "interface") ||
-	    !get_param(cmd, "P2pdevID") ||
+	if (!get_param(cmd, "interface") || !get_param(cmd, "P2pdevID") ||
 	    !get_param(cmd, "GroupID"))
 		return -1;
 	return 0;
 }
 
-
 static int req_intf_prog_type(struct sigma_cmd *cmd)
 {
 	const char *prog = get_param(cmd, "Program");
 
-	if (!get_param(cmd, "interface") ||
-	    !get_param(cmd, "Type") ||
-	    !prog || strcmp(prog, "WFD") != 0)
+	if (!get_param(cmd, "interface") || !get_param(cmd, "Type") || !prog ||
+	    strcmp(prog, "WFD") != 0)
 		return -1;
 	return 0;
 }
 
-
 static int req_intf_peeradd_inv(struct sigma_cmd *cmd)
 {
-	if (!get_param(cmd, "interface") ||
-	    !get_param(cmd, "peerAddress") ||
+	if (!get_param(cmd, "interface") || !get_param(cmd, "peerAddress") ||
 	    !get_param(cmd, "InvitationAction"))
 		return -1;
 	return 0;
 }
-
 
 void miracast_register_cmds(void)
 {

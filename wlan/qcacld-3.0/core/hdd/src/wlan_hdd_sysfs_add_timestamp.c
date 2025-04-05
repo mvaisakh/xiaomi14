@@ -22,11 +22,11 @@
  * dp_pkt_add_ts
  */
 
-#include <wlan_hdd_includes.h>
 #include "osif_psoc_sync.h"
+#include "qdf_trace.h"
+#include <wlan_hdd_includes.h>
 #include <wlan_hdd_sysfs.h>
 #include <wlan_hdd_sysfs_add_timestamp.h>
-#include "qdf_trace.h"
 
 #define MAX_USER_COMMAND_SIZE_TIMESTAMP 512
 
@@ -95,10 +95,9 @@ static int hdd_set_dp_pkt_add_ts_info(char *in_str)
 	return 0;
 }
 
-static ssize_t
-__hdd_sysfs_dp_pkt_add_ts_store(struct hdd_context *hdd_ctx,
-				struct kobj_attribute *attr,
-				char const *buf, size_t count)
+static ssize_t __hdd_sysfs_dp_pkt_add_ts_store(struct hdd_context *hdd_ctx,
+					       struct kobj_attribute *attr,
+					       char const *buf, size_t count)
 {
 	char buf_local[MAX_USER_COMMAND_SIZE_TIMESTAMP + 1];
 	char *str;
@@ -107,8 +106,8 @@ __hdd_sysfs_dp_pkt_add_ts_store(struct hdd_context *hdd_ctx,
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
 
-	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local),
-					      buf, count);
+	ret = hdd_sysfs_validate_and_copy_buf(buf_local, sizeof(buf_local), buf,
+					      count);
 	if (ret) {
 		hdd_err_rl("invalid input");
 		return ret;
@@ -140,22 +139,21 @@ static ssize_t hdd_sysfs_dp_pkt_add_ts_store(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
-	errno_size = __hdd_sysfs_dp_pkt_add_ts_store(hdd_ctx, attr,
-						     buf, count);
+	errno_size = __hdd_sysfs_dp_pkt_add_ts_store(hdd_ctx, attr, buf, count);
 
 	osif_psoc_sync_op_stop(psoc_sync);
 
 	return errno_size;
 }
 
-static ssize_t
-__hdd_sysfs_dp_pkt_add_ts_show(struct hdd_context *hdd_ctx,
-			       struct kobj_attribute *attr, char *buf)
+static ssize_t __hdd_sysfs_dp_pkt_add_ts_show(struct hdd_context *hdd_ctx,
+					      struct kobj_attribute *attr,
+					      char *buf)
 {
 	if (!wlan_hdd_validate_modules_state(hdd_ctx))
 		return -EINVAL;
@@ -176,8 +174,8 @@ static ssize_t hdd_sysfs_dp_pkt_add_ts_show(struct kobject *kobj,
 	if (ret != 0)
 		return ret;
 
-	errno_size = osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy),
-					     &psoc_sync);
+	errno_size =
+		osif_psoc_sync_op_start(wiphy_dev(hdd_ctx->wiphy), &psoc_sync);
 	if (errno_size)
 		return errno_size;
 
@@ -209,8 +207,7 @@ int hdd_sysfs_dp_pkt_add_ts_create(struct kobject *driver_kobject)
 	return error;
 }
 
-void
-hdd_sysfs_dp_pkt_add_ts_destroy(struct kobject *driver_kobject)
+void hdd_sysfs_dp_pkt_add_ts_destroy(struct kobject *driver_kobject)
 {
 	if (!driver_kobject) {
 		hdd_err("could not get driver kobject!");

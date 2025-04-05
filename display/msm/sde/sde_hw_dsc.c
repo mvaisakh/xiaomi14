@@ -4,38 +4,38 @@
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
-#define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
-#include "sde_hw_mdss.h"
-#include "sde_hwio.h"
-#include "sde_hw_catalog.h"
+#define pr_fmt(fmt) "[drm:%s:%d] " fmt, __func__, __LINE__
 #include "sde_hw_dsc.h"
-#include "sde_hw_pingpong.h"
 #include "sde_dbg.h"
-#include "sde_kms.h"
+#include "sde_hw_catalog.h"
 #include "sde_hw_dsc_1_2.h"
+#include "sde_hw_mdss.h"
+#include "sde_hw_pingpong.h"
+#include "sde_hwio.h"
+#include "sde_kms.h"
 
-#define DSC_COMMON_MODE	                0x000
-#define DSC_ENC                         0X004
-#define DSC_PICTURE                     0x008
-#define DSC_SLICE                       0x00C
-#define DSC_CHUNK_SIZE                  0x010
-#define DSC_DELAY                       0x014
-#define DSC_SCALE_INITIAL               0x018
-#define DSC_SCALE_DEC_INTERVAL          0x01C
-#define DSC_SCALE_INC_INTERVAL          0x020
-#define DSC_FIRST_LINE_BPG_OFFSET       0x024
-#define DSC_BPG_OFFSET                  0x028
-#define DSC_DSC_OFFSET                  0x02C
-#define DSC_FLATNESS                    0x030
-#define DSC_RC_MODEL_SIZE               0x034
-#define DSC_RC                          0x038
-#define DSC_RC_BUF_THRESH               0x03C
-#define DSC_RANGE_MIN_QP                0x074
-#define DSC_RANGE_MAX_QP                0x0B0
-#define DSC_RANGE_BPG_OFFSET            0x0EC
+#define DSC_COMMON_MODE 0x000
+#define DSC_ENC 0X004
+#define DSC_PICTURE 0x008
+#define DSC_SLICE 0x00C
+#define DSC_CHUNK_SIZE 0x010
+#define DSC_DELAY 0x014
+#define DSC_SCALE_INITIAL 0x018
+#define DSC_SCALE_DEC_INTERVAL 0x01C
+#define DSC_SCALE_INC_INTERVAL 0x020
+#define DSC_FIRST_LINE_BPG_OFFSET 0x024
+#define DSC_BPG_OFFSET 0x028
+#define DSC_DSC_OFFSET 0x02C
+#define DSC_FLATNESS 0x030
+#define DSC_RC_MODEL_SIZE 0x034
+#define DSC_RC 0x038
+#define DSC_RC_BUF_THRESH 0x03C
+#define DSC_RANGE_MIN_QP 0x074
+#define DSC_RANGE_MAX_QP 0x0B0
+#define DSC_RANGE_BPG_OFFSET 0x0EC
 
-#define DSC_CTL_BLOCK_SIZE              0x300
-#define DSC_CTL(m)     \
+#define DSC_CTL_BLOCK_SIZE 0x300
+#define DSC_CTL(m) \
 	(((m == DSC_NONE) || (m >= DSC_MAX)) ? 0 : (0x1800 - 0x3FC * (m - 1)))
 
 static void sde_hw_dsc_disable(struct sde_hw_dsc *dsc)
@@ -46,8 +46,8 @@ static void sde_hw_dsc_disable(struct sde_hw_dsc *dsc)
 }
 
 static void sde_hw_dsc_config(struct sde_hw_dsc *hw_dsc,
-		struct msm_display_dsc_info *dsc, u32 mode,
-		bool ich_reset_override)
+			      struct msm_display_dsc_info *dsc, u32 mode,
+			      bool ich_reset_override)
 {
 	u32 data;
 	u32 initial_lines = dsc->initial_lines;
@@ -124,15 +124,14 @@ static void sde_hw_dsc_config(struct sde_hw_dsc *hw_dsc,
 }
 
 static void sde_hw_dsc_config_thresh(struct sde_hw_dsc *hw_dsc,
-		struct msm_display_dsc_info *dsc)
+				     struct msm_display_dsc_info *dsc)
 {
 	u16 *lp;
 	int i;
 
 	struct sde_hw_blk_reg_map *dsc_c = &hw_dsc->hw;
 	u32 off = 0x0;
-	struct drm_dsc_rc_range_parameters *rc =
-		dsc->config.rc_range_params;
+	struct drm_dsc_rc_range_parameters *rc = dsc->config.rc_range_params;
 
 	lp = dsc->config.rc_buf_thresh;
 	off = DSC_RC_BUF_THRESH;
@@ -160,10 +159,8 @@ static void sde_hw_dsc_config_thresh(struct sde_hw_dsc *hw_dsc,
 	}
 }
 
-static void sde_hw_dsc_bind_pingpong_blk(
-		struct sde_hw_dsc *hw_dsc,
-		bool enable,
-		const enum sde_pingpong pp)
+static void sde_hw_dsc_bind_pingpong_blk(struct sde_hw_dsc *hw_dsc, bool enable,
+					 const enum sde_pingpong pp)
 {
 	struct sde_hw_blk_reg_map *c;
 	int mux_cfg = 0xF;
@@ -182,11 +179,9 @@ static void sde_hw_dsc_bind_pingpong_blk(
 		SDE_REG_WRITE(c, dsc_ctl_offset, mux_cfg);
 }
 
-
-static struct sde_dsc_cfg *_dsc_offset(enum sde_dsc dsc,
-		struct sde_mdss_cfg *m,
-		void __iomem *addr,
-		struct sde_hw_blk_reg_map *b)
+static struct sde_dsc_cfg *_dsc_offset(enum sde_dsc dsc, struct sde_mdss_cfg *m,
+				       void __iomem *addr,
+				       struct sde_hw_blk_reg_map *b)
 {
 	int i;
 
@@ -204,8 +199,7 @@ static struct sde_dsc_cfg *_dsc_offset(enum sde_dsc dsc,
 	return NULL;
 }
 
-static void _setup_dsc_ops(struct sde_hw_dsc_ops *ops,
-		unsigned long features)
+static void _setup_dsc_ops(struct sde_hw_dsc_ops *ops, unsigned long features)
 {
 	ops->dsc_disable = sde_hw_dsc_disable;
 	ops->dsc_config = sde_hw_dsc_config;
@@ -214,9 +208,8 @@ static void _setup_dsc_ops(struct sde_hw_dsc_ops *ops,
 		ops->bind_pingpong_blk = sde_hw_dsc_bind_pingpong_blk;
 };
 
-struct sde_hw_blk_reg_map *sde_hw_dsc_init(enum sde_dsc idx,
-		void __iomem *addr,
-		struct sde_mdss_cfg *m)
+struct sde_hw_blk_reg_map *sde_hw_dsc_init(enum sde_dsc idx, void __iomem *addr,
+					   struct sde_mdss_cfg *m)
 {
 	struct sde_hw_dsc *c;
 	struct sde_dsc_cfg *cfg;
@@ -235,19 +228,19 @@ struct sde_hw_blk_reg_map *sde_hw_dsc_init(enum sde_dsc idx,
 	if (test_bit(SDE_DSC_HW_REV_1_1, &c->caps->features)) {
 		_setup_dsc_ops(&c->ops, c->caps->features);
 		sde_dbg_reg_register_dump_range(SDE_DBG_NAME, cfg->name,
-				c->hw.blk_off,
-				c->hw.blk_off + c->hw.length,
-				c->hw.xin_id);
+						c->hw.blk_off,
+						c->hw.blk_off + c->hw.length,
+						c->hw.xin_id);
 
 		if ((c->idx == DSC_0) &&
-				test_bit(SDE_DSC_OUTPUT_CTRL, &cfg->features)) {
+		    test_bit(SDE_DSC_OUTPUT_CTRL, &cfg->features)) {
 			dsc_ctl_offset = DSC_CTL(c->idx);
-			sde_dbg_reg_register_dump_range(SDE_DBG_NAME,
-					"dsc_ctl",
-					c->hw.blk_off + dsc_ctl_offset,
-					c->hw.blk_off + dsc_ctl_offset +
-						DSC_CTL_BLOCK_SIZE,
-					c->hw.xin_id);
+			sde_dbg_reg_register_dump_range(
+				SDE_DBG_NAME, "dsc_ctl",
+				c->hw.blk_off + dsc_ctl_offset,
+				c->hw.blk_off + dsc_ctl_offset +
+					DSC_CTL_BLOCK_SIZE,
+				c->hw.xin_id);
 		}
 	} else if (test_bit(SDE_DSC_HW_REV_1_2, &c->caps->features)) {
 		char blk_name[32];
@@ -255,29 +248,29 @@ struct sde_hw_blk_reg_map *sde_hw_dsc_init(enum sde_dsc idx,
 		sde_dsc1_2_setup_ops(&c->ops, c->caps->features);
 
 		sde_dbg_reg_register_dump_range(SDE_DBG_NAME, cfg->name,
-				c->hw.blk_off,
-				c->hw.blk_off + c->hw.length,
-				c->hw.xin_id);
+						c->hw.blk_off,
+						c->hw.blk_off + c->hw.length,
+						c->hw.xin_id);
 
 		snprintf(blk_name, sizeof(blk_name), "dsc_enc_%u",
-				c->idx - DSC_0);
+			 c->idx - DSC_0);
 
-		sde_dbg_reg_register_dump_range(SDE_DBG_NAME,
-				blk_name,
-				c->hw.blk_off + c->caps->sblk->enc.base,
-				c->hw.blk_off + c->caps->sblk->enc.base +
+		sde_dbg_reg_register_dump_range(
+			SDE_DBG_NAME, blk_name,
+			c->hw.blk_off + c->caps->sblk->enc.base,
+			c->hw.blk_off + c->caps->sblk->enc.base +
 				c->caps->sblk->enc.len,
-				c->hw.xin_id);
+			c->hw.xin_id);
 
 		snprintf(blk_name, sizeof(blk_name), "dsc_ctl_%u",
-				c->idx - DSC_0);
+			 c->idx - DSC_0);
 
-		sde_dbg_reg_register_dump_range(SDE_DBG_NAME,
-				blk_name,
-				c->hw.blk_off + c->caps->sblk->ctl.base,
-				c->hw.blk_off + c->caps->sblk->ctl.base +
-					c->caps->sblk->ctl.len,
-				c->hw.xin_id);
+		sde_dbg_reg_register_dump_range(
+			SDE_DBG_NAME, blk_name,
+			c->hw.blk_off + c->caps->sblk->ctl.base,
+			c->hw.blk_off + c->caps->sblk->ctl.base +
+				c->caps->sblk->ctl.len,
+			c->hw.xin_id);
 	} else {
 		SDE_ERROR("failed to setup ops\n");
 		goto error_inv;

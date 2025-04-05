@@ -1,48 +1,45 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights
+ * reserved.
  */
 
-
 #include "dp_catalog.h"
-#include "dp_reg.h"
 #include "dp_debug.h"
 #include "dp_pll.h"
-#include <linux/rational.h>
+#include "dp_reg.h"
 #include <drm/drm_fixed.h>
+#include <linux/rational.h>
 
-#define dp_catalog_get_priv_v420(x) ({ \
-	struct dp_catalog *catalog; \
-	catalog = container_of(x, struct dp_catalog, x); \
-	container_of(catalog->sub, \
-		struct dp_catalog_private_v420, sub); \
-})
+#define dp_catalog_get_priv_v420(x)                                        \
+	({                                                                 \
+		struct dp_catalog *catalog;                                \
+		catalog = container_of(x, struct dp_catalog, x);           \
+		container_of(catalog->sub, struct dp_catalog_private_v420, \
+			     sub);                                         \
+	})
 
-#define dp_read(x) ({ \
-	catalog->sub.read(catalog->dpc, io_data, x); \
-})
+#define dp_read(x) ({ catalog->sub.read(catalog->dpc, io_data, x); })
 
-#define dp_write(x, y) ({ \
-	catalog->sub.write(catalog->dpc, io_data, x, y); \
-})
+#define dp_write(x, y) ({ catalog->sub.write(catalog->dpc, io_data, x, y); })
 
 #define MAX_VOLTAGE_LEVELS 4
 #define MAX_PRE_EMP_LEVELS 4
 
 static u8 const vm_pre_emphasis[MAX_VOLTAGE_LEVELS][MAX_PRE_EMP_LEVELS] = {
-	{0x00, 0x0E, 0x16, 0xFF},       /* pe0, 0 db */
-	{0x00, 0x0E, 0x16, 0xFF},       /* pe1, 3.5 db */
-	{0x00, 0x0E, 0xFF, 0xFF},       /* pe2, 6.0 db */
-	{0xFF, 0xFF, 0xFF, 0xFF}        /* pe3, 9.5 db */
+	{ 0x00, 0x0E, 0x16, 0xFF }, /* pe0, 0 db */
+	{ 0x00, 0x0E, 0x16, 0xFF }, /* pe1, 3.5 db */
+	{ 0x00, 0x0E, 0xFF, 0xFF }, /* pe2, 6.0 db */
+	{ 0xFF, 0xFF, 0xFF, 0xFF } /* pe3, 9.5 db */
 };
 
 /* voltage swing, 0.2v and 1.0v are not support */
 static u8 const vm_voltage_swing[MAX_VOLTAGE_LEVELS][MAX_PRE_EMP_LEVELS] = {
-	{0x07, 0x0F, 0x16, 0xFF}, /* sw0, 0.4v  */
-	{0x11, 0x1E, 0x1F, 0xFF}, /* sw1, 0.6 v */
-	{0x1A, 0x1F, 0xFF, 0xFF}, /* sw1, 0.8 v */
-	{0xFF, 0xFF, 0xFF, 0xFF}  /* sw1, 1.2 v, optional */
+	{ 0x07, 0x0F, 0x16, 0xFF }, /* sw0, 0.4v  */
+	{ 0x11, 0x1E, 0x1F, 0xFF }, /* sw1, 0.6 v */
+	{ 0x1A, 0x1F, 0xFF, 0xFF }, /* sw1, 0.8 v */
+	{ 0xFF, 0xFF, 0xFF, 0xFF } /* sw1, 1.2 v, optional */
 };
 
 struct dp_catalog_private_v420 {
@@ -53,7 +50,7 @@ struct dp_catalog_private_v420 {
 };
 
 static void dp_catalog_aux_setup_v420(struct dp_catalog_aux *aux,
-		struct dp_aux_cfg *cfg)
+				      struct dp_aux_cfg *cfg)
 {
 	struct dp_catalog_private_v420 *catalog;
 	struct dp_io_data *io_data;
@@ -87,8 +84,8 @@ static void dp_catalog_aux_setup_v420(struct dp_catalog_aux *aux,
 	/* DP AUX CFG register programming */
 	for (i = 0; i < PHY_AUX_CFG_MAX; i++) {
 		DP_DEBUG("%s: offset=0x%08x, value=0x%08x\n",
-			dp_phy_aux_config_type_to_string(i),
-			cfg[i].offset, cfg[i].lut[cfg[i].current_index]);
+			 dp_phy_aux_config_type_to_string(i), cfg[i].offset,
+			 cfg[i].lut[cfg[i].current_index]);
 		dp_write(cfg[i].offset, cfg[i].lut[cfg[i].current_index]);
 	}
 	wmb(); /* make sure DP AUX CFG programming happened */
@@ -126,7 +123,7 @@ static void dp_catalog_aux_clear_hw_int_v420(struct dp_catalog_aux *aux)
 }
 
 static void dp_catalog_panel_config_msa_v420(struct dp_catalog_panel *panel,
-					u32 rate, u32 stream_rate_khz)
+					     u32 rate, u32 stream_rate_khz)
 {
 	u32 mvid, nvid, mvid_off = 0, nvid_off = 0;
 	u32 const nvid_fixed = 0x8000;
@@ -148,16 +145,17 @@ static void dp_catalog_panel_config_msa_v420(struct dp_catalog_panel *panel,
 	}
 
 	dp_catalog = container_of(panel, struct dp_catalog, panel);
-	catalog = container_of(dp_catalog->sub, struct dp_catalog_private_v420, sub);
+	catalog = container_of(dp_catalog->sub, struct dp_catalog_private_v420,
+			       sub);
 
 	/*
-	 * MND calculator requires the target clock to be less than half the input clock. To meet
-	 * this requirement, the input clock is scaled here and then the resulting M value is
-	 * scaled by the same factor to offset the pre-scale.
-	 */
+   * MND calculator requires the target clock to be less than half the input
+   * clock. To meet this requirement, the input clock is scaled here and then
+   * the resulting M value is scaled by the same factor to offset the pre-scale.
+   */
 	rational_best_approximation(rate * input_scale, stream_rate_khz,
-			(unsigned long)(1 << 16) - 1,
-			(unsigned long)(1 << 16) - 1, &den, &num);
+				    (unsigned long)(1 << 16) - 1,
+				    (unsigned long)(1 << 16) - 1, &den, &num);
 
 	mvid = (num & 0xFFFF);
 	nvid = (den & 0xFFFF);
@@ -178,13 +176,14 @@ static void dp_catalog_panel_config_msa_v420(struct dp_catalog_panel *panel,
 		nvid_off = DP1_SOFTWARE_NVID - DP_SOFTWARE_NVID;
 	}
 
-	DP_DEBUG("pclk=%ld, lclk=%ld, mvid=0x%x, nvid=0x%x\n", stream_rate_khz, rate, mvid, nvid);
+	DP_DEBUG("pclk=%ld, lclk=%ld, mvid=0x%x, nvid=0x%x\n", stream_rate_khz,
+		 rate, mvid, nvid);
 	dp_write(DP_SOFTWARE_MVID + mvid_off, mvid);
 	dp_write(DP_SOFTWARE_NVID + nvid_off, nvid);
 }
 
 static void dp_catalog_ctrl_phy_lane_cfg_v420(struct dp_catalog_ctrl *ctrl,
-		bool flipped, u8 ln_cnt)
+					      bool flipped, u8 ln_cnt)
 {
 	u32 info = 0x0;
 	struct dp_catalog_private_v420 *catalog;
@@ -207,7 +206,7 @@ static void dp_catalog_ctrl_phy_lane_cfg_v420(struct dp_catalog_ctrl *ctrl,
 }
 
 static void dp_catalog_ctrl_update_vx_px_v420(struct dp_catalog_ctrl *ctrl,
-		u8 v_level, u8 p_level, bool high)
+					      u8 v_level, u8 p_level, bool high)
 {
 	struct dp_catalog_private_v420 *catalog;
 	struct dp_io_data *io_data;
@@ -216,8 +215,8 @@ static void dp_catalog_ctrl_update_vx_px_v420(struct dp_catalog_ctrl *ctrl,
 	u32 phy_version;
 	int idx;
 
-	if (!ctrl || !((v_level < MAX_VOLTAGE_LEVELS)
-		&& (p_level < MAX_PRE_EMP_LEVELS))) {
+	if (!ctrl || !((v_level < MAX_VOLTAGE_LEVELS) &&
+		       (p_level < MAX_PRE_EMP_LEVELS))) {
 		DP_ERR("invalid input\n");
 		return;
 	}
@@ -232,8 +231,8 @@ static void dp_catalog_ctrl_update_vx_px_v420(struct dp_catalog_ctrl *ctrl,
 	DP_DEBUG("version: 0x%x\n", version);
 
 	/*
-	 * For DP controller versions >= 1.2.3
-	 */
+   * For DP controller versions >= 1.2.3
+   */
 	if (version >= 0x10020003 && ctrl->valid_lt_params) {
 		idx = v_level * MAX_VOLTAGE_LEVELS + p_level;
 		if (high) {
@@ -271,16 +270,15 @@ static void dp_catalog_ctrl_update_vx_px_v420(struct dp_catalog_ctrl *ctrl,
 		dp_write(TXn_TX_DRV_LVL_V420, value0);
 		dp_write(TXn_TX_EMP_POST1_LVL, value1);
 
-		DP_DEBUG("hw: vx_value=0x%x px_value=0x%x\n",
-			value0, value1);
+		DP_DEBUG("hw: vx_value=0x%x px_value=0x%x\n", value0, value1);
 	} else {
-		DP_ERR("invalid vx (0x%x=0x%x), px (0x%x=0x%x\n",
-			v_level, value0, p_level, value1);
+		DP_ERR("invalid vx (0x%x=0x%x), px (0x%x=0x%x\n", v_level,
+		       value0, p_level, value1);
 	}
 }
 
 static void dp_catalog_ctrl_lane_pnswap_v420(struct dp_catalog_ctrl *ctrl,
-						u8 ln_pnswap)
+					     u8 ln_pnswap)
 {
 	struct dp_catalog_private_v420 *catalog;
 	struct dp_io_data *io_data;
@@ -310,13 +308,14 @@ static void dp_catalog_put_v420(struct dp_catalog *catalog)
 	if (!catalog)
 		return;
 
-	catalog_priv = container_of(catalog->sub,
-			struct dp_catalog_private_v420, sub);
+	catalog_priv =
+		container_of(catalog->sub, struct dp_catalog_private_v420, sub);
 	devm_kfree(catalog_priv->dev, catalog_priv);
 }
 
 struct dp_catalog_sub *dp_catalog_get_v420(struct device *dev,
-		struct dp_catalog *catalog, struct dp_catalog_io *io)
+					   struct dp_catalog *catalog,
+					   struct dp_catalog_io *io)
 {
 	struct dp_catalog_private_v420 *catalog_priv;
 
@@ -333,11 +332,11 @@ struct dp_catalog_sub *dp_catalog_get_v420(struct device *dev,
 	catalog_priv->io = io;
 	catalog_priv->dpc = catalog;
 
-	catalog_priv->sub.put      = dp_catalog_put_v420;
+	catalog_priv->sub.put = dp_catalog_put_v420;
 
-	catalog->aux.setup         = dp_catalog_aux_setup_v420;
+	catalog->aux.setup = dp_catalog_aux_setup_v420;
 	catalog->aux.clear_hw_interrupts = dp_catalog_aux_clear_hw_int_v420;
-	catalog->panel.config_msa  = dp_catalog_panel_config_msa_v420;
+	catalog->panel.config_msa = dp_catalog_panel_config_msa_v420;
 	catalog->ctrl.phy_lane_cfg = dp_catalog_ctrl_phy_lane_cfg_v420;
 	catalog->ctrl.update_vx_px = dp_catalog_ctrl_update_vx_px_v420;
 	catalog->ctrl.lane_pnswap = dp_catalog_ctrl_lane_pnswap_v420;

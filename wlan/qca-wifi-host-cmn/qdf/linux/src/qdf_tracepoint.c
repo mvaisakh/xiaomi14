@@ -40,8 +40,7 @@ static void qdf_trace_dp_tx_ip_packet(qdf_nbuf_t nbuf, uint8_t *trans_hdr,
 		__qdf_trace_dp_tx_comp_tcp_pkt(nbuf, tcp_seq,
 					       qdf_ntohl(tcph->ack_seq),
 					       qdf_ntohs(tcph->source),
-					       qdf_ntohs(tcph->dest),
-					       latency);
+					       qdf_ntohs(tcph->dest), latency);
 	} else if (ip_proto == QDF_NBUF_TRAC_UDP_TYPE &&
 		   __qdf_trace_dp_tx_comp_udp_pkt_enabled()) {
 		qdf_net_udphdr_t *udph = (qdf_net_udphdr_t *)trans_hdr;
@@ -51,9 +50,9 @@ static void qdf_trace_dp_tx_ip_packet(qdf_nbuf_t nbuf, uint8_t *trans_hdr,
 					       qdf_ntohs(udph->dst_port),
 					       latency);
 	} else if (__qdf_trace_dp_tx_comp_generic_ip_pkt_enabled()) {
-		__qdf_trace_dp_tx_comp_generic_ip_pkt(nbuf, ip_proto, ip_id,
-						      QDF_SWAP_U32(*(uint32_t *)trans_hdr),
-						      latency);
+		__qdf_trace_dp_tx_comp_generic_ip_pkt(
+			nbuf, ip_proto, ip_id,
+			QDF_SWAP_U32(*(uint32_t *)trans_hdr), latency);
 	}
 }
 
@@ -68,20 +67,18 @@ static void qdf_trace_dp_rx_ip_packet(qdf_nbuf_t nbuf, uint8_t *trans_hdr,
 		__qdf_trace_dp_rx_tcp_pkt(nbuf, qdf_ntohl(tcph->seq),
 					  qdf_ntohl(tcph->ack_seq),
 					  qdf_ntohs(tcph->source),
-					  qdf_ntohs(tcph->dest),
-					  latency);
+					  qdf_ntohs(tcph->dest), latency);
 	} else if (ip_proto == QDF_NBUF_TRAC_UDP_TYPE &&
 		   __qdf_trace_dp_rx_udp_pkt_enabled()) {
 		qdf_net_udphdr_t *udph = (qdf_net_udphdr_t *)trans_hdr;
 
 		__qdf_trace_dp_rx_udp_pkt(nbuf, qdf_ntohs(ip_id),
 					  qdf_ntohs(udph->src_port),
-					  qdf_ntohs(udph->dst_port),
-					  latency);
+					  qdf_ntohs(udph->dst_port), latency);
 	} else if (__qdf_trace_dp_rx_generic_ip_pkt_enabled()) {
-		__qdf_trace_dp_rx_generic_ip_pkt(nbuf, ip_proto, ip_id,
-						 QDF_SWAP_U32(*(uint32_t *)trans_hdr),
-						 latency);
+		__qdf_trace_dp_rx_generic_ip_pkt(
+			nbuf, ip_proto, ip_id,
+			QDF_SWAP_U32(*(uint32_t *)trans_hdr), latency);
 	}
 }
 
@@ -98,23 +95,23 @@ void qdf_trace_dp_packet(qdf_nbuf_t nbuf, enum qdf_proto_dir dir,
 	else
 		latency = qdf_nbuf_get_timedelta_us(nbuf);
 
-	ether_type = QDF_SWAP_U16(*(uint16_t *)(data +
-						QDF_NBUF_TRAC_ETH_TYPE_OFFSET));
+	ether_type = QDF_SWAP_U16(
+		*(uint16_t *)(data + QDF_NBUF_TRAC_ETH_TYPE_OFFSET));
 
 	if (unlikely(ether_type == QDF_ETH_TYPE_8021Q)) {
-		ether_type = QDF_SWAP_U16(*(uint16_t *)(data +
-					   QDF_NBUF_TRAC_VLAN_ETH_TYPE_OFFSET));
+		ether_type = QDF_SWAP_U16(*(
+			uint16_t *)(data + QDF_NBUF_TRAC_VLAN_ETH_TYPE_OFFSET));
 		ip_offset = QDF_NBUF_TRAC_VLAN_IP_OFFSET;
 	} else if (unlikely(ether_type == QDF_ETH_TYPE_8021AD)) {
-		ether_type = QDF_SWAP_U16(*(uint16_t *)(data +
+		ether_type = QDF_SWAP_U16(*(
+			uint16_t *)(data +
 				    QDF_NBUF_TRAC_DOUBLE_VLAN_ETH_TYPE_OFFSET));
 		ip_offset = QDF_NBUF_TRAC_DOUBLE_VLAN_IP_OFFSET;
 	}
 
 	switch (ether_type) {
 	case QDF_NBUF_TRAC_IPV4_ETH_TYPE:
-	case QDF_NBUF_TRAC_IPV6_ETH_TYPE:
-	{
+	case QDF_NBUF_TRAC_IPV6_ETH_TYPE: {
 		uint8_t *net_hdr;
 		uint8_t *trans_hdr;
 		uint8_t ip_proto;

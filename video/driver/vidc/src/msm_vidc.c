@@ -2,26 +2,27 @@
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
-/* Copyright (c) 2022-2023. Qualcomm Innovation Center, Inc. All rights reserved. */
+/* Copyright (c) 2022-2023. Qualcomm Innovation Center, Inc. All rights
+ * reserved. */
 
-#include <linux/types.h>
 #include <linux/hash.h>
+#include <linux/types.h>
 
-#include "msm_vidc_core.h"
-#include "msm_vidc_inst.h"
 #include "msm_vdec.h"
 #include "msm_venc.h"
-#include "msm_vidc_internal.h"
-#include "msm_vidc_driver.h"
-#include "msm_vidc_vb2.h"
-#include "msm_vidc_v4l2.h"
-#include "msm_vidc_debug.h"
-#include "msm_vidc_control.h"
-#include "msm_vidc_power.h"
-#include "msm_vidc_fence.h"
-#include "msm_vidc_memory.h"
-#include "venus_hfi_response.h"
 #include "msm_vidc.h"
+#include "msm_vidc_control.h"
+#include "msm_vidc_core.h"
+#include "msm_vidc_debug.h"
+#include "msm_vidc_driver.h"
+#include "msm_vidc_fence.h"
+#include "msm_vidc_inst.h"
+#include "msm_vidc_internal.h"
+#include "msm_vidc_memory.h"
+#include "msm_vidc_power.h"
+#include "msm_vidc_v4l2.h"
+#include "msm_vidc_vb2.h"
+#include "venus_hfi_response.h"
 
 extern const char video_banner[];
 
@@ -29,10 +30,10 @@ extern const char video_banner[];
 #define MSM_VIDC_BUS_NAME "platform:msm_vidc_bus"
 
 /* kernel/msm-4.19 */
-#define MSM_VIDC_VERSION     ((5 << 16) + (10 << 8) + 0)
+#define MSM_VIDC_VERSION ((5 << 16) + (10 << 8) + 0)
 
 static inline bool valid_v4l2_buffer(struct v4l2_buffer *b,
-		struct msm_vidc_inst *inst)
+				     struct msm_vidc_inst *inst)
 {
 	if (b->type == INPUT_MPLANE || b->type == OUTPUT_MPLANE)
 		return b->length > 0;
@@ -50,8 +51,8 @@ static int get_poll_flags(struct msm_vidc_inst *inst, u32 port)
 	unsigned long flags = 0;
 
 	if (port >= MAX_PORT) {
-		d_vpr_e("%s: invalid params, inst %pK, port %d\n",
-			__func__, inst, port);
+		d_vpr_e("%s: invalid params, inst %pK, port %d\n", __func__,
+			inst, port);
 		return poll;
 	}
 	q = inst->bufq[port].vb2q;
@@ -59,9 +60,9 @@ static int get_poll_flags(struct msm_vidc_inst *inst, u32 port)
 	spin_lock_irqsave(&q->done_lock, flags);
 	if (!list_empty(&q->done_list))
 		vb = list_first_entry(&q->done_list, struct vb2_buffer,
-							  done_entry);
+				      done_entry);
 	if (vb && (vb->state == VB2_BUF_STATE_DONE ||
-			   vb->state == VB2_BUF_STATE_ERROR)) {
+		   vb->state == VB2_BUF_STATE_ERROR)) {
 		if (port == OUTPUT_PORT || port == OUTPUT_META_PORT)
 			poll |= POLLIN | POLLRDNORM;
 		else if (port == INPUT_PORT || port == INPUT_META_PORT)
@@ -73,7 +74,7 @@ static int get_poll_flags(struct msm_vidc_inst *inst, u32 port)
 }
 
 int msm_vidc_poll(struct msm_vidc_inst *inst, struct file *filp,
-		struct poll_table_struct *wait)
+		  struct poll_table_struct *wait)
 {
 	int poll = 0;
 
@@ -122,15 +123,16 @@ int msm_vidc_enum_fmt(struct msm_vidc_inst *inst, struct v4l2_fmtdesc *f)
 	return -EINVAL;
 }
 
-int msm_vidc_query_ctrl(struct msm_vidc_inst *inst, struct v4l2_queryctrl *q_ctrl)
+int msm_vidc_query_ctrl(struct msm_vidc_inst *inst,
+			struct v4l2_queryctrl *q_ctrl)
 {
 	int rc = 0;
 	struct v4l2_ctrl *ctrl;
 
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, q_ctrl->id);
 	if (!ctrl) {
-		i_vpr_e(inst, "%s: get_ctrl failed for id %d\n",
-			__func__, q_ctrl->id);
+		i_vpr_e(inst, "%s: get_ctrl failed for id %d\n", __func__,
+			q_ctrl->id);
 		return -EINVAL;
 	}
 	q_ctrl->minimum = ctrl->minimum;
@@ -145,15 +147,16 @@ int msm_vidc_query_ctrl(struct msm_vidc_inst *inst, struct v4l2_queryctrl *q_ctr
 	return rc;
 }
 
-int msm_vidc_query_menu(struct msm_vidc_inst *inst, struct v4l2_querymenu *qmenu)
+int msm_vidc_query_menu(struct msm_vidc_inst *inst,
+			struct v4l2_querymenu *qmenu)
 {
 	int rc = 0;
 	struct v4l2_ctrl *ctrl;
 
 	ctrl = v4l2_ctrl_find(&inst->ctrl_handler, qmenu->id);
 	if (!ctrl) {
-		i_vpr_e(inst, "%s: get_ctrl failed for id %d\n",
-			__func__, qmenu->id);
+		i_vpr_e(inst, "%s: get_ctrl failed for id %d\n", __func__,
+			qmenu->id);
 		return -EINVAL;
 	}
 	if (ctrl->type != V4L2_CTRL_TYPE_MENU) {
@@ -168,7 +171,8 @@ int msm_vidc_query_menu(struct msm_vidc_inst *inst, struct v4l2_querymenu *qmenu
 		rc = -EINVAL;
 
 	i_vpr_h(inst,
-		"%s: ctrl: %s: min %lld, max %lld, menu_skip_mask %lld, qmenu: id %u, index %d, %s\n",
+		"%s: ctrl: %s: min %lld, max %lld, menu_skip_mask %lld, qmenu: id "
+		"%u, index %d, %s\n",
 		__func__, ctrl->name, ctrl->minimum, ctrl->maximum,
 		ctrl->menu_skip_mask, qmenu->id, qmenu->index,
 		rc ? "not supported" : "supported");
@@ -185,8 +189,8 @@ int msm_vidc_try_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		rc = msm_venc_try_fmt(inst, f);
 
 	if (rc)
-		i_vpr_e(inst, "%s: try_fmt(%d) failed %d\n",
-			__func__, f->type, rc);
+		i_vpr_e(inst, "%s: try_fmt(%d) failed %d\n", __func__, f->type,
+			rc);
 	return rc;
 }
 
@@ -200,8 +204,8 @@ int msm_vidc_s_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		rc = msm_venc_s_fmt(inst, f);
 
 	if (rc)
-		i_vpr_e(inst, "%s: s_fmt(%d) failed %d\n",
-			__func__, f->type, rc);
+		i_vpr_e(inst, "%s: s_fmt(%d) failed %d\n", __func__, f->type,
+			rc);
 	return rc;
 }
 
@@ -217,14 +221,15 @@ int msm_vidc_g_fmt(struct msm_vidc_inst *inst, struct v4l2_format *f)
 		return rc;
 
 	if (f->type == INPUT_MPLANE || f->type == OUTPUT_MPLANE)
-		i_vpr_h(inst, "%s: type %s format %s width %d height %d size %d\n",
+		i_vpr_h(inst,
+			"%s: type %s format %s width %d height %d size %d\n",
 			__func__, v4l2_type_name(f->type),
 			v4l2_pixelfmt_name(inst, f->fmt.pix_mp.pixelformat),
 			f->fmt.pix_mp.width, f->fmt.pix_mp.height,
 			f->fmt.pix_mp.plane_fmt[0].sizeimage);
 	else if (f->type == INPUT_META_PLANE || f->type == OUTPUT_META_PLANE)
-		i_vpr_h(inst, "%s: type %s size %d\n",
-			__func__, v4l2_type_name(f->type), f->fmt.meta.buffersize);
+		i_vpr_h(inst, "%s: type %s size %d\n", __func__,
+			v4l2_type_name(f->type), f->fmt.meta.buffersize);
 
 	return 0;
 }
@@ -258,14 +263,14 @@ int msm_vidc_s_param(struct msm_vidc_inst *inst, struct v4l2_streamparm *param)
 	int rc = 0;
 
 	if (param->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
-		param->type != V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
+	    param->type != V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
 		return -EINVAL;
 
 	if (is_encode_session(inst)) {
 		rc = msm_venc_s_param(inst, param);
 	} else {
-		i_vpr_e(inst, "%s: invalid domain %#x\n",
-			__func__, inst->domain);
+		i_vpr_e(inst, "%s: invalid domain %#x\n", __func__,
+			inst->domain);
 		return -EINVAL;
 	}
 
@@ -277,14 +282,14 @@ int msm_vidc_g_param(struct msm_vidc_inst *inst, struct v4l2_streamparm *param)
 	int rc = 0;
 
 	if (param->type != V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
-		param->type != V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
+	    param->type != V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE)
 		return -EINVAL;
 
 	if (is_encode_session(inst)) {
 		rc = msm_venc_g_param(inst, param);
 	} else {
-		i_vpr_e(inst, "%s: invalid domain %#x\n",
-			__func__, inst->domain);
+		i_vpr_e(inst, "%s: invalid domain %#x\n", __func__,
+			inst->domain);
 		return -EINVAL;
 	}
 
@@ -304,8 +309,8 @@ int msm_vidc_reqbufs(struct msm_vidc_inst *inst, struct v4l2_requestbuffers *b)
 
 	rc = vb2_reqbufs(inst->bufq[port].vb2q, b);
 	if (rc) {
-		i_vpr_e(inst, "%s: vb2_reqbufs(%d) failed, %d\n",
-			__func__, b->type, rc);
+		i_vpr_e(inst, "%s: vb2_reqbufs(%d) failed, %d\n", __func__,
+			b->type, rc);
 		goto exit;
 	}
 
@@ -326,8 +331,8 @@ int msm_vidc_querybuf(struct msm_vidc_inst *inst, struct v4l2_buffer *b)
 
 	rc = vb2_querybuf(inst->bufq[port].vb2q, b);
 	if (rc) {
-		i_vpr_e(inst, "%s: vb2_querybuf(%d) failed, %d\n",
-			__func__, b->type, rc);
+		i_vpr_e(inst, "%s: vb2_querybuf(%d) failed, %d\n", __func__,
+			b->type, rc);
 		goto exit;
 	}
 
@@ -335,7 +340,8 @@ exit:
 	return rc;
 }
 
-int msm_vidc_create_bufs(struct msm_vidc_inst *inst, struct v4l2_create_buffers *b)
+int msm_vidc_create_bufs(struct msm_vidc_inst *inst,
+			 struct v4l2_create_buffers *b)
 {
 	int rc = 0;
 	int port;
@@ -350,8 +356,8 @@ int msm_vidc_create_bufs(struct msm_vidc_inst *inst, struct v4l2_create_buffers 
 
 	rc = vb2_create_bufs(inst->bufq[port].vb2q, b);
 	if (rc) {
-		i_vpr_e(inst, "%s: vb2_create_bufs(%d) failed, %d\n",
-			__func__, f->type, rc);
+		i_vpr_e(inst, "%s: vb2_create_bufs(%d) failed, %d\n", __func__,
+			f->type, rc);
 		goto exit;
 	}
 
@@ -360,7 +366,7 @@ exit:
 }
 
 int msm_vidc_prepare_buf(struct msm_vidc_inst *inst, struct media_device *mdev,
-	struct v4l2_buffer *b)
+			 struct v4l2_buffer *b)
 {
 	int rc = 0;
 	struct vb2_queue *q;
@@ -387,7 +393,7 @@ exit:
 }
 
 int msm_vidc_qbuf(struct msm_vidc_inst *inst, struct media_device *mdev,
-		struct v4l2_buffer *b)
+		  struct v4l2_buffer *b)
 {
 	int rc = 0;
 	struct vb2_queue *q;
@@ -452,8 +458,8 @@ int msm_vidc_streamon(struct msm_vidc_inst *inst, enum v4l2_buf_type type)
 
 	rc = vb2_streamon(inst->bufq[port].vb2q, type);
 	if (rc) {
-		i_vpr_e(inst, "%s: vb2_streamon(%d) failed, %d\n",
-			__func__, type, rc);
+		i_vpr_e(inst, "%s: vb2_streamon(%d) failed, %d\n", __func__,
+			type, rc);
 		goto exit;
 	}
 
@@ -474,8 +480,8 @@ int msm_vidc_streamoff(struct msm_vidc_inst *inst, enum v4l2_buf_type type)
 
 	rc = vb2_streamoff(inst->bufq[port].vb2q, type);
 	if (rc) {
-		i_vpr_e(inst, "%s: vb2_streamoff(%d) failed, %d\n",
-			__func__, type, rc);
+		i_vpr_e(inst, "%s: vb2_streamoff(%d) failed, %d\n", __func__,
+			type, rc);
 		goto exit;
 	}
 
@@ -492,7 +498,8 @@ int msm_vidc_try_cmd(struct msm_vidc_inst *inst, union msm_v4l2_cmd *cmd)
 	if (is_decode_session(inst)) {
 		dec = (struct v4l2_decoder_cmd *)cmd;
 		i_vpr_h(inst, "%s: cmd %d\n", __func__, dec->cmd);
-		if (dec->cmd != V4L2_DEC_CMD_STOP && dec->cmd != V4L2_DEC_CMD_START)
+		if (dec->cmd != V4L2_DEC_CMD_STOP &&
+		    dec->cmd != V4L2_DEC_CMD_START)
 			return -EINVAL;
 		dec->flags = 0;
 		if (dec->cmd == V4L2_DEC_CMD_STOP) {
@@ -504,7 +511,8 @@ int msm_vidc_try_cmd(struct msm_vidc_inst *inst, union msm_v4l2_cmd *cmd)
 	} else if (is_encode_session(inst)) {
 		enc = (struct v4l2_encoder_cmd *)cmd;
 		i_vpr_h(inst, "%s: cmd %d\n", __func__, enc->cmd);
-		if (enc->cmd != V4L2_ENC_CMD_STOP && enc->cmd != V4L2_ENC_CMD_START)
+		if (enc->cmd != V4L2_ENC_CMD_STOP &&
+		    enc->cmd != V4L2_ENC_CMD_START)
 			return -EINVAL;
 		enc->flags = 0;
 	}
@@ -517,7 +525,8 @@ int msm_vidc_start_cmd(struct msm_vidc_inst *inst)
 	int rc = 0;
 
 	if (!is_decode_session(inst) && !is_encode_session(inst)) {
-		i_vpr_e(inst, "%s: invalid session %d\n", __func__, inst->domain);
+		i_vpr_e(inst, "%s: invalid session %d\n", __func__,
+			inst->domain);
 		return -EINVAL;
 	}
 
@@ -539,7 +548,8 @@ int msm_vidc_stop_cmd(struct msm_vidc_inst *inst)
 	int rc = 0;
 
 	if (!is_decode_session(inst) && !is_encode_session(inst)) {
-		i_vpr_e(inst, "%s: invalid session %d\n", __func__, inst->domain);
+		i_vpr_e(inst, "%s: invalid session %d\n", __func__,
+			inst->domain);
 		return -EINVAL;
 	}
 
@@ -556,7 +566,8 @@ int msm_vidc_stop_cmd(struct msm_vidc_inst *inst)
 	return rc;
 }
 
-int msm_vidc_enum_framesizes(struct msm_vidc_inst *inst, struct v4l2_frmsizeenum *fsize)
+int msm_vidc_enum_framesizes(struct msm_vidc_inst *inst,
+			     struct v4l2_frmsizeenum *fsize)
 {
 	enum msm_vidc_colorformat_type colorfmt;
 	enum msm_vidc_codec_type codec;
@@ -566,13 +577,15 @@ int msm_vidc_enum_framesizes(struct msm_vidc_inst *inst, struct v4l2_frmsizeenum
 	if (fsize->index)
 		return -EINVAL;
 
-	meta_fmt = v4l2_colorformat_from_driver(inst, MSM_VIDC_FMT_META, __func__);
+	meta_fmt =
+		v4l2_colorformat_from_driver(inst, MSM_VIDC_FMT_META, __func__);
 	if (fsize->pixel_format != meta_fmt) {
 		/* validate pixel format */
-		codec = v4l2_codec_to_driver(inst, fsize->pixel_format, __func__);
+		codec = v4l2_codec_to_driver(inst, fsize->pixel_format,
+					     __func__);
 		if (!codec) {
-			colorfmt = v4l2_colorformat_to_driver(inst, fsize->pixel_format,
-				__func__);
+			colorfmt = v4l2_colorformat_to_driver(
+				inst, fsize->pixel_format, __func__);
 			if (colorfmt == MSM_VIDC_FMT_NONE) {
 				i_vpr_e(inst, "%s: unsupported pix fmt %#x\n",
 					__func__, fsize->pixel_format);
@@ -594,7 +607,8 @@ int msm_vidc_enum_framesizes(struct msm_vidc_inst *inst, struct v4l2_frmsizeenum
 	return 0;
 }
 
-int msm_vidc_enum_frameintervals(struct msm_vidc_inst *inst, struct v4l2_frmivalenum *fival)
+int msm_vidc_enum_frameintervals(struct msm_vidc_inst *inst,
+				 struct v4l2_frmivalenum *fival)
 {
 	struct msm_vidc_core *core;
 	enum msm_vidc_colorformat_type colorfmt;
@@ -608,27 +622,28 @@ int msm_vidc_enum_frameintervals(struct msm_vidc_inst *inst, struct v4l2_frmival
 
 	core = inst->core;
 
-
 	/* only index 0 allowed as per v4l2 spec */
 	if (fival->index)
 		return -EINVAL;
 
-	meta_fmt = v4l2_colorformat_from_driver(inst, MSM_VIDC_FMT_META, __func__);
+	meta_fmt =
+		v4l2_colorformat_from_driver(inst, MSM_VIDC_FMT_META, __func__);
 	if (fival->pixel_format != meta_fmt) {
 		/* validate pixel format */
-		colorfmt = v4l2_colorformat_to_driver(inst, fival->pixel_format, __func__);
+		colorfmt = v4l2_colorformat_to_driver(inst, fival->pixel_format,
+						      __func__);
 		if (colorfmt == MSM_VIDC_FMT_NONE) {
-			i_vpr_e(inst, "%s: unsupported pix fmt %#x\n",
-				__func__, fival->pixel_format);
+			i_vpr_e(inst, "%s: unsupported pix fmt %#x\n", __func__,
+				fival->pixel_format);
 			return -EINVAL;
 		}
 	}
 
 	/* validate resolution */
 	if (fival->width > inst->capabilities[FRAME_WIDTH].max ||
-		fival->width < inst->capabilities[FRAME_WIDTH].min ||
-		fival->height > inst->capabilities[FRAME_HEIGHT].max ||
-		fival->height < inst->capabilities[FRAME_HEIGHT].min) {
+	    fival->width < inst->capabilities[FRAME_WIDTH].min ||
+	    fival->height > inst->capabilities[FRAME_HEIGHT].max ||
+	    fival->height < inst->capabilities[FRAME_HEIGHT].min) {
 		i_vpr_e(inst, "%s: unsupported resolution %u x %u\n", __func__,
 			fival->width, fival->height);
 		return -EINVAL;
@@ -641,7 +656,7 @@ int msm_vidc_enum_frameintervals(struct msm_vidc_inst *inst, struct v4l2_frmival
 	fival->type = V4L2_FRMIVAL_TYPE_STEPWISE;
 	fival->stepwise.min.numerator = 1;
 	fival->stepwise.min.denominator =
-			min_t(u32, fps, inst->capabilities[FRAME_RATE].max);
+		min_t(u32, fps, inst->capabilities[FRAME_RATE].max);
 	fival->stepwise.max.numerator = 1;
 	fival->stepwise.max.denominator = 1;
 	fival->stepwise.step.numerator = 1;
@@ -651,7 +666,7 @@ int msm_vidc_enum_frameintervals(struct msm_vidc_inst *inst, struct v4l2_frmival
 }
 
 int msm_vidc_subscribe_event(struct msm_vidc_inst *inst,
-		const struct v4l2_event_subscription *sub)
+			     const struct v4l2_event_subscription *sub)
 {
 	int rc = 0;
 
@@ -666,15 +681,15 @@ int msm_vidc_subscribe_event(struct msm_vidc_inst *inst,
 }
 
 int msm_vidc_unsubscribe_event(struct msm_vidc_inst *inst,
-		const struct v4l2_event_subscription *sub)
+			       const struct v4l2_event_subscription *sub)
 {
 	int rc = 0;
 
 	i_vpr_h(inst, "%s: type %d id %d\n", __func__, sub->type, sub->id);
 	rc = v4l2_event_unsubscribe(&inst->fh, sub);
 	if (rc)
-		i_vpr_e(inst, "%s: failed, type %d id %d\n",
-			 __func__, sub->type, sub->id);
+		i_vpr_e(inst, "%s: failed, type %d id %d\n", __func__,
+			sub->type, sub->id);
 	return rc;
 }
 
@@ -698,8 +713,8 @@ void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type)
 
 	if (session_type != MSM_VIDC_DECODER &&
 	    session_type != MSM_VIDC_ENCODER) {
-		d_vpr_e("%s: invalid session_type %d\n",
-			__func__, session_type);
+		d_vpr_e("%s: invalid session_type %d\n", __func__,
+			session_type);
 		return NULL;
 	}
 
@@ -720,7 +735,8 @@ void *msm_vidc_open(struct msm_vidc_core *core, u32 session_type)
 	inst->session_id = hash32_ptr(inst);
 	msm_vidc_update_state(inst, MSM_VIDC_OPEN, __func__);
 	inst->sub_state = MSM_VIDC_SUB_STATE_NONE;
-	strlcpy(inst->sub_state_name, "SUB_STATE_NONE", sizeof(inst->sub_state_name));
+	strlcpy(inst->sub_state_name, "SUB_STATE_NONE",
+		sizeof(inst->sub_state_name));
 	inst->active = true;
 	inst->request = false;
 	inst->ipsc_properties_set = false;
@@ -875,7 +891,8 @@ int msm_vidc_close(struct msm_vidc_inst *inst)
 	msm_vidc_session_close(inst);
 	msm_vidc_change_state(inst, MSM_VIDC_CLOSE, __func__);
 	inst->sub_state = MSM_VIDC_SUB_STATE_NONE;
-	strscpy(inst->sub_state_name, "SUB_STATE_NONE", sizeof(inst->sub_state_name));
+	strscpy(inst->sub_state_name, "SUB_STATE_NONE",
+		sizeof(inst->sub_state_name));
 	inst_unlock(inst, __func__);
 	client_unlock(inst, __func__);
 	cancel_stability_work_sync(inst);

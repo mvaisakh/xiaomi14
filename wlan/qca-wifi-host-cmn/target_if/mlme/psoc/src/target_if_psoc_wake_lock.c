@@ -23,15 +23,15 @@
  * This file provide definition for APIs related to wake lock
  */
 
-#include "qdf_lock.h"
-#include <target_if_psoc_wake_lock.h>
-#include <wlan_lmac_if_def.h>
-#include <host_diag_core_event.h>
-#include <wlan_objmgr_psoc_obj.h>
-#include <target_if.h>
-#include <target_if_vdev_mgr_rx_ops.h>
-#include <wlan_reg_services_api.h>
 #include "init_deinit_lmac.h"
+#include "qdf_lock.h"
+#include <host_diag_core_event.h>
+#include <target_if.h>
+#include <target_if_psoc_wake_lock.h>
+#include <target_if_vdev_mgr_rx_ops.h>
+#include <wlan_lmac_if_def.h>
+#include <wlan_objmgr_psoc_obj.h>
+#include <wlan_reg_services_api.h>
 
 void target_if_wake_lock_init(struct wlan_objmgr_psoc *psoc)
 {
@@ -40,8 +40,7 @@ void target_if_wake_lock_init(struct wlan_objmgr_psoc *psoc)
 
 	rx_ops = target_if_vdev_mgr_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->psoc_get_wakelock_info) {
-		mlme_err("psoc_id:%d No Rx Ops",
-			 wlan_psoc_get_id(psoc));
+		mlme_err("psoc_id:%d No Rx Ops", wlan_psoc_get_id(psoc));
 		return;
 	}
 
@@ -65,8 +64,7 @@ void target_if_wake_lock_deinit(struct wlan_objmgr_psoc *psoc)
 
 	rx_ops = target_if_vdev_mgr_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->psoc_get_wakelock_info) {
-		mlme_err("psoc_id:%d No Rx Ops",
-			 wlan_psoc_get_id(psoc));
+		mlme_err("psoc_id:%d No Rx Ops", wlan_psoc_get_id(psoc));
 		return;
 	}
 
@@ -81,17 +79,15 @@ void target_if_wake_lock_deinit(struct wlan_objmgr_psoc *psoc)
 	qdf_runtime_lock_deinit(&psoc_wakelock->roam_sync_runtime_lock);
 }
 
-QDF_STATUS target_if_wake_lock_timeout_acquire(
-				struct wlan_objmgr_psoc *psoc,
-				enum wakelock_mode mode)
+QDF_STATUS target_if_wake_lock_timeout_acquire(struct wlan_objmgr_psoc *psoc,
+					       enum wakelock_mode mode)
 {
 	struct psoc_mlme_wakelock *psoc_wakelock;
 	struct wlan_lmac_if_mlme_rx_ops *rx_ops;
 
 	rx_ops = target_if_vdev_mgr_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->psoc_get_wakelock_info) {
-		mlme_err("psoc_id:%d No Rx Ops",
-			 wlan_psoc_get_id(psoc));
+		mlme_err("psoc_id:%d No Rx Ops", wlan_psoc_get_id(psoc));
 		return QDF_STATUS_E_INVAL;
 	}
 
@@ -115,14 +111,13 @@ QDF_STATUS target_if_wake_lock_timeout_acquire(
 	}
 
 	qdf_runtime_pm_prevent_suspend(
-				&psoc_wakelock->wmi_cmd_rsp_runtime_lock);
+		&psoc_wakelock->wmi_cmd_rsp_runtime_lock);
 
 	return QDF_STATUS_SUCCESS;
 }
 
-QDF_STATUS target_if_wake_lock_timeout_release(
-				struct wlan_objmgr_psoc *psoc,
-				enum wakelock_mode mode)
+QDF_STATUS target_if_wake_lock_timeout_release(struct wlan_objmgr_psoc *psoc,
+					       enum wakelock_mode mode)
 {
 	struct psoc_mlme_wakelock *psoc_wakelock;
 	struct wlan_lmac_if_mlme_rx_ops *rx_ops;
@@ -171,14 +166,14 @@ target_if_vote_for_link_down(struct wlan_objmgr_psoc *psoc,
 
 	if (psoc_wakelock->is_link_up) {
 		htc_vote_link_down(htc_handle, HTC_LINK_VOTE_SAP_DFS_USER_ID);
-		qdf_runtime_pm_allow_suspend(&psoc_wakelock->prevent_runtime_lock);
+		qdf_runtime_pm_allow_suspend(
+			&psoc_wakelock->prevent_runtime_lock);
 		psoc_wakelock->is_link_up = false;
 	}
 }
 
-static void
-target_if_vote_for_link_up(struct wlan_objmgr_psoc *psoc,
-			   struct psoc_mlme_wakelock *psoc_wakelock)
+static void target_if_vote_for_link_up(struct wlan_objmgr_psoc *psoc,
+				       struct psoc_mlme_wakelock *psoc_wakelock)
 {
 	void *htc_handle;
 
@@ -190,7 +185,8 @@ target_if_vote_for_link_up(struct wlan_objmgr_psoc *psoc,
 
 	if (!psoc_wakelock->is_link_up) {
 		htc_vote_link_up(htc_handle, HTC_LINK_VOTE_SAP_DFS_USER_ID);
-		qdf_runtime_pm_prevent_suspend(&psoc_wakelock->prevent_runtime_lock);
+		qdf_runtime_pm_prevent_suspend(
+			&psoc_wakelock->prevent_runtime_lock);
 		psoc_wakelock->is_link_up = true;
 	}
 }
@@ -207,7 +203,7 @@ void target_if_vdev_start_link_handler(struct wlan_objmgr_vdev *vdev,
 	enum phy_ch_width ch_width, prev_ch_width;
 	uint32_t is_dfs, prev_ch_is_dfs;
 	enum channel_state ch_state, prev_ch_state;
-	struct ch_params ch_params = {0};
+	struct ch_params ch_params = { 0 };
 
 	psoc = wlan_vdev_get_psoc(vdev);
 	pdev = wlan_vdev_get_pdev(vdev);
@@ -223,14 +219,11 @@ void target_if_vdev_start_link_handler(struct wlan_objmgr_vdev *vdev,
 	is_dfs = wlan_reg_is_dfs_for_freq(pdev, ch_freq);
 
 	ch_params.ch_width = ch_width;
-	ch_state =
-	    wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
-						pdev, ch_freq, &ch_params,
-						REG_CURRENT_PWR_MODE);
+	ch_state = wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
+		pdev, ch_freq, &ch_params, REG_CURRENT_PWR_MODE);
 	rx_ops = target_if_vdev_mgr_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->psoc_get_wakelock_info) {
-		mlme_err("psoc_id:%d No Rx Ops",
-			 wlan_psoc_get_id(psoc));
+		mlme_err("psoc_id:%d No Rx Ops", wlan_psoc_get_id(psoc));
 		return;
 	}
 
@@ -240,32 +233,31 @@ void target_if_vdev_start_link_handler(struct wlan_objmgr_vdev *vdev,
 			prev_channel = wlan_vdev_mlme_get_bss_chan(vdev);
 			prev_ch_freq = prev_channel->ch_freq;
 			prev_ch_width = prev_channel->ch_width;
-			prev_ch_is_dfs = wlan_reg_is_dfs_for_freq(pdev,
-								  prev_ch_freq);
+			prev_ch_is_dfs =
+				wlan_reg_is_dfs_for_freq(pdev, prev_ch_freq);
 			ch_params.ch_width = prev_ch_width;
 			prev_ch_state =
-			wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
-						pdev,
-						prev_ch_freq, &ch_params,
-						REG_CURRENT_PWR_MODE);
+				wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
+					pdev, prev_ch_freq, &ch_params,
+					REG_CURRENT_PWR_MODE);
 			/*
-			 * In restart case, if SAP is on non DFS channel and
-			 * previously it was on DFS channel then vote for link
-			 * down.
-			 */
+       * In restart case, if SAP is on non DFS channel and
+       * previously it was on DFS channel then vote for link
+       * down.
+       */
 			if ((prev_ch_is_dfs ||
 			     prev_ch_state == CHANNEL_STATE_DFS) &&
-			     !(is_dfs || ch_state == CHANNEL_STATE_DFS))
+			    !(is_dfs || ch_state == CHANNEL_STATE_DFS))
 				target_if_vote_for_link_down(psoc,
 							     psoc_wakelock);
 
 			/*
-			 * If SAP is on DFS channel and previously it was on
-			 * non DFS channel then vote for link up
-			 */
+       * If SAP is on DFS channel and previously it was on
+       * non DFS channel then vote for link up
+       */
 			if (!(prev_ch_is_dfs ||
 			      prev_ch_state == CHANNEL_STATE_DFS) &&
-			     (is_dfs || ch_state == CHANNEL_STATE_DFS))
+			    (is_dfs || ch_state == CHANNEL_STATE_DFS))
 				target_if_vote_for_link_up(psoc, psoc_wakelock);
 		} else if (is_dfs || ch_state == CHANNEL_STATE_DFS)
 			target_if_vote_for_link_up(psoc, psoc_wakelock);
@@ -282,7 +274,7 @@ void target_if_vdev_stop_link_handler(struct wlan_objmgr_vdev *vdev)
 	uint32_t ch_freq;
 	enum phy_ch_width ch_width;
 	uint32_t is_dfs;
-	struct ch_params ch_params = {0};
+	struct ch_params ch_params = { 0 };
 
 	psoc = wlan_vdev_get_psoc(vdev);
 	pdev = wlan_vdev_get_pdev(vdev);
@@ -299,8 +291,7 @@ void target_if_vdev_stop_link_handler(struct wlan_objmgr_vdev *vdev)
 
 	rx_ops = target_if_vdev_mgr_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->psoc_get_wakelock_info) {
-		mlme_err("psoc_id:%d No Rx Ops",
-			 wlan_psoc_get_id(psoc));
+		mlme_err("psoc_id:%d No Rx Ops", wlan_psoc_get_id(psoc));
 		return;
 	}
 
@@ -309,10 +300,8 @@ void target_if_vdev_stop_link_handler(struct wlan_objmgr_vdev *vdev)
 	if (wlan_vdev_mlme_get_opmode(vdev) == QDF_SAP_MODE)
 		if (is_dfs ||
 		    (wlan_reg_get_5g_bonded_channel_state_for_pwrmode(
-				pdev,
-				ch_freq,
-				&ch_params,
-				REG_CURRENT_PWR_MODE) == CHANNEL_STATE_DFS))
+			     pdev, ch_freq, &ch_params, REG_CURRENT_PWR_MODE) ==
+		     CHANNEL_STATE_DFS))
 			target_if_vote_for_link_down(psoc, psoc_wakelock);
 }
 
@@ -323,8 +312,7 @@ void target_if_prevent_pm_during_roam_sync(struct wlan_objmgr_psoc *psoc)
 
 	rx_ops = target_if_vdev_mgr_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->psoc_get_wakelock_info) {
-		target_if_err("psoc_id:%d No Rx Ops",
-			      wlan_psoc_get_id(psoc));
+		target_if_err("psoc_id:%d No Rx Ops", wlan_psoc_get_id(psoc));
 		return;
 	}
 
@@ -339,8 +327,7 @@ void target_if_allow_pm_after_roam_sync(struct wlan_objmgr_psoc *psoc)
 
 	rx_ops = target_if_vdev_mgr_get_rx_ops(psoc);
 	if (!rx_ops || !rx_ops->psoc_get_wakelock_info) {
-		target_if_err("psoc_id:%d No Rx Ops",
-			      wlan_psoc_get_id(psoc));
+		target_if_err("psoc_id:%d No Rx Ops", wlan_psoc_get_id(psoc));
 		return;
 	}
 

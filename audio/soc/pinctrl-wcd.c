@@ -3,6 +3,7 @@
  * Copyright (c) 2016-2017, 2019, The Linux Foundation. All rights reserved.
  */
 
+#include <asoc/wcd934x_registers.h>
 #include <linux/gpio.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -13,17 +14,16 @@
 #include <linux/regmap.h>
 #include <linux/slab.h>
 #include <linux/types.h>
-#include <asoc/wcd934x_registers.h>
 
 #include "core.h"
 #include "pinctrl-utils.h"
 
 #define WCD_REG_DIR_CTL WCD934X_CHIP_TIER_CTRL_GPIO_CTL_OE
 #define WCD_REG_VAL_CTL WCD934X_CHIP_TIER_CTRL_GPIO_CTL_DATA
-#define WCD_GPIO_PULL_UP       1
-#define WCD_GPIO_PULL_DOWN     2
-#define WCD_GPIO_BIAS_DISABLE  3
-#define WCD_GPIO_STRING_LEN    20
+#define WCD_GPIO_PULL_UP 1
+#define WCD_GPIO_PULL_DOWN 2
+#define WCD_GPIO_BIAS_DISABLE 3
+#define WCD_GPIO_STRING_LEN 20
 
 /**
  * struct wcd_gpio_pad - keep current GPIO settings
@@ -35,7 +35,7 @@
  * @strength: Drive strength of a pin
  */
 struct wcd_gpio_pad {
-	u16  offset;
+	u16 offset;
 	bool is_valid;
 	bool value;
 	bool output_enabled;
@@ -51,15 +51,15 @@ struct wcd_gpio_priv {
 };
 
 static int wcd_gpio_read(struct wcd_gpio_priv *priv_data,
-			  struct wcd_gpio_pad *pad, unsigned int addr)
+			 struct wcd_gpio_pad *pad, unsigned int addr)
 {
 	unsigned int val;
 	int ret;
 
 	ret = regmap_read(priv_data->map, addr, &val);
 	if (ret < 0)
-		dev_err(priv_data->dev, "%s: read 0x%x failed\n",
-			__func__, addr);
+		dev_err(priv_data->dev, "%s: read 0x%x failed\n", __func__,
+			addr);
 	else
 		ret = (val >> pad->offset);
 
@@ -67,13 +67,13 @@ static int wcd_gpio_read(struct wcd_gpio_priv *priv_data,
 }
 
 static int wcd_gpio_write(struct wcd_gpio_priv *priv_data,
-			   struct wcd_gpio_pad *pad, unsigned int addr,
-			   unsigned int val)
+			  struct wcd_gpio_pad *pad, unsigned int addr,
+			  unsigned int val)
 {
 	int ret;
 
 	ret = regmap_update_bits(priv_data->map, addr, (1 << pad->offset),
-					val << pad->offset);
+				 val << pad->offset);
 	if (ret < 0)
 		dev_err(priv_data->dev, "write 0x%x failed\n", addr);
 
@@ -86,13 +86,13 @@ static int wcd_get_groups_count(struct pinctrl_dev *pctldev)
 }
 
 static const char *wcd_get_group_name(struct pinctrl_dev *pctldev,
-		unsigned int pin)
+				      unsigned int pin)
 {
 	return pctldev->desc->pins[pin].name;
 }
 
 static int wcd_get_group_pins(struct pinctrl_dev *pctldev, unsigned int pin,
-		const unsigned int **pins, unsigned int *num_pins)
+			      const unsigned int **pins, unsigned int *num_pins)
 {
 	*pins = &pctldev->desc->pins[pin].number;
 	*num_pins = 1;
@@ -100,15 +100,15 @@ static int wcd_get_group_pins(struct pinctrl_dev *pctldev, unsigned int pin,
 }
 
 static const struct pinctrl_ops wcd_pinctrl_ops = {
-	.get_groups_count       = wcd_get_groups_count,
-	.get_group_name         = wcd_get_group_name,
-	.get_group_pins         = wcd_get_group_pins,
-	.dt_node_to_map         = pinconf_generic_dt_node_to_map_group,
-	.dt_free_map            = pinctrl_utils_free_map,
+	.get_groups_count = wcd_get_groups_count,
+	.get_group_name = wcd_get_group_name,
+	.get_group_pins = wcd_get_group_pins,
+	.dt_node_to_map = pinconf_generic_dt_node_to_map_group,
+	.dt_free_map = pinctrl_utils_free_map,
 };
 
-static int wcd_config_get(struct pinctrl_dev *pctldev,
-				unsigned int pin, unsigned long *config)
+static int wcd_config_get(struct pinctrl_dev *pctldev, unsigned int pin,
+			  unsigned long *config)
 {
 	unsigned int param = pinconf_to_config_param(*config);
 	struct wcd_gpio_pad *pad;
@@ -144,7 +144,7 @@ static int wcd_config_get(struct pinctrl_dev *pctldev,
 }
 
 static int wcd_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
-				unsigned long *configs, unsigned int nconfs)
+			  unsigned long *configs, unsigned int nconfs)
 {
 	struct wcd_gpio_priv *priv_data = pinctrl_dev_get_drvdata(pctldev);
 	struct wcd_gpio_pad *pad;
@@ -157,8 +157,8 @@ static int wcd_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
 		param = pinconf_to_config_param(configs[i]);
 		arg = pinconf_to_config_argument(configs[i]);
 
-		dev_dbg(priv_data->dev, "%s: param: %d arg: %d",
-			__func__, param, arg);
+		dev_dbg(priv_data->dev, "%s: param: %d arg: %d", __func__,
+			param, arg);
 
 		switch (param) {
 		case PIN_CONFIG_BIAS_DISABLE:
@@ -204,7 +204,7 @@ done:
 }
 
 static const struct pinconf_ops wcd_pinconf_ops = {
-	.is_generic  = true,
+	.is_generic = true,
 	.pin_config_group_get = wcd_config_get,
 	.pin_config_group_set = wcd_config_set,
 };
@@ -219,8 +219,8 @@ static int wcd_gpio_direction_input(struct gpio_chip *chip, unsigned int pin)
 	return wcd_config_set(priv_data->ctrl, pin, &config, 1);
 }
 
-static int wcd_gpio_direction_output(struct gpio_chip *chip,
-				      unsigned int pin, int val)
+static int wcd_gpio_direction_output(struct gpio_chip *chip, unsigned int pin,
+				     int val)
 {
 	struct wcd_gpio_priv *priv_data = gpiochip_get_data(chip);
 	unsigned long config;
@@ -256,7 +256,7 @@ static void wcd_gpio_set(struct gpio_chip *chip, unsigned int pin, int value)
 }
 
 static const struct gpio_chip wcd_gpio_chip = {
-	.direction_input  = wcd_gpio_direction_input,
+	.direction_input = wcd_gpio_direction_input,
 	.direction_output = wcd_gpio_direction_output,
 	.get = wcd_gpio_get,
 	.set = wcd_gpio_set,
@@ -340,10 +340,10 @@ static int wcd_pinctrl_probe(struct platform_device *pdev)
 		pad = &pads[i];
 		pindesc->drv_data = pad;
 		pindesc->number = i;
-		snprintf(name[i], (WCD_GPIO_STRING_LEN - 1), "gpio%d", (i+1));
+		snprintf(name[i], (WCD_GPIO_STRING_LEN - 1), "gpio%d", (i + 1));
 		pindesc->name = name[i];
 		pad->offset = i;
-		pad->is_valid  = true;
+		pad->is_valid = true;
 	}
 
 	priv_data->chip = wcd_gpio_chip;
@@ -407,19 +407,20 @@ static int wcd_pinctrl_remove(struct platform_device *pdev)
 
 static const struct of_device_id wcd_pinctrl_of_match[] = {
 	{ .compatible = "qcom,wcd-pinctrl" },
-	{ },
+	{},
 };
 
 MODULE_DEVICE_TABLE(of, wcd_pinctrl_of_match);
 
 static struct platform_driver wcd_pinctrl_driver = {
-	.driver = {
-		   .name = "qcom-wcd-pinctrl",
-		   .of_match_table = wcd_pinctrl_of_match,
-		   .suppress_bind_attrs = true,
-	},
-	.probe = wcd_pinctrl_probe,
-	.remove = wcd_pinctrl_remove,
+    .driver =
+        {
+            .name = "qcom-wcd-pinctrl",
+            .of_match_table = wcd_pinctrl_of_match,
+            .suppress_bind_attrs = true,
+        },
+    .probe = wcd_pinctrl_probe,
+    .remove = wcd_pinctrl_remove,
 };
 
 module_platform_driver(wcd_pinctrl_driver);

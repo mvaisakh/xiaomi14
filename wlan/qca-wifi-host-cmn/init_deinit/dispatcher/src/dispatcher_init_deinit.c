@@ -15,20 +15,20 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "cdp_txrx_cmn.h"
 #include "cfg_dispatcher.h"
-#include <qdf_types.h>
-#include <qdf_trace.h>
-#include <qdf_threads.h>
-#include <qdf_module.h>
+#include "wlan_psoc_mlme_api.h"
 #include <dispatcher_init_deinit.h>
+#include <include/wlan_mlme_cmn.h>
+#include <qdf_module.h>
+#include <qdf_threads.h>
+#include <qdf_trace.h>
+#include <qdf_types.h>
 #include <scheduler_api.h>
-#include <wlan_scan_ucfg_api.h>
 #include <wlan_ftm_init_deinit_api.h>
 #include <wlan_mgmt_txrx_utils_api.h>
+#include <wlan_scan_ucfg_api.h>
 #include <wlan_serialization_api.h>
-#include "wlan_psoc_mlme_api.h"
-#include <include/wlan_mlme_cmn.h>
-#include "cdp_txrx_cmn.h"
 #ifdef WLAN_ATF_ENABLE
 #include <wlan_atf_utils_api.h>
 #endif
@@ -41,8 +41,8 @@
 #ifdef WIFI_POS_CONVERGED
 #include "wifi_pos_api.h"
 #endif /* WIFI_POS_CONVERGED */
-#include <wlan_reg_services_api.h>
 #include "wlan_crypto_main.h"
+#include <wlan_reg_services_api.h>
 #ifdef DFS_COMPONENT_ENABLE
 #include <wlan_dfs_init_deinit_api.h>
 #endif
@@ -80,9 +80,9 @@
 #ifdef DCS_INTERFERENCE_DETECTION
 #include <wlan_dcs_init_deinit_api.h>
 #endif
+#include <wlan_gpio_api.h>
 #include <wlan_if_mgr_main.h>
 #include <wlan_mlo_mgr_main.h>
-#include <wlan_gpio_api.h>
 
 #include <wlan_twt_api.h>
 
@@ -113,14 +113,13 @@ static QDF_STATUS dispatcher_deinit_wifi_radar(void)
 	return wlan_wifi_radar_deinit();
 }
 
-static QDF_STATUS dispatcher_wifi_radar_pdev_open
-		(struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS dispatcher_wifi_radar_pdev_open(struct wlan_objmgr_pdev *pdev)
 {
 	return wlan_wifi_radar_pdev_open(pdev);
 }
 
-static QDF_STATUS dispatcher_wifi_radar_pdev_close
-		(struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS
+dispatcher_wifi_radar_pdev_close(struct wlan_objmgr_pdev *pdev)
 {
 	return wlan_wifi_radar_pdev_close(pdev);
 }
@@ -135,14 +134,13 @@ static QDF_STATUS dispatcher_deinit_wifi_radar(void)
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS dispatcher_wifi_radar_pdev_open
-			(struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS dispatcher_wifi_radar_pdev_open(struct wlan_objmgr_pdev *pdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
 
-static QDF_STATUS dispatcher_wifi_radar_pdev_close
-			(struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS
+dispatcher_wifi_radar_pdev_close(struct wlan_objmgr_pdev *pdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -366,14 +364,13 @@ static QDF_STATUS dispatcher_regulatory_deinit(void)
 	return wlan_regulatory_deinit();
 }
 
-static QDF_STATUS dispatcher_regulatory_psoc_open(struct wlan_objmgr_psoc
-						  *psoc)
+static QDF_STATUS dispatcher_regulatory_psoc_open(struct wlan_objmgr_psoc *psoc)
 {
 	return regulatory_psoc_open(psoc);
 }
 
-static QDF_STATUS dispatcher_regulatory_psoc_close(struct wlan_objmgr_psoc
-						   *psoc)
+static QDF_STATUS
+dispatcher_regulatory_psoc_close(struct wlan_objmgr_psoc *psoc)
 {
 	return regulatory_psoc_close(psoc);
 }
@@ -421,8 +418,7 @@ static QDF_STATUS spectral_psoc_disable(struct wlan_objmgr_psoc *psoc)
 	return ops_spectral.spectral_psoc_disable_handler(psoc);
 }
 #else
-static QDF_STATUS dispatcher_spectral_pdev_open(struct wlan_objmgr_pdev
-						  *pdev)
+static QDF_STATUS dispatcher_spectral_pdev_open(struct wlan_objmgr_pdev *pdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -453,8 +449,7 @@ static QDF_STATUS spectral_psoc_disable(struct wlan_objmgr_psoc *psoc)
 }
 #endif
 #else
-static QDF_STATUS dispatcher_spectral_pdev_open(struct wlan_objmgr_pdev
-						  *pdev)
+static QDF_STATUS dispatcher_spectral_pdev_open(struct wlan_objmgr_pdev *pdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -485,14 +480,13 @@ static QDF_STATUS spectral_psoc_disable(struct wlan_objmgr_psoc *psoc)
 }
 #endif
 
-static QDF_STATUS dispatcher_regulatory_pdev_open(struct wlan_objmgr_pdev
-						  *pdev)
+static QDF_STATUS dispatcher_regulatory_pdev_open(struct wlan_objmgr_pdev *pdev)
 {
 	return regulatory_pdev_open(pdev);
 }
 
-static QDF_STATUS dispatcher_regulatory_pdev_close(struct wlan_objmgr_pdev
-						  *pdev)
+static QDF_STATUS
+dispatcher_regulatory_pdev_close(struct wlan_objmgr_pdev *pdev)
 {
 	return regulatory_pdev_close(pdev);
 }
@@ -538,7 +532,6 @@ static QDF_STATUS sa_api_psoc_disable(struct wlan_objmgr_psoc *psoc)
 	return QDF_STATUS_SUCCESS;
 }
 #endif /* END of WLAN_SA_API_ENABLE */
-
 
 #ifdef WLAN_ATF_ENABLE
 static QDF_STATUS dispatcher_init_atf(void)
@@ -791,7 +784,7 @@ static QDF_STATUS dispatcher_splitmac_deinit(void)
 {
 	return QDF_STATUS_SUCCESS;
 }
-#endif  /* WLAN_SUPPORT_SPLITMAC */
+#endif /* WLAN_SUPPORT_SPLITMAC */
 
 #ifdef WLAN_CONV_SPECTRAL_ENABLE
 #ifndef SPECTRAL_MODULIZED_ENABLE
@@ -877,8 +870,7 @@ static QDF_STATUS dispatcher_green_ap_init(void)
 	return wlan_green_ap_init();
 }
 
-static QDF_STATUS dispatcher_green_ap_pdev_open(
-				struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS dispatcher_green_ap_pdev_open(struct wlan_objmgr_pdev *pdev)
 {
 	return wlan_green_ap_pdev_open(pdev);
 }
@@ -898,8 +890,7 @@ static QDF_STATUS dispatcher_green_ap_init(void)
 {
 	return QDF_STATUS_SUCCESS;
 }
-static QDF_STATUS dispatcher_green_ap_pdev_open(
-				struct wlan_objmgr_pdev *pdev)
+static QDF_STATUS dispatcher_green_ap_pdev_open(struct wlan_objmgr_pdev *pdev)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -1191,10 +1182,10 @@ QDF_STATUS dispatcher_init(void)
 		goto coap_init_fail;
 
 	/*
-	 * scheduler INIT has to be the last as each component's
-	 * initialization has to happen first and then at the end
-	 * scheduler needs to start accepting the service.
-	 */
+   * scheduler INIT has to be the last as each component's
+   * initialization has to happen first and then at the end
+   * scheduler needs to start accepting the service.
+   */
 	if (QDF_STATUS_SUCCESS != scheduler_init())
 		goto scheduler_init_fail;
 

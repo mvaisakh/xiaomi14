@@ -15,13 +15,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "wmi_unified_priv.h"
 #include "wmi_unified_cfr_api.h"
+#include "wmi_unified_priv.h"
 
 #ifdef WLAN_CFR_ENABLE
 
-QDF_STATUS wmi_unified_send_peer_cfr_capture_cmd(wmi_unified_t wmi_handle,
-						 struct peer_cfr_params *param)
+QDF_STATUS
+wmi_unified_send_peer_cfr_capture_cmd(wmi_unified_t wmi_handle,
+				      struct peer_cfr_params *param)
 {
 	if (wmi_handle->ops->send_peer_cfr_capture_cmd)
 		return wmi_handle->ops->send_peer_cfr_capture_cmd(wmi_handle,
@@ -36,9 +37,7 @@ wmi_extract_cfr_peer_tx_event_param(wmi_unified_t wmi_handle, void *evt_buf,
 {
 	if (wmi_handle->ops->extract_cfr_peer_tx_event_param)
 		return wmi_handle->ops->extract_cfr_peer_tx_event_param(
-							wmi_handle,
-							evt_buf,
-							peer_tx_event);
+			wmi_handle, evt_buf, peer_tx_event);
 	return QDF_STATUS_E_FAILURE;
 }
 
@@ -52,40 +51,36 @@ QDF_STATUS wmi_unified_send_cfr_rcc_cmd(wmi_unified_t wmi_handle,
 }
 
 QDF_STATUS
-wmi_extract_cfr_pdev_phase_delta_event(wmi_unified_t wmi_handle,
-				       void *evt_buf,
+wmi_extract_cfr_pdev_phase_delta_event(wmi_unified_t wmi_handle, void *evt_buf,
 				       struct wmi_cfr_phase_delta_param *param)
 {
 	if (wmi_handle->ops->extract_cfr_phase_param)
 		return wmi_handle->ops->extract_cfr_phase_param(wmi_handle,
-								evt_buf,
-								param);
+								evt_buf, param);
 	return QDF_STATUS_E_FAILURE;
 }
 
 #ifdef WLAN_RCC_ENHANCED_AOA_SUPPORT
 QDF_STATUS
 wmi_extract_cfr_pdev_enhanced_aoa_phasedelta_event_fixed_param(
-		wmi_unified_t wmi_handle,
-		void *evt_buf,
-		struct wmi_cfr_enh_phase_delta_param *param)
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct wmi_cfr_enh_phase_delta_param *param)
 {
 	if (wmi_handle->ops->extract_cfr_enh_phase_fixed_param)
-		return wmi_handle->ops->extract_cfr_enh_phase_fixed_param
-				(wmi_handle, evt_buf, param);
+		return wmi_handle->ops->extract_cfr_enh_phase_fixed_param(
+			wmi_handle, evt_buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }
 
 QDF_STATUS
 wmi_extract_cfr_pdev_enhanced_aoa_phasedelta_event_data(
-		wmi_unified_t wmi_handle, void *evt_buf,
-		struct wmi_cfr_enh_phase_delta_param *param)
+	wmi_unified_t wmi_handle, void *evt_buf,
+	struct wmi_cfr_enh_phase_delta_param *param)
 {
 	if (wmi_handle->ops->extract_cfr_enh_phase_data)
-		return wmi_handle->ops->extract_cfr_enh_phase_data(wmi_handle,
-								   evt_buf,
-								   param);
+		return wmi_handle->ops->extract_cfr_enh_phase_data(
+			wmi_handle, evt_buf, param);
 
 	return QDF_STATUS_E_FAILURE;
 }

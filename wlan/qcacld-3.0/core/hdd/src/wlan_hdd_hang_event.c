@@ -14,14 +14,14 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#include "wlan_hdd_object_manager.h"
 #include <qdf_hang_event_notifier.h>
 #include <qdf_notifier.h>
+#include <qdf_types.h>
 #include <wlan_hdd_hang_event.h>
 #include <wlan_objmgr_vdev_obj.h>
-#include "wlan_hdd_object_manager.h"
-#include <qdf_types.h>
 
-struct hdd_hang_event_fixed_param  {
+struct hdd_hang_event_fixed_param {
 	uint16_t tlv_header;
 	uint8_t vdev_id;
 	uint8_t vdev_opmode;
@@ -38,11 +38,10 @@ struct hdd_scan_fixed_param {
 } qdf_packed;
 
 static int wlan_hdd_recovery_notifier_call(struct notifier_block *block,
-					   unsigned long state,
-					   void *data)
+					   unsigned long state, void *data)
 {
-	qdf_notif_block *notif_block = qdf_container_of(block, qdf_notif_block,
-							notif_block);
+	qdf_notif_block *notif_block =
+		qdf_container_of(block, qdf_notif_block, notif_block);
 	struct hdd_context *hdd_ctx;
 	struct qdf_notifer_data *hdd_hang_data = data;
 	uint8_t *hdd_buf_ptr;
@@ -68,18 +67,19 @@ static int wlan_hdd_recovery_notifier_call(struct notifier_block *block,
 		cmd_scan = (struct hdd_scan_fixed_param *)hdd_buf_ptr;
 		QDF_HANG_EVT_SET_HDR(&cmd_scan->tlv_header,
 				     HANG_EVT_TAG_OS_IF_SCAN,
-		QDF_HANG_GET_STRUCT_TLVLEN(struct hdd_scan_fixed_param));
+				     QDF_HANG_GET_STRUCT_TLVLEN(
+					     struct hdd_scan_fixed_param));
 		cmd_scan->last_scan_reject_vdev_id =
-					hdd_ctx->last_scan_reject_vdev_id;
+			hdd_ctx->last_scan_reject_vdev_id;
 		cmd_scan->last_scan_reject_reason =
-					hdd_ctx->last_scan_reject_reason;
-		cmd_scan->scan_reject_cnt =
-					hdd_ctx->scan_reject_cnt;
+			hdd_ctx->last_scan_reject_reason;
+		cmd_scan->scan_reject_cnt = hdd_ctx->scan_reject_cnt;
 		hdd_hang_data->offset += total_len;
 	}
 
 	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter,
-					   dbgid) {
+					   dbgid)
+	{
 		vdev = hdd_objmgr_get_vdev_by_user(adapter->deflink,
 						   WLAN_OSIF_ID);
 		if (!vdev) {
@@ -89,18 +89,18 @@ static int wlan_hdd_recovery_notifier_call(struct notifier_block *block,
 		total_len = sizeof(*cmd);
 		hdd_buf_ptr = hdd_hang_data->hang_data + hdd_hang_data->offset;
 		if (hdd_hang_data->offset + total_len >
-				QDF_WLAN_HANG_FW_OFFSET) {
+		    QDF_WLAN_HANG_FW_OFFSET) {
 			hdd_objmgr_put_vdev_by_user(vdev, WLAN_OSIF_ID);
 			hdd_adapter_dev_put_debug(adapter, dbgid);
 			if (next_adapter)
-				hdd_adapter_dev_put_debug(next_adapter,
-							  dbgid);
+				hdd_adapter_dev_put_debug(next_adapter, dbgid);
 			return NOTIFY_STOP_MASK;
 		}
 		cmd = (struct hdd_hang_event_fixed_param *)hdd_buf_ptr;
-		QDF_HANG_EVT_SET_HDR(&cmd->tlv_header,
-				     HANG_EVT_TAG_OS_IF,
-		QDF_HANG_GET_STRUCT_TLVLEN(struct hdd_hang_event_fixed_param));
+		QDF_HANG_EVT_SET_HDR(
+			&cmd->tlv_header, HANG_EVT_TAG_OS_IF,
+			QDF_HANG_GET_STRUCT_TLVLEN(
+				struct hdd_hang_event_fixed_param));
 		cmd->vdev_id = wlan_vdev_get_id(vdev);
 		cmd->vdev_opmode = wlan_vdev_mlme_get_opmode(vdev);
 		cmd->vdev_state = wlan_vdev_mlme_get_state(vdev);

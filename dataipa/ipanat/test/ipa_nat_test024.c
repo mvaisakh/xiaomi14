@@ -29,47 +29,40 @@
 
 /*=========================================================================*/
 /*!
-	@file
-	ipa_nat_test024.c
+        @file
+        ipa_nat_test024.c
 
-	@brief
-	Verify the following scenario:
-	1. Trigger thousands of table memory switches
+        @brief
+        Verify the following scenario:
+        1. Trigger thousands of table memory switches
 
 */
 /*===========================================================================*/
 
 #include "ipa_nat_test.h"
 
-int ipa_nat_test024(
-	const char* nat_mem_type,
-	u32 pub_ip_add,
-	int total_entries,
-	u32 tbl_hdl,
-	int sep,
-	void* arb_data_ptr)
+int ipa_nat_test024(const char *nat_mem_type, u32 pub_ip_add, int total_entries,
+		    u32 tbl_hdl, int sep, void *arb_data_ptr)
 {
-	int* tbl_hdl_ptr = (int*) arb_data_ptr;
+	int *tbl_hdl_ptr = (int *)arb_data_ptr;
 
 	int i, ret;
 
 	IPADBG("In\n");
 
-	if ( sep )
-	{
-		ret = ipa_nat_add_ipv4_tbl(pub_ip_add, nat_mem_type, total_entries, &tbl_hdl);
+	if (sep) {
+		ret = ipa_nat_add_ipv4_tbl(pub_ip_add, nat_mem_type,
+					   total_entries, &tbl_hdl);
 		CHECK_ERR_TBL_STOP(ret, tbl_hdl);
 	}
 
-	for ( i = 0; i < 1000; i++ )
-	{
-		ret = ipa_nat_test022(
-			nat_mem_type, pub_ip_add, total_entries, tbl_hdl, !sep, arb_data_ptr);
+	for (i = 0; i < 1000; i++) {
+		ret = ipa_nat_test022(nat_mem_type, pub_ip_add, total_entries,
+				      tbl_hdl, !sep, arb_data_ptr);
 		CHECK_ERR_TBL_STOP(ret, tbl_hdl);
 	}
 
-	if ( sep )
-	{
+	if (sep) {
 		ret = ipa_nat_del_ipv4_tbl(tbl_hdl);
 		*tbl_hdl_ptr = 0;
 		CHECK_ERR(ret);

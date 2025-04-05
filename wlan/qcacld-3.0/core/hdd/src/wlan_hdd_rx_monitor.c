@@ -17,16 +17,16 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "wlan_hdd_rx_monitor.h"
+#include "cdp_txrx_mon.h"
+#include "ol_txrx.h"
 #include "wlan_hdd_includes.h"
-#include <linux/netdevice.h>
-#include <linux/skbuff.h>
-#include <linux/etherdevice.h>
-#include <linux/if_ether.h>
 #include <cds_sched.h>
 #include <cds_utils.h>
-#include "wlan_hdd_rx_monitor.h"
-#include "ol_txrx.h"
-#include "cdp_txrx_mon.h"
+#include <linux/etherdevice.h>
+#include <linux/if_ether.h>
+#include <linux/netdevice.h>
+#include <linux/skbuff.h>
 
 int hdd_enable_monitor_mode(struct net_device *dev)
 {
