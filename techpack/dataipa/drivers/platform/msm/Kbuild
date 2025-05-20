@@ -19,7 +19,7 @@ endif
 ifeq ($(filter $(CONFIG_ARCH_WAIPIO) $(CONFIG_ARCH_KALAMA) $(CONFIG_ARCH_PINEAPPLE), y),y)
 DATAIPADRVTOP = $(srctree)/dataipa/drivers/platform/msm
 LINUXINCLUDE    += -include $(srctree)/dataipa/config/dataipa_vendor.h
-include $(srctree)/dataipa/config/dataipa_GKI.conf
+include $(srctree)/techpack/dataipa/config/dataipa_GKI.conf
 ifeq ($(CONFIG_LOCALVERSION), "-gki-consolidate")
 include $(srctree)/techpack/dataipa/config/dataipa_GKI_consolidate.conf
 LINUXINCLUDE    += -include $(srctree)/techpack/dataipa/config/dataipa_debug.h
