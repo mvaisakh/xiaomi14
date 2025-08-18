@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -206,8 +206,12 @@ struct page* rmnet_mem_get_pages_entry(gfp_t gfp_mask, unsigned int order, int *
 		/* IPA doesn't want retry logic but pool will be empty for lower orders and those
 		 * will fail too so that is akin to retry. So just hardcode to not retry for o3 page req
 		 */
+		/* __GFP_NOMEMALLOC, ensures that the allocation does not use emergency memory reserves
+		 * if emergency memory reserves are used, there can be drops at the socket layer if socket
+		 * has not registered for emergency resources flag SOCK_MEMALLOC is used at sock layer.
+		 */
 		if (order < 3) {
-			page = __dev_alloc_pages((adding)? GFP_ATOMIC : gfp_mask, order);
+			page = __dev_alloc_pages((adding)? (GFP_ATOMIC |__GFP_NOMEMALLOC) : gfp_mask, order);
 			if (page) {
 				/* If below unbound limit then add page to static pool*/
 				if (adding) {
@@ -222,7 +226,7 @@ struct page* rmnet_mem_get_pages_entry(gfp_t gfp_mask, unsigned int order, int *
 		} else {
 			/* Only call get page if we will add page to static pool*/
 			if (adding) {
-				page = __dev_alloc_pages((adding)? GFP_ATOMIC : gfp_mask, order);
+				page = __dev_alloc_pages((adding)? (GFP_ATOMIC |__GFP_NOMEMALLOC) : gfp_mask, order);
 				if (page) {
 
 					rmnet_mem_add_page(page, order);
@@ -298,7 +302,7 @@ void rmnet_mem_adjust(unsigned perm_size, u8 pageorder)
 
 	if (perm_size > static_pool_size[pageorder]) {
 		for (i = 0; i < (adjustment); i++) {
-			newpage = __dev_alloc_pages(GFP_ATOMIC, pageorder);
+			newpage = __dev_alloc_pages(GFP_ATOMIC|__GFP_NOMEMALLOC, pageorder);
 			if (!newpage) {
 				continue;
 			}

@@ -33,23 +33,23 @@ ifeq ($(TARGET_DATARMNET_EXT_ENABLE), true)
 	DATA_MEM_DLKM_BOARD_PLATFORMS_LIST += volcano
 
 	ifneq ($(TARGET_BOARD_AUTO),true)
-		ifeq ($(call is-board-platform-in-list,$(DATA_OFFLOAD_DLKM_BOARD_PLATFORMS_LIST)),true)
+		ifneq ( ,$(call is-board-platform-in-list2,$(DATA_OFFLOAD_DLKM_BOARD_PLATFORMS_LIST)))
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_offload.ko
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_perf_tether.ko
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_perf.ko
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_wlan.ko
 		endif
-		ifeq ($(call is-board-platform-in-list,$(DATA_MEM_DLKM_BOARD_PLATFORMS_LIST)),true)
+		ifneq ( ,$(call is-board-platform-in-list2,$(DATA_MEM_DLKM_BOARD_PLATFORMS_LIST)))
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_mem.ko
 		endif
-		ifeq ($(call is-board-platform-in-list,$(DATA_SHS_DLKM_BOARD_PLATFORMS_LIST)),true)
+		ifneq ( ,$(call is-board-platform-in-list2,$(DATA_SHS_DLKM_BOARD_PLATFORMS_LIST)))
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_shs.ko
 		endif
-		ifeq ($(call is-board-platform-in-list,$(DATA_APS_DLKM_BOARD_PLATFORMS_LIST)),true)
+		ifneq ( ,$(call is-board-platform-in-list2,$(DATA_APS_DLKM_BOARD_PLATFORMS_LIST)))
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_aps.ko
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_sch.ko
 		endif
-		ifeq ($(call is-board-platform-in-list,$(DATA_WLAN_DLKM_BOARD_PLATFORMS_LIST)),true)
+		ifneq ( ,$(call is-board-platform-in-list2,$(DATA_WLAN_DLKM_BOARD_PLATFORMS_LIST)))
 			BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/rmnet_wlan.ko
 		endif
 	endif
