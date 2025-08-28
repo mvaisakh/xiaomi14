@@ -1,2 +1,2 @@
 # Touch drivers
-obj-y += synaptics_tcm2/
+obj-y += synaptics_tcm2/ xiaomi/
