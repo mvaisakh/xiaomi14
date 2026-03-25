@@ -46,8 +46,8 @@ append_cmd POST_DEFCONFIG_CMDS 'sanity_check_abi'
 
 function build_defconfig_fragments() {
 	if [[ "${VARIANT}" =~ ^(gki|consolidate)$ ]]; then
-		apply_defconfig_fragment ${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${TARGET_PRODUCT}_GKI.config vendor/${TARGET_PRODUCT}-gki_defconfig
-                apply_defconfig_fragment ${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${MSM_TARGET}_GKI.config vendor/${MSM_TARGET}-gki_defconfig
+                apply_defconfig_fragment ${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${MSM_ARCH}_GKI.config vendor/${MSM_ARCH}-gki_defconfig
+		apply_defconfig_fragment ${KERNEL_DIR}/arch/${ARCH}/configs/vendor/${MSM_TARGET}_GKI.config vendor/${MSM_TARGET}-gki_defconfig
 		if [ "${VARIANT}" = gki ]; then
 			return
 		fi

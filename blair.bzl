@@ -3,6 +3,7 @@ load(":msm_kernel_la.bzl", "define_msm_la")
 load(":image_opts.bzl", "boot_image_opts")
 
 target_name = "blair"
+target_arch = "blair"
 
 def define_blair():
     _blair_in_tree_modules = [
@@ -245,6 +246,7 @@ def define_blair():
 
         define_msm_la(
             msm_target = target_name,
+            msm_arch = target_arch,
             variant = variant,
             in_tree_module_list = mod_list,
             boot_image_opts = boot_image_opts(

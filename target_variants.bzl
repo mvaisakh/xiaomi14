@@ -5,12 +5,14 @@ la_targets = [
     "autogvm",
     "blair",
     "gen3auto",
+    "houji",
     "neo-la",
     "niobe",
     "pineapple",
     "pitti",
     "sdmsteppeauto",
     "seraph",
+    "shennong",
 ]
 
 la_variants = [

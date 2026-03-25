@@ -2,8 +2,6 @@
 _unprotected_modules_map = {
     "pitti": [
         # keep sorted
-        "drivers/block/zram/zram.ko",
-        "mm/zsmalloc.ko",
     ],
 }
 

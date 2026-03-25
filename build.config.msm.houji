@@ -1,0 +1,4 @@
+################################################################################
+## Inheriting configs from ACK
+TARGET_PRODUCT=houji
+. ${ROOT_DIR}/msm-kernel/build.config.msm.pineapple
