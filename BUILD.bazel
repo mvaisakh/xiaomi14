@@ -1027,5 +1027,5 @@ ddk_headers(
     includes = [
         "drivers/devfreq",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:public"],
 )
