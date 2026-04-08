@@ -1,6 +1,7 @@
 load(":image_opts.bzl", "boot_image_opts")
 load(":msm_kernel_la.bzl", "define_msm_la")
 load(":target_variants.bzl", "la_variants")
+load(":msm_ext_modules.bzl", "get_msm_ext_modules")
 
 target_name = "sdmsteppeauto"
 target_arch = "sdmsteppeauto"
@@ -211,11 +212,17 @@ def define_sdmsteppeauto():
         else:
             mod_list = _sdmsteppeauto_in_tree_modules
 
+        ext_group_name = get_msm_ext_modules(
+            target = target_name,
+            variant = variant
+        )
+
         define_msm_la(
             msm_target = target_name,
             msm_arch = target_arch,
             variant = variant,
             in_tree_module_list = mod_list,
+            ext_module_list = ["//msm-kernel:{}".format(ext_group_name)],
             boot_image_opts = boot_image_opts(
                 earlycon_addr = "qcom_geni,0x880000",
                 kernel_vendor_cmdline_extras = [

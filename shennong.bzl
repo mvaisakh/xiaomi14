@@ -3,6 +3,7 @@ load(":msm_kernel_la.bzl", "define_msm_la")
 load(":image_opts.bzl", "boot_image_opts")
 load(":pineapple.bzl", "target_arch", "target_arch_in_tree_modules", "target_arch_consolidate_in_tree_modules", "target_arch_kernel_vendor_cmdline_extras", "target_arch_board_kernel_cmdline_extras", "target_arch_board_bootconfig_extras")
 load(":xiaomi_sm8650_common.bzl", "xiaomi_common_in_tree_modules", "xiaomi_common_consolidate_in_tree_modules")
+load(":msm_ext_modules.bzl", "get_msm_ext_modules")
 
 target_name = "shennong"
 
@@ -32,11 +33,18 @@ def define_shennong():
             board_kernel_cmdline_extras += ["nosoftlockup"]
             kernel_vendor_cmdline_extras += ["nosoftlockup"]
             board_bootconfig_extras += ["androidboot.console=0"]
+
+        ext_group_name = get_msm_ext_modules(
+            target = target_name,
+            variant = variant
+        )
+
         define_msm_la(
             msm_target = target_name,
             msm_arch = target_arch,
             variant = variant,
             in_tree_module_list = mod_list,
+            ext_module_list = ["//msm-kernel:{}".format(ext_group_name)],
             boot_image_opts = boot_image_opts(
                 earlycon_addr = "qcom_geni,0x00a9C000",
                 kernel_vendor_cmdline_extras = kernel_vendor_cmdline_extras,

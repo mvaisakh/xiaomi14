@@ -127,7 +127,7 @@ def _define_kernel_build(
         dtbo_list,
         dtstree,
         define_abi_targets,
-        kmi_enforced):
+        kmi_enforced,):
     """Creates a `kernel_build` and other associated definitions
 
     This is where the main kernel build target is created (e.g. `//msm-kernel:kalama_gki`).
@@ -342,6 +342,7 @@ def _define_kernel_dist(
         variant,
         base_kernel,
         define_abi_targets,
+        ext_module_list = [],
         boot_image_opts = boot_image_opts(),
         dpm_overlay = False):
     """Creates distribution targets for kernel builds
@@ -405,6 +406,9 @@ def _define_kernel_dist(
     if board_bc_extras:
         msm_dist_targets.append("{}_extra_bootconfig".format(target))
 
+    if ext_module_list:
+        msm_dist_targets.extend(ext_module_list)
+
     if define_abi_targets:
         kernel_abi_dist(
             name = "{}_dist".format(target),
@@ -462,6 +466,7 @@ def define_msm_la(
         msm_arch,
         variant,
         in_tree_module_list,
+        ext_module_list = [],
         kmi_enforced = True,
         dpm_overlay = False,
         boot_image_opts = boot_image_opts()):
@@ -564,6 +569,7 @@ def define_msm_la(
         variant,
         base_kernel,
         define_abi_targets,
+        ext_module_list = ext_module_list,
         boot_image_opts = boot_image_opts,
         dpm_overlay = dpm_overlay,
     )

@@ -1,6 +1,7 @@
 load(":target_variants.bzl", "la_variants")
 load(":msm_kernel_la.bzl", "define_msm_la")
 load(":image_opts.bzl", "boot_image_opts")
+load(":msm_ext_modules.bzl", "get_msm_ext_modules")
 
 target_name = "pitti"
 target_arch = "pitti"
@@ -234,11 +235,17 @@ def define_pitti():
             kernel_vendor_cmdline_extras += ["nosoftlockup"]
             board_bootconfig_extras += ["androidboot.console=0"]
 
+        ext_group_name = get_msm_ext_modules(
+            target = target_name,
+            variant = variant
+        )
+
         define_msm_la(
             msm_target = target_name,
             msm_arch = target_arch,
             variant = variant,
             in_tree_module_list = mod_list,
+            ext_module_list = ["//msm-kernel:{}".format(ext_group_name)],
             boot_image_opts = boot_image_opts(
                 earlycon_addr = "qcom_geni,0x4C8C000",
                 kernel_vendor_cmdline_extras = kernel_vendor_cmdline_extras,
