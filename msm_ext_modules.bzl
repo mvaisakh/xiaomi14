@@ -57,6 +57,7 @@ def get_msm_ext_modules(target, variant):
             "//vendor/qcom/opensource/bt-kernel:{}_modules".format(tv),
             "//vendor/qcom/opensource/camera-kernel:{}_camera".format(tv),
             "//vendor/nxp/opensource/driver:{}_nxp-nci".format(tv),
+            "//vendor/qcom/opensource/touch-drivers:{}_touch_drivers".format(tv),
         ],
     )
 
