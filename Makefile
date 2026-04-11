@@ -4,16 +4,9 @@ M ?= $(shell pwd)
 KBUILD_OPTIONS	+= CONFIG_TOUCHSCREEN_SYNA_TCM2=m
 # CONFIG_TOUCHSCREEN_SYNA_TCM2_TESTING is not set
 # CONFIG_TOUCHSCREEN_SYNA_TCM2_ROMBOOT is not set
-EXTRA_CFLAGS	+= -DDYNAMIC_DEBUG_MODULE
 EXTRA_CFLAGS	+= -DCONFIG_TOUCHSCREEN_SYNA_TCM2_REFLASH
 EXTRA_CFLAGS	+= -DCONFIG_TOUCHSCREEN_SYNA_TCM2_SYSFS
 EXTRA_CFLAGS	+= -DCONFIG_TOUCHSCREEN_SYNA_TCM2_TESTING
-EXTRA_CFLAGS	+= -I$(KERNEL_SRC)/../google-modules/display
-EXTRA_CFLAGS	+= -I$(KERNEL_SRC)/../google-modules/touch/common
-EXTRA_CFLAGS	+= -I$(KERNEL_SRC)/../google-modules/touch/common/include
-EXTRA_CFLAGS	+= -I$(KERNEL_SRC)/../google-modules/touch/synaptics
-EXTRA_CFLAGS	+= -I$(KERNEL_SRC)/../google-modules/touch/synaptics/tcm
-EXTRA_SYMBOLS	+= $(OUT_DIR)/../google-modules/touch/common/Module.symvers
 
 modules modules_install clean:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) \

@@ -45,7 +45,6 @@
 #include "synaptics_touchcom_func_touch.h"
 
 #include <linux/pm_qos.h>
-#include "../../../gs-google/drivers/soc/google/vh/kernel/systrace.h"
 
 #define PLATFORM_DRIVER_NAME "synaptics_tcm"
 
