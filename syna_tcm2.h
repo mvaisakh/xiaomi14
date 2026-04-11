@@ -569,12 +569,6 @@ struct syna_tcm {
 	u8 next_enable_fw_grip;
 	u8 next_enable_fw_palm;
 
-#if defined(USE_DRM_BRIDGE)
-	struct drm_bridge panel_bridge;
-	struct drm_connector *connector;
-	bool is_panel_lp_mode;
-#endif
-
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
 	u32 tbn_register_mask;
 #endif
