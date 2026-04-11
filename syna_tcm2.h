@@ -48,11 +48,6 @@
 #include <touch_bus_negotiator.h>
 #endif
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_OFFLOAD)
-#include <touch_offload.h>
-#include <linux/hrtimer.h>
-#endif
-
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
 #include <heatmap.h>
 #endif
@@ -502,14 +497,6 @@ struct syna_tcm {
 	ktime_t coords_timestamp;
 
 	struct syna_health_check syna_hc;
-
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_OFFLOAD)
-	struct touch_offload_context offload;
-	u16 *heatmap_buff;
-	struct touch_offload_frame *reserved_frame;
-	bool offload_reserved_coords;
-	u8 touch_offload_active_coords;
-#endif
 
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
 	bool heatmap_decoded;
