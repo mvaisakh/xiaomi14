@@ -1248,94 +1248,6 @@ static struct kobj_attribute kobj_attr_mf_mode =
 	       syna_sysfs_mf_mode_store);
 
 /**
- * syna_sysfs_compression_threshold_show()
- *
- * Attribute get the heatmap compression threshold.
- *
- * @param
- *    [ in] kobj:  an instance of kobj
- *    [ in] attr:  an instance of kobj attribute structure
- *    [out] buf:  string buffer shown on console
- *
- * @return
- *    on success, number of characters being output;
- *    otherwise, negative value on error.
- */
-static ssize_t syna_sysfs_compression_threshold_show(struct kobject *kobj,
-		struct kobj_attribute *attr, char *buf)
-{
-	int retval = 0;
-	struct device *p_dev;
-	struct kobject *p_kobj;
-	struct syna_tcm *tcm;
-
-	p_kobj = g_sysfs_dir->parent;
-	p_dev = container_of(p_kobj, struct device, kobj);
-	tcm = dev_get_drvdata(p_dev);
-
-	syna_pal_mutex_lock(&g_extif_mutex);
-
-	retval = scnprintf(buf, PAGE_SIZE, "%u\n", tcm->hw_if->compression_threhsold);
-
-	syna_pal_mutex_unlock(&g_extif_mutex);
-	return retval;
-}
-
-/**
- * syna_sysfs_compression_threshold_store()
- *
- * Attribute set the heatmap compression threshold.
- *
- * @param
- *    [ in] kobj:  an instance of kobj
- *    [ in] attr:  an instance of kobj attribute structure
- *    [ in] buf:   string buffer input
- *    [ in] count: size of buffer input
- *
- * @return
- *    on success, return count; otherwise, return error code
- */
-static ssize_t syna_sysfs_compression_threshold_store(struct kobject *kobj,
-		struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int retval = count;
-	u8 input;
-	struct device *p_dev;
-	struct kobject *p_kobj;
-	struct syna_tcm *tcm;
-
-	p_kobj = g_sysfs_dir->parent;
-	p_dev = container_of(p_kobj, struct device, kobj);
-	tcm = dev_get_drvdata(p_dev);
-
-	if (kstrtou8(buf, 10, &input)) {
-		LOGE("Invalid input %s", buf);
-		return -EINVAL;
-	}
-
-	syna_set_bus_ref(tcm, SYNA_BUS_REF_SYSFS, true);
-	syna_pal_mutex_lock(&g_extif_mutex);
-
-	tcm->hw_if->compression_threhsold = input;
-
-	syna_tcm_set_dynamic_config(tcm->tcm_dev,
-			DC_COMPRESSION_THRESHOLD,
-			input,
-			RESP_IN_ATTN);
-
-	LOGI("Set the heatmap compression threshold as %u.\n",
-	     tcm->hw_if->compression_threhsold);
-
-	syna_pal_mutex_unlock(&g_extif_mutex);
-	syna_set_bus_ref(tcm, SYNA_BUS_REF_SYSFS, false);
-	return retval;
-}
-
-static struct kobj_attribute kobj_attr_compression_threshold =
-	__ATTR(compression_threshold, 0644, syna_sysfs_compression_threshold_show,
-	       syna_sysfs_compression_threshold_store);
-
-/**
  * declaration of sysfs attributes
  */
 static struct attribute *attrs[] = {
@@ -1349,7 +1261,6 @@ static struct attribute *attrs[] = {
 	&kobj_attr_fw_grip.attr,
 	&kobj_attr_fw_palm.attr,
 	&kobj_attr_mf_mode.attr,
-	&kobj_attr_compression_threshold.attr,
 	NULL,
 };
 

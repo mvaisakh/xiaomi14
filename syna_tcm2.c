@@ -306,40 +306,6 @@ static int syna_dev_enable_lowpwr_gesture(struct syna_tcm *tcm, bool en)
 }
 
 /**
- * syna_dev_set_heatmap_mode()
- *
- * Enable or disable the low power gesture mode.
- * Furthermore, set up the wake-up irq.
- *
- * @param
- *    [ in] tcm: tcm driver handle
- *    [ in] en:  '1' to enable heatmap mode; '0' to disable.
- *
- * @return
- *    on success, 0; otherwise, negative value on error.
- */
-static void syna_dev_set_heatmap_mode(struct syna_tcm *tcm, bool en)
-{
-	int retval = 0;
-	struct syna_hw_attn_data *attn = &tcm->hw_if->bdata_attn;
-	uint8_t resp_code;
-	uint8_t heatmap[1] = {REPORT_HEAT_MAP};
-	uint8_t command = en ? CMD_ENABLE_REPORT : CMD_DISABLE_REPORT;
-	uint32_t delay = attn->irq_enabled ?
-			 RESP_IN_ATTN : tcm->tcm_dev->msg_data.default_resp_reading;
-
-	retval = tcm->tcm_dev->write_message(tcm->tcm_dev,
-			command,
-			heatmap,
-			1,
-			&resp_code,
-			delay);
-	if (retval < 0) {
-		LOGE("Fail to %s heatmap\n", en ? "enable" : "disable");
-	}
-}
-
-/**
  * syna_dev_restore_feature_setting()
  *
  * Restore the feature settings after the device resume.
@@ -355,8 +321,6 @@ static void syna_dev_set_heatmap_mode(struct syna_tcm *tcm, bool en)
  */
 static void syna_dev_restore_feature_setting(struct syna_tcm *tcm, unsigned int delay_ms_resp)
 {
-	syna_dev_set_heatmap_mode(tcm, true);
-
 	syna_tcm_set_dynamic_config(tcm->tcm_dev,
 			DC_ENABLE_PALM_REJECTION,
 			(tcm->enable_fw_palm & 0x01),
@@ -1236,52 +1200,6 @@ exit:
 	return retval;
 }
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
-static bool v4l2_read_frame(struct v4l2_heatmap *v4l2)
-{
-	bool ret = true;
-	int i, j;
-	struct syna_tcm *tcm =
-		container_of(v4l2, struct syna_tcm, v4l2);
-
-	if (tcm->v4l2.width == tcm->tcm_dev->rows &&
-		tcm->v4l2.height == tcm->tcm_dev->cols) {
-		if (tcm->heatmap_decoded) {
-			memcpy(v4l2->frame, tcm->heatmap_buff,
-			       tcm->v4l2.width * tcm->v4l2.height * sizeof(u16));
-		} else {
-		    if (syna_heatmap_alloc_check(tcm) != 0)
-			return false;
-
-		    /* for 'heat map' ($c3) report,
-		     * report data has been stored at tcm->event_data.buf;
-		     * while, tcm->event_data.data_length is the size of data
-		     */
-		    syna_dev_ptflib_decoder(tcm,
-			&((u16 *) tcm->event_data.buf)[tcm->tcm_dev->rows + tcm->tcm_dev->cols],
-			(tcm->event_data.data_length) / 2 -
-			    tcm->tcm_dev->rows - tcm->tcm_dev->cols,
-			tcm->heatmap_buff, tcm->tcm_dev->rows * tcm->tcm_dev->cols);
-
-		    for (i = 0; i < tcm->tcm_dev->cols; i++) {
-			for (j = 0; j < tcm->tcm_dev->rows; j++) {
-			    ((u16 *) v4l2->frame)[tcm->tcm_dev->rows * i + j] =
-				tcm->heatmap_buff[tcm->tcm_dev->cols * j + i];
-			}
-		    }
-		}
-	} else {
-		LOGE("size mismatched, (%lu, %lu) vs (%u, %u)!\n",
-		tcm->v4l2.width, tcm->v4l2.height,
-		tcm->tcm_dev->rows, tcm->tcm_dev->cols);
-		ret = false;
-	}
-	tcm->heatmap_decoded = false;
-
-	return ret;
-}
-#endif
-
 static irqreturn_t syna_dev_isr(int irq, void *handle)
 {
 	struct syna_tcm *tcm = handle;
@@ -1408,19 +1326,6 @@ static irqreturn_t syna_dev_interrupt_thread(int irq, void *data)
 
 	/* handling the particular report data */
 	switch (code) {
-	case REPORT_HEAT_MAP:
-		/* for 'heat map' ($c3) report,
-		 * report data has been stored at tcm->event_data.buf;
-		 * while, tcm->event_data.data_length is the size of data
-		 */
-		LOGD("Heat map data received, size:%d\n",
-			tcm->event_data.data_length);
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
-		ATRACE_BEGIN("heatmap_read");
-		heatmap_read(&tcm->v4l2, ktime_to_ns(tcm->coords_timestamp));
-		ATRACE_END();
-#endif
-		break;
 	case REPORT_FW_STATUS:
 		/* for 'fw status' ($c2) report,
 		 * report size shall be 2-byte only; the
@@ -2107,8 +2012,6 @@ static int syna_dev_suspend(struct device *dev)
 	if (irq_disabled && (hw_if->ops_enable_irq))
 		hw_if->ops_enable_irq(hw_if, false);
 
-	syna_dev_set_heatmap_mode(tcm, false);
-
 	syna_pinctrl_configure(tcm, false);
 
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
@@ -2621,24 +2524,6 @@ static int syna_dev_probe(struct platform_device *pdev)
 	tcm->syna_hc.status_event_cnt = 0;
 	tcm->syna_hc.touch_idx_state = 0;
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
-	/*
-	 * Heatmap_probe must be called before irq routine is registered,
-	 * because heatmap_read is called from interrupt context.
-	 */
-	tcm->v4l2.parent_dev = &tcm->pdev->dev;
-	tcm->v4l2.input_dev = tcm->input_dev;
-	tcm->v4l2.read_frame = v4l2_read_frame;
-	tcm->v4l2.width = tcm->tcm_dev->rows;
-	tcm->v4l2.height = tcm->tcm_dev->cols;
-	/* 240 Hz operation */
-	tcm->v4l2.timeperframe.numerator = 1;
-	tcm->v4l2.timeperframe.denominator = 240;
-	retval = heatmap_probe(&tcm->v4l2);
-	if (retval < 0)
-		goto err_heatmap_probe;
-#endif
-
 	/* init motion filter mode */
 	tcm->mf_mode = MF_DYNAMIC;
 
@@ -2740,11 +2625,6 @@ err_request_irq:
 #if defined(TCM_CONNECT_IN_PROBE)
 	tcm->dev_disconnect(tcm);
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
-	heatmap_remove(&tcm->v4l2);
-err_heatmap_probe:
-#endif
-
 err_connect:
 #endif
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
@@ -2829,10 +2709,6 @@ static int syna_dev_remove(struct platform_device *pdev)
 		LOGE("Fail to do device disconnection\n");
 
 	cpu_latency_qos_remove_request(&tcm->pm_qos_req);
-
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
-	heatmap_remove(&tcm->v4l2);
-#endif
 
 	if (tcm->raw_data_buffer) {
 		kfree(tcm->raw_data_buffer);

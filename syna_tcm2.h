@@ -48,10 +48,6 @@
 #include <touch_bus_negotiator.h>
 #endif
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
-#include <heatmap.h>
-#endif
-
 #include <linux/pm_qos.h>
 #include "../../../gs-google/drivers/soc/google/vh/kernel/systrace.h"
 
@@ -497,11 +493,6 @@ struct syna_tcm {
 	ktime_t coords_timestamp;
 
 	struct syna_health_check syna_hc;
-
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_HEATMAP)
-	bool heatmap_decoded;
-	struct v4l2_heatmap v4l2;
-#endif
 
 	/* Motion filter mode.
 	 *  0 = Always unfilter.
