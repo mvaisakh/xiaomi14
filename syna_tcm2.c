@@ -1859,11 +1859,6 @@ static int syna_dev_resume(struct device *dev)
 
 	LOGI("Prepare to resume device\n");
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
-	if (tcm->tbn_register_mask)
-		tbn_request_bus(tcm->tbn_register_mask);
-#endif
-
 	syna_pinctrl_configure(tcm, true);
 
 	if (hw_if->udfps_x != 0 && hw_if->udfps_y != 0)
@@ -2014,10 +2009,6 @@ static int syna_dev_suspend(struct device *dev)
 
 	syna_pinctrl_configure(tcm, false);
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
-	if (tcm->tbn_register_mask)
-		tbn_release_bus(tcm->tbn_register_mask);
-#endif
 	LOGI("Device suspended (pwr_state:%d), int_cnt:%llu\n", tcm->pwr_state,
 	     tcm->syna_hc.int_cnt);
 
@@ -2495,15 +2486,6 @@ static int syna_dev_probe(struct platform_device *pdev)
 
 	cpu_latency_qos_add_request(&tcm->pm_qos_req, PM_QOS_DEFAULT_VALUE);
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
-	if (register_tbn(&tcm->tbn_register_mask)) {
-		retval = -ENODEV;
-		LOGE("Failed to register tbn context.");
-		goto err_connect;
-	}
-	LOGI("tbn_register_mask = %#x.\n", tcm->tbn_register_mask);
-#endif
-
 #if defined(TCM_CONNECT_IN_PROBE)
 	/* connect to target device */
 	retval = tcm->dev_connect(tcm);
@@ -2627,10 +2609,6 @@ err_request_irq:
 
 err_connect:
 #endif
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
-	if (tcm->tbn_register_mask)
-		unregister_tbn(&tcm->tbn_register_mask);
-#endif
 	cpu_latency_qos_remove_request(&tcm->pm_qos_req);
 
 	if (tcm->event_wq)
@@ -2673,11 +2651,6 @@ static int syna_dev_remove(struct platform_device *pdev)
 	cancel_work_sync(&tcm->set_grip_mode_work);
 	cancel_work_sync(&tcm->set_palm_mode_work);
 	cancel_delayed_work_sync(&tcm->set_report_rate_work);
-
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
-	if (tcm->tbn_register_mask)
-		unregister_tbn(&tcm->tbn_register_mask);
-#endif
 
 #if defined(ENABLE_DISP_NOTIFIER)
 #if defined(USE_DRM_PANEL_NOTIFIER)

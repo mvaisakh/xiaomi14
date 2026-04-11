@@ -44,10 +44,6 @@
 #include "synaptics_touchcom_core_dev.h"
 #include "synaptics_touchcom_func_touch.h"
 
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
-#include <touch_bus_negotiator.h>
-#endif
-
 #include <linux/pm_qos.h>
 #include "../../../gs-google/drivers/soc/google/vh/kernel/systrace.h"
 
@@ -546,10 +542,6 @@ struct syna_tcm {
 	u8 enable_fw_palm;
 	u8 next_enable_fw_grip;
 	u8 next_enable_fw_palm;
-
-#if IS_ENABLED(CONFIG_TOUCHSCREEN_TBN)
-	u32 tbn_register_mask;
-#endif
 
 	struct pm_qos_request pm_qos_req;
 
