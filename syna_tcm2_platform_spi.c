@@ -1066,7 +1066,7 @@ static int syna_spi_probe(struct spi_device *spi)
  * @return
  *    on success, 0; otherwise, negative value on error.
  */
-static int syna_spi_remove(struct spi_device *spi)
+static void syna_spi_remove(struct spi_device *spi)
 {
 	struct syna_hw_attn_data *attn = &syna_spi_hw_if.bdata_attn;
 	struct syna_hw_pwr_data *pwr = &syna_spi_hw_if.bdata_pwr;
@@ -1093,7 +1093,6 @@ static int syna_spi_remove(struct spi_device *spi)
 	syna_spi_device->dev.platform_data = NULL;
 	platform_device_unregister(syna_spi_device);
 
-	return 0;
 }
 
 /**
