@@ -252,10 +252,15 @@ static void syna_tcm_v2_dispatch_report(struct tcm_dev *tcm_dev)
 			switch (tcm_msg->command) {
 			case CMD_RESET:
 				LOGD("Reset by CMD_RESET\n");
+				fallthrough;
 			case CMD_REBOOT_TO_ROM_BOOTLOADER:
+				fallthrough;
 			case CMD_RUN_BOOTLOADER_FIRMWARE:
+				fallthrough;
 			case CMD_RUN_APPLICATION_FIRMWARE:
+				fallthrough;
 			case CMD_ENTER_PRODUCTION_TEST_MODE:
+				fallthrough;
 			case CMD_ROMBOOT_RUN_BOOTLOADER_FIRMWARE:
 				tcm_msg->status_report_code = STATUS_OK;
 				tcm_msg->response_code = STATUS_OK;
