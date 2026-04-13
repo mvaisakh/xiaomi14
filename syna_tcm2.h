@@ -225,7 +225,7 @@
  *
  *        Set "disable" in default
  */
-#define ENABLE_EXTERNAL_FRAME_PROCESS
+/* #define ENABLE_EXTERNAL_FRAME_PROCESS */
 #define REPORT_TYPES (256)
 #define EFP_ENABLE	(1)
 #define EFP_DISABLE (0)
