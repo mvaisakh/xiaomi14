@@ -473,15 +473,14 @@ static int syna_spi_parse_dt(struct syna_hw_interface *hw_if,
 								       "synaptics,firmware_names",
 								       index, &name);
 				if (retval < 0)
-					hw_if->fw_name = FW_IMAGE_NAME;
-				else
+					LOGE("Firmware name not specified");
+				else {
 					hw_if->fw_name = name;
-				LOGI("Firmware name %s", hw_if->fw_name);
+					LOGI("Firmware name %s", hw_if->fw_name);
+				}
 				break;
 			}
 		}
-	} else {
-		hw_if->fw_name = FW_IMAGE_NAME;
 	}
 
 	prop = of_find_property(np, "synaptics,irq-gpio", NULL);
