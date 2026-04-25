@@ -1476,13 +1476,17 @@ static int configure_cpucp_mon(struct memlat_mon *mon)
 	struct device_node *of_node = mon->dev->of_node;
 	int ret;
 	const char c = ':';
+	const char *cpu_ptr;
 
 	msg.cpumask = mon->cpus_mpidr;
 	msg.hw_type = grp->hw_type;
 	msg.mon_type = mon->is_compute;
 	msg.mon_idx = mon->index;
-	if ((strrchr(dev_name(mon->dev), c) + 1))
-		scnprintf(msg.mon_name, MAX_NAME_LEN, "%s", (strrchr(dev_name(mon->dev), c) + 1));
+	cpu_ptr = strrchr(dev_name(mon->dev), c);
+
+	if (cpu_ptr)
+        scnprintf(msg.mon_name, MAX_NAME_LEN, "%s", cpu_ptr + 1);
+
 	ret = ops->set_param(memlat_data->ph, &msg,
 			MEMLAT_ALGO_STR, MEMLAT_SET_MONITOR, sizeof(msg));
 	if (ret < 0) {
