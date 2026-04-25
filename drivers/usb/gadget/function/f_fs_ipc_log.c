@@ -83,9 +83,18 @@ enum ffs_os_desc_type {
 	FFS_OS_DESC, FFS_OS_DESC_EXT_COMPAT, FFS_OS_DESC_EXT_PROP
 };
 
+#ifdef CONFIG_MODULES
 #define kprobe_log(context, fmt, ...) \
 	ipc_log_string(context, "%s: " fmt, \
 		get_kretprobe(ri)->kp.symbol_name, ##__VA_ARGS__)
+#else
+#define kprobe_log(context, fmt, ...)                 \
+    do {                                              \
+        (void)(context);                              \
+        if (0)                                        \
+            no_printk(fmt, ##__VA_ARGS__);            \
+    } while (0)
+#endif
 
 #define MAX_IPC_INSTANCES 9
 
