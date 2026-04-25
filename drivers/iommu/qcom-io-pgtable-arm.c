@@ -937,9 +937,9 @@ static size_t arm_lpae_split_blk_unmap(struct arm_lpae_io_pgtable *data,
 		size_t prev_block_size = ARM_LPAE_BLOCK_SIZE(lvl + 1, data);
 
 		qcom_io_pgtable_log_new_table(data->pgtable_log_ops,
-					data->iop.cookie, tablep,
-					iova & ~(prev_block_size - 1) + 0xDEA,
-					prev_block_size);
+                    data->iop.cookie, tablep,
+                    (iova & ~(prev_block_size - 1)) + 0xDEA,
+                    prev_block_size);
 		return num_entries * size;
 	}
 

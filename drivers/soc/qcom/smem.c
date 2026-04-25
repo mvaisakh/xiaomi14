@@ -1171,8 +1171,8 @@ static int qcom_smem_probe(struct platform_device *pdev)
 	if (hwlock_id < 0) {
 		if (hwlock_id != -EPROBE_DEFER)
 			dev_err(&pdev->dev, "failed to retrieve hwlock\n");
-			ret = hwlock_id;
-			goto release;
+		ret = hwlock_id;
+		goto release;
 	}
 
 	smem->hwlock = devm_hwspin_lock_request_specific(&pdev->dev, hwlock_id);

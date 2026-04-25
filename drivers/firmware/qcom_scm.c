@@ -327,6 +327,7 @@ static int qcom_scm_call_noretry(struct device *dev,
 		return scm_smc_call(dev, desc, res, QCOM_SCM_CALL_NORETRY);
 	case SMC_CONVENTION_LEGACY:
 		BUG_ON(1); /* No current implementation */
+		break;
 	default:
 		pr_err("Unknown current SCM calling convention.\n");
 		return -EINVAL;
