@@ -1255,6 +1255,7 @@ static void md_register_panic_data(void)
 				  &md_runq_seq_buf);
 }
 
+#ifdef CONFIG_MODULES
 static int register_vmap_mem(const char *name, void *virual_addr, size_t dump_len)
 {
 	int to_dump;
@@ -1375,6 +1376,7 @@ static void md_register_module_data(void)
 	}
 	preempt_enable();
 }
+#endif
 
 struct freq_log {
 	uint64_t ktime;
@@ -1536,7 +1538,9 @@ int msm_minidump_log_init(void)
 #endif
 #ifdef CONFIG_QCOM_MINIDUMP_PANIC_DUMP
 	register_cpufreq_log();
+#ifdef CONFIG_MODULES
 	md_register_module_data();
+#endif
 	md_register_panic_data();
 	atomic_notifier_chain_register(&panic_notifier_list, &md_panic_blk);
 #ifdef CONFIG_QCOM_MINIDUMP_PANIC_CPU_CONTEXT
