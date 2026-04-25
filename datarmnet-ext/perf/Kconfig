@@ -7,5 +7,5 @@ menuconfig RMNET_PERF
     default m
     depends on RMNET_CORE
     depends on RMNET_SHS
-    ---help---
+    help
         Performance support for the RmNet driver

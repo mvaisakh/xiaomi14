@@ -5,5 +5,5 @@
 menuconfig RMNET_APS
     tristate "Rmnet APS support"
     default m
-    ---help---
+    help
         Apps prioritization module for RmNet driver
