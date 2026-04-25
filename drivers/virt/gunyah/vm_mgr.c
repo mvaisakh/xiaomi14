@@ -178,8 +178,10 @@ EXPORT_SYMBOL_GPL(gh_vm_function_register);
 
 void gh_vm_function_unregister(struct gh_vm_function *fn)
 {
+#ifdef CONFIG_MODULES
 	/* Expecting unregister to only come when unloading a module */
 	WARN_ON(fn->mod && module_refcount(fn->mod));
+#endif
 	xa_erase(&gh_vm_functions, fn->type);
 }
 EXPORT_SYMBOL_GPL(gh_vm_function_unregister);
