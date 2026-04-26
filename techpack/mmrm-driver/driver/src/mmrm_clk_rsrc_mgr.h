@@ -27,7 +27,7 @@ enum mmrm_sw_vdd_levels {
 	MMRM_VDD_LEVEL_MAX
 };
 
-static int mmrm_sw_vdd_corner[] = {
+static int __maybe_unused mmrm_sw_vdd_corner[] = {
 	[MMRM_VDD_LEVEL_LOW_SVS] = RPMH_REGULATOR_LEVEL_LOW_SVS,
 	[MMRM_VDD_LEVEL_SVS] = RPMH_REGULATOR_LEVEL_SVS,
 	[MMRM_VDD_LEVEL_SVS_L1] = RPMH_REGULATOR_LEVEL_SVS_L1,

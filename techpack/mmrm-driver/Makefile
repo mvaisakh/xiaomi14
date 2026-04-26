@@ -1,4 +1,4 @@
-KBUILD_OPTIONS+= MMRM_ROOT=$(KERNEL_SRC)/$(M)
+KBUILD_OPTIONS += MMRM_ROOT=$(KERNEL_SRC)/techpack/mmrm-driver
 
 all: modules
 
