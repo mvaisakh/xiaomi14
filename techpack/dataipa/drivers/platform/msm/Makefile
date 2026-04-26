@@ -1,5 +1,5 @@
 ifeq ($(KP_MODULE_ROOT),)
-KP_MODULE_ROOT=$(KERNEL_SRC)/$(M)
+KP_MODULE_ROOT=$(KERNEL_SRC)/techpack/dataipa/drivers/platform/msm
 endif
 
 KBUILD_OPTIONS+=KBUILD_DTC_INCLUDE=$(KP_MODULE_ROOT)

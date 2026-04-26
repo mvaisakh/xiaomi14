@@ -6760,7 +6760,7 @@ void ipa3_enable_clks(void)
 			ipa3_ctx->icc_clk[idx][i][IPA_ICC_AB],
 			ipa3_ctx->icc_clk[idx][i][IPA_ICC_IB]))
 			WARN(1, "path %d bus scaling failed", i);
-			IPADBG_CLK("IPA ICC Voting for BW %d Path Completed\n", i);
+		IPADBG_CLK("IPA ICC Voting for BW %d Path Completed\n", i);
 	}
 	IPADBG_CLK("IPA ICC Voting for BW Finished\n");
 
@@ -6837,7 +6837,7 @@ void ipa3_disable_clks(void)
 			ipa3_ctx->icc_clk[IPA_ICC_NONE][i][IPA_ICC_AB],
 			ipa3_ctx->icc_clk[IPA_ICC_NONE][i][IPA_ICC_IB]))
 			WARN(1, "path %d bus off failed", i);
-			IPADBG_CLK("IPA ICC Voting for BW %d Path Completed\n", i);
+		IPADBG_CLK("IPA ICC Voting for BW %d Path Completed\n", i);
 	}
 	IPADBG_CLK("IPA ICC Voting for BW Finished\n");
 	atomic_set(&ipa3_ctx->ipa_clk_vote, 0);
