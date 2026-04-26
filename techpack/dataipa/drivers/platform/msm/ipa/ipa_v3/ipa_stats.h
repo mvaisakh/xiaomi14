@@ -78,7 +78,7 @@
  * registers with pm
  */
 struct pm_client_name_lookup { char *name; int idx_hdl;};
-static struct pm_client_name_lookup client_lookup_table[] = {
+static struct pm_client_name_lookup __maybe_unused client_lookup_table[] = {
 	{"ODL", 1},
 	{"IPA_CLIENT_APPS_LAN_CONS", 2},
 	{"EMB MODEM", 3},
