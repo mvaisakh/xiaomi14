@@ -16,7 +16,7 @@
 
 static uint32_t cam_ife_csid_680_110_num_top_regs[] = {0,};
 
-static struct cam_ife_csid_ver2_reg_info cam_ife_csid_680_110_reg_info = {
+static struct cam_ife_csid_ver2_reg_info __maybe_unused cam_ife_csid_680_110_reg_info = {
 	.top_irq_reg_info      = cam_ife_csid_680_top_irq_reg_info,
 	.rx_irq_reg_info       = cam_ife_csid_680_rx_irq_reg_info,
 	.path_irq_reg_info     = {

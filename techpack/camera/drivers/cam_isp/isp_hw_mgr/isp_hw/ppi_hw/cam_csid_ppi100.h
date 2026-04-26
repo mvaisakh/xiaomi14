@@ -8,7 +8,7 @@
 
 #include "cam_csid_ppi_core.h"
 
-static struct cam_csid_ppi_reg_offset cam_csid_ppi_100_reg_offset = {
+static struct cam_csid_ppi_reg_offset __maybe_unused cam_csid_ppi_100_reg_offset = {
 	.ppi_hw_version_addr    = 0,
 	.ppi_module_cfg_addr    = 0x60,
 	.ppi_irq_status_addr    = 0x68,
