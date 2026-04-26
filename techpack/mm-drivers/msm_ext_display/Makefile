@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 
-KBUILD_OPTIONS += MSM_EXT_DISPLAY_ROOT=$(KERNEL_SRC)/$(M)/../
+KBUILD_OPTIONS += MSM_EXT_DISPLAY_ROOT=$(KERNEL_SRC)/techpack/mm-drivers/
 
 all: modules
 
