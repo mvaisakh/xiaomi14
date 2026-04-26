@@ -428,13 +428,6 @@ static inline int sde_encoder_phys_inc_pending(struct sde_encoder_phys *phys)
 void sde_encoder_clear_fence_error_in_progress(struct sde_encoder_phys *phys_enc);
 
 /**
- * sde_encoder_hw_fence_signal - hw fence related fence error handing
- * @phys_enc: Pointer to physical encoder structure
- * return: 0 on success; error code otherwise
- */
-static inline int sde_encoder_hw_fence_signal(struct sde_encoder_phys *phys_enc);
-
-/**
  * struct sde_encoder_phys_vid - sub-class of sde_encoder_phys to handle video
  *	mode specific operations
  * @base:	Baseclass physical encoder structure
