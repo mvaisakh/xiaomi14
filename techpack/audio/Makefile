@@ -10,7 +10,7 @@ KBUILD_OPTIONS += CONFIG_SND_SOC_GVM=y
 KBUILD_OPTIONS += MODNAME=audio_dlkm
 endif
 
-AUDIO_ROOT=$(KERNEL_SRC)/techpack/audio
+AUDIO_ROOT=$(srctree)/techpack/audio
 
 KBUILD_OPTIONS+=  AUDIO_ROOT=$(AUDIO_ROOT)
 
