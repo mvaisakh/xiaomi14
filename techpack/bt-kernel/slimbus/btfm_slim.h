@@ -82,7 +82,7 @@ struct btfmslim {
 #endif
 };
 
-extern int btfm_feedback_ch_setting;
+extern int btfm_feedback_ch_setting_slim;
 
 /**
  * btfm_slim_hw_init: Initialize slimbus slave device

@@ -142,11 +142,11 @@ int btfm_slim_enable_ch(struct btfmslim *btfmslim, struct btfmslim_ch *ch,
 	BTFMSLIM_INFO("chipset soc version:%x", chipset_ver);
 
 	/* for feedback channel, PCM bit should not be set */
-	if (btfm_feedback_ch_setting) {
+	if (btfm_feedback_ch_setting_slim) {
 		BTFMSLIM_DBG("port open for feedback ch, not setting PCM bit");
 		//prop.dataf = SLIM_CH_DATAF_NOT_DEFINED;
 		/* reset so that next port open sets the data format properly */
-		btfm_feedback_ch_setting = 0;
+		btfm_feedback_ch_setting_slim = 0;
 	}
 
 	ret = slim_stream_prepare(chan->dai.sruntime, &chan->dai.sconfig);

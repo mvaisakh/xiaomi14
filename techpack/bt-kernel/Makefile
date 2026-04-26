@@ -2,7 +2,7 @@ KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
 M ?= $(shell pwd)
 
 M=$(PWD)
-BT_ROOT=$(KERNEL_SRC)/$(M)
+BT_ROOT=$(KERNEL_SRC)/techpack/bt-kernel
 
 KBUILD_OPTIONS+=  BT_ROOT=$(BT_ROOT)
 
