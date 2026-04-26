@@ -85,7 +85,7 @@ enum cam_debug_priority {
 	CAM_DBG_PRIORITY_2,
 };
 
-static const char *cam_debug_mod_name[CAM_DBG_MOD_MAX] = {
+static const char __maybe_unused *cam_debug_mod_name[CAM_DBG_MOD_MAX] = {
 	[CAM_CDM]         = "CAM-CDM",
 	[CAM_CORE]        = "CAM-CORE",
 	[CAM_CRM]         = "CAM-CRM",
@@ -172,7 +172,7 @@ __builtin_choose_expr(((module_id) == CAM_SYNX), "CAM-SYNX",                \
 __builtin_choose_expr(__builtin_constant_p((module_id)), ___CAM_DBG_MOD_NAME(module_id), \
 	CAM_DBG_MOD_NAME(module_id))
 
-static const char *cam_debug_tag_name[CAM_TYPE_MAX] = {
+static const char __maybe_unused *cam_debug_tag_name[CAM_TYPE_MAX] = {
 	[CAM_TYPE_TRACE] = "CAM_TRACE",
 	[CAM_TYPE_ERR]   = "CAM_ERR",
 	[CAM_TYPE_WARN]  = "CAM_WARN",

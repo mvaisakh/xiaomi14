@@ -61,13 +61,6 @@
 #include "cam_csid_ppi100.h"
 #include "camera_main.h"
 
-#ifndef CAMERA_COMPILE_BY
-#include "cam_generated_h"
-#endif
-
-char camera_banner[] = "Camera-Banner: (" CAMERA_COMPILE_BY "@"
-	CAMERA_COMPILE_HOST ") (" CAMERA_COMPILE_TIME ")";
-
 #ifdef CONFIG_CAM_PRESIL
 extern int cam_presil_framework_dev_init_from_main(void);
 extern void cam_presil_framework_dev_exit_from_main(void);
@@ -294,7 +287,7 @@ static int camera_init(void)
 	int rc;
 	uint i, j, num_inits;
 
-	CAM_INFO(CAM_UTIL, "%s", camera_banner);
+	CAM_INFO(CAM_UTIL, "camera module init");
 	rc = camera_verify_submodules();
 	if (rc)
 		goto end_init;

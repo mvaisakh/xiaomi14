@@ -1,7 +1,7 @@
 # Makefile for use with Android's kernel/build system
 
-KBUILD_OPTIONS += CAMERA_KERNEL_ROOT=$(shell pwd)
-KBUILD_OPTIONS += KERNEL_ROOT=$(ROOT_DIR)/$(KERNEL_DIR)
+KBUILD_OPTIONS += CAMERA_KERNEL_ROOT=$(srctree)/techpack/camera
+KBUILD_OPTIONS += KERNEL_ROOT=$(srctree)
 KBUILD_OPTIONS += MODNAME=camera
 
 all: modules
@@ -15,7 +15,7 @@ cam_generated_h: $(shell find . -iname "*.c") $(shell find . -iname "*.h") $(she
 	echo '#define CAMERA_COMPILE_BY "$(CAMERA_COMPILE_BY)"' >> cam_generated_h
 	echo '#define CAMERA_COMPILE_HOST "$(CAMERA_COMPILE_HOST)"' >> cam_generated_h
 
-modules: cam_generated_h
+all: modules cam_generated_h
 
 modules dtbs:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules $(KBUILD_OPTIONS)
