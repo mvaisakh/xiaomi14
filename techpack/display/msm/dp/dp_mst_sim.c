@@ -1056,7 +1056,7 @@ static ssize_t dp_sim_debug_write_hpd(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_sim_device *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int hpd = 0;
 
@@ -1088,7 +1088,7 @@ static ssize_t dp_sim_debug_write_skip_link_training(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_sim_device *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int skip_lk, lk_cnt;
 
@@ -1121,7 +1121,7 @@ static ssize_t dp_sim_debug_write_skip_edid(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_sim_device *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int val = 0;
 
@@ -1151,7 +1151,7 @@ static ssize_t dp_sim_debug_write_skip_dpcd(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_sim_device *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int val = 0;
 
@@ -1181,7 +1181,7 @@ static ssize_t dp_sim_debug_write_skip_config(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_sim_device *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int val = 0;
 
@@ -1212,7 +1212,7 @@ static ssize_t dp_sim_debug_write_mst_hpd(struct file *file,
 {
 	struct dp_sim_debug_edid_entry *entry = file->private_data;
 	struct dp_sim_device *debug;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int hpd = 0;
 
@@ -1260,7 +1260,7 @@ static ssize_t dp_sim_debug_write_mst_mode(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_sim_device *debug = file->private_data;
-	char buf[SZ_16];
+	char buf[SZ_16] = {};
 	size_t len = 0;
 	int mst_sideband_mode = 0;
 	u32 mst_port_cnt = 0;

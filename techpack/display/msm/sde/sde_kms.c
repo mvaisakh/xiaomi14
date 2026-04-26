@@ -2978,7 +2978,7 @@ static int _sde_kms_validate_vm_request(struct drm_atomic_state *state, struct s
 		enum sde_crtc_vm_req vm_req, bool vm_owns_hw)
 {
 	struct drm_crtc *crtc, *active_crtc = NULL, *global_active_crtc = NULL;
-	struct drm_crtc_state *new_cstate, *old_cstate, *active_cstate;
+	struct drm_crtc_state *new_cstate, *old_cstate, *active_cstate = NULL;
 	struct drm_encoder *encoder;
 	struct drm_connector *connector;
 	struct drm_connector_state *new_connstate;
@@ -2988,7 +2988,7 @@ static int _sde_kms_validate_vm_request(struct drm_atomic_state *state, struct s
 	struct dsi_display *dsi_display;
 	uint32_t i, commit_crtc_cnt = 0, global_crtc_cnt = 0;
 	uint32_t crtc_encoder_cnt = 0;
-	enum sde_crtc_idle_pc_state idle_pc_state;
+	enum sde_crtc_idle_pc_state idle_pc_state = 0;
 	int rc = 0;
 
 	for_each_oldnew_crtc_in_state(state, crtc, old_cstate, new_cstate, i) {
