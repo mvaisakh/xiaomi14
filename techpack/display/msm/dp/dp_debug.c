@@ -460,7 +460,7 @@ static ssize_t dp_debug_write_hpd(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int const hpd_data_mask = 0x7;
 	int hpd = 0;
@@ -503,7 +503,7 @@ static ssize_t dp_debug_write_edid_modes(struct file *file,
 {
 	struct dp_debug_private *debug = file->private_data;
 	struct dp_panel *panel;
-	char buf[SZ_32];
+	char buf[SZ_32] = {};
 	size_t len = 0;
 	int hdisplay = 0, vdisplay = 0, vrefresh = 0, aspect_ratio;
 
@@ -549,7 +549,7 @@ static ssize_t dp_debug_write_edid_modes_mst(struct file *file,
 	struct drm_connector *connector;
 	struct sde_connector *sde_conn;
 	struct dp_panel *panel = NULL;
-	char buf[SZ_512];
+	char buf[SZ_512] = {};
 	char *read_buf;
 	size_t len = 0;
 
@@ -608,7 +608,7 @@ static ssize_t dp_debug_write_mst_con_id(struct file *file,
 	struct sde_connector *sde_conn;
 	struct drm_dp_mst_port *mst_port;
 	struct dp_panel *dp_panel;
-	char buf[SZ_32];
+	char buf[SZ_32] = {};
 	size_t len = 0;
 	int con_id = 0, status;
 
@@ -684,7 +684,7 @@ static ssize_t dp_debug_write_mst_con_add(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_32];
+	char buf[SZ_32] = {};
 	size_t len = 0;
 	const int dp_en = BIT(3), hpd_high = BIT(7), hpd_irq = BIT(8);
 	int vdo = dp_en | hpd_high | hpd_irq;
@@ -712,7 +712,7 @@ static ssize_t dp_debug_write_mst_con_remove(struct file *file,
 	struct dp_debug_private *debug = file->private_data;
 	struct drm_connector_list_iter conn_iter;
 	struct drm_connector *connector;
-	char buf[SZ_32];
+	char buf[SZ_32] = {};
 	size_t len = 0;
 	int con_id = 0;
 	bool in_list = false;
@@ -765,7 +765,7 @@ static ssize_t dp_debug_mmrm_clk_cb_write(struct file *file,
 		 const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	struct dss_clk_mmrm_cb mmrm_cb_data;
 	struct mmrm_client_notifier_data notifier_data;
@@ -803,7 +803,7 @@ static ssize_t dp_debug_bw_code_write(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	u32 max_bw_code = 0;
 
@@ -852,7 +852,7 @@ static ssize_t dp_debug_mst_mode_write(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	u32 mst_mode = 0;
 
@@ -881,7 +881,7 @@ static ssize_t dp_debug_max_pclk_khz_write(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	u32 max_pclk = 0;
 
@@ -948,7 +948,7 @@ static ssize_t dp_debug_mst_sideband_mode_write(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int mst_sideband_mode = 0;
 	u32 mst_port_cnt = 0;
@@ -997,7 +997,7 @@ static ssize_t dp_debug_tpg_write(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	u32 tpg_pattern = 0;
 
@@ -1034,7 +1034,7 @@ static ssize_t dp_debug_write_exe_mode(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_32];
+	char buf[SZ_32] = {};
 	size_t len = 0;
 
 	if (!debug)
@@ -1066,7 +1066,7 @@ static ssize_t dp_debug_read_connected(struct file *file,
 		char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	u32 len = 0;
 
 	if (!debug)
@@ -1089,7 +1089,7 @@ static ssize_t dp_debug_write_hdcp(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int hdcp = 0;
 
@@ -1482,7 +1482,7 @@ static ssize_t dp_debug_tpg_read(struct file *file,
 	char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	u32 len = 0;
 
 	if (!debug)
@@ -1802,7 +1802,7 @@ static ssize_t dp_debug_write_sim(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int sim;
 
@@ -1834,7 +1834,7 @@ static ssize_t dp_debug_write_attention(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_8];
+	char buf[SZ_8] = {};
 	size_t len = 0;
 	int vdo;
 
@@ -1863,7 +1863,7 @@ static ssize_t dp_debug_write_dump(struct file *file,
 		const char __user *user_buff, size_t count, loff_t *ppos)
 {
 	struct dp_debug_private *debug = file->private_data;
-	char buf[SZ_32];
+	char buf[SZ_32] = {};
 	size_t len = 0;
 
 	if (!debug)

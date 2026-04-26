@@ -1269,7 +1269,7 @@ enum sde_clk_ctrl_type {
 /**
  * sde_clk_ctrl_type - String of top level clock control signals
  */
-static const char *sde_clk_ctrl_type_s[SDE_CLK_CTRL_MAX] = {
+static const char __maybe_unused *sde_clk_ctrl_type_s[SDE_CLK_CTRL_MAX] = {
 	[SDE_CLK_CTRL_NONE] = "NONE",
 	[SDE_CLK_CTRL_VIG0] = "VIG0",
 	[SDE_CLK_CTRL_VIG1] = "VIG1",
