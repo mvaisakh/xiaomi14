@@ -1,0 +1,17 @@
+# Build BT kernel drivers
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/btpower.ko
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/radio-i2c-rtc6226-qca.ko
+ifeq ($(TARGET_BOARD_PLATFORM), sun)
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/btfmcodec.ko
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/btfm_slim_codec.ko
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/bt_fm_swr.ko
+else ifeq ($(TARGET_BOARD_PLATFORM), volcano)
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/btfmcodec.ko
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/bt_fm_swr.ko
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/bt_fm_slim.ko
+else
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/bt_fm_slim.ko
+endif
+ifeq ($(TARGET_USES_QTI_UWB), true)
+PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/spi_cnss_proto.ko
+endif
