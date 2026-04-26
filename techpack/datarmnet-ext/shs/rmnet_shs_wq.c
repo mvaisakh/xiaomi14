@@ -61,8 +61,8 @@ DATARMNETb5d58adbe7(&DATARMNETecb92a9ca5);}static void DATARMNETdb368d4fbd(void)
 {
 #if IS_ENABLED(CONFIG_SCHED_WALT)
 cpumask_t DATARMNETaec9fb9581={CPU_BITS_NONE};int DATARMNETda889fd34d;unsigned 
-int DATARMNET9824ef7d49=(0xd2d+202-0xdf7);if(walt_get_cpus_in_state1(&
-DATARMNETaec9fb9581)<(0xd2d+202-0xdf7))return;for(DATARMNETda889fd34d=
+int DATARMNET9824ef7d49=(0xd2d+202-0xdf7);walt_get_cpus_in_state1(&
+DATARMNETaec9fb9581);for(DATARMNETda889fd34d=
 (0xd2d+202-0xdf7);DATARMNETda889fd34d<DATARMNETc6782fed88;DATARMNETda889fd34d++)
 {if(cpumask_test_cpu(DATARMNETda889fd34d,&DATARMNETaec9fb9581)){
 DATARMNET9824ef7d49|=(0xd26+209-0xdf6)<<DATARMNETda889fd34d;}}if((

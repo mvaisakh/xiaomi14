@@ -18,9 +18,9 @@
 #ifndef RMNET_TRACE_INCLUDE_PATH
 #if defined(CONFIG_RMNET_LA_PLATFORM)
 #ifdef CONFIG_ARCH_KHAJE
-#define RMNET_TRACE_INCLUDE_PATH ../../../../../vendor/qcom/opensource/datarmnet/core
+#define RMNET_TRACE_INCLUDE_PATH ../../techpack/datarmnet/core
 #else
-#define RMNET_TRACE_INCLUDE_PATH ../../../../vendor/qcom/opensource/datarmnet/core
+#define RMNET_TRACE_INCLUDE_PATH ../../techpack/datarmnet/core
 #endif /* CONFIG_ARCH_KHAJE */
 #elif defined(__arch_um__)
 #define RMNET_TRACE_INCLUDE_PATH ../../datarmnet/core
