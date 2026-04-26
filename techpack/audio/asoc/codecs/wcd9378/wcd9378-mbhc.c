@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 #include <linux/module.h>
 #include <linux/init.h>
@@ -827,6 +827,21 @@ static void wcd9378_mbhc_bcs_enable(struct wcd_mbhc *mbhc,
 		wcd9378_disable_bcs_before_slow_insert(mbhc->component, true);
 }
 
+static int wcd9378_mbhc_force_micbias_disable(struct snd_soc_component *component,
+						int micb_num)
+{
+	struct wcd9378_priv *wcd9378 =
+			snd_soc_component_get_drvdata(component);
+
+	if (wcd9378->micb_ref[micb_num - 1] > 1)
+		wcd9378->micb_ref[micb_num - 1] = 1;
+
+	if (wcd9378->pullup_ref[micb_num - 1] > 0)
+		wcd9378->pullup_ref[micb_num - 1] = 0;
+
+	return wcd9378_micbias_control(component, micb_num, MICB_DISABLE, false);
+}
+
 static const struct wcd_mbhc_cb mbhc_cb = {
 	.request_irq = wcd9378_mbhc_request_irq,
 	.irq_control = wcd9378_mbhc_irq_control,
@@ -853,6 +868,7 @@ static const struct wcd_mbhc_cb mbhc_cb = {
 	.mbhc_moisture_polling_ctrl = wcd9378_mbhc_moisture_polling_ctrl,
 	.mbhc_moisture_detect_en = wcd9378_mbhc_moisture_detect_en,
 	.bcs_enable = wcd9378_mbhc_bcs_enable,
+	.mbhc_force_micbias_disable = wcd9378_mbhc_force_micbias_disable,
 };
 
 static int wcd9378_get_hph_type(struct snd_kcontrol *kcontrol,
@@ -995,6 +1011,12 @@ void wcd9378_mbhc_hs_detect_exit(struct snd_soc_component *component)
 		return;
 	}
 	wcd_mbhc_stop(&wcd9378_mbhc->wcd_mbhc);
+
+	if (wcd9378_mbhc->wcd_mbhc.micbias_enable) {
+		wcd9378_micbias_control(component,
+				MIC_BIAS_2, MICB_DISABLE, false);
+		wcd9378_mbhc->wcd_mbhc.micbias_enable = false;
+	}
 }
 EXPORT_SYMBOL_GPL(wcd9378_mbhc_hs_detect_exit);
 

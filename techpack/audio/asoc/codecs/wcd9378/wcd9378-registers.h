@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #ifndef WCD9378_REGISTERS_H
@@ -868,6 +868,8 @@ enum {
 #define WCD9378_NUM_REGISTERS                  (WCD9378_SMP_MIC_CTRL2_DEV_VER - WCD9378_BASE + 1)
 #define WCD9378_MAX_REGISTER                   (WCD9378_MESSAGE2 + 1)
 
+#define WCD9378_REGISTERS_ARRAY_NUM            (824)
+
 #define WCD9378_TX_NEW_TX_CH12_MUX_CH2_SEL_SHIFT                          0x03
 #define WCD9378_TX_NEW_TX_CH12_MUX_CH1_SEL_SHIFT                          0x00
 #define WCD9378_TX_NEW_TX_CH34_MUX_CH3_SEL_SHIFT                          0x00
@@ -885,10 +887,6 @@ enum {
 #define WCD9378_FU42_MUTE_CH1_CN      (WCD9378_FU42_MUTE_CH1 | WCD9378_CN_ENABLE_MASK)
 #define WCD9378_FU42_MUTE_CH2_CN      (WCD9378_FU42_MUTE_CH2 | WCD9378_CN_ENABLE_MASK)
 
-#define SWRS_SCP_BASE_CLK_BASE                 (0x004d)
-#define SWRS_SCP_BUSCLOCK_SCALE_BANK0          (0x0062)
-#define SWRS_SCP_BUSCLOCK_SCALE_BANK1          (0x0072)
-
 #define SWRS_SCP_SDCA_INTMASK_1                (0x0000005c)
 #define SWRS_SCP_SDCA_INTMASK_2                (0x0000005d)
 #define SWRS_SCP_SDCA_INTMASK_3                (0x0000005e)
@@ -901,5 +899,7 @@ enum {
 #define SWRS_SCP_SDCA_INTRTYPE_2               (0x000000f8)
 #define SWRS_SCP_SDCA_INTRTYPE_3               (0x000000fc)
 
+extern bool wcd9378_sdca_readable_register(unsigned int reg);
+extern bool wcd9378_sdca_writeable_register(unsigned int reg);
 
 #endif /* WCD9378_REGISTERS_H */

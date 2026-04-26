@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <linux/irq.h>
@@ -100,6 +100,10 @@
 
 #define SWRM_MAJOR_VERSION(x) (x & 0xFFFFFF00)
 #define SWR_BASECLK_VAL_1_FOR_19P2MHZ  (0x1)
+#define SWRS_DEVID_COMBINE(cls_id, addr_id)	\
+			(((long)(cls_id) << 32) | (addr_id))
+#define WCD9378_TX_DEVID (0x1001170223)
+#define WCD9378_RX_DEVID (0x1001170224)
 
 /* pm runtime auto suspend timer in msecs */
 static int auto_suspend_timer = 500;
@@ -1942,17 +1946,21 @@ static void swrm_apply_port_config(struct swr_master *master)
 /* also, if the device enumerates on the bus when active bank is 1, issue bank switch */
 static void swrm_initialize_clk_base_scale(struct swr_mstr_ctrl *swrm, u8 dev_num)
 {
-	int clk_scale, n_row, n_col;
-	int cls_id;
-	int frame_shape;
-	u8 active_bank;
+	int clk_scale = 0, n_row = 0, n_col = 0;
+	int cls_id = 0, addr_id = 0;
+	long dev_id = 0;
+	int frame_shape = 0;
+	u8 active_bank = 0;
 
 	if (dev_num == 0)
 		return;
 
 	cls_id = swr_master_read(swrm, SWRM_ENUMERATOR_SLAVE_DEV_ID_2(dev_num));
-	if (cls_id & 0xFF00) {
+	addr_id = swr_master_read(swrm, SWRM_ENUMERATOR_SLAVE_DEV_ID_1(dev_num));
+	dev_id = SWRS_DEVID_COMBINE(cls_id, addr_id);
 
+	if ((cls_id & 0xFF00) ||
+		(dev_id == WCD9378_TX_DEVID || dev_id == WCD9378_RX_DEVID)) {
 		active_bank = get_active_bank_num(swrm);
 		if (active_bank != 0) {
 			frame_shape = swr_master_read(swrm, SWRM_MCP_FRAME_CTRL_BANK(active_bank));
@@ -1976,7 +1984,6 @@ static void swrm_initialize_clk_base_scale(struct swr_mstr_ctrl *swrm, u8 dev_nu
 	}
 }
 
-#define SLAVE_DEV_CLASS_ID  GENMASK(45, 40)
 static int swrm_update_clk_base_and_scale(struct swr_master *master, u8 inactive_bank)
 {
 	struct swr_device *swr_dev;
@@ -1989,8 +1996,7 @@ static int swrm_update_clk_base_and_scale(struct swr_master *master, u8 inactive
 		if (swr_dev->dev_num == 0)
 			continue;
 
-		/* check class_id if 1 */
-		if (!(swr_dev->addr & SLAVE_DEV_CLASS_ID))
+		if (!swr_dev->paging_support)
 			continue;
 
 		/* v1.2 slave could be attached to the bus */
@@ -2141,6 +2147,7 @@ static int swrm_slvdev_datapath_control(struct swr_master *master, bool enable)
 	swrm_update_clk_base_and_scale(master, bank);
 	enable_bank_switch(swrm, bank, n_row, n_col);
 	inactive_bank = bank ? 0 : 1;
+	swrm_update_clk_base_and_scale(master, inactive_bank);
 
 	if (enable)
 		swrm_copy_data_port_config(master, inactive_bank);
