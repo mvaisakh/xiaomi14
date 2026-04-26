@@ -45,6 +45,8 @@
 		rc; \
 	})
 
+static bool qseecomd_down;
+
 const char *hdcp_errors[] =	{"HDCP_SUCCESS",
 				"HDCP_FAIL",
 				"HDCP_BAD_PARAM",

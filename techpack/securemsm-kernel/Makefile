@@ -1,5 +1,5 @@
 M=$(PWD)
-SSG_MODULE_ROOT=$(KERNEL_SRC)/$(M)
+SSG_MODULE_ROOT=$(KERNEL_SRC)/techpack/securemsm-kernel
 ifeq ($(TARGET_MACHINE), ar-sg1)
 	SSG_MODULE_ROOT=$(M)
 endif
