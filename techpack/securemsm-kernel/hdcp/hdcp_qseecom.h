@@ -29,14 +29,6 @@ struct hdcp1_qsee_handle {
 };
 
 /*
- * If Qseecomd starts late and hdcp key
- * verification has already started, qseecomd_down
- * flag will be set to true. It will be set to false
- * once the Qseecomd is up. Initial assumption is
- * that the Qseecomd will start in time.
- */
-static bool qseecomd_down;
-/*
  * @max_hdcp_key_verify_retries - Max number of retries by default set to 0 which
  *                                is equivalent to 0MS. Actual value will be the one
  *                                from the dtsi file.
