@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-KDIR := $(TOP)/kernel_platform/msm-kernel
+KDIR := $(srctree)
 include $(MSM_HW_FENCE_ROOT)/config/kalamammdrivers.conf
 LINUXINCLUDE += -include $(MSM_HW_FENCE_ROOT)/config/kalamammdriversconf.h \
 		-I$(MSM_HW_FENCE_ROOT)hw_fence/include/
@@ -24,5 +24,8 @@ msm_hw_fence-$(CONFIG_DEBUG_FS) += src/hw_fence_ioctl.o
 
 CDEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
 endif
+
+ifdef CC_IS_CLANG
 EXTRA_CFLAGS += -Wformat-extra-args -Wstrict-prototypes -Wformat-insufficient-args \
 		-Wformat-invalid-specifier -Wformat-zero-length -Wnonnull
+endif

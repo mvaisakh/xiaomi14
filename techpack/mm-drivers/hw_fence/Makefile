@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-only
-KBUILD_OPTIONS += MSM_HW_FENCE_ROOT=$(KERNEL_SRC)/$(M)/../
+KBUILD_OPTIONS += MSM_HW_FENCE_ROOT=$(KERNEL_SRC)/techpack/mm-drivers/
 
 all: modules
 
