@@ -25,7 +25,7 @@
 #include "btfm_codec_hw_interface.h"
 
 static int bt_soc_enable_status;
-int btfm_feedback_ch_setting;
+int btfm_feedback_ch_setting_slim;
 static uint8_t usecase_codec;
 
 static int btfm_slim_hwep_write(struct snd_soc_component *codec,
@@ -61,7 +61,7 @@ static int btfm_get_feedback_ch_setting(struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
 {
 	BTFMSLIM_DBG("");
-	ucontrol->value.integer.value[0] = btfm_feedback_ch_setting;
+	ucontrol->value.integer.value[0] = btfm_feedback_ch_setting_slim;
 	return 1;
 }
 
@@ -69,7 +69,7 @@ static int btfm_put_feedback_ch_setting(struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_value *ucontrol)
 {
 	BTFMSLIM_DBG("");
-	btfm_feedback_ch_setting = ucontrol->value.integer.value[0];
+	btfm_feedback_ch_setting_slim = ucontrol->value.integer.value[0];
 	return 1;
 }
 
