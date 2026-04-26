@@ -1,4 +1,4 @@
-KBUILD_OPTIONS += DSP_ROOT=$(KERNEL_SRC)/$(M) V=1
+KBUILD_OPTIONS += DSP_ROOT=$(KERNEL_SRC)/techpack/dsp V=1
 
 all:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules $(KBUILD_OPTIONS)

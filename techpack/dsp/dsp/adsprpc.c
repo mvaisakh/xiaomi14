@@ -8889,8 +8889,9 @@ long fastrpc_dev_get_hlos_pid(struct fastrpc_device *dev, unsigned long invoke_p
 	return err;
 }
 
-long fastrpc_driver_invoke(struct fastrpc_device *dev, unsigned int invoke_num,
-								unsigned long invoke_param)
+long fastrpc_driver_invoke(struct fastrpc_device *dev,
+			enum fastrpc_driver_invoke_nums invoke_num,
+					unsigned long invoke_param)
 {
 	int err = 0;
 
