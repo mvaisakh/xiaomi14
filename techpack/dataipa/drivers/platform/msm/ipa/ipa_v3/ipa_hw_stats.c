@@ -678,7 +678,7 @@ int ipa_get_quota_stats(struct ipa_quota_stats_all *out)
 {
 	int i;
 	int ret;
-	struct ipahal_stats_get_offset_quota get_offset = { { 0 } };
+	struct ipahal_stats_get_offset_quota get_offset = { 0 };
 	struct ipahal_stats_offset offset = { 0 };
 	struct ipahal_imm_cmd_dma_shared_mem cmd = { 0 };
 	struct ipahal_imm_cmd_pyld *cmd_pyld[2];
@@ -2142,7 +2142,7 @@ int ipa_get_drop_stats(struct ipa_drop_stats_all *out)
 {
 	int i;
 	int ret;
-	struct ipahal_stats_get_offset_drop get_offset = { { 0 } };
+	struct ipahal_stats_get_offset_drop get_offset = { 0 };
 	struct ipahal_stats_offset offset = { 0 };
 	struct ipahal_imm_cmd_dma_shared_mem cmd = { 0 };
 	struct ipahal_imm_cmd_pyld *cmd_pyld[2];
