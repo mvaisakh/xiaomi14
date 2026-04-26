@@ -196,7 +196,7 @@ static void hw_fence_dbg_release(struct dma_fence *fence)
 	kfree(hw_dma_fence);
 }
 
-static struct dma_fence_ops hw_fence_dbg_ops = {
+static struct dma_fence_ops __maybe_unused hw_fence_dbg_ops = {
 	.get_driver_name = hw_fence_dbg_get_driver_name,
 	.get_timeline_name = hw_fence_dbg_get_timeline_name,
 	.enable_signaling = hw_fence_dbg_enable_signaling,
