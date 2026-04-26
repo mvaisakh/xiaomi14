@@ -16,7 +16,7 @@ struct sde_hw_pingpong;
 struct sde_hw_merge_3d;
 
 #define DITHER_DEPTH_MAP_INDEX 9
-static u32 dither_depth_map[DITHER_DEPTH_MAP_INDEX] = {
+static u32 __maybe_unused dither_depth_map[DITHER_DEPTH_MAP_INDEX] = {
 	0, 0, 0, 0, 0, 1, 2, 3, 3
 };
 

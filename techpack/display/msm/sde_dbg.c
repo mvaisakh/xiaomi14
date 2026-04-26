@@ -1194,7 +1194,7 @@ static void _sde_dbg_dump_dsi_dbg_bus(struct sde_dbg_sde_debug_bus *bus, u32 ena
 
 void sde_evtlog_dump_all(struct sde_dbg_evtlog *evtlog)
 {
-	char buf[SDE_EVTLOG_BUF_MAX];
+	char buf[SDE_EVTLOG_BUF_MAX] = {};
 	bool update_last_entry = true;
 	u32 in_log, in_mem, in_dump;
 	char *dump_addr = NULL;
@@ -1614,7 +1614,7 @@ static ssize_t sde_evtlog_dump_read(struct file *file, char __user *buff,
 		size_t count, loff_t *ppos)
 {
 	ssize_t len = 0;
-	char evtlog_buf[SDE_EVTLOG_BUF_MAX];
+	char evtlog_buf[SDE_EVTLOG_BUF_MAX] = {};
 
 	if (!buff || !ppos)
 		return -EINVAL;
@@ -1706,7 +1706,7 @@ static ssize_t sde_dbg_ctrl_write(struct file *file,
 	const char __user *user_buf, size_t count, loff_t *ppos)
 {
 	u32 dbg_ctrl = 0;
-	char buf[24];
+	char buf[24] = {};
 
 	if (!file) {
 		pr_err("DbgDbg: %s: error no file --\n", __func__);
@@ -1951,7 +1951,7 @@ static ssize_t sde_recovery_dbgbus_dump_read(struct file *file,
 		size_t count, loff_t *ppos)
 {
 	ssize_t len = 0;
-	char log_buf[SDE_EVTLOG_BUF_MAX];
+	char log_buf[SDE_EVTLOG_BUF_MAX] = {};
 	u32 *data;
 	struct sde_dbg_debug_bus_common *cmn = file->private_data;
 	u32 entry_size = DUMP_CLMN_COUNT;
@@ -2191,7 +2191,7 @@ static ssize_t sde_dbg_reg_base_offset_write(struct file *file,
 	struct sde_dbg_reg_base *dbg;
 	u32 off = 0;
 	u32 cnt = DEFAULT_BASE_REG_CNT;
-	char buf[24];
+	char buf[24] = {};
 	int rc;
 
 	if (!file)
@@ -2304,7 +2304,7 @@ static ssize_t sde_dbg_reg_base_reg_write(struct file *file,
 	struct sde_dbg_reg_base *dbg;
 	size_t off;
 	u32 data, cnt;
-	char buf[24];
+	char buf[24] = {};
 	int rc;
 	struct sde_hw_blk_reg_map c = {0};
 
@@ -2408,7 +2408,7 @@ static ssize_t sde_dbg_reg_base_reg_read(struct file *file,
 
 	if (!dbg->buf) {
 		struct sde_hw_blk_reg_map c = {0};
-		char dump_buf[64];
+		char dump_buf[64] = {};
 		u32 cur_offset = 0, tot = 0;
 
 		dbg->buf_len = sizeof(dump_buf) *

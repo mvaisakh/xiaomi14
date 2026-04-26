@@ -470,8 +470,8 @@ static int _arm_output_hw_fence(struct sde_hw_ctl *hw_ctl, bool vid_mode, u32 li
 	}
 
 	ipcc_out_signal = data->ipcc_out_signal_pp[data->ipcc_out_signal_pp_idx];
-	data->ipcc_out_signal_pp_idx = (++data->ipcc_out_signal_pp_idx %
-		MAX_SDE_HFENCE_OUT_SIGNAL_PING_PONG);
+	data->ipcc_out_signal_pp_idx = (data->ipcc_out_signal_pp_idx + 1) %
+                                MAX_SDE_HFENCE_OUT_SIGNAL_PING_PONG;
 
 	SDE_DEBUG("out-fence ctl_id:%d out_signal:%d hw_fence_client:%s\n",
 		ctl_id, ipcc_out_signal, _get_client_id_name(data->hw_fence_client_id));

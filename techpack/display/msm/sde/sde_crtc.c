@@ -2796,7 +2796,7 @@ static void _sde_crtc_frame_data_notify(struct drm_crtc *crtc,
 	sde_crtc_event_notify(crtc, DRM_EVENT_FRAME_DATA, &buf,
 			sizeof(struct sde_drm_frame_data_buf));
 
-	sde_crtc->frame_data.idx = ++sde_crtc->frame_data.idx % sde_crtc->frame_data.cnt;
+	sde_crtc->frame_data.idx = (sde_crtc->frame_data.idx + 1) % sde_crtc->frame_data.cnt;
 }
 
 void sde_crtc_get_frame_data(struct drm_crtc *crtc)
@@ -7480,7 +7480,7 @@ static ssize_t _sde_debugfs_hw_fence_features_mask_wr(struct file *file,
 {
 	struct sde_crtc *sde_crtc;
 	u32 bit, enable;
-	char buf[30];
+	char buf[30] = {};
 
 	if (!file || !file->private_data)
 		return -EINVAL;
@@ -7546,7 +7546,7 @@ static ssize_t _sde_crtc_misr_setup(struct file *file,
 {
 	struct drm_crtc *crtc;
 	struct sde_crtc *sde_crtc;
-	char buf[MISR_BUFF_SIZE + 1];
+	char buf[MISR_BUFF_SIZE + 1] = {};
 	u32 frame_count, enable;
 	size_t buff_copy;
 	struct sde_kms *sde_kms;
