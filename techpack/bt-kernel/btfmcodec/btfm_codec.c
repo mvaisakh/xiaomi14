@@ -134,7 +134,7 @@ static int btfmcodec_dev_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-btm_opcode STREAM_TO_UINT32 (struct sk_buff *skb)
+btm_opcode STREAM_TO_UINT32_CODEC (struct sk_buff *skb)
 {
 	return (skb->data[0] | (skb->data[1] << 8) |
 		(skb->data[2] << 16) | (skb->data[3] << 24));
@@ -151,9 +151,9 @@ static void btfmcodec_dev_rxwork(struct work_struct *work)
 
 	BTFMCODEC_DBG("start");
 	while ((skb = skb_dequeue(&btfmcodec_dev->rxq))) {
-		btm_opcode opcode = STREAM_TO_UINT32(skb);
+		btm_opcode opcode = STREAM_TO_UINT32_CODEC(skb);
 		skb_pull(skb, sizeof(btm_opcode));
-		len = STREAM_TO_UINT32(skb);
+		len = STREAM_TO_UINT32_CODEC(skb);
 		skb_pull(skb, sizeof(len));
 		switch (opcode) {
 		case BTM_BTFMCODEC_PREPARE_AUDIO_BEARER_SWITCH_REQ:

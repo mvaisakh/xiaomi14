@@ -434,7 +434,7 @@ typedef struct {
   char reasonstr[100];
 } UwbPrimaryReasonMap;
 
-static UwbPrimaryReasonMap uwbPriReasonMap[] = {
+static UwbPrimaryReasonMap __maybe_unused uwbPriReasonMap[] = {
 	{UWB_HOST_REASON_DEFAULT_NONE, "Invalid reason"},
 	{UWB_HOST_REASON_PERI_SOC_CRASHED, "Peri SOC crashed"},
 	{UWB_HOST_REASON_UWB_SOC_CRASHED, "UWB SOC crashed"},
@@ -464,7 +464,7 @@ static UwbPrimaryReasonMap uwbPriReasonMap[] = {
 	{UWB_HOST_REASON_DIAG_LOG_API_STUCK, "DIAG log API stuck"}
 };
 
-static UwbSecondaryReasonMap uwbSecReasonMap[] = {
+static UwbSecondaryReasonMap __maybe_unused uwbSecReasonMap[] = {
 	{ UWB_SOC_REASON_DEFAULT, "Default"},
 	{ UWB_SOC_REASON_TX_RX_INVALID_PKT, "Tx/Rx Inavlid Packet"},
 	{ UWB_SOC_REASON_TX_RX_INVALID_PKT_LENE, "Tx/Rx Invalid Pkt Len"},
