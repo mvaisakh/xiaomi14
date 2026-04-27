@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-only
 TECHPACK?=y
 
+export KERNEL_SRC=$(srctree)
+export KERNEL_ROOT=$(srctree)
+
 techpack-dirs := $(shell find $(srctree)/techpack -maxdepth 1 -mindepth 1 -type d -not -name ".*")
 obj-${TECHPACK} += $(addsuffix /,$(subst $(srctree)/techpack/,,$(techpack-dirs)))
