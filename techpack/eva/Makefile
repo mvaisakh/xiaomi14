@@ -1,4 +1,4 @@
-KBUILD_OPTIONS+= EVA_ROOT=$(KERNEL_SRC)/$(M)
+KBUILD_OPTIONS+= EVA_ROOT=$(KERNEL_SRC)/techpack/eva
 
 all:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules $(KBUILD_OPTIONS)
