@@ -32,7 +32,7 @@ KBUILD_CPPFLAGS += -DCONFIG_SYNX_PINEAPPLE=1
 ccflags-y += -DCONFIG_SYNX_PINEAPPLE=1
 endif
 
-obj-m += synx-driver.o
-obj-m += synx/ipclite.o
-obj-m += synx/test/ipclite_test.o
+obj-y += synx-driver.o
+obj-y += synx/ipclite.o
+obj-y += synx/test/ipclite_test.o
 synx-driver-objs := synx/synx.o synx/synx_global.o synx/synx_util.o synx/synx_debugfs.o
