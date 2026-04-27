@@ -789,7 +789,8 @@ fail:
 	return rc;
 }
 
-int synx_signal(struct synx_session *session, u32 h_synx, u32 status)
+int synx_signal(struct synx_session *session, u32 h_synx,
+	enum synx_signal_status status)
 {
 	int rc = SYNX_SUCCESS;
 	struct synx_client *client;
