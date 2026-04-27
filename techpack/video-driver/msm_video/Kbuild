@@ -43,7 +43,7 @@ LINUXINCLUDE   += -I$(VIDEO_DRIVER_ABS_PATH)/platform/common/inc \
 USERINCLUDE    += -I$(VIDEO_ROOT)/include/uapi/vidc/media \
                   -I$(VIDEO_ROOT)/include/uapi/vidc
 
-obj-m += msm_video.o
+obj-y += msm_video.o
 
 ifeq ($(CONFIG_MSM_VIDC_PINEAPPLE), y)
 msm_video-objs += $(VIDEO_DRIVER_REL_PATH)/platform/pineapple/src/msm_vidc_pineapple.o \
