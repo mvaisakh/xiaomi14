@@ -9,7 +9,7 @@ endif
 # If we're not GVM and not in an Android tree, select KGSL config
 ifeq ($(CONFIG_QTI_QUIN_GVM),)
 	ifeq ($(ANDROID_BUILD_TOP),)
-		CONFIG_QCOM_KGSL = m
+		CONFIG_QCOM_KGSL = y
 	endif
 endif
 
