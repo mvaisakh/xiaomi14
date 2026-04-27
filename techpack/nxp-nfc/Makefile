@@ -2,7 +2,7 @@ KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
 
 M ?= $(shell pwd)
 
-KBUILD_OPTIONS+= NFC_ROOT=$(KERNEL_SRC)/$(M)
+KBUILD_OPTIONS+= NFC_ROOT=$(KERNEL_SRC)/techpack/nxp-nfc
 
 all:
 	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules $(KBUILD_OPTIONS)
