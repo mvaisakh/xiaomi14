@@ -9,7 +9,7 @@ KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
 # variable $(M). Allowing a relative path for $(M) enables us to have the build
 # system put output/object files (.o, .ko.) into a directory different from the
 # module source directory.
-M ?= $(shell pwd)
+M ?= $(srctree)/techpack/wlan/qcacld-3.0
 
 ifeq ($(WLAN_ROOT),)
 
