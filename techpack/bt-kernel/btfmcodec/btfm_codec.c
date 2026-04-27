@@ -652,11 +652,9 @@ static int __init btfmcodec_init(void)
 	}
 
 	BTFMCODEC_INFO("creating btfm codec class");
-  #if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 1, 128)
+
 	dev_class =class_create(THIS_MODULE,"btfmcodec");
-  #else
-        dev_class =class_create("btfmcodec");
-  #endif
+
 	if (IS_ERR(dev_class)) {
 		ret = PTR_ERR(dev_class);
 		BTFMCODEC_ERR("class_create failed ret:%d\n", ret);

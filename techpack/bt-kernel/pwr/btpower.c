@@ -3063,11 +3063,9 @@ static int __init btpower_init(void)
 		ret = -1;
 		goto chrdev_err;
 	}
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6, 1, 128)
+
 	bt_class = class_create(THIS_MODULE,"bt-dev");
-#else
-        bt_class = class_create("bt-dev");
-#endif
+
 	if (IS_ERR(bt_class)) {
 		pr_err("%s: coudn't create class\n", __func__);
 		ret = -1;
