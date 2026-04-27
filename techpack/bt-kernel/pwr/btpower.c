@@ -2765,9 +2765,6 @@ int perform_fmd_operation(void)
 			} else if (fmdStruct.socFwVer == PEACH_SOC_VERSION_2_0) {
 				pr_info("%s: UPDATE_SOC_VER :: PEACH_SOC_VERSION_2_0\n",
 					__func__);
-#ifdef CONFIG_FMD_ENABLE
-				cnss_utils_fmd_status(true);
-#endif
 				if (vote_wlan_reg_for_fmd() < 0) {
 					pr_err("%s: failed to vote wlan_reg\n", __func__);
 					return -EINVAL;
