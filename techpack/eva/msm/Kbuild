@@ -5,7 +5,8 @@ LINUXINCLUDE    += -I$(EVA_ROOT)/include \
 #srctree is /kernel_platform/common/
 
 ccflags-y += -I$(EVA_ROOT)/msm/eva/ \
-    -I$(srctree)/drivers/media/platform/msm/synx/
+    -I$(srctree)/drivers/media/platform/msm/synx/ \
+    -I$(srctree)/techpack/dsp/include/linux/
 
 # add flag to compile mmrm actual implementatio instead of stub version.
 # to follow up with mmrm team if techpack users need to define this for long term?
@@ -33,7 +34,7 @@ $(info within KBUILD file CONFIG_ARCH_PINEAPPLE = $(CONFIG_ARCH_PINEAPPLE))
 KBUILD_CPPFLAGS += -DCONFIG_EVA_PINEAPPLE=1 -DCVP_CONFIG_SYNX_V2=1
 ccflags-y += -DCONFIG_EVA_PINEAPPLE=1 -DCVP_CONFIG_SYNX_V2=1
 ccflags-y += -I$(EVA_ROOT)/../synx-kernel/msm/synx/ \
-    -I$(EVA_ROOT)/../dsp-kernel/include/ \
+    -I$(EVA_ROOT)/../dsp/include/ \
     -I$(EVA_ROOT)/../synx-kernel/include/uapi/synx/media/
 endif
 
@@ -65,5 +66,5 @@ msm-eva-objs := eva/cvp.o \
 	eva/vm/cvp_vm_main.o \
 	eva/vm/cvp_vm_msgq.o \
 	eva/vm/cvp_vm_resource.o
-obj-m += msm-eva.o
+obj-y += msm-eva.o
 
