@@ -3,6 +3,7 @@ TECHPACK?=y
 
 export KERNEL_SRC=$(srctree)
 export KERNEL_ROOT=$(srctree)
+export TARGET_PRODUCT=houji
 
 techpack-dirs := $(shell find $(srctree)/techpack -maxdepth 1 -mindepth 1 -type d -not -name ".*")
 obj-${TECHPACK} += $(addsuffix /,$(subst $(srctree)/techpack/,,$(techpack-dirs)))
