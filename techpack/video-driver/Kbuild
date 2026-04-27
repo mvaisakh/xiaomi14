@@ -1,1 +1,1 @@
-obj-y := msm_video/ video/
+obj-y := msm_video/
