@@ -15,7 +15,7 @@ ifeq ($(WLAN_ROOT),)
 
 ifeq ($(WLAN_ROOT_MODULE_SOURCE_PATH),)
 # WLAN_ROOT must contain an absolute path (i.e. not a relative path)
-KBUILD_OPTIONS := WLAN_ROOT=$(shell cd $(KERNEL_SRC); readlink -e $(M))
+KBUILD_OPTIONS := WLAN_ROOT=$(srctree)/techpack/wlan/qcacld-3.0
 else
 # Honor what is passed from Make variable $(M), which could be a relative path.
 KBUILD_OPTIONS := WLAN_ROOT=$(M)
