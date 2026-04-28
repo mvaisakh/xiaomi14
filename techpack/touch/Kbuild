@@ -1,0 +1,2 @@
+# Touch drivers
+obj-y += synaptics_tcm2/
