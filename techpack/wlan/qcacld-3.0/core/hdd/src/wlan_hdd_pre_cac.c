@@ -514,7 +514,7 @@ wlan_hdd_start_pre_cac_trans(struct hdd_context *hdd_ctx,
 
 int wlan_hdd_request_pre_cac(struct hdd_context *hdd_ctx, uint32_t chan_freq)
 {
-	struct hdd_adapter *adapter;
+	struct hdd_adapter *adapter = {};
 	struct osif_vdev_sync *vdev_sync;
 	int errno;
 	bool is_vdev_sync_created = false;
