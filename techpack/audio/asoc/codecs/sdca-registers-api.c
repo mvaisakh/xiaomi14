@@ -12,7 +12,7 @@
 static ssize_t codec_debug_address_read(struct file *file, char __user *ubuf,
 				size_t count, loff_t *ppos)
 {
-	char buf[RW_BUF_LEN];
+	char buf[RW_BUF_LEN] = {};
 	struct sdca_regdump_info *regdump_info = NULL;
 	struct snd_soc_component *component = NULL;
 
@@ -38,7 +38,7 @@ static ssize_t codec_debug_address_read(struct file *file, char __user *ubuf,
 static ssize_t codec_debug_address_write(struct file *file,
 	const char __user *ubuf, size_t cnt, loff_t *ppos)
 {
-	char buf[RW_BUF_LEN];
+	char buf[RW_BUF_LEN] = {};
 	int rc = 0, ret = 0;
 	struct sdca_regdump_info *regdump_info = NULL;
 	struct snd_soc_component *component = NULL;
@@ -73,7 +73,7 @@ static ssize_t codec_debug_address_write(struct file *file,
 static ssize_t codec_debug_data_read(struct file *file, char __user *ubuf,
 				size_t count, loff_t *ppos)
 {
-	char buf[RW_BUF_LEN];
+	char buf[RW_BUF_LEN] = {};
 	struct sdca_regdump_info *regdump_info = NULL;
 	struct snd_soc_component *component = NULL;
 	int reg_val = 0;
@@ -114,7 +114,7 @@ static ssize_t codec_debug_data_read(struct file *file, char __user *ubuf,
 static ssize_t codec_debug_data_write(struct file *file,
 	const char __user *ubuf, size_t cnt, loff_t *ppos)
 {
-	char buf[RW_BUF_LEN];
+	char buf[RW_BUF_LEN] = {};
 	struct sdca_regdump_info *regdump_info = NULL;
 	struct snd_soc_component *component = NULL;
 	int data = 0, rc = 0, ret = 0;
@@ -165,7 +165,7 @@ static ssize_t codec_debug_registers_dump(struct file *file, char __user *ubuf,
 {
 	struct sdca_regdump_info *regdump_info = NULL;
 	struct snd_soc_component *component = NULL;
-	char tmp_buf[RW_BUF_LEN];
+	char tmp_buf[RW_BUF_LEN] = {};
 	int i = 0, reg_val = 0, len = 0;
 	ssize_t total = 0;
 
