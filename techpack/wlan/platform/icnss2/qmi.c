@@ -1676,13 +1676,13 @@ out:
 	return rc;
 }
 
-int wlfw_qdss_trace_start(struct icnss_priv *priv)
+int wlfw_qdss_trace_start_icnss2(struct icnss_priv *priv)
 {
 	return wlfw_send_qdss_trace_mode_req(priv,
 					     QMI_WLFW_QDSS_TRACE_ON_V01, 0);
 }
 
-int wlfw_qdss_trace_stop(struct icnss_priv *priv, unsigned long long option)
+int wlfw_qdss_trace_stop_icnss2(struct icnss_priv *priv, unsigned long long option)
 {
 	return wlfw_send_qdss_trace_mode_req(priv, QMI_WLFW_QDSS_TRACE_OFF_V01,
 					     option);
