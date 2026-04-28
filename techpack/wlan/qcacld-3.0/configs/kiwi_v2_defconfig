@@ -7,7 +7,7 @@ CONFIG_MOBILE_ROUTER := y
 CONFIG_WLAN_SYSFS := y
 endif
 
-include $(WLAN_ROOT)/configs/default_defconfig
+include $(WLAN_ROOT)/configs/pineapple_gki_kiwi-v2_defconfig
 
 #Enable 11BE EHT
 CONFIG_WLAN_FEATURE_11BE := y
@@ -140,3 +140,6 @@ CONFIG_WLAN_FEATURE_MULTI_LINK_SAP_TEST_CONFIG := y
 
 CONFIG_DP_FTM_MODE_SKIP_WBM_RING_INIT := y
 CONFIG_FEATURE_WLAN_SUPPORT_USD=y
+
+CONFIG_CNSS_OUT_OF_TREE := y
+CONFIG_IPA_OUT_OF_TREE := y
