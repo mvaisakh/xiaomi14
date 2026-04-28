@@ -2368,7 +2368,7 @@ void nan_pasn_peer_handle_del_rsp(struct wlan_objmgr_psoc *psoc,
 	struct nan_psoc_priv_obj *psoc_nan_obj;
 	struct nan_pasn_peer_ops *peer_ops;
 	uint8_t *cookie;
-	uint8_t ndi_vdev_id;
+	uint8_t ndi_vdev_id = 0;
 	struct qdf_mac_addr peer_mac_addr;
 	bool is_peer_migrated;
 	struct wlan_objmgr_vdev *nan_vdev;
