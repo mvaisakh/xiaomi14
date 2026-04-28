@@ -793,7 +793,7 @@ QDF_STATUS
 mlo_mgr_link_switch_trans_next_state(struct wlan_mlo_dev_context *mlo_dev_ctx)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
-	enum mlo_link_switch_req_state cur_state, next_state;
+	enum mlo_link_switch_req_state cur_state, next_state = 0;
 
 	mlo_dev_lock_acquire(mlo_dev_ctx);
 	cur_state = mlo_dev_ctx->link_ctx->last_req.state;
