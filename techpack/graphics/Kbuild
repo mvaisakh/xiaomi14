@@ -60,6 +60,7 @@ ifeq ($(CONFIG_ARCH_HOLI), y)
 endif
 
 ccflags-y += -I$(KGSL_PATH) -I$(KGSL_PATH)/include/linux -I$(KGSL_PATH)/include -I$(KERNEL_SRC)/drivers/devfreq
+ccflags-y += -Wno-unused-result -Wno-unused-variable
 
 obj-$(CONFIG_QCOM_KGSL) += msm_kgsl.o
 
