@@ -977,99 +977,6 @@ static struct kobj_attribute kobj_attr_high_sensitivity =
 	       syna_sysfs_high_sensitivity_store);
 
 /**
- * syna_sysfs_fw_grip_show()
- *
- * Attribute to show current grip suppression mode.
- *
- * @param
- *    [ in] kobj:  an instance of kobj
- *    [ in] attr:  an instance of kobj attribute structure
- *    [out] buf:  string buffer shown on console
- *
- * @return
- *    on success, number of characters being output;
- *    otherwise, negative value on error.
- */
-static ssize_t syna_sysfs_fw_grip_show(struct kobject *kobj,
-		struct kobj_attribute *attr, char *buf)
-{
-	int retval = 0;
-	struct device *p_dev;
-	struct kobject *p_kobj;
-	struct syna_tcm *tcm;
-
-	p_kobj = g_sysfs_dir->parent;
-	p_dev = container_of(p_kobj, struct device, kobj);
-	tcm = dev_get_drvdata(p_dev);
-
-	syna_pal_mutex_lock(&g_extif_mutex);
-
-	retval = scnprintf(buf, PAGE_SIZE, "%u\n", tcm->enable_fw_grip);
-
-	syna_pal_mutex_unlock(&g_extif_mutex);
-	return retval;
-}
-
-/**
- * syna_sysfs_fw_grip_store()
- *
- * Attribute to set grip suppression mode.
- * 0 - Disable fw grip suppression.
- * 1 - Enable fw grip suppression.
- * 2 - Force disable fw grip suppression.
- * 3 - Force enable fw grip suppression.
- *
- * @param
- *    [ in] kobj:  an instance of kobj
- *    [ in] attr:  an instance of kobj attribute structure
- *    [ in] buf:   string buffer input
- *    [ in] count: size of buffer input
- *
- * @return
- *    on success, return count; otherwise, return error code
- */
-static ssize_t syna_sysfs_fw_grip_store(struct kobject *kobj,
-		struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int retval = count;
-	u8 input;
-	struct device *p_dev;
-	struct kobject *p_kobj;
-	struct syna_tcm *tcm;
-
-	p_kobj = g_sysfs_dir->parent;
-	p_dev = container_of(p_kobj, struct device, kobj);
-	tcm = dev_get_drvdata(p_dev);
-
-	if (kstrtou8(buf, 16, &input)) {
-		LOGE("Invalid input %s", buf);
-		return -EINVAL;
-	}
-
-	syna_set_bus_ref(tcm, SYNA_BUS_REF_SYSFS, true);
-	syna_pal_mutex_lock(&g_extif_mutex);
-
-	tcm->enable_fw_grip = input;
-
-	retval = syna_tcm_set_dynamic_config(tcm->tcm_dev,
-				DC_ENABLE_GRIP_SUPPRESSION,
-				(input & 0x01),
-				RESP_IN_ATTN);
-
-	LOGI("Set fw grip suppression mode %u.\n", tcm->enable_fw_grip);
-
-	retval = count;
-
-	syna_pal_mutex_unlock(&g_extif_mutex);
-	syna_set_bus_ref(tcm, SYNA_BUS_REF_SYSFS, false);
-	return retval;
-}
-
-static struct kobj_attribute kobj_attr_fw_grip =
-	__ATTR(fw_grip, 0644, syna_sysfs_fw_grip_show,
-	       syna_sysfs_fw_grip_store);
-
-/**
  * syna_sysfs_fw_palm_show()
  *
  * Attribute to show current palm rejection mode.
@@ -1258,7 +1165,6 @@ static struct attribute *attrs[] = {
 	&kobj_attr_force_active.attr,
 	&kobj_attr_get_raw_data.attr,
 	&kobj_attr_high_sensitivity.attr,
-	&kobj_attr_fw_grip.attr,
 	&kobj_attr_fw_palm.attr,
 	&kobj_attr_mf_mode.attr,
 	NULL,
