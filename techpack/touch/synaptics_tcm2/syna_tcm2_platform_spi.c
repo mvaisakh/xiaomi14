@@ -504,7 +504,7 @@ static int syna_spi_parse_dt(struct syna_hw_interface *hw_if,
 	else
 		pwr->avdd_reg_name = name;
 
-	retval = of_property_read_string(np, "synaptics,vdd-name", &name);
+	retval = of_property_read_string(np, "synaptics,iovdd-name", &name);
 	if (retval < 0)
 		pwr->vdd_reg_name = NULL;
 	else
