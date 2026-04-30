@@ -338,7 +338,6 @@ struct custom_fw_status {
 			unsigned char b0_moisture:1;
 			unsigned char b1_noise_state:1;
 			unsigned char b2_freq_hopping:1;
-			unsigned char b3_grip:1;
 			unsigned char b4_palm:1;
 			unsigned char b5__7_reserved:3;
 			unsigned char reserved;
@@ -506,8 +505,6 @@ struct syna_tcm {
 	/* Work for motion filter commands. */
 	struct work_struct motion_filter_work;
 
-	/* Work for setting firmware grip mode. */
-	struct work_struct set_grip_mode_work;
 	/* Work for setting firmware palm mode. */
 	struct work_struct set_palm_mode_work;
 
@@ -537,9 +534,7 @@ struct syna_tcm {
 	s16 *raw_data_buffer;
 	struct completion raw_data_completion;
 	bool high_sensitivity_mode;
-	u8 enable_fw_grip;
 	u8 enable_fw_palm;
-	u8 next_enable_fw_grip;
 	u8 next_enable_fw_palm;
 
 	struct pm_qos_request pm_qos_req;

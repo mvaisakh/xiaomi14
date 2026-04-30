@@ -689,40 +689,6 @@ static int syna_spi_parse_dt(struct syna_hw_interface *hw_if,
 		hw_if->compression_threhsold = 15;
 	}
 
-	prop = of_find_property(np, "synaptics,grip-delta-threshold", NULL);
-	if (prop && prop->length) {
-		retval = of_property_read_u32(np, "synaptics,grip-delta-threshold",
-				&value);
-		if (retval < 0) {
-			LOGE("Fail to read synaptics,grip-delta-threshold\n");
-			return retval;
-		}
-
-		hw_if->grip_delta_threshold = value;
-	} else {
-		/*
-		 * Set default as 50.
-		 */
-		hw_if->grip_delta_threshold = 50;
-	}
-
-	prop = of_find_property(np, "synaptics,grip-border-threshold", NULL);
-	if (prop && prop->length) {
-		retval = of_property_read_u32(np, "synaptics,grip-border-threshold",
-				&value);
-		if (retval < 0) {
-			LOGE("Fail to read synaptics,grip-border-threshold\n");
-			return retval;
-		}
-
-		hw_if->grip_border_threshold = value;
-	} else {
-		/*
-		 * Set default as 50.
-		 */
-		hw_if->grip_border_threshold = 50;
-	}
-
 	hw_if->dynamic_report_rate = of_property_read_bool(np,"synaptics,dynamic-report-rate");
 
 	if (of_property_read_u32_array(np, "synaptics,udfps-coords", coords, 2)) {
