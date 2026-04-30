@@ -1715,11 +1715,11 @@ static int syna_pinctrl_configure(struct syna_tcm *tcm, bool enable)
 	LOGD("%s\n", enable ? "ACTIVE" : "SUSPEND");
 
 	if (enable) {
-		state = pinctrl_lookup_state(tcm->pinctrl, "ts_active");
+		state = pinctrl_lookup_state(tcm->pinctrl, "pmx_ts_active");
 		if (IS_ERR(state))
 			LOGE("Could not get ts_active pinstate!\n");
 	} else {
-		state = pinctrl_lookup_state(tcm->pinctrl, "ts_suspend");
+		state = pinctrl_lookup_state(tcm->pinctrl, "pmx_ts_suspend");
 		if (IS_ERR(state))
 			LOGE("Could not get ts_suspend pinstate!\n");
 	}
