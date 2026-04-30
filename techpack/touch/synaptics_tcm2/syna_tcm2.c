@@ -327,23 +327,8 @@ static void syna_dev_restore_feature_setting(struct syna_tcm *tcm, unsigned int 
 			delay_ms_resp);
 
 	syna_tcm_set_dynamic_config(tcm->tcm_dev,
-			DC_ENABLE_GRIP_SUPPRESSION,
-			(tcm->enable_fw_grip & 0x01),
-			delay_ms_resp);
-
-	syna_tcm_set_dynamic_config(tcm->tcm_dev,
 			DC_COMPRESSION_THRESHOLD,
 			tcm->hw_if->compression_threhsold,
-			delay_ms_resp);
-
-	syna_tcm_set_dynamic_config(tcm->tcm_dev,
-			DC_GRIP_DELTA_THRESHOLD,
-			tcm->hw_if->grip_delta_threshold,
-			delay_ms_resp);
-
-	syna_tcm_set_dynamic_config(tcm->tcm_dev,
-			DC_GRIP_BORDER_THRESHOLD,
-			tcm->hw_if->grip_border_threshold,
 			delay_ms_resp);
 
 	if (tcm->hw_if->dynamic_report_rate) {
@@ -462,26 +447,6 @@ static void syna_set_report_rate_work(struct work_struct *work)
 			RESP_IN_ATTN);
 	LOGI("Set touch report rate as %dHz",
 		(tcm->touch_report_rate_config == CONFIG_HIGH_REPORT_RATE) ? 240 : 120);
-}
-
-static void syna_set_grip_mode_work(struct work_struct *work)
-{
-	struct syna_tcm *tcm = container_of(work, struct syna_tcm, set_grip_mode_work);
-
-	if (tcm->pwr_state != PWR_ON) {
-		LOGI("Touch is already off.");
-		return;
-	}
-
-	if (tcm->enable_fw_grip != tcm->next_enable_fw_grip) {
-		tcm->enable_fw_grip = tcm->next_enable_fw_grip;
-		LOGI("%s firmware grip suppression.\n",
-			(tcm->enable_fw_grip == 1) ? "Enable" : "Disable");
-		syna_tcm_set_dynamic_config(tcm->tcm_dev,
-				DC_ENABLE_GRIP_SUPPRESSION,
-				tcm->enable_fw_grip,
-				RESP_IN_ATTN);
-	}
 }
 
 static void syna_set_palm_mode_work(struct work_struct *work)
@@ -1325,9 +1290,9 @@ static irqreturn_t syna_dev_interrupt_thread(int irq, void *data)
 		 * report size shall be 2-byte only; the
 		 */
 		status = (struct custom_fw_status *)&tcm->event_data.buf[0];
-		LOGI("Status: moisture:%d noise:%d freq-change:%d, grip:%d, palm:%d\n",
+		LOGI("Status: moisture:%d noise:%d freq-change:%d, palm:%d\n",
 			status->b0_moisture, status->b1_noise_state,
-			status->b2_freq_hopping, status->b3_grip, status->b4_palm);
+			status->b2_freq_hopping, status->b4_palm);
 
 		if (status->b0_moisture)
 			tcm->syna_hc.wet_cnt++;
@@ -2502,7 +2467,6 @@ static int syna_dev_probe(struct platform_device *pdev)
 	tcm->mf_mode = MF_DYNAMIC;
 
 	INIT_WORK(&tcm->motion_filter_work, syna_motion_filter_work);
-	INIT_WORK(&tcm->set_grip_mode_work, syna_set_grip_mode_work);
 	INIT_WORK(&tcm->set_palm_mode_work, syna_set_palm_mode_work);
 
 	tcm->touch_report_rate_config = CONFIG_HIGH_REPORT_RATE;
@@ -2514,7 +2478,6 @@ static int syna_dev_probe(struct platform_device *pdev)
 		goto err_request_irq;
 	}
 
-	tcm->enable_fw_grip = 0x00;
 	tcm->enable_fw_palm = 0x01;
 	syna_dev_restore_feature_setting(tcm, RESP_IN_POLLING);
 
@@ -2640,7 +2603,6 @@ static int syna_dev_remove(struct platform_device *pdev)
 	cancel_work_sync(&tcm->suspend_work);
 	cancel_work_sync(&tcm->resume_work);
 	cancel_work_sync(&tcm->motion_filter_work);
-	cancel_work_sync(&tcm->set_grip_mode_work);
 	cancel_work_sync(&tcm->set_palm_mode_work);
 	cancel_delayed_work_sync(&tcm->set_report_rate_work);
 
