@@ -148,8 +148,6 @@ struct syna_hw_interface {
 	const char *fw_name;
 	int pixels_per_mm;
 	u16 compression_threhsold;
-	u16 grip_delta_threshold;
-	u16 grip_border_threshold;
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_OFFLOAD)
 	u32 offload_id;
 #endif
