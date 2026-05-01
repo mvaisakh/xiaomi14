@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -665,6 +665,18 @@ int dp_connector_get_modes(struct drm_connector *connector,
 	return rc;
 }
 
+int dp_connector_set_info_blob(struct drm_connector *connector,
+		void *info, void *display, struct msm_mode_info *mode_info)
+{
+	struct dp_display *dp_display = display;
+	const char *display_type = NULL;
+
+	dp_display->get_display_type(dp_display, &display_type);
+	sde_kms_info_add_keystr(info, "display type", display_type);
+
+	return 0;
+}
+
 int dp_drm_bridge_init(void *data, struct drm_encoder *encoder,
 	u32 max_mixer_count, u32 max_dsc_count)
 {
@@ -752,17 +764,12 @@ enum drm_mode_status dp_connector_mode_valid(struct drm_connector *connector,
 		return MODE_ERROR;
 	}
 
-	/* As per spec, failsafe mode should always be present */
-	if ((mode->hdisplay == 640) && (mode->vdisplay == 480) && (mode->clock == 25175))
-		goto validate_mode;
-
 	if (dp_panel->mode_override && (mode->hdisplay != dp_panel->hdisplay ||
 			mode->vdisplay != dp_panel->vdisplay ||
 			vrefresh != dp_panel->vrefresh ||
 			mode->picture_aspect_ratio != dp_panel->aspect_ratio))
 		return MODE_BAD;
 
-validate_mode:
 	return dp_disp->validate_mode(dp_disp, sde_conn->drv_panel,
 			mode, &avail_dp_res);
 }

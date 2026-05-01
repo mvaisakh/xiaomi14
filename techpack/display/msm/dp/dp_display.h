@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2021-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -111,6 +111,10 @@ struct dp_display {
 	void (*clear_reservation)(struct dp_display *dp, struct dp_panel *panel);
 	int (*get_mst_pbn_div)(struct dp_display *dp);
 	int (*get_active_stream_count)(struct dp_display *dp_display);
+	int (*get_display_type)(struct dp_display *dp_display,
+			const char **display_type);
+	int (*mst_get_fixed_topology_display_type)(struct dp_display *dp_display,
+			u32 strm_id, const char **display_type);
 };
 
 void *get_ipc_log_context(void);

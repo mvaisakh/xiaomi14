@@ -151,7 +151,6 @@ struct dsi_display_ext_bridge {
  * @sw_te_using_wd:   Is software te enabled
  * @display_lock:     Mutex for dsi_display interface.
  * @disp_te_gpio:     GPIO for panel TE interrupt.
- * @is_spurious_interrupt: bool to specify spurious interrupt.
  * @is_te_irq_enabled:bool to specify whether TE interrupt is enabled.
  * @esd_te_gate:      completion gate to signal TE interrupt.
  * @ctrl_count:       Number of DSI interfaces required by panel.
@@ -220,7 +219,6 @@ struct dsi_display {
 	int disp_te_gpio;
 	bool is_te_irq_enabled;
 	struct completion esd_te_gate;
-	bool is_spurious_interrupt;
 
 	u32 ctrl_count;
 	struct dsi_display_ctrl ctrl[MAX_DSI_CTRLS_PER_DISPLAY];
@@ -854,11 +852,10 @@ int dsi_display_update_transfer_time(void *display, u32 transfer_time);
  */
 int dsi_display_get_panel_scan_line(void *display, u16 *scan_line, ktime_t *scan_line_ts);
 
-/**
- * dsi_display_report_dead() - report panel dead and cancel work queue
- * @display:     handle to display
- *
- */
-void dsi_display_report_dead(struct dsi_display *display);
+#ifdef MI_DISPLAY_MODIFY
+char *mi_dsi_display_get_cmdline_panel_info(struct dsi_display *display);
+int dsi_display_cmd_rx(struct dsi_display *display, struct dsi_cmd_desc *cmd);
+int dsi_display_ctrl_get_host_init_state(struct dsi_display *dsi_display, bool *state);
+#endif
 
 #endif /* _DSI_DISPLAY_H_ */
