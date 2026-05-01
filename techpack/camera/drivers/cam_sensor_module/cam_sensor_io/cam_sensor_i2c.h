@@ -38,6 +38,21 @@ int32_t cam_cci_i2c_read(struct cam_sensor_cci_client *client,
 
 /**
  * @client: CCI client structure
+ * @data: I2C data
+ * @addr_type: I2c address type
+ * @data_type: I2C data type
+ * @is_probing: Is probing a sensor
+ *
+ * This API handles CCI read
+ */
+int32_t cam_cci_i2c_read_with_little_endian(struct cam_sensor_cci_client *client,
+	uint32_t addr, uint32_t *data,
+	enum camera_sensor_i2c_type addr_type,
+	enum camera_sensor_i2c_type data_type,
+	bool is_probing);
+
+/**
+ * @client: CCI client structure
  * @addr: I2c address
  * @data: I2C data
  * @addr_type: I2c address type
@@ -100,6 +115,22 @@ int32_t cam_cci_i2c_poll(struct cam_sensor_cci_client *client,
 	enum camera_sensor_i2c_type addr_type,
 	uint32_t delay_ms);
 
+/**
+ * @client: CCI client structure
+ * @addr: I2C address
+ * @data: I2C data
+ * @data_mask: I2C data mask
+ * @data_type: I2C data type
+ * @addr_type: I2C addr type
+ * @delay_ms: Delay in milli seconds
+ *
+ * This API implements CCI based I2C poll
+ */
+int32_t cam_cci_i2c_poll_with_32(struct cam_sensor_cci_client *client,
+	uint32_t addr, uint32_t data, uint32_t data_mask,
+	enum camera_sensor_i2c_type data_type,
+	enum camera_sensor_i2c_type addr_type,
+	uint32_t delay_ms);
 
 /**
  * cam_qup_i2c_read : QUP based i2c read

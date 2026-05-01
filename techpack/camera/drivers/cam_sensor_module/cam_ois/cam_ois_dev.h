@@ -22,6 +22,7 @@
 #include <cam_subdev.h>
 #include "cam_soc_util.h"
 #include "cam_context.h"
+#include "cam_parklens_thread.h"
 
 #define DEFINE_MSM_MUTEX(mutexname) \
 	static struct mutex mutexname = __MUTEX_INITIALIZER(mutexname)
@@ -113,6 +114,7 @@ struct cam_ois_ctrl_t {
 	struct i2c_settings_array i2c_fwinit_data;
 	struct i2c_settings_array i2c_init_data;
 	struct i2c_settings_array i2c_calib_data;
+	struct i2c_settings_array i2c_postinit_data;
 	struct i2c_settings_array i2c_mode_data;
 	struct i2c_settings_array i2c_time_data;
 	enum msm_camera_device_type_t ois_device_type;
@@ -125,6 +127,10 @@ struct cam_ois_ctrl_t {
 	struct i2c_settings_array i2c_fw_init_data[MAX_OIS_FW_COUNT];
 	struct i2c_settings_array i2c_fw_finalize_data[MAX_OIS_FW_COUNT];
 	struct i2c_settings_array i2c_fw_version_data;
+	struct cam_ois_parklens_ctrl_t parklens_ctrl;
+	struct i2c_settings_array i2c_parklens_data;
+	struct i2c_data_settings i2c_data;
+	uint64_t last_flush_req; 
 };
 
 /**
